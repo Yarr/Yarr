@@ -1,5 +1,14 @@
-#ifndef _PCIDRIVER_COMMON_H
-#define _PCIDRIVER_COMMON_H
+// #################################
+// # Author: Timon Heim
+// # Email: timon.heim at cern.ch
+// # Project: Yarr
+// # Description: Simple PCie Carrier Kernel driver
+// # Comment: Original driver taken from Marcus Guillermo
+// #          Modified for SPEC card
+// ################################
+
+#ifndef _SPECDRIVER_COMMON_H
+#define _SPECDRIVER_COMMON_H
 
 
 /*************************************************************************/
@@ -14,7 +23,7 @@ typedef struct {
 	unsigned long cpua;
 	unsigned long size;
 	struct class_device_attribute sysfs_attr;	/* initialized when adding the entry */
-} pcidriver_kmem_entry_t;
+} specdriver_kmem_entry_t;
 
 /* Define an entry in the umem list (this list is per device) */
 /* This list keeps references to the SG lists for each mapped userspace region */
@@ -26,7 +35,7 @@ typedef struct {
 	unsigned int nents;			/* actual entries in the scatter/gatter list (NOT nents for the map function, but the result) */
 	struct scatterlist *sg;		/* list of sg entries */
 	struct class_device_attribute sysfs_attr;	/* initialized when adding the entry */
-} pcidriver_umem_entry_t;
+} specdriver_umem_entry_t;
 
 /* Hold the driver private data */
 typedef struct  {
@@ -37,18 +46,16 @@ typedef struct  {
 	int mmap_mode;						/* current mmap mode */
 	int mmap_area;						/* current PCI mmap area */
 
-#ifdef ENABLE_IRQ
 	int irq_enabled;					/* Non-zero if IRQ is enabled */
 	int irq_count;						/* Just an IRQ counter */
 
-	wait_queue_head_t irq_queues[ PCIDRIVER_INT_MAXSOURCES ];
+	wait_queue_head_t irq_queues[ SPECDRIVER_INT_MAXSOURCES ];
 										/* One queue per interrupt source */
-	atomic_t irq_outstanding[ PCIDRIVER_INT_MAXSOURCES ];
+	atomic_t irq_outstanding[ SPECDRIVER_INT_MAXSOURCES ];
 										/* Outstanding interrupts per queue */
-	volatile unsigned int *bars_kmapped[6];		/* PCI BARs mmapped in kernel space */
-
-#endif
 	
+    volatile unsigned int *bars_kmapped[3];		/* PCI BARs mmapped in kernel space */
+
 	spinlock_t kmemlist_lock;			/* Spinlock to lock kmem list operations */
 	struct list_head kmem_list;			/* List of 'kmem_list_entry's associated with this device */
 	atomic_t kmem_count;				/* id for next kmem entry */
@@ -58,49 +65,9 @@ typedef struct  {
 	atomic_t umem_count;				/* id for next umem entry */
 
 	
-} pcidriver_privdata_t;
+} specdriver_privdata_t;
 
-/* Identifies the mpRACE-1 boards */
-#define MPRACE1_VENDOR_ID 0x10b5
-#define MPRACE1_DEVICE_ID 0x9656
-
-/* Identifies the PCI-X Test boards */
-#define PCIXTEST_VENDOR_ID 0x10dc
-#define PCIXTEST_DEVICE_ID 0x0156
-
-/* Identifies the PCIe RobInExpress boards */
-#define PCIEROB_VENDOR_ID 0x10dc
-#define PCIEROB_DEVICE_ID 0x0188
-
-/* Identifies the PCIe-PLDA Test board */
-#define PCIEPLDA_VENDOR_ID 0x1556
-#define PCIEPLDA_DEVICE_ID 0x1100
-
-/* Identifies the PCIe-ABB Test board */
-#define PCIEABB_VENDOR_ID 0x10dc
-#define PCIEABB_DEVICE_ID 0x0153
-
-/* Identifies the PCI-X ROBIN2 boards */
-#define PCIXROB_VENDOR_ID 0x10dc
-#define PCIXROB_DEVICE_ID 0x0144
-
-/* Identifies the PCI-e ROBIN2express boards */
-#define PCIEROB_VENDOR_ID 0x10dc
-#define PCIEROB_DEVICE_ID 0x0188
-
-/* Identifies the PCI-X PROGRAPE4 */
-#define PCIXPG4_VENDOR_ID 0x1679
-#define PCIXPG4_DEVICE_ID 0x0001
-
-/* Identifies the PCI-64 PROGRAPE4 */
-#define PCI64PG4_VENDOR_ID 0x1679
-#define PCI64PG4_DEVICE_ID 0x0005
-
-/* Identifies the PCI-E Xilinx ML605 */
-#define PCIE_XILINX_VENDOR_ID 0x10ee
-#define PCIE_ML605_DEVICE_ID 0x6014
-
-/* Identifies the SPEC card with XY firmware */
+/* Identifies the SPEC card */
 #define PCIE_SPEC_VENDOR_ID 0x10DC
 #define PCIE_SPEC_DEVICE_ID 0x018d
 

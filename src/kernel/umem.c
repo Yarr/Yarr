@@ -30,12 +30,12 @@
  * Reserve a new scatter/gather list and map it from memory to PCI bus addresses.
  *
  */
-int pcidriver_umem_sgmap(pcidriver_privdata_t *privdata, umem_handle_t *umem_handle)
+int specdriver_umem_sgmap(specdriver_privdata_t *privdata, umem_handle_t *umem_handle)
 {
 	int i, res, nr_pages;
 	struct page **pages;
 	struct scatterlist *sg = NULL;
-	pcidriver_umem_entry_t *umem_entry;
+	specdriver_umem_entry_t *umem_entry;
 	unsigned int nents;
 	unsigned long count,offset,length;
 
@@ -147,7 +147,7 @@ int pcidriver_umem_sgmap(pcidriver_privdata_t *privdata, umem_handle_t *umem_han
 	umem_entry->nents = nents;
 	umem_entry->sg = sg;
 
-	if (pcidriver_sysfs_initialize_umem(privdata, umem_entry->id, &(umem_entry->sysfs_attr)) != 0)
+	if (specdriver_sysfs_initialize_umem(privdata, umem_entry->id, &(umem_entry->sysfs_attr)) != 0)
 		goto umem_sgmap_name_fail;
 
 	/* Add entry to the umem list */
@@ -187,10 +187,10 @@ umem_sgmap_pages:
  * Unmap a scatter/gather list
  *
  */
-int pcidriver_umem_sgunmap(pcidriver_privdata_t *privdata, pcidriver_umem_entry_t *umem_entry)
+int specdriver_umem_sgunmap(specdriver_privdata_t *privdata, specdriver_umem_entry_t *umem_entry)
 {
 	int i;
-	pcidriver_sysfs_remove(privdata, &(umem_entry->sysfs_attr));
+	specdriver_sysfs_remove(privdata, &(umem_entry->sysfs_attr));
 
 	/* Unmap user memory */
 	pci_unmap_sg( privdata->pdev, umem_entry->sg, umem_entry->nr_pages, PCI_DMA_BIDIRECTIONAL );
@@ -229,15 +229,15 @@ int pcidriver_umem_sgunmap(pcidriver_privdata_t *privdata, pcidriver_umem_entry_
  * Unmap all scatter/gather lists.
  *
  */
-int pcidriver_umem_sgunmap_all(pcidriver_privdata_t *privdata)
+int specdriver_umem_sgunmap_all(specdriver_privdata_t *privdata)
 {
 	struct list_head *ptr, *next;
-	pcidriver_umem_entry_t *umem_entry;
+	specdriver_umem_entry_t *umem_entry;
 
 	/* iterate safely over the entries and delete them */
 	list_for_each_safe( ptr, next, &(privdata->umem_list) ) {
-		umem_entry = list_entry(ptr, pcidriver_umem_entry_t, list );
-		pcidriver_umem_sgunmap( privdata, umem_entry ); 		/* spin lock inside! */
+		umem_entry = list_entry(ptr, specdriver_umem_entry_t, list );
+		specdriver_umem_sgunmap( privdata, umem_entry ); 		/* spin lock inside! */
 	}
 
 	return 0;
@@ -248,17 +248,17 @@ int pcidriver_umem_sgunmap_all(pcidriver_privdata_t *privdata)
  * Copies the scatter/gather list from kernelspace to userspace.
  *
  */
-int pcidriver_umem_sgget(pcidriver_privdata_t *privdata, umem_sglist_t *umem_sglist)
+int specdriver_umem_sgget(specdriver_privdata_t *privdata, umem_sglist_t *umem_sglist)
 {
 	int i;
-	pcidriver_umem_entry_t *umem_entry;
+	specdriver_umem_entry_t *umem_entry;
 	struct scatterlist *sg;
 	int idx = 0;
 	dma_addr_t cur_addr;
 	unsigned int cur_size;
 
 	/* Find the associated umem_entry for this buffer */
-	umem_entry = pcidriver_umem_find_entry_id( privdata, umem_sglist->handle_id );
+	umem_entry = specdriver_umem_find_entry_id( privdata, umem_sglist->handle_id );
 	if (umem_entry == NULL)
 		return -EINVAL;					/* umem_handle is not valid */
 
@@ -268,7 +268,7 @@ int pcidriver_umem_sgget(pcidriver_privdata_t *privdata, umem_sglist_t *umem_sgl
 
 	/* Copy the SG list to the user format */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
-	if (umem_sglist->type == PCIDRIVER_SG_MERGED) {
+	if (umem_sglist->type == SPECDRIVER_SG_MERGED) {
 		for_each_sg(umem_entry->sg, sg, umem_entry->nents, i ) {
 			if (i==0) {
 				umem_sglist->sg[0].addr = sg_dma_address( sg );
@@ -312,7 +312,7 @@ int pcidriver_umem_sgget(pcidriver_privdata_t *privdata, umem_sglist_t *umem_sgl
 			umem_sglist->nents = umem_entry->nents;
 	}
 #else
-	if (umem_sglist->type == PCIDRIVER_SG_MERGED) {
+	if (umem_sglist->type == SPECDRIVER_SG_MERGED) {
 		/* Merge entries that are contiguous into a single entry */
 		/* Non-optimal but fast for most cases */
 		/* First one always true */
@@ -368,24 +368,24 @@ int pcidriver_umem_sgget(pcidriver_privdata_t *privdata, umem_sglist_t *umem_sgl
  * Sync user space memory from/to device
  *
  */
-int pcidriver_umem_sync( pcidriver_privdata_t *privdata, umem_handle_t *umem_handle )
+int specdriver_umem_sync( specdriver_privdata_t *privdata, umem_handle_t *umem_handle )
 {
-	pcidriver_umem_entry_t *umem_entry;
+	specdriver_umem_entry_t *umem_entry;
 
 	/* Find the associated umem_entry for this buffer */
-	umem_entry = pcidriver_umem_find_entry_id( privdata, umem_handle->handle_id );
+	umem_entry = specdriver_umem_find_entry_id( privdata, umem_handle->handle_id );
 	if (umem_entry == NULL)
 		return -EINVAL;					/* umem_handle is not valid */
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,11)
 	switch (umem_handle->dir) {
-		case PCIDRIVER_DMA_TODEVICE:
+		case SPECDRIVER_DMA_TODEVICE:
 			pci_dma_sync_sg_for_device( privdata->pdev, umem_entry->sg, umem_entry->nents, PCI_DMA_TODEVICE );
 			break;
-		case PCIDRIVER_DMA_FROMDEVICE:
+		case SPECDRIVER_DMA_FROMDEVICE:
 			pci_dma_sync_sg_for_cpu( privdata->pdev, umem_entry->sg, umem_entry->nents, PCI_DMA_FROMDEVICE );
 			break;
-		case PCIDRIVER_DMA_BIDIRECTIONAL:
+		case SPECDRIVER_DMA_BIDIRECTIONAL:
 			pci_dma_sync_sg_for_device( privdata->pdev, umem_entry->sg, umem_entry->nents, PCI_DMA_BIDIRECTIONAL );
 			pci_dma_sync_sg_for_cpu( privdata->pdev, umem_entry->sg, umem_entry->nents, PCI_DMA_BIDIRECTIONAL );
 			break;
@@ -394,13 +394,13 @@ int pcidriver_umem_sync( pcidriver_privdata_t *privdata, umem_handle_t *umem_han
 	}
 #else
 	switch (umem_handle->dir) {
-		case PCIDRIVER_DMA_TODEVICE:
+		case SPECDRIVER_DMA_TODEVICE:
 			pci_dma_sync_sg( privdata->pdev, umem_entry->sg, umem_entry->nents, PCI_DMA_TODEVICE );
 			break;
-		case PCIDRIVER_DMA_FROMDEVICE:
+		case SPECDRIVER_DMA_FROMDEVICE:
 			pci_dma_sync_sg( privdata->pdev, umem_entry->sg, umem_entry->nents, PCI_DMA_FROMDEVICE );
 			break;
-		case PCIDRIVER_DMA_BIDIRECTIONAL:
+		case SPECDRIVER_DMA_BIDIRECTIONAL:
 			pci_dma_sync_sg( privdata->pdev, umem_entry->sg, umem_entry->nents, PCI_DMA_BIDIRECTIONAL );
 			break;
 		default:
@@ -413,19 +413,19 @@ int pcidriver_umem_sync( pcidriver_privdata_t *privdata, umem_handle_t *umem_han
 
 /*
  *
- * Get the pcidriver_umem_entry_t structure for the given id.
+ * Get the specdriver_umem_entry_t structure for the given id.
  *
  * @param id ID of the umem entry to search for
  *
  */
-pcidriver_umem_entry_t *pcidriver_umem_find_entry_id(pcidriver_privdata_t *privdata, int id)
+specdriver_umem_entry_t *specdriver_umem_find_entry_id(specdriver_privdata_t *privdata, int id)
 {
 	struct list_head *ptr;
-	pcidriver_umem_entry_t *entry;
+	specdriver_umem_entry_t *entry;
 
 	spin_lock(&(privdata->umemlist_lock));
 	list_for_each(ptr, &(privdata->umem_list)) {
-		entry = list_entry(ptr, pcidriver_umem_entry_t, list );
+		entry = list_entry(ptr, specdriver_umem_entry_t, list );
 
 		if (entry->id == id) {
 			spin_unlock( &(privdata->umemlist_lock) );

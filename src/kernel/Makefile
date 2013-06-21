@@ -1,5 +1,5 @@
 
-obj-m := pciDriver.o
+obj-m := specDriver.o
 pciDriver-objs := base.o int.o umem.o kmem.o sysfs.o ioctl.o
 
 KERNELDIR ?= /lib/modules/$(shell uname -r)/build
@@ -10,21 +10,21 @@ default: dolink
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
 
 dolink:
-	@ln -sf ../../include/driver/pciDriver.h
+	@ln -sf ../include/driver/specDriver.h
 
 install:
 	@mkdir -p $(INSTALLDIR)
 	@echo "INSTALL $(INSTALLDIR)/pciDriver.ko"
-	@install -m 755 pciDriver.ko $(INSTALLDIR)
+	@install -m 755 specDriver.ko $(INSTALLDIR)
 	@echo "INSTALL /usr/include/pciDriver/driver/pciDriver.h"
-	@mkdir -p /usr/include/pciDriver/driver
-	@install -m 644 pciDriver.h /usr/include/pciDriver/driver
+	@mkdir -p /usr/include/specDriver/driver
+	@install -m 644 pciDriver.h /usr/include/specDriver/driver
 
 uninstall:
-	@echo "UNINSTALL $(INSTALLDIR)/pciDriver.ko"
-	@rm -f $(INSTALLDIR)/pciDriver.ko
-	@echo "UNINSTALL /usr/include/pciDriver/driver/pciDriver.h"
-	@rm -rf /usr/include/pciDriver/driver
+	@echo "UNINSTALL $(INSTALLDIR)/specDriver.ko"
+	@rm -f $(INSTALLDIR)/specDriver.ko
+	@echo "UNINSTALL /usr/include/specDriver/driver/specDriver.h"
+	@rm -rf /usr/include/specDriver/driver
 
 clean:
 	rm -f *.o *.ko *.mod.c

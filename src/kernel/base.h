@@ -6,8 +6,8 @@
 // # Comment: Original driver taken from Marcus Guillermo
 // ################################
 
-#ifndef _SPECRIVER_BASE_H
-#define _SPECRIVER_BASE_H
+#ifndef _SPECDRIVER_BASE_H
+#define _SPECDRIVER_BASE_H
 
 #include "sysfs.h"
 

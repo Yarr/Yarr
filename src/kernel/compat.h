@@ -59,7 +59,7 @@ static inline const char *dev_name(struct device *dev) {
 	#define sysfs_attr_def_pointer privdata->class_dev
 	#define SYSFS_GET_FUNCTION(name) ssize_t name(struct class_device *cls, char *buf)
 	#define SYSFS_SET_FUNCTION(name) ssize_t name(struct class_device *cls, const char *buf, size_t count)
-	#define SYSFS_GET_PRIVDATA (pcidriver_privdata_t*)cls->class_data
+	#define SYSFS_GET_PRIVDATA (specdriver_privdata_t*)cls->class_data
 
 #else
 

@@ -30,13 +30,13 @@
  * it available via sysfs if possible.
  *
  */
-int pcidriver_kmem_alloc(pcidriver_privdata_t *privdata, kmem_handle_t *kmem_handle)
+int specdriver_kmem_alloc(specdriver_privdata_t *privdata, kmem_handle_t *kmem_handle)
 {
-	pcidriver_kmem_entry_t *kmem_entry;
+	specdriver_kmem_entry_t *kmem_entry;
 	void *retptr;
 
 	/* First, allocate zeroed memory for the kmem_entry */
-	if ((kmem_entry = kcalloc(1, sizeof(pcidriver_kmem_entry_t), GFP_KERNEL)) == NULL)
+	if ((kmem_entry = kcalloc(1, sizeof(specdriver_kmem_entry_t), GFP_KERNEL)) == NULL)
 		goto kmem_alloc_entry_fail;
 
 	/* Initialize the kmem_entry */
@@ -45,7 +45,7 @@ int pcidriver_kmem_alloc(pcidriver_privdata_t *privdata, kmem_handle_t *kmem_han
 	kmem_handle->handle_id = kmem_entry->id;
 
 	/* Initialize sysfs if possible */
-	if (pcidriver_sysfs_initialize_kmem(privdata, kmem_entry->id, &(kmem_entry->sysfs_attr)) != 0)
+	if (specdriver_sysfs_initialize_kmem(privdata, kmem_entry->id, &(kmem_entry->sysfs_attr)) != 0)
 		goto kmem_alloc_mem_fail;
 
 	/* ...and allocate the DMA memory */
@@ -81,15 +81,15 @@ kmem_alloc_entry_fail:
  * Called via sysfs, frees kernel memory and the corresponding management structure
  *
  */
-int pcidriver_kmem_free( pcidriver_privdata_t *privdata, kmem_handle_t *kmem_handle )
+int specdriver_kmem_free( specdriver_privdata_t *privdata, kmem_handle_t *kmem_handle )
 {
-	pcidriver_kmem_entry_t *kmem_entry;
+	specdriver_kmem_entry_t *kmem_entry;
 
 	/* Find the associated kmem_entry for this buffer */
-	if ((kmem_entry = pcidriver_kmem_find_entry(privdata, kmem_handle)) == NULL)
+	if ((kmem_entry = specdriver_kmem_find_entry(privdata, kmem_handle)) == NULL)
 		return -EINVAL;					/* kmem_handle is not valid */
 
-	return pcidriver_kmem_free_entry(privdata, kmem_entry);
+	return specdriver_kmem_free_entry(privdata, kmem_entry);
 }
 
 /**
@@ -97,15 +97,15 @@ int pcidriver_kmem_free( pcidriver_privdata_t *privdata, kmem_handle_t *kmem_han
  * Called when cleaning up, frees all kernel memory and their corresponding management structure
  *
  */
-int pcidriver_kmem_free_all(pcidriver_privdata_t *privdata)
+int specdriver_kmem_free_all(specdriver_privdata_t *privdata)
 {
 	struct list_head *ptr, *next;
-	pcidriver_kmem_entry_t *kmem_entry;
+	specdriver_kmem_entry_t *kmem_entry;
 
 	/* iterate safely over the entries and delete them */
 	list_for_each_safe(ptr, next, &(privdata->kmem_list)) {
-		kmem_entry = list_entry(ptr, pcidriver_kmem_entry_t, list);
-		pcidriver_kmem_free_entry(privdata, kmem_entry); 		/* spin lock inside! */
+		kmem_entry = list_entry(ptr, specdriver_kmem_entry_t, list);
+		specdriver_kmem_free_entry(privdata, kmem_entry); 		/* spin lock inside! */
 	}
 
 	return 0;
@@ -116,23 +116,23 @@ int pcidriver_kmem_free_all(pcidriver_privdata_t *privdata)
  * Synchronize memory to/from the device (or in both directions).
  *
  */
-int pcidriver_kmem_sync( pcidriver_privdata_t *privdata, kmem_sync_t *kmem_sync )
+int specdriver_kmem_sync( specdriver_privdata_t *privdata, kmem_sync_t *kmem_sync )
 {
-	pcidriver_kmem_entry_t *kmem_entry;
+	specdriver_kmem_entry_t *kmem_entry;
 
 	/* Find the associated kmem_entry for this buffer */
-	if ((kmem_entry = pcidriver_kmem_find_entry(privdata, &(kmem_sync->handle))) == NULL)
+	if ((kmem_entry = specdriver_kmem_find_entry(privdata, &(kmem_sync->handle))) == NULL)
 		return -EINVAL;					/* kmem_handle is not valid */
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,11)
 	switch (kmem_sync->dir) {
-		case PCIDRIVER_DMA_TODEVICE:
+		case SPECDRIVER_DMA_TODEVICE:
 			pci_dma_sync_single_for_device( privdata->pdev, kmem_entry->dma_handle, kmem_entry->size, PCI_DMA_TODEVICE );
 			break;
-		case PCIDRIVER_DMA_FROMDEVICE:
+		case SPECDRIVER_DMA_FROMDEVICE:
 			pci_dma_sync_single_for_cpu( privdata->pdev, kmem_entry->dma_handle, kmem_entry->size, PCI_DMA_FROMDEVICE );
 			break;
-		case PCIDRIVER_DMA_BIDIRECTIONAL:
+		case SPECDRIVER_DMA_BIDIRECTIONAL:
 			pci_dma_sync_single_for_device( privdata->pdev, kmem_entry->dma_handle, kmem_entry->size, PCI_DMA_BIDIRECTIONAL );
 			pci_dma_sync_single_for_cpu( privdata->pdev, kmem_entry->dma_handle, kmem_entry->size, PCI_DMA_BIDIRECTIONAL );
 			break;
@@ -141,13 +141,13 @@ int pcidriver_kmem_sync( pcidriver_privdata_t *privdata, kmem_sync_t *kmem_sync 
 	}
 #else
 	switch (kmem_sync->dir) {
-		case PCIDRIVER_DMA_TODEVICE:
+		case SPECDRIVER_DMA_TODEVICE:
 			pci_dma_sync_single( privdata->pdev, kmem_entry->dma_handle, kmem_entry->size, PCI_DMA_TODEVICE );
 			break;
-		case PCIDRIVER_DMA_FROMDEVICE:
+		case SPECDRIVER_DMA_FROMDEVICE:
 			pci_dma_sync_single( privdata->pdev, kmem_entry->dma_handle, kmem_entry->size, PCI_DMA_FROMDEVICE );
 			break;
-		case PCIDRIVER_DMA_BIDIRECTIONAL:
+		case SPECDRIVER_DMA_BIDIRECTIONAL:
 			pci_dma_sync_single( privdata->pdev, kmem_entry->dma_handle, kmem_entry->size, PCI_DMA_BIDIRECTIONAL );
 			break;
 		default:
@@ -163,9 +163,9 @@ int pcidriver_kmem_sync( pcidriver_privdata_t *privdata, kmem_sync_t *kmem_sync 
  * Free the given kmem_entry and its memory.
  *
  */
-int pcidriver_kmem_free_entry(pcidriver_privdata_t *privdata, pcidriver_kmem_entry_t *kmem_entry)
+int specdriver_kmem_free_entry(specdriver_privdata_t *privdata, specdriver_kmem_entry_t *kmem_entry)
 {
-	pcidriver_sysfs_remove(privdata, &(kmem_entry->sysfs_attr));
+	specdriver_sysfs_remove(privdata, &(kmem_entry->sysfs_attr));
 
 	/* Go over the pages of the kmem buffer, and mark them as not reserved */
 #if 0
@@ -215,16 +215,16 @@ int pcidriver_kmem_free_entry(pcidriver_privdata_t *privdata, pcidriver_kmem_ent
  * Find the corresponding kmem_entry for the given kmem_handle.
  *
  */
-pcidriver_kmem_entry_t *pcidriver_kmem_find_entry(pcidriver_privdata_t *privdata, kmem_handle_t *kmem_handle)
+specdriver_kmem_entry_t *specdriver_kmem_find_entry(specdriver_privdata_t *privdata, kmem_handle_t *kmem_handle)
 {
 	struct list_head *ptr;
-	pcidriver_kmem_entry_t *entry, *result = NULL;
+	specdriver_kmem_entry_t *entry, *result = NULL;
 
 	/* should I implement it better using the handle_id? */
 
 	spin_lock(&(privdata->kmemlist_lock));
 	list_for_each(ptr, &(privdata->kmem_list)) {
-		entry = list_entry(ptr, pcidriver_kmem_entry_t, list);
+		entry = list_entry(ptr, specdriver_kmem_entry_t, list);
 
 		if (entry->dma_handle == kmem_handle->pa) {
 			result = entry;
@@ -241,14 +241,14 @@ pcidriver_kmem_entry_t *pcidriver_kmem_find_entry(pcidriver_privdata_t *privdata
  * find the corresponding kmem_entry for the given id.
  *
  */
-pcidriver_kmem_entry_t *pcidriver_kmem_find_entry_id(pcidriver_privdata_t *privdata, int id)
+specdriver_kmem_entry_t *specdriver_kmem_find_entry_id(specdriver_privdata_t *privdata, int id)
 {
 	struct list_head *ptr;
-	pcidriver_kmem_entry_t *entry, *result = NULL;
+	specdriver_kmem_entry_t *entry, *result = NULL;
 
 	spin_lock(&(privdata->kmemlist_lock));
 	list_for_each(ptr, &(privdata->kmem_list)) {
-		entry = list_entry(ptr, pcidriver_kmem_entry_t, list);
+		entry = list_entry(ptr, specdriver_kmem_entry_t, list);
 
 		if (entry->id == id) {
 			result = entry;
@@ -265,10 +265,10 @@ pcidriver_kmem_entry_t *pcidriver_kmem_find_entry_id(pcidriver_privdata_t *privd
  * mmap() kernel memory to userspace.
  *
  */
-int pcidriver_mmap_kmem(pcidriver_privdata_t *privdata, struct vm_area_struct *vma)
+int specdriver_mmap_kmem(specdriver_privdata_t *privdata, struct vm_area_struct *vma)
 {
 	unsigned long vma_size;
-	pcidriver_kmem_entry_t *kmem_entry;
+	specdriver_kmem_entry_t *kmem_entry;
 	int ret;
 
 	mod_info_dbg("Entering mmap_kmem\n");
@@ -281,7 +281,7 @@ int pcidriver_mmap_kmem(pcidriver_privdata_t *privdata, struct vm_area_struct *v
 		mod_info("Trying to mmap a kernel memory buffer without creating it first!\n");
 		return -EFAULT;
 	}
-	kmem_entry = list_entry(privdata->kmem_list.prev, pcidriver_kmem_entry_t, list);
+	kmem_entry = list_entry(privdata->kmem_list.prev, specdriver_kmem_entry_t, list);
 	spin_unlock(&(privdata->kmemlist_lock));
 
 	mod_info_dbg("Got kmem_entry with id: %d\n", kmem_entry->id);

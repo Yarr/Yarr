@@ -53,12 +53,12 @@
  *
  * Sets the mmap mode for following mmap() calls.
  *
- * @param arg Not a pointer, but either PCIDRIVER_MMAP_PCI or PCIDRIVER_MMAP_KMEM
+ * @param arg Not a pointer, but either SPECDRIVER_MMAP_PCI or SPECDRIVER_MMAP_KMEM
  *
  */
-static int ioctl_mmap_mode(pcidriver_privdata_t *privdata, unsigned long arg)
+static int ioctl_mmap_mode(specdriver_privdata_t *privdata, unsigned long arg)
 {
-	if ((arg != PCIDRIVER_MMAP_PCI) && (arg != PCIDRIVER_MMAP_KMEM))
+	if ((arg != SPECDRIVER_MMAP_PCI) && (arg != SPECDRIVER_MMAP_KMEM))
 		return -EINVAL;
 
 	/* change the mode */
@@ -72,10 +72,10 @@ static int ioctl_mmap_mode(pcidriver_privdata_t *privdata, unsigned long arg)
  * Sets the mmap area (BAR) for following mmap() calls.
  *
  */
-static int ioctl_mmap_area(pcidriver_privdata_t *privdata, unsigned long arg)
+static int ioctl_mmap_area(specdriver_privdata_t *privdata, unsigned long arg)
 {
 	/* validate input */
-	if ((arg < PCIDRIVER_BAR0) || (arg > PCIDRIVER_BAR5))
+	if ((arg < SPECDRIVER_BAR0) || (arg > SPECDRIVER_BAR5))
 		return -EINVAL;
 
 	/* change the PCI area to mmap */
@@ -88,24 +88,24 @@ static int ioctl_mmap_area(pcidriver_privdata_t *privdata, unsigned long arg)
  *
  * Reads/writes a byte/word/dword of the device's PCI config.
  *
- * @see pcidriver_pci_read
- * @see pcidriver_pci_write
+ * @see specdriver_pci_read
+ * @see specdriver_pci_write
  *
  */
-static int ioctl_pci_config_read_write(pcidriver_privdata_t *privdata, unsigned int cmd, unsigned long arg)
+static int ioctl_pci_config_read_write(specdriver_privdata_t *privdata, unsigned int cmd, unsigned long arg)
 {
 	int ret;
 	READ_FROM_USER(pci_cfg_cmd, pci_cmd);
 
-	if (cmd == PCIDRIVER_IOC_PCI_CFG_RD) {
+	if (cmd == SPECDRIVER_IOC_PCI_CFG_RD) {
 		switch (pci_cmd.size) {
-			case PCIDRIVER_PCI_CFG_SZ_BYTE:
+			case SPECDRIVER_PCI_CFG_SZ_BYTE:
 				ret = pci_read_config_byte( privdata->pdev, pci_cmd.addr, &(pci_cmd.val.byte) );
 				break;
-			case PCIDRIVER_PCI_CFG_SZ_WORD:
+			case SPECDRIVER_PCI_CFG_SZ_WORD:
 				ret = pci_read_config_word( privdata->pdev, pci_cmd.addr, &(pci_cmd.val.word) );
 				break;
-			case PCIDRIVER_PCI_CFG_SZ_DWORD:
+			case SPECDRIVER_PCI_CFG_SZ_DWORD:
 				ret = pci_read_config_dword( privdata->pdev, pci_cmd.addr, &(pci_cmd.val.dword) );
 				break;
 			default:
@@ -113,13 +113,13 @@ static int ioctl_pci_config_read_write(pcidriver_privdata_t *privdata, unsigned 
 		}
 	} else {
 		switch (pci_cmd.size) {
-			case PCIDRIVER_PCI_CFG_SZ_BYTE:
+			case SPECDRIVER_PCI_CFG_SZ_BYTE:
 				ret = pci_write_config_byte( privdata->pdev, pci_cmd.addr, pci_cmd.val.byte );
 				break;
-			case PCIDRIVER_PCI_CFG_SZ_WORD:
+			case SPECDRIVER_PCI_CFG_SZ_WORD:
 				ret = pci_write_config_word( privdata->pdev, pci_cmd.addr, pci_cmd.val.word );
 				break;
-			case PCIDRIVER_PCI_CFG_SZ_DWORD:
+			case SPECDRIVER_PCI_CFG_SZ_DWORD:
 				ret = pci_write_config_dword( privdata->pdev, pci_cmd.addr, pci_cmd.val.dword );
 				break;
 			default:
@@ -137,10 +137,10 @@ static int ioctl_pci_config_read_write(pcidriver_privdata_t *privdata, unsigned 
  *
  * Gets the PCI information for the device.
  *
- * @see pcidriver_pci_info
+ * @see specdriver_pci_info
  *
  */
-static int ioctl_pci_info(pcidriver_privdata_t *privdata, unsigned long arg)
+static int ioctl_pci_info(specdriver_privdata_t *privdata, unsigned long arg)
 {
 	int ret;
 	int bar;
@@ -160,7 +160,7 @@ static int ioctl_pci_info(pcidriver_privdata_t *privdata, unsigned long arg)
 		return ret;
 
 
-	for (bar = 0; bar < 6; bar++) {
+	for (bar = 0; bar < 3; bar++) {
 		pci_info.bar_start[bar] = pci_resource_start(privdata->pdev, bar);
 		pci_info.bar_length[bar] = pci_resource_len(privdata->pdev, bar);
 	}
@@ -174,15 +174,15 @@ static int ioctl_pci_info(pcidriver_privdata_t *privdata, unsigned long arg)
  *
  * Allocates kernel memory.
  *
- * @see pcidriver_kmem_alloc
+ * @see specdriver_kmem_alloc
  *
  */
-static int ioctl_kmem_alloc(pcidriver_privdata_t *privdata, unsigned long arg)
+static int ioctl_kmem_alloc(specdriver_privdata_t *privdata, unsigned long arg)
 {
 	int ret;
 	READ_FROM_USER(kmem_handle_t, khandle);
 
-	if ((ret = pcidriver_kmem_alloc(privdata, &khandle)) != 0)
+	if ((ret = specdriver_kmem_alloc(privdata, &khandle)) != 0)
 		return ret;
 
 	WRITE_TO_USER(kmem_handle_t, khandle);
@@ -194,15 +194,15 @@ static int ioctl_kmem_alloc(pcidriver_privdata_t *privdata, unsigned long arg)
  *
  * Frees kernel memory.
  *
- * @see pcidriver_kmem_free
+ * @see specdriver_kmem_free
  *
  */
-static int ioctl_kmem_free(pcidriver_privdata_t *privdata, unsigned long arg)
+static int ioctl_kmem_free(specdriver_privdata_t *privdata, unsigned long arg)
 {
 	int ret;
 	READ_FROM_USER(kmem_handle_t, khandle);
 
-	if ((ret = pcidriver_kmem_free(privdata, &khandle)) != 0)
+	if ((ret = specdriver_kmem_free(privdata, &khandle)) != 0)
 		return ret;
 
 	return 0;
@@ -212,30 +212,30 @@ static int ioctl_kmem_free(pcidriver_privdata_t *privdata, unsigned long arg)
  *
  * Syncs kernel memory.
  *
- * @see pcidriver_kmem_sync
+ * @see specdriver_kmem_sync
  *
  */
-static int ioctl_kmem_sync(pcidriver_privdata_t *privdata, unsigned long arg)
+static int ioctl_kmem_sync(specdriver_privdata_t *privdata, unsigned long arg)
 {
 	int ret;
 	READ_FROM_USER(kmem_sync_t, ksync);
 
-	return pcidriver_kmem_sync(privdata, &ksync);
+	return specdriver_kmem_sync(privdata, &ksync);
 }
 
 /*
  *
  * Maps the given scatter/gather list from memory to PCI bus addresses.
  *
- * @see pcidriver_umem_sgmap
+ * @see specdriver_umem_sgmap
  *
  */
-static int ioctl_umem_sgmap(pcidriver_privdata_t *privdata, unsigned long arg)
+static int ioctl_umem_sgmap(specdriver_privdata_t *privdata, unsigned long arg)
 {
 	int ret;
 	READ_FROM_USER(umem_handle_t, uhandle);
 
-	if ((ret = pcidriver_umem_sgmap(privdata, &uhandle)) != 0)
+	if ((ret = specdriver_umem_sgmap(privdata, &uhandle)) != 0)
 		return ret;
 
 	WRITE_TO_USER(umem_handle_t, uhandle);
@@ -247,21 +247,21 @@ static int ioctl_umem_sgmap(pcidriver_privdata_t *privdata, unsigned long arg)
  *
  * Unmaps the given scatter/gather list.
  *
- * @see pcidriver_umem_sgunmap
+ * @see specdriver_umem_sgunmap
  *
  */
-static int ioctl_umem_sgunmap(pcidriver_privdata_t *privdata, unsigned long arg)
+static int ioctl_umem_sgunmap(specdriver_privdata_t *privdata, unsigned long arg)
 {
 	int ret;
-	pcidriver_umem_entry_t *umem_entry;
+	specdriver_umem_entry_t *umem_entry;
 	READ_FROM_USER(umem_handle_t, uhandle);
 
 	/* Find the associated umem_entry for this buffer,
 	 * return -EINVAL if the specified handle id is invalid */
-	if ((umem_entry = pcidriver_umem_find_entry_id(privdata, uhandle.handle_id)) == NULL)
+	if ((umem_entry = specdriver_umem_find_entry_id(privdata, uhandle.handle_id)) == NULL)
 		return -EINVAL;
 
-	if ((ret = pcidriver_umem_sgunmap(privdata, umem_entry)) != 0)
+	if ((ret = specdriver_umem_sgunmap(privdata, umem_entry)) != 0)
 		return ret;
 
 	return 0;
@@ -271,10 +271,10 @@ static int ioctl_umem_sgunmap(pcidriver_privdata_t *privdata, unsigned long arg)
  *
  * Copies the scatter/gather list from kernelspace to userspace.
  *
- * @see pcidriver_umem_sgget
+ * @see specdriver_umem_sgget
  *
  */
-static int ioctl_umem_sgget(pcidriver_privdata_t *privdata, unsigned long arg)
+static int ioctl_umem_sgget(specdriver_privdata_t *privdata, unsigned long arg)
 {
 	int ret;
 	READ_FROM_USER(umem_sglist_t, usglist);
@@ -289,7 +289,7 @@ static int ioctl_umem_sgget(pcidriver_privdata_t *privdata, unsigned long arg)
 	ret = copy_from_user(usglist.sg, ((umem_sglist_t *)arg)->sg, (usglist.nents)*sizeof(umem_sgentry_t));
 	if (ret) return -EFAULT;
 
-	if ((ret = pcidriver_umem_sgget(privdata, &usglist)) != 0)
+	if ((ret = specdriver_umem_sgget(privdata, &usglist)) != 0)
 		return ret;
 
 	/* write data to user space */
@@ -311,15 +311,15 @@ static int ioctl_umem_sgget(pcidriver_privdata_t *privdata, unsigned long arg)
  *
  * Syncs user memory.
  *
- * @see pcidriver_umem_sync
+ * @see specdriver_umem_sync
  *
  */
-static int ioctl_umem_sync(pcidriver_privdata_t *privdata, unsigned long arg)
+static int ioctl_umem_sync(specdriver_privdata_t *privdata, unsigned long arg)
 {
 	int ret;
 	READ_FROM_USER(umem_handle_t, uhandle);
 
-	return pcidriver_umem_sync( privdata, &uhandle );
+	return specdriver_umem_sync( privdata, &uhandle );
 }
 
 /**
@@ -329,13 +329,12 @@ static int ioctl_umem_sync(pcidriver_privdata_t *privdata, unsigned long arg)
  * @param arg Not a pointer, but the irq source to wait for (unsigned int)
  *
  */
-static int ioctl_wait_interrupt(pcidriver_privdata_t *privdata, unsigned long arg)
+static int ioctl_wait_interrupt(specdriver_privdata_t *privdata, unsigned long arg)
 {
-#ifdef ENABLE_IRQ
 	unsigned int irq_source;
 	int temp;
 
-	if (arg >= PCIDRIVER_INT_MAXSOURCES)
+	if (arg >= SPECDRIVER_INT_MAXSOURCES)
 		return -EFAULT;						/* User tried to overrun the IRQ_SOURCES array */
 
 	irq_source = arg;
@@ -358,10 +357,6 @@ static int ioctl_wait_interrupt(pcidriver_privdata_t *privdata, unsigned long ar
 	}
     //mod_info("Done waiting for interrupt!");
 	return 0;
-#else
-	mod_info("Asked to wait for interrupt but interrupts are not enabled in the driver\n");
-	return -EFAULT;
-#endif
 }
 
 /**
@@ -372,22 +367,17 @@ static int ioctl_wait_interrupt(pcidriver_privdata_t *privdata, unsigned long ar
  * @returns -EFAULT if the user specified an irq source out of range
  *
  */
-static int ioctl_clear_ioq(pcidriver_privdata_t *privdata, unsigned long arg)
+static int ioctl_clear_ioq(specdriver_privdata_t *privdata, unsigned long arg)
 {
-#ifdef ENABLE_IRQ
 	unsigned int irq_source;
 
-	if (arg >= PCIDRIVER_INT_MAXSOURCES)
+	if (arg >= SPECDRIVER_INT_MAXSOURCES)
 		return -EFAULT;
 
 	irq_source = arg;
 	atomic_set(&(privdata->irq_outstanding[irq_source]), 0);
 
 	return 0;
-#else
-	mod_info("Asked to wait for interrupt but interrupts are not enabled in the driver\n");
-	return -EFAULT;
-#endif
 }
 
 /**
@@ -399,54 +389,54 @@ static int ioctl_clear_ioq(pcidriver_privdata_t *privdata, unsigned long arg)
  * @returns -EFAULT when an invalid memory pointer is passed
  *
  */
-long pcidriver_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+long specdriver_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
-	pcidriver_privdata_t *privdata = filp->private_data;
+	specdriver_privdata_t *privdata = filp->private_data;
 
 	/* Select the appropiate command */
 	switch (cmd) {
-		case PCIDRIVER_IOC_MMAP_MODE:
+		case SPECDRIVER_IOC_MMAP_MODE:
 			return ioctl_mmap_mode(privdata, arg);
 
-		case PCIDRIVER_IOC_MMAP_AREA:
+		case SPECDRIVER_IOC_MMAP_AREA:
 			return ioctl_mmap_area(privdata, arg);
 
-		case PCIDRIVER_IOC_PCI_CFG_RD:
-		case PCIDRIVER_IOC_PCI_CFG_WR:
+		case SPECDRIVER_IOC_PCI_CFG_RD:
+		case SPECDRIVER_IOC_PCI_CFG_WR:
 			return ioctl_pci_config_read_write(privdata, cmd, arg);
 
-//		case PCIDRIVER_IOC_PCI_INFO:
+//		case SPECDRIVER_IOC_PCI_INFO:
 //			return ioctl_pci_info(privdata, arg);
 //			return ioctl_pci_config_read_write(privdata, cmd, arg);
 
-		case PCIDRIVER_IOC_PCI_INFO:
+		case SPECDRIVER_IOC_PCI_INFO:
 			return ioctl_pci_info(privdata, arg);
 
-		case PCIDRIVER_IOC_KMEM_ALLOC:
+		case SPECDRIVER_IOC_KMEM_ALLOC:
 			return ioctl_kmem_alloc(privdata, arg);
 
-		case PCIDRIVER_IOC_KMEM_FREE:
+		case SPECDRIVER_IOC_KMEM_FREE:
 			return ioctl_kmem_free(privdata, arg);
 
-		case PCIDRIVER_IOC_KMEM_SYNC:
+		case SPECDRIVER_IOC_KMEM_SYNC:
 			return ioctl_kmem_sync(privdata, arg);
 
-		case PCIDRIVER_IOC_UMEM_SGMAP:
+		case SPECDRIVER_IOC_UMEM_SGMAP:
 			return ioctl_umem_sgmap(privdata, arg);
 
-		case PCIDRIVER_IOC_UMEM_SGUNMAP:
+		case SPECDRIVER_IOC_UMEM_SGUNMAP:
 			return ioctl_umem_sgunmap(privdata, arg);
 
-		case PCIDRIVER_IOC_UMEM_SGGET:
+		case SPECDRIVER_IOC_UMEM_SGGET:
 			return ioctl_umem_sgget(privdata, arg);
 
-		case PCIDRIVER_IOC_UMEM_SYNC:
+		case SPECDRIVER_IOC_UMEM_SYNC:
 			return ioctl_umem_sync(privdata, arg);
 
-		case PCIDRIVER_IOC_WAITI:
+		case SPECDRIVER_IOC_WAITI:
 			return ioctl_wait_interrupt(privdata, arg);
 
-		case PCIDRIVER_IOC_CLEAR_IOQ:
+		case SPECDRIVER_IOC_CLEAR_IOQ:
 			return ioctl_clear_ioq(privdata, arg);
 
 		default:
