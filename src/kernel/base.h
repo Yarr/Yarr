@@ -1,31 +1,30 @@
-#ifndef _PCIDRIVER_BASE_H
-#define _PCIDRIVER_BASE_H
+// #################################
+// # Author: Timon Heim
+// # Email: timon.heim at cern.ch
+// # Project: Yarr
+// # Description: Simple PCie Carrier Kernel driver
+// # Comment: Original driver taken from Marcus Guillermo
+// ################################
+
+#ifndef _SPECRIVER_BASE_H
+#define _SPECRIVER_BASE_H
 
 #include "sysfs.h"
 
-/**
- *
- * This file contains prototypes and data structures for internal use of the pciDriver.
- *
- *
- */
-
 /* prototypes for file_operations */
-static struct file_operations pcidriver_fops;
-int pcidriver_mmap( struct file *filp, struct vm_area_struct *vmap );
-int pcidriver_open(struct inode *inode, struct file *filp );
-int pcidriver_release(struct inode *inode, struct file *filp);
+static struct file_operations specdriver_fops;
+int specdriver_mmap( struct file *filp, struct vm_area_struct *vmap );
+int specdriver_open(struct inode *inode, struct file *filp );
+int specdriver_release(struct inode *inode, struct file *filp);
 
 /* prototypes for device operations */
-static struct pci_driver pcidriver_driver;
-static int __devinit pcidriver_probe(struct pci_dev *pdev, const struct pci_device_id *id);
-static void __devexit pcidriver_remove(struct pci_dev *pdev);
-
-
+static struct pci_driver specdriver_driver;
+static int __devinit specdriver_probe(struct pci_dev *pdev, const struct pci_device_id *id);
+static void __devexit specdriver_remove(struct pci_dev *pdev);
 
 /* prototypes for module operations */
-static int __init pcidriver_init(void);
-static void pcidriver_exit(void);
+static int __init specdriver_init(void);
+static void specdriver_exit(void);
 
 /*
  * This is the table of PCI devices handled by this driver by default
@@ -44,50 +43,37 @@ static void pcidriver_exit(void);
  *
  */
 
-static const __devinitdata struct pci_device_id pcidriver_ids[] = {
-	{ PCI_DEVICE( MPRACE1_VENDOR_ID , MPRACE1_DEVICE_ID ) },		// mpRACE-1
-	{ PCI_DEVICE( PCIXTEST_VENDOR_ID , PCIXTEST_DEVICE_ID ) },		// pcixTest
-	{ PCI_DEVICE( PCIEPLDA_VENDOR_ID , PCIEPLDA_DEVICE_ID ) },		// PCIePLDA
-	{ PCI_DEVICE( PCIEROB_VENDOR_ID , PCIEROB_DEVICE_ID ) },		// PCIe ROBIN
-	{ PCI_DEVICE( PCIEABB_VENDOR_ID , PCIEABB_DEVICE_ID ) },		// PCIeABB
-	{ PCI_DEVICE( PCIXROB_VENDOR_ID , PCIXROB_DEVICE_ID ) },		// PCI-X ROB2
-	{ PCI_DEVICE( PCIEROB_VENDOR_ID , PCIEROB_DEVICE_ID ) },		// PCIe ROB2
-	{ PCI_DEVICE( PCIXPG4_VENDOR_ID , PCIXPG4_DEVICE_ID ) },		// PCI-X PROGRAPE 4
-	{ PCI_DEVICE( PCI64PG4_VENDOR_ID , PCI64PG4_DEVICE_ID ) },		// PCI-64 PROGRAPE 4
-	{ PCI_DEVICE( PCIE_XILINX_VENDOR_ID, PCIE_ML605_DEVICE_ID ) },  // PCI-E Xilinx ML605
+static const __devinitdata struct pci_device_id specdriver_ids[] = {
 	{ PCI_DEVICE( PCIE_SPEC_VENDOR_ID, PCIE_SPEC_DEVICE_ID ) },     // PCI-E SPEC card
 	{0,0,0,0},
 };
 
 /* prototypes for internal driver functions */
-int pcidriver_pci_read( pcidriver_privdata_t *privdata, pci_cfg_cmd *pci_cmd );
-int pcidriver_pci_write( pcidriver_privdata_t *privdata, pci_cfg_cmd *pci_cmd );
-int pcidriver_pci_info( pcidriver_privdata_t *privdata, pci_board_info *pci_info );
+int specdriver_pci_read( specdriver_privdata_t *privdata, pci_cfg_cmd *pci_cmd );
+int specdriver_pci_write( specdriver_privdata_t *privdata, pci_cfg_cmd *pci_cmd );
+int specdriver_pci_info( specdriver_privdata_t *privdata, pci_board_info *pci_info );
 
-int pcidriver_mmap_pci( pcidriver_privdata_t *privdata, struct vm_area_struct *vmap , int bar );
-int pcidriver_mmap_kmem( pcidriver_privdata_t *privdata, struct vm_area_struct *vmap );
+int specdriver_mmap_pci( specdriver_privdata_t *privdata, struct vm_area_struct *vmap , int bar );
+int specdriver_mmap_kmem( specdriver_privdata_t *privdata, struct vm_area_struct *vmap );
 
 /*************************************************************************/
 /* Static data */
 /* Hold the allocated major & minor numbers */
-static dev_t pcidriver_devt;
+static dev_t specdriver_devt;
 
 /* Number of devices allocated */
-static atomic_t pcidriver_deviceCount;
+static atomic_t specdriver_deviceCount;
 
 /* Sysfs attributes */
-static DEVICE_ATTR(mmap_mode, (S_IRUGO | S_IWUGO), pcidriver_show_mmap_mode, pcidriver_store_mmap_mode);
-static DEVICE_ATTR(mmap_area, (S_IRUGO | S_IWUGO), pcidriver_show_mmap_area, pcidriver_store_mmap_area);
-static DEVICE_ATTR(kmem_count, S_IRUGO, pcidriver_show_kmem_count, NULL);
-static DEVICE_ATTR(kbuffers, S_IRUGO, pcidriver_show_kbuffers, NULL);
-static DEVICE_ATTR(kmem_alloc, S_IWUGO, NULL, pcidriver_store_kmem_alloc);
-static DEVICE_ATTR(kmem_free, S_IWUGO, NULL, pcidriver_store_kmem_free);
-static DEVICE_ATTR(umappings, S_IRUGO, pcidriver_show_umappings, NULL);
-static DEVICE_ATTR(umem_unmap, S_IWUGO, NULL, pcidriver_store_umem_unmap);
-
-#ifdef ENABLE_IRQ
-static DEVICE_ATTR(irq_count, S_IRUGO, pcidriver_show_irq_count, NULL);
-static DEVICE_ATTR(irq_queues, S_IRUGO, pcidriver_show_irq_queues, NULL);
-#endif
+static DEVICE_ATTR(mmap_mode, (S_IRUGO | S_IWUGO), specdriver_show_mmap_mode, specdriver_store_mmap_mode);
+static DEVICE_ATTR(mmap_area, (S_IRUGO | S_IWUGO), specdriver_show_mmap_area, specdriver_store_mmap_area);
+static DEVICE_ATTR(kmem_count, S_IRUGO, specdriver_show_kmem_count, NULL);
+static DEVICE_ATTR(kbuffers, S_IRUGO, specdriver_show_kbuffers, NULL);
+static DEVICE_ATTR(kmem_alloc, S_IWUGO, NULL, specdriver_store_kmem_alloc);
+static DEVICE_ATTR(kmem_free, S_IWUGO, NULL, specdriver_store_kmem_free);
+static DEVICE_ATTR(umappings, S_IRUGO, specdriver_show_umappings, NULL);
+static DEVICE_ATTR(umem_unmap, S_IWUGO, NULL, specdriver_store_umem_unmap);
+static DEVICE_ATTR(irq_count, S_IRUGO, specdriver_show_irq_count, NULL);
+static DEVICE_ATTR(irq_queues, S_IRUGO, specdriver_show_irq_queues, NULL);
 
 #endif
