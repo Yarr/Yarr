@@ -1,6 +1,6 @@
 
 obj-m := specDriver.o
-pciDriver-objs := base.o int.o umem.o kmem.o sysfs.o ioctl.o
+specDriver-objs := base.o int.o umem.o kmem.o sysfs.o ioctl.o
 
 KERNELDIR ?= /lib/modules/$(shell uname -r)/build
 INSTALLDIR ?= /lib/modules/$(shell uname -r)/extra
@@ -10,7 +10,7 @@ default: dolink
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
 
 dolink:
-	@ln -sf ../include/driver/specDriver.h
+	@ln -sf ../libSpec/include/specDriver.h
 
 install:
 	@mkdir -p $(INSTALLDIR)
@@ -27,4 +27,4 @@ uninstall:
 	@rm -rf /usr/include/specDriver/driver
 
 clean:
-	rm -f *.o *.ko *.mod.c
+	rm -f *.o *.ko *.mod.c specDriver.h
