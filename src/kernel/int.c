@@ -23,7 +23,7 @@
 
 #include "compat.h"
 
-#include "pciDriver.h"
+#include "specDriver.h"
 
 #include "common.h"
 
@@ -47,7 +47,7 @@ int specdriver_probe_irq(specdriver_privdata_t *privdata)
 	for (i = 0; i < 6; i++)
 		privdata->bars_kmapped[i] = NULL;
 
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < 6; i++) {
 		bar_addr = pci_resource_start(privdata->pdev, i);
 		bar_len = pci_resource_len(privdata->pdev, i);
 		bar_flags = pci_resource_flags(privdata->pdev, i);

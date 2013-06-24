@@ -32,7 +32,7 @@
 
 #include "config.h" 			/* Configuration for the driver */
 #include "compat.h" 			/* Compatibility functions/definitions */
-#include "pciDriver.h" 			/* External interface for the driver */
+#include "specDriver.h" 			/* External interface for the driver */
 #include "common.h" 			/* Internal definitions for all parts */
 #include "kmem.h" 			/* Internal definitions for kernel memory */
 #include "umem.h" 			/* Internal definitions for user space memory */

@@ -20,7 +20,7 @@
 
 #include "compat.h"
 #include "config.h"
-#include "pciDriver.h"
+#include "specDriver.h"
 #include "common.h"
 #include "umem.h"
 #include "kmem.h"

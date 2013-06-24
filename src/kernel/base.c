@@ -51,7 +51,7 @@
 #include "compat.h"
 
 /* External interface for the driver */
-#include "pciDriver.h"
+#include "specDriver.h"
 
 /* Internal definitions for all parts (prototypes, data, macros) */
 #include "common.h"
@@ -436,13 +436,13 @@ int specdriver_mmap(struct file *filp, struct vm_area_struct *vma)
 
 	/* Check the current mmap mode */
 	switch (privdata->mmap_mode) {
-		case PCIDRIVER_MMAP_PCI:
+		case SPECDRIVER_MMAP_PCI:
 			/* Mmap a PCI region */
             /* 3 Bars for SPEC */
 			switch (privdata->mmap_area) {
-				case PCIDRIVER_BAR0:	bar = 0; break;
-				case PCIDRIVER_BAR2:	bar = 2; break;
-				case PCIDRIVER_BAR4:	bar = 4; break;
+				case SPECDRIVER_BAR0:	bar = 0; break;
+				case SPECDRIVER_BAR2:	bar = 2; break;
+				case SPECDRIVER_BAR4:	bar = 4; break;
 				default:
 					mod_info("Attempted to mmap a PCI area with the wrong mmap_area value: %d\n",privdata->mmap_area);
 					return -EINVAL;			/* invalid parameter */
@@ -450,7 +450,7 @@ int specdriver_mmap(struct file *filp, struct vm_area_struct *vma)
 			}
 			ret = specdriver_mmap_pci(privdata, vma, bar);
 			break;
-		case PCIDRIVER_MMAP_KMEM:
+		case SPECDRIVER_MMAP_KMEM:
 			/* mmap a Kernel buffer */
 			ret = specdriver_mmap_kmem(privdata, vma);
 			break;

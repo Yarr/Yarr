@@ -20,7 +20,7 @@
 
 #include "config.h"			/* compile-time configuration */
 #include "compat.h"			/* compatibility definitions for older linux */
-#include "pciDriver.h"			/* external interface for the driver */
+#include "specDriver.h"			/* external interface for the driver */
 #include "common.h"		/* internal definitions for all parts */
 #include "umem.h"		/* prototypes for kernel memory */
 #include "sysfs.h"		/* prototypes for sysfs */
