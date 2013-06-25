@@ -204,14 +204,14 @@ static int __devinit specdriver_probe(struct pci_dev *pdev, const struct pci_dev
     /* Setup DMA mask, no idea why ?? */
 	if(pci_set_dma_mask(pdev, DMA_BIT_MASK(64)) == 0) {
 		mod_info("64bits bus master DMA capable\n");
-		if(pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(64)) < 0) {
-			mod_info("Unable to perform 64bits consistent DMA mask set operation!\n");
-		}
+		//if(pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(64)) < 0) {
+		//	mod_info("Unable to perform 64bits consistent DMA mask set operation!\n");
+		//}
 	} else if(pci_set_dma_mask(pdev, DMA_BIT_MASK(32)) == 0) {
 		mod_info("32bits bus master DMA capable\n");
-		if(pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(32)) < 0) {
-		    mod_info("Unable to perform 64bits consistent DMA mask set operation!\n");
-		}
+		//if(pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(32)) < 0) {
+		//    mod_info("Unable to perform 64bits consistent DMA mask set operation!\n");
+		//}
 	} else {
 	    mod_info("Unable to perform DMA mask set operation!\n");
 	}
@@ -441,8 +441,11 @@ int specdriver_mmap(struct file *filp, struct vm_area_struct *vma)
             /* 3 Bars for SPEC */
 			switch (privdata->mmap_area) {
 				case SPECDRIVER_BAR0:	bar = 0; break;
+				case SPECDRIVER_BAR1:	bar = 1; break;
 				case SPECDRIVER_BAR2:	bar = 2; break;
+				case SPECDRIVER_BAR3:	bar = 3; break;
 				case SPECDRIVER_BAR4:	bar = 4; break;
+				case SPECDRIVER_BAR5:	bar = 5; break;
 				default:
 					mod_info("Attempted to mmap a PCI area with the wrong mmap_area value: %d\n",privdata->mmap_area);
 					return -EINVAL;			/* invalid parameter */

@@ -37,12 +37,12 @@
  */
 int specdriver_probe_irq(specdriver_privdata_t *privdata)
 {
-	unsigned char int_pin, int_line;
+	//unsigned char int_pin, int_line;
 	unsigned long bar_addr, bar_len, bar_flags;
 	int i;
 	int err;
-    volatile void *bar4;
-    volatile uint32_t *addr;
+    //volatile void *bar4;
+    //volatile uint32_t *addr;
 
 	for (i = 0; i < 6; i++)
 		privdata->bars_kmapped[i] = NULL;

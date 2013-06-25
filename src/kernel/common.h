@@ -54,7 +54,7 @@ typedef struct  {
 	atomic_t irq_outstanding[ SPECDRIVER_INT_MAXSOURCES ];
 										/* Outstanding interrupts per queue */
 	
-    volatile unsigned int *bars_kmapped[3];		/* PCI BARs mmapped in kernel space */
+    volatile unsigned int *bars_kmapped[6];		/* PCI BARs mmapped in kernel space */
 
 	spinlock_t kmemlist_lock;			/* Spinlock to lock kmem list operations */
 	struct list_head kmem_list;			/* List of 'kmem_list_entry's associated with this device */

@@ -160,7 +160,7 @@ static int ioctl_pci_info(specdriver_privdata_t *privdata, unsigned long arg)
 		return ret;
 
 
-	for (bar = 0; bar < 3; bar++) {
+	for (bar = 0; bar < 6; bar++) {
 		pci_info.bar_start[bar] = pci_resource_start(privdata->pdev, bar);
 		pci_info.bar_length[bar] = pci_resource_len(privdata->pdev, bar);
 	}

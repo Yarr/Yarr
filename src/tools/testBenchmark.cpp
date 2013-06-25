@@ -396,7 +396,6 @@ int main()
             break;
         }
 
-#if 0
         struct dma_linked_list *llist = prep_dma(um, ll, write);
 
         // Copy linked list
@@ -451,7 +450,7 @@ int main()
             *(dst+DMACTRLR) = 0x02; // Abort DMA transfer
             break;
         }
-#endif
+        
         delete ll;
         delete um;
         std::cin >> temp;
