@@ -14,11 +14,11 @@ dolink:
 
 install:
 	@mkdir -p $(INSTALLDIR)
-	@echo "INSTALL $(INSTALLDIR)/pciDriver.ko"
+	@echo "INSTALL $(INSTALLDIR)/specDriver.ko"
 	@install -m 755 specDriver.ko $(INSTALLDIR)
-	@echo "INSTALL /usr/include/pciDriver/driver/pciDriver.h"
+	@echo "INSTALL /usr/include/specDriver/driver/specDriver.h"
 	@mkdir -p /usr/include/specDriver/driver
-	@install -m 644 pciDriver.h /usr/include/specDriver/driver
+	@install -m 644 specDriver.h /usr/include/specDriver/driver
 
 uninstall:
 	@echo "UNINSTALL $(INSTALLDIR)/specDriver.ko"
@@ -27,4 +27,5 @@ uninstall:
 	@rm -rf /usr/include/specDriver/driver
 
 clean:
-	rm -f *.o *.ko *.mod.c specDriver.h
+	rm -f *.o *.ko *.mod.c .*.cmd specDriver.h *.unsigned *.order *.symvers
+	rm -rf .tmp_versions 

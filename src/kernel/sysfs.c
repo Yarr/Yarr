@@ -120,7 +120,6 @@ static SYSFS_GET_FUNCTION(specdriver_show_umem_entry)
 #endif
 }
 
-#ifdef ENABLE_IRQ
 SYSFS_GET_FUNCTION(specdriver_show_irq_count)
 {
 	specdriver_privdata_t *privdata = SYSFS_GET_PRIVDATA;
@@ -140,7 +139,6 @@ SYSFS_GET_FUNCTION(specdriver_show_irq_queues)
 
 	return (offset > PAGE_SIZE ? PAGE_SIZE : offset+1);
 }
-#endif
 
 SYSFS_GET_FUNCTION(specdriver_show_mmap_mode)
 {
