@@ -25,6 +25,7 @@ SRC = tools
 SPEC = libSpec
 YARR = libYarr
 BUILD = build
+LLIB = lib
 
 -include local.config
 
@@ -90,11 +91,11 @@ $(BIN)/%: $(BUILD)/%.o $(SPEC_OBJS) $(YARR_OBJS)
 	@echo [Linking] $@
 	@$(LD) $(LDFLAGS) $< $(SPEC_OBJS) $(YARR_OBJS) $(LIBS) -o $@
 
-$(BUILD)/libspec.a: $(YARR_OBJS)
+$(BUILD)/libyarr.a: $(YARR_OBJS)
 	@echo [Creating] $@
 	@$(AR) rcs $@ $(YARR_OBJS)
 
-$(BUILD)/libyarr.a: $(SPEC_OBJS)
+$(BUILD)/libspec.a: $(SPEC_OBJS)
 	@echo [Creating] $@
 	@$(AR) rcs $@ $(SPEC_OBJS)
 

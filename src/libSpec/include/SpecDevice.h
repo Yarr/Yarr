@@ -1,44 +1,23 @@
-#ifndef PD_PCIDEVICE_H_
-#define PD_PCIDEVICE_H_
-
-/********************************************************************
- * 
- * October 10th, 2006
- * Guillermo Marcus - Universitaet Mannheim
- * 
- * $Revision: 1.5 $
- * $Date: 2008-01-24 14:21:36 $
- * 
- *******************************************************************/
-
-/*******************************************************************
- * Change History:
- * 
- * $Log: not supported by cvs2svn $
- * Revision 1.4  2008-01-11 10:14:21  marcus
- * Added intSource to the interrupt wait function.
- *
- * Revision 1.3  2006/11/17 18:51:08  marcus
- * Support both types of SG-lists at runtime.
- *
- * Revision 1.2  2006/11/17 16:51:05  marcus
- * Added page info values, and functions to get the bus and slot of a device,
- * required for compatibility with the uelib.
- *
- * Revision 1.1  2006/10/13 17:18:34  marcus
- * Implemented and tested most of C++ interface.
- *
- *******************************************************************/
+#ifndef PD_SPECDEVICE_H_
+#define PD_SPECDEVICE_H_
+// #################################
+// # Author: Timon Heim
+// # Email: timon.heim at cern.ch
+// # Project: Yarr
+// # Description: SPEC cpp library
+// # Comment: Original driver taken from Marcus Guillermo
+// #          Modified for SPEC card
+// ################################
 
 #include <pthread.h>
 
-namespace pciDriver {
+namespace specDriver {
 
 // Forward references
 class KernelMemory;
 class UserMemory;
 	
-class PciDevice {
+class SpecDevice {
 private:
 	unsigned int pagesize;
 	unsigned int pageshift;
@@ -50,8 +29,8 @@ protected:
 	char name[50];
 	pthread_mutex_t mmap_mutex;
 public:
-	PciDevice(int number);
-	~PciDevice();
+	SpecDevice(int number);
+	~SpecDevice();
 	
 	void open();
 	void close();
@@ -86,4 +65,4 @@ public:
 	
 }
 
-#endif /*PD_PCIDEVICE_H_*/
+#endif /*PD_SPECDEVICE_H_*/

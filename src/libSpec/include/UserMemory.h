@@ -20,12 +20,12 @@
  *
  *******************************************************************/
 
-#include "PciDevice.h"
+#include "SpecDevice.h"
 
-namespace pciDriver {
+namespace specDriver {
 
 class UserMemory {
-	friend class PciDevice;
+	friend class SpecDevice;
 private:
 	struct sg_entry {
 		unsigned long addr;
@@ -36,11 +36,11 @@ protected:
 	unsigned long vma;
 	unsigned long size;
 	int handle_id;
-	PciDevice *device;
+	SpecDevice *device;
 	int nents;
 	struct sg_entry *sg;
 
-	UserMemory(PciDevice& device, void *mem, unsigned int size, bool merged );
+	UserMemory(SpecDevice& device, void *mem, unsigned int size, bool merged );
 public:
 	~UserMemory();
 	

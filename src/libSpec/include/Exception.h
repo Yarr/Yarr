@@ -1,5 +1,5 @@
-#ifndef PCIDRIVER_EXCEPTION_H_
-#define PCIDRIVER_EXCEPTION_H_
+#ifndef SPECDRIVER_EXCEPTION_H_
+#define SPECDRIVER_EXCEPTION_H_
 
 /********************************************************************
  * 
@@ -26,7 +26,7 @@
 
 #include <exception>
 
-namespace pciDriver {
+namespace specDriver {
 	
 class Exception : public std::exception {
 protected:
@@ -56,4 +56,4 @@ public:
 
 }
 
-#endif /*PCIDRIVER_EXCEPTION_H_*/
+#endif /*SPECDRIVER_EXCEPTION_H_*/

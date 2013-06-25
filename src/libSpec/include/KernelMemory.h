@@ -11,21 +11,21 @@
  * 
  *******************************************************************/
 
-#include "PciDevice.h"
+#include "SpecDevice.h"
 
-namespace pciDriver {
+namespace specDriver {
 
 class KernelMemory {
-	friend class PciDevice;
+	friend class SpecDevice;
 	
 protected:
 	unsigned long pa;
 	unsigned long size;
 	int handle_id;
 	void *mem;
-	PciDevice *device;
+	SpecDevice *device;
 
-	KernelMemory(PciDevice& device, unsigned int size);
+	KernelMemory(SpecDevice& device, unsigned int size);
 public:
 	~KernelMemory();
 

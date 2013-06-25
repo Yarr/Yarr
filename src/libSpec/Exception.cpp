@@ -9,7 +9,7 @@
 
 #include "Exception.h"
 
-using namespace pciDriver;
+using namespace specDriver;
 
 const char* Exception::descriptions[] = {
 	"Unknown Exception",

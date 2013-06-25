@@ -30,7 +30,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-using namespace pciDriver;
+using namespace specDriver;
 
 /**
  *
@@ -38,7 +38,7 @@ using namespace pciDriver;
  * from kernel space.
  *
  */
-UserMemory::UserMemory(PciDevice& dev, void *mem, unsigned int size, bool merged)
+UserMemory::UserMemory(SpecDevice& dev, void *mem, unsigned int size, bool merged)
 {
 	int i;
 	umem_handle_t uh;
@@ -55,19 +55,19 @@ UserMemory::UserMemory(PciDevice& dev, void *mem, unsigned int size, bool merged
 	uh.size = size;
 
 	/* Lock and Map the memory to their pages */
-	if (ioctl(dev_handle, PCIDRIVER_IOC_UMEM_SGMAP, &uh) != 0)
+	if (ioctl(dev_handle, SPECDRIVER_IOC_UMEM_SGMAP, &uh) != 0)
 		throw Exception( Exception::SGMAP_FAILED );
 
 	this->handle_id = uh.handle_id;
 
 	/* Obtain the scatter/gather list for this memory */
 	sgl.handle_id = uh.handle_id;
-	sgl.type = ((merged) ? PCIDRIVER_SG_MERGED : PCIDRIVER_SG_NONMERGED);
+	sgl.type = ((merged) ? SPECDRIVER_SG_MERGED : SPECDRIVER_SG_NONMERGED);
 	sgl.nents = (size / getpagesize()) + 2;
 	sgl.sg = new umem_sgentry_t[ sgl.nents ];
 
-	if (ioctl(dev_handle, PCIDRIVER_IOC_UMEM_SGGET, &sgl) != 0) {
-		ioctl( dev_handle, PCIDRIVER_IOC_UMEM_SGUNMAP, &uh );
+	if (ioctl(dev_handle, SPECDRIVER_IOC_UMEM_SGGET, &sgl) != 0) {
+		ioctl( dev_handle, SPECDRIVER_IOC_UMEM_SGUNMAP, &uh );
 		delete [] sgl.sg;
 		throw Exception( Exception::SGMAP_FAILED );
 	}
@@ -100,7 +100,7 @@ UserMemory::~UserMemory()
 	uh.vma = vma;
 	uh.size = size;
 
-	if (ioctl(device->getHandle(), PCIDRIVER_IOC_UMEM_SGUNMAP, &uh) != 0)
+	if (ioctl(device->getHandle(), SPECDRIVER_IOC_UMEM_SGUNMAP, &uh) != 0)
 		throw Exception(Exception::INTERNAL_ERROR);
 }
 
@@ -119,6 +119,6 @@ void UserMemory::sync(sync_dir dir)
 	uh.size = size;
 	uh.dir = dir;
 
-	if (ioctl(device->getHandle(), PCIDRIVER_IOC_UMEM_SYNC, &uh) != 0)
+	if (ioctl(device->getHandle(), SPECDRIVER_IOC_UMEM_SYNC, &uh) != 0)
 		throw Exception( Exception::INTERNAL_ERROR );
 }

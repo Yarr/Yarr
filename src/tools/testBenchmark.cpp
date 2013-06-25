@@ -389,12 +389,14 @@ int main()
         std::cout << "Total Nr of pages: " << pages << std::endl;
         um->sync(UserMemory::BIDIRECTIONAL);
 
+        std::string temp;
         KernelMemory *ll = &device->allocKernelMemory(sizeof(struct dma_linked_list)*pages);
         if (ll == NULL) {
             std::cout << "ERROR allocating Kernel Memory!" << std::endl;
             break;
         }
 
+#if 0
         struct dma_linked_list *llist = prep_dma(um, ll, write);
 
         // Copy linked list
@@ -425,7 +427,6 @@ int main()
                 printf("UNKNOWN -> 0x%x\n", stat);
                 break;
         }
-        std::string temp;
         dst = (uint32_t*) bar;
         if (stat < 0x5 && stat != 0x2) {
             // Start Transfer
@@ -450,6 +451,7 @@ int main()
             *(dst+DMACTRLR) = 0x02; // Abort DMA transfer
             break;
         }
+#endif
         delete ll;
         delete um;
         std::cin >> temp;
@@ -458,7 +460,6 @@ int main()
     double time_outer = (end_outer.tv_sec - start_outer.tv_sec) * 1000.0; //msecs
     time_outer += (end_outer.tv_usec - start_outer.tv_usec) / 1000.0; //usecs
     printf("Transferred %f kB in %f ms, throughput = %f MB/s\n", 500.0*49, time_outer, 500.0*49/time_outer*1000.0/1024); 
-
 
     // Cleanup
     device->unmapBAR(0, bar);
