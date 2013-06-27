@@ -56,7 +56,13 @@
  * bla
  */
 
-#include <linux/ioctl.h>
+#ifdef __linux__
+    #include <linux/ioctl.h>
+#elif __APPLE__ && __MACH__
+    #include <sys/ioctl.h>
+#else
+    #error Windows sucks!
+#endif
 
 /* Possible values for ioctl commands */
 
