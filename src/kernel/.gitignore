@@ -1,0 +1,19 @@
+#####################
+# .gitignore sample #
+#####################
+
+# Ignore the kernel build stuff
+*.o
+*.o.cmd
+*.ko.cmd
+*.symvers
+*.ko.unsigned
+*.ko.unsigned.cmd
+*.ko
+*.mod.c
+*.order
+specDriver.h
+.tmp_versions/
+
+# ... except for this one.
+!.gitignore
