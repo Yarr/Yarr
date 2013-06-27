@@ -189,7 +189,6 @@ void SpecDevice::clearInterruptQueue(unsigned int int_id)
 unsigned int SpecDevice::getBARsize(unsigned int bar)
 {
 	pci_board_info info;
-	unsigned int id;
 
 	if (handle == -1)
 		throw Exception( Exception::NOT_OPEN );
