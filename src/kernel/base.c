@@ -217,7 +217,7 @@ static int __devinit specdriver_probe(struct pci_dev *pdev, const struct pci_dev
 	}
     
     /* LEts use MSI interrupts */
-    if (pci_enable_msi_block(pdev, 1) != 0) 
+    if (pci_enable_msi(pdev) != 0) 
         mod_info("Failed activating MSI!"); 
 
 	/* Set Memory-Write-Invalidate support */
