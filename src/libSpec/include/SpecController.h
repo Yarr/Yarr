@@ -17,15 +17,25 @@
 #include <UserMemory.h>
 #include <Exception.h>
 
-#define DMACTRLR 0x0
-#define DMASTATR 0x1
-#define DMACSTARTR 0x2
-#define DMAHSTARTLR 0x3
-#define DMAHSTARTHR 0x4
-#define DMALENR 0x5
-#define DMAHNEXTLR 0x6
-#define DMAHNEXTHR 0x7
-#define DMAATTRIBR 0x8
+enum SPEC_DMA_REG {
+    DMACTRLR = 0x0,
+    DMASTATR = 0x1,
+    DMACSTARTR = 0x2,
+    DMAHSTARTLR = 0x3,
+    DMAHSTARTHR = 0x4,
+    DMALENR = 0x5,
+    DMAHNEXTLR = 0x6,
+    DMAHNEXTHR = 0x7,
+    DMAATTRIBR = 0x8
+};
+
+enum SPEC_DMAS_TATUS {
+    DMAIDLE = 0x0,
+    DMADONE = 0x1,
+    DMABUSY = 0x2,
+    DMAERROR = 0x3,
+    DMAABORTED = 0x4
+};
 
 struct dma_linked_list {
     uint32_t carrier_start;
@@ -70,5 +80,6 @@ class SpecController {
 
         struct dma_linked_list* prepDmaList(UserMemory *um, KernelMemory *km, uint32_t off, bool write);
         void startDma();
+        uint32_t getDmaStatus();
 };
 #endif
