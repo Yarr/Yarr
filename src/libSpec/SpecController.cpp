@@ -53,7 +53,6 @@ void SpecController::writeDma(uint32_t off, uint32_t *data, size_t words) {
     this->startDma();
 
     spec->waitForInterrupt(0);
-    delete llist;
     delete km;
     delete um;
 }
@@ -71,7 +70,6 @@ void SpecController::readDma(uint32_t off, uint32_t *data, size_t words) {
     spec->waitForInterrupt(0);
     um->sync(UserMemory::BIDIRECTIONAL);
 
-    delete llist;
     delete km;
     delete um;
 }
@@ -198,8 +196,8 @@ struct dma_linked_list* SpecController::prepDmaList(UserMemory *um, KernelMemory
         do {
             uint32_t fixed_size = sg_size;
             if (sg_size > 4096) fixed_size = 4096;
-            // FIXME How do we propagate the carrier address??
-            llist[j].carrier_start = dev_off; // Always start at 0x0in FPGA RAM
+            //llist[j].carrier_start = dev_off;
+            llist[j].carrier_start = 0;
             dev_off += fixed_size/4;;
             llist[j].host_start_l = sg_addr_l;
             llist[j].host_start_h = sg_addr_h;
@@ -225,7 +223,7 @@ struct dma_linked_list* SpecController::prepDmaList(UserMemory *um, KernelMemory
 }
 
 void SpecController::startDma() {
-    uint32_t *addr = (uint32_t*) bar4+DMACTRLR;
+    uint32_t *addr = (uint32_t*) bar0+DMACTRLR;
     // Set t 0x1 to start DMA transfer
     *addr = 0x1;
 }
