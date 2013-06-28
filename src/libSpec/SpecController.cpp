@@ -15,8 +15,14 @@
 
 SpecController::SpecController(unsigned int id) {
     specId = id;
-    this->init();
-    this->configure();
+    try {
+        this->init();
+        this->configure();
+    } catch (Exception &e) {
+        std::cerr << __PRETTY_FUNCTION__ << " -> " << e.toString() << std::endl;
+        std::cerr << __PRETTY_FUNCTION__ <<  " -> Fatal Error! Aborting!"  << std::endl;
+        exit(1);
+    }
 }
 
 SpecController::~SpecController() {
@@ -43,67 +49,81 @@ void SpecController::readBlock(uint32_t off, uint32_t *val, size_t words) {
 }
 
 void SpecController::writeDma(uint32_t off, uint32_t *data, size_t words) {
-    UserMemory *um = &spec->mapUserMemory(data, words*4, false);
-    KernelMemory *km = &spec->allocKernelMemory(sizeof(struct dma_linked_list)*um->getSGcount());
+    int status = this->getDmaStatus(); 
+    if ( status == DMAIDLE || status == DMADONE || status == DMAABORTED ) {
+        UserMemory *um = &spec->mapUserMemory(data, words*4, false);
+        KernelMemory *km = &spec->allocKernelMemory(sizeof(struct dma_linked_list)*um->getSGcount());
 
-    struct dma_linked_list *llist = this->prepDmaList(um, km, off, 1);
-    
-    uint32_t *addr = (uint32_t*) bar0+DMACSTARTR;
-    memcpy(addr, &llist[0], sizeof(struct dma_linked_list));
-    this->startDma();
+        struct dma_linked_list *llist = this->prepDmaList(um, km, off, 1);
+        
+        uint32_t *addr = (uint32_t*) bar0+DMACSTARTR;
+        memcpy(addr, &llist[0], sizeof(struct dma_linked_list));
+        this->startDma();
 
-    spec->waitForInterrupt(0);
-    delete km;
-    delete um;
+        spec->waitForInterrupt(0);
+        delete km;
+        delete um;
+    } else {
+        std::cerr << __PRETTY_FUNCTION__ << " -> " 
+            << "DMA Transfer aborted (Status = 0x" << std::hex << status << std::dec << ")" << std::endl;
+    }
 }
 
 void SpecController::readDma(uint32_t off, uint32_t *data, size_t words) {
-    UserMemory *um = &spec->mapUserMemory(data, words*4, false);
-    KernelMemory *km = &spec->allocKernelMemory(sizeof(struct dma_linked_list)*um->getSGcount());
+    int status = this->getDmaStatus(); 
+    if ( status == DMAIDLE || status == DMADONE || status == DMAABORTED ) {
+        UserMemory *um = &spec->mapUserMemory(data, words*4, false);
+        KernelMemory *km = &spec->allocKernelMemory(sizeof(struct dma_linked_list)*um->getSGcount());
 
-    struct dma_linked_list *llist = this->prepDmaList(um, km, off, 0);
-    
-    uint32_t *addr = (uint32_t*) bar0+DMACSTARTR;
-    memcpy(addr, &llist[0], sizeof(struct dma_linked_list));
-    this->startDma();
+        struct dma_linked_list *llist = this->prepDmaList(um, km, off, 0);
+        
+        uint32_t *addr = (uint32_t*) bar0+DMACSTARTR;
+        memcpy(addr, &llist[0], sizeof(struct dma_linked_list));
+        this->startDma();
 
-    spec->waitForInterrupt(0);
-    um->sync(UserMemory::BIDIRECTIONAL);
+        spec->waitForInterrupt(0);
+        um->sync(UserMemory::BIDIRECTIONAL);
 
-    delete km;
-    delete um;
+        delete km;
+        delete um;
+    } else {
+        std::cerr << __PRETTY_FUNCTION__ << " -> " 
+            << "DMA Transfer aborted (Status = 0x" << std::hex << status << std::dec << ")" << std::endl;
+    }
 }
 
 void SpecController::init() {
 #ifdef DEBUG
-    std::cout << __FUNCTION__ << "-> Opening SPEC with id #" << specId << std::endl;
+    std::cout << __PRETTY_FUNCTION__ << "-> Opening SPEC with id #" << specId << std::endl;
 #endif
     // Init SPEC
     try {
         spec = new SpecDevice(specId);
     } catch (Exception &e) {
-        std::cerr << __FUNCTION__ << "-> " << e.toString() << std::endl;
+        std::cerr << __PRETTY_FUNCTION__ << " -> " << e.toString() << std::endl;
+        throw Exception(Exception::INIT_FAILED);
         return;
     }
     // Open SPEC
     spec->open();
 #ifdef DEBUG
-    std::cout << __FUNCTION__ << "-> Mapping BARs" << std::endl;
+    std::cout << __PRETTY_FUNCTION__ << " -> Mapping BARs" << std::endl;
 #endif
     // Map BARs
     try {
         bar0 = spec->mapBAR(0);
 #ifdef DEBUG
-        std::cout << __FUNCTION__ << "-> Mapped BAR0 at 0x" << std::hex << bar0 
+        std::cout << __PRETTY_FUNCTION__ << " -> Mapped BAR0 at 0x" << std::hex << bar0 
             << " with size 0x" << spec->getBARsize(0) << std::dec << std::endl;
 #endif
         bar4 = spec->mapBAR(4);
 #ifdef DEBUG
-        std::cout << __FUNCTION__ << "-> Mapped BAR4 at 0x" << std::hex << bar4 
+        std::cout << __PRETTY_FUNCTION__ << " -> Mapped BAR4 at 0x" << std::hex << bar4 
             << " with size 0x" << spec->getBARsize(4) << std::dec << std::endl;
 #endif
     } catch (Exception &e) {
-        std::cerr << __FUNCTION__ << "-> " << e.toString() << std::endl;
+        std::cerr << __PRETTY_FUNCTION__ << " -> " << e.toString() << std::endl;
+        throw Exception(Exception::INIT_FAILED);
         return;
     }
     return;
@@ -111,7 +131,7 @@ void SpecController::init() {
 
 void SpecController::configure() {
 #ifdef DEBUG
-        std::cout << __FUNCTION__ << "-> Configuring GN412X" << std::endl;
+        std::cout << __PRETTY_FUNCTION__ << "-> Configuring GN412X" << std::endl;
 #endif
      
     // Activate MSI
@@ -227,3 +247,9 @@ void SpecController::startDma() {
     // Set t 0x1 to start DMA transfer
     *addr = 0x1;
 }
+
+uint32_t SpecController::getDmaStatus() {
+    uint32_t *addr = (uint32_t*) bar0+DMASTATR;
+    return *addr;
+}
+

@@ -43,7 +43,8 @@ public:
 		MMAP_FAILED,
 		ALLOC_FAILED,
 		SGMAP_FAILED,
-		INTERRUPT_FAILED
+		INTERRUPT_FAILED,
+        INIT_FAILED
 	};
 
 	static const char* descriptions[];

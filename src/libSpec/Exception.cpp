@@ -21,7 +21,8 @@ const char* Exception::descriptions[] = {
 	"Mmap failed",
 	"Alloc failed",
 	"SGmap failed",
-	"Interrupt failed"
+	"Interrupt failed",
+    "Init failed"
 };
 
 
