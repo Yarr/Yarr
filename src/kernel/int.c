@@ -154,6 +154,7 @@ void specdriver_irq_unmap_bars(specdriver_privdata_t *privdata)
 irqreturn_t specdriver_irq_handler(int irq, void *dev_id) {
     specdriver_privdata_t *privdata = (specdriver_privdata_t*) dev_id;
     mod_info("IRQ #%d handled!", irq);
+    // FIXME Read some register and properly use queues
    	atomic_inc(&(privdata->irq_outstanding[0]));
 	wake_up_interruptible(&(privdata->irq_queues[0]));
     privdata->irq_count++;
