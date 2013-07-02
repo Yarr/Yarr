@@ -142,6 +142,15 @@ void specdriver_irq_unmap_bars(specdriver_privdata_t *privdata)
 	}
 }
 
+// FIXME crashes while loading, wrong bar ?
+int specdriver_ack_irq(specdriver_privdata_t *privdata) {
+    // Get BAR to Gennum
+    void *bar4 = (void*) privdata->bars_kmapped[3];
+    // Return Value of GNGPIO_INT_STATUS to acknowledge
+    // and see waht triggered the irq
+    uint32_t *addr = (uint32_t*) bar4 + 0xA20;
+    return (int) *(addr);
+}
 
 /**
  *
@@ -152,11 +161,13 @@ void specdriver_irq_unmap_bars(specdriver_privdata_t *privdata)
  *
  */
 irqreturn_t specdriver_irq_handler(int irq, void *dev_id) {
+    int queue = 0;
     specdriver_privdata_t *privdata = (specdriver_privdata_t*) dev_id;
-    mod_info("IRQ #%d handled!", irq);
+    //queue = specdriver_ack_irq(privdata);
     // FIXME Read some register and properly use queues
    	atomic_inc(&(privdata->irq_outstanding[0]));
 	wake_up_interruptible(&(privdata->irq_queues[0]));
     privdata->irq_count++;
+    mod_info("IRQ #%d handled! Source %d", irq, queue);
     return IRQ_HANDLED;
 }

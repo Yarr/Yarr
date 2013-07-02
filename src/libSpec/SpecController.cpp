@@ -64,9 +64,9 @@ void SpecController::writeDma(uint32_t off, uint32_t *data, size_t words) {
         this->startDma();
 
         spec->waitForInterrupt(0);
+        
         // Ackowledge interrupt
-        this->read32(bar4, GNINT_STAT/4);
-        this->read32(bar4, GNGPIO_INT_STATUS/4);
+        volatile uint32_t irq_ack = this->read32(bar4, GNGPIO_INT_STATUS/4);
 
         delete km;
         delete um;
@@ -89,9 +89,9 @@ void SpecController::readDma(uint32_t off, uint32_t *data, size_t words) {
         this->startDma();
 
         spec->waitForInterrupt(0);
+        
         // Ackowledge interrupt
-        this->read32(bar4, GNINT_STAT/4);
-        this->read32(bar4, GNGPIO_INT_STATUS/4);
+        volatile uint32_t irq_ack = this->read32(bar4, GNGPIO_INT_STATUS/4);
         
         um->sync(UserMemory::BIDIRECTIONAL);
 
@@ -177,10 +177,16 @@ void SpecController::configure() {
     this->write32(bar4,GNGPIO_INT_MASK_CLR/4, 0x0300);
 
     // Clear All IRQs
+    std::cout << "GNINT_STAT = 0x" << std::hex << this->read32(bar4,GNINT_STAT/4) << std::dec << std::endl;
     this->write32(bar4,GNINT_STAT/4, 0xFFF0);
+    this->write32(bar4,GNINT_STAT/4, 0x0000);
     
     // Reset GPIO INT STATUS
+    std::cout << "GNINT_STAT = 0x" << std::hex << this->read32(bar4,GNGPIO_INT_STATUS/4) << std::dec << std::endl;
     this->read32(bar4,GNGPIO_INT_STATUS/4);
+    this->write32(bar4,GNGPIO_INT_STATUS/4, 0x0000);
+    
+    usleep(200);
 
     // Clear IRQ queues
     spec->clearInterruptQueue(0);

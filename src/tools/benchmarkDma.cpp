@@ -11,17 +11,17 @@ int main(void) {
     timeval start, end;
     std::cout << std::endl << "==========================================" << std::endl;
     std::cout << "Starting DMA Write Benchmark:" << std::endl;
-    for (int cycles=0; cycles<3; cycles++) {
+    for (int cycles=0; cycles<10; cycles++) {
         const size_t size = 1024*100;
         uint32_t data[size];
         // Prepare data pattern
         memset(data, 0x5A, size*4);
         
         // Write to Spec
-        int maxLoops = 1;
+        int maxLoops = 100;
         gettimeofday(&start, NULL);
         for (int loops=0; loops<maxLoops; loops++)
-           mySpec.writeDma(0x0, data, size);
+           //mySpec.writeDma(0x0, data, size);
         gettimeofday(&end, NULL);
 
         // Analyze time

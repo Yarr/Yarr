@@ -204,14 +204,14 @@ static int __devinit specdriver_probe(struct pci_dev *pdev, const struct pci_dev
     /* Setup DMA mask, no idea why ?? */
 	if(pci_set_dma_mask(pdev, DMA_BIT_MASK(64)) == 0) {
 		mod_info("64bits bus master DMA capable\n");
-		//if(pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(64)) < 0) {
-		//	mod_info("Unable to perform 64bits consistent DMA mask set operation!\n");
-		//}
+		if(pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(64)) < 0) {
+			mod_info("Unable to perform 64bits consistent DMA mask set operation!\n");
+		}
 	} else if(pci_set_dma_mask(pdev, DMA_BIT_MASK(32)) == 0) {
 		mod_info("32bits bus master DMA capable\n");
-		//if(pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(32)) < 0) {
-		//    mod_info("Unable to perform 64bits consistent DMA mask set operation!\n");
-		//}
+		if(pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(32)) < 0) {
+		    mod_info("Unable to perform 64bits consistent DMA mask set operation!\n");
+		}
 	} else {
 	    mod_info("Unable to perform DMA mask set operation!\n");
 	}

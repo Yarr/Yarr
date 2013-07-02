@@ -349,13 +349,13 @@ static int ioctl_wait_interrupt(specdriver_privdata_t *privdata, unsigned long a
                  * by int.c:check_acknowledge_channel() as soon as in interrupt for
                  * the specified source arrives. */
 		ret = wait_event_interruptible_timeout( (privdata->irq_queues[irq_source]), (atomic_read(&(privdata->irq_outstanding[irq_source])) > 0), (100*HZ/1000) ); // Timeout after 100ms
-        if (ret<0)
+        if (ret == 0)
             mod_info("Wait for interrupt timed out!");
 
 		//if (atomic_add_negative( -1, &(privdata->irq_outstanding[irq_source])) )
 		//	atomic_inc( &(privdata->irq_outstanding[irq_source]) );
 		//else
-        atomic_dec(&(privdata->irq_outstanding[irq_source]));
+        if (ret != 0) atomic_dec(&(privdata->irq_outstanding[irq_source]));
 	    temp =0;
 	}
     //mod_info("Done waiting for interrupt!");
