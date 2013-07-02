@@ -7,11 +7,14 @@
 // #          Modified for SPEC card
 // ################################
 
+#include <stdlib.h>
 #include <iostream>
 #include <string.h>
 
 #include <SpecController.h>
 #include <GennumRegMap.h>
+
+#define DEBUG
 
 SpecController::SpecController(unsigned int id) {
     specId = id;
@@ -21,7 +24,7 @@ SpecController::SpecController(unsigned int id) {
     } catch (Exception &e) {
         std::cerr << __PRETTY_FUNCTION__ << " -> " << e.toString() << std::endl;
         std::cerr << __PRETTY_FUNCTION__ <<  " -> Fatal Error! Aborting!"  << std::endl;
-        exit(1);
+        exit(-1);
     }
 }
 
@@ -61,6 +64,10 @@ void SpecController::writeDma(uint32_t off, uint32_t *data, size_t words) {
         this->startDma();
 
         spec->waitForInterrupt(0);
+        // Ackowledge interrupt
+        this->read32(bar4, GNINT_STAT/4);
+        this->read32(bar4, GNGPIO_INT_STATUS/4);
+
         delete km;
         delete um;
     } else {
@@ -82,6 +89,10 @@ void SpecController::readDma(uint32_t off, uint32_t *data, size_t words) {
         this->startDma();
 
         spec->waitForInterrupt(0);
+        // Ackowledge interrupt
+        this->read32(bar4, GNINT_STAT/4);
+        this->read32(bar4, GNGPIO_INT_STATUS/4);
+        
         um->sync(UserMemory::BIDIRECTIONAL);
 
         delete km;
