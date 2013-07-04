@@ -15,7 +15,7 @@
 /*******************************/
 
 /* Debug messages */
-#define DEBUG
+//#define DEBUG
 
 /* The name of the module */
 #define MODNAME "specDriver"
