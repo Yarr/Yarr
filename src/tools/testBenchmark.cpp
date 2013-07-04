@@ -285,7 +285,9 @@ int main()
     device->open();  
 
     int size;
-    void *bar, *gn;
+    void *bar = NULL;
+    void *gn = NULL;
+
     cout << "Mapping BAR " << "0 and 4" << " ... " << std::endl;
     try {
         bar = device->mapBAR(0);
@@ -298,7 +300,7 @@ int main()
         cout << "failed" << endl;
     }
 
-    uint32_t *addr;
+    //uint32_t *addr;
     setup_gennum(gn);
     
     timeval start, end, start_outer, end_outer;
