@@ -9,7 +9,7 @@ int main(void) {
     SpecController mySpec(0);
 
     int maxCycles = 10;
-    int maxLoops = 50;
+    int maxLoops = 10;
 
     double overall_time = 0;
     double overall_data = 0;
