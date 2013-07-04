@@ -67,6 +67,7 @@ void SpecController::writeDma(uint32_t off, uint32_t *data, size_t words) {
         
         // Ackowledge interrupt
         volatile uint32_t irq_ack = this->read32(bar4, GNGPIO_INT_STATUS/4);
+        (void) irq_ack;
 
         delete km;
         delete um;
@@ -92,7 +93,8 @@ void SpecController::readDma(uint32_t off, uint32_t *data, size_t words) {
         
         // Ackowledge interrupt
         volatile uint32_t irq_ack = this->read32(bar4, GNGPIO_INT_STATUS/4);
-        
+        (void) irq_ack;
+
         um->sync(UserMemory::BIDIRECTIONAL);
 
         delete km;
@@ -179,11 +181,13 @@ void SpecController::configure() {
     // Clear All IRQs
     this->write32(bar4,GNINT_STAT/4, 0xFFF0);
     this->write32(bar4,GNINT_STAT/4, 0x0000);
-    volatile uint32_t res = this->read32(bar4,GNINT_STAT/4);
-    
+    volatile uint32_t res1 = this->read32(bar4,GNINT_STAT/4);
+    (void) res1;
+
     // Reset GPIO INT STATUS
-    res = this->read32(bar4,GNGPIO_INT_STATUS/4);
-    
+    volatile uint32_t res2 = this->read32(bar4,GNGPIO_INT_STATUS/4);
+    (void) res2;
+
     usleep(200);
 
     // Clear IRQ queues
