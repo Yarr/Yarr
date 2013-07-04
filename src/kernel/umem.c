@@ -299,7 +299,7 @@ int specdriver_umem_sgget(specdriver_privdata_t *privdata, umem_sglist_t *umem_s
 		umem_sglist->nents = idx+1;
 	} else {
 		for_each_sg(umem_entry->sg, sg, umem_entry->nents, i ) {
-			mod_info("entry: %d\n",i);
+			mod_info_dbg("entry: %d\n",i);
 			umem_sglist->sg[i].addr = sg_dma_address( sg );
 			umem_sglist->sg[i].size = sg_dma_len( sg );
 		}

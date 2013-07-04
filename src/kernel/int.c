@@ -168,6 +168,6 @@ irqreturn_t specdriver_irq_handler(int irq, void *dev_id) {
    	atomic_inc(&(privdata->irq_outstanding[0]));
 	wake_up_interruptible(&(privdata->irq_queues[0]));
     privdata->irq_count++;
-    mod_info("IRQ #%d handled! Source %d", irq, queue);
+    mod_info_dbg("IRQ #%d handled! Source %d", irq, queue);
     return IRQ_HANDLED;
 }
