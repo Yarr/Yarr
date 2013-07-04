@@ -177,14 +177,12 @@ void SpecController::configure() {
     this->write32(bar4,GNGPIO_INT_MASK_CLR/4, 0x0300);
 
     // Clear All IRQs
-    std::cout << "GNINT_STAT = 0x" << std::hex << this->read32(bar4,GNINT_STAT/4) << std::dec << std::endl;
     this->write32(bar4,GNINT_STAT/4, 0xFFF0);
     this->write32(bar4,GNINT_STAT/4, 0x0000);
+    volatile uint32_t res = this->read32(bar4,GNINT_STAT/4);
     
     // Reset GPIO INT STATUS
-    std::cout << "GNINT_STAT = 0x" << std::hex << this->read32(bar4,GNGPIO_INT_STATUS/4) << std::dec << std::endl;
-    this->read32(bar4,GNGPIO_INT_STATUS/4);
-    this->write32(bar4,GNGPIO_INT_STATUS/4, 0x0000);
+    res = this->read32(bar4,GNGPIO_INT_STATUS/4);
     
     usleep(200);
 
@@ -244,6 +242,16 @@ struct dma_linked_list* SpecController::prepDmaList(UserMemory *um, KernelMemory
             llist[j].host_next_l = (uint32_t)((uint64_t)next & 0xFFFFFFFF);
             llist[j].host_next_h = (uint32_t)((uint64_t)next >> 32);
             llist[j].attr = 0x1 + (write << 1); // L2P, not last
+#if 0
+            std::cout << "Linked List Entry [" << std::dec << j << std::hex << "]:" << std::endl;
+            std::cout << "  Carrier Start: 0x" << llist[j].carrier_start << std::endl;
+            std::cout << "  Host Start H:  0x" << llist[j].host_start_h << std::endl;
+            std::cout << "  Host Start L:  0x" << llist[j].host_start_l << std::endl;
+            std::cout << "  Length:        " << std::dec << llist[j].length << std::hex << std::endl;
+            std::cout << "  Host Next L    0x" << llist[j].host_next_l << std::endl;
+            std::cout << "  Host Next H    0x" << llist[j].host_next_h << std::endl;
+            std::cout << "  Attribute      0x" << llist[j].attr << std::endl;
+#endif
             sg_size = sg_size - 4096;
             sg_addr_l = sg_addr_l + 4096; // FIXME: Can this overflow ?
             j++;
@@ -253,6 +261,13 @@ struct dma_linked_list* SpecController::prepDmaList(UserMemory *um, KernelMemory
     llist[j-1].host_next_l = 0x0;
     llist[j-1].host_next_h = 0x0;
     llist[j-1].attr = 0x0 + (write << 1); // last item
+#if 0
+    std::cout << "Modified Last Item[" << std::dec << j-1 << "]" << std::hex << std::endl;
+    std::cout << "  Host Next L    0x" << llist[j-1].host_next_l << std::endl;
+    std::cout << "  Host Next H    0x" << llist[j-1].host_next_h << std::endl;
+    std::cout << "  Attribute      0x" << llist[j-1].attr << std::endl;// L2P, last item
+    std::cout << std::dec;
+#endif
 
     // Sync Memory
     km->sync(KernelMemory::BIDIRECTIONAL);
