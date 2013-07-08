@@ -19,7 +19,7 @@ uint32_t rand32() {
 int main (void) {
     SpecController mySpec(0);
 
-    int maxLoops = 10;
+    int maxLoops = 1;
     
     const size_t size = 1024/4; // 1kB
     
@@ -31,14 +31,18 @@ int main (void) {
         std::cout << "Creating Sample of size " << size*4/1024 << "kB ... ";
         uint32_t sample[size];
         for(unsigned int i = 0; i<size; i++)
-            sample[i] = rand32();
+            //sample[i] = rand32();
+            sample[i] = i;
 
         std::cout << "Writing Sample ... ";
-        mySpec.writeDma(0x0, sample, size);
-         
+        mySpec.writeBlock(0x1000, sample, size);
+        
+        std::string tmp;
+        std::cin >> tmp;
+
         std::cout << "Reading Sample!" << std::endl;
         uint32_t readBack[size];
-        mySpec.readDma(0x0, readBack, size);
+        mySpec.readBlock(0x1000, readBack, size);
 
         int counter = 0;
         std::cout << "Sample\tReadback" << std::endl;
