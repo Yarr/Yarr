@@ -226,7 +226,7 @@ void SpecController::readBlock(void *bar, uint32_t off, uint32_t *val, size_t wo
 
 struct dma_linked_list* SpecController::prepDmaList(UserMemory *um, KernelMemory *km, uint32_t off, bool write) {
     struct dma_linked_list *llist = (struct dma_linked_list*) km->getBuffer();
-    uint32_t dev_off = off;
+    uint32_t dev_off = off*4;
     unsigned int j = 0;
     for (unsigned int i=0; i<um->getSGcount(); i++) {
         int sg_size = um->getSGentrySize(i);
@@ -235,9 +235,9 @@ struct dma_linked_list* SpecController::prepDmaList(UserMemory *um, KernelMemory
         do {
             uint32_t fixed_size = sg_size;
             if (sg_size > 4096) fixed_size = 4096;
-            //llist[j].carrier_start = dev_off;
-            llist[j].carrier_start = 0;
-            dev_off += fixed_size/4;;
+            llist[j].carrier_start = dev_off;
+            //llist[j].carrier_start = 0;
+            dev_off += fixed_size;
             llist[j].host_start_l = sg_addr_l;
             llist[j].host_start_h = sg_addr_h;
             llist[j].length = fixed_size;
