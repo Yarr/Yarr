@@ -19,9 +19,9 @@ uint32_t rand32() {
 int main (void) {
     SpecController mySpec(0);
 
-    int maxLoops = 1;
+    int maxLoops = 10;
     
-    const size_t size = 1024/4; // 1kB
+    const size_t size = 1024/4*10; // 1kB
     
     srand(time(NULL));
 
@@ -35,14 +35,14 @@ int main (void) {
             sample[i] = i;
 
         std::cout << "Writing Sample ... ";
-        mySpec.writeBlock(0x1000, sample, size);
+        mySpec.writeBlock(0x20000, sample, size);
         
-        std::string tmp;
-        std::cin >> tmp;
+        //std::string tmp;
+        //std::cin >> tmp;
 
         std::cout << "Reading Sample!" << std::endl;
         uint32_t readBack[size];
-        mySpec.readBlock(0x1000, readBack, size);
+        mySpec.readBlock(0x20000, readBack, size);
 
         int counter = 0;
         std::cout << "Sample\tReadback" << std::endl;
