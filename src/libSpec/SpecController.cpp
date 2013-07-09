@@ -147,8 +147,13 @@ void SpecController::configure() {
         std::cout << __PRETTY_FUNCTION__ << "-> Configuring GN412X" << std::endl;
 #endif
      
-    // Activate MSI
-    this->write32(bar4,GNPPCI_MSI_CONTROL/4, 0x00A55805);
+    // Activate MSI if necessary
+    if (read32(bar4, GNPPCI_MSI_CONTROL/4) != 0x00A55805) {
+#ifdef DEBUG
+        std::cout << __PRETTY_FUNCTION__ << "-> MSI needs to be configured!" << std::endl;
+#endif
+        this->write32(bar4,GNPPCI_MSI_CONTROL/4, 0x00A55805);
+    }
  
     // Reset INTx vectors
     for (int i=0; i<8; i++) this->write32(bar4, GNINT_CFG(i)/4, 0x0);
