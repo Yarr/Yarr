@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- IMPORTANT: This is an internal file that has been generated   -->
+<!--     by the Xilinx ISE software.  Any direct editing or        -->
+<!--     changes made to this file may result in unpredictable     -->
+<!--     behavior or data corruption.  It is strongly advised that -->
+<!--     users do not edit the contents of this file.              -->
+<!--                                                               -->
+<!-- Copyright (c) 1995-2010 Xilinx, Inc.  All rights reserved.    -->
+
+<messages>
+<msg type="info" file="ProjectMgmt" num="1061" ><arg fmt="%s" index="1">Parsing VHDL file &quot;/home/mcattin/projects/ddr3_ctrl_core/hdl/pfc/ip_cores/ddr_controller_bank5/user_design/rtl/ddr_controller_bank5.vhd&quot; into library work</arg>
+</msg>
+
+<msg type="info" file="ProjectMgmt" num="1061" ><arg fmt="%s" index="1">Parsing VHDL file &quot;/home/mcattin/projects/ddr3_ctrl_core/hdl/pfc/ip_cores/ddr_controller_bank5/user_design/rtl/iodrp_controller.vhd&quot; into library work</arg>
+</msg>
+
+<msg type="info" file="ProjectMgmt" num="1061" ><arg fmt="%s" index="1">Parsing VHDL file &quot;/home/mcattin/projects/ddr3_ctrl_core/hdl/pfc/ip_cores/ddr_controller_bank5/user_design/rtl/iodrp_mcb_controller.vhd&quot; into library work</arg>
+</msg>
+
+<msg type="info" file="ProjectMgmt" num="1061" ><arg fmt="%s" index="1">Parsing VHDL file &quot;/home/mcattin/projects/ddr3_ctrl_core/hdl/pfc/ip_cores/ddr_controller_bank5/user_design/rtl/mcb_raw_wrapper.vhd&quot; into library work</arg>
+</msg>
+
+<msg type="info" file="ProjectMgmt" num="1061" ><arg fmt="%s" index="1">Parsing VHDL file &quot;/home/mcattin/projects/ddr3_ctrl_core/hdl/pfc/ip_cores/ddr_controller_bank5/user_design/rtl/mcb_soft_calibration.vhd&quot; into library work</arg>
+</msg>
+
+<msg type="info" file="ProjectMgmt" num="1061" ><arg fmt="%s" index="1">Parsing VHDL file &quot;/home/mcattin/projects/ddr3_ctrl_core/hdl/pfc/ip_cores/ddr_controller_bank5/user_design/rtl/mcb_soft_calibration_top.vhd&quot; into library work</arg>
+</msg>
+
+<msg type="info" file="ProjectMgmt" num="1061" ><arg fmt="%s" index="1">Parsing VHDL file &quot;/home/mcattin/projects/ddr3_ctrl_core/hdl/pfc/ip_cores/ddr_controller_bank5/user_design/rtl/memc5_infrastructure.vhd&quot; into library work</arg>
+</msg>
+
+<msg type="info" file="ProjectMgmt" num="1061" ><arg fmt="%s" index="1">Parsing VHDL file &quot;/home/mcattin/projects/ddr3_ctrl_core/hdl/pfc/ip_cores/ddr_controller_bank5/user_design/rtl/memc5_wrapper.vhd&quot; into library work</arg>
+</msg>
+
+</messages>
+

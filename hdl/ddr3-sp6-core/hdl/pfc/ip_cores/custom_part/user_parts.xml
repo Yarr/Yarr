@@ -1,0 +1,7 @@
+<MemoryFile>
+    <MemoryType ClkType="Local clocking" FPGA="spartan6" HDL="verilog,vhdl" text="DDR3_SDRAM" tmin="2500" tmax="3300" >
+        <group text="Components" >
+            <Info clockingType="Local clocking" PartNumber="MT41J128M16HA-15E" tmin="2500" tmax="3300" />
+        </group>
+    </MemoryType>
+</MemoryFile>
