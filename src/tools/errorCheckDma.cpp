@@ -19,9 +19,11 @@ uint32_t rand32() {
 int main (void) {
     SpecController mySpec(0);
 
-    int maxLoops = 10;
-    
-    const size_t size = 1024/4*10; // 1kB
+    int maxLoops = 100;
+    int overall_errors = 0;
+    uint32_t off = 0;
+
+    const size_t size = 1024/4*20; // 1kB
     
     srand(time(NULL));
 
@@ -35,14 +37,14 @@ int main (void) {
             sample[i] = i;
 
         std::cout << "Writing Sample ... ";
-        mySpec.writeBlock(0x10000, sample, size);
+        mySpec.writeDma(off, sample, size);
         
         //std::string tmp;
         //std::cin >> tmp;
 
         std::cout << "Reading Sample!" << std::endl;
         uint32_t readBack[size];
-        mySpec.readDma(0x0, readBack, size);
+        mySpec.readDma(off, readBack, size);
 
         int counter = 0;
         std::cout << "Sample\tReadback" << std::endl;
@@ -54,7 +56,15 @@ int main (void) {
         }
         std::cout << "Found #" << counter << " errors!" << std::endl;
         std::cout << "==================================" << std::endl;
+        overall_errors += counter;
+        if (counter != 0) return 0;
+        off += size;
+        sleep(2); // is this needed?
     }
+        std::cout << std::endl << "==================================" << std::endl;
+        std::cout << "Total Number of Errors #" << overall_errors << " errors!" << std::endl;
+        std::cout << (double)overall_errors/(double)(size*maxLoops) << "\% are errors!" << std::endl;
+        std::cout << "==================================" << std::endl;
 
     return 0;
 }
