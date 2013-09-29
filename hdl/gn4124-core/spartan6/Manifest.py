@@ -7,3 +7,5 @@ files = ["gn4124_core.vhd",
          "serdes_n_to_1_s2_diff.vhd",
          "serdes_n_to_1_s2_se.vhd",
          "pulse_sync_rtl.vhd"]
+
+library = "work"

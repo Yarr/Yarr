@@ -107,7 +107,7 @@ void SpecController::readDma(uint32_t off, uint32_t *data, size_t words) {
 
 void SpecController::init() {
 #ifdef DEBUG
-    std::cout << __PRETTY_FUNCTION__ << "-> Opening SPEC with id #" << specId << std::endl;
+    std::cout << __PRETTY_FUNCTION__ << " -> Opening SPEC with id #" << specId << std::endl;
 #endif
     // Init SPEC
     try {
@@ -154,7 +154,7 @@ void SpecController::configure() {
 #endif
         this->write32(bar4,GNPPCI_MSI_CONTROL/4, 0x00A55805);
     }
- 
+    
     // Reset INTx vectors
     for (int i=0; i<8; i++) this->write32(bar4, GNINT_CFG(i)/4, 0x0);
 

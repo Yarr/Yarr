@@ -18,12 +18,12 @@ uint32_t rand32() {
 
 int main (void) {
     SpecController mySpec(0);
-
+    
     int maxLoops = 100;
     int overall_errors = 0;
     uint32_t off = 0;
 
-    const size_t size = 1024/4*20; // 1kB
+    const size_t size = 1024/4*40; // 1kB
     
     srand(time(NULL));
 
@@ -58,7 +58,7 @@ int main (void) {
         std::cout << "==================================" << std::endl;
         overall_errors += counter;
         if (counter != 0) return 0;
-        off += size;
+        //off += size;
         sleep(2); // is this needed?
     }
         std::cout << std::endl << "==================================" << std::endl;
