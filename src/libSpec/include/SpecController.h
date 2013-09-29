@@ -29,7 +29,7 @@ enum SPEC_DMA_REG {
     DMAATTRIBR = 0x8
 };
 
-enum SPEC_DMAS_TATUS {
+enum SPEC_DMA_STATUS {
     DMAIDLE = 0x0,
     DMADONE = 0x1,
     DMABUSY = 0x2,
