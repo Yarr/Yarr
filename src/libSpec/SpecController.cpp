@@ -294,3 +294,38 @@ uint32_t SpecController::getDmaStatus() {
     return *addr;
 }
 
+void program(const void *data, size_t size) {
+    // Stuff perhaps missing, but in manual
+    // FCL_IM -> enable the right 
+    
+    // Setup BOOT_SEL signals in GPIO 14,15 to 0, 1
+    
+    // FCL_CLK_DIV -> 0x0 -> PCLK/2 (PCLK = 125MHz)
+    
+    // FCL_CTRL -> 0x40 -> Reset
+    // Check reset is high
+    // FCL_CTRL -> 0x0
+    
+    // FCL_IRQ -> 0x0 -> Clear pending IRQ
+    
+    // Setup FCL CTRL
+    // 0x2 - SPRI_EN
+    // 0x4 - FSM_EN
+    // 0x30 - Last Byte CNT -> (size & 0x3)
+    // 0x100 - SPRI_CLK_STOP_EN
+
+    // FCL_TIMER_CTRL -> 0x0
+    // FCL_TIMER_0 -> 0x10
+    // FCL_TIMER_1 -> 0x0
+    
+    // Enable the right lines
+    // FCL_EN -> 0x17
+    
+    // Start FSM
+    // FCL_CTRL += 0x1
+
+    // Write a bit of data to FCL_FIFO
+    // Wait until FCL_IRQ & 0x5 = 1
+    // Loop
+    // FCL_CTRL -> 0x186 (last data written)
+}
