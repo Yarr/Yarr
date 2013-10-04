@@ -63,7 +63,9 @@ class SpecController {
 
         void writeDma(uint32_t off, uint32_t *data, size_t words);
         void readDma(uint32_t off, uint32_t *data, size_t words);
-             
+
+        int progFpga(const void *data, size_t size);
+    
     private:
         unsigned int specId;
         SpecDevice *spec;

@@ -58,4 +58,6 @@ enum {
 	FCL_IRQ			= FCL_BASE + 0x20,
 	FCL_TIMER_CTRL		= FCL_BASE + 0x24,
 	FCL_IM			= FCL_BASE + 0x28,
+
+	FCL_FIFO		= 0xE00,
 };

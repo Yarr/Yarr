@@ -13,6 +13,7 @@
 
 #include <SpecController.h>
 #include <GennumRegMap.h>
+#include <BitOps.h>
 
 #define DEBUG
 
@@ -294,38 +295,100 @@ uint32_t SpecController::getDmaStatus() {
     return *addr;
 }
 
-void program(const void *data, size_t size) {
+int SpecController::progFpga(const void *data, size_t size) {
+#ifdef DEBUG
+    std::cout << __PRETTY_FUNCTION__ << "-> Setting up programming of FPGA" <<std::endl;
+#endif
+    int size32 = (size + 3) >> 2;
+    const uint32_t *data32 = (uint32_t*)data;
+
     // Stuff perhaps missing, but in manual
     // FCL_IM -> enable the right 
     
     // Setup BOOT_SEL signals in GPIO 14,15 to 0, 1
-    
+    this->mask32(bar4, GNGPIO_DIRECTION_MODE/4, 0xC000, 0);
+    this->mask32(bar4, GNGPIO_OUTPUT_ENABLE/4, 0xC000, 0xC000);
+    this->mask32(bar4, GNGPIO_OUTPUT_VALUE/4, 0xC000, 0x8000);
+
     // FCL_CLK_DIV -> 0x0 -> PCLK/2 (PCLK = 125MHz)
-    
+    this->write32(bar4, FCL_CLK_DIV/4, 0x0);
     // FCL_CTRL -> 0x40 -> Reset
+    this->write32(bar4, FCL_CTRL/4, 0x40);
     // Check reset is high
+    if (0x40 != this->read32(bar4, FCL_CTRL/4)) {
+        std::cerr << __PRETTY_FUNCTION__ << "-> Error setting FCL_CTRL ... aborting!" << std::endl;
+        return -1;
+    }
+
     // FCL_CTRL -> 0x0
-    
+    this->write32(bar4, FCL_CTRL/4, 0x0);
+   
     // FCL_IRQ -> 0x0 -> Clear pending IRQ
+    this->write32(bar4, FCL_IRQ/4, 0x0);
     
+    uint32_t ctrl = 0;
+	switch(size & 3) {
+        case 3: ctrl = 0x116; break;
+        case 2: ctrl = 0x126; break;
+        case 1: ctrl = 0x136; break;
+        case 0: ctrl = 0x106; break;
+	}
     // Setup FCL CTRL
     // 0x2 - SPRI_EN
     // 0x4 - FSM_EN
     // 0x30 - Last Byte CNT -> (size & 0x3)
     // 0x100 - SPRI_CLK_STOP_EN
+    this->write32(bar4, FCL_CTRL/4, ctrl);
 
     // FCL_TIMER_CTRL -> 0x0
     // FCL_TIMER_0 -> 0x10
     // FCL_TIMER_1 -> 0x0
+    this->write32(bar4, FCL_TIMER_CTRL/4, 0x0);
+    this->write32(bar4, FCL_TIMER_0/4, 0x10);
+    this->write32(bar4, FCL_TIMER_1/4, 0x0);
     
     // Enable the right lines
     // FCL_EN -> 0x17
+    this->write32(bar4, FCL_EN/4, 0x17);
     
     // Start FSM
     // FCL_CTRL += 0x1
+    ctrl |= 0x1;
+    this->write32(bar4, FCL_CTRL/4, ctrl);
 
+#ifdef DEBUG
+    std::cout << __PRETTY_FUNCTION__ << "-> Starting programming!" <<std::endl;
+#endif
     // Write a bit of data to FCL_FIFO
-    // Wait until FCL_IRQ & 0x5 = 1
-    // Loop
+    int done = 0;
+    int wrote = 0;
+	while(size32 > 0)
+	{
+        // Check if FPGA configuration has errors
+
+		int i = read32(bar4, FCL_IRQ/4);
+		if ( (i & 8) && wrote) {
+		    done = 1;
+#ifdef DEBUG
+            std::cout << __PRETTY_FUNCTION__ << "-> Done programming!" <<std::endl;
+#endif
+		} else if ( (i & 0x4) && !done) {
+            std::cerr << __PRETTY_FUNCTION__<< "-> Error while programming after " << wrote << " words ... aborting!" << std::endl;
+            return -1;
+		}
+
+        // Wait until FCL_IRQ & 0x5 = 1
+		while (read32(bar4, FCL_IRQ/4)  & (1<<5))
+			;
+
+        // Loop
+		for (i = 0; size32 && i < 32; i++) {
+			write32(bar4, FCL_FIFO/4, BitOps::unaligned_bitswap_le32(data32));
+			data32++; size32--; wrote++;
+		}
+	}
     // FCL_CTRL -> 0x186 (last data written)
+    this->write32(bar4, FCL_CTRL, 0x186);
+
+    return wrote;
 }
