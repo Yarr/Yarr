@@ -13,12 +13,16 @@ int main(int argc, char* argv[]) {
     
     // Open file
     std::cout << "Opening file: " << argv[1] << std::endl;
-    std::fstream file(argv[1], std::ios::binary | std::ios::ate);
+    std::fstream file(argv[1], std::ios::binary | std::ios::in);
 
     // Get file size
-    size_t size = file.tellg();
+    size_t beg, end, size;
+    beg = file.tellg();
+    file.seekg(0, std::ios::end);
+    end = file.tellg();
+    size = end - beg;
+    std::cout << "Size: " << size << " kB" << std::endl;
     file.seekg(0, std::ios::beg);
-    std::cout << "Size: " << size/1024.0 << " kB" << std::endl;
 
     // Get pointer to file
     char *buffer = new char[size];
@@ -31,7 +35,8 @@ int main(int argc, char* argv[]) {
 
     // Start programming
     std::cout << "Starting programming ..." << std::endl;
-    unsigned int wrote = mySpec.progFpga(buffer, size);
+    unsigned int wrote = 0;
+    wrote = mySpec.progFpga(buffer, size);
     if (wrote != size) {
         std::cout << "... error, not all was written!" << std::endl;
         std::cout << " Size:  " << size << std::endl;

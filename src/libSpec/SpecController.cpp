@@ -108,7 +108,7 @@ void SpecController::readDma(uint32_t off, uint32_t *data, size_t words) {
 
 void SpecController::init() {
 #ifdef DEBUG
-    std::cout << __PRETTY_FUNCTION__ << "-> Opening SPEC with id #" << specId << std::endl;
+    std::cout << __PRETTY_FUNCTION__ << " -> Opening SPEC with id #" << specId << std::endl;
 #endif
     // Init SPEC
     try {
@@ -145,13 +145,13 @@ void SpecController::init() {
 
 void SpecController::configure() {
 #ifdef DEBUG
-        std::cout << __PRETTY_FUNCTION__ << "-> Configuring GN412X" << std::endl;
+        std::cout << __PRETTY_FUNCTION__ << " -> Configuring GN412X" << std::endl;
 #endif
      
     // Activate MSI if necessary
     if (read32(bar4, GNPPCI_MSI_CONTROL/4) != 0x00A55805) {
 #ifdef DEBUG
-        std::cout << __PRETTY_FUNCTION__ << "-> MSI needs to be configured!" << std::endl;
+        std::cout << __PRETTY_FUNCTION__ << " -> MSI needs to be configured!" << std::endl;
 #endif
         this->write32(bar4,GNPPCI_MSI_CONTROL/4, 0x00A55805);
     }
@@ -297,7 +297,7 @@ uint32_t SpecController::getDmaStatus() {
 
 int SpecController::progFpga(const void *data, size_t size) {
 #ifdef DEBUG
-    std::cout << __PRETTY_FUNCTION__ << "-> Setting up programming of FPGA" <<std::endl;
+    std::cout << __PRETTY_FUNCTION__ << " -> Setting up programming of FPGA" <<std::endl;
 #endif
     int size32 = (size + 3) >> 2;
     const uint32_t *data32 = (uint32_t*)data;
@@ -316,7 +316,7 @@ int SpecController::progFpga(const void *data, size_t size) {
     this->write32(bar4, FCL_CTRL/4, 0x40);
     // Check reset is high
     if (0x40 != this->read32(bar4, FCL_CTRL/4)) {
-        std::cerr << __PRETTY_FUNCTION__ << "-> Error setting FCL_CTRL ... aborting!" << std::endl;
+        std::cerr << __PRETTY_FUNCTION__ << " -> Error setting FCL_CTRL ... aborting!" << std::endl;
         return -1;
     }
 
@@ -357,7 +357,7 @@ int SpecController::progFpga(const void *data, size_t size) {
     this->write32(bar4, FCL_CTRL/4, ctrl);
 
 #ifdef DEBUG
-    std::cout << __PRETTY_FUNCTION__ << "-> Starting programming!" <<std::endl;
+    std::cout << __PRETTY_FUNCTION__ << " -> Starting programming!" <<std::endl;
 #endif
     // Write a bit of data to FCL_FIFO
     int done = 0;
@@ -369,11 +369,8 @@ int SpecController::progFpga(const void *data, size_t size) {
 		int i = read32(bar4, FCL_IRQ/4);
 		if ( (i & 8) && wrote) {
 		    done = 1;
-#ifdef DEBUG
-            std::cout << __PRETTY_FUNCTION__ << "-> Done programming!" <<std::endl;
-#endif
 		} else if ( (i & 0x4) && !done) {
-            std::cerr << __PRETTY_FUNCTION__<< "-> Error while programming after " << wrote << " words ... aborting!" << std::endl;
+            std::cerr << __PRETTY_FUNCTION__<< " -> Error while programming after " << wrote << " words ... aborting!" << std::endl;
             return -1;
 		}
 
@@ -389,6 +386,9 @@ int SpecController::progFpga(const void *data, size_t size) {
 	}
     // FCL_CTRL -> 0x186 (last data written)
     this->write32(bar4, FCL_CTRL, 0x186);
+#ifdef DEBUG
+    std::cout << __PRETTY_FUNCTION__ << " -> Programming done!!" <<std::endl;
+#endif
 
-    return wrote;
+    return wrote*4;
 }
