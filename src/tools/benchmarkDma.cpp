@@ -18,7 +18,7 @@ int main(void) {
     std::cout << std::endl << "==========================================" << std::endl;
     std::cout << "Starting DMA Write Benchmark:" << std::endl;
     for (int cycles=0; cycles<maxCycles; cycles++) {
-        const size_t size = 1024*100; // 400kB
+        const size_t size = 1024*10; // 400kB
         uint32_t data[size];
         // Prepare data pattern
         memset(data, 0x5A, size*4);
