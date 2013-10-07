@@ -324,8 +324,10 @@ int SpecController::progFpga(const void *data, size_t size) {
     this->write32(bar4, FCL_CTRL/4, 0x0);
    
     // FCL_IRQ -> 0x0 -> Clear pending IRQ
-    this->write32(bar4, FCL_IRQ/4, 0x0);
-    
+    volatile uint32_t foo = this->read32(bar4, FCL_IRQ/4);
+    (void) foo;
+
+    // Get number of uneven bytes in word sense
     uint32_t ctrl = 0;
 	switch(size & 3) {
         case 3: ctrl = 0x116; break;
@@ -388,6 +390,22 @@ int SpecController::progFpga(const void *data, size_t size) {
     this->write32(bar4, FCL_CTRL, 0x186);
 #ifdef DEBUG
     std::cout << __PRETTY_FUNCTION__ << " -> Programming done!!" <<std::endl;
+#endif
+    
+    //Wait a bit for the FPGA to boot up
+    usleep(250);
+
+    uint32_t irq = read32(bar4, FCL_IRQ/4);
+    uint32_t status = read32(bar4, FCL_STATUS/4);
+
+    if (irq & 0x4)
+        std::cerr << __PRETTY_FUNCTION__<< " -> FCL IRQ indicates an error, read: 0x" << std::hex << irq << std::dec << std::endl;
+
+#ifdef DEBUG
+    if (irq & 0x8)
+        std::cout << __PRETTY_FUNCTION__ << " -> FCL IRQ indicates CONFIG_DONE" <<std::endl;
+    if (status & 0x8)
+        std::cout << __PRETTY_FUNCTION__ << " -> FCL STATUS indicates SPRI_DONE" <<std::endl;
 #endif
 
     return wrote*4;
