@@ -32,7 +32,7 @@ library UNISIM;
 use UNISIM.vcomponents.all;
 
 
-entity spec_gn4124_test is
+entity yarr is
   port
     (
       -- On board 20MHz oscillator
@@ -111,11 +111,11 @@ entity spec_gn4124_test is
 		DDR3_BA : out std_logic_vector(2 downto 0);
 		DDR3_DQ : inout std_logic_vector(15 downto 0)
       );
-end spec_gn4124_test;
+end yarr;
 
 
 
-architecture rtl of spec_gn4124_test is
+architecture rtl of yarr is
 
   ------------------------------------------------------------------------------
   -- Components declaration
@@ -922,17 +922,18 @@ begin
 
 rst <= (L_RST_N and locked);
 
-cmp_clk_gen : clk_gen
-  port map
-   (-- Clock in ports
-    CLK_125_P => clk_125m_pllref_p_i,
-    CLK_125_N => clk_125m_pllref_n_i,
-    -- Clock out ports
-    CLK_125 => CLK_125,
-    CLK_333 => CLK_333,
-    -- Status and control signals
-    RESET  => not L_RST_N,
-    LOCKED => locked);
+    cmp_clk_gen : clk_gen
+    port map (
+        -- Clock in ports
+        CLK_125_P => clk_125m_pllref_p_i,
+        CLK_125_N => clk_125m_pllref_n_i,
+        -- Clock out ports
+        CLK_125 => CLK_125,
+        CLK_333 => CLK_333,
+        -- Status and control signals
+        RESET  => not L_RST_N,
+        LOCKED => locked
+    );
 
 	cmp_ddr3_ctrl: ddr3_ctrl PORT MAP(
 		clk_i => CLK_333,
