@@ -58,7 +58,7 @@
 
 #ifdef __linux__
     #include <linux/ioctl.h>
-#elif __APPLE__ && __MACH__
+#elif defined(__APPLE__) && defined(__MACH__)
     #include <sys/ioctl.h>
 #else
     #error Windows sucks!
