@@ -10,15 +10,15 @@ MODE = DEBUGE
 AR = ar
 
 CPP = g++
-CPPFLAGS += -Wall -Wextra -IlibSpec/include -IlibYarr/include -IlibUtil/include `root-config --cflags`
+CPPFLAGS += -Wall -Wextra -IlibSpec/include -IlibYarr/include -IlibUtil/include #`root-config --cflags`
 CPPFLAGS_DEBUG += -g -O0
 CPPFLAGS_RELEASE += -O2 -DNDEBUG
 
 LD = g++
-LDFLAGS += `root-config --ldflags`
+LDFLAGS += #`root-config --ldflags`
 LDFLAGS_DEBUG +=
 LDFLAGS_RELEASE += 
-LIBS += `root-config --libs --glibs`
+LIBS += #`root-config --libs --glibs`
 
 BIN = bin
 SRC = tools
