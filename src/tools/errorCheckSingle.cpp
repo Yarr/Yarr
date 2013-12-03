@@ -30,7 +30,7 @@ int main (void) {
         std::cout << std::endl << "==================================" << std::endl;
         
         std::cout << "Creating Sample of size " << size*4/1024 << "kB ... ";
-        uint32_t sample[size];
+        uint32_t *sample = new uint32_t[size];
         for(unsigned int i = 0; i<size; i++)
             //sample[i] = rand32();
             sample[i] = i;
@@ -42,7 +42,7 @@ int main (void) {
         //std::cin >> tmp;
 
         std::cout << "Reading Sample!" << std::endl;
-        uint32_t readBack[size];
+        uint32_t *readBack = new uint32_t[size];
         mySpec.readBlock(0x20000+off, readBack, size);
 
         int counter = 0;
@@ -56,6 +56,9 @@ int main (void) {
         std::cout << "Found #" << counter << " errors!" << std::endl;
         std::cout << "==================================" << std::endl;
         off += size;
+
+        delete sample;
+        delete readBack;
     }
 
     return 0;
