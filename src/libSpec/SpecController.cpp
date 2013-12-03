@@ -69,7 +69,7 @@ void SpecController::writeDma(uint32_t off, uint32_t *data, size_t words) {
         // Ackowledge interrupt
         volatile uint32_t irq_ack = this->read32(bar4, GNGPIO_INT_STATUS/4);
         (void) irq_ack;
-
+        
         delete km;
         delete um;
     } else {
@@ -262,8 +262,10 @@ struct dma_linked_list* SpecController::prepDmaList(UserMemory *um, KernelMemory
             std::cout << "  Host Next H    0x" << llist[j].host_next_h << std::endl;
             std::cout << "  Attribute      0x" << llist[j].attr << std::endl;
 #endif
-            sg_size = sg_size - 4096;
-            sg_addr_l = sg_addr_l + 4096; // FIXME: Can this overflow ?
+            sg_size = sg_size - fixed_size;
+            sg_addr_l = sg_addr_l + fixed_size;
+            // Prevent overflow
+            sg_addr_h = sg_addr_h + ((uint64_t)(sg_addr_l + fixed_size) >> 32);
             j++;
         } while (sg_size > 0);
     }
