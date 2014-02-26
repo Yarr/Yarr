@@ -51,6 +51,9 @@ use UNISIM.vcomponents.all;
 -- Entity declaration for GN4124 core (gn4124_core)
 --==============================================================================
 entity gn4124_core is
+  generic (
+    g_ACK_TIMEOUT : positive := 100                    -- Wishbone ACK timeout (in wishbone clock cycles)
+    );
   port
     (
       ---------------------------------------------------------
@@ -121,6 +124,9 @@ entity gn4124_core is
       csr_dat_i   : in  std_logic_vector(31 downto 0);
       csr_ack_i   : in  std_logic;
       csr_stall_i : in  std_logic;
+      csr_err_i   : in  std_logic;
+      csr_rty_i   : in  std_logic;      -- not used internally
+      csr_int_i   : in  std_logic;      -- not used internally
 
       ---------------------------------------------------------
       -- DMA wishbone interface (master pipelined)
@@ -133,7 +139,10 @@ entity gn4124_core is
       dma_cyc_o   : out std_logic;
       dma_dat_i   : in  std_logic_vector(31 downto 0);
       dma_ack_i   : in  std_logic;
-      dma_stall_i : in  std_logic
+      dma_stall_i : in  std_logic;
+      dma_err_i   : in  std_logic;      -- not used internally
+      dma_rty_i   : in  std_logic;      -- not used internally
+      dma_int_i   : in  std_logic       -- not used internally
       );
 end gn4124_core;
 
@@ -348,7 +357,21 @@ begin
   -- Status output assignment
   ------------------------------------------------------------------------------
   status_o(0)           <= p2l_pll_locked;
-  status_o(31 downto 1) <= (others => '0');
+  status_o(1) <= irq_p_i;
+  status_o(2) <= p2l_rdy_wbm and p2l_rdy_pdm;
+  status_o(3) <= arb_ser_valid;
+  status_o(4) <= arb_ser_dframe;
+  status_o(5 downto 20) <= pdm_arb_data(15 downto 0);
+  status_o(21) <= arb_pdm_gnt;
+  status_o(22) <= arb_ldm_gnt;
+  status_o(23) <= arb_wbm_gnt;
+  status_o(24) <= ldm_arb_req;
+  status_o(25) <= pdm_arb_req;
+  status_o(26) <= wbm_arb_req;
+  status_o(27 downto 28) <= p_rd_d_rdy;
+  status_o(29 downto 30) <= l_wr_rdy;
+  status_o(31) <= l2p_edb;
+  
 
   ------------------------------------------------------------------------------
   -- Clock Input. Generate ioclocks and system clock via BUFPLL
@@ -485,6 +508,9 @@ begin
   -- Wishbone master
   -----------------------------------------------------------------------------
   cmp_wbmaster32 : wbmaster32
+    generic map(
+      g_ACK_TIMEOUT => g_ACK_TIMEOUT
+      )
     port map
     (
       ---------------------------------------------------------
@@ -537,7 +563,10 @@ begin
       wb_stb_o   => csr_stb_o,
       wb_we_o    => csr_we_o,
       wb_ack_i   => csr_ack_i,
-      wb_stall_i => csr_stall_i
+      wb_stall_i => csr_stall_i,
+      wb_err_i   => csr_err_i,
+      wb_rty_i   => csr_rty_i,
+      wb_int_i   => csr_int_i
       );
 
   -- Adapt address bus width for top level
@@ -553,6 +582,7 @@ begin
       rst_n_i => rst_n,
 
       dma_ctrl_irq_o => dma_irq,
+      l2p_rdy => l2p_rdy,
 
       dma_ctrl_carrier_addr_o => dma_ctrl_carrier_addr,
       dma_ctrl_host_addr_h_o  => dma_ctrl_host_addr_h,
