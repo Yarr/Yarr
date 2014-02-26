@@ -46,8 +46,8 @@ public:
 
 	inline void mmap_lock() { pthread_mutex_lock( &mmap_mutex ); }
 	inline void mmap_unlock() { pthread_mutex_unlock( &mmap_mutex ); }
-	
-	void waitForInterrupt(unsigned int int_id);
+
+    int waitForInterrupt(unsigned int int_id);
 	void clearInterruptQueue(unsigned int int_id);
 	
 	unsigned int getBARsize(unsigned int bar);

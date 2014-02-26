@@ -52,7 +52,7 @@ void SpecController::readBlock(uint32_t off, uint32_t *val, size_t words) {
     this->readBlock(bar0, off, val, words);
 }
 
-void SpecController::writeDma(uint32_t off, uint32_t *data, size_t words) {
+int SpecController::writeDma(uint32_t off, uint32_t *data, size_t words) {
     int status = this->getDmaStatus(); 
     if ( status == DMAIDLE || status == DMADONE || status == DMAABORTED ) {
         UserMemory *um = &spec->mapUserMemory(data, words*4, false);
@@ -72,13 +72,15 @@ void SpecController::writeDma(uint32_t off, uint32_t *data, size_t words) {
         
         delete km;
         delete um;
+        return 0;
     } else {
         std::cerr << __PRETTY_FUNCTION__ << " -> " 
             << "DMA Transfer aborted (Status = 0x" << std::hex << status << std::dec << ")" << std::endl;
+        return 1;
     }
 }
 
-void SpecController::readDma(uint32_t off, uint32_t *data, size_t words) {
+int SpecController::readDma(uint32_t off, uint32_t *data, size_t words) {
     int status = this->getDmaStatus(); 
     if ( status == DMAIDLE || status == DMADONE || status == DMAABORTED ) {
         UserMemory *um = &spec->mapUserMemory(data, words*4, false);
@@ -90,7 +92,11 @@ void SpecController::readDma(uint32_t off, uint32_t *data, size_t words) {
         memcpy(addr, &llist[0], sizeof(struct dma_linked_list));
         this->startDma();
 
-        spec->waitForInterrupt(0);
+        if (spec->waitForInterrupt(0) < 1) {
+            std::cerr << __PRETTY_FUNCTION__ << " -> " 
+            << "Interrupt timeout, aborting transfer!" << std::endl;
+            this->abortDma();
+        }
         
         // Ackowledge interrupt
         volatile uint32_t irq_ack = this->read32(bar4, GNGPIO_INT_STATUS/4);
@@ -100,9 +106,12 @@ void SpecController::readDma(uint32_t off, uint32_t *data, size_t words) {
 
         delete km;
         delete um;
+
+        return 0;
     } else {
         std::cerr << __PRETTY_FUNCTION__ << " -> " 
             << "DMA Transfer aborted (Status = 0x" << std::hex << status << std::dec << ")" << std::endl;
+        return 1;
     }
 }
 
@@ -290,6 +299,12 @@ void SpecController::startDma() {
     uint32_t *addr = (uint32_t*) bar0+DMACTRLR;
     // Set t 0x1 to start DMA transfer
     *addr = 0x1;
+}
+
+void SpecController::abortDma() {
+    uint32_t *addr = (uint32_t*) bar0+DMACTRLR;
+    // Set t 0x2 to abort DMA transfer
+    *addr = 0x2;
 }
 
 uint32_t SpecController::getDmaStatus() {

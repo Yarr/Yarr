@@ -156,13 +156,16 @@ UserMemory& SpecDevice::mapUserMemory(void *mem, unsigned int size, bool merged)
  * Waits for an interrupt.
  *
  */
-void SpecDevice::waitForInterrupt(unsigned int int_id)
+int SpecDevice::waitForInterrupt(unsigned int int_id)
 {
 	if (handle == -1)
 		throw Exception(Exception::NOT_OPEN);
 	
-	if (ioctl(handle, SPECDRIVER_IOC_WAITI, int_id) != 0)
+	int ret = ioctl(handle, SPECDRIVER_IOC_WAITI, int_id);
+    if (ret < 0)
 		throw Exception(Exception::INTERRUPT_FAILED);
+
+    return ret;
 }
 
 /**
@@ -175,7 +178,7 @@ void SpecDevice::clearInterruptQueue(unsigned int int_id)
 	if (handle == -1)
 		throw Exception( Exception::NOT_OPEN );
 	
-	if (ioctl(handle, SPECDRIVER_IOC_CLEAR_IOQ, int_id) != 0)
+	if(ioctl(handle, SPECDRIVER_IOC_CLEAR_IOQ, int_id) != 0 )
 		throw Exception(Exception::INTERNAL_ERROR);
 }
 

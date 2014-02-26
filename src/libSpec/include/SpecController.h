@@ -61,8 +61,8 @@ class SpecController {
         void writeBlock(uint32_t off, uint32_t *val, size_t words);
         void readBlock(uint32_t off, uint32_t *val, size_t words);
 
-        void writeDma(uint32_t off, uint32_t *data, size_t words);
-        void readDma(uint32_t off, uint32_t *data, size_t words);
+        int writeDma(uint32_t off, uint32_t *data, size_t words);
+        int readDma(uint32_t off, uint32_t *data, size_t words);
 
         int progFpga(const void *data, size_t size);
     
@@ -70,7 +70,7 @@ class SpecController {
         unsigned int specId;
         SpecDevice *spec;
         void *bar0, *bar4;
-        
+
         void init();
         void configure();
 
@@ -83,6 +83,7 @@ class SpecController {
 
         struct dma_linked_list* prepDmaList(UserMemory *um, KernelMemory *km, uint32_t off, bool write);
         void startDma();
+        void abortDma();
         uint32_t getDmaStatus();
 };
 #endif
