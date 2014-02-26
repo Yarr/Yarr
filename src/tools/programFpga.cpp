@@ -14,7 +14,12 @@ int main(int argc, char* argv[]) {
     // Open file
     std::cout << "Opening file: " << argv[1] << std::endl;
     std::fstream file(argv[1], std::ios::binary | std::ios::in);
-
+    
+    // Check file
+    if (!file) {
+        std::cout << "Problem opening file ... aborting" << std::endl;
+        return 1;
+    }
     // Get file size
     size_t beg, end, size;
     beg = file.tellg();
