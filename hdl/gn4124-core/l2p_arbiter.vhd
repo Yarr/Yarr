@@ -33,6 +33,7 @@
 -------------------------------------------------------------------------------
 -- last changes: 23-09-2010 (mcattin) Add FF on data path and
 --                                    change valid request logic
+-- 26.02.2014 (theim) Changed priority order (swapped LDM <-> PDM)
 -------------------------------------------------------------------------------
 
 library IEEE;
@@ -119,8 +120,8 @@ begin
   --
   -- Strict priority arbitration scheme
   -- Highest : WBM request
-  --         : LDM request
-  -- Lowest  : PDM request
+  --         : PDM request
+  -- Lowest  : LDM request
   -----------------------------------------------------------------------------
   process (clk_i, rst_n_i)
   begin
@@ -134,14 +135,14 @@ begin
         arb_wbm_gnt <= '1';
         arb_pdm_gnt <= '0';
         arb_ldm_gnt <= '0';
-      elsif (ldm_arb_req_valid = '1') then
-        arb_wbm_gnt <= '0';
-        arb_pdm_gnt <= '0';
-        arb_ldm_gnt <= '1';
       elsif (pdm_arb_req_valid = '1') then
         arb_wbm_gnt <= '0';
         arb_pdm_gnt <= '1';
         arb_ldm_gnt <= '0';
+      elsif (ldm_arb_req_valid = '1') then
+        arb_wbm_gnt <= '0';
+        arb_pdm_gnt <= '0';
+        arb_ldm_gnt <= '1';
       elsif (eop = '1') then
         arb_wbm_gnt <= '0';
         arb_pdm_gnt <= '0';
