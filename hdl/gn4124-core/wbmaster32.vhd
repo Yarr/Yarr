@@ -45,8 +45,13 @@ use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
 use work.gn4124_core_pkg.all;
 
+use work.common_pkg.all;
+
 
 entity wbmaster32 is
+  generic (
+    g_ACK_TIMEOUT : positive := 100     -- Wishbone ACK timeout (in wb_clk cycles)
+    );
   port
     (
       ---------------------------------------------------------
@@ -100,62 +105,16 @@ entity wbmaster32 is
       wb_cyc_o   : out std_logic;                      -- Cycle
       wb_dat_i   : in  std_logic_vector(31 downto 0);  -- Data in
       wb_ack_i   : in  std_logic;                      -- Acknowledge
-      wb_stall_i : in  std_logic                       -- Stall
+      wb_stall_i : in  std_logic;                      -- Stall
+      wb_err_i   : in  std_logic;                      -- Error
+      wb_rty_i   : in  std_logic;                      -- Retry
+      wb_int_i   : in  std_logic                       -- Interrupt
       );
 end wbmaster32;
 
 
 architecture behaviour of wbmaster32 is
 
-    component generic_async_fifo is
-    generic (
-        g_data_width : natural;
-        g_size       : natural;
-        g_show_ahead : boolean := false;
-
-        -- Read-side flag selection
-        g_with_rd_empty        : boolean := true;   -- with empty flag
-        g_with_rd_full         : boolean := false;  -- with full flag
-        g_with_rd_almost_empty : boolean := false;
-        g_with_rd_almost_full  : boolean := false;
-        g_with_rd_count        : boolean := false;  -- with words counter
-
-        g_with_wr_empty        : boolean := false;
-        g_with_wr_full         : boolean := true;
-        g_with_wr_almost_empty : boolean := false;
-        g_with_wr_almost_full  : boolean := false;
-        g_with_wr_count        : boolean := false;
-
-        g_almost_empty_threshold : integer;  -- threshold for almost empty flag
-        g_almost_full_threshold  : integer   -- threshold for almost full flag
-    );
-
-    port (
-        rst_n_i : in std_logic := '1';
-
-        -- write port
-        clk_wr_i : in std_logic;
-        d_i      : in std_logic_vector(g_data_width-1 downto 0);
-        we_i     : in std_logic;
-
-        wr_empty_o        : out std_logic;
-        wr_full_o         : out std_logic;
-        wr_almost_empty_o : out std_logic;
-        wr_almost_full_o  : out std_logic;
-        wr_count_o        : out std_logic_vector(log2_ceil(g_size)-1 downto 0);
-
-        -- read port
-        clk_rd_i : in  std_logic;
-        q_o      : out std_logic_vector(g_data_width-1 downto 0);
-        rd_i     : in  std_logic;
-
-        rd_empty_o        : out std_logic;
-        rd_full_o         : out std_logic;
-        rd_almost_empty_o : out std_logic;
-        rd_almost_full_o  : out std_logic;
-        rd_count_o        : out std_logic_vector(log2_ceil(g_size)-1 downto 0)
-    );
-    end component generic_async_fifo;
 
   -----------------------------------------------------------------------------
   -- Constants declaration
@@ -192,6 +151,7 @@ architecture behaviour of wbmaster32 is
   signal wishbone_current_state : wishbone_state_type;
 
   signal wb_ack_t   : std_logic;
+  signal wb_err_t   : std_logic;
   signal wb_dat_i_t : std_logic_vector(31 downto 0);
   signal wb_cyc_t   : std_logic;
   signal wb_dat_o_t : std_logic_vector(31 downto 0);
@@ -200,6 +160,9 @@ architecture behaviour of wbmaster32 is
   signal wb_we_t    : std_logic;
   signal wb_sel_t   : std_logic_vector(3 downto 0);
   signal wb_stall_t : std_logic;
+
+  signal wb_ack_timeout_cnt : unsigned(log2_ceil(g_ACK_TIMEOUT)-1 downto 0);
+  signal wb_ack_timeout     : std_logic;
 
   -- L2P packet generator
   type   l2p_read_cpl_state_type is (L2P_IDLE, L2P_HEADER, L2P_DATA);
@@ -491,6 +454,18 @@ begin
             -- end of the bus cycle
             wb_cyc_t               <= '0';
             wishbone_current_state <= WB_IDLE;
+          elsif (wb_err_t = '1') or (wb_ack_timeout = '1') then
+            -- e.g. When trying to access unmapped wishbone addresses,
+            -- the wb crossbar asserts ERR. If ERR is not asserted when
+            -- accessing un-mapped addresses, a timeout makes sure the
+            -- transaction terminates.
+            if (wb_we_t = '0') then
+              from_wb_fifo_din <= (others => '1');  -- dummy data as the transaction failed
+              from_wb_fifo_wr  <= '1';
+            end if;
+            -- end of the bus cycle
+            wb_cyc_t               <= '0';
+            wishbone_current_state <= WB_IDLE;
           end if;
 
         when others =>
@@ -519,6 +494,36 @@ begin
   wb_dat_o   <= wb_dat_o_t;
   wb_ack_t   <= wb_ack_i;
   wb_stall_t <= wb_stall_i;
+  wb_err_t   <= wb_err_i;
+
+  -- ACK timeout
+  p_wb_ack_timeout_cnt : process (wb_clk_i, rst_n_i)
+  begin
+    if rst_n_i = c_RST_ACTIVE then
+      wb_ack_timeout_cnt <= (others => '1');
+    elsif rising_edge(wb_clk_i) then
+      if wishbone_current_state = WB_WAIT_ACK then
+        if wb_ack_timeout_cnt /= 0 then
+          wb_ack_timeout_cnt <= wb_ack_timeout_cnt - 1;
+        end if;
+      else
+        wb_ack_timeout_cnt <= (others => '1');
+      end if;
+    end if;
+  end process p_wb_ack_timeout_cnt;
+
+  p_ack_timeout : process (wb_clk_i, rst_n_i)
+  begin
+    if rst_n_i = c_RST_ACTIVE then
+      wb_ack_timeout <= '0';
+    elsif rising_edge(wb_clk_i) then
+      if wb_ack_timeout_cnt = 0 then
+        wb_ack_timeout <= '1';
+      else
+        wb_ack_timeout <= '0';
+      end if;
+    end if;
+  end process p_ack_timeout;
 
 end behaviour;
 
