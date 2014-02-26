@@ -196,7 +196,7 @@ architecture behaviour of l2p_dma_master is
   signal l2p_dma_stb_t : std_logic;
 
   -- L2P DMA Master FSM
-  type l2p_dma_state_type is (L2P_IDLE, L2P_WAIT_DATA, L2P_HEADER, L2P_ADDR_H,
+  type l2p_dma_state_type is (L2P_IDLE, L2P_SETUP, L2P_WAIT_DATA, L2P_HEADER, L2P_ADDR_H,
                               L2P_ADDR_L, L2P_DATA, L2P_LAST_DATA, L2P_WAIT_RDY);
   signal l2p_dma_current_state : l2p_dma_state_type;
 
@@ -326,7 +326,7 @@ begin
         else
           l2p_len_cnt <= (others => '0');
         end if;
-      elsif ((l2p_dma_current_state = L2P_DATA or l2p_dma_current_state = L2P_WAIT_RDY) and data_fifo_valid = '1') then
+      elsif ((l2p_dma_current_state = L2P_DATA) and (data_fifo_valid = '1' or data_fifo_valid_ex = '1')) then
         l2p_data_cnt <= l2p_data_cnt - 1;
       elsif (l2p_last_packet = '0' and l2p_dma_current_state = L2P_LAST_DATA) then
         -- load the host address of the next packet
@@ -396,7 +396,12 @@ begin
           l2p_edb_o          <= '0';
           data_fifo_valid_ex <= '0';
 
-          if (data_fifo_empty = '0') then
+          if (dma_ctrl_start_l2p_i = '1') then
+            l2p_dma_current_state <= L2P_SETUP;
+          end if;
+          
+        when L2P_SETUP =>
+          if (data_fifo_empty = '0' and l2p_rdy_i = '1') then
             -- We have data to send -> prepare a packet, first the header
             l2p_dma_current_state <= L2P_HEADER;
             -- request access to PCIe bus
@@ -454,7 +459,9 @@ begin
           data_fifo_valid_ex <= '0';
           if (data_fifo_valid = '1' or data_fifo_valid_ex = '1') then
             -- send data with byte swap if requested
-            ldm_arb_data_o  <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
+            --ldm_arb_data_o  <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
+            ldm_arb_data_o(10 downto 0)  <= std_logic_vector(l2p_data_cnt);
+            ldm_arb_data_o(31 downto 11) <= (others => '0');
             ldm_arb_valid_o <= '1';
           else
             ldm_arb_valid_o <= '0';
@@ -519,16 +526,15 @@ begin
             ldm_arb_valid_o <= '0';
           else
             -- send last data word with byte swap if requested
-            ldm_arb_data_o   <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
+            --ldm_arb_data_o   <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
+            ldm_arb_data_o(10 downto 0)  <= std_logic_vector(l2p_data_cnt);
+            ldm_arb_data_o(31 downto 11) <= (others => '0');
             ldm_arb_valid_o  <= '1';
             -- clear dframe signal to indicate the end of packet
             ldm_arb_dframe_o <= '0';
             if(l2p_len_cnt > 0) then
               -- There is still data to be send -> start a new packet
-              l2p_dma_current_state <= L2P_HEADER;
-              -- As the end of packet is used to delimit arbitration phases
-              -- we have to ask again for permission
-              ldm_arb_req_o         <= '1';
+              l2p_dma_current_state <= L2P_SETUP;
             else
               -- Nomore data to send, go back to sleep
               l2p_dma_current_state <= L2P_IDLE;
