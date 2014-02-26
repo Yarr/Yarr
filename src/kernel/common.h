@@ -7,6 +7,8 @@
 // #          Modified for SPEC card
 // ################################
 
+//#define DEBUG
+
 #ifndef _SPECDRIVER_COMMON_H
 #define _SPECDRIVER_COMMON_H
 
