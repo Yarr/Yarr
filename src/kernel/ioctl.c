@@ -336,7 +336,7 @@ static int ioctl_wait_interrupt(specdriver_privdata_t *privdata, unsigned long a
     int ret;
 
 	if (arg >= SPECDRIVER_INT_MAXSOURCES)
-		return -EFAULT;						/* User tried to overrun the IRQ_SOURCES array */
+		return -1;						/* User tried to overrun the IRQ_SOURCES array */
 
 	irq_source = arg;
 
@@ -348,7 +348,7 @@ static int ioctl_wait_interrupt(specdriver_privdata_t *privdata, unsigned long a
 		/* We wait here with an interruptible timeout. This will be interrupted
                  * by int.c:check_acknowledge_channel() as soon as in interrupt for
                  * the specified source arrives. */
-		ret = wait_event_interruptible_timeout( (privdata->irq_queues[irq_source]), (atomic_read(&(privdata->irq_outstanding[irq_source])) > 0), (100*HZ/1000) ); // Timeout after 100ms
+		ret = wait_event_interruptible_timeout( (privdata->irq_queues[irq_source]), (atomic_read(&(privdata->irq_outstanding[irq_source])) > 0), (500*HZ/1000) ); // Timeout after 100ms
         if (ret == 0)
             mod_info("Wait for interrupt timed out!");
 
@@ -359,7 +359,7 @@ static int ioctl_wait_interrupt(specdriver_privdata_t *privdata, unsigned long a
 	    temp =0;
 	}
     //mod_info("Done waiting for interrupt!");
-	return 0;
+	return ret;
 }
 
 /**
