@@ -582,7 +582,6 @@ begin
       rst_n_i => rst_n,
 
       dma_ctrl_irq_o => dma_irq,
-      l2p_rdy => l2p_rdy,
 
       dma_ctrl_carrier_addr_o => dma_ctrl_carrier_addr,
       dma_ctrl_host_addr_h_o  => dma_ctrl_host_addr_h,
