@@ -33,6 +33,9 @@
 --------------------------------------------------------------------------------
 -- last changes: 11-07-2011 (mcattin) Replaced Xilinx Coregen FIFOs with genrams
 --               library cores from ohwr.org
+-- 26.02.14 (theim) Fixed a racecondition where the statemachine could end up
+--                  in a deadlock. Added a Setup state after Idle and fixed the
+--                  counting of the l2p_data_cnt.
 --------------------------------------------------------------------------------
 -- TODO: - byte enable support
 --------------------------------------------------------------------------------
