@@ -42,8 +42,8 @@ entity yarr is
       L_CLKp : in std_logic;            -- Local bus clock (frequency set in GN4124 config registers)
       L_CLKn : in std_logic;            -- Local bus clock (frequency set in GN4124 config registers)
 		
-		clk_125m_pllref_n_i : in std_logic;
-		clk_125m_pllref_p_i : in std_logic;
+		--clk_125m_pllref_n_i : in std_logic;
+		--clk_125m_pllref_p_i : in std_logic;
 
       L_RST_N : in std_logic;           -- Reset from GN4124 (RSTOUT18_N)
 
@@ -192,6 +192,9 @@ architecture rtl of yarr is
         csr_dat_i   : in  std_logic_vector(31 downto 0);
         csr_ack_i   : in  std_logic;
         csr_stall_i : in  std_logic;
+        csr_err_i   : in  std_logic;
+        csr_rty_i   : in  std_logic;
+        csr_int_i   : in  std_logic;
 
         ---------------------------------------------------------
         -- DMA interface (Pipelined wishbone master)
@@ -204,7 +207,10 @@ architecture rtl of yarr is
         dma_cyc_o   : out std_logic;
         dma_dat_i   : in  std_logic_vector(31 downto 0);
         dma_ack_i   : in  std_logic;
-        dma_stall_i : in  std_logic
+        dma_stall_i : in  std_logic;
+        dma_err_i   : in  std_logic;
+        dma_rty_i   : in  std_logic;
+        dma_int_i   : in  std_logic
         );
   end component;  --  gn4124_core
 
@@ -290,7 +296,7 @@ architecture rtl of yarr is
 		 --! Bank and port size selection
 		 g_BANK_PORT_SELECT   : string  := "SPEC_BANK3_32B_32B";
 		 --! Core's clock period in ps
-		 g_MEMCLK_PERIOD      : integer := 3000;
+		 g_MEMCLK_PERIOD      : integer := 3125;
 		 --! If TRUE, uses Xilinx calibration core (Input term, DQS centering)
 		 g_CALIB_SOFT_IP      : string  := "TRUE";
 		 --! User ports addresses maping (BANK_ROW_COLUMN or ROW_BANK_COLUMN)
@@ -478,10 +484,9 @@ architecture rtl of yarr is
 	component clk_gen
 	port
 	 (-- Clock in ports
-	  CLK_125_P         : in     std_logic;
-	  CLK_125_N         : in     std_logic;
+	  CLK_200			: in std_logic;
 	  -- Clock out ports
-	  CLK_125          : out    std_logic;
+	  CLK_160          : out    std_logic;
 	  CLK_333          : out    std_logic;
 	  -- Status and control signals
 	  RESET             : in     std_logic;
@@ -517,7 +522,7 @@ architecture rtl of yarr is
 
   -- System clock
   signal sys_clk : std_logic;
-  signal CLK_125 : std_logic;
+  signal CLK_160 : std_logic;
   signal CLK_333 : std_logic;
   
   signal locked : std_logic;
@@ -599,6 +604,8 @@ architecture rtl of yarr is
   signal debug_dma : std_logic_vector(31 downto 0);
   
   signal ddr_status : std_logic_vector(31 downto 0);
+  signal gn4124_core_Status : std_logic_vector(31 downto 0);
+  
 begin
 
 
@@ -625,8 +632,7 @@ begin
       ---------------------------------------------------------
       -- Control and status
       rst_n_a_i             => L_RST_N,
-      status_o(0)           => p2l_pll_locked,
-      status_o(31 downto 1) => open,
+      status_o => gn4124_core_status,
 
 
       ---------------------------------------------------------
@@ -694,6 +700,9 @@ begin
       csr_dat_i   => wbm_dat_i,
       csr_ack_i   => wbm_ack,
       csr_stall_i => wbm_stall,
+      csr_err_i   => '0',
+      csr_rty_i   => '0',
+      csr_int_i   => '0',
 
       ---------------------------------------------------------
       -- DMA wishbone interface (master pipelined)
@@ -706,7 +715,10 @@ begin
       dma_cyc_o   => dma_cyc,
       dma_dat_i   => dma_dat_i,
       dma_ack_i   => dma_ack,
-      dma_stall_i => dma_stall
+      dma_stall_i => dma_stall,
+      dma_err_i   => '0',
+      dma_rty_i   => '0',
+      dma_int_i   => '0'
       );
 	GPIO(0) <= irq_out;
 	GPIO(1) <= '0';
@@ -778,68 +790,14 @@ begin
   dummy_stat_reg_3      <= X"12345678";
   dummy_stat_reg_switch <= X"0000000" & "000" & p2l_pll_locked;
 
---  cmp_dummy_ctrl_regs : dummy_ctrl_regs_wb_slave
---    port map(
---      rst_n_i         => L_RST_N,
---      wb_clk_i        => l_clk,
---      wb_addr_i       => wb_adr(1 downto 0),
---      wb_data_i       => wb_dat_o,
---      wb_data_o       => wb_dat_i(95 downto 64),
---      wb_cyc_i        => wb_cyc(2),
---      wb_sel_i        => wb_sel,
---      wb_stb_i        => wb_stb,
---      wb_we_i         => wb_we,
---      wb_ack_o        => wb_ack(2),
---      dummy_reg_1_o   => dummy_ctrl_reg_1,
---      dummy_reg_2_o   => dummy_ctrl_reg_2,
---      dummy_reg_3_o   => dummy_ctrl_reg_3,
---      dummy_reg_led_o => dummy_ctrl_reg_led
---      );
-
   led_red_o   <= dummy_ctrl_reg_led(0);
   led_green_o <= dummy_ctrl_reg_led(1);
 
-  ------------------------------------------------------------------------------
-  -- DMA wishbone bus connected to a DPRAM
-  ------------------------------------------------------------------------------
---  process (l_clk, L_RST_N)
---  begin
---    if (L_RST_N = '0') then
---      dma_ack <= '0';
---    elsif rising_edge(l_clk) then
---      if (dma_cyc = '1' and dma_stb = '1') then
---        dma_ack <= '1';
---      else
---        dma_ack <= '0';
---      end if;
---    end if;
---  end process;
---
---  dma_stall <= '0';
---
---  ram_we <= dma_we and dma_cyc and dma_stb;
---
---  cmp_test_ram : generic_spram
---    generic map(
---      g_data_width               => 32,
---      g_size                     => 2048,
---      g_with_byte_enable         => false,
---      g_addr_conflict_resolution => "write_first"
---      )
---    port map(
---      rst_n_i => L_RST_N,
---      clk_i   => l_clk,
---      bwe_i   => "0000",
---      we_i    => ram_we,
---      a_i     => dma_adr(10 downto 0),
---      d_i     => dma_dat_o,
---      q_o     => dma_dat_i
---      );
 
 	--                       [3] +  [1]   +  [1]  +  [3]  +   [8]                +       [16]
-	TRIG0(31 downto 0) <= dma_stall & ddr_status(7 downto 1) & dma_adr(7 downto 0) & wb_adr(15 downto 0)  ;
-	TRIG1(31 downto 0) <= dma_dat_o(31 downto 0);
-	TRIG2(31 downto 0) <= dma_cyc & dma_stb & dma_ack & irq_to_gn4124 & dma_dat_i(27 downto 0);
+	TRIG0(31 downto 0) <= gn4124_core_status;
+	TRIG1(31 downto 0) <= dma_adr;
+	TRIG2(31 downto 0) <= wbm_adr;
 	ila_i : ila
 	  port map (
 		 CONTROL => CONTROL,
@@ -925,10 +883,9 @@ rst <= (L_RST_N and locked);
     cmp_clk_gen : clk_gen
     port map (
         -- Clock in ports
-        CLK_125_P => clk_125m_pllref_p_i,
-        CLK_125_N => clk_125m_pllref_n_i,
+        CLK_200 => l_clk,
         -- Clock out ports
-        CLK_125 => CLK_125,
+        CLK_160 => CLK_160,
         CLK_333 => CLK_333,
         -- Status and control signals
         RESET  => not L_RST_N,
