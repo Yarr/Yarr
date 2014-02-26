@@ -8,10 +8,10 @@
 NET "clk20_vcxo_i" LOC = H12; # CLK25_VCXO
 NET "clk20_vcxo_i" IOSTANDARD = "LVCMOS25";
 
-NET "clk_125m_pllref_n_i" LOC = F10;
-NET "clk_125m_pllref_n_i" IOSTANDARD = "LVDS_25";
-NET "clk_125m_pllref_p_i" LOC = G9;
-NET "clk_125m_pllref_p_i" IOSTANDARD = "LVDS_25";
+#NET "clk_125m_pllref_n_i" LOC = F10;
+#NET "clk_125m_pllref_n_i" IOSTANDARD = "LVDS_25";
+#NET "clk_125m_pllref_p_i" LOC = G9;
+#NET "clk_125m_pllref_p_i" IOSTANDARD = "LVDS_25";
 
 #----------------------------------------
 # SFP slot
@@ -572,9 +572,17 @@ NET "DDR3_UDQS_N"  IN_TERM = NONE;
 
 NET "L_CLKp" TNM_NET = "l_clkp_grp";
 TIMESPEC TS_l_clkp = PERIOD "l_clkp_grp" 5 ns HIGH 50%;
+NET "L_CLKn" TNM_NET = "l_clkn_grp";
+TIMESPEC TS_l_clkn = PERIOD "l_clkn_grp" 5 ns HIGH 50%;
+
 NET "P2L_CLKp" TNM_NET = "p2l_clkp_grp";
 TIMESPEC TS_p2l_clkp = PERIOD "p2l_clkp_grp" 5 ns HIGH 50%;
 NET "P2L_CLKn" TNM_NET = "p2l_clkn_grp";
+TIMESPEC TS_p2l_clkn = PERIOD "p2l_clkn_grp" 5 ns HIGH 50%;
+
+NET "L2P_CLKp" TNM_NET = "p2l_clkp_grp";
+TIMESPEC TS_p2l_clkp = PERIOD "p2l_clkp_grp" 5 ns HIGH 50%;
+NET "L2P_CLKn" TNM_NET = "p2l_clkn_grp";
 TIMESPEC TS_p2l_clkn = PERIOD "p2l_clkn_grp" 5 ns HIGH 50%;
 
 # System clock
@@ -582,11 +590,11 @@ TIMESPEC TS_p2l_clkn = PERIOD "p2l_clkn_grp" 5 ns HIGH 50%;
 NET "clk20_vcxo_i" TNM_NET = "clk20_vcxo_i_grp";
 TIMESPEC TS_clk20_vcxo_i = PERIOD "clk20_vcxo_i_grp" 50 ns HIGH 50%;
 
-NET "clk_125m_pllref_n_i" TNM_NET = "clk_125m_pllref_n_i_grp";
-TIMESPEC TS_clk_125m_pllref_n_i = PERIOD "clk_125m_pllref_n_i_grp" 8 ns HIGH 50%;
+#NET "clk_125m_pllref_n_i" TNM_NET = "clk_125m_pllref_n_i_grp";
+#TIMESPEC TS_clk_125m_pllref_n_i = PERIOD "clk_125m_pllref_n_i_grp" 8 ns HIGH 50%;
 
-NET "clk_125m_pllref_p_i" TNM_NET = "clk_125m_pllref_p_i_grp";
-TIMESPEC TS_clk_125m_pllref_p_i = PERIOD "clk_125m_pllref_p_i_grp" 8 ns HIGH 50%;
+#NET "clk_125m_pllref_p_i" TNM_NET = "clk_125m_pllref_p_i_grp";
+#TIMESPEC TS_clk_125m_pllref_p_i = PERIOD "clk_125m_pllref_p_i_grp" 8 ns HIGH 50%;
 
 # DDR3
 NET "cmp_ddr3_ctrl/cmp_ddr3_ctrl_wrapper/gen_spec_bank3_32b_32b.cmp_ddr3_ctrl/memc3_infrastructure_inst/sys_clk_ibufg" TNM_NET = "SYS_CLK5";
