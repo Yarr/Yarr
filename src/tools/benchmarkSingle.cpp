@@ -1,6 +1,7 @@
 #include <SpecController.h>
 
 #include <iostream>
+#include <fstream>
 #include <sys/time.h>
 #include <string.h>
 #include <stdint.h>
@@ -8,8 +9,11 @@
 int main(void) {
     SpecController mySpec(0);
     
-    int maxCycles = 10;
-    int maxLoops = 1024*100;
+    std::fstream file_write("benchmarkSingle_write.out", std::ios::out);
+    std::fstream file_read("benchmarkSingle_read.out", std::ios::out);
+  
+    int maxCycles = 50;
+    int maxLoops = 1024;
 
     double overall_time = 0;
     double overall_data = 0;
@@ -18,7 +22,7 @@ int main(void) {
     std::cout << std::endl << "==========================================" << std::endl;
     std::cout << "Starting Write Benchmark:" << std::endl;
     for (int cycles=0; cycles<maxCycles; cycles++) {
-        const size_t size = 128;
+        const size_t size = 32*(2*(cycles+1));
         uint32_t data[size];
         // Prepare data pattern
         memset(data, 0x5A, size*4);
@@ -37,6 +41,7 @@ int main(void) {
         time += (end.tv_usec - start.tv_usec) / 1000.0; //usecs
         overall_time += time;
         std::cout << "Transferred " << total_data << "MB in " << time << " ms: " << total_data/time*1000.0 << " MB/s" << std::endl;
+        file_write << size << "\t" << total_data << "\t" << time << "\t" << total_data/time*1000.0 << std::endl;
     }
     std::cout << "===========================================" << std::endl;
     std::cout << "---> Mean Transfer Speed: " << overall_data/overall_time*1000.0 << " MB/s"  << std::endl;
@@ -48,7 +53,7 @@ int main(void) {
     std::cout << "===========================================" << std::endl;
     std::cout << "Starting Read Benchmark:" << std::endl;
     for (int cycles=0; cycles<maxCycles; cycles++) {
-        const size_t size = 128;
+        const size_t size = 4*(2*(cycles+1));
         uint32_t data[size];
         
         // Read from Spec
@@ -66,10 +71,14 @@ int main(void) {
         time += (end.tv_usec - start.tv_usec) / 1000.0; //usecs
         overall_time += time;
         std::cout << "Transferred " << total_data << "MB in " << time << " ms: " << total_data/time*1000.0 << " MB/s" << std::endl;
+        file_read << size << "\t" << total_data << "\t" << time << "\t" << total_data/time*1000.0 << std::endl;
     }
     std::cout << "===========================================" << std::endl;
     std::cout << "---> Mean Transfer Speed: " << overall_data/overall_time*1000.0 << " MB/s"  << std::endl;
     std::cout << "===========================================" << std::endl << std::endl;
+    
+    file_write.close();
+    file_read.close();
 
     return 0;
 }
