@@ -195,6 +195,7 @@ architecture behaviour of l2p_dma_master is
   -- Wishbone
   signal wb_read_cnt   : unsigned(31 downto 0);
   signal wb_ack_cnt    : unsigned(31 downto 0);
+  signal wb_timeout_cnt : unsigned(31 downto 0);
   signal l2p_dma_cyc_t : std_logic;
   signal l2p_dma_stb_t : std_logic;
 
@@ -734,8 +735,11 @@ begin
       -- cyc signal management
       if (addr_fifo_valid = '1') then
         l2p_dma_cyc_t <= '1';
-      elsif (wb_ack_cnt = wb_read_cnt-1 and l2p_dma_ack_i = '1') then
+      elsif (wb_ack_cnt >= wb_read_cnt) then
         -- last ack received -> end of the transaction
+        l2p_dma_cyc_t <= '0';
+      elsif (wb_timeout_cnt >= 2000) then
+        -- timeout, data not coming
         l2p_dma_cyc_t <= '0';
       end if;
     end if;
@@ -768,6 +772,20 @@ begin
       end if;
     end if;
   end process p_wb_ack_cnt;
+  
+  -- Wishbone timeout counter
+  p_wb_timeout_cnt : process (l2p_dma_clk_i, rst_n_i)
+  begin
+    if (rst_n_i = c_RST_ACTIVE) then
+      wb_timeout_cnt <= (others => '0');
+    elsif rising_edge(l2p_dma_clk_i) then
+      if (not(wb_ack_cnt = wb_read_cnt)) then
+        wb_timeout_cnt <= wb_timeout_cnt + 1;
+      else
+        wb_timeout_cnt <= (others =>'0');
+      end if;
+    end if;
+  end process p_wb_timeout_cnt;
 
 
 end behaviour;
