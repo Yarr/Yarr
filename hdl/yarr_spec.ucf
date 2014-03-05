@@ -587,8 +587,8 @@ TIMESPEC TS_p2l_clkn = PERIOD "p2l_clkn_grp" 5 ns HIGH 50%;
 
 # System clock
 
-NET "clk20_vcxo_i" TNM_NET = "clk20_vcxo_i_grp";
-TIMESPEC TS_clk20_vcxo_i = PERIOD "clk20_vcxo_i_grp" 50 ns HIGH 50%;
+#NET "clk20_vcxo_i" TNM_NET = "clk20_vcxo_i_grp";
+#TIMESPEC TS_clk20_vcxo_i = PERIOD "clk20_vcxo_i_grp" 50 ns HIGH 50%;
 
 #NET "clk_125m_pllref_n_i" TNM_NET = "clk_125m_pllref_n_i_grp";
 #TIMESPEC TS_clk_125m_pllref_n_i = PERIOD "clk_125m_pllref_n_i_grp" 8 ns HIGH 50%;
