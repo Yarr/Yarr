@@ -370,7 +370,8 @@ begin
   status_o(26) <= wbm_arb_req;
   status_o(27 downto 28) <= p_rd_d_rdy;
   status_o(29 downto 30) <= l_wr_rdy;
-  status_o(31) <= l2p_edb;
+  status_o(31) <= l2p_rdy;
+--  status_o(31 downto 1) <= (others => '0');
   
 
   ------------------------------------------------------------------------------
