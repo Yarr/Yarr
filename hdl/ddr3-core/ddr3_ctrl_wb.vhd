@@ -125,7 +125,7 @@ architecture rtl of ddr3_ctrl_wb is
   ------------------------------------------------------------------------------
   constant c_DDR_BURST_LENGTH : integer := 32;  -- must not exceed 63
 
-  constant c_FIFO_ALMOST_FULL : std_logic_vector(6 downto 0) := std_logic_vector(to_unsigned(57, 7));
+  constant c_FIFO_ALMOST_FULL : std_logic_vector(6 downto 0) := std_logic_vector(to_unsigned(53, 7));
 
   constant c_ADDR_SHIFT : integer := log2_ceil(g_DATA_PORT_SIZE/8);
 
@@ -143,11 +143,13 @@ architecture rtl of ddr3_ctrl_wb is
   signal wb_cyc_d      : std_logic;
   signal wb_cyc_f_edge : std_logic;
   signal wb_cyc_r_edge : std_logic;
+  signal wb_stb_valid  : std_logic;
   signal wb_stb_d      : std_logic;
   signal wb_stb_f_edge : std_logic;
   signal wb_we_d       : std_logic;
   signal wb_we_f_edge  : std_logic;
   signal wb_addr_d     : std_logic_vector(31 downto 0);
+  signal wb_stall      : std_logic;
 
   signal ddr_burst_cnt     : unsigned(5 downto 0);
   signal ddr_cmd_en        : std_logic;
@@ -188,6 +190,9 @@ begin
   ddr_wr_clk_o  <= wb_clk_i;
   ddr_rd_clk_o  <= wb_clk_i;
 
+  -- stb is valid only if cyc is '1'
+  wb_stb_valid <= wb_stb_i and wb_cyc_i;
+
   -- Cycle, we and strobe rising and falling edge detection
   p_wb_cyc_f_edge : process (wb_clk_i)
   begin
@@ -198,7 +203,7 @@ begin
         wb_we_d  <= '0';
       else
         wb_cyc_d <= wb_cyc_i;
-        wb_stb_d <= wb_stb_i;
+        wb_stb_d <= wb_stb_valid;
         wb_we_d  <= wb_we_i;
       end if;
     end if;
@@ -206,7 +211,7 @@ begin
 
   wb_cyc_f_edge <= not(wb_cyc_i) and wb_cyc_d;
   wb_cyc_r_edge <= wb_cyc_i and not(wb_cyc_d);
-  wb_stb_f_edge <= not(wb_stb_i) and wb_stb_d;
+  wb_stb_f_edge <= not(wb_stb_valid) and wb_stb_d;
   wb_we_f_edge  <= not(wb_we_i) and wb_we_d;
 
   -- Data inputs
@@ -217,7 +222,7 @@ begin
         ddr_wr_data <= (others => '0');
         ddr_wr_en   <= '0';
       else
-        if (wb_stb_i = '1') and (wb_cyc_i = '1') and (wb_we_i = '1') then
+        if (wb_stb_valid = '1') and (wb_cyc_i = '1') and (wb_we_i = '1') then
           ddr_wr_en <= '1';
         else
           ddr_wr_en <= '0';
@@ -239,7 +244,7 @@ begin
         wb_addr_d         <= (others => '0');
       else
         wb_addr_d <= wb_addr_i;
-        if ((ddr_burst_cnt = 0 and wb_cyc_r_edge = '1' and wb_stb_i = '1') or
+        if ((ddr_burst_cnt = 0 and wb_cyc_r_edge = '1' and wb_stb_valid = '1') or
             (ddr_burst_cnt = to_unsigned(1, ddr_burst_cnt'length))) then
           ddr_cmd_byte_addr <= wb_addr_d(g_BYTE_ADDR_WIDTH-c_ADDR_SHIFT-1 downto 0) & addr_shift;
           ddr_cmd_instr     <= "00" & not(wb_we_d);
@@ -261,8 +266,8 @@ begin
       else
         ddr_cmd_en_d <= ddr_cmd_en;
         if (((ddr_burst_cnt = c_DDR_BURST_LENGTH) or
-             ((wb_cyc_f_edge = '1' and wb_we_d = '1') and (ddr_burst_cnt > 0))or
-             (wb_stb_f_edge = '1' and wb_we_d = '0')) and ddr_cmd_full_i = '0') then
+             (wb_cyc_f_edge = '1' and wb_we_d = '1') or
+             (wb_stb_f_edge = '1' and wb_we_d = '0' and wb_stall = '0')) and ddr_cmd_full_i = '0' and ddr_burst_cnt > 0) then
           ddr_cmd_en <= '1';            -- might have problem if burst_cnt = BURST_LENGTH for more than 2 clk cycles
         else
           ddr_cmd_en <= '0';
@@ -281,9 +286,9 @@ begin
       if (rst_n = '0') then
         ddr_burst_cnt <= (others => '0');
       else
-        if (wb_cyc_f_edge = '1') then
+        if ((wb_cyc_f_edge = '1' and wb_we_d = '1') or (wb_stb_f_edge = '1' and wb_we_d = '0' and wb_stall = '0')) then
           ddr_burst_cnt <= to_unsigned(0, ddr_burst_cnt'length);
-        elsif (wb_stb_i = '1' and wb_cyc_i = '1') then
+        elsif (wb_stb_valid = '1' and wb_cyc_i = '1') then
           if (ddr_burst_cnt = c_DDR_BURST_LENGTH) then
             ddr_burst_cnt <= to_unsigned(1, ddr_burst_cnt'length);
           else
@@ -324,19 +329,20 @@ begin
   begin
     if rising_edge(wb_clk_i) then
       if (rst_n = '0') then
-        wb_stall_o <= '0';
+        wb_stall <= '0';
       else
         if ((ddr_wr_count_i > c_FIFO_ALMOST_FULL) or
             (ddr_wr_full_i = '1') or
             (ddr_rd_count_i > c_FIFO_ALMOST_FULL) or
             (ddr_rd_full_i = '1')) then
-          wb_stall_o <= '1';
+          wb_stall <= '1';
         else
-          wb_stall_o <= '0';
+          wb_stall <= '0';
         end if;
       end if;
     end if;
   end process p_ddr_stall;
+  wb_stall_o <= wb_stall;
   --wb_stall_o <= ddr_cmd_full_i or ddr_wr_full_i or ddr_rd_full_i;
 
 

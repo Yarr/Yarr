@@ -443,10 +443,30 @@ architecture rtl of ddr3_ctrl is
 --==============================================================================
 --! Architecure begin
 --==============================================================================
+  signal wb0_ack : std_logic;
+  signal wb0_stall : std_logic;
 begin
+
+   wb0_ack_o <= wb0_ack;
+   wb0_stall_o <= wb0_stall;
 
 	status_o(6 downto 1) <= p0_cmd_bl;
 	status_o(7) <= p0_cmd_en;
+   status_o(8) <= p0_cmd_full;
+   status_o(8) <= p0_cmd_full;
+   status_o(9) <= p0_wr_en;
+   status_o(10) <= p0_wr_full;
+   status_o(11) <= p0_rd_en;
+   status_o(12) <= p0_rd_full;
+   status_o(13) <= wb0_cyc_i;
+   status_o(14) <= wb0_stb_i;
+   status_o(15) <= wb0_we_i;
+   status_o(16) <= wb0_ack;
+   status_o(17) <= wb0_stall;
+   status_o(18) <= p0_wr_error;
+   status_o(19) <= p0_rd_error;
+   status_o(31 downto 20) <= p0_cmd_byte_addr(11 downto 0);
+--   status_o(31 downto 1) <= (others => '0');
 
   ------------------------------------------------------------------------------
   -- PORT 0
@@ -491,8 +511,8 @@ begin
       wb_addr_i           => wb0_addr_i,
       wb_data_i           => wb0_data_i,
       wb_data_o           => wb0_data_o,
-      wb_ack_o            => wb0_ack_o,
-      wb_stall_o          => wb0_stall_o
+      wb_ack_o            => wb0_ack,
+      wb_stall_o          => wb0_stall
       );
 
   ------------------------------------------------------------------------------
