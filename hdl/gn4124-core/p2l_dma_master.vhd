@@ -591,7 +591,7 @@ begin
       -- cyc signal management
       if (to_wb_fifo_valid = '1') then
         p2l_dma_cyc_t <= '1';
-      elsif (wb_ack_cnt = wb_write_cnt-1 and p2l_dma_ack_i = '1') then
+      elsif (wb_ack_cnt >= wb_write_cnt) then
         -- last ack received -> end of the transaction
         p2l_dma_cyc_t <= '0';
       end if;
@@ -625,6 +625,7 @@ begin
       end if;
     end if;
   end process p_wb_ack_cnt;
+      
 
 end behaviour;
 
