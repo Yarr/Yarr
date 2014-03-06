@@ -793,20 +793,20 @@ begin
   led_red_o   <= dummy_ctrl_reg_led(0);
   led_green_o <= dummy_ctrl_reg_led(1);
 
-	TRIG0(31 downto 0) <= ddr_status;
-	TRIG1(31 downto 0) <= dma_adr;
-	TRIG2(31 downto 0) <= dma_dat_i;
-	ila_i : ila
-	  port map (
-		 CONTROL => CONTROL,
-		 CLK => l_clk,
-		 TRIG0 => TRIG0,
-		 TRIG1 => TRIG1,
-		 TRIG2 => TRIG2);
-		 
-	ila_icon_i : ila_icon
-		port map (
-    CONTROL0 => CONTROL);
+--	TRIG0(31 downto 0) <= ddr_status;
+--	TRIG1(31 downto 0) <= dma_adr;
+--	TRIG2(31 downto 0) <= dma_dat_i;
+--	ila_i : ila
+--	  port map (
+--		 CONTROL => CONTROL,
+--		 CLK => l_clk,
+--		 TRIG0 => TRIG0,
+--		 TRIG1 => TRIG1,
+--		 TRIG2 => TRIG2);
+--		 
+--	ila_icon_i : ila_icon
+--		port map (
+--    CONTROL0 => CONTROL);
 	 
   ------------------------------------------------------------------------------
   -- Interrupt stuff
