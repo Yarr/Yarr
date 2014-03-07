@@ -16,6 +16,14 @@ YarrGui::YarrGui(QWidget *parent) :
     devicePath.setFilter(QDir::System);
     deviceList = devicePath.entryList(filter);
     ui->device_listWidget->addItems(deviceList);
+
+    QVector<double> x(100), y(100);
+    for (int i=0; i<100; i++) {
+        x[i] = i*0.01;
+        y[i] = sin(i*0.01);
+    }
+    ui->plotWidget->addGraph();
+    ui->plotWidget->graph(0)->setData(x, y);
 }
 
 YarrGui::~YarrGui()
