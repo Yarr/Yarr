@@ -18,8 +18,6 @@ public:
     ~YarrGui();
 
 private slots:
-    void on_device_listView_clicked(const QModelIndex &index);
-
     void on_device_listWidget_currentItemChanged(QListWidgetItem *current, QListWidgetItem *previous);
 
 private:
