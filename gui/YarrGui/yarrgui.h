@@ -2,6 +2,8 @@
 #define YARRGUI_H
 
 #include <QMainWindow>
+#include <QDir>
+#include <QListWidgetItem>
 
 namespace Ui {
 class YarrGui;
@@ -15,8 +17,14 @@ public:
     explicit YarrGui(QWidget *parent = 0);
     ~YarrGui();
 
+private slots:
+    void on_device_listView_clicked(const QModelIndex &index);
+
+    void on_device_listWidget_currentItemChanged(QListWidgetItem *current, QListWidgetItem *previous);
+
 private:
     Ui::YarrGui *ui;
+    QDir devicePath;
 };
 
 #endif // YARRGUI_H
