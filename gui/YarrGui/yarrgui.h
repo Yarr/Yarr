@@ -5,6 +5,8 @@
 #include <QDir>
 #include <QListWidgetItem>
 
+#include <cmath>
+
 namespace Ui {
 class YarrGui;
 }

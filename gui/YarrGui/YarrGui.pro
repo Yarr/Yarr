@@ -6,15 +6,17 @@
 
 QT       += core gui
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
 TARGET = YarrGui
 TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        yarrgui.cpp
+        yarrgui.cpp \
+    qcustomplot.cpp
 
-HEADERS  += yarrgui.h
+HEADERS  += yarrgui.h \
+    qcustomplot.h
 
 FORMS    += yarrgui.ui
