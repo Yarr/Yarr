@@ -3,8 +3,8 @@
 
 #include <QMainWindow>
 #include <QDir>
-#include <QListWidgetItem>
 
+#include <string>
 #include <cmath>
 
 namespace Ui {
@@ -20,9 +20,10 @@ public:
     ~YarrGui();
 
 private slots:
-    void on_device_listView_clicked(const QModelIndex &index);
 
-    void on_device_listWidget_currentItemChanged(QListWidgetItem *current, QListWidgetItem *previous);
+    void on_device_comboBox_currentIndexChanged(const QString &arg1);
+
+    void on_device_comboBox_currentIndexChanged(int index);
 
 private:
     Ui::YarrGui *ui;
