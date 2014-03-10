@@ -1,13 +1,20 @@
-QMAKE=qmake
+UNAME := $(shell uname)
+ifeq ($(UNAME),Linux)
+	TARGET=YarrGui
+	QMAKE=qmake-qt4
+endif
+ifeq ($(UNAME),Darwin)
+	TARGET=YarrGui.app
+	QMAKE=qmake
+endif
 MAKE=make
 BUILD=build
 BIN=bin
-TARGET=YarrGui.app
 
 all:
 	mkdir -p $(BUILD)
 	mkdir -p $(BIN)
-	$(QMAKE) -o $(PWD)/$(BUILD)/Makefile YarrGui/YarrGui.pro
+	$(QMAKE) -o $(PWD)/$(BUILD)/Makefile YarrGui/YarrGui.pro CONFIG+=debug CONFIG+=x86_64
 	$(MAKE) -C $(PWD)/$(BUILD)
 	rm -rf $(PWD)/$(BIN)/$(TARGET)
 	mv $(PWD)/$(BUILD)/$(TARGET) $(PWD)/$(BIN)/$(TARGET)

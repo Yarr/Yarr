@@ -56,6 +56,7 @@ class SpecController {
         SpecController();
         ~SpecController();
 
+        bool isInitialized();
         int getId();
         int getBarSize(unsigned int bar);
 

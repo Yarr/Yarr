@@ -43,6 +43,10 @@ SpecController::~SpecController() {
     delete spec;
 }
 
+bool SpecController::isInitialized() {
+    return is_initialized;
+}
+
 int SpecController::getId() {
     return specId;
 }

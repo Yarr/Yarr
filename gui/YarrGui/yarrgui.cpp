@@ -1,6 +1,6 @@
 #include "yarrgui.h"
 #include "ui_yarrgui.h"
-
+#include <iostream>
 YarrGui::YarrGui(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::YarrGui)
@@ -15,21 +15,20 @@ YarrGui::YarrGui(QWidget *parent) :
     filter << "spec*";
     devicePath.setFilter(QDir::System);
     deviceList = devicePath.entryList(filter);
-
-    // Init device vector
-    specVec.resize(deviceList.size());
-    for(int i=0; i<deviceList.size(); i++)
-        specVec[i] = new SpecController;
-
+    
     // Display devices in list
     ui->device_comboBox->addItems(deviceList);
+
+    // Init device vector
+    for(int i=0; i<deviceList.size(); i++)
+        specVec.push_back(new SpecController());
 }
 
 YarrGui::~YarrGui()
 {
     // Clean up devices
-    for(int i=0; i<deviceList.size(); i++)
-        delete specVec[i];
+    //for(int i=0; i<deviceList.size(); i++)
+        //delete specVec[i];
 
     delete ui;
 }
@@ -41,10 +40,13 @@ void YarrGui::on_device_comboBox_currentIndexChanged(const QString &arg1)
 
 void YarrGui::on_device_comboBox_currentIndexChanged(int index)
 {
-    ui->specid_value->setNum(specVec[index]->getId());
-    ui->bar0_value->setNum(specVec[index]->getBarSize(0));
-    ui->bar4_value->setNum(specVec[index]->getBarSize(4));
+    if (specVec.size()) {
+        ui->specid_value->setNum(specVec[index]->getId());
+        ui->bar0_value->setNum(specVec[index]->getBarSize(0));
+        ui->bar4_value->setNum(specVec[index]->getBarSize(4));
+    }
 }
+
 
 void YarrGui::init() {
     // Preset labels
