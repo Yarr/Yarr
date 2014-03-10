@@ -20,3 +20,6 @@ HEADERS  += yarrgui.h \
     qcustomplot.h
 
 FORMS    += yarrgui.ui
+
+INCLUDEPATH += ../../src/libSpec/include SpecController.h
+LIBS += -L../../src/lib -lspec -lutil -lyarr

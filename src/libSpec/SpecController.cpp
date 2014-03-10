@@ -17,8 +17,14 @@
 
 #define DEBUG
 
+SpecController::SpecController() {
+    specId = 666;
+    is_initialized = false;
+}
+
 SpecController::SpecController(unsigned int id) {
     specId = id;
+    is_initialized = false;
     try {
         this->init();
         this->configure();
@@ -27,6 +33,7 @@ SpecController::SpecController(unsigned int id) {
         std::cerr << __PRETTY_FUNCTION__ <<  " -> Fatal Error! Aborting!"  << std::endl;
         exit(-1);
     }
+    is_initialized = true;
 }
 
 SpecController::~SpecController() {
@@ -34,6 +41,31 @@ SpecController::~SpecController() {
     spec->unmapBAR(4, bar4);
     spec->close();
     delete spec;
+}
+
+int SpecController::getId() {
+    return specId;
+}
+
+int SpecController::getBarSize(unsigned int bar) {
+    return spec->getBARsize(bar);
+}
+
+void SpecController::init(unsigned int id) {
+    if (!is_initialized) {
+        specId = id;
+        try {
+            this->init();
+            this->configure();
+        } catch (Exception &e) {
+            std::cerr << __PRETTY_FUNCTION__ << " -> " << e.toString() << std::endl;
+            std::cerr << __PRETTY_FUNCTION__ <<  " -> Fatal Error! Aborting!"  << std::endl;
+            exit(-1);
+        }
+        is_initialized = true;
+    } else {
+        std::cerr << __PRETTY_FUNCTION__ << " -> " << "Device is already initialzed!" << std::endl;
+    }
 }
 
 void SpecController::writeSingle(uint32_t off, uint32_t val) {
