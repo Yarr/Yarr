@@ -7,10 +7,10 @@ YarrGui::YarrGui(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    devicePath.setPath("/dev");
+    devicePath.setPath("/dev/");
     QStringList filter;
     QStringList deviceList;
-    filter << "ttys*";
+    filter << "spec*";
     devicePath.setFilter(QDir::System);
     deviceList = devicePath.entryList(filter);
 

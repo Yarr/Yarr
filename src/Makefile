@@ -63,11 +63,11 @@ TARGETS = $(patsubst $(SRC)/%.cpp,$(BIN)/%,$(SRC_FILES))
 
 all: util spec yarr $(TARGETS)
 
-spec: $(BUILD)/libspec.a
+spec: $(LLIB)/libspec.a
 
-yarr: $(BUILD)/libyarr.a
+yarr: $(LLIB)/libyarr.a
 
-util: $(BUILD)/libutil.a
+util: $(LLIB)/libutil.a
 
 help:
 	@echo # Use 'make' to create all programs
@@ -101,15 +101,15 @@ $(BIN)/%: $(BUILD)/%.o $(SPEC_OBJS) $(YARR_OBJS)
 	@echo [Linking] $@
 	@$(LD) $(LDFLAGS) $< $(SPEC_OBJS) $(YARR_OBJS) $(UTIL_OBJS) $(LIBS) -o $@
 
-$(BUILD)/libyarr.a: $(YARR_OBJS)
+$(LLIB)/libyarr.a: $(YARR_OBJS)
 	@echo [Creating] $@
 	@$(AR) rcs $@ $(YARR_OBJS)
 
-$(BUILD)/libspec.a: $(SPEC_OBJS)
+$(LLIB)/libspec.a: $(SPEC_OBJS)
 	@echo [Creating] $@
 	@$(AR) rcs $@ $(SPEC_OBJS)
 
-$(BUILD)/libutil.a: $(UTIL_OBJS)
+$(LLIB)/libutil.a: $(UTIL_OBJS)
 	@echo [Creating] $@
 	@$(AR) rcs $@ $(UTIL_OBJS)
 
