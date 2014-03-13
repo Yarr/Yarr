@@ -300,7 +300,7 @@ architecture rtl of yarr is
 		 --! If TRUE, uses Xilinx calibration core (Input term, DQS centering)
 		 g_CALIB_SOFT_IP      : string  := "TRUE";
 		 --! User ports addresses maping (BANK_ROW_COLUMN or ROW_BANK_COLUMN)
-		 g_MEM_ADDR_ORDER     : string  := "ROW_BANK_COLUMN";
+		 g_MEM_ADDR_ORDER     : string  := "BANK_ROW_COLUMN";
 		 --! Simulation mode
 		 g_SIMULATION         : string  := "FALSE";
 		 --! DDR3 data port width
@@ -793,22 +793,20 @@ begin
   led_red_o   <= dummy_ctrl_reg_led(0);
   led_green_o <= dummy_ctrl_reg_led(1);
 
-
-	--                       [3] +  [1]   +  [1]  +  [3]  +   [8]                +       [16]
-	TRIG0(31 downto 0) <= gn4124_core_status;
-	TRIG1(31 downto 0) <= dma_adr;
-	TRIG2(31 downto 0) <= wbm_adr;
-	ila_i : ila
-	  port map (
-		 CONTROL => CONTROL,
-		 CLK => l_clk,
-		 TRIG0 => TRIG0,
-		 TRIG1 => TRIG1,
-		 TRIG2 => TRIG2);
-		 
-	ila_icon_i : ila_icon
-		port map (
-    CONTROL0 => CONTROL);
+--	TRIG0(31 downto 0) <= ddr_status;
+--	TRIG1(31 downto 0) <= dma_adr;
+--	TRIG2(31 downto 0) <= dma_dat_i;
+--	ila_i : ila
+--	  port map (
+--		 CONTROL => CONTROL,
+--		 CLK => l_clk,
+--		 TRIG0 => TRIG0,
+--		 TRIG1 => TRIG1,
+--		 TRIG2 => TRIG2);
+--		 
+--	ila_icon_i : ila_icon
+--		port map (
+--    CONTROL0 => CONTROL);
 	 
   ------------------------------------------------------------------------------
   -- Interrupt stuff

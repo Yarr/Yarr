@@ -10,6 +10,7 @@
 // ################################
 
 #include <pthread.h>
+#include <fcntl.h>
 
 namespace specDriver {
 
@@ -22,7 +23,7 @@ private:
 	unsigned int pagesize;
 	unsigned int pageshift;
 	unsigned int pagemask;
-	
+    struct flock filelock;	
 protected:
 	int handle;
 	int device;

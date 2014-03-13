@@ -5,6 +5,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
+#include <cmath>
 
 uint32_t rand32() {
     uint32_t number = 0;
@@ -19,11 +20,11 @@ uint32_t rand32() {
 int main (void) {
     SpecController mySpec(0);
     
-    int maxLoops = 100;
+    int maxLoops = 10000;
     int overall_errors = 0;
     uint32_t off = 0;
 
-    const size_t size = 1024/4*40; // 1kB
+    const size_t size = 1024/4*100; // 1kB
     
     srand(time(NULL));
 
@@ -33,21 +34,19 @@ int main (void) {
         std::cout << "Creating Sample of size " << size*4/1024 << "kB ... ";
         uint32_t sample[size];
         for(unsigned int i = 0; i<size; i++)
-            //sample[i] = rand32();
-            sample[i] = i;
+            sample[i] = rand32();
+            //sample[i] = i;
 
         std::cout << "Writing Sample ... ";
         mySpec.writeDma(off, sample, size);
         
-        //std::string tmp;
-        //std::cin >> tmp;
-
         std::cout << "Reading Sample!" << std::endl;
         uint32_t readBack[size];
-        mySpec.readDma(off, readBack, size);
+        if (mySpec.readDma(off, readBack, size))
+            return 0;
 
         int counter = 0;
-        std::cout << "Sample\tReadback" << std::endl;
+        std::cout << "Sample\tReadback #" << loop << " " <<std::endl;
         for(unsigned int i = 0; i<size; i++) {
             if(sample[i] != readBack[i]) {
                 counter ++;
@@ -58,12 +57,14 @@ int main (void) {
         std::cout << "==================================" << std::endl;
         overall_errors += counter;
         if (counter != 0) return 0;
-        //off += size;
-        sleep(2); // is this needed?
+        off += size;
+        //sleep(2); // is this needed?
     }
         std::cout << std::endl << "==================================" << std::endl;
+        std::cout << "Total Data transfered " << size*4*maxLoops/1024/1024 << " MB!" << std::endl;
         std::cout << "Total Number of Errors #" << overall_errors << " errors!" << std::endl;
         std::cout << (double)overall_errors/(double)(size*maxLoops) << "\% are errors!" << std::endl;
+        std::cout << "Bit error rate (CL 99%): " << (double)(-1*log(0.01))/(double)(size*maxLoops*32) << std::endl;
         std::cout << "==================================" << std::endl;
 
     return 0;

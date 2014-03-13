@@ -12,8 +12,8 @@ set ylabel 'Transfer speed [MB/s]'
 set key bottom right
 set title 'DMA Transfer Benchmark'
 
-plot 'benchmarkDma_write.out' u ($1/4/1024):4 linestyle 1 w lines title 'DMA WRITE (CPU -> FPGA)', \
-'benchmarkDma_read.out' u ($1/4/1024):4 linestyle 2 w lines title 'DMA READ (FPGA->CPU)'
+plot 'benchmarkDma_write.out' u ($1*4/1024):4 linestyle 1 w lines title 'DMA WRITE (CPU -> FPGA)', \
+'benchmarkDma_read.out' u ($1*4/1024):4 linestyle 2 w lines title 'DMA READ (FPGA->CPU)'
 
 ! epstopdf benchmarkDma.eps
 ! rm benchmarkDma.eps

@@ -21,7 +21,9 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <sys/file.h>
 #include <errno.h>
+#include <iostream>
 
 using namespace specDriver;
 
@@ -104,6 +106,13 @@ void SpecDevice::open()
 		throw Exception( Exception::OPEN_FAILED );
 		
 	handle = ret;
+    
+    if (fcntl(handle, F_GETLK, &filelock))
+		throw Exception( Exception::LOCK_FAILED );
+    filelock.l_type = F_RDLCK | F_WRLCK;
+    if (fcntl(handle, F_SETLK, &filelock))
+		throw Exception( Exception::LOCK_FAILED );
+
 }
 
 /**
@@ -114,8 +123,11 @@ void SpecDevice::open()
 void SpecDevice::close()
 {
 	// do nothing, pass silently if closing a non-opened device.
-	if (handle != -1)	
+	if (handle != -1) {
+        filelock.l_type = F_UNLCK;
+        fcntl(handle, F_UNLCK, &filelock);
 		::close(handle);
+    }
 	
 	handle = -1;
 }
