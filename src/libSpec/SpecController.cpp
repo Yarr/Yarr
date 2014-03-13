@@ -54,7 +54,7 @@ void SpecController::readBlock(uint32_t off, uint32_t *val, size_t words) {
 
 int SpecController::writeDma(uint32_t off, uint32_t *data, size_t words) {
     int status = this->getDmaStatus(); 
-    if ( status == DMAIDLE || status == DMADONE || status == DMAABORTED ) {
+    if ( status == DMAIDLE || status == DMADONE || status == DMAABORTED) {
         UserMemory *um = &spec->mapUserMemory(data, words*4, false);
         KernelMemory *km = &spec->allocKernelMemory(sizeof(struct dma_linked_list)*um->getSGcount());
 
@@ -82,7 +82,7 @@ int SpecController::writeDma(uint32_t off, uint32_t *data, size_t words) {
 
 int SpecController::readDma(uint32_t off, uint32_t *data, size_t words) {
     int status = this->getDmaStatus(); 
-    if ( status == DMAIDLE || status == DMADONE || status == DMAABORTED ) {
+    if ( status == DMAIDLE || status == DMADONE || status == DMAABORTED) {
         UserMemory *um = &spec->mapUserMemory(data, words*4, false);
         KernelMemory *km = &spec->allocKernelMemory(sizeof(struct dma_linked_list)*um->getSGcount());
 
@@ -309,7 +309,19 @@ void SpecController::abortDma() {
 
 uint32_t SpecController::getDmaStatus() {
     uint32_t *addr = (uint32_t*) bar0+DMASTATR;
-    return *addr;
+    uint32_t status = *addr;
+#if 0
+    std::cout << __PRETTY_FUNCTION__ << " -> DMA Status: ";
+    switch (status) {
+        case DMAIDLE: std::cout << "DMA IDLE"; break;
+        case DMADONE: std::cout << "DMA DONE"; break;
+        case DMAABORTED: std::cout << "DMA ABORTED"; break;
+        case DMAERROR: std::cout << "DMA ERROR"; break;
+        default: std::cout << "UNKNOWN"; break;
+    }
+    std::cout << std::endl;
+#endif
+    return status;
 }
 
 int SpecController::progFpga(const void *data, size_t size) {
