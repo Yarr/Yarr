@@ -1,6 +1,8 @@
 #include "yarrgui.h"
 #include "ui_yarrgui.h"
+
 #include <iostream>
+
 YarrGui::YarrGui(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::YarrGui)
@@ -22,13 +24,16 @@ YarrGui::YarrGui(QWidget *parent) :
     // Init device vector
     for(int i=0; i<deviceList.size(); i++)
         specVec.push_back(new SpecController());
+ 
+    qout = new QDebugStream(std::cout, ui->console, QColor("black"));
+    qerr = new QDebugStream(std::cerr, ui->console, QColor("red"));
 }
 
 YarrGui::~YarrGui()
 {
     // Clean up devices
-    //for(int i=0; i<deviceList.size(); i++)
-        //delete specVec[i];
+    for(int i=0; i<deviceList.size(); i++)
+        delete specVec[i];
 
     delete ui;
 }
@@ -55,11 +60,15 @@ void YarrGui::init() {
     ui->bar4_value->setNum(-1);
 }
 
-void YarrGui::on_pushButton_clicked()
+void YarrGui::on_init_button_clicked()
 {
     int index = ui->device_comboBox->currentIndex();
     specVec[index]->init(index);
     ui->specid_value->setNum(specVec[index]->getId());
     ui->bar0_value->setNum(specVec[index]->getBarSize(0));
     ui->bar4_value->setNum(specVec[index]->getBarSize(4));
+}
+
+void YarrGui::on_progfile_button_clicked() {
+    ui->progfile_name->setText(QFileDialog::getOpenFileName(this, tr("Select bit-file"), "./", tr("Bit File(*.bit)")));
 }

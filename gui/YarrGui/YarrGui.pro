@@ -17,7 +17,8 @@ SOURCES += main.cpp\
     qcustomplot.cpp
 
 HEADERS  += yarrgui.h \
-    qcustomplot.h
+    qcustomplot.h \
+    qdebugstream.h
 
 FORMS    += yarrgui.ui
 
