@@ -17,6 +17,7 @@ const char* Exception::descriptions[] = {
 	"Invalid BAR",
 	"Internal Error",
 	"Open failed",
+    "Lock failed",
 	"Not Open",
 	"Mmap failed",
 	"Alloc failed",
