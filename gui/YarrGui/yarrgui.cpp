@@ -35,6 +35,7 @@ YarrGui::YarrGui(QWidget *parent) :
     // Init Benchmark Plot
     writeGraph = ui->benchmark_plot->addGraph();
     readGraph = ui->benchmark_plot->addGraph();
+
     ui->benchmark_plot->xAxis->setLabel("Package size [kB]");
     ui->benchmark_plot->yAxis->setLabel("Speed [MB/s]");
     ui->benchmark_plot->xAxis->setRange(0, 500);
@@ -43,6 +44,17 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->benchmark_plot->setInteraction(QCP::iRangeZoom, true);
     ui->benchmark_plot->setInteraction(QCP::iSelectPlottables, true);
     ui->benchmark_plot->setInteraction(QCP::iSelectAxes, true);
+    ui->benchmark_plot->legend->setVisible(true);
+    ui->benchmark_plot->legend->setFont(QFont("Helvetica", 9));
+
+    writeGraph()->setName("Spec" + QString(0) + " DMA Write");
+    writeGraph()->setLineStyle((QCPGraph::LineStyle)i);
+    writeGraph()->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 5));
+
+    readGraph()->setName("Spec" + QString(0) + " DMA Read");
+    readGraph()->setLineStyle((QCPGraph::LineStyle)i);
+    readGraph()->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 5));
+
     // Init console
     qout = new QDebugStream(std::cout, ui->console, QColor("black"));
     qerr = new QDebugStream(std::cerr, ui->console, QColor("red"));
