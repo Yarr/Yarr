@@ -150,6 +150,7 @@ architecture rtl of ddr3_ctrl_wb is
   signal wb_we_f_edge  : std_logic;
   signal wb_addr_d     : std_logic_vector(31 downto 0);
   signal wb_stall      : std_logic;
+  signal wb_data_d     : std_logic_vector(31 downto 0);
 
   signal ddr_burst_cnt     : unsigned(5 downto 0);
   signal ddr_cmd_en        : std_logic;
@@ -220,6 +221,7 @@ begin
     if rising_edge(wb_clk_i) then
       if (rst_n = '0') then
         ddr_wr_data <= (others => '0');
+        wb_data_d <= (others => '0');
         ddr_wr_en   <= '0';
       else
         if (wb_stb_valid = '1') and (wb_cyc_i = '1') and (wb_we_i = '1') then
@@ -227,6 +229,7 @@ begin
         else
           ddr_wr_en <= '0';
         end if;
+        --wb_data_d <=  wb_data_i;
         ddr_wr_data <= wb_data_i;
         ddr_wr_mask <= not(wb_sel_i);
       end if;
@@ -234,72 +237,114 @@ begin
   end process p_ddr_inputs;
 
   -- Command parameters (burst length and address) registration
-  p_ddr_cmd : process (wb_clk_i)
-  begin
-    if rising_edge(wb_clk_i) then
-      if (rst_n = '0') then
-        ddr_cmd_byte_addr <= (others => '0');
-        ddr_cmd_instr     <= "000";
-        ddr_cmd_bl        <= (others => '0');
-        wb_addr_d         <= (others => '0');
-      else
-        wb_addr_d <= wb_addr_i;
-        if ((ddr_burst_cnt = 0 and wb_cyc_r_edge = '1' and wb_stb_valid = '1') or
-            (ddr_burst_cnt = to_unsigned(1, ddr_burst_cnt'length))) then
-          ddr_cmd_byte_addr <= wb_addr_d(g_BYTE_ADDR_WIDTH-c_ADDR_SHIFT-1 downto 0) & addr_shift;
-          ddr_cmd_instr     <= "00" & not(wb_we_d);
-        end if;
-        ddr_cmd_bl <= std_logic_vector(ddr_burst_cnt - 1);
-      end if;
-    end if;
-  end process p_ddr_cmd;
+--  p_ddr_cmd : process (wb_clk_i)
+--  begin
+--    if rising_edge(wb_clk_i) then
+--      if (rst_n = '0') then
+--        ddr_cmd_byte_addr <= (others => '0');
+--        ddr_cmd_instr     <= "000";
+--        ddr_cmd_bl        <= (others => '0');
+--        wb_addr_d         <= (others => '0');
+--      else
+--        wb_addr_d <= wb_addr_i;
+--        if ((ddr_burst_cnt = 0 and wb_cyc_r_edge = '1' and wb_stb_valid = '1') or
+--            (ddr_burst_cnt = to_unsigned(1, ddr_burst_cnt'length))) then
+--          ddr_cmd_byte_addr <= wb_addr_d(g_BYTE_ADDR_WIDTH-c_ADDR_SHIFT-1 downto 0) & addr_shift;
+--          ddr_cmd_instr     <= "00" & not(wb_we_d);
+--        end if;
+--        ddr_cmd_bl <= std_logic_vector(ddr_burst_cnt - 1);
+--      end if;
+--    end if;
+--  end process p_ddr_cmd;
 
   addr_shift <= (others => '0');
 
   -- Command enable signal generation
-  p_ddr_cmd_en : process (wb_clk_i)
-  begin
-    if rising_edge(wb_clk_i) then
-      if (rst_n = '0') then
-        ddr_cmd_en   <= '0';
-        ddr_cmd_en_d <= '0';
-      else
-        ddr_cmd_en_d <= ddr_cmd_en;
-        if (((ddr_burst_cnt = c_DDR_BURST_LENGTH) or
-             (wb_cyc_f_edge = '1' and wb_we_d = '1') or
-             (wb_stb_f_edge = '1' and wb_we_d = '0' and wb_stall = '0')) and ddr_cmd_full_i = '0' and ddr_burst_cnt > 0) then
-          ddr_cmd_en <= '1';            -- might have problem if burst_cnt = BURST_LENGTH for more than 2 clk cycles
-        else
-          ddr_cmd_en <= '0';
-        end if;
-      end if;
-    end if;
-  end process p_ddr_cmd_en;
+--  p_ddr_cmd_en : process (wb_clk_i)
+--  begin
+--    if rising_edge(wb_clk_i) then
+--      if (rst_n = '0') then
+--        ddr_cmd_en   <= '0';
+--        ddr_cmd_en_d <= '0';
+--      else
+--        ddr_cmd_en_d <= ddr_cmd_en;
+--        if (((ddr_burst_cnt = c_DDR_BURST_LENGTH) or
+--             (wb_cyc_f_edge = '1' and wb_we_d = '1') or
+--             (wb_stb_f_edge = '1' and wb_we_d = '0')) and ddr_cmd_full_i = '0' and ddr_burst_cnt > 0) then
+--          ddr_cmd_en <= '1';            -- might have problem if burst_cnt = BURST_LENGTH for more than 2 clk cycles
+--        else
+--          ddr_cmd_en <= '0';
+--        end if;
+--      end if;
+--    end if;
+--  end process p_ddr_cmd_en;
 
   -- Command enable rising edge detection
   ddr_cmd_en_r_edge <= ddr_cmd_en and not(ddr_cmd_en_d);
 
   -- Burst counter
-  p_ddr_burst_cnt : process (wb_clk_i)
+--  p_ddr_burst_cnt : process (wb_clk_i)
+--  begin
+--    if rising_edge(wb_clk_i) then
+--      if (rst_n = '0') then
+--        ddr_burst_cnt <= (others => '0');
+--      else
+--        if ((wb_cyc_f_edge = '1' and wb_we_d = '1') or (wb_stb_f_edge = '1' and wb_we_d = '0')) then
+--          ddr_burst_cnt <= to_unsigned(0, ddr_burst_cnt'length);
+--        elsif (wb_stb_valid = '1' and wb_cyc_i = '1') then
+--          if (ddr_burst_cnt = c_DDR_BURST_LENGTH) then
+--            ddr_burst_cnt <= to_unsigned(1, ddr_burst_cnt'length);
+--          else
+--            ddr_burst_cnt <= ddr_burst_cnt + 1;
+--          end if;
+--        elsif (ddr_burst_cnt = c_DDR_BURST_LENGTH) then
+--          ddr_burst_cnt <= to_unsigned(0, ddr_burst_cnt'length);
+--        end if;
+--      end if;
+--    end if;
+--  end process p_ddr_burst_cnt;
+  
+  p_ddr_control : process(wb_clk_i)
   begin
-    if rising_edge(wb_clk_i) then
+   if rising_edge(wb_clk_i) then
       if (rst_n = '0') then
-        ddr_burst_cnt <= (others => '0');
+         ddr_burst_cnt     <= (others => '0');
+         ddr_cmd_en        <= '0';
+         ddr_cmd_en_d      <= '0';
+         ddr_cmd_byte_addr <= (others => '0');
+         ddr_cmd_instr     <= "000";
+         ddr_cmd_bl        <= (others => '0');
+         wb_addr_d         <= (others => '0');
       else
-        if ((wb_cyc_f_edge = '1' and wb_we_d = '1') or (wb_stb_f_edge = '1' and wb_we_d = '0' and wb_stall = '0')) then
-          ddr_burst_cnt <= to_unsigned(0, ddr_burst_cnt'length);
-        elsif (wb_stb_valid = '1' and wb_cyc_i = '1') then
-          if (ddr_burst_cnt = c_DDR_BURST_LENGTH) then
-            ddr_burst_cnt <= to_unsigned(1, ddr_burst_cnt'length);
-          else
-            ddr_burst_cnt <= ddr_burst_cnt + 1;
-          end if;
-        elsif (ddr_burst_cnt = c_DDR_BURST_LENGTH) then
-          ddr_burst_cnt <= to_unsigned(0, ddr_burst_cnt'length);
-        end if;
+         if (wb_stb_i = '1' and wb_cyc_i = '1') then
+            if (ddr_burst_cnt = c_DDR_BURST_LENGTH) then
+               ddr_burst_cnt <= to_unsigned(1, ddr_burst_cnt'length);
+               ddr_cmd_en <= '1';
+            else
+               ddr_burst_cnt <= ddr_burst_cnt + 1;
+               ddr_cmd_en <= '0';
+            end if;
+         elsif (wb_stb_i = '0' and wb_cyc_i = '0' and ddr_burst_cnt > 0) then
+            ddr_burst_cnt <= to_unsigned(0, ddr_burst_cnt'length);
+            ddr_cmd_en <= '1';
+         elsif (wb_stb_i = '0' and wb_cyc_i = '1' and ddr_burst_cnt > 0 and wb_we_d = '0' and wb_stall = '0') then
+            ddr_burst_cnt <= to_unsigned(0, ddr_burst_cnt'length);
+            ddr_cmd_en <= '1';
+         else
+            ddr_cmd_en <= '0';
+         end if;
+         
+         if (ddr_burst_cnt = to_unsigned(1, ddr_burst_cnt'length)) then
+            ddr_cmd_byte_addr <= wb_addr_d(g_BYTE_ADDR_WIDTH-c_ADDR_SHIFT-1 downto 0) & addr_shift;
+            ddr_cmd_instr     <= "00" & not(wb_we_d);
+         end if;
+         
+         ddr_cmd_en_d <= ddr_cmd_en;
+         wb_addr_d <= wb_addr_i;
+         ddr_cmd_bl <= std_logic_vector(ddr_burst_cnt - 1);
+         end if;
       end if;
-    end if;
-  end process p_ddr_burst_cnt;
+   end process p_ddr_control;
 
   -- Read enable signal generation
   ddr_rd_en <= not(ddr_rd_empty_i);
