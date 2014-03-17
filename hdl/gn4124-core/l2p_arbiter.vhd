@@ -40,6 +40,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
 use work.gn4124_core_pkg.all;
+use work.common_pkg.all;
 
 
 entity l2p_arbiter is
@@ -100,7 +101,6 @@ architecture rtl of l2p_arbiter is
   signal arb_ser_dframe_t  : std_logic;
   signal arb_ser_data_t    : std_logic_vector(31 downto 0);
 
-
 begin
 
 
@@ -110,18 +110,33 @@ begin
   ldm_arb_req_valid <= ldm_arb_req_i and (not(arb_wbm_gnt) and not(arb_pdm_gnt));
 
   -- Detect end of packet to delimit the arbitration phase
-  eop <= ((arb_wbm_gnt and not(wbm_arb_dframe_i) and wbm_arb_valid_i) or
-          (arb_pdm_gnt and not(pdm_arb_dframe_i) and pdm_arb_valid_i) or
-          (arb_ldm_gnt and not(ldm_arb_dframe_i) and ldm_arb_valid_i));
+--  eop <= ((arb_wbm_gnt and not(wbm_arb_dframe_i) and wbm_arb_valid_i) or
+--          (arb_pdm_gnt and not(pdm_arb_dframe_i) and pdm_arb_valid_i) or
+--          (arb_ldm_gnt and not(ldm_arb_dframe_i) and ldm_arb_valid_i));
 
+   process (clk_i, rst_n_i)
+   begin
+      if (rst_n_i = c_RST_ACTIVE) then
+      eop <= '0';
+      elsif rising_edge(clk_i) then
+         if ((arb_wbm_gnt = '1' and wbm_arb_dframe_i = '0' and wbm_arb_valid_i = '1') or
+             (arb_pdm_gnt = '1' and pdm_arb_dframe_i = '0' and pdm_arb_valid_i = '1') or
+             (arb_ldm_gnt = '1' and ldm_arb_dframe_i = '0' and ldm_arb_valid_i = '1')) then
+            eop <= '1';
+         else
+            eop <= '0';
+         end if;
+      end if;
+   end process;
+   
   -----------------------------------------------------------------------------
   -- Arbitration is started when a valid request is present and ends when the
   -- EOP condition is detected
   --
   -- Strict priority arbitration scheme
   -- Highest : WBM request
-  --         : PDM request
-  -- Lowest  : LDM request
+  --         : LDM request
+  -- Lowest  : PDM request
   -----------------------------------------------------------------------------
   process (clk_i, rst_n_i)
   begin
@@ -131,21 +146,21 @@ begin
       arb_ldm_gnt <= '0';
     elsif rising_edge(clk_i) then
       --if (arb_req_valid = '1') then
-      if (wbm_arb_req_valid = '1') then
-        arb_wbm_gnt <= '1';
+      if (eop = '1') then
+        arb_wbm_gnt <= '0';
         arb_pdm_gnt <= '0';
         arb_ldm_gnt <= '0';
-      elsif (pdm_arb_req_valid = '1') then
-        arb_wbm_gnt <= '0';
-        arb_pdm_gnt <= '1';
+      elsif (wbm_arb_req_valid = '1') then
+        arb_wbm_gnt <= '1';
+        arb_pdm_gnt <= '0';
         arb_ldm_gnt <= '0';
       elsif (ldm_arb_req_valid = '1') then
         arb_wbm_gnt <= '0';
         arb_pdm_gnt <= '0';
         arb_ldm_gnt <= '1';
-      elsif (eop = '1') then
+      elsif (pdm_arb_req_valid = '1') then
         arb_wbm_gnt <= '0';
-        arb_pdm_gnt <= '0';
+        arb_pdm_gnt <= '1';
         arb_ldm_gnt <= '0';
       end if;
     end if;
