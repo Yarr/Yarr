@@ -5,8 +5,9 @@
 #include <stdint.h>
 #include <string>
 
-namespace Bitfile {
+namespace BitFile {
     int checkFile(std::fstream &file) {
+        if (!file) return 1;
         char key;
         uint8_t c_length[2];
         uint16_t length;
@@ -106,6 +107,19 @@ namespace Bitfile {
         delete field4;
         delete field5;
         delete field6;
+        return 0;
+    }
+
+    size_t getSize(std::fstream &file) {
+        size_t beg, end, size;
+        if (file) {
+            beg = file.tellg();
+            file.seekg(0, std::ios::end);
+            end = file.tellg();
+            size = end - beg;
+            file.seekg(0, std::ios::beg);
+            return size;
+        }
         return 0;
     }
 }

@@ -5,6 +5,7 @@
 
 namespace BitFile{
     int checkFile(std::fstream &file);
+    size_t getSize(std::fstream &file);
 }
 
 #endif
