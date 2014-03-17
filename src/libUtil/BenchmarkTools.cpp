@@ -33,7 +33,7 @@ namespace BenchmarkTools {
        uint32_t *buffer = new uint32_t[package_size];
        memset(buffer, 0x5A, package_size*4);
        double time = BenchmarkTools::measureWriteTime(spec, 0x0, buffer, package_size, repetitions);
-       double speed = ((package_size*4*repetitions)/1024.0/1024.0)/time;
+       double speed = (((package_size*4*repetitions)/1024.0/1024.0)/time)*1000.0;
        delete buffer;
        return speed;
    }
@@ -42,7 +42,7 @@ namespace BenchmarkTools {
        uint32_t *buffer = new uint32_t[package_size];
        memset(buffer, 0x5A, package_size*4);
        double time = BenchmarkTools::measureReadTime(spec, 0x0, buffer, package_size, repetitions);
-       double speed = ((package_size*4*repetitions)/1024.0/1024.0)/time;
+       double speed = (((package_size*4*repetitions)/1024.0/1024.0)/time)*1000.0;
        delete buffer;
        return speed;
    }
