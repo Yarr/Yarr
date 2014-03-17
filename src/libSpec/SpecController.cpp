@@ -416,7 +416,7 @@ int SpecController::progFpga(const void *data, size_t size) {
 		}
 	}
     // FCL_CTRL -> 0x186 (last data written)
-    this->write32(bar4, FCL_CTRL, 0x186);
+    this->write32(bar4, FCL_CTRL/4, 0x186);
 #ifdef DEBUG
     std::cout << __PRETTY_FUNCTION__ << " -> Programming done!!" <<std::endl;
 #endif
