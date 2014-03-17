@@ -356,12 +356,12 @@ begin
   ------------------------------------------------------------------------------
   -- Status output assignment
   ------------------------------------------------------------------------------
-  status_o(0)           <= p2l_pll_locked;
+  status_o(0) <= l2p_edb;
   status_o(1) <= irq_p_i;
   status_o(2) <= p2l_rdy_wbm and p2l_rdy_pdm;
   status_o(3) <= arb_ser_valid;
   status_o(4) <= arb_ser_dframe;
-  status_o(5 downto 20) <= pdm_arb_data(15 downto 0);
+  status_o(5 downto 20) <= ldm_arb_data(15 downto 0);
   status_o(21) <= arb_pdm_gnt;
   status_o(22) <= arb_ldm_gnt;
   status_o(23) <= arb_wbm_gnt;
@@ -823,7 +823,8 @@ begin
       tx_error    <= tx_error_t2;
 
       --assert when packet badly ends (e.g. dma abort)
-      l2p_edb_t  <= l2p_edb;
+      --l2p_edb_t  <= l2p_edb;
+      l2p_edb_t  <= '0';
       l2p_edb_t2 <= l2p_edb_t;
       l2p_edb_o  <= l2p_edb_t2;
     end if;

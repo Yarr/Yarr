@@ -180,6 +180,7 @@ architecture behaviour of p2l_dma_master is
   signal wb_ack_cnt    : unsigned(31 downto 0);
   signal p2l_dma_cyc_t : std_logic;
   signal p2l_dma_stb_t : std_logic;
+  signal p2l_dma_stall_d : std_logic_vector(1 downto 0);
 
   -- P2L DMA read request FSM
   type   p2l_dma_state_type is (P2L_IDLE, P2L_HEADER, P2L_ADDR_H, P2L_ADDR_L, P2L_WAIT_READ_COMPLETION);
@@ -401,6 +402,8 @@ begin
     elsif rising_edge(clk_i) then
       rx_error_o      <= rx_error_t;
       dma_ctrl_done_o <= dma_ctrl_done_t;
+      p2l_dma_stall_d(0) <= p2l_dma_stall_i;
+      p2l_dma_stall_d(1) <= p2l_dma_stall_d(0);
     end if;
   end process p_ctrl_pipe;
 
@@ -591,7 +594,7 @@ begin
       -- cyc signal management
       if (to_wb_fifo_valid = '1') then
         p2l_dma_cyc_t <= '1';
-      elsif (wb_ack_cnt >= wb_write_cnt) then
+      elsif (wb_ack_cnt >= wb_write_cnt and p2l_dma_stall_d(1) = '0') then
         -- last ack received -> end of the transaction
         p2l_dma_cyc_t <= '0';
       end if;

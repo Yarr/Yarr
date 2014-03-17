@@ -95,8 +95,8 @@ architecture syn of generic_async_fifo is
       din                     : in  std_logic_vector(31 downto 0);
       wr_en                   : in  std_logic;
       rd_en                   : in  std_logic;
-      prog_full_thresh_assert : in  std_logic_vector(8 downto 0);
-      prog_full_thresh_negate : in  std_logic_vector(8 downto 0);
+      prog_full_thresh_assert : in  std_logic_vector(9 downto 0);
+      prog_full_thresh_negate : in  std_logic_vector(9 downto 0);
       dout                    : out std_logic_vector(31 downto 0);
       full                    : out std_logic;
       empty                   : out std_logic;
@@ -148,8 +148,8 @@ begin
         din                     => d_i,
         wr_en                   => we_i,
         rd_en                   => rd_i,
-        prog_full_thresh_assert => std_logic_vector(to_unsigned(g_almost_full_threshold, 9)),
-        prog_full_thresh_negate => std_logic_vector(to_unsigned(g_almost_full_threshold, 9)),
+        prog_full_thresh_assert => std_logic_vector(to_unsigned(g_almost_full_threshold, 10)),
+        prog_full_thresh_negate => std_logic_vector(to_unsigned(g_almost_full_threshold, 10)),
         dout                    => q_o,
         full                    => wr_full_o,
         empty                   => rd_empty_o,
