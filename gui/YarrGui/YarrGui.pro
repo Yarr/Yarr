@@ -22,5 +22,6 @@ HEADERS  += yarrgui.h \
 
 FORMS    += yarrgui.ui
 
-INCLUDEPATH += ../../src/libSpec/include SpecController.h
+INCLUDEPATH += ../../src/libSpec/include
+INCLUDEPATH += ../../src/libUtil/include
 LIBS += -L../../src/lib -lspec -lutil -lyarr
