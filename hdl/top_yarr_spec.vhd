@@ -793,9 +793,12 @@ begin
   led_red_o   <= dummy_ctrl_reg_led(0);
   led_green_o <= dummy_ctrl_reg_led(1);
 
+--	--TRIG0(31 downto 0) <= gn4124_core_status;
 --	TRIG0(31 downto 0) <= ddr_status;
 --	TRIG1(31 downto 0) <= dma_adr;
+--   --TRIG1(31 downto 0) <= (others => '0');
 --	TRIG2(31 downto 0) <= dma_dat_i;
+--   --TRIG2(31 downto 0) <= (others => '0');
 --	ila_i : ila
 --	  port map (
 --		 CONTROL => CONTROL,
