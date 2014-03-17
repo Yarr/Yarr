@@ -23,8 +23,17 @@
       <height>411</height>
      </rect>
     </property>
+    <property name="tabPosition">
+     <enum>QTabWidget::North</enum>
+    </property>
+    <property name="tabShape">
+     <enum>QTabWidget::Rounded</enum>
+    </property>
     <property name="currentIndex">
      <number>1</number>
+    </property>
+    <property name="tabsClosable">
+     <bool>false</bool>
     </property>
     <widget class="QWidget" name="Spec">
      <attribute name="title">
@@ -195,7 +204,7 @@
        <rect>
         <x>9</x>
         <y>10</y>
-        <width>194</width>
+        <width>195</width>
         <height>128</height>
        </rect>
       </property>
@@ -265,7 +274,7 @@
          <property name="value">
           <number>10</number>
          </property>
-         <property name="displayIntegerBase" stdset="0">
+         <property name="displayIntegerBase">
           <number>10</number>
          </property>
         </widget>

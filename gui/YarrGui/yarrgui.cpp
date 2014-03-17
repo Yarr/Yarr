@@ -46,6 +46,10 @@ YarrGui::YarrGui(QWidget *parent) :
     // Init console
     qout = new QDebugStream(std::cout, ui->console, QColor("black"));
     qerr = new QDebugStream(std::cerr, ui->console, QColor("red"));
+
+    ui->main_tabWidget->setCurrentIndex(0);
+    ui->main_tabWidget->setTabEnabled(0, true);
+    ui->main_tabWidget->setTabEnabled(1, false);
 }
 
 YarrGui::~YarrGui()
@@ -84,6 +88,7 @@ void YarrGui::on_init_button_clicked()
         ui->specid_value->setNum(specVec[index]->getId());
         ui->bar0_value->setNum(specVec[index]->getBarSize(0));
         ui->bar4_value->setNum(specVec[index]->getBarSize(4));
+        ui->main_tabWidget->setTabEnabled(1, true);
     } else {
         QMessageBox errorBox;
         errorBox.critical(0, "Error", "Initialization not successful!");
@@ -154,7 +159,6 @@ void YarrGui::on_startWrite_button_clicked() {
 
     for (unsigned int index=0; index<deviceList.size(); index++) {
         if (specVec[index]->isInitialized()) {
-
             for (unsigned i=min; i<max; i+=interval) {
                 double speed = BenchmarkTools::measureWriteSpeed(specVec[index], i*256, repetitions);
                 std::cout << "Starting: " << i << " " << speed << " " << ((steps*interval)/(double)(i-min))*100 << std::endl;
