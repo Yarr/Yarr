@@ -29,13 +29,11 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->device_comboBox->addItems(deviceList);
 
     // Init device vector
-    for(int i=0; i<deviceList.size(); i++)
+    for(int i=0; i<deviceList.size(); i++) {
         specVec.push_back(new SpecController());
-    
-    // Init Benchmark Plot
-    writeGraph = ui->benchmark_plot->addGraph();
-    readGraph = ui->benchmark_plot->addGraph();
+    }
 
+    // Init Benchmark Plot
     ui->benchmark_plot->xAxis->setLabel("Package size [kB]");
     ui->benchmark_plot->yAxis->setLabel("Speed [MB/s]");
     ui->benchmark_plot->xAxis->setRange(0, 500);
@@ -46,14 +44,27 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->benchmark_plot->setInteraction(QCP::iSelectAxes, true);
     ui->benchmark_plot->legend->setVisible(true);
     ui->benchmark_plot->legend->setFont(QFont("Helvetica", 9));
+    ui->benchmark_plot->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignRight|Qt::AlignBottom);
 
-    writeGraph()->setName("Spec" + QString(0) + " DMA Write");
-    writeGraph()->setLineStyle((QCPGraph::LineStyle)i);
-    writeGraph()->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 5));
-
-    readGraph()->setName("Spec" + QString(0) + " DMA Read");
-    readGraph()->setLineStyle((QCPGraph::LineStyle)i);
-    readGraph()->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 5));
+    QPen pen;
+    QColor color;
+    for(int i=0; i<deviceList.size(); i++) {
+        writeGraphVec.push_back(ui->benchmark_plot->addGraph()); 
+        readGraphVec.push_back(ui->benchmark_plot->addGraph());
+        QColor color1(sin(i*0.3)*100+100, sin(i*0.6+0.7)*100+100, sin(i*0.4+0.6)*100+100);
+        pen.setColor(color1);
+        writeGraphVec[i]->setPen(pen);
+        writeGraphVec[i]->setName("Spec #" + QString::number(i) + " DMA Write");
+        writeGraphVec[i]->setLineStyle(QCPGraph::lsLine);
+        writeGraphVec[i]->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, color1, 5));
+ 
+        QColor color2(sin(i*0.6+0.7)*100+100, sin(i*0.3)*100+100, sin(i*0.4+0.6)*100+100);
+        pen.setColor(color2);
+        readGraphVec[i]->setPen(pen);
+        readGraphVec[i]->setName("Spec #" + QString::number(i) + " DMA Read");
+        readGraphVec[i]->setLineStyle(QCPGraph::lsLine);;
+        readGraphVec[i]->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, color2, 5));
+    }
 
     // Init console
     qout = new QDebugStream(std::cout, ui->console, QColor("black"));
@@ -138,10 +149,12 @@ void YarrGui::on_prog_button_clicked() {
 
     size_t size = BitFile::getSize(file);
     
-    std::cout << "size: " << size << std::endl;
+    // Read file into buffer
     char *buffer = new char[size];
     file.seekg(0, std::ios::beg);
     file.read(buffer, size);
+    
+    // Program FPGA
     int wrote = specVec[index]->progFpga(buffer, size);
     if (wrote != size) {
         QMessageBox errorBox;
@@ -167,14 +180,48 @@ void YarrGui::on_startWrite_button_clicked() {
 
     unsigned interval = (max-min)/steps;
 
-    writeGraph->clearData();
-
     for (unsigned int index=0; index<deviceList.size(); index++) {
+        writeGraphVec[index]->clearData();
+        
         if (specVec[index]->isInitialized()) {
             for (unsigned i=min; i<max; i+=interval) {
                 double speed = BenchmarkTools::measureWriteSpeed(specVec[index], i*256, repetitions);
-                std::cout << "Starting: " << i << " " << speed << " " << ((steps*interval)/(double)(i-min))*100 << std::endl;
-                writeGraph->addData(i, speed);
+                if (speed < 0) {
+                    QMessageBox errorBox;
+                    errorBox.critical(0, "Error", "DMA timed out!");
+                    return;
+                }
+                writeGraphVec[index]->addData(i, speed);
+                ui->benchmark_plot->rescaleAxes();
+                ui->benchmark_plot->replot();
+                ui->benchmark_progressBar->setValue(((i-min)/(double)(steps*interval))*100);
+                QApplication::processEvents(); // Else we lookk like we are not responding
+            }
+            ui->benchmark_progressBar->setValue(100);
+        }
+    }       
+}
+
+void YarrGui::on_startRead_button_clicked() {
+    unsigned min = ui->minSize_spinBox->value();
+    unsigned max = ui->maxSize_spinBox->value();
+    unsigned steps = ui->steps_spinBox->value();
+    unsigned repetitions = ui->repetitions_spinBox->value();
+
+    unsigned interval = (max-min)/steps;
+
+    for (unsigned int index=0; index<deviceList.size(); index++) {
+        readGraphVec[index]->clearData();
+        
+        if (specVec[index]->isInitialized()) {
+            for (unsigned i=min; i<max; i+=interval) {
+                double speed = BenchmarkTools::measureReadSpeed(specVec[index], i*256, repetitions);
+                if (speed < 0) {
+                    QMessageBox errorBox;
+                    errorBox.critical(0, "Error", "DMA timed out!");
+                    return;
+                }
+                readGraphVec[index]->addData(i, speed);
                 ui->benchmark_plot->rescaleAxes();
                 ui->benchmark_plot->replot();
                 ui->benchmark_progressBar->setValue(((i-min)/(double)(steps*interval))*100);

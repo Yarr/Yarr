@@ -39,6 +39,7 @@ private slots:
     void on_minSize_spinBox_valueChanged(int i);
     void on_maxSize_spinBox_valueChanged(int i);
     void on_startWrite_button_clicked();
+    void on_startRead_button_clicked();
 private:
     Ui::YarrGui *ui;
     
@@ -50,9 +51,8 @@ private:
 
     void init();
     std::vector<SpecController*> specVec;
-
-    QCPGraph *writeGraph;
-    QCPGraph *readGraph;
+    std::vector<QCPGraph*> writeGraphVec;
+    std::vector<QCPGraph*> readGraphVec;
 };
 
 #endif // YARRGUI_H

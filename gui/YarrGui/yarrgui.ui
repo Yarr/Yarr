@@ -202,7 +202,7 @@
      <widget class="QWidget" name="layoutWidget">
       <property name="geometry">
        <rect>
-        <x>9</x>
+        <x>79</x>
         <y>10</y>
         <width>195</width>
         <height>128</height>
@@ -239,7 +239,7 @@
           <number>1000</number>
          </property>
          <property name="value">
-          <number>39</number>
+          <number>50</number>
          </property>
         </widget>
        </item>
@@ -266,7 +266,7 @@
        <item row="0" column="1">
         <widget class="QSpinBox" name="minSize_spinBox">
          <property name="minimum">
-          <number>1</number>
+          <number>10</number>
          </property>
          <property name="maximum">
           <number>450</number>
@@ -274,15 +274,12 @@
          <property name="value">
           <number>10</number>
          </property>
-         <property name="displayIntegerBase">
-          <number>10</number>
-         </property>
         </widget>
        </item>
        <item row="1" column="1">
         <widget class="QSpinBox" name="maxSize_spinBox">
          <property name="minimum">
-          <number>1</number>
+          <number>10</number>
          </property>
          <property name="maximum">
           <number>450</number>
@@ -297,7 +294,7 @@
      <widget class="QPushButton" name="startWrite_button">
       <property name="geometry">
        <rect>
-        <x>10</x>
+        <x>80</x>
         <y>150</y>
         <width>191</width>
         <height>27</height>
@@ -310,9 +307,9 @@
      <widget class="QProgressBar" name="benchmark_progressBar">
       <property name="geometry">
        <rect>
-        <x>10</x>
+        <x>20</x>
         <y>350</y>
-        <width>351</width>
+        <width>331</width>
         <height>23</height>
        </rect>
       </property>
@@ -320,10 +317,10 @@
        <number>0</number>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton">
+     <widget class="QPushButton" name="startRead_button">
       <property name="geometry">
        <rect>
-        <x>10</x>
+        <x>80</x>
         <y>180</y>
         <width>191</width>
         <height>27</height>
@@ -333,6 +330,70 @@
        <string>Start Read Benchmark</string>
       </property>
      </widget>
+     <widget class="Line" name="plotFrame_line3">
+      <property name="geometry">
+       <rect>
+        <x>360</x>
+        <y>0</y>
+        <width>600</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+     <widget class="Line" name="plotFrame_line2">
+      <property name="geometry">
+       <rect>
+        <x>350</x>
+        <y>10</y>
+        <width>21</width>
+        <height>360</height>
+       </rect>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+     </widget>
+     <widget class="Line" name="plotFrame_line4">
+      <property name="geometry">
+       <rect>
+        <x>950</x>
+        <y>10</y>
+        <width>20</width>
+        <height>360</height>
+       </rect>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+     </widget>
+     <widget class="Line" name="plotFrame_line1">
+      <property name="geometry">
+       <rect>
+        <x>360</x>
+        <y>360</y>
+        <width>600</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="layoutDirection">
+       <enum>Qt::LeftToRight</enum>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+     <zorder>benchmark_plot</zorder>
+     <zorder>layoutWidget</zorder>
+     <zorder>startWrite_button</zorder>
+     <zorder>benchmark_progressBar</zorder>
+     <zorder>startRead_button</zorder>
+     <zorder>plotFrame_line4</zorder>
+     <zorder>plotFrame_line3</zorder>
+     <zorder>plotFrame_line2</zorder>
+     <zorder>plotFrame_line1</zorder>
     </widget>
    </widget>
    <widget class="QTextEdit" name="console">
