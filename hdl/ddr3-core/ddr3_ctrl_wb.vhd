@@ -150,6 +150,8 @@ architecture rtl of ddr3_ctrl_wb is
   signal wb_we_f_edge  : std_logic;
   signal wb_addr_d     : std_logic_vector(31 downto 0);
   signal wb_stall      : std_logic;
+  signal wb_stall_d    : std_logic_vector(1 downto 0);
+  signal wb_stall_cnt  : unsigned(7 downto 0);
   signal wb_data_d     : std_logic_vector(31 downto 0);
 
   signal ddr_burst_cnt     : unsigned(5 downto 0);
@@ -327,7 +329,7 @@ begin
          elsif (wb_stb_i = '0' and wb_cyc_i = '0' and ddr_burst_cnt > 0) then
             ddr_burst_cnt <= to_unsigned(0, ddr_burst_cnt'length);
             ddr_cmd_en <= '1';
-         elsif (wb_stb_i = '0' and wb_cyc_i = '1' and ddr_burst_cnt > 0 and wb_we_d = '0' and wb_stall = '0') then
+         elsif (wb_stb_i = '0' and wb_cyc_i = '1' and ddr_burst_cnt > 0 and wb_we_d = '0' and wb_stall = '0' and wb_stall_d(1) = '0') then
             ddr_burst_cnt <= to_unsigned(0, ddr_burst_cnt'length);
             ddr_cmd_en <= '1';
          else
@@ -375,15 +377,24 @@ begin
     if rising_edge(wb_clk_i) then
       if (rst_n = '0') then
         wb_stall <= '0';
+        wb_stall_cnt <= (others => '0');
+        wb_stall_d <= "00";
       else
         if ((ddr_wr_count_i > c_FIFO_ALMOST_FULL) or
             (ddr_wr_full_i = '1') or
             (ddr_rd_count_i > c_FIFO_ALMOST_FULL) or
             (ddr_rd_full_i = '1')) then
-          wb_stall <= '1';
+             wb_stall <= '1';
+             wb_stall_cnt <= to_unsigned(16, 8);
+        elsif (wb_stall_cnt > 1) then
+            wb_stall <= '1';
+            wb_stall_cnt <= wb_stall_cnt - 1;      
         else
-          wb_stall <= '0';
+            wb_stall <= '0';
+            wb_stall_cnt <= (others => '0');         
         end if;
+        wb_stall_d(0) <= wb_stall;
+        wb_stall_d(1) <= wb_stall_d(0);
       end if;
     end if;
   end process p_ddr_stall;
