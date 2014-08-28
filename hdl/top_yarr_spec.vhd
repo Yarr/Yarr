@@ -296,7 +296,7 @@ architecture rtl of yarr is
 		 --! Bank and port size selection
 		 g_BANK_PORT_SELECT   : string  := "SPEC_BANK3_32B_32B";
 		 --! Core's clock period in ps
-		 g_MEMCLK_PERIOD      : integer := 3125;
+		 g_MEMCLK_PERIOD      : integer := 3000;
 		 --! If TRUE, uses Xilinx calibration core (Input term, DQS centering)
 		 g_CALIB_SOFT_IP      : string  := "TRUE";
 		 --! User ports addresses maping (BANK_ROW_COLUMN or ROW_BANK_COLUMN)
@@ -601,10 +601,14 @@ architecture rtl of yarr is
   signal TRIG0 : STD_LOGIC_VECTOR(31 DOWNTO 0);
   signal TRIG1 : STD_LOGIC_VECTOR(31 DOWNTO 0);
   signal TRIG2 : STD_LOGIC_VECTOR(31 DOWNTO 0);
+  signal TRIG0_t : STD_LOGIC_VECTOR(31 DOWNTO 0);
+  signal TRIG1_t : STD_LOGIC_VECTOR(31 DOWNTO 0);
+  signal TRIG2_t : STD_LOGIC_VECTOR(31 DOWNTO 0);
   signal debug_dma : std_logic_vector(31 downto 0);
   
   signal ddr_status : std_logic_vector(31 downto 0);
   signal gn4124_core_Status : std_logic_vector(31 downto 0);
+  
   
 begin
 
@@ -793,23 +797,45 @@ begin
   led_red_o   <= dummy_ctrl_reg_led(0);
   led_green_o <= dummy_ctrl_reg_led(1);
 
---	--TRIG0(31 downto 0) <= gn4124_core_status;
+--   TRIG2(31 downto 0) <= gn4124_core_status;
 --	TRIG0(31 downto 0) <= ddr_status;
---	TRIG1(31 downto 0) <= dma_adr;
---   --TRIG1(31 downto 0) <= (others => '0');
---	TRIG2(31 downto 0) <= dma_dat_i;
---   --TRIG2(31 downto 0) <= (others => '0');
---	ila_i : ila
---	  port map (
---		 CONTROL => CONTROL,
---		 CLK => l_clk,
---		 TRIG0 => TRIG0,
---		 TRIG1 => TRIG1,
---		 TRIG2 => TRIG2);
---		 
---	ila_icon_i : ila_icon
---		port map (
---    CONTROL0 => CONTROL);
+	TRIG1(31 downto 0) <= dma_adr;
+	TRIG2(31 downto 0) <= dma_dat_i;
+--   TRIG0(31 downto 0) <= (others => '0');
+--   TRIG1(31 downto 0) <= (others => '0');
+--   TRIG2(31 downto 0) <= (others => '0');
+   TRIG0(12 downto 0) <= (others => '0');
+   TRIG0(13) <= dma_cyc;
+   TRIG0(14) <= dma_stb;
+   TRIG0(15) <= dma_we;
+   TRIG0(16) <= dma_ack;
+   TRIG0(17) <= dma_stall;
+   TRIG0(31 downto 18) <= (others => '0');
+   
+   p_ila_proc : process (l_clk, L_RST_N)
+   begin
+      if (L_RST_N = '0') then
+         --TRIG0(31 downto 0) <= (others => '0');
+         --TRIG1(31 downto 0) <= (others => '0');
+         --TRIG2(31 downto 0) <= (others => '0');
+      elsif rising_edge(l_clk) then
+         --TRIG2(31 downto 0) <= gn4124_core_status;
+         --TRIG0(31 downto 0) <= ddr_status;
+         --TRIG1(31 downto 0) <= dma_adr;      
+      end if;
+   end process p_ila_proc;
+   
+	ila_i : ila
+	  port map (
+		 CONTROL => CONTROL,
+		 CLK => l_clk,
+		 TRIG0 => TRIG0,
+		 TRIG1 => TRIG1,
+		 TRIG2 => TRIG2);
+		 
+	ila_icon_i : ila_icon
+		port map (
+    CONTROL0 => CONTROL);
 	 
   ------------------------------------------------------------------------------
   -- Interrupt stuff
