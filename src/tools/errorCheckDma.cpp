@@ -20,53 +20,76 @@ uint32_t rand32() {
 int main (void) {
     SpecController mySpec(0);
     
-    int maxLoops = 1000000;
+    int maxLoops = 10000;
     int overall_errors = 0;
     uint32_t off = 0;
 
-    const size_t size = 1024/4*400; // 1kB
+    const size_t size = 1024/4*500; // 1kB
     
     srand(time(NULL));
 
+    std::cout << "==================================" << std::endl;
+    std::cout << "Starting error check:" << std::endl;
+    std::cout << "Sample size: " << size/256.0 << " kB" << std::endl;
+    std::cout << "Iterations: " << maxLoops << std::endl;
+    std::cout << "==================================" << std::endl;
+    
+    int cur = 0;
+    int cur_old = -1;
     for (int loop = 0; loop<maxLoops; loop++) {
-        std::cout << std::endl << "==================================" << std::endl;
+        cur = fabs(loop/(double)maxLoops*100);
+        if (cur != cur_old) {
+            std::cout << "\r|";
+            for(int i=0; i<20; i++) {
+                if (i*5 <= cur) {
+                    std::cout << "#";
+                } else {
+                    std::cout << " ";
+                }
+            }
+            std::cout << "| " << (int) cur << "%";
+            std::cout.flush();
+        }
+        cur_old = cur;
+        //std::cout << std::endl << "==================================" << std::endl;
         
-        std::cout << "Creating Sample of size " << size*4/1024 << "kB ... ";
+        //std::cout << "Creating Sample of size " << size*4/1024 << "kB ... ";
         uint32_t *sample = new uint32_t[size];
         for(unsigned int i = 0; i<size; i++)
-            //sample[i] = rand32();
-            sample[i] = i;
+            sample[i] = rand32();
+            //sample[i] = i;
 
-        std::cout << "Writing Sample ... ";
+        //std::cout << "Writing Sample ... ";
         mySpec.writeDma(off, sample, size);
         
-        std::cout << "Reading Sample!" << std::endl;
+        //std::cout << "Reading Sample!" << std::endl;
         uint32_t *readBack = new uint32_t[size];
         if (mySpec.readDma(off, readBack, size))
             return 0;
 
         int counter = 0;
-        std::cout << "Sample\tReadback #" << loop << " " <<std::endl;
+        //std::cout << "Sample\tReadback #" << loop << " " <<std::endl;
         for(unsigned int i = 0; i<size; i++) {
             if(sample[i] != readBack[i]) {
                 counter ++;
                 std::cout << "[" << i << "] " << std::hex << sample[i] << "\t" << readBack[i] << std::dec << std::endl;
             }
         }
-        std::cout << "Found #" << counter << " errors!" << std::endl;
-        std::cout << "==================================" << std::endl;
+        //std::cout << "Found #" << counter << " errors!" << std::endl;
+        //std::cout << "==================================" << std::endl;
         overall_errors += counter;
-        if (counter != 0) return 0;
+        //if (counter != 0) return 0;
         off += size;
         off = off%0xF0000;
 
         delete sample;
         delete readBack;
-        //sleep(2); // is this needed?
+        //sleep(2); // for chipscope
     }
     
+    std::cout << std::endl;
     std::cout << std::endl << "==================================" << std::endl;
-    std::cout << "Total Data transfered " << size*4*maxLoops/1024/1024/1024 << " GB!" << std::endl;
+    std::cout << "Total Data transfered " << size*4*maxLoops/1024.0/1024.0/1024.0 << " GB!" << std::endl;
     std::cout << "Total Number of Errors #" << overall_errors << " errors!" << std::endl;
     std::cout << (double)overall_errors/(double)(size*maxLoops) << "\% are errors!" << std::endl;
     std::cout << "Bit error rate (CL 99%): " << (double)(-1*log(0.01))/(double)(size*maxLoops*32) << std::endl;
