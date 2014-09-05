@@ -9,9 +9,9 @@
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
-use IEEE.STD_LOGIC_UNSIGNED.all;
-use IEEE.STD_LOGIC_ARITH.all;
---use IEEE.NUMERIC_STD.all;
+--use IEEE.STD_LOGIC_ARITH.all;
+use IEEE.NUMERIC_STD.all;
+
 use work.gn4124_core_pkg.all;
 use work.common_pkg.all;
 
@@ -89,9 +89,9 @@ architecture behavioral of l2p_dma_master is
     ---------------------
     -- Constants
     ---------------------
-    constant c_L2P_MAX_PAYLOAD : std_logic_vector(10 downto 0) := CONV_STD_LOGIC_VECTOR(32, 11);
-    constant c_ADDR_FIFO_FULL_THRES : std_logic_vector(9 downto 0) := CONV_STD_LOGIC_VECTOR(800, 10);
-    constant c_DATA_FIFO_FULL_THRES : std_logic_vector(9 downto 0) := CONV_STD_LOGIC_VECTOR(800, 10);
+    constant c_L2P_MAX_PAYLOAD : integer := 32;
+    constant c_ADDR_FIFO_FULL_THRES : integer := 800;
+    constant c_DATA_FIFO_FULL_THRES : integer := 800;
     constant c_TIMEOUT : integer := 2000;
 
     ---------------------
@@ -124,34 +124,46 @@ architecture behavioral of l2p_dma_master is
 
     -- L2P packets
     signal s_l2p_header    : std_logic_vector(31 downto 0);
-    signal l2p_len_cnt     : std_logic_vector(29 downto 0);
+    signal l2p_len_cnt     : unsigned(12 downto 0);
     signal l2p_address_h   : std_logic_vector(31 downto 0);
     signal l2p_address_l   : std_logic_vector(31 downto 0);
-    signal l2p_data_cnt    : std_logic_vector(10 downto 0);
+    signal l2p_data_cnt    : unsigned(12 downto 0);
     signal l2p_64b_address : std_logic;
-    signal l2p_len_header  : std_logic_vector(9 downto 0);
+    signal l2p_len_header  : unsigned(12 downto 0);
     signal l2p_byte_swap   : std_logic_vector(1 downto 0);
     signal l2p_last_packet : std_logic;
     signal l2p_lbe_header  : std_logic_vector(3 downto 0);
     
+    signal ldm_arb_data_l  : std_logic_vector(31 downto 0); 
     signal ldm_arb_valid   : std_logic;
+    
+    signal data_fifo_valid : std_logic;
+    signal addr_fifo_valid : std_logic;
 
     -- Counter
-    signal target_addr_cnt : std_logic_vector(29 downto 0);
-    signal dma_length_cnt  : std_logic_vector(29 downto 0);
-    signal l2p_timeout_cnt : std_logic_vector(31 downto 0);
-    signal wb_timeout_cnt  : std_logic_vector(31 downto 0);
+    signal target_addr_cnt : std_logic_vector(31 downto 0);
+    signal dma_length_cnt  : unsigned(12 downto 0);
+    signal l2p_timeout_cnt : unsigned(12 downto 0);
+    signal wb_timeout_cnt  : unsigned(12 downto 0);
 
     -- Wishbone
     signal l2p_dma_cyc_t   : std_logic;
     signal l2p_dma_stb_t   : std_logic;
-    signal wb_ack_cnt      : std_logic_vector(29 downto 0);
-    signal wb_read_cnt     : std_logic_vector(29 downto 0);
+    signal wb_ack_cnt      : unsigned(12 downto 0);
+    signal wb_read_cnt     : unsigned(12 downto 0);
 
 begin
     fifo_rst <= not rst_n_i or fifo_rst_t;
 
     ldm_arb_valid_o <= ldm_arb_valid;
+    ldm_arb_data_o <= ldm_arb_data_l;
+    
+--    ldm_arb_data_o <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap) when (l2p_dma_current_state = L2P_DATA) 
+--                      else f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap) when (l2p_dma_current_state = L2P_LAST_DATA)
+--                      else ldm_arb_data_l when (l2p_dma_current_state = L2P_HEADER)
+--                      else ldm_arb_data_l when (l2p_dma_current_state = L2P_ADDR_L)
+--                      else ldm_arb_data_l when (l2p_dma_current_state = L2P_ADDR_H)
+--                      else x"DEADBEEF";
     ---------------------
     -- L2P FSM
     ---------------------    
@@ -160,7 +172,7 @@ begin
         if (rst_n_i = '0') then
             l2p_dma_current_state <= L2P_IDLE;
             ldm_arb_req_o <= '0';
-            ldm_arb_data_o <= (others => '0');
+            ldm_arb_data_l <= (others => '0');
             ldm_arb_valid <= '0';
             ldm_arb_dframe_o <= '0';
             data_fifo_rd <= '0';
@@ -168,6 +180,7 @@ begin
             l2p_edb_o <= '0';
             l2p_timeout_cnt <= (others => '0');
             fifo_rst_t <= '0';
+            data_fifo_valid <= '0';
         elsif rising_edge(clk_i) then
             case l2p_dma_current_state is
                 
@@ -176,17 +189,21 @@ begin
                     l2p_edb_o <= '0';
                     fifo_rst_t <= '0';
                     ldm_arb_req_o <= '0';
-                    --ldm_arb_data_o <= (others => '0');
+                    ldm_arb_data_l <= (others => '0');
                     ldm_arb_valid <= '0';
                     ldm_arb_dframe_o <= '0';
                     data_fifo_rd <= '0';
                     dma_ctrl_done_o <= '0';
+                    data_fifo_valid <= '0';
                     if (dma_ctrl_start_l2p_i = '1') then
                         l2p_dma_current_state <= L2P_SETUP;
                     end if;
                     
 
                 when L2P_SETUP =>
+                    ldm_arb_valid <= '0';
+                    ldm_arb_dframe_o <= '0';
+                    data_fifo_rd <= '0';
                     l2p_timeout_cnt <= (others => '0');
                     if (l2p_rdy_i = '1') then
                         l2p_dma_current_state <= L2P_HEADER;
@@ -194,10 +211,11 @@ begin
                     end if;
 
                 when L2P_HEADER =>
+                    ldm_arb_valid <= '0';
                     if (arb_ldm_gnt_i = '1' and l_wr_rdy_i = "11") then
                         ldm_arb_req_o <= '0'; -- Bus has been granted
                         -- Send header
-                        ldm_arb_data_o <= s_l2p_header;
+                        ldm_arb_data_l <= s_l2p_header;
                         ldm_arb_valid <= '1';
                         ldm_arb_dframe_o <= '1'; -- Keep asserted to stay bus master
                         if (l2p_64b_address = '1') then
@@ -208,60 +226,121 @@ begin
                     end if;
 
                 when L2P_ADDR_H =>
-                    ldm_arb_data_o <= l2p_address_h;
+                    ldm_arb_data_l <= l2p_address_h;
                     l2p_dma_current_state <= L2P_ADDR_L;
 
                 when L2P_ADDR_L =>
-                    ldm_arb_data_o <= l2p_address_l;
+                    ldm_arb_data_l <= l2p_address_l;
                     l2p_dma_current_state <= L2P_DATA;
 
-                when L2P_DATA =>
+                when L2P_DATA =>   
+                     ldm_arb_data_l <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);                
+                     if (data_fifo_empty = '0' and data_fifo_valid = '1' and l2p_data_cnt > 1) then
+                        ldm_arb_valid <= '1';
+                        ldm_arb_dframe_o <= '1';
+                        data_fifo_valid <= '0';
+                     elsif (data_fifo_empty = '1' and data_fifo_valid = '1' and l2p_data_cnt > 1) then
+                        ldm_arb_valid <= '0';
+                        ldm_arb_dframe_o <= '1';
+                        data_fifo_valid <= '0';
+                     elsif (data_fifo_valid = '1' and l2p_data_cnt <= 1) then
+                        ldm_arb_valid <= '1';
+                        ldm_arb_dframe_o <= '0';
+                        l2p_dma_current_state <= L2P_LAST_DATA;
+                        data_fifo_valid <= '0';
+                     else
+                        ldm_arb_valid <= '0';
+                        ldm_arb_dframe_o <= '1';
+                     end if;
+                     
+                     if (data_fifo_empty = '0' and l2p_rdy_i = '1' and l2p_data_cnt > 1) then
+                        data_fifo_rd <= '1';
+                        data_fifo_valid <= '1';
+                     elsif (data_fifo_empty = '0' and l2p_rdy_i = '1' and l2p_data_cnt = 0) then
+                        data_fifo_rd <= '1';
+                        data_fifo_valid <= '1';                        
+                     else
+                        data_fifo_rd <= '0';
+                     end if;
+                     
+                     
 --                    if (data_fifo_empty = '0' and l2p_rdy_i = '1' and l2p_data_cnt > 1) then
 --                        data_fifo_rd <= '1';
---                    elsif (data_fifo_empty = '0' and l2p_data_cnt = 2) then
+--                        ldm_arb_data_l <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
+--                    elsif (data_fifo_empty = '0' and data_fifo_empty_d = '0' and l2p_data_cnt = 1) then
+--                        data_fifo_rd <= '0';
+--                        ldm_arb_data_l <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
+--                    elsif (data_fifo_empty = '0' and data_fifo_empty_d = '1' and l2p_data_cnt = 1) then
 --                        data_fifo_rd <= '1';
+--                        ldm_arb_data_l <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);                        
+--                    elsif (data_fifo_empty = '1' and l2p_data_cnt = 1) then
+--                        data_fifo_rd <= '1';
+--                        ldm_arb_data_l <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
+--                    elsif (data_fifo_empty = '0' and l2p_data_cnt = 0) then
+--                        data_fifo_rd <= '1';
+--                        ldm_arb_data_l <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);                    
 --                    else
 --                        data_fifo_rd <= '0';
 --                    end if;
+--                    
+--                    if (data_fifo_empty = '0' and data_fifo_rd = '1' and l2p_data_cnt > 1) then
+--                        ldm_arb_valid <= '1';
+--                        ldm_arb_dframe_o <= '1';
+--                    elsif (data_fifo_empty = '0' and data_fifo_empty_d = '0' and l2p_data_cnt = 1 and data_fifo_rd = '1') then
+--                        ldm_arb_valid <= '1';
+--                        ldm_arb_dframe_o <= '0';
+--                        l2p_dma_current_state <= L2P_LAST_DATA;
+--                    elsif (data_fifo_empty = '0' and data_fifo_empty_d = '1' and l2p_data_cnt = 1 and data_fifo_rd = '1') then
+--                        ldm_arb_valid <= '1';
+--                        ldm_arb_dframe_o <= '1';
+--                    elsif (l2p_data_cnt = 0) then
+--                        ldm_arb_valid <= '1';
+--                        ldm_arb_dframe_o <= '0';
+--                        l2p_dma_current_state <= L2P_LAST_DATA;                    
+--                    else 
+--                        ldm_arb_valid <= '0';
+--                        ldm_arb_dframe_o <= '1';
+--                    end if;
                     
-                    if (data_fifo_empty = '0' and l2p_data_cnt > 1 and l2p_rdy_i = '1' and data_fifo_rd = '1') then
-                        ldm_arb_dframe_o <= '1';
-                        ldm_arb_valid <= '1';
-                        ldm_arb_data_o <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
-                        data_fifo_rd <= '1';
-                     elsif (data_fifo_empty = '0' and l2p_data_cnt > 1 and l2p_rdy_i = '0' and data_fifo_rd = '1') then
-                        ldm_arb_dframe_o <= '1';
-                        ldm_arb_valid <= '1';
-                        ldm_arb_data_o <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
-                        data_fifo_rd <= '0';
-                    elsif (data_fifo_empty = '0' and l2p_data_cnt > 1 and l2p_rdy_i = '1' and data_fifo_rd = '0') then
-                        ldm_arb_dframe_o <= '1';
-                        ldm_arb_valid <= '0';
-                        ldm_arb_data_o <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
-                        data_fifo_rd <= '1';  
-                    elsif (l2p_data_cnt = 1 and data_fifo_empty = '0' and data_fifo_rd = '1') then
-                        ldm_arb_dframe_o <= '0';
-                        ldm_arb_valid <= '1';
-                        ldm_arb_data_o <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
-                        data_fifo_rd <= '0';
-                        l2p_dma_current_state <= L2P_LAST_DATA;
-                    elsif (l2p_data_cnt = 1 and data_fifo_empty = '0' and data_fifo_rd = '0') then
-                        ldm_arb_dframe_o <= '0';
-                        ldm_arb_valid <= '1';
-                        ldm_arb_data_o <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
-                        data_fifo_rd <= '1';
-                        l2p_dma_current_state <= L2P_LAST_DATA;
-                    elsif (l2p_data_cnt = 0 and data_fifo_empty = '0' and data_fifo_rd = '0') then
-                        ldm_arb_dframe_o <= '0';
-                        ldm_arb_valid <= '1';
-                        ldm_arb_data_o <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
-                        data_fifo_rd <= '1';
-                        l2p_dma_current_state <= L2P_LAST_DATA;                            
-                    else
-                        ldm_arb_dframe_o <= '1';
-                        ldm_arb_valid <= '0';
-                        data_fifo_rd <= '0';
-                    end if;
+--                    if (data_fifo_empty = '0' and l2p_data_cnt > TO_UNSIGNED(1, 13) and l2p_rdy_i = '1' and data_fifo_rd = '1') then
+--                        ldm_arb_dframe_o <= '1';
+--                        ldm_arb_valid <= '1';
+--                        ldm_arb_data_l <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
+--                        data_fifo_rd <= '1';
+--                     elsif (data_fifo_empty = '0' and l2p_data_cnt > TO_UNSIGNED(1, 13) and l2p_rdy_i = '0' and data_fifo_rd = '1') then
+--                        ldm_arb_dframe_o <= '1';
+--                        ldm_arb_valid <= '1';
+--                        ldm_arb_data_l <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
+--                        data_fifo_rd <= '0';
+--                    elsif (data_fifo_empty = '0' and l2p_data_cnt > TO_UNSIGNED(1, 13) and l2p_rdy_i = '1' and data_fifo_rd = '0') then
+--                        ldm_arb_dframe_o <= '1';
+--                        ldm_arb_valid <= '0';
+--                        ldm_arb_data_l <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
+--                        data_fifo_rd <= '1';  
+--                    elsif (l2p_data_cnt = TO_UNSIGNED(1, 13) and data_fifo_empty = '0' and data_fifo_rd = '1') then
+--                        ldm_arb_dframe_o <= '0';
+--                        ldm_arb_valid <= '1';
+--                        ldm_arb_data_l <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
+--                        data_fifo_rd <= '0';
+--                        l2p_dma_current_state <= L2P_LAST_DATA;
+--                    elsif (l2p_data_cnt = TO_UNSIGNED(1, 13) and data_fifo_empty = '0' and data_fifo_rd = '0') then
+--                        ldm_arb_dframe_o <= '1';
+--                        ldm_arb_valid <= '0';
+--                        ldm_arb_data_l <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
+--                        data_fifo_rd <= '1';
+--                        --l2p_dma_current_state <= L2P_LAST_DATA;
+--                    elsif (l2p_data_cnt = TO_UNSIGNED(0, 13) and data_fifo_empty = '0' and data_fifo_rd = '0') then
+--                        ldm_arb_dframe_o <= '0';
+--                        ldm_arb_valid <= '1';
+--                        ldm_arb_data_l <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
+--                        data_fifo_rd <= '1';
+--                        l2p_dma_current_state <= L2P_LAST_DATA;                            
+--                    else
+--                        ldm_arb_dframe_o <= '1';
+--                        ldm_arb_valid <= '0';
+--                        data_fifo_rd <= '0';
+--                    end if;
+                    
                     -- Error condition, aboirt transfer
                     if (tx_error_i = '1' or l2p_timeout_cnt > c_TIMEOUT or dma_ctrl_abort_i = '1') then
                         l2p_dma_current_state <= L2P_ERROR;
@@ -309,21 +388,22 @@ begin
     -- Last Byte Enable must be "0000" when length = 1
     l2p_lbe_header <= "0000" when l2p_len_header = 1 else "1111";
     -- 64bit address flag
-    l2p_64b_address <= '0' when l2p_address_h = 0 else '1';
+    l2p_64b_address <= '0' when l2p_address_h = "00000000" else '1';
 
     -- Packet header
-    s_l2p_header <= "000"                                -->  Traffic Class
-                    & '0'                                -->  Snoop
-                    & "001" & l2p_64b_address            -->  Header type,
-                                                         --   memory write 32-bit or
-                                                         --   memory write 64-bit
-                    & l2p_lbe_header                     -->  LBE (Last Byte Enable)
-                    & "1111"                             -->  FBE (First Byte Enable)
-                    & "000"                              -->  Reserved
-                    & '0'                                -->  VC (Virtual Channel)
-                    & "00"                               -->  Reserved
-                    & std_logic_vector(l2p_len_header);  -->  Length (in 32-bit words)
-                                                         --   0x000 => 1024 words (4096 bytes)
+    s_l2p_header(31 downto 29) <= "000";                   -->  Traffic Class
+    s_l2p_header(28)           <= '0';                     -->  Snoop
+    s_l2p_header(27 downto 25) <= "001"; -->  Header type,
+                                                           --   memory write 32-bit or
+                                                           --   memory write 64-bit
+    s_l2p_header(24)           <= l2p_64b_address;                                                      
+    s_l2p_header(23 downto 20) <= l2p_lbe_header;          -->  LBE (Last Byte Enable)
+    s_l2p_header(19 downto 16) <= "1111";                  -->  FBE (First Byte Enable)
+    s_l2p_header(15 downto 13) <= "000";                   -->  Reserved
+    s_l2p_header(12)           <= '0';                     -->  VC (Virtual Channel)
+    s_l2p_header(11 downto 10) <= "00";                    -->  Reserved
+    s_l2p_header(9  downto  0) <= STD_LOGIC_VECTOR(l2p_len_header(9 downto 0));  -->  Length (in 32-bit words)
+                                                                                 --   0x000 => 1024 words (4096 bytes)
     p_pkt_gen : process (clk_i, rst_n_i)
     begin
         if (rst_n_i = '0') then
@@ -336,22 +416,23 @@ begin
             l2p_last_packet <= '0';
         elsif rising_edge(clk_i) then
             if (l2p_dma_current_state = L2P_IDLE) then
-                l2p_len_cnt <= dma_ctrl_len_i(31 downto 2);
+                l2p_len_cnt <= unsigned(dma_ctrl_len_i(14 downto 2));
                 l2p_address_h <= dma_ctrl_host_addr_h_i;
                 l2p_address_l <= dma_ctrl_host_addr_l_i;
                 l2p_byte_swap <= dma_ctrl_byte_swap_i;
+                l2p_last_packet <= '0';
             elsif (l2p_dma_current_state = L2P_SETUP) then
-                if (l2p_len_cnt > c_L2P_MAX_PAYLOAD(9 downto 0)) then
-                    l2p_data_cnt <= c_L2P_MAX_PAYLOAD;
-                    l2p_len_header <= c_L2P_MAX_PAYLOAD(9 downto 0);
+                if (l2p_len_cnt > c_L2P_MAX_PAYLOAD) then
+                    l2p_data_cnt <= TO_UNSIGNED(c_L2P_MAX_PAYLOAD, 13);
+                    l2p_len_header <= TO_UNSIGNED(c_L2P_MAX_PAYLOAD, 13);
                     l2p_last_packet <= '0';
-                elsif (l2p_len_cnt = c_L2P_MAX_PAYLOAD(9 downto 0)) then
-                    l2p_data_cnt <= c_L2P_MAX_PAYLOAD;
-                    l2p_len_header <= c_L2P_MAX_PAYLOAD(9 downto 0);
+                elsif (l2p_len_cnt = c_L2P_MAX_PAYLOAD) then
+                    l2p_data_cnt <= TO_UNSIGNED(c_L2P_MAX_PAYLOAD, 13);
+                    l2p_len_header <= TO_UNSIGNED(c_L2P_MAX_PAYLOAD, 13);
                     l2p_last_packet <= '1';
                 else
-                    l2p_data_cnt <= l2p_len_cnt(10 downto 0);
-                    l2p_len_header <= l2p_len_cnt(9 downto 0);
+                    l2p_data_cnt <= l2p_len_cnt;
+                    l2p_len_header <= l2p_len_cnt;
                     l2p_last_packet <= '1';
                 end if;
             --elsif (l2p_dma_current_state = L2P_HEADER) then
@@ -361,13 +442,13 @@ begin
             elsif (l2p_dma_current_state = L2P_DATA) then
                --if (data_fifo_empty = '0' and l2p_data_cnt > 1 and data_fifo_rd = '1') then
                 if (ldm_arb_valid = '1') then
-                    l2p_data_cnt <= l2p_data_cnt -1;
+                    l2p_data_cnt <= l2p_data_cnt - 1;
                 end if;
             elsif (l2p_dma_current_state = L2P_LAST_DATA) then
                 if (l2p_last_packet = '0') then
                     -- Increase Address
                     -- TODO Not overflow safe !
-                    l2p_address_l <= l2p_address_l + (CONV_INTEGER(c_L2P_MAX_PAYLOAD) * 4);
+                    l2p_address_l <= STD_LOGIC_VECTOR(unsigned(l2p_address_l) + (c_L2P_MAX_PAYLOAD * 4));
                     l2p_len_cnt <= l2p_len_cnt - c_L2P_MAX_PAYLOAD;
                 else
                     l2p_len_cnt <= (others => '0');
@@ -378,7 +459,7 @@ begin
 
     ---------------------
     -- Address Counter
-    ---------------------
+    ---------------------    
     p_target_cnt : process (clk_i, rst_n_i)
     begin
         if (rst_n_i = '0') then
@@ -397,9 +478,10 @@ begin
             elsif (dma_ctrl_start_l2p_i = '1') then
                 if (l2p_dma_current_state = L2P_IDLE) then
                     -- dma target adrr is byte address, need 32bit address
-                    target_addr_cnt <= dma_ctrl_target_addr_i(31 downto 2);
+                    target_addr_cnt(31 downto 30) <= "00";
+                    target_addr_cnt(29 downto 0) <= dma_ctrl_target_addr_i(31 downto 2);
                     -- dma target length is in byte, need 32bit
-                    dma_length_cnt <= dma_ctrl_len_i(31 downto 2);
+                    dma_length_cnt <= unsigned(dma_ctrl_len_i(14 downto 2));
                     dma_ctrl_error_o <= '0';
                 else
                     target_addr_cnt <= (others => '0');
@@ -407,11 +489,11 @@ begin
                     dma_ctrl_error_o <= '1';
                 end if;
                 addr_fifo_wr <= '0';
-           elsif (dma_length_cnt /= 0 and addr_fifo_full = '0') then
+           elsif (dma_length_cnt > 0) and (addr_fifo_full = '0') then
                 addr_fifo_wr <= '1';
-                target_addr_cnt <= target_addr_cnt + 1;
+                target_addr_cnt <= STD_LOGIC_VECTOR(unsigned(target_addr_cnt) + 1);
                 dma_length_cnt <= dma_length_cnt - 1;
-                addr_fifo_din <= "00" & std_logic_vector(target_addr_cnt);
+                addr_fifo_din <= target_addr_cnt;
             else
                 addr_fifo_wr <= '0';
                 dma_ctrl_error_o <= '0';
@@ -428,8 +510,16 @@ begin
     l2p_dma_adr_o <= addr_fifo_dout;
     l2p_dma_dat_o <= (others => '0');
     l2p_dma_we_o <= '0';
+    
+--    l2p_dma_adr_o(18 downto 0) <= addr_fifo_dout(18 downto 0);
+--    l2p_dma_adr_o(30 downto 19) <= STD_LOGIC_VECTOR(wb_read_cnt(11 downto 0));
+--    l2p_dma_adr_o(31) <= addr_fifo_empty;
+--    l2p_dma_adr_o(11 downto 0) <= STD_LOGIC_VECTOR(wb_read_cnt(11 downto 0));
+--    l2p_dma_adr_o(31 downto 12) <= (others => '0');
 
-    p_wb_master : process (l2p_dma_clk_i, rst_n_i)
+    addr_fifo_valid <= not(addr_fifo_empty or l2p_dma_stall_i or data_fifo_full or p2l_dma_cyc_i);
+    
+    p_wb_master : process (l2p_dma_clk_i, rst_n_i, wb_read_cnt)
     begin
         if (rst_n_i = '0') then
             l2p_dma_stb_t <= '0';
@@ -448,49 +538,36 @@ begin
                 l2p_dma_sel_o <= (others => '1');
                 addr_fifo_rd <= '0';               
             elsif (l2p_dma_current_state = L2P_IDLE and dma_ctrl_start_l2p_i = '1') then
-                wb_read_cnt <= dma_ctrl_len_i(31 downto 2);
+                wb_read_cnt <= unsigned(dma_ctrl_len_i(14 downto 2));
                 l2p_dma_stb_t <= '0';
                 l2p_dma_sel_o <= (others => '1');
                 addr_fifo_rd <= '0';
-            elsif (addr_fifo_empty = '0' and l2p_dma_stall_i = '0' 
-                   and data_fifo_full = '0' and p2l_dma_cyc_i = '0'
-                   and wb_read_cnt /= 0) then
+            elsif ((addr_fifo_valid = '1') and (wb_read_cnt > 0)) then
                 wb_read_cnt <= wb_read_cnt - 1;
                 l2p_dma_stb_t <= '1';
-                --l2p_dma_adr_o <= addr_fifo_dout;
                 l2p_dma_sel_o <= (others => '1');
                 addr_fifo_rd <= '1';
             else
+                wb_read_cnt <= wb_read_cnt;
                 l2p_dma_stb_t <= '0';
                 l2p_dma_sel_o <= (others => '1');
                 addr_fifo_rd <= '0';
             end if;
-
---            if (addr_fifo_rd = '1') then
---               l2p_dma_adr_o <= addr_fifo_dout;
---               l2p_dma_sel_o <= (others => '1');
---               l2p_dma_stb_t <= '1';
---            else
---               l2p_dma_adr_o <= (others => '0');
---               l2p_dma_sel_o <= (others => '0');
---               l2p_dma_stb_t <= '0';
---            end if;
             
             -- Cycle logic
-            if (wb_read_cnt /= 0 or wb_ack_cnt /= 0) then
-                l2p_dma_cyc_t <= '1';
-            else
+            if (wb_read_cnt = 0 and wb_ack_cnt = 0) then
                 l2p_dma_cyc_t <= '0';
+            else
+                l2p_dma_cyc_t <= '1';
             end if;
 
             -- Acknowledge counter
-            if (l2p_dma_ack_i = '1' and wb_ack_cnt /= 0) then
+            if (l2p_dma_ack_i = '1' and wb_ack_cnt > 0) then
                 wb_ack_cnt <= wb_ack_cnt - 1;
             elsif (l2p_dma_current_state = L2P_ERROR) then
                wb_ack_cnt <= (others => '0');
             elsif (l2p_dma_current_state = L2P_IDLE and dma_ctrl_start_l2p_i = '1') then
-                wb_ack_cnt <= dma_ctrl_len_i(31 downto 2);
-
+                wb_ack_cnt <= unsigned(dma_ctrl_len_i(14 downto 2));
             end if;
             
             -- Timeout counter
@@ -517,8 +594,8 @@ begin
         din => addr_fifo_din,
         wr_en => addr_fifo_wr,
         rd_en => addr_fifo_rd,
-        prog_full_thresh_assert => c_ADDR_FIFO_FULL_THRES,
-        prog_full_thresh_negate => c_ADDR_FIFO_FULL_THRES-50,
+        prog_full_thresh_assert => STD_LOGIC_VECTOR(TO_UNSIGNED(c_ADDR_FIFO_FULL_THRES, 10)),
+        prog_full_thresh_negate => STD_LOGIC_VECTOR(TO_UNSIGNED(c_ADDR_FIFO_FULL_THRES-50, 10)),
         dout => addr_fifo_dout,
         full => open,
         empty => addr_fifo_empty,
@@ -534,8 +611,8 @@ begin
         din => data_fifo_din,
         wr_en => data_fifo_wr,
         rd_en => data_fifo_rd,
-        prog_full_thresh_assert => c_DATA_FIFO_FULL_THRES,
-        prog_full_thresh_negate => c_DATA_FIFO_FULL_THRES-50,
+        prog_full_thresh_assert => STD_LOGIC_VECTOR(TO_UNSIGNED(c_DATA_FIFO_FULL_THRES, 10)),
+        prog_full_thresh_negate => STD_LOGIC_VECTOR(TO_UNSIGNED(c_DATA_FIFO_FULL_THRES-50, 10)),
         dout => data_fifo_dout,
         full => open,
         empty => data_fifo_empty,

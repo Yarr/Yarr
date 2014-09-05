@@ -580,7 +580,8 @@ begin
     elsif rising_edge(p2l_dma_clk_i) then
       -- data and address
       if (to_wb_fifo_valid = '1') then
-        p2l_dma_adr_o <= "00" & to_wb_fifo_dout(61 downto 32);
+        p2l_dma_adr_o(31 downto 30) <= "00";
+		  p2l_dma_adr_o(29 downto 0) <= to_wb_fifo_dout(61 downto 32);
         p2l_dma_dat_o <= to_wb_fifo_dout(31 downto 0);
       end if;
       -- stb and sel signals management

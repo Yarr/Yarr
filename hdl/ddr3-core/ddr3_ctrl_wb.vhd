@@ -1,8 +1,6 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
---use IEEE.NUMERIC_STD.all;
-use IEEE.std_logic_unsigned.all;
-use IEEE.std_logic_arith.all;
+use IEEE.NUMERIC_STD.all;
 
 
 library work;
@@ -72,10 +70,10 @@ architecture behavioral of ddr3_ctrl_wb is
     --------------------------------------
     -- Constants
     --------------------------------------
-    constant c_DDR_BURST_LENGTH : std_logic_vector(5 downto 0) := CONV_STD_LOGIC_VECTOR(16, 6);
-    constant c_FIFO_ALMOST_FULL : std_logic_vector(6 downto 0) := CONV_STD_LOGIC_VECTOR(53, 7);
+    constant c_DDR_BURST_LENGTH : integer := 16;
+    constant c_FIFO_ALMOST_FULL : integer := 53;
     constant c_ADDR_SHIFT : integer := log2_ceil(g_DATA_PORT_SIZE/8);
-    constant c_STALL_TIME : std_logic_vector(3 downto 0) := CONV_STD_LOGIC_VECTOR(20, 4);
+    constant c_STALL_TIME : integer := 20;
 
     --------------------------------------
     -- Signals
@@ -95,9 +93,9 @@ architecture behavioral of ddr3_ctrl_wb is
     --------------------------------------
     -- Counter
     --------------------------------------
-    signal wb_stall_cnt : std_logic_vector(3 downto 0);
-    signal ddr_burst_cnt : std_logic_vector(5 downto 0);
-    signal ddr_burst_cnt_d : std_logic_vector(5 downto 0);
+    signal wb_stall_cnt : unsigned(3 downto 0);
+    signal ddr_burst_cnt : unsigned(5 downto 0);
+    signal ddr_burst_cnt_d : unsigned(5 downto 0);
     
 begin
     -- Tie offs
@@ -177,19 +175,19 @@ begin
         elsif rising_edge(wb_clk_i) then
             if (wb_cyc_i = '1' and wb_stb_i = '1') then
                 if (ddr_burst_cnt = c_DDR_BURST_LENGTH) then
-                    ddr_burst_cnt <= CONV_STD_LOGIC_VECTOR(1, 6);
+                    ddr_burst_cnt <= TO_UNSIGNED(1, 6);
                     ddr_cmd_en <= '1';
                 else
                     ddr_burst_cnt <= ddr_burst_cnt + 1;
                     ddr_cmd_en <= '0';
                 end if;
             elsif (wb_stb_i = '0' and ddr_burst_cnt > 0) then
-                ddr_burst_cnt <= (others => '0');
+                ddr_burst_cnt <= TO_UNSIGNED(0, 6);
                 ddr_cmd_en <= '1';
             else
                 ddr_cmd_en <= '0';
             end if;
-            ddr_cmd_bl_o <= std_logic_vector(ddr_burst_cnt - 1);
+            ddr_cmd_bl_o <= STD_LOGIC_VECTOR(ddr_burst_cnt - 1);
         
             ddr_burst_cnt_d <= ddr_burst_cnt;
             if (wb_stb_i = '1') then
@@ -199,11 +197,19 @@ begin
             
             
             if (ddr_burst_cnt = 0) then
-                ddr_cmd_byte_addr_o <= wb_addr_i(g_BYTE_ADDR_WIDTH-c_ADDR_SHIFT-1 downto 0) & addr_shift;
-                ddr_cmd_instr_o <= "00" & not(wb_we_i);
+				ddr_cmd_byte_addr_o <= wb_addr_i(g_BYTE_ADDR_WIDTH-c_ADDR_SHIFT-1 downto 0) & addr_shift;
+				ddr_cmd_instr_o <= "00" & not(wb_we_i);
+--				ddr_cmd_byte_addr_o(g_BYTE_ADDR_WIDTH - 1 downto c_ADDR_SHIFT) <= wb_addr_i(g_BYTE_ADDR_WIDTH-c_ADDR_SHIFT-1 downto 0);
+--				ddr_cmd_byte_addr_o(c_ADDR_SHIFT - 1 downto 0) <= addr_shift;
+--				ddr_cmd_instr_o(2 downto 1) <= "00";
+--				ddr_cmd_instr_o(0) <= not(wb_we_i);
             elsif (ddr_cmd_en = '1') then
-                ddr_cmd_byte_addr_o <= wb_addr_d(g_BYTE_ADDR_WIDTH-c_ADDR_SHIFT-1 downto 0) & addr_shift;
-                ddr_cmd_instr_o <= "00" & not(wb_we_d);            
+				ddr_cmd_byte_addr_o <= wb_addr_d(g_BYTE_ADDR_WIDTH-c_ADDR_SHIFT-1 downto 0) & addr_shift;
+				ddr_cmd_instr_o <= "00" & not(wb_we_d);
+--				ddr_cmd_byte_addr_o(g_BYTE_ADDR_WIDTH - 1 downto c_ADDR_SHIFT) <= wb_addr_d(g_BYTE_ADDR_WIDTH-c_ADDR_SHIFT-1 downto 0);
+--				ddr_cmd_byte_addr_o(c_ADDR_SHIFT - 1 downto 0) <= addr_shift;
+--				ddr_cmd_instr_o(2 downto 1) <= "00";
+--				ddr_cmd_instr_o(0) <= not(wb_we_d);            
             end if;
         end if;
     end process p_ddr_ctrl;
@@ -218,19 +224,19 @@ begin
             wb_stall_d <= '0';
             wb_stall_cnt <= (others => '0');
         elsif rising_edge(wb_clk_i) then
-            if (ddr_wr_count_i > c_FIFO_ALMOST_FULL or
-                    ddr_rd_count_i > c_FIFO_ALMOST_FULL or
+            if (unsigned(ddr_wr_count_i) > c_FIFO_ALMOST_FULL or
+                    unsigned(ddr_rd_count_i) > c_FIFO_ALMOST_FULL or
                     ddr_wr_full_i = '1' or
                     ddr_rd_full_i = '1' or
                     ddr_cmd_full_i = '1') then
                 wb_stall <= '1';
-                wb_stall_cnt <= c_STALL_TIME;
+                wb_stall_cnt <= TO_UNSIGNED(c_STALL_TIME, 4);
             elsif (wb_stall_cnt > 1) then
                 wb_stall <= '1';
                 wb_stall_cnt <= wb_stall_cnt - 1;
             else
                 wb_stall <= '0';
-                wb_stall_cnt <= (others =>'0');
+                wb_stall_cnt <= (others => '0');
             end if;
             wb_stall_d <= wb_stall;
         end if;
