@@ -8,10 +8,10 @@
 NET "clk20_vcxo_i" LOC = H12; # CLK25_VCXO
 NET "clk20_vcxo_i" IOSTANDARD = "LVCMOS25";
 
-#NET "clk_125m_pllref_n_i" LOC = F10;
-#NET "clk_125m_pllref_n_i" IOSTANDARD = "LVDS_25";
-#NET "clk_125m_pllref_p_i" LOC = G9;
-#NET "clk_125m_pllref_p_i" IOSTANDARD = "LVDS_25";
+NET "clk_125m_pllref_n_i" LOC = F10;
+NET "clk_125m_pllref_n_i" IOSTANDARD = "LVDS_25";
+NET "clk_125m_pllref_p_i" LOC = G9;
+NET "clk_125m_pllref_p_i" IOSTANDARD = "LVDS_25";
 
 #----------------------------------------
 # SFP slot
@@ -43,14 +43,14 @@ NET "clk20_vcxo_i" IOSTANDARD = "LVCMOS25";
 #----------------------------------------
 # DAC interface (for VCXO)
 #----------------------------------------
-#NET "PLL25DAC1_SYNC_N" LOC = A3;
-#NET "PLL25DAC1_SYNC_N" IOSTANDARD = "LVCMOS25";
-#NET "PLL25DAC2_SYNC_N" LOC = B3;
-#NET "PLL25DAC2_SYNC_N" IOSTANDARD = "LVCMOS25";
-#NET "PLL25DAC_DIN" LOC = C4;
-#NET "PLL25DAC_DIN" IOSTANDARD = "LVCMOS25";
-#NET "PLL25DAC_SCLK" LOC = A4;
-#NET "PLL25DAC_SCLK" IOSTANDARD = "LVCMOS25";
+NET "PLL25DAC_SYNC_N" LOC = A3;
+NET "PLL25DAC_SYNC_N" IOSTANDARD = "LVCMOS25";
+NET "PLL20DAC_SYNC_N" LOC = B3;
+NET "PLL20DAC_SYNC_N" IOSTANDARD = "LVCMOS25";
+NET "PLLDAC_DIN" LOC = C4;
+NET "PLLDAC_DIN" IOSTANDARD = "LVCMOS25";
+NET "PLLDAC_SCLK" LOC = A4;
+NET "PLLDAC_SCLK" IOSTANDARD = "LVCMOS25";
 
 #----------------------------------------
 # 1-wire thermometer w/ ID
@@ -248,8 +248,8 @@ NET "GPIO[1]" IOSTANDARD = "LVCMOS25";
 
 #NET "spi_din_i" LOC = T15; # LA25_P
 #NET "spi_din_i" IOSTANDARD = "LVCMOS25";
-#NET "spi_dout_o" LOC = C18; # LA31_N
-#NET "spi_dout_o" IOSTANDARD = "LVCMOS25";
+NET "TX_DATA" LOC = C18; # LA31_N
+NET "TX_DATA" IOSTANDARD = "LVCMOS25";
 #NET "spi_sck_o" LOC = D17; # LA31_P
 #NET "spi_sck_o" IOSTANDARD = "LVCMOS25";
 #NET "spi_cs_adc_n_o" LOC = V17; # LA30_P
@@ -569,6 +569,8 @@ NET "DDR3_UDQS_N"  IN_TERM = NONE;
 #===============================================================================
 
 # GN4124
+#NET "L_CLK" TNM_NET = "l_clk_grp";
+#TIMESPEC TS_l_clkp = PERIOD "l_clk_grp" 5 ns HIGH 50%;
 
 NET "L_CLKp" TNM_NET = "l_clkp_grp";
 TIMESPEC TS_l_clkp = PERIOD "l_clkp_grp" 5 ns HIGH 50%;
@@ -585,16 +587,14 @@ TIMESPEC TS_p2l_clkp = PERIOD "p2l_clkp_grp" 5 ns HIGH 50%;
 NET "L2P_CLKn" TNM_NET = "p2l_clkn_grp";
 TIMESPEC TS_p2l_clkn = PERIOD "p2l_clkn_grp" 5 ns HIGH 50%;
 
-# System clock
-
 NET "clk20_vcxo_i" TNM_NET = "clk20_vcxo_i_grp";
 TIMESPEC TS_clk20_vcxo_i = PERIOD "clk20_vcxo_i_grp" 50 ns HIGH 50%;
 
-#NET "clk_125m_pllref_n_i" TNM_NET = "clk_125m_pllref_n_i_grp";
-#TIMESPEC TS_clk_125m_pllref_n_i = PERIOD "clk_125m_pllref_n_i_grp" 8 ns HIGH 50%;
+NET "clk_125m_pllref_n_i" TNM_NET = "clk_125m_pllref_n_i_grp";
+TIMESPEC TS_clk_125m_pllref_n_i = PERIOD "clk_125m_pllref_n_i_grp" 8 ns HIGH 50%;
 
-#NET "clk_125m_pllref_p_i" TNM_NET = "clk_125m_pllref_p_i_grp";
-#TIMESPEC TS_clk_125m_pllref_p_i = PERIOD "clk_125m_pllref_p_i_grp" 8 ns HIGH 50%;
+NET "clk_125m_pllref_p_i" TNM_NET = "clk_125m_pllref_p_i_grp";
+TIMESPEC TS_clk_125m_pllref_p_i = PERIOD "clk_125m_pllref_p_i_grp" 8 ns HIGH 50%;
 
 # DDR3
 NET "cmp_ddr3_ctrl/cmp_ddr3_ctrl_wrapper/gen_spec_bank3_32b_32b.cmp_ddr3_ctrl/memc3_infrastructure_inst/sys_clk_ibufg" TNM_NET = "SYS_CLK5";

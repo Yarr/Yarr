@@ -20,11 +20,11 @@ uint32_t rand32() {
 int main (void) {
     SpecController mySpec(0);
     
-    int maxLoops = 10000;
+    int maxLoops = 5000000;
     int overall_errors = 0;
     uint32_t off = 0;
 
-    const size_t size = 1024/4*500; // 1kB
+    const size_t size = 1024/4*250; // 1kB
     
     srand(time(NULL));
 

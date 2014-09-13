@@ -67,7 +67,7 @@ begin
 			else
 			   sreg <= (others => '0');
 			   data_read_o <= '0';
-			   bit_count <= (others => '0');
+			   bit_count <= TO_UNSIGNED(g_PORT_WIDTH-1, bit_count'length);
 			end if;
 		end if;
     end process serialize;

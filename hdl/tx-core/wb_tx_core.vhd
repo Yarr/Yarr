@@ -13,6 +13,16 @@
 -- #   0x2 - Underrun (RO)
 -- #   0x3 - Overrun (RO)
 -- #   0x4 - Empty (RO)
+-- #   0x5 - Trigger Enable (RW)
+-- #   0x6 - Trigger Done (RO)
+-- #   0x7 - Trigger Conf (RW) : 
+-- #          0 = External
+-- #          1 = Internal Time
+-- #          2 = Internal Count
+-- #   0x8 - Trigger Frequency (RW)
+-- #   0x9 - Trigger Time_L (RW)
+-- #   0xA - Trigger Time_H (RW)
+-- #   0xB - Trigger Count (RW)
 
 library IEEE;
 use ieee.std_logic_1164.all;
@@ -67,14 +77,58 @@ architecture behavioral of wb_tx_core is
 		);
 	end component;
 	
+	constant c_TRIG_WORD_LENGTH : integer := 5;
+	constant c_TRIG_WORD : std_logic_vector(c_TRIG_WORD_LENGTH-1 downto 0) := "00001";
+	
+	component trigger_unit
+		generic (
+			g_TRIG_WORD_LENGTH : integer := c_TRIG_WORD_LENGTH
+		);
+		port (
+			clk_i 	: in  std_logic;
+			rst_n_i	: in  std_logic;
+			
+			-- Serial Trigger Out
+			trig_o : out std_logic;
+			trig_pulse_o : out std_logic;
+			
+			-- Trigger In (async)
+			ext_trig_i	: in std_logic;
+			
+			-- Config
+			trig_word_i : in std_logic_vector(g_TRIG_WORD_LENGTH-1 downto 0); -- Trigger command
+			trig_freq_i : in std_logic_vector(31 downto 0); -- Number of clock cycles between triggers
+			trig_time_i : in std_logic_vector(63 downto 0); -- Clock cycles
+			trig_count_i : in std_logic_vector(31 downto 0); -- Fixed number of triggers
+			trig_conf_i	: in std_logic_vector(3 downto 0); -- Internal, external, pseudo random, 
+			trig_en_i : in std_logic;
+			trig_done_o : out std_logic
+		);
+	end component;
+	
 	-- Signals
+	signal tx_data_cmd : std_logic_vector(g_NUM_TX-1 downto 0);
+	signal tx_data_trig : std_logic;
+	signal tx_trig_pulse : std_logic;
+	
+	-- Registers
 	signal tx_enable : std_logic_vector(31 downto 0) := (others => '0');
+	
 	signal tx_underrun : std_logic_vector(31 downto 0) := (others => '0');
 	signal tx_overrun : std_logic_vector(31 downto 0) := (others => '0');
 	signal tx_almost_full : std_logic_vector(31 downto 0) := (others => '0');
 	signal tx_empty	: std_logic_vector(31 downto 0) := (others => '0');
 	
+	-- Trigger command
+	signal trig_freq : std_logic_vector(31 downto 0); -- Number of clock cycles between triggers
+	signal trig_time : std_logic_vector(63 downto 0); -- Clock cycles
+	signal trig_count : std_logic_vector(31 downto 0); -- Fixed number of triggers
+	signal trig_conf : std_logic_vector(3 downto 0); -- Internal, external, pseudo random, 
+	signal trig_en : std_logic;
+	signal trig_done : std_logic;
+	
 	signal wb_wr_en	: std_logic_vector(31 downto 0) := (others => '0');
+	signal wb_dat_t : std_logic_vector(31 downto 0);
 	
 	signal channel : integer range 0 to 31;
 
@@ -90,6 +144,8 @@ begin
 			wb_ack_o <= '0';
 			wb_wr_en <= (others => '0');
 			tx_enable <= (others => '0');
+			wb_dat_t <= (others => '0');
+			trig_en <= '0';
 		elsif rising_edge(wb_clk_i) then
 			wb_wr_en <= (others => '0');
 			wb_ack_o <= '0';
@@ -98,8 +154,27 @@ begin
 					if (wb_adr_i(3 downto 0) = x"0") then -- Write to fifo
 						wb_wr_en(channel) <= '1';
 						wb_ack_o <= '1';
+						wb_dat_t <= wb_dat_i;
 					elsif (wb_adr_i(3 downto 0) = x"1") then -- Set enable mask
 						tx_enable <= wb_dat_i;
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"5") then -- Set trigger enable
+						trig_en <= wb_dat_i(0);
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"7") then -- Set trigger conf
+						trig_conf <= wb_dat_i(3 downto 0);
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"8") then -- Set trigger frequency
+						trig_freq <= wb_dat_i;
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"9") then -- Set trigger time low
+						trig_time(31 downto 0) <= wb_dat_i;
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"A") then -- Set trigger time high
+						trig_time(63 downto 32) <= wb_dat_i;
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"B") then -- Set trigger count
+						trig_count <= wb_dat_i;
 						wb_ack_o <= '1';
 					else
 						wb_ack_o <= '1';
@@ -117,6 +192,30 @@ begin
 					elsif (wb_adr_i(3 downto 0) = x"4") then -- Read empty stat
 						wb_dat_o <= tx_empty;
 						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"5") then -- Read trigger enable
+						wb_dat_o(0) <= trig_en;
+						wb_dat_o(31 downto 1) <= (others => '0');
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"6") then -- Read trigger done
+						wb_dat_o(0) <= trig_done;
+						wb_dat_o(31 downto 1) <= (others => '0');
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"7") then -- Read trigger conf
+						wb_dat_o(3 downto 0) <= trig_conf;
+						wb_dat_o(31 downto 4) <= (others => '0');
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"8") then -- Read trigger freq
+						wb_dat_o <= trig_freq;
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"9") then -- Read trigger time low
+						wb_dat_o <= trig_time(31 downto 0);
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"A") then -- Read trigger time high
+						wb_dat_o <= trig_time(63 downto 32);
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"B") then -- Read trigger count
+						wb_dat_o <= trig_count;
+						wb_ack_o <= '1';
 					else
 						wb_dat_o <= x"DEADBEEF";
 						wb_ack_o <= '1';
@@ -133,11 +232,11 @@ begin
 			wb_clk_i => wb_clk_i,
 			rst_n_i => rst_n_i,
 			-- Data In
-			wb_dat_i => wb_dat_i,
+			wb_dat_i => wb_dat_t,
 			wb_wr_en_i => wb_wr_en(I),
 			-- TX
 			tx_clk_i => tx_clk_i,
-			tx_data_o => tx_data_o(I),
+			tx_data_o => tx_data_cmd(I),
 			tx_enable_i => tx_enable(I),
 			-- Status
 			tx_underrun_o => tx_underrun(I),
@@ -145,6 +244,37 @@ begin
 			tx_almost_full_o => tx_almost_full(I),
 			tx_empty_o => tx_empty(I)
 		);
+		
+		tx_mux : process(tx_clk_i, rst_n_i)
+		begin
+			if (rst_n_i = '0') then
+				tx_data_o(I) <= '0';
+			elsif rising_edge(tx_clk_i) then
+				if (tx_enable(I) = '1' and trig_en = '1') then
+					tx_data_o(I) <= tx_data_trig;
+				else
+					tx_data_o(I) <= tx_data_cmd(I);
+				end if;
+			end if;
+		end process;
 	end generate tx_channels;
+	
+	cmp_trig_unit : trigger_unit PORT MAP (
+		clk_i => tx_clk_i,
+		rst_n_i => rst_n_i,
+		-- Serial Trigger Out
+		trig_o => tx_data_trig,
+		trig_pulse_o=> tx_trig_pulse,
+		-- Trigger In (async)
+		ext_trig_i => '0',
+		-- Config
+		trig_word_i => c_TRIG_WORD,
+		trig_freq_i => trig_freq,
+		trig_time_i => trig_time,
+		trig_count_i => trig_count,
+		trig_conf_i => trig_conf,
+		trig_en_i => trig_en,
+		trig_done_o => trig_done
+	);
 
 end behavioral;

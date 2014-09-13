@@ -22,7 +22,7 @@ int main(void) {
     std::cout << std::endl << "==========================================" << std::endl;
     std::cout << "Starting Write Benchmark:" << std::endl;
     for (int cycles=0; cycles<maxCycles; cycles++) {
-        const size_t size = 32*(2*(cycles+1));
+        const size_t size = 2*(cycles+1);
         uint32_t data[size];
         // Prepare data pattern
         memset(data, 0x5A, size*4);
@@ -53,7 +53,7 @@ int main(void) {
     std::cout << "===========================================" << std::endl;
     std::cout << "Starting Read Benchmark:" << std::endl;
     for (int cycles=0; cycles<maxCycles; cycles++) {
-        const size_t size = 4*(2*(cycles+1));
+        const size_t size = 2*(cycles+1);
         uint32_t data[size];
         
         // Read from Spec
