@@ -49,7 +49,8 @@ entity wb_tx_core is
 		
 		-- TX
 		tx_clk_i	: in  std_logic;
-		tx_data_o	: out std_logic_vector(g_NUM_TX-1 downto 0)
+		tx_data_o	: out std_logic_vector(g_NUM_TX-1 downto 0);
+		trig_pulse_o : out std_logic
 	);
 end wb_tx_core;
 
@@ -259,6 +260,7 @@ begin
 		end process;
 	end generate tx_channels;
 	
+	trig_pulse_o <= tx_trig_pulse;
 	cmp_trig_unit : trigger_unit PORT MAP (
 		clk_i => tx_clk_i,
 		rst_n_i => rst_n_i,

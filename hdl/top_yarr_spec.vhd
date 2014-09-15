@@ -322,7 +322,8 @@ architecture rtl of yarr is
 
 		-- TX
 		tx_clk_i	: in  std_logic;
-		tx_data_o	: out std_logic_vector(g_NUM_TX-1 downto 0)
+		tx_data_o	: out std_logic_vector(g_NUM_TX-1 downto 0);
+		trig_pulse_o : out std_logic
 	);
 	end component;
 	
@@ -353,6 +354,8 @@ architecture rtl of yarr is
 		-- Rx Interface
 		rx_data_i 	: in  std_logic_vector(31 downto 0);
 		rx_valid_i	: in  std_logic;
+		-- Status in
+		trig_pulse_i : in std_logic;
 		-- Status out
 		irq_o		: out std_logic;
 		busy_o		: out std_logic
@@ -718,7 +721,30 @@ architecture rtl of yarr is
   signal gn4124_core_Status : std_logic_vector(31 downto 0);
   
   signal tx_data_o : std_logic_vector(0 downto 0);
+  signal trig_pulse : std_logic;
   
+	COMPONENT test_fifo
+	  PORT (
+		rst : IN STD_LOGIC;
+		wr_clk : IN STD_LOGIC;
+		rd_clk : IN STD_LOGIC;
+		din : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+		wr_en : IN STD_LOGIC;
+		rd_en : IN STD_LOGIC;
+		dout : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
+		full : OUT STD_LOGIC;
+		empty : OUT STD_LOGIC
+	  );
+	END COMPONENT;
+	
+	signal test_fifo_din : std_logic_vector(31 downto 0);
+	signal test_fifo_dout : std_logic_vector(31 downto 0);
+	signal test_fifo_wren : std_logic;
+	signal test_fifo_rden : std_logic;
+	signal test_fifo_empty : std_logic;
+	signal test_fifo_full : std_logic;
+	signal test_fifo_valid : std_logic;
+ 	signal test_fifo_valid1 : std_logic; 
 begin
 
 
@@ -944,7 +970,8 @@ begin
 		wb_stall_o => wb_stall(1),
 		-- TX
 		tx_clk_i => sys_clk_125,
-		tx_data_o => tx_data_o
+		tx_data_o => tx_data_o,
+		trig_pulse_o => trig_pulse
 	);
 	
 	cmp_wb_rx_bridge : wb_rx_bridge port map (
@@ -971,12 +998,27 @@ begin
 		dma_ack_i => rx_dma_ack,
 		dma_stall_i => rx_dma_stall,
 		-- Rx Interface
-		rx_data_i => x"00000000",
-		rx_valid_i => '0',
+		rx_data_i => test_fifo_dout,
+		rx_valid_i => not test_fifo_empty,
+		-- Status in
+		trig_pulse_i => trig_pulse,
 		-- Status out
 		irq_o => open,
 		busy_o => open
 	);
+	
+	cmp_test_fifo : test_fifo
+  PORT MAP (
+    rst => not rst_n,
+    wr_clk => sys_clk_125,
+    rd_clk => sys_clk,
+    din => x"DEADBEEF",
+    wr_en => trig_pulse,
+    rd_en => not test_fifo_empty,
+    dout => test_fifo_dout,
+    full => test_fifo_full,
+    empty => test_fifo_empty
+  );
 
   --wb_stall(1) <= '0' when wb_cyc(1) = '0' else not(wb_ack(1));
 --  wb_stall(2) <= '0' when wb_cyc(2) = '0' else not(wb_ack(2));
@@ -991,17 +1033,17 @@ begin
 
 --   TRIG2(31 downto 0) <= gn4124_core_status;
 --	TRIG0(31 downto 0) <= ddr_status;
-	TRIG1(31 downto 0) <= rx_dma_adr;
-	TRIG2(31 downto 0) <= rx_dma_dat_i;
+	TRIG1(31 downto 0) <= dma_adr;
+	TRIG2(31 downto 0) <= dma_dat_o;
 --   TRIG0(31 downto 0) <= (others => '0');
 --   TRIG1(31 downto 0) <= (others => '0');
 --   TRIG2(31 downto 0) <= (others => '0');
    TRIG0(12 downto 0) <= (others => '0');
-   TRIG0(13) <= rx_dma_cyc;
-   TRIG0(14) <= rx_dma_stb;
-   TRIG0(15) <= rx_dma_we;
-   TRIG0(16) <= rx_dma_ack;
-   TRIG0(17) <= rx_dma_stall;
+   TRIG0(13) <= dma_cyc;
+   TRIG0(14) <= dma_stb;
+   TRIG0(15) <= dma_we;
+   TRIG0(16) <= dma_ack;
+   TRIG0(17) <= dma_stall;
    TRIG0(31 downto 18) <= (others => '0');
    
    p_ila_proc : process (sys_clk, L_RST_N)

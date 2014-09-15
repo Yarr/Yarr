@@ -234,7 +234,7 @@ void SpecController::writeBlock(void *bar, uint32_t off, uint32_t *val, size_t w
 }
 
 void SpecController::readBlock(void *bar, uint32_t off, uint32_t *val, size_t words) {
-    uint32_t *addr = (uint32_t*) bar+off;
+    volatile uint32_t *addr = (uint32_t*) bar+off;
     for(unsigned int i=0; i<words; i++) val[i] = *addr++;
 }
 

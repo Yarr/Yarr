@@ -47,6 +47,9 @@ entity wb_rx_bridge is
 		rx_data_i 	: in  std_logic_vector(31 downto 0);
 		rx_valid_i	: in  std_logic;
 		
+		-- Status In
+		trig_pulse_i : in std_logic;
+		
 		-- Status out
 		irq_o		: out std_logic;
 		busy_o		: out std_logic
@@ -88,9 +91,9 @@ architecture Behavioral of wb_rx_bridge is
 	
 	-- Constants
 	constant c_ALMOST_FULL_THRESHOLD : unsigned(13 downto 0) := TO_UNSIGNED(16000, 14);
-	constant c_PACKAGE_SIZE : unsigned(31 downto 0) := TO_UNSIGNED((250*1024/4)-1, 32); -- 250kByte
+	constant c_PACKAGE_SIZE : unsigned(31 downto 0) := TO_UNSIGNED((250), 32); -- 250kByte
 	constant c_TIMEOUT : unsigned(31 downto 0) := TO_UNSIGNED(2**14, 32); -- Counts in 25ns = 0.82ms
-	constant c_TIME_FRAME : unsigned(31 downto 0) := TO_UNSIGNED(2000000000-1, 32); -- 200MHz clock cycles in 1 sec
+	constant c_TIME_FRAME : unsigned(31 downto 0) := TO_UNSIGNED(200000000-1, 32); -- 200MHz clock cycles in 1 sec
 	
 	-- Signals
 	signal data_fifo_din : std_logic_vector(31 downto 0);
@@ -110,6 +113,7 @@ architecture Behavioral of wb_rx_bridge is
 	
 	signal dma_stb_t : std_logic;
 	signal dma_adr_cnt : unsigned(31 downto 0);
+	signal dma_start_adr : unsigned(31 downto 0);
 	signal dma_data_cnt : unsigned(31 downto 0);
 	signal dma_timeout_cnt : unsigned(31 downto 0);
 	
@@ -123,6 +127,12 @@ architecture Behavioral of wb_rx_bridge is
 	signal time_cnt : unsigned(31 downto 0);
 	signal time_pulse : std_logic;
 	signal data_rate_cnt : unsigned(31 downto 0);
+	signal trig_cnt : unsigned(31 downto 0);
+	
+	signal trig_pulse_d0 : std_logic;
+	signal trig_pulse_d1 : std_logic;
+	signal trig_pulse_pos : std_logic;
+	
 	
 	-- Registers
 	signal loopback : std_logic;
@@ -155,10 +165,17 @@ begin
 				if (wb_we_i = '0') then
 					-- READ
 					if (wb_adr_i(3 downto 0) = x"0") then -- Start Addr
-						wb_dat_o <= ctrl_fifo_dout(31 downto 0);
-						ctrl_fifo_dout_tmp <= ctrl_fifo_dout(63 downto 32);
-						wb_ack_o <= '1';
-						ctrl_fifo_rden <= '1';
+						if (ctrl_fifo_empty = '0') then
+							wb_dat_o <= ctrl_fifo_dout(31 downto 0);
+							ctrl_fifo_dout_tmp <= ctrl_fifo_dout(63 downto 32);
+							wb_ack_o <= '1';
+							ctrl_fifo_rden <= '1';
+						else
+							wb_dat_o <= x"DEADBEEF";
+							ctrl_fifo_dout_tmp <= (others => '0');
+							wb_ack_o <= '1';
+							ctrl_fifo_rden <= '0';
+						end if;						
 					elsif (wb_adr_i(3 downto 0) = x"1") then -- Count
 						wb_dat_o <= ctrl_fifo_dout_tmp;
 						wb_ack_o <= '1';
@@ -231,6 +248,7 @@ begin
 		if (rst_n_i = '0') then
 			ctrl_fifo_wren <= '0';
 			dma_adr_cnt <= (others => '0');
+			dma_start_adr <= (others => '0');
 			dma_data_cnt <= (others => '0');
 			dma_timeout_cnt <= (others => '0');
 			ctrl_fifo_din(31 downto 0) <= (others => '0');
@@ -242,16 +260,22 @@ begin
 			
 			-- Package size counter
 			if (dma_stb_t = '1' and dma_data_cnt = c_PACKAGE_SIZE) then
-				dma_data_cnt <= TO_UNSIGNED(1, 32);
 				ctrl_fifo_din(63 downto  32) <= std_logic_vector(dma_data_cnt);
+				ctrl_fifo_din(31 downto 0) <= std_logic_vector(dma_start_adr);
+				dma_start_adr <= dma_start_adr + c_PACKAGE_SIZE;
+				dma_data_cnt <= TO_UNSIGNED(1, 32);
 				ctrl_fifo_wren <= '1';
 			elsif (dma_stb_t = '0' and dma_data_cnt = c_PACKAGE_SIZE) then
-				dma_data_cnt <= TO_UNSIGNED(0, 32);
 				ctrl_fifo_din(63 downto  32) <= std_logic_vector(dma_data_cnt);
+				ctrl_fifo_din(31 downto 0) <= std_logic_vector(dma_start_adr);
+				dma_start_adr <= dma_start_adr + c_PACKAGE_SIZE;
+				dma_data_cnt <= TO_UNSIGNED(0, 32);
 				ctrl_fifo_wren <= '1';
-			elsif (dma_stb_t = '0' and dma_timeout_cnt >= c_TIMEOUT) then
-				dma_data_cnt <= TO_UNSIGNED(0, 32);
+			elsif (dma_stb_t = '0' and dma_timeout_cnt >= c_TIMEOUT and dma_data_cnt > 0) then
 				ctrl_fifo_din(63 downto  32) <= std_logic_vector(dma_data_cnt);
+				ctrl_fifo_din(31 downto 0) <= std_logic_vector(dma_start_adr);
+				dma_start_adr <= dma_start_adr + dma_data_cnt;
+				dma_data_cnt <= TO_UNSIGNED(0, 32);
 				ctrl_fifo_wren <= '1';
 			elsif (dma_stb_t = '1') then
 				dma_data_cnt <= dma_data_cnt + 1;
@@ -260,11 +284,11 @@ begin
 				ctrl_fifo_wren <= '0';
 			end if;
 			
-			if (dma_data_cnt = 0 and dma_stb_t = '1') then -- New package
-				ctrl_fifo_din(31 downto 0) <= std_logic_vector(dma_adr_cnt);
-			elsif (dma_data_cnt = 1 and dma_stb_t = '1' and dma_adr_cnt /= (unsigned(ctrl_fifo_din(31 downto 0))+1)) then -- Flying take over
-				ctrl_fifo_din(31 downto 0) <= std_logic_vector(dma_adr_cnt);
-			end if;
+--			if (dma_data_cnt = 0 and ctrl_fifo_wren = '1') then -- New package
+--				ctrl_fifo_din(31 downto 0) <= std_logic_vector(dma_adr_cnt);
+--			elsif (dma_data_cnt = 1 and ctrl_fifo_wren = '1') then -- Flying take over
+--				ctrl_fifo_din(31 downto 0) <= std_logic_vector(dma_adr_cnt-1);
+--			end if;
 			
 			-- Timeout counter
 			if (dma_data_cnt > 0 and data_fifo_empty = '1') then
@@ -313,6 +337,28 @@ begin
 			rx_valid_local_d <= rx_valid_local;
 		end if;
 	end process;
+	
+	-- Trigger sync and count
+	trig_sync : process (sys_clk_i, rst_n_i)
+	begin
+		if (rst_n_i = '0') then
+			trig_pulse_d0 <= '0';
+			trig_pulse_d1 <= '0';
+			trig_pulse_pos <= '0';
+			trig_cnt <= (others => '0');
+		elsif rising_edge(sys_clk_i) then
+			trig_pulse_d0 <= trig_pulse_i;
+			trig_pulse_d1 <= trig_pulse_d0;
+			if (trig_pulse_d0 = '1' and trig_pulse_d1 = '0') then
+				trig_pulse_pos <= '1';
+			else
+				trig_pulse_pos <= '0';
+			end if;
+			if (trig_pulse_pos = '1') then
+				trig_cnt <= trig_cnt + 1;
+			end if;
+		end if;
+	end process trig_sync;
 
 	cmp_rx_bridge_fifo : rx_bridge_fifo PORT MAP (
 		rst => not rst_n_i,

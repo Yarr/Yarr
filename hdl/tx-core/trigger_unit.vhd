@@ -66,6 +66,8 @@ architecture Behavioral of trigger_unit is
 	signal freq_cnt : unsigned(31 downto 0);
 	
 	-- Sync
+	constant c_DONE_DELAY : integer := 32;
+	signal trig_done_d : std_logic_vector(c_DONE_DELAY-1 downto 0);
 	signal trig_en_d0 : std_logic;
 	signal trig_en_d1 : std_logic;
 	signal trig_en_pos : std_logic;
@@ -73,6 +75,7 @@ architecture Behavioral of trigger_unit is
 	signal ext_trig_d0 : std_logic;
 	signal ext_trig_d1 : std_logic;
 	signal ext_trig_pos : std_logic;
+	
 	
 begin
 	-- Done conditions
@@ -225,9 +228,8 @@ begin
 				trig_en <= '0';
 			end if;
 			
-			trig_done_o <= trig_done;
+			trig_done_o <= trig_done;	
 		end if;
 	end process;
-	
 end Behavioral;
 
