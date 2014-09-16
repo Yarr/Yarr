@@ -85,11 +85,11 @@ int main(void) {
     mySpec.readBlock(TX_ADDR | TRIG_DONE, &done, 1);
     mySpec.writeBlock(0x00004001, &enable_mask, 1);
 
-    uint32_t conf = 0x2;
+    uint32_t conf = 0x1;
     uint32_t enable = 0x1;
-    uint32_t frequency = 1/(double)(TX_CLK_PERIOD * 1e-9 *2000000.0); // 1MHz
+    uint32_t frequency = 1/(double)(TX_CLK_PERIOD * 1e-9 *80000000.0); // 10MHz
     uint64_t time = 10.0/(double)(TX_CLK_PERIOD * 1e-9); // 10s
-    uint32_t count = 260; // 10 trigger
+    uint32_t count = 340*256; // 10 trigger
 
     mySpec.writeBlock(TX_ADDR | TRIG_CONF, &conf, 1);
     mySpec.writeBlock(TX_ADDR | TRIG_FREQ, &frequency, 1);
@@ -126,14 +126,17 @@ int main(void) {
             std::cout << "Rate = " << answer*4.0/1024.0/1024.0 << " MB/s" << std::endl;
             std::cout << "Start Adr = 0x" << std::hex << addr << std::endl << std::dec;
             std::cout << "Count = 0x" << std::hex << data_cnt << std::endl << std::dec;
-            std::cout.flush();
             uint32_t *buf = new uint32_t[data_cnt];
             std::cout << "Starting DMA" << std::endl;
-            mySpec.readDma(addr, buf, data_cnt);
+            if(mySpec.readDma(addr, buf, data_cnt)) {
+                std::cout << "DMA FAILED!!!" << std::endl;
+                return -1;
+            }
             std::cout << "DMA done" << std::endl;
-            for (int i=0; i<data_cnt; i++)
-                std::cout << "[" << i << "] 0x" << std::hex << buf[i] << std::dec << std::endl;
+            //for (int i=0; i<data_cnt; i++)
+            //    std::cout << "[" << i << "] 0x" << std::hex << buf[i] << std::dec << std::endl;
             delete buf;
+            std::cout.flush();
         }         
     }
     gettimeofday(&end, NULL);
@@ -147,7 +150,10 @@ int main(void) {
         std::cout << "Count = 0x" << std::hex << data_cnt << std::endl << std::dec;
         std::cout.flush();
         uint32_t *buf = new uint32_t[data_cnt];
-        //mySpec.readDma(addr, buf, data_cnt);
+        if(mySpec.readDma(addr, buf, data_cnt)) {
+            std::cout << "DMA FAILED!!!" << std::endl;
+            return -1;
+        }
         delete buf;
     }         
     

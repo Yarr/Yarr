@@ -1,7 +1,7 @@
 ##############################################################
 #
 # Xilinx Core Generator version 14.7
-# Date: Fri Sep 12 14:30:25 2014
+# Date: Mon Sep 15 09:26:56 2014
 #
 ##############################################################
 #
@@ -150,7 +150,7 @@ CSET overflow_flag_axi=false
 CSET overflow_sense=Active_High
 CSET overflow_sense_axi=Active_High
 CSET performance_options=First_Word_Fall_Through
-CSET programmable_empty_type=No_Programmable_Empty_Threshold
+CSET programmable_empty_type=Single_Programmable_Empty_Threshold_Input_Port
 CSET programmable_empty_type_axis=No_Programmable_Empty_Threshold
 CSET programmable_empty_type_rach=No_Programmable_Empty_Threshold
 CSET programmable_empty_type_rdch=No_Programmable_Empty_Threshold
@@ -210,4 +210,4 @@ CSET wuser_width=1
 MISC pkg_timestamp=2012-11-19T12:39:56Z
 # END Extra information
 GENERATE
-# CRC: f0dd3a85
+# CRC: e445a371

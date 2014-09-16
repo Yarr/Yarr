@@ -997,7 +997,7 @@ begin
 		dma_we_o => rx_dma_we,
 		dma_ack_i => rx_dma_ack,
 		dma_stall_i => rx_dma_stall,
-		-- Rx Interface
+		-- Rx Interface (sync to sys_clk)
 		rx_data_i => test_fifo_dout,
 		rx_valid_i => not test_fifo_empty,
 		-- Status in
@@ -1031,20 +1031,25 @@ begin
   led_red_o   <= dummy_ctrl_reg_led(0);
   led_green_o <= dummy_ctrl_reg_led(1);
 
---   TRIG2(31 downto 0) <= gn4124_core_status;
---	TRIG0(31 downto 0) <= ddr_status;
-	TRIG1(31 downto 0) <= dma_adr;
-	TRIG2(31 downto 0) <= dma_dat_o;
+   TRIG1(31 downto 0) <= gn4124_core_status;
+	TRIG2(31 downto 0) <= ddr_status;
+--	TRIG1(31 downto 0) <= dma_adr;
+--	TRIG2(31 downto 0) <= rx_dma_dat_o;
 --   TRIG0(31 downto 0) <= (others => '0');
 --   TRIG1(31 downto 0) <= (others => '0');
 --   TRIG2(31 downto 0) <= (others => '0');
    TRIG0(12 downto 0) <= (others => '0');
-   TRIG0(13) <= dma_cyc;
-   TRIG0(14) <= dma_stb;
-   TRIG0(15) <= dma_we;
-   TRIG0(16) <= dma_ack;
-   TRIG0(17) <= dma_stall;
-   TRIG0(31 downto 18) <= (others => '0');
+   TRIG0(13) <= rx_dma_cyc;
+   TRIG0(14) <= rx_dma_stb;
+   TRIG0(15) <= rx_dma_we;
+   TRIG0(16) <= rx_dma_ack;
+   TRIG0(17) <= rx_dma_stall;   
+	TRIG0(18) <= dma_cyc;
+   TRIG0(19) <= dma_stb;
+   TRIG0(20) <= dma_we;
+   TRIG0(21) <= dma_ack;
+   TRIG0(22) <= dma_stall; 
+   TRIG0(31 downto 23) <= (others => '0');
    
    p_ila_proc : process (sys_clk, L_RST_N)
    begin

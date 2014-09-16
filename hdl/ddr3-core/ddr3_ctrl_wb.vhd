@@ -70,10 +70,13 @@ architecture behavioral of ddr3_ctrl_wb is
     --------------------------------------
     -- Constants
     --------------------------------------
-    constant c_DDR_BURST_LENGTH : integer := 16;
-    constant c_FIFO_ALMOST_FULL : integer := 53;
+    constant c_DDR_BURST_LENGTH : unsigned(5 downto 0) := TO_UNSIGNED(16, 6);
+	constant c_READ_STALL_ASSERT : unsigned(6 downto 0) := TO_UNSIGNED(52, 7);
+	constant c_READ_STALL_NEGATE : unsigned(6 downto 0) := TO_UNSIGNED(42, 7);
+	constant c_WRITE_STALL_ASSERT : unsigned(6 downto 0) := TO_UNSIGNED(52, 7);
+	constant c_WRITE_STALL_NEGATE : unsigned(6 downto 0) := TO_UNSIGNED(42, 7);
     constant c_ADDR_SHIFT : integer := log2_ceil(g_DATA_PORT_SIZE/8);
-    constant c_STALL_TIME : integer := 20;
+    constant c_STALL_TIME : unsigned(3 downto 0) := TO_UNSIGNED(15, 4);
 
     --------------------------------------
     -- Signals
@@ -96,6 +99,8 @@ architecture behavioral of ddr3_ctrl_wb is
     signal wb_stall_cnt : unsigned(3 downto 0);
     signal ddr_burst_cnt : unsigned(5 downto 0);
     signal ddr_burst_cnt_d : unsigned(5 downto 0);
+	signal read_cnt : unsigned(7 downto 0);
+	signal write_cnt : unsigned(7 downto 0);
     
 begin
     -- Tie offs
@@ -148,7 +153,7 @@ begin
 
             if (ddr_rd_en = '1' and ddr_rd_empty_i = '0') then
                 ddr_rd_ack <= '1';
-                wb_data_o <= ddr_rd_data_i;
+                wb_data_o <= ddr_rd_data_i;		
             else
                 ddr_rd_ack <= '0';
                 wb_data_o <= (others => '1');
@@ -172,6 +177,8 @@ begin
             wb_addr_d <= (others => '0');
             wb_we_d <= '0';
             wb_stall_restart <= '0';
+			read_cnt <= (others => '0');
+			write_cnt <= (others =>'0');
         elsif rising_edge(wb_clk_i) then
             if (wb_cyc_i = '1' and wb_stb_i = '1') then
                 if (ddr_burst_cnt = c_DDR_BURST_LENGTH) then
@@ -181,7 +188,7 @@ begin
                     ddr_burst_cnt <= ddr_burst_cnt + 1;
                     ddr_cmd_en <= '0';
                 end if;
-            elsif (wb_stb_i = '0' and ddr_burst_cnt > 0) then
+            elsif (wb_cyc_i = '1' and wb_stb_i = '0' and ddr_burst_cnt > 0 and wb_stall = '0') then
                 ddr_burst_cnt <= TO_UNSIGNED(0, 6);
                 ddr_cmd_en <= '1';
             else
@@ -194,29 +201,40 @@ begin
                wb_addr_d <= wb_addr_i;
                wb_we_d <= wb_we_i;
             end if;
-            
-            
+                
             if (ddr_burst_cnt = 0) then
-				ddr_cmd_byte_addr_o <= wb_addr_i(g_BYTE_ADDR_WIDTH-c_ADDR_SHIFT-1 downto 0) & addr_shift;
-				ddr_cmd_instr_o <= "00" & not(wb_we_i);
---				ddr_cmd_byte_addr_o(g_BYTE_ADDR_WIDTH - 1 downto c_ADDR_SHIFT) <= wb_addr_i(g_BYTE_ADDR_WIDTH-c_ADDR_SHIFT-1 downto 0);
---				ddr_cmd_byte_addr_o(c_ADDR_SHIFT - 1 downto 0) <= addr_shift;
---				ddr_cmd_instr_o(2 downto 1) <= "00";
---				ddr_cmd_instr_o(0) <= not(wb_we_i);
+					ddr_cmd_byte_addr_o <= wb_addr_i(g_BYTE_ADDR_WIDTH-c_ADDR_SHIFT-1 downto 0) & addr_shift;
+					ddr_cmd_instr_o <= "00" & not(wb_we_i);
             elsif (ddr_cmd_en = '1') then
-				ddr_cmd_byte_addr_o <= wb_addr_d(g_BYTE_ADDR_WIDTH-c_ADDR_SHIFT-1 downto 0) & addr_shift;
-				ddr_cmd_instr_o <= "00" & not(wb_we_d);
---				ddr_cmd_byte_addr_o(g_BYTE_ADDR_WIDTH - 1 downto c_ADDR_SHIFT) <= wb_addr_d(g_BYTE_ADDR_WIDTH-c_ADDR_SHIFT-1 downto 0);
---				ddr_cmd_byte_addr_o(c_ADDR_SHIFT - 1 downto 0) <= addr_shift;
---				ddr_cmd_instr_o(2 downto 1) <= "00";
---				ddr_cmd_instr_o(0) <= not(wb_we_d);            
+					ddr_cmd_byte_addr_o <= wb_addr_d(g_BYTE_ADDR_WIDTH-c_ADDR_SHIFT-1 downto 0) & addr_shift;
+					ddr_cmd_instr_o <= "00" & not(wb_we_d);       
             end if;
+
+			if (wb_we_i = '0') then
+				if (ddr_cmd_en = '1' and ddr_rd_ack = '0') then
+					read_cnt <= read_cnt + ddr_burst_cnt_d;
+				elsif (ddr_cmd_en = '1' and ddr_rd_ack = '1') then
+					read_cnt <= read_cnt + ddr_burst_cnt_d - 1;
+				elsif (ddr_cmd_en = '0' and ddr_rd_ack = '1' and read_cnt > 0) then
+					read_cnt <= read_cnt - 1;
+				end if;
+			else
+				if (ddr_cmd_en = '1' and ddr_wr_ack = '0' and write_cnt >= ddr_burst_cnt_d) then
+					write_cnt <= write_cnt - ddr_burst_cnt_d;
+				elsif (ddr_cmd_en = '1' and ddr_wr_ack = '1' and write_cnt >= ddr_burst_cnt_d ) then
+					write_cnt <= (write_cnt - ddr_burst_cnt_d) + 1;
+				elsif (ddr_cmd_en = '0' and ddr_wr_ack = '1') then
+					write_cnt <= write_cnt + 1;
+				end if;			
+			end if;
+				
         end if;
     end process p_ddr_ctrl;
+	
     --------------------------------------
     -- Stall proc
     --------------------------------------
-    wb_stall_o <= wb_stall;
+	wb_stall_o <= wb_stall;
     p_wb_stall : process (wb_clk_i, rst_n_i)
     begin
         if (rst_n_i = '0') then
@@ -224,20 +242,16 @@ begin
             wb_stall_d <= '0';
             wb_stall_cnt <= (others => '0');
         elsif rising_edge(wb_clk_i) then
-            if (unsigned(ddr_wr_count_i) > c_FIFO_ALMOST_FULL or
-                    unsigned(ddr_rd_count_i) > c_FIFO_ALMOST_FULL or
-                    ddr_wr_full_i = '1' or
-                    ddr_rd_full_i = '1' or
-                    ddr_cmd_full_i = '1') then
-                wb_stall <= '1';
-                wb_stall_cnt <= TO_UNSIGNED(c_STALL_TIME, 4);
-            elsif (wb_stall_cnt > 1) then
-                wb_stall <= '1';
-                wb_stall_cnt <= wb_stall_cnt - 1;
-            else
-                wb_stall <= '0';
-                wb_stall_cnt <= (others => '0');
+            if (ddr_cmd_full_i = '1' or
+					read_cnt > c_READ_STALL_ASSERT or
+					unsigned(ddr_wr_count_i) > c_WRITE_STALL_ASSERT) then
+				wb_stall <= '1';
+            elsif (ddr_cmd_full_i = '0' and
+					read_cnt < c_READ_STALL_NEGATE and
+					unsigned(ddr_wr_count_i) < c_WRITE_STALL_NEGATE) then
+				wb_stall <= '0';
             end if;
+			
             wb_stall_d <= wb_stall;
         end if;
     end process p_wb_stall;

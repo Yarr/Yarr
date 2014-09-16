@@ -48,11 +48,13 @@ ENTITY rx_bridge_fifo IS
     din : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
     wr_en : IN STD_LOGIC;
     rd_en : IN STD_LOGIC;
+    prog_empty_thresh : IN STD_LOGIC_VECTOR(13 DOWNTO 0);
     prog_full_thresh : IN STD_LOGIC_VECTOR(13 DOWNTO 0);
     dout : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
     full : OUT STD_LOGIC;
     empty : OUT STD_LOGIC;
-    prog_full : OUT STD_LOGIC
+    prog_full : OUT STD_LOGIC;
+    prog_empty : OUT STD_LOGIC
   );
 END rx_bridge_fifo;
 
@@ -66,11 +68,13 @@ COMPONENT wrapped_rx_bridge_fifo
     din : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
     wr_en : IN STD_LOGIC;
     rd_en : IN STD_LOGIC;
+    prog_empty_thresh : IN STD_LOGIC_VECTOR(13 DOWNTO 0);
     prog_full_thresh : IN STD_LOGIC_VECTOR(13 DOWNTO 0);
     dout : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
     full : OUT STD_LOGIC;
     empty : OUT STD_LOGIC;
-    prog_full : OUT STD_LOGIC
+    prog_full : OUT STD_LOGIC;
+    prog_empty : OUT STD_LOGIC
   );
 END COMPONENT;
 
@@ -194,7 +198,7 @@ END COMPONENT;
       c_prog_empty_thresh_assert_val_wdch => 1022,
       c_prog_empty_thresh_assert_val_wrch => 1022,
       c_prog_empty_thresh_negate_val => 5,
-      c_prog_empty_type => 0,
+      c_prog_empty_type => 3,
       c_prog_empty_type_axis => 0,
       c_prog_empty_type_rach => 0,
       c_prog_empty_type_rdch => 0,
@@ -278,11 +282,13 @@ U0 : wrapped_rx_bridge_fifo
     din => din,
     wr_en => wr_en,
     rd_en => rd_en,
+    prog_empty_thresh => prog_empty_thresh,
     prog_full_thresh => prog_full_thresh,
     dout => dout,
     full => full,
     empty => empty,
-    prog_full => prog_full
+    prog_full => prog_full,
+    prog_empty => prog_empty
   );
 -- synthesis translate_on
 

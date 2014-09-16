@@ -90,8 +90,8 @@ architecture behavioral of l2p_dma_master is
     -- Constants
     ---------------------
     constant c_L2P_MAX_PAYLOAD : integer := 32;
-    constant c_ADDR_FIFO_FULL_THRES : integer := 800;
-    constant c_DATA_FIFO_FULL_THRES : integer := 800;
+    constant c_ADDR_FIFO_FULL_THRES : integer := 700;
+    constant c_DATA_FIFO_FULL_THRES : integer := 700;
     constant c_TIMEOUT : integer := 2000;
 
     ---------------------
@@ -259,6 +259,9 @@ begin
                      end if;
                      
                      if (data_fifo_empty = '0' and l2p_rdy_i = '1' and l2p_data_cnt > 1) then
+                        data_fifo_rd <= '1';
+                        data_fifo_valid <= '1';
+                     elsif (data_fifo_empty = '0' and l2p_rdy_i = '1' and l2p_data_cnt = 1 and data_fifo_valid = '0') then
                         data_fifo_rd <= '1';
                         data_fifo_valid <= '1';
                      elsif (data_fifo_empty = '0' and l2p_rdy_i = '1' and l2p_data_cnt = 0) then

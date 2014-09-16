@@ -68,10 +68,12 @@ architecture Behavioral of wb_rx_bridge is
 		wr_en : IN STD_LOGIC;
 		rd_en : IN STD_LOGIC;
 		prog_full_thresh : IN STD_LOGIC_VECTOR(13 DOWNTO 0);
+		prog_empty_thresh : IN STD_LOGIC_VECTOR(13 DOWNTO 0);
 		dout : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
 		full : OUT STD_LOGIC;
 		empty : OUT STD_LOGIC;
-		prog_full : OUT STD_LOGIC
+		prog_full : OUT STD_LOGIC;
+		prog_empty : OUT STD_LOGIC
 	);
 	END COMPONENT;
 	
@@ -91,9 +93,11 @@ architecture Behavioral of wb_rx_bridge is
 	
 	-- Constants
 	constant c_ALMOST_FULL_THRESHOLD : unsigned(13 downto 0) := TO_UNSIGNED(16000, 14);
-	constant c_PACKAGE_SIZE : unsigned(31 downto 0) := TO_UNSIGNED((250), 32); -- 250kByte
+	constant c_PACKAGE_SIZE : unsigned(31 downto 0) := TO_UNSIGNED((50*256), 32); -- 250kByte
 	constant c_TIMEOUT : unsigned(31 downto 0) := TO_UNSIGNED(2**14, 32); -- Counts in 25ns = 0.82ms
 	constant c_TIME_FRAME : unsigned(31 downto 0) := TO_UNSIGNED(200000000-1, 32); -- 200MHz clock cycles in 1 sec
+	constant c_EMPTY_THRESHOLD : unsigned(13 downto 0) := TO_UNSIGNED(16, 14);
+	constant c_EMPTY_TIMEOUT : unsigned(7 downto 0) := TO_UNSIGNED(500, 8);
 	
 	-- Signals
 	signal data_fifo_din : std_logic_vector(31 downto 0);
@@ -103,6 +107,11 @@ architecture Behavioral of wb_rx_bridge is
 	signal data_fifo_full : std_logic;
 	signal data_fifo_empty : std_logic;
 	signal data_fifo_almost_full : std_logic;
+	signal data_fifo_prog_empty : std_logic;
+	
+	signal data_fifo_empty_cnt : unsigned(7 downto 0);
+	signal data_fifo_empty_true : std_logic;
+	signal data_fifo_empty_pressure : std_logic;
 	
 	signal ctrl_fifo_din : std_logic_vector(63 downto 0);
 	signal ctrl_fifo_dout : std_logic_vector(63 downto 0);
@@ -112,10 +121,12 @@ architecture Behavioral of wb_rx_bridge is
 	signal ctrl_fifo_empty : std_logic;
 	
 	signal dma_stb_t : std_logic;
+	signal dma_stb_valid : std_logic;
 	signal dma_adr_cnt : unsigned(31 downto 0);
 	signal dma_start_adr : unsigned(31 downto 0);
 	signal dma_data_cnt : unsigned(31 downto 0);
 	signal dma_timeout_cnt : unsigned(31 downto 0);
+	signal dma_ack_cnt : unsigned(7 downto 0);
 	
 	signal rx_data_local : std_logic_vector(31 downto 0);
 	signal rx_valid_local : std_logic;
@@ -152,6 +163,7 @@ begin
 			wb_stall_o <= '0';
 			ctrl_fifo_rden <= '0';
 			rx_valid_local <= '0';
+			ctrl_fifo_dout_tmp <= (others => '0');
 			-- Regs
 			loopback <= '0';
 		elsif rising_edge(sys_clk_i) then
@@ -220,18 +232,47 @@ begin
 		end if;
 	end process data_rec;
 	
+	-- Empty logic to produce some backpressure
+	data_fifo_empty <= '1' when (data_fifo_empty_true = '1') else data_fifo_empty_pressure;
+	empty_proc : process(dma_clk_i, rst_n_i)
+	begin
+		if (rst_n_i = '0') then
+			data_fifo_empty_pressure <= '0';
+			data_fifo_empty_cnt <= (others => '0');
+		elsif rising_edge(dma_clk_i) then
+			-- Timeout Counter
+			if (data_fifo_empty_true = '0' and data_fifo_prog_empty = '1') then
+				data_fifo_empty_cnt <= data_fifo_empty_cnt + 1;
+			elsif (data_fifo_empty_true = '0' and data_fifo_prog_empty = '0') then
+				data_fifo_empty_cnt <= (others => '0');
+			elsif (data_fifo_empty_true = '1') then
+				data_fifo_empty_cnt <= (others => '0');
+			end if;
+			
+			if (data_fifo_empty_cnt > c_EMPTY_TIMEOUT) then
+				data_fifo_empty_pressure <= '0';
+			elsif (data_fifo_prog_empty = '0') then
+				data_fifo_empty_pressure <= '0';
+			elsif (data_fifo_empty = '1') then
+				data_fifo_empty_pressure <= '1';
+			end if;
+		end if;
+	end process empty_proc;
+	
 	-- DMA Master and data control
-	dma_adr_o <= std_logic_vector(dma_adr_cnt);
-	dma_dat_o <= data_fifo_dout;
-	dma_cyc_o <= dma_stb_t;
-	dma_stb_o <= dma_stb_t;
-	dma_we_o <= '1'; -- Write only
+
 	
 	to_ddr_proc: process(dma_clk_i, rst_n_i)
 	begin
 		if(rst_n_i = '0') then
 			dma_stb_t <= '0';
 			data_fifo_rden <= '0';
+			dma_adr_o <= (others => '0');
+			dma_dat_o <= (others => '0');
+			dma_cyc_o <= '0';
+			dma_stb_o <= '0';
+			dma_stb_valid <= '0';
+			dma_we_o <= '1'; -- Write only
 		elsif rising_edge(dma_clk_i) then
 			if (data_fifo_empty = '0' and dma_stall_i = '0' and ctrl_fifo_full = '0') then
 				dma_stb_t <= '1';
@@ -240,6 +281,18 @@ begin
 				dma_stb_t <= '0';
 				data_fifo_rden <= '0';
 			end if;
+			
+			if (data_fifo_empty = '0' or dma_ack_cnt > 0) then
+				dma_cyc_o <= '1';
+			else
+				dma_cyc_o <= '0';
+			end if;
+				
+			dma_adr_o <= std_logic_vector(dma_adr_cnt);
+			dma_dat_o <= data_fifo_dout;
+			dma_stb_o <= dma_stb_valid;
+			dma_stb_valid <= dma_stb_t and not data_fifo_empty;
+			dma_we_o <= '1'; -- Write only
 		end if;
 	end process to_ddr_proc;
 	
@@ -251,33 +304,40 @@ begin
 			dma_start_adr <= (others => '0');
 			dma_data_cnt <= (others => '0');
 			dma_timeout_cnt <= (others => '0');
-			ctrl_fifo_din(31 downto 0) <= (others => '0');
+			ctrl_fifo_din(63 downto 0) <= (others => '0');
+			dma_ack_cnt <= (others => '0');
 		elsif rising_edge(dma_clk_i) then
 			-- Address Counter
-			if (dma_stb_t = '1') then
+			if (dma_stb_valid = '1') then
 				dma_adr_cnt <= dma_adr_cnt + 1;
 			end if;
 			
+			if (dma_stb_valid = '1' and dma_ack_i = '0') then
+				dma_ack_cnt <= dma_ack_cnt + 1;
+			elsif (dma_stb_valid = '0' and dma_ack_i = '1' and dma_ack_cnt > 0) then
+				dma_ack_cnt <= dma_ack_cnt - 1;
+			end if;
+			
 			-- Package size counter
-			if (dma_stb_t = '1' and dma_data_cnt = c_PACKAGE_SIZE) then
+			if (dma_stb_valid = '1' and dma_data_cnt = c_PACKAGE_SIZE) then
 				ctrl_fifo_din(63 downto  32) <= std_logic_vector(dma_data_cnt);
 				ctrl_fifo_din(31 downto 0) <= std_logic_vector(dma_start_adr);
 				dma_start_adr <= dma_start_adr + c_PACKAGE_SIZE;
 				dma_data_cnt <= TO_UNSIGNED(1, 32);
 				ctrl_fifo_wren <= '1';
-			elsif (dma_stb_t = '0' and dma_data_cnt = c_PACKAGE_SIZE) then
+			elsif (dma_stb_valid = '0' and dma_data_cnt = c_PACKAGE_SIZE) then
 				ctrl_fifo_din(63 downto  32) <= std_logic_vector(dma_data_cnt);
 				ctrl_fifo_din(31 downto 0) <= std_logic_vector(dma_start_adr);
 				dma_start_adr <= dma_start_adr + c_PACKAGE_SIZE;
 				dma_data_cnt <= TO_UNSIGNED(0, 32);
 				ctrl_fifo_wren <= '1';
-			elsif (dma_stb_t = '0' and dma_timeout_cnt >= c_TIMEOUT and dma_data_cnt > 0) then
+			elsif (dma_stb_valid = '0' and dma_timeout_cnt >= c_TIMEOUT and dma_data_cnt > 0) then
 				ctrl_fifo_din(63 downto  32) <= std_logic_vector(dma_data_cnt);
 				ctrl_fifo_din(31 downto 0) <= std_logic_vector(dma_start_adr);
 				dma_start_adr <= dma_start_adr + dma_data_cnt;
 				dma_data_cnt <= TO_UNSIGNED(0, 32);
 				ctrl_fifo_wren <= '1';
-			elsif (dma_stb_t = '1') then
+			elsif (dma_stb_valid = '1') then
 				dma_data_cnt <= dma_data_cnt + 1;
 				ctrl_fifo_wren <= '0';
 			else
@@ -330,6 +390,7 @@ begin
 	delayproc : process (sys_clk_i, rst_n_i)
 	begin
 		if (rst_n_i = '0') then
+			rx_data_local <= (others => '0');
 			rx_data_local_d <= (others => '0');
 			rx_valid_local_d <= '0';
 		elsif rising_edge(sys_clk_i) then
@@ -368,10 +429,12 @@ begin
 		wr_en => data_fifo_wren,
 		rd_en => data_fifo_rden,
 		prog_full_thresh => std_logic_vector(c_ALMOST_FULL_THRESHOLD),
+		prog_empty_thresh => std_logic_vector(c_EMPTY_THRESHOLD),
 		dout => data_fifo_dout,
 		full => data_fifo_full,
-		empty => data_fifo_empty,
-		prog_full => data_fifo_almost_full
+		empty => data_fifo_empty_true,
+		prog_full => data_fifo_almost_full,
+		prog_empty => data_fifo_prog_empty
 	);
 	
 	cmp_rx_bridge_ctrl_fifo : rx_bridge_ctrl_fifo PORT MAP (
