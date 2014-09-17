@@ -67,8 +67,8 @@ architecture Behavioral of wb_rx_bridge is
 		din : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
 		wr_en : IN STD_LOGIC;
 		rd_en : IN STD_LOGIC;
-		prog_full_thresh : IN STD_LOGIC_VECTOR(13 DOWNTO 0);
-		prog_empty_thresh : IN STD_LOGIC_VECTOR(13 DOWNTO 0);
+		prog_full_thresh : IN STD_LOGIC_VECTOR(10 DOWNTO 0);
+		prog_empty_thresh : IN STD_LOGIC_VECTOR(10 DOWNTO 0);
 		dout : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
 		full : OUT STD_LOGIC;
 		empty : OUT STD_LOGIC;
@@ -92,11 +92,11 @@ architecture Behavioral of wb_rx_bridge is
 	END COMPONENT;
 	
 	-- Constants
-	constant c_ALMOST_FULL_THRESHOLD : unsigned(13 downto 0) := TO_UNSIGNED(16000, 14);
+	constant c_ALMOST_FULL_THRESHOLD : unsigned(10 downto 0) := TO_UNSIGNED(1900, 11);
 	constant c_PACKAGE_SIZE : unsigned(31 downto 0) := TO_UNSIGNED((250*256), 32); -- 250kByte
 	constant c_TIMEOUT : unsigned(31 downto 0) := TO_UNSIGNED(2**14, 32); -- Counts in 25ns = 0.82ms
 	constant c_TIME_FRAME : unsigned(31 downto 0) := TO_UNSIGNED(200000000-1, 32); -- 200MHz clock cycles in 1 sec
-	constant c_EMPTY_THRESHOLD : unsigned(13 downto 0) := TO_UNSIGNED(32, 14);
+	constant c_EMPTY_THRESHOLD : unsigned(10 downto 0) := TO_UNSIGNED(32, 11);
 	constant c_EMPTY_TIMEOUT : unsigned(7 downto 0) := TO_UNSIGNED(500, 8);
 	
 	-- Signals

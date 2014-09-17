@@ -118,7 +118,18 @@ entity yarr is
 		
 		---------------------------------------------------------
         -- FMC
-		tx_data		: out std_logic
+		---------------------------------------------------------
+		-- Trigger input
+		ext_trig		: out std_logic;
+		-- LVDS buffer
+		pwdn_l			: out std_logic_vector(2 downto 0);
+		-- FE-I4
+		fe_clk_p		: out std_logic_vector(0 downto 0);
+		fe_clk_n		: out std_logic_vector(0 downto 0);
+		fe_cmd_p		: out std_logic_vector(0 downto 0);
+		fe_cmd_n		: out std_logic_vector(0 downto 0);
+		fe_data_p		: in  std_logic_vector(0 downto 0);
+		fe_data_n		: in  std_logic_vector(0 downto 0)
       );
 end yarr;
 
@@ -555,23 +566,14 @@ architecture rtl of yarr is
 	component clk_gen
 	port
 	 (-- Clock in ports
-	  CLK_200           : in     std_logic;
+	  CLK_40_IN        : in     std_logic;
+	  CLKFB_IN         : in    std_logic;
 	  -- Clock out ports
+	  CLK_640           : out    std_logic;
 	  CLK_160          : out    std_logic;
-	  CLK_80          : out    std_logic;
-	  CLK_40          : out    std_logic;
-	  -- Status and control signals
-	  RESET             : in     std_logic;
-	  LOCKED            : out    std_logic
-	 );
-	end component;
-	
-	component ddr3_clk
-	port
-	 (-- Clock in ports
-	  CLK_200           : in     std_logic;
-	  -- Clock out ports
-	  CLK_333          : out    std_logic;
+	  CLK_80           : out    std_logic;
+	  CLK_40           : out    std_logic;
+	  CLKFB_OUT         : out    std_logic;
 	  -- Status and control signals
 	  RESET             : in     std_logic;
 	  LOCKED            : out    std_logic
@@ -599,6 +601,9 @@ architecture rtl of yarr is
   ------------------------------------------------------------------------------
   constant c_BAR0_APERTURE    : integer := 16;  -- nb of bits for 32-bit word address
   constant c_CSR_WB_SLAVES_NB : integer := 3;
+  
+  constant c_TX_CHANNELS : integer := 1;
+  constant c_RX_CHANNELS : integer := 1;
 
   ------------------------------------------------------------------------------
   -- Signals declaration
@@ -606,17 +611,20 @@ architecture rtl of yarr is
 
   -- System clock
   signal sys_clk : std_logic;
-  signal CLK_125 : std_logic;
+  
+  -- IO clocks
   signal CLK_40 : std_logic;
   signal CLK_80 : std_logic;
+  signal CLK_125 : std_logic;
   signal CLK_160 : std_logic;
-  signal CLK_333 : std_logic;
+  signal CLK_640 : std_logic;
+  signal ioclk_fb : std_logic;
   
-  -- System clock
+  -- System clock generation
   signal sys_clk_in         : std_logic;
-  signal sys_clk_125_buf    : std_logic;
+  signal sys_clk_40_buf    : std_logic;
   signal sys_clk_200_buf    : std_logic;
-  signal sys_clk_125        : std_logic;
+  signal sys_clk_40        : std_logic;
   signal sys_clk_200        : std_logic;
   signal sys_clk_fb         : std_logic;
   signal sys_clk_pll_locked : std_logic;
@@ -745,9 +753,63 @@ architecture rtl of yarr is
 	signal test_fifo_full : std_logic;
 	signal test_fifo_valid : std_logic;
  	signal test_fifo_valid1 : std_logic; 
+	
+	signal fe_cmd_o : std_logic_vector(c_TX_CHANNELS-1 downto 0);
+	signal fe_clk_o : std_logic_vector(c_TX_CHANNELS-1 downto 0);
+	signal fe_data_i : std_logic_vector(c_RX_CHANNELS-1 downto 0);
 begin
-
-
+	-- Activate LVDS buffer
+	pwdn_l <= (others => 'Z');
+	
+	-- Differential buffers
+	tx_loop: for I in 0 to c_TX_CHANNELS-1 generate
+	begin
+		tx_buf : OBUFDS
+		generic map (
+			IOSTANDARD => "LVDS_25")
+		port map (
+			O => fe_cmd_p(I),     -- Diff_p output (connect directly to top-level port)
+			OB => fe_cmd_n(I),   -- Diff_n output (connect directly to top-level port)
+			I => fe_cmd_o(I)      -- Buffer input 
+		);
+		clk_buf : OBUFDS
+		generic map (
+			IOSTANDARD => "LVDS_25")
+		port map (
+			O => fe_clk_p(I),     -- Diff_p output (connect directly to top-level port)
+			OB => fe_clk_n(I),   -- Diff_n output (connect directly to top-level port)
+			I => fe_clk_o(I)      -- Buffer input 
+		);
+		ODDR2_inst : ODDR2
+		generic map(
+			DDR_ALIGNMENT => "NONE", -- Sets output alignment to "NONE", "C0", "C1" 
+			INIT => '0', -- Sets initial state of the Q output to '0' or '1'
+			SRTYPE => "SYNC") -- Specifies "SYNC" or "ASYNC" set/reset
+		port map (
+			Q => fe_clk_o(I), -- 1-bit output data
+			C0 => clk_40, -- 1-bit clock input
+			C1 => not clk_40, -- 1-bit clock input
+			CE => '1',  -- 1-bit clock enable input
+			D0 => '0',   -- 1-bit data input (associated with C0)
+			D1 => '1',   -- 1-bit data input (associated with C1)
+			R => not rst_n,    -- 1-bit reset input
+			S => '0'     -- 1-bit set input
+		);
+	end generate;
+	
+	rx_loop: for I in 0 to c_RX_CHANNELS-1 generate
+	begin
+		rx_buf : IBUFDS
+		generic map (
+			DIFF_TERM => TRUE, -- Differential Termination 
+			IBUF_LOW_PWR => FALSE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+			IOSTANDARD => "LVDS_25")
+		port map (
+			O => fe_data_i(I),  -- Buffer output
+			I => fe_data_p(I),  -- Diff_p buffer input (connect directly to top-level port)
+			IB => fe_data_n(I) -- Diff_n buffer input (connect directly to top-level port)
+		);
+	end generate;
   ------------------------------------------------------------------------------
   -- Local clock from gennum LCLK
   ------------------------------------------------------------------------------
@@ -774,16 +836,6 @@ begin
 		I => clk_125m_pllref_p_i,  -- Diff_p clock buffer input (connect directly to top-level port)
 		IB => clk_125m_pllref_n_i -- Diff_n clock buffer input (connect directly to top-level port)
 	);	
---  cmp_l_clk_buf : IBUFDS
---    generic map (
---      DIFF_TERM    => false,            -- Differential Termination
---      IBUF_LOW_PWR => true,             -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
---      IOSTANDARD   => "DEFAULT")
---    port map (
---      O  => l_clk,                      -- Buffer output
---      I  => L_CLKp,                     -- Diff_p buffer input (connect directly to top-level port)
---      IB => L_CLKn                      -- Diff_n buffer input (connect directly to top-level port)
---      );
 
   ------------------------------------------------------------------------------
   -- GN4124 interface
@@ -950,7 +1002,7 @@ begin
       IOSTANDARD => "DEFAULT",
       SLEW => "FAST")
    port map (
-      O => tx_data,     -- Buffer output (connect directly to top-level port)
+      O => ext_trig,     -- Buffer output (connect directly to top-level port)
       I => tx_data_o(0)      -- Buffer input 
    );
 	  
@@ -969,8 +1021,8 @@ begin
 		wb_ack_o => wb_ack(1),
 		wb_stall_o => wb_stall(1),
 		-- TX
-		tx_clk_i => sys_clk_125,
-		tx_data_o => tx_data_o,
+		tx_clk_i => CLK_40,
+		tx_data_o => fe_cmd_o,
 		trig_pulse_o => trig_pulse
 	);
 	
@@ -1010,7 +1062,7 @@ begin
 	cmp_test_fifo : test_fifo
   PORT MAP (
     rst => not rst_n,
-    wr_clk => sys_clk_125,
+    wr_clk => CLK_40,
     rd_clk => sys_clk,
     din => x"DEADBEEF",
     wr_en => trig_pulse,
@@ -1128,48 +1180,38 @@ begin
 --AUX_LEDS_O(2) <= '1';
 --AUX_LEDS_O(3) <= '0';
 
-	rst_n <= (L_RST_N and sys_clk_pll_locked);
-
-	locked <= locked_v(0) or locked_v(1);
+	rst_n <= (L_RST_N and sys_clk_pll_locked and locked);
 		
---	cmp_clk_gen : clk_gen
---	port map (
---		-- Clock in ports
---		CLK_200 => l_clk,
---		-- Clock out ports
---		CLK_160 => CLK_160,
---		CLK_80 => CLK_80,
---		CLK_40 => CLK_40,
---		-- Status and control signals
---		RESET  => not L_RST_N,
---		LOCKED => locked_v(0)
---	);
+	cmp_clk_gen : clk_gen
+	port map (
+		-- Clock in ports
+		CLK_40_IN => sys_clk_40,
+		CLKFB_IN => ioclk_fb,
+		-- Clock out ports
+		CLK_640 => CLK_640,
+		CLK_160 => CLK_160,
+		CLK_80 => CLK_80,
+		CLK_40 => CLK_40,
+		CLKFB_OUT => ioclk_fb,
+		-- Status and control signals
+		RESET  => not L_RST_N,
+		LOCKED => locked
+	);
 	
---	cmp_ddr3_clk : ddr3_clk
---	port map (
---		-- Clock in ports
---		CLK_200 => CLK_125,
---		-- Clock out ports
---		CLK_333 => CLK_333,
---		-- Status and control signals
---		RESET  => not L_RST_N,
---		LOCKED => locked_v(1)
---	);
-
-  ------------------------------------------------------------------------------
-  -- Clocks distribution from 20MHz TCXO
-  -- 125.000 MHz system clock
-  -- 200.000 MHz fast system clock
-  -- 333.333 MHz DDR3 clock
-  ------------------------------------------------------------------------------
+	------------------------------------------------------------------------------
+	-- Clocks distribution from 20MHz TCXO
+	--  40.000 MHz IO driver clock
+	-- 200.000 MHz fast system clock
+	-- 333.333 MHz DDR3 clock
+	------------------------------------------------------------------------------
 	sys_clk <= l_clk;
-  -- AD5662BRMZ-1 DAC output powers up to 0V. The output remains valid until a
-  -- write sequence arrives to the DAC.
-  -- To avoid spurious writes, the DAC interface outputs are fixed to safe values.
-  pll25dac_sync_n <= '1';
-  pll20dac_sync_n <= '1';
-  plldac_din      <= '0';
-  plldac_sclk     <= '0';
+	-- AD5662BRMZ-1 DAC output powers up to 0V. The output remains valid until a
+	-- write sequence arrives to the DAC.
+	-- To avoid spurious writes, the DAC interface outputs are fixed to safe values.
+	pll25dac_sync_n <= '1';
+	pll20dac_sync_n <= '1';
+	plldac_din      <= '0';
+	plldac_sclk     <= '0';
 
   cmp_sys_clk_buf : IBUFG
     port map (
@@ -1184,7 +1226,7 @@ begin
       DIVCLK_DIVIDE      => 1,
       CLKFBOUT_MULT      => 50,
       CLKFBOUT_PHASE     => 0.000,
-      CLKOUT0_DIVIDE     => 8,
+      CLKOUT0_DIVIDE     => 25,
       CLKOUT0_PHASE      => 0.000,
       CLKOUT0_DUTY_CYCLE => 0.500,
       CLKOUT1_DIVIDE     => 5,
@@ -1197,7 +1239,7 @@ begin
       REF_JITTER         => 0.016)
     port map (
       CLKFBOUT => sys_clk_fb,
-      CLKOUT0  => sys_clk_125_buf,
+      CLKOUT0  => sys_clk_40_buf,
       CLKOUT1  => sys_clk_200_buf,
       CLKOUT2  => ddr_clk_buf,
       CLKOUT3  => open,
@@ -1210,8 +1252,8 @@ begin
 
   cmp_clk_125_buf : BUFG
     port map (
-      O => sys_clk_125,
-      I => sys_clk_125_buf);
+      O => sys_clk_40,
+      I => sys_clk_40_buf);
 
   cmp_clk_200_buf : BUFG
     port map (
