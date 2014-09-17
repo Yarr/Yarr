@@ -1,4 +1,6 @@
 #include <SpecController.h>
+#include <BenchmarkTools.h>
+
 #include <iostream>
 #include <stdint.h>
 #include <string.h>
@@ -87,7 +89,7 @@ int main(void) {
 
     uint32_t conf = 0x1;
     uint32_t enable = 0x1;
-    uint32_t frequency = 1/(double)(TX_CLK_PERIOD * 1e-9 *80000000.0); // 10MHz
+    uint32_t frequency = 1/(double)(TX_CLK_PERIOD * 1e-9 *100000000.0); // 10MHz
     uint64_t time = 10.0/(double)(TX_CLK_PERIOD * 1e-9); // 10s
     uint32_t count = 340*256; // 10 trigger
 
@@ -128,11 +130,13 @@ int main(void) {
             std::cout << "Count = 0x" << std::hex << data_cnt << std::endl << std::dec;
             uint32_t *buf = new uint32_t[data_cnt];
             std::cout << "Starting DMA" << std::endl;
-            if(mySpec.readDma(addr, buf, data_cnt)) {
+            double readtime = BenchmarkTools::measureReadTime(&mySpec, addr, buf, data_cnt, 1);
+            if (readtime < 0) {
                 std::cout << "DMA FAILED!!!" << std::endl;
                 return -1;
             }
             std::cout << "DMA done" << std::endl;
+            std::cout << "Performance: " << data_cnt*4/1024.0/1024.0/readtime*1000 << " MB/s" << std::endl;
             //for (int i=0; i<data_cnt; i++)
             //    std::cout << "[" << i << "] 0x" << std::hex << buf[i] << std::dec << std::endl;
             delete buf;
@@ -140,23 +144,29 @@ int main(void) {
         }         
     }
     gettimeofday(&end, NULL);
-    usleep(500);
-    mySpec.readBlock(RX_ADDR | RX_DATA_RATE, &answer, 1);
-    mySpec.readBlock(RX_ADDR | RX_START_ADDR, &addr, 1);
-    mySpec.readBlock(RX_ADDR | RX_DATA_COUNT, &data_cnt, 1);
-    if (data_cnt > 0) {
-        std::cout << "Rate = " << answer*4.0/1024.0/1024.0 << " MB/s" << std::endl;
-        std::cout << "Start Adr = 0x" << std::hex << addr << std::endl << std::dec;
-        std::cout << "Count = 0x" << std::hex << data_cnt << std::endl << std::dec;
-        std::cout.flush();
-        uint32_t *buf = new uint32_t[data_cnt];
-        if(mySpec.readDma(addr, buf, data_cnt)) {
-            std::cout << "DMA FAILED!!!" << std::endl;
-            return -1;
-        }
-        delete buf;
-    }         
-    
+    //usleep(500);
+    std::cout << "\n\n############################\n\n" << std::endl;
+    while(data_cnt > 0) {
+        data_cnt = 0;
+        mySpec.readBlock(RX_ADDR | RX_DATA_RATE, &answer, 1);
+        mySpec.readBlock(RX_ADDR | RX_START_ADDR, &addr, 1);
+        mySpec.readBlock(RX_ADDR | RX_DATA_COUNT, &data_cnt, 1);
+        if (data_cnt > 0) {
+            std::cout << "Rate = " << answer*4.0/1024.0/1024.0 << " MB/s" << std::endl;
+            std::cout << "Start Adr = 0x" << std::hex << addr << std::endl << std::dec;
+            std::cout << "Count = 0x" << std::hex << data_cnt << std::endl << std::dec;
+            std::cout.flush();
+            uint32_t *buf = new uint32_t[data_cnt];
+            double readtime = BenchmarkTools::measureReadTime(&mySpec, addr, buf, data_cnt, 1);
+            if (readtime < 0) {
+                std::cout << "DMA FAILED!!!" << std::endl;
+                return -1;
+            }
+            std::cout << "DMA done" << std::endl;
+            std::cout << "Performance: " << data_cnt*4/1024.0/1024.0/readtime*1000 << " MB/s" << std::endl;
+            delete buf;
+        }         
+    }
     std::cout << "DONE" << std::endl;
     mySpec.writeBlock(TX_ADDR | TRIG_EN, &disable, 1);
     double stopwatch = (end.tv_sec - start.tv_sec) * 1000.0; //msecs
