@@ -338,6 +338,34 @@ architecture rtl of yarr is
 	);
 	end component;
 	
+	component wb_rx_core
+		generic (
+			g_NUM_RX : integer range 1 to 32 := 1
+		);
+		port (
+			-- Sys connect
+			wb_clk_i	: in  std_logic;
+			rst_n_i		: in  std_logic;
+			-- Wishbone slave interface
+			wb_adr_i	: in  std_logic_vector(31 downto 0);
+			wb_dat_i	: in  std_logic_vector(31 downto 0);
+			wb_dat_o	: out std_logic_vector(31 downto 0);
+			wb_cyc_i	: in  std_logic;
+			wb_stb_i	: in  std_logic;
+			wb_we_i		: in  std_logic;
+			wb_ack_o	: out std_logic;
+			wb_stall_o	: out std_logic;
+			-- RX IN
+			rx_clk_i	: in  std_logic;
+			rx_serdes_clk_i : in std_logic;
+			rx_data_i	: in std_logic_vector(g_NUM_RX-1 downto 0);	
+			-- RX OUT (sync to sys_clk)
+			rx_valid_o : out std_logic;
+			rx_data_o : out std_logic_vector(31 downto 0);
+			busy_o : out std_logic
+		);
+	end component;
+	
 	component wb_rx_bridge is
 	port (
 		-- Sys Connect
@@ -600,7 +628,7 @@ architecture rtl of yarr is
   -- Constants declaration
   ------------------------------------------------------------------------------
   constant c_BAR0_APERTURE    : integer := 16;  -- nb of bits for 32-bit word address
-  constant c_CSR_WB_SLAVES_NB : integer := 3;
+  constant c_CSR_WB_SLAVES_NB : integer := 4;
   
   constant c_TX_CHANNELS : integer := 1;
   constant c_RX_CHANNELS : integer := 1;
@@ -618,6 +646,10 @@ architecture rtl of yarr is
   signal CLK_125 : std_logic;
   signal CLK_160 : std_logic;
   signal CLK_640 : std_logic;
+  signal CLK_40_buf : std_logic;
+  signal CLK_80_buf : std_logic;
+  signal CLK_160_buf : std_logic;
+  signal CLK_640_buf : std_logic;
   signal ioclk_fb : std_logic;
   
   -- System clock generation
@@ -730,33 +762,13 @@ architecture rtl of yarr is
   
   signal tx_data_o : std_logic_vector(0 downto 0);
   signal trig_pulse : std_logic;
-  
-	COMPONENT test_fifo
-	  PORT (
-		rst : IN STD_LOGIC;
-		wr_clk : IN STD_LOGIC;
-		rd_clk : IN STD_LOGIC;
-		din : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
-		wr_en : IN STD_LOGIC;
-		rd_en : IN STD_LOGIC;
-		dout : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
-		full : OUT STD_LOGIC;
-		empty : OUT STD_LOGIC
-	  );
-	END COMPONENT;
-	
-	signal test_fifo_din : std_logic_vector(31 downto 0);
-	signal test_fifo_dout : std_logic_vector(31 downto 0);
-	signal test_fifo_wren : std_logic;
-	signal test_fifo_rden : std_logic;
-	signal test_fifo_empty : std_logic;
-	signal test_fifo_full : std_logic;
-	signal test_fifo_valid : std_logic;
- 	signal test_fifo_valid1 : std_logic; 
-	
+  	
 	signal fe_cmd_o : std_logic_vector(c_TX_CHANNELS-1 downto 0);
 	signal fe_clk_o : std_logic_vector(c_TX_CHANNELS-1 downto 0);
 	signal fe_data_i : std_logic_vector(c_RX_CHANNELS-1 downto 0);
+	
+	signal rx_data : std_logic_vector(31 downto 0);
+	signal rx_valid : std_logic;
 begin
 	-- Activate LVDS buffer
 	pwdn_l <= (others => 'Z');
@@ -1026,11 +1038,9 @@ begin
 		trig_pulse_o => trig_pulse
 	);
 	
-	cmp_wb_rx_bridge : wb_rx_bridge port map (
-		-- Sys Connect
-		sys_clk_i => sys_clk,
+	cmp_wb_rx_core: wb_rx_core PORT MAP(
+		wb_clk_i => sys_clk,
 		rst_n_i => rst_n,
-		-- Wishbone slave interface
 		wb_adr_i => wb_adr,
 		wb_dat_i => wb_dat_o,
 		wb_dat_o => wb_dat_i(95 downto 64),
@@ -1039,6 +1049,27 @@ begin
 		wb_we_i => wb_we,
 		wb_ack_o => wb_ack(2),
 		wb_stall_o => wb_stall(2),
+		rx_clk_i => CLK_160,
+		rx_serdes_clk_i => CLK_640,
+		rx_data_i => fe_data_i,
+		rx_valid_o => rx_valid,
+		rx_data_o => rx_data,
+		busy_o => open
+	);
+	
+	cmp_wb_rx_bridge : wb_rx_bridge port map (
+		-- Sys Connect
+		sys_clk_i => sys_clk,
+		rst_n_i => rst_n,
+		-- Wishbone slave interface
+		wb_adr_i => wb_adr,
+		wb_dat_i => wb_dat_o,
+		wb_dat_o => wb_dat_i(127 downto 96),
+		wb_cyc_i => wb_cyc(3),
+		wb_stb_i => wb_stb,
+		wb_we_i => wb_we,
+		wb_ack_o => wb_ack(3),
+		wb_stall_o => wb_stall(3),
 		-- Wishbone DMA Master Interface
 		dma_clk_i => sys_clk,
 		dma_adr_o => rx_dma_adr,
@@ -1050,27 +1081,14 @@ begin
 		dma_ack_i => rx_dma_ack,
 		dma_stall_i => rx_dma_stall,
 		-- Rx Interface (sync to sys_clk)
-		rx_data_i => test_fifo_dout,
-		rx_valid_i => not test_fifo_empty,
+		rx_data_i => rx_data,
+		rx_valid_i => rx_valid,
 		-- Status in
 		trig_pulse_i => trig_pulse,
 		-- Status out
 		irq_o => open,
 		busy_o => open
 	);
-	
-	cmp_test_fifo : test_fifo
-  PORT MAP (
-    rst => not rst_n,
-    wr_clk => CLK_40,
-    rd_clk => sys_clk,
-    din => x"DEADBEEF",
-    wr_en => trig_pulse,
-    rd_en => not test_fifo_empty,
-    dout => test_fifo_dout,
-    full => test_fifo_full,
-    empty => test_fifo_empty
-  );
 
   --wb_stall(1) <= '0' when wb_cyc(1) = '0' else not(wb_ack(1));
 --  wb_stall(2) <= '0' when wb_cyc(2) = '0' else not(wb_ack(2));
@@ -1188,16 +1206,42 @@ begin
 		CLK_40_IN => sys_clk_40,
 		CLKFB_IN => ioclk_fb,
 		-- Clock out ports
-		CLK_640 => CLK_640,
-		CLK_160 => CLK_160,
-		CLK_80 => CLK_80,
-		CLK_40 => CLK_40,
+		CLK_640 => CLK_640_buf,
+		CLK_160 => CLK_160_buf,
+		CLK_80 => CLK_80_buf,
+		CLK_40 => CLK_40_buf,
 		CLKFB_OUT => ioclk_fb,
 		-- Status and control signals
 		RESET  => not L_RST_N,
 		LOCKED => locked
 	);
 	
+	BUFPLL_640 : BUFPLL
+	generic map (
+		DIVIDE => 4,         -- DIVCLK divider (1-8)
+		ENABLE_SYNC => TRUE  -- Enable synchrnonization between PLL and GCLK (TRUE/FALSE)
+	)
+	port map (
+		IOCLK => CLK_640,               -- 1-bit output: Output I/O clock
+		LOCK => open,                 -- 1-bit output: Synchronized LOCK output
+		SERDESSTROBE => open, -- 1-bit output: Output SERDES strobe (connect to ISERDES2/OSERDES2)
+		GCLK => CLK_160,                 -- 1-bit input: BUFG clock input
+		LOCKED => locked,             -- 1-bit input: LOCKED input from PLL
+		PLLIN => clk_640_buf                -- 1-bit input: Clock input from PLL
+	);
+
+	cmp_ioclk_160_buf : BUFG
+	port map (
+		O => CLK_160,
+		I => CLK_160_buf);
+	cmp_ioclk_80_buf : BUFG
+	port map (
+		O => CLK_80,
+		I => CLK_80_buf);
+	cmp_ioclk_40_buf : BUFG
+	port map (
+		O => CLK_40,
+		I => CLK_40_buf);		
 	------------------------------------------------------------------------------
 	-- Clocks distribution from 20MHz TCXO
 	--  40.000 MHz IO driver clock

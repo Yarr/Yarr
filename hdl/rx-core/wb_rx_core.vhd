@@ -36,30 +36,74 @@ entity wb_rx_core is
 		-- RX IN
 		rx_clk_i	: in  std_logic;
 		rx_serdes_clk_i : in std_logic;
-		rx_data_i	: out std_logic_vector(g_NUM_RX-1 downto 0);
+		rx_data_i	: in std_logic_vector(g_NUM_RX-1 downto 0);
 		
 		-- RX OUT (sync to sys_clk)
-		rx_valid_o : std_logic;
-		rx_data_o : out std_logic_vector(31 downto 0)
+		rx_valid_o : out std_logic;
+		rx_data_o : out std_logic_vector(31 downto 0);
+		busy_o : out std_logic
 	);
 end wb_rx_core;
 
 architecture behavioral of wb_rx_core is
 
+	constant c_ALL_ZEROS : std_logic_vector(g_NUM_RX-1 downto 0) := (others => '0');
+
+	component fei4_rx_channel
+		port (
+			-- Sys connect
+			rst_n_i : in std_logic;
+			clk_160_i : in std_logic;
+			clk_640_i : in std_logic;
+			enable_i : in std_logic;
+			-- Input
+			rx_data_i : in std_logic;
+			-- Output
+			rx_data_o : out std_logic_vector(23 downto 0);
+			rx_valid_o : out std_logic;
+			rx_stat_o : out std_logic_vector(7 downto 0)
+		);
+	end component;
+	
+	COMPONENT rx_channel_fifo
+		PORT (
+			rst : IN STD_LOGIC;
+			wr_clk : IN STD_LOGIC;
+			rd_clk : IN STD_LOGIC;
+			din : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+			wr_en : IN STD_LOGIC;
+			rd_en : IN STD_LOGIC;
+			dout : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
+			full : OUT STD_LOGIC;
+			empty : OUT STD_LOGIC
+		);
+	END COMPONENT;
+	
+	type rx_data_array is array (g_NUM_RX-1 downto 0) of std_logic_vector(23 downto 0);
+	type rx_data_fifo_array is array (g_NUM_RX-1 downto 0) of std_logic_vector(31 downto 0);
+	type rx_stat_array is array (g_NUM_RX-1 downto 0) of std_logic_vector(7 downto 0);
+	signal rx_data : rx_data_array;
+	signal rx_valid : std_logic_vector(g_NUM_RX-1 downto 0);
+	signal rx_stat : rx_stat_array;
+	
+	signal rx_fifo_dout :rx_data_fifo_array;
+	signal rx_fifo_full : std_logic_vector(g_NUM_RX-1 downto 0);
+	signal rx_fifo_empty : std_logic_vector(g_NUM_RX-1 downto 0);
+	signal rx_fifo_rden : std_logic_vector(g_NUM_RX-1 downto 0);
+
 	signal rx_enable : std_logic_vector(31 downto 0);
 	
+	signal rx_fifo_cur : std_logic_vector(g_NUM_RX-1 downto 0);
+	signal rx_fifo_act : std_logic_vector(g_NUM_RX-1 downto 0);
 begin
 	wb_proc: process (wb_clk_i, rst_n_i)
 	begin
 		if (rst_n_i = '0') then
 			wb_dat_o <= (others => '0');
 			wb_ack_o <= '0';
-			wb_wr_en <= (others => '0');
-			tx_enable <= (others => '0');
-			wb_dat_t <= (others => '0');
-			trig_en <= '0';
+			rx_enable <= (others => '0');
+			wb_stall_o <= '0';
 		elsif rising_edge(wb_clk_i) then
-			wb_wr_en <= (others => '0');
 			wb_ack_o <= '0';
 			if (wb_cyc_i = '1' and wb_stb_i = '1') then
 				if (wb_we_i = '1') then
@@ -81,5 +125,77 @@ begin
 			end if;
 		end if;
 	end process wb_proc;
+	
+	-- Arbiter
+	arbiter_proc : process(wb_clk_i, rst_n_i)
+	begin
+		if (rst_n_i = '0') then
+			rx_data_o <= (others => '0');
+			rx_valid_o <= '0';
+		elsif rising_edge(wb_clk_i) then
+			-- Read active Fifo
+			rx_fifo_rden <= rx_fifo_cur and rx_fifo_empty;
+			rx_data_o <= x"DEADBEEF";
+			rx_valid_o <= '0';
+			for I in 0 to g_NUM_RX-1 loop
+				if (rx_fifo_rden(I) = '1' and rx_fifo_empty(I) = '0') then
+					rx_data_o <= rx_fifo_dout(I);
+					rx_valid_o <= '1';
+				end if;
+			end loop;
+		end if;
+	end process arbiter_proc;
+	
+	-- Bit shifter
+	single_shift_gen: if (g_NUM_RX = 1) generate
+	begin
+		process(wb_clk_i, rst_n_i)
+		begin
+			if (rst_n_i = '0') then
+				rx_fifo_cur <= (0 => '1', others => '0');
+			elsif rising_edge(wb_clk_i) then
+				rx_fifo_cur <= (0 => '1', others => '0');
+			end if;
+		end process;
+	end generate;
+	multi_shift_gen: if (g_NUM_RX > 1) generate
+	begin
+		process(wb_clk_i, rst_n_i)
+		begin
+			if (rst_n_i = '0') then
+				rx_fifo_cur <= (0 => '1', others => '0');
+			elsif rising_edge(wb_clk_i) then
+				rx_fifo_cur <= rx_fifo_cur(g_NUM_RX-2 downto 0) & rx_fifo_cur(g_NUM_RX-1);
+			end if;
+		end process;
+	end generate;
+	
+	-- Generate Rx Channels
+	busy_o <= '0' when (rx_fifo_full = c_ALL_ZEROS) else '1';
+	rx_channels: for I in 0 to g_NUM_RX-1 generate
+	begin
+		cmp_fei4_rx_channel: fei4_rx_channel PORT MAP(
+			rst_n_i => rst_n_i,
+			clk_160_i => rx_clk_i,
+			clk_640_i => rx_serdes_clk_i,
+			enable_i => rx_enable(I),
+			rx_data_i => rx_data_i(I),
+			rx_data_o => rx_data(I),
+			rx_valid_o => rx_valid(I),
+			rx_stat_o => rx_stat(I)
+		);
+		
+		cmp_rx_channel_fifo : rx_channel_fifo PORT MAP (
+			rst => not rst_n_i,
+			wr_clk => rx_clk_i,
+			rd_clk => wb_clk_i,
+			din => STD_LOGIC_VECTOR(TO_UNSIGNED(I,8)) & rx_data(I),
+			wr_en => rx_valid(I),
+			rd_en => rx_fifo_rden(I),
+			dout => rx_fifo_dout(I),
+			full => rx_fifo_full(I),
+			empty => rx_fifo_empty(I)
+		);
+	end generate;
 end behavioral;
 

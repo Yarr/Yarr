@@ -165,19 +165,10 @@ begin
 
   CLK_640 <= clkout0;
 
-  clkout2_buf : BUFG
-  port map
-   (O   => CLK_160,
-    I   => clkout1);
+  CLK_160 <= clkout1;
 
-  clkout3_buf : BUFG
-  port map
-   (O   => CLK_80,
-    I   => clkout2);
+  CLK_80 <= clkout2;
 
-  clkout4_buf : BUFG
-  port map
-   (O   => CLK_40,
-    I   => clkout3);
+  CLK_40 <= clkout3;
 
 end xilinx;

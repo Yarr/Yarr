@@ -2,12 +2,9 @@
 -- # Project: Yarr
 -- # Author: Timon Heim
 -- # E-Mail: timon.heim at cern.ch
--- # Comments: RX core
--- # Outputs are synchronous to wb_clk_i
+-- # Comments: RX channel
+-- # FE-I4 Style Rx Channel; Sync, Align & Decode
 -- ####################################
--- # Adress Map:
--- # Adr[3:0]:
--- #     0x0 : RX Enable Mask
 
 
 library IEEE;
@@ -31,7 +28,7 @@ entity fei4_rx_channel is
 		-- Output
 		rx_data_o : out std_logic_vector(23 downto 0);
 		rx_valid_o : out std_logic;
-		rx_stat_o : out std_logic_vector(31 downto 0)
+		rx_stat_o : out std_logic_vector(7 downto 0)
 	);
 end fei4_rx_channel;
 
@@ -110,7 +107,10 @@ architecture behavioral of fei4_rx_channel is
 	signal data_frame_value : std_logic_vector(23 downto 0);
 	signal data_frame_valid : std_logic;
 	
-	signal status : std_logic_vector(31 downto 0);
+	signal status : std_logic_vector(7 downto 0);
+	
+	signal pll_clk640 : std_logic;
+	signal locked : std_logic;
 
 begin
 	-- Status Output
@@ -119,11 +119,11 @@ begin
 	status(1) <= data_enc_sync;
 	status(2) <= data_dec_decerr;
 	status(3) <= data_dec_disperr;
-	status(31 downto 4) <= (others => '0');
+	status(7 downto 4) <= (others => '0');
 
 	-- Frame collector
 	rx_data_o <= data_frame_value;
-	rx_valid_o <= data_frame_valid and data_raw_lock and data_enc_sync;
+	rx_valid_o <= data_frame_valid and data_raw_lock and data_enc_sync and enable_i;
 	framing_proc : process(clk_160_i, rst_n_i)
 	begin
 		if (rst_n_i = '0') then
@@ -183,7 +183,7 @@ begin
 	cmp_cdr_serdes : cdr_serdes port map (
 		clk160 => clk_160_i,
 		clk640 => clk_640_i, 
-		reset => not rst_n_i,
+		reset => not rst_n_i and not locked,
 		din => rx_data_i,
 		data_value => data_raw_value,
 		data_valid => data_raw_valid,
