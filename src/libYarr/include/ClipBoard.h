@@ -12,11 +12,12 @@
 #include <mutex>
 #include <queue>
 
+#include "RawData.h"
+#include "Fei4EventData.h"
+
 template <class T>
 class ClipBoard {
     public:
-        ClipBoard();
-        ~ClipBoard();
 
         void pushData(T *data) {
             queueMutex.lock();
@@ -40,5 +41,9 @@ class ClipBoard {
         std::queue<T*> dataQueue;
 
 };
+
+template class ClipBoard<RawData>;
+template class ClipBoard<Fei4Data>;
+
 
 #endif

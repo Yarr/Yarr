@@ -18,6 +18,9 @@ class RawData {
             buf = arg_buf;
             words = arg_words;
         }
+        ~RawData() {
+            delete buf;
+        }
         uint32_t adr;
         uint32_t *buf;
         size_t words;

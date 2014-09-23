@@ -10,8 +10,12 @@
 // ################################
 
 class DataProcessor {
-    DataProcessor();
-    ~DataProcessor();
+    public:
+        DataProcessor();
+        ~DataProcessor();
+
+        void init();
+        void process();
 };
 
 #endif

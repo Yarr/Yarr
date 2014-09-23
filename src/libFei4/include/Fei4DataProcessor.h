@@ -14,7 +14,7 @@
 #include "RawData.h"
 #include "Fei4EventData.h"
 
-class Fei4DataProcessor : DataProcessor {
+class Fei4DataProcessor : public DataProcessor {
     public:
         Fei4DataProcessor();
         ~Fei4DataProcessor();

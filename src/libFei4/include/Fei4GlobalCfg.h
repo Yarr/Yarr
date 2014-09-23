@@ -110,7 +110,6 @@ class Fei4GlobalCfg {
         //13
         Field<uint16_t, 13, 0xF, 1> S1;
         Field<uint16_t, 13, 0xE, 1> S0;
-        Field<uint16_t, 13, 0xE, 2> S;
         Field<uint16_t, 13, 0x1, 13, true> Pixel_latch_strobe;
         //14
         Field<uint16_t, 14, 0x8, 8, true> LVDSDrvIref;

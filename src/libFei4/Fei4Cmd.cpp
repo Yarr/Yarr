@@ -67,6 +67,13 @@ void Fei4Cmd::globalReset(int chipId) {
     link->write(0x005A2000+((chipId<<6)&0x3C0));
 }
 
+void Fei4Cmd::globalPulse(int chipId, int width) {
+    if (verbose) std::cout << __PRETTY_FUNCTION__ << std::endl;
+    link->write(0x005A2400+((chipId<<6)&0x3C0)+(width&0x3F));
+    for(unsigned i=0; i<(width%32+1); i++)
+        link->write(0x0);
+}
+
 void Fei4Cmd::calTrigger(int delay) {
     if (verbose) std::cout << __PRETTY_FUNCTION__ << std::endl;
     link->write(0x00001640);

@@ -90,6 +90,9 @@ void TxCore::setTrigWord(uint32_t *word) {
             << word[4] << word[3] << word[2] << word[1] << std::dec << std::endl;
     spec->writeBlock(TX_ADDR | TRIG_WORD, word, 4);
 }
-        
 
+bool TxCore::isTrigDone() {
+    return spec->readSingle(TX_ADDR | TRIG_DONE);
+}
+        
 

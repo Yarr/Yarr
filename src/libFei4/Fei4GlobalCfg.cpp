@@ -41,7 +41,6 @@ void Fei4GlobalCfg::init() {
     PrmpVbnLCC.initField(cfg, 0);
     S1.initField(cfg, 0);
     S0.initField(cfg, 0);
-    S.initField(cfg, 0);
     Pixel_latch_strobe.initField(cfg, 0);
     LVDSDrvIref.initField(cfg, 171);
     GADCCompBias.initField(cfg, 100);
