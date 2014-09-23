@@ -8,21 +8,24 @@
 -- # Adress Map:
 -- # Adr[8:4]: channel number 0 to 31
 -- # Adr[3:0]:
--- #   0x0 - FiFo (WO)
--- #   0x1 - Enable (RW)
--- #   0x2 - Underrun (RO)
--- #   0x3 - Overrun (RO)
--- #   0x4 - Empty (RO)
--- #   0x5 - Trigger Enable (RW)
--- #   0x6 - Trigger Done (RO)
--- #   0x7 - Trigger Conf (RW) : 
+-- #   0x0 - FiFo (WO) (Channel specific)
+-- #   0x1 - CMD Enable (RW)
+-- #   0x2 - CMD Empty (RO)
+-- #   0x3 - Trigger Enable (RW)
+-- #   0x4 - Trigger Done (RO)
+-- #   0x5 - Trigger Conf (RW) : 
 -- #          0 = External
 -- #          1 = Internal Time
 -- #          2 = Internal Count
--- #   0x8 - Trigger Frequency (RW)
--- #   0x9 - Trigger Time_L (RW)
--- #   0xA - Trigger Time_H (RW)
--- #   0xB - Trigger Count (RW)
+-- #   0x6 - Trigger Frequency (RW)
+-- #   0x7 - Trigger Time_L (RW)
+-- #   0x8 - Trigger Time_H (RW)
+-- #   0x9 - Trigger Count (RW)
+-- #   0xA - Trigger Word Length (RW)
+-- #   0xB - Trigger Word [31:0] (RW)
+-- #   0xC - Trigger Word [63:32] (RW)
+-- #   0xD - Trigger Word [95:64] (RW)
+-- #   0xE - Trigger Word [127:96] (RW)
 
 library IEEE;
 use ieee.std_logic_1164.all;
@@ -78,13 +81,7 @@ architecture behavioral of wb_tx_core is
 		);
 	end component;
 	
-	constant c_TRIG_WORD_LENGTH : integer := 5;
-	constant c_TRIG_WORD : std_logic_vector(c_TRIG_WORD_LENGTH-1 downto 0) := "00001";
-	
 	component trigger_unit
-		generic (
-			g_TRIG_WORD_LENGTH : integer := c_TRIG_WORD_LENGTH
-		);
 		port (
 			clk_i 	: in  std_logic;
 			rst_n_i	: in  std_logic;
@@ -97,7 +94,8 @@ architecture behavioral of wb_tx_core is
 			ext_trig_i	: in std_logic;
 			
 			-- Config
-			trig_word_i : in std_logic_vector(g_TRIG_WORD_LENGTH-1 downto 0); -- Trigger command
+			trig_word_i : in std_logic_vector(127 downto 0); -- Trigger command
+			trig_word_length_i : in std_logic_vector(31 downto 0); -- Trigger command length
 			trig_freq_i : in std_logic_vector(31 downto 0); -- Number of clock cycles between triggers
 			trig_time_i : in std_logic_vector(63 downto 0); -- Clock cycles
 			trig_count_i : in std_logic_vector(31 downto 0); -- Fixed number of triggers
@@ -127,6 +125,8 @@ architecture behavioral of wb_tx_core is
 	signal trig_conf : std_logic_vector(3 downto 0); -- Internal, external, pseudo random, 
 	signal trig_en : std_logic;
 	signal trig_done : std_logic;
+	signal trig_word_length : std_logic_vector(31 downto 0);
+	signal trig_word : std_logic_vector(127 downto 0);
 	
 	signal wb_wr_en	: std_logic_vector(31 downto 0) := (others => '0');
 	signal wb_dat_t : std_logic_vector(31 downto 0);
@@ -159,23 +159,38 @@ begin
 					elsif (wb_adr_i(3 downto 0) = x"1") then -- Set enable mask
 						tx_enable <= wb_dat_i;
 						wb_ack_o <= '1';
-					elsif (wb_adr_i(3 downto 0) = x"5") then -- Set trigger enable
+					elsif (wb_adr_i(3 downto 0) = x"3") then -- Set trigger enable
 						trig_en <= wb_dat_i(0);
 						wb_ack_o <= '1';
-					elsif (wb_adr_i(3 downto 0) = x"7") then -- Set trigger conf
+					elsif (wb_adr_i(3 downto 0) = x"5") then -- Set trigger conf
 						trig_conf <= wb_dat_i(3 downto 0);
 						wb_ack_o <= '1';
-					elsif (wb_adr_i(3 downto 0) = x"8") then -- Set trigger frequency
+					elsif (wb_adr_i(3 downto 0) = x"6") then -- Set trigger frequency
 						trig_freq <= wb_dat_i;
 						wb_ack_o <= '1';
-					elsif (wb_adr_i(3 downto 0) = x"9") then -- Set trigger time low
+					elsif (wb_adr_i(3 downto 0) = x"7") then -- Set trigger time low
 						trig_time(31 downto 0) <= wb_dat_i;
 						wb_ack_o <= '1';
-					elsif (wb_adr_i(3 downto 0) = x"A") then -- Set trigger time high
+					elsif (wb_adr_i(3 downto 0) = x"8") then -- Set trigger time high
 						trig_time(63 downto 32) <= wb_dat_i;
 						wb_ack_o <= '1';
-					elsif (wb_adr_i(3 downto 0) = x"B") then -- Set trigger count
+					elsif (wb_adr_i(3 downto 0) = x"9") then -- Set trigger count
 						trig_count <= wb_dat_i;
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"A") then -- Set trigger word length (bits)
+						trig_word_length <= wb_dat_i;
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"B") then -- Set trigger word [31:0]
+						trig_word(31 downto 0) <= wb_dat_i;
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"C") then -- Set trigger word [63:32]
+						trig_word(63 downto 32) <= wb_dat_i;
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"D") then -- Set trigger word [95:64]
+						trig_word(95 downto 64) <= wb_dat_i;
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"E") then -- Set trigger word [127:96]
+						trig_word(127 downto 96) <= wb_dat_i;
 						wb_ack_o <= '1';
 					else
 						wb_ack_o <= '1';
@@ -184,38 +199,47 @@ begin
 					if (wb_adr_i(3 downto 0) = x"1") then -- Read enable mask
 						wb_dat_o <= tx_enable;
 						wb_ack_o <= '1';
-					elsif (wb_adr_i(3 downto 0) = x"2") then -- Read underrun stat
-						wb_dat_o <= tx_underrun;
-						wb_ack_o <= '1';
-					elsif (wb_adr_i(3 downto 0) = x"3") then -- Read overrun stat
-						wb_dat_o <= tx_overrun;
-						wb_ack_o <= '1';
-					elsif (wb_adr_i(3 downto 0) = x"4") then -- Read empty stat
+					elsif (wb_adr_i(3 downto 0) = x"2") then -- Read empty stat
 						wb_dat_o <= tx_empty;
 						wb_ack_o <= '1';
-					elsif (wb_adr_i(3 downto 0) = x"5") then -- Read trigger enable
+					elsif (wb_adr_i(3 downto 0) = x"3") then -- Read trigger enable
 						wb_dat_o(0) <= trig_en;
 						wb_dat_o(31 downto 1) <= (others => '0');
 						wb_ack_o <= '1';
-					elsif (wb_adr_i(3 downto 0) = x"6") then -- Read trigger done
+					elsif (wb_adr_i(3 downto 0) = x"4") then -- Read trigger done
 						wb_dat_o(0) <= trig_done;
 						wb_dat_o(31 downto 1) <= (others => '0');
 						wb_ack_o <= '1';
-					elsif (wb_adr_i(3 downto 0) = x"7") then -- Read trigger conf
+					elsif (wb_adr_i(3 downto 0) = x"5") then -- Read trigger conf
 						wb_dat_o(3 downto 0) <= trig_conf;
 						wb_dat_o(31 downto 4) <= (others => '0');
 						wb_ack_o <= '1';
-					elsif (wb_adr_i(3 downto 0) = x"8") then -- Read trigger freq
+					elsif (wb_adr_i(3 downto 0) = x"6") then -- Read trigger freq
 						wb_dat_o <= trig_freq;
 						wb_ack_o <= '1';
-					elsif (wb_adr_i(3 downto 0) = x"9") then -- Read trigger time low
+					elsif (wb_adr_i(3 downto 0) = x"7") then -- Read trigger time low
 						wb_dat_o <= trig_time(31 downto 0);
 						wb_ack_o <= '1';
-					elsif (wb_adr_i(3 downto 0) = x"A") then -- Read trigger time high
+					elsif (wb_adr_i(3 downto 0) = x"8") then -- Read trigger time high
 						wb_dat_o <= trig_time(63 downto 32);
 						wb_ack_o <= '1';
-					elsif (wb_adr_i(3 downto 0) = x"B") then -- Read trigger count
+					elsif (wb_adr_i(3 downto 0) = x"9") then -- Read trigger count
 						wb_dat_o <= trig_count;
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"A") then -- Set trigger word length (bits)
+						wb_dat_o <= trig_word_length;
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"B") then -- Set trigger word [31:0]
+						wb_dat_o <= trig_word(31 downto 0);
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"C") then -- Set trigger word [63:32]
+						wb_dat_o <= trig_word(63 downto 32);
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"D") then -- Set trigger word [95:64]
+						wb_dat_o <= trig_word(95 downto 64);
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"E") then -- Set trigger word [127:96]
+						wb_dat_o <= trig_word(127 downto 96);
 						wb_ack_o <= '1';
 					else
 						wb_dat_o <= x"DEADBEEF";
@@ -270,7 +294,8 @@ begin
 		-- Trigger In (async)
 		ext_trig_i => '0',
 		-- Config
-		trig_word_i => c_TRIG_WORD,
+		trig_word_i => trig_word,
+		trig_word_length_i => trig_word_length,
 		trig_freq_i => trig_freq,
 		trig_time_i => trig_time,
 		trig_count_i => trig_count,

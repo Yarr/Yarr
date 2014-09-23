@@ -8,20 +8,25 @@
 
 #define TX_ADDR (0x1 << 14)
 #define RX_ADDR (0x2 << 14)
+#define RX_BRIDGE (0x3 << 14)
 
-#define TX_CLK_PERIOD 8 // ns
+#define TX_CLK_PERIOD 25 // ns
 
 #define TX_FIFO 0x0
 #define TX_ENABLE 0x1
-#define TX_UNDERRUN 0x2
-#define TX_OVERRUN 0x3
-#define TX_EMPTY 0x4
-#define TRIG_EN 0x5
-#define TRIG_DONE 0x6
-#define TRIG_CONF 0x7
-#define TRIG_FREQ 0x8
-#define TRIG_TIME 0x9
-#define TRIG_COUNT 0xB
+#define TX_EMPTY 0x2
+#define TRIG_EN 0x3
+#define TRIG_DONE 0x4
+#define TRIG_CONF 0x5
+#define TRIG_FREQ 0x6
+#define TRIG_TIME_L 0x7
+#define TRIG_TIME_H 0x8
+#define TRIG_COUNT 0x9
+#define TRIG_WORD_LENGTH 0xA
+#define TRIG_WORD_0 0xB
+#define TRIG_WORD_1 0xC
+#define TRIG_WORD_2 0xD
+#define TRIG_WORD_3 0xE
 
 #define RX_START_ADDR 0x0
 #define RX_DATA_COUNT 0x1
@@ -89,20 +94,20 @@ int main(void) {
 
     uint32_t conf = 0x1;
     uint32_t enable = 0x1;
-    uint32_t frequency = 1/(double)(TX_CLK_PERIOD * 1e-9 *100000000.0); // 10MHz
+    uint32_t frequency = 1.0/(double)(TX_CLK_PERIOD * 1e-9 *100000000.0); // 10MHz
     uint64_t time = 10.0/(double)(TX_CLK_PERIOD * 1e-9); // 10s
     uint32_t count = 340*256; // 10 trigger
 
     mySpec.writeBlock(TX_ADDR | TRIG_CONF, &conf, 1);
     mySpec.writeBlock(TX_ADDR | TRIG_FREQ, &frequency, 1);
-    mySpec.writeBlock(TX_ADDR | TRIG_TIME, (uint32_t*)&time, 2);
+    mySpec.writeBlock(TX_ADDR | TRIG_TIME_L, (uint32_t*)&time, 2);
     mySpec.writeBlock(TX_ADDR | TRIG_COUNT, &count, 1);
 
     mySpec.readBlock(TX_ADDR | TRIG_CONF, &answer, 1);
     std::cout << "Conf: " << answer << std::endl << std::dec;
     mySpec.readBlock(TX_ADDR | TRIG_FREQ, &answer, 1);
     std::cout << "Freq: " << 1e-3/(answer*(double)(TX_CLK_PERIOD * 1e-9)) << " kHz" << std::endl << std::dec;
-    mySpec.readBlock(TX_ADDR | TRIG_TIME, (uint32_t*)&time, 2);
+    mySpec.readBlock(TX_ADDR | TRIG_TIME_L, (uint32_t*)&time, 2);
     std::cout << "Time: " << time*(double)(TX_CLK_PERIOD *1e-9) << " s"<< std::endl << std::dec;
     mySpec.readBlock(TX_ADDR | TRIG_COUNT, &answer, 1);
     std::cout << "Count: " << answer << std::endl << std::dec;
@@ -120,9 +125,9 @@ int main(void) {
         done = 0;
         addr = 0;
         data_cnt = 0;
-        mySpec.readBlock(RX_ADDR | RX_DATA_RATE, &answer, 1);
-        mySpec.readBlock(RX_ADDR | RX_START_ADDR, &addr, 1);
-        mySpec.readBlock(RX_ADDR | RX_DATA_COUNT, &data_cnt, 1);
+        mySpec.readBlock(RX_BRIDGE | RX_DATA_RATE, &answer, 1);
+        mySpec.readBlock(RX_BRIDGE | RX_START_ADDR, &addr, 1);
+        mySpec.readBlock(RX_BRIDGE | RX_DATA_COUNT, &data_cnt, 1);
         if (data_cnt > 0) {
             mySpec.readBlock(TX_ADDR | TRIG_DONE, &done, 1);
             std::cout << "Rate = " << answer*4.0/1024.0/1024.0 << " MB/s" << std::endl;
@@ -148,9 +153,9 @@ int main(void) {
     std::cout << "\n\n############################\n\n" << std::endl;
     while(data_cnt > 0) {
         data_cnt = 0;
-        mySpec.readBlock(RX_ADDR | RX_DATA_RATE, &answer, 1);
-        mySpec.readBlock(RX_ADDR | RX_START_ADDR, &addr, 1);
-        mySpec.readBlock(RX_ADDR | RX_DATA_COUNT, &data_cnt, 1);
+        mySpec.readBlock(RX_BRIDGE | RX_DATA_RATE, &answer, 1);
+        mySpec.readBlock(RX_BRIDGE | RX_START_ADDR, &addr, 1);
+        mySpec.readBlock(RX_BRIDGE | RX_DATA_COUNT, &data_cnt, 1);
         if (data_cnt > 0) {
             std::cout << "Rate = " << answer*4.0/1024.0/1024.0 << " MB/s" << std::endl;
             std::cout << "Start Adr = 0x" << std::hex << addr << std::endl << std::dec;

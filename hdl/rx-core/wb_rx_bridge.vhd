@@ -261,6 +261,8 @@ begin
 	
 	-- DMA Master and data control
 
+
+	dma_stb_valid <= dma_stb_t and not data_fifo_empty;
 	
 	to_ddr_proc: process(dma_clk_i, rst_n_i)
 	begin
@@ -268,10 +270,10 @@ begin
 			dma_stb_t <= '0';
 			data_fifo_rden <= '0';
 			dma_adr_o <= (others => '0');
-			dma_dat_o <= (others => '0');
+			--dma_dat_o <= (others => '0');
 			dma_cyc_o <= '0';
 			dma_stb_o <= '0';
-			dma_stb_valid <= '0';
+			--dma_stb_valid <= '0';
 			dma_we_o <= '1'; -- Write only
 		elsif rising_edge(dma_clk_i) then
 			if (data_fifo_empty = '0' and dma_stall_i = '0' and ctrl_fifo_full = '0') then
@@ -291,7 +293,6 @@ begin
 			dma_adr_o <= std_logic_vector(dma_adr_cnt);
 			dma_dat_o <= data_fifo_dout;
 			dma_stb_o <= dma_stb_valid;
-			dma_stb_valid <= dma_stb_t and not data_fifo_empty;
 			dma_we_o <= '1'; -- Write only
 		end if;
 	end process to_ddr_proc;

@@ -362,7 +362,8 @@ architecture rtl of yarr is
 			-- RX OUT (sync to sys_clk)
 			rx_valid_o : out std_logic;
 			rx_data_o : out std_logic_vector(31 downto 0);
-			busy_o : out std_logic
+			busy_o : out std_logic;
+			debug_o : out std_logic_vector(31 downto 0)
 		);
 	end component;
 	
@@ -736,7 +737,7 @@ architecture rtl of yarr is
   signal dummy_ctrl_reg_led : std_logic_vector(31 downto 0);
 
   -- FOR TESTS
-  signal debug       : std_logic_vector(7 downto 0);
+  signal debug       : std_logic_vector(31 downto 0);
   signal clk_div_cnt : unsigned(3 downto 0);
   signal clk_div     : std_logic;
 
@@ -771,7 +772,7 @@ architecture rtl of yarr is
 	signal rx_valid : std_logic;
 begin
 	-- Activate LVDS buffer
-	pwdn_l <= (others => 'Z');
+	pwdn_l <= (others => '1');
 	
 	-- Differential buffers
 	tx_loop: for I in 0 to c_TX_CHANNELS-1 generate
@@ -1015,7 +1016,7 @@ begin
       SLEW => "FAST")
    port map (
       O => ext_trig,     -- Buffer output (connect directly to top-level port)
-      I => tx_data_o(0)      -- Buffer input 
+      I => fe_data_i(0)      -- Buffer input 
    );
 	  
 	cmp_wb_tx_core : wb_tx_core port map
@@ -1054,7 +1055,8 @@ begin
 		rx_data_i => fe_data_i,
 		rx_valid_o => rx_valid,
 		rx_data_o => rx_data,
-		busy_o => open
+		busy_o => open,
+		debug_o => debug
 	);
 	
 	cmp_wb_rx_bridge : wb_rx_bridge port map (
@@ -1101,43 +1103,35 @@ begin
   led_red_o   <= dummy_ctrl_reg_led(0);
   led_green_o <= dummy_ctrl_reg_led(1);
 
-   TRIG1(31 downto 0) <= gn4124_core_status;
-	TRIG2(31 downto 0) <= ddr_status;
---	TRIG1(31 downto 0) <= dma_adr;
---	TRIG2(31 downto 0) <= rx_dma_dat_o;
 --   TRIG0(31 downto 0) <= (others => '0');
 --   TRIG1(31 downto 0) <= (others => '0');
 --   TRIG2(31 downto 0) <= (others => '0');
-   TRIG0(12 downto 0) <= (others => '0');
-   TRIG0(13) <= rx_dma_cyc;
-   TRIG0(14) <= rx_dma_stb;
-   TRIG0(15) <= rx_dma_we;
-   TRIG0(16) <= rx_dma_ack;
-   TRIG0(17) <= rx_dma_stall;   
-	TRIG0(18) <= dma_cyc;
-   TRIG0(19) <= dma_stb;
-   TRIG0(20) <= dma_we;
-   TRIG0(21) <= dma_ack;
-   TRIG0(22) <= dma_stall; 
-   TRIG0(31 downto 23) <= (others => '0');
-   
-   p_ila_proc : process (sys_clk, L_RST_N)
-   begin
-      if (L_RST_N = '0') then
-         --TRIG0(31 downto 0) <= (others => '0');
-         --TRIG1(31 downto 0) <= (others => '0');
-         --TRIG2(31 downto 0) <= (others => '0');
-      elsif rising_edge(sys_clk) then
-         --TRIG2(31 downto 0) <= gn4124_core_status;
-         --TRIG0(31 downto 0) <= ddr_status;
-         --TRIG1(31 downto 0) <= dma_adr;      
-      end if;
-   end process p_ila_proc;
+--   TRIG0(12 downto 0) <= (others => '0');
+--   TRIG1(31 downto 0) <= rx_dma_dat_o;
+--   TRIG2(31 downto 0) <= ddr_status;
+--   TRIG0(13) <= rx_dma_cyc;
+--   TRIG0(14) <= rx_dma_stb;
+--   TRIG0(15) <= rx_dma_we;
+--   TRIG0(16) <= rx_dma_ack;
+--   TRIG0(17) <= rx_dma_stall;   
+--   TRIG0(18) <= dma_cyc;
+--   TRIG0(19) <= dma_stb;
+--   TRIG0(20) <= dma_we;
+--   TRIG0(21) <= dma_ack;
+--   TRIG0(22) <= dma_stall; 
+--   TRIG0(31 downto 23) <= (others => '0');
+	TRIG0(0) <= rx_valid;
+	TRIG0(1) <= fe_cmd_o(0);
+	TRIG0(2) <= trig_pulse;
+	TRIG0(31 downto 3) <= (others => '0');
+	TRIG1 <= rx_data;
+	TRIG2 <= debug;
    
 	ila_i : ila
 	  port map (
 		 CONTROL => CONTROL,
-		 CLK => sys_clk,
+		 CLK => CLK_160,
+--		 CLK => sys_clk,
 		 TRIG0 => TRIG0,
 		 TRIG1 => TRIG1,
 		 TRIG2 => TRIG2);

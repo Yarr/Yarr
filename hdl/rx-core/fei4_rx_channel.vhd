@@ -28,7 +28,8 @@ entity fei4_rx_channel is
 		-- Output
 		rx_data_o : out std_logic_vector(23 downto 0);
 		rx_valid_o : out std_logic;
-		rx_stat_o : out std_logic_vector(7 downto 0)
+		rx_stat_o : out std_logic_vector(7 downto 0);
+		rx_data_raw_o : out std_logic_vector(7 downto 0)
 	);
 end fei4_rx_channel;
 
@@ -83,6 +84,7 @@ architecture behavioral of fei4_rx_channel is
 	
 	constant c_SOF : std_logic_vector(7 downto 0) := x"fc";
 	constant c_EOF : std_logic_vector(7 downto 0) := x"bc";
+	constant c_IDLE : std_logic_vector(7 downto 0) := x"3c";
 
 	signal data_raw_value : std_logic_vector(1 downto 0);
 	signal data_raw_valid : std_logic_vector(1 downto 0);
@@ -108,9 +110,6 @@ architecture behavioral of fei4_rx_channel is
 	signal data_frame_valid : std_logic;
 	
 	signal status : std_logic_vector(7 downto 0);
-	
-	signal pll_clk640 : std_logic;
-	signal locked : std_logic;
 
 begin
 	-- Status Output
@@ -119,7 +118,9 @@ begin
 	status(1) <= data_enc_sync;
 	status(2) <= data_dec_decerr;
 	status(3) <= data_dec_disperr;
-	status(7 downto 4) <= (others => '0');
+	status(5 downto 4) <= data_raw_value;
+	status(7 downto 6) <= data_raw_valid;
+	rx_data_raw_o <= data_dec_value;
 
 	-- Frame collector
 	rx_data_o <= data_frame_value;
@@ -133,17 +134,17 @@ begin
 			data_frame_valid <= '0';
 		elsif rising_edge(clk_160_i) then
 			-- Mark Start and End of Frame
-			if (data_dec_valid = '1' and data_dec_kchar = '1' and data_dec_value = c_SOF) then
+			if (data_dec_valid = '1' and data_dec_kchar = '1' and data_dec_value = c_SOF and data_enc_sync = '1') then
 				data_frame_flag <= '1';
-			elsif (data_dec_valid = '1' and data_dec_kchar = '1' and data_dec_value = c_EOF) then
+			elsif (data_dec_valid = '1' and data_dec_kchar = '1' and (data_dec_value = c_EOF or data_dec_value = c_IDLE)) then
 				data_frame_flag <= '0';
 			end if;
 			
 			-- Count bytes
-			if (data_frame_flag = '1' and data_dec_valid = '1' and data_fram_cnt = 3) then
+			if (data_frame_flag = '1' and data_dec_valid = '1' and data_fram_cnt = 2) then
 				data_fram_cnt <= (others => '0');
 				data_frame_valid <= '1';
-			elsif (data_frame_flag = '1' and data_dec_valid = '1' and data_fram_cnt < 3) then
+			elsif (data_frame_flag = '1' and data_dec_valid = '1' and data_fram_cnt < 2) then
 				data_fram_cnt <= data_fram_cnt + 1;
 				data_frame_valid <= '0';
 			elsif (data_frame_flag = '0') then
@@ -183,7 +184,7 @@ begin
 	cmp_cdr_serdes : cdr_serdes port map (
 		clk160 => clk_160_i,
 		clk640 => clk_640_i, 
-		reset => not rst_n_i and not locked,
+		reset => not rst_n_i,
 		din => rx_data_i,
 		data_value => data_raw_value,
 		data_valid => data_raw_valid,

@@ -45,7 +45,7 @@ architecture behavioral of serial_port is
 begin
 
     -- Tie offs
-    data_o <= sreg(0);
+    data_o <= sreg(g_PORT_WIDTH-1);
     -- Serializer proc
     serialize: process(clk_i, rst_n_i)
     begin
@@ -60,7 +60,7 @@ begin
 					data_read_o <= '1';
 					bit_count <= (others => '0');
 				else
-					sreg <= '0' & sreg(g_PORT_WIDTH-1 downto 1);
+					sreg <= sreg(g_PORT_WIDTH-2 downto 0) & '0';
 					data_read_o <= '0';
 					bit_count <= bit_count + 1;
 				end if;

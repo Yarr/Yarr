@@ -41,7 +41,9 @@ entity wb_rx_core is
 		-- RX OUT (sync to sys_clk)
 		rx_valid_o : out std_logic;
 		rx_data_o : out std_logic_vector(31 downto 0);
-		busy_o : out std_logic
+		busy_o : out std_logic;
+		
+		debug_o : out std_logic_vector(31 downto 0)
 	);
 end wb_rx_core;
 
@@ -61,7 +63,8 @@ architecture behavioral of wb_rx_core is
 			-- Output
 			rx_data_o : out std_logic_vector(23 downto 0);
 			rx_valid_o : out std_logic;
-			rx_stat_o : out std_logic_vector(7 downto 0)
+			rx_stat_o : out std_logic_vector(7 downto 0);
+			rx_data_raw_o : out std_logic_vector(7 downto 0)
 		);
 	end component;
 	
@@ -85,6 +88,7 @@ architecture behavioral of wb_rx_core is
 	signal rx_data : rx_data_array;
 	signal rx_valid : std_logic_vector(g_NUM_RX-1 downto 0);
 	signal rx_stat : rx_stat_array;
+	signal rx_data_raw : rx_stat_array;
 	
 	signal rx_fifo_dout :rx_data_fifo_array;
 	signal rx_fifo_full : std_logic_vector(g_NUM_RX-1 downto 0);
@@ -95,7 +99,16 @@ architecture behavioral of wb_rx_core is
 	
 	signal rx_fifo_cur : std_logic_vector(g_NUM_RX-1 downto 0);
 	signal rx_fifo_act : std_logic_vector(g_NUM_RX-1 downto 0);
+	
+	signal debug : std_logic_vector(31 downto 0);
+	
 begin
+	debug_o <= debug;
+	
+	debug(7 downto 0) <= rx_stat(0);
+	debug(15 downto 8) <= rx_data_raw(0);
+	debug(16) <= rx_valid(0);
+
 	wb_proc: process (wb_clk_i, rst_n_i)
 	begin
 		if (rst_n_i = '0') then
@@ -182,7 +195,8 @@ begin
 			rx_data_i => rx_data_i(I),
 			rx_data_o => rx_data(I),
 			rx_valid_o => rx_valid(I),
-			rx_stat_o => rx_stat(I)
+			rx_stat_o => rx_stat(I),
+			rx_data_raw_o => rx_data_raw(I)
 		);
 		
 		cmp_rx_channel_fifo : rx_channel_fifo PORT MAP (
