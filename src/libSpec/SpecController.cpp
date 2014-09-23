@@ -45,6 +45,15 @@ uint32_t SpecController::readSingle(uint32_t off) {
     return this->read32(bar0, off);
 }
 
+void SpecController::write32(uint32_t off, uint32_t *val, size_t words) {
+    this->write32(bar0, off, val, words);
+}
+
+void SpecController::read32(uint32_t off, uint32_t *val, size_t words) {
+    this->read32(bar0, off, val, words);
+}
+
+
 void SpecController::writeBlock(uint32_t off, uint32_t *val, size_t words) {
     this->writeBlock(bar0, off, val, words);
 }
@@ -234,11 +243,22 @@ void SpecController::writeBlock(void *bar, uint32_t off, uint32_t *val, size_t w
     memcpy(addr, val, words*4);
 }
 
-void SpecController::readBlock(void *bar, uint32_t off, uint32_t *val, size_t words) {
-    volatile uint32_t *addr = (uint32_t*) bar+off;
-    for(unsigned int i=0; i<words; i++) val[i] = *addr++;
+void SpecController::write32(void *bar, uint32_t off, uint32_t *val, size_t words) {
+    uint32_t *addr = (uint32_t*) bar+off;
+    for (uint32_t i=0; i<words; i++)
+        *addr = val[i];
 }
 
+void SpecController::readBlock(void *bar, uint32_t off, uint32_t *val, size_t words) {
+    uint32_t *addr = (uint32_t*) bar+off;
+    for(unsigned int i=0; i<words; i++) 
+        val[i] = *addr;
+}
+
+void SpecController::read32(void *bar, uint32_t off, uint32_t *val, size_t words) {
+    uint32_t *addr = (uint32_t*) bar+off;
+    for(unsigned int i=0; i<words; i++) val[i] = *addr++;
+}
 
 struct dma_linked_list* SpecController::prepDmaList(UserMemory *um, KernelMemory *km, uint32_t off, bool write) {
     struct dma_linked_list *llist = (struct dma_linked_list*) km->getBuffer();
