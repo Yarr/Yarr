@@ -1,6 +1,7 @@
 #include <SpecController.h>
 #include <iostream>
 #include <stdint.h>
+#include <unistd.h>
 #include <string.h>
 #include <sys/time.h>
 
