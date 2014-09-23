@@ -2,6 +2,7 @@
 #include <iostream>
 #include <stdint.h>
 #include <string.h>
+#include <unistd.h>
 
 int main(void) {
     SpecController mySpec(0);
@@ -22,7 +23,7 @@ int main(void) {
     std::cout << "Loopback = 0x" << std::hex << answer << std::endl << std::dec;
 
     std::cout << "Writing some data to the Fifo" << std::endl;
-    for (int i=0; i<size; i++)
+    for (unsigned int i=0; i<size; i++)
         mySpec.writeBlock(0x00008004, &data, 1);
     mySpec.readBlock(0x00008003, &answer, 1);
     std::cout << "Rate = " << answer*4.0 << " B/s" << std::endl;
