@@ -18,12 +18,16 @@ namespace BitOps {
         return x;
     }
 
-    unsigned reverse_bits(unsigned x, unsigned n) {
-        if(n == 1){
-            return(x);
-        }else{
-            return((reverse_bits((((1<<unsigned((n+1)/2))-1)&x),((n+1)/2))<<(n/2))|reverse_bits(x>>((n+1)/2),n/2));
+    unsigned reverse_bits(unsigned n, unsigned bits) {
+        unsigned nrev;
+        nrev = 0;
+        for (; bits; bits--) {
+            nrev |= n & 1;
+            nrev <<= 1;
+            n>>=1;
         }
+        nrev>>=1;
+        return nrev;
     }
 
     uint32_t unaligned_bitswap_le32(const uint32_t *ptr32) {
