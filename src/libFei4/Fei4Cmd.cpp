@@ -37,7 +37,7 @@ void Fei4Cmd::cal() {
 }
 
 void Fei4Cmd::wrRegister(int chipId, int address, int value) {
-    if (verbose) std::cout << __PRETTY_FUNCTION__ << std::endl;
+    if (verbose) std::cout << __PRETTY_FUNCTION__ << " : Addr " << address << ", Value 0x" << std::hex << value << std::dec << std::endl ;
     link->write(0x005A0800+((chipId<<6)&0x3C0)+(address&0x3F));
     link->write((value<<16)&0xFFFF0000);
 }

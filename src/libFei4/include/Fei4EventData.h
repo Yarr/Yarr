@@ -11,6 +11,7 @@
 
 #include <deque>
 #include <vector>
+#include <string>
 
 class Fei4Hit {
     public:

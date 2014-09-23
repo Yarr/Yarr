@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <string>
+#include <cstring>
 
 #include <SpecController.h>
 #include <GennumRegMap.h>
