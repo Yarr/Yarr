@@ -25,15 +25,20 @@ class ClipBoard {
             queueMutex.unlock();
         }
 
-        void popData(T *data) {
+        T* popData() {
             queueMutex.lock();
-            data = dataQueue.front();
+            T *tmp = dataQueue.front();
             dataQueue.pop();
             queueMutex.unlock();
+            return tmp;
         }
 
         bool empty() {
             return dataQueue.empty();
+        }
+
+        unsigned size() {
+            return dataQueue.size();
         }
 
     private:

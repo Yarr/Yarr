@@ -57,6 +57,7 @@ class TxCore {
         void setTrigWordLength(uint32_t length); // From Msb
         void setTrigWord(uint32_t *word); // 4 words, start at Msb
 
+        bool isCmdEmpty();
         bool isTrigDone();
     private:
         SpecController *spec;

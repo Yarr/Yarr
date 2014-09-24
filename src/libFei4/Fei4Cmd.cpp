@@ -54,6 +54,7 @@ void Fei4Cmd::wrFrontEnd(int chipId, uint32_t *bitstream) {
     for(int i = 20 ; i >= 0 ; --i) {
         link->write(bitstream[i]);	
     }
+    link->write(0x0);
 }
 
 void Fei4Cmd::runMode(int chipId, bool mode) {

@@ -5,7 +5,7 @@
 ## variables there. See local.config.sample for an example and a description
 ## of all used variables.
 
-MODE = DEBUGE
+MODE = DEBUG
 
 AR = ar
 

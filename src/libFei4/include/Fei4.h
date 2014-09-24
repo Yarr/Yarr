@@ -16,10 +16,13 @@
 #include "Fei4GlobalCfg.h"
 
 enum MASK_STAGE {
-    MASK_ALL     = 0xFFFFFFFF,
-    MASK_HALF    = 0x55555555,
-    MASK_QUARTER = 0x11111111,
-    MASK_EIGHTH  = 0x01010101
+    MASK_1  = 0xFFFFFFFF,
+    MASK_2  = 0x55555555,
+    MASK_4  = 0x11111111,
+    MASK_8  = 0x01010101,
+    MASK_16 = 0x00010001,
+    MASK_32 = 0x00000001,
+    MASK_NONE    = 0x00000000
 };
 
 class Fei4 : public Fei4GlobalCfg, public Fei4Cmd {

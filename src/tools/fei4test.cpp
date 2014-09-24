@@ -30,45 +30,53 @@ int main(void) {
     // Config
     std::cout << "### Sending Configuration ###" << std::endl;
     tx.setCmdEnable(0x1);
+    tx.setTrigEnable(0x0);
     fe.sendConfig();
 
-    uint32_t trigger_word[4] = {0x00, 0x00, 0x001d ,0x1680}; // 255 - 36 = 219 -> TrigLat
+    spec.writeSingle(RX_ADDR | 0x0, 0x1);
+
+    uint32_t trigger_word[4] = {0x00, 0x00, 0x001d ,0x1640}; // 255 - 36 = 219 -> TrigLat
 
     // Setup Trigger
     tx.setTrigConfig(INT_COUNT);
-    tx.setTrigFreq(100e3); // 100kHz
-    tx.setTrigCnt(100);
+    tx.setTrigFreq(5e3); // 100kHz
+    tx.setTrigCnt(50);
     tx.setTrigWordLength(64);
     tx.setTrigWord(trigger_word);
 
     // Setup FE
     fe.setRunMode(false);
-    fe.writeRegister(&Fei4::Trig_Count, 4);
-    fe.writeRegister(&Fei4::Trig_Lat, 220);
+    fe.writeRegister(&Fei4::Trig_Count, 3);
+    fe.writeRegister(&Fei4::Trig_Lat, 222);
 
     // Init Mask Staging
-    fe.writeRegister(&Fei4::Colpr_Mode, 0x3); // all
+    fe.writeRegister(&Fei4::Colpr_Mode, 0x3);
     fe.writeRegister(&Fei4::Colpr_Addr, 0x0);
-    fe.initMask(MASK_QUARTER);
+    fe.initMask(MASK_32);
     fe.loadIntoPixel(0x1);
-    fe.initMask(MASK_QUARTER);
     fe.writeRegister(&Fei4::DigHitIn_Sel, 0x1);
 
-    unsigned mask = MASK_QUARTER;
-    for (;!(mask&0x8000);mask<<=1) {
+    int count = 0;
+    for (int i=0; i<32; i++) {
+        std::cout << "Mask Stage: " << count << std::endl;
         fe.setRunMode(true);
+        while(!tx.isCmdEmpty());
+        std::cout << "Starting trigger " << std::endl;
         tx.setTrigEnable(0x1);
+        std::cout << "Done " << std::endl;
         unsigned done = 0;
         unsigned dma_addr = 0;
         unsigned dma_count = 0;
         unsigned rate = 0;
-        while (done == 0 && dma_count == 0) {
+        while (done == 0 || dma_count == 0) {
             dma_count = 0;
             dma_addr = 0;
             rate = spec.readSingle(RX_BRIDGE | RX_DATA_RATE);
             dma_addr = spec.readSingle(RX_BRIDGE | RX_START_ADDR);
             dma_count = spec.readSingle(RX_BRIDGE | RX_DATA_COUNT);
-            if (dma_count > 0) {
+            if (dma_count > 0 && dma_count != 0xFFFFFFFF) {
+                done = tx.isTrigDone();
+                std::cout << "Some data " << dma_count << std::endl;
                 uint32_t *buf = new uint32_t[dma_count];
                 double readTime = BenchmarkTools::measureReadTime(&spec, dma_addr, buf, dma_count, 1);
                 if (readTime < 0) {
@@ -76,15 +84,28 @@ int main(void) {
                     return -1;
                 }
                 clipRaw.pushData(new RawData(dma_addr, buf, dma_count));
-                done = tx.isTrigDone();
-            
             }
         }
-
+        tx.setTrigEnable(0x0);
+        std::cout << "Stopped trigger" << std::endl;
+        fe.setRunMode(false);
+        fe.shiftMask();
+        fe.loadIntoPixel(0x1);
+        count++;
     }
+    spec.writeSingle(RX_ADDR | 0x0, 0x0);
 
     Fei4DataProcessor proc;
     proc.connect(&clipRaw, &clipEvent);
-        
+    proc.process();
+    unsigned i = 0;
+    std::cout << "Writing: " << clipEvent.size() << " files!" << std::endl;
+    while(!clipEvent.empty()) {
+        Fei4Data *data = clipEvent.popData();
+        std::cout << data << std::endl;
+        data->toFile("digitalScan_" + std::to_string(i) + ".dat");
+        i++;
+        delete data;
+    }
 
 }

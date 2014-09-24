@@ -94,5 +94,8 @@ void TxCore::setTrigWord(uint32_t *word) {
 bool TxCore::isTrigDone() {
     return spec->readSingle(TX_ADDR | TRIG_DONE);
 }
-        
+ 
+bool TxCore::isCmdEmpty() {
+    return spec->readSingle(TX_ADDR | TX_EMPTY);
+}
 
