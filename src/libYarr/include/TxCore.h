@@ -42,7 +42,7 @@ class TxCore {
 
         void setVerbose(bool v=true);
 
-        void writeFifo(uint32_t value, unsigned channel);
+        void writeFifo(uint32_t value);
         
         void setCmdEnable(uint32_t value);
         void maskCmdEnable(uint32_t value, uint32_t mask);

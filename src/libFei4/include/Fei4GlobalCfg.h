@@ -21,6 +21,7 @@ class Field {
 
     public:
         Field(){};
+        
         void initField(T* cfg, const T& cfgBits) {
             m_cfg = cfg;
             this->write(cfgBits);

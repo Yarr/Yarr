@@ -23,7 +23,7 @@ int main(void) {
     // Init
     SpecController spec(0);
     TxCore tx(&spec);
-    Fei4 fe(&tx, 0, 0);
+    Fei4 fe(&tx, 0);
     ClipBoard<RawData> clipRaw;
     ClipBoard<Fei4Data> clipEvent;
     
@@ -31,7 +31,7 @@ int main(void) {
     std::cout << "### Sending Configuration ###" << std::endl;
     tx.setCmdEnable(0x1);
     tx.setTrigEnable(0x0);
-    fe.sendConfig();
+    fe.configure();
 
     spec.writeSingle(RX_ADDR | 0x0, 0x1);
 

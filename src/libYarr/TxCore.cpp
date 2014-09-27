@@ -13,12 +13,11 @@ TxCore::TxCore(SpecController *arg_spec) {
     verbose = false;
 }
 
-void TxCore::writeFifo(uint32_t value, unsigned channel) {
+void TxCore::writeFifo(uint32_t value) {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ 
-            << " : Writing 0x" << std::hex << value << std::dec 
-            << " to Channel #" << channel << std::endl;
-    spec->writeSingle(TX_ADDR | ((channel<<4)&0xF0) | TX_FIFO, value);
+            << " : Writing 0x" << std::hex << value << std::dec << std::endl;
+    spec->writeSingle(TX_ADDR | TX_FIFO, value);
 }
 
 void TxCore::setCmdEnable(uint32_t value) {

@@ -8,11 +8,11 @@
 
 #include "Fei4.h"
 
-Fei4::Fei4(TxCore *core, unsigned channel, unsigned arg_chipId) : Fei4GlobalCfg(), Fei4Cmd(core, channel) {
+Fei4::Fei4(TxCore *core, unsigned arg_chipId) : Fei4GlobalCfg(), Fei4PixelCfg(), Fei4Cmd(core) {
     chipId = arg_chipId;
 }
 
-void Fei4::sendConfig() {
+void Fei4::configure() {
     runMode(chipId, false);
     
     // Increase threshold
@@ -27,6 +27,18 @@ void Fei4::sendConfig() {
     setValue(&Fei4::Vthin_Coarse, tmp);
     writeRegister(&Fei4::Vthin_Coarse);
 
+}
+
+void Fei4::configurePixels() {
+    runMode(chipId, false);
+    writeRegister(&Fei4::Colpr_Mode, 0x0);
+    for (unsigned dc=0; dc<Fei4PixelCfg::n_DC; dc++) {
+        writeRegister(&Fei4::Colpr_Addr, dc);
+        for (unsigned bit=0; bit<Fei4PixelCfg::n_Bits; bit++) {
+            wrFrontEnd(chipId, getCfg(bit, dc));
+            loadIntoPixel(bit);
+        }
+    }
 }
 
 void Fei4::initMask(enum MASK_STAGE mask) {
