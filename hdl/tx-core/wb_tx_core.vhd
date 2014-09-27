@@ -8,7 +8,7 @@
 -- # Adress Map:
 -- # Adr[8:4]: channel number 0 to 31
 -- # Adr[3:0]:
--- #   0x0 - FiFo (WO) (Channel specific)
+-- #   0x0 - FiFo (WO) (Write to enabled channels)
 -- #   0x1 - CMD Enable (RW)
 -- #   0x2 - CMD Empty (RO)
 -- #   0x3 - Trigger Enable (RW)
@@ -153,7 +153,7 @@ begin
 			if (wb_cyc_i = '1' and wb_stb_i = '1') then
 				if (wb_we_i = '1') then
 					if (wb_adr_i(3 downto 0) = x"0") then -- Write to fifo
-						wb_wr_en(channel) <= '1';
+						wb_wr_en <= tx_enable;
 						wb_ack_o <= '1';
 						wb_dat_t <= wb_dat_i;
 					elsif (wb_adr_i(3 downto 0) = x"1") then -- Set enable mask
