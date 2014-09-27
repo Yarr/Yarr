@@ -1,0 +1,33 @@
+/*
+ * Authors: T. Heim <timon.heim@cern.ch>
+ * Date: 2013-Oct-22
+ */
+
+#ifndef LOOPENGINE_H
+#define LOOPENGINE_H
+
+#include "EngineTBase.h"
+#include "LoopActionBase.h"
+#include "Fei4.h"
+
+typedef EngineTBase< std::vector< shared_ptr<LoopActionBase> > > Engine;
+
+class LoopEngine : public Engine {
+    public:
+        LoopEngine();
+        ~LoopEngine();
+        
+        void addAction(Engine::element_value_type el);
+        
+        void init();
+        void execute();
+        void end();
+
+    private:
+        Engine::loop_list_type m_list;
+        //Fei4 gFe;
+
+
+};
+
+#endif
