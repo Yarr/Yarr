@@ -14,6 +14,7 @@
 #include "TxCore.h"
 #include "Fei4Cmd.h"
 #include "Fei4GlobalCfg.h"
+#include "Fei4PixelCfg.h"
 
 enum MASK_STAGE {
     MASK_1  = 0xFFFFFFFF,
@@ -25,21 +26,27 @@ enum MASK_STAGE {
     MASK_NONE    = 0x00000000
 };
 
-class Fei4 : public Fei4GlobalCfg, public Fei4Cmd {
+class Fei4 : public Fei4GlobalCfg, public Fei4PixelCfg, public Fei4Cmd {
     public:
-        Fei4(TxCore *arg_core, unsigned channel, unsigned chipId);
+        Fei4(TxCore *arg_core, unsigned chipId);
 
-        void sendConfig();
+        void configure();
+        void configurePixels();
 
         void setRunMode(bool mode=true) {
             runMode(chipId, mode);
         }
 
         void initMask(enum MASK_STAGE mask);
+        void initMask(uint32_t mask);
         void shiftMask();
         void loadIntoShiftReg(unsigned pixel_latch);
         void loadIntoPixel(unsigned pixel_latch);
         void shiftByOne();
+
+        TxCore* getTxCore() {
+            return core;
+        }
 
         template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight>
             void writeRegister(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref, uint16_t cfgBits){

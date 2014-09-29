@@ -10,6 +10,12 @@
 #include "Fei4EventData.h"
 #include "Fei4DataProcessor.h"
 
+#include "LoopEngine.h"
+
+#include "AllStdActions.h"
+#include "AllFei4Actions.h"
+
+
 #define RX_ADDR (0x2 << 14)
 #define RX_BRIDGE (0x3 << 14)
 
@@ -23,16 +29,59 @@ int main(void) {
     // Init
     SpecController spec(0);
     TxCore tx(&spec);
-    Fei4 fe(&tx, 0, 0);
+    RxCore rx(&spec);
+
+    Fei4 g_fe(&tx, 8);
+    Fei4 fe(&tx, 0);
+    
     ClipBoard<RawData> clipRaw;
     ClipBoard<Fei4Data> clipEvent;
+
+    std::cout << "### Initilizing Loop Engine ###" << std::endl;
+    // Init Loop Engine
+    LoopEngine eng(&g_fe, &tx, &rx);
     
+    // Init specific loops
+    Fei4MaskLoop maskStaging;
+    eng.addAction(std::make_shared<Fei4MaskLoop>(maskStaging));
+    maskStaging.setVerbose();
+    maskStaging.setMaskStage(MASK_16);
+
+    Fei4DcLoop dcLoop;
+    eng.addAction(std::make_shared<Fei4DcLoop>(dcLoop));
+    dcLoop.setVerbose();
+    dcLoop.setMode(ALL_DC);
+
+    Fei4TriggerLoop triggerLoop;
+    eng.addAction(std::make_shared<Fei4TriggerLoop>(triggerLoop));
+    triggerLoop.setVerbose();
+    triggerLoop.setTrigCnt(50);
+    triggerLoop.setTrigFreq(1e3);
+    triggerLoop.setTrigDelay(50);
+
+    StdDataLoop dataLoop;
+    eng.addAction(std::make_shared<StdDataLoop>(dataLoop));
+    dataLoop.setVerbose();
+    dataLoop.connect(&clipRaw);
+
+    eng.init();
+
     // Config
     std::cout << "### Sending Configuration ###" << std::endl;
     tx.setCmdEnable(0x1);
-    tx.setTrigEnable(0x0);
-    fe.sendConfig();
+    fe.setRunMode(false);
+    fe.configure();
+    fe.writeRegister(&Fei4::Trig_Count, 3);
+    fe.writeRegister(&Fei4::Trig_Lat, triggerLoop.getTrigDelay());
 
+    // Start engine
+    std::cout << "### Starting Engine ###" << std::endl;
+    eng.execute();
+
+    // Stop Engine
+    std::cout << "### Stopping Engine ###" << std::endl;
+    eng.end();
+#if 0
     spec.writeSingle(RX_ADDR | 0x0, 0x1);
 
     uint32_t trigger_word[4] = {0x00, 0x00, 0x001d ,0x1640}; // 255 - 36 = 219 -> TrigLat
@@ -94,6 +143,7 @@ int main(void) {
         count++;
     }
     spec.writeSingle(RX_ADDR | 0x0, 0x0);
+#endif
 
     Fei4DataProcessor proc;
     proc.connect(&clipRaw, &clipEvent);

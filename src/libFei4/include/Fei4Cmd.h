@@ -11,13 +11,10 @@
 
 #include <iostream>
 #include "TxCore.h"
-#include "TxLink.h"
-
-
 
 class Fei4Cmd {
     protected:
-        Fei4Cmd(TxCore *core, unsigned channel);
+        Fei4Cmd(TxCore *core);
         ~Fei4Cmd();
 
         void setVerbose(bool v=true) {
@@ -40,8 +37,8 @@ class Fei4Cmd {
 
         void calTrigger(int delay);
 
+        TxCore *core;
     private:
-        TxLink *link;
         bool verbose;
 
 };

@@ -21,6 +21,7 @@ class Field {
 
     public:
         Field(){};
+        
         void initField(T* cfg, const T& cfgBits) {
             m_cfg = cfg;
             this->write(cfgBits);
@@ -34,10 +35,8 @@ class Field {
         // Write value to field and config
         void write(const T& cfgBits) {
             unsigned maskBits = (1<<mask)-1;
-            std::cout << "Before -> Addr: " << mOffset << " Value: " << std::hex << m_cfg[mOffset] << std::dec << std::endl;
             m_cfg[mOffset]=(m_cfg[mOffset]&(~(maskBits<<bOffset))) | 
                 (((msbRight?BitOps::reverse_bits(cfgBits, mask):cfgBits)&maskBits)<<bOffset);
-            std::cout << "After -> Addr: " << mOffset << " Value: " << std::hex << m_cfg[mOffset] << std::dec << std::endl;
         }
 
         unsigned addr() const{
