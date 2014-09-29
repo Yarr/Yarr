@@ -3,24 +3,38 @@
  * Date: 2013-Oct-22
  */
 
-#ifndef STDTRIGGERLOOP_H
-#define STDTRIGGERLOOP_H
+#ifndef FEI4TRIGGERLOOP_H
+#define FEI4TRIGGERLOOP_H
 
-#include <LoopActionBase.h>
+#include "LoopActionBase.h"
 
-class StdTriggerLoop: public LoopActionBase {
+#define TRIG_CMD 0xe8000000
+#define CAL_CMD  0x00000164
+
+class Fei4TriggerLoop: public LoopActionBase {
     public:
-        StdTriggerLoop();
+        Fei4TriggerLoop();
         
-        void setMaxTrigCnt(unsigned int cnt);
-        unsigned int getMaxTrigCnt();
+        void setTrigCnt(unsigned int cnt);
+        unsigned getTrigCnt();
         void setTrigDelay(unsigned int delay);
-        unsigned int getTrigDelay();
+        unsigned getTrigDelay();
+        void setTrigFreq(double freq);
+        double getTrigFreq();
+        void setTrigTime(double time);
+        double getTrigTime();
+        void setIsInner(bool itis=true);
+        bool getIsInner();
 
     private:
-        unsigned int m_maxTrigCnt;
-        unsigned int m_curTrigCnt;
-        unsigned int m_trigDelay;
+        unsigned m_trigCnt;
+        unsigned m_trigDelay;
+        double m_trigFreq;
+        double m_trigTime;
+        uint32_t m_trigWord[4];
+        uint32_t m_trigWordLength;
+
+        bool isInner;
 
         void init();
         void end();

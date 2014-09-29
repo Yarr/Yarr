@@ -8,12 +8,19 @@
 #define LOOPACTIONBASE_H
 
 #include <memory>
+
+#include "Fei4.h"
+#include "TxCore.h"
+#include "RxCore.h"
+
 using std::shared_ptr;
 
 class LoopActionBase {
     public:
         LoopActionBase();
 
+        void setVerbose(bool v=true);
+        void setup(Fei4 *fe, TxCore *tx, RxCore *rx);
         void setNext(shared_ptr<LoopActionBase>& ptr);
         void execute();
         
@@ -25,6 +32,11 @@ class LoopActionBase {
         virtual bool done();
 
         bool m_done;
+        bool verbose;
+
+        Fei4 *g_fe;
+        TxCore *g_tx;
+        RxCore *g_rx;
 
     private:
         void execStep();

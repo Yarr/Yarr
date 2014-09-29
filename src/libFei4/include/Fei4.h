@@ -38,10 +38,15 @@ class Fei4 : public Fei4GlobalCfg, public Fei4PixelCfg, public Fei4Cmd {
         }
 
         void initMask(enum MASK_STAGE mask);
+        void initMask(uint32_t mask);
         void shiftMask();
         void loadIntoShiftReg(unsigned pixel_latch);
         void loadIntoPixel(unsigned pixel_latch);
         void shiftByOne();
+
+        TxCore* getTxCore() {
+            return core;
+        }
 
         template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight>
             void writeRegister(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref, uint16_t cfgBits){

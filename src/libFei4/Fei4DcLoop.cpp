@@ -3,16 +3,18 @@
  * Date: 2013-Oct-22
  */
 
-#include "StdDcLoop.h"
+#include "Fei4DcLoop.h"
 
-StdDcLoop::StdDcLoop() : LoopActionBase() {
+Fei4DcLoop::Fei4DcLoop() : LoopActionBase() {
     m_mode = SINGLE_DC;
     m_colStart = 0;
     m_colEnd = 40;
     m_col = 0;
 }
 
-void StdDcLoop::init() {
+void Fei4DcLoop::init() {
+    if (verbose)
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
     // Figure out how often to loop
     // depending on COLPR_MODE
     switch (m_mode) {
@@ -32,29 +34,34 @@ void StdDcLoop::init() {
             break;
     }
     // Set COLPR_MODE
-    //m_grp->setRegister((&Fei4GlobalCfg::CP), (uint16_t) m_mode);
+    g_fe->writeRegister((&Fei4GlobalCfg::Colpr_Mode), (uint16_t) m_mode);
 }
 
-void StdDcLoop::end() {
+void Fei4DcLoop::end() {
+    if (verbose)
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
 }
 
-void StdDcLoop::execPart1() {
+void Fei4DcLoop::execPart1() {
+    if (verbose)
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
     // Address col
-    //m_grp->setRegister(&Fei4GlobalCfg::Colpr_Addr, m_col);
+    g_fe->writeRegister(&Fei4GlobalCfg::Colpr_Addr, m_col);
 }
 
-void StdDcLoop::execPart2() {
-    
+void Fei4DcLoop::execPart2() {
+    if (verbose)
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
     // Check Loop condition
     m_col++;
     if (m_col >= m_colEnd) m_done = true;
 }
 
-void StdDcLoop::setMode(DcLoop_Type mode) {
+void Fei4DcLoop::setMode(DcLoop_Type mode) {
     m_mode = mode;
 }
 
-DcLoop_Type StdDcLoop::getMode() {
+DcLoop_Type Fei4DcLoop::getMode() {
     return m_mode;
 }
 

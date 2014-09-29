@@ -13,17 +13,12 @@
 
 class RawData {
     public:
-        RawData(uint32_t arg_adr, uint32_t *arg_buf, size_t arg_words) {
-            adr = arg_adr;
-            buf = arg_buf;
-            words = arg_words;
-        }
-        ~RawData() {
-            delete buf;
-        }
+        RawData(uint32_t arg_adr, uint32_t *arg_buf, unsigned arg_words);
+        ~RawData();
+        
         uint32_t adr;
         uint32_t *buf;
-        size_t words;
+        unsigned words;
 };
 
 #endif

@@ -5,9 +5,11 @@
 
 #include "LoopEngine.h"
 
-// Our LoopEngine will take care of distributing the FeGrp to each loop item
-LoopEngine::LoopEngine() {
-
+// Our LoopEngine will take care of distributing the global Fe to each loop item
+LoopEngine::LoopEngine(Fei4 *fe, TxCore *tx, RxCore *rx) {
+    g_fe = fe;
+    g_tx = tx;
+    g_rx = rx;
 }
 
 LoopEngine::~LoopEngine() {
@@ -22,6 +24,7 @@ void LoopEngine::addAction(Engine::element_value_type el){
 void LoopEngine::init() {
     Engine::loop_list_type::iterator it = m_list.begin();
     while(m_list.end() != it) {
+        (*it)->setup(g_fe, g_tx, g_rx);
         ++it;
     }
 }

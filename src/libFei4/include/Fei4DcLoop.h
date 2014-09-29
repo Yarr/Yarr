@@ -3,8 +3,8 @@
  * Date: 2013-Oct-22
  */
 
-#ifndef STDDCLOOP_H
-#define STDDCLOOP_H
+#ifndef FEI4DCLOOP_H
+#define FEI4DCLOOP_H
 
 #include "LoopActionBase.h"
 #include "Fei4.h"
@@ -16,9 +16,9 @@ enum DcLoop_Type {
     ALL_DC = 0x3
 };
 
-class StdDcLoop: public LoopActionBase {
+class Fei4DcLoop: public LoopActionBase {
     public:
-        StdDcLoop();
+        Fei4DcLoop();
        
         void setMode(DcLoop_Type mode);
         DcLoop_Type getMode();

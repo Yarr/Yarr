@@ -30,7 +30,6 @@ void Fei4::configure() {
 }
 
 void Fei4::configurePixels() {
-    runMode(chipId, false);
     writeRegister(&Fei4::Colpr_Mode, 0x0);
     for (unsigned dc=0; dc<Fei4PixelCfg::n_DC; dc++) {
         writeRegister(&Fei4::Colpr_Addr, dc);
@@ -42,7 +41,13 @@ void Fei4::configurePixels() {
 }
 
 void Fei4::initMask(enum MASK_STAGE mask) {
-    runMode(chipId, false);
+    uint32_t bitstream[21];
+    for(unsigned i=0; i<21; i++)
+        bitstream[i] = mask;
+    wrFrontEnd(chipId, bitstream);
+}
+
+void Fei4::initMask(uint32_t mask) {
     uint32_t bitstream[21];
     for(unsigned i=0; i<21; i++)
         bitstream[i] = mask;
@@ -58,7 +63,6 @@ void Fei4::shiftMask() {
 
 // Inverts pixel latch
 void Fei4::loadIntoShiftReg(unsigned pixel_latch) {
-    runMode(chipId, false);
     // Select Pixel latch to copy into SR
     writeRegister(&Fei4::Pixel_latch_strobe, pixel_latch);
     // Select SR in Parallel Input Mode
@@ -77,7 +81,6 @@ void Fei4::loadIntoShiftReg(unsigned pixel_latch) {
 }
 
 void Fei4::loadIntoPixel(unsigned pixel_latch) {
-    runMode(chipId, false);
     // Select Pixel latch to copy into SR
     writeRegister(&Fei4::Pixel_latch_strobe, pixel_latch);
     
@@ -93,8 +96,6 @@ void Fei4::loadIntoPixel(unsigned pixel_latch) {
 }
 
 void Fei4::shiftByOne() {
-    runMode(chipId, false);
-    
     // Normal Shift Mode
     writeRegister(&Fei4::S1, 0x0);
     writeRegister(&Fei4::S0, 0x0);

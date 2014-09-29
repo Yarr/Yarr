@@ -9,12 +9,14 @@
 #include "EngineTBase.h"
 #include "LoopActionBase.h"
 #include "Fei4.h"
+#include "TxCore.h"
+#include "RxCore.h"
 
 typedef EngineTBase< std::vector< shared_ptr<LoopActionBase> > > Engine;
 
 class LoopEngine : public Engine {
     public:
-        LoopEngine();
+        LoopEngine(Fei4 *fe, TxCore *tx, RxCore *rx);
         ~LoopEngine();
         
         void addAction(Engine::element_value_type el);
@@ -25,9 +27,9 @@ class LoopEngine : public Engine {
 
     private:
         Engine::loop_list_type m_list;
-        //Fei4 gFe;
-
-
+        Fei4 *g_fe;
+        TxCore *g_tx;
+        RxCore *g_rx;
 };
 
 #endif

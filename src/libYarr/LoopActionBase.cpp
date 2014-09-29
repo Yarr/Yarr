@@ -8,7 +8,21 @@
 #include <iostream>
 
 LoopActionBase::LoopActionBase() {
+    g_fe = NULL;
+    g_tx = NULL;
+    g_rx = NULL;
+    verbose = false;
+    m_done = false;
+}
 
+void LoopActionBase::setVerbose(bool v) {
+    verbose = v;
+}
+
+void LoopActionBase::setup(Fei4 *fe, TxCore *tx, RxCore *rx) {
+    g_fe = fe;
+    g_tx = tx;
+    g_rx = rx;
 }
 
 void LoopActionBase::setNext(shared_ptr<LoopActionBase>& ptr) {

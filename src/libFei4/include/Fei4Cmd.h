@@ -37,8 +37,8 @@ class Fei4Cmd {
 
         void calTrigger(int delay);
 
-    private:
         TxCore *core;
+    private:
         bool verbose;
 
 };
