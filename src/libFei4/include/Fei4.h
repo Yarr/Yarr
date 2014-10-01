@@ -26,6 +26,13 @@ enum MASK_STAGE {
     MASK_NONE    = 0x00000000
 };
 
+enum DC_MODE {
+    SINGLE_DC = 0x0,
+    QUAD_DC = 0x1,
+    OCTA_DC = 0x2,
+    ALL_DC = 0x3
+};
+
 class Fei4 : public Fei4GlobalCfg, public Fei4PixelCfg, public Fei4Cmd {
     public:
         Fei4(TxCore *arg_core, unsigned chipId);

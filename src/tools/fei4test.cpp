@@ -88,12 +88,10 @@ int main(void) {
     std::cout << "### Starting Engine ###" << std::endl;
     eng.execute();
 
-    std::cin >> tmp;
 
     // Stop Engine
     std::cout << "### Stopping Engine ###" << std::endl;
     eng.end();
-    std::cin >> tmp;
 
 #if 0
     uint32_t trigger_word[4] = {0x00, 0x00, 0x001d ,0x1640}; // 255 - 36 = 219 -> TrigLat
@@ -156,10 +154,10 @@ int main(void) {
     }
     spec.writeSingle(RX_ADDR | 0x0, 0x0);
 #endif
+
     std::cout << "### Disabling RX ###" << std::endl;
     tx.setCmdEnable(0x0);
     rx.setRxEnable(0x0);
-    std::cin >> tmp;
     
     std::cout << "### Analyzing data ###" << std::endl;
     Fei4DataProcessor proc;

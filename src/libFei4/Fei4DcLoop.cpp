@@ -59,11 +59,11 @@ void Fei4DcLoop::execPart2() {
     if (!(m_col < m_colEnd)) m_done = true;
 }
 
-void Fei4DcLoop::setMode(DcLoop_Type mode) {
+void Fei4DcLoop::setMode(enum DC_MODE mode) {
     m_mode = mode;
 }
 
-DcLoop_Type Fei4DcLoop::getMode() {
+enum DC_MODE Fei4DcLoop::getMode() {
     return m_mode;
 }
 
