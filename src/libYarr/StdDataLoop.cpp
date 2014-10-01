@@ -36,8 +36,8 @@ void StdDataLoop::execPart2() {
     uint32_t done = 0;
     uint32_t rate = -1;
     RawData *newData = NULL;
-    while (done == 0 || rate != 0) {
-        rate = g_rx->getDataRate();
+    while (done == 0) {
+        //rate = g_rx->getDataRate();
         done = g_tx->isTrigDone();
         do {
             newData =  g_rx->readData();

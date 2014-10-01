@@ -10,9 +10,9 @@ MODE = DEBUG
 AR = ar
 
 CPP = g++
-CPPFLAGS += -std=c++11 -Wall -Wextra -Wunused-variable -IlibSpec/include \
+CPPFLAGS += -std=c++11 -Wall -Wunused-variable -IlibSpec/include \
 			-IlibYarr/include -IlibUtil/include -IlibFei4/include
-CPPFLAGS_DEBUG += -g -O0
+CPPFLAGS_DEBUG += -g -O1
 CPPFLAGS_RELEASE += -O2 -DNDEBUG
 
 LD = g++

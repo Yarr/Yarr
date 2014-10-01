@@ -33,7 +33,7 @@ class Fei4Cmd {
         void wrFrontEnd(int chipId, uint32_t *bitstream);
         void runMode(int chipId, bool mode);
         void globalReset(int chipId);
-        void globalPulse(int chipId, int width);
+        void globalPulse(int chipId, unsigned width);
 
         void calTrigger(int delay);
 

@@ -9,6 +9,7 @@
 #include "Fei4Cmd.h"
 
 Fei4Cmd::Fei4Cmd(TxCore *arg_core) {
+    verbose = false;
     core = arg_core;
 }
 
@@ -68,7 +69,7 @@ void Fei4Cmd::globalReset(int chipId) {
     core->writeFifo(0x005A2000+((chipId<<6)&0x3C0));
 }
 
-void Fei4Cmd::globalPulse(int chipId, int width) {
+void Fei4Cmd::globalPulse(int chipId, unsigned width) {
     if (verbose) std::cout << __PRETTY_FUNCTION__ << std::endl;
     core->writeFifo(0x005A2400+((chipId<<6)&0x3C0)+(width&0x3F));
     for(unsigned i=0; i<(width%32+1); i++)
