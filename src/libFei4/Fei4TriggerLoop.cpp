@@ -7,17 +7,18 @@
 
 Fei4TriggerLoop::Fei4TriggerLoop() : LoopActionBase() {
     m_trigCnt = 50; // Maximum numberof triggers to send
-    m_trigDelay = 52; // Delay between injection and trigger
+    m_trigDelay = 33; // Delay between injection and trigger
     m_trigFreq = 1e3; // 1kHz
     m_trigTime = 10; // 10s
     m_trigWord[0] = 0x00;
-    m_trigWord[1] = 0x00;
-    m_trigWord[2] = TRIG_CMD;
+    m_trigWord[1] = TRIG_CMD;
+    m_trigWord[2] = 0x00;
     m_trigWord[3] = CAL_CMD;
     isInner = false;
 }
 
 void Fei4TriggerLoop::init() {
+    m_done = false;
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     // Setup Trigger
@@ -28,19 +29,18 @@ void Fei4TriggerLoop::init() {
     }
     g_tx->setTrigFreq(m_trigFreq);
     g_tx->setTrigCnt(m_trigCnt);
-    g_tx->setTrigWordLength(64);
+    g_tx->setTrigWordLength(m_trigWordLength);
     g_tx->setTrigWord(m_trigWord);
     
     // Set Modules into runmode
     g_fe->setRunMode(true);
+    while(!g_tx->isCmdEmpty());
 }
 
 void Fei4TriggerLoop::end() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     g_fe->setRunMode(false);
-    // Disable Trigger
-    g_tx->setTrigEnable(0x0);
 }
 
 void Fei4TriggerLoop::execPart1() {
@@ -55,6 +55,8 @@ void Fei4TriggerLoop::execPart2() {
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     if (isInner)
         while(!g_tx->isTrigDone());
+    // Disable Trigger
+    g_tx->setTrigEnable(0x0);
     m_done = true;
 }
 
@@ -67,12 +69,16 @@ unsigned int Fei4TriggerLoop::getTrigCnt() {
 }
 
 void Fei4TriggerLoop::setTrigDelay(unsigned int delay) {
-    unsigned pos = (delay-5)%32; // subtract 8 bit long trig cmd
-    unsigned word = (delay-5)/32; // Select word in array
+    unsigned pos = (delay-1)%32; // subtract 8 bit long trig cmd
+    unsigned word = (delay-1)/32; // Select word in array
+    m_trigWord[0] = 0;
+    m_trigWord[1] = 0;
+    m_trigWord[2] = 0;
+    m_trigWord[3] = CAL_CMD;
     if ((word < 3 && pos <= 27) || word < 2) {
-        m_trigWord[3-word] = (TRIG_CMD>>pos);
+        m_trigWord[2-word] = (TRIG_CMD>>pos);
         if (pos > 27) // In case we shifted over word border
-            m_trigWord[3-1-word] = (TRIG_CMD<<(5-(32-pos)));
+            m_trigWord[2-1-word] = (TRIG_CMD<<(5-(32-pos)));
         m_trigDelay = delay;
     }
     m_trigWordLength = 32 + delay;

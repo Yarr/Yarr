@@ -13,6 +13,7 @@ Fei4DcLoop::Fei4DcLoop() : LoopActionBase() {
 }
 
 void Fei4DcLoop::init() {
+    m_done = false;
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     // Figure out how often to loop
@@ -22,10 +23,10 @@ void Fei4DcLoop::init() {
             m_colEnd = 40;
             break;
         case QUAD_DC:
-            m_colEnd = 10;
+            m_colEnd = 4;
             break;
         case OCTA_DC:
-            m_colEnd = 5;
+            m_colEnd = 8;
             break;
         case ALL_DC:
             m_colEnd = 1;
@@ -34,7 +35,8 @@ void Fei4DcLoop::init() {
             break;
     }
     // Set COLPR_MODE
-    g_fe->writeRegister((&Fei4GlobalCfg::Colpr_Mode), (uint16_t) m_mode);
+    g_fe->writeRegister((&Fei4::Colpr_Mode), (uint16_t) m_mode);
+    m_col = 0;
 }
 
 void Fei4DcLoop::end() {
@@ -46,7 +48,7 @@ void Fei4DcLoop::execPart1() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     // Address col
-    g_fe->writeRegister(&Fei4GlobalCfg::Colpr_Addr, m_col);
+    g_fe->writeRegister(&Fei4::Colpr_Addr, m_col);
 }
 
 void Fei4DcLoop::execPart2() {
@@ -54,7 +56,7 @@ void Fei4DcLoop::execPart2() {
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     // Check Loop condition
     m_col++;
-    if (m_col >= m_colEnd) m_done = true;
+    if (!(m_col < m_colEnd)) m_done = true;
 }
 
 void Fei4DcLoop::setMode(DcLoop_Type mode) {

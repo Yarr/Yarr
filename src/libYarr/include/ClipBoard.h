@@ -21,7 +21,7 @@ class ClipBoard {
 
         void pushData(T *data) {
             queueMutex.lock();
-            dataQueue.push(data);
+            if (data != NULL) dataQueue.push(data);
             queueMutex.unlock();
         }
 

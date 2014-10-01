@@ -13,7 +13,7 @@ Fei4Cmd::Fei4Cmd(TxCore *arg_core) {
 }
 
 Fei4Cmd::~Fei4Cmd() {
-    delete core;
+
 }
 
 void Fei4Cmd::trigger() {

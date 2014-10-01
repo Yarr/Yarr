@@ -41,7 +41,6 @@ void Fei4DataProcessor::process() {
                 curOut->serviceRecords[code]+=number;
             } else {
                 if (events == 0 ) {
-                    std::cout << "Ripped event" << std::endl;
                     l1id = oldl1id;
                     bcid = oldbcid;
                     curOut->newEvent(l1id);
@@ -65,9 +64,6 @@ void Fei4DataProcessor::process() {
         }
 
         output->pushData(curOut);
-        std::cout << "Total events = " << events << std::endl;
-        std::cout << "Total hits = " << hits << std::endl;
-
         //Cleanup
         delete curIn;
     }

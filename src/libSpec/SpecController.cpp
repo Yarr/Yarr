@@ -43,7 +43,8 @@ void SpecController::writeSingle(uint32_t off, uint32_t val) {
 }
 
 uint32_t SpecController::readSingle(uint32_t off) {
-    return this->read32(bar0, off);
+    uint32_t tmp = this->read32(bar0, off);
+    return tmp; 
 }
 
 void SpecController::write32(uint32_t off, uint32_t *val, size_t words) {

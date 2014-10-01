@@ -26,6 +26,10 @@ void TxCore::setCmdEnable(uint32_t value) {
     spec->writeSingle(TX_ADDR | TX_ENABLE, value);
 }
 
+uint32_t TxCore::getCmdEnable() {
+    return spec->readSingle(TX_ADDR | TX_ENABLE);
+}
+
 void TxCore::maskCmdEnable(uint32_t value, uint32_t mask) {
     uint32_t tmp = spec->readSingle(TX_ADDR | TX_ENABLE);
     tmp &= ~mask;
@@ -39,6 +43,10 @@ void TxCore::setTrigEnable(uint32_t value) {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << value << std::dec << std::endl;
     spec->writeSingle(TX_ADDR | TRIG_EN, value);
+}
+
+uint32_t TxCore::getTrigEnable() {
+    return spec->readSingle(TX_ADDR | TRIG_EN);
 }
 
 void TxCore::maskTrigEnable(uint32_t value, uint32_t mask) {

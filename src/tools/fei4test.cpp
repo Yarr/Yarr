@@ -1,5 +1,7 @@
 #include <iostream>
 #include <stdint.h>
+#include <fstream>
+#include <string>
 
 #include "SpecController.h"
 #include "TxCore.h"
@@ -31,11 +33,13 @@ int main(void) {
     TxCore tx(&spec);
     RxCore rx(&spec);
 
-    Fei4 g_fe(&tx, 8);
+    Fei4 g_fe(&tx, 0);
     Fei4 fe(&tx, 0);
     
     ClipBoard<RawData> clipRaw;
     ClipBoard<Fei4Data> clipEvent;
+
+    std::string tmp;
 
     std::cout << "### Initilizing Loop Engine ###" << std::endl;
     // Init Loop Engine
@@ -43,26 +47,28 @@ int main(void) {
     
     // Init specific loops
     Fei4MaskLoop maskStaging;
+    maskStaging.setVerbose(true);
+    maskStaging.setMaskStage(MASK_32);
     eng.addAction(std::make_shared<Fei4MaskLoop>(maskStaging));
-    maskStaging.setVerbose();
-    maskStaging.setMaskStage(MASK_16);
 
     Fei4DcLoop dcLoop;
+    dcLoop.setVerbose(true);
+    dcLoop.setMode(QUAD_DC);
     eng.addAction(std::make_shared<Fei4DcLoop>(dcLoop));
-    dcLoop.setVerbose();
-    dcLoop.setMode(ALL_DC);
 
     Fei4TriggerLoop triggerLoop;
-    eng.addAction(std::make_shared<Fei4TriggerLoop>(triggerLoop));
-    triggerLoop.setVerbose();
+    triggerLoop.setVerbose(true);
     triggerLoop.setTrigCnt(50);
-    triggerLoop.setTrigFreq(1e3);
-    triggerLoop.setTrigDelay(50);
+    triggerLoop.setTrigFreq(5e3);
+    //triggerLoop.setTrigDelay(50);
+    eng.addAction(std::make_shared<Fei4TriggerLoop>(triggerLoop));
 
     StdDataLoop dataLoop;
-    eng.addAction(std::make_shared<StdDataLoop>(dataLoop));
-    dataLoop.setVerbose();
+    dataLoop.setVerbose(true);
     dataLoop.connect(&clipRaw);
+    eng.addAction(std::make_shared<StdDataLoop>(dataLoop));
+
+    std::cin >> tmp;
 
     eng.init();
 
@@ -71,19 +77,25 @@ int main(void) {
     tx.setCmdEnable(0x1);
     fe.setRunMode(false);
     fe.configure();
-    fe.writeRegister(&Fei4::Trig_Count, 3);
-    fe.writeRegister(&Fei4::Trig_Lat, triggerLoop.getTrigDelay());
+    fe.writeRegister(&Fei4::Trig_Count, 4);
+    fe.writeRegister(&Fei4::Trig_Lat, 255-triggerLoop.getTrigDelay()-1);
+    fe.writeRegister(&Fei4::DigHitIn_Sel, 0x1);
+    while(!tx.isCmdEmpty());
+    rx.setRxEnable(0x1);
+    std::cin >> tmp;
 
     // Start engine
     std::cout << "### Starting Engine ###" << std::endl;
     eng.execute();
 
+    std::cin >> tmp;
+
     // Stop Engine
     std::cout << "### Stopping Engine ###" << std::endl;
     eng.end();
-#if 0
-    spec.writeSingle(RX_ADDR | 0x0, 0x1);
+    std::cin >> tmp;
 
+#if 0
     uint32_t trigger_word[4] = {0x00, 0x00, 0x001d ,0x1640}; // 255 - 36 = 219 -> TrigLat
 
     // Setup Trigger
@@ -144,18 +156,26 @@ int main(void) {
     }
     spec.writeSingle(RX_ADDR | 0x0, 0x0);
 #endif
-
+    std::cout << "### Disabling RX ###" << std::endl;
+    tx.setCmdEnable(0x0);
+    rx.setRxEnable(0x0);
+    std::cin >> tmp;
+    
+    std::cout << "### Analyzing data ###" << std::endl;
     Fei4DataProcessor proc;
     proc.connect(&clipRaw, &clipEvent);
     proc.process();
     unsigned i = 0;
-    std::cout << "Writing: " << clipEvent.size() << " files!" << std::endl;
+    std::string filename = "digitalscan.txt";
+    // Recreate File
+    std::fstream file(filename, std::fstream::trunc);
+    file.close();
+    std::cout << "Writing: " << clipEvent.size() << " files ..." << std::endl;
     while(!clipEvent.empty()) {
         Fei4Data *data = clipEvent.popData();
-        std::cout << data << std::endl;
-        data->toFile("digitalScan_" + std::to_string(i) + ".dat");
+        data->toFile(filename);
         i++;
         delete data;
     }
-
+    std::cout << "... done!" << std::endl;
 }

@@ -47,7 +47,8 @@ architecture Behavioral of trigger_unit is
 	signal trig_count : std_logic_vector(31 downto 0);
 	signal trig_conf : stD_logic_vector(3 downto 0);
 	signal trig_en : std_logic;
-	signal trig_done : std_logic;
+	constant c_DONE_DELAY : integer := 32;
+	signal trig_done : std_logic_vector(c_DONE_DELAY-1 downto 0);
 	
 	-- Counters
 	signal stopwatch_cnt : unsigned(63 downto 0);
@@ -55,8 +56,6 @@ architecture Behavioral of trigger_unit is
 	signal freq_cnt : unsigned(31 downto 0);
 	
 	-- Sync
-	constant c_DONE_DELAY : integer := 32;
-	signal trig_done_d : std_logic_vector(c_DONE_DELAY-1 downto 0);
 	signal trig_en_d0 : std_logic;
 	signal trig_en_d1 : std_logic;
 	signal trig_en_pos : std_logic;
@@ -71,19 +70,19 @@ begin
 	done_proc : process(clk_i, rst_n_i)
 	begin
 		if (rst_n_i = '0') then
-			trig_done <= '0';
+			trig_done(0) <= '0';
 		elsif rising_edge(clk_i) then
 			if (trig_en = '0') then -- Reset done on disable
-				trig_done <= '0';
+				trig_done(0) <= '0';
 			elsif (trig_conf = x"0") then -- External
-				trig_done <= '1';
+				trig_done(0) <= '1';
 			elsif (trig_conf = x"1") then -- Internal time
 				if (stopwatch_cnt = unsigned(trig_time)) then
-					trig_done <= '1';
+					trig_done(0) <= '1';
 				end if;
 			elsif (trig_conf = x"2") then -- Internal count
 				if (int_trig_cnt = unsigned(trig_count)) then
-					trig_done <= '1';
+					trig_done(0) <= '1';
 				end if;
 			--elsif (trig_conf = x"3") then -- Pseudo Random
 			end if;
@@ -96,7 +95,7 @@ begin
 		if (rst_n_i = '0') then
 			stopwatch_cnt <= (others => '0');
 		elsif rising_edge(clk_i) then
-			if (trig_done = '1') then
+			if (trig_done(0) = '1') then
 				stopwatch_cnt <= (others => '0');
 			elsif (trig_en = '1') then
 				stopwatch_cnt <= stopwatch_cnt + 1;
@@ -110,7 +109,7 @@ begin
 		if (rst_n_i = '0') then
 			int_trig_cnt <= (others => '0');
 		elsif rising_edge(clk_i) then
-			if (trig_done = '1') then
+			if (trig_done(0) = '1') then
 				int_trig_cnt <= (others => '0');
 			elsif (trig_en = '1' and trig_pulse = '1') then
 				int_trig_cnt <= int_trig_cnt + 1;
@@ -133,7 +132,7 @@ begin
 					trig_pulse <= '0';
 				end if;
 			else -- Pulsing on requency counter
-				if (trig_done = '1') then
+				if (trig_done(0) = '1') then
 					trig_pulse <= '0';
 					freq_cnt <= (others => '0');
 				elsif (trig_en = '1') then
@@ -183,6 +182,7 @@ begin
 			trig_conf <= (others => '0');
 			trig_en <= '0';
 			trig_done_o <= '0';
+			trig_done(c_DONE_DELAY-1 downto 1) <= (others => '0');
 			ext_trig_d0 <= '0';
 			ext_trig_d0 <= '0';
 			ext_trig_pos <= '0';
@@ -223,8 +223,11 @@ begin
 			elsif (trig_en_neg = '1') then
 				trig_en <= '0';
 			end if;
-			
-			trig_done_o <= trig_done;	
+
+			for I in 1 to c_DONE_DELAY-1 loop
+				trig_done(I) <= trig_done(I-1);
+			end loop;
+			trig_done_o <= trig_done(c_DONE_DELAY-1);	
 		end if;
 	end process;
 end Behavioral;

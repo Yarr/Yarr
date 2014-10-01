@@ -12,7 +12,7 @@
 #include "TxCore.h"
 #include "RxCore.h"
 
-typedef EngineTBase< std::vector< shared_ptr<LoopActionBase> > > Engine;
+typedef EngineTBase< std::vector< std::shared_ptr<LoopActionBase> > > Engine;
 
 class LoopEngine : public Engine {
     public:

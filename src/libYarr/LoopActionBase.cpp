@@ -16,10 +16,14 @@ LoopActionBase::LoopActionBase() {
 }
 
 void LoopActionBase::setVerbose(bool v) {
+    if (v)
+        std::cout << __PRETTY_FUNCTION__ << " : Enabling debug output" << std::endl;
     verbose = v;
 }
 
 void LoopActionBase::setup(Fei4 *fe, TxCore *tx, RxCore *rx) {
+    if (verbose)
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
     g_fe = fe;
     g_tx = tx;
     g_rx = rx;

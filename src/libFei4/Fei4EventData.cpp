@@ -4,8 +4,8 @@
 #include <iostream>
 
 void Fei4Data::toFile(std::string filename) {
-    std::cout << __PRETTY_FUNCTION__ << " " << filename << std::endl;
-    std::fstream file(filename, std::fstream::out | std::fstream::trunc);
+    //std::cout << __PRETTY_FUNCTION__ << " " << filename << std::endl;
+    std::fstream file(filename, std::fstream::out | std::fstream::app);
     
     file << events.size() << std::endl;
     for (unsigned i=0; i<events.size(); i++) {

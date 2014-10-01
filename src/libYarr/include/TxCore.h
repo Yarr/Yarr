@@ -45,9 +45,11 @@ class TxCore {
         void writeFifo(uint32_t value);
         
         void setCmdEnable(uint32_t value);
+        uint32_t getCmdEnable();
         void maskCmdEnable(uint32_t value, uint32_t mask);
 
         void setTrigEnable(uint32_t value);
+        uint32_t getTrigEnable();
         void maskTrigEnable(uint32_t value, uint32_t mask);
 
         void setTrigConfig(enum TRIG_CONF_VALUE cfg);

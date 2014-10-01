@@ -26,7 +26,6 @@ void Fei4::configure() {
     // Set actual threshold
     setValue(&Fei4::Vthin_Coarse, tmp);
     writeRegister(&Fei4::Vthin_Coarse);
-
 }
 
 void Fei4::configurePixels() {

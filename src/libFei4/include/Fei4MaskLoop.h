@@ -15,13 +15,13 @@ class Fei4MaskLoop : public LoopActionBase {
         Fei4MaskLoop();
 
         void setMaskStage(enum MASK_STAGE mask);
-        void setMaskStage(uint32_t mask);
-        uint32_t getMaskStage();
-        void setIterations(unsigned it);
-        unsigned getIterations();
+        //void setMaskStage(uint32_t mask);
+        //uint32_t getMaskStage();
+        //void setIterations(unsigned it);
+        //unsigned getIterations();
         
     private:
-        uint32_t m_mask;
+        enum MASK_STAGE m_mask;
         unsigned m_it;
         unsigned m_itCur;
 

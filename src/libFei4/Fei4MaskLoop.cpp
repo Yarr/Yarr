@@ -12,6 +12,7 @@ Fei4MaskLoop::Fei4MaskLoop() : LoopActionBase() {
 }
 
 void Fei4MaskLoop::init() {
+    m_done = false;
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     // Shift Mask into all pixels
@@ -19,12 +20,15 @@ void Fei4MaskLoop::init() {
     g_fe->writeRegister(&Fei4::Colpr_Addr, 0x0);
     g_fe->initMask(m_mask);
     g_fe->loadIntoPixel(0x1);
+    m_itCur = 0;
 }
 
 void Fei4MaskLoop::end() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     // Disable all pixels
+    g_fe->writeRegister(&Fei4::Colpr_Mode, 0x3);
+    g_fe->writeRegister(&Fei4::Colpr_Addr, 0x0);
     g_fe->initMask(MASK_NONE);
     g_fe->loadIntoPixel(0x1);
 }
@@ -37,10 +41,13 @@ void Fei4MaskLoop::execPart1() {
 void Fei4MaskLoop::execPart2() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
-    if (!(m_itCur < m_it)) m_done = true;
+    std::cout << " ---> Mask Stage" << m_itCur << std::endl;
     m_itCur++;
+    g_fe->writeRegister(&Fei4::Colpr_Mode, 0x3);
+    g_fe->writeRegister(&Fei4::Colpr_Addr, 0x0);
     g_fe->shiftMask();
     g_fe->loadIntoPixel(0x1);
+    if (!(m_itCur < m_it)) m_done = true;
 }
 
 void Fei4MaskLoop::setMaskStage(enum MASK_STAGE mask) {
@@ -75,7 +82,7 @@ void Fei4MaskLoop::setMaskStage(enum MASK_STAGE mask) {
             break;
     }
 }
-
+/*
 void Fei4MaskLoop::setMaskStage(uint32_t mask) {
     m_mask = mask;
 }
@@ -90,4 +97,4 @@ void Fei4MaskLoop::setIterations(unsigned it) {
 
 unsigned Fei4MaskLoop::getIterations() {
     return m_it;
-}
+}*/
