@@ -11,7 +11,7 @@ void Fei4Data::toFile(std::string filename) {
     for (unsigned i=0; i<events.size(); i++) {
         file << events[i]->l1id << " " << events[i]->hits.size() << std::endl;
         for (unsigned j=0; j<events[i]->hits.size(); j++) {
-            file << events[i]->hits[j].bcid << " " << events[i]->hits[j].col << " " << events[i]->hits[j].row << " " << events[i]->hits[j].tot << std::endl;
+            file << events[i]->hits[j]->bcid << " " << events[i]->hits[j]->col << " " << events[i]->hits[j]->row << " " << events[i]->hits[j]->tot << std::endl;
         }
     }
     file.close();

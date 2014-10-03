@@ -11,6 +11,10 @@ Fei4DataProcessor::~Fei4DataProcessor() {
 
 }
 
+void Fei4DataProcessor::init() {
+
+}
+
 void Fei4DataProcessor::process() {
     int oldl1id = 0;
     int oldbcid = 0;

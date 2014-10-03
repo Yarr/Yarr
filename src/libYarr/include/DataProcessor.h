@@ -14,8 +14,8 @@ class DataProcessor {
         DataProcessor();
         ~DataProcessor();
 
-        void init();
-        void process();
+        virtual void init() {}
+        virtual void process() {}
 };
 
 #endif

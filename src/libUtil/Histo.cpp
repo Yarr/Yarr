@@ -1,3 +1,4 @@
+#if 0
 #include "Histo.h"
 
 #include <iostream>
@@ -65,7 +66,6 @@ Histo2d<T>::Histo2d(unsigned arg_nBinsX, double arg_xLow, double arg_xHigh,doubl
     yHigh = arg_yHigh;
     binWidthX = (xHigh - xLow)/(double)nBinsX;
     binWidthY = (yHigh - yLow)/(double)nBinsY;
-    //this->init();
 }
 
 template <class T>
@@ -107,3 +107,5 @@ void Histo2d<T>::print() {
 
 template class Histo2d<int>;
 template class Histo2d<double>;
+
+#endif

@@ -22,7 +22,7 @@ class Fei4Hit {
             tot = arg_tot;
         }
         ~Fei4Hit(){};
-        
+
         int bcid;
         int row;
         int col;
@@ -35,29 +35,29 @@ class Fei4Event {
             l1id = arg_l1id;
         }
         ~Fei4Event() {
-            /*while(!hits.empty()) {
+            while(!hits.empty()) {
                 Fei4Hit *tmp = hits.back();
                 hits.pop_back();
                 delete tmp;
-            }*/
+            }
         }
 
         void addHit(int arg_bcid, int arg_row, int arg_col, int arg_tot) {
-            hits.push_back(Fei4Hit(arg_bcid, arg_row, arg_col, arg_tot));
+            hits.push_back(new Fei4Hit(arg_bcid, arg_row, arg_col, arg_tot));
         }
-        
+
         int l1id;
-        std::deque<Fei4Hit> hits;
+        std::deque<Fei4Hit*> hits;
 };
 
 class Fei4Data {
     public:
-         static const unsigned numServiceRecords = 32;
-         Fei4Data() {
-             curEvent = NULL;
+        static const unsigned numServiceRecords = 32;
+        Fei4Data() {
+            curEvent = NULL;
             for(unsigned i=0; i<numServiceRecords; i++)
                 serviceRecords.push_back(0);
-         }
+        }
         ~Fei4Data() {
             while(!events.empty()) {
                 Fei4Event *tmp = events.back();

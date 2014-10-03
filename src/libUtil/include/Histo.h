@@ -1,3 +1,4 @@
+#if 0
 #ifndef HISTO_H
 #define HISTO_H
 
@@ -15,11 +16,11 @@ class Histo {
         
         unsigned nBins;
         double gLow, gHigh;
-        T *data;
         unsigned underflow;
         unsigned overflow;
         int entries;
         double binWidth;
+        T *data;
     private:
 };
 
@@ -47,4 +48,5 @@ class Histo2d : public Histo<T> {
 extern template class Histo2d<int>;
 extern template class Histo2d<double>;
 
+#endif
 #endif

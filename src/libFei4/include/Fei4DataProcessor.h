@@ -23,7 +23,8 @@ class Fei4DataProcessor : public DataProcessor {
             input = arg_input;
             output = arg_output;
         }
-
+    
+        void init();
         void process();
 
     private:

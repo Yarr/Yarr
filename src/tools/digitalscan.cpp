@@ -10,6 +10,8 @@
 #include "RawData.h"
 #include "Fei4EventData.h"
 #include "Fei4DataProcessor.h"
+#include "Fei4Histogrammer.h"
+#include "ResultBase.h"
 
 #include "Fei4Scans.h"
 
@@ -25,6 +27,7 @@ int main(void) {
 
     ClipBoard<RawData> clipRaw;
     ClipBoard<Fei4Data> clipEvent;
+    ClipBoard<ResultBase> clipHisto;
 
     Fei4DigitalScan digScan(&g_fe, &tx, &rx, &clipRaw);
     
@@ -52,18 +55,16 @@ int main(void) {
     Fei4DataProcessor proc;
     proc.connect(&clipRaw, &clipEvent);
     proc.process();
-    unsigned i = 0;
-    std::string filename = "digitalscan.dat";
-    // Recreate File
-    std::fstream file(filename, std::fstream::trunc);
-    file.close();
-    std::cout << "Writing: " << clipEvent.size() << " files ..." << std::endl;
-    while(!clipEvent.empty()) {
-        Fei4Data *data = clipEvent.popData();
-        data->toFile(filename);
-        i++;
-        delete data;
-    }
+    
+    std::cout << "### Histogramming data ###" << std::endl;
+    Fei4Histogrammer histogrammer;
+    histogrammer.addHistogrammer(new OccupancyHistogram);
+    histogrammer.process();
+    histogrammer.publish();
+
+    Histo2d *h = (Histo2d*) clipHisto.popData();
+    h->toFile("digitalscan_occupancy.dat");
+    
     std::cout << "... done!" << std::endl;
 
     return 0;
