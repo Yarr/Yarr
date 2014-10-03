@@ -59,11 +59,13 @@ int main(void) {
     std::cout << "### Histogramming data ###" << std::endl;
     Fei4Histogrammer histogrammer;
     histogrammer.addHistogrammer(new OccupancyHistogram);
+    histogrammer.connect(&clipEvent, &clipHisto);
     histogrammer.process();
     histogrammer.publish();
 
     Histo2d *h = (Histo2d*) clipHisto.popData();
-    h->toFile("digitalscan_occupancy.dat");
+    if (h != NULL)
+        h->toFile("digitalscan_occupancy.dat");
     
     std::cout << "... done!" << std::endl;
 

@@ -22,11 +22,15 @@ void Fei4Histogrammer::init() {
 }
 
 void Fei4Histogrammer::process() {
-    Fei4Data *data = input->popData();
-    for (unsigned i=0; i<algorithms.size(); i++) {
-        algorithms[i]->processEvent(data);
+    while (!input->empty()) {
+        Fei4Data *data = input->popData();
+        if (data != NULL) {
+            for (unsigned i=0; i<algorithms.size(); i++) {
+                algorithms[i]->processEvent(data);
+            }
+            delete data;
+        }
     }
-    delete data;
 }
 
 void Fei4Histogrammer::publish() {
@@ -42,7 +46,7 @@ void OccupancyHistogram::processEvent(Fei4Data *data) {
         for (std::deque<Fei4Hit*>::iterator hitIt = curEvent->hits.begin(); hitIt!=curEvent->hits.end(); ++hitIt) {   
             Fei4Hit *curHit = *hitIt;
             if(curHit->tot > 0)
-                h->fill(curHit->row, curHit->col);
+                h->fill(curHit->col, curHit->row);
         }
     }
 }

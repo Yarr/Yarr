@@ -22,9 +22,7 @@
 class HistogramAlgorithm {
     public:
         HistogramAlgorithm() {}
-        virtual ~HistogramAlgorithm() {
-            delete r;
-        }
+        virtual ~HistogramAlgorithm() {}
         
         ResultBase* getResult() {
             return r;

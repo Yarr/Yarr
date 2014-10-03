@@ -37,7 +37,7 @@ void Histo2d::fill(double x, double y, double v) {
     } else {
         unsigned xbin = (x-xlow)/xbinWidth;
         unsigned ybin = (y-ylow)/ybinWidth;
-        data[xbin+(ybin*ybins)]+=v;
+        data[ybin+(xbin*ybins)]+=v;
         if (v > max)
             max = v;
         if (v < min)
@@ -56,7 +56,7 @@ void Histo2d::toFile(std::string filename) {
     // Data
     for (unsigned int i=0; i<xbins; i++) {
         for (unsigned int j=0; j<ybins; j++) {
-            file << data[i+(j*ybins)] << " ";
+            file << data[j+(i*ybins)] << " ";
         }
         file << std::endl;
     }
