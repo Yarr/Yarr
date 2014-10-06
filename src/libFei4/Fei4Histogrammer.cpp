@@ -39,6 +39,18 @@ void Fei4Histogrammer::publish() {
     }
 }
 
+void Fei4Histogrammer::toFile(std::string basename) {
+    for (unsigned i=0; i<algorithms.size(); i++) {
+        algorithms[i]->getResult()->toFile(basename, true);
+    }
+}
+
+void Fei4Histogrammer::plot(std::string basename) {
+    for (unsigned i=0; i<algorithms.size(); i++) {
+        algorithms[i]->getResult()->plot(basename);
+    }
+}
+
 
 void OccupancyHistogram::processEvent(Fei4Data *data) {
     for (std::deque<Fei4Event*>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   

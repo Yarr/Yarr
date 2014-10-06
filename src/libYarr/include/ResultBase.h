@@ -15,9 +15,12 @@
 class ResultBase {
     public:
         ResultBase(std::string arg_name);
-        ~ResultBase();
+        virtual ~ResultBase();
 
         std::string getName();
+
+        virtual void toFile(std::string basename, bool header=true) {}
+        virtual void plot(std::string basename) {}
         
         void setAxisTitle(std::string x, std::string y="y", std::string z="z");
         void setXaxisTitle(std::string);

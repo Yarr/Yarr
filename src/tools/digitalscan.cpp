@@ -38,6 +38,7 @@ int main(void) {
     tx.setCmdEnable(0x1);
     fe.setRunMode(false);
     fe.configure();
+    fe.configurePixels();
     while(!tx.isCmdEmpty());
     rx.setRxEnable(0x1);
 
@@ -63,9 +64,12 @@ int main(void) {
     histogrammer.process();
     histogrammer.publish();
 
+    std::cout << "### Saving ###" << std::endl;
     Histo2d *h = (Histo2d*) clipHisto.popData();
-    if (h != NULL)
-        h->toFile("digitalscan_occupancy.dat");
+    if (h != NULL) {
+        h->toFile("digitalscan");
+        h->plot("digitalscan");
+    }
     
     std::cout << "... done!" << std::endl;
 

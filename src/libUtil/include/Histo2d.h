@@ -14,7 +14,7 @@
 
 #include "ResultBase.h"
 
-class Histo2d : ResultBase {
+class Histo2d : public ResultBase {
     public:
         Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
                 unsigned arg_ybins, double arg_ylow, double arg_yhigh);
@@ -27,7 +27,8 @@ class Histo2d : ResultBase {
         //void setBin(unsigned x, double v);
         //double getBin(unsigned n);
         
-        void toFile(std::string filename);
+        void toFile(std::string filename, bool header=true);
+        void plot(std::string filename);
 
     private:
         double *data;

@@ -50,6 +50,8 @@ class Fei4Histogrammer : public DataProcessor {
         void init();
         void process();
         void publish();
+        void toFile(std::string basename);
+        void plot(std::string basename);
 
     private:
         ClipBoard<Fei4Data> *input;
@@ -62,6 +64,9 @@ class OccupancyHistogram : public HistogramAlgorithm {
     public:
         OccupancyHistogram() : HistogramAlgorithm() {
             h = new Histo2d("Occupancy", 80, 0.5, 80.5, 336, 0.5, 336.5);
+            h->setXaxisTitle("Column");
+            h->setYaxisTitle("Row");
+            h->setZaxisTitle("Hits");
             r = (ResultBase*) h;
         }
         ~OccupancyHistogram() {
