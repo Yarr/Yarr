@@ -118,11 +118,17 @@ int SpecController::readDma(uint32_t off, uint32_t *data, size_t words) {
 
         delete km;
         delete um;
-
-        return 0;
+        status = this->getDmaStatus(); 
+        if (status == DMAABORTED || status == DMAERROR) {
+            std::cerr << __PRETTY_FUNCTION__ << " -> " 
+                << "DMA Transfer failed! (Status = 0x" << std::hex << status << std::dec << ")" << std::endl;
+            return 1;
+        } else {
+            return 0;
+        }
     } else {
         std::cerr << __PRETTY_FUNCTION__ << " -> " 
-            << "DMA Transfer aborted (Status = 0x" << std::hex << status << std::dec << ")" << std::endl;
+            << "DMA Transfer aborted! (Status = 0x" << std::hex << status << std::dec << ")" << std::endl;
         return 1;
     }
 }

@@ -25,7 +25,8 @@ class ScanBase {
         ScanBase(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawData> *data);
 
         virtual void init() {}
-        virtual void configure() {}
+        virtual void preScan() {}
+        virtual void postScan() {}
         void run();
 
         std::shared_ptr<LoopActionBase> getLoop(unsigned n);

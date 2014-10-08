@@ -29,6 +29,7 @@ class HistogramAlgorithm {
         }
         
         virtual void processEvent(Fei4Data *data) {}
+        virtual void end() {}
     protected:
         ResultBase *r;
 };
@@ -60,22 +61,60 @@ class Fei4Histogrammer : public DataProcessor {
         std::vector<HistogramAlgorithm*> algorithms;
 };
 
-class OccupancyHistogram : public HistogramAlgorithm {
+class OccupancyMap : public HistogramAlgorithm {
     public:
-        OccupancyHistogram() : HistogramAlgorithm() {
-            h = new Histo2d("Occupancy", 80, 0.5, 80.5, 336, 0.5, 336.5);
+        OccupancyMap() : HistogramAlgorithm() {
+            h = new Histo2d("OccupancyMap", 80, 0.5, 80.5, 336, 0.5, 336.5);
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
             h->setZaxisTitle("Hits");
             r = (ResultBase*) h;
         }
-        ~OccupancyHistogram() {
+        ~OccupancyMap() {
             delete h;
         }
         
         void processEvent(Fei4Data *data);
+        void end() {}
     private:
         Histo2d *h;
-};  
+};
 
+class TotMap : public HistogramAlgorithm {
+    public:
+        TotMap() : HistogramAlgorithm() {
+            h = new Histo2d("TotMap", 80, 0.5, 80.5, 336, 0.5, 336.5);
+            h->setXaxisTitle("Column");
+            h->setYaxisTitle("Row");
+            h->setZaxisTitle("Total ToT");
+            r = (ResultBase*) h;
+        }
+        ~TotMap() {
+            delete h;
+        }
+
+        void processEvent(Fei4Data *data);
+        void end() {}
+    private:
+        Histo2d *h;
+};
+
+class Tot2Map : public HistogramAlgorithm {
+    public:
+        Tot2Map() : HistogramAlgorithm() {
+            h = new Histo2d("Tot2Map", 80, 0.5, 80.5, 336, 0.5, 336.5);
+            h->setXaxisTitle("Column");
+            h->setYaxisTitle("Row");
+            h->setZaxisTitle("Total ToT2");
+            r = (ResultBase*) h;
+        }
+        ~Tot2Map() {
+            delete h;
+        }
+
+        void processEvent(Fei4Data *data);
+        void end() {}
+    private:
+        Histo2d *h;
+};
 #endif

@@ -9,6 +9,8 @@
 // # Comment: Takes
 // ################################
 
+#include <vector>
+
 #include "DataProcessor.h"
 #include "ClipBoard.h"
 #include "RawData.h"
@@ -16,7 +18,7 @@
 
 class Fei4DataProcessor : public DataProcessor {
     public:
-        Fei4DataProcessor();
+        Fei4DataProcessor(unsigned arg_hitDiscCfg);
         ~Fei4DataProcessor();
         
         void connect(ClipBoard<RawData> *arg_input, ClipBoard<Fei4Data> *arg_output) {
@@ -30,7 +32,8 @@ class Fei4DataProcessor : public DataProcessor {
     private:
         ClipBoard<RawData> *input;
         ClipBoard<Fei4Data> *output;
-
+        unsigned hitDiscCfg;
+        std::array<std::array<unsigned, 16>, 3> totCode;
 };
 
 #endif

@@ -160,7 +160,7 @@ int main(void) {
     rx.setRxEnable(0x0);
     
     std::cout << "### Analyzing data ###" << std::endl;
-    Fei4DataProcessor proc;
+    Fei4DataProcessor proc(0);
     proc.connect(&clipRaw, &clipEvent);
     proc.process();
     unsigned i = 0;

@@ -19,11 +19,18 @@ class Fei4MaskLoop : public LoopActionBase {
         //uint32_t getMaskStage();
         //void setIterations(unsigned it);
         //unsigned getIterations();
+        void setScap(bool v=true) {enable_sCap = v;}
+        bool getScap() {return enable_sCap;}
+        void setLcap(bool v=true) {enable_lCap=1;}
+        bool getLcap() {return enable_lCap;}
+
         
     private:
         enum MASK_STAGE m_mask;
         unsigned m_it;
         unsigned m_itCur;
+        bool enable_sCap;
+        bool enable_lCap;
 
         void init();
         void end();

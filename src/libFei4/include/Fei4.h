@@ -65,6 +65,11 @@ class Fei4 : public Fei4GlobalCfg, public Fei4PixelCfg, public Fei4Cmd {
             void writeRegister(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref){
                 wrRegister(chipId, getAddr(ref), cfg[getAddr(ref)]);
             }
+        
+        template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight>
+            T readRegister(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref){
+                return getValue(ref);
+            }
     private:
         unsigned chipId;
 };

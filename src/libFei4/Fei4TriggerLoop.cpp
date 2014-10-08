@@ -4,6 +4,7 @@
  */
 
 #include "Fei4TriggerLoop.h"
+#include <unistd.h>
 
 Fei4TriggerLoop::Fei4TriggerLoop() : LoopActionBase() {
     m_trigCnt = 50; // Maximum numberof triggers to send
@@ -35,12 +36,14 @@ void Fei4TriggerLoop::init() {
     // Set Modules into runmode
     g_fe->setRunMode(true);
     while(!g_tx->isCmdEmpty());
+    usleep(100); // Empty could be delayed
 }
 
 void Fei4TriggerLoop::end() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     g_fe->setRunMode(false);
+    while(!g_tx->isCmdEmpty());
 }
 
 void Fei4TriggerLoop::execPart1() {
@@ -53,8 +56,7 @@ void Fei4TriggerLoop::execPart1() {
 void Fei4TriggerLoop::execPart2() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
-    if (isInner)
-        while(!g_tx->isTrigDone());
+    while(!g_tx->isTrigDone());
     // Disable Trigger
     g_tx->setTrigEnable(0x0);
     m_done = true;

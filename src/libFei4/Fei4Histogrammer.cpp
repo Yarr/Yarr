@@ -31,6 +31,9 @@ void Fei4Histogrammer::process() {
             delete data;
         }
     }
+    for (unsigned i=0; i<algorithms.size(); i++) {
+        algorithms[i]->end();
+    }
 }
 
 void Fei4Histogrammer::publish() {
@@ -52,7 +55,7 @@ void Fei4Histogrammer::plot(std::string basename) {
 }
 
 
-void OccupancyHistogram::processEvent(Fei4Data *data) {
+void OccupancyMap::processEvent(Fei4Data *data) {
     for (std::deque<Fei4Event*>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
         Fei4Event *curEvent = *eventIt;
         for (std::deque<Fei4Hit*>::iterator hitIt = curEvent->hits.begin(); hitIt!=curEvent->hits.end(); ++hitIt) {   
@@ -62,3 +65,28 @@ void OccupancyHistogram::processEvent(Fei4Data *data) {
         }
     }
 }
+
+void TotMap::processEvent(Fei4Data *data) {
+    for (std::deque<Fei4Event*>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
+        Fei4Event *curEvent = *eventIt;
+        for (std::deque<Fei4Hit*>::iterator hitIt = curEvent->hits.begin(); hitIt!=curEvent->hits.end(); ++hitIt) {   
+            Fei4Hit *curHit = *hitIt;
+            if(curHit->tot > 0)
+                h->fill(curHit->col, curHit->row, curHit->tot);
+        }
+    }
+}
+
+void Tot2Map::processEvent(Fei4Data *data) {
+    for (std::deque<Fei4Event*>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
+        Fei4Event *curEvent = *eventIt;
+        for (std::deque<Fei4Hit*>::iterator hitIt = curEvent->hits.begin(); hitIt!=curEvent->hits.end(); ++hitIt) {   
+            Fei4Hit *curHit = *hitIt;
+            if(curHit->tot > 0)
+                h->fill(curHit->col, curHit->row, curHit->tot*curHit->tot);
+        }
+    }
+}
+
+
+    

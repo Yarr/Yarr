@@ -1107,25 +1107,26 @@ begin
 --   TRIG1(31 downto 0) <= (others => '0');
 --   TRIG2(31 downto 0) <= (others => '0');
 --   TRIG0(12 downto 0) <= (others => '0');
---   TRIG1(31 downto 0) <= rx_dma_dat_o;
---   TRIG2(31 downto 0) <= ddr_status;
---   TRIG0(13) <= rx_dma_cyc;
---   TRIG0(14) <= rx_dma_stb;
---   TRIG0(15) <= rx_dma_we;
---   TRIG0(16) <= rx_dma_ack;
---   TRIG0(17) <= rx_dma_stall;   
---   TRIG0(18) <= dma_cyc;
---   TRIG0(19) <= dma_stb;
---   TRIG0(20) <= dma_we;
---   TRIG0(21) <= dma_ack;
---   TRIG0(22) <= dma_stall; 
---   TRIG0(31 downto 23) <= (others => '0');
-	TRIG0(0) <= rx_valid;
-	TRIG0(1) <= fe_cmd_o(0);
-	TRIG0(2) <= trig_pulse;
-	TRIG0(31 downto 3) <= (others => '0');
-	TRIG1 <= rx_data;
-	TRIG2 <= debug;
+   TRIG1(31 downto 0) <= rx_dma_dat_o;
+   TRIG2(31 downto 0) <= ddr_status;
+   TRIG0(13) <= rx_dma_cyc;
+   TRIG0(14) <= rx_dma_stb;
+   TRIG0(15) <= rx_dma_we;
+   TRIG0(16) <= rx_dma_ack;
+   TRIG0(17) <= rx_dma_stall;   
+   TRIG0(18) <= dma_cyc;
+   TRIG0(19) <= dma_stb;
+   TRIG0(20) <= dma_we;
+   TRIG0(21) <= dma_ack;
+   TRIG0(22) <= dma_stall; 
+   TRIG0(23) <= irq_out;
+   TRIG0(31 downto 24) <= (others => '0');
+--	TRIG0(0) <= rx_valid;
+--	TRIG0(1) <= fe_cmd_o(0);
+--	TRIG0(2) <= trig_pulse;
+--	TRIG0(31 downto 3) <= (others => '0');
+--	TRIG1 <= rx_data;
+--	TRIG2 <= debug;
    
 	ila_i : ila
 	  port map (

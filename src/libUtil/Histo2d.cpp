@@ -23,6 +23,8 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     
     min = 0;
     max = 0;
+    underflow = 0;
+    overflow = 0;
     data = new double[xbins*ybins];
 }
 
@@ -32,8 +34,10 @@ Histo2d::~Histo2d() {
 
 void Histo2d::fill(double x, double y, double v) {
     if (x < xlow || y < ylow) {
+        //std::cout << "Underflow " << x << " " << y << std::endl;
         underflow += v;
-    } else if (x >= xhigh || y >= yhigh) {
+    } else if (x > xhigh || y > yhigh) {
+        //std::cout << "Overflow " << x << " " << y << std::endl;
         overflow += v;
     } else {
         unsigned xbin = (x-xlow)/xbinWidth;
@@ -76,8 +80,9 @@ void Histo2d::plot(std::string prefix) {
     FILE *gnu = popen(cmd.c_str(), "w");
     
     fprintf(gnu, "set terminal postscript enhanced color \"Helvetica\" 14\n");
-    fprintf(gnu, "set palette defined ( 0 '#D53E4F', 1 '#F46D43', 2 '#FDAE61', 3 '#FEE08B', 4 '#E6F598', 5 '#ABDDA4', 6 '#66C2A5', 7 '#3288BD')\n");
-    fprintf(gnu, "set pm3d map\n");
+    fprintf(gnu, "set palette negative defined ( 0 '#D53E4F', 1 '#F46D43', 2 '#FDAE61', 3 '#FEE08B', 4 '#E6F598', 5 '#ABDDA4', 6 '#66C2A5', 7 '#3288BD')\n");
+    //fprintf(gnu, "set pm3d map\n");
+    //fprintf(gnu, "set \n");
     fprintf(gnu, "unset key\n");
     fprintf(gnu, "set title \"%s\"\n" , ResultBase::name.c_str());
     fprintf(gnu, "set xlabel \"%s\"\n" , ResultBase::xAxisTitle.c_str());
@@ -85,7 +90,9 @@ void Histo2d::plot(std::string prefix) {
     fprintf(gnu, "set cblabel \"%s\"\n" , ResultBase::zAxisTitle.c_str());
     fprintf(gnu, "set xrange[%f:%f]\n", xlow, xhigh);
     fprintf(gnu, "set yrange[%f:%f]\n", ylow, yhigh);
-    fprintf(gnu, "splot \"/tmp/tmp_%s.dat\" matrix u (($1+1)*((%f-%f)/%d)):(($2+1)*((%f-%f)/%d)):3\n", ResultBase::name.c_str(), xhigh, xlow, xbins, yhigh, ylow, ybins);
+    //fprintf(gnu, "set cbrange[0:120]\n");
+    //fprintf(gnu, "splot \"/tmp/tmp_%s.dat\" matrix u (($1)*((%f-%f)/%d)):(($2)*((%f-%f)/%d)):3\n", ResultBase::name.c_str(), xhigh, xlow, xbins, yhigh, ylow, ybins);
+    fprintf(gnu, "plot \"/tmp/tmp_%s.dat\" matrix u (($1+1)*((%f-%f)/%d)):(($2+1)*((%f-%f)/%d)):3 with image\n", ResultBase::name.c_str(), xhigh, xlow, xbins, yhigh, ylow, ybins);
     pclose(gnu);
 }
 

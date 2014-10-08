@@ -29,14 +29,23 @@ void Fei4::configure() {
 }
 
 void Fei4::configurePixels() {
+    // Increase threshold
+    uint16_t tmp = getValue(&Fei4::Vthin_Coarse);
+    writeRegister(&Fei4::Vthin_Coarse, 255);
+    
+    // Write Pixel Mask
     writeRegister(&Fei4::Colpr_Mode, 0x0);
     for (unsigned dc=0; dc<Fei4PixelCfg::n_DC; dc++) {
         writeRegister(&Fei4::Colpr_Addr, dc);
         for (unsigned bit=0; bit<Fei4PixelCfg::n_Bits; bit++) {
             wrFrontEnd(chipId, getCfg(bit, dc));
-            loadIntoPixel(bit);
+            loadIntoPixel(1 << bit);
+            while(core->isCmdEmpty() == 0);
         }
     }
+    // Set actual threshold
+    setValue(&Fei4::Vthin_Coarse, tmp);
+    writeRegister(&Fei4::Vthin_Coarse);
 }
 
 void Fei4::initMask(enum MASK_STAGE mask) {

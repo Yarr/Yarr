@@ -94,10 +94,10 @@ architecture Behavioral of wb_rx_bridge is
 	-- Constants
 	constant c_ALMOST_FULL_THRESHOLD : unsigned(10 downto 0) := TO_UNSIGNED(1900, 11);
 	constant c_PACKAGE_SIZE : unsigned(31 downto 0) := TO_UNSIGNED((250*256), 32); -- 250kByte
-	constant c_TIMEOUT : unsigned(31 downto 0) := TO_UNSIGNED(2**12, 32); -- Counts in 25ns = 0.82ms
+	constant c_TIMEOUT : unsigned(31 downto 0) := TO_UNSIGNED(2**12, 32); -- Counts in 5ns = 0.1ms
 	constant c_TIME_FRAME : unsigned(31 downto 0) := TO_UNSIGNED(200000000-1, 32); -- 200MHz clock cycles in 1 sec
-	constant c_EMPTY_THRESHOLD : unsigned(10 downto 0) := TO_UNSIGNED(32, 11);
-	constant c_EMPTY_TIMEOUT : unsigned(7 downto 0) := TO_UNSIGNED(500, 8);
+	constant c_EMPTY_THRESHOLD : unsigned(10 downto 0) := TO_UNSIGNED(31, 11);
+	constant c_EMPTY_TIMEOUT : unsigned(10 downto 0) := TO_UNSIGNED(500, 11);
 	
 	-- Signals
 	signal data_fifo_din : std_logic_vector(31 downto 0);
@@ -183,7 +183,7 @@ begin
 							wb_ack_o <= '1';
 							ctrl_fifo_rden <= '1';
 						else
-							wb_dat_o <= x"DEADBEEF";
+							wb_dat_o <= x"FFFFFFFF";
 							ctrl_fifo_dout_tmp <= (others => '0');
 							wb_ack_o <= '1';
 							ctrl_fifo_rden <= '0';

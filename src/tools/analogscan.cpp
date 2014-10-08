@@ -29,10 +29,10 @@ int main(void) {
     ClipBoard<Fei4Data> clipEvent;
     ClipBoard<ResultBase> clipHisto;
 
-    Fei4DigitalScan digScan(&g_fe, &tx, &rx, &clipRaw);
+    Fei4AnalogScan anaScan(&g_fe, &tx, &rx, &clipRaw);
     
     std::cout << "### Init Scan ###" << std::endl;
-    digScan.init();
+    anaScan.init();
 
     std::cout << "### Configure Module ###" << std::endl;
     tx.setCmdEnable(0x1);
@@ -43,13 +43,13 @@ int main(void) {
     rx.setRxEnable(0x1);
 
     std::cout << "### Pre Scan ###" << std::endl;
-    digScan.preScan();
+    anaScan.preScan();
 
     std::cout << "### Scan ###" << std::endl;
-    digScan.run();
+    anaScan.run();
 
     std::cout << "### Post Scan ###" << std::endl;
-    digScan.postScan();
+    anaScan.postScan();
     
     std::cout << "### Disabling RX ###" << std::endl;
     tx.setCmdEnable(0x0);
@@ -70,8 +70,8 @@ int main(void) {
     histogrammer.publish();
 
     std::cout << "### Saving ###" << std::endl;
-    histogrammer.plot("digitalscan");
-    histogrammer.toFile("digitalsca");
+    histogrammer.plot("analogscan");
+    histogrammer.toFile("analogscan");
     std::cout << "... done!" << std::endl;
 
     return 0;

@@ -19,7 +19,8 @@ class Fei4DigitalScan : public ScanBase {
         Fei4DigitalScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawData> *data);
         
         void init();
-        void configure();
+        void preScan();
+        void postScan() {}
 
     private:
         enum MASK_STAGE mask;

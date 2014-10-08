@@ -4,6 +4,7 @@
  */
 
 #include "StdDataLoop.h"
+#include <unistd.h>
 
 StdDataLoop::StdDataLoop() : LoopActionBase() {
     storage = NULL;
@@ -35,20 +36,32 @@ void StdDataLoop::execPart2() {
     unsigned count = 0;
     uint32_t done = 0;
     uint32_t rate = -1;
+    unsigned iterations = 0;
     RawData *newData = NULL;
     while (done == 0) {
         //rate = g_rx->getDataRate();
         done = g_tx->isTrigDone();
         do {
             newData =  g_rx->readData();
+            iterations++;
             if (newData != NULL) {
                 storage->pushData(newData);
                 count += newData->words;
             }
         } while (newData != NULL);
     }
+    usleep(50);
+    do {
+        newData =  g_rx->readData();
+        iterations++;
+        if (newData != NULL) {
+            storage->pushData(newData);
+            count += newData->words;
+        }
+    } while (newData != NULL);
+    
     if (verbose)
-        std::cout << " --> Received " << count << " words!" << std::endl;
+        std::cout << " --> Received " << count << " words! " << iterations << std::endl;
     m_done = true;
 }
 

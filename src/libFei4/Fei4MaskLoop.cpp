@@ -9,6 +9,8 @@ Fei4MaskLoop::Fei4MaskLoop() : LoopActionBase() {
     m_mask = MASK_16;
     m_it = 16;
     m_itCur = 0;
+    enable_sCap = false;
+    enable_lCap = false;
 }
 
 void Fei4MaskLoop::init() {
@@ -18,9 +20,13 @@ void Fei4MaskLoop::init() {
     // Shift Mask into all pixels
     g_fe->writeRegister(&Fei4::Colpr_Mode, 0x3);
     g_fe->writeRegister(&Fei4::Colpr_Addr, 0x0);
+    g_fe->initMask(MASK_1);
+    if (enable_lCap) g_fe->loadIntoPixel(1 << 6);
+    if (enable_sCap) g_fe->loadIntoPixel(1 << 7);
     g_fe->initMask(m_mask);
-    g_fe->loadIntoPixel(0x1);
+    g_fe->loadIntoPixel(1 << 0);
     m_itCur = 0;
+    while(g_tx->isCmdEmpty() == 0);
 }
 
 void Fei4MaskLoop::end() {
@@ -30,7 +36,10 @@ void Fei4MaskLoop::end() {
     g_fe->writeRegister(&Fei4::Colpr_Mode, 0x3);
     g_fe->writeRegister(&Fei4::Colpr_Addr, 0x0);
     g_fe->initMask(MASK_NONE);
-    g_fe->loadIntoPixel(0x1);
+    g_fe->loadIntoPixel(1 << 0);
+    if (enable_lCap) g_fe->loadIntoPixel(1 << 6);
+    if (enable_sCap) g_fe->loadIntoPixel(1 << 7);
+    while(g_tx->isCmdEmpty() == 0);
 }
 
 void Fei4MaskLoop::execPart1() {
@@ -41,13 +50,16 @@ void Fei4MaskLoop::execPart1() {
 void Fei4MaskLoop::execPart2() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
-    std::cout << " ---> Mask Stage" << m_itCur << std::endl;
+    std::cout << " ---> Mask Stage " << m_itCur << std::endl;
     m_itCur++;
+    if (!(m_itCur < m_it)) m_done = true;
     g_fe->writeRegister(&Fei4::Colpr_Mode, 0x3);
     g_fe->writeRegister(&Fei4::Colpr_Addr, 0x0);
     g_fe->shiftMask();
-    g_fe->loadIntoPixel(0x1);
-    if (!(m_itCur < m_it)) m_done = true;
+    g_fe->loadIntoPixel(1 << 0);
+    //if (enable_lCap) g_fe->loadIntoPixel(1 << 6);
+    //if (enable_sCap) g_fe->loadIntoPixel(1 << 7);
+    while(g_tx->isCmdEmpty() == 0);
 }
 
 void Fei4MaskLoop::setMaskStage(enum MASK_STAGE mask) {
