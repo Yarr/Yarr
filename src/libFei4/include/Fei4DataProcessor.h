@@ -10,6 +10,7 @@
 // ################################
 
 #include <vector>
+#include <array>
 
 #include "DataProcessor.h"
 #include "ClipBoard.h"
