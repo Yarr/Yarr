@@ -38,7 +38,7 @@ void Fei4DataProcessor::process() {
                 // Pixel Header
                 l1id = (value & 0x7c00) >> 10;
                 bcid = (value & 0x03FF);
-                curOut->newEvent(l1id);
+                curOut->newEvent(l1id, bcid);
                 events++;
             } else if (((value & 0x00FF0000) >> 16) == 0xef) {
                 // Service Record
@@ -51,7 +51,7 @@ void Fei4DataProcessor::process() {
                 // Value Record
             } else {
                 if (events == 0 ) {
-                    curOut->newEvent(l1id);
+                    curOut->newEvent(l1id, bcid);
                     events++;
                 }
                 unsigned col = (value & 0xFE0000) >> 17;
@@ -62,12 +62,12 @@ void Fei4DataProcessor::process() {
                     std::cout << "Someting wrong: " << i << " " << curIn->words << " " << std::hex << value << std::dec << std::endl;
                 if (totCode[hitDiscCfg][tot1] > 0) {
                     if (curOut != NULL)
-                        curOut->curEvent->addHit(bcid, row, col, totCode[hitDiscCfg][tot1]);
+                        curOut->curEvent->addHit(row, col, totCode[hitDiscCfg][tot1]);
                     hits++;
                 }
                 if (totCode[hitDiscCfg][tot1] > 0) {
                     if (curOut != NULL)
-                        curOut->curEvent->addHit(bcid, row+1, col, totCode[hitDiscCfg][tot2]);
+                        curOut->curEvent->addHit(row+1, col, totCode[hitDiscCfg][tot2]);
                     hits++;
                 }
             }

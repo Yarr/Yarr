@@ -10,6 +10,8 @@
 // ################################
 
 #include <iostream>
+#include <fstream>
+#include <string>
 
 #include "ResultBase.h"
 
@@ -24,6 +26,9 @@ class Histo1d : public ResultBase {
         
         void setBin(unsigned n, double v);
         double getBin(unsigned n);
+        
+        void toFile(std::string filename, bool header=true);
+        void plot(std::string filename);
 
     private:
         double *data;

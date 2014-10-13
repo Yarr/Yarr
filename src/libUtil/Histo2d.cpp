@@ -32,6 +32,10 @@ Histo2d::~Histo2d() {
     delete data;
 }
 
+unsigned Histo2d::size() const {
+    return xbins*ybins;
+}
+
 void Histo2d::fill(double x, double y, double v) {
     if (x < xlow || y < ylow) {
         //std::cout << "Underflow " << x << " " << y << std::endl;
@@ -49,6 +53,31 @@ void Histo2d::fill(double x, double y, double v) {
             min = v;
     }
 }
+
+void Histo2d::setAll(double v) {
+    for (unsigned int i=0; i<ybins; i++) {
+        for (unsigned int j=0; j<xbins; j++) {
+            data[i+(j*ybins)] = v;
+        }
+    }
+}
+
+void Histo2d::add(const Histo2d &h) {
+    if (this->size() != h.size())
+        return;
+    for (unsigned int i=0; i<(xbins*ybins); i++) {
+        data[i] += h.getBin(i);
+    }
+}
+
+double Histo2d::getBin(unsigned n) const {
+    if (n < this->size()) {
+        return data[n];
+    } else {
+        return -1;
+    }
+}
+
 
 void Histo2d::toFile(std::string prefix, bool header) {
     std::string filename = prefix + "_" + ResultBase::name + ".dat";

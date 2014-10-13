@@ -15,24 +15,24 @@
 
 class Fei4Hit {
     public:
-        Fei4Hit(int arg_bcid, int arg_row, int arg_col, int arg_tot) {
-            bcid = arg_bcid;
+        Fei4Hit(unsigned arg_row, unsigned arg_col, unsigned arg_tot) {
             row = arg_row;
             col = arg_col;
             tot = arg_tot;
         }
         ~Fei4Hit(){};
 
-        int bcid;
-        int row;
-        int col;
-        int tot;
+        unsigned row;
+        unsigned col;
+        unsigned tot;
 };
 
 class Fei4Event {
     public:
-        Fei4Event(int arg_l1id) {
+        Fei4Event(unsigned arg_l1id, unsigned arg_bcid) {
             l1id = arg_l1id;
+            bcid = arg_bcid;
+            nHits = 0;
         }
         ~Fei4Event() {
             while(!hits.empty()) {
@@ -42,11 +42,14 @@ class Fei4Event {
             }
         }
 
-        void addHit(int arg_bcid, int arg_row, int arg_col, int arg_tot) {
-            hits.push_back(new Fei4Hit(arg_bcid, arg_row, arg_col, arg_tot));
+        void addHit(unsigned arg_row, unsigned arg_col, unsigned arg_tot) {
+            hits.push_back(new Fei4Hit(arg_row, arg_col, arg_tot));
+            nHits++;
         }
 
-        int l1id;
+        unsigned l1id;
+        unsigned bcid;
+        unsigned nHits;
         std::deque<Fei4Hit*> hits;
 };
 
@@ -66,8 +69,8 @@ class Fei4Data {
             }
         }
 
-        void newEvent(int arg_l1id) {
-            curEvent = new Fei4Event(arg_l1id);
+        void newEvent(unsigned arg_l1id, unsigned arg_bcid) {
+            curEvent = new Fei4Event(arg_l1id, arg_bcid);
             events.push_back(curEvent);
         }
 

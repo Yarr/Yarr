@@ -57,7 +57,7 @@ void Fei4DigitalScan::init() {
 // Do necessary pre-scan configuration
 void Fei4DigitalScan::preScan() {
     g_fe->writeRegister(&Fei4::Trig_Count, 12);
-    g_fe->writeRegister(&Fei4::Trig_Lat, 255-triggerDelay-8);
+    g_fe->writeRegister(&Fei4::Trig_Lat, 255-triggerDelay-4);
     g_fe->writeRegister(&Fei4::DigHitIn_Sel, 0x1);
     g_fe->writeRegister(&Fei4::Vthin_Coarse, 200);
     while(g_tx->isCmdEmpty() == 0);

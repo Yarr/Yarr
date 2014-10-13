@@ -65,6 +65,7 @@ int main(void) {
     histogrammer.addHistogrammer(new OccupancyMap());
     histogrammer.addHistogrammer(new TotMap());
     histogrammer.addHistogrammer(new Tot2Map());
+    histogrammer.addHistogrammer(new L1Dist());
     histogrammer.connect(&clipEvent, &clipHisto);
     histogrammer.process();
     histogrammer.publish();

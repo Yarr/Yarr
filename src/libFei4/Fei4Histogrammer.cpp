@@ -88,5 +88,18 @@ void Tot2Map::processEvent(Fei4Data *data) {
     }
 }
 
-
+void L1Dist::processEvent(Fei4Data *data) {
+    // Event Loop
+    for (std::deque<Fei4Event*>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
+        Fei4Event *curEvent = *eventIt;
+        if(curEvent->l1id != l1id) {
+            l1id = curEvent->l1id;
+            bcid_offset = curEvent->bcid;
+        }
+        int delta_bcid = curEvent->bcid - bcid_offset;
+        if (delta_bcid < 0)
+            delta_bcid += 0x400;
+        h->fill(delta_bcid, curEvent->nHits);
+    }
+}
     
