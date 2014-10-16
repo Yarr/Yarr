@@ -30,6 +30,7 @@ class LoopEngine : public Engine {
         Fei4 *g_fe;
         TxCore *g_tx;
         RxCore *g_rx;
+        LoopStatus stat;
 };
 
 #endif

@@ -24,7 +24,8 @@ void LoopEngine::addAction(Engine::element_value_type el){
 void LoopEngine::init() {
     Engine::loop_list_type::iterator it = m_list.begin();
     while(m_list.end() != it) {
-        (*it)->setup(g_fe, g_tx, g_rx);
+        stat.addLoop((*it).get());
+        (*it)->setup(&stat, g_fe, g_tx, g_rx);
         ++it;
     }
 }
