@@ -14,19 +14,13 @@
 
 #include "BitOps.h"
 
-class BaseField {
-    protected:
-        BaseField() {}
-        ~BaseField() {}
-};
-
 template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight = false>
-class Field : BaseField {
+class Field {
     private:
         T* m_cfg;
 
     public:
-        Field() : BaseField() {};
+        Field(){};
         
         void initField(T* cfg, const T& cfgBits) {
             m_cfg = cfg;

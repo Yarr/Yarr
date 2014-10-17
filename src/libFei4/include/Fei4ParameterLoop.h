@@ -8,13 +8,16 @@
 
 #include "LoopActionBase.h"
 
+enum LOOP_PAR {
+    VCAL_PAR
+};
+
 class Fei4ParameterLoop : public LoopActionBase {
     public:
         Fei4ParameterLoop();
 
-        template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight>
-        void setParamter(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref) {
-            par = new Field<T, mOffset, bOffset, mask, msbRight>(ref);
+        void setParameter(enum LOOP_PAR x) {
+            par = x;
         }
         
         void setRange(unsigned arg_min, unsigned arg_max, unsigned arg_step);
@@ -25,12 +28,13 @@ class Fei4ParameterLoop : public LoopActionBase {
         void execPart1();
         void execPart2();
 
+        void writePar();
+
+        enum LOOP_PAR par;
         unsigned min;
         unsigned step;
         unsigned max;
         unsigned cur;
-
-        Field<uint16_t, 0, 0, 0, false> Fei4GlobalCfg::*par; 
 };
 
 
