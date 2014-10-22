@@ -10,21 +10,17 @@
 // ################################
 
 #include <deque>
+#include <list>
 #include <vector>
 #include <string>
 
-class Fei4Hit {
-    public:
-        Fei4Hit(unsigned arg_row, unsigned arg_col, unsigned arg_tot) {
-            row = arg_row;
-            col = arg_col;
-            tot = arg_tot;
-        }
-        ~Fei4Hit(){};
+#include "LoopStatus.h"
 
-        unsigned row;
-        unsigned col;
-        unsigned tot;
+struct Fei4Hit {
+    unsigned col : 7;
+    unsigned row : 9;
+    unsigned tot : 5;
+    unsigned unused : 11;
 };
 
 class Fei4Event {
@@ -43,14 +39,18 @@ class Fei4Event {
         }
 
         void addHit(unsigned arg_row, unsigned arg_col, unsigned arg_tot) {
-            hits.push_back(new Fei4Hit(arg_row, arg_col, arg_tot));
+            struct Fei4Hit *tmp = new Fei4Hit();
+            tmp->col = arg_col;
+            tmp->row = arg_row;
+            tmp->tot = arg_tot;
+            hits.push_back(tmp);
             nHits++;
         }
 
-        unsigned l1id;
-        unsigned bcid;
-        unsigned nHits;
-        std::deque<Fei4Hit*> hits;
+        uint16_t l1id;
+        uint16_t bcid;
+        uint16_t nHits;
+        std::vector<Fei4Hit*> hits;
 };
 
 class Fei4Data {
@@ -74,11 +74,19 @@ class Fei4Data {
             events.push_back(curEvent);
         }
 
+        void delLastEvent() {
+            delete curEvent;
+            events.pop_back();
+            curEvent = events.back();
+        }
+
         void toFile(std::string filename);
 
 
         Fei4Event *curEvent;
-        std::deque<Fei4Event*> events;
+
+        LoopStatus lStat;
+        std::list<Fei4Event*> events;
         std::vector<int> serviceRecords;
 };
 

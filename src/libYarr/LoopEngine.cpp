@@ -23,8 +23,22 @@ void LoopEngine::addAction(Engine::element_value_type el){
 // Iniitialization step, needed before execution
 void LoopEngine::init() {
     Engine::loop_list_type::iterator it = m_list.begin();
+   
+    unsigned count = 0;
     while(m_list.end() != it) {
-        stat.addLoop((*it).get());
+        if ((*it)->split())
+            count++;
+        ++it;
+    }
+    stat.init(count);
+    
+    unsigned i = 0;
+    it = m_list.begin();
+    while(m_list.end() != it) {
+        if ((*it)->split()) {
+            stat.addLoop(i, (*it).get());
+            i++;
+        }
         (*it)->setup(&stat, g_fe, g_tx, g_rx);
         ++it;
     }

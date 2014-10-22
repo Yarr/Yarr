@@ -12,9 +12,12 @@
 #include <iostream>
 #include <string>
 
+#include "LoopStatus.h"
+
 class ResultBase {
     public:
         ResultBase(std::string arg_name);
+        ResultBase(std::string arg_name, LoopStatus &stat);
         virtual ~ResultBase();
 
         std::string getName();
@@ -36,6 +39,8 @@ class ResultBase {
         std::string xAxisTitle;
         std::string yAxisTitle;
         std::string zAxisTitle;
+            
+        LoopStatus lStat;
     private:
 };
 #endif

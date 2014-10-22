@@ -12,8 +12,8 @@ AR = ar
 CPP = g++
 CPPFLAGS += -std=c++11 -Wall -Wunused-variable -IlibSpec/include \
 			-IlibYarr/include -IlibUtil/include -IlibFei4/include
-CPPFLAGS_DEBUG += -g -O1
-CPPFLAGS_RELEASE += -O2 -DNDEBUG
+CPPFLAGS_DEBUG += -g -O2
+CPPFLAGS_RELEASE += -O0 -DNDEBUG
 
 LD = g++
 LDFLAGS += #`root-config --ldflags`

@@ -8,37 +8,20 @@
 #define LOOPACTIONBASE_H
 
 #include <memory>
-#include <vector>
-#include <map>
 
 #include "Fei4.h"
 #include "TxCore.h"
 #include "RxCore.h"
+#include "LoopStatus.h"
 
 using std::shared_ptr;
-
-class LoopActionBase;
-
-class LoopStatus {
-    public:
-        void addLoop(LoopActionBase *loop) {
-            statVec.push_back(0);
-            statMap[loop] = &statVec.back();
-        }
-        
-        void set(unsigned i, double v) {statVec[i] = v;}
-        void set(LoopActionBase *l, double v) {*statMap[l] = v;}
-        unsigned get(unsigned i) {return statVec[i];}
-        unsigned get(LoopActionBase *l) {return *statMap[l];}
-
-    private:
-        std::map<LoopActionBase*, unsigned*> statMap;    
-        std::vector<unsigned> statVec;
-};
 
 class LoopActionBase {
     public:
         LoopActionBase();
+
+        void setSplitData(bool v=true);
+        bool split();
 
         void setVerbose(bool v=true);
         void setup(LoopStatus *stat, Fei4 *fe, TxCore *tx, RxCore *rx);
@@ -54,6 +37,7 @@ class LoopActionBase {
 
         bool m_done;
         bool verbose;
+        bool splitData;
 
         LoopStatus *g_stat;
         Fei4 *g_fe;

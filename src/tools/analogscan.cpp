@@ -29,7 +29,7 @@ int main(void) {
     ClipBoard<Fei4Data> clipEvent;
     ClipBoard<ResultBase> clipHisto;
 
-    Fei4AnalogScan anaScan(&g_fe, &tx, &rx, &clipRaw);
+    Fei4ThresholdScan anaScan(&g_fe, &tx, &rx, &clipRaw);
     
     std::cout << "### Init Scan ###" << std::endl;
     anaScan.init();
@@ -58,21 +58,26 @@ int main(void) {
     std::cout << "### Analyzing data ###" << std::endl;
     Fei4DataProcessor proc(fe.getValue(&Fei4::HitDiscCnfg));
     proc.connect(&clipRaw, &clipEvent);
+    std::string tmp;
+    std::cout << " After connect" << std::endl;
+    std::cin >> tmp;
     proc.process();
+    std::cout << " After process" << std::endl;
+    std::cin >> tmp;
     
     std::cout << "### Histogramming data ###" << std::endl;
     Fei4Histogrammer histogrammer;
     histogrammer.addHistogrammer(new OccupancyMap());
-    histogrammer.addHistogrammer(new TotMap());
-    histogrammer.addHistogrammer(new Tot2Map());
-    histogrammer.addHistogrammer(new L1Dist());
+    //histogrammer.addHistogrammer(new TotMap());
+    //histogrammer.addHistogrammer(new Tot2Map());
+    //histogrammer.addHistogrammer(new L1Dist());
     histogrammer.connect(&clipEvent, &clipHisto);
     histogrammer.process();
     histogrammer.publish();
 
     std::cout << "### Saving ###" << std::endl;
-    histogrammer.plot("analogscan");
-    histogrammer.toFile("analogscan");
+    //histogrammer.plot("analogscan");
+    //histogrammer.toFile("analogscan");
     std::cout << "... done!" << std::endl;
 
     return 0;

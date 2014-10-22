@@ -11,14 +11,24 @@ LoopActionBase::LoopActionBase() {
     g_fe = NULL;
     g_tx = NULL;
     g_rx = NULL;
+    g_stat = NULL;
     verbose = false;
     m_done = false;
+    splitData = false;
 }
 
 void LoopActionBase::setVerbose(bool v) {
     if (v)
         std::cout << __PRETTY_FUNCTION__ << " : Enabling debug output" << std::endl;
     verbose = v;
+}
+
+void LoopActionBase::setSplitData(bool v) {
+    splitData = v;
+}
+
+bool LoopActionBase::split() {
+    return splitData;
 }
 
 void LoopActionBase::setup(LoopStatus *stat, Fei4 *fe, TxCore *tx, RxCore *rx) {

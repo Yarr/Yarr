@@ -22,6 +22,8 @@ void Fei4ParameterLoop::end() {
 void Fei4ParameterLoop::execPart1() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << " : Parameter Loop at -> " << cur << std::endl;
+    if (splitData)
+        g_stat->set(this, cur);
 }
 
 void Fei4ParameterLoop::execPart2() {

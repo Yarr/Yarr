@@ -11,6 +11,8 @@
 
 #include <stdint.h>
 
+#include "LoopStatus.h"
+
 class RawData {
     public:
         RawData(uint32_t arg_adr, uint32_t *arg_buf, unsigned arg_words);
@@ -19,6 +21,7 @@ class RawData {
         uint32_t adr;
         uint32_t *buf;
         unsigned words;
+        LoopStatus stat;
 };
 
 #endif

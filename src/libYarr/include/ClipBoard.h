@@ -10,7 +10,7 @@
 // ################################
 
 #include <mutex>
-#include <queue>
+#include <deque>
 
 #include "RawData.h"
 #include "Fei4EventData.h"
@@ -21,14 +21,14 @@ class ClipBoard {
 
         void pushData(T *data) {
             queueMutex.lock();
-            if (data != NULL) dataQueue.push(data);
+            if (data != NULL) dataQueue.push_back(data);
             queueMutex.unlock();
         }
 
         T* popData() {
             queueMutex.lock();
             T *tmp = dataQueue.front();
-            dataQueue.pop();
+            dataQueue.pop_front();
             queueMutex.unlock();
             return tmp;
         }
@@ -41,9 +41,18 @@ class ClipBoard {
             return dataQueue.size();
         }
 
+        typename std::deque<T*>::iterator begin() {
+            return dataQueue.begin();
+        }
+       
+
+        typename std::deque<T*>::iterator end() {
+            return dataQueue.end();
+        }
+
     private:
         std::mutex queueMutex;
-        std::queue<T*> dataQueue;
+        std::deque<T*> dataQueue;
 
 };
 

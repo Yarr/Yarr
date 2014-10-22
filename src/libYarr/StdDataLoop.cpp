@@ -45,6 +45,7 @@ void StdDataLoop::execPart2() {
             newData =  g_rx->readData();
             iterations++;
             if (newData != NULL) {
+                newData->stat = *g_stat;
                 storage->pushData(newData);
                 count += newData->words;
             }
@@ -55,6 +56,7 @@ void StdDataLoop::execPart2() {
         newData =  g_rx->readData();
         iterations++;
         if (newData != NULL) {
+            newData->stat = *g_stat;
             storage->pushData(newData);
             count += newData->words;
         }

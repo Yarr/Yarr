@@ -11,6 +11,9 @@
 
 #include <iostream>
 #include <deque>
+#include <map>
+#include <list>
+#include <vector>
 
 #include "DataProcessor.h"
 #include "ClipBoard.h"
@@ -18,11 +21,14 @@
 #include "ResultBase.h"
 #include "Histo1d.h"
 #include "Histo2d.h"
+#include "LoopStatus.h"
 
 class HistogramAlgorithm {
     public:
         HistogramAlgorithm() {}
         virtual ~HistogramAlgorithm() {}
+
+        virtual void create(LoopStatus &stat) {}
         
         ResultBase* getResult() {
             return r;
@@ -59,19 +65,26 @@ class Fei4Histogrammer : public DataProcessor {
         ClipBoard<ResultBase> *output;
 
         std::vector<HistogramAlgorithm*> algorithms;
+        LoopStatus curStat;
+        bool first;
 };
 
 class OccupancyMap : public HistogramAlgorithm {
     public:
         OccupancyMap() : HistogramAlgorithm() {
-            h = new Histo2d("OccupancyMap", 80, 0.5, 80.5, 336, 0.5, 336.5);
+            r = NULL;
+            h = NULL;
+        }
+        ~OccupancyMap() {
+            delete h;
+        }
+        
+        void create(LoopStatus &stat) {
+            h = new Histo2d("OccupancyMap", 80, 0.5, 80.5, 336, 0.5, 336.5, stat);
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
             h->setZaxisTitle("Hits");
             r = (ResultBase*) h;
-        }
-        ~OccupancyMap() {
-            delete h;
         }
         
         void processEvent(Fei4Data *data);
@@ -83,14 +96,19 @@ class OccupancyMap : public HistogramAlgorithm {
 class TotMap : public HistogramAlgorithm {
     public:
         TotMap() : HistogramAlgorithm() {
-            h = new Histo2d("TotMap", 80, 0.5, 80.5, 336, 0.5, 336.5);
+            h = NULL;
+            r = NULL;
+        }
+        ~TotMap() {
+            delete h;
+        }
+
+        void create(LoopStatus &stat) {
+            h = new Histo2d("TotMap", 80, 0.5, 80.5, 336, 0.5, 336.5, stat);
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
             h->setZaxisTitle("Total ToT");
             r = (ResultBase*) h;
-        }
-        ~TotMap() {
-            delete h;
         }
 
         void processEvent(Fei4Data *data);
@@ -102,14 +120,17 @@ class TotMap : public HistogramAlgorithm {
 class Tot2Map : public HistogramAlgorithm {
     public:
         Tot2Map() : HistogramAlgorithm() {
-            h = new Histo2d("Tot2Map", 80, 0.5, 80.5, 336, 0.5, 336.5);
+        }
+        ~Tot2Map() {
+            delete h;
+        }
+
+        void create(LoopStatus &stat) {
+            h = new Histo2d("Tot2Map", 80, 0.5, 80.5, 336, 0.5, 336.5, stat);
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
             h->setZaxisTitle("Total ToT2");
             r = (ResultBase*) h;
-        }
-        ~Tot2Map() {
-            delete h;
         }
 
         void processEvent(Fei4Data *data);
@@ -121,15 +142,21 @@ class Tot2Map : public HistogramAlgorithm {
 class L1Dist : public HistogramAlgorithm {
     public:
         L1Dist() : HistogramAlgorithm() {
+            h = NULL;
+            r = NULL;
+        }
+
+        ~L1Dist() {
+            delete h;
+        }
+
+        void create(LoopStatus &stat) {
             h = new Histo1d("L1Dist", 16, -0.5, 15.5);
             h->setXaxisTitle("L1A");
             h->setYaxisTitle("Hits");
             r = (ResultBase*) h;
             l1id = 33;
             bcid_offset = 0;
-        }
-        ~L1Dist() {
-            delete h;
         }
 
         void processEvent(Fei4Data *data);

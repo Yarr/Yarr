@@ -9,10 +9,10 @@
 #include "Fei4DigitalScan.h"
 
 Fei4DigitalScan::Fei4DigitalScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawData> *data) : ScanBase(fe, tx, rx, data) {
-    mask = MASK_32;
+    mask = MASK_16;
     dcMode = QUAD_DC;
     numOfTriggers = 100;
-    triggerFrequency = 20e3;
+    triggerFrequency = 12e3;
     triggerDelay = 50;
     verbose = false;
 }
@@ -56,7 +56,7 @@ void Fei4DigitalScan::init() {
 
 // Do necessary pre-scan configuration
 void Fei4DigitalScan::preScan() {
-    g_fe->writeRegister(&Fei4::Trig_Count, 12);
+    g_fe->writeRegister(&Fei4::Trig_Count, 10);
     g_fe->writeRegister(&Fei4::Trig_Lat, 255-triggerDelay-4);
     g_fe->writeRegister(&Fei4::DigHitIn_Sel, 0x1);
     g_fe->writeRegister(&Fei4::Vthin_Coarse, 200);

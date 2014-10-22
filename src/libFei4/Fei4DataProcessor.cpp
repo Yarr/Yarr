@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "LoopStatus.h"
+
 Fei4DataProcessor::Fei4DataProcessor(unsigned arg_hitDiscCfg) : DataProcessor(){
     input = NULL;
     output = NULL;
@@ -28,6 +30,7 @@ void Fei4DataProcessor::process() {
         // Get data containers
         RawData *curIn = input->popData();
         Fei4Data *curOut = new Fei4Data();
+        curOut->lStat = curIn->stat;
 
         // Process
         int hits = 0;
@@ -35,11 +38,16 @@ void Fei4DataProcessor::process() {
         for (unsigned i=0; i<curIn->words; i++) {
             uint32_t value = curIn->buf[i];
             if (((value & 0x00FF0000) >> 16) == 0xe9) {
+                // Delete empty events
+                if (events > 0 && hits == 0)
+                    curOut->delLastEvent();
                 // Pixel Header
                 l1id = (value & 0x7c00) >> 10;
                 bcid = (value & 0x03FF);
                 curOut->newEvent(l1id, bcid);
+
                 events++;
+                hits = 0;
             } else if (((value & 0x00FF0000) >> 16) == 0xef) {
                 // Service Record
                 unsigned code = (value & 0xFC00) >> 10;
@@ -53,11 +61,12 @@ void Fei4DataProcessor::process() {
                 if (events == 0 ) {
                     curOut->newEvent(l1id, bcid);
                     events++;
+                    hits = 0;
                 }
-                unsigned col = (value & 0xFE0000) >> 17;
-                unsigned row = (value & 0x01FF00) >> 8;
-                unsigned tot1 = (value & 0xF0) >> 4;
-                unsigned tot2 = (value & 0xF);
+                uint16_t col = (value & 0xFE0000) >> 17;
+                uint16_t row = (value & 0x01FF00) >> 8;
+                uint8_t tot1 = (value & 0xF0) >> 4;
+                uint8_t tot2 = (value & 0xF);
                 if (i > 0 && (col == 0 || row == 0))
                     std::cout << "Someting wrong: " << i << " " << curIn->words << " " << std::hex << value << std::dec << std::endl;
                 if (totCode[hitDiscCfg][tot1] > 0) {

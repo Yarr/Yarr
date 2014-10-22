@@ -18,6 +18,8 @@ class Histo2d : public ResultBase {
     public:
         Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
                 unsigned arg_ybins, double arg_ylow, double arg_yhigh);
+        Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
+                unsigned arg_ybins, double arg_ylow, double arg_yhigh, LoopStatus &stat);
         ~Histo2d();
         
         unsigned size() const;

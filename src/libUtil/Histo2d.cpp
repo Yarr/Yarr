@@ -28,6 +28,25 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     data = new double[xbins*ybins];
 }
 
+Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
+        unsigned arg_ybins, double arg_ylow, double arg_yhigh, LoopStatus &stat) : ResultBase(arg_name, stat) {
+    xbins = arg_xbins;
+    xlow = arg_xlow;
+    xhigh = arg_xhigh;
+    xbinWidth = (xhigh - xlow)/xbins;
+    
+    ybins = arg_ybins;
+    ylow = arg_ylow;
+    yhigh = arg_yhigh;
+    ybinWidth = (yhigh - ylow)/ybins;
+    
+    min = 0;
+    max = 0;
+    underflow = 0;
+    overflow = 0;
+    data = new double[xbins*ybins];
+}
+
 Histo2d::~Histo2d() {
     delete data;
 }
@@ -103,7 +122,10 @@ void Histo2d::toFile(std::string prefix, bool header) {
 void Histo2d::plot(std::string prefix) {
     // Put raw histo data in tmp file
     this->toFile("/tmp/tmp", false);
-    std::string cmd = "gnuplot | ps2pdf - " + prefix + "_" + ResultBase::name + ".pdf";
+    std::string cmd = "gnuplot | ps2pdf - " + prefix + "_" + ResultBase::name;
+    for (unsigned i=0; i<lStat.size(); i++)
+        cmd += "_" + std::to_string(lStat.get(i));
+    cmd += ".pdf";
 
     // Open gnuplot as file and pipe commands
     FILE *gnu = popen(cmd.c_str(), "w");

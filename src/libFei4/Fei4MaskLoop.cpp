@@ -15,7 +15,6 @@ Fei4MaskLoop::Fei4MaskLoop() : LoopActionBase() {
 
 void Fei4MaskLoop::init() {
     m_done = false;
-    g_stat->set(this, 0);
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     // Shift Mask into all pixels
@@ -46,6 +45,8 @@ void Fei4MaskLoop::end() {
 void Fei4MaskLoop::execPart1() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
+    if (splitData)
+        g_stat->set(this, m_itCur);
 }
 
 void Fei4MaskLoop::execPart2() {
@@ -53,7 +54,6 @@ void Fei4MaskLoop::execPart2() {
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     std::cout << " ---> Mask Stage " << m_itCur << std::endl;
     m_itCur++;
-    g_stat->set(this, m_itCur);
     if (!(m_itCur < m_it)) m_done = true;
     g_fe->writeRegister(&Fei4::Colpr_Mode, 0x3);
     g_fe->writeRegister(&Fei4::Colpr_Addr, 0x0);

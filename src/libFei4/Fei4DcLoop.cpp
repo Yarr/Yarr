@@ -46,7 +46,9 @@ void Fei4DcLoop::end() {
 
 void Fei4DcLoop::execPart1() {
     if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+        std::cout << __PRETTY_FUNCTION__ << " --> " << m_col << std::endl;
+    if (splitData)
+        g_stat->set(this, m_col);
     // Address col
     g_fe->writeRegister(&Fei4::Colpr_Addr, m_col);
 }
