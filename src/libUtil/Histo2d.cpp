@@ -10,7 +10,7 @@
 #include <stdio.h>
 
 Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
-        unsigned arg_ybins, double arg_ylow, double arg_yhigh) : ResultBase(arg_name) {
+        unsigned arg_ybins, double arg_ylow, double arg_yhigh) : HistogramBase(arg_name) {
     xbins = arg_xbins;
     xlow = arg_xlow;
     xhigh = arg_xhigh;
@@ -29,7 +29,7 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
 }
 
 Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
-        unsigned arg_ybins, double arg_ylow, double arg_yhigh, LoopStatus &stat) : ResultBase(arg_name, stat) {
+        unsigned arg_ybins, double arg_ylow, double arg_yhigh, LoopStatus &stat) : HistogramBase(arg_name, stat) {
     xbins = arg_xbins;
     xlow = arg_xlow;
     xhigh = arg_xhigh;
@@ -99,7 +99,7 @@ double Histo2d::getBin(unsigned n) const {
 
 
 void Histo2d::toFile(std::string prefix, bool header) {
-    std::string filename = prefix + "_" + ResultBase::name + ".dat";
+    std::string filename = prefix + "_" + HistogramBase::name + ".dat";
     std::fstream file(filename, std::fstream::out | std::fstream::trunc);
     // Header
     if (header) {
@@ -122,7 +122,7 @@ void Histo2d::toFile(std::string prefix, bool header) {
 void Histo2d::plot(std::string prefix) {
     // Put raw histo data in tmp file
     this->toFile("/tmp/tmp", false);
-    std::string cmd = "gnuplot | ps2pdf - " + prefix + "_" + ResultBase::name;
+    std::string cmd = "gnuplot | ps2pdf - " + prefix + "_" + HistogramBase::name;
     for (unsigned i=0; i<lStat.size(); i++)
         cmd += "_" + std::to_string(lStat.get(i));
     cmd += ".pdf";
@@ -135,15 +135,15 @@ void Histo2d::plot(std::string prefix) {
     //fprintf(gnu, "set pm3d map\n");
     //fprintf(gnu, "set \n");
     fprintf(gnu, "unset key\n");
-    fprintf(gnu, "set title \"%s\"\n" , ResultBase::name.c_str());
-    fprintf(gnu, "set xlabel \"%s\"\n" , ResultBase::xAxisTitle.c_str());
-    fprintf(gnu, "set ylabel \"%s\"\n" , ResultBase::yAxisTitle.c_str());
-    fprintf(gnu, "set cblabel \"%s\"\n" , ResultBase::zAxisTitle.c_str());
+    fprintf(gnu, "set title \"%s\"\n" , HistogramBase::name.c_str());
+    fprintf(gnu, "set xlabel \"%s\"\n" , HistogramBase::xAxisTitle.c_str());
+    fprintf(gnu, "set ylabel \"%s\"\n" , HistogramBase::yAxisTitle.c_str());
+    fprintf(gnu, "set cblabel \"%s\"\n" , HistogramBase::zAxisTitle.c_str());
     fprintf(gnu, "set xrange[%f:%f]\n", xlow, xhigh);
     fprintf(gnu, "set yrange[%f:%f]\n", ylow, yhigh);
     //fprintf(gnu, "set cbrange[0:120]\n");
-    //fprintf(gnu, "splot \"/tmp/tmp_%s.dat\" matrix u (($1)*((%f-%f)/%d)):(($2)*((%f-%f)/%d)):3\n", ResultBase::name.c_str(), xhigh, xlow, xbins, yhigh, ylow, ybins);
-    fprintf(gnu, "plot \"/tmp/tmp_%s.dat\" matrix u (($1+1)*((%f-%f)/%d)):(($2+1)*((%f-%f)/%d)):3 with image\n", ResultBase::name.c_str(), xhigh, xlow, xbins, yhigh, ylow, ybins);
+    //fprintf(gnu, "splot \"/tmp/tmp_%s.dat\" matrix u (($1)*((%f-%f)/%d)):(($2)*((%f-%f)/%d)):3\n", HistogramBase::name.c_str(), xhigh, xlow, xbins, yhigh, ylow, ybins);
+    fprintf(gnu, "plot \"/tmp/tmp_%s.dat\" matrix u (($1+1)*((%f-%f)/%d)):(($2+1)*((%f-%f)/%d)):3 with image\n", HistogramBase::name.c_str(), xhigh, xlow, xbins, yhigh, ylow, ybins);
     pclose(gnu);
 }
 

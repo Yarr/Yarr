@@ -11,7 +11,7 @@
 #include "Fei4EventData.h"
 #include "Fei4DataProcessor.h"
 #include "Fei4Histogrammer.h"
-#include "ResultBase.h"
+#include "HistogramBase.h"
 
 #include "Fei4Scans.h"
 
@@ -27,7 +27,7 @@ int main(void) {
 
     ClipBoard<RawData> clipRaw;
     ClipBoard<Fei4Data> clipEvent;
-    ClipBoard<ResultBase> clipHisto;
+    ClipBoard<HistogramBase> clipHisto;
 
     Fei4ThresholdScan anaScan(&g_fe, &tx, &rx, &clipRaw);
     

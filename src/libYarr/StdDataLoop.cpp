@@ -35,7 +35,7 @@ void StdDataLoop::execPart2() {
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     unsigned count = 0;
     uint32_t done = 0;
-    uint32_t rate = -1;
+    //uint32_t rate = -1;
     unsigned iterations = 0;
     RawData *newData = NULL;
     while (done == 0) {

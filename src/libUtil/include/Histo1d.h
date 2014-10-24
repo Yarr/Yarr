@@ -13,9 +13,9 @@
 #include <fstream>
 #include <string>
 
-#include "ResultBase.h"
+#include "HistogramBase.h"
 
-class Histo1d : public ResultBase {
+class Histo1d : public HistogramBase {
     public:
         Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh);
         ~Histo1d();

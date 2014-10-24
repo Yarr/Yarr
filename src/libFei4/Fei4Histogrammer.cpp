@@ -52,18 +52,18 @@ void Fei4Histogrammer::process() {
 
 void Fei4Histogrammer::publish() {
     for (unsigned i=0; i<algorithms.size(); i++) {
-        output->pushData(algorithms[i]->getResult());
+        output->pushData(algorithms[i]->getHisto());
     }
 }
 
 void Fei4Histogrammer::toFile(std::string basename) {
     for (unsigned i=0; i<algorithms.size(); i++) {
-        algorithms[i]->getResult()->toFile(basename, true);
+        algorithms[i]->getHisto()->toFile(basename, true);
     }
 }
 
 void Fei4Histogrammer::plot(std::string basename) {
-    for (std::deque<ResultBase*>::iterator it = output->begin(); it != output->end(); ++it) {
+    for (std::deque<HistogramBase*>::iterator it = output->begin(); it != output->end(); ++it) {
         std::cout << "Plotting : " << (*it)->getName() << std::endl;
         (*it)->plot(basename);
     }    

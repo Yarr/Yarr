@@ -18,7 +18,7 @@
 #include "DataProcessor.h"
 #include "ClipBoard.h"
 #include "Fei4EventData.h"
-#include "ResultBase.h"
+#include "HistogramBase.h"
 #include "Histo1d.h"
 #include "Histo2d.h"
 #include "LoopStatus.h"
@@ -30,14 +30,14 @@ class HistogramAlgorithm {
 
         virtual void create(LoopStatus &stat) {}
         
-        ResultBase* getResult() {
+        HistogramBase* getHisto() {
             return r;
         }
         
         virtual void processEvent(Fei4Data *data) {}
         virtual void end() {}
     protected:
-        ResultBase *r;
+        HistogramBase *r;
 };
 
 class Fei4Histogrammer : public DataProcessor {
@@ -45,7 +45,7 @@ class Fei4Histogrammer : public DataProcessor {
         Fei4Histogrammer();
         ~Fei4Histogrammer();
 
-        void connect(ClipBoard<Fei4Data> *arg_input, ClipBoard<ResultBase> *arg_output) {
+        void connect(ClipBoard<Fei4Data> *arg_input, ClipBoard<HistogramBase> *arg_output) {
             input = arg_input;
             output = arg_output;
         }
@@ -62,7 +62,7 @@ class Fei4Histogrammer : public DataProcessor {
 
     private:
         ClipBoard<Fei4Data> *input;
-        ClipBoard<ResultBase> *output;
+        ClipBoard<HistogramBase> *output;
 
         std::vector<HistogramAlgorithm*> algorithms;
         LoopStatus curStat;
@@ -84,7 +84,7 @@ class OccupancyMap : public HistogramAlgorithm {
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
             h->setZaxisTitle("Hits");
-            r = (ResultBase*) h;
+            r = (HistogramBase*) h;
         }
         
         void processEvent(Fei4Data *data);
@@ -108,7 +108,7 @@ class TotMap : public HistogramAlgorithm {
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
             h->setZaxisTitle("Total ToT");
-            r = (ResultBase*) h;
+            r = (HistogramBase*) h;
         }
 
         void processEvent(Fei4Data *data);
@@ -130,7 +130,7 @@ class Tot2Map : public HistogramAlgorithm {
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
             h->setZaxisTitle("Total ToT2");
-            r = (ResultBase*) h;
+            r = (HistogramBase*) h;
         }
 
         void processEvent(Fei4Data *data);
@@ -154,7 +154,7 @@ class L1Dist : public HistogramAlgorithm {
             h = new Histo1d("L1Dist", 16, -0.5, 15.5);
             h->setXaxisTitle("L1A");
             h->setYaxisTitle("Hits");
-            r = (ResultBase*) h;
+            r = (HistogramBase*) h;
             l1id = 33;
             bcid_offset = 0;
         }

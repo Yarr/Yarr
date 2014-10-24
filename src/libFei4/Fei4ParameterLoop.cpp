@@ -5,6 +5,7 @@
 
 #include "Fei4ParameterLoop.h"
 
+#if 0
 Fei4ParameterLoop::Fei4ParameterLoop() {
 
 }
@@ -33,13 +34,7 @@ void Fei4ParameterLoop::execPart2() {
 }
 
 void Fei4ParameterLoop::writePar() {
-    switch (par) {
-        case VCAL_PAR:
-            g_fe->writeRegister(&Fei4::PlsrDAC, cur);
-            break;
-        default:
-            break;
-    }
+    g_fe->writeRegister(parPtr, cur);
 }
 
 void Fei4ParameterLoop::setRange(unsigned arg_min, unsigned arg_max, unsigned arg_step) {
@@ -47,3 +42,4 @@ void Fei4ParameterLoop::setRange(unsigned arg_min, unsigned arg_max, unsigned ar
     max = arg_max;
     step = arg_step;
 }
+#endif
