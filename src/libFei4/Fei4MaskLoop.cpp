@@ -11,6 +11,7 @@ Fei4MaskLoop::Fei4MaskLoop() : LoopActionBase() {
     m_itCur = 0;
     enable_sCap = false;
     enable_lCap = false;
+    loopType = typeid(this);
 }
 
 void Fei4MaskLoop::init() {

@@ -8,6 +8,7 @@
 
 StdDataLoop::StdDataLoop() : LoopActionBase() {
     storage = NULL;
+    loopType = typeid(this);
 }
 
 void StdDataLoop::init() {

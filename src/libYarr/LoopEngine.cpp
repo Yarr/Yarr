@@ -26,6 +26,7 @@ void LoopEngine::init() {
    
     unsigned count = 0;
     while(m_list.end() != it) {
+        std::cout << "Name: " << (*it)->name() << std::endl;
         if ((*it)->split())
             count++;
         ++it;

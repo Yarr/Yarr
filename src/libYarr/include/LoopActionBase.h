@@ -10,6 +10,7 @@
 #include <memory>
 #include <typeinfo>
 #include <typeindex>
+#include <string>
 
 #include "Fei4.h"
 #include "TxCore.h"
@@ -29,6 +30,10 @@ class LoopActionBase {
         void setup(LoopStatus *stat, Fei4 *fe, TxCore *tx, RxCore *rx);
         void setNext(shared_ptr<LoopActionBase>& ptr);
         void execute();
+
+        std::string name() {
+            return loopType.name();
+        }
         
     protected:
         virtual void init() {}

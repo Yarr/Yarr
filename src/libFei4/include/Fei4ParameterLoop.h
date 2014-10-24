@@ -27,7 +27,9 @@ class Fei4ParameterLoopBase : public LoopActionBase {
 template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight>
 class Fei4ParameterLoop : public Fei4ParameterLoopBase {
     public:
-        Fei4ParameterLoop(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref): parPtr(ref) { };
+        Fei4ParameterLoop(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref): parPtr(ref) { 
+        loopType = typeid(this);
+        };
         
         
     private:

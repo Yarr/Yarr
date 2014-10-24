@@ -7,7 +7,7 @@
 #include "LoopActionBase.h"
 #include <iostream>
 
-LoopActionBase::LoopActionBase() : loopType(typeid(this)){
+LoopActionBase::LoopActionBase() : loopType(typeid(void)){
     g_fe = NULL;
     g_tx = NULL;
     g_rx = NULL;

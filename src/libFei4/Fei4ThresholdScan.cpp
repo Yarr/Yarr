@@ -14,7 +14,7 @@ Fei4ThresholdScan::Fei4ThresholdScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard
     numOfTriggers = 100;
     triggerFrequency = 10e3;
     triggerDelay = 50;
-    minVcal = 20;
+    minVcal = 100;
     maxVcal = 100;
     stepVcal = 2;
 
