@@ -10,6 +10,8 @@ Fei4DcLoop::Fei4DcLoop() : LoopActionBase() {
     m_colStart = 0;
     m_colEnd = 40;
     m_col = 0;
+
+    loopType = typeid(this);
 }
 
 void Fei4DcLoop::init() {

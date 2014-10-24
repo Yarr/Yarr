@@ -8,6 +8,8 @@
 #define LOOPACTIONBASE_H
 
 #include <memory>
+#include <typeinfo>
+#include <typeindex>
 
 #include "Fei4.h"
 #include "TxCore.h"
@@ -44,6 +46,7 @@ class LoopActionBase {
         TxCore *g_tx;
         RxCore *g_rx;
 
+        std::type_index loopType;
     private:
         void execStep();
         void run();

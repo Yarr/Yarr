@@ -32,4 +32,9 @@ unsigned ScanBase::size() {
     return loops.size();
 }
 
+void ScanBase::addLoop(std::shared_ptr<LoopActionBase> l) {
+    loops.push_back(l);
+    engine.addAction(l);
+}
+
 

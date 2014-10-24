@@ -42,15 +42,10 @@ void Fei4AnalogScan::init() {
     dataLoop->setVerbose(verbose);
     dataLoop->connect(g_data);
 
-    loops.push_back(maskStaging);
-    loops.push_back(dcLoop);
-    loops.push_back(triggerLoop);
-    loops.push_back(dataLoop);
-
-    engine.addAction(maskStaging);
-    engine.addAction(dcLoop);
-    engine.addAction(triggerLoop);
-    engine.addAction(dataLoop);
+    this->addLoop(maskStaging);
+    this->addLoop(dcLoop);
+    this->addLoop(triggerLoop);
+    this->addLoop(dataLoop);
 
     engine.init();
 }

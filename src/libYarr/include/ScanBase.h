@@ -11,6 +11,7 @@
 
 #include <vector>
 #include <memory>
+#include <map>
 
 #include "Fei4.h"
 #include "TxCore.h"
@@ -35,14 +36,16 @@ class ScanBase {
 
     protected:
         LoopEngine engine;
-        std::vector<std::shared_ptr<LoopActionBase> > loops;
+        void addLoop(std::shared_ptr<LoopActionBase> l);
+
         Fei4 *g_fe;
         TxCore *g_tx;
         RxCore *g_rx;
         ClipBoard<RawData> *g_data;
 
-
     private:
+        std::vector<std::shared_ptr<LoopActionBase> > loops;
+        //wstd::map<
 };
 
 #endif
