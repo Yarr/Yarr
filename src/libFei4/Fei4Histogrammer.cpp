@@ -71,50 +71,57 @@ void Fei4Histogrammer::plot(std::string basename) {
 
 
 void OccupancyMap::processEvent(Fei4Data *data) {
-    for (std::list<Fei4Event*>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
-        Fei4Event *curEvent = *eventIt;
-        for (std::vector<Fei4Hit*>::iterator hitIt = curEvent->hits.begin(); hitIt!=curEvent->hits.end(); ++hitIt) {   
-            Fei4Hit *curHit = *hitIt;
-            if(curHit->tot > 0)
-                h->fill(curHit->col, curHit->row);
+    unsigned c1 = 0;
+    unsigned c2 = 0;
+    unsigned c3 = 0;
+    for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
+        Fei4Event curEvent = *eventIt;
+        ++c1;
+        c3 += curEvent.nHits;
+        for (std::vector<Fei4Hit>::iterator hitIt = curEvent.hits.begin(); hitIt!=curEvent.hits.end(); ++hitIt) {   
+            Fei4Hit curHit = *hitIt;
+            ++c2;
+            if(curHit.tot > 0)
+                h->fill(curHit.col, curHit.row);
         }
     }
+    std::cout << __PRETTY_FUNCTION__ << " : " << c1 << " Events with " << c2 << " hits! Should be " << c3 << std::endl;
 }
 
 void TotMap::processEvent(Fei4Data *data) {
-    for (std::list<Fei4Event*>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
-        Fei4Event *curEvent = *eventIt;
-        for (std::vector<Fei4Hit*>::iterator hitIt = curEvent->hits.begin(); hitIt!=curEvent->hits.end(); ++hitIt) {   
-            Fei4Hit *curHit = *hitIt;
-            if(curHit->tot > 0)
-                h->fill(curHit->col, curHit->row, curHit->tot);
+    for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
+        Fei4Event curEvent = *eventIt;
+        for (std::vector<Fei4Hit>::iterator hitIt = curEvent.hits.begin(); hitIt!=curEvent.hits.end(); ++hitIt) {   
+            Fei4Hit curHit = *hitIt;
+            if(curHit.tot > 0)
+                h->fill(curHit.col, curHit.row, curHit.tot);
         }
     }
 }
 
 void Tot2Map::processEvent(Fei4Data *data) {
-    for (std::list<Fei4Event*>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
-        Fei4Event *curEvent = *eventIt;
-        for (std::vector<Fei4Hit*>::iterator hitIt = curEvent->hits.begin(); hitIt!=curEvent->hits.end(); ++hitIt) {   
-            Fei4Hit *curHit = *hitIt;
-            if(curHit->tot > 0)
-                h->fill(curHit->col, curHit->row, curHit->tot*curHit->tot);
+    for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
+        Fei4Event curEvent = *eventIt;
+        for (std::vector<Fei4Hit>::iterator hitIt = curEvent.hits.begin(); hitIt!=curEvent.hits.end(); ++hitIt) {   
+            Fei4Hit curHit = *hitIt;
+            if(curHit.tot > 0)
+                h->fill(curHit.col, curHit.row, curHit.tot*curHit.tot);
         }
     }
 }
 
 void L1Dist::processEvent(Fei4Data *data) {
     // Event Loop
-    for (std::list<Fei4Event*>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
-        Fei4Event *curEvent = *eventIt;
-        if(curEvent->l1id != l1id) {
-            l1id = curEvent->l1id;
-            bcid_offset = curEvent->bcid;
+    for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
+        Fei4Event curEvent = *eventIt;
+        if(curEvent.l1id != l1id) {
+            l1id = curEvent.l1id;
+            bcid_offset = curEvent.bcid;
         }
-        int delta_bcid = curEvent->bcid - bcid_offset;
+        int delta_bcid = curEvent.bcid - bcid_offset;
         if (delta_bcid < 0)
             delta_bcid += 0x400;
-        h->fill(delta_bcid, curEvent->nHits);
+        h->fill(delta_bcid, curEvent.nHits);
     }
 }
     
