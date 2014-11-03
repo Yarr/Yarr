@@ -18,35 +18,18 @@ Fei4Histogrammer::~Fei4Histogrammer() {
 }
 
 void Fei4Histogrammer::init() {
-    first = true;
+
 }
 
 void Fei4Histogrammer::process() {
     while (!input->empty()) {
         Fei4Data *data = input->popData();
-
-        if (data != NULL) {
-            if (first) {
-                for (unsigned i=0; i<algorithms.size(); i++) {
-                    curStat = data->lStat;
-                    algorithms[i]->create(curStat);
-                }
-                first = false;
-            }
-            for (unsigned i=0; i<algorithms.size(); i++) {
-                if (!(data->lStat == curStat)) {
-                    std::cout << "Split" << std::endl;
-                    this->publish();
-                    curStat = data->lStat;
-                    algorithms[i]->create(curStat);
-                }
-                algorithms[i]->processEvent(data);
-            }
-            delete data;
+        for (unsigned i=0; i<algorithms.size(); i++) {
+            algorithms[i]->create(data->lStat);
+            algorithms[i]->processEvent(data);
         }
-    }
-    for (unsigned i=0; i<algorithms.size(); i++) {
-        algorithms[i]->end();
+        delete data;
+        this->publish();
     }
 }
 

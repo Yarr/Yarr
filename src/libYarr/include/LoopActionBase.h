@@ -23,17 +23,18 @@ class LoopActionBase {
     public:
         LoopActionBase();
 
-        void setSplitData(bool v=true);
-        bool split();
-
         void setVerbose(bool v=true);
         void setup(LoopStatus *stat, Fei4 *fe, TxCore *tx, RxCore *rx);
         void setNext(shared_ptr<LoopActionBase>& ptr);
         void execute();
 
-        std::string name() {
-            return loopType.name();
+        std::type_index type() {
+            return loopType;
         }
+
+        unsigned getMin();
+        unsigned getMax();
+        unsigned getStep();
         
     protected:
         virtual void init() {}
@@ -44,7 +45,10 @@ class LoopActionBase {
 
         bool m_done;
         bool verbose;
-        bool splitData;
+
+        unsigned min;
+        unsigned max;
+        unsigned step;
 
         LoopStatus *g_stat;
         Fei4 *g_fe;

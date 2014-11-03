@@ -16,11 +16,13 @@ class LoopStatus {
         LoopStatus(const LoopStatus &l) {
             statMap = l.getMap();
             statVec = l.getVector();
+            loopVec = l.getPointer();
         }
 
         LoopStatus& operator=(const LoopStatus &l) {
             statMap = l.getMap();
             statVec = l.getVector();
+            loopVec = l.getPointer();
             return *this;
         }
 
@@ -39,21 +41,26 @@ class LoopStatus {
 
         void init(unsigned i) {
             statVec.resize(i);
+            loopVec.resize(i);
         }
         void addLoop(unsigned i, void *loop) {
             statMap[loop] = &statVec[i];
+            loopVec[i] = loop;
         }
         
         void set(unsigned i, unsigned v) {statVec[i] = v;}
         void set(void *l, unsigned v) {*(statMap[l]) = v;}
         unsigned get(unsigned i) const {return statVec[i];}
+        void* getPointer(unsigned i) const {return loopVec[i];}
         unsigned get(void *l) {return *(statMap[l]);}
         unsigned size() const {return statVec.size();}
 
         std::map<void*, unsigned*> getMap() const {return statMap;}
         std::vector<unsigned> getVector() const {return statVec;}
+        std::vector<void*> getPointer() const {return loopVec;}
     private:
-        std::map<void*, unsigned*> statMap;    
+        std::map<void*, unsigned*> statMap;
+        std::vector<void*> loopVec;
         std::vector<unsigned> statVec;
 };
 

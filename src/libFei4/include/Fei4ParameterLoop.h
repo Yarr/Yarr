@@ -43,8 +43,7 @@ class Fei4ParameterLoop : public Fei4ParameterLoopBase {
         void execPart1() {
             if (verbose)
                 std::cout << __PRETTY_FUNCTION__ << " : Parameter Loop at -> " << cur << std::endl;
-            if (splitData)
-                g_stat->set(this, cur);
+            g_stat->set(this, cur);
         }
 
         void execPart2() {

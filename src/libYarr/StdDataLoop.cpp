@@ -10,6 +10,9 @@
 StdDataLoop::StdDataLoop() : LoopActionBase() {
     storage = NULL;
     loopType = typeid(this);
+    min = 0;
+    max = 0;
+    step = 0;
 }
 
 void StdDataLoop::init() {

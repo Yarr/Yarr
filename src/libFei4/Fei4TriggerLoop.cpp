@@ -16,6 +16,9 @@ Fei4TriggerLoop::Fei4TriggerLoop() : LoopActionBase() {
     m_trigWord[2] = 0x00;
     m_trigWord[3] = CAL_CMD;
     isInner = false;
+    min = 0;
+    max = 0;
+    step = 0;
     loopType = typeid(this);
 }
 

@@ -39,8 +39,6 @@ void Fei4ThresholdScan::init() {
     std::shared_ptr<Fei4ParameterLoopBase> parLoop( Fei4ParameterLoopBuilder(&Fei4::PlsrDAC) );
     parLoop->setRange(minVcal, maxVcal, stepVcal);
     parLoop->setVerbose(true);
-    parLoop->setVerbose(false);
-    parLoop->setSplitData(true);
 
     // Loop 3: Trigger
     std::shared_ptr<Fei4TriggerLoop> triggerLoop(new Fei4TriggerLoop);
