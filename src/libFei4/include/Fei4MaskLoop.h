@@ -27,8 +27,7 @@ class Fei4MaskLoop : public LoopActionBase {
         
     private:
         enum MASK_STAGE m_mask;
-        unsigned m_it;
-        unsigned m_itCur;
+        unsigned m_cur;
         bool enable_sCap;
         bool enable_lCap;
 

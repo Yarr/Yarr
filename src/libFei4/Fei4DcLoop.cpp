@@ -7,8 +7,9 @@
 
 Fei4DcLoop::Fei4DcLoop() : LoopActionBase() {
     m_mode = SINGLE_DC;
-    m_colStart = 0;
-    m_colEnd = 40;
+    min = 0;
+    max = 40;
+    step = 1;
     m_col = 0;
 
     loopType = typeid(this);
@@ -22,23 +23,23 @@ void Fei4DcLoop::init() {
     // depending on COLPR_MODE
     switch (m_mode) {
         case SINGLE_DC:
-            m_colEnd = 40;
+            max = 40;
             break;
         case QUAD_DC:
-            m_colEnd = 4;
+            max = 4;
             break;
         case OCTA_DC:
-            m_colEnd = 8;
+            max = 8;
             break;
         case ALL_DC:
-            m_colEnd = 1;
+            max = 1;
             break;
         default:
             break;
     }
     // Set COLPR_MODE
     g_fe->writeRegister((&Fei4::Colpr_Mode), (uint16_t) m_mode);
-    m_col = 0;
+    m_col = min;
 }
 
 void Fei4DcLoop::end() {
@@ -49,8 +50,7 @@ void Fei4DcLoop::end() {
 void Fei4DcLoop::execPart1() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << " --> " << m_col << std::endl;
-    if (splitData)
-        g_stat->set(this, m_col);
+    g_stat->set(this, m_col);
     // Address col
     g_fe->writeRegister(&Fei4::Colpr_Addr, m_col);
 }
@@ -59,8 +59,8 @@ void Fei4DcLoop::execPart2() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     // Check Loop condition
-    m_col++;
-    if (!(m_col < m_colEnd)) m_done = true;
+    m_col+=step;
+    if (!(m_col < max)) m_done = true;
 }
 
 void Fei4DcLoop::setMode(enum DC_MODE mode) {

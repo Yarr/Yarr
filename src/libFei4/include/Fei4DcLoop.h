@@ -18,7 +18,7 @@ class Fei4DcLoop: public LoopActionBase {
 
     private:
         enum DC_MODE m_mode;
-        int m_col, m_colStart, m_colEnd;
+        unsigned m_col;
 
         void init();
         void end();

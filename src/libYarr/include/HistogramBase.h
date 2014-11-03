@@ -21,6 +21,7 @@ class HistogramBase {
         virtual ~HistogramBase();
 
         std::string getName();
+        LoopStatus getStat() {return lStat;}
 
         virtual void toFile(std::string basename, bool header=true) {}
         virtual void plot(std::string basename) {}

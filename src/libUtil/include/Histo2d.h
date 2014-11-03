@@ -13,6 +13,7 @@
 #include <fstream>
 
 #include "HistogramBase.h"
+#include "ResultBase.h"
 
 class Histo2d : public HistogramBase {
     public:

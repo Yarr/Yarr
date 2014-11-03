@@ -24,22 +24,12 @@ void LoopEngine::addAction(Engine::element_value_type el){
 void LoopEngine::init() {
     Engine::loop_list_type::iterator it = m_list.begin();
    
-    unsigned count = 0;
-    while(m_list.end() != it) {
-        std::cout << "Name: " << (*it)->name() << std::endl;
-        if ((*it)->split())
-            count++;
-        ++it;
-    }
-    stat.init(count);
+    stat.init(m_list.size());
     
     unsigned i = 0;
-    it = m_list.begin();
     while(m_list.end() != it) {
-        if ((*it)->split()) {
-            stat.addLoop(i, (*it).get());
-            i++;
-        }
+        stat.addLoop(i, (*it).get());
+        i++;
         (*it)->setup(&stat, g_fe, g_tx, g_rx);
         ++it;
     }

@@ -12,6 +12,7 @@
 #include "Fei4DataProcessor.h"
 #include "Fei4Histogrammer.h"
 #include "HistogramBase.h"
+#include "Fei4Analysis.h"
 
 #include "Fei4Scans.h"
 
@@ -28,6 +29,7 @@ int main(void) {
     ClipBoard<RawData> clipRaw;
     ClipBoard<Fei4Data> clipEvent;
     ClipBoard<HistogramBase> clipHisto;
+    ClipBoard<HistogramBase> clipResult;
 
     Fei4ThresholdScan anaScan(&g_fe, &tx, &rx, &clipRaw);
     
@@ -75,8 +77,13 @@ int main(void) {
     histogrammer.process();
     histogrammer.publish();
 
+    Fei4Analysis ana;
+    ana.addAlgorithm(new OccupancyAnalysis);
+    ana.connect(&anaScan, &clipHisto, &clipResult);
+    ana.process();
+
     std::cout << "### Saving ###" << std::endl;
-    //histogrammer.plot("analogscan");
+    ana.plot("analogscan");
     //histogrammer.toFile("analogscan");
     std::cout << "... done!" << std::endl;
 

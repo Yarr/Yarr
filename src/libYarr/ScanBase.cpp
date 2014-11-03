@@ -28,6 +28,10 @@ std::shared_ptr<LoopActionBase> ScanBase::operator[](unsigned n) {
     return loops[n];
 }
 
+std::shared_ptr<LoopActionBase> ScanBase::operator[](std::type_index t) {
+    return loopMap[t];
+}
+
 unsigned ScanBase::size() {
     return loops.size();
 }
@@ -35,6 +39,7 @@ unsigned ScanBase::size() {
 void ScanBase::addLoop(std::shared_ptr<LoopActionBase> l) {
     loops.push_back(l);
     engine.addAction(l);
+    loopMap[l->type()] = l;
 }
 
 

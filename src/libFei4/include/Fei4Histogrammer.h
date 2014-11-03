@@ -35,7 +35,6 @@ class HistogramAlgorithm {
         }
         
         virtual void processEvent(Fei4Data *data) {}
-        virtual void end() {}
     protected:
         HistogramBase *r;
 };
@@ -65,8 +64,6 @@ class Fei4Histogrammer : public DataProcessor {
         ClipBoard<HistogramBase> *output;
 
         std::vector<HistogramAlgorithm*> algorithms;
-        LoopStatus curStat;
-        bool first;
 };
 
 class OccupancyMap : public HistogramAlgorithm {
@@ -88,7 +85,6 @@ class OccupancyMap : public HistogramAlgorithm {
         }
         
         void processEvent(Fei4Data *data);
-        void end() {}
     private:
         Histo2d *h;
 };
@@ -112,7 +108,6 @@ class TotMap : public HistogramAlgorithm {
         }
 
         void processEvent(Fei4Data *data);
-        void end() {}
     private:
         Histo2d *h;
 };
@@ -134,7 +129,6 @@ class Tot2Map : public HistogramAlgorithm {
         }
 
         void processEvent(Fei4Data *data);
-        void end() {}
     private:
         Histo2d *h;
 };
@@ -160,11 +154,9 @@ class L1Dist : public HistogramAlgorithm {
         }
 
         void processEvent(Fei4Data *data);
-        void end() {}
     private:
         Histo1d *h;
         unsigned l1id;
         unsigned bcid_offset;
-        bool newL1;
 };
 #endif
