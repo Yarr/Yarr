@@ -30,6 +30,7 @@ RawData* RxCore::readData() {
             std::cout << __PRETTY_FUNCTION__ << " : Addr 0x" << std::hex <<
                 dma_addr << " ,Count " << std::dec << real_dma_count << std::endl;
         uint32_t *buf = new uint32_t[dma_count];
+        for (unsigned i=0; i<dma_count; i++) buf[i] = 0;
         if (spec->readDma(dma_addr, buf, real_dma_count)) {
             std::cout << __PRETTY_FUNCTION__ << std::hex << "0x" << dma_addr << " 0x" << dma_count << std::dec << std::endl;
             exit(1);

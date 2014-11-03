@@ -36,8 +36,9 @@ void Fei4DataProcessor::process() {
         int hits = 0;
         int events = 0;
         for (unsigned i=0; i<curIn->words; i++) {
-            uint32_t value = curIn->buf[i];
-            if (((value & 0x00FF0000) >> 16) == 0xe9) {
+            uint32_t value(curIn->buf[i]);
+            uint32_t header = ((value & 0x00FF0000) >> 16);
+            if (header == 0xe9) {
                 // Delete empty events
                 if (events > 0 && hits == 0)
                     curOut->delLastEvent();
@@ -48,14 +49,14 @@ void Fei4DataProcessor::process() {
 
                 events++;
                 hits = 0;
-            } else if (((value & 0x00FF0000) >> 16) == 0xef) {
+            } else if (header == 0xef) {
                 // Service Record
                 unsigned code = (value & 0xFC00) >> 10;
                 unsigned number = value & 0x03FF;
                 curOut->serviceRecords[code]+=number;
-            } else if (((value & 0x00FF0000) >> 16) == 0xea) {
+            } else if (header == 0xea) {
                 // Address Record
-            } else if (( value& 0x00FF0000) >> 16 == 0xec) {
+            } else if (header == 0xec) {
                 // Value Record
             } else {
                 if (events == 0 ) {

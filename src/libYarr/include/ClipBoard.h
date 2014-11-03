@@ -22,6 +22,12 @@ template <class T>
 class ClipBoard {
     public:
 
+        ClipBoard(){}
+        ~ClipBoard() {
+            while(!this->empty())
+                delete this->popData();
+        }
+
         void pushData(T *data) {
             queueMutex.lock();
             if (data != NULL) dataQueue.push_back(data);

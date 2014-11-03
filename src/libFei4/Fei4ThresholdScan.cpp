@@ -9,12 +9,12 @@
 #include "Fei4ThresholdScan.h"
 
 Fei4ThresholdScan::Fei4ThresholdScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawData> *data) : ScanBase(fe, tx, rx, data) {
-    mask = MASK_16;
+    mask = MASK_32;
     dcMode = QUAD_DC;
-    numOfTriggers = 50;
+    numOfTriggers = 100;
     triggerFrequency = 10e3;
     triggerDelay = 50;
-    minVcal = 0;
+    minVcal = 10;
     maxVcal = 100;
     stepVcal = 1;
 
@@ -38,7 +38,7 @@ void Fei4ThresholdScan::init() {
     // Loop 1: Parameter Loop
     std::shared_ptr<Fei4ParameterLoopBase> parLoop( Fei4ParameterLoopBuilder(&Fei4::PlsrDAC) );
     parLoop->setRange(minVcal, maxVcal, stepVcal);
-    parLoop->setVerbose(true);
+    parLoop->setVerbose(false);
 
     // Loop 3: Trigger
     std::shared_ptr<Fei4TriggerLoop> triggerLoop(new Fei4TriggerLoop);
@@ -63,7 +63,7 @@ void Fei4ThresholdScan::init() {
 
 // Do necessary pre-scan configuration
 void Fei4ThresholdScan::preScan() {
-    g_fe->writeRegister(&Fei4::Trig_Count, 8);
+    g_fe->writeRegister(&Fei4::Trig_Count, 12);
     g_fe->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-2);
     g_fe->writeRegister(&Fei4::PlsrDAC, 300);
     g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 

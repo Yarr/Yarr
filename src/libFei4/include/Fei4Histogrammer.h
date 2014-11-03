@@ -73,7 +73,6 @@ class OccupancyMap : public HistogramAlgorithm {
             h = NULL;
         }
         ~OccupancyMap() {
-            delete h;
         }
         
         void create(LoopStatus &stat) {
@@ -96,7 +95,6 @@ class TotMap : public HistogramAlgorithm {
             r = NULL;
         }
         ~TotMap() {
-            delete h;
         }
 
         void create(LoopStatus &stat) {
@@ -117,7 +115,6 @@ class Tot2Map : public HistogramAlgorithm {
         Tot2Map() : HistogramAlgorithm() {
         }
         ~Tot2Map() {
-            delete h;
         }
 
         void create(LoopStatus &stat) {
@@ -141,7 +138,6 @@ class L1Dist : public HistogramAlgorithm {
         }
 
         ~L1Dist() {
-            delete h;
         }
 
         void create(LoopStatus &stat) {

@@ -56,16 +56,13 @@ int main(void) {
     std::cout << "### Disabling RX ###" << std::endl;
     tx.setCmdEnable(0x0);
     rx.setRxEnable(0x0);
+    std::cout << "Collected: " << clipRaw.size() << " Raw Data Fragments" << std::endl;
     
     std::cout << "### Analyzing data ###" << std::endl;
     Fei4DataProcessor proc(fe.getValue(&Fei4::HitDiscCnfg));
     proc.connect(&clipRaw, &clipEvent);
-    std::string tmp;
-    std::cout << " After connect" << std::endl;
-    std::cin >> tmp;
     proc.process();
-    std::cout << " After process" << std::endl;
-    std::cin >> tmp;
+    std::cout << "Collected: " << clipEvent.size() << " Events" << std::endl;
     
     std::cout << "### Histogramming data ###" << std::endl;
     Fei4Histogrammer histogrammer;
@@ -75,12 +72,16 @@ int main(void) {
     //histogrammer.addHistogrammer(new L1Dist());
     histogrammer.connect(&clipEvent, &clipHisto);
     histogrammer.process();
-    histogrammer.publish();
 
+    std::cout << "Collected: " << clipHisto.size() << " Histograms" << std::endl;
+
+    std::cout << "### Analyzing data ###" << std::endl;
     Fei4Analysis ana;
     ana.addAlgorithm(new OccupancyAnalysis);
     ana.connect(&anaScan, &clipHisto, &clipResult);
+    ana.init();
     ana.process();
+    std::cout << "Collected: " << clipResult.size() << " Histograms" << std::endl;
 
     std::cout << "### Saving ###" << std::endl;
     ana.plot("analogscan");

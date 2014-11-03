@@ -48,7 +48,7 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
 }
 
 Histo2d::~Histo2d() {
-    delete data;
+    delete[] data;
 }
 
 unsigned Histo2d::size() const {
@@ -93,13 +93,13 @@ double Histo2d::getBin(unsigned n) const {
     if (n < this->size()) {
         return data[n];
     } else {
-        return -1;
+        return 0;
     }
 }
 
 
 void Histo2d::toFile(std::string prefix, bool header) {
-    std::string filename = prefix + "_" + HistogramBase::name + ".dat";
+    std::string filename = prefix + "_" + name + ".dat";
     std::fstream file(filename, std::fstream::out | std::fstream::trunc);
     // Header
     if (header) {

@@ -4,7 +4,9 @@
  */
 
 #include "StdDataLoop.h"
-#include <unistd.h>
+
+#include <chrono>
+#include <thread>
 #include <algorithm>
 
 StdDataLoop::StdDataLoop() : LoopActionBase() {
@@ -12,7 +14,7 @@ StdDataLoop::StdDataLoop() : LoopActionBase() {
     loopType = typeid(this);
     min = 0;
     max = 0;
-    step = 0;
+    step = 1;
 }
 
 void StdDataLoop::init() {
@@ -59,7 +61,7 @@ void StdDataLoop::execPart2() {
             }
         } while (newData != NULL);
     }
-    usleep(50);
+    std::this_thread::sleep_for(std::chrono::microseconds(50));
     do {
         newData =  g_rx->readData();
         iterations++;

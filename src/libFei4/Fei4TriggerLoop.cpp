@@ -18,7 +18,7 @@ Fei4TriggerLoop::Fei4TriggerLoop() : LoopActionBase() {
     isInner = false;
     min = 0;
     max = 0;
-    step = 0;
+    step = 1;
     loopType = typeid(this);
 }
 
