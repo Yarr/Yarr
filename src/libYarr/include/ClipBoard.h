@@ -15,6 +15,9 @@
 #include "RawData.h"
 #include "Fei4EventData.h"
 
+#include <iostream>
+#include <typeinfo>
+
 template <class T>
 class ClipBoard {
     public:
@@ -23,6 +26,8 @@ class ClipBoard {
             queueMutex.lock();
             if (data != NULL) dataQueue.push_back(data);
             queueMutex.unlock();
+            //static unsigned cnt = 0;
+            //std::cout << "Pushed " << cnt++ << " " << typeid(T).name() << " objects so far" << std::endl;
         }
 
         T* popData() {

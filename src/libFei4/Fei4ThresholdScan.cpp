@@ -11,12 +11,12 @@
 Fei4ThresholdScan::Fei4ThresholdScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawData> *data) : ScanBase(fe, tx, rx, data) {
     mask = MASK_16;
     dcMode = QUAD_DC;
-    numOfTriggers = 100;
+    numOfTriggers = 50;
     triggerFrequency = 10e3;
     triggerDelay = 50;
-    minVcal = 100;
+    minVcal = 0;
     maxVcal = 100;
-    stepVcal = 2;
+    stepVcal = 1;
 
     verbose = false;
 }
@@ -39,6 +39,7 @@ void Fei4ThresholdScan::init() {
     std::shared_ptr<Fei4ParameterLoopBase> parLoop( Fei4ParameterLoopBuilder(&Fei4::PlsrDAC) );
     parLoop->setRange(minVcal, maxVcal, stepVcal);
     parLoop->setVerbose(true);
+    parLoop->setVerbose(false);
     parLoop->setSplitData(true);
 
     // Loop 3: Trigger
