@@ -9,7 +9,7 @@
 #include "Histo1d.h"
 #include <stdio.h>
 
-Histo1d::Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh) : HistogramBase(arg_name) {
+Histo1d::Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh, std::type_index t) : HistogramBase(arg_name, t) {
     bins = arg_bins;
     xlow = arg_xlow;
     xhigh = arg_xhigh;

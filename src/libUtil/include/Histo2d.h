@@ -11,6 +11,9 @@
 
 #include <string>
 #include <fstream>
+#include <typeinfo>
+#include <typeindex>
+#include <stdio.h>
 
 #include "HistogramBase.h"
 #include "ResultBase.h"
@@ -18,9 +21,9 @@
 class Histo2d : public HistogramBase {
     public:
         Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
-                unsigned arg_ybins, double arg_ylow, double arg_yhigh);
+                unsigned arg_ybins, double arg_ylow, double arg_yhigh, std::type_index t);
         Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
-                unsigned arg_ybins, double arg_ylow, double arg_yhigh, LoopStatus &stat);
+                unsigned arg_ybins, double arg_ylow, double arg_yhigh, std::type_index t, LoopStatus &stat);
         ~Histo2d();
         
         unsigned size() const;

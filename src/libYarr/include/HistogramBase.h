@@ -11,13 +11,15 @@
 
 #include <iostream>
 #include <string>
+#include <typeinfo>
+#include <typeindex>
 
 #include "LoopStatus.h"
 
 class HistogramBase {
     public:
-        HistogramBase(std::string arg_name);
-        HistogramBase(std::string arg_name, LoopStatus &stat);
+        HistogramBase(std::string arg_name, std::type_index t);
+        HistogramBase(std::string arg_name, std::type_index t, LoopStatus &stat);
         virtual ~HistogramBase();
 
         std::string getName();
@@ -35,6 +37,7 @@ class HistogramBase {
         std::string getYaxisTitle();
         std::string getZaxisTitle();
 
+        std::type_index getType() {return type;}
     protected:
         std::string name;
         std::string xAxisTitle;
@@ -43,5 +46,6 @@ class HistogramBase {
             
         LoopStatus lStat;
     private:
+        std::type_index type;
 };
 #endif

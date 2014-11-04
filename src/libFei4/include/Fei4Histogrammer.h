@@ -14,6 +14,7 @@
 #include <map>
 #include <list>
 #include <vector>
+#include <typeinfo>
 
 #include "DataProcessor.h"
 #include "ClipBoard.h"
@@ -76,7 +77,7 @@ class OccupancyMap : public HistogramAlgorithm {
         }
         
         void create(LoopStatus &stat) {
-            h = new Histo2d("OccupancyMap", 80, 0.5, 80.5, 336, 0.5, 336.5, stat);
+            h = new Histo2d("OccupancyMap", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this), stat);
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
             h->setZaxisTitle("Hits");
@@ -98,7 +99,7 @@ class TotMap : public HistogramAlgorithm {
         }
 
         void create(LoopStatus &stat) {
-            h = new Histo2d("TotMap", 80, 0.5, 80.5, 336, 0.5, 336.5, stat);
+            h = new Histo2d("TotMap", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this), stat);
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
             h->setZaxisTitle("Total ToT");
@@ -118,7 +119,7 @@ class Tot2Map : public HistogramAlgorithm {
         }
 
         void create(LoopStatus &stat) {
-            h = new Histo2d("Tot2Map", 80, 0.5, 80.5, 336, 0.5, 336.5, stat);
+            h = new Histo2d("Tot2Map", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this), stat);
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
             h->setZaxisTitle("Total ToT2");
@@ -141,7 +142,7 @@ class L1Dist : public HistogramAlgorithm {
         }
 
         void create(LoopStatus &stat) {
-            h = new Histo1d("L1Dist", 16, -0.5, 15.5);
+            h = new Histo1d("L1Dist", 16, -0.5, 15.5, typeid(this));
             h->setXaxisTitle("L1A");
             h->setYaxisTitle("Hits");
             r = (HistogramBase*) h;

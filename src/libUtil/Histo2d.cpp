@@ -7,10 +7,9 @@
 // ################################
 
 #include "Histo2d.h"
-#include <stdio.h>
 
 Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
-        unsigned arg_ybins, double arg_ylow, double arg_yhigh) : HistogramBase(arg_name) {
+        unsigned arg_ybins, double arg_ylow, double arg_yhigh, std::type_index t) : HistogramBase(arg_name, t) {
     xbins = arg_xbins;
     xlow = arg_xlow;
     xhigh = arg_xhigh;
@@ -29,7 +28,7 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
 }
 
 Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
-        unsigned arg_ybins, double arg_ylow, double arg_yhigh, LoopStatus &stat) : HistogramBase(arg_name, stat) {
+        unsigned arg_ybins, double arg_ylow, double arg_yhigh, std::type_index t, LoopStatus &stat) : HistogramBase(arg_name, t, stat) {
     xbins = arg_xbins;
     xlow = arg_xlow;
     xhigh = arg_xhigh;

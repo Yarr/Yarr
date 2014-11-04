@@ -18,6 +18,7 @@
 #include "DataProcessor.h"
 #include "HistogramBase.h"
 #include "Histo2d.h"
+#include "Fei4Histogrammer.h"
 
 #include "AllFei4Actions.h"
 #include "AllStdActions.h"
@@ -32,8 +33,10 @@ class AnalysisAlgorithm {
         }
         virtual void init(ScanBase *s) {}
         virtual void processHistogram(HistogramBase *h) {}
+        virtual void end() {}
 
     protected:
+        ScanBase *scan;
         ClipBoard<HistogramBase> *output;
 };
 
@@ -69,11 +72,33 @@ class OccupancyAnalysis : public AnalysisAlgorithm {
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
+        void end() {}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         unsigned n_count;
         std::map<unsigned, Histo2d*> occMaps;
+        std::map<unsigned, unsigned> innerCnt;
+};
+
+class ScurveFitter : public AnalysisAlgorithm {
+    public:
+        ScurveFitter() : AnalysisAlgorithm() {};
+        ~ScurveFitter() {};
+
+        void init(ScanBase *s);
+        void processHistogram(HistogramBase *h);
+        void end();
+
+    private:
+        unsigned vcalLoop;
+        unsigned vcalMin;
+        unsigned vcalMax;
+        unsigned vcalBins;
+        unsigned n_count;
+        std::vector<unsigned> loops;
+        std::vector<unsigned> loopMax;
+        std::map<unsigned, Histo1d*> histos;
         std::map<unsigned, unsigned> innerCnt;
 };
 

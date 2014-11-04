@@ -12,12 +12,14 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <typeinfo>
+#include <typeindex>
 
 #include "HistogramBase.h"
 
 class Histo1d : public HistogramBase {
     public:
-        Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh);
+        Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh, std::type_index t);
         ~Histo1d();
         
         unsigned size();
