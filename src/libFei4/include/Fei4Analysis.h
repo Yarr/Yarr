@@ -94,6 +94,7 @@ class ScurveFitter : public AnalysisAlgorithm {
         unsigned vcalLoop;
         unsigned vcalMin;
         unsigned vcalMax;
+        unsigned vcalStep;
         unsigned vcalBins;
         unsigned n_count;
         std::vector<unsigned> loops;

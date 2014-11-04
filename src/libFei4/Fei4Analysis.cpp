@@ -107,16 +107,20 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
 }
 
 void ScurveFitter::init(ScanBase *s) {
+    std::shared_ptr<LoopActionBase> tmpVcalLoop(Fei4ParameterLoopBuilder(&Fei4::PlsrDAC));
     scan = s;
     n_count = 26880;
     vcalLoop = 0;
+    std::cout << "Init ScurveFitter " << std::endl;
+    std::cout << "Looking for " << (tmpVcalLoop->type()).name() << std::endl;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        std::cout << "Got " << n << " " << l->type().name() << std::endl;
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
                     l->type() != typeid(Fei4MaskLoop*) &&
                     l->type() != typeid(StdDataLoop*) &&
                     l->type() != typeid(Fei4DcLoop*)) &&
-                    l->type() != typeid(Fei4ParameterLoopBuilder(&Fei4::PlsrDAC))) {
+                    l->type() != tmpVcalLoop->type()) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -126,11 +130,13 @@ void ScurveFitter::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
         // Vcal Loop
-        if (l->type() == typeid(Fei4ParameterLoopBuilder(&Fei4::PlsrDAC))) {
+        if (l->type() == tmpVcalLoop->type()) {
             vcalLoop = n;
             vcalMax = l->getMax();
             vcalMin = l->getMin();
-            vcalBins = (vcalMax-vcalMin)/l->getStep();
+            vcalStep = l->getStep();
+            std::cout << "Found Vcal Loop from " << vcalMin << " to " << vcalMax << " in " << l->getStep() << std::endl;
+            vcalBins = (vcalMax-vcalMin)/vcalStep;
         }
     }
 }
@@ -146,7 +152,7 @@ void ScurveFitter::processHistogram(HistogramBase *t) {
             // Select correct output container
             unsigned ident = bin;
             unsigned offset = 26880;
-            unsigned vcal = h->getStat().get((void*)scan->getLoop(vcalLoop).get());
+            unsigned vcal = h->getStat().get(vcalLoop);
             // Determine identifier
             std::string name = "Scurve";
             name += "-" + std::to_string(bin);
@@ -159,7 +165,7 @@ void ScurveFitter::processHistogram(HistogramBase *t) {
             
             // Check if Histogram exists
             if (histos[ident] == NULL) {
-                Histo1d *h = new Histo1d(name, vcalBins, vcalMin, vcalMax, typeid(this));
+                Histo1d *h = new Histo1d(name, vcalBins+1, vcalMin-((double)vcalStep/2.0), vcalMax+((double)vcalStep/2.0), typeid(this));
                 h->setXaxisTitle("Vcal");
                 h->setYaxisTitle("Occupancy");
                 histos[ident] = h;
@@ -167,14 +173,14 @@ void ScurveFitter::processHistogram(HistogramBase *t) {
             }
 
             // Add up Histograms
-            histos[ident]->fill(vcal);
+            histos[ident]->fill(vcal, h->getBin(bin));
             innerCnt[ident]++;
 
             // Got all data, finish up Analysis
             if (innerCnt[ident] == vcalBins) {
-                std::cout << "Collected all inner loops for " << histos[ident]->getName() << "(" << ident << ")" << std::endl;
-                if (bin%1000==0) {
+                if (bin%1500==0) {
                     output->pushData(histos[ident]);
+                    std::cout << "Collected all inner loops for " << histos[ident]->getName() << "(" << ident << ")" << std::endl;
                 } else {
                     delete histos[ident];
                     histos[ident] = NULL;

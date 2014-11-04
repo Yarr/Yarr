@@ -16,11 +16,6 @@ class Fei4ParameterLoopBase : public LoopActionBase {
             max = arg_max;
             step = arg_step;
         }
-        
-    protected:
-        unsigned min;
-        unsigned step;
-        unsigned max;
 };
 
 

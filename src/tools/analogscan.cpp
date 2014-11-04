@@ -78,6 +78,7 @@ int main(void) {
     std::cout << "### Analyzing data ###" << std::endl;
     Fei4Analysis ana;
     ana.addAlgorithm(new OccupancyAnalysis);
+    ana.addAlgorithm(new ScurveFitter);
     ana.connect(&anaScan, &clipHisto, &clipResult);
     ana.init();
     ana.process();

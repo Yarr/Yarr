@@ -9,14 +9,14 @@
 #include "Fei4ThresholdScan.h"
 
 Fei4ThresholdScan::Fei4ThresholdScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawData> *data) : ScanBase(fe, tx, rx, data) {
-    mask = MASK_32;
+    mask = MASK_16;
     dcMode = QUAD_DC;
-    numOfTriggers = 100;
-    triggerFrequency = 10e3;
+    numOfTriggers = 50;
+    triggerFrequency = 9e3;
     triggerDelay = 50;
     minVcal = 10;
     maxVcal = 100;
-    stepVcal = 1;
+    stepVcal = 2;
 
     verbose = false;
 }
