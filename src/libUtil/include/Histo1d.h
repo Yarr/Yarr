@@ -25,9 +25,12 @@ class Histo1d : public HistogramBase {
         unsigned size();
 
         void fill(double x, double v=1);
+
+        void scale(const double s);
         
         void setBin(unsigned n, double v);
         double getBin(unsigned n);
+        double* getData() { return data;};
         
         void toFile(std::string filename, bool header=true);
         void plot(std::string filename);

@@ -17,8 +17,10 @@
 #undef __BEGIN_DECLS
 #undef __END_DECLS
 #ifdef __cplusplus
-# define __BEGIN_DECLS extern "C" {
-# define __END_DECLS }
+//# define __BEGIN_DECLS extern "C" {
+//# define __END_DECLS }
+# define __BEGIN_DECLS /* empty */
+# define __END_DECLS /* empty */
 #else
 # define __BEGIN_DECLS /* empty */
 # define __END_DECLS /* empty */
@@ -26,7 +28,6 @@
 
 #include "lmstruct.h"
 
-__BEGIN_DECLS
 
 /* Levenberg-Marquardt minimization. */
 void lmmin( int n_par, double *par, int m_dat, const void *data, 
@@ -74,5 +75,4 @@ void lmmin( int n_par, double *par, int m_dat, const void *data,
 /* Refined calculation of Eucledian norm. */
 double lm_enorm( int, const double * );
 
-__END_DECLS
 #endif /* LMMIN_H */

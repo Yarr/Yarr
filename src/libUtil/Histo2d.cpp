@@ -25,6 +25,8 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     underflow = 0;
     overflow = 0;
     data = new double[xbins*ybins];
+    this->setAll(0);
+
 }
 
 Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
@@ -44,6 +46,7 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     underflow = 0;
     overflow = 0;
     data = new double[xbins*ybins];
+    this->setAll(0);
 }
 
 Histo2d::~Histo2d() {
@@ -88,11 +91,32 @@ void Histo2d::add(const Histo2d &h) {
     }
 }
 
+void Histo2d::scale(const double s) {
+    for (unsigned int i=0; i<(xbins*ybins); i++) {
+        data[i] = data[i]*s;
+    }
+}
+
+
 double Histo2d::getBin(unsigned n) const {
     if (n < this->size()) {
         return data[n];
     } else {
         return 0;
+    }
+}
+
+int Histo2d::binNum(double x, double y) {
+    if (x < xlow || y < ylow) {
+        //std::cout << "Underflow " << x << " " << y << std::endl;
+        return -1;
+    } else if (x > xhigh || y > yhigh) {
+        //std::cout << "Overflow " << x << " " << y << std::endl;
+        return -1;
+    } else {
+        unsigned xbin = (x-xlow)/xbinWidth;
+        unsigned ybin = (y-ylow)/ybinWidth;
+        return (ybin+(xbin*ybins));
     }
 }
 

@@ -35,9 +35,11 @@ class Histo2d : public HistogramBase {
         void subtract(const Histo2d &h);
         void multiply(const Histo2d &h);
         void divide(const Histo2d &h);
+        void scale(const double s);
         //void setBin(unsigned x, double v);
         
         double getBin(unsigned n) const;
+        int binNum(double x, double y);
         
         void toFile(std::string filename, bool header=true);
         void plot(std::string filename);

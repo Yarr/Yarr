@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <fstream>
 #include <string>
+#include <chrono>
 
 #include "SpecController.h"
 #include "TxCore.h"
@@ -17,6 +18,8 @@
 #include "Fei4Scans.h"
 
 int main(void) {
+    // Start Stopwatch
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     // Init
     std::cout << "### Init Stuff ###" << std::endl;
     SpecController spec(0);
@@ -33,6 +36,7 @@ int main(void) {
 
     Fei4ThresholdScan anaScan(&g_fe, &tx, &rx, &clipRaw);
     
+    std::chrono::steady_clock::time_point init = std::chrono::steady_clock::now();
     std::cout << "### Init Scan ###" << std::endl;
     anaScan.init();
 
@@ -44,6 +48,7 @@ int main(void) {
     while(!tx.isCmdEmpty());
     rx.setRxEnable(0x1);
 
+    std::chrono::steady_clock::time_point config = std::chrono::steady_clock::now();
     std::cout << "### Pre Scan ###" << std::endl;
     anaScan.preScan();
 
@@ -57,12 +62,15 @@ int main(void) {
     tx.setCmdEnable(0x0);
     rx.setRxEnable(0x0);
     std::cout << "Collected: " << clipRaw.size() << " Raw Data Fragments" << std::endl;
+    std::chrono::steady_clock::time_point scan = std::chrono::steady_clock::now();
     
-    std::cout << "### Analyzing data ###" << std::endl;
+    std::cout << "### Processing data ###" << std::endl;
     Fei4DataProcessor proc(fe.getValue(&Fei4::HitDiscCnfg));
     proc.connect(&clipRaw, &clipEvent);
     proc.process();
     std::cout << "Collected: " << clipEvent.size() << " Events" << std::endl;
+    std::chrono::steady_clock::time_point pro = std::chrono::steady_clock::now();
+    
     
     std::cout << "### Histogramming data ###" << std::endl;
     Fei4Histogrammer histogrammer;
@@ -72,6 +80,7 @@ int main(void) {
     //histogrammer.addHistogrammer(new L1Dist());
     histogrammer.connect(&clipEvent, &clipHisto);
     histogrammer.process();
+    std::chrono::steady_clock::time_point hist = std::chrono::steady_clock::now();
 
     std::cout << "Collected: " << clipHisto.size() << " Histograms" << std::endl;
 
@@ -82,12 +91,24 @@ int main(void) {
     ana.connect(&anaScan, &clipHisto, &clipResult);
     ana.init();
     ana.process();
+    ana.end();
     std::cout << "Collected: " << clipResult.size() << " Histograms" << std::endl;
+    std::chrono::steady_clock::time_point anal = std::chrono::steady_clock::now();
 
     std::cout << "### Saving ###" << std::endl;
     ana.plot("analogscan");
     //histogrammer.toFile("analogscan");
     std::cout << "... done!" << std::endl;
 
+    std::cout << "### Timing ###" << std::endl;
+    std::cout << "Init: " << std::chrono::duration_cast<std::chrono::milliseconds>(init-start).count() << " ms!" << std::endl;
+    std::cout << "Configure: " << std::chrono::duration_cast<std::chrono::milliseconds>(config - init).count() << " ms!" << std::endl;
+    std::cout << "Scan: " << std::chrono::duration_cast<std::chrono::milliseconds>(scan - config).count() << " ms!" << std::endl;
+    std::cout << "Processor: " << std::chrono::duration_cast<std::chrono::milliseconds>(pro - scan).count() << " ms!" << std::endl;
+    std::cout << "Histogrammer: " << std::chrono::duration_cast<std::chrono::milliseconds>(hist - pro).count() << " ms!" << std::endl;
+    std::cout << "Analysis: " << std::chrono::duration_cast<std::chrono::milliseconds>(anal - hist).count() << " ms!" << std::endl;
+    std::cout << "=======================" << std::endl;
+    std::cout << "Total: " << std::chrono::duration_cast<std::chrono::milliseconds>(anal - init).count() << " ms!" << std::endl;
+    std::cout << std::endl << "Finished!" << std::endl;
     return 0;
 }

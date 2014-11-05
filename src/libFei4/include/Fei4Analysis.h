@@ -12,6 +12,9 @@
 #include <iostream>
 #include <vector>
 #include <typeinfo>
+#include <cmath>
+#include <functional>
+#include <chrono>
 
 #include "ScanBase.h"
 #include "ClipBoard.h"
@@ -19,6 +22,7 @@
 #include "HistogramBase.h"
 #include "Histo2d.h"
 #include "Fei4Histogrammer.h"
+#include "lmcurve.h"
 
 #include "AllFei4Actions.h"
 #include "AllStdActions.h"
@@ -53,6 +57,7 @@ class Fei4Analysis : DataProcessor {
         
         void init();
         void process();
+        void end();
 
         void addAlgorithm(AnalysisAlgorithm *a);
         void plot(std::string basename);
@@ -97,9 +102,18 @@ class ScurveFitter : public AnalysisAlgorithm {
         unsigned vcalStep;
         unsigned vcalBins;
         unsigned n_count;
+        unsigned injections;
+        unsigned cnt;
+        std::vector<double> x;
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         std::map<unsigned, Histo1d*> histos;
+        std::map<unsigned, Histo2d*> thrMap;
+        std::map<unsigned, Histo1d*> thrDist;
+        std::map<unsigned, Histo2d*> sigMap;
+        std::map<unsigned, Histo1d*> sigDist;
+        std::map<unsigned, Histo1d*> chiDist;
+        std::map<unsigned, Histo1d*> timeDist;
         std::map<unsigned, unsigned> innerCnt;
 };
 

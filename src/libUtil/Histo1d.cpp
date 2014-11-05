@@ -63,6 +63,14 @@ double Histo1d::getBin(unsigned n) {
     }
     return 0;
 }
+
+void Histo1d::scale(const double s) {
+    for (unsigned int i=0; i<bins; i++) {
+        data[i] = data[i] * s;
+    }
+}
+
+
 void Histo1d::toFile(std::string prefix, bool header) {
     std::string filename = prefix + "_" + HistogramBase::name + ".dat";
     std::fstream file(filename, std::fstream::out | std::fstream::trunc);
