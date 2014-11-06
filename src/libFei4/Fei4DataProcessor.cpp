@@ -38,6 +38,7 @@ void Fei4DataProcessor::process() {
         for (unsigned i=0; i<curIn->words; i++) {
             uint32_t value(curIn->buf[i]);
             uint32_t header = ((value & 0x00FF0000) >> 16);
+            unsigned channel = ((value & 0xFF000000) >> 24);
             if (header == 0xe9) {
                 // Delete empty events
                 if (events > 0 && hits == 0)
