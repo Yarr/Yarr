@@ -35,12 +35,12 @@ int main(void) {
     digScan.init();
 
     std::cout << "### Configure Module ###" << std::endl;
-    tx.setCmdEnable(0x1);
+    tx.setCmdEnable(0x3);
     fe.setRunMode(false);
     fe.configure();
     fe.configurePixels();
     while(!tx.isCmdEmpty());
-    rx.setRxEnable(0x1);
+    rx.setRxEnable(0x3);
 
     std::cout << "### Pre Scan ###" << std::endl;
     digScan.preScan();
@@ -63,17 +63,17 @@ int main(void) {
     std::cout << "### Histogramming data ###" << std::endl;
     Fei4Histogrammer histogrammer;
     histogrammer.addHistogrammer(new OccupancyMap());
-    histogrammer.addHistogrammer(new TotMap());
-    histogrammer.addHistogrammer(new Tot2Map());
-    histogrammer.addHistogrammer(new L1Dist());
+    //histogrammer.addHistogrammer(new TotMap());
+    //histogrammer.addHistogrammer(new Tot2Map());
+    //histogrammer.addHistogrammer(new L1Dist());
     histogrammer.connect(&clipEvent, &clipHisto);
     histogrammer.init();
     histogrammer.process();
-    histogrammer.publish();
+    //histogrammer.publish();
 
     std::cout << "### Saving ###" << std::endl;
-    histogrammer.plot("digitalscan");
-    histogrammer.toFile("digitalsca");
+    //histogrammer.plot("digitalscan");
+    histogrammer.toFile("digitalscan");
     std::cout << "... done!" << std::endl;
 
     return 0;
