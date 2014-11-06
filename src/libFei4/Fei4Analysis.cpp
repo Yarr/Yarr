@@ -248,7 +248,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         hh1->setYaxisTitle("Number of Pixels");
                         sigDist[outerIdent] = hh1;
                         hh1 = new Histo1d("Chi2Dist", 51, -0.025, 2.525, typeid(this));
-                        hh1->setXaxisTitle("Threshold [Vcal]");
+                        hh1->setXaxisTitle("Fit Chi/ndf");
                         hh1->setYaxisTitle("Number of Pixels");
                         chiDist[outerIdent] = hh1;
                         hh1 = new Histo1d("TimePerFitDist", 201, -1, 401, typeid(this));
@@ -266,9 +266,12 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     }
 
                     // Delete s-curve
-                    delete histos[ident];
-                    histos[ident] = NULL;
-                    //output->pushData(histos[ident]);
+                    if (bin%2680==0) {
+                        output->pushData(histos[ident]);
+                    } else {
+                        delete histos[ident];
+                        histos[ident] = NULL;
+                    }
                 }
             }
         }
