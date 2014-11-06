@@ -369,7 +369,7 @@ int SpecController::progFpga(const void *data, size_t size) {
     this->mask32(bar4, GNGPIO_OUTPUT_VALUE/4, 0xC000, 0x8000);
 
     // FCL_CLK_DIV -> 0x0 -> PCLK/2 (PCLK = 125MHz)
-    this->write32(bar4, FCL_CLK_DIV/4, 0x0);
+    this->write32(bar4, FCL_CLK_DIV/4, 0x1);
     // FCL_CTRL -> 0x40 -> Reset
     this->write32(bar4, FCL_CTRL/4, 0x40);
     // Check reset is high
@@ -451,7 +451,7 @@ int SpecController::progFpga(const void *data, size_t size) {
 #endif
     
     //Wait a bit for the FPGA to boot up
-    usleep(250);
+    sleep(1);
 
     uint32_t irq = read32(bar4, FCL_IRQ/4);
     uint32_t status = read32(bar4, FCL_STATUS/4);
@@ -460,8 +460,10 @@ int SpecController::progFpga(const void *data, size_t size) {
         std::cerr << __PRETTY_FUNCTION__<< " -> FCL IRQ indicates an error, read: 0x" << std::hex << irq << std::dec << std::endl;
 
 #ifdef DEBUG
+    std::cout << __PRETTY_FUNCTION__ << " -> FCL IRQ: 0x" << std::hex << irq << std::dec << std::endl;
     if (irq & 0x8)
         std::cout << __PRETTY_FUNCTION__ << " -> FCL IRQ indicates CONFIG_DONE" <<std::endl;
+    std::cout << __PRETTY_FUNCTION__ << " -> FCL Status: 0x" << std::hex << status << std::dec << std::endl;
     if (status & 0x8)
         std::cout << __PRETTY_FUNCTION__ << " -> FCL STATUS indicates SPRI_DONE" <<std::endl;
 #endif
