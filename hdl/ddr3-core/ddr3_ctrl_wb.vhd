@@ -85,6 +85,7 @@ architecture behavioral of ddr3_ctrl_wb is
     signal ddr_rd_ack : std_logic;
     signal ddr_rd_en  : std_logic;
     signal ddr_cmd_en : std_logic;
+	signal ddr_cmd_full : std_logic;
 
     signal wb_stall   : std_logic;
     signal wb_stall_d : std_logic;
@@ -240,13 +241,15 @@ begin
         if (rst_n_i = '0') then
             wb_stall <= '0';
             wb_stall_d <= '0';
+			ddr_cmd_full <= '0';
             wb_stall_cnt <= (others => '0');
         elsif rising_edge(wb_clk_i) then
-            if (ddr_cmd_full_i = '1' or
+			ddr_cmd_full <= ddr_cmd_full_i;
+            if (ddr_cmd_full = '1' or
 					read_cnt > c_READ_STALL_ASSERT or
 					unsigned(ddr_wr_count_i) > c_WRITE_STALL_ASSERT) then
 				wb_stall <= '1';
-            elsif (ddr_cmd_full_i = '0' and
+            elsif (ddr_cmd_full = '0' and
 					read_cnt < c_READ_STALL_NEGATE and
 					unsigned(ddr_wr_count_i) < c_WRITE_STALL_NEGATE) then
 				wb_stall <= '0';

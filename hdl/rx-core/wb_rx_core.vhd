@@ -94,11 +94,16 @@ architecture behavioral of wb_rx_core is
 	signal rx_fifo_full : std_logic_vector(g_NUM_RX-1 downto 0);
 	signal rx_fifo_empty : std_logic_vector(g_NUM_RX-1 downto 0);
 	signal rx_fifo_rden : std_logic_vector(g_NUM_RX-1 downto 0);
+	signal rx_fifo_dout_t : std_logic_vector(31 downto 0);
 
 	signal rx_enable : std_logic_vector(31 downto 0);
 	
 	signal rx_fifo_cur : std_logic_vector(g_NUM_RX-1 downto 0);
+	signal rx_fifo_cur_d : std_logic_vector(g_NUM_RX-1 downto 0);
 	signal rx_fifo_act : std_logic_vector(g_NUM_RX-1 downto 0);
+	signal rx_fifo_cnt : unsigned(5 downto 0);
+	signal rx_fifo_cnt_d : unsigned(5 downto 0);
+	signal rx_fifo_cnt_dd : unsigned(5 downto 0);
 	
 	signal debug : std_logic_vector(31 downto 0);
 	
@@ -145,31 +150,41 @@ begin
 		if (rst_n_i = '0') then
 			rx_data_o <= (others => '0');
 			rx_valid_o <= '0';
+			rx_fifo_cnt <= (others => '0');
+			rx_fifo_cnt_d <= (others => '0');
+			rx_fifo_cnt_dd <= (others => '0');
+			rx_fifo_act <= (others => '0');
 		elsif rising_edge(wb_clk_i) then
 			-- Read active Fifo
-			rx_fifo_rden <= rx_fifo_cur and rx_fifo_empty;
+			rx_fifo_act <= (others => '0');
+			rx_fifo_act(TO_INTEGER(rx_fifo_cnt)) <= '1';
+			
+			rx_fifo_rden <= rx_fifo_act;
 			rx_data_o <= x"DEADBEEF";
 			rx_valid_o <= '0';
-			for I in 0 to g_NUM_RX-1 loop
-				if (rx_fifo_rden(I) = '1' and rx_fifo_empty(I) = '0') then
-					rx_data_o <= rx_fifo_dout(I);
+			--for I in 0 to g_NUM_RX-1 loop
+				--rx_data_o <= rx_fifo_dout(I) when (rx_fifo_rden(I) = '1') else rx_fifo_dout(I+1);
+				if (rx_fifo_rden(TO_INTEGER(rx_fifo_cnt_dd)) = '1' and rx_fifo_empty(TO_INTEGER(rx_fifo_cnt_dd)) = '0') then
+					rx_data_o <= rx_fifo_dout(TO_INTEGER(rx_fifo_cnt_dd));
 					rx_valid_o <= '1';
 				end if;
-			end loop;
+			--end loop;
+			
+			rx_fifo_cnt_dd <= rx_fifo_cnt_d;
+			rx_fifo_cnt_d <= rx_fifo_cnt;
+			if(rx_fifo_cnt >= g_NUM_RX-1) then
+				rx_fifo_cnt <= (others => '0');
+			else
+				rx_fifo_cnt <= rx_fifo_cnt + 1;
+			end if;
 		end if;
 	end process arbiter_proc;
 	
 	-- Bit shifter
 	single_shift_gen: if (g_NUM_RX = 1) generate
 	begin
-		process(wb_clk_i, rst_n_i)
-		begin
-			if (rst_n_i = '0') then
-				rx_fifo_cur <= (0 => '1', others => '0');
-			elsif rising_edge(wb_clk_i) then
-				rx_fifo_cur <= (0 => '1', others => '0');
-			end if;
-		end process;
+		rx_fifo_cur <= (0 => '1', others => '0');
+		rx_fifo_cur_d <= rx_fifo_cur;
 	end generate;
 	multi_shift_gen: if (g_NUM_RX > 1) generate
 	begin
@@ -177,8 +192,10 @@ begin
 		begin
 			if (rst_n_i = '0') then
 				rx_fifo_cur <= (0 => '1', others => '0');
+				rx_fifo_cur_d <= (g_NUM_RX-1 => '1', others => '0');
 			elsif rising_edge(wb_clk_i) then
 				rx_fifo_cur <= rx_fifo_cur(g_NUM_RX-2 downto 0) & rx_fifo_cur(g_NUM_RX-1);
+				rx_fifo_cur_d <= rx_fifo_cur;
 			end if;
 		end process;
 	end generate;

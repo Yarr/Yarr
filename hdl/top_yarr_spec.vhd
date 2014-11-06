@@ -124,12 +124,12 @@ entity yarr is
 		-- LVDS buffer
 		pwdn_l			: out std_logic_vector(2 downto 0);
 		-- FE-I4
-		fe_clk_p		: out std_logic_vector(0 downto 0);
-		fe_clk_n		: out std_logic_vector(0 downto 0);
-		fe_cmd_p		: out std_logic_vector(0 downto 0);
-		fe_cmd_n		: out std_logic_vector(0 downto 0);
-		fe_data_p		: in  std_logic_vector(0 downto 0);
-		fe_data_n		: in  std_logic_vector(0 downto 0)
+		fe_clk_p		: out std_logic_vector(1 downto 0);
+		fe_clk_n		: out std_logic_vector(1 downto 0);
+		fe_cmd_p		: out std_logic_vector(1 downto 0);
+		fe_cmd_n		: out std_logic_vector(1 downto 0);
+		fe_data_p		: in  std_logic_vector(1 downto 0);
+		fe_data_n		: in  std_logic_vector(1 downto 0)
       );
 end yarr;
 
@@ -314,7 +314,7 @@ architecture rtl of yarr is
   
 	component wb_tx_core
 	generic (
-		g_NUM_TX : integer range 1 to 32 := 1
+		g_NUM_TX : integer range 1 to 32 := 2
 	);
 	port (
 		-- Sys connect
@@ -340,7 +340,7 @@ architecture rtl of yarr is
 	
 	component wb_rx_core
 		generic (
-			g_NUM_RX : integer range 1 to 32 := 1
+			g_NUM_RX : integer range 1 to 32 := 2
 		);
 		port (
 			-- Sys connect
@@ -631,8 +631,8 @@ architecture rtl of yarr is
   constant c_BAR0_APERTURE    : integer := 16;  -- nb of bits for 32-bit word address
   constant c_CSR_WB_SLAVES_NB : integer := 4;
   
-  constant c_TX_CHANNELS : integer := 1;
-  constant c_RX_CHANNELS : integer := 1;
+  constant c_TX_CHANNELS : integer := 2;
+  constant c_RX_CHANNELS : integer := 2;
 
   ------------------------------------------------------------------------------
   -- Signals declaration
@@ -1124,7 +1124,8 @@ begin
 	TRIG0(0) <= rx_valid;
 	TRIG0(1) <= fe_cmd_o(0);
 	TRIG0(2) <= trig_pulse;
-	TRIG0(31 downto 3) <= (others => '0');
+	TRIG0(3) <= fe_cmd_o(0);
+	TRIG0(31 downto 4) <= (others => '0');
 	TRIG1 <= rx_data;
 	TRIG2 <= debug;
    
