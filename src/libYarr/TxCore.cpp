@@ -11,6 +11,7 @@
 TxCore::TxCore(SpecController *arg_spec) {
     spec = arg_spec;
     verbose = false;
+    enMask = 0x0;
 }
 
 void TxCore::writeFifo(uint32_t value) {
@@ -24,6 +25,7 @@ void TxCore::setCmdEnable(uint32_t value) {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << value << std::dec << std::endl;
     spec->writeSingle(TX_ADDR | TX_ENABLE, value);
+    enMask = value;
 }
 
 uint32_t TxCore::getCmdEnable() {
@@ -103,6 +105,6 @@ bool TxCore::isTrigDone() {
 }
  
 bool TxCore::isCmdEmpty() {
-    return spec->readSingle(TX_ADDR | TX_EMPTY);
+    return (spec->readSingle(TX_ADDR | TX_EMPTY) & enMask);
 }
 

@@ -64,6 +64,7 @@ class TxCore {
     private:
         SpecController *spec;
         bool verbose;
+        uint32_t enMask;
 };
 
 #endif
