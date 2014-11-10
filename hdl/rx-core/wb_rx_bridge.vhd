@@ -94,7 +94,7 @@ architecture Behavioral of wb_rx_bridge is
 	-- Constants
 	constant c_ALMOST_FULL_THRESHOLD : unsigned(10 downto 0) := TO_UNSIGNED(1900, 11);
 	constant c_PACKAGE_SIZE : unsigned(31 downto 0) := TO_UNSIGNED((250*256), 32); -- 250kByte
-	constant c_TIMEOUT : unsigned(31 downto 0) := TO_UNSIGNED(2**12, 32); -- Counts in 5ns = 0.1ms
+	constant c_TIMEOUT : unsigned(31 downto 0) := TO_UNSIGNED(2**15, 32); -- Counts in 5ns = 0.1ms
 	constant c_TIME_FRAME : unsigned(31 downto 0) := TO_UNSIGNED(200000000-1, 32); -- 200MHz clock cycles in 1 sec
 	constant c_EMPTY_THRESHOLD : unsigned(10 downto 0) := TO_UNSIGNED(31, 11);
 	constant c_EMPTY_TIMEOUT : unsigned(10 downto 0) := TO_UNSIGNED(500, 11);
@@ -270,10 +270,9 @@ begin
 			dma_stb_t <= '0';
 			data_fifo_rden <= '0';
 			dma_adr_o <= (others => '0');
-			--dma_dat_o <= (others => '0');
+			dma_dat_o <= (others => '0');
 			dma_cyc_o <= '0';
 			dma_stb_o <= '0';
-			--dma_stb_valid <= '0';
 			dma_we_o <= '1'; -- Write only
 		elsif rising_edge(dma_clk_i) then
 			if (data_fifo_empty = '0' and dma_stall_i = '0' and ctrl_fifo_full = '0') then
@@ -292,7 +291,7 @@ begin
 				
 			dma_adr_o <= std_logic_vector(dma_adr_cnt);
 			dma_dat_o <= data_fifo_dout;
-			dma_stb_o <= dma_stb_valid;
+			dma_stb_o <= dma_stb_t and not data_fifo_empty;
 			dma_we_o <= '1'; -- Write only
 		end if;
 	end process to_ddr_proc;
@@ -354,7 +353,7 @@ begin
 			-- Timeout counter
 			if (dma_data_cnt > 0 and data_fifo_empty = '1') then
 				dma_timeout_cnt <= dma_timeout_cnt + 1;
-			elsif (dma_data_cnt = 0 or data_fifo_empty = '0') then
+			elsif (data_fifo_empty = '0') then
 				dma_timeout_cnt <= TO_UNSIGNED(0, 32);
 			end if;
 		end if;

@@ -91,9 +91,11 @@ architecture behavioral of wb_rx_core is
 	signal rx_data_raw : rx_stat_array;
 	
 	signal rx_fifo_dout :rx_data_fifo_array;
+	signal rx_fifo_din : rx_data_fifo_array;
 	signal rx_fifo_full : std_logic_vector(g_NUM_RX-1 downto 0);
 	signal rx_fifo_empty : std_logic_vector(g_NUM_RX-1 downto 0);
 	signal rx_fifo_rden : std_logic_vector(g_NUM_RX-1 downto 0);
+	signal rx_fifo_wren : std_logic_vector(g_NUM_RX-1 downto 0);
 	signal rx_fifo_dout_t : std_logic_vector(31 downto 0);
 
 	signal rx_enable : std_logic_vector(31 downto 0);
@@ -216,12 +218,14 @@ begin
 			rx_data_raw_o => rx_data_raw(I)
 		);
 		
+		rx_fifo_din(I) <= STD_LOGIC_VECTOR(TO_UNSIGNED(I,8)) & rx_data(0);
+		rx_fifo_wren(I) <= rx_valid(0) and rx_enable(I);
 		cmp_rx_channel_fifo : rx_channel_fifo PORT MAP (
 			rst => not rst_n_i,
 			wr_clk => rx_clk_i,
 			rd_clk => wb_clk_i,
-			din => STD_LOGIC_VECTOR(TO_UNSIGNED(I,8)) & rx_data(I),
-			wr_en => rx_valid(I),
+			din => rx_fifo_din(I),
+			wr_en => rx_fifo_wren(I),
 			rd_en => rx_fifo_rden(I),
 			dout => rx_fifo_dout(I),
 			full => rx_fifo_full(I),

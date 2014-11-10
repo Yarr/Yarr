@@ -192,11 +192,13 @@ NET "GPIO[1]" LOC = AB19;
 NET "GPIO[1]" IOSTANDARD = "LVCMOS25";
 
 #----------------------------------------
-# FMC slot
+# FMC slot - YARR FE-I4 RJ45 Style board
 #----------------------------------------
 # Lemo Connector
 NET "EXT_TRIG" LOC = C18; # LA31_N
 NET "EXT_TRIG" IOSTANDARD = "LVCMOS25";
+#NET "LA31_P" LOC = D17; # LA31_P
+#NET "LA31_P" IOSTANDARD = "LVCMOS25";
 
 # LVDS Buffer control
 NET "PWDN_L[0]" LOC = V7; # LA03_P
@@ -205,6 +207,21 @@ NET "PWDN_L[1]" LOC = W8; # LA03_N
 NET "PWDN_L[1]" IOSTANDARD = "LVCMOS25";
 NET "PWDN_L[2]" LOC = R9; # LA08_P
 NET "PWDN_L[2]" IOSTANDARD = "LVCMOS25";
+#NET "LA08_N" LOC = R8; # LA08_N
+#NET "LA08_N" IOSTANDARD = "LVCMOS25";
+
+#NET "PEM_1[0]" LOC = T10; # LA12_P
+#NET "PEM_1[0]" IOSTANDARD = "LVCMOS25";
+#NET "PEM_0[0]" LOC = U10; # LA12_N
+#NET "PEM_0[0]" IOSTANDARD = "LVCMOS25";
+#NET "PEM_1[1]" LOC = W12; # LA16_P
+#NET "PEM_1[1]" IOSTANDARD = "LVCMOS25";
+#NET "PEM_0[1]" LOC = Y12; # LA16_N
+#NET "PEM_0[1]" IOSTANDARD = "LVCMOS25";
+#NET "PEM_1[2]" LOC = R11; # LA20_P
+#NET "PEM_1[2]" IOSTANDARD = "LVCMOS25";
+#NET "PEM_0[2]" LOC = T11; # LA20_N
+#NET "PEM_0[2]" IOSTANDARD = "LVCMOS25";
 
 # RJ45 FE-I4 Style Interface
 NET "FE_CLK_P[0]" LOC = W6; # LA02_P
@@ -215,6 +232,35 @@ NET "FE_CLK_P[1]" LOC = T8; # LA04_P
 NET "FE_CLK_P[1]" IOSTANDARD = "LVDS_25";
 NET "FE_CLK_N[1]" LOC = U8; # LA04_N
 NET "FE_CLK_N[1]" IOSTANDARD = "LVDS_25";
+NET "FE_CLK_P[2]" LOC = U9; # LA07_P
+NET "FE_CLK_P[2]" IOSTANDARD = "LVDS_25";
+NET "FE_CLK_N[2]" LOC = V9; # LA07_N
+NET "FE_CLK_N[2]" IOSTANDARD = "LVDS_25";
+NET "FE_CLK_P[3]" LOC = W10; # LA11_P
+NET "FE_CLK_P[3]" IOSTANDARD = "LVDS_25";
+NET "FE_CLK_N[3]" LOC = Y10; # LA11_N
+NET "FE_CLK_N[3]" IOSTANDARD = "LVDS_25";
+# Fake ports
+NET "FE_CLK_P[3]" LOC = Y13; # LA17_P
+NET "FE_CLK_P[3]" IOSTANDARD = "LVDS_25";
+NET "FE_CLK_N[3]" LOC = AB13; # LA17_N
+NET "FE_CLK_N[3]" IOSTANDARD = "LVDS_25";
+NET "FE_CLK_P[4]" LOC = AA4; # LA14_P
+NET "FE_CLK_P[4]" IOSTANDARD = "LVDS_25";
+NET "FE_CLK_N[4]" LOC = AB4; # LA14_N
+NET "FE_CLK_N[4]" IOSTANDARD = "LVDS_25";
+NET "FE_CLK_P[5]" LOC = AA8; # LA10_P
+NET "FE_CLK_P[5]" IOSTANDARD = "LVDS_25";
+NET "FE_CLK_N[5]" LOC = AB8; # LA10_N
+NET "FE_CLK_N[5]" IOSTANDARD = "LVDS_25";
+NET "FE_CLK_P[6]" LOC = Y17; # LA26_P
+NET "FE_CLK_P[6]" IOSTANDARD = "LVDS_25";
+NET "FE_CLK_N[6]" LOC = AB17; # LA26_N
+NET "FE_CLK_N[6]" IOSTANDARD = "LVDS_25";
+NET "FE_CLK_P[7]" LOC = R13; # LA22_P
+NET "FE_CLK_P[7]" IOSTANDARD = "LVDS_25";
+NET "FE_CLK_N[7]" LOC = T14; # LA22_N
+NET "FE_CLK_N[7]" IOSTANDARD = "LVDS_25";
 
 NET "FE_CMD_P[0]" LOC = Y16; # LA28_P
 NET "FE_CMD_P[0]" IOSTANDARD = "LVDS_25";
@@ -224,6 +270,31 @@ NET "FE_CMD_P[1]" LOC = V17; # LA30_P
 NET "FE_CMD_P[1]" IOSTANDARD = "LVDS_25";
 NET "FE_CMD_N[1]" LOC = W18; # LA30_N
 NET "FE_CMD_N[1]" IOSTANDARD = "LVDS_25";
+NET "FE_CMD_P[2]" LOC = C19; # LA33_P
+NET "FE_CMD_P[2]" IOSTANDARD = "LVDS_25";
+NET "FE_CMD_N[2]" LOC = A19; # LA33_N
+NET "FE_CMD_N[2]" IOSTANDARD = "LVDS_25";
+NET "FE_CMD_P[3]" LOC = B20; # LA32_P
+NET "FE_CMD_P[3]" IOSTANDARD = "LVDS_25";
+NET "FE_CMD_N[3]" LOC = A20; # LA32_N
+NET "FE_CMD_N[3]" IOSTANDARD = "LVDS_25";
+#Fake ports
+NET "FE_CMD_P[4]" LOC = Y11; # LA00_P
+NET "FE_CMD_P[4]" IOSTANDARD = "LVDS_25";
+NET "FE_CMD_N[4]" LOC = AB11; # LA00_N
+NET "FE_CMD_N[4]" IOSTANDARD = "LVDS_25";
+NET "FE_CMD_P[5]" LOC = W17; # LA29_P
+NET "FE_CMD_P[5]" IOSTANDARD = "LVDS_25";
+NET "FE_CMD_N[5]" LOC = Y18; # LA29_N
+NET "FE_CMD_N[5]" IOSTANDARD = "LVDS_25";
+NET "FE_CMD_P[6]" LOC = Y7; # LA09_P
+NET "FE_CMD_P[6]" IOSTANDARD = "LVDS_25";
+NET "FE_CMD_N[6]" LOC = AB7; # LA09_N
+NET "FE_CMD_N[6]" IOSTANDARD = "LVDS_25";
+NET "FE_CMD_P[7]" LOC = T15; # LA25_P
+NET "FE_CMD_P[7]" IOSTANDARD = "LVDS_25";
+NET "FE_CMD_N[7]" LOC = U15; # LA25_N
+NET "FE_CMD_N[7]" IOSTANDARD = "LVDS_25";
 
 NET "FE_DATA_P[0]" LOC = V11; # LA15_P
 NET "FE_DATA_P[0]" IOSTANDARD = "LVDS_25";
@@ -233,143 +304,66 @@ NET "FE_DATA_P[1]" LOC = Y15; # LA19_P
 NET "FE_DATA_P[1]" IOSTANDARD = "LVDS_25";
 NET "FE_DATA_N[1]" LOC = AB15; # LA19_N
 NET "FE_DATA_N[1]" IOSTANDARD = "LVDS_25";
+NET "FE_DATA_P[2]" LOC = V13; # LA21_P
+NET "FE_DATA_P[2]" IOSTANDARD = "LVDS_25";
+NET "FE_DATA_N[2]" LOC = W13; # LA21_N
+NET "FE_DATA_N[2]" IOSTANDARD = "LVDS_25";
+NET "FE_DATA_P[3]" LOC = W14; # LA24_P
+NET "FE_DATA_P[3]" IOSTANDARD = "LVDS_25";
+NET "FE_DATA_N[3]" LOC = Y14; # LA24_N
+NET "FE_DATA_N[3]" IOSTANDARD = "LVDS_25";
+# Fake ports
+NET "FE_DATA_P[4]" LOC = AA12; # LA01_P
+NET "FE_DATA_P[4]" IOSTANDARD = "LVDS_25";
+NET "FE_DATA_N[4]" LOC = AB12; # LA01_N
+NET "FE_DATA_N[4]" IOSTANDARD = "LVDS_25";
+NET "FE_DATA_P[5]" LOC = Y9; # LA13_P
+NET "FE_DATA_P[5]" IOSTANDARD = "LVDS_25";
+NET "FE_DATA_N[5]" LOC = AB9; # LA13_N
+NET "FE_DATA_N[5]" IOSTANDARD = "LVDS_25";
+NET "FE_DATA_P[6]" LOC = AA6; # LA05_P
+NET "FE_DATA_P[6]" IOSTANDARD = "LVDS_25";
+NET "FE_DATA_N[6]" LOC = AB6; # LA05_N
+NET "FE_DATA_N[6]" IOSTANDARD = "LVDS_25";
+NET "FE_DATA_P[7]" LOC = AA18; # LA27_P
+NET "FE_DATA_P[7]" IOSTANDARD = "LVDS_25";
+NET "FE_DATA_N[7]" LOC = AB18; # LA27_N
+NET "FE_DATA_N[7]" IOSTANDARD = "LVDS_25";
+#NET "FE_DATA_P[8]" LOC = T8; # LA04_P
+#NET "FE_DATA_P[8]" IOSTANDARD = "LVDS_25";
+#NET "FE_DATA_N[8]" LOC = U8; # LA04_N
+#NET "FE_DATA_N[8]" IOSTANDARD = "LVDS_25";
+#NET "FE_DATA_P[9]" LOC = T12; # LA18_P
+#NET "FE_DATA_P[9]" IOSTANDARD = "LVDS_25";
+#NET "FE_DATA_N[9]" LOC = U12; # LA18_N
+#NET "FE_DATA_N[9]" IOSTANDARD = "LVDS_25";
+#NET "FE_DATA_P[10]" LOC = Y5; # LA06_P
+#NET "FE_DATA_P[10]" IOSTANDARD = "LVDS_25";
+#NET "FE_DATA_N[10]" LOC = AB5; # LA06_N
+#NET "FE_DATA_N[10]" IOSTANDARD = "LVDS_25";
 
-#NET "ext_trigger_n_i" LOC = AB13; # LA17_N
-#NET "ext_trigger_n_i" IOSTANDARD = "LVDS_25";
-#NET "ext_trigger_p_i" LOC = Y13; # LA17_P
-#NET "ext_trigger_p_i" IOSTANDARD = "LVDS_25";
 
-# dco_p and dco_n are swapped compared to the FMC ADC schematics
-# this is to be coherent in the hdl design
-#NET "adc_dco_n_i" LOC = AB11; # LA00_N
-#NET "adc_dco_n_i" IOSTANDARD = "LVDS_25";
-#NET "adc_dco_p_i" LOC = Y11; # LA00_P
-#NET "adc_dco_p_i" IOSTANDARD = "LVDS_25";
 
-# fr_p and fr_n are swapped compared to the FMC ADC schematics
-# this is to be coherent in the hdl design
-#NET "adc_fr_n_i" LOC = AB12; # LA01_N
-#NET "adc_fr_n_i" IOSTANDARD = "LVDS_25";
-#NET "adc_fr_p_i" LOC = AA12; # LA01_P
-#NET "adc_fr_p_i" IOSTANDARD = "LVDS_25";
-
-#NET "adc_outa_n_i[0]" LOC = AB4; # LA14_N
-#NET "adc_outa_n_i[0]" IOSTANDARD = "LVDS_25";
-#NET "adc_outa_p_i[0]" LOC = AA4; # LA14_P
-#NET "adc_outa_p_i[0]" IOSTANDARD = "LVDS_25";
-
-#NET "adc_outa_n_i[1]" LOC = Y12; # LA16_N
-#NET "adc_outa_n_i[1]" IOSTANDARD = "LVDS_25";
-#NET "adc_outa_p_i[1]" LOC = W12; # LA16_P
-#NET "adc_outa_p_i[1]" IOSTANDARD = "LVDS_25";
-#NET "adc_outb_n_i[1]" LOC = AB9; # LA13_N
-#NET "adc_outb_n_i[1]" IOSTANDARD = "LVDS_25";
-#NET "adc_outb_p_i[1]" LOC = Y9; # LA13_P
-#NET "adc_outb_p_i[1]" IOSTANDARD = "LVDS_25";
-#NET "adc_outa_n_i[2]" LOC = AB8; # LA10_N
-#NET "adc_outa_n_i[2]" IOSTANDARD = "LVDS_25";
-#NET "adc_outa_p_i[2]" LOC = AA8; # LA10_P
-#NET "adc_outa_p_i[2]" IOSTANDARD = "LVDS_25";
-#NET "adc_outb_n_i[2]" LOC = AB7; # LA09_N
-#NET "adc_outb_n_i[2]" IOSTANDARD = "LVDS_25";
-#NET "adc_outb_p_i[2]" LOC = Y7; # LA09_P
-#NET "adc_outb_p_i[2]" IOSTANDARD = "LVDS_25";
-#NET "adc_outa_n_i[3]" LOC = V9; # LA07_N
-#NET "adc_outa_n_i[3]" IOSTANDARD = "LVDS_25";
-#NET "adc_outa_p_i[3]" LOC = U9; # LA07_P
-#NET "adc_outa_p_i[3]" IOSTANDARD = "LVDS_25";
-#NET "adc_outb_n_i[3]" LOC = AB6; # LA05_N
-#NET "adc_outb_n_i[3]" IOSTANDARD = "LVDS_25";
-#NET "adc_outb_p_i[3]" LOC = AA6; # LA05_P
-#NET "adc_outb_p_i[3]" IOSTANDARD = "LVDS_25";
-
-#NET "spi_din_i" LOC = T15; # LA25_P
-#NET "spi_din_i" IOSTANDARD = "LVCMOS25";
-#NET "spi_sck_o" LOC = D17; # LA31_P
-#NET "spi_sck_o" IOSTANDARD = "LVCMOS25";
-#NET "spi_cs_dac1_n_o" LOC = B20; # LA32_P
-#NET "spi_cs_dac1_n_o" IOSTANDARD = "LVCMOS25";
-#NET "spi_cs_dac2_n_o" LOC = A20; # LA32_N
-#NET "spi_cs_dac2_n_o" IOSTANDARD = "LVCMOS25";
-#NET "spi_cs_dac3_n_o" LOC = C19; # LA33_P
-#NET "spi_cs_dac3_n_o" IOSTANDARD = "LVCMOS25";
-#NET "spi_cs_dac4_n_o" LOC = A19; # LA33_N
-#NET "spi_cs_dac4_n_o" IOSTANDARD = "LVCMOS25";
+#NET "LA23_N" LOC = AB16; # LA23_N
+#NET "LA23_N" IOSTANDARD = "LVCMOS25";
+#NET "LA23_P" LOC = AA16; # LA23_P
+#NET "LA23_P" IOSTANDARD = "LVCMOS25";
 
 
 
 
-#NET "gpio_ssr_ch1_o[0]" LOC = Y17; # LA26_P
-#NET "gpio_ssr_ch1_o[0]" IOSTANDARD = "LVCMOS25";
-#NET "gpio_ssr_ch1_o[1]" LOC = AB17; # LA26_N
-#NET "gpio_ssr_ch1_o[1]" IOSTANDARD = "LVCMOS25";
-#NET "gpio_ssr_ch1_o[2]" LOC = AB18; # LA27_N
-#NET "gpio_ssr_ch1_o[2]" IOSTANDARD = "LVCMOS25";
-#NET "gpio_ssr_ch1_o[3]" LOC = U15; # LA25_N
-#NET "gpio_ssr_ch1_o[3]" IOSTANDARD = "LVCMOS25";
-#NET "gpio_ssr_ch1_o[4]" LOC = W14; # LA24_P
-#NET "gpio_ssr_ch1_o[4]" IOSTANDARD = "LVCMOS25";
-#NET "gpio_ssr_ch1_o[5]" LOC = Y14; # LA24_N
-#NET "gpio_ssr_ch1_o[5]" IOSTANDARD = "LVCMOS25";
-#NET "gpio_ssr_ch1_o[6]" LOC = W17; # LA29_P
-#NET "gpio_ssr_ch1_o[6]" IOSTANDARD = "LVCMOS25";
 
-#NET "gpio_ssr_ch2_o[0]" LOC = R11; # LA20_P
-#NET "gpio_ssr_ch2_o[0]" IOSTANDARD = "LVCMOS25";
-#NET "gpio_ssr_ch2_o[2]" LOC = R13; # LA22_P
-#NET "gpio_ssr_ch2_o[2]" IOSTANDARD = "LVCMOS25";
-#NET "gpio_ssr_ch2_o[3]" LOC = T14; # LA22_N
-#NET "gpio_ssr_ch2_o[3]" IOSTANDARD = "LVCMOS25";
-#NET "gpio_ssr_ch2_o[4]" LOC = V13; # LA21_P
-#NET "gpio_ssr_ch2_o[4]" IOSTANDARD = "LVCMOS25";
-#NET "gpio_ssr_ch2_o[5]" LOC = AA18; # LA27_P
-#NET "gpio_ssr_ch2_o[5]" IOSTANDARD = "LVCMOS25";
-#NET "gpio_ssr_ch2_o[6]" LOC = W13; # LA21_N
-#NET "gpio_ssr_ch2_o[6]" IOSTANDARD = "LVCMOS25";
 
-#NET "gpio_ssr_ch3_o[2]" LOC = T10; # LA12_P
-#NET "gpio_ssr_ch3_o[2]" IOSTANDARD = "LVCMOS25";
-#NET "gpio_ssr_ch3_o[3]" LOC = U10; # LA12_N
-#NET "gpio_ssr_ch3_o[3]" IOSTANDARD = "LVCMOS25";
-#NET "gpio_ssr_ch3_o[4]" LOC = W10; # LA11_P
-#NET "gpio_ssr_ch3_o[4]" IOSTANDARD = "LVCMOS25";
-#NET "gpio_ssr_ch3_o[5]" LOC = Y10; # LA11_N
-#NET "gpio_ssr_ch3_o[5]" IOSTANDARD = "LVCMOS25";
-#NET "gpio_ssr_ch3_o[6]" LOC = T11; # LA20_N
-#NET "gpio_ssr_ch3_o[6]" IOSTANDARD = "LVCMOS25";";
-
-#NET "gpio_ssr_ch3_o[1]" LOC = R8; # LA08_N
-#NET "gpio_ssr_ch3_o[1]" IOSTANDARD = "LVCMOS25";
-#NET "gpio_ssr_ch4_o[5]" LOC = Y5; # LA06_P
-#NET "gpio_ssr_ch4_o[5]" IOSTANDARD = "LVCMOS25";
-#NET "gpio_ssr_ch4_o[4]" LOC = T8; # LA04_P
-#NET "gpio_ssr_ch4_o[4]" IOSTANDARD = "LVCMOS25";
-#NET "gpio_ssr_ch4_o[6]" LOC = U8; # LA04_N
-#NET "gpio_ssr_ch4_o[6]" IOSTANDARD = "LVCMOS25";
-
-#NET "gpio_si570_oe_o" LOC = AB5; # LA06_N
-#NET "gpio_si570_oe_o" IOSTANDARD = "LVCMOS25";
-
-#NET "si570_thermo_scl_b" LOC = U12; # LA18_N
-#NET "si570_thermo_scl_b" IOSTANDARD = "LVCMOS25";
-#NET "si570_thermo_sda_b" LOC = T12; # LA18_P
-#NET "si570_thermo_sda_b" IOSTANDARD = "LVCMOS25";
-
-#NET "prsnt_m2c_n_i" LOC = AB14; # PRSNT_M2C_L
-#NET "prsnt_m2c_n_i" IOSTANDARD = "LVCMOS25";
 
 #----------------------------------------
 # FMC slot (unused pins)
 #----------------------------------------
+#NET "prsnt_m2c_n_i" LOC = AB14; # PRSNT_M2C_L
+#NET "prsnt_m2c_n_i" IOSTANDARD = "LVCMOS25";
 #NET "PG_C2M" LOC = AA14;
 #NET "PG_C2M" IOSTANDARD = "LVCMOS25";
 
-#NET "LA23_N" LOC = AB16;
-#NET "LA23_N" IOSTANDARD = "LVCMOS25";
-#NET "LA23_P" LOC = AA16;
-#NET "LA23_P" IOSTANDARD = "LVCMOS25";
-#NET "LA29_N" LOC = Y18;
-#NET "LA29_N" IOSTANDARD = "LVCMOS25";
+
 
 #NET "TDO_FROM_FMC" LOC = F9;
 #NET "TDO_FROM_FMC" IOSTANDARD = "LVCMOS25";

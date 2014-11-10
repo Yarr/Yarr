@@ -71,7 +71,7 @@ architecture behavioral of ddr3_ctrl_wb is
     -- Constants
     --------------------------------------
     constant c_DDR_BURST_LENGTH : unsigned(5 downto 0) := TO_UNSIGNED(16, 6);
-	constant c_READ_STALL_ASSERT : unsigned(6 downto 0) := TO_UNSIGNED(58, 7);
+	constant c_READ_STALL_ASSERT : unsigned(6 downto 0) := TO_UNSIGNED(54, 7);
 	constant c_READ_STALL_NEGATE : unsigned(6 downto 0) := TO_UNSIGNED(42, 7);
 	constant c_WRITE_STALL_ASSERT : unsigned(6 downto 0) := TO_UNSIGNED(52, 7);
 	constant c_WRITE_STALL_NEGATE : unsigned(6 downto 0) := TO_UNSIGNED(42, 7);
