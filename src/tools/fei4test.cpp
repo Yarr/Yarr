@@ -38,6 +38,8 @@ int main(void) {
     
     ClipBoard<RawData> clipRaw;
     ClipBoard<Fei4Data> clipEvent;
+    std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;
+    eventMap[0] = &clipEvent;
 
     std::string tmp;
 
@@ -161,7 +163,7 @@ int main(void) {
     
     std::cout << "### Analyzing data ###" << std::endl;
     Fei4DataProcessor proc(0);
-    proc.connect(&clipRaw, &clipEvent);
+    proc.connect(&clipRaw, eventMap);
     proc.process();
     unsigned i = 0;
     std::string filename = "digitalscan.txt";

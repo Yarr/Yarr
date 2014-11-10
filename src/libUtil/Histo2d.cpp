@@ -144,7 +144,8 @@ void Histo2d::toFile(std::string prefix, bool header) {
 
 void Histo2d::plot(std::string prefix) {
     // Put raw histo data in tmp file
-    this->toFile("/tmp/tmp", false);
+    std::string tmp_name = "/tmp/tmp_yarr_histo2d_" + prefix;
+    this->toFile(tmp_name, false);
     std::string cmd = "gnuplot | ps2pdf - " + prefix + "_" + HistogramBase::name;
     for (unsigned i=0; i<lStat.size(); i++)
         cmd += "_" + std::to_string(lStat.get(i));
@@ -166,7 +167,7 @@ void Histo2d::plot(std::string prefix) {
     fprintf(gnu, "set yrange[%f:%f]\n", ylow, yhigh);
     //fprintf(gnu, "set cbrange[0:120]\n");
     //fprintf(gnu, "splot \"/tmp/tmp_%s.dat\" matrix u (($1)*((%f-%f)/%d)):(($2)*((%f-%f)/%d)):3\n", HistogramBase::name.c_str(), xhigh, xlow, xbins, yhigh, ylow, ybins);
-    fprintf(gnu, "plot \"/tmp/tmp_%s.dat\" matrix u (($1+1)*((%f-%f)/%d)):(($2+1)*((%f-%f)/%d)):3 with image\n", HistogramBase::name.c_str(), xhigh, xlow, xbins, yhigh, ylow, ybins);
+    fprintf(gnu, "plot \"/tmp/tmp_yarr_histo2d_%s.dat\" matrix u (($1+1)*((%f-%f)/%d)):(($2+1)*((%f-%f)/%d)):3 with image\n", (prefix + "_" + HistogramBase::name).c_str(), xhigh, xlow, xbins, yhigh, ylow, ybins);
     pclose(gnu);
 }
 

@@ -38,8 +38,11 @@ class ClipBoard {
 
         T* popData() {
             queueMutex.lock();
-            T *tmp = dataQueue.front();
-            dataQueue.pop_front();
+            T *tmp = NULL;
+            if(!dataQueue.empty()) {
+                tmp = dataQueue.front();
+                dataQueue.pop_front();
+            }
             queueMutex.unlock();
             return tmp;
         }

@@ -12,7 +12,7 @@ Fei4DigitalScan::Fei4DigitalScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<Raw
     mask = MASK_16;
     dcMode = QUAD_DC;
     numOfTriggers = 100;
-    triggerFrequency = 12e3;
+    triggerFrequency = 10e3;
     triggerDelay = 50;
     verbose = false;
 }

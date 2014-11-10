@@ -24,6 +24,8 @@ void Fei4Histogrammer::init() {
 void Fei4Histogrammer::process() {
     while (!input->empty()) {
         Fei4Data *data = input->popData();
+        if (data == NULL)
+            continue;
         for (unsigned i=0; i<algorithms.size(); i++) {
             algorithms[i]->create(data->lStat);
             algorithms[i]->processEvent(data);

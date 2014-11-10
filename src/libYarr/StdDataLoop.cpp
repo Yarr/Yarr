@@ -15,6 +15,7 @@ StdDataLoop::StdDataLoop() : LoopActionBase() {
     min = 0;
     max = 0;
     step = 1;
+    counter = 0;
 }
 
 void StdDataLoop::init() {
@@ -61,7 +62,7 @@ void StdDataLoop::execPart2() {
             }
         } while (newData != NULL);
     }
-    std::this_thread::sleep_for(std::chrono::microseconds(50));
+    std::this_thread::sleep_for(std::chrono::microseconds(400));
     do {
         newData =  g_rx->readData();
         iterations++;
@@ -78,7 +79,7 @@ void StdDataLoop::execPart2() {
         for (unsigned i=0; i<tmp_storage.size(); i++) {
             if (i==0)
                 startAddr = tmp_storage[i]->adr;
-            std::copy(tmp_storage[i]->buf, tmp_storage[i]->buf+tmp_storage[i]->words, tBuf+offset);
+            std::copy(&tmp_storage[i]->buf[0], &tmp_storage[i]->buf[tmp_storage[i]->words], &tBuf[offset]);
             offset += tmp_storage[i]->words;
             delete tmp_storage[i];
         }
@@ -95,6 +96,7 @@ void StdDataLoop::execPart2() {
     if (verbose)
         std::cout << " --> Received " << count << " words! " << iterations << std::endl;
     m_done = true;
+    counter++;
 }
 
 void StdDataLoop::connect(ClipBoard<RawData> *clipboard) {

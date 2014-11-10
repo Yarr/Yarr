@@ -11,6 +11,7 @@
 
 #include <vector>
 #include <array>
+#include <map>
 
 #include "DataProcessor.h"
 #include "ClipBoard.h"
@@ -22,9 +23,9 @@ class Fei4DataProcessor : public DataProcessor {
         Fei4DataProcessor(unsigned arg_hitDiscCfg);
         ~Fei4DataProcessor();
         
-        void connect(ClipBoard<RawData> *arg_input, ClipBoard<Fei4Data> *arg_output) {
+        void connect(ClipBoard<RawData> *arg_input, std::map<unsigned, ClipBoard<Fei4Data>* > arg_outMap) {
             input = arg_input;
-            output = arg_output;
+            outMap = arg_outMap;
         }
     
         void init();
@@ -32,7 +33,8 @@ class Fei4DataProcessor : public DataProcessor {
 
     private:
         ClipBoard<RawData> *input;
-        ClipBoard<Fei4Data> *output;
+        std::map<unsigned, ClipBoard<Fei4Data>* > outMap;
+        std::vector<unsigned> activeChannels;
         unsigned hitDiscCfg;
         std::array<std::array<unsigned, 16>, 3> totCode;
 };

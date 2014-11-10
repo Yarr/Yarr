@@ -91,7 +91,8 @@ void Histo1d::toFile(std::string prefix, bool header) {
 
 void Histo1d::plot(std::string prefix) {
     // Put raw histo data in tmp file
-    this->toFile("/tmp/tmp", false);
+    std::string tmp_name = "/tmp/tmp_yarr_histo1d_" + prefix;
+    this->toFile(tmp_name, false);
     std::string cmd = "gnuplot | ps2pdf - " + prefix + "_" + HistogramBase::name + ".pdf";
 
     // Open gnuplot as file and pipe commands
@@ -109,6 +110,6 @@ void Histo1d::plot(std::string prefix) {
     fprintf(gnu, "set style line 1 lt 1 lc rgb '#A6CEE3'\n");
     fprintf(gnu, "set style fill solid 0.5\n");
     fprintf(gnu, "set boxwidth %f*0.9 absolute\n", binWidth);
-    fprintf(gnu, "plot \"/tmp/tmp_%s.dat\" matrix u ((($1)*(%f))+%f+(%f/2)):3 with boxes\n", HistogramBase::name.c_str(), binWidth, xlow, binWidth);
+    fprintf(gnu, "plot \"/tmp/tmp_yarr_histo1d_%s.dat\" matrix u ((($1)*(%f))+%f+(%f/2)):3 with boxes\n", (prefix + "_" + HistogramBase::name).c_str(), binWidth, xlow, binWidth);
     pclose(gnu);
 }

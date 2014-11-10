@@ -107,7 +107,9 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
 
     // Got all data, finish up Analysis
     if (innerCnt[ident] == n_count) {
-        output->pushData(occMaps[ident]);
+        //output->pushData(occMaps[ident]);
+        delete occMaps[ident];
+        occMaps[ident] = NULL;
     }
 }
 
@@ -266,7 +268,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     }
 
                     // Delete s-curve
-                    if (bin%2680==0) {
+                    if (bin%2680==0 && false) {
                         output->pushData(histos[ident]);
                     } else {
                         delete histos[ident];

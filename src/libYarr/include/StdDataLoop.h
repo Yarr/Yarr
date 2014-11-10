@@ -17,7 +17,7 @@ class StdDataLoop: public LoopActionBase {
         
     private:
         ClipBoard<RawData> *storage;
-        
+        unsigned counter;
         void init();
         void end();
         void execPart1();
