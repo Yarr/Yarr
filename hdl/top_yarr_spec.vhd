@@ -34,8 +34,8 @@ use UNISIM.vcomponents.all;
 
 entity yarr is
   generic (
-	  g_TX_CHANNELS : integer := 8;
-	  g_RX_CHANNELS : integer := 8
+	  g_TX_CHANNELS : integer := 4;
+	  g_RX_CHANNELS : integer := 16
 	  );
   port
     (
@@ -774,6 +774,8 @@ architecture rtl of yarr is
 	
 	signal rx_data : std_logic_vector(31 downto 0);
 	signal rx_valid : std_logic;
+	
+	signal rx_busy : std_logic;
 begin
 	-- Activate LVDS buffer
 	pwdn_l <= (others => '1');
@@ -1093,7 +1095,7 @@ begin
 		trig_pulse_i => trig_pulse,
 		-- Status out
 		irq_o => open,
-		busy_o => open
+		busy_o => rx_busy
 	);
 
   --wb_stall(1) <= '0' when wb_cyc(1) = '0' else not(wb_ack(1));
@@ -1125,7 +1127,8 @@ begin
    TRIG0(21) <= dma_ack;
    TRIG0(22) <= dma_stall; 
    TRIG0(23) <= irq_out;
-   TRIG0(31 downto 24) <= (others => '0');
+   TRIG0(24) <= rx_busy;
+   TRIG0(31 downto 25) <= (others => '0');
 --	TRIG0(0) <= rx_valid;
 --	TRIG0(1) <= fe_cmd_o(0);
 --	TRIG0(2) <= trig_pulse;

@@ -89,6 +89,7 @@ architecture behavioral of ddr3_ctrl_wb is
 
     signal wb_stall   : std_logic;
     signal wb_stall_d : std_logic;
+    signal wb_stall_dd : std_logic;
     signal wb_we_d    : std_logic;
     signal wb_addr_d  : std_logic_vector(g_DATA_PORT_SIZE - 1 downto 0);
     signal wb_stall_restart : std_logic;
@@ -177,7 +178,7 @@ begin
             ddr_cmd_bl_o <= (others => '0');
             wb_addr_d <= (others => '0');
             wb_we_d <= '0';
-            wb_stall_restart <= '0';
+            wb_stall_restart <= '1';
 			read_cnt <= (others => '0');
 			write_cnt <= (others =>'0');
         elsif rising_edge(wb_clk_i) then
@@ -189,9 +190,9 @@ begin
                     ddr_burst_cnt <= ddr_burst_cnt + 1;
                     ddr_cmd_en <= '0';
                 end if;
-            elsif (wb_cyc_i = '1' and wb_stb_i = '0' and ddr_burst_cnt > 0 and wb_stall = '0') then
+            elsif (wb_cyc_i = '1' and wb_stb_i = '0' and ddr_burst_cnt > 0 and wb_stall_dd = '0') then
                 ddr_burst_cnt <= TO_UNSIGNED(0, 6);
-                ddr_cmd_en <= '1';
+                ddr_cmd_en <= '1';			
             else
                 ddr_cmd_en <= '0';
             end if;
@@ -228,7 +229,12 @@ begin
 					write_cnt <= write_cnt + 1;
 				end if;			
 			end if;
-				
+		
+			if (wb_stall = '1') then
+				wb_stall_restart <= '0';
+			elsif (wb_stb_i = '1' ) then
+				wb_stall_restart <= '1';
+			end if;
         end if;
     end process p_ddr_ctrl;
 	
@@ -241,6 +247,7 @@ begin
         if (rst_n_i = '0') then
             wb_stall <= '0';
             wb_stall_d <= '0';
+			wb_stall_dd <= '0';
 			ddr_cmd_full <= '0';
             wb_stall_cnt <= (others => '0');
         elsif rising_edge(wb_clk_i) then
@@ -256,6 +263,7 @@ begin
             end if;
 			
             wb_stall_d <= wb_stall;
+            wb_stall_dd <= wb_stall_d;
         end if;
     end process p_wb_stall;
 end architecture behavioral;

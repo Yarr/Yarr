@@ -35,7 +35,10 @@ class LoopActionBase {
         unsigned getMin();
         unsigned getMax();
         unsigned getStep();
-        
+        void setMin(unsigned v);
+        void setMax(unsigned v);
+        void setStep(unsigned v);
+
     protected:
         virtual void init() {}
         virtual void end() {}

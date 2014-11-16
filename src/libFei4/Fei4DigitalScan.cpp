@@ -9,9 +9,9 @@
 #include "Fei4DigitalScan.h"
 
 Fei4DigitalScan::Fei4DigitalScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawData> *data) : ScanBase(fe, tx, rx, data) {
-    mask = MASK_16;
+    mask = MASK_32;
     dcMode = QUAD_DC;
-    numOfTriggers = 100;
+    numOfTriggers = 5;
     triggerFrequency = 10e3;
     triggerDelay = 50;
     verbose = false;
@@ -23,11 +23,13 @@ void Fei4DigitalScan::init() {
     std::shared_ptr<Fei4MaskLoop> maskStaging(new Fei4MaskLoop);
     maskStaging->setVerbose(verbose);
     maskStaging->setMaskStage(mask);
+    maskStaging->setMax(0);
 
     // Loop 2: Double Columns
     std::shared_ptr<Fei4DcLoop> dcLoop(new Fei4DcLoop);
     dcLoop->setVerbose(verbose);
     dcLoop->setMode(dcMode);
+    dcLoop->setMax(0);
 
     // Loop 3: Trigger
     std::shared_ptr<Fei4TriggerLoop> triggerLoop(new Fei4TriggerLoop);

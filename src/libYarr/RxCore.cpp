@@ -23,6 +23,7 @@ void RxCore::maskRxEnable(uint32_t value, uint32_t mask) {
 RawData* RxCore::readData() {
     uint32_t dma_addr = getStartAddr();
     uint32_t dma_count = getDataCount();
+    uint32_t real_dma_count = dma_count;
     if (dma_count > 0 && dma_count < (251*256)) {
         getStartAddr();
         uint32_t extra_dma_count = getDataCount();
@@ -31,7 +32,9 @@ RawData* RxCore::readData() {
             getStartAddr();
             extra_dma_count = getDataCount();
         }
-
+        real_dma_count = dma_count;
+        if (dma_count < 64)
+            dma_count = 64;
         if (verbose)
             std::cout << __PRETTY_FUNCTION__ << " : Addr 0x" << std::hex <<
                 dma_addr << " ,Count " << std::dec << dma_count << std::endl;
@@ -41,7 +44,7 @@ RawData* RxCore::readData() {
             exit(1);
             return NULL;
         }
-        return new RawData(dma_addr, buf, dma_count);
+        return new RawData(dma_addr, buf, real_dma_count);
     } else {
         return NULL;
     }
@@ -57,4 +60,12 @@ uint32_t RxCore::getStartAddr() {
 
 uint32_t RxCore::getDataCount() {
     return spec->readSingle(RX_BRIDGE | RX_DATA_COUNT);
+}
+
+bool RxCore::isBridgeEmpty() {
+    return spec->readSingle(RX_BRIDGE | RX_BRIDGE_EMPTY);
+}
+
+uint32_t RxCore::getCurCount() {
+    return spec->readSingle(RX_BRIDGE | RX_CUR_COUNT);
 }

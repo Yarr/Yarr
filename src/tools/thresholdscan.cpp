@@ -96,6 +96,14 @@ int main(void) {
     ClipBoard<Fei4Data> clipEvent5;
     ClipBoard<Fei4Data> clipEvent6;
     ClipBoard<Fei4Data> clipEvent7;
+    ClipBoard<Fei4Data> clipEvent8;
+    ClipBoard<Fei4Data> clipEvent9;
+    ClipBoard<Fei4Data> clipEvent10;
+    ClipBoard<Fei4Data> clipEvent11;
+    ClipBoard<Fei4Data> clipEvent12;
+    ClipBoard<Fei4Data> clipEvent13;
+    ClipBoard<Fei4Data> clipEvent14;
+    ClipBoard<Fei4Data> clipEvent15;
 
     eventMap[0] = &clipEvent0;
     eventMap[1] = &clipEvent1;
@@ -105,6 +113,14 @@ int main(void) {
     eventMap[5] = &clipEvent5;
     eventMap[6] = &clipEvent6;
     eventMap[7] = &clipEvent7;
+    eventMap[8] = &clipEvent8;
+    eventMap[9] = &clipEvent9;
+    eventMap[10] = &clipEvent10;
+    eventMap[11] = &clipEvent11;
+    eventMap[12] = &clipEvent12;
+    eventMap[13] = &clipEvent13;
+    eventMap[14] = &clipEvent14;
+    eventMap[15] = &clipEvent15;
 
     Fei4ThresholdScan thrScan(&g_fe, &tx, &rx, &clipRaw);
 
@@ -113,13 +129,15 @@ int main(void) {
     thrScan.init();
 
     std::cout << "### Configure Module ###" << std::endl;
-    tx.setCmdEnable(0x3);
+    tx.setCmdEnable(0x1);
     fe.setRunMode(false);
     fe.configure();
     fe.configurePixels();
     while(!tx.isCmdEmpty());
-    rx.setRxEnable(0xFF);
-
+    rx.setRxEnable(0x1);
+    
+    std::this_thread::sleep_for(std::chrono::microseconds(1000));
+    
     std::chrono::steady_clock::time_point config = std::chrono::steady_clock::now();
     std::cout << "### Pre Scan ###" << std::endl;
     thrScan.preScan();
@@ -128,6 +146,7 @@ int main(void) {
     std::thread p2(processing, &g_fe, &clipRaw, eventMap);
     std::thread p3(processing, &g_fe, &clipRaw, eventMap);
     std::thread p4(processing, &g_fe, &clipRaw, eventMap);
+    
     std::thread t1(analysis, 0, &thrScan, &clipEvent0);
     std::thread t2(analysis, 1, &thrScan, &clipEvent1);
     std::thread t3(analysis, 2, &thrScan, &clipEvent2);
@@ -136,6 +155,14 @@ int main(void) {
     std::thread t6(analysis, 5, &thrScan, &clipEvent5);
     std::thread t7(analysis, 6, &thrScan, &clipEvent6);
     std::thread t8(analysis, 7, &thrScan, &clipEvent7);
+    std::thread t9(analysis, 8, &thrScan, &clipEvent8);
+    std::thread t10(analysis, 9, &thrScan, &clipEvent9);
+    std::thread t11(analysis, 10, &thrScan, &clipEvent10);
+    std::thread t12(analysis, 11, &thrScan, &clipEvent11);
+    std::thread t13(analysis, 12, &thrScan, &clipEvent12);
+    std::thread t14(analysis, 13, &thrScan, &clipEvent13);
+    std::thread t15(analysis, 14, &thrScan, &clipEvent14);
+    std::thread t16(analysis, 15, &thrScan, &clipEvent15);
     
     std::cout << "### Scan ###" << std::endl;
     thrScan.run();
@@ -169,6 +196,14 @@ int main(void) {
     t6.join();
     t7.join();
     t8.join();
+    t9.join();
+    t10.join();
+    t11.join();
+    t12.join();
+    t13.join();
+    t14.join();
+    t15.join();
+    t16.join();
 
     std::chrono::steady_clock::time_point ana = std::chrono::steady_clock::now();
 

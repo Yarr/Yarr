@@ -77,3 +77,15 @@ unsigned LoopActionBase::getMax() {
 unsigned LoopActionBase::getStep() {
     return step;
 }
+
+void LoopActionBase::setMax(unsigned v) {
+    max = v;
+}
+
+void LoopActionBase::setMin(unsigned v) {
+    min = v;
+}
+
+void LoopActionBase::setStep(unsigned v) {
+    step = v;
+}

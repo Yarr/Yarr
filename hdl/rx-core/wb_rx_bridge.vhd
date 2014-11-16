@@ -94,10 +94,10 @@ architecture Behavioral of wb_rx_bridge is
 	-- Constants
 	constant c_ALMOST_FULL_THRESHOLD : unsigned(10 downto 0) := TO_UNSIGNED(1900, 11);
 	constant c_PACKAGE_SIZE : unsigned(31 downto 0) := TO_UNSIGNED((250*256), 32); -- 250kByte
-	constant c_TIMEOUT : unsigned(31 downto 0) := TO_UNSIGNED(2**15, 32); -- Counts in 5ns = 0.1ms
+	constant c_TIMEOUT : unsigned(31 downto 0) := TO_UNSIGNED(2**14, 32); -- Counts in 5ns = 0.1ms
 	constant c_TIME_FRAME : unsigned(31 downto 0) := TO_UNSIGNED(200000000-1, 32); -- 200MHz clock cycles in 1 sec
 	constant c_EMPTY_THRESHOLD : unsigned(10 downto 0) := TO_UNSIGNED(31, 11);
-	constant c_EMPTY_TIMEOUT : unsigned(10 downto 0) := TO_UNSIGNED(500, 11);
+	constant c_EMPTY_TIMEOUT : unsigned(10 downto 0) := TO_UNSIGNED(1000, 11);
 	
 	-- Signals
 	signal data_fifo_din : std_logic_vector(31 downto 0);
@@ -109,7 +109,7 @@ architecture Behavioral of wb_rx_bridge is
 	signal data_fifo_almost_full : std_logic;
 	signal data_fifo_prog_empty : std_logic;
 	
-	signal data_fifo_empty_cnt : unsigned(7 downto 0);
+	signal data_fifo_empty_cnt : unsigned(10 downto 0);
 	signal data_fifo_empty_true : std_logic;
 	signal data_fifo_empty_pressure : std_logic;
 	
@@ -125,6 +125,7 @@ architecture Behavioral of wb_rx_bridge is
 	signal dma_adr_cnt : unsigned(31 downto 0);
 	signal dma_start_adr : unsigned(31 downto 0);
 	signal dma_data_cnt : unsigned(31 downto 0);
+	signal dma_data_cnt_d : unsigned(31 downto 0);
 	signal dma_timeout_cnt : unsigned(31 downto 0);
 	signal dma_ack_cnt : unsigned(7 downto 0);
 	
@@ -197,7 +198,14 @@ begin
 						wb_ack_o <= '1';
 					elsif (wb_adr_i(3 downto 0) = x"3") then -- Data Rate
 						wb_dat_o <= data_rate;
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"5") then -- Bridge Empty
+						wb_dat_o(31 downto 1) <= (others => '0');
+						wb_dat_o(0) <= data_fifo_empty_true;
 						wb_ack_o <= '1';	
+					elsif (wb_adr_i(3 downto 0) = x"6") then -- Cur Count
+						wb_dat_o <= std_logic_vector(dma_data_cnt_d);
+						wb_ack_o <= '1';							
 					else
 						wb_dat_o <= x"DEADBEEF";
 						wb_ack_o <= '1';
@@ -253,15 +261,13 @@ begin
 				data_fifo_empty_pressure <= '0';
 			elsif (data_fifo_prog_empty = '0') then
 				data_fifo_empty_pressure <= '0';
-			elsif (data_fifo_empty = '1') then
+			elsif (data_fifo_empty_true = '1') then
 				data_fifo_empty_pressure <= '1';
 			end if;
 		end if;
 	end process empty_proc;
 	
 	-- DMA Master and data control
-
-
 	dma_stb_valid <= dma_stb_t and not data_fifo_empty;
 	
 	to_ddr_proc: process(dma_clk_i, rst_n_i)
@@ -303,6 +309,7 @@ begin
 			dma_adr_cnt <= (others => '0');
 			dma_start_adr <= (others => '0');
 			dma_data_cnt <= (others => '0');
+			dma_data_cnt_d <= (others => '0');
 			dma_timeout_cnt <= (others => '0');
 			ctrl_fifo_din(63 downto 0) <= (others => '0');
 			dma_ack_cnt <= (others => '0');
@@ -343,7 +350,7 @@ begin
 			else
 				ctrl_fifo_wren <= '0';
 			end if;
-			
+			dma_data_cnt_d <= dma_data_cnt;
 --			if (dma_data_cnt = 0 and ctrl_fifo_wren = '1') then -- New package
 --				ctrl_fifo_din(31 downto 0) <= std_logic_vector(dma_adr_cnt);
 --			elsif (dma_data_cnt = 1 and ctrl_fifo_wren = '1') then -- Flying take over

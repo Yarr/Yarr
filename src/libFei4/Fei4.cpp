@@ -22,6 +22,12 @@ void Fei4::configure() {
     for (unsigned i=0; i<numRegs; i++) {
         wrRegister(chipId, i, cfg[i]);
     }
+    
+    // Request all Service Records
+    writeRegister(&Fei4::ReadErrorReq, 0x1);
+    globalPulse(chipId, 10);
+    writeRegister(&Fei4::ReadErrorReq, 0x0);
+
 
     // Set actual threshold
     setValue(&Fei4::Vthin_Coarse, tmp);

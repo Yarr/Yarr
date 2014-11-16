@@ -43,15 +43,19 @@ void StdDataLoop::execPart2() {
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     unsigned count = 0;
     uint32_t done = 0;
-    //uint32_t rate = -1;
+    //uint32_t rate = 0;
+    uint32_t curCnt = 0;
     unsigned iterations = 0;
     uint32_t startAddr = 0;
 
 
     std::vector<RawData*> tmp_storage;
     RawData *newData = NULL;
+    // Wait a bit for data to arrive
+    std::this_thread::sleep_for(std::chrono::microseconds(100));
     while (done == 0) {
         //rate = g_rx->getDataRate();
+        curCnt = g_rx->getCurCount();
         done = g_tx->isTrigDone();
         do {
             newData =  g_rx->readData();
@@ -62,13 +66,17 @@ void StdDataLoop::execPart2() {
             }
         } while (newData != NULL);
     }
-    std::this_thread::sleep_for(std::chrono::microseconds(400));
+    // Gather rest of data after timeout
+    std::this_thread::sleep_for(std::chrono::microseconds(5000));
+    newData = NULL;
     do {
+        curCnt = g_rx->getCurCount();
         newData =  g_rx->readData();
         iterations++;
         if (newData != NULL) {
             tmp_storage.push_back(newData);
             count += newData->words;
+            std::cout << "Bridge Cnt: " << (unsigned)g_rx->getCurCount() << std::endl;
         }
     } while (newData != NULL);
     

@@ -24,6 +24,8 @@
 #define RX_LOOPBACK 0x2
 #define RX_DATA_RATE 0x3
 #define RX_LOOP_FIFO 0x4
+#define RX_BRIDGE_EMPTY 0x5
+#define RX_CUR_COUNT 0x6
 
 class RxCore {
     public:
@@ -35,6 +37,8 @@ class RxCore {
         RawData* readData();
         
         uint32_t getDataRate();
+        uint32_t getCurCount();
+        bool isBridgeEmpty();
 
     private:
         SpecController *spec;

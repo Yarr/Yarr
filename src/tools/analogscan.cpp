@@ -93,7 +93,7 @@ int main(void) {
     fe.configure();
     fe.configurePixels();
     while(!tx.isCmdEmpty());
-    rx.setRxEnable(0xFF);
+    rx.setRxEnable(0x1);
 
     std::chrono::steady_clock::time_point config = std::chrono::steady_clock::now();
     std::cout << "### Pre Scan ###" << std::endl;

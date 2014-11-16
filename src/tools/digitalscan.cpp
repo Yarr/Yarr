@@ -71,6 +71,14 @@ int main(void) {
     ClipBoard<Fei4Data> clipEvent5;
     ClipBoard<Fei4Data> clipEvent6;
     ClipBoard<Fei4Data> clipEvent7;
+    ClipBoard<Fei4Data> clipEvent8;
+    ClipBoard<Fei4Data> clipEvent9;
+    ClipBoard<Fei4Data> clipEvent10;
+    ClipBoard<Fei4Data> clipEvent11;
+    ClipBoard<Fei4Data> clipEvent12;
+    ClipBoard<Fei4Data> clipEvent13;
+    ClipBoard<Fei4Data> clipEvent14;
+    ClipBoard<Fei4Data> clipEvent15;
 
     eventMap[0] = &clipEvent0;
     eventMap[1] = &clipEvent1;
@@ -80,6 +88,14 @@ int main(void) {
     eventMap[5] = &clipEvent5;
     eventMap[6] = &clipEvent6;
     eventMap[7] = &clipEvent7;
+    eventMap[8] = &clipEvent8;
+    eventMap[9] = &clipEvent9;
+    eventMap[10] = &clipEvent10;
+    eventMap[11] = &clipEvent11;
+    eventMap[12] = &clipEvent12;
+    eventMap[13] = &clipEvent13;
+    eventMap[14] = &clipEvent14;
+    eventMap[15] = &clipEvent15;
 
     Fei4DigitalScan digScan(&g_fe, &tx, &rx, &clipRaw);
 
@@ -93,8 +109,10 @@ int main(void) {
     fe.configure();
     fe.configurePixels();
     while(!tx.isCmdEmpty());
-    rx.setRxEnable(0xFF);
+    rx.setRxEnable(0x1);
 
+    std::this_thread::sleep_for(std::chrono::microseconds(1000));
+    
     std::chrono::steady_clock::time_point config = std::chrono::steady_clock::now();
     std::cout << "### Pre Scan ###" << std::endl;
     digScan.preScan();
@@ -110,6 +128,7 @@ int main(void) {
     rx.setRxEnable(0x0);
     std::cout << "Collected: " << clipRaw.size() << " Raw Data Fragments" << std::endl;
     std::chrono::steady_clock::time_point scan = std::chrono::steady_clock::now();
+    
 
     std::cout << "### Processing data ###" << std::endl;
     Fei4DataProcessor proc(fe.getValue(&Fei4::HitDiscCnfg));
@@ -118,6 +137,7 @@ int main(void) {
     proc.process();
     std::cout << "Collected: " << clipEvent1.size() << " Events" << std::endl;
     std::chrono::steady_clock::time_point pro = std::chrono::steady_clock::now();
+    return 0;
 
     std::thread t1(analysis, 0, &digScan, &clipEvent0);
     std::thread t2(analysis, 1, &digScan, &clipEvent1);
@@ -127,6 +147,14 @@ int main(void) {
     std::thread t6(analysis, 5, &digScan, &clipEvent5);
     std::thread t7(analysis, 6, &digScan, &clipEvent6);
     std::thread t8(analysis, 7, &digScan, &clipEvent7);
+    std::thread t9(analysis, 8, &digScan, &clipEvent8);
+    std::thread t10(analysis, 9, &digScan, &clipEvent9);
+    std::thread t11(analysis, 10, &digScan, &clipEvent10);
+    std::thread t12(analysis, 11, &digScan, &clipEvent11);
+    std::thread t13(analysis, 12, &digScan, &clipEvent12);
+    std::thread t14(analysis, 13, &digScan, &clipEvent13);
+    std::thread t15(analysis, 14, &digScan, &clipEvent14);
+    std::thread t16(analysis, 15, &digScan, &clipEvent15);
 
     t1.join();
     t2.join();
@@ -136,6 +164,14 @@ int main(void) {
     t6.join();
     t7.join();
     t8.join();
+    t9.join();
+    t10.join();
+    t11.join();
+    t12.join();
+    t13.join();
+    t14.join();
+    t15.join();
+    t16.join();
 
     std::chrono::steady_clock::time_point ana = std::chrono::steady_clock::now();
 
