@@ -450,23 +450,23 @@ begin
    wb0_ack_o <= wb0_ack;
    wb0_stall_o <= wb0_stall;
 
-	status_o(6 downto 1) <= p0_cmd_bl;
-	status_o(7) <= p0_cmd_en;
-   status_o(8) <= p0_cmd_full;
-   status_o(8) <= p0_cmd_full;
-   status_o(9) <= p0_wr_en;
-   status_o(10) <= p0_wr_full;
-   status_o(11) <= p0_rd_en;
-   status_o(12) <= p0_rd_full;
-   status_o(13) <= wb0_cyc_i;
-   status_o(14) <= wb0_stb_i;
-   status_o(15) <= wb0_we_i;
-   status_o(16) <= wb0_ack;
-   status_o(17) <= wb0_stall;
-   status_o(18) <= p0_wr_error;
-   status_o(19) <= p0_rd_error;
-   status_o(31 downto 20) <= p0_cmd_byte_addr(11 downto 0);
---   status_o(31 downto 1) <= (others => '0');
+	status_o(5 downto 0) <= p0_cmd_bl;
+	status_o(11 downto 6) <= p1_cmd_bl;
+	status_o(12) <= p0_cmd_en;
+	status_o(13) <= p0_cmd_full;
+	status_o(14) <= p0_rd_en;
+	status_o(15) <= p0_rd_full;
+	status_o(16) <= p0_rd_error;
+	status_o(17) <= p0_rd_overflow;
+	status_o(18) <= p1_cmd_en;
+	status_o(19) <= p1_cmd_full;
+	status_o(20) <= p1_wr_en;
+	status_o(21) <= p1_wr_full;
+	status_o(22) <= p1_wr_error;
+	status_o(23) <= p0_wr_en;
+	status_o(24) <= p0_wr_full;
+	status_o(31 downto 25) <= (others => '0');
+	--   status_o(31 downto 1) <= (others => '0');
 
   ------------------------------------------------------------------------------
   -- PORT 0
@@ -586,7 +586,7 @@ begin
       clk_i   => clk_i,
       rst_n_i => rst_n_i,
 
-      calib_done_o  => status_o(0),
+      calib_done_o  => open,
       ddr3_dq_b     => ddr3_dq_b,
       ddr3_a_o      => ddr3_a_o,
       ddr3_ba_o     => ddr3_ba_o,

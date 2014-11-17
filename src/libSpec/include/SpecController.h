@@ -64,6 +64,9 @@ class SpecController {
 
         void writeSingle(uint32_t off, uint32_t val);
         uint32_t readSingle(uint32_t off);
+        
+        void write32(uint32_t off, uint32_t *val, size_t words = 1);
+        void read32(uint32_t off, uint32_t *val, size_t words = 1);
 
         void writeBlock(uint32_t off, uint32_t *val, size_t words);
         void readBlock(uint32_t off, uint32_t *val, size_t words);
@@ -85,6 +88,9 @@ class SpecController {
         void write32(void *bar, uint32_t off, uint32_t val);
         uint32_t read32(void *bar, uint32_t off);
         void mask32(void *bar, uint32_t off, uint32_t mask, uint32_t val);
+        
+        void write32(void *bar, uint32_t off, uint32_t *val, size_t words);
+        void read32(void *bar, uint32_t off, uint32_t *val, size_t words);
 
         void writeBlock(void *bar, uint32_t off, uint32_t *val, size_t words);
         void readBlock(void *bar, uint32_t off, uint32_t *val, size_t words);
