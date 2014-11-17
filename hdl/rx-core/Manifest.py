@@ -5,4 +5,4 @@ files = ["cdr_serdes.vhd",
          "wb_rx_core.vhd"
          ]
 
-modules = {"local" : "./decode_8b10b"}
+modules = {"local" : ["decode_8b10b"],}
