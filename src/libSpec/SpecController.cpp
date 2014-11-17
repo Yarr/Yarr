@@ -8,8 +8,10 @@
 // ################################
 
 #include <stdlib.h>
+#include <unistd.h>
 #include <iostream>
-#include <string.h>
+#include <string>
+#include <cstring>
 
 #include <SpecController.h>
 #include <GennumRegMap.h>
@@ -77,8 +79,18 @@ void SpecController::writeSingle(uint32_t off, uint32_t val) {
 }
 
 uint32_t SpecController::readSingle(uint32_t off) {
-    return this->read32(bar0, off);
+    uint32_t tmp = this->read32(bar0, off);
+    return tmp; 
 }
+
+void SpecController::write32(uint32_t off, uint32_t *val, size_t words) {
+    this->write32(bar0, off, val, words);
+}
+
+void SpecController::read32(uint32_t off, uint32_t *val, size_t words) {
+    this->read32(bar0, off, val, words);
+}
+
 
 void SpecController::writeBlock(uint32_t off, uint32_t *val, size_t words) {
     this->writeBlock(bar0, off, val, words);
@@ -142,11 +154,17 @@ int SpecController::readDma(uint32_t off, uint32_t *data, size_t words) {
 
         delete km;
         delete um;
-
-        return 0;
+        status = this->getDmaStatus(); 
+        if (status == DMAABORTED || status == DMAERROR) {
+            std::cerr << __PRETTY_FUNCTION__ << " -> " 
+                << "DMA Transfer failed! (Status = 0x" << std::hex << status << std::dec << ")" << std::endl;
+            return 1;
+        } else {
+            return 0;
+        }
     } else {
         std::cerr << __PRETTY_FUNCTION__ << " -> " 
-            << "DMA Transfer aborted (Status = 0x" << std::hex << status << std::dec << ")" << std::endl;
+            << "DMA Transfer aborted! (Status = 0x" << std::hex << status << std::dec << ")" << std::endl;
         return 1;
     }
 }
@@ -269,11 +287,22 @@ void SpecController::writeBlock(void *bar, uint32_t off, uint32_t *val, size_t w
     memcpy(addr, val, words*4);
 }
 
+void SpecController::write32(void *bar, uint32_t off, uint32_t *val, size_t words) {
+    uint32_t *addr = (uint32_t*) bar+off;
+    for (uint32_t i=0; i<words; i++)
+        *addr = val[i];
+}
+
 void SpecController::readBlock(void *bar, uint32_t off, uint32_t *val, size_t words) {
+    uint32_t *addr = (uint32_t*) bar+off;
+    for(unsigned int i=0; i<words; i++) 
+        val[i] = *addr;
+}
+
+void SpecController::read32(void *bar, uint32_t off, uint32_t *val, size_t words) {
     uint32_t *addr = (uint32_t*) bar+off;
     for(unsigned int i=0; i<words; i++) val[i] = *addr++;
 }
-
 
 struct dma_linked_list* SpecController::prepDmaList(UserMemory *um, KernelMemory *km, uint32_t off, bool write) {
     struct dma_linked_list *llist = (struct dma_linked_list*) km->getBuffer();
@@ -376,7 +405,7 @@ int SpecController::progFpga(const void *data, size_t size) {
     this->mask32(bar4, GNGPIO_OUTPUT_VALUE/4, 0xC000, 0x8000);
 
     // FCL_CLK_DIV -> 0x0 -> PCLK/2 (PCLK = 125MHz)
-    this->write32(bar4, FCL_CLK_DIV/4, 0x0);
+    this->write32(bar4, FCL_CLK_DIV/4, 0x1);
     // FCL_CTRL -> 0x40 -> Reset
     this->write32(bar4, FCL_CTRL/4, 0x40);
     // Check reset is high
@@ -458,7 +487,7 @@ int SpecController::progFpga(const void *data, size_t size) {
 #endif
     
     //Wait a bit for the FPGA to boot up
-    usleep(250);
+    sleep(1);
 
     uint32_t irq = read32(bar4, FCL_IRQ/4);
     uint32_t status = read32(bar4, FCL_STATUS/4);
@@ -467,8 +496,10 @@ int SpecController::progFpga(const void *data, size_t size) {
         std::cerr << __PRETTY_FUNCTION__<< " -> FCL IRQ indicates an error, read: 0x" << std::hex << irq << std::dec << std::endl;
 
 #ifdef DEBUG
+    std::cout << __PRETTY_FUNCTION__ << " -> FCL IRQ: 0x" << std::hex << irq << std::dec << std::endl;
     if (irq & 0x8)
         std::cout << __PRETTY_FUNCTION__ << " -> FCL IRQ indicates CONFIG_DONE" <<std::endl;
+    std::cout << __PRETTY_FUNCTION__ << " -> FCL Status: 0x" << std::hex << status << std::dec << std::endl;
     if (status & 0x8)
         std::cout << __PRETTY_FUNCTION__ << " -> FCL STATUS indicates SPRI_DONE" <<std::endl;
 #endif

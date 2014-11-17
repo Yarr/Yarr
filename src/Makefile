@@ -5,17 +5,18 @@
 ## variables there. See local.config.sample for an example and a description
 ## of all used variables.
 
-MODE = DEBUGE
+MODE = DEBUG
 
 AR = ar
 
 CPP = g++
-CPPFLAGS += -Wall -Wextra -IlibSpec/include -IlibYarr/include -IlibUtil/include #`root-config --cflags`
-CPPFLAGS_DEBUG += -g -O0
-CPPFLAGS_RELEASE += -O2 -DNDEBUG
+CPPFLAGS += -std=c++11 -Wall -Wunused-variable -IlibSpec/include \
+			-IlibYarr/include -IlibUtil/include -IlibFei4/include
+CPPFLAGS_DEBUG += -g -O2 -pthread
+CPPFLAGS_RELEASE += -O0 -DNDEBUG
 
 LD = g++
-LDFLAGS += #`root-config --ldflags`
+LDFLAGS += -pthread -std=c++11 #`root-config --ldflags`
 LDFLAGS_DEBUG +=
 LDFLAGS_RELEASE += 
 LIBS += #`root-config --libs --glibs`
@@ -24,6 +25,7 @@ BIN = bin
 SRC = tools
 SPEC = libSpec
 YARR = libYarr
+FEI4 = libFei4
 UTIL = libUtil
 BUILD = build
 LLIB = lib
@@ -40,34 +42,39 @@ LDFLAGS += $(LDFLAGS_$(MODE))
 SRC_FILES = $(wildcard $(SRC)/*.cpp) 
 SPEC_FILES = $(wildcard $(SPEC)/*.cpp)
 YARR_FILES = $(wildcard $(YARR)/*.cpp)
+FEI4_FILES = $(wildcard $(FEI4)/*.cpp)
 UTIL_FILES = $(wildcard $(UTIL)/*.cpp)
 
 SRC_DEPS = $(patsubst $(SRC)/%.cpp,$(BUILD)/%.d,$(SRC_FILES))
 SPEC_DEPS = $(patsubst $(SPEC)/%.cpp,$(BUILD)/%.d,$(SPEC_FILES))
 YARR_DEPS = $(patsubst $(YARR)/%.cpp,$(BUILD)/%.d,$(YARR_FILES))
+FEI4_DEPS = $(patsubst $(FEI4)/%.cpp,$(BUILD)/%.d,$(FEI4_FILES))
 UTIL_DEPS = $(patsubst $(UTIL)/%.cpp,$(BUILD)/%.d,$(UTIL_FILES))
 
-ALL_DEPS = $(SRC_DEPS) $(SPEC_DEPS) $(YARR_DEPS) $(UTIL_DEPS)
+ALL_DEPS = $(SRC_DEPS) $(SPEC_DEPS) $(YARR_DEPS) $(FEI4_DEPS) $(UTIL_DEPS)
 
 SRC_OBJS = $(patsubst $(SRC)/%.cpp,$(BUILD)/%.o,$(SRC_FILES))
 SPEC_OBJS = $(patsubst $(SPEC)/%.cpp,$(BUILD)/%.o,$(SPEC_FILES))
 YARR_OBJS = $(patsubst $(YARR)/%.cpp,$(BUILD)/%.o,$(YARR_FILES))
+FEI4_OBJS = $(patsubst $(FEI4)/%.cpp,$(BUILD)/%.o,$(FEI4_FILES))
 UTIL_OBJS = $(patsubst $(UTIL)/%.cpp,$(BUILD)/%.o,$(UTIL_FILES))
 
-ALL_OBJS = $(SRC_OBJS) $(SPEC_OBJS) $(YARR_OBJS) $(UTIL_OBJS)
+ALL_OBJS = $(SRC_OBJS) $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(UTIL_OBJS)
 
 TARGETS = $(patsubst $(SRC)/%.cpp,$(BIN)/%,$(SRC_FILES))
 
 ######
 ##  Targets
 
-all: util spec yarr $(TARGETS)
+all: util fei4 spec yarr $(TARGETS)
 
-spec: $(LLIB)/libspec.a
+spec: $(BUILD)/libspec.a
 
-yarr: $(LLIB)/libyarr.a
+yarr: $(BUILD)/libyarr.a
 
-util: $(LLIB)/libutil.a
+fei4: $(BUILD)/libfei4.a
+
+util: $(BUILD)/libutil.a
 
 help:
 	@echo # Use 'make' to create all programs
@@ -88,6 +95,9 @@ $(BUILD)/%.d: $(SPEC)/%.cpp
 $(BUILD)/%.d: $(YARR)/%.cpp
 	@$(CPP) $(CPPFLAGS) -MM -MT $(patsubst $(YARR)/%.cpp,$(BUILD)/%.o,$<) $< > $@
 
+$(BUILD)/%.d: $(FEI4)/%.cpp
+	@$(CPP) $(CPPFLAGS) -MM -MT $(patsubst $(FEI4)/%.cpp,$(BUILD)/%.o,$<) $< > $@
+
 $(BUILD)/%.d: $(UTIL)/%.cpp
 	@$(CPP) $(CPPFLAGS) -MM -MT $(patsubst $(UTIL)/%.cpp,$(BUILD)/%.o,$<) $< > $@
 
@@ -97,26 +107,30 @@ $(BUILD)/%.o:
 	@$(CPP) $(CPPFLAGS) -c $< -o $@
         
 # Target
-$(BIN)/%: $(BUILD)/%.o $(SPEC_OBJS) $(YARR_OBJS)
+$(BIN)/%: $(BUILD)/%.o $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(UTIL_OBJS)
 	@echo [Linking] $@
-	@$(LD) $(LDFLAGS) $< $(SPEC_OBJS) $(YARR_OBJS) $(UTIL_OBJS) $(LIBS) -o $@
+	@$(LD) $(LDFLAGS) $< $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(UTIL_OBJS) $(LIBS) -o $@
 
-$(LLIB)/libyarr.a: $(YARR_OBJS)
+$(BUILD)/libyarr.a: $(YARR_OBJS)
 	@echo [Creating] $@
 	@$(AR) rcs $@ $(YARR_OBJS)
 
-$(LLIB)/libspec.a: $(SPEC_OBJS)
+$(BUILD)/libfei4.a: $(FEI4_OBJS)
+	@echo [Creating] $@
+	@$(AR) rcs $@ $(FEI4_OBJS)
+
+$(BUILD)/libspec.a: $(SPEC_OBJS)
 	@echo [Creating] $@
 	@$(AR) rcs $@ $(SPEC_OBJS)
 
-$(LLIB)/libutil.a: $(UTIL_OBJS)
+$(BUILD)/libutil.a: $(UTIL_OBJS)
 	@echo [Creating] $@
 	@$(AR) rcs $@ $(UTIL_OBJS)
 
 -include $(ALL_DEPS)
 
 clean:
-	@$(RM) $(ALL_OBJS) $(ALL_DEPS) $(TARGETS) $(BUILD)/libspec.a $(BUILD)/libyarr.a $(BUILD)/libutil.a
+	@$(RM) $(ALL_OBJS) $(ALL_DEPS) $(TARGETS) $(BUILD)/libspec.a $(BUILD)/libyarr.a $(BUILD)/libutil.a $(BUILD)/libfei4.a
 	@echo "[Clean] … done!"
 
 list:
@@ -160,6 +174,15 @@ mkinfo:
 	@echo "    $(YARR_DEPS)"
 	@echo Object files:
 	@echo "    $(YARR_OBJS)"
+	@echo 
+	@echo Fei4 Files
+	@echo =============
+	@echo Source files:
+	@echo "    $(FEI4_FILES)"
+	@echo Dependency files:
+	@echo "    $(FEI4_DEPS)"
+	@echo Object files:
+	@echo "    $(FEI4_OBJS)"
 	@echo 
 	@echo UTIL Files
 	@echo =============

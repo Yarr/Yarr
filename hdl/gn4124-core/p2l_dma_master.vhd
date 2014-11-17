@@ -402,8 +402,6 @@ begin
     elsif rising_edge(clk_i) then
       rx_error_o      <= rx_error_t;
       dma_ctrl_done_o <= dma_ctrl_done_t;
-      p2l_dma_stall_d(0) <= p2l_dma_stall_i;
-      p2l_dma_stall_d(1) <= p2l_dma_stall_d(0);
     end if;
   end process p_ctrl_pipe;
 
@@ -577,10 +575,14 @@ begin
       p2l_dma_sel_o <= "0000";
       p2l_dma_adr_o <= (others => '0');
       p2l_dma_dat_o <= (others => '0');
+      p2l_dma_stall_d <= (others => '0');
     elsif rising_edge(p2l_dma_clk_i) then
+	  p2l_dma_stall_d(0) <= p2l_dma_stall_i;
+      p2l_dma_stall_d(1) <= p2l_dma_stall_d(0);
       -- data and address
       if (to_wb_fifo_valid = '1') then
-        p2l_dma_adr_o <= "00" & to_wb_fifo_dout(61 downto 32);
+        p2l_dma_adr_o(31 downto 30) <= "00";
+		  p2l_dma_adr_o(29 downto 0) <= to_wb_fifo_dout(61 downto 32);
         p2l_dma_dat_o <= to_wb_fifo_dout(31 downto 0);
       end if;
       -- stb and sel signals management
