@@ -51,6 +51,7 @@ YarrGui::YarrGui(QWidget *parent) :
     for(int i=0; i<deviceList.size(); i++) {
         writeGraphVec.push_back(ui->benchmark_plot->addGraph()); 
         readGraphVec.push_back(ui->benchmark_plot->addGraph());
+        
         QColor color1(sin(i*0.3)*100+100, sin(i*0.6+0.7)*100+100, sin(i*0.4+0.6)*100+100);
         pen.setColor(color1);
         writeGraphVec[i]->setPen(pen);
@@ -184,7 +185,7 @@ void YarrGui::on_startWrite_button_clicked() {
         writeGraphVec[index]->clearData();
         
         if (specVec[index]->isInitialized()) {
-            for (unsigned i=min; i<max; i+=interval) {
+            for (unsigned i=min; i<=max; i+=interval) {
                 double speed = BenchmarkTools::measureWriteSpeed(specVec[index], i*256, repetitions);
                 if (speed < 0) {
                     QMessageBox errorBox;
@@ -194,10 +195,10 @@ void YarrGui::on_startWrite_button_clicked() {
                 writeGraphVec[index]->addData(i, speed);
                 ui->benchmark_plot->rescaleAxes();
                 ui->benchmark_plot->replot();
-                ui->benchmark_progressBar->setValue(((i-min)/(double)(steps*interval))*100);
-                QApplication::processEvents(); // Else we lookk like we are not responding
+                double per = ((i-min)/(double)interval)/(double)steps;
+                ui->benchmark_progressBar->setValue(per*100);
+                QApplication::processEvents(); // Else we look like we are not responding
             }
-            ui->benchmark_progressBar->setValue(100);
         }
     }       
 }
@@ -214,7 +215,7 @@ void YarrGui::on_startRead_button_clicked() {
         readGraphVec[index]->clearData();
         
         if (specVec[index]->isInitialized()) {
-            for (unsigned i=min; i<max; i+=interval) {
+            for (unsigned i=min; i<=max; i+=interval) {
                 double speed = BenchmarkTools::measureReadSpeed(specVec[index], i*256, repetitions);
                 if (speed < 0) {
                     QMessageBox errorBox;
@@ -224,10 +225,10 @@ void YarrGui::on_startRead_button_clicked() {
                 readGraphVec[index]->addData(i, speed);
                 ui->benchmark_plot->rescaleAxes();
                 ui->benchmark_plot->replot();
-                ui->benchmark_progressBar->setValue(((i-min)/(double)(steps*interval))*100);
-                QApplication::processEvents(); // Else we lookk like we are not responding
+                double per = ((i-min)/(double)interval)/(double)steps;
+                ui->benchmark_progressBar->setValue(per*100);
+                QApplication::processEvents(); // Else we look like we are not responding
             }
-            ui->benchmark_progressBar->setValue(100);
         }
     }       
 }
