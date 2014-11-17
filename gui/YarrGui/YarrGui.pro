@@ -5,9 +5,11 @@
 #-------------------------------------------------
 
 QT       += core gui
-QMAKE_CXXFLAGS += -std=c++11 -stdlib=libc++
-QMAKE_LFLAGS += -std=c++11 -stdlib=libc++
-QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.7
+macx {
+    QMAKE_CXXFLAGS += -std=c++11 -stdlib=libc++
+    QMAKE_LFLAGS += -std=c++11 -stdlib=libc++
+    QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.7
+}
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
