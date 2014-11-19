@@ -361,7 +361,7 @@ begin
   status_o(2) <= p2l_rdy_wbm and p2l_rdy_pdm;
   status_o(3) <= arb_ser_valid;
   status_o(4) <= arb_ser_dframe;
-  status_o(5 downto 20) <= ldm_arb_data(15 downto 0);
+  status_o(20 downto 5) <= ldm_arb_data(15 downto 0);
   status_o(21) <= arb_pdm_gnt;
   status_o(22) <= arb_ldm_gnt;
   status_o(23) <= arb_wbm_gnt;

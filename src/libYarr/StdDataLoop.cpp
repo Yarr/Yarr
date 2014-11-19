@@ -51,8 +51,6 @@ void StdDataLoop::execPart2() {
 
     std::vector<RawData*> tmp_storage;
     RawData *newData = NULL;
-    // Wait a bit for data to arrive
-    std::this_thread::sleep_for(std::chrono::microseconds(100));
     while (done == 0) {
         //rate = g_rx->getDataRate();
         curCnt = g_rx->getCurCount();
@@ -67,7 +65,7 @@ void StdDataLoop::execPart2() {
         } while (newData != NULL);
     }
     // Gather rest of data after timeout
-    std::this_thread::sleep_for(std::chrono::microseconds(5000));
+    std::this_thread::sleep_for(std::chrono::microseconds(200));
     newData = NULL;
     do {
         curCnt = g_rx->getCurCount();
@@ -76,7 +74,6 @@ void StdDataLoop::execPart2() {
         if (newData != NULL) {
             tmp_storage.push_back(newData);
             count += newData->words;
-            std::cout << "Bridge Cnt: " << (unsigned)g_rx->getCurCount() << std::endl;
         }
     } while (newData != NULL);
     

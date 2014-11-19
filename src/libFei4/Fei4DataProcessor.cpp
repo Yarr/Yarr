@@ -54,6 +54,8 @@ void Fei4DataProcessor::process() {
             uint32_t value = curIn->buf[i];
             uint32_t header = ((value & 0x00FF0000) >> 16);
             unsigned channel = ((value & 0xFF000000) >> 24);
+            if (value == 0xDEADBEEF)
+                    std::cout << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << curIn->words << " " << std::hex << value << " " << std::dec << std::endl;
             if (curOut[channel] == NULL) {
                 std::cout << "# ERROR # " << __PRETTY_FUNCTION__ << " : Received data for channel " << channel << " but storage not initiliazed!" << std::endl;
             } else if (header == 0xe9) {

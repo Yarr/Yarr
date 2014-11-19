@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include <cmath>
 
@@ -20,11 +21,11 @@ uint32_t rand32() {
 int main (void) {
     SpecController mySpec(0);
     
-    int maxLoops = 5000000;
+    int maxLoops = 50000;
     int overall_errors = 0;
     uint32_t off = 0;
 
-    const size_t size = 1024/4*250; // 1kB
+    const size_t size = 33; // 1kB
     
     srand(time(NULL));
 
@@ -56,12 +57,12 @@ int main (void) {
         //std::cout << "Creating Sample of size " << size*4/1024 << "kB ... ";
         uint32_t *sample = new uint32_t[size];
         for(unsigned int i = 0; i<size; i++)
-            sample[i] = rand32();
-            //sample[i] = i;
+            //sample[i] = rand32();
+            sample[i] = (i+off);
 
         //std::cout << "Writing Sample ... ";
-        mySpec.writeDma(off, sample, size);
-        
+        if (mySpec.writeDma(off, sample, size))
+            return 0; 
         //std::cout << "Reading Sample!" << std::endl;
         uint32_t *readBack = new uint32_t[size];
         if (mySpec.readDma(off, readBack, size))
@@ -72,7 +73,7 @@ int main (void) {
         for(unsigned int i = 0; i<size; i++) {
             if(sample[i] != readBack[i]) {
                 counter ++;
-                std::cout << "[" << i << "] " << std::hex << sample[i] << "\t" << readBack[i] << std::dec << std::endl;
+                std::cout << loop << " [" << i << "] " << std::hex << sample[i] << "\t" << readBack[i] << std::dec << std::endl;
             }
         }
         //std::cout << "Found #" << counter << " errors!" << std::endl;
@@ -80,11 +81,14 @@ int main (void) {
         overall_errors += counter;
         //if (counter != 0) return 0;
         off += size;
-        off = off%0xF0000;
+        off = off%0x10000000;
 
         delete sample;
         delete readBack;
-        //sleep(2); // for chipscope
+        if (counter > 0)
+            return 0;
+        //sleep(1); // for chipscope
+
     }
     
     std::cout << std::endl;

@@ -465,7 +465,9 @@ begin
 	status_o(22) <= p1_wr_error;
 	status_o(23) <= p0_wr_en;
 	status_o(24) <= p0_wr_full;
-	status_o(31 downto 25) <= (others => '0');
+	status_o(25) <= p0_rd_empty;
+	status_o(26) <= p1_wr_empty;
+	status_o(31 downto 27) <= (others => '0');
 	--   status_o(31 downto 1) <= (others => '0');
 
   ------------------------------------------------------------------------------

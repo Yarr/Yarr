@@ -249,10 +249,8 @@ begin
 			data_fifo_empty_cnt <= (others => '0');
 		elsif rising_edge(dma_clk_i) then
 			-- Timeout Counter
-			if (data_fifo_empty_true = '0' and data_fifo_prog_empty = '1') then
+			if (data_fifo_empty_true = '0' and data_fifo_empty_pressure = '1') then
 				data_fifo_empty_cnt <= data_fifo_empty_cnt + 1;
-			elsif (data_fifo_empty_true = '0' and data_fifo_prog_empty = '0') then
-				data_fifo_empty_cnt <= (others => '0');
 			elsif (data_fifo_empty_true = '1') then
 				data_fifo_empty_cnt <= (others => '0');
 			end if;

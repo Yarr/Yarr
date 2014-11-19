@@ -33,8 +33,8 @@ RawData* RxCore::readData() {
             extra_dma_count = getDataCount();
         }
         real_dma_count = dma_count;
-        if (dma_count < 64)
-            dma_count = 64;
+        if (dma_count%32 != 0)
+            dma_count += 32-(dma_count%32);
         if (verbose)
             std::cout << __PRETTY_FUNCTION__ << " : Addr 0x" << std::hex <<
                 dma_addr << " ,Count " << std::dec << dma_count << std::endl;

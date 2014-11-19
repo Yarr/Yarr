@@ -1114,7 +1114,8 @@ begin
 --   TRIG2(31 downto 0) <= (others => '0');
 --   TRIG0(12 downto 0) <= (others => '0');
    --TRIG1(31 downto 0) <= rx_dma_dat_o;
-   TRIG1(31 downto 0) <= dma_dat_i;
+   --TRIG1(31 downto 0) <= dma_dat_i;
+   TRIG1(31 downto 0) <= gn4124_core_status;
    TRIG2(31 downto 0) <= ddr_status;
    TRIG0(13) <= rx_dma_cyc;
    TRIG0(14) <= rx_dma_stb;
