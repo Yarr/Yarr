@@ -25,7 +25,7 @@ int main (void) {
     int overall_errors = 0;
     uint32_t off = 0;
 
-    const size_t size = 33; // 1kB
+    const size_t size = 4096; // 1kB
     
     srand(time(NULL));
 

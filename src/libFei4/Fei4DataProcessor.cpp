@@ -27,10 +27,15 @@ void Fei4DataProcessor::init() {
 void Fei4DataProcessor::process() {
     std::map<unsigned, unsigned> l1id;
     std::map<unsigned, unsigned> bcid;
+    std::map<unsigned, unsigned> wordCount;
+    std::map<unsigned, int> hits;
+    
     unsigned badCnt = 0;
     for (unsigned i=0; i<activeChannels.size(); i++) {
         l1id[i] = 0;
         bcid[i] = 0;
+        wordCount[i] = 0;
+        hits[i] = 0;
     }
     
     unsigned dataCnt = 0;
@@ -40,12 +45,10 @@ void Fei4DataProcessor::process() {
         if (curIn == NULL)
             continue;
         std::map<unsigned, Fei4Data*> curOut;
-        std::map<unsigned, int> hits;
         std::map<unsigned, int> events;
         for (unsigned i=0; i<activeChannels.size(); i++) {
             curOut[i] = new Fei4Data();
             curOut[i]->lStat = curIn->stat;
-            hits[i] = 0;
             events[i] = 0;
         }
 
@@ -54,6 +57,7 @@ void Fei4DataProcessor::process() {
             uint32_t value = curIn->buf[i];
             uint32_t header = ((value & 0x00FF0000) >> 16);
             unsigned channel = ((value & 0xFF000000) >> 24);
+            wordCount[channel]++;
             if (value == 0xDEADBEEF)
                     std::cout << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << curIn->words << " " << std::hex << value << " " << std::dec << std::endl;
             if (curOut[channel] == NULL) {
@@ -68,7 +72,7 @@ void Fei4DataProcessor::process() {
                 curOut[channel]->newEvent(l1id[channel], bcid[channel]);
 
                 events[channel]++;
-                hits[channel] = 0;
+                //hits[channel] = 0;
             } else if (header == 0xef) {
                 // Service Record
                 unsigned code = (value & 0xFC00) >> 10;
@@ -87,7 +91,7 @@ void Fei4DataProcessor::process() {
                     std::cout << i << " " << channel << " no header " << std::hex << value << std::dec << " " << col << " " << row << std::endl;
                     curOut[channel]->newEvent(l1id[channel], bcid[channel]);
                     events[channel]++;
-                    hits[channel] = 0;
+                    //hits[channel] = 0;
                 }
                 if (col == 0 || row == 0 || col > 80 || row > 336) {
                     badCnt++;
@@ -116,8 +120,5 @@ void Fei4DataProcessor::process() {
         //Cleanup
         delete curIn;
         dataCnt++;
-        for (unsigned i=0; i<activeChannels.size(); i++) {
-            //std::cout << "Number of events/hits: [" << i << "] : " << events[i] << " " << hits[i] << std::endl;
-        }
     }
 }

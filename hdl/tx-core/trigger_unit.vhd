@@ -75,7 +75,7 @@ begin
 			if (trig_en = '0') then -- Reset done on disable
 				trig_done(0) <= '0';
 			elsif (trig_conf = x"0") then -- External
-				trig_done(0) <= '1';
+				trig_done(0) <= '0';
 			elsif (trig_conf = x"1") then -- Internal time
 				if (stopwatch_cnt = unsigned(trig_time)) then
 					trig_done(0) <= '1';

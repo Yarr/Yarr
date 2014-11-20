@@ -134,7 +134,7 @@ int main(void) {
     fe.configure();
     fe.configurePixels();
     while(!tx.isCmdEmpty());
-    rx.setRxEnable(0x1);
+    rx.setRxEnable(0xFFFF);
     
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
     

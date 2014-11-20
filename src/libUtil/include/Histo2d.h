@@ -27,6 +27,7 @@ class Histo2d : public HistogramBase {
         ~Histo2d();
         
         unsigned size() const;
+        unsigned numOfEntries() const;
 
         void fill(double x, double y, double v=1);
         void setAll(double v = 1);
@@ -62,6 +63,7 @@ class Histo2d : public HistogramBase {
 
         double max;
         double min;
+        unsigned entries;
 };
 
 #endif

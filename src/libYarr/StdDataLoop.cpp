@@ -66,7 +66,6 @@ void StdDataLoop::execPart2() {
     }
     // Gather rest of data after timeout
     std::this_thread::sleep_for(std::chrono::microseconds(200));
-    newData = NULL;
     do {
         curCnt = g_rx->getCurCount();
         newData =  g_rx->readData();
@@ -93,6 +92,7 @@ void StdDataLoop::execPart2() {
         mergedData->stat = *g_stat;
         storage->pushData(mergedData);
     } else  {
+        std::cout << __PRETTY_FUNCTION__ << " --> Found no data!" << std::endl;
         RawData *mergedData = new RawData(0, NULL, 0);
         mergedData->stat = *g_stat;
         storage->pushData(mergedData);

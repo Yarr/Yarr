@@ -22,6 +22,7 @@ Histo1d::Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, doubl
 
     underflow = 0;
     overflow = 0;
+    entries = 0;
 }
 
 Histo1d::~Histo1d() {
@@ -45,6 +46,7 @@ void Histo1d::fill(double x, double v) {
         if (v < min)
             min = v;
     }
+    entries++;
 }
 
 void Histo1d::setBin(unsigned n, double v) {
@@ -55,6 +57,7 @@ void Histo1d::setBin(unsigned n, double v) {
         if (v < min)
             min = v;
     }
+    entries++;
 }
 
 double Histo1d::getBin(unsigned n) {

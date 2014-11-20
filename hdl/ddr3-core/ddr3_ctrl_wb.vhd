@@ -190,7 +190,7 @@ begin
                     ddr_burst_cnt <= ddr_burst_cnt + 1;
                     ddr_cmd_en <= '0';
                 end if;
-            elsif (wb_cyc_i = '1' and wb_stb_i = '0' and ddr_burst_cnt > 0 and wb_stall = '0') then
+            elsif (wb_cyc_i = '1' and wb_stb_i = '0' and ddr_burst_cnt > 0 and wb_stall_dd = '0') then
                 ddr_burst_cnt <= TO_UNSIGNED(0, 6);
                 ddr_cmd_en <= '1';			
             else

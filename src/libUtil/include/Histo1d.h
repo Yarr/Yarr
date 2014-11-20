@@ -47,6 +47,7 @@ class Histo1d : public HistogramBase {
 
         double max;
         double min;
+        unsigned entries;
 };
 
 #endif
