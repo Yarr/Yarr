@@ -51,8 +51,9 @@ void analysis(unsigned ch, ScanBase *s, ClipBoard<Fei4Data> *events) {
 
     std::cout << "### Analyzing data ###" << std::endl;
     Fei4Analysis ana;
-    //ana.addAlgorithm(new OccupancyAnalysis);
-    ana.addAlgorithm(new ScurveFitter);
+    ana.addAlgorithm(new OccupancyAnalysis);
+    //ana.addAlgorithm(new ScurveFitter);
+    ana.addAlgorithm(new OccGlobalThresholdTune);
     ana.connect(s, &clipHisto, &clipResult);
     ana.init();
     
@@ -69,7 +70,7 @@ void analysis(unsigned ch, ScanBase *s, ClipBoard<Fei4Data> *events) {
 
     std::cout << "### Saving ###" << std::endl;
     std::string channel = "ch" + std::to_string(ch);
-    ana.plot(channel+ "_thresholdscan");
+    ana.plot(channel+ "_thresholdtune");
     //histogrammer.toFile("analogscan");
     std::cout << "... done!" << std::endl;
 }
@@ -106,7 +107,7 @@ int main(void) {
     ClipBoard<Fei4Data> clipEvent15;
 
     eventMap[0] = &clipEvent0;
-    eventMap[1] = &clipEvent1;
+    /*eventMap[1] = &clipEvent1;
     eventMap[2] = &clipEvent2;
     eventMap[3] = &clipEvent3;
     eventMap[4] = &clipEvent4;
@@ -120,13 +121,13 @@ int main(void) {
     eventMap[12] = &clipEvent12;
     eventMap[13] = &clipEvent13;
     eventMap[14] = &clipEvent14;
-    eventMap[15] = &clipEvent15;
+    eventMap[15] = &clipEvent15;*/
 
-    Fei4ThresholdScan thrScan(&g_fe, &tx, &rx, &clipRaw);
+    Fei4GlobalThresholdTune thrTune(&g_fe, &tx, &rx, &clipRaw);
 
     std::chrono::steady_clock::time_point init = std::chrono::steady_clock::now();
     std::cout << "### Init Scan ###" << std::endl;
-    thrScan.init();
+    thrTune.init();
 
     std::cout << "### Configure Module ###" << std::endl;
     tx.setCmdEnable(0x1);
@@ -140,35 +141,35 @@ int main(void) {
     
     std::chrono::steady_clock::time_point config = std::chrono::steady_clock::now();
     std::cout << "### Pre Scan ###" << std::endl;
-    thrScan.preScan();
+    thrTune.preScan();
 
     std::thread p1(processing, &g_fe, &clipRaw, eventMap);
     std::thread p2(processing, &g_fe, &clipRaw, eventMap);
     std::thread p3(processing, &g_fe, &clipRaw, eventMap);
     std::thread p4(processing, &g_fe, &clipRaw, eventMap);
     
-    std::thread t1(analysis, 0, &thrScan, &clipEvent0);
-    std::thread t2(analysis, 1, &thrScan, &clipEvent1);
-    std::thread t3(analysis, 2, &thrScan, &clipEvent2);
-    std::thread t4(analysis, 3, &thrScan, &clipEvent3);
-    std::thread t5(analysis, 4, &thrScan, &clipEvent4);
-    std::thread t6(analysis, 5, &thrScan, &clipEvent5);
-    std::thread t7(analysis, 6, &thrScan, &clipEvent6);
-    std::thread t8(analysis, 7, &thrScan, &clipEvent7);
-    std::thread t9(analysis, 8, &thrScan, &clipEvent8);
-    std::thread t10(analysis, 9, &thrScan, &clipEvent9);
-    std::thread t11(analysis, 10, &thrScan, &clipEvent10);
-    std::thread t12(analysis, 11, &thrScan, &clipEvent11);
-    std::thread t13(analysis, 12, &thrScan, &clipEvent12);
-    std::thread t14(analysis, 13, &thrScan, &clipEvent13);
-    std::thread t15(analysis, 14, &thrScan, &clipEvent14);
-    std::thread t16(analysis, 15, &thrScan, &clipEvent15);
+    std::thread t1(analysis, 0, &thrTune, &clipEvent0);
+    /*std::thread t2(analysis, 1, &thrTune, &clipEvent1);
+    std::thread t3(analysis, 2, &thrTune, &clipEvent2);
+    std::thread t4(analysis, 3, &thrTune, &clipEvent3);
+    std::thread t5(analysis, 4, &thrTune, &clipEvent4);
+    std::thread t6(analysis, 5, &thrTune, &clipEvent5);
+    std::thread t7(analysis, 6, &thrTune, &clipEvent6);
+    std::thread t8(analysis, 7, &thrTune, &clipEvent7);
+    std::thread t9(analysis, 8, &thrTune, &clipEvent8);
+    std::thread t10(analysis, 9, &thrTune, &clipEvent9);
+    std::thread t11(analysis, 10, &thrTune, &clipEvent10);
+    std::thread t12(analysis, 11, &thrTune, &clipEvent11);
+    std::thread t13(analysis, 12, &thrTune, &clipEvent12);
+    std::thread t14(analysis, 13, &thrTune, &clipEvent13);
+    std::thread t15(analysis, 14, &thrTune, &clipEvent14);
+    std::thread t16(analysis, 15, &thrTune, &clipEvent15);*/
     
     std::cout << "### Scan ###" << std::endl;
-    thrScan.run();
+    thrTune.run();
 
     std::cout << "### Post Scan ###" << std::endl;
-    thrScan.postScan();
+    thrTune.postScan();
 
     std::cout << "### Disabling RX ###" << std::endl;
     tx.setCmdEnable(0x0);
@@ -189,7 +190,7 @@ int main(void) {
     
 
     t1.join();
-    t2.join();
+    /*t2.join();
     t3.join();
     t4.join();
     t5.join();
@@ -203,7 +204,7 @@ int main(void) {
     t13.join();
     t14.join();
     t15.join();
-    t16.join();
+    t16.join();*/
 
     std::chrono::steady_clock::time_point ana = std::chrono::steady_clock::now();
 

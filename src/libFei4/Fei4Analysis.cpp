@@ -290,3 +290,107 @@ void ScurveFitter::end() {
         output->pushData(timeDist[0]);
     }
 }
+
+void OccGlobalThresholdTune::init(ScanBase *s) {
+    std::shared_ptr<LoopActionBase> tmpVthinFb(Fei4GRegFeedbackBuilder(&Fei4::Vthin_Fine));
+    n_count = 1;
+    for (unsigned n=0; n<s->size(); n++) {
+        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        if ((l->type() != typeid(Fei4TriggerLoop*) &&
+                    l->type() != typeid(Fei4MaskLoop*) &&
+                    l->type() != typeid(StdDataLoop*) &&
+                    l->type() != typeid(Fei4DcLoop*))) {
+            loops.push_back(n);
+            loopMax.push_back((unsigned)l->getMax());
+        } else {
+            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            if (cnt == 0)
+                cnt = 1;
+            n_count = n_count*cnt;
+            std::cout << "Count per Loop = " << cnt << std::endl;
+        }
+        
+        if (l->type() == typeid(Fei4TriggerLoop*)) {
+            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
+
+        if (l->type() == tmpVthinFb->type()) {
+            std::cout << "Found Feedback Loop" << std::endl;
+            fb = (Fei4GRegFeedbackBase*) l.get();  
+        }
+    }
+
+}
+
+void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
+    // Check if right Histogram
+    if (h->getType() != typeid(OccupancyMap*))
+        return;
+
+    // Select correct output container
+    unsigned ident = 0;
+    unsigned offset = 0;
+
+    // Determine identifier
+    std::string name = "OccupancyMap";
+    std::string name2 = "OccupancyDist";
+    for (unsigned n=0; n<loops.size(); n++) {
+        ident += h->getStat().get(loops[n])+offset;
+        offset += loopMax[n];
+        name += "-" + std::to_string(h->getStat().get(loops[n]));
+        name2 += "-" + std::to_string(h->getStat().get(loops[n]));
+    }
+
+    // Check if Histogram exists
+    if (occMaps[ident] == NULL) {
+        Histo2d *hh = new Histo2d(name, 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        hh->setXaxisTitle("Column");
+        hh->setYaxisTitle("Row");
+        hh->setZaxisTitle("Hits");
+        occMaps[ident] = hh;
+        Histo1d *hhh = new Histo1d(name2, injections+1, -0.5, injections+0.5, typeid(this));
+        hh->setXaxisTitle("Occupancy");
+        hh->setYaxisTitle("Number of Pixels");
+        occDists[ident] = hhh;
+        innerCnt[ident] = 0;
+    }
+
+    // Add up Histograms
+    occMaps[ident]->add(*(Histo2d*)h);
+    innerCnt[ident]++;
+
+    // Got all data, finish up Analysis
+    if (innerCnt[ident] == n_count) {
+
+        for(unsigned i=0; i<occMaps[ident]->size(); i++)
+            occDists[ident]->fill(occMaps[ident]->getBin(i));
+
+        bool done = false;
+        double sign = 0;
+        if (fb->getStep() == 1) {
+            done = true;
+        }
+
+        double meanOcc = occDists[ident]->getMean()/injections;
+        std::cout << "Mean Occupancy: " << meanOcc << std::endl;
+
+        if (meanOcc > 0.5) {
+            sign = +1;
+        } else if (meanOcc < 0.4) {
+            sign = -1;
+        } else {
+            sign = 0;
+            done = true;
+        }
+        
+        std::cout << "Sending feedback: " << sign << " " << done << std::endl;
+        fb->feedback(sign, done);
+        output->pushData(occMaps[ident]);
+        output->pushData(occDists[ident]);
+        innerCnt[ident] = 0;
+        //delete occMaps[ident];
+        //occMaps[ident] = NULL;
+    }
+    
+}

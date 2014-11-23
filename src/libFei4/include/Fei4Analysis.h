@@ -117,4 +117,25 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> innerCnt;
 };
 
+class OccGlobalThresholdTune : public AnalysisAlgorithm {
+    public:
+        OccGlobalThresholdTune() : AnalysisAlgorithm()  {};
+        ~OccGlobalThresholdTune() {};
+
+        void init(ScanBase *s);
+        void processHistogram(HistogramBase *h);
+        void end() {};
+
+    private:
+        std::vector<unsigned> loops;
+        std::vector<unsigned> loopMax;
+        unsigned n_count;
+        std::map<unsigned, Histo2d*> occMaps;
+        std::map<unsigned, Histo1d*> occDists;
+        std::map<unsigned, unsigned> innerCnt;
+        unsigned injections;
+        Fei4GRegFeedbackBase *fb;
+
+};
+
 #endif

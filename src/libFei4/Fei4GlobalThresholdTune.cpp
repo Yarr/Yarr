@@ -6,9 +6,9 @@
 // # Comment: Nothing fancy
 // ################################
 
-#include "Fei4ThresholdScan.h"
+#include "Fei4GlobalThresholdTune.h"
 
-Fei4ThresholdScan::Fei4ThresholdScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawData> *data) : ScanBase(fe, tx, rx, data) {
+Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawData> *data) : ScanBase(fe, tx, rx, data) {
     mask = MASK_16;
     dcMode = QUAD_DC;
     numOfTriggers = 100;
@@ -18,27 +18,30 @@ Fei4ThresholdScan::Fei4ThresholdScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard
     maxVcal = 100;
     stepVcal = 1;
 
+    target = 50;
     verbose = false;
 }
 
 // Initialize Loops
-void Fei4ThresholdScan::init() {
+void Fei4GlobalThresholdTune::init() {
+    // Loop 0: Feedback
+    std::shared_ptr<Fei4GRegFeedbackBase> fbLoop(Fei4GRegFeedbackBuilder(&Fei4::Vthin_Fine));
+    fbLoop->setStep(20);
+    fbLoop->setMax(250);
+
     // Loop 1: Mask Staging
     std::shared_ptr<Fei4MaskLoop> maskStaging(new Fei4MaskLoop);
     maskStaging->setVerbose(verbose);
     maskStaging->setMaskStage(mask);
     maskStaging->setScap(true);
     maskStaging->setLcap(true);
+    //maskStaging->setStep(2);
     
     // Loop 2: Double Columns
     std::shared_ptr<Fei4DcLoop> dcLoop(new Fei4DcLoop);
     dcLoop->setVerbose(verbose);
     dcLoop->setMode(dcMode);
-
-    // Loop 1: Parameter Loop
-    std::shared_ptr<Fei4ParameterLoopBase> parLoop( Fei4ParameterLoopBuilder(&Fei4::PlsrDAC) );
-    parLoop->setRange(minVcal, maxVcal, stepVcal);
-    parLoop->setVerbose(false);
+    //dcLoop->setStep(2);
 
     // Loop 3: Trigger
     std::shared_ptr<Fei4TriggerLoop> triggerLoop(new Fei4TriggerLoop);
@@ -52,9 +55,9 @@ void Fei4ThresholdScan::init() {
     dataLoop->setVerbose(verbose);
     dataLoop->connect(g_data);
 
+    this->addLoop(fbLoop);
     this->addLoop(maskStaging);
     this->addLoop(dcLoop);
-    this->addLoop(parLoop);
     this->addLoop(triggerLoop);
     this->addLoop(dataLoop);
 
@@ -62,11 +65,10 @@ void Fei4ThresholdScan::init() {
 }
 
 // Do necessary pre-scan configuration
-void Fei4ThresholdScan::preScan() {
+void Fei4GlobalThresholdTune::preScan() {
     g_fe->writeRegister(&Fei4::Trig_Count, 12);
     g_fe->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
-    g_fe->writeRegister(&Fei4::PlsrDAC, 300);
-    g_fe->writeRegister(&Fei4::Vthin_Fine, 107);
+    g_fe->writeRegister(&Fei4::PlsrDAC, (unsigned)target);
     g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
     while(!g_tx->isCmdEmpty());
 }

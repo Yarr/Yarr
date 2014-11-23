@@ -23,14 +23,25 @@ Histo1d::Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, doubl
     underflow = 0;
     overflow = 0;
     entries = 0;
+    sum = 0;
 }
 
 Histo1d::~Histo1d() {
-    delete data;
+    delete[] data;
 }
 
-unsigned Histo1d::size() {
+unsigned Histo1d::size() const {
     return bins;
+}
+
+double Histo1d::getMean() {
+    if (sum == 0)
+        return 0;
+    double weighted_sum = 0;
+    for (unsigned i=0; i<bins; i++)
+        weighted_sum += data[i]*(((i+1)*binWidth)+xlow+(binWidth/2.0));
+    std::cout << weighted_sum << " " << sum << std::endl;
+    return weighted_sum/sum;
 }
 
 void Histo1d::fill(double x, double v) {
@@ -47,6 +58,7 @@ void Histo1d::fill(double x, double v) {
             min = v;
     }
     entries++;
+    sum+=v;
 }
 
 void Histo1d::setBin(unsigned n, double v) {
@@ -58,9 +70,10 @@ void Histo1d::setBin(unsigned n, double v) {
             min = v;
     }
     entries++;
+    sum+=v;
 }
 
-double Histo1d::getBin(unsigned n) {
+double Histo1d::getBin(unsigned n) const {
     if (n < bins) {
         return data[n];
     }
@@ -70,6 +83,18 @@ double Histo1d::getBin(unsigned n) {
 void Histo1d::scale(const double s) {
     for (unsigned int i=0; i<bins; i++) {
         data[i] = data[i] * s;
+    }
+    sum = sum*s;
+}
+
+void Histo1d::add(const Histo1d &h) {
+    if (h.size() != bins) {
+        return;
+    } else {
+        for (unsigned i=0; i<bins; i++) {
+            data[i] += h.getBin(i);
+            sum += h.getBin(i);
+        }
     }
 }
 

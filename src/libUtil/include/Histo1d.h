@@ -22,14 +22,16 @@ class Histo1d : public HistogramBase {
         Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh, std::type_index t);
         ~Histo1d();
         
-        unsigned size();
+        unsigned size() const;
+        double getMean();
 
         void fill(double x, double v=1);
 
         void scale(const double s);
+        void add(const Histo1d &h);
         
         void setBin(unsigned n, double v);
-        double getBin(unsigned n);
+        double getBin(unsigned n) const;
         double* getData() { return data;};
         
         void toFile(std::string filename, bool header=true);
@@ -48,6 +50,7 @@ class Histo1d : public HistogramBase {
         double max;
         double min;
         unsigned entries;
+        double sum;
 };
 
 #endif
