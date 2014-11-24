@@ -25,7 +25,7 @@ Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Fei4 *fe, TxCore *tx, RxCore *r
 // Initialize Loops
 void Fei4GlobalThresholdTune::init() {
     // Loop 0: Feedback
-    std::shared_ptr<Fei4GRegFeedbackBase> fbLoop(Fei4GRegFeedbackBuilder(&Fei4::Vthin_Fine));
+    std::shared_ptr<Fei4GlobalFeedbackBase> fbLoop(Fei4GlobalFeedbackBuilder(&Fei4::Vthin_Fine));
     fbLoop->setStep(20);
     fbLoop->setMax(250);
 

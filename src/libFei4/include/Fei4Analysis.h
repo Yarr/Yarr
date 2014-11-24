@@ -134,7 +134,7 @@ class OccGlobalThresholdTune : public AnalysisAlgorithm {
         std::map<unsigned, Histo1d*> occDists;
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;
-        Fei4GRegFeedbackBase *fb;
+        Fei4GlobalFeedbackBase *fb;
 
 };
 

@@ -24,10 +24,12 @@ class ClipBoard {
 
         ClipBoard(){}
         ~ClipBoard() {
-            while(!this->empty()) {
-                T *tmp = this->popData();
-                if (tmp != NULL) delete tmp;
+            T* tmp = this->popData();
+            while(tmp != NULL) {
+                delete tmp;
+                tmp = this->popData();
             }
+
         }
 
         void pushData(T *data) {

@@ -292,7 +292,7 @@ void ScurveFitter::end() {
 }
 
 void OccGlobalThresholdTune::init(ScanBase *s) {
-    std::shared_ptr<LoopActionBase> tmpVthinFb(Fei4GRegFeedbackBuilder(&Fei4::Vthin_Fine));
+    std::shared_ptr<LoopActionBase> tmpVthinFb(Fei4GlobalFeedbackBuilder(&Fei4::Vthin_Fine));
     n_count = 1;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
@@ -317,7 +317,7 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
 
         if (l->type() == tmpVthinFb->type()) {
             std::cout << "Found Feedback Loop" << std::endl;
-            fb = (Fei4GRegFeedbackBase*) l.get();  
+            fb = (Fei4GlobalFeedbackBase*) l.get();  
         }
     }
 
@@ -375,9 +375,9 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
         double meanOcc = occDists[ident]->getMean()/injections;
         std::cout << "Mean Occupancy: " << meanOcc << std::endl;
 
-        if (meanOcc > 0.5) {
+        if (meanOcc > 0.52) {
             sign = +1;
-        } else if (meanOcc < 0.4) {
+        } else if (meanOcc < 0.48) {
             sign = -1;
         } else {
             sign = 0;
@@ -390,7 +390,9 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
         output->pushData(occDists[ident]);
         innerCnt[ident] = 0;
         //delete occMaps[ident];
-        //occMaps[ident] = NULL;
+        occMaps[ident] = NULL;
+        //delete occDists[ident];
+        occDists[ident] = NULL;
     }
     
 }

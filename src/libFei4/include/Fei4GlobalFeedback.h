@@ -3,22 +3,23 @@
  * Date: 2014-Oct-16
  */
 
-#ifndef FEI4GREGFEEDBACK_H
-#define FEI4GREGFEEDBACK_H
+#ifndef FEI4GLOBALFEEDBACK_H
+#define FEI4GLOBALFEEDBACK_H
 
 #include <queue>
 #include <mutex>
 #include "LoopActionBase.h"
 
-class Fei4GRegFeedbackBase : public LoopActionBase {
+class Fei4GlobalFeedbackBase : public LoopActionBase {
     public: 
         // TODO Feedback needs to handle multiple channels
         void feedback(double sign, bool last = false) {
-            if (sign != oldSign)
+            if (sign != oldSign) {
+                oldSign = 0;
                 step = step/2;
+            }
             values.push(cur+(step*sign));
             std::cout << "--> Adding new value " << cur+(step*sign) << std::endl;
-            oldSign = sign;
             m_done = last;
             fbMutex.unlock();
         }
@@ -32,9 +33,9 @@ class Fei4GRegFeedbackBase : public LoopActionBase {
 
 
 template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight>
-class Fei4GRegFeedback : public Fei4GRegFeedbackBase {
+class Fei4GlobalFeedback : public Fei4GlobalFeedbackBase {
     public:
-        Fei4GRegFeedback(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref): parPtr(ref) { 
+        Fei4GlobalFeedback(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref): parPtr(ref) { 
             loopType = typeid(this);
             oldSign = -1;
         };
@@ -71,8 +72,8 @@ class Fei4GRegFeedback : public Fei4GRegFeedbackBase {
 };
 
 template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight>
-Fei4GRegFeedbackBase* Fei4GRegFeedbackBuilder(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref) {
-        return new Fei4GRegFeedback<T,mOffset,bOffset,mask,msbRight>(ref);
+Fei4GlobalFeedbackBase* Fei4GlobalFeedbackBuilder(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref) {
+        return new Fei4GlobalFeedback<T,mOffset,bOffset,mask,msbRight>(ref);
 }
 
 #endif

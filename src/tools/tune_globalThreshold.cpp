@@ -51,7 +51,7 @@ void analysis(unsigned ch, ScanBase *s, ClipBoard<Fei4Data> *events) {
 
     std::cout << "### Analyzing data ###" << std::endl;
     Fei4Analysis ana;
-    ana.addAlgorithm(new OccupancyAnalysis);
+    //ana.addAlgorithm(new OccupancyAnalysis);
     //ana.addAlgorithm(new ScurveFitter);
     ana.addAlgorithm(new OccGlobalThresholdTune);
     ana.connect(s, &clipHisto, &clipResult);
@@ -144,9 +144,9 @@ int main(void) {
     thrTune.preScan();
 
     std::thread p1(processing, &g_fe, &clipRaw, eventMap);
-    std::thread p2(processing, &g_fe, &clipRaw, eventMap);
-    std::thread p3(processing, &g_fe, &clipRaw, eventMap);
-    std::thread p4(processing, &g_fe, &clipRaw, eventMap);
+    //std::thread p2(processing, &g_fe, &clipRaw, eventMap);
+    //std::thread p3(processing, &g_fe, &clipRaw, eventMap);
+    //std::thread p4(processing, &g_fe, &clipRaw, eventMap);
     
     std::thread t1(analysis, 0, &thrTune, &clipEvent0);
     /*std::thread t2(analysis, 1, &thrTune, &clipEvent1);
@@ -181,11 +181,11 @@ int main(void) {
     std::chrono::steady_clock::time_point scan = std::chrono::steady_clock::now();
 
     p1.join();
-    p2.join();
-    p3.join();
-    p4.join();
+    //p2.join();
+    //p3.join();
+    //p4.join();
     
-    std::cout << "Collected: " << clipEvent1.size() << " Events" << std::endl;
+    std::cout << "Collected: " << clipEvent0.size() << " Events" << std::endl;
     std::chrono::steady_clock::time_point pro = std::chrono::steady_clock::now();
     
 
