@@ -105,6 +105,11 @@ class Fei4PixelCfg {
         void setLCap(unsigned col, unsigned row, unsigned v);
         void setSCap(unsigned col, unsigned row, unsigned v);
         void setFDAC(unsigned col, unsigned row, unsigned v);
+        unsigned getEn(unsigned col, unsigned row);
+        unsigned getTDAC(unsigned col, unsigned row);
+        unsigned getLCap(unsigned col, unsigned row);
+        unsigned getSCap(unsigned col, unsigned row);
+        unsigned getFDAC(unsigned col, unsigned row);
 
         static unsigned to_dc(unsigned col);
         static unsigned to_bit(unsigned col, unsigned row);

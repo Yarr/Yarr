@@ -2,3 +2,4 @@
 #include "Fei4AnalogScan.h"
 #include "Fei4ThresholdScan.h"
 #include "Fei4GlobalThresholdTune.h"
+#include "Fei4PixelThresholdTune.h"

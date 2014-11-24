@@ -131,3 +131,39 @@ unsigned Fei4PixelCfg::to_bit(unsigned col, unsigned row) {
 void Fei4PixelCfg::setEn(unsigned col, unsigned row, unsigned v) {
     m_En[to_dc(col)].setPixel(to_bit(col, row) , v);
 }
+
+void Fei4PixelCfg::setTDAC(unsigned col, unsigned row, unsigned v) {
+    m_TDAC[to_dc(col)].setPixel(to_bit(col, row) , v);
+}
+
+void Fei4PixelCfg::setLCap(unsigned col, unsigned row, unsigned v) {
+    m_LCap[to_dc(col)].setPixel(to_bit(col, row) , v);
+}
+
+void Fei4PixelCfg::setSCap(unsigned col, unsigned row, unsigned v) {
+    m_SCap[to_dc(col)].setPixel(to_bit(col, row) , v);
+}
+
+void Fei4PixelCfg::setFDAC(unsigned col, unsigned row, unsigned v) {
+    m_FDAC[to_dc(col)].setPixel(to_bit(col, row) , v);
+}
+
+unsigned Fei4PixelCfg::getEn(unsigned col, unsigned row) {
+    return m_En[to_dc(col)].getPixel(to_bit(col, row));
+}
+
+unsigned Fei4PixelCfg::getTDAC(unsigned col, unsigned row) {
+    return m_TDAC[to_dc(col)].getPixel(to_bit(col, row));
+}
+
+unsigned Fei4PixelCfg::getLCap(unsigned col, unsigned row) {
+    return m_LCap[to_dc(col)].getPixel(to_bit(col, row));
+}
+
+unsigned Fei4PixelCfg::getSCap(unsigned col, unsigned row) {
+    return m_SCap[to_dc(col)].getPixel(to_bit(col, row));
+}
+
+unsigned Fei4PixelCfg::getFDAC(unsigned col, unsigned row) {
+    return m_FDAC[to_dc(col)].getPixel(to_bit(col, row));
+}

@@ -38,7 +38,7 @@ class Fei4 : public Fei4GlobalCfg, public Fei4PixelCfg, public Fei4Cmd {
         Fei4(TxCore *arg_core, unsigned chipId);
 
         void configure();
-        void configurePixels();
+        void configurePixels(unsigned lsb=0, unsigned msb=Fei4PixelCfg::n_Bits);
 
         void setRunMode(bool mode=true) {
             runMode(chipId, mode);
