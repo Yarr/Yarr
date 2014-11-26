@@ -24,6 +24,7 @@ class Histo2d : public HistogramBase {
                 unsigned arg_ybins, double arg_ylow, double arg_yhigh, std::type_index t);
         Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
                 unsigned arg_ybins, double arg_ylow, double arg_yhigh, std::type_index t, LoopStatus &stat);
+        Histo2d(Histo2d *h);
         ~Histo2d();
         
         unsigned size() const;
@@ -37,10 +38,25 @@ class Histo2d : public HistogramBase {
         void multiply(const Histo2d &h);
         void divide(const Histo2d &h);
         void scale(const double s);
-        //void setBin(unsigned x, double v);
+        void setBin(unsigned x, double v);
         
         double getBin(unsigned n) const;
         int binNum(double x, double y);
+        
+        double getUnderflow() {return underflow;}
+        double getOverflow() {return overflow;}
+        unsigned getXbins() {return xbins;}
+        double getXlow() {return xlow;}
+        double getXhigh() {return xhigh;}
+        double getXbinWidth() {return xbinWidth;}
+        unsigned getYbins() {return ybins;}
+        double getYlow() {return ylow;}
+        double getYhigh() {return yhigh;}
+        double getYbinWidth() {return ybinWidth;}
+        double getMax() {return max;}
+        double getMin() {return min;}
+        double getNumOfEntries() {return entries;}
+
         
         void toFile(std::string filename, bool header=true);
         void plot(std::string filename);

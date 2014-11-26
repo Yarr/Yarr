@@ -18,7 +18,7 @@ Fei4PixelThresholdTune::Fei4PixelThresholdTune(Fei4 *fe, TxCore *tx, RxCore *rx,
     maxVcal = 100;
     stepVcal = 1;
 
-    target = 50;
+    target = 70;
     verbose = false;
 }
 
@@ -67,6 +67,7 @@ void Fei4PixelThresholdTune::preScan() {
     g_fe->writeRegister(&Fei4::Trig_Count, 12);
     g_fe->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
     g_fe->writeRegister(&Fei4::PlsrDAC, (unsigned)target);
+    g_fe->writeRegister(&Fei4::Vthin_Fine, 195);
     g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
     while(!g_tx->isCmdEmpty());
 }

@@ -123,6 +123,13 @@ int main(void) {
     eventMap[14] = &clipEvent14;
     eventMap[15] = &clipEvent15;*/
 
+    for(unsigned row=1; row<337; row++) {
+        for (unsigned col=1; col<81; col++) {
+            std::cout << g_fe.getTDAC(col, row) << " ";
+        }
+        std::cout << std::endl;
+    }
+
     Fei4GlobalThresholdTune thrTune(&g_fe, &tx, &rx, &clipRaw);
 
     std::chrono::steady_clock::time_point init = std::chrono::steady_clock::now();

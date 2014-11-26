@@ -10,6 +10,7 @@
 #include <mutex>
 #include "LoopActionBase.h"
 #include "Histo2d.h"
+#include "ClipBoard.h"
 
 enum FeedbackType {
     TDAC_FB, // 0 - 31
@@ -18,33 +19,32 @@ enum FeedbackType {
 
 class Fei4PixelFeedback : public LoopActionBase {
     public:
-        Fei4PixelFeedback(enum FeedbackType type) {
+        Fei4PixelFeedback(enum FeedbackType type) : LoopActionBase(){
             fbType = type;
             switch (fbType) {
                 case (TDAC_FB):
-                    step = 16;
-                    min = 15;
+                    step = 8;
+                    min = 16;
+                    max = 31;
                     break;
                 case (FDAC_FB):
                     step = 8;
-                    min = 7;
+                    min = 8;
+                    max = 15;
                     break;
             }
-            max = 0;
+            fbHisto = NULL;
+            loopType = typeid(this);
         }
 
-        void feedback(Histo2d h) {
-            if (h.size() != 26880) {
+        void feedback(Histo2d *h) {
+            if (h->size() != 26880) {
                 std::cout << __PRETTY_FUNCTION__ << " --> ERROR : Wrong type of feedback histogram!" << std::endl;
                 m_done = true;
             } else {
-                for (unsigned col=1; col<=80; col++) {
-                    for (unsigned row=1; row<=336; row++) {
-                        int sign = h.getBin(row+(col*336));
-                        this->setPixel(col, row, (this->getPixel(col, row)+(step*sign)));
-                    }
-                }
+                fbHisto = h;
             }
+
             fbMutex.unlock();
         }
         
@@ -52,12 +52,13 @@ class Fei4PixelFeedback : public LoopActionBase {
         void init() {
             m_done = false;
             // Initilize Pixel regs with default config
-            for (unsigned col=1; col<=80; col++) {
-                for (unsigned row=1; row<=336; row++) {
+            for (unsigned col=1; col<81; col++) {
+                for (unsigned row=1; row<337; row++) {
                     this->setPixel(col, row, min);
                 }
             }
             this->writePixelCfg();
+            oldStep = step;
         }
 
         void end() {//Save last config
@@ -66,14 +67,19 @@ class Fei4PixelFeedback : public LoopActionBase {
         void execPart1() {
             g_stat->set(this, step);
             fbMutex.try_lock(); // Need to lock on frist run
+            this->writePixelCfg();
         }
 
         void execPart2() {
             fbMutex.lock();
-            if (step == 1)
-                m_done = true;
+            this->addFeedback();
+            std::cout << " Received feeddback at step: " << step << std::endl;
+            if (last) m_done = true;
+            if (step == 1 && oldStep == 1)
+                last = true;
+            oldStep = step;
             step = step/2;
-            this->writePixelCfg();
+            if (step ==0) step =1;
         }
 
         // TODO Make Multi channel capable
@@ -100,8 +106,28 @@ class Fei4PixelFeedback : public LoopActionBase {
                     break;
             }
         }
+
+        void addFeedback() {
+            std::cout << " Feedback! " << std::endl;
+            if (fbHisto != NULL) {
+                for (unsigned row=1; row<337; row++) {
+                    for (unsigned col=1; col<81; col++) {
+                        int sign = fbHisto->getBin(fbHisto->binNum(col, row));
+                        int v = getPixel(col, row);
+                        v = v + ((int)step)*sign;
+                        if (v < 0) v = 0;
+                        if ((unsigned)v > max) v = max;
+                        this->setPixel(col, row, v);
+                    }
+                }
+            }
+            delete fbHisto;
+            std::cout << std::endl;
+        }
+
         
         void writePixelCfg() {
+            std::cout << "Writing config" << std::endl;
             // Not real lsb/msb because that is defined in the pixel config
             unsigned lsb = 0;
             unsigned msb = 0;
@@ -122,6 +148,9 @@ class Fei4PixelFeedback : public LoopActionBase {
 
         std::mutex fbMutex;
         enum FeedbackType fbType;
+        Histo2d *fbHisto;
+        unsigned oldStep;
+        bool last;
 };
 
 #endif

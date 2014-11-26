@@ -14,23 +14,28 @@ void DoubleColumnBit::set(const uint32_t *bitstream) {
 }
 
 void DoubleColumnBit::setAll(const uint32_t val) {
-    for(unsigned i=0; i<n_Words; i++)
-        storage[i] = val;
+    for(unsigned i=0; i<n_Words; i++) {
+        storage[i] = 0;
+        for (unsigned j=0; j<32; j++) {
+            uint32_t tmp = val << j;
+            storage[i] |= tmp;
+        }
+    }
 }
 
 void DoubleColumnBit::setPixel(const unsigned n, uint32_t val) {
-    val <<= (n-1)%32;
-    uint32_t mask = 0x1 << ((n-1)%32);
-    storage[(n-1)/32] = val | (storage[(n-1)/32]&~mask);
+    val <<= (n)%32;
+    uint32_t mask = 0x1 << ((n)%32);
+    storage[(n)/32] = val | (storage[(n)/32]&(~mask));
 }
 
 uint32_t* DoubleColumnBit::getStream() {
-    return storage;
+    return &storage[0];
 }
 
 uint32_t DoubleColumnBit::getPixel(const unsigned n) {
-    uint32_t mask = 0x1 << ((n-1)%32);
-    return ((storage[(n-1)/32] & mask) >> ((n-1)%32));
+    uint32_t mask = 0x1 << ((n)%32);
+    return ((storage[(n)/32] & mask) >> ((n)%32));
 }
 
 uint32_t DoubleColumnBit::getWord(const unsigned n) {
@@ -40,11 +45,11 @@ uint32_t DoubleColumnBit::getWord(const unsigned n) {
 Fei4PixelCfg::Fei4PixelCfg() {
     for (unsigned i=0; i<n_DC; i++) {
         m_En[i].setAll(0);
-        m_TDAC[i].setAll(15);
+        m_TDAC[i].setAll(16);
         m_LCap[i].setAll(0);
         m_SCap[i].setAll(0);
         m_Hitbus[i].setAll(1);
-        m_FDAC[i].setAll(7);
+        m_FDAC[i].setAll(8);
     }
 }
 
@@ -125,7 +130,17 @@ unsigned Fei4PixelCfg::to_dc(unsigned col) {
 }
 
 unsigned Fei4PixelCfg::to_bit(unsigned col, unsigned row) {
-    return (col%2==0) ? 336-row : 335+row;
+    unsigned bit = 0;
+    // Bit 671 = 2,336
+    // Bit 336 = 2,1
+    // Bit 335 = 1,1
+    // Bit 0   = 1,336
+    if (col%2 == 0) {
+        bit = row+335;
+    } else {
+        bit = 336-row;
+    }
+    return bit;
 }
 
 void Fei4PixelCfg::setEn(unsigned col, unsigned row, unsigned v) {

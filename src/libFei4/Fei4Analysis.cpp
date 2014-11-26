@@ -54,6 +54,15 @@ void Fei4Analysis::plot(std::string basename) {
     }
 }
 
+void Fei4Analysis::toFile(std::string basename) {
+    if (output->empty())
+        return;
+    for (std::deque<HistogramBase*>::iterator it = output->begin(); it != output->end(); ++it) {
+        std::cout << "Saving : " << (*it)->getName() << std::endl;
+        (*it)->toFile(basename, true);
+    }
+}
+
 
 void OccupancyAnalysis::init(ScanBase *s) {
     n_count = 1;
@@ -393,6 +402,99 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
         occMaps[ident] = NULL;
         //delete occDists[ident];
         occDists[ident] = NULL;
+    }
+    
+}
+
+void OccPixelThresholdTune::init(ScanBase *s) {
+    n_count = 1;
+    for (unsigned n=0; n<s->size(); n++) {
+        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        if ((l->type() != typeid(Fei4TriggerLoop*) &&
+                    l->type() != typeid(Fei4MaskLoop*) &&
+                    l->type() != typeid(StdDataLoop*) &&
+                    l->type() != typeid(Fei4DcLoop*))) {
+            loops.push_back(n);
+            loopMax.push_back((unsigned)l->getMax());
+        } else {
+            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            if (cnt == 0)
+                cnt = 1;
+            n_count = n_count*cnt;
+            std::cout << "Count per Loop = " << cnt << std::endl;
+        }
+        
+        if (l->type() == typeid(Fei4TriggerLoop*)) {
+            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
+        
+        std::cout << l->type().name() << std::endl;
+        if (l->type() == typeid(Fei4PixelFeedback*)) {
+            std::cout << "Found Feedback Loop" << std::endl;
+            fb = dynamic_cast<Fei4PixelFeedback*>(l.get());  
+        }
+    }
+
+}
+
+void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
+    // Check if right Histogram
+    if (h->getType() != typeid(OccupancyMap*))
+        return;
+
+    // Select correct output container
+    unsigned ident = 0;
+    unsigned offset = 0;
+
+    // Determine identifier
+    std::string name = "OccupancyMap";
+    std::string name2 = "OccupancyDist";
+    for (unsigned n=0; n<loops.size(); n++) {
+        ident += h->getStat().get(loops[n])+offset;
+        offset += loopMax[n];
+        name += "-" + std::to_string(h->getStat().get(loops[n]));
+        name2 += "-" + std::to_string(h->getStat().get(loops[n]));
+    }
+
+    // Check if Histogram exists
+    if (occMaps[ident] == NULL) {
+        Histo2d *hh = new Histo2d(name, 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        hh->setXaxisTitle("Column");
+        hh->setYaxisTitle("Row");
+        hh->setZaxisTitle("Hits");
+        occMaps[ident] = hh;
+    }
+
+    // Add up Histograms
+    occMaps[ident]->add(*(Histo2d*)h);
+    innerCnt[ident]++;
+    
+    // Got all data, finish up Analysis
+    if (innerCnt[ident] == n_count) {
+        double mean = 0;
+        Histo2d *fbHisto = new Histo2d("feedback", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        Histo1d *occDist = new Histo1d(name2, injections+1, -0.5, injections+0.5, typeid(this));
+        for (unsigned i=0; i<fbHisto->size(); i++) {
+            if ((occMaps[ident]->getBin(i)/(double)injections) > 0.52) {
+                fbHisto->setBin(i, -1);
+            } else if ((occMaps[ident]->getBin(i)/(double)injections) < 0.48) {
+                fbHisto->setBin(i, +1);
+            } else {
+                fbHisto->setBin(i, 0);
+            }
+            mean += occMaps[ident]->getBin(i);
+            occDist->fill(occMaps[ident]->getBin(i));
+        }
+        std::cout << "Mean Occupancy: " << mean/(26880*(double)injections) << std::endl;
+        
+        std::cout << "Sending feedback" << std::endl;
+        fb->feedback(fbHisto);
+        output->pushData(occMaps[ident]);
+        output->pushData(occDist);
+        innerCnt[ident] = 0;
+        //delete occMaps[ident];
+        occMaps[ident] = NULL;
     }
     
 }

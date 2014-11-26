@@ -8,7 +8,7 @@
 
 #include "Fei4.h"
 
-Fei4::Fei4(TxCore *core, unsigned arg_chipId) : Fei4GlobalCfg(), Fei4PixelCfg(), Fei4Cmd(core) {
+Fei4::Fei4(TxCore *core, unsigned arg_chipId) : Fei4Cfg(arg_chipId), Fei4Cmd(core) {
     chipId = arg_chipId;
 }
 

@@ -11,8 +11,8 @@ AR = ar
 
 CPP = g++
 CPPFLAGS += -std=c++11 -Wall -Wunused-variable -IlibSpec/include \
-			-IlibYarr/include -IlibUtil/include -IlibFei4/include
-CPPFLAGS_DEBUG += -g -O2 -pthread
+			-IlibYarr/include -IlibUtil/include -IlibFei4/include -O0
+CPPFLAGS_DEBUG += -g -O0 -pthread
 CPPFLAGS_RELEASE += -O0 -DNDEBUG
 
 LD = g++

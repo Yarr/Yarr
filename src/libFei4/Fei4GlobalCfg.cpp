@@ -51,7 +51,7 @@ void Fei4GlobalCfg::init() {
     PrmpVbnFol.initField(cfg, 106);
     PrmpVbp_L.initField(cfg, 43);
     // 12
-    PrmpVbpf.initField(cfg, 71);
+    PrmpVbpf.initField(cfg, 40);
     PrmpVbnLCC.initField(cfg, 0);
     // 13
     S1.initField(cfg, 0);
@@ -158,7 +158,7 @@ void Fei4GlobalCfg::toFile(std::string filename) {
     file << "Trig_Count       " << Trig_Count.value() << std::endl;
     file << "Conf_AddrEnable  " << Conf_AddrEnable.value() << std::endl;
     file << "ErrorMask_0      " << ErrorMask_0.value() << std::endl;
-    file << "ErrorMadk_1      " << ErrorMask_1.value() << std::endl;
+    file << "ErrorMask_1      " << ErrorMask_1.value() << std::endl;
     file << "PrmpVbp_R        " << PrmpVbp_R.value() << std::endl;
     
     file.close();

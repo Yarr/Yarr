@@ -61,6 +61,7 @@ class Fei4Analysis : DataProcessor {
 
         void addAlgorithm(AnalysisAlgorithm *a);
         void plot(std::string basename);
+        void toFile(std::string basename);
 
     private:
         ClipBoard<HistogramBase> *input;
@@ -138,4 +139,23 @@ class OccGlobalThresholdTune : public AnalysisAlgorithm {
 
 };
 
+class OccPixelThresholdTune : public AnalysisAlgorithm {
+    public:
+        OccPixelThresholdTune() : AnalysisAlgorithm()  {};
+        ~OccPixelThresholdTune() {};
+
+        void init(ScanBase *s);
+        void processHistogram(HistogramBase *h);
+        void end() {};
+
+    private:
+        std::vector<unsigned> loops;
+        std::vector<unsigned> loopMax;
+        unsigned n_count;
+        std::map<unsigned, Histo2d*> occMaps;
+        std::map<unsigned, unsigned> innerCnt;
+        unsigned injections;
+        Fei4PixelFeedback *fb;
+
+};
 #endif

@@ -51,6 +51,29 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     entries = 0;
 }
 
+Histo2d::Histo2d(Histo2d *h) : HistogramBase(h->getName(), h->getType()) {
+    xbins = h->getXbins();
+    xlow = h->getXlow();
+    xhigh = h->getXhigh();
+    xbinWidth = h->getXbinWidth();
+
+    ybins = h->getYbins();
+    ylow = h->getYlow();
+    yhigh = h->getYhigh();
+    ybinWidth = h->getYbinWidth();
+
+    min = h->getMin();
+    max = h->getMax();
+    underflow = h->getUnderflow();
+    overflow = h->getOverflow();
+
+    data = new double[xbins*ybins];
+    for(unsigned i=0; i<xbins*ybins; i++)
+        data[i] = h->getBin(i);
+    entries = h->getNumOfEntries();
+    lStat = h->getStat();
+}
+
 Histo2d::~Histo2d() {
     delete[] data;
 }
@@ -114,6 +137,13 @@ double Histo2d::getBin(unsigned n) const {
         return 0;
     }
 }
+
+void Histo2d::setBin(unsigned n, double v) {
+    if (n < this->size()) {
+        data[n] = v;
+    }
+}
+
 
 int Histo2d::binNum(double x, double y) {
     if (x < xlow || y < ylow) {

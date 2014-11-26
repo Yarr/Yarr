@@ -13,8 +13,7 @@
 
 #include "TxCore.h"
 #include "Fei4Cmd.h"
-#include "Fei4GlobalCfg.h"
-#include "Fei4PixelCfg.h"
+#include "Fei4Cfg.h"
 
 enum MASK_STAGE {
     MASK_1  = 0xFFFFFFFF,
@@ -33,7 +32,7 @@ enum DC_MODE {
     ALL_DC = 0x3
 };
 
-class Fei4 : public Fei4GlobalCfg, public Fei4PixelCfg, public Fei4Cmd {
+class Fei4 : public Fei4Cfg, public Fei4Cmd {
     public:
         Fei4(TxCore *arg_core, unsigned chipId);
 

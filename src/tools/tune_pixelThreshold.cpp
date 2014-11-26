@@ -53,7 +53,7 @@ void analysis(unsigned ch, ScanBase *s, ClipBoard<Fei4Data> *events) {
     Fei4Analysis ana;
     //ana.addAlgorithm(new OccupancyAnalysis);
     //ana.addAlgorithm(new ScurveFitter);
-    ana.addAlgorithm(new OccGlobalThresholdTune);
+    ana.addAlgorithm(new OccPixelThresholdTune);
     ana.connect(s, &clipHisto, &clipResult);
     ana.init();
     
@@ -70,8 +70,8 @@ void analysis(unsigned ch, ScanBase *s, ClipBoard<Fei4Data> *events) {
 
     std::cout << "### Saving ###" << std::endl;
     std::string channel = "ch" + std::to_string(ch);
-    ana.plot(channel+ "_thresholdtune");
-    //histogrammer.toFile("analogscan");
+    ana.plot(channel+ "_thresholdpixeltune");
+    ana.toFile(channel + "_thresholdpixeltune");
     std::cout << "... done!" << std::endl;
 }
 

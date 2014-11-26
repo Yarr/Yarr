@@ -18,7 +18,7 @@ Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Fei4 *fe, TxCore *tx, RxCore *r
     maxVcal = 100;
     stepVcal = 1;
 
-    target = 50;
+    target = 70;
     verbose = false;
 }
 
