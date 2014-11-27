@@ -18,7 +18,10 @@ Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Fei4 *fe, TxCore *tx, RxCore *r
     maxVcal = 100;
     stepVcal = 1;
 
-    target = 70;
+    useScap = true;
+    useLcap = true;
+
+    target = 3000;
     verbose = false;
 }
 
@@ -33,8 +36,8 @@ void Fei4GlobalThresholdTune::init() {
     std::shared_ptr<Fei4MaskLoop> maskStaging(new Fei4MaskLoop);
     maskStaging->setVerbose(verbose);
     maskStaging->setMaskStage(mask);
-    maskStaging->setScap(true);
-    maskStaging->setLcap(true);
+    maskStaging->setScap(useScap);
+    maskStaging->setLcap(useLcap);
     //maskStaging->setStep(2);
     
     // Loop 2: Double Columns
@@ -67,8 +70,12 @@ void Fei4GlobalThresholdTune::init() {
 // Do necessary pre-scan configuration
 void Fei4GlobalThresholdTune::preScan() {
     g_fe->writeRegister(&Fei4::Trig_Count, 12);
+    // TODO VCAL and TDAC needs to be calculated per FE, not global
     g_fe->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
-    g_fe->writeRegister(&Fei4::PlsrDAC, (unsigned)target);
+    for (unsigned col=1; col<81; col++)
+        for (unsigned row=1; row<337; row++)
+            g_fe->setTDAC(col, row, 16);
+    g_fe->writeRegister(&Fei4::PlsrDAC, g_fe->toVcal(target, useScap, useLcap));
     g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
     while(!g_tx->isCmdEmpty());
 }

@@ -84,8 +84,13 @@ int main(void) {
     TxCore tx(&spec);
     RxCore rx(&spec);
 
+    std::string cfgName = "test_config.bin";
+
     Fei4 g_fe(&tx, 0);
     Fei4 fe(&tx, 0);
+
+    g_fe.fromFileBinary(cfgName);
+    fe.fromFileBinary(cfgName);
 
     ClipBoard<RawData> clipRaw;
     std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;
@@ -217,5 +222,7 @@ int main(void) {
     std::cout << "=======================" << std::endl;
     std::cout << "Total: " << std::chrono::duration_cast<std::chrono::milliseconds>(ana - init).count() << " ms!" << std::endl;
     std::cout << std::endl << "Finished!" << std::endl;
+
+    g_fe.toFileBinary(cfgName);
     return 0;
 }

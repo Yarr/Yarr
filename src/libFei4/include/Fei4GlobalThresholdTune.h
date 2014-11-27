@@ -31,7 +31,9 @@ class Fei4GlobalThresholdTune : public ScanBase {
         unsigned minVcal;
         unsigned maxVcal;
         unsigned stepVcal;
-        
+        bool useScap;
+        bool useLcap;
+
         double target;
         bool verbose;
 };

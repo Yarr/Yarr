@@ -84,9 +84,15 @@ int main(void) {
     TxCore tx(&spec);
     RxCore rx(&spec);
 
-    Fei4 g_fe(&tx, 0);
+
+    std::string cfgName = "test_config.bin";
+
+    Fei4 g_fe(&tx, 8);
     Fei4 fe(&tx, 0);
 
+    g_fe.fromFileBinary(cfgName);
+    fe.fromFileBinary(cfgName);
+    
     ClipBoard<RawData> clipRaw;
     std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;
     ClipBoard<Fei4Data> clipEvent0;
@@ -122,14 +128,7 @@ int main(void) {
     eventMap[13] = &clipEvent13;
     eventMap[14] = &clipEvent14;
     eventMap[15] = &clipEvent15;*/
-
-    for(unsigned row=1; row<337; row++) {
-        for (unsigned col=1; col<81; col++) {
-            std::cout << g_fe.getTDAC(col, row) << " ";
-        }
-        std::cout << std::endl;
-    }
-
+    
     Fei4GlobalThresholdTune thrTune(&g_fe, &tx, &rx, &clipRaw);
 
     std::chrono::steady_clock::time_point init = std::chrono::steady_clock::now();
@@ -224,5 +223,8 @@ int main(void) {
     std::cout << "=======================" << std::endl;
     std::cout << "Total: " << std::chrono::duration_cast<std::chrono::milliseconds>(ana - init).count() << " ms!" << std::endl;
     std::cout << std::endl << "Finished!" << std::endl;
+    
+    std::cout << "Saving config to: " << cfgName << std::endl;
+    g_fe.toFileBinary(cfgName);
     return 0;
 }

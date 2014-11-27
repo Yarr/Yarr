@@ -250,11 +250,11 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         hh2->setZaxisTitle("Noise [Vcal]");
                         sigMap[outerIdent] = hh2;
                         //std::cout << " NEW ThresholdDist: " << outerIdent << std::endl;
-                        Histo1d *hh1 = new Histo1d("ThresholdDist", 51, -1, 101, typeid(this));
+                        Histo1d *hh1 = new Histo1d("ThresholdDist", 201, -0.25, 100.25, typeid(this));
                         hh1->setXaxisTitle("Threshold [Vcal]");
                         hh1->setYaxisTitle("Number of Pixels");
                         thrDist[outerIdent] = hh1;
-                        hh1 = new Histo1d("NoiseDist", 51, -0.1, 10.1, typeid(this));
+                        hh1 = new Histo1d("NoiseDist", 101, -0.05, 10.05, typeid(this));
                         hh1->setXaxisTitle("Threshold [Vcal]");
                         hh1->setYaxisTitle("Number of Pixels");
                         sigDist[outerIdent] = hh1;
@@ -384,9 +384,9 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
         double meanOcc = occDists[ident]->getMean()/injections;
         std::cout << "Mean Occupancy: " << meanOcc << std::endl;
 
-        if (meanOcc > 0.52) {
+        if (meanOcc > 0.51) {
             sign = +1;
-        } else if (meanOcc < 0.48) {
+        } else if (meanOcc < 0.49) {
             sign = -1;
         } else {
             sign = 0;

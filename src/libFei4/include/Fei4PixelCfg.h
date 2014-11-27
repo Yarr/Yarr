@@ -81,6 +81,7 @@ class Fei4PixelCfg {
     public:
         const static unsigned n_DC = 40;
         const static unsigned n_Bits = 13;
+        const static unsigned n_Words = 21;
     private:
         // Config represantation
         DoubleColumnBit m_En[n_DC];

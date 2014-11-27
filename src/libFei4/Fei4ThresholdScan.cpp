@@ -66,7 +66,6 @@ void Fei4ThresholdScan::preScan() {
     g_fe->writeRegister(&Fei4::Trig_Count, 12);
     g_fe->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
     g_fe->writeRegister(&Fei4::PlsrDAC, 300);
-    g_fe->writeRegister(&Fei4::Vthin_Fine, 107);
     g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
     while(!g_tx->isCmdEmpty());
 }
