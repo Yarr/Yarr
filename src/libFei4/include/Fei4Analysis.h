@@ -87,6 +87,27 @@ class OccupancyAnalysis : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> innerCnt;
 };
 
+class TotAnalysis : public AnalysisAlgorithm {
+    public:
+        TotAnalysis() : AnalysisAlgorithm() {};
+        ~TotAnalysis() {};
+
+        void init(ScanBase *s);
+        void processHistogram(HistogramBase *h);
+        void end() {}
+    private:
+        std::vector<unsigned> loops;
+        std::vector<unsigned> loopMax;
+        unsigned n_count;
+        double injections;
+        std::map<unsigned, Histo2d*> occMaps;
+        std::map<unsigned, unsigned> occInnerCnt;
+        std::map<unsigned, Histo2d*> totMaps;
+        std::map<unsigned, unsigned> totInnerCnt;
+        std::map<unsigned, Histo2d*> tot2Maps;
+        std::map<unsigned, unsigned> tot2InnerCnt;
+};
+
 class ScurveFitter : public AnalysisAlgorithm {
     public:
         ScurveFitter() : AnalysisAlgorithm() {};

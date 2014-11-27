@@ -122,6 +122,130 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
     }
 }
 
+void TotAnalysis::init(ScanBase *s) {
+    n_count = 1;
+    injections = 1;
+    for (unsigned n=0; n<s->size(); n++) {
+        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        if ((l->type() != typeid(Fei4TriggerLoop*) &&
+                    l->type() != typeid(Fei4MaskLoop*) &&
+                    l->type() != typeid(StdDataLoop*) &&
+                    l->type() != typeid(Fei4DcLoop*))) {
+            loops.push_back(n);
+            loopMax.push_back((unsigned)l->getMax());
+        } else {
+            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            if (cnt == 0)
+                cnt = 1;
+            n_count = n_count*cnt;
+        }
+        
+        if (l->type() == typeid(Fei4TriggerLoop*)) {
+            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
+    }
+}
+
+void TotAnalysis::processHistogram(HistogramBase *h) {
+    // Select correct output container
+    unsigned ident = 0;
+    unsigned offset = 0;
+    // Determine identifier
+    std::string name = "OccMap";
+    std::string name2 = "TotMap";
+    std::string name3 = "Tot2Map";
+    for (unsigned n=0; n<loops.size(); n++) {
+        ident += h->getStat().get(loops[n])+offset;
+        offset += loopMax[n];
+        name += "-" + std::to_string(h->getStat().get(loops[n]));
+        name2 += "-" + std::to_string(h->getStat().get(loops[n]));
+        name3 += "-" + std::to_string(h->getStat().get(loops[n]));
+    }
+    
+    // Check if Histogram exists
+    if (occMaps[ident] == NULL) {
+        Histo2d *hh = new Histo2d(name, 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        hh->setXaxisTitle("Column");
+        hh->setYaxisTitle("Row");
+        hh->setZaxisTitle("Hits");
+        occMaps[ident] = hh;
+        occInnerCnt[ident] = 0;
+        hh = new Histo2d(name2, 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        hh->setXaxisTitle("Column");
+        hh->setYaxisTitle("Row");
+        hh->setZaxisTitle("Sum ToT");
+        totMaps[ident] = hh;
+        totInnerCnt[ident] = 0;
+        hh = new Histo2d(name3, 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        hh->setXaxisTitle("Column");
+        hh->setYaxisTitle("Row");
+        hh->setZaxisTitle("Sum ToT^2");
+        tot2Maps[ident] = hh;
+        tot2InnerCnt[ident] = 0;
+    }
+    
+    // Gather Histogram
+    if (h->getType() == typeid(OccupancyMap*)) {
+        occMaps[ident]->add(*(Histo2d*)h);
+        occInnerCnt[ident]++;
+    } else if (h->getType() == typeid(TotMap*)) {
+        totMaps[ident]->add(*(Histo2d*)h);
+        totInnerCnt[ident]++;
+    } else if (h->getType() == typeid(Tot2Map*)) {
+        tot2Maps[ident]->add(*(Histo2d*)h);
+        tot2InnerCnt[ident]++;
+    } else {
+        return;
+    }
+
+    // Got all data, finish up Analysis
+    if (occInnerCnt[ident] == n_count &&
+         totInnerCnt[ident] == n_count &&
+         tot2InnerCnt[ident] == n_count) {
+        Histo2d *meanTotMap = new Histo2d("MeanTotMap", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        meanTotMap->setXaxisTitle("Column");
+        meanTotMap->setYaxisTitle("Row");
+        meanTotMap->setZaxisTitle("Mean ToT");
+        Histo2d *meanTot2Map = new Histo2d("MeanTot2Map", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        meanTot2Map->setXaxisTitle("Column");
+        meanTot2Map->setYaxisTitle("Row");
+        meanTot2Map->setZaxisTitle("Mean ToT^2");
+        Histo2d *sigmaTotMap = new Histo2d("SigmaTotMap", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        sigmaTotMap->setXaxisTitle("Column");
+        sigmaTotMap->setYaxisTitle("Row");
+        sigmaTotMap->setZaxisTitle("Sigma ToT");
+        Histo1d *meanTotDist = new Histo1d("MeanTotDist", 161, -0.05, 16.05, typeid(this));
+        meanTotDist->setXaxisTitle("Mean ToT");
+        meanTotDist->setYaxisTitle("Number of Pixels");
+        Histo1d *sigmaTotDist = new Histo1d("SigmaTotDist", 51, -0.005, 0.505, typeid(this));
+        sigmaTotDist->setXaxisTitle("Sigma ToT");
+        sigmaTotDist->setYaxisTitle("Number of Pixels");
+
+        meanTotMap->add(*totMaps[ident]);
+        meanTotMap->divide(*occMaps[ident]);
+        meanTot2Map->add(*tot2Maps[ident]);
+        meanTot2Map->divide(*occMaps[ident]);
+        for(unsigned i=0; i<meanTotMap->size(); i++) {
+           double sigma = sqrt(fabs((meanTot2Map->getBin(i) - (meanTotMap->getBin(i)*meanTotMap->getBin(i)))/(injections-1)));
+           sigmaTotMap->setBin(i, sigma);
+           meanTotDist->fill(meanTotMap->getBin(i));
+           sigmaTotDist->fill(sigma);
+        }
+
+        output->pushData(meanTotMap);
+        output->pushData(sigmaTotMap);
+        output->pushData(meanTotDist);
+        output->pushData(sigmaTotDist);
+        delete meanTot2Map;
+
+        occMaps[ident] = NULL;
+        occInnerCnt[ident] = 0;
+        totInnerCnt[ident] = 0;
+        tot2InnerCnt[ident] = 0;
+    }
+}
+
 void ScurveFitter::init(ScanBase *s) {
     std::shared_ptr<LoopActionBase> tmpVcalLoop(Fei4ParameterLoopBuilder(&Fei4::PlsrDAC));
     scan = s;
