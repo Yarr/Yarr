@@ -123,6 +123,24 @@ void Histo2d::add(const Histo2d &h) {
     entries += h.numOfEntries();
 }
 
+void Histo2d::divide(const Histo2d &h) {
+    if (this->size() != h.size())
+        return;
+    for (unsigned int i=0; i<(xbins*ybins); i++) {
+        data[i] = data[i]/h.getBin(i);
+    }
+    entries += h.numOfEntries();
+}
+
+void Histo2d::multiply(const Histo2d &h) {
+    if (this->size() != h.size())
+        return;
+    for (unsigned int i=0; i<(xbins*ybins); i++) {
+        data[i] = data[i]*h.getBin(i);
+    }
+    entries += h.numOfEntries();
+}
+
 void Histo2d::scale(const double s) {
     for (unsigned int i=0; i<(xbins*ybins); i++) {
         data[i] = data[i]*s;
