@@ -123,8 +123,11 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
 }
 
 void TotAnalysis::init(ScanBase *s) {
+    std::shared_ptr<LoopActionBase> tmpPrmpFb(Fei4GlobalFeedbackBuilder(&Fei4::PrmpVbp));
     n_count = 1;
     injections = 1;
+    pixelFb = NULL;
+    globalFb = NULL;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
@@ -143,6 +146,16 @@ void TotAnalysis::init(ScanBase *s) {
         if (l->type() == typeid(Fei4TriggerLoop*)) {
             Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
             injections = trigLoop->getTrigCnt();
+        }
+        
+        if (l->type() == tmpPrmpFb->type()) {
+            std::cout << "Found Glboal Feedback Loop" << std::endl;
+            globalFb = (Fei4GlobalFeedbackBase*) l.get();  
+        }
+        
+        if (l->type() == typeid(Fei4PixelFeedback*)) {
+            std::cout << "Found Pixel Feedback Loop" << std::endl;
+            pixelFb = (Fei4PixelFeedback*) l.get();  
         }
     }
 }
@@ -231,6 +244,48 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
            sigmaTotMap->setBin(i, sigma);
            meanTotDist->fill(meanTotMap->getBin(i));
            sigmaTotDist->fill(sigma);
+        }
+
+        if (globalFb != NULL) {
+            double mean = 0;
+            for (unsigned i=0; i<meanTotMap->size(); i++)
+                mean += meanTotMap->getBin(i);
+            mean = mean/(double)meanTotMap->size();
+            std::cout << "Mean is: " << mean << std::endl;
+            
+            // TODO Get this from somewhere
+            double targetTot = 10.0;
+            int sign = 0;
+            bool last = false;
+            if (mean < (targetTot-0.1)) {
+                sign = +1;
+            } else if (mean > (targetTot+0.1)) {
+                sign = -1;
+            } else {
+                sign = 0;
+                last = true;
+            }
+            globalFb->feedbackBinary(sign, last);
+        }
+        
+        if (pixelFb != NULL) {
+            // TODO Get this from somewhere
+            double targetTot = 10.0;
+            Histo2d *fbHisto = new Histo2d("feedback", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+            for (unsigned i=0; i<meanTotMap->size(); i++) {
+                int sign = 0;
+                double mean = meanTotMap->getBin(i);
+                if (mean < (targetTot-0.05)) {
+                    sign = -1;
+                } else if (mean > (targetTot+0.05)) {
+                    sign = +1;
+                } else {
+                    sign = 0;
+                }
+                fbHisto->setBin(i, sign);
+            }
+            
+            pixelFb->feedback(fbHisto);
         }
 
         output->pushData(meanTotMap);

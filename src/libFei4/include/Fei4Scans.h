@@ -3,4 +3,6 @@
 #include "Fei4ThresholdScan.h"
 #include "Fei4TotScan.h"
 #include "Fei4GlobalThresholdTune.h"
+#include "Fei4GlobalPreampTune.h"
 #include "Fei4PixelThresholdTune.h"
+#include "Fei4PixelPreampTune.h"

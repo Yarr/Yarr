@@ -106,6 +106,8 @@ class TotAnalysis : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> totInnerCnt;
         std::map<unsigned, Histo2d*> tot2Maps;
         std::map<unsigned, unsigned> tot2InnerCnt;
+        Fei4GlobalFeedbackBase *globalFb;
+        Fei4PixelFeedback *pixelFb;
 };
 
 class ScurveFitter : public AnalysisAlgorithm {
@@ -153,6 +155,28 @@ class OccGlobalThresholdTune : public AnalysisAlgorithm {
         std::vector<unsigned> loopMax;
         unsigned n_count;
         std::map<unsigned, Histo2d*> occMaps;
+        std::map<unsigned, Histo1d*> occDists;
+        std::map<unsigned, unsigned> innerCnt;
+        unsigned injections;
+        Fei4GlobalFeedbackBase *fb;
+
+};
+
+class GlobalPreampTune : public AnalysisAlgorithm {
+    public:
+        GlobalPreampTune() : AnalysisAlgorithm()  {};
+        ~GlobalPreampTune() {};
+
+        void init(ScanBase *s);
+        void processHistogram(HistogramBase *h);
+        void end() {};
+
+    private:
+        std::vector<unsigned> loops;
+        std::vector<unsigned> loopMax;
+        unsigned n_count;
+        std::map<unsigned, Histo2d*> occMaps;
+        std::map<unsigned, Histo2d*> totMaps;
         std::map<unsigned, Histo1d*> occDists;
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;

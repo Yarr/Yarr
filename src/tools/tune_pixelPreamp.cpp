@@ -1,3 +1,4 @@
+
 #include <iostream>
 #include <stdint.h>
 #include <fstream>
@@ -18,6 +19,22 @@
 
 #include "Fei4Scans.h"
 
+bool scanDone = false;
+bool processorDone = false;
+
+void processing(Fei4 *fe, ClipBoard<RawData> *clipRaw, std::map<unsigned, ClipBoard<Fei4Data>* > eventMap) {
+    std::cout << "### Processing data ###" << std::endl;
+    Fei4DataProcessor proc(fe->getValue(&Fei4::HitDiscCnfg));
+    proc.connect(clipRaw, eventMap);
+    proc.init();
+    while(!scanDone) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        proc.process();
+    }
+    proc.process();
+    processorDone = true;
+}
+
 void analysis(unsigned ch, ScanBase *s, ClipBoard<Fei4Data> *events) {
     ClipBoard<HistogramBase> clipHisto;
     ClipBoard<HistogramBase> clipResult;
@@ -29,23 +46,32 @@ void analysis(unsigned ch, ScanBase *s, ClipBoard<Fei4Data> *events) {
     histogrammer.addHistogrammer(new Tot2Map());
     //histogrammer.addHistogrammer(new L1Dist());
     histogrammer.connect(events, &clipHisto);
-    histogrammer.process();
     
     std::cout << "Collected: " << clipHisto.size() << " Histograms on Channel " << ch << std::endl;
 
     std::cout << "### Analyzing data ###" << std::endl;
     Fei4Analysis ana;
+    //ana.addAlgorithm(new OccupancyAnalysis);
+    //ana.addAlgorithm(new ScurveFitter);
     ana.addAlgorithm(new TotAnalysis);
     ana.connect(s, &clipHisto, &clipResult);
     ana.init();
+    
+    while(!processorDone) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        histogrammer.process();
+        ana.process();
+    }
+    histogrammer.process();
     ana.process();
+
     ana.end();
     std::cout << "Collected: " << clipResult.size() << " Histograms on Channel " << ch << std::endl;
 
     std::cout << "### Saving ###" << std::endl;
     std::string channel = "ch" + std::to_string(ch);
-    ana.plot(channel+ "_totscan");
-    //ana.toFile(channel+ "_totscan");
+    ana.plot(channel+ "_preamppixeltune");
+    //histogrammer.toFile("analogscan");
     std::cout << "... done!" << std::endl;
 }
 
@@ -58,13 +84,15 @@ int main(void) {
     TxCore tx(&spec);
     RxCore rx(&spec);
 
-    std::string cfgFile = "test_config.bin";
-    Fei4 g_fe(&tx, 0);
-    Fei4 fe(&tx, 0);
-    
-    fe.fromFileBinary(cfgFile);
-    g_fe.fromFileBinary(cfgFile);
 
+    std::string cfgName = "test_config.bin";
+
+    Fei4 g_fe(&tx, 8);
+    Fei4 fe(&tx, 0);
+
+    g_fe.fromFileBinary(cfgName);
+    fe.fromFileBinary(cfgName);
+    
     ClipBoard<RawData> clipRaw;
     std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;
     ClipBoard<Fei4Data> clipEvent0;
@@ -85,7 +113,7 @@ int main(void) {
     ClipBoard<Fei4Data> clipEvent15;
 
     eventMap[0] = &clipEvent0;
-    eventMap[1] = &clipEvent1;
+    /*eventMap[1] = &clipEvent1;
     eventMap[2] = &clipEvent2;
     eventMap[3] = &clipEvent3;
     eventMap[4] = &clipEvent4;
@@ -99,13 +127,13 @@ int main(void) {
     eventMap[12] = &clipEvent12;
     eventMap[13] = &clipEvent13;
     eventMap[14] = &clipEvent14;
-    eventMap[15] = &clipEvent15;
-
-    Fei4TotScan totScan(&g_fe, &tx, &rx, &clipRaw);
+    eventMap[15] = &clipEvent15;*/
+    
+    Fei4PixelPreampTune prmpTune(&g_fe, &tx, &rx, &clipRaw);
 
     std::chrono::steady_clock::time_point init = std::chrono::steady_clock::now();
     std::cout << "### Init Scan ###" << std::endl;
-    totScan.init();
+    prmpTune.init();
 
     std::cout << "### Configure Module ###" << std::endl;
     tx.setCmdEnable(0x1);
@@ -114,37 +142,75 @@ int main(void) {
     fe.configurePixels();
     while(!tx.isCmdEmpty());
     rx.setRxEnable(0x1);
-
+    
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
     
     std::chrono::steady_clock::time_point config = std::chrono::steady_clock::now();
     std::cout << "### Pre Scan ###" << std::endl;
-    totScan.preScan();
+    prmpTune.preScan();
 
+    std::thread p1(processing, &g_fe, &clipRaw, eventMap);
+    //std::thread p2(processing, &g_fe, &clipRaw, eventMap);
+    //std::thread p3(processing, &g_fe, &clipRaw, eventMap);
+    //std::thread p4(processing, &g_fe, &clipRaw, eventMap);
+    
+    std::thread t1(analysis, 0, &prmpTune, &clipEvent0);
+    /*std::thread t2(analysis, 1, &prmpTune, &clipEvent1);
+    std::thread t3(analysis, 2, &prmpTune, &clipEvent2);
+    std::thread t4(analysis, 3, &prmpTune, &clipEvent3);
+    std::thread t5(analysis, 4, &prmpTune, &clipEvent4);
+    std::thread t6(analysis, 5, &prmpTune, &clipEvent5);
+    std::thread t7(analysis, 6, &prmpTune, &clipEvent6);
+    std::thread t8(analysis, 7, &prmpTune, &clipEvent7);
+    std::thread t9(analysis, 8, &prmpTune, &clipEvent8);
+    std::thread t10(analysis, 9, &prmpTune, &clipEvent9);
+    std::thread t11(analysis, 10, &prmpTune, &clipEvent10);
+    std::thread t12(analysis, 11, &prmpTune, &clipEvent11);
+    std::thread t13(analysis, 12, &prmpTune, &clipEvent12);
+    std::thread t14(analysis, 13, &prmpTune, &clipEvent13);
+    std::thread t15(analysis, 14, &prmpTune, &clipEvent14);
+    std::thread t16(analysis, 15, &prmpTune, &clipEvent15);*/
+    
     std::cout << "### Scan ###" << std::endl;
-    totScan.run();
+    prmpTune.run();
 
     std::cout << "### Post Scan ###" << std::endl;
-    totScan.postScan();
+    prmpTune.postScan();
 
     std::cout << "### Disabling RX ###" << std::endl;
     tx.setCmdEnable(0x0);
     rx.setRxEnable(0x0);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    scanDone = true;
+    
     std::cout << "Collected: " << clipRaw.size() << " Raw Data Fragments" << std::endl;
     std::chrono::steady_clock::time_point scan = std::chrono::steady_clock::now();
+
+    p1.join();
+    //p2.join();
+    //p3.join();
+    //p4.join();
+    
+    std::cout << "Collected: " << clipEvent0.size() << " Events" << std::endl;
+    std::chrono::steady_clock::time_point pro = std::chrono::steady_clock::now();
     
 
-    std::cout << "### Processing data ###" << std::endl;
-    Fei4DataProcessor proc(fe.getValue(&Fei4::HitDiscCnfg));
-    proc.connect(&clipRaw, eventMap);
-    proc.init();
-    proc.process();
-    std::cout << "Collected: " << clipEvent1.size() << " Events" << std::endl;
-    std::chrono::steady_clock::time_point pro = std::chrono::steady_clock::now();
-
-    std::thread t1(analysis, 0, &totScan, &clipEvent0);
-
     t1.join();
+    /*t2.join();
+    t3.join();
+    t4.join();
+    t5.join();
+    t6.join();
+    t7.join();
+    t8.join();
+    t9.join();
+    t10.join();
+    t11.join();
+    t12.join();
+    t13.join();
+    t14.join();
+    t15.join();
+    t16.join();*/
 
     std::chrono::steady_clock::time_point ana = std::chrono::steady_clock::now();
 
@@ -157,5 +223,8 @@ int main(void) {
     std::cout << "=======================" << std::endl;
     std::cout << "Total: " << std::chrono::duration_cast<std::chrono::milliseconds>(ana - init).count() << " ms!" << std::endl;
     std::cout << std::endl << "Finished!" << std::endl;
+    
+    std::cout << "Saving config to: " << cfgName << std::endl;
+    g_fe.toFileBinary(cfgName);
     return 0;
 }

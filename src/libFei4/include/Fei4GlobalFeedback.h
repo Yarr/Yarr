@@ -18,9 +18,23 @@ class Fei4GlobalFeedbackBase : public LoopActionBase {
                 oldSign = 0;
                 step = step/2;
             }
+            int val = (cur+(step*sign));
+            if (val < 0) val = 0;
             values.push(cur+(step*sign));
             std::cout << "--> Adding new value " << cur+(step*sign) << std::endl;
             m_done = last;
+            if (val < 50) m_done = true;
+            fbMutex.unlock();
+        }
+        
+        void feedbackBinary(double sign, bool last = false) {
+            int val = (cur+(step*sign));
+            if (val < 0) val = 0;
+            values.push(val);
+            std::cout << "--> Adding new value " << val << std::endl;
+            step = step/2;
+            m_done = last;
+            if (step == 1) m_done = true;
             fbMutex.unlock();
         }
    protected:
@@ -60,7 +74,6 @@ class Fei4GlobalFeedback : public Fei4GlobalFeedbackBase {
             values.pop();
             std::cout << "--> Received feedback: " << cur << std::endl;
             this->writePar();
-            if (cur < 50) m_done = true;
         }
 
         void writePar() {

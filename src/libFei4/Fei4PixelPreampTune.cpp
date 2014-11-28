@@ -2,13 +2,13 @@
 // # Author: Timon Heim
 // # Email: timon.heim at cern.ch
 // # Project: Yarr
-// # Description: Fei4 Threshold Scan
+// # Description: Fei4 Preamp Scan
 // # Comment: Nothing fancy
 // ################################
 
-#include "Fei4PixelThresholdTune.h"
+#include "Fei4PixelPreampTune.h"
 
-Fei4PixelThresholdTune::Fei4PixelThresholdTune(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawData> *data) : ScanBase(fe, tx, rx, data) {
+Fei4PixelPreampTune::Fei4PixelPreampTune(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawData> *data) : ScanBase(fe, tx, rx, data) {
     mask = MASK_16;
     dcMode = QUAD_DC;
     numOfTriggers = 100;
@@ -20,14 +20,14 @@ Fei4PixelThresholdTune::Fei4PixelThresholdTune(Fei4 *fe, TxCore *tx, RxCore *rx,
     useScap = true;
     useLcap = true;
 
-    target = 3000;
+    target = 16000;
     verbose = false;
 }
 
 // Initialize Loops
-void Fei4PixelThresholdTune::init() {
+void Fei4PixelPreampTune::init() {
     // Loop 0: Feedback
-    std::shared_ptr<Fei4PixelFeedback> fbLoop(new Fei4PixelFeedback(TDAC_FB));
+    std::shared_ptr<Fei4PixelFeedback> fbLoop(new Fei4PixelFeedback(FDAC_FB));
 
     // Loop 1: Mask Staging
     std::shared_ptr<Fei4MaskLoop> maskStaging(new Fei4MaskLoop);
@@ -65,10 +65,10 @@ void Fei4PixelThresholdTune::init() {
 }
 
 // Do necessary pre-scan configuration
-void Fei4PixelThresholdTune::preScan() {
+void Fei4PixelPreampTune::preScan() {
     g_fe->writeRegister(&Fei4::Trig_Count, 12);
     g_fe->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
-    // TODO Make this mult ichannel capable
+    // TODO Make this multi channel capabale
     g_fe->writeRegister(&Fei4::PlsrDAC, g_fe->toVcal(target, useScap, useLcap));
     g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
     while(!g_tx->isCmdEmpty());
