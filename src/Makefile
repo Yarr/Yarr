@@ -1,25 +1,24 @@
 ######
-##  Default configuration
-##
-## Modify this configuration by creating a local.config file and resetting the
-## variables there. See local.config.sample for an example and a description
-## of all used variables.
+## Author: Timon Heim/Jan Kuechler
+## Last edit: 04.12.2014
 
 MODE = DEBUG
 
 AR = ar
 
+# Compiler
 CPP = g++
-CPPFLAGS += -std=c++11 -Wall -Wunused-variable -IlibSpec/include \
-			-IlibYarr/include -IlibUtil/include -IlibFei4/include -O0
-CPPFLAGS_DEBUG += -g -O0 -pthread
-CPPFLAGS_RELEASE += -O0 -DNDEBUG
+CPPFLAGS += -pthread -std=c++11 -Wall -Wunused-variable -IlibSpec/include \
+			-IlibYarr/include -IlibUtil/include -IlibFei4/include
+CPPFLAGS_DEBUG += -g -O0 -DDEBUG
+CPPFLAGS_RELEASE += -O2 -DNDEBUG
 
+# Linker
 LD = g++
-LDFLAGS += -pthread -std=c++11 #`root-config --ldflags`
+LDFLAGS += -pthread -std=c++11
 LDFLAGS_DEBUG +=
 LDFLAGS_RELEASE += 
-LIBS += #`root-config --libs --glibs`
+LIBS +=
 
 BIN = bin
 SRC = tools
@@ -29,8 +28,6 @@ FEI4 = libFei4
 UTIL = libUtil
 BUILD = build
 LLIB = lib
-
--include local.config
 
 # Set build mode specific variables
 CPPFLAGS += $(CPPFLAGS_$(MODE))
@@ -68,13 +65,13 @@ TARGETS = $(patsubst $(SRC)/%.cpp,$(BIN)/%,$(SRC_FILES))
 
 all: util fei4 spec yarr $(TARGETS)
 
-spec: $(BUILD)/libspec.a
+spec: $(LLIB)/libspec.a
 
-yarr: $(BUILD)/libyarr.a
+yarr: $(LLIB)/libyarr.a
 
-fei4: $(BUILD)/libfei4.a
+fei4: $(LLIB)/libfei4.a
 
-util: $(BUILD)/libutil.a
+util: $(LLIB)/libutil.a
 
 help:
 	@echo # Use 'make' to create all programs
@@ -111,26 +108,27 @@ $(BIN)/%: $(BUILD)/%.o $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(UTIL_OBJS)
 	@echo [Linking] $@
 	@$(LD) $(LDFLAGS) $< $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(UTIL_OBJS) $(LIBS) -o $@
 
-$(BUILD)/libyarr.a: $(YARR_OBJS)
+# Libs
+$(LLIB)/libyarr.a: $(YARR_OBJS)
 	@echo [Creating] $@
 	@$(AR) rcs $@ $(YARR_OBJS)
 
-$(BUILD)/libfei4.a: $(FEI4_OBJS)
+$(LLIB)/libfei4.a: $(FEI4_OBJS)
 	@echo [Creating] $@
 	@$(AR) rcs $@ $(FEI4_OBJS)
 
-$(BUILD)/libspec.a: $(SPEC_OBJS)
+$(LLIB)/libspec.a: $(SPEC_OBJS)
 	@echo [Creating] $@
 	@$(AR) rcs $@ $(SPEC_OBJS)
 
-$(BUILD)/libutil.a: $(UTIL_OBJS)
+$(LLIB)/libutil.a: $(UTIL_OBJS)
 	@echo [Creating] $@
 	@$(AR) rcs $@ $(UTIL_OBJS)
 
 -include $(ALL_DEPS)
 
 clean:
-	@$(RM) $(ALL_OBJS) $(ALL_DEPS) $(TARGETS) $(BUILD)/libspec.a $(BUILD)/libyarr.a $(BUILD)/libutil.a $(BUILD)/libfei4.a
+	@$(RM) $(ALL_OBJS) $(ALL_DEPS) $(TARGETS) $(LLIB)/libspec.a $(LLIB)/libyarr.a $(LLIB)/libutil.a $(LLIB)/libfei4.a
 	@echo "[Clean] … done!"
 
 list:
@@ -184,7 +182,7 @@ mkinfo:
 	@echo Object files:
 	@echo "    $(FEI4_OBJS)"
 	@echo 
-	@echo UTIL Files
+	@echo Util Files
 	@echo =============
 	@echo Source files:
 	@echo "    $(UTIL_FILES)"
