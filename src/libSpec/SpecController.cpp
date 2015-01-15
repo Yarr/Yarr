@@ -76,7 +76,11 @@ int SpecController::writeDma(uint32_t off, uint32_t *data, size_t words) {
         memcpy(addr, &llist[0], sizeof(struct dma_linked_list));
         this->startDma();
 
-        spec->waitForInterrupt(0);
+        if (spec->waitForInterrupt(0) < 1) {
+            std::cerr << __PRETTY_FUNCTION__ << " -> " 
+            << "Interrupt timeout, aborting transfer!" << std::endl;
+            this->abortDma();
+        }
         
         // Ackowledge interrupt
         volatile uint32_t irq_ack = this->read32(bar4, GNGPIO_INT_STATUS/4);
