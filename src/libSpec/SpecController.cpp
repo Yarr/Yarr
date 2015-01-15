@@ -17,8 +17,6 @@
 #include <GennumRegMap.h>
 #include <BitOps.h>
 
-#define DEBUG
-
 SpecController::SpecController(unsigned int id) {
     specId = id;
     try {
