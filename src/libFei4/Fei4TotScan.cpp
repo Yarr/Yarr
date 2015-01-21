@@ -17,7 +17,7 @@ Fei4TotScan::Fei4TotScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawData> *d
     useScap = true;
     useLcap = true;
 
-    target = 16000;
+    target = 15000;
 
     verbose = false;
 }

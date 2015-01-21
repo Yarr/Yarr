@@ -66,6 +66,7 @@ void Fei4Analysis::toFile(std::string basename) {
 
 void OccupancyAnalysis::init(ScanBase *s) {
     n_count = 1;
+    injections = 0;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
@@ -79,6 +80,10 @@ void OccupancyAnalysis::init(ScanBase *s) {
             if (cnt == 0)
                 cnt = 1;
             n_count = n_count*cnt;
+        }
+        if (l->type() == typeid(Fei4TriggerLoop*)) {
+            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
         }
     }
 }
@@ -94,10 +99,12 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
 
     // Determine identifier
     std::string name = "OccupancyMap";
+    std::string name2 = "EnMask";
     for (unsigned n=0; n<loops.size(); n++) {
         ident += h->getStat().get(loops[n])+offset;
         offset += loopMax[n];
         name += "-" + std::to_string(h->getStat().get(loops[n]));
+        name2 += "-" + std::to_string(h->getStat().get(loops[n]));
     }
 
     // Check if Histogram exists
@@ -116,7 +123,16 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
 
     // Got all data, finish up Analysis
     if (innerCnt[ident] == n_count) {
+        Histo2d *mask = new Histo2d(name2, 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        mask->setXaxisTitle("Column");
+        mask->setYaxisTitle("Rows");
+        mask->setZaxisTitle("Enable");
+        for (unsigned i=0; i<occMaps[ident]->size(); i++)
+            if (occMaps[ident]->getBin(i) == injections)
+                mask->setBin(i, 1);
+        output->pushData(mask); // TODO push this mask to the specific configuration
         output->pushData(occMaps[ident]);
+        
         //delete occMaps[ident];
         //occMaps[ident] = NULL;
     }
@@ -220,10 +236,14 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         meanTotMap->setXaxisTitle("Column");
         meanTotMap->setYaxisTitle("Row");
         meanTotMap->setZaxisTitle("Mean ToT");
-        Histo2d *meanTot2Map = new Histo2d("MeanTot2Map", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
-        meanTot2Map->setXaxisTitle("Column");
-        meanTot2Map->setYaxisTitle("Row");
-        meanTot2Map->setZaxisTitle("Mean ToT^2");
+        Histo2d *sumTotMap = new Histo2d("SumTotMap", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        sumTotMap->setXaxisTitle("Column");
+        sumTotMap->setYaxisTitle("Row");
+        sumTotMap->setZaxisTitle("Mean ToT");
+        Histo2d *sumTot2Map = new Histo2d("MeanTot2Map", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        sumTot2Map->setXaxisTitle("Column");
+        sumTot2Map->setYaxisTitle("Row");
+        sumTot2Map->setZaxisTitle("Mean ToT^2");
         Histo2d *sigmaTotMap = new Histo2d("SigmaTotMap", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
         sigmaTotMap->setXaxisTitle("Column");
         sigmaTotMap->setYaxisTitle("Row");
@@ -231,16 +251,16 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         Histo1d *meanTotDist = new Histo1d("MeanTotDist", 161, -0.05, 16.05, typeid(this));
         meanTotDist->setXaxisTitle("Mean ToT");
         meanTotDist->setYaxisTitle("Number of Pixels");
-        Histo1d *sigmaTotDist = new Histo1d("SigmaTotDist", 51, -0.005, 0.505, typeid(this));
+        Histo1d *sigmaTotDist = new Histo1d("SigmaTotDist", 101, -0.05, 1.05, typeid(this));
         sigmaTotDist->setXaxisTitle("Sigma ToT");
         sigmaTotDist->setYaxisTitle("Number of Pixels");
 
         meanTotMap->add(*totMaps[ident]);
         meanTotMap->divide(*occMaps[ident]);
-        meanTot2Map->add(*tot2Maps[ident]);
-        meanTot2Map->divide(*occMaps[ident]);
+        sumTotMap->add(*totMaps[ident]);
+        sumTot2Map->add(*tot2Maps[ident]);
         for(unsigned i=0; i<meanTotMap->size(); i++) {
-           double sigma = sqrt(fabs((meanTot2Map->getBin(i) - (meanTotMap->getBin(i)*meanTotMap->getBin(i)))/(injections-1)));
+           double sigma = sqrt(fabs((sumTot2Map->getBin(i) - ((sumTotMap->getBin(i)*sumTotMap->getBin(i))/injections))/(injections-1)));
            sigmaTotMap->setBin(i, sigma);
            meanTotDist->fill(meanTotMap->getBin(i));
            sigmaTotDist->fill(sigma);
@@ -292,7 +312,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         output->pushData(sigmaTotMap);
         output->pushData(meanTotDist);
         output->pushData(sigmaTotDist);
-        delete meanTot2Map;
+        delete sumTot2Map;
 
         occMaps[ident] = NULL;
         occInnerCnt[ident] = 0;

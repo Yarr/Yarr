@@ -25,7 +25,7 @@ int main (void) {
     int overall_errors = 0;
     uint32_t off = 0;
 
-    const size_t size = 4096; // 1kB
+    const size_t size = 256*100; // 1kB
     
     srand(time(NULL));
 
@@ -96,7 +96,7 @@ int main (void) {
     std::cout << "Total Data transfered " << size*4*maxLoops/1024.0/1024.0/1024.0 << " GB!" << std::endl;
     std::cout << "Total Number of Errors #" << overall_errors << " errors!" << std::endl;
     std::cout << (double)overall_errors/(double)(size*maxLoops) << "\% are errors!" << std::endl;
-    std::cout << "Bit error rate (CL 99%): " << (double)(-1*log(0.01))/(double)(size*maxLoops*32) << std::endl;
+    std::cout << "Bit error rate (CL 99%): " << (double)(-1*log(0.05))/(double)(size*maxLoops*32) << std::endl;
     std::cout << "==================================" << std::endl;
 
     return 0;

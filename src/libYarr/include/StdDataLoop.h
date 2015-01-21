@@ -9,6 +9,7 @@
 #include "LoopActionBase.h"
 #include "ClipBoard.h"
 #include "RawData.h"
+#include <signal.h>
 
 class StdDataLoop: public LoopActionBase {
     public:

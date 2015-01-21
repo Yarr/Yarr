@@ -17,11 +17,14 @@
 #include "Fei4EventData.h"
 #include "HistogramBase.h"
 #include "ResultBase.h"
+#include "Fei4.h"
 
 class Bookkeeper {
     public:
         Bookkeeper();
         ~Bookkeeper();
+
+        void addFe(unsigned channel, Fei4 *fe);
 
         void pushData(RawData *d);
         void pushData(Fei4Data *d);
@@ -34,7 +37,9 @@ class Bookkeeper {
         void popData(ResultBase *r);
 
     private:
-
+        // List of FEs TODO should be generic
+        std::vector<std::pair<unsigned, Fei4*> > feList;
+            
         // Raw Data
         std::deque<RawData*> rawDataList;
         std::mutex rawDataMutex;
