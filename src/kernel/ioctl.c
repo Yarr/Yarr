@@ -355,7 +355,7 @@ static int ioctl_wait_interrupt(specdriver_privdata_t *privdata, unsigned long a
 		//if (atomic_add_negative( -1, &(privdata->irq_outstanding[irq_source])) )
 		//	atomic_inc( &(privdata->irq_outstanding[irq_source]) );
 		//else
-        if (ret != 0) atomic_dec(&(privdata->irq_outstanding[irq_source]));
+        if (ret != 0) atomic_set(&(privdata->irq_outstanding[irq_source]), 0);
 	    temp =0;
 	}
     //mod_info("Done waiting for interrupt!");
