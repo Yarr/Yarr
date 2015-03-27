@@ -10,12 +10,13 @@
 
 #include <stdint.h>
 #include <iostream>
+#include <array>
 
 class DoubleColumnBit {
     public:
         const static unsigned n_Words = 21;
     protected:
-        uint32_t storage[n_Words];
+        std::array<uint32_t, n_Words> storage;
     public:    
         void set(const uint32_t *bitstream);
         void setAll(const uint32_t val);
@@ -80,6 +81,7 @@ class Fei4PixelCfg {
     public:
         const static unsigned n_DC = 40;
         const static unsigned n_Bits = 13;
+        const static unsigned n_Words = 21;
     private:
         // Config represantation
         DoubleColumnBit m_En[n_DC];
@@ -105,6 +107,11 @@ class Fei4PixelCfg {
         void setLCap(unsigned col, unsigned row, unsigned v);
         void setSCap(unsigned col, unsigned row, unsigned v);
         void setFDAC(unsigned col, unsigned row, unsigned v);
+        unsigned getEn(unsigned col, unsigned row);
+        unsigned getTDAC(unsigned col, unsigned row);
+        unsigned getLCap(unsigned col, unsigned row);
+        unsigned getSCap(unsigned col, unsigned row);
+        unsigned getFDAC(unsigned col, unsigned row);
 
         static unsigned to_dc(unsigned col);
         static unsigned to_bit(unsigned col, unsigned row);

@@ -115,7 +115,7 @@ END COMPONENT;
       c_din_width_wach => 32,
       c_din_width_wdch => 64,
       c_din_width_wrch => 2,
-      c_dout_rst_val => "0",
+      c_dout_rst_val => "00C0FFEE",
       c_dout_width => 32,
       c_enable_rlocs => 0,
       c_enable_rst_sync => 1,

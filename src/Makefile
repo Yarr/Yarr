@@ -1,25 +1,25 @@
 ######
-##  Default configuration
-##
-## Modify this configuration by creating a local.config file and resetting the
-## variables there. See local.config.sample for an example and a description
-## of all used variables.
+## Author: Timon Heim/Jan Kuechler
+## Last edit: 04.12.2014
+
 
 MODE = DEBUG
 
 AR = ar
 
+# Compiler
 CPP = g++
-CPPFLAGS += -std=c++11 -Wall -Wunused-variable -IlibSpec/include \
+CPPFLAGS += -pthread -std=c++11 -Wall -Wunused-variable -IlibSpec/include \
 			-IlibYarr/include -IlibUtil/include -IlibFei4/include
-CPPFLAGS_DEBUG += -g -O2 -pthread
-CPPFLAGS_RELEASE += -O0 -DNDEBUG
+CPPFLAGS_DEBUG += -g -O0 -DDEBUG
+CPPFLAGS_RELEASE += -O2 -DNDEBUG
 
+# Linker
 LD = g++
-LDFLAGS += -pthread -std=c++11 #`root-config --ldflags`
+LDFLAGS += -pthread -std=c++11
 LDFLAGS_DEBUG +=
 LDFLAGS_RELEASE += 
-LIBS += #`root-config --libs --glibs`
+LIBS +=
 
 BIN = bin
 SRC = tools
@@ -30,7 +30,15 @@ UTIL = libUtil
 BUILD = build
 LLIB = lib
 
--include local.config
+GCC_MAJOR = $(shell $(CPP) -dumpversion | cut -d'.' -f1)
+GCC_MINOR = $(shell $(CPP) -dumpversion | cut -d'.' -f2)
+
+ifeq ($(shell echo ${GCC_MAJOR}\<4| bc), 1)
+$(error $(CPP) version is too old, need atleast 4.7!)
+endif
+ifeq ($(shell echo ${GCC_MINOR}\<7 | bc), 1)
+$(error $(CPP) version is too old, need atleast 4.7!)
+endif
 
 # Set build mode specific variables
 CPPFLAGS += $(CPPFLAGS_$(MODE))
@@ -111,6 +119,7 @@ $(BIN)/%: $(BUILD)/%.o $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(UTIL_OBJS)
 	@echo [Linking] $@
 	@$(LD) $(LDFLAGS) $< $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(UTIL_OBJS) $(LIBS) -o $@
 
+# Libs
 $(LLIB)/libyarr.a: $(YARR_OBJS)
 	@echo [Creating] $@
 	@$(AR) rcs $@ $(YARR_OBJS)
@@ -184,7 +193,7 @@ mkinfo:
 	@echo Object files:
 	@echo "    $(FEI4_OBJS)"
 	@echo 
-	@echo UTIL Files
+	@echo Util Files
 	@echo =============
 	@echo Source files:
 	@echo "    $(UTIL_FILES)"

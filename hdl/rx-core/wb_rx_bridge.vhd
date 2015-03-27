@@ -249,10 +249,8 @@ begin
 			data_fifo_empty_cnt <= (others => '0');
 		elsif rising_edge(dma_clk_i) then
 			-- Timeout Counter
-			if (data_fifo_empty_true = '0' and data_fifo_prog_empty = '1') then
+			if (data_fifo_empty_true = '0' and data_fifo_empty_pressure = '1') then
 				data_fifo_empty_cnt <= data_fifo_empty_cnt + 1;
-			elsif (data_fifo_empty_true = '0' and data_fifo_prog_empty = '0') then
-				data_fifo_empty_cnt <= (others => '0');
 			elsif (data_fifo_empty_true = '1') then
 				data_fifo_empty_cnt <= (others => '0');
 			end if;
@@ -326,19 +324,20 @@ begin
 			end if;
 			
 			-- Package size counter
-			if (dma_stb_valid = '1' and dma_data_cnt = c_PACKAGE_SIZE) then
+			-- Check if Fifo is full
+			if (dma_stb_valid = '1' and dma_data_cnt >= c_PACKAGE_SIZE and ctrl_fifo_full = '0') then
 				ctrl_fifo_din(63 downto  32) <= std_logic_vector(dma_data_cnt);
 				ctrl_fifo_din(31 downto 0) <= std_logic_vector(dma_start_adr);
 				dma_start_adr <= dma_start_adr + c_PACKAGE_SIZE;
 				dma_data_cnt <= TO_UNSIGNED(1, 32);
 				ctrl_fifo_wren <= '1';
-			elsif (dma_stb_valid = '0' and dma_data_cnt = c_PACKAGE_SIZE) then
+			elsif (dma_stb_valid = '0' and dma_data_cnt >= c_PACKAGE_SIZE and ctrl_fifo_full = '0') then
 				ctrl_fifo_din(63 downto  32) <= std_logic_vector(dma_data_cnt);
 				ctrl_fifo_din(31 downto 0) <= std_logic_vector(dma_start_adr);
 				dma_start_adr <= dma_start_adr + c_PACKAGE_SIZE;
 				dma_data_cnt <= TO_UNSIGNED(0, 32);
 				ctrl_fifo_wren <= '1';
-			elsif (dma_stb_valid = '0' and dma_timeout_cnt >= c_TIMEOUT and dma_data_cnt > 0) then
+			elsif (dma_stb_valid = '0' and dma_timeout_cnt >= c_TIMEOUT and dma_data_cnt > 0 and ctrl_fifo_full ='0') then
 				ctrl_fifo_din(63 downto  32) <= std_logic_vector(dma_data_cnt);
 				ctrl_fifo_din(31 downto 0) <= std_logic_vector(dma_start_adr);
 				dma_start_adr <= dma_start_adr + dma_data_cnt;

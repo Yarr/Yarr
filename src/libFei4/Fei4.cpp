@@ -8,7 +8,7 @@
 
 #include "Fei4.h"
 
-Fei4::Fei4(TxCore *core, unsigned arg_chipId) : Fei4GlobalCfg(), Fei4PixelCfg(), Fei4Cmd(core) {
+Fei4::Fei4(TxCore *core, unsigned arg_chipId) : Fei4Cfg(arg_chipId), Fei4Cmd(core) {
     chipId = arg_chipId;
 }
 
@@ -34,7 +34,7 @@ void Fei4::configure() {
     writeRegister(&Fei4::Vthin_Coarse);
 }
 
-void Fei4::configurePixels() {
+void Fei4::configurePixels(unsigned lsb, unsigned msb) {
     // Increase threshold
     uint16_t tmp = getValue(&Fei4::Vthin_Coarse);
     writeRegister(&Fei4::Vthin_Coarse, 255);
@@ -43,7 +43,7 @@ void Fei4::configurePixels() {
     writeRegister(&Fei4::Colpr_Mode, 0x0);
     for (unsigned dc=0; dc<Fei4PixelCfg::n_DC; dc++) {
         writeRegister(&Fei4::Colpr_Addr, dc);
-        for (unsigned bit=0; bit<Fei4PixelCfg::n_Bits; bit++) {
+        for (unsigned bit=lsb; bit<msb; bit++) {
             wrFrontEnd(chipId, getCfg(bit, dc));
             loadIntoPixel(1 << bit);
             while(core->isCmdEmpty() == 0);

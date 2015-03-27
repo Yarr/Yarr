@@ -71,7 +71,7 @@ void Fei4Cmd::wrFrontEnd(int chipId, uint32_t *bitstream) {
     core->writeFifo(0x0);
     core->writeFifo(0x005A1000+((chipId<<6)&0x3C0));
     //Flipping the order in order to send bit 671-0, and not bit 31-0, 63-21, etc.
-    for(int i = 20 ; i >= 0 ; --i) {
+    for(int i = 20 ; i>=0 ; i--) {
         core->writeFifo(bitstream[i]);	
     }
     core->writeFifo(0x0);

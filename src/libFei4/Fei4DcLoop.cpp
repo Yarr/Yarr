@@ -65,6 +65,22 @@ void Fei4DcLoop::execPart2() {
 
 void Fei4DcLoop::setMode(enum DC_MODE mode) {
     m_mode = mode;
+    switch (m_mode) {
+        case SINGLE_DC:
+            max = 40;
+            break;
+        case QUAD_DC:
+            max = 4;
+            break;
+        case OCTA_DC:
+            max = 8;
+            break;
+        case ALL_DC:
+            max = 1;
+            break;
+        default:
+            break;
+    }
 }
 
 enum DC_MODE Fei4DcLoop::getMode() {

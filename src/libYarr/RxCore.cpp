@@ -25,16 +25,9 @@ RawData* RxCore::readData() {
     uint32_t dma_count = getDataCount();
     uint32_t real_dma_count = dma_count;
     if (dma_count > 0 && dma_count < (251*256)) {
-        getStartAddr();
-        uint32_t extra_dma_count = getDataCount();
-        while (extra_dma_count > 0 && extra_dma_count < (251*256) && dma_count < (400*256)) {
-            dma_count += extra_dma_count;
-            getStartAddr();
-            extra_dma_count = getDataCount();
-        }
         real_dma_count = dma_count;
-        if (dma_count < 64)
-            dma_count = 64;
+        if (dma_count%32 != 0)
+            dma_count += 32-(dma_count%32);
         if (verbose)
             std::cout << __PRETTY_FUNCTION__ << " : Addr 0x" << std::hex <<
                 dma_addr << " ,Count " << std::dec << dma_count << std::endl;

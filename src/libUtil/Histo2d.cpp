@@ -26,6 +26,7 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     overflow = 0;
     data = new double[xbins*ybins];
     this->setAll(0);
+    entries = 0;
 
 }
 
@@ -47,6 +48,30 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     overflow = 0;
     data = new double[xbins*ybins];
     this->setAll(0);
+    entries = 0;
+}
+
+Histo2d::Histo2d(Histo2d *h) : HistogramBase(h->getName(), h->getType()) {
+    xbins = h->getXbins();
+    xlow = h->getXlow();
+    xhigh = h->getXhigh();
+    xbinWidth = h->getXbinWidth();
+
+    ybins = h->getYbins();
+    ylow = h->getYlow();
+    yhigh = h->getYhigh();
+    ybinWidth = h->getYbinWidth();
+
+    min = h->getMin();
+    max = h->getMax();
+    underflow = h->getUnderflow();
+    overflow = h->getOverflow();
+
+    data = new double[xbins*ybins];
+    for(unsigned i=0; i<xbins*ybins; i++)
+        data[i] = h->getBin(i);
+    entries = h->getNumOfEntries();
+    lStat = h->getStat();
 }
 
 Histo2d::~Histo2d() {
@@ -55,6 +80,10 @@ Histo2d::~Histo2d() {
 
 unsigned Histo2d::size() const {
     return xbins*ybins;
+}
+
+unsigned Histo2d::numOfEntries() const {
+    return entries;
 }
 
 void Histo2d::fill(double x, double y, double v) {
@@ -73,12 +102,14 @@ void Histo2d::fill(double x, double y, double v) {
         if (v < min)
             min = v;
     }
+    entries++;
 }
 
 void Histo2d::setAll(double v) {
     for (unsigned int i=0; i<ybins; i++) {
         for (unsigned int j=0; j<xbins; j++) {
             data[i+(j*ybins)] = v;
+            entries++;
         }
     }
 }
@@ -89,6 +120,29 @@ void Histo2d::add(const Histo2d &h) {
     for (unsigned int i=0; i<(xbins*ybins); i++) {
         data[i] += h.getBin(i);
     }
+    entries += h.numOfEntries();
+}
+
+void Histo2d::divide(const Histo2d &h) {
+    if (this->size() != h.size())
+        return;
+    for (unsigned int i=0; i<(xbins*ybins); i++) {
+        if (h.getBin(i) == 0) {
+            data[i] = 0;
+        } else {
+            data[i] = data[i]/h.getBin(i);
+        }
+    }
+    entries += h.numOfEntries();
+}
+
+void Histo2d::multiply(const Histo2d &h) {
+    if (this->size() != h.size())
+        return;
+    for (unsigned int i=0; i<(xbins*ybins); i++) {
+        data[i] = data[i]*h.getBin(i);
+    }
+    entries += h.numOfEntries();
 }
 
 void Histo2d::scale(const double s) {
@@ -105,6 +159,13 @@ double Histo2d::getBin(unsigned n) const {
         return 0;
     }
 }
+
+void Histo2d::setBin(unsigned n, double v) {
+    if (n < this->size()) {
+        data[n] = v;
+    }
+}
+
 
 int Histo2d::binNum(double x, double y) {
     if (x < xlow || y < ylow) {

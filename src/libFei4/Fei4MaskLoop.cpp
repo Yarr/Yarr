@@ -57,13 +57,16 @@ void Fei4MaskLoop::execPart2() {
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     m_cur += step;
     if (!(m_cur < max)) m_done = true;
-    g_fe->writeRegister(&Fei4::Colpr_Mode, 0x3);
-    g_fe->writeRegister(&Fei4::Colpr_Addr, 0x0);
-    g_fe->shiftMask();
-    g_fe->loadIntoPixel(1 << 0);
-    //if (enable_lCap) g_fe->loadIntoPixel(1 << 6);
-    //if (enable_sCap) g_fe->loadIntoPixel(1 << 7);
-    while(g_tx->isCmdEmpty() == 0);
+    // Shift Enable mask by step size
+    for(unsigned i=0; i<step; i++) {
+        g_fe->writeRegister(&Fei4::Colpr_Mode, 0x3);
+        g_fe->writeRegister(&Fei4::Colpr_Addr, 0x0);
+        g_fe->shiftMask();
+        g_fe->loadIntoPixel(1 << 0);
+        //if (enable_lCap) g_fe->loadIntoPixel(1 << 6);
+        //if (enable_sCap) g_fe->loadIntoPixel(1 << 7);
+        while(g_tx->isCmdEmpty() == 0);
+    }
 }
 
 void Fei4MaskLoop::setMaskStage(enum MASK_STAGE mask) {

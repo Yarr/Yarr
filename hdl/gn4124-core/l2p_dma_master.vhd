@@ -118,7 +118,7 @@ architecture behavioral of l2p_dma_master is
 
     -- L2P FSM
     type l2p_dma_state_type is (L2P_IDLE, L2P_SETUP, L2P_HEADER, 
-                                L2P_ADDR_H, L2P_ADDR_L, L2P_DATA,
+                                L2P_ADDR_H, L2P_ADDR_L, L2P_SETUP_DATA, L2P_DATA,
                                 L2P_LAST_DATA, L2P_ERROR);
     signal l2p_dma_current_state : l2p_dma_state_type;
 
@@ -198,6 +198,7 @@ begin
                     ldm_arb_valid <= '0';
                     ldm_arb_dframe_o <= '0';
                     data_fifo_rd <= '0';
+					data_fifo_valid <= '0';
                     dma_ctrl_done_o <= '0';
                     data_fifo_valid <= '0';
                     if (dma_ctrl_start_l2p_i = '1') then
@@ -209,6 +210,7 @@ begin
                     ldm_arb_valid <= '0';
                     ldm_arb_dframe_o <= '0';
                     data_fifo_rd <= '0';
+					data_fifo_valid <= '0';
                     l2p_timeout_cnt <= (others => '0');
                     if (l2p_rdy_i = '1') then
                         l2p_dma_current_state <= L2P_HEADER;
@@ -237,40 +239,65 @@ begin
                 when L2P_ADDR_L =>
                     ldm_arb_data_l <= l2p_address_l;
                     l2p_dma_current_state <= L2P_DATA;
-
+					
                 when L2P_DATA =>   
-                     ldm_arb_data_l <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);                
-                     if (data_fifo_empty = '0' and data_fifo_valid = '1' and l2p_data_cnt > 1) then
-                        ldm_arb_valid <= '1';
-                        ldm_arb_dframe_o <= '1';
-                        data_fifo_valid <= '0';
-                     elsif (data_fifo_empty = '1' and data_fifo_valid = '1' and l2p_data_cnt > 1) then
-                        ldm_arb_valid <= '0';
-                        ldm_arb_dframe_o <= '1';
-                        data_fifo_valid <= '0';
-                     elsif (data_fifo_valid = '1' and l2p_data_cnt <= 1) then
-                        ldm_arb_valid <= '1';
-                        ldm_arb_dframe_o <= '0';
-                        l2p_dma_current_state <= L2P_LAST_DATA;
-                        data_fifo_valid <= '0';
-                     else
-                        ldm_arb_valid <= '0';
-                        ldm_arb_dframe_o <= '1';
-                     end if;
-                     
-                     if (data_fifo_empty = '0' and l2p_rdy_i = '1' and l2p_data_cnt > 1) then
-                        data_fifo_rd <= '1';
-                        data_fifo_valid <= '1';
-                     elsif (data_fifo_empty = '0' and l2p_rdy_i = '1' and l2p_data_cnt = 1 and data_fifo_valid = '0') then
-                        data_fifo_rd <= '1';
-                        data_fifo_valid <= '1';
-                     elsif (data_fifo_empty = '0' and l2p_rdy_i = '1' and l2p_data_cnt = 0) then
-                        data_fifo_rd <= '1';
-                        data_fifo_valid <= '1';                        
-                     else
-                        data_fifo_rd <= '0';
-                     end if;
-                    
+                     ldm_arb_data_l <= x"DEADBEEF";                
+--                     if (data_fifo_empty = '0' and data_fifo_valid = '1' and l2p_data_cnt > 1) then
+--						ldm_arb_data_l <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
+--                        ldm_arb_valid <= '1';
+--                        ldm_arb_dframe_o <= '1';
+--                        data_fifo_valid <= '0';
+--                     elsif (data_fifo_empty = '1' and data_fifo_valid = '1' and l2p_data_cnt > 1) then
+--						ldm_arb_data_l <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
+--                        ldm_arb_valid <= '0';
+--                        ldm_arb_dframe_o <= '1';
+--                        data_fifo_valid <= '0';
+--                     elsif (data_fifo_valid = '1' and l2p_data_cnt <= 1) then
+--						ldm_arb_data_l <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
+--                        ldm_arb_valid <= '1';
+--                        ldm_arb_dframe_o <= '0';
+--                        l2p_dma_current_state <= L2P_LAST_DATA;
+--                        data_fifo_valid <= '0';
+--                     else
+--                        ldm_arb_valid <= '0';
+--                        ldm_arb_dframe_o <= '1';
+--                     end if;
+--                     
+--                     if (data_fifo_empty = '0' and l2p_rdy_i = '1' and l2p_data_cnt > 1) then
+--                        data_fifo_rd <= '1';
+--                        data_fifo_valid <= '1';
+--                     elsif (data_fifo_empty = '0' and l2p_rdy_i = '1' and l2p_data_cnt = 1 and data_fifo_valid = '0') then
+--                        data_fifo_rd <= '1';
+--                        data_fifo_valid <= '1';
+--                     elsif (data_fifo_empty = '0' and l2p_rdy_i = '1' and l2p_data_cnt = 0) then
+--                        data_fifo_rd <= '1';
+--                        data_fifo_valid <= '1';                        
+--                     else
+--                        data_fifo_rd <= '0';
+--                     end if;
+					 
+					 if (data_fifo_empty = '0' and l2p_rdy_i = '1') then
+						data_fifo_rd <= '1';
+					 else
+						data_fifo_rd <= '0';
+					 end if;
+					 
+					if (data_fifo_rd = '1' and data_fifo_empty = '0' and l2p_data_cnt = 1) then
+						ldm_arb_data_l <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
+						ldm_arb_valid <= '1';
+						ldm_arb_dframe_o <= '0';
+						l2p_dma_current_state <= L2P_LAST_DATA;					
+						data_fifo_rd <= '0'; -- Don't read too much
+					elsif (data_fifo_rd = '1' and data_fifo_empty = '0' and l2p_data_cnt > 1) then
+						ldm_arb_data_l <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
+						ldm_arb_valid <= '1';
+						ldm_arb_dframe_o <= '1';
+					else
+						ldm_arb_data_l <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
+						ldm_arb_valid <= '0';
+						ldm_arb_dframe_o <= '1';
+					end if;
+					
                     -- Error condition, aboirt transfer
                     if (tx_error_i = '1' or l2p_timeout_cnt > c_TIMEOUT or dma_ctrl_abort_i = '1') then
                         l2p_dma_current_state <= L2P_ERROR;
@@ -284,9 +311,11 @@ begin
                     end if;
 
                 when L2P_LAST_DATA =>
+					ldm_arb_data_l <= x"DEADBEEF";
                     ldm_arb_dframe_o <= '0';
                     ldm_arb_valid <= '0';
                     data_fifo_rd <= '0';
+					data_fifo_valid <= '0';
                     if (dma_ctrl_abort_i = '1' or tx_error_i = '1') then
                         l2p_dma_current_state <= L2P_IDLE;
                         dma_ctrl_done_o <= '1';
@@ -298,6 +327,7 @@ begin
                     end if;
                 
                 when L2P_ERROR =>
+					ldm_arb_data_l <= x"DEADBEEF";
                     ldm_arb_dframe_o <= '0';
                     ldm_arb_valid <='1';
                     l2p_edb_o <= '1';
@@ -370,8 +400,8 @@ begin
             elsif (l2p_dma_current_state = L2P_ADDR_L) then
                 --l2p_data_cnt <= l2p_data_cnt -1;
             elsif (l2p_dma_current_state = L2P_DATA) then
-               --if (data_fifo_empty = '0' and l2p_data_cnt > 1 and data_fifo_rd = '1') then
-                if (ldm_arb_valid = '1') then
+				if (data_fifo_empty = '0' and data_fifo_rd = '1') then
+                --if (ldm_arb_valid = '1') then
                     l2p_data_cnt <= l2p_data_cnt - 1;
                 end if;
             elsif (l2p_dma_current_state = L2P_LAST_DATA) then
@@ -504,9 +534,21 @@ begin
     end process p_wb_master;
 
     -- Receive data
-    data_fifo_din <= l2p_dma_dat_i;
-    data_fifo_wr <= l2p_dma_ack_i and l2p_dma_cyc_t;
-    
+	data_rec_proc : process(l2p_dma_clk_i, rst_n_i)
+	begin
+		if (rst_n_i = '0') then
+			data_fifo_din <= x"DEADBABE";
+			data_fifo_wr <= '0';
+		elsif rising_edge(l2p_dma_clk_i) then
+			if (l2p_dma_cyc_t = '1') then
+				data_fifo_din <= l2p_dma_dat_i;
+				data_fifo_wr <= l2p_dma_ack_i;
+			else
+				data_fifo_din <= x"BABEDEAD";
+				data_fifo_wr <= '0';
+			end if;
+		end if;
+    end process data_rec_proc;
     ---------------------
     -- FIFOs
     ---------------------

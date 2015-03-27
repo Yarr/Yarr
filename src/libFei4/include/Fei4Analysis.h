@@ -61,6 +61,7 @@ class Fei4Analysis : DataProcessor {
 
         void addAlgorithm(AnalysisAlgorithm *a);
         void plot(std::string basename);
+        void toFile(std::string basename);
 
     private:
         ClipBoard<HistogramBase> *input;
@@ -82,8 +83,32 @@ class OccupancyAnalysis : public AnalysisAlgorithm {
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         unsigned n_count;
+        unsigned injections;
         std::map<unsigned, Histo2d*> occMaps;
         std::map<unsigned, unsigned> innerCnt;
+};
+
+class TotAnalysis : public AnalysisAlgorithm {
+    public:
+        TotAnalysis() : AnalysisAlgorithm() {};
+        ~TotAnalysis() {};
+
+        void init(ScanBase *s);
+        void processHistogram(HistogramBase *h);
+        void end() {}
+    private:
+        std::vector<unsigned> loops;
+        std::vector<unsigned> loopMax;
+        unsigned n_count;
+        double injections;
+        std::map<unsigned, Histo2d*> occMaps;
+        std::map<unsigned, unsigned> occInnerCnt;
+        std::map<unsigned, Histo2d*> totMaps;
+        std::map<unsigned, unsigned> totInnerCnt;
+        std::map<unsigned, Histo2d*> tot2Maps;
+        std::map<unsigned, unsigned> tot2InnerCnt;
+        Fei4GlobalFeedbackBase *globalFb;
+        Fei4PixelFeedback *pixelFb;
 };
 
 class ScurveFitter : public AnalysisAlgorithm {
@@ -117,4 +142,66 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> innerCnt;
 };
 
+class OccGlobalThresholdTune : public AnalysisAlgorithm {
+    public:
+        OccGlobalThresholdTune() : AnalysisAlgorithm()  {};
+        ~OccGlobalThresholdTune() {};
+
+        void init(ScanBase *s);
+        void processHistogram(HistogramBase *h);
+        void end() {};
+
+    private:
+        std::vector<unsigned> loops;
+        std::vector<unsigned> loopMax;
+        unsigned n_count;
+        std::map<unsigned, Histo2d*> occMaps;
+        std::map<unsigned, Histo1d*> occDists;
+        std::map<unsigned, unsigned> innerCnt;
+        unsigned injections;
+        Fei4GlobalFeedbackBase *fb;
+
+};
+
+class GlobalPreampTune : public AnalysisAlgorithm {
+    public:
+        GlobalPreampTune() : AnalysisAlgorithm()  {};
+        ~GlobalPreampTune() {};
+
+        void init(ScanBase *s);
+        void processHistogram(HistogramBase *h);
+        void end() {};
+
+    private:
+        std::vector<unsigned> loops;
+        std::vector<unsigned> loopMax;
+        unsigned n_count;
+        std::map<unsigned, Histo2d*> occMaps;
+        std::map<unsigned, Histo2d*> totMaps;
+        std::map<unsigned, Histo1d*> occDists;
+        std::map<unsigned, unsigned> innerCnt;
+        unsigned injections;
+        Fei4GlobalFeedbackBase *fb;
+
+};
+
+class OccPixelThresholdTune : public AnalysisAlgorithm {
+    public:
+        OccPixelThresholdTune() : AnalysisAlgorithm()  {};
+        ~OccPixelThresholdTune() {};
+
+        void init(ScanBase *s);
+        void processHistogram(HistogramBase *h);
+        void end() {};
+
+    private:
+        std::vector<unsigned> loops;
+        std::vector<unsigned> loopMax;
+        unsigned n_count;
+        std::map<unsigned, Histo2d*> occMaps;
+        std::map<unsigned, unsigned> innerCnt;
+        unsigned injections;
+        Fei4PixelFeedback *fb;
+
+};
 #endif

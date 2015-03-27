@@ -83,8 +83,13 @@ int main(void) {
     TxCore tx(&spec);
     RxCore rx(&spec);
 
+    std::string cfgFile = "test_config.bin";
+
     Fei4 g_fe(&tx, 0);
     Fei4 fe(&tx, 0);
+
+    fe.fromFileBinary(cfgFile);
+    g_fe.fromFileBinary(cfgFile);
 
     ClipBoard<RawData> clipRaw;
     std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;

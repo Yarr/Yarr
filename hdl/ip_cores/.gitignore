@@ -1,0 +1,7 @@
+!.gitignore
+!*.vhd
+!*.ngc
+!*.xco
+
+# Ignore everything else
+*.*
