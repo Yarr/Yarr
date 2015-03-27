@@ -17,8 +17,6 @@
 #include <GennumRegMap.h>
 #include <BitOps.h>
 
-#define DEBUG
-
 SpecController::SpecController() {
     specId = 666;
     is_initialized = false;
