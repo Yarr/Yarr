@@ -107,17 +107,21 @@ void YarrGui::init() {
 void YarrGui::on_init_button_clicked()
 {
     int index = ui->device_comboBox->currentIndex();
-    specVec[index]->init(index);
-    if (specVec[index]->isInitialized()) {
-        ui->specid_value->setNum(specVec[index]->getId());
-        ui->bar0_value->setNum(specVec[index]->getBarSize(0));
-        ui->bar4_value->setNum(specVec[index]->getBarSize(4));
-        ui->main_tabWidget->setTabEnabled(1, true);
-    } else {
+    if (specVec.size() == 0 || index > specVec.size()) {
         QMessageBox errorBox;
-        errorBox.critical(0, "Error", "Initialization not successful!");
+        errorBox.critical(0, "Error", "Device not found!");
+    } else {
+        specVec[index]->init(index);
+        if (specVec[index]->isInitialized()) {
+            ui->specid_value->setNum(specVec[index]->getId());
+            ui->bar0_value->setNum(specVec[index]->getBarSize(0));
+            ui->bar4_value->setNum(specVec[index]->getBarSize(4));
+            ui->main_tabWidget->setTabEnabled(1, true);
+        } else {
+            QMessageBox errorBox;
+            errorBox.critical(0, "Error", "Initialization not successful!");
+        }
     }
-
 }
 
 void YarrGui::on_progfile_button_clicked() {
@@ -135,34 +139,39 @@ void YarrGui::on_progfile_button_clicked() {
 void YarrGui::on_prog_button_clicked() {
     
     int index = ui->device_comboBox->currentIndex();
-    if (!specVec[index]->isInitialized()) {
+    if (specVec.size() == 0 || index > specVec.size()) {
         QMessageBox errorBox;
-        errorBox.critical(0, "Error", "Spec not initiliazed!");
-        return;
-    }
+        errorBox.critical(0, "Error", "Device not found!");
+    } else {
+        if (!specVec[index]->isInitialized()) {
+            QMessageBox errorBox;
+            errorBox.critical(0, "Error", "Spec not initiliazed!");
+            return;
+        }
 
-    std::fstream file(ui->progfile_name->text().toStdString().c_str(), std::fstream::in);
-    if (!file) {
-        QMessageBox errorBox;
-        errorBox.critical(0, "Error", "Problem opening File!");
-        return;
-    }
+        std::fstream file(ui->progfile_name->text().toStdString().c_str(), std::fstream::in);
+        if (!file) {
+            QMessageBox errorBox;
+            errorBox.critical(0, "Error", "Problem opening File!");
+            return;
+        }
 
-    size_t size = BitFile::getSize(file);
-    
-    // Read file into buffer
-    char *buffer = new char[size];
-    file.seekg(0, std::ios::beg);
-    file.read(buffer, size);
-    
-    // Program FPGA
-    int wrote = specVec[index]->progFpga(buffer, size);
-    if (wrote != size) {
-        QMessageBox errorBox;
-        errorBox.critical(0, "Error", "FPGA not succesfully programmed!");
+        size_t size = BitFile::getSize(file);
+        
+        // Read file into buffer
+        char *buffer = new char[size];
+        file.seekg(0, std::ios::beg);
+        file.read(buffer, size);
+        
+        // Program FPGA
+        int wrote = specVec[index]->progFpga(buffer, size);
+        if (wrote != size) {
+            QMessageBox errorBox;
+            errorBox.critical(0, "Error", "FPGA not succesfully programmed!");
+        }
+        delete buffer;
+        file.close();    
     }
-    delete buffer;
-    file.close();    
 }
 
 void YarrGui::on_minSize_spinBox_valueChanged(int i) {
