@@ -629,6 +629,8 @@ uint32_t SpecController::writeEeprom(uint8_t * buffer, uint32_t len, uint32_t of
                 exit(-2);
             }
         }
+        
+        totalTransfer++;
     }
 
     //Possibly clear status register to unlock BUS for next use?
