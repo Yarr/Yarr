@@ -30,12 +30,12 @@ int main() {
     std::cout << std::hex;
     std::cout << std::showbase;
     std::cout << std::setw(9) << "addr" << std::setw(5) << "msk" << std::setw(12) << "data" << std::endl;
-    //256/6 = 85; 256%6 = 2
+    //256/6 = 42; 256%6 = 4
     {
         uint16_t a;     //address
         uint8_t  m;     //mask
         uint32_t d;     //data
-        for(unsigned int i = 0; i<85; i++) {
+        for(unsigned int i = 0; i<42; i++) {
             a  = ((buffer[i*6] | (buffer[i*6+1] << 8)) & 0xffc);
             m  = ((buffer[i*6+1] & 0xf0) >> 4);
             d  = (buffer[i*6+2] | (buffer[i*6+3] << 8) | (buffer[i*6+4] << 16) | (buffer[i*6+5] << 24));

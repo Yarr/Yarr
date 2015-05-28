@@ -69,7 +69,7 @@ int SpecController::writeDma(uint32_t off, uint32_t *data, size_t words) {
         KernelMemory *km = &spec->allocKernelMemory(sizeof(struct dma_linked_list)*um->getSGcount());
 
         struct dma_linked_list *llist = this->prepDmaList(um, km, off, 1);
-        
+
         uint32_t *addr = (uint32_t*) bar0+DMACSTARTR;
         memcpy(addr, &llist[0], sizeof(struct dma_linked_list));
         this->startDma();
@@ -79,11 +79,11 @@ int SpecController::writeDma(uint32_t off, uint32_t *data, size_t words) {
             << "Interrupt timeout, aborting transfer!" << std::endl;
             this->abortDma();
         }
-        
+
         // Ackowledge interrupt
         volatile uint32_t irq_ack = this->read32(bar4, GNGPIO_INT_STATUS/4);
         (void) irq_ack;
-        
+
         delete km;
         delete um;
         return 0;
@@ -576,8 +576,8 @@ uint32_t SpecController::readEeprom(uint8_t * buffer, uint32_t len) {
 uint32_t SpecController::writeEeprom(uint8_t * buffer, uint32_t len, uint32_t offs) {
 
 	uint32_t totalTransfer=0;
-	int k = 0;
-	int j = 0;
+	unsigned int k = 0;
+	unsigned int j = 0;
 	uint32_t tmp = 0;
 
     //Set TWI to run in host mode
@@ -605,13 +605,13 @@ uint32_t SpecController::writeEeprom(uint8_t * buffer, uint32_t len, uint32_t of
     //Write data into EEPROM
     for(k = 0; k<len; k++) {
         //Sets the internal address counter of the EEPROM to the desired address.
-        this->write32(bar4, TWI_DATA/4, (offset + k) & 0xFF);
+        this->write32(bar4, TWI_DATA/4, (offs + k) & 0xFF);
 
-        //Write piece of data into data register. Upon write access to the 
+        //Write piece of data into data register. Upon write access to the
         //address register with slave device address, this piece of data
         //will be flashed to the EEPROM
-        this->write32(bar4, TWI_DATA/4, *(buffer + k))
-        
+        this->write32(bar4, TWI_DATA/4, *(buffer + k));
+
         //Write 7 bit slave device address
         //to TWI_ADDRESS register and thus initiate a data transfer.
         //TWI slave address of the EEPROM is 0x56 (1010110).
@@ -629,7 +629,7 @@ uint32_t SpecController::writeEeprom(uint8_t * buffer, uint32_t len, uint32_t of
                 exit(-2);
             }
         }
-        
+
         totalTransfer++;
     }
 
@@ -638,5 +638,3 @@ uint32_t SpecController::writeEeprom(uint8_t * buffer, uint32_t len, uint32_t of
 
     return totalTransfer;
 }
-
-
