@@ -457,6 +457,8 @@ int SpecController::progFpga(const void *data, size_t size) {
 
     uint32_t irq = read32(bar4, FCL_IRQ/4);
     uint32_t status = read32(bar4, FCL_STATUS/4);
+    
+    (void) status;
 
     if (irq & 0x4)
         std::cerr << __PRETTY_FUNCTION__<< " -> FCL IRQ indicates an error, read: 0x" << std::hex << irq << std::dec << std::endl;

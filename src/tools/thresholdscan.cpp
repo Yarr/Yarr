@@ -22,16 +22,29 @@
 bool scanDone = false;
 bool processorDone = false;
 
-void processing(Fei4 *fe, ClipBoard<RawData> *clipRaw, std::map<unsigned, ClipBoard<Fei4Data>* > eventMap) {
+void processing(Fei4 *fe, ClipBoard<RawDataContainer> *clipRaw, std::map<unsigned, ClipBoard<Fei4Data>* > eventMap) {
     std::cout << "### Processing data ###" << std::endl;
     Fei4DataProcessor proc(fe->getValue(&Fei4::HitDiscCnfg));
     proc.connect(clipRaw, eventMap);
     proc.init();
+    //int count = 0;
+    //double time = 0;
     while(!scanDone) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        
+        //std::chrono::steady_clock::time_point before = std::chrono::steady_clock::now();
         proc.process();
+        //std::chrono::steady_clock::time_point after = std::chrono::steady_clock::now();
+        //time += std::chrono::duration_cast<std::chrono::milliseconds>(after - before).count();
+        //count++;
+
     }
+    //std::chrono::steady_clock::time_point before = std::chrono::steady_clock::now();
     proc.process();
+    //std::chrono::steady_clock::time_point after = std::chrono::steady_clock::now();
+    //time += std::chrono::duration_cast<std::chrono::milliseconds>(after - before).count();
+    //count++;
+    //std::cout << count << " " << time << " " << time/(double)count << std::endl;
     processorDone = true;
 }
 
@@ -91,7 +104,7 @@ int main(void) {
     fe.fromFileBinary(cfgFile);
     g_fe.fromFileBinary(cfgFile);
 
-    ClipBoard<RawData> clipRaw;
+    ClipBoard<RawDataContainer> clipRaw;
     std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;
     ClipBoard<Fei4Data> clipEvent0;
     ClipBoard<Fei4Data> clipEvent1;
@@ -139,7 +152,7 @@ int main(void) {
     fe.configure();
     fe.configurePixels();
     while(!tx.isCmdEmpty());
-    rx.setRxEnable(0x1);
+    rx.setRxEnable(0xFF);
     
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
     

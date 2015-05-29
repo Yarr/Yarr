@@ -65,7 +65,7 @@ int main(void) {
     fe.fromFileBinary(cfgFile);
     g_fe.fromFileBinary(cfgFile);
 
-    ClipBoard<RawData> clipRaw;
+    ClipBoard<RawDataContainer> clipRaw;
     std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;
     ClipBoard<Fei4Data> clipEvent0;
     ClipBoard<Fei4Data> clipEvent1;

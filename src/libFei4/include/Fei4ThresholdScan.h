@@ -16,7 +16,7 @@
 
 class Fei4ThresholdScan : public ScanBase {
     public:
-        Fei4ThresholdScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawData> *data);
+        Fei4ThresholdScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data);
         
         void init();
         void preScan();

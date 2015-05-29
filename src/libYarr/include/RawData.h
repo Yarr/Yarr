@@ -24,4 +24,28 @@ class RawData {
         LoopStatus stat;
 };
 
+class RawDataContainer {
+    public:
+        RawDataContainer(){}
+        ~RawDataContainer() {
+            for(unsigned int i=0; i<adr.size(); i++)
+                delete[] buf[i];
+        }
+
+        void add(RawData *d) {
+            adr.push_back(d->adr);
+            buf.push_back(d->buf);
+            words.push_back(d->words);
+        }
+
+        unsigned size() {
+            return adr.size();
+        }
+
+        std::vector<uint32_t> adr;
+        std::vector<uint32_t*> buf;
+        std::vector<unsigned> words;
+        LoopStatus stat;
+};
+
 #endif

@@ -25,7 +25,7 @@ class ClipBoard {
         ClipBoard(){}
         ~ClipBoard() {
             T* tmp = this->popData();
-            while(tmp != NULL) {
+            while(!dataQueue.empty()) {
                 delete tmp;
                 tmp = this->popData();
             }
@@ -40,6 +40,7 @@ class ClipBoard {
             //std::cout << "Pushed " << cnt++ << " " << typeid(T).name() << " objects so far" << std::endl;
         }
 
+        // User has to take of deletin popped data
         T* popData() {
             queueMutex.lock();
             T *tmp = NULL;

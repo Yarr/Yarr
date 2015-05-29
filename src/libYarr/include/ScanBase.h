@@ -24,7 +24,7 @@
 
 class ScanBase {
     public:
-        ScanBase(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawData> *data);
+        ScanBase(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data);
 
         virtual void init() {}
         virtual void preScan() {}
@@ -43,7 +43,7 @@ class ScanBase {
         Fei4 *g_fe;
         TxCore *g_tx;
         RxCore *g_rx;
-        ClipBoard<RawData> *g_data;
+        ClipBoard<RawDataContainer> *g_data;
 
     private:
         std::vector<std::shared_ptr<LoopActionBase> > loops;
