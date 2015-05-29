@@ -474,3 +474,128 @@ int SpecController::progFpga(const void *data, size_t size) {
 
     return wrote*4;
 }
+
+//uint32_t SpecController::readEprom(void * buffer, uint32_t devAddr, uint32_t offset, uint32_t len) {
+uint32_t SpecController::readEeprom(uint8_t * buffer, uint32_t len) {
+
+	//std::cout << "Creating local variables.\n"; //debug
+	uint32_t totalTransfer=0;
+	int k = 0;
+	int j = 0;
+	uint32_t tmp = 0;
+	//uint8_t * ptrBuff = static_cast<uint8_t*>(buffer);
+
+    //int size32 = (size + 3) >> 2;
+    //const uint32_t *data32 = (uint32_t*)data;
+
+
+    // Set TWI to run in host mode
+    std::cout << "Setting Gennum TWI interface into host mode.\n"; //debug
+    this->mask32(bar4, LB_CTL/4, 0x0, 0x10000);
+
+    //Set TWI to run with both divisors to maximum (it is assumed
+    //that the initial frequency is 125MHz, as suggested in the manual, that would lead to a
+    //resulting frequency of 488.3kHz - the EEPROM on the board most probably is a 
+    //24LC024 - which can handle up to 1MHz), clear FIFO count register,
+    //unset slave monitor (->normal operation), unset hold, allow acknowledge bit,
+    //uses normal (7-bit) addresses (not 10-bit), set as master node, set as master transmitter
+    std::cout << "Setting clock divisors and other important bits.\n"; //debug
+    this->write32(bar4, TWI_CTRL/4, 0xFF4E);
+
+    //Wait while TWI BUS active bit is set, stop if takes too long
+    std::cout << "Waiting while TWI BUS active bit is set.\n"; //debug
+    for(k = 1000000; (this->read32(bar4, TWI_STATUS/4) & 0x100); k--) {
+        if(k == 0) {
+            std::cout << "TWI BUS busy. Cannot initialize data transfer. \n";
+            exit(-1);
+        }
+    }
+
+    //This read is supposed to clear the TWI_IRT_STATUS register.
+    //Not sure if this works or is even necessary?
+    std::cout << "Clear TWI status register.\n"; //debug
+    this->read32(bar4, TWI_IRT_STATUS/4);
+
+    //Writes first byte of function parameter offset to TWI_DATA register (8 bit long).
+    //I have no idea why this should be done. It is not necessary according to the Gennum manual.
+    //I think it sets the internal address counter of the EEPROM (that automatically incremates
+    //after every read access) to a desired start address.
+    //this->write32(bar4, TWI_DATA/4, offset & 0xFF);
+    this->write32(bar4, TWI_DATA/4, 0);
+
+    //Write first 7 bit (7-bit-addresses!!!) of function parameter devAddr
+    //to TWI_ADDRESS register and thus initiate a data transfer.
+    //TWI slave address of the EEPROM is 0x56 (1010110).
+    //I think this is not necessary since the start address is supposed to be zero.
+    //this->write32(bar4, TWI_ADDRESS/4, devAddr & 0x7F);
+    this->write32(bar4, TWI_ADDRESS/4, 0x56);
+
+    //Wait until data transfer is finished or error occurs, stop if takes too long.
+    //I think this is not necessary since the start addr is supposed to be zero.
+    for(j = 1000000000, tmp = 0; !(tmp & 0x1); k--) {
+        tmp = this->read32(bar4, TWI_IRT_STATUS/4);
+        if(tmp & 0xC) {
+            std::cout << "NACK or timeout occured. Aborting... \n";
+            exit(-2);
+        }
+        if(k==0) {
+            std::cout << "Transfer takes too long. Aborting... \n";
+            exit(-2);
+        }
+    }
+
+    //Set as master receiver
+    std::cout << "Setting Gennum TWI interface into master receiver mode.\n"; //debug
+    this->mask32(bar4, TWI_CTRL/4, 0x0, 0x1);
+
+    //Read pieces of FIFO size until data of function parameter len is read - FiFo has 15 byte maximum
+    std::cout << "Reading EEPROM.\n"; //debug
+    for(k = 1, tmp = 0; len>0; ) {
+        if(len > 1) {
+		    k = 1;
+		    len -= k;
+        } else {
+            k = len;
+            len = 0;
+        }
+        //std::cout << "Remaining length: " << len << std::endl; //debug
+        //std::cout << "Words to read: " << k << std::endl; //debug
+
+        /* Tell EEPROM how much data to send */
+        this->write32(bar4, TWI_TR_SIZE/4, k);
+        //std::cout << "Told EEPROM to write " << k << " words to data register.\n"; //debug
+
+        /* Write EEPROM slave address (0x56) to BUS to initiate data transfer */
+        this->write32(bar4, TWI_ADDRESS/4, 0x56);
+        //std::cout << "Initialized data transfer.\n"; //debug
+
+        /* Wait until data transfer is complete */
+        for(j = 1000000000, tmp = 0; !(tmp & 0x1); j--) {
+            //std::cout << "Reading status register, " << j << " attempts remaining.\n"; //debug
+            tmp = this->read32(bar4, TWI_IRT_STATUS/4);
+            /*if(tmp & 0xC) {
+                std::cout << "NACK or timeout occured. Aborting... \n";
+                exit(-3);
+            }*/
+            if(j==0) {
+                std::cout << "Transfer takes too long. Aborting... \n";
+                exit(-3);
+            }
+        }
+        //std::cout << "All requested data written to data register.\n"; //debug
+
+        /* Read data from FiFo */
+        for(tmp = 0; k>0; k--) {
+            tmp = read32(bar4, TWI_DATA/4);
+            *(buffer + totalTransfer) = tmp & 0xFF;
+            //std::cout << "Just read value: " << std::hex << tmp << std::dec << std::endl; //debug
+            totalTransfer++;
+        }
+    }
+
+    //Possibly clear status register to unlock BUS for next use?
+    this->read32(bar4, TWI_IRT_STATUS/4);
+
+    return totalTransfer;
+}
+
