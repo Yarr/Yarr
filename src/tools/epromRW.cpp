@@ -40,9 +40,9 @@ int main() {
 
     mySpec.readEeprom(buffer, 256);
 
-    std::cout << std::hex;
-    std::cout << std::showbase;
-    std::cout << std::setw(9) << "addr" << std::setw(5) << "msk" << std::setw(12) << "data" << std::endl;
+    oF << std::hex;
+    oF << std::showbase;
+    oF << std::setw(9) << "addr" << std::setw(5) << "msk" << std::setw(12) << "data" << std::endl;
     //256/6 = 42; 256%6 = 4
     {
         uint16_t a;     //address
@@ -52,11 +52,11 @@ int main() {
             a  = ((buffer[i*6] | (buffer[i*6+1] << 8)) & 0xffc);
             m  = ((buffer[i*6+1] & 0xf0) >> 4);
             d  = (buffer[i*6+2] | (buffer[i*6+3] << 8) | (buffer[i*6+4] << 16) | (buffer[i*6+5] << 24));
-            std::cout << std::setw(9) << a << std::setw(5) << (int)m << std::setw(12) << d << std::endl;
+            oF << std::setw(9) << a << std::setw(5) << (int)m << std::setw(12) << d << std::endl;
         }
     }
-    std::cout << std::dec;
-    std::cout << std::noshowbase;
+    oF << std::dec;
+    oF << std::noshowbase;
 
     delete buffer;
 
