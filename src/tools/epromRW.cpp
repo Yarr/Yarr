@@ -1,7 +1,9 @@
-#include <iostream>
+#include <fstream>
 #include <iomanip>
-#include <string>
+#include <iostream>
 #include <stdint.h>
+#include <string>
+#include <time.h>
 
 #include <SpecController.h>
 
@@ -9,23 +11,34 @@
 int main() {
 
     // Open device
-    std::cout << "Opening Spec device." << std::endl; //debug
     SpecController mySpec(0);
-    std::cout << "Opened SpecController.\n"; //debug
 
-    //uint32_t len = 256;
-    //uint8_t * buffer = new uint8_t[len];
     uint8_t * buffer = new uint8_t[256];
+    std::string filepath;
 
-    //debug
-    //std::cout << "Reading Gennum registers before EEPROM read for comparison.\n";
-    //mySpec.readGennumRegs();
+    {
+        std::string fnKeyword = ""; //filename keyword put before the time generated filename - use encouraged
+        struct tm * timeinfo; 
+        time_t rawtime; 
+        time(&rawtime);
+        timeinfo = localtime(&rawtime);
+        
+        filepath =   "EEPROMContent/"
+                   + fnKeyword + to_string(1900+(timeinfo->tm_year)) + '_' 
+                   + to_string(1+(timeinfo->tm_mon)) + '_'
+                   + to_string((timeinfo->tm_mday)) + '_'
+                   + to_string((timeinfo->tm_hour)) + '_'
+                   + to_string((timeinfo->tm_min)) + '_'
+                   + to_string((timeinfo->tm_sec)) + ".sbe"; //SpecBoard EEPROM content file (sbe)
+    }
 
-    std::cout << "Created new array.\nCalling read function.\n"; //debug
+    std::ofstream oF(filepath);
+    if(!oF) {
+        std::perror(filepath);
+        exit(-10);
+    }
 
     mySpec.readEeprom(buffer, 256);
-
-    std::cout << "Read function returned.\nReading array:\n"; //debug
 
     std::cout << std::hex;
     std::cout << std::showbase;
@@ -45,15 +58,7 @@ int main() {
     std::cout << std::dec;
     std::cout << std::noshowbase;
 
-    std::cout << "Deleting array.\n"; //debug
-
     delete buffer;
-
-    //debug
-    //std::cout << "Reading Gennum registers after EEPROM read for comparison.\n";
-    //mySpec.readGennumRegs();
-
-    std::cout << "Returning control.\n"; //debug
 
     return 0;
 
