@@ -8,37 +8,44 @@
 #include <SpecController.h>
 
 
-int main() {
+int main(int argc, char * argv[]) {
 
     // Open device
     SpecController mySpec(0);
 
-    uint8_t * buffer = new uint8_t[256];
+    uint8_t * buffer = new uint8_t[252];
     std::string filepath;
 
     {
         std::string fnKeyword = ""; //filename keyword put before the time generated filename - use encouraged
-        struct tm * timeinfo; 
-        time_t rawtime; 
+        if(argc == 1) {
+            ;
+        } else if (argc == 2) {
+            fnKeyword = argv[1];
+        } else {
+            std::cout << "Too many arguments. Aborting... \n";
+        }
+        struct tm * timeinfo;
+        time_t rawtime;
         time(&rawtime);
         timeinfo = localtime(&rawtime);
-        
+
         filepath =   "EEPROMContent/"
-                   + fnKeyword + to_string(1900+(timeinfo->tm_year)) + '_' 
-                   + to_string(1+(timeinfo->tm_mon)) + '_'
-                   + to_string((timeinfo->tm_mday)) + '_'
-                   + to_string((timeinfo->tm_hour)) + '_'
-                   + to_string((timeinfo->tm_min)) + '_'
-                   + to_string((timeinfo->tm_sec)) + ".sbe"; //SpecBoard EEPROM content file (sbe)
+                   + fnKeyword + std::to_string(1900+(timeinfo->tm_year)) + '_'
+                   + std::to_string(1+(timeinfo->tm_mon)) + '_'
+                   + std::to_string((timeinfo->tm_mday)) + '_'
+                   + std::to_string((timeinfo->tm_hour)) + '_'
+                   + std::to_string((timeinfo->tm_min)) + '_'
+                   + std::to_string((timeinfo->tm_sec)) + ".sbe"; //SpecBoard EEPROM content file (sbe)
     }
 
     std::ofstream oF(filepath);
     if(!oF) {
-        std::perror(filepath);
+        std::cout << "Could not create output file. Aborting... \n";
         exit(-10);
     }
 
-    mySpec.readEeprom(buffer, 256);
+    mySpec.readEeprom(buffer, 252);
 
     oF << std::hex;
     oF << std::showbase;
@@ -57,6 +64,7 @@ int main() {
     }
     oF << std::dec;
     oF << std::noshowbase;
+    oF.close();
 
     delete buffer;
 

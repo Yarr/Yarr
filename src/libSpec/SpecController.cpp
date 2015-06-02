@@ -17,6 +17,8 @@
 #include <GennumRegMap.h>
 #include <BitOps.h>
 
+#include <unistd.h>
+
 SpecController::SpecController(unsigned int id) {
     specId = id;
     try {
@@ -607,21 +609,21 @@ uint32_t SpecController::writeEeprom(uint8_t * buffer, uint32_t len, uint32_t of
         //Sets the internal address counter of the EEPROM to the desired address.
         this->write32(bar4, TWI_DATA/4, (offs + k) & 0xFF);
         std::cout << "Setting EEPROM register counter... \n";
-        sleep(1);
+        usleep(50000);
 
         //Write piece of data into data register. Upon write access to the
         //address register with slave device address, this piece of data
         //will be flashed to the EEPROM
         this->write32(bar4, TWI_DATA/4, *(buffer + k));
         std::cout << "Writing new EEPROM data to data register... \n";
-        sleep(1);
+        usleep(50000);
 
         //Write 7 bit slave device address
         //to TWI_ADDRESS register and thus initiate a data transfer.
         //TWI slave address of the EEPROM is 0x56 (1010110).
         this->write32(bar4, TWI_ADDRESS/4, 0x56);
         std::cout << "Flashing data to EEPROM... \n";
-        sleep(1);
+        usleep(50000);
 
         //Wait until data transfer is finished or error occurs, stop if takes too long.
         for(j = 1000000000, tmp = 0; !(tmp & 0x1); j--) {
