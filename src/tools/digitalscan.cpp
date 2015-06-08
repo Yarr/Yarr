@@ -15,6 +15,7 @@
 #include "Fei4Histogrammer.h"
 #include "HistogramBase.h"
 #include "Fei4Analysis.h"
+#include "Bookkeeper.h"
 
 #include "Fei4Scans.h"
 
@@ -93,7 +94,10 @@ int main(void) {
     eventMap[14] = &clipEvent14;
     eventMap[15] = &clipEvent15;
 
-    Fei4DigitalScan digScan(&g_fe, &tx, &rx, &clipRaw);
+    Bookkeeper k;
+
+    //Fei4DigitalScan digScan(&g_fe, &tx, &rx, &clipRaw);
+    Fei4DigitalScan digScan(&k);
 
     std::chrono::steady_clock::time_point init = std::chrono::steady_clock::now();
     std::cout << "### Init Scan ###" << std::endl;

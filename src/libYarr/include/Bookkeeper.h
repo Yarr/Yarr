@@ -17,44 +17,30 @@
 #include "Fei4EventData.h"
 #include "HistogramBase.h"
 #include "ResultBase.h"
+#include "ClipBoard.h"
+
+
 #include "Fei4.h"
+#include "TxCore.h"
+#include "RxCore.h"
+
+class ScanBase;
 
 class Bookkeeper {
     public:
         Bookkeeper();
         ~Bookkeeper();
 
-        void addFe(unsigned channel, Fei4 *fe);
+        Fei4 *fe;
+        Fei4 *g_fe;
+        TxCore *tx;
+        RxCore *rx;
+        ClipBoard<RawDataContainer> *data;
 
-        void pushData(RawData *d);
-        void pushData(Fei4Data *d);
-        void pushData(HistogramBase *h);
-        void pushData(ResultBase *r);
-
-        void popData(RawData *d);
-        void popData(Fei4Data *d);
-        void popData(HistogramBase *h);
-        void popData(ResultBase *r);
-
+        ScanBase *s;
     private:
-        // List of FEs TODO should be generic
-        std::vector<std::pair<unsigned, Fei4*> > feList;
-            
-        // Raw Data
-        std::deque<RawData*> rawDataList;
-        std::mutex rawDataMutex;
+        
 
-        // Processed Data
-        std::deque<Fei4Data*> procDataList;
-        std::mutex procDataMutex;
-
-        // Histogrammer Data
-        std::deque<HistogramBase*> histoList;
-        std::mutex histoMutex;
-
-        // Analyzed Data
-        std::deque<ResultBase*> resultList;
-        std::mutex resultMutex;
 
 };
 

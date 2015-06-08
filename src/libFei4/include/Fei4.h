@@ -15,6 +15,8 @@
 #include "Fei4Cmd.h"
 #include "Fei4Cfg.h"
 
+class Fei4Analysis;
+
 enum MASK_STAGE {
     MASK_1  = 0xFFFFFFFF,
     MASK_2  = 0x55555555,
@@ -71,6 +73,8 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd {
             }
     private:
         unsigned chipId;
+
+        Fei4Analysis *ana;
 };
 
 #endif

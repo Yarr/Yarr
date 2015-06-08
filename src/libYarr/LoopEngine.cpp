@@ -12,6 +12,13 @@ LoopEngine::LoopEngine(Fei4 *fe, TxCore *tx, RxCore *rx) {
     g_rx = rx;
 }
 
+LoopEngine::LoopEngine(Bookkeeper *k) {
+    g_fe = k->g_fe;
+    g_tx = k->tx;
+    g_rx = k->rx;
+    g_bk = k;
+}
+
 LoopEngine::~LoopEngine() {
 }
 
@@ -30,7 +37,8 @@ void LoopEngine::init() {
     while(m_list.end() != it) {
         stat.addLoop(i, (*it).get());
         i++;
-        (*it)->setup(&stat, g_fe, g_tx, g_rx);
+        //(*it)->setup(&stat, g_fe, g_tx, g_rx);
+        (*it)->setup(&stat, g_bk);
         ++it;
     }
 }

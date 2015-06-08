@@ -24,6 +24,8 @@
 #include "Fei4Histogrammer.h"
 #include "lmcurve.h"
 
+#include "Bookkeeper.h"
+
 #include "AllFei4Actions.h"
 #include "AllStdActions.h"
 
