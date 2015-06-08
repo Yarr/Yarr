@@ -121,9 +121,12 @@ architecture behavioral of wb_rx_core is
 	signal rx_fifo_full : std_logic_vector(g_NUM_RX-1 downto 0);
 	signal rx_fifo_empty : std_logic_vector(g_NUM_RX-1 downto 0);
 	signal rx_fifo_rden : std_logic_vector(g_NUM_RX-1 downto 0);
+	signal rx_fifo_rden_t : std_logic_vector(g_NUM_RX-1 downto 0);
 	signal rx_fifo_wren : std_logic_vector(g_NUM_RX-1 downto 0);
 
 	signal rx_enable : std_logic_vector(31 downto 0);
+	
+	signal channel : integer range 0 to g_NUM_RX-1;
 
 	signal debug : std_logic_vector(31 downto 0);
 	
@@ -169,11 +172,30 @@ begin
 		clk_i => wb_clk_i,
 		rst_i => not rst_n_i,
 		req_i => not rx_fifo_empty,
-		gnt_o => rx_fifo_rden
+		gnt_o => rx_fifo_rden_t
 	);
 	
-	rx_valid_o <= '0' when (unsigned(rx_fifo_rden) = 0 or ((rx_fifo_rden and rx_fifo_empty) = rx_fifo_rden)) else '1';
-	rx_data_o <= x"DEADBEEF" when (unsigned(rx_fifo_rden) = 0) else rx_fifo_dout(log2_ceil(to_integer(unsigned(rx_fifo_rden))));
+	--rx_valid_o <= '0' when (unsigned(rx_fifo_rden) = 0 or ((rx_fifo_rden and rx_fifo_empty) = rx_fifo_rden)) else '1';
+	--rx_data_o <= x"DEADBEEF" when (unsigned(rx_fifo_rden) = 0) else rx_fifo_dout(log2_ceil(to_integer(unsigned(rx_fifo_rden))));
+	
+	reg_proc : process(wb_clk_i, rst_n_i)
+	begin
+		if (rst_n_i = '0') then
+			rx_fifo_rden <= (others => '0');
+			rx_valid_o <= '0';
+			channel <= 0;			
+		elsif rising_edge(wb_clk_i) then
+			rx_fifo_rden <= rx_fifo_rden_t;
+			channel <= log2_ceil(to_integer(unsigned(rx_fifo_rden_t)));
+			if (unsigned(rx_fifo_rden) = 0 or ((rx_fifo_rden and rx_fifo_empty) = rx_fifo_rden)) then
+				rx_valid_o <= '0';
+				rx_data_o <= x"DEADBEEF";
+			else
+				rx_valid_o <= '1';
+				rx_data_o <= rx_fifo_dout(channel);
+			end if;
+		end if;
+	end process reg_proc;
 	
 	-- Generate Rx Channels
 	busy_o <= '0' when (rx_fifo_full = c_ALL_ZEROS) else '1';
