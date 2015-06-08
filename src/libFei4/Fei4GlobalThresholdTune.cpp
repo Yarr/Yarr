@@ -29,7 +29,7 @@ Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Fei4 *fe, TxCore *tx, RxCore *r
 void Fei4GlobalThresholdTune::init() {
     // Loop 0: Feedback
     std::shared_ptr<Fei4GlobalFeedbackBase> fbLoop(Fei4GlobalFeedbackBuilder(&Fei4::Vthin_Fine));
-    fbLoop->setStep(20);
+    fbLoop->setStep(16);
     fbLoop->setMax(250);
 
     // Loop 1: Mask Staging

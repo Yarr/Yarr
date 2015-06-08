@@ -139,7 +139,7 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
 }
 
 void TotAnalysis::init(ScanBase *s) {
-    std::shared_ptr<LoopActionBase> tmpPrmpFb(Fei4GlobalFeedbackBuilder(&Fei4::PrmpVbp));
+    std::shared_ptr<LoopActionBase> tmpPrmpFb(Fei4GlobalFeedbackBuilder(&Fei4::PrmpVbpf));
     n_count = 1;
     injections = 1;
     pixelFb = NULL;
@@ -203,13 +203,13 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         hh = new Histo2d(name2, 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
-        hh->setZaxisTitle("Sum ToT");
+        hh->setZaxisTitle("{/Symbol S}(ToT)");
         totMaps[ident] = hh;
         totInnerCnt[ident] = 0;
         hh = new Histo2d(name3, 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
-        hh->setZaxisTitle("Sum ToT^2");
+        hh->setZaxisTitle("{/Symbol S}(ToT^2)");
         tot2Maps[ident] = hh;
         tot2InnerCnt[ident] = 0;
     }
@@ -235,24 +235,24 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         Histo2d *meanTotMap = new Histo2d("MeanTotMap", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
         meanTotMap->setXaxisTitle("Column");
         meanTotMap->setYaxisTitle("Row");
-        meanTotMap->setZaxisTitle("Mean ToT");
+        meanTotMap->setZaxisTitle("Mean ToT [bc]");
         Histo2d *sumTotMap = new Histo2d("SumTotMap", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
         sumTotMap->setXaxisTitle("Column");
         sumTotMap->setYaxisTitle("Row");
-        sumTotMap->setZaxisTitle("Mean ToT");
+        sumTotMap->setZaxisTitle("Mean ToT [bc]");
         Histo2d *sumTot2Map = new Histo2d("MeanTot2Map", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
         sumTot2Map->setXaxisTitle("Column");
         sumTot2Map->setYaxisTitle("Row");
-        sumTot2Map->setZaxisTitle("Mean ToT^2");
+        sumTot2Map->setZaxisTitle("Mean ToT^2 [bc^2]");
         Histo2d *sigmaTotMap = new Histo2d("SigmaTotMap", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
         sigmaTotMap->setXaxisTitle("Column");
         sigmaTotMap->setYaxisTitle("Row");
-        sigmaTotMap->setZaxisTitle("Sigma ToT");
-        Histo1d *meanTotDist = new Histo1d("MeanTotDist", 161, -0.05, 16.05, typeid(this));
-        meanTotDist->setXaxisTitle("Mean ToT");
+        sigmaTotMap->setZaxisTitle("Sigma ToT [bc]");
+        Histo1d *meanTotDist = new Histo1d("MeanTotDist_"+std::to_string(ident), 161, -0.05, 16.05, typeid(this));
+        meanTotDist->setXaxisTitle("Mean ToT [bc]");
         meanTotDist->setYaxisTitle("Number of Pixels");
         Histo1d *sigmaTotDist = new Histo1d("SigmaTotDist", 101, -0.05, 1.05, typeid(this));
-        sigmaTotDist->setXaxisTitle("Sigma ToT");
+        sigmaTotDist->setXaxisTitle("Sigma ToT [bc]");
         sigmaTotDist->setYaxisTitle("Number of Pixels");
 
         meanTotMap->add(*totMaps[ident]);
@@ -278,9 +278,9 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
             int sign = 0;
             bool last = false;
             if (mean < (targetTot-0.1)) {
-                sign = +1;
-            } else if (mean > (targetTot+0.1)) {
                 sign = -1;
+            } else if (mean > (targetTot+0.1)) {
+                sign = +1;
             } else {
                 sign = 0;
                 last = true;
@@ -558,8 +558,8 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
         hh->setZaxisTitle("Hits");
         occMaps[ident] = hh;
         Histo1d *hhh = new Histo1d(name2, injections+1, -0.5, injections+0.5, typeid(this));
-        hh->setXaxisTitle("Occupancy");
-        hh->setYaxisTitle("Number of Pixels");
+        hhh->setXaxisTitle("Occupancy");
+        hhh->setYaxisTitle("Number of Pixels");
         occDists[ident] = hhh;
         innerCnt[ident] = 0;
     }
@@ -674,10 +674,12 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
         double mean = 0;
         Histo2d *fbHisto = new Histo2d("feedback", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
         Histo1d *occDist = new Histo1d(name2, injections+1, -0.5, injections+0.5, typeid(this));
+        occDist->setXaxisTitle("Occupancy");
+        occDist->setYaxisTitle("Number of Pixels");
         for (unsigned i=0; i<fbHisto->size(); i++) {
-            if ((occMaps[ident]->getBin(i)/(double)injections) > 0.52) {
+            if ((occMaps[ident]->getBin(i)/(double)injections) > 0.54) {
                 fbHisto->setBin(i, -1);
-            } else if ((occMaps[ident]->getBin(i)/(double)injections) < 0.48) {
+            } else if ((occMaps[ident]->getBin(i)/(double)injections) < 0.46) {
                 fbHisto->setBin(i, +1);
             } else {
                 fbHisto->setBin(i, 0);

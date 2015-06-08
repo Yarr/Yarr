@@ -28,9 +28,9 @@ Fei4GlobalPreampTune::Fei4GlobalPreampTune(Fei4 *fe, TxCore *tx, RxCore *rx, Cli
 // Initialize Loops
 void Fei4GlobalPreampTune::init() {
     // Loop 0: Feedback
-    std::shared_ptr<Fei4GlobalFeedbackBase> fbLoop(Fei4GlobalFeedbackBuilder(&Fei4::PrmpVbp));
+    std::shared_ptr<Fei4GlobalFeedbackBase> fbLoop(Fei4GlobalFeedbackBuilder(&Fei4::PrmpVbpf));
     fbLoop->setStep(64);
-    fbLoop->setMax(127);
+    fbLoop->setMax(128);
 
     // Loop 1: Mask Staging
     std::shared_ptr<Fei4MaskLoop> maskStaging(new Fei4MaskLoop);
