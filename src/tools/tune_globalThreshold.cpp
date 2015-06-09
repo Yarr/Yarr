@@ -22,7 +22,7 @@
 bool scanDone = false;
 bool processorDone = false;
 
-void processing(Fei4 *fe, ClipBoard<RawData> *clipRaw, std::map<unsigned, ClipBoard<Fei4Data>* > eventMap) {
+void processing(Fei4 *fe, ClipBoard<RawDataContainer> *clipRaw, std::map<unsigned, ClipBoard<Fei4Data>* > eventMap) {
     std::cout << "### Processing data ###" << std::endl;
     Fei4DataProcessor proc(fe->getValue(&Fei4::HitDiscCnfg));
     proc.connect(clipRaw, eventMap);
@@ -93,7 +93,7 @@ int main(void) {
     g_fe.fromFileBinary(cfgName);
     fe.fromFileBinary(cfgName);
     
-    ClipBoard<RawData> clipRaw;
+    ClipBoard<RawDataContainer> clipRaw;
     std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;
     ClipBoard<Fei4Data> clipEvent0;
     ClipBoard<Fei4Data> clipEvent1;

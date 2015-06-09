@@ -16,6 +16,10 @@ enum {
     GNPPCI_DCR = 0x60,
 	GNPCI_SYS_CFG_SYSTEM	= 0x800,
 
+
+    /* page 127 */
+    LB_CTL = 0x804,
+
 	/* page 130 ff */
     GNCLK_CSR       = 0x808,
 	GNINT_CTRL		= 0x810,
@@ -29,6 +33,20 @@ enum {
 	GNINT_CFG_6		= 0x838,
 	GNINT_CFG_7		= 0x83c,
 #define GNINT_CFG(x) (GNINT_CFG_0 + 4 * (x))
+
+    /* page 139 ff */
+    TWI_BASE = 0x900,
+    TWI_CTRL = TWI_BASE,
+    TWI_STATUS = TWI_BASE + 0x4,
+    TWI_ADDRESS = TWI_BASE + 0x8,
+    TWI_DATA = TWI_BASE + 0xC,
+    TWI_IRT_STATUS = TWI_BASE + 0x10,
+    TWI_TR_SIZE = TWI_BASE + 0x14,
+    TWI_SLV_MON = TWI_BASE + 0x18,
+    TWI_TO = TWI_BASE + 0x1C,
+    TWI_IR_MASK = TWI_BASE + 0x20,
+    TWI_IR_EN = TWI_BASE + 0x24,
+    TWI_IR_DIS = TWI_BASE + 0x28,
 
 	/* page 146 ff */
 	GNGPIO_BASE = 0xA00,

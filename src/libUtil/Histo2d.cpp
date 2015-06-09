@@ -207,7 +207,7 @@ void Histo2d::plot(std::string prefix) {
     // Put raw histo data in tmp file
     std::string tmp_name = "/tmp/tmp_yarr_histo2d_" + prefix;
     this->toFile(tmp_name, false);
-    std::string cmd = "gnuplot | ps2pdf - " + prefix + "_" + HistogramBase::name;
+    std::string cmd = "gnuplot | epstopdf -f > " + prefix + "_" + HistogramBase::name;
     for (unsigned i=0; i<lStat.size(); i++)
         cmd += "_" + std::to_string(lStat.get(i));
     cmd += ".pdf";
@@ -215,10 +215,9 @@ void Histo2d::plot(std::string prefix) {
     // Open gnuplot as file and pipe commands
     FILE *gnu = popen(cmd.c_str(), "w");
     
-    fprintf(gnu, "set terminal postscript enhanced color \"Helvetica\" 14\n");
+    fprintf(gnu, "set terminal postscript enhanced color \"Helvetica\" 18 eps\n");
     fprintf(gnu, "set palette negative defined ( 0 '#D53E4F', 1 '#F46D43', 2 '#FDAE61', 3 '#FEE08B', 4 '#E6F598', 5 '#ABDDA4', 6 '#66C2A5', 7 '#3288BD')\n");
     //fprintf(gnu, "set pm3d map\n");
-    //fprintf(gnu, "set \n");
     fprintf(gnu, "unset key\n");
     fprintf(gnu, "set title \"%s\"\n" , HistogramBase::name.c_str());
     fprintf(gnu, "set xlabel \"%s\"\n" , HistogramBase::xAxisTitle.c_str());

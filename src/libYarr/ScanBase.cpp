@@ -8,7 +8,7 @@
 
 #include "ScanBase.h"
 
-ScanBase::ScanBase(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawData> *data) : engine(fe, tx, rx){
+ScanBase::ScanBase(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data) : engine(fe, tx, rx){
     g_fe = fe;
     g_tx = tx;
     g_rx = rx;

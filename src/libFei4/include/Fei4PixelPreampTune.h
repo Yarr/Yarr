@@ -16,7 +16,7 @@
 
 class Fei4PixelPreampTune : public ScanBase {
     public:
-        Fei4PixelPreampTune(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawData> *data);
+        Fei4PixelPreampTune(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data);
         
         void init();
         void preScan();

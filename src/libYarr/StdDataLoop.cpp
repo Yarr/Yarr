@@ -49,8 +49,10 @@ void StdDataLoop::execPart2() {
     uint32_t startAddr = 0;
 
 
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
     std::vector<RawData*> tmp_storage;
     RawData *newData = NULL;
+    RawDataContainer *rdc = new RawDataContainer();
     while (done == 0) {
         //rate = g_rx->getDataRate();
         curCnt = g_rx->getCurCount();
@@ -59,51 +61,34 @@ void StdDataLoop::execPart2() {
             newData =  g_rx->readData();
             iterations++;
             if (newData != NULL) {
-                tmp_storage.push_back(newData);
+                rdc->add(newData);
                 count += newData->words;
             }
         } while (newData != NULL);
+        delete newData;
     }
     // Gather rest of data after timeout
-    std::this_thread::sleep_for(std::chrono::microseconds(200));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
     do {
         curCnt = g_rx->getCurCount();
         newData =  g_rx->readData();
         iterations++;
         if (newData != NULL) {
-            tmp_storage.push_back(newData);
+            rdc->add(newData);
             count += newData->words;
         }
     } while (newData != NULL);
+    delete newData;
     
-    // Merge data
-    if (tmp_storage.size() > 0) {
-        uint32_t *tBuf = new uint32_t[count];
-        unsigned offset = 0;
-        for (unsigned i=0; i<tmp_storage.size(); i++) {
-            if (i==0)
-                startAddr = tmp_storage[i]->adr;
-            std::copy(&tmp_storage[i]->buf[0], &tmp_storage[i]->buf[tmp_storage[i]->words], &tBuf[offset]);
-            offset += tmp_storage[i]->words;
-            delete tmp_storage[i];
-        }
-
-        RawData *mergedData = new RawData(startAddr, tBuf, count);
-        mergedData->stat = *g_stat;
-        storage->pushData(mergedData);
-    } else  {
-        std::cout << __PRETTY_FUNCTION__ << " --> Found no data!" << std::endl;
-        RawData *mergedData = new RawData(0, NULL, 0);
-        mergedData->stat = *g_stat;
-        storage->pushData(mergedData);
-    }
+    rdc->stat = *g_stat;
+    storage->pushData(rdc);
         
-    if (verbose)
+    //if (verbose)
         std::cout << " --> Received " << count << " words! " << iterations << std::endl;
     m_done = true;
     counter++;
 }
 
-void StdDataLoop::connect(ClipBoard<RawData> *clipboard) {
+void StdDataLoop::connect(ClipBoard<RawDataContainer> *clipboard) {
     storage = clipboard;
 }

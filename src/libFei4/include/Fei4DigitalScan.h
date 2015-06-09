@@ -16,7 +16,7 @@
 
 class Fei4DigitalScan : public ScanBase {
     public:
-        Fei4DigitalScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawData> *data);
+        Fei4DigitalScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data);
         
         void init();
         void preScan();

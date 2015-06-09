@@ -75,6 +75,7 @@ class SpecController {
         int readDma(uint32_t off, uint32_t *data, size_t words);
 
         int progFpga(const void *data, size_t size);
+        uint32_t readEeprom(uint8_t * buffer, uint32_t len);
     
     private:
         unsigned int specId;

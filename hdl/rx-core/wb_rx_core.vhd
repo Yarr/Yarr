@@ -48,8 +48,34 @@ entity wb_rx_core is
 end wb_rx_core;
 
 architecture behavioral of wb_rx_core is
+	function log2_ceil(val : integer) return natural is
+		 variable result : natural;
+	begin
+		 for i in 0 to g_NUM_RX-1 loop
+			 if (val <= (2 ** i)) then
+				 result := i;
+				 exit;
+			 end if;
+		 end loop;
+		 return result;
+	end function;
 
 	constant c_ALL_ZEROS : std_logic_vector(g_NUM_RX-1 downto 0) := (others => '0');
+	
+	component rr_arbiter
+		generic (
+			g_CHANNELS : integer := g_NUM_RX
+		);
+		port (
+			-- sys connect
+			clk_i : in std_logic;
+			rst_i : in std_logic;
+			-- requests
+			req_i : in std_logic_vector(g_CHANNELS-1 downto 0);
+			-- grants
+			gnt_o : out std_logic_vector(g_CHANNELS-1 downto 0)
+		);
+	end component rr_arbiter;
 
 	component fei4_rx_channel
 		port (
@@ -95,18 +121,13 @@ architecture behavioral of wb_rx_core is
 	signal rx_fifo_full : std_logic_vector(g_NUM_RX-1 downto 0);
 	signal rx_fifo_empty : std_logic_vector(g_NUM_RX-1 downto 0);
 	signal rx_fifo_rden : std_logic_vector(g_NUM_RX-1 downto 0);
+	signal rx_fifo_rden_t : std_logic_vector(g_NUM_RX-1 downto 0);
 	signal rx_fifo_wren : std_logic_vector(g_NUM_RX-1 downto 0);
-	signal rx_fifo_dout_t : std_logic_vector(31 downto 0);
 
 	signal rx_enable : std_logic_vector(31 downto 0);
 	
-	signal rx_fifo_cur : std_logic_vector(g_NUM_RX-1 downto 0);
-	signal rx_fifo_cur_d : std_logic_vector(g_NUM_RX-1 downto 0);
-	signal rx_fifo_act : std_logic_vector(g_NUM_RX-1 downto 0);
-	signal rx_fifo_cnt : unsigned(5 downto 0);
-	signal rx_fifo_cnt_d : unsigned(5 downto 0);
-	signal rx_fifo_cnt_dd : unsigned(5 downto 0);
-	
+	signal channel : integer range 0 to g_NUM_RX-1;
+
 	signal debug : std_logic_vector(31 downto 0);
 	
 begin
@@ -147,60 +168,34 @@ begin
 	end process wb_proc;
 	
 	-- Arbiter
-	arbiter_proc : process(wb_clk_i, rst_n_i)
+	cmp_rr_arbiter : rr_arbiter port map (
+		clk_i => wb_clk_i,
+		rst_i => not rst_n_i,
+		req_i => not rx_fifo_empty,
+		gnt_o => rx_fifo_rden_t
+	);
+	
+	--rx_valid_o <= '0' when (unsigned(rx_fifo_rden) = 0 or ((rx_fifo_rden and rx_fifo_empty) = rx_fifo_rden)) else '1';
+	--rx_data_o <= x"DEADBEEF" when (unsigned(rx_fifo_rden) = 0) else rx_fifo_dout(log2_ceil(to_integer(unsigned(rx_fifo_rden))));
+	
+	reg_proc : process(wb_clk_i, rst_n_i)
 	begin
 		if (rst_n_i = '0') then
-			rx_data_o <= (others => '0');
+			rx_fifo_rden <= (others => '0');
 			rx_valid_o <= '0';
-			rx_fifo_cnt <= (others => '0');
-			rx_fifo_cnt_d <= (others => '0');
-			rx_fifo_cnt_dd <= (others => '0');
-			rx_fifo_act <= (others => '0');
+			channel <= 0;			
 		elsif rising_edge(wb_clk_i) then
-			-- Read active Fifo
-			rx_fifo_act <= (others => '0');
-			rx_fifo_act(TO_INTEGER(rx_fifo_cnt)) <= '1';
-			
-			rx_fifo_rden <= rx_fifo_act;
-			rx_data_o <= x"DEADBEEF";
-			rx_valid_o <= '0';
-			--for I in 0 to g_NUM_RX-1 loop
-				--rx_data_o <= rx_fifo_dout(I) when (rx_fifo_rden(I) = '1') else rx_fifo_dout(I+1);
-				if (rx_fifo_rden(TO_INTEGER(rx_fifo_cnt_dd)) = '1' and rx_fifo_empty(TO_INTEGER(rx_fifo_cnt_dd)) = '0') then
-					rx_data_o <= rx_fifo_dout(TO_INTEGER(rx_fifo_cnt_dd));
-					rx_valid_o <= '1';
-				end if;
-			--end loop;
-			
-			rx_fifo_cnt_dd <= rx_fifo_cnt_d;
-			rx_fifo_cnt_d <= rx_fifo_cnt;
-			if(rx_fifo_cnt >= g_NUM_RX-1) then
-				rx_fifo_cnt <= (others => '0');
+			rx_fifo_rden <= rx_fifo_rden_t;
+			channel <= log2_ceil(to_integer(unsigned(rx_fifo_rden_t)));
+			if (unsigned(rx_fifo_rden) = 0 or ((rx_fifo_rden and rx_fifo_empty) = rx_fifo_rden)) then
+				rx_valid_o <= '0';
+				rx_data_o <= x"DEADBEEF";
 			else
-				rx_fifo_cnt <= rx_fifo_cnt + 1;
+				rx_valid_o <= '1';
+				rx_data_o <= rx_fifo_dout(channel);
 			end if;
 		end if;
-	end process arbiter_proc;
-	
-	-- Bit shifter
-	single_shift_gen: if (g_NUM_RX = 1) generate
-	begin
-		rx_fifo_cur <= (0 => '1', others => '0');
-		rx_fifo_cur_d <= rx_fifo_cur;
-	end generate;
-	multi_shift_gen: if (g_NUM_RX > 1) generate
-	begin
-		process(wb_clk_i, rst_n_i)
-		begin
-			if (rst_n_i = '0') then
-				rx_fifo_cur <= (0 => '1', others => '0');
-				rx_fifo_cur_d <= (g_NUM_RX-1 => '1', others => '0');
-			elsif rising_edge(wb_clk_i) then
-				rx_fifo_cur <= rx_fifo_cur(g_NUM_RX-2 downto 0) & rx_fifo_cur(g_NUM_RX-1);
-				rx_fifo_cur_d <= rx_fifo_cur;
-			end if;
-		end process;
-	end generate;
+	end process reg_proc;
 	
 	-- Generate Rx Channels
 	busy_o <= '0' when (rx_fifo_full = c_ALL_ZEROS) else '1';

@@ -41,8 +41,8 @@ int specdriver_probe_irq(specdriver_privdata_t *privdata)
 	unsigned long bar_addr, bar_len, bar_flags;
 	int i;
 	int err;
-    //volatile void *bar4;
-    //volatile uint32_t *addr;
+    volatile void *bar4;
+    volatile unsigned int  *addr;
 
 	for (i = 0; i < 6; i++)
 		privdata->bars_kmapped[i] = NULL;
@@ -82,13 +82,16 @@ int specdriver_probe_irq(specdriver_privdata_t *privdata)
 			mod_info( "Failed to remap BAR%d into kernel space.\n", i );
 			return -EIO;
 		}
+        mod_info("Mapped BAR%d at 0x%.8X with length %d", i, bar_addr, bar_len);
     }
 
     // Init GN4124
     //bar4 = privdata->bars_kmapped[4];
-    //addr = (uint32_t*) bar4+0x800; // MSI_CONTROL
-    //*addr = 0x000e5000;
-    //mod_info("Activated MSI in GN4124!\n");
+    //addr = bar4+0x48; // MSI_CONTROL
+    //mod_info("Initiliazed MSI in GN4124! 0x%.8X \n", *addr);
+    //*addr = 0x00A55805;
+    //mod_info("Initiliazed MSI in GN4124! 0x%.8X \n", *addr);
+    //mod_info("Initiliazed MSI in GN4124! 0x%.8X \n", *addr);
 
 	/* Initialize the interrupt handler for this device */
 	/* Initialize the wait queues */
@@ -105,7 +108,9 @@ int specdriver_probe_irq(specdriver_privdata_t *privdata)
 
 	privdata->irq_enabled = 1;
 	//mod_info("Registered Interrupt Handler at pin %i, line %i, IRQ %i\n", int_pin, int_line, privdata->pdev->irq );
-	mod_info("Registered Interrupt Handler at IRQ %i\n", privdata->pdev->irq );
+	//mod_info("Registered Interrupt Handler at IRQ %i\n", privdata->pdev->irq );
+    //*addr = 0x00A55805;
+    //mod_info("Initiliazed MSI in GN4124! 0x%.8X \n", *addr);
 
 	return 0;
 }
