@@ -55,8 +55,6 @@ int main(void) {
     TxCore tx(&spec);
     RxCore rx(&spec);
 
-    Fei4 g_fe(&tx, 0);
-    Fei4 fe(&tx, 0);
 
     ClipBoard<RawDataContainer> clipRaw;
     std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;
@@ -94,21 +92,26 @@ int main(void) {
     eventMap[14] = &clipEvent14;
     eventMap[15] = &clipEvent15;
 
-    Bookkeeper k;
+    Bookkeeper keeper(&tx, &rx);
 
-    //Fei4DigitalScan digScan(&g_fe, &tx, &rx, &clipRaw);
-    Fei4DigitalScan digScan(&k);
+    Fei4DigitalScan digScan(&keeper);
 
     std::chrono::steady_clock::time_point init = std::chrono::steady_clock::now();
     std::cout << "### Init Scan ###" << std::endl;
     digScan.init();
 
     std::cout << "### Configure Module ###" << std::endl;
-    tx.setCmdEnable(0x1);
-    fe.setRunMode(false);
-    fe.configure();
-    fe.configurePixels();
-    while(!tx.isCmdEmpty());
+
+	for(unsigned int k=0; k<keeper.feList.size(); k++) {
+		tx.setCmdEnable(0x1);
+		keeper.feList[k]->setRunMode(false);
+		keeper.feList[k]->configure();
+		keeper.feList[k]->configurePixels();
+		while(!tx.isCmdEmpty());
+	}
+
+
+	tx.setCmdEnable(0x1);
     rx.setRxEnable(0xFFFF);
     
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
@@ -131,7 +134,7 @@ int main(void) {
     
 
     std::cout << "### Processing data ###" << std::endl;
-    Fei4DataProcessor proc(fe.getValue(&Fei4::HitDiscCnfg));
+    Fei4DataProcessor proc(keeper.g_fe->getValue(&Fei4::HitDiscCnfg));
     proc.connect(&clipRaw, eventMap);
     proc.init();
     proc.process();

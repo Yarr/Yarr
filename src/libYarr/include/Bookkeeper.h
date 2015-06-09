@@ -24,24 +24,33 @@
 #include "TxCore.h"
 #include "RxCore.h"
 
-class ScanBase;
-
 class Bookkeeper {
     public:
-        Bookkeeper();
+        Bookkeeper(TxCore *arg_tx, RxCore *arg_rx);
         ~Bookkeeper();
 
-        Fei4 *fe;
+        void addFe(unsigned channel, unsigned chipId);
+		int removeFe(unsigned channel);
+		int removeFe(Fei4 *fe);
+
+		int prepareMap();
+
+		uint32_t setFeActive(Fei4 *fe);
+		uint32_t setFeInactive(Fei4 *fe);
+		uint32_t collectActiveMask();
+//		uint31_t setActiveMask(uint32_t);	// Not allowed => change the FEs instead!!
+
+//	    std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;
+
         Fei4 *g_fe;
         TxCore *tx;
         RxCore *rx;
+
         ClipBoard<RawDataContainer> *data;
+		std::vector<Fei4*> feList;
 
-        ScanBase *s;
     private:
-        
-
-
+		uint32_t activeMask;
 };
 
 #endif
