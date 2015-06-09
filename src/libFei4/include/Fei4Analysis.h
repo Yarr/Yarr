@@ -40,6 +40,7 @@ class AnalysisAlgorithm {
         virtual void init(ScanBase *s) {}
         virtual void processHistogram(HistogramBase *h) {}
         virtual void end() {}
+		unsigned channel;	// I don't know why it has to be here AND in Fei4Analysis below
 
     protected:
         ScanBase *scan;
@@ -64,6 +65,8 @@ class Fei4Analysis : DataProcessor {
         void addAlgorithm(AnalysisAlgorithm *a);
         void plot(std::string basename);
         void toFile(std::string basename);
+
+		unsigned channel;
 
     private:
         ClipBoard<HistogramBase> *input;

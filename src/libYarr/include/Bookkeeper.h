@@ -38,7 +38,9 @@ class Bookkeeper {
 		uint32_t setFeActive(Fei4 *fe);
 		uint32_t setFeInactive(Fei4 *fe);
 		uint32_t collectActiveMask();
-//		uint31_t setActiveMask(uint32_t);	// Not allowed => change the FEs instead!!
+
+		void lockChannelMutex(unsigned ch);
+		void unlockChannelMutex(unsigned ch);
 
 //	    std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;
 
@@ -48,6 +50,8 @@ class Bookkeeper {
 
         ClipBoard<RawDataContainer> *data;
 		std::vector<Fei4*> feList;
+
+		std::vector<std::mutex*> channelMutexes;
 
     private:
 		uint32_t activeMask;

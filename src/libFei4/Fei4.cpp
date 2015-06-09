@@ -162,14 +162,3 @@ unsigned Fei4::setChannel(unsigned arg_channel) {
 	this->channel = arg_channel;
 	return getChannel();
 }
-
-
-
-bool Fei4::getGlobal() {
-	return this->isGlobal;
-}
-
-bool Fei4::setGlobal(bool global) {
-	this->isGlobal = global;
-	return getGlobal();
-}

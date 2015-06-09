@@ -59,6 +59,7 @@ class LoopActionBase {
         Fei4 *g_fe;
         TxCore *g_tx;
         RxCore *g_rx;
+		Bookkeeper *keeper;
 
         std::type_index loopType;
     private:

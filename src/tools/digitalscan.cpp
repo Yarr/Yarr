@@ -35,6 +35,7 @@ void analysis(unsigned ch, ScanBase *s, ClipBoard<Fei4Data> *events) {
     Fei4Analysis ana;
     ana.addAlgorithm(new OccupancyAnalysis);
     ana.connect(s, &clipHisto, &clipResult);
+	ana.channel = ch;
     ana.init();
     ana.process();
     ana.end();

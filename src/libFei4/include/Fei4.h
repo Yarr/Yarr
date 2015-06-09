@@ -66,9 +66,6 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd {
 		unsigned getChannel();
 		unsigned setChannel(unsigned channel);
 
-		bool getGlobal();
-		bool setGlobal(bool global);
-
 
         TxCore* getTxCore() {
             return core;
@@ -100,9 +97,7 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd {
     private:
         unsigned chipId;
 		bool isActive;
-		bool isGlobal;
 		unsigned channel;
-
 
 };
 

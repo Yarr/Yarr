@@ -38,6 +38,7 @@ void LoopActionBase::setup(LoopStatus *stat, Bookkeeper *k) {
     g_fe = k->g_fe;
     g_tx = k->tx;
     g_rx = k->rx;
+	keeper = k;
 }
 
 void LoopActionBase::setNext(shared_ptr<LoopActionBase>& ptr) {

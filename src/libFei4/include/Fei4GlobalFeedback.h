@@ -13,7 +13,7 @@
 class Fei4GlobalFeedbackBase : public LoopActionBase {
     public: 
         // TODO Feedback needs to handle multiple channels
-        void feedback(double sign, bool last = false) {
+        void feedback(unsigned channel, double sign, bool last = false) {
             if (sign != oldSign) {
                 oldSign = 0;
                 step = step/2;
