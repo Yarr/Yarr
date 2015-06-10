@@ -33,6 +33,8 @@ class Bookkeeper {
 		int removeFe(unsigned channel);
 		int removeFe(Fei4 *fe);
 
+		Fei4* getFei4byChannel(unsigned channel);
+
 		int prepareMap();
 
 		uint32_t setFeActive(Fei4 *fe);

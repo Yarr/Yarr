@@ -24,7 +24,9 @@ class Fei4GlobalFeedbackBase : public LoopActionBase {
             std::cout << "--> Adding new value " << cur+(step*sign) << std::endl;
             m_done = last;
             if (val < 50) m_done = true;
-            fbMutex.unlock();
+//            fbMutex.unlock();
+			keeper->channelMutexes[channel]->unlock();
+			std::cout << "Used channel #" << channel << std::endl;		// Ingrid likes debugs
         }
         
         void feedbackBinary(double sign, bool last = false) {
@@ -35,8 +37,10 @@ class Fei4GlobalFeedbackBase : public LoopActionBase {
             step = step/2;
             m_done = last;
             if (step == 1) m_done = true;
-            fbMutex.unlock();
+//            fbMutex.unlock();
+			keeper->channelMutexes[channel]->unlock();
         }
+		unsigned channel;
    protected:
         std::mutex fbMutex;
         std::queue<unsigned> values;
@@ -65,11 +69,13 @@ class Fei4GlobalFeedback : public Fei4GlobalFeedbackBase {
         void end() {}
         void execPart1() {
             g_stat->set(this, cur);
-            fbMutex.try_lock();
+//            fbMutex.try_lock();
+			keeper->channelMutexes[channel]->try_lock();
         }
 
         void execPart2() {
-            fbMutex.lock();
+//            fbMutex.lock();
+			keeper->channelMutexes[channel]->lock();
             cur = values.front();
             values.pop();
             std::cout << "--> Received feedback: " << cur << std::endl;
@@ -77,7 +83,9 @@ class Fei4GlobalFeedback : public Fei4GlobalFeedbackBase {
         }
 
         void writePar() {
-            g_fe->writeRegister(parPtr, cur);
+//            g_fe->writeRegister(parPtr, cur);
+			keeper->getFei4byChannel(channel)->writeRegister(parPtr, cur);
+			std::cout << "writePar to channel #" << channel << std::endl;		// Ingrid likes debugs
         }
 
 

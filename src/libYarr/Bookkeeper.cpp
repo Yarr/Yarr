@@ -42,6 +42,15 @@ int Bookkeeper::removeFe(Fei4* fe) {
 	return removeFe(arg_channel);
 }
 
+Fei4* Bookkeeper::getFei4byChannel(unsigned arg_channel) {
+	for(unsigned int k=0; k<feList.size(); k++) {
+		if(feList[k]->getChannel() == arg_channel) {
+			return feList[k];
+		}
+	}
+	return NULL;	
+}
+
 void Bookkeeper::lockChannelMutex(unsigned ch) {
 	channelMutexes[ch]->try_lock();
 }
