@@ -32,7 +32,7 @@ void processing(Fei4 *fe, ClipBoard<RawDataContainer> *clipRaw, std::map<unsigne
         proc.process();
     }
     proc.process();
-    processorDone = true;
+    
 }
 
 void analysis(unsigned ch, ScanBase *s, ClipBoard<Fei4Data> *events) {
@@ -51,10 +51,12 @@ void analysis(unsigned ch, ScanBase *s, ClipBoard<Fei4Data> *events) {
 
     std::cout << "### Analyzing data ###" << std::endl;
     Fei4Analysis ana;
+	ana.channel = ch;
     //ana.addAlgorithm(new OccupancyAnalysis);
     //ana.addAlgorithm(new ScurveFitter);
-    ana.addAlgorithm(new OccGlobalThresholdTune);
+    ana.addAlgorithm(new OccGlobalThresholdTune, ch);
     ana.connect(s, &clipHisto, &clipResult);
+	
     ana.init();
     
     while(!processorDone) {
@@ -84,16 +86,40 @@ int main(void) {
     TxCore tx(&spec);
     RxCore rx(&spec);
 
+    ClipBoard<RawDataContainer> clipRaw;
+    Bookkeeper keeper(&tx, &rx);
+	keeper.data = &clipRaw;
 
     std::string cfgName = "test_config.bin";
 
-    Fei4 g_fe(&tx, 8);
-    Fei4 fe(&tx, 0);
+//    keeper.g_fe(&tx, 8);
 
-    g_fe.fromFileBinary(cfgName);
-    fe.fromFileBinary(cfgName);
-    
-    ClipBoard<RawDataContainer> clipRaw;
+
+	keeper.addFe(0,0);
+	keeper.addFe(1,0);
+/*	keeper.addFe(2,0);
+	keeper.addFe(3,0);
+	keeper.addFe(4,0);
+	keeper.addFe(5,0);
+	keeper.addFe(6,0);
+	keeper.addFe(7,0);
+	keeper.addFe(8,0);
+	keeper.addFe(9,0);
+	keeper.addFe(10,0);
+	keeper.addFe(11,0);
+	keeper.addFe(12,0);
+	keeper.addFe(13,0);
+	keeper.addFe(14,0);
+	keeper.addFe(15,0);*/
+
+
+	keeper.g_fe->setChipId(8);
+    keeper.g_fe->fromFileBinary(cfgName);
+
+	for(unsigned int k=0; k<keeper.feList.size(); k++) {	
+	    keeper.feList[k]->fromFileBinary(cfgName);
+	}
+
     std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;
     ClipBoard<Fei4Data> clipEvent0;
     ClipBoard<Fei4Data> clipEvent1;
@@ -113,7 +139,7 @@ int main(void) {
     ClipBoard<Fei4Data> clipEvent15;
 
     eventMap[0] = &clipEvent0;
-    /*eventMap[1] = &clipEvent1;
+    eventMap[1] = &clipEvent1;
     eventMap[2] = &clipEvent2;
     eventMap[3] = &clipEvent3;
     eventMap[4] = &clipEvent4;
@@ -127,21 +153,35 @@ int main(void) {
     eventMap[12] = &clipEvent12;
     eventMap[13] = &clipEvent13;
     eventMap[14] = &clipEvent14;
-    eventMap[15] = &clipEvent15;*/
+    eventMap[15] = &clipEvent15;
     
-    Fei4GlobalThresholdTune thrTune(&g_fe, &tx, &rx, &clipRaw);
+//    Fei4GlobalThresholdTune thrTune(&g_fe, &tx, &rx, &clipRaw);
+    Fei4GlobalThresholdTune thrTune(&keeper);
 
     std::chrono::steady_clock::time_point init = std::chrono::steady_clock::now();
     std::cout << "### Init Scan ###" << std::endl;
     thrTune.init();
 
     std::cout << "### Configure Module ###" << std::endl;
+
+	for(unsigned int k=0; k<keeper.feList.size(); k++) {
+		tx.setCmdEnable(1 << keeper.feList[k]->getChannel());
+		keeper.feList[k]->setRunMode(false);
+		keeper.feList[k]->configure();
+		keeper.feList[k]->configurePixels();
+		while(!tx.isCmdEmpty());
+	}
+
+/*
     tx.setCmdEnable(0x1);
     fe.setRunMode(false);
     fe.configure();
     fe.configurePixels();
     while(!tx.isCmdEmpty());
-    rx.setRxEnable(0x1);
+*/
+
+	tx.setCmdEnable(0x3);
+    rx.setRxEnable(0x3);
     
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
     
@@ -149,14 +189,14 @@ int main(void) {
     std::cout << "### Pre Scan ###" << std::endl;
     thrTune.preScan();
 
-    std::thread p1(processing, &g_fe, &clipRaw, eventMap);
-    //std::thread p2(processing, &g_fe, &clipRaw, eventMap);
-    //std::thread p3(processing, &g_fe, &clipRaw, eventMap);
-    //std::thread p4(processing, &g_fe, &clipRaw, eventMap);
-    
+    std::thread p1(processing, keeper.g_fe, &clipRaw, eventMap);
+    std::thread p2(processing, keeper.g_fe, &clipRaw, eventMap);
+    std::thread p3(processing, keeper.g_fe, &clipRaw, eventMap);
+    std::thread p4(processing, keeper.g_fe, &clipRaw, eventMap);
+
     std::thread t1(analysis, 0, &thrTune, &clipEvent0);
-    /*std::thread t2(analysis, 1, &thrTune, &clipEvent1);
-    std::thread t3(analysis, 2, &thrTune, &clipEvent2);
+    std::thread t2(analysis, 1, &thrTune, &clipEvent1);
+/*    std::thread t3(analysis, 2, &thrTune, &clipEvent2);
     std::thread t4(analysis, 3, &thrTune, &clipEvent3);
     std::thread t5(analysis, 4, &thrTune, &clipEvent4);
     std::thread t6(analysis, 5, &thrTune, &clipEvent5);
@@ -187,17 +227,19 @@ int main(void) {
     std::chrono::steady_clock::time_point scan = std::chrono::steady_clock::now();
 
     p1.join();
-    //p2.join();
-    //p3.join();
-    //p4.join();
-    
+    p2.join();
+    p3.join();
+    p4.join();
+
+    processorDone = true; 
+
     std::cout << "Collected: " << clipEvent0.size() << " Events" << std::endl;
     std::chrono::steady_clock::time_point pro = std::chrono::steady_clock::now();
     
 
     t1.join();
-    /*t2.join();
-    t3.join();
+    t2.join();
+/*    t3.join();
     t4.join();
     t5.join();
     t6.join();
@@ -225,6 +267,6 @@ int main(void) {
     std::cout << std::endl << "Finished!" << std::endl;
     
     std::cout << "Saving config to: " << cfgName << std::endl;
-    g_fe.toFileBinary(cfgName);
+    keeper.g_fe->toFileBinary(cfgName);
     return 0;
 }

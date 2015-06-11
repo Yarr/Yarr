@@ -25,6 +25,24 @@ Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Fei4 *fe, TxCore *tx, RxCore *r
     verbose = false;
 }
 
+Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Bookkeeper *k) : ScanBase(k) {
+    mask = MASK_16;
+    dcMode = QUAD_DC;
+    numOfTriggers = 100;
+    triggerFrequency = 10e3;
+    triggerDelay = 50;
+    minVcal = 10;
+    maxVcal = 100;
+    stepVcal = 1;
+
+    useScap = true;
+    useLcap = true;
+
+    target = 3000;
+    verbose = false;
+}
+
+
 // Initialize Loops
 void Fei4GlobalThresholdTune::init() {
     // Loop 0: Feedback
@@ -67,7 +85,7 @@ void Fei4GlobalThresholdTune::init() {
     engine.init();
 }
 
-// Do necessary pre-scan configuration
+// Do necessary pre-scan configuration		// Ingrid
 void Fei4GlobalThresholdTune::preScan() {
     g_fe->writeRegister(&Fei4::Trig_Count, 12);
     // TODO VCAL and TDAC needs to be calculated per FE, not global

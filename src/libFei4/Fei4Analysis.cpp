@@ -45,6 +45,11 @@ void Fei4Analysis::addAlgorithm(AnalysisAlgorithm *a) {
     algorithms.push_back(a);
 }
 
+void Fei4Analysis::addAlgorithm(AnalysisAlgorithm *a, unsigned ch) {
+    algorithms.push_back(a);
+	a->channel = ch;
+}
+
 void Fei4Analysis::plot(std::string basename) {
     if (output->empty())
         return;
@@ -502,7 +507,7 @@ void ScurveFitter::end() {
 void OccGlobalThresholdTune::init(ScanBase *s) {
     std::shared_ptr<LoopActionBase> tmpVthinFb(Fei4GlobalFeedbackBuilder(&Fei4::Vthin_Fine));
     n_count = 1;
-	fb->channel = channel;
+	std::cout << "Analysis on Channel: " << channel << std::endl;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
@@ -593,7 +598,7 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
             done = true;
         }
         
-        std::cout << "Sending feedback: " << sign << " " << done << std::endl;
+//        std::cout << "Sending feedback on channel " << this->channel << " : " << sign << " " << done << std::endl;
         fb->feedback(this->channel, sign, done);
         output->pushData(occMaps[ident]);
         output->pushData(occDists[ident]);

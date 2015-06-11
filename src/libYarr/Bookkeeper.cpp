@@ -21,16 +21,16 @@ Bookkeeper::~Bookkeeper() {
 
 void Bookkeeper::addFe(unsigned channel, unsigned chipId) {
     feList.push_back(new Fei4(tx, chipId, channel));
-	while(channel>channelMutexes.size())
-		channelMutexes.push_back(new std::mutex);
+	mutexMap.insert(std::pair<unsigned, std::mutex*>(channel,new std::mutex));
 }
 
 int Bookkeeper::removeFe(unsigned arg_channel) {
-	channelMutexes[arg_channel]->lock();
+//	mutexMap[arg_channel]->lock();	// Needed?
 	for(unsigned int k=0; k<feList.size(); k++) {
 		if(feList[k]->getChannel() == arg_channel) {
 			delete feList[k];
 			feList.erase(feList.begin() + k);
+			mutexMap.erase(arg_channel);
 			return arg_channel;
 		}
 	}
@@ -52,11 +52,11 @@ Fei4* Bookkeeper::getFei4byChannel(unsigned arg_channel) {
 }
 
 void Bookkeeper::lockChannelMutex(unsigned ch) {
-	channelMutexes[ch]->try_lock();
+	mutexMap[ch]->try_lock();
 }
 
 void Bookkeeper::unlockChannelMutex(unsigned ch) {
-	channelMutexes[ch]->unlock();
+	mutexMap[ch]->unlock();
 }
 
 /*

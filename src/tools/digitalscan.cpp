@@ -56,7 +56,6 @@ int main(void) {
     TxCore tx(&spec);
     RxCore rx(&spec);
 
-
     ClipBoard<RawDataContainer> clipRaw;
     std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;
     ClipBoard<Fei4Data> clipEvent0;
@@ -94,6 +93,11 @@ int main(void) {
     eventMap[15] = &clipEvent15;
 
     Bookkeeper keeper(&tx, &rx);
+	keeper.data = &clipRaw;
+
+	keeper.addFe(0,0);
+	keeper.addFe(1,0);
+	keeper.g_fe->setChipId(8);
 
     Fei4DigitalScan digScan(&keeper);
 
@@ -112,7 +116,7 @@ int main(void) {
 	}
 
 
-	tx.setCmdEnable(0x1);
+	tx.setCmdEnable(0x3);
     rx.setRxEnable(0xFFFF);
     
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
@@ -144,7 +148,7 @@ int main(void) {
 
     std::thread t1(analysis, 0, &digScan, &clipEvent0);
     std::thread t2(analysis, 1, &digScan, &clipEvent1);
-    std::thread t3(analysis, 2, &digScan, &clipEvent2);
+/*    std::thread t3(analysis, 2, &digScan, &clipEvent2);
     std::thread t4(analysis, 3, &digScan, &clipEvent3);
     std::thread t5(analysis, 4, &digScan, &clipEvent4);
     std::thread t6(analysis, 5, &digScan, &clipEvent5);
@@ -157,11 +161,11 @@ int main(void) {
     std::thread t13(analysis, 12, &digScan, &clipEvent12);
     std::thread t14(analysis, 13, &digScan, &clipEvent13);
     std::thread t15(analysis, 14, &digScan, &clipEvent14);
-    std::thread t16(analysis, 15, &digScan, &clipEvent15);
+    std::thread t16(analysis, 15, &digScan, &clipEvent15);*/
 
     t1.join();
     t2.join();
-    t3.join();
+/*    t3.join();
     t4.join();
     t5.join();
     t6.join();
@@ -174,7 +178,7 @@ int main(void) {
     t13.join();
     t14.join();
     t15.join();
-    t16.join();
+    t16.join();*/
 
     std::chrono::steady_clock::time_point ana = std::chrono::steady_clock::now();
 

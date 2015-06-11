@@ -63,6 +63,7 @@ class Fei4Analysis : DataProcessor {
         void end();
 
         void addAlgorithm(AnalysisAlgorithm *a);
+		void addAlgorithm(AnalysisAlgorithm *a, unsigned ch);
         void plot(std::string basename);
         void toFile(std::string basename);
 

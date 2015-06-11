@@ -54,6 +54,7 @@ class Bookkeeper {
 		std::vector<Fei4*> feList;
 
 		std::vector<std::mutex*> channelMutexes;
+		std::map<unsigned, std::mutex*> mutexMap;
 
     private:
 		uint32_t activeMask;
