@@ -41,6 +41,8 @@ class LoopActionBase {
         void setMax(unsigned v);
         void setStep(unsigned v);
 
+		bool checkGlobalDone();
+
     protected:
         virtual void init() {}
         virtual void end() {}
@@ -49,6 +51,7 @@ class LoopActionBase {
         virtual bool done();
 
         bool m_done;
+		bool g_done;
         bool verbose;
 
         unsigned min;
@@ -60,6 +63,7 @@ class LoopActionBase {
         TxCore *g_tx;
         RxCore *g_rx;
 		Bookkeeper *keeper;
+		std::map<unsigned, bool> doneMap;
 
         std::type_index loopType;
     private:

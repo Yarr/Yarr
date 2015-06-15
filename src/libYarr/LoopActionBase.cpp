@@ -65,7 +65,6 @@ void LoopActionBase::run() {
     this->init();
     while(!this->done()) this->execStep();
     this->end();
-
 }
 
 unsigned LoopActionBase::getMin() {
@@ -90,4 +89,16 @@ void LoopActionBase::setMin(unsigned v) {
 
 void LoopActionBase::setStep(unsigned v) {
     step = v;
+}
+
+bool LoopActionBase::checkGlobalDone() {
+	bool done = true;
+	for(unsigned int j=0; j<keeper->feList.size(); j++) {
+		if(keeper->feList[j]->getActive() == true) {
+		done = done & doneMap[keeper->feList[j]->getChannel()];
+		}
+	}
+	g_done = done;
+	return g_done;
+
 }

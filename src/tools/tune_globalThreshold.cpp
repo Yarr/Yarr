@@ -180,8 +180,8 @@ int main(void) {
     while(!tx.isCmdEmpty());
 */
 
-	tx.setCmdEnable(0x3);
-    rx.setRxEnable(0x3);
+	tx.setCmdEnable(0x3);		// Ingrid still has to set this
+    rx.setRxEnable(0x3);		// Ingrid still has to set thiss
     
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
     
@@ -221,8 +221,9 @@ int main(void) {
     tx.setCmdEnable(0x0);
     rx.setRxEnable(0x0);
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    scanDone = true;
-    
+    scanDone = true;  
+
+
     std::cout << "Collected: " << clipRaw.size() << " Raw Data Fragments" << std::endl;
     std::chrono::steady_clock::time_point scan = std::chrono::steady_clock::now();
 

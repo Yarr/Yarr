@@ -44,6 +44,8 @@ class Bookkeeper {
 		void lockChannelMutex(unsigned ch);
 		void unlockChannelMutex(unsigned ch);
 
+//		bool checkGlobalDone();
+
 //	    std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;
 
         Fei4 *g_fe;
@@ -53,11 +55,13 @@ class Bookkeeper {
         ClipBoard<RawDataContainer> *data;
 		std::vector<Fei4*> feList;
 
-		std::vector<std::mutex*> channelMutexes;
-		std::map<unsigned, std::mutex*> mutexMap;
+//		std::vector<std::mutex*> channelMutexes;
+		std::map<unsigned, std::mutex*> mutexMap;	// channel, mutex
+//		std::map<unsigned, bool> doneMap;			// channel, done
 
     private:
 		uint32_t activeMask;
+
 };
 
 #endif

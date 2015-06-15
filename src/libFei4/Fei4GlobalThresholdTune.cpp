@@ -93,7 +93,7 @@ void Fei4GlobalThresholdTune::preScan() {
     for (unsigned col=1; col<81; col++)
         for (unsigned row=1; row<337; row++)
             g_fe->setTDAC(col, row, 16);
-    g_fe->writeRegister(&Fei4::PlsrDAC, g_fe->toVcal(target, useScap, useLcap));
+    g_fe->writeRegister(&Fei4::PlsrDAC, g_fe->toVcal(target, useScap, useLcap));	// Ingrid =>pro FE! vorher: tx auf Kanal
     g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
     while(!g_tx->isCmdEmpty());
 }

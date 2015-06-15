@@ -37,7 +37,6 @@ void LoopEngine::init() {
     while(m_list.end() != it) {
         stat.addLoop(i, (*it).get());
         i++;
-        //(*it)->setup(&stat, g_fe, g_tx, g_rx);
         (*it)->setup(&stat, g_bk);
         ++it;
     }
