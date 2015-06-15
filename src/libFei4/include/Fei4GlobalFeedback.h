@@ -11,21 +11,7 @@
 #include "LoopActionBase.h"
 
 class Fei4GlobalFeedbackBase : public LoopActionBase {
-    public: 
-        void feedbackOld(unsigned channel, double sign, bool last = false) {	// Obsolete function
-            if (sign != oldSign[channel]) {
-                oldSign[channel] = 0;
-                localStep[channel] = localStep[channel]/2;
-            }
-            int val = (values[channel]+(localStep[channel]*sign));
-            if (val < 0) val = 0;
-            values[channel] = val;
-            std::cout << "--> Adding new value " << values[channel]+(localStep[channel]*sign) << std::endl;
-            m_done = last;
-            if (val < 50) m_done = true;
-			keeper->mutexMap[channel]->unlock();
-        }
-        
+    public:       
         void feedback(unsigned channel, double sign, bool last = false) {
             if (sign != oldSign[channel]) {
                 oldSign[channel] = 0;
@@ -40,16 +26,12 @@ class Fei4GlobalFeedbackBase : public LoopActionBase {
 	            values[channel] = val;
 	            std::cout << "--> Adding new value " << values[channel]+(localStep[channel]*sign) << " on channel # " << channel<< std::endl;
 			}
-           doneMap[channel] |= last ;
-			m_done = checkGlobalDone();
+            doneMap[channel] |= last;
             if (val < 50) {
 				doneMap[channel] = true;
-				m_done = checkGlobalDone();
 			}
 			keeper->mutexMap[channel]->unlock();
         }
-
-
 
         void feedbackBinary(double sign, bool last = false) {
             int val = (cur+(step*sign));
@@ -59,9 +41,24 @@ class Fei4GlobalFeedbackBase : public LoopActionBase {
             step = step/2;
             m_done = last;
             if (step == 1) m_done = true;
-//            fbMutex.unlock();
 //			keeper->mutexMap[channel]->unlock();
         }
+
+        void feedbackBinary(unsigned channel, double sign, bool last = false) {
+            int val = (cur+(step*sign));
+            if (val < 0) val = 0;
+            values[0] = val;
+            std::cout << "--> Adding new value " << val << std::endl;
+            step = step/2;
+			doneMap[channel] |= last;
+            if (step == 1) {
+				 doneMap[channel] = true;
+			}
+			keeper->mutexMap[channel]->unlock();
+        }
+
+
+
    protected:
         std::mutex fbMutex;
         std::map<unsigned, unsigned> values;
@@ -111,12 +108,11 @@ class Fei4GlobalFeedback : public Fei4GlobalFeedbackBase {
         void execPart2() {
 			for(unsigned int k=0; k<keeper->feList.size(); k++) {
 				if(keeper->feList[k]->getActive()) {
-//					std::cout << "waiting for channel " << 	keeper->feList[k]->getChannel() << std::endl;
 					keeper->mutexMap[keeper->feList[k]->getChannel()]->lock();
 			    }
 			}
-
-            cur++;//values[0];
+			m_done = checkGlobalDone();
+            cur++;
             std::cout << "--> Received feedback: " << cur << std::endl;
             this->writePar();
         }
@@ -130,7 +126,6 @@ class Fei4GlobalFeedback : public Fei4GlobalFeedbackBase {
 			}
 			g_tx->setCmdEnable(3);
         }
-
 
         Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*parPtr;
 };

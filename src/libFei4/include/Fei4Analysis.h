@@ -40,7 +40,7 @@ class AnalysisAlgorithm {
         virtual void init(ScanBase *s) {}
         virtual void processHistogram(HistogramBase *h) {}
         virtual void end() {}
-		unsigned channel;	// I don't know why it has to be here AND in Fei4Analysis below
+		unsigned channel;
 
     protected:
         ScanBase *scan;

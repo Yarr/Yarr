@@ -99,10 +99,10 @@ class Fei4PixelFeedback : public LoopActionBase {
         void setPixel(unsigned col, unsigned row, unsigned v) {
             switch (fbType) {
                 case (TDAC_FB):
-                    g_fe->setTDAC(col, row, v);
+                    g_fe->setTDAC(col, row, v);		// per FE
                     break;
                 case (FDAC_FB):
-                    g_fe->setFDAC(col, row, v);
+                    g_fe->setFDAC(col, row, v);		// per FE
                     break;
             }
         }

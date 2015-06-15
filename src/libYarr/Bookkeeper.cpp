@@ -25,7 +25,6 @@ void Bookkeeper::addFe(unsigned channel, unsigned chipId) {
 }
 
 int Bookkeeper::removeFe(unsigned arg_channel) {
-//	mutexMap[arg_channel]->lock();	// Needed?
 	for(unsigned int k=0; k<feList.size(); k++) {
 		if(feList[k]->getChannel() == arg_channel) {
 			delete feList[k];
@@ -51,36 +50,18 @@ Fei4* Bookkeeper::getFei4byChannel(unsigned arg_channel) {
 	return NULL;	
 }
 
-void Bookkeeper::lockChannelMutex(unsigned ch) {
-	mutexMap[ch]->try_lock();
-}
-
-void Bookkeeper::unlockChannelMutex(unsigned ch) {
-	mutexMap[ch]->unlock();
-}
-
-
-
-/*
 int Bookkeeper::prepareMap() {
+	unsigned int n = 0;
 	configFeList.clear();
-	unsigned int numberActiveFes = 0;
-
-
-	
 	for(unsigned int j=0; j<feList.size(); j++) {
-		if(feList[j].second->getActive() == true) {
-			configFeList.push_back(&feList[j]);
-			numberActiveFes += 1;
+		if(feList[j]->getActive() == true) {
+			configFeList.push_back(feList[j]);
+			this->eventMap.emplace(n,&feList[j]->clipDataFei4);
+			n += 1;
 		}
 	}
-	for(unsigned int k=0; k<configFeList.size(); k++) {
-	this->eventMap.emplace(k,&configFeList[k]->second->clipDataFei4);
-	}
-	return numberActiveFes;
+	return n;
 }
-
-*/
 
 uint32_t Bookkeeper::setFeActive(Fei4 *fe) {
 	fe->setActive(true);
@@ -110,7 +91,4 @@ uint32_t Bookkeeper::collectActiveMask() {
 	activeMask = newMask;
 	return activeMask;
 }
-
-
-
 

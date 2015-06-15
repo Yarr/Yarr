@@ -17,8 +17,9 @@
 #include "Fei4Analysis.h"
 
 #include "Fei4Scans.h"
+#include "RunManager.h"
 
-void analysis(unsigned ch, ScanBase *s, ClipBoard<Fei4Data> *events) {
+/*void analysis(unsigned ch, ScanBase *s, ClipBoard<Fei4Data> *events) {
     ClipBoard<HistogramBase> clipHisto;
     ClipBoard<HistogramBase> clipResult;
 
@@ -47,7 +48,7 @@ void analysis(unsigned ch, ScanBase *s, ClipBoard<Fei4Data> *events) {
     ana.plot(channel+ "_analogscan");
     //histogrammer.toFile("analogscan");
     std::cout << "... done!" << std::endl;
-}
+}*/
 
 int main(void) {
     // Start Stopwatch
@@ -58,59 +59,50 @@ int main(void) {
     TxCore tx(&spec);
     RxCore rx(&spec);
 
-    Fei4 g_fe(&tx, 0);
-    Fei4 fe(&tx, 0);
-
     ClipBoard<RawDataContainer> clipRaw;
-    std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;
-    ClipBoard<Fei4Data> clipEvent0;
-    ClipBoard<Fei4Data> clipEvent1;
-    ClipBoard<Fei4Data> clipEvent2;
-    ClipBoard<Fei4Data> clipEvent3;
-    ClipBoard<Fei4Data> clipEvent4;
-    ClipBoard<Fei4Data> clipEvent5;
-    ClipBoard<Fei4Data> clipEvent6;
-    ClipBoard<Fei4Data> clipEvent7;
-    ClipBoard<Fei4Data> clipEvent8;
-    ClipBoard<Fei4Data> clipEvent9;
-    ClipBoard<Fei4Data> clipEvent10;
-    ClipBoard<Fei4Data> clipEvent11;
-    ClipBoard<Fei4Data> clipEvent12;
-    ClipBoard<Fei4Data> clipEvent13;
-    ClipBoard<Fei4Data> clipEvent14;
-    ClipBoard<Fei4Data> clipEvent15;
 
-    eventMap[0] = &clipEvent0;
-    eventMap[1] = &clipEvent1;
-    eventMap[2] = &clipEvent2;
-    eventMap[3] = &clipEvent3;
-    eventMap[4] = &clipEvent4;
-    eventMap[5] = &clipEvent5;
-    eventMap[6] = &clipEvent6;
-    eventMap[7] = &clipEvent7;
-    eventMap[8] = &clipEvent8;
-    eventMap[9] = &clipEvent9;
-    eventMap[10] = &clipEvent10;
-    eventMap[11] = &clipEvent11;
-    eventMap[12] = &clipEvent12;
-    eventMap[13] = &clipEvent13;
-    eventMap[14] = &clipEvent14;
-    eventMap[15] = &clipEvent15;
+    Bookkeeper keeper(&tx, &rx);
+	keeper.data = &clipRaw;
 
-    Fei4AnalogScan anaScan(&g_fe, &tx, &rx, &clipRaw);
+	keeper.addFe(0,0);
+	keeper.addFe(1,0);
+	keeper.g_fe->setChipId(8);
+
+
+		// Booking of histrograms and corresponding analysis
+	for(unsigned int k=0; k<keeper.feList.size(); k++) {
+		keeper.feList[k]->histogrammer = new Fei4Histogrammer();
+		keeper.feList[k]->ana = new Fei4Analysis();
+		keeper.feList[k]->histogrammer->addHistogrammer(new OccupancyMap());
+		keeper.feList[k]->ana->addAlgorithm(new OccupancyAnalysis);
+	}
+
+	RunManager rm(&keeper);
+	keeper.prepareMap();
+
+
+
+
+    Fei4AnalogScan anaScan(&keeper);
 
     std::chrono::steady_clock::time_point init = std::chrono::steady_clock::now();
     std::cout << "### Init Scan ###" << std::endl;
     anaScan.init();
 
     std::cout << "### Configure Module ###" << std::endl;
-    tx.setCmdEnable(0x1);
-    fe.setRunMode(false);
-    fe.configure();
-    fe.configurePixels();
-    while(!tx.isCmdEmpty());
-    rx.setRxEnable(0x1);
-    
+
+ 	for(unsigned int k=0; k<keeper.feList.size(); k++) {
+		tx.setCmdEnable(0x1);
+		keeper.feList[k]->setRunMode(false);
+		keeper.feList[k]->configure();
+		keeper.feList[k]->configurePixels();
+		while(!tx.isCmdEmpty());
+	}   
+
+	tx.setCmdEnable(0x3);
+    rx.setRxEnable(0xF);
+
+
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
 
     std::chrono::steady_clock::time_point config = std::chrono::steady_clock::now();
@@ -130,46 +122,14 @@ int main(void) {
     std::chrono::steady_clock::time_point scan = std::chrono::steady_clock::now();
 
     std::cout << "### Processing data ###" << std::endl;
-    Fei4DataProcessor proc(fe.getValue(&Fei4::HitDiscCnfg));
-    proc.connect(&clipRaw, eventMap);
+    Fei4DataProcessor proc(keeper.g_fe->getValue(&Fei4::HitDiscCnfg));
+    proc.connect(&clipRaw, keeper.eventMap);
     proc.init();
     proc.process();
-    std::cout << "Collected: " << clipEvent1.size() << " Events" << std::endl;
+    std::cout << "Collected: " << keeper.eventMap[0]->size() << " Events" << std::endl;
     std::chrono::steady_clock::time_point pro = std::chrono::steady_clock::now();
 
-    std::thread t1(analysis, 0, &anaScan, &clipEvent0);
-    std::thread t2(analysis, 1, &anaScan, &clipEvent1);
-    std::thread t3(analysis, 2, &anaScan, &clipEvent2);
-    std::thread t4(analysis, 3, &anaScan, &clipEvent3);
-    std::thread t5(analysis, 4, &anaScan, &clipEvent4);
-    std::thread t6(analysis, 5, &anaScan, &clipEvent5);
-    std::thread t7(analysis, 6, &anaScan, &clipEvent6);
-    std::thread t8(analysis, 7, &anaScan, &clipEvent7);
-    std::thread t9(analysis, 8, &anaScan, &clipEvent8);
-    std::thread t10(analysis, 9, &anaScan, &clipEvent9);
-    std::thread t11(analysis, 10, &anaScan, &clipEvent10);
-    std::thread t12(analysis, 11, &anaScan, &clipEvent11);
-    std::thread t13(analysis, 12, &anaScan, &clipEvent12);
-    std::thread t14(analysis, 13, &anaScan, &clipEvent13);
-    std::thread t15(analysis, 14, &anaScan, &clipEvent14);
-    std::thread t16(analysis, 15, &anaScan, &clipEvent15);
-
-    t1.join();
-    t2.join();
-    t3.join();
-    t4.join();
-    t5.join();
-    t6.join();
-    t7.join();
-    t8.join();
-    t9.join();
-    t10.join();
-    t11.join();
-    t12.join();
-    t13.join();
-    t14.join();
-    t15.join();
-    t16.join();
+	rm.threadEvaluation(&anaScan);
 
     std::chrono::steady_clock::time_point ana = std::chrono::steady_clock::now();
 

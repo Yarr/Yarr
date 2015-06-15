@@ -22,6 +22,8 @@ class Fei4GlobalThresholdTune : public ScanBase {
         void preScan();
         void postScan() {}
 
+		Bookkeeper *keeper;
+
     private:
         enum MASK_STAGE mask;
         enum DC_MODE dcMode;
