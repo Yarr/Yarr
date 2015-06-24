@@ -1,11 +1,11 @@
 UNAME := $(shell uname)
 ifeq ($(UNAME),Linux)
 	TARGET=YarrGui
-	QMAKE=qmake
+	QMAKE=qmake-qt5
 endif
 ifeq ($(UNAME),Darwin)
 	TARGET=YarrGui.app
-	QMAKE=qmake
+	QMAKE=qmake-qt5
 endif
 MAKE=make
 BUILD=build
