@@ -53,7 +53,14 @@ using namespace specDriver;
 class SpecController {
     public:
         SpecController(unsigned int id);
+        SpecController();
         ~SpecController();
+
+        bool isInitialized();
+        int getId();
+        int getBarSize(unsigned int bar);
+
+        void init(unsigned int id);
 
         void writeSingle(uint32_t off, uint32_t val);
         uint32_t readSingle(uint32_t off);
@@ -68,9 +75,11 @@ class SpecController {
         int readDma(uint32_t off, uint32_t *data, size_t words);
 
         int progFpga(const void *data, size_t size);
+        uint32_t readEeprom(uint8_t * buffer, uint32_t len);
     
     private:
         unsigned int specId;
+        bool is_initialized;
         SpecDevice *spec;
         void *bar0, *bar4;
 

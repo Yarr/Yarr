@@ -7,7 +7,7 @@ int main(void) {
     SpecController mySpec(0);
     std::string tmp;
     //std::cin >> tmp;
-    const size_t size = 4096;//256*5;
+    const size_t size = 32;//256*5;
     uint32_t *data = new uint32_t[size];
     uint32_t *resp = new uint32_t[size];
     for(unsigned i=0; i<size; i++)

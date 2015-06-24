@@ -83,6 +83,7 @@ class OccupancyAnalysis : public AnalysisAlgorithm {
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         unsigned n_count;
+        unsigned injections;
         std::map<unsigned, Histo2d*> occMaps;
         std::map<unsigned, unsigned> innerCnt;
 };

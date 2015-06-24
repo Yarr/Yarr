@@ -9,14 +9,15 @@
 #include "LoopActionBase.h"
 #include "ClipBoard.h"
 #include "RawData.h"
+#include <signal.h>
 
 class StdDataLoop: public LoopActionBase {
     public:
         StdDataLoop();
-        void connect(ClipBoard<RawData> *clipboard);
+        void connect(ClipBoard<RawDataContainer> *clipboard);
         
     private:
-        ClipBoard<RawData> *storage;
+        ClipBoard<RawDataContainer> *storage;
         unsigned counter;
         void init();
         void end();

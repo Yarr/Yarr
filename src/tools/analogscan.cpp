@@ -61,7 +61,7 @@ int main(void) {
     Fei4 g_fe(&tx, 0);
     Fei4 fe(&tx, 0);
 
-    ClipBoard<RawData> clipRaw;
+    ClipBoard<RawDataContainer> clipRaw;
     std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;
     ClipBoard<Fei4Data> clipEvent0;
     ClipBoard<Fei4Data> clipEvent1;
@@ -109,7 +109,9 @@ int main(void) {
     fe.configure();
     fe.configurePixels();
     while(!tx.isCmdEmpty());
-    rx.setRxEnable(0xFFFF);
+    rx.setRxEnable(0x1);
+    
+    std::this_thread::sleep_for(std::chrono::microseconds(1000));
 
     std::chrono::steady_clock::time_point config = std::chrono::steady_clock::now();
     std::cout << "### Pre Scan ###" << std::endl;

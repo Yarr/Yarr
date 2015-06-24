@@ -25,9 +25,6 @@ void analysis(unsigned ch, ScanBase *s, ClipBoard<Fei4Data> *events) {
     std::cout << "### Histogramming data ###" << std::endl;
     Fei4Histogrammer histogrammer;
     histogrammer.addHistogrammer(new OccupancyMap());
-    //histogrammer.addHistogrammer(new TotMap());
-    //histogrammer.addHistogrammer(new Tot2Map());
-    //histogrammer.addHistogrammer(new L1Dist());
     histogrammer.connect(events, &clipHisto);
     histogrammer.process();
     
@@ -45,7 +42,6 @@ void analysis(unsigned ch, ScanBase *s, ClipBoard<Fei4Data> *events) {
     std::cout << "### Saving ###" << std::endl;
     std::string channel = "ch" + std::to_string(ch);
     ana.plot(channel+ "_digitalscan");
-    //histogrammer.toFile("analogscan");
     std::cout << "... done!" << std::endl;
 }
 
@@ -61,7 +57,7 @@ int main(void) {
     Fei4 g_fe(&tx, 0);
     Fei4 fe(&tx, 0);
 
-    ClipBoard<RawData> clipRaw;
+    ClipBoard<RawDataContainer> clipRaw;
     std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;
     ClipBoard<Fei4Data> clipEvent0;
     ClipBoard<Fei4Data> clipEvent1;
@@ -109,8 +105,8 @@ int main(void) {
     fe.configure();
     fe.configurePixels();
     while(!tx.isCmdEmpty());
-    rx.setRxEnable(0x1);
-
+    rx.setRxEnable(0xFFFF);
+    
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
     
     std::chrono::steady_clock::time_point config = std::chrono::steady_clock::now();
@@ -137,7 +133,6 @@ int main(void) {
     proc.process();
     std::cout << "Collected: " << clipEvent1.size() << " Events" << std::endl;
     std::chrono::steady_clock::time_point pro = std::chrono::steady_clock::now();
-    return 0;
 
     std::thread t1(analysis, 0, &digScan, &clipEvent0);
     std::thread t2(analysis, 1, &digScan, &clipEvent1);

@@ -16,7 +16,7 @@
 
 class Fei4GlobalThresholdTune : public ScanBase {
     public:
-        Fei4GlobalThresholdTune(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawData> *data);
+        Fei4GlobalThresholdTune(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data);
         
         void init();
         void preScan();

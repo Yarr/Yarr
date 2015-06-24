@@ -50,6 +50,7 @@ int main(void) {
     overall_data = 0;
     overall_time = 0;
 
+
     std::cout << "===========================================" << std::endl;
     std::cout << "Starting DMA Read Benchmark:" << std::endl;
     for (int cycles=0; cycles<maxCycles; cycles++) {

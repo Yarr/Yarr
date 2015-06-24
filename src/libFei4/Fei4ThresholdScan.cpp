@@ -8,7 +8,7 @@
 
 #include "Fei4ThresholdScan.h"
 
-Fei4ThresholdScan::Fei4ThresholdScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawData> *data) : ScanBase(fe, tx, rx, data) {
+Fei4ThresholdScan::Fei4ThresholdScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data) : ScanBase(fe, tx, rx, data) {
     mask = MASK_16;
     dcMode = QUAD_DC;
     numOfTriggers = 100;
@@ -63,7 +63,7 @@ void Fei4ThresholdScan::init() {
 
 // Do necessary pre-scan configuration
 void Fei4ThresholdScan::preScan() {
-    g_fe->writeRegister(&Fei4::Trig_Count, 12);
+    g_fe->writeRegister(&Fei4::Trig_Count, 8);
     g_fe->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
     g_fe->writeRegister(&Fei4::PlsrDAC, 300);
     g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 

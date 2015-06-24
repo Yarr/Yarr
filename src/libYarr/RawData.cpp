@@ -7,5 +7,5 @@ RawData::RawData(uint32_t arg_adr, uint32_t *arg_buf, unsigned arg_words) {
 }
 
 RawData::~RawData() {
-    delete[] buf;
+    //delete[] buf;
 }

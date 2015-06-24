@@ -8,7 +8,7 @@
 
 #include "Fei4GlobalThresholdTune.h"
 
-Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawData> *data) : ScanBase(fe, tx, rx, data) {
+Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data) : ScanBase(fe, tx, rx, data) {
     mask = MASK_16;
     dcMode = QUAD_DC;
     numOfTriggers = 100;
@@ -29,7 +29,7 @@ Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Fei4 *fe, TxCore *tx, RxCore *r
 void Fei4GlobalThresholdTune::init() {
     // Loop 0: Feedback
     std::shared_ptr<Fei4GlobalFeedbackBase> fbLoop(Fei4GlobalFeedbackBuilder(&Fei4::Vthin_Fine));
-    fbLoop->setStep(20);
+    fbLoop->setStep(16);
     fbLoop->setMax(250);
 
     // Loop 1: Mask Staging

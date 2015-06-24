@@ -39,6 +39,10 @@ Bookkeeper::~Bookkeeper() {
     resultMutex.unlock();
 }
 
+void Bookkeeper::addFe(unsigned channel, Fei4 *fe) {
+    feList.push_back(std::pair<unsigned, Fei4*>(channel, fe));
+}
+
 void Bookkeeper::pushData(RawData *d) {
     rawDataMutex.lock();
     rawDataList.push_back(d);

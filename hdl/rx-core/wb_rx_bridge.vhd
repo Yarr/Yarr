@@ -93,11 +93,11 @@ architecture Behavioral of wb_rx_bridge is
 	
 	-- Constants
 	constant c_ALMOST_FULL_THRESHOLD : unsigned(10 downto 0) := TO_UNSIGNED(1900, 11);
-	constant c_PACKAGE_SIZE : unsigned(31 downto 0) := TO_UNSIGNED((250*256), 32); -- 250kByte
+	constant c_PACKAGE_SIZE : unsigned(31 downto 0) := TO_UNSIGNED((200*256), 32); -- 200kByte
 	constant c_TIMEOUT : unsigned(31 downto 0) := TO_UNSIGNED(2**14, 32); -- Counts in 5ns = 0.1ms
 	constant c_TIME_FRAME : unsigned(31 downto 0) := TO_UNSIGNED(200000000-1, 32); -- 200MHz clock cycles in 1 sec
-	constant c_EMPTY_THRESHOLD : unsigned(10 downto 0) := TO_UNSIGNED(31, 11);
-	constant c_EMPTY_TIMEOUT : unsigned(10 downto 0) := TO_UNSIGNED(1000, 11);
+	constant c_EMPTY_THRESHOLD : unsigned(10 downto 0) := TO_UNSIGNED(16, 11);
+	constant c_EMPTY_TIMEOUT : unsigned(10 downto 0) := TO_UNSIGNED(2000, 11);
 	
 	-- Signals
 	signal data_fifo_din : std_logic_vector(31 downto 0);

@@ -8,7 +8,7 @@
 
 #include "Fei4TotScan.h"
 
-Fei4TotScan::Fei4TotScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawData> *data) : ScanBase(fe, tx, rx, data) {
+Fei4TotScan::Fei4TotScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data) : ScanBase(fe, tx, rx, data) {
     mask = MASK_16;
     dcMode = QUAD_DC;
     numOfTriggers = 100;
@@ -17,7 +17,7 @@ Fei4TotScan::Fei4TotScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawData> *d
     useScap = true;
     useLcap = true;
 
-    target = 16000;
+    target = 15000;
 
     verbose = false;
 }

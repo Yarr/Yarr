@@ -121,12 +121,12 @@ void Histo1d::plot(std::string prefix) {
     // Put raw histo data in tmp file
     std::string tmp_name = "/tmp/tmp_yarr_histo1d_" + prefix;
     this->toFile(tmp_name, false);
-    std::string cmd = "gnuplot | ps2pdf - " + prefix + "_" + HistogramBase::name + ".pdf";
+    std::string cmd = "gnuplot | epstopdf -f > " + prefix + "_" + HistogramBase::name + ".pdf";
 
     // Open gnuplot as file and pipe commands
     FILE *gnu = popen(cmd.c_str(), "w");
     
-    fprintf(gnu, "set terminal postscript enhanced color \"Helvetica\" 14\n");
+    fprintf(gnu, "set terminal postscript enhanced color \"Helvetica\" 18 eps\n");
     fprintf(gnu, "unset key\n");
     fprintf(gnu, "set title \"%s\"\n" , HistogramBase::name.c_str());
     fprintf(gnu, "set xlabel \"%s\"\n" , HistogramBase::xAxisTitle.c_str());
