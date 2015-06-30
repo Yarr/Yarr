@@ -612,6 +612,7 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
 }
 
 void OccPixelThresholdTune::init(ScanBase *s) {
+	std::cout << "Analysis on Channel: " << channel << std::endl;
     n_count = 1;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
@@ -674,7 +675,7 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
     // Add up Histograms
     occMaps[ident]->add(*(Histo2d*)h);
     innerCnt[ident]++;
-    
+
     // Got all data, finish up Analysis
     if (innerCnt[ident] == n_count) {
         double mean = 0;
@@ -695,8 +696,8 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
         }
         std::cout << "Mean Occupancy: " << mean/(26880*(double)injections) << std::endl;
         
-        std::cout << "Sending feedback" << std::endl;
-        fb->feedback(fbHisto);
+        std::cout << "Sending feedback on channel #" << this->channel << std::endl;
+        fb->feedback(this->channel, fbHisto);
         output->pushData(occMaps[ident]);
         output->pushData(occDist);
         innerCnt[ident] = 0;

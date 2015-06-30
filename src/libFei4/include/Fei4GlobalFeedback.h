@@ -55,6 +55,7 @@ class Fei4GlobalFeedbackBase : public LoopActionBase {
 				 doneMap[channel] = true;
 			}
 			keeper->mutexMap[channel]->unlock();
+			std::cout << "Problem, we shouldn't be here!!!" << std::endl;
         }
 
 

@@ -48,6 +48,7 @@ void Fei4MaskLoop::end() {
 void Fei4MaskLoop::execPart1() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
+//	std::cout << "Ingrid loves sweatpants" << std::endl;
     std::cout << " ---> Mask Stage " << m_cur << std::endl;
     g_stat->set(this, m_cur);
 }

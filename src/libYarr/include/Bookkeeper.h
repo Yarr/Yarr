@@ -45,12 +45,17 @@ class Bookkeeper {
         TxCore *tx;
         RxCore *rx;
 
-        ClipBoard<RawDataContainer> *data;
+        ClipBoard<RawDataContainer> *rawData;
+//	    std::map<unsigned, ClipBoard<HistogramBase>* > histoData;
+//	    std::map<unsigned, ClipBoard<HistogramBase>* > resultData;
+
 	    std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;
 		std::vector<Fei4*> feList;
-		std::vector<Fei4*> configFeList;
+		std::vector<Fei4*> activeFeList;
 
 		std::map<unsigned, std::mutex*> mutexMap;	// <channel, mutex>
+
+		int dummy();
 
     private:
 		uint32_t activeMask;

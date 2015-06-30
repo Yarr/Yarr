@@ -88,30 +88,12 @@ int main(void) {
 
     ClipBoard<RawDataContainer> clipRaw;
     Bookkeeper keeper(&tx, &rx);
-	keeper.data = &clipRaw;
+	keeper.rawData = &clipRaw;
 
     std::string cfgName = "test_config.bin";
 
-//    keeper.g_fe(&tx, 8);
-
-
 	keeper.addFe(0,0);
 	keeper.addFe(1,0);
-/*	keeper.addFe(2,0);
-	keeper.addFe(3,0);
-	keeper.addFe(4,0);
-	keeper.addFe(5,0);
-	keeper.addFe(6,0);
-	keeper.addFe(7,0);
-	keeper.addFe(8,0);
-	keeper.addFe(9,0);
-	keeper.addFe(10,0);
-	keeper.addFe(11,0);
-	keeper.addFe(12,0);
-	keeper.addFe(13,0);
-	keeper.addFe(14,0);
-	keeper.addFe(15,0);*/
-
 
 	keeper.g_fe->setChipId(8);
     keeper.g_fe->fromFileBinary(cfgName);
@@ -120,42 +102,6 @@ int main(void) {
 	    keeper.feList[k]->fromFileBinary(cfgName);
 	}
 
-    std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;
-    ClipBoard<Fei4Data> clipEvent0;
-    ClipBoard<Fei4Data> clipEvent1;
-    ClipBoard<Fei4Data> clipEvent2;
-    ClipBoard<Fei4Data> clipEvent3;
-    ClipBoard<Fei4Data> clipEvent4;
-    ClipBoard<Fei4Data> clipEvent5;
-    ClipBoard<Fei4Data> clipEvent6;
-    ClipBoard<Fei4Data> clipEvent7;
-    ClipBoard<Fei4Data> clipEvent8;
-    ClipBoard<Fei4Data> clipEvent9;
-    ClipBoard<Fei4Data> clipEvent10;
-    ClipBoard<Fei4Data> clipEvent11;
-    ClipBoard<Fei4Data> clipEvent12;
-    ClipBoard<Fei4Data> clipEvent13;
-    ClipBoard<Fei4Data> clipEvent14;
-    ClipBoard<Fei4Data> clipEvent15;
-
-    eventMap[0] = &clipEvent0;
-    eventMap[1] = &clipEvent1;
-    eventMap[2] = &clipEvent2;
-    eventMap[3] = &clipEvent3;
-    eventMap[4] = &clipEvent4;
-    eventMap[5] = &clipEvent5;
-    eventMap[6] = &clipEvent6;
-    eventMap[7] = &clipEvent7;
-    eventMap[8] = &clipEvent8;
-    eventMap[9] = &clipEvent9;
-    eventMap[10] = &clipEvent10;
-    eventMap[11] = &clipEvent11;
-    eventMap[12] = &clipEvent12;
-    eventMap[13] = &clipEvent13;
-    eventMap[14] = &clipEvent14;
-    eventMap[15] = &clipEvent15;
-    
-//    Fei4GlobalThresholdTune thrTune(&g_fe, &tx, &rx, &clipRaw);
     Fei4GlobalThresholdTune thrTune(&keeper);
 
     std::chrono::steady_clock::time_point init = std::chrono::steady_clock::now();
@@ -172,16 +118,8 @@ int main(void) {
 		while(!tx.isCmdEmpty());
 	}
 
-/*
-    tx.setCmdEnable(0x1);
-    fe.setRunMode(false);
-    fe.configure();
-    fe.configurePixels();
-    while(!tx.isCmdEmpty());
-*/
-
-	tx.setCmdEnable(0x3);		// Ingrid still has to set this
-    rx.setRxEnable(0x3);		// Ingrid still has to set thiss
+	tx.setCmdEnable(keeper.collectActiveMask());		// Ingrid still has to set this
+    rx.setRxEnable(keeper.collectActiveMask());			// Ingrid still has to set thiss
     
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
     
@@ -189,28 +127,15 @@ int main(void) {
     std::cout << "### Pre Scan ###" << std::endl;
     thrTune.preScan();
 
-    std::thread p1(processing, keeper.g_fe, &clipRaw, eventMap);
-    std::thread p2(processing, keeper.g_fe, &clipRaw, eventMap);
-    std::thread p3(processing, keeper.g_fe, &clipRaw, eventMap);
-    std::thread p4(processing, keeper.g_fe, &clipRaw, eventMap);
+    std::thread p1(processing, keeper.g_fe, &clipRaw, keeper.eventMap);
+    std::thread p2(processing, keeper.g_fe, &clipRaw, keeper.eventMap);
+    std::thread p3(processing, keeper.g_fe, &clipRaw, keeper.eventMap);
+    std::thread p4(processing, keeper.g_fe, &clipRaw, keeper.eventMap);
 
-    std::thread t1(analysis, 0, &thrTune, &clipEvent0);
-    std::thread t2(analysis, 1, &thrTune, &clipEvent1);
-/*    std::thread t3(analysis, 2, &thrTune, &clipEvent2);
-    std::thread t4(analysis, 3, &thrTune, &clipEvent3);
-    std::thread t5(analysis, 4, &thrTune, &clipEvent4);
-    std::thread t6(analysis, 5, &thrTune, &clipEvent5);
-    std::thread t7(analysis, 6, &thrTune, &clipEvent6);
-    std::thread t8(analysis, 7, &thrTune, &clipEvent7);
-    std::thread t9(analysis, 8, &thrTune, &clipEvent8);
-    std::thread t10(analysis, 9, &thrTune, &clipEvent9);
-    std::thread t11(analysis, 10, &thrTune, &clipEvent10);
-    std::thread t12(analysis, 11, &thrTune, &clipEvent11);
-    std::thread t13(analysis, 12, &thrTune, &clipEvent12);
-    std::thread t14(analysis, 13, &thrTune, &clipEvent13);
-    std::thread t15(analysis, 14, &thrTune, &clipEvent14);
-    std::thread t16(analysis, 15, &thrTune, &clipEvent15);*/
-    
+    std::thread t1(analysis, 0, &thrTune, keeper.eventMap[0]);
+    std::thread t2(analysis, 1, &thrTune, keeper.eventMap[1]);
+
+   
     std::cout << "### Scan ###" << std::endl;
     thrTune.run();
 
@@ -223,7 +148,6 @@ int main(void) {
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     scanDone = true;  
 
-
     std::cout << "Collected: " << clipRaw.size() << " Raw Data Fragments" << std::endl;
     std::chrono::steady_clock::time_point scan = std::chrono::steady_clock::now();
 
@@ -234,10 +158,9 @@ int main(void) {
 
     processorDone = true; 
 
-    std::cout << "Collected: " << clipEvent0.size() << " Events" << std::endl;
+    std::cout << "Collected: " << keeper.eventMap[0]->size() << " Events" << std::endl;
     std::chrono::steady_clock::time_point pro = std::chrono::steady_clock::now();
     
-
     t1.join();
     t2.join();
 /*    t3.join();

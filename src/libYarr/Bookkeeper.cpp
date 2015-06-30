@@ -22,6 +22,7 @@ Bookkeeper::~Bookkeeper() {
 void Bookkeeper::addFe(unsigned channel, unsigned chipId) {
     feList.push_back(new Fei4(tx, chipId, channel));
 	mutexMap.insert(std::pair<unsigned, std::mutex*>(channel,new std::mutex));
+	prepareMap();
 }
 
 int Bookkeeper::removeFe(unsigned arg_channel) {
@@ -30,6 +31,7 @@ int Bookkeeper::removeFe(unsigned arg_channel) {
 			delete feList[k];
 			feList.erase(feList.begin() + k);
 			mutexMap.erase(arg_channel);
+			prepareMap();
 			return arg_channel;
 		}
 	}
@@ -38,6 +40,7 @@ int Bookkeeper::removeFe(unsigned arg_channel) {
 
 int Bookkeeper::removeFe(Fei4* fe) {
 	unsigned arg_channel = fe->getChannel();
+	prepareMap();
 	return removeFe(arg_channel);
 }
 
@@ -52,10 +55,10 @@ Fei4* Bookkeeper::getFei4byChannel(unsigned arg_channel) {
 
 int Bookkeeper::prepareMap() {
 	unsigned int n = 0;
-	configFeList.clear();
+	activeFeList.clear();
 	for(unsigned int j=0; j<feList.size(); j++) {
 		if(feList[j]->getActive() == true) {
-			configFeList.push_back(feList[j]);
+			activeFeList.push_back(feList[j]);
 			this->eventMap.emplace(n,&feList[j]->clipDataFei4);
 			n += 1;
 		}
@@ -90,5 +93,9 @@ uint32_t Bookkeeper::collectActiveMask() {
 	}
 	activeMask = newMask;
 	return activeMask;
+}
+
+int Bookkeeper::dummy() {
+	return 667;
 }
 
