@@ -12,6 +12,7 @@ Bookkeeper::Bookkeeper(TxCore *arg_tx, RxCore *arg_rx) {
 	tx = arg_tx;
 	rx = arg_rx;
 	g_fe = new Fei4(tx, 0);
+	usedChannels = 0x0;
 }
 
 // Delete all leftover data, Bookkeeper should be deleted last
@@ -20,15 +21,24 @@ Bookkeeper::~Bookkeeper() {
 }
 
 void Bookkeeper::addFe(unsigned channel, unsigned chipId) {
+	if(isChannelUsed(channel)) {
+		std::cout << "No FE added on channel #" << channel << " with chipId " << chipId << std::endl;
+		return;
+	}
+	usedChannels |= (1<< channel);
     feList.push_back(new Fei4(tx, chipId, channel));
 	mutexMap.insert(std::pair<unsigned, std::mutex*>(channel,new std::mutex));
 	prepareMap();
 }
 
 int Bookkeeper::removeFe(unsigned arg_channel) {
+		// This way is valid if channel numbers are unique!
 	for(unsigned int k=0; k<feList.size(); k++) {
 		if(feList[k]->getChannel() == arg_channel) {
 			delete feList[k];
+
+				usedChannels &= !(1 << arg_channel);
+
 			feList.erase(feList.begin() + k);
 			mutexMap.erase(arg_channel);
 			prepareMap();
@@ -66,11 +76,22 @@ int Bookkeeper::prepareMap() {
 	return n;
 }
 
+bool Bookkeeper::isChannelUsed(unsigned arg_channel) {
+	uint32_t ch = 1 << arg_channel;
+	if(ch & usedChannels) {
+		std::cout << "Error: channel #" << arg_channel << " already assigned to a FE!" << std::endl;
+		return true;
+	}
+	else
+		return false;
+}
+
 uint32_t Bookkeeper::setFeActive(Fei4 *fe) {
 	fe->setActive(true);
 	uint32_t data = 0;
 	data = 1 << fe->getChannel();
 	activeMask |= data;
+	this->prepareMap();
 	return activeMask;
 }
 
@@ -79,6 +100,7 @@ uint32_t Bookkeeper::setFeInactive(Fei4 *fe) {
 	uint32_t data = 0;
 	data = 1 << fe->getChannel();
 	activeMask &= !data;
+	this->prepareMap();
 	return activeMask;
 }
 
