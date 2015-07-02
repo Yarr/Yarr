@@ -241,3 +241,49 @@ void YarrGui::on_startRead_button_clicked() {
         }
     }       
 }
+
+void YarrGui::on_NoiseScanButton_clicked()
+{
+
+}
+
+void YarrGui::on_sbefile_button_2_clicked()
+{
+    QString filename = QFileDialog::getOpenFileName(this, tr("Select EEPROM content file"), "./", tr("SpecBoard EEPROM content file(*.sbe)"));
+    std::fstream file(filename.toStdString().c_str(), std::fstream::in);
+    if (!file) {
+        QMessageBox errorBox;
+        errorBox.critical(0, "Error", "A problem occured. ");
+        ui->sbefile_name->setText("");
+        return;
+    }
+    ui->sbefile_name->setText(filename);
+}
+
+void YarrGui::on_SBEWriteButton_clicked()
+{
+    int index = ui->device_comboBox->currentIndex();
+    uint8_t * buffer = new uint8_t[ARRAYLENGTH];
+    std::string pathname;
+    pathname = ui->sbefile_name->text().toStdString().c_str();
+
+    specVec.at(index)->getSbeFile(pathname, buffer, ARRAYLENGTH);
+    specVec.at(index)->writeEeprom(buffer, ARRAYLENGTH, 0);
+
+    delete buffer;
+
+}
+
+void YarrGui::on_SBEReadButton_clicked()
+{
+    int index = ui->device_comboBox->currentIndex();
+    uint8_t * buffer = new uint8_t[ARRAYLENGTH];
+    std::string fnKeyword;
+    fnKeyword = ui->filename_keyword->text().toStdString().c_str();
+
+    mySpec.readEeprom(buffer, ARRAYLENGTH);
+    mySpec.createSbeFile(fnKeyword, buffer, ARRAYLENGTH);
+
+    delete buffer;
+
+}
