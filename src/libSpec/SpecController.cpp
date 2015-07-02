@@ -649,3 +649,126 @@ uint32_t SpecController::writeEeprom(uint8_t * buffer, uint32_t len, uint32_t of
 
     return totalTransfer;
 }
+
+void SpecController::createSbeFile(std::string fnKeyword, uint8_t * buffer, uint32_t length) {
+    std::string filepath;
+    {
+        if(length != ARRAYLENGTH) {
+            std::cout << "Wrong uint8_t array length. Aborting... \n";
+            exit(-1);
+        }
+        struct tm * timeinfo;
+        time_t rawtime;
+        time(&rawtime);
+        timeinfo = localtime(&rawtime);
+
+        filepath =   "EEPROMContent/"
+                   + fnKeyword + std::to_string(1900+(timeinfo->tm_year)) + '_'
+                   + std::to_string(1+(timeinfo->tm_mon)) + '_'
+                   + std::to_string((timeinfo->tm_mday)) + '_'
+                   + std::to_string((timeinfo->tm_hour)) + '_'
+                   + std::to_string((timeinfo->tm_min)) + '_'
+                   + std::to_string((timeinfo->tm_sec)) + ".sbe"; //SpecBoard EEPROM content file (sbe)
+    }
+
+    std::ofstream oF(filepath);
+    if(!oF) {
+        std::cout << "Could not create output file. Aborting... \n";
+        exit(-1);
+    }
+
+    oF << std::hex;
+    oF << std::showbase;
+    oF << std::setw(9) << "addr" << std::setw(5) << "msk" << std::setw(12) << "data" << std::endl;
+    //256/6 = 42; 256%6 = 4
+    {
+        uint16_t a;     //address
+        uint8_t  m;     //mask
+        uint32_t d;     //data
+        for(unsigned int i = 0; i<(ARRAYLENGTH / 6); i++) {
+            a  = ((buffer[i*6] | (buffer[i*6+1] << 8)) & 0xffc);
+            m  = ((buffer[i*6+1] & 0xf0) >> 4);
+            d  = (buffer[i*6+2] | (buffer[i*6+3] << 8) | (buffer[i*6+4] << 16) | (buffer[i*6+5] << 24));
+            oF << std::setw(9) << a << std::setw(5) << (int)m << std::setw(12) << d << std::endl;
+        }
+    }
+    oF << std::dec;
+    oF << std::noshowbase;
+    oF.close();
+
+}
+
+void SpecController:getSbeFile(std::string pathname, uint8_t * buffer, uint32_t length) {
+
+    if(length != ARRAYLENGTH) {
+        std::cout << "Wrong uint8_t array length. Aborting... \n";
+        exit(-1);
+    }
+
+    std::ifstream iF(pathname);
+
+    {
+        std::string tmpStr;
+        std::getline(iF, tmpStr);
+        if(tmpStr != "     addr  msk        data") {
+            std::cout << "Invalid headline. \n "
+                      << "Note that it is encouraged to automatically create an sbe file \n"
+                      << "using the EEPROM read functionality, copy the file, do desired \n"
+                      << "changes by hand and use this file to write to the EEPROM. \n";
+            exit(-1);
+        }
+    }
+
+    {
+        uint32_t tmpInt;
+        unsigned int i = 0;
+        iF >> std::hex;
+        iF >> std::showbase;
+        while(iF >> tmpInt) {
+            if(i == ARRAYLENGTH) {
+                std::cout << "sbe file too big. Aborting... \nWARNING the EEPROM content has probably been modified!\n";
+                exit(-1);
+            }
+            switch(i%3) {
+            case 0:
+                if(tmpInt>0xFFF) {
+                    std::cout << "Invalid address size in line " << i/3 + 1 << ". Aborting... \n";
+                    exit(-1);
+                }
+                *(buffer+i) = (tmpInt & 0xFF);
+                i++;
+                *(buffer+i) = ((tmpInt >> 8) & 0xF);
+                break;
+            case 1:
+                if(tmpInt>0xF) {
+                    std::cout << "Invalid mask size in line " << i/3 + 1 << ". Aborting... \n";
+                    exit(-1);
+                }
+                *(buffer+i) |= ((tmpInt & 0xF) << 4);
+                i++;
+                break;
+            case 2:
+                if(tmpInt>0xFFFFFFFF) {
+                    std::cout << "Invalid data size in line " << i/3 + 1 << ". Aborting... \n";
+                    exit(-1);
+                }
+                *(buffer+i)   = (tmpInt & 0xFF);
+                *(buffer+i+1) = ((tmpInt >>  8) & 0xFF);
+                *(buffer+i+2) = ((tmpInt >> 16) & 0xFF);
+                *(buffer+i+3) = ((tmpInt >> 24) & 0xFF);
+                i+=4; //equivalent i->i+3+1, case structure invariant under i->i+3
+                break;
+            }
+        }
+        iF >> std::dec;
+        iF >> std::noshowbase;
+        if(i!=ARRAYLENGTH) {
+            std::cout << "Input file incomplete. Aborting... \nWARNING the EEPROM content has probably been modified!\n";
+            exit(-1);
+        }
+    }
+    
+    return;
+
+}
+

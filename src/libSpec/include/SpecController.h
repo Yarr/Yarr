@@ -17,6 +17,8 @@
 #include <UserMemory.h>
 #include <Exception.h>
 
+#define ARRAYLENGTH 252
+
 enum SPEC_DMA_REG {
     DMACTRLR = 0x0,
     DMASTATR = 0x1,
@@ -70,6 +72,8 @@ class SpecController {
         int progFpga(const void *data, size_t size);
         uint32_t readEeprom(uint8_t * buffer, uint32_t len);
         uint32_t writeEeprom(uint8_t * buffer, uint32_t len, uint32_t offs);
+        void createSbeFile(std::string fnKeyword, uint8_t * buffer, uint32_t length);
+        void getSbeFile(std::string pathname, uint8_t * buffer, uint32_t length);
 
     private:
         unsigned int specId;
