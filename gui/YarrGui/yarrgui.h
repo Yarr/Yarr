@@ -15,6 +15,9 @@
 #include "SpecController.h"
 #include "qcustomplot.h"
 
+#include <unistd.h>
+#include <sys/wait.h>
+
 namespace Ui {
 class YarrGui;
 }
@@ -40,6 +43,14 @@ private slots:
     void on_maxSize_spinBox_valueChanged(int i);
     void on_startWrite_button_clicked();
     void on_startRead_button_clicked();
+    void on_NoiseScanButton_clicked();
+
+    void on_sbefile_button_2_clicked();
+
+    void on_SBEWriteButton_clicked();
+
+    void on_SBEReadButton_clicked();
+
 private:
     Ui::YarrGui *ui;
     
