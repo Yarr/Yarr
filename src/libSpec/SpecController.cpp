@@ -10,9 +10,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <cstring>
 #include <unistd.h>
+#include <iomanip>
 
 #include <SpecController.h>
 #include <GennumRegMap.h>
@@ -708,7 +710,7 @@ void SpecController::createSbeFile(std::string fnKeyword, uint8_t * buffer, uint
                    + std::to_string((timeinfo->tm_sec)) + ".sbe"; //SpecBoard EEPROM content file (sbe)
     }
 
-    std::ofstream oF(filepath);
+    std::fstream oF(filepath);
     if(!oF) {
         std::cout << "Could not create output file. Aborting... \n";
         exit(-1);
@@ -735,7 +737,7 @@ void SpecController::createSbeFile(std::string fnKeyword, uint8_t * buffer, uint
 
 }
 
-void SpecController:getSbeFile(std::string pathname, uint8_t * buffer, uint32_t length) {
+void SpecController::getSbeFile(std::string pathname, uint8_t * buffer, uint32_t length) {
 
     if(length != ARRAYLENGTH) {
         std::cout << "Wrong uint8_t array length. Aborting... \n";
