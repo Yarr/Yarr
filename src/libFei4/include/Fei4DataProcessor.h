@@ -37,6 +37,10 @@ class Fei4DataProcessor : public DataProcessor {
         std::vector<unsigned> activeChannels;
         unsigned hitDiscCfg;
         std::array<std::array<unsigned, 16>, 3> totCode;
+        std::map<unsigned, unsigned> l1id;
+        std::map<unsigned, unsigned> bcid;
+        std::map<unsigned, unsigned> wordCount;
+        std::map<unsigned, int> hits;        
 };
 
 #endif

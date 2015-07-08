@@ -213,8 +213,8 @@ begin
 			rx_data_raw_o => rx_data_raw(I)
 		);
 		
-		rx_fifo_din(I) <= STD_LOGIC_VECTOR(TO_UNSIGNED(I,8)) & rx_data(0);
-		rx_fifo_wren(I) <= rx_valid(0) and rx_enable(I);
+		rx_fifo_din(I) <= STD_LOGIC_VECTOR(TO_UNSIGNED(I,8)) & rx_data(I);
+		rx_fifo_wren(I) <= rx_valid(I) and rx_enable(I);
 		cmp_rx_channel_fifo : rx_channel_fifo PORT MAP (
 			rst => not rst_n_i,
 			wr_clk => rx_clk_i,

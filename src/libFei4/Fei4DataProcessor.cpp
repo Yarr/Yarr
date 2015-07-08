@@ -25,11 +25,6 @@ void Fei4DataProcessor::init() {
 }
 
 void Fei4DataProcessor::process() {
-    std::map<unsigned, unsigned> l1id;
-    std::map<unsigned, unsigned> bcid;
-    std::map<unsigned, unsigned> wordCount;
-    std::map<unsigned, int> hits;
-
     unsigned badCnt = 0;
     for (unsigned i=0; i<activeChannels.size(); i++) {
         l1id[i] = 0;
@@ -54,17 +49,19 @@ void Fei4DataProcessor::process() {
             events[i] = 0;
         }
 
-        for(unsigned c=0; c<curInV->size(); c++) {
+        unsigned size = curInV->size();
+        for(unsigned c=0; c<size; c++) {
             RawData *curIn = new RawData(curInV->adr[c], curInV->buf[c], curInV->words[c]);
             // Process
-            for (unsigned i=0; i<curIn->words; i++) {
+            unsigned words = curIn->words;
+            for (unsigned i=0; i<words; i++) {
                 uint32_t value = curIn->buf[i];
                 uint32_t header = ((value & 0x00FF0000) >> 16);
                 unsigned channel = ((value & 0xFF000000) >> 24);
                 wordCount[channel]++;
-                if (value == 0xDEADBEEF)
+                if (__builtin_expect((value == 0xDEADBEEF), 0)) {
                     std::cout << "# ERROR # " << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << curIn->words << " " << std::hex << value << " " << std::dec << std::endl;
-                if (curOut[channel] == NULL) {
+                } else if (__builtin_expect((curOut[channel] == NULL), 0)) {
                     std::cout << "# ERROR # " << __PRETTY_FUNCTION__ << " : Received data for channel " << channel << " but storage not initiliazed!" << std::endl;
                 } else if (header == 0xe9) {
                     // Pixel Header
@@ -78,9 +75,9 @@ void Fei4DataProcessor::process() {
                     unsigned code = (value & 0xFC00) >> 10;
                     unsigned number = value & 0x03FF;
                     curOut[channel]->serviceRecords[code]+=number;
-                } else if (header == 0xea) {
+                //} else if (header == 0xea) {
                     // Address Record
-                } else if (header == 0xec) {
+                //} else if (header == 0xec) {
                     // Value Record
                 } else {
                     uint16_t col = (value & 0xFE0000) >> 17;
@@ -93,22 +90,18 @@ void Fei4DataProcessor::process() {
                         events[channel]++;
                         //hits[channel] = 0;
                     }
-                    if (col == 0 || row == 0 || col > 80 || row > 336) {
+                    if (__builtin_expect((col == 0 || row == 0 || col > 80 || row > 336), 0)) {
                         badCnt++;
                         std::cout << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << curIn->words << " " << std::hex << value << " " << std::dec << std::endl;
-                        if (i > 0) 
-                            std::cout << "   " << std::hex << curIn->buf[i-1] << std::dec << std::endl;
-                        if (i < (curIn->words-1))
-                            std::cout << "   " << std::hex << curIn->buf[i+1] << std::dec << std::endl;
                     } else {
-                        if (totCode[hitDiscCfg][tot1] > 0) {
-                            if (curOut[channel] != NULL)
-                                curOut[channel]->curEvent->addHit(row, col, totCode[hitDiscCfg][tot1]);
+                        unsigned dec_tot1 = totCode[hitDiscCfg][tot1];
+                        unsigned dec_tot2 = totCode[hitDiscCfg][tot2];
+                        if (dec_tot1 > 0) {
+                            curOut[channel]->curEvent->addHit(row, col, dec_tot1);
                             hits[channel]++;
                         }
-                        if (totCode[hitDiscCfg][tot1] > 0) {
-                            if (curOut[channel] != NULL)
-                                curOut[channel]->curEvent->addHit(row+1, col, totCode[hitDiscCfg][tot2]);
+                        if (dec_tot2 > 0) {
+                            curOut[channel]->curEvent->addHit(row+1, col, dec_tot2);
                             hits[channel]++;
                         }
                     }
