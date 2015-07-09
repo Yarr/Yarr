@@ -699,3 +699,69 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
     }
     
 }
+
+// TODO exclude every loop
+void L1Analysis::init(ScanBase *s) {
+    n_count = 1;
+    injections = 0;
+    std::shared_ptr<LoopActionBase> tmpVcalLoop(Fei4ParameterLoopBuilder(&Fei4::PlsrDAC));
+    for (unsigned n=0; n<s->size(); n++) {
+        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        if ((l->type() != typeid(Fei4TriggerLoop*) &&
+                    l->type() != typeid(Fei4MaskLoop*) &&
+                    l->type() != typeid(StdDataLoop*) &&
+                    l->type() != typeid(Fei4DcLoop*)) &&
+                    l->type() != tmpVcalLoop->type()) {
+            loops.push_back(n);
+            loopMax.push_back((unsigned)l->getMax());
+        } else {
+            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            if (cnt == 0)
+                cnt = 1;
+            n_count = n_count*cnt;
+        }
+        if (l->type() == typeid(Fei4TriggerLoop*)) {
+            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
+    }
+}
+
+void L1Analysis::processHistogram(HistogramBase *h) {
+    // Check if right Histogram
+    if (h->getType() != typeid(L1Dist*))
+        return;
+
+    // Select correct output container
+    unsigned ident = 0;
+    unsigned offset = 0;
+
+    // Determine identifier
+    std::string name = "L1Dist";
+    for (unsigned n=0; n<loops.size(); n++) {
+        ident += h->getStat().get(loops[n])+offset;
+        offset += loopMax[n];
+        name += "-" + std::to_string(h->getStat().get(loops[n]));
+    }
+
+    // Check if Histogram exists
+    if (l1Histos[ident] == NULL) {
+        Histo1d *hh = new Histo1d(name, 16, -0.5, 15.5, typeid(this));
+        hh->setXaxisTitle("L1Id");
+        hh->setYaxisTitle("Hits");
+        l1Histos[ident] = hh;
+        innerCnt[ident] = 0;
+    }
+
+    // Add up Histograms
+    l1Histos[ident]->add(*(Histo1d*)h);
+    innerCnt[ident]++;
+
+    // Got all data, finish up Analysis
+    if (innerCnt[ident] == n_count) {
+        output->pushData(l1Histos[ident]);
+        
+        //delete occMaps[ident];
+        //occMaps[ident] = NULL;
+    }
+}

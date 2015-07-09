@@ -204,4 +204,22 @@ class OccPixelThresholdTune : public AnalysisAlgorithm {
         Fei4PixelFeedback *fb;
 
 };
+
+class L1Analysis : public AnalysisAlgorithm {
+    public:
+        L1Analysis() : AnalysisAlgorithm() {};
+        ~L1Analysis() {};
+
+        void init(ScanBase *s);
+        void processHistogram(HistogramBase *h);
+        void end() {}
+    private:
+        std::vector<unsigned> loops;
+        std::vector<unsigned> loopMax;
+        unsigned n_count;
+        unsigned injections;
+        std::map<unsigned, Histo1d*> l1Histos;
+        std::map<unsigned, unsigned> innerCnt;
+};
+
 #endif
