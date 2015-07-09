@@ -49,7 +49,6 @@ void StdDataLoop::execPart2() {
     uint32_t startAddr = 0;
 
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
     std::vector<RawData*> tmp_storage;
     RawData *newData = NULL;
     RawDataContainer *rdc = new RawDataContainer();
@@ -67,8 +66,8 @@ void StdDataLoop::execPart2() {
         } while (newData != NULL);
         delete newData;
     }
-    // Gather rest of data after timeout
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    // Gather rest of data after timeout (~0.1ms)
+    std::this_thread::sleep_for(std::chrono::microseconds(500));
     do {
         curCnt = g_rx->getCurCount();
         newData =  g_rx->readData();
@@ -83,7 +82,7 @@ void StdDataLoop::execPart2() {
     rdc->stat = *g_stat;
     storage->pushData(rdc);
         
-    //if (verbose)
+    if (verbose)
         std::cout << " --> Received " << count << " words! " << iterations << std::endl;
     m_done = true;
     counter++;
