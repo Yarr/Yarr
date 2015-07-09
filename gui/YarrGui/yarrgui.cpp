@@ -281,8 +281,8 @@ void YarrGui::on_SBEReadButton_clicked()
     std::string fnKeyword;
     fnKeyword = ui->filename_keyword->text().toStdString().c_str();
 
-    mySpec.readEeprom(buffer, ARRAYLENGTH);
-    mySpec.createSbeFile(fnKeyword, buffer, ARRAYLENGTH);
+    //mySpec.readEeprom(buffer, ARRAYLENGTH);
+    //mySpec.createSbeFile(fnKeyword, buffer, ARRAYLENGTH);
 
     delete buffer;
 
