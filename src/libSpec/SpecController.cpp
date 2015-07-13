@@ -710,7 +710,7 @@ void SpecController::createSbeFile(std::string fnKeyword, uint8_t * buffer, uint
                    + std::to_string((timeinfo->tm_sec)) + ".sbe"; //SpecBoard EEPROM content file (sbe)
     }
 
-    std::fstream oF(filepath);
+    std::ofstream oF(filepath);
     if(!oF) {
         std::cout << "Could not create output file. Aborting... \n";
         exit(-1);
