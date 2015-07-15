@@ -31,6 +31,16 @@ void LoopActionBase::setup(LoopStatus *stat, Fei4 *fe, TxCore *tx, RxCore *rx) {
     g_rx = rx;
 }
 
+void LoopActionBase::setup(LoopStatus *stat, Bookkeeper *k) {
+    if (verbose)
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    g_stat = stat;
+    g_fe = k->g_fe;
+    g_tx = k->tx;
+    g_rx = k->rx;
+	keeper = k;
+}
+
 void LoopActionBase::setNext(shared_ptr<LoopActionBase>& ptr) {
     m_inner = ptr;
 }
@@ -55,7 +65,6 @@ void LoopActionBase::run() {
     this->init();
     while(!this->done()) this->execStep();
     this->end();
-
 }
 
 unsigned LoopActionBase::getMin() {
@@ -80,4 +89,16 @@ void LoopActionBase::setMin(unsigned v) {
 
 void LoopActionBase::setStep(unsigned v) {
     step = v;
+}
+
+bool LoopActionBase::checkGlobalDone() {
+	bool done = true;
+	for(unsigned int j=0; j<keeper->feList.size(); j++) {
+		if(keeper->feList[j]->getActive() == true) {
+		done = done & doneMap[keeper->feList[j]->getChannel()];
+		}
+	}
+	g_done = done;
+	return g_done;
+
 }

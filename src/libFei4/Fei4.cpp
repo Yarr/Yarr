@@ -10,6 +10,21 @@
 
 Fei4::Fei4(TxCore *core, unsigned arg_chipId) : Fei4Cfg(arg_chipId), Fei4Cmd(core) {
     chipId = arg_chipId;
+	histogrammer = NULL;
+	ana = NULL;
+	setActive(true);
+}
+
+Fei4::Fei4(TxCore *core, unsigned arg_chipId, unsigned arg_channel) : Fei4Cfg(arg_chipId), Fei4Cmd(core) {
+    chipId = arg_chipId;
+	channel = arg_channel;
+	histogrammer = NULL;
+	ana = NULL;
+	setActive(true);
+}
+
+Fei4::~Fei4() {	
+
 }
 
 void Fei4::configure() {
@@ -119,4 +134,31 @@ void Fei4::shiftByOne() {
     globalPulse(chipId, 10);
 
     writeRegister(&Fei4::SR_Clock, 0x0);
+}
+
+unsigned Fei4::getChipId() {
+	return this->chipId;
+}
+
+unsigned Fei4::setChipId(unsigned arg_chipId) {
+	this->chipId = arg_chipId;
+	return getChipId();
+}
+
+bool Fei4::getActive() {
+	return this->isActive;
+}
+
+bool Fei4::setActive(bool active) {
+	this->isActive = active;
+	return getActive();
+}
+
+unsigned Fei4::getChannel() {
+	return this->channel;
+}
+
+unsigned Fei4::setChannel(unsigned arg_channel) {
+	this->channel = arg_channel;
+	return getChannel();
 }

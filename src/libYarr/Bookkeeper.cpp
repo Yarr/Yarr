@@ -8,90 +8,116 @@
 
 #include "Bookkeeper.h"
 
-Bookkeeper::Bookkeeper() {
-
+Bookkeeper::Bookkeeper(TxCore *arg_tx, RxCore *arg_rx) {
+	tx = arg_tx;
+	rx = arg_rx;
+	g_fe = new Fei4(tx, 0);
+	usedChannels = 0x0;
 }
 
 // Delete all leftover data, Bookkeeper should be deleted last
 Bookkeeper::~Bookkeeper() {
-    // Raw Data
-    rawDataMutex.lock();
-    for(std::deque<RawData*>::iterator it = rawDataList.begin(); it != rawDataList.end(); ++it)
-        delete (*it);
-    rawDataMutex.unlock();
 
-    // Processed Data
-    procDataMutex.lock();
-    for(std::deque<Fei4Data*>::iterator it = procDataList.begin(); it != procDataList.end(); ++it)
-        delete (*it);
-    procDataMutex.unlock();
-
-    // Histogrammer Data
-    histoMutex.lock();
-    for(std::deque<HistogramBase*>::iterator it = histoList.begin(); it != histoList.end(); ++it)
-        delete (*it);
-    histoMutex.unlock();
-    
-    // Analyzed Data
-    resultMutex.lock();
-    for(std::deque<ResultBase*>::iterator it = resultList.begin(); it != resultList.end(); ++it)
-        delete (*it);
-    resultMutex.unlock();
 }
 
-void Bookkeeper::addFe(unsigned channel, Fei4 *fe) {
-    feList.push_back(std::pair<unsigned, Fei4*>(channel, fe));
+void Bookkeeper::addFe(unsigned channel, unsigned chipId) {
+	if(isChannelUsed(channel)) {
+		std::cout << "No FE added on channel #" << channel << " with chipId " << chipId << std::endl;
+		return;
+	}
+	usedChannels |= (1<< channel);
+    feList.push_back(new Fei4(tx, chipId, channel));
+	mutexMap.insert(std::pair<unsigned, std::mutex*>(channel,new std::mutex));
+	prepareMap();
 }
 
-void Bookkeeper::pushData(RawData *d) {
-    rawDataMutex.lock();
-    rawDataList.push_back(d);
-    rawDataMutex.unlock();
+int Bookkeeper::removeFe(unsigned arg_channel) {
+		// This way is valid if channel numbers are unique!
+	for(unsigned int k=0; k<feList.size(); k++) {
+		if(feList[k]->getChannel() == arg_channel) {
+			delete feList[k];
+
+				usedChannels &= !(1 << arg_channel);
+
+			feList.erase(feList.begin() + k);
+			mutexMap.erase(arg_channel);
+			prepareMap();
+			return arg_channel;
+		}
+	}
+	return -1;
 }
 
-void Bookkeeper::pushData(Fei4Data *d) {
-    procDataMutex.lock();
-    procDataList.push_back(d);
-    procDataMutex.unlock();
+int Bookkeeper::removeFe(Fei4* fe) {
+	unsigned arg_channel = fe->getChannel();
+	prepareMap();
+	return removeFe(arg_channel);
 }
 
-void Bookkeeper::pushData(HistogramBase *h) {
-    histoMutex.lock();
-    histoList.push_back(h);
-    histoMutex.unlock();
+Fei4* Bookkeeper::getFei4byChannel(unsigned arg_channel) {
+	for(unsigned int k=0; k<feList.size(); k++) {
+		if(feList[k]->getChannel() == arg_channel) {
+			return feList[k];
+		}
+	}
+	return NULL;	
 }
 
-void Bookkeeper::pushData(ResultBase *r) {
-    resultMutex.lock();
-    resultList.push_back(r);
-    resultMutex.unlock();
+int Bookkeeper::prepareMap() {
+	unsigned int n = 0;
+	activeFeList.clear();
+	for(unsigned int j=0; j<feList.size(); j++) {
+		if(feList[j]->getActive() == true) {
+			activeFeList.push_back(feList[j]);
+			this->eventMap.emplace(n,&feList[j]->clipDataFei4);
+			n += 1;
+		}
+	}
+	return n;
 }
 
-void Bookkeeper::popData(RawData *d) {
-    rawDataMutex.lock();
-    d = rawDataList.front();
-    rawDataList.pop_front();
-    rawDataMutex.unlock();
+bool Bookkeeper::isChannelUsed(unsigned arg_channel) {
+	uint32_t ch = 1 << arg_channel;
+	if(ch & usedChannels) {
+		std::cout << "Error: channel #" << arg_channel << " already assigned to a FE!" << std::endl;
+		return true;
+	}
+	else
+		return false;
 }
 
-void Bookkeeper::popData(Fei4Data *d) {
-    procDataMutex.lock();
-    d = procDataList.front();
-    procDataList.pop_front();
-    procDataMutex.unlock();
+uint32_t Bookkeeper::setFeActive(Fei4 *fe) {
+	fe->setActive(true);
+	uint32_t data = 0;
+	data = 1 << fe->getChannel();
+	activeMask |= data;
+	this->prepareMap();
+	return activeMask;
 }
 
-void Bookkeeper::popData(HistogramBase *h) {
-    histoMutex.lock();
-    h = histoList.front();
-    histoList.pop_front();
-    histoMutex.unlock();
+uint32_t Bookkeeper::setFeInactive(Fei4 *fe) {
+	fe->setActive(false);
+	uint32_t data = 0;
+	data = 1 << fe->getChannel();
+	activeMask &= !data;
+	this->prepareMap();
+	return activeMask;
 }
 
-void Bookkeeper::popData(ResultBase *r) {
-    resultMutex.lock();
-    r = resultList.front();
-    resultList.pop_front();
-    resultMutex.unlock();
+uint32_t Bookkeeper::collectActiveMask() {
+	uint32_t data = 0;
+	uint32_t newMask = 0;
+	for(unsigned int k=0; k<feList.size(); k++) {
+		if(feList[k]->getActive()) {
+			data = 1 << feList[k]->getChannel();
+			newMask |= data;		
+		}
+	}
+	activeMask = newMask;
+	return activeMask;
+}
+
+int Bookkeeper::dummy() {
+	return 667;
 }
 

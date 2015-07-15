@@ -24,6 +24,24 @@ Fei4PixelThresholdTune::Fei4PixelThresholdTune(Fei4 *fe, TxCore *tx, RxCore *rx,
     verbose = false;
 }
 
+Fei4PixelThresholdTune::Fei4PixelThresholdTune(Bookkeeper *k) : ScanBase(k) {
+    mask = MASK_16;
+    dcMode = QUAD_DC;
+    numOfTriggers = 100;
+    triggerFrequency = 10e3;
+    triggerDelay = 50;
+    minVcal = 10;
+    maxVcal = 100;
+    stepVcal = 1;
+    useScap = true;
+    useLcap = true;
+
+    target = 3000;
+    verbose = false;
+
+	keeper = k;
+}
+
 // Initialize Loops
 void Fei4PixelThresholdTune::init() {
     // Loop 0: Feedback
@@ -69,7 +87,18 @@ void Fei4PixelThresholdTune::preScan() {
     g_fe->writeRegister(&Fei4::Trig_Count, 12);
     g_fe->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
     // TODO Make this mult ichannel capable
-    g_fe->writeRegister(&Fei4::PlsrDAC, g_fe->toVcal(target, useScap, useLcap));
-    g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
+
+    for (unsigned col=1; col<81; col++)			// What about this loop? Global or per FE?
+        for (unsigned row=1; row<337; row++)
+            g_fe->setTDAC(col, row, 16);
+
+	for(unsigned int k=0; k<keeper->feList.size(); k++) {	
+		keeper->tx->setCmdEnable(1 << keeper->feList[k]->getChannel());		// set tx to the correct channel
+    	keeper->feList[k]->writeRegister(&Fei4::PlsrDAC, g_fe->toVcal(target, useScap, useLcap));	// Ingrid =>pro FE! vorher: tx auf Kanal
+		keeper->feList[k]->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
+	}
+		keeper->tx->setCmdEnable(keeper->collectActiveMask());				// set tx back to include all active channels
+//    g_fe->writeRegister(&Fei4::PlsrDAC, g_fe->toVcal(target, useScap, useLcap));
+//    g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
     while(!g_tx->isCmdEmpty());
 }

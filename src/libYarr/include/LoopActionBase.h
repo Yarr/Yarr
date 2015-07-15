@@ -16,6 +16,7 @@
 #include "TxCore.h"
 #include "RxCore.h"
 #include "LoopStatus.h"
+#include "Bookkeeper.h"
 
 using std::shared_ptr;
 
@@ -25,6 +26,7 @@ class LoopActionBase {
 
         void setVerbose(bool v=true);
         void setup(LoopStatus *stat, Fei4 *fe, TxCore *tx, RxCore *rx);
+        void setup(LoopStatus *stat, Bookkeeper *k);
         void setNext(shared_ptr<LoopActionBase>& ptr);
         void execute();
 
@@ -39,6 +41,8 @@ class LoopActionBase {
         void setMax(unsigned v);
         void setStep(unsigned v);
 
+		bool checkGlobalDone();
+
     protected:
         virtual void init() {}
         virtual void end() {}
@@ -47,6 +51,7 @@ class LoopActionBase {
         virtual bool done();
 
         bool m_done;
+		bool g_done;
         bool verbose;
 
         unsigned min;
@@ -57,6 +62,8 @@ class LoopActionBase {
         Fei4 *g_fe;
         TxCore *g_tx;
         RxCore *g_rx;
+		Bookkeeper *keeper;
+		std::map<unsigned, bool> doneMap;
 
         std::type_index loopType;
     private:

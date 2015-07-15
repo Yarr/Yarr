@@ -24,6 +24,8 @@
 #include "Fei4Histogrammer.h"
 #include "lmcurve.h"
 
+#include "Bookkeeper.h"
+
 #include "AllFei4Actions.h"
 #include "AllStdActions.h"
 
@@ -38,6 +40,7 @@ class AnalysisAlgorithm {
         virtual void init(ScanBase *s) {}
         virtual void processHistogram(HistogramBase *h) {}
         virtual void end() {}
+		unsigned channel;
 
     protected:
         ScanBase *scan;
@@ -60,8 +63,11 @@ class Fei4Analysis : DataProcessor {
         void end();
 
         void addAlgorithm(AnalysisAlgorithm *a);
+		void addAlgorithm(AnalysisAlgorithm *a, unsigned ch);
         void plot(std::string basename);
         void toFile(std::string basename);
+
+		unsigned channel;
 
     private:
         ClipBoard<HistogramBase> *input;
