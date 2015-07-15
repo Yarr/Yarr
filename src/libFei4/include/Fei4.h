@@ -42,6 +42,8 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd {
     public:
         Fei4(TxCore *arg_core, unsigned chipId);
         Fei4(TxCore *arg_core, unsigned chipId, unsigned arg_channel);
+        Fei4(TxCore *arg_core, unsigned chipId, unsigned arg_txchannel, unsigned arg_rxchannel);
+
 		~Fei4();
         void configure();
         void configurePixels(unsigned lsb=0, unsigned msb=Fei4PixelCfg::n_Bits);
@@ -57,14 +59,15 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd {
         void loadIntoPixel(unsigned pixel_latch);
         void shiftByOne();
 
-		unsigned getChipId();
-		unsigned setChipId(unsigned chipId);
 
 		bool getActive();
-		bool setActive(bool active);
+		void setActive(bool active);
 
-		unsigned getChannel();
-		unsigned setChannel(unsigned channel);
+		unsigned getChannel() __attribute__ ((deprecated));
+		unsigned getTxChannel();
+		unsigned getRxChannel();
+		void setChannel(unsigned channel);
+		void setChannel(unsigned arg_txChannel, unsigned arg_rxChannel);
 
 
         TxCore* getTxCore() {
@@ -95,9 +98,9 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd {
 		Fei4Histogrammer *histogrammer;
 
     private:
-        unsigned chipId;
 		bool isActive;
-		unsigned channel;
+		unsigned txChannel;
+        unsigned rxChannel;
 
 };
 

@@ -8,6 +8,14 @@
 
 #include "Fei4Cfg.h"
 
+unsigned Fei4Cfg::getChipId() {
+	return chipId;
+}
+
+void Fei4Cfg::setChipId(unsigned arg_chipId) {
+	chipId = arg_chipId;
+}
+
 void Fei4Cfg::toFileBinary(std::string filename) {
     std::fstream outfile(filename.c_str(), std::fstream::out | std::fstream::binary | std::fstream::trunc);
     if (outfile) {

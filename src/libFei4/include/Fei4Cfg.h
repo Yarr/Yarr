@@ -46,11 +46,16 @@ class Fei4Cfg : public Fei4GlobalCfg, public Fei4PixelCfg {
             return (unsigned) round((V - vcalOffset*1e-3)/(vcalSlope*1e-3));
         }
 
+		unsigned getChipId();
+		void setChipId(unsigned chipId);
+        
         void toFileBinary(std::string filename);
         void fromFileBinary(std::string filename);
 
-    private:
+    protected:
         unsigned chipId;
+
+    private:
         double sCap; // fF
         double lCap; // fF
         double vcalOffset; // mV
