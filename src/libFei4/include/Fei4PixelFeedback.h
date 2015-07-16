@@ -56,7 +56,7 @@ class Fei4PixelFeedback : public LoopActionBase {
                 fbHistoMap[channel] = h;
             }
 
-			keeper->mutexMap[channel]->unlock();
+			keeper->mutexMap[channel].unlock();
         }
         
     private:
@@ -104,7 +104,7 @@ class Fei4PixelFeedback : public LoopActionBase {
             fbMutex.try_lock(); // Need to lock on frist run
 			for(unsigned int k=0; k<keeper->feList.size(); k++) {
 				if(keeper->feList[k]->getActive()) {	
-					keeper->mutexMap[keeper->feList[k]->getChannel()]->try_lock();
+					keeper->mutexMap[keeper->feList[k]->getChannel()].try_lock();
           			this->writePixelCfg(keeper->feList[k]->getChannel());
 			    }
 			}
@@ -118,7 +118,7 @@ class Fei4PixelFeedback : public LoopActionBase {
 			for(unsigned int k=0; k<keeper->feList.size(); k++) {
 				if(keeper->feList[k]->getActive()) {
 					ch = keeper->feList[k]->getChannel();
-					keeper->mutexMap[ch]->lock();
+					keeper->mutexMap[ch].lock();
 
 				    this->addFeedback(ch);
 				    std::cout << " Received feeddback for channel #" << ch << " at step: " << step << std::endl;

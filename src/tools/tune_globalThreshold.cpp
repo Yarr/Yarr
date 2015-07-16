@@ -22,7 +22,7 @@
 bool scanDone = false;
 bool processorDone = false;
 
-void processing(Fei4 *fe, ClipBoard<RawDataContainer> *clipRaw, std::map<unsigned, ClipBoard<Fei4Data>* > eventMap) {
+void processing(Fei4 *fe, ClipBoard<RawDataContainer> *clipRaw, std::map<unsigned, ClipBoard<Fei4Data> > *eventMap) {
     std::cout << "### Processing data ###" << std::endl;
     Fei4DataProcessor proc(fe->getValue(&Fei4::HitDiscCnfg));
     proc.connect(clipRaw, eventMap);
@@ -93,7 +93,7 @@ int main(void) {
     std::string cfgName = "test_config.bin";
 
 	keeper.addFe(0,0);
-	keeper.addFe(1,0);
+	keeper.addFe(0,1);
 
 	keeper.g_fe->setChipId(8);
     keeper.g_fe->fromFileBinary(cfgName);
@@ -127,13 +127,13 @@ int main(void) {
     std::cout << "### Pre Scan ###" << std::endl;
     thrTune.preScan();
 
-    std::thread p1(processing, keeper.g_fe, &clipRaw, keeper.eventMap);
-    std::thread p2(processing, keeper.g_fe, &clipRaw, keeper.eventMap);
-    std::thread p3(processing, keeper.g_fe, &clipRaw, keeper.eventMap);
-    std::thread p4(processing, keeper.g_fe, &clipRaw, keeper.eventMap);
+    std::thread p1(processing, keeper.g_fe, &clipRaw, &keeper.eventMap);
+    std::thread p2(processing, keeper.g_fe, &clipRaw, &keeper.eventMap);
+    std::thread p3(processing, keeper.g_fe, &clipRaw, &keeper.eventMap);
+    std::thread p4(processing, keeper.g_fe, &clipRaw, &keeper.eventMap);
 
-    std::thread t1(analysis, 0, &thrTune, keeper.eventMap[0]);
-    std::thread t2(analysis, 1, &thrTune, keeper.eventMap[1]);
+    std::thread t1(analysis, 0, &thrTune, &keeper.eventMap[0]);
+    std::thread t2(analysis, 1, &thrTune, &keeper.eventMap[1]);
 
    
     std::cout << "### Scan ###" << std::endl;
@@ -158,7 +158,7 @@ int main(void) {
 
     processorDone = true; 
 
-    std::cout << "Collected: " << keeper.eventMap[0]->size() << " Events" << std::endl;
+    std::cout << "Collected: " << keeper.eventMap[0].size() << " Events" << std::endl;
     std::chrono::steady_clock::time_point pro = std::chrono::steady_clock::now();
     
     t1.join();

@@ -21,21 +21,21 @@
 void analysis(unsigned ch, ScanBase *s, Bookkeeper *k) {
     std::cout << "### Histogramming data ###" << std::endl;
 	Fei4 *fe = k->getFei4byChannel(ch);
-    fe->histogrammer->connect(&fe->clipDataFei4, &fe->clipHisto);
+    fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
     fe->histogrammer->process();
     
-	std::cout << "Collected: " << fe->clipHisto.size() << " Histograms on Channel " << ch << " with ChipID " << fe->getChipId() << std::endl;
+	std::cout << "Collected: " << fe->clipHisto->size() << " Histograms on Channel " << ch << " with ChipID " << fe->getChipId() << std::endl;
 
     std::cout << "### Analyzing data on channel #" << ch << " ###" << std::endl;
-    fe->ana->connect(s, &fe->clipHisto, &fe->clipResult);
+    fe->ana->connect(s, fe->clipHisto, fe->clipResult);
     fe->ana->init();
     fe->ana->process();
     fe->ana->end();
-    std::cout << "Collected: " << fe->clipResult.size() << " Histograms on Channel " << ch << std::endl;
+    std::cout << "Collected: " << fe->clipResult->size() << " Histograms on Channel " << ch << std::endl;
 
     std::cout << "### Saving on channel #" << ch << " ###" << std::endl;
     std::string channel = "ch" + std::to_string(ch);
-    fe->ana->plot(channel);// + "_" + typeid(s).name());
+    fe->ana->plot(channel + "_analogscan_");// + "_" + typeid(s).name());
     std::cout << "... done!" << std::endl;
 }
 
@@ -55,7 +55,7 @@ int main(void) {
 	keeper.rawData = &clipRaw;
 
 	keeper.addFe(0,0);
-	keeper.addFe(1,0);
+	keeper.addFe(0,1);
 	keeper.g_fe->setChipId(8);
 
 	keeper.prepareMap();
@@ -108,11 +108,11 @@ int main(void) {
 
     std::cout << "### Processing data ###" << std::endl;
     Fei4DataProcessor proc(keeper.g_fe->getValue(&Fei4::HitDiscCnfg));
-    proc.connect(&clipRaw, keeper.eventMap);
+    proc.connect(&clipRaw, &keeper.eventMap);
     proc.init();
     proc.process();
  	for(unsigned int k=0; k<keeper.feList.size(); k++) {
-	    std::cout << "Collected on channel #" << keeper.feList[k]->getChannel() << ": " << keeper.eventMap[0]->size() << " Events" << std::endl;
+	    std::cout << "Collected on channel #" << keeper.feList[k]->getChannel() << ": " << keeper.eventMap[0].size() << " Events" << std::endl;
 	}
     std::chrono::steady_clock::time_point pro = std::chrono::steady_clock::now();
 

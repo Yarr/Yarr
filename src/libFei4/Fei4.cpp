@@ -143,12 +143,16 @@ void Fei4::shiftByOne() {
     writeRegister(&Fei4::SR_Clock, 0x0);
 }
 
-bool Fei4::getActive() {
-	return this->isActive;
+bool Fei4::isActive() {
+	return active;
 }
 
-void Fei4::setActive(bool active) {
-	isActive = active;
+bool Fei4::getActive() {
+	return this->active;
+}
+
+void Fei4::setActive(bool arg_active) {
+	active = arg_active;
 }
 
 unsigned Fei4::getChannel() {

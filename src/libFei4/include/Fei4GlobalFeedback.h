@@ -30,7 +30,7 @@ class Fei4GlobalFeedbackBase : public LoopActionBase {
             if (val < 50) {
 				doneMap[channel] = true;
 			}
-			keeper->mutexMap[channel]->unlock();
+			keeper->mutexMap[channel].unlock();
         }
 
         void feedbackBinary(double sign, bool last = false) {
@@ -54,8 +54,7 @@ class Fei4GlobalFeedbackBase : public LoopActionBase {
             if (step == 1) {
 				 doneMap[channel] = true;
 			}
-			keeper->mutexMap[channel]->unlock();
-			std::cout << "Problem, we shouldn't be here!!!" << std::endl;
+			keeper->mutexMap[channel].unlock();
         }
 
 
@@ -101,7 +100,7 @@ class Fei4GlobalFeedback : public Fei4GlobalFeedbackBase {
             g_stat->set(this, cur);
 			for(unsigned int k=0; k<keeper->feList.size(); k++) {
 				if(keeper->feList[k]->getActive()) {	
-					keeper->mutexMap[keeper->feList[k]->getChannel()]->try_lock();
+					keeper->mutexMap[keeper->feList[k]->getChannel()].try_lock();
 			    }
 			}
 		}
@@ -109,7 +108,7 @@ class Fei4GlobalFeedback : public Fei4GlobalFeedbackBase {
         void execPart2() {
 			for(unsigned int k=0; k<keeper->feList.size(); k++) {
 				if(keeper->feList[k]->getActive()) {
-					keeper->mutexMap[keeper->feList[k]->getChannel()]->lock();
+					keeper->mutexMap[keeper->feList[k]->getChannel()].lock();
 			    }
 			}
 			m_done = checkGlobalDone();

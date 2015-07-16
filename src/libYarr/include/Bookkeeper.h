@@ -28,8 +28,10 @@ class Bookkeeper {
         Bookkeeper(TxCore *arg_tx, RxCore *arg_rx);
         ~Bookkeeper();
 
-        void addFe(unsigned channel, unsigned chipId);
-		int removeFe(unsigned channel);
+        void addFe(unsigned chipId, unsigned txChannel, unsigned rxChannel);
+        void addFe(unsigned chipId, unsigned channel);
+		
+        int removeFe(unsigned channel);
 		int removeFe(Fei4 *fe);
 
 		Fei4* getFei4byChannel(unsigned channel);
@@ -45,18 +47,28 @@ class Bookkeeper {
         Fei4 *g_fe;
         TxCore *tx;
         RxCore *rx;
+        
+        std::vector<Fei4*> feList;
 
         ClipBoard<RawDataContainer> *rawData;
 
-	    std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;
-		std::vector<Fei4*> feList;
+        // per rx link
+	    std::map<unsigned, ClipBoard<Fei4Data> > eventMap;
+	    std::map<unsigned, ClipBoard<HistogramBase> > histoMap;
+	    std::map<unsigned, ClipBoard<HistogramBase> > resultMap;
+		std::map<unsigned, std::mutex> mutexMap;	
+        
 		std::vector<Fei4*> activeFeList;
 
-		std::map<unsigned, std::mutex*> mutexMap;	// <channel, mutex>
 
-		int dummy();	// just a Remnant to see if the Bookkeeper is known
+        // Construct mask of active channels
+        uint32_t getTxMask();
+        uint32_t getRxMask();
 
     private:
+        uint32_t activeTxMask;
+        uint32_t activeRxMask;
+
 		uint32_t activeMask;
 		uint32_t usedChannels;
 };

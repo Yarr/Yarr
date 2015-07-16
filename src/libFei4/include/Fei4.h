@@ -61,9 +61,10 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd {
 
 
 		bool getActive();
+		bool isActive();
 		void setActive(bool active);
 
-		unsigned getChannel() __attribute__ ((deprecated));
+		unsigned getChannel();
 		unsigned getTxChannel();
 		unsigned getRxChannel();
 		void setChannel(unsigned channel);
@@ -90,15 +91,15 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd {
                 return getValue(ref);
             }
 
-		ClipBoard<Fei4Data> clipDataFei4;
-		ClipBoard<HistogramBase> clipHisto;
-		ClipBoard<HistogramBase> clipResult;
+		ClipBoard<Fei4Data> *clipDataFei4;
+		ClipBoard<HistogramBase> *clipHisto;
+		ClipBoard<HistogramBase> *clipResult;
 
         Fei4Analysis *ana;
 		Fei4Histogrammer *histogrammer;
 
     private:
-		bool isActive;
+		bool active;
 		unsigned txChannel;
         unsigned rxChannel;
 

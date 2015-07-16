@@ -19,7 +19,7 @@ Fei4DataProcessor::~Fei4DataProcessor() {
 }
 
 void Fei4DataProcessor::init() {
-    for(std::map<unsigned, ClipBoard<Fei4Data>* >::iterator it = outMap.begin(); it != outMap.end(); ++it) {
+    for(std::map<unsigned, ClipBoard<Fei4Data> >::iterator it = outMap->begin(); it != outMap->end(); ++it) {
         activeChannels.push_back(it->first);
     }
 }
@@ -110,7 +110,7 @@ void Fei4DataProcessor::process() {
             delete curIn;
         }
         for (unsigned i=0; i<activeChannels.size(); i++) {
-            outMap[i]->pushData(curOut[i]);
+            outMap->at(i).pushData(curOut[i]);
         }
         //Cleanup
         delete curInV;

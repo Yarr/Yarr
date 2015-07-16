@@ -20,15 +20,24 @@ Bookkeeper::~Bookkeeper() {
 
 }
 
-void Bookkeeper::addFe(unsigned channel, unsigned chipId) {
-	if(isChannelUsed(channel)) {
-		std::cout << "No FE added on channel #" << channel << " with chipId " << chipId << std::endl;
-		return;
-	}
-	usedChannels |= (1<< channel);
-    feList.push_back(new Fei4(tx, chipId, channel));
-	mutexMap.insert(std::pair<unsigned, std::mutex*>(channel,new std::mutex));
-	prepareMap();
+void Bookkeeper::addFe(unsigned chipId, unsigned txChannel, unsigned rxChannel) {
+    if(isChannelUsed(rxChannel)) {
+        std::cerr << __PRETTY_FUNCTION__ << " -> Error rx channel already in use, not adding FE" << std::endl;
+    } else {
+        feList.push_back(new Fei4(tx, chipId, txChannel, rxChannel));
+        eventMap[rxChannel];
+        histoMap[rxChannel];
+        resultMap[rxChannel];
+        feList.back()->clipDataFei4 = &eventMap[rxChannel];
+        feList.back()->clipHisto = &histoMap[rxChannel];
+        feList.back()->clipResult = &resultMap[rxChannel];
+        mutexMap[rxChannel];
+    }
+    std::cout << __PRETTY_FUNCTION__ << " -> Added FE: ChipId(" << chipId << "), Tx(" << txChannel << "), Rx(" << rxChannel << ")" << std::endl;
+}
+
+void Bookkeeper::addFe(unsigned chipId, unsigned channel) {
+    this->addFe(chipId, channel, channel);
 }
 
 int Bookkeeper::removeFe(unsigned arg_channel) {
@@ -69,7 +78,7 @@ int Bookkeeper::prepareMap() {
 	for(unsigned int j=0; j<feList.size(); j++) {
 		if(feList[j]->getActive() == true) {
 			activeFeList.push_back(feList[j]);
-			this->eventMap.emplace(n,&feList[j]->clipDataFei4);
+			//this->eventMap.emplace(n,&feList[j]->clipDataFei4);
 			n += 1;
 		}
 	}
@@ -77,13 +86,11 @@ int Bookkeeper::prepareMap() {
 }
 
 bool Bookkeeper::isChannelUsed(unsigned arg_channel) {
-	uint32_t ch = 1 << arg_channel;
-	if(ch & usedChannels) {
-		std::cout << "Error: channel #" << arg_channel << " already assigned to a FE!" << std::endl;
-		return true;
-	}
-	else
-		return false;
+    for (unsigned i=0; i<feList.size(); i++) {
+        if (feList[i]->getRxChannel() == arg_channel)
+            return true;
+    }
+    return false;
 }
 
 uint32_t Bookkeeper::setFeActive(Fei4 *fe) {
@@ -117,7 +124,12 @@ uint32_t Bookkeeper::collectActiveMask() {
 	return activeMask;
 }
 
-int Bookkeeper::dummy() {
-	return 667;
+uint32_t Bookkeeper::getTxMask() {
+    uint32_t mask = 0;
+    for (unsigned i=0; i<feList.size(); i++) {
+        if (feList[i]->isActive()) {
+            mask += 0x1 << feList[i]->getTxChannel();
+        }
+    }
+    return mask;
 }
-

@@ -22,7 +22,7 @@
 bool scanDone = false;
 bool processorDone = false;
 
-void processing(Fei4 *fe, ClipBoard<RawDataContainer> *clipRaw, std::map<unsigned, ClipBoard<Fei4Data>* > eventMap) {
+void processing(Fei4 *fe, ClipBoard<RawDataContainer> *clipRaw, std::map<unsigned, ClipBoard<Fei4Data> > *eventMap) {
     std::cout << "### Processing data ###" << std::endl;
     Fei4DataProcessor proc(fe->getValue(&Fei4::HitDiscCnfg));
     proc.connect(clipRaw, eventMap);
@@ -105,8 +105,9 @@ int main(void) {
     g_fe.fromFileBinary(cfgFile);
 
     ClipBoard<RawDataContainer> clipRaw;
-    std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;
-    ClipBoard<Fei4Data> clipEvent0;
+    std::map<unsigned, ClipBoard<Fei4Data> > eventMap;
+    fe.clipDataFei4 = &eventMap[0];
+    /*ClipBoard<Fei4Data> clipEvent0;
     ClipBoard<Fei4Data> clipEvent1;
     ClipBoard<Fei4Data> clipEvent2;
     ClipBoard<Fei4Data> clipEvent3;
@@ -138,7 +139,7 @@ int main(void) {
     eventMap[12] = &clipEvent12;
     eventMap[13] = &clipEvent13;
     eventMap[14] = &clipEvent14;
-    eventMap[15] = &clipEvent15;
+    eventMap[15] = &clipEvent15;*/
 
     Fei4ThresholdScan thrScan(&g_fe, &tx, &rx, &clipRaw);
 
@@ -160,13 +161,13 @@ int main(void) {
     std::cout << "### Pre Scan ###" << std::endl;
     thrScan.preScan();
 
-    std::thread p1(processing, &g_fe, &clipRaw, eventMap);
-    std::thread p2(processing, &g_fe, &clipRaw, eventMap);
-    std::thread p3(processing, &g_fe, &clipRaw, eventMap);
-    std::thread p4(processing, &g_fe, &clipRaw, eventMap);
+    std::thread p1(processing, &g_fe, &clipRaw, &eventMap);
+    std::thread p2(processing, &g_fe, &clipRaw, &eventMap);
+    std::thread p3(processing, &g_fe, &clipRaw, &eventMap);
+    std::thread p4(processing, &g_fe, &clipRaw, &eventMap);
     
-    std::thread t1(analysis, 0, &thrScan, &clipEvent0);
-    std::thread t2(analysis, 1, &thrScan, &clipEvent1);
+    std::thread t1(analysis, 0, &thrScan, &eventMap[0]);
+    /*std::thread t2(analysis, 1, &thrScan, &clipEvent1);
     std::thread t3(analysis, 2, &thrScan, &clipEvent2);
     std::thread t4(analysis, 3, &thrScan, &clipEvent3);
     std::thread t5(analysis, 4, &thrScan, &clipEvent4);
@@ -180,7 +181,7 @@ int main(void) {
     std::thread t13(analysis, 12, &thrScan, &clipEvent12);
     std::thread t14(analysis, 13, &thrScan, &clipEvent13);
     std::thread t15(analysis, 14, &thrScan, &clipEvent14);
-    std::thread t16(analysis, 15, &thrScan, &clipEvent15);
+    std::thread t16(analysis, 15, &thrScan, &clipEvent15);*/
     
     std::cout << "### Scan ###" << std::endl;
     thrScan.run();
@@ -202,12 +203,12 @@ int main(void) {
     p3.join();
     p4.join();
     
-    std::cout << "Collected: " << clipEvent1.size() << " Events" << std::endl;
+    std::cout << "Collected: " << eventMap[0].size() << " Events" << std::endl;
     std::chrono::steady_clock::time_point pro = std::chrono::steady_clock::now();
     
 
     t1.join();
-    t2.join();
+    /*t2.join();
     t3.join();
     t4.join();
     t5.join();
@@ -221,7 +222,7 @@ int main(void) {
     t13.join();
     t14.join();
     t15.join();
-    t16.join();
+    t16.join();*/
 
     std::chrono::steady_clock::time_point ana = std::chrono::steady_clock::now();
 

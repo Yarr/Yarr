@@ -22,7 +22,7 @@
 bool scanDone = false;
 bool processorDone = false;
 
-void processing(Fei4 *fe, ClipBoard<RawDataContainer> *clipRaw, std::map<unsigned, ClipBoard<Fei4Data>* > eventMap) {
+void processing(Fei4 *fe, ClipBoard<RawDataContainer> *clipRaw, std::map<unsigned, ClipBoard<Fei4Data> > *eventMap) {
     std::cout << "### Processing data ###" << std::endl;
     Fei4DataProcessor proc(fe->getValue(&Fei4::HitDiscCnfg));
     proc.connect(clipRaw, eventMap);
@@ -128,15 +128,15 @@ int main(void) {
     std::cout << "### Pre Scan ###" << std::endl;
     thrTune.preScan();
 
-    std::thread p1(processing, keeper.g_fe, &clipRaw, keeper.eventMap);
-	std::thread p2(processing, keeper.g_fe, &clipRaw, keeper.eventMap);
-	std::thread p3(processing, keeper.g_fe, &clipRaw, keeper.eventMap);
-	std::thread p4(processing, keeper.g_fe, &clipRaw, keeper.eventMap);
+    std::thread p1(processing, keeper.g_fe, &clipRaw, &keeper.eventMap);
+	std::thread p2(processing, keeper.g_fe, &clipRaw, &keeper.eventMap);
+	std::thread p3(processing, keeper.g_fe, &clipRaw, &keeper.eventMap);
+	std::thread p4(processing, keeper.g_fe, &clipRaw, &keeper.eventMap);
 
     
 		// Only one thread per active FE!
-    std::thread t1(analysis, 0, &thrTune, keeper.eventMap[0]);
-    std::thread t2(analysis, 1, &thrTune, keeper.eventMap[1]);
+    std::thread t1(analysis, 0, &thrTune, &keeper.eventMap[0]);
+    std::thread t2(analysis, 1, &thrTune, &keeper.eventMap[1]);
     
     std::cout << "### Scan ###" << std::endl;
     thrTune.run();
@@ -161,7 +161,7 @@ int main(void) {
     processorDone = true;
     
  	for(unsigned int k=0; k<keeper.activeFeList.size(); k++) {
-	    std::cout << "Collected on channel #" << keeper.activeFeList[k]->getChannel() << ": " << keeper.eventMap[0]->size() << " Events" << std::endl;
+	    std::cout << "Collected on channel #" << keeper.activeFeList[k]->getChannel() << ": " << keeper.eventMap[0].size() << " Events" << std::endl;
 	}
     std::chrono::steady_clock::time_point pro = std::chrono::steady_clock::now();
     
