@@ -28,7 +28,7 @@ class Fei4Cfg : public Fei4GlobalCfg, public Fei4PixelCfg {
             vcalSlope = 1.5;
         }
 
-        double toCharge(double vcal, bool sCapOn, bool lCapOn) {
+        double toCharge(double vcal, bool sCapOn=true, bool lCapOn=true) {
             // Q = C*V
             double C = 0;
             if (sCapOn) C += sCap*1e-15;
@@ -37,7 +37,7 @@ class Fei4Cfg : public Fei4GlobalCfg, public Fei4PixelCfg {
             return C*V;
         }
 
-        unsigned toVcal(double charge, bool sCapOn, bool lCapOn) {
+        unsigned toVcal(double charge, bool sCapOn=true, bool lCapOn=true) {
             // V = Q/C
             double C = 0;
             if (sCapOn) C += sCap*1e-15;
