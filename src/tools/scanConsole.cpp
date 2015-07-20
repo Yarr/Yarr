@@ -264,7 +264,6 @@ int main(int argc, char *argv[]) {
             anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana));
             std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
         }
-    std::cout << "-> Setting Tx Mask to: 0x" << std::hex << bookie.getTxMask() << std::dec << std::endl;
     }
 
     std::cout << std::endl;
