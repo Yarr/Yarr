@@ -82,10 +82,24 @@ void Fei4PixelPreampTune::init() {
 
 // Do necessary pre-scan configuration
 void Fei4PixelPreampTune::preScan() {
+    // Global config
+	g_tx->setCmdEnable(b->getTxMask());
     g_fe->writeRegister(&Fei4::Trig_Count, 12);
     g_fe->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
-    // TODO Make this multi channel capabale
-    g_fe->writeRegister(&Fei4::PlsrDAC, g_fe->toVcal(target, useScap, useLcap));
     g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
+    while(!g_tx->isCmdEmpty());
+
+	for(unsigned int k=0; k<b->feList.size(); k++) {
+        Fei4 *fe = b->feList[k];
+        // Set to single channel tx
+		g_tx->setCmdEnable(0x1 << fe->getChannel());
+        // Set specific pulser DAC
+    	fe->writeRegister(&Fei4::PlsrDAC, fe->toVcal(target, useScap, useLcap));
+        // Reset all FDACs
+        for (unsigned col=1; col<81; col++)
+            for (unsigned row=1; row<337; row++)
+                fe->setFDAC(col, row, 8);
+	}
+	g_tx->setCmdEnable(b->getTxMask());
     while(!g_tx->isCmdEmpty());
 }

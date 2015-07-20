@@ -86,13 +86,24 @@ void Fei4GlobalPreampTune::init() {
 
 // Do necessary pre-scan configuration
 void Fei4GlobalPreampTune::preScan() {
+    // Global config
+	g_tx->setCmdEnable(b->getTxMask());
     g_fe->writeRegister(&Fei4::Trig_Count, 12);
-    // TODO VCAL and TDAC needs to be calculated per FE, not global
     g_fe->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
-    for (unsigned col=1; col<81; col++)
-        for (unsigned row=1; row<337; row++)
-            g_fe->setFDAC(col, row, 8);
-    g_fe->writeRegister(&Fei4::PlsrDAC, g_fe->toVcal(target, useScap, useLcap));
     g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
+    
+	for(unsigned int k=0; k<b->feList.size(); k++) {
+        Fei4 *fe = b->feList[k];
+        // Set to single channel tx
+		g_tx->setCmdEnable(0x1 << fe->getChannel());
+        // Set specific pulser DAC
+        g_fe->writeRegister(&Fei4::PlsrDAC, g_fe->toVcal(target, useScap, useLcap));
+        // Reset all TDACs
+        // TODO do not if retune
+        for (unsigned col=1; col<81; col++)
+            for (unsigned row=1; row<337; row++)
+                fe->setFDAC(col, row, 8);
+	}
+	g_tx->setCmdEnable(b->getTxMask());
     while(!g_tx->isCmdEmpty());
 }

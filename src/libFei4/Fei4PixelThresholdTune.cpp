@@ -81,6 +81,7 @@ void Fei4PixelThresholdTune::preScan() {
     g_fe->writeRegister(&Fei4::Trig_Count, 12);
     g_fe->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
     g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
+    while(!g_tx->isCmdEmpty());
 
 	for(unsigned int k=0; k<b->feList.size(); k++) {
         Fei4 *fe = b->feList[k];
