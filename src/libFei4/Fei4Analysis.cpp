@@ -383,7 +383,6 @@ double scurveFct(double x, const double *par) {
 
 void ScurveFitter::processHistogram(HistogramBase *h) {
     cnt++;
-    //std::cout << "--> Processing : " << h->getName() << " " << cnt << std::endl;
     // Check if right Histogram
     if (h->getType() != typeid(OccupancyMap*))
         return;
@@ -458,12 +457,13 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         hh2->setZaxisTitle("Noise [Vcal]");
                         sigMap[outerIdent] = hh2;
                         //std::cout << " NEW ThresholdDist: " << outerIdent << std::endl;
-                        Histo1d *hh1 = new Histo1d("ThresholdDist", 201, -0.25, 100.25, typeid(this));
-                        hh1->setXaxisTitle("Threshold [Vcal]");
+                        //TODO ranges have to be more flexible
+                        Histo1d *hh1 = new Histo1d("ThresholdDist", 201, bookie->getTargetThreshold()-1005, bookie->getTargetThreshold()+1005, typeid(this));
+                        hh1->setXaxisTitle("Threshold [e]");
                         hh1->setYaxisTitle("Number of Pixels");
                         thrDist[outerIdent] = hh1;
-                        hh1 = new Histo1d("NoiseDist", 101, -0.05, 10.05, typeid(this));
-                        hh1->setXaxisTitle("Noise [Vcal]");
+                        hh1 = new Histo1d("NoiseDist", 101, -4.5, 304.5, typeid(this));
+                        hh1->setXaxisTitle("Noise [e]");
                         hh1->setYaxisTitle("Number of Pixels");
                         sigDist[outerIdent] = hh1;
                         hh1 = new Histo1d("Chi2Dist", 51, -0.025, 2.525, typeid(this));
@@ -476,10 +476,10 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         timeDist[outerIdent] = hh1;
                     }
                     if (par[0] > vcalMin && par[0] < vcalMax) {
-                        thrMap[outerIdent]->fill(col, row, par[0]);
-                        thrDist[outerIdent]->fill(par[0]);
-                        sigMap[outerIdent]->fill(col, row, par[1]);
-                        sigDist[outerIdent]->fill(par[1]);
+                        thrMap[outerIdent]->fill(col, row, bookie->getFe(channel)->toCharge(par[0]));
+                        thrDist[outerIdent]->fill(bookie->getFe(channel)->toCharge(par[0]));
+                        sigMap[outerIdent]->fill(col, row, bookie->getFe(channel)->toCharge(par[1]));
+                        sigDist[outerIdent]->fill(bookie->getFe(channel)->toCharge(par[1]));
                         chiDist[outerIdent]->fill(status.fnorm/(double)status.nfev);
                         timeDist[outerIdent]->fill(fitTime.count());
                     }
@@ -590,9 +590,9 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
         double meanOcc = occDists[ident]->getMean()/injections;
         std::cout << "Mean Occupancy: " << meanOcc << std::endl;
 
-        if (meanOcc > 0.52) {
+        if (meanOcc > 0.51) {
             sign = +1;
-        } else if (meanOcc < 0.48) {
+        } else if (meanOcc < 0.49) {
             sign = -1;
         } else {
             sign = 0;
