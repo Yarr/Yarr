@@ -50,10 +50,13 @@ class Fei4Cfg : public Fei4GlobalCfg, public Fei4PixelCfg {
 		void setChipId(unsigned chipId);
         
         void toFileBinary(std::string filename);
+        void toFileBinary();
         void fromFileBinary(std::string filename);
+        void fromFileBinary();
 
     protected:
         unsigned chipId;
+        std::string cfgName;
 
     private:
         double sCap; // fF

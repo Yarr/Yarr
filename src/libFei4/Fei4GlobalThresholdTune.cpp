@@ -22,7 +22,7 @@ Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Fei4 *fe, TxCore *tx, RxCore *r
     verbose = false;
 }
 
-Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Bookkeeper *k) : ScanBase(k) {
+Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Bookkeeper *b) : ScanBase(b) {
     mask = MASK_16;
     dcMode = QUAD_DC;
     numOfTriggers = 100;
@@ -32,10 +32,8 @@ Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Bookkeeper *k) : ScanBase(k) {
     useScap = true;
     useLcap = true;
 
-    target = 3000;
+    target = b->getTargetThreshold();
     verbose = false;
-
-	keeper = k;
 }
 
 
@@ -82,14 +80,14 @@ void Fei4GlobalThresholdTune::init() {
 // Do necessary pre-scan configuration
 void Fei4GlobalThresholdTune::preScan() {
     // Global config
-	g_tx->setCmdEnable(keeper->getTxMask());
+	g_tx->setCmdEnable(b->getTxMask());
     g_fe->writeRegister(&Fei4::Trig_Count, 12);
     g_fe->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
     g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
 
 
-	for(unsigned int k=0; k<keeper->feList.size(); k++) {
-        Fei4 *fe = keeper->feList[k];
+	for(unsigned int k=0; k<b->feList.size(); k++) {
+        Fei4 *fe = b->feList[k];
         // Set to single channel tx
 		g_tx->setCmdEnable(0x1 << fe->getChannel());
         // Set specific pulser DAC
@@ -100,6 +98,6 @@ void Fei4GlobalThresholdTune::preScan() {
             for (unsigned row=1; row<337; row++)
                 fe->setTDAC(col, row, 16);
 	}
-	g_tx->setCmdEnable(keeper->getTxMask());
+	g_tx->setCmdEnable(b->getTxMask());
     while(!g_tx->isCmdEmpty());
 }

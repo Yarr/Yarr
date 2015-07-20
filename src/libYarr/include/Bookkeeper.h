@@ -44,7 +44,21 @@ class Bookkeeper {
         }
 
 		bool isChannelUsed(unsigned arg_channel);
+        
+        // Construct mask of active channels
+        uint32_t getTxMask();
+        uint32_t getRxMask();
 
+        void setTargetTot(int v) {target_tot = v;}
+        int getTargetTot() {return target_tot;}
+        
+        void setTargetCharge(int v) {target_charge = v;}
+        int getTargetCharge() {return target_charge;}
+
+        void setTargetThreshold(int v) {target_threshold = v;}
+        int getTargetThreshold() {return target_threshold;}
+        
+        // TODO make private, not nice like that
         Fei4 *g_fe;
         TxCore *tx;
         RxCore *rx;
@@ -61,17 +75,16 @@ class Bookkeeper {
         
 		std::vector<Fei4*> activeFeList;
 
-
-        // Construct mask of active channels
-        uint32_t getTxMask();
-        uint32_t getRxMask();
-
     private:
         uint32_t activeTxMask;
         uint32_t activeRxMask;
 
 		uint32_t activeMask;
 		uint32_t usedChannels;
+
+        int target_tot;
+        int target_threshold;
+        int target_charge;
 };
 
 #endif

@@ -20,6 +20,7 @@ ScanBase::ScanBase(Bookkeeper *k) : engine(k) {
     g_tx = k->tx;
     g_rx = k->rx;
     g_data = &k->rawData;
+    b = k;
 }
 
 void ScanBase::run() {

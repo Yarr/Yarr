@@ -43,6 +43,7 @@ class ScanBase {
     protected:
         LoopEngine engine;
         void addLoop(std::shared_ptr<LoopActionBase> l);
+        Bookkeeper *b;
 
         Fei4 *g_fe;
         TxCore *g_tx;

@@ -38,7 +38,7 @@ Fei4GlobalPreampTune::Fei4GlobalPreampTune(Bookkeeper *b) : ScanBase(b) {
     useScap = true;
     useLcap = true;
 
-    target = 16000;
+    target = b->getTargetCharge();
     verbose = false;
 }
 

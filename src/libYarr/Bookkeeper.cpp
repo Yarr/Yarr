@@ -12,6 +12,9 @@ Bookkeeper::Bookkeeper(TxCore *arg_tx, RxCore *arg_rx) {
     tx = arg_tx;
     rx = arg_rx;
     g_fe = new Fei4(tx, 8);
+    target_tot = 10;
+    target_charge = 16000;
+    target_threshold = 3000;
 }
 
 // Delete all leftover data, Bookkeeper should be deleted last

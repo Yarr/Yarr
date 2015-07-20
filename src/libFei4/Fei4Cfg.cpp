@@ -17,6 +17,7 @@ void Fei4Cfg::setChipId(unsigned arg_chipId) {
 }
 
 void Fei4Cfg::toFileBinary(std::string filename) {
+    cfgName = filename;
     std::fstream outfile(filename.c_str(), std::fstream::out | std::fstream::binary | std::fstream::trunc);
     if (outfile) {
         // General config
@@ -42,7 +43,16 @@ void Fei4Cfg::toFileBinary(std::string filename) {
     outfile.close();
 }
 
+void Fei4Cfg::toFileBinary() {
+    if (cfgName != "") {
+        this->toFileBinary(cfgName);
+    } else {
+        std::cout << __PRETTY_FUNCTION__ << " --> ERROR: No filename specified!" << std::endl;
+    }
+}
+
 void Fei4Cfg::fromFileBinary(std::string filename) {
+    cfgName = filename;
     std::fstream infile(filename.c_str(), std::fstream::in | std::fstream::binary);
     if (infile) {
         // General config
@@ -67,4 +77,12 @@ void Fei4Cfg::fromFileBinary(std::string filename) {
     }
     infile.close();
 
+}
+
+void Fei4Cfg::fromFileBinary() {
+    if (cfgName != "") {
+        this->fromFileBinary(cfgName);
+    } else {
+        std::cout << __PRETTY_FUNCTION__ << " --> ERROR: No filename specified!" << std::endl;
+    }
 }
