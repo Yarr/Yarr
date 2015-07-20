@@ -290,7 +290,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
                 sign = 0;
                 last = true;
             }
-            globalFb->feedbackBinary(sign, last);
+            globalFb->feedbackBinary(channel, sign, last);
         }
         
         if (pixelFb != NULL) {
@@ -310,7 +310,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
                 fbHisto->setBin(i, sign);
             }
             
-            pixelFb->feedback(fbHisto);
+            pixelFb->feedback(channel, fbHisto);
         }
 
         output->pushData(meanTotMap);

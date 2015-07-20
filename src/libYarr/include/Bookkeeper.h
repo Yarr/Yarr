@@ -27,22 +27,23 @@ class Bookkeeper {
     public:
         Bookkeeper(TxCore *arg_tx, RxCore *arg_rx);
         ~Bookkeeper();
-
+        
+        // TODO should only add generic Fe class
+        // TODO should be independent of chipId
         void addFe(unsigned chipId, unsigned txChannel, unsigned rxChannel);
         void addFe(unsigned chipId, unsigned channel);
 		
-        int removeFe(unsigned channel);
-		int removeFe(Fei4 *fe);
+        void delFe(unsigned rxChannel);
+		void delFe(Fei4 *fe);
 
 		Fei4* getFei4byChannel(unsigned channel);
-
-		int prepareMap();
+		Fei4* getFe(unsigned rxChannel);
+        Fei4* getLastFe();
+        Fei4* getGlobalFe() {
+            return g_fe;
+        }
 
 		bool isChannelUsed(unsigned arg_channel);
-
-		uint32_t setFeActive(Fei4 *fe);
-		uint32_t setFeInactive(Fei4 *fe);
-		uint32_t collectActiveMask();
 
         Fei4 *g_fe;
         TxCore *tx;
@@ -50,7 +51,7 @@ class Bookkeeper {
         
         std::vector<Fei4*> feList;
 
-        ClipBoard<RawDataContainer> *rawData;
+        ClipBoard<RawDataContainer> rawData;
 
         // per rx link
 	    std::map<unsigned, ClipBoard<Fei4Data> > eventMap;

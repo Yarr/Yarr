@@ -12,6 +12,3 @@ DataProcessor::DataProcessor() {
 
 }
 
-DataProcessor::~DataProcessor() {
-
-}

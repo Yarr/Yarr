@@ -37,104 +37,96 @@ class Fei4PixelFeedback : public LoopActionBase {
             loopType = typeid(this);
         }
 
-        void feedback(Histo2d *h) {
-            if (h->size() != 26880) {
-                std::cout << __PRETTY_FUNCTION__ << " --> ERROR : Wrong type of feedback histogram!" << std::endl;
-                m_done = true;
-            } else {
-                fbHisto = h;
-            }
-
-            fbMutex.unlock();
-        }
-
         void feedback(unsigned channel, Histo2d *h) {
             if (h->size() != 26880) {
                 std::cout << __PRETTY_FUNCTION__ << " --> ERROR : Wrong type of feedback histogram!" << std::endl;
-            doneMap[channel] = true;
+                doneMap[channel] = true;
             } else {
                 fbHistoMap[channel] = h;
             }
 
-			keeper->mutexMap[channel].unlock();
+            keeper->mutexMap[channel].unlock();
         }
-        
+
     private:
         void init() {
             m_done = false;
-			unsigned int ch;
+            unsigned int ch;
 
-			for(unsigned k=0; k<keeper->feList.size(); k++) {
-				if(keeper->feList[k]->getActive()) {
-					ch = keeper->feList[k]->getChannel();
-					fbHistoMap[ch] = NULL;
-					stepMap[ch] = step;
-					doneMap[ch] = false;
-			    }
-			}
-
-
-
-            // Initilize Pixel regs with default config
-            for (unsigned col=1; col<81; col++) {
-                for (unsigned row=1; row<337; row++) {
-                    this->setPixel(col, row, min);
+            // Loop over active FEs
+            for(unsigned int k=0; k<keeper->feList.size(); k++) {
+                if(keeper->feList[k]->getActive()) {
+                    ch = keeper->feList[k]->getChannel();
+                    
+                    // Init Maps
+                    oldStepMap[ch] = stepMap[ch];
+                    doneMap[ch] = false;
+                    fbHistoMap[ch] = NULL;
+                    stepMap[ch] = step;
+                    
+                    // Initilize Pixel regs with default config
+                    for (unsigned col=1; col<81; col++) {
+                        for (unsigned row=1; row<337; row++) {
+                            this->setPixel(keeper->feList[k], col, row, min);
+                        }
+                    }
                 }
             }
-//            this->writePixelCfg();
-//            oldStep = step;
-
-			for(unsigned int k=0; k<keeper->feList.size(); k++) {
-				if(keeper->feList[k]->getActive()) {
-					ch = keeper->feList[k]->getChannel();
-					oldStepMap[ch] = stepMap[ch];
-					doneMap[ch] = false;
-					this->writePixelCfg(ch);
-			    }
-			}
 
 
         }
 
-        void end() {//Save last config
+        void end() {
         }
 
         void execPart1() {
-            g_stat->set(this, step);		// Ingrid needs to make different steps here?
-            fbMutex.try_lock(); // Need to lock on frist run
-			for(unsigned int k=0; k<keeper->feList.size(); k++) {
-				if(keeper->feList[k]->getActive()) {	
-					keeper->mutexMap[keeper->feList[k]->getChannel()].try_lock();
-          			this->writePixelCfg(keeper->feList[k]->getChannel());
-			    }
-			}
-
-//            this->writePixelCfg();
+            // TODO Current Step or iteration count ?
+            g_stat->set(this, step);
+         
+            for(unsigned int k=0; k<keeper->feList.size(); k++) {
+                if(keeper->feList[k]->getActive()) {
+                    // Need to lock mutex on first itereation
+                    keeper->mutexMap[keeper->feList[k]->getChannel()].try_lock();
+                    // Write config
+                    this->writePixelCfg(keeper->feList[k]);
+                }
+            }
         }
 
         void execPart2() {
-//            fbMutex.lock();
-			unsigned ch;
-			for(unsigned int k=0; k<keeper->feList.size(); k++) {
-				if(keeper->feList[k]->getActive()) {
-					ch = keeper->feList[k]->getChannel();
-					keeper->mutexMap[ch].lock();
+            unsigned ch;
+            for(unsigned int k=0; k<keeper->feList.size(); k++) {
+                if(keeper->feList[k]->getActive()) {
+                    ch = keeper->feList[k]->getChannel();
 
-				    this->addFeedback(ch);
-				    std::cout << " Received feeddback for channel #" << ch << " at step: " << step << std::endl;
+                    // Wait for Mutex to be unlocked by feedback
+                    keeper->mutexMap[ch].lock();
 
-					m_done = checkGlobalDone();
-				    if (lastMap[ch]) doneMap[ch] = true;
-				    if (stepMap[ch] == 1 && oldStepMap[ch] == 1)
-				        lastMap[ch] = true;
-				    oldStepMap[ch] = stepMap[ch];
-				    stepMap[ch] = stepMap[ch]/2;
-				    if (stepMap[ch] ==0) stepMap[ch] =1;
-			    }
-			}
+                    this->addFeedback(ch);
+                    std::cout << " Received feeddback for channel #" << ch << " at step: " << step << std::endl;
+
+                    m_done = this->allDone();
+                    if (lastMap[ch]) doneMap[ch] = true;
+                    if (stepMap[ch] == 1 && oldStepMap[ch] == 1)
+                        lastMap[ch] = true;
+                    oldStepMap[ch] = stepMap[ch];
+                    stepMap[ch] = stepMap[ch]/2;
+                    if (stepMap[ch] ==0) stepMap[ch] =1;
+                }
+            }
         }
 
-        // TODO Make Multi channel capable
+        bool allDone() {
+            for(unsigned int k=0; k<keeper->feList.size(); k++) {
+                if(keeper->feList[k]->getActive()) {
+                    unsigned ch = keeper->feList[k]->getRxChannel();
+                    if (!doneMap[ch])
+                        return false;
+                }
+            }
+            return true;
+        }
+
         unsigned getPixel(unsigned col, unsigned row) {
             unsigned v = 0;
             switch (fbType) {
@@ -148,14 +140,14 @@ class Fei4PixelFeedback : public LoopActionBase {
             return v;
         }
 
-        unsigned getPixel(unsigned channel, unsigned col, unsigned row) {
+        unsigned getPixel(Fei4 *fe, unsigned col, unsigned row) {
             unsigned v = 0;
             switch (fbType) {
                 case (TDAC_FB):
-                    v = keeper->getFei4byChannel(channel)->getTDAC(col, row);
+                    v = fe->getTDAC(col, row);
                     break;
                 case (FDAC_FB):
-                    v = keeper->getFei4byChannel(channel)->getFDAC(col, row);
+                    v = fe->getFDAC(col, row);
                     break;
             }
             return v;
@@ -172,19 +164,13 @@ class Fei4PixelFeedback : public LoopActionBase {
             }
         }
 
-        void setPixel(unsigned channel, unsigned col, unsigned row, unsigned v) {
+        void setPixel(Fei4 *fe, unsigned col, unsigned row, unsigned v) {
             switch (fbType) {
                 case (TDAC_FB):
-			keeper->tx->setCmdEnable(1 << channel);
-					keeper->getFei4byChannel(channel)->setTDAC(col, row, v);
-			keeper->tx->setCmdEnable(keeper->collectActiveMask());
-
+                    fe->setTDAC(col, row, v);
                     break;
                 case (FDAC_FB):
-			keeper->tx->setCmdEnable(1 << channel);
-					keeper->getFei4byChannel(channel)->setFDAC(col, row, v);
-			keeper->tx->setCmdEnable(keeper->collectActiveMask());
-
+                    fe->setFDAC(col, row, v);
                     break;
             }
         }
@@ -195,11 +181,11 @@ class Fei4PixelFeedback : public LoopActionBase {
                 for (unsigned row=1; row<337; row++) {
                     for (unsigned col=1; col<81; col++) {
                         int sign = fbHistoMap[ch]->getBin(fbHistoMap[ch]->binNum(col, row));
-                        int v = getPixel(ch,col, row);
+                        int v = getPixel(keeper->getFe(ch),col, row);
                         v = v + ((int)stepMap[ch])*sign;
                         if (v < 0) v = 0;
                         if ((unsigned)v > max) v = max;
-                        this->setPixel(ch,col, row, v);
+                        this->setPixel(keeper->getFe(ch),col, row, v);
                     }
                 }
             }
@@ -207,7 +193,7 @@ class Fei4PixelFeedback : public LoopActionBase {
             std::cout << std::endl;
         }
 
-        
+
         void writePixelCfg() {
             std::cout << "Writing config" << std::endl;
             // Not real lsb/msb because that is defined in the pixel config
@@ -227,8 +213,7 @@ class Fei4PixelFeedback : public LoopActionBase {
             g_fe->configurePixels(lsb, msb+1);
         }
 
-        void writePixelCfg(unsigned channel) {
-            std::cout << "Writing config to channel #" << channel << std::endl;
+        void writePixelCfg(Fei4 *fe) {
             // Not real lsb/msb because that is defined in the pixel config
             unsigned lsb = 0;
             unsigned msb = 0;
@@ -243,23 +228,21 @@ class Fei4PixelFeedback : public LoopActionBase {
                     break;
             }
             // Write config into FE
-			keeper->tx->setCmdEnable(1 << channel);
-			keeper->getFei4byChannel(channel)->configurePixels(lsb, msb+1);
-			keeper->tx->setCmdEnable(keeper->collectActiveMask());
+            g_tx->setCmdEnable(1 << fe->getTxChannel());
+            fe->configurePixels(lsb, msb+1);
+            g_tx->setCmdEnable(keeper->getTxMask());
         }
 
-
-        std::mutex fbMutex;
         enum FeedbackType fbType;
         Histo2d *fbHisto;
         unsigned oldStep;
         bool last;
 
-		std::map<unsigned, Histo2d *>	fbHistoMap;
-		std::map<unsigned, unsigned> oldStepMap;
-		std::map<unsigned, unsigned> stepMap;
-		std::map<unsigned, double> oldSign;
-		std::map<unsigned, bool>	lastMap;
+        std::map<unsigned, Histo2d*>	fbHistoMap;
+        std::map<unsigned, unsigned> oldStepMap;
+        std::map<unsigned, unsigned> stepMap;
+        std::map<unsigned, double> oldSign;
+        std::map<unsigned, bool>	lastMap;
 
 };
 

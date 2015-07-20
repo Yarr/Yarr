@@ -82,10 +82,8 @@ int main(void) {
     TxCore tx(&spec);
     RxCore rx(&spec);
 
-    ClipBoard<RawDataContainer> clipRaw;
     Bookkeeper keeper(&tx, &rx);
-	keeper.rawData = &clipRaw;
-
+    
     std::string cfgName = "test_config.bin";
 
 	keeper.addFe(0,0);
@@ -128,10 +126,10 @@ int main(void) {
     std::cout << "### Pre Scan ###" << std::endl;
     thrTune.preScan();
 
-    std::thread p1(processing, keeper.g_fe, &clipRaw, &keeper.eventMap);
-	std::thread p2(processing, keeper.g_fe, &clipRaw, &keeper.eventMap);
-	std::thread p3(processing, keeper.g_fe, &clipRaw, &keeper.eventMap);
-	std::thread p4(processing, keeper.g_fe, &clipRaw, &keeper.eventMap);
+    std::thread p1(processing, keeper.g_fe, &keeper.rawData, &keeper.eventMap);
+	std::thread p2(processing, keeper.g_fe, &keeper.rawData, &keeper.eventMap);
+	std::thread p3(processing, keeper.g_fe, &keeper.rawData, &keeper.eventMap);
+	std::thread p4(processing, keeper.g_fe, &keeper.rawData, &keeper.eventMap);
 
     
 		// Only one thread per active FE!
@@ -150,7 +148,7 @@ int main(void) {
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     scanDone = true;
     
-    std::cout << "Collected: " << clipRaw.size() << " Raw Data Fragments" << std::endl;
+    std::cout << "Collected: " << keeper.rawData.size() << " Raw Data Fragments" << std::endl;
     std::chrono::steady_clock::time_point scan = std::chrono::steady_clock::now();
 
     p1.join();

@@ -25,6 +25,23 @@ Fei4GlobalPreampTune::Fei4GlobalPreampTune(Fei4 *fe, TxCore *tx, RxCore *rx, Cli
     verbose = false;
 }
 
+Fei4GlobalPreampTune::Fei4GlobalPreampTune(Bookkeeper *b) : ScanBase(b) {
+    mask = MASK_16;
+    dcMode = QUAD_DC;
+    numOfTriggers = 100;
+    triggerFrequency = 10e3;
+    triggerDelay = 50;
+    minVcal = 10;
+    maxVcal = 100;
+    stepVcal = 1;
+
+    useScap = true;
+    useLcap = true;
+
+    target = 16000;
+    verbose = false;
+}
+
 // Initialize Loops
 void Fei4GlobalPreampTune::init() {
     // Loop 0: Feedback

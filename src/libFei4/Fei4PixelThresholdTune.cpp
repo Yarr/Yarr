@@ -14,9 +14,7 @@ Fei4PixelThresholdTune::Fei4PixelThresholdTune(Fei4 *fe, TxCore *tx, RxCore *rx,
     numOfTriggers = 100;
     triggerFrequency = 10e3;
     triggerDelay = 50;
-    minVcal = 10;
-    maxVcal = 100;
-    stepVcal = 1;
+    
     useScap = true;
     useLcap = true;
 
@@ -30,9 +28,7 @@ Fei4PixelThresholdTune::Fei4PixelThresholdTune(Bookkeeper *k) : ScanBase(k) {
     numOfTriggers = 100;
     triggerFrequency = 10e3;
     triggerDelay = 50;
-    minVcal = 10;
-    maxVcal = 100;
-    stepVcal = 1;
+    
     useScap = true;
     useLcap = true;
 
@@ -53,13 +49,11 @@ void Fei4PixelThresholdTune::init() {
     maskStaging->setMaskStage(mask);
     maskStaging->setScap(useScap);
     maskStaging->setLcap(useLcap);
-    //maskStaging->setStep(2);
     
     // Loop 2: Double Columns
     std::shared_ptr<Fei4DcLoop> dcLoop(new Fei4DcLoop);
     dcLoop->setVerbose(verbose);
     dcLoop->setMode(dcMode);
-    //dcLoop->setStep(2);
 
     // Loop 3: Trigger
     std::shared_ptr<Fei4TriggerLoop> triggerLoop(new Fei4TriggerLoop);
@@ -84,21 +78,23 @@ void Fei4PixelThresholdTune::init() {
 
 // Do necessary pre-scan configuration
 void Fei4PixelThresholdTune::preScan() {
+    // Global config
+	g_tx->setCmdEnable(keeper->getTxMask());
     g_fe->writeRegister(&Fei4::Trig_Count, 12);
     g_fe->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
-    // TODO Make this mult ichannel capable
+    g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
 
-    for (unsigned col=1; col<81; col++)			// What about this loop? Global or per FE?
-        for (unsigned row=1; row<337; row++)
-            g_fe->setTDAC(col, row, 16);
-
-	for(unsigned int k=0; k<keeper->feList.size(); k++) {	
-		keeper->tx->setCmdEnable(1 << keeper->feList[k]->getChannel());		// set tx to the correct channel
-    	keeper->feList[k]->writeRegister(&Fei4::PlsrDAC, g_fe->toVcal(target, useScap, useLcap));	// Ingrid =>pro FE! vorher: tx auf Kanal
-		keeper->feList[k]->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
+	for(unsigned int k=0; k<keeper->feList.size(); k++) {
+        Fei4 *fe = keeper->feList[k];
+        // Set to single channel tx
+		g_tx->setCmdEnable(0x1 << fe->getChannel());
+        // Set specific pulser DAC
+    	fe->writeRegister(&Fei4::PlsrDAC, fe->toVcal(target, useScap, useLcap));
+        // Reset all TDACs
+        for (unsigned col=1; col<81; col++)
+            for (unsigned row=1; row<337; row++)
+                fe->setTDAC(col, row, 16);
 	}
-		keeper->tx->setCmdEnable(keeper->collectActiveMask());				// set tx back to include all active channels
-//    g_fe->writeRegister(&Fei4::PlsrDAC, g_fe->toVcal(target, useScap, useLcap));
-//    g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
+	g_tx->setCmdEnable(keeper->getTxMask());
     while(!g_tx->isCmdEmpty());
 }

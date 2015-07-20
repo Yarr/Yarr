@@ -10,13 +10,14 @@
 // ################################
 
 #include <iostream>
+#include <string>
 
 #include "TxCore.h"
 #include "Fei4Cmd.h"
 #include "Fei4Cfg.h"
-#include "HistogramBase.h"
 #include "Fei4EventData.h"
 #include "ClipBoard.h"
+#include "HistogramBase.h"
 
 class Fei4Analysis;
 class Fei4Histogrammer;
@@ -64,12 +65,20 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd {
 		bool isActive();
 		void setActive(bool active);
 
+        // TODO Move name and channel to YARR FE cfg
 		unsigned getChannel();
 		unsigned getTxChannel();
 		unsigned getRxChannel();
 		void setChannel(unsigned channel);
 		void setChannel(unsigned arg_txChannel, unsigned arg_rxChannel);
 
+        std::string getName() {
+            return name;
+        }
+
+        void setName(std::string arg_name) {
+            name = arg_name;
+        }
 
         TxCore* getTxCore() {
             return core;
@@ -99,7 +108,8 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd {
 		Fei4Histogrammer *histogrammer;
 
     private:
-		bool active;
+        std::string name;
+        bool active;
 		unsigned txChannel;
         unsigned rxChannel;
 

@@ -49,18 +49,14 @@ int main(void) {
     RxCore rx(&spec);
 
 
-    ClipBoard<RawDataContainer> clipRaw;
 
     Bookkeeper keeper(&tx, &rx);
-	keeper.rawData = &clipRaw;
 
 	keeper.addFe(0,0);
 	keeper.addFe(0,1);
 	keeper.g_fe->setChipId(8);
 
-	keeper.prepareMap();
-
-		// Booking of histrograms and corresponding analysis
+    // Booking of histrograms and corresponding analysis
 	for(unsigned int k=0; k<keeper.feList.size(); k++) {
 		keeper.feList[k]->histogrammer = new Fei4Histogrammer();
 		keeper.feList[k]->ana = new Fei4Analysis();
@@ -102,13 +98,13 @@ int main(void) {
     std::cout << "### Disabling RX ###" << std::endl;
     tx.setCmdEnable(0x0);
     rx.setRxEnable(0x0);
-    std::cout << "Collected: " << clipRaw.size() << " Raw Data Fragments" << std::endl;
+    std::cout << "Collected: " << keeper.rawData.size() << " Raw Data Fragments" << std::endl;
     std::chrono::steady_clock::time_point scan = std::chrono::steady_clock::now();
     
 
     std::cout << "### Processing data ###" << std::endl;
     Fei4DataProcessor proc(keeper.g_fe->getValue(&Fei4::HitDiscCnfg));
-    proc.connect(&clipRaw, &keeper.eventMap);
+    proc.connect(&keeper.rawData, &keeper.eventMap);
     proc.init();
     proc.process();
     std::cout << "Collected: " << keeper.eventMap[0].size() << " Events" << std::endl;

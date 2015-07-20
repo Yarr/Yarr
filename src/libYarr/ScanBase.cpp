@@ -19,7 +19,7 @@ ScanBase::ScanBase(Bookkeeper *k) : engine(k) {
     g_fe = k->g_fe;
     g_tx = k->tx;
     g_rx = k->rx;
-    g_data = k->rawData;
+    g_data = &k->rawData;
 }
 
 void ScanBase::run() {
