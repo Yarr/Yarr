@@ -97,6 +97,7 @@ void Fei4GlobalThresholdTune::preScan() {
         for (unsigned col=1; col<81; col++)
             for (unsigned row=1; row<337; row++)
                 fe->setTDAC(col, row, 16);
+        fe->configurePixels();
 	}
 	g_tx->setCmdEnable(b->getTxMask());
     while(!g_tx->isCmdEmpty());

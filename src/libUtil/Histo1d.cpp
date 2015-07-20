@@ -57,7 +57,6 @@ double Histo1d::getMean() {
     double weighted_sum = 0;
     for (unsigned i=0; i<bins; i++)
         weighted_sum += data[i]*(((i+1)*binWidth)+xlow+(binWidth/2.0));
-    std::cout << weighted_sum << " " << sum << std::endl;
     return weighted_sum/sum;
 }
 

@@ -12,6 +12,11 @@ Fei4Analysis::Fei4Analysis() {
 
 }
 
+Fei4Analysis::Fei4Analysis(Bookkeeper *b, unsigned ch) {
+    bookie = b;
+    channel = ch;
+}
+
 Fei4Analysis::~Fei4Analysis() {
 
 }
@@ -43,11 +48,12 @@ void Fei4Analysis::end() {
 
 void Fei4Analysis::addAlgorithm(AnalysisAlgorithm *a) {
     algorithms.push_back(a);
+    a->setBookkeeper(bookie);
+    a->setChannel(channel);
 }
 
 void Fei4Analysis::addAlgorithm(AnalysisAlgorithm *a, unsigned ch) {
     algorithms.push_back(a);
-	a->channel = ch;
 }
 
 void Fei4Analysis::plot(std::string basename) {
@@ -170,12 +176,10 @@ void TotAnalysis::init(ScanBase *s) {
         }
         
         if (l->type() == tmpPrmpFb->type()) {
-            std::cout << "Found Glboal Feedback Loop" << std::endl;
             globalFb = (Fei4GlobalFeedbackBase*) l.get();  
         }
         
         if (l->type() == typeid(Fei4PixelFeedback*)) {
-            std::cout << "Found Pixel Feedback Loop" << std::endl;
             pixelFb = (Fei4PixelFeedback*) l.get();  
         }
     }
@@ -507,7 +511,6 @@ void ScurveFitter::end() {
 void OccGlobalThresholdTune::init(ScanBase *s) {
     std::shared_ptr<LoopActionBase> tmpVthinFb(Fei4GlobalFeedbackBuilder(&Fei4::Vthin_Fine));
     n_count = 1;
-	std::cout << "Analysis on Channel: " << channel << std::endl;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
@@ -521,7 +524,6 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
             if (cnt == 0)
                 cnt = 1;
             n_count = n_count*cnt;
-            std::cout << "Count per Loop = " << cnt << std::endl;
         }
         
         if (l->type() == typeid(Fei4TriggerLoop*)) {
@@ -530,7 +532,6 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
         }
 
         if (l->type() == tmpVthinFb->type()) {
-            std::cout << "Found Feedback Loop" << std::endl;
             fb = (Fei4GlobalFeedbackBase*) l.get();  
         }
     }
@@ -598,7 +599,6 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
             done = true;
         }
         
-//        std::cout << "Sending feedback on channel " << this->channel << " : " << sign << " " << done << std::endl;
         fb->feedback(this->channel, sign, done);
         output->pushData(occMaps[ident]);
         output->pushData(occDists[ident]);
@@ -612,7 +612,6 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
 }
 
 void OccPixelThresholdTune::init(ScanBase *s) {
-	std::cout << "Analysis on Channel: " << channel << std::endl;
     n_count = 1;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
@@ -627,7 +626,6 @@ void OccPixelThresholdTune::init(ScanBase *s) {
             if (cnt == 0)
                 cnt = 1;
             n_count = n_count*cnt;
-            std::cout << "Count per Loop = " << cnt << std::endl;
         }
         
         if (l->type() == typeid(Fei4TriggerLoop*)) {
@@ -635,9 +633,7 @@ void OccPixelThresholdTune::init(ScanBase *s) {
             injections = trigLoop->getTrigCnt();
         }
         
-        std::cout << l->type().name() << std::endl;
         if (l->type() == typeid(Fei4PixelFeedback*)) {
-            std::cout << "Found Feedback Loop" << std::endl;
             fb = dynamic_cast<Fei4PixelFeedback*>(l.get());  
         }
     }
@@ -696,7 +692,6 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
         }
         std::cout << "Mean Occupancy: " << mean/(26880*(double)injections) << std::endl;
         
-        std::cout << "Sending feedback on channel #" << this->channel << std::endl;
         fb->feedback(this->channel, fbHisto);
         output->pushData(occMaps[ident]);
         output->pushData(occDist);

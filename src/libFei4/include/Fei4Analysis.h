@@ -33,6 +33,9 @@ class AnalysisAlgorithm {
     public:
         AnalysisAlgorithm() {};
         ~AnalysisAlgorithm() {};
+        
+        void setBookkeeper (Bookkeeper *b) {bookie = b;}
+        void setChannel (unsigned ch) {channel = ch;}
 
         void connect(ClipBoard<HistogramBase> *out) {
             output = out;
@@ -40,9 +43,10 @@ class AnalysisAlgorithm {
         virtual void init(ScanBase *s) {}
         virtual void processHistogram(HistogramBase *h) {}
         virtual void end() {}
-		unsigned channel;
 
     protected:
+        Bookkeeper *bookie;
+        unsigned channel;
         ScanBase *scan;
         ClipBoard<HistogramBase> *output;
 };
@@ -50,6 +54,7 @@ class AnalysisAlgorithm {
 class Fei4Analysis : DataProcessor {
     public:
         Fei4Analysis();
+        Fei4Analysis(Bookkeeper *b, unsigned ch);
         ~Fei4Analysis();
         
         void connect(ScanBase *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output) {
@@ -67,9 +72,9 @@ class Fei4Analysis : DataProcessor {
         void plot(std::string basename);
         void toFile(std::string basename);
 
-		unsigned channel;
-
     private:
+        Bookkeeper *bookie;
+        unsigned channel;
         ClipBoard<HistogramBase> *input;
         ClipBoard<HistogramBase> *output;
         ScanBase *scan;

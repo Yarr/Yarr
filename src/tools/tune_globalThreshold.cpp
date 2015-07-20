@@ -51,7 +51,6 @@ void analysis(unsigned ch, ScanBase *s, ClipBoard<Fei4Data> *events) {
 
     std::cout << "### Analyzing data ###" << std::endl;
     Fei4Analysis ana;
-	ana.channel = ch;
     //ana.addAlgorithm(new OccupancyAnalysis);
     //ana.addAlgorithm(new ScurveFitter);
     ana.addAlgorithm(new OccGlobalThresholdTune, ch);

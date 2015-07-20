@@ -11,49 +11,45 @@
 #include "LoopActionBase.h"
 
 class Fei4GlobalFeedbackBase : public LoopActionBase {
-    public:       
+    public:
+        // Step down feedback algorithm
         void feedback(unsigned channel, double sign, bool last = false) {
+            // Calculate new step and val
             if (sign != oldSign[channel]) {
                 oldSign[channel] = 0;
                 localStep[channel] = localStep[channel]/2;
             }
             int val = (values[channel]+(localStep[channel]*sign));
             if (val < 0) val = 0;
-			if(last) {
-  	        	std::cout << "--> Keeping value    " << values[channel] << " on channel # " << channel << std::endl;
-			}
-			else {
-	            values[channel] = val;
-	            std::cout << "--> Adding new value " << values[channel]+(localStep[channel]*sign) << " on channel # " << channel<< std::endl;
-			}
+	        values[channel] = val;
             doneMap[channel] |= last;
+
+            if (localStep[channel] == 1) {
+				 doneMap[channel] = true;
+			}
+            
+            // Abort if we are getting to low
             if (val < 50) {
 				doneMap[channel] = true;
 			}
+            // Unlock the mutex to let the scan proceed
 			keeper->mutexMap[channel].unlock();
         }
 
-        void feedbackBinary(double sign, bool last = false) {
-            int val = (cur+(step*sign));
-            if (val < 0) val = 0;
-            values[0] = val;
-            std::cout << "--> Adding new value " << val << std::endl;
-            step = step/2;
-            m_done = last;
-            if (step == 1) m_done = true;
-//			keeper->mutexMap[channel]->unlock();
-        }
-
+        // Binary search feedback algorithm
         void feedbackBinary(unsigned channel, double sign, bool last = false) {
-            int val = (cur+(step*sign));
+            // Calculate new step and value
+            int val = (values[channel]+(localStep[channel]*sign));
             if (val < 0) val = 0;
-            values[0] = val;
-            std::cout << "--> Adding new value " << val << std::endl;
-            step = step/2;
+            values[channel] = val;
+            localStep[channel]  = localStep[channel]/2;
 			doneMap[channel] |= last;
-            if (step == 1) {
+             
+            if (localStep[channel] == 1) {
 				 doneMap[channel] = true;
 			}
+            
+            // Unlock the mutex to let the scan proceed
 			keeper->mutexMap[channel].unlock();
         }
 
@@ -81,10 +77,10 @@ class Fei4GlobalFeedback : public Fei4GlobalFeedbackBase {
         void init() {
             m_done = false;
             cur = 0;
-			unsigned int ch;
-			for(unsigned int k=0; k<keeper->feList.size(); k++) {
+			// Init all maps:
+            for(unsigned int k=0; k<keeper->feList.size(); k++) {
 				if(keeper->feList[k]->getActive()) {
-					ch = keeper->feList[k]->getChannel();
+			        unsigned ch = keeper->feList[k]->getChannel();
 					localStep[ch] = step;
 					values[ch] = max;
 					oldSign[ch] = -1;
@@ -94,10 +90,18 @@ class Fei4GlobalFeedback : public Fei4GlobalFeedbackBase {
             this->writePar();
         }
 
-        void end() {}
+        void end() {
+			for(unsigned int k=0; k<keeper->feList.size(); k++) {
+				if(keeper->feList[k]->getActive()) {	
+                    unsigned ch = keeper->feList[k]->getRxChannel();
+                    std::cout << " --> Final parameter of Fe " << ch << " is " << values[ch] << std::endl;
+			    }
+			}
+        }
 
         void execPart1() {
             g_stat->set(this, cur);
+            // Lock all mutexes if open
 			for(unsigned int k=0; k<keeper->feList.size(); k++) {
 				if(keeper->feList[k]->getActive()) {	
 					keeper->mutexMap[keeper->feList[k]->getChannel()].try_lock();
@@ -106,25 +110,41 @@ class Fei4GlobalFeedback : public Fei4GlobalFeedbackBase {
 		}
 
         void execPart2() {
+            // Wait for mutexes to be unlocked by feedback
 			for(unsigned int k=0; k<keeper->feList.size(); k++) {
 				if(keeper->feList[k]->getActive()) {
-					keeper->mutexMap[keeper->feList[k]->getChannel()].lock();
+					keeper->mutexMap[keeper->feList[k]->getRxChannel()].lock();
+                    if (verbose)
+                        std::cout << " --> Received Feedback on Channel " 
+                            << keeper->feList[k]->getRxChannel() << " with value: " 
+                            << values[keeper->feList[k]->getRxChannel()] << std::endl;
 			    }
 			}
-			m_done = checkGlobalDone();
+			m_done = allDone();
             cur++;
-            std::cout << "--> Received feedback: " << cur << std::endl;
             this->writePar();
         }
 
         void writePar() {
 			for(unsigned int k=0; k<keeper->feList.size(); k++) {
 				if(keeper->feList[k]->getActive()) {
-					g_tx->setCmdEnable(1 << keeper->feList[k]->getChannel());
-					keeper->feList[k]->writeRegister(parPtr, values[keeper->feList[k]->getChannel()]);
+					g_tx->setCmdEnable(1 << keeper->feList[k]->getTxChannel());
+					keeper->feList[k]->writeRegister(parPtr, values[keeper->feList[k]->getRxChannel()]);
 				}
 			}
-			g_tx->setCmdEnable(3);
+            while(!g_tx->isCmdEmpty());
+			g_tx->setCmdEnable(keeper->getTxMask());
+        }
+        
+        bool allDone() {
+            for(unsigned int k=0; k<keeper->feList.size(); k++) {
+                if(keeper->feList[k]->getActive()) {
+                    unsigned ch = keeper->feList[k]->getRxChannel();
+                    if (!doneMap[ch])
+                        return false;
+                }
+            }
+            return true;
         }
 
         Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*parPtr;

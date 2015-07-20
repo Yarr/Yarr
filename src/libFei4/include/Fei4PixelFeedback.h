@@ -28,18 +28,19 @@ class Fei4PixelFeedback : public LoopActionBase {
                     max = 31;
                     break;
                 case (FDAC_FB):
-                    step = 8;
+                    step = 4;
                     min = 8;
                     max = 15;
                     break;
             }
-            fbHisto = NULL;
             loopType = typeid(this);
         }
 
         void feedback(unsigned channel, Histo2d *h) {
+            // TODO Check on NULL pointer
             if (h->size() != 26880) {
-                std::cout << __PRETTY_FUNCTION__ << " --> ERROR : Wrong type of feedback histogram!" << std::endl;
+                std::cout << __PRETTY_FUNCTION__ 
+                    << " --> ERROR : Wrong type of feedback histogram on channel " << channel << std::endl;
                 doneMap[channel] = true;
             } else {
                 fbHistoMap[channel] = h;
@@ -51,18 +52,15 @@ class Fei4PixelFeedback : public LoopActionBase {
     private:
         void init() {
             m_done = false;
-            unsigned int ch;
+            cur = 0;
 
             // Loop over active FEs
             for(unsigned int k=0; k<keeper->feList.size(); k++) {
                 if(keeper->feList[k]->getActive()) {
-                    ch = keeper->feList[k]->getChannel();
+                    unsigned ch = keeper->feList[k]->getChannel();
                     
                     // Init Maps
-                    oldStepMap[ch] = stepMap[ch];
-                    doneMap[ch] = false;
                     fbHistoMap[ch] = NULL;
-                    stepMap[ch] = step;
                     
                     // Initilize Pixel regs with default config
                     for (unsigned col=1; col<81; col++) {
@@ -80,8 +78,7 @@ class Fei4PixelFeedback : public LoopActionBase {
         }
 
         void execPart1() {
-            // TODO Current Step or iteration count ?
-            g_stat->set(this, step);
+            g_stat->set(this, cur);
          
             for(unsigned int k=0; k<keeper->feList.size(); k++) {
                 if(keeper->feList[k]->getActive()) {
@@ -98,22 +95,19 @@ class Fei4PixelFeedback : public LoopActionBase {
             for(unsigned int k=0; k<keeper->feList.size(); k++) {
                 if(keeper->feList[k]->getActive()) {
                     ch = keeper->feList[k]->getChannel();
-
                     // Wait for Mutex to be unlocked by feedback
                     keeper->mutexMap[ch].lock();
-
                     this->addFeedback(ch);
-                    std::cout << " Received feeddback for channel #" << ch << " at step: " << step << std::endl;
-
-                    m_done = this->allDone();
-                    if (lastMap[ch]) doneMap[ch] = true;
-                    if (stepMap[ch] == 1 && oldStepMap[ch] == 1)
-                        lastMap[ch] = true;
-                    oldStepMap[ch] = stepMap[ch];
-                    stepMap[ch] = stepMap[ch]/2;
-                    if (stepMap[ch] ==0) stepMap[ch] =1;
                 }
             }
+            // Execute last step twice to get full range
+            if (step == 1 && oldStep == 1)
+                m_done = true;
+            oldStep = step;
+            step = step/2;
+            if(step == 0)
+                step = 1;
+            cur++;
         }
 
         bool allDone() {
@@ -125,19 +119,6 @@ class Fei4PixelFeedback : public LoopActionBase {
                 }
             }
             return true;
-        }
-
-        unsigned getPixel(unsigned col, unsigned row) {
-            unsigned v = 0;
-            switch (fbType) {
-                case (TDAC_FB):
-                    v = g_fe->getTDAC(col, row);
-                    break;
-                case (FDAC_FB):
-                    v = g_fe->getFDAC(col, row);
-                    break;
-            }
-            return v;
         }
 
         unsigned getPixel(Fei4 *fe, unsigned col, unsigned row) {
@@ -153,17 +134,6 @@ class Fei4PixelFeedback : public LoopActionBase {
             return v;
         }
 
-        void setPixel(unsigned col, unsigned row, unsigned v) {
-            switch (fbType) {
-                case (TDAC_FB):
-                    g_fe->setTDAC(col, row, v);		// per FE
-                    break;
-                case (FDAC_FB):
-                    g_fe->setFDAC(col, row, v);		// per FE
-                    break;
-            }
-        }
-
         void setPixel(Fei4 *fe, unsigned col, unsigned row, unsigned v) {
             switch (fbType) {
                 case (TDAC_FB):
@@ -176,41 +146,19 @@ class Fei4PixelFeedback : public LoopActionBase {
         }
 
         void addFeedback(unsigned ch) {
-            std::cout << " Feedback! at channel #" << ch << std::endl;
             if (fbHistoMap[ch] != NULL) {
                 for (unsigned row=1; row<337; row++) {
                     for (unsigned col=1; col<81; col++) {
                         int sign = fbHistoMap[ch]->getBin(fbHistoMap[ch]->binNum(col, row));
                         int v = getPixel(keeper->getFe(ch),col, row);
-                        v = v + ((int)stepMap[ch])*sign;
+                        v = v + (step)*sign;
                         if (v < 0) v = 0;
                         if ((unsigned)v > max) v = max;
                         this->setPixel(keeper->getFe(ch),col, row, v);
                     }
                 }
+                delete fbHistoMap[ch];
             }
-            delete fbHistoMap[ch];
-            std::cout << std::endl;
-        }
-
-
-        void writePixelCfg() {
-            std::cout << "Writing config" << std::endl;
-            // Not real lsb/msb because that is defined in the pixel config
-            unsigned lsb = 0;
-            unsigned msb = 0;
-            switch (fbType) {
-                case (TDAC_FB):
-                    lsb  = 1;
-                    msb = 5;
-                    break;
-                case (FDAC_FB):
-                    lsb = 9;
-                    msb = 12;
-                    break;
-            }
-            // Write config into FE
-            g_fe->configurePixels(lsb, msb+1);
         }
 
         void writePixelCfg(Fei4 *fe) {
@@ -234,16 +182,9 @@ class Fei4PixelFeedback : public LoopActionBase {
         }
 
         enum FeedbackType fbType;
-        Histo2d *fbHisto;
-        unsigned oldStep;
-        bool last;
-
-        std::map<unsigned, Histo2d*>	fbHistoMap;
-        std::map<unsigned, unsigned> oldStepMap;
-        std::map<unsigned, unsigned> stepMap;
-        std::map<unsigned, double> oldSign;
-        std::map<unsigned, bool>	lastMap;
-
+        std::map<unsigned, Histo2d*> fbHistoMap;
+        unsigned step, oldStep;
+        unsigned cur;
 };
 
 #endif

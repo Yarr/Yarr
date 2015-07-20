@@ -46,7 +46,6 @@ void analysis(unsigned ch, ScanBase *s, ClipBoard<Fei4Data> *events) {
  
     std::cout << "### Analyzing data on channel #" << ch << " ###" << std::endl;
     Fei4Analysis ana;
-	ana.channel = ch;
 
     ana.addAlgorithm(new OccPixelThresholdTune,ch);
     ana.connect(s, &clipHisto, &clipResult);
