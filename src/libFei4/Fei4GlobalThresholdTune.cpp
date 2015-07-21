@@ -11,7 +11,7 @@
 Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data) : ScanBase(fe, tx, rx, data) {
     mask = MASK_16;
     dcMode = QUAD_DC;
-    numOfTriggers = 100;
+    numOfTriggers = 200;
     triggerFrequency = 10e3;
     triggerDelay = 50;
 
@@ -25,7 +25,7 @@ Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Fei4 *fe, TxCore *tx, RxCore *r
 Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Bookkeeper *b) : ScanBase(b) {
     mask = MASK_16;
     dcMode = QUAD_DC;
-    numOfTriggers = 100;
+    numOfTriggers = 200;
     triggerFrequency = 10e3;
     triggerDelay = 50;
 
@@ -41,8 +41,9 @@ Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Bookkeeper *b) : ScanBase(b) {
 void Fei4GlobalThresholdTune::init() {
     // Loop 0: Feedback, start with max fine threshold
     std::shared_ptr<Fei4GlobalFeedbackBase> fbLoop(Fei4GlobalFeedbackBuilder(&Fei4::Vthin_Fine));
-    fbLoop->setStep(16);
+    fbLoop->setStep(32);
     fbLoop->setMax(255);
+    fbLoop->setVerbose(true);
 
     // Loop 1: Mask Staging
     std::shared_ptr<Fei4MaskLoop> maskStaging(new Fei4MaskLoop);

@@ -60,6 +60,16 @@ double Histo1d::getMean() {
     return weighted_sum/sum;
 }
 
+double Histo1d::getStdDev() {
+    if (sum == 0)
+        return 0;
+    double mean = this->getMean();
+    double mu = 0;
+    for (unsigned i=0; i<bins; i++)
+        mu += data[i] * pow((((i+1)*binWidth)+xlow+(binWidth/2.0))-mean,2);
+    return sqrt(mu/(double)sum);
+}
+
 void Histo1d::fill(double x, double v) {
     if (x < xlow) {
         underflow+=v;

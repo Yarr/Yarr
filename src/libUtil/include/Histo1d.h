@@ -14,6 +14,7 @@
 #include <string>
 #include <typeinfo>
 #include <typeindex>
+#include <cmath>
 
 #include "HistogramBase.h"
 
@@ -25,6 +26,7 @@ class Histo1d : public HistogramBase {
         
         unsigned size() const;
         double getMean();
+        double getStdDev();
 
         void fill(double x, double v=1);
 

@@ -499,9 +499,11 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
 void ScurveFitter::end() {
     if (thrDist[0] != NULL) {
+        std::cout << "[" << channel << "] Threashold Mean = " << thrDist[0]->getMean() << " +- " << thrDist[0]->getStdDev() << std::endl;
         output->pushData(thrDist[0]);
         output->pushData(thrMap[0]);
         output->pushData(sigDist[0]);
+        std::cout << "[" << channel << "] Noise Mean = " << sigDist[0]->getMean() << " +- " << sigDist[0]->getStdDev() << std::endl;
         output->pushData(sigMap[0]);
         output->pushData(chiDist[0]);
         output->pushData(timeDist[0]);
@@ -590,9 +592,9 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
         double meanOcc = occDists[ident]->getMean()/injections;
         std::cout << "Mean Occupancy: " << meanOcc << std::endl;
 
-        if (meanOcc > 0.51) {
+        if (meanOcc > 0.52) {
             sign = +1;
-        } else if (meanOcc < 0.49) {
+        } else if (meanOcc < 0.48) {
             sign = -1;
         } else {
             sign = 0;
@@ -680,9 +682,10 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
         occDist->setXaxisTitle("Occupancy");
         occDist->setYaxisTitle("Number of Pixels");
         for (unsigned i=0; i<fbHisto->size(); i++) {
-            if ((occMaps[ident]->getBin(i)/(double)injections) > 0.6) {
+            double occ = occMaps[ident]->getBin(i);
+            if ((occ/(double)injections) > 0.6) {
                 fbHisto->setBin(i, -1);
-            } else if ((occMaps[ident]->getBin(i)/(double)injections) < 0.4) {
+            } else if ((occ/(double)injections) < 0.4) {
                 fbHisto->setBin(i, +1);
             } else {
                 fbHisto->setBin(i, 0);
