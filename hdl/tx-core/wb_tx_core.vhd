@@ -121,6 +121,8 @@ architecture behavioral of wb_tx_core is
 	-- Trigger command
 	signal trig_freq : std_logic_vector(31 downto 0); -- Number of clock cycles between triggers
 	signal trig_time : std_logic_vector(63 downto 0); -- Clock cycles
+	signal trig_time_l : std_logic_vector(31 downto 0);
+	signal trig_time_h : std_logic_vector(31 downto 0);
 	signal trig_count : std_logic_vector(31 downto 0); -- Fixed number of triggers
 	signal trig_conf : std_logic_vector(3 downto 0); -- Internal, external, pseudo random, 
 	signal trig_en : std_logic;
@@ -150,6 +152,7 @@ begin
 		elsif rising_edge(wb_clk_i) then
 			wb_wr_en <= (others => '0');
 			wb_ack_o <= '0';
+			trig_time <= trig_time_h & trig_time_l;
 			if (wb_cyc_i = '1' and wb_stb_i = '1') then
 				if (wb_we_i = '1') then
 					if (wb_adr_i(3 downto 0) = x"0") then -- Write to fifo
@@ -169,10 +172,10 @@ begin
 						trig_freq <= wb_dat_i;
 						wb_ack_o <= '1';
 					elsif (wb_adr_i(3 downto 0) = x"7") then -- Set trigger time low
-						trig_time(31 downto 0) <= wb_dat_i;
+						trig_time_l(31 downto 0) <= wb_dat_i;
 						wb_ack_o <= '1';
 					elsif (wb_adr_i(3 downto 0) = x"8") then -- Set trigger time high
-						trig_time(63 downto 32) <= wb_dat_i;
+						trig_time_h(31 downto 0) <= wb_dat_i;
 						wb_ack_o <= '1';
 					elsif (wb_adr_i(3 downto 0) = x"9") then -- Set trigger count
 						trig_count <= wb_dat_i;
