@@ -105,6 +105,7 @@ bool TxCore::isTrigDone() {
 }
  
 bool TxCore::isCmdEmpty() {
+    std::this_thread::sleep_for(std::chrono::microseconds(10));
     return (spec->readSingle(TX_ADDR | TX_EMPTY) & enMask);
 }
 
