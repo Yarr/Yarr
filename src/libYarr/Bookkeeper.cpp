@@ -19,7 +19,7 @@ Bookkeeper::Bookkeeper(TxCore *arg_tx, RxCore *arg_rx) {
 
 // Delete all leftover data, Bookkeeper should be deleted last
 Bookkeeper::~Bookkeeper() {
-
+    delete g_fe;
 }
 
 // RxChannel is unique ident
@@ -100,7 +100,7 @@ uint32_t Bookkeeper::getTxMask() {
     uint32_t mask = 0;
     for (unsigned i=0; i<feList.size(); i++) {
         if (feList[i]->isActive()) {
-            mask += 0x1 << feList[i]->getTxChannel();
+            mask |= (0x1 << feList[i]->getTxChannel());
         }
     }
     return mask;
@@ -110,7 +110,7 @@ uint32_t Bookkeeper::getRxMask() {
     uint32_t mask = 0;
     for (unsigned i=0; i<feList.size(); i++) {
         if (feList[i]->isActive()) {
-            mask += 0x1 << feList[i]->getRxChannel();
+            mask |= (0x1 << feList[i]->getRxChannel());
         }
     }
     return mask;

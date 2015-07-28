@@ -589,12 +589,12 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
             done = true;
         }
 
-        double meanOcc = occDists[ident]->getMean()/injections;
-        std::cout << "Mean Occupancy: " << meanOcc << std::endl;
+        double meanOcc = occDists[ident]->getMean()/(double)injections;
+        std::cout << "[" << channel << "]Mean Occupancy: " << meanOcc << std::endl;
 
-        if (meanOcc > 0.52) {
+        if ((meanOcc > 0.51) && !done) {
             sign = +1;
-        } else if (meanOcc < 0.48) {
+        } else if ((meanOcc < 0.49) && !done) {
             sign = -1;
         } else {
             sign = 0;

@@ -13,7 +13,7 @@ Fei4::Fei4(TxCore *core, unsigned arg_chipId) : Fei4Cfg(arg_chipId), Fei4Cmd(cor
     rxChannel = 99;
 	histogrammer = NULL;
 	ana = NULL;
-	setActive(true);
+	active = true;
 }
 
 Fei4::Fei4(TxCore *core, unsigned arg_chipId, unsigned arg_channel) : Fei4Cfg(arg_chipId), Fei4Cmd(core) {
@@ -21,7 +21,7 @@ Fei4::Fei4(TxCore *core, unsigned arg_chipId, unsigned arg_channel) : Fei4Cfg(ar
 	rxChannel = arg_channel;
 	histogrammer = NULL;
 	ana = NULL;
-	setActive(true);
+	active = true;
 }
 
 Fei4::Fei4(TxCore *core, unsigned arg_chipId, unsigned arg_txChannel, unsigned arg_rxChannel) : Fei4Cfg(arg_chipId), Fei4Cmd(core) {
@@ -29,7 +29,7 @@ Fei4::Fei4(TxCore *core, unsigned arg_chipId, unsigned arg_txChannel, unsigned a
 	rxChannel = arg_rxChannel;
 	histogrammer = NULL;
 	ana = NULL;
-	setActive(true);
+	active = true;
 }
 
 Fei4::~Fei4() {	

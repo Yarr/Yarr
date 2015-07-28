@@ -85,15 +85,17 @@ void Fei4PixelThresholdTune::preScan() {
 
 	for(unsigned int k=0; k<b->feList.size(); k++) {
         Fei4 *fe = b->feList[k];
-        // Set to single channel tx
-		g_tx->setCmdEnable(0x1 << fe->getChannel());
-        // Set specific pulser DAC
-    	fe->writeRegister(&Fei4::PlsrDAC, fe->toVcal(target, useScap, useLcap));
-        // Reset all TDACs
-        for (unsigned col=1; col<81; col++)
-            for (unsigned row=1; row<337; row++)
-                fe->setTDAC(col, row, 16);
+        if (fe->isActive()) {
+            // Set to single channel tx
+            g_tx->setCmdEnable(0x1 << fe->getTxChannel());
+            // Set specific pulser DAC
+            fe->writeRegister(&Fei4::PlsrDAC, fe->toVcal(target, useScap, useLcap));
+            // Reset all TDACs
+            for (unsigned col=1; col<81; col++)
+                for (unsigned row=1; row<337; row++)
+                    fe->setTDAC(col, row, 16);
+            while(!g_tx->isCmdEmpty());
+        }
 	}
 	g_tx->setCmdEnable(b->getTxMask());
-    while(!g_tx->isCmdEmpty());
 }

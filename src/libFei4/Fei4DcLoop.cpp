@@ -53,6 +53,7 @@ void Fei4DcLoop::execPart1() {
     g_stat->set(this, m_col);
     // Address col
     g_fe->writeRegister(&Fei4::Colpr_Addr, m_col);
+    while(!g_tx->isCmdEmpty());
 }
 
 void Fei4DcLoop::execPart2() {

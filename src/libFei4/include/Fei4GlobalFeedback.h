@@ -20,6 +20,7 @@ class Fei4GlobalFeedbackBase : public LoopActionBase {
                 localStep[channel] = localStep[channel]/2;
             }
             int val = (values[channel]+(localStep[channel]*sign));
+            if (val > (int)max) val = max;
             if (val < 0) val = 0;
 	        values[channel] = val;
             doneMap[channel] |= last;
@@ -80,7 +81,7 @@ class Fei4GlobalFeedback : public Fei4GlobalFeedbackBase {
 			// Init all maps:
             for(unsigned int k=0; k<keeper->feList.size(); k++) {
 				if(keeper->feList[k]->getActive()) {
-			        unsigned ch = keeper->feList[k]->getChannel();
+			        unsigned ch = keeper->feList[k]->getRxChannel();
 					localStep[ch] = step;
 					values[ch] = max;
 					oldSign[ch] = -1;
@@ -104,9 +105,10 @@ class Fei4GlobalFeedback : public Fei4GlobalFeedbackBase {
             // Lock all mutexes if open
 			for(unsigned int k=0; k<keeper->feList.size(); k++) {
 				if(keeper->feList[k]->getActive()) {	
-					keeper->mutexMap[keeper->feList[k]->getChannel()].try_lock();
+					keeper->mutexMap[keeper->feList[k]->getRxChannel()].try_lock();
 			    }
 			}
+			m_done = allDone();
 		}
 
         void execPart2() {
@@ -120,7 +122,6 @@ class Fei4GlobalFeedback : public Fei4GlobalFeedbackBase {
                             << values[keeper->feList[k]->getRxChannel()] << std::endl;
 			    }
 			}
-			m_done = allDone();
             cur++;
             this->writePar();
         }
@@ -130,9 +131,9 @@ class Fei4GlobalFeedback : public Fei4GlobalFeedbackBase {
 				if(keeper->feList[k]->getActive()) {
 					g_tx->setCmdEnable(1 << keeper->feList[k]->getTxChannel());
 					keeper->feList[k]->writeRegister(parPtr, values[keeper->feList[k]->getRxChannel()]);
+                    while(!g_tx->isCmdEmpty());
 				}
 			}
-            while(!g_tx->isCmdEmpty());
 			g_tx->setCmdEnable(keeper->getTxMask());
         }
         

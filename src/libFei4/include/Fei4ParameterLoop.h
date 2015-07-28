@@ -49,6 +49,7 @@ class Fei4ParameterLoop : public Fei4ParameterLoopBase {
 
         void writePar() {
             g_fe->writeRegister(parPtr, cur);
+            while(!g_tx->isCmdEmpty());
         }
 
         unsigned cur;

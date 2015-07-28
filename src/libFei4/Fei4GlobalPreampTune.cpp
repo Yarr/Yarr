@@ -48,6 +48,7 @@ void Fei4GlobalPreampTune::init() {
     std::shared_ptr<Fei4GlobalFeedbackBase> fbLoop(Fei4GlobalFeedbackBuilder(&Fei4::PrmpVbpf));
     fbLoop->setStep(64);
     fbLoop->setMax(128);
+    fbLoop->setVerbose(true);
 
     // Loop 1: Mask Staging
     std::shared_ptr<Fei4MaskLoop> maskStaging(new Fei4MaskLoop);
@@ -96,16 +97,16 @@ void Fei4GlobalPreampTune::preScan() {
 	for(unsigned int k=0; k<b->feList.size(); k++) {
         Fei4 *fe = b->feList[k];
         // Set to single channel tx
-		g_tx->setCmdEnable(0x1 << fe->getChannel());
+		g_tx->setCmdEnable(0x1 << fe->getTxChannel());
         // Set specific pulser DAC
-        g_fe->writeRegister(&Fei4::PlsrDAC, g_fe->toVcal(target, useScap, useLcap));
+        fe->writeRegister(&Fei4::PlsrDAC, fe->toVcal(target, useScap, useLcap));
         // Reset all TDACs
         // TODO do not if retune
         for (unsigned col=1; col<81; col++)
             for (unsigned row=1; row<337; row++)
                 fe->setFDAC(col, row, 8);
         fe->configurePixels();
+        while(!g_tx->isCmdEmpty());
 	}
 	g_tx->setCmdEnable(b->getTxMask());
-    while(!g_tx->isCmdEmpty());
 }

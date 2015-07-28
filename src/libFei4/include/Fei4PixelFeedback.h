@@ -57,7 +57,7 @@ class Fei4PixelFeedback : public LoopActionBase {
             // Loop over active FEs
             for(unsigned int k=0; k<keeper->feList.size(); k++) {
                 if(keeper->feList[k]->getActive()) {
-                    unsigned ch = keeper->feList[k]->getChannel();
+                    unsigned ch = keeper->feList[k]->getRxChannel();
                     
                     // Init Maps
                     fbHistoMap[ch] = NULL;
@@ -83,7 +83,7 @@ class Fei4PixelFeedback : public LoopActionBase {
             for(unsigned int k=0; k<keeper->feList.size(); k++) {
                 if(keeper->feList[k]->getActive()) {
                     // Need to lock mutex on first itereation
-                    keeper->mutexMap[keeper->feList[k]->getChannel()].try_lock();
+                    keeper->mutexMap[keeper->feList[k]->getRxChannel()].try_lock();
                     // Write config
                     this->writePixelCfg(keeper->feList[k]);
                 }
@@ -94,7 +94,7 @@ class Fei4PixelFeedback : public LoopActionBase {
             unsigned ch;
             for(unsigned int k=0; k<keeper->feList.size(); k++) {
                 if(keeper->feList[k]->getActive()) {
-                    ch = keeper->feList[k]->getChannel();
+                    ch = keeper->feList[k]->getRxChannel();
                     // Wait for Mutex to be unlocked by feedback
                     keeper->mutexMap[ch].lock();
                     this->addFeedback(ch);
@@ -179,6 +179,7 @@ class Fei4PixelFeedback : public LoopActionBase {
             g_tx->setCmdEnable(1 << fe->getTxChannel());
             fe->configurePixels(lsb, msb+1);
             g_tx->setCmdEnable(keeper->getTxMask());
+            while(!g_tx->isCmdEmpty());
         }
 
         enum FeedbackType fbType;

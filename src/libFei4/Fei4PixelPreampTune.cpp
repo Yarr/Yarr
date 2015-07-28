@@ -92,14 +92,14 @@ void Fei4PixelPreampTune::preScan() {
 	for(unsigned int k=0; k<b->feList.size(); k++) {
         Fei4 *fe = b->feList[k];
         // Set to single channel tx
-		g_tx->setCmdEnable(0x1 << fe->getChannel());
+		g_tx->setCmdEnable(0x1 << fe->getTxChannel());
         // Set specific pulser DAC
     	fe->writeRegister(&Fei4::PlsrDAC, fe->toVcal(target, useScap, useLcap));
         // Reset all FDACs
         for (unsigned col=1; col<81; col++)
             for (unsigned row=1; row<337; row++)
                 fe->setFDAC(col, row, 8);
+        while(!g_tx->isCmdEmpty());
 	}
 	g_tx->setCmdEnable(b->getTxMask());
-    while(!g_tx->isCmdEmpty());
 }

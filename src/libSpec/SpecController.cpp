@@ -487,6 +487,7 @@ uint32_t SpecController::readEeprom(uint8_t * buffer, uint32_t len) {
 	unsigned int j = 0;
 	uint32_t tmp = 0;
 
+    std::cout << "Starting read" << std::endl;
     //Set TWI to run in host mode
     usleep(1000);
     this->mask32(bar4, LB_CTL/4, 0x0, 0x10000);

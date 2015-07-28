@@ -41,7 +41,7 @@ Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Bookkeeper *b) : ScanBase(b) {
 void Fei4GlobalThresholdTune::init() {
     // Loop 0: Feedback, start with max fine threshold
     std::shared_ptr<Fei4GlobalFeedbackBase> fbLoop(Fei4GlobalFeedbackBuilder(&Fei4::Vthin_Fine));
-    fbLoop->setStep(32);
+    fbLoop->setStep(16);
     fbLoop->setMax(255);
     fbLoop->setVerbose(true);
 
@@ -90,7 +90,7 @@ void Fei4GlobalThresholdTune::preScan() {
 	for(unsigned int k=0; k<b->feList.size(); k++) {
         Fei4 *fe = b->feList[k];
         // Set to single channel tx
-		g_tx->setCmdEnable(0x1 << fe->getChannel());
+		g_tx->setCmdEnable(0x1 << fe->getTxChannel());
         // Set specific pulser DAC
     	fe->writeRegister(&Fei4::PlsrDAC, fe->toVcal(target, useScap, useLcap));
         // Reset all TDACs
@@ -99,7 +99,7 @@ void Fei4GlobalThresholdTune::preScan() {
             for (unsigned row=1; row<337; row++)
                 fe->setTDAC(col, row, 16);
         fe->configurePixels();
+        while(!g_tx->isCmdEmpty());
 	}
 	g_tx->setCmdEnable(b->getTxMask());
-    while(!g_tx->isCmdEmpty());
 }

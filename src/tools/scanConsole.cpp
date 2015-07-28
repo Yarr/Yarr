@@ -37,7 +37,7 @@ void process(Bookkeeper *bookie) {
     Fei4DataProcessor proc(bookie->getGlobalFe()->getValue(&Fei4::HitDiscCnfg));
     proc.connect(&bookie->rawData, &bookie->eventMap);
     proc.init();
-
+    
     while(!scanDone) {
         // TODO some better wakeup signal?
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -120,19 +120,32 @@ int main(int argc, char *argv[]) {
 
     std::cout << "-> Read global config (" << configPath << "):" << std::endl;
     std::fstream gConfig(configPath, std::ios::in);
-    while (!gConfig.eof()) {
-        std::string name, feCfgPath;
+    if (!gConfig) {
+        std::cerr << "## ERROR ## Could not open file: " << configPath << std::endl;
+        return -1;
+    }
+
+    while (!gConfig.eof() && gConfig) {
         unsigned id, tx, rx;
-        gConfig >> name >> id >> tx >> rx >> feCfgPath;
-        if (gConfig.eof())
-            break;
-        std::cout << "-> Found FE " << name << std::endl;
-        // Add FE to bookkeeper
-        bookie.addFe(id, tx, rx);
-        bookie.getLastFe()->setName(name);
-        // TODO verify cfg typea
-        // Load config
-        bookie.getLastFe()->fromFileBinary(feCfgPath);
+        std::string name, feCfgPath;
+        if (gConfig.peek() == '#') {
+            char tmp[1024];
+            gConfig.getline(tmp, 1024);
+            std::cout << " Skipping: " << tmp << std::endl;
+        } else {
+            gConfig >> name >> id >> tx >> rx >> feCfgPath;
+            if (gConfig.eof())
+                break;
+            std::cout << "-> Found FE " << name << std::endl;
+            // Add FE to bookkeeper
+            bookie.addFe(id, tx, rx);
+            bookie.getLastFe()->setName(name);
+            // TODO verify cfg typea
+            // Load config
+            bookie.getLastFe()->fromFileBinary(feCfgPath);
+            // Set chipId again after loading in case we got std cfg
+            bookie.getLastFe()->setChipId(id);
+        }
     }
         
     std::cout << std::endl;
@@ -150,11 +163,13 @@ int main(int argc, char *argv[]) {
         fe->configure();
         fe->configurePixels(); // TODO should call abstract configure only
         // Wait for fifo to be empty
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
         while(!tx.isCmdEmpty());
     }
     std::chrono::steady_clock::time_point cfg_end = std::chrono::steady_clock::now();
     std::cout << "-> All FEs configured in " 
         << std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count() << " ms !" << std::endl;
+    
     // Wait for rx to sync with FE stream
     // TODO Check RX sync
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
@@ -163,7 +178,7 @@ int main(int argc, char *argv[]) {
     std::cout << "-> Setting Tx Mask to: 0x" << std::hex << bookie.getTxMask() << std::dec << std::endl;
     rx.setRxEnable(bookie.getRxMask());
     std::cout << "-> Setting Rx Mask to: 0x" << std::hex << bookie.getRxMask() << std::dec << std::endl;
-
+    
     std::cout << std::endl;
     std::cout << "##############" << std::endl;
     std::cout << "# Setup Scan #" << std::endl;
