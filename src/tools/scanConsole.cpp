@@ -72,9 +72,10 @@ int main(int argc, char *argv[]) {
     unsigned specNum = 0;
     std::string scanType = "digitalscan";
     std::string configPath = "";
+    bool doPlots = false;
 
     int c;
-    while ((c = getopt(argc, argv, "hs:n:c:")) != -1) {
+    while ((c = getopt(argc, argv, "hs:n:c:p")) != -1) {
         switch (c) {
             case 'h':
                 printHelp();
@@ -88,6 +89,9 @@ int main(int argc, char *argv[]) {
                 break;
             case 'c':
                 configPath = optarg;
+                break;
+            case 'p':
+                doPlots = true;
                 break;
             case '?':
                 if (optopt == 's' || optopt == 'n' || optopt == 'c') {
@@ -128,7 +132,12 @@ int main(int argc, char *argv[]) {
     while (!gConfig.eof() && gConfig) {
         unsigned id, tx, rx;
         std::string name, feCfgPath;
-        if (gConfig.peek() == '#') {
+        char peekaboo = gConfig.peek();
+        if (peekaboo == '\n') {
+            gConfig.ignore();
+            peekaboo = gConfig.peek();
+        }
+        if (peekaboo == '#') {
             char tmp[1024];
             gConfig.getline(tmp, 1024);
             std::cout << " Skipping: " << tmp << std::endl;
@@ -333,8 +342,10 @@ int main(int argc, char *argv[]) {
             std::cout << "-> Saving config of FE " << fe->getName() << std::endl;
             fe->toFileBinary();
             // Plot
-            std::cout << "-> Plotting histograms of FE " << fe->getRxChannel() << std::endl;
-            fe->ana->plot("ch" + std::to_string(fe->getRxChannel()) + "_" + scanType);
+            if (doPlots) {
+                std::cout << "-> Plotting histograms of FE " << fe->getRxChannel() << std::endl;
+                fe->ana->plot("ch" + std::to_string(fe->getRxChannel()) + "_" + scanType);
+            }
             // Free
             delete fe->histogrammer;
             fe->histogrammer = NULL;
@@ -350,6 +361,7 @@ void printHelp() {
     std::cout << " -h: Shows this." << std::endl;
     std::cout << " -s: Scan type. Possible types:" << std::endl;
     listScans();
+    std::cout << " -p: Enable plotting of results." << std::endl;
 }
 
 void listScans() {

@@ -683,9 +683,9 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
         occDist->setYaxisTitle("Number of Pixels");
         for (unsigned i=0; i<fbHisto->size(); i++) {
             double occ = occMaps[ident]->getBin(i);
-            if ((occ/(double)injections) > 0.6) {
+            if ((occ/(double)injections) > 0.65) {
                 fbHisto->setBin(i, -1);
-            } else if ((occ/(double)injections) < 0.4) {
+            } else if ((occ/(double)injections) < 0.35) {
                 fbHisto->setBin(i, +1);
             } else {
                 fbHisto->setBin(i, 0);
@@ -693,7 +693,8 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
             mean += occMaps[ident]->getBin(i);
             occDist->fill(occMaps[ident]->getBin(i));
         }
-        std::cout << "Mean Occupancy: " << mean/(26880*(double)injections) << std::endl;
+        std::cout << "[" << channel << "] Mean Occupancy: " << mean/(26880*(double)injections) << std::endl;
+        std::cout << "[" << channel << "] RMS: " << occDist->getStdDev() << std::endl;
         
         fb->feedback(this->channel, fbHisto);
         output->pushData(occMaps[ident]);
