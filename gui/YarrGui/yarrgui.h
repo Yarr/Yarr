@@ -18,6 +18,12 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+#include <sstream>
+#include <iomanip>
+
+#include <QFile>
+#include <QTextStream>
+
 namespace Ui {
 class YarrGui;
 }

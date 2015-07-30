@@ -1,5 +1,6 @@
 #include "yarrgui.h"
 #include <QApplication>
+#include <QString>
 
 int main(int argc, char *argv[])
 {
