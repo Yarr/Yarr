@@ -12,11 +12,14 @@
 #include "TxCore.h"
 #include "RxCore.h"
 
+#include "Bookkeeper.h"
+
 typedef EngineTBase< std::vector< std::shared_ptr<LoopActionBase> > > Engine;
 
 class LoopEngine : public Engine {
     public:
         LoopEngine(Fei4 *fe, TxCore *tx, RxCore *rx);
+        LoopEngine(Bookkeeper *k);
         ~LoopEngine();
         
         void addAction(Engine::element_value_type el);
@@ -31,6 +34,7 @@ class LoopEngine : public Engine {
         TxCore *g_tx;
         RxCore *g_rx;
         LoopStatus stat;
+        Bookkeeper *g_bk;
 };
 
 #endif

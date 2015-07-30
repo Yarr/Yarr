@@ -22,9 +22,13 @@
 #include "ClipBoard.h"
 #include "RawData.h"
 
+#include "Bookkeeper.h"
+
 class ScanBase {
     public:
         ScanBase(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data);
+        ScanBase(Bookkeeper *k);
+        virtual ~ScanBase() {}
 
         virtual void init() {}
         virtual void preScan() {}
@@ -39,6 +43,7 @@ class ScanBase {
     protected:
         LoopEngine engine;
         void addLoop(std::shared_ptr<LoopActionBase> l);
+        Bookkeeper *b;
 
         Fei4 *g_fe;
         TxCore *g_tx;

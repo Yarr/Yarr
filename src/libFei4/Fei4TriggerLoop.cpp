@@ -37,15 +37,29 @@ void Fei4TriggerLoop::init() {
     g_tx->setTrigWordLength(m_trigWordLength);
     g_tx->setTrigWord(m_trigWord);
     
-    // Set Modules into runmode
+    // Set active Modules into runmode
+    // TODO ISSUE: This makes problems
+    /*for (unsigned i=0; i<keeper->feList.size(); i++) {
+        if (keeper->feList[i]->isActive()) {
+            std::cout << "Tx = " << (0x1 << keeper->feList[i]->getTxChannel()) << std::endl;
+            g_tx->setCmdEnable(0x1 << keeper->feList[i]->getTxChannel());
+            keeper->feList[i]->setRunMode(true);
+            usleep(100);
+            while(!g_tx->isCmdEmpty());
+        }
+    }*/
+
+    // Workaround: Put everything into run mode, active rx channels will sort this out
+    g_tx->setCmdEnable(keeper->getTxMask());
     g_fe->setRunMode(true);
-    while(!g_tx->isCmdEmpty());
     usleep(100); // Empty could be delayed
+    while(!g_tx->isCmdEmpty());
 }
 
 void Fei4TriggerLoop::end() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
+    // Go back to conf mode, general state of FE should be conf mode
     g_fe->setRunMode(false);
     while(!g_tx->isCmdEmpty());
 }

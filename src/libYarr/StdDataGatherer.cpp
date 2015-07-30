@@ -1,15 +1,15 @@
 /*
  * Authors: T. Heim <timon.heim@cern.ch>,
- * Date: 2014-Sep-27
+ * Date: 2015-Jul-21
  */
 
-#include "StdDataLoop.h"
+#include "StdDataGatherer.h"
 
 #include <chrono>
 #include <thread>
 #include <algorithm>
 
-StdDataLoop::StdDataLoop() : LoopActionBase() {
+StdDataGatherer::StdDataGatherer() : LoopActionBase() {
     storage = NULL;
     loopType = typeid(this);
     min = 0;
@@ -18,19 +18,19 @@ StdDataLoop::StdDataLoop() : LoopActionBase() {
     counter = 0;
 }
 
-void StdDataLoop::init() {
+void StdDataGatherer::init() {
     m_done = false;
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
 }
 
-void StdDataLoop::end() {
+void StdDataGatherer::end() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
 
 }
 
-void StdDataLoop::execPart1() {
+void StdDataGatherer::execPart1() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     if (g_tx->getTrigEnable() == 0)
@@ -38,56 +38,47 @@ void StdDataLoop::execPart1() {
 
 }
 
-void StdDataLoop::execPart2() {
+void StdDataGatherer::execPart2() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     unsigned count = 0;
     uint32_t done = 0;
-    //uint32_t rate = 0;
-    uint32_t curCnt = 0;
-    unsigned iterations = 0;
-    uint32_t startAddr = 0;
+    uint32_t rate = 0;
 
+    signaled = 0;
+    signal(SIGINT, handle_sig);
+
+    std::cout << "### IMPORTANT ### Going into endless loop, interrupt with ^c (SIGINT)!" << std::endl;
 
     std::vector<RawData*> tmp_storage;
     RawData *newData = NULL;
-    RawDataContainer *rdc = new RawDataContainer();
-    while (done == 0) {
-        //rate = g_rx->getDataRate();
-        curCnt = g_rx->getCurCount();
+    while (done == 0 || signaled == 1) {
+        RawDataContainer *rdc = new RawDataContainer();
+        rate = g_rx->getDataRate();
+        if (verbose)
+            std::cout << " --> Data Rate: " << rate/256.0/1024.0 << " MB/s" << std::endl;
         done = g_tx->isTrigDone();
         do {
             newData =  g_rx->readData();
-            iterations++;
             if (newData != NULL) {
                 rdc->add(newData);
                 count += newData->words;
             }
         } while (newData != NULL);
         delete newData;
+        rdc->stat = *g_stat;
+        storage->pushData(rdc);
+        std::this_thread::sleep_for(std::chrono::microseconds(500));
     }
-    // Gather rest of data after timeout (~0.1ms)
-    std::this_thread::sleep_for(std::chrono::microseconds(500));
-    do {
-        curCnt = g_rx->getCurCount();
-        newData =  g_rx->readData();
-        iterations++;
-        if (newData != NULL) {
-            rdc->add(newData);
-            count += newData->words;
-        }
-    } while (newData != NULL);
-    delete newData;
-    
-    rdc->stat = *g_stat;
-    storage->pushData(rdc);
         
-    if (verbose)
-        std::cout << " --> Received " << count << " words! " << iterations << std::endl;
     m_done = true;
     counter++;
 }
 
-void StdDataLoop::connect(ClipBoard<RawDataContainer> *clipboard) {
+void StdDataGatherer::connect(ClipBoard<RawDataContainer> *clipboard) {
     storage = clipboard;
+}
+
+void handle_sig(int param) {
+    signaled = 1;
 }

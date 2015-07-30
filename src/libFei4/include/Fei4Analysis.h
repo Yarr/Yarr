@@ -24,6 +24,8 @@
 #include "Fei4Histogrammer.h"
 #include "lmcurve.h"
 
+#include "Bookkeeper.h"
+
 #include "AllFei4Actions.h"
 #include "AllStdActions.h"
 
@@ -31,6 +33,9 @@ class AnalysisAlgorithm {
     public:
         AnalysisAlgorithm() {};
         ~AnalysisAlgorithm() {};
+        
+        void setBookkeeper (Bookkeeper *b) {bookie = b;}
+        void setChannel (unsigned ch) {channel = ch;}
 
         void connect(ClipBoard<HistogramBase> *out) {
             output = out;
@@ -40,6 +45,8 @@ class AnalysisAlgorithm {
         virtual void end() {}
 
     protected:
+        Bookkeeper *bookie;
+        unsigned channel;
         ScanBase *scan;
         ClipBoard<HistogramBase> *output;
 };
@@ -47,6 +54,7 @@ class AnalysisAlgorithm {
 class Fei4Analysis : DataProcessor {
     public:
         Fei4Analysis();
+        Fei4Analysis(Bookkeeper *b, unsigned ch);
         ~Fei4Analysis();
         
         void connect(ScanBase *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output) {
@@ -60,10 +68,13 @@ class Fei4Analysis : DataProcessor {
         void end();
 
         void addAlgorithm(AnalysisAlgorithm *a);
+		void addAlgorithm(AnalysisAlgorithm *a, unsigned ch);
         void plot(std::string basename);
         void toFile(std::string basename);
 
     private:
+        Bookkeeper *bookie;
+        unsigned channel;
         ClipBoard<HistogramBase> *input;
         ClipBoard<HistogramBase> *output;
         ScanBase *scan;
@@ -204,4 +215,22 @@ class OccPixelThresholdTune : public AnalysisAlgorithm {
         Fei4PixelFeedback *fb;
 
 };
+
+class L1Analysis : public AnalysisAlgorithm {
+    public:
+        L1Analysis() : AnalysisAlgorithm() {};
+        ~L1Analysis() {};
+
+        void init(ScanBase *s);
+        void processHistogram(HistogramBase *h);
+        void end() {}
+    private:
+        std::vector<unsigned> loops;
+        std::vector<unsigned> loopMax;
+        unsigned n_count;
+        unsigned injections;
+        std::map<unsigned, Histo1d*> l1Histos;
+        std::map<unsigned, unsigned> innerCnt;
+};
+
 #endif

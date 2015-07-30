@@ -22,7 +22,7 @@
 bool scanDone = false;
 bool processorDone = false;
 
-void processing(Fei4 *fe, ClipBoard<RawDataContainer> *clipRaw, std::map<unsigned, ClipBoard<Fei4Data>* > eventMap) {
+void processing(Fei4 *fe, ClipBoard<RawDataContainer> *clipRaw, std::map<unsigned, ClipBoard<Fei4Data> > *eventMap) {
     std::cout << "### Processing data ###" << std::endl;
     Fei4DataProcessor proc(fe->getValue(&Fei4::HitDiscCnfg));
     proc.connect(clipRaw, eventMap);
@@ -94,8 +94,9 @@ int main(void) {
     fe.fromFileBinary(cfgName);
     
     ClipBoard<RawDataContainer> clipRaw;
-    std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;
-    ClipBoard<Fei4Data> clipEvent0;
+    std::map<unsigned, ClipBoard<Fei4Data> > eventMap;
+    eventMap[0];
+    /*ClipBoard<Fei4Data> clipEvent0;
     ClipBoard<Fei4Data> clipEvent1;
     ClipBoard<Fei4Data> clipEvent2;
     ClipBoard<Fei4Data> clipEvent3;
@@ -113,7 +114,7 @@ int main(void) {
     ClipBoard<Fei4Data> clipEvent15;
 
     eventMap[0] = &clipEvent0;
-    /*eventMap[1] = &clipEvent1;
+    eventMap[1] = &clipEvent1;
     eventMap[2] = &clipEvent2;
     eventMap[3] = &clipEvent3;
     eventMap[4] = &clipEvent4;
@@ -149,12 +150,12 @@ int main(void) {
     std::cout << "### Pre Scan ###" << std::endl;
     prmpTune.preScan();
 
-    std::thread p1(processing, &g_fe, &clipRaw, eventMap);
+    std::thread p1(processing, &g_fe, &clipRaw, &eventMap);
     //std::thread p2(processing, &g_fe, &clipRaw, eventMap);
     //std::thread p3(processing, &g_fe, &clipRaw, eventMap);
     //std::thread p4(processing, &g_fe, &clipRaw, eventMap);
     
-    std::thread t1(analysis, 0, &prmpTune, &clipEvent0);
+    std::thread t1(analysis, 0, &prmpTune, &eventMap[0]);
     /*std::thread t2(analysis, 1, &prmpTune, &clipEvent1);
     std::thread t3(analysis, 2, &prmpTune, &clipEvent2);
     std::thread t4(analysis, 3, &prmpTune, &clipEvent3);
@@ -191,7 +192,7 @@ int main(void) {
     //p3.join();
     //p4.join();
     
-    std::cout << "Collected: " << clipEvent0.size() << " Events" << std::endl;
+    std::cout << "Collected: " << eventMap[0].size() << " Events" << std::endl;
     std::chrono::steady_clock::time_point pro = std::chrono::steady_clock::now();
     
 

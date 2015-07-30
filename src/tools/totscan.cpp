@@ -66,8 +66,8 @@ int main(void) {
     g_fe.fromFileBinary(cfgFile);
 
     ClipBoard<RawDataContainer> clipRaw;
-    std::map<unsigned, ClipBoard<Fei4Data>* > eventMap;
-    ClipBoard<Fei4Data> clipEvent0;
+    std::map<unsigned, ClipBoard<Fei4Data> > eventMap;
+    /*ClipBoard<Fei4Data> clipEvent0;
     ClipBoard<Fei4Data> clipEvent1;
     ClipBoard<Fei4Data> clipEvent2;
     ClipBoard<Fei4Data> clipEvent3;
@@ -99,7 +99,8 @@ int main(void) {
     eventMap[12] = &clipEvent12;
     eventMap[13] = &clipEvent13;
     eventMap[14] = &clipEvent14;
-    eventMap[15] = &clipEvent15;
+    eventMap[15] = &clipEvent15;*/
+    eventMap[0];
 
     Fei4TotScan totScan(&g_fe, &tx, &rx, &clipRaw);
 
@@ -136,13 +137,13 @@ int main(void) {
 
     std::cout << "### Processing data ###" << std::endl;
     Fei4DataProcessor proc(fe.getValue(&Fei4::HitDiscCnfg));
-    proc.connect(&clipRaw, eventMap);
+    proc.connect(&clipRaw, &eventMap);
     proc.init();
     proc.process();
-    std::cout << "Collected: " << clipEvent1.size() << " Events" << std::endl;
+    std::cout << "Collected: " << eventMap[0].size() << " Events" << std::endl;
     std::chrono::steady_clock::time_point pro = std::chrono::steady_clock::now();
 
-    std::thread t1(analysis, 0, &totScan, &clipEvent0);
+    std::thread t1(analysis, 0, &totScan, &eventMap[0]);
 
     t1.join();
 

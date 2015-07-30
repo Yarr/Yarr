@@ -8,90 +8,110 @@
 
 #include "Bookkeeper.h"
 
-Bookkeeper::Bookkeeper() {
-
+Bookkeeper::Bookkeeper(TxCore *arg_tx, RxCore *arg_rx) {
+    tx = arg_tx;
+    rx = arg_rx;
+    g_fe = new Fei4(tx, 8);
+    target_tot = 10;
+    target_charge = 16000;
+    target_threshold = 3000;
 }
 
 // Delete all leftover data, Bookkeeper should be deleted last
 Bookkeeper::~Bookkeeper() {
-    // Raw Data
-    rawDataMutex.lock();
-    for(std::deque<RawData*>::iterator it = rawDataList.begin(); it != rawDataList.end(); ++it)
-        delete (*it);
-    rawDataMutex.unlock();
-
-    // Processed Data
-    procDataMutex.lock();
-    for(std::deque<Fei4Data*>::iterator it = procDataList.begin(); it != procDataList.end(); ++it)
-        delete (*it);
-    procDataMutex.unlock();
-
-    // Histogrammer Data
-    histoMutex.lock();
-    for(std::deque<HistogramBase*>::iterator it = histoList.begin(); it != histoList.end(); ++it)
-        delete (*it);
-    histoMutex.unlock();
-    
-    // Analyzed Data
-    resultMutex.lock();
-    for(std::deque<ResultBase*>::iterator it = resultList.begin(); it != resultList.end(); ++it)
-        delete (*it);
-    resultMutex.unlock();
+    delete g_fe;
 }
 
-void Bookkeeper::addFe(unsigned channel, Fei4 *fe) {
-    feList.push_back(std::pair<unsigned, Fei4*>(channel, fe));
+// RxChannel is unique ident
+void Bookkeeper::addFe(unsigned chipId, unsigned txChannel, unsigned rxChannel) {
+    if(isChannelUsed(rxChannel)) {
+        std::cerr << __PRETTY_FUNCTION__ << " -> Error rx channel already in use, not adding FE" << std::endl;
+    } else {
+        feList.push_back(new Fei4(tx, chipId, txChannel, rxChannel));
+        eventMap[rxChannel];
+        histoMap[rxChannel];
+        resultMap[rxChannel];
+        feList.back()->clipDataFei4 = &eventMap[rxChannel];
+        feList.back()->clipHisto = &histoMap[rxChannel];
+        feList.back()->clipResult = &resultMap[rxChannel];
+        mutexMap[rxChannel];
+    }
+    std::cout << __PRETTY_FUNCTION__ << " -> Added FE: ChipId(" << chipId << "), Tx(" << txChannel << "), Rx(" << rxChannel << ")" << std::endl;
 }
 
-void Bookkeeper::pushData(RawData *d) {
-    rawDataMutex.lock();
-    rawDataList.push_back(d);
-    rawDataMutex.unlock();
+void Bookkeeper::addFe(unsigned chipId, unsigned channel) {
+    this->addFe(chipId, channel, channel);
 }
 
-void Bookkeeper::pushData(Fei4Data *d) {
-    procDataMutex.lock();
-    procDataList.push_back(d);
-    procDataMutex.unlock();
+// RxChannel is unique ident
+void Bookkeeper::delFe(unsigned rxChannel) {
+    if (!isChannelUsed(rxChannel)) {
+        std::cerr << __PRETTY_FUNCTION__ << " -> Error rx channel not in use, can not delete FE" << std::endl;
+    } else {
+        for(unsigned int k=0; k<feList.size(); k++) {
+            if(feList[k]->getChannel() == rxChannel) {
+                delete feList[k];
+                feList.erase(feList.begin() + k);
+            }
+        }
+        mutexMap.erase(rxChannel);
+        histoMap.erase(rxChannel);
+        resultMap.erase(rxChannel);
+        mutexMap.erase(rxChannel);
+    }
 }
 
-void Bookkeeper::pushData(HistogramBase *h) {
-    histoMutex.lock();
-    histoList.push_back(h);
-    histoMutex.unlock();
+void Bookkeeper::delFe(Fei4* fe) {
+    unsigned arg_channel = fe->getChannel();
+    delFe(arg_channel);
 }
 
-void Bookkeeper::pushData(ResultBase *r) {
-    resultMutex.lock();
-    resultList.push_back(r);
-    resultMutex.unlock();
+Fei4* Bookkeeper::getFei4byChannel(unsigned arg_channel) {
+    for(unsigned int k=0; k<feList.size(); k++) {
+        if(feList[k]->getChannel() == arg_channel) {
+            return feList[k];
+        }
+    }
+    return NULL;	
 }
 
-void Bookkeeper::popData(RawData *d) {
-    rawDataMutex.lock();
-    d = rawDataList.front();
-    rawDataList.pop_front();
-    rawDataMutex.unlock();
+Fei4* Bookkeeper::getFe(unsigned rxChannel) {
+    for(unsigned int k=0; k<feList.size(); k++) {
+        if(feList[k]->getChannel() == rxChannel) {
+            return feList[k];
+        }
+    }
+    return NULL;
 }
 
-void Bookkeeper::popData(Fei4Data *d) {
-    procDataMutex.lock();
-    d = procDataList.front();
-    procDataList.pop_front();
-    procDataMutex.unlock();
+Fei4* Bookkeeper::getLastFe() {
+    return feList.back();
 }
 
-void Bookkeeper::popData(HistogramBase *h) {
-    histoMutex.lock();
-    h = histoList.front();
-    histoList.pop_front();
-    histoMutex.unlock();
+bool Bookkeeper::isChannelUsed(unsigned arg_channel) {
+    for (unsigned i=0; i<feList.size(); i++) {
+        if (feList[i]->getRxChannel() == arg_channel)
+            return true;
+    }
+    return false;
 }
 
-void Bookkeeper::popData(ResultBase *r) {
-    resultMutex.lock();
-    r = resultList.front();
-    resultList.pop_front();
-    resultMutex.unlock();
+uint32_t Bookkeeper::getTxMask() {
+    uint32_t mask = 0;
+    for (unsigned i=0; i<feList.size(); i++) {
+        if (feList[i]->isActive()) {
+            mask |= (0x1 << feList[i]->getTxChannel());
+        }
+    }
+    return mask;
 }
 
+uint32_t Bookkeeper::getRxMask() {
+    uint32_t mask = 0;
+    for (unsigned i=0; i<feList.size(); i++) {
+        if (feList[i]->isActive()) {
+            mask |= (0x1 << feList[i]->getRxChannel());
+        }
+    }
+    return mask;
+}

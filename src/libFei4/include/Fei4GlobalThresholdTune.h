@@ -17,11 +17,10 @@
 class Fei4GlobalThresholdTune : public ScanBase {
     public:
         Fei4GlobalThresholdTune(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data);
-        
+		Fei4GlobalThresholdTune(Bookkeeper *k);
         void init();
         void preScan();
         void postScan() {}
-
     private:
         enum MASK_STAGE mask;
         enum DC_MODE dcMode;

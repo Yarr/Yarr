@@ -522,7 +522,9 @@ uint32_t SpecController::readEeprom(uint8_t * buffer, uint32_t len) {
 	unsigned int j = 0;
 	uint32_t tmp = 0;
 
+    std::cout << "Starting read" << std::endl;
     //Set TWI to run in host mode
+    usleep(1000);
     this->mask32(bar4, LB_CTL/4, 0x0, 0x10000);
 
     //Set TWI to run with both divisors to maximum (it is assumed
@@ -531,32 +533,43 @@ uint32_t SpecController::readEeprom(uint8_t * buffer, uint32_t len) {
     //24LC024 - which can handle up to 1MHz), clear FIFO count register,
     //unset slave monitor (->normal operation), unset hold, allow acknowledge bit,
     //uses normal (7-bit) addresses (not 10-bit), set as master node, set as master transmitter
+    usleep(1000);
     this->write32(bar4, TWI_CTRL/4, 0xFF4E);
 
     //Wait while TWI BUS active bit is set, stop if takes too long
-    for(j = 1000000; (this->read32(bar4, TWI_STATUS/4) & 0x100); j--) {
+    usleep(1000);
+    //std::cout << std::unitbuf << "Waiting for TWI BUS"; //DEBUG
+    for(j = 1000000; (this->read32(bar4, TWI_STATUS/4) & 0x100); j--, usleep(1000)) {
         if(j == 0) {
             std::cout << "TWI BUS busy. Cannot initialize data transfer. \n";
             exit(-1);
+            //std::cout << "."; //DEBUG
+            //j = 1000000; //DEBUG
         }
     }
+    //std::cout << "\n" << std::nounitbuf; //DEBUG
 
     //This read is supposed to clear the TWI_IRT_STATUS register.
+    usleep(1000);
     this->read32(bar4, TWI_IRT_STATUS/4);
 
     //Sets the internal address counter of the EEPROM (that automatically incremates
     //after every read access) to a desired start address.
     //this->write32(bar4, TWI_DATA/4, offset & 0xFF);
+    usleep(1000);
     this->write32(bar4, TWI_DATA/4, 0);
 
     //Write first 7 bit (7-bit-addresses!!!) of function parameter devAddr
     //to TWI_ADDRESS register and thus initiate a data transfer.
     //TWI slave address of the EEPROM is 0x56 (1010110).
     //this->write32(bar4, TWI_ADDRESS/4, devAddr & 0x7F);
+    usleep(1000);
     this->write32(bar4, TWI_ADDRESS/4, 0x56);
 
     //Wait until data transfer is finished or error occurs, stop if takes too long.
-    for(j = 1000000000, tmp = 0; !(tmp & 0x1); j--) {
+    usleep(1000);
+    //std::cout << std::unitbuf << "Waiting for Gennum to write slave address"; //DEBUG
+    for(j = 1000000000, tmp = 0; !(tmp & 0x1); j--, usleep(1000)) {
         tmp = this->read32(bar4, TWI_IRT_STATUS/4);
         if(tmp & 0xC) {
             std::cout << "NACK or timeout occured. Aborting... \n";
@@ -564,11 +577,15 @@ uint32_t SpecController::readEeprom(uint8_t * buffer, uint32_t len) {
         }
         if(j==0) {
             std::cout << "Transfer takes too long. Aborting... \n";
-            exit(-2);
+            exit(-1);
+            //std::cout << "."; //DEBUG
+            //j = 1000000000; //DEBUG
         }
     }
+    //std::cout << "\n" << std::nounitbuf; //DEBUG
 
     //Set as master receiver
+    usleep(1000);
     this->mask32(bar4, TWI_CTRL/4, 0x0, 0x1);
 
     //Read pieces of FIFO size until data of function parameter len is read - FiFo has 15 byte maximum
@@ -582,33 +599,47 @@ uint32_t SpecController::readEeprom(uint8_t * buffer, uint32_t len) {
         }
 
         /* Tell EEPROM how much data to send */
+        usleep(1000);
         this->write32(bar4, TWI_TR_SIZE/4, k);
 
         /* Write EEPROM slave address (0x56) to BUS to initiate data transfer */
+        usleep(1000);
         this->write32(bar4, TWI_ADDRESS/4, 0x56);
 
         /* Wait until data transfer is complete */
-        for(j = 1000000000, tmp = 0; !(tmp & 0x1); j--) {
+        //std::cout << std::unitbuf << "Transferring data, " << len << " left"; //DEBUG
+        for(j = 1000000, tmp = 0; !(tmp & 0x1); j--) {
+            usleep(1000);
             tmp = this->read32(bar4, TWI_IRT_STATUS/4);
+            //std::cout << tmp << std::endl; //DEBUG
             /*if(tmp & 0xC) {
                 std::cout << "NACK or timeout occured. Aborting... \n";
                 exit(-3);
             }*/
+            //std::cout << "."; //DEBUG
             if(j==0) {
                 std::cout << "Transfer takes too long. Aborting... \n";
-                exit(-3);
+                exit(-1);
+                //std::cout << "."; //DEBUG
+                //j = 1000000; //DEBUG
             }
         }
+        //std::cout << "\n" << std::nounitbuf; //DEBUG
 
         /* Read data from FiFo */
-        for(tmp = 0; k>0; k--) {
-            tmp = read32(bar4, TWI_DATA/4);
+        usleep(1000);
+        //std::cout << std::unitbuf << "Reading data from FiFo"; //DEBUG
+        for(tmp = 0; k>0; k--, usleep(1000)) {
+            tmp = this->read32(bar4, TWI_DATA/4);
             *(buffer + totalTransfer) = tmp & 0xFF;
             totalTransfer++;
+            //std::cout << "."; //DEBUG
         }
     }
+    //std::cout << "\n" << std::nounitbuf; //DEBUG
 
     //Possibly clear status register to unlock BUS for next use?
+    usleep(1000);
     this->read32(bar4, TWI_IRT_STATUS/4);
 
     return totalTransfer;
@@ -622,6 +653,7 @@ uint32_t SpecController::writeEeprom(uint8_t * buffer, uint32_t len, uint32_t of
 	uint32_t tmp = 0;
 
     //Set TWI to run in host mode
+    usleep(1000);
     this->mask32(bar4, LB_CTL/4, 0x0, 0x10000);
 
     //Set TWI to run with both divisors to maximum (it is assumed
@@ -630,10 +662,12 @@ uint32_t SpecController::writeEeprom(uint8_t * buffer, uint32_t len, uint32_t of
     //24LC024 - which can handle up to 1MHz), clear FIFO count register,
     //unset slave monitor (->normal operation), unset hold, allow acknowledge bit,
     //uses normal (7-bit) addresses (not 10-bit), set as master node, set as master transmitter
+    usleep(1000);
     this->write32(bar4, TWI_CTRL/4, 0xFF4E);
 
     //Wait while TWI BUS active bit is set, stop if takes too long
-    for(j = 1000000; (this->read32(bar4, TWI_STATUS/4) & 0x100); j--) {
+    usleep(1000);
+    for(j = 1000000; (this->read32(bar4, TWI_STATUS/4) & 0x100); j--, usleep(1000)) {
         if(j == 0) {
             std::cout << "TWI BUS busy. Cannot initialize data transfer. \n";
             exit(-1);
@@ -641,42 +675,45 @@ uint32_t SpecController::writeEeprom(uint8_t * buffer, uint32_t len, uint32_t of
     }
 
     //This read is supposed to clear the TWI_IRT_STATUS register.
+    usleep(1000);
     this->read32(bar4, TWI_IRT_STATUS/4);
 
     //Write data into EEPROM
+    usleep(1000);
     for(k = 0; k<len; k++) {
         //Sets the internal address counter of the EEPROM to the desired address.
+        usleep(5000);
         this->write32(bar4, TWI_DATA/4, (offs + k) & 0xFF);
-        std::cout << "Setting EEPROM register counter... \n";
-        usleep(50000);
+        //std::cout << "Setting EEPROM register counter... \n"; //DEBUG
 
         //Write piece of data into data register. Upon write access to the
         //address register with slave device address, this piece of data
         //will be flashed to the EEPROM
+        usleep(5000);
         this->write32(bar4, TWI_DATA/4, *(buffer + k));
-        std::cout << "Writing new EEPROM data to data register... \n";
-        usleep(50000);
+        //std::cout << "Writing new EEPROM data to data register... \n"; //DEBUG
 
         //Write 7 bit slave device address
         //to TWI_ADDRESS register and thus initiate a data transfer.
         //TWI slave address of the EEPROM is 0x56 (1010110).
+        usleep(5000);
         this->write32(bar4, TWI_ADDRESS/4, 0x56);
-        std::cout << "Flashing data to EEPROM... \n";
-        usleep(50000);
+        //std::cout << "Flashing data to EEPROM... \n"; //DEBUG
 
         //Wait until data transfer is finished or error occurs, stop if takes too long.
-        for(j = 1000000000, tmp = 0; !(tmp & 0x1); j--) {
+        usleep(1000);
+        for(j = 1000000000, tmp = 0; !(tmp & 0x1); j--, usleep(1000)) {
             tmp = this->read32(bar4, TWI_IRT_STATUS/4);
             if(tmp & 0xC) {
                 if(tmp & 0x4)
                     std::cout << "NACK occured. Aborting... \n";
                 if(tmp & 0x8)
                     std::cout << "Timeout occured. Aborting... \n";
-                exit(-2);
+                exit(-1);
             }
             if(j==0) {
                 std::cout << "Transfer takes too long. Aborting... \n";
-                exit(-2);
+                exit(-1);
             }
         }
 
@@ -684,6 +721,7 @@ uint32_t SpecController::writeEeprom(uint8_t * buffer, uint32_t len, uint32_t of
     }
 
     //Possibly clear status register to unlock BUS for next use?
+    usleep(1000);
     this->read32(bar4, TWI_IRT_STATUS/4);
 
     return totalTransfer;
@@ -701,7 +739,7 @@ void SpecController::createSbeFile(std::string fnKeyword, uint8_t * buffer, uint
         time(&rawtime);
         timeinfo = localtime(&rawtime);
 
-        filepath =   "EEPROMContent/"
+        filepath =   "util/"
                    + fnKeyword + std::to_string(1900+(timeinfo->tm_year)) + '_'
                    + std::to_string(1+(timeinfo->tm_mon)) + '_'
                    + std::to_string((timeinfo->tm_mday)) + '_'

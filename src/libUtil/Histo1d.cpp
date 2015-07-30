@@ -26,6 +26,23 @@ Histo1d::Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, doubl
     sum = 0;
 }
 
+Histo1d::Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh, std::type_index t, LoopStatus &stat) : HistogramBase(arg_name, t, stat) {
+    bins = arg_bins;
+    xlow = arg_xlow;
+    xhigh = arg_xhigh;
+    binWidth = (xhigh - xlow)/bins;
+    data = new double[bins];
+    for(unsigned i=0; i<bins; i++)
+        data[i] = 0;
+    min = 0;
+    max = 0;
+
+    underflow = 0;
+    overflow = 0;
+    entries = 0;
+    sum = 0;
+}
+
 Histo1d::~Histo1d() {
     delete[] data;
 }
@@ -40,8 +57,17 @@ double Histo1d::getMean() {
     double weighted_sum = 0;
     for (unsigned i=0; i<bins; i++)
         weighted_sum += data[i]*(((i+1)*binWidth)+xlow+(binWidth/2.0));
-    std::cout << weighted_sum << " " << sum << std::endl;
     return weighted_sum/sum;
+}
+
+double Histo1d::getStdDev() {
+    if (sum == 0)
+        return 0;
+    double mean = this->getMean();
+    double mu = 0;
+    for (unsigned i=0; i<bins; i++)
+        mu += data[i] * pow((((i+1)*binWidth)+xlow+(binWidth/2.0))-mean,2);
+    return sqrt(mu/(double)sum);
 }
 
 void Histo1d::fill(double x, double v) {

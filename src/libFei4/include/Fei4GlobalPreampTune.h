@@ -17,6 +17,7 @@
 class Fei4GlobalPreampTune : public ScanBase {
     public:
         Fei4GlobalPreampTune(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data);
+        Fei4GlobalPreampTune(Bookkeeper *b);
         
         void init();
         void preScan();

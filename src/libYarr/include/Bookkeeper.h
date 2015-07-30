@@ -17,45 +17,74 @@
 #include "Fei4EventData.h"
 #include "HistogramBase.h"
 #include "ResultBase.h"
+#include "ClipBoard.h"
+
 #include "Fei4.h"
+#include "TxCore.h"
+#include "RxCore.h"
 
 class Bookkeeper {
     public:
-        Bookkeeper();
+        Bookkeeper(TxCore *arg_tx, RxCore *arg_rx);
         ~Bookkeeper();
+        
+        // TODO should only add generic Fe class
+        // TODO should be independent of chipId
+        void addFe(unsigned chipId, unsigned txChannel, unsigned rxChannel);
+        void addFe(unsigned chipId, unsigned channel);
+		
+        void delFe(unsigned rxChannel);
+		void delFe(Fei4 *fe);
 
-        void addFe(unsigned channel, Fei4 *fe);
+		Fei4* getFei4byChannel(unsigned channel);
+		Fei4* getFe(unsigned rxChannel);
+        Fei4* getLastFe();
+        Fei4* getGlobalFe() {
+            return g_fe;
+        }
 
-        void pushData(RawData *d);
-        void pushData(Fei4Data *d);
-        void pushData(HistogramBase *h);
-        void pushData(ResultBase *r);
+		bool isChannelUsed(unsigned arg_channel);
+        
+        // Construct mask of active channels
+        uint32_t getTxMask();
+        uint32_t getRxMask();
 
-        void popData(RawData *d);
-        void popData(Fei4Data *d);
-        void popData(HistogramBase *h);
-        void popData(ResultBase *r);
+        void setTargetTot(int v) {target_tot = v;}
+        int getTargetTot() {return target_tot;}
+        
+        void setTargetCharge(int v) {target_charge = v;}
+        int getTargetCharge() {return target_charge;}
+
+        void setTargetThreshold(int v) {target_threshold = v;}
+        int getTargetThreshold() {return target_threshold;}
+        
+        // TODO make private, not nice like that
+        Fei4 *g_fe;
+        TxCore *tx;
+        RxCore *rx;
+        
+        std::vector<Fei4*> feList;
+
+        ClipBoard<RawDataContainer> rawData;
+
+        // per rx link
+	    std::map<unsigned, ClipBoard<Fei4Data> > eventMap;
+	    std::map<unsigned, ClipBoard<HistogramBase> > histoMap;
+	    std::map<unsigned, ClipBoard<HistogramBase> > resultMap;
+		std::map<unsigned, std::mutex> mutexMap;	
+        
+		std::vector<Fei4*> activeFeList;
 
     private:
-        // List of FEs TODO should be generic
-        std::vector<std::pair<unsigned, Fei4*> > feList;
-            
-        // Raw Data
-        std::deque<RawData*> rawDataList;
-        std::mutex rawDataMutex;
+        uint32_t activeTxMask;
+        uint32_t activeRxMask;
 
-        // Processed Data
-        std::deque<Fei4Data*> procDataList;
-        std::mutex procDataMutex;
+		uint32_t activeMask;
+		uint32_t usedChannels;
 
-        // Histogrammer Data
-        std::deque<HistogramBase*> histoList;
-        std::mutex histoMutex;
-
-        // Analyzed Data
-        std::deque<ResultBase*> resultList;
-        std::mutex resultMutex;
-
+        int target_tot;
+        int target_threshold;
+        int target_charge;
 };
 
 #endif

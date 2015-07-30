@@ -10,10 +10,17 @@
 // ################################
 
 #include <iostream>
+#include <string>
 
 #include "TxCore.h"
 #include "Fei4Cmd.h"
 #include "Fei4Cfg.h"
+#include "Fei4EventData.h"
+#include "ClipBoard.h"
+#include "HistogramBase.h"
+
+class Fei4Analysis;
+class Fei4Histogrammer;
 
 enum MASK_STAGE {
     MASK_1  = 0xFFFFFFFF,
@@ -35,7 +42,10 @@ enum DC_MODE {
 class Fei4 : public Fei4Cfg, public Fei4Cmd {
     public:
         Fei4(TxCore *arg_core, unsigned chipId);
+        Fei4(TxCore *arg_core, unsigned chipId, unsigned arg_channel);
+        Fei4(TxCore *arg_core, unsigned chipId, unsigned arg_txchannel, unsigned arg_rxchannel);
 
+		~Fei4();
         void configure();
         void configurePixels(unsigned lsb=0, unsigned msb=Fei4PixelCfg::n_Bits);
 
@@ -49,6 +59,26 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd {
         void loadIntoShiftReg(unsigned pixel_latch);
         void loadIntoPixel(unsigned pixel_latch);
         void shiftByOne();
+
+
+		bool getActive();
+		bool isActive();
+		void setActive(bool active);
+
+        // TODO Move name and channel to YARR FE cfg
+		unsigned getChannel();
+		unsigned getTxChannel();
+		unsigned getRxChannel();
+		void setChannel(unsigned channel);
+		void setChannel(unsigned arg_txChannel, unsigned arg_rxChannel);
+
+        std::string getName() {
+            return name;
+        }
+
+        void setName(std::string arg_name) {
+            name = arg_name;
+        }
 
         TxCore* getTxCore() {
             return core;
@@ -69,8 +99,20 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd {
             T readRegister(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref){
                 return getValue(ref);
             }
+
+		ClipBoard<Fei4Data> *clipDataFei4;
+		ClipBoard<HistogramBase> *clipHisto;
+		ClipBoard<HistogramBase> *clipResult;
+
+        Fei4Analysis *ana;
+		Fei4Histogrammer *histogrammer;
+
     private:
-        unsigned chipId;
+        std::string name;
+        bool active;
+		unsigned txChannel;
+        unsigned rxChannel;
+
 };
 
 #endif

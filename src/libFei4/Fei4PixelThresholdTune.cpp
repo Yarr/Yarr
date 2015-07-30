@@ -11,16 +11,28 @@
 Fei4PixelThresholdTune::Fei4PixelThresholdTune(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data) : ScanBase(fe, tx, rx, data) {
     mask = MASK_16;
     dcMode = QUAD_DC;
-    numOfTriggers = 100;
+    numOfTriggers = 200;
     triggerFrequency = 10e3;
     triggerDelay = 50;
-    minVcal = 10;
-    maxVcal = 100;
-    stepVcal = 1;
+    
     useScap = true;
     useLcap = true;
 
     target = 3000;
+    verbose = false;
+}
+
+Fei4PixelThresholdTune::Fei4PixelThresholdTune(Bookkeeper *b) : ScanBase(b) {
+    mask = MASK_16;
+    dcMode = QUAD_DC;
+    numOfTriggers = 200;
+    triggerFrequency = 10e3;
+    triggerDelay = 50;
+    
+    useScap = true;
+    useLcap = true;
+
+    target = b->getTargetThreshold();
     verbose = false;
 }
 
@@ -35,13 +47,11 @@ void Fei4PixelThresholdTune::init() {
     maskStaging->setMaskStage(mask);
     maskStaging->setScap(useScap);
     maskStaging->setLcap(useLcap);
-    //maskStaging->setStep(2);
     
     // Loop 2: Double Columns
     std::shared_ptr<Fei4DcLoop> dcLoop(new Fei4DcLoop);
     dcLoop->setVerbose(verbose);
     dcLoop->setMode(dcMode);
-    //dcLoop->setStep(2);
 
     // Loop 3: Trigger
     std::shared_ptr<Fei4TriggerLoop> triggerLoop(new Fei4TriggerLoop);
@@ -66,10 +76,26 @@ void Fei4PixelThresholdTune::init() {
 
 // Do necessary pre-scan configuration
 void Fei4PixelThresholdTune::preScan() {
+    // Global config
+	g_tx->setCmdEnable(b->getTxMask());
     g_fe->writeRegister(&Fei4::Trig_Count, 12);
     g_fe->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
-    // TODO Make this mult ichannel capable
-    g_fe->writeRegister(&Fei4::PlsrDAC, g_fe->toVcal(target, useScap, useLcap));
     g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
     while(!g_tx->isCmdEmpty());
+
+	for(unsigned int k=0; k<b->feList.size(); k++) {
+        Fei4 *fe = b->feList[k];
+        if (fe->isActive()) {
+            // Set to single channel tx
+            g_tx->setCmdEnable(0x1 << fe->getTxChannel());
+            // Set specific pulser DAC
+            fe->writeRegister(&Fei4::PlsrDAC, fe->toVcal(target, useScap, useLcap));
+            // Reset all TDACs
+            for (unsigned col=1; col<81; col++)
+                for (unsigned row=1; row<337; row++)
+                    fe->setTDAC(col, row, 16);
+            while(!g_tx->isCmdEmpty());
+        }
+	}
+	g_tx->setCmdEnable(b->getTxMask());
 }

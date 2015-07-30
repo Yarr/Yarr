@@ -17,10 +17,12 @@
 class Fei4PixelThresholdTune : public ScanBase {
     public:
         Fei4PixelThresholdTune(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data);
-        
+        Fei4PixelThresholdTune(Bookkeeper *k);
         void init();
         void preScan();
         void postScan() {}
+
+		Bookkeeper *keeper;
 
     private:
         enum MASK_STAGE mask;

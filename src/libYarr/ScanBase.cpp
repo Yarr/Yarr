@@ -15,6 +15,14 @@ ScanBase::ScanBase(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer>
     g_data = data;
 }
 
+ScanBase::ScanBase(Bookkeeper *k) : engine(k) {
+    g_fe = k->g_fe;
+    g_tx = k->tx;
+    g_rx = k->rx;
+    g_data = &k->rawData;
+    b = k;
+}
+
 void ScanBase::run() {
     engine.execute();
     engine.end();

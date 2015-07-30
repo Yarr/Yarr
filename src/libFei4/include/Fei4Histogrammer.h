@@ -142,7 +142,7 @@ class L1Dist : public HistogramAlgorithm {
         }
 
         void create(LoopStatus &stat) {
-            h = new Histo1d("L1Dist", 16, -0.5, 15.5, typeid(this));
+            h = new Histo1d("L1Dist", 16, -0.5, 15.5, typeid(this), stat);
             h->setXaxisTitle("L1A");
             h->setYaxisTitle("Hits");
             r = (HistogramBase*) h;

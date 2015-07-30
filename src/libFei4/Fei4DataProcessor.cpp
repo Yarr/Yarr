@@ -19,7 +19,7 @@ Fei4DataProcessor::~Fei4DataProcessor() {
 }
 
 void Fei4DataProcessor::init() {
-    for(std::map<unsigned, ClipBoard<Fei4Data>* >::iterator it = outMap.begin(); it != outMap.end(); ++it) {
+    for(std::map<unsigned, ClipBoard<Fei4Data> >::iterator it = outMap->begin(); it != outMap->end(); ++it) {
         activeChannels.push_back(it->first);
     }
 }
@@ -27,10 +27,10 @@ void Fei4DataProcessor::init() {
 void Fei4DataProcessor::process() {
     unsigned badCnt = 0;
     for (unsigned i=0; i<activeChannels.size(); i++) {
-        l1id[i] = 0;
-        bcid[i] = 0;
-        wordCount[i] = 0;
-        hits[i] = 0;
+        l1id[activeChannels[i]] = 0;
+        bcid[activeChannels[i]] = 0;
+        wordCount[activeChannels[i]] = 0;
+        hits[activeChannels[i]] = 0;
     }
 
     unsigned dataCnt = 0;
@@ -44,12 +44,14 @@ void Fei4DataProcessor::process() {
         std::map<unsigned, Fei4Data*> curOut;
         std::map<unsigned, int> events;
         for (unsigned i=0; i<activeChannels.size(); i++) {
-            curOut[i] = new Fei4Data();
-            curOut[i]->lStat = curInV->stat;
-            events[i] = 0;
+            curOut[activeChannels[i]] = new Fei4Data();
+            curOut[activeChannels[i]]->lStat = curInV->stat;
+            events[activeChannels[i]] = 0;
         }
 
         unsigned size = curInV->size();
+        if (size == 0)
+            std::cout << "Empty!" << std::endl;
         for(unsigned c=0; c<size; c++) {
             RawData *curIn = new RawData(curInV->adr[c], curInV->buf[c], curInV->words[c]);
             // Process
@@ -106,11 +108,13 @@ void Fei4DataProcessor::process() {
                         }
                     }
                 }
+                if (badCnt > 10)
+                    break;
             }
             delete curIn;
         }
         for (unsigned i=0; i<activeChannels.size(); i++) {
-            outMap[i]->pushData(curOut[i]);
+            outMap->at(activeChannels[i]).pushData(curOut[activeChannels[i]]);
         }
         //Cleanup
         delete curInV;

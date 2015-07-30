@@ -28,7 +28,7 @@ class Fei4Cfg : public Fei4GlobalCfg, public Fei4PixelCfg {
             vcalSlope = 1.5;
         }
 
-        double toCharge(double vcal, bool sCapOn, bool lCapOn) {
+        double toCharge(double vcal, bool sCapOn=true, bool lCapOn=true) {
             // Q = C*V
             double C = 0;
             if (sCapOn) C += sCap*1e-15;
@@ -37,7 +37,7 @@ class Fei4Cfg : public Fei4GlobalCfg, public Fei4PixelCfg {
             return C*V;
         }
 
-        unsigned toVcal(double charge, bool sCapOn, bool lCapOn) {
+        unsigned toVcal(double charge, bool sCapOn=true, bool lCapOn=true) {
             // V = Q/C
             double C = 0;
             if (sCapOn) C += sCap*1e-15;
@@ -46,11 +46,19 @@ class Fei4Cfg : public Fei4GlobalCfg, public Fei4PixelCfg {
             return (unsigned) round((V - vcalOffset*1e-3)/(vcalSlope*1e-3));
         }
 
+		unsigned getChipId();
+		void setChipId(unsigned chipId);
+        
         void toFileBinary(std::string filename);
+        void toFileBinary();
         void fromFileBinary(std::string filename);
+        void fromFileBinary();
+
+    protected:
+        unsigned chipId;
+        std::string cfgName;
 
     private:
-        unsigned chipId;
         double sCap; // fF
         double lCap; // fF
         double vcalOffset; // mV
