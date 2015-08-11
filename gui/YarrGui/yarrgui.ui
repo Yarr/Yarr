@@ -15,6 +15,9 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <widget class="QTabWidget" name="main_tabWidget">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>19</x>
@@ -30,7 +33,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>3</number>
+     <number>1</number>
     </property>
     <property name="tabsClosable">
      <bool>false</bool>
@@ -182,6 +185,176 @@
       </property>
       <property name="text">
        <string>FPGA Bit File:</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="tab_3">
+     <attribute name="title">
+      <string>FEs</string>
+     </attribute>
+     <widget class="QLineEdit" name="chipIdEdit">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>31</width>
+        <height>23</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="txChannelEdit">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>40</y>
+        <width>31</width>
+        <height>23</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="rxChannelEdit">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>70</y>
+        <width>31</width>
+        <height>23</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="bitfile_label_4">
+      <property name="geometry">
+       <rect>
+        <x>50</x>
+        <y>10</y>
+        <width>71</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>chipId</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="bitfile_label_5">
+      <property name="geometry">
+       <rect>
+        <x>50</x>
+        <y>40</y>
+        <width>71</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>txChannel</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="bitfile_label_6">
+      <property name="geometry">
+       <rect>
+        <x>50</x>
+        <y>70</y>
+        <width>71</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>rxChannel</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="addFeButton">
+      <property name="geometry">
+       <rect>
+        <x>120</x>
+        <y>10</y>
+        <width>101</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Add FE</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="remFeButton">
+      <property name="geometry">
+       <rect>
+        <x>120</x>
+        <y>50</y>
+        <width>101</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Remove FE</string>
+      </property>
+     </widget>
+     <widget class="QTreeWidget" name="feTree">
+      <property name="geometry">
+       <rect>
+        <x>230</x>
+        <y>10</y>
+        <width>731</width>
+        <height>361</height>
+       </rect>
+      </property>
+      <property name="columnCount">
+       <number>3</number>
+      </property>
+      <attribute name="headerVisible">
+       <bool>false</bool>
+      </attribute>
+      <attribute name="headerMinimumSectionSize">
+       <number>50</number>
+      </attribute>
+      <column>
+       <property name="text">
+        <string notr="true">1</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string notr="true">2</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string notr="true">3</string>
+       </property>
+      </column>
+     </widget>
+     <widget class="QToolButton" name="configFile_button">
+      <property name="geometry">
+       <rect>
+        <x>200</x>
+        <y>120</y>
+        <width>21</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>...</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="configfileName">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>120</y>
+        <width>181</width>
+        <height>31</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="bitfile_label_7">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>100</y>
+        <width>131</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Config file</string>
       </property>
      </widget>
     </widget>
@@ -404,12 +577,48 @@
        <rect>
         <x>10</x>
         <y>10</y>
-        <width>161</width>
+        <width>191</width>
         <height>31</height>
        </rect>
       </property>
       <property name="text">
        <string>NoiseScan</string>
+      </property>
+     </widget>
+     <widget class="QCustomPlot" name="scanPlot" native="true">
+      <property name="geometry">
+       <rect>
+        <x>210</x>
+        <y>10</y>
+        <width>751</width>
+        <height>361</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="DigitalScanButton">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>40</y>
+        <width>191</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>DigitalScan</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="AnalogScanButton">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>70</y>
+        <width>191</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>AnalogScan</string>
       </property>
      </widget>
     </widget>
@@ -421,7 +630,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>330</y>
+        <y>100</y>
         <width>261</width>
         <height>31</height>
        </rect>
@@ -431,7 +640,7 @@
       <property name="geometry">
        <rect>
         <x>280</x>
-        <y>330</y>
+        <y>100</y>
         <width>41</width>
         <height>31</height>
        </rect>
@@ -444,7 +653,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>310</y>
+        <y>80</y>
         <width>131</width>
         <height>17</height>
        </rect>
@@ -457,7 +666,7 @@
       <property name="geometry">
        <rect>
         <x>340</x>
-        <y>330</y>
+        <y>100</y>
         <width>90</width>
         <height>27</height>
        </rect>
@@ -470,7 +679,7 @@
       <property name="geometry">
        <rect>
         <x>340</x>
-        <y>260</y>
+        <y>30</y>
         <width>90</width>
         <height>27</height>
        </rect>
@@ -483,7 +692,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>260</y>
+        <y>30</y>
         <width>261</width>
         <height>31</height>
        </rect>
@@ -493,7 +702,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>240</y>
+        <y>10</y>
         <width>131</width>
         <height>17</height>
        </rect>
@@ -511,7 +720,7 @@
         <x>490</x>
         <y>10</y>
         <width>471</width>
-        <height>321</height>
+        <height>361</height>
        </rect>
       </property>
       <property name="font">
@@ -526,8 +735,8 @@
      <widget class="QCheckBox" name="SBECheckBox">
       <property name="geometry">
        <rect>
-        <x>500</x>
-        <y>340</y>
+        <x>10</x>
+        <y>350</y>
         <width>451</width>
         <height>21</height>
        </rect>

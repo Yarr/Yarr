@@ -46,6 +46,19 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->benchmark_plot->legend->setFont(QFont("Helvetica", 9));
     ui->benchmark_plot->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignRight|Qt::AlignBottom);
 
+    ui->scanPlot->xAxis->setLabel("Row");
+    ui->scanPlot->yAxis->setLabel("Column");
+    ui->scanPlot->xAxis->setRange(0, 80);
+    ui->scanPlot->yAxis->setRange(0, 336);
+    ui->scanPlot->setInteraction(QCP::iRangeDrag, true);
+    ui->scanPlot->setInteraction(QCP::iRangeZoom, true);
+    ui->scanPlot->setInteraction(QCP::iSelectPlottables, true);
+    ui->scanPlot->setInteraction(QCP::iSelectAxes, true);
+    ui->scanPlot->legend->setVisible(true);
+    ui->scanPlot->legend->setFont(QFont("Helvetica", 9));
+    ui->scanPlot->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignRight|Qt::AlignBottom);
+
+
     QPen pen;
     QColor color;
     for(int i=0; i<deviceList.size(); i++) {
@@ -74,6 +87,13 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->main_tabWidget->setCurrentIndex(0);
     ui->main_tabWidget->setTabEnabled(0, true);
     ui->main_tabWidget->setTabEnabled(1, false);
+    ui->main_tabWidget->setTabEnabled(2, false);
+    ui->main_tabWidget->setTabEnabled(3, false);
+    ui->main_tabWidget->setTabEnabled(4, false);
+
+    ui->feTree->setColumnWidth(0, 200);
+    ui->feTree->setColumnWidth(1, 500);
+    //ui->feTree->setColumnWidth(2, 2000);
 }
 
 YarrGui::~YarrGui()
@@ -117,6 +137,12 @@ void YarrGui::on_init_button_clicked()
             ui->bar0_value->setNum(specVec[index]->getBarSize(0));
             ui->bar4_value->setNum(specVec[index]->getBarSize(4));
             ui->main_tabWidget->setTabEnabled(1, true);
+            ui->main_tabWidget->setTabEnabled(2, true);
+            ui->main_tabWidget->setTabEnabled(3, true);
+            ui->main_tabWidget->setTabEnabled(4, true);
+            tx = new TxCore(specVec[index]);
+            rx = new RxCore(specVec[index]);
+            bk = new Bookkeeper(tx, rx);
         } else {
             QMessageBox errorBox;
             errorBox.critical(0, "Error", "Initialization not successful!");
@@ -320,5 +346,182 @@ void YarrGui::on_SBEReadButton_clicked()
     ui->SBETextEdit->setText(content);
 
     delete buffer;
+
+}
+
+void YarrGui::on_addFeButton_clicked()
+{
+
+    unsigned chipIdAdded = (ui->chipIdEdit->text()).toUInt();
+    unsigned txChannelAdded = (ui->txChannelEdit->text()).toUInt();
+    unsigned rxChannelAdded = (ui->rxChannelEdit->text()).toUInt();
+
+    bk->addFe(chipIdAdded, txChannelAdded, rxChannelAdded);
+    bk->getLastFe()->fromFileBinary((ui->configfileName->text()).toStdString());
+    tx->setCmdEnable(0x1 << bk->getLastFe()->getTxChannel());
+    bk->getLastFe()->configure();
+    bk->getLastFe()->configurePixels();
+    while(!(tx->isCmdEmpty())) {
+        ;
+    }
+    std::this_thread::sleep_for(std::chrono::microseconds(1000));
+    tx->setCmdEnable(bk->getTxMask());
+    rx->setRxEnable(bk->getRxMask());
+
+    QTreeWidgetItem * feTreeItem = new QTreeWidgetItem(ui->feTree);
+    QTreeWidgetItem * feTreeItemId = new QTreeWidgetItem();
+    QTreeWidgetItem * feTreeItemTx = new QTreeWidgetItem();
+    QTreeWidgetItem * feTreeItemRx = new QTreeWidgetItem();
+    QTreeWidgetItem * feTreeItemCf = new QTreeWidgetItem();
+    QTreeWidgetItem * feTreeItemCk = new QTreeWidgetItem();
+
+    feTreeItem->setText(0, "FE " + QString::number(ui->feTree->topLevelItemCount()));
+    feTreeItemId->setText(0, "Chip ID");
+    feTreeItemId->setText(1, QString::number(chipIdAdded));
+    feTreeItemTx->setText(0, "TX Channel");
+    feTreeItemTx->setText(1, QString::number(txChannelAdded));
+    feTreeItemRx->setText(0, "RX Channel");
+    feTreeItemRx->setText(1, QString::number(rxChannelAdded));
+    feTreeItemCf->setText(0, "Config file");
+    feTreeItemCf->setText(1, ui->configfileName->text());
+    feTreeItemCk->setText(0, "Active");
+    feTreeItemCk->setFlags(feTreeItemCk->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsSelectable);
+    feTreeItemCk->setCheckState(1, Qt::Unchecked);
+
+    feTreeItem->addChild(feTreeItemId);
+    feTreeItem->addChild(feTreeItemTx);
+    feTreeItem->addChild(feTreeItemRx);
+    feTreeItem->addChild(feTreeItemCf);
+    feTreeItem->addChild(feTreeItemCk);
+
+}
+
+void YarrGui::on_feTree_itemClicked(QTreeWidgetItem * item, int column)
+{
+    if(item->childCount() == 0) {
+        return;
+    }
+    QString chipIdAdded = item->child(0)->text(1);
+    QString txChannelAdded = item->child(1)->text(1);
+    QString rxChannelAdded = item->child(2)->text(1);
+
+    ui->chipIdEdit->setText(chipIdAdded);
+    ui->txChannelEdit->setText(txChannelAdded);
+    ui->rxChannelEdit->setText(rxChannelAdded);
+}
+
+void YarrGui::on_remFeButton_clicked()
+{
+    QTreeWidgetItem * itemRemoved = ui->feTree->currentItem();
+    if(itemRemoved->childCount() == 0) {
+        return;
+    }
+    QString channelRemoved = itemRemoved->child(2)->text(1);
+    bk->delFe(channelRemoved.toUInt());
+    itemRemoved->~QTreeWidgetItem(); //MEMORY LEAK HERE!
+}
+
+void process(Bookkeeper *bookie, bool * scanDone) {
+    // Set correct Hit Discriminator setting, for proper decoding
+    Fei4DataProcessor proc(bookie->getGlobalFe()->getValue(&Fei4::HitDiscCnfg));
+    proc.connect(&bookie->rawData, &bookie->eventMap);
+    proc.init();
+
+    while(!(*scanDone)) {
+        // TODO some better wakeup signal?
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        proc.process();
+    }
+    proc.process();
+}
+
+void analysis(Fei4Histogrammer *h, Fei4Analysis *a, bool * processorDone) {
+    h->init();
+    a->init();
+
+    while(!(*processorDone)) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        h->process();
+        a->process();
+    }
+    h->process();
+    a->process();
+
+    a->end();
+}
+
+void YarrGui::on_DigitalScanButton_clicked()
+{
+    scanDone = false;
+    processorDone = false;
+    ScanBase * s = new Fei4DigitalScan(bk);
+
+    //int curIndex = (int)ui->feTree->currentIndex().data();
+    //Fei4 * fe = bk->feList[0]; //DEBUG!!!
+    Fei4 * fe = NULL;
+    for(unsigned i = 0; i < ui->feTree->topLevelItemCount(); i++) {
+        if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
+            std::cout << i << " is checked\n";
+            fe = bk->feList[i];
+            break;
+        } else {
+            std::cout << i << " is not checked\n";
+        }
+    }
+
+    if(fe==NULL) {
+        std::cout << "No FE chosen for plotting\n";
+        return;
+    }
+
+    fe->histogrammer = new Fei4Histogrammer();
+    fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
+    fe->histogrammer->addHistogrammer(new OccupancyMap());
+    fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
+    fe->ana->connect(s, fe->clipHisto, fe->clipResult);
+    fe->ana->addAlgorithm(new OccupancyAnalysis());
+
+    s->init();
+    s->preScan();
+
+    unsigned int numThreads = std::thread::hardware_concurrency();
+    //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
+    std::vector<std::thread> procThreads;
+    for (unsigned i=0; i<numThreads; i++) {
+        procThreads.push_back(std::thread(process, bk, &scanDone));
+        //std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
+    }
+
+    std::vector<std::thread> anaThreads;
+    //std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
+    if (fe->isActive()) {
+        anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana, &processorDone));
+        //std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
+    }
+
+    s->run();
+    s->postScan();
+    scanDone = true;
+
+    for (unsigned i=0; i<numThreads; i++) {
+        procThreads[i].join();
+    }
+    processorDone = true;
+
+    for (unsigned i=0; i<anaThreads.size(); i++) {
+        anaThreads[i].join();
+    }
+
+    tx->setCmdEnable(0x0);
+    rx->setRxEnable(0x0);
+
+    delete s;
+    fe->toFileBinary();
+    fe->ana->plot("Digitalscan_GUI");
+    delete fe->histogrammer;
+    fe->histogrammer = NULL;
+    delete fe->ana;
+    fe->ana = NULL;
+
 
 }

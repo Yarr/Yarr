@@ -5,11 +5,14 @@
 #-------------------------------------------------
 
 QT       += core gui
-macx {
-    QMAKE_CXXFLAGS += -std=c++11 -stdlib=libc++
-    QMAKE_LFLAGS += -std=c++11 -stdlib=libc++
-    QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.7
-}
+#macx {
+#    QMAKE_CXXFLAGS += -std=c++11 -stdlib=libc++
+#    QMAKE_LFLAGS += -std=c++11 -stdlib=libc++
+#    QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.7
+#}
+
+QMAKE_CXXFLAGS += -std=c++11
+QMAKE_LFLAGS += -std=c++11
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
@@ -29,4 +32,7 @@ FORMS    += yarrgui.ui
 
 INCLUDEPATH += ../../src/libSpec/include
 INCLUDEPATH += ../../src/libUtil/include
-LIBS += -L../../src/lib -lspec -lutil -lyarr
+INCLUDEPATH += ../../src/libYarr/include
+INCLUDEPATH += ../../src/libFei4/include
+
+LIBS += -L../../src/lib -lfei4 -lspec -lutil -lyarr

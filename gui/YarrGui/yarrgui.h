@@ -13,7 +13,17 @@
 
 #include "qdebugstream.h"
 #include "SpecController.h"
+#include "Bookkeeper.h"
 #include "qcustomplot.h"
+#include "TxCore.h"
+#include "RxCore.h"
+#include "Fei4.h"
+#include "ScanBase.h"
+#include "Fei4DataProcessor.h"
+#include "Fei4Histogrammer.h"
+#include "Fei4Analysis.h"
+#include "Fei4Scans.h"
+#include "DataProcessor.h"
 
 #include <unistd.h>
 #include <sys/wait.h>
@@ -23,6 +33,9 @@
 
 #include <QFile>
 #include <QTextStream>
+
+#include <QTreeWidget>
+#include <QTreeWidgetItem>
 
 namespace Ui {
 class YarrGui;
@@ -35,6 +48,12 @@ class YarrGui : public QMainWindow
 public:
     explicit YarrGui(QWidget *parent = 0);
     ~YarrGui();
+
+    bool scanDone;
+    bool processorDone;
+
+//    static void process(Bookkeeper *, bool *);
+//    static void analysis(Fei4Histogrammer *, Fei4Analysis *, bool *);
 
 private slots:
 
@@ -57,6 +76,14 @@ private slots:
 
     void on_SBEReadButton_clicked();
 
+    void on_addFeButton_clicked();
+
+    void on_feTree_itemClicked(QTreeWidgetItem * item, int column);
+
+    void on_remFeButton_clicked();
+
+    void on_DigitalScanButton_clicked();
+
 private:
     Ui::YarrGui *ui;
     
@@ -67,9 +94,17 @@ private:
     QDebugStream *qerr;
 
     void init();
+
     std::vector<SpecController*> specVec;
+
     std::vector<QCPGraph*> writeGraphVec;
     std::vector<QCPGraph*> readGraphVec;
+
+    Bookkeeper * bk;
+    TxCore * tx;
+    RxCore * rx;
+
+
 };
 
 #endif // YARRGUI_H
