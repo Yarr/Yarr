@@ -145,7 +145,7 @@ void Histo1d::toFile(std::string prefix, bool header) {
 
 void Histo1d::plot(std::string prefix) {
     // Put raw histo data in tmp file
-    std::string tmp_name = "/tmp/tmp_yarr_histo1d_" + prefix;
+    std::string tmp_name = "/tmp/" + std::string(getenv("USER")) + "/tmp_yarr_histo1d_" + prefix;
     this->toFile(tmp_name, false);
     std::string cmd = "gnuplot | epstopdf -f > " + prefix + "_" + HistogramBase::name + ".pdf";
 

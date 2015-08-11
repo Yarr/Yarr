@@ -205,7 +205,7 @@ void Histo2d::toFile(std::string prefix, bool header) {
 
 void Histo2d::plot(std::string prefix) {
     // Put raw histo data in tmp file
-    std::string tmp_name = "/tmp/tmp_yarr_histo2d_" + prefix;
+    std::string tmp_name = "/tmp/" + std::string(getenv("USER")) + "/tmp_yarr_histo2d_" + prefix;
     this->toFile(tmp_name, false);
     std::string cmd = "gnuplot | epstopdf -f > " + prefix + "_" + HistogramBase::name;
     for (unsigned i=0; i<lStat.size(); i++)
