@@ -164,6 +164,6 @@ void Histo1d::plot(std::string prefix) {
     fprintf(gnu, "set style line 1 lt 1 lc rgb '#A6CEE3'\n");
     fprintf(gnu, "set style fill solid 0.5\n");
     fprintf(gnu, "set boxwidth %f*0.9 absolute\n", binWidth);
-    fprintf(gnu, "plot \"/tmp/tmp_yarr_histo1d_%s.dat\" matrix u ((($1)*(%f))+%f+(%f/2)):3 with boxes\n", (prefix + "_" + HistogramBase::name).c_str(), binWidth, xlow, binWidth);
+    fprintf(gnu, "plot \"%s\" matrix u ((($1)*(%f))+%f+(%f/2)):3 with boxes\n", (tmp_name + "_" + name + ".dat").c_str(), binWidth, xlow, binWidth);
     pclose(gnu);
 }
