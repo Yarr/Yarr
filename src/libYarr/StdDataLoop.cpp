@@ -44,9 +44,9 @@ void StdDataLoop::execPart2() {
     unsigned count = 0;
     uint32_t done = 0;
     //uint32_t rate = 0;
-    uint32_t curCnt = 0;
+    //uint32_t curCnt = 0;
     unsigned iterations = 0;
-    uint32_t startAddr = 0;
+    //uint32_t startAddr = 0;
 
 
     std::vector<RawData*> tmp_storage;
@@ -54,7 +54,7 @@ void StdDataLoop::execPart2() {
     RawDataContainer *rdc = new RawDataContainer();
     while (done == 0) {
         //rate = g_rx->getDataRate();
-        curCnt = g_rx->getCurCount();
+        //curCnt = g_rx->getCurCount();
         done = g_tx->isTrigDone();
         do {
             newData =  g_rx->readData();
@@ -69,7 +69,7 @@ void StdDataLoop::execPart2() {
     // Gather rest of data after timeout (~0.1ms)
     std::this_thread::sleep_for(std::chrono::microseconds(500));
     do {
-        curCnt = g_rx->getCurCount();
+        //curCnt = g_rx->getCurCount();
         newData =  g_rx->readData();
         iterations++;
         if (newData != NULL) {
