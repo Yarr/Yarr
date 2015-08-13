@@ -56,21 +56,21 @@ void Fei4Analysis::addAlgorithm(AnalysisAlgorithm *a, unsigned ch) {
     algorithms.push_back(a);
 }
 
-void Fei4Analysis::plot(std::string basename) {
+void Fei4Analysis::plot(std::string basename, std::string dir) {
     if (output->empty())
         return;
     for (std::deque<HistogramBase*>::iterator it = output->begin(); it != output->end(); ++it) {
         std::cout << "Plotting : " << (*it)->getName() << std::endl;
-        (*it)->plot(basename);
+        (*it)->plot(basename, dir);
     }
 }
 
-void Fei4Analysis::toFile(std::string basename) {
+void Fei4Analysis::toFile(std::string basename, std::string dir) {
     if (output->empty())
         return;
     for (std::deque<HistogramBase*>::iterator it = output->begin(); it != output->end(); ++it) {
         std::cout << "Saving : " << (*it)->getName() << std::endl;
-        (*it)->toFile(basename, true);
+        (*it)->toFile(basename, dir, true);
     }
 }
 

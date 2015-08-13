@@ -58,8 +58,8 @@ class Histo2d : public HistogramBase {
         double getNumOfEntries() {return entries;}
 
         
-        void toFile(std::string filename, bool header=true);
-        void plot(std::string filename);
+        void toFile(std::string filename, std::string dir = "", bool header=true);
+        void plot(std::string filename, std::string dir = "");
 
     private:
         double *data;

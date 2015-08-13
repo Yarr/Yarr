@@ -72,10 +72,11 @@ int main(int argc, char *argv[]) {
     unsigned specNum = 0;
     std::string scanType = "digitalscan";
     std::string configPath = "";
+    std::string outputDir = "./";
     bool doPlots = false;
 
     int c;
-    while ((c = getopt(argc, argv, "hs:n:c:p")) != -1) {
+    while ((c = getopt(argc, argv, "hs:n:c:po:")) != -1) {
         switch (c) {
             case 'h':
                 printHelp();
@@ -92,6 +93,11 @@ int main(int argc, char *argv[]) {
                 break;
             case 'p':
                 doPlots = true;
+                break;
+            case 'o':
+                outputDir = std::string(optarg);
+                if (outputDir.back() != '/')
+                    outputDir = outputDir + "/";
                 break;
             case '?':
                 if (optopt == 's' || optopt == 'n' || optopt == 'c') {
@@ -110,6 +116,8 @@ int main(int argc, char *argv[]) {
     std::cout << " SPEC Nr: " << specNum << std::endl;
     std::cout << " Scan Type: " << scanType << std::endl;
     std::cout << " Global configuration: " << configPath << std::endl;
+    std::cout << " Output Plots: " << doPlots << std::endl;
+    std::cout << " Output Directory: " << outputDir << std::endl;
 
     std::cout << std::endl;
     std::cout << "#################" << std::endl;
@@ -344,7 +352,7 @@ int main(int argc, char *argv[]) {
             // Plot
             if (doPlots) {
                 std::cout << "-> Plotting histograms of FE " << fe->getRxChannel() << std::endl;
-                fe->ana->plot("ch" + std::to_string(fe->getRxChannel()) + "_" + scanType);
+                fe->ana->plot("ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
             }
             // Free
             delete fe->histogrammer;
@@ -359,9 +367,10 @@ int main(int argc, char *argv[]) {
 void printHelp() {
     std::cout << "Help:" << std::endl;
     std::cout << " -h: Shows this." << std::endl;
-    std::cout << " -s: Scan type. Possible types:" << std::endl;
+    std::cout << " -s <scan_type> : Scan type. Possible types:" << std::endl;
     listScans();
     std::cout << " -p: Enable plotting of results." << std::endl;
+    std::cout << " -o <dir> : Output directory." << std::endl;
 }
 
 void listScans() {

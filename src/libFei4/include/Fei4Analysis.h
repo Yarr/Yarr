@@ -69,8 +69,8 @@ class Fei4Analysis : DataProcessor {
 
         void addAlgorithm(AnalysisAlgorithm *a);
 		void addAlgorithm(AnalysisAlgorithm *a, unsigned ch);
-        void plot(std::string basename);
-        void toFile(std::string basename);
+        void plot(std::string basename, std::string dir = "");
+        void toFile(std::string basename, std::string dir = "");
 
     private:
         Bookkeeper *bookie;

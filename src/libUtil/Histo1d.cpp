@@ -125,8 +125,8 @@ void Histo1d::add(const Histo1d &h) {
 }
 
 
-void Histo1d::toFile(std::string prefix, bool header) {
-    std::string filename = prefix + "_" + HistogramBase::name + ".dat";
+void Histo1d::toFile(std::string prefix, std::string dir, bool header) {
+    std::string filename = dir + prefix + "_" + HistogramBase::name + ".dat";
     std::fstream file(filename, std::fstream::out | std::fstream::trunc);
     // Header
     if (header) {
@@ -143,11 +143,11 @@ void Histo1d::toFile(std::string prefix, bool header) {
     file.close();
 }
 
-void Histo1d::plot(std::string prefix) {
+void Histo1d::plot(std::string prefix, std::string dir) {
     // Put raw histo data in tmp file
-    std::string tmp_name = "/tmp/" + std::string(getenv("USER")) + "/tmp_yarr_histo1d_" + prefix;
-    this->toFile(tmp_name, false);
-    std::string cmd = "gnuplot | epstopdf -f > " + prefix + "_" + HistogramBase::name + ".pdf";
+    std::string tmp_name = std::string(getenv("USER")) + "/tmp_yarr_histo1d_" + prefix;
+    this->toFile(tmp_name, "/tmp/", false);
+    std::string cmd = "gnuplot | epstopdf -f > " + dir + prefix + "_" + HistogramBase::name + ".pdf";
 
     // Open gnuplot as file and pipe commands
     FILE *gnu = popen(cmd.c_str(), "w");
@@ -164,6 +164,6 @@ void Histo1d::plot(std::string prefix) {
     fprintf(gnu, "set style line 1 lt 1 lc rgb '#A6CEE3'\n");
     fprintf(gnu, "set style fill solid 0.5\n");
     fprintf(gnu, "set boxwidth %f*0.9 absolute\n", binWidth);
-    fprintf(gnu, "plot \"%s\" matrix u ((($1)*(%f))+%f+(%f/2)):3 with boxes\n", (tmp_name + "_" + name + ".dat").c_str(), binWidth, xlow, binWidth);
+    fprintf(gnu, "plot \"%s\" matrix u ((($1)*(%f))+%f+(%f/2)):3 with boxes\n", ("/tmp/" + tmp_name + "_" + name + ".dat").c_str(), binWidth, xlow, binWidth);
     pclose(gnu);
 }

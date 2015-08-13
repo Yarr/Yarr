@@ -44,7 +44,7 @@ void Fei4Histogrammer::publish() {
 void Fei4Histogrammer::toFile(std::string basename) {
     for (std::deque<HistogramBase*>::iterator it = output->begin(); it != output->end(); ++it) {
         std::cout << "Saving : " << (*it)->getName() << std::endl;
-        (*it)->toFile(basename, true);
+        (*it)->toFile(basename);
     }
 }
 
