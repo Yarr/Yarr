@@ -228,6 +228,9 @@ int main(int argc, char *argv[]) {
     } else if (scanType == "tune_pixelpreamp") {
         std::cout << "-> Found Pixel Preamp Tuning" << std::endl;
         s = new Fei4PixelPreampTune(&bookie);
+    } else if (scanType == "noisescan") {
+        std::cout << "-> Found Noisescan" << std::endl;
+        s = new Fei4NoiseScan(&bookie);
     } else {
         std::cout << "-> No matching Scan found, possible:" << std::endl;
         listScans();
@@ -251,6 +254,7 @@ int main(int argc, char *argv[]) {
             // Init analysis per FE and depending on scan type
             fe->ana = new Fei4Analysis(&bookie, fe->getRxChannel());
             fe->ana->connect(s, fe->clipHisto, fe->clipResult);
+            fe->ana->addAlgorithm(new L1Analysis());
             if (scanType == "digitalscan") {
                 fe->ana->addAlgorithm(new OccupancyAnalysis());
             } else if (scanType == "analogscan") {
@@ -267,6 +271,8 @@ int main(int argc, char *argv[]) {
                 fe->ana->addAlgorithm(new TotAnalysis());
             } else if (scanType == "tune_pixelpreamp") {
                 fe->ana->addAlgorithm(new TotAnalysis());
+            } else if (scanType == "noisescan") {
+                fe->ana->addAlgorithm(new OccupancyAnalysis());
             } else {
                 std::cout << "-> Analyses not defined for scan type" << std::endl;
                 listScans();
@@ -382,6 +388,7 @@ void listScans() {
     std::cout << "  tune_pixelthreshold" << std::endl;
     std::cout << "  tune_globalpreamp" << std::endl;
     std::cout << "  tune_pixelpreamp" << std::endl;
+    std::cout << "  noisescan" << std::endl;
 }
 
 

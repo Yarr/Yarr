@@ -50,8 +50,8 @@ void Fei4DataProcessor::process() {
         }
 
         unsigned size = curInV->size();
-        if (size == 0)
-            std::cout << "Empty!" << std::endl;
+        //if (size == 0)
+            //std::cout << "Empty!" << std::endl;
         for(unsigned c=0; c<size; c++) {
             RawData *curIn = new RawData(curInV->adr[c], curInV->buf[c], curInV->words[c]);
             // Process
