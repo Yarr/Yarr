@@ -25,6 +25,7 @@ class Histo1d : public HistogramBase {
         ~Histo1d();
         
         unsigned size() const;
+        unsigned getEntries() const;
         double getMean();
         double getStdDev();
 

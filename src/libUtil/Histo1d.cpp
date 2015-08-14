@@ -51,6 +51,10 @@ unsigned Histo1d::size() const {
     return bins;
 }
 
+unsigned Histo1d::getEntries() const {
+    return entries;
+}
+
 double Histo1d::getMean() {
     if (sum == 0)
         return 0;
@@ -121,6 +125,7 @@ void Histo1d::add(const Histo1d &h) {
             data[i] += h.getBin(i);
             sum += h.getBin(i);
         }
+        entries += h.getEntries();
     }
 }
 
