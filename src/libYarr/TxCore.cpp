@@ -100,6 +100,12 @@ void TxCore::setTrigWord(uint32_t *word) {
     spec->writeBlock(TX_ADDR | TRIG_WORD, word, 4);
 }
 
+void TxCore::toggleTrigAbort() {
+    if (verbose)
+        std::cout << __PRETTY_FUNCTION__ << " : Toggling Trigger abort!" << std::endl;
+    spec->writeSingle(TX_ADDR | TRIG_ABORT, 0x1);
+}
+
 bool TxCore::isTrigDone() {
     return spec->readSingle(TX_ADDR | TRIG_DONE);
 }

@@ -73,7 +73,7 @@ void StdDataGatherer::execPart2() {
         if (signaled == 1) {
             std::cout << "Caught interrupt, stopping data taking!" << std::endl;
             std::cout << "Abort will leave buffers full of data!" << std::endl;
-            break;
+            g_tx->toggleTrigAbort();
         }
         std::this_thread::sleep_for(std::chrono::microseconds(500));
     }
