@@ -44,11 +44,11 @@ uint32_t DoubleColumnBit::getWord(const unsigned n) {
 
 Fei4PixelCfg::Fei4PixelCfg() {
     for (unsigned i=0; i<n_DC; i++) {
-        m_En[i].setAll(0);
+        m_En[i].setAll(1);
         m_TDAC[i].setAll(16);
         m_LCap[i].setAll(0);
         m_SCap[i].setAll(0);
-        m_Hitbus[i].setAll(1);
+        m_Hitbus[i].setAll(0);
         m_FDAC[i].setAll(8);
     }
 }
