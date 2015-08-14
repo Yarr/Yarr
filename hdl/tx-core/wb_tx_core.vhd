@@ -151,6 +151,7 @@ begin
 			tx_enable <= (others => '0');
 			wb_dat_t <= (others => '0');
 			trig_en <= '0';
+			trig_abort  <= '0';
 		elsif rising_edge(wb_clk_i) then
 			wb_wr_en <= (others => '0');
 			wb_ack_o <= '0';
