@@ -138,11 +138,24 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
         mask->setXaxisTitle("Column");
         mask->setYaxisTitle("Rows");
         mask->setZaxisTitle("Enable");
-        for (unsigned i=0; i<occMaps[ident]->size(); i++)
-            if (occMaps[ident]->getBin(i) == injections)
+        
+        // TODO Make this adjustable, probalby not always want a mask
+        bool makeMask = true;
+        
+        for (unsigned i=0; i<occMaps[ident]->size(); i++) {
+            if (occMaps[ident]->getBin(i) == injections) {
                 mask->setBin(i, 1);
+            } else {
+                if (makeMask) {
+                    Fei4 *fe = bookie->getFe(channel);
+                    fe->setEn((i/336)+1, (i%336)+1, 0);
+                    fe->setHitbus((i/336)+1, (i%336)+1, 1);
+                }
+            }
+        }
         output->pushData(mask); // TODO push this mask to the specific configuration
         output->pushData(occMaps[ident]);
+        
         
         //delete occMaps[ident];
         //occMaps[ident] = NULL;
@@ -770,4 +783,54 @@ void L1Analysis::processHistogram(HistogramBase *h) {
         //delete occMaps[ident];
         //occMaps[ident] = NULL;
     }
+}
+
+void NoiseAnalysis::init(ScanBase *s) {
+    // We assume the nosie scan only has one trigger and data loop
+    occ = new Histo2d("Occupancy", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+    occ->setXaxisTitle("Col");
+    occ->setYaxisTitle("Row");
+    occ->setZaxisTitle("Hits");
+    n_trigger = 0;
+}
+
+void NoiseAnalysis::processHistogram(HistogramBase *h) {
+    if (h->getType() == typeid(OccupancyMap*)) {
+        occ->add(*(Histo2d*)h);
+    } else if (h->getType() == typeid(HitDist*)) {
+        n_trigger += ((Histo1d*)h)->getEntries();       
+    }
+}
+
+void NoiseAnalysis::end() {
+    Histo2d* noiseOcc = new Histo2d("NoiseOccupancy", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+    noiseOcc->setXaxisTitle("Col");
+    noiseOcc->setYaxisTitle("Row");
+    noiseOcc->setZaxisTitle("Noise Occupancy hits/bc");
+
+    Histo2d* mask = new Histo2d("NoiseMask", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+    mask->setXaxisTitle("Col");
+    mask->setYaxisTitle("Row");
+    mask->setZaxisTitle("Mask");
+    
+    noiseOcc->add(occ);
+    noiseOcc->scale(1.0/(double)n_trigger);
+    bool applyMask = true;
+    double noiseThr = 1e-6; 
+    for (unsigned i=0; i<noiseOcc->size(); i++) {
+        if (noiseOcc->getBin(i) > noiseThr) {
+            Fei4 *fe = bookie->getFe(channel);
+            mask->setBin(i, 0);
+            if (applyMask) {
+                fe->setEn((i/336)+1, (i%336)+1, 0);
+                fe->setHitbus((i/336)+1, (i%336)+1, 1);
+            }
+        } else {
+            mask->setBin(i, 1);
+        }
+    }
+
+    output->pushData(occ);
+    output->pushData(noiseOcc);
+    output->pushData(mask);
 }

@@ -233,4 +233,17 @@ class L1Analysis : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> innerCnt;
 };
 
+class NoiseAnalysis : public AnalysisAlgorithm {
+    public:
+        NoiseAnalysis() : AnalysisAlgorithm() {};
+        ~NoiseAnalysis() {};
+
+        void init(ScanBase *s);
+        void processHistogram(HistogramBase *h);
+        void end();
+    private:
+        unsigned n_trigger;
+        Histo2d* occ;        
+};
+
 #endif

@@ -104,3 +104,10 @@ void L1Dist::processEvent(Fei4Data *data) {
     }
 }
     
+void HitDist::processEvent(Fei4Data *data) {
+    // Event Loop
+    for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
+        Fei4Event curEvent = *eventIt;
+        h->fill(curEvent.nHits);
+    }
+}

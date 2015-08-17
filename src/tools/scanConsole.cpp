@@ -129,7 +129,8 @@ int main(int argc, char *argv[]) {
     TxCore tx(&spec);
     RxCore rx(&spec);
     Bookkeeper bookie(&tx, &rx);
-
+    bookie.setTargetThreshold(1500);
+    
     std::cout << "-> Read global config (" << configPath << "):" << std::endl;
     std::fstream gConfig(configPath, std::ios::in);
     if (!gConfig) {
@@ -250,6 +251,7 @@ int main(int argc, char *argv[]) {
             fe->histogrammer->addHistogrammer(new TotMap());
             fe->histogrammer->addHistogrammer(new Tot2Map());
             fe->histogrammer->addHistogrammer(new L1Dist());
+            fe->histogrammer->addHistogrammer(new HitDist());
            
             // Init analysis per FE and depending on scan type
             fe->ana = new Fei4Analysis(&bookie, fe->getRxChannel());
@@ -272,7 +274,7 @@ int main(int argc, char *argv[]) {
             } else if (scanType == "tune_pixelpreamp") {
                 fe->ana->addAlgorithm(new TotAnalysis());
             } else if (scanType == "noisescan") {
-                fe->ana->addAlgorithm(new OccupancyAnalysis());
+                fe->ana->addAlgorithm(new NoiseAnalysis());
             } else {
                 std::cout << "-> Analyses not defined for scan type" << std::endl;
                 listScans();

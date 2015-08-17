@@ -147,6 +147,10 @@ void Fei4PixelCfg::setEn(unsigned col, unsigned row, unsigned v) {
     m_En[to_dc(col)].setPixel(to_bit(col, row) , v);
 }
 
+void Fei4PixelCfg::setHitbus(unsigned col, unsigned row, unsigned v) {
+    m_Hitbus[to_dc(col)].setPixel(to_bit(col, row) , v);
+}
+
 void Fei4PixelCfg::setTDAC(unsigned col, unsigned row, unsigned v) {
     m_TDAC[to_dc(col)].setPixel(to_bit(col, row) , v);
 }
