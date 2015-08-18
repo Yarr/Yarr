@@ -311,7 +311,6 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         }
         
         if (pixelFb != NULL) {
-            // TODO Get this from somewhere
             double targetTot = bookie->getTargetTot();
             Histo2d *fbHisto = new Histo2d("feedback", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
             for (unsigned i=0; i<meanTotMap->size(); i++) {
