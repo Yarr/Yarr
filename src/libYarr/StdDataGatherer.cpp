@@ -38,6 +38,8 @@ void StdDataGatherer::execPart1() {
 
 }
 
+sig_atomic_t signaled = 0;
+
 void StdDataGatherer::execPart2() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
@@ -46,13 +48,13 @@ void StdDataGatherer::execPart2() {
     uint32_t rate = 0;
 
     signaled = 0;
-    signal(SIGINT, handle_sig);
+    signal(SIGINT, [](int signum){signaled = 1;});
 
     std::cout << "### IMPORTANT ### Going into endless loop, interrupt with ^c (SIGINT)!" << std::endl;
 
     std::vector<RawData*> tmp_storage;
     RawData *newData = NULL;
-    while (done == 0 || signaled == 1) {
+    while (done == 0) {
         RawDataContainer *rdc = new RawDataContainer();
         rate = g_rx->getDataRate();
         if (verbose)
@@ -68,6 +70,11 @@ void StdDataGatherer::execPart2() {
         delete newData;
         rdc->stat = *g_stat;
         storage->pushData(rdc);
+        if (signaled == 1) {
+            std::cout << "Caught interrupt, stopping data taking!" << std::endl;
+            std::cout << "Abort will leave buffers full of data!" << std::endl;
+            g_tx->toggleTrigAbort();
+        }
         std::this_thread::sleep_for(std::chrono::microseconds(500));
     }
         
@@ -77,8 +84,4 @@ void StdDataGatherer::execPart2() {
 
 void StdDataGatherer::connect(ClipBoard<RawDataContainer> *clipboard) {
     storage = clipboard;
-}
-
-void handle_sig(int param) {
-    signaled = 1;
 }

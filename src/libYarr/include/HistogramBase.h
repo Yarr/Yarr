@@ -26,8 +26,8 @@ class HistogramBase {
 
         LoopStatus getStat() {return lStat;}
 
-        virtual void toFile(std::string basename, bool header=true) {}
-        virtual void plot(std::string basename) {}
+        virtual void toFile(std::string basename, std::string dir = "", bool header=true) {}
+        virtual void plot(std::string basename, std::string dir = "") {}
         
         void setAxisTitle(std::string x, std::string y="y", std::string z="z");
         void setXaxisTitle(std::string);

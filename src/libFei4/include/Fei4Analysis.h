@@ -69,8 +69,8 @@ class Fei4Analysis : DataProcessor {
 
         void addAlgorithm(AnalysisAlgorithm *a);
 		void addAlgorithm(AnalysisAlgorithm *a, unsigned ch);
-        void plot(std::string basename);
-        void toFile(std::string basename);
+        void plot(std::string basename, std::string dir = "");
+        void toFile(std::string basename, std::string dir = "");
 
     private:
         Bookkeeper *bookie;
@@ -231,6 +231,19 @@ class L1Analysis : public AnalysisAlgorithm {
         unsigned injections;
         std::map<unsigned, Histo1d*> l1Histos;
         std::map<unsigned, unsigned> innerCnt;
+};
+
+class NoiseAnalysis : public AnalysisAlgorithm {
+    public:
+        NoiseAnalysis() : AnalysisAlgorithm() {};
+        ~NoiseAnalysis() {};
+
+        void init(ScanBase *s);
+        void processHistogram(HistogramBase *h);
+        void end();
+    private:
+        unsigned n_trigger;
+        Histo2d* occ;        
 };
 
 #endif

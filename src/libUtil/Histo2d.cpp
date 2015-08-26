@@ -182,8 +182,8 @@ int Histo2d::binNum(double x, double y) {
 }
 
 
-void Histo2d::toFile(std::string prefix, bool header) {
-    std::string filename = prefix + "_" + name + ".dat";
+void Histo2d::toFile(std::string prefix, std::string dir, bool header) {
+    std::string filename = dir + prefix + "_" + name + ".dat";
     std::fstream file(filename, std::fstream::out | std::fstream::trunc);
     // Header
     if (header) {
@@ -203,11 +203,11 @@ void Histo2d::toFile(std::string prefix, bool header) {
     file.close();
 }
 
-void Histo2d::plot(std::string prefix) {
+void Histo2d::plot(std::string prefix, std::string dir) {
     // Put raw histo data in tmp file
-    std::string tmp_name = "/tmp/tmp_yarr_histo2d_" + prefix;
-    this->toFile(tmp_name, false);
-    std::string cmd = "gnuplot | epstopdf -f > " + prefix + "_" + HistogramBase::name;
+    std::string tmp_name = std::string(getenv("USER")) + "/tmp_yarr_histo2d_" + prefix;
+    this->toFile(tmp_name, "/tmp/", false);
+    std::string cmd = "gnuplot | epstopdf -f > " + dir + prefix + "_" + HistogramBase::name;
     for (unsigned i=0; i<lStat.size(); i++)
         cmd += "_" + std::to_string(lStat.get(i));
     cmd += ".pdf";
@@ -227,7 +227,7 @@ void Histo2d::plot(std::string prefix) {
     fprintf(gnu, "set yrange[%f:%f]\n", ylow, yhigh);
     //fprintf(gnu, "set cbrange[0:120]\n");
     //fprintf(gnu, "splot \"/tmp/tmp_%s.dat\" matrix u (($1)*((%f-%f)/%d)):(($2)*((%f-%f)/%d)):3\n", HistogramBase::name.c_str(), xhigh, xlow, xbins, yhigh, ylow, ybins);
-    fprintf(gnu, "plot \"/tmp/tmp_yarr_histo2d_%s.dat\" matrix u (($1+1)*((%f-%f)/%d)):(($2+1)*((%f-%f)/%d)):3 with image\n", (prefix + "_" + HistogramBase::name).c_str(), xhigh, xlow, xbins, yhigh, ylow, ybins);
+    fprintf(gnu, "plot \"%s\" matrix u (($1+1)*((%f-%f)/%d)):(($2+1)*((%f-%f)/%d)):3 with image\n", ("/tmp/" + tmp_name + "_" + name + ".dat").c_str(), xhigh, xlow, xbins, yhigh, ylow, ybins);
     pclose(gnu);
 }
 

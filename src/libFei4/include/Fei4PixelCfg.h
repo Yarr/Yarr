@@ -103,6 +103,7 @@ class Fei4PixelCfg {
         DoubleColumnField<4, false>& FDAC(unsigned dc);
 
         void setEn(unsigned col, unsigned row, unsigned v);
+        void setHitbus(unsigned col, unsigned row, unsigned v);
         void setTDAC(unsigned col, unsigned row, unsigned v);
         void setLCap(unsigned col, unsigned row, unsigned v);
         void setSCap(unsigned col, unsigned row, unsigned v);
