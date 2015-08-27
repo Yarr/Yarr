@@ -46,8 +46,8 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->benchmark_plot->legend->setFont(QFont("Helvetica", 9));
     ui->benchmark_plot->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignRight|Qt::AlignBottom);
 
-    ui->scanPlot->xAxis->setLabel("Row");
-    ui->scanPlot->yAxis->setLabel("Column");
+    ui->scanPlot->xAxis->setLabel("Column");
+    ui->scanPlot->yAxis->setLabel("Row");
     ui->scanPlot->xAxis->setRange(0, 80);
     ui->scanPlot->yAxis->setRange(0, 336);
     ui->scanPlot->setInteraction(QCP::iRangeDrag, true);
@@ -456,16 +456,11 @@ void YarrGui::on_DigitalScanButton_clicked()
     processorDone = false;
     ScanBase * s = new Fei4DigitalScan(bk);
 
-    //int curIndex = (int)ui->feTree->currentIndex().data();
-    //Fei4 * fe = bk->feList[0]; //DEBUG!!!
     Fei4 * fe = NULL;
     for(unsigned i = 0; i < ui->feTree->topLevelItemCount(); i++) {
         if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
-            std::cout << i << " is checked\n";
             fe = bk->feList[i];
             break;
-        } else {
-            std::cout << i << " is not checked\n";
         }
     }
 
@@ -512,16 +507,59 @@ void YarrGui::on_DigitalScanButton_clicked()
         anaThreads[i].join();
     }
 
+    std::cout << "Data in front end object: " << fe->clipResult->size() << std::endl;
+
     tx->setCmdEnable(0x0);
     rx->setRxEnable(0x0);
 
     delete s;
     fe->toFileBinary();
     fe->ana->plot("Digitalscan_GUI");
+
+    //DEBUG begin
+
+    std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
+    it++;
+    HistogramBase * showMe = *it;
+    //std::cout << showMe->getType().name() << std::endl;
+    QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
+    ui->scanPlot->addPlottable(colorMap);
+    colorMap->data()->setSize(80, 336);
+    colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
+    for(int xCoord = 0; xCoord<80; xCoord++) {
+        for(int yCoord = 0; yCoord<336; yCoord++) {
+            unsigned binNumber = ((Histo2d *)showMe)->binNum(xCoord, yCoord);
+            std::cout << binNumber << ':';
+            double colVal = ((Histo2d *)showMe)->getBin(binNumber);
+            std::cout << colVal << '\t';
+            colorMap->data()->setCell(xCoord, yCoord, colVal);
+        }
+    }
+    std::cout << std::endl;
+    QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
+    ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
+    colorScale->setType(QCPAxis::atRight);
+    colorMap->setColorScale(colorScale);
+    colorScale->axis()->setLabel("Occupancy");
+    colorMap->setGradient(QCPColorGradient::gpPolar);
+    colorMap->rescaleDataRange();
+
+    QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
+    ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+    colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+    ui->scanPlot->rescaleAxes();
+    //ui->scanPlot->
+    //std::cout << ((Histo2d*)showMe)->size() << '\t' << ((Histo2d*)showMe)->numOfEntries() << '\n';
+    ui->scanPlot->replot();
+
+    std::cout << "Plotting done.\n";
+    //DEBUG end
     delete fe->histogrammer;
     fe->histogrammer = NULL;
     delete fe->ana;
     fe->ana = NULL;
 
+    std::cout << "Returning... \n";
 
+    return;
 }
