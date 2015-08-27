@@ -51,6 +51,7 @@ public:
 
     bool scanDone;
     bool processorDone;
+    //bool secondTurn; //DEBUG
 
 //    static void process(Bookkeeper *, bool *);
 //    static void analysis(Fei4Histogrammer *, Fei4Analysis *, bool *);

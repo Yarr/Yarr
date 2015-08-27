@@ -54,10 +54,9 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->scanPlot->setInteraction(QCP::iRangeZoom, true);
     ui->scanPlot->setInteraction(QCP::iSelectPlottables, true);
     ui->scanPlot->setInteraction(QCP::iSelectAxes, true);
-    ui->scanPlot->legend->setVisible(true);
+    ui->scanPlot->legend->setVisible(false);
     ui->scanPlot->legend->setFont(QFont("Helvetica", 9));
     ui->scanPlot->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignRight|Qt::AlignBottom);
-
 
     QPen pen;
     QColor color;
@@ -94,6 +93,8 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->feTree->setColumnWidth(0, 200);
     ui->feTree->setColumnWidth(1, 500);
     //ui->feTree->setColumnWidth(2, 2000);
+
+    //secondTurn = false; //DEBUG
 }
 
 YarrGui::~YarrGui()
@@ -452,6 +453,7 @@ void analysis(Fei4Histogrammer *h, Fei4Analysis *a, bool * processorDone) {
 
 void YarrGui::on_DigitalScanButton_clicked()
 {
+
     scanDone = false;
     processorDone = false;
     ScanBase * s = new Fei4DigitalScan(bk);
@@ -476,8 +478,15 @@ void YarrGui::on_DigitalScanButton_clicked()
     fe->ana->connect(s, fe->clipHisto, fe->clipResult);
     fe->ana->addAlgorithm(new OccupancyAnalysis());
 
+
     s->init();
     s->preScan();
+
+//    if(secondTurn) {
+//        std::cout << "Success until here. \n";
+//        return;
+//    }
+
 
     unsigned int numThreads = std::thread::hardware_concurrency();
     //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
@@ -507,8 +516,6 @@ void YarrGui::on_DigitalScanButton_clicked()
         anaThreads[i].join();
     }
 
-    std::cout << "Data in front end object: " << fe->clipResult->size() << std::endl;
-
     tx->setCmdEnable(0x0);
     rx->setRxEnable(0x0);
 
@@ -521,16 +528,18 @@ void YarrGui::on_DigitalScanButton_clicked()
     std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
     it++;
     HistogramBase * showMe = *it;
-    //std::cout << showMe->getType().name() << std::endl;
+
+    if(ui->scanPlot->plottable(0) == NULL) {
+        std::cout << "Nothing here.\n";
+    }
+
     QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
     ui->scanPlot->addPlottable(colorMap);
     colorMap->data()->setSize(80, 336);
     colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
     for(int xCoord = 0; xCoord<80; xCoord++) {
         for(int yCoord = 0; yCoord<336; yCoord++) {
-            unsigned binNumber = ((Histo2d *)showMe)->binNum(xCoord, yCoord);
-            std::cout << binNumber << ':';
-            double colVal = ((Histo2d *)showMe)->getBin(binNumber);
+            double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
             std::cout << colVal << '\t';
             colorMap->data()->setCell(xCoord, yCoord, colVal);
         }
@@ -548,9 +557,13 @@ void YarrGui::on_DigitalScanButton_clicked()
     ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
     colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
     ui->scanPlot->rescaleAxes();
-    //ui->scanPlot->
-    //std::cout << ((Histo2d*)showMe)->size() << '\t' << ((Histo2d*)showMe)->numOfEntries() << '\n';
     ui->scanPlot->replot();
+
+//    ui->scanPlot->removePlottable(colorMap);
+//    ui->scanPlot->plotLayout()->remove(colorScale);
+//    delete colorMap;
+//    delete colorScale;
+//    delete marginGroup;
 
     std::cout << "Plotting done.\n";
     //DEBUG end
@@ -559,7 +572,9 @@ void YarrGui::on_DigitalScanButton_clicked()
     delete fe->ana;
     fe->ana = NULL;
 
-    std::cout << "Returning... \n";
+    std::cout << "Returning... \n"; //DEBUG
+
+    //secondTurn = true;
 
     return;
 }
