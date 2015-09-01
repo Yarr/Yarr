@@ -287,6 +287,8 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
            meanTotDist->fill(meanTotMap->getBin(i));
            sigmaTotDist->fill(sigma);
         }
+        
+        std::cout << "[" << channel << "] ToT Mean = " << meanTotDist->getMean() << " +- " << meanTotDist->getStdDev() << std::endl;
 
         if (globalFb != NULL) {
             double mean = 0;
