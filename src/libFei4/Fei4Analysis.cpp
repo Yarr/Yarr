@@ -463,12 +463,12 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         Histo2d *hh2 = new Histo2d("ThresholdMap", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
                         hh2->setXaxisTitle("Column");
                         hh2->setYaxisTitle("Row");
-                        hh2->setZaxisTitle("Threshold [Vcal]");
+                        hh2->setZaxisTitle("Threshold [e]");
                         thrMap[outerIdent] = hh2;
                         hh2 = new Histo2d("NoiseMap", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
                         hh2->setXaxisTitle("Column");
                         hh2->setYaxisTitle("Row");
-                        hh2->setZaxisTitle("Noise [Vcal]");
+                        hh2->setZaxisTitle("Noise [e]");
                         sigMap[outerIdent] = hh2;
                         //std::cout << " NEW ThresholdDist: " << outerIdent << std::endl;
                         //TODO ranges have to be more flexible
