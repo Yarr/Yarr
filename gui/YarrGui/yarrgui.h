@@ -37,6 +37,8 @@
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 
+#include <QtTest/QTest>
+
 namespace Ui {
 class YarrGui;
 }
@@ -51,7 +53,7 @@ public:
 
     bool scanDone;
     bool processorDone;
-    //bool secondTurn; //DEBUG
+    bool secondTurn; //DEBUG
 
 //    static void process(Bookkeeper *, bool *);
 //    static void analysis(Fei4Histogrammer *, Fei4Analysis *, bool *);
@@ -84,6 +86,20 @@ private slots:
     void on_remFeButton_clicked();
 
     void on_DigitalScanButton_clicked();
+
+    void on_AnalogScanButton_clicked();
+
+    void on_ThresholdScanButton_clicked();
+
+    void on_ToTScanButton_clicked();
+
+    void on_GThrTuneButton_clicked();
+
+    void on_GPreaTuneButton_clicked();
+
+    void on_PThrTuneButton_clicked();
+
+    void on_PPreaTuneButton_clicked();
 
 private:
     Ui::YarrGui *ui;

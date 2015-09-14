@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui testlib
 #macx {
 #    QMAKE_CXXFLAGS += -std=c++11 -stdlib=libc++
 #    QMAKE_LFLAGS += -std=c++11 -stdlib=libc++

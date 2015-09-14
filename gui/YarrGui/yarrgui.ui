@@ -33,7 +33,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>3</number>
     </property>
     <property name="tabsClosable">
      <bool>false</bool>
@@ -619,6 +619,84 @@
       </property>
       <property name="text">
        <string>AnalogScan</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="ThresholdScanButton">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>100</y>
+        <width>191</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>ThresholdScan</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="ToTScanButton">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>130</y>
+        <width>191</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>ToTScan</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="GThrTuneButton">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>180</y>
+        <width>191</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>GlobalThresholdTune</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="GPreaTuneButton">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>210</y>
+        <width>191</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>GlobalPreampTune</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="PThrTuneButton">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>240</y>
+        <width>191</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>PixelThresholdTune</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="PPreaTuneButton">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>270</y>
+        <width>191</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>PixelPreampTune</string>
       </property>
      </widget>
     </widget>
