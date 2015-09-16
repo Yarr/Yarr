@@ -93,8 +93,6 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->feTree->setColumnWidth(0, 200);
     ui->feTree->setColumnWidth(1, 500);
     //ui->feTree->setColumnWidth(2, 2000);
-
-    secondTurn = false; //DEBUG
 }
 
 YarrGui::~YarrGui()
@@ -527,7 +525,7 @@ void analysis(Fei4Histogrammer *h, Fei4Analysis *a, bool * processorDone) {
     a->end();
 }
 
-void YarrGui::on_NoiseScanButton_clicked()
+void YarrGui::doNoiseScan()
 {
     scanDone = false;
     processorDone = false;
@@ -632,23 +630,8 @@ void YarrGui::on_NoiseScanButton_clicked()
     return;
 }
 
-void YarrGui::on_DigitalScanButton_clicked()
+void YarrGui::doDigitalScan()
 {
-
-    if(tx->isCmdEmpty()) {
-        std::cout << "Cmd empty\n";
-    } else {
-        std::cout << "Cmd not empty\n";
-    }
-
-    if(tx->isTrigDone()) {
-        std::cout << "Trig done\n";
-    } else {
-        std::cout << "Trig not done\n";
-    }
-
-    std::cout << "Beginning scan... \n";
-
 
     scanDone = false;
     processorDone = false;
@@ -675,12 +658,6 @@ void YarrGui::on_DigitalScanButton_clicked()
     fe->ana->addAlgorithm(new OccupancyAnalysis());
 
     s->init();
-    QTest::qSleep(10);
-    if(secondTurn) {
-
-        std::cout << "Success until here. \n";
-        return;
-    }
     s->preScan();
 
     unsigned int numThreads = std::thread::hardware_concurrency();
@@ -710,9 +687,6 @@ void YarrGui::on_DigitalScanButton_clicked()
     for (unsigned i=0; i<anaThreads.size(); i++) {
         anaThreads[i].join();
     }
-
-    tx->setCmdEnable(0x0);
-    rx->setRxEnable(0x0);
 
     delete s;
     fe->toFileBinary();
@@ -766,43 +740,10 @@ void YarrGui::on_DigitalScanButton_clicked()
     delete fe->ana;
     fe->ana = NULL;
 
-    secondTurn = true;
-
-    if(tx->isCmdEmpty()) {
-        std::cout << "Cmd empty\n";
-    } else {
-        std::cout << "Cmd not empty\n";
-    }
-
-    if(tx->isTrigDone()) {
-        std::cout << "Trig done\n";
-    } else {
-        std::cout << "Trig not done\n";
-    }
-
-    std::cout << "Trig abort...\n";
-    tx->setTrigCnt(0);
-
-    if(tx->isCmdEmpty()) {
-        std::cout << "Cmd empty\n";
-    } else {
-        std::cout << "Cmd not empty\n";
-    }
-
-    if(tx->isTrigDone()) {
-        std::cout << "Trig done\n";
-    } else {
-        std::cout << "Trig not done\n";
-    }
-
-    std::cout << std::hex << std::showbase << tx->getTrigEnable() << std::dec << std::noshowbase << std::endl;
-
-    std::cout << "Returning...\n";
-
     return;
 }
 
-void YarrGui::on_AnalogScanButton_clicked()
+void YarrGui::doAnalogScan()
 {
     scanDone = false;
     processorDone = false;
@@ -907,7 +848,7 @@ void YarrGui::on_AnalogScanButton_clicked()
     return;
 }
 
-void YarrGui::on_ThresholdScanButton_clicked()
+void YarrGui::doThresholdScan()
 {
     scanDone = false;
     processorDone = false;
@@ -1012,7 +953,7 @@ void YarrGui::on_ThresholdScanButton_clicked()
     return;
 }
 
-void YarrGui::on_ToTScanButton_clicked()
+void YarrGui::doToTScan()
 {
     scanDone = false;
     processorDone = false;
@@ -1119,7 +1060,7 @@ void YarrGui::on_ToTScanButton_clicked()
     return;
 }
 
-void YarrGui::on_GThrTuneButton_clicked()
+void YarrGui::doGThrTune()
 {
     scanDone = false;
     processorDone = false;
@@ -1224,7 +1165,7 @@ void YarrGui::on_GThrTuneButton_clicked()
     return;
 }
 
-void YarrGui::on_GPreaTuneButton_clicked()
+void YarrGui::doGPreaTune()
 {
     scanDone = false;
     processorDone = false;
@@ -1331,7 +1272,7 @@ void YarrGui::on_GPreaTuneButton_clicked()
     return;
 }
 
-void YarrGui::on_PThrTuneButton_clicked()
+void YarrGui::doPThrTune()
 {
     scanDone = false;
     processorDone = false;
@@ -1437,7 +1378,7 @@ void YarrGui::on_PThrTuneButton_clicked()
 }
 
 
-void YarrGui::on_PPreaTuneButton_clicked()
+void YarrGui::doPPreaTune()
 {
     scanDone = false;
     processorDone = false;
@@ -1542,4 +1483,48 @@ void YarrGui::on_PPreaTuneButton_clicked()
     fe->ana = NULL;
 
     return;
+}
+
+void YarrGui::on_NoiseScanButton_clicked() {
+    scanVec.push_back( [&] () { doNoiseScan(); });
+}
+
+void YarrGui::on_DigitalScanButton_clicked() {
+    scanVec.push_back( [&] () { doDigitalScan(); });
+}
+
+void YarrGui::on_AnalogScanButton_clicked() {
+    scanVec.push_back( [&] () { doAnalogScan(); });
+}
+
+void YarrGui::on_ThresholdScanButton_clicked() {
+    scanVec.push_back( [&] () { doThresholdScan(); });
+}
+
+void YarrGui::on_ToTScanButton_clicked() {
+    scanVec.push_back( [&] () { doToTScan(); });
+}
+
+void YarrGui::on_GThrTuneButton_clicked() {
+    scanVec.push_back( [&] () { doGThrTune(); });
+}
+
+void YarrGui::on_GPreaTuneButton_clicked() {
+    scanVec.push_back( [&] () { doGPreaTune(); });
+}
+
+void YarrGui::on_PThrTuneButton_clicked() {
+    scanVec.push_back( [&] () { doPThrTune(); });
+}
+
+void YarrGui::on_PPreaTuneButton_clicked() {
+    scanVec.push_back( [&] () { doPPreaTune(); });
+}
+
+void YarrGui::on_doScansButton_clicked()
+{
+    std::cout << scanVec.size() << std::endl;
+    for(unsigned int i = 0; i<scanVec.size(); i++) {
+        (scanVec.at(i))();
+    }
 }

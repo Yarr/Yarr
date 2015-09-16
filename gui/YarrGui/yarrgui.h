@@ -39,6 +39,8 @@
 
 #include <QtTest/QTest>
 
+#include <functional>
+
 namespace Ui {
 class YarrGui;
 }
@@ -53,10 +55,6 @@ public:
 
     bool scanDone;
     bool processorDone;
-    bool secondTurn; //DEBUG
-
-//    static void process(Bookkeeper *, bool *);
-//    static void analysis(Fei4Histogrammer *, Fei4Analysis *, bool *);
 
 private slots:
 
@@ -71,35 +69,27 @@ private slots:
     void on_maxSize_spinBox_valueChanged(int i);
     void on_startWrite_button_clicked();
     void on_startRead_button_clicked();
-    void on_NoiseScanButton_clicked();
 
     void on_sbefile_button_2_clicked();
-
     void on_SBEWriteButton_clicked();
-
     void on_SBEReadButton_clicked();
 
     void on_addFeButton_clicked();
-
     void on_feTree_itemClicked(QTreeWidgetItem * item, int column);
-
     void on_remFeButton_clicked();
 
+    void on_NoiseScanButton_clicked();
     void on_DigitalScanButton_clicked();
-
     void on_AnalogScanButton_clicked();
-
     void on_ThresholdScanButton_clicked();
-
     void on_ToTScanButton_clicked();
 
     void on_GThrTuneButton_clicked();
-
     void on_GPreaTuneButton_clicked();
-
     void on_PThrTuneButton_clicked();
-
     void on_PPreaTuneButton_clicked();
+
+    void on_doScansButton_clicked();
 
 private:
     Ui::YarrGui *ui;
@@ -121,6 +111,18 @@ private:
     TxCore * tx;
     RxCore * rx;
 
+    std::vector< std::function<void()> > scanVec;
+
+    void doNoiseScan();
+    void doDigitalScan();
+    void doAnalogScan();
+    void doThresholdScan();
+    void doToTScan();
+
+    void doGThrTune();
+    void doGPreaTune();
+    void doPThrTune();
+    void doPPreaTune();
 
 };
 
