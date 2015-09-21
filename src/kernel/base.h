@@ -19,11 +19,20 @@ int specdriver_release(struct inode *inode, struct file *filp);
 
 /* prototypes for device operations */
 static struct pci_driver specdriver_driver;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
+static int specdriver_probe(struct pci_dev *pdev, const struct pci_device_id *id);
+static void specdriver_remove(struct pci_dev *pdev);
+#else
 static int __devinit specdriver_probe(struct pci_dev *pdev, const struct pci_device_id *id);
 static void __devexit specdriver_remove(struct pci_dev *pdev);
+#endif
 
 /* prototypes for module operations */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
+static int specdriver_init(void);
+#else
 static int __init specdriver_init(void);
+#endif
 static void specdriver_exit(void);
 
 /*
@@ -43,7 +52,8 @@ static void specdriver_exit(void);
  *
  */
 
-static const __devinitdata struct pci_device_id specdriver_ids[] = {
+//static const __devinitdata struct pci_device_id specdriver_ids[] = {
+static const struct pci_device_id specdriver_ids[] = {
 	{ PCI_DEVICE( PCIE_SPEC_VENDOR_ID, PCIE_SPEC_DEVICE_ID ) },     // PCI-E SPEC card
 	{0,0,0,0},
 };
