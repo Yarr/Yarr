@@ -33,7 +33,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>3</number>
+     <number>1</number>
     </property>
     <property name="tabsClosable">
      <bool>false</bool>
@@ -293,7 +293,7 @@
         <x>450</x>
         <y>10</y>
         <width>511</width>
-        <height>361</height>
+        <height>321</height>
        </rect>
       </property>
       <property name="columnCount">
@@ -521,6 +521,29 @@
       </property>
       <property name="text">
        <string>GlobalPreampTune</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="scanVec_lineEdit">
+      <property name="geometry">
+       <rect>
+        <x>450</x>
+        <y>342</y>
+        <width>511</width>
+        <height>31</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="RemoveScans_Button">
+      <property name="geometry">
+       <rect>
+        <x>240</x>
+        <y>340</y>
+        <width>191</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Remove Scans</string>
       </property>
      </widget>
     </widget>
@@ -758,7 +781,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Scan! Yeeeaaaaahhh!</string>
+       <string>Run Scans</string>
       </property>
      </widget>
     </widget>

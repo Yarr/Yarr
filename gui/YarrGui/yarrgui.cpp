@@ -93,6 +93,8 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->feTree->setColumnWidth(0, 200);
     ui->feTree->setColumnWidth(1, 500);
     //ui->feTree->setColumnWidth(2, 2000);
+
+    ui->scanVec_lineEdit->setReadOnly(true);
 }
 
 YarrGui::~YarrGui()
@@ -493,7 +495,7 @@ void YarrGui::on_remFeButton_clicked()
     }
     QString channelRemoved = itemRemoved->child(2)->text(1);
     bk->delFe(channelRemoved.toUInt());
-    itemRemoved->~QTreeWidgetItem(); //MEMORY LEAK HERE!
+    itemRemoved->~QTreeWidgetItem(); //MEMORY LEAK HERE! ADD DESTRUCTORS HERE!
 }
 
 void process(Bookkeeper *bookie, bool * scanDone) {
@@ -527,105 +529,111 @@ void analysis(Fei4Histogrammer *h, Fei4Analysis *a, bool * processorDone) {
 
 void YarrGui::doNoiseScan()
 {
-    scanDone = false;
-    processorDone = false;
-    ScanBase * s = new Fei4NoiseScan(bk);
 
-    Fei4 * fe = NULL;
+    std::vector<Fei4*> feVec;
+
     for(unsigned i = 0; i < ui->feTree->topLevelItemCount(); i++) {
         if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
-            fe = bk->feList[i];
-            break;
+            feVec.push_back(bk->feList[i]);
         }
     }
 
-    if(fe==NULL) {
-        std::cout << "No FE chosen for plotting\n";
+    if(feVec.size() == 0) {
+        std::cout << "No FEs chosen for scanning.\n";
         return;
     }
 
-    fe->histogrammer = new Fei4Histogrammer();
-    fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
-    fe->histogrammer->addHistogrammer(new OccupancyMap());
-    fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
-    fe->ana->connect(s, fe->clipHisto, fe->clipResult);
-    fe->ana->addAlgorithm(new NoiseAnalysis());
 
-    s->init();
-    s->preScan();
+    for(unsigned j = 0; j < feVec.size(); j++){
+        scanDone = false;
+        processorDone = false;
+        ScanBase * s = new Fei4NoiseScan(bk);
 
-    unsigned int numThreads = std::thread::hardware_concurrency();
-    //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
-    std::vector<std::thread> procThreads;
-    for (unsigned i=0; i<numThreads; i++) {
-        procThreads.push_back(std::thread(process, bk, &scanDone));
-        //std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
-    }
+        Fei4 * fe = feVec.at(j);
 
-    std::vector<std::thread> anaThreads;
-    //std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
-    if (fe->isActive()) {
-        anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana, &processorDone));
-        //std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
-    }
+        fe->histogrammer = new Fei4Histogrammer();
+        fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
+        fe->histogrammer->addHistogrammer(new OccupancyMap());
+        fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
+        fe->ana->connect(s, fe->clipHisto, fe->clipResult);
+        fe->ana->addAlgorithm(new NoiseAnalysis());
 
-    s->run();
-    s->postScan();
-    scanDone = true;
+        s->init();
+        s->preScan();
 
-    for (unsigned i=0; i<numThreads; i++) {
-        procThreads[i].join();
-    }
-    processorDone = true;
-
-    for (unsigned i=0; i<anaThreads.size(); i++) {
-        anaThreads[i].join();
-    }
-
-    tx->setCmdEnable(0x0);
-    rx->setRxEnable(0x0);
-
-    delete s;
-    fe->toFileBinary();
-    fe->ana->plot("Noisescan_GUI");
-
-    //DEBUG begin [plotting]
-
-    std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
-    it++;
-    HistogramBase * showMe = *it;
-
-    QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
-    ui->scanPlot->addPlottable(colorMap);
-    colorMap->data()->setSize(80, 336);
-    colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
-    for(int xCoord = 0; xCoord<80; xCoord++) {
-        for(int yCoord = 0; yCoord<336; yCoord++) {
-            double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
-            colorMap->data()->setCell(xCoord, yCoord, colVal);
+        unsigned int numThreads = std::thread::hardware_concurrency();
+        //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
+        std::vector<std::thread> procThreads;
+        for (unsigned i=0; i<numThreads; i++) {
+            procThreads.push_back(std::thread(process, bk, &scanDone));
+            //std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
         }
+
+        std::vector<std::thread> anaThreads;
+        //std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
+        if (fe->isActive()) {
+            anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana, &processorDone));
+            //std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
+        }
+
+        s->run();
+        s->postScan();
+        scanDone = true;
+
+        for (unsigned i=0; i<numThreads; i++) {
+            procThreads[i].join();
+        }
+        processorDone = true;
+
+        for (unsigned i=0; i<anaThreads.size(); i++) {
+            anaThreads[i].join();
+        }
+
+        tx->setCmdEnable(0x0);
+        rx->setRxEnable(0x0);
+
+        delete s;
+        fe->toFileBinary();
+        fe->ana->plot("Noisescan_GUI");
+
+        //DEBUG begin [plotting]
+
+        std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
+        it++;
+        HistogramBase * showMe = *it;
+
+        QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
+        ui->scanPlot->addPlottable(colorMap);
+        colorMap->data()->setSize(80, 336);
+        colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
+        for(int xCoord = 0; xCoord<80; xCoord++) {
+            for(int yCoord = 0; yCoord<336; yCoord++) {
+                double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
+                colorMap->data()->setCell(xCoord, yCoord, colVal);
+            }
+        }
+        std::cout << std::endl;
+        QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
+        ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
+        colorScale->setType(QCPAxis::atRight);
+        colorMap->setColorScale(colorScale);
+        colorScale->axis()->setLabel("Occupancy");
+        colorMap->setGradient(QCPColorGradient::gpPolar);
+        colorMap->rescaleDataRange();
+
+        QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
+        ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+        colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+        ui->scanPlot->rescaleAxes();
+        ui->scanPlot->replot();
+
+        //DEBUG end [plotting]
+
+        delete fe->histogrammer;
+        fe->histogrammer = NULL;
+        delete fe->ana;
+        fe->ana = NULL;
     }
-    std::cout << std::endl;
-    QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
-    ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
-    colorScale->setType(QCPAxis::atRight);
-    colorMap->setColorScale(colorScale);
-    colorScale->axis()->setLabel("Occupancy");
-    colorMap->setGradient(QCPColorGradient::gpPolar);
-    colorMap->rescaleDataRange();
-
-    QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
-    ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-    colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-    ui->scanPlot->rescaleAxes();
-    ui->scanPlot->replot();
-
-    //DEBUG end [plotting]
-
-    delete fe->histogrammer;
-    fe->histogrammer = NULL;
-    delete fe->ana;
-    fe->ana = NULL;
 
     return;
 }
@@ -633,746 +641,785 @@ void YarrGui::doNoiseScan()
 void YarrGui::doDigitalScan()
 {
 
-    scanDone = false;
-    processorDone = false;
-    ScanBase * s = new Fei4DigitalScan(bk);
+    std::vector<Fei4*> feVec;
 
-    Fei4 * fe = NULL;
     for(unsigned i = 0; i < ui->feTree->topLevelItemCount(); i++) {
         if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
-            fe = bk->feList[i];
-            break;
+            feVec.push_back(bk->feList[i]);
         }
     }
 
-    if(fe==NULL) {
-        std::cout << "No FE chosen for plotting\n";
+    if(feVec.size() == 0) {
+        std::cout << "No FEs chosen for scanning.\n";
         return;
     }
 
-    fe->histogrammer = new Fei4Histogrammer();
-    fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
-    fe->histogrammer->addHistogrammer(new OccupancyMap());
-    fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
-    fe->ana->connect(s, fe->clipHisto, fe->clipResult);
-    fe->ana->addAlgorithm(new OccupancyAnalysis());
+    for(unsigned j = 0; j < feVec.size(); j++){
+        scanDone = false;
+        processorDone = false;
+        ScanBase * s = new Fei4DigitalScan(bk);
 
-    s->init();
-    s->preScan();
+        Fei4 * fe = feVec.at(j);
 
-    unsigned int numThreads = std::thread::hardware_concurrency();
-    //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
-    std::vector<std::thread> procThreads;
-    for (unsigned i=0; i<numThreads; i++) {
-        procThreads.push_back(std::thread(process, bk, &scanDone));
-        //std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
-    }
+        fe->histogrammer = new Fei4Histogrammer();
+        fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
+        fe->histogrammer->addHistogrammer(new OccupancyMap());
+        fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
+        fe->ana->connect(s, fe->clipHisto, fe->clipResult);
+        fe->ana->addAlgorithm(new OccupancyAnalysis());
 
-    std::vector<std::thread> anaThreads;
-    //std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
-    if (fe->isActive()) {
-        anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana, &processorDone));
-        //std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
-    }
+        s->init();
+        s->preScan();
 
-    s->run();
-    s->postScan();
-    scanDone = true;
-
-    for (unsigned i=0; i<numThreads; i++) {
-        procThreads[i].join();
-    }
-    processorDone = true;
-
-    for (unsigned i=0; i<anaThreads.size(); i++) {
-        anaThreads[i].join();
-    }
-
-    delete s;
-    fe->toFileBinary();
-    fe->ana->plot("Digitalscan_GUI");
-
-    //DEBUG begin [plotting]
-
-    std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
-    it++;
-    HistogramBase * showMe = *it;
-
-//    if(ui->scanPlot->plottable(0) == NULL) {
-//        std::cout << "Nothing here.\n";
-//    }
-
-    QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
-    ui->scanPlot->addPlottable(colorMap);
-    colorMap->data()->setSize(80, 336);
-    colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
-    for(int xCoord = 0; xCoord<80; xCoord++) {
-        for(int yCoord = 0; yCoord<336; yCoord++) {
-            double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
-            colorMap->data()->setCell(xCoord, yCoord, colVal);
+        unsigned int numThreads = std::thread::hardware_concurrency();
+        //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
+        std::vector<std::thread> procThreads;
+        for (unsigned i=0; i<numThreads; i++) {
+            procThreads.push_back(std::thread(process, bk, &scanDone));
+            //std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
         }
+
+        std::vector<std::thread> anaThreads;
+        //std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
+        if (fe->isActive()) {
+            anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana, &processorDone));
+            //std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
+        }
+
+        s->run();
+        s->postScan();
+        scanDone = true;
+
+        for (unsigned i=0; i<numThreads; i++) {
+            procThreads[i].join();
+        }
+        processorDone = true;
+
+        for (unsigned i=0; i<anaThreads.size(); i++) {
+            anaThreads[i].join();
+        }
+
+        delete s;
+        fe->toFileBinary();
+        fe->ana->plot("Digitalscan_GUI");
+
+        //DEBUG begin [plotting]
+
+        std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
+        it++;
+        HistogramBase * showMe = *it;
+
+        //    if(ui->scanPlot->plottable(0) == NULL) {
+        //        std::cout << "Nothing here.\n";
+        //    }
+
+        QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
+        ui->scanPlot->addPlottable(colorMap);
+        colorMap->data()->setSize(80, 336);
+        colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
+        for(int xCoord = 0; xCoord<80; xCoord++) {
+            for(int yCoord = 0; yCoord<336; yCoord++) {
+                double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
+                colorMap->data()->setCell(xCoord, yCoord, colVal);
+            }
+        }
+        std::cout << std::endl;
+        QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
+        ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
+        colorScale->setType(QCPAxis::atRight);
+        colorMap->setColorScale(colorScale);
+        colorScale->axis()->setLabel("Occupancy");
+        colorMap->setGradient(QCPColorGradient::gpPolar);
+        colorMap->rescaleDataRange();
+
+        QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
+        ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+        colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+        ui->scanPlot->rescaleAxes();
+        ui->scanPlot->replot();
+
+        //    ui->scanPlot->removePlottable(colorMap);
+        //    ui->scanPlot->plotLayout()->remove(colorScale);
+        //    delete colorMap;
+        //    delete colorScale;
+        //    delete marginGroup;
+
+        //DEBUG end [plotting]
+
+        delete fe->histogrammer;
+        fe->histogrammer = NULL;
+        delete fe->ana;
+        fe->ana = NULL;
     }
-    std::cout << std::endl;
-    QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
-    ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
-    colorScale->setType(QCPAxis::atRight);
-    colorMap->setColorScale(colorScale);
-    colorScale->axis()->setLabel("Occupancy");
-    colorMap->setGradient(QCPColorGradient::gpPolar);
-    colorMap->rescaleDataRange();
-
-    QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
-    ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-    colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-    ui->scanPlot->rescaleAxes();
-    ui->scanPlot->replot();
-
-//    ui->scanPlot->removePlottable(colorMap);
-//    ui->scanPlot->plotLayout()->remove(colorScale);
-//    delete colorMap;
-//    delete colorScale;
-//    delete marginGroup;
-
-    //DEBUG end [plotting]
-
-    delete fe->histogrammer;
-    fe->histogrammer = NULL;
-    delete fe->ana;
-    fe->ana = NULL;
 
     return;
 }
 
 void YarrGui::doAnalogScan()
 {
-    scanDone = false;
-    processorDone = false;
-    ScanBase * s = new Fei4AnalogScan(bk);
 
-    Fei4 * fe = NULL;
+    std::vector<Fei4*> feVec;
+
     for(unsigned i = 0; i < ui->feTree->topLevelItemCount(); i++) {
         if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
-            fe = bk->feList[i];
-            break;
+            feVec.push_back(bk->feList[i]);
         }
     }
 
-    if(fe==NULL) {
-        std::cout << "No FE chosen for plotting\n";
+    if(feVec.size() == 0) {
+        std::cout << "No FEs chosen for scanning.\n";
         return;
     }
 
-    fe->histogrammer = new Fei4Histogrammer();
-    fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
-    fe->histogrammer->addHistogrammer(new OccupancyMap());
-    fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
-    fe->ana->connect(s, fe->clipHisto, fe->clipResult);
-    fe->ana->addAlgorithm(new OccupancyAnalysis());
 
-    s->init();
-    s->preScan();
+    for(unsigned j = 0; j < feVec.size(); j++){
+        scanDone = false;
+        processorDone = false;
+        ScanBase * s = new Fei4AnalogScan(bk);
 
-    unsigned int numThreads = std::thread::hardware_concurrency();
-    //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
-    std::vector<std::thread> procThreads;
-    for (unsigned i=0; i<numThreads; i++) {
-        procThreads.push_back(std::thread(process, bk, &scanDone));
-        //std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
-    }
+        Fei4 * fe = feVec.at(j);
 
-    std::vector<std::thread> anaThreads;
-    //std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
-    if (fe->isActive()) {
-        anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana, &processorDone));
-        //std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
-    }
+        fe->histogrammer = new Fei4Histogrammer();
+        fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
+        fe->histogrammer->addHistogrammer(new OccupancyMap());
+        fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
+        fe->ana->connect(s, fe->clipHisto, fe->clipResult);
+        fe->ana->addAlgorithm(new OccupancyAnalysis());
 
-    s->run();
-    s->postScan();
-    scanDone = true;
+        s->init();
+        s->preScan();
 
-    for (unsigned i=0; i<numThreads; i++) {
-        procThreads[i].join();
-    }
-    processorDone = true;
-
-    for (unsigned i=0; i<anaThreads.size(); i++) {
-        anaThreads[i].join();
-    }
-
-    tx->setCmdEnable(0x0);
-    rx->setRxEnable(0x0);
-
-    delete s;
-    fe->toFileBinary();
-    fe->ana->plot("Analogscan_GUI");
-
-    //DEBUG begin [plotting]
-
-    std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
-    it++;
-    HistogramBase * showMe = *it;
-
-    QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
-    ui->scanPlot->addPlottable(colorMap);
-    colorMap->data()->setSize(80, 336);
-    colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
-    for(int xCoord = 0; xCoord<80; xCoord++) {
-        for(int yCoord = 0; yCoord<336; yCoord++) {
-            double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
-            colorMap->data()->setCell(xCoord, yCoord, colVal);
+        unsigned int numThreads = std::thread::hardware_concurrency();
+        //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
+        std::vector<std::thread> procThreads;
+        for (unsigned i=0; i<numThreads; i++) {
+            procThreads.push_back(std::thread(process, bk, &scanDone));
+            //std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
         }
+
+        std::vector<std::thread> anaThreads;
+        //std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
+        if (fe->isActive()) {
+            anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana, &processorDone));
+            //std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
+        }
+
+        s->run();
+        s->postScan();
+        scanDone = true;
+
+        for (unsigned i=0; i<numThreads; i++) {
+            procThreads[i].join();
+        }
+        processorDone = true;
+
+        for (unsigned i=0; i<anaThreads.size(); i++) {
+            anaThreads[i].join();
+        }
+
+        tx->setCmdEnable(0x0);
+        rx->setRxEnable(0x0);
+
+        delete s;
+        fe->toFileBinary();
+        fe->ana->plot("Analogscan_GUI");
+
+        //DEBUG begin [plotting]
+
+        std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
+        it++;
+        HistogramBase * showMe = *it;
+
+        QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
+        ui->scanPlot->addPlottable(colorMap);
+        colorMap->data()->setSize(80, 336);
+        colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
+        for(int xCoord = 0; xCoord<80; xCoord++) {
+            for(int yCoord = 0; yCoord<336; yCoord++) {
+                double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
+                colorMap->data()->setCell(xCoord, yCoord, colVal);
+            }
+        }
+        std::cout << std::endl;
+        QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
+        ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
+        colorScale->setType(QCPAxis::atRight);
+        colorMap->setColorScale(colorScale);
+        colorScale->axis()->setLabel("Occupancy");
+        colorMap->setGradient(QCPColorGradient::gpPolar);
+        colorMap->rescaleDataRange();
+
+        QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
+        ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+        colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+        ui->scanPlot->rescaleAxes();
+        ui->scanPlot->replot();
+
+        //DEBUG end [plotting]
+
+        delete fe->histogrammer;
+        fe->histogrammer = NULL;
+        delete fe->ana;
+        fe->ana = NULL;
     }
-    std::cout << std::endl;
-    QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
-    ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
-    colorScale->setType(QCPAxis::atRight);
-    colorMap->setColorScale(colorScale);
-    colorScale->axis()->setLabel("Occupancy");
-    colorMap->setGradient(QCPColorGradient::gpPolar);
-    colorMap->rescaleDataRange();
-
-    QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
-    ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-    colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-    ui->scanPlot->rescaleAxes();
-    ui->scanPlot->replot();
-
-    //DEBUG end [plotting]
-
-    delete fe->histogrammer;
-    fe->histogrammer = NULL;
-    delete fe->ana;
-    fe->ana = NULL;
 
     return;
 }
 
 void YarrGui::doThresholdScan()
 {
-    scanDone = false;
-    processorDone = false;
-    ScanBase * s = new Fei4ThresholdScan(bk);
 
-    Fei4 * fe = NULL;
+    std::vector<Fei4*> feVec;
+
     for(unsigned i = 0; i < ui->feTree->topLevelItemCount(); i++) {
         if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
-            fe = bk->feList[i];
-            break;
+            feVec.push_back(bk->feList[i]);
         }
     }
 
-    if(fe==NULL) {
-        std::cout << "No FE chosen for plotting\n";
+    if(feVec.size() == 0) {
+        std::cout << "No FEs chosen for scanning.\n";
         return;
     }
 
-    fe->histogrammer = new Fei4Histogrammer();
-    fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
-    fe->histogrammer->addHistogrammer(new OccupancyMap());
-    fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
-    fe->ana->connect(s, fe->clipHisto, fe->clipResult);
-    fe->ana->addAlgorithm(new ScurveFitter());
+    for(unsigned j = 0; j < feVec.size(); j++){
+        scanDone = false;
+        processorDone = false;
+        ScanBase * s = new Fei4ThresholdScan(bk);
 
-    s->init();
-    s->preScan();
+        Fei4 * fe = feVec.at(j);
 
-    unsigned int numThreads = std::thread::hardware_concurrency();
-    //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
-    std::vector<std::thread> procThreads;
-    for (unsigned i=0; i<numThreads; i++) {
-        procThreads.push_back(std::thread(process, bk, &scanDone));
-        //std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
-    }
+        fe->histogrammer = new Fei4Histogrammer();
+        fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
+        fe->histogrammer->addHistogrammer(new OccupancyMap());
+        fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
+        fe->ana->connect(s, fe->clipHisto, fe->clipResult);
+        fe->ana->addAlgorithm(new ScurveFitter());
 
-    std::vector<std::thread> anaThreads;
-    //std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
-    if (fe->isActive()) {
-        anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana, &processorDone));
-        //std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
-    }
+        s->init();
+        s->preScan();
 
-    s->run();
-    s->postScan();
-    scanDone = true;
-
-    for (unsigned i=0; i<numThreads; i++) {
-        procThreads[i].join();
-    }
-    processorDone = true;
-
-    for (unsigned i=0; i<anaThreads.size(); i++) {
-        anaThreads[i].join();
-    }
-
-    tx->setCmdEnable(0x0);
-    rx->setRxEnable(0x0);
-
-    delete s;
-    fe->toFileBinary();
-    fe->ana->plot("Thresholdscan_GUI");
-
-    //DEBUG begin [plotting]
-
-    std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
-    it++;
-    HistogramBase * showMe = *it;
-
-    QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
-    ui->scanPlot->addPlottable(colorMap);
-    colorMap->data()->setSize(80, 336);
-    colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
-    for(int xCoord = 0; xCoord<80; xCoord++) {
-        for(int yCoord = 0; yCoord<336; yCoord++) {
-            double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
-            colorMap->data()->setCell(xCoord, yCoord, colVal);
+        unsigned int numThreads = std::thread::hardware_concurrency();
+        //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
+        std::vector<std::thread> procThreads;
+        for (unsigned i=0; i<numThreads; i++) {
+            procThreads.push_back(std::thread(process, bk, &scanDone));
+            //std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
         }
+
+        std::vector<std::thread> anaThreads;
+        //std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
+        if (fe->isActive()) {
+            anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana, &processorDone));
+            //std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
+        }
+
+        s->run();
+        s->postScan();
+        scanDone = true;
+
+        for (unsigned i=0; i<numThreads; i++) {
+            procThreads[i].join();
+        }
+        processorDone = true;
+
+        for (unsigned i=0; i<anaThreads.size(); i++) {
+            anaThreads[i].join();
+        }
+
+        tx->setCmdEnable(0x0);
+        rx->setRxEnable(0x0);
+
+        delete s;
+        fe->toFileBinary();
+        fe->ana->plot("Thresholdscan_GUI");
+
+        //DEBUG begin [plotting]
+
+        std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
+        it++;
+        HistogramBase * showMe = *it;
+
+        QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
+        ui->scanPlot->addPlottable(colorMap);
+        colorMap->data()->setSize(80, 336);
+        colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
+        for(int xCoord = 0; xCoord<80; xCoord++) {
+            for(int yCoord = 0; yCoord<336; yCoord++) {
+                double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
+                colorMap->data()->setCell(xCoord, yCoord, colVal);
+            }
+        }
+        std::cout << std::endl;
+        QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
+        ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
+        colorScale->setType(QCPAxis::atRight);
+        colorMap->setColorScale(colorScale);
+        colorScale->axis()->setLabel("Occupancy");
+        colorMap->setGradient(QCPColorGradient::gpPolar);
+        colorMap->rescaleDataRange();
+
+        QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
+        ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+        colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+        ui->scanPlot->rescaleAxes();
+        ui->scanPlot->replot();
+
+        //DEBUG end [plotting]
+
+        delete fe->histogrammer;
+        fe->histogrammer = NULL;
+        delete fe->ana;
+        fe->ana = NULL;
     }
-    std::cout << std::endl;
-    QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
-    ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
-    colorScale->setType(QCPAxis::atRight);
-    colorMap->setColorScale(colorScale);
-    colorScale->axis()->setLabel("Occupancy");
-    colorMap->setGradient(QCPColorGradient::gpPolar);
-    colorMap->rescaleDataRange();
-
-    QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
-    ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-    colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-    ui->scanPlot->rescaleAxes();
-    ui->scanPlot->replot();
-
-    //DEBUG end [plotting]
-
-    delete fe->histogrammer;
-    fe->histogrammer = NULL;
-    delete fe->ana;
-    fe->ana = NULL;
 
     return;
 }
 
 void YarrGui::doToTScan()
 {
-    scanDone = false;
-    processorDone = false;
-    ScanBase * s = new Fei4TotScan(bk);
 
-    Fei4 * fe = NULL;
+    std::vector<Fei4*> feVec;
+
     for(unsigned i = 0; i < ui->feTree->topLevelItemCount(); i++) {
         if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
-            fe = bk->feList[i];
-            break;
+            feVec.push_back(bk->feList[i]);
         }
     }
 
-    if(fe==NULL) {
-        std::cout << "No FE chosen for plotting\n";
+    if(feVec.size() == 0) {
+        std::cout << "No FEs chosen for scanning.\n";
         return;
     }
 
-    fe->histogrammer = new Fei4Histogrammer();
-    fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
-    fe->histogrammer->addHistogrammer(new OccupancyMap());
-    fe->histogrammer->addHistogrammer(new TotMap());
-    fe->histogrammer->addHistogrammer(new Tot2Map());
-    fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
-    fe->ana->connect(s, fe->clipHisto, fe->clipResult);
-    fe->ana->addAlgorithm(new TotAnalysis());
 
-    s->init();
-    s->preScan();
+    for(unsigned j = 0; j < feVec.size(); j++){
+        scanDone = false;
+        processorDone = false;
+        ScanBase * s = new Fei4TotScan(bk);
 
-    unsigned int numThreads = std::thread::hardware_concurrency();
-    //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
-    std::vector<std::thread> procThreads;
-    for (unsigned i=0; i<numThreads; i++) {
-        procThreads.push_back(std::thread(process, bk, &scanDone));
-        //std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
-    }
+        Fei4 * fe = feVec.at(j);
 
-    std::vector<std::thread> anaThreads;
-    //std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
-    if (fe->isActive()) {
-        anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana, &processorDone));
-        //std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
-    }
+        fe->histogrammer = new Fei4Histogrammer();
+        fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
+        fe->histogrammer->addHistogrammer(new OccupancyMap());
+        fe->histogrammer->addHistogrammer(new TotMap());
+        fe->histogrammer->addHistogrammer(new Tot2Map());
+        fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
+        fe->ana->connect(s, fe->clipHisto, fe->clipResult);
+        fe->ana->addAlgorithm(new TotAnalysis());
 
-    s->run();
-    s->postScan();
-    scanDone = true;
+        s->init();
+        s->preScan();
 
-    for (unsigned i=0; i<numThreads; i++) {
-        procThreads[i].join();
-    }
-    processorDone = true;
-
-    for (unsigned i=0; i<anaThreads.size(); i++) {
-        anaThreads[i].join();
-    }
-
-    tx->setCmdEnable(0x0);
-    rx->setRxEnable(0x0);
-
-    delete s;
-    fe->toFileBinary();
-    fe->ana->plot("ToTscan_GUI");
-
-    //DEBUG begin [plotting]
-
-    std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
-    it++;
-    HistogramBase * showMe = *it;
-
-    QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
-    ui->scanPlot->addPlottable(colorMap);
-    colorMap->data()->setSize(80, 336);
-    colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
-    for(int xCoord = 0; xCoord<80; xCoord++) {
-        for(int yCoord = 0; yCoord<336; yCoord++) {
-            double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
-            colorMap->data()->setCell(xCoord, yCoord, colVal);
+        unsigned int numThreads = std::thread::hardware_concurrency();
+        //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
+        std::vector<std::thread> procThreads;
+        for (unsigned i=0; i<numThreads; i++) {
+            procThreads.push_back(std::thread(process, bk, &scanDone));
+            //std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
         }
+
+        std::vector<std::thread> anaThreads;
+        //std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
+        if (fe->isActive()) {
+            anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana, &processorDone));
+            //std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
+        }
+
+        s->run();
+        s->postScan();
+        scanDone = true;
+
+        for (unsigned i=0; i<numThreads; i++) {
+            procThreads[i].join();
+        }
+        processorDone = true;
+
+        for (unsigned i=0; i<anaThreads.size(); i++) {
+            anaThreads[i].join();
+        }
+
+        tx->setCmdEnable(0x0);
+        rx->setRxEnable(0x0);
+
+        delete s;
+        fe->toFileBinary();
+        fe->ana->plot("ToTscan_GUI");
+
+        //DEBUG begin [plotting]
+
+        std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
+        it++;
+        HistogramBase * showMe = *it;
+
+        QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
+        ui->scanPlot->addPlottable(colorMap);
+        colorMap->data()->setSize(80, 336);
+        colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
+        for(int xCoord = 0; xCoord<80; xCoord++) {
+            for(int yCoord = 0; yCoord<336; yCoord++) {
+                double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
+                colorMap->data()->setCell(xCoord, yCoord, colVal);
+            }
+        }
+        std::cout << std::endl;
+        QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
+        ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
+        colorScale->setType(QCPAxis::atRight);
+        colorMap->setColorScale(colorScale);
+        colorScale->axis()->setLabel("Occupancy");
+        colorMap->setGradient(QCPColorGradient::gpPolar);
+        colorMap->rescaleDataRange();
+
+        QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
+        ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+        colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+        ui->scanPlot->rescaleAxes();
+        ui->scanPlot->replot();
+
+        //DEBUG end [plotting]
+
+        delete fe->histogrammer;
+        fe->histogrammer = NULL;
+        delete fe->ana;
+        fe->ana = NULL;
     }
-    std::cout << std::endl;
-    QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
-    ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
-    colorScale->setType(QCPAxis::atRight);
-    colorMap->setColorScale(colorScale);
-    colorScale->axis()->setLabel("Occupancy");
-    colorMap->setGradient(QCPColorGradient::gpPolar);
-    colorMap->rescaleDataRange();
-
-    QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
-    ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-    colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-    ui->scanPlot->rescaleAxes();
-    ui->scanPlot->replot();
-
-    //DEBUG end [plotting]
-
-    delete fe->histogrammer;
-    fe->histogrammer = NULL;
-    delete fe->ana;
-    fe->ana = NULL;
 
     return;
 }
 
 void YarrGui::doGThrTune()
 {
-    scanDone = false;
-    processorDone = false;
-    ScanBase * s = new Fei4GlobalThresholdTune(bk);
 
-    Fei4 * fe = NULL;
+    std::vector<Fei4*> feVec;
+
     for(unsigned i = 0; i < ui->feTree->topLevelItemCount(); i++) {
         if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
-            fe = bk->feList[i];
-            break;
+            feVec.push_back(bk->feList[i]);
         }
     }
 
-    if(fe==NULL) {
-        std::cout << "No FE chosen for plotting\n";
+    if(feVec.size() == 0) {
+        std::cout << "No FEs chosen for scanning.\n";
         return;
     }
 
-    fe->histogrammer = new Fei4Histogrammer();
-    fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
-    fe->histogrammer->addHistogrammer(new OccupancyMap());
-    fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
-    fe->ana->connect(s, fe->clipHisto, fe->clipResult);
-    fe->ana->addAlgorithm(new OccGlobalThresholdTune());
 
-    s->init();
-    s->preScan();
+    for(unsigned j = 0; j < feVec.size(); j++){
+        scanDone = false;
+        processorDone = false;
+        ScanBase * s = new Fei4GlobalThresholdTune(bk);
 
-    unsigned int numThreads = std::thread::hardware_concurrency();
-    //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
-    std::vector<std::thread> procThreads;
-    for (unsigned i=0; i<numThreads; i++) {
-        procThreads.push_back(std::thread(process, bk, &scanDone));
-        //std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
-    }
+        Fei4 * fe = feVec.at(j);
 
-    std::vector<std::thread> anaThreads;
-    //std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
-    if (fe->isActive()) {
-        anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana, &processorDone));
-        //std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
-    }
+        fe->histogrammer = new Fei4Histogrammer();
+        fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
+        fe->histogrammer->addHistogrammer(new OccupancyMap());
+        fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
+        fe->ana->connect(s, fe->clipHisto, fe->clipResult);
+        fe->ana->addAlgorithm(new OccGlobalThresholdTune());
 
-    s->run();
-    s->postScan();
-    scanDone = true;
+        s->init();
+        s->preScan();
 
-    for (unsigned i=0; i<numThreads; i++) {
-        procThreads[i].join();
-    }
-    processorDone = true;
-
-    for (unsigned i=0; i<anaThreads.size(); i++) {
-        anaThreads[i].join();
-    }
-
-    tx->setCmdEnable(0x0);
-    rx->setRxEnable(0x0);
-
-    delete s;
-    fe->toFileBinary();
-    fe->ana->plot("GThrTune_GUI");
-
-    //DEBUG begin [plotting]
-
-    std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
-    it++;
-    HistogramBase * showMe = *it;
-
-    QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
-    ui->scanPlot->addPlottable(colorMap);
-    colorMap->data()->setSize(80, 336);
-    colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
-    for(int xCoord = 0; xCoord<80; xCoord++) {
-        for(int yCoord = 0; yCoord<336; yCoord++) {
-            double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
-            colorMap->data()->setCell(xCoord, yCoord, colVal);
+        unsigned int numThreads = std::thread::hardware_concurrency();
+        //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
+        std::vector<std::thread> procThreads;
+        for (unsigned i=0; i<numThreads; i++) {
+            procThreads.push_back(std::thread(process, bk, &scanDone));
+            //std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
         }
+
+        std::vector<std::thread> anaThreads;
+        //std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
+        if (fe->isActive()) {
+            anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana, &processorDone));
+            //std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
+        }
+
+        s->run();
+        s->postScan();
+        scanDone = true;
+
+        for (unsigned i=0; i<numThreads; i++) {
+            procThreads[i].join();
+        }
+        processorDone = true;
+
+        for (unsigned i=0; i<anaThreads.size(); i++) {
+            anaThreads[i].join();
+        }
+
+        tx->setCmdEnable(0x0);
+        rx->setRxEnable(0x0);
+
+        delete s;
+        fe->toFileBinary();
+        fe->ana->plot("GThrTune_GUI");
+
+        //DEBUG begin [plotting]
+
+        std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
+        it++;
+        HistogramBase * showMe = *it;
+
+        QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
+        ui->scanPlot->addPlottable(colorMap);
+        colorMap->data()->setSize(80, 336);
+        colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
+        for(int xCoord = 0; xCoord<80; xCoord++) {
+            for(int yCoord = 0; yCoord<336; yCoord++) {
+                double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
+                colorMap->data()->setCell(xCoord, yCoord, colVal);
+            }
+        }
+        std::cout << std::endl;
+        QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
+        ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
+        colorScale->setType(QCPAxis::atRight);
+        colorMap->setColorScale(colorScale);
+        colorScale->axis()->setLabel("Global Threshold");
+        colorMap->setGradient(QCPColorGradient::gpPolar);
+        colorMap->rescaleDataRange();
+
+        QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
+        ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+        colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+        ui->scanPlot->rescaleAxes();
+        ui->scanPlot->replot();
+
+        //DEBUG end [plotting]
+
+        delete fe->histogrammer;
+        fe->histogrammer = NULL;
+        delete fe->ana;
+        fe->ana = NULL;
     }
-    std::cout << std::endl;
-    QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
-    ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
-    colorScale->setType(QCPAxis::atRight);
-    colorMap->setColorScale(colorScale);
-    colorScale->axis()->setLabel("Global Threshold");
-    colorMap->setGradient(QCPColorGradient::gpPolar);
-    colorMap->rescaleDataRange();
-
-    QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
-    ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-    colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-    ui->scanPlot->rescaleAxes();
-    ui->scanPlot->replot();
-
-    //DEBUG end [plotting]
-
-    delete fe->histogrammer;
-    fe->histogrammer = NULL;
-    delete fe->ana;
-    fe->ana = NULL;
 
     return;
 }
 
 void YarrGui::doGPreaTune()
 {
-    scanDone = false;
-    processorDone = false;
-    ScanBase * s = new Fei4GlobalPreampTune(bk);
 
-    Fei4 * fe = NULL;
+    std::vector<Fei4*> feVec;
+
     for(unsigned i = 0; i < ui->feTree->topLevelItemCount(); i++) {
         if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
-            fe = bk->feList[i];
-            break;
+            feVec.push_back(bk->feList[i]);
         }
     }
 
-    if(fe==NULL) {
-        std::cout << "No FE chosen for plotting\n";
+    if(feVec.size() == 0) {
+        std::cout << "No FEs chosen for scanning.\n";
         return;
     }
 
-    fe->histogrammer = new Fei4Histogrammer();
-    fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
-    fe->histogrammer->addHistogrammer(new OccupancyMap());
-    fe->histogrammer->addHistogrammer(new TotMap());
-    fe->histogrammer->addHistogrammer(new Tot2Map());
-    fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
-    fe->ana->connect(s, fe->clipHisto, fe->clipResult);
-    fe->ana->addAlgorithm(new TotAnalysis());
 
-    s->init();
-    s->preScan();
+    for(unsigned j = 0; j < feVec.size(); j++){
+        scanDone = false;
+        processorDone = false;
+        ScanBase * s = new Fei4GlobalPreampTune(bk);
 
-    unsigned int numThreads = std::thread::hardware_concurrency();
-    //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
-    std::vector<std::thread> procThreads;
-    for (unsigned i=0; i<numThreads; i++) {
-        procThreads.push_back(std::thread(process, bk, &scanDone));
-        //std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
-    }
+        Fei4 * fe = feVec.at(j);
 
-    std::vector<std::thread> anaThreads;
-    //std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
-    if (fe->isActive()) {
-        anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana, &processorDone));
-        //std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
-    }
+        fe->histogrammer = new Fei4Histogrammer();
+        fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
+        fe->histogrammer->addHistogrammer(new OccupancyMap());
+        fe->histogrammer->addHistogrammer(new TotMap());
+        fe->histogrammer->addHistogrammer(new Tot2Map());
+        fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
+        fe->ana->connect(s, fe->clipHisto, fe->clipResult);
+        fe->ana->addAlgorithm(new TotAnalysis());
 
-    s->run();
-    s->postScan();
-    scanDone = true;
+        s->init();
+        s->preScan();
 
-    for (unsigned i=0; i<numThreads; i++) {
-        procThreads[i].join();
-    }
-    processorDone = true;
-
-    for (unsigned i=0; i<anaThreads.size(); i++) {
-        anaThreads[i].join();
-    }
-
-    tx->setCmdEnable(0x0);
-    rx->setRxEnable(0x0);
-
-    delete s;
-    fe->toFileBinary();
-    fe->ana->plot("GPreaTune_GUI");
-
-    //DEBUG begin [plotting]
-
-    std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
-    it++;
-    HistogramBase * showMe = *it;
-
-    QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
-    ui->scanPlot->addPlottable(colorMap);
-    colorMap->data()->setSize(80, 336);
-    colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
-    for(int xCoord = 0; xCoord<80; xCoord++) {
-        for(int yCoord = 0; yCoord<336; yCoord++) {
-            double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
-            colorMap->data()->setCell(xCoord, yCoord, colVal);
+        unsigned int numThreads = std::thread::hardware_concurrency();
+        //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
+        std::vector<std::thread> procThreads;
+        for (unsigned i=0; i<numThreads; i++) {
+            procThreads.push_back(std::thread(process, bk, &scanDone));
+            //std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
         }
+
+        std::vector<std::thread> anaThreads;
+        //std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
+        if (fe->isActive()) {
+            anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana, &processorDone));
+            //std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
+        }
+
+        s->run();
+        s->postScan();
+        scanDone = true;
+
+        for (unsigned i=0; i<numThreads; i++) {
+            procThreads[i].join();
+        }
+        processorDone = true;
+
+        for (unsigned i=0; i<anaThreads.size(); i++) {
+            anaThreads[i].join();
+        }
+
+        tx->setCmdEnable(0x0);
+        rx->setRxEnable(0x0);
+
+        delete s;
+        fe->toFileBinary();
+        fe->ana->plot("GPreaTune_GUI");
+
+        //DEBUG begin [plotting]
+
+        std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
+        it++;
+        HistogramBase * showMe = *it;
+
+        QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
+        ui->scanPlot->addPlottable(colorMap);
+        colorMap->data()->setSize(80, 336);
+        colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
+        for(int xCoord = 0; xCoord<80; xCoord++) {
+            for(int yCoord = 0; yCoord<336; yCoord++) {
+                double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
+                colorMap->data()->setCell(xCoord, yCoord, colVal);
+            }
+        }
+        std::cout << std::endl;
+        QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
+        ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
+        colorScale->setType(QCPAxis::atRight);
+        colorMap->setColorScale(colorScale);
+        colorScale->axis()->setLabel("Global Preamp");
+        colorMap->setGradient(QCPColorGradient::gpPolar);
+        colorMap->rescaleDataRange();
+
+        QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
+        ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+        colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+        ui->scanPlot->rescaleAxes();
+        ui->scanPlot->replot();
+
+        //DEBUG end [plotting]
+
+        delete fe->histogrammer;
+        fe->histogrammer = NULL;
+        delete fe->ana;
+        fe->ana = NULL;
     }
-    std::cout << std::endl;
-    QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
-    ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
-    colorScale->setType(QCPAxis::atRight);
-    colorMap->setColorScale(colorScale);
-    colorScale->axis()->setLabel("Global Preamp");
-    colorMap->setGradient(QCPColorGradient::gpPolar);
-    colorMap->rescaleDataRange();
-
-    QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
-    ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-    colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-    ui->scanPlot->rescaleAxes();
-    ui->scanPlot->replot();
-
-    //DEBUG end [plotting]
-
-    delete fe->histogrammer;
-    fe->histogrammer = NULL;
-    delete fe->ana;
-    fe->ana = NULL;
 
     return;
 }
 
 void YarrGui::doPThrTune()
 {
-    scanDone = false;
-    processorDone = false;
-    ScanBase * s = new Fei4PixelThresholdTune(bk);
 
-    Fei4 * fe = NULL;
+    std::vector<Fei4*> feVec;
+
     for(unsigned i = 0; i < ui->feTree->topLevelItemCount(); i++) {
         if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
-            fe = bk->feList[i];
-            break;
+            feVec.push_back(bk->feList[i]);
         }
     }
 
-    if(fe==NULL) {
-        std::cout << "No FE chosen for plotting\n";
+    if(feVec.size() == 0) {
+        std::cout << "No FEs chosen for scanning.\n";
         return;
     }
 
-    fe->histogrammer = new Fei4Histogrammer();
-    fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
-    fe->histogrammer->addHistogrammer(new OccupancyMap());
-    fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
-    fe->ana->connect(s, fe->clipHisto, fe->clipResult);
-    fe->ana->addAlgorithm(new OccPixelThresholdTune());
 
-    s->init();
-    s->preScan();
+    for(unsigned j = 0; j < feVec.size(); j++){
+        scanDone = false;
+        processorDone = false;
+        ScanBase * s = new Fei4PixelThresholdTune(bk);
 
-    unsigned int numThreads = std::thread::hardware_concurrency();
-    //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
-    std::vector<std::thread> procThreads;
-    for (unsigned i=0; i<numThreads; i++) {
-        procThreads.push_back(std::thread(process, bk, &scanDone));
-        //std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
-    }
+        Fei4 * fe = feVec.at(j);
 
-    std::vector<std::thread> anaThreads;
-    //std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
-    if (fe->isActive()) {
-        anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana, &processorDone));
-        //std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
-    }
+        fe->histogrammer = new Fei4Histogrammer();
+        fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
+        fe->histogrammer->addHistogrammer(new OccupancyMap());
+        fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
+        fe->ana->connect(s, fe->clipHisto, fe->clipResult);
+        fe->ana->addAlgorithm(new OccPixelThresholdTune());
 
-    s->run();
-    s->postScan();
-    scanDone = true;
+        s->init();
+        s->preScan();
 
-    for (unsigned i=0; i<numThreads; i++) {
-        procThreads[i].join();
-    }
-    processorDone = true;
-
-    for (unsigned i=0; i<anaThreads.size(); i++) {
-        anaThreads[i].join();
-    }
-
-    tx->setCmdEnable(0x0);
-    rx->setRxEnable(0x0);
-
-    delete s;
-    fe->toFileBinary();
-    fe->ana->plot("PThrTune_GUI");
-
-    //DEBUG begin [plotting]
-
-    std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
-    it++;
-    HistogramBase * showMe = *it;
-
-    QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
-    ui->scanPlot->addPlottable(colorMap);
-    colorMap->data()->setSize(80, 336);
-    colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
-    for(int xCoord = 0; xCoord<80; xCoord++) {
-        for(int yCoord = 0; yCoord<336; yCoord++) {
-            double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
-            colorMap->data()->setCell(xCoord, yCoord, colVal);
+        unsigned int numThreads = std::thread::hardware_concurrency();
+        //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
+        std::vector<std::thread> procThreads;
+        for (unsigned i=0; i<numThreads; i++) {
+            procThreads.push_back(std::thread(process, bk, &scanDone));
+            //std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
         }
+
+        std::vector<std::thread> anaThreads;
+        //std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
+        if (fe->isActive()) {
+            anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana, &processorDone));
+            //std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
+        }
+
+        s->run();
+        s->postScan();
+        scanDone = true;
+
+        for (unsigned i=0; i<numThreads; i++) {
+            procThreads[i].join();
+        }
+        processorDone = true;
+
+        for (unsigned i=0; i<anaThreads.size(); i++) {
+            anaThreads[i].join();
+        }
+
+        tx->setCmdEnable(0x0);
+        rx->setRxEnable(0x0);
+
+        delete s;
+        fe->toFileBinary();
+        fe->ana->plot("PThrTune_GUI");
+
+        //DEBUG begin [plotting]
+
+        std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
+        it++;
+        HistogramBase * showMe = *it;
+
+        QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
+        ui->scanPlot->addPlottable(colorMap);
+        colorMap->data()->setSize(80, 336);
+        colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
+        for(int xCoord = 0; xCoord<80; xCoord++) {
+            for(int yCoord = 0; yCoord<336; yCoord++) {
+                double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
+                colorMap->data()->setCell(xCoord, yCoord, colVal);
+            }
+        }
+        std::cout << std::endl;
+        QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
+        ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
+        colorScale->setType(QCPAxis::atRight);
+        colorMap->setColorScale(colorScale);
+        colorScale->axis()->setLabel("Pixel Threshold");
+        colorMap->setGradient(QCPColorGradient::gpPolar);
+        colorMap->rescaleDataRange();
+
+        QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
+        ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+        colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+        ui->scanPlot->rescaleAxes();
+        ui->scanPlot->replot();
+
+        //DEBUG end [plotting]
+
+        delete fe->histogrammer;
+        fe->histogrammer = NULL;
+        delete fe->ana;
+        fe->ana = NULL;
     }
-    std::cout << std::endl;
-    QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
-    ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
-    colorScale->setType(QCPAxis::atRight);
-    colorMap->setColorScale(colorScale);
-    colorScale->axis()->setLabel("Pixel Threshold");
-    colorMap->setGradient(QCPColorGradient::gpPolar);
-    colorMap->rescaleDataRange();
-
-    QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
-    ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-    colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-    ui->scanPlot->rescaleAxes();
-    ui->scanPlot->replot();
-
-    //DEBUG end [plotting]
-
-    delete fe->histogrammer;
-    fe->histogrammer = NULL;
-    delete fe->ana;
-    fe->ana = NULL;
 
     return;
 }
@@ -1380,145 +1427,160 @@ void YarrGui::doPThrTune()
 
 void YarrGui::doPPreaTune()
 {
-    scanDone = false;
-    processorDone = false;
-    ScanBase * s = new Fei4PixelPreampTune(bk);
 
-    Fei4 * fe = NULL;
+    std::vector<Fei4*> feVec;
+
     for(unsigned i = 0; i < ui->feTree->topLevelItemCount(); i++) {
         if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
-            fe = bk->feList[i];
-            break;
+            feVec.push_back(bk->feList[i]);
         }
     }
 
-    if(fe==NULL) {
-        std::cout << "No FE chosen for plotting\n";
+    if(feVec.size() == 0) {
+        std::cout << "No FEs chosen for scanning.\n";
         return;
     }
 
-    fe->histogrammer = new Fei4Histogrammer();
-    fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
-    fe->histogrammer->addHistogrammer(new OccupancyMap());
-    fe->histogrammer->addHistogrammer(new TotMap());
-    fe->histogrammer->addHistogrammer(new Tot2Map());
-    fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
-    fe->ana->connect(s, fe->clipHisto, fe->clipResult);
-    fe->ana->addAlgorithm(new TotAnalysis());
 
-    s->init();
-    s->preScan();
+    for(unsigned j = 0; j < feVec.size(); j++){
+        scanDone = false;
+        processorDone = false;
+        ScanBase * s = new Fei4PixelPreampTune(bk);
 
-    unsigned int numThreads = std::thread::hardware_concurrency();
-    //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
-    std::vector<std::thread> procThreads;
-    for (unsigned i=0; i<numThreads; i++) {
-        procThreads.push_back(std::thread(process, bk, &scanDone));
-        //std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
-    }
+        Fei4 * fe = feVec.at(j);
 
-    std::vector<std::thread> anaThreads;
-    //std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
-    if (fe->isActive()) {
-        anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana, &processorDone));
-        //std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
-    }
+        fe->histogrammer = new Fei4Histogrammer();
+        fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
+        fe->histogrammer->addHistogrammer(new OccupancyMap());
+        fe->histogrammer->addHistogrammer(new TotMap());
+        fe->histogrammer->addHistogrammer(new Tot2Map());
+        fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
+        fe->ana->connect(s, fe->clipHisto, fe->clipResult);
+        fe->ana->addAlgorithm(new TotAnalysis());
 
-    s->run();
-    s->postScan();
-    scanDone = true;
+        s->init();
+        s->preScan();
 
-    for (unsigned i=0; i<numThreads; i++) {
-        procThreads[i].join();
-    }
-    processorDone = true;
-
-    for (unsigned i=0; i<anaThreads.size(); i++) {
-        anaThreads[i].join();
-    }
-
-    tx->setCmdEnable(0x0);
-    rx->setRxEnable(0x0);
-
-    delete s;
-    fe->toFileBinary();
-    fe->ana->plot("PPreaTune_GUI");
-
-    //DEBUG begin [plotting]
-
-    std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
-    it++;
-    HistogramBase * showMe = *it;
-
-    QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
-    ui->scanPlot->addPlottable(colorMap);
-    colorMap->data()->setSize(80, 336);
-    colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
-    for(int xCoord = 0; xCoord<80; xCoord++) {
-        for(int yCoord = 0; yCoord<336; yCoord++) {
-            double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
-            colorMap->data()->setCell(xCoord, yCoord, colVal);
+        unsigned int numThreads = std::thread::hardware_concurrency();
+        //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
+        std::vector<std::thread> procThreads;
+        for (unsigned i=0; i<numThreads; i++) {
+            procThreads.push_back(std::thread(process, bk, &scanDone));
+            //std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
         }
+
+        std::vector<std::thread> anaThreads;
+        //std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
+        if (fe->isActive()) {
+            anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana, &processorDone));
+            //std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
+        }
+
+        s->run();
+        s->postScan();
+        scanDone = true;
+
+        for (unsigned i=0; i<numThreads; i++) {
+            procThreads[i].join();
+        }
+        processorDone = true;
+
+        for (unsigned i=0; i<anaThreads.size(); i++) {
+            anaThreads[i].join();
+        }
+
+        tx->setCmdEnable(0x0);
+        rx->setRxEnable(0x0);
+
+        delete s;
+        fe->toFileBinary();
+        fe->ana->plot("PPreaTune_GUI");
+
+        //DEBUG begin [plotting]
+
+        std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
+        it++;
+        HistogramBase * showMe = *it;
+
+        QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
+        ui->scanPlot->addPlottable(colorMap);
+        colorMap->data()->setSize(80, 336);
+        colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
+        for(int xCoord = 0; xCoord<80; xCoord++) {
+            for(int yCoord = 0; yCoord<336; yCoord++) {
+                double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
+                colorMap->data()->setCell(xCoord, yCoord, colVal);
+            }
+        }
+        std::cout << std::endl;
+        QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
+        ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
+        colorScale->setType(QCPAxis::atRight);
+        colorMap->setColorScale(colorScale);
+        colorScale->axis()->setLabel("Pixel Preamp");
+        colorMap->setGradient(QCPColorGradient::gpPolar);
+        colorMap->rescaleDataRange();
+
+        QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
+        ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+        colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+        ui->scanPlot->rescaleAxes();
+        ui->scanPlot->replot();
+
+        //DEBUG end [plotting]
+
+        delete fe->histogrammer;
+        fe->histogrammer = NULL;
+        delete fe->ana;
+        fe->ana = NULL;
     }
-    std::cout << std::endl;
-    QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
-    ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
-    colorScale->setType(QCPAxis::atRight);
-    colorMap->setColorScale(colorScale);
-    colorScale->axis()->setLabel("Pixel Preamp");
-    colorMap->setGradient(QCPColorGradient::gpPolar);
-    colorMap->rescaleDataRange();
-
-    QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
-    ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-    colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-    ui->scanPlot->rescaleAxes();
-    ui->scanPlot->replot();
-
-    //DEBUG end [plotting]
-
-    delete fe->histogrammer;
-    fe->histogrammer = NULL;
-    delete fe->ana;
-    fe->ana = NULL;
 
     return;
 }
 
 void YarrGui::on_NoiseScanButton_clicked() {
     scanVec.push_back( [&] () { doNoiseScan(); });
+    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + ", NS");
 }
 
 void YarrGui::on_DigitalScanButton_clicked() {
     scanVec.push_back( [&] () { doDigitalScan(); });
+    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + ", DS");
 }
 
 void YarrGui::on_AnalogScanButton_clicked() {
     scanVec.push_back( [&] () { doAnalogScan(); });
+    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + ", AS");
 }
 
 void YarrGui::on_ThresholdScanButton_clicked() {
     scanVec.push_back( [&] () { doThresholdScan(); });
+    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + ", TS");
 }
 
 void YarrGui::on_ToTScanButton_clicked() {
     scanVec.push_back( [&] () { doToTScan(); });
+    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + ", ToTS");
 }
 
 void YarrGui::on_GThrTuneButton_clicked() {
     scanVec.push_back( [&] () { doGThrTune(); });
+    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + ", GTT");
 }
 
 void YarrGui::on_GPreaTuneButton_clicked() {
     scanVec.push_back( [&] () { doGPreaTune(); });
+    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + ", GPT");
 }
 
 void YarrGui::on_PThrTuneButton_clicked() {
     scanVec.push_back( [&] () { doPThrTune(); });
+    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + ", PTT");
 }
 
 void YarrGui::on_PPreaTuneButton_clicked() {
     scanVec.push_back( [&] () { doPPreaTune(); });
+    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + ", PPT");
 }
 
 void YarrGui::on_doScansButton_clicked()
@@ -1527,4 +1589,10 @@ void YarrGui::on_doScansButton_clicked()
     for(unsigned int i = 0; i<scanVec.size(); i++) {
         (scanVec.at(i))();
     }
+}
+
+void YarrGui::on_RemoveScans_Button_clicked()
+{
+    ui->scanVec_lineEdit->setText("");
+    scanVec->clear();
 }

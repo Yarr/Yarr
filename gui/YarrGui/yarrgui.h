@@ -91,6 +91,8 @@ private slots:
 
     void on_doScansButton_clicked();
 
+    void on_RemoveScans_Button_clicked();
+
 private:
     Ui::YarrGui *ui;
     
