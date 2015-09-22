@@ -705,6 +705,10 @@ void YarrGui::doDigitalScan()
 
         //DEBUG begin [plotting]
 
+        QCustomPlot * tabScanPlot = new QCustomPlot();
+        QString newTabName = "DS FE " + QString::number(j);
+        ui->scanPlots_tabWidget->addTab(tabScanPlot, newTabName);
+
         std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
         it++;
         HistogramBase * showMe = *it;
@@ -713,8 +717,8 @@ void YarrGui::doDigitalScan()
         //        std::cout << "Nothing here.\n";
         //    }
 
-        QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
-        ui->scanPlot->addPlottable(colorMap);
+        QCPColorMap * colorMap = new QCPColorMap(tabScanPlot->xAxis, tabScanPlot->yAxis);
+        tabScanPlot->addPlottable(colorMap);
         colorMap->data()->setSize(80, 336);
         colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
         for(int xCoord = 0; xCoord<80; xCoord++) {
@@ -724,19 +728,19 @@ void YarrGui::doDigitalScan()
             }
         }
         std::cout << std::endl;
-        QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
-        ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
+        QCPColorScale * colorScale = new QCPColorScale(tabScanPlot);
+        tabScanPlot->plotLayout()->addElement(0, 1, colorScale);
         colorScale->setType(QCPAxis::atRight);
         colorMap->setColorScale(colorScale);
         colorScale->axis()->setLabel("Occupancy");
         colorMap->setGradient(QCPColorGradient::gpPolar);
         colorMap->rescaleDataRange();
 
-        QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
-        ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+        QCPMarginGroup * marginGroup = new QCPMarginGroup(tabScanPlot);
+        tabScanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
         colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-        ui->scanPlot->rescaleAxes();
-        ui->scanPlot->replot();
+        tabScanPlot->rescaleAxes();
+        tabScanPlot->replot();
 
         //    ui->scanPlot->removePlottable(colorMap);
         //    ui->scanPlot->plotLayout()->remove(colorScale);
