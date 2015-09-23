@@ -294,7 +294,11 @@ int specdriver_mmap_kmem(specdriver_privdata_t *privdata, struct vm_area_struct 
 		return -EINVAL;
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0)
+	vma->vm_flags |= (VM_DONTEXPAND|VM_DONTDUMP);
+#else
 	vma->vm_flags |= (VM_RESERVED);
+#endif
 
 #ifdef pgprot_noncached
 	// This is coherent memory, so it must not be cached.
