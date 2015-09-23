@@ -385,7 +385,7 @@ void YarrGui::on_addFeButton_clicked()
         feTreeItemRx->setText(1, QString::number(rxChannelAdded));
         feTreeItemCf->setText(0, "Config file");
         feTreeItemCf->setText(1, ui->configfileName->text());
-        feTreeItemCk->setText(0, "Active");
+        feTreeItemCk->setText(0, "Scan");
         feTreeItemCk->setFlags(feTreeItemCk->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsSelectable);
         feTreeItemCk->setCheckState(1, Qt::Unchecked);
 
@@ -417,6 +417,9 @@ void YarrGui::on_addFeButton_clicked()
             if(peeek == '#' || peeek == '\n') {
                 char tmpStr[2048];
                 gCfg.getline(tmpStr, 2048);
+                while(iswspace(gCfg.peek())) {
+                    gCfg.get();
+                }
                 continue;
             }
             gCfg >> chipNameTmp >> chipIdTmp >> txChannelTmp >> rxChannelTmp >> chipCfgFilenameTmp;
@@ -425,11 +428,14 @@ void YarrGui::on_addFeButton_clicked()
             txChannelsAdded.push_back(txChannelTmp);
             rxChannelsAdded.push_back(rxChannelTmp);
             chipCfgFilenamesAdded.push_back(chipCfgFilenameTmp);
+            while(iswspace(gCfg.peek())) {
+                gCfg.get();
+            }
         }
-        for(unsigned i = 0; i<chipIdsAdded.size(); i++) {
+        for(unsigned int i = 0; i < (chipIdsAdded.size()) ; i++) {
             if(bk->getFe(rxChannelsAdded.at(i)) != NULL) {
-                std::cout << "ERROR - rx channel already used. Aborting... \n";
-                return;
+                std::cout << "ERROR - rx channel " << rxChannelsAdded.at(i) << " already used. Skipping... \n";
+                continue;
             }
             bk->addFe(chipIdsAdded.at(i), txChannelsAdded.at(i), rxChannelsAdded.at(i));
             bk->getLastFe()->fromFileBinary(chipCfgFilenamesAdded.at(i));
@@ -459,7 +465,7 @@ void YarrGui::on_addFeButton_clicked()
             feTreeItemRx->setText(1, QString::number(rxChannelsAdded.at(i)));
             feTreeItemCf->setText(0, "Config file");
             feTreeItemCf->setText(1, QString::fromStdString(chipCfgFilenamesAdded.at(i)));
-            feTreeItemCk->setText(0, "Active");
+            feTreeItemCk->setText(0, "Scan");
             feTreeItemCk->setFlags(feTreeItemCk->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsSelectable);
             feTreeItemCk->setCheckState(1, Qt::Unchecked);
 
@@ -754,6 +760,11 @@ void YarrGui::doDigitalScan()
         fe->histogrammer = NULL;
         delete fe->ana;
         fe->ana = NULL;
+    }
+
+    QObjectList myList = ui->scanPlot->plottable(0)->children();
+    for(unsigned int i = 0; i < myList.size(); i++) {
+        std::cout << typeid(myList.at(i)).name() << std::endl;
     }
 
     return;
