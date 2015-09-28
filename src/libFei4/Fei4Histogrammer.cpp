@@ -44,7 +44,7 @@ void Fei4Histogrammer::publish() {
 void Fei4Histogrammer::toFile(std::string basename) {
     for (std::deque<HistogramBase*>::iterator it = output->begin(); it != output->end(); ++it) {
         std::cout << "Saving : " << (*it)->getName() << std::endl;
-        (*it)->toFile(basename, true);
+        (*it)->toFile(basename);
     }
 }
 
@@ -104,3 +104,10 @@ void L1Dist::processEvent(Fei4Data *data) {
     }
 }
     
+void HitDist::processEvent(Fei4Data *data) {
+    // Event Loop
+    for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
+        Fei4Event curEvent = *eventIt;
+        h->fill(curEvent.nHits);
+    }
+}

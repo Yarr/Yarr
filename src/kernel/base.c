@@ -92,7 +92,11 @@ static struct class_compat *specdriver_class;
  * Called when loading the driver
  *
  */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
+static int specdriver_init(void)
+#else
 static int __init specdriver_init(void)
+#endif
 {
 	int err;
 
@@ -172,7 +176,11 @@ static struct pci_driver specdriver_driver = {
  * @param pdev Pointer to the PCI device
  *
  */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
+static int specdriver_probe(struct pci_dev *pdev, const struct pci_device_id *id)
+#else
 static int __devinit specdriver_probe(struct pci_dev *pdev, const struct pci_device_id *id)
+#endif
 {
 	int err;
 	int devno;
@@ -313,7 +321,11 @@ probe_pcien_fail:
  * This function is called when disconnecting a device
  *
  */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
+static void specdriver_remove(struct pci_dev *pdev)
+#else
 static void __devexit specdriver_remove(struct pci_dev *pdev)
+#endif
 {
 	specdriver_privdata_t *privdata;
     

@@ -156,4 +156,26 @@ class L1Dist : public HistogramAlgorithm {
         unsigned l1id;
         unsigned bcid_offset;
 };
+
+class HitDist : public HistogramAlgorithm {
+    public:
+        HitDist() : HistogramAlgorithm() {
+            h = NULL;
+            r = NULL;
+        }
+
+        ~HitDist() {
+        }
+
+        void create(LoopStatus &stat) {
+            h = new Histo1d("HitDist", 16, -0.5, 15.5, typeid(this), stat);
+            h->setXaxisTitle("Number of Hits");
+            h->setYaxisTitle("Events");
+            r = (HistogramBase*) h;
+        }
+
+        void processEvent(Fei4Data *data);
+    private:
+        Histo1d *h;
+};
 #endif

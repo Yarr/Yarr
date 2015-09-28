@@ -23,6 +23,8 @@ class Fei4TriggerLoop: public LoopActionBase {
         double getTrigFreq();
         void setTrigTime(double time);
         double getTrigTime();
+        void setNoInject();
+
         void setIsInner(bool itis=true);
         bool getIsInner();
 

@@ -29,6 +29,7 @@ entity trigger_unit is
 		trig_count_i : in std_logic_vector(31 downto 0); -- Fixed number of triggers
 		trig_conf_i	: in std_logic_vector(3 downto 0); -- Internal, external, pseudo random, 
 		trig_en_i : in std_logic;
+		trig_abort_i : in std_logic;
 		trig_done_o : out std_logic
 	);
 end trigger_unit;
@@ -74,6 +75,8 @@ begin
 		elsif rising_edge(clk_i) then
 			if (trig_en = '0') then -- Reset done on disable
 				trig_done(0) <= '0';
+			elsif (trig_abort_i = '1') then -- Abort triggering
+				trig_done(0) <= '1';
 			elsif (trig_conf = x"0") then -- External
 				trig_done(0) <= '0';
 			elsif (trig_conf = x"1") then -- Internal time

@@ -101,6 +101,7 @@ architecture behavioral of wb_tx_core is
 			trig_count_i : in std_logic_vector(31 downto 0); -- Fixed number of triggers
 			trig_conf_i	: in std_logic_vector(3 downto 0); -- Internal, external, pseudo random, 
 			trig_en_i : in std_logic;
+			trig_abort_i : in std_logic;
 			trig_done_o : out std_logic
 		);
 	end component;
@@ -129,6 +130,7 @@ architecture behavioral of wb_tx_core is
 	signal trig_done : std_logic;
 	signal trig_word_length : std_logic_vector(31 downto 0);
 	signal trig_word : std_logic_vector(127 downto 0);
+	signal trig_abort : std_logic;
 	
 	signal wb_wr_en	: std_logic_vector(31 downto 0) := (others => '0');
 	signal wb_dat_t : std_logic_vector(31 downto 0);
@@ -149,10 +151,12 @@ begin
 			tx_enable <= (others => '0');
 			wb_dat_t <= (others => '0');
 			trig_en <= '0';
+			trig_abort  <= '0';
 		elsif rising_edge(wb_clk_i) then
 			wb_wr_en <= (others => '0');
 			wb_ack_o <= '0';
 			trig_time <= trig_time_h & trig_time_l;
+			trig_abort  <= '0';
 			if (wb_cyc_i = '1' and wb_stb_i = '1') then
 				if (wb_we_i = '1') then
 					if (wb_adr_i(3 downto 0) = x"0") then -- Write to fifo
@@ -194,6 +198,9 @@ begin
 						wb_ack_o <= '1';
 					elsif (wb_adr_i(3 downto 0) = x"E") then -- Set trigger word [127:96]
 						trig_word(127 downto 96) <= wb_dat_i;
+						wb_ack_o <= '1';
+					elsif (wb_adr_i(3 downto 0) = x"F") then -- Toggle trigger abort
+						trig_abort <= wb_dat_i(0);
 						wb_ack_o <= '1';
 					else
 						wb_ack_o <= '1';
@@ -304,6 +311,7 @@ begin
 		trig_count_i => trig_count,
 		trig_conf_i => trig_conf,
 		trig_en_i => trig_en,
+		trig_abort_i => trig_abort,
 		trig_done_o => trig_done
 	);
 

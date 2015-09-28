@@ -75,19 +75,18 @@ yarr_spec.xise \
 ../common/rr_arbiter.vhd \
 ../rx-core/wb_rx_core.vhd \
 ../ddr3-core/ddr3_ctrl.vhd \
-../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/memc3_infrastructure.vhd \
 ../rx-core/decode_8b10b/decode_8b10b_lut.vhd \
 ../gn4124-core/spartan6/serdes_n_to_1_s2_diff.vhd \
 ../ip_cores/rx_channel_fifo.ngc \
 ../ip_cores/rx_bridge_fifo.ngc \
-../yarr_spec.ucf \
+../ip_cores/rx_bridge_fifo.vhd \
 ../ip_cores/rx_bridge_ctrl_fifo.ngc \
 ../tx-core/wb_tx_core.vhd \
 ../ip_cores/clk_gen.vhd \
-../top_yarr_spec.vhd \
+../yarr_spec_quad_fei4_revB.ucf \
 run.tcl \
 ../ddr3-core/ddr3_ctrl_wb.vhd \
-../ip_cores/rx_bridge_fifo.vhd \
+../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/memc3_infrastructure.vhd \
 ../ip_cores/fifo_32x512.ngc \
 ../common/generic_async_fifo_wrapper.vhd \
 ../ip_cores/fifo_32x512.vhd \
@@ -121,6 +120,7 @@ run.tcl \
 ../gn4124-core/spartan6/l2p_ser.vhd \
 ../rx-core/decode_8b10b/decode_8b10b_bram.vhd \
 ../common/dummy_stat_regs.vhd \
+../top_yarr_spec.vhd \
 ../rx-core/fei4_rx_channel.vhd \
 ../ip_cores/ila_icon.vhd \
 ../common/common_pkg.vhd

@@ -29,6 +29,7 @@
 #define TRIG_COUNT 0x9
 #define TRIG_WORD_LENGTH 0xA
 #define TRIG_WORD 0xB
+#define TRIG_ABORT 0xF
 
 #define TX_CLK_PERIOD 25e-9
 
@@ -60,6 +61,8 @@ class TxCore {
         void setTrigTime(double time); // in s
         void setTrigWordLength(uint32_t length); // From Msb
         void setTrigWord(uint32_t *word); // 4 words, start at Msb
+
+        void toggleTrigAbort();
 
         bool isCmdEmpty();
         bool isTrigDone();

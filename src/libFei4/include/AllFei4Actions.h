@@ -4,3 +4,4 @@
 #include "Fei4ParameterLoop.h"
 #include "Fei4GlobalFeedback.h"
 #include "Fei4PixelFeedback.h"
+#include "Fei4NoiseScan.h"

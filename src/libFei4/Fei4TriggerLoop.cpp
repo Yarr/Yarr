@@ -36,7 +36,7 @@ void Fei4TriggerLoop::init() {
     g_tx->setTrigCnt(m_trigCnt);
     g_tx->setTrigWordLength(m_trigWordLength);
     g_tx->setTrigWord(m_trigWord);
-    
+    g_tx->setTrigTime(m_trigTime);
     // Set active Modules into runmode
     // TODO ISSUE: This makes problems
     /*for (unsigned i=0; i<keeper->feList.size(); i++) {
@@ -102,6 +102,14 @@ void Fei4TriggerLoop::setTrigDelay(unsigned int delay) {
         m_trigDelay = delay;
     }
     m_trigWordLength = 32 + delay;
+}
+
+void Fei4TriggerLoop::setNoInject() {
+    m_trigWord[0] = 0;
+    m_trigWord[1] = 0;
+    m_trigWord[2] = 0;
+    m_trigWord[3] = TRIG_CMD;
+    m_trigWordLength = 5;
 }
 
 unsigned int Fei4TriggerLoop::getTrigDelay() {

@@ -25,6 +25,7 @@ class Histo1d : public HistogramBase {
         ~Histo1d();
         
         unsigned size() const;
+        unsigned getEntries() const;
         double getMean();
         double getStdDev();
 
@@ -37,8 +38,8 @@ class Histo1d : public HistogramBase {
         double getBin(unsigned n) const;
         double* getData() { return data;};
         
-        void toFile(std::string filename, bool header=true);
-        void plot(std::string filename);
+        void toFile(std::string filename, std::string dir = "", bool header=true);
+        void plot(std::string filename, std::string dir = "");
 
     private:
         double *data;

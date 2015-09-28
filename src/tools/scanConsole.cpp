@@ -72,10 +72,11 @@ int main(int argc, char *argv[]) {
     unsigned specNum = 0;
     std::string scanType = "digitalscan";
     std::string configPath = "";
+    std::string outputDir = "./";
     bool doPlots = false;
 
     int c;
-    while ((c = getopt(argc, argv, "hs:n:c:p")) != -1) {
+    while ((c = getopt(argc, argv, "hs:n:c:po:")) != -1) {
         switch (c) {
             case 'h':
                 printHelp();
@@ -92,6 +93,11 @@ int main(int argc, char *argv[]) {
                 break;
             case 'p':
                 doPlots = true;
+                break;
+            case 'o':
+                outputDir = std::string(optarg);
+                if (outputDir.back() != '/')
+                    outputDir = outputDir + "/";
                 break;
             case '?':
                 if (optopt == 's' || optopt == 'n' || optopt == 'c') {
@@ -110,6 +116,8 @@ int main(int argc, char *argv[]) {
     std::cout << " SPEC Nr: " << specNum << std::endl;
     std::cout << " Scan Type: " << scanType << std::endl;
     std::cout << " Global configuration: " << configPath << std::endl;
+    std::cout << " Output Plots: " << doPlots << std::endl;
+    std::cout << " Output Directory: " << outputDir << std::endl;
 
     std::cout << std::endl;
     std::cout << "#################" << std::endl;
@@ -121,7 +129,8 @@ int main(int argc, char *argv[]) {
     TxCore tx(&spec);
     RxCore rx(&spec);
     Bookkeeper bookie(&tx, &rx);
-
+    bookie.setTargetThreshold(1500);
+    
     std::cout << "-> Read global config (" << configPath << "):" << std::endl;
     std::fstream gConfig(configPath, std::ios::in);
     if (!gConfig) {
@@ -220,6 +229,9 @@ int main(int argc, char *argv[]) {
     } else if (scanType == "tune_pixelpreamp") {
         std::cout << "-> Found Pixel Preamp Tuning" << std::endl;
         s = new Fei4PixelPreampTune(&bookie);
+    } else if (scanType == "noisescan") {
+        std::cout << "-> Found Noisescan" << std::endl;
+        s = new Fei4NoiseScan(&bookie);
     } else {
         std::cout << "-> No matching Scan found, possible:" << std::endl;
         listScans();
@@ -239,10 +251,12 @@ int main(int argc, char *argv[]) {
             fe->histogrammer->addHistogrammer(new TotMap());
             fe->histogrammer->addHistogrammer(new Tot2Map());
             fe->histogrammer->addHistogrammer(new L1Dist());
+            fe->histogrammer->addHistogrammer(new HitDist());
            
             // Init analysis per FE and depending on scan type
             fe->ana = new Fei4Analysis(&bookie, fe->getRxChannel());
             fe->ana->connect(s, fe->clipHisto, fe->clipResult);
+            fe->ana->addAlgorithm(new L1Analysis());
             if (scanType == "digitalscan") {
                 fe->ana->addAlgorithm(new OccupancyAnalysis());
             } else if (scanType == "analogscan") {
@@ -259,6 +273,8 @@ int main(int argc, char *argv[]) {
                 fe->ana->addAlgorithm(new TotAnalysis());
             } else if (scanType == "tune_pixelpreamp") {
                 fe->ana->addAlgorithm(new TotAnalysis());
+            } else if (scanType == "noisescan") {
+                fe->ana->addAlgorithm(new NoiseAnalysis());
             } else {
                 std::cout << "-> Analyses not defined for scan type" << std::endl;
                 listScans();
@@ -344,7 +360,7 @@ int main(int argc, char *argv[]) {
             // Plot
             if (doPlots) {
                 std::cout << "-> Plotting histograms of FE " << fe->getRxChannel() << std::endl;
-                fe->ana->plot("ch" + std::to_string(fe->getRxChannel()) + "_" + scanType);
+                fe->ana->plot("ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
             }
             // Free
             delete fe->histogrammer;
@@ -359,9 +375,10 @@ int main(int argc, char *argv[]) {
 void printHelp() {
     std::cout << "Help:" << std::endl;
     std::cout << " -h: Shows this." << std::endl;
-    std::cout << " -s: Scan type. Possible types:" << std::endl;
+    std::cout << " -s <scan_type> : Scan type. Possible types:" << std::endl;
     listScans();
     std::cout << " -p: Enable plotting of results." << std::endl;
+    std::cout << " -o <dir> : Output directory." << std::endl;
 }
 
 void listScans() {
@@ -373,6 +390,7 @@ void listScans() {
     std::cout << "  tune_pixelthreshold" << std::endl;
     std::cout << "  tune_globalpreamp" << std::endl;
     std::cout << "  tune_pixelpreamp" << std::endl;
+    std::cout << "  noisescan" << std::endl;
 }
 
 

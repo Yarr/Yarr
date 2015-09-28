@@ -44,11 +44,11 @@ uint32_t DoubleColumnBit::getWord(const unsigned n) {
 
 Fei4PixelCfg::Fei4PixelCfg() {
     for (unsigned i=0; i<n_DC; i++) {
-        m_En[i].setAll(0);
+        m_En[i].setAll(1);
         m_TDAC[i].setAll(16);
         m_LCap[i].setAll(0);
         m_SCap[i].setAll(0);
-        m_Hitbus[i].setAll(1);
+        m_Hitbus[i].setAll(0);
         m_FDAC[i].setAll(8);
     }
 }
@@ -145,6 +145,10 @@ unsigned Fei4PixelCfg::to_bit(unsigned col, unsigned row) {
 
 void Fei4PixelCfg::setEn(unsigned col, unsigned row, unsigned v) {
     m_En[to_dc(col)].setPixel(to_bit(col, row) , v);
+}
+
+void Fei4PixelCfg::setHitbus(unsigned col, unsigned row, unsigned v) {
+    m_Hitbus[to_dc(col)].setPixel(to_bit(col, row) , v);
 }
 
 void Fei4PixelCfg::setTDAC(unsigned col, unsigned row, unsigned v) {
