@@ -9,6 +9,7 @@ YARR is a readout system based around the concept of moving intelligence from th
 Folder Structure
 ------------------------
 .. code-block:: none
+
     Yarr
     |-- doc : Documentation
     |-- hdl : Firmware
