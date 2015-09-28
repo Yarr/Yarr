@@ -18,20 +18,20 @@ Folder Structure
     |    |-- gn4124-core
     |    |-- ip_cores
     |    |-- rx_core
-    |    |-- syn (firmware synthesis)
+    |    |-- syn : Firmware synthesis tools
     |    |-- tx_core
     |-- src : Software
     |    |-- bin
     |    |-- build
-    |    |-- kernel
+    |    |-- kernel : Custom kernel driver
     |    |-- lib
     |    |-- libFei4
     |    |-- libSpec
     |    |-- libUtil
     |    |-- libYarr
-    |    |-- tools (command line tools)
-    |    |-- util (scripts)
-    | -- gui: QT5 based GUI
+    |    |-- tools : Command line tools
+    |    |-- util : Scripts
+    |-- gui: QT5 based GUI
           |-- YarrGui
           |-- bin
           |-- build
