@@ -40,7 +40,6 @@ Content:
 -------------------------
 .. toctree::
    
-   index
    install
    firmware
    adapter
