@@ -52,6 +52,7 @@ Compile and load the kernel driver
     - If the kernel driver is properly loaded can be checked with *dmesg*
 
     .. code-block:: none
+        :linenos:
     
         [theim@lambda kernel]$ dmesg
         <Lots of text>

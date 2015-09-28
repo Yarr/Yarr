@@ -40,4 +40,8 @@ Content:
 -------------------------
 .. toctree::
    
+   index
    install
+   firmware
+   adapter
+   fei4
