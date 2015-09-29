@@ -9,7 +9,7 @@ FE-I4
 Quad RJ45 rev. A
 ^^^^^^^^^^^^^^^
 
-    .. image: images/yarr_quad_fei4_revA.png
+    .. image:: images/yarr_quad_fei4_revA.png
 
     - FMC-LPC adapter board with four RJ45 connectors with custom FE-I4 pinout
     - LVDS lines buffered by a TI DS90LV004
@@ -26,7 +26,7 @@ Quad RJ45 rev. A
 Quad RJ45 rev. B
 ^^^^^^^^^^^^^^^
 
-    .. image: images/yarr_quad_fei4_revB.png
+    .. image:: images/yarr_quad_fei4_revB.png
 
     - FMC-LPC adapter board with four RJ45 connectors with custom FE-I4 pinout
     - LVDS lines buffered by a TI DS90LV004
