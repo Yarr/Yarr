@@ -93,6 +93,8 @@ private slots:
 
     void on_RemoveScans_Button_clicked();
 
+    void on_removePlot_button_clicked();
+
 private:
     Ui::YarrGui *ui;
     

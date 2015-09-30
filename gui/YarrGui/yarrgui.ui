@@ -761,16 +761,6 @@
      <attribute name="title">
       <string>Scan</string>
      </attribute>
-     <widget class="QCustomPlot" name="scanPlot" native="true">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>300</y>
-        <width>91</width>
-        <height>31</height>
-       </rect>
-      </property>
-     </widget>
      <widget class="QPushButton" name="doScansButton">
       <property name="geometry">
        <rect>
@@ -790,51 +780,25 @@
         <x>210</x>
         <y>10</y>
         <width>741</width>
-        <height>361</height>
+        <height>371</height>
        </rect>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>-1</number>
       </property>
-      <widget class="QWidget" name="tab_4">
-       <attribute name="title">
-        <string>Tab 1</string>
-       </attribute>
-      </widget>
      </widget>
-     <widget class="QTreeWidget" name="scanTree">
+     <widget class="QPushButton" name="removePlot_button">
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>10</y>
+        <y>320</y>
         <width>191</width>
-        <height>331</height>
+        <height>31</height>
        </rect>
       </property>
-      <property name="columnCount">
-       <number>3</number>
+      <property name="text">
+       <string>Remove plot</string>
       </property>
-      <attribute name="headerVisible">
-       <bool>false</bool>
-      </attribute>
-      <attribute name="headerMinimumSectionSize">
-       <number>50</number>
-      </attribute>
-      <column>
-       <property name="text">
-        <string notr="true">1</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string notr="true">2</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string notr="true">3</string>
-       </property>
-      </column>
      </widget>
     </widget>
     <widget class="QWidget" name="tab_2">

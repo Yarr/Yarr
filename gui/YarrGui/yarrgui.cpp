@@ -46,17 +46,20 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->benchmark_plot->legend->setFont(QFont("Helvetica", 9));
     ui->benchmark_plot->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignRight|Qt::AlignBottom);
 
-    ui->scanPlot->xAxis->setLabel("Column");
-    ui->scanPlot->yAxis->setLabel("Row");
-    ui->scanPlot->xAxis->setRange(0, 80);
-    ui->scanPlot->yAxis->setRange(0, 336);
-    ui->scanPlot->setInteraction(QCP::iRangeDrag, true);
-    ui->scanPlot->setInteraction(QCP::iRangeZoom, true);
-    ui->scanPlot->setInteraction(QCP::iSelectPlottables, true);
-    ui->scanPlot->setInteraction(QCP::iSelectAxes, true);
-    ui->scanPlot->legend->setVisible(false);
-    ui->scanPlot->legend->setFont(QFont("Helvetica", 9));
-    ui->scanPlot->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignRight|Qt::AlignBottom);
+//    ui->scanPlot->xAxis->setLabel("Column");
+//    ui->scanPlot->yAxis->setLabel("Row");
+//    ui->scanPlot->xAxis->setRange(0, 80);
+//    ui->scanPlot->yAxis->setRange(0, 336);
+//    ui->scanPlot->setInteraction(QCP::iRangeDrag, true);
+//    ui->scanPlot->setInteraction(QCP::iRangeZoom, true);
+//    ui->scanPlot->setInteraction(QCP::iSelectPlottables, true);
+//    ui->scanPlot->setInteraction(QCP::iSelectAxes, true);
+//    ui->scanPlot->legend->setVisible(false);
+//    ui->scanPlot->legend->setFont(QFont("Helvetica", 9));
+//    ui->scanPlot->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignRight|Qt::AlignBottom);
+
+    ui->global_cfg_checkBox->setChecked(true); //DEBUG
+    ui->configfileName_2->setText("util/global_config.cfg"); //DEBUG
 
     QPen pen;
     QColor color;
@@ -538,7 +541,7 @@ void YarrGui::doNoiseScan()
 
     std::vector<Fei4*> feVec;
 
-    for(unsigned i = 0; i < ui->feTree->topLevelItemCount(); i++) {
+    for(int i = 0; i < ui->feTree->topLevelItemCount(); i++) {
         if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
             feVec.push_back(bk->feList[i]);
         }
@@ -595,43 +598,52 @@ void YarrGui::doNoiseScan()
             anaThreads[i].join();
         }
 
-        tx->setCmdEnable(0x0);
-        rx->setRxEnable(0x0);
+//        tx->setCmdEnable(0x0);
+//        rx->setRxEnable(0x0);
 
         delete s;
         fe->toFileBinary();
-        fe->ana->plot("Noisescan_GUI");
+        //fe->ana->plot("Noisescan_GUI");
 
         //DEBUG begin [plotting]
 
-        std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
-        it++;
-        HistogramBase * showMe = *it;
-
-        QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
-        ui->scanPlot->addPlottable(colorMap);
-        colorMap->data()->setSize(80, 336);
-        colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
-        for(int xCoord = 0; xCoord<80; xCoord++) {
-            for(int yCoord = 0; yCoord<336; yCoord++) {
-                double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
-                colorMap->data()->setCell(xCoord, yCoord, colVal);
-            }
+        while(fe->clipDataFei4->size() != 0) {
+            fe->clipDataFei4->popData();
         }
-        std::cout << std::endl;
-        QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
-        ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
-        colorScale->setType(QCPAxis::atRight);
-        colorMap->setColorScale(colorScale);
-        colorScale->axis()->setLabel("Occupancy");
-        colorMap->setGradient(QCPColorGradient::gpPolar);
-        colorMap->rescaleDataRange();
 
-        QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
-        ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-        colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-        ui->scanPlot->rescaleAxes();
-        ui->scanPlot->replot();
+        while(fe->clipHisto->size() != 0) {
+            fe->clipHisto->popData();
+        }
+
+        while(fe->clipResult->size() != 0){
+            HistogramBase * showMe = fe->clipResult->popData();
+
+            QCustomPlot * tabScanPlot = new QCustomPlot();
+            QString newTabName = "NS FE" + QString::number(j);
+            ui->scanPlots_tabWidget->addTab(tabScanPlot, newTabName);
+
+            QCPColorMap * colorMap = new QCPColorMap(tabScanPlot->xAxis, tabScanPlot->yAxis);
+            tabScanPlot->addPlottable(colorMap);
+            colorMap->data()->setSize(80, 336);
+            colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
+            for(int xCoord = 0; xCoord<80; xCoord++) {
+                for(int yCoord = 0; yCoord<336; yCoord++) {
+                    double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
+                    colorMap->data()->setCell(xCoord, yCoord, colVal);
+                }
+            }
+            std::cout << std::endl;
+            QCPColorScale * colorScale = new QCPColorScale(tabScanPlot);
+            tabScanPlot->plotLayout()->addElement(0, 1, colorScale);
+            colorScale->setType(QCPAxis::atRight);
+            colorMap->setColorScale(colorScale);
+            colorScale->axis()->setLabel("Occupancy");
+            colorMap->setGradient(QCPColorGradient::gpPolar);
+            colorMap->rescaleDataRange();
+
+            tabScanPlot->rescaleAxes();
+            tabScanPlot->replot();
+        }
 
         //DEBUG end [plotting]
 
@@ -649,7 +661,7 @@ void YarrGui::doDigitalScan()
 
     std::vector<Fei4*> feVec;
 
-    for(unsigned i = 0; i < ui->feTree->topLevelItemCount(); i++) {
+    for(int i = 0; i < ui->feTree->topLevelItemCount(); i++) {
         if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
             feVec.push_back(bk->feList[i]);
         }
@@ -660,19 +672,42 @@ void YarrGui::doDigitalScan()
         return;
     }
 
-    for(unsigned j = 0; j < feVec.size(); j++){
+    for(unsigned j = 0; j < feVec.size(); j++) {
         scanDone = false;
         processorDone = false;
         ScanBase * s = new Fei4DigitalScan(bk);
 
         Fei4 * fe = feVec.at(j);
 
+//        fe->histogrammer = new Fei4Histogrammer();
+//        fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
+//        fe->histogrammer->addHistogrammer(new OccupancyMap());
+//        fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
+//        fe->ana->connect(s, fe->clipHisto, fe->clipResult);
+//        fe->ana->addAlgorithm(new OccupancyAnalysis());
+
+
+//        Fei4Histogrammer tmpF4Hist;
+//        fe->histogrammer = &tmpF4Hist;
+//        fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
+
         fe->histogrammer = new Fei4Histogrammer();
         fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
+
+//        OccupancyMap tmpOMap;
+//        fe->histogrammer->addHistogrammer(&tmpOMap);
+
         fe->histogrammer->addHistogrammer(new OccupancyMap());
+
+//        Fei4Analysis tmpF4Ana(bk, fe->getRxChannel());
+//        fe->ana = &tmpF4Ana;
+//        fe->ana->connect(s, fe->clipHisto, fe->clipResult);
+
         fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
         fe->ana->connect(s, fe->clipHisto, fe->clipResult);
-        fe->ana->addAlgorithm(new OccupancyAnalysis());
+
+        OccupancyAnalysis tmpOAna;
+        fe->ana->addAlgorithm(&tmpOAna);
 
         s->init();
         s->preScan();
@@ -699,6 +734,7 @@ void YarrGui::doDigitalScan()
         for (unsigned i=0; i<numThreads; i++) {
             procThreads[i].join();
         }
+
         processorDone = true;
 
         for (unsigned i=0; i<anaThreads.size(); i++) {
@@ -707,65 +743,77 @@ void YarrGui::doDigitalScan()
 
         delete s;
         fe->toFileBinary();
-        fe->ana->plot("Digitalscan_GUI");
+//        fe->ana->plot("Digitalscan_GUI");
 
         //DEBUG begin [plotting]
 
-        QCustomPlot * tabScanPlot = new QCustomPlot();
-        QString newTabName = "DS FE " + QString::number(j);
-        ui->scanPlots_tabWidget->addTab(tabScanPlot, newTabName);
-
-        std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
-        it++;
-        HistogramBase * showMe = *it;
-
-        //    if(ui->scanPlot->plottable(0) == NULL) {
-        //        std::cout << "Nothing here.\n";
-        //    }
-
-        QCPColorMap * colorMap = new QCPColorMap(tabScanPlot->xAxis, tabScanPlot->yAxis);
-        tabScanPlot->addPlottable(colorMap);
-        colorMap->data()->setSize(80, 336);
-        colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
-        for(int xCoord = 0; xCoord<80; xCoord++) {
-            for(int yCoord = 0; yCoord<336; yCoord++) {
-                double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
-                colorMap->data()->setCell(xCoord, yCoord, colVal);
-            }
+        while(fe->clipDataFei4->size() != 0) {
+            fe->clipDataFei4->popData();
         }
-        std::cout << std::endl;
-        QCPColorScale * colorScale = new QCPColorScale(tabScanPlot);
-        tabScanPlot->plotLayout()->addElement(0, 1, colorScale);
-        colorScale->setType(QCPAxis::atRight);
-        colorMap->setColorScale(colorScale);
-        colorScale->axis()->setLabel("Occupancy");
-        colorMap->setGradient(QCPColorGradient::gpPolar);
-        colorMap->rescaleDataRange();
 
-        QCPMarginGroup * marginGroup = new QCPMarginGroup(tabScanPlot);
-        tabScanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-        colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-        tabScanPlot->rescaleAxes();
-        tabScanPlot->replot();
+        while(fe->clipHisto->size() != 0) {
+            fe->clipHisto->popData();
+        }
 
-        //    ui->scanPlot->removePlottable(colorMap);
-        //    ui->scanPlot->plotLayout()->remove(colorScale);
-        //    delete colorMap;
-        //    delete colorScale;
-        //    delete marginGroup;
+        while(fe->clipResult->size() != 0) {
+            HistogramBase * showMe = fe->clipResult->popData();
+
+            QCustomPlot * tabScanPlot = new QCustomPlot();
+            QString newTabName = "DS FE" + QString::number(j+1);
+            ui->scanPlots_tabWidget->addTab(tabScanPlot, newTabName);
+
+            //    if(ui->scanPlot->plottable(0) == NULL) {
+            //        std::cout << "Nothing here.\n";
+            //    }
+
+            QCPColorMap * colorMap = new QCPColorMap(tabScanPlot->xAxis, tabScanPlot->yAxis);
+            tabScanPlot->addPlottable(colorMap);
+            colorMap->data()->setSize(80, 336);
+            colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
+            for(int xCoord = 0; xCoord<80; xCoord++) {
+                for(int yCoord = 0; yCoord<336; yCoord++) {
+                    double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
+                    colorMap->data()->setCell(xCoord, yCoord, colVal);
+                }
+            }
+            std::cout << std::endl;
+            QCPColorScale * colorScale = new QCPColorScale(tabScanPlot);
+            tabScanPlot->plotLayout()->addElement(0, 1, colorScale);
+            colorScale->setType(QCPAxis::atRight);
+            colorMap->setColorScale(colorScale);
+            colorScale->axis()->setLabel("Occupancy");
+            colorMap->setGradient(QCPColorGradient::gpPolar);
+            colorMap->rescaleDataRange();
+
+//            QCPMarginGroup * marginGroup = new QCPMarginGroup(tabScanPlot);
+//            tabScanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+//            colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+            tabScanPlot->rescaleAxes();
+            tabScanPlot->replot();
+
+            //    ui->scanPlot->removePlottable(colorMap);
+            //    ui->scanPlot->plotLayout()->remove(colorScale);
+            //    delete colorMap;
+            //    delete colorScale;
+            //    delete marginGroup;
+        } //DEBUG leave while-clipResult-size
 
         //DEBUG end [plotting]
 
-        delete fe->histogrammer;
-        fe->histogrammer = NULL;
-        delete fe->ana;
-        fe->ana = NULL;
-    }
+//        tmpOMap.~OccupancyMap();
 
-    QObjectList myList = ui->scanPlot->plottable(0)->children();
-    for(unsigned int i = 0; i < myList.size(); i++) {
-        std::cout << typeid(myList.at(i)).name() << std::endl;
-    }
+        fe->histogrammer->clearHistogrammers();
+        delete fe->histogrammer;
+        fe->histogrammer = nullptr;
+        delete fe->ana;
+        fe->ana = nullptr;
+
+    }  //DEBUG leave for-fe-vec-size
+
+//    QObjectList myList = ui->scanPlot->plottable(0)->children();
+//    for(unsigned int i = 0; i < myList.size(); i++) {
+//        std::cout << typeid(myList.at(i)).name() << std::endl;
+//    }
 
     return;
 }
@@ -775,7 +823,7 @@ void YarrGui::doAnalogScan()
 
     std::vector<Fei4*> feVec;
 
-    for(unsigned i = 0; i < ui->feTree->topLevelItemCount(); i++) {
+    for(int i = 0; i < ui->feTree->topLevelItemCount(); i++) {
         if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
             feVec.push_back(bk->feList[i]);
         }
@@ -832,43 +880,52 @@ void YarrGui::doAnalogScan()
             anaThreads[i].join();
         }
 
-        tx->setCmdEnable(0x0);
-        rx->setRxEnable(0x0);
+//        tx->setCmdEnable(0x0);
+//        rx->setRxEnable(0x0);
 
         delete s;
         fe->toFileBinary();
-        fe->ana->plot("Analogscan_GUI");
+//        fe->ana->plot("Analogscan_GUI");
 
         //DEBUG begin [plotting]
 
-        std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
-        it++;
-        HistogramBase * showMe = *it;
-
-        QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
-        ui->scanPlot->addPlottable(colorMap);
-        colorMap->data()->setSize(80, 336);
-        colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
-        for(int xCoord = 0; xCoord<80; xCoord++) {
-            for(int yCoord = 0; yCoord<336; yCoord++) {
-                double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
-                colorMap->data()->setCell(xCoord, yCoord, colVal);
-            }
+        while(fe->clipDataFei4->size() != 0) {
+            fe->clipDataFei4->popData();
         }
-        std::cout << std::endl;
-        QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
-        ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
-        colorScale->setType(QCPAxis::atRight);
-        colorMap->setColorScale(colorScale);
-        colorScale->axis()->setLabel("Occupancy");
-        colorMap->setGradient(QCPColorGradient::gpPolar);
-        colorMap->rescaleDataRange();
 
-        QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
-        ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-        colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-        ui->scanPlot->rescaleAxes();
-        ui->scanPlot->replot();
+        while(fe->clipHisto->size() != 0) {
+            fe->clipHisto->popData();
+        }
+
+        while(fe->clipResult->size() != 0){
+            HistogramBase * showMe = fe->clipResult->popData();
+
+            QCustomPlot * tabScanPlot = new QCustomPlot();
+            QString newTabName = "AS FE" + QString::number(j);
+            ui->scanPlots_tabWidget->addTab(tabScanPlot, newTabName);
+
+            QCPColorMap * colorMap = new QCPColorMap(tabScanPlot->xAxis, tabScanPlot->yAxis);
+            tabScanPlot->addPlottable(colorMap);
+            colorMap->data()->setSize(80, 336);
+            colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
+            for(int xCoord = 0; xCoord<80; xCoord++) {
+                for(int yCoord = 0; yCoord<336; yCoord++) {
+                    double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
+                    colorMap->data()->setCell(xCoord, yCoord, colVal);
+                }
+            }
+            std::cout << std::endl;
+            QCPColorScale * colorScale = new QCPColorScale(tabScanPlot);
+            tabScanPlot->plotLayout()->addElement(0, 1, colorScale);
+            colorScale->setType(QCPAxis::atRight);
+            colorMap->setColorScale(colorScale);
+            colorScale->axis()->setLabel("Occupancy");
+            colorMap->setGradient(QCPColorGradient::gpPolar);
+            colorMap->rescaleDataRange();
+
+            tabScanPlot->rescaleAxes();
+            tabScanPlot->replot();
+        }
 
         //DEBUG end [plotting]
 
@@ -886,7 +943,7 @@ void YarrGui::doThresholdScan()
 
     std::vector<Fei4*> feVec;
 
-    for(unsigned i = 0; i < ui->feTree->topLevelItemCount(); i++) {
+    for(int i = 0; i < ui->feTree->topLevelItemCount(); i++) {
         if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
             feVec.push_back(bk->feList[i]);
         }
@@ -942,43 +999,54 @@ void YarrGui::doThresholdScan()
             anaThreads[i].join();
         }
 
-        tx->setCmdEnable(0x0);
-        rx->setRxEnable(0x0);
+//        tx->setCmdEnable(0x0);
+//        rx->setRxEnable(0x0);
 
         delete s;
         fe->toFileBinary();
-        fe->ana->plot("Thresholdscan_GUI");
+        //fe->ana->plot("Thresholdscan_GUI");
 
         //DEBUG begin [plotting]
 
-        std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
-        it++;
-        HistogramBase * showMe = *it;
-
-        QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
-        ui->scanPlot->addPlottable(colorMap);
-        colorMap->data()->setSize(80, 336);
-        colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
-        for(int xCoord = 0; xCoord<80; xCoord++) {
-            for(int yCoord = 0; yCoord<336; yCoord++) {
-                double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
-                colorMap->data()->setCell(xCoord, yCoord, colVal);
-            }
+        while(fe->clipDataFei4->size() != 0) {
+            fe->clipDataFei4->popData();
         }
-        std::cout << std::endl;
-        QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
-        ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
-        colorScale->setType(QCPAxis::atRight);
-        colorMap->setColorScale(colorScale);
-        colorScale->axis()->setLabel("Occupancy");
-        colorMap->setGradient(QCPColorGradient::gpPolar);
-        colorMap->rescaleDataRange();
 
-        QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
-        ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-        colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-        ui->scanPlot->rescaleAxes();
-        ui->scanPlot->replot();
+        while(fe->clipHisto->size() != 0) {
+            fe->clipHisto->popData();
+        }
+
+        while(fe->clipResult->size() != 0){
+            HistogramBase * showMe = fe->clipResult->popData();
+
+            QCustomPlot * tabScanPlot = new QCustomPlot();
+            QString newTabName = "TS FE" + QString::number(j);
+            ui->scanPlots_tabWidget->addTab(tabScanPlot, newTabName);
+
+            QCPColorMap * colorMap = new QCPColorMap(tabScanPlot->xAxis, tabScanPlot->yAxis);
+            tabScanPlot->addPlottable(colorMap);
+            colorMap->data()->setSize(80, 336);
+            colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
+            std::cout << (showMe->getType()).name() << std::endl; //DEBUG
+            continue; //DEBUG
+            for(int xCoord = 0; xCoord<80; xCoord++) {
+                for(int yCoord = 0; yCoord<336; yCoord++) {
+                    double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
+                    colorMap->data()->setCell(xCoord, yCoord, colVal);
+                }
+            }
+            std::cout << std::endl;
+            QCPColorScale * colorScale = new QCPColorScale(tabScanPlot);
+            tabScanPlot->plotLayout()->addElement(0, 1, colorScale);
+            colorScale->setType(QCPAxis::atRight);
+            colorMap->setColorScale(colorScale);
+            colorScale->axis()->setLabel("Occupancy");
+            colorMap->setGradient(QCPColorGradient::gpPolar);
+            colorMap->rescaleDataRange();
+
+            tabScanPlot->rescaleAxes();
+            tabScanPlot->replot();
+        }
 
         //DEBUG end [plotting]
 
@@ -996,7 +1064,7 @@ void YarrGui::doToTScan()
 
     std::vector<Fei4*> feVec;
 
-    for(unsigned i = 0; i < ui->feTree->topLevelItemCount(); i++) {
+    for(int i = 0; i < ui->feTree->topLevelItemCount(); i++) {
         if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
             feVec.push_back(bk->feList[i]);
         }
@@ -1055,43 +1123,52 @@ void YarrGui::doToTScan()
             anaThreads[i].join();
         }
 
-        tx->setCmdEnable(0x0);
-        rx->setRxEnable(0x0);
+//        tx->setCmdEnable(0x0);
+//        rx->setRxEnable(0x0);
 
         delete s;
         fe->toFileBinary();
-        fe->ana->plot("ToTscan_GUI");
+        //fe->ana->plot("ToTscan_GUI");
 
         //DEBUG begin [plotting]
 
-        std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
-        it++;
-        HistogramBase * showMe = *it;
-
-        QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
-        ui->scanPlot->addPlottable(colorMap);
-        colorMap->data()->setSize(80, 336);
-        colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
-        for(int xCoord = 0; xCoord<80; xCoord++) {
-            for(int yCoord = 0; yCoord<336; yCoord++) {
-                double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
-                colorMap->data()->setCell(xCoord, yCoord, colVal);
-            }
+        while(fe->clipDataFei4->size() != 0) {
+            fe->clipDataFei4->popData();
         }
-        std::cout << std::endl;
-        QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
-        ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
-        colorScale->setType(QCPAxis::atRight);
-        colorMap->setColorScale(colorScale);
-        colorScale->axis()->setLabel("Occupancy");
-        colorMap->setGradient(QCPColorGradient::gpPolar);
-        colorMap->rescaleDataRange();
 
-        QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
-        ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-        colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-        ui->scanPlot->rescaleAxes();
-        ui->scanPlot->replot();
+        while(fe->clipHisto->size() != 0) {
+            fe->clipHisto->popData();
+        }
+
+        while(fe->clipResult->size() != 0){
+            HistogramBase * showMe = fe->clipResult->popData();
+
+            QCustomPlot * tabScanPlot = new QCustomPlot();
+            QString newTabName = "ToTS FE" + QString::number(j);
+            ui->scanPlots_tabWidget->addTab(tabScanPlot, newTabName);
+
+            QCPColorMap * colorMap = new QCPColorMap(tabScanPlot->xAxis, tabScanPlot->yAxis);
+            tabScanPlot->addPlottable(colorMap);
+            colorMap->data()->setSize(80, 336);
+            colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
+            for(int xCoord = 0; xCoord<80; xCoord++) {
+                for(int yCoord = 0; yCoord<336; yCoord++) {
+                    double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
+                    colorMap->data()->setCell(xCoord, yCoord, colVal);
+                }
+            }
+            std::cout << std::endl;
+            QCPColorScale * colorScale = new QCPColorScale(tabScanPlot);
+            tabScanPlot->plotLayout()->addElement(0, 1, colorScale);
+            colorScale->setType(QCPAxis::atRight);
+            colorMap->setColorScale(colorScale);
+            colorScale->axis()->setLabel("Occupancy");
+            colorMap->setGradient(QCPColorGradient::gpPolar);
+            colorMap->rescaleDataRange();
+
+            tabScanPlot->rescaleAxes();
+            tabScanPlot->replot();
+        }
 
         //DEBUG end [plotting]
 
@@ -1109,7 +1186,7 @@ void YarrGui::doGThrTune()
 
     std::vector<Fei4*> feVec;
 
-    for(unsigned i = 0; i < ui->feTree->topLevelItemCount(); i++) {
+    for(int i = 0; i < ui->feTree->topLevelItemCount(); i++) {
         if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
             feVec.push_back(bk->feList[i]);
         }
@@ -1166,43 +1243,52 @@ void YarrGui::doGThrTune()
             anaThreads[i].join();
         }
 
-        tx->setCmdEnable(0x0);
-        rx->setRxEnable(0x0);
+//        tx->setCmdEnable(0x0);
+//        rx->setRxEnable(0x0);
 
         delete s;
         fe->toFileBinary();
-        fe->ana->plot("GThrTune_GUI");
+        //fe->ana->plot("GThrTune_GUI");
 
         //DEBUG begin [plotting]
 
-        std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
-        it++;
-        HistogramBase * showMe = *it;
-
-        QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
-        ui->scanPlot->addPlottable(colorMap);
-        colorMap->data()->setSize(80, 336);
-        colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
-        for(int xCoord = 0; xCoord<80; xCoord++) {
-            for(int yCoord = 0; yCoord<336; yCoord++) {
-                double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
-                colorMap->data()->setCell(xCoord, yCoord, colVal);
-            }
+        while(fe->clipDataFei4->size() != 0) {
+            fe->clipDataFei4->popData();
         }
-        std::cout << std::endl;
-        QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
-        ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
-        colorScale->setType(QCPAxis::atRight);
-        colorMap->setColorScale(colorScale);
-        colorScale->axis()->setLabel("Global Threshold");
-        colorMap->setGradient(QCPColorGradient::gpPolar);
-        colorMap->rescaleDataRange();
 
-        QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
-        ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-        colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-        ui->scanPlot->rescaleAxes();
-        ui->scanPlot->replot();
+        while(fe->clipHisto->size() != 0) {
+            fe->clipHisto->popData();
+        }
+
+        while(fe->clipResult->size() != 0){
+            HistogramBase * showMe = fe->clipResult->popData();
+
+            QCustomPlot * tabScanPlot = new QCustomPlot();
+            QString newTabName = "GTT FE" + QString::number(j);
+            ui->scanPlots_tabWidget->addTab(tabScanPlot, newTabName);
+
+            QCPColorMap * colorMap = new QCPColorMap(tabScanPlot->xAxis, tabScanPlot->yAxis);
+            tabScanPlot->addPlottable(colorMap);
+            colorMap->data()->setSize(80, 336);
+            colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
+            for(int xCoord = 0; xCoord<80; xCoord++) {
+                for(int yCoord = 0; yCoord<336; yCoord++) {
+                    double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
+                    colorMap->data()->setCell(xCoord, yCoord, colVal);
+                }
+            }
+            std::cout << std::endl;
+            QCPColorScale * colorScale = new QCPColorScale(tabScanPlot);
+            tabScanPlot->plotLayout()->addElement(0, 1, colorScale);
+            colorScale->setType(QCPAxis::atRight);
+            colorMap->setColorScale(colorScale);
+            colorScale->axis()->setLabel("Global Threshold");
+            colorMap->setGradient(QCPColorGradient::gpPolar);
+            colorMap->rescaleDataRange();
+
+            tabScanPlot->rescaleAxes();
+            tabScanPlot->replot();
+        }
 
         //DEBUG end [plotting]
 
@@ -1220,7 +1306,7 @@ void YarrGui::doGPreaTune()
 
     std::vector<Fei4*> feVec;
 
-    for(unsigned i = 0; i < ui->feTree->topLevelItemCount(); i++) {
+    for(int i = 0; i < ui->feTree->topLevelItemCount(); i++) {
         if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
             feVec.push_back(bk->feList[i]);
         }
@@ -1279,43 +1365,52 @@ void YarrGui::doGPreaTune()
             anaThreads[i].join();
         }
 
-        tx->setCmdEnable(0x0);
-        rx->setRxEnable(0x0);
+//        tx->setCmdEnable(0x0);
+//        rx->setRxEnable(0x0);
 
         delete s;
         fe->toFileBinary();
-        fe->ana->plot("GPreaTune_GUI");
+        //fe->ana->plot("GPreaTune_GUI");
 
         //DEBUG begin [plotting]
 
-        std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
-        it++;
-        HistogramBase * showMe = *it;
-
-        QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
-        ui->scanPlot->addPlottable(colorMap);
-        colorMap->data()->setSize(80, 336);
-        colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
-        for(int xCoord = 0; xCoord<80; xCoord++) {
-            for(int yCoord = 0; yCoord<336; yCoord++) {
-                double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
-                colorMap->data()->setCell(xCoord, yCoord, colVal);
-            }
+        while(fe->clipDataFei4->size() != 0) {
+            fe->clipDataFei4->popData();
         }
-        std::cout << std::endl;
-        QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
-        ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
-        colorScale->setType(QCPAxis::atRight);
-        colorMap->setColorScale(colorScale);
-        colorScale->axis()->setLabel("Global Preamp");
-        colorMap->setGradient(QCPColorGradient::gpPolar);
-        colorMap->rescaleDataRange();
 
-        QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
-        ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-        colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-        ui->scanPlot->rescaleAxes();
-        ui->scanPlot->replot();
+        while(fe->clipHisto->size() != 0) {
+            fe->clipHisto->popData();
+        }
+
+        while(fe->clipResult->size() != 0){
+            HistogramBase * showMe = fe->clipResult->popData();
+
+            QCustomPlot * tabScanPlot = new QCustomPlot();
+            QString newTabName = "GPT FE" + QString::number(j);
+            ui->scanPlots_tabWidget->addTab(tabScanPlot, newTabName);
+
+            QCPColorMap * colorMap = new QCPColorMap(tabScanPlot->xAxis, tabScanPlot->yAxis);
+            tabScanPlot->addPlottable(colorMap);
+            colorMap->data()->setSize(80, 336);
+            colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
+            for(int xCoord = 0; xCoord<80; xCoord++) {
+                for(int yCoord = 0; yCoord<336; yCoord++) {
+                    double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
+                    colorMap->data()->setCell(xCoord, yCoord, colVal);
+                }
+            }
+            std::cout << std::endl;
+            QCPColorScale * colorScale = new QCPColorScale(tabScanPlot);
+            tabScanPlot->plotLayout()->addElement(0, 1, colorScale);
+            colorScale->setType(QCPAxis::atRight);
+            colorMap->setColorScale(colorScale);
+            colorScale->axis()->setLabel("Global Preamp");
+            colorMap->setGradient(QCPColorGradient::gpPolar);
+            colorMap->rescaleDataRange();
+
+            tabScanPlot->rescaleAxes();
+            tabScanPlot->replot();
+        }
 
         //DEBUG end [plotting]
 
@@ -1333,7 +1428,7 @@ void YarrGui::doPThrTune()
 
     std::vector<Fei4*> feVec;
 
-    for(unsigned i = 0; i < ui->feTree->topLevelItemCount(); i++) {
+    for(int i = 0; i < ui->feTree->topLevelItemCount(); i++) {
         if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
             feVec.push_back(bk->feList[i]);
         }
@@ -1390,43 +1485,52 @@ void YarrGui::doPThrTune()
             anaThreads[i].join();
         }
 
-        tx->setCmdEnable(0x0);
-        rx->setRxEnable(0x0);
+//        tx->setCmdEnable(0x0);
+//        rx->setRxEnable(0x0);
 
         delete s;
         fe->toFileBinary();
-        fe->ana->plot("PThrTune_GUI");
+        //fe->ana->plot("PThrTune_GUI");
 
         //DEBUG begin [plotting]
 
-        std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
-        it++;
-        HistogramBase * showMe = *it;
-
-        QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
-        ui->scanPlot->addPlottable(colorMap);
-        colorMap->data()->setSize(80, 336);
-        colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
-        for(int xCoord = 0; xCoord<80; xCoord++) {
-            for(int yCoord = 0; yCoord<336; yCoord++) {
-                double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
-                colorMap->data()->setCell(xCoord, yCoord, colVal);
-            }
+        while(fe->clipDataFei4->size() != 0) {
+            fe->clipDataFei4->popData();
         }
-        std::cout << std::endl;
-        QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
-        ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
-        colorScale->setType(QCPAxis::atRight);
-        colorMap->setColorScale(colorScale);
-        colorScale->axis()->setLabel("Pixel Threshold");
-        colorMap->setGradient(QCPColorGradient::gpPolar);
-        colorMap->rescaleDataRange();
 
-        QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
-        ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-        colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-        ui->scanPlot->rescaleAxes();
-        ui->scanPlot->replot();
+        while(fe->clipHisto->size() != 0) {
+            fe->clipHisto->popData();
+        }
+
+        while(fe->clipResult->size() != 0){
+            HistogramBase * showMe = fe->clipResult->popData();
+
+            QCustomPlot * tabScanPlot = new QCustomPlot();
+            QString newTabName = "PTT FE" + QString::number(j);
+            ui->scanPlots_tabWidget->addTab(tabScanPlot, newTabName);
+
+            QCPColorMap * colorMap = new QCPColorMap(tabScanPlot->xAxis, tabScanPlot->yAxis);
+            tabScanPlot->addPlottable(colorMap);
+            colorMap->data()->setSize(80, 336);
+            colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
+            for(int xCoord = 0; xCoord<80; xCoord++) {
+                for(int yCoord = 0; yCoord<336; yCoord++) {
+                    double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
+                    colorMap->data()->setCell(xCoord, yCoord, colVal);
+                }
+            }
+            std::cout << std::endl;
+            QCPColorScale * colorScale = new QCPColorScale(tabScanPlot);
+            tabScanPlot->plotLayout()->addElement(0, 1, colorScale);
+            colorScale->setType(QCPAxis::atRight);
+            colorMap->setColorScale(colorScale);
+            colorScale->axis()->setLabel("Pixel Threshold");
+            colorMap->setGradient(QCPColorGradient::gpPolar);
+            colorMap->rescaleDataRange();
+
+            tabScanPlot->rescaleAxes();
+            tabScanPlot->replot();
+        }
 
         //DEBUG end [plotting]
 
@@ -1445,7 +1549,7 @@ void YarrGui::doPPreaTune()
 
     std::vector<Fei4*> feVec;
 
-    for(unsigned i = 0; i < ui->feTree->topLevelItemCount(); i++) {
+    for(int i = 0; i < ui->feTree->topLevelItemCount(); i++) {
         if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
             feVec.push_back(bk->feList[i]);
         }
@@ -1504,43 +1608,52 @@ void YarrGui::doPPreaTune()
             anaThreads[i].join();
         }
 
-        tx->setCmdEnable(0x0);
-        rx->setRxEnable(0x0);
+//        tx->setCmdEnable(0x0);
+//        rx->setRxEnable(0x0);
 
         delete s;
         fe->toFileBinary();
-        fe->ana->plot("PPreaTune_GUI");
+        //fe->ana->plot("PPreaTune_GUI");
 
         //DEBUG begin [plotting]
 
-        std::deque<HistogramBase*>::iterator it = fe->clipResult->begin();
-        it++;
-        HistogramBase * showMe = *it;
-
-        QCPColorMap * colorMap = new QCPColorMap(ui->scanPlot->xAxis, ui->scanPlot->yAxis);
-        ui->scanPlot->addPlottable(colorMap);
-        colorMap->data()->setSize(80, 336);
-        colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
-        for(int xCoord = 0; xCoord<80; xCoord++) {
-            for(int yCoord = 0; yCoord<336; yCoord++) {
-                double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
-                colorMap->data()->setCell(xCoord, yCoord, colVal);
-            }
+        while(fe->clipDataFei4->size() != 0) {
+            fe->clipDataFei4->popData();
         }
-        std::cout << std::endl;
-        QCPColorScale * colorScale = new QCPColorScale(ui->scanPlot);
-        ui->scanPlot->plotLayout()->addElement(0, 1, colorScale);
-        colorScale->setType(QCPAxis::atRight);
-        colorMap->setColorScale(colorScale);
-        colorScale->axis()->setLabel("Pixel Preamp");
-        colorMap->setGradient(QCPColorGradient::gpPolar);
-        colorMap->rescaleDataRange();
 
-        QCPMarginGroup * marginGroup = new QCPMarginGroup(ui->scanPlot);
-        ui->scanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-        colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
-        ui->scanPlot->rescaleAxes();
-        ui->scanPlot->replot();
+        while(fe->clipHisto->size() != 0) {
+            fe->clipHisto->popData();
+        }
+
+        while(fe->clipResult->size() != 0){
+            HistogramBase * showMe = fe->clipResult->popData();
+
+            QCustomPlot * tabScanPlot = new QCustomPlot();
+            QString newTabName = "PPT FE" + QString::number(j);
+            ui->scanPlots_tabWidget->addTab(tabScanPlot, newTabName); //ADDED HERE
+
+            QCPColorMap * colorMap = new QCPColorMap(tabScanPlot->xAxis, tabScanPlot->yAxis);
+            tabScanPlot->addPlottable(colorMap); //ADDED HERE
+            colorMap->data()->setSize(80, 336);
+            colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
+            for(int xCoord = 0; xCoord<80; xCoord++) {
+                for(int yCoord = 0; yCoord<336; yCoord++) {
+                    double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord); //TODO MAKE BETTER
+                    colorMap->data()->setCell(xCoord, yCoord, colVal);
+                }
+            }
+            std::cout << std::endl;
+            QCPColorScale * colorScale = new QCPColorScale(tabScanPlot);
+            tabScanPlot->plotLayout()->addElement(0, 1, colorScale); //ADDED HERE
+            colorScale->setType(QCPAxis::atRight);
+            colorMap->setColorScale(colorScale);
+            colorScale->axis()->setLabel("Pixel Preamp");
+            colorMap->setGradient(QCPColorGradient::gpPolar);
+            colorMap->rescaleDataRange();
+
+            tabScanPlot->rescaleAxes();
+            tabScanPlot->replot();
+        }
 
         //DEBUG end [plotting]
 
@@ -1555,47 +1668,47 @@ void YarrGui::doPPreaTune()
 
 void YarrGui::on_NoiseScanButton_clicked() {
     scanVec.push_back( [&] () { doNoiseScan(); });
-    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + ", NS");
+    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + "NS ");
 }
 
 void YarrGui::on_DigitalScanButton_clicked() {
     scanVec.push_back( [&] () { doDigitalScan(); });
-    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + ", DS");
+    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + "DS ");
 }
 
 void YarrGui::on_AnalogScanButton_clicked() {
     scanVec.push_back( [&] () { doAnalogScan(); });
-    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + ", AS");
+    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + "AS ");
 }
 
 void YarrGui::on_ThresholdScanButton_clicked() {
     scanVec.push_back( [&] () { doThresholdScan(); });
-    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + ", TS");
+    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + "TS ");
 }
 
 void YarrGui::on_ToTScanButton_clicked() {
     scanVec.push_back( [&] () { doToTScan(); });
-    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + ", ToTS");
+    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + "ToTS ");
 }
 
 void YarrGui::on_GThrTuneButton_clicked() {
     scanVec.push_back( [&] () { doGThrTune(); });
-    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + ", GTT");
+    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + "GTT ");
 }
 
 void YarrGui::on_GPreaTuneButton_clicked() {
     scanVec.push_back( [&] () { doGPreaTune(); });
-    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + ", GPT");
+    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + "GPT ");
 }
 
 void YarrGui::on_PThrTuneButton_clicked() {
     scanVec.push_back( [&] () { doPThrTune(); });
-    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + ", PTT");
+    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + "PTT ");
 }
 
 void YarrGui::on_PPreaTuneButton_clicked() {
     scanVec.push_back( [&] () { doPPreaTune(); });
-    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + ", PPT");
+    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + "PPT ");
 }
 
 void YarrGui::on_doScansButton_clicked()
@@ -1609,5 +1722,25 @@ void YarrGui::on_doScansButton_clicked()
 void YarrGui::on_RemoveScans_Button_clicked()
 {
     ui->scanVec_lineEdit->setText("");
-    scanVec->clear();
+    scanVec.clear();
+}
+
+void YarrGui::on_removePlot_button_clicked()
+{
+    delete (ui->scanPlots_tabWidget->currentWidget());
+    //QCustomPlot * curPlt = (QCustomPlot*) curWid;
+
+    //QCPLayoutElement * delqcp2 = curPlt->plotLayout()->element(0, 1);
+    //curPlt->plotLayout()->remove(delqcp2);
+
+    //QCPAbstractPlottable * delqcp1 = curPlt->plottable(0);
+    //curPlt->removePlottable(0);
+
+    //delete curPlt;
+    //ui->scanPlots_tabWidget->removeTab(curIn); //TODO MAKE BETTER
+    //delete delqcp2;
+    //delete delqcp1;
+
+//    curPlt->plottable()
+    
 }
