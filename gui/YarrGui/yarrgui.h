@@ -95,6 +95,8 @@ private slots:
 
     void on_removePlot_button_clicked();
 
+    void on_plotTree_itemClicked(QTreeWidgetItem *item, int column);
+
 private:
     Ui::YarrGui *ui;
     

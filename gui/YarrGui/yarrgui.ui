@@ -800,6 +800,40 @@
        <string>Remove plot</string>
       </property>
      </widget>
+     <widget class="QTreeWidget" name="plotTree">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>191</width>
+        <height>301</height>
+       </rect>
+      </property>
+      <property name="columnCount">
+       <number>3</number>
+      </property>
+      <attribute name="headerVisible">
+       <bool>false</bool>
+      </attribute>
+      <attribute name="headerMinimumSectionSize">
+       <number>50</number>
+      </attribute>
+      <column>
+       <property name="text">
+        <string notr="true">1</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string notr="true">2</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string notr="true">3</string>
+       </property>
+      </column>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_2">
      <attribute name="title">

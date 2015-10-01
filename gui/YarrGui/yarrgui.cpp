@@ -379,7 +379,7 @@ void YarrGui::on_addFeButton_clicked()
         QTreeWidgetItem * feTreeItemCf = new QTreeWidgetItem();
         QTreeWidgetItem * feTreeItemCk = new QTreeWidgetItem();
 
-        feTreeItem->setText(0, "FE " + QString::number(ui->feTree->topLevelItemCount()));
+        feTreeItem->setText(0, "FE " + QString::number(ui->feTree->topLevelItemCount() + 1));
         feTreeItemId->setText(0, "Chip ID");
         feTreeItemId->setText(1, QString::number(chipIdAdded));
         feTreeItemTx->setText(0, "TX Channel");
@@ -504,7 +504,7 @@ void YarrGui::on_remFeButton_clicked()
     }
     QString channelRemoved = itemRemoved->child(2)->text(1);
     bk->delFe(channelRemoved.toUInt());
-    itemRemoved->~QTreeWidgetItem(); //MEMORY LEAK HERE! ADD DESTRUCTORS HERE!
+    delete itemRemoved; //TODO MORE CLEANUP HERE
 }
 
 void process(Bookkeeper *bookie, bool * scanDone) {
@@ -679,6 +679,21 @@ void YarrGui::doDigitalScan()
 
         Fei4 * fe = feVec.at(j);
 
+        QTreeWidgetItem * plotTreeItem = nullptr;
+        for(int k = 0; k < ui->plotTree->topLevelItemCount(); k++) {
+           if(ui->plotTree->topLevelItem(k)->text() == ui->feTree->topLevelItem(j)->text(0)) {
+               plotTreeItem = ui->plotTree->topLevelItem(k);
+               break;
+           }
+        }
+
+        if(plotTreeItem == nullptr) {
+            plotTreeItem = new QTreeWidgetItem(ui->plotTree);
+        }
+        QTreeWidgetItem * plotTreeItemDS = new QTreeWidgetItem();
+        plotTreeItemDS->setText(0, "Digitalscan");
+        plotTreeItem->addChild(plotTreeItemDS);
+
 //        fe->histogrammer = new Fei4Histogrammer();
 //        fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
 //        fe->histogrammer->addHistogrammer(new OccupancyMap());
@@ -759,8 +774,12 @@ void YarrGui::doDigitalScan()
             HistogramBase * showMe = fe->clipResult->popData();
 
             QCustomPlot * tabScanPlot = new QCustomPlot();
-            QString newTabName = "DS FE" + QString::number(j+1);
+            //QString newTabName = "DS FE" + QString::number(j+1);
+            QString newTabName = "DS " + ui->feTree->topLevelItem(j)->text(0);
             ui->scanPlots_tabWidget->addTab(tabScanPlot, newTabName);
+
+            QTreeWidgetItem * plotTreeItemP = new QTreeWidgetItem();
+            plotTreeItemDS->addChild(plotTreeItemP);
 
             //    if(ui->scanPlot->plottable(0) == NULL) {
             //        std::cout << "Nothing here.\n";
@@ -1743,4 +1762,14 @@ void YarrGui::on_removePlot_button_clicked()
 
 //    curPlt->plottable()
     
+}
+
+void YarrGui::on_plotTree_itemClicked(QTreeWidgetItem *item, int column)
+{
+    std::cout << ui->plotTree->children().size() << std::endl;
+    if(item->childCount() > 0) {
+        std::cout << "Has children\n";
+        return;
+    }
+    std::cout << ui->plotTree->children().size() << std::endl;
 }
