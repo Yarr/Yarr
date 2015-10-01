@@ -54,6 +54,8 @@ class Fei4Histogrammer : public DataProcessor {
             algorithms.push_back(a);
         }
 
+        void clearHistogrammers();
+
         void init();
         void process();
         void publish();
