@@ -681,7 +681,7 @@ void YarrGui::doDigitalScan()
 
         QTreeWidgetItem * plotTreeItem = nullptr;
         for(int k = 0; k < ui->plotTree->topLevelItemCount(); k++) {
-           if(ui->plotTree->topLevelItem(k)->text() == ui->feTree->topLevelItem(j)->text(0)) {
+           if(ui->plotTree->topLevelItem(k)->text(0) == ui->feTree->topLevelItem(j)->text(0)) {
                plotTreeItem = ui->plotTree->topLevelItem(k);
                break;
            }
