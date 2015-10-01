@@ -689,7 +689,9 @@ void YarrGui::doDigitalScan()
 
         if(plotTreeItem == nullptr) {
             plotTreeItem = new QTreeWidgetItem(ui->plotTree);
+            plotTreeItem->setText(0, ui->feTree->topLevelItem(j)->text(0));
         }
+
         QTreeWidgetItem * plotTreeItemDS = new QTreeWidgetItem();
         plotTreeItemDS->setText(0, "Digitalscan");
         plotTreeItem->addChild(plotTreeItemDS);
@@ -779,6 +781,7 @@ void YarrGui::doDigitalScan()
             ui->scanPlots_tabWidget->addTab(tabScanPlot, newTabName);
 
             QTreeWidgetItem * plotTreeItemP = new QTreeWidgetItem();
+            plotTreeItemP->setText(0, "Plot " + QString::number(plotTreeItemDS->childCount() + 1));
             plotTreeItemDS->addChild(plotTreeItemP);
 
             //    if(ui->scanPlot->plottable(0) == NULL) {
@@ -1768,8 +1771,29 @@ void YarrGui::on_plotTree_itemClicked(QTreeWidgetItem *item, int column)
 {
     std::cout << ui->plotTree->children().size() << std::endl;
     if(item->childCount() > 0) {
-        std::cout << "Has children\n";
         return;
     }
-    std::cout << ui->plotTree->children().size() << std::endl;
+
+    bool foundTabPos = false;
+    int plotTabPos = 0;
+    for(int i = 0; i < ui->plotTree->topLevelItemCount(); i++) {
+        for(int j = 0; j < ui->plotTree->topLevelItem(i)->childCount(); j++) {
+            for(int k = 0; k < ui->plotTree->topLevelItem(i)->child(j)->childCount(); k++) {
+                plotTabPos++;
+                if(ui->plotTree->topLevelItem(i)->child(j)->child(k) == item) {
+                    foundTabPos = true;
+                }
+                if(foundTabPos) {break;}
+            }
+            if(foundTabPos) {break;}
+        }
+        if(foundTabPos) {break;}
+    }
+
+    if(!foundTabPos) {
+        std::cout << "Something went wrong\n";
+        return;
+    } else {
+        ui->scanPlots_tabWidget->setCurrentIndex(plotTabPos - 1);
+    } //TODO This is extremely ugly. Switch to model based tree sometime!
 }
