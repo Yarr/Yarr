@@ -119,6 +119,7 @@ private:
 
     std::vector< std::function<void()> > scanVec;
 
+    void doScan(ScanBase *s, QString qn);
     void doNoiseScan();
     void doDigitalScan();
     void doAnalogScan();

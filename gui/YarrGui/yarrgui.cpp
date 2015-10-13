@@ -379,7 +379,7 @@ void YarrGui::on_addFeButton_clicked()
         QTreeWidgetItem * feTreeItemCf = new QTreeWidgetItem();
         QTreeWidgetItem * feTreeItemCk = new QTreeWidgetItem();
 
-        feTreeItem->setText(0, "FE " + QString::number(ui->feTree->topLevelItemCount() + 1));
+        feTreeItem->setText(0, "FE " + QString::number(ui->feTree->topLevelItemCount()));
         feTreeItemId->setText(0, "Chip ID");
         feTreeItemId->setText(1, QString::number(chipIdAdded));
         feTreeItemTx->setText(0, "TX Channel");
@@ -503,8 +503,11 @@ void YarrGui::on_remFeButton_clicked()
         return;
     }
     QString channelRemoved = itemRemoved->child(2)->text(1);
+    (bk->getFe(channelRemoved.toUInt()))->toFileBinary();
     bk->delFe(channelRemoved.toUInt());
-    delete itemRemoved; //TODO MORE CLEANUP HERE
+    tx->setCmdEnable(bk->getTxMask());
+    rx->setRxEnable(bk->getRxMask());
+    delete itemRemoved;
 }
 
 void process(Bookkeeper *bookie, bool * scanDone) {
@@ -536,148 +539,28 @@ void analysis(Fei4Histogrammer *h, Fei4Analysis *a, bool * processorDone) {
     a->end();
 }
 
-void YarrGui::doNoiseScan()
-{
-
-    std::vector<Fei4*> feVec;
-
-    for(int i = 0; i < ui->feTree->topLevelItemCount(); i++) {
-        if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
-            feVec.push_back(bk->feList[i]);
-        }
-    }
-
-    if(feVec.size() == 0) {
-        std::cout << "No FEs chosen for scanning.\n";
-        return;
-    }
-
-
-    for(unsigned j = 0; j < feVec.size(); j++){
-        scanDone = false;
-        processorDone = false;
-        ScanBase * s = new Fei4NoiseScan(bk);
-
-        Fei4 * fe = feVec.at(j);
-
-        fe->histogrammer = new Fei4Histogrammer();
-        fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
-        fe->histogrammer->addHistogrammer(new OccupancyMap());
-        fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
-        fe->ana->connect(s, fe->clipHisto, fe->clipResult);
-        fe->ana->addAlgorithm(new NoiseAnalysis());
-
-        s->init();
-        s->preScan();
-
-        unsigned int numThreads = std::thread::hardware_concurrency();
-        //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
-        std::vector<std::thread> procThreads;
-        for (unsigned i=0; i<numThreads; i++) {
-            procThreads.push_back(std::thread(process, bk, &scanDone));
-            //std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
-        }
-
-        std::vector<std::thread> anaThreads;
-        //std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
-        if (fe->isActive()) {
-            anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana, &processorDone));
-            //std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
-        }
-
-        s->run();
-        s->postScan();
-        scanDone = true;
-
-        for (unsigned i=0; i<numThreads; i++) {
-            procThreads[i].join();
-        }
-        processorDone = true;
-
-        for (unsigned i=0; i<anaThreads.size(); i++) {
-            anaThreads[i].join();
-        }
-
-//        tx->setCmdEnable(0x0);
-//        rx->setRxEnable(0x0);
-
-        delete s;
-        fe->toFileBinary();
-        //fe->ana->plot("Noisescan_GUI");
-
-        //DEBUG begin [plotting]
-
-        while(fe->clipDataFei4->size() != 0) {
-            fe->clipDataFei4->popData();
-        }
-
-        while(fe->clipHisto->size() != 0) {
-            fe->clipHisto->popData();
-        }
-
-        while(fe->clipResult->size() != 0){
-            HistogramBase * showMe = fe->clipResult->popData();
-
-            QCustomPlot * tabScanPlot = new QCustomPlot();
-            QString newTabName = "NS FE" + QString::number(j);
-            ui->scanPlots_tabWidget->addTab(tabScanPlot, newTabName);
-
-            QCPColorMap * colorMap = new QCPColorMap(tabScanPlot->xAxis, tabScanPlot->yAxis);
-            tabScanPlot->addPlottable(colorMap);
-            colorMap->data()->setSize(80, 336);
-            colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
-            for(int xCoord = 0; xCoord<80; xCoord++) {
-                for(int yCoord = 0; yCoord<336; yCoord++) {
-                    double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord);
-                    colorMap->data()->setCell(xCoord, yCoord, colVal);
-                }
-            }
-            std::cout << std::endl;
-            QCPColorScale * colorScale = new QCPColorScale(tabScanPlot);
-            tabScanPlot->plotLayout()->addElement(0, 1, colorScale);
-            colorScale->setType(QCPAxis::atRight);
-            colorMap->setColorScale(colorScale);
-            colorScale->axis()->setLabel("Occupancy");
-            colorMap->setGradient(QCPColorGradient::gpPolar);
-            colorMap->rescaleDataRange();
-
-            tabScanPlot->rescaleAxes();
-            tabScanPlot->replot();
-        }
-
-        //DEBUG end [plotting]
-
-        delete fe->histogrammer;
-        fe->histogrammer = NULL;
-        delete fe->ana;
-        fe->ana = NULL;
-    }
-
+void YarrGui::doNoiseScan() {
+    QString scNm = "NS";
+    ScanBase * sc = new Fei4NoiseScan(bk);
+    doScan(sc, scNm);
     return;
 }
 
 void YarrGui::doDigitalScan()
 {
+    QString scNm = "DS";
+    ScanBase * sc = new Fei4DigitalScan(bk);
+    doScan(sc, scNm);
+    return;
 
-    std::vector<Fei4*> feVec;
-
-    for(int i = 0; i < ui->feTree->topLevelItemCount(); i++) {
-        if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
-            feVec.push_back(bk->feList[i]);
-        }
-    }
-
-    if(feVec.size() == 0) {
-        std::cout << "No FEs chosen for scanning.\n";
-        return;
-    }
-
-    for(unsigned j = 0; j < feVec.size(); j++) {
+    /* for(int j = 0; j < ui->feTree->topLevelItemCount(); j++) {
         scanDone = false;
         processorDone = false;
         ScanBase * s = new Fei4DigitalScan(bk);
 
-        Fei4 * fe = feVec.at(j);
+        if(!(ui->feTree->topLevelItem(j)->child(4)->checkState(1))) { continue; }
+
+        Fei4 * fe = bk->feList.at(j);
 
         QTreeWidgetItem * plotTreeItem = nullptr;
         for(int k = 0; k < ui->plotTree->topLevelItemCount(); k++) {
@@ -696,35 +579,12 @@ void YarrGui::doDigitalScan()
         plotTreeItemDS->setText(0, "Digitalscan");
         plotTreeItem->addChild(plotTreeItemDS);
 
-//        fe->histogrammer = new Fei4Histogrammer();
-//        fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
-//        fe->histogrammer->addHistogrammer(new OccupancyMap());
-//        fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
-//        fe->ana->connect(s, fe->clipHisto, fe->clipResult);
-//        fe->ana->addAlgorithm(new OccupancyAnalysis());
-
-
-//        Fei4Histogrammer tmpF4Hist;
-//        fe->histogrammer = &tmpF4Hist;
-//        fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
-
         fe->histogrammer = new Fei4Histogrammer();
         fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
-
-//        OccupancyMap tmpOMap;
-//        fe->histogrammer->addHistogrammer(&tmpOMap);
-
         fe->histogrammer->addHistogrammer(new OccupancyMap());
-
-//        Fei4Analysis tmpF4Ana(bk, fe->getRxChannel());
-//        fe->ana = &tmpF4Ana;
-//        fe->ana->connect(s, fe->clipHisto, fe->clipResult);
-
         fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
         fe->ana->connect(s, fe->clipHisto, fe->clipResult);
-
-        OccupancyAnalysis tmpOAna;
-        fe->ana->addAlgorithm(&tmpOAna);
+        fe->ana->addAlgorithm(new OccupancyAnalysis());
 
         s->init();
         s->preScan();
@@ -759,7 +619,7 @@ void YarrGui::doDigitalScan()
         }
 
         delete s;
-        fe->toFileBinary();
+//        fe->toFileBinary();  TODO move to cleanup
 //        fe->ana->plot("Digitalscan_GUI");
 
         //DEBUG begin [plotting]
@@ -783,10 +643,6 @@ void YarrGui::doDigitalScan()
             QTreeWidgetItem * plotTreeItemP = new QTreeWidgetItem();
             plotTreeItemP->setText(0, "Plot " + QString::number(plotTreeItemDS->childCount() + 1));
             plotTreeItemDS->addChild(plotTreeItemP);
-
-            //    if(ui->scanPlot->plottable(0) == NULL) {
-            //        std::cout << "Nothing here.\n";
-            //    }
 
             QCPColorMap * colorMap = new QCPColorMap(tabScanPlot->xAxis, tabScanPlot->yAxis);
             tabScanPlot->addPlottable(colorMap);
@@ -813,56 +669,35 @@ void YarrGui::doDigitalScan()
             tabScanPlot->rescaleAxes();
             tabScanPlot->replot();
 
-            //    ui->scanPlot->removePlottable(colorMap);
-            //    ui->scanPlot->plotLayout()->remove(colorScale);
-            //    delete colorMap;
-            //    delete colorScale;
-            //    delete marginGroup;
-        } //DEBUG leave while-clipResult-size
+        }
 
         //DEBUG end [plotting]
 
-//        tmpOMap.~OccupancyMap();
-
-        fe->histogrammer->clearHistogrammers();
         delete fe->histogrammer;
         fe->histogrammer = nullptr;
         delete fe->ana;
         fe->ana = nullptr;
 
-    }  //DEBUG leave for-fe-vec-size
+    }
 
-//    QObjectList myList = ui->scanPlot->plottable(0)->children();
-//    for(unsigned int i = 0; i < myList.size(); i++) {
-//        std::cout << typeid(myList.at(i)).name() << std::endl;
-//    }
-
-    return;
+    return; */
 }
 
 void YarrGui::doAnalogScan()
 {
+    QString scNm = "AS";
+    ScanBase * sc = new Fei4AnalogScan(bk);
+    doScan(sc, scNm);
+    return;
 
-    std::vector<Fei4*> feVec;
-
-    for(int i = 0; i < ui->feTree->topLevelItemCount(); i++) {
-        if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
-            feVec.push_back(bk->feList[i]);
-        }
-    }
-
-    if(feVec.size() == 0) {
-        std::cout << "No FEs chosen for scanning.\n";
-        return;
-    }
-
-
-    for(unsigned j = 0; j < feVec.size(); j++){
+    /* for(unsigned j = 0; j < ui->feTree->topLevelItemCount(); j++){
         scanDone = false;
         processorDone = false;
         ScanBase * s = new Fei4AnalogScan(bk);
 
-        Fei4 * fe = feVec.at(j);
+        if(!(ui->feTree->topLevelItem(j)->child(4)->checkState(1))) { continue; }
+
+        Fei4 * fe = bk->feList.at(j);
 
         fe->histogrammer = new Fei4Histogrammer();
         fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
@@ -957,31 +792,23 @@ void YarrGui::doAnalogScan()
         fe->ana = NULL;
     }
 
-    return;
+    return; */
 }
 
 void YarrGui::doThresholdScan()
 {
-
-    std::vector<Fei4*> feVec;
-
-    for(int i = 0; i < ui->feTree->topLevelItemCount(); i++) {
-        if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
-            feVec.push_back(bk->feList[i]);
-        }
-    }
-
-    if(feVec.size() == 0) {
-        std::cout << "No FEs chosen for scanning.\n";
-        return;
-    }
-
-    for(unsigned j = 0; j < feVec.size(); j++){
+    QString scNm = "TS";
+    ScanBase * sc = new Fei4ThresholdScan(bk);
+    doScan(sc, scNm);
+    return;
+    /* for(int j = 0; j < ui->feTree->topLevelItemCount(); j++){
         scanDone = false;
         processorDone = false;
         ScanBase * s = new Fei4ThresholdScan(bk);
 
-        Fei4 * fe = feVec.at(j);
+        if(!(ui->feTree->topLevelItem(j)->child(4)->checkState(1))) { continue; }
+
+        Fei4 * fe = bk->feList.at(j);
 
         fe->histogrammer = new Fei4Histogrammer();
         fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
@@ -1078,32 +905,24 @@ void YarrGui::doThresholdScan()
         fe->ana = NULL;
     }
 
-    return;
+    return; */
 }
 
 void YarrGui::doToTScan()
 {
+    QString scNm = "ToTS";
+    ScanBase * sc = new Fei4TotScan(bk);
+    doScan(sc, scNm);
+    return;
 
-    std::vector<Fei4*> feVec;
-
-    for(int i = 0; i < ui->feTree->topLevelItemCount(); i++) {
-        if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
-            feVec.push_back(bk->feList[i]);
-        }
-    }
-
-    if(feVec.size() == 0) {
-        std::cout << "No FEs chosen for scanning.\n";
-        return;
-    }
-
-
-    for(unsigned j = 0; j < feVec.size(); j++){
+    /* for(int j = 0; j < ui->feTree->topLevelItemCount(); j++){
         scanDone = false;
         processorDone = false;
         ScanBase * s = new Fei4TotScan(bk);
 
-        Fei4 * fe = feVec.at(j);
+        if(!(ui->feTree->topLevelItem(j)->child(4)->checkState(1))) { continue; }
+
+        Fei4 * fe = bk->feList.at(j);
 
         fe->histogrammer = new Fei4Histogrammer();
         fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
@@ -1200,32 +1019,24 @@ void YarrGui::doToTScan()
         fe->ana = NULL;
     }
 
-    return;
+    return; */
 }
 
 void YarrGui::doGThrTune()
 {
+    QString scNm = "GTT";
+    ScanBase * sc = new Fei4GlobalThresholdTune(bk);
+    doScan(sc, scNm);
+    return;
 
-    std::vector<Fei4*> feVec;
-
-    for(int i = 0; i < ui->feTree->topLevelItemCount(); i++) {
-        if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
-            feVec.push_back(bk->feList[i]);
-        }
-    }
-
-    if(feVec.size() == 0) {
-        std::cout << "No FEs chosen for scanning.\n";
-        return;
-    }
-
-
-    for(unsigned j = 0; j < feVec.size(); j++){
+    /* for(int j = 0; j < ui->feTree->topLevelItemCount(); j++){
         scanDone = false;
         processorDone = false;
         ScanBase * s = new Fei4GlobalThresholdTune(bk);
 
-        Fei4 * fe = feVec.at(j);
+        if(!(ui->feTree->topLevelItem(j)->child(4)->checkState(1))) { continue; }
+
+        Fei4 * fe = bk->feList.at(j);
 
         fe->histogrammer = new Fei4Histogrammer();
         fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
@@ -1320,32 +1131,24 @@ void YarrGui::doGThrTune()
         fe->ana = NULL;
     }
 
-    return;
+    return; */
 }
 
 void YarrGui::doGPreaTune()
 {
+    QString scNm = "GPT";
+    ScanBase * sc = new Fei4GlobalPreampTune(bk);
+    doScan(sc, scNm);
+    return;
 
-    std::vector<Fei4*> feVec;
-
-    for(int i = 0; i < ui->feTree->topLevelItemCount(); i++) {
-        if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
-            feVec.push_back(bk->feList[i]);
-        }
-    }
-
-    if(feVec.size() == 0) {
-        std::cout << "No FEs chosen for scanning.\n";
-        return;
-    }
-
-
-    for(unsigned j = 0; j < feVec.size(); j++){
+    /* for(int j = 0; j < ui->feTree->topLevelItemCount(); j++){
         scanDone = false;
         processorDone = false;
         ScanBase * s = new Fei4GlobalPreampTune(bk);
 
-        Fei4 * fe = feVec.at(j);
+        if(!(ui->feTree->topLevelItem(j)->child(4)->checkState(1))) { continue; }
+
+        Fei4 * fe = bk->feList.at(j);
 
         fe->histogrammer = new Fei4Histogrammer();
         fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
@@ -1442,32 +1245,24 @@ void YarrGui::doGPreaTune()
         fe->ana = NULL;
     }
 
-    return;
+    return; */
 }
 
 void YarrGui::doPThrTune()
 {
+    QString scNm = "PTT";
+    ScanBase * sc = new Fei4PixelThresholdTune(bk);
+    doScan(sc, scNm);
+    return;
 
-    std::vector<Fei4*> feVec;
-
-    for(int i = 0; i < ui->feTree->topLevelItemCount(); i++) {
-        if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
-            feVec.push_back(bk->feList[i]);
-        }
-    }
-
-    if(feVec.size() == 0) {
-        std::cout << "No FEs chosen for scanning.\n";
-        return;
-    }
-
-
-    for(unsigned j = 0; j < feVec.size(); j++){
+    /* for(int j = 0; j < ui->feTree->topLevelItemCount(); j++){
         scanDone = false;
         processorDone = false;
         ScanBase * s = new Fei4PixelThresholdTune(bk);
 
-        Fei4 * fe = feVec.at(j);
+        if(!(ui->feTree->topLevelItem(j)->child(4)->checkState(1))) { continue; }
+
+        Fei4 * fe = bk->feList.at(j);
 
         fe->histogrammer = new Fei4Histogrammer();
         fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
@@ -1562,33 +1357,25 @@ void YarrGui::doPThrTune()
         fe->ana = NULL;
     }
 
-    return;
+    return; */
 }
 
 
 void YarrGui::doPPreaTune()
 {
+    QString scNm = "PPT";
+    ScanBase * sc = new Fei4PixelPreampTune(bk);
+    doScan(sc, scNm);
+    return;
 
-    std::vector<Fei4*> feVec;
-
-    for(int i = 0; i < ui->feTree->topLevelItemCount(); i++) {
-        if(ui->feTree->topLevelItem(i)->child(4)->checkState(1)) {
-            feVec.push_back(bk->feList[i]);
-        }
-    }
-
-    if(feVec.size() == 0) {
-        std::cout << "No FEs chosen for scanning.\n";
-        return;
-    }
-
-
-    for(unsigned j = 0; j < feVec.size(); j++){
+    /* for(int j = 0; j < ui->feTree->topLevelItemCount(); j++){
         scanDone = false;
         processorDone = false;
         ScanBase * s = new Fei4PixelPreampTune(bk);
 
-        Fei4 * fe = feVec.at(j);
+        if(!(ui->feTree->topLevelItem(j)->child(4)->checkState(1))) { continue; }
+
+        Fei4 * fe = bk->feList.at(j);
 
         fe->histogrammer = new Fei4Histogrammer();
         fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
@@ -1685,16 +1472,162 @@ void YarrGui::doPPreaTune()
         fe->ana = NULL;
     }
 
+    return; */
+}
+
+void YarrGui::doScan(ScanBase * s, QString qn) {
+    for(int j = 0; j < ui->feTree->topLevelItemCount(); j++) {
+        scanDone = false;
+        processorDone = false;
+
+        if(!(ui->feTree->topLevelItem(j)->child(4)->checkState(1))) { continue; }
+
+        Fei4 * fe = bk->feList.at(j);
+
+        QTreeWidgetItem * plotTreeItem = nullptr;
+        for(int k = 0; k < ui->plotTree->topLevelItemCount(); k++) {
+           if(ui->plotTree->topLevelItem(k)->text(0) == ui->feTree->topLevelItem(j)->text(0)) {
+               plotTreeItem = ui->plotTree->topLevelItem(k);
+               break;
+           }
+        }
+
+        if(plotTreeItem == nullptr) {
+            plotTreeItem = new QTreeWidgetItem(ui->plotTree);
+            plotTreeItem->setText(0, ui->feTree->topLevelItem(j)->text(0));
+        }
+
+        QTreeWidgetItem * plotTreeItemDS = new QTreeWidgetItem();
+        plotTreeItemDS->setText(0, qn);
+        plotTreeItem->addChild(plotTreeItemDS);
+
+        fe->histogrammer = new Fei4Histogrammer();
+        fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
+
+        fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
+        fe->ana->connect(s, fe->clipHisto, fe->clipResult);
+
+        fe->histogrammer->addHistogrammer(new OccupancyMap());
+
+        if(qn == "ToTS" || qn == "GPT" || qn == "PPT") {
+            fe->histogrammer->addHistogrammer(new TotMap());
+            fe->histogrammer->addHistogrammer(new Tot2Map());
+        }
+
+        if(qn == "NS")   {fe->ana->addAlgorithm(new NoiseAnalysis());}
+        if(qn == "DS")   {fe->ana->addAlgorithm(new OccupancyAnalysis());}
+        if(qn == "AS")   {fe->ana->addAlgorithm(new OccupancyAnalysis());}
+        if(qn == "TS")   {fe->ana->addAlgorithm(new ScurveFitter());}
+        if(qn == "ToTS") {fe->ana->addAlgorithm(new TotAnalysis());}
+        if(qn == "GTT")  {fe->ana->addAlgorithm(new OccGlobalThresholdTune());}
+        if(qn == "GPT")  {fe->ana->addAlgorithm(new TotAnalysis());}
+        if(qn == "PTT")  {fe->ana->addAlgorithm(new OccPixelThresholdTune());}
+        if(qn == "PPT")  {fe->ana->addAlgorithm(new TotAnalysis());}
+
+        s->init();
+        s->preScan();
+
+        unsigned int numThreads = std::thread::hardware_concurrency();
+        //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
+        std::vector<std::thread> procThreads;
+        for (unsigned i=0; i<numThreads; i++) {
+            procThreads.push_back(std::thread(process, bk, &scanDone));
+            //std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
+        }
+
+        std::vector<std::thread> anaThreads;
+        //std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
+        if (fe->isActive()) {
+            anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana, &processorDone));
+            //std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
+        }
+
+        s->run();
+        s->postScan();
+        scanDone = true;
+
+        for (unsigned i=0; i<numThreads; i++) {
+            procThreads[i].join();
+        }
+
+        processorDone = true;
+
+        for (unsigned i=0; i<anaThreads.size(); i++) {
+            anaThreads[i].join();
+        }
+
+        delete s;
+//        fe->toFileBinary();
+//        fe->ana->plot("Scan_GUI");
+
+        //DEBUG begin [plotting]
+
+        while(fe->clipDataFei4->size() != 0) {
+            fe->clipDataFei4->popData();
+        }
+
+        while(fe->clipHisto->size() != 0) {
+            fe->clipHisto->popData();
+        }
+
+        while(fe->clipResult->size() != 0) {
+            HistogramBase * showMe = fe->clipResult->popData();
+
+            QCustomPlot * tabScanPlot = new QCustomPlot();
+            QString newTabName = qn + ' ' + ui->feTree->topLevelItem(j)->text(0);
+            ui->scanPlots_tabWidget->addTab(tabScanPlot, newTabName);
+
+            QTreeWidgetItem * plotTreeItemP = new QTreeWidgetItem();
+            plotTreeItemP->setText(0, "Plot " + QString::number(plotTreeItemDS->childCount() + 1));
+            plotTreeItemDS->addChild(plotTreeItemP);
+
+            QCPColorMap * colorMap = new QCPColorMap(tabScanPlot->xAxis, tabScanPlot->yAxis);
+            tabScanPlot->addPlottable(colorMap);
+            colorMap->data()->setSize(80, 336);
+            colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
+            for(int xCoord = 0; xCoord<80; xCoord++) {
+                for(int yCoord = 0; yCoord<336; yCoord++) {
+                    double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord); //TODO make better
+                    colorMap->data()->setCell(xCoord, yCoord, colVal);                //TODO catch other graphs
+                }
+            }
+            std::cout << std::endl;
+            QCPColorScale * colorScale = new QCPColorScale(tabScanPlot);
+            tabScanPlot->plotLayout()->addElement(0, 1, colorScale);
+            colorScale->setType(QCPAxis::atRight);
+            colorMap->setColorScale(colorScale);
+            colorScale->axis()->setLabel(" ");
+            colorMap->setGradient(QCPColorGradient::gpPolar);
+            colorMap->rescaleDataRange();
+
+//            QCPMarginGroup * marginGroup = new QCPMarginGroup(tabScanPlot);
+//            tabScanPlot->axisRect()->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+//            colorScale->setMarginGroup(QCP::msBottom | QCP::msTop, marginGroup);
+            tabScanPlot->rescaleAxes();
+            tabScanPlot->replot();
+
+        }
+
+        //DEBUG end [plotting]
+
+        delete fe->histogrammer;
+        fe->histogrammer = nullptr;
+        delete fe->ana;
+        fe->ana = nullptr;
+
+    }
+
     return;
 }
 
 void YarrGui::on_NoiseScanButton_clicked() {
-    scanVec.push_back( [&] () { doNoiseScan(); });
+    scanVec.push_back( [&] () { doNoiseScan(); } );
     ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + "NS ");
 }
 
 void YarrGui::on_DigitalScanButton_clicked() {
     scanVec.push_back( [&] () { doDigitalScan(); });
+    //scanVec.push_back( [&] () { doScan((new Fei4DigitalScan(bk)), QString{"DS"}); });
     ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + "DS ");
 }
 
@@ -1769,7 +1702,6 @@ void YarrGui::on_removePlot_button_clicked()
 
 void YarrGui::on_plotTree_itemClicked(QTreeWidgetItem *item, int column)
 {
-    std::cout << ui->plotTree->children().size() << std::endl;
     if(item->childCount() > 0) {
         return;
     }
