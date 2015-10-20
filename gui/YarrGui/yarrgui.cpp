@@ -1682,7 +1682,29 @@ void YarrGui::on_RemoveScans_Button_clicked()
 
 void YarrGui::on_removePlot_button_clicked()
 {
+    if(ui->plotTree->currentItem() == nullptr) {
+        std::cout << "Please select plot to delete\n";
+        return;
+    }
+    if(ui->plotTree->currentItem()->childCount() > 0) {
+        std::cout << "Please select plot to delete\n";
+        return;
+    }
+
     delete (ui->scanPlots_tabWidget->currentWidget());
+    delete (ui->plotTree->currentItem());
+
+    for(int i = 0; i < ui->plotTree->topLevelItemCount(); i++) {
+        if(ui->plotTree->topLevelItem(i)->childCount() == 0) {
+            delete (ui->plotTree->topLevelItem(i));
+        } else {
+            for(int j = 0; j < ui->plotTree->topLevelItem(i)->childCount(); j++) {
+                for(int k = 0; k < ui->plotTree->topLevelItem(i)->child(j)->childCount(); k++) {
+                    ;
+                }
+            }
+        }
+    }
     //QCustomPlot * curPlt = (QCustomPlot*) curWid;
 
     //QCPLayoutElement * delqcp2 = curPlt->plotLayout()->element(0, 1);
@@ -1723,9 +1745,23 @@ void YarrGui::on_plotTree_itemClicked(QTreeWidgetItem *item, int column)
     }
 
     if(!foundTabPos) {
-        std::cout << "Something went wrong\n";
         return;
     } else {
         ui->scanPlots_tabWidget->setCurrentIndex(plotTabPos - 1);
+    } //TODO This is extremely ugly. Switch to model based tree sometime!
+}
+
+void YarrGui::on_scanPlots_tabWidget_tabBarClicked(int index)
+{
+    int tmpIndex = 0;
+    for(int i = 0; i < ui->plotTree->topLevelItemCount(); i++) {
+        for(int j = 0; j < ui->plotTree->topLevelItem(i)->childCount(); j++) {
+            for(int k = 0; k < ui->plotTree->topLevelItem(i)->child(j)->childCount(); k++) {
+                if(tmpIndex == index) {
+                    ui->plotTree->setCurrentItem(ui->plotTree->topLevelItem(i)->child(j)->child(k));
+                }
+                tmpIndex++;
+            }
+        }
     } //TODO This is extremely ugly. Switch to model based tree sometime!
 }

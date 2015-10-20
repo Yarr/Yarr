@@ -97,6 +97,8 @@ private slots:
 
     void on_plotTree_itemClicked(QTreeWidgetItem *item, int column);
 
+    void on_scanPlots_tabWidget_tabBarClicked(int index);
+
 private:
     Ui::YarrGui *ui;
     
