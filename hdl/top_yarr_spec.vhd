@@ -1,27 +1,9 @@
---------------------------------------------------------------------------------
---                                                                            --
--- CERN BE-CO-HT         GN4124 core for PCIe FMC carrier                     --
---                       http://www.ohwr.org/projects/gn4124-core             --
---------------------------------------------------------------------------------
---
--- unit name: spec_gn4124_test (spec_gn4124_test.vhd)
---
--- author: Matthieu Cattin (matthieu.cattin@cern.ch)
---
--- date: 07-07-2011
---
--- version: 0.1
---
--- description: Wrapper for the GN4124 core to drop into the FPGA on the
---              SPEC (Simple PCIe FMC Carrier) board
---
--- dependencies:
---
---------------------------------------------------------------------------------
--- last changes: see svn log.
---------------------------------------------------------------------------------
--- TODO: - 
---------------------------------------------------------------------------------
+--------------------------------------------
+-- Project: YARR
+-- Author: Timon Heim (timon.heim@cern.ch)
+-- Description: Top module for YARR on SPEC
+-- Dependencies: -
+--------------------------------------------
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
@@ -133,7 +115,10 @@ entity yarr is
 		fe_cmd_p		: out std_logic_vector(g_TX_CHANNELS-1 downto 0);
 		fe_cmd_n		: out std_logic_vector(g_TX_CHANNELS-1 downto 0);
 		fe_data_p		: in  std_logic_vector(g_RX_CHANNELS-1 downto 0);
-		fe_data_n		: in  std_logic_vector(g_RX_CHANNELS-1 downto 0)
+		fe_data_n		: in  std_logic_vector(g_RX_CHANNELS-1 downto 0);
+		-- I2c
+		sda				: inout std_logic;
+		scl					: inout std_logic
       );
 end yarr;
 
@@ -277,44 +262,6 @@ architecture rtl of yarr is
         wb_stall_i : in  std_logic_vector(g_WB_SLAVES_NB-1 downto 0)        -- Stall
         );
   end component wb_addr_decoder;
-
-  component dummy_stat_regs_wb_slave
-    port (
-      rst_n_i                 : in  std_logic;
-      wb_clk_i                : in  std_logic;
-      wb_addr_i               : in  std_logic_vector(1 downto 0);
-      wb_data_i               : in  std_logic_vector(31 downto 0);
-      wb_data_o               : out std_logic_vector(31 downto 0);
-      wb_cyc_i                : in  std_logic;
-      wb_sel_i                : in  std_logic_vector(3 downto 0);
-      wb_stb_i                : in  std_logic;
-      wb_we_i                 : in  std_logic;
-      wb_ack_o                : out std_logic;
-      dummy_stat_reg_1_i      : in  std_logic_vector(31 downto 0);
-      dummy_stat_reg_2_i      : in  std_logic_vector(31 downto 0);
-      dummy_stat_reg_3_i      : in  std_logic_vector(31 downto 0);
-      dummy_stat_reg_switch_i : in  std_logic_vector(31 downto 0)
-      );
-  end component;
-
-  component dummy_ctrl_regs_wb_slave
-    port (
-      rst_n_i         : in  std_logic;
-      wb_clk_i        : in  std_logic;
-      wb_addr_i       : in  std_logic_vector(1 downto 0);
-      wb_data_i       : in  std_logic_vector(31 downto 0);
-      wb_data_o       : out std_logic_vector(31 downto 0);
-      wb_cyc_i        : in  std_logic;
-      wb_sel_i        : in  std_logic_vector(3 downto 0);
-      wb_stb_i        : in  std_logic;
-      wb_we_i         : in  std_logic;
-      wb_ack_o        : out std_logic;
-      dummy_reg_1_o   : out std_logic_vector(31 downto 0);
-      dummy_reg_2_o   : out std_logic_vector(31 downto 0);
-      dummy_reg_3_o   : out std_logic_vector(31 downto 0);
-      dummy_reg_led_o : out std_logic_vector(31 downto 0)
-      );
-  end component;
   
 	component wb_tx_core
 	generic (
@@ -405,7 +352,25 @@ architecture rtl of yarr is
 		busy_o		: out std_logic
 	);
 	end component;
-  
+	
+	component i2c_master_wb_top
+		port (
+			  wb_clk_i : in  std_logic;
+			  wb_rst_i : in  std_logic;
+			  arst_i   : in  std_logic;
+			  wb_adr_i : in  std_logic_vector(2 downto 0);
+			  wb_dat_i : in  std_logic_vector(7 downto 0);
+			  wb_dat_o : out std_logic_vector(7 downto 0);
+			  wb_we_i  : in  std_logic;
+			  wb_stb_i : in  std_logic;
+			  wb_cyc_i : in  std_logic;
+			  wb_ack_o : out std_logic;
+			  wb_inta_o: out std_logic;
+			  scl      : inout std_logic;
+			  sda      : inout std_logic
+			  );
+	end component;
+	
 	component ddr3_ctrl
 	  generic(
 		 --! Bank and port size selection
@@ -632,8 +597,8 @@ architecture rtl of yarr is
   ------------------------------------------------------------------------------
   -- Constants declaration
   ------------------------------------------------------------------------------
-  constant c_BAR0_APERTURE    : integer := 16;  -- nb of bits for 32-bit word address
-  constant c_CSR_WB_SLAVES_NB : integer := 4;
+  constant c_BAR0_APERTURE    : integer := 18;  -- nb of bits for 32-bit word address
+  constant c_CSR_WB_SLAVES_NB : integer := 16; -- upper 4 bits used for addressing slave
   
   constant c_TX_CHANNELS : integer := g_TX_CHANNELS;
   constant c_RX_CHANNELS : integer := g_RX_CHANNELS;
@@ -693,14 +658,14 @@ architecture rtl of yarr is
 
   -- CSR wishbone bus (slaves)
   signal wb_adr   : std_logic_vector(31 downto 0);
-  signal wb_dat_i : std_logic_vector((32*c_CSR_WB_SLAVES_NB)-1 downto 0);
+  signal wb_dat_i : std_logic_vector((32*c_CSR_WB_SLAVES_NB)-1 downto 0) := (others => '0');
   signal wb_dat_o : std_logic_vector(31 downto 0);
   signal wb_sel   : std_logic_vector(3 downto 0);
-  signal wb_cyc   : std_logic_vector(c_CSR_WB_SLAVES_NB-1 downto 0);
+  signal wb_cyc   : std_logic_vector(c_CSR_WB_SLAVES_NB-1 downto 0) := (others => '0');
   signal wb_stb   : std_logic;
   signal wb_we    : std_logic;
-  signal wb_ack   : std_logic_vector(c_CSR_WB_SLAVES_NB-1 downto 0);
-  signal wb_stall : std_logic_vector(c_CSR_WB_SLAVES_NB-1 downto 0);
+  signal wb_ack   : std_logic_vector(c_CSR_WB_SLAVES_NB-1 downto 0) := (others => '0');
+  signal wb_stall : std_logic_vector(c_CSR_WB_SLAVES_NB-1 downto 0) := (others => '0');
 
   -- DMA wishbone bus
   signal dma_adr   : std_logic_vector(31 downto 0);
@@ -739,6 +704,10 @@ architecture rtl of yarr is
   signal dummy_ctrl_reg_2   : std_logic_vector(31 downto 0);
   signal dummy_ctrl_reg_3   : std_logic_vector(31 downto 0);
   signal dummy_ctrl_reg_led : std_logic_vector(31 downto 0);
+  
+  -- I2C
+  signal scl_t : std_logic;
+  signal sda_t : std_logic;
 
   -- FOR TESTS
   signal debug       : std_logic_vector(31 downto 0);
@@ -1097,6 +1066,26 @@ begin
 		irq_o => open,
 		busy_o => rx_busy
 	);
+	
+	wb_dat_i(159 downto 136) <= (others => '0');
+	
+	cmp_i2c_master : i2c_master_wb_top
+	port map (
+		wb_clk_i => sys_clk,
+		wb_rst_i => not rst_n,
+		arst_i => rst_n,
+		wb_adr_i => wb_adr(2 downto 0),
+		wb_dat_i => wb_dat_o(7 downto 0),
+		wb_dat_o => wb_dat_i(135 downto 128),
+		wb_we_i => wb_we,
+		wb_stb_i => wb_stb,
+		wb_cyc_i => wb_cyc(4),
+		wb_ack_o => wb_ack(4),
+		wb_inta_o => open,
+		scl => scl,
+		sda => sda
+	);
+	
 
   --wb_stall(1) <= '0' when wb_cyc(1) = '0' else not(wb_ack(1));
 --  wb_stall(2) <= '0' when wb_cyc(2) = '0' else not(wb_ack(2));
@@ -1110,26 +1099,26 @@ begin
   led_green_o <= dummy_ctrl_reg_led(1);
 
 --   TRIG0(31 downto 0) <= (others => '0');
---   TRIG1(31 downto 0) <= (others => '0');
---   TRIG2(31 downto 0) <= (others => '0');
+--	TRIG1(31 downto 0) <= (others => '0');
+--	TRIG2(31 downto 0) <= (others => '0');
 --   TRIG0(12 downto 0) <= (others => '0');
    --TRIG1(31 downto 0) <= rx_dma_dat_o;
    --TRIG1(31 downto 0) <= dma_dat_i;
-   TRIG1(31 downto 0) <= gn4124_core_status;
-   TRIG2(31 downto 0) <= ddr_status;
-   TRIG0(13) <= rx_dma_cyc;
-   TRIG0(14) <= rx_dma_stb;
-   TRIG0(15) <= rx_dma_we;
-   TRIG0(16) <= rx_dma_ack;
-   TRIG0(17) <= rx_dma_stall;   
-   TRIG0(18) <= dma_cyc;
-   TRIG0(19) <= dma_stb;
-   TRIG0(20) <= dma_we;
-   TRIG0(21) <= dma_ack;
-   TRIG0(22) <= dma_stall; 
-   TRIG0(23) <= irq_out;
-   TRIG0(24) <= rx_busy;
-   TRIG0(31 downto 25) <= (others => '0');
+--   TRIG1(31 downto 0) <= gn4124_core_status;
+--   TRIG2(31 downto 0) <= ddr_status;
+--   TRIG0(13) <= rx_dma_cyc;
+--   TRIG0(14) <= rx_dma_stb;
+--   TRIG0(15) <= rx_dma_we;
+--   TRIG0(16) <= rx_dma_ack;
+--   TRIG0(17) <= rx_dma_stall;   
+--   TRIG0(18) <= dma_cyc;
+--   TRIG0(19) <= dma_stb;
+--   TRIG0(20) <= dma_we;
+--   TRIG0(21) <= dma_ack;
+--   TRIG0(22) <= dma_stall; 
+--   TRIG0(23) <= irq_out;
+--   TRIG0(24) <= rx_busy;
+--   TRIG0(31 downto 25) <= (others => '0');
 --	TRIG0(0) <= rx_valid;
 --	TRIG0(1) <= fe_cmd_o(0);
 --	TRIG0(2) <= trig_pulse;
@@ -1137,6 +1126,13 @@ begin
 --	TRIG0(31 downto 4) <= (others => '0');
 --	TRIG1 <= rx_data;
 --	TRIG2 <= debug;
+		TRIG0(0) <= scl;
+		TRIG0(1) <= sda;
+		TRIG0(2) <= wb_stb;
+		TRIG0(3) <= wb_ack(4);
+		TRIG0(31 downto 4) <= (others => '0');
+		TRIG1 <= wb_adr;
+		TRIG2 <= wb_dat_o;
    
 	ila_i : ila
 	  port map (
