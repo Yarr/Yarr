@@ -806,7 +806,7 @@
         <x>10</x>
         <y>10</y>
         <width>191</width>
-        <height>301</height>
+        <height>271</height>
        </rect>
       </property>
       <property name="columnCount">
@@ -833,6 +833,19 @@
         <string notr="true">3</string>
        </property>
       </column>
+     </widget>
+     <widget class="QPushButton" name="detachPlot_button_">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>290</y>
+        <width>191</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Detach plot</string>
+      </property>
      </widget>
     </widget>
     <widget class="QWidget" name="tab_2">

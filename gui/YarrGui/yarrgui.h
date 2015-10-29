@@ -41,6 +41,8 @@
 
 #include <functional>
 
+#include "plotdialog.h"
+
 namespace Ui {
 class YarrGui;
 }
@@ -99,6 +101,8 @@ private slots:
 
     void on_scanPlots_tabWidget_tabBarClicked(int index);
 
+    void on_detachPlot_button__clicked();
+
 private:
     Ui::YarrGui *ui;
     
@@ -119,19 +123,9 @@ private:
     TxCore * tx;
     RxCore * rx;
 
-    std::vector< std::function<void()> > scanVec;
+    std::vector< QString > scanVec;
 
-    void doScan(ScanBase *s, QString qn);
-    void doNoiseScan();
-    void doDigitalScan();
-    void doAnalogScan();
-    void doThresholdScan();
-    void doToTScan();
-
-    void doGThrTune();
-    void doGPreaTune();
-    void doPThrTune();
-    void doPPreaTune();
+    void doScan(QString qn);
 
 };
 
