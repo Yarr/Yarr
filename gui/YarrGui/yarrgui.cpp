@@ -751,14 +751,12 @@ void YarrGui::on_doScansButton_clicked()
     }
 }
 
-void YarrGui::on_RemoveScans_Button_clicked()
-{
+void YarrGui::on_RemoveScans_Button_clicked() {
     ui->scanVec_lineEdit->setText("");
     scanVec.clear();
 }
 
-void YarrGui::on_removePlot_button_clicked()
-{
+void YarrGui::removePlot() {
     if(ui->plotTree->currentItem() == nullptr) {
         std::cout << "Please select plot to delete\n";
         return;
@@ -776,14 +774,26 @@ void YarrGui::on_removePlot_button_clicked()
             delete (ui->plotTree->topLevelItem(i));
         } else {
             for(int j = 0; j < ui->plotTree->topLevelItem(i)->childCount(); j++) {
-                for(int k = 0; k < ui->plotTree->topLevelItem(i)->child(j)->childCount(); k++) {
-                    ;
-                }
+                if(ui->plotTree->topLevelItem(i)->child(j)->childCount() == 0)
+                    delete (ui->plotTree->topLevelItem(i)->child(j));
             }
         }
     }
+    for(int i = 0; i < ui->plotTree->topLevelItemCount(); i++) {
+        if(ui->plotTree->topLevelItem(i)->childCount() == 0) {
+            delete (ui->plotTree->topLevelItem(i));
+        }
+    }
 
-    
+    return;
+}
+
+void YarrGui::on_removePlot_button_clicked() {
+    removePlot();
+    if(ui->plotTree->topLevelItemCount() > 0) {
+        ui->plotTree->setCurrentItem(ui->plotTree->topLevelItem(0));
+    }
+    return;
 }
 
 void YarrGui::on_plotTree_itemClicked(QTreeWidgetItem *item, int column)
@@ -830,8 +840,7 @@ void YarrGui::on_scanPlots_tabWidget_tabBarClicked(int index)
     } //TODO This is extremely ugly. Switch to model based tree sometime!
 }
 
-void YarrGui::on_detachPlot_button__clicked()
-{
+void YarrGui::detachPlot() {
     if(ui->plotTree->currentItem() == nullptr) {
         std::cout << "Please select plot to detach...\n";
         return;
@@ -873,7 +882,88 @@ void YarrGui::on_detachPlot_button__clicked()
     myPDiag->setModal(false);
     myPDiag->show();
 
-    ui->scanPlots_tabWidget->removeTab(ui->scanPlots_tabWidget->currentIndex());
+    removePlot();
 
     return;
+}
+
+void YarrGui::on_detachPlot_button__clicked() {
+    detachPlot();
+    if(ui->plotTree->topLevelItemCount() > 0) {
+        ui->plotTree->setCurrentItem(ui->plotTree->topLevelItem(0));
+    }
+    return;
+}
+
+void YarrGui::on_detachAll_button_clicked() {
+
+    while(true) {
+        ui->plotTree->setCurrentItem(ui->plotTree->topLevelItem(0)->child(0)->child(0));
+        ui->scanPlots_tabWidget->setCurrentIndex(0);
+        detachPlot();
+        if(ui->plotTree->topLevelItemCount() == 0) {break;}
+    }
+
+    return;
+}
+
+void YarrGui::on_debugScanButton_clicked()
+{
+    QString qn = "Debug";
+    for(int j = 0; j < ui->feTree->topLevelItemCount(); j++) {
+        scanDone = false;
+        processorDone = false;
+
+        if(!(ui->feTree->topLevelItem(j)->child(4)->checkState(1))) { continue; } //Is the Scan checkbox checked?
+
+        QTreeWidgetItem * plotTreeItem = nullptr;
+        for(int k = 0; k < ui->plotTree->topLevelItemCount(); k++) { //Is the current FE already in the tree? ...
+           if(ui->plotTree->topLevelItem(k)->text(0) == ui->feTree->topLevelItem(j)->text(0)) {
+               plotTreeItem = ui->plotTree->topLevelItem(k);
+               break;
+           }
+        }
+
+        if(plotTreeItem == nullptr) { //... if not: create a branch fot it
+            plotTreeItem = new QTreeWidgetItem(ui->plotTree);
+            plotTreeItem->setText(0, ui->feTree->topLevelItem(j)->text(0));
+        }
+
+        QTreeWidgetItem * plotTreeItemDS = new QTreeWidgetItem();
+        plotTreeItemDS->setText(0, qn);
+        plotTreeItem->addChild(plotTreeItemDS);
+
+        QCustomPlot * tabScanPlot = new QCustomPlot();
+        QString newTabName = qn + ' ' + ui->feTree->topLevelItem(j)->text(0);
+        ui->scanPlots_tabWidget->addTab(tabScanPlot, newTabName);
+
+        QTreeWidgetItem * plotTreeItemP = new QTreeWidgetItem();
+        plotTreeItemP->setText(0, "Plot " + QString::number(plotTreeItemDS->childCount() + 1));
+        plotTreeItemDS->addChild(plotTreeItemP);
+
+        QCPColorMap * colorMap = new QCPColorMap(tabScanPlot->xAxis, tabScanPlot->yAxis);
+        tabScanPlot->addPlottable(colorMap);
+        colorMap->data()->setSize(80, 336);
+        colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
+        for(int xCoord = 0; xCoord<80; xCoord++) {
+            for(int yCoord = 0; yCoord<336; yCoord++) {
+                colorMap->data()->setCell(xCoord, yCoord, 25);
+            }
+        }
+
+        QCPColorScale * colorScale = new QCPColorScale(tabScanPlot);
+        tabScanPlot->plotLayout()->addElement(0, 1, colorScale);
+        colorScale->setType(QCPAxis::atRight);
+        colorMap->setColorScale(colorScale);
+        colorScale->axis()->setLabel(" ");
+        colorMap->setGradient(QCPColorGradient::gpPolar);
+        colorMap->rescaleDataRange();
+
+        tabScanPlot->rescaleAxes();
+        tabScanPlot->replot();
+
+    }
+
+    return;
+
 }

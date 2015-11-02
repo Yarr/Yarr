@@ -6,6 +6,7 @@
 #include <QFileDialog>
 #include <QColor>
 #include <QApplication>
+#include <QTest>
 
 #include <string>
 #include <vector>
@@ -103,6 +104,10 @@ private slots:
 
     void on_detachPlot_button__clicked();
 
+    void on_detachAll_button_clicked();
+
+    void on_debugScanButton_clicked();
+
 private:
     Ui::YarrGui *ui;
     
@@ -126,6 +131,8 @@ private:
     std::vector< QString > scanVec;
 
     void doScan(QString qn);
+    void detachPlot();
+    void removePlot();
 
 };
 

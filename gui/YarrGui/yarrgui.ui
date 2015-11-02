@@ -806,7 +806,7 @@
         <x>10</x>
         <y>10</y>
         <width>191</width>
-        <height>271</height>
+        <height>211</height>
        </rect>
       </property>
       <property name="columnCount">
@@ -838,13 +838,39 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>290</y>
+        <y>260</y>
         <width>191</width>
         <height>31</height>
        </rect>
       </property>
       <property name="text">
        <string>Detach plot</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="detachAll_button">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>290</y>
+        <width>191</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Detach all</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="debugScanButton">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>230</y>
+        <width>191</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>DEBUG</string>
       </property>
      </widget>
     </widget>
