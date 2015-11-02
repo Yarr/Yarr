@@ -673,10 +673,9 @@ void YarrGui::doScan(QString qn) {
                 for(int yCoord = 0; yCoord<336; yCoord++) {
                     double colVal = ((Histo2d *)showMe)->getBin(yCoord + 336*xCoord); //TODO make better
                     colorMap->data()->setCell(xCoord, yCoord, colVal);                //TODO catch other graphs
-                            colorMap->data()->setCell(xCoord, yCoord, 25);
                 }
             }
-            std::cout << std::endl;
+
             QCPColorScale * colorScale = new QCPColorScale(tabScanPlot);
             tabScanPlot->plotLayout()->addElement(0, 1, colorScale);
             colorScale->setType(QCPAxis::atRight);
