@@ -33,54 +33,8 @@ YarrGui::YarrGui(QWidget *parent) :
         specVec.push_back(new SpecController());
     }
 
-    // Init Benchmark Plot
-    ui->benchmark_plot->xAxis->setLabel("Package size [kB]");
-    ui->benchmark_plot->yAxis->setLabel("Speed [MB/s]");
-    ui->benchmark_plot->xAxis->setRange(0, 500);
-    ui->benchmark_plot->yAxis->setRange(0, 500);
-    ui->benchmark_plot->setInteraction(QCP::iRangeDrag, true);
-    ui->benchmark_plot->setInteraction(QCP::iRangeZoom, true);
-    ui->benchmark_plot->setInteraction(QCP::iSelectPlottables, true);
-    ui->benchmark_plot->setInteraction(QCP::iSelectAxes, true);
-    ui->benchmark_plot->legend->setVisible(true);
-    ui->benchmark_plot->legend->setFont(QFont("Helvetica", 9));
-    ui->benchmark_plot->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignRight|Qt::AlignBottom);
-
-//    ui->scanPlot->xAxis->setLabel("Column");
-//    ui->scanPlot->yAxis->setLabel("Row");
-//    ui->scanPlot->xAxis->setRange(0, 80);
-//    ui->scanPlot->yAxis->setRange(0, 336);
-//    ui->scanPlot->setInteraction(QCP::iRangeDrag, true);
-//    ui->scanPlot->setInteraction(QCP::iRangeZoom, true);
-//    ui->scanPlot->setInteraction(QCP::iSelectPlottables, true);
-//    ui->scanPlot->setInteraction(QCP::iSelectAxes, true);
-//    ui->scanPlot->legend->setVisible(false);
-//    ui->scanPlot->legend->setFont(QFont("Helvetica", 9));
-//    ui->scanPlot->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignRight|Qt::AlignBottom);
-
     ui->global_cfg_checkBox->setChecked(true); //DEBUG
     ui->configfileName_2->setText("util/global_config.gcfg"); //DEBUG
-
-    QPen pen;
-    QColor color;
-    for(int i=0; i<deviceList.size(); i++) {
-        writeGraphVec.push_back(ui->benchmark_plot->addGraph()); 
-        readGraphVec.push_back(ui->benchmark_plot->addGraph());
-        
-        QColor color1(sin(i*0.3)*100+100, sin(i*0.6+0.7)*100+100, sin(i*0.4+0.6)*100+100);
-        pen.setColor(color1);
-        writeGraphVec[i]->setPen(pen);
-        writeGraphVec[i]->setName("Spec #" + QString::number(i) + " DMA Write");
-        writeGraphVec[i]->setLineStyle(QCPGraph::lsLine);
-        writeGraphVec[i]->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, color1, 5));
-
-        QColor color2(sin(i*0.6+0.7)*100+100, sin(i*0.3)*100+100, sin(i*0.4+0.6)*100+100);
-        pen.setColor(color2);
-        readGraphVec[i]->setPen(pen);
-        readGraphVec[i]->setName("Spec #" + QString::number(i) + " DMA Read");
-        readGraphVec[i]->setLineStyle(QCPGraph::lsLine);;
-        readGraphVec[i]->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, color2, 5));
-    }
 
     // Init console
     qout = new QDebugStream(std::cout, ui->console, QColor("black"));
@@ -91,7 +45,7 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->main_tabWidget->setTabEnabled(1, false);
     ui->main_tabWidget->setTabEnabled(2, false);
     ui->main_tabWidget->setTabEnabled(3, false);
-    ui->main_tabWidget->setTabEnabled(4, false);
+    ui->addFuncButton->setEnabled(false);
 
     ui->feTree->setColumnWidth(0, 200);
     ui->feTree->setColumnWidth(1, 500);
@@ -159,7 +113,7 @@ void YarrGui::on_init_button_clicked()
             ui->main_tabWidget->setTabEnabled(1, true);
             ui->main_tabWidget->setTabEnabled(2, true);
             ui->main_tabWidget->setTabEnabled(3, true);
-            ui->main_tabWidget->setTabEnabled(4, true);
+            ui->addFuncButton->setEnabled(true);
             tx = new TxCore(specVec[index]);
             rx = new RxCore(specVec[index]);
             bk = new Bookkeeper(tx, rx);
@@ -218,74 +172,6 @@ void YarrGui::on_prog_button_clicked() {
         delete buffer;
         file.close();    
     }
-}
-
-void YarrGui::on_minSize_spinBox_valueChanged(int i) {
-    ui->maxSize_spinBox->setMinimum(i+1);
-}
-
-void YarrGui::on_maxSize_spinBox_valueChanged(int i) {
-    ui->minSize_spinBox->setMaximum(i-1);
-}
-
-void YarrGui::on_startWrite_button_clicked() {
-    unsigned min = ui->minSize_spinBox->value();
-    unsigned max = ui->maxSize_spinBox->value();
-    unsigned steps = ui->steps_spinBox->value();
-    unsigned repetitions = ui->repetitions_spinBox->value();
-
-    unsigned interval = (max-min)/steps;
-
-    for (unsigned int index=0; index<deviceList.size(); index++) {
-        writeGraphVec[index]->clearData();
-        
-        if (specVec[index]->isInitialized()) {
-            for (unsigned i=min; i<=max; i+=interval) {
-                double speed = BenchmarkTools::measureWriteSpeed(specVec[index], i*256, repetitions);
-                if (speed < 0) {
-                    QMessageBox errorBox;
-                    errorBox.critical(0, "Error", "DMA timed out!");
-                    return;
-                }
-                writeGraphVec[index]->addData(i, speed);
-                ui->benchmark_plot->rescaleAxes();
-                ui->benchmark_plot->replot();
-                double per = ((i-min)/(double)interval)/(double)steps;
-                ui->benchmark_progressBar->setValue(per*100);
-                QApplication::processEvents(); // Else we look like we are not responding
-            }
-        }
-    }       
-}
-
-void YarrGui::on_startRead_button_clicked() {
-    unsigned min = ui->minSize_spinBox->value();
-    unsigned max = ui->maxSize_spinBox->value();
-    unsigned steps = ui->steps_spinBox->value();
-    unsigned repetitions = ui->repetitions_spinBox->value();
-
-    unsigned interval = (max-min)/steps;
-
-    for (unsigned int index=0; index<deviceList.size(); index++) {
-        readGraphVec[index]->clearData();
-        
-        if (specVec[index]->isInitialized()) {
-            for (unsigned i=min; i<=max; i+=interval) {
-                double speed = BenchmarkTools::measureReadSpeed(specVec[index], i*256, repetitions);
-                if (speed < 0) {
-                    QMessageBox errorBox;
-                    errorBox.critical(0, "Error", "DMA timed out!");
-                    return;
-                }
-                readGraphVec[index]->addData(i, speed);
-                ui->benchmark_plot->rescaleAxes();
-                ui->benchmark_plot->replot();
-                double per = ((i-min)/(double)interval)/(double)steps;
-                ui->benchmark_progressBar->setValue(per*100);
-                QApplication::processEvents(); // Else we look like we are not responding
-            }
-        }
-    }       
 }
 
 void YarrGui::on_sbefile_button_2_clicked() {
@@ -987,6 +873,7 @@ void YarrGui::on_addFuncButton_clicked()
     if(ui->additionalFunctionality->currentText() == "Benchmark") {
         BenchmarkDialog * myDialog = new BenchmarkDialog(this);
         myDialog->setModal(false);
+        myDialog->setWindowTitle("Benchmark");
         myDialog->show();
     }
     return;
