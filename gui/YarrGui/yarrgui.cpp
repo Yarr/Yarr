@@ -69,6 +69,10 @@ YarrGui::~YarrGui()
     delete ui;
 }
 
+int YarrGui::getDeviceComboBoxCurrentIndex() {
+    return ui->device_comboBox->currentIndex();
+}
+
 int YarrGui::getDeviceListSize() {
     return deviceList.size();
 }
@@ -186,8 +190,7 @@ void YarrGui::on_sbefile_button_2_clicked() {
     ui->sbefile_name->setText(filename);
 }
 
-void YarrGui::on_SBEWriteButton_clicked()
-{
+void YarrGui::on_SBEWriteButton_clicked() {
     int index = ui->device_comboBox->currentIndex();
     uint8_t * buffer = new uint8_t[ARRAYLENGTH];
     std::string pathname;
@@ -209,8 +212,7 @@ void YarrGui::on_SBEWriteButton_clicked()
 
 }
 
-void YarrGui::on_SBEReadButton_clicked()
-{
+void YarrGui::on_SBEReadButton_clicked() {
     int index = ui->device_comboBox->currentIndex();
     uint8_t * buffer = new uint8_t[ARRAYLENGTH];
     std::string fnKeyword;
@@ -874,6 +876,12 @@ void YarrGui::on_addFuncButton_clicked()
         BenchmarkDialog * myDialog = new BenchmarkDialog(this);
         myDialog->setModal(false);
         myDialog->setWindowTitle("Benchmark");
+        myDialog->show();
+    }
+    if(ui->additionalFunctionality->currentText() == "EEPROM") {
+        EEPROMDialog * myDialog = new EEPROMDialog(this);
+        myDialog->setModal(false);
+        myDialog->setWindowTitle("SpecBoard EEPROM");
         myDialog->show();
     }
     return;

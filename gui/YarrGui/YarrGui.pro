@@ -24,17 +24,20 @@ SOURCES += main.cpp\
         yarrgui.cpp \
     qcustomplot.cpp \
     plotdialog.cpp \
-    benchmarkdialog.cpp
+    benchmarkdialog.cpp \
+    eepromdialog.cpp
 
 HEADERS  += yarrgui.h \
     qcustomplot.h \
     qdebugstream.h \
     plotdialog.h \
-    benchmarkdialog.h
+    benchmarkdialog.h \
+    eepromdialog.h
 
 FORMS    += yarrgui.ui \
     plotdialog.ui \
-    benchmarkdialog.ui
+    benchmarkdialog.ui \
+    eepromdialog.ui
 
 INCLUDEPATH += ../../src/libSpec/include
 INCLUDEPATH += ../../src/libUtil/include

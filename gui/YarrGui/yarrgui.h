@@ -42,8 +42,9 @@
 
 //#include <functional>
 
-#include "plotdialog.h"
 #include "benchmarkdialog.h"
+#include "eepromdialog.h"
+#include "plotdialog.h"
 
 namespace Ui {
 class YarrGui;
@@ -60,6 +61,7 @@ public:
     bool scanDone;
     bool processorDone;
 
+    int getDeviceComboBoxCurrentIndex();
     int getDeviceListSize();
     bool isSpecInitialized(unsigned int i);
     SpecController * specVecAt(unsigned int i);
