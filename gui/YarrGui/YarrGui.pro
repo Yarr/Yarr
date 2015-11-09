@@ -23,15 +23,18 @@ TEMPLATE = app
 SOURCES += main.cpp\
         yarrgui.cpp \
     qcustomplot.cpp \
-    plotdialog.cpp
+    plotdialog.cpp \
+    benchmarkdialog.cpp
 
 HEADERS  += yarrgui.h \
     qcustomplot.h \
     qdebugstream.h \
-    plotdialog.h
+    plotdialog.h \
+    benchmarkdialog.h
 
 FORMS    += yarrgui.ui \
-    plotdialog.ui
+    plotdialog.ui \
+    benchmarkdialog.ui
 
 INCLUDEPATH += ../../src/libSpec/include
 INCLUDEPATH += ../../src/libUtil/include

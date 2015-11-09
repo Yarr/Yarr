@@ -40,9 +40,10 @@
 
 #include <QtTest/QTest>
 
-#include <functional>
+//#include <functional>
 
 #include "plotdialog.h"
+#include "benchmarkdialog.h"
 
 namespace Ui {
 class YarrGui;
@@ -58,6 +59,10 @@ public:
 
     bool scanDone;
     bool processorDone;
+
+    int getDeviceListSize();
+    bool isSpecInitialized(unsigned int i);
+    SpecController * specVecAt(unsigned int i);
 
 private slots:
 
@@ -93,20 +98,18 @@ private slots:
     void on_PPreaTuneButton_clicked();
 
     void on_doScansButton_clicked();
-
     void on_RemoveScans_Button_clicked();
-
     void on_removePlot_button_clicked();
 
     void on_plotTree_itemClicked(QTreeWidgetItem *item, int column);
-
     void on_scanPlots_tabWidget_tabBarClicked(int index);
 
     void on_detachPlot_button__clicked();
-
     void on_detachAll_button_clicked();
 
     void on_debugScanButton_clicked();
+
+    void on_addFuncButton_clicked();
 
 private:
     Ui::YarrGui *ui;
@@ -137,3 +140,4 @@ private:
 };
 
 #endif // YARRGUI_H
+

@@ -59,7 +59,7 @@ YarrGui::YarrGui(QWidget *parent) :
 //    ui->scanPlot->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignRight|Qt::AlignBottom);
 
     ui->global_cfg_checkBox->setChecked(true); //DEBUG
-    ui->configfileName_2->setText("util/global_config.cfg"); //DEBUG
+    ui->configfileName_2->setText("util/global_config.gcfg"); //DEBUG
 
     QPen pen;
     QColor color;
@@ -73,7 +73,7 @@ YarrGui::YarrGui(QWidget *parent) :
         writeGraphVec[i]->setName("Spec #" + QString::number(i) + " DMA Write");
         writeGraphVec[i]->setLineStyle(QCPGraph::lsLine);
         writeGraphVec[i]->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, color1, 5));
- 
+
         QColor color2(sin(i*0.6+0.7)*100+100, sin(i*0.3)*100+100, sin(i*0.4+0.6)*100+100);
         pen.setColor(color2);
         readGraphVec[i]->setPen(pen);
@@ -98,6 +98,10 @@ YarrGui::YarrGui(QWidget *parent) :
     //ui->feTree->setColumnWidth(2, 2000);
 
     ui->scanVec_lineEdit->setReadOnly(true);
+
+    ui->additionalFunctionality->addItem("");
+    ui->additionalFunctionality->addItem("Benchmark");
+    ui->additionalFunctionality->addItem("EEPROM");
 }
 
 YarrGui::~YarrGui()
@@ -109,6 +113,18 @@ YarrGui::~YarrGui()
     }
 
     delete ui;
+}
+
+int YarrGui::getDeviceListSize() {
+    return deviceList.size();
+}
+
+bool YarrGui::isSpecInitialized(unsigned int i) {
+    return specVec.at(i)->isInitialized();
+}
+
+SpecController * YarrGui::specVecAt(unsigned int i) {
+    return specVec.at(i);
 }
 
 void YarrGui::on_device_comboBox_currentIndexChanged(int index)
@@ -272,8 +288,7 @@ void YarrGui::on_startRead_button_clicked() {
     }       
 }
 
-void YarrGui::on_sbefile_button_2_clicked()
-{
+void YarrGui::on_sbefile_button_2_clicked() {
     QString filename = QFileDialog::getOpenFileName(this, tr("Select EEPROM content file"), "./", tr("SpecBoard EEPROM content file(*.sbe)"));
     std::fstream file(filename.toStdString().c_str(), std::fstream::in);
     if (!file) {
@@ -965,5 +980,14 @@ void YarrGui::on_debugScanButton_clicked()
     }
 
     return;
+}
 
+void YarrGui::on_addFuncButton_clicked()
+{
+    if(ui->additionalFunctionality->currentText() == "Benchmark") {
+        BenchmarkDialog * myDialog = new BenchmarkDialog(this);
+        myDialog->setModal(false);
+        myDialog->show();
+    }
+    return;
 }
