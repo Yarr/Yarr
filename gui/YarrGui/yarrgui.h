@@ -40,8 +40,6 @@
 
 #include <QtTest/QTest>
 
-//#include <functional>
-
 #include "benchmarkdialog.h"
 #include "eepromdialog.h"
 #include "plotdialog.h"
@@ -73,10 +71,6 @@ private slots:
     void on_init_button_clicked();
     void on_progfile_button_clicked();
     void on_prog_button_clicked();
-
-    void on_sbefile_button_2_clicked();
-    void on_SBEWriteButton_clicked();
-    void on_SBEReadButton_clicked();
 
     void on_addFeButton_clicked();
     void on_feTree_itemClicked(QTreeWidgetItem * item, int column);
