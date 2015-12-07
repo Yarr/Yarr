@@ -67,7 +67,7 @@ YARR_OBJS = $(patsubst $(YARR)/%.cpp,$(BUILD)/%.o,$(YARR_FILES))
 FEI4_OBJS = $(patsubst $(FEI4)/%.cpp,$(BUILD)/%.o,$(FEI4_FILES))
 UTIL_OBJS = $(patsubst $(UTIL)/%.cpp,$(BUILD)/%.o,$(UTIL_FILES))
 
-ALL_OBJS = $(SRC_OBJS) $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(UTIL_OBJS)
+ALL_OBJS = $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(UTIL_OBJS)
 
 TARGETS = $(patsubst $(SRC)/%.cpp,$(BIN)/%,$(SRC_FILES))
 
