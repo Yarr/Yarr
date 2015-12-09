@@ -44,3 +44,4 @@ Content:
    firmware
    adapter
    fei4
+   gui
