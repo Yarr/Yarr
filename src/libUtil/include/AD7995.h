@@ -6,6 +6,8 @@
 // # Project: Yarr
 // # Description: AD7995 ADC
 // # Comment: I2C interface to ADCs
+// #          As used on the YARR Quad Fe-I4 board, 
+// #          assumed to measure temp. with NTC
 // ################################
 
 #include <iostream>
@@ -18,11 +20,13 @@ class AD7995 : public PeriphialI2C {
         AD7995(SpecController *arg_spec);
         ~AD7995();
         void setActiveChannels(bool ch1, bool ch2, bool ch3, bool ch4);
-        double read();
+        void read();
+        double getValue(unsigned arg_ch);
 
     private:
         uint32_t dev_addr;
         unsigned ch_cnt;
+        double ch_value[4];
 };
 
 #endif

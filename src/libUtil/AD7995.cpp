@@ -5,6 +5,8 @@ AD7995::AD7995(SpecController *arg_spec) : PeriphialI2C(arg_spec) {
     dev_addr = 0x28;
     this->init();
     ch_cnt = 0;
+    for (unsigned int i=0; i<4; i++)
+        ch_value[i] = 0;
     //setupRead(dev_addr);
 }
 
@@ -31,7 +33,6 @@ void AD7995::setActiveChannels(bool ch1, bool ch2, bool ch3, bool ch4) {
     
     setupWrite(dev_addr);
     writeData(val & 0xFF);
-    std::cout << "Writing: " << val << std::endl;
 }
 
 double convert(double adc) {
@@ -44,14 +45,15 @@ double convert(double adc) {
     return (1.0/((1.0/T25)+((1.0/B)*(log(R/R0)))))-273.15;
 }
 
-double AD7995::read() {
+void AD7995::read() {
    setupRead(dev_addr);
    uint32_t value = 0;
    unsigned ch = 99;
    unsigned adc = 0;
    uint32_t tmp = 0;
    double temp = 0;
-   
+  
+   // Read all active channels
    for (unsigned i=0; i<ch_cnt; i++) {
        value = 0;
        tmp = 0;
@@ -61,10 +63,17 @@ double AD7995::read() {
        value |= tmp & 0xFF;
        ch = (value >> 12) & 0x03;
        adc = value & 0x0FFF;
-       //std::cout << ch << " " << convert(adc) << " " << adc << std::endl;
+       ch_value[i] = convert(adc);
    }
    sendNack();
-   return convert(adc);
+}
+
+double AD7995::getValue(unsigned arg_ch) {
+    if (arg_ch >= 4) {
+        std::cerr << __PRETTY_FUNCTION__ << " : Channel not in range!" << std::endl;
+        return 0;
+    }
+    return ch_value[arg_ch];
 }
 
 
