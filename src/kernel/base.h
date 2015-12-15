@@ -75,8 +75,8 @@ static dev_t specdriver_devt;
 static atomic_t specdriver_deviceCount;
 
 /* Sysfs attributes */
-static DEVICE_ATTR(mmap_mode, (S_IRUGO | S_IWUGO), specdriver_show_mmap_mode, specdriver_store_mmap_mode);
-static DEVICE_ATTR(mmap_area, (S_IRUGO | S_IWUGO), specdriver_show_mmap_area, specdriver_store_mmap_area);
+static DEVICE_ATTR(mmap_mode, (S_IRUGO | S_IWUSR | S_IWGRP), specdriver_show_mmap_mode, specdriver_store_mmap_mode);
+static DEVICE_ATTR(mmap_area, (S_IRUGO | S_IWUSR | S_IWGRP), specdriver_show_mmap_area, specdriver_store_mmap_area);
 static DEVICE_ATTR(kmem_count, S_IRUGO, specdriver_show_kmem_count, NULL);
 static DEVICE_ATTR(kbuffers, S_IRUGO, specdriver_show_kbuffers, NULL);
 static DEVICE_ATTR(kmem_alloc, S_IWUGO, NULL, specdriver_store_kmem_alloc);
