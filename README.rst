@@ -4,8 +4,7 @@ Yarr: Yet Another Rapid Readout
 
 Documentation
 =====================
-Documentation covering installation and usage can be found here http://yarr.rtfd.org
-
+Documentation covering installation and usage can be found here http://yarr.rtfd.org (for devel branch http://yarr.readthedocs.org/en/devel/ )
 Mailing list
 =====================
 Subscribe to the CERN mailing list: `yarr-user <https://e-groups.cern.ch/e-groups/EgroupsSubscription.do?egroupName=yarr-users>`_ 

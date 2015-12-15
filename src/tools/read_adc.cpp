@@ -24,7 +24,8 @@ int main(int argc, char* argv[]) {
 
     long double timestamp = 0;
     while(1) {
-        double value = adc.read();
+        adc.read();
+        double value = adc.getValue(0);
         timestamp = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count()/1.0e6;
         std::cout << std::setprecision(15) << timestamp << " " << value << std::endl;
         ofile << std::setprecision(15) << timestamp << " " << value << std::endl;
