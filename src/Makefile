@@ -1,14 +1,19 @@
 ######
 ## Author: Timon Heim/Jan Kuechler
-## Last edit: 04.12.2014
+## Last edit: 09.12.2015
 
+UNAME_S := $(shell uname -s)
 
 MODE = DEBUG
 
 AR = ar
 
-# Compiler
+# Compilera
 CPP = g++
+ifeq ($(UNAME_S),Darwin)
+	CPP = clang++
+endif
+
 CPPFLAGS += -pthread -std=c++11 -Wall -Wunused-variable -IlibSpec/include \
 			-IlibYarr/include -IlibUtil/include -IlibFei4/include
 CPPFLAGS_DEBUG += -g -O1 -DDEBUG
@@ -16,6 +21,9 @@ CPPFLAGS_RELEASE += -O2 -DNDEBUG
 
 # Linker
 LD = g++
+ifeq ($(UNAME_S),Darwin)
+	LD = clang++
+endif
 LDFLAGS += -pthread -std=c++11
 LDFLAGS_DEBUG +=
 LDFLAGS_RELEASE += 
@@ -33,11 +41,13 @@ LLIB = lib
 GCC_MAJOR = $(shell $(CPP) -dumpversion | cut -d'.' -f1)
 GCC_MINOR = $(shell $(CPP) -dumpversion | cut -d'.' -f2)
 
-ifeq ($(shell echo ${GCC_MAJOR}\<4| bc), 1)
-$(error $(CPP) version is too old, need atleast 4.7!)
-endif
-ifeq ($(shell echo ${GCC_MINOR}\<7 | bc), 1)
-$(error $(CPP) version is too old, need atleast 4.7!)
+ifneq ($(UNAME_S), Darwin)
+	ifeq ($(shell echo ${GCC_MAJOR}\<4| bc), 1)
+		$(error $(CPP) version is too old, need atleast 4.7!)
+	endif
+	ifeq ($(shell echo ${GCC_MINOR}\<7 | bc), 1)
+		$(error $(CPP) version is too old, need atleast 4.7!)
+	endif
 endif
 
 # Set build mode specific variables
@@ -67,7 +77,7 @@ YARR_OBJS = $(patsubst $(YARR)/%.cpp,$(BUILD)/%.o,$(YARR_FILES))
 FEI4_OBJS = $(patsubst $(FEI4)/%.cpp,$(BUILD)/%.o,$(FEI4_FILES))
 UTIL_OBJS = $(patsubst $(UTIL)/%.cpp,$(BUILD)/%.o,$(UTIL_FILES))
 
-ALL_OBJS = $(SRC_OBJS) $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(UTIL_OBJS)
+ALL_OBJS = $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(UTIL_OBJS)
 
 TARGETS = $(patsubst $(SRC)/%.cpp,$(BIN)/%,$(SRC_FILES))
 
