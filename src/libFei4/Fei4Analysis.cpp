@@ -18,7 +18,9 @@ Fei4Analysis::Fei4Analysis(Bookkeeper *b, unsigned ch) {
 }
 
 Fei4Analysis::~Fei4Analysis() {
-
+    for (unsigned i=0; i<algorithms.size(); i++) {
+        delete algorithms[i];
+    }
 }
 
 void Fei4Analysis::init() {
@@ -472,7 +474,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         sigMap[outerIdent] = hh2;
                         //std::cout << " NEW ThresholdDist: " << outerIdent << std::endl;
                         //TODO ranges have to be more flexible
-                        Histo1d *hh1 = new Histo1d("ThresholdDist", 201, bookie->getTargetThreshold()-1005, bookie->getTargetThreshold()+1005, typeid(this));
+                        Histo1d *hh1 = new Histo1d("ThresholdDist", 301, bookie->getTargetThreshold()-1005, bookie->getTargetThreshold()+2005, typeid(this));
                         hh1->setXaxisTitle("Threshold [e]");
                         hh1->setYaxisTitle("Number of Pixels");
                         thrDist[outerIdent] = hh1;
@@ -780,9 +782,6 @@ void L1Analysis::processHistogram(HistogramBase *h) {
     // Got all data, finish up Analysis
     if (innerCnt[ident] == n_count) {
         output->pushData(l1Histos[ident]);
-        
-        //delete occMaps[ident];
-        //occMaps[ident] = NULL;
     }
 }
 

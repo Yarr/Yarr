@@ -24,10 +24,9 @@ class ClipBoard {
 
         ClipBoard(){}
         ~ClipBoard() {
-            T* tmp = this->popData();
             while(!dataQueue.empty()) {
+                T* tmp = this->popData();
                 delete tmp;
-                tmp = this->popData();
             }
 
         }
