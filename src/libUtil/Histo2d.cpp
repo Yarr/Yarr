@@ -207,15 +207,18 @@ void Histo2d::plot(std::string prefix, std::string dir) {
     // Put raw histo data in tmp file
     std::string tmp_name = std::string(getenv("USER")) + "/tmp_yarr_histo2d_" + prefix;
     this->toFile(tmp_name, "/tmp/", false);
-    std::string cmd = "gnuplot | epstopdf -f > " + dir + prefix + "_" + HistogramBase::name;
+    //std::string cmd = "gnuplot | epstopdf -f > " + dir + prefix + "_" + HistogramBase::name;
+    std::string cmd = "gnuplot > " + dir + prefix + "_" + HistogramBase::name;
     for (unsigned i=0; i<lStat.size(); i++)
         cmd += "_" + std::to_string(lStat.get(i));
-    cmd += ".pdf";
+    //cmd += ".pdf";
+    cmd += ".png";
 
     // Open gnuplot as file and pipe commands
     FILE *gnu = popen(cmd.c_str(), "w");
     
-    fprintf(gnu, "set terminal postscript enhanced color \"Helvetica\" 18 eps\n");
+    //fprintf(gnu, "set terminal postscript enhanced color \"Helvetica\" 18 eps\n");
+    fprintf(gnu, "set terminal png size 1280, 1024\n");
     fprintf(gnu, "set palette negative defined ( 0 '#D53E4F', 1 '#F46D43', 2 '#FDAE61', 3 '#FEE08B', 4 '#E6F598', 5 '#ABDDA4', 6 '#66C2A5', 7 '#3288BD')\n");
     //fprintf(gnu, "set pm3d map\n");
     fprintf(gnu, "unset key\n");
@@ -227,7 +230,8 @@ void Histo2d::plot(std::string prefix, std::string dir) {
     fprintf(gnu, "set yrange[%f:%f]\n", ylow, yhigh);
     //fprintf(gnu, "set cbrange[0:120]\n");
     //fprintf(gnu, "splot \"/tmp/tmp_%s.dat\" matrix u (($1)*((%f-%f)/%d)):(($2)*((%f-%f)/%d)):3\n", HistogramBase::name.c_str(), xhigh, xlow, xbins, yhigh, ylow, ybins);
-    fprintf(gnu, "plot \"%s\" matrix u (($1+1)*((%f-%f)/%d)):(($2+1)*((%f-%f)/%d)):3 with image\n", ("/tmp/" + tmp_name + "_" + name + ".dat").c_str(), xhigh, xlow, xbins, yhigh, ylow, ybins);
+    fprintf(gnu, "plot \"%s\" matrix u (($1)*((%f-%f)/%d.0)+%f):(($2)*((%f-%f)/%d.0)+%f):3 with image\n", ("/tmp/" + tmp_name + "_" + name + ".dat").c_str(), xhigh, xlow, xbins, xlow +(xhigh-xlow)/(xbins*2.0), yhigh, ylow, ybins, ylow+(yhigh-ylow)/(ybins*2.0));
+   // fprintf(gnu, "plot \"%s\" matrix u (($1)):(($2)):3 with image\n", ("/tmp/" + tmp_name + "_" + name + ".dat").c_str());
     pclose(gnu);
 }
 
