@@ -11,7 +11,7 @@ QT       += core gui testlib
 #    QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.7
 #}
 
-QMAKE_CXXFLAGS += -std=c++11
+QMAKE_CXXFLAGS += -std=c++11 -Wno-unused-parameter
 QMAKE_LFLAGS += -std=c++11
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
@@ -25,19 +25,26 @@ SOURCES += main.cpp\
     qcustomplot.cpp \
     plotdialog.cpp \
     benchmarkdialog.cpp \
-    eepromdialog.cpp
+    eepromdialog.cpp \
+    createscandialog.cpp \
+    scanstruct.cpp \
+    fei4reghelper.cpp
 
 HEADERS  += yarrgui.h \
     qcustomplot.h \
     qdebugstream.h \
     plotdialog.h \
     benchmarkdialog.h \
-    eepromdialog.h
+    eepromdialog.h \
+    createscandialog.h \
+    scanstruct.h \
+    fei4reghelper.h
 
 FORMS    += yarrgui.ui \
     plotdialog.ui \
     benchmarkdialog.ui \
-    eepromdialog.ui
+    eepromdialog.ui \
+    createscandialog.ui
 
 INCLUDEPATH += ../../src/libSpec/include
 INCLUDEPATH += ../../src/libUtil/include

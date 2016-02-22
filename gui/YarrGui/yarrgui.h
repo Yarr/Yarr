@@ -8,11 +8,12 @@
 #include <QApplication>
 #include <QTest>
 
+#include <array>
 #include <string>
 #include <vector>
 #include <cmath>
 
-#include "qdebugstream.h"
+//#include "qdebugstream.h"
 #include "SpecController.h"
 #include "Bookkeeper.h"
 #include "qcustomplot.h"
@@ -41,8 +42,10 @@
 #include <QtTest/QTest>
 
 #include "benchmarkdialog.h"
+#include "createscandialog.h"
 #include "eepromdialog.h"
 #include "plotdialog.h"
+#include "scanstruct.h"
 
 namespace Ui {
 class YarrGui;
@@ -63,6 +66,8 @@ public:
     int getDeviceListSize();
     bool isSpecInitialized(unsigned int i);
     SpecController * specVecAt(unsigned int i);
+
+    void setCustomScan(CustomScan & other);
 
 private slots:
 
@@ -101,14 +106,16 @@ private slots:
 
     void on_addFuncButton_clicked();
 
+    void on_runCustomScanButton_clicked();
+
 private:
-    Ui::YarrGui *ui;
+    Ui::YarrGui * ui;
     
     QDir devicePath;
     QStringList deviceList;
 
-    QDebugStream *qout;
-    QDebugStream *qerr;
+//    QDebugStream *qout;
+//    QDebugStream *qerr;
 
     void init();
 
@@ -118,7 +125,8 @@ private:
     TxCore * tx;
     RxCore * rx;
 
-    std::vector< QString > scanVec;
+    std::vector<QString> scanVec;
+    CustomScan cs;
 
     void doScan(QString qn);
     void detachPlot();
@@ -127,4 +135,5 @@ private:
 };
 
 #endif // YARRGUI_H
+
 

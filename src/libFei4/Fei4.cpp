@@ -179,3 +179,18 @@ void Fei4::setChannel(unsigned arg_txChannel, unsigned arg_rxChannel) {
 	rxChannel = arg_rxChannel;
 }
 
+void Fei4::wrGR16(unsigned int mOffset, unsigned int bOffset, unsigned int mask, bool msbRight, uint16_t cfgBits) {
+    //First, bring local representation of GR to new state.
+    //This is equivalent to what the template function "setValue" does
+    //Fetches a (value of a) 16 bit bar, sets the bits that correspond to the current GR to 0,
+    //reverses the bit-order of the new value for the GR if necessary, cuts digits that are incompatible
+    //with the size of the current GR, shifts it to the right position within the 16 bit bar,
+    //then ORs both values
+    unsigned maskBits = (1 << mask) - 1;
+    cfg[mOffset]=(cfg[mOffset]&(~(maskBits<<bOffset))) |
+                 (((msbRight?BitOps::reverse_bits(cfgBits, mask):cfgBits)&maskBits)<<bOffset);
+    //Now actually write the new value to the FE-I4 Global Register
+    wrRegister(chipId, mOffset, cfg[mOffset]);
+
+    return;
+}

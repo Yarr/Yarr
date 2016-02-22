@@ -555,13 +555,13 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>350</y>
+        <y>320</y>
         <width>191</width>
         <height>31</height>
        </rect>
       </property>
       <property name="text">
-       <string>Run Scans</string>
+       <string>Run scans</string>
       </property>
      </widget>
      <widget class="QTabWidget" name="scanPlots_tabWidget">
@@ -581,7 +581,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>320</y>
+        <y>260</y>
         <width>191</width>
         <height>31</height>
        </rect>
@@ -596,7 +596,7 @@
         <x>10</x>
         <y>10</y>
         <width>191</width>
-        <height>211</height>
+        <height>151</height>
        </rect>
       </property>
       <property name="columnCount">
@@ -628,7 +628,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>260</y>
+        <y>200</y>
         <width>191</width>
         <height>31</height>
        </rect>
@@ -641,7 +641,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>290</y>
+        <y>230</y>
         <width>191</width>
         <height>31</height>
        </rect>
@@ -654,13 +654,39 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>230</y>
+        <y>170</y>
         <width>191</width>
         <height>31</height>
        </rect>
       </property>
       <property name="text">
        <string>DEBUG</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="removeAllButton">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>290</y>
+        <width>191</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Remove all</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="runCustomScanButton">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>350</y>
+        <width>191</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Run custom scan</string>
       </property>
      </widget>
     </widget>

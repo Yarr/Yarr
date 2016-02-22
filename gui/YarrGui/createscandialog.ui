@@ -1,0 +1,1070 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CreateScanDialog</class>
+ <widget class="QDialog" name="CreateScanDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1220</width>
+    <height>1460</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout">
+   <item>
+    <widget class="QScrollArea" name="scrollArea">
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="scrollAreaWidgetContents">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>1200</width>
+        <height>1440</height>
+       </rect>
+      </property>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="0" column="0">
+        <widget class="QFrame" name="owningFrame">
+         <widget class="QPushButton" name="saveButton">
+          <property name="geometry">
+           <rect>
+            <x>820</x>
+            <y>1370</y>
+            <width>151</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Save</string>
+          </property>
+         </widget>
+         <widget class="QCheckBox" name="checkPixThr">
+          <property name="geometry">
+           <rect>
+            <x>530</x>
+            <y>1390</y>
+            <width>161</width>
+            <height>21</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>OccPixelThresholdTune</string>
+          </property>
+         </widget>
+         <widget class="QCheckBox" name="checkToT2Map">
+          <property name="geometry">
+           <rect>
+            <x>240</x>
+            <y>1360</y>
+            <width>81</width>
+            <height>21</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>ToT2 Map</string>
+          </property>
+         </widget>
+         <widget class="QCheckBox" name="checkToTMap">
+          <property name="geometry">
+           <rect>
+            <x>150</x>
+            <y>1360</y>
+            <width>81</width>
+            <height>21</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>ToT Map</string>
+          </property>
+         </widget>
+         <widget class="QCheckBox" name="checkScuFit">
+          <property name="geometry">
+           <rect>
+            <x>410</x>
+            <y>1390</y>
+            <width>101</width>
+            <height>21</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Scurve Fitter</string>
+          </property>
+         </widget>
+         <widget class="QCheckBox" name="checkOccMap">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>1360</y>
+            <width>121</width>
+            <height>21</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Occupancy Map</string>
+          </property>
+         </widget>
+         <widget class="QCheckBox" name="checkToTAna">
+          <property name="geometry">
+           <rect>
+            <x>300</x>
+            <y>1390</y>
+            <width>101</width>
+            <height>21</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>ToT Analysis</string>
+          </property>
+         </widget>
+         <widget class="QCheckBox" name="checkNoiseAna">
+          <property name="geometry">
+           <rect>
+            <x>170</x>
+            <y>1390</y>
+            <width>121</width>
+            <height>21</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Noise Analysis</string>
+          </property>
+         </widget>
+         <widget class="QCheckBox" name="checkOccAna">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>1390</y>
+            <width>161</width>
+            <height>21</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Occupancy Analysis</string>
+          </property>
+         </widget>
+         <widget class="QTableWidget" name="postscanTable">
+          <property name="geometry">
+           <rect>
+            <x>490</x>
+            <y>1020</y>
+            <width>501</width>
+            <height>311</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="fei4PostClearRegisterButton">
+          <property name="geometry">
+           <rect>
+            <x>330</x>
+            <y>1060</y>
+            <width>91</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Clear</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="fei4PostRegValLabel">
+          <property name="geometry">
+           <rect>
+            <x>190</x>
+            <y>1020</y>
+            <width>91</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Register value</string>
+          </property>
+         </widget>
+         <widget class="QSpinBox" name="fei4PostRegValBox">
+          <property name="geometry">
+           <rect>
+            <x>190</x>
+            <y>1040</y>
+            <width>131</width>
+            <height>24</height>
+           </rect>
+          </property>
+          <property name="maximum">
+           <number>65535</number>
+          </property>
+         </widget>
+         <widget class="QComboBox" name="fei4PostRegisterBox">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>1040</y>
+            <width>171</width>
+            <height>23</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="fei4PostSetRegisterButton">
+          <property name="geometry">
+           <rect>
+            <x>330</x>
+            <y>1022</y>
+            <width>91</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Set</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="fei4PostRegisterLabel">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>1020</y>
+            <width>81</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Fei4 register</string>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="fei4LoopClearButton">
+          <property name="geometry">
+           <rect>
+            <x>380</x>
+            <y>970</y>
+            <width>91</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Clear</string>
+          </property>
+         </widget>
+         <widget class="QPlainTextEdit" name="loopStructureText">
+          <property name="geometry">
+           <rect>
+            <x>490</x>
+            <y>360</y>
+            <width>681</width>
+            <height>601</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="dataLoopButton">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>620</y>
+            <width>151</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Data Loop</string>
+          </property>
+         </widget>
+         <widget class="QSpinBox" name="globalMaxBox">
+          <property name="geometry">
+           <rect>
+            <x>220</x>
+            <y>830</y>
+            <width>48</width>
+            <height>24</height>
+           </rect>
+          </property>
+          <property name="maximum">
+           <number>26880</number>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="PFbLoopButton">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>770</y>
+            <width>151</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Pixel Feedback Loop</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="dataVerboseLabel">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>610</y>
+            <width>61</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Verbose</string>
+          </property>
+         </widget>
+         <widget class="QComboBox" name="parameterVerboseBox">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>730</y>
+            <width>71</width>
+            <height>23</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QLabel" name="parameterMaxLabel">
+          <property name="geometry">
+           <rect>
+            <x>220</x>
+            <y>660</y>
+            <width>31</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Max</string>
+          </property>
+         </widget>
+         <widget class="QSpinBox" name="parameterStepBox">
+          <property name="geometry">
+           <rect>
+            <x>280</x>
+            <y>680</y>
+            <width>48</width>
+            <height>24</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QLabel" name="globalStepLabel">
+          <property name="geometry">
+           <rect>
+            <x>280</x>
+            <y>810</y>
+            <width>31</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Step</string>
+          </property>
+         </widget>
+         <widget class="QSpinBox" name="parameterMaxBox">
+          <property name="geometry">
+           <rect>
+            <x>220</x>
+            <y>680</y>
+            <width>48</width>
+            <height>24</height>
+           </rect>
+          </property>
+          <property name="maximum">
+           <number>26880</number>
+          </property>
+         </widget>
+         <widget class="QLabel" name="parameterMinLabel">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>660</y>
+            <width>21</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Min</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="parameterStepLabel">
+          <property name="geometry">
+           <rect>
+            <x>280</x>
+            <y>660</y>
+            <width>31</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Step</string>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="GFbLoopButton">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>820</y>
+            <width>151</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Global Feedback Loop</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="parameterRangeRegisterLabel">
+          <property name="geometry">
+           <rect>
+            <x>240</x>
+            <y>710</y>
+            <width>121</width>
+            <height>20</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Parameter register</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="pixelFeedbackLabel">
+          <property name="geometry">
+           <rect>
+            <x>240</x>
+            <y>760</y>
+            <width>101</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Feedback type</string>
+          </property>
+         </widget>
+         <widget class="QComboBox" name="globalVerboseBox">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>880</y>
+            <width>71</width>
+            <height>23</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="gatherButton">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>920</y>
+            <width>151</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Data Gatherer</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="globalMinLabel">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>810</y>
+            <width>21</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Min</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="gatherVerboseLabel">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>910</y>
+            <width>61</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Verbose</string>
+          </property>
+         </widget>
+         <widget class="QComboBox" name="parameterRangeRegisterBox">
+          <property name="geometry">
+           <rect>
+            <x>240</x>
+            <y>730</y>
+            <width>151</width>
+            <height>23</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QComboBox" name="pixelFeedbackBox">
+          <property name="geometry">
+           <rect>
+            <x>240</x>
+            <y>780</y>
+            <width>79</width>
+            <height>21</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QLabel" name="pixelVerboseLabel">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>760</y>
+            <width>61</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Verbose</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="globalVerboseLabel">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>860</y>
+            <width>61</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Verbose</string>
+          </property>
+         </widget>
+         <widget class="QComboBox" name="pixelVerboseBox">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>780</y>
+            <width>71</width>
+            <height>23</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QComboBox" name="dataVerboseBox">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>630</y>
+            <width>71</width>
+            <height>23</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QLabel" name="globalMaxLabel">
+          <property name="geometry">
+           <rect>
+            <x>220</x>
+            <y>810</y>
+            <width>31</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Max</string>
+          </property>
+         </widget>
+         <widget class="QComboBox" name="gatherVerboseBox">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>930</y>
+            <width>71</width>
+            <height>23</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QComboBox" name="globalRegisterBox">
+          <property name="geometry">
+           <rect>
+            <x>240</x>
+            <y>880</y>
+            <width>151</width>
+            <height>23</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="parameterLoopButton">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>670</y>
+            <width>151</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Parameter Loop</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="globalRegisterLabel">
+          <property name="geometry">
+           <rect>
+            <x>240</x>
+            <y>860</y>
+            <width>121</width>
+            <height>20</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Parameter register</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="parameterVerboseLabel">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>710</y>
+            <width>61</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Verbose</string>
+          </property>
+         </widget>
+         <widget class="QSpinBox" name="globalStepBox">
+          <property name="geometry">
+           <rect>
+            <x>280</x>
+            <y>830</y>
+            <width>48</width>
+            <height>24</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QSpinBox" name="parameterMinBox">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>680</y>
+            <width>48</width>
+            <height>24</height>
+           </rect>
+          </property>
+          <property name="maximum">
+           <number>26880</number>
+          </property>
+         </widget>
+         <widget class="QSpinBox" name="globalMinBox">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>830</y>
+            <width>48</width>
+            <height>24</height>
+           </rect>
+          </property>
+          <property name="maximum">
+           <number>26880</number>
+          </property>
+         </widget>
+         <widget class="QLabel" name="dcModeLabel">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>360</y>
+            <width>61</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>DC Mode</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="triggerVerboseLabel">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>510</y>
+            <width>61</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Verbose</string>
+          </property>
+         </widget>
+         <widget class="QComboBox" name="dcVerboseBox">
+          <property name="geometry">
+           <rect>
+            <x>240</x>
+            <y>380</y>
+            <width>71</width>
+            <height>23</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="maskLoopButton">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>420</y>
+            <width>151</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Mask Loop</string>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="dcLoopButton">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>370</y>
+            <width>151</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>DC Loop</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="triggerCountLabel">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>560</y>
+            <width>41</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Count</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="triggerTimeLabel">
+          <property name="geometry">
+           <rect>
+            <x>300</x>
+            <y>560</y>
+            <width>31</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Time</string>
+          </property>
+         </widget>
+         <widget class="QComboBox" name="maskVerboseBox">
+          <property name="geometry">
+           <rect>
+            <x>240</x>
+            <y>430</y>
+            <width>71</width>
+            <height>23</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QLabel" name="triggerFrequencyLabel">
+          <property name="geometry">
+           <rect>
+            <x>300</x>
+            <y>510</y>
+            <width>71</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Frequency</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="maskLcapLabel">
+          <property name="geometry">
+           <rect>
+            <x>240</x>
+            <y>460</y>
+            <width>41</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>L Cap</string>
+          </property>
+         </widget>
+         <widget class="QComboBox" name="maskLcapBox">
+          <property name="geometry">
+           <rect>
+            <x>240</x>
+            <y>480</y>
+            <width>71</width>
+            <height>23</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QSpinBox" name="triggerCountBox">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>580</y>
+            <width>48</width>
+            <height>24</height>
+           </rect>
+          </property>
+          <property name="maximum">
+           <number>10000</number>
+          </property>
+          <property name="singleStep">
+           <number>10</number>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="triggerLoopButton">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>520</y>
+            <width>151</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Trigger Loop</string>
+          </property>
+         </widget>
+         <widget class="QComboBox" name="maskScapBox">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>480</y>
+            <width>71</width>
+            <height>23</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QLabel" name="maskScapLabel">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>460</y>
+            <width>41</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>S Cap</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="dcVerboseLabel">
+          <property name="geometry">
+           <rect>
+            <x>240</x>
+            <y>360</y>
+            <width>61</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Verbose</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="maskVerboseLabel">
+          <property name="geometry">
+           <rect>
+            <x>240</x>
+            <y>410</y>
+            <width>61</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Verbose</string>
+          </property>
+         </widget>
+         <widget class="QSlider" name="horizontalSlider">
+          <property name="geometry">
+           <rect>
+            <x>220</x>
+            <y>580</y>
+            <width>71</width>
+            <height>21</height>
+           </rect>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+         <widget class="QSpinBox" name="triggerDelayBox">
+          <property name="geometry">
+           <rect>
+            <x>240</x>
+            <y>530</y>
+            <width>48</width>
+            <height>24</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QComboBox" name="maskStageBox">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>430</y>
+            <width>71</width>
+            <height>23</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QDoubleSpinBox" name="triggerTimeBox">
+          <property name="geometry">
+           <rect>
+            <x>300</x>
+            <y>580</y>
+            <width>67</width>
+            <height>24</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QComboBox" name="triggerVerboseBox">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>530</y>
+            <width>71</width>
+            <height>23</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QLabel" name="maskStageLabel">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>410</y>
+            <width>71</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Mask stage</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="triggerDelayLabel">
+          <property name="geometry">
+           <rect>
+            <x>240</x>
+            <y>510</y>
+            <width>41</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Delay</string>
+          </property>
+         </widget>
+         <widget class="QDoubleSpinBox" name="triggerFrequencyBox">
+          <property name="geometry">
+           <rect>
+            <x>300</x>
+            <y>530</y>
+            <width>67</width>
+            <height>24</height>
+           </rect>
+          </property>
+          <property name="maximum">
+           <double>100000.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>100.000000000000000</double>
+          </property>
+         </widget>
+         <widget class="QComboBox" name="dcModeBox">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>380</y>
+            <width>71</width>
+            <height>23</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QTableWidget" name="prescanTable">
+          <property name="geometry">
+           <rect>
+            <x>490</x>
+            <y>0</y>
+            <width>501</width>
+            <height>311</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="fei4PreClearRegisterButton">
+          <property name="geometry">
+           <rect>
+            <x>330</x>
+            <y>40</y>
+            <width>91</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Clear</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="fei4PreRegisterLabel">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>81</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Fei4 register</string>
+          </property>
+         </widget>
+         <widget class="QComboBox" name="fei4PreRegisterBox">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>20</y>
+            <width>171</width>
+            <height>23</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QLabel" name="fei4PreRegValLabel">
+          <property name="geometry">
+           <rect>
+            <x>190</x>
+            <y>0</y>
+            <width>91</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Register value</string>
+          </property>
+         </widget>
+         <widget class="QSpinBox" name="fei4PreRegValBox">
+          <property name="geometry">
+           <rect>
+            <x>190</x>
+            <y>20</y>
+            <width>131</width>
+            <height>24</height>
+           </rect>
+          </property>
+          <property name="maximum">
+           <number>65535</number>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="fei4PreSetRegisterButton">
+          <property name="geometry">
+           <rect>
+            <x>330</x>
+            <y>2</y>
+            <width>91</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Set</string>
+          </property>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
