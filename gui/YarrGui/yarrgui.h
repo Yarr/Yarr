@@ -94,15 +94,16 @@ private slots:
 
     void on_doScansButton_clicked();
     void on_RemoveScans_Button_clicked();
-    void on_removePlot_button_clicked();
 
     void on_plotTree_itemClicked(QTreeWidgetItem *item, int column);
     void on_scanPlots_tabWidget_tabBarClicked(int index);
 
     void on_detachPlot_button__clicked();
     void on_detachAll_button_clicked();
+    void on_removePlot_button_clicked();
+    void on_removeAllButton_clicked();
 
-    void on_debugScanButton_clicked();
+    //void on_debugScanButton_clicked();
 
     void on_addFuncButton_clicked();
 
@@ -135,5 +136,3 @@ private:
 };
 
 #endif // YARRGUI_H
-
-

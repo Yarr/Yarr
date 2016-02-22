@@ -114,19 +114,6 @@ void CreateScanDialog::on_fei4PreClearRegisterButton_clicked() {
     return;
 }
 
-void fixLoopText(QString & tmp) {
-    QChar cmp('\n');
-    QString ins = "       ";
-    if(tmp.size() > 0) {tmp.insert(0, ins);}
-    for(int i = 1; i < tmp.size(); i++) {
-        if(tmp.at(i - 1) == cmp) {
-            tmp.insert(i, ins);
-        }
-    }
-
-    return;
-}
-
 void CreateScanDialog::on_dcLoopButton_clicked() {
     int sLS = myScan.scanLoopsSize();
 
@@ -139,10 +126,12 @@ void CreateScanDialog::on_dcLoopButton_clicked() {
 
     QString ins = QString::number(sLS + 1) + ". DC Loop\n";
     QString tmp = ui->loopStructureText->toPlainText();
+    QString ind = "";
+    for(int i = 0; i < sLS; i++) {
+        ind.append("    ");
+    }
 
-    fixLoopText(tmp);
-
-    tmp = ins + tmp + ins;
+    tmp = tmp + ind + ins;
 
     ui->loopStructureText->setPlainText(tmp);
 
@@ -163,10 +152,12 @@ void CreateScanDialog::on_maskLoopButton_clicked() {
 
     QString ins = QString::number(sLS + 1) + ". Mask Loop\n";
     QString tmp = ui->loopStructureText->toPlainText();
+    QString ind = "";
+    for(int i = 0; i < sLS; i++) {
+        ind.append("    ");
+    }
 
-    fixLoopText(tmp);
-
-    tmp = ins + tmp + ins;
+    tmp = tmp + ind + ins;
 
     ui->loopStructureText->setPlainText(tmp);
 
@@ -194,10 +185,12 @@ void CreateScanDialog::on_triggerLoopButton_clicked() {
 
     QString ins = QString::number(sLS + 1) + ". Trigger Loop\n";
     QString tmp = ui->loopStructureText->toPlainText();
+    QString ind = "";
+    for(int i = 0; i < sLS; i++) {
+        ind.append("    ");
+    }
 
-    fixLoopText(tmp);
-
-    tmp = ins + tmp + ins;
+    tmp = tmp + ind + ins;
 
     ui->loopStructureText->setPlainText(tmp);
 
@@ -229,10 +222,12 @@ void CreateScanDialog::on_dataLoopButton_clicked() {
 
     QString ins = QString::number(sLS + 1) + ". Data Loop\n";
     QString tmp = ui->loopStructureText->toPlainText();
+    QString ind = "";
+    for (int i = 0; i < sLS; i++) {
+        ind.append("    ");
+    }
 
-    fixLoopText(tmp);
-
-    tmp = ins + tmp + ins;
+    tmp = tmp + ind + ins;
 
     ui->loopStructureText->setPlainText(tmp);
 
@@ -256,14 +251,16 @@ void CreateScanDialog::on_parameterLoopButton_clicked() {
     f->mask = h.mask;
     f->msbRight = h.msbRight;            //find more elegant solution some time
 
-//DEBUG    myScan.addScanLoop(f);
+    myScan.addScanLoop(f);
 
     QString ins = QString::number(sLS + 1) + ". Parameter Loop\n";
     QString tmp = ui->loopStructureText->toPlainText();
+    QString ind = "";
+    for(int i = 0; i < sLS; i++) {
+        ind.append("    ");
+    }
 
-    fixLoopText(tmp);
-
-    tmp = ins + tmp + ins;
+    tmp = tmp + ind + ins;
 
     ui->loopStructureText->setPlainText(tmp);
 
@@ -278,14 +275,16 @@ void CreateScanDialog::on_PFbLoopButton_clicked() {
 
     f->setVerbose(ui->pixelVerboseBox->itemData(ui->pixelVerboseBox->currentIndex()).value<bool>());
 
-//DEBUG    myScan.addScanLoop(f);
+    myScan.addScanLoop(f);
 
     QString ins = QString::number(sLS + 1) + ". Pixel Feedback\n";
     QString tmp = ui->loopStructureText->toPlainText();
+    QString ind = "";
+    for (int i = 0; i < sLS; i++) {
+        ind.append("    ");
+    }
 
-    fixLoopText(tmp);
-
-    tmp = ins + tmp + ins;
+    tmp = tmp + ind + ins;
 
     ui->loopStructureText->setPlainText(tmp);
 
@@ -305,14 +304,16 @@ void CreateScanDialog::on_GFbLoopButton_clicked() {
     f->setStep(ui->globalStepBox->value());
     f->setVerbose(ui->dataVerboseBox->itemData(ui->dataVerboseBox->currentIndex()).value<bool>());
 
-//DEBUG    myScan.addScanLoop(f);
+    myScan.addScanLoop(f);
 
     QString ins = QString::number(sLS + 1) + ". Global Feedback\n";
     QString tmp = ui->loopStructureText->toPlainText();
+    QString ind = "";
+    for (int i = 0; i < sLS; i++) {
+        ind.append("    ");
+    }
 
-    fixLoopText(tmp);
-
-    tmp = ins + tmp + ins;
+    tmp = tmp + ind + ins;
 
     ui->loopStructureText->setPlainText(tmp);
 
@@ -326,14 +327,16 @@ void CreateScanDialog::on_gatherButton_clicked() {
 
     f->setVerbose(ui->gatherVerboseBox->itemData(ui->gatherVerboseBox->currentIndex()).value<bool>());
 
-//DEBUG    myScan.addScanLoop(f);
+    myScan.addScanLoop(f);
 
     QString ins = QString::number(sLS + 1) + ". Data Gather\n";
     QString tmp = ui->loopStructureText->toPlainText();
+    QString ind = "";
+    for (int i = 0; i < sLS; i++) {
+        ind.append("    ");
+    }
 
-    fixLoopText(tmp);
-
-    tmp = ins + tmp + ins;
+    tmp = tmp + ind + ins;
 
     ui->loopStructureText->setPlainText(tmp);
 

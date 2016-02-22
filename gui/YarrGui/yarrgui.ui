@@ -596,7 +596,7 @@
         <x>10</x>
         <y>10</y>
         <width>191</width>
-        <height>151</height>
+        <height>181</height>
        </rect>
       </property>
       <property name="columnCount">
@@ -648,19 +648,6 @@
       </property>
       <property name="text">
        <string>Detach all</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="debugScanButton">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>170</y>
-        <width>191</width>
-        <height>31</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>DEBUG</string>
       </property>
      </widget>
      <widget class="QPushButton" name="removeAllButton">

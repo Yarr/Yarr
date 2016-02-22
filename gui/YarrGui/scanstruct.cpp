@@ -10,36 +10,36 @@ void CustomScan::addPreScanReg(Fei4RegHelper f, uint16_t i) {
     return;
 }
 
-void CustomScan::addScanLoop(std::shared_ptr<StdDataLoop> p) {
-    addLoop(p);
-
-    return;
-}
-
-void CustomScan::addScanLoop(std::shared_ptr<Fei4DcLoop> p) {
-    addLoop(p);
-
-    return;
-}
-
-void CustomScan::addScanLoop(std::shared_ptr<Fei4MaskLoop> p) {
-    addLoop(p);
-
-    return;
-}
-
-void CustomScan::addScanLoop(std::shared_ptr<Fei4TriggerLoop> p) {
-    addLoop(p);
-
-    return;
-
-}
-
-//void CustomScan::addScanLoop(std::shared_ptr<LoopActionBase> l) {
-//    scanLoops.append(l);
+//void CustomScan::addScanLoop(std::shared_ptr<StdDataLoop> p) {
+//    addLoop(p);
 
 //    return;
 //}
+
+//void CustomScan::addScanLoop(std::shared_ptr<Fei4DcLoop> p) {
+//    addLoop(p);
+
+//    return;
+//}
+
+//void CustomScan::addScanLoop(std::shared_ptr<Fei4MaskLoop> p) {
+//    addLoop(p);
+
+//    return;
+//}
+
+//void CustomScan::addScanLoop(std::shared_ptr<Fei4TriggerLoop> p) {
+//    addLoop(p);
+
+//    return;
+
+//}
+
+void CustomScan::addScanLoop(std::shared_ptr<LoopActionBase> l) {
+    scanLoops.append(l);
+
+    return;
+}
 
 
 void CustomScan::addPostScanReg(Fei4RegHelper f, uint16_t i) {

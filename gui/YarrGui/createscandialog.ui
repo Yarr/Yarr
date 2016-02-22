@@ -746,7 +746,7 @@
          <widget class="QComboBox" name="maskVerboseBox">
           <property name="geometry">
            <rect>
-            <x>240</x>
+            <x>320</x>
             <y>430</y>
             <width>71</width>
             <height>23</height>
@@ -857,7 +857,7 @@
          <widget class="QLabel" name="maskVerboseLabel">
           <property name="geometry">
            <rect>
-            <x>240</x>
+            <x>320</x>
             <y>410</y>
             <width>61</width>
             <height>16</height>
@@ -895,7 +895,7 @@
            <rect>
             <x>160</x>
             <y>430</y>
-            <width>71</width>
+            <width>151</width>
             <height>23</height>
            </rect>
           </property>

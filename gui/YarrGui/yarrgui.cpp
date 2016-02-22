@@ -434,7 +434,7 @@ void YarrGui::doScan(QString qn) {
         fe->ana = new Fei4Analysis(bk, fe->getRxChannel());
         fe->ana->connect(s, fe->clipHisto, fe->clipResult);
 
-        if(qn=="CS") {
+        if (qn=="CS") {
             CustomScan * tmp;
             tmp = dynamic_cast<CustomScan*>(s);
             if(tmp->bA.at(0) == true) {fe->histogrammer->addHistogrammer(new OccupancyMap());}
@@ -446,21 +446,10 @@ void YarrGui::doScan(QString qn) {
             if(tmp->bA.at(5) == true) {fe->ana->addAlgorithm(new TotAnalysis());}
             if(tmp->bA.at(6) == true) {fe->ana->addAlgorithm(new ScurveFitter());}
             if(tmp->bA.at(7) == true) {fe->ana->addAlgorithm(new OccPixelThresholdTune);}
-
-//            if(tmp->bA.at(0) == true) {OccupancyMap m; fe->histogrammer->addHistogrammer(&m);}
-//            if(tmp->bA.at(1) == true) {fe->histogrammer->addHistogrammer(new TotMap());}
-//            if(tmp->bA.at(2) == true) {fe->histogrammer->addHistogrammer(new Tot2Map());}
-
-//            if(tmp->bA.at(3) == true) {OccupancyAnalysis a; fe->ana->addAlgorithm(&a);}
-//            if(tmp->bA.at(4) == true) {fe->ana->addAlgorithm(new NoiseAnalysis());}
-//            if(tmp->bA.at(5) == true) {fe->ana->addAlgorithm(new TotAnalysis());}
-//            if(tmp->bA.at(6) == true) {fe->ana->addAlgorithm(new ScurveFitter());}
-//            if(tmp->bA.at(7) == true) {fe->ana->addAlgorithm(new OccPixelThresholdTune);}
-
         } else {
             fe->histogrammer->addHistogrammer(new OccupancyMap());
 
-            if(qn == "ToTS" || qn == "GPT" || qn == "PPT") {
+            if (qn == "ToTS" || qn == "GPT" || qn == "PPT") {
                 fe->histogrammer->addHistogrammer(new TotMap());
                 fe->histogrammer->addHistogrammer(new Tot2Map());
             }
@@ -700,6 +689,17 @@ void YarrGui::on_removePlot_button_clicked() {
     return;
 }
 
+void YarrGui::on_removeAllButton_clicked() {
+    while(true) {
+        ui->plotTree->setCurrentItem(ui->plotTree->topLevelItem(0)->child(0)->child(0));
+        ui->scanPlots_tabWidget->setCurrentIndex(0);
+        removePlot();
+        if(ui->plotTree->topLevelItemCount() == 0) {break;}
+    }
+
+    return;
+}
+
 void YarrGui::on_plotTree_itemClicked(QTreeWidgetItem *item, int column) {
     if(item->childCount() > 0) {
         return;
@@ -842,63 +842,63 @@ void YarrGui::on_detachAll_button_clicked() {
     return;
 }
 
-void YarrGui::on_debugScanButton_clicked() {
-    QString qn = "Debug";
-    for(int j = 0; j < ui->feTree->topLevelItemCount(); j++) {
-        scanDone = false;
-        processorDone = false;
+//void YarrGui::on_debugScanButton_clicked() {
+//    QString qn = "Debug";
+//    for(int j = 0; j < ui->feTree->topLevelItemCount(); j++) {
+//        scanDone = false;
+//        processorDone = false;
 
-        if(!(ui->feTree->topLevelItem(j)->child(4)->checkState(1))) { continue; } //Is the Scan checkbox checked?
+//        if(!(ui->feTree->topLevelItem(j)->child(4)->checkState(1))) { continue; } //Is the Scan checkbox checked?
 
-        QTreeWidgetItem * plotTreeItem = nullptr;
-        for(int k = 0; k < ui->plotTree->topLevelItemCount(); k++) { //Is the current FE already in the tree? ...
-           if(ui->plotTree->topLevelItem(k)->text(0) == ui->feTree->topLevelItem(j)->text(0)) {
-               plotTreeItem = ui->plotTree->topLevelItem(k);
-               break;
-           }
-        }
+//        QTreeWidgetItem * plotTreeItem = nullptr;
+//        for(int k = 0; k < ui->plotTree->topLevelItemCount(); k++) { //Is the current FE already in the tree? ...
+//           if(ui->plotTree->topLevelItem(k)->text(0) == ui->feTree->topLevelItem(j)->text(0)) {
+//               plotTreeItem = ui->plotTree->topLevelItem(k);
+//               break;
+//           }
+//        }
 
-        if(plotTreeItem == nullptr) { //... if not: create a branch fot it
-            plotTreeItem = new QTreeWidgetItem(ui->plotTree);
-            plotTreeItem->setText(0, ui->feTree->topLevelItem(j)->text(0));
-        }
+//        if(plotTreeItem == nullptr) { //... if not: create a branch fot it
+//            plotTreeItem = new QTreeWidgetItem(ui->plotTree);
+//            plotTreeItem->setText(0, ui->feTree->topLevelItem(j)->text(0));
+//        }
 
-        QTreeWidgetItem * plotTreeItemDS = new QTreeWidgetItem();
-        plotTreeItemDS->setText(0, qn);
-        plotTreeItem->addChild(plotTreeItemDS);
+//        QTreeWidgetItem * plotTreeItemDS = new QTreeWidgetItem();
+//        plotTreeItemDS->setText(0, qn);
+//        plotTreeItem->addChild(plotTreeItemDS);
 
-        QCustomPlot * tabScanPlot = new QCustomPlot();
-        QString newTabName = qn + ' ' + ui->feTree->topLevelItem(j)->text(0);
-        ui->scanPlots_tabWidget->addTab(tabScanPlot, newTabName);
+//        QCustomPlot * tabScanPlot = new QCustomPlot();
+//        QString newTabName = qn + ' ' + ui->feTree->topLevelItem(j)->text(0);
+//        ui->scanPlots_tabWidget->addTab(tabScanPlot, newTabName);
 
-        QTreeWidgetItem * plotTreeItemP = new QTreeWidgetItem();
-        plotTreeItemP->setText(0, "Plot " + QString::number(plotTreeItemDS->childCount() + 1));
-        plotTreeItemDS->addChild(plotTreeItemP);
+//        QTreeWidgetItem * plotTreeItemP = new QTreeWidgetItem();
+//        plotTreeItemP->setText(0, "Plot " + QString::number(plotTreeItemDS->childCount() + 1));
+//        plotTreeItemDS->addChild(plotTreeItemP);
 
-        QCPColorMap * colorMap = new QCPColorMap(tabScanPlot->xAxis, tabScanPlot->yAxis);
-        tabScanPlot->addPlottable(colorMap);
-        colorMap->data()->setSize(80, 336);
-        colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
-        for(int xCoord = 0; xCoord<80; xCoord++) {
-            for(int yCoord = 0; yCoord<336; yCoord++) {
-                colorMap->data()->setCell(xCoord, yCoord, 25);
-            }
-        }
+//        QCPColorMap * colorMap = new QCPColorMap(tabScanPlot->xAxis, tabScanPlot->yAxis);
+//        tabScanPlot->addPlottable(colorMap);
+//        colorMap->data()->setSize(80, 336);
+//        colorMap->data()->setRange(QCPRange(0, 80), QCPRange(0, 336));
+//        for(int xCoord = 0; xCoord<80; xCoord++) {
+//            for(int yCoord = 0; yCoord<336; yCoord++) {
+//                colorMap->data()->setCell(xCoord, yCoord, 25);
+//            }
+//        }
 
-        QCPColorScale * colorScale = new QCPColorScale(tabScanPlot);
-        tabScanPlot->plotLayout()->addElement(0, 1, colorScale);
-        colorScale->setType(QCPAxis::atRight);
-        colorMap->setColorScale(colorScale);
-        colorScale->axis()->setLabel(" ");
-        colorMap->setGradient(QCPColorGradient::gpPolar);
-        colorMap->rescaleDataRange();
+//        QCPColorScale * colorScale = new QCPColorScale(tabScanPlot);
+//        tabScanPlot->plotLayout()->addElement(0, 1, colorScale);
+//        colorScale->setType(QCPAxis::atRight);
+//        colorMap->setColorScale(colorScale);
+//        colorScale->axis()->setLabel(" ");
+//        colorMap->setGradient(QCPColorGradient::gpPolar);
+//        colorMap->rescaleDataRange();
 
-        tabScanPlot->rescaleAxes();
-        tabScanPlot->replot();
+//        tabScanPlot->rescaleAxes();
+//        tabScanPlot->replot();
 
-    }
-    return;
-}
+//    }
+//    return;
+//}
 
 void YarrGui::on_addFuncButton_clicked()
 {

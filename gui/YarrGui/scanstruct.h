@@ -30,11 +30,11 @@ public:
     ~CustomScan() {}
 
     void addPreScanReg(Fei4RegHelper f, uint16_t i);
-//    void addScanLoop(std::shared_ptr<LoopActionBase>);
-    void addScanLoop(std::shared_ptr<StdDataLoop> p);
-    void addScanLoop(std::shared_ptr<Fei4DcLoop> p);
-    void addScanLoop(std::shared_ptr<Fei4MaskLoop> p);
-    void addScanLoop(std::shared_ptr<Fei4TriggerLoop> p);
+    void addScanLoop(std::shared_ptr<LoopActionBase>);
+//    void addScanLoop(std::shared_ptr<StdDataLoop> p);
+//    void addScanLoop(std::shared_ptr<Fei4DcLoop> p);
+//    void addScanLoop(std::shared_ptr<Fei4MaskLoop> p);
+//    void addScanLoop(std::shared_ptr<Fei4TriggerLoop> p);
     void addPostScanReg(Fei4RegHelper f, uint16_t i);
 
     void clearPreScanRegs();
