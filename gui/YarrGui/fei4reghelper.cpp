@@ -41,6 +41,7 @@ bool Fei4RegHelper::operator==(Fei4RegHelper const& other) const {
     return true;
 }
 
+//###################################################################################
 
 void Fei4PLHelper::init() {
     m_done = false;
@@ -76,7 +77,7 @@ void Fei4PLHelper::end() {
     return;
 }
 
-
+//###################################################################################
 
 void Fei4GFHelper::init() {
     m_done = false;

@@ -41,7 +41,12 @@ public:
 
 class Fei4PLHelper : public Fei4RegHelper, public LoopActionBase {
 public:
-    Fei4PLHelper() {}
+    Fei4PLHelper() : cur(0) {}
+    Fei4PLHelper(Fei4RegHelper f) : Fei4RegHelper(f), cur(0) {}
+    Fei4PLHelper(unsigned int p1, unsigned int p2, unsigned int p3, bool p4)
+        : Fei4RegHelper(p1, p2, p3, p4), cur(0) {}
+    Fei4PLHelper(Fei4PLHelper const& other)
+        : Fei4RegHelper(other.getMOffset(), other.getBOffset(), other.getMask(), other.getMsbRight()), cur(0) {}
     ~Fei4PLHelper() {}
 
     void init();
@@ -50,7 +55,7 @@ public:
     void end();
 
 private:
-    unsigned cur;
+    uint16_t cur;
 };
 
 //##################################################################################
@@ -59,7 +64,7 @@ class Fei4GFHelper : public Fei4RegHelper, public Fei4GlobalFeedbackBase {
 public:
     Fei4GFHelper() : Fei4RegHelper() {}
     Fei4GFHelper(unsigned int p1, unsigned int p2, unsigned int p3, bool p4) : Fei4RegHelper(p1, p2, p3, p4) {}
-    Fei4GFHelper(Fei4RegHelper f) : Fei4RegHelper(f) {};
+    Fei4GFHelper(Fei4RegHelper f) : Fei4RegHelper(f) {}
     ~Fei4GFHelper() {}
 
 private:
