@@ -237,19 +237,18 @@ void CreateScanDialog::on_dataLoopButton_clicked() {
 void CreateScanDialog::on_parameterLoopButton_clicked() {
     int sLS = myScan.scanLoopsSize();
 
-    std::shared_ptr<Fei4PLHelper> f(new Fei4PLHelper());
+    Fei4RegHelper h(ui->parameterRangeRegisterBox->itemData(ui->parameterRangeRegisterBox->currentIndex()).value<Fei4RegHelper>());
+    unsigned int p1 = h.getMOffset();
+    unsigned int p2 = h.getBOffset();
+    unsigned int p3 = h.getMask();
+    bool p4 = h.getMsbRight();
+
+    std::shared_ptr<Fei4PLHelper> f(new Fei4PLHelper(p1, p2, p3, p4));
 
     f->setMin(ui->parameterMinBox->value());
     f->setMax(ui->parameterMaxBox->value());
     f->setStep(ui->parameterStepBox->value());
     f->setVerbose(ui->parameterVerboseBox->itemData(ui->parameterVerboseBox->currentIndex()).value<bool>());
-
-    Fei4RegHelper h(ui->parameterRangeRegisterBox->itemData(ui->parameterRangeRegisterBox->currentIndex()).value<Fei4RegHelper>());
-
-    f->mOffset = h.mOffset;
-    f->bOffset = h.bOffset;
-    f->mask = h.mask;
-    f->msbRight = h.msbRight;            //find more elegant solution some time
 
     myScan.addScanLoop(f);
 
