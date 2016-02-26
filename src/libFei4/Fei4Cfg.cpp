@@ -86,3 +86,48 @@ void Fei4Cfg::fromFileBinary() {
         std::cout << __PRETTY_FUNCTION__ << " --> ERROR: No filename specified!" << std::endl;
     }
 }
+
+void Fei4Cfg::toFileXml(tinyxml2::XMLDocument *doc) {
+    tinyxml2::XMLElement *fe = doc->NewElement("FE-I4B");
+    
+    tinyxml2::XMLElement *par = doc->NewElement("Parameter");
+    
+    tinyxml2::XMLElement *ele = doc->NewElement("Name");
+    ele->SetText(name.c_str());
+    ele->SetAttribute("type", "string");
+    par->LinkEndChild(ele);
+
+    ele = doc->NewElement("chipId");
+    ele->SetText(chipId);
+    ele->SetAttribute("type", "dec");
+    par->LinkEndChild(ele);
+
+    ele = doc->NewElement("sCap");
+    ele->SetText(sCap);
+    ele->SetAttribute("type", "double");
+    ele->SetAttribute("unit", "fF");
+    par->LinkEndChild(ele);
+
+    ele = doc->NewElement("lCap");
+    ele->SetText(lCap);
+    ele->SetAttribute("type", "double");
+    ele->SetAttribute("unit", "fF");
+    par->LinkEndChild(ele);
+
+    ele = doc->NewElement("vcalOffset");
+    ele->SetText(vcalOffset);
+    ele->SetAttribute("type", "double");
+    ele->SetAttribute("unit", "mV");
+    par->LinkEndChild(ele);
+
+    ele = doc->NewElement("vcalSlope");
+    ele->SetText(vcalSlope);
+    ele->SetAttribute("type", "double");
+    ele->SetAttribute("unit", "mV");
+    par->LinkEndChild(ele);
+
+    fe->LinkEndChild(par);
+    Fei4GlobalCfg::toFileXml(doc, fe);
+    Fei4PixelCfg::toFileXml(doc, fe);
+    doc->LinkEndChild(fe);
+}
