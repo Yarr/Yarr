@@ -437,15 +437,15 @@ void YarrGui::doScan(QString qn) {
         if (qn=="CS") {
             CustomScan * tmp;
             tmp = dynamic_cast<CustomScan*>(s);
-            if(tmp->bA.at(0) == true) {fe->histogrammer->addHistogrammer(new OccupancyMap());}
-            if(tmp->bA.at(1) == true) {fe->histogrammer->addHistogrammer(new TotMap());}
-            if(tmp->bA.at(2) == true) {fe->histogrammer->addHistogrammer(new Tot2Map());}
+            if(tmp->bA.at(OCC_MAP) == true) {fe->histogrammer->addHistogrammer(new OccupancyMap());}
+            if(tmp->bA.at(TOT_MAP) == true) {fe->histogrammer->addHistogrammer(new TotMap());}
+            if(tmp->bA.at(TOT_2_MAP) == true) {fe->histogrammer->addHistogrammer(new Tot2Map());}
 
-            if(tmp->bA.at(3) == true) {fe->ana->addAlgorithm(new OccupancyAnalysis());}
-            if(tmp->bA.at(4) == true) {fe->ana->addAlgorithm(new NoiseAnalysis());}
-            if(tmp->bA.at(5) == true) {fe->ana->addAlgorithm(new TotAnalysis());}
-            if(tmp->bA.at(6) == true) {fe->ana->addAlgorithm(new ScurveFitter());}
-            if(tmp->bA.at(7) == true) {fe->ana->addAlgorithm(new OccPixelThresholdTune);}
+            if(tmp->bA.at(OCC_ANA) == true) {fe->ana->addAlgorithm(new OccupancyAnalysis());}
+            if(tmp->bA.at(NOISE_ANA) == true) {fe->ana->addAlgorithm(new NoiseAnalysis());}
+            if(tmp->bA.at(TOT_ANA) == true) {fe->ana->addAlgorithm(new TotAnalysis());}
+            if(tmp->bA.at(S_CU_FIT) == true) {fe->ana->addAlgorithm(new ScurveFitter());}
+            if(tmp->bA.at(PIX_THR) == true) {fe->ana->addAlgorithm(new OccPixelThresholdTune);}
         } else {
             fe->histogrammer->addHistogrammer(new OccupancyMap());
 

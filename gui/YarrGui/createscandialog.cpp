@@ -894,9 +894,9 @@ void CreateScanDialog::initVerbose(QComboBox * b) {
 
 void CreateScanDialog::on_checkOccMap_stateChanged(int arg1) {
     if(arg1 == Qt::Unchecked) {
-        myScan.bA.at(0) = false;            //change to enum or enum class some time, this is not safe
+        myScan.bA.at(OCC_MAP) = false;            //change to enum or enum class some time, this is not safe
     } else if(arg1 == Qt::Checked) {
-        myScan.bA.at(0) = true;
+        myScan.bA.at(OCC_MAP) = true;
     }
 
     return;
@@ -904,9 +904,9 @@ void CreateScanDialog::on_checkOccMap_stateChanged(int arg1) {
 
 void CreateScanDialog::on_checkToTMap_stateChanged(int arg1) {
     if(arg1 == Qt::Unchecked) {
-        myScan.bA.at(1) = false;
+        myScan.bA.at(TOT_MAP) = false;
     } else if(arg1 == Qt::Checked) {
-        myScan.bA.at(1) = true;
+        myScan.bA.at(TOT_MAP) = true;
     }
 
     return;
@@ -914,9 +914,9 @@ void CreateScanDialog::on_checkToTMap_stateChanged(int arg1) {
 
 void CreateScanDialog::on_checkToT2Map_stateChanged(int arg1) {
     if(arg1 == Qt::Unchecked) {
-        myScan.bA.at(2) = false;
+        myScan.bA.at(TOT_2_MAP) = false;
     } else if(arg1 == Qt::Checked) {
-        myScan.bA.at(2) = true;
+        myScan.bA.at(TOT_2_MAP) = true;
     }
 
     return;
@@ -924,9 +924,9 @@ void CreateScanDialog::on_checkToT2Map_stateChanged(int arg1) {
 
 void CreateScanDialog::on_checkOccAna_stateChanged(int arg1) {
     if(arg1 == Qt::Unchecked) {
-        myScan.bA.at(3) = false;
+        myScan.bA.at(OCC_ANA) = false;
     } else if(arg1 == Qt::Checked) {
-        myScan.bA.at(3) = true;
+        myScan.bA.at(OCC_ANA) = true;
     }
 
     return;
@@ -934,9 +934,9 @@ void CreateScanDialog::on_checkOccAna_stateChanged(int arg1) {
 
 void CreateScanDialog::on_checkNoiseAna_stateChanged(int arg1) {
     if(arg1 == Qt::Unchecked) {
-        myScan.bA.at(4) = false;
+        myScan.bA.at(NOISE_ANA) = false;
     } else if(arg1 == Qt::Checked) {
-        myScan.bA.at(4) = true;
+        myScan.bA.at(NOISE_ANA) = true;
     }
 
     return;
@@ -944,9 +944,9 @@ void CreateScanDialog::on_checkNoiseAna_stateChanged(int arg1) {
 
 void CreateScanDialog::on_checkToTAna_stateChanged(int arg1) {
     if(arg1 == Qt::Unchecked) {
-        myScan.bA.at(5) = false;
+        myScan.bA.at(TOT_ANA) = false;
     } else if(arg1 == Qt::Checked) {
-        myScan.bA.at(5) = true;
+        myScan.bA.at(TOT_ANA) = true;
     }
 
     return;
@@ -954,9 +954,9 @@ void CreateScanDialog::on_checkToTAna_stateChanged(int arg1) {
 
 void CreateScanDialog::on_checkScuFit_stateChanged(int arg1) {
     if(arg1 == Qt::Unchecked) {
-        myScan.bA.at(6) = false;
+        myScan.bA.at(S_CU_FIT) = false;
     } else if(arg1 == Qt::Checked) {
-        myScan.bA.at(6) = true;
+        myScan.bA.at(S_CU_FIT) = true;
     }
 
     return;
@@ -964,9 +964,9 @@ void CreateScanDialog::on_checkScuFit_stateChanged(int arg1) {
 
 void CreateScanDialog::on_checkPixThr_stateChanged(int arg1) {
     if(arg1 == Qt::Unchecked) {
-        myScan.bA.at(7) = false;
+        myScan.bA.at(PIX_THR) = false;
     } else if(arg1 == Qt::Checked) {
-        myScan.bA.at(7) = true;
+        myScan.bA.at(PIX_THR) = true;
     }
 
     return;

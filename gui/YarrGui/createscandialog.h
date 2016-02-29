@@ -23,6 +23,17 @@ namespace Ui {
 class CreateScanDialog;
 }
 
+enum HISTS_AND_ANAS {
+    OCC_MAP   = 0,
+    TOT_MAP   = 1,
+    TOT_2_MAP = 2,
+    OCC_ANA   = 3,
+    NOISE_ANA = 4,
+    TOT_ANA   = 5,
+    S_CU_FIT  = 6,
+    PIX_THR   = 7
+};
+
 class CreateScanDialog : public QDialog {
     Q_OBJECT
 
