@@ -21,7 +21,11 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        yarrgui.cpp \
+    yarrgui.cpp \
+    yarrgui_spec.cpp \
+    yarrgui_fes.cpp \
+    yarrgui_scans.cpp \
+    yarrgui_plots.cpp \
     qcustomplot.cpp \
     plotdialog.cpp \
     benchmarkdialog.cpp \
