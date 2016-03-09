@@ -298,15 +298,15 @@ int main(void) {
     unsigned step = 0;
     double vcal_low = 0.1;
     double vcal_high = 0.5;
-    double vcal_step = 0.02;
+    double vcal_step = 0.005;
     int vcal_bins = (vcal_high - vcal_low)/vcal_step;
     int injections = 50;
 
-    Histo2d smap2d("smap", vcal_bins, vcal_low-(vcal_step*0.5), vcal_high+(vcal_step*0.5), injections, 0.5, injections+0.5, typeid(NULL));
-    Histo1d smap1d("smap", vcal_bins, vcal_low-(vcal_step*0.5), vcal_high+(vcal_step*0.5), typeid(NULL));
+    Histo2d smap2d("smap", vcal_bins+1, vcal_low-(vcal_step*0.5), vcal_high+(vcal_step*0.5), injections-1, 0.5, injections-0.5, typeid(NULL));
+    Histo1d smap1d("smap", vcal_bins+1, vcal_low-(vcal_step*0.5), vcal_high+(vcal_step*0.5), typeid(NULL));
     smap2d.setAxisTitle("Vcal", "Hits", "Pixels");
     smap1d.setAxisTitle("Vcal", "Hits");
-    for(double vcal=vcal_low; vcal<=vcal_high; vcal+=vcal_step) {
+    for(double vcal=vcal_low; vcal <= vcal_high; vcal+=vcal_step) {
         std::cout << "Vcal = " << vcal << std::endl;
         serial.write((":VOLT " + std::to_string(vcal) + "\r\n"));
         usleep(5000);
