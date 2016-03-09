@@ -40,10 +40,10 @@ using namespace specDriver;
  */
 UserMemory::UserMemory(SpecDevice& dev, void *mem, unsigned int size, bool merged)
 {
-	int i;
-	umem_handle_t uh;
-	umem_sglist_t sgl;
-	int dev_handle;
+	int i = 0;
+	umem_handle_t uh = {0};
+	umem_sglist_t sgl = {0};
+	int dev_handle = 0;
 
 	dev_handle = dev.getHandle();
 
@@ -92,7 +92,7 @@ UserMemory::UserMemory(SpecDevice& dev, void *mem, unsigned int size, bool merge
  */
 UserMemory::~UserMemory()
 {
-	umem_handle_t uh;
+	umem_handle_t uh = {0};
 
 	delete [] this->sg;
 
@@ -111,7 +111,7 @@ UserMemory::~UserMemory()
  */
 void UserMemory::sync(sync_dir dir)
 {
-	umem_handle_t uh;
+	umem_handle_t uh = {0};
 
 	/* We assume (C++ API) dir === (Driver API) dir */
 	uh.handle_id = handle_id;

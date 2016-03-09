@@ -37,9 +37,9 @@ using namespace specDriver;
  */
 SpecDevice::SpecDevice(int number)
 {
-	struct stat tmp_stat;
+	struct stat tmp_stat = {0};
 	
-	unsigned int temp;
+	unsigned int temp = 0;
 	
 	device = number;
 	snprintf(name, sizeof(name), "/dev/spec%d", number);
@@ -96,7 +96,7 @@ int SpecDevice::getHandle()
  */
 void SpecDevice::open()
 {
-	int ret;
+	int ret = 0;
 
 	/* Check if the device is already opened and exit if yes */
 	if (handle != -1)
@@ -203,7 +203,7 @@ void SpecDevice::clearInterruptQueue(unsigned int int_id)
  */
 unsigned int SpecDevice::getBARsize(unsigned int bar)
 {
-	pci_board_info info;
+	pci_board_info info = {0};
 
 	if (handle == -1)
 		throw Exception( Exception::NOT_OPEN );
@@ -224,7 +224,7 @@ unsigned int SpecDevice::getBARsize(unsigned int bar)
  */
 unsigned short SpecDevice::getBus() 
 {
-	pci_board_info info;
+	pci_board_info info = {0};
 
 	if (handle == -1)
 		throw Exception(Exception::NOT_OPEN);
@@ -242,7 +242,7 @@ unsigned short SpecDevice::getBus()
  */
 unsigned short SpecDevice::getSlot()
 {
-	pci_board_info info;
+	pci_board_info info = {0};
 
 	if (handle == -1)
 		throw Exception(Exception::NOT_OPEN);
@@ -263,8 +263,8 @@ unsigned short SpecDevice::getSlot()
  */
 void *SpecDevice::mapBAR(unsigned int bar)
 {
-	void *mem;
-	pci_board_info info;
+	void *mem = NULL;
+	pci_board_info info = {0};
 
 	if (handle == -1)
 		throw Exception(Exception::NOT_OPEN);
@@ -314,7 +314,7 @@ void *SpecDevice::mapBAR(unsigned int bar)
  */
 void SpecDevice::unmapBAR(unsigned int bar, void *ptr)
 {
-	pci_board_info info;
+	pci_board_info info = {0};
 
 	if (handle == -1)
 		throw Exception(Exception::NOT_OPEN);
