@@ -32,12 +32,16 @@
  */
 int specdriver_umem_sgmap(specdriver_privdata_t *privdata, umem_handle_t *umem_handle)
 {
-	int i, res, nr_pages;
-	struct page **pages;
+	int i = 0;
+    int res = 0;
+    int nr_pages = 0;
+	struct page **pages = NULL;
 	struct scatterlist *sg = NULL;
-	specdriver_umem_entry_t *umem_entry;
-	unsigned int nents;
-	unsigned long count,offset,length;
+	specdriver_umem_entry_t *umem_entry = NULL;
+	unsigned int nents = 0;
+	unsigned long count = 0;
+    unsigned long offset = 0;
+    unsigned long length = 0;
 
 	/*
 	 * We do some checks first. Then, the following is necessary to create a
@@ -189,7 +193,7 @@ umem_sgmap_pages:
  */
 int specdriver_umem_sgunmap(specdriver_privdata_t *privdata, specdriver_umem_entry_t *umem_entry)
 {
-	int i;
+	int i = 0;
 	specdriver_sysfs_remove(privdata, &(umem_entry->sysfs_attr));
 
 	/* Unmap user memory */
@@ -250,12 +254,12 @@ int specdriver_umem_sgunmap_all(specdriver_privdata_t *privdata)
  */
 int specdriver_umem_sgget(specdriver_privdata_t *privdata, umem_sglist_t *umem_sglist)
 {
-	int i;
-	specdriver_umem_entry_t *umem_entry;
-	struct scatterlist *sg;
+	int i = 0;
+	specdriver_umem_entry_t *umem_entry = NULL;
+	struct scatterlist *sg = NULL;
 	int idx = 0;
-	dma_addr_t cur_addr;
-	unsigned int cur_size;
+	dma_addr_t cur_addr = 0;
+	unsigned int cur_size = 0;
 
 	/* Find the associated umem_entry for this buffer */
 	umem_entry = specdriver_umem_find_entry_id( privdata, umem_sglist->handle_id );
@@ -370,7 +374,7 @@ int specdriver_umem_sgget(specdriver_privdata_t *privdata, umem_sglist_t *umem_s
  */
 int specdriver_umem_sync( specdriver_privdata_t *privdata, umem_handle_t *umem_handle )
 {
-	specdriver_umem_entry_t *umem_entry;
+	specdriver_umem_entry_t *umem_entry = NULL;
 
 	/* Find the associated umem_entry for this buffer */
 	umem_entry = specdriver_umem_find_entry_id( privdata, umem_handle->handle_id );
@@ -420,8 +424,8 @@ int specdriver_umem_sync( specdriver_privdata_t *privdata, umem_handle_t *umem_h
  */
 specdriver_umem_entry_t *specdriver_umem_find_entry_id(specdriver_privdata_t *privdata, int id)
 {
-	struct list_head *ptr;
-	specdriver_umem_entry_t *entry;
+	struct list_head *ptr = NULL;
+	specdriver_umem_entry_t *entry = NULL;
 
 	spin_lock(&(privdata->umemlist_lock));
 	list_for_each(ptr, &(privdata->umem_list)) {

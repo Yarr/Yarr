@@ -98,7 +98,7 @@ static int specdriver_init(void)
 static int __init specdriver_init(void)
 #endif
 {
-	int err;
+	int err = 0;
 
 	/* Initialize the device count */
 	atomic_set(&specdriver_deviceCount, 0);
@@ -182,10 +182,10 @@ static int specdriver_probe(struct pci_dev *pdev, const struct pci_device_id *id
 static int __devinit specdriver_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 #endif
 {
-	int err;
-	int devno;
-	specdriver_privdata_t *privdata;
-	int devid;
+	int err = 0;
+	int devno = 0;
+	specdriver_privdata_t *privdata = NULL;
+	int devid = 0;
 
 	/* Get our SPEC board or atleast GN4124 */
     if ((id->vendor == PCIE_SPEC_VENDOR_ID) &&
@@ -327,7 +327,7 @@ static void specdriver_remove(struct pci_dev *pdev)
 static void __devexit specdriver_remove(struct pci_dev *pdev)
 #endif
 {
-	specdriver_privdata_t *privdata;
+	specdriver_privdata_t *privdata = NULL;
     
 	/* Get private data from the device */
 	privdata = pci_get_drvdata(pdev);
@@ -402,7 +402,7 @@ static struct file_operations specdriver_fops = {
  */
 int specdriver_open(struct inode *inode, struct file *filp)
 {
-	specdriver_privdata_t *privdata;
+	specdriver_privdata_t *privdata = NULL;
 
 	/* Set the private data area for the file */
 	privdata = container_of( inode->i_cdev, specdriver_privdata_t, cdev);
@@ -419,7 +419,7 @@ int specdriver_open(struct inode *inode, struct file *filp)
  */
 int specdriver_release(struct inode *inode, struct file *filp)
 {
-	specdriver_privdata_t *privdata;
+	specdriver_privdata_t *privdata = NULL;
 
 	/* Get the private data area */
 	privdata = filp->private_data;
@@ -438,8 +438,9 @@ int specdriver_release(struct inode *inode, struct file *filp)
  */
 int specdriver_mmap(struct file *filp, struct vm_area_struct *vma)
 {
-	specdriver_privdata_t *privdata;
-	int ret = 0, bar;
+	specdriver_privdata_t *privdata = NULL;
+	int ret = 0;
+    int bar = 0;
 
 	mod_info_dbg("Entering mmap\n");
 
@@ -482,9 +483,10 @@ int specdriver_mmap(struct file *filp, struct vm_area_struct *vma)
 int specdriver_mmap_pci(specdriver_privdata_t *privdata, struct vm_area_struct *vmap, int bar)
 {
 	int ret = 0;
-	unsigned long bar_addr;
-	unsigned long bar_length, vma_size;
-	unsigned long bar_flags;
+	unsigned long bar_addr = 0;
+	unsigned long bar_length = 0;
+    unsigned long vma_size = 0;
+	unsigned long bar_flags = 0;
 
 	mod_info_dbg("Entering mmap_pci\n");
 
