@@ -171,6 +171,10 @@ unsigned Fei4PixelCfg::getEn(unsigned col, unsigned row) {
     return m_En[to_dc(col)].getPixel(to_bit(col, row));
 }
 
+unsigned Fei4PixelCfg::getHitbus(unsigned col, unsigned row) {
+    return m_Hitbus[to_dc(col)].getPixel(to_bit(col, row));
+}
+
 unsigned Fei4PixelCfg::getTDAC(unsigned col, unsigned row) {
     return m_TDAC[to_dc(col)].getPixel(to_bit(col, row));
 }
@@ -185,4 +189,25 @@ unsigned Fei4PixelCfg::getSCap(unsigned col, unsigned row) {
 
 unsigned Fei4PixelCfg::getFDAC(unsigned col, unsigned row) {
     return m_FDAC[to_dc(col)].getPixel(to_bit(col, row));
+}
+
+void Fei4PixelCfg::toFileXml(tinyxml2::XMLDocument *doc, tinyxml2::XMLElement *node) {
+    tinyxml2::XMLElement *pcfg = doc->NewElement("PixelConfig");
+    
+    tinyxml2::XMLElement *reg = NULL;
+    for (unsigned col=1; col<=80; col++) {
+        for (unsigned row=1; row<=336; row++) {
+            reg = doc->NewElement("Pixel");
+            reg->SetAttribute("Col", col);
+            reg->SetAttribute("Row", row);
+            reg->SetAttribute("Enable", getEn(col, row));
+            reg->SetAttribute("Hitbus", getHitbus(col, row));
+            reg->SetAttribute("TDAC", getTDAC(col, row));
+            reg->SetAttribute("FDAC", getFDAC(col, row));
+            pcfg->LinkEndChild(reg);
+        }
+    }
+
+
+    node->LinkEndChild(pcfg);
 }
