@@ -338,8 +338,11 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         output->pushData(meanTotDist);
         output->pushData(sigmaTotDist);
         delete sumTot2Map;
+        delete sumTotMap;
 
-        occMaps[ident] = NULL;
+        delete occMaps[ident];
+        delete totMaps[ident];
+        delete tot2Maps[ident];
         occInnerCnt[ident] = 0;
         totInnerCnt[ident] = 0;
         tot2InnerCnt[ident] = 0;

@@ -12,6 +12,8 @@
 #include <iostream>
 #include <array>
 
+#include "tinyxml2.h"
+
 class DoubleColumnBit {
     public:
         const static unsigned n_Words = 21;
@@ -109,6 +111,7 @@ class Fei4PixelCfg {
         void setSCap(unsigned col, unsigned row, unsigned v);
         void setFDAC(unsigned col, unsigned row, unsigned v);
         unsigned getEn(unsigned col, unsigned row);
+        unsigned getHitbus(unsigned col, unsigned row);
         unsigned getTDAC(unsigned col, unsigned row);
         unsigned getLCap(unsigned col, unsigned row);
         unsigned getSCap(unsigned col, unsigned row);
@@ -116,6 +119,8 @@ class Fei4PixelCfg {
 
         static unsigned to_dc(unsigned col);
         static unsigned to_bit(unsigned col, unsigned row);
+
+        void toFileXml(tinyxml2::XMLDocument *doc, tinyxml2::XMLElement *node);
 };
 
 #endif

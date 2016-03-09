@@ -26,9 +26,9 @@ using namespace specDriver;
  */
 KernelMemory::KernelMemory(SpecDevice& dev, unsigned int size)
 {
-	void *m_ptr;
-	kmem_handle_t kh;
-	int dev_handle;
+	void *m_ptr = NULL;
+	kmem_handle_t kh = {0};
+	int dev_handle = 0;
 	
 	dev_handle = dev.getHandle();
 
@@ -77,7 +77,7 @@ pd_allockm_err:
  */
 KernelMemory::~KernelMemory()
 {
-	kmem_handle_t kh;
+	kmem_handle_t kh = {0};
 	
 	/* Unmap */
 	munmap(this->mem, this->size);
@@ -97,7 +97,7 @@ KernelMemory::~KernelMemory()
  */
 void KernelMemory::sync(sync_dir dir)
 {
-	kmem_sync_t ks;
+	kmem_sync_t ks = {0};
 
 	ks.handle.handle_id = handle_id;
 	ks.handle.pa = pa;

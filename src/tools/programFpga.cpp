@@ -109,7 +109,7 @@ int checkBitFile(std::fstream &file) {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
+    if (argc < 2) {
         std::cout << "Please specify bitfile to program!" << std::endl;
         return -1;
     }
@@ -118,6 +118,14 @@ int main(int argc, char* argv[]) {
     std::cout << "Opening file: " << argv[1] << std::endl;
     std::fstream file(argv[1], std::ios::binary | std::ios::in);
     
+    unsigned spec_num = 0;
+
+    if (argc == 3) {
+        spec_num = atoi(argv[2]);
+        std::cout << "SPEC number: " << spec_num << std::endl;
+    }
+
+
     // Check file
     if (!file) {
         std::cerr << __PRETTY_FUNCTION__  << " -> Problem opening file ... aborting" << std::endl;
@@ -145,7 +153,7 @@ int main(int argc, char* argv[]) {
 
     // Open device
     std::cout << "Opening Spec device." << std::endl;
-    SpecController mySpec(0);
+    SpecController mySpec(spec_num);
 
     // Start programming
     std::cout << "Starting programming ..." << std::endl;

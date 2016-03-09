@@ -15,6 +15,7 @@
 
 #include "Fei4GlobalCfg.h"
 #include "Fei4PixelCfg.h"
+#include "tinyxml2.h"
 
 #define ELECTRON_CHARGE 1.602e-19
 
@@ -49,12 +50,22 @@ class Fei4Cfg : public Fei4GlobalCfg, public Fei4PixelCfg {
 		unsigned getChipId();
 		void setChipId(unsigned chipId);
         
+        std::string getName() {
+            return name;
+        }
+
+        void setName(std::string arg_name) {
+            name = arg_name;
+        }
+        
         void toFileBinary(std::string filename);
         void toFileBinary();
         void fromFileBinary(std::string filename);
         void fromFileBinary();
+        void toFileXml(tinyxml2::XMLDocument *doc);
 
     protected:
+        std::string name;
         unsigned chipId;
         std::string cfgName;
 

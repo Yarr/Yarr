@@ -11,11 +11,21 @@
 #include <iostream>
 #include <stdint.h>
 #include <string>
+#include <map>
 
 #include "BitOps.h"
+#include "Utils.h"
+#include "tinyxml2.h"
+
+template<typename T>
+class FieldOperator {
+    public:
+        virtual unsigned value() const = 0;
+        virtual void write(const T& cfgBits) = 0;
+};
 
 template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight = false>
-class Field {
+class Field : public FieldOperator<T> {
     private:
         T* m_cfg;
 
@@ -26,6 +36,7 @@ class Field {
             m_cfg = cfg;
             this->write(cfgBits);
         }
+
         // Get value of field
         unsigned value() const{
             unsigned maskBits = (1<<mask)-1;
@@ -44,6 +55,7 @@ class Field {
         }
 };
 
+
 class Fei4GlobalCfg {
     private:
         void init();
@@ -53,8 +65,10 @@ class Fei4GlobalCfg {
         uint16_t cfg[numRegs];
         Fei4GlobalCfg();
 
-        void toFile(std::string filename);
-        void fromFile(std::string filename);
+        void toFilePlain(std::string filename);
+        void fromFilePlain(std::string filename);
+
+        void toFileXml(tinyxml2::XMLDocument *doc, tinyxml2::XMLElement *node);
 
         template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight>
             void setValue(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref, const T& cfgBits) {
@@ -71,6 +85,8 @@ class Fei4GlobalCfg {
                 return (this->*ref).addr();
             }
 
+        
+        std::map<std::string, FieldOperator<uint16_t>*> fieldMap;
 
         // Fe-I4 global registers, see page 118 FE-I4B Manual
         //1
@@ -86,7 +102,7 @@ class Fei4GlobalCfg {
         //5
         Field<uint16_t, 5, 0x8, 8, true> PrmpVbp_R;
         Field<uint16_t, 5, 0x0, 8,true> BufVgOpAmp;
-        Field<uint16_t, 5, 0x0, 8,true> GADCVref;
+        //Field<uint16_t, 5, 0x0, 8,true> GADCVref;
         //6
         Field<uint16_t, 6, 0x0, 8, true> PrmpVbp;
         //7
