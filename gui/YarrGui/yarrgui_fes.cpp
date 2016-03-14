@@ -164,4 +164,20 @@ void YarrGui::on_remFeButton_clicked(){
     delete itemRemoved;
 }
 
+void YarrGui::on_configFile_button_clicked(){
+    QString filename = QFileDialog::getOpenFileName(this, tr("Select config file"), "./", tr("Config File(*.cfg)"));
+
+    ui->configfileName->setText(filename);
+
+    return;
+}
+
+void YarrGui::on_gConfigFile_button_clicked(){
+    QString filename = QFileDialog::getOpenFileName(this, tr("Select global config file"), "./", tr("Global Config File(*.gcfg)"));
+
+    ui->configfileName_2->setText(filename);
+
+    return;
+}
+
 #endif

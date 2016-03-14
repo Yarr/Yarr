@@ -109,6 +109,10 @@ private slots:
 
     void on_runCustomScanButton_clicked();
 
+    void on_configFile_button_clicked();
+
+    void on_gConfigFile_button_clicked();
+
 private:
     Ui::YarrGui * ui;
     
