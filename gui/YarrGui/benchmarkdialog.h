@@ -25,7 +25,6 @@ public:
 
 private slots:
     void on_startWrite_button_clicked();
-
     void on_startRead_button_clicked();
 
 private:

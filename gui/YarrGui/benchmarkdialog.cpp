@@ -8,7 +8,7 @@ BenchmarkDialog::BenchmarkDialog(QWidget *parent) :
     parentCast = dynamic_cast<YarrGui*>(parent);
     if(parentCast == nullptr) {
         std::cerr << "Parent cast failed. Aborting...\n";
-        exit(-1);
+        this->close();
     }
 
     ui->setupUi(this);

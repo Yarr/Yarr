@@ -11,7 +11,9 @@ void YarrGui::setCustomScan(CustomScan & other) {
 }
 
 void YarrGui::doScan(QString qn) {
-    for(int j = 0; j < ui->feTree->topLevelItemCount(); j++) {
+    int N = ui->feTree->topLevelItemCount();
+    int M = scanVec.size();
+    for(int j = 0; j < N; j++) {
         scanDone = false;
         processorDone = false;
 
@@ -92,7 +94,9 @@ void YarrGui::doScan(QString qn) {
         }
 
         s->init();
+        ui->scanProgressBar->setValue(ui->scanProgressBar->value() + (int)(100.0/(7.0*N*M))); //1
         s->preScan();
+        ui->scanProgressBar->setValue(ui->scanProgressBar->value() + (int)(100.0/(7.0*N*M))); //2
 
         unsigned int numThreads = std::thread::hardware_concurrency();
         //std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl;
@@ -110,18 +114,22 @@ void YarrGui::doScan(QString qn) {
         }
 
         s->run();
+        ui->scanProgressBar->setValue(ui->scanProgressBar->value() + (int)(100.0/(7.0*N*M))); //3
         s->postScan();
+        ui->scanProgressBar->setValue(ui->scanProgressBar->value() + (int)(100.0/(7.0*N*M))); //4
         scanDone = true;
 
         for (unsigned i=0; i<numThreads; i++) {
             procThreads[i].join();
         }
+        ui->scanProgressBar->setValue(ui->scanProgressBar->value() + (int)(100.0/(7.0*N*M))); //5
 
         processorDone = true;
 
         for (unsigned i=0; i<anaThreads.size(); i++) {
             anaThreads[i].join();
         }
+        ui->scanProgressBar->setValue(ui->scanProgressBar->value() + (int)(100.0/(7.0*N*M))); //6
 
         if(qn != "CS") {
             delete s;
@@ -211,6 +219,7 @@ void YarrGui::doScan(QString qn) {
             tabScanPlot->rescaleAxes();
             tabScanPlot->replot();
         }
+        ui->scanProgressBar->setValue(ui->scanProgressBar->value() + (int)(100.0/(7.0*N*M))); //7
         delete fe->histogrammer;
         fe->histogrammer = nullptr;
         delete fe->ana;
@@ -265,9 +274,13 @@ void YarrGui::on_PPreaTuneButton_clicked() {
 }
 
 void YarrGui::on_doScansButton_clicked() {
-    for(unsigned int i = 0; i<scanVec.size(); i++) {
+    ui->scanProgressBar->setValue(0);
+    unsigned int M = scanVec.size();
+    for(unsigned int i = 0; i < M; i++) {
         doScan(scanVec.at(i));
+        ui->scanProgressBar->setValue(100*(i+1)/M);
     }
+    ui->scanProgressBar->setValue(100);
 }
 
 void YarrGui::on_RemoveScans_Button_clicked() {

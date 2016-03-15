@@ -77,9 +77,12 @@ private slots:
     void on_progfile_button_clicked();
     void on_prog_button_clicked();
 
+    //Fe
     void on_addFeButton_clicked();
     void on_feTree_itemClicked(QTreeWidgetItem * item, int column);
     void on_remFeButton_clicked();
+    void on_configFile_button_clicked();
+    void on_gConfigFile_button_clicked();
 
     void on_NoiseScanButton_clicked();
     void on_DigitalScanButton_clicked();
@@ -92,6 +95,7 @@ private slots:
     void on_PThrTuneButton_clicked();
     void on_PPreaTuneButton_clicked();
 
+    //Scans
     void on_doScansButton_clicked();
     void on_RemoveScans_Button_clicked();
 
@@ -102,16 +106,12 @@ private slots:
     void on_detachAll_button_clicked();
     void on_removePlot_button_clicked();
     void on_removeAllButton_clicked();
+    void on_runCustomScanButton_clicked();
 
     //void on_debugScanButton_clicked();
 
+    //Additional functionality
     void on_addFuncButton_clicked();
-
-    void on_runCustomScanButton_clicked();
-
-    void on_configFile_button_clicked();
-
-    void on_gConfigFile_button_clicked();
 
 private:
     Ui::YarrGui * ui;
@@ -122,8 +122,6 @@ private:
 //    QDebugStream *qout;
 //    QDebugStream *qerr;
 
-    void init();
-
     std::vector<SpecController*> specVec;
 
     Bookkeeper * bk;
@@ -133,6 +131,7 @@ private:
     std::vector<QString> scanVec;
     CustomScan cs;
 
+    void init();
     void doScan(QString qn);
     void detachPlot();
     void removePlot();

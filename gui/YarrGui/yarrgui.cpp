@@ -49,16 +49,16 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->feTree->setColumnWidth(0, 200);
     ui->feTree->setColumnWidth(1, 500);
 
-    ui->plotTree->setColumnWidth(0, 500);
-
     ui->scanVec_lineEdit->setReadOnly(true);
+
+    ui->plotTree->setColumnWidth(0, 500);
+    ui->runCustomScanButton->setEnabled(false);
+    ui->scanProgressBar->setValue(0);
 
     ui->additionalFunctionality->addItem("");
     ui->additionalFunctionality->addItem("Benchmark");
     ui->additionalFunctionality->addItem("EEPROM");
     ui->additionalFunctionality->addItem("Create scan");
-
-    ui->runCustomScanButton->setEnabled(false);
 }
 
 YarrGui::~YarrGui()
