@@ -131,3 +131,29 @@ void Fei4Cfg::toFileXml(tinyxml2::XMLDocument *doc) {
     Fei4PixelCfg::toFileXml(doc, fe);
     doc->LinkEndChild(fe);
 }
+
+void Fei4Cfg::toFileJson(json &j) {
+    j["FE-I4B"]["Parameter"]["name"] = name;
+    j["FE-I4B"]["Parameter"]["chipId"] = chipId;
+    j["FE-I4B"]["Parameter"]["sCap"] = sCap;
+    j["FE-I4B"]["Parameter"]["lCap"] = lCap;
+    j["FE-I4B"]["Parameter"]["vcalOffset"] = vcalOffset;
+    j["FE-I4B"]["Parameter"]["vcalSlope"] = vcalSlope;
+    
+    Fei4PixelCfg::toFileJson(j);
+    Fei4GlobalCfg::toFileJson(j);
+
+}
+
+void Fei4Cfg::fromFileJson(json &j) {
+    name = j["FE-I4B"]["Parameter"]["name"];
+    chipId = j["FE-I4B"]["Parameter"]["chipId"];
+    sCap = j["FE-I4B"]["Parameter"]["sCap"];
+    lCap = j["FE-I4B"]["Parameter"]["lCap"];
+    vcalOffset = j["FE-I4B"]["Parameter"]["vcalOffset"];
+    vcalSlope = j["FE-I4B"]["Parameter"]["vcalSlope"];
+    
+    Fei4PixelCfg::fromFileJson(j);
+    Fei4GlobalCfg::fromFileJson(j);
+
+}

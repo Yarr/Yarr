@@ -16,6 +16,9 @@
 #include "BitOps.h"
 #include "Utils.h"
 #include "tinyxml2.h"
+#include "json.hpp"
+
+using json = nlohmann::json;
 
 template<typename T>
 class FieldOperator {
@@ -40,7 +43,8 @@ class Field : public FieldOperator<T> {
         // Get value of field
         unsigned value() const{
             unsigned maskBits = (1<<mask)-1;
-            return ((m_cfg[mOffset]&(maskBits<<bOffset))>>bOffset);
+            unsigned tmp = ((m_cfg[mOffset]&(maskBits<<bOffset))>>bOffset);
+            return (msbRight?BitOps::reverse_bits(tmp, mask):tmp);
         }
 
         // Write value to field and config
@@ -53,6 +57,7 @@ class Field : public FieldOperator<T> {
         unsigned addr() const{
             return mOffset;
         }
+
 };
 
 
@@ -69,6 +74,9 @@ class Fei4GlobalCfg {
         void fromFilePlain(std::string filename);
 
         void toFileXml(tinyxml2::XMLDocument *doc, tinyxml2::XMLElement *node);
+
+        void toFileJson(json &j);
+        void fromFileJson(json &j);
 
         template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight>
             void setValue(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref, const T& cfgBits) {

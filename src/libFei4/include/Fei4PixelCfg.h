@@ -13,6 +13,9 @@
 #include <array>
 
 #include "tinyxml2.h"
+#include "json.hpp"
+
+using json = nlohmann::json;
 
 class DoubleColumnBit {
     public:
@@ -82,6 +85,8 @@ class DoubleColumnField {
 class Fei4PixelCfg {
     public:
         const static unsigned n_DC = 40;
+        const static unsigned n_Col = 80;
+        const static unsigned n_Row = 336;
         const static unsigned n_Bits = 13;
         const static unsigned n_Words = 21;
     private:
@@ -121,6 +126,9 @@ class Fei4PixelCfg {
         static unsigned to_bit(unsigned col, unsigned row);
 
         void toFileXml(tinyxml2::XMLDocument *doc, tinyxml2::XMLElement *node);
+        
+        void toFileJson(json &j);
+        void fromFileJson(json &j);
 };
 
 #endif
