@@ -9,7 +9,6 @@
 #include "Fei4Histogrammer.h"
 
 Fei4Histogrammer::Fei4Histogrammer() {
-
 }
 
 Fei4Histogrammer::~Fei4Histogrammer() {

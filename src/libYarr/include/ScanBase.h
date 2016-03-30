@@ -15,6 +15,7 @@
 #include <typeindex>
 
 #include "Fei4.h"
+#include "Fe65p2.h"
 #include "TxCore.h"
 #include "RxCore.h"
 #include "LoopEngine.h"
@@ -46,6 +47,7 @@ class ScanBase {
         Bookkeeper *b;
 
         Fei4 *g_fe;
+        Fe65p2 *g_fe65p2;
         TxCore *g_tx;
         RxCore *g_rx;
         ClipBoard<RawDataContainer> *g_data;

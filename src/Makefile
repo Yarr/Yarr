@@ -10,21 +10,24 @@ AR = ar
 
 # Compilera
 CPP = g++
+#CC = gcc
 ifeq ($(UNAME_S),Darwin)
 	CPP = clang++
+#	CC = clang
 endif
 
 CPPFLAGS += -pthread -std=c++11 -Wall -Wunused-variable -IlibSpec/include \
-			-IlibYarr/include -IlibUtil/include -IlibFei4/include
+			-IlibYarr/include -IlibUtil/include -IlibFei4/include -IlibFe65p2/include
 CPPFLAGS_DEBUG += -g -O1 -DDEBUG
 CPPFLAGS_RELEASE += -O2 -DNDEBUG
 
 # Linker
 LD = g++
+LDFLAGS = -pthread -std=c++11
 ifeq ($(UNAME_S),Darwin)
 	LD = clang++
+	LDFLAGS = -std=c++11
 endif
-LDFLAGS += -pthread -std=c++11
 LDFLAGS_DEBUG +=
 LDFLAGS_RELEASE += 
 LIBS +=
@@ -34,6 +37,7 @@ SRC = tools
 SPEC = libSpec
 YARR = libYarr
 FEI4 = libFei4
+FE65P2 = libFe65p2
 UTIL = libUtil
 BUILD = build
 LLIB = lib
@@ -61,36 +65,41 @@ SRC_FILES = $(wildcard $(SRC)/*.cpp)
 SPEC_FILES = $(wildcard $(SPEC)/*.cpp)
 YARR_FILES = $(wildcard $(YARR)/*.cpp)
 FEI4_FILES = $(wildcard $(FEI4)/*.cpp)
+FE65P2_FILES = $(wildcard $(FE65P2)/*.cpp)
 UTIL_FILES = $(wildcard $(UTIL)/*.cpp)
 
 SRC_DEPS = $(patsubst $(SRC)/%.cpp,$(BUILD)/%.d,$(SRC_FILES))
 SPEC_DEPS = $(patsubst $(SPEC)/%.cpp,$(BUILD)/%.d,$(SPEC_FILES))
 YARR_DEPS = $(patsubst $(YARR)/%.cpp,$(BUILD)/%.d,$(YARR_FILES))
 FEI4_DEPS = $(patsubst $(FEI4)/%.cpp,$(BUILD)/%.d,$(FEI4_FILES))
+FE65P2_DEPS = $(patsubst $(FE65P2)/%.cpp,$(BUILD)/%.d,$(FE65P2_FILES))
 UTIL_DEPS = $(patsubst $(UTIL)/%.cpp,$(BUILD)/%.d,$(UTIL_FILES))
 
-ALL_DEPS = $(SRC_DEPS) $(SPEC_DEPS) $(YARR_DEPS) $(FEI4_DEPS) $(UTIL_DEPS)
+ALL_DEPS = $(SRC_DEPS) $(SPEC_DEPS) $(YARR_DEPS) $(FEI4_DEPS) $(FE65P2_DEPS) $(UTIL_DEPS)
 
 SRC_OBJS = $(patsubst $(SRC)/%.cpp,$(BUILD)/%.o,$(SRC_FILES))
 SPEC_OBJS = $(patsubst $(SPEC)/%.cpp,$(BUILD)/%.o,$(SPEC_FILES))
 YARR_OBJS = $(patsubst $(YARR)/%.cpp,$(BUILD)/%.o,$(YARR_FILES))
 FEI4_OBJS = $(patsubst $(FEI4)/%.cpp,$(BUILD)/%.o,$(FEI4_FILES))
+FE65P2_OBJS = $(patsubst $(FE65P2)/%.cpp,$(BUILD)/%.o,$(FE65P2_FILES))
 UTIL_OBJS = $(patsubst $(UTIL)/%.cpp,$(BUILD)/%.o,$(UTIL_FILES))
 
-ALL_OBJS = $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(UTIL_OBJS)
+ALL_OBJS = $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS)
 
 TARGETS = $(patsubst $(SRC)/%.cpp,$(BIN)/%,$(SRC_FILES))
 
 ######
 ##  Targets
 
-all: util fei4 spec yarr $(TARGETS)
+all: util fei4 fe65p2 spec yarr $(TARGETS)
 
 spec: $(LLIB)/libspec.a
 
 yarr: $(LLIB)/libyarr.a
 
 fei4: $(LLIB)/libfei4.a
+
+fe65p2: $(LLIB)/libfe65p2.a
 
 util: $(LLIB)/libutil.a
 
@@ -116,6 +125,9 @@ $(BUILD)/%.d: $(YARR)/%.cpp
 $(BUILD)/%.d: $(FEI4)/%.cpp
 	@$(CPP) $(CPPFLAGS) -MM -MT $(patsubst $(FEI4)/%.cpp,$(BUILD)/%.o,$<) $< > $@
 
+$(BUILD)/%.d: $(FE65P2)/%.cpp
+	@$(CPP) $(CPPFLAGS) -MM -MT $(patsubst $(FE65P2)/%.cpp,$(BUILD)/%.o,$<) $< > $@
+
 $(BUILD)/%.d: $(UTIL)/%.cpp
 	@$(CPP) $(CPPFLAGS) -MM -MT $(patsubst $(UTIL)/%.cpp,$(BUILD)/%.o,$<) $< > $@
 
@@ -125,9 +137,9 @@ $(BUILD)/%.o:
 	@$(CPP) $(CPPFLAGS) -c $< -o $@
         
 # Target
-$(BIN)/%: $(BUILD)/%.o $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(UTIL_OBJS)
+$(BIN)/%: $(BUILD)/%.o $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS)
 	@echo [Linking] $@
-	@$(LD) $(LDFLAGS) $< $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(UTIL_OBJS) $(LIBS) -o $@
+	@$(LD) $(LDFLAGS) $< $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS) $(LIBS) -o $@
 
 # Libs
 $(LLIB)/libyarr.a: $(YARR_OBJS)
@@ -137,6 +149,10 @@ $(LLIB)/libyarr.a: $(YARR_OBJS)
 $(LLIB)/libfei4.a: $(FEI4_OBJS)
 	@echo [Creating] $@
 	@$(AR) rcs $@ $(FEI4_OBJS)
+
+$(LLIB)/libfe65p2.a: $(FE65P2_OBJS)
+	@echo [Creating] $@
+	@$(AR) rcs $@ $(FE65P2_OBJS)
 
 $(LLIB)/libspec.a: $(SPEC_OBJS)
 	@echo [Creating] $@
@@ -149,7 +165,7 @@ $(LLIB)/libutil.a: $(UTIL_OBJS)
 -include $(ALL_DEPS)
 
 clean:
-	@$(RM) $(ALL_OBJS) $(ALL_DEPS) $(TARGETS) $(LLIB)/libspec.a $(LLIB)/libyarr.a $(LLIB)/libutil.a $(LLIB)/libfei4.a
+	@$(RM) $(ALL_OBJS) $(ALL_DEPS) $(TARGETS) $(LLIB)/libspec.a $(LLIB)/libyarr.a $(LLIB)/libutil.a $(LLIB)/libfei4.a $(LLIB)/libfe65p2.a
 	@echo "[Clean] … done!"
 
 list:
@@ -202,6 +218,15 @@ mkinfo:
 	@echo "    $(FEI4_DEPS)"
 	@echo Object files:
 	@echo "    $(FEI4_OBJS)"
+	@echo 
+	@echo Fe65p2 Files
+	@echo =============
+	@echo Source files:
+	@echo "    $(FE65P2_FILES)"
+	@echo Dependency files:
+	@echo "    $(FE65P2_DEPS)"
+	@echo Object files:
+	@echo "    $(FE65P2_OBJS)"
 	@echo 
 	@echo Util Files
 	@echo =============

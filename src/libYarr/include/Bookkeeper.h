@@ -20,6 +20,7 @@
 #include "ClipBoard.h"
 
 #include "Fei4.h"
+#include "Fe65p2.h"
 #include "TxCore.h"
 #include "RxCore.h"
 
@@ -60,6 +61,7 @@ class Bookkeeper {
         
         // TODO make private, not nice like that
         Fei4 *g_fe;
+        Fe65p2 *g_fe65p2;
         TxCore *tx;
         RxCore *rx;
         
