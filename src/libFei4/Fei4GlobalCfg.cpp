@@ -179,3 +179,19 @@ void Fei4GlobalCfg::toFileXml(tinyxml2::XMLDocument *doc, tinyxml2::XMLElement *
 
     node->LinkEndChild(gcfg);
 }
+
+void Fei4GlobalCfg::toFileJson(json &j) {
+    typedef std::map<std::string, FieldOperator<uint16_t>*>::iterator it_type;
+    for(it_type iterator = fieldMap.begin(); iterator != fieldMap.end(); iterator++) {
+         j["FE-I4B"]["GlobalConfig"][iterator->first] = iterator->second->value();
+    }
+
+}
+
+void Fei4GlobalCfg::fromFileJson(json &j) {
+    typedef std::map<std::string, FieldOperator<uint16_t>*>::iterator it_type;
+    for(it_type iterator = fieldMap.begin(); iterator != fieldMap.end(); iterator++) {
+         iterator->second->write((uint16_t) j["FE-I4B"]["GlobalConfig"][iterator->first]);
+    }
+
+}

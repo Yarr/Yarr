@@ -14,7 +14,7 @@
 
 class Fei4Cmd {
     protected:
-        Fei4Cmd(TxCore *core);
+        Fei4Cmd(TxCore *arg_core);
         ~Fei4Cmd();
 
         void setVerbose(bool v=true) {
