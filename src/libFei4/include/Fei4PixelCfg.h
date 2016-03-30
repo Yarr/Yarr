@@ -23,11 +23,13 @@ class DoubleColumnBit {
     protected:
         std::array<uint32_t, n_Words> storage;
     public:    
+
         void set(const uint32_t *bitstream);
         void setAll(const uint32_t val);
         void setPixel(const unsigned n, uint32_t val);
 
         uint32_t* getStream();
+        std::array<uint32_t, n_Words> getArray() {return storage;}
         uint32_t getPixel(const unsigned n);
         uint32_t getWord(const unsigned n);
 };

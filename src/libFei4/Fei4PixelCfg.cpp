@@ -214,7 +214,7 @@ void Fei4PixelCfg::toFileXml(tinyxml2::XMLDocument *doc, tinyxml2::XMLElement *n
 
 void Fei4PixelCfg::toFileJson(json &j) {
     // Layout is one array per column
-    for (unsigned row=1; row<=n_Row; row++) {
+    /*for (unsigned row=1; row<=n_Row; row++) {
         for (unsigned col=1; col<=n_Col; col++) {
             j["FE-I4B"]["PixelConfig"][row-1]["Row"] = row;
             j["FE-I4B"]["PixelConfig"][row-1]["Enable"][col-1] = getEn(col, row);
@@ -223,6 +223,17 @@ void Fei4PixelCfg::toFileJson(json &j) {
             j["FE-I4B"]["PixelConfig"][row-1]["FDAC"][col-1] = getFDAC(col, row);
         }
     }
+
+    /*
+    // Not human readble pixel regs
+    for (unsigned dc=0; dc<n_DC; dc++) {
+            j["FE-I4B"]["PixelConfig"]["Enable"][dc] = m_En[dc].getArray();
+            j["FE-I4B"]["PixelConfig"]["Hitbus"][dc] = m_Hitbus[dc].getArray();
+            for (unsigned bit=0; bit<5; bit++)
+                j["FE-I4B"]["PixelConfig"]["TDAC"][dc][bit] = m_TDAC[dc][bit].getArray();
+            for (unsigned bit=0; bit<5; bit++)
+                j["FE-I4B"]["PixelConfig"]["FDAC"][dc][bit] = m_FDAC[dc][bit].getArray();
+    }*/
 }
 
 void Fei4PixelCfg::fromFileJson(json &j) {
@@ -235,4 +246,5 @@ void Fei4PixelCfg::fromFileJson(json &j) {
             setFDAC(col, row, j["FE-I4B"]["PixelConfig"][row-1]["Enable"][col-1]);
         }
     }
+
 }
