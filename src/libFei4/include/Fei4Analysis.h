@@ -31,7 +31,10 @@
 
 class AnalysisAlgorithm {
     public:
-        AnalysisAlgorithm() {};
+        AnalysisAlgorithm() {
+            nCol = 80;
+            nRow = 336;
+        };
         virtual ~AnalysisAlgorithm() {}
         
         void setBookkeeper (Bookkeeper *b) {bookie = b;}
@@ -44,11 +47,18 @@ class AnalysisAlgorithm {
         virtual void processHistogram(HistogramBase *h) {}
         virtual void end() {}
 
+        void setMapSize(unsigned col,unsigned row) {
+            nCol = col;
+            nRow = row;
+        }
+
     protected:
         Bookkeeper *bookie;
         unsigned channel;
         ScanBase *scan;
         ClipBoard<HistogramBase> *output;
+
+        unsigned nCol, nRow;
 };
 
 class Fei4Analysis : DataProcessor {
@@ -71,6 +81,13 @@ class Fei4Analysis : DataProcessor {
 		void addAlgorithm(AnalysisAlgorithm *a, unsigned ch);
         void plot(std::string basename, std::string dir = "");
         void toFile(std::string basename, std::string dir = "");
+
+        void setMapSize(unsigned col, unsigned row) {
+            for (unsigned i=0; i<algorithms.size(); i++) {
+                algorithms[i]->setMapSize(col, row);
+            }
+        }
+            
 
     private:
         Bookkeeper *bookie;

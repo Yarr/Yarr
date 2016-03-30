@@ -122,7 +122,7 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
 
     // Check if Histogram exists
     if (occMaps[ident] == NULL) {
-        Histo2d *hh = new Histo2d(name, 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
         hh->setZaxisTitle("Hits");
@@ -136,7 +136,7 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
 
     // Got all data, finish up Analysis
     if (innerCnt[ident] == n_count) {
-        Histo2d *mask = new Histo2d(name2, 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        Histo2d *mask = new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         mask->setXaxisTitle("Column");
         mask->setYaxisTitle("Rows");
         mask->setZaxisTitle("Enable");
@@ -150,8 +150,8 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
             } else {
                 if (makeMask) {
                     Fei4 *fe = bookie->getFe(channel);
-                    fe->setEn((i/336)+1, (i%336)+1, 0);
-                    fe->setHitbus((i/336)+1, (i%336)+1, 1);
+                    fe->setEn((i/nRow)+1, (i%nRow)+1, 0);
+                    fe->setHitbus((i/nRow)+1, (i%nRow)+1, 1);
                 }
             }
         }
@@ -218,19 +218,19 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
     
     // Check if Histogram exists
     if (occMaps[ident] == NULL) {
-        Histo2d *hh = new Histo2d(name, 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
         hh->setZaxisTitle("Hits");
         occMaps[ident] = hh;
         occInnerCnt[ident] = 0;
-        hh = new Histo2d(name2, 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        hh = new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
         hh->setZaxisTitle("{/Symbol S}(ToT)");
         totMaps[ident] = hh;
         totInnerCnt[ident] = 0;
-        hh = new Histo2d(name3, 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        hh = new Histo2d(name3, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
         hh->setZaxisTitle("{/Symbol S}(ToT^2)");
@@ -256,19 +256,19 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
     if (occInnerCnt[ident] == n_count &&
          totInnerCnt[ident] == n_count &&
          tot2InnerCnt[ident] == n_count) {
-        Histo2d *meanTotMap = new Histo2d("MeanTotMap", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        Histo2d *meanTotMap = new Histo2d("MeanTotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         meanTotMap->setXaxisTitle("Column");
         meanTotMap->setYaxisTitle("Row");
         meanTotMap->setZaxisTitle("Mean ToT [bc]");
-        Histo2d *sumTotMap = new Histo2d("SumTotMap", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        Histo2d *sumTotMap = new Histo2d("SumTotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         sumTotMap->setXaxisTitle("Column");
         sumTotMap->setYaxisTitle("Row");
         sumTotMap->setZaxisTitle("Mean ToT [bc]");
-        Histo2d *sumTot2Map = new Histo2d("MeanTot2Map", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        Histo2d *sumTot2Map = new Histo2d("MeanTot2Map", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         sumTot2Map->setXaxisTitle("Column");
         sumTot2Map->setYaxisTitle("Row");
         sumTot2Map->setZaxisTitle("Mean ToT^2 [bc^2]");
-        Histo2d *sigmaTotMap = new Histo2d("SigmaTotMap", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        Histo2d *sigmaTotMap = new Histo2d("SigmaTotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         sigmaTotMap->setXaxisTitle("Column");
         sigmaTotMap->setYaxisTitle("Row");
         sigmaTotMap->setZaxisTitle("Sigma ToT [bc]");
@@ -316,7 +316,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         
         if (pixelFb != NULL) {
             double targetTot = bookie->getTargetTot();
-            Histo2d *fbHisto = new Histo2d("feedback", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+            Histo2d *fbHisto = new Histo2d("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
             for (unsigned i=0; i<meanTotMap->size(); i++) {
                 int sign = 0;
                 double mean = meanTotMap->getBin(i);
@@ -407,8 +407,8 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
         return;
 
     Histo2d *hh = (Histo2d*) h;
-    for(unsigned col=1; col<=80; col++) {
-        for (unsigned row=1; row<=336; row++) {
+    for(unsigned col=1; col<=nCol; col++) {
+        for (unsigned row=1; row<=nRow; row++) {
             unsigned bin = hh->binNum(col, row);
             if (hh->getBin(bin) != 0) {
                 // Select correct output container
@@ -465,12 +465,12 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     std::chrono::microseconds fitTime = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
                     if (thrMap[outerIdent] == NULL) {
                         //std::cout << " NEW ThresholdMap: " << outerIdent << std::endl;
-                        Histo2d *hh2 = new Histo2d("ThresholdMap", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+                        Histo2d *hh2 = new Histo2d("ThresholdMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
                         hh2->setXaxisTitle("Column");
                         hh2->setYaxisTitle("Row");
                         hh2->setZaxisTitle("Threshold [e]");
                         thrMap[outerIdent] = hh2;
-                        hh2 = new Histo2d("NoiseMap", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+                        hh2 = new Histo2d("NoiseMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
                         hh2->setXaxisTitle("Column");
                         hh2->setYaxisTitle("Row");
                         hh2->setZaxisTitle("Noise [e]");
@@ -580,7 +580,7 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
 
     // Check if Histogram exists
     if (occMaps[ident] == NULL) {
-        Histo2d *hh = new Histo2d(name, 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
         hh->setZaxisTitle("Hits");
@@ -682,7 +682,7 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
 
     // Check if Histogram exists
     if (occMaps[ident] == NULL) {
-        Histo2d *hh = new Histo2d(name, 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
         hh->setZaxisTitle("Hits");
@@ -696,7 +696,7 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
     // Got all data, finish up Analysis
     if (innerCnt[ident] == n_count) {
         double mean = 0;
-        Histo2d *fbHisto = new Histo2d("feedback", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+        Histo2d *fbHisto = new Histo2d("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         Histo1d *occDist = new Histo1d(name2, injections+1, -0.5, injections+0.5, typeid(this));
         occDist->setXaxisTitle("Occupancy");
         occDist->setYaxisTitle("Number of Pixels");
@@ -790,7 +790,7 @@ void L1Analysis::processHistogram(HistogramBase *h) {
 
 void NoiseAnalysis::init(ScanBase *s) {
     // We assume the nosie scan only has one trigger and data loop
-    occ = new Histo2d("Occupancy", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+    occ = new Histo2d("Occupancy", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
     occ->setXaxisTitle("Col");
     occ->setYaxisTitle("Row");
     occ->setZaxisTitle("Hits");
@@ -806,12 +806,12 @@ void NoiseAnalysis::processHistogram(HistogramBase *h) {
 }
 
 void NoiseAnalysis::end() {
-    Histo2d* noiseOcc = new Histo2d("NoiseOccupancy", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+    Histo2d* noiseOcc = new Histo2d("NoiseOccupancy", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
     noiseOcc->setXaxisTitle("Col");
     noiseOcc->setYaxisTitle("Row");
     noiseOcc->setZaxisTitle("Noise Occupancy hits/bc");
 
-    Histo2d* mask = new Histo2d("NoiseMask", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this));
+    Histo2d* mask = new Histo2d("NoiseMask", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
     mask->setXaxisTitle("Col");
     mask->setYaxisTitle("Row");
     mask->setZaxisTitle("Mask");
@@ -825,8 +825,8 @@ void NoiseAnalysis::end() {
             Fei4 *fe = bookie->getFe(channel);
             mask->setBin(i, 0);
             if (applyMask) {
-                fe->setEn((i/336)+1, (i%336)+1, 0);
-                fe->setHitbus((i/336)+1, (i%336)+1, 1);
+                fe->setEn((i/nRow)+1, (i%nRow)+1, 0);
+                fe->setHitbus((i/nRow)+1, (i%nRow)+1, 1);
             }
         } else {
             mask->setBin(i, 1);
