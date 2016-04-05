@@ -1,5 +1,5 @@
 #include "RxCore.h"
-
+#include <cstring>
 RxCore::RxCore(SpecController *arg_spec) {
     spec = arg_spec;
     verbose = false;
@@ -32,6 +32,7 @@ RawData* RxCore::readData() {
             std::cout << __PRETTY_FUNCTION__ << " : Addr 0x" << std::hex <<
                 dma_addr << " ,Count " << std::dec << dma_count << std::endl;
         uint32_t *buf = new uint32_t[dma_count];
+        std::memset(buf, 0x0, sizeof(uint32_t)*dma_count);
         if (spec->readDma(dma_addr, buf, dma_count)) {
             std::cout << __PRETTY_FUNCTION__ << std::hex << "0x" << dma_addr << " 0x" << dma_count << std::dec << std::endl;
             exit(1);

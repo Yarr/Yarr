@@ -13,6 +13,8 @@
 #include <chrono>
 #include <thread>
 #include <vector>
+#include <iomanip>
+#include <ctime>
 
 #include "SpecController.h"
 #include "TxCore.h"
@@ -70,7 +72,7 @@ int main(int argc, char *argv[]) {
     
     // Init parameters
     unsigned specNum = 0;
-    std::string scanType = "digitalscan";
+    std::string scanType = "";
     std::string configPath = "";
     std::string outputDir = "./";
     bool doPlots = false;
@@ -118,18 +120,27 @@ int main(int argc, char *argv[]) {
     std::cout << " Global configuration: " << configPath << std::endl;
     std::cout << " Output Plots: " << doPlots << std::endl;
     std::cout << " Output Directory: " << outputDir << std::endl;
+    
+    // Timestamp
+    std::time_t now = std::time(NULL);
+    struct tm *lt = std::localtime(&now);
+    char timestamp[20];
+    strftime(timestamp, 20, "%F_%H:%M:%S", lt);
+    std::cout << std::endl;
+    std::cout << "Timestamp : " << timestamp << std::endl;
 
     std::cout << std::endl;
     std::cout << "#################" << std::endl;
     std::cout << "# Init Hardware #" << std::endl;
     std::cout << "#################" << std::endl;
-    
+
+
     std::cout << "-> Init SPEC " << specNum << " : " << std::endl;
     SpecController spec(specNum);
     TxCore tx(&spec);
     RxCore rx(&spec);
     Bookkeeper bookie(&tx, &rx);
-    bookie.setTargetThreshold(1500);
+    bookie.setTargetThreshold(2500);
     
     std::cout << "-> Read global config (" << configPath << "):" << std::endl;
     std::fstream gConfig(configPath, std::ios::in);
@@ -163,6 +174,9 @@ int main(int argc, char *argv[]) {
             bookie.getLastFe()->fromFileBinary(feCfgPath);
             // Set chipId again after loading in case we got std cfg
             bookie.getLastFe()->setChipId(id);
+            // Make backup of current config
+            bookie.getLastFe()->toFileBinary(feCfgPath + "-" + std::string(timestamp));
+            bookie.getLastFe()->toFileBinary(feCfgPath);
         }
     }
         
@@ -226,6 +240,9 @@ int main(int argc, char *argv[]) {
     } else if (scanType == "tune_globalpreamp") {
         std::cout << "-> Found Global Preamp Tuning" << std::endl;
         s = new Fei4GlobalPreampTune(&bookie);
+    } else if (scanType == "retune_globalpreamp") {
+        std::cout << "-> Found Global Preamp Retuning" << std::endl;
+        s = new Fei4GlobalPreampRetune(&bookie);
     } else if (scanType == "tune_pixelpreamp") {
         std::cout << "-> Found Pixel Preamp Tuning" << std::endl;
         s = new Fei4PixelPreampTune(&bookie);
@@ -360,7 +377,8 @@ int main(int argc, char *argv[]) {
             // Plot
             if (doPlots) {
                 std::cout << "-> Plotting histograms of FE " << fe->getRxChannel() << std::endl;
-                fe->ana->plot("ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
+                fe->ana->plot(std::string(timestamp) + "-" + fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
+                fe->ana->toFile(std::string(timestamp) + "-" + fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
             }
             // Free
             delete fe->histogrammer;

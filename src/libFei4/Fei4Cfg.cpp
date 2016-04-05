@@ -86,3 +86,74 @@ void Fei4Cfg::fromFileBinary() {
         std::cout << __PRETTY_FUNCTION__ << " --> ERROR: No filename specified!" << std::endl;
     }
 }
+
+void Fei4Cfg::toFileXml(tinyxml2::XMLDocument *doc) {
+    tinyxml2::XMLElement *fe = doc->NewElement("FE-I4B");
+    
+    tinyxml2::XMLElement *par = doc->NewElement("Parameter");
+    
+    tinyxml2::XMLElement *ele = doc->NewElement("Name");
+    ele->SetText(name.c_str());
+    ele->SetAttribute("type", "string");
+    par->LinkEndChild(ele);
+
+    ele = doc->NewElement("chipId");
+    ele->SetText(chipId);
+    ele->SetAttribute("type", "dec");
+    par->LinkEndChild(ele);
+
+    ele = doc->NewElement("sCap");
+    ele->SetText(sCap);
+    ele->SetAttribute("type", "double");
+    ele->SetAttribute("unit", "fF");
+    par->LinkEndChild(ele);
+
+    ele = doc->NewElement("lCap");
+    ele->SetText(lCap);
+    ele->SetAttribute("type", "double");
+    ele->SetAttribute("unit", "fF");
+    par->LinkEndChild(ele);
+
+    ele = doc->NewElement("vcalOffset");
+    ele->SetText(vcalOffset);
+    ele->SetAttribute("type", "double");
+    ele->SetAttribute("unit", "mV");
+    par->LinkEndChild(ele);
+
+    ele = doc->NewElement("vcalSlope");
+    ele->SetText(vcalSlope);
+    ele->SetAttribute("type", "double");
+    ele->SetAttribute("unit", "mV");
+    par->LinkEndChild(ele);
+
+    fe->LinkEndChild(par);
+    Fei4GlobalCfg::toFileXml(doc, fe);
+    Fei4PixelCfg::toFileXml(doc, fe);
+    doc->LinkEndChild(fe);
+}
+
+void Fei4Cfg::toFileJson(json &j) {
+    j["FE-I4B"]["Parameter"]["name"] = name;
+    j["FE-I4B"]["Parameter"]["chipId"] = chipId;
+    j["FE-I4B"]["Parameter"]["sCap"] = sCap;
+    j["FE-I4B"]["Parameter"]["lCap"] = lCap;
+    j["FE-I4B"]["Parameter"]["vcalOffset"] = vcalOffset;
+    j["FE-I4B"]["Parameter"]["vcalSlope"] = vcalSlope;
+    
+    Fei4PixelCfg::toFileJson(j);
+    Fei4GlobalCfg::toFileJson(j);
+
+}
+
+void Fei4Cfg::fromFileJson(json &j) {
+    name = j["FE-I4B"]["Parameter"]["name"];
+    chipId = j["FE-I4B"]["Parameter"]["chipId"];
+    sCap = j["FE-I4B"]["Parameter"]["sCap"];
+    lCap = j["FE-I4B"]["Parameter"]["lCap"];
+    vcalOffset = j["FE-I4B"]["Parameter"]["vcalOffset"];
+    vcalSlope = j["FE-I4B"]["Parameter"]["vcalSlope"];
+    
+    Fei4PixelCfg::fromFileJson(j);
+    Fei4GlobalCfg::fromFileJson(j);
+
+}

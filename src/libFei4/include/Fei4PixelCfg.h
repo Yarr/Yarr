@@ -12,17 +12,24 @@
 #include <iostream>
 #include <array>
 
+#include "tinyxml2.h"
+#include "json.hpp"
+
+using json = nlohmann::json;
+
 class DoubleColumnBit {
     public:
         const static unsigned n_Words = 21;
     protected:
         std::array<uint32_t, n_Words> storage;
     public:    
+
         void set(const uint32_t *bitstream);
         void setAll(const uint32_t val);
         void setPixel(const unsigned n, uint32_t val);
 
         uint32_t* getStream();
+        std::array<uint32_t, n_Words> getArray() {return storage;}
         uint32_t getPixel(const unsigned n);
         uint32_t getWord(const unsigned n);
 };
@@ -80,6 +87,8 @@ class DoubleColumnField {
 class Fei4PixelCfg {
     public:
         const static unsigned n_DC = 40;
+        const static unsigned n_Col = 80;
+        const static unsigned n_Row = 336;
         const static unsigned n_Bits = 13;
         const static unsigned n_Words = 21;
     private:
@@ -109,6 +118,7 @@ class Fei4PixelCfg {
         void setSCap(unsigned col, unsigned row, unsigned v);
         void setFDAC(unsigned col, unsigned row, unsigned v);
         unsigned getEn(unsigned col, unsigned row);
+        unsigned getHitbus(unsigned col, unsigned row);
         unsigned getTDAC(unsigned col, unsigned row);
         unsigned getLCap(unsigned col, unsigned row);
         unsigned getSCap(unsigned col, unsigned row);
@@ -116,6 +126,11 @@ class Fei4PixelCfg {
 
         static unsigned to_dc(unsigned col);
         static unsigned to_bit(unsigned col, unsigned row);
+
+        void toFileXml(tinyxml2::XMLDocument *doc, tinyxml2::XMLElement *node);
+        
+        void toFileJson(json &j);
+        void fromFileJson(json &j);
 };
 
 #endif

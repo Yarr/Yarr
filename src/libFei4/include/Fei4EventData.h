@@ -44,10 +44,11 @@ class Fei4Event {
         }
 
         void addHit(unsigned arg_row, unsigned arg_col, unsigned arg_tot) {
-            struct Fei4Hit tmp;
-            tmp.col = arg_col;
-            tmp.row = arg_row;
-            tmp.tot = arg_tot;
+            struct Fei4Hit tmp = {arg_col, arg_row, arg_tot, 0};
+            //tmp.col = arg_col;
+            //tmp.row = arg_row;
+            //tmp.tot = arg_tot;
+            //tmp.unused = 0;
             hits.push_back(Fei4Hit(tmp));
             nHits++;
         }

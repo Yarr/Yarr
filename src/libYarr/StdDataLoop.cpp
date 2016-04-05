@@ -60,11 +60,11 @@ void StdDataLoop::execPart2() {
             newData =  g_rx->readData();
             iterations++;
             if (newData != NULL) {
-                rdc->add(newData);
                 count += newData->words;
+                rdc->add(newData);
             }
         } while (newData != NULL);
-        delete newData;
+        //delete newData;
     }
     // Gather rest of data after timeout (~0.1ms)
     std::this_thread::sleep_for(std::chrono::microseconds(500));
@@ -73,8 +73,8 @@ void StdDataLoop::execPart2() {
         newData =  g_rx->readData();
         iterations++;
         if (newData != NULL) {
-            rdc->add(newData);
             count += newData->words;
+            rdc->add(newData);
         }
     } while (newData != NULL);
     delete newData;

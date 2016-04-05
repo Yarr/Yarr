@@ -12,6 +12,7 @@
 #include <iostream>
 #include <string>
 
+#include "FrontEnd.h"
 #include "TxCore.h"
 #include "Fei4Cmd.h"
 #include "Fei4Cfg.h"
@@ -39,7 +40,7 @@ enum DC_MODE {
     ALL_DC = 0x3
 };
 
-class Fei4 : public Fei4Cfg, public Fei4Cmd {
+class Fei4 : public FrontEnd, public Fei4Cfg, public Fei4Cmd {
     public:
         Fei4(TxCore *arg_core, unsigned chipId);
         Fei4(TxCore *arg_core, unsigned chipId, unsigned arg_channel);
@@ -61,28 +62,6 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd {
         void shiftByOne();
 
 
-		bool getActive();
-		bool isActive();
-		void setActive(bool active);
-
-        // TODO Move name and channel to YARR FE cfg
-		unsigned getChannel();
-		unsigned getTxChannel();
-		unsigned getRxChannel();
-		void setChannel(unsigned channel);
-		void setChannel(unsigned arg_txChannel, unsigned arg_rxChannel);
-
-        std::string getName() {
-            return name;
-        }
-
-        void setName(std::string arg_name) {
-            name = arg_name;
-        }
-
-        TxCore* getTxCore() {
-            return core;
-        }
 
         template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight>
             void writeRegister(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref, uint16_t cfgBits){
@@ -110,10 +89,6 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd {
 		Fei4Histogrammer *histogrammer;
 
     private:
-        std::string name;
-        bool active;
-		unsigned txChannel;
-        unsigned rxChannel;
 
 };
 

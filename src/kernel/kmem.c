@@ -32,8 +32,8 @@
  */
 int specdriver_kmem_alloc(specdriver_privdata_t *privdata, kmem_handle_t *kmem_handle)
 {
-	specdriver_kmem_entry_t *kmem_entry;
-	void *retptr;
+	specdriver_kmem_entry_t *kmem_entry = NULL;
+	void *retptr = NULL;
 
 	/* First, allocate zeroed memory for the kmem_entry */
 	if ((kmem_entry = kcalloc(1, sizeof(specdriver_kmem_entry_t), GFP_KERNEL)) == NULL)
@@ -83,7 +83,7 @@ kmem_alloc_entry_fail:
  */
 int specdriver_kmem_free( specdriver_privdata_t *privdata, kmem_handle_t *kmem_handle )
 {
-	specdriver_kmem_entry_t *kmem_entry;
+	specdriver_kmem_entry_t *kmem_entry = NULL;
 
 	/* Find the associated kmem_entry for this buffer */
 	if ((kmem_entry = specdriver_kmem_find_entry(privdata, kmem_handle)) == NULL)
@@ -99,8 +99,9 @@ int specdriver_kmem_free( specdriver_privdata_t *privdata, kmem_handle_t *kmem_h
  */
 int specdriver_kmem_free_all(specdriver_privdata_t *privdata)
 {
-	struct list_head *ptr, *next;
-	specdriver_kmem_entry_t *kmem_entry;
+	struct list_head *ptr = NULL;
+    struct list_head *next = NULL;
+	specdriver_kmem_entry_t *kmem_entry = NULL;
 
 	/* iterate safely over the entries and delete them */
 	list_for_each_safe(ptr, next, &(privdata->kmem_list)) {
@@ -118,7 +119,7 @@ int specdriver_kmem_free_all(specdriver_privdata_t *privdata)
  */
 int specdriver_kmem_sync( specdriver_privdata_t *privdata, kmem_sync_t *kmem_sync )
 {
-	specdriver_kmem_entry_t *kmem_entry;
+	specdriver_kmem_entry_t *kmem_entry = NULL;
 
 	/* Find the associated kmem_entry for this buffer */
 	if ((kmem_entry = specdriver_kmem_find_entry(privdata, &(kmem_sync->handle))) == NULL)
@@ -217,8 +218,9 @@ int specdriver_kmem_free_entry(specdriver_privdata_t *privdata, specdriver_kmem_
  */
 specdriver_kmem_entry_t *specdriver_kmem_find_entry(specdriver_privdata_t *privdata, kmem_handle_t *kmem_handle)
 {
-	struct list_head *ptr;
-	specdriver_kmem_entry_t *entry, *result = NULL;
+	struct list_head *ptr = NULL;
+	specdriver_kmem_entry_t *entry = NULL;
+    specdriver_kmem_entry_t *result = NULL;
 
 	/* should I implement it better using the handle_id? */
 
@@ -243,8 +245,9 @@ specdriver_kmem_entry_t *specdriver_kmem_find_entry(specdriver_privdata_t *privd
  */
 specdriver_kmem_entry_t *specdriver_kmem_find_entry_id(specdriver_privdata_t *privdata, int id)
 {
-	struct list_head *ptr;
-	specdriver_kmem_entry_t *entry, *result = NULL;
+	struct list_head *ptr = NULL;
+	specdriver_kmem_entry_t *entry = NULL;
+    specdriver_kmem_entry_t *result = NULL;
 
 	spin_lock(&(privdata->kmemlist_lock));
 	list_for_each(ptr, &(privdata->kmem_list)) {
@@ -267,9 +270,9 @@ specdriver_kmem_entry_t *specdriver_kmem_find_entry_id(specdriver_privdata_t *pr
  */
 int specdriver_mmap_kmem(specdriver_privdata_t *privdata, struct vm_area_struct *vma)
 {
-	unsigned long vma_size;
-	specdriver_kmem_entry_t *kmem_entry;
-	int ret;
+	unsigned long vma_size = 0;
+	specdriver_kmem_entry_t *kmem_entry = NULL;
+	int ret = 0;
 
 	mod_info_dbg("Entering mmap_kmem\n");
 

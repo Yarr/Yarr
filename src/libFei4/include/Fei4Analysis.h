@@ -32,7 +32,7 @@
 class AnalysisAlgorithm {
     public:
         AnalysisAlgorithm() {};
-        ~AnalysisAlgorithm() {};
+        virtual ~AnalysisAlgorithm() {}
         
         void setBookkeeper (Bookkeeper *b) {bookie = b;}
         void setChannel (unsigned ch) {channel = ch;}
