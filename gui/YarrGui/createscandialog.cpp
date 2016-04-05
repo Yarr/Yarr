@@ -56,7 +56,6 @@ CreateScanDialog::CreateScanDialog(Bookkeeper * bk, QWidget * parent) :
         ui->horizontalSlider->setSliderPosition(0);
         ui->triggerTimeBox->setEnabled(false);
 
-//        ui->scrollArea->setWidget(ui->owningFrame);
         ui->scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
         ui->scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
@@ -69,8 +68,6 @@ CreateScanDialog::CreateScanDialog(Bookkeeper * bk, QWidget * parent) :
         if(localParent == nullptr) {
             std::cout << "Severe cast error. YarrGui not accessible! \n";
         }
-
-        //myScan = new CustomScan(bk);
 }
 
 CreateScanDialog::~CreateScanDialog() {
