@@ -161,7 +161,8 @@ void YarrGui::doScan(QString qn) {
 
             //Add plot to scan tree
             QTreeWidgetItem * plotTreeItemP = new QTreeWidgetItem(plotTreeItemDS); // X
-            plotTreeItemP->setText(0, "Plot " + QString::number(plotTreeItemDS->childCount() + 1));
+            plotTreeItemP->setText(0, "Plot " + QString::number(plotTreeItemDS->childCount())
+                                              + " (" + QString::fromStdString(showMe->getName()) + ")");
             plotTreeItemDS->addChild(plotTreeItemP);
 
             if(dynamic_cast<Histo2d*>(showMe) != nullptr) {
@@ -226,51 +227,6 @@ void YarrGui::doScan(QString qn) {
         fe->ana = nullptr;
     }
     return;
-}
-
-void YarrGui::on_NoiseScanButton_clicked() {
-    scanVec.push_back("NS");
-    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + "NS ");
-}
-
-void YarrGui::on_DigitalScanButton_clicked() {
-    scanVec.push_back("DS");
-    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + "DS ");
-}
-
-void YarrGui::on_AnalogScanButton_clicked() {
-    scanVec.push_back("AS");
-    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + "AS ");
-}
-
-void YarrGui::on_ThresholdScanButton_clicked() {
-    scanVec.push_back("TS");
-    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + "TS ");
-}
-
-void YarrGui::on_ToTScanButton_clicked() {
-    scanVec.push_back("ToTS");
-    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + "ToTS ");
-}
-
-void YarrGui::on_GThrTuneButton_clicked() {
-    scanVec.push_back("GTT");
-    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + "GTT ");
-}
-
-void YarrGui::on_GPreaTuneButton_clicked() {
-    scanVec.push_back("GPT");
-    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + "GPT ");
-}
-
-void YarrGui::on_PThrTuneButton_clicked() {
-    scanVec.push_back("PTT");
-    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + "PTT ");
-}
-
-void YarrGui::on_PPreaTuneButton_clicked() {
-    scanVec.push_back("PPT");
-    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + "PPT ");
 }
 
 void YarrGui::on_doScansButton_clicked() {

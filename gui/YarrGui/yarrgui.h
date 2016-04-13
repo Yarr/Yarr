@@ -1,51 +1,47 @@
 #ifndef YARRGUI_H
 #define YARRGUI_H
 
-#include <QMainWindow>
-#include <QDir>
-#include <QFileDialog>
-#include <QColor>
 #include <QApplication>
+#include <QColor>
+#include <QDir>
+#include <QFile>
+#include <QFileDialog>
+#include <QMainWindow>
+#include <QMap>
 #include <QTest>
+#include <QtTest/QTest>
+#include <QTextStream>
+#include <QTreeWidget>
+#include <QTreeWidgetItem>
 
 #include <array>
-#include <string>
-#include <vector>
 #include <cmath>
+#include <iomanip>
+#include <sstream>
+#include <string>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <vector>
 
 //#include "qdebugstream.h"
 #include "SpecController.h"
+#include "benchmarkdialog.h"
+#include "createscandialog.h"
 #include "Bookkeeper.h"
+#include "eepromdialog.h"
+#include "plotdialog.h"
 #include "qcustomplot.h"
 #include "TxCore.h"
 #include "RxCore.h"
 #include "Fei4.h"
 #include "ScanBase.h"
+#include "scanstruct.h"
 #include "Fei4DataProcessor.h"
 #include "Fei4Histogrammer.h"
 #include "Fei4Analysis.h"
 #include "Fei4Scans.h"
 #include "DataProcessor.h"
 
-#include <unistd.h>
-#include <sys/wait.h>
-
-#include <sstream>
-#include <iomanip>
-
-#include <QFile>
-#include <QTextStream>
-
-#include <QTreeWidget>
-#include <QTreeWidgetItem>
-
-#include <QtTest/QTest>
-
-#include "benchmarkdialog.h"
-#include "createscandialog.h"
-#include "eepromdialog.h"
-#include "plotdialog.h"
-#include "scanstruct.h"
 
 namespace Ui {
 class YarrGui;
@@ -84,17 +80,6 @@ private slots:
     void on_configFile_button_clicked();
     void on_gConfigFile_button_clicked();
 
-    void on_NoiseScanButton_clicked();
-    void on_DigitalScanButton_clicked();
-    void on_AnalogScanButton_clicked();
-    void on_ThresholdScanButton_clicked();
-    void on_ToTScanButton_clicked();
-
-    void on_GThrTuneButton_clicked();
-    void on_GPreaTuneButton_clicked();
-    void on_PThrTuneButton_clicked();
-    void on_PPreaTuneButton_clicked();
-
     //Scans
     void on_doScansButton_clicked();
     void on_RemoveScans_Button_clicked();
@@ -113,6 +98,12 @@ private slots:
     //Additional functionality
     void on_addFuncButton_clicked();
 
+    void on_addScanButton_clicked();
+
+    void on_exportPlotButton_clicked();
+
+    void on_addFeGlobalButton_clicked();
+
 private:
     Ui::YarrGui * ui;
     
@@ -130,8 +121,10 @@ private:
 
     std::vector<QString> scanVec;
     CustomScan cs;
+    QMap<QString, QString> availableScansMap;
 
-    void init();
+    void initAvailableScans();
+    void initSpecLabels();
     void doScan(QString qn);
     void detachPlot();
     void removePlot();
@@ -139,3 +132,4 @@ private:
 };
 
 #endif // YARRGUI_H
+

@@ -16,7 +16,8 @@ YarrGui::YarrGui(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    this->init();
+    initSpecLabels();
+    initAvailableScans();
 
     // Get list of devices
     devicePath.setPath("/dev/");
@@ -33,7 +34,6 @@ YarrGui::YarrGui(QWidget *parent) :
         specVec.push_back(new SpecController());
     }
 
-    ui->global_cfg_checkBox->setChecked(true); //DEBUG
     ui->configfileName_2->setText("util/global_config.gcfg"); //DEBUG
 
     // Init console
@@ -88,7 +88,7 @@ SpecController * YarrGui::specVecAt(unsigned int i) {
     return specVec.at(i);
 }
 
-void YarrGui::init() {
+void YarrGui::initSpecLabels() {
     // Preset labels
     ui->specid_value->setNum(-1);
     ui->bar0_value->setNum(-1);
@@ -224,3 +224,80 @@ void YarrGui::on_addFuncButton_clicked()
 //It seems that qt must have all code that belongs
 //to a *.ui file in the corresponding *.cpp file,
 //else it won't compile???
+
+void YarrGui::on_addScanButton_clicked(){
+    QString myKey = ui->addScanBox->currentText();
+    QString myVal = availableScansMap.value(myKey);
+    scanVec.push_back(myVal);
+    myVal.append(" ");
+    ui->scanVec_lineEdit->insert(myVal);
+
+    return;
+}
+
+void YarrGui::initAvailableScans(){
+    availableScansMap.insert("NoiseScan (NS)", "NS");
+    availableScansMap.insert("DigitalScan (DS)", "DS");
+    availableScansMap.insert("AnalogScan (AS)", "AS");
+    availableScansMap.insert("ThresholdScan (TS)", "TS");
+    availableScansMap.insert("ToTScan (ToTS)", "ToTS");
+
+    availableScansMap.insert("GlobalThresholdTune (GTT)", "GTT");
+    availableScansMap.insert("GlobalPreampTune (GPT)", "GPT");
+    availableScansMap.insert("PixelThresholdTune (PTT)", "PTT");
+    availableScansMap.insert("PixelPreampTune (PPT)", "PPT");
+
+    QMap<QString, QString>::const_iterator i = availableScansMap.constBegin();
+    while(i != availableScansMap.constEnd()){
+        ui->addScanBox->addItem(i.key());
+        ++i;
+    }
+
+    return;
+}
+
+//void YarrGui::on_NoiseScanButton_clicked() {
+//    scanVec.push_back("NS");
+//    ui->scanVec_lineEdit->setText((ui->scanVec_lineEdit->text()) + "NS ");
+//}
+
+void YarrGui::on_exportPlotButton_clicked(){
+    if(ui->scanPlots_tabWidget->count() == 0){return;}
+    if(ui->plotTree->currentItem() == nullptr) {
+        std::cerr << "Please select plot. Returning... " << std::endl;
+        return;
+    }
+    if(ui->plotTree->currentItem()->childCount() > 0){
+        std::cerr << "Please select plot. Returning... " << std::endl;
+        return;
+    }
+
+    QWidget * toCast = ui->scanPlots_tabWidget->currentWidget();
+    QCustomPlot * myPlot = dynamic_cast<QCustomPlot*>(toCast);
+    if(myPlot == nullptr){
+        std::cerr << "Severe cast error. Returning... " << std::endl;
+
+        return;
+    }
+
+    QString myFileName = ui->plotTree->currentItem()->text(0);
+
+    struct tm * timeinfo;
+    time_t rawtime;
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+
+    myFileName = myFileName
+               + QString::number(1900+(timeinfo->tm_year)) + '_'
+               + (timeinfo->tm_mon > 8 ? QString::number(1+(timeinfo->tm_mon)) : ('0' + QString::number(1+(timeinfo->tm_mon)))) + '_'
+               + QString::number((timeinfo->tm_mday)) + '_'
+               + QString::number((timeinfo->tm_hour)) + '_'
+               + QString::number((timeinfo->tm_min)) + '_'
+               + QString::number((timeinfo->tm_sec)) + ".pdf";
+
+    myPlot->savePdf(myFileName);
+    std::cout << "Saved current plot to \"" << myFileName.toStdString() << '"' << std::endl;
+
+    return;
+}
+
