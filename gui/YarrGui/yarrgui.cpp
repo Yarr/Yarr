@@ -4,12 +4,6 @@
 #include <BitFile.h>
 #include <BenchmarkTools.h>
 
-#include <iostream>
-#include <fstream>
-#include <string>
-
-#include <QMessageBox>
-
 YarrGui::YarrGui(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::YarrGui)
@@ -59,6 +53,11 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->additionalFunctionality->addItem("Benchmark");
     ui->additionalFunctionality->addItem("EEPROM");
     ui->additionalFunctionality->addItem("Create scan");
+
+    QPixmap yarrPapageiPix("yarr_papagei_2.png");
+    yarrPapageiPix = yarrPapageiPix.scaledToHeight(ui->yarrPapageiLabel->height() - 10);
+    ui->yarrPapageiLabel->setPixmap(yarrPapageiPix);
+    ui->yarrPapageiLabel->setAlignment(Qt::AlignRight);
 }
 
 YarrGui::~YarrGui()

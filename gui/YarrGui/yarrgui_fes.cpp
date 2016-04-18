@@ -146,18 +146,25 @@ void YarrGui::on_feTree_itemClicked(QTreeWidgetItem * item, int column){
     if(item->childCount() == 0) {
         return;
     }
-    QString chipIdAdded = item->child(0)->text(1);
-    QString txChannelAdded = item->child(1)->text(1);
-    QString rxChannelAdded = item->child(2)->text(1);
+    QString chipIdAdded     = item->child(0)->text(1);
+    QString txChannelAdded  = item->child(1)->text(1);
+    QString rxChannelAdded  = item->child(2)->text(1);
+    QString configFileAdded = item->child(3)->text(1);
 
     ui->chipIdEdit->setText(chipIdAdded);
     ui->txChannelEdit->setText(txChannelAdded);
     ui->rxChannelEdit->setText(rxChannelAdded);
+    ui->configfileName->setText(configFileAdded);
 }
 
 void YarrGui::on_remFeButton_clicked(){
+    if(ui->feTree->currentItem() == nullptr){
+        std::cerr << "Please select a FE from the tree. Returning... " << std::endl;
+        return;
+    }
     QTreeWidgetItem * itemRemoved = ui->feTree->currentItem();
     if(itemRemoved->childCount() == 0) {
+        std::cerr << "Please select a FE from the tree. Returning... " << std::endl;
         return;
     }
     QString channelRemoved = itemRemoved->child(2)->text(1);

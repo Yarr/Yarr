@@ -6,8 +6,11 @@
 #include <QDir>
 #include <QFile>
 #include <QFileDialog>
+#include <QImage>
 #include <QMainWindow>
 #include <QMap>
+#include <QMessageBox>
+#include <QPixmap>
 #include <QTest>
 #include <QtTest/QTest>
 #include <QTextStream>
@@ -16,7 +19,9 @@
 
 #include <array>
 #include <cmath>
+#include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <sys/wait.h>
