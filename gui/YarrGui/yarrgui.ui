@@ -33,7 +33,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>2</number>
     </property>
     <property name="tabsClosable">
      <bool>false</bool>
@@ -185,6 +185,19 @@
       </property>
       <property name="text">
        <string>FPGA Bit File:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="yarrPapageiLabel">
+      <property name="geometry">
+       <rect>
+        <x>630</x>
+        <y>24</y>
+        <width>321</width>
+        <height>351</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>YarrPapagei</string>
       </property>
      </widget>
     </widget>
@@ -415,7 +428,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>350</y>
+        <y>330</y>
         <width>101</width>
         <height>31</height>
        </rect>
@@ -427,9 +440,9 @@
      <widget class="QTabWidget" name="scanPlots_tabWidget">
       <property name="geometry">
        <rect>
-        <x>440</x>
+        <x>430</x>
         <y>10</y>
-        <width>511</width>
+        <width>521</width>
         <height>371</height>
        </rect>
       </property>
@@ -441,7 +454,7 @@
       <property name="geometry">
        <rect>
         <x>220</x>
-        <y>290</y>
+        <y>270</y>
         <width>101</width>
         <height>31</height>
        </rect>
@@ -455,8 +468,8 @@
        <rect>
         <x>10</x>
         <y>10</y>
-        <width>421</width>
-        <height>241</height>
+        <width>411</width>
+        <height>221</height>
        </rect>
       </property>
       <property name="columnCount">
@@ -488,7 +501,7 @@
       <property name="geometry">
        <rect>
         <x>220</x>
-        <y>320</y>
+        <y>300</y>
         <width>101</width>
         <height>31</height>
        </rect>
@@ -501,8 +514,8 @@
       <property name="geometry">
        <rect>
         <x>320</x>
-        <y>320</y>
-        <width>111</width>
+        <y>300</y>
+        <width>101</width>
         <height>31</height>
        </rect>
       </property>
@@ -514,8 +527,8 @@
       <property name="geometry">
        <rect>
         <x>320</x>
-        <y>290</y>
-        <width>111</width>
+        <y>270</y>
+        <width>101</width>
         <height>31</height>
        </rect>
       </property>
@@ -527,7 +540,7 @@
       <property name="geometry">
        <rect>
         <x>110</x>
-        <y>350</y>
+        <y>330</y>
         <width>111</width>
         <height>31</height>
        </rect>
@@ -539,9 +552,9 @@
      <widget class="QProgressBar" name="scanProgressBar">
       <property name="geometry">
        <rect>
-        <x>220</x>
+        <x>10</x>
         <y>360</y>
-        <width>101</width>
+        <width>411</width>
         <height>21</height>
        </rect>
       </property>
@@ -553,7 +566,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>290</y>
+        <y>270</y>
         <width>211</width>
         <height>31</height>
        </rect>
@@ -563,20 +576,20 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>320</y>
+        <y>300</y>
         <width>101</width>
         <height>31</height>
        </rect>
       </property>
       <property name="text">
-       <string>Add scan</string>
+       <string>Add scan ↑</string>
       </property>
      </widget>
      <widget class="QPushButton" name="RemoveScans_Button">
       <property name="geometry">
        <rect>
         <x>110</x>
-        <y>320</y>
+        <y>300</y>
         <width>111</width>
         <height>31</height>
        </rect>
@@ -589,8 +602,8 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>260</y>
-        <width>421</width>
+        <y>240</y>
+        <width>411</width>
         <height>31</height>
        </rect>
       </property>
@@ -598,14 +611,27 @@
      <widget class="QPushButton" name="exportPlotButton">
       <property name="geometry">
        <rect>
-        <x>320</x>
-        <y>350</y>
-        <width>111</width>
+        <x>220</x>
+        <y>330</y>
+        <width>101</width>
         <height>31</height>
        </rect>
       </property>
       <property name="text">
-       <string>Export plot (PDF)</string>
+       <string>Export (PDF)</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="exportPlotCSVButton">
+      <property name="geometry">
+       <rect>
+        <x>320</x>
+        <y>330</y>
+        <width>101</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Export (CSV)</string>
       </property>
      </widget>
     </widget>

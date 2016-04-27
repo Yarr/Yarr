@@ -109,6 +109,8 @@ private slots:
 
     void on_addFeGlobalButton_clicked();
 
+    void on_exportPlotCSVButton_clicked();
+
 private:
     Ui::YarrGui * ui;
     

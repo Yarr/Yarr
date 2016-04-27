@@ -58,6 +58,15 @@ YarrGui::YarrGui(QWidget *parent) :
     yarrPapageiPix = yarrPapageiPix.scaledToHeight(ui->yarrPapageiLabel->height() - 10);
     ui->yarrPapageiLabel->setPixmap(yarrPapageiPix);
     ui->yarrPapageiLabel->setAlignment(Qt::AlignRight);
+
+    ui->chipIdEdit->setText("6");
+    ui->rxChannelEdit->setText("0");
+    ui->txChannelEdit->setText("0");
+    ui->configfileName->setText("util/your_config_here.cfg");
+
+    ui->addScanButton->setFont(QFont("Sans Serif", 10, QFont::Bold));
+    ui->doScansButton->setFont(QFont("Sans Serif", 10, QFont::Bold));
+
 }
 
 YarrGui::~YarrGui()
@@ -300,3 +309,56 @@ void YarrGui::on_exportPlotButton_clicked(){
     return;
 }
 
+
+void YarrGui::on_exportPlotCSVButton_clicked(){
+    if(ui->scanPlots_tabWidget->count() == 0){return;}
+    if(ui->plotTree->currentItem() == nullptr) {
+        std::cerr << "Please select plot. Returning... " << std::endl;
+        return;
+    }
+    if(ui->plotTree->currentItem()->childCount() > 0){
+        std::cerr << "Please select plot. Returning... " << std::endl;
+        return;
+    }
+
+    QWidget * toCast = ui->scanPlots_tabWidget->currentWidget();
+    QCustomPlot * myPlot = dynamic_cast<QCustomPlot*>(toCast);
+    if(myPlot == nullptr){
+        std::cerr << "Severe cast error. Returning... " << std::endl;
+        return;
+    }
+
+    QCPColorMap * myColorMap = dynamic_cast<QCPColorMap*>(myPlot->plottable());
+    if(myColorMap == nullptr){
+        std::cout << "Severe cast error. Aborting... " << std::endl;
+        return;
+    }
+
+    QString myFileName = ui->plotTree->currentItem()->text(0);
+
+    struct tm * timeinfo;
+    time_t rawtime;
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+
+    myFileName = myFileName
+               + QString::number(1900+(timeinfo->tm_year)) + '_'
+               + (timeinfo->tm_mon > 8 ? QString::number(1+(timeinfo->tm_mon)) : ('0' + QString::number(1+(timeinfo->tm_mon)))) + '_'
+               + QString::number((timeinfo->tm_mday)) + '_'
+               + QString::number((timeinfo->tm_hour)) + '_'
+               + QString::number((timeinfo->tm_min)) + '_'
+               + QString::number((timeinfo->tm_sec)) + ".csv";
+
+    std::ofstream myCSVOutput(myFileName.toStdString());
+
+    for(int xCoord = 0; xCoord<80; xCoord++){
+        for(int yCoord = 0; yCoord<336; yCoord++) {
+            myCSVOutput << xCoord << ",\t" << yCoord << ",\t" << myColorMap->data()->cell(xCoord, yCoord) << std::endl;
+        }
+    }
+
+    myCSVOutput.close();
+    std::cout << "Saved current plot to \"" << myFileName.toStdString() << '"' << std::endl;
+
+    return;
+}
