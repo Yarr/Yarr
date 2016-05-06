@@ -11,12 +11,14 @@ Fe65p2QcLoop::Fe65p2QcLoop() {
     max = 4;
     step = 1;
     m_cur = 0;
+    m_done = false;
     
     loopType = typeid(this);
 }
 
 void Fe65p2QcLoop::init() {
-
+    m_cur = 0;
+    m_done = false;
 }
 
 void Fe65p2QcLoop::end() {
@@ -24,6 +26,7 @@ void Fe65p2QcLoop::end() {
 }
 
 void Fe65p2QcLoop::execPart1() {
+    std::cout << "\t--> Qc Loop: " << m_cur << std::endl;
     // All in parallel
     g_fe65p2->setValue(&Fe65p2::ColEn, (m_mask << m_cur));
     g_fe65p2->setValue(&Fe65p2::ColSrEn, (m_mask << m_cur));
@@ -32,6 +35,7 @@ void Fe65p2QcLoop::execPart1() {
 }
 
 void Fe65p2QcLoop::execPart2() {
+    m_cur+=step;
     if (!(m_cur < max)) m_done = true;
 }
 

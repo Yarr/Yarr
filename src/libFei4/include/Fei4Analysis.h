@@ -27,6 +27,7 @@
 #include "Bookkeeper.h"
 
 #include "AllFei4Actions.h"
+#include "AllFe65p2Actions.h"
 #include "AllStdActions.h"
 
 class AnalysisAlgorithm {

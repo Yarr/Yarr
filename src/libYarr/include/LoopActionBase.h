@@ -13,7 +13,7 @@
 #include <string>
 
 #include "Fei4.h"
-#include "FE65p2.h"
+#include "Fe65p2.h"
 #include "TxCore.h"
 #include "RxCore.h"
 #include "LoopStatus.h"

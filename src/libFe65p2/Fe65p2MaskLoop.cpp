@@ -19,6 +19,8 @@ Fe65p2MaskLoop::Fe65p2MaskLoop() : LoopActionBase() {
 void Fe65p2MaskLoop::init() {
     // TODO want to init mask here and then only shift it in execPart2()
     // Nothing to do
+    m_cur = 0;
+    m_done = false;
 }
 
 void Fe65p2MaskLoop::end() {

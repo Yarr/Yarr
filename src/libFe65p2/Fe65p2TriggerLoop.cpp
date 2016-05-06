@@ -23,6 +23,7 @@ Fe65p2TriggerLoop::Fe65p2TriggerLoop() : LoopActionBase() {
 
 void Fe65p2TriggerLoop::init() {
     // Setup Trigger
+    m_done = false;
     if (m_trigCnt > 0) {
         g_tx->setTrigConfig(INT_COUNT);
     } else {
@@ -33,7 +34,6 @@ void Fe65p2TriggerLoop::init() {
     g_tx->setTrigWordLength(m_trigWordLength);
     g_tx->setTrigWord(m_trigWord);
     g_tx->setTrigTime(m_trigTime);
-    while(!g_tx->isCmdEmpty());
 }
 
 void Fe65p2TriggerLoop::end() {
@@ -41,6 +41,7 @@ void Fe65p2TriggerLoop::end() {
 }
 
 void Fe65p2TriggerLoop::execPart1() {
+    std::cout << " Trigger Loop" << std::endl;
     // Enable Trigger
     g_tx->setTrigEnable(0x1);
 

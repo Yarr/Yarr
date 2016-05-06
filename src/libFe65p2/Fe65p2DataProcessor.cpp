@@ -63,8 +63,9 @@ void Fe65p2DataProcessor::process() {
                     std::cout << "# ERROR # " << __PRETTY_FUNCTION__ << " : Received data for channel " << channel << " but storage not initiliazed!" << std::endl;
                 } else if ((value & 0x00800000) == 0x00800000) {
                     // BCID
-                    if ((bcid[channel] - (value & 0x007FFFFF)) > 1) 
+                    if ((int)(value & 0x007FFFFF) - (int)(bcid[channel]) > 1) {
                         l1id[channel]++; // Iterate L1id when not consecutive bcid
+                    }
                     bcid[channel] = (value & 0x007FFFFF);
                     curOut[channel]->newEvent(l1id[channel], bcid[channel]);
                     events[channel]++;
@@ -105,6 +106,7 @@ void Fe65p2DataProcessor::process() {
                         } else {
                             if (tot0 != 15) {
                                 curOut[channel]->curEvent->addHit(real_row0, real_col, tot0);
+                                //std::cout << " hit!" << std::endl;
                                 hits[channel]++;
                             }
                             if (tot1 != 15) {

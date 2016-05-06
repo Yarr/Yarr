@@ -83,6 +83,9 @@ void OccupancyAnalysis::init(ScanBase *s) {
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
+                    l->type() != typeid(Fe65p2MaskLoop*) &&
+                    l->type() != typeid(Fe65p2TriggerLoop*) &&
+                    l->type() != typeid(Fe65p2QcLoop*) &&
                     l->type() != typeid(Fei4MaskLoop*) &&
                     l->type() != typeid(StdDataLoop*) &&
                     l->type() != typeid(Fei4DcLoop*))) {
@@ -96,6 +99,10 @@ void OccupancyAnalysis::init(ScanBase *s) {
         }
         if (l->type() == typeid(Fei4TriggerLoop*)) {
             Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
+        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
+            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
             injections = trigLoop->getTrigCnt();
         }
     }
@@ -736,6 +743,9 @@ void L1Analysis::init(ScanBase *s) {
                     l->type() != typeid(Fei4MaskLoop*) &&
                     l->type() != typeid(StdDataLoop*) &&
                     l->type() != typeid(Fei4DcLoop*)) &&
+                    l->type() != typeid(Fe65p2MaskLoop*) &&
+                    l->type() != typeid(Fe65p2QcLoop*) &&
+                    l->type() != typeid(Fe65p2TriggerLoop*) &&
                     l->type() != tmpVcalLoop->type()) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -747,6 +757,10 @@ void L1Analysis::init(ScanBase *s) {
         }
         if (l->type() == typeid(Fei4TriggerLoop*)) {
             Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
+        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
+            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
             injections = trigLoop->getTrigCnt();
         }
     }

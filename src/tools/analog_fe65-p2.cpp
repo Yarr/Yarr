@@ -110,8 +110,6 @@ void getData(RxCore *rx, Histo2d *h) {
     RawData *newData = NULL;
     do {
         usleep(500);
-        if (newData != NULL)
-            delete newData;
         newData = rx->readData();
         if (newData != NULL) {
             rdc.add(newData);
@@ -188,10 +186,10 @@ int main(void) {
     greg.reg.ColSrEnCnfg = 0xFFFF;
     greg.reg.ColSrOutCnfg = 15;
     greg.reg.SPARE = 0;
-    greg.reg.PrmpVbpDacConf = 36; //36
+    greg.reg.PrmpVbpDacConf = 50; //36
     greg.reg.vthin1DacConf = 255; //255
     greg.reg.vthin2DacConf = 0; //0
-    greg.reg.vffDacConf = 50;
+    greg.reg.vffDacConf = 24;
     greg.reg.VctrCF0DacConf = 0;
     greg.reg.VctrCF1DacConf = 0;
     greg.reg.PrmpVbnFolDacConf = 50;
@@ -207,7 +205,7 @@ int main(void) {
     tx.setCmdEnable(0x1);
     // Disable clocks
     tx.writeFifo(0x0);
-    tx.writeFifo(0x80300004);
+    tx.writeFifo(0x80300000);
     
    
     config_global(&tx, &greg.array[0]);// Write config
@@ -217,7 +215,7 @@ int main(void) {
         //Write 1s
         shift_pixel(&tx, (uint16_t) 0xFFFF);
         
-        greg.reg.SignLdCnfg = 1;
+        greg.reg.SignLdCnfg = 0;
         greg.reg.InjEnLdCnfg = 0;
         greg.reg.TDacLdCnfg = 15;
         greg.reg.PixConfLdCnfg = 0;
@@ -246,7 +244,7 @@ int main(void) {
     }
 
     // Enable some pixels
-    if (0){
+    if(0){
         shift_pixel(&tx, (uint16_t) 0xFFFF); // Every 16th
         greg.reg.PixConfLdCnfg = 3;
         config_global(&tx, &greg.array[0]);
@@ -264,30 +262,42 @@ int main(void) {
     config_global(&tx, &greg.array[0]);// Write config
     //shift_pixel(&tx,(uint16_t) 0x0);
    
+    std::string trash;
+    std::cout << "Waiting" << std::endl;
+    std::cin >> trash;
 
     // Turn on clocks
     tx.writeFifo(0x0);
-    tx.writeFifo(0x80300007);
+    tx.writeFifo(0x80300003);
     
     // Reset
     tx.writeFifo(0x0);
-    tx.writeFifo(0x80300037);
+    tx.writeFifo(0x80300033);
     usleep(5000);
     
     //Clocks on & Analog Inj
+    // Pix D conf = 0
     tx.writeFifo(0x0);
-    tx.writeFifo(0x8030000F);
+    tx.writeFifo(0x8030000B);
     usleep(5000);
+       
+    // Setup pulser DAC
+    unsigned PlsrDac = 1000;
+    uint32_t dacReg = ((0x7<<12) | (PlsrDac << 2)) & 0x0000FFFF;
+    tx.writeFifo(0x0);
+    tx.writeFifo(0x80330000 | dacReg);
+    tx.writeFifo(0x0);
+    tx.writeFifo(0x80310000 + (0x1 << 5));
+    usleep(1000);
     
     rx.setRxEnable(0x1);
-    std::string trash;
     std::cout << "Waiting" << std::endl;
     std::cin >> trash;
     // Inject & trigger
     
     tx.writeFifo(0x0);
-    tx.writeFifo(0x80320000 + (greg.reg.LatencyCnfg+60));
-    //tx.writeFifo(0x80320000 + (greg.reg.LatencyCnfg+4));
+    //tx.writeFifo(0x80320000 + (greg.reg.LatencyCnfg+60)); // 1MHz injection
+    tx.writeFifo(0x80320000 + (greg.reg.LatencyCnfg+5));
    
     uint16_t mask[16];
     for (unsigned i=0; i<16; i++) {
@@ -304,6 +314,7 @@ int main(void) {
         greg.reg.ColEnCnfg = 0xFFFF;
         greg.reg.ColSrEnCnfg = (0xFFFF);
         greg.reg.vthin1DacConf = 255; //255
+        //greg.reg.preCompVbnDacConf = 0;
         config_global(&tx, &greg.array[0]);// Write config
         
         /*
@@ -317,6 +328,7 @@ int main(void) {
         config_global(&tx, &greg.array[0]);// Write config
         */
         shift_pixel(&tx,(uint16_t) (0x1<<i));
+            usleep(5000);
         greg.reg.InjEnLdCnfg = 1;
         greg.reg.PixConfLdCnfg = 3;
         config_global(&tx, &greg.array[0]);// Write config
@@ -327,22 +339,24 @@ int main(void) {
             
         // Write 0s
         //shift_pixel(&tx, (uint16_t) 0x0000);
-        
+        usleep(5000);
         for (unsigned j=0; j<4; j++) {
             std::cout << "---> Quad Col: " << j << std::endl;
             // Shift by one at the end
-            greg.reg.ColSrEnCnfg = (0x1111<<j);
+            //greg.reg.ColSrEnCnfg = (0x1111<<j);
             greg.reg.ColEnCnfg = (0x1111<<j);
-            greg.reg.vthin1DacConf = 100; //255
+            greg.reg.vthin1DacConf = 50; //255
+            //greg.reg.preCompVbnDacConf = 50;
             config_global(&tx, &greg.array[0]);// Write config
         
             Histo2d mask_step(std::string("Index_" + std::to_string(i)), 64, 0.5, 64.5, 64, 0.5, 64.5, typeid(NULL));
+            usleep(10000);
             for(unsigned k=0; k<50; k++) {
                 // Number of injections
                 // Inject
                 tx.writeFifo(0x0);
                 tx.writeFifo(0x80310002);
-                usleep(50);
+                usleep(500);
                 getData(&rx, &mask_step);
             }
             occ.add(&mask_step);

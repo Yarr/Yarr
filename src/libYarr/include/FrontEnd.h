@@ -21,9 +21,12 @@ class FrontEnd {
         unsigned getChannel();
 		unsigned getTxChannel();
 		unsigned getRxChannel();
+        std::string getName();
+     
 		void setChannel(unsigned channel);
 		void setChannel(unsigned arg_txChannel, unsigned arg_rxChannel);
-		
+        void setName(std::string arg_name);
+
         bool getActive();
 		bool isActive();
 		void setActive(bool active);

@@ -13,6 +13,7 @@
 #include "ScanBase.h"
 
 #include "AllStdActions.h"
+#include "AllFe65p2Actions.h"
 
 class Fe65p2DigitalScan : public ScanBase {
     public:

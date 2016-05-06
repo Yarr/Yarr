@@ -14,7 +14,26 @@ Fe65p2DigitalScan::Fe65p2DigitalScan(Bookkeeper *k) : ScanBase(k) {
 }
 
 void Fe65p2DigitalScan::init() {
+    // Loop 1: Mask Staging
+    std::shared_ptr<Fe65p2MaskLoop> maskStaging(new Fe65p2MaskLoop);
 
+    // Loop 2: Double Columns
+    std::shared_ptr<Fe65p2QcLoop> dcLoop(new Fe65p2QcLoop);
+    
+    // Loop 3: Trigger
+    std::shared_ptr<Fe65p2TriggerLoop> triggerLoop(new Fe65p2TriggerLoop);
+
+    // Loop 4: Data gatherer
+    std::shared_ptr<StdDataLoop> dataLoop(new StdDataLoop);
+    dataLoop->setVerbose(false);
+    dataLoop->connect(g_data);
+
+    this->addLoop(maskStaging);
+    this->addLoop(dcLoop);
+    this->addLoop(triggerLoop);
+    this->addLoop(dataLoop);
+    
+    engine.init();
 }
 
 void Fe65p2DigitalScan::preScan() {

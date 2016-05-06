@@ -110,8 +110,6 @@ void getData(RxCore *rx, Histo2d *h) {
     RawData *newData = NULL;
     do {
         usleep(500);
-        if (newData != NULL)
-            delete newData;
         newData = rx->readData();
         if (newData != NULL) {
             rdc.add(newData);

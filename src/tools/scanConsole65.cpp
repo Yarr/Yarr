@@ -184,6 +184,12 @@ int main(int argc, char *argv[]) {
     }
     */ 
     bookie.addFe(0, 0, 0);
+    bookie.getLastFe()->setName("fe65p2");
+    Fe65p2 *fe = bookie.g_fe65p2;
+    fe->setName("fe65p2");
+    fe->clipDataFei4 = &bookie.eventMap[0];
+    fe->clipHisto = &bookie.histoMap[0];
+    fe->clipResult = &bookie.resultMap[0];
 
     std::cout << std::endl;
     std::cout << "#################" << std::endl;
@@ -204,7 +210,9 @@ int main(int argc, char *argv[]) {
         std::this_thread::sleep_for(std::chrono::microseconds(100));
         while(!tx.isCmdEmpty());
     }*/
+    tx.setCmdEnable(0x1);
     bookie.g_fe65p2->configure();
+    while(!tx.isCmdEmpty());
 
     std::chrono::steady_clock::time_point cfg_end = std::chrono::steady_clock::now();
     std::cout << "-> All FEs configured in " 
@@ -267,9 +275,9 @@ int main(int argc, char *argv[]) {
     }
     
     // Init histogrammer and analysis
-    //for (unsigned i=0; i<bookie.feList.size(); i++) {
-        Fe65p2 *fe = bookie.g_fe65p2;
-        //if (fe->isActive()) {
+    for (unsigned i=0; i<bookie.feList.size(); i++) {
+        Fei4 *fe = bookie.feList[i];
+        if (fe->isActive()) {
             // Init histogrammer per FE
             fe->histogrammer = new Fei4Histogrammer();
             fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
@@ -279,6 +287,7 @@ int main(int argc, char *argv[]) {
             fe->histogrammer->addHistogrammer(new Tot2Map());
             fe->histogrammer->addHistogrammer(new L1Dist());
             fe->histogrammer->addHistogrammer(new HitDist());
+            // Fe65p2 specific
             fe->histogrammer->setMapSize(64, 64);
            
             // Init analysis per FE and depending on scan type
@@ -309,8 +318,9 @@ int main(int argc, char *argv[]) {
                 std::cerr << "-> Aborting!" << std::endl;
                 return -1;
             }
-        //}
-    //}
+            fe->ana->setMapSize(64, 64);
+        }
+    }
 
     std::cout << "-> Running pre scan!" << std::endl;
     s->init();
@@ -326,13 +336,13 @@ int main(int argc, char *argv[]) {
 
     std::vector<std::thread> anaThreads;
     std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
-    //for (unsigned i=0; i<bookie.feList.size(); i++) {
-        //Fei4 *fe = bookie.feList[i];
-        //if (fe->isActive()) {
+    for (unsigned i=0; i<bookie.feList.size(); i++) {
+        Fei4 *fe = bookie.feList[i];
+        if (fe->isActive()) {
             anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana));
             std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
-        //}
-    //}
+        }
+    }
 
     std::cout << std::endl;
     std::cout << "########" << std::endl;
@@ -388,8 +398,8 @@ int main(int argc, char *argv[]) {
             // Plot
             if (doPlots) {
                 std::cout << "-> Plotting histograms of FE " << fe->getRxChannel() << std::endl;
-                fe->ana->plot(std::string(timestamp) + "-" + fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
-                fe->ana->toFile(std::string(timestamp) + "-" + fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
+                fe->ana->plot(/*std::string(timestamp) + "-" + */fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
+                fe->ana->toFile(/*std::string(timestamp) + "-" + */fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
             }
             // Free
             delete fe->histogrammer;
