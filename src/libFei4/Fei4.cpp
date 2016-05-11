@@ -93,7 +93,7 @@ void Fei4::initMask(uint32_t mask) {
 }
 
 void Fei4::shiftMask() {
-    this->loadIntoShiftReg(0x1);
+    this->loadIntoShiftReg(0x1); //enable latch (0 in GR13 is spare!)
     this->loadIntoPixel(0x1);
     this->loadIntoShiftReg(0x1);
     this->shiftByOne();
@@ -103,10 +103,10 @@ void Fei4::shiftMask() {
 void Fei4::loadIntoShiftReg(unsigned pixel_latch) {
     // Select Pixel latch to copy into SR
     writeRegister(&Fei4::Pixel_latch_strobe, pixel_latch);
-    // Select SR in Parallel Input Mode
+    // Select SR in Parallel Input Mode; (S0, S1, HitLd) = (1, 1, 0), see manual p. 84
     writeRegister(&Fei4::S1, 0x1);
     writeRegister(&Fei4::S0, 0x1);
-    writeRegister(&Fei4::SR_Clock, 0x1);
+    writeRegister(&Fei4::SR_Clock, 0x1); //next global pulse -> clock
 
     // Copy from Latches into SR
     globalPulse(chipId, 10);
@@ -121,7 +121,7 @@ void Fei4::loadIntoShiftReg(unsigned pixel_latch) {
 void Fei4::loadIntoPixel(unsigned pixel_latch) {
     // Select Pixel latch to copy into SR
     writeRegister(&Fei4::Pixel_latch_strobe, pixel_latch);
-    
+
     // Enable Latches
     writeRegister(&Fei4::Latch_Enable, 0x1);
 

@@ -112,6 +112,15 @@ void Fei4TriggerLoop::setNoInject() {
     m_trigWordLength = 5;
 }
 
+void Fei4TriggerLoop::setOnlyInject(){
+    m_trigWord[0] = 0;
+    m_trigWord[1] = CAL_CMD;
+    m_trigWord[2] = 0;
+    m_trigWord[3] = 0;
+
+    return;
+}
+
 unsigned int Fei4TriggerLoop::getTrigDelay() {
     return m_trigDelay;
 }
