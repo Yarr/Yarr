@@ -26,7 +26,7 @@
 #include "Fei4Histogrammer.h"
 #include "Fei4Analysis.h"
 #include "Fei4Scans.h"
-#include "Fe65p2DigitalScan.h"
+#include "Fe65p2Scans.h"
 
 void printHelp();
 void listScans();
@@ -242,7 +242,7 @@ int main(int argc, char *argv[]) {
         s = new Fe65p2DigitalScan(&bookie);
     } else if (scanType == "analogscan") {
         std::cout << "-> Found Analog Scan" << std::endl;
-        s = new Fei4AnalogScan(&bookie);
+        s = new Fe65p2AnalogScan(&bookie);
     } else if (scanType == "thresholdscan") {
         std::cout << "-> Found Threshold Scan" << std::endl;
         s = new Fei4ThresholdScan(&bookie);

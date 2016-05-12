@@ -48,6 +48,7 @@ class Fe65p2Cmd {
         
         void setLatency(uint16_t lat);
         void injectAndTrigger();
+        void setPlsrDac(unsigned setting);
 
         void reset();
         void clocksOn();

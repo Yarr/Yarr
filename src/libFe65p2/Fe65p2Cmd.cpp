@@ -101,6 +101,21 @@ void Fe65p2Cmd::writeStaticReg() {
     while(core->isCmdEmpty() == 0);
 }
 
+void Fe65p2Cmd::setPlsrDac(unsigned setting) {
+    // [15] 1 = ignore, 0 = good
+    // [14] 1 = buffered, 0 = unbuffered
+    // [13] 1 = 1x, 0 = 2x
+    // [12] 1 = active, 0 = shut down
+    // [11:2] 10-bit DAC setting
+    // [1:0] ignored
+    uint32_t dacReg = ((0x7<<12) | (setting << 2)) & 0xFFFF;
+    core->writeFifo(0x0);
+    core->writeFifo(0x80330000 | dacReg);
+    core->writeFifo(0x0);
+    core->writeFifo((0x80310000) | (0x1 << 5));
+    usleep(1000);
+}
+
 void Fe65p2Cmd::setStaticReg(uint32_t bit) {
     static_reg |= bit;
 }

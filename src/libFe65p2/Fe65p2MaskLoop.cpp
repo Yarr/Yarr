@@ -45,10 +45,12 @@ void Fe65p2MaskLoop::execPart1() {
     g_fe65p2->writePixel((m_mask<<m_cur));
             
     // Write to Pixel reg
+    g_fe65p2->setValue(&Fe65p2::InjEnLd, 0x1);
     g_fe65p2->setValue(&Fe65p2::PixConfLd, 0x3);
     g_fe65p2->configureGlobal();
     // Unset shadow reg and reset threshold
     g_fe65p2->setValue(&Fe65p2::PixConfLd, 0x0);
+    g_fe65p2->setValue(&Fe65p2::InjEnLd, 0x0);
     g_fe65p2->setValue(&Fe65p2::Vthin1Dac, tmp1);
     g_fe65p2->setValue(&Fe65p2::Vthin2Dac, tmp2);
     g_fe65p2->configureGlobal();
