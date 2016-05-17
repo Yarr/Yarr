@@ -358,17 +358,22 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
 
 void ScurveFitter::init(ScanBase *s) {
     std::shared_ptr<LoopActionBase> tmpVcalLoop(Fei4ParameterLoopBuilder(&Fei4::PlsrDAC));
+    std::shared_ptr<LoopActionBase> tmpVcalLoop2(new Fe65p2ParameterLoop(&Fe65p2::PlsrDac));
     scan = s;
-    n_count = 26880;
+    n_count = nCol*nRow;
     vcalLoop = 0;
     injections = 50;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ((l->type() != typeid(Fei4TriggerLoop*) &&
+        if (l->type() != typeid(Fei4TriggerLoop*) &&
+                    l->type() != typeid(Fe65p2TriggerLoop*) &&
                     l->type() != typeid(Fei4MaskLoop*) &&
+                    l->type() != typeid(Fe65p2MaskLoop*) &&
                     l->type() != typeid(StdDataLoop*) &&
-                    l->type() != typeid(Fei4DcLoop*)) &&
-                l->type() != tmpVcalLoop->type()) {
+                    l->type() != typeid(Fei4DcLoop*) &&
+                    l->type() != typeid(Fe65p2QcLoop*) &&
+                    l->type() != tmpVcalLoop2->type() &&
+                    l->type() != tmpVcalLoop->type()) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -378,7 +383,8 @@ void ScurveFitter::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
         // Vcal Loop
-        if (l->type() == tmpVcalLoop->type()) {
+        if (l->type() == tmpVcalLoop->type() ||
+                l->type() == tmpVcalLoop2->type()) {
             vcalLoop = n;
             vcalMax = l->getMax();
             vcalMin = l->getMin();
@@ -390,12 +396,17 @@ void ScurveFitter::init(ScanBase *s) {
             Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
             injections = trigLoop->getTrigCnt();
         }
+        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
+            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
     }
     
     for (unsigned i=vcalMin; i<=vcalMax; i+=vcalStep) {
         x.push_back(i);
     }
     cnt = 0;
+
 }
 
 // Errorfunction
@@ -421,9 +432,10 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                 // Select correct output container
                 unsigned ident = bin;
                 unsigned outerIdent = 0;
-                unsigned offset = 26880;
+                unsigned offset = nCol*nRow;
                 unsigned outerOffset = 0;
                 unsigned vcal = hh->getStat().get(vcalLoop);
+                //std::cout << "VCAL = " << vcal << std::endl;
                 // Determine identifier
                 std::string name = "Scurve";
                 name += "-" + std::to_string(bin);
@@ -510,13 +522,6 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         timeDist[outerIdent]->fill(fitTime.count());
                     }
 
-                    // Delete s-curve
-                    if (bin%2680==0) {
-                        output->pushData(histos[ident]);
-                    } else {
-                        delete histos[ident];
-                        histos[ident] = NULL;
-                    }
                 }
             }
         }
@@ -533,6 +538,16 @@ void ScurveFitter::end() {
         output->pushData(sigMap[0]);
         output->pushData(chiDist[0]);
         output->pushData(timeDist[0]);
+    }
+    // Delete s-curve
+    for(unsigned bin=0; bin<(nCol*nRow); bin++) {
+        if (bin%((nCol*nRow)/10)==0) {
+            std::cout << "Saving S-curve #" << bin << std::endl;
+            output->pushData(histos[bin]);
+        } else {
+            delete histos[bin];
+            histos[bin] = NULL;
+        }
     }
 }
 
@@ -737,6 +752,7 @@ void L1Analysis::init(ScanBase *s) {
     n_count = 1;
     injections = 0;
     std::shared_ptr<LoopActionBase> tmpVcalLoop(Fei4ParameterLoopBuilder(&Fei4::PlsrDAC));
+    std::shared_ptr<LoopActionBase> tmpVcalLoop2(new Fe65p2ParameterLoop(&Fe65p2::PlsrDac));
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
@@ -746,7 +762,8 @@ void L1Analysis::init(ScanBase *s) {
                     l->type() != typeid(Fe65p2MaskLoop*) &&
                     l->type() != typeid(Fe65p2QcLoop*) &&
                     l->type() != typeid(Fe65p2TriggerLoop*) &&
-                    l->type() != tmpVcalLoop->type()) {
+                    l->type() != tmpVcalLoop->type() &&
+                    l->type() != tmpVcalLoop2->type()) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {

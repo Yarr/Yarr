@@ -25,6 +25,7 @@
 #include "lmcurve.h"
 
 #include "Bookkeeper.h"
+#include "FeedbackBase.h"
 
 #include "AllFei4Actions.h"
 #include "AllFe65p2Actions.h"
@@ -136,8 +137,8 @@ class TotAnalysis : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> totInnerCnt;
         std::map<unsigned, Histo2d*> tot2Maps;
         std::map<unsigned, unsigned> tot2InnerCnt;
-        Fei4GlobalFeedbackBase *globalFb;
-        Fei4PixelFeedback *pixelFb;
+        GlobalFeedbackBase *globalFb;
+        PixelFeedbackBase *pixelFb;
 };
 
 class ScurveFitter : public AnalysisAlgorithm {

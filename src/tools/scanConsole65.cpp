@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
     TxCore tx(&spec);
     RxCore rx(&spec);
     Bookkeeper bookie(&tx, &rx);
-    bookie.setTargetThreshold(2500);
+    bookie.setTargetThreshold(1000);
     
     std::cout << "-> Read global config (" << configPath << "):" << std::endl;
     std::fstream gConfig(configPath, std::ios::in);
@@ -185,6 +185,11 @@ int main(int argc, char *argv[]) {
     */ 
     bookie.addFe(0, 0, 0);
     bookie.getLastFe()->setName("fe65p2");
+    bookie.getLastFe()->setScap(1.18);
+    bookie.getLastFe()->setLcap(0);
+    bookie.getLastFe()->setVcalSlope(0.564);
+    bookie.getLastFe()->setVcalOffset(0.011);
+
     Fe65p2 *fe = bookie.g_fe65p2;
     fe->setName("fe65p2");
     fe->clipDataFei4 = &bookie.eventMap[0];
@@ -245,7 +250,7 @@ int main(int argc, char *argv[]) {
         s = new Fe65p2AnalogScan(&bookie);
     } else if (scanType == "thresholdscan") {
         std::cout << "-> Found Threshold Scan" << std::endl;
-        s = new Fei4ThresholdScan(&bookie);
+        s = new Fe65p2ThresholdScan(&bookie);
     } else if (scanType == "totscan") {
         std::cout << "-> Found ToT Scan" << std::endl;
         s = new Fei4TotScan(&bookie);
@@ -299,6 +304,7 @@ int main(int argc, char *argv[]) {
             } else if (scanType == "analogscan") {
                 fe->ana->addAlgorithm(new OccupancyAnalysis());
             } else if (scanType == "thresholdscan") {
+                fe->ana->addAlgorithm(new OccupancyAnalysis());
                 fe->ana->addAlgorithm(new ScurveFitter());
             } else if (scanType == "totscan") {
                 fe->ana->addAlgorithm(new TotAnalysis());
@@ -399,7 +405,7 @@ int main(int argc, char *argv[]) {
             if (doPlots) {
                 std::cout << "-> Plotting histograms of FE " << fe->getRxChannel() << std::endl;
                 fe->ana->plot(/*std::string(timestamp) + "-" + */fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
-                fe->ana->toFile(/*std::string(timestamp) + "-" + */fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
+                //fe->ana->toFile(/*std::string(timestamp) + "-" + */fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
             }
             // Free
             delete fe->histogrammer;

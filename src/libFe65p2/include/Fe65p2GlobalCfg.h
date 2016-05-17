@@ -84,9 +84,13 @@ class Fe65p2GlobalCfg {
         Fe65p2GlobalReg CompVbnDacConf;
         Fe65p2GlobalReg PreCompVbnDac;
 
+        // Not actually in Fe65p2, for sw reason here
+        Fe65p2GlobalReg PlsrDac;
+
     protected:
         void init();
         uint16_t cfg[numRegs];
+        uint16_t dacReg;
     private:
 };
 

@@ -9,8 +9,9 @@
 #include <queue>
 #include <mutex>
 #include "LoopActionBase.h"
+#include "FeedbackBase.h"
 
-class Fei4GlobalFeedbackBase : public LoopActionBase {
+class Fei4GlobalFeedbackBase : public LoopActionBase, public GlobalFeedbackBase {
     public:
         // Step down feedback algorithm
         void feedback(unsigned channel, double sign, bool last = false) {

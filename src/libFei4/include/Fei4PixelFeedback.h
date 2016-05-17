@@ -11,13 +11,14 @@
 #include "LoopActionBase.h"
 #include "Histo2d.h"
 #include "ClipBoard.h"
+#include "FeedbackBase.h"
 
 enum FeedbackType {
     TDAC_FB, // 0 - 31
     FDAC_FB// 0 - 15
 };
 
-class Fei4PixelFeedback : public LoopActionBase {
+class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
     public:
         Fei4PixelFeedback(enum FeedbackType type) : LoopActionBase(){
             fbType = type;

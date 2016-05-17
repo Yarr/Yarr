@@ -101,10 +101,10 @@ class Fe65p2PixelCfg {
         void setInjEn(unsigned col, unsigned row, unsigned v);
         void setTDAC(unsigned col, unsigned row, unsigned v);
         void setPixConf(unsigned col, unsigned row, unsigned v);
-        unsigned getSign(unsigned col, unsigned row, unsigned v); 
-        unsigned getInjEn(unsigned col, unsigned row, unsigned v); 
-        unsigned getTDAC(unsigned col, unsigned row, unsigned v); 
-        unsigned getPixConf(unsigned col, unsigned row, unsigned v); 
+        unsigned getSign(unsigned col, unsigned row); 
+        unsigned getInjEn(unsigned col, unsigned row); 
+        unsigned getTDAC(unsigned col, unsigned row); 
+        unsigned getPixConf(unsigned col, unsigned row); 
 
         static unsigned to_qc(unsigned col);
         static unsigned to_bit(unsigned col, unsigned row);

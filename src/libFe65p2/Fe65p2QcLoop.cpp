@@ -6,9 +6,9 @@
 #include "Fe65p2QcLoop.h"
 
 Fe65p2QcLoop::Fe65p2QcLoop() {
-    m_mask = 0x1111;
+    m_mask = 0x1;
     min = 0;
-    max = 4;
+    max = 16;
     step = 1;
     m_cur = 0;
     m_done = false;

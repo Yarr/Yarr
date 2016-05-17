@@ -39,8 +39,8 @@ Fe65p2PixelCfg::Fe65p2PixelCfg() {
     for (unsigned i=0; i<n_QC; i++) {
         m_Sign[i].setAll(0);
         m_InjEn[i].setAll(0);
-        m_TDAC[i].setAll(8);
-        m_PixConf[i].setAll(3);
+        m_TDAC[i].setAll(15);
+        m_PixConf[i].setAll(0);
     }
 }
 
@@ -143,18 +143,18 @@ void Fe65p2PixelCfg::setPixConf(unsigned col, unsigned row, unsigned v) {
     m_PixConf[to_qc(col)].setPixel(to_bit(col, row), v);
 }
 
-unsigned Fe65p2PixelCfg::getSign(unsigned col, unsigned row, unsigned v) {
+unsigned Fe65p2PixelCfg::getSign(unsigned col, unsigned row) {
     return m_Sign[to_qc(col)].getPixel(to_bit(col, row));
 }
 
-unsigned Fe65p2PixelCfg::getInjEn(unsigned col, unsigned row, unsigned v) {
+unsigned Fe65p2PixelCfg::getInjEn(unsigned col, unsigned row) {
     return m_InjEn[to_qc(col)].getPixel(to_bit(col, row));
 }
 
-unsigned Fe65p2PixelCfg::getTDAC(unsigned col, unsigned row, unsigned v) {
+unsigned Fe65p2PixelCfg::getTDAC(unsigned col, unsigned row) {
     return m_TDAC[to_qc(col)].getPixel(to_bit(col, row));
 }
 
-unsigned Fe65p2PixelCfg::getPixConf(unsigned col, unsigned row, unsigned v) {
+unsigned Fe65p2PixelCfg::getPixConf(unsigned col, unsigned row) {
     return m_PixConf[to_qc(col)].getPixel(to_bit(col, row));
 }

@@ -26,14 +26,16 @@ void Fe65p2GlobalCfg::init() {
         ColSrEn.initReg(cfg, 0x0a, 0xFFFF);
         ColSrOut.initReg(cfg, 0x0b, 15);
         SPARE_1.initReg(cfg, 0x0c, 0);
-        PrmpVbpDac.initReg(cfg, 0x0d, 36);
+        PrmpVbpDac.initReg(cfg, 0x0d, 50);
         Vthin1Dac.initReg(cfg, 0x0e, 255);
         Vthin2Dac.initReg(cfg, 0x0f, 0);
-        VffDac.initReg(cfg, 0x10, 50);
+        VffDac.initReg(cfg, 0x10, 24);
         VctrCF0Dac.initReg(cfg, 0x11, 0);
         VctrCF1Dac.initReg(cfg, 0x12, 0);
         PrmpVbnFolDac.initReg(cfg, 0x13, 50);
         VbnLccDac.initReg(cfg, 0x14, 1);
         CompVbnDacConf.initReg(cfg, 0x15, 25);
         PreCompVbnDac.initReg(cfg, 0x16, 50);
+
+        PlsrDac.initReg(&dacReg, 0x0, 0);
 }

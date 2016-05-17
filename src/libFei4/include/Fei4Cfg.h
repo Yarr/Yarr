@@ -50,6 +50,11 @@ class Fei4Cfg : public Fei4GlobalCfg, public Fei4PixelCfg {
             return (unsigned) round((V - vcalOffset*1e-3)/(vcalSlope*1e-3));
         }
 
+        void setScap(double c) {sCap = c;}
+        void setLcap(double c) {lCap = c;}
+        void setVcalSlope(double s) {vcalSlope = s;}
+        void setVcalOffset(double o) {vcalOffset = o;}
+
 		unsigned getChipId();
 		void setChipId(unsigned chipId);
         

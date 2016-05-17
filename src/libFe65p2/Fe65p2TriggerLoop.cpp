@@ -8,7 +8,7 @@
 Fe65p2TriggerLoop::Fe65p2TriggerLoop() : LoopActionBase() {
     m_trigCnt = 50; // Maximum numberof triggers to send
     m_trigDelay = 33; // Delay between injection and trigger
-    m_trigFreq = 1e3; // 1kHz
+    m_trigFreq = 5e3; // 1kHz
     m_trigTime = 10; // 10s
     m_trigWord[0] = 0x00;
     m_trigWord[1] = 0x00;
@@ -41,7 +41,7 @@ void Fe65p2TriggerLoop::end() {
 }
 
 void Fe65p2TriggerLoop::execPart1() {
-    std::cout << " Trigger Loop" << std::endl;
+    //std::cout << " Trigger Loop" << std::endl;
     // Enable Trigger
     g_tx->setTrigEnable(0x1);
 

@@ -19,7 +19,7 @@ void Fe65p2Cmd::writeGlobal(uint16_t *cfg) {
     core->writeFifo(0x0);
     core->writeFifo(MOJO_HEADER + (PULSE_REG << 16) + PULSE_SHIFT_GLOBAL);
     while(core->isCmdEmpty() == 0);
-    usleep(10); // Need to wait for Mojo to send
+    usleep(50); // Need to wait for Mojo to send
 }
 
 void Fe65p2Cmd::writePixel(uint16_t *bitstream) {
@@ -33,7 +33,7 @@ void Fe65p2Cmd::writePixel(uint16_t *bitstream) {
     core->writeFifo(0x0);
     core->writeFifo(MOJO_HEADER + (PULSE_REG << 16) + PULSE_SHIFT_PIXEL);
     while(core->isCmdEmpty() == 0);
-    usleep(15); // Need to wait for Mojo to send
+    usleep(50); // Need to wait for Mojo to send
 }
 
 void Fe65p2Cmd::writePixel(uint16_t mask) {
@@ -47,7 +47,7 @@ void Fe65p2Cmd::writePixel(uint16_t mask) {
     core->writeFifo(0x0);
     core->writeFifo(MOJO_HEADER + (PULSE_REG << 16) + PULSE_SHIFT_PIXEL);
     while(core->isCmdEmpty() == 0);
-    usleep(15); // Need to wait for Mojo to send
+    usleep(50); // Need to wait for Mojo to send
 }
 
 void Fe65p2Cmd::setLatency(uint16_t lat) {
@@ -66,7 +66,7 @@ void Fe65p2Cmd::reset() {
     setStaticReg(STATIC_RST0);
     setStaticReg(STATIC_RST1);
     this->writeStaticReg();
-    usleep(1000);
+    usleep(5000);
     unsetStaticReg(STATIC_RST0);
     unsetStaticReg(STATIC_RST1);
     this->writeStaticReg();
@@ -113,7 +113,7 @@ void Fe65p2Cmd::setPlsrDac(unsigned setting) {
     core->writeFifo(0x80330000 | dacReg);
     core->writeFifo(0x0);
     core->writeFifo((0x80310000) | (0x1 << 5));
-    usleep(1000);
+    usleep(2000);
 }
 
 void Fe65p2Cmd::setStaticReg(uint32_t bit) {
