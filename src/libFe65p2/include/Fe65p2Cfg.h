@@ -14,6 +14,9 @@
 
 #include "Fe65p2GlobalCfg.h"
 #include "Fe65p2PixelCfg.h"
+#include "json.hpp"
+
+using json = nlohmann::json;
 
 #define ELECTRON_CHARGE 1.602e-19
 
@@ -21,8 +24,8 @@ class Fe65p2Cfg : public Fe65p2GlobalCfg, public Fe65p2PixelCfg{
     public:
         Fe65p2Cfg() {
             cap = 1.18;
-            vcal_slope = 0.564e-3;
-            vcal_offset = 0.011e-3;
+            vcal_slope = 0.564;
+            vcal_offset = 0.011;
         }
         
         ~Fe65p2Cfg() {
@@ -31,19 +34,23 @@ class Fe65p2Cfg : public Fe65p2GlobalCfg, public Fe65p2PixelCfg{
         
         double toCharge(unsigned vcal) {
             // Q = C*V
-            return (cap * 1.0e-15)*((vcal_slope*vcal)+vcal_offset)/ELECTRON_CHARGE;
+            return (cap * 1.0e-15)*(((1.0e-3*vcal_slope)*vcal)+(vcal_offset*1.0e-3))/ELECTRON_CHARGE;
         }
 
         unsigned toVcal(double charge) {
             // V = Q/C
-            return floor((((charge*ELECTRON_CHARGE)/cap)-vcal_offset)/vcal_slope);
+            return floor((((charge*ELECTRON_CHARGE)/(cap * 1.0e-15))-(vcal_offset*1.0e-3))/(vcal_slope*1.0e-3));
         }
 
+        void toFileJson(json &j);
+        void fromFileJson(json &j);
+
     protected:
+        std::string name;
     private:
         double cap; //fF
-        double vcal_slope; //V
-        double vcal_offset; //V
+        double vcal_slope; //mV
+        double vcal_offset; //mV
 
 };
 

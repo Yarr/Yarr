@@ -12,6 +12,10 @@
 #include <stdint.h>
 #include <array>
 
+#include "json.hpp"
+
+using json = nlohmann::json;
+
 class QuadColumnBit {
     public:
         const static unsigned n_Words = 16;
@@ -83,6 +87,8 @@ class Fe65p2PixelCfg {
         const static unsigned n_QC = 16;
         const static unsigned n_Bits = 8;
         const static unsigned n_Words = 16;
+        const static unsigned n_Col = 64;
+        const static unsigned n_Row = 64;
     private:
         QuadColumnBit m_Sign[n_QC];
         QuadColumnBit m_InjEn[n_QC];
@@ -108,6 +114,9 @@ class Fe65p2PixelCfg {
 
         static unsigned to_qc(unsigned col);
         static unsigned to_bit(unsigned col, unsigned row);
+
+        void toFileJson(json &j);
+        void fromFileJson(json &j);
 };
 
 #endif

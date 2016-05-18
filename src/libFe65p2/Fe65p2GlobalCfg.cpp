@@ -12,30 +12,46 @@ void Fe65p2GlobalCfg::init() {
         for(unsigned i=0; i<numRegs; i++)
             cfg[i] = 0x0;
         
-        TestHit.initReg(cfg, 0x00, 0);
-        SignLd.initReg(cfg, 0x01, 0);
-        InjEnLd.initReg(cfg, 0x02, 0);
-        TDacLd.initReg(cfg, 0x03, 0);
-        PixConfLd.initReg(cfg, 0x04, 0);
-        SPARE_0.initReg(cfg, 0x05, 0);
+        TestHit.initReg(cfg, 0x00, 0); regMap["TestHit"] = &TestHit;
+        SignLd.initReg(cfg, 0x01, 0); regMap["SignLd"] = &SignLd;
+        InjEnLd.initReg(cfg, 0x02, 0); regMap["InjEnLd"] = &InjEnLd;
+        TDacLd.initReg(cfg, 0x03, 0); regMap["TDacLd"] = &TDacLd;
+        PixConfLd.initReg(cfg, 0x04, 0); regMap["PixConfLd"] = &PixConfLd;
+        SPARE_0.initReg(cfg, 0x05, 0); // unused
 
-        OneSr.initReg(cfg, 0x06, 0);
-        HitDisc.initReg(cfg, 0x07, 0);
-        Latency.initReg(cfg, 0x08, 30);
-        ColEn.initReg(cfg, 0x09, 0xFFFF);
-        ColSrEn.initReg(cfg, 0x0a, 0xFFFF);
-        ColSrOut.initReg(cfg, 0x0b, 15);
-        SPARE_1.initReg(cfg, 0x0c, 0);
-        PrmpVbpDac.initReg(cfg, 0x0d, 50);
-        Vthin1Dac.initReg(cfg, 0x0e, 255);
-        Vthin2Dac.initReg(cfg, 0x0f, 0);
-        VffDac.initReg(cfg, 0x10, 24);
-        VctrCF0Dac.initReg(cfg, 0x11, 0);
-        VctrCF1Dac.initReg(cfg, 0x12, 0);
-        PrmpVbnFolDac.initReg(cfg, 0x13, 50);
-        VbnLccDac.initReg(cfg, 0x14, 1);
-        CompVbnDacConf.initReg(cfg, 0x15, 25);
-        PreCompVbnDac.initReg(cfg, 0x16, 50);
+        OneSr.initReg(cfg, 0x06, 0); regMap["OneSr"] = &OneSr;
+        HitDisc.initReg(cfg, 0x07, 0); // not connected
+        Latency.initReg(cfg, 0x08, 30); regMap["Latency"] = &Latency;
+        ColEn.initReg(cfg, 0x09, 0xFFFF); regMap["ColEn"] = &ColEn;
+        ColSrEn.initReg(cfg, 0x0a, 0xFFFF); regMap["ColSrEn"] = &ColSrEn;
+        ColSrOut.initReg(cfg, 0x0b, 15); regMap["ColSrOut"] = &ColSrOut;
+        SPARE_1.initReg(cfg, 0x0c, 0); // unused
+        PrmpVbpDac.initReg(cfg, 0x0d, 50); regMap["PrmpVbpDac"] = &PrmpVbpDac;
+        Vthin1Dac.initReg(cfg, 0x0e, 255); regMap["Vthin1Dac"] = &Vthin1Dac;
+        Vthin2Dac.initReg(cfg, 0x0f, 0); regMap["Vthin2Dac"] = &Vthin2Dac;
+        VffDac.initReg(cfg, 0x10, 24); regMap["VffDac"] = &VffDac;
+        VctrCF0Dac.initReg(cfg, 0x11, 0); // not connected
+        VctrCF1Dac.initReg(cfg, 0x12, 0); // not connected
+        PrmpVbnFolDac.initReg(cfg, 0x13, 50); regMap["PrmpVbnFolDac"] = &PrmpVbnFolDac;
+        VbnLccDac.initReg(cfg, 0x14, 1); regMap["VbnLccDac"] = &VbnLccDac;
+        CompVbnDacConf.initReg(cfg, 0x15, 25); regMap["CompVbnDacConf"] = &CompVbnDacConf;
+        PreCompVbnDac.initReg(cfg, 0x16, 50); regMap["PreCompVbnDac"] = &PreCompVbnDac;
 
         PlsrDac.initReg(&dacReg, 0x0, 0);
+}
+
+void Fe65p2GlobalCfg::toFileJson(json &j) {
+    typedef std::map<std::string, Fe65p2GlobalReg*>::iterator it_type;
+    for(it_type iterator = regMap.begin(); iterator != regMap.end(); iterator++) {
+         j["FE65-P2"]["GlobalConfig"][iterator->first] = iterator->second->read();
+    }
+
+}
+
+void Fe65p2GlobalCfg::fromFileJson(json &j) {
+    typedef std::map<std::string, Fe65p2GlobalReg*>::iterator it_type;
+    for(it_type iterator = regMap.begin(); iterator != regMap.end(); iterator++) {
+         iterator->second->write((uint16_t) j["FE65-P2"]["GlobalConfig"][iterator->first]);
+    }
+
 }

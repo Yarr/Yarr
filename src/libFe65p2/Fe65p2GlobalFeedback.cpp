@@ -8,7 +8,9 @@
 Fe65p2GlobalFeedback::Fe65p2GlobalFeedback(Fe65p2GlobalReg Fe65p2GlobalCfg::*reg) {
     m_reg = reg;
     loopType = typeid(this);
-    cur = 0;    m_done = false;
+    cur = 0;    
+    m_done = false;
+    max = 255;
 }
 
 void Fe65p2GlobalFeedback::feedbackBinary(unsigned channel, double sign, bool last) {
@@ -30,6 +32,7 @@ void Fe65p2GlobalFeedback::feedbackBinary(unsigned channel, double sign, bool la
 
 void Fe65p2GlobalFeedback::feedback(unsigned channel, double sign, bool last) {
     // Calculate new step and val
+    std::cout << "in feedback" << std::endl;
     if (sign != oldSign[channel]) {
         oldSign[channel] = 0;
         localStep[channel] = localStep[channel]/2;
@@ -44,11 +47,8 @@ void Fe65p2GlobalFeedback::feedback(unsigned channel, double sign, bool last) {
         doneMap[channel] = true;
     }
 
-    // Abort if we are getting to low
-    if (val < 50) {
-        doneMap[channel] = true;
-    }
     // Unlock the mutex to let the scan proceed
+    std::cout << "unlock" << std::endl;
     keeper->mutexMap[channel].unlock();
 
 }

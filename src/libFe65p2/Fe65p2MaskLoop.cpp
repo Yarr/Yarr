@@ -8,7 +8,7 @@
 Fe65p2MaskLoop::Fe65p2MaskLoop() : LoopActionBase() {
     m_mask = 0x0101;
     min = 0;
-    max = 256;
+    max = 8;
     step = 1;
     m_cur =0;
     m_done = false;
@@ -43,14 +43,14 @@ void Fe65p2MaskLoop::execPart1() {
     g_fe65p2->configureGlobal();
     usleep(2000); // Wait for DAC 
     // Write mask to SR
-    
+    /*
     uint16_t mask[16];
     for (unsigned i=0; i<16; i++)
         mask[i] = 0;
     mask[m_cur/16] = (0x1 << (m_cur%16));
     g_fe65p2->writePixel(mask);
-    
-    //g_fe65p2->writePixel((m_mask<<m_cur));
+    */
+    g_fe65p2->writePixel((m_mask<<m_cur));
             
     // Write to Pixel reg
     g_fe65p2->setValue(&Fe65p2::InjEnLd, 0x1);

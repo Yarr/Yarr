@@ -23,7 +23,7 @@ void Fe65p2ThresholdScan::init() {
     
     // Loop 3: Parameter Loop
     std::shared_ptr<Fe65p2ParameterLoop> parLoop(new Fe65p2ParameterLoop(&Fe65p2GlobalCfg::PlsrDac));
-    parLoop->setRange(0, 800, 10);
+    parLoop->setRange(50, 350, 10);
     // Loop 4: Trigger
     std::shared_ptr<Fe65p2TriggerLoop> triggerLoop(new Fe65p2TriggerLoop);
 
@@ -44,12 +44,11 @@ void Fe65p2ThresholdScan::init() {
 void Fe65p2ThresholdScan::preScan() {
     g_fe65p2->setLatency(60+5);
     g_fe65p2->setValue(&Fe65p2::TestHit, 0x0);
-    g_fe65p2->setValue(&Fe65p2::Vthin1Dac, 20); // TODO use cfg thr
     g_fe65p2->enAnaInj();
     g_fe65p2->setValue(&Fe65p2::Latency, 60);
     g_fe65p2->configureGlobal();
     for(unsigned i=0; i<16; i++) {
-        g_fe65p2->PixConf(i).setAll(3);
+        g_fe65p2->PixConf(i).setAll(0);
     }
 
     g_fe65p2->configurePixels();

@@ -189,7 +189,8 @@ class OccGlobalThresholdTune : public AnalysisAlgorithm {
         std::map<unsigned, Histo1d*> occDists;
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;
-        Fei4GlobalFeedbackBase *fb;
+        GlobalFeedbackBase *fb;
+        LoopActionBase *lb;
 
 };
 
@@ -211,7 +212,7 @@ class GlobalPreampTune : public AnalysisAlgorithm {
         std::map<unsigned, Histo1d*> occDists;
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;
-        Fei4GlobalFeedbackBase *fb;
+        GlobalFeedbackBase *fb;
 
 };
 
@@ -231,7 +232,7 @@ class OccPixelThresholdTune : public AnalysisAlgorithm {
         std::map<unsigned, Histo2d*> occMaps;
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;
-        Fei4PixelFeedback *fb;
+        PixelFeedbackBase *fb;
 
 };
 

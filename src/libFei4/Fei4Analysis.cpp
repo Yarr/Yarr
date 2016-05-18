@@ -198,11 +198,11 @@ void TotAnalysis::init(ScanBase *s) {
         }
         
         if (l->type() == tmpPrmpFb->type()) {
-            globalFb = (Fei4GlobalFeedbackBase*) l.get();  
+            globalFb = (GlobalFeedbackBase*) l.get();  
         }
         
         if (l->type() == typeid(Fei4PixelFeedback*)) {
-            pixelFb = (Fei4PixelFeedback*) l.get();  
+            pixelFb = (PixelFeedbackBase*) l.get();  
         }
     }
 }
@@ -496,11 +496,12 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         sigMap[outerIdent] = hh2;
                         //std::cout << " NEW ThresholdDist: " << outerIdent << std::endl;
                         //TODO ranges have to be more flexible
-                        Histo1d *hh1 = new Histo1d("ThresholdDist", 301, bookie->getTargetThreshold()-1005, bookie->getTargetThreshold()+2005, typeid(this));
+                        //Histo1d *hh1 = new Histo1d("ThresholdDist", 201, bookie->getTargetThreshold()-1005, bookie->getTargetThreshold()+1005, typeid(this));
+                        Histo1d *hh1 = new Histo1d("ThresholdDist", 201, -2.5, 1002.5, typeid(this));
                         hh1->setXaxisTitle("Threshold [e]");
                         hh1->setYaxisTitle("Number of Pixels");
                         thrDist[outerIdent] = hh1;
-                        hh1 = new Histo1d("NoiseDist", 101, -4.5, 304.5, typeid(this));
+                        hh1 = new Histo1d("NoiseDist", 51, -1, 101, typeid(this));
                         hh1->setXaxisTitle("Noise [e]");
                         hh1->setYaxisTitle("Number of Pixels");
                         sigDist[outerIdent] = hh1;
@@ -553,12 +554,16 @@ void ScurveFitter::end() {
 
 void OccGlobalThresholdTune::init(ScanBase *s) {
     std::shared_ptr<LoopActionBase> tmpVthinFb(Fei4GlobalFeedbackBuilder(&Fei4::Vthin_Fine));
+    std::shared_ptr<LoopActionBase> tmpVthinFb2(new Fe65p2GlobalFeedback(&Fe65p2::Vthin1Dac));
     n_count = 1;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
+                    l->type() != typeid(Fe65p2TriggerLoop*) &&
                     l->type() != typeid(Fei4MaskLoop*) &&
+                    l->type() != typeid(Fe65p2MaskLoop*) &&
                     l->type() != typeid(StdDataLoop*) &&
+                    l->type() != typeid(Fe65p2QcLoop*) &&
                     l->type() != typeid(Fei4DcLoop*))) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -573,9 +578,15 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
             Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
             injections = trigLoop->getTrigCnt();
         }
+        
+        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
+            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
 
-        if (l->type() == tmpVthinFb->type()) {
-            fb = (Fei4GlobalFeedbackBase*) l.get();  
+        if (l->type() == tmpVthinFb->type() || l->type() == tmpVthinFb2->type()) {
+            fb = (GlobalFeedbackBase*) ((Fe65p2GlobalFeedback*) l.get()); 
+            lb = (LoopActionBase*) l.get(); 
         }
     }
 
@@ -626,7 +637,7 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
 
         bool done = false;
         double sign = 0;
-        if (fb->getStep() == 1) {
+        if (lb->getStep() == 1) {
             done = true;
         }
 
@@ -642,7 +653,9 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
             done = true;
         }
         
+        std::cout << "Calling feedback" << std::endl;
         fb->feedback(this->channel, sign, done);
+        std::cout << "After feedback" << std::endl;
         output->pushData(occMaps[ident]);
         output->pushData(occDists[ident]);
         innerCnt[ident] = 0;
@@ -659,8 +672,11 @@ void OccPixelThresholdTune::init(ScanBase *s) {
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
+                    l->type() != typeid(Fe65p2TriggerLoop*) &&
                     l->type() != typeid(Fei4MaskLoop*) &&
+                    l->type() != typeid(Fe65p2MaskLoop*) &&
                     l->type() != typeid(StdDataLoop*) &&
+                    l->type() != typeid(Fe65p2QcLoop*) &&
                     l->type() != typeid(Fei4DcLoop*))) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -676,8 +692,16 @@ void OccPixelThresholdTune::init(ScanBase *s) {
             injections = trigLoop->getTrigCnt();
         }
         
+        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
+            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
+        
         if (l->type() == typeid(Fei4PixelFeedback*)) {
-            fb = dynamic_cast<Fei4PixelFeedback*>(l.get());  
+            fb = (PixelFeedbackBase*)((Fei4PixelFeedback*) l.get());  
+        }
+        if (l->type() == typeid(Fe65p2PixelFeedback*)) {
+            fb = (PixelFeedbackBase*)((Fe65p2PixelFeedback*) l.get());  
         }
     }
 
@@ -734,7 +758,7 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
             mean += occMaps[ident]->getBin(i);
             occDist->fill(occMaps[ident]->getBin(i));
         }
-        std::cout << "[" << channel << "] Mean Occupancy: " << mean/(26880*(double)injections) << std::endl;
+        std::cout << "[" << channel << "] Mean Occupancy: " << mean/(nCol*nRow*(double)injections) << std::endl;
         std::cout << "[" << channel << "] RMS: " << occDist->getStdDev() << std::endl;
         
         fb->feedback(this->channel, fbHisto);

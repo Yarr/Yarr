@@ -27,6 +27,9 @@
 #include "Fei4Analysis.h"
 #include "Fei4Scans.h"
 #include "Fe65p2Scans.h"
+#include "json.hpp"
+
+using json = nlohmann::json;
 
 void printHelp();
 void listScans();
@@ -141,7 +144,7 @@ int main(int argc, char *argv[]) {
     TxCore tx(&spec);
     RxCore rx(&spec);
     Bookkeeper bookie(&tx, &rx);
-    bookie.setTargetThreshold(1000);
+    bookie.setTargetThreshold(500);
     
     std::cout << "-> Read global config (" << configPath << "):" << std::endl;
     std::fstream gConfig(configPath, std::ios::in);
@@ -196,6 +199,17 @@ int main(int argc, char *argv[]) {
     fe->clipHisto = &bookie.histoMap[0];
     fe->clipResult = &bookie.resultMap[0];
 
+    json icfg;
+    std::fstream icfg_file((fe->getName()+".json").c_str(), std::ios::in);
+    if (icfg_file) {
+        std::fstream backup((fe->getName()+".json.backup").c_str(), std::ios::out);
+        icfg_file >> icfg;
+        fe->fromFileJson(icfg);
+        backup << std::setw(4) << icfg;
+        backup.close();
+    }
+    icfg_file.close();
+    
     std::cout << std::endl;
     std::cout << "#################" << std::endl;
     std::cout << "# Configure FEs #" << std::endl;
@@ -256,10 +270,10 @@ int main(int argc, char *argv[]) {
         s = new Fei4TotScan(&bookie);
     } else if (scanType == "tune_globalthreshold") {
         std::cout << "-> Found Global Threshold Tuning" << std::endl;
-        s = new Fei4GlobalThresholdTune(&bookie);
+        s = new Fe65p2GlobalThresholdTune(&bookie);
     } else if (scanType == "tune_pixelthreshold") {
         std::cout << "-> Found Pixel Threshold Tuning" << std::endl;
-        s = new Fei4PixelThresholdTune(&bookie);
+        s = new Fe65p2PixelThresholdTune(&bookie);
     } else if (scanType == "tune_globalpreamp") {
         std::cout << "-> Found Global Preamp Tuning" << std::endl;
         s = new Fei4GlobalPreampTune(&bookie);
@@ -304,7 +318,7 @@ int main(int argc, char *argv[]) {
             } else if (scanType == "analogscan") {
                 fe->ana->addAlgorithm(new OccupancyAnalysis());
             } else if (scanType == "thresholdscan") {
-                fe->ana->addAlgorithm(new OccupancyAnalysis());
+                //fe->ana->addAlgorithm(new OccupancyAnalysis());
                 fe->ana->addAlgorithm(new ScurveFitter());
             } else if (scanType == "totscan") {
                 fe->ana->addAlgorithm(new TotAnalysis());
@@ -396,22 +410,26 @@ int main(int argc, char *argv[]) {
     // Cleanup
     delete s;
     for (unsigned i=0; i<bookie.feList.size(); i++) {
-        Fei4 *fe = bookie.feList[i];
-        if (fe->isActive()) {
+        Fei4 *fei4 = bookie.feList[i];
+        if (fei4->isActive()) {
             // Save config
             std::cout << "-> Saving config of FE " << fe->getName() << std::endl;
-            fe->toFileBinary();
+            json cfg;
+            std::fstream cfg_file((fe->getName()+".json").c_str(), std::ios::out);
+            fe->toFileJson(cfg);
+            cfg_file << std::setw(4) << cfg;
+            cfg_file.close();
             // Plot
             if (doPlots) {
                 std::cout << "-> Plotting histograms of FE " << fe->getRxChannel() << std::endl;
-                fe->ana->plot(/*std::string(timestamp) + "-" + */fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
+                fei4->ana->plot(/*std::string(timestamp) + "-" + */fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
                 //fe->ana->toFile(/*std::string(timestamp) + "-" + */fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
             }
             // Free
-            delete fe->histogrammer;
-            fe->histogrammer = NULL;
-            delete fe->ana;
-            fe->ana = NULL;
+            delete fei4->histogrammer;
+            fei4->histogrammer = NULL;
+            delete fei4->ana;
+            fei4->ana = NULL;
         }
     }
     return 0;

@@ -78,7 +78,7 @@ uint16_t* Fe65p2PixelCfg::getCfg(unsigned bit, unsigned qc) {
 
 
 unsigned Fe65p2PixelCfg::to_qc(unsigned col) { //1-64
-    return (col-1)%4;
+    return (col-1)/4;
 }
 
 unsigned Fe65p2PixelCfg::to_bit(unsigned col, unsigned row) {
@@ -157,4 +157,28 @@ unsigned Fe65p2PixelCfg::getTDAC(unsigned col, unsigned row) {
 
 unsigned Fe65p2PixelCfg::getPixConf(unsigned col, unsigned row) {
     return m_PixConf[to_qc(col)].getPixel(to_bit(col, row));
+}
+
+void Fe65p2PixelCfg::toFileJson(json &j) {
+    for (unsigned col=1; col<=n_Col; col++) {
+        for (unsigned row=1; row<=n_Row; row++) {
+            j["FE65-P2"]["PixelConfig"][col-1]["Col"] = col;
+            j["FE65-P2"]["PixelConfig"][col-1]["Sign"][row-1] = getSign(col, row);
+            j["FE65-P2"]["PixelConfig"][col-1]["InjEn"][row-1] = getInjEn(col, row);
+            j["FE65-P2"]["PixelConfig"][col-1]["TDAC"][row-1] = getTDAC(col, row);
+            j["FE65-P2"]["PixelConfig"][col-1]["PixConf"][row-1] = getPixConf(col, row);
+        }
+    }
+}
+
+void Fe65p2PixelCfg::fromFileJson(json &j) {
+    for (unsigned col=1; col<=n_Col; col++) {
+        for (unsigned row=1; row<=n_Row; row++) {
+            setSign(col, row, j["FE65-P2"]["PixelConfig"][col-1]["Sign"][row-1]);
+            setInjEn(col, row, j["FE65-P2"]["PixelConfig"][col-1]["InjEn"][row-1]);
+            setTDAC(col, row, j["FE65-P2"]["PixelConfig"][col-1]["TDAC"][row-1]);
+            setPixConf(col, row, j["FE65-P2"]["PixelConfig"][col-1]["PixConf"][row-1]);
+        }
+    }
+
 }

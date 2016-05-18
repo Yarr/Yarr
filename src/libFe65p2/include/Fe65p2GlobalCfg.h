@@ -11,6 +11,11 @@
 
 #include <stdint.h>
 #include <array>
+#include <map>
+
+#include "json.hpp"
+
+using json = nlohmann::json;
 
 class Fe65p2GlobalReg {
     private:
@@ -56,6 +61,11 @@ class Fe65p2GlobalCfg {
         unsigned getAddr(Fe65p2GlobalReg Fe65p2GlobalCfg::*reg) {
             return (this->*reg).addr();
         }
+
+        void toFileJson(json &j);
+        void fromFileJson(json &j);
+        
+        std::map<std::string, Fe65p2GlobalReg*> regMap;
 
         // Pixel Shadow register
         Fe65p2GlobalReg TestHit;

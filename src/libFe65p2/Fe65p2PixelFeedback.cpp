@@ -17,6 +17,7 @@ Fe65p2PixelFeedback::Fe65p2PixelFeedback() {
 }
 
 void Fe65p2PixelFeedback::feedback(unsigned channel, Histo2d *h) {
+    std::cout << "--> Received feedback on channel: " << channel << std::endl;
     // TODO Check on NULL pointer
     if (h->size() != 4096) {
         std::cout << __PRETTY_FUNCTION__ 
@@ -68,12 +69,14 @@ void Fe65p2PixelFeedback::addFeedback(unsigned ch) {
         for (unsigned row=1; row<65; row++) {
             for (unsigned col=1; col<65; col++) {
                 int sign = fbHistoMap[ch]->getBin(fbHistoMap[ch]->binNum(col, row));
-                int v = getPixel(ch,col, row);
-                v = v + (step)*sign;
+                int v = this->getPixel(ch,col, row);
+                v = v + (step)*(-1*sign); // Invert as we are using FE-I4 analysis
                 if (v < 0) v = 0;
                 if ((unsigned)v > max) v = max;
                 this->setPixel(ch,col, row, v);
+                //std::cout << v << " ";
             }
+            //std::cout << std::endl;
         }
         delete fbHistoMap[ch];
         fbHistoMap[ch] = NULL;
@@ -101,6 +104,7 @@ void Fe65p2PixelFeedback::end() {
 void Fe65p2PixelFeedback::execPart1() {
     g_stat->set(this, cur);
     unsigned ch = 0; // hardcoded TODO
+    keeper->mutexMap[ch].try_lock();
     this->writePixelCfg(ch);
 }
 
