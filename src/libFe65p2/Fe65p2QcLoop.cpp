@@ -29,7 +29,7 @@ void Fe65p2QcLoop::execPart1() {
     std::cout << "\t--> Qc Loop: " << m_cur << std::endl;
     // All in parallel
     g_fe65p2->setValue(&Fe65p2::ColEn, (m_mask << m_cur));
-    g_fe65p2->setValue(&Fe65p2::ColSrEn, (m_mask << m_cur));
+    //g_fe65p2->setValue(&Fe65p2::ColSrEn, (m_mask << m_cur));
     // Write to global regs
     g_fe65p2->configureGlobal();
 }

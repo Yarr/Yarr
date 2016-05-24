@@ -16,9 +16,9 @@ Fe65p2GlobalThresholdTune::Fe65p2GlobalThresholdTune(Bookkeeper *k) : ScanBase(k
 void Fe65p2GlobalThresholdTune::init() {
     // Loop1: Feedback llop
     std::shared_ptr<Fe65p2GlobalFeedback> fbLoop(new Fe65p2GlobalFeedback(&Fe65p2::Vthin1Dac));
-    fbLoop->setMax(133);
+    fbLoop->setMax(150);
     fbLoop->setMin(0);
-    fbLoop->setStep(16);
+    fbLoop->setStep(8);
     
     // Loop 1: Mask Staging
     std::shared_ptr<Fe65p2MaskLoop> maskStaging(new Fe65p2MaskLoop);
@@ -54,8 +54,8 @@ void Fe65p2GlobalThresholdTune::preScan() {
     g_fe65p2->configureGlobal();
     // Reset all TDACs
     for(unsigned i=0; i<16; i++) {
-        g_fe65p2->TDAC(i).setAll(0);
-        g_fe65p2->Sign(i).setAll(1);
+        //g_fe65p2->TDAC(i).setAll(0);
+        //g_fe65p2->Sign(i).setAll(0);
     }
 
     g_fe65p2->configurePixels();

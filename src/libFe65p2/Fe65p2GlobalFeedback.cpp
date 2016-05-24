@@ -47,6 +47,9 @@ void Fe65p2GlobalFeedback::feedback(unsigned channel, double sign, bool last) {
         doneMap[channel] = true;
     }
 
+    //if (val < 120 && localStep[channel] > 4)
+    //    localStep[channel] = 4;
+
     // Unlock the mutex to let the scan proceed
     std::cout << "unlock" << std::endl;
     keeper->mutexMap[channel].unlock();

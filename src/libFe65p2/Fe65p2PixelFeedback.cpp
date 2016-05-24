@@ -61,6 +61,16 @@ unsigned Fe65p2PixelFeedback::getPixel(unsigned channel, unsigned col, unsigned 
 }
 
 void Fe65p2PixelFeedback::writePixelCfg(unsigned channel) {
+    // Turn off all pixels
+    g_fe65p2->setValue(&Fe65p2::ColEn, 0xFFFF);
+    g_fe65p2->setValue(&Fe65p2::ColSrEn, 0xFFFF);
+    g_fe65p2->writePixel((uint16_t)0x0);
+    g_fe65p2->setValue(&Fe65p2::PixConfLd, 0x3);
+    g_fe65p2->configureGlobal();
+    g_fe65p2->setValue(&Fe65p2::PixConfLd, 0x0);
+    g_fe65p2->configureGlobal();
+    
+    // Reconfigure pixels
     g_fe65p2->configurePixels();
 }
 
@@ -113,9 +123,13 @@ void Fe65p2PixelFeedback::execPart2() {
     keeper->mutexMap[ch].lock();
     this->addFeedback(ch);
 
-    if (step == 1)
+    // Execute last step twice to get full range
+    if (step == 1 && oldStep == 1)
         m_done = true;
+    oldStep = step;
     step = step/2;
+    if(step == 0)
+        step = 1;
     cur++;
 }
 
