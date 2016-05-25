@@ -60,8 +60,8 @@ void Fei4MaskLoop::execPart2() {
     if (!(m_cur < max)) m_done = true;
     // Shift Enable mask by step size
     for(unsigned i=0; i<step; i++) {
-        g_fe->writeRegister(&Fei4::Colpr_Mode, 0x3); //colpr_mode = 11_2 => all DCs
-        g_fe->writeRegister(&Fei4::Colpr_Addr, 0x0); //which of the 40 DCs (range 0-39)
+        g_fe->writeRegister(&Fei4::Colpr_Mode, 0x3);
+        g_fe->writeRegister(&Fei4::Colpr_Addr, 0x0);
         g_fe->shiftMask();
         g_fe->loadIntoPixel(1 << 0);
         //if (enable_lCap) g_fe->loadIntoPixel(1 << 6);
