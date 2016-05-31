@@ -26,10 +26,10 @@ void Fe65p2GlobalCfg::init() {
         ColSrEn.initReg(cfg, 0x0a, 0xFFFF); regMap["ColSrEn"] = &ColSrEn;
         ColSrOut.initReg(cfg, 0x0b, 15); regMap["ColSrOut"] = &ColSrOut;
         SPARE_1.initReg(cfg, 0x0c, 0); // unused
-        PrmpVbpDac.initReg(cfg, 0x0d, 50); regMap["PrmpVbpDac"] = &PrmpVbpDac;
+        PrmpVbpDac.initReg(cfg, 0x0d, 40); regMap["PrmpVbpDac"] = &PrmpVbpDac;
         Vthin1Dac.initReg(cfg, 0x0e, 255); regMap["Vthin1Dac"] = &Vthin1Dac;
         Vthin2Dac.initReg(cfg, 0x0f, 0); regMap["Vthin2Dac"] = &Vthin2Dac;
-        VffDac.initReg(cfg, 0x10, 24); regMap["VffDac"] = &VffDac;
+        VffDac.initReg(cfg, 0x10, 80); regMap["VffDac"] = &VffDac;
         VctrCF0Dac.initReg(cfg, 0x11, 0); // not connected
         VctrCF1Dac.initReg(cfg, 0x12, 0); // not connected
         PrmpVbnFolDac.initReg(cfg, 0x13, 50); regMap["PrmpVbnFolDac"] = &PrmpVbnFolDac;

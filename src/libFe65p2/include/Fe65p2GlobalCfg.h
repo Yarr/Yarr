@@ -62,9 +62,6 @@ class Fe65p2GlobalCfg {
             return (this->*reg).addr();
         }
 
-        void toFileJson(json &j);
-        void fromFileJson(json &j);
-        
         std::map<std::string, Fe65p2GlobalReg*> regMap;
 
         // Pixel Shadow register
@@ -98,6 +95,9 @@ class Fe65p2GlobalCfg {
         Fe65p2GlobalReg PlsrDac;
 
     protected:
+        void toFileJson(json &j);
+        void fromFileJson(json &j);
+        
         void init();
         uint16_t cfg[numRegs];
         uint16_t dacReg;

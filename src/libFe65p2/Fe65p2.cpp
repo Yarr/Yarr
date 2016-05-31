@@ -28,8 +28,23 @@ void Fe65p2::configurePixels() {
     // Set threshold high
     uint16_t tmp1 = getValue(&Fe65p2::Vthin1Dac);
     uint16_t tmp2 = getValue(&Fe65p2::Vthin2Dac);
+    uint16_t tmp3 = getValue(&Fe65p2::PrmpVbpDac);
+    uint16_t tmp4 = getValue(&Fe65p2::VffDac);
     setValue(&Fe65p2::Vthin1Dac, 255);
-    setValue(&Fe65p2::Vthin2Dac, 0);
+    setValue(&Fe65p2::Vthin2Dac, 10);
+    setValue(&Fe65p2::PrmpVbpDac, 0);
+    setValue(&Fe65p2::VffDac, 0);
+    
+   
+    // Turn all off
+    setValue(&Fe65p2::ColSrEn, 0xFFFF);
+    configureGlobal();
+    writePixel((uint16_t) 0x0);
+    setValue(&Fe65p2::PixConfLd, 0x3);
+    configureGlobal();
+    setValue(&Fe65p2::PixConfLd, 0x0);
+    configureGlobal();
+    
     // Configure global regs
     configureGlobal();
     // Configure pixel regs
@@ -78,6 +93,7 @@ void Fe65p2::configurePixels() {
             setValue(&Fe65p2::PixConfLd, 0x0);
             configureGlobal();
 
+            writePixel((uint16_t) 0x0);
         }
     }
     // Reset SR
@@ -85,6 +101,8 @@ void Fe65p2::configurePixels() {
     // Reset threshold
     setValue(&Fe65p2::Vthin1Dac, tmp1);
     setValue(&Fe65p2::Vthin2Dac, tmp2);
+    setValue(&Fe65p2::PrmpVbpDac, tmp3);
+    setValue(&Fe65p2::VffDac, tmp4);
     configureGlobal();
 
 }

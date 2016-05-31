@@ -10,8 +10,9 @@
 // ################################
 
 #include <string>
+#include "json.hpp"
 
-#include "TxCore.h"
+using json = nlohmann::json;
 
 class FrontEnd {
     public:
@@ -30,7 +31,9 @@ class FrontEnd {
         bool getActive();
 		bool isActive();
 		void setActive(bool active);
-
+        
+        //virtual void toFileJson(json &j) {};
+        //virtual void fromFileJson(json &j) {};
     protected:
         std::string name;
         bool active;

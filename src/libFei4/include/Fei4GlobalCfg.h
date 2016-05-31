@@ -65,6 +65,8 @@ class Fei4GlobalCfg {
     private:
         void init();
     protected:
+        void toFileJson(json &j);
+        void fromFileJson(json &j);
     public:
         static const unsigned numRegs = 36;
         uint16_t cfg[numRegs];
@@ -74,9 +76,6 @@ class Fei4GlobalCfg {
         void fromFilePlain(std::string filename);
 
         void toFileXml(tinyxml2::XMLDocument *doc, tinyxml2::XMLElement *node);
-
-        void toFileJson(json &j);
-        void fromFileJson(json &j);
 
         template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight>
             void setValue(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref, const T& cfgBits) {

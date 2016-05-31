@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
     TxCore tx(&spec);
     RxCore rx(&spec);
     Bookkeeper bookie(&tx, &rx);
-    bookie.setTargetThreshold(600);
+    bookie.setTargetThreshold(800);
     
     std::cout << "-> Read global config (" << configPath << "):" << std::endl;
     std::fstream gConfig(configPath, std::ios::in);
