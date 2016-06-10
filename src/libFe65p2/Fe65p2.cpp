@@ -17,6 +17,7 @@ void Fe65p2::init() {
 
 void Fe65p2::configureGlobal() {
     writeGlobal(Fe65p2Cfg::cfg);
+    setTrigCount(Fe65p2Cfg::trigCountReg);
     //setPlsrDac(Fe65p2Cfg::dacReg);
 }
 
@@ -28,16 +29,17 @@ void Fe65p2::configurePixels() {
     // Set threshold high
     uint16_t tmp1 = getValue(&Fe65p2::Vthin1Dac);
     uint16_t tmp2 = getValue(&Fe65p2::Vthin2Dac);
-    uint16_t tmp3 = getValue(&Fe65p2::PrmpVbpDac);
+    uint16_t tmp3 = getValue(&Fe65p2::PreCompVbnDac);
     uint16_t tmp4 = getValue(&Fe65p2::VffDac);
     setValue(&Fe65p2::Vthin1Dac, 255);
-    setValue(&Fe65p2::Vthin2Dac, 10);
-    setValue(&Fe65p2::PrmpVbpDac, 0);
-    setValue(&Fe65p2::VffDac, 0);
+    setValue(&Fe65p2::Vthin2Dac, 0);
+    setValue(&Fe65p2::PreCompVbnDac, 100);
+    //setValue(&Fe65p2::VffDac, 0);
     
    
     // Turn all off
     setValue(&Fe65p2::ColSrEn, 0xFFFF);
+    setValue(&Fe65p2::ColEn, 0xFFFF);
     configureGlobal();
     writePixel((uint16_t) 0x0);
     setValue(&Fe65p2::PixConfLd, 0x3);
@@ -46,7 +48,7 @@ void Fe65p2::configurePixels() {
     configureGlobal();
     
     // Configure global regs
-    configureGlobal();
+    //configureGlobal();
     // Configure pixel regs
     for(unsigned i=0; i<Fe65p2Cfg::n_QC; i++) {
         setValue(&Fe65p2::ColSrEn, (0x1<<i));
@@ -101,8 +103,8 @@ void Fe65p2::configurePixels() {
     // Reset threshold
     setValue(&Fe65p2::Vthin1Dac, tmp1);
     setValue(&Fe65p2::Vthin2Dac, tmp2);
-    setValue(&Fe65p2::PrmpVbpDac, tmp3);
-    setValue(&Fe65p2::VffDac, tmp4);
+    setValue(&Fe65p2::PreCompVbnDac, tmp3);
+    //setValue(&Fe65p2::VffDac, tmp4);
     configureGlobal();
 
 }

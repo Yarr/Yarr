@@ -423,7 +423,7 @@ int main(int argc, char *argv[]) {
             if (doPlots) {
                 std::cout << "-> Plotting histograms of FE " << fe->getRxChannel() << std::endl;
                 fei4->ana->plot(/*std::string(timestamp) + "-" + */fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
-                //fe->ana->toFile(/*std::string(timestamp) + "-" + */fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
+                fei4->ana->toFile(/*std::string(timestamp) + "-" + */fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
             }
             // Free
             delete fei4->histogrammer;

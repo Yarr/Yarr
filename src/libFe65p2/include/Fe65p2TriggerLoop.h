@@ -21,6 +21,8 @@ class Fe65p2TriggerLoop : public LoopActionBase {
         void setTrigTime(double time);
         double getTrigTime();
 
+        void setNoInject();
+
     private:
         unsigned m_trigCnt;
         unsigned m_trigDelay;
