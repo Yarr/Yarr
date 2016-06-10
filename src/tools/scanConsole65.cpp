@@ -285,7 +285,7 @@ int main(int argc, char *argv[]) {
         s = new Fei4PixelPreampTune(&bookie);
     } else if (scanType == "noisescan") {
         std::cout << "-> Found Noisescan" << std::endl;
-        s = new Fei4NoiseScan(&bookie);
+        s = new Fe65p2NoiseScan(&bookie);
     } else {
         std::cout << "-> No matching Scan found, possible:" << std::endl;
         listScans();
