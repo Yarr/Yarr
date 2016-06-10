@@ -77,3 +77,10 @@ void Fe65p2TriggerLoop::setTrigTime(double time) {
 double Fe65p2TriggerLoop::getTrigTime() {
     return m_trigTime;
 }
+
+void Fe65p2TriggerLoop::setNoInject() {
+    m_trigWord[0] = 0x00;
+    m_trigWord[1] = 0x00;
+    m_trigWord[2] = 0x00;
+    m_trigWord[3] = MOJO_HEADER + (PULSE_REG << 16) + PULSE_TRIGGER;
+}

@@ -34,8 +34,10 @@ void Fe65p2MaskLoop::execPart1() {
     uint16_t tmp1 = g_fe65p2->getValue(&Fe65p2::Vthin1Dac);
     std::cout << tmp1 << std::endl;
     uint16_t tmp2 = g_fe65p2->getValue(&Fe65p2::Vthin2Dac);
+    uint16_t tmp3 = g_fe65p2->getValue(&Fe65p2::VffDac);
     g_fe65p2->setValue(&Fe65p2::Vthin1Dac, 255);
     g_fe65p2->setValue(&Fe65p2::Vthin2Dac, 0);
+    g_fe65p2->setValue(&Fe65p2::VffDac, 0);
     // All in parallel
     g_fe65p2->setValue(&Fe65p2::ColEn, 0xFFFF);
     g_fe65p2->setValue(&Fe65p2::ColSrEn, 0xFFFF);
@@ -62,6 +64,7 @@ void Fe65p2MaskLoop::execPart1() {
     g_fe65p2->setValue(&Fe65p2::InjEnLd, 0x0);
     g_fe65p2->setValue(&Fe65p2::Vthin1Dac, tmp1);
     g_fe65p2->setValue(&Fe65p2::Vthin2Dac, tmp2);
+    g_fe65p2->setValue(&Fe65p2::VffDac, tmp3);
     g_fe65p2->configureGlobal();
     usleep(5000); // Wait for DAC 
 

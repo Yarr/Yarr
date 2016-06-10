@@ -501,7 +501,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         hh1->setXaxisTitle("Threshold [e]");
                         hh1->setYaxisTitle("Number of Pixels");
                         thrDist[outerIdent] = hh1;
-                        hh1 = new Histo1d("NoiseDist", 51, -1, 101, typeid(this));
+                        hh1 = new Histo1d("NoiseDist", 76, -1, 151, typeid(this));
                         hh1->setXaxisTitle("Noise [e]");
                         hh1->setYaxisTitle("Number of Pixels");
                         sigDist[outerIdent] = hh1;
@@ -514,7 +514,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         hh1->setYaxisTitle("Number of Pixels");
                         timeDist[outerIdent] = hh1;
                     }
-                    if (par[0] > vcalMin && par[0] < vcalMax) {
+                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin)/16.0) {
                         thrMap[outerIdent]->fill(col, row, bookie->getFe(channel)->toCharge(par[0]));
                         thrDist[outerIdent]->fill(bookie->getFe(channel)->toCharge(par[0]));
                         sigMap[outerIdent]->fill(col, row, bookie->getFe(channel)->toCharge(par[1]));

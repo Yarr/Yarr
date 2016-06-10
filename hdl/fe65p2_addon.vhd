@@ -71,6 +71,7 @@ architecture behavioral of fe65p2_addon is
 	signal pulser_reg : std_logic_vector(15 downto 0);
 	signal latency : unsigned(8 downto 0);
 	signal dac_setting : std_logic_vector(15 downto 0);
+	signal trig_multiplier : unsigned(3 downto 0);
 
     -- config serialiser
     signal conf_load : std_logic_vector(7 downto 0);
@@ -85,6 +86,7 @@ architecture behavioral of fe65p2_addon is
     signal trigger : std_logic;
     signal pulser_trig_t : std_logic_vector(49 downto 0);
     signal inject_cnt : unsigned(8 downto 0);
+	 signal trig_cnt : unsigned(4 downto 0);
     signal en_inj : std_logic;
 
     -- DAC
@@ -106,9 +108,7 @@ begin
     en_pix_sr_cnfg_o <= en_pix_reg;
     ld_cnfg_o <= conf_load(4) or conf_load(5) or conf_load(6) or conf_load(7) or dig_inj;
     si_cnfg_o <= conf_sreg(144) or pix_sreg(255);
-    pix_d_cnfg_o <= static_reg(2);
-    rst_0_o <= not static_reg(4);
-    rst_1_o <= not static_reg(5);
+
 
     dac_sclk_o <= dac_sclk_t;
     dac_sdi_o <= dac_sreg(15);
@@ -117,11 +117,13 @@ begin
     dac_cs_o <= dac_cs_t;
     inj_sw_o <= '0' when (unsigned(pulser_trig_t) = 0) else '1';
 
-    -- Other static settings
+    -- Static settings
     en_data_clk <= static_reg(0);
     en_bx_clk <= static_reg(1);
+	 pix_d_cnfg_o <= static_reg(2);
     en_inj <= static_reg(3);
-
+    rst_0_o <= not static_reg(4);
+    rst_1_o <= not static_reg(5);
 	
     yarr_cmd <= serial_in;
     cmd_deserialiser: process(clk_40, sys_rst)
@@ -161,6 +163,7 @@ begin
             pulser_reg <= (others => '0');
             latency <= (others => '0');
             dac_setting <= (others => '0');
+				trig_multiplier <= x"5";
         elsif rising_edge(clk_40) then
             new_cmd <= '0';
             if (cmd_valid = '1') then
@@ -178,6 +181,8 @@ begin
             -- [4] : shift SR by one
             -- [5] : load DAC
             -- [6] : switch pulser
+				-- [7] : trigger (no inject)
+				
             if (new_cmd = '1') then
 				case (adr) is
 					-- Global Shift reg (145 bit)
@@ -226,6 +231,7 @@ begin
 					when x"0031" => pulser_reg <= payload;
 					when x"0032" => latency <= unsigned(payload(8 downto 0));
 					when x"0033" => dac_setting <= payload(15 downto 0);
+					when x"0034" => trig_multiplier <= unsigned(payload(3 downto 0));
 					when others => 
 				end case;
 
@@ -304,6 +310,7 @@ begin
             trigger <= '0';
             pulser_trig_t(0) <= '0';
             inject_cnt <= (others => '0');
+				trig_cnt <= (others => '0');
         elsif rising_edge(clk_40) then
 			dig_inj <= '0';
 			trigger <= '0';
@@ -320,7 +327,7 @@ begin
 					dig_inj <= '1';
 				end if;
 				inject_cnt <= inject_cnt - 1;
-			elsif (inject_cnt < 10 and inject_cnt > 1) then -- TODO change to trigger multiplier
+			elsif ((inject_cnt <= (TO_INTEGER(trig_multiplier))) and inject_cnt > 1) then -- TODO change to trigger multiplier
 				inject_cnt <= inject_cnt - 1;
 				dig_inj <= '0';
 				trigger <= '1';
@@ -333,6 +340,13 @@ begin
 				dig_inj <= '0';
 			end if;
         end if;
+		  
+		  if (pulser_reg(7) = '1') then
+	         trig_cnt <= TO_UNSIGNED((TO_INTEGER(trig_multiplier) + 1), 5);
+        elsif (trig_cnt > 0) then
+            trig_cnt <= trig_cnt - 1;
+				trigger <= '1';
+		  end if;
     end process inject_proc;
 
 	pulse_delay: for I in 1 to 49 generate

@@ -116,6 +116,12 @@ void Fe65p2Cmd::setPlsrDac(unsigned setting) {
     usleep(2000);
 }
 
+void Fe65p2Cmd::setTrigCount(uint32_t setting) {
+    core->writeFifo(0x0);
+    core->writeFifo(MOJO_HEADER + (TRIGCNT_REG << 16) + setting);
+    while(core->isCmdEmpty() == 0);
+}
+
 void Fe65p2Cmd::setStaticReg(uint32_t bit) {
     static_reg |= bit;
 }

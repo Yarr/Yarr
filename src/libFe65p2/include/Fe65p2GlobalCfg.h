@@ -93,6 +93,7 @@ class Fe65p2GlobalCfg {
 
         // Not actually in Fe65p2, for sw reason here
         Fe65p2GlobalReg PlsrDac;
+        Fe65p2GlobalReg TrigCount;
 
     protected:
         void toFileJson(json &j);
@@ -101,6 +102,7 @@ class Fe65p2GlobalCfg {
         void init();
         uint16_t cfg[numRegs];
         uint16_t dacReg;
+        uint16_t trigCountReg;
     private:
 };
 

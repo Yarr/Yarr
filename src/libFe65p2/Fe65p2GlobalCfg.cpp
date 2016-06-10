@@ -36,8 +36,10 @@ void Fe65p2GlobalCfg::init() {
         VbnLccDac.initReg(cfg, 0x14, 1); regMap["VbnLccDac"] = &VbnLccDac;
         CompVbnDacConf.initReg(cfg, 0x15, 25); regMap["CompVbnDacConf"] = &CompVbnDacConf;
         PreCompVbnDac.initReg(cfg, 0x16, 50); regMap["PreCompVbnDac"] = &PreCompVbnDac;
-
-        PlsrDac.initReg(&dacReg, 0x0, 0);
+        
+        // Only in firmware
+        PlsrDac.initReg(&dacReg, 0x0, 0); regMap["PlsrDac"] = &PlsrDac;
+        TrigCount.initReg(&trigCountReg, 0x0, 10); regMap["TrigCount"] = &TrigCount;
 }
 
 void Fe65p2GlobalCfg::toFileJson(json &j) {

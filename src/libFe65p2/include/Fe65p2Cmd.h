@@ -23,12 +23,17 @@
 #define STATIC_REG 0x30
 #define PULSE_REG 0x31
 #define LAT_REG 0x32
+#define DAC_REG 0x33
+#define TRIGCNT_REG 0x34
 
 #define PULSE_SHIFT_GLOBAL 0x1
 #define PULSE_INJECT 0x2
 #define PULSE_SHIFT_PIXEL 0x4
 #define PULSE_LOAD 0x8
-#define PULSE_SHIFTBYONE 0x10 //untested
+#define PULSE_SHIFTBYONE 0x10 //untestead
+#define PULSE_LOADDAC 0x20
+#define PULSE_SWITCHPLSR 0x40
+#define PULSE_TRIGGER 0x80
 
 #define STATIC_DATA_CLK 0x1
 #define STATIC_BX_CLK 0x2
@@ -49,6 +54,7 @@ class Fe65p2Cmd {
         void setLatency(uint16_t lat);
         void injectAndTrigger();
         void setPlsrDac(unsigned setting);
+        void setTrigCount(uint32_t setting);
 
         void reset();
         void clocksOn();
