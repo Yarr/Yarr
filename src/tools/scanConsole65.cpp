@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
         }
     }
     */ 
-    bookie.addFe(0, 0, 0);
+    bookie.addFe(0, 0);
     bookie.getLastFe()->setName("fe65p2");
     bookie.getLastFe()->setScap(1.18);
     bookie.getLastFe()->setLcap(0);

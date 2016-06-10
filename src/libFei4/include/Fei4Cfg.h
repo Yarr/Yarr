@@ -24,8 +24,8 @@ using json = nlohmann::json;
 
 class Fei4Cfg : public Fei4GlobalCfg, public Fei4PixelCfg {
     public:
-        Fei4Cfg(unsigned arg_chipId) {
-            chipId = arg_chipId;
+        Fei4Cfg() {
+            chipId = 0;
             sCap = 1.9;
             lCap = 3.8;
             vcalOffset = 0;

@@ -30,9 +30,8 @@ class Bookkeeper {
         ~Bookkeeper();
         
         // TODO should only add generic Fe class
-        // TODO should be independent of chipId
-        void addFe(unsigned chipId, unsigned txChannel, unsigned rxChannel);
-        void addFe(unsigned chipId, unsigned channel);
+        void addFe(unsigned txChannel, unsigned rxChannel);
+        void addFe(unsigned channel);
 		
         void delFe(unsigned rxChannel);
 		void delFe(Fei4 *fe);
@@ -78,11 +77,11 @@ class Bookkeeper {
 		std::vector<Fei4*> activeFeList;
 
     private:
-        uint32_t activeTxMask;
-        uint32_t activeRxMask;
+        //uint32_t activeTxMask;
+        //uint32_t activeRxMask;
 
-		uint32_t activeMask;
-		uint32_t usedChannels;
+		//uint32_t activeMask;
+		//uint32_t usedChannels;
 
         int target_tot;
         int target_threshold;

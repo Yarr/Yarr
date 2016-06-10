@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
                 break;
             std::cout << "-> Found FE " << name << std::endl;
             // Add FE to bookkeeper
-            bookie.addFe(id, tx, rx);
+            bookie.addFe(tx, rx);
             bookie.getLastFe()->setName(name);
             // TODO verify cfg typea
             // Load config

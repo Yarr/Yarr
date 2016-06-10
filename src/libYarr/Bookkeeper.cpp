@@ -28,11 +28,11 @@ Bookkeeper::~Bookkeeper() {
 }
 
 // RxChannel is unique ident
-void Bookkeeper::addFe(unsigned chipId, unsigned txChannel, unsigned rxChannel) {
+void Bookkeeper::addFe(unsigned txChannel, unsigned rxChannel) {
     if(isChannelUsed(rxChannel)) {
         std::cerr << __PRETTY_FUNCTION__ << " -> Error rx channel already in use, not adding FE" << std::endl;
     } else {
-        feList.push_back(new Fei4(tx, chipId, txChannel, rxChannel));
+        feList.push_back(new Fei4(tx, txChannel, rxChannel));
         eventMap[rxChannel];
         histoMap[rxChannel];
         resultMap[rxChannel];
@@ -41,11 +41,11 @@ void Bookkeeper::addFe(unsigned chipId, unsigned txChannel, unsigned rxChannel) 
         feList.back()->clipResult = &resultMap[rxChannel];
         mutexMap[rxChannel];
     }
-    std::cout << __PRETTY_FUNCTION__ << " -> Added FE: ChipId(" << chipId << "), Tx(" << txChannel << "), Rx(" << rxChannel << ")" << std::endl;
+    std::cout << __PRETTY_FUNCTION__ << " -> Added FE: Tx(" << txChannel << "), Rx(" << rxChannel << ")" << std::endl;
 }
 
-void Bookkeeper::addFe(unsigned chipId, unsigned channel) {
-    this->addFe(chipId, channel, channel);
+void Bookkeeper::addFe(unsigned channel) {
+    this->addFe(channel, channel);
 }
 
 // RxChannel is unique ident
