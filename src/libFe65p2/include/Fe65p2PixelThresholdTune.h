@@ -8,7 +8,7 @@
 // ################################
 
 #ifndef FE65P2PIXELTHRESHOLDTUNE_H
-#define FE65P2PIXELTHRESHOLDRUNE_H
+#define FE65P2PIXELTHRESHOLDTUNE_H
 
 #include "ScanBase.h"
 

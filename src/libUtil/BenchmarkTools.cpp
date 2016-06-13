@@ -34,7 +34,7 @@ namespace BenchmarkTools {
        memset(buffer, 0x5A, package_size*4);
        double time = BenchmarkTools::measureWriteTime(spec, 0x0, buffer, package_size, repetitions);
        double speed = ((package_size*4*repetitions)/1024.0/1024.0)/time;
-       delete buffer;
+       delete[] buffer;
        return speed;
    }
    
@@ -43,7 +43,7 @@ namespace BenchmarkTools {
        memset(buffer, 0x5A, package_size*4);
        double time = BenchmarkTools::measureReadTime(spec, 0x0, buffer, package_size, repetitions);
        double speed = ((package_size*4*repetitions)/1024.0/1024.0)/time;
-       delete buffer;
+       delete[] buffer;
        return speed;
    }
 }
