@@ -29,7 +29,19 @@ void YarrGui::on_addFeButton_clicked(){
         iFJ << std::setw(4) << j;
     }
     iFJ.close();
-    bk->getLastFe()->fromFileJson(j);
+    try{
+        bk->getLastFe()->fromFileJson(j);
+    }
+    catch(std::domain_error){
+        std::cerr << iFNJ << " does not contain a valid configuration. " << std::endl;
+        std::cerr << "Using default configuration instead. " << std::endl;
+        iFJ.open("util/default.js", std::ios_base::in);
+        iFJ >> j;
+        iFJ.close();
+        iFJ.open(iFNJ, std::ios_base::out);
+        iFJ << std::setw(4) << j;
+        iFJ.close();
+    }
     tx->setCmdEnable(0x1 << bk->getLastFe()->getTxChannel());
     bk->getLastFe()->configure();
     bk->getLastFe()->configurePixels();
@@ -138,7 +150,19 @@ void YarrGui::on_addFeGlobalButton_clicked(){
             iFJ << std::setw(4) << j;
         }
         iFJ.close();
-        bk->getLastFe()->fromFileJson(j);
+        try{
+            bk->getLastFe()->fromFileJson(j);
+        }
+        catch(std::domain_error){
+            std::cerr << chipCfgFilenamesAdded.at(i) << " contains a damaged configuration. " << std::endl;
+            std::cerr << "Using default configuration instead. " << std::endl;
+            iFJ.open("util/default.js", std::ios_base::in);
+            iFJ >> j;
+            iFJ.close();
+            iFJ.open(chipCfgFilenamesAdded.at(i), std::ios_base::out);
+            iFJ << std::setw(4) << j;
+            iFJ.close();
+        }
         tx->setCmdEnable(0x1 << bk->getLastFe()->getTxChannel());
         bk->getLastFe()->configure();
         bk->getLastFe()->configurePixels();
