@@ -11,24 +11,25 @@ void YarrGui::on_addFeButton_clicked(){
         std::cout << "ERROR - rx channel already used. Aborting... \n";
         return;
     }
-//    bk->addFe(chipIdAdded, txChannelAdded, rxChannelAdded);
+    bk->addFe(chipIdAdded, txChannelAdded, rxChannelAdded);
     std::string iFNJ = (ui->configfileName->text()).toStdString();
-    std::ifstream iFJ(iFNJ);
+    std::fstream iFJ(iFNJ, std::ios_base::in);
     nlohmann::json j;
     try{
         iFJ >> j;
     }
     catch(std::invalid_argument){
-        std::cerr << "File does not contain a valid configuration. " << std::endl;
-        std::cerr << "Loading default config instead... " << std::endl;
+        std::cerr << iFNJ << " does not contain a valid configuration. " << std::endl;
+        std::cerr << "Using default configuration instead. " << std::endl;
         iFJ.close();
-        iFJ.open("util/default.js");
+        iFJ.open("util/default.js", std::ios_base::in);
         iFJ >> j;
+        iFJ.close();
+        iFJ.open(iFNJ, std::ios_base::out);
+        iFJ << std::setw(4) << j;
     }
     iFJ.close();
-//    cfgByRxMap[rxChannelAdded] = j;
     bk->getLastFe()->fromFileJson(j);
-    bk->getLastFe()->fromFileBinary((ui->configfileName->text()).toStdString()); //JSON here!
     tx->setCmdEnable(0x1 << bk->getLastFe()->getTxChannel());
     bk->getLastFe()->configure();
     bk->getLastFe()->configurePixels();
@@ -55,6 +56,12 @@ void YarrGui::on_addFeButton_clicked(){
     feTreeItemRx->setText(1, QString::number(rxChannelAdded));
     feTreeItemCf->setText(0, "Config file");
     feTreeItemCf->setText(1, ui->configfileName->text());
+    QPushButton * b = new QPushButton("Edit config", this);
+    ui->feTree->setItemWidget(feTreeItemCf, 2, b);
+    QObject::connect(b, &QPushButton::clicked, this, [=](){
+        EditCfgDialog d(bk->getFe(rxChannelAdded), QString::fromStdString(iFNJ), this);
+        d.exec();
+    });
     feTreeItemCk->setText(0, "Scan");
     feTreeItemCk->setFlags(feTreeItemCk->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsSelectable);
     feTreeItemCk->setCheckState(1, Qt::Checked);
@@ -126,17 +133,11 @@ void YarrGui::on_addFeGlobalButton_clicked(){
             iFJ.close();
             iFJ.open("util/default.js", std::ios_base::in);
             iFJ >> j;
-
-            std::cout << "************************************************" << std::endl;
-            std::cout << std::setw(4) << j;
-            std::cout << "************************************************" << std::endl;
-
             iFJ.close();
             iFJ.open(chipCfgFilenamesAdded.at(i), std::ios_base::out);
             iFJ << std::setw(4) << j;
         }
         iFJ.close();
-//        cfgByRxMap[rxChannelsAdded.at(i)] = j; //will remain in memory
         bk->getLastFe()->fromFileJson(j);
         tx->setCmdEnable(0x1 << bk->getLastFe()->getTxChannel());
         bk->getLastFe()->configure();
@@ -164,14 +165,12 @@ void YarrGui::on_addFeGlobalButton_clicked(){
         feTreeItemRx->setText(1, QString::number(rxChannelsAdded.at(i)));
         feTreeItemCf->setText(0, "Config file");
         feTreeItemCf->setText(1, QString::fromStdString(chipCfgFilenamesAdded.at(i)));
-        {
-            QPushButton * b = new QPushButton("Edit config", this);
-            ui->feTree->setItemWidget(feTreeItemCf, 2, b);
-            QObject::connect(b, &QPushButton::clicked, this, [=](){
-                EditCfgDialog d(bk->getFe(rxChannelsAdded.at(i)), QString::fromStdString(chipCfgFilenamesAdded.at(i)), this);
-                d.exec();
-            });
-        }
+        QPushButton * b = new QPushButton("Edit config", this);
+        ui->feTree->setItemWidget(feTreeItemCf, 2, b);
+        QObject::connect(b, &QPushButton::clicked, this, [=](){
+            EditCfgDialog d(bk->getFe(rxChannelsAdded.at(i)), QString::fromStdString(chipCfgFilenamesAdded.at(i)), this);
+            d.exec();
+        });
         feTreeItemCk->setText(0, "Scan");
         feTreeItemCk->setFlags(feTreeItemCk->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsSelectable);
         feTreeItemCk->setCheckState(1, Qt::Checked);
@@ -217,13 +216,16 @@ void YarrGui::on_remFeButton_clicked(){
         return;
     }
     QString channelRemoved = itemRemoved->child(2)->text(1);
-//    (bk->getFe(channelRemoved.toUInt()))->toFileBinary(); //JSON here
     QString cfgFileRemoved = itemRemoved->child(3)->text(1);
     std::string cfgFNJ = cfgFileRemoved.toStdString();
     std::ofstream cfgFJ(cfgFNJ);
     if(!cfgFJ.is_open()){
         std::cerr << "ERROR - cfg file " << cfgFNJ << " could not be opened. " << std::endl;
         std::cerr << "Current configuration will not be written to a file. " << std::endl;
+    }else{
+        nlohmann::json j;
+        bk->getFe(channelRemoved.toInt())->toFileJson(j);
+        cfgFJ << std::setw(4) << j;
     }
 /*    try{
         nlohmann::json j = cfgByRxMap.at(channelRemoved.toUInt());
