@@ -103,8 +103,8 @@ typedef struct {
 } kmem_handle_t;
 
 typedef struct {
-	unsigned long addr;
-	unsigned long size;
+	unsigned long addr = 0;
+	unsigned long size = 0;
 } umem_sgentry_t;
 
 typedef struct {

@@ -3,8 +3,11 @@
 #include <stdint.h>
 #include <string.h>
 
-int main(void) {
-    SpecController mySpec(0);
+int main(int argc, char **argv) {
+    int specNum = 0;
+    if (argc == 2)
+        specNum = atoi(argv[1]);
+    SpecController mySpec(specNum);
     std::string tmp;
     const size_t size = 256*8;
     unsigned err_count = 0;
@@ -30,8 +33,8 @@ int main(void) {
     if (err_count == 0)
         std::cout << "Success! No errors." << std::endl;
     
-    delete data;
-    delete resp;
+    delete[] data;
+    delete[] resp;
 
     return 0;
 }

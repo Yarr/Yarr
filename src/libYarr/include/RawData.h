@@ -36,6 +36,7 @@ class RawDataContainer {
             adr.push_back(d->adr);
             buf.push_back(d->buf);
             words.push_back(d->words);
+            delete d;
         }
 
         unsigned size() {

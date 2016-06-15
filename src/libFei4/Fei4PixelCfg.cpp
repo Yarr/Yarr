@@ -171,6 +171,10 @@ unsigned Fei4PixelCfg::getEn(unsigned col, unsigned row) {
     return m_En[to_dc(col)].getPixel(to_bit(col, row));
 }
 
+unsigned Fei4PixelCfg::getHitbus(unsigned col, unsigned row) {
+    return m_Hitbus[to_dc(col)].getPixel(to_bit(col, row));
+}
+
 unsigned Fei4PixelCfg::getTDAC(unsigned col, unsigned row) {
     return m_TDAC[to_dc(col)].getPixel(to_bit(col, row));
 }
@@ -185,4 +189,62 @@ unsigned Fei4PixelCfg::getSCap(unsigned col, unsigned row) {
 
 unsigned Fei4PixelCfg::getFDAC(unsigned col, unsigned row) {
     return m_FDAC[to_dc(col)].getPixel(to_bit(col, row));
+}
+
+void Fei4PixelCfg::toFileXml(tinyxml2::XMLDocument *doc, tinyxml2::XMLElement *node) {
+    tinyxml2::XMLElement *pcfg = doc->NewElement("PixelConfig");
+    
+    tinyxml2::XMLElement *reg = NULL;
+    for (unsigned col=1; col<=80; col++) {
+        for (unsigned row=1; row<=336; row++) {
+            reg = doc->NewElement("Pixel");
+            reg->SetAttribute("Col", col);
+            reg->SetAttribute("Row", row);
+            reg->SetAttribute("Enable", getEn(col, row));
+            reg->SetAttribute("Hitbus", getHitbus(col, row));
+            reg->SetAttribute("TDAC", getTDAC(col, row));
+            reg->SetAttribute("FDAC", getFDAC(col, row));
+            pcfg->LinkEndChild(reg);
+        }
+    }
+
+
+    node->LinkEndChild(pcfg);
+}
+
+void Fei4PixelCfg::toFileJson(json &j) {
+    // Layout is one array per column
+    for (unsigned row=1; row<=n_Row; row++) {
+        for (unsigned col=1; col<=n_Col; col++) {
+            j["FE-I4B"]["PixelConfig"][row-1]["Row"] = row;
+            j["FE-I4B"]["PixelConfig"][row-1]["Enable"][col-1] = getEn(col, row);
+            j["FE-I4B"]["PixelConfig"][row-1]["Hitbus"][col-1] = getHitbus(col, row);
+            j["FE-I4B"]["PixelConfig"][row-1]["TDAC"][col-1] = getTDAC(col, row);
+            j["FE-I4B"]["PixelConfig"][row-1]["FDAC"][col-1] = getFDAC(col, row);
+        }
+    }
+
+    /*
+    // Not human readble pixel regs
+    for (unsigned dc=0; dc<n_DC; dc++) {
+            j["FE-I4B"]["PixelConfig"]["Enable"][dc] = m_En[dc].getArray();
+            j["FE-I4B"]["PixelConfig"]["Hitbus"][dc] = m_Hitbus[dc].getArray();
+            for (unsigned bit=0; bit<5; bit++)
+                j["FE-I4B"]["PixelConfig"]["TDAC"][dc][bit] = m_TDAC[dc][bit].getArray();
+            for (unsigned bit=0; bit<5; bit++)
+                j["FE-I4B"]["PixelConfig"]["FDAC"][dc][bit] = m_FDAC[dc][bit].getArray();
+    }*/
+}
+
+void Fei4PixelCfg::fromFileJson(json &j) {
+    // Layout is one array per column
+    for (unsigned row=1; row<=n_Row; row++) {
+        for (unsigned col=1; col<=n_Col; col++) {
+            setEn(col, row, j["FE-I4B"]["PixelConfig"][row-1]["Enable"][col-1]);
+            setHitbus(col, row, j["FE-I4B"]["PixelConfig"][row-1]["Enable"][col-1]);
+            setTDAC(col, row, j["FE-I4B"]["PixelConfig"][row-1]["Enable"][col-1]);
+            setFDAC(col, row, j["FE-I4B"]["PixelConfig"][row-1]["Enable"][col-1]);
+        }
+    }
+
 }

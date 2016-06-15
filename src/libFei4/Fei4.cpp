@@ -8,7 +8,7 @@
 
 #include "Fei4.h"
 
-Fei4::Fei4(TxCore *core, unsigned arg_chipId) : Fei4Cfg(arg_chipId), Fei4Cmd(core) {
+Fei4::Fei4(TxCore *core, unsigned arg_chipId) : FrontEnd(), Fei4Cfg(arg_chipId), Fei4Cmd(core) {
     txChannel = 99;
     rxChannel = 99;
 	histogrammer = NULL;
@@ -16,7 +16,7 @@ Fei4::Fei4(TxCore *core, unsigned arg_chipId) : Fei4Cfg(arg_chipId), Fei4Cmd(cor
 	active = true;
 }
 
-Fei4::Fei4(TxCore *core, unsigned arg_chipId, unsigned arg_channel) : Fei4Cfg(arg_chipId), Fei4Cmd(core) {
+Fei4::Fei4(TxCore *core, unsigned arg_chipId, unsigned arg_channel) : FrontEnd(), Fei4Cfg(arg_chipId), Fei4Cmd(core) {
 	txChannel = arg_channel;
 	rxChannel = arg_channel;
 	histogrammer = NULL;
@@ -24,7 +24,7 @@ Fei4::Fei4(TxCore *core, unsigned arg_chipId, unsigned arg_channel) : Fei4Cfg(ar
 	active = true;
 }
 
-Fei4::Fei4(TxCore *core, unsigned arg_chipId, unsigned arg_txChannel, unsigned arg_rxChannel) : Fei4Cfg(arg_chipId), Fei4Cmd(core) {
+Fei4::Fei4(TxCore *core, unsigned arg_chipId, unsigned arg_txChannel, unsigned arg_rxChannel) : FrontEnd(), Fei4Cfg(arg_chipId), Fei4Cmd(core) {
 	txChannel = arg_txChannel;
 	rxChannel = arg_rxChannel;
 	histogrammer = NULL;
@@ -145,37 +145,5 @@ void Fei4::shiftByOne() {
     writeRegister(&Fei4::SR_Clock, 0x0);
 }
 
-bool Fei4::isActive() {
-	return active;
-}
 
-bool Fei4::getActive() {
-	return this->active;
-}
-
-void Fei4::setActive(bool arg_active) {
-	active = arg_active;
-}
-
-unsigned Fei4::getChannel() {
-	return rxChannel;
-}
-
-unsigned Fei4::getRxChannel() {
-	return rxChannel;
-}
-
-unsigned Fei4::getTxChannel() {
-	return txChannel;
-}
-
-void Fei4::setChannel(unsigned arg_channel) {
-	txChannel = arg_channel;
-	rxChannel = arg_channel;
-}
-
-void Fei4::setChannel(unsigned arg_txChannel, unsigned arg_rxChannel) {
-	txChannel = arg_txChannel;
-	rxChannel = arg_rxChannel;
-}
 

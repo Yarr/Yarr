@@ -19,6 +19,10 @@ Bookkeeper::Bookkeeper(TxCore *arg_tx, RxCore *arg_rx) {
 
 // Delete all leftover data, Bookkeeper should be deleted last
 Bookkeeper::~Bookkeeper() {
+    for(unsigned int k=0; k<feList.size(); k++) {
+        delete feList[k];
+        feList.erase(feList.begin() + k);
+    }
     delete g_fe;
 }
 

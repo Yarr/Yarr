@@ -40,7 +40,7 @@
 
 /** Declares a variable of the given type with the given name and copies it from userspace */
 #define READ_FROM_USER(type, name) \
-	type name; \
+	type name = {0}; \
 	if ((ret = copy_from_user(&name, (type*)arg, sizeof(name))) != 0) \
 		return -EFAULT;
 
@@ -94,7 +94,7 @@ static int ioctl_mmap_area(specdriver_privdata_t *privdata, unsigned long arg)
  */
 static int ioctl_pci_config_read_write(specdriver_privdata_t *privdata, unsigned int cmd, unsigned long arg)
 {
-	int ret;
+	int ret = 0;
 	READ_FROM_USER(pci_cfg_cmd, pci_cmd);
 
 	if (cmd == SPECDRIVER_IOC_PCI_CFG_RD) {
@@ -142,8 +142,8 @@ static int ioctl_pci_config_read_write(specdriver_privdata_t *privdata, unsigned
  */
 static int ioctl_pci_info(specdriver_privdata_t *privdata, unsigned long arg)
 {
-	int ret;
-	int bar;
+	int ret = 0;
+	int bar = 0;
 	READ_FROM_USER(pci_board_info, pci_info);
 
 	pci_info.vendor_id = privdata->pdev->vendor;
@@ -179,7 +179,7 @@ static int ioctl_pci_info(specdriver_privdata_t *privdata, unsigned long arg)
  */
 static int ioctl_kmem_alloc(specdriver_privdata_t *privdata, unsigned long arg)
 {
-	int ret;
+	int ret = 0;
 	READ_FROM_USER(kmem_handle_t, khandle);
 
 	if ((ret = specdriver_kmem_alloc(privdata, &khandle)) != 0)
@@ -199,7 +199,7 @@ static int ioctl_kmem_alloc(specdriver_privdata_t *privdata, unsigned long arg)
  */
 static int ioctl_kmem_free(specdriver_privdata_t *privdata, unsigned long arg)
 {
-	int ret;
+	int ret = 0;
 	READ_FROM_USER(kmem_handle_t, khandle);
 
 	if ((ret = specdriver_kmem_free(privdata, &khandle)) != 0)
@@ -217,7 +217,7 @@ static int ioctl_kmem_free(specdriver_privdata_t *privdata, unsigned long arg)
  */
 static int ioctl_kmem_sync(specdriver_privdata_t *privdata, unsigned long arg)
 {
-	int ret;
+	int ret = 0;
 	READ_FROM_USER(kmem_sync_t, ksync);
 
 	return specdriver_kmem_sync(privdata, &ksync);
@@ -232,7 +232,7 @@ static int ioctl_kmem_sync(specdriver_privdata_t *privdata, unsigned long arg)
  */
 static int ioctl_umem_sgmap(specdriver_privdata_t *privdata, unsigned long arg)
 {
-	int ret;
+	int ret = 0;
 	READ_FROM_USER(umem_handle_t, uhandle);
 
 	if ((ret = specdriver_umem_sgmap(privdata, &uhandle)) != 0)
@@ -252,7 +252,7 @@ static int ioctl_umem_sgmap(specdriver_privdata_t *privdata, unsigned long arg)
  */
 static int ioctl_umem_sgunmap(specdriver_privdata_t *privdata, unsigned long arg)
 {
-	int ret;
+	int ret = 0;
 	specdriver_umem_entry_t *umem_entry;
 	READ_FROM_USER(umem_handle_t, uhandle);
 
@@ -276,7 +276,7 @@ static int ioctl_umem_sgunmap(specdriver_privdata_t *privdata, unsigned long arg
  */
 static int ioctl_umem_sgget(specdriver_privdata_t *privdata, unsigned long arg)
 {
-	int ret;
+	int ret = 0;
 	READ_FROM_USER(umem_sglist_t, usglist);
 
 	/* The umem_sglist_t has a pointer to the scatter/gather list itself which
@@ -316,7 +316,7 @@ static int ioctl_umem_sgget(specdriver_privdata_t *privdata, unsigned long arg)
  */
 static int ioctl_umem_sync(specdriver_privdata_t *privdata, unsigned long arg)
 {
-	int ret;
+	int ret = 0;
 	READ_FROM_USER(umem_handle_t, uhandle);
 
 	return specdriver_umem_sync( privdata, &uhandle );
@@ -333,7 +333,7 @@ static int ioctl_wait_interrupt(specdriver_privdata_t *privdata, unsigned long a
 {
 	unsigned int irq_source;
 	int temp;
-    int ret;
+    int ret = 0;
 
 	if (arg >= SPECDRIVER_INT_MAXSOURCES)
 		return -1;						/* User tried to overrun the IRQ_SOURCES array */
