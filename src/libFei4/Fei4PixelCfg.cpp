@@ -214,7 +214,7 @@ void Fei4PixelCfg::toFileXml(tinyxml2::XMLDocument *doc, tinyxml2::XMLElement *n
 
 void Fei4PixelCfg::toFileJson(json &j) {
     // Layout is one array per column
-    /*for (unsigned row=1; row<=n_Row; row++) {
+    for (unsigned row=1; row<=n_Row; row++) {
         for (unsigned col=1; col<=n_Col; col++) {
             j["FE-I4B"]["PixelConfig"][row-1]["Row"] = row;
             j["FE-I4B"]["PixelConfig"][row-1]["Enable"][col-1] = getEn(col, row);
