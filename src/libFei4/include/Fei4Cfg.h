@@ -46,6 +46,7 @@ class Fei4Cfg : public Fei4GlobalCfg, public Fei4PixelCfg {
             double C = 0;
             if (sCapOn) C += sCap*1e-15;
             if (lCapOn) C += lCap*1e-15;
+            if (C==0) return 0;
             double V = (charge*ELECTRON_CHARGE)/C;
             return (unsigned) round((V - vcalOffset*1e-3)/(vcalSlope*1e-3));
         }
