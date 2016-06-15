@@ -40,8 +40,8 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->main_tabWidget->setTabEnabled(2, false);
     ui->addFuncButton->setEnabled(false);
 
-    ui->feTree->setColumnWidth(0, 200);
-    ui->feTree->setColumnWidth(1, 500);
+    ui->feTree->setColumnWidth(0, 190);
+    ui->feTree->setColumnWidth(1, 150);
 
     ui->scanVec_lineEdit->setReadOnly(true);
 
@@ -62,7 +62,7 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->chipIdEdit->setText("6");
     ui->rxChannelEdit->setText("0");
     ui->txChannelEdit->setText("0");
-    ui->configfileName->setText("util/your_config_here.cfg");
+    ui->configfileName->setText("util/your_config_here.js");
 
     ui->addScanButton->setFont(QFont("Sans Serif", 10, QFont::Bold));
     ui->doScansButton->setFont(QFont("Sans Serif", 10, QFont::Bold));
@@ -360,5 +360,10 @@ void YarrGui::on_exportPlotCSVButton_clicked(){
     myCSVOutput.close();
     std::cout << "Saved current plot to \"" << myFileName.toStdString() << '"' << std::endl;
 
+    return;
+}
+
+void YarrGui::editCfgSlot(){
+    std::cout << "q->Test successful" << std::endl;
     return;
 }
