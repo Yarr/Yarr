@@ -9,33 +9,11 @@ EditCfgDialog::EditCfgDialog(Fei4 * f, QString cfgFNJ_param, QWidget * parent) :
 {
     ui->setupUi(this);
 
-/*    std::ifstream iF(cfgFNJ);
-    std::streampos fsize = 0;
-    fsize = iF.tellg();
-    iF.seekg(0, std::ios::end);
-    fsize = iF.tellg() - fsize;
-    iF.seekg(0, std::ios::beg);
-    char buf[size_t(fsize)];
-    iF.read(buf, size_t(fsize));
-    std::string s(buf);
-    while(s.at(s.size()-1) != '}'){
-        s.pop_back();
-    }
-    s.append("\n");
-    iF.close();
+    nlohmann::json j;
+    this->fE->toFileJson(j);
+    std::string s;
+    s = j.dump(4);
     ui->cfgEdit->setPlainText(QString::fromStdString(s));
-    if(cfgFNJ == "util/default.js"){
-        cfgFNJ = "util/tmp.js";
-        std::cout << "Saving as " << cfgFNJ << std::endl;
-    }*/
-
-    QFile iF(this->cfgFNJ);
-    iF.open(QIODevice::ReadOnly);
-    QByteArray bA;
-    bA = iF.readAll();
-    iF.close();
-    QString qS(bA);
-    ui->cfgEdit->setPlainText(qS);
 }
 
 EditCfgDialog::~EditCfgDialog(){
