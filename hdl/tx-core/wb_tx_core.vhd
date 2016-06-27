@@ -53,7 +53,10 @@ entity wb_tx_core is
 		-- TX
 		tx_clk_i	: in  std_logic;
 		tx_data_o	: out std_logic_vector(g_NUM_TX-1 downto 0);
-		trig_pulse_o : out std_logic
+		trig_pulse_o : out std_logic;
+		
+		-- Async
+		ext_trig_i : in std_logic
 	);
 end wb_tx_core;
 
@@ -304,7 +307,7 @@ begin
 		trig_o => tx_data_trig,
 		trig_pulse_o=> tx_trig_pulse,
 		-- Trigger In (async)
-		ext_trig_i => '0',
+		ext_trig_i => ext_trig_i,
 		-- Config
 		trig_word_i => trig_word,
 		trig_word_length_i => trig_word_length,

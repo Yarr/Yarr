@@ -63,6 +63,7 @@ architecture Behavioral of trigger_unit is
 	signal trig_en_neg : std_logic;
 	signal ext_trig_d0 : std_logic;
 	signal ext_trig_d1 : std_logic;
+	signal ext_trig_d2 : std_logic;
 	signal ext_trig_pos : std_logic;
 	
 	
@@ -196,10 +197,12 @@ begin
 		elsif rising_edge(clk_i) then
 			ext_trig_d0 <= ext_trig_i;
 			ext_trig_d1 <= ext_trig_d0;
-			if (ext_trig_d1 = '0' and ext_trig_d0 = '1') then
+			ext_trig_d2 <= ext_trig_d1;
+			-- Triggered on pos edge of external signal
+			if (ext_trig_d2 = '0' and ext_trig_d1 = '1') then
 				ext_trig_pos <= '1';
 			else
-				ext_trig_pos <= '1';
+				ext_trig_pos <= '0';
 			end if;
 		
 			trig_en_d0 <= trig_en_i;

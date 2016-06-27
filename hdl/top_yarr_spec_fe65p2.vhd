@@ -325,7 +325,9 @@ architecture rtl of yarr is
         -- TX
              tx_clk_i	: in  std_logic;
              tx_data_o	: out std_logic_vector(g_NUM_TX-1 downto 0);
-             trig_pulse_o : out std_logic
+             trig_pulse_o : out std_logic;
+		  -- Async
+				 ext_trig_i : in std_logic
          );
     end component;
 
@@ -1056,7 +1058,8 @@ begin
         -- TX
         tx_clk_i => CLK_40,
         tx_data_o => fe_cmd_o,
-        trig_pulse_o => trig_pulse
+        trig_pulse_o => trig_pulse,
+		  ext_trig_i => hit_or_t
     );
 
     cmp_wb_rx_core: wb_rx_core PORT MAP(
