@@ -339,14 +339,15 @@ begin
 				inject_cnt <= inject_cnt - 1;
 				dig_inj <= '0';
 			end if;
-        end if;
-		  
-		  if (pulser_reg(7) = '1') then
+			
+		   if (pulser_reg(7) = '1') then
 	         trig_cnt <= TO_UNSIGNED((TO_INTEGER(trig_multiplier) + 1), 5);
-        elsif (trig_cnt > 0) then
+         elsif (trig_cnt > 0) then
             trig_cnt <= trig_cnt - 1;
 				trigger <= '1';
-		  end if;
+		   end if;
+      end if;
+ 
     end process inject_proc;
 
 	pulse_delay: for I in 1 to 49 generate
