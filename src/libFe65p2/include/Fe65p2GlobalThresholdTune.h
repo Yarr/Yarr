@@ -7,8 +7,8 @@
 // # Comment: Nothing fancy
 // ################################
 
-#ifndef FE65P2GLOABLTHRESHOLDTUNE_H
-#define FE65P2GLOBALTHRESHOLDRUNE_H
+#ifndef FE65P2GLOBALTHRESHOLDTUNE_H
+#define FE65P2GLOBALTHRESHOLDTUNE_H
 
 #include "ScanBase.h"
 
