@@ -41,7 +41,7 @@ void Fe65p2AnalogScan::preScan() {
     g_fe65p2->configDac();
     
     for(unsigned i=0; i<16; i++) {
-        g_fe65p2->PixConf(i).setAll(0);
+        //g_fe65p2->PixConf(i).setAll(0);
     }
     g_fe65p2->configurePixels();
     

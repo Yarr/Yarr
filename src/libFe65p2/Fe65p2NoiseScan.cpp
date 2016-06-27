@@ -9,7 +9,7 @@
 #include "Fe65p2NoiseScan.h"
 
 Fe65p2NoiseScan::Fe65p2NoiseScan(Bookkeeper *k) : ScanBase(k) {
-    triggerFrequency = 1e4;
+    triggerFrequency = 1e3;
     triggerTime = 30;
     verbose = false;
 }
@@ -23,6 +23,7 @@ void Fe65p2NoiseScan::init() {
     triggerLoop->setTrigTime(triggerTime);
     triggerLoop->setTrigCnt(0); // Activated time mode
     triggerLoop->setNoInject();
+    //triggerLoop->setExtTrigger();
 
     // Loop 2: Data gatherer
     std::shared_ptr<StdDataGatherer> dataLoop(new StdDataGatherer);

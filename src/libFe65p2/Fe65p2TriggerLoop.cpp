@@ -17,6 +17,7 @@ Fe65p2TriggerLoop::Fe65p2TriggerLoop() : LoopActionBase() {
     min = 0;
     max = 0;
     step = 1;
+    m_trigMode = INT_COUNT;
     m_done = false;
     loopType = typeid(this);
 }
@@ -24,11 +25,7 @@ Fe65p2TriggerLoop::Fe65p2TriggerLoop() : LoopActionBase() {
 void Fe65p2TriggerLoop::init() {
     // Setup Trigger
     m_done = false;
-    if (m_trigCnt > 0) {
-        g_tx->setTrigConfig(INT_COUNT);
-    } else {
-        g_tx->setTrigConfig(INT_TIME);
-    }
+    g_tx->setTrigConfig(m_trigMode);
     g_tx->setTrigFreq(m_trigFreq);
     g_tx->setTrigCnt(m_trigCnt);
     g_tx->setTrigWordLength(m_trigWordLength);
@@ -56,6 +53,11 @@ void Fe65p2TriggerLoop::execPart2() {
 
 void Fe65p2TriggerLoop::setTrigCnt(unsigned int cnt) {
     m_trigCnt = cnt;
+    if (m_trigCnt > 0) {
+        m_trigMode = INT_COUNT;
+    } else {
+        m_trigMode = INT_TIME;
+    }
 }
 
 unsigned int Fe65p2TriggerLoop::getTrigCnt() {
@@ -83,4 +85,13 @@ void Fe65p2TriggerLoop::setNoInject() {
     m_trigWord[1] = 0x00;
     m_trigWord[2] = 0x00;
     m_trigWord[3] = MOJO_HEADER + (PULSE_REG << 16) + PULSE_TRIGGER;
+}
+
+void Fe65p2TriggerLoop::setExtTrigger() {
+    m_trigMode = EXT_TRIGGER;
+    // trigger should be sent out roughly 66 BCs from incoming trigger signal 
+    m_trigWord[0] = 0x00;
+    m_trigWord[1] = 0x00;
+    m_trigWord[2] = MOJO_HEADER + (PULSE_REG << 16) + PULSE_TRIGGER;
+    m_trigWord[3] = 0x00;
 }

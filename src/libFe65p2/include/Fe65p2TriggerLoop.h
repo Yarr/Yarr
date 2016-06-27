@@ -22,6 +22,7 @@ class Fe65p2TriggerLoop : public LoopActionBase {
         double getTrigTime();
 
         void setNoInject();
+        void setExtTrigger();
 
     private:
         unsigned m_trigCnt;
@@ -30,7 +31,8 @@ class Fe65p2TriggerLoop : public LoopActionBase {
         double m_trigTime;
         uint32_t m_trigWord[4];
         uint32_t m_trigWordLength;
-        
+        enum TRIG_CONF_VALUE m_trigMode;
+
         void init();
         void end();
         void execPart1();

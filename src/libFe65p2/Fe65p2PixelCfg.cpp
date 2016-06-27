@@ -39,8 +39,8 @@ Fe65p2PixelCfg::Fe65p2PixelCfg() {
     for (unsigned i=0; i<n_QC; i++) {
         m_Sign[i].setAll(0);
         m_InjEn[i].setAll(0);
-        m_TDAC[i].setAll(15);
-        m_PixConf[i].setAll(0);
+        m_TDAC[i].setAll(0);
+        m_PixConf[i].setAll(3);
     }
 }
 
