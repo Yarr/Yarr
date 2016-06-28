@@ -47,8 +47,8 @@ void Fe65p2AnalogScan::preScan() {
     
     g_fe65p2->setLatency(60+5);
     g_fe65p2->setValue(&Fe65p2::TestHit, 0x0);
-    g_fe65p2->setValue(&Fe65p2::Vthin1Dac, 100); // Set Threshold not too low, not too high
-    g_fe65p2->setValue(&Fe65p2::Vthin2Dac, 50); // Set Threshold not too low, not too high
+    //g_fe65p2->setValue(&Fe65p2::Vthin1Dac, 100); // Set Threshold not too low, not too high
+    //g_fe65p2->setValue(&Fe65p2::Vthin2Dac, 50); // Set Threshold not too low, not too high
     g_fe65p2->enAnaInj();
     g_fe65p2->setValue(&Fe65p2::Latency, 60);
     g_fe65p2->configureGlobal();
