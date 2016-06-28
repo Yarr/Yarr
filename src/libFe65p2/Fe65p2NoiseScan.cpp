@@ -10,12 +10,14 @@
 
 Fe65p2NoiseScan::Fe65p2NoiseScan(Bookkeeper *k) : ScanBase(k) {
     triggerFrequency = 1e3;
-    triggerTime = 30;
+    triggerTime = 360;
     verbose = false;
 }
 
 // Initialize Loops
 void Fe65p2NoiseScan::init() {
+    
+
     // Loop 1: Trigger
     std::shared_ptr<Fe65p2TriggerLoop> triggerLoop(new Fe65p2TriggerLoop);
     triggerLoop->setVerbose(verbose);
@@ -39,7 +41,7 @@ void Fe65p2NoiseScan::init() {
 // Do necessary pre-scan configuration
 void Fe65p2NoiseScan::preScan() {
     g_fe65p2->setValue(&Fe65p2::TrigCount, 10);
-    g_fe65p2->setValue(&Fe65p2::Latency, 60);
+    g_fe65p2->setValue(&Fe65p2::Latency, 70);
     g_fe65p2->configureGlobal();
     while(!g_tx->isCmdEmpty());
 }

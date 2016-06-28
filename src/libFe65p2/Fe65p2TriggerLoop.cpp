@@ -90,6 +90,7 @@ void Fe65p2TriggerLoop::setNoInject() {
 void Fe65p2TriggerLoop::setExtTrigger() {
     m_trigMode = EXT_TRIGGER;
     // trigger should be sent out roughly 66 BCs from incoming trigger signal 
+    // measurement says 75BCs
     m_trigWord[0] = 0x00;
     m_trigWord[1] = 0x00;
     m_trigWord[2] = MOJO_HEADER + (PULSE_REG << 16) + PULSE_TRIGGER;
