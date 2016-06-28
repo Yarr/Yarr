@@ -4,3 +4,4 @@
 #include "Fe65p2GlobalThresholdTune.h"
 #include "Fe65p2PixelThresholdTune.h"
 #include "Fe65p2NoiseScan.h"
+#include "Fe65p2ExtTrigger.h"

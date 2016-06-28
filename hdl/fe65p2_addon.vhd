@@ -84,7 +84,7 @@ architecture behavioral of fe65p2_addon is
     -- inject & trigger
     signal dig_inj : std_logic;
     signal trigger : std_logic;
-    signal pulser_trig_t : std_logic_vector(49 downto 0);
+    signal pulser_trig_t : std_logic_vector(40 downto 0);
     signal inject_cnt : unsigned(8 downto 0);
 	 signal trig_cnt : unsigned(4 downto 0);
     signal en_inj : std_logic;
@@ -350,7 +350,7 @@ begin
  
     end process inject_proc;
 
-	pulse_delay: for I in 1 to 49 generate
+	pulse_delay: for I in 1 to pulser_trig_t'length-1 generate
 	begin
 		delay_proc: process(clk_40)
 		begin

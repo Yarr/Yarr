@@ -36,8 +36,8 @@ end trigger_unit;
 
 architecture Behavioral of trigger_unit is
     -- Signals
-    signal bit_count : unsigned(7 downto 0);
-    signal sreg      : std_logic_vector(127 downto 0);
+   signal bit_count : unsigned(7 downto 0);
+   signal sreg      : std_logic_vector(127 downto 0);
 	signal trig_pulse : std_logic;
 	
 	-- Registers
@@ -64,6 +64,8 @@ architecture Behavioral of trigger_unit is
 	signal ext_trig_d0 : std_logic;
 	signal ext_trig_d1 : std_logic;
 	signal ext_trig_d2 : std_logic;
+	signal ext_trig_d3 : std_logic;
+	signal ext_trig_d4 : std_logic;
 	signal ext_trig_pos : std_logic;
 	
 	
@@ -78,8 +80,8 @@ begin
 				trig_done(0) <= '0';
 			elsif (trig_abort_i = '1') then -- Abort triggering
 				trig_done(0) <= '1';
-			elsif (trig_conf = x"0") then -- External
-				trig_done(0) <= '0';
+			elsif (trig_conf = x"0") then -- External, abot will set done
+				--trig_done(0) <= '0';
 			elsif (trig_conf = x"1") then -- Internal time
 				if (stopwatch_cnt = unsigned(trig_time)) then
 					trig_done(0) <= '1';
@@ -89,6 +91,8 @@ begin
 					trig_done(0) <= '1';
 				end if;
 			--elsif (trig_conf = x"3") then -- Pseudo Random
+			else -- unknown conf
+				trig_done(0) <= '1';
 			end if;
 		end if;
 	end process done_proc;
@@ -130,7 +134,7 @@ begin
 			freq_cnt <= (others => '0');
 		elsif rising_edge(clk_i) then
 			if (trig_conf = x"0") then -- Pusling on External rising edge
-				if (trig_en = '1' and ext_trig_pos = '1') then
+				if (trig_en = '1' and ext_trig_pos = '1' and trig_done(0) = '0') then
 					trig_pulse <= '1';
 				else
 					trig_pulse <= '0';
@@ -188,18 +192,23 @@ begin
 			trig_done_o <= '0';
 			trig_done(c_DONE_DELAY-1 downto 1) <= (others => '0');
 			ext_trig_d0 <= '0';
-			ext_trig_d0 <= '0';
+			ext_trig_d1 <= '0';
+			ext_trig_d2 <= '0';
+			ext_trig_d3 <= '0';
+			ext_trig_d4 <= '0';
 			ext_trig_pos <= '0';
 			trig_en_d0 <= '0';
 			trig_en_d1 <= '0';
 			trig_en_pos <= '0';
 			trig_en_neg <= '0';
 		elsif rising_edge(clk_i) then
-			ext_trig_d0 <= ext_trig_i;
+			ext_trig_d0 <= ext_trig_i; -- async input
 			ext_trig_d1 <= ext_trig_d0;
 			ext_trig_d2 <= ext_trig_d1;
-			-- Triggered on pos edge of external signal
-			if (ext_trig_d2 = '0' and ext_trig_d1 = '1') then
+			ext_trig_d3 <= ext_trig_d2;
+			ext_trig_d4 <= ext_trig_d3;
+			-- Triggered on pos edge of external signal and high longer than 25ns
+			if (ext_trig_d4 = '0' and ext_trig_d3 = '1' and ext_trig_d2 = '1' and ext_trig_d1 = '1') then
 				ext_trig_pos <= '1';
 			else
 				ext_trig_pos <= '0';
