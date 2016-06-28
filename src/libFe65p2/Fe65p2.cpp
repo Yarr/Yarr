@@ -37,6 +37,8 @@ void Fe65p2::configurePixels() {
     //setValue(&Fe65p2::VffDac, 0);
     
    
+    uint16_t colEn = getValue(&Fe65p2::ColEn);
+    uint16_t colSrEn = getValue(&Fe65p2::ColSrEn);
     // Turn all off
     setValue(&Fe65p2::ColSrEn, 0xFFFF);
     setValue(&Fe65p2::ColEn, 0xFFFF);
@@ -104,6 +106,8 @@ void Fe65p2::configurePixels() {
     setValue(&Fe65p2::Vthin1Dac, tmp1);
     setValue(&Fe65p2::Vthin2Dac, tmp2);
     setValue(&Fe65p2::PreCompVbnDac, tmp3);
+    setValue(&Fe65p2::ColSrEn, colSrEn);
+    setValue(&Fe65p2::ColEn, colEn);
     //setValue(&Fe65p2::VffDac, tmp4);
     configureGlobal();
 
