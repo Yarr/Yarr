@@ -22,7 +22,20 @@ EditCfgDialog::~EditCfgDialog(){
 
 void EditCfgDialog::on_saveButton_clicked(){
     nlohmann::json j;
-    j = nlohmann::json::parse(ui->cfgEdit->toPlainText().toStdString());
+    try{
+        j = nlohmann::json::parse(ui->cfgEdit->toPlainText().toStdString());
+    }
+    catch(std::invalid_argument){
+        std::cerr << "ERROR - Malformed argument - aborting" << std::endl;
+        return;
+    }
+    try{
+        this->fE->fromFileJson(j);
+    }
+    catch(std::domain_error){
+        std::cerr << "ERROR - Malformed argument - aborting" << std::endl;
+        return;
+    }
     QFile oF(this->cfgFNJ);
     oF.open(QIODevice::WriteOnly);
     QString qS;
@@ -30,15 +43,27 @@ void EditCfgDialog::on_saveButton_clicked(){
     QTextStream oS(&oF);
     oS << qS;
     oF.close();
-    this->fE->fromFileJson(j);
 
     return;
 }
 
 void EditCfgDialog::on_applyButton_clicked(){
     nlohmann::json j;
-    j = nlohmann::json::parse(ui->cfgEdit->toPlainText().toStdString());
-    this->fE->fromFileJson(j);
+    try{
+        j = nlohmann::json::parse(ui->cfgEdit->toPlainText().toStdString());
+    }
+    catch(std::invalid_argument){
+        std::cerr << "ERROR - Malformed config - aborting" << std::endl;
+        return;
+    }
+
+    try{
+        this->fE->fromFileJson(j);
+    }
+    catch(std::domain_error){
+        std::cout << "ERROR - Malformed config - aborting" << std::endl;
+        return;
+    }
 
     return;
 }
@@ -46,7 +71,13 @@ void EditCfgDialog::on_applyButton_clicked(){
 void EditCfgDialog::on_saveAsButton_clicked(){
     QString filename = QFileDialog::getSaveFileName(this, tr("Select JSON config file"), "./util/", tr("JSON Config File(*.js *.json)"));
     nlohmann::json j;
-    j = nlohmann::json::parse(ui->cfgEdit->toPlainText().toStdString());
+    try{
+        j = nlohmann::json::parse(ui->cfgEdit->toPlainText().toStdString());
+    }
+    catch(std::invalid_argument){
+        std::cerr << "ERROR - Malformed config - aborting" << std::endl;
+        return;
+    }
     QFile oF(filename);
     oF.open(QIODevice::WriteOnly);
     QString qS;
