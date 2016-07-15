@@ -16,9 +16,9 @@
   <widget class="QPlainTextEdit" name="cfgEdit">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>831</x>
      <y>10</y>
-     <width>841</width>
+     <width>20</width>
      <height>441</height>
     </rect>
    </property>
@@ -78,6 +78,97 @@
    </property>
    <property name="text">
     <string>Save as... </string>
+   </property>
+  </widget>
+  <widget class="QTableWidget" name="cfgTable">
+   <property name="geometry">
+    <rect>
+     <x>100</x>
+     <y>10</y>
+     <width>721</width>
+     <height>441</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="EnableRadio">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>20</y>
+     <width>71</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Enable</string>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="TDACRadio">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>40</y>
+     <width>71</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>TDAC</string>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="LCapRadio">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>60</y>
+     <width>71</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>LCap</string>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="SCapRadio">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>80</y>
+     <width>71</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>SCap</string>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="HitbusRadio">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>100</y>
+     <width>71</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Hitbus</string>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="FDACRadio">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>120</y>
+     <width>71</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>FDAC</string>
    </property>
   </widget>
  </widget>

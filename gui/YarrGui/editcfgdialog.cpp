@@ -11,9 +11,25 @@ EditCfgDialog::EditCfgDialog(Fei4 * f, QString cfgFNJ_param, QWidget * parent) :
 
     nlohmann::json j;
     this->fE->toFileJson(j);
-    std::string s;
-    s = j.dump(4);
-    ui->cfgEdit->setPlainText(QString::fromStdString(s));
+//    std::string s;
+//    s = j.dump(4);
+//    ui->cfgEdit->setPlainText(QString::fromStdString(s));
+
+    ui->cfgTable->setRowCount(336);
+    ui->cfgTable->setColumnCount(80);
+//    ui->cfgTable->setAlternatingRowColors(true);
+    for(unsigned int i = 0; i<336; i += 1){
+        for(unsigned int k = 0; k < 80; k += 1){
+            unsigned int l = j["FE-I4B"]["PixelConfig"][i]["Enable"][k];
+            QPushButton * b = new QPushButton(QString::number(l), this);
+            ui->cfgTable->setCellWidget(i, k, b);
+            QObject::connect(b, &QPushButton::clicked, this, [=](){
+                unsigned int u = b->text().toUInt();
+                u += 1;
+                b->setText(QString::number(u));
+            });
+        }
+    }
 }
 
 EditCfgDialog::~EditCfgDialog(){
