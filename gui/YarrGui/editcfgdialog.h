@@ -6,6 +6,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QString>
+#include <QTableWidget>
 #include <QTextStream>
 
 #include <fstream>
@@ -32,6 +33,13 @@ private slots:
     void on_applyButton_clicked();
     void on_saveButton_clicked();
     void on_saveAsButton_clicked();
+
+    void on_EnableRadio_clicked();
+    void on_TDACRadio_clicked();
+    void on_LCapRadio_clicked();
+    void on_SCapRadio_clicked();
+    void on_HitbusRadio_clicked();
+    void on_FDACRadio_clicked();
 
 private:
     Ui::EditCfgDialog *ui;
