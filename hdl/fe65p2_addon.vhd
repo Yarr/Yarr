@@ -72,6 +72,7 @@ architecture behavioral of fe65p2_addon is
 	signal latency : unsigned(8 downto 0);
 	signal dac_setting : std_logic_vector(15 downto 0);
 	signal trig_multiplier : unsigned(3 downto 0);
+	signal delay_setting : std_logic_vector(7 downto 0);
 
     -- config serialiser
     signal conf_load : std_logic_vector(7 downto 0);
@@ -88,6 +89,7 @@ architecture behavioral of fe65p2_addon is
     signal inject_cnt : unsigned(8 downto 0);
 	 signal trig_cnt : unsigned(4 downto 0);
     signal en_inj : std_logic;
+	 signal inj_sw_t : std_logic;
 
     -- DAC
     signal dac_load : std_logic_vector(15 downto 0);
@@ -95,6 +97,16 @@ architecture behavioral of fe65p2_addon is
     signal dac_sreg_cnt : unsigned(7 downto 0);
     signal dac_sreg : std_logic_vector(15 downto 0);
     signal dac_sclk_t : std_logic;
+	 
+	component delay_line
+    generic (
+        width : positive := 8);
+    port (
+        input : IN std_logic;
+        output : OUT std_logic;
+		  setting : IN std_logic_vector(width-1 downto 0) );
+	 end component delay_line;
+	 
 begin
     sys_rst <= not rst_n;
     clk_40 <= clk_i;
@@ -115,12 +127,20 @@ begin
     dac_ld_o <= not (dac_load(15)  or dac_load(14) or dac_load(13) or dac_load(12) or dac_load(11) or 
 					dac_load(10) or dac_load(9) or dac_load(8) or dac_load(7) or dac_load(6) or dac_load(5));
     dac_cs_o <= dac_cs_t;
-    inj_sw_o <= '0' when (unsigned(pulser_trig_t) = 0) else '1';
+    inj_sw_t <= '0' when (unsigned(pulser_trig_t) = 0) else '1';
 
+	 cmp_inj_delay: delay_line 
+     GENERIC MAP(
+        width => 8)
+     PORT MAP(
+	 input => inj_sw_t,
+	 output => inj_sw_o,
+	 setting => delay_setting(7 downto 0)
+	 );
     -- Static settings
     en_data_clk <= static_reg(0);
     en_bx_clk <= static_reg(1);
-	 pix_d_cnfg_o <= static_reg(2);
+	pix_d_cnfg_o <= static_reg(2);
     en_inj <= static_reg(3);
     rst_0_o <= not static_reg(4);
     rst_1_o <= not static_reg(5);
@@ -163,7 +183,8 @@ begin
             pulser_reg <= (others => '0');
             latency <= (others => '0');
             dac_setting <= (others => '0');
-				trig_multiplier <= x"5";
+            trig_multiplier <= x"5";
+			delay_setting <= (others => '0');
         elsif rising_edge(clk_40) then
             new_cmd <= '0';
             if (cmd_valid = '1') then
@@ -232,6 +253,7 @@ begin
 					when x"0032" => latency <= unsigned(payload(8 downto 0));
 					when x"0033" => dac_setting <= payload(15 downto 0);
 					when x"0034" => trig_multiplier <= unsigned(payload(3 downto 0));
+					when x"0035" => delay_setting <= payload(7 downto 0);
 					when others => 
 				end case;
 
