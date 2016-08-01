@@ -56,7 +56,7 @@ class Fe65p2Cmd {
         void injectAndTrigger();
         void setPlsrDac(unsigned setting);
         void setTrigCount(uint32_t setting);
-        void setTrigFineDelay(uint32_t setting);
+        void setPulserDelay(uint32_t setting);
 
         void reset();
         void clocksOn();
