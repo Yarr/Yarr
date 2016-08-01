@@ -25,6 +25,7 @@
 #define LAT_REG 0x32
 #define DAC_REG 0x33
 #define TRIGCNT_REG 0x34
+#define DELAY_REG 0x35
 
 #define PULSE_SHIFT_GLOBAL 0x1
 #define PULSE_INJECT 0x2
@@ -55,6 +56,7 @@ class Fe65p2Cmd {
         void injectAndTrigger();
         void setPlsrDac(unsigned setting);
         void setTrigCount(uint32_t setting);
+        void setTrigFineDelay(uint32_t setting);
 
         void reset();
         void clocksOn();
