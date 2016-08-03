@@ -241,9 +241,9 @@ void Fei4PixelCfg::fromFileJson(json &j) {
     for (unsigned row=1; row<=n_Row; row++) {
         for (unsigned col=1; col<=n_Col; col++) {
             setEn(col, row, j["FE-I4B"]["PixelConfig"][row-1]["Enable"][col-1]);
-            setHitbus(col, row, j["FE-I4B"]["PixelConfig"][row-1]["Enable"][col-1]);
-            setTDAC(col, row, j["FE-I4B"]["PixelConfig"][row-1]["Enable"][col-1]);
-            setFDAC(col, row, j["FE-I4B"]["PixelConfig"][row-1]["Enable"][col-1]);
+            setHitbus(col, row, j["FE-I4B"]["PixelConfig"][row-1]["Hitbus"][col-1]);
+            setTDAC(col, row, j["FE-I4B"]["PixelConfig"][row-1]["TDAC"][col-1]);
+            setFDAC(col, row, j["FE-I4B"]["PixelConfig"][row-1]["FDAC"][col-1]);
         }
     }
 
