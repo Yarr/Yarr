@@ -57,7 +57,16 @@ void YarrGui::on_prog_button_clicked() {
             return;
         }
 
-        std::fstream file(ui->progfile_name->text().toStdString().c_str(), std::fstream::in);
+//        std::fstream file(ui->progfile_name->text().toStdString().c_str(), std::fstream::in);
+        std::fstream file;
+        if(ui->revABitfRadio->isChecked()){
+            file.open("../hdl/syn/yarr_quad_fei4_revA.bit", std::fstream::in);
+        }else if(ui->revBBitfRadio->isChecked()){
+            file.open("../hdl/syn/yarr_quad_fei4_revB.bit", std::fstream::in);
+        }else{
+            std::cerr << "ERROR - must choose one bitfile (rev A or rev B) - aborting... " << std::endl;
+            return;
+        }
         if (!file) {
             QMessageBox errorBox;
             errorBox.critical(0, "Error", "Problem opening File!");
