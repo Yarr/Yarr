@@ -139,6 +139,7 @@ architecture behavioral of wb_tx_core is
     -- Trig input freq counter
     signal ext_trig_t1 : std_logic;
     signal ext_trig_t2 : std_logic;
+    signal ext_trig_t3 : std_logic;
     signal trig_in_freq_cnt : unsigned(31 downto 0);
     signal trig_in_freq : std_logic_vector(31 downto 0);
     signal per_second : std_logic;
@@ -372,16 +373,18 @@ begin
             trig_in_freq_cnt <= (others => '0');
             ext_trig_t1 <= '0';
             ext_trig_t2 <= '0';
+            ext_trig_t3 <= '0';
         elsif rising_edge(tx_clk_i) then
             ext_trig_t1 <= ext_trig_i;
             ext_trig_t2 <= ext_trig_t1;        
-            if (per_second = '1') then
-                trig_in_freq <= std_logic_vector(trig_in_freq_cnt);
+            ext_trig_t3 <= ext_trig_t2;        
+            if (trig_done = '1') then
                 trig_in_freq_cnt <= (others => '0');
             else
-                if (ext_trig_t2 = '1') then -- not really frequency as it looks at level not edge
+                if (ext_trig_t2 = '1' and ext_trig_t3 = '0') then -- positive edge
                     trig_in_freq_cnt <= trig_in_freq_cnt + 1;
                 end if;
+                trig_in_freq <= std_logic_vector(trig_in_freq_cnt);
             end if;
         end if;
     end process trig_in_freq_proc;
