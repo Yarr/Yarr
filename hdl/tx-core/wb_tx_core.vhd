@@ -126,13 +126,27 @@ architecture behavioral of wb_tx_core is
 	signal trig_freq : std_logic_vector(31 downto 0); -- Number of clock cycles between triggers
 	signal trig_time : std_logic_vector(63 downto 0); -- Clock cycles
 	signal trig_time_l : std_logic_vector(31 downto 0);
+	signal trig_time_l_d : std_logic_vector(31 downto 0);
 	signal trig_time_h : std_logic_vector(31 downto 0);
+	signal trig_time_h_d : std_logic_vector(31 downto 0);
 	signal trig_count : std_logic_vector(31 downto 0); -- Fixed number of triggers
 	signal trig_conf : std_logic_vector(3 downto 0); -- Internal, external, pseudo random, 
 	signal trig_en : std_logic;
 	signal trig_done : std_logic;
 	signal trig_word_length : std_logic_vector(31 downto 0);
 	signal trig_word : std_logic_vector(127 downto 0);
+    
+    -- Trig input freq counter
+    signal ext_trig_t1 : std_logic;
+    signal ext_trig_t2 : std_logic;
+    signal trig_in_freq_cnt : unsigned(31 downto 0);
+    signal trig_in_freq : std_logic_vector(31 downto 0);
+    signal per_second : std_logic;
+    signal per_second_cnt : unsigned(31 downto 0);
+    constant ticks_per_second : integer := 40000000; -- 40 MHz clock rate
+    
+    
+    
 	signal trig_abort : std_logic;
 	
 	signal wb_wr_en	: std_logic_vector(31 downto 0) := (others => '0');
@@ -155,10 +169,21 @@ begin
 			wb_dat_t <= (others => '0');
 			trig_en <= '0';
 			trig_abort  <= '0';
+            tx_enable <= (others => '0');
+            trig_conf <= (others => '0');
+            trig_time_h <= (others => '0');
+            trig_time_h_d <= (others => '0');
+            trig_time_h <= (others => '0');
+            trig_time_l_d <= (others => '0');
+            trig_count <= (others => '0');
+            trig_word <= (others => '0');
+            trig_abort <= '0';
 		elsif rising_edge(wb_clk_i) then
 			wb_wr_en <= (others => '0');
 			wb_ack_o <= '0';
-			trig_time <= trig_time_h & trig_time_l;
+            trig_time_h_d <= trig_time_h;
+            trig_time_l_d <= trig_time_l;
+			trig_time <= trig_time_h_d & trig_time_l_d; -- delay for more flexible routing
 			trig_abort  <= '0';
 			if (wb_cyc_i = '1' and wb_stb_i = '1') then
 				if (wb_we_i = '1') then
@@ -256,6 +281,9 @@ begin
 						when x"E" => -- Set trigger word [127:96]
 							wb_dat_o <= trig_word(127 downto 96);
 							wb_ack_o <= '1';
+						when x"F" => -- Trigger in frequency
+							wb_dat_o <= trig_in_freq;
+							wb_ack_o <= '1';
 						when others =>
 							wb_dat_o <= x"DEADBEEF";
 							wb_ack_o <= '1';
@@ -319,5 +347,43 @@ begin
 		trig_abort_i => trig_abort,
 		trig_done_o => trig_done
 	);
+    
+    -- Create 1 tick per second for counter
+    per_sec_proc : process(tx_clk_i, rst_n_i)
+    begin
+        if (rst_n_i = '0') then
+            per_second <= '0';
+            per_second_cnt <= (others => '0');
+        elsif rising_edge(tx_clk_i) then
+            if (per_second_cnt = ticks_per_second) then
+                per_second <= '1';
+                per_second_cnt <= (others => '0');
+            else
+                per_second <= '0';
+                per_second_cnt <= per_second_cnt + 1;
+            end if;
+        end if;
+    end process per_sec_proc;
+    
+    -- Count incoming trig frequency
+    trig_in_freq_proc : process(tx_clk_i, rst_n_i)
+    begin
+        if (rst_n_i = '0') then
+            trig_in_freq_cnt <= (others => '0');
+            ext_trig_t1 <= '0';
+            ext_trig_t2 <= '0';
+        elsif rising_edge(tx_clk_i) then
+            ext_trig_t1 <= ext_trig_i;
+            ext_trig_t2 <= ext_trig_t1;        
+            if (per_second = '1') then
+                trig_in_freq <= std_logic_vector(trig_in_freq_cnt);
+                trig_in_freq_cnt <= (others => '0');
+            else
+                if (ext_trig_t2 = '1') then -- not really frequency as it looks at level not edge
+                    trig_in_freq_cnt <= trig_in_freq_cnt + 1;
+                end if;
+            end if;
+        end if;
+    end process trig_in_freq_proc;
 
 end behavioral;
