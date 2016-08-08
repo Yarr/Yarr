@@ -102,6 +102,8 @@ architecture behavioral of fe65p2_addon is
     generic (
         width : positive := 8);
     port (
+        clk : in std_logic;
+        rst : in std_logic;
         input : IN std_logic;
         output : OUT std_logic;
 		  setting : IN std_logic_vector(width-1 downto 0) );
@@ -129,14 +131,18 @@ begin
     dac_cs_o <= dac_cs_t;
     inj_sw_t <= '0' when (unsigned(pulser_trig_t) = 0) else '1';
 
-	 cmp_inj_delay: delay_line 
-     GENERIC MAP(
-        width => 8)
-     PORT MAP(
-	 input => inj_sw_t,
-	 output => inj_sw_o,
-	 setting => delay_setting(7 downto 0)
-	 );
+    -- Fine delay for pulser
+	cmp_inj_delay: delay_line 
+    GENERIC MAP(
+        width => 7)
+    PORT MAP(
+        clk => clk_40,
+        rst => sys_rst,
+        input => inj_sw_t,
+        output => inj_sw_o,
+        setting => delay_setting(6 downto 0)
+	);
+    
     -- Static settings
     en_data_clk <= static_reg(0);
     en_bx_clk <= static_reg(1);
