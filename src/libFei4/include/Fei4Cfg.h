@@ -13,6 +13,7 @@
 #include <fstream>
 #include <cmath>
 
+#include "FrontEnd.h"
 #include "Fei4GlobalCfg.h"
 #include "Fei4PixelCfg.h"
 #include "tinyxml2.h"
@@ -22,7 +23,7 @@ using json = nlohmann::json;
 
 #define ELECTRON_CHARGE 1.602e-19
 
-class Fei4Cfg : public Fei4GlobalCfg, public Fei4PixelCfg {
+class Fei4Cfg : public FrontEndCfg, public Fei4GlobalCfg, public Fei4PixelCfg {
     public:
         Fei4Cfg() {
             chipId = 0;
@@ -32,6 +33,7 @@ class Fei4Cfg : public Fei4GlobalCfg, public Fei4PixelCfg {
             vcalSlope = 1.5;
         }
 
+        double toCharge(double vcal) {return this->toCharge(vcal, true, true);}
         double toCharge(double vcal, bool sCapOn=true, bool lCapOn=true) {
             // Q = C*V
             double C = 0;

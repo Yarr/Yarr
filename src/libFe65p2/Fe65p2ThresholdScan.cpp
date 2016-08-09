@@ -23,7 +23,7 @@ void Fe65p2ThresholdScan::init() {
     
     // Loop 3: Parameter Loop
     std::shared_ptr<Fe65p2ParameterLoop> parLoop(new Fe65p2ParameterLoop(&Fe65p2GlobalCfg::PlsrDac));
-    parLoop->setRange(50, 650, 20);
+    parLoop->setRange(50, 350, 10);
     // Loop 4: Trigger
     std::shared_ptr<Fe65p2TriggerLoop> triggerLoop(new Fe65p2TriggerLoop);
 

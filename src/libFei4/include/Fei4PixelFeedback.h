@@ -66,7 +66,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
                     // Initilize Pixel regs with default config
                     for (unsigned col=1; col<81; col++) {
                         for (unsigned row=1; row<337; row++) {
-                            this->setPixel(keeper->feList[k], col, row, min);
+                            this->setPixel(dynamic_cast<Fei4*>(keeper->feList[k]), col, row, min);
                         }
                     }
                 }
@@ -86,7 +86,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
                     // Need to lock mutex on first itereation
                     keeper->mutexMap[keeper->feList[k]->getRxChannel()].try_lock();
                     // Write config
-                    this->writePixelCfg(keeper->feList[k]);
+                    this->writePixelCfg(dynamic_cast<Fei4*>(keeper->feList[k]));
                 }
             }
         }
@@ -151,11 +151,11 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
                 for (unsigned row=1; row<337; row++) {
                     for (unsigned col=1; col<81; col++) {
                         int sign = fbHistoMap[ch]->getBin(fbHistoMap[ch]->binNum(col, row));
-                        int v = getPixel(keeper->getFe(ch),col, row);
+                        int v = getPixel(dynamic_cast<Fei4*>(keeper->getFe(ch)),col, row);
                         v = v + (step)*sign;
                         if (v < 0) v = 0;
                         if ((unsigned)v > max) v = max;
-                        this->setPixel(keeper->getFe(ch),col, row, v);
+                        this->setPixel(dynamic_cast<Fei4*>(keeper->getFe(ch)),col, row, v);
                     }
                 }
                 delete fbHistoMap[ch];

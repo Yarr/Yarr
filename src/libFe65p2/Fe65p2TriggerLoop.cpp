@@ -48,6 +48,7 @@ void Fe65p2TriggerLoop::execPart2() {
     while(!g_tx->isTrigDone()); // We shouldnt get here, cause the inner data loop waits already
     // Disable Trigger
     g_tx->setTrigEnable(0x0);
+    std::cout << "COUNT: " << g_tx->getTrigInCount() << std::endl;
     m_done = true;
 }
 

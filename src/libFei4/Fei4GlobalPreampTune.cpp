@@ -95,7 +95,7 @@ void Fei4GlobalPreampTune::preScan() {
     while(!g_tx->isCmdEmpty());
     
 	for(unsigned int k=0; k<b->feList.size(); k++) {
-        Fei4 *fe = b->feList[k];
+        Fei4 *fe = dynamic_cast<Fei4*>(b->feList[k]);
         // Set to single channel tx
 		g_tx->setCmdEnable(0x1 << fe->getTxChannel());
         // Set specific pulser DAC

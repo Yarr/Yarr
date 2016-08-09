@@ -186,25 +186,28 @@ int main(int argc, char *argv[]) {
         }
     }
     */ 
-    bookie.addFe(0, 0);
+    bookie.addFe(new Fe65p2(&tx), 0, 0);
     bookie.getLastFe()->setName("fe65p2");
-    bookie.getLastFe()->setScap(1.18);
-    bookie.getLastFe()->setLcap(0);
-    bookie.getLastFe()->setVcalSlope(0.564);
-    bookie.getLastFe()->setVcalOffset(0.011);
+    bookie.getLastFe()->setActive(1);
+    //bookie.getLastFe()->setScap(1.18);
+    //bookie.getLastFe()->setLcap(0);
+    //bookie.getLastFe()->setVcalSlope(0.564);
+    //bookie.getLastFe()->setVcalOffset(0.011);
 
-    Fe65p2 *fe = bookie.g_fe65p2;
-    fe->setName("fe65p2");
-    fe->clipDataFei4 = &bookie.eventMap[0];
-    fe->clipHisto = &bookie.histoMap[0];
-    fe->clipResult = &bookie.resultMap[0];
+    //Fe65p2 *fe = bookie.g_fe65p2;
+    //fe->setName("fe65p2");
+    //fe->clipDataFei4 = &bookie.eventMap[0];
+    //fe->clipHisto = &bookie.histoMap[0];
+    //fe->clipResult = &bookie.resultMap[0];
 
     json icfg;
-    std::fstream icfg_file((fe->getName()+".json").c_str(), std::ios::in);
+    std::fstream icfg_file((bookie.getLastFe()->getName()+".json").c_str(), std::ios::in);
     if (icfg_file) {
-        std::fstream backup((fe->getName()+".json.backup").c_str(), std::ios::out);
+        std::fstream backup((bookie.getLastFe()->getName()+".json.backup").c_str(), std::ios::out);
         icfg_file >> icfg;
-        fe->fromFileJson(icfg);
+        bookie.g_fe65p2->fromFileJson(icfg);
+        dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->fromFileJson(icfg);
+        bookie.getLastFe()->setName("fe65p2");
         backup << std::setw(4) << icfg;
         backup.close();
     }
@@ -295,7 +298,7 @@ int main(int argc, char *argv[]) {
     
     // Init histogrammer and analysis
     for (unsigned i=0; i<bookie.feList.size(); i++) {
-        Fei4 *fe = bookie.feList[i];
+        FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
             // Init histogrammer per FE
             fe->histogrammer = new Fei4Histogrammer();
@@ -357,7 +360,7 @@ int main(int argc, char *argv[]) {
     std::vector<std::thread> anaThreads;
     std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
     for (unsigned i=0; i<bookie.feList.size(); i++) {
-        Fei4 *fe = bookie.feList[i];
+        FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
             anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana));
             std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
@@ -410,26 +413,26 @@ int main(int argc, char *argv[]) {
     // Cleanup
     delete s;
     for (unsigned i=0; i<bookie.feList.size(); i++) {
-        Fei4 *fei4 = bookie.feList[i];
-        if (fei4->isActive()) {
+        FrontEnd *fe = bookie.feList[i];
+        if (fe->isActive()) {
             // Save config
             std::cout << "-> Saving config of FE " << fe->getName() << std::endl;
             json cfg;
             std::fstream cfg_file((fe->getName()+".json").c_str(), std::ios::out);
-            fe->toFileJson(cfg);
+            dynamic_cast<FrontEndCfg*>(fe)->toFileJson(cfg);
             cfg_file << std::setw(4) << cfg;
             cfg_file.close();
             // Plot
             if (doPlots) {
                 std::cout << "-> Plotting histograms of FE " << fe->getRxChannel() << std::endl;
-                fei4->ana->plot(/*std::string(timestamp) + "-" + */fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
-                fei4->ana->toFile(/*std::string(timestamp) + "-" + */fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
+                fe->ana->plot(/*std::string(timestamp) + "-" + */fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
+                fe->ana->toFile(/*std::string(timestamp) + "-" + */fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
             }
             // Free
-            delete fei4->histogrammer;
-            fei4->histogrammer = NULL;
-            delete fei4->ana;
-            fei4->ana = NULL;
+            delete fe->histogrammer;
+            fe->histogrammer = NULL;
+            delete fe->ana;
+            fe->ana = NULL;
         }
     }
     return 0;
