@@ -39,6 +39,8 @@ int main(int argc, char *argv[]) {
             mask >> val;
             if (val < 1) {
                 c["FE65-P2"]["PixelConfig"][j]["PixConf"][i] = 0;
+            } else {
+                //c["FE65-P2"]["PixelConfig"][j]["PixConf"][i] = 3;
             }
         }
     }
