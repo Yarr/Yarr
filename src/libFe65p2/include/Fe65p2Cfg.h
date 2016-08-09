@@ -12,6 +12,7 @@
 #include <string>
 #include <cmath>
 
+#include "FrontEnd.h"
 #include "Fe65p2GlobalCfg.h"
 #include "Fe65p2PixelCfg.h"
 #include "json.hpp"
@@ -20,7 +21,7 @@ using json = nlohmann::json;
 
 #define ELECTRON_CHARGE 1.602e-19
 
-class Fe65p2Cfg : public Fe65p2GlobalCfg, public Fe65p2PixelCfg{
+class Fe65p2Cfg : public FrontEndCfg, public Fe65p2GlobalCfg, public Fe65p2PixelCfg{
     public:
         Fe65p2Cfg() {
             cap = 1.18;
@@ -32,7 +33,7 @@ class Fe65p2Cfg : public Fe65p2GlobalCfg, public Fe65p2PixelCfg{
 
         }
         
-        double toCharge(unsigned vcal) {
+        double toCharge(double vcal) {
             // Q = C*V
             return (cap * 1.0e-15)*(((1.0e-3*vcal_slope)*vcal)+(vcal_offset*1.0e-3))/ELECTRON_CHARGE;
         }
@@ -44,6 +45,10 @@ class Fe65p2Cfg : public Fe65p2GlobalCfg, public Fe65p2PixelCfg{
 
         void toFileJson(json &j);
         void fromFileJson(json &j);
+        void toFileBinary(std::string) {};
+        void fromFileBinary(std::string) {};
+        void toFileBinary() {};
+        void fromFileBinary() {};
 
     protected:
         std::string name;

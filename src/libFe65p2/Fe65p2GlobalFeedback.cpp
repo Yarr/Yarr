@@ -84,10 +84,11 @@ void Fe65p2GlobalFeedback::execPart1() {
 }
 
 void Fe65p2GlobalFeedback::execPart2() {
-    unsigned ch = 0;
+    unsigned ch = 0; // TODO hardcoded on ch0
     keeper->mutexMap[ch].lock();
     std::cout << "---> Received Feedback for Fe " << ch << " with value " << values[ch] << std::endl;
     
+    dynamic_cast<Fe65p2*>(keeper->feList[ch])->setValue(m_reg, (uint16_t) values[ch]);
     g_fe65p2->setValue(m_reg, (uint16_t) values[ch]);
     g_fe65p2->configureGlobal();
     

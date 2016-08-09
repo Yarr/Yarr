@@ -131,7 +131,7 @@ class Fei4GlobalFeedback : public Fei4GlobalFeedbackBase {
 			for(unsigned int k=0; k<keeper->feList.size(); k++) {
 				if(keeper->feList[k]->getActive()) {
 					g_tx->setCmdEnable(1 << keeper->feList[k]->getTxChannel());
-					keeper->feList[k]->writeRegister(parPtr, values[keeper->feList[k]->getRxChannel()]);
+				    dynamic_cast<Fei4*>(keeper->feList[k])->writeRegister(parPtr, values[keeper->feList[k]->getRxChannel()]);
                     while(!g_tx->isCmdEmpty());
 				}
 			}

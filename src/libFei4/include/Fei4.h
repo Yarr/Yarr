@@ -16,12 +16,7 @@
 #include "TxCore.h"
 #include "Fei4Cmd.h"
 #include "Fei4Cfg.h"
-#include "Fei4EventData.h"
-#include "ClipBoard.h"
-#include "HistogramBase.h"
 
-class Fei4Analysis;
-class Fei4Histogrammer;
 
 enum MASK_STAGE {
     MASK_1  = 0xFFFFFFFF,
@@ -40,14 +35,16 @@ enum DC_MODE {
     ALL_DC = 0x3
 };
 
-class Fei4 : public FrontEnd, public Fei4Cfg, public Fei4Cmd {
+class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
     public:
         Fei4(TxCore *arg_core);
         Fei4(TxCore *arg_core, unsigned arg_channel);
         Fei4(TxCore *arg_core, unsigned arg_txchannel, unsigned arg_rxchannel);
 
 		~Fei4();
+        
         void configure();
+        void configureGlobal();
         void configurePixels(unsigned lsb=0, unsigned msb=Fei4PixelCfg::n_Bits);
 
         void setRunMode(bool mode=true) {
@@ -78,13 +75,6 @@ class Fei4 : public FrontEnd, public Fei4Cfg, public Fei4Cmd {
             T readRegister(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref){
                 return getValue(ref);
             }
-
-		ClipBoard<Fei4Data> *clipDataFei4;
-		ClipBoard<HistogramBase> *clipHisto;
-		ClipBoard<HistogramBase> *clipResult;
-
-        Fei4Analysis *ana;
-		Fei4Histogrammer *histogrammer;
 
     private:
 

@@ -19,6 +19,7 @@
 #include "ResultBase.h"
 #include "ClipBoard.h"
 
+#include "FrontEnd.h"
 #include "Fei4.h"
 #include "Fe65p2.h"
 #include "TxCore.h"
@@ -30,16 +31,16 @@ class Bookkeeper {
         ~Bookkeeper();
         
         // TODO should only add generic Fe class
-        void addFe(unsigned txChannel, unsigned rxChannel);
-        void addFe(unsigned channel);
+        void addFe(FrontEnd *fe, unsigned txChannel, unsigned rxChannel);
+        void addFe(FrontEnd *fe, unsigned channel);
 		
         void delFe(unsigned rxChannel);
-		void delFe(Fei4 *fe);
+		void delFe(FrontEnd *fe);
 
-		Fei4* getFei4byChannel(unsigned channel);
-		Fei4* getFe(unsigned rxChannel);
-        Fei4* getLastFe();
-        Fei4* getGlobalFe() {
+		FrontEnd* getFeByChannel(unsigned channel);
+		FrontEnd* getFe(unsigned rxChannel);
+        FrontEnd* getLastFe();
+        FrontEnd* getGlobalFe() {
             return g_fe;
         }
 
@@ -64,7 +65,7 @@ class Bookkeeper {
         TxCore *tx;
         RxCore *rx;
         
-        std::vector<Fei4*> feList;
+        std::vector<FrontEnd*> feList;
 
         ClipBoard<RawDataContainer> rawData;
 
@@ -74,7 +75,7 @@ class Bookkeeper {
 	    std::map<unsigned, ClipBoard<HistogramBase> > resultMap;
 		std::map<unsigned, std::mutex> mutexMap;	
         
-		std::vector<Fei4*> activeFeList;
+		std::vector<FrontEnd*> activeFeList;
 
     private:
         //uint32_t activeTxMask;

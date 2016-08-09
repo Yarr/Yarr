@@ -21,14 +21,17 @@ int main(void) {
     tx.setCmdEnable(0x1);
     
     fe->setPlsrDac(1000);
+    fe->enAnaInj();
+    fe->clocksOn();
     while(!tx.isCmdEmpty());
 
-    for(unsigned i=0; i<256; i++) {
+    for(unsigned i=0; i<256; i+=1) {
         std::cout << i << std::endl;
         fe->setPulserDelay(i);
         usleep(500);
         fe->injectAndTrigger();
-        sleep(1); 
+        std::string trash;
+        std::cin >> trash; 
     }
     return 0;
 }

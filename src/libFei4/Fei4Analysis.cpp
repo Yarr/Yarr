@@ -156,9 +156,11 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
                 mask->setBin(i, 1);
             } else {
                 if (makeMask) {
-                    Fei4 *fe = bookie->getFe(channel);
-                    fe->setEn((i/nRow)+1, (i%nRow)+1, 0);
-                    fe->setHitbus((i/nRow)+1, (i%nRow)+1, 1);
+                    if(dynamic_cast<Fei4*>(bookie->getFe(channel))) {;
+                        Fei4 *fe = dynamic_cast<Fei4*>(bookie->getFe(channel));
+                        fe->setEn((i/nRow)+1, (i%nRow)+1, 0);
+                        fe->setHitbus((i/nRow)+1, (i%nRow)+1, 1);
+                    }
                 }
             }
         }
@@ -515,10 +517,11 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         timeDist[outerIdent] = hh1;
                     }
                     if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin)/16.0) {
-                        thrMap[outerIdent]->fill(col, row, bookie->getFe(channel)->toCharge(par[0]));
-                        thrDist[outerIdent]->fill(bookie->getFe(channel)->toCharge(par[0]));
-                        sigMap[outerIdent]->fill(col, row, bookie->getFe(channel)->toCharge(par[1]));
-                        sigDist[outerIdent]->fill(bookie->getFe(channel)->toCharge(par[1]));
+                        FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
+                        thrMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0]));
+                        thrDist[outerIdent]->fill(feCfg->toCharge(par[0]));
+                        sigMap[outerIdent]->fill(col, row, feCfg->toCharge(par[1]));
+                        sigDist[outerIdent]->fill(feCfg->toCharge(par[1]));
                         chiDist[outerIdent]->fill(status.fnorm/(double)status.nfev);
                         timeDist[outerIdent]->fill(fitTime.count());
                     }
@@ -877,11 +880,13 @@ void NoiseAnalysis::end() {
     double noiseThr = 1e-6; 
     for (unsigned i=0; i<noiseOcc->size(); i++) {
         if (noiseOcc->getBin(i) > noiseThr) {
-            Fei4 *fe = bookie->getFe(channel);
             mask->setBin(i, 0);
             if (applyMask) {
-                fe->setEn((i/nRow)+1, (i%nRow)+1, 0);
-                fe->setHitbus((i/nRow)+1, (i%nRow)+1, 1);
+                if(dynamic_cast<Fei4*>(bookie->getFe(channel))) {;
+                    Fei4 *fe = dynamic_cast<Fei4*>(bookie->getFe(channel));
+                    fe->setEn((i/nRow)+1, (i%nRow)+1, 0);
+                    fe->setHitbus((i/nRow)+1, (i%nRow)+1, 1);
+                }
             }
         } else {
             mask->setBin(i, 1);
