@@ -46,6 +46,8 @@ private:
 
     Fei4 * fE;
     QString cfgFNJ;
+
+    nlohmann::json j;
 };
 
 #endif // EDITCFGDIALOG_H
