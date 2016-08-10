@@ -6,171 +6,114 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>860</width>
-    <height>481</height>
+    <width>349</width>
+    <height>243</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <widget class="QPlainTextEdit" name="cfgEdit">
-   <property name="geometry">
-    <rect>
-     <x>831</x>
-     <y>10</y>
-     <width>20</width>
-     <height>441</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="applyButton">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>450</y>
-     <width>141</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Load this configuration into FE, but don't update the config's file representation</string>
-   </property>
-   <property name="toolTipDuration">
-    <number>10000</number>
-   </property>
-   <property name="text">
-    <string>Apply</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="saveButton">
-   <property name="geometry">
-    <rect>
-     <x>360</x>
-     <y>450</y>
-     <width>141</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Load this configuration into FE and update config's file representation</string>
-   </property>
-   <property name="toolTipDuration">
-    <number>10000</number>
-   </property>
-   <property name="text">
-    <string>Save</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="saveAsButton">
-   <property name="geometry">
-    <rect>
-     <x>710</x>
-     <y>450</y>
-     <width>141</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Save this configuration to file, but don't load it into the FE</string>
-   </property>
-   <property name="toolTipDuration">
-    <number>10000</number>
-   </property>
-   <property name="text">
-    <string>Save as... </string>
-   </property>
-  </widget>
-  <widget class="QTableWidget" name="cfgTable">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>10</y>
-     <width>721</width>
-     <height>441</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QRadioButton" name="EnableRadio">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>20</y>
-     <width>71</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Enable</string>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QRadioButton" name="TDACRadio">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>40</y>
-     <width>71</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>TDAC</string>
-   </property>
-  </widget>
-  <widget class="QRadioButton" name="LCapRadio">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>60</y>
-     <width>71</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>LCap</string>
-   </property>
-  </widget>
-  <widget class="QRadioButton" name="SCapRadio">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>80</y>
-     <width>71</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>SCap</string>
-   </property>
-  </widget>
-  <widget class="QRadioButton" name="HitbusRadio">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>100</y>
-     <width>71</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Hitbus</string>
-   </property>
-  </widget>
-  <widget class="QRadioButton" name="FDACRadio">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>120</y>
-     <width>71</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>FDAC</string>
-   </property>
-  </widget>
+  <layout class="QVBoxLayout" name="verticalLayout_2">
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="QRadioButton" name="EnableRadio">
+         <property name="text">
+          <string>Enable</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="TDACRadio">
+         <property name="text">
+          <string>TDAC</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="LCapRadio">
+         <property name="text">
+          <string>LCap</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="SCapRadio">
+         <property name="text">
+          <string>SCap</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="HitbusRadio">
+         <property name="text">
+          <string>Hitbus</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="FDACRadio">
+         <property name="text">
+          <string>FDAC</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <widget class="QTableWidget" name="cfgTable"/>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QPushButton" name="applyButton">
+       <property name="toolTip">
+        <string>Load this configuration into FE, but don't update the config's file representation</string>
+       </property>
+       <property name="toolTipDuration">
+        <number>10000</number>
+       </property>
+       <property name="text">
+        <string>Apply</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="saveButton">
+       <property name="toolTip">
+        <string>Load this configuration into FE and update config's file representation</string>
+       </property>
+       <property name="toolTipDuration">
+        <number>10000</number>
+       </property>
+       <property name="text">
+        <string>Save</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="saveAsButton">
+       <property name="toolTip">
+        <string>Save this configuration to file, but don't load it into the FE</string>
+       </property>
+       <property name="toolTipDuration">
+        <number>10000</number>
+       </property>
+       <property name="text">
+        <string>Save as... </string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
  </widget>
  <resources/>
  <connections/>

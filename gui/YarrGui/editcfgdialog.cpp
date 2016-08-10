@@ -9,46 +9,56 @@ EditCfgDialog::EditCfgDialog(Fei4 * f, QString cfgFNJ_param, QWidget * parent) :
 {
     ui->setupUi(this);
 
-    nlohmann::json j;
-    this->fE->toFileJson(j);
-//    std::string s;
-//    s = j.dump(4);
-//    ui->cfgEdit->setPlainText(QString::fromStdString(s));
+    this->fE->toFileJson(this->j);
 
     ui->cfgTable->setRowCount(336);
     ui->cfgTable->setColumnCount(80);
-//    ui->cfgTable->setAlternatingRowColors(true);
-    std::string tmpStdStr = "";
-    if(ui->EnableRadio->isChecked()){
-        tmpStdStr = ui->EnableRadio->text().toStdString();
-    }else if(ui->TDACRadio->isChecked()){
-        tmpStdStr = ui->TDACRadio->text().toStdString();
-    }else if(ui->LCapRadio->isChecked()){
-        tmpStdStr = ui->LCapRadio->text().toStdString();
-    }else if(ui->SCapRadio->isChecked()){
-        tmpStdStr = ui->SCapRadio->text().toStdString();
-    }else if(ui->HitbusRadio->isChecked()){
-        tmpStdStr = ui->HitbusRadio->text().toStdString();
-    }else if(ui->FDACRadio->isChecked()){
-        tmpStdStr = ui->FDACRadio->text().toStdString();
-    }else{
-        std::cerr << "No valid radio button checked. Aborting... " << std::endl;
-        this->close();
+    for(unsigned int i = 0; i < 80; i += 1){
+        ui->cfgTable->setColumnWidth(i, 25);
     }
+    ui->cfgTable->setAlternatingRowColors(true);
     for(unsigned int i = 0; i<336; i += 1){
         for(unsigned int k = 0; k < 80; k += 1){
             unsigned int l = j["FE-I4B"]["PixelConfig"][i][ui->EnableRadio->text().toStdString().c_str()][k];
             QPushButton * b = new QPushButton(QString::number(l), this);
+            b->setMinimumWidth(10);
             ui->cfgTable->setCellWidget(i, k, b);
             QObject::connect(b, &QPushButton::clicked, this, [=](){
+                unsigned int max_val = 0;
+                std::string tmpStdStr = "";
+                if(ui->EnableRadio->isChecked()){
+                    max_val = 1;
+                    tmpStdStr = ui->EnableRadio->text().toStdString();
+                }else if(ui->TDACRadio->isChecked()){
+                    max_val = 31;
+                    tmpStdStr = ui->TDACRadio->text().toStdString();
+                }else if(ui->LCapRadio->isChecked()){
+                    max_val = 1;
+                    tmpStdStr = ui->LCapRadio->text().toStdString();
+                }else if(ui->SCapRadio->isChecked()){
+                    max_val = 1;
+                    tmpStdStr = ui->SCapRadio->text().toStdString();
+                }else if(ui->HitbusRadio->isChecked()){
+                    max_val = 1;
+                    tmpStdStr = ui->HitbusRadio->text().toStdString();
+                }else if(ui->FDACRadio->isChecked()){
+                    max_val = 15;
+                    tmpStdStr = ui->FDACRadio->text().toStdString();
+                }else{
+                    std::cerr << "No valid radio button checked. Aborting... " << std::endl;
+                    this->close();
+                }
                 unsigned int u = b->text().toUInt();
                 u += 1;
+                if(u > max_val){
+                    u = 0;
+                }
                 b->setText(QString::number(u));
+                std::cout << tmpStdStr << std::endl; //DEBUG
+                this->j["FE-I4B"]["PixelConfig"][i][tmpStdStr.c_str()][k] = u;
             });
         }
     }
-//    QPushButton * qpshb = dynamic_cast<QPushButton*>(ui->cfgTable->cellWidget(5, 5)); //DEBUG
-//    if(qpshb == nullptr){std::cerr << "You need to revise something here. " << std::endl;} //DEBUG
 }
 
 EditCfgDialog::~EditCfgDialog(){
@@ -56,16 +66,8 @@ EditCfgDialog::~EditCfgDialog(){
 }
 
 void EditCfgDialog::on_saveButton_clicked(){
-    nlohmann::json j;
     try{
-        j = nlohmann::json::parse(ui->cfgEdit->toPlainText().toStdString());
-    }
-    catch(std::invalid_argument){
-        std::cerr << "ERROR - Malformed argument - aborting" << std::endl;
-        return;
-    }
-    try{
-        this->fE->fromFileJson(j);
+        this->fE->fromFileJson(this->j);
     }
     catch(std::domain_error){
         std::cerr << "ERROR - Malformed argument - aborting" << std::endl;
@@ -74,7 +76,7 @@ void EditCfgDialog::on_saveButton_clicked(){
     QFile oF(this->cfgFNJ);
     oF.open(QIODevice::WriteOnly);
     QString qS;
-    qS = QString::fromStdString(j.dump(4));
+    qS = QString::fromStdString(this->j.dump(4));
     QTextStream oS(&oF);
     oS << qS;
     oF.close();
@@ -83,17 +85,8 @@ void EditCfgDialog::on_saveButton_clicked(){
 }
 
 void EditCfgDialog::on_applyButton_clicked(){
-    nlohmann::json j;
     try{
-        j = nlohmann::json::parse(ui->cfgEdit->toPlainText().toStdString());
-    }
-    catch(std::invalid_argument){
-        std::cerr << "ERROR - Malformed config - aborting" << std::endl;
-        return;
-    }
-
-    try{
-        this->fE->fromFileJson(j);
+        this->fE->fromFileJson(this->j);
     }
     catch(std::domain_error){
         std::cout << "ERROR - Malformed config - aborting" << std::endl;
@@ -105,21 +98,10 @@ void EditCfgDialog::on_applyButton_clicked(){
 
 void EditCfgDialog::on_saveAsButton_clicked(){
     QString filename = QFileDialog::getSaveFileName(this, tr("Select JSON config file"), "./util/", tr("JSON Config File(*.js *.json)"));
-    nlohmann::json j;
-    try{
-        j = nlohmann::json::parse(ui->cfgEdit->toPlainText().toStdString());
-    }
-    catch(std::invalid_argument){
-        std::cerr << "ERROR - Malformed config - aborting" << std::endl;
-        return;
-    }
     QFile oF(filename);
     oF.open(QIODevice::WriteOnly);
     QString qS;
-    qS = QString::fromStdString(j.dump(4));
-    if(qS.at(qS.size()-1) != '\n'){
-        qS.append("\n");
-    }
+    qS = QString::fromStdString(this->j.dump(4));
     QTextStream oS(&oF);
     oS << qS;
     oF.close();
@@ -131,9 +113,6 @@ void EditCfgDialog::on_EnableRadio_clicked(){
     if(!ui->EnableRadio->isChecked()){
         return;
     }
-
-    nlohmann::json j;
-    this->fE->toFileJson(j);
 
     for(unsigned int i = 0; i<336; i += 1){
         for(unsigned int k = 0; k < 80; k += 1){
@@ -151,9 +130,6 @@ void EditCfgDialog::on_TDACRadio_clicked(){
         return;
     }
 
-    nlohmann::json j;
-    this->fE->toFileJson(j);
-
     for(unsigned int i = 0; i<336; i += 1){
         for(unsigned int k = 0; k < 80; k += 1){
             unsigned int l = j["FE-I4B"]["PixelConfig"][i][ui->TDACRadio->text().toStdString().c_str()][k];
@@ -169,9 +145,6 @@ void EditCfgDialog::on_LCapRadio_clicked(){
     if(!ui->LCapRadio->isChecked()){
         return;
     }
-
-    nlohmann::json j;
-    this->fE->toFileJson(j);
 
     for(unsigned int i = 0; i<336; i += 1){
         for(unsigned int k = 0; k < 80; k += 1){
@@ -189,9 +162,6 @@ void EditCfgDialog::on_SCapRadio_clicked(){
         return;
     }
 
-    nlohmann::json j;
-    this->fE->toFileJson(j);
-
     for(unsigned int i = 0; i<336; i += 1){
         for(unsigned int k = 0; k < 80; k += 1){
             unsigned int l = j["FE-I4B"]["PixelConfig"][i][ui->SCapRadio->text().toStdString().c_str()][k];
@@ -208,9 +178,6 @@ void EditCfgDialog::on_HitbusRadio_clicked(){
         return;
     }
 
-    nlohmann::json j;
-    this->fE->toFileJson(j);
-
     for(unsigned int i = 0; i<336; i += 1){
         for(unsigned int k = 0; k < 80; k += 1){
             unsigned int l = j["FE-I4B"]["PixelConfig"][i][ui->HitbusRadio->text().toStdString().c_str()][k];
@@ -226,9 +193,6 @@ void EditCfgDialog::on_FDACRadio_clicked(){
     if(!ui->FDACRadio->isChecked()){
         return;
     }
-
-    nlohmann::json j;
-    this->fE->toFileJson(j);
 
     for(unsigned int i = 0; i<336; i += 1){
         for(unsigned int k = 0; k < 80; k += 1){

@@ -33,7 +33,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>0</number>
     </property>
     <property name="tabsClosable">
      <bool>false</bool>
@@ -152,6 +152,9 @@
       </property>
      </widget>
      <widget class="QLineEdit" name="progfile_name">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <property name="geometry">
        <rect>
         <x>30</x>
@@ -162,6 +165,9 @@
       </property>
      </widget>
      <widget class="QToolButton" name="progfile_button">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <property name="geometry">
        <rect>
         <x>300</x>
@@ -198,6 +204,35 @@
       </property>
       <property name="text">
        <string>YarrPapagei</string>
+      </property>
+     </widget>
+     <widget class="QRadioButton" name="revABitfRadio">
+      <property name="geometry">
+       <rect>
+        <x>30</x>
+        <y>330</y>
+        <width>131</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Revision A Bitfile</string>
+      </property>
+     </widget>
+     <widget class="QRadioButton" name="revBBitfRadio">
+      <property name="geometry">
+       <rect>
+        <x>30</x>
+        <y>350</y>
+        <width>131</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Revision B Bitfile</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
       </property>
      </widget>
     </widget>
