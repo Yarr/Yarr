@@ -309,6 +309,7 @@ int main(int argc, char *argv[]) {
             fe->histogrammer->addHistogrammer(new Tot2Map());
             fe->histogrammer->addHistogrammer(new L1Dist());
             fe->histogrammer->addHistogrammer(new HitDist());
+            fe->histogrammer->addHistogrammer(new TotDist());
             // Fe65p2 specific
             fe->histogrammer->setMapSize(64, 64);
            
@@ -316,6 +317,7 @@ int main(int argc, char *argv[]) {
             fe->ana = new Fei4Analysis(&bookie, fe->getRxChannel());
             fe->ana->connect(s, fe->clipHisto, fe->clipResult);
             fe->ana->addAlgorithm(new L1Analysis());
+            fe->ana->addAlgorithm(new TotDistPlotter());
             if (scanType == "digitalscan") {
                 fe->ana->addAlgorithm(new OccupancyAnalysis());
             } else if (scanType == "analogscan") {

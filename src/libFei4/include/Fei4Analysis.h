@@ -253,6 +253,23 @@ class L1Analysis : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> innerCnt;
 };
 
+class TotDistPlotter : public AnalysisAlgorithm {
+    public:
+        TotDistPlotter() : AnalysisAlgorithm() {};
+        ~TotDistPlotter() {};
+
+        void init(ScanBase *s);
+        void processHistogram(HistogramBase *h);
+        void end() {}
+    private:
+        std::vector<unsigned> loops;
+        std::vector<unsigned> loopMax;
+        unsigned n_count;
+        unsigned injections;
+        std::map<unsigned, Histo1d*> tot;
+        std::map<unsigned, unsigned> innerCnt;
+};
+
 class NoiseAnalysis : public AnalysisAlgorithm {
     public:
         NoiseAnalysis() : AnalysisAlgorithm() {};

@@ -147,6 +147,25 @@ class Tot2Map : public HistogramAlgorithm {
         Histo2d *h;
 };
 
+class TotDist : public HistogramAlgorithm {
+    public:
+        TotDist() : HistogramAlgorithm() {
+        }
+        ~TotDist() {
+        }
+
+        void create(LoopStatus &stat) {
+            h = new Histo1d("TotDist", 16, 0.5, 16.5, typeid(this), stat);
+            h->setXaxisTitle("ToT [bc]");
+            h->setYaxisTitle("# of Hits");
+            r = (HistogramBase*) h;
+        }
+
+        void processEvent(Fei4Data *data);
+    private:
+        Histo1d *h;
+};
+
 class L1Dist : public HistogramAlgorithm {
     public:
         L1Dist() : HistogramAlgorithm() {
