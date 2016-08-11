@@ -41,7 +41,7 @@ void Fe65p2ExtTrigger::init() {
 // Do necessary pre-scan configuration
 void Fe65p2ExtTrigger::preScan() {
     g_fe65p2->setValue(&Fe65p2::TrigCount, 10);
-    g_fe65p2->setValue(&Fe65p2::Latency, 75); // TODO Check latency
+    g_fe65p2->setValue(&Fe65p2::Latency, 82);
     g_fe65p2->configureGlobal();
     while(!g_tx->isCmdEmpty());
 }
