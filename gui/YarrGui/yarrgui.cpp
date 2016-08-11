@@ -55,7 +55,8 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->additionalFunctionality->addItem("Create scan");
 
     QPixmap yarrPapageiPix("yarr_papagei_2.png");
-    yarrPapageiPix = yarrPapageiPix.scaledToHeight(ui->yarrPapageiLabel->height() - 10);
+//    yarrPapageiPix = yarrPapageiPix.scaledToHeight(ui->yarrPapageiLabel->height() - 10);
+    yarrPapageiPix = yarrPapageiPix.scaledToHeight(500);
     ui->yarrPapageiLabel->setPixmap(yarrPapageiPix);
     ui->yarrPapageiLabel->setAlignment(Qt::AlignRight);
 
