@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
     std::fstream gConfig(configPath, std::ios::in);
     if (!gConfig) {
         std::cerr << "## ERROR ## Could not open file: " << configPath << std::endl;
-        return -1;
+        //return -1;
     }
     
     // TODO add fe65p2 to bookie
@@ -289,6 +289,9 @@ int main(int argc, char *argv[]) {
     } else if (scanType == "noisescan") {
         std::cout << "-> Found Noisescan" << std::endl;
         s = new Fe65p2NoiseScan(&bookie);
+    } else if (scanType == "exttrigger") {
+        std::cout << "-> Found External Trigger" << std::endl;
+        s = new Fe65p2ExtTrigger(&bookie);
     } else {
         std::cout << "-> No matching Scan found, possible:" << std::endl;
         listScans();
@@ -337,6 +340,8 @@ int main(int argc, char *argv[]) {
                 fe->ana->addAlgorithm(new TotAnalysis());
             } else if (scanType == "noisescan") {
                 fe->ana->addAlgorithm(new NoiseAnalysis());
+            } else if (scanType == "exttrigger") {
+                fe->ana->addAlgorithm(new OccupancyAnalysis());
             } else {
                 std::cout << "-> Analyses not defined for scan type" << std::endl;
                 listScans();
