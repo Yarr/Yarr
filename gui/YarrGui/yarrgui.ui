@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1000</width>
-    <height>2194</height>
+    <height>511</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -26,7 +26,7 @@
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
-      <widget class="QWidget" name="">
+      <widget class="QWidget" name="layoutWidget">
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout">
@@ -70,7 +70,7 @@
            <enum>QTabWidget::Rounded</enum>
           </property>
           <property name="currentIndex">
-           <number>2</number>
+           <number>0</number>
           </property>
           <property name="tabsClosable">
            <bool>false</bool>
@@ -85,7 +85,7 @@
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <widget class="QWidget" name="">
+              <widget class="QWidget" name="layoutWidget">
                <layout class="QVBoxLayout" name="verticalLayout_4">
                 <property name="sizeConstraint">
                  <enum>QLayout::SetMinAndMaxSize</enum>
@@ -160,6 +160,19 @@
                  </widget>
                 </item>
                 <item>
+                 <spacer name="verticalSpacer_2">
+                  <property name="orientation">
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>20</width>
+                    <height>40</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item>
                  <widget class="QPushButton" name="prog_button">
                   <property name="text">
                    <string>Program</string>
@@ -213,32 +226,39 @@
                 </item>
                </layout>
               </widget>
-              <widget class="QLabel" name="yarrPapageiLabel">
-               <property name="minimumSize">
-                <size>
-                 <width>300</width>
-                 <height>140</height>
-                </size>
-               </property>
-               <property name="text">
-                <string>YarrPapagei</string>
-               </property>
+              <widget class="QWidget" name="">
+               <layout class="QHBoxLayout" name="horizontalLayout_9">
+                <item>
+                 <spacer name="horizontalSpacer_2">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item>
+                 <widget class="QLabel" name="yarrPapageiLabel">
+                  <property name="minimumSize">
+                   <size>
+                    <width>300</width>
+                    <height>140</height>
+                   </size>
+                  </property>
+                  <property name="text">
+                   <string>YarrPapagei</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
               </widget>
              </widget>
             </item>
            </layout>
-           <zorder>layoutWidget</zorder>
-           <zorder>devicesel_label</zorder>
-           <zorder>device_comboBox</zorder>
-           <zorder>init_button</zorder>
-           <zorder>prog_button</zorder>
-           <zorder>progfile_name</zorder>
-           <zorder>progfile_button</zorder>
-           <zorder>bitfile_label</zorder>
-           <zorder>yarrPapageiLabel</zorder>
-           <zorder>revABitfRadio</zorder>
-           <zorder>revBBitfRadio</zorder>
-           <zorder>console</zorder>
           </widget>
           <widget class="QWidget" name="tab_3">
            <attribute name="title">
@@ -250,7 +270,7 @@
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <widget class="QWidget" name="">
+              <widget class="QWidget" name="layoutWidget">
                <layout class="QVBoxLayout" name="verticalLayout_8">
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_8">
@@ -363,6 +383,19 @@
                  </layout>
                 </item>
                 <item>
+                 <spacer name="verticalSpacer">
+                  <property name="orientation">
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>20</width>
+                    <height>40</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item>
                  <widget class="QLabel" name="bitfile_label_8">
                   <property name="text">
                    <string>Global config file</string>
@@ -462,7 +495,7 @@
                  </property>
                 </column>
                </widget>
-               <widget class="QWidget" name="">
+               <widget class="QWidget" name="layoutWidget">
                 <layout class="QGridLayout" name="gridLayout_2">
                  <item row="0" column="0" colspan="4">
                   <widget class="QLineEdit" name="scanVec_lineEdit"/>
@@ -563,7 +596,7 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="">
+      <widget class="QWidget" name="layoutWidget">
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
          <widget class="Line" name="line">

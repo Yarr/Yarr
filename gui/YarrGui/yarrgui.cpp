@@ -56,9 +56,10 @@ YarrGui::YarrGui(QWidget *parent) :
 
     QPixmap yarrPapageiPix("yarr_papagei_2.png");
 //    yarrPapageiPix = yarrPapageiPix.scaledToHeight(ui->yarrPapageiLabel->height() - 10);
-    yarrPapageiPix = yarrPapageiPix.scaledToHeight(500);
+//    yarrPapageiPix = yarrPapageiPix.scaledToHeight(500);
     ui->yarrPapageiLabel->setPixmap(yarrPapageiPix);
     ui->yarrPapageiLabel->setAlignment(Qt::AlignRight);
+    ui->yarrPapageiLabel->setScaledContents(true);
 
     ui->chipIdEdit->setText("6");
     ui->rxChannelEdit->setText("0");
