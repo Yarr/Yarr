@@ -1059,7 +1059,7 @@ begin
         tx_clk_i => CLK_40,
         tx_data_o => fe_cmd_o,
         trig_pulse_o => trig_pulse,
-		  ext_trig_i => hit_or_t
+		  ext_trig_i => not hit_or_t
     );
 
     cmp_wb_rx_core: wb_rx_core PORT MAP(

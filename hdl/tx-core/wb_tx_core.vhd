@@ -378,7 +378,7 @@ begin
             ext_trig_t1 <= ext_trig_i;
             ext_trig_t2 <= ext_trig_t1;        
             ext_trig_t3 <= ext_trig_t2;        
-            if (trig_done = '1') then
+            if (trig_done = '1') then -- reset when trigger module is done
                 trig_in_freq_cnt <= (others => '0');
             else
                 if (ext_trig_t2 = '1' and ext_trig_t3 = '0') then -- positive edge

@@ -68,6 +68,8 @@ architecture Behavioral of trigger_unit is
 	signal ext_trig_d4 : std_logic;
 	signal ext_trig_pos : std_logic;
 	
+    constant c_DEADTIME : integer := 200;
+	signal deadtime : unsigned(7 downto 0);
 	
 begin
 	-- Done conditions
@@ -201,6 +203,7 @@ begin
 			trig_en_d1 <= '0';
 			trig_en_pos <= '0';
 			trig_en_neg <= '0';
+            deadtime <= (others => '0');
 		elsif rising_edge(clk_i) then
 			ext_trig_d0 <= ext_trig_i; -- async input
 			ext_trig_d1 <= ext_trig_d0;
@@ -208,8 +211,9 @@ begin
 			ext_trig_d3 <= ext_trig_d2;
 			ext_trig_d4 <= ext_trig_d3;
 			-- Triggered on pos edge of external signal and high longer than 25ns
-			if (ext_trig_d4 = '0' and ext_trig_d3 = '1' and ext_trig_d2 = '1' and ext_trig_d1 = '1') then
+			if (ext_trig_d4 = '0' and ext_trig_d3 = '1' and ext_trig_d2 = '1' and ext_trig_d1 = '1' and deadtime = 0) then
 				ext_trig_pos <= '1';
+                deadtime <= to_unsigned(c_DEADTIME, 8);
 			else
 				ext_trig_pos <= '0';
 			end if;
@@ -242,7 +246,12 @@ begin
 			for I in 1 to c_DONE_DELAY-1 loop
 				trig_done(I) <= trig_done(I-1);
 			end loop;
-			trig_done_o <= trig_done(c_DONE_DELAY-1);	
+			trig_done_o <= trig_done(c_DONE_DELAY-1);
+
+            if (deadtime > 0) then
+                deadtime <= deadtime - 1;
+            end if;
+                    
 		end if;
 	end process;
 end Behavioral;
