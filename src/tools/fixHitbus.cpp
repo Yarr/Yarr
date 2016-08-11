@@ -6,6 +6,7 @@
 #include "TxCore.h"
 #include "RxCore.h"
 #include "Fe65p2.h"
+#include "Histo2d.h"
 
 using json = nlohmann::json;
 
@@ -35,6 +36,7 @@ int main(int argc, char *argv[]) {
 
     // Enable link
     tx.setCmdEnable(0x1);
+    tx.toggleTrigAbort();
     // Configure FE
     g_fe->configure();
 
@@ -42,22 +44,36 @@ int main(int argc, char *argv[]) {
     g_fe->setPlsrDac(1000);
     tx.setTrigEnable(0x0);
 
+    while(!tx.isCmdEmpty());
+    
     int num_inject = 50;
 
+
+    while(!tx.isCmdEmpty());
+
+    Histo2d enMask("enMask", 64, 0.5, 64.5, 64, 0.5, 64.5, typeid(void));
     for (unsigned i=0; i<16; i++) {
-        uint32_t colEn = 0x1 << i;
-        g_fe->setValue(&Fe65p2::ColEn, colEn);
-        g_fe->configureGlobal();
+    	uint32_t colEn = 0x1<<i;
+    	g_fe->setValue(&Fe65p2::ColEn, colEn);
+    	g_fe->configureGlobal();
         for(unsigned n=0; n<16; n++) {
             g_fe->PixConf(n).setAll(0);
             g_fe->InjEn(n).setAll(0);
+            g_fe->configurePixels();
+            while(!tx.isCmdEmpty());
         }
         for (unsigned j=0; j<256; j++) {
-            g_fe->PixConf(i).setAll(0);
+            if (cfg["FE65-P2"]["PixelConfig"][(i*4)+(j/64)]["PixConf"][j%64] <= 1) {
+		enMask.setBin(enMask.binNum((i*4)+(j/64)+1, (j%64)+1), 0);
+                continue;
+	    }
+            
+	    g_fe->PixConf(i).setAll(0);
             g_fe->InjEn(i).setAll(0);
             g_fe->setPixConf((i*4)+(j/64)+1, (j%64)+1, 3);
             g_fe->setInjEn((i*4)+(j/64)+1, (j%64)+1, 1);
             g_fe->configurePixels();
+            while(!tx.isCmdEmpty());
             
             tx.setTrigConfig(INT_COUNT);
             tx.setTrigCnt(num_inject);
@@ -75,14 +91,17 @@ int main(int argc, char *argv[]) {
             
             int num_hitbus = tx.getTrigInCount();
             if (num_hitbus < (2*num_inject)*0.9 || num_hitbus > (2*num_inject)*1.1) {
-                std::cout << "[" << i << "][" << j << "] = " << num_hitbus << std::endl;
-                fe->setPixConf((i*4)+(j/64)+1, (j%64)+1, 0);
+                std::cout << "[" << (i*4)+(j/64)+1 << "][" << (j%64)+1 << "] = " << num_hitbus << std::endl;
+                fe->setPixConf((i*4)+(j/64)+1, (j%64)+1, 2); // => HitEn = 1, HitOrEn = 0
+		enMask.setBin(enMask.binNum((i*4)+(j/64)+1, (j%64)+1), 0);
+            } else {
+		enMask.setBin(enMask.binNum((i*4)+(j/64)+1, (j%64)+1), 1);
             }
-            
-
         }
     }
 
+    enMask.plot("hitbus");
+    enMask.toFile("hitbus");
     fe->toFileJson(cfg);
     std::fstream outFile(("masked_" + std::string(argv[1])).c_str(), std::ios::out);
     outFile << std::setw(4) << cfg;
