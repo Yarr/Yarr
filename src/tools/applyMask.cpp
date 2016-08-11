@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
             int val = -1;
             mask >> val;
             if (val < 1) {
-                c["FE65-P2"]["PixelConfig"][j]["PixConf"][i] = 0;
+                c["FE65-P2"]["PixelConfig"][j]["PixConf"][i] = 0; // do not enable powerdown
             } else {
                 //c["FE65-P2"]["PixelConfig"][j]["PixConf"][i] = 3;
             }
