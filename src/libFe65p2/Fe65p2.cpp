@@ -30,14 +30,14 @@ void Fe65p2::configurePixels() {
     uint16_t tmp1 = getValue(&Fe65p2::Vthin1Dac);
     uint16_t tmp2 = getValue(&Fe65p2::Vthin2Dac);
     uint16_t tmp3 = getValue(&Fe65p2::PreCompVbnDac);
-    uint16_t tmp4 = getValue(&Fe65p2::CompVbnDacConf);
+    uint16_t tmp4 = getValue(&Fe65p2::CompVbnDac);
     uint16_t tmp5 = getValue(&Fe65p2::VffDac);
     uint16_t tmp6 = getValue(&Fe65p2::PrmpVbpDac);
     uint16_t tmp7 = getValue(&Fe65p2::PrmpVbnFolDac);
     setValue(&Fe65p2::Vthin1Dac, 255);
     setValue(&Fe65p2::Vthin2Dac, 0);
     setValue(&Fe65p2::PreCompVbnDac, 0);
-    setValue(&Fe65p2::CompVbnDacConf, 0);
+    setValue(&Fe65p2::CompVbnDac, 0);
     //setValue(&Fe65p2::VffDac, 10);
     //setValue(&Fe65p2::PrmpVbpDac, 50);
     setValue(&Fe65p2::PrmpVbnFolDac, 0);
@@ -112,7 +112,7 @@ void Fe65p2::configurePixels() {
     setValue(&Fe65p2::Vthin1Dac, tmp1);
     setValue(&Fe65p2::Vthin2Dac, tmp2);
     setValue(&Fe65p2::PreCompVbnDac, tmp3);
-    setValue(&Fe65p2::CompVbnDacConf, tmp4);
+    setValue(&Fe65p2::CompVbnDac, tmp4);
     setValue(&Fe65p2::VffDac, tmp5);
     setValue(&Fe65p2::PrmpVbpDac, tmp6);
     setValue(&Fe65p2::PrmpVbnFolDac, tmp7);

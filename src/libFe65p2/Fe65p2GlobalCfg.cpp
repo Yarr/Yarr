@@ -34,11 +34,12 @@ void Fe65p2GlobalCfg::init() {
         VctrCF1Dac.initReg(cfg, 0x12, 0); // not connected
         PrmpVbnFolDac.initReg(cfg, 0x13, 50); regMap["PrmpVbnFolDac"] = &PrmpVbnFolDac;
         VbnLccDac.initReg(cfg, 0x14, 1); regMap["VbnLccDac"] = &VbnLccDac;
-        CompVbnDacConf.initReg(cfg, 0x15, 25); regMap["CompVbnDacConf"] = &CompVbnDacConf;
+        CompVbnDac.initReg(cfg, 0x15, 25); regMap["CompVbnDac"] = &CompVbnDac;
         PreCompVbnDac.initReg(cfg, 0x16, 50); regMap["PreCompVbnDac"] = &PreCompVbnDac;
         
         // Only in firmware
-        PlsrDac.initReg(&dacReg, 0x0, 0); regMap["PlsrDac"] = &PlsrDac;
+        PlsrDac.initReg(&plsrDacReg, 0x0, 0); regMap["PlsrDac"] = &PlsrDac;
+        PlsrDelay.initReg(&plsrDelayReg, 0x0, 0); regMap["PlsrDelay"] = &PlsrDelay;
         TrigCount.initReg(&trigCountReg, 0x0, 10); regMap["TrigCount"] = &TrigCount;
 }
 
@@ -53,7 +54,11 @@ void Fe65p2GlobalCfg::toFileJson(json &j) {
 void Fe65p2GlobalCfg::fromFileJson(json &j) {
     typedef std::map<std::string, Fe65p2GlobalReg*>::iterator it_type;
     for(it_type iterator = regMap.begin(); iterator != regMap.end(); iterator++) {
-         iterator->second->write((uint16_t) j["FE65-P2"]["GlobalConfig"][iterator->first]);
+        if (!j["FE65-P2"]["GlobalConfig"][iterator->first].empty()) {
+            iterator->second->write((uint16_t) j["FE65-P2"]["GlobalConfig"][iterator->first]);
+        } else {
+            std::cout << "Fe65p2GlobalCfg: Could not find register \"" << iterator->first << "\" using default value!" << std::endl;
+        }
     }
 
 }

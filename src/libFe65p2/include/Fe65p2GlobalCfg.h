@@ -88,11 +88,12 @@ class Fe65p2GlobalCfg {
         Fe65p2GlobalReg VctrCF1Dac;
         Fe65p2GlobalReg PrmpVbnFolDac;
         Fe65p2GlobalReg VbnLccDac;
-        Fe65p2GlobalReg CompVbnDacConf;
+        Fe65p2GlobalReg CompVbnDac;
         Fe65p2GlobalReg PreCompVbnDac;
 
         // Not actually in Fe65p2, for sw reason here
         Fe65p2GlobalReg PlsrDac;
+        Fe65p2GlobalReg PlsrDelay;
         Fe65p2GlobalReg TrigCount;
 
     protected:
@@ -102,6 +103,8 @@ class Fe65p2GlobalCfg {
         void init();
         uint16_t cfg[numRegs];
         uint16_t dacReg;
+        uint16_t plsrDacReg;
+        uint16_t plsrDelayReg;
         uint16_t trigCountReg;
     private:
 };
