@@ -9,7 +9,6 @@
 #include "Fei4Histogrammer.h"
 
 Fei4Histogrammer::Fei4Histogrammer() {
-
 }
 
 Fei4Histogrammer::~Fei4Histogrammer() {
@@ -85,6 +84,17 @@ void Tot2Map::processEvent(Fei4Data *data) {
             Fei4Hit curHit = *hitIt;
             if(curHit.tot > 0)
                 h->fill(curHit.col, curHit.row, curHit.tot*curHit.tot);
+        }
+    }
+}
+
+void TotDist::processEvent(Fei4Data *data) {
+    for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
+        Fei4Event curEvent = *eventIt;
+        for (std::vector<Fei4Hit>::iterator hitIt = curEvent.hits.begin(); hitIt!=curEvent.hits.end(); ++hitIt) {   
+            Fei4Hit curHit = *hitIt;
+            if(curHit.tot > 0)
+                h->fill(curHit.tot);
         }
     }
 }

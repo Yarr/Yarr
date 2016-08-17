@@ -36,7 +36,7 @@ bool processorDone = false;
 
 void process(Bookkeeper *bookie) {
     // Set correct Hit Discriminator setting, for proper decoding
-    Fei4DataProcessor proc(bookie->getGlobalFe()->getValue(&Fei4::HitDiscCnfg));
+    Fei4DataProcessor proc(bookie->g_fe->getValue(&Fei4::HitDiscCnfg));
     proc.connect(&bookie->rawData, &bookie->eventMap);
     proc.init();
     
@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
     }
 
     while (!gConfig.eof() && gConfig) {
-        unsigned id, tx, rx;
+        unsigned id, txChannel, rxChannel;
         std::string name, feCfgPath;
         char peekaboo = gConfig.peek();
         if (peekaboo == '\n') {
@@ -162,21 +162,21 @@ int main(int argc, char *argv[]) {
             gConfig.getline(tmp, 1024);
             std::cout << " Skipping: " << tmp << std::endl;
         } else {
-            gConfig >> name >> id >> tx >> rx >> feCfgPath;
+            gConfig >> name >> id >> txChannel >> rxChannel >> feCfgPath;
             if (gConfig.eof())
                 break;
             std::cout << "-> Found FE " << name << std::endl;
             // Add FE to bookkeeper
-            bookie.addFe(id, tx, rx);
-            bookie.getLastFe()->setName(name);
+            bookie.addFe(new Fei4(&tx, txChannel, rxChannel), txChannel, rxChannel);
+            dynamic_cast<FrontEnd*>(bookie.getLastFe())->setName(name);
             // TODO verify cfg typea
             // Load config
-            bookie.getLastFe()->fromFileBinary(feCfgPath);
+            dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->fromFileBinary(feCfgPath);
             // Set chipId again after loading in case we got std cfg
-            bookie.getLastFe()->setChipId(id);
+            //dynamic_cast<FrontEnd*>(bookie.getLastFe())->setChipId(id);
             // Make backup of current config
-            bookie.getLastFe()->toFileBinary(feCfgPath + "-" + std::string(timestamp));
-            bookie.getLastFe()->toFileBinary(feCfgPath);
+            dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileBinary(feCfgPath + "-" + std::string(timestamp));
+            dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileBinary(feCfgPath);
         }
     }
         
@@ -187,13 +187,12 @@ int main(int argc, char *argv[]) {
     
     std::chrono::steady_clock::time_point cfg_start = std::chrono::steady_clock::now();
     for (unsigned i=0; i<bookie.feList.size(); i++) {
-        Fei4 *fe = bookie.feList[i];
+        FrontEnd *fe = bookie.feList[i];
         std::cout << "-> Configuring " << fe->getName() << std::endl;
         // Select correct channel
         tx.setCmdEnable(0x1 << fe->getTxChannel());
         // Configure
         fe->configure();
-        fe->configurePixels(); // TODO should call abstract configure only
         // Wait for fifo to be empty
         std::this_thread::sleep_for(std::chrono::microseconds(100));
         while(!tx.isCmdEmpty());
@@ -258,7 +257,7 @@ int main(int argc, char *argv[]) {
     
     // Init histogrammer and analysis
     for (unsigned i=0; i<bookie.feList.size(); i++) {
-        Fei4 *fe = bookie.feList[i];
+        FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
             // Init histogrammer per FE
             fe->histogrammer = new Fei4Histogrammer();
@@ -316,7 +315,7 @@ int main(int argc, char *argv[]) {
     std::vector<std::thread> anaThreads;
     std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
     for (unsigned i=0; i<bookie.feList.size(); i++) {
-        Fei4 *fe = bookie.feList[i];
+        FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
             anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana));
             std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
@@ -369,16 +368,16 @@ int main(int argc, char *argv[]) {
     // Cleanup
     delete s;
     for (unsigned i=0; i<bookie.feList.size(); i++) {
-        Fei4 *fe = bookie.feList[i];
+        FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
             // Save config
             std::cout << "-> Saving config of FE " << fe->getName() << std::endl;
-            fe->toFileBinary();
+            dynamic_cast<FrontEndCfg*>(fe)->toFileBinary();
             // Plot
             if (doPlots) {
                 std::cout << "-> Plotting histograms of FE " << fe->getRxChannel() << std::endl;
                 fe->ana->plot(std::string(timestamp) + "-" + fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
-                fe->ana->toFile(std::string(timestamp) + "-" + fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
+                //fe->ana->toFile(std::string(timestamp) + "-" + fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
             }
             // Free
             delete fe->histogrammer;

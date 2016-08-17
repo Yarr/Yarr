@@ -30,9 +30,6 @@ class Fei4PixelThresholdTune : public ScanBase {
         unsigned numOfTriggers;
         double triggerFrequency;
         unsigned triggerDelay;
-        unsigned minVcal;
-        unsigned maxVcal;
-        unsigned stepVcal;
         bool useScap;
         bool useLcap;
 

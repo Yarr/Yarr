@@ -25,6 +25,7 @@ void Fei4DataProcessor::init() {
 }
 
 void Fei4DataProcessor::process() {
+    // TODO put data from channels back into input, so other processors can use it
     unsigned badCnt = 0;
     for (unsigned i=0; i<activeChannels.size(); i++) {
         l1id[activeChannels[i]] = 0;

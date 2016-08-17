@@ -26,7 +26,11 @@
 
 class HistogramAlgorithm {
     public:
-        HistogramAlgorithm() {}
+        HistogramAlgorithm() {
+            nCol = 80;
+            nRow = 336;
+        
+        }
         virtual ~HistogramAlgorithm() {}
 
         virtual void create(LoopStatus &stat) {}
@@ -36,8 +40,14 @@ class HistogramAlgorithm {
         }
         
         virtual void processEvent(Fei4Data *data) {}
+        void setMapSize(unsigned col, unsigned row) {
+            nCol = col;
+            nRow = row;
+        }
     protected:
         HistogramBase *r;
+        unsigned nCol;
+        unsigned nRow;
 };
 
 class Fei4Histogrammer : public DataProcessor {
@@ -52,6 +62,12 @@ class Fei4Histogrammer : public DataProcessor {
 
         void addHistogrammer(HistogramAlgorithm *a) {
             algorithms.push_back(a);
+        }
+
+        void setMapSize(unsigned col, unsigned row) {
+            for (unsigned i=0; i<algorithms.size(); i++) {
+                algorithms[i]->setMapSize(col, row);
+            }
         }
 
         void init();
@@ -77,7 +93,7 @@ class OccupancyMap : public HistogramAlgorithm {
         }
         
         void create(LoopStatus &stat) {
-            h = new Histo2d("OccupancyMap", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this), stat);
+            h = new Histo2d("OccupancyMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this), stat);
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
             h->setZaxisTitle("Hits");
@@ -99,7 +115,7 @@ class TotMap : public HistogramAlgorithm {
         }
 
         void create(LoopStatus &stat) {
-            h = new Histo2d("TotMap", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this), stat);
+            h = new Histo2d("TotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this), stat);
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
             h->setZaxisTitle("Total ToT");
@@ -119,7 +135,7 @@ class Tot2Map : public HistogramAlgorithm {
         }
 
         void create(LoopStatus &stat) {
-            h = new Histo2d("Tot2Map", 80, 0.5, 80.5, 336, 0.5, 336.5, typeid(this), stat);
+            h = new Histo2d("Tot2Map", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this), stat);
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
             h->setZaxisTitle("Total ToT2");
@@ -129,6 +145,25 @@ class Tot2Map : public HistogramAlgorithm {
         void processEvent(Fei4Data *data);
     private:
         Histo2d *h;
+};
+
+class TotDist : public HistogramAlgorithm {
+    public:
+        TotDist() : HistogramAlgorithm() {
+        }
+        ~TotDist() {
+        }
+
+        void create(LoopStatus &stat) {
+            h = new Histo1d("TotDist", 16, 0.5, 16.5, typeid(this), stat);
+            h->setXaxisTitle("ToT [bc]");
+            h->setYaxisTitle("# of Hits");
+            r = (HistogramBase*) h;
+        }
+
+        void processEvent(Fei4Data *data);
+    private:
+        Histo1d *h;
 };
 
 class L1Dist : public HistogramAlgorithm {

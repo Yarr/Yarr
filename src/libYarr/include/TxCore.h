@@ -30,6 +30,7 @@
 #define TRIG_WORD_LENGTH 0xA
 #define TRIG_WORD 0xB
 #define TRIG_ABORT 0xF
+#define TRIG_IN_CNT 0xF
 
 #define TX_CLK_PERIOD 25e-9
 
@@ -66,6 +67,8 @@ class TxCore {
 
         bool isCmdEmpty();
         bool isTrigDone();
+
+        uint32_t getTrigInCount();
     private:
         SpecController *spec;
         bool verbose;

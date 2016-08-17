@@ -13,6 +13,7 @@
 #include <string>
 
 #include "Fei4.h"
+#include "Fe65p2.h"
 #include "TxCore.h"
 #include "RxCore.h"
 #include "LoopStatus.h"
@@ -60,6 +61,7 @@ class LoopActionBase {
 
         LoopStatus *g_stat;
         Fei4 *g_fe;
+        Fe65p2 *g_fe65p2;
         TxCore *g_tx;
         RxCore *g_rx;
 		Bookkeeper *keeper;

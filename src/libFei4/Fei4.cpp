@@ -8,7 +8,7 @@
 
 #include "Fei4.h"
 
-Fei4::Fei4(TxCore *core, unsigned arg_chipId) : FrontEnd(), Fei4Cfg(arg_chipId), Fei4Cmd(core) {
+Fei4::Fei4(TxCore *core) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
     txChannel = 99;
     rxChannel = 99;
 	histogrammer = NULL;
@@ -16,7 +16,7 @@ Fei4::Fei4(TxCore *core, unsigned arg_chipId) : FrontEnd(), Fei4Cfg(arg_chipId),
 	active = true;
 }
 
-Fei4::Fei4(TxCore *core, unsigned arg_chipId, unsigned arg_channel) : FrontEnd(), Fei4Cfg(arg_chipId), Fei4Cmd(core) {
+Fei4::Fei4(TxCore *core, unsigned arg_channel) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
 	txChannel = arg_channel;
 	rxChannel = arg_channel;
 	histogrammer = NULL;
@@ -24,7 +24,7 @@ Fei4::Fei4(TxCore *core, unsigned arg_chipId, unsigned arg_channel) : FrontEnd()
 	active = true;
 }
 
-Fei4::Fei4(TxCore *core, unsigned arg_chipId, unsigned arg_txChannel, unsigned arg_rxChannel) : FrontEnd(), Fei4Cfg(arg_chipId), Fei4Cmd(core) {
+Fei4::Fei4(TxCore *core, unsigned arg_txChannel, unsigned arg_rxChannel) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
 	txChannel = arg_txChannel;
 	rxChannel = arg_rxChannel;
 	histogrammer = NULL;
@@ -37,6 +37,11 @@ Fei4::~Fei4() {
 }
 
 void Fei4::configure() {
+    this->configureGlobal();
+    this->configurePixels();
+}
+
+void Fei4::configureGlobal() {
     runMode(chipId, false);
     
     // Increase threshold
