@@ -174,7 +174,6 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
 }
 
 void TotAnalysis::init(ScanBase *s) {
-    std::shared_ptr<LoopActionBase> tmpPrmpFb(Fei4GlobalFeedbackBuilder(&Fei4::PrmpVbpf));
     n_count = 1;
     injections = 1;
     pixelFb = NULL;
@@ -182,7 +181,10 @@ void TotAnalysis::init(ScanBase *s) {
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
-                    l->type() != typeid(Fei4MaskLoop*) &&
+	            l->type() != typeid(Fe65p2MaskLoop*) &&
+	            l->type() != typeid(Fe65p2TriggerLoop*) &&
+	            l->type() != typeid(Fe65p2QcLoop*) &&
+	            l->type() != typeid(Fei4MaskLoop*) &&
                     l->type() != typeid(StdDataLoop*) &&
                     l->type() != typeid(Fei4DcLoop*))) {
             loops.push_back(n);
@@ -198,7 +200,13 @@ void TotAnalysis::init(ScanBase *s) {
             Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
             injections = trigLoop->getTrigCnt();
         }
-        
+
+        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
+	  Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
+	  injections = trigLoop->getTrigCnt();
+        }
+	
+	std::shared_ptr<LoopActionBase> tmpPrmpFb(Fei4GlobalFeedbackBuilder(&Fei4::PrmpVbpf));
         if (l->type() == tmpPrmpFb->type()) {
             globalFb = (GlobalFeedbackBase*) l.get();  
         }
