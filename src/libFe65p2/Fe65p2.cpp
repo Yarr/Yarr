@@ -22,7 +22,7 @@ void Fe65p2::configureGlobal() {
 }
 
 void Fe65p2::configDac() {
-    setPlsrDac(Fe65p2Cfg::dacReg);
+    setPlsrDac(Fe65p2Cfg::plsrDacReg);
 }
 
 void Fe65p2::configurePixels() {

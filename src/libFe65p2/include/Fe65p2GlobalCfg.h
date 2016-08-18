@@ -102,7 +102,6 @@ class Fe65p2GlobalCfg {
         
         void init();
         uint16_t cfg[numRegs];
-        uint16_t dacReg;
         uint16_t plsrDacReg;
         uint16_t plsrDelayReg;
         uint16_t trigCountReg;
