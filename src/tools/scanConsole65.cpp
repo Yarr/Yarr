@@ -270,7 +270,7 @@ int main(int argc, char *argv[]) {
         s = new Fe65p2ThresholdScan(&bookie);
     } else if (scanType == "totscan") {
         std::cout << "-> Found ToT Scan" << std::endl;
-        s = new Fei4TotScan(&bookie);
+        s = new Fe65p2TotScan(&bookie);
     } else if (scanType == "tune_globalthreshold") {
         std::cout << "-> Found Global Threshold Tuning" << std::endl;
         s = new Fe65p2GlobalThresholdTune(&bookie);
@@ -329,7 +329,7 @@ int main(int argc, char *argv[]) {
                 //fe->ana->addAlgorithm(new OccupancyAnalysis());
                 fe->ana->addAlgorithm(new ScurveFitter());
             } else if (scanType == "totscan") {
-                fe->ana->addAlgorithm(new TotAnalysis());
+	      fe->ana->addAlgorithm(new TotAnalysis());
             } else if (scanType == "tune_globalthreshold") {
                 fe->ana->addAlgorithm(new OccGlobalThresholdTune());
             } else if (scanType == "tune_pixelthreshold") {
