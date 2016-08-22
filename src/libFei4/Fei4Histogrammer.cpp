@@ -36,7 +36,9 @@ void Fei4Histogrammer::process() {
 
 void Fei4Histogrammer::publish() {
     for (unsigned i=0; i<algorithms.size(); i++) {
-        output->pushData(algorithms[i]->getHisto());
+        if (algorithms[i]->getHisto() != NULL) {
+            output->pushData(algorithms[i]->getHisto());
+        }
     }
 }
 
@@ -52,6 +54,14 @@ void Fei4Histogrammer::plot(std::string basename) {
         std::cout << "Plotting : " << (*it)->getName() << std::endl;
         (*it)->plot(basename);
     }    
+}
+
+void DataArchiver::processEvent(Fei4Data *data) {
+    for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
+        Fei4Event curEvent = *eventIt;
+        // Save Event to File
+        curEvent.toFileBinary(fileHandle);
+    }
 }
 
 
@@ -114,7 +124,7 @@ void L1Dist::processEvent(Fei4Data *data) {
     }
 }
     
-void HitDist::processEvent(Fei4Data *data) {
+void HitsPerEvent::processEvent(Fei4Data *data) {
     // Event Loop
     for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
         Fei4Event curEvent = *eventIt;

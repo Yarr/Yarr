@@ -937,7 +937,7 @@ void NoiseAnalysis::init(ScanBase *s) {
 void NoiseAnalysis::processHistogram(HistogramBase *h) {
     if (h->getType() == typeid(OccupancyMap*)) {
         occ->add(*(Histo2d*)h);
-    } else if (h->getType() == typeid(HitDist*)) {
+    } else if (h->getType() == typeid(HitsPerEvent*)) {
         n_trigger += ((Histo1d*)h)->getEntries();       
     }
 }

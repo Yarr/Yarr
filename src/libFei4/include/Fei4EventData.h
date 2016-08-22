@@ -13,6 +13,7 @@
 #include <list>
 #include <vector>
 #include <string>
+#include <unistd.h>
 
 #include "LoopStatus.h"
 
@@ -53,6 +54,9 @@ class Fei4Event {
             nHits++;
         }
 
+        void toFileBinary(std::fstream &handle);
+        void fromFileBinary(std::fstream &handle);
+
         uint16_t l1id;
         uint16_t bcid;
         uint16_t nHits;
@@ -87,7 +91,6 @@ class Fei4Data {
         }
 
         void toFile(std::string filename);
-
 
         Fei4Event *curEvent;
 

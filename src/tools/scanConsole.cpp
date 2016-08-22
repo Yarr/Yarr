@@ -267,7 +267,7 @@ int main(int argc, char *argv[]) {
             fe->histogrammer->addHistogrammer(new TotMap());
             fe->histogrammer->addHistogrammer(new Tot2Map());
             fe->histogrammer->addHistogrammer(new L1Dist());
-            fe->histogrammer->addHistogrammer(new HitDist());
+            fe->histogrammer->addHistogrammer(new HitsPerEvent());
            
             // Init analysis per FE and depending on scan type
             fe->ana = new Fei4Analysis(&bookie, fe->getRxChannel());

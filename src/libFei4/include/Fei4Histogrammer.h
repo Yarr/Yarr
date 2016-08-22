@@ -15,6 +15,8 @@
 #include <list>
 #include <vector>
 #include <typeinfo>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "DataProcessor.h"
 #include "ClipBoard.h"
@@ -81,6 +83,22 @@ class Fei4Histogrammer : public DataProcessor {
         ClipBoard<HistogramBase> *output;
 
         std::vector<HistogramAlgorithm*> algorithms;
+};
+
+class DataArchiver : public HistogramAlgorithm {
+    public:
+        DataArchiver(std::string filename) : HistogramAlgorithm() {
+            r = NULL;
+            fileHandle.open(filename.c_str(), std::fstream::out | std::fstream::binary | std::fstream::trunc);
+        }
+        ~DataArchiver() {
+            fileHandle.close();
+        }
+
+        void create(LoopStatus &stat) {}
+        void processEvent(Fei4Data *data);
+    private:
+        std::fstream fileHandle;
 };
 
 class OccupancyMap : public HistogramAlgorithm {
@@ -192,14 +210,14 @@ class L1Dist : public HistogramAlgorithm {
         unsigned bcid_offset;
 };
 
-class HitDist : public HistogramAlgorithm {
+class HitsPerEvent : public HistogramAlgorithm {
     public:
-        HitDist() : HistogramAlgorithm() {
+        HitsPerEvent() : HistogramAlgorithm() {
             h = NULL;
             r = NULL;
         }
 
-        ~HitDist() {
+        ~HitsPerEvent() {
         }
 
         void create(LoopStatus &stat) {

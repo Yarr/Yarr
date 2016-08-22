@@ -311,8 +311,9 @@ int main(int argc, char *argv[]) {
             fe->histogrammer->addHistogrammer(new TotMap());
             fe->histogrammer->addHistogrammer(new Tot2Map());
             fe->histogrammer->addHistogrammer(new L1Dist());
-            fe->histogrammer->addHistogrammer(new HitDist());
+            fe->histogrammer->addHistogrammer(new HitsPerEvent());
             fe->histogrammer->addHistogrammer(new TotDist());
+            fe->histogrammer->addHistogrammer(new DataArchiver("rawData.dat"));
             // Fe65p2 specific
             fe->histogrammer->setMapSize(64, 64);
            
@@ -329,7 +330,7 @@ int main(int argc, char *argv[]) {
                 //fe->ana->addAlgorithm(new OccupancyAnalysis());
                 fe->ana->addAlgorithm(new ScurveFitter());
             } else if (scanType == "totscan") {
-	      fe->ana->addAlgorithm(new TotAnalysis());
+	            fe->ana->addAlgorithm(new TotAnalysis());
             } else if (scanType == "tune_globalthreshold") {
                 fe->ana->addAlgorithm(new OccGlobalThresholdTune());
             } else if (scanType == "tune_pixelthreshold") {
