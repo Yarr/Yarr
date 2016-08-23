@@ -54,7 +54,6 @@ EditCfgDialog::EditCfgDialog(Fei4 * f, QString cfgFNJ_param, QWidget * parent) :
                     u = 0;
                 }
                 b->setText(QString::number(u));
-                std::cout << tmpStdStr << std::endl; //DEBUG
                 this->j["FE-I4B"]["PixelConfig"][i][tmpStdStr.c_str()][k] = u;
             });
         }
