@@ -5,7 +5,7 @@
 MAKEFLAGS=--warn-undefined-variables
 
 INCLUDE = -I./. $(shell root-config --cflags) -I../libFei4/include -I../libUtil/include -I../libYarr/include -I../libSpec/include -I../libFe65p2/include
-LIBS = $(shell root-config --libs) -L./../lib -lyarr -lfei4 -lutil -lfe65p2 -lspec
+LIBS = $(shell root-config --libs) -L./../lib -lfei4 -lyarr -lspec -lutil -lfe65p2
 
 # Define compiler and flags
 CXX = g++
@@ -29,7 +29,7 @@ all: $(EXE) $(OBJ) $(OOBJ)
 	@echo "[Compiling] $@"
 
 %: %.o
-	@$(CXX) $(CFLAGS) $(LDFLAGS) $< $(OBJ) -o $@
+	@$(CXX) $(CFLAGS) $< $(OBJ) $(LDFLAGS) -o $@
 	@echo "[Linking] $@"
 
 .PHONY: clean
