@@ -24,17 +24,59 @@ struct Fei4Hit {
     unsigned unused : 11;
 };
 
+class Fei4Cluster {
+    public:
+        Fei4Cluster() {
+            nHits = 0;
+        }
+        ~Fei4Cluster() {}
+
+        void addHit(Fei4Hit* hit) {
+            hits.push_back(hit);
+            nHits++;
+        }
+
+        unsigned getColLength() {
+            int min = 999999;
+            int max = -1;
+            for (unsigned i=0; i<hits.size(); i++) {
+                if (hits[i]->col > max)
+                    max = hits[i]->col;
+                if (hits[i]->col < min)
+                    min = hits[i]->col;
+            }
+            return max-min+1;
+        }
+        
+        unsigned getRowWidth() {
+            int min = 999999;
+            int max = -1;
+            for (unsigned i=0; i<hits.size(); i++) {
+                if (hits[i]->row > max)
+                    max = hits[i]->row;
+                if (hits[i]->row < min)
+                    min = hits[i]->row;
+            }
+            return max-min+1;
+        }
+
+        unsigned nHits;
+        std::vector<Fei4Hit*> hits;
+};
+
 class Fei4Event {
     public:
         Fei4Event() {
             l1id = 0;
             bcid = 0;
             nHits = 0;
+            nClusters = 0;
         }
         Fei4Event(unsigned arg_l1id, unsigned arg_bcid) {
             l1id = arg_l1id;
             bcid = arg_bcid;
             nHits = 0;
+            nClusters = 0;
         }
         ~Fei4Event() {
             //while(!hits.empty()) {
@@ -54,13 +96,17 @@ class Fei4Event {
             nHits++;
         }
 
+        void doClustering();
+
         void toFileBinary(std::fstream &handle);
         void fromFileBinary(std::fstream &handle);
 
         uint16_t l1id;
         uint16_t bcid;
         uint16_t nHits;
+        uint16_t nClusters;
         std::vector<Fei4Hit> hits;
+        std::vector<Fei4Cluster> clusters;
 };
 
 class Fei4Data {
