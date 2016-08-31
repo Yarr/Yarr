@@ -460,7 +460,6 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
                 // Check if Histogram exists
                 if (histos[ident] == NULL) {
-                    //std::cout << "NEW " << name << std::endl;
                     Histo1d *hhh = new Histo1d(name, vcalBins+1, vcalMin-((double)vcalStep/2.0), vcalMax+((double)vcalStep/2.0), typeid(this));
                     hhh->setXaxisTitle("Vcal");
                     hhh->setYaxisTitle("Occupancy");
@@ -471,12 +470,10 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                 // Add up Histograms
                 histos[ident]->fill(vcal, hh->getBin(bin));
                 innerCnt[ident]++;
-                //std::cout << innerCnt[ident] << std::endl;
 
                 // Got all data, finish up Analysis
                 // TODO This requires the loop to run from low to high and a hit in the last bin
                 if (vcal == vcalMax) {
-                    //std::cout << " Done with scurve : " << histos[ident]->getName() << std::endl;
                     // Scale histos
                     //histos[ident]->scale(1.0/(double)injections);
 
@@ -493,7 +490,6 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     end = std::chrono::high_resolution_clock::now();
                     std::chrono::microseconds fitTime = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
                     if (thrMap[outerIdent] == NULL) {
-                        //std::cout << " NEW ThresholdMap: " << outerIdent << std::endl;
                         Histo2d *hh2 = new Histo2d("ThresholdMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
                         hh2->setXaxisTitle("Column");
                         hh2->setYaxisTitle("Row");
@@ -504,7 +500,6 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         hh2->setYaxisTitle("Row");
                         hh2->setZaxisTitle("Noise [e]");
                         sigMap[outerIdent] = hh2;
-                        //std::cout << " NEW ThresholdDist: " << outerIdent << std::endl;
                         //TODO ranges have to be more flexible
                         //Histo1d *hh1 = new Histo1d("ThresholdDist", 201, bookie->getTargetThreshold()-1005, bookie->getTargetThreshold()+1005, typeid(this));
                         Histo1d *hh1 = new Histo1d("ThresholdDist", 201, -2.5, 1002.5, typeid(this));

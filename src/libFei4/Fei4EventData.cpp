@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <list>
 
 void Fei4Event::toFileBinary(std::fstream &handle) {
     handle.write((char*)&l1id, sizeof(uint16_t));
@@ -25,43 +26,46 @@ void Fei4Event::fromFileBinary(std::fstream &handle) {
 }
 
 void Fei4Event::doClustering() {
+    // No hits = no cluster
     if (nHits == 0)
         return ;
     
     // Create "copy" of hits
-    std::vector<Fei4Hit*> unclustered;
+    std::list<Fei4Hit*> unclustered;
     for (unsigned i=0; i<hits.size(); i++)
         unclustered.push_back(&hits[i]);
 
-    // Create first cluster
+    // Create first cluster and add first hit
     clusters.push_back(Fei4Cluster());
-    clusters.back().addHit(unclustered[0]);
-    unclustered.erase(unclustered.begin() + 0);
+    clusters.back().addHit(unclustered.front());
+    unclustered.erase(unclustered.begin());
 
-    // Loop over vector until empty
+    int gap = 1;
+
+    // Loop over vector of unclustered hits until empty
     while (!unclustered.empty()) {
-        // Loop over hits in cluster
+        // Loop over hits in cluster, increases as we go
         for (unsigned i=0; i<clusters.back().nHits; i++) {
             Fei4Hit tHit = *clusters.back().hits[i];
             
             // Loop over unclustered hits
-            for (unsigned j=0; j<unclustered.size(); j++) {
-                if ((abs((int)tHit.col - unclustered[j]->col) <= 2)
-                 && (abs((int)tHit.row - unclustered[j]->row) <= 2)) {
+            for (auto j=unclustered.begin(); j!=unclustered.end(); ++j) {
+                if ((abs((int)tHit.col - (*j)->col) <= (1+gap))
+                 && (abs((int)tHit.row - (*j)->row) <= (1+gap))) {
                     // If not more than 1 pixel gap, add to cluster
-                    clusters.back().addHit(unclustered[j]);
-                    unclustered.erase(unclustered.begin()+j);
-                    j--;
+                    clusters.back().addHit(*j);
+                    unclustered.erase(j--);
                 }
             }
         }
         // Still hits to be clustered, create new cluster
         if (!unclustered.empty()) {
             clusters.push_back(Fei4Cluster());
-            clusters.back().addHit(unclustered[0]);
-            unclustered.erase(unclustered.begin() + 0);
+            clusters.back().addHit(unclustered.front());
+            unclustered.erase(unclustered.begin());
         }
     }
+    // All clustered
         
     
 }

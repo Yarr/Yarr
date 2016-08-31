@@ -14,14 +14,14 @@ int main(int argc, char* argv[]) {
     Histo1d hitsPerEvent("hitsPerEvent", 31, -0.5, 30.5, typeid(void));
     hitsPerEvent.setXaxisTitle("# of Hits");
     hitsPerEvent.setYaxisTitle("# of Events");
-    
+
     Histo1d hitsPerCluster("hitsPerCluster", 31, -0.5, 30.5, typeid(void));
     hitsPerCluster.setXaxisTitle("# of Hits");
     hitsPerCluster.setYaxisTitle("# of Events");
-    
+
     Histo2d *eventScreen = NULL;
     //Histo2d eventScreen("eventScreen", 64, 0.5, 64.5, 64, 0.5, 64.5, typeid(void));
-    
+
     Histo1d clusterColLength("clusterColLength", 31, -0.5, 30.5, typeid(void));
     clusterColLength.setXaxisTitle("Cluster Column Length");
     clusterColLength.setYaxisTitle("# of Clusters");
@@ -38,8 +38,13 @@ int main(int argc, char* argv[]) {
     clustersPerEvent.setXaxisTitle("# of Clusters");
     clustersPerEvent.setYaxisTitle("# of Events");
 
-    Histo1d bcid("bcid", 10000001, -0.5, 10000000.5, typeid(void));
-    Histo1d bcidDiff("bcidDiff", 501, -0.5, 500.5, typeid(void));
+    Histo1d hitsPerTrigger("clustersPerEvent", 11, -0.5, 10.5, typeid(void));
+    hitsPerTrigger.setXaxisTitle("# of Clusters");
+    hitsPerTrigger.setYaxisTitle("# of Events");
+
+    Histo1d bcid("bcid", 65536, -0.5, 65535.5, typeid(void));
+    Histo1d bcidDiff("bcidDiff", 1001, -0.5, 1000.5, typeid(void));
+    Histo1d l1id("l1id", 1001, -0.5, 1000.5, typeid(void));
 
     for (int i=1; i<argc; i++) {
         std::cout << "Opening file: " << argv[i] << std::endl;
@@ -55,91 +60,84 @@ int main(int argc, char* argv[]) {
         int plotIt = 0;
         int old_bcid = 0;
         int other_old_bcid = 0;
-        unsigned long timestamp = 0;
+        int max_bcid = 0;
+        int trigger = 0;
+        int old_l1id = -1;
         while (file) {
             int now = file.tellg();
-            //std::cout << "\r" << (double)now/(double)size*100 << "%" << std::flush;
+            std::cout << "\r" << (double)now/(double)size*100 << "%                    " << std::flush;
             Fei4Event event;
             event.fromFileBinary(file);
             if (!file)
                 break;
 
             hitsPerEvent.fill(event.nHits);
-           
+            l1id.fill(event.l1id);
+
+
+            if (max_bcid < event.bcid)
+                max_bcid = event.bcid;
+
+            if ((event.l1id - old_l1id) > 0|| event.l1id < old_l1id) {
+                trigger++;
+            }
+            old_l1id = event.l1id;
+
             if (count==0)
                 other_old_bcid = event.bcid;
 
-            std::cout << timestamp << std::endl;
-            if (event.bcid - other_old_bcid < 0) {
-                timestamp+= (34935 + (int)event.bcid - other_old_bcid);
-            } else {
-                timestamp+= (event.bcid - other_old_bcid);
-            }
-            bcid.fill(timestamp, event.nHits);
+            bcid.fill(event.bcid, event.nHits);
 
-            if (timestamp > 10000000)
-                break;
-
-            if ((int)event.bcid - old_bcid < 0) // wrap around, just reset
+            if ((int)event.bcid - old_bcid < 0 && ((int)event.bcid-old_bcid+65535) > 10) {// wrap around, just reset
+                bcidDiff.fill((int)event.bcid-old_bcid+65535);
                 old_bcid = event.bcid;
-
-            if ((int)event.bcid -old_bcid > 5) { 
+            } else if ((int)event.bcid - old_bcid > 10) { 
                 bcidDiff.fill((int)event.bcid-old_bcid);
                 old_bcid = event.bcid;
             }
+
             if (event.nHits > 0) {
                 event.doClustering();
                 clustersPerEvent.fill(event.clusters.size());
+                nonZero_cnt++;
             }
 
-            if(event.nHits > 1) {
-                for (unsigned i=0; i<event.clusters.size(); i++) {
-                    hitsPerCluster.fill(event.clusters[i].nHits);
+            for (unsigned i=0; i<event.clusters.size(); i++) {
+                hitsPerCluster.fill(event.clusters[i].nHits);
+                if (event.clusters[i].nHits > 1) {
                     clusterColLength.fill(event.clusters[i].getColLength());
                     clusterRowWidth.fill(event.clusters[i].getRowWidth());
                     clusterWidthLengthCorr.fill(event.clusters[i].getColLength(), event.clusters[i].getRowWidth());
-
                 }
-                if (event.clusters.size() > 1) {
-                    eventScreen = new Histo2d((std::to_string(nonZero_cnt) + "-eventScreen"), 64, 0.5, 64.5, 64, 0.5, 64.5, typeid(void));
-                    for (unsigned i=0; i<event.nHits; i++) {
-                        eventScreen->fill(event.hits[i].col, event.hits[i].row, event.hits[i].tot);
-                    }
-                    //eventScreen->plot(std::to_string(plotIt));
+
+            }
+            if (event.clusters.size() > 0 && plotIt < 10) {
+                if (nonZero_cnt%10 == 0 && eventScreen != NULL) {
+                    eventScreen->plot(std::to_string(plotIt));
                     plotIt++;
                     delete eventScreen;
+                    eventScreen = NULL;
                 }
 
-
-                /*
-                std::cout << "Number of clusters in event: " << event.clusters.size() << std::endl;
-                std::cout << "Number of hit in first cluster in event: " << event.clusters[0].hits.size() << std::endl;
-                if (event.clusters[0].hits.size() > 6) {
-                    if (eventScreen != NULL) {
-                        std::cout << "Plotting #" << nonZero_cnt << std::endl;
-                        eventScreen->plot(std::to_string(nonZero_cnt));
-                        delete eventScreen;
-                        eventScreen = NULL;
-                        plotIt++;
-                    }
+                if (eventScreen == NULL)
                     eventScreen = new Histo2d((std::to_string(nonZero_cnt) + "-eventScreen"), 64, 0.5, 64.5, 64, 0.5, 64.5, typeid(void));
-                    for (unsigned i=0; i<event.nHits; i++) {
-                        //std::cout << event.hits[i].col << " " << event.hits[i].row << " " << event.hits[i].tot << std::endl;
-                        eventScreen->fill(event.hits[i].col, event.hits[i].row, event.hits[i].tot);
-                    }
-                }            
-                //std::cout << "~~ Event #" << count << " ~~" << std::endl;
-                //std::cout << event.l1id << " " << event.bcid << " " << event.nHits << std::endl;
-                */
-                nonZero_cnt++;
+
+                for (unsigned i=0; i<event.nHits; i++) {
+                    eventScreen->fill(event.hits[i].col, event.hits[i].row, event.hits[i].tot);
+                }
             }
+
             count ++;
         }
         std::cout << std::endl;
         file.close();
+        std::cout << "Max BCID: " << max_bcid << std::endl;
+        std::cout << "Numer of trigger: " << trigger << std::endl;
     }
 
+
     bcid.plot("offline");
+    l1id.plot("offline");
     bcidDiff.plot("offline");
     hitsPerEvent.plot("offline");
     hitsPerCluster.plot("offline");
@@ -147,9 +145,13 @@ int main(int argc, char* argv[]) {
     clusterRowWidth.plot("offline");
     clusterWidthLengthCorr.plot("offline");
     clustersPerEvent.plot("offline");
-    
-    std::cout << "Number of events: " << clustersPerEvent.getEntries() << std::endl;
-    std::cout << "Number of clusters: " << hitsPerEvent.getEntries() << std::endl;
+
+    std::cout << "Cluster Column Length mean: " << clusterColLength.getMean() << " +- " << clusterColLength.getStdDev() << std::endl;
+    std::cout << "Cluster Row Width mean:     " << clusterRowWidth.getMean() << " +- " << clusterRowWidth.getStdDev() << std::endl;
+    std::cout << "BCID entries: " << bcid.getEntries() << std::endl;
+    std::cout << "BCIDdiff entries: " << bcidDiff.getEntries() << std::endl;
+    std::cout << "Number of clusters: " << clustersPerEvent.getEntries() << std::endl;
+    std::cout << "Number of events: " << hitsPerEvent.getEntries() << std::endl;
 
     return 0;
 }
