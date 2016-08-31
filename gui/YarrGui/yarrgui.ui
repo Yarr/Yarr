@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1000</width>
-    <height>511</height>
+    <height>529</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -28,36 +28,6 @@
       </property>
       <widget class="QWidget" name="layoutWidget">
        <layout class="QVBoxLayout" name="verticalLayout_2">
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout">
-          <item>
-           <spacer name="horizontalSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeType">
-             <enum>QSizePolicy::Expanding</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item>
-           <widget class="QComboBox" name="additionalFunctionality"/>
-          </item>
-          <item>
-           <widget class="QPushButton" name="addFuncButton">
-            <property name="text">
-             <string>Go!</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
         <item>
          <widget class="QTabWidget" name="main_tabWidget">
           <property name="enabled">
@@ -226,7 +196,7 @@
                 </item>
                </layout>
               </widget>
-              <widget class="QWidget" name="">
+              <widget class="QWidget" name="layoutWidget">
                <layout class="QHBoxLayout" name="horizontalLayout_9">
                 <item>
                  <spacer name="horizontalSpacer_2">
@@ -632,6 +602,25 @@
    </layout>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1000</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuOptions">
+    <property name="title">
+     <string>Options</string>
+    </property>
+    <addaction name="actionBenchmark"/>
+    <addaction name="actionEEPROM"/>
+    <addaction name="actionCreate_scan"/>
+   </widget>
+   <addaction name="menuOptions"/>
+  </widget>
   <action name="actionExit">
    <property name="text">
     <string>Exit</string>
@@ -640,6 +629,21 @@
   <action name="actionBla">
    <property name="text">
     <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionBenchmark">
+   <property name="text">
+    <string>Benchmark</string>
+   </property>
+  </action>
+  <action name="actionEEPROM">
+   <property name="text">
+    <string>EEPROM</string>
+   </property>
+  </action>
+  <action name="actionCreate_scan">
+   <property name="text">
+    <string>Create scan</string>
    </property>
   </action>
  </widget>

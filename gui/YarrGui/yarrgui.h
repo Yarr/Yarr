@@ -104,19 +104,15 @@ private slots:
 
     //void on_debugScanButton_clicked();
 
-    //Additional functionality
-    void on_addFuncButton_clicked();
-
     void on_addScanButton_clicked();
-
     void on_exportPlotButton_clicked();
-
     void on_addFeGlobalButton_clicked();
-
     void on_exportPlotCSVButton_clicked();
 
-
-    void editCfgSlot();
+    //menu bar
+    void on_actionBenchmark_triggered();
+    void on_actionEEPROM_triggered();
+    void on_actionCreate_scan_triggered();
 
 private:
     Ui::YarrGui * ui;

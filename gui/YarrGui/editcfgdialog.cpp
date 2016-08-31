@@ -58,6 +58,8 @@ EditCfgDialog::EditCfgDialog(Fei4 * f, QString cfgFNJ_param, QWidget * parent) :
             });
         }
     }
+
+    this->setWindowState(Qt::WindowMaximized);
 }
 
 EditCfgDialog::~EditCfgDialog(){

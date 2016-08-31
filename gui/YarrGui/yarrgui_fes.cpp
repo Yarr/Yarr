@@ -72,7 +72,9 @@ void YarrGui::on_addFeButton_clicked(){
     ui->feTree->setItemWidget(feTreeItemCf, 2, b);
     QObject::connect(b, &QPushButton::clicked, this, [=](){
         EditCfgDialog d(bk->getFe(rxChannelAdded), QString::fromStdString(iFNJ), this);
-        d.exec();
+        //d.exec();
+        d.setModal(true);
+        d.showMaximized();
     });
     feTreeItemCk->setText(0, "Scan");
     feTreeItemCk->setFlags(feTreeItemCk->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsSelectable);

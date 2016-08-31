@@ -38,7 +38,6 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->main_tabWidget->setTabEnabled(0, true);
     ui->main_tabWidget->setTabEnabled(1, false);
     ui->main_tabWidget->setTabEnabled(2, false);
-    ui->addFuncButton->setEnabled(false);
 
     ui->feTree->setColumnWidth(0, 190);
     ui->feTree->setColumnWidth(1, 150);
@@ -49,14 +48,7 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->runCustomScanButton->setEnabled(false);
     ui->scanProgressBar->setValue(0);
 
-    ui->additionalFunctionality->addItem("");
-    ui->additionalFunctionality->addItem("Benchmark");
-    ui->additionalFunctionality->addItem("EEPROM");
-    ui->additionalFunctionality->addItem("Create scan");
-
     QPixmap yarrPapageiPix("yarr_papagei_2.png");
-//    yarrPapageiPix = yarrPapageiPix.scaledToHeight(ui->yarrPapageiLabel->height() - 10);
-//    yarrPapageiPix = yarrPapageiPix.scaledToHeight(500);
     ui->yarrPapageiLabel->setPixmap(yarrPapageiPix);
     ui->yarrPapageiLabel->setAlignment(Qt::AlignRight);
     ui->yarrPapageiLabel->setScaledContents(true);
@@ -69,6 +61,9 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->addScanButton->setFont(QFont("Sans Serif", 10, QFont::Bold));
     ui->doScansButton->setFont(QFont("Sans Serif", 10, QFont::Bold));
 
+    ui->actionBenchmark->setEnabled(false);
+    ui->actionCreate_scan->setEnabled(false);
+    ui->actionEEPROM->setEnabled(false);
 }
 
 YarrGui::~YarrGui()
@@ -194,38 +189,6 @@ void analysis(Fei4Histogrammer *h, Fei4Analysis *a, bool * processorDone) {
 //    }
 //    return;
 //}
-
-void YarrGui::on_addFuncButton_clicked()
-{
-    if(ui->additionalFunctionality->currentText() == "Benchmark") {
-        BenchmarkDialog * myDialog = new BenchmarkDialog(this);
-        myDialog->setModal(false);
-        myDialog->setWindowTitle("Benchmark");
-        myDialog->show();
-    }
-    if(ui->additionalFunctionality->currentText() == "EEPROM") {
-        EEPROMDialog * myDialog = new EEPROMDialog(this);
-        myDialog->setModal(false);
-        myDialog->setWindowTitle("SpecBoard EEPROM");
-        myDialog->show();
-    }
-    if(ui->additionalFunctionality->currentText() == "Create scan") {
-//        CreateScanDialog * myDialog = new CreateScanDialog(bk, this);
-//        myDialog->setModal(false);
-//        myDialog->setWindowTitle("Create scan");
-//        myDialog->show();
-        //Less heap memory consumption...
-        CreateScanDialog myDialog(bk, this);
-        myDialog.setModal(false);
-        myDialog.setWindowTitle("Create scan");
-        myDialog.show();
-        while(myDialog.isVisible()) {
-            QApplication::processEvents();
-        }
-    }
-
-    return;
-}
 
 #include "yarrgui_spec.cpp"
 #include "yarrgui_fes.cpp"
@@ -365,7 +328,32 @@ void YarrGui::on_exportPlotCSVButton_clicked(){
     return;
 }
 
-void YarrGui::editCfgSlot(){
-    std::cout << "q->Test successful" << std::endl;
+void YarrGui::on_actionBenchmark_triggered(){
+    BenchmarkDialog * myDialog = new BenchmarkDialog(this);
+    myDialog->setModal(false);
+    myDialog->setWindowTitle("Benchmark");
+    myDialog->setModal(true);
+    myDialog->showMaximized();
+
+    return;
+}
+
+void YarrGui::on_actionEEPROM_triggered(){
+    EEPROMDialog * myDialog = new EEPROMDialog(this);
+    myDialog->setModal(false);
+    myDialog->setWindowTitle("SpecBoard EEPROM");
+    myDialog->setModal(true);
+    myDialog->showMaximized();
+
+    return;
+}
+
+void YarrGui::on_actionCreate_scan_triggered(){
+    CreateScanDialog * myDialog = new CreateScanDialog(bk, this);
+    myDialog->setModal(false);
+    myDialog->setWindowTitle("Create scan");
+    myDialog->setModal(true);
+    myDialog->showMaximized();
+
     return;
 }

@@ -66,8 +66,33 @@ CreateScanDialog::CreateScanDialog(Bookkeeper * bk, QWidget * parent) :
 
         localParent = dynamic_cast<YarrGui*>(parent);
         if(localParent == nullptr) {
-            std::cout << "Severe cast error. YarrGui not accessible! \n";
+            std::cerr << "Severe cast error. YarrGui not accessible! \n";
+            this->close();
         }
+
+//        std::cout << ui->verticalLayout->minimumSize().width() << std::endl; //DEBUG
+//        std::cout << ui->verticalLayout->minimumSize().height() << std::endl; //DEBUG
+//        QList<int> tmpList1;
+//        tmpList1.append(ui->verticalLayout->minimumSize().width());
+//        ui->splitter_2->setSizes();
+
+        QList<int> tmpList;
+        tmpList.append(2500);
+        tmpList.append(5000);
+
+//        tmpList.append(ui->splitter->width() - ui->verticalLayout_2->minimumSize().width());
+//        tmpList.append(ui->verticalLayout_2->minimumSize().width());
+//        ui->splitter->setSizes(tmpList);
+//        tmpList.clear();
+
+//        tmpList.append(ui->splitter_2->width() - ui->verticalLayout->minimumSize().width() - 200);
+//        tmpList.append(ui->verticalLayout->minimumSize().width());
+//        ui->splitter_2->setSizes(tmpList);
+//        tmpList.clear();
+
+        ui->splitter->setSizes(tmpList);
+        ui->splitter_2->setSizes(tmpList);
+        ui->splitter_3->setSizes(tmpList);
 }
 
 CreateScanDialog::~CreateScanDialog() {
