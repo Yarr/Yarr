@@ -55,4 +55,4 @@ INCLUDEPATH += ../../src/libUtil/include
 INCLUDEPATH += ../../src/libYarr/include
 INCLUDEPATH += ../../src/libFei4/include
 
-LIBS += -L../../src/lib -lfei4 -lspec -lutil -lyarr
+LIBS += -L../../src/lib -lyarr
