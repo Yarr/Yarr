@@ -12,11 +12,40 @@ void YarrGui::on_addFeButton_clicked(){
         return;
     }
     bk->addFe(chipIdAdded, txChannelAdded, rxChannelAdded);
-    bk->getLastFe()->fromFileBinary((ui->configfileName->text()).toStdString());
+    std::string iFNJ = (ui->configfileName->text()).toStdString();
+    std::fstream iFJ(iFNJ, std::ios_base::in);
+    nlohmann::json j;
+    try{
+        iFJ >> j;
+    }
+    catch(std::invalid_argument){
+        std::cerr << iFNJ << " does not contain a valid configuration. " << std::endl;
+        std::cerr << "Using default configuration instead. " << std::endl;
+        iFJ.close();
+        iFJ.open("util/default.js", std::ios_base::in);
+        iFJ >> j;
+        iFJ.close();
+        iFJ.open(iFNJ, std::ios_base::out);
+        iFJ << std::setw(4) << j;
+    }
+    iFJ.close();
+    try{
+        bk->getLastFe()->fromFileJson(j);
+    }
+    catch(std::domain_error){
+        std::cerr << iFNJ << " does not contain a valid configuration. " << std::endl;
+        std::cerr << "Using default configuration instead. " << std::endl;
+        iFJ.open("util/default.js", std::ios_base::in);
+        iFJ >> j;
+        iFJ.close();
+        iFJ.open(iFNJ, std::ios_base::out);
+        iFJ << std::setw(4) << j;
+        iFJ.close();
+    }
     tx->setCmdEnable(0x1 << bk->getLastFe()->getTxChannel());
     bk->getLastFe()->configure();
     bk->getLastFe()->configurePixels();
-    while(!(tx->isCmdEmpty())) {
+    while(!(tx->isCmdEmpty())){
         ;
     }
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
@@ -39,6 +68,14 @@ void YarrGui::on_addFeButton_clicked(){
     feTreeItemRx->setText(1, QString::number(rxChannelAdded));
     feTreeItemCf->setText(0, "Config file");
     feTreeItemCf->setText(1, ui->configfileName->text());
+    QPushButton * b = new QPushButton("Edit config", this);
+    ui->feTree->setItemWidget(feTreeItemCf, 2, b);
+    QObject::connect(b, &QPushButton::clicked, this, [=](){
+        EditCfgDialog d(bk->getFe(rxChannelAdded), QString::fromStdString(iFNJ), this);
+        //d.exec();
+        d.setModal(true);
+        d.showMaximized();
+    });
     feTreeItemCk->setText(0, "Scan");
     feTreeItemCk->setFlags(feTreeItemCk->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsSelectable);
     feTreeItemCk->setCheckState(1, Qt::Checked);
@@ -92,13 +129,42 @@ void YarrGui::on_addFeGlobalButton_clicked(){
             gCfg.get();
         }
     }
-    for(unsigned int i = 0; i < (chipIdsAdded.size()) ; i++) {
-        if(bk->getFe(rxChannelsAdded.at(i)) != NULL) {
+    for(unsigned int i = 0; i < (chipIdsAdded.size()) ; i++){
+        if(bk->getFe(rxChannelsAdded.at(i)) != NULL){
             std::cout << "ERROR - rx channel " << rxChannelsAdded.at(i) << " already used. Skipping... \n";
             continue;
         }
         bk->addFe(chipIdsAdded.at(i), txChannelsAdded.at(i), rxChannelsAdded.at(i));
-        bk->getLastFe()->fromFileBinary(chipCfgFilenamesAdded.at(i));
+//        bk->getLastFe()->fromFileBinary(chipCfgFilenamesAdded.at(i)); //JSON here
+        std::fstream iFJ(chipCfgFilenamesAdded.at(i), std::ios_base::in);
+        nlohmann::json j;
+        try{
+            iFJ >> j;
+        }
+        catch(std::invalid_argument){
+            std::cerr << chipCfgFilenamesAdded.at(i) << " does not contain a valid configuration. " << std::endl;
+            std::cerr << "Using default configuration instead. " << std::endl;
+            iFJ.close();
+            iFJ.open("util/default.js", std::ios_base::in);
+            iFJ >> j;
+            iFJ.close();
+            iFJ.open(chipCfgFilenamesAdded.at(i), std::ios_base::out);
+            iFJ << std::setw(4) << j;
+        }
+        iFJ.close();
+        try{
+            bk->getLastFe()->fromFileJson(j);
+        }
+        catch(std::domain_error){
+            std::cerr << chipCfgFilenamesAdded.at(i) << " contains a damaged configuration. " << std::endl;
+            std::cerr << "Using default configuration instead. " << std::endl;
+            iFJ.open("util/default.js", std::ios_base::in);
+            iFJ >> j;
+            iFJ.close();
+            iFJ.open(chipCfgFilenamesAdded.at(i), std::ios_base::out);
+            iFJ << std::setw(4) << j;
+            iFJ.close();
+        }
         tx->setCmdEnable(0x1 << bk->getLastFe()->getTxChannel());
         bk->getLastFe()->configure();
         bk->getLastFe()->configurePixels();
@@ -125,6 +191,12 @@ void YarrGui::on_addFeGlobalButton_clicked(){
         feTreeItemRx->setText(1, QString::number(rxChannelsAdded.at(i)));
         feTreeItemCf->setText(0, "Config file");
         feTreeItemCf->setText(1, QString::fromStdString(chipCfgFilenamesAdded.at(i)));
+        QPushButton * b = new QPushButton("Edit config", this);
+        ui->feTree->setItemWidget(feTreeItemCf, 2, b);
+        QObject::connect(b, &QPushButton::clicked, this, [=](){
+            EditCfgDialog d(bk->getFe(rxChannelsAdded.at(i)), QString::fromStdString(chipCfgFilenamesAdded.at(i)), this);
+            d.exec();
+        });
         feTreeItemCk->setText(0, "Scan");
         feTreeItemCk->setFlags(feTreeItemCk->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsSelectable);
         feTreeItemCk->setCheckState(1, Qt::Checked);
@@ -155,6 +227,8 @@ void YarrGui::on_feTree_itemClicked(QTreeWidgetItem * item, int column){
     ui->txChannelEdit->setText(txChannelAdded);
     ui->rxChannelEdit->setText(rxChannelAdded);
     ui->configfileName->setText(configFileAdded);
+
+    return;
 }
 
 void YarrGui::on_remFeButton_clicked(){
@@ -168,15 +242,37 @@ void YarrGui::on_remFeButton_clicked(){
         return;
     }
     QString channelRemoved = itemRemoved->child(2)->text(1);
-    (bk->getFe(channelRemoved.toUInt()))->toFileBinary();
+    QString cfgFileRemoved = itemRemoved->child(3)->text(1);
+    std::string cfgFNJ = cfgFileRemoved.toStdString();
+    std::ofstream cfgFJ(cfgFNJ);
+    if(!cfgFJ.is_open()){
+        std::cerr << "ERROR - cfg file " << cfgFNJ << " could not be opened. " << std::endl;
+        std::cerr << "Current configuration will not be written to a file. " << std::endl;
+    }else{
+        nlohmann::json j;
+        bk->getFe(channelRemoved.toInt())->toFileJson(j);
+        cfgFJ << std::setw(4) << j;
+    }
+/*    try{
+        nlohmann::json j = cfgByRxMap.at(channelRemoved.toUInt());
+        cfgFJ << j;
+        cfgByRxMap.erase(channelRemoved.toUInt());
+    }
+    catch(std::out_of_range & oor){
+        std::cerr << "ERROR - no JSON object for the given RX channel. " << std::endl;
+        std::cerr << "Current configuration will not be written to a file. " << std::endl;
+    }*/
+    cfgFJ.close();
     bk->delFe(channelRemoved.toUInt());
     tx->setCmdEnable(bk->getTxMask());
     rx->setRxEnable(bk->getRxMask());
     delete itemRemoved;
+
+    return;
 }
 
 void YarrGui::on_configFile_button_clicked(){
-    QString filename = QFileDialog::getOpenFileName(this, tr("Select config file"), "./", tr("Config File(*.cfg)"));
+    QString filename = QFileDialog::getOpenFileName(this, tr("Select JSON config file"), "./", tr("JSON Config File(*.js)"));
 
     ui->configfileName->setText(filename);
 

@@ -9,12 +9,13 @@ void YarrGui::on_device_comboBox_currentIndexChanged(int index) {
     }
 }
 
-void YarrGui::on_init_button_clicked() {
+void YarrGui::on_init_button_clicked(){
     int index = ui->device_comboBox->currentIndex();
-    if (specVec.size() == 0 || index > specVec.size()) {
+    if(specVec.size() == 0 || index > specVec.size()){
         QMessageBox errorBox;
         errorBox.critical(0, "Error", "Device not found!");
-    } else {
+        return;
+    }else{
         specVec[index]->init(index);
         if (specVec[index]->isInitialized()) {
             ui->specid_value->setNum(specVec[index]->getId());
@@ -22,15 +23,20 @@ void YarrGui::on_init_button_clicked() {
             ui->bar4_value->setNum(specVec[index]->getBarSize(4));
             ui->main_tabWidget->setTabEnabled(1, true);
             ui->main_tabWidget->setTabEnabled(2, true);
-            ui->addFuncButton->setEnabled(true);
             tx = new TxCore(specVec[index]);
             rx = new RxCore(specVec[index]);
             bk = new Bookkeeper(tx, rx);
-        } else {
+        }else{
             QMessageBox errorBox;
             errorBox.critical(0, "Error", "Initialization not successful!");
+            return;
         }
     }
+    ui->actionBenchmark->setEnabled(true);
+    ui->actionCreate_scan->setEnabled(true);
+    ui->actionEEPROM->setEnabled(true);
+
+    return;
 }
 
 void YarrGui::on_progfile_button_clicked() {
@@ -57,7 +63,16 @@ void YarrGui::on_prog_button_clicked() {
             return;
         }
 
-        std::fstream file(ui->progfile_name->text().toStdString().c_str(), std::fstream::in);
+//        std::fstream file(ui->progfile_name->text().toStdString().c_str(), std::fstream::in);
+        std::fstream file;
+        if(ui->revABitfRadio->isChecked()){
+            file.open("../hdl/syn/yarr_quad_fei4_revA.bit", std::fstream::in);
+        }else if(ui->revBBitfRadio->isChecked()){
+            file.open("../hdl/syn/yarr_quad_fei4_revB.bit", std::fstream::in);
+        }else{
+            std::cerr << "ERROR - must choose one bitfile (rev A or rev B) - aborting... " << std::endl;
+            return;
+        }
         if (!file) {
             QMessageBox errorBox;
             errorBox.critical(0, "Error", "Problem opening File!");

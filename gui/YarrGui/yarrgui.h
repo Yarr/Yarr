@@ -11,6 +11,7 @@
 #include <QMap>
 #include <QMessageBox>
 #include <QPixmap>
+#include <QPushButton>
 #include <QTest>
 #include <QtTest/QTest>
 #include <QTextStream>
@@ -22,7 +23,9 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -41,12 +44,13 @@
 #include "Fei4.h"
 #include "ScanBase.h"
 #include "scanstruct.h"
+#include "editcfgdialog.h"
 #include "Fei4DataProcessor.h"
 #include "Fei4Histogrammer.h"
 #include "Fei4Analysis.h"
 #include "Fei4Scans.h"
 #include "DataProcessor.h"
-
+#include "json.hpp"
 
 namespace Ui {
 class YarrGui;
@@ -100,16 +104,15 @@ private slots:
 
     //void on_debugScanButton_clicked();
 
-    //Additional functionality
-    void on_addFuncButton_clicked();
-
     void on_addScanButton_clicked();
-
     void on_exportPlotButton_clicked();
-
     void on_addFeGlobalButton_clicked();
-
     void on_exportPlotCSVButton_clicked();
+
+    //menu bar
+    void on_actionBenchmark_triggered();
+    void on_actionEEPROM_triggered();
+    void on_actionCreate_scan_triggered();
 
 private:
     Ui::YarrGui * ui;
@@ -129,6 +132,7 @@ private:
     std::vector<QString> scanVec;
     CustomScan cs;
     QMap<QString, QString> availableScansMap;
+//    std::map<unsigned int, nlohmann::json> cfgByRxMap;
 
     void initAvailableScans();
     void initSpecLabels();
