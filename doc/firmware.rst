@@ -1,6 +1,12 @@
 Firmware
 ===============
 
+Bit Files
+--------------
+Default bit files for the different adapter cards are supplied:
+    - hdl/syn/yarr_quad_fei4_revA.bit : Quad FEi4 rev. A
+    - hdl/syn/yarr_quad_fei4_revB.bit : Quad FEi4 rev. B
+
 Dependencies
 ---------------
     - Xilinx ISE 14.7 needs to be installed on the machine

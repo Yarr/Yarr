@@ -41,6 +41,7 @@ Content:
 .. toctree::
    
    install
+   compat
    firmware
    adapter
    fei4
