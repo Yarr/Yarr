@@ -45,6 +45,10 @@ BenchmarkDialog::BenchmarkDialog(QWidget *parent) :
         readGraphVec[i]->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, color2, 5));
     }
 
+    QList<int> tmpList;
+    tmpList.append(2500);
+    tmpList.append(5000);
+    ui->splitter->setSizes(tmpList);
 }
 
 BenchmarkDialog::~BenchmarkDialog()

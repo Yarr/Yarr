@@ -24,11 +24,11 @@ public:
     ~EEPROMDialog();
 
 private slots:
-    void on_sbefile_button_2_clicked();
-
+    void on_wrFromEditButton_clicked();
     void on_SBEReadButton_clicked();
-
     void on_SBEWriteButton_clicked();
+    void on_sbefile_button_2_clicked();
+    void on_sbefile_button_4_clicked();
 
 private:
     Ui::EEPROMDialog *ui;

@@ -21,7 +21,7 @@
 #include <BitOps.h>
 
 SpecController::SpecController() {
-    specId = 666;
+    specId = -1;
     is_initialized = false;
 }
 
@@ -727,28 +727,27 @@ uint32_t SpecController::writeEeprom(uint8_t * buffer, uint32_t len, uint32_t of
     return totalTransfer;
 }
 
-void SpecController::createSbeFile(std::string fnKeyword, uint8_t * buffer, uint32_t length) {
-    std::string filepath;
-    {
-        if(length != ARRAYLENGTH) {
-            std::cout << "Wrong uint8_t array length. Aborting... \n";
-            exit(-1);
-        }
+void SpecController::createSbeFile(std::string fName, uint8_t * buffer, uint32_t length) {
+    if(length != ARRAYLENGTH) {
+        std::cout << "Wrong uint8_t array length. Aborting... \n";
+        exit(-1);
+    }
+
+    if(fName==""){
         struct tm * timeinfo;
         time_t rawtime;
         time(&rawtime);
         timeinfo = localtime(&rawtime);
-
-        filepath =   "util/"
-                   + fnKeyword + std::to_string(1900+(timeinfo->tm_year)) + '_'
-                   + std::to_string(1+(timeinfo->tm_mon)) + '_'
-                   + std::to_string((timeinfo->tm_mday)) + '_'
-                   + std::to_string((timeinfo->tm_hour)) + '_'
-                   + std::to_string((timeinfo->tm_min)) + '_'
-                   + std::to_string((timeinfo->tm_sec)) + ".sbe"; //SpecBoard EEPROM content file (sbe)
+        fName =   "util/auto_"
+                + std::to_string(1900+(timeinfo->tm_year)) + '_'
+                + std::to_string(1+(timeinfo->tm_mon)) + '_'
+                + std::to_string((timeinfo->tm_mday)) + '_'
+                + std::to_string((timeinfo->tm_hour)) + '_'
+                + std::to_string((timeinfo->tm_min)) + '_'
+                + std::to_string((timeinfo->tm_sec)) + ".sbe"; //SpecBoard EEPROM content file (sbe)
     }
 
-    std::ofstream oF(filepath);
+    std::ofstream oF(fName);
     if(!oF) {
         std::cout << "Could not create output file. Aborting... \n";
         exit(-1);
@@ -776,7 +775,6 @@ void SpecController::createSbeFile(std::string fnKeyword, uint8_t * buffer, uint
 }
 
 void SpecController::getSbeFile(std::string pathname, uint8_t * buffer, uint32_t length) {
-
     if(length != ARRAYLENGTH) {
         std::cout << "Wrong uint8_t array length. Aborting... \n";
         exit(-1);
@@ -788,11 +786,11 @@ void SpecController::getSbeFile(std::string pathname, uint8_t * buffer, uint32_t
         std::string tmpStr;
         std::getline(iF, tmpStr);
         if(tmpStr != "     addr  msk        data") {
-            std::cout << "Invalid headline. \n "
+            std::cerr << "Invalid headline. \n "
                       << "Note that it is encouraged to automatically create an sbe file \n"
                       << "using the EEPROM read functionality, copy the file, do desired \n"
                       << "changes by hand and use this file to write to the EEPROM. \n";
-            exit(-1);
+            return;
         }
     }
 
@@ -803,14 +801,14 @@ void SpecController::getSbeFile(std::string pathname, uint8_t * buffer, uint32_t
         iF >> std::showbase;
         while(iF >> tmpInt) {
             if(i == ARRAYLENGTH) {
-                std::cout << "sbe file too big. Aborting... \nWARNING the EEPROM content has probably been modified!\n";
-                exit(-1);
+                std::cerr << "sbe file too big. Aborting... \nWARNING the EEPROM content has probably been modified!\n";
+                return;
             }
             switch(i%3) {
             case 0:
                 if(tmpInt>0xFFF) {
                     std::cout << "Invalid address size in line " << i/3 + 1 << ". Aborting... \n";
-                    exit(-1);
+                    return;
                 }
                 *(buffer+i) = (tmpInt & 0xFF);
                 i++;
@@ -818,16 +816,16 @@ void SpecController::getSbeFile(std::string pathname, uint8_t * buffer, uint32_t
                 break;
             case 1:
                 if(tmpInt>0xF) {
-                    std::cout << "Invalid mask size in line " << i/3 + 1 << ". Aborting... \n";
-                    exit(-1);
+                    std::cerr << "Invalid mask size in line " << i/3 + 1 << ". Aborting... \n";
+                    return;
                 }
                 *(buffer+i) |= ((tmpInt & 0xF) << 4);
                 i++;
                 break;
             case 2:
                 if(tmpInt>0xFFFFFFFF) {
-                    std::cout << "Invalid data size in line " << i/3 + 1 << ". Aborting... \n";
-                    exit(-1);
+                    std::cerr << "Invalid data size in line " << i/3 + 1 << ". Aborting... \n";
+                    return;
                 }
                 *(buffer+i)   = (tmpInt & 0xFF);
                 *(buffer+i+1) = ((tmpInt >>  8) & 0xFF);
@@ -840,12 +838,11 @@ void SpecController::getSbeFile(std::string pathname, uint8_t * buffer, uint32_t
         iF >> std::dec;
         iF >> std::noshowbase;
         if(i!=ARRAYLENGTH) {
-            std::cout << "Input file incomplete. Aborting... \nWARNING the EEPROM content has probably been modified!\n";
-            exit(-1);
+            std::cerr << "Input file incomplete. Aborting... \nWARNING the EEPROM content has probably been modified!\n";
+            return;
         }
     }
-    
-    return;
 
+    return;
 }
 
