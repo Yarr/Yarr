@@ -220,6 +220,8 @@ void Fei4PixelCfg::toFileJson(json &j) {
             j["FE-I4B"]["PixelConfig"][row-1]["Enable"][col-1] = getEn(col, row);
             j["FE-I4B"]["PixelConfig"][row-1]["Hitbus"][col-1] = getHitbus(col, row);
             j["FE-I4B"]["PixelConfig"][row-1]["TDAC"][col-1] = getTDAC(col, row);
+            j["FE-I4B"]["PixelConfig"][row-1]["LCap"][col-1] = getLCap(col, row);
+            j["FE-I4B"]["PixelConfig"][row-1]["SCap"][col-1] = getSCap(col, row);
             j["FE-I4B"]["PixelConfig"][row-1]["FDAC"][col-1] = getFDAC(col, row);
         }
     }
@@ -241,9 +243,11 @@ void Fei4PixelCfg::fromFileJson(json &j) {
     for (unsigned row=1; row<=n_Row; row++) {
         for (unsigned col=1; col<=n_Col; col++) {
             setEn(col, row, j["FE-I4B"]["PixelConfig"][row-1]["Enable"][col-1]);
-            setHitbus(col, row, j["FE-I4B"]["PixelConfig"][row-1]["Enable"][col-1]);
-            setTDAC(col, row, j["FE-I4B"]["PixelConfig"][row-1]["Enable"][col-1]);
-            setFDAC(col, row, j["FE-I4B"]["PixelConfig"][row-1]["Enable"][col-1]);
+            setHitbus(col, row, j["FE-I4B"]["PixelConfig"][row-1]["Hitbus"][col-1]);
+            setTDAC(col, row, j["FE-I4B"]["PixelConfig"][row-1]["TDAC"][col-1]);
+            setLCap(col, row, j["FE-I4B"]["PixelConfig"][row-1]["LCap"][col-1]);
+            setSCap(col, row, j["FE-I4B"]["PixelConfig"][row-1]["SCap"][col-1]);
+            setFDAC(col, row, j["FE-I4B"]["PixelConfig"][row-1]["FDAC"][col-1]);
         }
     }
 
