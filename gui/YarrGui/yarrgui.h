@@ -31,7 +31,7 @@
 #include <unistd.h>
 #include <vector>
 
-//#include "qdebugstream.h"
+#include "qdebugstream.h"
 #include "SpecController.h"
 #include "benchmarkdialog.h"
 #include "createscandialog.h"
@@ -120,8 +120,8 @@ private:
     QDir devicePath;
     QStringList deviceList;
 
-//    QDebugStream *qout;
-//    QDebugStream *qerr;
+    QDebugStream *qout;
+    QDebugStream *qerr;
 
     std::vector<SpecController*> specVec;
 

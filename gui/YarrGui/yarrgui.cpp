@@ -31,8 +31,8 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->configfileName_2->setText("util/global_config.gcfg"); //DEBUG
 
     // Init console
-//    qout = new QDebugStream(std::cout, ui->console, QColor("black"));
-//    qerr = new QDebugStream(std::cerr, ui->console, QColor("red"));
+    qout = new QDebugStream(std::cout, ui->console, QColor("black"));
+    qerr = new QDebugStream(std::cerr, ui->console, QColor("red"));
 
     ui->main_tabWidget->setCurrentIndex(0);
     ui->main_tabWidget->setTabEnabled(0, true);
