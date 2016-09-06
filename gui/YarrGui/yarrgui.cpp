@@ -253,7 +253,7 @@ void YarrGui::on_exportPlotButton_clicked(){
         return;
     }
 
-    QString myFileName = ui->plotTree->currentItem()->text(0);
+/*    QString myFileName = ui->plotTree->currentItem()->text(0);
 
     struct tm * timeinfo;
     time_t rawtime;
@@ -267,6 +267,12 @@ void YarrGui::on_exportPlotButton_clicked(){
                + QString::number((timeinfo->tm_hour)) + '_'
                + QString::number((timeinfo->tm_min)) + '_'
                + QString::number((timeinfo->tm_sec)) + ".pdf";
+*/
+
+    QString myFileName = QFileDialog::getSaveFileName(this,
+                                                      "Save plot as PDF",
+                                                      "./",
+                                                      "Portable Document Format(*.pdf)");
 
     myPlot->savePdf(myFileName);
     std::cout << "Saved current plot to \"" << myFileName.toStdString() << '"' << std::endl;
@@ -299,7 +305,7 @@ void YarrGui::on_exportPlotCSVButton_clicked(){
         return;
     }
 
-    QString myFileName = ui->plotTree->currentItem()->text(0);
+/*    QString myFileName = ui->plotTree->currentItem()->text(0);
 
     struct tm * timeinfo;
     time_t rawtime;
@@ -313,6 +319,13 @@ void YarrGui::on_exportPlotCSVButton_clicked(){
                + QString::number((timeinfo->tm_hour)) + '_'
                + QString::number((timeinfo->tm_min)) + '_'
                + QString::number((timeinfo->tm_sec)) + ".csv";
+*/
+
+    QString myFileName = QFileDialog::getSaveFileName(this,
+                                                      "Save plot as CSV",
+                                                      "./",
+                                                      "Comma-Separated Values(*.csv)");
+    if(myFileName==""){return;}
 
     std::ofstream myCSVOutput(myFileName.toStdString());
 
