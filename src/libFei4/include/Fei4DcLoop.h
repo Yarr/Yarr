@@ -14,10 +14,13 @@ class Fei4DcLoop: public LoopActionBase {
         Fei4DcLoop();
        
         void setMode(enum DC_MODE mode);
-        enum DC_MODE getMode();
+        uint32_t getMode();
+        
+        void loadConfig(json &config);
+        void writeConfig(json &config);
 
     private:
-        enum DC_MODE m_mode;
+        uint32_t m_mode;
         unsigned m_col;
 
         void init();

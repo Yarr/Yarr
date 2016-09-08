@@ -217,42 +217,48 @@ int main(int argc, char *argv[]) {
 
     // TODO Make this nice
     ScanBase *s = NULL;
-    std::cout << "-> Selecting Scan: " << scanType << std::endl;
-    if (scanType == "digitalscan") {
-        std::cout << "-> Found Digital Scan" << std::endl;
-        s = new Fei4DigitalScan(&bookie);
-    } else if (scanType == "analogscan") {
-        std::cout << "-> Found Analog Scan" << std::endl;
-        s = new Fei4AnalogScan(&bookie);
-    } else if (scanType == "thresholdscan") {
-        std::cout << "-> Found Threshold Scan" << std::endl;
-        s = new Fei4ThresholdScan(&bookie);
-    } else if (scanType == "totscan") {
-        std::cout << "-> Found ToT Scan" << std::endl;
-        s = new Fei4TotScan(&bookie);
-    } else if (scanType == "tune_globalthreshold") {
-        std::cout << "-> Found Global Threshold Tuning" << std::endl;
-        s = new Fei4GlobalThresholdTune(&bookie);
-    } else if (scanType == "tune_pixelthreshold") {
-        std::cout << "-> Found Pixel Threshold Tuning" << std::endl;
-        s = new Fei4PixelThresholdTune(&bookie);
-    } else if (scanType == "tune_globalpreamp") {
-        std::cout << "-> Found Global Preamp Tuning" << std::endl;
-        s = new Fei4GlobalPreampTune(&bookie);
-    } else if (scanType == "retune_globalpreamp") {
-        std::cout << "-> Found Global Preamp Retuning" << std::endl;
-        s = new Fei4GlobalPreampRetune(&bookie);
-    } else if (scanType == "tune_pixelpreamp") {
-        std::cout << "-> Found Pixel Preamp Tuning" << std::endl;
-        s = new Fei4PixelPreampTune(&bookie);
-    } else if (scanType == "noisescan") {
-        std::cout << "-> Found Noisescan" << std::endl;
-        s = new Fei4NoiseScan(&bookie);
+
+    if (scanType.find("json") != std::string::npos) {
+        std::cout << "-> Found Scan config, constructing scan ..." << std::endl;
+
     } else {
-        std::cout << "-> No matching Scan found, possible:" << std::endl;
-        listScans();
-        std::cerr << "-> Aborting!" << std::endl;
-        return -1;
+        std::cout << "-> Selecting Scan: " << scanType << std::endl;
+        if (scanType == "digitalscan") {
+            std::cout << "-> Found Digital Scan" << std::endl;
+            s = new Fei4DigitalScan(&bookie);
+        } else if (scanType == "analogscan") {
+            std::cout << "-> Found Analog Scan" << std::endl;
+            s = new Fei4AnalogScan(&bookie);
+        } else if (scanType == "thresholdscan") {
+            std::cout << "-> Found Threshold Scan" << std::endl;
+            s = new Fei4ThresholdScan(&bookie);
+        } else if (scanType == "totscan") {
+            std::cout << "-> Found ToT Scan" << std::endl;
+            s = new Fei4TotScan(&bookie);
+        } else if (scanType == "tune_globalthreshold") {
+            std::cout << "-> Found Global Threshold Tuning" << std::endl;
+            s = new Fei4GlobalThresholdTune(&bookie);
+        } else if (scanType == "tune_pixelthreshold") {
+            std::cout << "-> Found Pixel Threshold Tuning" << std::endl;
+            s = new Fei4PixelThresholdTune(&bookie);
+        } else if (scanType == "tune_globalpreamp") {
+            std::cout << "-> Found Global Preamp Tuning" << std::endl;
+            s = new Fei4GlobalPreampTune(&bookie);
+        } else if (scanType == "retune_globalpreamp") {
+            std::cout << "-> Found Global Preamp Retuning" << std::endl;
+            s = new Fei4GlobalPreampRetune(&bookie);
+        } else if (scanType == "tune_pixelpreamp") {
+            std::cout << "-> Found Pixel Preamp Tuning" << std::endl;
+            s = new Fei4PixelPreampTune(&bookie);
+        } else if (scanType == "noisescan") {
+            std::cout << "-> Found Noisescan" << std::endl;
+            s = new Fei4NoiseScan(&bookie);
+        } else {
+            std::cout << "-> No matching Scan found, possible:" << std::endl;
+            listScans();
+            std::cerr << "-> Aborting!" << std::endl;
+            return -1;
+        }
     }
     
     // Init histogrammer and analysis

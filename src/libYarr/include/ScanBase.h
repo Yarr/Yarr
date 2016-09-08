@@ -22,8 +22,11 @@
 #include "LoopActionBase.h"
 #include "ClipBoard.h"
 #include "RawData.h"
+#include "json.hpp"
 
 #include "Bookkeeper.h"
+
+using json = nlohmann::json;
 
 class ScanBase {
     public:
@@ -40,6 +43,8 @@ class ScanBase {
         std::shared_ptr<LoopActionBase> operator[](unsigned n);
         std::shared_ptr<LoopActionBase> operator[](std::type_index t);
         unsigned size();
+        
+        virtual void loadConfig(json &cfg) {}
 
     protected:
         LoopEngine engine;

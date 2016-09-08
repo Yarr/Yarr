@@ -15,7 +15,7 @@ class Fei4MaskLoop : public LoopActionBase {
         Fei4MaskLoop();
 
         void setMaskStage(enum MASK_STAGE mask);
-        //void setMaskStage(uint32_t mask);
+        void setMaskStage(uint32_t mask);
         //uint32_t getMaskStage();
         //void setIterations(unsigned it);
         //unsigned getIterations();
@@ -24,9 +24,11 @@ class Fei4MaskLoop : public LoopActionBase {
         void setLcap(bool v=true) {enable_lCap = v;}
         bool getLcap() {return enable_lCap;}
 
+        void writeConfig(json &config);
+        void loadConfig(json &config);
         
     private:
-        enum MASK_STAGE m_mask;
+        uint32_t m_mask;
         unsigned m_cur;
         bool enable_sCap;
         bool enable_lCap;

@@ -1,0 +1,79 @@
+{
+    "scan": {
+        "analysis": {
+            "1": {
+                "algorithm": "OccupancyAnalysis",
+                "config": {
+                    "createMask": true
+                }
+            },
+            "n_count": 1
+        },
+        "histogrammer": {
+            "0": {
+                "algorithm": "OccupancyMap"
+            },
+            "1": {
+                "algorithm": "TotMap"
+            },
+            "2": {
+                "algorithm": "Tot2Map"
+            },
+            "3": {
+                "algorithm": "L1Dist"
+            },
+            "4": {
+                "algorithm": "HitDist"
+            },
+            "n_count": 5
+        },
+        "loops": {
+            "0": {
+                "config": {
+                    "enable_lcap": true,
+                    "enable_scap": true,
+                    "mask": 4097,
+                    "max": 16,
+                    "min": 0,
+                    "step": 1
+                },
+                "loopAction": "Fei4MaskLoop"
+            },
+            "1": {
+                "config": {
+                    "max": 4,
+                    "min": 0,
+                    "mode": 1,
+                    "step": 1
+                },
+                "loopAction": "Fei4DcLoop"
+            },
+            "2": {
+                "config": {
+                    "count": 50,
+                    "delay": 30,
+                    "extTrigger": false,
+                    "frequency": 1000.0,
+                    "noInject": false,
+                    "time": 0
+                },
+                "loopAction": "Fei4TriggerLoop"
+            },
+            "3": {
+                "loopAction": "StdDataLoop"
+            },
+            "n_loops": 4
+        },
+        "name": "DigitalScan",
+        "prescan": {
+            "FE-I4B": {
+                "GlobalConfig": {
+                    "DigHitIn_Sel": 1,
+                    "Trig_Count": 10,
+                    "Trig_Lat": 220,
+                    "Vthin_Coarse": 200
+                }
+            }
+        }
+    }
+}

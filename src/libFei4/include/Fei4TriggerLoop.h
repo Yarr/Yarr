@@ -28,6 +28,8 @@ class Fei4TriggerLoop: public LoopActionBase {
         void setIsInner(bool itis=true);
         bool getIsInner();
 
+        void writeConfig(json &config);
+        void loadConfig(json &config);
     private:
         unsigned m_trigCnt;
         unsigned m_trigDelay;
@@ -35,6 +37,9 @@ class Fei4TriggerLoop: public LoopActionBase {
         double m_trigTime;
         uint32_t m_trigWord[4];
         uint32_t m_trigWordLength;
+
+        bool m_noInject; // TODO implement in init
+        bool m_extTrigger; // TODO implement in init
 
         bool isInner;
 

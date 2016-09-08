@@ -92,7 +92,23 @@ class Fei4GlobalCfg {
                 return (this->*ref).addr();
             }
 
-        
+        uint16_t getValue(std::string regName) {
+            if (fieldMap.find(regName) != fieldMap.end()) {
+                return fieldMap[regName]->value();
+            } else {
+                std::cerr << " --> Error: Could not find register \""<< regName << "\"" << std::endl;
+            }
+            return 0;
+        }
+
+        void setValue(std::string regName, uint16_t value) {
+            if (fieldMap.find(regName) != fieldMap.end()) {
+                fieldMap[regName]->write(value);
+            } else {
+                std::cerr << " --> Error: Could not find register \""<< regName << "\"" << std::endl;
+            }
+        }
+
         std::map<std::string, FieldOperator<uint16_t>*> fieldMap;
 
         // Fe-I4 global registers, see page 118 FE-I4B Manual

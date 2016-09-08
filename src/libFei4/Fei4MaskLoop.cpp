@@ -102,11 +102,11 @@ void Fei4MaskLoop::setMaskStage(enum MASK_STAGE mask) {
             break;
     }
 }
-/*
+
 void Fei4MaskLoop::setMaskStage(uint32_t mask) {
     m_mask = mask;
 }
-
+/*
 uint32_t Fei4MaskLoop::getMaskStage() {
     return m_mask;
 }
@@ -118,3 +118,21 @@ void Fei4MaskLoop::setIterations(unsigned it) {
 unsigned Fei4MaskLoop::getIterations() {
     return m_it;
 }*/
+
+void Fei4MaskLoop::writeConfig(json &config) {
+    config["min"] = min;
+    config["max"] = max;
+    config["step"] = step;
+    config["mask"] = (uint32_t) m_mask;
+    config["enable_lcap"] = enable_lCap;
+    config["enable_scap"] = enable_sCap;
+}
+
+void Fei4MaskLoop::loadConfig(json &config) {
+    min = config["min"];
+    max = config["max"];
+    step = config["step"];
+    m_mask = (uint32_t) config["mask"];
+    enable_lCap = config["enable_lcap"];
+    enable_sCap = config["enable_scap"];
+}

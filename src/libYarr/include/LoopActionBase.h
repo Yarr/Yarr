@@ -18,6 +18,9 @@
 #include "RxCore.h"
 #include "LoopStatus.h"
 #include "Bookkeeper.h"
+#include "json.hpp"
+
+using json = nlohmann::json;
 
 using std::shared_ptr;
 
@@ -42,7 +45,10 @@ class LoopActionBase {
         void setMax(unsigned v);
         void setStep(unsigned v);
 
-		bool checkGlobalDone();
+        virtual void loadConfig(json &config) {}
+        virtual void writeConfig(json &config) {}
+		
+        bool checkGlobalDone();
 
     protected:
         virtual void init() {}

@@ -15,6 +15,8 @@ Fei4TriggerLoop::Fei4TriggerLoop() : LoopActionBase() {
     m_trigWord[1] = TRIG_CMD;
     m_trigWord[2] = 0x00;
     m_trigWord[3] = CAL_CMD;
+    m_noInject = false;
+    m_extTrigger = false;
     isInner = false;
     min = 0;
     max = 0;
@@ -27,6 +29,7 @@ void Fei4TriggerLoop::init() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     // Setup Trigger
+    this->setTrigDelay(m_trigDelay);
     if (m_trigCnt > 0) {
         g_tx->setTrigConfig(INT_COUNT);
     } else {
@@ -138,5 +141,18 @@ void Fei4TriggerLoop::setIsInner(bool itis) {
 
 bool Fei4TriggerLoop::getIsInner() {
     return isInner;
+}
+
+void Fei4TriggerLoop::writeConfig(json &config) {
+    config["count"] = m_trigCnt;
+    config["frequency"] = m_trigFreq;
+    config["time"] = m_trigTime;
+    config["delay"] = m_trigDelay;
+    config["noInject"] = m_noInject;
+    config["extTrigger"] = m_extTrigger;
+}
+
+void Fei4TriggerLoop::loadConfig(json &config) {
+    // TODO implement me
 }
 
