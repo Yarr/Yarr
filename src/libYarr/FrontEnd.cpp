@@ -18,6 +18,14 @@ void FrontEnd::setChannel(unsigned arg_txChannel, unsigned arg_rxChannel) {
 	rxChannel = arg_rxChannel;
 }
 
+void FrontEnd::setName(std::string arg_name) {
+    name = arg_name;
+}
+
+std::string FrontEnd::getName() {
+    return name;
+}
+
 bool FrontEnd::isActive() {
 	return active;
 }

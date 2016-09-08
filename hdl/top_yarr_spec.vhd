@@ -1025,8 +1025,8 @@ begin
 		wb_we_i => wb_we,
 		wb_ack_o => wb_ack(2),
 		wb_stall_o => wb_stall(2),
-		rx_clk_i => CLK_160,
-		rx_serdes_clk_i => CLK_640,
+		rx_clk_i => CLK_40,
+		rx_serdes_clk_i => CLK_160,
 		rx_data_i => fe_data_i,
 		rx_valid_o => rx_valid,
 		rx_data_o => rx_data,
@@ -1119,26 +1119,26 @@ begin
 --   TRIG0(23) <= irq_out;
 --   TRIG0(24) <= rx_busy;
 --   TRIG0(31 downto 25) <= (others => '0');
---	TRIG0(0) <= rx_valid;
---	TRIG0(1) <= fe_cmd_o(0);
---	TRIG0(2) <= trig_pulse;
---	TRIG0(3) <= fe_cmd_o(0);
---	TRIG0(31 downto 4) <= (others => '0');
---	TRIG1 <= rx_data;
---	TRIG2 <= debug;
-		TRIG0(0) <= scl;
-		TRIG0(1) <= sda;
-		TRIG0(2) <= wb_stb;
-		TRIG0(3) <= wb_ack(4);
-		TRIG0(31 downto 4) <= (others => '0');
-		TRIG1 <= wb_adr;
-		TRIG2 <= wb_dat_o;
+	TRIG0(0) <= rx_valid;
+	TRIG0(1) <= fe_cmd_o(0);
+	TRIG0(2) <= trig_pulse;
+	TRIG0(3) <= fe_cmd_o(0);
+	TRIG0(31 downto 4) <= (others => '0');
+	TRIG1 <= rx_data;
+	TRIG2 <= debug;
+--		TRIG0(0) <= scl;
+--		TRIG0(1) <= sda;
+--		TRIG0(2) <= wb_stb;
+--		TRIG0(3) <= wb_ack(4);
+--		TRIG0(31 downto 4) <= (others => '0');
+--		TRIG1 <= wb_adr;
+--		TRIG2 <= wb_dat_o;
    
 	ila_i : ila
 	  port map (
 		 CONTROL => CONTROL,
---		 CLK => CLK_160,
-		 CLK => sys_clk,
+		 CLK => CLK_40,
+--		 CLK => sys_clk,
 		 TRIG0 => TRIG0,
 		 TRIG1 => TRIG1,
 		 TRIG2 => TRIG2);

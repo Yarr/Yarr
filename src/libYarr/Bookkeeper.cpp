@@ -11,7 +11,8 @@
 Bookkeeper::Bookkeeper(TxCore *arg_tx, RxCore *arg_rx) {
     tx = arg_tx;
     rx = arg_rx;
-    g_fe = new Fei4(tx, 8);
+    g_fe = new Fei4(tx, 8); // Broadcast to all
+    g_fe65p2 = new Fe65p2(tx); // Hardware only allows single FE65-P2
     target_tot = 10;
     target_charge = 16000;
     target_threshold = 3000;
@@ -24,14 +25,16 @@ Bookkeeper::~Bookkeeper() {
         feList.erase(feList.begin() + k);
     }
     delete g_fe;
+    delete g_fe65p2;
 }
 
 // RxChannel is unique ident
-void Bookkeeper::addFe(unsigned chipId, unsigned txChannel, unsigned rxChannel) {
+void Bookkeeper::addFe(FrontEnd *fe, unsigned txChannel, unsigned rxChannel) {
     if(isChannelUsed(rxChannel)) {
         std::cerr << __PRETTY_FUNCTION__ << " -> Error rx channel already in use, not adding FE" << std::endl;
     } else {
-        feList.push_back(new Fei4(tx, chipId, txChannel, rxChannel));
+        feList.push_back(fe);
+        feList.back()->setChannel(txChannel, rxChannel);
         eventMap[rxChannel];
         histoMap[rxChannel];
         resultMap[rxChannel];
@@ -40,11 +43,11 @@ void Bookkeeper::addFe(unsigned chipId, unsigned txChannel, unsigned rxChannel) 
         feList.back()->clipResult = &resultMap[rxChannel];
         mutexMap[rxChannel];
     }
-    std::cout << __PRETTY_FUNCTION__ << " -> Added FE: ChipId(" << chipId << "), Tx(" << txChannel << "), Rx(" << rxChannel << ")" << std::endl;
+    std::cout << __PRETTY_FUNCTION__ << " -> Added FE: Tx(" << txChannel << "), Rx(" << rxChannel << ")" << std::endl;
 }
 
-void Bookkeeper::addFe(unsigned chipId, unsigned channel) {
-    this->addFe(chipId, channel, channel);
+void Bookkeeper::addFe(FrontEnd *fe, unsigned channel) {
+    this->addFe(fe, channel, channel);
 }
 
 // RxChannel is unique ident
@@ -65,12 +68,12 @@ void Bookkeeper::delFe(unsigned rxChannel) {
     }
 }
 
-void Bookkeeper::delFe(Fei4* fe) {
+void Bookkeeper::delFe(FrontEnd* fe) {
     unsigned arg_channel = fe->getChannel();
     delFe(arg_channel);
 }
 
-Fei4* Bookkeeper::getFei4byChannel(unsigned arg_channel) {
+FrontEnd* Bookkeeper::getFeByChannel(unsigned arg_channel) {
     for(unsigned int k=0; k<feList.size(); k++) {
         if(feList[k]->getChannel() == arg_channel) {
             return feList[k];
@@ -79,7 +82,7 @@ Fei4* Bookkeeper::getFei4byChannel(unsigned arg_channel) {
     return NULL;	
 }
 
-Fei4* Bookkeeper::getFe(unsigned rxChannel) {
+FrontEnd* Bookkeeper::getFe(unsigned rxChannel) {
     for(unsigned int k=0; k<feList.size(); k++) {
         if(feList[k]->getChannel() == rxChannel) {
             return feList[k];
@@ -88,7 +91,7 @@ Fei4* Bookkeeper::getFe(unsigned rxChannel) {
     return NULL;
 }
 
-Fei4* Bookkeeper::getLastFe() {
+FrontEnd* Bookkeeper::getLastFe() {
     return feList.back();
 }
 

@@ -29,6 +29,7 @@
 #include <linux/wait.h>
 #include <linux/sched.h>
 #include <linux/completion.h>
+#include <linux/uaccess.h>
 
 #include "config.h" 			/* Configuration for the driver */
 #include "compat.h" 			/* Compatibility functions/definitions */
@@ -277,33 +278,35 @@ static int ioctl_umem_sgunmap(specdriver_privdata_t *privdata, unsigned long arg
 static int ioctl_umem_sgget(specdriver_privdata_t *privdata, unsigned long arg)
 {
 	int ret = 0;
+	umem_sgentry_t *t_sg;
 	READ_FROM_USER(umem_sglist_t, usglist);
+	t_sg = usglist.sg;
 
 	/* The umem_sglist_t has a pointer to the scatter/gather list itself which
 	 * needs to be copied separately. The number of elements is stored in ->nents.
 	 * As the list can get very big, we need to use vmalloc. */
 	if ((usglist.sg = vmalloc(usglist.nents * sizeof(umem_sgentry_t))) == NULL)
 		return -ENOMEM;
-
+	
 	/* copy array to kernel structure */
-	ret = copy_from_user(usglist.sg, ((umem_sglist_t *)arg)->sg, (usglist.nents)*sizeof(umem_sgentry_t));
+	ret = copy_from_user(usglist.sg, t_sg, (usglist.nents)*sizeof(umem_sgentry_t));
 	if (ret) return -EFAULT;
 
 	if ((ret = specdriver_umem_sgget(privdata, &usglist)) != 0)
 		return ret;
 
 	/* write data to user space */
-	ret = copy_to_user(((umem_sglist_t *)arg)->sg, usglist.sg, (usglist.nents)*sizeof(umem_sgentry_t));
+	ret = copy_to_user(t_sg, usglist.sg, (usglist.nents)*sizeof(umem_sgentry_t));
 	if (ret) return -EFAULT;
 
 	/* free array memory */
 	vfree(usglist.sg);
 
 	/* restore sg pointer to vma address in user space before copying */
-	usglist.sg = ((umem_sglist_t *)arg)->sg;
+	usglist.sg = t_sg;
 
 	WRITE_TO_USER(umem_sglist_t, usglist);
-
+	
 	return 0;
 }
 

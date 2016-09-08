@@ -115,3 +115,7 @@ bool TxCore::isCmdEmpty() {
     return (spec->readSingle(TX_ADDR | TX_EMPTY) & enMask);
 }
 
+uint32_t TxCore::getTrigInCount() {
+    return (spec->readSingle(TX_ADDR | TRIG_IN_CNT));
+}
+

@@ -9,7 +9,6 @@
 #include "Fei4Histogrammer.h"
 
 Fei4Histogrammer::Fei4Histogrammer() {
-
 }
 
 Fei4Histogrammer::~Fei4Histogrammer() {
@@ -37,7 +36,9 @@ void Fei4Histogrammer::process() {
 
 void Fei4Histogrammer::publish() {
     for (unsigned i=0; i<algorithms.size(); i++) {
-        output->pushData(algorithms[i]->getHisto());
+        if (algorithms[i]->getHisto() != NULL) {
+            output->pushData(algorithms[i]->getHisto());
+        }
     }
 }
 
@@ -53,6 +54,14 @@ void Fei4Histogrammer::plot(std::string basename) {
         std::cout << "Plotting : " << (*it)->getName() << std::endl;
         (*it)->plot(basename);
     }    
+}
+
+void DataArchiver::processEvent(Fei4Data *data) {
+    for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
+        Fei4Event curEvent = *eventIt;
+        // Save Event to File
+        curEvent.toFileBinary(fileHandle);
+    }
 }
 
 
@@ -89,6 +98,17 @@ void Tot2Map::processEvent(Fei4Data *data) {
     }
 }
 
+void TotDist::processEvent(Fei4Data *data) {
+    for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
+        Fei4Event curEvent = *eventIt;
+        for (std::vector<Fei4Hit>::iterator hitIt = curEvent.hits.begin(); hitIt!=curEvent.hits.end(); ++hitIt) {   
+            Fei4Hit curHit = *hitIt;
+            if(curHit.tot > 0)
+                h->fill(curHit.tot);
+        }
+    }
+}
+
 void L1Dist::processEvent(Fei4Data *data) {
     // Event Loop
     for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
@@ -104,7 +124,7 @@ void L1Dist::processEvent(Fei4Data *data) {
     }
 }
     
-void HitDist::processEvent(Fei4Data *data) {
+void HitsPerEvent::processEvent(Fei4Data *data) {
     // Event Loop
     for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
         Fei4Event curEvent = *eventIt;

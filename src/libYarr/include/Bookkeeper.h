@@ -19,7 +19,9 @@
 #include "ResultBase.h"
 #include "ClipBoard.h"
 
+#include "FrontEnd.h"
 #include "Fei4.h"
+#include "Fe65p2.h"
 #include "TxCore.h"
 #include "RxCore.h"
 
@@ -29,17 +31,16 @@ class Bookkeeper {
         ~Bookkeeper();
         
         // TODO should only add generic Fe class
-        // TODO should be independent of chipId
-        void addFe(unsigned chipId, unsigned txChannel, unsigned rxChannel);
-        void addFe(unsigned chipId, unsigned channel);
+        void addFe(FrontEnd *fe, unsigned txChannel, unsigned rxChannel);
+        void addFe(FrontEnd *fe, unsigned channel);
 		
         void delFe(unsigned rxChannel);
-		void delFe(Fei4 *fe);
+		void delFe(FrontEnd *fe);
 
-		Fei4* getFei4byChannel(unsigned channel);
-		Fei4* getFe(unsigned rxChannel);
-        Fei4* getLastFe();
-        Fei4* getGlobalFe() {
+		FrontEnd* getFeByChannel(unsigned channel);
+		FrontEnd* getFe(unsigned rxChannel);
+        FrontEnd* getLastFe();
+        FrontEnd* getGlobalFe() {
             return g_fe;
         }
 
@@ -60,10 +61,11 @@ class Bookkeeper {
         
         // TODO make private, not nice like that
         Fei4 *g_fe;
+        Fe65p2 *g_fe65p2;
         TxCore *tx;
         RxCore *rx;
         
-        std::vector<Fei4*> feList;
+        std::vector<FrontEnd*> feList;
 
         ClipBoard<RawDataContainer> rawData;
 
@@ -73,14 +75,14 @@ class Bookkeeper {
 	    std::map<unsigned, ClipBoard<HistogramBase> > resultMap;
 		std::map<unsigned, std::mutex> mutexMap;	
         
-		std::vector<Fei4*> activeFeList;
+		std::vector<FrontEnd*> activeFeList;
 
     private:
-        uint32_t activeTxMask;
-        uint32_t activeRxMask;
+        //uint32_t activeTxMask;
+        //uint32_t activeRxMask;
 
-		uint32_t activeMask;
-		uint32_t usedChannels;
+		//uint32_t activeMask;
+		//uint32_t usedChannels;
 
         int target_tot;
         int target_threshold;

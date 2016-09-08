@@ -1,0 +1,8 @@
+#include "Fe65p2DigitalScan.h"
+#include "Fe65p2ThresholdScan.h"
+#include "Fe65p2AnalogScan.h"
+#include "Fe65p2GlobalThresholdTune.h"
+#include "Fe65p2PixelThresholdTune.h"
+#include "Fe65p2NoiseScan.h"
+#include "Fe65p2ExtTrigger.h"
+#include "Fe65p2TotScan.h"

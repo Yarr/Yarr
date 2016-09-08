@@ -25,13 +25,18 @@
 #include "lmcurve.h"
 
 #include "Bookkeeper.h"
+#include "FeedbackBase.h"
 
 #include "AllFei4Actions.h"
+#include "AllFe65p2Actions.h"
 #include "AllStdActions.h"
 
 class AnalysisAlgorithm {
     public:
-        AnalysisAlgorithm() {};
+        AnalysisAlgorithm() {
+            nCol = 80;
+            nRow = 336;
+        };
         virtual ~AnalysisAlgorithm() {}
         
         void setBookkeeper (Bookkeeper *b) {bookie = b;}
@@ -44,11 +49,18 @@ class AnalysisAlgorithm {
         virtual void processHistogram(HistogramBase *h) {}
         virtual void end() {}
 
+        void setMapSize(unsigned col,unsigned row) {
+            nCol = col;
+            nRow = row;
+        }
+
     protected:
         Bookkeeper *bookie;
         unsigned channel;
         ScanBase *scan;
         ClipBoard<HistogramBase> *output;
+
+        unsigned nCol, nRow;
 };
 
 class Fei4Analysis : DataProcessor {
@@ -71,6 +83,13 @@ class Fei4Analysis : DataProcessor {
 		void addAlgorithm(AnalysisAlgorithm *a, unsigned ch);
         void plot(std::string basename, std::string dir = "");
         void toFile(std::string basename, std::string dir = "");
+
+        void setMapSize(unsigned col, unsigned row) {
+            for (unsigned i=0; i<algorithms.size(); i++) {
+                algorithms[i]->setMapSize(col, row);
+            }
+        }
+            
 
     private:
         Bookkeeper *bookie;
@@ -118,8 +137,8 @@ class TotAnalysis : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> totInnerCnt;
         std::map<unsigned, Histo2d*> tot2Maps;
         std::map<unsigned, unsigned> tot2InnerCnt;
-        Fei4GlobalFeedbackBase *globalFb;
-        Fei4PixelFeedback *pixelFb;
+        GlobalFeedbackBase *globalFb;
+        PixelFeedbackBase *pixelFb;
 };
 
 class ScurveFitter : public AnalysisAlgorithm {
@@ -170,7 +189,8 @@ class OccGlobalThresholdTune : public AnalysisAlgorithm {
         std::map<unsigned, Histo1d*> occDists;
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;
-        Fei4GlobalFeedbackBase *fb;
+        GlobalFeedbackBase *fb;
+        LoopActionBase *lb;
 
 };
 
@@ -192,7 +212,7 @@ class GlobalPreampTune : public AnalysisAlgorithm {
         std::map<unsigned, Histo1d*> occDists;
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;
-        Fei4GlobalFeedbackBase *fb;
+        GlobalFeedbackBase *fb;
 
 };
 
@@ -212,7 +232,7 @@ class OccPixelThresholdTune : public AnalysisAlgorithm {
         std::map<unsigned, Histo2d*> occMaps;
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;
-        Fei4PixelFeedback *fb;
+        PixelFeedbackBase *fb;
 
 };
 
@@ -230,6 +250,23 @@ class L1Analysis : public AnalysisAlgorithm {
         unsigned n_count;
         unsigned injections;
         std::map<unsigned, Histo1d*> l1Histos;
+        std::map<unsigned, unsigned> innerCnt;
+};
+
+class TotDistPlotter : public AnalysisAlgorithm {
+    public:
+        TotDistPlotter() : AnalysisAlgorithm() {};
+        ~TotDistPlotter() {};
+
+        void init(ScanBase *s);
+        void processHistogram(HistogramBase *h);
+        void end() {}
+    private:
+        std::vector<unsigned> loops;
+        std::vector<unsigned> loopMax;
+        unsigned n_count;
+        unsigned injections;
+        std::map<unsigned, Histo1d*> tot;
         std::map<unsigned, unsigned> innerCnt;
 };
 

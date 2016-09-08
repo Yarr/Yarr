@@ -7,21 +7,29 @@ PROJECT := yarr_spec.xise
 ISE_CRAP := *.b yarr_summary.html *.tcl yarr.bld yarr.cmd_log *.drc yarr.lso *.ncd yarr.ngc yarr.ngd yarr.ngr yarr.pad yarr.par yarr.pcf yarr.prj yarr.ptwx yarr.stx yarr.syr yarr.twr yarr.twx yarr.gise $(PROJECT).gise yarr.bgn yarr.unroutes yarr.ut yarr.xpi yarr.xst yarr_bitgen.xwbt yarr_envsettings.html yarr_guide.ncd yarr_map.map yarr_map.mrp yarr_map.ncd yarr_map.ngm yarr_map.xrpt yarr_ngdbuild.xrpt yarr_pad.csv yarr_pad.txt yarr_par.xrpt yarr_summary.xml yarr_usage.xml yarr_xst.xrpt usage_statistics_webtalk.html par_usage_statistics.html webtalk.log webtalk_pn.xml run.tcl
 
 #target for performing local synthesis
-local: syn_pre_cmd check_tool
+local: syn_pre_cmd check_tool generate_tcl synthesis syn_post_cmd
+
+generate_tcl:
 		echo "project open $(PROJECT)" > run.tcl
-		echo "process run {Generate Programming File} -force rerun_all" >> run.tcl
+		echo "process run {Synthesize - XST}" >> run.tcl
+		echo "process run {Translate}" >> run.tcl
+		echo "process run {Map}" >> run.tcl
+		echo "process run {Place & Route}" >> run.tcl
+		echo "process run {Generate Programming File}" >> run.tcl
+
+synthesis:
 		/opt/Xilinx/14.7/ISE_DS/ISE/bin/lin64/xtclsh run.tcl
 
 check_tool:
 		
 
-syn_post_cmd: local
+syn_post_cmd:
 		
 
 syn_pre_cmd:
 		
 
-#target for cleaing all intermediate stuff
+#target for cleaning all intermediate stuff
 clean:
 		rm -f $(ISE_CRAP)
 		rm -rf xst xlnx_auto_*_xdb iseconfig _xmsgs _ngo
@@ -30,103 +38,103 @@ clean:
 mrproper:
 		rm -f *.bit *.bin *.mcs
 
-.PHONY: mrproper clean syn_pre_scipt syn_post_cmd local check_tool
+.PHONY: mrproper clean syn_pre_cmd syn_post_cmd synthesis local check_tool
 
-USER:=$(HDLMAKE_RSYNTH_USER)#take the value from the environment
-SERVER:=$(HDLMAKE_RSYNTH_SERVER)#take the value from the environment
+USER:=$(HDLMAKE_RSYNTH_USER)# take the value from the environment
+SERVER:=$(HDLMAKE_RSYNTH_SERVER)# take the value from the environment
 ISE_PATH:=$(HDLMAKE_RSYNTH_ISE_PATH)
 R_NAME:=theim/yarr_spec
 PORT:=22
 
 __test_for_remote_synthesis_variables:
 ifeq (x$(USER),x)
-	@echo "Remote synthesis user is not set.You can set it by editing variable USER in the makefile or setting env. variable HDLMAKE_RSYNTH_USER." && false
+	@echo "Remote synthesis user is not set. You can set it by editing variable USER in the makefile or setting env. variable HDLMAKE_RSYNTH_USER." && false
 endif
 ifeq (x$(SERVER),x)
-	@echo "Remote synthesis server is not set.You can set it by editing variable SERVER in the makefile or setting env. variable HDLMAKE_RSYNTH_SERVER." && false
+	@echo "Remote synthesis server is not set. You can set it by editing variable SERVER in the makefile or setting env. variable HDLMAKE_RSYNTH_SERVER." && false
 endif
 ifeq (x$(ISE_PATH),x)
-	@echo "Remote synthesis server is not set.You can set it by editing variable ISE_PATH in the makefile or setting env. variable HDLMAKE_RSYNTH_ISE_PATH." && false
+	@echo "Remote synthesis server is not set. You can set it by editing variable ISE_PATH in the makefile or setting env. variable HDLMAKE_RSYNTH_ISE_PATH." && false
 endif
 
 CWD := $(shell pwd)
 
-FILES := ../ip_cores/ila.vhd \
-../gn4124-core/dma_controller_wb_slave.vhd \
-../ip_cores/l2p_fifo.vhd \
-../ip_cores/rx_bridge_ctrl_fifo.vhd \
-../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/mcb_soft_calibration.vhd \
-../common/wb_addr_decoder.vhd \
-../rx-core/data_alignment.vhd \
-../tx-core/trigger_unit.vhd \
-../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/mcb_raw_wrapper.vhd \
-yarr_spec.xise \
-../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/iodrp_mcb_controller.vhd \
-../rx-core/cdr_serdes.vhd \
-../tx-core/serial_port.vhd \
-../ip_cores/l2p_fifo.ngc \
-../tx-core/tx_channel.vhd \
-../rx-core/decode_8b10b/decode_8b10b_rtl.vhd \
-../ddr3-core/ddr3_ctrl_wrapper.vhd \
-../gn4124-core/dma_controller.vhd \
-../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/mcb_soft_calibration_top.vhd \
-../gn4124-core/spartan6/serdes_1_to_n_clk_pll_s2_diff.vhd \
-../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/memc3_wrapper.vhd \
+FILES := ../tx-core/wb_tx_core.vhd \
 ../common/rr_arbiter.vhd \
-../rx-core/wb_rx_core.vhd \
-../ddr3-core/ddr3_ctrl.vhd \
-../rx-core/decode_8b10b/decode_8b10b_lut.vhd \
-../gn4124-core/spartan6/serdes_n_to_1_s2_diff.vhd \
+../gn4124-core/spartan6/p2l_des.vhd \
+../gn4124-core/spartan6/gn4124_core_pkg.vhd \
 ../ip_cores/rx_channel_fifo.ngc \
-../ip_cores/rx_bridge_fifo.ngc \
+../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/mcb_soft_calibration.vhd \
+../ip_cores/ila.ngc \
+../ip_cores/l2p_fifo.vhd \
+../tx-core/trigger_unit.vhd \
+../rx-core/decode_8b10b/decode_8b10b_bram.vhd \
+../yarr_spec_quad_fei4_revB.ucf \
+../rx-core/decode_8b10b/decode_8b10b_lut.vhd \
+../gn4124-core/l2p_arbiter.vhd \
+../ip_cores/ila.vhd \
+../rx-core/data_alignment.vhd \
+../rx-core/decode_8b10b/decode_8b10b_lut_base.vhd \
+../ip_cores/ila_icon.vhd \
+../tx-core/tx_channel.vhd \
+../rx-core/fei4_rx_channel.vhd \
+../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/mcb_raw_wrapper.vhd \
+../gn4124-core/spartan6/l2p_ser.vhd \
+../common/dummy_stat_regs.vhd \
+../common/generic_async_fifo_wrapper.vhd \
+../common/common_pkg.vhd \
+../rx-core/decode_8b10b/decode_8b10b_wrapper.vhd \
+../gn4124-core/spartan6/gn4124_core.vhd \
+../ddr3-core/ddr3_ctrl_wb.vhd \
+yarr_spec.xise \
+../common/dummy_ctrl_regs.vhd \
+../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/memc3_infrastructure.vhd \
+../ip_cores/ila_icon.ngc \
+../rx-core/decode_8b10b/decode_8b10b_rtl.vhd \
+../rx-core/decode_8b10b/decode_8b10b_top.vhd \
+../gn4124-core/wbmaster32.vhd \
+../rx-core/decode_8b10b/decode_8b10b_disp.vhd \
+../rx-core/wb_rx_core.vhd \
+run.tcl \
+../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/mcb_soft_calibration_top.vhd \
+../ddr3-core/ddr3_ctrl_wrapper.vhd \
 ../ip_cores/rx_bridge_fifo.vhd \
 ../ip_cores/rx_bridge_ctrl_fifo.ngc \
-../tx-core/wb_tx_core.vhd \
-../ip_cores/clk_gen.vhd \
-../yarr_spec_quad_fei4_revB.ucf \
-run.tcl \
-../ddr3-core/ddr3_ctrl_wb.vhd \
-../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/memc3_infrastructure.vhd \
-../ip_cores/fifo_32x512.ngc \
-../common/generic_async_fifo_wrapper.vhd \
-../ip_cores/fifo_32x512.vhd \
-../rx-core/decode_8b10b/decode_8b10b_lut_base.vhd \
-../ip_cores/rx_channel_fifo.vhd \
-../gn4124-core/spartan6/gn4124_core_pkg.vhd \
-../gn4124-core/spartan6/p2l_des.vhd \
-../gn4124-core/l2p_dma_master.vhd \
-../common/dummy_ctrl_regs.vhd \
-../gn4124-core/l2p_arbiter.vhd \
-../ddr3-core/ddr3_ctrl_pkg.vhd \
+../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/iodrp_mcb_controller.vhd \
 ../gn4124-core/spartan6/serdes_n_to_1_s2_se.vhd \
-../gn4124-core/spartan6/serdes_1_to_n_data_s2_se.vhd \
-../gn4124-core/wbmaster32.vhd \
-../gn4124-core/spartan6/pulse_sync_rtl.vhd \
-../rx-core/decode_8b10b/decode_8b10b_top.vhd \
-../gn4124-core/spartan6/gn4124_core.vhd \
-../ip_cores/ila_icon.ngc \
-../ip_cores/fifo_64x512.ngc \
-../gn4124-core/p2l_dma_master.vhd \
-../rx-core/wb_rx_bridge.vhd \
-../ip_cores/ila.ngc \
-../gn4124-core/p2l_decode32.vhd \
+../ip_cores/clk_gen.vhd \
 ../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/iodrp_controller.vhd \
-../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/ddr3_ctrl_spec_bank3_32b_32b.vhd \
+../rx-core/cdr_serdes.vhd \
+../ip_cores/rx_channel_fifo.vhd \
 ../rx-core/decode_8b10b/decode_8b10b_pkg.vhd \
-../rx-core/decode_8b10b/decode_8b10b_wrapper.vhd \
-../rx-core/decode_8b10b/decode_8b10b_disp.vhd \
+../ddr3-core/ddr3_ctrl.vhd \
+../ip_cores/rx_bridge_fifo.ngc \
+../gn4124-core/l2p_dma_master.vhd \
+../ip_cores/fifo_32x512.vhd \
+../ip_cores/rx_bridge_ctrl_fifo.vhd \
+../gn4124-core/spartan6/serdes_1_to_n_data_s2_se.vhd \
+../common/wb_addr_decoder.vhd \
+../ddr3-core/ddr3_ctrl_pkg.vhd \
+../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/ddr3_ctrl_spec_bank3_32b_32b.vhd \
+../ip_cores/l2p_fifo.ngc \
+../rx-core/wb_rx_bridge.vhd \
 ../ip_cores/fifo_64x512.vhd \
-../ddr3-core/ddr3_ctrl_wrapper_pkg.vhd \
-../gn4124-core/spartan6/l2p_ser.vhd \
-../rx-core/decode_8b10b/decode_8b10b_bram.vhd \
-../common/dummy_stat_regs.vhd \
+../ip_cores/fifo_32x512.ngc \
 ../top_yarr_spec.vhd \
-../rx-core/fei4_rx_channel.vhd \
-../ip_cores/ila_icon.vhd \
-../common/common_pkg.vhd
+../ip_cores/fifo_64x512.ngc \
+../ddr3-core/ddr3_ctrl_wrapper_pkg.vhd \
+../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/memc3_wrapper.vhd \
+../gn4124-core/spartan6/serdes_n_to_1_s2_diff.vhd \
+../gn4124-core/p2l_decode32.vhd \
+../tx-core/serial_port.vhd \
+../gn4124-core/dma_controller_wb_slave.vhd \
+../gn4124-core/dma_controller.vhd \
+../gn4124-core/spartan6/serdes_1_to_n_clk_pll_s2_diff.vhd \
+../gn4124-core/p2l_dma_master.vhd \
+../gn4124-core/spartan6/pulse_sync_rtl.vhd
 
 #target for running synthesis in the remote location
-remote: __test_for_remote_synthesis_variables __send __do_synthesis
+remote: __test_for_remote_synthesis_variables generate_tcl __send __do_synthesis
 __send_back: __do_synthesis
 __do_synthesis: __send
 __send: __test_for_remote_synthesis_variables

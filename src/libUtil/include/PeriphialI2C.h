@@ -59,7 +59,7 @@ class PeriphialI2C {
         SpecController *spec;
         uint32_t last_dev_addr;
         uint32_t last_reg_addr;
-        uint32_t last_rw;
+        //uint32_t last_rw;
         int checkTip();
 };
 
