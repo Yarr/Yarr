@@ -91,17 +91,9 @@ TARGETS = $(patsubst $(SRC)/%.cpp,$(BIN)/%,$(SRC_FILES))
 ######
 ##  Targets
 
-all: util fei4 fe65p2 spec yarr $(TARGETS)
+all: yarrlib $(TARGETS)
 
-spec: $(LLIB)/libspec.a
-
-yarr: $(LLIB)/libyarr.a
-
-fei4: $(LLIB)/libfei4.a
-
-fe65p2: $(LLIB)/libfe65p2.a
-
-util: $(LLIB)/libutil.a
+yarrlib: $(LLIB)/libyarr.a
 
 help:
 	@echo # Use 'make' to create all programs
@@ -142,25 +134,10 @@ $(BIN)/%: $(BUILD)/%.o $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(U
 	@$(LD) $(LDFLAGS) $< $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS) $(LIBS) -o $@
 
 # Libs
-$(LLIB)/libyarr.a: $(YARR_OBJS)
-	@echo [Creating] $@
-	@$(AR) rcs $@ $(YARR_OBJS)
 
-$(LLIB)/libfei4.a: $(FEI4_OBJS)
+$(LLIB)/libyarr.a: $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(UTIL_OBJS)
 	@echo [Creating] $@
-	@$(AR) rcs $@ $(FEI4_OBJS)
-
-$(LLIB)/libfe65p2.a: $(FE65P2_OBJS)
-	@echo [Creating] $@
-	@$(AR) rcs $@ $(FE65P2_OBJS)
-
-$(LLIB)/libspec.a: $(SPEC_OBJS)
-	@echo [Creating] $@
-	@$(AR) rcs $@ $(SPEC_OBJS)
-
-$(LLIB)/libutil.a: $(UTIL_OBJS)
-	@echo [Creating] $@
-	@$(AR) rcs $@ $(UTIL_OBJS)
+	@$(AR) rcs $@ $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(UTIL_OBJS)
 
 -include $(ALL_DEPS)
 

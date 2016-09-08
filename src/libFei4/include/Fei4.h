@@ -76,6 +76,7 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
                 return getValue(ref);
             }
 
+        void wrGR16(unsigned int mOffset, unsigned int bOffset, unsigned int mask, bool msbRight, uint16_t cfgBits);
     private:
 
 };

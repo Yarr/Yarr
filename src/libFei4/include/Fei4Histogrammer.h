@@ -71,6 +71,8 @@ class Fei4Histogrammer : public DataProcessor {
                 algorithms[i]->setMapSize(col, row);
             }
         }
+        
+        void clearHistogrammers();
 
         void init();
         void process();

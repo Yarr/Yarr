@@ -106,8 +106,8 @@ void SpecDevice::open()
 		throw Exception( Exception::OPEN_FAILED );
 		
 	handle = ret;
-    
-    //if (fcntl(handle, F_GETLK, &filelock))					
+
+    //if (fcntl(handle, F_GETLK, &filelock))
     //throw Exception( Exception::LOCK_FAILED );
     //filelock.l_type = F_RDLCK | F_WRLCK;
     //if (fcntl(handle, F_SETLK, &filelock))
@@ -124,8 +124,10 @@ void SpecDevice::close()
 {
 	// do nothing, pass silently if closing a non-opened device.
 	if (handle != -1) {
+        // Unlock
         filelock.l_type = F_UNLCK;
         fcntl(handle, F_UNLCK, &filelock);
+        // Close device
 		::close(handle);
     }
 	

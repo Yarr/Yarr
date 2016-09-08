@@ -99,12 +99,12 @@ int checkBitFile(std::fstream &file) {
         return 1;
     }
     
-    delete field1;
-    delete field2;
-    delete field3;
-    delete field4;
-    delete field5;
-    delete field6;
+    delete[] field1;
+    delete[] field2;
+    delete[] field3;
+    delete[] field4;
+    delete[] field5;
+    delete[] field6;
     return 0;
 }
 

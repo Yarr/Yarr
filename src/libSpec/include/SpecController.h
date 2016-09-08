@@ -56,7 +56,14 @@ using namespace specDriver;
 class SpecController {
     public:
         SpecController(unsigned int id);
+        SpecController();
         ~SpecController();
+
+        bool isInitialized();
+        int getId();
+        int getBarSize(unsigned int bar);
+
+        void init(unsigned int id);
 
         void writeSingle(uint32_t off, uint32_t val);
         uint32_t readSingle(uint32_t off);
@@ -78,6 +85,7 @@ class SpecController {
 
     private:
         unsigned int specId;
+        bool is_initialized;
         SpecDevice *spec;
         void *bar0, *bar4;
 

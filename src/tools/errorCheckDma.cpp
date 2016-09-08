@@ -83,8 +83,8 @@ int main (void) {
         off += size;
         off = off%0x10000000;
 
-        delete sample;
-        delete readBack;
+        delete[] sample;
+        delete[] readBack;
         if (counter > 0)
             return 0;
         //sleep(1); // for chipscope
