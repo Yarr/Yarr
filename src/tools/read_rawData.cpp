@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
         int old_l1id = -1;
         while (file) {
             int now = file.tellg();
-            std::cout << "\r" << (double)now/(double)size*100 << "%                    " << std::flush;
+            //std::cout << "\r" << (double)now/(double)size*100 << "%                    " << std::flush;
             Fei4Event event;
             event.fromFileBinary(file);
             if (!file)
@@ -112,15 +112,19 @@ int main(int argc, char* argv[]) {
 
             }
             if (event.clusters.size() > 0 && plotIt < 10) {
-                if (nonZero_cnt%10 == 0 && eventScreen != NULL) {
-                    eventScreen->plot(std::to_string(plotIt));
+                if (nonZero_cnt%50 == 0 && eventScreen != NULL) {
+                    //eventScreen->plot(std::to_string(plotIt));
                     plotIt++;
                     delete eventScreen;
                     eventScreen = NULL;
                 }
 
-                if (eventScreen == NULL)
+                if (eventScreen == NULL) {
                     eventScreen = new Histo2d((std::to_string(nonZero_cnt) + "-eventScreen"), 64, 0.5, 64.5, 64, 0.5, 64.5, typeid(void));
+                    eventScreen->setXaxisTitle("Column");
+                    eventScreen->setYaxisTitle("Row");
+                    eventScreen->setZaxisTitle("ToT");
+                }
 
                 for (unsigned i=0; i<event.nHits; i++) {
                     eventScreen->fill(event.hits[i].col, event.hits[i].row, event.hits[i].tot);
@@ -135,7 +139,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Numer of trigger: " << trigger << std::endl;
     }
 
-
+/*
     bcid.plot("offline");
     l1id.plot("offline");
     bcidDiff.plot("offline");
@@ -152,6 +156,6 @@ int main(int argc, char* argv[]) {
     std::cout << "BCIDdiff entries: " << bcidDiff.getEntries() << std::endl;
     std::cout << "Number of clusters: " << clustersPerEvent.getEntries() << std::endl;
     std::cout << "Number of events: " << hitsPerEvent.getEntries() << std::endl;
-
+    */
     return 0;
 }

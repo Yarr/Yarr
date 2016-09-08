@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
             while(!tx.isCmdEmpty());
         }
         for (unsigned j=0; j<256; j++) {
-            if (cfg["FE65-P2"]["PixelConfig"][(i*4)+(j/64)]["PixConf"][j%64] <= 1) {
+            if ((int) cfg["FE65-P2"]["PixelConfig"][(i*4)+(j/64)]["PixConf"][j%64] <= 1) {
 		enMask.setBin(enMask.binNum((i*4)+(j/64)+1, (j%64)+1), 0);
                 continue;
 	    }
