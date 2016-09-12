@@ -1,6 +1,7 @@
 #ifndef YARRGUI_H
 #define YARRGUI_H
 
+
 #include <QApplication>
 #include <QColor>
 #include <QDir>
@@ -31,6 +32,8 @@
 #include <unistd.h>
 #include <vector>
 
+#include <BitFile.h>
+#include <BenchmarkTools.h>
 #include "qdebugstream.h"
 #include "SpecController.h"
 #include "benchmarkdialog.h"

@@ -57,5 +57,6 @@ INCLUDEPATH += ../../src/libSpec/include
 INCLUDEPATH += ../../src/libUtil/include
 INCLUDEPATH += ../../src/libYarr/include
 INCLUDEPATH += ../../src/libFei4/include
+INCLUDEPATH += ../../src/libFe65p2/include
 
 LIBS += -L../../src/lib -lyarr
