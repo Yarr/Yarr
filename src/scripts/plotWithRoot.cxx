@@ -25,8 +25,11 @@ int main(int argc, char *argv[]) {
         double xhigh, yhigh;
         int underflow, overflow;
 
-        infile >> type >> name;
-        infile >> xaxistitle >> yaxistitle >> zaxistitle;
+        std::getline(infile, type);
+        std::getline(infile, name);
+        std::getline(infile, xaxistitle);
+        std::getline(infile, yaxistitle);
+        std::getline(infile, zaxistitle);
         infile >> xbins >> xlow >> xhigh;
 
         if (type == "Histo2d") {
@@ -35,25 +38,24 @@ int main(int argc, char *argv[]) {
 
         infile >> underflow >> overflow;
 
-        if (!infile) {
-            std::cout << "Something wrong with file ..." << std::endl;
-            return -1;
-        }
-
         std::cout << "Histogram type: " << type << std::endl;
         std::cout << "Histogram name: " << name << std::endl;
         std::cout << "X axis title: " << xaxistitle << std::endl;
         std::cout << "Y axis title: " << yaxistitle << std::endl;
         std::cout << "Z axis title: " << zaxistitle << std::endl;
 
+        if (!infile) {
+            std::cout << "Something wrong with file ..." << std::endl;
+            return -1;
+        }
 
         TCanvas *c = new TCanvas("c", "c", 800, 600);
         TH1 *h;
         if (type == "Histo2d") {
             h = (TH1*) new TH2F(name.c_str(), name.c_str(), xbins, xlow, xhigh, ybins, ylow, yhigh);
             h->SetStats(0);
-            for (unsigned i=0; i<ybins; i++) {
-                for (unsigned j=0; j<xbins; j++) {
+            for (int i=0; i<ybins; i++) {
+                for (int j=0; j<xbins; j++) {
                     double tmp;
                     infile >> tmp;
                     h->SetBinContent(j+1, i+1, tmp);
