@@ -60,7 +60,7 @@ void Fei4DataProcessor::process() {
             for (unsigned i=0; i<words; i++) {
                 uint32_t value = curIn->buf[i];
                 uint32_t header = ((value & 0x00FF0000) >> 16);
-                unsigned channel = ((value & 0xFF000000) >> 24);
+                unsigned channel = ((value & 0xFC000000) >> 26);
                 wordCount[channel]++;
                 if (__builtin_expect((value == 0xDEADBEEF), 0)) {
                     std::cout << "# ERROR # " << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << curIn->words << " " << std::hex << value << " " << std::dec << std::endl;

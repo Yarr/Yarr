@@ -87,7 +87,7 @@ architecture behavioral of wb_rx_core is
 			-- Input
 			rx_data_i : in std_logic;
 			-- Output
-			rx_data_o : out std_logic_vector(23 downto 0);
+			rx_data_o : out std_logic_vector(25 downto 0);
 			rx_valid_o : out std_logic;
 			rx_stat_o : out std_logic_vector(7 downto 0);
 			rx_data_raw_o : out std_logic_vector(7 downto 0)
@@ -108,7 +108,7 @@ architecture behavioral of wb_rx_core is
 		);
 	END COMPONENT;
 	
-	type rx_data_array is array (g_NUM_RX-1 downto 0) of std_logic_vector(23 downto 0);
+	type rx_data_array is array (g_NUM_RX-1 downto 0) of std_logic_vector(25 downto 0);
 	type rx_data_fifo_array is array (g_NUM_RX-1 downto 0) of std_logic_vector(31 downto 0);
 	type rx_stat_array is array (g_NUM_RX-1 downto 0) of std_logic_vector(7 downto 0);
 	signal rx_data : rx_data_array;
@@ -213,7 +213,7 @@ begin
 			rx_data_raw_o => rx_data_raw(I)
 		);
 		
-		rx_fifo_din(I) <= STD_LOGIC_VECTOR(TO_UNSIGNED(I,8)) & rx_data(I);
+		rx_fifo_din(I) <= STD_LOGIC_VECTOR(TO_UNSIGNED(I,6)) & rx_data(I);
 		rx_fifo_wren(I) <= rx_valid(I) and rx_enable(I);
 		cmp_rx_channel_fifo : rx_channel_fifo PORT MAP (
 			rst => not rst_n_i,

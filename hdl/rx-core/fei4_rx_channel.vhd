@@ -26,7 +26,7 @@ entity fei4_rx_channel is
 		rx_data_i : in std_logic;
 		
 		-- Output
-		rx_data_o : out std_logic_vector(23 downto 0);
+		rx_data_o : out std_logic_vector(25 downto 0);
 		rx_valid_o : out std_logic;
 		rx_stat_o : out std_logic_vector(7 downto 0);
 		rx_data_raw_o : out std_logic_vector(7 downto 0)
@@ -106,7 +106,7 @@ architecture behavioral of fei4_rx_channel is
 	
 	signal data_fram_cnt : unsigned(1 downto 0);
 	signal data_frame_flag : std_logic;
-	signal data_frame_value : std_logic_vector(23 downto 0);
+	signal data_frame_value : std_logic_vector(25 downto 0);
 	signal data_frame_valid : std_logic;
 	
 	signal status : std_logic_vector(7 downto 0);
@@ -156,6 +156,7 @@ begin
 			
 			-- Build Frame
 			if (data_frame_flag = '1' and data_dec_valid = '1' and data_dec_kchar = '0' ) then
+                data_frame_value(25 downto 24) <= "00"; -- no special code
 				data_frame_value(23 downto 16) <= data_frame_value(15 downto 8);
 				data_frame_value(15 downto 8) <= data_frame_value(7 downto 0);
 				data_frame_value(7 downto 0) <= data_dec_value;

@@ -55,7 +55,9 @@ void Fe65p2DataProcessor::process() {
             unsigned words = curIn->words;
             for (unsigned i=0; i<words; i++) {
                 uint32_t value = curIn->buf[i];
-                unsigned channel = ((value & 0xFF000000) >> 24);
+                unsigned channel = ((value & 0xFC000000) >> 26);
+                unsigned type = ((value &0x03000000) >> 24);
+                std::cout << type << std::endl;
                 wordCount[channel]++;
                 if (__builtin_expect((value == 0xDEADBEEF), 0)) {
                     std::cout << "# ERROR # " << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << curIn->words << " " << std::hex << value << " " << std::dec << std::endl;
