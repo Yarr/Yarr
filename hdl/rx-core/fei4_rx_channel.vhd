@@ -24,6 +24,7 @@ entity fei4_rx_channel is
 		
 		-- Input
 		rx_data_i : in std_logic;
+        trig_tag_i : in std_logic_vector(31 downto 0);
 		
 		-- Output
 		rx_data_o : out std_logic_vector(25 downto 0);
@@ -132,14 +133,7 @@ begin
 			data_frame_flag <= '0';
 			data_frame_value <= (others => '0');
 			data_frame_valid <= '0';
-		elsif rising_edge(clk_160_i) then
-			-- Mark Start and End of Frame
-			if (data_dec_valid = '1' and data_dec_kchar = '1' and data_dec_value = c_SOF and data_enc_sync = '1') then
-				data_frame_flag <= '1';
-			elsif (data_dec_valid = '1' and data_dec_kchar = '1' and (data_dec_value = c_EOF or data_dec_value = c_IDLE)) then
-				data_frame_flag <= '0';
-			end if;
-			
+		elsif rising_edge(clk_160_i) then	
 			-- Count bytes
 			if (data_frame_flag = '1' and data_dec_valid = '1' and data_fram_cnt = 2) then
 				data_fram_cnt <= (others => '0');
@@ -154,6 +148,16 @@ begin
 				data_frame_valid <= '0';
 			end if;
 			
+            -- Mark Start and End of Frame
+			if (data_dec_valid = '1' and data_dec_kchar = '1' and data_dec_value = c_SOF and data_enc_sync = '1') then
+				data_frame_flag <= '1';
+                data_frame_value(25 downto 24) <= "01"; -- tag code
+                data_frame_value(23 downto 0) <= trig_tag_i(23 downto 0);
+                data_frame_valid <= '1';
+			elsif (data_dec_valid = '1' and data_dec_kchar = '1' and (data_dec_value = c_EOF or data_dec_value = c_IDLE)) then
+				data_frame_flag <= '0';
+			end if;
+            
 			-- Build Frame
 			if (data_frame_flag = '1' and data_dec_valid = '1' and data_dec_kchar = '0' ) then
                 data_frame_value(25 downto 24) <= "00"; -- no special code

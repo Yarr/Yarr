@@ -351,7 +351,8 @@ architecture rtl of yarr is
             -- RX IN
              rx_clk_i	: in  std_logic;
              rx_serdes_clk_i : in std_logic;
-             rx_data_i	: in std_logic_vector(g_NUM_RX-1 downto 0);	
+             rx_data_i	: in std_logic_vector(g_NUM_RX-1 downto 0);
+             trig_tag_i : in std_logic_vector(31 downto 0);
             -- RX OUT (sync to sys_clk)
              rx_valid_o : out std_logic;
              rx_data_o : out std_logic_vector(31 downto 0);
@@ -411,6 +412,42 @@ architecture rtl of yarr is
                  scl      : inout std_logic;
                  sda      : inout std_logic
              );
+    end component;
+    
+    component wb_trigger_logic
+        port (
+            -- Sys connect
+            wb_clk_i	: in  std_logic;
+            rst_n_i		: in  std_logic;
+            
+            -- Wishbone slave interface
+            wb_adr_i	: in  std_logic_vector(31 downto 0);
+            wb_dat_i	: in  std_logic_vector(31 downto 0);
+            wb_dat_o	: out std_logic_vector(31 downto 0);
+            wb_cyc_i	: in  std_logic;
+            wb_stb_i	: in  std_logic;
+            wb_we_i		: in  std_logic;
+            wb_ack_o	: out std_logic;
+            
+            -- To/From outside world
+            ext_trig_i : in std_logic_vector(3 downto 0);
+            ext_trig_o : out std_logic;
+            ext_busy_i : in std_logic;
+            ext_busy_o : out std_logic;
+
+            -- Eudet TLU
+            eudet_clk_o : out std_logic;
+            eudet_busy_o : out std_logic;
+            eudet_trig_i : in std_logic;
+            eudet_rst_i : in std_logic;
+
+            -- To/From inside world
+            clk_i : in std_logic;
+            int_trig_i : in std_logic_vector(3 downto 0);
+            int_trig_o : out std_logic;
+            int_busy_i : in std_logic;
+            trig_tag : out std_logic_vector(31 downto 0)
+        );
     end component;
 
     component ddr3_ctrl
@@ -750,6 +787,10 @@ architecture rtl of yarr is
   -- I2C
     signal scl_t : std_logic;
     signal sda_t : std_logic;
+    
+  -- Trigger logic
+  signal int_busy_t : std_logic;
+  signal trig_tag_t : std_logic_vector(31 downto 0);
 
   -- FOR TESTS
     signal debug       : std_logic_vector(31 downto 0);
@@ -1078,6 +1119,7 @@ begin
                                            rx_data_i => fe_data_i,
                                            rx_valid_o => rx_valid,
                                            rx_data_o => rx_data,
+                                           trig_tag_i => trig_tag_t,
                                            busy_o => open,
                                            debug_o => debug
                                        );
@@ -1133,6 +1175,31 @@ begin
                  scl => open,
                  sda => open
              );
+             
+	cmp_wb_trigger_logic: wb_trigger_logic PORT MAP(
+		wb_clk_i => sys_clk,
+		rst_n_i => rst_n,
+		wb_adr_i => wb_adr(31 downto 0),
+		wb_dat_i => wb_dat_o(31 downto 0),
+		wb_dat_o => wb_dat_i(191 downto 160),
+		wb_cyc_i => wb_cyc(5),
+		wb_stb_i => wb_stb,
+		wb_we_i => wb_we,
+		wb_ack_o => wb_ack(5),
+		ext_trig_i => "0000",
+		ext_trig_o => open,
+		ext_busy_i => '0',
+		ext_busy_o => open,
+		eudet_clk_o => open,
+		eudet_busy_o => open,
+		eudet_trig_i => '0',
+		eudet_rst_i => '0',
+		clk_i => CLK_40,
+		int_trig_i => "000" & trig_pulse,
+		int_trig_o => open,
+		int_busy_i => '0',
+		trig_tag => trig_tag_t
+	);
 
 
   --wb_stall(1) <= '0' when wb_cyc(1) = '0' else not(wb_ack(1));

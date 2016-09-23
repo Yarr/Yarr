@@ -37,6 +37,7 @@ entity wb_rx_core is
 		rx_clk_i	: in  std_logic;
 		rx_serdes_clk_i : in std_logic;
 		rx_data_i	: in std_logic_vector(g_NUM_RX-1 downto 0);
+        trig_tag_i : in std_logic_vector(31 downto 0);
 		
 		-- RX OUT (sync to sys_clk)
 		rx_valid_o : out std_logic;
@@ -86,6 +87,7 @@ architecture behavioral of wb_rx_core is
 			enable_i : in std_logic;
 			-- Input
 			rx_data_i : in std_logic;
+            trig_tag_i : in std_logic_vector(31 downto 0);
 			-- Output
 			rx_data_o : out std_logic_vector(25 downto 0);
 			rx_valid_o : out std_logic;
@@ -207,6 +209,7 @@ begin
 			clk_640_i => rx_serdes_clk_i,
 			enable_i => rx_enable(I),
 			rx_data_i => rx_data_i(I),
+            trig_tag_i => trig_tag_i,
 			rx_data_o => rx_data(I),
 			rx_valid_o => rx_valid(I),
 			rx_stat_o => rx_stat(I),
