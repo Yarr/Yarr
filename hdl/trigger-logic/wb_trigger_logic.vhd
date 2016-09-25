@@ -66,7 +66,29 @@ architecture rtl of wb_trigger_logic is
             sync_out : out std_logic
         );
     end component;
+    
+    component eudet_tlu
+        port (
+            -- Sys connect
+            clk_i : IN std_logic;
+            rst_n_i : IN std_logic;
             
+            -- Eudet signals
+            eudet_trig_i : IN std_logic;
+            eudet_rst_i : IN std_logic;
+            eudet_busy_o : OUT std_logic;
+            eudet_clk_o : OUT std_logic;
+
+            -- From logic
+            busy_i : IN std_logic;
+            simple_mode_i : IN std_logic;
+            -- To logic
+            trig_o : OUT std_logic;
+            rst_o : OUT std_logic;
+            trig_tag_o : OUT std_logic_vector(15 downto 0)
+        );
+    end component;
+
     -- Registers
     signal trig_mask : std_logic_vector(31 downto 0);
     signal trig_tag_mode : std_logic_vector(7 downto 0);
@@ -93,8 +115,8 @@ begin
         if (rst_n_i = '0') then
             wb_dat_o <= (others => '0');
             wb_ack_o <= '0';
-            trig_mask <= x"00000010";
-            trig_tag_mode <= (others => '0');
+            trig_mask <= x"00000010"; -- auto enable internal
+            trig_tag_mode <= x"01";
         elsif rising_edge(wb_clk_i) then
             wb_ack_o <= '0';
             wb_dat_o <= (others => '0');
@@ -207,4 +229,19 @@ begin
             end if;
         end if;
     end process out_proc;
+
+    cmp_eudet_tlu: eudet_tlu
+    port map (
+        clk_i => clk_i,
+        rst_n_i => rst_n_i,
+        eudet_trig_i => eudet_trig_i,
+        eudet_rst_i => eudet_rst_i,
+        eudet_busy_o => eudet_busy_o,
+        eudet_clk_o => eudet_clk_o,
+        busy_i => '0',
+        simple_mode_i => '0',
+        trig_o => eudet_trig_t,
+        rst_o => open,
+        trig_tag_o => eudet_trig_tag_t
+    );
 end rtl;
