@@ -135,7 +135,17 @@ entity yarr is
 		  HIT_OR_P : in std_logic;
 		  HIT_OR_N : in std_logic;
 		  OUT_DATA_P : in std_logic;
-		  OUT_DATA_N : in std_logic
+		  OUT_DATA_N : in std_logic;
+          EXT_4_P : out std_logic;
+          EXT_4_N : out std_logic;
+          EXT_3_P : in std_logic;
+          EXT_3_N : in std_logic;
+          EXT_2_P : out std_logic;
+          EXT_2_N : out std_logic;
+          EXT_1_P : in std_logic;
+          EXT_1_N : in std_logic;
+          IO_0 : in std_logic;
+          IO_1 : in std_logic
     );
 end yarr;
 
@@ -792,6 +802,10 @@ architecture rtl of yarr is
   signal int_busy_t : std_logic;
   signal trig_tag_t : std_logic_vector(31 downto 0);
   signal int_trig_t : std_logic;
+  signal eudet_trig_t : std_logic;
+  signal eudet_clk_t : std_logic;
+  signal eudet_rst_t : std_logic;
+  signal eudet_busy_t : std_logic;
 
   -- FOR TESTS
     signal debug       : std_logic_vector(31 downto 0);
@@ -867,10 +881,14 @@ begin
    en_pix_sr_cnfg_buf : OBUFDS port map (O => en_pix_sr_cnfg_n, OB => en_pix_sr_cnfg_p, I => not en_pix_sr_cnfg_t); -- inv
    rst_1_buf : OBUFDS port map (O => rst_1_n, OB => rst_1_p, I => not rst_1_t); --inv
    si_cnfg_buf : OBUFDS port map (O => si_cnfg_p, OB => si_cnfg_n, I => si_cnfg_t);
+   eudet_clk_buf : OBUFDS port map (O => EXT_4_P, OB => EXT_4_N, I => eudet_clk_t);
+   eudet_busy_buf : OBUFDS port map (O => EXT_2_P, OB => EXT_2_N, I => eudet_busy_t);
 	
    so_cnfg_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => so_cnfg_t, I => so_cnfg_p, IB => so_cnfg_n);
    hit_or_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => hit_or_t, I => hit_or_p, IB => hit_or_n);
    out_data_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => out_data_t, I => out_data_p, IB => out_data_n);
+   eudet_rst_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => eudet_rst_t, I => EXT_3_P, IB => EXT_3_N);
+   eudet_trig_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => eudet_trig_t, I => EXT_1_P, IB => EXT_1_N);
 	
 	fe_data_i(0) <= not out_data_t;
 	
@@ -1191,10 +1209,10 @@ begin
 		ext_trig_o => open,
 		ext_busy_i => '0',
 		ext_busy_o => open,
-		eudet_clk_o => open,
-		eudet_busy_o => open,
-		eudet_trig_i => '0',
-		eudet_rst_i => '0',
+		eudet_clk_o => eudet_clk_t,
+		eudet_busy_o => eudet_busy_t,
+		eudet_trig_i => eudet_trig_t,
+		eudet_rst_i => eudet_rst_t,
 		clk_i => CLK_40,
 		int_trig_i => "000" & trig_pulse,
 		int_trig_o => int_trig_t,

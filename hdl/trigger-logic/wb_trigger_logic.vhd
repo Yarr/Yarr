@@ -107,6 +107,7 @@ architecture rtl of wb_trigger_logic is
     signal eudet_trig_tag_t : std_logic_vector(15 downto 0);
     signal trig_counter : unsigned (31 downto 0);
     signal timestamp_cnt : unsigned(31 downto 0);
+    signal local_reset : std_logic;
     
 begin
     -- WB interface
@@ -122,12 +123,15 @@ begin
             wb_dat_o <= (others => '0');
             if (wb_cyc_i = '1' and wb_stb_i = '1') then
                 wb_ack_o <= '1';
+                local_reset <= '0';
                 if (wb_we_i = '1') then
                     case (wb_adr_i(7 downto 0)) is
                         when x"00" =>
                             trig_mask <= wb_dat_i;
                         when x"01" =>
                             trig_tag_mode <= wb_dat_i(7 downto 0);
+                        when x"FF" =>
+                            local_reset <= '1'; -- Pulse local reset
                         when others =>
                     end case;
                 else
@@ -194,10 +198,17 @@ begin
             timestamp_cnt <= (others => '0');
         elsif rising_edge(clk_i) then
             -- TODO need reset
-            if (master_trig_sel_edge = '1') then
+            if (local_reset = '1') then
+                trig_counter <= (others => '0');    
+            elsif (master_trig_sel_edge = '1') then
                 trig_counter <= trig_counter + 1;
             end if;
-            timestamp_cnt <= timestamp_cnt + 1;
+
+            if (local_reset = '1') then
+                timestamp_cnt <= (others => '0');
+            else
+                timestamp_cnt <= timestamp_cnt + 1;
+            end if;
             
             if (master_trig_sel_edge = '1' and master_busy_t = '0') then
                 case (trig_tag_mode) is
@@ -211,7 +222,6 @@ begin
                         trig_tag <= x"DEADBEEF";
                 end case;
             end if;
-                    
         end if;
     end process trig_tag_proc;
     
