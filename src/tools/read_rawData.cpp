@@ -83,6 +83,7 @@ int main(int argc, char* argv[]) {
             }
             old_l1id = event.l1id;
 
+            std::cout << "Tag: " << event.tag << std::endl;
             if (count==0)
                 other_old_bcid = event.bcid;
 

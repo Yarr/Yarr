@@ -24,6 +24,7 @@ void Fe65p2DataProcessor::init() {
 void Fe65p2DataProcessor::process() {
     unsigned badCnt = 0;
     for (unsigned i=0; i<activeChannels.size(); i++) {
+        tag[activeChannels[i]] = 0;
         l1id[activeChannels[i]] = 0;
         bcid[activeChannels[i]] = 0;
         wordCount[activeChannels[i]] = 0;
@@ -58,8 +59,7 @@ void Fe65p2DataProcessor::process() {
                 unsigned channel = ((value & 0xFC000000) >> 26);
                 unsigned type = ((value &0x03000000) >> 24);
                 if (type == 0x1) {
-                    std::cout << type << std::endl;
-                    std::cout << int(value & 0x00FFFFFF) << std::endl;
+                    tag[channel] = unsigned(value & 0x00FFFFFF);
                 } else {
                     wordCount[channel]++;
                     if (__builtin_expect((value == 0xDEADBEEF), 0)) {
@@ -72,7 +72,7 @@ void Fe65p2DataProcessor::process() {
                             l1id[channel]++; // Iterate L1id when not consecutive bcid
                         }
                         bcid[channel] = (value & 0x007FFFFF);
-                        curOut[channel]->newEvent(l1id[channel], bcid[channel]);
+                        curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
                         events[channel]++;
                     } else {
                         unsigned col  = (value & 0x1e0000) >> 17;
@@ -101,7 +101,7 @@ void Fe65p2DataProcessor::process() {
 
                             if (events[channel] == 0 ) {
                                 std::cout << "# ERROR # " << channel << " no header in data fragment!" << std::endl;
-                                curOut[channel]->newEvent(l1id[channel], bcid[channel]);
+                                curOut[channel]->newEvent(0xDEADBEEF, l1id[channel], bcid[channel]);
                                 events[channel]++;
                                 //hits[channel] = 0;
                             }

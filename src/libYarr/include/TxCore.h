@@ -40,6 +40,17 @@ enum TRIG_CONF_VALUE {
     INT_COUNT = 0x2
 };
 
+// TODO move into its own class
+#define TRIG_LOGIC_ADR (0x5 << 14)
+#define TRIG_LOGIC_MASK 0x0
+#define TRIG_LOGIC_MODE 0x1
+
+enum TRIG_LOGIC_MODE_VALUE { 
+    MODE_L1A_COUNT = 0x0,
+    MODE_TIMESTAMP = 0x1,
+    MODE_EUDET_TAG = 0x2
+};
+
 class TxCore {
     public:
         TxCore(SpecController *arg_spec);
@@ -69,6 +80,15 @@ class TxCore {
         bool isTrigDone();
 
         uint32_t getTrigInCount();
+        
+        // TODO move to own class
+        void setTriggerLogicMask(uint32_t mask) {
+            spec->writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_MASK, mask);
+        };
+        void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) {
+            spec->writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_MODE, (uint32_t) mode);
+        }
+
     private:
         SpecController *spec;
         bool verbose;
