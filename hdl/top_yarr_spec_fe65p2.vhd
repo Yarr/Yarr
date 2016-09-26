@@ -791,6 +791,7 @@ architecture rtl of yarr is
   -- Trigger logic
   signal int_busy_t : std_logic;
   signal trig_tag_t : std_logic_vector(31 downto 0);
+  signal int_trig_t : std_logic;
 
   -- FOR TESTS
     signal debug       : std_logic_vector(31 downto 0);
@@ -1100,7 +1101,7 @@ begin
         tx_clk_i => CLK_40,
         tx_data_o => fe_cmd_o,
         trig_pulse_o => trig_pulse,
-		  ext_trig_i => not hit_or_t
+		  ext_trig_i => int_trig_t
     );
 
     cmp_wb_rx_core: wb_rx_core PORT MAP(
@@ -1186,7 +1187,7 @@ begin
 		wb_stb_i => wb_stb,
 		wb_we_i => wb_we,
 		wb_ack_o => wb_ack(5),
-		ext_trig_i => "0000",
+		ext_trig_i => "000" & not hit_or_t,
 		ext_trig_o => open,
 		ext_busy_i => '0',
 		ext_busy_o => open,
@@ -1196,7 +1197,7 @@ begin
 		eudet_rst_i => '0',
 		clk_i => CLK_40,
 		int_trig_i => "000" & trig_pulse,
-		int_trig_o => open,
+		int_trig_o => int_trig_t,
 		int_busy_i => '0',
 		trig_tag => trig_tag_t
 	);
@@ -1214,8 +1215,8 @@ begin
     led_green_o <= dummy_ctrl_reg_led(1);
 
     --   TRIG0(31 downto 0) <= (others => '0');
-    --	TRIG1(31 downto 0) <= (others => '0');
-    --	TRIG2(31 downto 0) <= (others => '0');
+    	TRIG1(31 downto 0) <= (others => '0');
+    	TRIG2(31 downto 0) <= (others => '0');
     --   TRIG0(12 downto 0) <= (others => '0');
     --TRIG1(31 downto 0) <= rx_dma_dat_o;
     --TRIG1(31 downto 0) <= dma_dat_i;
@@ -1234,13 +1235,13 @@ begin
     --   TRIG0(23) <= irq_out;
     --   TRIG0(24) <= rx_busy;
     --   TRIG0(31 downto 25) <= (others => '0');
-    TRIG0(0) <= rx_valid;
-    TRIG0(1) <= fe_cmd_o(0);
-    TRIG0(2) <= trig_pulse;
-    TRIG0(3) <= fe_cmd_o(0);
-    TRIG0(31 downto 4) <= (others => '0');
-    TRIG1 <= rx_data;
-    TRIG2 <= debug;
+--    TRIG0(0) <= rx_valid;
+--    TRIG0(1) <= fe_cmd_o(0);
+--    TRIG0(2) <= trig_pulse;
+--    TRIG0(3) <= fe_cmd_o(0);
+--    TRIG0(31 downto 4) <= (others => '0');
+--    TRIG1 <= rx_data;
+--    TRIG2 <= debug;
     --		TRIG0(0) <= scl;
     --		TRIG0(1) <= sda;
     --		TRIG0(2) <= wb_stb;
@@ -1248,6 +1249,8 @@ begin
     --		TRIG0(31 downto 4) <= (others => '0');
     --		TRIG1 <= wb_adr;
     --		TRIG2 <= wb_dat_o;
+    TRIG0(14 downto 0) <= trig_tag_t(14 downto 0);
+    TRIG0(15) <= int_trig_t;
 
     ila_i : ila
     port map (

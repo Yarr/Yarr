@@ -3,7 +3,7 @@
 -- # Project: Yarr
 -- # Author: Timon Heim
 -- # E-Mail: timon.heim at cern.ch
--- # Comments: EUDET TLU interface, only smart handshake
+-- # Comments: EUDET TLU interface
 -- # Data: 09/2016
 -- # Outputs are synchronous to clk_i
 -- ####################################
@@ -65,7 +65,7 @@ architecture rtl of eudet_tlu is
     signal eudet_clk_t : std_logic;
     signal eudet_bust_t : std_logic;
     signal clk_counter : unsigned (3 downto 0);
-    signal bit_counter : unsigned (3 downto 0);
+    signal bit_counter : unsigned (4 downto 0);
     signal dead_counter : unsigned (9 downto 0);
 begin
     -- Sync async inputs
@@ -74,6 +74,7 @@ begin
 
     eudet_busy_o <= eudet_busy_t;
     eudet_clk_o <= eudet_clk_t;
+    rst_o <= '0';
 
     state_machine: process(clk_i, rst_n_i)
     begin
@@ -84,6 +85,9 @@ begin
             clk_counter <= (others => '0');
             bit_counter <= (others => '0');
             dead_counter <= (others => '0');
+            trig_tag_t <= (others => '0');
+            trig_tag_o <= (others => '0');
+            trig_o <= '0';
         elsif rising_edge(clk_i) then
             case state is
                 when IDLE =>
@@ -91,6 +95,7 @@ begin
                     eudet_clk_t <= '0';
                     clk_counter <= (others => '0');
                     bit_counter <= (others => '0');
+                    trig_o <= '0';
                     if (sync_eudet_trig_i = '1') then
                         state <= TRIGGER;
                     end if;
@@ -99,6 +104,7 @@ begin
                     -- Raise busy and wit until trigger is negated
                     eudet_busy_t <= '1';
                     eudet_clk_t <= '0';
+                    trig_o <= '0';
                     clk_counter <= (others => '0');
                     bit_counter <= (others => '0');
                     trig_tag_t <= (others => '0');
@@ -111,17 +117,18 @@ begin
 
                 when RECEIVE =>
                     eudet_busy_t <= '1';
+                    trig_o <= '0';
                     clk_counter <= clk_counter + 1;
                     dead_counter <= (others => '0');
                     if (clk_counter = (C_CLKDIVIDER-1)) then
                         clk_counter <= (others => '0');
                         eudet_clk_t <= not eudet_clk_t;
-                        if (eudet_clk_t = '1') then --/edunegative edge
+                        if (eudet_clk_t = '1') then --sampling on negative edge
                             bit_counter <= bit_counter + 1;
                             trig_tag_t <= eudet_trig_i & trig_tag_t(15 downto 1); -- do not need synced vers here
                         end if;
                     end if;
-                    if (bit_counter = x"F") then
+                    if (bit_counter = "10000") then
                         state <= DEAD;
                         trig_tag_o <= '0' & trig_tag_t(14 downto 0);
                     end if;
@@ -129,6 +136,10 @@ begin
                 when DEAD =>
                     eudet_busy_t <= '1';
                     eudet_clk_t <= '0';
+                    trig_o <= '0';
+                    if (dead_counter = 0) then
+                        trig_o <= '1'; -- Trigger now (16 clock cycles after the inital trigger?)
+                    end if;
                     dead_counter <= dead_counter + 1;
                     if (dead_counter = C_DEADTIME) then
                         state <= IDLE;
@@ -137,6 +148,7 @@ begin
                 when others =>
                     eudet_busy_t <= '0';
                     eudet_clk_t <= '0';
+                    trig_o <= '0';
                     clk_counter <= (others => '0');
                     bit_counter <= (others => '0');
                     state <= IDLE;
