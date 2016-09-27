@@ -37,6 +37,12 @@ using eutelescope::EUTELESCOPE;
 #include <string>
 #include <vector>
 
+typedef struct {
+  unsigned col : 7;
+  unsigned row : 9;
+  unsigned tot : 5;
+  unsigned unused : 11;
+} YHit;
 
 namespace eudaq {
 
@@ -294,135 +300,12 @@ namespace eudaq {
 	      eutelescope::EUTelGenericSparsePixel *thisHit = new eutelescope::EUTelGenericSparsePixel( col, row, ToT, lvl1);
 	      sparseFrame->addSparsePixel( thisHit );
 	      tmphits.push_back( thisHit );
-	      /*
-		      //ganged pixels bottom
-		            if (row==329){
-			          row = 336;
-				        col=col;
-					      eutelescope::EUTelGenericSparsePixel *thisHitgang1 = new eutelescope::EUTelGenericSparsePixel( row, col, ToT,  lvl1);
-					            sparseFrame->addSparsePixel( thisHitgang1 );
-						          tmphits.push_back( thisHitgang1 );
-							        row = 340;
-								      col=col;
-								            eutelescope::EUTelGenericSparsePixel *thisHitgang2 = new eutelescope::EUTelGenericSparsePixel( row, col, ToT,  lvl1);
-									          sparseFrame->addSparsePixel( thisHitgang2 );
-										        tmphits.push_back( thisHitgang2 );
-											      }
-											            
-											            if (row==331){
-												          row = 337;
-													        col=col;
-														      eutelescope::EUTelGenericSparsePixel *thisHitgang1 = new eutelescope::EUTelGenericSparsePixel( row, col, ToT,  lvl1);
-														            sparseFrame->addSparsePixel( thisHitgang1 );
-															          tmphits.push_back( thisHitgang1 );
-																        row = 341;
-																	      col=col;
-																	            eutelescope::EUTelGenericSparsePixel *thisHitgang2 = new eutelescope::EUTelGenericSparsePixel( row, col, ToT,  lvl1);
-																		          sparseFrame->addSparsePixel( thisHitgang2 );
-																			        tmphits.push_back( thisHitgang2 );
-																				      }
-																				            
-																				            if (row==333){
-																					          row = 338;
-																						        col=col;
-																							      eutelescope::EUTelGenericSparsePixel *thisHitgang1 = new eutelescope::EUTelGenericSparsePixel( row, col, ToT,  lvl1);
-																							            sparseFrame->addSparsePixel( thisHitgang1 );
-																								          tmphits.push_back( thisHitgang1 );
-																									        row = 342;
-																										      col=col;
-																										            eutelescope::EUTelGenericSparsePixel *thisHitgang2 = new eutelescope::EUTelGenericSparsePixel( row, col, ToT,  lvl1);
-																											          sparseFrame->addSparsePixel( thisHitgang2 );
-																												        tmphits.push_back( thisHitgang2 );
-																													      }
-																													            
-																													            if (row==335){
-																														    row = 339;
-																														    col=col;
-																														    eutelescope::EUTelGenericSparsePixel *thisHitgang1 = new eutelescope::EUTelGenericSparsePixel( row, col, ToT,  lvl1);
-																														    sparseFrame->addSparsePixel( thisHitgang1 );
-																														    tmphits.push_back( thisHitgang1 );
-																														    row = 343;
-																														    col=col;
-																														    eutelescope::EUTelGenericSparsePixel *thisHitgang2 = new eutelescope::EUTelGenericSparsePixel( row, col, ToT,  lvl1);
-																														    sparseFrame->addSparsePixel( thisHitgang2 );
-																														    tmphits.push_back( thisHitgang2 );
-	    }
-																														          
-																														    //ganged pixels top
-																														    if (row==352){
-	      row = 348;
-	      col=col;
-	      eutelescope::EUTelGenericSparsePixel *thisHitgang1 = new eutelescope::EUTelGenericSparsePixel( row, col, ToT,  lvl1);
-	      sparseFrame->addSparsePixel( thisHitgang1 );
-	      tmphits.push_back( thisHitgang1 );
-	      row = 344;
-	      col=col;
-	      eutelescope::EUTelGenericSparsePixel *thisHitgang2 = new eutelescope::EUTelGenericSparsePixel( row, col, ToT,  lvl1);
-	      sparseFrame->addSparsePixel( thisHitgang2 );
-	      tmphits.push_back( thisHitgang2 );
-	    }
-																														          
-																														    if (row==354){
-	      row = 349;
-	      col=col;
-	      eutelescope::EUTelGenericSparsePixel *thisHitgang1 = new eutelescope::EUTelGenericSparsePixel( row, col, ToT,  lvl1);
-	      sparseFrame->addSparsePixel( thisHitgang1 );
-	      tmphits.push_back( thisHitgang1 );
-	      row = 345;
-	      col=col;
-	      eutelescope::EUTelGenericSparsePixel *thisHitgang2 = new eutelescope::EUTelGenericSparsePixel( row, col, ToT,  lvl1);
-	      sparseFrame->addSparsePixel( thisHitgang2 );
-	      tmphits.push_back( thisHitgang2 );
-	    }
-																														          
-																														    if (row==356){
-	      row = 350;
-	      col=col;
-	      eutelescope::EUTelGenericSparsePixel *thisHitgang1 = new eutelescope::EUTelGenericSparsePixel( row, col, ToT,  lvl1);
-	      sparseFrame->addSparsePixel( thisHitgang1 );
-	      tmphits.push_back( thisHitgang1 );
-	      row = 346;
-	      col=col;
-	      eutelescope::EUTelGenericSparsePixel *thisHitgang2 = new eutelescope::EUTelGenericSparsePixel( row, col, ToT,  lvl1);
-	      sparseFrame->addSparsePixel( thisHitgang2 );
-	      tmphits.push_back( thisHitgang2 );
-	    }
-																														          
-																														    if (row==358){
-	      row = 351;
-	      col=col;
-	      eutelescope::EUTelGenericSparsePixel *thisHitgang1 = new eutelescope::EUTelGenericSparsePixel( row, col, ToT,  lvl1);
-	      sparseFrame->addSparsePixel( thisHitgang1 );
-	      tmphits.push_back( thisHitgang1 );
-	      row = 347;
-	      col=col;
-	      eutelescope::EUTelGenericSparsePixel *thisHitgang2 = new eutelescope::EUTelGenericSparsePixel( row, col, ToT,  lvl1);
-	      sparseFrame->addSparsePixel( thisHitgang2 );
-	      tmphits.push_back( thisHitgang2 );
-	    }
-																														          */
 	    }else{ //1 or 2 chip module
 	      //500x25
 	      //unsigned int Col1 = (int)(t_Col/2);
 	      //unsigned int Row1 = (t_Col+1)%2 + 2 * t_Row;
 	      //int col = (int)(hits[i].col/2);
 	      //int row = (hits[i].col+1)%2 + (2 * hits[i].row);
-	      /*    
-		        if( m_sensorids[sensor] + chip_id_offset == 21)
-			    {
-			        //SQUARE 125X100 GEOMETRY
-				    unsigned int Col1 = hits[i].col;
-				        unsigned int Row1 = hits[i].row;
-					    unsigned int rem4r = (hits[i].row + 1)%4;
-					        unsigned int rem2c = (hits[i].col + 1)%2;
-						    int col = ( (rem4r<2 && rem2c==1) || (rem4r>1 && rem2c==0) ) ? Col1*2 : Col1*2+1;
-						        int row = (int)(Row1/2);
-							    eutelescope::EUTelGenericSparsePixel *thisHit = new eutelescope::EUTelGenericSparsePixel( col, row, hits[i].tot, hits[i].lv1);
-							        sparseFrame->addSparsePixel( thisHit );
-								    tmphits.push_back( thisHit );
-								        }
-									    else
-	      */    
 	      {
 		int col = hits[i].col;
 		int row = hits[i].row;
@@ -620,72 +503,37 @@ namespace eudaq {
   std::vector<CTELHit> YARRConverterPlugin::decodeData(const RawDataEvent & ev) const{
     std::vector<CTELHit> hits;
     eudaq::RawDataEvent::data_t block0=ev.GetBlock(0);
-    uint64_t rcetrig=getlittleendian<uint64_t>(&block0[20]);
-    uint64_t deadtime=getlittleendian<uint64_t>(&block0[28]);
-    unsigned eudetTrig = getlittleendian<unsigned int>(&block0[36])&0x7fff;
-    unsigned triggerword = (getlittleendian<unsigned int>(&block0[36])&0xff0000)>>16;
-    unsigned hitbusword = (getlittleendian<unsigned int>(&block0[36])&0xf000000)>>24;
-    //std::cout<<"TLU word: "<<eudetTrig<<std::endl;
-    //std::cout<<"Trigger word: "<<triggerword<<std::endl;
-    //std::cout<<"Hitbus word: "<<hitbusword<<std::endl;
-    //std::cout<<"Trigger time: "<<rcetrig<<std::endl;
-    //std::cout<<"Deadtime: "<<deadtime<<std::endl;
-    if(rcetrig==0 && triggerword==0){
+
+    //This is the new bit for YARR.  I've tested it with YARR standalone and it workd, but I'm not totally sure what Timon is going to put in these blocks (such as if there will be a header or so)!  Therefore, this will need some minor modifications once the Producer is done. 
+    unsigned it = 0;
+
+    //Only setup for data at the moment ! (i.e. not headers)
+    uint16_t myl1id = (uint16_t) *(&block0[it]); it += sizeof(uint16_t);
+    uint16_t mybcid = (uint16_t) *(&block0[it]); it += sizeof(uint16_t);
+    uint16_t mnHits = (uint16_t) *(&block0[it]); it += sizeof(uint16_t);
+
+    if(myl1id==0 && mybcid==0){
       std::cout<<"Event not valid. Not filling Planes."<<std::endl;
       return hits;
     }
-    eudaq::RawDataEvent::data_t pixblock=ev.GetBlock(1);
-    int oldl1id[16];
-    int link=-1;
-    int l1id;
-    int ntrg=0;
-    int bxid;
-    int firstbxid[16];
-    int bxdiff;
-    for (int i=0;i<16;i++){
-      oldl1id[i]=-1;
-      firstbxid[i]=-1;
-    }
-    unsigned int indx=0;
-    while (indx<pixblock.size()){
-      unsigned currentu=getlittleendian<unsigned>(&pixblock[indx]);
-      FormattedRecord current(currentu);
-      if(current.isHeader()){
-	ntrg++; //really, this is the total number of triggers summed over all the modules
-	link=current.getLink();
-	l1id=current.getL1id();
-	bxid=current.getBxid()&0xff;
-	//std::cout<<"l1id "<<l1id<<" ; bxid "<<bxid<<" ; link "<<link<<std::endl;
-	if(oldl1id[link]!=l1id){
-	  oldl1id[link]=l1id;
-	  firstbxid[link]=bxid;
-	}
-	bxdiff=bxid-firstbxid[link];
-	if(bxdiff<0)bxdiff+=256;
-      }else if(current.isHeaderTwo()){
-	int rce = current.getRCE();
-	//std::cout<<"RCE header. Number is "<<rce<<std::endl; 
-      }else if(current.isData()){
-	//int chip=current.getFE();
-	int tot=current.getToT();
-	int col=current.getCol();
-	int row=current.getRow();
-	int fe=current.getFE();
+    
+    while (it < block0.size()){
+      for (unsigned i=0; i<mnHits; i++) {
+	YHit yhit = *(YHit *) &block0[it]; it += sizeof(YHit);
+	int tot=yhit.tot;
+	int col=yhit.col;
+	int row=yhit.row;
 	CTELHit hit;
 	hit.tot = tot;
 	hit.col = col;
 	hit.row = row;
-	hit.chip = fe;
-	hit.lv1 = bxdiff;
-	hit.link = link;
-	hit.rceTrigger = rcetrig;
-	hit.eudetTrigger = eudetTrig;
+	hit.chip = 0;
+	hit.lv1 = 0;
+	hit.link = 0;
+	hit.rceTrigger = mybcid;
+	hit.eudetTrigger = myl1id;
 	hits.push_back(hit);
-      } else{
-	std::cout<<"ERROR in CTELConverterPlugin:  invalid data block. "<<std::endl;
-	break;
-      }
-      indx+=4;
+      }	
     }
     return hits;
   }
