@@ -4,12 +4,12 @@
 
 MAKEFLAGS=--warn-undefined-variables
 
-INCLUDE = -I./
-LIBS = 
+INCLUDE = -I./ -I../src/libYarr/include -I../src/libSpec/include -I../src/libUtil/include -I../src/libFei4/include -I../src/libFe65p2/include
+LIBS = -L../src/lib -lyarr
 
 # Define compiler and flags
 CXX = g++
-CFLAGS = -g -O0 -Wall -std=c++11 $(INCLUDE)
+CFLAGS = -g -O0 -Wall -std=c++14 -pthread $(INCLUDE)
 LDFLAGS = $(LIBS)
 
 SRC = $(wildcard eudaq/*.cc) 
