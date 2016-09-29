@@ -9,7 +9,7 @@ LIBS = -L../src/lib -lyarr
 
 # Define compiler and flags
 CXX = g++
-CFLAGS = -g -O0 -Wall -std=c++14 -pthread $(INCLUDE)
+CFLAGS = -g -O0 -Wall -std=c++11 -pthread $(INCLUDE)
 LDFLAGS = $(LIBS)
 
 SRC = $(wildcard eudaq/*.cc) 
@@ -30,7 +30,7 @@ build/%.o: eudaq/%.cc
 
 bin/%: build/%.o $(OBJ)
 	@echo "[Linking] $@"
-	@$(CXX) $(CFLAGS) $(LDFLAGS) $< $(OBJ) -o $@
+	@$(CXX) $(CFLAGS) $(LDFLAGS) $< $(OBJ) $(LIBS) -o $@
 
 .PHONY: clean
 clean:
