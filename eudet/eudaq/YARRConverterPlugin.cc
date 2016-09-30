@@ -16,13 +16,13 @@ typedef struct {
   unsigned row : 9;
   unsigned tot : 5;
   unsigned unused : 11;
-} YHit;
+} Fei4Hit;
 
 namespace eudaq {
 
   // The event type for which this converter plugin will be registered
   // Modify this to match your actual event type (from the Producer)
-  static const char *EVENT_TYPE = "Example";
+  static const char *EVENT_TYPE = "YarrFei4";
 
   // Declare a new class that inherits from DataConverterPlugin
   class ExampleConverterPlugin : public DataConverterPlugin {
@@ -32,30 +32,10 @@ namespace eudaq {
     // You may extract information from the BORE and/or configuration
     // and store it in member variables to use during the decoding later.
     virtual void Initialize(const Event &bore, const Configuration &cnf) {
-      m_exampleparam = bore.GetTag("EXAMPLE", 0);
+      //m_exampleparam = bore.GetTag("EXAMPLE", 0);
 #ifndef WIN32 // some linux Stuff //$$change
       (void)cnf; // just to suppress a warning about unused parameter cnf
 #endif
-    }
-
-    // This should return the trigger ID (as provided by the TLU)
-    // if it was read out, otherwise it can either return (unsigned)-1,
-    // or be left undefined as there is already a default version.
-    virtual unsigned GetTriggerID(const Event &ev) const {
-      static const unsigned TRIGGER_OFFSET = 8;
-      // Make sure the event is of class RawDataEvent
-      if (const RawDataEvent *rev = dynamic_cast<const RawDataEvent *>(&ev)) {
-        // This is just an example, modified it to suit your raw data format
-        // Make sure we have at least one block of data, and it is large enough
-        if (rev->NumBlocks() > 0 &&
-            rev->GetBlock(0).size() >= (TRIGGER_OFFSET + sizeof(short))) {
-          // Read a little-endian unsigned short from offset TRIGGER_OFFSET
-          return getlittleendian<unsigned short>(
-						 &rev->GetBlock(0)[TRIGGER_OFFSET]);
-        }
-      }
-      // If we are unable to extract the Trigger ID, signal with (unsigned)-1
-      return (unsigned)-1;
     }
 
     // Here, the data from the RawDataEvent is extracted into a StandardEvent.
@@ -65,41 +45,36 @@ namespace eudaq {
                                      const Event &ev) const {
       // If the event type is used for different sensors
       // they can be differentiated here
-      std::string sensortype = "example";
+      std::string sensortype = "Fe65p2";
       // Create a StandardPlane representing one sensor plane
       int id = 0;
       StandardPlane plane(id, EVENT_TYPE, sensortype);
       // Set the number of pixels
-      int width = 100, height = 50;
+      int width = 64, height = 64;
       plane.SetSizeRaw(width, height);
-      // Set the trigger ID
-      plane.SetTLUEvent(GetTriggerID(ev));
-      // Add the plane to the StandardEvent
-
-      //This is the new bit for YARR.  I've tested it with YARR standalone and it workd, but I'm not totally sure what Timon is going to put in these blocks (such as if there will be a header or so)!  Therefore, this will need some minor modifications once the Producer is done.
 
       const RawDataEvent & my_ev = dynamic_cast<const RawDataEvent &>(ev);
       eudaq::RawDataEvent::data_t block0=my_ev.GetBlock(0);
+
+      uint32_t mytag = *((uint32_t*) (&block0[0]));
+      plane.SetTLUEvent(mytag);
+
+      eudaq::RawDataEvent::data_t block1=my_ev.GetBlock(1);
+      uint16_t myl1id = *((uint16_t*) (&block1[0]));
       
-      unsigned it = 0;
-      //Only setup for data at the moment ! (i.e. not headers)
-      uint16_t myl1id = (uint16_t) *(&block0[it]); it += sizeof(uint16_t);
-      uint16_t mybcid = (uint16_t) *(&block0[it]); it += sizeof(uint16_t);
-      uint16_t mnHits = (uint16_t) *(&block0[it]); it += sizeof(uint16_t);
-      
-      if(myl1id==0 && mybcid==0){
-	std::cout<<"Event not valid. Not filling Planes."<<std::endl;
-	return false;
-      }
-      
-      while (it < block0.size()){
-	for (unsigned i=0; i<mnHits; i++) {
-	  YHit yhit = *(YHit *) &block0[it]; it += sizeof(YHit);
+      eudaq::RawDataEvent::data_t block2=my_ev.GetBlock(2);
+      uint16_t mybcid = *((uint16_t*) (&block2[0]));
+
+      eudaq::RawDataEvent::data_t block3=my_ev.GetBlock(3);
+      uint16_t mnHits = *((uint16_t*) (&block3[0]));
+
+      eudaq::RawDataEvent::data_t block4=my_ev.GetBlock(4);
+      for (unsigned i=0; i<mnHits; i+=sizeof(Fei4Hit)) {
+	  Fei4Hit yhit = *((Fei4Hit *) &block4[i]);
 	  int tot=yhit.tot;
 	  int col=yhit.col;
 	  int row=yhit.row;
-	  plane.PushPixel(col,row,tot,false,0);
-	}
+	  plane.PushPixel(col,row,tot,false,mybcid);
       }
       
       sev.AddPlane(plane);
