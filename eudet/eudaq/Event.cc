@@ -6,6 +6,8 @@
 #include "PluginManager.hh"
 #include "BufferSerializer.hh"
 
+#define __FORCE_EUDAQ1_FILES___
+
 namespace eudaq {
 
   template class DLLEXPORT Factory<Event>;
@@ -106,7 +108,7 @@ namespace eudaq {
         os << std::string(offset +4, ' ') << "0x" << to_hex(e, 16) << ",\n";
 
       }
-    }
+}
     if (timestampsSet)
     {
       os << std::string(offset + 2, ' ') << "</Time>\n";

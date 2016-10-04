@@ -39,6 +39,27 @@ using json = nlohmann::json;
 // Modify this to something appropriate for your producer.
 static const std::string EVENT_TYPE = "YarrFei4";
 
+class YarrFe65p2Producer;
+
+class EudetArchiver : public HistogramAlgorithm {
+    public:
+        EudetArchiver(YarrFe65p2Producer *prod, int run) : HistogramAlgorithm() {
+            r = NULL;
+            m_prod = prod;
+            m_run = run;
+            m_eventCount = 0;
+        }
+        ~EudetArchiver() {
+        }
+
+        void processEvent(Fei4Data *data);
+        void create(LoopStatus &stat) {}
+    private:
+        YarrFe65p2Producer *m_prod;
+        int m_run;
+        int m_eventCount;
+};
+
 
 // Declare a new class that inherits from eudaq::Producer
 class YarrFe65p2Producer : public eudaq::Producer {
@@ -63,7 +84,7 @@ class YarrFe65p2Producer : public eudaq::Producer {
                 rx = new RxCore(spec);
                 bookie = new Bookkeeper(tx, rx);
                 m_daqId = 0;
-                m_dutName = "Unknown";
+                m_dutName = "LBLFE65-16";
                 m_trigMultiplier = 5;
                 m_trigLatency = 200; 
                 scanDone = false;
@@ -98,7 +119,7 @@ class YarrFe65p2Producer : public eudaq::Producer {
             // Do any configuration of the hardware here
             // Configuration file values are accessible as config.Get(name, default)
             m_daqId = config.Get("DaqId", 0);
-            m_dutName = config.Get("DutName", "unknown");
+            m_dutName = config.Get("DutName", "LBLFE65-16");
             m_trigMultiplier= config.Get("TriggerMultiplier", 5);
             m_trigLatency = config.Get("TriggerLatency", 200);
 
@@ -110,7 +131,7 @@ class YarrFe65p2Producer : public eudaq::Producer {
             // Load config
             std::cout << "Loading config ... " << std::endl;
             json icfg;
-            std::fstream icfg_file((m_dutName + ".json").c_str(), std::ios::in);
+            std::fstream icfg_file(("configs/" + m_dutName + ".json").c_str(), std::ios::in);
             if (icfg_file) {
                 icfg_file >> icfg;
                 bookie->g_fe65p2->fromFileJson(icfg);
@@ -118,6 +139,7 @@ class YarrFe65p2Producer : public eudaq::Producer {
                 std::cout << "Config for FE " << m_dutName << " loaded!" << std::endl;
             } else {
                 std::cerr << "~~ERROR~~ Config for FE " << m_dutName << " not found! Aborting!" << std::endl;
+                SetStatus(eudaq::Status::LVL_ERROR, "Configuration Error");
                 throw eudaq::Exception(("Config for FE " + m_dutName + " not found! Aborting!").c_str());
             }
             icfg_file.close();
@@ -177,16 +199,15 @@ class YarrFe65p2Producer : public eudaq::Producer {
             myFe->histogrammer->connect(myFe->clipDataFei4, myFe->clipHisto);
             myFe->histogrammer->addHistogrammer(new OccupancyMap());
             myFe->histogrammer->addHistogrammer(new TotMap());
-            myFe->histogrammer->addHistogrammer(new Tot2Map());
+            //myFe->histogrammer->addHistogrammer(new Tot2Map());
             myFe->histogrammer->addHistogrammer(new L1Dist());
-            myFe->histogrammer->addHistogrammer(new HitsPerEvent());
+            //myFe->histogrammer->addHistogrammer(new HitsPerEvent());
             myFe->histogrammer->addHistogrammer(new TotDist());
             // This is where the raw data is saved
-            myFe->histogrammer->addHistogrammer(new DataArchiver((m_dutName + "_" + this->toString(m_run, 6) + ".raw")));
+            myFe->histogrammer->addHistogrammer(new DataArchiver(("data/" + m_dutName + "_" + this->toString(m_run, 6) + ".raw")));
+            myFe->histogrammer->addHistogrammer(new EudetArchiver(this, m_run));
             myFe->histogrammer->setMapSize(64, 64);
             
-            dataFile.open((m_dutName + "_" + this->toString(m_run, 6) + ".raw").c_str(), std::fstream::in | std::fstream::binary);
-
             // Init analysis
             std::cout << "Initiliasing analysis." << std::endl;
             myFe->ana = new Fei4Analysis(bookie, myFe->getRxChannel());
@@ -243,29 +264,24 @@ class YarrFe65p2Producer : public eudaq::Producer {
             for (auto &n : anaThreads) n.join();
             std::cout << "All done." << std::endl;
             
+            m_stat = stopped;
+            
             delete myFe->histogrammer; // This will close the file
             myFe->histogrammer = NULL;
 
-            std::cout << "Waiting for all data to be sent ..." << std::endl;
-            // wait until all events have been read out from the hardware
-            while (m_stat == stopping) {
-                eudaq::mSleep(20);
-            }
-    
-            dataFile.close();
-
+            // Clean threads
             runThread.clear();
             procThreads.clear();
             anaThreads.clear();
 
             // Plot stuff
-            myFe->ana->plot(m_dutName + "_" + this->toString(m_run, 6));
+            myFe->ana->plot("data/" + m_dutName + "_" + this->toString(m_run, 6));
             delete myFe->ana;
             myFe->ana = NULL;
             
             // Save config
             std::cout << "Save backup config file." << std::endl;
-            std::fstream ocfg_file((m_dutName + "_" + this->toString(m_run, 6) + ".json").c_str(), std::ios::out);
+            std::fstream ocfg_file(("data/" + m_dutName + "_" + this->toString(m_run, 6) + ".json").c_str(), std::ios::out);
             json cfg;
             myFe->toFileJson(cfg);
             ocfg_file << std::setw(4) << cfg;
@@ -310,10 +326,6 @@ class YarrFe65p2Producer : public eudaq::Producer {
             DEBUG_OUT("<starting>");
             while (m_stat == started){
 
-                if (!makeAndSendEvents())
-                {
-                    eudaq::mSleep(20);
-                }
 
             }
             DEBUG_OUT("</starting>");
@@ -322,48 +334,10 @@ class YarrFe65p2Producer : public eudaq::Producer {
         void state_stopping(){
             DEBUG_OUT("<stopping>");
             while (m_stat == stopping){
-                if (!makeAndSendEvents())
-                {
-                    m_stat = stopped;
-                }
             }
             DEBUG_OUT("</stopping>");
         }
 
-        bool makeAndSendEvents(){
-            // If event
-            ++m_eventCount;
-            eudaq::RawDataEvent ev(EVENT_TYPE, m_run, m_eventCount);
-            ev.SetTag("EventNumber", m_eventCount);
-            eudaq::mSleep(200);
-
-            
-            Fei4Event event;
-            event.fromFileBinary(dataFile);
-    
-            if (dataFile) {
-                char *buffer = new char[sizeof(uint32_t) + (3*sizeof(uint16_t)) + (event.nHits*sizeof(Fei4Hit))];
-                unsigned it = 0;
-                *(uint32_t*)&buffer[it] = event.tag; it+= sizeof(uint32_t);
-                *(uint16_t*)&buffer[it] = event.l1id; it+= sizeof(uint16_t);
-                *(uint16_t*)&buffer[it] = event.bcid; it+= sizeof(uint16_t);
-                *(uint16_t*)&buffer[it] = event.nHits; it+= sizeof(uint16_t);
-                for (unsigned i=0; i<event.nHits; i++) {
-                    *(Fei4Hit*)&buffer[it] = event.hits[i]; it+= sizeof(Fei4Hit);
-                }
-
-                // Fill event with data
-                ev.SetTimeStampToNow();
-                // Send the event to the Data Collector 
-                if (m_eventCount % 10 == 0)
-                {
-                    std::cout << "sending Event: " << m_eventCount << std::endl;
-                }
-
-                SendEvent(ev);
-            }
-            return false;
-        }
         // This is just an example, adapt it to your hardware
         void ReadoutLoop() {
             // Loop until Run Control tells us to terminate
@@ -374,7 +348,10 @@ class YarrFe65p2Producer : public eudaq::Producer {
                 state_stopping();
             }
         }
-
+        
+        void incEventCount() {
+            ++m_eventCount;
+        }
     private:
         // YARR objects
         SpecController *spec;
@@ -383,7 +360,6 @@ class YarrFe65p2Producer : public eudaq::Producer {
         Bookkeeper *bookie;
         ScanBase *s;
         Fe65p2 *myFe;
-        std::fstream dataFile;
 
         // YARR producer config
         unsigned m_daqId; // To distinguish different systems
@@ -394,7 +370,6 @@ class YarrFe65p2Producer : public eudaq::Producer {
         // General producer variables
         unsigned m_run; // run number
         unsigned m_eventCount; // event counter
-
 
         // Producer state
         status_enum m_stat = unconfigured;
@@ -460,7 +435,11 @@ int main(int /*argc*/, const char ** argv) {
         op.Parse(argv);
         // Set the Log level for displaying messages based on command-line
         EUDAQ_LOG_LEVEL(level.Value());
-        std::cout << "Example Producer name = \"" << name.Value() << "\" connected to " << rctrl.Value() << std::endl;
+
+        std::cout << "     #############################" << std::endl;
+        std::cout << "     ### YARR FE65-P2 Producer ###" << std::endl;
+        std::cout << "     #############################" << std::endl;
+        std::cout << "-> Producer name = \"" << name.Value() << "\" connected to " << rctrl.Value() << std::endl;
         if (name.IsSet())
         {
             eudaq::mSleep(1000);
@@ -478,4 +457,44 @@ int main(int /*argc*/, const char ** argv) {
         return op.HandleMainException();
     }
     return 0;
+}
+
+void EudetArchiver::processEvent(Fei4Data *data) {
+    for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
+        Fei4Event curEvent = *eventIt;
+        eudaq::RawDataEvent ev(EVENT_TYPE, m_run, m_eventCount);
+        ev.SetTag("EventNumber", m_eventCount);
+        ++m_eventCount;
+        m_prod->incEventCount();
+        if (m_eventCount%1000 == 0)
+            std::cout << "~~ Got event #: " << m_eventCount << std::endl;
+        /*
+           std::cout << "++ Tag: " << event.tag << std::endl;
+           std::cout << "++ L1ID: " << event.l1id << std::endl;
+           std::cout << "++ BCID: " << event.bcid << std::endl;
+           std::cout << "++ nHits: " << event.nHits << std::endl; 
+           */
+        /*unsigned char *buffer = new unsigned char[sizeof(uint32_t) + (3*sizeof(uint16_t)) + (curEvent.nHits*sizeof(Fei4Hit))];
+        unsigned it = 0;
+        *(uint32_t*)&buffer[it] = curEvent.tag; it+= sizeof(uint32_t);
+        *(uint16_t*)&buffer[it] = curEvent.l1id; it+= sizeof(uint16_t);
+        *(uint16_t*)&buffer[it] = curEvent.bcid; it+= sizeof(uint16_t);
+        *(uint16_t*)&buffer[it] = curEvent.nHits; it+= sizeof(uint16_t);
+        for (unsigned i=0; i<curEvent.nHits; i++) {
+            *(Fei4Hit*)&buffer[it] = curEvent.hits[i]; it+= sizeof(Fei4Hit);
+        }*/
+
+        //ev.AddBlock(0,  buffer,sizeof(uint32_t) + (3*sizeof(uint16_t)) + (curEvent.nHits*sizeof(Fei4Hit))); 
+        ev.AddBlock(0, (char*) &curEvent.tag, sizeof(uint32_t));
+        ev.AddBlock(1, (char*) &curEvent.l1id, sizeof(uint16_t));
+        ev.AddBlock(2, (char*) &curEvent.bcid, sizeof(uint16_t));
+        ev.AddBlock(3, (char*) &curEvent.nHits, sizeof(uint16_t));
+        if (curEvent.nHits > 0)
+            ev.AddBlock(4, (char*) &curEvent.hits[0], curEvent.nHits*sizeof(Fei4Hit));
+        // Fill event with data
+        ev.SetTimeStampToNow();
+        // Send the event to the Data Collector 
+        m_prod->SendEvent(ev);
+        //delete buffer;
+    }
 }

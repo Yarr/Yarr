@@ -9,7 +9,7 @@ LIBS = -L../src/lib -lyarr
 
 # Define compiler and flags
 CXX = g++
-CFLAGS = -g -O0 -Wall -std=c++11 -pthread $(INCLUDE)
+CFLAGS = -g -O1 -Wall -std=c++11 -pthread $(INCLUDE)
 LDFLAGS = $(LIBS)
 
 SRC = $(wildcard eudaq/*.cc) 
