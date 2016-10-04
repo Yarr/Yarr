@@ -15,7 +15,10 @@ class StdDataGatherer: public LoopActionBase {
     public:
         StdDataGatherer();
         void connect(ClipBoard<RawDataContainer> *clipboard);
-        
+
+        void kill() {
+            killswitch = true;
+        }
     private:
         ClipBoard<RawDataContainer> *storage;
         unsigned counter;
@@ -23,7 +26,7 @@ class StdDataGatherer: public LoopActionBase {
         void end();
         void execPart1();
         void execPart2();
-
+        bool killswitch;
 };
 
 #endif

@@ -31,12 +31,6 @@ class Fe65p2 : public FrontEnd, public Fe65p2Cfg, public Fe65p2Cmd {
         void configurePixels();
         void configDac();
 
-		ClipBoard<Fei4Data> *clipDataFei4;
-		ClipBoard<HistogramBase> *clipHisto;
-		ClipBoard<HistogramBase> *clipResult;
-        
-        Fei4Analysis *ana;
-		Fei4Histogrammer *histogrammer;
     private:
 };
 #endif

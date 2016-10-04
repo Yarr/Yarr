@@ -43,7 +43,7 @@ mrproper:
 USER:=$(HDLMAKE_RSYNTH_USER)# take the value from the environment
 SERVER:=$(HDLMAKE_RSYNTH_SERVER)# take the value from the environment
 ISE_PATH:=$(HDLMAKE_RSYNTH_ISE_PATH)
-R_NAME:=theim/yarr_spec
+R_NAME:=pixel/yarr_spec
 PORT:=22
 
 __test_for_remote_synthesis_variables:
@@ -59,88 +59,88 @@ endif
 
 CWD := $(shell pwd)
 
-FILES := ../tx-core/wb_tx_core.vhd \
-../common/rr_arbiter.vhd \
-../trigger-logic/wb_trigger_logic.vhd \
-../gn4124-core/spartan6/gn4124_core_pkg.vhd \
-../ip_cores/rx_channel_fifo.ngc \
-../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/mcb_soft_calibration.vhd \
-../ip_cores/ila.ngc \
-../ip_cores/l2p_fifo.vhd \
-../tx-core/trigger_unit.vhd \
-../rx-core/decode_8b10b/decode_8b10b_bram.vhd \
-../ip_cores/fifo_32x512.ngc \
-../i2c-master/i2c_master_bit_ctrl.vhd \
-../gn4124-core/l2p_arbiter.vhd \
-../ip_cores/ila.vhd \
-../rx-core/data_alignment.vhd \
-../rx-core/decode_8b10b/decode_8b10b_lut_base.vhd \
-../ip_cores/ila_icon.vhd \
-../tx-core/tx_channel.vhd \
-../rx-core/decode_8b10b/decode_8b10b_lut.vhd \
-../rx-core/fei4_rx_channel.vhd \
-../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/mcb_raw_wrapper.vhd \
-../gn4124-core/spartan6/l2p_ser.vhd \
-../common/dummy_stat_regs.vhd \
-../common/generic_async_fifo_wrapper.vhd \
-../common/common_pkg.vhd \
-../gn4124-core/spartan6/gn4124_core.vhd \
-../ddr3-core/ddr3_ctrl_wb.vhd \
-yarr_spec.xise \
-../common/dummy_ctrl_regs.vhd \
-../rx-core/cdr_serdes.vhd \
-../i2c-master/i2c_master_byte_ctrl.vhd \
-../ip_cores/ila_icon.ngc \
-../rx-core/decode_8b10b/decode_8b10b_rtl.vhd \
-../trigger-logic/eudet_tlu.vhd \
-../yarr_fe65p2_revC.ucf \
-../rx-core/decode_8b10b/decode_8b10b_disp.vhd \
-../rx-core/decode_8b10b/decode_8b10b_top.vhd \
-../rx-core/wb_rx_core.vhd \
-run.tcl \
-../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/mcb_soft_calibration_top.vhd \
-../ddr3-core/ddr3_ctrl_wrapper.vhd \
-../ip_cores/rx_bridge_fifo.vhd \
-../ip_cores/rx_bridge_ctrl_fifo.ngc \
-../delay_line.vhd \
-../gn4124-core/spartan6/serdes_n_to_1_s2_se.vhd \
-../ip_cores/clk_gen.vhd \
-../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/iodrp_controller.vhd \
-../fe65p2_addon.vhd \
-../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/memc3_infrastructure.vhd \
-../ip_cores/rx_channel_fifo.vhd \
-../rx-core/decode_8b10b/decode_8b10b_pkg.vhd \
-../ddr3-core/ddr3_ctrl.vhd \
-../ip_cores/rx_bridge_fifo.ngc \
-../gn4124-core/l2p_dma_master.vhd \
-../gn4124-core/wbmaster32.vhd \
-../ip_cores/fifo_32x512.vhd \
+FILES := ../common/wb_addr_decoder.vhd \
 ../ip_cores/rx_bridge_ctrl_fifo.vhd \
-../gn4124-core/spartan6/serdes_1_to_n_data_s2_se.vhd \
-../common/wb_addr_decoder.vhd \
+../common/dummy_stat_regs.vhd \
 ../ddr3-core/ddr3_ctrl_pkg.vhd \
-../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/ddr3_ctrl_spec_bank3_32b_32b.vhd \
-../ip_cores/l2p_fifo.ngc \
-../rx-core/wb_rx_bridge.vhd \
-../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/iodrp_mcb_controller.vhd \
-../top_yarr_spec_fe65p2.vhd \
-../ip_cores/fifo_64x512.vhd \
-../gn4124-core/spartan6/p2l_des.vhd \
-../ip_cores/fifo_64x512.ngc \
-../i2c-master/i2c_master_registers.vhd \
-../common/synchronizer.vhd \
-../rx-core/decode_8b10b/decode_8b10b_wrapper.vhd \
-../ddr3-core/ddr3_ctrl_wrapper_pkg.vhd \
-../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/memc3_wrapper.vhd \
+../rx-core/decode_8b10b/decode_8b10b_lut_base.vhd \
+../ip_cores/rx_channel_fifo.ngc \
+../common/dummy_ctrl_regs.vhd \
 ../gn4124-core/spartan6/serdes_n_to_1_s2_diff.vhd \
-../gn4124-core/p2l_decode32.vhd \
+../rx-core/decode_8b10b/decode_8b10b_wrapper.vhd \
+../ip_cores/fifo_64x512.ngc \
+../rx-core/decode_8b10b/decode_8b10b_rtl.vhd \
+../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/mcb_raw_wrapper.vhd \
+../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/ddr3_ctrl_spec_bank3_32b_32b.vhd \
+../rx-core/cdr_serdes.vhd \
+../rx-core/decode_8b10b/decode_8b10b_pkg.vhd \
+../common/common_pkg.vhd \
+../gn4124-core/spartan6/pulse_sync_rtl.vhd \
+../ip_cores/ila.vhd \
+../top_yarr_spec_fe65p2.vhd \
+../ip_cores/rx_bridge_fifo.ngc \
+../common/rr_arbiter.vhd \
+../ip_cores/l2p_fifo.vhd \
+../i2c-master/i2c_master_registers.vhd \
+../rx-core/decode_8b10b/decode_8b10b_disp.vhd \
+../gn4124-core/wbmaster32.vhd \
+../ddr3-core/ddr3_ctrl_wrapper_pkg.vhd \
+../gn4124-core/spartan6/gn4124_core.vhd \
+../rx-core/wb_rx_core.vhd \
+../trigger-logic/eudet_tlu.vhd \
+../fe65p2_addon.vhd \
 ../tx-core/serial_port.vhd \
+../i2c-master/i2c_master_byte_ctrl.vhd \
+../common/synchronizer.vhd \
+../ddr3-core/ddr3_ctrl.vhd \
+../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/memc3_wrapper.vhd \
+run.tcl \
+../i2c-master/i2c_master_wb_top.vhd \
+../gn4124-core/spartan6/l2p_ser.vhd \
+../ip_cores/ila.ngc \
+../rx-core/fei4_rx_channel.vhd \
+../ip_cores/fifo_32x512.vhd \
+../ip_cores/ila_icon.vhd \
 ../gn4124-core/dma_controller_wb_slave.vhd \
+../gn4124-core/l2p_arbiter.vhd \
+yarr_spec.xise \
+../trigger-logic/wb_trigger_logic.vhd \
+../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/memc3_infrastructure.vhd \
+../ddr3-core/ddr3_ctrl_wb.vhd \
+../common/generic_async_fifo_wrapper.vhd \
+../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/mcb_soft_calibration_top.vhd \
+../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/mcb_soft_calibration.vhd \
+../gn4124-core/spartan6/gn4124_core_pkg.vhd \
+../ip_cores/ila_icon.ngc \
+../ip_cores/rx_channel_fifo.vhd \
+../tx-core/tx_channel.vhd \
+../yarr_fe65p2_revC.ucf \
+../ip_cores/fifo_32x512.ngc \
+../gn4124-core/l2p_dma_master.vhd \
+../ip_cores/fifo_64x512.vhd \
+../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/iodrp_mcb_controller.vhd \
+../ip_cores/clk_gen.vhd \
+../rx-core/data_alignment.vhd \
+../tx-core/trigger_unit.vhd \
+../gn4124-core/p2l_decode32.vhd \
+../gn4124-core/spartan6/serdes_1_to_n_data_s2_se.vhd \
+../rx-core/decode_8b10b/decode_8b10b_top.vhd \
+../rx-core/decode_8b10b/decode_8b10b_lut.vhd \
+../ip_cores/rx_bridge_fifo.vhd \
+../ip_cores/l2p_fifo.ngc \
+../ip_cores/rx_bridge_ctrl_fifo.ngc \
+../ddr3-core/ddr3_ctrl_wrapper.vhd \
+../i2c-master/i2c_master_bit_ctrl.vhd \
 ../gn4124-core/dma_controller.vhd \
 ../gn4124-core/spartan6/serdes_1_to_n_clk_pll_s2_diff.vhd \
-../i2c-master/i2c_master_wb_top.vhd \
+../gn4124-core/spartan6/p2l_des.vhd \
+../ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/iodrp_controller.vhd \
+../rx-core/decode_8b10b/decode_8b10b_bram.vhd \
 ../gn4124-core/p2l_dma_master.vhd \
-../gn4124-core/spartan6/pulse_sync_rtl.vhd
+../gn4124-core/spartan6/serdes_n_to_1_s2_se.vhd \
+../tx-core/wb_tx_core.vhd \
+../delay_line.vhd \
+../rx-core/wb_rx_bridge.vhd
 
 #target for running synthesis in the remote location
 remote: __test_for_remote_synthesis_variables generate_tcl __send __do_synthesis
