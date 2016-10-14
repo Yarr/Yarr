@@ -83,14 +83,21 @@ void Fei4GFHelper::init() {
     m_done = false;
     cur = 0;
     // Init all maps:
-    for(unsigned int k=0; k<keeper->feList.size(); k++) {
-        if(keeper->feList[k]->getActive()) {
-            unsigned ch = keeper->feList[k]->getRxChannel();
-            localStep[ch] = step;
-            values[ch] = max;
-            oldSign[ch] = -1;
-            doneMap[ch] = false;
-        }
+//    for(unsigned int k=0; k<keeper->feList.size(); k++) {
+//        if(keeper->feList[k]->getActive()) {
+//            unsigned ch = keeper->feList[k]->getRxChannel();
+//            localStep[ch] = step;
+//            values[ch] = max;
+//            oldSign[ch] = -1;
+//            doneMap[ch] = false;
+//        }
+//    }
+    for(unsigned int k=0; k < keeper->activeFeList.size(); k++){
+        unsigned ch = keeper->activeFeList[k]->getRxChannel();
+        localStep[ch] = step;
+        values[ch] = max;
+        oldSign[ch] = -1;
+        doneMap[ch] = false;
     }
     this->writePar();
 
@@ -100,10 +107,8 @@ void Fei4GFHelper::init() {
 void Fei4GFHelper::execPart1() {
     g_stat->set(this, cur);
     // Lock all mutexes if open
-    for(unsigned int k=0; k<keeper->feList.size(); k++) {
-        if(keeper->feList[k]->getActive()) {
-            keeper->mutexMap[keeper->feList[k]->getRxChannel()].try_lock();
-        }
+    for(unsigned int k=0; k<keeper->activeFeList.size(); k++) {
+        keeper->mutexMap[keeper->activeFeList[k]->getRxChannel()].try_lock();
     }
     m_done = allDone();
 
@@ -112,14 +117,12 @@ void Fei4GFHelper::execPart1() {
 
 void Fei4GFHelper::execPart2() {
     // Wait for mutexes to be unlocked by feedback
-    for(unsigned int k=0; k<keeper->feList.size(); k++) {
-        if(keeper->feList[k]->getActive()) {
-            keeper->mutexMap[keeper->feList[k]->getRxChannel()].lock();
-            if (verbose)
-                std::cout << " --> Received Feedback on Channel "
-                    << keeper->feList[k]->getRxChannel() << " with value: "
-                    << values[keeper->feList[k]->getRxChannel()] << std::endl;
-        }
+    for(unsigned int k=0; k<keeper->activeFeList.size(); k++) {
+        keeper->mutexMap[keeper->activeFeList[k]->getRxChannel()].lock();
+        if (verbose)
+            std::cout << " --> Received Feedback on Channel "
+                      << keeper->activeFeList[k]->getRxChannel() << " with value: "
+                      << values[keeper->activeFeList[k]->getRxChannel()] << std::endl;
     }
     cur++;
     this->writePar();
@@ -128,23 +131,19 @@ void Fei4GFHelper::execPart2() {
 }
 
 void Fei4GFHelper::end() {
-    for(unsigned int k=0; k<keeper->feList.size(); k++) {
-        if(keeper->feList[k]->getActive()) {
-            unsigned ch = keeper->feList[k]->getRxChannel();
-            std::cout << " --> Final parameter of Fe " << ch << " is " << values[ch] << std::endl;
-        }
+    for(unsigned int k=0; k<keeper->activeFeList.size(); k++) {
+        unsigned ch = keeper->activeFeList[k]->getRxChannel();
+        std::cout << " --> Final parameter of Fe " << ch << " is " << values[ch] << std::endl;
     }
 
     return;
 }
 
 void Fei4GFHelper::writePar() {
-    for(unsigned int k=0; k<keeper->feList.size(); k++) {
-        if(keeper->feList[k]->getActive()) {
-            g_tx->setCmdEnable(1 << keeper->feList[k]->getTxChannel());
-            keeper->feList[k]->wrGR16(mOffset, bOffset, mask, msbRight, values[keeper->feList[k]->getRxChannel()]);
-            while(!g_tx->isCmdEmpty());
-        }
+    for(unsigned int k=0; k<keeper->activeFeList.size(); k++) {
+        g_tx->setCmdEnable(1 << keeper->activeFeList[k]->getTxChannel());
+        dynamic_cast<Fei4*>(keeper->activeFeList[k])->wrGR16(mOffset, bOffset, mask, msbRight, values[keeper->activeFeList[k]->getRxChannel()]);
+        while(!g_tx->isCmdEmpty());
     }
     g_tx->setCmdEnable(keeper->getTxMask());
 
@@ -152,13 +151,11 @@ void Fei4GFHelper::writePar() {
 }
 
 bool Fei4GFHelper::allDone() {
-    for(unsigned int k=0; k<keeper->feList.size(); k++) {
-        if(keeper->feList[k]->getActive()) {
-            unsigned ch = keeper->feList[k]->getRxChannel();
-            if (!doneMap[ch])
-                return false;
+    for(unsigned int k=0; k<keeper->activeFeList.size(); k++) {
+        unsigned ch = keeper->activeFeList[k]->getRxChannel();
+        if(!doneMap[ch]){
+            return false;
         }
     }
     return true;
 }
-

@@ -112,7 +112,8 @@ void CustomScan::init() {
 void CustomScan::postScan() {
     std::pair<Fei4RegHelper, uint16_t> v;
     foreach (v, postScanRegs) {
-        v.first.writeReg(this->b->getFe(0), v.second);
+//        v.first.writeReg(this->b->getFe(0), v.second);
+        v.first.writeReg(dynamic_cast<Fei4*>(this->b->getLastFe()), v.second);
         while(!(g_tx->isCmdEmpty())) {
             ;
         }

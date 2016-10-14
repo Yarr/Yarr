@@ -2,17 +2,21 @@
 #define EDITCFGDIALOG_H
 
 #include <QByteArray>
+#include <QColor>
 #include <QDialog>
 #include <QFile>
 #include <QFileDialog>
+#include <QFont>
 #include <QString>
 #include <QTableWidget>
 #include <QTextStream>
 
+#include <array>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <utility>
 
 #include "Fei4.h"
 #include "json.hpp"
@@ -40,6 +44,12 @@ private slots:
     void on_SCapRadio_clicked();
     void on_HitbusRadio_clicked();
     void on_FDACRadio_clicked();
+    void clickHandler(int rowCl, int colCl);
+    void enterHandler(int rowEn, int colEn);
+
+    void on_zoomInButton_clicked();
+
+    void on_zoomOutButton_clicked();
 
 private:
     Ui::EditCfgDialog *ui;
@@ -48,6 +58,10 @@ private:
     QString cfgFNJ;
 
     nlohmann::json j;
+
+    QColor* fetchColor(unsigned int v, unsigned int m);
+    std::pair<std::string, unsigned int> getMaxVal();
+    void initLegend();
 };
 
 #endif // EDITCFGDIALOG_H

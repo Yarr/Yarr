@@ -71,6 +71,26 @@
     </layout>
    </item>
    <item>
+    <widget class="QTableWidget" name="tableLegend"/>
+   </item>
+   <item>
+    <widget class="QLineEdit" name="linePosInfo"/>
+   </item>
+   <item>
+    <widget class="QPushButton" name="zoomInButton">
+     <property name="text">
+      <string>+</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="zoomOutButton">
+     <property name="text">
+      <string>-</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
       <widget class="QPushButton" name="applyButton">

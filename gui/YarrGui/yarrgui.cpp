@@ -2,6 +2,16 @@
 #include "ui_yarrgui.h"
 
 //######################################################################
+// CONTENTS:
+// -constructor/destructor
+// -SPECboard
+// -FEs
+// -scans
+// -plots
+// -options menu
+//######################################################################
+
+//######################################################################
 //####################     contructor/destructor    ####################
 //######################################################################
 
@@ -210,11 +220,12 @@ void YarrGui::on_addFeButton_clicked(){
     unsigned txChannelAdded = (ui->txChannelEdit->text()).toUInt();
     unsigned rxChannelAdded = (ui->rxChannelEdit->text()).toUInt();
 
-    if(bk->getFe(rxChannelAdded) != NULL) {
+    if(bk->isChannelUsed(rxChannelAdded)) {
         std::cout << "ERROR - rx channel already used. Aborting... \n";
         return;
     }
-    bk->addFe(chipIdAdded, txChannelAdded, rxChannelAdded);
+//    bk->addFe(chipIdAdded, txChannelAdded, rxChannelAdded);
+    bk->addFe(new Fei4(bk->tx, txChannelAdded, rxChannelAdded), txChannelAdded, rxChannelAdded);
     std::string iFNJ = (ui->configfileName->text()).toStdString();
     std::fstream iFJ(iFNJ, std::ios_base::in);
     nlohmann::json j;
@@ -233,7 +244,7 @@ void YarrGui::on_addFeButton_clicked(){
     }
     iFJ.close();
     try{
-        bk->getLastFe()->fromFileJson(j);
+        dynamic_cast<Fei4*>(bk->getLastFe())->fromFileJson(j);
     }
     catch(std::domain_error){
         std::cerr << iFNJ << " does not contain a valid configuration. " << std::endl;
@@ -247,7 +258,7 @@ void YarrGui::on_addFeButton_clicked(){
     }
     tx->setCmdEnable(0x1 << bk->getLastFe()->getTxChannel());
     bk->getLastFe()->configure();
-    bk->getLastFe()->configurePixels();
+    dynamic_cast<Fei4*>(bk->getLastFe())->configurePixels();
     while(!(tx->isCmdEmpty())){
         ;
     }
@@ -274,7 +285,7 @@ void YarrGui::on_addFeButton_clicked(){
     QPushButton * b = new QPushButton("Edit config", this);
     ui->feTree->setItemWidget(feTreeItemCf, 2, b);
     QObject::connect(b, &QPushButton::clicked, this, [=](){
-        EditCfgDialog d(bk->getFe(rxChannelAdded), QString::fromStdString(iFNJ), this);
+        EditCfgDialog d(dynamic_cast<Fei4*>(bk->getFe(rxChannelAdded)), QString::fromStdString(iFNJ), this);
         d.exec();
         //d.setModal(true);
         //d.showMaximized();
@@ -313,7 +324,7 @@ void YarrGui::on_remFeButton_clicked(){
         std::cerr << "Current configuration will not be written to a file. " << std::endl;
     }else{
         nlohmann::json j;
-        bk->getFe(channelRemoved.toInt())->toFileJson(j);
+        dynamic_cast<Fei4*>(bk->getFe(channelRemoved.toInt()))->toFileJson(j);
         cfgFJ << std::setw(4) << j;
     }
 /*    try{
@@ -333,7 +344,7 @@ void YarrGui::on_remFeButton_clicked(){
 
     return;
 }
-
+//GOFROMHERE
 void YarrGui::on_configFile_button_clicked(){
     QString filename = QFileDialog::getOpenFileName(this, tr("Select JSON config file"), "./", tr("JSON Config File(*.js)"));
 
@@ -406,11 +417,12 @@ void YarrGui::on_addFeGlobalButton_clicked(){
         }
     }
     for(unsigned int i = 0; i < (chipIdsAdded.size()) ; i++){
-        if(bk->getFe(rxChannelsAdded.at(i)) != NULL){
+        if(bk->isChannelUsed(rxChannelsAdded.at(i))){
             std::cout << "ERROR - rx channel " << rxChannelsAdded.at(i) << " already used. Skipping... \n";
             continue;
         }
-        bk->addFe(chipIdsAdded.at(i), txChannelsAdded.at(i), rxChannelsAdded.at(i));
+//        bk->addFe(chipIdsAdded.at(i), txChannelsAdded.at(i), rxChannelsAdded.at(i));
+        bk->addFe(new Fei4(bk->tx, txChannelsAdded.at(i), rxChannelsAdded.at(i)), txChannelsAdded.at(i), rxChannelsAdded.at(i));
 //        bk->getLastFe()->fromFileBinary(chipCfgFilenamesAdded.at(i)); //JSON here
         std::fstream iFJ(chipCfgFilenamesAdded.at(i), std::ios_base::in);
         nlohmann::json j;
@@ -429,7 +441,7 @@ void YarrGui::on_addFeGlobalButton_clicked(){
         }
         iFJ.close();
         try{
-            bk->getLastFe()->fromFileJson(j);
+            dynamic_cast<Fei4*>(bk->getLastFe())->fromFileJson(j);
         }
         catch(std::domain_error){
             std::cerr << chipCfgFilenamesAdded.at(i) << " contains a damaged configuration. " << std::endl;
@@ -442,8 +454,8 @@ void YarrGui::on_addFeGlobalButton_clicked(){
             iFJ.close();
         }
         tx->setCmdEnable(0x1 << bk->getLastFe()->getTxChannel());
-        bk->getLastFe()->configure();
-        bk->getLastFe()->configurePixels();
+        dynamic_cast<Fei4*>(bk->getLastFe())->configure();
+        dynamic_cast<Fei4*>(bk->getLastFe())->configurePixels();
         while(!(tx->isCmdEmpty())) {
             ;
         }
@@ -470,7 +482,8 @@ void YarrGui::on_addFeGlobalButton_clicked(){
         QPushButton * b = new QPushButton("Edit config", this);
         ui->feTree->setItemWidget(feTreeItemCf, 2, b);
         QObject::connect(b, &QPushButton::clicked, this, [=](){
-            EditCfgDialog d(bk->getFe(rxChannelsAdded.at(i)), QString::fromStdString(chipCfgFilenamesAdded.at(i)), this);
+            EditCfgDialog d(dynamic_cast<Fei4*>(bk->getFe(rxChannelsAdded.at(i))),
+                            QString::fromStdString(chipCfgFilenamesAdded.at(i)), this);
             d.exec();
         });
         feTreeItemCk->setText(0, "Scan");
@@ -495,7 +508,7 @@ void YarrGui::on_addFeGlobalButton_clicked(){
 
 void process(Bookkeeper *bookie, bool * scanDone) {
     // Set correct Hit Discriminator setting, for proper decoding
-    Fei4DataProcessor proc(bookie->getGlobalFe()->getValue(&Fei4::HitDiscCnfg));
+    Fei4DataProcessor proc(bookie->g_fe->getValue(&Fei4::HitDiscCnfg));
     proc.connect(&bookie->rawData, &bookie->eventMap);
     proc.init();
 
@@ -559,7 +572,7 @@ void YarrGui::doScan(QString qn){
 
         if(!(ui->feTree->topLevelItem(j)->child(4)->checkState(1))){continue;} //Is the Scan checkbox checked?
 
-        Fei4 * fe = bk->feList.at(j);
+        Fei4 * fe = dynamic_cast<Fei4*>(bk->feList.at(j));
 
         ScanBase * s = nullptr;
 
