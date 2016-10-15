@@ -271,7 +271,7 @@ void EditCfgDialog::on_FDACRadio_clicked(){
 //######################### UTILS #########################
 
 QColor* EditCfgDialog::fetchColor(unsigned int v, unsigned int m){
-    int r = 1275 * v / m;
+    int r = 1530 * v / (m+1);
     std::array<int, 3> myRgb;
     myRgb.at(0) = 255;
     myRgb.at(1) = 0;
@@ -286,6 +286,8 @@ QColor* EditCfgDialog::fetchColor(unsigned int v, unsigned int m){
     myRgb.at(1) -= (r>255 ? 255 : r);
     r -= (r>255 ? 255 : r);
     myRgb.at(0) += (r>255 ? 255 : r);
+    r -= (r>255 ? 255 : r);
+    myRgb.at(2) -= (r>255 ? 255 : r);
     r -= (r>255 ? 255 : r);
 
     if(r != 0){
