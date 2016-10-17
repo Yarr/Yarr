@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PointerDialog</class>
+ <widget class="QDialog" name="PointerDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>80</width>
+    <height>258</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QSpinBox" name="spinBox">
+     <property name="minimum">
+      <number>-31</number>
+     </property>
+     <property name="maximum">
+      <number>31</number>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QRadioButton" name="oneModeRadio">
+     <property name="toolTip">
+      <string>Alter one cell by value</string>
+     </property>
+     <property name="text">
+      <string>ONE</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QRadioButton" name="rowModeRadio">
+     <property name="toolTip">
+      <string>Alter one row by value</string>
+     </property>
+     <property name="text">
+      <string>ROW</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QRadioButton" name="colModeRadio">
+     <property name="toolTip">
+      <string>Alter one column by value</string>
+     </property>
+     <property name="text">
+      <string>COL</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QRadioButton" name="allModeRadio">
+     <property name="toolTip">
+      <string>Alter all cells by value</string>
+     </property>
+     <property name="text">
+      <string>ALL</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QRadioButton" name="soneModeRadio">
+     <property name="toolTip">
+      <string>Set one cell to value</string>
+     </property>
+     <property name="text">
+      <string>SONE</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QRadioButton" name="srowModeRadio">
+     <property name="toolTip">
+      <string>Set one row to value</string>
+     </property>
+     <property name="text">
+      <string>SROW</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QRadioButton" name="scolModeRadio">
+     <property name="toolTip">
+      <string>Set one column to value</string>
+     </property>
+     <property name="text">
+      <string>SCOL</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QRadioButton" name="sallModeRadio">
+     <property name="toolTip">
+      <string>Set all cells to value</string>
+     </property>
+     <property name="text">
+      <string>SALL</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

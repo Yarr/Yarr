@@ -7,6 +7,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFont>
+#include <QKeyEvent>
 #include <QString>
 #include <QTableWidget>
 #include <QTextStream>
@@ -20,10 +21,13 @@
 
 #include "Fei4.h"
 #include "json.hpp"
+#include "pointerdialog.h"
 
 namespace Ui {
 class EditCfgDialog;
 }
+
+class PointerDialog;
 
 class EditCfgDialog : public QDialog
 {
@@ -46,10 +50,10 @@ private slots:
     void on_FDACRadio_clicked();
     void clickHandler(int rowCl, int colCl);
     void enterHandler(int rowEn, int colEn);
-
     void on_zoomInButton_clicked();
-
     void on_zoomOutButton_clicked();
+    void keyPressEvent(QKeyEvent* event);
+    void keyReleaseEvent(QKeyEvent* event);
 
 private:
     Ui::EditCfgDialog *ui;
@@ -62,6 +66,13 @@ private:
     QColor* fetchColor(unsigned int v, unsigned int m);
     std::pair<std::string, unsigned int> getMaxVal();
     void initLegend();
+
+    enum class editMode {ONE, ROW, COL, ALL, SONE, SROW, SCOL, SALL};
+    editMode eM; //edit mode
+    int eN; //edit number
+    PointerDialog * pD;
+
+    friend class PointerDialog;
 };
 
 #endif // EDITCFGDIALOG_H

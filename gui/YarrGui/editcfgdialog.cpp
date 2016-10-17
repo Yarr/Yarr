@@ -5,7 +5,10 @@ EditCfgDialog::EditCfgDialog(Fei4 * f, QString cfgFNJ_param, QWidget * parent) :
     QDialog(parent),
     ui(new Ui::EditCfgDialog),
     fE(f),
-    cfgFNJ(cfgFNJ_param)
+    cfgFNJ(cfgFNJ_param),
+    eM(editMode::ONE),
+    eN(1),
+    pD(nullptr)
 {
     ui->setupUi(this);
 
@@ -28,6 +31,7 @@ EditCfgDialog::EditCfgDialog(Fei4 * f, QString cfgFNJ_param, QWidget * parent) :
     zeroFont->setPixelSize(1);
     ui->cfgTable->setFont(*zeroFont);
     ui->cfgTable->setMouseTracking(true);
+//    this->grabKeyboard();
     QObject::connect(ui->cfgTable, SIGNAL(cellClicked(int,int)), this, SLOT(clickHandler(int,int)));
     QObject::connect(ui->cfgTable, SIGNAL(cellEntered(int,int)), this, SLOT(enterHandler(int,int)));
     for(unsigned int i = 0; i<336; i += 1){
@@ -39,6 +43,7 @@ EditCfgDialog::EditCfgDialog(Fei4 * f, QString cfgFNJ_param, QWidget * parent) :
             ui->cfgTable->setItem(i, k, new QTableWidgetItem(QString::number(l)));
             ui->cfgTable->item(i, k)->setBackgroundColor(*(this->fetchColor(l, 1)));
             ui->cfgTable->item(i, k)->setFlags(0x0);
+//            ui->cfgTable->item(i, k)->setToolTip(QString::number(l));
 /*            QObject::connect(ui->cfgTable, SIGNAL(cellClicked(int,int)), this, [=](int rowCl, int colCl){
                 unsigned int max_val = 0;
                 std::string tmpStdStr = "";
@@ -146,6 +151,7 @@ void EditCfgDialog::on_applyButton_clicked(){
 }
 
 void EditCfgDialog::on_saveAsButton_clicked(){
+    this->releaseKeyboard();
     QString filename = QFileDialog::getSaveFileName(this, tr("Select JSON config file"), "./util/", tr("JSON Config File(*.js *.json)"));
     QFile oF(filename);
     oF.open(QIODevice::WriteOnly);
@@ -154,6 +160,7 @@ void EditCfgDialog::on_saveAsButton_clicked(){
     QTextStream oS(&oF);
     oS << qS;
     oF.close();
+    this->grabKeyboard();
 
     return;
 }
@@ -327,19 +334,150 @@ std::pair<std::string, unsigned int> EditCfgDialog::getMaxVal(){
 
 void EditCfgDialog::clickHandler(int rowCl, int colCl){
     std::pair<std::string, unsigned int> maxVal = this->getMaxVal();
-    unsigned int u = ui->cfgTable->item(rowCl, colCl)->text().toUInt();
-    u = (u+1)%(maxVal.second+1);
-    ui->cfgTable->item(rowCl, colCl)->setBackgroundColor(*(this->fetchColor(u, maxVal.second)));
-    ui->cfgTable->item(rowCl, colCl)->setText(QString::number(u));
-    this->j["FE-I4B"]["PixelConfig"][rowCl][maxVal.first.c_str()][colCl] = u;
+    switch(this->eM){
+        case editMode::ONE:{
+            int i = ui->cfgTable->item(rowCl, colCl)->text().toInt();
+            i += this->eN;
+            while(i>(int)maxVal.second){
+                i-=(maxVal.second+1);
+            }
+            while(i<0){
+                i+=(maxVal.second+1);
+            }
+            unsigned int u = (unsigned int)i;
+            ui->cfgTable->item(rowCl, colCl)->setBackgroundColor(*(this->fetchColor(u, maxVal.second)));
+            ui->cfgTable->item(rowCl, colCl)->setText(QString::number(u));
+//            ui->cfgTable->item(rowCl, colCl)->setToolTip(QString::number(u));
+            this->j["FE-I4B"]["PixelConfig"][rowCl][maxVal.first.c_str()][colCl] = u;
+            break;
+        }
+        case editMode::ROW:{
+            for(unsigned int k = 0; k < 80; k+=1){
+                int i = ui->cfgTable->item(rowCl, k)->text().toInt();
+                i += this->eN;
+                while(i>(int)maxVal.second){
+                    i-=(maxVal.second+1);
+                }
+                while(i<0){
+                    i+=(maxVal.second+1);
+                }
+                unsigned int u = (unsigned int)i;
+                ui->cfgTable->item(rowCl, k)->setBackgroundColor(*(this->fetchColor(u, maxVal.second)));
+                ui->cfgTable->item(rowCl, k)->setText(QString::number(u));
+//                ui->cfgTable->item(rowCl, k)->setToolTip(QString::number(u));
+                this->j["FE-I4B"]["PixelConfig"][rowCl][maxVal.first.c_str()][k] = u;
+            }
+            break;
+        }
+        case editMode::COL:{
+            for(unsigned int k = 0; k < 336; k+=1){
+                int i = ui->cfgTable->item(k, colCl)->text().toInt();
+                i += this->eN;
+                while(i>(int)maxVal.second){
+                    i-=(maxVal.second+1);
+                }
+                while(i<0){
+                    i+=(maxVal.second+1);
+                }
+                unsigned int u = (unsigned int)i;
+                ui->cfgTable->item(k, colCl)->setBackgroundColor(*(this->fetchColor(u, maxVal.second)));
+                ui->cfgTable->item(k, colCl)->setText(QString::number(u));
+//                ui->cfgTable->item(k, colCl)->setToolTip(QString::number(u));
+                this->j["FE-I4B"]["PixelConfig"][k][maxVal.first.c_str()][colCl] = u;
+            }
+            break;
+        }
+        case editMode::ALL:{
+            for(unsigned int k = 0; k<336; k+=1){
+                for(unsigned int l = 0; l<80; l+=1){
+                    int i = ui->cfgTable->item(k, l)->text().toInt();
+                    i += this->eN;
+                    while(i>(int)maxVal.second){
+                        i-=(maxVal.second+1);
+                    }
+                    while(i<0){
+                        i+=(maxVal.second+1);
+                    }
+                    unsigned int u = (unsigned int)i;
+                    ui->cfgTable->item(k, l)->setBackgroundColor(*(this->fetchColor(u, maxVal.second)));
+                    ui->cfgTable->item(k, l)->setText(QString::number(u));
+//                    ui->cfgTable->item(k, l)->setToolTip(QString::number(u));
+                    this->j["FE-I4B"]["PixelConfig"][k][maxVal.first.c_str()][l] = u;
+                }
+            }
+            break;
+        }
+        case editMode::SONE:{
+            int i = this->eN;
+            if(i<0 || i>maxVal.second){
+                std::cerr << "Value exceeds allowed range. Aborting..." << std::endl;
+                break;
+            }
+            unsigned int u = (unsigned int)i;
+            ui->cfgTable->item(rowCl, colCl)->setBackgroundColor(*(this->fetchColor(u, maxVal.second)));
+            ui->cfgTable->item(rowCl, colCl)->setText(QString::number(u));
+//            ui->cfgTable->item(rowCl, colCl)->setToolTip(QString::number(u));
+            this->j["FE-I4B"]["PixelConfig"][rowCl][maxVal.first.c_str()][colCl] = u;
+            break;
+        }
+        case editMode::SROW:{
+            int i = this->eN;
+            if(i<0 || i>maxVal.second){
+                std::cerr << "Value exceeds allowed range. Aborting..." << std::endl;
+                break;
+            }
+            for(unsigned int k = 0; k < 80; k+=1){
+                unsigned int u = (unsigned int)i;
+                ui->cfgTable->item(rowCl, k)->setBackgroundColor(*(this->fetchColor(u, maxVal.second)));
+                ui->cfgTable->item(rowCl, k)->setText(QString::number(u));
+//                ui->cfgTable->item(rowCl, k)->setToolTip(QString::number(u));
+                this->j["FE-I4B"]["PixelConfig"][rowCl][maxVal.first.c_str()][k] = u;
+            }
+            break;
+        }
+        case editMode::SCOL:{
+            int i = this->eN;
+            if(i<0 || i>maxVal.second){
+                std::cerr << "Value exceeds allowed range. Aborting..." << std::endl;
+                break;
+            }
+            for(unsigned int k = 0; k < 336; k+=1){
+                unsigned int u = (unsigned int)i;
+                ui->cfgTable->item(k, colCl)->setBackgroundColor(*(this->fetchColor(u, maxVal.second)));
+                ui->cfgTable->item(k, colCl)->setText(QString::number(u));
+//                ui->cfgTable->item(k, colCl)->setToolTip(QString::number(u));
+                this->j["FE-I4B"]["PixelConfig"][k][maxVal.first.c_str()][colCl] = u;
+            }
+            break;
+        }
+        case editMode::SALL:{
+            int i = this->eN;
+            if(i<0 || i>maxVal.second){
+                std::cerr << "Value exceeds allowed range. Aborting..." << std::endl;
+                break;
+            }
+            for(unsigned int k = 0; k<336; k+=1){
+                for(unsigned int l = 0; l<80; l+=1){
+                    unsigned int u = (unsigned int)i;
+                    ui->cfgTable->item(k, l)->setBackgroundColor(*(this->fetchColor(u, maxVal.second)));
+                    ui->cfgTable->item(k, l)->setText(QString::number(u));
+//                    ui->cfgTable->item(k, l)->setToolTip(QString::number(u));
+                    this->j["FE-I4B"]["PixelConfig"][k][maxVal.first.c_str()][l] = u;
+                }
+            }
+            break;
+        }
+    }
 
     return;
 }
 
 void EditCfgDialog::enterHandler(int rowEn, int colEn){
-    QString tmpQStr = "(" + QString::number(rowEn) + ", " + QString::number(colEn) + ")";
+    QString tmpQStr = "(" + QString::number(rowEn) + ", " + QString::number(colEn) + ") : "
+                          + ui->cfgTable->item(rowEn, colEn)->text();
 
     ui->linePosInfo->setText(tmpQStr);
+
 
     return;
 }
@@ -389,4 +527,28 @@ void EditCfgDialog::on_zoomOutButton_clicked(){
 
     return;
 
+}
+
+void EditCfgDialog::keyPressEvent(QKeyEvent* event){
+    if(event->key() == Qt::Key_Control){
+        this->grabKeyboard();
+        this->pD = new PointerDialog(this);
+        this->pD->exec();
+    }else{
+        event->ignore();
+    }
+
+    return;
+}
+
+void EditCfgDialog::keyReleaseEvent(QKeyEvent* event){
+    if(event->key() == Qt::Key_Control){
+        this->pD->close();
+        this->pD = nullptr;
+        this->releaseKeyboard();
+    }else{
+        event->ignore();
+    }
+
+    return;
 }
