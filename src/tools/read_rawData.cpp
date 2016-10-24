@@ -46,6 +46,11 @@ int main(int argc, char* argv[]) {
     Histo1d bcidDiff("bcidDiff", 1001, -0.5, 1000.5, typeid(void));
     Histo1d l1id("l1id", 1001, -0.5, 1000.5, typeid(void));
 
+    Histo2d occupancy("occupancy", 64, 0.5, 64.5, 64, 0.5, 64.5, typeid(void));
+    occupancy.setXaxisTitle("Column");
+    occupancy.setYaxisTitle("Row");
+    occupancy.setZaxisTitle("Hits");
+
     for (int i=1; i<argc; i++) {
         std::cout << "Opening file: " << argv[i] << std::endl;
         std::fstream file(argv[i], std::fstream::in | std::fstream::binary);
@@ -70,6 +75,11 @@ int main(int argc, char* argv[]) {
             event.fromFileBinary(file);
             if (!file)
                 break;
+            std::cout << "############" << std::endl;
+            std::cout << "Tag: " << event.tag << std::endl;
+            std::cout << "L1Id: " << event.l1id << std::endl;
+            std::cout << "BCId: " << event.bcid << std::endl;
+            std::cout << "Hits: " << event.nHits << std::endl;
 
             hitsPerEvent.fill(event.nHits);
             l1id.fill(event.l1id);
@@ -83,7 +93,7 @@ int main(int argc, char* argv[]) {
             }
             old_l1id = event.l1id;
 
-            std::cout << "Tag: " << event.tag << std::endl;
+            //std::cout << "Tag: " << event.tag << std::endl;
             if (count==0)
                 other_old_bcid = event.bcid;
 
@@ -101,6 +111,9 @@ int main(int argc, char* argv[]) {
                 event.doClustering();
                 clustersPerEvent.fill(event.clusters.size());
                 nonZero_cnt++;
+                for (unsigned i=0; i<event.nHits; i++) {
+                    occupancy.fill(event.hits[i].col, event.hits[i].row);
+                }
             }
 
             for (unsigned i=0; i<event.clusters.size(); i++) {
@@ -140,7 +153,21 @@ int main(int argc, char* argv[]) {
         std::cout << "Numer of trigger: " << trigger << std::endl;
     }
 
-/*
+    int sum = 0;
+    for (unsigned i=0; i<64*64; i++) {
+        sum += occupancy.getBin(i);
+    }
+    double mean=(double)sum/4096.0;
+    std::cout << "Occupancy mean = " << mean << std::endl;
+    for (unsigned i=0; i<64*64; i++) {
+        if (occupancy.getBin(i) > (mean*5)) {
+            std::cout << "Flagged bin " << i << " nosiy " << occupancy.getBin(i) << std::endl;
+            occupancy.setBin(i, 0);
+        }
+    }
+
+
+
     bcid.plot("offline");
     l1id.plot("offline");
     bcidDiff.plot("offline");
@@ -150,6 +177,7 @@ int main(int argc, char* argv[]) {
     clusterRowWidth.plot("offline");
     clusterWidthLengthCorr.plot("offline");
     clustersPerEvent.plot("offline");
+    occupancy.plot("offline");
 
     std::cout << "Cluster Column Length mean: " << clusterColLength.getMean() << " +- " << clusterColLength.getStdDev() << std::endl;
     std::cout << "Cluster Row Width mean:     " << clusterRowWidth.getMean() << " +- " << clusterRowWidth.getStdDev() << std::endl;
@@ -157,6 +185,6 @@ int main(int argc, char* argv[]) {
     std::cout << "BCIDdiff entries: " << bcidDiff.getEntries() << std::endl;
     std::cout << "Number of clusters: " << clustersPerEvent.getEntries() << std::endl;
     std::cout << "Number of events: " << hitsPerEvent.getEntries() << std::endl;
-    */
+    
     return 0;
 }

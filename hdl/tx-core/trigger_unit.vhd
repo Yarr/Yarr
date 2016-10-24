@@ -68,7 +68,7 @@ architecture Behavioral of trigger_unit is
 	signal ext_trig_d4 : std_logic;
 	signal ext_trig_pos : std_logic;
 	
-    constant c_DEADTIME : integer := 10;
+    constant c_DEADTIME : integer := 10; -- Deadtime moved to trigger logic
 	signal deadtime : unsigned(7 downto 0);
 	
 begin

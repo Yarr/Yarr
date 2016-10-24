@@ -20,6 +20,7 @@ StdDataGatherer::StdDataGatherer() : LoopActionBase() {
 
 void StdDataGatherer::init() {
     m_done = false;
+    killswitch = false;
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
 }
@@ -49,6 +50,7 @@ void StdDataGatherer::execPart2() {
 
     signaled = 0;
     signal(SIGINT, [](int signum){signaled = 1;});
+    signal(SIGUSR1, [](int signum){signaled = 1;});
 
     std::cout << "### IMPORTANT ### Going into endless loop, interrupt with ^c (SIGINT)!" << std::endl;
 
@@ -70,7 +72,7 @@ void StdDataGatherer::execPart2() {
         delete newData;
         rdc->stat = *g_stat;
         storage->pushData(rdc);
-        if (signaled == 1) {
+        if (signaled == 1 || killswitch) {
             std::cout << "Caught interrupt, stopping data taking!" << std::endl;
             std::cout << "Abort will leave buffers full of data!" << std::endl;
             g_tx->toggleTrigAbort();
