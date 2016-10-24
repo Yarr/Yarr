@@ -6,7 +6,7 @@ Installation
     - Compile YARR producer:
 
     .. code-block:: none
-        :linesnos:
+        :linenos:
 
         $ cd path/to/yarr/eudet
         $ make
@@ -33,7 +33,7 @@ Operation
     - Start producer:
 
     .. code-block:: none
-        :linesnos:
+        :linenos:
 
         $ cd path/to/yarr/eudet
         $ bin/yarr_fe65p2_producer -r <RC ip address> -n <module name>
