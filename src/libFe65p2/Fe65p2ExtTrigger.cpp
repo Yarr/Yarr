@@ -10,7 +10,7 @@
 
 Fe65p2ExtTrigger::Fe65p2ExtTrigger(Bookkeeper *k) : ScanBase(k) {
     triggerFrequency = 1e3;
-    triggerTime = 360;
+    triggerTime = 3600;
     verbose = false;
 }
 
@@ -40,9 +40,9 @@ void Fe65p2ExtTrigger::init() {
 
 // Do necessary pre-scan configuration
 void Fe65p2ExtTrigger::preScan() {
-    g_fe65p2->setValue(&Fe65p2::TrigCount, 10);
-    g_fe65p2->setValue(&Fe65p2::Latency, 82);
-    g_fe65p2->configureGlobal();
+    //g_fe65p2->setValue(&Fe65p2::TrigCount, 3);
+    //g_fe65p2->setValue(&Fe65p2::Latency, 82);
+    //g_fe65p2->configureGlobal();
     while(!g_tx->isCmdEmpty());
 }
 
