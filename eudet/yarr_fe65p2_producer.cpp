@@ -521,6 +521,5 @@ void EudetArchiver::processEvent(Fei4Data *data) {
         if (curEvent.nHits > 0)
             ev.AddBlock(4, (char*) &curEvent.hits[0], curEvent.nHits*sizeof(Fei4Hit));
         */
-
     }
 }

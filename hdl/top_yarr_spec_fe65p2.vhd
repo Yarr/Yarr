@@ -881,14 +881,14 @@ begin
    en_pix_sr_cnfg_buf : OBUFDS port map (O => en_pix_sr_cnfg_n, OB => en_pix_sr_cnfg_p, I => not en_pix_sr_cnfg_t); -- inv
    rst_1_buf : OBUFDS port map (O => rst_1_n, OB => rst_1_p, I => not rst_1_t); --inv
    si_cnfg_buf : OBUFDS port map (O => si_cnfg_p, OB => si_cnfg_n, I => si_cnfg_t);
-   eudet_clk_buf : OBUFDS port map (O => EXT_4_P, OB => EXT_4_N, I => eudet_clk_t);
-   eudet_busy_buf : OBUFDS port map (O => EXT_2_P, OB => EXT_2_N, I => eudet_busy_t);
+   eudet_clk_buf : OBUFDS port map (O => EXT_1_P, OB => EXT_1_N, I => eudet_clk_t);
+   eudet_busy_buf : OBUFDS port map (O => EXT_3_P, OB => EXT_3_N, I => eudet_busy_t);
 	
    so_cnfg_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => so_cnfg_t, I => so_cnfg_p, IB => so_cnfg_n);
    hit_or_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => hit_or_t, I => hit_or_p, IB => hit_or_n);
    out_data_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => out_data_t, I => out_data_p, IB => out_data_n);
-   eudet_rst_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => eudet_rst_t, I => EXT_3_P, IB => EXT_3_N);
-   eudet_trig_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => eudet_trig_t, I => EXT_1_P, IB => EXT_1_N);
+   eudet_rst_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => eudet_rst_t, I => EXT_2_P, IB => EXT_2_N);
+   eudet_trig_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => eudet_trig_t, I => EXT_4_P, IB => EXT_4_N);
 	
 	fe_data_i(0) <= not out_data_t;
 	
@@ -1269,7 +1269,11 @@ begin
     --		TRIG2 <= wb_dat_o;
     TRIG0(14 downto 0) <= trig_tag_t(14 downto 0);
     TRIG0(15) <= int_trig_t;
-
+    TRIG0(16) <= eudet_trig_t;
+    TRIG0(17) <= eudet_clk_t;
+    TRIG0(18) <= eudet_busy_t;
+    TRIG0(31 downto 19) <= (others => '0');
+    
     ila_i : ila
     port map (
                  CONTROL => CONTROL,
