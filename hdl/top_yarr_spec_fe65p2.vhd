@@ -881,7 +881,7 @@ begin
    en_pix_sr_cnfg_buf : OBUFDS port map (O => en_pix_sr_cnfg_n, OB => en_pix_sr_cnfg_p, I => not en_pix_sr_cnfg_t); -- inv
    rst_1_buf : OBUFDS port map (O => rst_1_n, OB => rst_1_p, I => not rst_1_t); --inv
    si_cnfg_buf : OBUFDS port map (O => si_cnfg_p, OB => si_cnfg_n, I => si_cnfg_t);
-   eudet_clk_buf : OBUFDS port map (O => EXT_4_P, OB => EXT_4_N, I => eudet_clk_t);
+   eudet_clk_buf : OBUFDS port map (O => EXT_4_P, OB => EXT_4_N, I => not eudet_clk_t);
    eudet_busy_buf : OBUFDS port map (O => EXT_2_P, OB => EXT_2_N, I => eudet_busy_t);
 	
    so_cnfg_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => so_cnfg_t, I => so_cnfg_p, IB => so_cnfg_n);
@@ -1269,6 +1269,12 @@ begin
     --		TRIG2 <= wb_dat_o;
     TRIG0(14 downto 0) <= trig_tag_t(14 downto 0);
     TRIG0(15) <= int_trig_t;
+    TRIG0(16) <= eudet_trig_t;
+    TRIG0(17) <= eudet_clk_t;
+    TRIG0(18) <= eudet_busy_t;
+    TRIG0(19) <= trigger_t;
+    TRIG0(20) <= hit_or_t;
+
 
     ila_i : ila
     port map (

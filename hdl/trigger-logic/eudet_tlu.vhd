@@ -49,7 +49,7 @@ architecture rtl of eudet_tlu is
     end component;
 
     -- constants
-    signal C_DEADTIME : integer := 200; -- clk_i cycles
+    signal C_DEADTIME : integer := 300; -- clk_i cycles
     signal C_CLKDIVIDER : integer := 4; -- 40 MHz -> 10Mhz
 
     -- State machine
