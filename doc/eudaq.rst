@@ -14,7 +14,7 @@ Installation
     - Copy YARR converter plugin to EUDAQ and recompile EUDAQ:
 
     .. code-block:: none
-        :linesnos:
+        :linenos:
 
         $ cd path/to/yarr/eudet
         $ scp eudaq/YARRConverterPlugin.cc <user>@<host>:/path/to/eudaq/main/lib/plugins/.
