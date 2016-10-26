@@ -54,7 +54,23 @@ namespace eudaq {
       plane.SetSizeZS(width, height, 0, 1);
 
       const RawDataEvent & my_ev = dynamic_cast<const RawDataEvent &>(ev);
-      eudaq::RawDataEvent::data_t block0=my_ev.GetBlock(0);
+      for (unsigned i=0; i<my_ev.NumBlocks(); i++) {
+        eudaq::RawDataEvent::data_t block=my_ev.GetBlock(i);
+        unsigned it = 0;
+        uint32_t tag = *((uint32_t*)(&block[it])); it+= sizeof(uint32_t);
+        uint32_t l1id = *((uint16_t*)(&block[it])); it+= sizeof(uint16_t);
+        uint32_t bcid = *((uint16_t*)(&block[it])); it+= sizeof(uint16_t);
+        uint32_t nHits = *((uint16_t*)(&block[it])); it+= sizeof(uint16_t);
+        plane.SetTLUEvent(tag);
+
+        for (unsigned i=0; i<nHits; i++) {
+            Fei4Hit hit = *((Fei4Hit*)(&block[it])); it+= sizeof(Fei4Hit);
+	        plane.PushPixel(hit.col,hit.row,hit.tot);
+        }
+        
+      }
+    
+      /*
       uint32_t mytag = *((uint32_t*) (&block0[0]));
       plane.SetTLUEvent(mytag);
       std::cout << "Hello! Getting tag " << mytag << std::endl;		
@@ -81,7 +97,7 @@ namespace eudaq {
 	     int row=yhit.row;
 	     plane.PushPixel(col,row,tot);
          }
-      }
+      }*/
       
       sev.AddPlane(plane);
       // Indicate that data was successfully converted
