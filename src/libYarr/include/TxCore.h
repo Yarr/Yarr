@@ -89,6 +89,10 @@ class TxCore {
             spec->writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_MODE, (uint32_t) mode);
         }
 
+        void resetTriggerLogic() {
+            spec->writeSingle(TRIG_LOGIC_ADR | 0xFF, 0x1);
+        }
+
     private:
         SpecController *spec;
         bool verbose;

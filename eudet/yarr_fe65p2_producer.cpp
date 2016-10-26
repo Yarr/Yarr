@@ -130,6 +130,7 @@ class YarrFe65p2Producer : public eudaq::Producer {
 
             // Configure hardware 
             std::cout << "Setting up triggerlogic ..." << std::endl;
+            tx->resetTriggerLogic();
             tx->setTriggerLogicMask(0x0100); // Eudet TLU
             tx->setTriggerLogicMode(MODE_EUDET_TAG);
                
@@ -178,6 +179,7 @@ class YarrFe65p2Producer : public eudaq::Producer {
             std::cout << "### Start Run: ### " << m_run << std::endl;
             std::cout << "##################" << std::endl;
 
+            tx->resetTriggerLogic();
 
             // It must send a BORE to the Data Collector
             eudaq::RawDataEvent bore(eudaq::RawDataEvent::BORE(EVENT_TYPE, m_run));
