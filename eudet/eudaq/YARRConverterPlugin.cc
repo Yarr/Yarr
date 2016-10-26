@@ -25,7 +25,7 @@ namespace eudaq {
   static const char *EVENT_TYPE = "YarrFei4";
 
   // Declare a new class that inherits from DataConverterPlugin
-  class ExampleConverterPlugin : public DataConverterPlugin {
+  class YARRConverterPlugin : public DataConverterPlugin {
 
   public:
     // This is called once at the beginning of each run.
@@ -51,30 +51,36 @@ namespace eudaq {
       StandardPlane plane(id, EVENT_TYPE, sensortype);
       // Set the number of pixels
       int width = 64, height = 64;
-      plane.SetSizeRaw(width, height);
+      plane.SetSizeZS(width, height, 0, 1);
 
       const RawDataEvent & my_ev = dynamic_cast<const RawDataEvent &>(ev);
       eudaq::RawDataEvent::data_t block0=my_ev.GetBlock(0);
-
       uint32_t mytag = *((uint32_t*) (&block0[0]));
       plane.SetTLUEvent(mytag);
+      std::cout << "Hello! Getting tag " << mytag << std::endl;		
 
       eudaq::RawDataEvent::data_t block1=my_ev.GetBlock(1);
       uint16_t myl1id = *((uint16_t*) (&block1[0]));
+      std::cout << "Hello! Getting l1id " << myl1id << std::endl;		
       
       eudaq::RawDataEvent::data_t block2=my_ev.GetBlock(2);
       uint16_t mybcid = *((uint16_t*) (&block2[0]));
+      std::cout << "Hello! Getting bcid " << mybcid << std::endl;		
 
       eudaq::RawDataEvent::data_t block3=my_ev.GetBlock(3);
       uint16_t mnHits = *((uint16_t*) (&block3[0]));
+      std::cout << "Hello! Getting nHits " << mnHits << std::endl;		
 
-      eudaq::RawDataEvent::data_t block4=my_ev.GetBlock(4);
-      for (unsigned i=0; i<mnHits; i+=sizeof(Fei4Hit)) {
-	  Fei4Hit yhit = *((Fei4Hit *) &block4[i]);
-	  int tot=yhit.tot;
-	  int col=yhit.col;
-	  int row=yhit.row;
-	  plane.PushPixel(col,row,tot,false,mybcid);
+      if (mnHits > 0) {
+      	std::cout << "Hello! Getting hits" << std::endl;		
+      	eudaq::RawDataEvent::data_t block4=my_ev.GetBlock(4);
+      	for (unsigned i=0; i<mnHits; i+=sizeof(Fei4Hit)) {
+ 	     Fei4Hit yhit = *((Fei4Hit *) &block4[i]);
+	     int tot=yhit.tot;
+	     int col=yhit.col;
+	     int row=yhit.row;
+	     plane.PushPixel(col,row,tot);
+         }
       }
       
       sev.AddPlane(plane);
@@ -94,17 +100,17 @@ namespace eudaq {
     // The DataConverterPlugin constructor must be passed the event type
     // in order to register this converter for the corresponding conversions
     // Member variables should also be initialized to default values here.
-    ExampleConverterPlugin()
+    YARRConverterPlugin()
       : DataConverterPlugin(EVENT_TYPE), m_exampleparam(0) {}
 
     // Information extracted in Initialize() can be stored here:
     unsigned m_exampleparam;
 
     // The single instance of this converter plugin
-    static ExampleConverterPlugin m_instance;
+    static YARRConverterPlugin m_instance;
   }; // class ExampleConverterPlugin
 
   // Instantiate the converter plugin instance
-  ExampleConverterPlugin ExampleConverterPlugin::m_instance;
+  YARRConverterPlugin YARRConverterPlugin::m_instance;
 
 } // namespace eudaq
