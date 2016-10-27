@@ -121,9 +121,9 @@ begin
         elsif rising_edge(wb_clk_i) then
             wb_ack_o <= '0';
             wb_dat_o <= (others => '0');
+            local_reset <= '0';
             if (wb_cyc_i = '1' and wb_stb_i = '1') then
                 wb_ack_o <= '1';
-                local_reset <= '0';
                 if (wb_we_i = '1') then
                     case (wb_adr_i(7 downto 0)) is
                         when x"00" =>
