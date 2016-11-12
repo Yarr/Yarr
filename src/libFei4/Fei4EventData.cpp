@@ -5,6 +5,7 @@
 #include <list>
 
 void Fei4Event::toFileBinary(std::fstream &handle) {
+    handle.write((char*)&tag, sizeof(uint32_t));
     handle.write((char*)&l1id, sizeof(uint16_t));
     handle.write((char*)&bcid, sizeof(uint16_t));
     handle.write((char*)&nHits, sizeof(uint16_t));
@@ -15,6 +16,7 @@ void Fei4Event::toFileBinary(std::fstream &handle) {
 
 void Fei4Event::fromFileBinary(std::fstream &handle) {
     uint16_t t_hits = 0;
+    handle.read((char*)&tag, sizeof(uint32_t));
     handle.read((char*)&l1id, sizeof(uint16_t));
     handle.read((char*)&bcid, sizeof(uint16_t));
     handle.read((char*)&t_hits, sizeof(uint16_t));

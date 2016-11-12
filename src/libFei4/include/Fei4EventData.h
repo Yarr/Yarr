@@ -67,12 +67,14 @@ class Fei4Cluster {
 class Fei4Event {
     public:
         Fei4Event() {
+            tag = 0;
             l1id = 0;
             bcid = 0;
             nHits = 0;
             nClusters = 0;
         }
-        Fei4Event(unsigned arg_l1id, unsigned arg_bcid) {
+        Fei4Event(unsigned arg_tag, unsigned arg_l1id, unsigned arg_bcid) {
+            tag = arg_tag;
             l1id = arg_l1id;
             bcid = arg_bcid;
             nHits = 0;
@@ -103,6 +105,7 @@ class Fei4Event {
 
         uint16_t l1id;
         uint16_t bcid;
+        uint32_t tag;
         uint16_t nHits;
         uint16_t nClusters;
         std::vector<Fei4Hit> hits;
@@ -125,8 +128,8 @@ class Fei4Data {
             //}
         }
 
-        void newEvent(unsigned arg_l1id, unsigned arg_bcid) {
-            events.push_back(Fei4Event(arg_l1id, arg_bcid));
+        void newEvent(unsigned arg_tag, unsigned arg_l1id, unsigned arg_bcid) {
+            events.push_back(Fei4Event(arg_tag, arg_l1id, arg_bcid));
             curEvent = &events.back();
         }
 

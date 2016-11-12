@@ -68,7 +68,7 @@ architecture Behavioral of trigger_unit is
 	signal ext_trig_d4 : std_logic;
 	signal ext_trig_pos : std_logic;
 	
-    constant c_DEADTIME : integer := 200;
+    constant c_DEADTIME : integer := 10; -- Deadtime moved to trigger logic
 	signal deadtime : unsigned(7 downto 0);
 	
 begin
@@ -211,7 +211,7 @@ begin
 			ext_trig_d3 <= ext_trig_d2;
 			ext_trig_d4 <= ext_trig_d3;
 			-- Triggered on pos edge of external signal and high longer than 25ns
-			if (ext_trig_d4 = '0' and ext_trig_d3 = '1' and ext_trig_d2 = '1' and ext_trig_d1 = '1' and deadtime = 0) then
+			if (ext_trig_d4 = '0' and ext_trig_d3 = '1' and deadtime = 0) then
 				ext_trig_pos <= '1';
                 deadtime <= to_unsigned(c_DEADTIME, 8);
 			else

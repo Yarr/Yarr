@@ -28,7 +28,6 @@ class ClipBoard {
                 T* tmp = this->popData();
                 delete tmp;
             }
-
         }
 
         void pushData(T *data) {
@@ -66,6 +65,13 @@ class ClipBoard {
 
         typename std::deque<T*>::iterator end() {
             return dataQueue.end();
+        }
+
+        void clear() {
+            while(!dataQueue.empty()) {
+                T* tmp = this->popData();
+                delete tmp;
+            }
         }
 
     private:

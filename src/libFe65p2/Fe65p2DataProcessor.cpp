@@ -24,6 +24,7 @@ void Fe65p2DataProcessor::init() {
 void Fe65p2DataProcessor::process() {
     unsigned badCnt = 0;
     for (unsigned i=0; i<activeChannels.size(); i++) {
+        tag[activeChannels[i]] = 0;
         l1id[activeChannels[i]] = 0;
         bcid[activeChannels[i]] = 0;
         wordCount[activeChannels[i]] = 0;
@@ -55,63 +56,68 @@ void Fe65p2DataProcessor::process() {
             unsigned words = curIn->words;
             for (unsigned i=0; i<words; i++) {
                 uint32_t value = curIn->buf[i];
-                unsigned channel = ((value & 0xFF000000) >> 24);
-                wordCount[channel]++;
-                if (__builtin_expect((value == 0xDEADBEEF), 0)) {
-                    std::cout << "# ERROR # " << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << curIn->words << " " << std::hex << value << " " << std::dec << std::endl;
-                } else if (__builtin_expect((curOut[channel] == NULL), 0)) {
-                    std::cout << "# ERROR # " << __PRETTY_FUNCTION__ << " : Received data for channel " << channel << " but storage not initiliazed!" << std::endl;
-                } else if ((value & 0x00800000) == 0x00800000) {
-                    // BCID
-                    if ((int)(value & 0x007FFFFF) - (int)(bcid[channel]) > 1) {
-                        l1id[channel]++; // Iterate L1id when not consecutive bcid
-                    }
-                    bcid[channel] = (value & 0x007FFFFF);
-                    curOut[channel]->newEvent(l1id[channel], bcid[channel]);
-                    events[channel]++;
+                unsigned channel = ((value & 0xFC000000) >> 26);
+                unsigned type = ((value &0x03000000) >> 24);
+                if (type == 0x1) {
+                    tag[channel] = unsigned(value & 0x00FFFFFF);
                 } else {
-                    unsigned col  = (value & 0x1e0000) >> 17;
-                    unsigned row  = (value & 0x01F800) >> 11;
-                    unsigned rowp = (value & 0x000400) >> 10;
-                    unsigned tot0 = (value & 0x0000F0) >> 4;
-                    unsigned tot1 = (value & 0x00000F) >> 0;
-
-                    if ((tot0 != 15 || tot1 != 15) && (tot0 > 0 || tot1 > 0)) {
-                        unsigned real_col = 0;
-                        unsigned real_row0 = 0;
-                        unsigned real_row1 = 0;
-                        if (rowp == 1) {
-                            real_col = (col*4) + ((row/32)*2) + 1;
-                        } else {
-                            real_col = (col*4) + ((row/32)*2) + 2;
+                    wordCount[channel]++;
+                    if (__builtin_expect((value == 0xDEADBEEF), 0)) {
+                        std::cout << "# ERROR # " << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << curIn->words << " " << std::hex << value << " " << std::dec << std::endl;
+                    } else if (__builtin_expect((curOut[channel] == NULL), 0)) {
+                        std::cout << "# ERROR # " << __PRETTY_FUNCTION__ << " : Received data for channel " << channel << " but storage not initiliazed!" << std::endl;
+                    } else if ((value & 0x00800000) == 0x00800000) {
+                        // BCID
+                        if ((int)(value & 0x007FFFFF) - (int)(bcid[channel]) > 1) {
+                            l1id[channel]++; // Iterate L1id when not consecutive bcid
                         }
+                        bcid[channel] = (value & 0x007FFFFF);
+                        curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
+                        events[channel]++;
+                    } else {
+                        unsigned col  = (value & 0x1e0000) >> 17;
+                        unsigned row  = (value & 0x01F800) >> 11;
+                        unsigned rowp = (value & 0x000400) >> 10;
+                        unsigned tot0 = (value & 0x0000F0) >> 4;
+                        unsigned tot1 = (value & 0x00000F) >> 0;
 
-                        if (row < 32) {
-                            real_row1 = (row+1)*2;
-                            real_row0 = (row+1)*2 - 1;
-                        } else {
-                            real_row1 = 64 - (row-32)*2;
-                            real_row0 = 64 - (row-32)*2 - 1;
-                        }
-
-                        if (events[channel] == 0 ) {
-                            std::cout << "# ERROR # " << channel << " no header in data fragment!" << std::endl;
-                            curOut[channel]->newEvent(l1id[channel], bcid[channel]);
-                            events[channel]++;
-                            //hits[channel] = 0;
-                        }
-                        if (__builtin_expect((real_col == 0 || real_row0 == 0 || real_col > 64 || real_row0 > 64), 0)) {
-                            badCnt++;
-                            std::cout << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << curIn->words << " " << std::hex << value << " " << std::dec << std::endl;
-                        } else {
-                            if (tot0 != 15) {
-                                curOut[channel]->curEvent->addHit(real_row0, real_col, tot0);
-                                //std::cout << " hit!" << std::endl;
-                                hits[channel]++;
+                        if ((tot0 != 15 || tot1 != 15) && (tot0 > 0 || tot1 > 0)) {
+                            unsigned real_col = 0;
+                            unsigned real_row0 = 0;
+                            unsigned real_row1 = 0;
+                            if (rowp == 1) {
+                                real_col = (col*4) + ((row/32)*2) + 1;
+                            } else {
+                                real_col = (col*4) + ((row/32)*2) + 2;
                             }
-                            if (tot1 != 15) {
-                                curOut[channel]->curEvent->addHit(real_row1, real_col, tot1);
-                                hits[channel]++;
+
+                            if (row < 32) {
+                                real_row1 = (row+1)*2;
+                                real_row0 = (row+1)*2 - 1;
+                            } else {
+                                real_row1 = 64 - (row-32)*2;
+                                real_row0 = 64 - (row-32)*2 - 1;
+                            }
+
+                            if (events[channel] == 0 ) {
+                                std::cout << "# ERROR # " << channel << " no header in data fragment!" << std::endl;
+                                curOut[channel]->newEvent(0xDEADBEEF, l1id[channel], bcid[channel]);
+                                events[channel]++;
+                                //hits[channel] = 0;
+                            }
+                            if (__builtin_expect((real_col == 0 || real_row0 == 0 || real_col > 64 || real_row0 > 64), 0)) {
+                                badCnt++;
+                                std::cout << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << curIn->words << " " << std::hex << value << " " << std::dec << std::endl;
+                            } else {
+                                if (tot0 != 15) {
+                                    curOut[channel]->curEvent->addHit(real_row0, real_col, tot0);
+                                    //std::cout << " hit!" << std::endl;
+                                    hits[channel]++;
+                                }
+                                if (tot1 != 15) {
+                                    curOut[channel]->curEvent->addHit(real_row1, real_col, tot1);
+                                    hits[channel]++;
+                                }
                             }
                         }
                     }

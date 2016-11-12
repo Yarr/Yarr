@@ -55,7 +55,7 @@ entity wb_tx_core is
 		tx_data_o	: out std_logic_vector(g_NUM_TX-1 downto 0);
 		trig_pulse_o : out std_logic;
 		
-		-- Async
+		-- Sync
 		ext_trig_i : in std_logic
 	);
 end wb_tx_core;

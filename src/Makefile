@@ -135,9 +135,9 @@ $(BIN)/%: $(BUILD)/%.o $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(U
 
 # Libs
 
-$(LLIB)/libyarr.a: $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(UTIL_OBJS)
+$(LLIB)/libyarr.a: $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS)
 	@echo [Creating] $@
-	@$(AR) rcs $@ $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(UTIL_OBJS)
+	@$(AR) rcs $@ $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS)
 
 -include $(ALL_DEPS)
 
