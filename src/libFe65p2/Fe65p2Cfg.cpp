@@ -14,13 +14,19 @@ void Fe65p2Cfg::toFileJson(json &j) {
 }
 
 void Fe65p2Cfg::fromFileJson(json &j) {
-    name = j["FE65-P2"]["name"];
-    txChannel = j["FE65-P2"]["txChannel"];
-    rxChannel = j["FE65-P2"]["rxChannel"];
+    if (!j["FE65-P2"]["name"].empty())
+        name = j["FE65-P2"]["name"];
+    if (!j["FE65-P2"]["txChannel"].empty())
+        txChannel = j["FE65-P2"]["txChannel"];
+    if (!j["FE65-P2"]["rxChannel"].empty())
+        rxChannel = j["FE65-P2"]["rxChannel"];
     
-    cap = j["FE65-P2"]["Parameter"]["cap"];
-    vcal_slope = j["FE65-P2"]["Parameter"]["vcalSlope"];
-    vcal_offset = j["FE65-P2"]["Parameter"]["vcalOffset"];
+    if (!j["FE65-P2"]["Parameter"]["cap"].empty())
+        cap = j["FE65-P2"]["Parameter"]["cap"];
+    if (!j["FE65-P2"]["Parameter"]["vcalSlope"].empty())
+        vcal_slope = j["FE65-P2"]["Parameter"]["vcalSlope"];
+    if (!j["FE65-P2"]["Parameter"]["vcalOffset"].empty())
+        vcal_offset = j["FE65-P2"]["Parameter"]["vcalOffset"];
 
     Fe65p2GlobalCfg::fromFileJson(j);
     Fe65p2PixelCfg::fromFileJson(j);
