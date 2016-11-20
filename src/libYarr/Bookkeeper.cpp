@@ -34,7 +34,7 @@ void Bookkeeper::addFe(FrontEnd *fe, unsigned txChannel, unsigned rxChannel) {
         std::cerr << __PRETTY_FUNCTION__ << " -> Error rx channel already in use, not adding FE" << std::endl;
     } else {
         feList.push_back(fe);
-        feList.back()->setChannel(txChannel, rxChannel);
+        dynamic_cast<FrontEndCfg*>(feList.back())->setChannel(txChannel, rxChannel);
         eventMap[rxChannel];
         histoMap[rxChannel];
         resultMap[rxChannel];
@@ -56,7 +56,7 @@ void Bookkeeper::delFe(unsigned rxChannel) {
         std::cerr << __PRETTY_FUNCTION__ << " -> Error rx channel not in use, can not delete FE" << std::endl;
     } else {
         for(unsigned int k=0; k<feList.size(); k++) {
-            if(feList[k]->getChannel() == rxChannel) {
+            if(dynamic_cast<FrontEndCfg*>(feList[k])->getChannel() == rxChannel) {
                 delete feList[k];
                 feList.erase(feList.begin() + k);
             }
@@ -69,13 +69,13 @@ void Bookkeeper::delFe(unsigned rxChannel) {
 }
 
 void Bookkeeper::delFe(FrontEnd* fe) {
-    unsigned arg_channel = fe->getChannel();
+    unsigned arg_channel = dynamic_cast<FrontEndCfg*>(fe)->getChannel();
     delFe(arg_channel);
 }
 
 FrontEnd* Bookkeeper::getFeByChannel(unsigned arg_channel) {
     for(unsigned int k=0; k<feList.size(); k++) {
-        if(feList[k]->getChannel() == arg_channel) {
+        if(dynamic_cast<FrontEndCfg*>(feList[k])->getChannel() == arg_channel) {
             return feList[k];
         }
     }
@@ -84,7 +84,7 @@ FrontEnd* Bookkeeper::getFeByChannel(unsigned arg_channel) {
 
 FrontEnd* Bookkeeper::getFe(unsigned rxChannel) {
     for(unsigned int k=0; k<feList.size(); k++) {
-        if(feList[k]->getChannel() == rxChannel) {
+        if(dynamic_cast<FrontEndCfg*>(feList[k])->getChannel() == rxChannel) {
             return feList[k];
         }
     }
@@ -97,7 +97,7 @@ FrontEnd* Bookkeeper::getLastFe() {
 
 bool Bookkeeper::isChannelUsed(unsigned arg_channel) {
     for (unsigned i=0; i<feList.size(); i++) {
-        if (feList[i]->getRxChannel() == arg_channel)
+        if (dynamic_cast<FrontEndCfg*>(feList[i])->getRxChannel() == arg_channel)
             return true;
     }
     return false;
@@ -107,7 +107,7 @@ uint32_t Bookkeeper::getTxMask() {
     uint32_t mask = 0;
     for (unsigned i=0; i<feList.size(); i++) {
         if (feList[i]->isActive()) {
-            mask |= (0x1 << feList[i]->getTxChannel());
+            mask |= (0x1 << dynamic_cast<FrontEndCfg*>(feList[i])->getTxChannel());
         }
     }
     return mask;
@@ -117,7 +117,7 @@ uint32_t Bookkeeper::getRxMask() {
     uint32_t mask = 0;
     for (unsigned i=0; i<feList.size(); i++) {
         if (feList[i]->isActive()) {
-            mask |= (0x1 << feList[i]->getRxChannel());
+            mask |= (0x1 << dynamic_cast<FrontEndCfg*>(feList[i])->getRxChannel());
         }
     }
     return mask;

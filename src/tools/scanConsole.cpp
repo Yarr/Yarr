@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
             std::cout << "-> Found FE " << name << std::endl;
             // Add FE to bookkeeper
             bookie.addFe(new Fei4(&tx, txChannel, rxChannel), txChannel, rxChannel);
-            dynamic_cast<FrontEnd*>(bookie.getLastFe())->setName(name);
+            dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->setName(name);
             // TODO verify cfg typea
             // Load config
             dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->fromFileBinary(feCfgPath);
@@ -188,9 +188,9 @@ int main(int argc, char *argv[]) {
     std::chrono::steady_clock::time_point cfg_start = std::chrono::steady_clock::now();
     for (unsigned i=0; i<bookie.feList.size(); i++) {
         FrontEnd *fe = bookie.feList[i];
-        std::cout << "-> Configuring " << fe->getName() << std::endl;
+        std::cout << "-> Configuring " << dynamic_cast<FrontEndCfg*>(fe)->getName() << std::endl;
         // Select correct channel
-        tx.setCmdEnable(0x1 << fe->getTxChannel());
+        tx.setCmdEnable(0x1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         // Configure
         fe->configure();
         // Wait for fifo to be empty
@@ -276,7 +276,7 @@ int main(int argc, char *argv[]) {
             fe->histogrammer->addHistogrammer(new HitsPerEvent());
            
             // Init analysis per FE and depending on scan type
-            fe->ana = new Fei4Analysis(&bookie, fe->getRxChannel());
+            fe->ana = new Fei4Analysis(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
             fe->ana->connect(s, fe->clipHisto, fe->clipResult);
             fe->ana->addAlgorithm(new L1Analysis());
             if (scanType == "digitalscan") {
@@ -324,7 +324,7 @@ int main(int argc, char *argv[]) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
             anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana));
-            std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
+            std::cout << "  -> Analysis thread of Fe " << dynamic_cast<FrontEndCfg*>(fe)->getRxChannel() << std::endl;
         }
     }
 
@@ -377,12 +377,12 @@ int main(int argc, char *argv[]) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
             // Save config
-            std::cout << "-> Saving config of FE " << fe->getName() << std::endl;
+            std::cout << "-> Saving config of FE " << dynamic_cast<FrontEndCfg*>(fe)->getName() << std::endl;
             dynamic_cast<FrontEndCfg*>(fe)->toFileBinary();
             // Plot
             if (doPlots) {
-                std::cout << "-> Plotting histograms of FE " << fe->getRxChannel() << std::endl;
-                fe->ana->plot(std::string(timestamp) + "-" + fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
+                std::cout << "-> Plotting histograms of FE " << dynamic_cast<FrontEndCfg*>(fe)->getRxChannel() << std::endl;
+                fe->ana->plot(std::string(timestamp) + "-" + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_ch" + std::to_string(dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) + "_" + scanType, outputDir);
                 //fe->ana->toFile(std::string(timestamp) + "-" + fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
             }
             // Free

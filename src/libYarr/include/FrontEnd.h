@@ -24,15 +24,6 @@ class FrontEnd {
     public:
         FrontEnd() {}
         virtual ~FrontEnd() {}
-		
-        unsigned getChannel();
-		unsigned getTxChannel();
-		unsigned getRxChannel();
-        std::string getName();
-     
-		void setChannel(unsigned channel);
-		void setChannel(unsigned arg_txChannel, unsigned arg_rxChannel);
-        void setName(std::string arg_name);
 
         bool getActive();
 		bool isActive();
@@ -48,10 +39,7 @@ class FrontEnd {
         Fei4Histogrammer *histogrammer;
 
     protected:
-        std::string name;
         bool active;
-        unsigned txChannel;
-        unsigned rxChannel;
 };
 
 class FrontEndCfg {
@@ -63,6 +51,19 @@ class FrontEndCfg {
         virtual void fromFileBinary(std::string)=0;
         virtual void toFileBinary()=0;
         virtual void fromFileBinary()=0;
+		
+        unsigned getChannel() {return rxChannel;}
+		unsigned getTxChannel() {return txChannel;}
+		unsigned getRxChannel() {return rxChannel;}
+        std::string getName() {return name;}
+        
+        void setChannel(unsigned channel) {txChannel = channel; rxChannel = channel;}
+		void setChannel(unsigned arg_txChannel, unsigned arg_rxChannel) {txChannel = arg_txChannel; rxChannel = arg_rxChannel;}
+        void setName(std::string arg_name) {name = arg_name;}
+    protected:
+        std::string name;
+        unsigned txChannel;
+        unsigned rxChannel;
 };
 
 #endif

@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
     }
     */ 
     bookie.addFe(new Fe65p2(&tx), 0, 0);
-    bookie.getLastFe()->setName("fe65p2");
+    dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->setName("fe65p2");
     bookie.getLastFe()->setActive(1);
     //bookie.getLastFe()->setScap(1.18);
     //bookie.getLastFe()->setLcap(0);
@@ -205,13 +205,13 @@ int main(int argc, char *argv[]) {
     //fe->clipResult = &bookie.resultMap[0];
 
     json icfg;
-    std::fstream icfg_file((bookie.getLastFe()->getName()+".json").c_str(), std::ios::in);
+    std::fstream icfg_file((dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getName()+".json").c_str(), std::ios::in);
     if (icfg_file) {
-        std::fstream backup((bookie.getLastFe()->getName()+".json.backup").c_str(), std::ios::out);
+        std::fstream backup((dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getName()+".json.backup").c_str(), std::ios::out);
         icfg_file >> icfg;
         bookie.g_fe65p2->fromFileJson(icfg);
         dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->fromFileJson(icfg);
-        bookie.getLastFe()->setName("fe65p2");
+        dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->setName("fe65p2");
         backup << std::setw(4) << icfg;
         backup.close();
     }
@@ -322,7 +322,7 @@ int main(int argc, char *argv[]) {
             fe->histogrammer->setMapSize(64, 64);
            
             // Init analysis per FE and depending on scan type
-            fe->ana = new Fei4Analysis(&bookie, fe->getRxChannel());
+            fe->ana = new Fei4Analysis(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
             fe->ana->connect(s, fe->clipHisto, fe->clipResult);
             fe->ana->addAlgorithm(new L1Analysis());
             fe->ana->addAlgorithm(new TotDistPlotter());
@@ -375,7 +375,7 @@ int main(int argc, char *argv[]) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
             anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana));
-            std::cout << "  -> Analysis thread of Fe " << fe->getRxChannel() << std::endl;
+            std::cout << "  -> Analysis thread of Fe " << dynamic_cast<FrontEndCfg*>(fe)->getRxChannel() << std::endl;
         }
     }
 
@@ -428,17 +428,17 @@ int main(int argc, char *argv[]) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
             // Save config
-            std::cout << "-> Saving config of FE " << fe->getName() << std::endl;
+            std::cout << "-> Saving config of FE " << dynamic_cast<FrontEndCfg*>(fe)->getName() << std::endl;
             json cfg;
-            std::fstream cfg_file((fe->getName()+".json").c_str(), std::ios::out);
+            std::fstream cfg_file((dynamic_cast<FrontEndCfg*>(fe)->getName()+".json").c_str(), std::ios::out);
             dynamic_cast<FrontEndCfg*>(fe)->toFileJson(cfg);
             cfg_file << std::setw(4) << cfg;
             cfg_file.close();
             // Plot
             if (doPlots) {
-                std::cout << "-> Plotting histograms of FE " << fe->getRxChannel() << std::endl;
-                fe->ana->plot(/*std::string(timestamp) + "-" + */fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
-                fe->ana->toFile(/*std::string(timestamp) + "-" + */fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
+                std::cout << "-> Plotting histograms of FE " << dynamic_cast<FrontEndCfg*>(fe)->getRxChannel() << std::endl;
+                fe->ana->plot(/*std::string(timestamp) + "-" + */dynamic_cast<FrontEndCfg*>(fe)->getName() + "_ch" + std::to_string(dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) + "_" + scanType, outputDir);
+                fe->ana->toFile(/*std::string(timestamp) + "-" + */dynamic_cast<FrontEndCfg*>(fe)->getName() + "_ch" + std::to_string(dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) + "_" + scanType, outputDir);
             }
             // Free
             delete fe->histogrammer;
