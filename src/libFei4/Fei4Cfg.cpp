@@ -133,7 +133,10 @@ void Fei4Cfg::toFileXml(tinyxml2::XMLDocument *doc) {
 }
 
 void Fei4Cfg::toFileJson(json &j) {
-    j["FE-I4B"]["Parameter"]["name"] = name;
+    j["FE-I4B"]["name"] = name;
+    j["FE-I4B"]["txChannel"] = txChannel;
+    j["FE-I4B"]["rxChannel"] = rxChannel;
+
     j["FE-I4B"]["Parameter"]["chipId"] = chipId;
     j["FE-I4B"]["Parameter"]["sCap"] = sCap;
     j["FE-I4B"]["Parameter"]["lCap"] = lCap;
@@ -146,7 +149,10 @@ void Fei4Cfg::toFileJson(json &j) {
 }
 
 void Fei4Cfg::fromFileJson(json &j) {
-    name = j["FE-I4B"]["Parameter"]["name"];
+    name = j["FE-I4B"]["name"];
+    txChannel = j["FE-I4B"]["txChannel"];
+    rxChannel = j["FE-I4B"]["rxChannel"];
+
     chipId = j["FE-I4B"]["Parameter"]["chipId"];
     sCap = j["FE-I4B"]["Parameter"]["sCap"];
     lCap = j["FE-I4B"]["Parameter"]["lCap"];
