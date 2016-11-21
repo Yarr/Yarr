@@ -139,10 +139,11 @@ void Fei4Cfg::toFileJson(json &j) {
     j["FE-I4B"]["Parameter"]["lCap"] = lCap;
     j["FE-I4B"]["Parameter"]["vcalOffset"] = vcalOffset;
     j["FE-I4B"]["Parameter"]["vcalSlope"] = vcalSlope;
-    
+    j["FE-I4B"]["Parameter"]["txChannel"] = this->txChannel;
+    j["FE-I4B"]["Parameter"]["rxChannel"] = this->rxChannel;
+
     Fei4PixelCfg::toFileJson(j);
     Fei4GlobalCfg::toFileJson(j);
-
 }
 
 void Fei4Cfg::fromFileJson(json &j) {
@@ -152,8 +153,9 @@ void Fei4Cfg::fromFileJson(json &j) {
     lCap = j["FE-I4B"]["Parameter"]["lCap"];
     vcalOffset = j["FE-I4B"]["Parameter"]["vcalOffset"];
     vcalSlope = j["FE-I4B"]["Parameter"]["vcalSlope"];
-    
+    this->txChannel = j["FE-I4B"]["Parameter"]["txChannel"];
+    this->rxChannel = j["FE-I4B"]["Parameter"]["rxChannel"];
+
     Fei4PixelCfg::fromFileJson(j);
     Fei4GlobalCfg::fromFileJson(j);
-
 }

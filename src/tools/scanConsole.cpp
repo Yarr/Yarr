@@ -8,13 +8,17 @@
 
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <unistd.h>
 #include <fstream>
 #include <chrono>
 #include <thread>
 #include <vector>
 #include <iomanip>
+#include <cctype> //w'space detection
 #include <ctime>
+#include <map>
+#include <sstream>
 
 #include "SpecController.h"
 #include "TxCore.h"
@@ -26,6 +30,14 @@
 #include "Fei4Histogrammer.h"
 #include "Fei4Analysis.h"
 #include "Fei4Scans.h"
+
+#if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
+
+//  #include <errno.h>
+//  #include <sys/stat.h>
+#include <cstdlib> //I am not proud of this ):
+
+#endif
 
 void printHelp();
 void listScans();
@@ -48,7 +60,7 @@ void process(Bookkeeper *bookie) {
     proc.process();
 }
 
-void analysis(Fei4Histogrammer *h, Fei4Analysis *a) {
+void analysis(Fei4Histogrammer *h, Fei4Analysis *a){
     h->init();
     a->init();
     
@@ -73,12 +85,32 @@ int main(int argc, char *argv[]) {
     // Init parameters
     unsigned specNum = 0;
     std::string scanType = "";
-    std::string configPath = "";
-    std::string outputDir = "./";
+    std::string gConfigPath = "";
+    std::vector<std::string> cConfigPath;
+    std::string outputDir = "../Plots/";
     bool doPlots = false;
+    unsigned runCounter = 0;
+    std::string runDir = "run";
+
+#if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
+    {
+        std::ifstream iF("../.yarr-system/.runCounter");
+        iF >> runCounter;
+        iF.close();
+        std::stringstream sS;
+        sS << std::setw(7) << std::setfill('0') << runCounter;
+        runDir += sS.str();
+        runDir += '/';
+
+        runCounter += 1;
+        std::ofstream oF("../.yarr-system/.runCounter");
+        oF << runCounter;
+        oF.close();
+    }
+#endif
 
     int c;
-    while ((c = getopt(argc, argv, "hs:n:c:po:")) != -1) {
+    while ((c = getopt(argc, argv, "hs:n:g:c:po:")) != -1) {
         switch (c) {
             case 'h':
                 printHelp();
@@ -90,8 +122,16 @@ int main(int argc, char *argv[]) {
             case 'n':
                 specNum = atoi(optarg);
                 break;
+            case 'g':
+                gConfigPath = std::string(optarg);
+                break;
             case 'c':
-                configPath = optarg;
+//                configPath = std::string(optarg);
+                optind -= 1; //this is a bit hacky, but getopt doesn't support multiple
+                             //values for one option, so it can't be helped
+                for(; optind < argc && *argv[optind] != '-'; optind += 1){
+                    cConfigPath.push_back(std::string(argv[optind]));
+                }
                 break;
             case 'p':
                 doPlots = true;
@@ -100,11 +140,19 @@ int main(int argc, char *argv[]) {
                 outputDir = std::string(optarg);
                 if (outputDir.back() != '/')
                     outputDir = outputDir + "/";
+#if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
+                outputDir += runDir;
+#endif
                 break;
             case '?':
-                if (optopt == 's' || optopt == 'n' || optopt == 'c') {
-                    std::cerr << "-> Option " << (char)optopt 
-                        << " requires a parameter! (Proceeding with default)" << std::endl;
+                if(optopt == 's' || optopt == 'n'){
+                    std::cerr << "-> Option " << (char)optopt
+                              << " requires a parameter! (Proceeding with default)"
+                              << std::endl;
+                }else if(optopt == 'g' || optopt == 'c'){
+                    std::cerr << "-> Option " << (char)optopt
+                              << " requires a parameter! Aborting... " << std::endl;
+                    return -1;
                 } else {
                     std::cerr << "-> Unknown parameter: " << (char)optopt << std::endl;
                 }
@@ -115,12 +163,65 @@ int main(int argc, char *argv[]) {
         }
     }
 
+#if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
+
+//for some reason, 'make' issues that kdir is an undefined reference
+//a test program on another machine has worked fine
+//    int mDExSt = mkdir(outputDir.c_str(), 0777); //mkdir exit status
+//    mode_t myMode = 0777;
+//    int mDExSt = mkdir(outputDir.c_str(), myMode); //mkdir exit status
+    std::string cmdStr = "mkdir -p "; //I am not proud of this ):
+    cmdStr += outputDir;
+    int sysExSt = system(cmdStr.c_str());
+    if(sysExSt != 0){
+        std::cerr << "Error creating output directory - plots might not be saved!" << std::endl;
+    }
+    //read errno variable and catch some errors, if necessary
+    //errno=1 is permission denied, errno = 17 is dir already exists, ...
+    //see /usr/include/asm-generic/errno-base.h and [...]/errno.h for all codes
+
+#endif
+
+    if(gConfigPath != ""){
+        std::cout << std::endl << "##############################################" << std::endl
+                               << "##                                          ##" << std::endl
+                               << "##  Extracting configs from config list...  ##" << std::endl
+                               << "##                                          ##" << std::endl
+                               << "##############################################" << std::endl;
+        int tmpI = 0;
+        std::string tmpStr = "";
+        std::ifstream gCfgIn(gConfigPath);
+        if(!gCfgIn){
+            std::cerr << "Cannot open file containing config list" << std::endl;
+        }else{
+            while(std::getline(gCfgIn, tmpStr)){
+                if(tmpStr.front() == '#'){
+                    continue;
+                }
+                while(isspace(tmpStr.back())){
+                    tmpStr.pop_back();
+                }
+                cConfigPath.push_back(tmpStr);
+            }
+        }
+        if(cConfigPath.size() == 0){
+            std::cerr << "No chips added. Terminating program..." << std::endl;
+            return -1;
+        }
+    }
+
     std::cout << " SPEC Nr: " << specNum << std::endl;
     std::cout << " Scan Type: " << scanType << std::endl;
-    std::cout << " Global configuration: " << configPath << std::endl;
+    if(gConfigPath != ""){
+        std::cout << " Config list in: " << gConfigPath << std::endl;
+    }
+    std::cout << "Chips: " << std::endl;
+    for(std::string const& sTmp : cConfigPath){
+        std::cout << "    " << sTmp << std::endl;
+    }
     std::cout << " Output Plots: " << doPlots << std::endl;
     std::cout << " Output Directory: " << outputDir << std::endl;
-    
+
     // Timestamp
     std::time_t now = std::time(NULL);
     struct tm *lt = std::localtime(&now);
@@ -140,9 +241,192 @@ int main(int argc, char *argv[]) {
     TxCore tx(&spec);
     RxCore rx(&spec);
     Bookkeeper bookie(&tx, &rx);
+    std::map<FrontEnd*, std::string> feCfgMap;
     bookie.setTargetThreshold(2500);
-    
-    std::cout << "-> Read global config (" << configPath << "):" << std::endl;
+
+    std::cout << "#######################" << std::endl
+              << "##                   ##" << std::endl
+              << "##  Adding chips...  ##" << std::endl
+              << "##                   ##" << std::endl
+              << "#######################" << std::endl;
+    std::cout << cConfigPath.size() << " chips..." << std::endl; //DEBUG
+    std::cout << "Token 1" << std::endl;
+    for(std::string const& sTmp : cConfigPath){
+        std::string discardMe; //Error handling, wait for user
+        nlohmann::json jTmp;
+        std::ifstream iFTmp(sTmp);
+        try{
+            if(iFTmp){
+                jTmp = nlohmann::json::parse(iFTmp);
+            }else{
+                throw std::invalid_argument("Config file not readable... ");
+            }
+        }catch(std::invalid_argument){
+            std::cerr << "No config in " << sTmp
+                      << ", press enter to skip, enter '4' to add an empty FE-I4B config, "
+                      << "enter '6' to add an empty FE65-P2 config: " << std::endl;
+            std::getline(std::cin, discardMe);
+            if(discardMe == "4"){
+                jTmp["FE-I4B"] = nlohmann::json::parse("{}");
+            }else if(discardMe == "6"){
+                jTmp["FE65-P2"] = nlohmann::json::parse("{}");
+            }else{
+                continue;
+            }
+        }
+        std::cout << "Token 2" << std::endl;
+        iFTmp.close();
+        std::string chipType;
+        if(!jTmp["FE-I4B"].is_null()){
+            chipType = "FE-I4B";
+        }else if(!jTmp["FE65-P2"].is_null()){
+            chipType = "FE65-P2";
+        }else{
+            std::cerr << "Unknown chip type or malformed config in " << sTmp << std::endl;
+            continue;
+        }
+        std::cout << "Token 3" << std::endl;
+
+        unsigned int uTmpTx = 0;
+        unsigned int uTmpRx = 0;
+
+        //determine TxChannel
+        std::cout << chipType << std::endl;
+        if(jTmp[chipType]["Parameter"]["TxChannel"].is_null()){
+            std::cout << "Token 4" << std::endl;
+            uTmpTx = 0;
+            while(bookie.isChannelUsed(uTmpTx)){
+                uTmpTx += 1;
+            }
+            std::cout << "No TxChannel in " << sTmp << ", "<< uTmpTx << " can be used"
+                      << ". Press enter to confirm or enter another TxChannel:  " << std::endl;
+            std::getline(std::cin, discardMe);
+            if(discardMe.size() > 0){
+                uTmpTx = std::stoul(discardMe);
+            }
+        }else{
+            if(bookie.isChannelUsed(jTmp[chipType]["Parameter"]["TxChannel"])){
+                uTmpTx = 0;
+                while(bookie.isChannelUsed(uTmpTx)){
+                    uTmpTx += 1;
+                }
+                std::cout << "TxChannel " << jTmp[chipType]["Parameter"]["TxChannel"]
+                          << " from config " << sTmp << "already in use, " << uTmpTx
+                          << " can be used. Press enter to confirm or enter another TxChannel: " << std::endl;
+                std::getline(std::cin, discardMe);
+                if(discardMe.size() > 0){
+                    uTmpTx = std::stoul(discardMe);
+                }
+            }else{
+                uTmpTx = jTmp[chipType]["Parameter"]["TxChannel"];
+            }
+        }
+        std::cout << "Token 5" << std::endl;
+        //determine RxChannel
+        if(jTmp[chipType]["Parameter"]["TxChannel"].is_null()){
+            if(!jTmp[chipType]["Parameter"]["RxChannel"].is_null()){
+                uTmpRx = jTmp[chipType]["Parameter"]["RxChannel"];
+                std::cout << "Warning! RxChannel " << uTmpRx
+                          << " found in config, but using automatically generated TxChannel "
+                          << uTmpTx << ". Press enter to confirm or enter another RxChannel: " << std::endl;
+                std::getline(std::cin, discardMe);
+                if(discardMe.size() > 0){
+                    uTmpRx = std::stoul(discardMe);
+                }
+            }else{
+                std::cout << "Token 6" << std::endl;
+                uTmpRx = uTmpTx;
+                std::cout << "Warning! Neither TxChannel nor RxChannel in config " << sTmp
+                          << ". Automatically generated RxChannel " << uTmpRx
+                          << " can be used. Press enter to confirm or enter another RxChannel: " << std::endl;
+                std::getline(std::cin, discardMe);
+                if(discardMe.size() > 0){
+                    uTmpRx = std::stoul(discardMe);
+                }
+            }
+        }else{
+            if(jTmp[chipType]["Parameter"]["TxChannel"] == uTmpTx){
+                if(!jTmp[chipType]["Parameter"]["RxChannel"].is_null()){
+                    uTmpRx = jTmp[chipType]["Parameter"]["RxChannel"];
+                }else{
+                    uTmpRx = uTmpTx;
+                    std::cout << "Warning! No RxChannel in config " << sTmp
+                              << ". Using " << uTmpRx << " from TxChannel instead. "
+                              << "Press enter to confirm or enter another RxChannel: " << std::endl;
+                    std::getline(std::cin, discardMe);
+                    if(discardMe.size() > 0){
+                        uTmpRx = std::stoul(discardMe);
+                    }
+                }
+            }else{
+                if(jTmp[chipType]["Parameter"]["RxChannel"].is_null()){
+                    uTmpRx = uTmpTx;
+                    std::cout << "Warning! No RxChannel in " << sTmp
+                              << ". Using automatically generated RxChannel " << uTmpRx
+                              << ". Press enter to confirm or enter another RxChannel: " << std::endl;
+                    std::getline(std::cin, discardMe);
+                    if(discardMe.size() > 0){
+                        uTmpRx = std::stoul(discardMe);
+                    }
+                }else{
+                    uTmpRx = jTmp[chipType]["Parameter"]["RxChannel"];
+                    std::cout << "Warning! Found RxChannel " << uTmpRx << " in config " << sTmp
+                              << ", but using automatically generated TxChannel " << uTmpTx
+                              << ". Press enter to confirm or enter another RxChannel: " << std::endl;
+                    std::getline(std::cin, discardMe);
+                    if(discardMe.size() > 0){
+                        uTmpRx = std::stoul(discardMe);
+                    }
+                }
+            }
+        }
+        std::cout << "Token 7" << std::endl;
+
+        if(bookie.isChannelUsed(uTmpTx)){
+            std::cerr << "ERROR! Cannot add " << chipType << " with config " << sTmp
+                      << ", TxChannel " << uTmpTx << ", RxChannel " << uTmpRx << std::endl;
+            continue;
+        }
+
+        if(chipType == "FE-I4B"){
+            Fei4 *fEI4Tmp = new Fei4(&tx, uTmpTx, uTmpRx);
+            try{
+                fEI4Tmp->fromFileJson(jTmp);
+            }catch(std::domain_error){
+                std::cerr << "Malformed config. Press enter to proceed, "
+                          << "enter 's' to skip this chip or CTRL+C to abort... " <<std::endl;
+                std::getline(std::cin, discardMe);
+                if(discardMe == "s"){
+                    std::cout << "Skipping config file " << sTmp << ", not adding chip" << std::endl;
+                    continue;
+                }
+            }
+            bookie.addFe(fEI4Tmp, uTmpTx, uTmpRx);
+            feCfgMap.insert(std::pair<FrontEnd*, std::string>(fEI4Tmp, sTmp));
+        }else{
+            std::cout << "Token 8" << std::endl;
+            Fe65p2 *fE65P2Tmp = new Fe65p2(&tx, uTmpTx, uTmpRx);
+            std::cout << "Token 8.1" << std::endl;
+            try{
+                fE65P2Tmp->fromFileJson(jTmp);
+            }catch(std::domain_error){
+                std::cerr << "Malformed config. Press enter to proceed, "
+                          << "enter 's' to skip this chip or CTRL+C to abort... " <<std::endl;
+                std::getline(std::cin, discardMe);
+                if(discardMe == "s"){
+                    std::cout << "Skipping config file " << sTmp << ", not adding chip" << std::endl;
+                    continue;
+                }
+            }
+            std::cout << "Token 8.2" << std::endl;
+            bookie.addFe(fE65P2Tmp, uTmpTx, uTmpRx);
+            feCfgMap.insert(std::pair<FrontEnd*, std::string>(fE65P2Tmp, sTmp));
+            std::cout << "Token 9" << std::endl;
+        }
+    }
+    std::cout << "Token 10" << std::endl;
+
+/*    std::cout << "-> Read global config (" << configPath << "):" << std::endl;
     std::fstream gConfig(configPath, std::ios::in);
     if (!gConfig) {
         std::cerr << "## ERROR ## Could not open file: " << configPath << std::endl;
@@ -179,7 +463,7 @@ int main(int argc, char *argv[]) {
             dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileBinary(feCfgPath);
         }
     }
-        
+*/
     std::cout << std::endl;
     std::cout << "#################" << std::endl;
     std::cout << "# Configure FEs #" << std::endl;
@@ -308,7 +592,9 @@ int main(int argc, char *argv[]) {
 
     std::cout << "-> Running pre scan!" << std::endl;
     s->init();
+    std::cout << "Token 11" << std::endl;
     s->preScan();
+    std::cout << "Token 12" << std::endl;
 
     unsigned int numThreads = std::thread::hardware_concurrency();
     std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl; 
@@ -378,11 +664,29 @@ int main(int argc, char *argv[]) {
         if (fe->isActive()) {
             // Save config
             std::cout << "-> Saving config of FE " << fe->getName() << std::endl;
-            dynamic_cast<FrontEndCfg*>(fe)->toFileBinary();
+            //dynamic_cast<FrontEndCfg*>(fe)->toFileBinary();
+            nlohmann::json jTmp;
+            dynamic_cast<FrontEndCfg*>(fe)->toFileJson(jTmp);
+            std::string jSTmp;
+            jSTmp = jTmp.dump(4); //4 spaces indentation
+            std::stringstream sStrmTmp;
+            sStrmTmp << jSTmp;
+            std::ofstream oFTmp(feCfgMap.at(fe));
+            oFTmp << sStrmTmp.rdbuf();
+            oFTmp.close();
             // Plot
             if (doPlots) {
                 std::cout << "-> Plotting histograms of FE " << fe->getRxChannel() << std::endl;
+#if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
+                std::string outputDirTmp = outputDir + runDir;
+                outputDirTmp += fe->getName() + "/" + scanType + "/";
+                std::string cmdStr = "mkdir -p ";
+                cmdStr += outputDirTmp;
+                int sysExSt = system(cmdStr.c_str());
+                fe->ana->plot(std::string(timestamp) + "-" + fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDirTmp);
+#else
                 fe->ana->plot(std::string(timestamp) + "-" + fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
+#endif
                 //fe->ana->toFile(std::string(timestamp) + "-" + fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
             }
             // Free
@@ -400,6 +704,9 @@ void printHelp() {
     std::cout << " -h: Shows this." << std::endl;
     std::cout << " -s <scan_type> : Scan type. Possible types:" << std::endl;
     listScans();
+    std::cout << " -n: Provide SPECboard number." << std::endl;
+    std::cout << " -g <cfg_list.txt>: Provide list of chip configurations." << std::endl;
+    std::cout << " -c <cfg1.cfg> [<cfg2.cfg> ...]: Provide chip configuration, can take multiple arguments." << std::endl;
     std::cout << " -p: Enable plotting of results." << std::endl;
     std::cout << " -o <dir> : Output directory." << std::endl;
 }

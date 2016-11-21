@@ -1,7 +1,18 @@
 #include "Fe65p2.h"
 
 Fe65p2::Fe65p2(TxCore *arg_core) : Fe65p2Cmd(arg_core) {
+    txChannel = 99;
+    rxChannel = 99;
+}
 
+Fe65p2::Fe65p2(TxCore *arg_core, unsigned arg_channel) : Fe65p2Cmd(arg_core){
+    txChannel = arg_channel;
+    rxChannel = arg_channel;
+}
+
+Fe65p2::Fe65p2(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) : Fe65p2Cmd(arg_core){
+    txChannel = arg_txChannel;
+    rxChannel = arg_rxChannel;
 }
 
 void Fe65p2::configure() {
