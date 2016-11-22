@@ -249,8 +249,6 @@ int main(int argc, char *argv[]) {
               << "##  Adding chips...  ##" << std::endl
               << "##                   ##" << std::endl
               << "#######################" << std::endl;
-    std::cout << cConfigPath.size() << " chips..." << std::endl; //DEBUG
-    std::cout << "Token 1" << std::endl;
     for(std::string const& sTmp : cConfigPath){
         std::string discardMe; //Error handling, wait for user
         nlohmann::json jTmp;
@@ -274,7 +272,6 @@ int main(int argc, char *argv[]) {
                 continue;
             }
         }
-        std::cout << "Token 2" << std::endl;
         iFTmp.close();
         std::string chipType;
         if(!jTmp["FE-I4B"].is_null()){
@@ -285,15 +282,13 @@ int main(int argc, char *argv[]) {
             std::cerr << "Unknown chip type or malformed config in " << sTmp << std::endl;
             continue;
         }
-        std::cout << "Token 3" << std::endl;
 
         unsigned int uTmpTx = 0;
         unsigned int uTmpRx = 0;
 
         //determine TxChannel
         std::cout << chipType << std::endl;
-        if(jTmp[chipType]["Parameter"]["TxChannel"].is_null()){
-            std::cout << "Token 4" << std::endl;
+        if(jTmp[chipType]["TxChannel"].is_null()){
             uTmpTx = 0;
             while(bookie.isChannelUsed(uTmpTx)){
                 uTmpTx += 1;
@@ -305,12 +300,12 @@ int main(int argc, char *argv[]) {
                 uTmpTx = std::stoul(discardMe);
             }
         }else{
-            if(bookie.isChannelUsed(jTmp[chipType]["Parameter"]["TxChannel"])){
+            if(bookie.isChannelUsed(jTmp[chipType]["TxChannel"])){
                 uTmpTx = 0;
                 while(bookie.isChannelUsed(uTmpTx)){
                     uTmpTx += 1;
                 }
-                std::cout << "TxChannel " << jTmp[chipType]["Parameter"]["TxChannel"]
+                std::cout << "TxChannel " << jTmp[chipType]["TxChannel"]
                           << " from config " << sTmp << "already in use, " << uTmpTx
                           << " can be used. Press enter to confirm or enter another TxChannel: " << std::endl;
                 std::getline(std::cin, discardMe);
@@ -318,14 +313,13 @@ int main(int argc, char *argv[]) {
                     uTmpTx = std::stoul(discardMe);
                 }
             }else{
-                uTmpTx = jTmp[chipType]["Parameter"]["TxChannel"];
+                uTmpTx = jTmp[chipType]["TxChannel"];
             }
         }
-        std::cout << "Token 5" << std::endl;
         //determine RxChannel
-        if(jTmp[chipType]["Parameter"]["TxChannel"].is_null()){
-            if(!jTmp[chipType]["Parameter"]["RxChannel"].is_null()){
-                uTmpRx = jTmp[chipType]["Parameter"]["RxChannel"];
+        if(jTmp[chipType]["TxChannel"].is_null()){
+            if(!jTmp[chipType]["RxChannel"].is_null()){
+                uTmpRx = jTmp[chipType]["RxChannel"];
                 std::cout << "Warning! RxChannel " << uTmpRx
                           << " found in config, but using automatically generated TxChannel "
                           << uTmpTx << ". Press enter to confirm or enter another RxChannel: " << std::endl;
@@ -334,7 +328,6 @@ int main(int argc, char *argv[]) {
                     uTmpRx = std::stoul(discardMe);
                 }
             }else{
-                std::cout << "Token 6" << std::endl;
                 uTmpRx = uTmpTx;
                 std::cout << "Warning! Neither TxChannel nor RxChannel in config " << sTmp
                           << ". Automatically generated RxChannel " << uTmpRx
@@ -345,9 +338,9 @@ int main(int argc, char *argv[]) {
                 }
             }
         }else{
-            if(jTmp[chipType]["Parameter"]["TxChannel"] == uTmpTx){
-                if(!jTmp[chipType]["Parameter"]["RxChannel"].is_null()){
-                    uTmpRx = jTmp[chipType]["Parameter"]["RxChannel"];
+            if(jTmp[chipType]["TxChannel"] == uTmpTx){
+                if(!jTmp[chipType]["RxChannel"].is_null()){
+                    uTmpRx = jTmp[chipType]["RxChannel"];
                 }else{
                     uTmpRx = uTmpTx;
                     std::cout << "Warning! No RxChannel in config " << sTmp
@@ -359,7 +352,7 @@ int main(int argc, char *argv[]) {
                     }
                 }
             }else{
-                if(jTmp[chipType]["Parameter"]["RxChannel"].is_null()){
+                if(jTmp[chipType]["RxChannel"].is_null()){
                     uTmpRx = uTmpTx;
                     std::cout << "Warning! No RxChannel in " << sTmp
                               << ". Using automatically generated RxChannel " << uTmpRx
@@ -369,7 +362,7 @@ int main(int argc, char *argv[]) {
                         uTmpRx = std::stoul(discardMe);
                     }
                 }else{
-                    uTmpRx = jTmp[chipType]["Parameter"]["RxChannel"];
+                    uTmpRx = jTmp[chipType]["RxChannel"];
                     std::cout << "Warning! Found RxChannel " << uTmpRx << " in config " << sTmp
                               << ", but using automatically generated TxChannel " << uTmpTx
                               << ". Press enter to confirm or enter another RxChannel: " << std::endl;
@@ -380,7 +373,6 @@ int main(int argc, char *argv[]) {
                 }
             }
         }
-        std::cout << "Token 7" << std::endl;
 
         if(bookie.isChannelUsed(uTmpTx)){
             std::cerr << "ERROR! Cannot add " << chipType << " with config " << sTmp
@@ -404,9 +396,7 @@ int main(int argc, char *argv[]) {
             bookie.addFe(fEI4Tmp, uTmpTx, uTmpRx);
             feCfgMap.insert(std::pair<FrontEnd*, std::string>(fEI4Tmp, sTmp));
         }else{
-            std::cout << "Token 8" << std::endl;
             Fe65p2 *fE65P2Tmp = new Fe65p2(&tx, uTmpTx, uTmpRx);
-            std::cout << "Token 8.1" << std::endl;
             try{
                 fE65P2Tmp->fromFileJson(jTmp);
             }catch(std::domain_error){
@@ -418,13 +408,10 @@ int main(int argc, char *argv[]) {
                     continue;
                 }
             }
-            std::cout << "Token 8.2" << std::endl;
             bookie.addFe(fE65P2Tmp, uTmpTx, uTmpRx);
             feCfgMap.insert(std::pair<FrontEnd*, std::string>(fE65P2Tmp, sTmp));
-            std::cout << "Token 9" << std::endl;
         }
     }
-    std::cout << "Token 10" << std::endl;
 
 /*    std::cout << "-> Read global config (" << configPath << "):" << std::endl;
     std::fstream gConfig(configPath, std::ios::in);
@@ -592,9 +579,7 @@ int main(int argc, char *argv[]) {
 
     std::cout << "-> Running pre scan!" << std::endl;
     s->init();
-    std::cout << "Token 11" << std::endl;
     s->preScan();
-    std::cout << "Token 12" << std::endl;
 
     unsigned int numThreads = std::thread::hardware_concurrency();
     std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl; 
@@ -679,7 +664,7 @@ int main(int argc, char *argv[]) {
                 std::cout << "-> Plotting histograms of FE " << dynamic_cast<FrontEndCfg*>(fe)->getRxChannel() << std::endl;
 #if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
                 std::string outputDirTmp = outputDir + runDir;
-                outputDirTmp += fe->getName() + "/" + scanType + "/";
+                outputDirTmp += dynamic_cast<FrontEndCfg*>(fe)->getName() + "/" + scanType + "/";
                 std::string cmdStr = "mkdir -p ";
                 cmdStr += outputDirTmp;
                 int sysExSt = system(cmdStr.c_str());
