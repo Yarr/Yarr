@@ -28,6 +28,7 @@ void Fei4DataProcessor::process() {
     // TODO put data from channels back into input, so other processors can use it
     unsigned badCnt = 0;
     for (unsigned i=0; i<activeChannels.size(); i++) {
+        tag[activeChannels[i]] = 0;
         l1id[activeChannels[i]] = 0;
         bcid[activeChannels[i]] = 0;
         wordCount[activeChannels[i]] = 0;
@@ -60,52 +61,57 @@ void Fei4DataProcessor::process() {
             for (unsigned i=0; i<words; i++) {
                 uint32_t value = curIn->buf[i];
                 uint32_t header = ((value & 0x00FF0000) >> 16);
-                unsigned channel = ((value & 0xFF000000) >> 24);
-                wordCount[channel]++;
-                if (__builtin_expect((value == 0xDEADBEEF), 0)) {
-                    std::cout << "# ERROR # " << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << curIn->words << " " << std::hex << value << " " << std::dec << std::endl;
-                } else if (__builtin_expect((curOut[channel] == NULL), 0)) {
-                    std::cout << "# ERROR # " << __PRETTY_FUNCTION__ << " : Received data for channel " << channel << " but storage not initiliazed!" << std::endl;
-                } else if (header == 0xe9) {
-                    // Pixel Header
-                    l1id[channel] = (value & 0x7c00) >> 10;
-                    bcid[channel] = (value & 0x03FF);
-                    curOut[channel]->newEvent(l1id[channel], bcid[channel]);
-
-                    events[channel]++;
-                } else if (header == 0xef) {
-                    // Service Record
-                    unsigned code = (value & 0xFC00) >> 10;
-                    unsigned number = value & 0x03FF;
-                    curOut[channel]->serviceRecords[code]+=number;
-                //} else if (header == 0xea) {
-                    // Address Record
-                //} else if (header == 0xec) {
-                    // Value Record
+                unsigned channel = ((value & 0xFC000000) >> 26);
+                unsigned type = ((value &0x03000000) >> 24);
+                if (type == 0x1) {
+                    tag[channel] = unsigned(value & 0x00FFFFFF);
                 } else {
-                    uint16_t col = (value & 0xFE0000) >> 17;
-                    uint16_t row = (value & 0x01FF00) >> 8;
-                    uint8_t tot1 = (value & 0xF0) >> 4;
-                    uint8_t tot2 = (value & 0xF);
-                    if (events[channel] == 0 ) {
-                        std::cout << "# ERROR # " << channel << " no header in data fragment!" << std::endl;
-                        curOut[channel]->newEvent(l1id[channel], bcid[channel]);
+                    wordCount[channel]++;
+                    if (__builtin_expect((value == 0xDEADBEEF), 0)) {
+                        std::cout << "# ERROR # " << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << curIn->words << " " << std::hex << value << " " << std::dec << std::endl;
+                    } else if (__builtin_expect((curOut[channel] == NULL), 0)) {
+                        std::cout << "# ERROR # " << __PRETTY_FUNCTION__ << " : Received data for channel " << channel << " but storage not initiliazed!" << std::endl;
+                    } else if (header == 0xe9) {
+                        // Pixel Header
+                        l1id[channel] = (value & 0x7c00) >> 10;
+                        bcid[channel] = (value & 0x03FF);
+                        curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
+
                         events[channel]++;
-                        //hits[channel] = 0;
-                    }
-                    if (__builtin_expect((col == 0 || row == 0 || col > 80 || row > 336), 0)) {
-                        badCnt++;
-                        std::cout << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << curIn->words << " " << std::hex << value << " " << std::dec << std::endl;
+                    } else if (header == 0xef) {
+                        // Service Record
+                        unsigned code = (value & 0xFC00) >> 10;
+                        unsigned number = value & 0x03FF;
+                        curOut[channel]->serviceRecords[code]+=number;
+                    //} else if (header == 0xea) {
+                        // Address Record
+                    //} else if (header == 0xec) {
+                        // Value Record
                     } else {
-                        unsigned dec_tot1 = totCode[hitDiscCfg][tot1];
-                        unsigned dec_tot2 = totCode[hitDiscCfg][tot2];
-                        if (dec_tot1 > 0) {
-                            curOut[channel]->curEvent->addHit(row, col, dec_tot1);
-                            hits[channel]++;
+                        uint16_t col = (value & 0xFE0000) >> 17;
+                        uint16_t row = (value & 0x01FF00) >> 8;
+                        uint8_t tot1 = (value & 0xF0) >> 4;
+                        uint8_t tot2 = (value & 0xF);
+                        if (events[channel] == 0 ) {
+                            std::cout << "# ERROR # " << channel << " no header in data fragment!" << std::endl;
+                            curOut[channel]->newEvent(0xDEADBEEF, l1id[channel], bcid[channel]);
+                            events[channel]++;
+                            //hits[channel] = 0;
                         }
-                        if (dec_tot2 > 0) {
-                            curOut[channel]->curEvent->addHit(row+1, col, dec_tot2);
-                            hits[channel]++;
+                        if (__builtin_expect((col == 0 || row == 0 || col > 80 || row > 336), 0)) {
+                            badCnt++;
+                            std::cout << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << curIn->words << " " << std::hex << value << " " << std::dec << std::endl;
+                        } else {
+                            unsigned dec_tot1 = totCode[hitDiscCfg][tot1];
+                            unsigned dec_tot2 = totCode[hitDiscCfg][tot2];
+                            if (dec_tot1 > 0) {
+                                curOut[channel]->curEvent->addHit(row, col, dec_tot1);
+                                hits[channel]++;
+                            }
+                            if (dec_tot2 > 0) {
+                                curOut[channel]->curEvent->addHit(row+1, col, dec_tot2);
+                                hits[channel]++;
+                            }
                         }
                     }
                 }

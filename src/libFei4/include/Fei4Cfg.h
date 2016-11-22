@@ -70,7 +70,6 @@ class Fei4Cfg : public FrontEndCfg, public Fei4GlobalCfg, public Fei4PixelCfg {
         void fromFileJson(json &j);
 
     protected:
-        std::string name;
         unsigned chipId;
         std::string cfgName;
 

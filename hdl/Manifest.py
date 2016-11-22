@@ -14,13 +14,17 @@ files = ["ip_cores/clk_gen.vhd",
          "ip_cores/l2p_fifo.vhd",
          "ip_cores/rx_bridge_fifo.vhd",
          "ip_cores/rx_channel_fifo.vhd",
-         "ip_cores/rx_bridge_ctrl_fifo.vhd"]
+         "ip_cores/rx_bridge_ctrl_fifo.vhd",
+         "fe65p2_addon.vhd",
+         "delay_line.vhd"]
 
 modules = { "local" : [
             "common",
             "gn4124-core",
             "ddr3-core",
             "tx-core",
-            "rx-core"
+            "rx-core",
+            "i2c-master",
+            "trigger-logic"
             ],
           }

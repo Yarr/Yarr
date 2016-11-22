@@ -187,8 +187,11 @@ void Histo2d::toFile(std::string prefix, std::string dir, bool header) {
     std::fstream file(filename, std::fstream::out | std::fstream::trunc);
     // Header
     if (header) {
-        file << "Histo2d " << name << std::endl;
-        file << xAxisTitle << " " << yAxisTitle << " " << zAxisTitle << std::endl;
+        file << "Histo2d " <<  std::endl;
+        file << name << std::endl;
+        file << xAxisTitle << std::endl;
+        file << yAxisTitle << std::endl; 
+        file << zAxisTitle << std::endl;
         file << xbins << " " << xlow << " " << xhigh << std::endl;
         file << ybins << " " << ylow << " " << yhigh << std::endl;
         file << underflow << " " << overflow << std::endl;

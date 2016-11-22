@@ -135,7 +135,17 @@ entity yarr is
 		  HIT_OR_P : in std_logic;
 		  HIT_OR_N : in std_logic;
 		  OUT_DATA_P : in std_logic;
-		  OUT_DATA_N : in std_logic
+		  OUT_DATA_N : in std_logic;
+          EXT_4_P : out std_logic;
+          EXT_4_N : out std_logic;
+          EXT_3_P : in std_logic;
+          EXT_3_N : in std_logic;
+          EXT_2_P : out std_logic;
+          EXT_2_N : out std_logic;
+          EXT_1_P : in std_logic;
+          EXT_1_N : in std_logic;
+          IO_0 : in std_logic;
+          IO_1 : in std_logic
     );
 end yarr;
 
@@ -351,7 +361,8 @@ architecture rtl of yarr is
             -- RX IN
              rx_clk_i	: in  std_logic;
              rx_serdes_clk_i : in std_logic;
-             rx_data_i	: in std_logic_vector(g_NUM_RX-1 downto 0);	
+             rx_data_i	: in std_logic_vector(g_NUM_RX-1 downto 0);
+             trig_tag_i : in std_logic_vector(31 downto 0);
             -- RX OUT (sync to sys_clk)
              rx_valid_o : out std_logic;
              rx_data_o : out std_logic_vector(31 downto 0);
@@ -411,6 +422,42 @@ architecture rtl of yarr is
                  scl      : inout std_logic;
                  sda      : inout std_logic
              );
+    end component;
+    
+    component wb_trigger_logic
+        port (
+            -- Sys connect
+            wb_clk_i	: in  std_logic;
+            rst_n_i		: in  std_logic;
+            
+            -- Wishbone slave interface
+            wb_adr_i	: in  std_logic_vector(31 downto 0);
+            wb_dat_i	: in  std_logic_vector(31 downto 0);
+            wb_dat_o	: out std_logic_vector(31 downto 0);
+            wb_cyc_i	: in  std_logic;
+            wb_stb_i	: in  std_logic;
+            wb_we_i		: in  std_logic;
+            wb_ack_o	: out std_logic;
+            
+            -- To/From outside world
+            ext_trig_i : in std_logic_vector(3 downto 0);
+            ext_trig_o : out std_logic;
+            ext_busy_i : in std_logic;
+            ext_busy_o : out std_logic;
+
+            -- Eudet TLU
+            eudet_clk_o : out std_logic;
+            eudet_busy_o : out std_logic;
+            eudet_trig_i : in std_logic;
+            eudet_rst_i : in std_logic;
+
+            -- To/From inside world
+            clk_i : in std_logic;
+            int_trig_i : in std_logic_vector(3 downto 0);
+            int_trig_o : out std_logic;
+            int_busy_i : in std_logic;
+            trig_tag : out std_logic_vector(31 downto 0)
+        );
     end component;
 
     component ddr3_ctrl
@@ -750,6 +797,15 @@ architecture rtl of yarr is
   -- I2C
     signal scl_t : std_logic;
     signal sda_t : std_logic;
+    
+  -- Trigger logic
+  signal int_busy_t : std_logic;
+  signal trig_tag_t : std_logic_vector(31 downto 0);
+  signal int_trig_t : std_logic;
+  signal eudet_trig_t : std_logic;
+  signal eudet_clk_t : std_logic;
+  signal eudet_rst_t : std_logic;
+  signal eudet_busy_t : std_logic;
 
   -- FOR TESTS
     signal debug       : std_logic_vector(31 downto 0);
@@ -825,10 +881,14 @@ begin
    en_pix_sr_cnfg_buf : OBUFDS port map (O => en_pix_sr_cnfg_n, OB => en_pix_sr_cnfg_p, I => not en_pix_sr_cnfg_t); -- inv
    rst_1_buf : OBUFDS port map (O => rst_1_n, OB => rst_1_p, I => not rst_1_t); --inv
    si_cnfg_buf : OBUFDS port map (O => si_cnfg_p, OB => si_cnfg_n, I => si_cnfg_t);
+   eudet_clk_buf : OBUFDS port map (O => EXT_4_P, OB => EXT_4_N, I => not eudet_clk_t);
+   eudet_busy_buf : OBUFDS port map (O => EXT_2_P, OB => EXT_2_N, I => eudet_busy_t);
 	
    so_cnfg_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => so_cnfg_t, I => so_cnfg_p, IB => so_cnfg_n);
    hit_or_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => hit_or_t, I => hit_or_p, IB => hit_or_n);
    out_data_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => out_data_t, I => out_data_p, IB => out_data_n);
+   eudet_rst_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => eudet_rst_t, I => EXT_2_P, IB => EXT_2_N);
+   eudet_trig_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => eudet_trig_t, I => EXT_4_P, IB => EXT_4_N);
 	
 	fe_data_i(0) <= not out_data_t;
 	
@@ -1059,7 +1119,7 @@ begin
         tx_clk_i => CLK_40,
         tx_data_o => fe_cmd_o,
         trig_pulse_o => trig_pulse,
-		  ext_trig_i => not hit_or_t
+		  ext_trig_i => int_trig_t
     );
 
     cmp_wb_rx_core: wb_rx_core PORT MAP(
@@ -1078,6 +1138,7 @@ begin
                                            rx_data_i => fe_data_i,
                                            rx_valid_o => rx_valid,
                                            rx_data_o => rx_data,
+                                           trig_tag_i => trig_tag_t,
                                            busy_o => open,
                                            debug_o => debug
                                        );
@@ -1133,6 +1194,31 @@ begin
                  scl => open,
                  sda => open
              );
+             
+	cmp_wb_trigger_logic: wb_trigger_logic PORT MAP(
+		wb_clk_i => sys_clk,
+		rst_n_i => rst_n,
+		wb_adr_i => wb_adr(31 downto 0),
+		wb_dat_i => wb_dat_o(31 downto 0),
+		wb_dat_o => wb_dat_i(191 downto 160),
+		wb_cyc_i => wb_cyc(5),
+		wb_stb_i => wb_stb,
+		wb_we_i => wb_we,
+		wb_ack_o => wb_ack(5),
+		ext_trig_i => "000" & not hit_or_t,
+		ext_trig_o => open,
+		ext_busy_i => '0',
+		ext_busy_o => open,
+		eudet_clk_o => eudet_clk_t,
+		eudet_busy_o => eudet_busy_t,
+		eudet_trig_i => eudet_trig_t,
+		eudet_rst_i => eudet_rst_t,
+		clk_i => CLK_40,
+		int_trig_i => "000" & trig_pulse,
+		int_trig_o => int_trig_t,
+		int_busy_i => '0',
+		trig_tag => trig_tag_t
+	);
 
 
   --wb_stall(1) <= '0' when wb_cyc(1) = '0' else not(wb_ack(1));
@@ -1147,8 +1233,8 @@ begin
     led_green_o <= dummy_ctrl_reg_led(1);
 
     --   TRIG0(31 downto 0) <= (others => '0');
-    --	TRIG1(31 downto 0) <= (others => '0');
-    --	TRIG2(31 downto 0) <= (others => '0');
+    	TRIG1(31 downto 0) <= (others => '0');
+    	TRIG2(31 downto 0) <= (others => '0');
     --   TRIG0(12 downto 0) <= (others => '0');
     --TRIG1(31 downto 0) <= rx_dma_dat_o;
     --TRIG1(31 downto 0) <= dma_dat_i;
@@ -1167,13 +1253,13 @@ begin
     --   TRIG0(23) <= irq_out;
     --   TRIG0(24) <= rx_busy;
     --   TRIG0(31 downto 25) <= (others => '0');
-    TRIG0(0) <= rx_valid;
-    TRIG0(1) <= fe_cmd_o(0);
-    TRIG0(2) <= trig_pulse;
-    TRIG0(3) <= fe_cmd_o(0);
-    TRIG0(31 downto 4) <= (others => '0');
-    TRIG1 <= rx_data;
-    TRIG2 <= debug;
+--    TRIG0(0) <= rx_valid;
+--    TRIG0(1) <= fe_cmd_o(0);
+--    TRIG0(2) <= trig_pulse;
+--    TRIG0(3) <= fe_cmd_o(0);
+--    TRIG0(31 downto 4) <= (others => '0');
+--    TRIG1 <= rx_data;
+--    TRIG2 <= debug;
     --		TRIG0(0) <= scl;
     --		TRIG0(1) <= sda;
     --		TRIG0(2) <= wb_stb;
@@ -1181,7 +1267,14 @@ begin
     --		TRIG0(31 downto 4) <= (others => '0');
     --		TRIG1 <= wb_adr;
     --		TRIG2 <= wb_dat_o;
-
+    TRIG0(14 downto 0) <= trig_tag_t(14 downto 0);
+    TRIG0(15) <= int_trig_t;
+    TRIG0(16) <= eudet_trig_t;
+    TRIG0(17) <= eudet_clk_t;
+    TRIG0(18) <= eudet_busy_t;
+    TRIG0(19) <= trigger_t;
+    TRIG0(20) <= hit_or_t;
+    
     ila_i : ila
     port map (
                  CONTROL => CONTROL,

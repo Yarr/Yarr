@@ -133,7 +133,10 @@ void Fei4Cfg::toFileXml(tinyxml2::XMLDocument *doc) {
 }
 
 void Fei4Cfg::toFileJson(json &j) {
-    j["FE-I4B"]["Parameter"]["name"] = name;
+    j["FE-I4B"]["name"] = name;
+    j["FE-I4B"]["txChannel"] = txChannel;
+    j["FE-I4B"]["rxChannel"] = rxChannel;
+
     j["FE-I4B"]["Parameter"]["chipId"] = chipId;
     j["FE-I4B"]["Parameter"]["sCap"] = sCap;
     j["FE-I4B"]["Parameter"]["lCap"] = lCap;
@@ -147,14 +150,23 @@ void Fei4Cfg::toFileJson(json &j) {
 }
 
 void Fei4Cfg::fromFileJson(json &j) {
-    name = j["FE-I4B"]["Parameter"]["name"];
-    chipId = j["FE-I4B"]["Parameter"]["chipId"];
-    sCap = j["FE-I4B"]["Parameter"]["sCap"];
-    lCap = j["FE-I4B"]["Parameter"]["lCap"];
-    vcalOffset = j["FE-I4B"]["Parameter"]["vcalOffset"];
-    vcalSlope = j["FE-I4B"]["Parameter"]["vcalSlope"];
-    this->txChannel = j["FE-I4B"]["Parameter"]["txChannel"];
-    this->rxChannel = j["FE-I4B"]["Parameter"]["rxChannel"];
+    if (!j["FE-I4B"]["name"].empty())
+        name = j["FE-I4B"]["name"];
+    if (!j["FE-I4B"]["txChannel"].empty())
+        txChannel = j["FE-I4B"]["txChannel"];
+    if (!j["FE-I4B"]["rxChannel"].empty())
+        rxChannel = j["FE-I4B"]["rxChannel"];
+
+    if (!j["FE-I4B"]["Parameter"]["chipId"].empty())
+        chipId = j["FE-I4B"]["Parameter"]["chipId"];
+    if (!j["FE-I4B"]["Parameter"]["sCap"].empty())
+        sCap = j["FE-I4B"]["Parameter"]["sCap"];
+    if (!j["FE-I4B"]["Parameter"]["lCap"].empty())
+        lCap = j["FE-I4B"]["Parameter"]["lCap"];
+    if (!j["FE-I4B"]["Parameter"]["vcalOffset"].empty())
+        vcalOffset = j["FE-I4B"]["Parameter"]["vcalOffset"];
+    if (!j["FE-I4B"]["Parameter"]["vcalSlop"].empty())
+        vcalSlope = j["FE-I4B"]["Parameter"]["vcalSlope"];
 
     Fei4PixelCfg::fromFileJson(j);
     Fei4GlobalCfg::fromFileJson(j);

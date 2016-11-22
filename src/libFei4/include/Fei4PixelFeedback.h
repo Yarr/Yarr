@@ -58,7 +58,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
             // Loop over active FEs
             for(unsigned int k=0; k<keeper->feList.size(); k++) {
                 if(keeper->feList[k]->getActive()) {
-                    unsigned ch = keeper->feList[k]->getRxChannel();
+                    unsigned ch = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
                     
                     // Init Maps
                     fbHistoMap[ch] = NULL;
@@ -84,7 +84,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
             for(unsigned int k=0; k<keeper->feList.size(); k++) {
                 if(keeper->feList[k]->getActive()) {
                     // Need to lock mutex on first itereation
-                    keeper->mutexMap[keeper->feList[k]->getRxChannel()].try_lock();
+                    keeper->mutexMap[dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel()].try_lock();
                     // Write config
                     this->writePixelCfg(dynamic_cast<Fei4*>(keeper->feList[k]));
                 }
@@ -95,7 +95,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
             unsigned ch;
             for(unsigned int k=0; k<keeper->feList.size(); k++) {
                 if(keeper->feList[k]->getActive()) {
-                    ch = keeper->feList[k]->getRxChannel();
+                    ch = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
                     // Wait for Mutex to be unlocked by feedback
                     keeper->mutexMap[ch].lock();
                     this->addFeedback(ch);
@@ -114,7 +114,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
         bool allDone() {
             for(unsigned int k=0; k<keeper->feList.size(); k++) {
                 if(keeper->feList[k]->getActive()) {
-                    unsigned ch = keeper->feList[k]->getRxChannel();
+                    unsigned ch = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
                     if (!doneMap[ch])
                         return false;
                 }
@@ -177,7 +177,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
                     break;
             }
             // Write config into FE
-            g_tx->setCmdEnable(1 << fe->getTxChannel());
+            g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
             fe->configurePixels(lsb, msb+1);
             g_tx->setCmdEnable(keeper->getTxMask());
             while(!g_tx->isCmdEmpty());

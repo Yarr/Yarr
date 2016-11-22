@@ -8,24 +8,6 @@
 
 #include "FrontEnd.h"
 
-void FrontEnd::setChannel(unsigned arg_channel) {
-	txChannel = arg_channel;
-	rxChannel = arg_channel;
-}
-
-void FrontEnd::setChannel(unsigned arg_txChannel, unsigned arg_rxChannel) {
-	txChannel = arg_txChannel;
-	rxChannel = arg_rxChannel;
-}
-
-void FrontEnd::setName(std::string arg_name) {
-    name = arg_name;
-}
-
-std::string FrontEnd::getName() {
-    return name;
-}
-
 bool FrontEnd::isActive() {
 	return active;
 }
@@ -36,16 +18,4 @@ bool FrontEnd::getActive() {
 
 void FrontEnd::setActive(bool arg_active) {
 	active = arg_active;
-}
-
-unsigned FrontEnd::getChannel() {
-	return rxChannel;
-}
-
-unsigned FrontEnd::getRxChannel() {
-	return rxChannel;
-}
-
-unsigned FrontEnd::getTxChannel() {
-	return txChannel;
 }

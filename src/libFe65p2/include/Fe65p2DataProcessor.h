@@ -31,6 +31,7 @@ class Fe65p2DataProcessor : public DataProcessor {
         ClipBoard<RawDataContainer> *input;
         std::map<unsigned, ClipBoard<Fei4Data> > *outMap;
         std::vector<unsigned> activeChannels;
+        std::map<unsigned, unsigned> tag;
         std::map<unsigned, unsigned> l1id;
         std::map<unsigned, unsigned> bcid;
         std::map<unsigned, unsigned> wordCount;

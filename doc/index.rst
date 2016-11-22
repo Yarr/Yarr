@@ -43,6 +43,8 @@ Content:
    install
    compat
    firmware
-   adapter
    fei4
+   fe65p2
+   eudaq
    gui
+   adapter

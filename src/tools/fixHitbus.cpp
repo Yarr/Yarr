@@ -37,6 +37,8 @@ int main(int argc, char *argv[]) {
     // Enable link
     tx.setCmdEnable(0x1);
     tx.toggleTrigAbort();
+
+    tx.setTriggerLogicMask(0x001);
     // Configure FE
     g_fe->configure();
 
@@ -90,7 +92,7 @@ int main(int argc, char *argv[]) {
             tx.setTrigEnable(0x0);
             
             int num_hitbus = tx.getTrigInCount();
-            if (num_hitbus < (2*num_inject)*0.9 || num_hitbus > (2*num_inject)*1.1) {
+            if (num_hitbus < (2*num_inject)*0.4 || num_hitbus > (2*num_inject)*1.1) {
                 std::cout << "[" << (i*4)+(j/64)+1 << "][" << (j%64)+1 << "] = " << num_hitbus << std::endl;
                 fe->setPixConf((i*4)+(j/64)+1, (j%64)+1, 2); // => HitEn = 1, HitOrEn = 0
 		enMask.setBin(enMask.binNum((i*4)+(j/64)+1, (j%64)+1), 0);
