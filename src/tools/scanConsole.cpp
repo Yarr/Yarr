@@ -338,7 +338,7 @@ int main(int argc, char *argv[]) {
                 }
             }
         }else{
-            if(jTmp[chipType]["TxChannel"] == uTmpTx){
+            if((int) jTmp[chipType]["TxChannel"] == uTmpTx){
                 if(!jTmp[chipType]["RxChannel"].is_null()){
                     uTmpRx = jTmp[chipType]["RxChannel"];
                 }else{
