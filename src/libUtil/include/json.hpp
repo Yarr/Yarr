@@ -6422,30 +6422,34 @@ class basic_json
                 o << "[";
 
                 // increase indentation
+                /* theim: dont want indent for arrays
                 if (pretty_print)
                 {
                     new_indent += indent_step;
                     o << "\n";
                 }
+                */
 
                 for (auto i = m_value.array->cbegin(); i != m_value.array->cend(); ++i)
                 {
                     if (i != m_value.array->cbegin())
                     {
-                        o << (pretty_print ? ",\n" : ",");
+                        o << (pretty_print ? "," : ",");
                     }
-                    o << string_t(new_indent, ' ');
+                    //o << string_t(new_indent, ' ');
                     i->dump(o, pretty_print, indent_step, new_indent);
                 }
 
                 // decrease indentation
+                /*
                 if (pretty_print)
                 {
                     new_indent -= indent_step;
                     o << "\n";
                 }
+                */
+                o << "]";
 
-                o << string_t(new_indent, ' ') << "]";
                 return;
             }
 
