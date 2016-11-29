@@ -22,7 +22,11 @@
 #include <linux/pagemap.h>
 #include <linux/spinlock.h>
 #include <linux/list.h>
-#include <asm/scatterlist.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
+    #include <linux/scatterlist.h>
+#else   
+    #include <asm/scatterlist.h>
+#endif
 #include <linux/vmalloc.h>
 #include <linux/stat.h>
 #include <linux/interrupt.h>
