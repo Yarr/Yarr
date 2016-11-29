@@ -5991,11 +5991,13 @@ class basic_json
                 o << "[";
 
                 // increase indentation
+                /* theim
                 if (pretty_print)
                 {
                     new_indent += indent_step;
                     o << "\n";
                 }
+                */
 
                 for (auto i = m_value.array->cbegin(); i != m_value.array->cend(); ++i)
                 {
@@ -6009,6 +6011,7 @@ class basic_json
                 }
 
                 // decrease indentation
+                /* theim
                 if (pretty_print)
                 {
                     new_indent -= indent_step;
@@ -6016,6 +6019,8 @@ class basic_json
                 }
 
                 o << string_t(new_indent, ' ') << "]";
+                */
+                o << "]";
                 return;
             }
 
