@@ -134,7 +134,12 @@ int main(int argc, char *argv[]) {
                 }
                 break;
             case 'p':
-                doPlots = true;
+                if(argv[0] != "bin/scanConsole"){
+                    std::cerr << "Please start program from 'src' directory as 'bin/scanConsole'" << std::endl;
+                    doPlots = false;
+                }else{
+                    doPlots = true;
+                }
                 break;
             case 'o':
                 outputDir = std::string(optarg);
@@ -165,8 +170,9 @@ int main(int argc, char *argv[]) {
 
 #if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
 
-//for some reason, 'make' issues that kdir is an undefined reference
+//for some reason, 'make' issues that mkdir is an undefined reference
 //a test program on another machine has worked fine
+//a test program on this machine has also worked fine
 //    int mDExSt = mkdir(outputDir.c_str(), 0777); //mkdir exit status
 //    mode_t myMode = 0777;
 //    int mDExSt = mkdir(outputDir.c_str(), myMode); //mkdir exit status
