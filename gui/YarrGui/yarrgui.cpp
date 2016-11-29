@@ -256,7 +256,7 @@ void YarrGui::on_addFeButton_clicked(){
         iFJ << std::setw(4) << j;
         iFJ.close();
     }
-    tx->setCmdEnable(0x1 << bk->getLastFe()->getTxChannel());
+    tx->setCmdEnable(0x1 << dynamic_cast<FrontEndCfg*>(bk->getLastFe())->getTxChannel());
     bk->getLastFe()->configure();
     dynamic_cast<Fei4*>(bk->getLastFe())->configurePixels();
     while(!(tx->isCmdEmpty())){
@@ -453,7 +453,7 @@ void YarrGui::on_addFeGlobalButton_clicked(){
             iFJ << std::setw(4) << j;
             iFJ.close();
         }
-        tx->setCmdEnable(0x1 << bk->getLastFe()->getTxChannel());
+        tx->setCmdEnable(0x1 << dynamic_cast<FrontEndCfg*>(bk->getLastFe())->getTxChannel());
         dynamic_cast<Fei4*>(bk->getLastFe())->configure();
         dynamic_cast<Fei4*>(bk->getLastFe())->configurePixels();
         while(!(tx->isCmdEmpty())) {
