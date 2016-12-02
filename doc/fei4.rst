@@ -26,7 +26,8 @@ Supported Scans
 Example Scan:
 ^^^^^^^^^^^^^^^^^^^^^
 
-    .. code-block:: none
+    Example of how to run a scan::
+
         $ bin/scanConsole -s analogscan -c configs/test.json -p
         #####################################
         # Welcome to the YARR Scan Console! #
@@ -42,6 +43,7 @@ Example Scan:
 
         Timestamp: 2016-12-02_08:40:44
         Run Number: 1
+        
         #################
         # Init Hardware #
         #################
@@ -51,6 +53,7 @@ Example Scan:
         void SpecController::init() -> Mapped BAR0 at 0x0x7f3edff3e000 with size 0x100000
         void SpecController::init() -> Mapped BAR4 at 0x0x7f3ee0059000 with size 0x1000
         void SpecController::configure() -> Configuring GN412X
+        
         #######################
         ##  Loading Configs  ##
         #######################
@@ -140,26 +143,6 @@ Example Scan:
         Saving : OccupancyMap
         Saving : L1Dist
     
-Global configuration
-^^^^^^^^^^^^^^^^^^^^^
-    - The global configuration should contain the following information for each attached chip per line:
-        - Name <string> : Name/Id of chip (not allowed to contain whitespace), e.g. DC56874 or Mary
-        - ChipId <unsigned> : Chip Id as specified by the wirebonds attached to the chip, typically 0 for single-chip cards, 7 for single-chip modules and 7/6 foer double-chip modules
-        - Tx link <unsigned> : Channel in the FPGA the CMD stream is transmitted through
-        - Rx link <unsigned> : Channel data from the FE is received in the FPGA
-        - Config <string> : Path to file and filename of config file for this chip, is created if it does not exist
-    - N.B.: Tx and Rx link are always the same for single chip modules, but can one Tx link is shared by a double chip module. In porper definition of the Tx link will lead to the chip not being properly configured and giving wrong scan results (Scans are run with broadcast)
-    - Example:
-
-    .. code-block:: none
-        
-        Huey    7   0   0   configs/Huey.cfg
-        # A comment starts with a #, inline comments do not work
-        Dewey   7   1   1   configs/Dewey.cfg
-        Louie   6   1   2   configs/Louie.cfg
-
-    - Here Dewey and Louie are a double-chip module sharing the CMD line in TX link 1
-
 Tuning
 ^^^^^^^^^^^^^^^^^^^^^
     - A chip can be tuned by executing the tuning scans in a specific order, e.g.:
