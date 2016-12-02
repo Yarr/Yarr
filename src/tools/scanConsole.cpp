@@ -230,9 +230,9 @@ int main(int argc, char *argv[]) {
                 std::cerr << "Unknown chip type or malformed config in " << sTmp << std::endl;
                 continue;
             }
+            // Load config
+            dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->fromFileJson(jTmp);
         }
-        // Load config
-        dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->fromFileJson(jTmp);
         feCfgMap[bookie.getLastFe()] = sTmp;
         iFTmp.close();
     }
