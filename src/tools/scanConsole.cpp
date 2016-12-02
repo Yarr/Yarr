@@ -100,14 +100,16 @@ int main(int argc, char *argv[]) {
     unsigned runCounter = 0;
 
     // Load run counter
-    std::ifstream iF("~/.yarr-system/runCounter");
+    int sysExSt = system("mkdir -p ~/.yarr");
+
+    std::ifstream iF("~/.yarr/runCounter");
     iF >> runCounter;
     iF.close();
     std::stringstream sS;
     sS << std::setw(7) << std::setfill('0') << runCounter;
 
     runCounter += 1;
-    std::ofstream oF("~/.yarr-system/runCounter");
+    std::ofstream oF("~/.yarr/runCounter");
     oF << runCounter;
     oF.close();
 
@@ -162,6 +164,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    outputDir += (toString(runCounter, 6) + "_" + scanType + "/");
+    
     std::cout << " SPEC Nr: " << specNum << std::endl;
     std::cout << " Scan Type: " << scanType << std::endl;
     
@@ -235,6 +239,13 @@ int main(int argc, char *argv[]) {
         }
         feCfgMap[bookie.getLastFe()] = sTmp;
         iFTmp.close();
+        
+        // Macke backup of current config
+        std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getName() + ".json");
+        nlohmann::json backupCfg;
+        dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
+        backupCfgFile << std::setw(4) << backupCfg;
+        backupCfgFile.close();
     }
     
     std::cout << std::endl;
@@ -444,7 +455,6 @@ int main(int argc, char *argv[]) {
             //    mode_t myMode = 0777;
             //    int mDExSt = mkdir(outputDir.c_str(), myMode); //mkdir exit status
             std::string cmdStr = "mkdir -p "; //I am not proud of this ):
-            outputDir += (toString(runCounter, 6) + "_" + scanType + "/");
             cmdStr += outputDir;
             int sysExSt = system(cmdStr.c_str());
             if(sysExSt != 0){
@@ -487,10 +497,10 @@ void printHelp() {
     std::cout << " -s <scan_type> : Scan type. Possible types:" << std::endl;
     listScans();
     std::cout << " -n: Provide SPECboard number." << std::endl;
-    std::cout << " -g <cfg_list.txt>: Provide list of chip configurations." << std::endl;
+    //std::cout << " -g <cfg_list.txt>: Provide list of chip configurations." << std::endl;
     std::cout << " -c <cfg1.cfg> [<cfg2.cfg> ...]: Provide chip configuration, can take multiple arguments." << std::endl;
     std::cout << " -p: Enable plotting of results." << std::endl;
-    std::cout << " -o <dir> : Output directory." << std::endl;
+    std::cout << " -o <dir> : Output directory. (Default ./data/)" << std::endl;
 }
 
 void listScans() {
