@@ -39,6 +39,13 @@
 
 #endif
 
+std::string toString(int value,int digitsCount)
+{
+    std::ostringstream os;
+    os<<std::setfill('0')<<std::setw(digitsCount)<<value;
+    return os.str();
+}
+
 void printHelp();
 void listScans();
 
@@ -85,29 +92,24 @@ int main(int argc, char *argv[]) {
     // Init parameters
     unsigned specNum = 0;
     std::string scanType = "";
-    std::string gConfigPath = "";
     std::vector<std::string> cConfigPath;
-    std::string outputDir = "../Plots/";
+    std::string outputDir = "./data/";
     bool doPlots = false;
+    int target_threshold = 2500;
+    
     unsigned runCounter = 0;
-    std::string runDir = "run";
 
-#if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
-    {
-        std::ifstream iF("../.yarr-system/.runCounter");
-        iF >> runCounter;
-        iF.close();
-        std::stringstream sS;
-        sS << std::setw(7) << std::setfill('0') << runCounter;
-        runDir += sS.str();
-        runDir += '/';
+    // Load run counter
+    std::ifstream iF("~/.yarr-system/runCounter");
+    iF >> runCounter;
+    iF.close();
+    std::stringstream sS;
+    sS << std::setw(7) << std::setfill('0') << runCounter;
 
-        runCounter += 1;
-        std::ofstream oF("../.yarr-system/.runCounter");
-        oF << runCounter;
-        oF.close();
-    }
-#endif
+    runCounter += 1;
+    std::ofstream oF("~/.yarr-system/runCounter");
+    oF << runCounter;
+    oF.close();
 
     int c;
     while ((c = getopt(argc, argv, "hs:n:g:c:po:")) != -1) {
@@ -122,9 +124,6 @@ int main(int argc, char *argv[]) {
             case 'n':
                 specNum = atoi(optarg);
                 break;
-            case 'g':
-                gConfigPath = std::string(optarg);
-                break;
             case 'c':
 //                configPath = std::string(optarg);
                 optind -= 1; //this is a bit hacky, but getopt doesn't support multiple
@@ -134,20 +133,15 @@ int main(int argc, char *argv[]) {
                 }
                 break;
             case 'p':
-                if(argv[0] != "bin/scanConsole"){
-                    std::cerr << "Please start program from 'src' directory as 'bin/scanConsole'" << std::endl;
-                    doPlots = false;
-                }else{
-                    doPlots = true;
-                }
+                doPlots = true;
                 break;
             case 'o':
                 outputDir = std::string(optarg);
                 if (outputDir.back() != '/')
                     outputDir = outputDir + "/";
-#if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
-                outputDir += runDir;
-#endif
+                break;
+            case 't':
+                target_threshold = atoi(optarg);
                 break;
             case '?':
                 if(optopt == 's' || optopt == 'n'){
@@ -168,63 +162,14 @@ int main(int argc, char *argv[]) {
         }
     }
 
-#if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
-
-//for some reason, 'make' issues that mkdir is an undefined reference
-//a test program on another machine has worked fine
-//a test program on this machine has also worked fine
-//    int mDExSt = mkdir(outputDir.c_str(), 0777); //mkdir exit status
-//    mode_t myMode = 0777;
-//    int mDExSt = mkdir(outputDir.c_str(), myMode); //mkdir exit status
-    std::string cmdStr = "mkdir -p "; //I am not proud of this ):
-    cmdStr += outputDir;
-    int sysExSt = system(cmdStr.c_str());
-    if(sysExSt != 0){
-        std::cerr << "Error creating output directory - plots might not be saved!" << std::endl;
-    }
-    //read errno variable and catch some errors, if necessary
-    //errno=1 is permission denied, errno = 17 is dir already exists, ...
-    //see /usr/include/asm-generic/errno-base.h and [...]/errno.h for all codes
-
-#endif
-
-    if(gConfigPath != ""){
-        std::cout << std::endl << "##############################################" << std::endl
-                               << "##                                          ##" << std::endl
-                               << "##  Extracting configs from config list...  ##" << std::endl
-                               << "##                                          ##" << std::endl
-                               << "##############################################" << std::endl;
-        int tmpI = 0;
-        std::string tmpStr = "";
-        std::ifstream gCfgIn(gConfigPath);
-        if(!gCfgIn){
-            std::cerr << "Cannot open file containing config list" << std::endl;
-        }else{
-            while(std::getline(gCfgIn, tmpStr)){
-                if(tmpStr.front() == '#'){
-                    continue;
-                }
-                while(isspace(tmpStr.back())){
-                    tmpStr.pop_back();
-                }
-                cConfigPath.push_back(tmpStr);
-            }
-        }
-        if(cConfigPath.size() == 0){
-            std::cerr << "No chips added. Terminating program..." << std::endl;
-            return -1;
-        }
-    }
-
     std::cout << " SPEC Nr: " << specNum << std::endl;
     std::cout << " Scan Type: " << scanType << std::endl;
-    if(gConfigPath != ""){
-        std::cout << " Config list in: " << gConfigPath << std::endl;
-    }
+    
     std::cout << "Chips: " << std::endl;
     for(std::string const& sTmp : cConfigPath){
         std::cout << "    " << sTmp << std::endl;
     }
+    std::cout << " Target Threshold: " << target_threshold << std::endl;
     std::cout << " Output Plots: " << doPlots << std::endl;
     std::cout << " Output Directory: " << outputDir << std::endl;
 
@@ -234,7 +179,8 @@ int main(int argc, char *argv[]) {
     char timestamp[20];
     strftime(timestamp, 20, "%F_%H:%M:%S", lt);
     std::cout << std::endl;
-    std::cout << "Timestamp : " << timestamp << std::endl;
+    std::cout << "Timestamp: " << timestamp << std::endl;
+    std::cout << "Run Number: " << runCounter;
 
     std::cout << std::endl;
     std::cout << "#################" << std::endl;
@@ -248,215 +194,49 @@ int main(int argc, char *argv[]) {
     RxCore rx(&spec);
     Bookkeeper bookie(&tx, &rx);
     std::map<FrontEnd*, std::string> feCfgMap;
-    bookie.setTargetThreshold(2500);
+
+    bookie.setTargetThreshold(target_threshold);
+    bookie.setTargetTot(10);
+    bookie.setTargetCharge(16000);
 
     std::cout << "#######################" << std::endl
-              << "##                   ##" << std::endl
-              << "##  Adding chips...  ##" << std::endl
-              << "##                   ##" << std::endl
+              << "##  Loading Configs  ##" << std::endl
               << "#######################" << std::endl;
+    
     for(std::string const& sTmp : cConfigPath){
         std::string discardMe; //Error handling, wait for user
         nlohmann::json jTmp;
         std::ifstream iFTmp(sTmp);
-        try{
-            if(iFTmp){
-                jTmp = nlohmann::json::parse(iFTmp);
-            }else{
-                throw std::invalid_argument("Config file not readable... ");
+
+        if (!iFTmp) {
+            std::cerr << "File not found: " << sTmp << std::endl;
+            std::cerr << "Creating new config (type FE-I4B) ..." << std::endl;
+            unsigned i=0;
+            for (; i<16; i++) {
+                if (bookie.getFe(i) == NULL)
+                    break;
             }
-        }catch(std::invalid_argument){
-            std::cerr << "No config in " << sTmp
-                      << ", press enter to skip, enter '4' to add an empty FE-I4B config, "
-                      << "enter '6' to add an empty FE65-P2 config: " << std::endl;
-            std::getline(std::cin, discardMe);
-            if(discardMe == "4"){
-                jTmp["FE-I4B"] = nlohmann::json::parse("{}");
-            }else if(discardMe == "6"){
-                jTmp["FE65-P2"] = nlohmann::json::parse("{}");
-            }else{
+            std::cout << "Rx " << i << " seems to be free, assuming same Tx channel." << std::endl;
+            bookie.addFe(dynamic_cast<FrontEnd*>(new Fei4(&tx)), i, i);
+        } else {
+            jTmp << iFTmp;
+            if(!jTmp["FE-I4B"].is_null()){
+                std::cout << "Found FE-I4B: " << jTmp["FE-I4B"]["name"] << std::endl;
+                bookie.addFe(dynamic_cast<FrontEnd*>(new Fei4(&tx)), jTmp["FE-I4B"]["txChannel"], jTmp["FE-I4B"]["txChannel"]);        
+            } else if(!jTmp["FE65-P2"].is_null()){
+                std::cout << "Found FE65-P2: " << jTmp["FE-I4B"]["name"] << std::endl;
+                bookie.addFe(dynamic_cast<FrontEnd*>(new Fe65p2(&tx)), jTmp["FE65-P2"]["txChannel"], jTmp["FE-I4B"]["txChannel"]);        
+            } else{
+                std::cerr << "Unknown chip type or malformed config in " << sTmp << std::endl;
                 continue;
             }
         }
+        // Load config
+        dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->fromFileJson(jTmp);
+        feCfgMap[bookie.getLastFe()] = sTmp;
         iFTmp.close();
-        std::string chipType;
-        if(!jTmp["FE-I4B"].is_null()){
-            chipType = "FE-I4B";
-        }else if(!jTmp["FE65-P2"].is_null()){
-            chipType = "FE65-P2";
-        }else{
-            std::cerr << "Unknown chip type or malformed config in " << sTmp << std::endl;
-            continue;
-        }
-
-        unsigned int uTmpTx = 0;
-        unsigned int uTmpRx = 0;
-
-        //determine TxChannel
-        std::cout << chipType << std::endl;
-        if(jTmp[chipType]["TxChannel"].is_null()){
-            uTmpTx = 0;
-            while(bookie.isChannelUsed(uTmpTx)){
-                uTmpTx += 1;
-            }
-            std::cout << "No TxChannel in " << sTmp << ", "<< uTmpTx << " can be used"
-                      << ". Press enter to confirm or enter another TxChannel:  " << std::endl;
-            std::getline(std::cin, discardMe);
-            if(discardMe.size() > 0){
-                uTmpTx = std::stoul(discardMe);
-            }
-        }else{
-            if(bookie.isChannelUsed(jTmp[chipType]["TxChannel"])){
-                uTmpTx = 0;
-                while(bookie.isChannelUsed(uTmpTx)){
-                    uTmpTx += 1;
-                }
-                std::cout << "TxChannel " << jTmp[chipType]["TxChannel"]
-                          << " from config " << sTmp << "already in use, " << uTmpTx
-                          << " can be used. Press enter to confirm or enter another TxChannel: " << std::endl;
-                std::getline(std::cin, discardMe);
-                if(discardMe.size() > 0){
-                    uTmpTx = std::stoul(discardMe);
-                }
-            }else{
-                uTmpTx = jTmp[chipType]["TxChannel"];
-            }
-        }
-        //determine RxChannel
-        if(jTmp[chipType]["TxChannel"].is_null()){
-            if(!jTmp[chipType]["RxChannel"].is_null()){
-                uTmpRx = jTmp[chipType]["RxChannel"];
-                std::cout << "Warning! RxChannel " << uTmpRx
-                          << " found in config, but using automatically generated TxChannel "
-                          << uTmpTx << ". Press enter to confirm or enter another RxChannel: " << std::endl;
-                std::getline(std::cin, discardMe);
-                if(discardMe.size() > 0){
-                    uTmpRx = std::stoul(discardMe);
-                }
-            }else{
-                uTmpRx = uTmpTx;
-                std::cout << "Warning! Neither TxChannel nor RxChannel in config " << sTmp
-                          << ". Automatically generated RxChannel " << uTmpRx
-                          << " can be used. Press enter to confirm or enter another RxChannel: " << std::endl;
-                std::getline(std::cin, discardMe);
-                if(discardMe.size() > 0){
-                    uTmpRx = std::stoul(discardMe);
-                }
-            }
-        }else{
-            if((int) jTmp[chipType]["TxChannel"] == uTmpTx){
-                if(!jTmp[chipType]["RxChannel"].is_null()){
-                    uTmpRx = jTmp[chipType]["RxChannel"];
-                }else{
-                    uTmpRx = uTmpTx;
-                    std::cout << "Warning! No RxChannel in config " << sTmp
-                              << ". Using " << uTmpRx << " from TxChannel instead. "
-                              << "Press enter to confirm or enter another RxChannel: " << std::endl;
-                    std::getline(std::cin, discardMe);
-                    if(discardMe.size() > 0){
-                        uTmpRx = std::stoul(discardMe);
-                    }
-                }
-            }else{
-                if(jTmp[chipType]["RxChannel"].is_null()){
-                    uTmpRx = uTmpTx;
-                    std::cout << "Warning! No RxChannel in " << sTmp
-                              << ". Using automatically generated RxChannel " << uTmpRx
-                              << ". Press enter to confirm or enter another RxChannel: " << std::endl;
-                    std::getline(std::cin, discardMe);
-                    if(discardMe.size() > 0){
-                        uTmpRx = std::stoul(discardMe);
-                    }
-                }else{
-                    uTmpRx = jTmp[chipType]["RxChannel"];
-                    std::cout << "Warning! Found RxChannel " << uTmpRx << " in config " << sTmp
-                              << ", but using automatically generated TxChannel " << uTmpTx
-                              << ". Press enter to confirm or enter another RxChannel: " << std::endl;
-                    std::getline(std::cin, discardMe);
-                    if(discardMe.size() > 0){
-                        uTmpRx = std::stoul(discardMe);
-                    }
-                }
-            }
-        }
-
-        if(bookie.isChannelUsed(uTmpTx)){
-            std::cerr << "ERROR! Cannot add " << chipType << " with config " << sTmp
-                      << ", TxChannel " << uTmpTx << ", RxChannel " << uTmpRx << std::endl;
-            continue;
-        }
-
-        if(chipType == "FE-I4B"){
-            Fei4 *fEI4Tmp = new Fei4(&tx, uTmpTx, uTmpRx);
-            try{
-                fEI4Tmp->fromFileJson(jTmp);
-            }catch(std::domain_error){
-                std::cerr << "Malformed config. Press enter to proceed, "
-                          << "enter 's' to skip this chip or CTRL+C to abort... " <<std::endl;
-                std::getline(std::cin, discardMe);
-                if(discardMe == "s"){
-                    std::cout << "Skipping config file " << sTmp << ", not adding chip" << std::endl;
-                    continue;
-                }
-            }
-            bookie.addFe(fEI4Tmp, uTmpTx, uTmpRx);
-            feCfgMap.insert(std::pair<FrontEnd*, std::string>(fEI4Tmp, sTmp));
-        }else{
-            Fe65p2 *fE65P2Tmp = new Fe65p2(&tx, uTmpTx, uTmpRx);
-            try{
-                fE65P2Tmp->fromFileJson(jTmp);
-            }catch(std::domain_error){
-                std::cerr << "Malformed config. Press enter to proceed, "
-                          << "enter 's' to skip this chip or CTRL+C to abort... " <<std::endl;
-                std::getline(std::cin, discardMe);
-                if(discardMe == "s"){
-                    std::cout << "Skipping config file " << sTmp << ", not adding chip" << std::endl;
-                    continue;
-                }
-            }
-            bookie.addFe(fE65P2Tmp, uTmpTx, uTmpRx);
-            feCfgMap.insert(std::pair<FrontEnd*, std::string>(fE65P2Tmp, sTmp));
-        }
     }
-
-/*    std::cout << "-> Read global config (" << configPath << "):" << std::endl;
-    std::fstream gConfig(configPath, std::ios::in);
-    if (!gConfig) {
-        std::cerr << "## ERROR ## Could not open file: " << configPath << std::endl;
-        return -1;
-    }
-
-    while (!gConfig.eof() && gConfig) {
-        unsigned id, txChannel, rxChannel;
-        std::string name, feCfgPath;
-        char peekaboo = gConfig.peek();
-        if (peekaboo == '\n') {
-            gConfig.ignore();
-            peekaboo = gConfig.peek();
-        }
-        if (peekaboo == '#') {
-            char tmp[1024];
-            gConfig.getline(tmp, 1024);
-            std::cout << " Skipping: " << tmp << std::endl;
-        } else {
-            gConfig >> name >> id >> txChannel >> rxChannel >> feCfgPath;
-            if (gConfig.eof())
-                break;
-            std::cout << "-> Found FE " << name << std::endl;
-            // Add FE to bookkeeper
-            bookie.addFe(new Fei4(&tx, txChannel, rxChannel), txChannel, rxChannel);
-            dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->setName(name);
-            // TODO verify cfg typea
-            // Load config
-            dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->fromFileBinary(feCfgPath);
-            // Set chipId again after loading in case we got std cfg
-            //dynamic_cast<FrontEnd*>(bookie.getLastFe())->setChipId(id);
-            // Make backup of current config
-            dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileBinary(feCfgPath + "-" + std::string(timestamp));
-            dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileBinary(feCfgPath);
-        }
-    }
-*/
+    
     std::cout << std::endl;
     std::cout << "#################" << std::endl;
     std::cout << "# Configure FEs #" << std::endl;
@@ -647,38 +427,49 @@ int main(int argc, char *argv[]) {
     std::cout << "###########" << std::endl;
     std::cout << "# Cleanup #" << std::endl;
     std::cout << "###########" << std::endl;
+
+
+
     
     // Cleanup
     delete s;
     for (unsigned i=0; i<bookie.feList.size(); i++) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
+            // Create folder
+            //for some reason, 'make' issues that mkdir is an undefined reference
+            //a test program on another machine has worked fine
+            //a test program on this machine has also worked fine
+            //    int mDExSt = mkdir(outputDir.c_str(), 0777); //mkdir exit status
+            //    mode_t myMode = 0777;
+            //    int mDExSt = mkdir(outputDir.c_str(), myMode); //mkdir exit status
+            std::string cmdStr = "mkdir -p "; //I am not proud of this ):
+            outputDir += (toString(runCounter, 6) + "_" + scanType + "/");
+            cmdStr += outputDir;
+            int sysExSt = system(cmdStr.c_str());
+            if(sysExSt != 0){
+                std::cerr << "Error creating output directory - plots might not be saved!" << std::endl;
+            }
+            //read errno variable and catch some errors, if necessary
+            //errno=1 is permission denied, errno = 17 is dir already exists, ...
+            //see /usr/include/asm-generic/errno-base.h and [...]/errno.h for all codes
+            
+            // TODO save backup config into run folder
+
             // Save config
-            std::cout << "-> Saving config of FE " << dynamic_cast<FrontEndCfg*>(fe)->getName() << std::endl;
-            //dynamic_cast<FrontEndCfg*>(fe)->toFileBinary();
+            std::cout << "-> Saving config of FE " << dynamic_cast<FrontEndCfg*>(fe)->getName() << " to " << feCfgMap.at(fe) << std::endl;
             nlohmann::json jTmp;
             dynamic_cast<FrontEndCfg*>(fe)->toFileJson(jTmp);
-            std::string jSTmp;
-            jSTmp = jTmp.dump(4); //4 spaces indentation
-            std::stringstream sStrmTmp;
-            sStrmTmp << jSTmp;
             std::ofstream oFTmp(feCfgMap.at(fe));
-            oFTmp << sStrmTmp.rdbuf();
+            oFTmp << std::setw(4) << jTmp;
             oFTmp.close();
+
             // Plot
             if (doPlots) {
                 std::cout << "-> Plotting histograms of FE " << dynamic_cast<FrontEndCfg*>(fe)->getRxChannel() << std::endl;
-#if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
-                std::string outputDirTmp = outputDir + runDir;
-                outputDirTmp += dynamic_cast<FrontEndCfg*>(fe)->getName() + "/" + scanType + "/";
-                std::string cmdStr = "mkdir -p ";
-                cmdStr += outputDirTmp;
-                int sysExSt = system(cmdStr.c_str());
-                fe->ana->plot(std::string(timestamp) + "-" + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_ch" + std::to_string(dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) + "_" + scanType, outputDirTmp);
-#else
-                fe->ana->plot(std::string(timestamp) + "-" + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_ch" + std::to_string(dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) + "_" + scanType, outputDir);
-#endif
-                //fe->ana->toFile(std::string(timestamp) + "-" + fe->getName() + "_ch" + std::to_string(fe->getRxChannel()) + "_" + scanType, outputDir);
+                std::string outputDirTmp = outputDir;
+                fe->ana->plot(dynamic_cast<FrontEndCfg*>(fe)->getName(), outputDirTmp);
+                fe->ana->toFile(dynamic_cast<FrontEndCfg*>(fe)->getName(), outputDir);
             }
             // Free
             delete fe->histogrammer;
