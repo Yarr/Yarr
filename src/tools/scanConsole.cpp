@@ -100,17 +100,21 @@ int main(int argc, char *argv[]) {
     unsigned runCounter = 0;
 
     // Load run counter
-    int sysExSt = system("mkdir -p ~/.yarr");
-
-    std::ifstream iF("~/.yarr/runCounter");
-    iF >> runCounter;
+    system("mkdir -p ~/.yarr");
+    
+    std::string home = getenv("HOME");
+    std::fstream iF((home + "/.yarr/runCounter").c_str(), std::ios::in);
+    if (iF) {
+        iF >> runCounter;
+        runCounter += 1;
+    } else {
+        system("echo \"1\n\" > ~/.yarr/runCounter");
+        runCounter = 1;
+    }
     iF.close();
-    std::stringstream sS;
-    sS << std::setw(7) << std::setfill('0') << runCounter;
 
-    runCounter += 1;
-    std::ofstream oF("~/.yarr/runCounter");
-    oF << runCounter;
+    std::fstream oF((home + "/.yarr/runCounter").c_str(), std::ios::out);
+    oF << runCounter << std::endl;
     oF.close();
 
     int c;
@@ -169,13 +173,30 @@ int main(int argc, char *argv[]) {
     std::cout << " SPEC Nr: " << specNum << std::endl;
     std::cout << " Scan Type: " << scanType << std::endl;
     
-    std::cout << "Chips: " << std::endl;
+    std::cout << " Chips: " << std::endl;
     for(std::string const& sTmp : cConfigPath){
         std::cout << "    " << sTmp << std::endl;
     }
     std::cout << " Target Threshold: " << target_threshold << std::endl;
     std::cout << " Output Plots: " << doPlots << std::endl;
     std::cout << " Output Directory: " << outputDir << std::endl;
+    
+    // Create folder
+    //for some reason, 'make' issues that mkdir is an undefined reference
+    //a test program on another machine has worked fine
+    //a test program on this machine has also worked fine
+    //    int mDExSt = mkdir(outputDir.c_str(), 0777); //mkdir exit status
+    //    mode_t myMode = 0777;
+    //    int mDExSt = mkdir(outputDir.c_str(), myMode); //mkdir exit status
+    std::string cmdStr = "mkdir -p "; //I am not proud of this ):
+    cmdStr += outputDir;
+    int sysExSt = system(cmdStr.c_str());
+    if(sysExSt != 0){
+        std::cerr << "Error creating output directory - plots might not be saved!" << std::endl;
+    }
+    //read errno variable and catch some errors, if necessary
+    //errno=1 is permission denied, errno = 17 is dir already exists, ...
+    //see /usr/include/asm-generic/errno-base.h and [...]/errno.h for all codes
 
     // Timestamp
     std::time_t now = std::time(NULL);
@@ -240,7 +261,7 @@ int main(int argc, char *argv[]) {
         feCfgMap[bookie.getLastFe()] = sTmp;
         iFTmp.close();
         
-        // Macke backup of current config
+        // Create backup of current config
         std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getName() + ".json");
         nlohmann::json backupCfg;
         dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
@@ -447,22 +468,6 @@ int main(int argc, char *argv[]) {
     for (unsigned i=0; i<bookie.feList.size(); i++) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
-            // Create folder
-            //for some reason, 'make' issues that mkdir is an undefined reference
-            //a test program on another machine has worked fine
-            //a test program on this machine has also worked fine
-            //    int mDExSt = mkdir(outputDir.c_str(), 0777); //mkdir exit status
-            //    mode_t myMode = 0777;
-            //    int mDExSt = mkdir(outputDir.c_str(), myMode); //mkdir exit status
-            std::string cmdStr = "mkdir -p "; //I am not proud of this ):
-            cmdStr += outputDir;
-            int sysExSt = system(cmdStr.c_str());
-            if(sysExSt != 0){
-                std::cerr << "Error creating output directory - plots might not be saved!" << std::endl;
-            }
-            //read errno variable and catch some errors, if necessary
-            //errno=1 is permission denied, errno = 17 is dir already exists, ...
-            //see /usr/include/asm-generic/errno-base.h and [...]/errno.h for all codes
             
             // TODO save backup config into run folder
 
