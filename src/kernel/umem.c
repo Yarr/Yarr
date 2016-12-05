@@ -92,7 +92,11 @@ int specdriver_umem_sgmap(specdriver_privdata_t *privdata, umem_handle_t *umem_h
 
 	/* Get the page information */
 	down_read(&current->mm->mmap_sem);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
 	res = get_user_pages_remote(
+#else
+	res = get_user_pages(
+#endif
 				current,
 				current->mm,
 				umem_handle->vma,
