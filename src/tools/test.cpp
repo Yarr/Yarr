@@ -13,6 +13,9 @@ int main(int argc, char **argv) {
     unsigned err_count = 0;
     
     uint32_t *data = new uint32_t[size];
+    for(unsigned i=0; i<size;i++)
+        data[i] = i;
+
     uint32_t *resp = new uint32_t[size];
 
     std::cout << "Starting DMA write/read test ..." << std::endl;
