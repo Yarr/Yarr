@@ -94,7 +94,7 @@ Compile the software and load the firmware
 
     - Program the FPGA on the SPEC board
 
-    .. code-block::none
+    .. code-block:: none
         :linenos:
 
         $ bin/programFpga ../hdl/syn/yarr_quad_fei4_revB.bit 
