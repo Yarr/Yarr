@@ -71,6 +71,16 @@ Compile and load the kernel driver
 
     - Loading the kernel driver manually is only necessary directly after installation, it will be loaded automatically when the system starts and a SPEC board is installed
 
+    - In case you run into a problem during *modprobe* which looks like this: *modprobe: ERROR: could not insert 'specDriver': Required key not available*. Do the following:
+
+    .. code-block:: none
+        :linenos:
+
+        sudo yum install mokutil
+        sudo mokutil -disable-validation
+
+    - This will require you to create a password with at least 8 characters. Reboot after that and the UEFI will ask you to change the security settings. Choose "yes", reenter the password or whatever it asks for.
+
 Compile the software and load the firmware
 ----------------
     - Compile the software:
@@ -87,33 +97,33 @@ Compile the software and load the firmware
     .. code-block::none
         :linenos:
 
-     [theim@lambda src]$ bin/programFpga ../hdl/syn/yarr_quad_fei4_revB.bit 
-     Opening file: ../hdl/syn/yarr_quad_fei4_revB.bit
-     Size: 1.41732 MB
-     =========================================
-     File info:
-     Design Name: yarr.ncd;HW_TIMEOUT=FALSE;UserID=0xFFFFFFFF
-     Device:      6slx45tfgg484
-     Timestamp:   2015/08/25 12:20:08
-     Data size:   1486064
-     =========================================
-     Reading file.
-     Opening Spec device.
-     void SpecController::init() -> Opening SPEC with id #0
-     void SpecController::init() -> Mapping BARs
-     void SpecController::init() -> Mapped BAR0 at 0x0x7f5902cd1000 with size 0x100000
-     void SpecController::init() -> Mapped BAR4 at 0x0x7f5903deb000 with size 0x1000
-     void SpecController::configure() -> Configuring GN412X
-     void SpecController::configure() -> MSI needs to be configured!
-     Starting programming ...
-     int SpecController::progFpga(const void*, size_t) -> Setting up programming of FPGA
-     int SpecController::progFpga(const void*, size_t) -> Starting programming!
-     int SpecController::progFpga(const void*, size_t) -> Programming done!!
-     int SpecController::progFpga(const void*, size_t) -> FCL IRQ: 0x38
-     int SpecController::progFpga(const void*, size_t) -> FCL IRQ indicates CONFIG_DONE
-     int SpecController::progFpga(const void*, size_t) -> FCL Status: 0x2c
-     int SpecController::progFpga(const void*, size_t) -> FCL STATUS indicates SPRI_DONE
-     ... done!
+        $ bin/programFpga ../hdl/syn/yarr_quad_fei4_revB.bit 
+        Opening file: ../hdl/syn/yarr_quad_fei4_revB.bit
+        Size: 1.41732 MB
+        =========================================
+        File info:
+        Design Name: yarr.ncd;HW_TIMEOUT=FALSE;UserID=0xFFFFFFFF
+        Device:      6slx45tfgg484
+        Timestamp:   2015/08/25 12:20:08
+        Data size:   1486064
+        =========================================
+        Reading file.
+        Opening Spec device.
+        void SpecController::init() -> Opening SPEC with id #0
+        void SpecController::init() -> Mapping BARs
+        void SpecController::init() -> Mapped BAR0 at 0x0x7f5902cd1000 with size 0x100000
+        void SpecController::init() -> Mapped BAR4 at 0x0x7f5903deb000 with size 0x1000
+        void SpecController::configure() -> Configuring GN412X
+        void SpecController::configure() -> MSI needs to be configured!
+        Starting programming ...
+        int SpecController::progFpga(const void*, size_t) -> Setting up programming of FPGA
+        int SpecController::progFpga(const void*, size_t) -> Starting programming!
+        int SpecController::progFpga(const void*, size_t) -> Programming done!!
+        int SpecController::progFpga(const void*, size_t) -> FCL IRQ: 0x38
+        int SpecController::progFpga(const void*, size_t) -> FCL IRQ indicates CONFIG_DONE
+        int SpecController::progFpga(const void*, size_t) -> FCL Status: 0x2c
+        int SpecController::progFpga(const void*, size_t) -> FCL STATUS indicates SPRI_DONE
+        ... done!
 
     - Look for the flags *CONFIG_DONE* and *SPRI_DONE* to signal successful programming
     - Four LEDs on the SPEC board (close to the PCIe connector) should blink
