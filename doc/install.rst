@@ -8,7 +8,7 @@ Setting up your machine
     .. code-block:: none
         :linenos:
 
-        [theim@lambda ~]$ g++ --version
+        $ g++ --version
         g++ (GCC) 4.8.3 20140911 (Red Hat 4.8.3-9)
         Copyright (C) 2013 Free Software Foundation, Inc.
         This is free software; see the source for copying conditions.  There is NO
@@ -20,6 +20,13 @@ Setting up your machine
         :linenos:
 
         source /afs/cern.ch/sw/lcg/contrib/gcc/4.8/x86_64-slc6/setup.sh
+
+    - If not installed before, you need some standard packages:
+
+    .. code-block:: none
+        :linenos:
+
+        sudo yum install gnuplot texlive-epstopdf
 
 Initialise repository
 -------------------

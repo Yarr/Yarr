@@ -460,9 +460,8 @@ int main(int argc, char *argv[]) {
     std::cout << "# Cleanup #" << std::endl;
     std::cout << "###########" << std::endl;
 
-
-
-    
+    // Need this folder to plot
+    system("mkdir -p /tmp/$USER");
     // Cleanup
     delete s;
     for (unsigned i=0; i<bookie.feList.size(); i++) {

@@ -142,7 +142,11 @@ Example Scan:
         Saving : EnMask
         Saving : OccupancyMap
         Saving : L1Dist
-    
+   
+Getting started
+^^^^^^^^^^^^^^^^^^^^^
+    - 
+
 Tuning
 ^^^^^^^^^^^^^^^^^^^^^
     - A chip can be tuned by executing the tuning scans in a specific order, e.g.:
