@@ -1,6 +1,6 @@
 .. image:: http://readthedocs.org/projects/yarr/badge/?version=latest
-:target: http://yarr.readthedocs.io/en/latest/?badge=latest
-:alt: Documentation Status
+    :target: http://yarr.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
 
 ======================
 Yarr: Yet Another Rapid Readout
