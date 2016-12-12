@@ -34,8 +34,9 @@ LIBS +=
 
 BIN = bin
 SRC = tools
-SPEC = libSpec
 YARR = libYarr
+SPEC = libSpec
+EMU = libEmu
 FEI4 = libFei4
 FE65P2 = libFe65p2
 UTIL = libUtil
@@ -67,6 +68,7 @@ YARR_FILES = $(wildcard $(YARR)/*.cpp)
 FEI4_FILES = $(wildcard $(FEI4)/*.cpp)
 FE65P2_FILES = $(wildcard $(FE65P2)/*.cpp)
 UTIL_FILES = $(wildcard $(UTIL)/*.cpp)
+EMU_FILES = $(wildcard $(EMU)/*.cpp)
 
 SRC_DEPS = $(patsubst $(SRC)/%.cpp,$(BUILD)/%.d,$(SRC_FILES))
 SPEC_DEPS = $(patsubst $(SPEC)/%.cpp,$(BUILD)/%.d,$(SPEC_FILES))
@@ -74,8 +76,9 @@ YARR_DEPS = $(patsubst $(YARR)/%.cpp,$(BUILD)/%.d,$(YARR_FILES))
 FEI4_DEPS = $(patsubst $(FEI4)/%.cpp,$(BUILD)/%.d,$(FEI4_FILES))
 FE65P2_DEPS = $(patsubst $(FE65P2)/%.cpp,$(BUILD)/%.d,$(FE65P2_FILES))
 UTIL_DEPS = $(patsubst $(UTIL)/%.cpp,$(BUILD)/%.d,$(UTIL_FILES))
+EMU_DEPS = $(patsubst $(EMU)/%.cpp,$(BUILD)/%.d,$(EMU_FILES))
 
-ALL_DEPS = $(SRC_DEPS) $(SPEC_DEPS) $(YARR_DEPS) $(FEI4_DEPS) $(FE65P2_DEPS) $(UTIL_DEPS)
+ALL_DEPS = $(SRC_DEPS) $(SPEC_DEPS) $(YARR_DEPS) $(FEI4_DEPS) $(FE65P2_DEPS) $(UTIL_DEPS) $(EMU_DEPS)
 
 SRC_OBJS = $(patsubst $(SRC)/%.cpp,$(BUILD)/%.o,$(SRC_FILES))
 SPEC_OBJS = $(patsubst $(SPEC)/%.cpp,$(BUILD)/%.o,$(SPEC_FILES))
@@ -83,8 +86,9 @@ YARR_OBJS = $(patsubst $(YARR)/%.cpp,$(BUILD)/%.o,$(YARR_FILES))
 FEI4_OBJS = $(patsubst $(FEI4)/%.cpp,$(BUILD)/%.o,$(FEI4_FILES))
 FE65P2_OBJS = $(patsubst $(FE65P2)/%.cpp,$(BUILD)/%.o,$(FE65P2_FILES))
 UTIL_OBJS = $(patsubst $(UTIL)/%.cpp,$(BUILD)/%.o,$(UTIL_FILES))
+EMU_OBJS = $(patsubst $(EMU)/%.cpp,$(BUILD)/%.o,$(EMU_FILES))
 
-ALL_OBJS = $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS)
+ALL_OBJS = $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS) $(EMU_OBJS)
 
 TARGETS = $(patsubst $(SRC)/%.cpp,$(BIN)/%,$(SRC_FILES))
 
@@ -123,26 +127,29 @@ $(BUILD)/%.d: $(FE65P2)/%.cpp
 $(BUILD)/%.d: $(UTIL)/%.cpp
 	@$(CPP) $(CPPFLAGS) -MM -MT $(patsubst $(UTIL)/%.cpp,$(BUILD)/%.o,$<) $< > $@
 
+$(BUILD)/%.d: $(EMU)/%.cpp
+	@$(CPP) $(CPPFLAGS) -MM -MT $(patsubst $(EMU)/%.cpp,$(BUILD)/%.o,$<) $< > $@
+
 # Object creation
 $(BUILD)/%.o:
 	@echo [Compiling] $@
 	@$(CPP) $(CPPFLAGS) -c $< -o $@
         
 # Target
-$(BIN)/%: $(BUILD)/%.o $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS)
+$(BIN)/%: $(BUILD)/%.o $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS) $(EMU_OBJS)
 	@echo [Linking] $@
-	@$(LD) $(LDFLAGS) $< $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS) $(LIBS) -o $@
+	@$(LD) $(LDFLAGS) $< $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS) $(EMU_OBJS) $(LIBS) -o $@
 
 # Libs
 
-$(LLIB)/libyarr.a: $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS)
+$(LLIB)/libyarr.a: $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS) $(EMU_OBJS)
 	@echo [Creating] $@
-	@$(AR) rcs $@ $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS)
+	@$(AR) rcs $@ $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS) $(EMU_OBJS)
 
 -include $(ALL_DEPS)
 
 clean:
-	@$(RM) $(ALL_OBJS) $(ALL_DEPS) $(TARGETS) $(LLIB)/libspec.a $(LLIB)/libyarr.a $(LLIB)/libutil.a $(LLIB)/libfei4.a $(LLIB)/libfe65p2.a
+	@$(RM) $(ALL_OBJS) $(ALL_DEPS) $(TARGETS) $(LLIB)/libyarr.a
 	@echo "[Clean] … done!"
 
 list:
@@ -213,6 +220,15 @@ mkinfo:
 	@echo "    $(UTIL_DEPS)"
 	@echo Object files:
 	@echo "    $(UTIL_OBJS)"
+	@echo 
+	@echo Emu Files
+	@echo =============
+	@echo Source files:
+	@echo "    $(EMU_FILES)"
+	@echo Dependency files:
+	@echo "    $(EMU_DEPS)"
+	@echo Object files:
+	@echo "    $(EMU_OBJS)"
 	@echo 
         
 .PHONY: clean distclean mkinfo help
