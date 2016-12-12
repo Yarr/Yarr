@@ -2,8 +2,8 @@
 #include <iostream>
 
 #include "SpecController.h"
-#include "TxCore.h"
-#include "RxCore.h"
+#include "SpecTxCore.h"
+#include "SpecRxCore.h"
 #include "Fe65p2.h"
 #include "Bookkeeper.h"
 
@@ -11,8 +11,8 @@ int main(void) {
 
     std::cout << "Initialising .." << std::endl;
     SpecController spec(0);
-    TxCore tx(&spec);
-    RxCore rx(&spec);
+    SpecTxCore tx(&spec);
+    SpecRxCore rx(&spec);
     Bookkeeper bookie(&tx, &rx);
 
     Fe65p2 *fe = bookie.g_fe65p2;

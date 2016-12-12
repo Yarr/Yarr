@@ -3,8 +3,8 @@
 #include <iomanip>
 
 #include "SpecController.h"
-#include "TxCore.h"
-#include "RxCore.h"
+#include "SpecTxCore.h"
+#include "SpecRxCore.h"
 #include "json.hpp"
 
 #include "Fe65p2.h"
@@ -14,8 +14,8 @@ using json = nlohmann::json;
 int main(int argc, char *argv[]) {
 	
 	SpecController mySpec(0);
-	TxCore tx(&mySpec);
-	RxCore rx(&mySpec);
+	SpecTxCore tx(&mySpec);
+	SpecRxCore rx(&mySpec);
 	
 	tx.setCmdEnable(0x1);
 	

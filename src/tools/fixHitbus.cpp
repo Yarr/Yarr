@@ -3,8 +3,8 @@
 #include <fstream>
 
 #include "SpecController.h"
-#include "TxCore.h"
-#include "RxCore.h"
+#include "SpecTxCore.h"
+#include "SpecRxCore.h"
 #include "Fe65p2.h"
 #include "Histo2d.h"
 
@@ -18,8 +18,8 @@ int main(int argc, char *argv[]) {
     }
 
     SpecController spec(0);
-    TxCore tx(&spec);
-    RxCore rx(&spec);
+    SpecTxCore tx(&spec);
+    SpecRxCore rx(&spec);
 
     Fe65p2 *fe = new Fe65p2(&tx);
     Fe65p2 *g_fe = new Fe65p2(&tx);

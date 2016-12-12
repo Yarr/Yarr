@@ -5,45 +5,17 @@
 // # Author: Timon Heim
 // # Email: timon.heim at cern.ch
 // # Project: Yarr
-// # Description: YARR FW Library
+// # Description: YARR Hardware Abstraction Layer
 // # Comment: Transmitter Core
 // ################################
 
-#include <iostream>
-#include <stdint.h>
-#include <thread>
-#include <chrono>
-
-#include "SpecController.h"
-
-#define TX_ADDR (0x1 << 14)
-
-#define TX_FIFO 0x0
-#define TX_ENABLE 0x1
-#define TX_EMPTY 0x2
-#define TRIG_EN 0x3
-#define TRIG_DONE 0x4
-#define TRIG_CONF 0x5
-#define TRIG_FREQ 0x6
-#define TRIG_TIME 0x7
-#define TRIG_COUNT 0x9
-#define TRIG_WORD_LENGTH 0xA
-#define TRIG_WORD 0xB
-#define TRIG_ABORT 0xF
-#define TRIG_IN_CNT 0xF
-
-#define TX_CLK_PERIOD 25e-9
+#include <cstdint>
 
 enum TRIG_CONF_VALUE {
     EXT_TRIGGER = 0x0,
     INT_TIME = 0x1,
     INT_COUNT = 0x2
 };
-
-// TODO move into its own class
-#define TRIG_LOGIC_ADR (0x5 << 14)
-#define TRIG_LOGIC_MASK 0x0
-#define TRIG_LOGIC_MODE 0x1
 
 enum TRIG_LOGIC_MODE_VALUE { 
     MODE_L1A_COUNT = 0x0,
@@ -53,49 +25,35 @@ enum TRIG_LOGIC_MODE_VALUE {
 
 class TxCore {
     public:
-        TxCore(SpecController *arg_spec);
+        // Write to FE interface
+        virtual void writeFifo(uint32_t) = 0;
+        virtual void setCmdEnable(uint32_t) = 0;
+        virtual uint32_t getCmdEnable() = 0;
+        virtual bool isCmdEmpty() = 0;
 
-        void setVerbose(bool v=true);
+        // Word repeater TODO: move to seperate class?
+        virtual void setTrigEnable(uint32_t value) = 0;
+        virtual uint32_t getTrigEnable() = 0;
+        virtual void maskTrigEnable(uint32_t value, uint32_t mask) = 0;
+        virtual bool isTrigDone() = 0;
 
-        void writeFifo(uint32_t value);
-        
-        void setCmdEnable(uint32_t value);
-        uint32_t getCmdEnable();
-        void maskCmdEnable(uint32_t value, uint32_t mask);
 
-        void setTrigEnable(uint32_t value);
-        uint32_t getTrigEnable();
-        void maskTrigEnable(uint32_t value, uint32_t mask);
+        virtual void setTrigConfig(enum TRIG_CONF_VALUE cfg) = 0;
+        virtual void setTrigFreq(double freq) = 0; // in Hz
+        virtual void setTrigCnt(uint32_t count) = 0;
+        virtual void setTrigTime(double time) = 0; // in s
+        virtual void setTrigWordLength(uint32_t length) = 0; // From Msb
+        virtual void setTrigWord(uint32_t *word) = 0; // 4 words, start at Msb
+        virtual void toggleTrigAbort() = 0;
 
-        void setTrigConfig(enum TRIG_CONF_VALUE cfg);
-        void setTrigFreq(double freq); // in Hz
-        void setTrigCnt(uint32_t count);
-        void setTrigTime(double time); // in s
-        void setTrigWordLength(uint32_t length); // From Msb
-        void setTrigWord(uint32_t *word); // 4 words, start at Msb
-
-        void toggleTrigAbort();
-
-        bool isCmdEmpty();
-        bool isTrigDone();
-
-        uint32_t getTrigInCount();
-        
-        // TODO move to own class
-        void setTriggerLogicMask(uint32_t mask) {
-            spec->writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_MASK, mask);
-        };
-        void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) {
-            spec->writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_MODE, (uint32_t) mode);
-        }
-
-        void resetTriggerLogic() {
-            spec->writeSingle(TRIG_LOGIC_ADR | 0xFF, 0x1);
-        }
-
-    private:
-        SpecController *spec;
-        bool verbose;
+        // Trigger interface
+        virtual void setTriggerLogicMask(uint32_t mask) = 0;
+        virtual void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) = 0;
+        virtual void resetTriggerLogic() = 0;
+        virtual uint32_t getTrigInCount() = 0;
+    protected:
+        TxCore();
+        ~TxCore();
         uint32_t enMask;
 };
 

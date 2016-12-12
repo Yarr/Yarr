@@ -17,8 +17,8 @@
 #include <ctime>
 
 #include "SpecController.h"
-#include "TxCore.h"
-#include "RxCore.h"
+#include "SpecTxCore.h"
+#include "SpecRxCore.h"
 #include "Bookkeeper.h"
 #include "Fe65p2.h"
 #include "ScanBase.h"
@@ -141,8 +141,8 @@ int main(int argc, char *argv[]) {
 
     std::cout << "-> Init SPEC " << specNum << " : " << std::endl;
     SpecController spec(specNum);
-    TxCore tx(&spec);
-    RxCore rx(&spec);
+    SpecTxCore tx(&spec);
+    SpecRxCore rx(&spec);
     Bookkeeper bookie(&tx, &rx);
     bookie.setTargetThreshold(800);
    
