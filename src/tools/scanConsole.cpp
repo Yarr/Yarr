@@ -168,6 +168,11 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    if (cConfigPath.size() == 0) {
+        std::cerr << "Error: no config files given, please specify config file name under -c option, even if file does not exist!" << std::endl;
+        return -1;
+    }
+
     outputDir += (toString(runCounter, 6) + "_" + scanType + "/");
     
     std::cout << " SPEC Nr: " << specNum << std::endl;
