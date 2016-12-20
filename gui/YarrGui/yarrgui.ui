@@ -40,7 +40,7 @@
            <enum>QTabWidget::Rounded</enum>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <property name="tabsClosable">
            <bool>false</bool>
@@ -247,67 +247,13 @@
                   <item>
                    <layout class="QVBoxLayout" name="verticalLayout_7">
                     <item>
-                     <layout class="QHBoxLayout" name="horizontalLayout_5">
-                      <item>
-                       <widget class="QLineEdit" name="chipIdEdit">
-                        <property name="maximumSize">
-                         <size>
-                          <width>120</width>
-                          <height>16777215</height>
-                         </size>
-                        </property>
-                       </widget>
-                      </item>
-                      <item>
-                       <widget class="QLabel" name="bitfile_label_4">
-                        <property name="text">
-                         <string>chipId</string>
-                        </property>
-                       </widget>
-                      </item>
-                     </layout>
+                     <layout class="QHBoxLayout" name="horizontalLayout_5"/>
                     </item>
                     <item>
-                     <layout class="QHBoxLayout" name="horizontalLayout_4">
-                      <item>
-                       <widget class="QLineEdit" name="txChannelEdit">
-                        <property name="maximumSize">
-                         <size>
-                          <width>120</width>
-                          <height>16777215</height>
-                         </size>
-                        </property>
-                       </widget>
-                      </item>
-                      <item>
-                       <widget class="QLabel" name="bitfile_label_5">
-                        <property name="text">
-                         <string>txChannel</string>
-                        </property>
-                       </widget>
-                      </item>
-                     </layout>
+                     <layout class="QHBoxLayout" name="horizontalLayout_4"/>
                     </item>
                     <item>
-                     <layout class="QHBoxLayout" name="horizontalLayout_3">
-                      <item>
-                       <widget class="QLineEdit" name="rxChannelEdit">
-                        <property name="maximumSize">
-                         <size>
-                          <width>120</width>
-                          <height>16777215</height>
-                         </size>
-                        </property>
-                       </widget>
-                      </item>
-                      <item>
-                       <widget class="QLabel" name="bitfile_label_6">
-                        <property name="text">
-                         <string>rxChannel</string>
-                        </property>
-                       </widget>
-                      </item>
-                     </layout>
+                     <layout class="QHBoxLayout" name="horizontalLayout_3"/>
                     </item>
                     <item>
                      <widget class="QLabel" name="bitfile_label_7">
