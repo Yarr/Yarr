@@ -144,7 +144,7 @@ entity yarr is
           EXT_2_N : out std_logic;
           EXT_1_P : in std_logic;
           EXT_1_N : in std_logic;
-          IO_0 : in std_logic;
+          IO_0 : out std_logic;
           IO_1 : in std_logic
     );
 end yarr;
@@ -887,8 +887,8 @@ begin
    so_cnfg_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => so_cnfg_t, I => so_cnfg_p, IB => so_cnfg_n);
    hit_or_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => hit_or_t, I => hit_or_p, IB => hit_or_n);
    out_data_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => out_data_t, I => out_data_p, IB => out_data_n);
-   eudet_rst_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => eudet_rst_t, I => EXT_2_P, IB => EXT_2_N);
-   eudet_trig_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => eudet_trig_t, I => EXT_4_P, IB => EXT_4_N);
+   eudet_rst_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => eudet_rst_t, I => EXT_3_P, IB => EXT_3_N);
+   eudet_trig_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => eudet_trig_t, I => EXT_1_P, IB => EXT_1_N);
 	
 	fe_data_i(0) <= not out_data_t;
 	
@@ -1205,10 +1205,10 @@ begin
 		wb_stb_i => wb_stb,
 		wb_we_i => wb_we,
 		wb_ack_o => wb_ack(5),
-		ext_trig_i => "000" & not hit_or_t,
+		ext_trig_i => "00" & IO_1 & not hit_or_t,
 		ext_trig_o => open,
 		ext_busy_i => '0',
-		ext_busy_o => open,
+		ext_busy_o => IO_0,
 		eudet_clk_o => eudet_clk_t,
 		eudet_busy_o => eudet_busy_t,
 		eudet_trig_i => eudet_trig_t,
