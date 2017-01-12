@@ -500,9 +500,18 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         hh2->setYaxisTitle("Row");
                         hh2->setZaxisTitle("Noise [e]");
                         sigMap[outerIdent] = hh2;
-                        //TODO ranges have to be more flexible
+                        
+                        int bin_width = 10;
+                        int xlow = bookie->getTargetThreshold()-1000-bin_width/2;
+                        if (xlow < 0) xlow = -1*bin_width/2;
+                        int xhigh = bookie->getTargetThreshold()+1000+bin_width/2;
+                        if ((xhigh-xlow)%bin_width != 0)
+                            xhigh += ((xhigh-xlow)%bin_width);
+                        int bins = (xhigh-xlow)/bin_width;
+                        
+                        Histo1d *hh1 = new Histo1d("ThresholdDist", bins, xlow, xhigh, typeid(this));
                         //Histo1d *hh1 = new Histo1d("ThresholdDist", 201, bookie->getTargetThreshold()-1005, bookie->getTargetThreshold()+1005, typeid(this));
-                        Histo1d *hh1 = new Histo1d("ThresholdDist", 201, -2.5, 1002.5, typeid(this));
+                        //Histo1d *hh1 = new Histo1d("ThresholdDist", 201, -2.5, 1002.5, typeid(this));
                         hh1->setXaxisTitle("Threshold [e]");
                         hh1->setYaxisTitle("Number of Pixels");
                         thrDist[outerIdent] = hh1;
@@ -591,7 +600,7 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
         }
 
         if (l->type() == tmpVthinFb->type() || l->type() == tmpVthinFb2->type()) {
-            fb = (GlobalFeedbackBase*) ((Fe65p2GlobalFeedback*) l.get()); 
+            fb = dynamic_cast<GlobalFeedbackBase*>(l.get()); 
             lb = (LoopActionBase*) l.get(); 
         }
     }
