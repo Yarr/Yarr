@@ -1,5 +1,5 @@
 #!/bin/bash
-if [ "$#" -ne 1 ] || ! [ -d "$1" ]; then
+if [ "$#" -ne 1 ]; then
     echo "Usage: $0 <config_file1.json> [<config_file2.json> ..]" >&2
     exit 1
 fi
