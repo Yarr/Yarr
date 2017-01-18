@@ -1,6 +1,9 @@
 ######
 ## Author: Timon Heim/Jan Kuechler
-## Last edit: 09.12.2015
+## Last edit: 17.01.2017
+## Updates:
+## * 17.01.2017 - K. Potamianos <karolos.potamianos@cern.ch>
+##   Major refactoring to simplify adding features
 
 UNAME_S := $(shell uname -s)
 
@@ -8,38 +11,37 @@ MODE = DEBUG
 
 AR = ar
 
-# Compilera
+# Compiler
 CPP = g++
 #CC = gcc
 ifeq ($(UNAME_S),Darwin)
 	CPP = clang++
-#	CC = clang
+else
+	LDFLAGS += -pthread
 endif
 
-CPPFLAGS += -pthread -std=c++11 -Wall -Wunused-variable -IlibSpec/include \
-			-IlibYarr/include -IlibUtil/include -IlibFei4/include -IlibFe65p2/include
+CPPFLAGS += -std=c++11 -Wall -Wunused-variable
+INC_DIRS := $(wildcard */include)
+INCFLAGS += $(addprefix -I,$(INC_DIRS))
+CPPFLAGS += $(INCFLAGS)
+
 CPPFLAGS_DEBUG += -g -O1 -DDEBUG
 CPPFLAGS_RELEASE += -O2 -DNDEBUG
 
 # Linker
 LD = g++
-LDFLAGS = -pthread -std=c++11
 ifeq ($(UNAME_S),Darwin)
 	LD = clang++
-	LDFLAGS = -std=c++11
+else
+	LDFLAGS += -pthread
 endif
+
+LDFLAGS += -std=c++11
 LDFLAGS_DEBUG +=
-LDFLAGS_RELEASE += 
+LDFLAGS_RELEASE +=
 LIBS +=
 
 BIN = bin
-SRC = tools
-YARR = libYarr
-SPEC = libSpec
-EMU = libEmu
-FEI4 = libFei4
-FE65P2 = libFe65p2
-UTIL = libUtil
 BUILD = build
 LLIB = lib
 
@@ -59,45 +61,45 @@ endif
 CPPFLAGS += $(CPPFLAGS_$(MODE))
 LDFLAGS += $(LDFLAGS_$(MODE))
 
+all:
+
 ######
 ##  File lists
 
-SRC_FILES = $(wildcard $(SRC)/*.cpp) 
-SPEC_FILES = $(wildcard $(SPEC)/*.cpp)
-YARR_FILES = $(wildcard $(YARR)/*.cpp)
-FEI4_FILES = $(wildcard $(FEI4)/*.cpp)
-FE65P2_FILES = $(wildcard $(FE65P2)/*.cpp)
-UTIL_FILES = $(wildcard $(UTIL)/*.cpp)
-EMU_FILES = $(wildcard $(EMU)/*.cpp)
+# Arguments: 1 - pkgName ; 2 - pkgDir
+define addPkg
+$(1)_FILES = $(wildcard $(2)/*.cpp)
+$(1)_DEPS = $$(patsubst %.cpp,$(BUILD)/%.d,$$(notdir $$($(1)_FILES)))
+ALL_DEPS += $$($(1)_DEPS)
+$(1)_OBJS = $$(patsubst %.d,%.o,$$($(1)_DEPS))
+ALL_OBJS += $$($(1)_OBJS)
+STATLIBS += $(LLIB)/$(call lc,$(2).a)
 
-SRC_DEPS = $(patsubst $(SRC)/%.cpp,$(BUILD)/%.d,$(SRC_FILES))
-SPEC_DEPS = $(patsubst $(SPEC)/%.cpp,$(BUILD)/%.d,$(SPEC_FILES))
-YARR_DEPS = $(patsubst $(YARR)/%.cpp,$(BUILD)/%.d,$(YARR_FILES))
-FEI4_DEPS = $(patsubst $(FEI4)/%.cpp,$(BUILD)/%.d,$(FEI4_FILES))
-FE65P2_DEPS = $(patsubst $(FE65P2)/%.cpp,$(BUILD)/%.d,$(FE65P2_FILES))
-UTIL_DEPS = $(patsubst $(UTIL)/%.cpp,$(BUILD)/%.d,$(UTIL_FILES))
-EMU_DEPS = $(patsubst $(EMU)/%.cpp,$(BUILD)/%.d,$(EMU_FILES))
+$(BUILD)/%.o: $(2)/%.cpp
 
-ALL_DEPS = $(SRC_DEPS) $(SPEC_DEPS) $(YARR_DEPS) $(FEI4_DEPS) $(FE65P2_DEPS) $(UTIL_DEPS) $(EMU_DEPS)
+$(BUILD)/%.d: $(2)/%.cpp
+	@$(CPP) $(CPPFLAGS) -MM -MT $$(patsubst $(2)/%.cpp,$(BUILD)/%.o,$$<) $$< > $$@
 
-SRC_OBJS = $(patsubst $(SRC)/%.cpp,$(BUILD)/%.o,$(SRC_FILES))
-SPEC_OBJS = $(patsubst $(SPEC)/%.cpp,$(BUILD)/%.o,$(SPEC_FILES))
-YARR_OBJS = $(patsubst $(YARR)/%.cpp,$(BUILD)/%.o,$(YARR_FILES))
-FEI4_OBJS = $(patsubst $(FEI4)/%.cpp,$(BUILD)/%.o,$(FEI4_FILES))
-FE65P2_OBJS = $(patsubst $(FE65P2)/%.cpp,$(BUILD)/%.o,$(FE65P2_FILES))
-UTIL_OBJS = $(patsubst $(UTIL)/%.cpp,$(BUILD)/%.o,$(UTIL_FILES))
-EMU_OBJS = $(patsubst $(EMU)/%.cpp,$(BUILD)/%.o,$(EMU_FILES))
+$(LLIB)/$(call lc,$(2).a): $$($(1)_OBJS)
+	@echo [Creating] $$@
+	@$(AR) rcs $$@ $$($(1)_OBJS)
 
-ALL_OBJS = $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS) $(EMU_OBJS)
+endef
 
-TARGETS = $(patsubst $(SRC)/%.cpp,$(BIN)/%,$(SRC_FILES))
+define lc
+$(shell echo $(1) | tr 'A-Z' 'a-z')
+endef
 
+define uc
+$(shell echo $(1) | tr 'a-z' 'A-Z')
+endef
+
+PKGS := tools libSpec libYarr libFei4 libFe65p2 libUtil libEmu
+$(foreach P,$(PKGS),$(eval $(call addPkg,$(patsubst LIB%,%,$(call uc,$(P))),$(P))))
+TARGETS=$(patsubst %.cpp,$(BIN)/%,$(notdir $(TOOLS_FILES)))
 ######
 ##  Targets
-
-all: yarrlib $(TARGETS)
-
-yarrlib: $(LLIB)/libyarr.a
+all: $(TARGETS) $(STATLIBS)
 
 help:
 	@echo # Use 'make' to create all programs
@@ -108,43 +110,15 @@ help:
 	@echo "#   mkinfo         - List makefile internals"
 	@echo "#   help           - Show this help message"
 
-# Dependency file creation
-$(BUILD)/%.d: $(SRC)/%.cpp
-	@$(CPP) $(CPPFLAGS) -MM -MT $(patsubst $(SRC)/%.cpp,$(BUILD)/%.o,$<) $< > $@
-
-$(BUILD)/%.d: $(SPEC)/%.cpp
-	@$(CPP) $(CPPFLAGS) -MM -MT $(patsubst $(SPEC)/%.cpp,$(BUILD)/%.o,$<) $< > $@
-
-$(BUILD)/%.d: $(YARR)/%.cpp
-	@$(CPP) $(CPPFLAGS) -MM -MT $(patsubst $(YARR)/%.cpp,$(BUILD)/%.o,$<) $< > $@
-
-$(BUILD)/%.d: $(FEI4)/%.cpp
-	@$(CPP) $(CPPFLAGS) -MM -MT $(patsubst $(FEI4)/%.cpp,$(BUILD)/%.o,$<) $< > $@
-
-$(BUILD)/%.d: $(FE65P2)/%.cpp
-	@$(CPP) $(CPPFLAGS) -MM -MT $(patsubst $(FE65P2)/%.cpp,$(BUILD)/%.o,$<) $< > $@
-
-$(BUILD)/%.d: $(UTIL)/%.cpp
-	@$(CPP) $(CPPFLAGS) -MM -MT $(patsubst $(UTIL)/%.cpp,$(BUILD)/%.o,$<) $< > $@
-
-$(BUILD)/%.d: $(EMU)/%.cpp
-	@$(CPP) $(CPPFLAGS) -MM -MT $(patsubst $(EMU)/%.cpp,$(BUILD)/%.o,$<) $< > $@
-
 # Object creation
 $(BUILD)/%.o:
 	@echo [Compiling] $@
 	@$(CPP) $(CPPFLAGS) -c $< -o $@
-        
+
 # Target
 $(BIN)/%: $(BUILD)/%.o $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS) $(EMU_OBJS)
 	@echo [Linking] $@
 	@$(LD) $(LDFLAGS) $< $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS) $(EMU_OBJS) $(LIBS) -o $@
-
-# Libs
-
-$(LLIB)/libyarr.a: $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS) $(EMU_OBJS)
-	@echo [Creating] $@
-	@$(AR) rcs $@ $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS) $(EMU_OBJS)
 
 -include $(ALL_DEPS)
 
@@ -170,12 +144,12 @@ mkinfo:
 	@echo Program Files
 	@echo =============
 	@echo Source files:
-	@echo "    $(SRC_FILES)"
+	@echo "    $(TOOLS_FILES)"
 	@echo Dependency files:
-	@echo "    $(SRC_DEPS)"
+	@echo "    $(TOOLS_DEPS)"
 	@echo Object files:
-	@echo "    $(SRC_OBJS)"
-	@echo 
+	@echo "    $(TOOLS_OBJS)"
+	@echo
 	@echo SPEC Files
 	@echo =============
 	@echo Source files:
@@ -184,7 +158,7 @@ mkinfo:
 	@echo "    $(SPEC_DEPS)"
 	@echo Object files:
 	@echo "    $(SPEC_OBJS)"
-	@echo 
+	@echo
 	@echo YARR Files
 	@echo =============
 	@echo Source files:
@@ -193,7 +167,7 @@ mkinfo:
 	@echo "    $(YARR_DEPS)"
 	@echo Object files:
 	@echo "    $(YARR_OBJS)"
-	@echo 
+	@echo
 	@echo Fei4 Files
 	@echo =============
 	@echo Source files:
@@ -202,7 +176,7 @@ mkinfo:
 	@echo "    $(FEI4_DEPS)"
 	@echo Object files:
 	@echo "    $(FEI4_OBJS)"
-	@echo 
+	@echo
 	@echo Fe65p2 Files
 	@echo =============
 	@echo Source files:
@@ -211,7 +185,7 @@ mkinfo:
 	@echo "    $(FE65P2_DEPS)"
 	@echo Object files:
 	@echo "    $(FE65P2_OBJS)"
-	@echo 
+	@echo
 	@echo Util Files
 	@echo =============
 	@echo Source files:
@@ -220,7 +194,7 @@ mkinfo:
 	@echo "    $(UTIL_DEPS)"
 	@echo Object files:
 	@echo "    $(UTIL_OBJS)"
-	@echo 
+	@echo
 	@echo Emu Files
 	@echo =============
 	@echo Source files:
@@ -229,6 +203,7 @@ mkinfo:
 	@echo "    $(EMU_DEPS)"
 	@echo Object files:
 	@echo "    $(EMU_OBJS)"
-	@echo 
-        
+	@echo
+	@echo
+
 .PHONY: clean distclean mkinfo help
