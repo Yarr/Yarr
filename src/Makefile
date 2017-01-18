@@ -69,6 +69,7 @@ all:
 # Arguments: 1 - pkgName ; 2 - pkgDir
 define addPkg
 $(1)_FILES = $(wildcard $(2)/*.cpp)
+ALL_FILES += $$($(1)_FILES)
 $(1)_DEPS = $$(patsubst %.cpp,$(BUILD)/%.d,$$(notdir $$($(1)_FILES)))
 ALL_DEPS += $$($(1)_DEPS)
 $(1)_OBJS = $$(patsubst %.d,%.o,$$($(1)_DEPS))
@@ -79,10 +80,6 @@ $(BUILD)/%.o: $(2)/%.cpp
 
 $(BUILD)/%.d: $(2)/%.cpp
 	@$(CPP) $(CPPFLAGS) -MM -MT $$(patsubst $(2)/%.cpp,$(BUILD)/%.o,$$<) $$< > $$@
-
-$(LLIB)/$(call lc,$(2).a): $$($(1)_OBJS)
-	@echo [Creating] $$@
-	@$(AR) rcs $$@ $$($(1)_OBJS)
 
 endef
 
@@ -97,9 +94,13 @@ endef
 PKGS := tools libSpec libYarr libFei4 libFe65p2 libUtil libEmu
 $(foreach P,$(PKGS),$(eval $(call addPkg,$(patsubst LIB%,%,$(call uc,$(P))),$(P))))
 TARGETS=$(patsubst %.cpp,$(BIN)/%,$(notdir $(TOOLS_FILES)))
+LIB_FILES := $(filter-out $(TOOLS_FILES),$(ALL_FILES))
+LIB_OBJS := $(patsubst %.cpp,$(BUILD)/%.o,$(notdir $(LIB_FILES)))
+
+
 ######
 ##  Targets
-all: $(TARGETS) $(STATLIBS)
+all: $(TARGETS) $(LLIB)/libyarr.a
 
 help:
 	@echo # Use 'make' to create all programs
@@ -116,9 +117,14 @@ $(BUILD)/%.o:
 	@$(CPP) $(CPPFLAGS) -c $< -o $@
 
 # Target
-$(BIN)/%: $(BUILD)/%.o $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS) $(EMU_OBJS)
+$(BIN)/%: $(BUILD)/%.o $(LLIB)/libyarr.a
 	@echo [Linking] $@
-	@$(LD) $(LDFLAGS) $< $(SPEC_OBJS) $(YARR_OBJS) $(FEI4_OBJS) $(FE65P2_OBJS) $(UTIL_OBJS) $(EMU_OBJS) $(LIBS) -o $@
+	@$(LD) $(LDFLAGS) $+ -o $@
+
+# Lib
+$(LLIB)/libyarr.a: $(LIB_OBJS)
+	@echo [Creating] $@
+	$(AR) rcs $@ $+
 
 -include $(ALL_DEPS)
 
