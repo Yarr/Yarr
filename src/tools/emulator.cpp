@@ -336,9 +336,11 @@ int main(int argc, char *argv[])
 	// set up the fe
 	fe = new Fei4(NULL, 0);
 
-	EmuShm *emu_shm = new EmuShm(1991, 200, 0);
+	EmuShm *emu_shm = new EmuShm(1337, 32, 0);
+	
+    emu_shm->dump();
 
-	while (1)
+    while (1)
 	{
 	        uint32_t command;
 		uint32_t value;
@@ -347,7 +349,7 @@ int main(int argc, char *argv[])
 
 		command = emu_shm->read32();
 
-		if ((command & 0x005A0800) == 0x005A0800)
+		if ((command & 0x00FFFF00) == 0x005A0800)
 		{
 			printf("got a 0x005A0800 command\n");
 			value = emu_shm->read32();
@@ -367,5 +369,6 @@ int main(int argc, char *argv[])
 		decode_command(command, value, bitstream);
 	}
 
+    delete emu_shm;
 	return 0;
 }

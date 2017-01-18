@@ -13,6 +13,7 @@
 #include <fcntl.h>
 #include <stdint.h>
 #include <string.h>
+#include <iostream>
 
 #include "EmuCom.h"
 
@@ -32,9 +33,12 @@ class EmuShm : public EmuCom {
 		uint32_t read_pointer;
 
         bool isEmpty();
+        uint32_t getCurSize() {return cur_size;}
 
 		void write32(uint32_t word);
 		uint32_t read32();
+
+        void dump();
 	private:
 
         int cur_size;

@@ -34,6 +34,8 @@ EmuShm::EmuShm(key_t key, uint32_t size, bool create)
 
 		read_pointer = 0;
 		write_pointer = 0;
+		memcpy(&shm_pointer[(shm_size - 2) * 4], &write_pointer, 4);	// shm_size - 2 is where the write pointer lives
+		memcpy(&shm_pointer[(shm_size - 1) * 4], &read_pointer, 4);	// shm_size - 1 is where the read pointer lives
 	}
 	else
 	{
@@ -84,11 +86,9 @@ void EmuShm::write32(uint32_t word)
 		{
 			memcpy(&read_pointer, &shm_pointer[(shm_size - 1) * 4], 4);	// shm_size - 1 is where the read pointer lives
 		}
-    printf("done1\n");
 
 		// do the write
-		memcpy(&shm_pointer[write_pointer], &word, 4);
-    printf("done2\n");
+		memcpy(&shm_pointer[write_pointer*4], &word, 4);
 
 		// update the write pointer
 		write_pointer += 1;
@@ -101,7 +101,7 @@ void EmuShm::write32(uint32_t word)
 
 		memcpy(&shm_pointer[(shm_size - 2) * 4], &write_pointer, 4); // shm_size - 2 is where the write pointer lives
 	}
-    printf("done\n");
+    this->dump();
 }
 
 uint32_t EmuShm::read32()
@@ -115,7 +115,7 @@ uint32_t EmuShm::read32()
 	}
 
 	// do the read
-	memcpy(&word, &shm_pointer[read_pointer], 4);
+	memcpy(&word, &shm_pointer[read_pointer*4], 4);
 
 	// update the read pointer
 	read_pointer += 1;
@@ -137,5 +137,11 @@ bool EmuShm::isEmpty() {
     if (cur_size == 0)
         return true;
     return false;
+}
+
+void EmuShm::dump() {
+    for(unsigned i=0; i<shm_size; i++) {
+        std::cout << "[" << i <<  "]\t\t0x" << std::hex << (uint32_t) *((uint32_t*) &shm_pointer[i*4]) << std::endl;
+    }
 }
 
