@@ -23,6 +23,8 @@
 #include "SpecController.h"
 #include "SpecTxCore.h"
 #include "SpecRxCore.h"
+#include "EmuTxCore.h"
+#include "EmuRxCore.h"
 #include "Bookkeeper.h"
 #include "Fei4.h"
 #include "ScanBase.h"
@@ -219,10 +221,18 @@ int main(int argc, char *argv[]) {
 
 
     std::cout << "-> Init SPEC " << specNum << " : " << std::endl;
-    SpecController spec(specNum);
-    SpecTxCore tx(&spec);
-    SpecRxCore rx(&spec);
-    Bookkeeper bookie(&tx, &rx);
+    TxCore *tx;
+    RxCore *rx;
+    if (specNum > 29) {
+        tx = (TxCore*) new EmuTxCore();
+        rx = (RxCore*) new EmuRxCore();
+    } else {
+        SpecController *spec = new SpecController(specNum);
+        tx = (TxCore*) new SpecTxCore(spec);
+        rx = (RxCore*) new SpecRxCore(spec);
+    }
+    
+    Bookkeeper bookie(tx, rx);
     std::map<FrontEnd*, std::string> feCfgMap;
 
     bookie.setTargetThreshold(target_threshold);
@@ -247,15 +257,15 @@ int main(int argc, char *argv[]) {
                     break;
             }
             std::cout << "Rx " << i << " seems to be free, assuming same Tx channel." << std::endl;
-            bookie.addFe(dynamic_cast<FrontEnd*>(new Fei4(&tx)), i, i);
+            bookie.addFe(dynamic_cast<FrontEnd*>(new Fei4(tx)), i, i);
         } else {
             jTmp << iFTmp;
             if(!jTmp["FE-I4B"].is_null()){
                 std::cout << "Found FE-I4B: " << jTmp["FE-I4B"]["name"] << std::endl;
-                bookie.addFe(dynamic_cast<FrontEnd*>(new Fei4(&tx)), jTmp["FE-I4B"]["txChannel"], jTmp["FE-I4B"]["txChannel"]);        
+                bookie.addFe(dynamic_cast<FrontEnd*>(new Fei4(tx)), jTmp["FE-I4B"]["txChannel"], jTmp["FE-I4B"]["txChannel"]);        
             } else if(!jTmp["FE65-P2"].is_null()){
                 std::cout << "Found FE65-P2: " << jTmp["FE-I4B"]["name"] << std::endl;
-                bookie.addFe(dynamic_cast<FrontEnd*>(new Fe65p2(&tx)), jTmp["FE65-P2"]["txChannel"], jTmp["FE-I4B"]["txChannel"]);        
+                bookie.addFe(dynamic_cast<FrontEnd*>(new Fe65p2(tx)), jTmp["FE65-P2"]["txChannel"], jTmp["FE-I4B"]["txChannel"]);        
             } else{
                 std::cerr << "Unknown chip type or malformed config in " << sTmp << std::endl;
                 continue;
@@ -284,12 +294,12 @@ int main(int argc, char *argv[]) {
         FrontEnd *fe = bookie.feList[i];
         std::cout << "-> Configuring " << dynamic_cast<FrontEndCfg*>(fe)->getName() << std::endl;
         // Select correct channel
-        tx.setCmdEnable(0x1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+       tx->setCmdEnable(0x1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         // Configure
         fe->configure();
         // Wait for fifo to be empty
         std::this_thread::sleep_for(std::chrono::microseconds(100));
-        while(!tx.isCmdEmpty());
+        while(!tx->isCmdEmpty());
     }
     std::chrono::steady_clock::time_point cfg_end = std::chrono::steady_clock::now();
     std::cout << "-> All FEs configured in " 
@@ -299,9 +309,9 @@ int main(int argc, char *argv[]) {
     // TODO Check RX sync
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
     // Enable all active channels
-    tx.setCmdEnable(bookie.getTxMask());
+    tx->setCmdEnable(bookie.getTxMask());
     std::cout << "-> Setting Tx Mask to: 0x" << std::hex << bookie.getTxMask() << std::dec << std::endl;
-    rx.setRxEnable(bookie.getRxMask());
+    rx->setRxEnable(bookie.getRxMask());
     std::cout << "-> Setting Rx Mask to: 0x" << std::hex << bookie.getRxMask() << std::dec << std::endl;
     
     std::cout << std::endl;
@@ -447,8 +457,8 @@ int main(int argc, char *argv[]) {
     std::chrono::steady_clock::time_point all_done = std::chrono::steady_clock::now();
     std::cout << "-> All done!" << std::endl;
 
-    tx.setCmdEnable(0x0);
-    rx.setRxEnable(0x0);
+    tx->setCmdEnable(0x0);
+    rx->setRxEnable(0x0);
 
     std::cout << std::endl;
     std::cout << "##########" << std::endl;
