@@ -124,7 +124,7 @@ $(BIN)/%: $(BUILD)/%.o $(LLIB)/libyarr.a
 # Lib
 $(LLIB)/libyarr.a: $(LIB_OBJS)
 	@echo [Creating] $@
-	$(AR) rcs $@ $+
+	@$(AR) rcs $@ $+
 
 -include $(ALL_DEPS)
 
