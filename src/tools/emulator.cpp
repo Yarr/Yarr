@@ -14,9 +14,7 @@
 #include <string.h>
 
 #include "Fei4.h"
-
-#define SHM_SIZE 928
-#define COMMAND_SIZE 92
+#include "EmuShm.h"
 
 uint32_t modeBits;
 Fei4 *fe;
@@ -338,102 +336,35 @@ int main(int argc, char *argv[])
 	// set up the fe
 	fe = new Fei4(NULL, 0);
 
-	// get the commands from the shared memory space that shm_yarr wrote to
-	int shm_command_id;
-	key_t shm_command_key;
-	char *shm_command_pointer; // this is our data space
-
-	// we need to use the same key that yarr set up
-	shm_command_key = 1991;
-
-	// get the shared memory segment
-	if ((shm_command_id = shmget(shm_command_key, SHM_SIZE, 0666)) < 0)
-	{
-		fprintf(stderr, "error: shmget failure\n");
-		exit(1);
-	}
-
-	// attach the shared memory segment to our data space
-	if ((shm_command_pointer = (char*) shmat(shm_command_id, NULL, 0)) == (char*) -1)
-	{
-		fprintf(stderr, "error: shmat failure\n");
-		exit(1);
-	}
-
-	// loop until killed, waiting for commands and acting upon commands
-        uint32_t command = 0;
-	uint32_t value = 0;
-	uint32_t bitstream[21];
-
-	// loop over commands in the shared memory, dealing with write/read access using a ring buffer and pointer positions
-	int32_t write_pointer_position;
-	int32_t read_pointer_position;
-
-	// get the initial read pointer position
-	memcpy(&read_pointer_position, &shm_command_pointer[4], 4);
+	EmuShm *emu_shm = new EmuShm(1991, 200, 0);
 
 	while (1)
 	{
-		// get the write pointer position
-		memcpy(&write_pointer_position, &shm_command_pointer[0], 4);
+	        uint32_t command;
+		uint32_t value;
+		uint32_t bitstream[21];
+		uint32_t padding;
 
-		// if there is a new command
-		if ((write_pointer_position * read_pointer_position > 0 && abs(write_pointer_position) > abs(read_pointer_position)) || \
-		    (write_pointer_position * read_pointer_position < 0 && abs(write_pointer_position) < abs(read_pointer_position)))
+		command = emu_shm->read32();
+
+		if ((command & 0x005A0800) == 0x005A0800)
 		{
-//			printf("write_pointer_position = %d\n", write_pointer_position);
-//			printf("read_pointer_position = %d\n", read_pointer_position);
-
-			// get the command from the shared memory space
-		        memcpy(&command, &shm_command_pointer[abs(read_pointer_position) + 0], 4);
-		        memcpy(&value, &shm_command_pointer[abs(read_pointer_position) + 4], 4);
-			memcpy(&bitstream[0], &shm_command_pointer[abs(read_pointer_position) + 8], 84);
-
-			// decode the command
-			decode_command(command, value, bitstream);
-
-			// update the read pointer position, as long as it won't catch up to the write pointer position
-			while (1)
-			{
-				int32_t tmp_read_pointer_position = read_pointer_position;
-				if (tmp_read_pointer_position > 0)
-				{
-					tmp_read_pointer_position += COMMAND_SIZE;
-				}
-				if (tmp_read_pointer_position < 0)
-				{
-					tmp_read_pointer_position -= COMMAND_SIZE;
-				}
-
-				// deal with loop around the buffer
-				if (abs(tmp_read_pointer_position) >= SHM_SIZE)
-				{
-					if (tmp_read_pointer_position > 0)
-					{
-						tmp_read_pointer_position = -8;
-					}
-					else if (tmp_read_pointer_position < 0)
-					{
-						tmp_read_pointer_position = 8;
-					}
-				}
-
-				// see if the new position is the same as the write pointer position
-				if (abs(tmp_read_pointer_position) != abs(write_pointer_position))
-				{
-					read_pointer_position = tmp_read_pointer_position;
-					break;
-				}
-
-				// grab the write pointer position again to see if it has moved further
-//				printf("waiting for the write pointer to move\n");
-//				sleep(1);
-				memcpy(&write_pointer_position, &shm_command_pointer[0], 4);
-			}
-
-			// write the read pointer position to the second position of the shared memory
-			memcpy(&shm_command_pointer[4], &read_pointer_position, 4);
+			printf("got a 0x005A0800 command\n");
+			value = emu_shm->read32();
 		}
+		if ((command & 0x005A1000) == 0x005A1000)
+		{
+			printf("got a 0x005A1000 command\n");
+			for (int i = 0; i < 21; i++)
+			{
+				bitstream[i] = emu_shm->read32();
+			}
+		}
+
+		padding = emu_shm->read32();
+
+		// decode the command
+		decode_command(command, value, bitstream);
 	}
 
 	return 0;
