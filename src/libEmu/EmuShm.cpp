@@ -4,18 +4,19 @@ EmuShm::EmuShm(key_t key, uint32_t size, bool create)
 {
 	shm_key = key;
 	shm_size = size;
+    cur_size = 0;
 
 	// create or get the shared memory segment using the key
 	if (create)
 	{
-		if ((shm_id = shmget(shm_key, shm_size, IPC_CREAT | 0666)) < 0)
+		if ((shm_id = shmget(shm_key, shm_size*4, IPC_CREAT | 0666)) < 0)
 		{
 			fprintf(stderr, "shmget failure\n");
 		}
 	}
 	else
 	{
-		if ((shm_id = shmget(shm_key, shm_size, 0666)) < 0)
+		if ((shm_id = shmget(shm_key, shm_size*4, 0666)) < 0)
 		{
 			fprintf(stderr, "shmget failure\n");
 		}
@@ -62,7 +63,7 @@ void EmuShm::write32(uint32_t word)
 	if (just_initialized)
 	{
 		// write the word
-		memcpy(&shm_pointer[write_pointer], &word, 4);
+		memcpy(&shm_pointer[write_pointer*4], &word, 4);
 
 		// update the write pointer
 		write_pointer += 1;
@@ -71,8 +72,7 @@ void EmuShm::write32(uint32_t word)
 		{
 			write_pointer = 0;
 		}
-
-		memcpy(&shm_pointer[(shm_size - 2) * 4], &write_pointer, 4); // shm_size - 2 is where the write pointer lives
+		memcpy(&shm_pointer[(shm_size - 2)*4], &write_pointer, 4); // shm_size - 2 is where the write pointer lives
 
 		// set jet_initialized to false
 		just_initialized = 0;
@@ -84,12 +84,15 @@ void EmuShm::write32(uint32_t word)
 		{
 			memcpy(&read_pointer, &shm_pointer[(shm_size - 1) * 4], 4);	// shm_size - 1 is where the read pointer lives
 		}
+    printf("done1\n");
 
 		// do the write
 		memcpy(&shm_pointer[write_pointer], &word, 4);
+    printf("done2\n");
 
 		// update the write pointer
 		write_pointer += 1;
+        cur_size++;
 
 		if (write_pointer > shm_size - 2)	// the ring buffer only goes from [0, shm_size - 2), in other words, from [0, shm_size - 3]
 		{
@@ -98,6 +101,7 @@ void EmuShm::write32(uint32_t word)
 
 		memcpy(&shm_pointer[(shm_size - 2) * 4], &write_pointer, 4); // shm_size - 2 is where the write pointer lives
 	}
+    printf("done\n");
 }
 
 uint32_t EmuShm::read32()
@@ -115,6 +119,7 @@ uint32_t EmuShm::read32()
 
 	// update the read pointer
 	read_pointer += 1;
+    cur_size--;
 
 	if (read_pointer > shm_size - 2)	// the ring buffer only goes from [0, shm_size - 2), in other words, from [0, shm_size - 3]
 	{
@@ -127,3 +132,10 @@ uint32_t EmuShm::read32()
 
 	return word;
 }
+
+bool EmuShm::isEmpty() {
+    if (cur_size == 0)
+        return true;
+    return false;
+}
+

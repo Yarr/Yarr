@@ -13,33 +13,34 @@
 #include <iostream>
 
 #include "TxCore.h"
+#include "EmuCom.h"
 
 class EmuTxCore : public TxCore {
     public:
-        EmuTxCore();
+        EmuTxCore(EmuCom *comCmd);
         ~EmuTxCore();
 
-        void writeFifo(uint32_t value){}
+        void writeFifo(uint32_t value);
         
         void setCmdEnable(uint32_t value) {}
         uint32_t getCmdEnable() {return 0x0;}
         void maskCmdEnable(uint32_t value, uint32_t mask) {}
 
-        void setTrigEnable(uint32_t value) {}
+        void setTrigEnable(uint32_t value);
         uint32_t getTrigEnable() {return 0x0;}
         void maskTrigEnable(uint32_t value, uint32_t mask) {}
 
         void setTrigConfig(enum TRIG_CONF_VALUE cfg) {}
         void setTrigFreq(double freq) {}
-        void setTrigCnt(uint32_t count) {}
+        void setTrigCnt(uint32_t count);
         void setTrigTime(double time) {}
         void setTrigWordLength(uint32_t length) {}
         void setTrigWord(uint32_t *word) {}
 
         void toggleTrigAbort() {}
 
-        bool isCmdEmpty() {return true;}
-        bool isTrigDone() {return true;}
+        bool isCmdEmpty() {return m_comCmd->isEmpty();}
+        bool isTrigDone() {return m_comCmd->isEmpty();}
 
         uint32_t getTrigInCount() {return 0x0;}
         
@@ -48,7 +49,9 @@ class EmuTxCore : public TxCore {
         void resetTriggerLogic() {}
 
     private:
+        EmuCom *m_comCmd;
 
+        int m_trigCnt;
 };
 
 #endif

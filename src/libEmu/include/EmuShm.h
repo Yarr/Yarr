@@ -14,7 +14,9 @@
 #include <stdint.h>
 #include <string.h>
 
-class EmuShm {
+#include "EmuCom.h"
+
+class EmuShm : public EmuCom {
 	public:
 		EmuShm(key_t key, uint32_t size, bool create);
 		~EmuShm();
@@ -29,9 +31,13 @@ class EmuShm {
 		uint32_t write_pointer;
 		uint32_t read_pointer;
 
+        bool isEmpty();
+
 		void write32(uint32_t word);
 		uint32_t read32();
 	private:
+
+        int cur_size;
 };
 
 #endif

@@ -25,6 +25,7 @@
 #include "SpecRxCore.h"
 #include "EmuTxCore.h"
 #include "EmuRxCore.h"
+#include "EmuShm.h"
 #include "Bookkeeper.h"
 #include "Fei4.h"
 #include "ScanBase.h"
@@ -223,8 +224,9 @@ int main(int argc, char *argv[]) {
     std::cout << "-> Init SPEC " << specNum << " : " << std::endl;
     TxCore *tx;
     RxCore *rx;
+    EmuShm comCmd(1337, 1024, true);
     if (specNum > 29) {
-        tx = (TxCore*) new EmuTxCore();
+        tx = (TxCore*) new EmuTxCore(dynamic_cast<EmuCom*>(&comCmd));
         rx = (RxCore*) new EmuRxCore();
     } else {
         SpecController *spec = new SpecController(specNum);
