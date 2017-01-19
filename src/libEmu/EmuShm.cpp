@@ -28,10 +28,11 @@ EmuShm::EmuShm(key_t key, uint32_t size, bool create)
 		fprintf(stderr, "shmat failure\n");
 	}
 
+    // TODO check for minimum size, else seg fault
 	// initialize these indices to be at the back of the shm buffer
-	index_of_upper_bound = shm_size / 4 - 2;
-	index_of_write_index = shm_size / 4 - 2;
-	index_of_read_index = shm_size / 4 - 1;
+	index_of_upper_bound = shm_size - (3*4);
+	index_of_write_index = shm_size - (2*4);
+	index_of_read_index = shm_size - (1*4);
 
 	if (create)
 	{
@@ -64,10 +65,10 @@ EmuShm::~EmuShm()
 
 void EmuShm::write32(uint32_t word)
 {
-//	printf("writing the word %x\n", word);
+	printf("writing the word 0x%x (%d, %d)\n", word, write_index, read_index);
 
 	// wait if the write index would catch up to the read index
-	while (((write_index + 1 > shm_size - 2) ? 0 : write_index + 1) == read_index)
+	while (((write_index + 4 > index_of_upper_bound) ? 0 : write_index + 4) == read_index)
 	{
 		memcpy(&read_index, &shm_pointer[index_of_read_index * 4], 4);		// read the read_index value from the shm buffer
 	}
@@ -76,8 +77,8 @@ void EmuShm::write32(uint32_t word)
 	memcpy(&shm_pointer[write_index * 4], &word, 4);
 
 	// update the write pointer
-	write_index += 1;
-	cur_size += 1 * 4;
+	write_index += 4;
+	cur_size ++;
 
 	// check if the write_index must wrap
 	if (write_index > index_of_upper_bound)
@@ -87,7 +88,6 @@ void EmuShm::write32(uint32_t word)
 
 	memcpy(&shm_pointer[index_of_write_index * 4], &write_index, 4);		// write the write_index value to the shm buffer
 
-	this->dump();
 }
 
 uint32_t EmuShm::read32()
@@ -104,8 +104,8 @@ uint32_t EmuShm::read32()
 	memcpy(&word, &shm_pointer[read_index * 4], 4);
 
 	// update the read pointer
-	read_index += 1;
-	cur_size -= 1 * 4;
+	read_index += 4;
+	cur_size--;
 
 	// check if the read_index must wrap
 	if (read_index > index_of_upper_bound)
@@ -115,7 +115,7 @@ uint32_t EmuShm::read32()
 
 	memcpy(&shm_pointer[index_of_read_index * 4], &read_index, 4);			// write the read_index value to the shm buffer
 
-//	printf("read the word %x\n", word);
+	printf("read the word 0x%x\n", word);
 
 	return word;
 }

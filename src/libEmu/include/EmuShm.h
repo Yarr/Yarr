@@ -48,7 +48,7 @@ class EmuShm : public EmuCom {
 		void dump();
 	private:
 		// this stores the current size of data which has not been read
-		int cur_size;	// in bytes
+		int cur_size;	// in words
 };
 
 #endif
