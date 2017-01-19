@@ -44,7 +44,7 @@ class EmuShm : public EmuCom {
 
 		// useful utility functions
 		bool isEmpty();
-		uint32_t getCurSize() {return cur_size;}
+		uint32_t getCurSize();
 		void dump();
 	private:
 		// this stores the current size of data which has not been read
