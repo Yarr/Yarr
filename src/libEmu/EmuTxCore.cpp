@@ -9,15 +9,15 @@
 
 #include "EmuTxCore.h"
 
-EmuTxCore::EmuTxCore(EmuCom *comCmd) {
-    m_comCmd = comCmd;
+EmuTxCore::EmuTxCore(EmuCom *com) {
+    m_com = com;
 }
 
 EmuTxCore::~EmuTxCore() {}
 
 void EmuTxCore::writeFifo(uint32_t value) {
     // TODO need to check channel
-    m_comCmd->write32(value);
+    m_com->write32(value);
 }
 
 void EmuTxCore::setTrigCnt(uint32_t count) {
@@ -26,7 +26,6 @@ void EmuTxCore::setTrigCnt(uint32_t count) {
 
 void EmuTxCore::setTrigEnable(uint32_t value) {
     for (unsigned i=0; i<m_trigCnt; i++) {
-        m_comCmd->write32(0x1D000000);
-        m_comCmd->write32(0xDEADBEEF);
+        m_com->write32(0x1D000000);
     }
 }

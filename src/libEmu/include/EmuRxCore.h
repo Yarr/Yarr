@@ -13,23 +13,24 @@
 #include <iostream>
 
 #include "RxCore.h"
+#include "EmuCom.h"
 
 class EmuRxCore : public RxCore {
     public:
-        EmuRxCore();
+        EmuRxCore(EmuCom *com);
         ~EmuRxCore();
         
         void setRxEnable(uint32_t val) {}
         void maskRxEnable(uint32_t val, uint32_t mask) {}
 
-        RawData* readData() {return NULL;}
+        RawData* readData();
         
         uint32_t getDataRate() {return 0;}
-        uint32_t getCurCount() {return 0;}
-        bool isBridgeEmpty() {return true;}
+        uint32_t getCurCount() {return m_com->getCurSize();}
+        bool isBridgeEmpty() {return m_com->isEmpty();}
 
     private:
-
+        EmuCom *m_com;
 };
 
 #endif

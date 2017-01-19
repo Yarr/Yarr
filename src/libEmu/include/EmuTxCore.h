@@ -17,7 +17,7 @@
 
 class EmuTxCore : public TxCore {
     public:
-        EmuTxCore(EmuCom *comCmd);
+        EmuTxCore(EmuCom *com);
         ~EmuTxCore();
 
         void writeFifo(uint32_t value);
@@ -39,8 +39,8 @@ class EmuTxCore : public TxCore {
 
         void toggleTrigAbort() {}
 
-        bool isCmdEmpty() {return m_comCmd->isEmpty();}
-        bool isTrigDone() {return m_comCmd->isEmpty();}
+        bool isCmdEmpty() {return m_com->isEmpty();}
+        bool isTrigDone() {return m_com->isEmpty();}
 
         uint32_t getTrigInCount() {return 0x0;}
         
@@ -49,7 +49,7 @@ class EmuTxCore : public TxCore {
         void resetTriggerLogic() {}
 
     private:
-        EmuCom *m_comCmd;
+        EmuCom *m_com;
 
         int m_trigCnt;
 };
