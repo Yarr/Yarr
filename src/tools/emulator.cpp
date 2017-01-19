@@ -336,39 +336,62 @@ int main(int argc, char *argv[])
 	// set up the fe
 	fe = new Fei4(NULL, 0);
 
-	EmuShm *emu_shm = new EmuShm(1337, 32, 0);
-	
-    emu_shm->dump();
+	EmuShm *emu_shm = new EmuShm(1337, 64, 0);
+	emu_shm->dump();
 
-    while (1)
+	while (1)
 	{
 	        uint32_t command;
+		uint32_t type;
+		uint32_t name;
+		uint32_t chipid;
+		uint32_t address;
+
 		uint32_t value;
 		uint32_t bitstream[21];
 		uint32_t padding;
 
 		command = emu_shm->read32();
+		type = command >> 14;
 
-		if ((command & 0x00FFFF00) == 0x005A0800)
+		switch (type)
 		{
-			printf("got a 0x005A0800 command\n");
-			value = emu_shm->read32();
-		}
-		if ((command & 0x005A1000) == 0x005A1000)
-		{
-			printf("got a 0x005A1000 command\n");
-			for (int i = 0; i < 21; i++)
-			{
-				bitstream[i] = emu_shm->read32();
-			}
-		}
+			case 0x168:
+				printf("recieved a slow command\n");
 
-		padding = emu_shm->read32();
+				name = command >> 10 & 0xF;
+				chipid = command >> 6 & 0xF;
+				address = command & 0x3F;
 
-		// decode the command
-		decode_command(command, value, bitstream);
+				switch (name)
+				{
+					case 1:
+						printf("recieved a RdRegister command\n");
+						break;
+					case 2:
+						printf("recieved a WrRegister command\n");
+						break;
+					case 4:
+						printf("recieved a WrFrontEnd command\n");
+						break;
+					case 8:
+						printf("recieved a GlobalReset command\n");
+						break;
+					case 9:
+						printf("recieved a GlobalPulse command\n");
+						break;
+					case 10:
+						printf("recieved a RunMode command\n");
+						break;
+				}
+
+				break;
+			default:
+				break;
+		}
 	}
 
-    delete emu_shm;
+	delete emu_shm;
+
 	return 0;
 }
