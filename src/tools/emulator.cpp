@@ -20,315 +20,318 @@ uint32_t modeBits;
 Fei4 *fe;
 uint32_t shift_register_buffer[21][40];
 
-void decode_command(uint32_t cmd, uint32_t val, uint32_t bstream[21])
+int handle_globalpulse(uint32_t chipid)
 {
-	// decode the command header from the command word - this will tell us what type of command it is
-	int header;
-	header = cmd & 0x00FFFC00;
+	int didSomething = 0;
 
-	switch (header)
+	// ignore if we get a ReadErrorReq
+	if (fe->getValue(&Fei4::ReadErrorReq) == 1)
 	{
-		case 0x005A2800:
+		didSomething = 1;
+	}
+
+	// eventually, I should change the FE that I use based on the chipid
+
+	// check if I need to shift the Shift Register by one
+	if (fe->getValue(&Fei4::S0) == 0 && fe->getValue(&Fei4::S1) == 0 && fe->getValue(&Fei4::HitLD) == 0 && fe->getValue(&Fei4::SR_Clock) == 1)
+	{
+		didSomething = 1;
+
+		// use Fei4::Colpr_Mode to determine which dc to loop over
+		int dc_step = 40;
+		switch (fe->getValue(&Fei4::Colpr_Mode))
 		{
-//			printf("got a runMode command\n");
-
-			// decode the chipId from the command word
-			int chipId;
-			chipId = (cmd >> 6) & 0xF;
-
-			// eventually, I should change the FE that I use based on the chipId
-
-			// decode the modeBits from the command word
-			modeBits = cmd & 0x3F;
-
-			break;
+			case 0:
+				dc_step = 40;
+				break;
+			case 1:
+				dc_step = 4;
+				break;
+			case 2:
+				dc_step = 8;
+				break;
+			case 3:
+				dc_step = 1;
+				break;
 		}
-		case 0x005A2400:
+
+		// loop through the 40 double columns
+		for (int i = 0; i < 40 / dc_step; i++)
 		{
-//			printf("got a globalPulse command\n");
+			int dc = fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
 
-			int didSomething = 0;
+			// use these to deal with overflow bits
+			uint32_t current_first_bit = 0;
+			uint32_t previous_first_bit = 0;
 
-			// decode the chipId from the command word
-			int chipId;
-			chipId = (cmd >> 6) & 0xF;
-
-			// ignore if we get a ReadErrorReq
-			if (fe->getValue(&Fei4::ReadErrorReq) == 1)
+			// shift all bits left by 1, keeping track of the overflow bits
+			for (int j = 20; j >= 0; j--)
 			{
-				didSomething = 1;
+				current_first_bit = shift_register_buffer[j][dc] & 1;
+				shift_register_buffer[j][dc] << 1;
+				shift_register_buffer[j][dc] += previous_first_bit;
+				previous_first_bit = current_first_bit;
 			}
-
-			// eventually, I should change the FE that I use based on the chipId
-
-			// check if I need to shift the Shift Register by one
-			if (fe->getValue(&Fei4::S0) == 0 && fe->getValue(&Fei4::S1) == 0 && fe->getValue(&Fei4::HitLD) == 0 && fe->getValue(&Fei4::SR_Clock) == 1)
-			{
-				didSomething = 1;
-				// use Fei4::Colpr_Mode to determine which dc to loop over
-				int dc_step = 40;
-				switch (fe->getValue(&Fei4::Colpr_Mode))
-				{
-					case 0:
-						dc_step = 40;
-						break;
-					case 1:
-						dc_step = 4;
-						break;
-					case 2:
-						dc_step = 8;
-						break;
-					case 3:
-						dc_step = 1;
-						break;
-				}
-
-				// loop through the 40 double columns
-				for (int i = 0; i < 40 / dc_step; i++)
-				{
-					int dc = fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
-
-					// use these to deal with overflow bits
-					uint32_t current_first_bit = 0;
-					uint32_t previous_first_bit = 0;
-
-					// shift all bits left by 1, keeping track of the overflow bits
-					for (int j = 20; j >= 0; j--)
-					{
-						current_first_bit = shift_register_buffer[j][dc] & 1;
-						shift_register_buffer[j][dc] << 1;
-						shift_register_buffer[j][dc] += previous_first_bit;
-						previous_first_bit = current_first_bit;
-					}
-				}
-			}
-
-			// check if we should write to the shift registers from the pixel registers
-			if (fe->getValue(&Fei4::S0) == 1 && fe->getValue(&Fei4::S1) == 1 && fe->getValue(&Fei4::HitLD) == 0 && fe->getValue(&Fei4::SR_Clock) == 1)
-			{
-				// use Fei4::Colpr_Mode to determine which dc to loop over
-				int dc_step = 40;
-				switch (fe->getValue(&Fei4::Colpr_Mode))
-				{
-					case 0:
-						dc_step = 40;
-						break;
-					case 1:
-						dc_step = 4;
-						break;
-					case 2:
-						dc_step = 8;
-						break;
-					case 3:
-						dc_step = 1;
-						break;
-				}
-
-				// loop through the 40 double columns
-				for (int i = 0; i < 40 / dc_step; i++)
-				{
-					int dc = fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
-//					printf("dc = %d\n", dc);
-
-					// loop through the 13 double column bits
-					for (int i = 0; i < 13; i++)
-					{
-						// if a double column bit is 1, write the contents of the corresponding pixel register to the Shift Register
-						if (fe->getValue(&Fei4::Pixel_latch_strobe) & (unsigned) pow(2, i))
-						{
-//							printf("writing contents of the Shift Register to pixel register %d\n", i);
-							didSomething = 1;
-							switch (i)
-							{
-								case 0:
-									memcpy(&shift_register_buffer[0][dc], fe->En(dc).getStream(), 84);
-									break;
-								case 1:
-									memcpy(&shift_register_buffer[0][dc], fe->TDAC(dc)[0].getStream(), 84);
-									break;
-								case 2:
-									memcpy(&shift_register_buffer[0][dc], fe->TDAC(dc)[1].getStream(), 84);
-									break;
-								case 3:
-									memcpy(&shift_register_buffer[0][dc], fe->TDAC(dc)[2].getStream(), 84);
-									break;
-								case 4:
-									memcpy(&shift_register_buffer[0][dc], fe->TDAC(dc)[3].getStream(), 84);
-									break;
-								case 5:
-									memcpy(&shift_register_buffer[0][dc], fe->TDAC(dc)[4].getStream(), 84);
-									break;
-								case 6:
-									memcpy(&shift_register_buffer[0][dc], fe->LCap(dc).getStream(), 84);
-									break;
-								case 7:
-									memcpy(&shift_register_buffer[0][dc], fe->SCap(dc).getStream(), 84);
-									break;
-								case 8:
-									memcpy(&shift_register_buffer[0][dc], fe->Hitbus(dc).getStream(), 84);
-									break;
-								case 9:
-									memcpy(&shift_register_buffer[0][dc], fe->FDAC(dc)[0].getStream(), 84);
-									break;
-								case 10:
-									memcpy(&shift_register_buffer[0][dc], fe->FDAC(dc)[1].getStream(), 84);
-									break;
-								case 11:
-									memcpy(&shift_register_buffer[0][dc], fe->FDAC(dc)[2].getStream(), 84);
-									break;
-								case 12:
-									memcpy(&shift_register_buffer[0][dc], fe->FDAC(dc)[3].getStream(), 84);
-									break;
-								default:
-									printf("why am I trying to write to pixel register %d?\n", i);
-									break;
-							}
-						}
-					}
-				}
-			}
-
-			// check if we should write to the pixel registers from the shift registers
-			if (fe->getValue(&Fei4::S0) == 0 && fe->getValue(&Fei4::S1) == 0 && fe->getValue(&Fei4::HitLD) == 0 && fe->getValue(&Fei4::Latch_Enable) == 1)
-			{
-				// use Fei4::Colpr_Mode to determine which dc to loop over
-				int dc_step = 40;
-				switch (fe->getValue(&Fei4::Colpr_Mode))
-				{
-					case 0:
-						dc_step = 40;
-						break;
-					case 1:
-						dc_step = 4;
-						break;
-					case 2:
-						dc_step = 8;
-						break;
-					case 3:
-						dc_step = 1;
-						break;
-				}
-
-				// loop through the 40 double columns
-				for (int i = 0; i < 40 / dc_step; i++)
-				{
-					int dc = fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
-//					printf("dc = %d\n", dc);
-
-					// loop through the 13 double column bits
-					for (int i = 0; i < 13; i++)
-					{
-						// if a double column bit is 1, write the contents of the Shift Register to the corresponding pixel register
-						if (fe->getValue(&Fei4::Pixel_latch_strobe) & (unsigned) pow(2, i))
-						{
-//							printf("writing contents of the Shift Register to pixel register %d\n", i);
-							didSomething = 1;
-							switch (i)
-							{
-								case 0:
-									fe->En(dc).set(&shift_register_buffer[0][dc]);
-									break;
-								case 1:
-									fe->TDAC(dc)[0].set(&shift_register_buffer[0][dc]);
-									break;
-								case 2:
-									fe->TDAC(dc)[1].set(&shift_register_buffer[0][dc]);
-									break;
-								case 3:
-									fe->TDAC(dc)[2].set(&shift_register_buffer[0][dc]);
-									break;
-								case 4:
-									fe->TDAC(dc)[3].set(&shift_register_buffer[0][dc]);
-									break;
-								case 5:
-									fe->TDAC(dc)[4].set(&shift_register_buffer[0][dc]);
-									break;
-								case 6:
-									fe->LCap(dc).set(&shift_register_buffer[0][dc]);
-									break;
-								case 7:
-									fe->SCap(dc).set(&shift_register_buffer[0][dc]);
-									break;
-								case 8:
-									fe->Hitbus(dc).set(&shift_register_buffer[0][dc]);
-									break;
-								case 9:
-									fe->FDAC(dc)[0].set(&shift_register_buffer[0][dc]);
-									break;
-								case 10:
-									fe->FDAC(dc)[1].set(&shift_register_buffer[0][dc]);
-									break;
-								case 11:
-									fe->FDAC(dc)[2].set(&shift_register_buffer[0][dc]);
-									break;
-								case 12:
-									fe->FDAC(dc)[3].set(&shift_register_buffer[0][dc]);
-									break;
-								default:
-									printf("why am I trying to write to pixel register %d?\n", i);
-									break;
-							}
-						}
-					}
-				}
-			}
-
-			if (!didSomething)
-			{
-				// print some info about the state of the global register
-				printf("did not do anything\t");
-				printf("Fei4::S0 = %x\t", fe->getValue(&Fei4::S0));
-				printf("Fei4::S1 = %x\t", fe->getValue(&Fei4::S1));
-				printf("Fei4::HitLD = %x\t", fe->getValue(&Fei4::HitLD));
-				printf("Fei4::Colpr_Mode = %x\t", fe->getValue(&Fei4::Colpr_Mode));
-				printf("Fei4::SR_Clock = %x\t", fe->getValue(&Fei4::SR_Clock));
-				printf("Fei4::Latch_Enable = %x\t", fe->getValue(&Fei4::Latch_Enable));
-				printf("Fei4::Pixel_latch_strobe = %x\n", fe->getValue(&Fei4::Pixel_latch_strobe));
-			}
-
-			break;
-		}
-		case 0x005A0800:
-		{
-//			printf("got a wrRegister command\n");
-
-			// decode the chipId from the command word
-			int chipId;
-			chipId = (cmd >> 6) & 0xF;
-
-			// decode the address from the command word
-			int address;
-			address = cmd & 0x3F;
-
-			// decode the value from the value word
-			int value;
-			value = val >> 16;
-
-			// write value to address in the Global Register (of FE chipId - ignoring this part for now)
-			fe->cfg[address] = value;
-
-			break;
-		}
-		case 0x005A1000:
-		{
-//			printf("got a wrFrontEnd command\n");
-
-			// decode the chipId from the command word
-			int chipId;
-			chipId = (cmd >> 6) & 0xF;
-
-			// write the bitstream to our Shift Register buffer (eventually, I should have one of these for every FE, and maybe every dc)
-			int dc = fe->getValue(&Fei4::Colpr_Addr);
-			memcpy(&shift_register_buffer[0][dc], &bstream[0], 84);
-
-			break;
-		}
-		default:
-		{
-			fprintf(stderr, "error: unknown command header: %x\n", header);
-			exit(1);
 		}
 	}
+
+	// check if we should write to the shift registers from the pixel registers
+	if (fe->getValue(&Fei4::S0) == 1 && fe->getValue(&Fei4::S1) == 1 && fe->getValue(&Fei4::HitLD) == 0 && fe->getValue(&Fei4::SR_Clock) == 1)
+	{
+		// use Fei4::Colpr_Mode to determine which dc to loop over
+		int dc_step = 40;
+		switch (fe->getValue(&Fei4::Colpr_Mode))
+		{
+			case 0:
+				dc_step = 40;
+				break;
+			case 1:
+				dc_step = 4;
+				break;
+			case 2:
+				dc_step = 8;
+				break;
+			case 3:
+				dc_step = 1;
+				break;
+		}
+
+		// loop through the 40 double columns
+		for (int i = 0; i < 40 / dc_step; i++)
+		{
+			int dc = fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
+
+			// loop through the 13 double column bits
+			for (int i = 0; i < 13; i++)
+			{
+				// if a double column bit is 1, write the contents of the corresponding pixel register to the Shift Register
+				if (fe->getValue(&Fei4::Pixel_latch_strobe) & (unsigned) pow(2, i))
+				{
+					didSomething = 1;
+
+					switch (i)
+					{
+						case 0:
+							memcpy(&shift_register_buffer[0][dc], fe->En(dc).getStream(), 84);
+							break;
+						case 1:
+							memcpy(&shift_register_buffer[0][dc], fe->TDAC(dc)[0].getStream(), 84);
+							break;
+						case 2:
+							memcpy(&shift_register_buffer[0][dc], fe->TDAC(dc)[1].getStream(), 84);
+							break;
+						case 3:
+							memcpy(&shift_register_buffer[0][dc], fe->TDAC(dc)[2].getStream(), 84);
+							break;
+						case 4:
+							memcpy(&shift_register_buffer[0][dc], fe->TDAC(dc)[3].getStream(), 84);
+							break;
+						case 5:
+							memcpy(&shift_register_buffer[0][dc], fe->TDAC(dc)[4].getStream(), 84);
+							break;
+						case 6:
+							memcpy(&shift_register_buffer[0][dc], fe->LCap(dc).getStream(), 84);
+							break;
+						case 7:
+							memcpy(&shift_register_buffer[0][dc], fe->SCap(dc).getStream(), 84);
+							break;
+						case 8:
+							memcpy(&shift_register_buffer[0][dc], fe->Hitbus(dc).getStream(), 84);
+							break;
+						case 9:
+							memcpy(&shift_register_buffer[0][dc], fe->FDAC(dc)[0].getStream(), 84);
+							break;
+						case 10:
+							memcpy(&shift_register_buffer[0][dc], fe->FDAC(dc)[1].getStream(), 84);
+							break;
+						case 11:
+							memcpy(&shift_register_buffer[0][dc], fe->FDAC(dc)[2].getStream(), 84);
+							break;
+						case 12:
+							memcpy(&shift_register_buffer[0][dc], fe->FDAC(dc)[3].getStream(), 84);
+							break;
+						default:
+							printf("why am I trying to write to pixel register %d?\n", i);
+							break;
+					}
+				}
+			}
+		}
+	}
+
+	// check if we should write to the pixel registers from the shift registers
+	if (fe->getValue(&Fei4::S0) == 0 && fe->getValue(&Fei4::S1) == 0 && fe->getValue(&Fei4::HitLD) == 0 && fe->getValue(&Fei4::Latch_Enable) == 1)
+	{
+		// use Fei4::Colpr_Mode to determine which dc to loop over
+		int dc_step = 40;
+		switch (fe->getValue(&Fei4::Colpr_Mode))
+		{
+			case 0:
+				dc_step = 40;
+				break;
+			case 1:
+				dc_step = 4;
+				break;
+			case 2:
+				dc_step = 8;
+				break;
+			case 3:
+				dc_step = 1;
+				break;
+		}
+
+		// loop through the 40 double columns
+		for (int i = 0; i < 40 / dc_step; i++)
+		{
+			int dc = fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
+
+			// loop through the 13 double column bits
+			for (int i = 0; i < 13; i++)
+			{
+				// if a double column bit is 1, write the contents of the Shift Register to the corresponding pixel register
+				if (fe->getValue(&Fei4::Pixel_latch_strobe) & (unsigned) pow(2, i))
+				{
+					didSomething = 1;
+
+					switch (i)
+					{
+						case 0:
+							fe->En(dc).set(&shift_register_buffer[0][dc]);
+							break;
+						case 1:
+							fe->TDAC(dc)[0].set(&shift_register_buffer[0][dc]);
+							break;
+						case 2:
+							fe->TDAC(dc)[1].set(&shift_register_buffer[0][dc]);
+							break;
+						case 3:
+							fe->TDAC(dc)[2].set(&shift_register_buffer[0][dc]);
+							break;
+						case 4:
+							fe->TDAC(dc)[3].set(&shift_register_buffer[0][dc]);
+							break;
+						case 5:
+							fe->TDAC(dc)[4].set(&shift_register_buffer[0][dc]);
+							break;
+						case 6:
+							fe->LCap(dc).set(&shift_register_buffer[0][dc]);
+							break;
+						case 7:
+							fe->SCap(dc).set(&shift_register_buffer[0][dc]);
+							break;
+						case 8:
+							fe->Hitbus(dc).set(&shift_register_buffer[0][dc]);
+							break;
+						case 9:
+							fe->FDAC(dc)[0].set(&shift_register_buffer[0][dc]);
+							break;
+						case 10:
+							fe->FDAC(dc)[1].set(&shift_register_buffer[0][dc]);
+							break;
+						case 11:
+							fe->FDAC(dc)[2].set(&shift_register_buffer[0][dc]);
+							break;
+						case 12:
+							fe->FDAC(dc)[3].set(&shift_register_buffer[0][dc]);
+							break;
+						default:
+							printf("why am I trying to write to pixel register %d?\n", i);
+							break;
+					}
+				}
+			}
+		}
+	}
+
+	if (!didSomething)
+	{
+		// print some info about the state of the global register
+		printf("did not do anything\t");
+		printf("Fei4::S0 = %x\t", fe->getValue(&Fei4::S0));
+		printf("Fei4::S1 = %x\t", fe->getValue(&Fei4::S1));
+		printf("Fei4::HitLD = %x\t", fe->getValue(&Fei4::HitLD));
+		printf("Fei4::Colpr_Mode = %x\t", fe->getValue(&Fei4::Colpr_Mode));
+		printf("Fei4::SR_Clock = %x\t", fe->getValue(&Fei4::SR_Clock));
+		printf("Fei4::Latch_Enable = %x\t", fe->getValue(&Fei4::Latch_Enable));
+		printf("Fei4::Pixel_latch_strobe = %x\n", fe->getValue(&Fei4::Pixel_latch_strobe));
+
+		return 1;
+	}
+
+//	printf("did something\n");
+
+	return 0;
+}
+
+int handle_runmode(uint32_t chipid, int command)
+{
+	// eventually, I should change the FE that I use based on the chipId
+
+	// decode the modeBits from the command word
+	modeBits = command & 0x3F;
+
+	return 0;
+}
+
+int handle_wrregister(uint32_t chipid, uint32_t address, uint32_t value)
+{
+	// write value to address in the Global Register (of FE chipid - ignoring this part for now)
+	fe->cfg[address] = value;
+
+	return 0;
+}
+
+int handle_wrfrontend(uint32_t chipid, uint32_t bitstream[21])
+{
+	// write the bitstream to our Shift Register buffer (eventually, I should have one of these for every FE, and maybe every dc)
+	int dc = fe->getValue(&Fei4::Colpr_Addr);
+	memcpy(&shift_register_buffer[0][dc], &bitstream[0], 84);
+
+	return 0;
+}
+
+int handle_trigger()
+{
+	for (int col = 1; col < fe->n_Col; col++)
+	{
+		for (int row = 1; row < fe->n_Row; row++)
+		{
+			if (fe->getEn(col, row))
+			{
+				printf("%d, %d enabled\n", col, row);
+			}
+			else
+			{
+				printf("%d, %d disabled\n", col, row);
+			}
+		}
+	}
+
+	return 0;
+/*
+		// use Fei4::Colpr_Mode to determine which dc to loop over
+		int dc_step = 40;
+		switch (fe->getValue(&Fei4::Colpr_Mode))
+		{
+			case 0:
+				dc_step = 40;
+				break;
+			case 1:
+				dc_step = 4;
+				break;
+			case 2:
+				dc_step = 8;
+				break;
+			case 3:
+				dc_step = 1;
+				break;
+		}
+
+		// loop through the 40 double columns
+		for (int i = 0; i < 40 / dc_step; i++)
+		{
+			int dc = fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
+*/
 }
 
 int main(int argc, char *argv[])
@@ -356,8 +359,12 @@ int main(int argc, char *argv[])
 
 		switch (type)
 		{
-			case 0x168:
-				printf("recieved a slow command\n");
+			case 0x7400:
+//				printf("recieved a trigger\n");
+				handle_trigger();
+				break;
+			case 0x0168:
+//				printf("recieved a slow command\n");
 
 				name = command >> 10 & 0xF;
 				chipid = command >> 6 & 0xF;
@@ -366,29 +373,42 @@ int main(int argc, char *argv[])
 				switch (name)
 				{
 					case 1:
-						printf("recieved a RdRegister command\n");
+//						printf("recieved a RdRegister command\n");
 						break;
 					case 2:
-						printf("recieved a WrRegister command\n");
+//						printf("recieved a WrRegister command\n");
+						value = emu_shm->read32();
+						value >>= 16; // nikola: remind me why
+						handle_wrregister(chipid, address, value);
 						break;
 					case 4:
-						printf("recieved a WrFrontEnd command\n");
+//						printf("recieved a WrFrontEnd command\n");
+						for (int i = 0; i < 21; i++)
+						{
+							bitstream[i] = emu_shm->read32();
+						}
+						handle_wrfrontend(chipid, bitstream);
 						break;
 					case 8:
-						printf("recieved a GlobalReset command\n");
+//						printf("recieved a GlobalReset command\n");
 						break;
 					case 9:
-						printf("recieved a GlobalPulse command\n");
+//						printf("recieved a GlobalPulse command\n");
+						handle_globalpulse(chipid);
 						break;
 					case 10:
-						printf("recieved a RunMode command\n");
+//						printf("recieved a RunMode command\n");
+						handle_runmode(chipid, command);
 						break;
 				}
 
 				break;
 			default:
+				printf("Software Emulator: ERROR - unknown type recieved, %x\n", type);
 				break;
 		}
+
+		padding = emu_shm->read32();
 	}
 
 	delete emu_shm;

@@ -28,6 +28,9 @@ class EmuShm : public EmuCom {
 		int shm_id;
 		char *shm_pointer;
 
+		// this is the size of the elements in the shared memory buffer/array
+		uint32_t element_size;
+
 		// these indicate the index in the ring buffer where the write and read "cursors" are
 		uint32_t write_index;
 		uint32_t read_index;
@@ -47,8 +50,6 @@ class EmuShm : public EmuCom {
 		uint32_t getCurSize();
 		void dump();
 	private:
-		// this stores the current size of data which has not been read
-		int cur_size;	// in words
 };
 
 #endif
