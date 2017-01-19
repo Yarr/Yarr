@@ -225,10 +225,10 @@ int main(int argc, char *argv[]) {
     TxCore *tx;
     RxCore *rx;
     EmuShm comCmd(1337, 32, true);
-    comCmd.dump();
+    EmuShm comData(1337, 32, true);
     if (specNum > 29) {
         tx = (TxCore*) new EmuTxCore(dynamic_cast<EmuCom*>(&comCmd));
-        rx = (RxCore*) new EmuRxCore();
+        rx = (RxCore*) new EmuRxCore(dynamic_cast<EmuCom*>(&comData));
     } else {
         SpecController *spec = new SpecController(specNum);
         tx = (TxCore*) new SpecTxCore(spec);
