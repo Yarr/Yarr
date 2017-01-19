@@ -18,14 +18,14 @@
 
 int main(int argc, char *argv[])
 {
-	EmuShm *emu_shm = new EmuShm(1991, 200, 1);
+	EmuShm *emu_shm = new EmuShm(1337, 64, 1);
 
 	int command_num;
 //	FILE * command_file = fopen("/home/nwhallon/Programming/git/YARR/src/test_raw_command.txt", "r");
 	FILE * command_file = fopen("/home/nwhallon/Programming/git/YARR/src/digitalscan_onemaskstep_raw_commands.txt", "r");
 	fscanf(command_file, "%d", &command_num);
 
-	for (int i = 0; i < command_num * 23; i++)
+	for (int i = 0; i < command_num; i++)
 	{
 		uint32_t word;
 

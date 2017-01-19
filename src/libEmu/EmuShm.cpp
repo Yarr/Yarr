@@ -4,19 +4,19 @@ EmuShm::EmuShm(key_t key, uint32_t size, bool create)
 {
 	shm_key = key;
 	shm_size = size;
-    cur_size = 0;
+	cur_size = 0;
 
 	// create or get the shared memory segment using the key
 	if (create)
 	{
-		if ((shm_id = shmget(shm_key, shm_size*4, IPC_CREAT | 0666)) < 0)
+		if ((shm_id = shmget(shm_key, shm_size, IPC_CREAT | 0666)) < 0)
 		{
 			fprintf(stderr, "shmget failure\n");
 		}
 	}
 	else
 	{
-		if ((shm_id = shmget(shm_key, shm_size*4, 0666)) < 0)
+		if ((shm_id = shmget(shm_key, shm_size, 0666)) < 0)
 		{
 			fprintf(stderr, "shmget failure\n");
 		}
@@ -28,19 +28,23 @@ EmuShm::EmuShm(key_t key, uint32_t size, bool create)
 		fprintf(stderr, "shmat failure\n");
 	}
 
+	// initialize these indices to be at the back of the shm buffer
+	index_of_upper_bound = shm_size / 4 - 2;
+	index_of_write_index = shm_size / 4 - 2;
+	index_of_read_index = shm_size / 4 - 1;
+
 	if (create)
 	{
-		just_initialized = 1;
+		write_index = 0;
+		read_index = 0;
 
-		read_pointer = 0;
-		write_pointer = 0;
-		memcpy(&shm_pointer[(shm_size - 2) * 4], &write_pointer, 4);	// shm_size - 2 is where the write pointer lives
-		memcpy(&shm_pointer[(shm_size - 1) * 4], &read_pointer, 4);	// shm_size - 1 is where the read pointer lives
+		memcpy(&shm_pointer[index_of_write_index * 4], &write_index, 4);	// write the write_index value to the shm buffer
+		memcpy(&shm_pointer[index_of_read_index * 4], &read_index, 4);		// write the read_index value to the shm buffer
 	}
 	else
 	{
-		memcpy(&write_pointer, &shm_pointer[(shm_size - 2) * 4], 4);	// shm_size - 2 is where the write pointer lives
-		memcpy(&read_pointer, &shm_pointer[(shm_size - 1) * 4], 4);	// shm_size - 1 is where the read pointer lives
+		memcpy(&write_index, &shm_pointer[index_of_write_index * 4], 4);	// read the write_index value from the shm buffer
+		memcpy(&read_index, &shm_pointer[index_of_read_index * 4], 4);		// read the read_index value from the shm buffer
 	}
 }
 
@@ -60,48 +64,30 @@ EmuShm::~EmuShm()
 
 void EmuShm::write32(uint32_t word)
 {
-	printf("writing the word %x\n", word);
+//	printf("writing the word %x\n", word);
 
-	if (just_initialized)
+	// wait if the write index would catch up to the read index
+	while (((write_index + 1 > shm_size - 2) ? 0 : write_index + 1) == read_index)
 	{
-		// write the word
-		memcpy(&shm_pointer[write_pointer*4], &word, 4);
-
-		// update the write pointer
-		write_pointer += 1;
-
-		if (write_pointer > shm_size - 2)	// the ring buffer only goes from [0, shm_size - 2), in other words, from [0, shm_size - 3]
-		{
-			write_pointer = 0;
-		}
-		memcpy(&shm_pointer[(shm_size - 2)*4], &write_pointer, 4); // shm_size - 2 is where the write pointer lives
-
-		// set jet_initialized to false
-		just_initialized = 0;
+		memcpy(&read_index, &shm_pointer[index_of_read_index * 4], 4);		// read the read_index value from the shm buffer
 	}
-	else
+
+	// do the write
+	memcpy(&shm_pointer[write_index * 4], &word, 4);
+
+	// update the write pointer
+	write_index += 1;
+	cur_size += 1 * 4;
+
+	// check if the write_index must wrap
+	if (write_index > index_of_upper_bound)
 	{
-		// wait if the write pointer would catch up to the read pointer
-		while (((write_pointer + 1 > shm_size - 2) ? 0 : write_pointer + 1) == read_pointer)
-		{
-			memcpy(&read_pointer, &shm_pointer[(shm_size - 1) * 4], 4);	// shm_size - 1 is where the read pointer lives
-		}
-
-		// do the write
-		memcpy(&shm_pointer[write_pointer*4], &word, 4);
-
-		// update the write pointer
-		write_pointer += 1;
-        cur_size++;
-
-		if (write_pointer > shm_size - 2)	// the ring buffer only goes from [0, shm_size - 2), in other words, from [0, shm_size - 3]
-		{
-			write_pointer = 0;
-		}
-
-		memcpy(&shm_pointer[(shm_size - 2) * 4], &write_pointer, 4); // shm_size - 2 is where the write pointer lives
+		write_index = 0;
 	}
-    this->dump();
+
+	memcpy(&shm_pointer[index_of_write_index * 4], &write_index, 4);		// write the write_index value to the shm buffer
+
+	this->dump();
 }
 
 uint32_t EmuShm::read32()
@@ -109,39 +95,44 @@ uint32_t EmuShm::read32()
 	uint32_t word;
 
 	// wait if the read pointer has caught up to the write pointer
-	while (read_pointer == write_pointer)
+	while (read_index == write_index)
 	{
-		memcpy(&write_pointer, &shm_pointer[(shm_size - 2) * 4], 4);	// shm_size - 2 is where the write pointer lives
+		memcpy(&write_index, &shm_pointer[index_of_write_index * 4], 4);	// read the write_index value from the shm buffer
 	}
 
 	// do the read
-	memcpy(&word, &shm_pointer[read_pointer*4], 4);
+	memcpy(&word, &shm_pointer[read_index * 4], 4);
 
 	// update the read pointer
-	read_pointer += 1;
-    cur_size--;
+	read_index += 1;
+	cur_size -= 1 * 4;
 
-	if (read_pointer > shm_size - 2)	// the ring buffer only goes from [0, shm_size - 2), in other words, from [0, shm_size - 3]
+	// check if the read_index must wrap
+	if (read_index > index_of_upper_bound)
 	{
-		read_pointer = 0;
+		read_index = 0;
 	}
 
-	memcpy(&shm_pointer[(shm_size - 1) * 4], &read_pointer, 4); // shm_size - 1 is where the write pointer lives
+	memcpy(&shm_pointer[index_of_read_index * 4], &read_index, 4);			// write the read_index value to the shm buffer
 
-	printf("read the word %x\n", word);
+//	printf("read the word %x\n", word);
 
 	return word;
 }
 
-bool EmuShm::isEmpty() {
-    if (cur_size == 0)
-        return true;
-    return false;
+bool EmuShm::isEmpty()
+{
+	if (cur_size == 0)
+	{
+		return true;
+	}
+	return false;
 }
 
-void EmuShm::dump() {
-    for(unsigned i=0; i<shm_size; i++) {
-        std::cout << "[" << i <<  "]\t\t0x" << std::hex << (uint32_t) *((uint32_t*) &shm_pointer[i*4]) << std::endl;
-    }
+void EmuShm::dump()
+{
+	for (uint32_t i = 0; i < shm_size / 4; i++)
+	{
+		std::cout << "[" << i << "]\t\t0x" << std::hex << (uint32_t) *((uint32_t*) &shm_pointer[i * 4]) << std::endl;
+	}
 }
-
