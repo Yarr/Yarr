@@ -65,7 +65,7 @@ EmuShm::~EmuShm()
 
 void EmuShm::write32(uint32_t word)
 {
-    printf("writing the word 0x%x (%d, %d)\n", word, write_index, read_index);
+    //printf("writing the word 0x%x (%d, %d)\n", word, write_index, read_index);
 
     // wait if the write index would catch up to the read index
     while (((write_index + element_size > index_of_upper_bound) ? 0 : write_index + element_size) == read_index)

@@ -25,7 +25,8 @@ void EmuTxCore::setTrigCnt(uint32_t count) {
 }
 
 void EmuTxCore::setTrigEnable(uint32_t value) {
-    for (unsigned i=0; i<m_trigCnt; i++) {
-        m_com->write32(0x1D000000);
-    }
+    if(!value) return;
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
+    m_com->write32(0x1D000000 | (m_trigCnt&0xFFFFFF));
+    m_com->write32(0xDEADBEEF);
 }

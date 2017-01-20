@@ -14,11 +14,14 @@
 #include <string.h>
 
 #include "Fei4.h"
+#include "Fei4Emu.h"
 #include "EmuShm.h"
 
 uint32_t modeBits;
 Fei4 *fe;
 uint32_t shift_register_buffer[21][40];
+
+Fei4Emu g_feEmu;
 
 int handle_globalpulse(uint32_t chipid)
 {
@@ -292,17 +295,21 @@ int handle_wrfrontend(uint32_t chipid, uint32_t bitstream[21])
 
 int handle_trigger()
 {
-	for (int col = 1; col < fe->n_Col; col++)
+	static int cnt(0);
+	std::cout << ++cnt << " -- " << __PRETTY_FUNCTION__ << std::endl;
+	g_feEmu.addDataHeader(false); // No Error flags
+	for (unsigned col = 1; col < fe->n_Col; col++)
 	{
-		for (int row = 1; row < fe->n_Row; row++)
+		for (unsigned row = 1; row < fe->n_Row; row++)
 		{
 			if (fe->getEn(col, row))
 			{
-				printf("%d, %d enabled\n", col, row);
+				//printf("%d, %d enabled\n", col, row);
+				g_feEmu.addDataRecord(col, row, 10, 0);
 			}
 			else
 			{
-				printf("%d, %d disabled\n", col, row);
+				//printf("%d, %d disabled\n", col, row);
 			}
 		}
 	}
@@ -339,8 +346,12 @@ int main(int argc, char *argv[])
 	// set up the fe
 	fe = new Fei4(NULL, 0);
 
-	EmuShm *emu_shm = new EmuShm(1337, 64, 0);
-	emu_shm->dump();
+	EmuShm *emu_shm_tx = new EmuShm(1337, 64, 0);
+	emu_shm_tx->dump();
+
+	auto emu_shm_rx = std::make_shared<EmuShm>(1338, 64, 0);
+	emu_shm_rx->dump();
+        g_feEmu.setRxShMem(emu_shm_rx);
 
 	while (1)
 	{
@@ -352,16 +363,22 @@ int main(int argc, char *argv[])
 
 		uint32_t value;
 		uint32_t bitstream[21];
-		uint32_t padding;
 
-		command = emu_shm->read32();
+		command = emu_shm_tx->read32();
+                uint32_t nTriggers = 1;
+                if((command & 0xFF000000) == 0x1D000000)
+			nTriggers = command & 0x00FFFFFF;
 		type = command >> 14;
 
 		switch (type)
 		{
 			case 0x7400:
 //				printf("recieved a trigger\n");
-				handle_trigger();
+				std::cout << "Processing batch of " << nTriggers << " triggers" << std::endl;
+				for(size_t i = 0 ; i < nTriggers ; ++i)
+					handle_trigger();
+				std::cout << "Done processing batch of " << nTriggers << " triggers" << std::endl;
+				emu_shm_tx->read32();
 				break;
 			case 0x0168:
 //				printf("recieved a slow command\n");
@@ -377,7 +394,7 @@ int main(int argc, char *argv[])
 						break;
 					case 2:
 //						printf("recieved a WrRegister command\n");
-						value = emu_shm->read32();
+						value = emu_shm_tx->read32();
 						value >>= 16; // nikola: remind me why
 						handle_wrregister(chipid, address, value);
 						break;
@@ -385,7 +402,7 @@ int main(int argc, char *argv[])
 //						printf("recieved a WrFrontEnd command\n");
 						for (int i = 0; i < 21; i++)
 						{
-							bitstream[i] = emu_shm->read32();
+							bitstream[i] = emu_shm_tx->read32();
 						}
 						handle_wrfrontend(chipid, bitstream);
 						break;
@@ -403,15 +420,15 @@ int main(int argc, char *argv[])
 				}
 
 				break;
+			case 0: break;
 			default:
 				printf("Software Emulator: ERROR - unknown type recieved, %x\n", type);
 				break;
 		}
 
-		padding = emu_shm->read32();
 	}
 
-	delete emu_shm;
+	delete emu_shm_tx;
 
 	return 0;
 }
