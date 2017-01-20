@@ -20,7 +20,7 @@
 class EmuShm : public EmuCom {
 	public:
 		EmuShm(key_t key, uint32_t size, bool create);
-		~EmuShm();
+		virtual ~EmuShm();
 
 		// variables for dealing with shm
 		uint32_t shm_size;	// in bytes
@@ -42,13 +42,13 @@ class EmuShm : public EmuCom {
 		uint32_t index_of_read_index;
 
 		// the main functionality of the class - write to and read from the ring buffer
-		void write32(uint32_t word);
-		uint32_t read32();
+		virtual void write32(uint32_t word);
+		virtual uint32_t read32();
 
 		// useful utility functions
-		bool isEmpty();
-		uint32_t getCurSize();
-		void dump();
+		virtual bool isEmpty();
+		virtual uint32_t getCurSize();
+		virtual void dump();
 	private:
 };
 
