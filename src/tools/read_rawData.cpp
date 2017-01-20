@@ -96,6 +96,7 @@ int main(int argc, char* argv[]) {
             //std::cout << "Tag: " << event.tag << std::endl;
             if (count==0)
                 other_old_bcid = event.bcid;
+            (void)other_old_bcid;
 
             bcid.fill(event.bcid, event.nHits);
 

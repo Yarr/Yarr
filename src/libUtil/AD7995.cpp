@@ -61,6 +61,7 @@ void AD7995::read() {
        readData(&tmp);
        value |= tmp & 0xFF;
        ch = (value >> 12) & 0x03;
+       (void) ch;
        adc = value & 0x0FFF;
        ch_value[i] = convert(adc);
    }

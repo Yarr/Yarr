@@ -68,7 +68,7 @@ int handle_globalpulse(uint32_t chipid)
 			for (int j = 20; j >= 0; j--)
 			{
 				current_first_bit = shift_register_buffer[j][dc] & 1;
-				shift_register_buffer[j][dc] << 1;
+				shift_register_buffer[j][dc] <<= 1;
 				shift_register_buffer[j][dc] += previous_first_bit;
 				previous_first_bit = current_first_bit;
 			}
