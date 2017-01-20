@@ -139,6 +139,6 @@ void EmuShm::dump()
 {
     for (uint32_t i = 0; i < shm_size / element_size; i++)
     {
-        std::cout << "[" << i << "]\t\t0x" << std::hex << (uint32_t) *((uint32_t*) &shm_pointer[i * element_size]) << std::endl;
+        std::cout << "[" << i << "]\t\t0x" << std::hex << (uint32_t) *((uint32_t*) &shm_pointer[i * element_size]) << std::dec << std::endl;
     }
 }

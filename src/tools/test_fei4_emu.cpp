@@ -25,6 +25,7 @@ int main(int argc, const char** argv) {
 
   for(auto& d : fei4Emu.getFeStream())
     std::cout << std::hex << d << std::endl;
+  std::cout << std::dec;
 
   return EXIT_SUCCESS;
 }
