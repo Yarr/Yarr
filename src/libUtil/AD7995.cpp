@@ -51,7 +51,6 @@ void AD7995::read() {
    unsigned ch = 99;
    unsigned adc = 0;
    uint32_t tmp = 0;
-   double temp = 0;
   
    // Read all active channels
    for (unsigned i=0; i<ch_cnt; i++) {

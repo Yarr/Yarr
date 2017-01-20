@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
         int trigger = 0;
         int old_l1id = -1;
         while (file) {
-            int now = file.tellg();
+            //int now = file.tellg();
             //std::cout << "\r" << (double)now/(double)size*100 << "%                    " << std::flush;
             Fei4Event event;
             event.fromFileBinary(file);

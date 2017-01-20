@@ -97,7 +97,7 @@ KernelMemory::~KernelMemory()
  */
 void KernelMemory::sync(sync_dir dir)
 {
-	kmem_sync_t ks = {0};
+	kmem_sync_t ks = {{0}};
 
 	ks.handle.handle_id = handle_id;
 	ks.handle.pa = pa;
