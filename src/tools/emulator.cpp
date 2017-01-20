@@ -64,16 +64,16 @@ int handle_globalpulse(uint32_t chipid)
 			int dc = fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
 
 			// use these to deal with overflow bits
-			uint32_t current_first_bit = 0;
-			uint32_t previous_first_bit = 0;
+			uint32_t current_last_bit = 0;
+			uint32_t previous_last_bit = 0;
 
 			// shift all bits left by 1, keeping track of the overflow bits
-			for (int j = 20; j >= 0; j--)
+			for (int j = 0; j < 21; j++)
 			{
-				current_first_bit = shift_register_buffer[j][dc] & 1;
+				current_last_bit = shift_register_buffer[j][dc] & 0x80000000;
 				shift_register_buffer[j][dc] <<= 1;
-				shift_register_buffer[j][dc] += previous_first_bit;
-				previous_first_bit = current_first_bit;
+				shift_register_buffer[j][dc] += previous_last_bit;
+				previous_last_bit = current_last_bit;
 			}
 		}
 	}
@@ -287,8 +287,30 @@ int handle_wrregister(uint32_t chipid, uint32_t address, uint32_t value)
 int handle_wrfrontend(uint32_t chipid, uint32_t bitstream[21])
 {
 	// write the bitstream to our Shift Register buffer (eventually, I should have one of these for every FE, and maybe every dc)
-	int dc = fe->getValue(&Fei4::Colpr_Addr);
-	memcpy(&shift_register_buffer[0][dc], &bitstream[0], 84);
+	int dc_step = 40;
+	switch (fe->getValue(&Fei4::Colpr_Mode))
+	{
+		case 0:
+			dc_step = 40;
+			break;
+		case 1:
+			dc_step = 4;
+			break;
+		case 2:
+			dc_step = 8;
+			break;
+		case 3:
+			dc_step = 1;
+			break;
+	}
+
+	// loop through the 40 double columns
+	for (int i = 0; i < 40 / dc_step; i++)
+	{
+		int dc = fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
+//printf("dc = %d\n", dc);
+		memcpy(&shift_register_buffer[0][dc], &bitstream[0], 84);
+	}
 
 	return 0;
 }
@@ -298,47 +320,45 @@ int handle_trigger()
 	static int cnt(0);
 	std::cout << ++cnt << " -- " << __PRETTY_FUNCTION__ << std::endl;
 	g_feEmu.addDataHeader(false); // No Error flags
-	for (unsigned col = 1; col < fe->n_Col; col++)
+
+	// use Fei4::Colpr_Mode to determine which dc to loop over
+	int dc_step = 40;
+	switch (fe->getValue(&Fei4::Colpr_Mode))
 	{
-		for (unsigned row = 1; row < fe->n_Row; row++)
+		case 0:
+			dc_step = 40;
+			break;
+		case 1:
+			dc_step = 4;
+			break;
+		case 2:
+			dc_step = 8;
+			break;
+		case 3:
+			dc_step = 1;
+			break;
+	}
+
+	// loop through the 40 double columns
+	for (int i = 0; i < 40 / dc_step; i++)
+	{
+		int dc = fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
+
+		for (unsigned row = 1; row <= fe->n_Row; row++)
 		{
-			if (fe->getEn(col, row))
+			if (fe->getEn(dc * 2 + 1, row))
 			{
-				//printf("%d, %d enabled\n", col, row);
-				g_feEmu.addDataRecord(col, row, 10, 0);
+//if (dc * 2 + 1 == 1) printf("LOL\n");
+				g_feEmu.addDataRecord(dc * 2 + 1, row, 10, 15);
 			}
-			else
+			if (fe->getEn(dc * 2 + 1 + 1, row))
 			{
-				//printf("%d, %d disabled\n", col, row);
+				g_feEmu.addDataRecord(dc * 2 + 1 + 1, row, 10, 15);
 			}
 		}
 	}
 
 	return 0;
-/*
-		// use Fei4::Colpr_Mode to determine which dc to loop over
-		int dc_step = 40;
-		switch (fe->getValue(&Fei4::Colpr_Mode))
-		{
-			case 0:
-				dc_step = 40;
-				break;
-			case 1:
-				dc_step = 4;
-				break;
-			case 2:
-				dc_step = 8;
-				break;
-			case 3:
-				dc_step = 1;
-				break;
-		}
-
-		// loop through the 40 double columns
-		for (int i = 0; i < 40 / dc_step; i++)
-		{
-			int dc = fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
-*/
 }
 
 int main(int argc, char *argv[])
