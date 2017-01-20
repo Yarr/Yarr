@@ -214,8 +214,6 @@ bool YarrGui::isSpecInitialized(unsigned int i) {
 void YarrGui::on_addFeButton_clicked(){
     std::string iFNJ = (ui->configfileName->text()).toStdString();
     this->addFE(iFNJ);
-
-    return;
 }
 
 void YarrGui::on_remFeButton_clicked(){

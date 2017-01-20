@@ -44,6 +44,12 @@ class FrontEnd {
 
 class FrontEndCfg {
     public:
+        FrontEndCfg() {
+            name = "JohnDoe";
+            txChannel = 99;
+            rxChannel = 99;
+        }
+
         virtual double toCharge(double)=0;
         virtual void toFileJson(json&)=0;
         virtual void fromFileJson(json&)=0;

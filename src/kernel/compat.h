@@ -23,23 +23,31 @@ static inline const char *dev_name(struct device *dev) {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
 	#define compat_lock_page SetPageLocked
 	#define compat_unlock_page ClearPageLocked
-#else
-	/* in v2.6.28, __set_page_locked and __clear_page_locked was introduced */
-	#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
-		#define compat_lock_page __set_page_locked
-		#define compat_unlock_page __clear_page_locked
-	#else
-		/* However, in v2.6.27 itself, neither of them is there, so
-		 * we need to use our own function fiddling with bits inside
-		 * the page struct :-\ */
-		static inline void compat_lock_page(struct page *page) {
-			__set_bit(PG_locked, &page->flags);
-		}
+#elif LINUX_VERSION_CODE == KERNEL_VERSION(2,6,27)
+/* However, in v2.6.27 itself, neither of them is there, so
+ * we need to use our own function fiddling with bits inside
+ * the page struct :-\ */
+	static inline void compat_lock_page(struct page *page) {
+		__set_bit(PG_locked, &page->flags);
+	}
 
-		static inline void compat_unlock_page(struct page *page) {
-			__clear_bit(PG_locked, &page->flags);
-		}
-	#endif
+	static inline void compat_unlock_page(struct page *page) {
+		__clear_bit(PG_locked, &page->flags);
+	}
+/* in v2.6.28, __set_page_locked and __clear_page_locked was introduced */
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(4,0,0)
+	#define compat_lock_page __set_page_locked
+	#define compat_unlock_page __clear_page_locked
+#else
+/* and gone again in Kernel 4.0 and higher */
+	static inline void compat_lock_page(struct page *page) {
+		__set_bit(PG_locked, &page->flags);
+	}
+
+	static inline void compat_unlock_page(struct page *page) {
+		__clear_bit(PG_locked, &page->flags);
+	}
+	
 #endif
 
 /* Before 2.6.13, simple_class was the standard interface. Nowadays, it's just called class */

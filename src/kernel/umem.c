@@ -17,6 +17,10 @@
 #include <linux/mm.h>
 #include <linux/pagemap.h>
 #include <linux/sched.h>
+// For Kernel 4.8
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
+    #include <linux/vmalloc.h>
+#endif
 
 #include "config.h"			/* compile-time configuration */
 #include "compat.h"			/* compatibility definitions for older linux */
@@ -88,7 +92,11 @@ int specdriver_umem_sgmap(specdriver_privdata_t *privdata, umem_handle_t *umem_h
 
 	/* Get the page information */
 	down_read(&current->mm->mmap_sem);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
+	res = get_user_pages_remote(
+#else
 	res = get_user_pages(
+#endif
 				current,
 				current->mm,
 				umem_handle->vma,
@@ -176,7 +184,12 @@ umem_sgmap_unmap:
 				compat_unlock_page(pages[i]);
 			if (!PageReserved(pages[i]))
 				set_page_dirty(pages[i]);
+			// Kernel 4.8
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
+			put_page(pages[i]);
+#else
 			page_cache_release(pages[i]);
+#endif
 		}
 	}
 	vfree(sg);
@@ -208,7 +221,12 @@ int specdriver_umem_sgunmap(specdriver_privdata_t *privdata, specdriver_umem_ent
 				compat_unlock_page(umem_entry->pages[i]);
 			}
 			/* and release it from the cache */
+			// Kernel 4.8
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
+			put_page( umem_entry->pages[i] );
+#else
 			page_cache_release( umem_entry->pages[i] );
+#endif
 		}
 	}
 
