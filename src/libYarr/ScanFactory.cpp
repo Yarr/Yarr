@@ -32,7 +32,7 @@ void ScanFactory::loadConfig(json &scanCfg) {
     int nLoops = scanCfg["scan"]["loops"]["n_loops"];
     std::cout << "  Number of Loops: " << nLoops << std::endl;
 
-    for (unsigned i=0; i<nLoops; i++) {
+    for (int i=0; i<nLoops; i++) {
         std::cout << "  Loading Loop #" << i << std::endl;
         std::string loopAction = scanCfg["scan"]["loops"][std::to_string(i)]["loopAction"];
         std::cout << "  Type: " << loopAction << std::endl;
