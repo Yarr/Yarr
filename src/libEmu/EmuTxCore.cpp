@@ -11,6 +11,8 @@
 
 EmuTxCore::EmuTxCore(EmuCom *com) {
     m_com = com;
+    m_trigCnt = 0;
+    trigProcRunning = false;
 }
 
 EmuTxCore::~EmuTxCore() {}
@@ -25,8 +27,19 @@ void EmuTxCore::setTrigCnt(uint32_t count) {
 }
 
 void EmuTxCore::setTrigEnable(uint32_t value) {
-    if(!value) return;
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
-    m_com->write32(0x1D000000 | (m_trigCnt&0xFFFFFF));
-    m_com->write32(0xDEADBEEF);
+    // TODO value should reflect channel
+    if(value == 0) {
+        triggerProc.join();
+    } else {
+        trigProcRunning = true;
+        triggerProc = std::thread(&EmuTxCore::doTrigger, this);
+    }
+}
+
+void EmuTxCore::doTrigger() {
+    for(unsigned i=0; i<m_trigCnt; i++) {
+        m_com->write32(0x1D000000 + i);
+    }
+    while(!m_com->isEmpty());
+    trigProcRunning = false;
 }

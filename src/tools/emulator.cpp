@@ -295,8 +295,8 @@ int handle_wrfrontend(uint32_t chipid, uint32_t bitstream[21])
 
 int handle_trigger()
 {
-	static int cnt(0);
-	std::cout << ++cnt << " -- " << __PRETTY_FUNCTION__ << std::endl;
+	//static int cnt(0);
+	//std::cout << ++cnt << " -- " << __PRETTY_FUNCTION__ << std::endl;
 	g_feEmu.addDataHeader(false); // No Error flags
 	for (unsigned col = 1; col < fe->n_Col; col++)
 	{
@@ -346,10 +346,10 @@ int main(int argc, char *argv[])
 	// set up the fe
 	fe = new Fei4(NULL, 0);
 
-	EmuShm *emu_shm_tx = new EmuShm(1337, 64, 0);
+	EmuShm *emu_shm_tx = new EmuShm(1337, 256, 0);
 	emu_shm_tx->dump();
 
-	auto emu_shm_rx = std::make_shared<EmuShm>(1338, 64, 0);
+	auto emu_shm_rx = std::make_shared<EmuShm>(1338, 256, 0);
 	emu_shm_rx->dump();
         g_feEmu.setRxShMem(emu_shm_rx);
 
@@ -365,20 +365,19 @@ int main(int argc, char *argv[])
 		uint32_t bitstream[21];
 
 		command = emu_shm_tx->read32();
-                uint32_t nTriggers = 1;
-                if((command & 0xFF000000) == 0x1D000000)
-			nTriggers = command & 0x00FFFFFF;
+        //uint32_t nTriggers = 1;
+        //if((command & 0xFF000000) == 0x1D000000)
+        //    nTriggers = command & 0x00FFFFFF;
 		type = command >> 14;
 
 		switch (type)
 		{
 			case 0x7400:
 //				printf("recieved a trigger\n");
-				std::cout << "Processing batch of " << nTriggers << " triggers" << std::endl;
-				for(size_t i = 0 ; i < nTriggers ; ++i)
+				//std::cout << "Processing batch of " << nTriggers << " triggers" << std::endl;
+				//for(size_t i = 0 ; i < nTriggers ; ++i)
 					handle_trigger();
-				std::cout << "Done processing batch of " << nTriggers << " triggers" << std::endl;
-				emu_shm_tx->read32();
+				//emu_shm_tx->read32();
 				break;
 			case 0x0168:
 //				printf("recieved a slow command\n");

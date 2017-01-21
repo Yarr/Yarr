@@ -224,8 +224,8 @@ int main(int argc, char *argv[]) {
     std::cout << "-> Init SPEC " << specNum << " : " << std::endl;
     TxCore *tx;
     RxCore *rx;
-    EmuShm comCmd(1337, 64, true);
-    EmuShm comData(1338, 64, true);
+    EmuShm comCmd(1337, 256, true);
+    EmuShm comData(1338, 256, true);
     if (specNum > 29) {
         tx = (TxCore*) new EmuTxCore(dynamic_cast<EmuCom*>(&comCmd));
         rx = (RxCore*) new EmuRxCore(dynamic_cast<EmuCom*>(&comData));

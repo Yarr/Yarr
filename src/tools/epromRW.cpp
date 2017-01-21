@@ -27,7 +27,7 @@ int main(int argc, char * argv[]) {
 
     mySpec.createSbeFile(fnKeyword, buffer, ARRAYLENGTH);
 
-    delete buffer;
+    delete[] buffer;
 
     return 0;
 

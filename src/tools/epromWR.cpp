@@ -22,7 +22,7 @@ int main(int argc, char * argv[]) {
 
     mySpec.writeEeprom(buffer, ARRAYLENGTH, 0);
 
-    delete buffer;
+    delete[] buffer;
 
     return 0;
 

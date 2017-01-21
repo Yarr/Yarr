@@ -60,8 +60,8 @@ int main (void) {
         std::cout << "==================================" << std::endl;
         off += size;
 
-        delete sample;
-        delete readBack;
+        delete[] sample;
+        delete[] readBack;
     }
 
     return 0;

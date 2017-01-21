@@ -11,6 +11,8 @@
 // ################################
 
 #include <iostream>
+#include <thread>
+#include <mutex>
 
 #include "TxCore.h"
 #include "EmuCom.h"
@@ -27,7 +29,7 @@ class EmuTxCore : public TxCore {
         void maskCmdEnable(uint32_t value, uint32_t mask) {}
 
         void setTrigEnable(uint32_t value);
-        uint32_t getTrigEnable() {return 0x0;}
+        uint32_t getTrigEnable() {return triggerProc.joinable() || !m_com->isEmpty();}
         void maskTrigEnable(uint32_t value, uint32_t mask) {}
 
         void setTrigConfig(enum TRIG_CONF_VALUE cfg) {}
@@ -39,8 +41,14 @@ class EmuTxCore : public TxCore {
 
         void toggleTrigAbort() {}
 
-        bool isCmdEmpty() {return m_com->isEmpty();}
-        bool isTrigDone() {return m_com->isEmpty();}
+        bool isCmdEmpty() {
+            bool rtn = m_com->isEmpty();
+            return rtn;
+        }
+        bool isTrigDone() {
+            bool rtn = !trigProcRunning && m_com->isEmpty();
+            return rtn;
+        }
 
         uint32_t getTrigInCount() {return 0x0;}
         
@@ -51,7 +59,11 @@ class EmuTxCore : public TxCore {
     private:
         EmuCom *m_com;
 
-        int m_trigCnt;
+        unsigned m_trigCnt;
+        std::mutex accMutex;
+        std::thread triggerProc;
+        bool trigProcRunning;
+        void doTrigger();
 };
 
 #endif

@@ -4,8 +4,8 @@
 
 int main(int argc, const char** argv) {
 
-	EmuShm* tx = new EmuShm(1337,64,0);
-	EmuShm* rx = new EmuShm(1338,64,0);
+	EmuShm* tx = new EmuShm(1337,256,0);
+	EmuShm* rx = new EmuShm(1338,256,0);
 
 	std::cout << "tx " << std::string('-',60) << std::endl;
 	tx->dump();
