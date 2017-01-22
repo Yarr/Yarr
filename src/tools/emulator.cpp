@@ -104,6 +104,9 @@ int handle_globalpulse(uint32_t chipid)
 		{
 			int dc = fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
 
+			DoubleColumnBitOps* bitReg[] = { &fe->En(dc), &fe->TDAC(dc)[0], &fe->TDAC(dc)[1], &fe->TDAC(dc)[2], &fe->TDAC(dc)[3], &fe->TDAC(dc)[4], &fe->LCap(dc), &fe->SCap(dc), &fe->SCap(dc), &fe->Hitbus(dc), &fe->FDAC(dc)[0], &fe->FDAC(dc)[1], &fe->FDAC(dc)[2], &fe->FDAC(dc)[3] };
+
+
 			// loop through the 13 double column bits
 			for (int i = 0; i < 13; i++)
 			{
@@ -111,52 +114,7 @@ int handle_globalpulse(uint32_t chipid)
 				if (fe->getValue(&Fei4::Pixel_latch_strobe) & (unsigned) pow(2, i))
 				{
 					didSomething = 1;
-
-					switch (i)
-					{
-						case 0:
-							memcpy(&shift_register_buffer[0][dc], fe->En(dc).getStream(), 84);
-							break;
-						case 1:
-							memcpy(&shift_register_buffer[0][dc], fe->TDAC(dc)[0].getStream(), 84);
-							break;
-						case 2:
-							memcpy(&shift_register_buffer[0][dc], fe->TDAC(dc)[1].getStream(), 84);
-							break;
-						case 3:
-							memcpy(&shift_register_buffer[0][dc], fe->TDAC(dc)[2].getStream(), 84);
-							break;
-						case 4:
-							memcpy(&shift_register_buffer[0][dc], fe->TDAC(dc)[3].getStream(), 84);
-							break;
-						case 5:
-							memcpy(&shift_register_buffer[0][dc], fe->TDAC(dc)[4].getStream(), 84);
-							break;
-						case 6:
-							memcpy(&shift_register_buffer[0][dc], fe->LCap(dc).getStream(), 84);
-							break;
-						case 7:
-							memcpy(&shift_register_buffer[0][dc], fe->SCap(dc).getStream(), 84);
-							break;
-						case 8:
-							memcpy(&shift_register_buffer[0][dc], fe->Hitbus(dc).getStream(), 84);
-							break;
-						case 9:
-							memcpy(&shift_register_buffer[0][dc], fe->FDAC(dc)[0].getStream(), 84);
-							break;
-						case 10:
-							memcpy(&shift_register_buffer[0][dc], fe->FDAC(dc)[1].getStream(), 84);
-							break;
-						case 11:
-							memcpy(&shift_register_buffer[0][dc], fe->FDAC(dc)[2].getStream(), 84);
-							break;
-						case 12:
-							memcpy(&shift_register_buffer[0][dc], fe->FDAC(dc)[3].getStream(), 84);
-							break;
-						default:
-							printf("why am I trying to write to pixel register %d?\n", i);
-							break;
-					}
+					memcpy(&shift_register_buffer[0][dc], bitReg[i]->getStream(), 84);
 				}
 			}
 		}
@@ -188,59 +146,16 @@ int handle_globalpulse(uint32_t chipid)
 		{
 			int dc = fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
 
+			DoubleColumnBitOps* bitReg[] = { &fe->En(dc), &fe->TDAC(dc)[0], &fe->TDAC(dc)[1], &fe->TDAC(dc)[2], &fe->TDAC(dc)[3], &fe->TDAC(dc)[4], &fe->LCap(dc), &fe->SCap(dc), &fe->SCap(dc), &fe->Hitbus(dc), &fe->FDAC(dc)[0], &fe->FDAC(dc)[1], &fe->FDAC(dc)[2], &fe->FDAC(dc)[3] };
+
 			// loop through the 13 double column bits
 			for (int i = 0; i < 13; i++)
 			{
 				// if a double column bit is 1, write the contents of the Shift Register to the corresponding pixel register
 				if (fe->getValue(&Fei4::Pixel_latch_strobe) & (unsigned) pow(2, i))
 				{
+					bitReg[i]->set(&shift_register_buffer[0][dc]);
 					didSomething = 1;
-
-					switch (i)
-					{
-						case 0:
-							fe->En(dc).set(&shift_register_buffer[0][dc]);
-							break;
-						case 1:
-							fe->TDAC(dc)[0].set(&shift_register_buffer[0][dc]);
-							break;
-						case 2:
-							fe->TDAC(dc)[1].set(&shift_register_buffer[0][dc]);
-							break;
-						case 3:
-							fe->TDAC(dc)[2].set(&shift_register_buffer[0][dc]);
-							break;
-						case 4:
-							fe->TDAC(dc)[3].set(&shift_register_buffer[0][dc]);
-							break;
-						case 5:
-							fe->TDAC(dc)[4].set(&shift_register_buffer[0][dc]);
-							break;
-						case 6:
-							fe->LCap(dc).set(&shift_register_buffer[0][dc]);
-							break;
-						case 7:
-							fe->SCap(dc).set(&shift_register_buffer[0][dc]);
-							break;
-						case 8:
-							fe->Hitbus(dc).set(&shift_register_buffer[0][dc]);
-							break;
-						case 9:
-							fe->FDAC(dc)[0].set(&shift_register_buffer[0][dc]);
-							break;
-						case 10:
-							fe->FDAC(dc)[1].set(&shift_register_buffer[0][dc]);
-							break;
-						case 11:
-							fe->FDAC(dc)[2].set(&shift_register_buffer[0][dc]);
-							break;
-						case 12:
-							fe->FDAC(dc)[3].set(&shift_register_buffer[0][dc]);
-							break;
-						default:
-							printf("why am I trying to write to pixel register %d?\n", i);
-							break;
-					}
 				}
 			}
 		}
