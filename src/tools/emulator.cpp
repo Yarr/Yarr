@@ -264,11 +264,11 @@ int handle_trigger()
 			if (fe->getEn(dc * 2 + 1, row))
 			{
 //if (dc * 2 + 1 == 1) printf("LOL\n");
-				g_feEmu.addDataRecord(dc * 2 + 1, row, 10, 15);
+				g_feEmu.addHit(dc * 2 + 1, row, 10, 0);
 			}
 			if (fe->getEn(dc * 2 + 1 + 1, row))
 			{
-				g_feEmu.addDataRecord(dc * 2 + 1 + 1, row, 10, 15);
+				g_feEmu.addHit(dc * 2 + 1 + 1, row, 10, 0);
 			}
 		}
 	}
