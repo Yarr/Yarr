@@ -49,7 +49,13 @@ struct Fei4Emu {
   }
   std::shared_ptr<EmuShm> m_rxShMem;
 
+  /// Adds hit to output
+  /// @tot1, @tot2: expressed in "real" terms (connected to ToT code later)
+  void addHit(uint16_t col, uint16_t row, uint8_t tot1, uint8_t tot2);
+
 //private:
+
+  uint8_t getToTCode(uint8_t dec_tot);
 
   void addServiceRecord(bool isInfoSR);
   void startFrame();
