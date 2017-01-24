@@ -8,6 +8,19 @@
 
 #include <cstdint>
 
+// this is temporary!!!
+typedef struct {
+	float Vthin_mean;
+	float Vthin_sigma;
+	float Vthin_gauss;
+	float TDACVbp_mean;
+	float TDACVbp_sigma;
+	float TDACVbp_gauss;
+	float noise_sigma_mean;
+	float noise_sigma_sigma;
+	float noise_sigma_gauss;
+} PixelModeling;
+
 class Fei4Emu {
 	public:
 		Fei4Emu();
@@ -30,6 +43,10 @@ class Fei4Emu {
 		uint8_t getToTCode(uint8_t dec_tot);
 		void pushOutput(uint32_t value);
 
+		// functions for modeling pixel responses
+		float calculateThreshold(int col, int row);
+		uint32_t calculateToT(float charge);
+
 		EmuShm *m_txShm;
 		EmuShm *m_rxShm;
 		Fei4 *m_fe;
@@ -37,13 +54,13 @@ class Fei4Emu {
 		uint32_t m_modeBits;
 		uint32_t m_shiftRegisterBuffer[21][40];
 
+		// these are not quite used - they are just set to 0
 		uint8_t m_feId;
 		uint32_t m_l1IdCnt;
 		uint32_t m_bcIdCnt;
 
-		// functions for modeling pixel responses
-		float calculateThreshold(uint32_t Vthin_Fine, uint32_t Vthin_Coarse, uint32_t TDACVbp, uint32_t TDAC);
-		uint32_t calculateToT(float charge);
+		// this is temporary!!!
+		PixelModeling m_pixelModels[80][336];
 };
 
 #endif //__FEI4_EMU_H__

@@ -1,5 +1,37 @@
 #include "Fei4Emu.h"
 
+// should use a better function than this (box muller method - stolen from the internet)
+double rand_normal(double mean, double sigma)
+{
+	static double n2 = 0.0;
+	static int n2_cached = 0;
+	if (!n2_cached)
+	{
+		double x, y, r;
+		do
+	        {
+			x = 2.0 * rand() / RAND_MAX - 1;
+			y = 2.0 * rand() / RAND_MAX - 1;
+
+			r = x * x + y * y;
+		}
+		while (r == 0.0 || r > 1.0);
+		{
+			double d = sqrt(-2.0 * log(r) / r);
+			double n1 = x * d;
+			n2 = y * d;
+			double result = n1 * sigma + mean;
+			n2_cached = 1;
+			return result;
+		}
+	}
+	else
+	{
+		n2_cached = 0;
+		return n2 * sigma + mean;
+	}
+}
+
 Fei4Emu::Fei4Emu()
 {
 	m_feId = 0x00;
@@ -9,6 +41,25 @@ Fei4Emu::Fei4Emu()
 	m_fe = new Fei4(NULL, 0);
 	m_txShm = new EmuShm(1337, 256, 0);
 	m_rxShm = new EmuShm(1338, 256, 0);
+
+	// initialize the pixel models
+	for (unsigned col = 1; col <= m_fe->n_Col; col++)
+	{
+		for (unsigned row = 1; row <= m_fe->n_Row; row++)
+		{
+			m_pixelModels[col - 1][row - 1].Vthin_mean = 100;
+			m_pixelModels[col - 1][row - 1].Vthin_sigma = 10;
+			m_pixelModels[col - 1][row - 1].Vthin_gauss = rand_normal(m_pixelModels[col - 1][row - 1].Vthin_mean, m_pixelModels[col - 1][row - 1].Vthin_sigma);
+
+			m_pixelModels[col - 1][row - 1].TDACVbp_mean = 10;
+			m_pixelModels[col - 1][row - 1].TDACVbp_sigma = 10;
+			m_pixelModels[col - 1][row - 1].TDACVbp_gauss = rand_normal(m_pixelModels[col - 1][row - 1].TDACVbp_mean, m_pixelModels[col - 1][row - 1].TDACVbp_sigma);
+
+			m_pixelModels[col - 1][row - 1].noise_sigma_mean = 40;
+			m_pixelModels[col - 1][row - 1].noise_sigma_sigma = 10;
+			m_pixelModels[col - 1][row - 1].noise_sigma_gauss = rand_normal(m_pixelModels[col - 1][row - 1].noise_sigma_mean, m_pixelModels[col - 1][row - 1].noise_sigma_sigma);
+		}
+	}
 }
 
 Fei4Emu::~Fei4Emu()
@@ -80,7 +131,7 @@ void Fei4Emu::executeLoop()
 			case 0:
 				break;
 			default:
-				printf("Software Emulator: ERROR - unknown type recieved, %x\n", type);
+				fprintf(stderr, "ERROR - unknown type recieved, %x\n", type);
 				break;
 		}
 
@@ -88,14 +139,12 @@ void Fei4Emu::executeLoop()
 
 }
 
+// functions for handling the recieved commands
 void Fei4Emu::handleGlobalPulse(uint32_t chipid)
 {
-	int didSomething = 0;
-
 	// ignore if we get a ReadErrorReq
 	if (m_fe->getValue(&Fei4::ReadErrorReq) == 1)
 	{
-		didSomething = 1;
 	}
 
 	// eventually, I should change the FE that I use based on the chipid
@@ -103,10 +152,8 @@ void Fei4Emu::handleGlobalPulse(uint32_t chipid)
 	// check if I need to shift the Shift Register by one
 	if (m_fe->getValue(&Fei4::S0) == 0 && m_fe->getValue(&Fei4::S1) == 0 && m_fe->getValue(&Fei4::HitLD) == 0 && m_fe->getValue(&Fei4::SR_Clock) == 1)
 	{
-		didSomething = 1;
-
 		// use Fei4::Colpr_Mode to determine which dc to loop over
-		int dc_step = 40;
+		unsigned dc_step = 40;
 		switch (m_fe->getValue(&Fei4::Colpr_Mode))
 		{
 			case 0:
@@ -124,9 +171,9 @@ void Fei4Emu::handleGlobalPulse(uint32_t chipid)
 		}
 
 		// loop through the 40 double columns
-		for (int i = 0; i < 40 / dc_step; i++)
+		for (unsigned i = 0; i < 40 / dc_step; i++)
 		{
-			int dc = m_fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
+			unsigned dc = m_fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
 
 			// use these to deal with overflow bits
 			uint32_t current_last_bit = 0;
@@ -147,7 +194,7 @@ void Fei4Emu::handleGlobalPulse(uint32_t chipid)
 	if (m_fe->getValue(&Fei4::S0) == 1 && m_fe->getValue(&Fei4::S1) == 1 && m_fe->getValue(&Fei4::HitLD) == 0 && m_fe->getValue(&Fei4::SR_Clock) == 1)
 	{
 		// use Fei4::Colpr_Mode to determine which dc to loop over
-		int dc_step = 40;
+		unsigned dc_step = 40;
 		switch (m_fe->getValue(&Fei4::Colpr_Mode))
 		{
 			case 0:
@@ -165,21 +212,19 @@ void Fei4Emu::handleGlobalPulse(uint32_t chipid)
 		}
 
 		// loop through the 40 double columns
-		for (int i = 0; i < 40 / dc_step; i++)
+		for (unsigned i = 0; i < 40 / dc_step; i++)
 		{
-			int dc = m_fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
+			unsigned dc = m_fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
 
 			DoubleColumnBitOps* bitReg[] = { &m_fe->En(dc), &m_fe->TDAC(dc)[0], &m_fe->TDAC(dc)[1], &m_fe->TDAC(dc)[2], &m_fe->TDAC(dc)[3], &m_fe->TDAC(dc)[4], &m_fe->LCap(dc), &m_fe->SCap(dc), &m_fe->SCap(dc), &m_fe->Hitbus(dc), &m_fe->FDAC(dc)[0], &m_fe->FDAC(dc)[1], &m_fe->FDAC(dc)[2], &m_fe->FDAC(dc)[3] };
 
-
 			// loop through the 13 double column bits
-			for (int i = 0; i < 13; i++)
+			for (int j = 0; j < 13; j++)
 			{
 				// if a double column bit is 1, write the contents of the corresponding pixel register to the Shift Register
-				if (m_fe->getValue(&Fei4::Pixel_latch_strobe) & (unsigned) pow(2, i))
+				if (m_fe->getValue(&Fei4::Pixel_latch_strobe) & (unsigned) pow(2, j))
 				{
-					didSomething = 1;
-					memcpy(&m_shiftRegisterBuffer[0][dc], bitReg[i]->getStream(), 84);
+					memcpy(&m_shiftRegisterBuffer[0][dc], bitReg[j]->getStream(), 84);
 				}
 			}
 		}
@@ -189,7 +234,7 @@ void Fei4Emu::handleGlobalPulse(uint32_t chipid)
 	if (m_fe->getValue(&Fei4::S0) == 0 && m_fe->getValue(&Fei4::S1) == 0 && m_fe->getValue(&Fei4::HitLD) == 0 && m_fe->getValue(&Fei4::Latch_Enable) == 1)
 	{
 		// use Fei4::Colpr_Mode to determine which dc to loop over
-		int dc_step = 40;
+		unsigned dc_step = 40;
 		switch (m_fe->getValue(&Fei4::Colpr_Mode))
 		{
 			case 0:
@@ -207,36 +252,22 @@ void Fei4Emu::handleGlobalPulse(uint32_t chipid)
 		}
 
 		// loop through the 40 double columns
-		for (int i = 0; i < 40 / dc_step; i++)
+		for (unsigned i = 0; i < 40 / dc_step; i++)
 		{
-			int dc = m_fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
+			unsigned dc = m_fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
 
 			DoubleColumnBitOps* bitReg[] = { &m_fe->En(dc), &m_fe->TDAC(dc)[0], &m_fe->TDAC(dc)[1], &m_fe->TDAC(dc)[2], &m_fe->TDAC(dc)[3], &m_fe->TDAC(dc)[4], &m_fe->LCap(dc), &m_fe->SCap(dc), &m_fe->SCap(dc), &m_fe->Hitbus(dc), &m_fe->FDAC(dc)[0], &m_fe->FDAC(dc)[1], &m_fe->FDAC(dc)[2], &m_fe->FDAC(dc)[3] };
 
 			// loop through the 13 double column bits
-			for (int i = 0; i < 13; i++)
+			for (int j = 0; j < 13; j++)
 			{
 				// if a double column bit is 1, write the contents of the Shift Register to the corresponding pixel register
-				if (m_fe->getValue(&Fei4::Pixel_latch_strobe) & (unsigned) pow(2, i))
+				if (m_fe->getValue(&Fei4::Pixel_latch_strobe) & (unsigned) pow(2, j))
 				{
-					bitReg[i]->set(&m_shiftRegisterBuffer[0][dc]);
-					didSomething = 1;
+					bitReg[j]->set(&m_shiftRegisterBuffer[0][dc]);
 				}
 			}
 		}
-	}
-
-	if (!didSomething)
-	{
-		// print some info about the state of the global register
-		printf("did not do anything\t");
-		printf("Fei4::S0 = %x\t", m_fe->getValue(&Fei4::S0));
-		printf("Fei4::S1 = %x\t", m_fe->getValue(&Fei4::S1));
-		printf("Fei4::HitLD = %x\t", m_fe->getValue(&Fei4::HitLD));
-		printf("Fei4::Colpr_Mode = %x\t", m_fe->getValue(&Fei4::Colpr_Mode));
-		printf("Fei4::SR_Clock = %x\t", m_fe->getValue(&Fei4::SR_Clock));
-		printf("Fei4::Latch_Enable = %x\t", m_fe->getValue(&Fei4::Latch_Enable));
-		printf("Fei4::Pixel_latch_strobe = %x\n", m_fe->getValue(&Fei4::Pixel_latch_strobe));
 	}
 }
 
@@ -256,8 +287,9 @@ void Fei4Emu::handleWrRegister(uint32_t chipid, uint32_t address, uint32_t value
 
 void Fei4Emu::handleWrFrontEnd(uint32_t chipid, uint32_t bitstream[21])
 {
-	// write the bitstream to our Shift Register buffer (eventually, I should have one of these for every FE, and maybe every dc)
-	int dc_step = 40;
+	// write the bitstream to our Shift Register buffer (eventually should take into consideration chipid)
+	// use Fei4::Colpr_Mode to determine which dc to loop over
+	unsigned dc_step = 40;
 	switch (m_fe->getValue(&Fei4::Colpr_Mode))
 	{
 		case 0:
@@ -275,19 +307,19 @@ void Fei4Emu::handleWrFrontEnd(uint32_t chipid, uint32_t bitstream[21])
 	}
 
 	// loop through the 40 double columns
-	for (int i = 0; i < 40 / dc_step; i++)
+	for (unsigned i = 0; i < 40 / dc_step; i++)
 	{
-		int dc = m_fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
+		unsigned dc = m_fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
 		memcpy(&m_shiftRegisterBuffer[0][dc], &bitstream[0], 84);
 	}
 }
 
 void Fei4Emu::handleTrigger()
 {
-	this->addDataHeader(false); // No Error flags
+	this->addDataHeader(false);	// no error flags
 
 	// use Fei4::Colpr_Mode to determine which dc to loop over
-	int dc_step = 40;
+	unsigned dc_step = 40;
 	switch (m_fe->getValue(&Fei4::Colpr_Mode))
 	{
 		case 0:
@@ -305,9 +337,9 @@ void Fei4Emu::handleTrigger()
 	}
 
 	// loop through the 40 double columns
-	for (int i = 0; i < 40 / dc_step; i++)
+	for (unsigned i = 0; i < 40 / dc_step; i++)
 	{
-		int dc = m_fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
+		unsigned dc = m_fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
 
 		for (unsigned row = 1; row <= m_fe->n_Row; row++)
 		{
@@ -315,21 +347,37 @@ void Fei4Emu::handleTrigger()
 			{
 				if (m_fe->getEn(dc * 2 + 1 + c, row))
 				{
-					// the injection charge is well defined
-					float injection_charge = m_fe->toCharge(m_fe->getValue(&Fei4::PlsrDAC), m_fe->getSCap(dc * 2 + 1 + c, row), m_fe->getLCap(dc * 2 + 1 + c, row));
-//					printf("injection_charge = %f\n", injection_charge);
+					float injection_charge = m_fe->toCharge(m_fe->getValue(&Fei4::PlsrDAC), m_fe->getSCap(dc * 2 + 1 + c, row), m_fe->getLCap(dc * 2 + 1 + c, row));	// the injection charge is well defined
+					float threshold_charge = calculateThreshold(dc * 2 + 1 + c, row);											// the threshold charge requires quite some modeling
+					float noise_charge = rand_normal(0, m_pixelModels[dc * 2 + 1 + c - 1][row - 1].noise_sigma_gauss);							// the noise charge requires simple modeling
 
-					// the threshold charge requires quite some modeling
-					float threshold_charge = calculateThreshold(m_fe->getValue(&Fei4::Vthin_Fine), m_fe->getValue(&Fei4::Vthin_Coarse), m_fe->getValue(&Fei4::TDACVbp), m_fe->getTDAC(dc * 2 + c + 1, row));
-//					printf("threshold_charge = %f\n", threshold_charge);
+					uint32_t digital_tot = 0;
+					uint32_t analog_tot = 0;
 
-					if (injection_charge > threshold_charge)
+					// check if we are doing a digital hit
+					if (m_fe->getValue(&Fei4::DigHitIn_Sel))
 					{
-						this->addHit(dc * 2 + 1 + c, row, this->calculateToT(injection_charge - threshold_charge), 0);
+						digital_tot = 10;
 					}
-					else if (m_fe->getValue(&Fei4::DigHitIn_Sel))
+
+					// check if we are doing an analog hit
+					if (injection_charge + noise_charge > threshold_charge)
 					{
-						this->addHit(dc * 2 + 1 + c, row, 10, 0);
+						analog_tot = this->calculateToT(injection_charge + noise_charge - threshold_charge);
+					}
+
+					if (digital_tot && analog_tot)
+					{
+						fprintf(stderr, "ERROR - doing both a digital and an analog hit, this should not happen!\n");
+					}
+
+					if (digital_tot >= analog_tot)
+					{
+						this->addHit(dc * 2 + 1 + c, row, digital_tot, 0);
+					}
+					if (analog_tot > digital_tot)
+					{
+						this->addHit(dc * 2 + 1 + c, row, analog_tot, 0);
 					}
 				}
 			}
@@ -337,6 +385,7 @@ void Fei4Emu::handleTrigger()
 	}
 }
 
+// functions for dealing with sending data to yarr
 void Fei4Emu::addDataHeader(bool hasErrorFlags)
 {
 	pushOutput( (m_feId << 24) | (0xe9 << 16) | (((uint32_t) hasErrorFlags) << 15) | ((m_l1IdCnt & 0x1F) << 10) | (m_bcIdCnt & 0x3FF) );
@@ -376,56 +425,22 @@ void Fei4Emu::pushOutput(uint32_t value)
 	}
 }
 
-double rand_normal(double mean, double stddev)
-{//Box muller method
-    static double n2 = 0.0;
-    static int n2_cached = 0;
-    if (!n2_cached)
-    {
-        double x, y, r;
-        do
-        {
-            x = 2.0*rand()/RAND_MAX - 1;
-            y = 2.0*rand()/RAND_MAX - 1;
-
-            r = x*x + y*y;
-        }
-        while (r == 0.0 || r > 1.0);
-        {
-            double d = sqrt(-2.0*log(r)/r);
-            double n1 = x*d;
-            n2 = y*d;
-            double result = n1*stddev + mean;
-            n2_cached = 1;
-            return result;
-        }
-    }
-    else
-    {
-        n2_cached = 0;
-        return n2*stddev + mean;
-    }
-}
-
-float Fei4Emu::calculateThreshold(uint32_t Vthin_Fine, uint32_t Vthin_Coarse, uint32_t TDACVbp, uint32_t TDAC)
+// functions for modeling pixel responses
+float Fei4Emu::calculateThreshold(int col, int row)
 {
-	// these will need to become members of a pixel class, and used to seed a Gaussian
-	float base_Vthin = 100;
-	float stddev_Vthin = 100;
-	float gauss_Vthin = rand_normal(base_Vthin, stddev_Vthin);
+	float modelVthin = m_pixelModels[col - 1][row - 1].Vthin_gauss * m_fe->getValue(&Fei4::Vthin_Fine) + m_pixelModels[col][row - 1].Vthin_gauss * m_fe->getValue(&Fei4::Vthin_Coarse) * 128;
+	float modelTDAC = m_pixelModels[col - 1][row - 1].TDACVbp_gauss * m_fe->getValue(&Fei4::TDACVbp) * (m_fe->getTDAC(col, row) - 15);
 
-	float base_TDACVbp = 10;
-	float stddev_TDACVbp = 10;
-	float gauss_TDACVbp = rand_normal(base_TDACVbp, stddev_TDACVbp);
+	float threshold = (modelVthin + modelTDAC) / 10.0;	// the divide by 10 gives nicer numbers...
+	if (threshold < 0)
+	{
+		threshold = 0;
+	}
 
-	// these will need to become their own functions
-	float modelVthin = gauss_Vthin * Vthin_Fine + gauss_Vthin * Vthin_Coarse * 128;
-	float modelTDAC = gauss_TDACVbp * TDACVbp * (TDAC - 15);
-
-	return (modelVthin + modelTDAC) / 10.0; // the divide by 10 gives nicer numbers...
+	return threshold;
 }
 
 uint32_t Fei4Emu::calculateToT(float charge)
 {
-	return (uint32_t) (charge * 10.0 / 16000.0); // this should eventually probably be modeled with a gaussian as well?
+	return (uint32_t) (charge * 10.0 / 16000.0); // this should eventually change to intersect at (charge = threshold, tot = 1), and the coefficient should become a member variable or something
 }
