@@ -89,6 +89,8 @@ architecture rtl of wb_trigger_logic is
         );
     end component;
 
+    signal C_DEADTIME : integer := 300; -- clk_i cycles
+    
     -- Registers
     signal trig_mask : std_logic_vector(31 downto 0);
     signal trig_tag_mode : std_logic_vector(7 downto 0);
@@ -108,7 +110,9 @@ architecture rtl of wb_trigger_logic is
     signal trig_counter : unsigned (31 downto 0);
     signal timestamp_cnt : unsigned(31 downto 0);
     signal local_reset : std_logic;
-    
+    signal deadtime_cnt : unsigned(15 downto 0);
+    signal busy_t : std_logic;
+
 begin
     -- WB interface
     wb_proc: process(wb_clk_i, rst_n_i)
@@ -153,7 +157,7 @@ begin
     end generate trig_inputs;
     cmp_sync_busy: synchronizer port map(clk_i => clk_i, rst_n_i => rst_n_i, async_in => ext_busy_i, sync_out => sync_ext_busy_i);
     
-    master_busy_t <= sync_ext_busy_i or int_busy_i;
+    master_busy_t <= sync_ext_busy_i or int_busy_i or busy_t;
 
     -- Apply trigger mask to inputs
     master_trig_t <= (sync_ext_trig_i(0) and trig_mask(0))
@@ -232,10 +236,25 @@ begin
             ext_trig_o <= '0';
             ext_busy_o <= '0';
             int_trig_o <= '0';
+            deadtime_cnt <= (others => '0');
+            busy_t <= '0';
         elsif rising_edge(clk_i) then
             if (master_busy_t = '0') then
                 ext_trig_o <= master_trig_sel_edge;
                 int_trig_o <= master_trig_sel_edge;
+                ext_busy_o <= '0';
+            else
+                ext_busy_o <= '1';
+            end if;
+
+            if (master_trig_sel_edge = '1') then
+                deadtime_cnt <= TO_UNSIGNED(C_DEADTIME, 16);
+            end if;
+            if (deadtime_cnt > 0) then
+                deadtime_cnt <= deadtime_cnt - 1;
+                busy_t <= '1';
+            else
+                busy_t <= '0';
             end if;
         end if;
     end process out_proc;
