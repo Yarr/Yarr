@@ -311,13 +311,27 @@ void Fei4Emu::handleTrigger()
 
 		for (unsigned row = 1; row <= m_fe->n_Row; row++)
 		{
-			if (m_fe->getEn(dc * 2 + 1, row))
+			for (int c = 0; c <= 1; c++)
 			{
-				this->addHit(dc * 2 + 1, row, 10, 0);
-			}
-			if (m_fe->getEn(dc * 2 + 1 + 1, row))
-			{
-				this->addHit(dc * 2 + 1 + 1, row, 10, 0);
+				if (m_fe->getEn(dc * 2 + 1 + c, row))
+				{
+					// the injection charge is well defined
+					float injection_charge = m_fe->toCharge(m_fe->getValue(&Fei4::PlsrDAC), m_fe->getSCap(dc * 2 + 1 + c, row), m_fe->getLCap(dc * 2 + 1 + c, row));
+//					printf("injection_charge = %f\n", injection_charge);
+
+					// the threshold charge requires quite some modeling
+					float threshold_charge = calculateThreshold(m_fe->getValue(&Fei4::Vthin_Fine), m_fe->getValue(&Fei4::Vthin_Coarse), m_fe->getValue(&Fei4::TDACVbp), m_fe->getTDAC(dc * 2 + c + 1, row));
+//					printf("threshold_charge = %f\n", threshold_charge);
+
+					if (injection_charge > threshold_charge)
+					{
+						this->addHit(dc * 2 + 1 + c, row, this->calculateToT(injection_charge - threshold_charge), 0);
+					}
+					else if (m_fe->getValue(&Fei4::DigHitIn_Sel))
+					{
+						this->addHit(dc * 2 + 1 + c, row, 10, 0);
+					}
+				}
 			}
 		}
 	}
@@ -360,4 +374,58 @@ void Fei4Emu::pushOutput(uint32_t value)
 	{
 		m_rxShm->write32(value);
 	}
+}
+
+double rand_normal(double mean, double stddev)
+{//Box muller method
+    static double n2 = 0.0;
+    static int n2_cached = 0;
+    if (!n2_cached)
+    {
+        double x, y, r;
+        do
+        {
+            x = 2.0*rand()/RAND_MAX - 1;
+            y = 2.0*rand()/RAND_MAX - 1;
+
+            r = x*x + y*y;
+        }
+        while (r == 0.0 || r > 1.0);
+        {
+            double d = sqrt(-2.0*log(r)/r);
+            double n1 = x*d;
+            n2 = y*d;
+            double result = n1*stddev + mean;
+            n2_cached = 1;
+            return result;
+        }
+    }
+    else
+    {
+        n2_cached = 0;
+        return n2*stddev + mean;
+    }
+}
+
+float Fei4Emu::calculateThreshold(uint32_t Vthin_Fine, uint32_t Vthin_Coarse, uint32_t TDACVbp, uint32_t TDAC)
+{
+	// these will need to become members of a pixel class, and used to seed a Gaussian
+	float base_Vthin = 100;
+	float stddev_Vthin = 100;
+	float gauss_Vthin = rand_normal(base_Vthin, stddev_Vthin);
+
+	float base_TDACVbp = 10;
+	float stddev_TDACVbp = 10;
+	float gauss_TDACVbp = rand_normal(base_TDACVbp, stddev_TDACVbp);
+
+	// these will need to become their own functions
+	float modelVthin = gauss_Vthin * Vthin_Fine + gauss_Vthin * Vthin_Coarse * 128;
+	float modelTDAC = gauss_TDACVbp * TDACVbp * (TDAC - 15);
+
+	return (modelVthin + modelTDAC) / 10.0; // the divide by 10 gives nicer numbers...
+}
+
+uint32_t Fei4Emu::calculateToT(float charge)
+{
+	return (uint32_t) (charge * 10.0 / 16000.0); // this should eventually probably be modeled with a gaussian as well?
 }

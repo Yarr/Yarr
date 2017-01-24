@@ -40,6 +40,10 @@ class Fei4Emu {
 		uint8_t m_feId;
 		uint32_t m_l1IdCnt;
 		uint32_t m_bcIdCnt;
+
+		// functions for modeling pixel responses
+		float calculateThreshold(uint32_t Vthin_Fine, uint32_t Vthin_Coarse, uint32_t TDACVbp, uint32_t TDAC);
+		uint32_t calculateToT(float charge);
 };
 
 #endif //__FEI4_EMU_H__
