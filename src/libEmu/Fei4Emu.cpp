@@ -42,6 +42,48 @@ Fei4Emu::Fei4Emu()
 	m_txShm = new EmuShm(1337, 256, 0);
 	m_rxShm = new EmuShm(1338, 256, 0);
 
+	this->initializePixelModels();
+}
+
+Fei4Emu::Fei4Emu(std::string output_model_cfg)
+{
+	m_feId = 0x00;
+	m_l1IdCnt = 0x00;
+	m_bcIdCnt = 0x00;
+
+	m_fe = new Fei4(NULL, 0);
+	m_txShm = new EmuShm(1337, 256, 0);
+	m_rxShm = new EmuShm(1338, 256, 0);
+
+	this->initializePixelModels();
+
+	m_output_model_cfg = output_model_cfg;
+}
+
+Fei4Emu::Fei4Emu(std::string output_model_cfg, std::string input_model_cfg)
+{
+	m_feId = 0x00;
+	m_l1IdCnt = 0x00;
+	m_bcIdCnt = 0x00;
+
+	m_fe = new Fei4(NULL, 0);
+	m_txShm = new EmuShm(1337, 256, 0);
+	m_rxShm = new EmuShm(1338, 256, 0);
+
+	this->initializePixelModelsFromFile(input_model_cfg);
+
+	m_output_model_cfg = output_model_cfg;
+}
+
+Fei4Emu::~Fei4Emu()
+{
+	delete m_fe;
+	delete m_txShm;
+	delete m_rxShm;
+}
+
+void Fei4Emu::initializePixelModels()
+{
 	// initialize the pixel models
 	for (unsigned col = 1; col <= m_fe->n_Col; col++)
 	{
@@ -62,11 +104,89 @@ Fei4Emu::Fei4Emu()
 	}
 }
 
-Fei4Emu::~Fei4Emu()
+void Fei4Emu::initializePixelModelsFromFile(std::string json_file_path)
 {
-	delete m_fe;
-	delete m_txShm;
-	delete m_rxShm;
+	std::ifstream file(json_file_path);
+	nlohmann::json j;
+	j << file;
+
+	for (unsigned col = 1; col <= m_fe->n_Col; col++)
+	{
+		for (unsigned row = 1; row <= m_fe->n_Row; row++)
+		{
+			m_pixelModels[col - 1][row - 1].Vthin_mean = j["Vthin_mean_vector"][(col - 1) * m_fe->n_Row + (row - 1)];
+			m_pixelModels[col - 1][row - 1].Vthin_sigma = j["Vthin_sigma_vector"][(col - 1) * m_fe->n_Row + (row - 1)];
+			m_pixelModels[col - 1][row - 1].Vthin_gauss = j["Vthin_gauss_vector"][(col - 1) * m_fe->n_Row + (row - 1)];
+
+			m_pixelModels[col - 1][row - 1].TDACVbp_mean = j["TDACVbp_mean_vector"][(col - 1) * m_fe->n_Row + (row - 1)];
+			m_pixelModels[col - 1][row - 1].TDACVbp_sigma = j["TDACVbp_sigma_vector"][(col - 1) * m_fe->n_Row + (row - 1)];
+			m_pixelModels[col - 1][row - 1].TDACVbp_gauss = j["TDACVbp_gauss_vector"][(col - 1) * m_fe->n_Row + (row - 1)];
+
+			m_pixelModels[col - 1][row - 1].noise_sigma_mean = j["noise_sigma_mean_vector"][(col - 1) * m_fe->n_Row + (row - 1)];
+			m_pixelModels[col - 1][row - 1].noise_sigma_sigma = j["noise_sigma_sigma_vector"][(col - 1) * m_fe->n_Row + (row - 1)];
+			m_pixelModels[col - 1][row - 1].noise_sigma_gauss = j["noise_sigma_gauss_vector"][(col - 1) * m_fe->n_Row + (row - 1)];
+		}
+	}
+
+	file.close();
+}
+
+void Fei4Emu::writePixelModelsToFile()
+{
+	if (m_output_model_cfg.size() == 0)
+	{
+		fprintf(stderr, "ERROR - m_output_model_cfg was null, but the user requested to write out the pixel model configuration - this should not happen!\n");
+		return;
+	}
+
+        std::ofstream file(m_output_model_cfg);
+	nlohmann::json j;
+
+	std::vector<float> Vthin_mean_vector; Vthin_mean_vector.reserve(m_fe->n_Col * m_fe->n_Row);
+	std::vector<float> Vthin_sigma_vector; Vthin_sigma_vector.reserve(m_fe->n_Col * m_fe->n_Row);
+	std::vector<float> Vthin_gauss_vector; Vthin_gauss_vector.reserve(m_fe->n_Col * m_fe->n_Row);
+
+	std::vector<float> TDACVbp_mean_vector; TDACVbp_mean_vector.reserve(m_fe->n_Col * m_fe->n_Row);
+	std::vector<float> TDACVbp_sigma_vector; TDACVbp_sigma_vector.reserve(m_fe->n_Col * m_fe->n_Row);
+	std::vector<float> TDACVbp_gauss_vector; TDACVbp_gauss_vector.reserve(m_fe->n_Col * m_fe->n_Row);
+
+	std::vector<float> noise_sigma_mean_vector; noise_sigma_mean_vector.reserve(m_fe->n_Col * m_fe->n_Row);
+	std::vector<float> noise_sigma_sigma_vector; noise_sigma_sigma_vector.reserve(m_fe->n_Col * m_fe->n_Row);
+	std::vector<float> noise_sigma_gauss_vector; noise_sigma_gauss_vector.reserve(m_fe->n_Col * m_fe->n_Row);
+
+	for (unsigned col = 1; col <= m_fe->n_Col; col++)
+	{
+		for (unsigned row = 1; row <= m_fe->n_Row; row++)
+		{
+			Vthin_mean_vector.push_back(m_pixelModels[col - 1][row - 1].Vthin_mean);
+			Vthin_sigma_vector.push_back(m_pixelModels[col - 1][row - 1].Vthin_sigma);
+			Vthin_gauss_vector.push_back(m_pixelModels[col - 1][row - 1].Vthin_gauss);
+
+			TDACVbp_mean_vector.push_back(m_pixelModels[col - 1][row - 1].TDACVbp_mean);
+			TDACVbp_sigma_vector.push_back(m_pixelModels[col - 1][row - 1].TDACVbp_sigma);
+			TDACVbp_gauss_vector.push_back(m_pixelModels[col - 1][row - 1].TDACVbp_gauss);
+
+			noise_sigma_mean_vector.push_back(m_pixelModels[col - 1][row - 1].noise_sigma_mean);
+			noise_sigma_sigma_vector.push_back(m_pixelModels[col - 1][row - 1].noise_sigma_sigma);
+			noise_sigma_gauss_vector.push_back(m_pixelModels[col - 1][row - 1].noise_sigma_gauss);
+		}
+	}
+
+	j["Vthin_mean_vector"] = Vthin_mean_vector;
+	j["Vthin_sigma_vector"] = Vthin_sigma_vector;
+	j["Vthin_gauss_vector"] = Vthin_gauss_vector;
+
+	j["TDACVbp_mean_vector"] = TDACVbp_mean_vector;
+	j["TDACVbp_sigma_vector"] = TDACVbp_sigma_vector;
+	j["TDACVbp_gauss_vector"] = TDACVbp_gauss_vector;
+
+	j["noise_sigma_mean_vector"] = noise_sigma_mean_vector;
+	j["noise_sigma_sigma_vector"] = noise_sigma_sigma_vector;
+	j["noise_sigma_gauss_vector"] = noise_sigma_gauss_vector;
+
+	file << j;
+
+	file.close();
 }
 
 void Fei4Emu::executeLoop()
