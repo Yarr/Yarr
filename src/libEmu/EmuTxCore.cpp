@@ -40,6 +40,7 @@ void EmuTxCore::doTrigger() {
     for(unsigned i=0; i<m_trigCnt; i++) {
         m_com->write32(0x1D000000 + i);
     }
+    m_com->write32(0x0);
     while(!m_com->isEmpty());
     trigProcRunning = false;
 }

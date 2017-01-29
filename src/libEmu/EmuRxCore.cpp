@@ -26,7 +26,7 @@ EmuRxCore::EmuRxCore(EmuCom *com) {
 EmuRxCore::~EmuRxCore() {}
 
 RawData* EmuRxCore::readData() {
-    std::this_thread::sleep_for(std::chrono::microseconds(10));
+    //std::this_thread::sleep_for(std::chrono::microseconds(1));
     uint32_t words = this->getCurCount()/sizeof(uint32_t);
     if (words > 0) {
         uint32_t *buf = new uint32_t[words];
