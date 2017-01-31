@@ -19,8 +19,10 @@
 
 class EmuShm : public EmuCom {
 	public:
-		EmuShm(key_t key, uint32_t size, bool create);
+		EmuShm(key_t key, uint32_t size, bool _create);
 		virtual ~EmuShm();
+
+		bool create;
 
 		// variables for dealing with shm
 		uint32_t shm_size;	// in bytes

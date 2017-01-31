@@ -5,6 +5,7 @@
 
 #include "Fei4.h"
 #include "EmuShm.h"
+#include "json.hpp"
 
 #include <cstdint>
 
@@ -24,7 +25,17 @@ typedef struct {
 class Fei4Emu {
 	public:
 		Fei4Emu();
+		Fei4Emu(std::string output_model_cfg);
+		Fei4Emu(std::string output_model_cfg, std::string input_model_cfg);
 		~Fei4Emu();
+
+		void initializePixelModels();
+
+		// input pixel model configuration from a json file
+		void initializePixelModelsFromFile(std::string jsonFile);
+
+		// output pixel model configuration to a json file
+		void writePixelModelsToFile();
 
 		// the main loop which recieves commands from yarr
 		void executeLoop();
@@ -52,7 +63,7 @@ class Fei4Emu {
 		Fei4 *m_fe;
 
 		uint32_t m_modeBits;
-		uint32_t m_shiftRegisterBuffer[21][40];
+		uint32_t m_shiftRegisterBuffer[40][21];
 
 		// these are not quite used - they are just set to 0
 		uint8_t m_feId;
@@ -61,6 +72,9 @@ class Fei4Emu {
 
 		// this is temporary!!!
 		PixelModeling m_pixelModels[80][336];
+
+		// this is the file path to output the pixel model configuration
+		std::string m_output_model_cfg;
 };
 
 #endif //__FEI4_EMU_H__
