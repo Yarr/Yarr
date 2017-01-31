@@ -1,7 +1,7 @@
 #include "Fei4Emu.h"
 
 // should use a better function than this (box muller method - stolen from the internet)
-double rand_normal(double mean, double sigma)
+double rand_normal(double mean, double sigma, bool can_be_negative)
 {
 	static double n2 = 0.0;
 	static int n2_cached = 0;
@@ -22,18 +22,28 @@ double rand_normal(double mean, double sigma)
 			n2 = y * d;
 			double result = n1 * sigma + mean;
 			n2_cached = 1;
+			if (!can_be_negative && result < 0)
+			{
+				rand_normal(mean, sigma, can_be_negative);
+			}
 			return result;
 		}
 	}
 	else
 	{
 		n2_cached = 0;
+		if (!can_be_negative && n2 * sigma + mean < 0)
+		{
+			rand_normal(mean, sigma, can_be_negative);
+		}
 		return n2 * sigma + mean;
 	}
 }
 
 Fei4Emu::Fei4Emu()
 {
+	srand(time(NULL));
+
 	m_feId = 0x00;
 	m_l1IdCnt = 0x00;
 	m_bcIdCnt = 0x00;
@@ -89,17 +99,17 @@ void Fei4Emu::initializePixelModels()
 	{
 		for (unsigned row = 1; row <= m_fe->n_Row; row++)
 		{
-			m_pixelModels[col - 1][row - 1].Vthin_mean = 100;
-			m_pixelModels[col - 1][row - 1].Vthin_sigma = 10;
-			m_pixelModels[col - 1][row - 1].Vthin_gauss = rand_normal(m_pixelModels[col - 1][row - 1].Vthin_mean, m_pixelModels[col - 1][row - 1].Vthin_sigma);
+			m_pixelModels[col - 1][row - 1].Vthin_mean = 22;
+			m_pixelModels[col - 1][row - 1].Vthin_sigma = 1;
+			m_pixelModels[col - 1][row - 1].Vthin_gauss = rand_normal(m_pixelModels[col - 1][row - 1].Vthin_mean, m_pixelModels[col - 1][row - 1].Vthin_sigma, 0);
 
-			m_pixelModels[col - 1][row - 1].TDACVbp_mean = 10;
-			m_pixelModels[col - 1][row - 1].TDACVbp_sigma = 10;
-			m_pixelModels[col - 1][row - 1].TDACVbp_gauss = rand_normal(m_pixelModels[col - 1][row - 1].TDACVbp_mean, m_pixelModels[col - 1][row - 1].TDACVbp_sigma);
+			m_pixelModels[col - 1][row - 1].TDACVbp_mean = 1;
+			m_pixelModels[col - 1][row - 1].TDACVbp_sigma = 0;
+			m_pixelModels[col - 1][row - 1].TDACVbp_gauss = rand_normal(m_pixelModels[col - 1][row - 1].TDACVbp_mean, m_pixelModels[col - 1][row - 1].TDACVbp_sigma, 0);
 
-			m_pixelModels[col - 1][row - 1].noise_sigma_mean = 40;
-			m_pixelModels[col - 1][row - 1].noise_sigma_sigma = 10;
-			m_pixelModels[col - 1][row - 1].noise_sigma_gauss = rand_normal(m_pixelModels[col - 1][row - 1].noise_sigma_mean, m_pixelModels[col - 1][row - 1].noise_sigma_sigma);
+			m_pixelModels[col - 1][row - 1].noise_sigma_mean = 150;
+			m_pixelModels[col - 1][row - 1].noise_sigma_sigma = 15;
+			m_pixelModels[col - 1][row - 1].noise_sigma_gauss = rand_normal(m_pixelModels[col - 1][row - 1].noise_sigma_mean, m_pixelModels[col - 1][row - 1].noise_sigma_sigma, 0);
 		}
 	}
 }
@@ -256,7 +266,6 @@ void Fei4Emu::executeLoop()
 		}
 
 	}
-
 }
 
 // functions for handling the recieved commands
@@ -302,9 +311,13 @@ void Fei4Emu::handleGlobalPulse(uint32_t chipid)
 			// shift all bits left by 1, keeping track of the overflow bits
 			for (int j = 0; j < 21; j++)
 			{
-				current_last_bit = m_shiftRegisterBuffer[j][dc] & 0x80000000;
-				m_shiftRegisterBuffer[j][dc] <<= 1;
-				m_shiftRegisterBuffer[j][dc] += previous_last_bit;
+				current_last_bit = m_shiftRegisterBuffer[dc][j] & 0x80000000;
+				if (current_last_bit)
+				{
+					current_last_bit = 0x00000001;
+				}
+				m_shiftRegisterBuffer[dc][j] <<= 1;
+				m_shiftRegisterBuffer[dc][j] += previous_last_bit;
 				previous_last_bit = current_last_bit;
 			}
 		}
@@ -336,7 +349,7 @@ void Fei4Emu::handleGlobalPulse(uint32_t chipid)
 		{
 			unsigned dc = m_fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
 
-			DoubleColumnBitOps* bitReg[] = { &m_fe->En(dc), &m_fe->TDAC(dc)[0], &m_fe->TDAC(dc)[1], &m_fe->TDAC(dc)[2], &m_fe->TDAC(dc)[3], &m_fe->TDAC(dc)[4], &m_fe->LCap(dc), &m_fe->SCap(dc), &m_fe->SCap(dc), &m_fe->Hitbus(dc), &m_fe->FDAC(dc)[0], &m_fe->FDAC(dc)[1], &m_fe->FDAC(dc)[2], &m_fe->FDAC(dc)[3] };
+			DoubleColumnBitOps* bitReg[] = { &m_fe->En(dc), &m_fe->TDAC(dc)[0], &m_fe->TDAC(dc)[1], &m_fe->TDAC(dc)[2], &m_fe->TDAC(dc)[3], &m_fe->TDAC(dc)[4], &m_fe->LCap(dc), &m_fe->SCap(dc), &m_fe->Hitbus(dc), &m_fe->FDAC(dc)[0], &m_fe->FDAC(dc)[1], &m_fe->FDAC(dc)[2], &m_fe->FDAC(dc)[3] };
 
 			// loop through the 13 double column bits
 			for (int j = 0; j < 13; j++)
@@ -344,7 +357,7 @@ void Fei4Emu::handleGlobalPulse(uint32_t chipid)
 				// if a double column bit is 1, write the contents of the corresponding pixel register to the Shift Register
 				if (m_fe->getValue(&Fei4::Pixel_latch_strobe) & (unsigned) pow(2, j))
 				{
-					memcpy(&m_shiftRegisterBuffer[0][dc], bitReg[j]->getStream(), 84);
+					memcpy(&m_shiftRegisterBuffer[dc][0], bitReg[j]->getStream(), 84);
 				}
 			}
 		}
@@ -376,7 +389,7 @@ void Fei4Emu::handleGlobalPulse(uint32_t chipid)
 		{
 			unsigned dc = m_fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
 
-			DoubleColumnBitOps* bitReg[] = { &m_fe->En(dc), &m_fe->TDAC(dc)[0], &m_fe->TDAC(dc)[1], &m_fe->TDAC(dc)[2], &m_fe->TDAC(dc)[3], &m_fe->TDAC(dc)[4], &m_fe->LCap(dc), &m_fe->SCap(dc), &m_fe->SCap(dc), &m_fe->Hitbus(dc), &m_fe->FDAC(dc)[0], &m_fe->FDAC(dc)[1], &m_fe->FDAC(dc)[2], &m_fe->FDAC(dc)[3] };
+			DoubleColumnBitOps* bitReg[] = { &m_fe->En(dc), &m_fe->TDAC(dc)[0], &m_fe->TDAC(dc)[1], &m_fe->TDAC(dc)[2], &m_fe->TDAC(dc)[3], &m_fe->TDAC(dc)[4], &m_fe->LCap(dc), &m_fe->SCap(dc), &m_fe->Hitbus(dc), &m_fe->FDAC(dc)[0], &m_fe->FDAC(dc)[1], &m_fe->FDAC(dc)[2], &m_fe->FDAC(dc)[3] };
 
 			// loop through the 13 double column bits
 			for (int j = 0; j < 13; j++)
@@ -384,7 +397,7 @@ void Fei4Emu::handleGlobalPulse(uint32_t chipid)
 				// if a double column bit is 1, write the contents of the Shift Register to the corresponding pixel register
 				if (m_fe->getValue(&Fei4::Pixel_latch_strobe) & (unsigned) pow(2, j))
 				{
-					bitReg[j]->set(&m_shiftRegisterBuffer[0][dc]);
+					bitReg[j]->set(&m_shiftRegisterBuffer[dc][0]);
 				}
 			}
 		}
@@ -430,7 +443,12 @@ void Fei4Emu::handleWrFrontEnd(uint32_t chipid, uint32_t bitstream[21])
 	for (unsigned i = 0; i < 40 / dc_step; i++)
 	{
 		unsigned dc = m_fe->getValue(&Fei4::Colpr_Addr) + dc_step * i % 40;
-		memcpy(&m_shiftRegisterBuffer[0][dc], &bitstream[0], 84);
+
+		// must copy the bitstream to the shift register in this inverted way because of the order in which it is read in
+		for (int j = 0; j < 21; j++)
+		{
+			m_shiftRegisterBuffer[dc][j] = bitstream[20 - j];
+		}
 	}
 }
 
@@ -469,19 +487,16 @@ void Fei4Emu::handleTrigger()
 				{
 					float injection_charge = m_fe->toCharge(m_fe->getValue(&Fei4::PlsrDAC), m_fe->getSCap(dc * 2 + 1 + c, row), m_fe->getLCap(dc * 2 + 1 + c, row));	// the injection charge is well defined
 					float threshold_charge = calculateThreshold(dc * 2 + 1 + c, row);											// the threshold charge requires quite some modeling
-					float noise_charge = rand_normal(0, m_pixelModels[dc * 2 + 1 + c - 1][row - 1].noise_sigma_gauss);							// the noise charge requires simple modeling
+					float noise_charge = rand_normal(0, m_pixelModels[dc * 2 + 1 + c - 1][row - 1].noise_sigma_gauss, 1);							// the noise charge requires simple modeling
 
 					uint32_t digital_tot = 0;
 					uint32_t analog_tot = 0;
 
-					// check if we are doing a digital hit
-					if (m_fe->getValue(&Fei4::DigHitIn_Sel))
+					if (m_fe->getValue(&Fei4::DigHitIn_Sel))				// check if we are doing a digital hit
 					{
 						digital_tot = 10;
 					}
-
-					// check if we are doing an analog hit
-					if (injection_charge + noise_charge > threshold_charge)
+					else if (injection_charge + noise_charge > threshold_charge)		// check if we are doing an analog hit
 					{
 						analog_tot = this->calculateToT(injection_charge + noise_charge - threshold_charge);
 					}
@@ -549,9 +564,9 @@ void Fei4Emu::pushOutput(uint32_t value)
 float Fei4Emu::calculateThreshold(int col, int row)
 {
 	float modelVthin = m_pixelModels[col - 1][row - 1].Vthin_gauss * m_fe->getValue(&Fei4::Vthin_Fine) + m_pixelModels[col][row - 1].Vthin_gauss * m_fe->getValue(&Fei4::Vthin_Coarse) * 128;
-	float modelTDAC = m_pixelModels[col - 1][row - 1].TDACVbp_gauss * m_fe->getValue(&Fei4::TDACVbp) * (m_fe->getTDAC(col, row) - 15);
+	float modelTDAC = 30.0 * m_fe->getTDAC(col, row);
+	float threshold = modelVthin - modelTDAC;
 
-	float threshold = (modelVthin + modelTDAC) / 10.0;	// the divide by 10 gives nicer numbers...
 	if (threshold < 0)
 	{
 		threshold = 0;
@@ -562,5 +577,5 @@ float Fei4Emu::calculateThreshold(int col, int row)
 
 uint32_t Fei4Emu::calculateToT(float charge)
 {
-	return (uint32_t) (charge * 10.0 / 16000.0); // this should eventually change to intersect at (charge = threshold, tot = 1), and the coefficient should become a member variable or something
+	return (uint32_t) (charge * 9.0 / 16000.0) + 1;
 }

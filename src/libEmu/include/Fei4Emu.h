@@ -63,7 +63,7 @@ class Fei4Emu {
 		Fei4 *m_fe;
 
 		uint32_t m_modeBits;
-		uint32_t m_shiftRegisterBuffer[21][40];
+		uint32_t m_shiftRegisterBuffer[40][21];
 
 		// these are not quite used - they are just set to 0
 		uint8_t m_feId;

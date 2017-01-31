@@ -1,7 +1,9 @@
 #include "EmuShm.h"
 
-EmuShm::EmuShm(key_t key, uint32_t size, bool create)
+EmuShm::EmuShm(key_t key, uint32_t size, bool _create)
 {
+    create = _create;
+
     shm_key = key;
     shm_size = size;
     element_size = sizeof(uint32_t);
@@ -51,15 +53,18 @@ EmuShm::EmuShm(key_t key, uint32_t size, bool create)
 
 EmuShm::~EmuShm()
 {
-    // detach the shared memory
-    shmdt(shm_pointer);
-
-    // remove the shared memory
-    struct shmid_ds shm_id_ds;
-
-    if (shmctl(shm_id, IPC_RMID, &shm_id_ds) == -1)
+    if (create)
     {
-        fprintf(stderr, "shmctl failed");
+        // detach the shared memory
+        shmdt(shm_pointer);
+
+        // remove the shared memory
+        struct shmid_ds shm_id_ds;
+
+        if (shmctl(shm_id, IPC_RMID, &shm_id_ds) == -1)
+        {
+            fprintf(stderr, "shmctl failed");
+        }
     }
 }
 
