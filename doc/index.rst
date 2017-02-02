@@ -25,6 +25,7 @@ Folder Structure
     |    |-- build
     |    |-- kernel : Custom kernel driver
     |    |-- lib
+    |    |-- libEmu
     |    |-- libFei4
     |    |-- libSpec
     |    |-- libUtil
@@ -48,3 +49,4 @@ Content:
    eudaq
    gui
    adapter
+   emulator
