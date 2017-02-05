@@ -20,11 +20,6 @@
 #include <GennumRegMap.h>
 #include <BitOps.h>
 
-SpecCom::SpecCom() {
-    specId = -1;
-    is_initialized = false;
-}
-
 SpecCom::SpecCom(unsigned int id) {
     specId = id;
     is_initialized = false;
