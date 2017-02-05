@@ -30,16 +30,13 @@ RawData* EmuRxCore::readData() {
     uint32_t words = this->getCurCount()/sizeof(uint32_t);
     if (words > 0) {
         uint32_t *buf = new uint32_t[words];
-        for(unsigned i=0; i<words; i++)
-            buf[i] = m_com->read32();
-#if 0
-	std::cout << __PRETTY_FUNCTION__ << ": words=" << words << " -- ";
-	std::cout << std::hex;
-	std::for_each(buf,buf+words,[](uint32_t w){ std::cout << HEXF(8,w) << "\t"; });
-	//std::copy(buf,buf+words,std::ostream_iterator<uint32_t>(std::cout,"\t"));
-	std::cout << std::dec << std::endl;
-#endif
-        return new RawData(0x0, buf, words);
+        //for(unsigned i=0; i<words; i++)
+        //    buf[i] = m_com->read32();
+        if (m_com->readBlock32(buf, words)) {
+            return new RawData(0x0, buf, words);
+        } else {
+            delete[] buf;
+        }
     }
     return NULL;
 }

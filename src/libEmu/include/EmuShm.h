@@ -46,6 +46,7 @@ class EmuShm : public EmuCom {
 		// the main functionality of the class - write to and read from the ring buffer
 		virtual void write32(uint32_t word);
 		virtual uint32_t read32();
+		virtual uint32_t readBlock32(uint32_t *buf, uint32_t length);
 
 		// useful utility functions
 		virtual bool isEmpty();

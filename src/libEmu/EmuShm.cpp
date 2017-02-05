@@ -122,6 +122,45 @@ uint32_t EmuShm::read32()
     return word;
 }
 
+uint32_t EmuShm::readBlock32(uint32_t* buf, uint32_t length) {
+    if ((length*element_size) > this->getCurSize()) {
+        std::cerr << __PRETTY_FUNCTION__ 
+            << " -> ERROR : not enough data in buffer! This should not be possible! Requested: " 
+            << length*element_size << ", actual: " << this->getCurSize() << std::endl;
+        return 0;
+    }
+    //     
+    // 0 1 2 3 4 5 6 7
+    //     w     r | | 
+    if (read_index+length*element_size > (index_of_upper_bound)) {
+        //split transfer
+        // length of first part
+
+        uint32_t length_p1 = index_of_upper_bound - read_index + element_size;
+        uint32_t length_p2 = length*element_size - length_p1;
+        memcpy(&buf[0], &shm_pointer[read_index], length_p1);
+        memcpy(&buf[(length_p1)/element_size], &shm_pointer[0], length_p2);
+    } else {
+        //one transfer
+        memcpy(&buf[0], &shm_pointer[read_index], element_size*length);
+    }
+    // update the read pointer
+
+    read_index += element_size*length;
+
+    // check if the read_index must wrap
+    if (read_index > index_of_upper_bound)
+    {
+        read_index = read_index-index_of_upper_bound-element_size;
+    }
+
+    // write the read_index value to the shm buffer
+    memcpy(&shm_pointer[index_of_read_index], &read_index, element_size);
+    
+    return 1;
+}
+
+
 bool EmuShm::isEmpty()
 {
     // Update write and read index values
