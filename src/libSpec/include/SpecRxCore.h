@@ -28,9 +28,9 @@
 #define RX_BRIDGE_EMPTY 0x5
 #define RX_CUR_COUNT 0x6
 
-class SpecRxCore : public RxCore{
+class SpecRxCore : virtual public RxCore, virtual public SpecCom{
     public:
-        SpecRxCore(SpecCom *arg_spec);
+        SpecRxCore();
 
         void setRxEnable(uint32_t val);
         void maskRxEnable(uint32_t val, uint32_t mask);
@@ -42,7 +42,6 @@ class SpecRxCore : public RxCore{
         bool isBridgeEmpty();
 
     private:
-        SpecCom *spec;
         bool verbose;
 
         uint32_t getStartAddr();

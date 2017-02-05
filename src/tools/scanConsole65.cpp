@@ -16,9 +16,7 @@
 #include <iomanip>
 #include <ctime>
 
-#include "SpecCom.h"
-#include "SpecTxCore.h"
-#include "SpecRxCore.h"
+#include "SpecController.h"
 #include "Bookkeeper.h"
 #include "Fe65p2.h"
 #include "ScanBase.h"
@@ -140,15 +138,13 @@ int main(int argc, char *argv[]) {
 
 
     std::cout << "-> Init SPEC " << specNum << " : " << std::endl;
-    SpecCom spec(specNum);
-    SpecTxCore tx(&spec);
-    SpecRxCore rx(&spec);
-    Bookkeeper bookie(&tx, &rx);
+    SpecController spec;
+    Bookkeeper bookie(&spec, &spec);
     bookie.setTargetThreshold(800);
    
     // TODO move me somwhere else
-    tx.setTriggerLogicMask(0x010);
-    tx.setTriggerLogicMode(MODE_L1A_COUNT);
+    spec.setTriggerLogicMask(0x010);
+    spec.setTriggerLogicMode(MODE_L1A_COUNT);
 
     std::cout << "-> Read global config (" << configPath << "):" << std::endl;
     std::fstream gConfig(configPath, std::ios::in);
@@ -190,7 +186,7 @@ int main(int argc, char *argv[]) {
         }
     }
     */ 
-    bookie.addFe(new Fe65p2(&tx), 0, 0);
+    bookie.addFe(new Fe65p2(&spec), 0, 0);
     dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->setName("fe65p2");
     bookie.getLastFe()->setActive(1);
     //bookie.getLastFe()->setScap(1.18);
@@ -228,17 +224,17 @@ int main(int argc, char *argv[]) {
         Fei4 *fe = bookie.feList[i];
         std::cout << "-> Configuring " << fe->getName() << std::endl;
         // Select correct channel
-        tx.setCmdEnable(0x1 << fe->getTxChannel());
+        spec.setCmdEnable(0x1 << fe->getTxChannel());
         // Configure
         fe->configure();
         fe->configurePixels(); // TODO should call abstract configure only
         // Wait for fifo to be empty
         std::this_thread::sleep_for(std::chrono::microseconds(100));
-        while(!tx.isCmdEmpty());
+        while(!spec.isCmdEmpty());
     }*/
-    tx.setCmdEnable(0x1);
+    spec.setCmdEnable(0x1);
     bookie.g_fe65p2->configure();
-    while(!tx.isCmdEmpty());
+    while(!spec.isCmdEmpty());
 
     std::chrono::steady_clock::time_point cfg_end = std::chrono::steady_clock::now();
     std::cout << "-> All FEs configured in " 
@@ -248,11 +244,11 @@ int main(int argc, char *argv[]) {
     // TODO Check RX sync
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
     // Enable all active channels
-    //tx.setCmdEnable(bookie.getTxMask());
-    tx.setCmdEnable(0x1);
+    //spec.setCmdEnable(bookie.getTxMask());
+    spec.setCmdEnable(0x1);
     std::cout << "-> Setting Tx Mask to: 0x" << std::hex << bookie.getTxMask() << std::dec << std::endl;
-    //rx.setRxEnable(bookie.getRxMask());
-    rx.setRxEnable(0x1);
+    //spec.setRxEnable(bookie.getRxMask());
+    spec.setRxEnable(0x1);
     std::cout << "-> Setting Rx Mask to: 0x" << std::hex << bookie.getRxMask() << std::dec << std::endl;
     
     std::cout << std::endl;
@@ -404,8 +400,8 @@ int main(int argc, char *argv[]) {
     std::chrono::steady_clock::time_point all_done = std::chrono::steady_clock::now();
     std::cout << "-> All done!" << std::endl;
 
-    tx.setCmdEnable(0x0);
-    rx.setRxEnable(0x0);
+    spec.setCmdEnable(0x0);
+    spec.setRxEnable(0x0);
 
     std::cout << std::endl;
     std::cout << "##########" << std::endl;

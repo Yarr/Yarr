@@ -1,5 +1,6 @@
 // emulator
 
+#include <iostream>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -19,7 +20,8 @@ Fei4Emu *g_emu;
 
 void interrupt_received(int signum)
 {
-	g_emu->writePixelModelsToFile();
+    std::cout << "Caught interrupt, exiting .." << std::endl;
+    g_emu->writePixelModelsToFile();
 
 	delete(g_emu);
 
@@ -29,6 +31,8 @@ void interrupt_received(int signum)
 int main(int argc, char *argv[])
 {
 	signal(SIGINT, interrupt_received);
+    
+    std::cout << "Emulator started .. " << std::endl;
 
 	// set up the emulator
 	if (argc == 1)

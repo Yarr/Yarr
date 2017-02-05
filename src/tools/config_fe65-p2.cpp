@@ -2,9 +2,7 @@
 #include <fstream>
 #include <iomanip>
 
-#include "SpecCom.h"
-#include "SpecTxCore.h"
-#include "SpecRxCore.h"
+#include "SpecController.h"
 #include "json.hpp"
 
 #include "Fe65p2.h"
@@ -13,13 +11,11 @@ using json = nlohmann::json;
 
 int main(int argc, char *argv[]) {
 	
-	SpecCom mySpec(0);
-	SpecTxCore tx(&mySpec);
-	SpecRxCore rx(&mySpec);
+	SpecController mySpec;
 	
-	tx.setCmdEnable(0x1);
+	mySpec.setCmdEnable(0x1);
 	
-	Fe65p2 fe(&tx);
+	Fe65p2 fe(&mySpec);
 	fe.configure();
 
 	// Read config file if there

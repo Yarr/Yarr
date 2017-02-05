@@ -2,9 +2,7 @@
 #include <iomanip>
 #include <fstream>
 
-#include "SpecCom.h"
-#include "SpecTxCore.h"
-#include "SpecRxCore.h"
+#include "SpecController.h"
 #include "Fe65p2.h"
 #include "Histo2d.h"
 
@@ -17,12 +15,10 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    SpecCom spec(0);
-    SpecTxCore tx(&spec);
-    SpecRxCore rx(&spec);
+    SpecController mySpec;
 
-    Fe65p2 *fe = new Fe65p2(&tx);
-    Fe65p2 *g_fe = new Fe65p2(&tx);
+    Fe65p2 *fe = new Fe65p2(&mySpec);
+    Fe65p2 *g_fe = new Fe65p2(&mySpec);
 
     std::fstream cfgFile(argv[1], std::ios::in);
     json cfg;
@@ -35,23 +31,23 @@ int main(int argc, char *argv[]) {
     g_fe->fromFileJson(cfg);
 
     // Enable link
-    tx.setCmdEnable(0x1);
-    tx.toggleTrigAbort();
+    mySpec.setCmdEnable(0x1);
+    mySpec.toggleTrigAbort();
 
-    tx.setTriggerLogicMask(0x001);
+    mySpec.setTriggerLogicMask(0x001);
     // Configure FE
     g_fe->configure();
 
     g_fe->enAnaInj();
     g_fe->setPlsrDac(1000);
-    tx.setTrigEnable(0x0);
+    mySpec.setTrigEnable(0x0);
 
-    while(!tx.isCmdEmpty());
+    while(!mySpec.isCmdEmpty());
     
     int num_inject = 50;
 
 
-    while(!tx.isCmdEmpty());
+    while(!mySpec.isCmdEmpty());
 
     Histo2d enMask("enMask", 64, 0.5, 64.5, 64, 0.5, 64.5, typeid(void));
     for (unsigned i=0; i<16; i++) {
@@ -62,7 +58,7 @@ int main(int argc, char *argv[]) {
             g_fe->PixConf(n).setAll(0);
             g_fe->InjEn(n).setAll(0);
             g_fe->configurePixels();
-            while(!tx.isCmdEmpty());
+            while(!mySpec.isCmdEmpty());
         }
         for (unsigned j=0; j<256; j++) {
             if ((int) cfg["FE65-P2"]["PixelConfig"][(i*4)+(j/64)]["PixConf"][j%64] <= 1) {
@@ -75,23 +71,23 @@ int main(int argc, char *argv[]) {
             g_fe->setPixConf((i*4)+(j/64)+1, (j%64)+1, 3);
             g_fe->setInjEn((i*4)+(j/64)+1, (j%64)+1, 1);
             g_fe->configurePixels();
-            while(!tx.isCmdEmpty());
+            while(!mySpec.isCmdEmpty());
             
-            tx.setTrigConfig(INT_COUNT);
-            tx.setTrigCnt(num_inject);
-            tx.setTrigFreq(1.0e3);
+            mySpec.setTrigConfig(INT_COUNT);
+            mySpec.setTrigCnt(num_inject);
+            mySpec.setTrigFreq(1.0e3);
             uint32_t trigWord[4];
             trigWord[0] = 0x00;
             trigWord[1] = 0x00;
             trigWord[2] = 0x00;
             trigWord[3] = MOJO_HEADER + (PULSE_REG << 16) + PULSE_INJECT;
-            tx.setTrigWord(trigWord);
+            mySpec.setTrigWord(trigWord);
 
-            tx.setTrigEnable(0x1);
-            while(!tx.isTrigDone());
-            tx.setTrigEnable(0x0);
+            mySpec.setTrigEnable(0x1);
+            while(!mySpec.isTrigDone());
+            mySpec.setTrigEnable(0x0);
             
-            int num_hitbus = tx.getTrigInCount();
+            int num_hitbus = mySpec.getTrigInCount();
             if (num_hitbus < (2*num_inject)*0.4 || num_hitbus > (2*num_inject)*1.1) {
                 std::cout << "[" << (i*4)+(j/64)+1 << "][" << (j%64)+1 << "] = " << num_hitbus << std::endl;
                 fe->setPixConf((i*4)+(j/64)+1, (j%64)+1, 2); // => HitEn = 1, HitOrEn = 0

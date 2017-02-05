@@ -20,9 +20,7 @@
 #include <map>
 #include <sstream>
 
-#include "SpecCom.h"
-#include "SpecTxCore.h"
-#include "SpecRxCore.h"
+#include "SpecController.h"
 #include "EmuTxCore.h"
 #include "EmuRxCore.h"
 #include "EmuShm.h"
@@ -230,9 +228,9 @@ int main(int argc, char *argv[]) {
         tx = (TxCore*) new EmuTxCore(dynamic_cast<EmuCom*>(&comCmd));
         rx = (RxCore*) new EmuRxCore(dynamic_cast<EmuCom*>(&comData));
     } else {
-        SpecCom *spec = new SpecCom(specNum);
-        tx = (TxCore*) new SpecTxCore(spec);
-        rx = (RxCore*) new SpecRxCore(spec);
+        SpecController *spec = new SpecController();
+        tx = (TxCore*) (SpecTxCore*) spec;
+        rx = (RxCore*) (SpecRxCore*) spec;
     }
     
     Bookkeeper bookie(tx, rx);

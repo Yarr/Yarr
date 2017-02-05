@@ -42,9 +42,9 @@
 
 
 
-class SpecTxCore : public TxCore{
+class SpecTxCore : virtual public TxCore, virtual public SpecCom{
     public:
-        SpecTxCore(SpecCom *arg_spec);
+        SpecTxCore();
 
         void setVerbose(bool v=true);
 
@@ -74,18 +74,17 @@ class SpecTxCore : public TxCore{
         
         // TODO move to own class
         void setTriggerLogicMask(uint32_t mask) {
-            spec->writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_MASK, mask);
+            SpecCom::writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_MASK, mask);
         };
         void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) {
-            spec->writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_MODE, (uint32_t) mode);
+            SpecCom::writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_MODE, (uint32_t) mode);
         }
 
         void resetTriggerLogic() {
-            spec->writeSingle(TRIG_LOGIC_ADR | 0xFF, 0x1);
+            SpecCom::writeSingle(TRIG_LOGIC_ADR | 0xFF, 0x1);
         }
 
     private:
-        SpecCom *spec;
         bool verbose;
         //uint32_t enMask;
 };
