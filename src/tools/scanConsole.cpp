@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
     // Init parameters
     unsigned specNum = 0;
     std::string scanType = "";
-    std::vector<std::string> cConfigPath;
+    std::vector<std::string> cConfigPaths;
     std::string outputDir = "./data/";
     std::string ctrlCfgPath = "";
     bool doPlots = false;
@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
                 optind -= 1; //this is a bit hacky, but getopt doesn't support multiple
                              //values for one option, so it can't be helped
                 for(; optind < argc && *argv[optind] != '-'; optind += 1){
-                    cConfigPath.push_back(std::string(argv[optind]));
+                    cConfigPaths.push_back(std::string(argv[optind]));
                 }
                 break;
             case 'r':
@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (cConfigPath.size() == 0) {
+    if (cConfigPaths.size() == 0) {
         std::cerr << "Error: no config files given, please specify config file name under -c option, even if file does not exist!" << std::endl;
         return -1;
     }
@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
     std::cout << " Scan Type: " << scanType << std::endl;
     
     std::cout << " Chips: " << std::endl;
-    for(std::string const& sTmp : cConfigPath){
+    for(std::string const& sTmp : cConfigPaths){
         std::cout << "    " << sTmp << std::endl;
     }
     std::cout << " Target Threshold: " << target_threshold << std::endl;
@@ -268,7 +268,7 @@ int main(int argc, char *argv[]) {
               << "##  Loading Configs  ##" << std::endl
               << "#######################" << std::endl;
     
-    for(std::string const& sTmp : cConfigPath){
+    for(std::string const& sTmp : cConfigPaths){
         std::string discardMe; //Error handling, wait for user
         nlohmann::json jTmp;
         std::ifstream iFTmp(sTmp);
