@@ -11,7 +11,7 @@
 
 #include <iostream>
 
-#include "SpecController.h"
+#include "SpecCom.h"
 #include "RxCore.h"
 #include "RawData.h"
 
@@ -30,7 +30,7 @@
 
 class SpecRxCore : public RxCore{
     public:
-        SpecRxCore(SpecController *arg_spec);
+        SpecRxCore(SpecCom *arg_spec);
 
         void setRxEnable(uint32_t val);
         void maskRxEnable(uint32_t val, uint32_t mask);
@@ -42,7 +42,7 @@ class SpecRxCore : public RxCore{
         bool isBridgeEmpty();
 
     private:
-        SpecController *spec;
+        SpecCom *spec;
         bool verbose;
 
         uint32_t getStartAddr();

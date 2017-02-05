@@ -1,7 +1,7 @@
 
 #include <iostream>
 
-#include "SpecController.h"
+#include "SpecCom.h"
 #include "SpecTxCore.h"
 #include "SpecRxCore.h"
 #include "Fe65p2.h"
@@ -10,7 +10,7 @@
 int main(void) {
 
     std::cout << "Initialising .." << std::endl;
-    SpecController spec(0);
+    SpecCom spec(0);
     SpecTxCore tx(&spec);
     SpecRxCore rx(&spec);
     Bookkeeper bookie(&tx, &rx);

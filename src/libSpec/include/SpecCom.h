@@ -1,5 +1,5 @@
-#ifndef SPECCONTROLLER_H
-#define SPECCONTROLLER_H
+#ifndef SPECCOM_H
+#define SPECCOM_H
 
 // #################################
 // # Author: Timon Heim
@@ -53,11 +53,11 @@ struct dma_linked_list {
 
 using namespace specDriver;
 
-class SpecController {
+class SpecCom {
     public:
-        SpecController(unsigned int id);
-        SpecController();
-        ~SpecController();
+        SpecCom(unsigned int id);
+        SpecCom();
+        ~SpecCom();
 
         bool isInitialized();
         int getId();

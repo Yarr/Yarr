@@ -2,7 +2,7 @@
 #include <fstream>
 #include <iomanip>
 
-#include "SpecController.h"
+#include "SpecCom.h"
 #include "SpecTxCore.h"
 #include "SpecRxCore.h"
 #include "json.hpp"
@@ -13,7 +13,7 @@ using json = nlohmann::json;
 
 int main(int argc, char *argv[]) {
 	
-	SpecController mySpec(0);
+	SpecCom mySpec(0);
 	SpecTxCore tx(&mySpec);
 	SpecRxCore rx(&mySpec);
 	

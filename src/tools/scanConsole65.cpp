@@ -16,7 +16,7 @@
 #include <iomanip>
 #include <ctime>
 
-#include "SpecController.h"
+#include "SpecCom.h"
 #include "SpecTxCore.h"
 #include "SpecRxCore.h"
 #include "Bookkeeper.h"
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
 
 
     std::cout << "-> Init SPEC " << specNum << " : " << std::endl;
-    SpecController spec(specNum);
+    SpecCom spec(specNum);
     SpecTxCore tx(&spec);
     SpecRxCore rx(&spec);
     Bookkeeper bookie(&tx, &rx);

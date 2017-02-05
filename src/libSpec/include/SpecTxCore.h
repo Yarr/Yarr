@@ -14,7 +14,7 @@
 #include <thread>
 #include <chrono>
 
-#include "SpecController.h"
+#include "SpecCom.h"
 #include "TxCore.h"
 
 #define TX_ADDR (0x1 << 14)
@@ -44,7 +44,7 @@
 
 class SpecTxCore : public TxCore{
     public:
-        SpecTxCore(SpecController *arg_spec);
+        SpecTxCore(SpecCom *arg_spec);
 
         void setVerbose(bool v=true);
 
@@ -85,7 +85,7 @@ class SpecTxCore : public TxCore{
         }
 
     private:
-        SpecController *spec;
+        SpecCom *spec;
         bool verbose;
         //uint32_t enMask;
 };

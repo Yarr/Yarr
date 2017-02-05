@@ -4,12 +4,12 @@
 #include <string>
 #include <stdint.h>
 
-#include <SpecController.h>
+#include <SpecCom.h>
 
 int main(int argc, char * argv[]) {
 
     // Open device
-    SpecController mySpec(0);
+    SpecCom mySpec(0);
 
     if((argc == 1) || (argc > 2)) {
         std::cout << "Requires one argument (path to .sbe file). Aborting... \n";

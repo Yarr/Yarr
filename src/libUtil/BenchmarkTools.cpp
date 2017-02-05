@@ -1,13 +1,13 @@
 #include <BenchmarkTools.h>
 
-#include <SpecController.h>
+#include <SpecCom.h>
 
 #include <sys/time.h>
 #include <stdint.h>
 #include <string.h>
 
 namespace BenchmarkTools {
-   double measureWriteTime(SpecController *spec, uint32_t addr, uint32_t *data, size_t size, int repetitions) {
+   double measureWriteTime(SpecCom *spec, uint32_t addr, uint32_t *data, size_t size, int repetitions) {
        timeval start, end;
        gettimeofday(&start, NULL);
        for (int loop = 0; loop<repetitions; loop++)
@@ -18,7 +18,7 @@ namespace BenchmarkTools {
        return time;
    }
 
-   double measureReadTime(SpecController *spec, uint32_t addr, uint32_t *data, size_t size, int repetitions) {
+   double measureReadTime(SpecCom *spec, uint32_t addr, uint32_t *data, size_t size, int repetitions) {
        timeval start, end;
        gettimeofday(&start, NULL);
        for (int loop = 0; loop<repetitions; loop++)
@@ -29,7 +29,7 @@ namespace BenchmarkTools {
        return time;
    }
 
-   double measureWriteSpeed(SpecController *spec, size_t package_size, int repetitions) {
+   double measureWriteSpeed(SpecCom *spec, size_t package_size, int repetitions) {
        uint32_t *buffer = new uint32_t[package_size];
        memset(buffer, 0x5A, package_size*4);
        double time = BenchmarkTools::measureWriteTime(spec, 0x0, buffer, package_size, repetitions);
@@ -38,7 +38,7 @@ namespace BenchmarkTools {
        return speed;
    }
    
-   double measureReadSpeed(SpecController *spec, size_t package_size, int repetitions) {
+   double measureReadSpeed(SpecCom *spec, size_t package_size, int repetitions) {
        uint32_t *buffer = new uint32_t[package_size];
        memset(buffer, 0x5A, package_size*4);
        double time = BenchmarkTools::measureReadTime(spec, 0x0, buffer, package_size, repetitions);

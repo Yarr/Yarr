@@ -16,16 +16,16 @@
 #include <unistd.h>
 #include <iomanip>
 
-#include <SpecController.h>
+#include <SpecCom.h>
 #include <GennumRegMap.h>
 #include <BitOps.h>
 
-SpecController::SpecController() {
+SpecCom::SpecCom() {
     specId = -1;
     is_initialized = false;
 }
 
-SpecController::SpecController(unsigned int id) {
+SpecCom::SpecCom(unsigned int id) {
     specId = id;
     is_initialized = false;
     try {
@@ -39,26 +39,26 @@ SpecController::SpecController(unsigned int id) {
     is_initialized = true;
 }
 
-SpecController::~SpecController() {
+SpecCom::~SpecCom() {
     spec->unmapBAR(0, bar0);
     spec->unmapBAR(4, bar4);
     spec->close();
     delete spec;
 }
 
-bool SpecController::isInitialized() {
+bool SpecCom::isInitialized() {
     return is_initialized;
 }
 
-int SpecController::getId() {
+int SpecCom::getId() {
     return specId;
 }
 
-int SpecController::getBarSize(unsigned int bar) {
+int SpecCom::getBarSize(unsigned int bar) {
     return spec->getBARsize(bar);
 }
 
-void SpecController::init(unsigned int id) {
+void SpecCom::init(unsigned int id) {
     if (!is_initialized) {
         specId = id;
         try {
@@ -75,33 +75,33 @@ void SpecController::init(unsigned int id) {
     }
 }
 
-void SpecController::writeSingle(uint32_t off, uint32_t val) {
+void SpecCom::writeSingle(uint32_t off, uint32_t val) {
     this->write32(bar0, off, val);
 }
 
-uint32_t SpecController::readSingle(uint32_t off) {
+uint32_t SpecCom::readSingle(uint32_t off) {
     uint32_t tmp = this->read32(bar0, off);
     return tmp; 
 }
 
-void SpecController::write32(uint32_t off, uint32_t *val, size_t words) {
+void SpecCom::write32(uint32_t off, uint32_t *val, size_t words) {
     this->write32(bar0, off, val, words);
 }
 
-void SpecController::read32(uint32_t off, uint32_t *val, size_t words) {
+void SpecCom::read32(uint32_t off, uint32_t *val, size_t words) {
     this->read32(bar0, off, val, words);
 }
 
 
-void SpecController::writeBlock(uint32_t off, uint32_t *val, size_t words) {
+void SpecCom::writeBlock(uint32_t off, uint32_t *val, size_t words) {
     this->writeBlock(bar0, off, val, words);
 }
 
-void SpecController::readBlock(uint32_t off, uint32_t *val, size_t words) {
+void SpecCom::readBlock(uint32_t off, uint32_t *val, size_t words) {
     this->readBlock(bar0, off, val, words);
 }
 
-int SpecController::writeDma(uint32_t off, uint32_t *data, size_t words) {
+int SpecCom::writeDma(uint32_t off, uint32_t *data, size_t words) {
     int status = this->getDmaStatus(); 
     if ( status == DMAIDLE || status == DMADONE || status == DMAABORTED) {
         UserMemory *um = &spec->mapUserMemory(data, words*4, false);
@@ -133,7 +133,7 @@ int SpecController::writeDma(uint32_t off, uint32_t *data, size_t words) {
     }
 }
 
-int SpecController::readDma(uint32_t off, uint32_t *data, size_t words) {
+int SpecCom::readDma(uint32_t off, uint32_t *data, size_t words) {
     int status = this->getDmaStatus(); 
     if ( status == DMAIDLE || status == DMADONE || status == DMAABORTED) {
         UserMemory *um = &spec->mapUserMemory(data, words*4, false);
@@ -174,7 +174,7 @@ int SpecController::readDma(uint32_t off, uint32_t *data, size_t words) {
     }
 }
 
-void SpecController::init() {
+void SpecCom::init() {
 #ifdef DEBUG
     std::cout << __PRETTY_FUNCTION__ << " -> Opening SPEC with id #" << specId << std::endl;
 #endif
@@ -211,7 +211,7 @@ void SpecController::init() {
     return;
 }
 
-void SpecController::configure() {
+void SpecCom::configure() {
 #ifdef DEBUG
         std::cout << __PRETTY_FUNCTION__ << " -> Configuring GN412X" << std::endl;
 #endif
@@ -269,17 +269,17 @@ void SpecController::configure() {
     spec->clearInterruptQueue(1);
 }
 
-void SpecController::write32(void *bar, uint32_t off, uint32_t val) {
+void SpecCom::write32(void *bar, uint32_t off, uint32_t val) {
     uint32_t *addr = (uint32_t*) bar+off;
     *addr = val;
 }
 
-uint32_t SpecController::read32(void *bar, uint32_t off) {
+uint32_t SpecCom::read32(void *bar, uint32_t off) {
     uint32_t *addr = (uint32_t*) bar+off;
     return *addr;
 }
 
-void SpecController::mask32(void *bar, uint32_t off, uint32_t mask, uint32_t val) {
+void SpecCom::mask32(void *bar, uint32_t off, uint32_t mask, uint32_t val) {
     uint32_t *addr = (uint32_t*) bar+off;
     uint32_t tmp = *addr;
     tmp &= ~mask;
@@ -287,29 +287,29 @@ void SpecController::mask32(void *bar, uint32_t off, uint32_t mask, uint32_t val
     *addr = tmp;
 }
 
-void SpecController::writeBlock(void *bar, uint32_t off, uint32_t *val, size_t words) {
+void SpecCom::writeBlock(void *bar, uint32_t off, uint32_t *val, size_t words) {
     uint32_t *addr = (uint32_t*) bar+off;
     memcpy(addr, val, words*4);
 }
 
-void SpecController::write32(void *bar, uint32_t off, uint32_t *val, size_t words) {
+void SpecCom::write32(void *bar, uint32_t off, uint32_t *val, size_t words) {
     uint32_t *addr = (uint32_t*) bar+off;
     for (uint32_t i=0; i<words; i++)
         *addr = val[i];
 }
 
-void SpecController::readBlock(void *bar, uint32_t off, uint32_t *val, size_t words) {
+void SpecCom::readBlock(void *bar, uint32_t off, uint32_t *val, size_t words) {
     uint32_t *addr = (uint32_t*) bar+off;
     for(unsigned int i=0; i<words; i++) 
         val[i] = *addr;
 }
 
-void SpecController::read32(void *bar, uint32_t off, uint32_t *val, size_t words) {
+void SpecCom::read32(void *bar, uint32_t off, uint32_t *val, size_t words) {
     uint32_t *addr = (uint32_t*) bar+off;
     for(unsigned int i=0; i<words; i++) val[i] = *addr++;
 }
 
-struct dma_linked_list* SpecController::prepDmaList(UserMemory *um, KernelMemory *km, uint32_t off, bool write) {
+struct dma_linked_list* SpecCom::prepDmaList(UserMemory *um, KernelMemory *km, uint32_t off, bool write) {
     struct dma_linked_list *llist = (struct dma_linked_list*) km->getBuffer();
     uint32_t dev_off = off*4;
     unsigned int j = 0;
@@ -365,19 +365,19 @@ struct dma_linked_list* SpecController::prepDmaList(UserMemory *um, KernelMemory
     return llist;
 }
 
-void SpecController::startDma() {
+void SpecCom::startDma() {
     uint32_t *addr = (uint32_t*) bar0+DMACTRLR;
     // Set t 0x1 to start DMA transfer
     *addr = 0x1;
 }
 
-void SpecController::abortDma() {
+void SpecCom::abortDma() {
     uint32_t *addr = (uint32_t*) bar0+DMACTRLR;
     // Set t 0x2 to abort DMA transfer
     *addr = 0x2;
 }
 
-uint32_t SpecController::getDmaStatus() {
+uint32_t SpecCom::getDmaStatus() {
     uint32_t *addr = (uint32_t*) bar0+DMASTATR;
     uint32_t status = *addr;
 #if 0
@@ -394,7 +394,7 @@ uint32_t SpecController::getDmaStatus() {
     return status;
 }
 
-int SpecController::progFpga(const void *data, size_t size) {
+int SpecCom::progFpga(const void *data, size_t size) {
 #ifdef DEBUG
     std::cout << __PRETTY_FUNCTION__ << " -> Setting up programming of FPGA" <<std::endl;
 #endif
@@ -515,7 +515,7 @@ int SpecController::progFpga(const void *data, size_t size) {
 }
 
 
-uint32_t SpecController::readEeprom(uint8_t * buffer, uint32_t len) {
+uint32_t SpecCom::readEeprom(uint8_t * buffer, uint32_t len) {
 
 	uint32_t totalTransfer=0;
 	unsigned int k = 0;
@@ -645,7 +645,7 @@ uint32_t SpecController::readEeprom(uint8_t * buffer, uint32_t len) {
     return totalTransfer;
 }
 
-uint32_t SpecController::writeEeprom(uint8_t * buffer, uint32_t len, uint32_t offs) {
+uint32_t SpecCom::writeEeprom(uint8_t * buffer, uint32_t len, uint32_t offs) {
 
 	uint32_t totalTransfer=0;
 	unsigned int k = 0;
@@ -727,7 +727,7 @@ uint32_t SpecController::writeEeprom(uint8_t * buffer, uint32_t len, uint32_t of
     return totalTransfer;
 }
 
-void SpecController::createSbeFile(std::string fName, uint8_t * buffer, uint32_t length) {
+void SpecCom::createSbeFile(std::string fName, uint8_t * buffer, uint32_t length) {
     if(length != ARRAYLENGTH) {
         std::cout << "Wrong uint8_t array length. Aborting... \n";
         exit(-1);
@@ -774,7 +774,7 @@ void SpecController::createSbeFile(std::string fName, uint8_t * buffer, uint32_t
 
 }
 
-void SpecController::getSbeFile(std::string pathname, uint8_t * buffer, uint32_t length) {
+void SpecCom::getSbeFile(std::string pathname, uint8_t * buffer, uint32_t length) {
     if(length != ARRAYLENGTH) {
         std::cout << "Wrong uint8_t array length. Aborting... \n";
         exit(-1);

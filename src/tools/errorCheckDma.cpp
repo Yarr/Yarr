@@ -1,4 +1,4 @@
-#include <SpecController.h>
+#include <SpecCom.h>
 
 #include <iostream>
 #include <stdint.h>
@@ -19,7 +19,7 @@ uint32_t rand32() {
 
 
 int main (void) {
-    SpecController mySpec(0);
+    SpecCom mySpec(0);
     
     int maxLoops = 50000;
     int overall_errors = 0;

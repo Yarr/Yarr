@@ -10,7 +10,7 @@
 
 #include <iostream>
 
-#include "SpecController.h"
+#include "SpecCom.h"
 
 #define I2C_ADDR (0x4 << 14)
 
@@ -43,7 +43,7 @@
 class PeriphialI2C {
     public:
     protected:
-        PeriphialI2C(SpecController *arg_spec);
+        PeriphialI2C(SpecCom *arg_spec);
 
         void init();
         int writeReg(uint32_t dev_addr, uint32_t reg_addr, uint32_t value);
@@ -56,7 +56,7 @@ class PeriphialI2C {
         int readData(uint32_t *value);
         int sendNack();
     private:
-        SpecController *spec;
+        SpecCom *spec;
         uint32_t last_dev_addr;
         uint32_t last_reg_addr;
         //uint32_t last_rw;

@@ -5,7 +5,7 @@
 #include <string>
 #include <time.h>
 
-#include <SpecController.h>
+#include <SpecCom.h>
 
 int main(int argc, char * argv[]) {
 
@@ -19,7 +19,7 @@ int main(int argc, char * argv[]) {
     }
 
     // Open device
-    SpecController mySpec(0);
+    SpecCom mySpec(0);
 
     uint8_t * buffer = new uint8_t[ARRAYLENGTH];
 

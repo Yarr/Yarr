@@ -1,4 +1,4 @@
-#include <SpecController.h>
+#include <SpecCom.h>
 
 #include <iostream>
 #include <fstream>
@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
     unsigned spec_num = 0;
     if (argc == 2)
         spec_num = atoi(argv[1]);
-    SpecController mySpec (spec_num);
+    SpecCom mySpec (spec_num);
 
     std::fstream file_write("benchmarkDma_write.out", std::ios::out);
     std::fstream file_read("benchmarkDma_read.out", std::ios::out);

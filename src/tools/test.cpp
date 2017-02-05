@@ -1,4 +1,4 @@
-#include <SpecController.h>
+#include <SpecCom.h>
 #include <iostream>
 #include <stdint.h>
 #include <string.h>
@@ -7,7 +7,7 @@ int main(int argc, char **argv) {
     int specNum = 0;
     if (argc == 2)
         specNum = atoi(argv[1]);
-    SpecController mySpec(specNum);
+    SpecCom mySpec(specNum);
     std::string tmp;
     const size_t size = 256*8;
     unsigned err_count = 0;

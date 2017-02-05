@@ -1,4 +1,4 @@
-#include "SpecController.h"
+#include "SpecCom.h"
 #include "AD7995.h"
 #include <iostream>
 #include <unistd.h>
@@ -7,7 +7,7 @@
 #include <iomanip>
 
 int main(int argc, char* argv[]) {
-    SpecController mySpec(0);
+    SpecCom mySpec(0);
 
     std::cout << "Init" << std::endl;
     AD7995 adc(&mySpec);

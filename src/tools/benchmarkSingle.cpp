@@ -1,4 +1,4 @@
-#include <SpecController.h>
+#include <SpecCom.h>
 
 #include <iostream>
 #include <fstream>
@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 int main(void) {
-    SpecController mySpec(0);
+    SpecCom mySpec(0);
     
     std::fstream file_write("benchmarkSingle_write.out", std::ios::out);
     std::fstream file_read("benchmarkSingle_read.out", std::ios::out);

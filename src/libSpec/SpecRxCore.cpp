@@ -1,6 +1,6 @@
 #include "SpecRxCore.h"
 #include <cstring>
-SpecRxCore::SpecRxCore(SpecController *arg_spec) {
+SpecRxCore::SpecRxCore(SpecCom *arg_spec) {
     spec = arg_spec;
     verbose = false;
 }

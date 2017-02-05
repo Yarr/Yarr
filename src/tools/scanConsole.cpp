@@ -20,7 +20,7 @@
 #include <map>
 #include <sstream>
 
-#include "SpecController.h"
+#include "SpecCom.h"
 #include "SpecTxCore.h"
 #include "SpecRxCore.h"
 #include "EmuTxCore.h"
@@ -230,7 +230,7 @@ int main(int argc, char *argv[]) {
         tx = (TxCore*) new EmuTxCore(dynamic_cast<EmuCom*>(&comCmd));
         rx = (RxCore*) new EmuRxCore(dynamic_cast<EmuCom*>(&comData));
     } else {
-        SpecController *spec = new SpecController(specNum);
+        SpecCom *spec = new SpecCom(specNum);
         tx = (TxCore*) new SpecTxCore(spec);
         rx = (RxCore*) new SpecRxCore(spec);
     }

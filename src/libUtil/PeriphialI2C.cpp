@@ -9,7 +9,7 @@
 #include "PeriphialI2C.h"
 #include <unistd.h>
 
-PeriphialI2C::PeriphialI2C(SpecController *arg_spec) {
+PeriphialI2C::PeriphialI2C(SpecCom *arg_spec) {
     spec = arg_spec;
 }
 

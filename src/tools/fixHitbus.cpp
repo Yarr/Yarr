@@ -2,7 +2,7 @@
 #include <iomanip>
 #include <fstream>
 
-#include "SpecController.h"
+#include "SpecCom.h"
 #include "SpecTxCore.h"
 #include "SpecRxCore.h"
 #include "Fe65p2.h"
@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    SpecController spec(0);
+    SpecCom spec(0);
     SpecTxCore tx(&spec);
     SpecRxCore rx(&spec);
 

@@ -8,7 +8,7 @@
 
 #include "SpecTxCore.h"
 
-SpecTxCore::SpecTxCore(SpecController *arg_spec) {
+SpecTxCore::SpecTxCore(SpecCom *arg_spec) {
     spec = arg_spec;
     verbose = false;
     enMask = 0x0;

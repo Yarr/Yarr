@@ -12,12 +12,12 @@
 
 #include <iostream>
 
-#include "SpecController.h"
+#include "SpecCom.h"
 #include "PeriphialI2C.h"
 
 class AD7995 : public PeriphialI2C {
     public:
-        AD7995(SpecController *arg_spec);
+        AD7995(SpecCom *arg_spec);
         ~AD7995();
         void setActiveChannels(bool ch1, bool ch2, bool ch3, bool ch4);
         void read();

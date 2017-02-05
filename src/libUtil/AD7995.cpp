@@ -1,7 +1,7 @@
 #include "AD7995.h"
 #include <cmath>
 
-AD7995::AD7995(SpecController *arg_spec) : PeriphialI2C(arg_spec) {
+AD7995::AD7995(SpecCom *arg_spec) : PeriphialI2C(arg_spec) {
     dev_addr = 0x28;
     this->init();
     ch_cnt = 0;

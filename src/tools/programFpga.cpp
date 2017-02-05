@@ -3,7 +3,7 @@
 #include <string>
 #include <stdint.h>
 
-#include <SpecController.h>
+#include <SpecCom.h>
 
 int checkBitFile(std::fstream &file) {
     char key;
@@ -153,7 +153,7 @@ int main(int argc, char* argv[]) {
 
     // Open device
     std::cout << "Opening Spec device." << std::endl;
-    SpecController mySpec(spec_num);
+    SpecCom mySpec(spec_num);
 
     // Start programming
     std::cout << "Starting programming ..." << std::endl;
