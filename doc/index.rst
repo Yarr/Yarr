@@ -26,11 +26,13 @@ Folder Structure
     |    |-- kernel : Custom kernel driver
     |    |-- lib
     |    |-- libFei4
+    |    |-- libFe65p2
     |    |-- libSpec
     |    |-- libUtil
     |    |-- libYarr
     |    |-- tools : Command line tools
-    |    |-- util : Scripts
+    |    |-- util : Useful snippets of code
+    |    |-- scripts : Enable useage of ROOT
     |-- gui: QT5 based GUI
           |-- YarrGui
           |-- bin
