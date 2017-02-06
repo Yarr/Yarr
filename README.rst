@@ -22,15 +22,15 @@ Hardware:
 Software:
     - SLC6 (Scientific Linux CERN 6) or CC7 (CERN CentOs 7)
     - GCC version 4.8 or higher
-        - for example from devtoolset-4, instruction can be found here https://www.softwarecollections.org/en/scls/rhscl/devtoolset-4/
+        - for example from devtoolset-4, instruction can be found here https://www.softwarecollections.org/en/scls/rhscl/devtoolset-4
     - QT5 for graphical user interface
     - Xilinx ISE 14.7 and `hdlmake <http://www.ohwr.org/projects/hdl-make/wiki>`_ (only to rebuild firmware)
 
-Optional Requirements:
-=====================
+Optional:
     - cmake version 2.8 or higher
+        - for MacOS consider installing cmake from homebrew: http://brew.sh
     - Atlas RCE SDK for cross compilation and running on RCEs (HSIO2 or COB)
-        - to install in /opt/AtlasRceSDK
+    - to install in /opt/AtlasRceSDK
         - sudo mkdir -p /opt/AtlasRceSDK
         - cd /opt/AtkasRceSDK/ ; curl -s  http://rceprojectportal.web.cern.ch/RceProjectPortal/software/SDK/V0.11.1.tar.gz | sudo tar xvfz - 
     - using CMake:
@@ -44,5 +44,3 @@ Optional Requirements:
             - make ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-gcc # ARM/Archlinux on RCE
             - make ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/macos-clang # MacOS build
         - make
-
-
