@@ -17,7 +17,7 @@
 #include "TxCore.h"
 #include "EmuCom.h"
 
-class EmuTxCore : public TxCore {
+class EmuTxCore : virtual public TxCore {
     public:
         EmuTxCore(EmuCom *com);
         ~EmuTxCore();

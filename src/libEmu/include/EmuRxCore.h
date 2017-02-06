@@ -15,7 +15,7 @@
 #include "RxCore.h"
 #include "EmuCom.h"
 
-class EmuRxCore : public RxCore {
+class EmuRxCore : virtual public RxCore {
     public:
         EmuRxCore(EmuCom *com);
         ~EmuRxCore();
