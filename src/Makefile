@@ -19,6 +19,11 @@ ARCH ?= $(UNAME_P)
 CPP = g++
 LD = g++
 
+ifneq ($(CROSS_COMPILE),)
+$(info Using: $(CPP))
+$(foreach D,CPP LD,$(eval $(D) = $(addprefix $(CROSS_COMPILE),$($(D)))))
+endif
+
 #CC = gcc
 ifeq ($(UNAME_S),Darwin)
 CPP = clang++
