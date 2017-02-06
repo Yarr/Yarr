@@ -7,6 +7,7 @@ Scan Console
     - Main scan execution program
     - Command line parameters:
         - "-s <scan name>": Sets the scan which should be performed, to see which scans are supported see below
+        - "-r <file>" : Controller config file, provide emulator config to use emulator e.g. config/emuCfg.json
         - "-c <file1> [<file2> ...]": Chip config files. If file does not exist, new config from default is created. Rx and Tx Channel are chosen to be the next available channel
         - "-p": Enable plot output (optional)
         - "-o <directory>": Specify plot output directory (default ./data/)
@@ -14,8 +15,7 @@ Scan Console
 
 Emulator
 ---------------------
-    - The Scan Console program will interact with the emulator, which (for the time being) needs to be started as a standalone program.
-    - One can call the program directly (after having started the scanConsole -- see below), or using the runMe.sh script under src/
+    - The Scan Console program will interact with the emulator, which is started in a seperate thread inside the main program.
 
 Supported Scans
 ^^^^^^^^^^^^^^^^^^^^^
@@ -37,137 +37,114 @@ Example Scan:
 
     The simplest way to run a scan is using the helper script::
 
-        $ ./runMe.sh digitalscan
-        Starting scanConsole ...
-        Scan PID: 27050
-        Starting emulator ...
-        Emulator PID: 27054
-        Scan completed.
-        Killing emulator...Done
-        ./runMe.sh: line 23: 27054 Killed                  ./bin/emulator &>emu.out
-        Available plots:
-        data/000075_digitalscan/Example_EnMask.png  data/000075_digitalscan/Example_OccupancyMap.png
-        Available logs:
-        data/000075_digitalscan/emu.out  data/000075_digitalscan/scan.out
-        Note: the killing of PID 27054 (bin/emulator) is expected
-
-    The output will be in scan.out in the data folder of the scan. You can monitor progress looking at the scan.out file in the src folder. It will be moved at the end of the scan.
-
-    Alternatively, you can start the program yourself, like when you run with a SPEC board, using a boart number >= 30 (for the time being).
-    In a new terminal, run::
-
-        $ ./bin/scanConsole -c configs/default_fei4b.json -s digitalscan -p -n 30
-
-    until it hangs. Then run in another terminal::
-
-        $ ./bin/emulator
-
-    This is necessary to run the emulator. Note that this is temporary until the emulator is started directly within `scanConsole`.
-
-    The output of the terminal when `scanConsole` was exectued should look like this::
-       
-
-        $ ./bin/scanConsole -c configs/default_fei4b.json -s digitalscan -p -n 30
+        $ bin/scanConsole -r emuCfg.json -c configs/test.json -s digitalscan -p
         #####################################
         # Welcome to the YARR Scan Console! #
         #####################################
         -> Parsing command line parameters ...
-         SPEC Nr: 30
-         Scan Type: digitalscan
-         Chips: 
-            configs/default_fei4b.json
-         Target Threshold: 2500
-         Output Plots: 1
-         Output Directory: ./data/000070_digitalscan/
-        
-        Timestamp: 2017-02-02_11:59:11
-        Run Number: 70
+        SPEC Nr: 0
+        Scan Type: digitalscan
+        Chips: 
+        configs/test.json
+        Target Threshold: 2500
+        Output Plots: 1
+        Output Directory: ./data/000306_digitalscan/
+
+        Timestamp: 2017-02-05_21:36:35
+        Run Number: 306
         #################
         # Init Hardware #
         #################
-        -> Init SPEC 30 : 
-        EmuRxCore::EmuRxCore(EmuCom*)
+        -> Opening controller config: emuCfg.json
+        -> Found Emulator config
+        -> Starting Emulator
+        configs/emu_fe0.json
+        Starting emulator loop
         #######################
         ##  Loading Configs  ##
         #######################
-        Found FE-I4B: "Example"
-        void Bookkeeper::addFe(FrontEnd*, unsigned int, unsigned int) -> Added FE: Tx(0), Rx(0)
-        
+        Found FE-I4B: "JohnDoe"
+        void Bookkeeper::addFe(FrontEnd *, unsigned int, unsigned int) -> Added FE: Tx(0), Rx(0)
+
         #################
         # Configure FEs #
         #################
-        -> Configuring Example
-        -> All FEs configured in 18901 ms !
+        -> Configuring JohnDoe
+        -> All FEs configured in 1 ms !
         -> Setting Tx Mask to: 0x1
         -> Setting Rx Mask to: 0x1
-        
+
         ##############
         # Setup Scan #
         ##############
         -> Selecting Scan: digitalscan
         -> Found Digital Scan
         -> Running pre scan!
-        -> Starting 4 processor Threads:
-          -> Processor thread #0 started!
-          -> Processor thread #1 started!
-          -> Processor thread #2 started!
-          -> Processor thread #3 started!
+        -> Starting 8 processor Threads:
+        -> Processor thread #0 started!
+        -> Processor thread #1 started!
+        -> Processor thread #2 started!
+        -> Processor thread #3 started!
+        -> Processor thread #4 started!
+        -> Processor thread #5 started!
+        -> Processor thread #6 started!
+        -> Processor thread #7 started!
         -> Starting histogrammer and analysis threads:
-          -> Analysis thread of Fe 0
-        
+        -> Analysis thread of Fe 0
+
         ########
         # Scan #
         ########
         -> Starting scan!
-         ---> Mask Stage 0
-         ---> Mask Stage 1
-         ---> Mask Stage 2
-         ---> Mask Stage 3
-         ---> Mask Stage 4
-         ---> Mask Stage 5
-         ---> Mask Stage 6
-         ---> Mask Stage 7
-         ---> Mask Stage 8
-         ---> Mask Stage 9
-         ---> Mask Stage 10
-         ---> Mask Stage 11
-         ---> Mask Stage 12
-         ---> Mask Stage 13
-         ---> Mask Stage 14
-         ---> Mask Stage 15
-         ---> Mask Stage 16
-         ---> Mask Stage 17
-         ---> Mask Stage 18
-         ---> Mask Stage 19
-         ---> Mask Stage 20
-         ---> Mask Stage 21
-         ---> Mask Stage 22
-         ---> Mask Stage 23
-         ---> Mask Stage 24
-         ---> Mask Stage 25
-         ---> Mask Stage 26
-         ---> Mask Stage 27
-         ---> Mask Stage 28
-         ---> Mask Stage 29
-         ---> Mask Stage 30
-         ---> Mask Stage 31
+        ---> Mask Stage 0
+        ---> Mask Stage 1
+        ---> Mask Stage 2
+        ---> Mask Stage 3
+        ---> Mask Stage 4
+        ---> Mask Stage 5
+        ---> Mask Stage 6
+        ---> Mask Stage 7
+        ---> Mask Stage 8
+        ---> Mask Stage 9
+        ---> Mask Stage 10
+        ---> Mask Stage 11
+        ---> Mask Stage 12
+        ---> Mask Stage 13
+        ---> Mask Stage 14
+        ---> Mask Stage 15
+        ---> Mask Stage 16
+        ---> Mask Stage 17
+        ---> Mask Stage 18
+        ---> Mask Stage 19
+        ---> Mask Stage 20
+        ---> Mask Stage 21
+        ---> Mask Stage 22
+        ---> Mask Stage 23
+        ---> Mask Stage 24
+        ---> Mask Stage 25
+        ---> Mask Stage 26
+        ---> Mask Stage 27
+        ---> Mask Stage 28
+        ---> Mask Stage 29
+        ---> Mask Stage 30
+        ---> Mask Stage 31
         -> Scan done!
         -> Waiting for processors to finish ...
         -> Processor done, waiting for analysis ...
         -> All done!
-        
+
         ##########
         # Timing #
         ##########
-        -> Configuration: 18901 ms
-        -> Scan:          3014 ms
-        -> Processing:    13 ms
-        -> Analysis:      79 ms
-        
+        -> Configuration: 1 ms
+        -> Scan:          2803 ms
+        -> Processing:    55 ms
+        -> Analysis:      55 ms
+
         ###########
         # Cleanup #
         ###########
-        -> Saving config of FE Example to configs/default_fei4b.json
+        -> Saving config of FE JohnDoe to configs/test.json
         -> Plotting histograms of FE 0
         Plotting : EnMask
         Warning: empty cb range [1:1], adjusting to [0.99:1.01]
@@ -177,4 +154,5 @@ Example Scan:
         Saving : EnMask
         Saving : OccupancyMap
         Saving : L1Dist
-
+        libc++abi.dylib: terminating
+        Abort trap: 6
