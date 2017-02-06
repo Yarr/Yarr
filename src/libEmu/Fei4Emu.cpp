@@ -164,6 +164,7 @@ void Fei4Emu::writePixelModelsToFile() {
 }
 
 void Fei4Emu::executeLoop() {
+    std::cout << "Starting emulator loop" << std::endl;
     while (1)
     {
             uint32_t command;
@@ -456,7 +457,7 @@ void Fei4Emu::pushOutput(uint32_t value) {
 
 // functions for modeling pixel responses
 float Fei4Emu::calculateThreshold(int col, int row) {
-    float modelVthin = m_pixelModels[col - 1][row - 1].Vthin_gauss * m_feCfg->getValue(&Fei4Cfg::Vthin_Fine) + m_pixelModels[col][row - 1].Vthin_gauss * m_feCfg->getValue(&Fei4Cfg::Vthin_Coarse) * 128;
+    float modelVthin = m_pixelModels[col - 1][row - 1].Vthin_gauss * m_feCfg->getValue(&Fei4Cfg::Vthin_Fine) + m_pixelModels[col-1][row - 1].Vthin_gauss * m_feCfg->getValue(&Fei4Cfg::Vthin_Coarse) * 128;
     float modelTDAC = 30.0 * m_feCfg->getTDAC(col, row);
     float threshold = modelVthin - modelTDAC;
 
