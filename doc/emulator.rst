@@ -11,7 +11,6 @@ Scan Console
         - "-c <file1> [<file2> ...]": Chip config files. If file does not exist, new config from default is created. Rx and Tx Channel are chosen to be the next available channel
         - "-p": Enable plot output (optional)
         - "-o <directory>": Specify plot output directory (default ./data/)
-        - "-n <number>": Specify board number (>= 30 for emulator)
 
 Emulator
 ---------------------
