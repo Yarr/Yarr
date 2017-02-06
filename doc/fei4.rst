@@ -7,6 +7,7 @@ Scan Console
     - Main scan execution program
     - Command line parameters:
         - "-s <scan name>": Sets the scan which should be performed, to see which scans are supported see below
+        - "-r <file>" : Controller configuration, specifies which hardware to use and hw config, see example configs/specCfg.json
         - "-c <file1> [<file2> ...]": Chip config files. If file does not exist, new config from default is created. Rx and Tx Channel are chosen to be the next available channel
         - "-p": Enable plot output (optional)
         - "-o <directory>": Specify plot output directory (default ./data/)
