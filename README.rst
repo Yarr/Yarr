@@ -35,8 +35,8 @@ Optional:
         - cd /opt/AtkasRceSDK/ ; curl -s  http://rceprojectportal.web.cern.ch/RceProjectPortal/software/SDK/V0.11.1.tar.gz | sudo tar xvfz - 
     - using CMake:
         - source /opt/AtkasRceSDK/V0.11.0/setup.sh # for RCEs
-        - mkdir <builddir>
         - cd YARR/src
+        - mkdir <builddir>
         - cd <buildir>
         - select one of the supported toolchains
             - make ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang # requires clang installed on Linux
