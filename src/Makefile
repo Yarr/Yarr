@@ -59,12 +59,11 @@ GCC_MAJOR = $(shell $(CPP) -dumpversion | cut -d'.' -f1)
 GCC_MINOR = $(shell $(CPP) -dumpversion | cut -d'.' -f2)
 
 ifneq ($(UNAME_S), Darwin)
-	ifeq ($(shell echo ${GCC_MAJOR}\<4| bc), 1)
-		$(error $(CPP) version is too old, need atleast 4.7!)
-	endif
-	ifeq ($(shell echo ${GCC_MINOR}\<7 | bc), 1)
-		$(error $(CPP) version is too old, need atleast 4.7!)
-	endif
+ifeq ($(shell echo ${GCC_MAJOR}\<4| bc), 1)
+ifeq ($(shell echo ${GCC_MINOR}\<7 | bc), 1)
+$(error $(CPP) version is too old, need atleast 4.7!)
+endif
+endif
 endif
 
 # Set build mode specific variables
