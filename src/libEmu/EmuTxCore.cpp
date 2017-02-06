@@ -15,6 +15,12 @@ EmuTxCore::EmuTxCore(EmuCom *com) {
     trigProcRunning = false;
 }
 
+EmuTxCore::EmuTxCore() {
+    m_com = NULL;
+    m_trigCnt = 0;
+    trigProcRunning = false;
+}
+
 EmuTxCore::~EmuTxCore() {}
 
 void EmuTxCore::writeFifo(uint32_t value) {

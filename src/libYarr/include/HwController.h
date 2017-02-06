@@ -11,10 +11,11 @@
 
 #include "TxCore.h"
 #include "RxCore.h"
+#include "json.hpp"
 
 class HwController : virtual public TxCore, virtual public RxCore {
     public:
-        virtual void loadConfig() {} //TODO make pure virtual
+        virtual void loadConfig(nlohmann::json &j) = 0 ;
 };
 
 #endif

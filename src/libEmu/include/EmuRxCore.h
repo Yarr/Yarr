@@ -18,8 +18,12 @@
 class EmuRxCore : virtual public RxCore {
     public:
         EmuRxCore(EmuCom *com);
+        EmuRxCore() {m_com = NULL;}
         ~EmuRxCore();
         
+        void setCom(EmuCom *com) {m_com = com;}
+        EmuCom* getCom() {return m_com;}
+
         void setRxEnable(uint32_t val) {}
         void maskRxEnable(uint32_t val, uint32_t mask) {}
 

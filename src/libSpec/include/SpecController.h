@@ -13,9 +13,12 @@
 #include "HwController.h"
 #include "SpecTxCore.h"
 #include "SpecRxCore.h"
+#include "json.hpp"
 
 class SpecController : public HwController, public SpecTxCore, public SpecRxCore {
     public:
+
+        void loadConfig(nlohmann::json &j) {}
 };
 
 #endif

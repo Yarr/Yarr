@@ -19,7 +19,6 @@
 #define HEXF(x,y) std::hex << "0x" << std::hex << std::setw(x) << std::setfill('0') << static_cast<int>(y) << std::dec
 
 EmuRxCore::EmuRxCore(EmuCom *com) {
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
     m_com = com;
 }
 

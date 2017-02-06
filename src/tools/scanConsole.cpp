@@ -23,7 +23,6 @@
 #include "HwController.h"
 #include "SpecController.h"
 #include "EmuController.h"
-#include "EmuShm.h"
 #include "Bookkeeper.h"
 #include "Fei4.h"
 #include "ScanBase.h"
@@ -31,6 +30,8 @@
 #include "Fei4Histogrammer.h"
 #include "Fei4Analysis.h"
 #include "Fei4Scans.h"
+
+#include "Fei4Emu.h"
 
 #if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
 
@@ -95,6 +96,7 @@ int main(int argc, char *argv[]) {
     std::string scanType = "";
     std::vector<std::string> cConfigPath;
     std::string outputDir = "./data/";
+    std::string ctrlCfgPath = "";
     bool doPlots = false;
     int target_threshold = 2500;
     
@@ -119,7 +121,7 @@ int main(int argc, char *argv[]) {
     oF.close();
 
     int c;
-    while ((c = getopt(argc, argv, "hs:n:g:c:po:")) != -1) {
+    while ((c = getopt(argc, argv, "hs:n:g:r:c:po:")) != -1) {
         switch (c) {
             case 'h':
                 printHelp();
@@ -138,6 +140,9 @@ int main(int argc, char *argv[]) {
                 for(; optind < argc && *argv[optind] != '-'; optind += 1){
                     cConfigPath.push_back(std::string(argv[optind]));
                 }
+                break;
+            case 'r':
+                ctrlCfgPath = std::string(optarg);
                 break;
             case 'p':
                 doPlots = true;
@@ -218,17 +223,39 @@ int main(int argc, char *argv[]) {
     std::cout << "# Init Hardware #" << std::endl;
     std::cout << "#################" << std::endl;
 
-
-    std::cout << "-> Init SPEC " << specNum << " : " << std::endl;
     HwController *hwCtrl;
-    EmuShm comCmd(1337, 256, true);
-    EmuShm comData(1338, 256, true);
-    if (specNum > 29) {
-        hwCtrl = new EmuController(&comCmd, &comData);
+    Fei4Emu *emu;
+    if (ctrlCfgPath == "") {
+        std::cout << "-> No controller config given, using default." << std::endl;
+        std::cout << "-> Init SPEC " << specNum << " : " << std::endl;
+        hwCtrl = new SpecController(); // TODO fix me with specnum
     } else {
-        hwCtrl = new SpecController();
+        // Open controller config file
+        std::cout << "-> Opening controller config: " << ctrlCfgPath << std::endl;
+        json ctrlCfg;
+        std::ifstream ctrlCfgFile(ctrlCfgPath);
+        ctrlCfg << ctrlCfgFile;
+        if (ctrlCfg["ctrlCfg"]["type"] == "spec") {
+            std::cout << "-> Found Spec config" << std::endl;
+            hwCtrl = new SpecController(); 
+            hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
+        } else if (ctrlCfg["ctrlCfg"]["type"] == "emu") {
+            std::cout << "-> Found Emulator config" << std::endl;
+            hwCtrl = new EmuController();
+            hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
+            //TODO make nice
+            std::cout << "-> Starting Emulator" << std::endl;
+            std::string emuCfgFile = ctrlCfg["ctrlCfg"]["cfg"]["feCfg"];
+            std::cout << emuCfgFile << std::endl;
+            emu= new Fei4Emu(emuCfgFile, emuCfgFile);
+        } else {
+            std::cerr << "#ERROR# Unknown config type: " << ctrlCfg["ctrlCfg"]["type"] << std::endl;
+            std::cerr << "Aborting!" << std::endl;
+            return -1;
+        }
     }
-    
+    std::thread emuThr(&Fei4Emu::executeLoop, emu);
+
     Bookkeeper bookie(hwCtrl, hwCtrl);
     std::map<FrontEnd*, std::string> feCfgMap;
 
@@ -514,7 +541,8 @@ void printHelp() {
     listScans();
     std::cout << " -n: Provide SPECboard number." << std::endl;
     //std::cout << " -g <cfg_list.txt>: Provide list of chip configurations." << std::endl;
-    std::cout << " -c <cfg1.cfg> [<cfg2.cfg> ...]: Provide chip configuration, can take multiple arguments." << std::endl;
+    std::cout << " -c <cfg1.json> [<cfg2.json> ...]: Provide chip configuration, can take multiple arguments." << std::endl;
+    std::cout << " -r <ctrl.json> Provide controller configuration." << std::endl;
     std::cout << " -p: Enable plotting of results." << std::endl;
     std::cout << " -o <dir> : Output directory. (Default ./data/)" << std::endl;
 }

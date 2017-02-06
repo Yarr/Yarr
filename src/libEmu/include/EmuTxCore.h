@@ -20,7 +20,11 @@
 class EmuTxCore : virtual public TxCore {
     public:
         EmuTxCore(EmuCom *com);
+        EmuTxCore();
         ~EmuTxCore();
+
+        void setCom(EmuCom *com) {m_com = com;}
+        EmuCom* getCom() {return m_com;}
 
         void writeFifo(uint32_t value);
         

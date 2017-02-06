@@ -13,10 +13,13 @@
 #include "HwController.h"
 #include "EmuTxCore.h"
 #include "EmuRxCore.h"
+#include "EmuShm.h"
+#include "json.hpp"
 
 class EmuController : public HwController, public EmuTxCore, public EmuRxCore {
     public:
-        EmuController(EmuCom *tx, EmuCom *rx) : EmuTxCore(tx), EmuRxCore(rx) {} 
+        EmuController() {} 
+        void loadConfig(nlohmann::json &j);
 };
 
 #endif
