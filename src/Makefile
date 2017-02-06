@@ -135,10 +135,12 @@ $(LLIB)/libyarr.a: $(LIB_OBJS)
 	@echo [Creating] $@
 	@$(AR) rcs $@ $+
 
+ifneq "$(MAKECMDGOALS)" "clean"
 -include $(ALL_DEPS)
+endif
 
 clean:
-	@$(RM) $(ALL_OBJS) $(ALL_DEPS) $(TARGETS) $(LLIB)/libyarr.a
+	@$(RM) -f $(ALL_OBJS) $(ALL_DEPS) $(TARGETS) $(LLIB)/libyarr.a
 	@echo "[Clean] … done!"
 
 list:
