@@ -26,7 +26,7 @@ Software:
     - QT5 for graphical user interface
     - Xilinx ISE 14.7 and `hdlmake <http://www.ohwr.org/projects/hdl-make/wiki>`_ (only to rebuild firmware)
 
-Optional
+Optional Requirements:
 =====================
     - cmake version 2.8 or higher
     - Atlas RCE SDK for cross compilation and running on RCEs (HSIO2 or COB)
@@ -42,6 +42,7 @@ Optional
             - make ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang # requires clang installed on Linux
             - make ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc # gcc 4.8 or higher
             - make ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-gcc # ARM/Archlinux on RCE
+            - make ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/macos-clang # MacOS build
         - make
 
 
