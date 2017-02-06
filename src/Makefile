@@ -16,13 +16,16 @@ AR = ar
 # In case it's not set, assuming local architecture
 ARCH ?= $(UNAME_P)
 
-# Compiler
 CPP = g++
+LD = g++
+
 #CC = gcc
 ifeq ($(UNAME_S),Darwin)
-	CPP = clang++
+CPP = clang++
+LD = clang++
 else
-	LDFLAGS += -pthread
+CPPFLAGS += -pthread
+LDFLAGS += -pthread
 endif
 
 CPPFLAGS += -std=c++11 -Wall -Werror
@@ -33,15 +36,6 @@ CPPFLAGS += $(INCFLAGS)
 CPPFLAGS_DEBUG += -g -O1 -DDEBUG
 CPPFLAGS_RELEASE += -O2 -DNDEBUG
 
-# Linker
-LD = g++
-ifeq ($(UNAME_S),Darwin)
-	LD = clang++
-else
-	LDFLAGS += -pthread
-endif
-
-LDFLAGS += -std=c++11
 LDFLAGS_DEBUG +=
 LDFLAGS_RELEASE +=
 LIBS +=
