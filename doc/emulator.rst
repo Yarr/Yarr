@@ -34,7 +34,7 @@ Not yet supported Scans
 Example Scan:
 ^^^^^^^^^^^^^^^^^^^^^
 
-    The simplest way to run a scan is using the helper script::
+    The emulator is used similar to the usual operation, just with a different controller config. E.g. like this::
 
         $ bin/scanConsole -r emuCfg.json -c configs/test.json -s digitalscan -p
         #####################################
@@ -153,5 +153,3 @@ Example Scan:
         Saving : EnMask
         Saving : OccupancyMap
         Saving : L1Dist
-        libc++abi.dylib: terminating
-        Abort trap: 6
