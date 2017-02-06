@@ -6,10 +6,15 @@
 ##   Major refactoring to simplify adding features
 
 UNAME_S := $(shell uname -s)
+UNAME_P := $(shell uname -p)
+MKDIR := mkdir -p
 
 MODE = DEBUG
 
 AR = ar
+
+# In case it's not set, assuming local architecture
+ARCH ?= $(UNAME_P)
 
 # Compiler
 CPP = g++
@@ -44,6 +49,11 @@ LIBS +=
 BIN = bin
 BUILD = build
 LLIB = lib
+
+ifneq ($(ARCH),)
+$(foreach D,BIN BUILD LLIB,$(eval $(D) = $(ARCH)/$($(D))))
+$(shell $(MKDIR) $(BIN) $(BUILD) $(LLIB))
+endif
 
 GCC_MAJOR = $(shell $(CPP) -dumpversion | cut -d'.' -f1)
 GCC_MINOR = $(shell $(CPP) -dumpversion | cut -d'.' -f2)
