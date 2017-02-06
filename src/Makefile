@@ -129,11 +129,17 @@ $(BUILD)/%.o:
 $(BIN)/%: $(BUILD)/%.o $(LLIB)/libyarr.a
 	@echo [Linking] $@
 	@$(LD) $(LDFLAGS) $+ -o $@
+ifeq ($(ARCH),$(UNAME_P))
+	@ln -sf ../$@ bin/$*
+endif
 
 # Lib
 $(LLIB)/libyarr.a: $(LIB_OBJS)
 	@echo [Creating] $@
 	@$(AR) rcs $@ $+
+ifeq ($(ARCH),$(UNAME_P))
+	ln -sf ../$@ lib/
+endif
 
 ifneq "$(MAKECMDGOALS)" "clean"
 -include $(ALL_DEPS)
