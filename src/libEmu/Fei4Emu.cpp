@@ -51,6 +51,7 @@ Fei4Emu::Fei4Emu() {
     m_rxShm = std::make_shared<EmuShm>(1338, 256, 0);
 
     this->initializePixelModels();
+    run = true;
 }
 
 Fei4Emu::Fei4Emu(std::string output_model_cfg): Fei4Emu() {
@@ -165,7 +166,7 @@ void Fei4Emu::writePixelModelsToFile() {
 
 void Fei4Emu::executeLoop() {
     std::cout << "Starting emulator loop" << std::endl;
-    while (1)
+    while (run)
     {
             uint32_t command;
         uint32_t type;
@@ -176,56 +177,58 @@ void Fei4Emu::executeLoop() {
         uint32_t value;
         uint32_t bitstream[21];
 
-        command = m_txShm->read32();
-        type = command >> 14;
+        if (!m_txShm->isEmpty()) {
+            command = m_txShm->read32();
+            type = command >> 14;
 
-        switch (type)
-        {
-            case 0x7400:
-                handleTrigger();
-                break;
-            case 0x0168:
-                name = command >> 10 & 0xF;
-                chipid = command >> 6 & 0xF;
-                address = command & 0x3F;
+            switch (type)
+            {
+                case 0x7400:
+                    handleTrigger();
+                    break;
+                case 0x0168:
+                    name = command >> 10 & 0xF;
+                    chipid = command >> 6 & 0xF;
+                    address = command & 0x3F;
 
-                switch (name)
-                {
-                    case 1:
-//                        printf("recieved a RdRegister command\n");
-                        break;
-                    case 2:
-//                        printf("recieved a WrRegister command\n");
-                        value = m_txShm->read32();
-                        value >>= 16;
-                        handleWrRegister(chipid, address, value);
-                        break;
-                    case 4:
-//                        printf("recieved a WrFrontEnd command\n");
-                        for (int i = 0; i < 21; i++) {
-                            bitstream[i] = m_txShm->read32();
-                        }
-                        handleWrFrontEnd(chipid, bitstream);
-                        break;
-                    case 8:
-//                        printf("recieved a GlobalReset command\n");
-                        break;
-                    case 9:
-//                        printf("recieved a GlobalPulse command\n");
-                        handleGlobalPulse(chipid);
-                        break;
-                    case 10:
-//                        printf("recieved a RunMode command\n");
-                        handleRunMode(chipid, command);
-                        break;
-                }
+                    switch (name)
+                    {
+                        case 1:
+    //                        printf("recieved a RdRegister command\n");
+                            break;
+                        case 2:
+    //                        printf("recieved a WrRegister command\n");
+                            value = m_txShm->read32();
+                            value >>= 16;
+                            handleWrRegister(chipid, address, value);
+                            break;
+                        case 4:
+    //                        printf("recieved a WrFrontEnd command\n");
+                            for (int i = 0; i < 21; i++) {
+                                bitstream[i] = m_txShm->read32();
+                            }
+                            handleWrFrontEnd(chipid, bitstream);
+                            break;
+                        case 8:
+    //                        printf("recieved a GlobalReset command\n");
+                            break;
+                        case 9:
+    //                        printf("recieved a GlobalPulse command\n");
+                            handleGlobalPulse(chipid);
+                            break;
+                        case 10:
+    //                        printf("recieved a RunMode command\n");
+                            handleRunMode(chipid, command);
+                            break;
+                    }
 
-                break;
-            case 0:
-                break;
-            default:
-                fprintf(stderr, "ERROR - unknown type recieved, %x\n", type);
-                break;
+                    break;
+                case 0:
+                    break;
+                default:
+                    fprintf(stderr, "ERROR - unknown type recieved, %x\n", type);
+                    break;
+            }
         }
 
     }

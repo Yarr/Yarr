@@ -224,6 +224,7 @@ int main(int argc, char *argv[]) {
     std::cout << "#################" << std::endl;
 
     HwController *hwCtrl;
+    Fei4Emu *emu;
     std::vector<std::thread> emuThreads;
     if (ctrlCfgPath == "") {
         std::cout << "-> No controller config given, using default." << std::endl;
@@ -247,7 +248,6 @@ int main(int argc, char *argv[]) {
             std::cout << "-> Starting Emulator" << std::endl;
             std::string emuCfgFile = ctrlCfg["ctrlCfg"]["cfg"]["feCfg"];
             std::cout << emuCfgFile << std::endl;
-            Fei4Emu *emu;
             emu= new Fei4Emu(emuCfgFile, emuCfgFile);
             emuThreads.push_back(std::thread(&Fei4Emu::executeLoop, emu));
         } else {
@@ -499,6 +499,12 @@ int main(int argc, char *argv[]) {
     std::cout << "###########" << std::endl;
     std::cout << "# Cleanup #" << std::endl;
     std::cout << "###########" << std::endl;
+
+    if (emu) {
+        emu->run = false;
+        emuThreads[0].join();
+        delete emu;
+    }
 
     // Need this folder to plot
     system("mkdir -p /tmp/$USER");

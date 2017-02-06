@@ -108,6 +108,7 @@ class Fei4Emu {
 
         // this is the file path to output the pixel model configuration
         std::string m_output_model_cfg;
+        volatile bool run;
 };
 
 #endif //__FEI4_EMU_H__
