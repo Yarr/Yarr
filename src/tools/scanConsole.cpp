@@ -224,7 +224,7 @@ int main(int argc, char *argv[]) {
     std::cout << "#################" << std::endl;
 
     HwController *hwCtrl;
-    Fei4Emu *emu;
+    std::vector<std::thread> emuThreads;
     if (ctrlCfgPath == "") {
         std::cout << "-> No controller config given, using default." << std::endl;
         std::cout << "-> Init SPEC " << specNum << " : " << std::endl;
@@ -247,14 +247,15 @@ int main(int argc, char *argv[]) {
             std::cout << "-> Starting Emulator" << std::endl;
             std::string emuCfgFile = ctrlCfg["ctrlCfg"]["cfg"]["feCfg"];
             std::cout << emuCfgFile << std::endl;
+            Fei4Emu *emu;
             emu= new Fei4Emu(emuCfgFile, emuCfgFile);
+            emuThreads.push_back(std::thread(&Fei4Emu::executeLoop, emu));
         } else {
             std::cerr << "#ERROR# Unknown config type: " << ctrlCfg["ctrlCfg"]["type"] << std::endl;
             std::cerr << "Aborting!" << std::endl;
             return -1;
         }
     }
-    std::thread emuThr(&Fei4Emu::executeLoop, emu);
 
     Bookkeeper bookie(hwCtrl, hwCtrl);
     std::map<FrontEnd*, std::string> feCfgMap;
