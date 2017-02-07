@@ -11,7 +11,6 @@ Scan Console
         - "-c <file1> [<file2> ...]": Chip config files. If file does not exist, new config from default is created. Rx and Tx Channel are chosen to be the next available channel
         - "-p": Enable plot output (optional)
         - "-o <directory>": Specify plot output directory (default ./data/)
-        - "-n <number>": Specify board number (>= 30 for emulator)
 
 Emulator
 ---------------------
@@ -35,7 +34,7 @@ Not yet supported Scans
 Example Scan:
 ^^^^^^^^^^^^^^^^^^^^^
 
-    The simplest way to run a scan is using the helper script::
+    The emulator is used similar to the usual operation, just with a different controller config. E.g. like this::
 
         $ bin/scanConsole -r emuCfg.json -c configs/test.json -s digitalscan -p
         #####################################
@@ -154,5 +153,3 @@ Example Scan:
         Saving : EnMask
         Saving : OccupancyMap
         Saving : L1Dist
-        libc++abi.dylib: terminating
-        Abort trap: 6
