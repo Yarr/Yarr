@@ -50,7 +50,7 @@ BUILD = build
 LLIB = lib
 
 ifneq ($(ARCH),)
-$(foreach D,BIN BUILD LLIB,$(eval $(D) = $(ARCH)/$($(D))))
+$(foreach D,BIN BUILD LLIB,$(eval $(D) = $($(D))/$(ARCH)))
 $(shell $(MKDIR) $(BIN) $(BUILD) $(LLIB))
 endif
 
