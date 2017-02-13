@@ -5,7 +5,7 @@ ifeq ($(UNAME),Linux)
 endif
 ifeq ($(UNAME),Darwin)
 	TARGET=YarrGui.app
-	QMAKE=qmake-qt5
+	QMAKE=qmake
 endif
 MAKE=make
 BUILD=build
