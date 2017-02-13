@@ -36,7 +36,7 @@ Example Scan:
 
     The emulator is used similar to the usual operation, just with a different controller config. E.g. like this::
 
-        $ bin/scanConsole -r emuCfg.json -c configs/test.json -s digitalscan -p
+        $ bin/scanConsole -r configs/emuCfg.json -c configs/test.json -s digitalscan -p
         #####################################
         # Welcome to the YARR Scan Console! #
         #####################################

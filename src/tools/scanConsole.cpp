@@ -103,7 +103,9 @@ int main(int argc, char *argv[]) {
     unsigned runCounter = 0;
 
     // Load run counter
-    system("mkdir -p ~/.yarr");
+    if (system("mkdir -p ~/.yarr") < 0) {
+        std::cerr << "#ERROR# Loading run counter ~/.yarr!" << std::endl;
+    }
     
     std::string home = getenv("HOME");
     std::fstream iF((home + "/.yarr/runCounter").c_str(), std::ios::in);
@@ -233,8 +235,12 @@ int main(int argc, char *argv[]) {
     } else {
         // Open controller config file
         std::cout << "-> Opening controller config: " << ctrlCfgPath << std::endl;
-        json ctrlCfg;
         std::ifstream ctrlCfgFile(ctrlCfgPath);
+        if (!ctrlCfgFile) {
+            std::cerr <<"#ERROR# Cannot open controller config file: " << ctrlCfgPath << std::endl;
+            return -1;
+        }
+        json ctrlCfg;
         ctrlCfg << ctrlCfgFile;
         if (ctrlCfg["ctrlCfg"]["type"] == "spec") {
             std::cout << "-> Found Spec config" << std::endl;
@@ -302,7 +308,7 @@ int main(int argc, char *argv[]) {
         iFTmp.close();
         
         // Create backup of current config
-        std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getName() + ".json");
+        std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getName() + ".json.after");
         nlohmann::json backupCfg;
         dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
         backupCfgFile << std::setw(4) << backupCfg;
@@ -505,17 +511,19 @@ int main(int argc, char *argv[]) {
         emuThreads[0].join();
         delete emu;
     }
+    //delete hwCtrl; //TODO add deconstructor
 
     // Need this folder to plot
-    system("mkdir -p /tmp/$USER");
+    if (system("mkdir -p /tmp/$USER") < 0) {
+        std::cerr << "#ERROR# Problem creating /tmp/$USER folder. Plots might work." << std::endl;
+    }
+
     // Cleanup
     delete s;
     for (unsigned i=0; i<bookie.feList.size(); i++) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
             
-            // TODO save backup config into run folder
-
             // Save config
             std::cout << "-> Saving config of FE " << dynamic_cast<FrontEndCfg*>(fe)->getName() << " to " << feCfgMap.at(fe) << std::endl;
             nlohmann::json jTmp;
@@ -523,6 +531,13 @@ int main(int argc, char *argv[]) {
             std::ofstream oFTmp(feCfgMap.at(fe));
             oFTmp << std::setw(4) << jTmp;
             oFTmp.close();
+
+            // Save extra config in data folder
+            std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getName() + ".json.after");
+            nlohmann::json backupCfg;
+            dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
+            backupCfgFile << std::setw(4) << backupCfg;
+            backupCfgFile.close(); 
 
             // Plot
             if (doPlots) {
@@ -537,6 +552,10 @@ int main(int argc, char *argv[]) {
             delete fe->ana;
             fe->ana = NULL;
         }
+    }
+    std::string lsCmd = "ls -1 " + outputDir + "*.p*";
+    if (system(lsCmd.c_str()) < 0) {
+        std::cout << "Find plots in: " << outputDir << std::endl;
     }
     return 0;
 }
