@@ -163,7 +163,7 @@ void Fei4Cfg::fromFileJson(json &j) {
         lCap = j["FE-I4B"]["Parameter"]["lCap"];
     if (!j["FE-I4B"]["Parameter"]["vcalOffset"].empty())
         vcalOffset = j["FE-I4B"]["Parameter"]["vcalOffset"];
-    if (!j["FE-I4B"]["Parameter"]["vcalSlop"].empty())
+    if (!j["FE-I4B"]["Parameter"]["vcalSlope"].empty())
         vcalSlope = j["FE-I4B"]["Parameter"]["vcalSlope"];
 
     Fei4PixelCfg::fromFileJson(j);
