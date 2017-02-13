@@ -128,8 +128,8 @@ void YarrGui::on_init_button_clicked(){
             ui->bar4_value->setNum(specVec[index]->getBarSize(4));
             ui->main_tabWidget->setTabEnabled(1, true);
             ui->main_tabWidget->setTabEnabled(2, true);
-            tx = new TxCore(specVec[index]);
-            rx = new RxCore(specVec[index]);
+            tx = specVec[index];
+            rx = specVec[index];
             bk = new Bookkeeper(tx, rx);
         }else{
             QMessageBox errorBox;

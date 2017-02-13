@@ -42,8 +42,8 @@
 #include "eepromdialog.h"
 #include "plotdialog.h"
 #include "qcustomplot.h"
-#include "TxCore.h"
-#include "RxCore.h"
+#include "SpecTxCore.h"
+#include "SpecRxCore.h"
 #include "Fei4.h"
 #include "ScanBase.h"
 #include "scanstruct.h"
@@ -129,8 +129,8 @@ private:
     std::vector<SpecController*> specVec;
 
     Bookkeeper * bk;
-    TxCore * tx;
-    RxCore * rx;
+    SpecTxCore * tx;
+    SpecRxCore * rx;
 
     std::vector<QString> scanVec;
     CustomScan cs;

@@ -17,14 +17,14 @@
 #include "fei4reghelper.h"
 #include "LoopActionBase.h"
 #include "RawData.h"
-#include "RxCore.h"
+#include "SpecRxCore.h"
 #include "ScanBase.h"
-#include "TxCore.h"
+#include "SpecTxCore.h"
 
 class CustomScan : public ScanBase {
 public:
     CustomScan() : ScanBase(nullptr, nullptr, nullptr, nullptr) {for(unsigned int i; i < 8; i++) bA.at(i) = false;}
-    CustomScan(Fei4 * p1, TxCore * p2, RxCore * p3, ClipBoard<RawDataContainer> * p4)
+    CustomScan(Fei4 * p1, SpecTxCore * p2, SpecRxCore * p3, ClipBoard<RawDataContainer> * p4)
         : ScanBase(p1, p2, p3, p4) {for(unsigned int i = 0; i < 8; i++) bA.at(i) = false;}
     CustomScan(Bookkeeper * bk) : ScanBase(bk) {for(unsigned int i = 0; i < 8; i++) bA.at(i) = false;}
     ~CustomScan() {}
