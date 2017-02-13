@@ -107,6 +107,7 @@ private slots:
 
     //void on_debugScanButton_clicked();
 
+    void addScan(QString const& myKey);
     void on_addScanButton_clicked();
     void on_exportPlotButton_clicked();
     void on_addFeGlobalButton_clicked();
@@ -117,7 +118,11 @@ private slots:
     void on_actionEEPROM_triggered();
     void on_actionCreate_scan_triggered();
 
+    void on_addScanBox_activated(const QString &arg1);
+
 private:
+    bool addFE(std::string);
+
     Ui::YarrGui * ui;
     
     QDir devicePath;

@@ -5,6 +5,8 @@
 #include <iostream>
 #include <stdint.h>
 
+#include <QMetaType>
+
 #include "Fei4.h"
 #include "Fei4GlobalFeedback.h"
 #include "LoopActionBase.h"
@@ -78,5 +80,7 @@ private:
     void writePar();
     bool allDone();
 };
+
+Q_DECLARE_METATYPE(Fei4RegHelper)
 
 #endif // FEI4REGHELPER_H

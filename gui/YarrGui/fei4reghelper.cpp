@@ -93,7 +93,7 @@ void Fei4GFHelper::init() {
 //        }
 //    }
     for(unsigned int k=0; k < keeper->activeFeList.size(); k++){
-        unsigned ch = dynamic_cast<FrontEndCfg*>(keeper->activeFeList[k])->getRxChannel();
+        unsigned ch = dynamic_cast<Fei4*>(keeper->activeFeList[k])->getRxChannel();
         localStep[ch] = step;
         values[ch] = max;
         oldSign[ch] = -1;
@@ -108,7 +108,7 @@ void Fei4GFHelper::execPart1() {
     g_stat->set(this, cur);
     // Lock all mutexes if open
     for(unsigned int k=0; k<keeper->activeFeList.size(); k++) {
-        keeper->mutexMap[dynamic_cast<FrontEndCfg*>(keeper->activeFeList[k])->getRxChannel()].try_lock();
+        keeper->mutexMap[dynamic_cast<Fei4*>(keeper->activeFeList[k])->getRxChannel()].try_lock();
     }
     m_done = allDone();
 
@@ -118,11 +118,11 @@ void Fei4GFHelper::execPart1() {
 void Fei4GFHelper::execPart2() {
     // Wait for mutexes to be unlocked by feedback
     for(unsigned int k=0; k<keeper->activeFeList.size(); k++) {
-        keeper->mutexMap[dynamic_cast<FrontEndCfg*>(keeper->activeFeList[k])->getRxChannel()].lock();
+        keeper->mutexMap[dynamic_cast<Fei4*>(keeper->activeFeList[k])->getRxChannel()].lock();
         if (verbose)
             std::cout << " --> Received Feedback on Channel "
-                      << dynamic_cast<FrontEndCfg*>(keeper->activeFeList[k])->getRxChannel() << " with value: "
-                      << values[dynamic_cast<FrontEndCfg*>(keeper->activeFeList[k])->getRxChannel()] << std::endl;
+                      << dynamic_cast<Fei4*>(keeper->activeFeList[k])->getRxChannel() << " with value: "
+                      << values[dynamic_cast<Fei4*>(keeper->activeFeList[k])->getRxChannel()] << std::endl;
     }
     cur++;
     this->writePar();
@@ -132,7 +132,7 @@ void Fei4GFHelper::execPart2() {
 
 void Fei4GFHelper::end() {
     for(unsigned int k=0; k<keeper->activeFeList.size(); k++) {
-        unsigned ch = dynamic_cast<FrontEndCfg*>(keeper->activeFeList[k])->getRxChannel();
+        unsigned ch = dynamic_cast<Fei4*>(keeper->activeFeList[k])->getRxChannel();
         std::cout << " --> Final parameter of Fe " << ch << " is " << values[ch] << std::endl;
     }
 
@@ -141,8 +141,12 @@ void Fei4GFHelper::end() {
 
 void Fei4GFHelper::writePar() {
     for(unsigned int k=0; k<keeper->activeFeList.size(); k++) {
-        g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(keeper->activeFeList[k])->getTxChannel());
-        dynamic_cast<Fei4*>(keeper->activeFeList[k])->wrGR16(mOffset, bOffset, mask, msbRight, values[dynamic_cast<FrontEndCfg*>(keeper->activeFeList[k])->getRxChannel()]);
+        g_tx->setCmdEnable(1 << dynamic_cast<Fei4*>(keeper->activeFeList[k])->getTxChannel());
+        dynamic_cast<Fei4*>(keeper->activeFeList[k])->wrGR16(mOffset,
+                                                             bOffset,
+                                                             mask,
+                                                             msbRight,
+                                                             values[dynamic_cast<Fei4*>(keeper->activeFeList[k])->getRxChannel()]);
         while(!g_tx->isCmdEmpty());
     }
     g_tx->setCmdEnable(keeper->getTxMask());
@@ -152,7 +156,7 @@ void Fei4GFHelper::writePar() {
 
 bool Fei4GFHelper::allDone() {
     for(unsigned int k=0; k<keeper->activeFeList.size(); k++) {
-        unsigned ch = dynamic_cast<FrontEndCfg*>(keeper->activeFeList[k])->getRxChannel();
+        unsigned ch = dynamic_cast<Fei4*>(keeper->activeFeList[k])->getRxChannel();
         if(!doneMap[ch]){
             return false;
         }

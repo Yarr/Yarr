@@ -64,9 +64,6 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->yarrPapageiLabel->setAlignment(Qt::AlignRight);
     ui->yarrPapageiLabel->setScaledContents(true);
 
-    ui->chipIdEdit->setText("6");
-    ui->rxChannelEdit->setText("0");
-    ui->txChannelEdit->setText("0");
     ui->configfileName->setText("util/your_config_here.js");
 
     ui->addScanButton->setFont(QFont("Sans Serif", 10, QFont::Bold));
@@ -215,94 +212,8 @@ bool YarrGui::isSpecInitialized(unsigned int i) {
 //######################################################################
 
 void YarrGui::on_addFeButton_clicked(){
-
-    unsigned chipIdAdded = (ui->chipIdEdit->text()).toUInt();
-    unsigned txChannelAdded = (ui->txChannelEdit->text()).toUInt();
-    unsigned rxChannelAdded = (ui->rxChannelEdit->text()).toUInt();
-
-    if(bk->isChannelUsed(rxChannelAdded)) {
-        std::cout << "ERROR - rx channel already used. Aborting... \n";
-        return;
-    }
-//    bk->addFe(chipIdAdded, txChannelAdded, rxChannelAdded);
-    bk->addFe(new Fei4(bk->tx, txChannelAdded, rxChannelAdded), txChannelAdded, rxChannelAdded);
     std::string iFNJ = (ui->configfileName->text()).toStdString();
-    std::fstream iFJ(iFNJ, std::ios_base::in);
-    nlohmann::json j;
-    try{
-        iFJ >> j;
-    }
-    catch(std::invalid_argument){
-        std::cerr << iFNJ << " does not contain a valid configuration. " << std::endl;
-        std::cerr << "Using default configuration instead. " << std::endl;
-        iFJ.close();
-        iFJ.open("util/default.js", std::ios_base::in);
-        iFJ >> j;
-        iFJ.close();
-        iFJ.open(iFNJ, std::ios_base::out);
-        iFJ << std::setw(4) << j;
-    }
-    iFJ.close();
-    try{
-        dynamic_cast<Fei4*>(bk->getLastFe())->fromFileJson(j);
-    }
-    catch(std::domain_error){
-        std::cerr << iFNJ << " does not contain a valid configuration. " << std::endl;
-        std::cerr << "Using default configuration instead. " << std::endl;
-        iFJ.open("util/default.js", std::ios_base::in);
-        iFJ >> j;
-        iFJ.close();
-        iFJ.open(iFNJ, std::ios_base::out);
-        iFJ << std::setw(4) << j;
-        iFJ.close();
-    }
-    tx->setCmdEnable(0x1 << dynamic_cast<FrontEndCfg*>(bk->getLastFe())->getTxChannel());
-    bk->getLastFe()->configure();
-    dynamic_cast<Fei4*>(bk->getLastFe())->configurePixels();
-    while(!(tx->isCmdEmpty())){
-        ;
-    }
-    std::this_thread::sleep_for(std::chrono::microseconds(1000));
-    tx->setCmdEnable(bk->getTxMask());
-    rx->setRxEnable(bk->getRxMask());
-
-    QTreeWidgetItem * feTreeItem = new QTreeWidgetItem(ui->feTree);
-    QTreeWidgetItem * feTreeItemId = new QTreeWidgetItem(feTreeItem);
-    QTreeWidgetItem * feTreeItemTx = new QTreeWidgetItem(feTreeItem);
-    QTreeWidgetItem * feTreeItemRx = new QTreeWidgetItem(feTreeItem);
-    QTreeWidgetItem * feTreeItemCf = new QTreeWidgetItem(feTreeItem);
-    QTreeWidgetItem * feTreeItemCk = new QTreeWidgetItem(feTreeItem);
-
-    feTreeItem->setText(0, "FE " + QString::number(ui->feTree->topLevelItemCount()));
-    feTreeItemId->setText(0, "Chip ID");
-    feTreeItemId->setText(1, QString::number(chipIdAdded));
-    feTreeItemTx->setText(0, "TX Channel");
-    feTreeItemTx->setText(1, QString::number(txChannelAdded));
-    feTreeItemRx->setText(0, "RX Channel");
-    feTreeItemRx->setText(1, QString::number(rxChannelAdded));
-    feTreeItemCf->setText(0, "Config file");
-    feTreeItemCf->setText(1, ui->configfileName->text());
-    QPushButton * b = new QPushButton("Edit config", this);
-    ui->feTree->setItemWidget(feTreeItemCf, 2, b);
-    QObject::connect(b, &QPushButton::clicked, this, [=](){
-        EditCfgDialog d(dynamic_cast<Fei4*>(bk->getFe(rxChannelAdded)), QString::fromStdString(iFNJ), this);
-        d.exec();
-        //d.setModal(true);
-        //d.showMaximized();
-    });
-    feTreeItemCk->setText(0, "Scan");
-    feTreeItemCk->setFlags(feTreeItemCk->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsSelectable);
-    feTreeItemCk->setCheckState(1, Qt::Checked);
-
-    feTreeItem->addChild(feTreeItemId);
-    feTreeItem->addChild(feTreeItemTx);
-    feTreeItem->addChild(feTreeItemRx);
-    feTreeItem->addChild(feTreeItemCf);
-    feTreeItem->addChild(feTreeItemCk);
-
-    feTreeItem->setExpanded(true);
-
-    return;
+    this->addFE(iFNJ);
 }
 
 void YarrGui::on_remFeButton_clicked(){
@@ -362,9 +273,6 @@ void YarrGui::on_feTree_itemClicked(QTreeWidgetItem * item, int column){
     QString rxChannelAdded  = item->child(2)->text(1);
     QString configFileAdded = item->child(3)->text(1);
 
-    ui->chipIdEdit->setText(chipIdAdded);
-    ui->txChannelEdit->setText(txChannelAdded);
-    ui->rxChannelEdit->setText(rxChannelAdded);
     ui->configfileName->setText(configFileAdded);
 
     return;
@@ -382,18 +290,11 @@ void YarrGui::on_addFeGlobalButton_clicked(){
     std::string gCfgFilename((ui->configfileName_2->text()).toStdString());
     std::ifstream gCfg(gCfgFilename);
     if(!gCfg) {
-        std::cout << "ERROR - could not open global config file. Aborting... \n";
+        std::cout << "ERROR - could not open global config file. Aborting... " << std::endl;
+        return;
     }
-    std::string chipNameTmp;
-    unsigned chipIdTmp;
-    unsigned txChannelTmp;
-    unsigned rxChannelTmp;
     std::string chipCfgFilenameTmp;
 
-    std::vector<std::string> chipNamesAdded;
-    std::vector<unsigned> chipIdsAdded;
-    std::vector<unsigned> txChannelsAdded;
-    std::vector<unsigned> rxChannelsAdded;
     std::vector<std::string> chipCfgFilenamesAdded;
     char peeek;
     while(!(gCfg.eof()) && gCfg){
@@ -406,100 +307,138 @@ void YarrGui::on_addFeGlobalButton_clicked(){
             }
             continue;
         }
-        gCfg >> chipNameTmp >> chipIdTmp >> txChannelTmp >> rxChannelTmp >> chipCfgFilenameTmp;
-        chipNamesAdded.push_back(chipNameTmp);
-        chipIdsAdded.push_back(chipIdTmp);
-        txChannelsAdded.push_back(txChannelTmp);
-        rxChannelsAdded.push_back(rxChannelTmp);
+        gCfg >> chipCfgFilenameTmp;
         chipCfgFilenamesAdded.push_back(chipCfgFilenameTmp);
         while(iswspace(gCfg.peek())) {
             gCfg.get();
         }
     }
-    for(unsigned int i = 0; i < (chipIdsAdded.size()) ; i++){
-        if(bk->isChannelUsed(rxChannelsAdded.at(i))){
-            std::cout << "ERROR - rx channel " << rxChannelsAdded.at(i) << " already used. Skipping... \n";
-            continue;
-        }
-//        bk->addFe(chipIdsAdded.at(i), txChannelsAdded.at(i), rxChannelsAdded.at(i));
-        bk->addFe(new Fei4(bk->tx, txChannelsAdded.at(i), rxChannelsAdded.at(i)), txChannelsAdded.at(i), rxChannelsAdded.at(i));
-//        bk->getLastFe()->fromFileBinary(chipCfgFilenamesAdded.at(i)); //JSON here
-        std::fstream iFJ(chipCfgFilenamesAdded.at(i), std::ios_base::in);
-        nlohmann::json j;
-        try{
-            iFJ >> j;
-        }
-        catch(std::invalid_argument){
-            std::cerr << chipCfgFilenamesAdded.at(i) << " does not contain a valid configuration. " << std::endl;
-            std::cerr << "Using default configuration instead. " << std::endl;
-            iFJ.close();
-            iFJ.open("util/default.js", std::ios_base::in);
-            iFJ >> j;
-            iFJ.close();
-            iFJ.open(chipCfgFilenamesAdded.at(i), std::ios_base::out);
-            iFJ << std::setw(4) << j;
-        }
-        iFJ.close();
-        try{
-            dynamic_cast<Fei4*>(bk->getLastFe())->fromFileJson(j);
-        }
-        catch(std::domain_error){
-            std::cerr << chipCfgFilenamesAdded.at(i) << " contains a damaged configuration. " << std::endl;
-            std::cerr << "Using default configuration instead. " << std::endl;
-            iFJ.open("util/default.js", std::ios_base::in);
-            iFJ >> j;
-            iFJ.close();
-            iFJ.open(chipCfgFilenamesAdded.at(i), std::ios_base::out);
-            iFJ << std::setw(4) << j;
-            iFJ.close();
-        }
-        tx->setCmdEnable(0x1 << dynamic_cast<FrontEndCfg*>(bk->getLastFe())->getTxChannel());
-        dynamic_cast<Fei4*>(bk->getLastFe())->configure();
-        dynamic_cast<Fei4*>(bk->getLastFe())->configurePixels();
-        while(!(tx->isCmdEmpty())) {
-            ;
-        }
-        std::this_thread::sleep_for(std::chrono::microseconds(1000));
-        tx->setCmdEnable(bk->getTxMask());
-        rx->setRxEnable(bk->getRxMask());
-
-        QTreeWidgetItem * feTreeItem = new QTreeWidgetItem(ui->feTree);
-        QTreeWidgetItem * feTreeItemId = new QTreeWidgetItem(feTreeItem);
-        QTreeWidgetItem * feTreeItemTx = new QTreeWidgetItem(feTreeItem);
-        QTreeWidgetItem * feTreeItemRx = new QTreeWidgetItem(feTreeItem);
-        QTreeWidgetItem * feTreeItemCf = new QTreeWidgetItem(feTreeItem);
-        QTreeWidgetItem * feTreeItemCk = new QTreeWidgetItem(feTreeItem);
-
-        feTreeItem->setText(0, QString::fromStdString(chipNamesAdded.at(i)));
-        feTreeItemId->setText(0, "Chip ID");
-        feTreeItemId->setText(1, QString::number(chipIdsAdded.at(i)));
-        feTreeItemTx->setText(0, "TX Channel");
-        feTreeItemTx->setText(1, QString::number(txChannelsAdded.at(i)));
-        feTreeItemRx->setText(0, "RX Channel");
-        feTreeItemRx->setText(1, QString::number(rxChannelsAdded.at(i)));
-        feTreeItemCf->setText(0, "Config file");
-        feTreeItemCf->setText(1, QString::fromStdString(chipCfgFilenamesAdded.at(i)));
-        QPushButton * b = new QPushButton("Edit config", this);
-        ui->feTree->setItemWidget(feTreeItemCf, 2, b);
-        QObject::connect(b, &QPushButton::clicked, this, [=](){
-            EditCfgDialog d(dynamic_cast<Fei4*>(bk->getFe(rxChannelsAdded.at(i))),
-                            QString::fromStdString(chipCfgFilenamesAdded.at(i)), this);
-            d.exec();
-        });
-        feTreeItemCk->setText(0, "Scan");
-        feTreeItemCk->setFlags(feTreeItemCk->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsSelectable);
-        feTreeItemCk->setCheckState(1, Qt::Checked);
-
-        feTreeItem->addChild(feTreeItemId);
-        feTreeItem->addChild(feTreeItemTx);
-        feTreeItem->addChild(feTreeItemRx);
-        feTreeItem->addChild(feTreeItemCf);
-        feTreeItem->addChild(feTreeItemCk);
-
-        feTreeItem->setExpanded(true);
+    for(unsigned int i = 0; i < (chipCfgFilenamesAdded.size()) ; i++){
+        this->addFE(chipCfgFilenamesAdded.at(i));
     }
 
     return;
+}
+
+bool YarrGui::addFE(std::string fN){
+    nlohmann::json j;
+    std::ifstream iF(fN);
+    if(!iF.is_open()){
+        std::cerr << "Config file " << fN << " does not exist. Aborting... " << std::endl;
+        return false;
+    }
+    try{
+        iF >> j;
+    }
+    catch(std::invalid_argument){
+        std::cerr << "File " << fN << " does not contain a valid configuration. Aborting... " << std::endl;
+        iF.close();
+        return false;
+    }
+    try{
+        if(bk->isChannelUsed((unsigned int)j["FE-I4B"]["rxChannel"])){
+            std::cerr << "Channel " << (unsigned int)j["FE-I4B"]["rxChannel"]
+                      << " in config file " << fN
+                      << " already used. Aborting... " << std::endl;
+            iF.close();
+            return false;
+        }
+    }
+    catch(std::domain_error){
+        std::cerr << "Missing txChannel/rxChannel field in config file " << fN
+                  << ". Aborting... " << std::endl;
+        iF.close();
+        return false;
+    }
+    iF.close();
+    bk->addFe(new Fei4(bk->tx,
+                       (unsigned int)j["FE-I4B"]["txChannel"],
+                       (unsigned int)j["FE-I4B"]["rxChannel"]),
+              (unsigned int)j["FE-I4B"]["txChannel"],
+              (unsigned int)j["FE-I4B"]["rxChannel"]);
+    try{
+        dynamic_cast<Fei4*>(bk->getLastFe())->fromFileJson(j);
+    }
+    catch(std::domain_error){
+        std::cerr << "Config file " << fN
+                  << " does not contain a valid configuration. Aborting... " << std::endl;
+        return false;
+    }
+
+    tx->setCmdEnable(0x1 << (unsigned int)j["FE-I4B"]["rxChannel"]);
+    dynamic_cast<Fei4*>(bk->getFe((unsigned int)j["FE-I4B"]["rxChannel"]))->configure();
+    dynamic_cast<Fei4*>(bk->getFe((unsigned int)j["FE-I4B"]["rxChannel"]))->configurePixels();
+    while(!(tx->isCmdEmpty())) {
+        ;
+    }
+
+    std::this_thread::sleep_for(std::chrono::microseconds(1000));
+    tx->setCmdEnable(bk->getTxMask());
+    rx->setRxEnable(bk->getRxMask());
+
+    QTreeWidgetItem * feTreeItem = new QTreeWidgetItem(ui->feTree);
+    QTreeWidgetItem * feTreeItemId = new QTreeWidgetItem(feTreeItem);
+    QTreeWidgetItem * feTreeItemTx = new QTreeWidgetItem(feTreeItem);
+    QTreeWidgetItem * feTreeItemRx = new QTreeWidgetItem(feTreeItem);
+    QTreeWidgetItem * feTreeItemCf = new QTreeWidgetItem(feTreeItem);
+    QTreeWidgetItem * feTreeItemCk = new QTreeWidgetItem(feTreeItem);
+
+    {
+        std::string chipNameTmp;
+        unsigned int chipIdTmp;
+        unsigned int txChannelTmp;
+        unsigned int rxChannelTmp;
+        try{
+            chipNameTmp = j["FE-I4B"]["name"];
+        }
+        catch(std::domain_error){
+            std::cerr << "Config file " << fN << " has no \"name\" field. "
+                      << "Defaulting to \"myChip\". " << std::endl;
+            chipNameTmp = "myChip";
+        }
+        try{
+            chipIdTmp = j["FE-I4B"]["Parameter"]["chipId"];
+        }
+        catch(std::domain_error){
+            std::cerr << "Config file " << fN << " has no \"chipId\" field. "
+                      << "Defaulting to 6. " << std::endl;
+            chipIdTmp = 6;
+        }
+        txChannelTmp = j["FE-I4B"]["txChannel"];
+        rxChannelTmp = j["FE-I4B"]["rxChannel"];
+
+        feTreeItem->setText(0, QString::fromStdString(chipNameTmp));
+        feTreeItemId->setText(0, "Chip ID");
+        feTreeItemId->setText(1, QString::number(chipIdTmp));
+        feTreeItemTx->setText(0, "TX Channel");
+        feTreeItemTx->setText(1, QString::number(txChannelTmp));
+        feTreeItemRx->setText(0, "RX Channel");
+        feTreeItemRx->setText(1, QString::number(rxChannelTmp));
+        feTreeItemCf->setText(0, "Config file");
+        feTreeItemCf->setText(1, QString::fromStdString(fN));
+    }
+
+    QPushButton * b = new QPushButton("Edit config", this);
+    ui->feTree->setItemWidget(feTreeItemCf, 2, b);
+    QObject::connect(b, &QPushButton::clicked, this, [=](){
+        EditCfgDialog d(dynamic_cast<Fei4*>(bk->getFe((unsigned int)j["FE-I4B"]["rxChannel"])),
+                        QString::fromStdString(fN), this);
+        d.exec();
+    });
+
+    feTreeItemCk->setText(0, "Scan");
+    feTreeItemCk->setFlags(feTreeItemCk->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsSelectable);
+    feTreeItemCk->setCheckState(1, Qt::Checked);
+
+    feTreeItem->addChild(feTreeItemId);
+    feTreeItem->addChild(feTreeItemTx);
+    feTreeItem->addChild(feTreeItemRx);
+    feTreeItem->addChild(feTreeItemCf);
+    feTreeItem->addChild(feTreeItemCk);
+
+    feTreeItem->setExpanded(true);
+
+    return true;
 }
 
 //######################################################################
@@ -564,6 +503,11 @@ void YarrGui::setCustomScan(CustomScan & other) {
 }
 
 void YarrGui::doScan(QString qn){
+    std::ofstream *tmpOfCout = new std::ofstream("deleteMeCout.txt");
+    std::streambuf *coutBuf = std::cout.rdbuf(tmpOfCout->rdbuf());
+    std::ofstream *tmpOfCerr = new std::ofstream("deleteMeCerr.txt");
+    std::streambuf *cerrBuf = std::cerr.rdbuf(tmpOfCerr->rdbuf());
+
     int N = ui->feTree->topLevelItemCount();
     int M = scanVec.size();
     for(int j = 0; j < N; j++){
@@ -779,17 +723,36 @@ void YarrGui::doScan(QString qn){
         delete fe->ana;
         fe->ana = nullptr;
     }
+
+    std::cout.rdbuf(coutBuf);
+    std::cerr.rdbuf(cerrBuf);
+    tmpOfCout->close();
+    tmpOfCerr->close();
+
+    std::ifstream tmpInCout("deleteMeCout.txt");
+    std::ifstream tmpInCerr("deleteMeCerr.txt");
+    std::cout << tmpInCout.rdbuf();
+    std::cerr << tmpInCerr.rdbuf();
+    tmpInCout.close();
+    tmpInCerr.close();
+
     return;
+}
+
+void YarrGui::addScan(QString const& myKey){
+    QString myVal = this->availableScansMap.value(myKey);
+    this->scanVec.push_back(myVal);
+    myVal.append(" ");
+    this->ui->scanVec_lineEdit->insert(myVal);
 }
 
 void YarrGui::on_addScanButton_clicked(){
     QString myKey = ui->addScanBox->currentText();
-    QString myVal = availableScansMap.value(myKey);
-    scanVec.push_back(myVal);
-    myVal.append(" ");
-    ui->scanVec_lineEdit->insert(myVal);
+    this->addScan(myKey);
+}
 
-    return;
+void YarrGui::on_addScanBox_activated(const QString &arg1){
+    this->addScan(arg1);
 }
 
 void YarrGui::on_doScansButton_clicked(){

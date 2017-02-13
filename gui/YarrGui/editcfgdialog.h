@@ -3,6 +3,7 @@
 
 #include <QByteArray>
 #include <QColor>
+#include <QComboBox>
 #include <QDialog>
 #include <QFile>
 #include <QFileDialog>
@@ -15,11 +16,13 @@
 #include <array>
 #include <fstream>
 #include <iostream>
+#include <math.h>
 #include <sstream>
 #include <string>
 #include <utility>
 
 #include "Fei4.h"
+#include "fei4reghelper.h"
 #include "json.hpp"
 #include "pointerdialog.h"
 
@@ -50,12 +53,39 @@ private slots:
     void on_FDACRadio_clicked();
     void clickHandler(int rowCl, int colCl);
     void enterHandler(int rowEn, int colEn);
+    void clickHandlerGR(int row, int col);
     void on_zoomInButton_clicked();
     void on_zoomOutButton_clicked();
     void keyPressEvent(QKeyEvent* event);
     void keyReleaseEvent(QKeyEvent* event);
 
+    void initGRCB(QComboBox*);
+    void normalizeHandler(QString q);
+    void updateHandlerGR(int);
+
+    void on_gCfgZoomInButton_clicked();
+    void on_gCfgZoomOutButton_clicked();
+
+    void on_chipIdSpin_valueChanged(int arg1);
+    void on_lCapDSpin_valueChanged(double arg1);
+    void on_sCapDSpin_valueChanged(double arg1);
+    void on_vcalOffsetDSpin_valueChanged(double arg1);
+    void on_vcalSlopeDSpin_valueChanged(double arg1);
+
+    void on_chipNameLine_textChanged(const QString &arg1);
+
+    void on_txChannelSpin_valueChanged(int arg1);
+
+    void on_rxChannelSpin_valueChanged(int arg1);
+
 private:
+    QColor grey;
+    QColor darkyellow;
+    QColor lightyellow;
+    QColor darkgreen;
+    QColor lightgreen;
+    void normalizeGRColors();
+
     Ui::EditCfgDialog *ui;
 
     Fei4 * fE;
@@ -75,4 +105,7 @@ private:
     friend class PointerDialog;
 };
 
+//Q_DECLARE_METATYPE(Fei4RegHelper)
+
 #endif // EDITCFGDIALOG_H
+
