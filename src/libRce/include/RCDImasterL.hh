@@ -57,7 +57,7 @@ namespace PgpTrans {
     int _current;
     bool _handshake;
     bool _blockread;
-    int m_counter;
+    //int m_counter;
     int _fd;
     //    static boost::mutex _guard;
     static std::mutex _guard;
