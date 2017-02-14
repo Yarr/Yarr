@@ -23,6 +23,7 @@
 #include "HwController.h"
 #include "SpecController.h"
 #include "EmuController.h"
+#include "RceController.h"
 #include "Bookkeeper.h"
 #include "Fei4.h"
 #include "ScanBase.h"
@@ -240,6 +241,10 @@ int main(int argc, char *argv[]) {
             std::cout << "-> Found Spec config" << std::endl;
             hwCtrl = new SpecController(); 
             hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
+	} else if ( (ctrlCfg["ctrlCfg"]["type"]=="rce") ) {
+	    std::cout << "-> Found RCE config" << std::endl;
+	      hwCtrl = new RceController();
+	      hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
         } else if (ctrlCfg["ctrlCfg"]["type"] == "emu") {
             std::cout << "-> Found Emulator config" << std::endl;
             hwCtrl = new EmuController();

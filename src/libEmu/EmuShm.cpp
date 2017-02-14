@@ -73,6 +73,7 @@ void EmuShm::write32(uint32_t word)
     //printf("writing the word 0x%x (%d, %d)\n", word, write_index, read_index);
 
     // wait if the write index would catch up to the read index
+  std::cout << std::hex <<word << " " <<std::dec;
     while (((write_index + element_size > index_of_upper_bound) ? 0 : write_index + element_size) == read_index)
     {
         memcpy(&read_index, &shm_pointer[index_of_read_index], element_size);		// read the read_index value from the shm buffer

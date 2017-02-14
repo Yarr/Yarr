@@ -1,0 +1,68 @@
+// 
+// Implements the master RCDI interface
+// 
+// Martin Kocian, SLAC, 6/6/2009
+//
+
+#ifndef RCDIMASTER_H
+#define RCDIMASTER_H
+
+#include <list>
+#include <vector>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+namespace PgpTrans {
+
+  class Receiver;
+
+  class RCDImaster{ 
+  public:
+    enum ERRCODES{SENDFAILED=666, RECEIVEFAILED=667};
+    enum TIMEOUTS{RECEIVETIMEOUT=100000000}; //in ns
+    static RCDImaster* instance();
+    void setFd(int fd){_fd=fd;}
+    virtual void receive();
+    unsigned int rwRegister(bool write, unsigned address, unsigned value, unsigned &retvalue);
+    unsigned int writeRegister(unsigned address, unsigned value);
+    unsigned int readRegister(unsigned address, unsigned& value);
+    unsigned int blockWrite(unsigned* data, int size, bool handshake, bool byteswap);
+    unsigned int blockRead(unsigned* data, int size, std::vector<unsigned>& retvec);
+    unsigned int readBuffers(std::vector<unsigned char>& retvec);
+    unsigned int sendCommand(unsigned char opcode, unsigned context=0);
+    unsigned int sendFragment(unsigned *data, unsigned size);
+    void setReceiver(Receiver* receiver);
+    Receiver* receiver();
+    unsigned nBuffers();
+    int currentBuffer(unsigned char*& header, unsigned &headerSize, unsigned char*&payload, unsigned &payloadSize);
+    int discardCurrentBuffer();
+    void getOldData(int i, unsigned *&data, int &size);
+  protected:
+    RCDImaster();
+    ~RCDImaster();
+  private:
+    Receiver* _receiver;
+    unsigned int _tid;
+    //    boost::mutex _data_mutex;
+    //    boost::condition_variable _data_cond;
+    std::mutex _data_mutex;
+    std::condition_variable  _data_cond;
+    unsigned _status;
+    unsigned _data;
+    std::list<std::vector<unsigned> > _buffers;
+    unsigned _txData[4096];
+    unsigned **_rxData;
+    int _size[16];
+    int _current;
+    bool _handshake;
+    bool _blockread;
+    int m_counter;
+    int _fd;
+    //    static boost::mutex _guard;
+    static std::mutex _guard;
+    static RCDImaster* _instance;
+  };
+    
+}//namespace
+
+#endif

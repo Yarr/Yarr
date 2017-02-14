@@ -99,7 +99,7 @@ define uc
 $(shell echo $(1) | tr 'a-z' 'A-Z')
 endef
 
-PKGS := tools libSpec libYarr libFei4 libFe65p2 libUtil libEmu
+PKGS := tools libSpec libYarr libFei4 libFe65p2 libUtil libEmu libRce
 $(foreach P,$(PKGS),$(eval $(call addPkg,$(patsubst LIB%,%,$(call uc,$(P))),$(P))))
 TARGETS=$(patsubst %.cpp,$(BIN)/%,$(notdir $(TOOLS_FILES)))
 LIB_FILES := $(filter-out $(TOOLS_FILES),$(ALL_FILES))
