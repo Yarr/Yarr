@@ -37,7 +37,7 @@ class EditCfgDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit EditCfgDialog(Fei4 * f, QString cfgFNJ_param = "util/default.js", QWidget * parent = 0);
+    explicit EditCfgDialog(Fei4 * f, QString cfgFNJ_param = "util/default.json", QWidget * parent = 0);
     ~EditCfgDialog();
 
 private slots:

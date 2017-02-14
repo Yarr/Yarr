@@ -64,7 +64,7 @@ YarrGui::YarrGui(QWidget *parent) :
     ui->yarrPapageiLabel->setAlignment(Qt::AlignRight);
     ui->yarrPapageiLabel->setScaledContents(true);
 
-    ui->configfileName->setText("util/your_config_here.js");
+    ui->configfileName->setText("util/your_config_here.json");
 
     ui->addScanButton->setFont(QFont("Sans Serif", 10, QFont::Bold));
     ui->doScansButton->setFont(QFont("Sans Serif", 10, QFont::Bold));
@@ -257,7 +257,7 @@ void YarrGui::on_remFeButton_clicked(){
 }
 //GOFROMHERE
 void YarrGui::on_configFile_button_clicked(){
-    QString filename = QFileDialog::getOpenFileName(this, tr("Select JSON config file"), "./", tr("JSON Config File(*.js)"));
+    QString filename = QFileDialog::getOpenFileName(this, tr("Select JSON config file"), "./", tr("JSON Config File(*.json)"));
 
     ui->configfileName->setText(filename);
 
