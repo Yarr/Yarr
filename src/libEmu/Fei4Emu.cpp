@@ -6,7 +6,7 @@
  */
 
 #include "Fei4Emu.h"
-
+using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 // should use a better function than this (box muller method - stolen from the internet)
 double rand_normal(double mean, double sigma, bool can_be_negative) {
     static double n2 = 0.0;
@@ -87,7 +87,7 @@ void Fei4Emu::initializePixelModels() {
 
 void Fei4Emu::initializePixelModelsFromFile(std::string json_file_path) {
     std::ifstream file(json_file_path);
-    nlohmann::json j;
+    json j;
     j << file;
 
     for (unsigned col = 1; col <= m_feCfg->n_Col; col++) {
@@ -117,7 +117,7 @@ void Fei4Emu::writePixelModelsToFile() {
     }
 
         std::ofstream file(m_output_model_cfg);
-    nlohmann::json j;
+    json j;
 
     std::vector<float> Vthin_mean_vector; Vthin_mean_vector.reserve(m_feCfg->n_Col * m_feCfg->n_Row);
     std::vector<float> Vthin_sigma_vector; Vthin_sigma_vector.reserve(m_feCfg->n_Col * m_feCfg->n_Row);

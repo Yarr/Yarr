@@ -17,7 +17,7 @@
 #include "Fe65p2PixelCfg.h"
 #include "json.hpp"
 
-using json = nlohmann::json;
+using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 
 #define ELECTRON_CHARGE 1.602e-19
 

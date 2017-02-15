@@ -1,7 +1,7 @@
 #include "RceCom.h"
 
 
-
+enum channeldefs {ADCREADOUT=29, TDCREADOUT=30, PGPACK=31};
 PgpModL pgpl;
 
 RceCom::RceCom() {
@@ -26,12 +26,12 @@ uint32_t RceCom::read32(){
 }
 // PGP handler
 void RceCom::receive(PgpTrans::PgpData *pgpdata){
-  //  int link=pgpdata->header[2];
+  int link=pgpdata->header[2];
   //std::cout<<"Link is "<<link<<std::endl;
   //std::cout<<"Payload "<<std::hex<<pgpdata->payload[0]<<std::dec<<std::endl;
   int size=pgpdata->payloadSize;
   //std::cout<<"Size "<<size<<std::endl;
-  //  if (link==PGPACK)return; //handshake from serialization command
+  if (link==(uint32_t)PGPACK)return; //handshake from serialization command
   //printf("Payloadsize %d Headersize %d\n",payloadSize,headerSize);
   uint32_t* data;
   

@@ -7,10 +7,12 @@
 #include "HwController.h"
 #include "json.hpp"
 
+using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+
 class RceController : public HwController, public RceTxCore, public RceRxCore {
     public:
         RceController() {} 
-        void loadConfig(nlohmann::json &j);
+        void loadConfig(json &j);
 };
 
 #endif

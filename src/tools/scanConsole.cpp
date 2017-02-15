@@ -42,6 +42,8 @@
 
 #endif
 
+using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+
 std::string toString(int value,int digitsCount)
 {
     std::ostringstream os;
@@ -281,7 +283,7 @@ int main(int argc, char *argv[]) {
     
     for(std::string const& sTmp : cConfigPaths){
         std::string discardMe; //Error handling, wait for user
-        nlohmann::json jTmp;
+        json jTmp;
         std::ifstream iFTmp(sTmp);
 
         if (!iFTmp) {
@@ -314,7 +316,7 @@ int main(int argc, char *argv[]) {
         
         // Create backup of current config
         std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getName() + ".json.after");
-        nlohmann::json backupCfg;
+        json backupCfg;
         dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
         backupCfgFile << std::setw(4) << backupCfg;
         backupCfgFile.close();
@@ -531,7 +533,7 @@ int main(int argc, char *argv[]) {
             
             // Save config
             std::cout << "-> Saving config of FE " << dynamic_cast<FrontEndCfg*>(fe)->getName() << " to " << feCfgMap.at(fe) << std::endl;
-            nlohmann::json jTmp;
+            json jTmp;
             dynamic_cast<FrontEndCfg*>(fe)->toFileJson(jTmp);
             std::ofstream oFTmp(feCfgMap.at(fe));
             oFTmp << std::setw(4) << jTmp;
@@ -539,7 +541,7 @@ int main(int argc, char *argv[]) {
 
             // Save extra config in data folder
             std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getName() + ".json.after");
-            nlohmann::json backupCfg;
+            json backupCfg;
             dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
             backupCfgFile << std::setw(4) << backupCfg;
             backupCfgFile.close(); 
