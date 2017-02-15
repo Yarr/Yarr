@@ -8,22 +8,6 @@
 
 #include "Fei4PixelPreampTune.h"
 
-Fei4PixelPreampTune::Fei4PixelPreampTune(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data) : ScanBase(fe, tx, rx, data) {
-    mask = MASK_16;
-    dcMode = QUAD_DC;
-    numOfTriggers = 100;
-    triggerFrequency = 10e3;
-    triggerDelay = 50;
-    minVcal = 10;
-    maxVcal = 100;
-    stepVcal = 1;
-    useScap = true;
-    useLcap = true;
-
-    target = 16000;
-    verbose = false;
-}
-
 Fei4PixelPreampTune::Fei4PixelPreampTune(Bookkeeper *b) : ScanBase(b) {
     mask = MASK_16;
     dcMode = QUAD_DC;

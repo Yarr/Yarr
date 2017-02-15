@@ -30,7 +30,6 @@ using json = nlohmann::json;
 
 class ScanBase {
     public:
-        ScanBase(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data);
         ScanBase(Bookkeeper *k);
         virtual ~ScanBase() {}
 

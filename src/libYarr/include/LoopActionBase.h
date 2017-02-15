@@ -29,7 +29,6 @@ class LoopActionBase {
         LoopActionBase();
 
         void setVerbose(bool v=true);
-        void setup(LoopStatus *stat, Fei4 *fe, TxCore *tx, RxCore *rx);
         void setup(LoopStatus *stat, Bookkeeper *k);
         void setNext(shared_ptr<LoopActionBase>& ptr);
         void execute();

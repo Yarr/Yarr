@@ -8,15 +8,6 @@
 
 #include "Fei4AnalogScan.h"
 
-Fei4AnalogScan::Fei4AnalogScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data) : ScanBase(fe, tx, rx, data) {
-    mask = MASK_32;
-    dcMode = QUAD_DC;
-    numOfTriggers = 100;
-    triggerFrequency = 20e3;
-    triggerDelay = 50;
-    verbose = false;
-}
-
 Fei4AnalogScan::Fei4AnalogScan(Bookkeeper *k) : ScanBase(k) {
     mask = MASK_32;
     dcMode = QUAD_DC;

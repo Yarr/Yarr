@@ -8,20 +8,6 @@
 
 #include "Fei4TotScan.h"
 
-Fei4TotScan::Fei4TotScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data) : ScanBase(fe, tx, rx, data) {
-    mask = MASK_16;
-    dcMode = QUAD_DC;
-    numOfTriggers = 100;
-    triggerFrequency = 10e3;
-    triggerDelay = 50;
-    useScap = true;
-    useLcap = true;
-
-    target = 16000;
-
-    verbose = false;
-}
-
 Fei4TotScan::Fei4TotScan(Bookkeeper *b) : ScanBase(b) {
     mask = MASK_16;
     dcMode = QUAD_DC;

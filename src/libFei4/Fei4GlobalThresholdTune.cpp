@@ -8,20 +8,6 @@
 
 #include "Fei4GlobalThresholdTune.h"
 
-Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data) : ScanBase(fe, tx, rx, data) {
-    mask = MASK_16;
-    dcMode = QUAD_DC;
-    numOfTriggers = 200;
-    triggerFrequency = 10e3;
-    triggerDelay = 50;
-
-    useScap = true;
-    useLcap = true;
-
-    target = 3000;
-    verbose = false;
-}
-
 Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Bookkeeper *b) : ScanBase(b) {
     mask = MASK_16;
     dcMode = QUAD_DC;

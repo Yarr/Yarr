@@ -16,7 +16,6 @@
 
 class Fei4TotScan : public ScanBase {
     public:
-        Fei4TotScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data);
         Fei4TotScan(Bookkeeper *b);
         
         void init();
