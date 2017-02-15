@@ -27,7 +27,6 @@ void LoopActionBase::setup(LoopStatus *stat, Bookkeeper *k) {
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     g_stat = stat;
     g_fe = k->g_fe;
-    g_fe65p2 = k->g_fe65p2;
     g_tx = k->tx;
     g_rx = k->rx;
 	keeper = k;

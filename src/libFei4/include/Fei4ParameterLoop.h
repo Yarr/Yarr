@@ -6,6 +6,7 @@
 #ifndef FEI4PARAMETERLOOP_H
 #define FEI4PARAMETERLOOP_H
 
+#include "Fei4.h"
 #include "LoopActionBase.h"
 
 
@@ -48,7 +49,7 @@ class Fei4ParameterLoop : public Fei4ParameterLoopBase {
         }
 
         void writePar() {
-            g_fe->writeRegister(parPtr, cur);
+            keeper->globalFe<Fei4>()->writeRegister(parPtr, cur);
             while(!g_tx->isCmdEmpty());
         }
 

@@ -10,8 +10,9 @@ int main(void) {
     std::cout << "Initialising .." << std::endl;
     SpecController spec;
     Bookkeeper bookie(&spec, &spec);
+    bookie.initGlobalFe(new Fe65p2(&spec));
 
-    Fe65p2 *fe = bookie.g_fe65p2;
+    Fe65p2 *fe = bookie.globalFe<Fe65p2>();
 
     std::cout << "Configuring FE .." << std::endl;
     spec.setCmdEnable(0x1);

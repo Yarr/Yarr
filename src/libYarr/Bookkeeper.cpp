@@ -11,8 +11,9 @@
 Bookkeeper::Bookkeeper(TxCore *arg_tx, RxCore *arg_rx) {
     tx = arg_tx;
     rx = arg_rx;
-    g_fe = new Fei4(tx, 8); // Broadcast to all
-    g_fe65p2 = new Fe65p2(tx); // Hardware only allows single FE65-P2
+    g_fe = NULL; //Type not yet known
+    //g_fe = new Fei4(tx, 8); // Broadcast to all
+    //g_fe65p2 = new Fe65p2(tx); // Hardware only allows single FE65-P2
     target_tot = 10;
     target_charge = 16000;
     target_threshold = 3000;
@@ -25,7 +26,6 @@ Bookkeeper::~Bookkeeper() {
         feList.erase(feList.begin() + k);
     }
     delete g_fe;
-    delete g_fe65p2;
 }
 
 // RxChannel is unique ident

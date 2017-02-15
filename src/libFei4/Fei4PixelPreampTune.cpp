@@ -20,7 +20,7 @@ Fei4PixelPreampTune::Fei4PixelPreampTune(Bookkeeper *b) : ScanBase(b) {
     useScap = true;
     useLcap = true;
 
-    target = b->getTargetCharge();
+    target = g_bk->getTargetCharge();
     verbose = false;
 }
 
@@ -67,14 +67,14 @@ void Fei4PixelPreampTune::init() {
 // Do necessary pre-scan configuration
 void Fei4PixelPreampTune::preScan() {
     // Global config
-	g_tx->setCmdEnable(b->getTxMask());
-    g_fe->writeRegister(&Fei4::Trig_Count, 12);
-    g_fe->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
-    g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
+	g_tx->setCmdEnable(g_bk->getTxMask());
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::Trig_Count, 12);
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
     while(!g_tx->isCmdEmpty());
 
-	for(unsigned int k=0; k<b->feList.size(); k++) {
-        Fei4 *fe = dynamic_cast<Fei4*>(b->feList[k]);
+	for(unsigned int k=0; k<g_bk->feList.size(); k++) {
+        Fei4 *fe = dynamic_cast<Fei4*>(g_bk->feList[k]);
         // Set to single channel tx
 		g_tx->setCmdEnable(0x1 << fe->getTxChannel());
         // Set specific pulser DAC
@@ -85,5 +85,5 @@ void Fei4PixelPreampTune::preScan() {
                 fe->setFDAC(col, row, 8);
         while(!g_tx->isCmdEmpty());
 	}
-	g_tx->setCmdEnable(b->getTxMask());
+	g_tx->setCmdEnable(g_bk->getTxMask());
 }

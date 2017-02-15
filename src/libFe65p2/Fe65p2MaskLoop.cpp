@@ -31,18 +31,18 @@ void Fe65p2MaskLoop::execPart1() {
     std::cout << " ---> Mask Stage " << m_cur << std::endl;
     // TODO needs to be done per FE!
     // Set threshold high
-    uint16_t tmp1 = g_fe65p2->getValue(&Fe65p2::Vthin1Dac);
+    uint16_t tmp1 = keeper->globalFe<Fe65p2>()->getValue(&Fe65p2::Vthin1Dac);
     std::cout << tmp1 << std::endl;
-    uint16_t tmp2 = g_fe65p2->getValue(&Fe65p2::Vthin2Dac);
-    uint16_t tmp3 = g_fe65p2->getValue(&Fe65p2::VffDac);
-    g_fe65p2->setValue(&Fe65p2::Vthin1Dac, 255);
-    g_fe65p2->setValue(&Fe65p2::Vthin2Dac, 0);
-    g_fe65p2->setValue(&Fe65p2::VffDac, 0);
+    uint16_t tmp2 = keeper->globalFe<Fe65p2>()->getValue(&Fe65p2::Vthin2Dac);
+    uint16_t tmp3 = keeper->globalFe<Fe65p2>()->getValue(&Fe65p2::VffDac);
+    keeper->globalFe<Fe65p2>()->setValue(&Fe65p2::Vthin1Dac, 255);
+    keeper->globalFe<Fe65p2>()->setValue(&Fe65p2::Vthin2Dac, 0);
+    keeper->globalFe<Fe65p2>()->setValue(&Fe65p2::VffDac, 0);
     // All in parallel
-    g_fe65p2->setValue(&Fe65p2::ColEn, 0xFFFF);
-    g_fe65p2->setValue(&Fe65p2::ColSrEn, 0xFFFF);
+    keeper->globalFe<Fe65p2>()->setValue(&Fe65p2::ColEn, 0xFFFF);
+    keeper->globalFe<Fe65p2>()->setValue(&Fe65p2::ColSrEn, 0xFFFF);
     // Write to global regs
-    g_fe65p2->configureGlobal();
+    keeper->globalFe<Fe65p2>()->configureGlobal();
     usleep(2000); // Wait for DAC 
     // Write mask to SR
     /*
@@ -50,22 +50,22 @@ void Fe65p2MaskLoop::execPart1() {
     for (unsigned i=0; i<16; i++)
         mask[i] = 0;
     mask[m_cur/16] = (0x1 << (m_cur%16));
-    g_fe65p2->writePixel(mask);
+    keeper->globalFe<Fe65p2>()->writePixel(mask);
     */
-    g_fe65p2->writePixel((m_mask<<m_cur));
+    keeper->globalFe<Fe65p2>()->writePixel((m_mask<<m_cur));
             
     // Write to Pixel reg
-    g_fe65p2->setValue(&Fe65p2::InjEnLd, 0x1);
-    g_fe65p2->setValue(&Fe65p2::PixConfLd, 0x3);
-    g_fe65p2->configureGlobal();
+    keeper->globalFe<Fe65p2>()->setValue(&Fe65p2::InjEnLd, 0x1);
+    keeper->globalFe<Fe65p2>()->setValue(&Fe65p2::PixConfLd, 0x3);
+    keeper->globalFe<Fe65p2>()->configureGlobal();
     
     // Unset shadow reg and reset threshold
-    g_fe65p2->setValue(&Fe65p2::PixConfLd, 0x0);
-    g_fe65p2->setValue(&Fe65p2::InjEnLd, 0x0);
-    g_fe65p2->setValue(&Fe65p2::Vthin1Dac, tmp1);
-    g_fe65p2->setValue(&Fe65p2::Vthin2Dac, tmp2);
-    g_fe65p2->setValue(&Fe65p2::VffDac, tmp3);
-    g_fe65p2->configureGlobal();
+    keeper->globalFe<Fe65p2>()->setValue(&Fe65p2::PixConfLd, 0x0);
+    keeper->globalFe<Fe65p2>()->setValue(&Fe65p2::InjEnLd, 0x0);
+    keeper->globalFe<Fe65p2>()->setValue(&Fe65p2::Vthin1Dac, tmp1);
+    keeper->globalFe<Fe65p2>()->setValue(&Fe65p2::Vthin2Dac, tmp2);
+    keeper->globalFe<Fe65p2>()->setValue(&Fe65p2::VffDac, tmp3);
+    keeper->globalFe<Fe65p2>()->configureGlobal();
     usleep(5000); // Wait for DAC 
 
     // Leave SR set, as it enables the digital inj (if TestHit is set)

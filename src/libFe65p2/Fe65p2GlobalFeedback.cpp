@@ -66,8 +66,8 @@ void Fe65p2GlobalFeedback::init() {
     oldSign[ch] = -1;
     doneMap[ch] = false;
     
-    g_fe65p2->setValue(m_reg, (uint16_t) values[ch]);
-    g_fe65p2->configureGlobal();
+    keeper->globalFe<Fe65p2>()->setValue(m_reg, (uint16_t) values[ch]);
+    keeper->globalFe<Fe65p2>()->configureGlobal();
 }
 
 void Fe65p2GlobalFeedback::end() {
@@ -89,8 +89,8 @@ void Fe65p2GlobalFeedback::execPart2() {
     std::cout << "---> Received Feedback for Fe " << ch << " with value " << values[ch] << std::endl;
     
     dynamic_cast<Fe65p2*>(keeper->feList[ch])->setValue(m_reg, (uint16_t) values[ch]);
-    g_fe65p2->setValue(m_reg, (uint16_t) values[ch]);
-    g_fe65p2->configureGlobal();
+    keeper->globalFe<Fe65p2>()->setValue(m_reg, (uint16_t) values[ch]);
+    keeper->globalFe<Fe65p2>()->configureGlobal();
     
     cur++;
 }

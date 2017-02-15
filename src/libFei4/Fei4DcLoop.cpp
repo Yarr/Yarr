@@ -38,7 +38,7 @@ void Fei4DcLoop::init() {
             break;
     }
     // Set COLPR_MODE
-    g_fe->writeRegister((&Fei4::Colpr_Mode), (uint16_t) m_mode);
+    keeper->globalFe<Fei4>()->writeRegister((&Fei4::Colpr_Mode), (uint16_t) m_mode);
     m_col = min;
 }
 
@@ -52,7 +52,7 @@ void Fei4DcLoop::execPart1() {
         std::cout << __PRETTY_FUNCTION__ << " --> " << m_col << std::endl;
     g_stat->set(this, m_col);
     // Address col
-    g_fe->writeRegister(&Fei4::Colpr_Addr, m_col);
+    keeper->globalFe<Fei4>()->writeRegister(&Fei4::Colpr_Addr, m_col);
     while(!g_tx->isCmdEmpty());
 }
 

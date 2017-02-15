@@ -57,7 +57,7 @@ bool processorDone = false;
 
 void process(Bookkeeper *bookie) {
     // Set correct Hit Discriminator setting, for proper decoding
-    Fei4DataProcessor proc(bookie->g_fe->getValue(&Fei4::HitDiscCnfg));
+    Fei4DataProcessor proc(bookie->globalFe<Fei4>()->getValue(&Fei4::HitDiscCnfg));
     proc.connect(&bookie->rawData, &bookie->eventMap);
     proc.init();
     
@@ -264,6 +264,8 @@ int main(int argc, char *argv[]) {
     }
 
     Bookkeeper bookie(hwCtrl, hwCtrl);
+    bookie.initGlobalFe(new Fei4(hwCtrl)); // TODO dynamic depending on current FE type
+
     std::map<FrontEnd*, std::string> feCfgMap;
 
     bookie.setTargetThreshold(target_threshold);

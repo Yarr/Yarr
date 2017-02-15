@@ -140,6 +140,7 @@ int main(int argc, char *argv[]) {
     std::cout << "-> Init SPEC " << specNum << " : " << std::endl;
     SpecController spec;
     Bookkeeper bookie(&spec, &spec);
+    bookie.initGlobalFe(new Fe65p2(&spec));
     bookie.setTargetThreshold(800);
    
     // TODO move me somwhere else
@@ -194,7 +195,7 @@ int main(int argc, char *argv[]) {
     //bookie.getLastFe()->setVcalSlope(0.564);
     //bookie.getLastFe()->setVcalOffset(0.011);
 
-    //Fe65p2 *fe = bookie.g_fe65p2;
+    //Fe65p2 *fe = bookie.globalFe<Fe65p2>();
     //fe->setName("fe65p2");
     //fe->clipDataFei4 = &bookie.eventMap[0];
     //fe->clipHisto = &bookie.histoMap[0];
@@ -205,7 +206,7 @@ int main(int argc, char *argv[]) {
     if (icfg_file) {
         std::fstream backup((dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getName()+".json.backup").c_str(), std::ios::out);
         icfg_file >> icfg;
-        bookie.g_fe65p2->fromFileJson(icfg);
+        bookie.globalFe<Fe65p2>()->fromFileJson(icfg);
         dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->fromFileJson(icfg);
         dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->setName("fe65p2");
         backup << std::setw(4) << icfg;
@@ -233,7 +234,7 @@ int main(int argc, char *argv[]) {
         while(!spec.isCmdEmpty());
     }*/
     spec.setCmdEnable(0x1);
-    bookie.g_fe65p2->configure();
+    bookie.globalFe<Fe65p2>()->configure();
     while(!spec.isCmdEmpty());
 
     std::chrono::steady_clock::time_point cfg_end = std::chrono::steady_clock::now();

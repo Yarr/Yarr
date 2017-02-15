@@ -37,8 +37,8 @@ void Fei4NoiseScan::init() {
 
 // Do necessary pre-scan configuration
 void Fei4NoiseScan::preScan() {
-    g_fe->writeRegister(&Fei4::Trig_Lat, 235);
-    g_fe->writeRegister(&Fei4::Trig_Count, 5);
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::Trig_Lat, 235);
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::Trig_Count, 5);
     while(!g_tx->isCmdEmpty());
 }
 

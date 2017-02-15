@@ -58,14 +58,14 @@ void Fei4TotScan::init() {
 
 // Do necessary pre-scan configuration
 void Fei4TotScan::preScan() {
-	g_tx->setCmdEnable(b->getTxMask());
-    g_fe->writeRegister(&Fei4::Trig_Count, 12);
-    g_fe->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
-    g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
+	g_tx->setCmdEnable(g_bk->getTxMask());
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::Trig_Count, 12);
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
     while(!g_tx->isCmdEmpty());
     
-	for(unsigned int k=0; k<b->feList.size(); k++) {
-        Fei4 *fe = dynamic_cast<Fei4*>(b->feList[k]);
+	for(unsigned int k=0; k<g_bk->feList.size(); k++) {
+        Fei4 *fe = dynamic_cast<Fei4*>(g_bk->feList[k]);
         if (fe->isActive()) {
             // Set to single channel tx
             g_tx->setCmdEnable(0x1 << fe->getTxChannel());
@@ -74,5 +74,5 @@ void Fei4TotScan::preScan() {
             while(!g_tx->isCmdEmpty());
         }
 	}
-	g_tx->setCmdEnable(b->getTxMask());
+	g_tx->setCmdEnable(g_bk->getTxMask());
 }

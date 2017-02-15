@@ -44,14 +44,14 @@ void Fe65p2PixelFeedback::setPixel(unsigned channel, unsigned col, unsigned row,
    
    dynamic_cast<Fe65p2*>(keeper->feList[channel])->setSign(col, row, dsign);
    dynamic_cast<Fe65p2*>(keeper->feList[channel])->setTDAC(col, row, tdac);
-   g_fe65p2->setSign(col, row, dsign);
-   g_fe65p2->setTDAC(col, row, tdac);
+   keeper->globalFe<Fe65p2>()->setSign(col, row, dsign);
+   keeper->globalFe<Fe65p2>()->setTDAC(col, row, tdac);
 }
 
 unsigned Fe65p2PixelFeedback::getPixel(unsigned channel, unsigned col, unsigned row) {
    // Fe65p2 TDAC encoding
-   unsigned dsign = g_fe65p2->getSign(col, row);
-   unsigned tdac = g_fe65p2->getTDAC(col, row);
+   unsigned dsign = keeper->globalFe<Fe65p2>()->getSign(col, row);
+   unsigned tdac = keeper->globalFe<Fe65p2>()->getTDAC(col, row);
     
    unsigned val = 32;
    if (dsign == 0) {
@@ -64,16 +64,16 @@ unsigned Fe65p2PixelFeedback::getPixel(unsigned channel, unsigned col, unsigned 
 
 void Fe65p2PixelFeedback::writePixelCfg(unsigned channel) {
     // Turn off all pixels
-    g_fe65p2->setValue(&Fe65p2::ColEn, 0xFFFF);
-    g_fe65p2->setValue(&Fe65p2::ColSrEn, 0xFFFF);
-    g_fe65p2->writePixel((uint16_t)0x0);
-    g_fe65p2->setValue(&Fe65p2::PixConfLd, 0x3);
-    g_fe65p2->configureGlobal();
-    g_fe65p2->setValue(&Fe65p2::PixConfLd, 0x0);
-    g_fe65p2->configureGlobal();
+    keeper->globalFe<Fe65p2>()->setValue(&Fe65p2::ColEn, 0xFFFF);
+    keeper->globalFe<Fe65p2>()->setValue(&Fe65p2::ColSrEn, 0xFFFF);
+    keeper->globalFe<Fe65p2>()->writePixel((uint16_t)0x0);
+    keeper->globalFe<Fe65p2>()->setValue(&Fe65p2::PixConfLd, 0x3);
+    keeper->globalFe<Fe65p2>()->configureGlobal();
+    keeper->globalFe<Fe65p2>()->setValue(&Fe65p2::PixConfLd, 0x0);
+    keeper->globalFe<Fe65p2>()->configureGlobal();
     
     // Reconfigure pixels
-    g_fe65p2->configurePixels();
+    keeper->globalFe<Fe65p2>()->configurePixels();
 }
 
 void Fe65p2PixelFeedback::addFeedback(unsigned ch) {

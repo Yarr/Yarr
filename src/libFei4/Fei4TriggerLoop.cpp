@@ -54,7 +54,7 @@ void Fei4TriggerLoop::init() {
 
     // Workaround: Put everything into run mode, active rx channels will sort this out
     g_tx->setCmdEnable(keeper->getTxMask());
-    g_fe->setRunMode(true);
+    keeper->globalFe<Fei4>()->setRunMode(true);
     usleep(100); // Empty could be delayed
     while(!g_tx->isCmdEmpty());
 }
@@ -63,7 +63,7 @@ void Fei4TriggerLoop::end() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     // Go back to conf mode, general state of FE should be conf mode
-    g_fe->setRunMode(false);
+    keeper->globalFe<Fei4>()->setRunMode(false);
     while(!g_tx->isCmdEmpty());
 }
 

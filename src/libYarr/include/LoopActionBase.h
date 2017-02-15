@@ -12,7 +12,6 @@
 #include <typeindex>
 #include <string>
 
-#include "Fei4.h"
 #include "Fe65p2.h"
 #include "TxCore.h"
 #include "RxCore.h"
@@ -65,8 +64,7 @@ class LoopActionBase {
         unsigned step;
 
         LoopStatus *g_stat;
-        Fei4 *g_fe;
-        Fe65p2 *g_fe65p2;
+        FrontEnd *g_fe;
         TxCore *g_tx;
         RxCore *g_rx;
 		Bookkeeper *keeper;

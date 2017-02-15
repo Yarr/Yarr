@@ -28,10 +28,10 @@ void Fe65p2ParameterLoop::end() {
 }
 
 void Fe65p2ParameterLoop::execPart1() {
-   g_fe65p2->setValue(m_reg, (uint16_t) cur);
+   keeper->globalFe<Fe65p2>()->setValue(m_reg, (uint16_t) cur);
    //std::cout << " Par = " << cur << std::endl;
-   g_fe65p2->configureGlobal();
-   g_fe65p2->configDac();
+   keeper->globalFe<Fe65p2>()->configureGlobal();
+   keeper->globalFe<Fe65p2>()->configDac();
    g_stat->set(this, cur);
 }
 
