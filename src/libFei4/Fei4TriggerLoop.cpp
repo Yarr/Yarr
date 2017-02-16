@@ -153,6 +153,12 @@ void Fei4TriggerLoop::writeConfig(json &config) {
 }
 
 void Fei4TriggerLoop::loadConfig(json &config) {
-    // TODO implement me
+    m_trigCnt = config["count"];
+    m_trigFreq = config["frequency"];
+    m_trigTime = config["time"];
+    m_trigDelay = config["delay"];
+    // TODO these two don't do anything yet
+    m_noInject = config["noInject"];
+    m_extTrigger = config["extTrigger"];
 }
 

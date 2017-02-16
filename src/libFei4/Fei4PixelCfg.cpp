@@ -240,6 +240,8 @@ void Fei4PixelCfg::toFileJson(json &j) {
 
 void Fei4PixelCfg::fromFileJson(json &j) {
     // Layout is one array per column
+    if (j["FE-I4B"]["PixelConfig"].empty())
+        return;
     for (unsigned row=1; row<=n_Row; row++) {
         for (unsigned col=1; col<=n_Col; col++) {
             setEn(col, row, j["FE-I4B"]["PixelConfig"][row-1]["Enable"][col-1]);

@@ -9,6 +9,7 @@
 #include "LoopActionBase.h"
 #include "FeedbackBase.h"
 #include "Histo2d.h"
+#include "Fe65p2.h"
 
 class Fe65p2PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
     public:

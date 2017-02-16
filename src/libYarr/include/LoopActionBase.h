@@ -12,7 +12,6 @@
 #include <typeindex>
 #include <string>
 
-#include "Fe65p2.h"
 #include "TxCore.h"
 #include "RxCore.h"
 #include "LoopStatus.h"

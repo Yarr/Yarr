@@ -8,14 +8,22 @@
 
 #include "ScanFactory.h"
 
-ScanFactory::ScanFactory() {
+ScanFactory::ScanFactory(Bookkeeper *k) : ScanBase(k) {
 }
 
 void ScanFactory::init() {
+    // TODO I don't like this, we assume the innermost loops get the data
+    dynamic_cast<StdDataLoop*>((this->getLoop(this->size()-1)).get())->connect(g_data);    
+    
+    engine.init();
 }
 
 void ScanFactory::preScan() {
-
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
+    // TODO no clue how to get around this
+    for (json::iterator it = m_config["scan"]["prescan"]["FE-I4B"]["GlobalConfig"].begin(); it != m_config["scan"]["prescan"]["FE-I4B"]["GlobalConfig"].end(); ++it) {
+        //g_bk->globalFe<Fei4>()->writeRegister((Field*) *g_bk->globalFe<Fei4>()->fieldMap[it.key()], it.value());
+    }
 }
 
 void ScanFactory::postScan() {
@@ -45,13 +53,16 @@ void ScanFactory::loadConfig(json &scanCfg) {
             std::cout << "### ERROR ### => Unknown Loop Action: " << loopAction << " ... skipping!" << std::endl;
         }
 
-        std::cout << "  Loading loop config ... " << std::endl;
-        action->loadConfig(scanCfg["scan"]["loops"][std::to_string(i)]["config"]);
+        if (!scanCfg["scan"]["loops"][std::to_string(i)]["config"].empty()) {
+            std::cout << "  Loading loop config ... " << std::endl;
+            action->loadConfig(scanCfg["scan"]["loops"][std::to_string(i)]["config"]);
+        }
+        this->addLoop(action);
 
-        std::cout << " Check config: " << std::endl;
-        json tCfg;
-        action->writeConfig(tCfg);
-        std::cout << std::setw(4) << tCfg;
+        //std::cout << " Check config: " << std::endl;
+        //json tCfg;
+        //action->writeConfig(tCfg);
+        //std::cout << std::setw(4) << tCfg;
     }
                     
 

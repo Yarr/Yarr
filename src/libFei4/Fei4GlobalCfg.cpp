@@ -191,7 +191,8 @@ void Fei4GlobalCfg::toFileJson(json &j) {
 void Fei4GlobalCfg::fromFileJson(json &j) {
     typedef std::map<std::string, FieldOperator<uint16_t>*>::iterator it_type;
     for(it_type iterator = fieldMap.begin(); iterator != fieldMap.end(); iterator++) {
-         iterator->second->write((uint16_t) j["FE-I4B"]["GlobalConfig"][iterator->first]);
+        if (!j["FE-I4B"]["GlobalConfig"][iterator->first].empty())
+            iterator->second->write((uint16_t) j["FE-I4B"]["GlobalConfig"][iterator->first]);
     }
 
 }

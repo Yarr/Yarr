@@ -11,6 +11,7 @@
 
 #include "LoopActionBase.h"
 #include "FeedbackBase.h"
+#include "Fe65p2.h"
 
 class Fe65p2GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
     public:

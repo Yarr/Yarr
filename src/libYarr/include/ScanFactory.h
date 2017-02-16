@@ -17,9 +17,9 @@
 
 using json = nlohmann::json;
 
-class ScanFactory {
+class ScanFactory : public ScanBase {
     public:
-        ScanFactory();
+        ScanFactory(Bookkeeper *k);
 
         void loadConfig(json &scanCfg);
 
