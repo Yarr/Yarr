@@ -26,6 +26,7 @@
 #include "Bookkeeper.h"
 #include "Fei4.h"
 #include "ScanBase.h"
+#include "ScanFactory.h"
 #include "Fei4DataProcessor.h"
 #include "Fei4Histogrammer.h"
 #include "Fei4Analysis.h"
@@ -357,7 +358,15 @@ int main(int argc, char *argv[]) {
 
     if (scanType.find("json") != std::string::npos) {
         std::cout << "-> Found Scan config, constructing scan ..." << std::endl;
-
+        s = new ScanFactory(&bookie);
+        std::ifstream scanCfgFile(scanType);
+        if (!scanCfgFile) {
+            std::cerr << "#ERROR# Could not open scan config: " << scanType << std::endl;
+            return -1;
+        }
+        json scanCfg;
+        scanCfg << scanCfgFile;
+        dynamic_cast<ScanFactory*>(s)->loadConfig(scanCfg);
     } else {
         std::cout << "-> Selecting Scan: " << scanType << std::endl;
         if (scanType == "digitalscan") {
@@ -397,48 +406,94 @@ int main(int argc, char *argv[]) {
             return -1;
         }
     }
-    
-    // Init histogrammer and analysis
-    for (unsigned i=0; i<bookie.feList.size(); i++) {
-        FrontEnd *fe = bookie.feList[i];
-        if (fe->isActive()) {
-            // Init histogrammer per FE
-            fe->histogrammer = new Fei4Histogrammer();
-            fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
-            // Add generic histograms
-            fe->histogrammer->addHistogrammer(new OccupancyMap());
-            fe->histogrammer->addHistogrammer(new TotMap());
-            fe->histogrammer->addHistogrammer(new Tot2Map());
-            fe->histogrammer->addHistogrammer(new L1Dist());
-            fe->histogrammer->addHistogrammer(new HitsPerEvent());
-           
-            // Init analysis per FE and depending on scan type
-            fe->ana = new Fei4Analysis(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
-            fe->ana->connect(s, fe->clipHisto, fe->clipResult);
-            fe->ana->addAlgorithm(new L1Analysis());
-            if (scanType == "digitalscan") {
+   
+    if (scanType.find("json") != std::string::npos) {
+        std::cout << "-> Found Scan config, loading histogrammer and analysis ..." << std::endl;
+        std::ifstream scanCfgFile(scanType);
+        if (!scanCfgFile) {
+            std::cerr << "#ERROR# Could not open scan config: " << scanType << std::endl;
+            return -1;
+        }
+        json scanCfg;
+        scanCfg << scanCfgFile;
+        json histoCfg = scanCfg["scan"]["histogrammer"];
+        json anaCfg = scanCfg["scan"]["analysis"];
+
+        for (unsigned i=0; i<bookie.feList.size(); i++) {
+            FrontEnd *fe = bookie.feList[i];
+            if (fe->isActive()) {
+                // TODO this loads only FE-i4 specific stuff, bad
+                // Load histogrammer
+                fe->histogrammer = new Fei4Histogrammer();
+                fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
+                int nHistos = histoCfg["n_count"];
+                std::cout << nHistos << std::endl;
+                for (int j=0; j<nHistos; j++) {
+                    std::cout << j << std::endl;
+                    if (histoCfg[std::to_string(j)]["algorithm"] == "OccupancyMap") {
+                        fe->histogrammer->addHistogrammer(new OccupancyMap());
+                    } else if (histoCfg[std::to_string(j)]["algorithm"] == "TotMap") {
+                        fe->histogrammer->addHistogrammer(new TotMap());
+                    } else if (histoCfg[std::to_string(j)]["algorithm"] == "Tot2Map") {
+                        fe->histogrammer->addHistogrammer(new Tot2Map());
+                    } else if (histoCfg[std::to_string(j)]["algorithm"] == "L1Dist") {
+                        fe->histogrammer->addHistogrammer(new L1Dist());
+                    } else if (histoCfg[std::to_string(j)]["algorithm"] == "HitsPerEvent") {
+                        fe->histogrammer->addHistogrammer(new HitsPerEvent());
+                    } else {
+                        std::cerr << "#ERROR# Histogrammer \"" << histoCfg[std::to_string(j)]["algorithm"] << "\" unknown, skipping!" << std::endl;
+                    }
+                }
+                // TODO hardcoded
+                fe->ana = new Fei4Analysis(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
+                fe->ana->connect(s, fe->clipHisto, fe->clipResult);
+                fe->ana->addAlgorithm(new L1Analysis());
                 fe->ana->addAlgorithm(new OccupancyAnalysis());
-            } else if (scanType == "analogscan") {
-                fe->ana->addAlgorithm(new OccupancyAnalysis());
-            } else if (scanType == "thresholdscan") {
-                fe->ana->addAlgorithm(new ScurveFitter());
-            } else if (scanType == "totscan") {
-                fe->ana->addAlgorithm(new TotAnalysis());
-            } else if (scanType == "tune_globalthreshold") {
-                fe->ana->addAlgorithm(new OccGlobalThresholdTune());
-            } else if (scanType == "tune_pixelthreshold") {
-                fe->ana->addAlgorithm(new OccPixelThresholdTune());
-            } else if (scanType == "tune_globalpreamp") {
-                fe->ana->addAlgorithm(new TotAnalysis());
-            } else if (scanType == "tune_pixelpreamp") {
-                fe->ana->addAlgorithm(new TotAnalysis());
-            } else if (scanType == "noisescan") {
-                fe->ana->addAlgorithm(new NoiseAnalysis());
-            } else {
-                std::cout << "-> Analyses not defined for scan type" << std::endl;
-                listScans();
-                std::cerr << "-> Aborting!" << std::endl;
-                return -1;
+            }
+        }
+    } else {
+        // Init histogrammer and analysis
+        for (unsigned i=0; i<bookie.feList.size(); i++) {
+            FrontEnd *fe = bookie.feList[i];
+            if (fe->isActive()) {
+                // Init histogrammer per FE
+                fe->histogrammer = new Fei4Histogrammer();
+                fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
+                // Add generic histograms
+                fe->histogrammer->addHistogrammer(new OccupancyMap());
+                fe->histogrammer->addHistogrammer(new TotMap());
+                fe->histogrammer->addHistogrammer(new Tot2Map());
+                fe->histogrammer->addHistogrammer(new L1Dist());
+                fe->histogrammer->addHistogrammer(new HitsPerEvent());
+               
+                // Init analysis per FE and depending on scan type
+                fe->ana = new Fei4Analysis(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
+                fe->ana->connect(s, fe->clipHisto, fe->clipResult);
+                fe->ana->addAlgorithm(new L1Analysis());
+                if (scanType == "digitalscan") {
+                    fe->ana->addAlgorithm(new OccupancyAnalysis());
+                } else if (scanType == "analogscan") {
+                    fe->ana->addAlgorithm(new OccupancyAnalysis());
+                } else if (scanType == "thresholdscan") {
+                    fe->ana->addAlgorithm(new ScurveFitter());
+                } else if (scanType == "totscan") {
+                    fe->ana->addAlgorithm(new TotAnalysis());
+                } else if (scanType == "tune_globalthreshold") {
+                    fe->ana->addAlgorithm(new OccGlobalThresholdTune());
+                } else if (scanType == "tune_pixelthreshold") {
+                    fe->ana->addAlgorithm(new OccPixelThresholdTune());
+                } else if (scanType == "tune_globalpreamp") {
+                    fe->ana->addAlgorithm(new TotAnalysis());
+                } else if (scanType == "tune_pixelpreamp") {
+                    fe->ana->addAlgorithm(new TotAnalysis());
+                } else if (scanType == "noisescan") {
+                    fe->ana->addAlgorithm(new NoiseAnalysis());
+                } else {
+                    std::cout << "-> Analyses not defined for scan type" << std::endl;
+                    listScans();
+                    std::cerr << "-> Aborting!" << std::endl;
+                    return -1;
+                }
             }
         }
     }
