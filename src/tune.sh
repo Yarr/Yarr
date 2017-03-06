@@ -1,17 +1,18 @@
 #!/bin/bash
-if [ "$#" -ne 1 ]; then
-    echo "Usage: $0 <config_file1.json> [<config_file2.json> ..]" >&2
+if [ "$#" -lt 4 ]; then
+    echo "Usage: $0 <target_threshold> <target_tot> <target_charge> <controller_config.json> <config_file1.json> [<config_file2.json> ..]" >&2
     exit 1
 fi
-bin/scanConsole -s digitalscan -c $@ -p
-bin/scanConsole -s analogscan -c $@ -p
-bin/scanConsole -s tune_globalthreshold -c $@ -p
-bin/scanConsole -s tune_globalpreamp -c $@ -p
-bin/scanConsole -s tune_globalthreshold -c $@ -p
-bin/scanConsole -s tune_pixelthreshold -c $@ -p
-bin/scanConsole -s tune_globalpreamp -c $@ -p
-bin/scanConsole -s tune_pixelpreamp -c $@ -p
-bin/scanConsole -s tune_pixelthreshold -c $@ -p
-bin/scanConsole -s noisescan -c $@ -p
-bin/scanConsole -s totscan -c $@ -p
-bin/scanConsole -s thresholdscan -c $@ -p
+
+bin/scanConsole -s digitalscan -t $1 $2 $3 -r $4 -c ${@:5} -p
+bin/scanConsole -s analogscan -t $1 $2 $3 -r $4 -c ${@:5} -p
+bin/scanConsole -s tune_globalthreshold -t $1 $2 $3 -r $4 -c ${@:5} -p
+bin/scanConsole -s tune_globalpreamp -t $1 $2 $3 -r $4 -c ${@:5} -p
+bin/scanConsole -s tune_globalthreshold -t $1 $2 $3 -r $4 -c ${@:5} -p
+bin/scanConsole -s tune_pixelthreshold -t $1 $2 $3 -r $4 -c ${@:5} -p
+bin/scanConsole -s tune_globalpreamp -t $1 $2 $3 -r $4 -c ${@:5} -p
+bin/scanConsole -s tune_pixelpreamp -t $1 $2 $3 -r $4 -c ${@:5} -p
+bin/scanConsole -s tune_pixelthreshold -t $1 $2 $3 -r $4 -c ${@:5} -p
+bin/scanConsole -s noisescan -t $1 $2 $3 -r $4 -c ${@:5} -p
+bin/scanConsole -s totscan -t $1 $2 $3 -r $4 -c ${@:5} -p
+bin/scanConsole -s thresholdscan -t $1 $2 $3 -r $4 -c ${@:5} -p

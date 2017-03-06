@@ -99,6 +99,8 @@ int main(int argc, char *argv[]) {
     std::string ctrlCfgPath = "";
     bool doPlots = false;
     int target_threshold = 2500;
+    int target_tot = 10;
+    int target_charge = 16000;
     
     unsigned runCounter = 0;
 
@@ -123,7 +125,8 @@ int main(int argc, char *argv[]) {
     oF.close();
 
     int c;
-    while ((c = getopt(argc, argv, "hs:n:g:r:c:po:")) != -1) {
+    while ((c = getopt(argc, argv, "hs:n:g:r:c:t:po:")) != -1) {
+        int count = 0;
         switch (c) {
             case 'h':
                 printHelp();
@@ -155,7 +158,26 @@ int main(int argc, char *argv[]) {
                     outputDir = outputDir + "/";
                 break;
             case 't':
-                target_threshold = atoi(optarg);
+                optind -= 1; //this is a bit hacky, but getopt doesn't support multiple
+                             //values for one option, so it can't be helped
+                for(; optind < argc && *argv[optind] != '-'; optind += 1){
+                    switch (count) {
+                        case 0:
+                            target_threshold = atoi(argv[optind]);
+                            break;
+                        case 1:
+                            target_tot = atoi(argv[optind]);
+                            break;
+                        case 2:
+                            target_charge = atoi(argv[optind]);
+                            break;
+                        default:
+                            std::cerr << "-> Can only receive max. 3 parameters with -t!!" << std::endl;
+                            break;
+                    }
+                    count++;
+
+                }
                 break;
             case '?':
                 if(optopt == 's' || optopt == 'n'){
@@ -191,6 +213,8 @@ int main(int argc, char *argv[]) {
         std::cout << "    " << sTmp << std::endl;
     }
     std::cout << " Target Threshold: " << target_threshold << std::endl;
+    std::cout << " Target ToT: " << target_tot << std::endl;
+    std::cout << " Target Charge: " << target_charge << std::endl;
     std::cout << " Output Plots: " << doPlots << std::endl;
     std::cout << " Output Directory: " << outputDir << std::endl;
     
@@ -267,8 +291,8 @@ int main(int argc, char *argv[]) {
     std::map<FrontEnd*, std::string> feCfgMap;
 
     bookie.setTargetThreshold(target_threshold);
-    bookie.setTargetTot(10);
-    bookie.setTargetCharge(16000);
+    bookie.setTargetTot(target_tot);
+    bookie.setTargetCharge(target_charge);
 
     std::cout << "#######################" << std::endl
               << "##  Loading Configs  ##" << std::endl
