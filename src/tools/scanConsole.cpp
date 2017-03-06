@@ -589,10 +589,11 @@ void printHelp() {
     std::cout << " -h: Shows this." << std::endl;
     std::cout << " -s <scan_type> : Scan type. Possible types:" << std::endl;
     listScans();
-    std::cout << " -n: Provide SPECboard number." << std::endl;
+    //std::cout << " -n: Provide SPECboard number." << std::endl;
     //std::cout << " -g <cfg_list.txt>: Provide list of chip configurations." << std::endl;
     std::cout << " -c <cfg1.json> [<cfg2.json> ...]: Provide chip configuration, can take multiple arguments." << std::endl;
     std::cout << " -r <ctrl.json> Provide controller configuration." << std::endl;
+    std::cout << " -t <target_threshold> [<tot_target> [<charge_target>]] : Output directory. (Default ./data/)" << std::endl;
     std::cout << " -p: Enable plotting of results." << std::endl;
     std::cout << " -o <dir> : Output directory. (Default ./data/)" << std::endl;
 }

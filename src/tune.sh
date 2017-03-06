@@ -1,5 +1,5 @@
 #!/bin/bash
-if [ "$#" -lt 4 ]; then
+if [ "$#" -lt 5 ]; then
     echo "Usage: $0 <target_threshold> <target_tot> <target_charge> <controller_config.json> <config_file1.json> [<config_file2.json> ..]" >&2
     exit 1
 fi
