@@ -36,6 +36,7 @@ class AnalysisAlgorithm {
         AnalysisAlgorithm() {
             nCol = 80;
             nRow = 336;
+            make_mask = true;
         };
         virtual ~AnalysisAlgorithm() {}
         
@@ -54,12 +55,15 @@ class AnalysisAlgorithm {
             nRow = row;
         }
 
+        void enMasking() {make_mask = true;}
+        void disMasking() {make_mask = false;}
+
     protected:
         Bookkeeper *bookie;
         unsigned channel;
         ScanBase *scan;
         ClipBoard<HistogramBase> *output;
-
+        bool make_mask;
         unsigned nCol, nRow;
 };
 
@@ -89,6 +93,8 @@ class Fei4Analysis : DataProcessor {
                 algorithms[i]->setMapSize(col, row);
             }
         }
+
+        AnalysisAlgorithm* getLastAna() {return algorithms.back();}
             
 
     private:

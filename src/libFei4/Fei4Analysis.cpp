@@ -148,14 +148,12 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
         mask->setYaxisTitle("Rows");
         mask->setZaxisTitle("Enable");
 
-        // TODO Make this adjustable, probalby not always want a mask
-        bool makeMask = true;
 
         for (unsigned i=0; i<occMaps[ident]->size(); i++) {
             if (occMaps[ident]->getBin(i) == injections) {
                 mask->setBin(i, 1);
             } else {
-                if (makeMask) {
+                if (make_mask) {
                     if(dynamic_cast<Fei4*>(bookie->getFe(channel))) {;
                         Fei4 *fe = dynamic_cast<Fei4*>(bookie->getFe(channel));
                         fe->setEn((i/nRow)+1, (i%nRow)+1, 0);
@@ -959,12 +957,11 @@ void NoiseAnalysis::end() {
 
     noiseOcc->add(occ);
     noiseOcc->scale(1.0/(double)n_trigger);
-    bool applyMask = true;
     double noiseThr = 1e-6; 
     for (unsigned i=0; i<noiseOcc->size(); i++) {
         if (noiseOcc->getBin(i) > noiseThr) {
             mask->setBin(i, 0);
-            if (applyMask) {
+            if (make_mask) {
                 if(dynamic_cast<Fei4*>(bookie->getFe(channel))) {;
                     Fei4 *fe = dynamic_cast<Fei4*>(bookie->getFe(channel));
                     fe->setEn((i/nRow)+1, (i%nRow)+1, 0);
