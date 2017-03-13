@@ -412,6 +412,9 @@ int main(int argc, char *argv[]) {
         } else if (scanType == "noisescan") {
             std::cout << "-> Found Noisescan" << std::endl;
             s = new Fei4NoiseScan(&bookie);
+        } else if (scanType == "selftrigger") {
+            std::cout << "-> Found Selftrigger" << std::endl;
+            s = new Fei4Selftrigger(&bookie);
         } else {
             std::cout << "-> No matching Scan found, possible:" << std::endl;
             listScans();
