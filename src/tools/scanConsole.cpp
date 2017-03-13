@@ -415,6 +415,9 @@ int main(int argc, char *argv[]) {
         } else if (scanType == "selftrigger") {
             std::cout << "-> Found Selftrigger" << std::endl;
             s = new Fei4Selftrigger(&bookie);
+        } else if (scanType == "selftrigger_noise") {
+            std::cout << "-> Found Selftrigger" << std::endl;
+            s = new Fei4Selftrigger(&bookie);
         } else {
             std::cout << "-> No matching Scan found, possible:" << std::endl;
             listScans();
@@ -458,6 +461,11 @@ int main(int argc, char *argv[]) {
             } else if (scanType == "tune_pixelpreamp") {
                 fe->ana->addAlgorithm(new TotAnalysis());
             } else if (scanType == "noisescan") {
+                fe->ana->addAlgorithm(new NoiseAnalysis());
+            } else if (scanType == "selftrigger") {
+                fe->ana->addAlgorithm(new NoiseAnalysis());
+                fe->ana->getLastAna()->disMasking();
+            } else if (scanType == "selftrigger_noise") {
                 fe->ana->addAlgorithm(new NoiseAnalysis());
             } else {
                 std::cout << "-> Analyses not defined for scan type" << std::endl;
