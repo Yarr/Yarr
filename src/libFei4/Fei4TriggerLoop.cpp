@@ -115,6 +115,13 @@ void Fei4TriggerLoop::setNoInject() {
     m_trigWordLength = 5;
 }
 
+void Fei4TriggerLoop::setNoWord() {
+    m_trigWord[0] = 0;
+    m_trigWord[1] = 0;
+    m_trigWord[2] = 0;
+    m_trigWord[3] = 0;
+}
+
 unsigned int Fei4TriggerLoop::getTrigDelay() {
     return m_trigDelay;
 }
@@ -135,6 +142,7 @@ double Fei4TriggerLoop::getTrigTime() {
     return m_trigTime;
 }
 
+/*
 void Fei4TriggerLoop::setIsInner(bool itis) {
     isInner = itis;
 }
@@ -142,6 +150,7 @@ void Fei4TriggerLoop::setIsInner(bool itis) {
 bool Fei4TriggerLoop::getIsInner() {
     return isInner;
 }
+*/
 
 void Fei4TriggerLoop::writeConfig(json &config) {
     config["count"] = m_trigCnt;
@@ -156,3 +165,10 @@ void Fei4TriggerLoop::loadConfig(json &config) {
     // TODO implement me
 }
 
+
+void Fei4TriggerLoop::setTrigWord(uint32_t word[4]) {
+    m_trigWord[0] = word[0];
+    m_trigWord[1] = word[1];
+    m_trigWord[2] = word[2];
+    m_trigWord[3] = word[3];
+}

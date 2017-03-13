@@ -24,9 +24,11 @@ class Fei4TriggerLoop: public LoopActionBase {
         void setTrigTime(double time);
         double getTrigTime();
         void setNoInject();
+        void setTrigWord(uint32_t word[4]);
+        void setNoWord();
 
-        void setIsInner(bool itis=true);
-        bool getIsInner();
+        //void setIsInner(bool itis=true);
+        //bool getIsInner();
 
         void writeConfig(json &config);
         void loadConfig(json &config);
