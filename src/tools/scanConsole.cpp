@@ -463,7 +463,8 @@ int main(int argc, char *argv[]) {
             } else if (scanType == "noisescan") {
                 fe->ana->addAlgorithm(new NoiseAnalysis());
             } else if (scanType == "selftrigger") {
-                fe->ana->addAlgorithm(new NoiseAnalysis());
+                fe->histogrammer->addHistogrammer(new DataArchiver((outputDir + "data.raw")));
+                fe->ana->addAlgorithm(new OccupancyAnalysis());
                 fe->ana->getLastAna()->disMasking();
             } else if (scanType == "selftrigger_noise") {
                 fe->ana->addAlgorithm(new NoiseAnalysis());
@@ -604,7 +605,7 @@ void printHelp() {
     //std::cout << " -g <cfg_list.txt>: Provide list of chip configurations." << std::endl;
     std::cout << " -c <cfg1.json> [<cfg2.json> ...]: Provide chip configuration, can take multiple arguments." << std::endl;
     std::cout << " -r <ctrl.json> Provide controller configuration." << std::endl;
-    std::cout << " -t <target_threshold> [<tot_target> [<charge_target>]] : Output directory. (Default ./data/)" << std::endl;
+    std::cout << " -t <target_threshold> [<tot_target> [<charge_target>]] : Set target values for threshold, tot, charge." << std::endl;
     std::cout << " -p: Enable plotting of results." << std::endl;
     std::cout << " -o <dir> : Output directory. (Default ./data/)" << std::endl;
 }
@@ -619,6 +620,8 @@ void listScans() {
     std::cout << "  tune_globalpreamp" << std::endl;
     std::cout << "  tune_pixelpreamp" << std::endl;
     std::cout << "  noisescan" << std::endl;
+    std::cout << "  selftrigger" << std::endl;
+    std::cout << "  selftrigger_noise" << std::endl;
 }
 
 
