@@ -22,7 +22,7 @@ void ScanFactory::preScan() {
     std::cout << __PRETTY_FUNCTION__ << std::endl;
     // TODO no clue how to get around this
     for (json::iterator it = m_config["scan"]["prescan"]["FE-I4B"]["GlobalConfig"].begin(); it != m_config["scan"]["prescan"]["FE-I4B"]["GlobalConfig"].end(); ++it) {
-        //g_bk->globalFe<Fei4>()->writeRegister((Field*) *g_bk->globalFe<Fei4>()->fieldMap[it.key()], it.value());
+        g_bk->globalFe<Fei4>()->writeRegister(g_bk->globalFe<Fei4>()->regMap[it.key()], it.value());
     }
 }
 

@@ -99,7 +99,7 @@ class Fei4GlobalCfg {
 
         uint16_t getValue(std::string regName) {
             if (regMap.find(regName) != regMap.end()) {
-                return regMap[regName]->value();
+                return (this->*regMap[regName]).value();
             } else {
                 std::cerr << " --> Error: Could not find register \""<< regName << "\"" << std::endl;
             }
@@ -108,13 +108,13 @@ class Fei4GlobalCfg {
 
         void setValue(std::string regName, uint16_t value) {
             if (regMap.find(regName) != regMap.end()) {
-                regMap[regName]->write(value);
+                (this->*regMap[regName]).write(value);
             } else {
                 std::cerr << " --> Error: Could not find register \""<< regName << "\"" << std::endl;
             }
         }
 
-        std::map<std::string, Fei4Register*> regMap;
+        std::map<std::string, Fei4Register Fei4GlobalCfg::*> regMap;
 
         // Fe-I4 global registers, see page 118 FE-I4B Manual
         //1

@@ -57,9 +57,7 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
         void loadIntoShiftReg(unsigned pixel_latch);
         void loadIntoPixel(unsigned pixel_latch);
         void shiftByOne();
-
-
-
+        
         void writeRegister(Fei4Register Fei4GlobalCfg::*ref, uint16_t cfgBits){
             setValue(ref, cfgBits);
             writeRegister(ref);
