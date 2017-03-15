@@ -26,7 +26,7 @@ Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Bookkeeper *b) : ScanBase(b) {
 // Initialize Loops
 void Fei4GlobalThresholdTune::init() {
     // Loop 0: Feedback, start with max fine threshold
-    std::shared_ptr<Fei4GlobalFeedbackBase> fbLoop(Fei4GlobalFeedbackBuilder(&Fei4::Vthin_Fine));
+    std::shared_ptr<Fei4GlobalFeedback> fbLoop(new Fei4GlobalFeedback(&Fei4::Vthin_Fine));
     fbLoop->setStep(16);
     fbLoop->setMax(255);
     fbLoop->setVerbose(true);

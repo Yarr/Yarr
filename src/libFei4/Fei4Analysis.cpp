@@ -206,7 +206,7 @@ void TotAnalysis::init(ScanBase *s) {
             injections = trigLoop->getTrigCnt();
         }
 
-        std::shared_ptr<LoopActionBase> tmpPrmpFb(Fei4GlobalFeedbackBuilder(&Fei4::PrmpVbpf));
+        std::shared_ptr<LoopActionBase> tmpPrmpFb(new Fei4GlobalFeedback(&Fei4::PrmpVbpf));
         if (l->type() == tmpPrmpFb->type()) {
             globalFb = dynamic_cast<GlobalFeedbackBase*>(l.get());  
         }
@@ -367,7 +367,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
 }
 
 void ScurveFitter::init(ScanBase *s) {
-    std::shared_ptr<LoopActionBase> tmpVcalLoop(Fei4ParameterLoopBuilder(&Fei4::PlsrDAC));
+    std::shared_ptr<LoopActionBase> tmpVcalLoop(new Fei4ParameterLoop(&Fei4::PlsrDAC));
     std::shared_ptr<LoopActionBase> tmpVcalLoop2(new Fe65p2ParameterLoop(&Fe65p2::PlsrDac));
     scan = s;
     n_count = nCol*nRow;
@@ -568,7 +568,7 @@ void ScurveFitter::end() {
 }
 
 void OccGlobalThresholdTune::init(ScanBase *s) {
-    std::shared_ptr<LoopActionBase> tmpVthinFb(Fei4GlobalFeedbackBuilder(&Fei4::Vthin_Fine));
+    std::shared_ptr<LoopActionBase> tmpVthinFb(new Fei4GlobalFeedback(&Fei4::Vthin_Fine));
     std::shared_ptr<LoopActionBase> tmpVthinFb2(new Fe65p2GlobalFeedback(&Fe65p2::Vthin1Dac));
     n_count = 1;
     for (unsigned n=0; n<s->size(); n++) {
@@ -790,7 +790,7 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
 void L1Analysis::init(ScanBase *s) {
     n_count = 1;
     injections = 0;
-    std::shared_ptr<LoopActionBase> tmpVcalLoop(Fei4ParameterLoopBuilder(&Fei4::PlsrDAC));
+    std::shared_ptr<LoopActionBase> tmpVcalLoop(new Fei4ParameterLoop(&Fei4::PlsrDAC));
     std::shared_ptr<LoopActionBase> tmpVcalLoop2(new Fe65p2ParameterLoop(&Fe65p2::PlsrDac));
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
@@ -861,7 +861,7 @@ void L1Analysis::processHistogram(HistogramBase *h) {
 void TotDistPlotter::init(ScanBase *s) {
     n_count = 1;
     injections = 0;
-    std::shared_ptr<LoopActionBase> tmpVcalLoop(Fei4ParameterLoopBuilder(&Fei4::PlsrDAC));
+    std::shared_ptr<LoopActionBase> tmpVcalLoop(new Fei4ParameterLoop(&Fei4::PlsrDAC));
     std::shared_ptr<LoopActionBase> tmpVcalLoop2(new Fe65p2ParameterLoop(&Fe65p2::PlsrDac));
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);

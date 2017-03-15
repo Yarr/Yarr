@@ -11,8 +11,12 @@
 #include "LoopActionBase.h"
 #include "FeedbackBase.h"
 
-class Fei4GlobalFeedbackBase : public LoopActionBase, public GlobalFeedbackBase {
+class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
     public:
+        Fei4GlobalFeedback(Fei4Register Fei4GlobalCfg::*ref) :parPtr(ref) { 
+            loopType = typeid(this);
+        };
+        
         // Step down feedback algorithm
         void feedback(unsigned channel, double sign, bool last = false) {
             // Calculate new step and val
@@ -55,25 +59,6 @@ class Fei4GlobalFeedbackBase : public LoopActionBase, public GlobalFeedbackBase 
 			keeper->mutexMap[channel].unlock();
         }
 
-
-
-   protected:
-        std::mutex fbMutex;
-        std::map<unsigned, unsigned> values;
-		std::map<unsigned, unsigned> localStep;
-		std::map<unsigned, double> oldSign;
-        unsigned cur;
-
-};
-
-
-template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight>
-class Fei4GlobalFeedback : public Fei4GlobalFeedbackBase {
-    public:
-        Fei4GlobalFeedback(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref): parPtr(ref) { 
-            loopType = typeid(this);
-        };
-        
         
     private:
         void init() {
@@ -149,12 +134,14 @@ class Fei4GlobalFeedback : public Fei4GlobalFeedbackBase {
             return true;
         }
 
-        Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*parPtr;
+        Fei4Register Fei4GlobalCfg::*parPtr;
+   
+    protected:
+        std::mutex fbMutex;
+        std::map<unsigned, unsigned> values;
+		std::map<unsigned, unsigned> localStep;
+		std::map<unsigned, double> oldSign;
+        unsigned cur;
 };
-
-template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight>
-Fei4GlobalFeedbackBase* Fei4GlobalFeedbackBuilder(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref) {
-        return new Fei4GlobalFeedback<T,mOffset,bOffset,mask,msbRight>(ref);
-}
 
 #endif

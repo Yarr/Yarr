@@ -28,7 +28,7 @@ Fei4GlobalPreampTune::Fei4GlobalPreampTune(Bookkeeper *b) : ScanBase(b) {
 // Initialize Loops
 void Fei4GlobalPreampTune::init() {
     // Loop 0: Feedback
-    std::shared_ptr<Fei4GlobalFeedbackBase> fbLoop(Fei4GlobalFeedbackBuilder(&Fei4::PrmpVbpf));
+    std::shared_ptr<Fei4GlobalFeedback> fbLoop(new Fei4GlobalFeedback(&Fei4::PrmpVbpf));
     fbLoop->setStep(64);
     fbLoop->setMax(128);
     fbLoop->setVerbose(true);

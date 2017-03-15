@@ -60,21 +60,18 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
 
 
 
-        template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight>
-            void writeRegister(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref, uint16_t cfgBits){
-                setValue(ref, cfgBits);
-                writeRegister(ref);
-            }
+        void writeRegister(Fei4Register Fei4GlobalCfg::*ref, uint16_t cfgBits){
+            setValue(ref, cfgBits);
+            writeRegister(ref);
+        }
 
-        template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight>
-            void writeRegister(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref){
-                wrRegister(chipId, getAddr(ref), cfg[getAddr(ref)]);
-            }
+        void writeRegister(Fei4Register Fei4GlobalCfg::*ref){
+            wrRegister(chipId, getAddr(ref), cfg[getAddr(ref)]);
+        }
         
-        template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight>
-            T readRegister(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref){
-                return getValue(ref);
-            }
+        uint16_t readRegister(Fei4Register Fei4GlobalCfg::*ref){
+            return getValue(ref);
+        }
 
         void wrGR16(unsigned int mOffset, unsigned int bOffset, unsigned int mask, bool msbRight, uint16_t cfgBits);
     private:
