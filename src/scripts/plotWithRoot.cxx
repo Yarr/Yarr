@@ -34,11 +34,13 @@ int main(int argc, char *argv[]) {
 
         if (type == "Histo2d") {
             infile >> ybins >> ylow >> yhigh;
+        } else {
+            ybins = 1;
         }
 
         infile >> underflow >> overflow;
 
-        std::cout << "Histogram type: " << type << std::endl;
+        std::cout << "Histogram type: " << type << " " << type.size() << std::endl;
         std::cout << "Histogram name: " << name << std::endl;
         std::cout << "X axis title: " << xaxistitle << std::endl;
         std::cout << "Y axis title: " << yaxistitle << std::endl;
@@ -50,7 +52,7 @@ int main(int argc, char *argv[]) {
         }
 
         TCanvas *c = new TCanvas("c", "c", 800, 600);
-        TH1 *h;
+        TH1 *h = NULL;
         if (type == "Histo2d") {
             h = (TH1*) new TH2F(name.c_str(), name.c_str(), xbins, xlow, xhigh, ybins, ylow, yhigh);
             h->SetStats(0);
@@ -58,12 +60,24 @@ int main(int argc, char *argv[]) {
                 for (int j=0; j<xbins; j++) {
                     double tmp;
                     infile >> tmp;
+                    std::cout << i << " " << j << " " << tmp << std::endl;
                     h->SetBinContent(j+1, i+1, tmp);
                 }
             }
             h->SetMaximum(h->GetMean()*4);
             h->Draw("colz");
+        } 
+        if (type == "Histo1d") {
+            h = (TH1*) new TH1F(name.c_str(), name.c_str(), xbins, xlow, xhigh);
+            for (int j=0; j<xbins; j++) {
+                double tmp;
+                infile >> tmp;
+                std::cout << j << " " << tmp << std::endl;
+                h->SetBinContent(j+1,tmp);
+            }
+            h->Draw();
         }
+
         filename.replace(filename.find(".dat"), 4, "_root.pdf"); 
 
         c->Print(filename.c_str());
