@@ -30,12 +30,12 @@ class RceTxCore : virtual public TxCore {
         uint32_t getTrigEnable() {return triggerProc.joinable() || !m_com->isEmpty();}
         void maskTrigEnable(uint32_t value, uint32_t mask) {}
 
-        void setTrigConfig(enum TRIG_CONF_VALUE cfg) {}
-        void setTrigFreq(double freq) {}
+        void setTrigConfig(enum TRIG_CONF_VALUE cfg) {m_trigCfg = cfg;} 
+        void setTrigFreq(double freq) {m_trigFreq = freq;}
         void setTrigCnt(uint32_t count);
-        void setTrigTime(double time) {}
-        void setTrigWordLength(uint32_t length) {}
-        void setTrigWord(uint32_t *word) {}
+        void setTrigTime(double time) {m_trigTime = time;}
+        void setTrigWordLength(uint32_t length) {} // TODO length here is bits, should be words
+        void setTrigWord(uint32_t *word) {for(unsigned i=0; i<4; i++) m_trigWord[i] = word[i]} 
 
         void toggleTrigAbort() {}
 
@@ -57,11 +57,16 @@ class RceTxCore : virtual public TxCore {
     private:
         RceCom *m_com;
 
-        unsigned m_trigCnt;
         std::mutex accMutex;
         std::thread triggerProc;
         bool trigProcRunning;
         void doTrigger();
+
+        enum TRIG_CONF_VALUE m_trigCfg;
+        unsigned m_trigCnt;
+        uint32_t m_trigWord[4]; // Repeated bitstream max length is 128 bits, in software there is not really a limit
+        double m_trigFreq;
+        double m_trigTime;
 };
 
 #endif
