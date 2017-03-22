@@ -6,6 +6,7 @@
 #include <iostream>
 #include <thread>
 #include <mutex>
+#include <chrono>
 
 #include "TxCore.h"
 #include "RceCom.h"
@@ -35,7 +36,7 @@ class RceTxCore : virtual public TxCore {
         void setTrigCnt(uint32_t count);
         void setTrigTime(double time) {m_trigTime = time;}
         void setTrigWordLength(uint32_t length) {} // TODO length here is bits, should be words
-        void setTrigWord(uint32_t *word) {for(unsigned i=0; i<4; i++) m_trigWord[i] = word[i]} 
+        void setTrigWord(uint32_t *word) {for(unsigned i=0; i<4; i++) m_trigWord[i] = word[i];} 
 
         void toggleTrigAbort() {}
 
@@ -60,7 +61,9 @@ class RceTxCore : virtual public TxCore {
         std::mutex accMutex;
         std::thread triggerProc;
         bool trigProcRunning;
-        void doTrigger();
+        
+        void doTriggerCnt();
+        void doTriggerTime();
 
         enum TRIG_CONF_VALUE m_trigCfg;
         unsigned m_trigCnt;
