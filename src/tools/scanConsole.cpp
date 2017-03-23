@@ -228,8 +228,8 @@ int main(int argc, char *argv[]) {
     std::cout << "# Init Hardware #" << std::endl;
     std::cout << "#################" << std::endl;
 
-    HwController *hwCtrl;
-    Fei4Emu *emu;
+    HwController *hwCtrl = NULL;
+    Fei4Emu *emu = NULL;
     std::vector<std::thread> emuThreads;
     if (ctrlCfgPath == "") {
         std::cout << "-> No controller config given, using default." << std::endl;
