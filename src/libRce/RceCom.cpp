@@ -1,18 +1,16 @@
 #include "RceCom.h"
-
+#include <iostream>
 
 enum channeldefs {ADCREADOUT=29, TDCREADOUT=30, PGPACK=31};
-PgpModL pgpl;
+
 
 RceCom::RceCom() {
-  pgpl.open();
-  pgp= PgpTrans::RCDImaster::instance();
-  
+  pgp= Rce::PGPmaster::instance();  
+  pgp->setReceiver((Rce::Receiver*)this);
   m_counter=0;
 }
 
 RceCom::~RceCom() {
-  pgpl.close();
 }
 bool RceCom::isEmpty() {
   return txfifo.empty();
@@ -25,37 +23,39 @@ uint32_t RceCom::read32(){
   return 0;
 }
 // PGP handler
-void RceCom::receive(PgpTrans::PgpData *pgpdata){
+void RceCom::receive(Rce::PgpData *pgpdata){
   int link=pgpdata->header[2];
-  //std::cout<<"Link is "<<link<<std::endl;
-  //std::cout<<"Payload "<<std::hex<<pgpdata->payload[0]<<std::dec<<std::endl;
   int size=pgpdata->payloadSize;
-  //std::cout<<"Size "<<size<<std::endl;
   if (link==(uint32_t)PGPACK)return; //handshake from serialization command
-  //printf("Payloadsize %d Headersize %d\n",payloadSize,headerSize);
-  uint32_t* data;
-  
-  data=pgpdata->payload;
+  unsigned int count=0;
+  uint32_t word=0;
+  uint8_t* data;
 
-  m_counter++;
+  data=(uint8_t*) pgpdata->payload;
+  /* convert 24bit record stream to 32 bit words*/
+ 
   m_lock.lock();
-  for(int i=0;i<size;i++) rxfifo.push(data[i]);
+  for(int i=0;i<size*sizeof(uint32_t);i++)  {
+    word|=data[i];
+    count++;
+    if(count==3) {
+      if(word!=0) rxfifo.push(word);
+      count=0;
+      word=0;
+    } 
+    word<<=8;
+  }
   m_lock.unlock();
-
-  //m_timer.Start();
-  //  m_handler->handle(link,data,size);
-   //m_timer.Stop();
-
-  //std::cout<<"Parsing done"<<std::endl;
+  m_counter++;
 }
 
 
 uint32_t RceCom::getCurSize()
 {
-   
   m_lock.lock();
-  return rxfifo.size();
+  uint32_t size= rxfifo.size();
   m_lock.unlock();
+  return size;
 }
 
 
@@ -79,3 +79,5 @@ void RceCom::releaseFifo() {
   }
   
 } // Add some padding
+
+

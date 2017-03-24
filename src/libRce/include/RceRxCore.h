@@ -9,13 +9,9 @@
 
 class RceRxCore : virtual public RxCore {
     public:
-        RceRxCore(RceCom *com);
-        RceRxCore() {m_com = NULL;}
+        RceRxCore();
         ~RceRxCore();
         
-        void setCom(RceCom *com) {m_com = com;}
-        RceCom* getCom() {return m_com;}
-
         void setRxEnable(uint32_t val) {}
         void maskRxEnable(uint32_t val, uint32_t mask) {}
 

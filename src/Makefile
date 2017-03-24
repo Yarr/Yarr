@@ -30,7 +30,7 @@ CPP = clang++
 LD = clang++
 else
 CPPFLAGS += -pthread
-LDFLAGS += -pthread
+LDFLAGS += -pthread -lrt
 endif
 
 CPPFLAGS += -std=c++11 -Wall -Werror
