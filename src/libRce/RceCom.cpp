@@ -35,7 +35,7 @@ void RceCom::receive(Rce::PgpData *pgpdata){
   /* convert 24bit record stream to 32 bit words*/
  
   m_lock.lock();
-  for(int i=0;i<size*sizeof(uint32_t);i++)  {
+  for(unsigned int i=0;i<size*sizeof(uint32_t);i++)  {
     word|=data[i];
     count++;
     if(count==3) {
