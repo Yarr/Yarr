@@ -250,7 +250,7 @@ int main(int argc, char *argv[]) {
             std::cout << "-> Found Spec config" << std::endl;
             hwCtrl = new SpecController(); 
             hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
-        } else if ( (ctrlCfg["ctrlCfg"]["type"]=="rce") ) {
+        } else if ( (ctrlCfg["ctrlCfg"]["type"]=="boc") ) {
             std::cout << "-> Found Boc config" << std::endl;
             hwCtrl = new BocController();
             hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
