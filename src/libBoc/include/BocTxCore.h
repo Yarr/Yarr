@@ -10,7 +10,7 @@
 #include "BocCom.h"
 #include "TxCore.h"
 
-class BocTxCore : virtual public TxCore, virtual public BocCom {
+class BocTxCore : virtual public TxCore {
 	public:
 		// constructor/destructor
 		BocTxCore();
@@ -44,6 +44,14 @@ class BocTxCore : virtual public TxCore, virtual public BocCom {
         void resetTriggerLogic();
         uint32_t getTrigInCount();
 
+        void setCom(BocCom *com) {
+            m_com = com;
+        }
+
+        BocCom *getCom() {
+            return m_com;
+        }
+
     private:
     	std::thread *m_trigThread;
     	void trigThreadProc();
@@ -62,6 +70,7 @@ class BocTxCore : virtual public TxCore, virtual public BocCom {
 
         // intermediate FIFO for storage
         std::queue<uint8_t> cmdFifo;
+        BocCom *m_com;
 };
 
 #endif // BOCTXCORE_H

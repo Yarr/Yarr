@@ -17,7 +17,7 @@
 #include "BocCom.h"
 #include "RawData.h"
 
-class BocRxCore : virtual public RxCore, virtual public BocCom {
+class BocRxCore : virtual public RxCore {
     public:
         BocRxCore();
         ~BocRxCore();
@@ -31,11 +31,21 @@ class BocRxCore : virtual public RxCore, virtual public BocCom {
         uint32_t getCurCount();
         bool isBridgeEmpty();
 
+        void setCom(BocCom *com) {
+            m_com = com;
+        }
+
+        BocCom *getCom() {
+            return m_com;
+        }
+
     private:
+
         uint32_t m_enableMask;
         std::queue<uint8_t> m_rxData[32];
         uint32_t m_formState[32];
         uint32_t m_formRecord[32];
+        BocCom *m_com;
 };
 
 #endif

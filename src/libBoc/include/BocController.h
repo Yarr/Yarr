@@ -19,8 +19,12 @@ using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::i
 
 class BocController : public HwController, public BocTxCore, public BocRxCore {
     public:
-    	BocController() {}
-        void loadConfig(json &j) {}
+    	BocController() {};
+    	~BocController();
+        void loadConfig(json &j);
+
+    private:
+    	BocCom *m_com;
 };
 
 #endif

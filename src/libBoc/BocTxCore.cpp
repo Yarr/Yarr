@@ -10,12 +10,6 @@
 
 BocTxCore::BocTxCore()
 {
-	// configure all TX channels for BPM @40 Mbit/s
-	setCmdEnable(0xFFFFFFFF);
-	BocCom::writeSingle(BMFN_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_CTRL, 0x41);
-	BocCom::writeSingle(BMFS_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_CTRL, 0x41);
-	setCmdEnable(0x00000000);
-
 	// we are currently not sending
 	m_isSending = false;
 }
@@ -39,10 +33,15 @@ void BocTxCore::setCmdEnable(uint32_t value)
 	m_enableMask = value;
 
 	// update BOC configuration
-	BocCom::writeSingle(BMFN_OFFSET + BMF_TXBROADCAST0, (m_enableMask >>  0) & 0xFF);
-	BocCom::writeSingle(BMFN_OFFSET + BMF_TXBROADCAST1, (m_enableMask >>  8) & 0xFF);
-	BocCom::writeSingle(BMFS_OFFSET + BMF_TXBROADCAST0, (m_enableMask >> 16) & 0xFF);
-	BocCom::writeSingle(BMFS_OFFSET + BMF_TXBROADCAST1, (m_enableMask >> 24) & 0xFF);
+	m_com->writeSingle(BMFN_OFFSET + BMF_TXBROADCAST0, (m_enableMask >>  0) & 0xFF);
+	m_com->writeSingle(BMFN_OFFSET + BMF_TXBROADCAST1, (m_enableMask >>  8) & 0xFF);
+	m_com->writeSingle(BMFS_OFFSET + BMF_TXBROADCAST0, (m_enableMask >> 16) & 0xFF);
+	m_com->writeSingle(BMFS_OFFSET + BMF_TXBROADCAST1, (m_enableMask >> 24) & 0xFF);
+
+	// make sure the configuration is matching
+	m_com->writeSingle(BMFN_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_CTRL, 0x41);
+	m_com->writeSingle(BMFS_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_CTRL, 0x41);
+
 }
 
 uint32_t BocTxCore::getCmdEnable()
@@ -82,15 +81,15 @@ void BocTxCore::writeFifo(uint32_t value)
 		// send data to the BMF north
 		if(m_enableMask & 0x0000FFFF)
 		{
-			BocCom::writeSingle(BMFN_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_CTRL, 0x41);
-			BocCom::writeNonInc(BMFN_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_FIFO_DATA, buf, 128);
+			m_com->writeSingle(BMFN_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_CTRL, 0x41);
+			m_com->writeNonInc(BMFN_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_FIFO_DATA, buf, 128);
 		}
 
 		// send data to the BMF north
 		if(m_enableMask & 0xFFFF0000)
 		{
-			BocCom::writeSingle(BMFS_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_CTRL, 0x41);
-			BocCom::writeNonInc(BMFS_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_FIFO_DATA, buf, 128);
+			m_com->writeSingle(BMFS_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_CTRL, 0x41);
+			m_com->writeNonInc(BMFS_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_FIFO_DATA, buf, 128);
 		}
 	}
 }
@@ -114,28 +113,28 @@ void BocTxCore::releaseFifo()
 		// send data to the BMF north
 		if(m_enableMask & 0x0000FFFF)
 		{
-			BocCom::writeSingle(BMFN_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_CTRL, 0x41);
-			BocCom::writeNonInc(BMFN_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_FIFO_DATA, buf, buflen);
+			m_com->writeSingle(BMFN_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_CTRL, 0x41);
+			m_com->writeNonInc(BMFN_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_FIFO_DATA, buf, buflen);
 		}
 
 		// send data to the BMF north
 		if(m_enableMask & 0xFFFF0000)
 		{
-			BocCom::writeSingle(BMFS_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_CTRL, 0x41);
-			BocCom::writeNonInc(BMFS_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_FIFO_DATA, buf, buflen);
+			m_com->writeSingle(BMFS_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_CTRL, 0x41);
+			m_com->writeNonInc(BMFS_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_FIFO_DATA, buf, buflen);
 		}
 	}
 
 	// send north
 	if(m_enableMask & 0x0000FFFF)
 	{
-		BocCom::writeSingle(BMFN_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_CTRL, 0x45);
+		m_com->writeSingle(BMFN_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_CTRL, 0x45);
 	}
 
 	// send south
 	if(m_enableMask & 0xFFFF0000)
 	{
-		BocCom::writeSingle(BMFS_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_CTRL, 0x45);
+		m_com->writeSingle(BMFS_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_CTRL, 0x45);
 	}
 }
 
@@ -153,11 +152,11 @@ bool BocTxCore::isCmdEmpty()
 	uint8_t status;
 	if(ch >= 16)
 	{
-		status = BocCom::readSingle(BMFS_OFFSET + BMF_TX_OFFSET + 32 * (ch%16) + BMF_TX_STATUS);
+		status = m_com->readSingle(BMFS_OFFSET + BMF_TX_OFFSET + 32 * (ch%16) + BMF_TX_STATUS);
 	}
 	else
 	{
-		status = BocCom::readSingle(BMFN_OFFSET + BMF_TX_OFFSET + 32 * (ch%16) + BMF_TX_STATUS);
+		status = m_com->readSingle(BMFN_OFFSET + BMF_TX_OFFSET + 32 * (ch%16) + BMF_TX_STATUS);
 	}
 
 	return (status & 0x1);
@@ -282,10 +281,10 @@ void BocTxCore::trigThreadProc()
 	double trigTime = 0;
 
 	// set up trigger mask
-	BocCom::writeSingle(BMFN_OFFSET + BMF_TXBROADCAST0, (m_trigMask >>  0) & 0xFF);
-	BocCom::writeSingle(BMFN_OFFSET + BMF_TXBROADCAST1, (m_trigMask >>  8) & 0xFF);
-	BocCom::writeSingle(BMFS_OFFSET + BMF_TXBROADCAST0, (m_trigMask >> 16) & 0xFF);
-	BocCom::writeSingle(BMFS_OFFSET + BMF_TXBROADCAST1, (m_trigMask >> 24) & 0xFF);
+	m_com->writeSingle(BMFN_OFFSET + BMF_TXBROADCAST0, (m_trigMask >>  0) & 0xFF);
+	m_com->writeSingle(BMFN_OFFSET + BMF_TXBROADCAST1, (m_trigMask >>  8) & 0xFF);
+	m_com->writeSingle(BMFS_OFFSET + BMF_TXBROADCAST0, (m_trigMask >> 16) & 0xFF);
+	m_com->writeSingle(BMFS_OFFSET + BMF_TXBROADCAST1, (m_trigMask >> 24) & 0xFF);
 
 	// we can abort triggering by setting trigThreadRunning to false
 	while(m_trigThreadRunning)
@@ -322,8 +321,8 @@ void BocTxCore::trigThreadProc()
 	std::cout << "finished trigger thread and cleaning up" << std::endl;
 
 	// restore mask to cmd mask
-	BocCom::writeSingle(BMFN_OFFSET + BMF_TXBROADCAST0, (m_enableMask >>  0) & 0xFF);
-	BocCom::writeSingle(BMFN_OFFSET + BMF_TXBROADCAST1, (m_enableMask >>  8) & 0xFF);
-	BocCom::writeSingle(BMFS_OFFSET + BMF_TXBROADCAST0, (m_enableMask >> 16) & 0xFF);
-	BocCom::writeSingle(BMFS_OFFSET + BMF_TXBROADCAST1, (m_enableMask >> 24) & 0xFF);
+	m_com->writeSingle(BMFN_OFFSET + BMF_TXBROADCAST0, (m_enableMask >>  0) & 0xFF);
+	m_com->writeSingle(BMFN_OFFSET + BMF_TXBROADCAST1, (m_enableMask >>  8) & 0xFF);
+	m_com->writeSingle(BMFS_OFFSET + BMF_TXBROADCAST0, (m_enableMask >> 16) & 0xFF);
+	m_com->writeSingle(BMFS_OFFSET + BMF_TXBROADCAST1, (m_enableMask >> 24) & 0xFF);
 }

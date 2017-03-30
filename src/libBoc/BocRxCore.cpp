@@ -19,11 +19,11 @@ BocRxCore::~BocRxCore()
 		// channel is disabled
 		if(ch >= 16)
 		{
-			BocCom::writeSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_CTRL, 0x0);
+			m_com->writeSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_CTRL, 0x0);
 		}
 		else
 		{
-			BocCom::writeSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_CTRL, 0x0);
+			m_com->writeSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_CTRL, 0x0);
 		}
 	}
 }
@@ -41,11 +41,11 @@ void BocRxCore::setRxEnable(uint32_t val)
 			// channel is enabled
 			if(ch >= 16)
 			{
-				BocCom::writeSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_CTRL, 0x5);
+				m_com->writeSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_CTRL, 0x5);
 			}
 			else
 			{
-				BocCom::writeSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_CTRL, 0x5);
+				m_com->writeSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_CTRL, 0x5);
 			}			
 		}
 		else
@@ -53,11 +53,11 @@ void BocRxCore::setRxEnable(uint32_t val)
 			// channel is disabled
 			if(ch >= 16)
 			{
-				BocCom::writeSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_CTRL, 0x0);
+				m_com->writeSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_CTRL, 0x0);
 			}
 			else
 			{
-				BocCom::writeSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_CTRL, 0x0);
+				m_com->writeSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_CTRL, 0x0);
 			}
 		}
 	}
@@ -84,14 +84,14 @@ RawData* BocRxCore::readData()
 		// skip empty channels
 		if(ch >= 16)
 		{
-			if(BocCom::readSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_STATUS) & 0x20)
+			if(m_com->readSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_STATUS) & 0x20)
 				continue;
 
-			while((BocCom::readSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_STATUS) & 0x20) == 0)
+			while((m_com->readSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_STATUS) & 0x20) == 0)
 			{
 				uint16_t data;
 				uint8_t tmp[2];
-				BocCom::readInc(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_DATA_HIGH, tmp, 2);
+				m_com->readInc(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_DATA_HIGH, tmp, 2);
 				data  = (uint16_t) tmp[0] << 8;
 				data |= (uint16_t) tmp[1] << 0;
 				m_rxData[ch].push(data);
@@ -99,14 +99,14 @@ RawData* BocRxCore::readData()
 		}
 		else
 		{
-			if(BocCom::readSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_STATUS) & 0x20)
+			if(m_com->readSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_STATUS) & 0x20)
 				continue;
 
-			while((BocCom::readSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_STATUS) & 0x20) == 0)
+			while((m_com->readSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_STATUS) & 0x20) == 0)
 			{
 				uint16_t data;
 				uint8_t tmp[2];
-				BocCom::readInc(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_DATA_HIGH, tmp, 2);
+				m_com->readInc(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_DATA_HIGH, tmp, 2);
 				data  = (uint16_t) tmp[0] << 8;
 				data |= (uint16_t) tmp[1] << 0;
 				m_rxData[ch].push(data);
@@ -186,13 +186,13 @@ bool BocRxCore::isBridgeEmpty()
 		// channel is disabled
 		if(ch >= 16)
 		{
-			if((BocCom::readSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_STATUS) & 0x20) == 0) {
+			if((m_com->readSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_STATUS) & 0x20) == 0) {
 				return false;
 			}
 		}
 		else
 		{
-			if((BocCom::readSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_STATUS) & 0x20) == 0) {
+			if((m_com->readSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_STATUS) & 0x20) == 0) {
 				return false;
 			}
 		}
