@@ -127,7 +127,7 @@ RawData* BocRxCore::readData()
 	for(int ch = 0; ch < 32; ch++)
 	{
 		// build records
-		while(m_rxData[ch].size() >= 4)
+		while(m_rxData[ch].size() > 0)
 		{
 			uint16_t data = m_rxData[ch].front();
 			m_rxData[ch].pop();
