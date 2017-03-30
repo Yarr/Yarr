@@ -22,6 +22,7 @@
 
 #include "HwController.h"
 #include "SpecController.h"
+#include "BocController.h"
 #include "EmuController.h"
 #include "RceController.h"
 #include "Bookkeeper.h"
@@ -248,6 +249,10 @@ int main(int argc, char *argv[]) {
         if (ctrlCfg["ctrlCfg"]["type"] == "spec") {
             std::cout << "-> Found Spec config" << std::endl;
             hwCtrl = new SpecController(); 
+            hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
+        } else if ( (ctrlCfg["ctrlCfg"]["type"]=="rce") ) {
+            std::cout << "-> Found Boc config" << std::endl;
+            hwCtrl = new BocController();
             hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
 	} else if ( (ctrlCfg["ctrlCfg"]["type"]=="rce") ) {
 	    std::cout << "-> Found RCE config" << std::endl;
