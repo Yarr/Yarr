@@ -3,7 +3,8 @@
         "type": "boc",
         "cfg" : {
             "bocHost" : "192.168.0.10",
-            "emuMask" : 1
+            "emuMask" : 1,
+            "emuHitCnt" : 2
         }
     }
 }

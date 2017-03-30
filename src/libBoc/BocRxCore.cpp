@@ -132,12 +132,12 @@ RawData* BocRxCore::readData()
 			uint16_t data = m_rxData[ch].front();
 			m_rxData[ch].pop();
 
-			// synchronize on start of frame
-			if((data & 0x1FF) == 0x1FC)
+			// synchronize on k-word
+			if(data & 0x100)
 			{
 				m_formState[ch] = 0;
 			}
-			else if((data & 0x100) == 0)
+			else
 			{
 				switch(m_formState[ch])
 				{
@@ -211,7 +211,7 @@ bool BocRxCore::isBridgeEmpty()
 	return true;
 }
 
-void BocRxCore::setEmu(uint32_t mask)
+void BocRxCore::setEmu(uint32_t mask, uint8_t hitcnt)
 {
 	// save mask
 	m_emuMask = mask;
@@ -227,8 +227,8 @@ void BocRxCore::setEmu(uint32_t mask)
 			{
 				std::cout << "Enabling FE-I4 emulator on channel " << ch << std::endl;
 				tmp |= 0x20;
-				m_com->writeSingle(BMFS_OFFSET + BMF_EMU_OFFSET + 8 * (ch%16) + BMF_EMU_CTRL, 0x1);
-				m_com->writeSingle(BMFS_OFFSET + BMF_EMU_OFFSET + 8 * (ch%16) + BMF_EMU_HITCNT, 0x2);
+				m_com->writeSingle(BMFS_OFFSET + BMF_EMU_OFFSET + 8 * (ch%16) + BMF_EMU_CTRL, 0x5);
+				m_com->writeSingle(BMFS_OFFSET + BMF_EMU_OFFSET + 8 * (ch%16) + BMF_EMU_HITCNT, hitcnt);
 			}
 			else
 			{
@@ -244,8 +244,8 @@ void BocRxCore::setEmu(uint32_t mask)
 			{
 				std::cout << "Enabling FE-I4 emulator on channel " << ch << std::endl;
 				tmp |= 0x20;
-				m_com->writeSingle(BMFN_OFFSET + BMF_EMU_OFFSET + 8 * (ch%16) + BMF_EMU_CTRL, 0x1);
-				m_com->writeSingle(BMFN_OFFSET + BMF_EMU_OFFSET + 8 * (ch%16) + BMF_EMU_HITCNT, 0x2);
+				m_com->writeSingle(BMFN_OFFSET + BMF_EMU_OFFSET + 8 * (ch%16) + BMF_EMU_CTRL, 0x5);
+				m_com->writeSingle(BMFN_OFFSET + BMF_EMU_OFFSET + 8 * (ch%16) + BMF_EMU_HITCNT, hitcnt);
 			}
 			else
 			{
