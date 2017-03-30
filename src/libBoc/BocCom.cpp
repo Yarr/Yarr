@@ -141,11 +141,16 @@ BocCom::BocCom(const std::string &host)
     // reset transaction id
     transaction_id = 0;
 
+    // debug output
+    std::cout << "BOC revision: 0x" << std::hex << (int)getBocRev() << std::dec << std::endl;
+    std::cout << "BMF north feature: 0x" << std::hex << getBmfFeatures(BMFN_OFFSET) << std::dec << std::endl;
+    std::cout << "BMF south feature: 0x" << std::hex <<	getBmfFeatures(BMFS_OFFSET) << std::dec	<< std::endl;
+
     // check that BOC revision is good
     if((getBocRev() < 0x4) ||
        (getBmfFeatures(BMFN_OFFSET) != getBmfFeatures(BMFS_OFFSET)) ||
-       ((getBmfFeatures(BMFN_OFFSET) & 0x10) != 0) ||
-       ((getBmfFeatures(BMFN_OFFSET) & 0x60) != 0x60))
+       ((getBmfFeatures(BMFN_OFFSET) & 0x10) == 0x10) ||
+       ((getBmfFeatures(BMFN_OFFSET) & 0x20) == 0))
     {
         std::cerr << "The BOC card is not compatible with the YaRR software. Sorry!" << std::endl;
         std::cerr << "You will need: " << std::endl;

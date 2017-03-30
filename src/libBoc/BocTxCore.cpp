@@ -104,7 +104,7 @@ void BocTxCore::releaseFifo()
 		size_t buflen = 0;
 
 		// fill up temporary buffer
-		while((buflen < 128) || (!cmdFifo.empty()))
+		while((buflen < 128) && (!cmdFifo.empty()))
 		{
 			buf[buflen] = cmdFifo.front();
 			cmdFifo.pop();
@@ -165,6 +165,8 @@ bool BocTxCore::isCmdEmpty()
 
 void BocTxCore::setTrigEnable(uint32_t value)
 {
+	m_trigMask = value;
+
 	if(value == 0)
 	{
 		if(m_trigThread != nullptr)
