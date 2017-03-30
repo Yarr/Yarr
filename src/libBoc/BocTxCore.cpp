@@ -300,6 +300,9 @@ void BocTxCore::trigThreadProc()
 		// count triggers sent out
 		trigNum++;
 
+		// output trigger number
+		std::cout << "Sending trigger #" << trigNum << std::endl;
+
 		// did we reach trigger count
 		if(trigNum == m_trigCount)
 			m_trigThreadRunning = false;

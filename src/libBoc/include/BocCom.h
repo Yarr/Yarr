@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 #include <string>
+#include <mutex>
 
 // FPGA register offsets
 #define BCF_OFFSET          0x0000
@@ -85,6 +86,8 @@ class BocCom {
 
         int socketfd;
         uint32_t transaction_id;
+
+        std::mutex socket_mutex;
 };
 
 #endif

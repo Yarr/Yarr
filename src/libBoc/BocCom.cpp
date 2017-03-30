@@ -183,6 +183,9 @@ void BocCom::readBlock(uint16_t addr, uint8_t *val, size_t words, bool increment
     uint8_t txdata[8];
     uint8_t rxdata[256];
 
+    // lock mutex
+    socket_mutex.lock();
+
     // we need to read in chunks of max. 128 byte
     if(words > 128)
     {
@@ -253,6 +256,9 @@ void BocCom::readBlock(uint16_t addr, uint8_t *val, size_t words, bool increment
 
     // increment transaction id
     transaction_id = transaction_id + 1;
+
+    // unlock mutex
+    socket_mutex.unlock();
 }
 
 void BocCom::writeSingle(uint16_t addr, uint8_t value)
@@ -267,6 +273,9 @@ void BocCom::writeBlock(uint16_t addr, uint8_t *val, size_t words, bool incremen
     uint8_t txdata[256];
     uint8_t rxdata[4];
     int ret;
+
+    // lock mutex
+    socket_mutex.lock();
 
     // we need to send data in chunks of max. 128 bytes
     if(words > 128)
@@ -338,6 +347,9 @@ void BocCom::writeBlock(uint16_t addr, uint8_t *val, size_t words, bool incremen
 
     // increment transaction id
     transaction_id = transaction_id + 1;
+
+    // unlock mutex
+    socket_mutex.unlock();
 }
 
 // incrementing read/write
