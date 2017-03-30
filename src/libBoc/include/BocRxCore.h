@@ -31,6 +31,9 @@ class BocRxCore : virtual public RxCore {
         uint32_t getCurCount();
         bool isBridgeEmpty();
 
+        void setEmu(uint32_t mask);
+        uint32_t getEmu();
+
         void setCom(BocCom *com) {
             m_com = com;
         }
@@ -42,6 +45,7 @@ class BocRxCore : virtual public RxCore {
     private:
 
         uint32_t m_enableMask;
+        uint32_t m_emuMask;
         std::queue<uint8_t> m_rxData[32];
         uint32_t m_formState[32];
         uint32_t m_formRecord[32];

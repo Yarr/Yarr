@@ -201,3 +201,53 @@ bool BocRxCore::isBridgeEmpty()
 	// if we reach this point no channel had data
 	return true;
 }
+
+void BocRxCore::setEmu(uint32_t mask)
+{
+	// save mask
+	m_emuMask = mask;
+
+	// loop through the channels to enable the emulator
+	for(int ch = 0; ch < 32; ch++)
+	{
+		if(ch >= 16)
+		{
+			uint8_t tmp = m_com->readSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_CTRL);
+			tmp = (tmp & 0x1F);
+			if(mask & (1 << ch))
+			{
+				std::cout << "Enabling FE-I4 emulator on channel " << ch << std::endl;
+				tmp |= 0x20;
+				m_com->writeSingle(BMFS_OFFSET + BMF_EMU_OFFSET + 8 * (ch%16) + BMF_EMU_CTRL, 0x1);
+				m_com->writeSingle(BMFS_OFFSET + BMF_EMU_OFFSET + 8 * (ch%16) + BMF_EMU_HITCNT, 0x2);
+			}
+			else
+			{
+				m_com->writeSingle(BMFS_OFFSET + BMF_EMU_OFFSET + 8 * (ch%16) + BMF_EMU_CTRL, 0x0);
+			}
+			m_com->writeSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_CTRL, tmp);
+		}
+		else
+		{
+			uint8_t tmp = m_com->readSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_CTRL);
+			tmp = (tmp & 0x1F);
+			if(mask & (1 << ch))
+			{
+				std::cout << "Enabling FE-I4 emulator on channel " << ch << std::endl;
+				tmp |= 0x20;
+				m_com->writeSingle(BMFN_OFFSET + BMF_EMU_OFFSET + 8 * (ch%16) + BMF_EMU_CTRL, 0x1);
+				m_com->writeSingle(BMFN_OFFSET + BMF_EMU_OFFSET + 8 * (ch%16) + BMF_EMU_HITCNT, 0x2);
+			}
+			else
+			{
+				m_com->writeSingle(BMFN_OFFSET + BMF_EMU_OFFSET + 8 * (ch%16) + BMF_EMU_CTRL, 0x0);
+			}
+			m_com->writeSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_CTRL, tmp);
+		}
+	}
+}
+
+uint32_t BocRxCore::getEmu()
+{
+	return m_emuMask;
+}

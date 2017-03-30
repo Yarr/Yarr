@@ -3,7 +3,7 @@
         "type": "boc",
         "cfg" : {
             "bocHost" : "192.168.0.10",
-            "useEmu" : false
+            "emuMask" : 1
         }
     }
 }

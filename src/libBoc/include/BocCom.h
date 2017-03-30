@@ -29,6 +29,15 @@
 #define BMF_RXBROADCAST0    0x36
 #define BMF_RXBROADCAST1    0x37
 
+// emulator
+#define BMF_EMU_OFFSET      0x80
+#define BMF_EMU_CTRL        0x0
+#define BMF_EMU_STATUS      0x1
+#define BMF_EMU_EXTRA       0x2
+#define BMF_EMU_CTRL2       0x3
+#define BMF_EMU_HIT         0x6
+#define BMF_EMU_HITCNT      0x7
+
 // TX registers
 #define BMF_TX_OFFSET       0xC00
 #define BMF_TX_CTRL         0x0
