@@ -93,32 +93,56 @@ RawData* BocRxCore::readData()
 		// skip empty channels
 		if(ch >= 16)
 		{
-			if(m_com->readSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_STATUS) & 0x20)
-				continue;
+			// get number of words in RX FIFO
+			uint16_t fifo_words;
+			fifo_words = (uint16_t) m_com->readSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_DCNT_LOW);
+			fifo_words |= (uint16_t) m_com->readSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_DCNT_HIGH) << 8;
 
-			while((m_com->readSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_STATUS) & 0x20) == 0)
+			while(fifo_words > 0)
 			{
-				uint16_t data;
-				uint8_t tmp[2];
-				m_com->readInc(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_DATA_HIGH, tmp, 2);
-				data  = (uint16_t) tmp[0] << 8;
-				data |= (uint16_t) tmp[1] << 0;
-				m_rxData[ch].push(data);
+				// we will transfer 128 words at a time
+				uint16_t transaction_words = (fifo_words > 128) ? 128 : fifo_words;
+				uint16_t buf[128];
+
+				m_com->read16(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_DATA_HIGH,
+							  BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_DATA_LOW,
+							  buf,
+							  transaction_words);
+
+				for(int i = 0; i < transaction_words; i++)
+				{
+					m_rxData[ch].push(buf[i]);
+				}
+
+				// decrement fifo_words
+				fifo_words -= transaction_words;
 			}
 		}
 		else
 		{
-			if(m_com->readSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_STATUS) & 0x20)
-				continue;
+			// get number of words in RX FIFO
+			uint16_t fifo_words;
+			fifo_words = (uint16_t) m_com->readSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_DCNT_LOW);
+			fifo_words |= (uint16_t) m_com->readSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_DCNT_HIGH) << 8;
 
-			while((m_com->readSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_STATUS) & 0x20) == 0)
+			while(fifo_words > 0)
 			{
-				uint16_t data;
-				uint8_t tmp[2];
-				m_com->readInc(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_DATA_HIGH, tmp, 2);
-				data  = (uint16_t) tmp[0] << 8;
-				data |= (uint16_t) tmp[1] << 0;
-				m_rxData[ch].push(data);
+				// we will transfer 128 words at a time
+				uint16_t transaction_words = (fifo_words > 128) ? 128 : fifo_words;
+				uint16_t buf[128];
+
+				m_com->read16(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_DATA_HIGH,
+							  BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_DATA_LOW,
+							  buf,
+							  transaction_words);
+
+				for(int i = 0; i < transaction_words; i++)
+				{
+					m_rxData[ch].push(buf[i]);
+				}
+
+				// decrement fifo_words
+				fifo_words -= transaction_words;
 			}
 		}
 	}

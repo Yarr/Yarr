@@ -149,13 +149,12 @@ BocCom::BocCom(const std::string &host)
     // check that BOC revision is good
     if((getBocRev() < 0x4) ||
        (getBmfFeatures(BMFN_OFFSET) != getBmfFeatures(BMFS_OFFSET)) ||
-       ((getBmfFeatures(BMFN_OFFSET) & 0x10) == 0x10) ||
-       ((getBmfFeatures(BMFN_OFFSET) & 0x20) == 0))
+       ((getBmfFeatures(BMFN_OFFSET) & 0xB0) == 0x90))
     {
         std::cerr << "The BOC card is not compatible with the YaRR software. Sorry!" << std::endl;
         std::cerr << "You will need: " << std::endl;
         std::cerr << "    - BOC at least revision D" << std::endl;
-        std::cerr << "    - IBL firmware on both BMF" << std::endl;
+        std::cerr << "    - YaRR firmware on both BMF and the BCF" << std::endl;
         std::cerr << "    - TX/RX broadcasting feature available" << std::endl;
         close(socketfd);
         exit(-1);
@@ -257,6 +256,93 @@ void BocCom::readBlock(uint16_t addr, uint8_t *val, size_t words, bool increment
     for(int i = 0; i < rxheader.words; i++)
     {
         val[i] = rxdata[4+i];
+    }
+
+    // increment transaction id
+    transaction_id = transaction_id + 1;
+
+    // unlock mutex
+    socket_mutex.unlock();
+}
+
+void BocCom::read16(uint16_t high_addr, uint16_t low_addr, uint16_t *val, size_t words)
+{
+    int ret;
+    IPBusHeader txheader;
+    IPBusHeader rxheader;
+    uint8_t txdata[8];
+    uint8_t rxdata[256];
+
+    // lock mutex
+    socket_mutex.lock();
+
+    // we need to read in chunks of max. 128 byte
+    if(words > 128)
+    {
+        words = 128;
+    }
+
+    // prepare packet
+    txheader.vers = 1;
+    txheader.trans_id = transaction_id;
+    txheader.words = words;
+    txheader.type = 0x10;
+    txheader.d = 0;
+    txheader.res = 0;
+
+#ifdef LL_DEBUG
+    // print header
+    print_header(&txheader);
+#endif
+
+    // copy header into byte-array
+    header2bytes(&txheader, txdata);
+    
+    // copy address into bytearray
+    txdata[7] = low_addr >> 8;;
+    txdata[6] = low_addr & 0xff;;
+    txdata[5] = high_addr >> 8;
+    txdata[4] = high_addr & 0xff;
+
+    // send out data through socket
+    ret = send(socketfd, txdata, 8, 0);
+    if(ret < 0)
+    {
+        std::cerr << "Error " << std::to_string(ret) << " while sending request." << std::endl;
+        exit(-1);
+    }
+    else if(ret != 8)
+    {
+        std::cerr << "Could only send " << std::to_string(ret) << " out of 8" <<
+                           " bytes. This needs to be catched in future versions!"<< std::endl;
+        exit(-1);
+    }
+
+    // receive response
+    ret = recv(socketfd, rxdata, words+4, 0);
+    if(ret < 0)
+    {
+        std::cerr << "Error " << std::to_string(ret) << " while receiving response." << std::endl;
+        exit(-1);
+    }
+
+#ifdef LL_DEBUG
+    std::cout << "Received " << ret << " bytes.\n";
+#endif
+
+    // copy into header
+    bytes2header(&rxheader, rxdata);
+
+#ifdef LL_DEBUG
+    // print out header
+    print_header(&rxheader);
+#endif
+
+    // copy data
+    for(int i = 0; i < rxheader.words; i++)
+    {
+        val[i] = (uint16_t)rxdata[2*i+4] << 8;
+        val[i] |= (uint16_t)rxdata[2*i+5];
     }
 
     // increment transaction id

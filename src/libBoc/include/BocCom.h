@@ -52,6 +52,8 @@
 #define BMF_RX_STATUS       0x1
 #define BMF_RX_DATA_HIGH    0x2
 #define BMF_RX_DATA_LOW     0x3
+#define BMF_RX_DCNT_LOW     0x10
+#define BMF_RX_DCNT_HIGH    0x11
 
 class BocCom {
     public:
@@ -65,6 +67,9 @@ class BocCom {
         // multiple read/write
         void writeBlock(uint16_t addr, uint8_t *val, size_t words, bool incrementing);
         void readBlock(uint16_t addr, uint8_t *val, size_t words, bool incrementing);
+
+        // 16-bit read (useful for RX FIFO)
+        void read16(uint16_t high_addr, uint16_t low_addr, uint16_t *val, size_t words);
 
         // incrementing read/write
         void writeInc(uint16_t addr, uint8_t *val, size_t words);
