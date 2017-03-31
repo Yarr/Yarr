@@ -95,8 +95,10 @@ RawData* BocRxCore::readData()
 		{
 			// get number of words in RX FIFO
 			uint16_t fifo_words;
-			fifo_words = (uint16_t) m_com->readSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_DCNT_LOW);
-			fifo_words |= (uint16_t) m_com->readSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_DCNT_HIGH) << 8;
+			uint8_t tmp[2];
+			m_com->readInc(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_DCNT_LOW, tmp, 2);
+			fifo_words = (uint16_t) tmp[0];
+			fifo_words |= (uint16_t) tmp[1] << 8;
 
 			while(fifo_words > 0)
 			{
@@ -122,8 +124,10 @@ RawData* BocRxCore::readData()
 		{
 			// get number of words in RX FIFO
 			uint16_t fifo_words;
-			fifo_words = (uint16_t) m_com->readSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_DCNT_LOW);
-			fifo_words |= (uint16_t) m_com->readSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_DCNT_HIGH) << 8;
+			uint8_t	tmp[2];
+                        m_com->readInc(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_DCNT_LOW, tmp, 2);
+                        fifo_words = (uint16_t)	tmp[0];
+                        fifo_words |= (uint16_t) tmp[1]	<< 8;
 
 			while(fifo_words > 0)
 			{
