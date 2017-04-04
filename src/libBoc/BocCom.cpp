@@ -271,7 +271,7 @@ void BocCom::read16(uint16_t high_addr, uint16_t low_addr, uint16_t *val, size_t
     IPBusHeader txheader;
     IPBusHeader rxheader;
     uint8_t txdata[8];
-    uint8_t rxdata[256];
+    uint8_t rxdata[512];
 
     // lock mutex
     socket_mutex.lock();
@@ -319,7 +319,7 @@ void BocCom::read16(uint16_t high_addr, uint16_t low_addr, uint16_t *val, size_t
     }
 
     // receive response
-    ret = recv(socketfd, rxdata, words+4, 0);
+    ret = recv(socketfd, rxdata, 2*words+4, 0);
     if(ret < 0)
     {
         std::cerr << "Error " << std::to_string(ret) << " while receiving response." << std::endl;
