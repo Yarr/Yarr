@@ -13,7 +13,6 @@
 
 class RceTxCore : virtual public TxCore {
     public:
-        RceTxCore(RceCom *com);
         RceTxCore();
         ~RceTxCore();
 
@@ -23,7 +22,7 @@ class RceTxCore : virtual public TxCore {
         void writeFifo(uint32_t value);
         void releaseFifo() {this->writeFifo(0x0);m_com->releaseFifo();} // Add some padding
         
-        void setCmdEnable(uint32_t value) {std::cout <<"en "; }
+        void setCmdEnable(uint32_t value) { }
         uint32_t getCmdEnable() {return 0x0;}
         void maskCmdEnable(uint32_t value, uint32_t mask) {}
 
@@ -60,6 +59,9 @@ class RceTxCore : virtual public TxCore {
 
         std::mutex accMutex;
         std::thread triggerProc;
+	void setChannelInMask(unsigned);
+	void setChannelOutMask(unsigned);
+	
         bool trigProcRunning;
         
         void doTriggerCnt();

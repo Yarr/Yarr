@@ -1,19 +1,43 @@
 #include <RceTxCore.h>
-RceTxCore::RceTxCore(RceCom *com) {
-    m_com = com;
+RceTxCore::RceTxCore():m_com(0) {
     m_trigCnt = 0;
+    m_com=new RceCom();
+
+    m_com->pgp->writeRegister("TRIGGER_MASK",0);
+    m_com->pgp->writeRegister("CALIB_MODE",0);
+    m_com->pgp->writeRegister("L1A_ROUTE",0);
+    m_com->pgp->writeRegister("RESET_INPUT_DELAYS",1);
+     m_com->pgp->writeRegister("CLOCK_SELECT",2);
+
+    setChannelInMask(1);
+    setChannelOutMask(1);
+    m_com->pgp->sendCommand("SOFT_RESET");
+    m_com->pgp->writeRegister("CLOCK_SELECT",2);
+    m_com->pgp->sendCommand("WRITE_PHASE_CALIB");
+    setChannelInMask(1);
+    setChannelOutMask(1);
+
 }
 
-RceTxCore::RceTxCore() {
-    m_com = NULL;
-    m_trigCnt = 0;
+void RceTxCore::setChannelInMask(unsigned mask) {
+  writeFifo(0x0);
+  writeFifo(0x0);
+  writeFifo(0x0);
+  writeFifo(0x0);
+  releaseFifo();
+  m_com->pgp->writeRegister("CHANNEL_IN_MASK",mask);
+}
+void RceTxCore::setChannelOutMask(unsigned mask) {
+  m_com->pgp->writeRegister("CHANNEL_OUT_MASK",mask);
 }
 
-RceTxCore::~RceTxCore() {}
+
+RceTxCore::~RceTxCore() {
+  if(m_com) delete m_com;
+}
 
 void RceTxCore::writeFifo(uint32_t value) {
     // TODO need to check channel
-  std::cout <<  "w= "<< std::hex << value <<std::dec << " ";
     m_com->write32(value);
 }
 
@@ -23,8 +47,8 @@ void RceTxCore::setTrigCnt(uint32_t count) {
 
 void RceTxCore::setTrigEnable(uint32_t value) {
     // TODO value should reflect channel mask
+  m_com->pgp->sendCommand("WRITE_PHASE_CALIB");
     if(value == 0) {
-        // setTrigEnable(0) is called to disable the trigger, once its done
         triggerProc.join();
     } else {
         trigProcRunning = true;
@@ -46,6 +70,7 @@ void RceTxCore::setTrigEnable(uint32_t value) {
 
 void RceTxCore::doTriggerCnt() {
     for(unsigned i=0; i<m_trigCnt; i++) {
+     
         m_com->write32(m_trigWord[3]);
         m_com->write32(m_trigWord[2]);
         m_com->write32(m_trigWord[1]);
