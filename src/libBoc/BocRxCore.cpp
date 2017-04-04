@@ -44,12 +44,14 @@ void BocRxCore::setRxEnable(uint32_t val)
 				uint8_t tmp = m_com->readSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_CTRL);
 				tmp = (tmp & 0xE0) | 0x5;
 				m_com->writeSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_CTRL, tmp);
+				m_com->writeSingle(BMFS_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_DCNT_LOW, 0x0);	// reset FIFO
 			}
 			else
 			{
 				uint8_t tmp = m_com->readSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_CTRL);
 				tmp = (tmp & 0xE0) | 0x5;
 				m_com->writeSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_CTRL, tmp);
+				m_com->writeSingle(BMFN_OFFSET + BMF_RX_OFFSET + 32 * (ch%16) + BMF_RX_DCNT_LOW, 0x0);	// reset FIFO
 			}			
 		}
 		else
@@ -163,26 +165,34 @@ RawData* BocRxCore::readData()
 			// synchronize on k-word
 			if(data & 0x100)
 			{
-				m_formState[ch] = 0;
+				if((data & 0xFF) == 0xFC)
+					m_formState[ch] = 1;
+				else
+					m_formState[ch] = 0;
 			}
 			else
 			{
 				switch(m_formState[ch])
 				{
 					case 0:
+						// we should not get here...
+						std::cout << "Skipping data outside frame..." << std::endl;
+						break;
+
+					case 1:
 						m_formRecord[ch] = (uint32_t)(data & 0xFF) << 16;
 						m_formState[ch]++;
 						break;
 
-					case 1:
+					case 2:
 						m_formRecord[ch] |= (uint32_t)(data & 0xFF) <<  8;
 						m_formState[ch]++;
 						break;
 
-					case 2:
+					case 3:
 						m_formRecord[ch] |= (uint32_t)(data & 0xFF) << 0;
-						m_formState[ch] = 0;
-						formatted_data.push_back((ch << 26) | (0x1 << 24) | m_formRecord[ch]);
+						m_formState[ch] = 1;
+						formatted_data.push_back((ch << 26) | (0x0 << 24) | m_formRecord[ch]);
 						break;
 
 				}
@@ -199,6 +209,7 @@ RawData* BocRxCore::readData()
 	{
 		uint32_t *buf = new uint32_t[formatted_data.size()];
 		std::copy(formatted_data.begin(), formatted_data.end(), buf);
+		std::cout << "returning " << formatted_data.size() << " records." << std::endl;
 		return new RawData(0x0, buf, formatted_data.size());
 	}
 }
