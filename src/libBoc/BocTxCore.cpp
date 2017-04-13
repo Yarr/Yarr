@@ -16,15 +16,7 @@ BocTxCore::BocTxCore()
 
 BocTxCore::~BocTxCore()
 {
-	// stop triggering
-	if(m_trigThread != nullptr)
-	{
-		// disable triggering
-		m_trigThreadRunning = false;
-		m_trigThread->join();
-		delete m_trigThread;
-		m_trigThread = nullptr;
-	}
+    setTrigEnable(0);
 }
 
 void BocTxCore::setCmdEnable(uint32_t value)
@@ -168,19 +160,61 @@ void BocTxCore::setTrigEnable(uint32_t value)
 
 	if(value == 0)
 	{
-		if(m_trigThread != nullptr)
-		{
-			// disable triggering
-			m_trigThreadRunning = false;
-			m_trigThread->join();
-			delete m_trigThread;
-			m_trigThread = nullptr;
-		}
+        // disable the trigger generator
+        m_com->writeSingle(BMFN_OFFSET + BMF_TRIG_CTRL, 0);
+        m_com->writeSingle(BMFS_OFFSET + BMF_TRIG_CTRL, 0);
 	}
 	else
 	{
-		m_trigThreadRunning = true;
-		m_trigThread = new std::thread(&BocTxCore::trigThreadProc, this);
+        // abort and stop
+        m_com->writeSingle(BMFN_OFFSET + BMF_TRIG_CTRL, 0x2);
+        m_com->writeSingle(BMFS_OFFSET + BMF_TRIG_CTRL, 0x2);
+
+        // trigger configuration
+        uint32_t cnt_int = m_trigCount;
+        uint32_t freq_int = (40e6 / m_trigFreq) - 1;
+        uint64_t time_int = (m_trigTime * 40e6) - 1;
+        uint8_t configBytes[16];
+        configBytes[0] = (time_int >> 56) & 0xFF;
+        configBytes[1] = (time_int >> 48) & 0xFF;
+        configBytes[2] = (time_int >> 40) & 0xFF;
+        configBytes[3] = (time_int >> 32) & 0xFF;
+        configBytes[4] = (time_int >> 24) & 0xFF;
+        configBytes[5] = (time_int >> 16) & 0xFF;
+        configBytes[6] = (time_int >>  8) & 0xFF;
+        configBytes[7] = (time_int >>  0) & 0xFF;
+        configBytes[8] = (freq_int >> 24) & 0xFF;
+        configBytes[9] = (freq_int >> 16) & 0xFF;
+        configBytes[10] = (freq_int >>  8) & 0xFF;
+        configBytes[11] = (freq_int >>  0) & 0xFF;
+        configBytes[12] = (cnt_int >> 24) & 0xFF;
+        configBytes[13] = (cnt_int >> 16) & 0xFF;
+        configBytes[14] = (cnt_int >>  8) & 0xFF;
+        configBytes[15] = (cnt_int >>  0) & 0xFF;
+        m_com->writeNonInc(BMFN_OFFSET + BMF_TRIG_CONFIG, configBytes, 16);
+        m_com->writeNonInc(BMFS_OFFSET + BMF_TRIG_CONFIG, configBytes, 16);
+
+        // first make sure we don't send anything from the FIFO
+	    if(m_enableMask & 0x0000FFFF)
+	    {
+		    m_com->writeSingle(BMFN_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_CTRL, 0x41);
+	    }
+	    if(m_enableMask & 0xFFFF0000)
+	    {
+		    m_com->writeSingle(BMFS_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_CTRL, 0x41);
+	    }
+
+        // start triggering
+        if(m_trigCfg == INT_TIME)
+        {
+            m_com->writeSingle(BMFN_OFFSET + BMF_TRIG_CTRL, 0x5);
+            m_com->writeSingle(BMFS_OFFSET + BMF_TRIG_CTRL, 0x5);
+        }
+        else
+        {
+            m_com->writeSingle(BMFN_OFFSET + BMF_TRIG_CTRL, 0x1);
+            m_com->writeSingle(BMFS_OFFSET + BMF_TRIG_CTRL, 0x1);
+        }
 	}
 }
 
@@ -199,27 +233,29 @@ void BocTxCore::maskTrigEnable(uint32_t value, uint32_t mask)
 
 void BocTxCore::toggleTrigAbort()
 {
-	if(m_trigThread != nullptr)
-	{
-		m_trigThreadRunning = false;
-		m_trigThread->join();
-		delete m_trigThread;
-		m_trigThread = nullptr;
-	}
+    // abort and stop
+    m_com->writeSingle(BMFN_OFFSET + BMF_TRIG_CTRL, 0x2);
+    m_com->writeSingle(BMFS_OFFSET + BMF_TRIG_CTRL, 0x2);
 }
 
 bool BocTxCore::isTrigDone()
 {
-	return !m_trigThreadRunning;
+    uint8_t north_status = m_com->readSingle(BMFN_OFFSET + BMF_TRIG_STATUS);
+    uint8_t south_status = m_com->readSingle(BMFS_OFFSET + BMF_TRIG_STATUS);
+
+    return (north_status & 0x1) && (south_status & 0x1);
 }
 
 void BocTxCore::setTrigConfig(enum TRIG_CONF_VALUE cfg)
 {
-
+    m_trigCfg = cfg;
 }
 
 void BocTxCore::setTrigFreq(double freq)
 {
+    // limit frequency to 200 kHz
+    if(freq > 200e3)  freq = 200e3;
+
 	m_trigFreq = freq;
 }
 
@@ -240,10 +276,28 @@ void BocTxCore::setTrigWordLength(uint32_t length)
 
 void BocTxCore::setTrigWord(uint32_t *word)
 {
-	m_trigWord[3] = word[3];
-	m_trigWord[2] = word[2];
-	m_trigWord[1] = word[1];
-	m_trigWord[0] = word[0];
+    // convert trigger word to bytes
+    uint8_t trigBytes[16];
+    trigBytes[0] = (word[3] >> 24) & 0xFF;
+    trigBytes[1] = (word[3] >> 16) & 0xFF;
+    trigBytes[2] = (word[3] >>  8) & 0xFF;
+    trigBytes[3] = (word[3] >>  0) & 0xFF;
+    trigBytes[4] = (word[2] >> 24) & 0xFF;
+    trigBytes[5] = (word[2] >> 16) & 0xFF;
+    trigBytes[6] = (word[2] >>  8) & 0xFF;
+    trigBytes[7] = (word[2] >>  0) & 0xFF;
+    trigBytes[8] = (word[1] >> 24) & 0xFF;
+    trigBytes[9] = (word[1] >> 16) & 0xFF;
+    trigBytes[10] = (word[1] >>  8) & 0xFF;
+    trigBytes[11] = (word[1] >>  0) & 0xFF;
+    trigBytes[12] = (word[0] >> 24) & 0xFF;
+    trigBytes[13] = (word[0] >> 16) & 0xFF;
+    trigBytes[14] = (word[0] >>  8) & 0xFF;
+    trigBytes[15] = (word[0] >>  0) & 0xFF;
+
+    // write all trigger words to the BOC at once
+    m_com->writeNonInc(BMFN_OFFSET + BMF_TRIG_WORD, trigBytes, 16);
+    m_com->writeNonInc(BMFS_OFFSET + BMF_TRIG_WORD, trigBytes, 16);
 }
 
 void BocTxCore::setTriggerLogicMask(uint32_t mask)
@@ -258,7 +312,7 @@ void BocTxCore::setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode)
 
 void BocTxCore::resetTriggerLogic()
 {
-
+    toggleTrigAbort();
 }
 
 uint32_t BocTxCore::getTrigInCount()
@@ -266,63 +320,3 @@ uint32_t BocTxCore::getTrigInCount()
 	return 0;
 }
 
-void BocTxCore::trigThreadProc()
-{
-	// debug output
-	std::cout << "Executing trigger thread..." << std::endl;
-	std::cout << "Parameters: " << std::endl;
-	std::cout << "    trigWord[3] = 0x" << std::hex << m_trigWord[3] << std::dec << std::endl;
-	std::cout << "    trigWord[2] = 0x" << std::hex << m_trigWord[2] << std::dec << std::endl;
-	std::cout << "    trigWord[1] = 0x" << std::hex << m_trigWord[1] << std::dec << std::endl;
-	std::cout << "    trigWord[0] = 0x" << std::hex << m_trigWord[0] << std::dec << std::endl;
-	std::cout << "    trigCount = " << m_trigCount << std::endl;
-
-	uint32_t trigNum = 0;
-	double trigTime = 0;
-
-	// set up trigger mask
-	m_com->writeSingle(BMFN_OFFSET + BMF_TXBROADCAST0, (m_trigMask >>  0) & 0xFF);
-	m_com->writeSingle(BMFN_OFFSET + BMF_TXBROADCAST1, (m_trigMask >>  8) & 0xFF);
-	m_com->writeSingle(BMFS_OFFSET + BMF_TXBROADCAST0, (m_trigMask >> 16) & 0xFF);
-	m_com->writeSingle(BMFS_OFFSET + BMF_TXBROADCAST1, (m_trigMask >> 24) & 0xFF);
-
-	// we can abort triggering by setting trigThreadRunning to false
-	while(m_trigThreadRunning)
-	{
-		// put trigger word into the FIFO
-		writeFifo(m_trigWord[3]);
-		writeFifo(m_trigWord[2]);
-		writeFifo(m_trigWord[1]);
-		writeFifo(m_trigWord[0]);
-
-		// send out the trigger
-		releaseFifo();
-
-		// count triggers sent out
-		trigNum++;
-
-		// output trigger number
-		std::cout << "Sending trigger #" << trigNum << std::endl;
-
-		// did we reach trigger count
-		if(trigNum == m_trigCount)
-			m_trigThreadRunning = false;
-
-		// sleep a bit
-		std::this_thread::sleep_for(std::chrono::microseconds((int)(1000000.0 / m_trigFreq)));
-		trigTime += 1.0 / m_trigFreq;
-
-		// stop triggering after time
-		if(trigTime > m_trigTime)
-			m_trigThreadRunning = false;
-	}
-
-	// debug
-	std::cout << "finished trigger thread and cleaning up" << std::endl;
-
-	// restore mask to cmd mask
-	m_com->writeSingle(BMFN_OFFSET + BMF_TXBROADCAST0, (m_enableMask >>  0) & 0xFF);
-	m_com->writeSingle(BMFN_OFFSET + BMF_TXBROADCAST1, (m_enableMask >>  8) & 0xFF);
-	m_com->writeSingle(BMFS_OFFSET + BMF_TXBROADCAST0, (m_enableMask >> 16) & 0xFF);
-	m_com->writeSingle(BMFS_OFFSET + BMF_TXBROADCAST1, (m_enableMask >> 24) & 0xFF);
-}

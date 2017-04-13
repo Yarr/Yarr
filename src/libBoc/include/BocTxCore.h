@@ -53,16 +53,13 @@ class BocTxCore : virtual public TxCore {
         }
 
     private:
-    	std::thread *m_trigThread;
-    	void trigThreadProc();
-    	volatile bool m_trigThreadRunning;
-
     	// trigger configuration
     	uint32_t m_trigWord[4];
     	uint32_t m_trigCount;
     	double m_trigTime;
     	double m_trigFreq;
     	uint32_t m_trigMask;
+        enum TRIG_CONF_VALUE m_trigCfg;
 
     	// enable mask and command sending
     	uint32_t m_enableMask;

@@ -24,6 +24,10 @@
 // BMF registers
 #define BMF_FEATURE_LOW     0x14
 #define BMF_FEATURE_HIGH    0x15
+#define BMF_TRIG_CTRL       0x1C
+#define BMF_TRIG_STATUS     0x1D
+#define BMF_TRIG_WORD       0x1E
+#define BMF_TRIG_CONFIG     0x1F
 #define BMF_TXBROADCAST0    0x34
 #define BMF_TXBROADCAST1    0x35
 #define BMF_RXBROADCAST0    0x36
