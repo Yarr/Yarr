@@ -98,6 +98,11 @@ class Fei4Event {
             nHits++;
         }
 
+        void addEvent(const Fei4Event &event) {
+            hits.insert(hits.end(), event.hits.begin(), event.hits.end());
+            nHits+=event.nHits;
+        }
+
         void doClustering();
 
         void toFileBinary(std::fstream &handle);
@@ -108,7 +113,7 @@ class Fei4Event {
         uint32_t tag;
         uint16_t nHits;
         uint16_t nClusters;
-        std::vector<Fei4Hit> hits;
+        std::list<Fei4Hit> hits;
         std::vector<Fei4Cluster> clusters;
 };
 

@@ -9,8 +9,8 @@ void Fei4Event::toFileBinary(std::fstream &handle) {
     handle.write((char*)&l1id, sizeof(uint16_t));
     handle.write((char*)&bcid, sizeof(uint16_t));
     handle.write((char*)&nHits, sizeof(uint16_t));
-    for (unsigned i=0; i<nHits; i++) {
-        handle.write((char*)&hits[i], sizeof(Fei4Hit));
+    for (auto hit : hits) {
+        handle.write((char*)&hit, sizeof(Fei4Hit));
     }
 }
 
@@ -31,12 +31,12 @@ void Fei4Event::doClustering() {
     // No hits = no cluster
     if (nHits == 0)
         return ;
-    
     // Create "copy" of hits
     std::list<Fei4Hit*> unclustered;
-    for (unsigned i=0; i<hits.size(); i++)
-        unclustered.push_back(&hits[i]);
-
+    for (auto &&hit : hits) {
+        unclustered.push_back(&hit);
+    }
+    
     // Create first cluster and add first hit
     clusters.push_back(Fei4Cluster());
     clusters.back().addHit(unclustered.front());
@@ -49,11 +49,10 @@ void Fei4Event::doClustering() {
         // Loop over hits in cluster, increases as we go
         for (unsigned i=0; i<clusters.back().nHits; i++) {
             Fei4Hit tHit = *clusters.back().hits[i];
-            
             // Loop over unclustered hits
-            for (auto j=unclustered.begin(); j!=unclustered.end(); ++j) {
-                if ((abs((int)tHit.col - (*j)->col) <= (1+gap))
-                 && (abs((int)tHit.row - (*j)->row) <= (1+gap))) {
+            for (auto j = unclustered.begin() ; j != unclustered.end(); ++j) {
+                if ((abs((int)(tHit.col) - (int)(*j)->col) <= (1+gap))
+                 && (abs((int)(tHit.row) - (int)(*j)->row) <= (1+gap))) {
                     // If not more than 1 pixel gap, add to cluster
                     clusters.back().addHit(*j);
                     unclustered.erase(j--);
@@ -79,7 +78,7 @@ void Fei4Data::toFile(std::string filename) {
     file << events.size() << std::endl;
     for (std::list<Fei4Event>::iterator eit = events.begin(); eit != events.end(); ++eit) {
         file << (*eit).l1id << " " << (*eit).bcid << " " << (*eit).nHits << std::endl;
-        for (std::vector<Fei4Hit>::iterator it = (*eit).hits.begin(); it != (*eit).hits.end(); ++it) {
+        for (std::list<Fei4Hit>::iterator it = (*eit).hits.begin(); it != (*eit).hits.end(); ++it) {
             file << (*it).col << " " << (*it).row << " " << (*it).tot << std::endl;
         }
     }
