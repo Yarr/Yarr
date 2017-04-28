@@ -8,6 +8,8 @@
 
 #include "Fei4Analysis.h"
 
+bool Fei4Analysis::processorDone = false;
+
 Fei4Analysis::Fei4Analysis() {
 
 }
@@ -28,21 +30,56 @@ void Fei4Analysis::init() {
         algorithms[i]->connect(output);
         algorithms[i]->init(scan);
     }
+    processorDone = false;
+}
+
+void Fei4Analysis::run() {
+  std::cout << __PRETTY_FUNCTION__ << std::endl;
+  thread_ptr.reset( new std::thread( &Fei4Analysis::process, this ) );
+}
+
+void Fei4Analysis::join() {
+  std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if( thread_ptr->joinable() ) thread_ptr->join();
 }
 
 void Fei4Analysis::process() {
-    while(!input->empty()) {
-        HistogramBase *h = input->popData();
-        if (h != NULL) {
-            for (unsigned i=0; i<algorithms.size(); i++) {
-                algorithms[i]->processHistogram(h);
-            }
-            delete h;
-        }
+  while( true ) {
+
+    //std::cout << __PRETTY_FUNCTION__ << std::endl;
+    
+    std::unique_lock<std::mutex> lk(mtx);
+    input->cv.wait( lk, [&] { return processorDone or !input->empty(); } );
+
+    process_core();
+
+    if( processorDone ) {
+      std::cout << __PRETTY_FUNCTION__ << ": processorDone!" << std::endl;
+      input->cv.notify_all();
+      break;
     }
+  }
+
+  process_core();
+
+  end();
+  
+}
+
+void Fei4Analysis::process_core() {
+  while(!input->empty()) {
+    HistogramBase *h = input->popData();
+    if (h != NULL) {
+      for (unsigned i=0; i<algorithms.size(); i++) {
+        algorithms[i]->processHistogram(h);
+      }
+      delete h;
+    }
+  }
 }
 
 void Fei4Analysis::end() {
+  std::cout << __PRETTY_FUNCTION__ << std::endl;
     for (unsigned i=0; i<algorithms.size(); i++) {
         algorithms[i]->end();
     }

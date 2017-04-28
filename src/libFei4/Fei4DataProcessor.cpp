@@ -4,7 +4,10 @@
 
 #include "LoopStatus.h"
 
+bool Fei4DataProcessor::scanDone = false;
+
 Fei4DataProcessor::Fei4DataProcessor(unsigned arg_hitDiscCfg) : DataProcessor(){
+  std::cout << __PRETTY_FUNCTION__ << std::endl;
     input = NULL;
     hitDiscCfg = arg_hitDiscCfg;
     totCode = {{{{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 14, 0}},
@@ -19,12 +22,46 @@ Fei4DataProcessor::~Fei4DataProcessor() {
 }
 
 void Fei4DataProcessor::init() {
+  std::cout << __PRETTY_FUNCTION__ << std::endl;
     for(std::map<unsigned, ClipBoard<Fei4Data> >::iterator it = outMap->begin(); it != outMap->end(); ++it) {
         activeChannels.push_back(it->first);
     }
+    scanDone = false;
 }
 
+void Fei4DataProcessor::run() {
+  std::cout << __PRETTY_FUNCTION__ << std::endl;
+  const unsigned int numThreads = std::thread::hardware_concurrency();
+  for (unsigned i=0; i<numThreads; i++) {
+    thread_ptrs.emplace_back( new std::thread(&Fei4DataProcessor::process, this) );
+    std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
+  }
+}
+
+void Fei4DataProcessor::join() {
+  for( auto& thread : thread_ptrs ) {
+    if( thread->joinable() ) thread->join();
+  }
+}
+
+
 void Fei4DataProcessor::process() {
+  while(true) {
+    std::unique_lock<std::mutex> lk(mtx);
+    input->cv.wait( lk, [&] { return scanDone or !input->empty(); } );
+    
+    process_core();
+    
+    if( scanDone ) {
+      input->cv.notify_all();
+      break;
+    }
+  }
+  
+  process_core();
+}
+
+void Fei4DataProcessor::process_core() {
     // TODO put data from channels back into input, so other processors can use it
     unsigned badCnt = 0;
     for (unsigned i=0; i<activeChannels.size(); i++) {

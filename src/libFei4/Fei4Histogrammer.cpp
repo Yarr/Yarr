@@ -8,6 +8,8 @@
 
 #include "Fei4Histogrammer.h"
 
+bool Fei4Histogrammer::processorDone = false;
+
 Fei4Histogrammer::Fei4Histogrammer() {
 }
 
@@ -17,7 +19,7 @@ Fei4Histogrammer::~Fei4Histogrammer() {
 }
 
 void Fei4Histogrammer::init() {
-
+  processorDone = false;
 }
 
 void Fei4Histogrammer::clearHistogrammers() {
@@ -27,7 +29,37 @@ void Fei4Histogrammer::clearHistogrammers() {
     algorithms.clear();
 }
 
+
+void Fei4Histogrammer::run() {
+  thread_ptr.reset( new std::thread( &Fei4Histogrammer::process, this ) );
+}
+
+void Fei4Histogrammer::join() {
+  if( thread_ptr->joinable() ) thread_ptr->join();
+}
+
 void Fei4Histogrammer::process() {
+  while( true ) {
+
+    //std::cout << __PRETTY_FUNCTION__ << std::endl;
+    
+    std::unique_lock<std::mutex> lk(mtx);
+    input->cv.wait( lk, [&] { return processorDone or !input->empty(); } );
+
+    process_core();
+
+    if( processorDone ) {
+      std::cout << __PRETTY_FUNCTION__ << ": processorDone!" << std::endl;
+      input->cv.notify_all();
+      break;
+    }
+  }
+
+  process_core();
+  
+}
+
+void Fei4Histogrammer::process_core() {
     while (!input->empty()) {
         Fei4Data *data = input->popData();
         if (data == NULL)

@@ -9,6 +9,9 @@
 // # Comment: Operates on data from the clipboard
 // ################################
 
+#include <mutex>
+#include <thread>
+
 class DataProcessor {
     public:
         DataProcessor();
@@ -16,6 +19,12 @@ class DataProcessor {
 
         virtual void init() {}
         virtual void process() {}
+        virtual void run() = 0;
+        virtual void join() = 0;
+    protected:
+        std::condition_variable cv;
+        std::mutex mtx;
+
 };
 
 #endif
