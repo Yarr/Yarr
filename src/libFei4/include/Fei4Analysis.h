@@ -63,7 +63,7 @@ class AnalysisAlgorithm {
         unsigned nCol, nRow;
 };
 
-class Fei4Analysis : DataProcessor {
+class Fei4Analysis : public DataProcessor {
     public:
         Fei4Analysis();
         Fei4Analysis(Bookkeeper *b, unsigned ch);
@@ -76,7 +76,10 @@ class Fei4Analysis : DataProcessor {
         }
         
         void init();
+        void run();
+        void join();
         void process();
+        void process_core();
         void end();
 
         void addAlgorithm(AnalysisAlgorithm *a);
@@ -90,6 +93,7 @@ class Fei4Analysis : DataProcessor {
             }
         }
             
+        static bool processorDone;
 
     private:
         Bookkeeper *bookie;
@@ -97,8 +101,10 @@ class Fei4Analysis : DataProcessor {
         ClipBoard<HistogramBase> *input;
         ClipBoard<HistogramBase> *output;
         ScanBase *scan;
+        std::unique_ptr<std::thread> thread_ptr;
         
         std::vector<AnalysisAlgorithm*> algorithms;
+
 };
 
 class OccupancyAnalysis : public AnalysisAlgorithm {

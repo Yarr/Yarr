@@ -13,6 +13,7 @@
 #include <fstream>
 #include <chrono>
 #include <thread>
+#include <mutex>
 #include <vector>
 #include <iomanip>
 #include <cctype> //w'space detection
@@ -52,38 +53,16 @@ std::string toString(int value,int digitsCount)
 void printHelp();
 void listScans();
 
-// TODO replace me with proper variable type not global
-bool scanDone = false;
-bool processorDone = false;
+std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie );
 
-void process(Bookkeeper *bookie) {
-    // Set correct Hit Discriminator setting, for proper decoding
-    Fei4DataProcessor proc(bookie->globalFe<Fei4>()->getValue(&Fei4::HitDiscCnfg));
-    proc.connect(&bookie->rawData, &bookie->eventMap);
-    proc.init();
-    
-    while(!scanDone) {
-        // TODO some better wakeup signal?
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        proc.process();
-    }
-    proc.process();
-}
+// In order to build Histogrammer, bookie is not needed --> good sign!
+// Do not want to use the raw pointer ScanBase*
+void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& histogrammers, const std::string& scanType, std::vector<FrontEnd*>& feList, ScanBase* s  );
 
-void analysis(Fei4Histogrammer *h, Fei4Analysis *a){
-    h->init();
-    a->init();
-    
-    while(!processorDone) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        h->process();
-        a->process();
-    }
-    h->process();
-    a->process();
+// In order to build Analysis, bookie is needed --> deep dependency!
+// Do not want to use the raw pointer ScanBase*
+void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s  );
 
-    a->end();
-}
 
 int main(int argc, char *argv[]) {
     std::cout << "#####################################" << std::endl;
@@ -324,11 +303,10 @@ int main(int argc, char *argv[]) {
     std::cout << "#################" << std::endl;
     
     std::chrono::steady_clock::time_point cfg_start = std::chrono::steady_clock::now();
-    for (unsigned i=0; i<bookie.feList.size(); i++) {
-        FrontEnd *fe = bookie.feList[i];
+    for ( FrontEnd* fe : bookie.feList ) {
         std::cout << "-> Configuring " << dynamic_cast<FrontEndCfg*>(fe)->getName() << std::endl;
         // Select correct channel
-       hwCtrl->setCmdEnable(0x1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+        hwCtrl->setCmdEnable(0x1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         // Configure
         fe->configure();
         // Wait for fifo to be empty
@@ -354,171 +332,40 @@ int main(int argc, char *argv[]) {
     std::cout << "##############" << std::endl;
 
     // TODO Make this nice
-    ScanBase *s = NULL;
+    std::unique_ptr<ScanBase> s = buildScan(scanType, bookie );
 
-    if (scanType.find("json") != std::string::npos) {
-        std::cout << "-> Found Scan config, constructing scan ..." << std::endl;
-        s = new ScanFactory(&bookie);
-        std::ifstream scanCfgFile(scanType);
-        if (!scanCfgFile) {
-            std::cerr << "#ERROR# Could not open scan config: " << scanType << std::endl;
-            return -1;
-        }
-        json scanCfg;
-        scanCfg << scanCfgFile;
-        dynamic_cast<ScanFactory*>(s)->loadConfig(scanCfg);
-    } else {
-        std::cout << "-> Selecting Scan: " << scanType << std::endl;
-        if (scanType == "digitalscan") {
-            std::cout << "-> Found Digital Scan" << std::endl;
-            s = new Fei4DigitalScan(&bookie);
-        } else if (scanType == "analogscan") {
-            std::cout << "-> Found Analog Scan" << std::endl;
-            s = new Fei4AnalogScan(&bookie);
-        } else if (scanType == "thresholdscan") {
-            std::cout << "-> Found Threshold Scan" << std::endl;
-            s = new Fei4ThresholdScan(&bookie);
-        } else if (scanType == "totscan") {
-            std::cout << "-> Found ToT Scan" << std::endl;
-            s = new Fei4TotScan(&bookie);
-        } else if (scanType == "tune_globalthreshold") {
-            std::cout << "-> Found Global Threshold Tuning" << std::endl;
-            s = new Fei4GlobalThresholdTune(&bookie);
-        } else if (scanType == "tune_pixelthreshold") {
-            std::cout << "-> Found Pixel Threshold Tuning" << std::endl;
-            s = new Fei4PixelThresholdTune(&bookie);
-        } else if (scanType == "tune_globalpreamp") {
-            std::cout << "-> Found Global Preamp Tuning" << std::endl;
-            s = new Fei4GlobalPreampTune(&bookie);
-        } else if (scanType == "retune_globalpreamp") {
-            std::cout << "-> Found Global Preamp Retuning" << std::endl;
-            s = new Fei4GlobalPreampRetune(&bookie);
-        } else if (scanType == "tune_pixelpreamp") {
-            std::cout << "-> Found Pixel Preamp Tuning" << std::endl;
-            s = new Fei4PixelPreampTune(&bookie);
-        } else if (scanType == "noisescan") {
-            std::cout << "-> Found Noisescan" << std::endl;
-            s = new Fei4NoiseScan(&bookie);
-        } else {
-            std::cout << "-> No matching Scan found, possible:" << std::endl;
-            listScans();
-            std::cerr << "-> Aborting!" << std::endl;
-            return -1;
-        }
-    }
-   
-    if (scanType.find("json") != std::string::npos) {
-        std::cout << "-> Found Scan config, loading histogrammer and analysis ..." << std::endl;
-        std::ifstream scanCfgFile(scanType);
-        if (!scanCfgFile) {
-            std::cerr << "#ERROR# Could not open scan config: " << scanType << std::endl;
-            return -1;
-        }
-        json scanCfg;
-        scanCfg << scanCfgFile;
-        json histoCfg = scanCfg["scan"]["histogrammer"];
-        json anaCfg = scanCfg["scan"]["analysis"];
+    // Use the abstract class instead of concrete -- in the future, this will be useful...
+    std::map<FrontEnd*, std::unique_ptr<DataProcessor> > histogrammers;
+    std::map<FrontEnd*, std::unique_ptr<DataProcessor> > analyses;
 
-        for (unsigned i=0; i<bookie.feList.size(); i++) {
-            FrontEnd *fe = bookie.feList[i];
-            if (fe->isActive()) {
-                // TODO this loads only FE-i4 specific stuff, bad
-                // Load histogrammer
-                fe->histogrammer = new Fei4Histogrammer();
-                fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
-                int nHistos = histoCfg["n_count"];
-                std::cout << nHistos << std::endl;
-                for (int j=0; j<nHistos; j++) {
-                    std::cout << j << std::endl;
-                    if (histoCfg[std::to_string(j)]["algorithm"] == "OccupancyMap") {
-                        fe->histogrammer->addHistogrammer(new OccupancyMap());
-                    } else if (histoCfg[std::to_string(j)]["algorithm"] == "TotMap") {
-                        fe->histogrammer->addHistogrammer(new TotMap());
-                    } else if (histoCfg[std::to_string(j)]["algorithm"] == "Tot2Map") {
-                        fe->histogrammer->addHistogrammer(new Tot2Map());
-                    } else if (histoCfg[std::to_string(j)]["algorithm"] == "L1Dist") {
-                        fe->histogrammer->addHistogrammer(new L1Dist());
-                    } else if (histoCfg[std::to_string(j)]["algorithm"] == "HitsPerEvent") {
-                        fe->histogrammer->addHistogrammer(new HitsPerEvent());
-                    } else {
-                        std::cerr << "#ERROR# Histogrammer \"" << histoCfg[std::to_string(j)]["algorithm"] << "\" unknown, skipping!" << std::endl;
-                    }
-                }
-                // TODO hardcoded
-                fe->ana = new Fei4Analysis(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
-                fe->ana->connect(s, fe->clipHisto, fe->clipResult);
-                fe->ana->addAlgorithm(new L1Analysis());
-                fe->ana->addAlgorithm(new OccupancyAnalysis());
-            }
-        }
-    } else {
-        // Init histogrammer and analysis
-        for (unsigned i=0; i<bookie.feList.size(); i++) {
-            FrontEnd *fe = bookie.feList[i];
-            if (fe->isActive()) {
-                // Init histogrammer per FE
-                fe->histogrammer = new Fei4Histogrammer();
-                fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
-                // Add generic histograms
-                fe->histogrammer->addHistogrammer(new OccupancyMap());
-                fe->histogrammer->addHistogrammer(new TotMap());
-                fe->histogrammer->addHistogrammer(new Tot2Map());
-                fe->histogrammer->addHistogrammer(new L1Dist());
-                fe->histogrammer->addHistogrammer(new HitsPerEvent());
-               
-                // Init analysis per FE and depending on scan type
-                fe->ana = new Fei4Analysis(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
-                fe->ana->connect(s, fe->clipHisto, fe->clipResult);
-                fe->ana->addAlgorithm(new L1Analysis());
-                if (scanType == "digitalscan") {
-                    fe->ana->addAlgorithm(new OccupancyAnalysis());
-                } else if (scanType == "analogscan") {
-                    fe->ana->addAlgorithm(new OccupancyAnalysis());
-                } else if (scanType == "thresholdscan") {
-                    fe->ana->addAlgorithm(new ScurveFitter());
-                } else if (scanType == "totscan") {
-                    fe->ana->addAlgorithm(new TotAnalysis());
-                } else if (scanType == "tune_globalthreshold") {
-                    fe->ana->addAlgorithm(new OccGlobalThresholdTune());
-                } else if (scanType == "tune_pixelthreshold") {
-                    fe->ana->addAlgorithm(new OccPixelThresholdTune());
-                } else if (scanType == "tune_globalpreamp") {
-                    fe->ana->addAlgorithm(new TotAnalysis());
-                } else if (scanType == "tune_pixelpreamp") {
-                    fe->ana->addAlgorithm(new TotAnalysis());
-                } else if (scanType == "noisescan") {
-                    fe->ana->addAlgorithm(new NoiseAnalysis());
-                } else {
-                    std::cout << "-> Analyses not defined for scan type" << std::endl;
-                    listScans();
-                    std::cerr << "-> Aborting!" << std::endl;
-                    return -1;
-                }
-            }
-        }
-    }
+    // TODO not to use the raw pointer!
+    buildHistogrammers( histogrammers, scanType, bookie.feList, s.get() );
+    buildAnalyses( analyses, scanType, bookie, s.get() );
 
     std::cout << "-> Running pre scan!" << std::endl;
     s->init();
     s->preScan();
 
-    unsigned int numThreads = std::thread::hardware_concurrency();
-    std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl; 
-    std::vector<std::thread> procThreads;
-    for (unsigned i=0; i<numThreads; i++) {
-        procThreads.push_back(std::thread(process, &bookie));
-        std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
-    }
-
-    std::vector<std::thread> anaThreads;
+    // Run from downstream to upstream
     std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
-    for (unsigned i=0; i<bookie.feList.size(); i++) {
-        FrontEnd *fe = bookie.feList[i];
+    for ( FrontEnd* fe : bookie.feList ) {
         if (fe->isActive()) {
-            anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana));
-            std::cout << "  -> Analysis thread of Fe " << dynamic_cast<FrontEndCfg*>(fe)->getRxChannel() << std::endl;
+          analyses[fe]->init();
+          analyses[fe]->run();
+          
+          histogrammers[fe]->init();
+          histogrammers[fe]->run();
+          
+          std::cout << "  -> Analysis thread of Fe " << dynamic_cast<FrontEndCfg*>(fe)->getRxChannel() << std::endl;
         }
     }
+
+    Fei4DataProcessor proc(bookie.globalFe<Fei4>()->getValue(&Fei4::HitDiscCnfg));
+    proc.connect( &bookie.rawData, &bookie.eventMap );
+    proc.init();
+    proc.run();
+
+    // Now the all downstream processors are ready --> Run scan
 
     std::cout << std::endl;
     std::cout << "########" << std::endl;
@@ -530,20 +377,43 @@ int main(int argc, char *argv[]) {
     s->run();
     s->postScan();
     std::cout << "-> Scan done!" << std::endl;
-    scanDone = true;
+
+    // Join from upstream to downstream.
+    
+    Fei4DataProcessor::scanDone = true;
+    bookie.rawData.cv.notify_all();
+
     std::chrono::steady_clock::time_point scan_done = std::chrono::steady_clock::now();
     std::cout << "-> Waiting for processors to finish ..." << std::endl;
-    for (unsigned i=0; i<numThreads; i++) {
-        procThreads[i].join();
-    }
+    // Join Fei4DataProcessor
+    proc.join();
     std::chrono::steady_clock::time_point processor_done = std::chrono::steady_clock::now();
-    processorDone = true;
-    std::cout << "-> Processor done, waiting for analysis ..." << std::endl;
-    for (unsigned i=0; i<anaThreads.size(); i++) {
-        anaThreads[i].join();
+    
+    Fei4Histogrammer::processorDone = true;
+    Fei4Analysis::processorDone = true;
+    
+    for (unsigned i=0; i<bookie.feList.size(); i++) {
+        FrontEnd *fe = bookie.feList[i];
+        if (fe->isActive()) {
+          fe->clipDataFei4->cv.notify_all();
+          fe->clipHisto->cv.notify_all();
+        }
     }
+    
+    std::cout << "-> Processor done, waiting for analysis ..." << std::endl;
+    // Join histogrammers
+    for( auto& histogrammer : histogrammers ) {
+      histogrammer.second->join();
+    }
+    // Join analyses
+    for( auto& ana : analyses ) {
+      ana.second->join();
+    }
+      
     std::chrono::steady_clock::time_point all_done = std::chrono::steady_clock::now();
     std::cout << "-> All done!" << std::endl;
+
+    // Joining is done.
 
     hwCtrl->setCmdEnable(0x0);
     hwCtrl->setRxEnable(0x0);
@@ -576,7 +446,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Cleanup
-    delete s;
+    //delete s;
     for (unsigned i=0; i<bookie.feList.size(); i++) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
@@ -600,14 +470,10 @@ int main(int argc, char *argv[]) {
             if (doPlots) {
                 std::cout << "-> Plotting histograms of FE " << dynamic_cast<FrontEndCfg*>(fe)->getRxChannel() << std::endl;
                 std::string outputDirTmp = outputDir;
-                fe->ana->plot(dynamic_cast<FrontEndCfg*>(fe)->getName(), outputDirTmp);
-                fe->ana->toFile(dynamic_cast<FrontEndCfg*>(fe)->getName(), outputDir);
+                auto& ana = static_cast<Fei4Analysis&>( *(analyses[fe]) );
+                ana.plot(dynamic_cast<FrontEndCfg*>(fe)->getName(), outputDirTmp);
+                ana.toFile(dynamic_cast<FrontEndCfg*>(fe)->getName(), outputDir);
             }
-            // Free
-            delete fe->histogrammer;
-            fe->histogrammer = NULL;
-            delete fe->ana;
-            fe->ana = NULL;
         }
     }
     std::string lsCmd = "ls -1 " + outputDir + "*.p*";
@@ -643,3 +509,186 @@ void listScans() {
 }
 
 
+std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie ) {
+  std::unique_ptr<ScanBase> s ( nullptr );
+  
+    if (scanType.find("json") != std::string::npos) {
+        std::cout << "-> Found Scan config, constructing scan ..." << std::endl;
+        s.reset( new ScanFactory(&bookie) );
+        std::ifstream scanCfgFile(scanType);
+        if (!scanCfgFile) {
+            std::cerr << "#ERROR# Could not open scan config: " << scanType << std::endl;
+            throw("buildScan failure!");
+        }
+        json scanCfg;
+        scanCfg << scanCfgFile;
+        dynamic_cast<ScanFactory&>(*s).loadConfig(scanCfg);
+    } else {
+        std::cout << "-> Selecting Scan: " << scanType << std::endl;
+        if (scanType == "digitalscan") {
+            std::cout << "-> Found Digital Scan" << std::endl;
+            s.reset( new Fei4DigitalScan(&bookie) );
+        } else if (scanType == "analogscan") {
+            std::cout << "-> Found Analog Scan" << std::endl;
+            s.reset( new Fei4AnalogScan(&bookie) );
+        } else if (scanType == "thresholdscan") {
+            std::cout << "-> Found Threshold Scan" << std::endl;
+            s.reset( new Fei4ThresholdScan(&bookie) );
+        } else if (scanType == "totscan") {
+            std::cout << "-> Found ToT Scan" << std::endl;
+            s.reset( new Fei4TotScan(&bookie) );
+        } else if (scanType == "tune_globalthreshold") {
+            std::cout << "-> Found Global Threshold Tuning" << std::endl;
+            s.reset( new Fei4GlobalThresholdTune(&bookie) );
+        } else if (scanType == "tune_pixelthreshold") {
+            std::cout << "-> Found Pixel Threshold Tuning" << std::endl;
+            s.reset( new Fei4PixelThresholdTune(&bookie) );
+        } else if (scanType == "tune_globalpreamp") {
+            std::cout << "-> Found Global Preamp Tuning" << std::endl;
+            s.reset( new Fei4GlobalPreampTune(&bookie) );
+        } else if (scanType == "retune_globalpreamp") {
+            std::cout << "-> Found Global Preamp Retuning" << std::endl;
+            s.reset( new Fei4GlobalPreampRetune(&bookie) );
+        } else if (scanType == "tune_pixelpreamp") {
+            std::cout << "-> Found Pixel Preamp Tuning" << std::endl;
+            s.reset( new Fei4PixelPreampTune(&bookie) );
+        } else if (scanType == "noisescan") {
+            std::cout << "-> Found Noisescan" << std::endl;
+            s.reset( new Fei4NoiseScan(&bookie) );
+        } else {
+            std::cout << "-> No matching Scan found, possible:" << std::endl;
+            listScans();
+            std::cerr << "-> Aborting!" << std::endl;
+            throw("buildScan failure!");
+        }
+    }
+
+    return s;
+}
+
+
+void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& histogrammers, const std::string& scanType, std::vector<FrontEnd*>& feList, ScanBase* s ) {
+    if (scanType.find("json") != std::string::npos) {
+        std::cout << "-> Found Scan config, loading histogrammer and analysis ..." << std::endl;
+        std::ifstream scanCfgFile(scanType);
+        if (!scanCfgFile) {
+            std::cerr << "#ERROR# Could not open scan config: " << scanType << std::endl;
+            throw("buildHistogrammers failure!");
+        }
+        json scanCfg;
+        scanCfg << scanCfgFile;
+        json histoCfg = scanCfg["scan"]["histogrammer"];
+        json anaCfg = scanCfg["scan"]["analysis"];
+
+        for (FrontEnd *fe : feList ) {
+            if (fe->isActive()) {
+                // TODO this loads only FE-i4 specific stuff, bad
+                // Load histogrammer
+                histogrammers[fe].reset( new Fei4Histogrammer );
+                auto& histogrammer = static_cast<Fei4Histogrammer&>( *(histogrammers[fe]) );
+                
+                histogrammer.connect(fe->clipDataFei4, fe->clipHisto);
+                int nHistos = histoCfg["n_count"];
+                std::cout << nHistos << std::endl;
+                for (int j=0; j<nHistos; j++) {
+                    std::cout << j << std::endl;
+                    if (histoCfg[std::to_string(j)]["algorithm"] == "OccupancyMap") {
+                        histogrammer.addHistogrammer(new OccupancyMap());
+                    } else if (histoCfg[std::to_string(j)]["algorithm"] == "TotMap") {
+                        histogrammer.addHistogrammer(new TotMap());
+                    } else if (histoCfg[std::to_string(j)]["algorithm"] == "Tot2Map") {
+                        histogrammer.addHistogrammer(new Tot2Map());
+                    } else if (histoCfg[std::to_string(j)]["algorithm"] == "L1Dist") {
+                        histogrammer.addHistogrammer(new L1Dist());
+                    } else if (histoCfg[std::to_string(j)]["algorithm"] == "HitsPerEvent") {
+                        histogrammer.addHistogrammer(new HitsPerEvent());
+                    } else {
+                        std::cerr << "#ERROR# Histogrammer \"" << histoCfg[std::to_string(j)]["algorithm"] << "\" unknown, skipping!" << std::endl;
+                    }
+                }
+            }
+        }
+    } else {
+        // Init histogrammer and analysis
+      for (FrontEnd *fe : feList ) {
+            if (fe->isActive()) {
+                // Init histogrammer per FE
+                histogrammers[fe].reset( new Fei4Histogrammer );
+                auto& histogrammer = static_cast<Fei4Histogrammer&>( *(histogrammers[fe]) );
+                
+                histogrammer.connect(fe->clipDataFei4, fe->clipHisto);
+                // Add generic histograms
+                histogrammer.addHistogrammer(new OccupancyMap());
+                histogrammer.addHistogrammer(new TotMap());
+                histogrammer.addHistogrammer(new Tot2Map());
+                histogrammer.addHistogrammer(new L1Dist());
+                histogrammer.addHistogrammer(new HitsPerEvent());
+               
+            }
+        }
+    }
+}
+
+
+void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s ) {
+    if (scanType.find("json") != std::string::npos) {
+        std::cout << "-> Found Scan config, loading histogrammer and analysis ..." << std::endl;
+        std::ifstream scanCfgFile(scanType);
+        if (!scanCfgFile) {
+            std::cerr << "#ERROR# Could not open scan config: " << scanType << std::endl;
+            throw( "buildAnalyses failed" );
+        }
+        json scanCfg;
+        scanCfg << scanCfgFile;
+        json histoCfg = scanCfg["scan"]["histogrammer"];
+        json anaCfg = scanCfg["scan"]["analysis"];
+
+        for (FrontEnd *fe : bookie.feList ) {
+            if (fe->isActive()) {
+                // TODO this loads only FE-i4 specific stuff, bad
+                // Load histogrammer
+                // TODO hardcoded
+                analyses[fe].reset( new Fei4Analysis(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) );
+                auto& ana = static_cast<Fei4Analysis&>( *(analyses[fe]) );
+                ana.connect(s, fe->clipHisto, fe->clipResult);
+                ana.addAlgorithm(new L1Analysis());
+                ana.addAlgorithm(new OccupancyAnalysis());
+            }
+        }
+    } else {
+        // Init histogrammer and analysis
+      for (FrontEnd *fe : bookie.feList ) {
+            if (fe->isActive()) {
+                // Init analysis per FE and depending on scan type
+                analyses[fe].reset( new Fei4Analysis(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) );
+                auto& ana = static_cast<Fei4Analysis&>( *(analyses[fe]) );
+                ana.connect(s, fe->clipHisto, fe->clipResult);
+                ana.addAlgorithm(new L1Analysis());
+                if (scanType == "digitalscan") {
+                    ana.addAlgorithm(new OccupancyAnalysis());
+                } else if (scanType == "analogscan") {
+                    ana.addAlgorithm(new OccupancyAnalysis());
+                } else if (scanType == "thresholdscan") {
+                    ana.addAlgorithm(new ScurveFitter());
+                } else if (scanType == "totscan") {
+                    ana.addAlgorithm(new TotAnalysis());
+                } else if (scanType == "tune_globalthreshold") {
+                    ana.addAlgorithm(new OccGlobalThresholdTune());
+                } else if (scanType == "tune_pixelthreshold") {
+                    ana.addAlgorithm(new OccPixelThresholdTune());
+                } else if (scanType == "tune_globalpreamp") {
+                    ana.addAlgorithm(new TotAnalysis());
+                } else if (scanType == "tune_pixelpreamp") {
+                    ana.addAlgorithm(new TotAnalysis());
+                } else if (scanType == "noisescan") {
+                    ana.addAlgorithm(new NoiseAnalysis());
+                } else {
+                    std::cout << "-> Analyses not defined for scan type" << std::endl;
+                    listScans();
+                    std::cerr << "-> Aborting!" << std::endl;
+                    throw("buildAnalyses failure!");
+                }
+            }
+        }
+    }
+}

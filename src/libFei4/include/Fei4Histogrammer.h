@@ -75,14 +75,22 @@ class Fei4Histogrammer : public DataProcessor {
         void clearHistogrammers();
 
         void init();
+        void run();
+        void join();
         void process();
+        void process_core();
         void publish();
         void toFile(std::string basename);
         void plot(std::string basename);
 
+        ClipBoard<Fei4Data>& getInput() { return *input; }
+
+        static bool processorDone;
+        
     private:
         ClipBoard<Fei4Data> *input;
         ClipBoard<HistogramBase> *output;
+        std::unique_ptr<std::thread> thread_ptr;
 
         std::vector<HistogramAlgorithm*> algorithms;
 };

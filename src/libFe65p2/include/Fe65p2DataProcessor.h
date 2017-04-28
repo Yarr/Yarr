@@ -25,9 +25,15 @@ class Fe65p2DataProcessor : public DataProcessor {
         }
 
         void init();
+        void run();
+        void join();
         void process();
+        void process_core();
 
+        static bool scanDone;
+           
     private:
+        std::vector<std::unique_ptr<std::thread>> thread_ptrs;
         ClipBoard<RawDataContainer> *input;
         std::map<unsigned, ClipBoard<Fei4Data> > *outMap;
         std::vector<unsigned> activeChannels;
