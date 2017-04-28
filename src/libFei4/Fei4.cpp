@@ -11,24 +11,24 @@
 Fei4::Fei4(TxCore *core) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
     txChannel = 99;
     rxChannel = 99;
-	histogrammer = NULL;
-	ana = NULL;
+	//histogrammer = NULL;
+	//ana = NULL;
 	active = true;
 }
 
 Fei4::Fei4(TxCore *core, unsigned arg_channel) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
 	txChannel = arg_channel;
 	rxChannel = arg_channel;
-	histogrammer = NULL;
-	ana = NULL;
+	//histogrammer = NULL;
+	//ana = NULL;
 	active = true;
 }
 
 Fei4::Fei4(TxCore *core, unsigned arg_txChannel, unsigned arg_rxChannel) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
 	txChannel = arg_txChannel;
 	rxChannel = arg_rxChannel;
-	histogrammer = NULL;
-	ana = NULL;
+	//histogrammer = NULL;
+	//ana = NULL;
 	active = true;
 }
 

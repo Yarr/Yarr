@@ -35,8 +35,8 @@ class FrontEnd {
         ClipBoard<HistogramBase> *clipHisto;
         ClipBoard<HistogramBase> *clipResult;
 
-        Fei4Analysis *ana;
-        Fei4Histogrammer *histogrammer;
+        //Fei4Analysis *ana;
+        //Fei4Histogrammer *histogrammer;
 
     protected:
         bool active;
