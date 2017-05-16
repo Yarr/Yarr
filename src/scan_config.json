@@ -11,35 +11,40 @@
         },
         "histogrammer": {
             "0": {
-                "algorithm": "OccupancyMap"
+                "algorithm": "OccupancyMap",
+                "config": {}
             },
             "1": {
-                "algorithm": "TotMap"
+                "algorithm": "TotMap",
+                "config": {}
             },
             "2": {
-                "algorithm": "Tot2Map"
+                "algorithm": "Tot2Map",
+                "config": {}
             },
             "3": {
-                "algorithm": "L1Dist"
+                "algorithm": "L1Dist",
+                "config": {}
             },
             "4": {
-                "algorithm": "HitDist"
+                "algorithm": "HitDist",
+                "config": {}
             },
             "n_count": 5
         },
         "loops": {
-            "0": {
+            [ {
                 "config": {
                     "enable_lcap": true,
                     "enable_scap": true,
-                    "mask": 4097,
+                    "mask": 65537,
                     "max": 16,
                     "min": 0,
                     "step": 1
                 },
                 "loopAction": "Fei4MaskLoop"
             },
-            "1": {
+            {
                 "config": {
                     "max": 4,
                     "min": 0,
@@ -48,9 +53,9 @@
                 },
                 "loopAction": "Fei4DcLoop"
             },
-            "2": {
+            {
                 "config": {
-                    "count": 50,
+                    "count": 100,
                     "delay": 30,
                     "extTrigger": false,
                     "frequency": 1000.0,
@@ -59,10 +64,9 @@
                 },
                 "loopAction": "Fei4TriggerLoop"
             },
-            "3": {
+            {
                 "loopAction": "StdDataLoop"
-            },
-            "n_loops": 4
+            } ]
         },
         "name": "DigitalScan",
         "prescan": {
