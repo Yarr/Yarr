@@ -389,22 +389,33 @@ int main(int argc, char *argv[]) {
     proc.join();
     std::chrono::steady_clock::time_point processor_done = std::chrono::steady_clock::now();
     
+    std::cout << "-> Processor done, waiting for histogrammer ..." << std::endl;
+    
     Fei4Histogrammer::processorDone = true;
-    Fei4Analysis::processorDone = true;
     
     for (unsigned i=0; i<bookie.feList.size(); i++) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
           fe->clipDataFei4->cv.notify_all();
-          fe->clipHisto->cv.notify_all();
         }
     }
     
-    std::cout << "-> Processor done, waiting for analysis ..." << std::endl;
     // Join histogrammers
     for( auto& histogrammer : histogrammers ) {
       histogrammer.second->join();
     }
+    
+    std::cout << "-> Processor done, waiting for analysis ..." << std::endl;
+    
+    Fei4Analysis::histogrammerDone = true;
+    
+    for (unsigned i=0; i<bookie.feList.size(); i++) {
+        FrontEnd *fe = bookie.feList[i];
+        if (fe->isActive()) {
+          fe->clipHisto->cv.notify_all();
+        }
+    }
+
     // Join analyses
     for( auto& ana : analyses ) {
       ana.second->join();

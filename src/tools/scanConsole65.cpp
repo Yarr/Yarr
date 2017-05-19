@@ -413,7 +413,7 @@ int main(int argc, char *argv[]) {
     
     std::chrono::steady_clock::time_point processor_done = std::chrono::steady_clock::now();
     Fei4Histogrammer::processorDone = true;
-    Fei4Analysis::processorDone = true;
+    Fei4Analysis::histogrammerDone = true;
     for( auto& histogrammer : histogrammers ) {
       histogrammer.second->join();
     }

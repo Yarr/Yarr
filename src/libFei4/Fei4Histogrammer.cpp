@@ -44,13 +44,14 @@ void Fei4Histogrammer::process() {
     //std::cout << __PRETTY_FUNCTION__ << std::endl;
     
     std::unique_lock<std::mutex> lk(mtx);
-    input->cv.wait( lk, [&] { return processorDone or !input->empty(); } );
+    input->cv.wait( lk, [&] { return processorDone || !input->empty(); } );
 
     process_core();
 
     if( processorDone ) {
+      process_core();  // this line is needed if the data comes in before scanDone is changed.
       std::cout << __PRETTY_FUNCTION__ << ": processorDone!" << std::endl;
-      input->cv.notify_all();
+      output->cv.notify_all();  // notification to the downstream
       break;
     }
   }

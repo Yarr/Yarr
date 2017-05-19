@@ -8,7 +8,7 @@
 
 #include "Fei4Analysis.h"
 
-bool Fei4Analysis::processorDone = false;
+bool Fei4Analysis::histogrammerDone = false;
 
 Fei4Analysis::Fei4Analysis() {
 
@@ -30,7 +30,7 @@ void Fei4Analysis::init() {
         algorithms[i]->connect(output);
         algorithms[i]->init(scan);
     }
-    processorDone = false;
+    histogrammerDone = false;
 }
 
 void Fei4Analysis::run() {
@@ -49,14 +49,16 @@ void Fei4Analysis::process() {
     //std::cout << __PRETTY_FUNCTION__ << std::endl;
     
     std::unique_lock<std::mutex> lk(mtx);
-    input->cv.wait( lk, [&] { return processorDone or !input->empty(); } );
+    input->cv.wait( lk, [&] { return histogrammerDone || !input->empty(); } );
+
 
     process_core();
-
-    if( processorDone ) {
-      std::cout << __PRETTY_FUNCTION__ << ": processorDone!" << std::endl;
-      input->cv.notify_all();
-      break;
+    
+    if( histogrammerDone ) {
+        process_core();  // this line is needed if the data comes in before scanDone is changed.
+        std::cout << __PRETTY_FUNCTION__ << ": histogrammerDone!" << std::endl;
+        output->cv.notify_all();  // notification to the downstream
+        break;
     }
   }
 
