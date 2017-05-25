@@ -20,7 +20,7 @@ else
 	LDFLAGS += -pthread
 endif
 
-CPPFLAGS += -std=c++11 -Wall -Werror
+CPPFLAGS += -std=c++11 -Wall
 INC_DIRS := $(wildcard */include)
 INCFLAGS += $(addprefix -I,$(INC_DIRS))
 CPPFLAGS += $(INCFLAGS)
