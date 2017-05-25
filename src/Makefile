@@ -52,9 +52,9 @@ ifneq ($(UNAME_S), Darwin)
 	ifeq ($(shell echo ${GCC_MAJOR}\<4| bc), 1)
 		$(error $(CPP) version is too old, need atleast 4.7!)
 	endif
-	ifeq ($(shell echo ${GCC_MINOR}\<7 | bc), 1)
-		$(error $(CPP) version is too old, need atleast 4.7!)
-	endif
+#	ifeq ($(shell echo ${GCC_MINOR}\<7 | bc), 1)
+#		$(error $(CPP) version is too old, need atleast 4.7!)
+#	endif
 endif
 
 # Set build mode specific variables
