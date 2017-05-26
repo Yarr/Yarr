@@ -93,7 +93,7 @@ class Fei4Analysis : public DataProcessor {
             }
         }
             
-        static bool processorDone;
+        static bool histogrammerDone;
 
     private:
         Bookkeeper *bookie;
