@@ -29,47 +29,47 @@ endif
 all: bitstream
 
 SOURCES_XCIFile := \
-../../../ip-cores/ila_axis/ila_axis.xci \
-../../../ip-cores/ila_dma_ctrl_reg/ila_dma_ctrl_reg.xci \
-../../../ip-cores/fifo_32x512/fifo_32x512.xci \
-../../../ip-cores/ila_pd_pdm/ila_pd_pdm.xci \
-../../../ip-cores/fifo_4x16/fifo_4x16.xci \
-../../../ip-cores/mig_7series_0/mig_7series_0.xci \
-../../../ip-cores/ila_l2p_dma/ila_l2p_dma.xci \
-../../../ip-cores/fifo_315x16/fifo_315x16.xci \
-../../../ip-cores/pcie_7x_0/pcie_7x_0.xci \
-../../../ip-cores/fifo_256x16/fifo_256x16.xci \
-../../../ip-cores/fifo_27x16/fifo_27x16.xci \
-../../../ip-cores/ila_wsh_pipe/ila_wsh_pipe.xci \
 ../../../ip-cores/fifo_96x512_1/fifo_96x512.xci \
+../../../ip-cores/ila_dma_ctrl_reg/ila_dma_ctrl_reg.xci \
+../../../ip-cores/ila_wsh_pipe/ila_wsh_pipe.xci \
+../../../ip-cores/ila_axis/ila_axis.xci \
+../../../ip-cores/ila_ddr/ila_ddr.xci \
 ../../../ip-cores/fifo_64x512/fifo_64x512.xci \
+../../../ip-cores/fifo_27x16/fifo_27x16.xci \
+../../../ip-cores/fifo_4x16/fifo_4x16.xci \
+../../../ip-cores/ila_l2p_dma/ila_l2p_dma.xci \
+../../../ip-cores/mig_7series_0/mig_7series_0.xci \
+../../../ip-cores/fifo_315x16/fifo_315x16.xci \
+../../../ip-cores/fifo_256x16/fifo_256x16.xci \
 ../../../ip-cores/l2p_fifo64/l2p_fifo64.xci \
-../../../ip-cores/ila_ddr/ila_ddr.xci
+../../../ip-cores/ila_pd_pdm/ila_pd_pdm.xci \
+../../../ip-cores/pcie_7x_0/pcie_7x_0.xci \
+../../../ip-cores/fifo_32x512/fifo_32x512.xci
 
 SOURCES_XDCFile := \
 xpressk7.xdc
 
 SOURCES_VHDLFile := \
-../../../rtl/ddr3k7-core/ddr3_ctrl_wb.vhd \
-../../../rtl/common/bcf_bram32.vhd \
-../../../rtl/app_package.vhd \
-../../../rtl/common/simple_counter.vhd \
-../../../rtl/wshexp-core/l2p_arbiter.vhd \
-../../../rtl/wshexp-core/dma_controller_wb_slave.vhd \
-../../../rtl/wshexp-core/debugregisters.vhd \
-../../../rtl/wshexp-core/l2p_fifo.vhd \
-../../../rtl/common/common_pkg.vhd \
 ../../../rtl/ddr3k7-core/ddr3_ctrl_pkg.vhd \
-../../../rtl/wshexp-core/p2l_decoder.vhd \
-../../../rtl/wshexp-core/wbmaster32.vhd \
-../../../rtl/common/wshexp_core_pkg.vhd \
-../../../rtl/common/k_bram.vhd \
-../../../rtl/wshexp-core/p2l_dma_master.vhd \
-top_level.vhd \
-../../../rtl/app.vhd \
-../../../rtl/wshexp-core/generic_async_fifo_wrapper.vhd \
+../../../rtl/common/simple_counter.vhd \
+../../../rtl/wshexp-core/debugregisters.vhd \
 ../../../rtl/wshexp-core/dma_controller.vhd \
-../../../rtl/wshexp-core/l2p_dma_master.vhd
+../../../rtl/wshexp-core/l2p_arbiter.vhd \
+top_level.vhd \
+../../../rtl/wshexp-core/p2l_dma_master.vhd \
+../../../rtl/wshexp-core/p2l_decoder.vhd \
+../../../rtl/wshexp-core/l2p_dma_master.vhd \
+../../../rtl/common/bcf_bram32.vhd \
+../../../rtl/wshexp-core/wbmaster32.vhd \
+../../../rtl/wshexp-core/generic_async_fifo_wrapper.vhd \
+../../../rtl/common/common_pkg.vhd \
+../../../rtl/wshexp-core/l2p_fifo.vhd \
+../../../rtl/ddr3k7-core/ddr3_ctrl_wb.vhd \
+../../../rtl/wshexp-core/dma_controller_wb_slave.vhd \
+../../../rtl/common/k_bram.vhd \
+../../../rtl/app.vhd \
+../../../rtl/app_package.vhd \
+../../../rtl/common/wshexp_core_pkg.vhd
 
 files.tcl:
 		@$(foreach sourcefile, $(SOURCES_XCIFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
