@@ -2,7 +2,7 @@
 # ls -1 | xargs -I % echo \"%\",
 
 modules = {
-"local" : ["../../../rtl","../../../ip-cores"],
+"local" : ["../../../rtl","../../../ip-cores/kintex7"],
 }
 
 

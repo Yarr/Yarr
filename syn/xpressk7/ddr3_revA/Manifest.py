@@ -3,7 +3,7 @@
 
 #modules = {"local" : ["../../../rtl/"],}
 modules = {
-"local" : ["../../../rtl","../../../ip-cores"],
+"local" : ["../../../rtl","../../../ip-cores/kintex7"],
 }
 
 files = [

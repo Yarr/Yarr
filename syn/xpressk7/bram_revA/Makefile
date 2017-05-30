@@ -28,24 +28,6 @@ endif
 #target for performing local synthesis
 all: bitstream
 
-SOURCES_XCIFile := \
-../../../ip-cores/fifo_96x512_1/fifo_96x512.xci \
-../../../ip-cores/ila_dma_ctrl_reg/ila_dma_ctrl_reg.xci \
-../../../ip-cores/ila_wsh_pipe/ila_wsh_pipe.xci \
-../../../ip-cores/ila_axis/ila_axis.xci \
-../../../ip-cores/ila_ddr/ila_ddr.xci \
-../../../ip-cores/fifo_64x512/fifo_64x512.xci \
-../../../ip-cores/fifo_27x16/fifo_27x16.xci \
-../../../ip-cores/fifo_4x16/fifo_4x16.xci \
-../../../ip-cores/ila_l2p_dma/ila_l2p_dma.xci \
-../../../ip-cores/mig_7series_0/mig_7series_0.xci \
-../../../ip-cores/fifo_315x16/fifo_315x16.xci \
-../../../ip-cores/fifo_256x16/fifo_256x16.xci \
-../../../ip-cores/l2p_fifo64/l2p_fifo64.xci \
-../../../ip-cores/ila_pd_pdm/ila_pd_pdm.xci \
-../../../ip-cores/pcie_7x_0/pcie_7x_0.xci \
-../../../ip-cores/fifo_32x512/fifo_32x512.xci
-
 SOURCES_XDCFile := \
 xpressk7.xdc
 
@@ -71,10 +53,28 @@ top_level.vhd \
 ../../../rtl/app_package.vhd \
 ../../../rtl/common/wshexp_core_pkg.vhd
 
+SOURCES_XCIFile := \
+../../../ip-cores/kintex7/fifo_27x16/fifo_27x16.xci \
+../../../ip-cores/kintex7/fifo_315x16/fifo_315x16.xci \
+../../../ip-cores/kintex7/fifo_4x16/fifo_4x16.xci \
+../../../ip-cores/kintex7/ila_axis/ila_axis.xci \
+../../../ip-cores/kintex7/ila_pd_pdm/ila_pd_pdm.xci \
+../../../ip-cores/kintex7/ila_dma_ctrl_reg/ila_dma_ctrl_reg.xci \
+../../../ip-cores/kintex7/ila_l2p_dma/ila_l2p_dma.xci \
+../../../ip-cores/kintex7/ila_wsh_pipe/ila_wsh_pipe.xci \
+../../../ip-cores/kintex7/fifo_64x512/fifo_64x512.xci \
+../../../ip-cores/kintex7/mig_7series_0/mig_7series_0.xci \
+../../../ip-cores/kintex7/l2p_fifo64/l2p_fifo64.xci \
+../../../ip-cores/kintex7/fifo_256x16/fifo_256x16.xci \
+../../../ip-cores/kintex7/fifo_96x512_1/fifo_96x512.xci \
+../../../ip-cores/kintex7/ila_ddr/ila_ddr.xci \
+../../../ip-cores/kintex7/pcie_7x_0/pcie_7x_0.xci \
+../../../ip-cores/kintex7/fifo_32x512/fifo_32x512.xci
+
 files.tcl:
-		@$(foreach sourcefile, $(SOURCES_XCIFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
 		@$(foreach sourcefile, $(SOURCES_XDCFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
 		@$(foreach sourcefile, $(SOURCES_VHDLFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
+		@$(foreach sourcefile, $(SOURCES_XCIFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
 
 SYN_PRE_PROJECT_CMD := 
 SYN_POST_PROJECT_CMD := 
