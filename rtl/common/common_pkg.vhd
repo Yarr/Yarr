@@ -2,7 +2,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
 
-use work.gn4124_core_pkg.all;
+use work.wshexp_core_pkg.all;
 
 package common_pkg is
 

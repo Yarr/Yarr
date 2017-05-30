@@ -1,0 +1,12 @@
+#-----------------------------------------------------------
+# Vivado v2016.2 (64-bit)
+# SW Build 1577090 on Thu Jun  2 16:32:35 MDT 2016
+# IP Build 1577682 on Fri Jun  3 12:00:54 MDT 2016
+# Start of session at: Tue May 30 12:00:47 2017
+# Process ID: 28563
+# Current directory: /home/asautaux/yarr_fw/syn/xpressk7/bram_revA/yarr.runs/impl_1
+# Command line: vivado -log top_level.vdi -applog -messageDb vivado.pb -mode batch -source top_level.tcl -notrace
+# Log file: /home/asautaux/yarr_fw/syn/xpressk7/bram_revA/yarr.runs/impl_1/top_level.vdi
+# Journal file: /home/asautaux/yarr_fw/syn/xpressk7/bram_revA/yarr.runs/impl_1/vivado.jou
+#-----------------------------------------------------------
+source top_level.tcl -notrace
