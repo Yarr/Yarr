@@ -16,7 +16,7 @@
             "CalPulseDelay": 0,
             "CalPulseWidth": 10,
             "Clk2Out": 0,
-            "Colpr_Addr": 0,
+            "Colpr_Addr": 39,
             "Colpr_Mode": 0,
             "Conf_AddrEnable": 1,
             "DJO": 0,
@@ -56,7 +56,7 @@
             "Pixel_latch_strobe": 0,
             "PllIbias": 88,
             "PllIcp": 28,
-            "PlsrDAC": 54,
+            "PlsrDAC": 300,
             "PlsrDACbias": 96,
             "PlsrDelay": 2,
             "PlsrIDACRamp": 213,
@@ -96,9 +96,7 @@
         "Parameter": {
             "chipId": 0,
             "lCap": 3.8,
-            "rxChannel": 99,
             "sCap": 1.9,
-            "txChannel": 99,
             "vcalOffset": 0.0,
             "vcalSlope": 1.5
         },

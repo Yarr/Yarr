@@ -33,6 +33,7 @@ class EmuRxCore : virtual public RxCore {
         uint32_t getCurCount() {return m_com->getCurSize();}
         bool isBridgeEmpty() {return m_com->isEmpty();}
 
+
     private:
         EmuCom *m_com;
 };
