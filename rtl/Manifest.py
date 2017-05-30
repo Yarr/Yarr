@@ -1,12 +1,12 @@
-files = ["fe65p2_addon.vhd"]
+# To list file
+# ls -1 | xargs -I % echo \"%\",
 
-modules = { "local" : [
-            "common",
-            "gn4124-core",
-            "ddr3-core",
-            "tx-core",
-            "rx-core",
-            "i2c-master",
-            "trigger-logic"
-            ],
-          }
+files = [
+#TOP
+"app_package.vhd",
+"app.vhd",
+]
+
+modules = {
+"local" : ["common","ddr3k7-core","wshexp-core"],
+}
