@@ -1,0 +1,15 @@
+Makefile
+*.bit
+*.log
+*.jou
+*.xpr
+*.tcl
+*.cache
+*.hw
+*.ip_user_files
+*.runs
+*.swp
+bitstream
+par
+project
+synthesize
