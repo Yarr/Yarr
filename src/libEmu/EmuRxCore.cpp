@@ -54,14 +54,14 @@ void outRawData(uint32_t adr, uint32_t *buf, uint32_t words){
 
   using namespace std;
 
-  ofstream rawDataFile; /* the file need to be opened in binary, not in ASCII */
-  rawDataFile.open("data/rawData/rawData.csv", ios::app | ios::out | ios::binary); /* app is for appending ! */
+  ofstream rawDataFile;                       /* append | output   | binary mode */
+  rawDataFile.open("data/rawData/rawData.dat", ios::app | ios::out | ios::binary);
 
   /* manages errors */
   if (!rawDataFile){ cerr<<"Cannot open the file for buf raw datas"<<endl;}
   
   for (int i = 0; i<(int)words; i++){
-    rawDataFile << hex << *(buf + i) << ",";
+    rawDataFile.write((char*)buf, sizeof(uint32_t)*words); /* write data in binary */
   }
 
   rawDataFile.close();
