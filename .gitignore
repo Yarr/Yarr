@@ -9,6 +9,8 @@ Makefile
 *.ip_user_files
 *.runs
 *.swp
+*.mcs
+*.prm
 bitstream
 par
 project
