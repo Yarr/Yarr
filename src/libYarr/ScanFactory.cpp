@@ -37,12 +37,11 @@ void ScanFactory::loadConfig(json &scanCfg) {
     std::string name = scanCfg["scan"]["name"];
     std::cout << "  Name: " << name << std::endl;
 
-    int nLoops = scanCfg["scan"]["loops"]["n_loops"];
-    std::cout << "  Number of Loops: " << nLoops << std::endl;
+    std::cout << "  Number of Loops: " << scanCfg["scan"]["loops"].size() << std::endl;
 
-    for (int i=0; i<nLoops; i++) {
+    for (int i=0; i<scanCfg["scan"]["loops"].size(); i++) {
         std::cout << "  Loading Loop #" << i << std::endl;
-        std::string loopAction = scanCfg["scan"]["loops"][std::to_string(i)]["loopAction"];
+        std::string loopAction = scanCfg["scan"]["loops"][i]["loopAction"];
         std::cout << "  Type: " << loopAction << std::endl;
         std::shared_ptr<LoopActionBase> action;
         if (loopAction.find("Std") != std::string::npos) {
@@ -53,9 +52,9 @@ void ScanFactory::loadConfig(json &scanCfg) {
             std::cout << "### ERROR ### => Unknown Loop Action: " << loopAction << " ... skipping!" << std::endl;
         }
 
-        if (!scanCfg["scan"]["loops"][std::to_string(i)]["config"].empty()) {
+        if (!scanCfg["scan"]["loops"][i]["config"].empty()) {
             std::cout << "  Loading loop config ... " << std::endl;
-            action->loadConfig(scanCfg["scan"]["loops"][std::to_string(i)]["config"]);
+            action->loadConfig(scanCfg["scan"]["loops"][i]["config"]);
         }
         this->addLoop(action);
 
