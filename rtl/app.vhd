@@ -117,7 +117,7 @@ end app;
 
 architecture Behavioral of app is
     
-    constant DEBUG_C : std_logic_vector(5 downto 0) := "000000";
+    constant DEBUG_C : std_logic_vector(5 downto 0) := "101111";
     
 
     

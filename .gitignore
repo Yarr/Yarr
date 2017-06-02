@@ -1,4 +1,3 @@
-Makefile
 *.bit
 *.log
 *.jou
@@ -11,6 +10,7 @@ Makefile
 *.swp
 *.mcs
 *.prm
+*.btree
 bitstream
 par
 project

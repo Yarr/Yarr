@@ -76,9 +76,10 @@ if len(bit_files) == 0 :
 	print("No bit file found !\n")
 elif len(bit_files) == 1:
 	print("Bit file found : " + bit_files[0])
-	ok = input ("Will you flash the RAM with this file [Y/n] ?")
+	ok = raw_input ("Will you flash the RAM with this file [Y/n] ?")
 	if ok[0].lower() == 'y':
 		bit_file = bit_files[0]
+		nb = 0
 	else:
 		bit_file = None
 else:
@@ -102,6 +103,7 @@ else:
 
 
 if (bit_file != None):
+	bit_file = bit_files[nb]
 	resp = raw_input ("Will you flash the RAM or the Flash [R/F] ?")
 	if resp[0].lower() == 'r':	
 		cmds = cmds_RAM.format('{',bit_file,'}')
