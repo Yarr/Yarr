@@ -1,0 +1,17 @@
+*.bit
+*.log
+*.jou
+*.xpr
+*.tcl
+*.cache
+*.hw
+*.ip_user_files
+*.runs
+*.swp
+*.mcs
+*.prm
+*.btree
+bitstream
+par
+project
+synthesize
