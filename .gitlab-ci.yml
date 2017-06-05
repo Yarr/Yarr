@@ -3,5 +3,6 @@ job_build:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     script:
       - yum -y install gcc-c++
+      - yum -y install make
       - cd src
       - make
