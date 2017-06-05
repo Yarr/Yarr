@@ -6,5 +6,5 @@ job_build_and_test:
       - yum -y install make
       - cd src
       - make
-      - bin/scanConsole -r configs/emuCfg.json -c configs/test.json -s digitalscan -p
+      - bin/scanConsole -r configs/emuCfg.json -c configs/test.json -s digitalscan
       - cd ../
