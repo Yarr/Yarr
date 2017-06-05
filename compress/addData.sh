@@ -26,6 +26,8 @@ LZ4CSV="${DATAFOLDER}lz4.csv" # path to the standard LZ4 data file
 ALGOFOLDER="$HOME/GIT/Bachelor_Project/Yarr/compress/algorithms/"
 LZ4="${ALGOFOLDER}lz4/lz4"
 
+# scan launch script
+SCAN="basicTotScan.sh"
 
 # ---------
 # HELP text
@@ -38,15 +40,13 @@ then
     echo
     echo The ITERATIONS is the number of wanted data. 
     echo
-    echo With no OPTION,  no compression is applied and raw data size is stored.
+    echo With no OPTION, but an ITERATIONS value,  no compression is applied and raw data size is stored.
     echo
     echo -e "  -lz4                      standard LZ4 compression"
     echo -e "  -h,  --help, <nothing>    display this help and exit"
     echo -e "  -p,  --path               display the path to the useful files"
     echo
     echo When a COMPRESSION MODE is given, the raw size, compressed size, compression time and decompression time are saved.
-    echo
-    echo Open the source code to have details about the paths and relations.
     echo
     exit 1
 fi
@@ -55,7 +55,7 @@ if [ "$1" == "-p" ]||[ "$1" == "--path" ]
 then
     printf "Data are in: $DATAFOLDER \n"
     printf "Yarr source code is in: $YARRSRC \n"
-    printf "The raw data are in: YARRRAWDATA \n"
+    printf "The raw data are in: $YARRRAWDATA \n"
 	
 
 # ------------------------
@@ -66,7 +66,7 @@ then
    for((i=1;i<=$1;i++));do # loop with the past argument
        # generate one raw data
        cd $YARRSRC
-       bash basicTotScan.sh
+       bash $SCAN
 
        # print size of the data and add the value to the data file
        cd $YARRRAWDATA
@@ -84,7 +84,7 @@ then
     for((i=1;i<=$2;i++));do # loop with the past argument
 	# generate one raw data
        cd ~/GIT/Bachelor_Project/Yarr/src
-       bash basicTotScan.sh
+       bash $SCAN
 
        cd $YARRRAWDATA # go to the raw data folder
 
@@ -103,7 +103,7 @@ then
        # use bc calculator to know the diff
        printf "$(echo "$STOPTIME - $STARTTIME" | bc)," >> $LZ4CSV
 
-       rm rawData.dat
+       rm rawData.dat # removed to avoid trouble when uncompressing
        
        # decompression
        STARTTIME=$(date +%s%N) # starts measure time [nanoseconds]
