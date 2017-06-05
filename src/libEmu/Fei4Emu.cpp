@@ -6,6 +6,9 @@
  */
 
 #include "Fei4Emu.h"
+#include <fstream>
+
+std::fstream outFile("data/rawData/rawData.dat", std::ios::out | std::ios::binary);
 
 // should use a better function than this (box muller method - stolen from the internet)
 double rand_normal(double mean, double sigma, bool can_be_negative) {
@@ -52,6 +55,8 @@ Fei4Emu::Fei4Emu() {
 
     this->initializePixelModels();
     run = true;
+
+
 }
 
 Fei4Emu::Fei4Emu(std::string output_model_cfg): Fei4Emu() {
@@ -64,6 +69,7 @@ Fei4Emu::Fei4Emu(std::string output_model_cfg, std::string input_model_cfg): Fei
 }
 
 Fei4Emu::~Fei4Emu() {
+    outFile.close();
 }
 
 void Fei4Emu::initializePixelModels() {
@@ -455,6 +461,7 @@ void Fei4Emu::handleTrigger() {
 void Fei4Emu::pushOutput(uint32_t value) {
     if (m_rxShm) {
         m_rxShm->write32(value);
+        outFile.write((char*) &value, sizeof(uint32_t));
     }
 }
 

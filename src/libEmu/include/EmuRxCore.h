@@ -34,7 +34,6 @@ class EmuRxCore : virtual public RxCore {
         uint32_t getCurCount() {return m_com->getCurSize();}
         bool isBridgeEmpty() {return m_com->isEmpty();}
 
-	void outRawData(uint32_t adr, uint32_t *buf, uint32_t words);
 
     private:
         EmuCom *m_com;
