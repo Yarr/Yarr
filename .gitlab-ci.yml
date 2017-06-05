@@ -1,0 +1,7 @@
+job_build:
+    stage: build
+    image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
+    script:
+      - yum -y install gcc-c++
+      - cd src
+      - make
