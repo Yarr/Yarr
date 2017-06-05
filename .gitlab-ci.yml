@@ -1,4 +1,4 @@
-before_script:
+job_setup:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     script:
       - yum -y install gcc-c++
