@@ -1,8 +1,17 @@
-job_build:
-    stage: build
+before_script:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     script:
       - yum -y install gcc-c++
       - yum -y install make
+
+job_build:
+    stage: build
       - cd src
       - make
+      - cd ../
+
+job_test:
+    stage: test
+      - cd src
+      - bin/scanConsole -r configs/emuCfg.json -c configs/test.json -s digitalscan -p
+      - cd ../
