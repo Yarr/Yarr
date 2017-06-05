@@ -4,9 +4,10 @@ job_build_and_test:
     script:
       - yum -y install gcc-c++
       - yum -y install make
+      - yum -y install gnuplot
       - cd src
       - make
-      - bin/scanConsole -r configs/emuCfg.json -c configs/test.json -s digitalscan
+      - bin/scanConsole -r configs/emuCfg.json -c configs/test.json -s digitalscan -p
       - ls
       - ls ./data/
       - ls ./data/000001_digitalscan/
