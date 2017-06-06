@@ -22,6 +22,8 @@ DATAFOLDER="$HOME/GIT/Bachelor_Project/Yarr/compress/data/"
 UNCOMSIZECSV="${DATAFOLDER}uncompSize.csv" # path to the raw size data file
 LZ4CSV="${DATAFOLDER}lz4.csv" # path to the standard LZ4 data file
 LZ49CSV="${DATAFOLDER}lz49.csv" # path to the strong LZ4 data file
+GZIPCSV="${DATAFOLDER}gzip.csv" # path to the standard GZIP data file
+
 
 # Algorithms paths
 ALGOFOLDER="$HOME/GIT/Bachelor_Project/Yarr/compress/algorithms/"
@@ -29,6 +31,7 @@ LZ4="${ALGOFOLDER}lz4/lz4" # base
 LZ4d=" -d" # decompression
 LZ49=" -9" # strong and slow compression
 
+GZIP="${ALGOFOLDER}gzip-1.2.4/gzip"
 
 # scan launch script
 SCAN="basicTotScan.sh"
@@ -57,19 +60,39 @@ function compression (){
 	STOPTIME=$(date +%s%N) # stop measure time [nanoseconds]
 
 	# save compressed size
-	printf "$(stat --printf="%s" rawData.dat.lz4)," >> $4
+	if [ $1 == "-gzip" ]
+	then
+	    printf "$(stat --printf="%s" rawData.dat.gz)," >> $4
+	elif [ $1 == "-lz4" ]||[ $1 == "-lz49" ]
+	then
+	    printf "$(stat --printf="%s" rawData.dat.lz4)," >> $4
+	fi
+	
 
 	# save the compression time in nanoseconds
 	# use bc calculator to know the diff
 	printf "$(echo "$STOPTIME - $STARTTIME" | bc)," >> $4
 	
-	rm rawData.dat # removed to avoid trouble when uncompressing
+	if [ $1 != "-gzip" ] # As gzip does not keep the original file
+	then
+	    rm rawData.dat # removed to avoid trouble when uncompressing
+	fi
+	
        
 	# decompression
-	STARTTIME=$(date +%s%N) # starts measure time [nanoseconds]
-	$1 $3 rawData.dat.lz4 # decompress
-	STOPTIME=$(date +%s%N) # stop measure time [nanoseconds]
-
+	if [ $1 == "-gzip" ]
+	then
+	    STARTTIME=$(date +%s%N) # starts measure time [nanoseconds]
+	    $1 $3 rawData.dat.gz # decompress
+	    STOPTIME=$(date +%s%N) # stop measure time [nanoseconds]
+	elif [ $1 == "-lz4" ]||[ $1 == "-lz49" ]
+	then
+	    STARTTIME=$(date +%s%N) # starts measure time [nanoseconds]
+	    $1 $3 rawData.dat.lz4 # decompress
+	    STOPTIME=$(date +%s%N) # stop measure time [nanoseconds]
+	fi
+	
+	    
 	# save the decompression time in nanoseconds
 	# use bc calculator to know the diff
 	printf "$(echo "$STOPTIME - $STARTTIME" | bc)\n" >> $4
@@ -95,6 +118,7 @@ then
     echo
     echo -e "  -lz4                      standard LZ4 compression"
     echo -e "  -lz49                     strong but slow LZ4 compression"
+    echo -e "  -gzip                     standard GZIP compression"
     echo -e "  -h,  --help, <nothing>    display this help and exit"
     echo -e "  -p,  --path               display the path to the useful files"
     echo
@@ -144,8 +168,15 @@ elif [ "$1" == "-lz49" ]
 then
    compression $LZ4 $2 $LZ4d $LZ49CSV $LZ49
 
-fi
 
-exit 1
+# ------------------------
+# Stanrard GZIP compression
+# ------------------------
+elif [ "$1" == "-gzip" ]
+then
+   compression $GZIP $2 $LZ4d $GZIPCSV
+
+
+fi
 
 #EOF

@@ -1,8 +1,8 @@
 
 % ====================================================
 %
-% Script to make some statistic tests on the raw datas
-% and to compressed data.
+% Make some statistical comparaison between two LZ4
+% compression mode.
 %
 % CONUS Vincent
 % 01.06.2017
