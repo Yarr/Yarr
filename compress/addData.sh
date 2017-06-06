@@ -21,13 +21,64 @@ YARRRAWDATA="${YARRSRC}/data/rawData" # path to the Yarr raw data folder
 DATAFOLDER="$HOME/GIT/Bachelor_Project/Yarr/compress/data/"
 UNCOMSIZECSV="${DATAFOLDER}uncompSize.csv" # path to the raw size data file
 LZ4CSV="${DATAFOLDER}lz4.csv" # path to the standard LZ4 data file
+LZ49CSV="${DATAFOLDER}lz49.csv" # path to the strong LZ4 data file
 
 # Algorithms paths
 ALGOFOLDER="$HOME/GIT/Bachelor_Project/Yarr/compress/algorithms/"
-LZ4="${ALGOFOLDER}lz4/lz4"
+LZ4="${ALGOFOLDER}lz4/lz4" # base
+LZ4d=" -d" # decompression
+LZ49=" -9" # strong and slow compression
+
 
 # scan launch script
 SCAN="basicTotScan.sh"
+
+# 1st arg. is compression algo, 2nd is iteration value
+# 3rd is decompression param, 4th is the output file
+# 5th for the strong comp param
+
+function compression (){
+
+    printf "compression\n"
+    for((i=1;i<=$2;i++));do # loop with the past argument
+	printf "loop\n"
+	# generate one raw data
+	cd ~/GIT/Bachelor_Project/Yarr/src
+	bash $SCAN
+
+	cd $YARRRAWDATA # go to the raw data folder
+
+	# save raw size
+	printf "$(stat --printf="%s" rawData.dat)," >> $4
+
+	#compression
+	STARTTIME=$(date +%s%N) # starts measure time [nanoseconds]
+	$1 $5 rawData.dat # compress
+	STOPTIME=$(date +%s%N) # stop measure time [nanoseconds]
+
+	# save compressed size
+	printf "$(stat --printf="%s" rawData.dat.lz4)," >> $4
+
+	# save the compression time in nanoseconds
+	# use bc calculator to know the diff
+	printf "$(echo "$STOPTIME - $STARTTIME" | bc)," >> $4
+	
+	rm rawData.dat # removed to avoid trouble when uncompressing
+       
+	# decompression
+	STARTTIME=$(date +%s%N) # starts measure time [nanoseconds]
+	$1 $3 rawData.dat.lz4 # decompress
+	STOPTIME=$(date +%s%N) # stop measure time [nanoseconds]
+
+	# save the decompression time in nanoseconds
+	# use bc calculator to know the diff
+	printf "$(echo "$STOPTIME - $STARTTIME" | bc)\n" >> $4
+	
+	rm rawData.dat*
+       
+    done
+
+}
 
 # ---------
 # HELP text
@@ -43,6 +94,7 @@ then
     echo With no OPTION, but an ITERATIONS value,  no compression is applied and raw data size is stored.
     echo
     echo -e "  -lz4                      standard LZ4 compression"
+    echo -e "  -lz49                     strong but slow LZ4 compression"
     echo -e "  -h,  --help, <nothing>    display this help and exit"
     echo -e "  -p,  --path               display the path to the useful files"
     echo
@@ -76,47 +128,24 @@ then
     
        rm rawData.dat
    done
+
 # ------------------------
 # Standard LZ4 compression
 # ------------------------
 elif [ "$1" == "-lz4" ]
 then
-    for((i=1;i<=$2;i++));do # loop with the past argument
-	# generate one raw data
-       cd ~/GIT/Bachelor_Project/Yarr/src
-       bash $SCAN
+   compression $LZ4 $2 $LZ4d $LZ4CSV
 
-       cd $YARRRAWDATA # go to the raw data folder
 
-       # save raw size
-       printf "$(stat --printf="%s" rawData.dat)," >> $LZ4CSV
+# ------------------------
+# Strong and slow LZ4 compression
+# ------------------------
+elif [ "$1" == "-lz49" ]
+then
+   compression $LZ4 $2 $LZ4d $LZ49CSV $LZ49
 
-       #compression
-       STARTTIME=$(date +%s%N) # starts measure time [nanoseconds]
-       $LZ4 rawData.dat # compress
-       STOPTIME=$(date +%s%N) # stop measure time [nanoseconds]
-
-       # save compressed size
-       printf "$(stat --printf="%s" rawData.dat.lz4)," >> $LZ4CSV
-
-       # save the compression time in nanoseconds
-       # use bc calculator to know the diff
-       printf "$(echo "$STOPTIME - $STARTTIME" | bc)," >> $LZ4CSV
-
-       rm rawData.dat # removed to avoid trouble when uncompressing
-       
-       # decompression
-       STARTTIME=$(date +%s%N) # starts measure time [nanoseconds]
-       $LZ4 -d rawData.dat.lz4 # decompress
-       STOPTIME=$(date +%s%N) # stop measure time [nanoseconds]
-
-       # save the decompression time in nanoseconds
-       # use bc calculator to know the diff
-       printf "$(echo "$STOPTIME - $STARTTIME" | bc)\n" >> $LZ4CSV
-       
-       rm rawData.dat*
-       
-    done
 fi
+
+exit 1
 
 #EOF
