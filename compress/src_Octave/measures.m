@@ -39,3 +39,15 @@ lz49meansize = mean(lz49size);
 lz49mediansize = median(lz49size);
 lz49stdsize = std(lz49size);
 lz49graphspan = [0 length(lz49size)]; % vector with the size of the data. 
+
+% ------------------------------------------------------------------------------------------
+
+% for GZIP
+gzipdata = csvread("../data/gzip.csv");
+gzipraw = gzipdata(:,1);
+gzipsize = gzipdata(:,2);
+
+gzipmeansize = mean(gzipsize);
+gzipmediansize = median(gzipsize);
+gzipstdsize = std(gzipsize);
+gzipgraphspan = [0 length(gzipsize)];

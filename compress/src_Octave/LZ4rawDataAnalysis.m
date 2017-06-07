@@ -136,7 +136,7 @@ subplot(2, 4, 6) % Gain strong LZ4
   gain_lz49 = 1- (lz49data(:,2)./lz49data(:,1));
   gainlz49meansize = mean(gain_lz49);
   gainlz49mediansize = median(gain_lz49);
-  gainlz49stdsize = std(gain_lz4);
+  gainlz49stdsize = std(gain_lz49);
 
   plot(gain_lz49, '-x', 'linewidth', 0.7);
   hold on;

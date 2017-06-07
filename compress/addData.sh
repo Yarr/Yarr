@@ -42,9 +42,8 @@ SCAN="basicTotScan.sh"
 
 function compression (){
 
-    printf "compression\n"
     for((i=1;i<=$2;i++));do # loop with the past argument
-	printf "loop\n"
+	
 	# generate one raw data
 	cd ~/GIT/Bachelor_Project/Yarr/src
 	bash $SCAN
@@ -58,12 +57,12 @@ function compression (){
 	STARTTIME=$(date +%s%N) # starts measure time [nanoseconds]
 	$1 $5 rawData.dat # compress
 	STOPTIME=$(date +%s%N) # stop measure time [nanoseconds]
-
+	
 	# save compressed size
-	if [ $1 == "-gzip" ]
+	if [ "$1" == "$GZIP" ]
 	then
 	    printf "$(stat --printf="%s" rawData.dat.gz)," >> $4
-	elif [ $1 == "-lz4" ]||[ $1 == "-lz49" ]
+	elif [ "$1" == "$LZ4*" ]
 	then
 	    printf "$(stat --printf="%s" rawData.dat.lz4)," >> $4
 	fi
@@ -72,20 +71,21 @@ function compression (){
 	# save the compression time in nanoseconds
 	# use bc calculator to know the diff
 	printf "$(echo "$STOPTIME - $STARTTIME" | bc)," >> $4
+
 	
-	if [ $1 != "-gzip" ] # As gzip does not keep the original file
+	if [ "$1" != "$GZIP" ] # As gzip does not keep the original file
 	then
 	    rm rawData.dat # removed to avoid trouble when uncompressing
 	fi
 	
-       
+	
 	# decompression
-	if [ $1 == "-gzip" ]
+	if [ "$1" == "$GZIP" ]
 	then
 	    STARTTIME=$(date +%s%N) # starts measure time [nanoseconds]
 	    $1 $3 rawData.dat.gz # decompress
 	    STOPTIME=$(date +%s%N) # stop measure time [nanoseconds]
-	elif [ $1 == "-lz4" ]||[ $1 == "-lz49" ]
+	elif [ "$1" == "$LZ4*" ]
 	then
 	    STARTTIME=$(date +%s%N) # starts measure time [nanoseconds]
 	    $1 $3 rawData.dat.lz4 # decompress
@@ -149,7 +149,7 @@ then
 
        stat --printf="%s" rawData.dat >> $UNCOMSIZECSV
        echo -e  '\r' >> $UNCOMSIZECSV
-    
+       
        rm rawData.dat
    done
 
