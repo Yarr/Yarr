@@ -33,8 +33,6 @@ LZ49=" -9" # strong and slow compression
 
 GZIP="${ALGOFOLDER}gzip-1.2.4/gzip"
 
-LZ78="${ALGOFOLDER}lz78/lz78"
-
 
 # scan launch script
 SCAN="basicTotScan.sh"
@@ -46,12 +44,11 @@ function compression (){
 
     for((i=1;i<=$2;i++));do # loop with the past argument
 	
-	# generate one raw data
+	# generate one raw data file
 	cd ~/GIT/Bachelor_Project/Yarr/src
 	bash $SCAN
 
 	cd $YARRRAWDATA # go to the raw data folder
-
 
 	# save raw size
 	printf "$(stat --printf="%s" rawData.dat)," >> $3
@@ -60,12 +57,12 @@ function compression (){
 	STARTTIME=$(date +%s%N) # starts measure time [nanoseconds]
 	$1 $4 rawData.dat # compress
 	STOPTIME=$(date +%s%N) # stop measure time [nanoseconds]
-	
+
 	# save compressed size
 	if [ "$1" == "$GZIP" ]
 	then
 	    printf "$(stat --printf="%s" rawData.dat.gz)," >> $3
-	elif [ "$1" == "$LZ4*" ]
+	elif [ "$1" == "$LZ4" ]||[ "$1" == "$LZ49" ]
 	then
 	    printf "$(stat --printf="%s" rawData.dat.lz4)," >> $3
 	fi
@@ -88,7 +85,7 @@ function compression (){
 	    STARTTIME=$(date +%s%N) # starts measure time [nanoseconds]
 	    $1 -d rawData.dat.gz # decompress
 	    STOPTIME=$(date +%s%N) # stop measure time [nanoseconds]
-	elif [ "$1" == "$LZ4*" ]
+	elif [ "$1" == "$LZ4" ]||[ "$1" == "$LZ49" ]
 	then
 	    STARTTIME=$(date +%s%N) # starts measure time [nanoseconds]
 	    $1 -d rawData.dat.lz4 # decompress
@@ -178,7 +175,6 @@ then
 elif [ "$1" == "-gzip" ]
 then
    compression $GZIP $2  $GZIPCSV
-
 
 fi
 

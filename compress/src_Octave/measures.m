@@ -43,7 +43,7 @@ lz49graphspan = [0 length(lz49size)]; % vector with the size of the data.
 % ------------------------------------------------------------------------------------------
 
 % for GZIP
-gzipdata = csvread("../data/gzip.csv");
+gzipdata = csvread("../data/z_not_written_now/6_Correct_Tot_data_GZIP/gzip.csv");
 gzipraw = gzipdata(:,1);
 gzipsize = gzipdata(:,2);
 
