@@ -33,12 +33,14 @@ LZ49=" -9" # strong and slow compression
 
 GZIP="${ALGOFOLDER}gzip-1.2.4/gzip"
 
+LZ78="${ALGOFOLDER}lz78/lz78"
+
+
 # scan launch script
 SCAN="basicTotScan.sh"
 
 # 1st arg. is compression algo, 2nd is iteration value
-# 3rd is decompression param, 4th is the output file
-# 5th for the strong comp param
+# 3th is the output file, 4th for the strong comp param
 
 function compression (){
 
@@ -50,27 +52,28 @@ function compression (){
 
 	cd $YARRRAWDATA # go to the raw data folder
 
+
 	# save raw size
-	printf "$(stat --printf="%s" rawData.dat)," >> $4
+	printf "$(stat --printf="%s" rawData.dat)," >> $3
 
 	#compression
 	STARTTIME=$(date +%s%N) # starts measure time [nanoseconds]
-	$1 $5 rawData.dat # compress
+	$1 $4 rawData.dat # compress
 	STOPTIME=$(date +%s%N) # stop measure time [nanoseconds]
 	
 	# save compressed size
 	if [ "$1" == "$GZIP" ]
 	then
-	    printf "$(stat --printf="%s" rawData.dat.gz)," >> $4
+	    printf "$(stat --printf="%s" rawData.dat.gz)," >> $3
 	elif [ "$1" == "$LZ4*" ]
 	then
-	    printf "$(stat --printf="%s" rawData.dat.lz4)," >> $4
+	    printf "$(stat --printf="%s" rawData.dat.lz4)," >> $3
 	fi
 	
 
 	# save the compression time in nanoseconds
 	# use bc calculator to know the diff
-	printf "$(echo "$STOPTIME - $STARTTIME" | bc)," >> $4
+	printf "$(echo "$STOPTIME - $STARTTIME" | bc)," >> $3
 
 	
 	if [ "$1" != "$GZIP" ] # As gzip does not keep the original file
@@ -83,19 +86,19 @@ function compression (){
 	if [ "$1" == "$GZIP" ]
 	then
 	    STARTTIME=$(date +%s%N) # starts measure time [nanoseconds]
-	    $1 $3 rawData.dat.gz # decompress
+	    $1 -d rawData.dat.gz # decompress
 	    STOPTIME=$(date +%s%N) # stop measure time [nanoseconds]
 	elif [ "$1" == "$LZ4*" ]
 	then
 	    STARTTIME=$(date +%s%N) # starts measure time [nanoseconds]
-	    $1 $3 rawData.dat.lz4 # decompress
+	    $1 -d rawData.dat.lz4 # decompress
 	    STOPTIME=$(date +%s%N) # stop measure time [nanoseconds]
 	fi
 	
 	    
 	# save the decompression time in nanoseconds
 	# use bc calculator to know the diff
-	printf "$(echo "$STOPTIME - $STARTTIME" | bc)\n" >> $4
+	printf "$(echo "$STOPTIME - $STARTTIME" | bc)\n" >> $3
 	
 	rm rawData.dat*
        
@@ -158,7 +161,7 @@ then
 # ------------------------
 elif [ "$1" == "-lz4" ]
 then
-   compression $LZ4 $2 $LZ4d $LZ4CSV
+   compression $LZ4 $2  $LZ4CSV
 
 
 # ------------------------
@@ -166,7 +169,7 @@ then
 # ------------------------
 elif [ "$1" == "-lz49" ]
 then
-   compression $LZ4 $2 $LZ4d $LZ49CSV $LZ49
+   compression $LZ4 $2  $LZ49CSV $LZ49
 
 
 # ------------------------
@@ -174,7 +177,7 @@ then
 # ------------------------
 elif [ "$1" == "-gzip" ]
 then
-   compression $GZIP $2 $LZ4d $GZIPCSV
+   compression $GZIP $2  $GZIPCSV
 
 
 fi
