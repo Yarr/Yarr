@@ -15,12 +15,12 @@ pkg load statistics % package useful for boxplot and histograms
 
 % uncomment the line to to the tests on archived data
 
-size = csvread("../data/z_not_written_now/5_Correct_Tot_data_LZ4/strong/uncompSize.csv");
-lz4data = csvread("../data/z_not_written_now/5_Correct_Tot_data_LZ4/strong/lz4.csv");
-lz49data = csvread("../data/z_not_written_now/5_Correct_Tot_data_LZ4/strong/lz49.csv");
-%size = csvread("../data/uncompSize.csv");
-%lz4data = csvread("../data/lz4.csv");
-%lz49data = csvread("../data/lz49.csv");
+%size = csvread("../data/z_not_written_now/5_Correct_Tot_data_LZ4/strong/uncompSize.csv");
+%lz4data = csvread("../data/z_not_written_now/5_Correct_Tot_data_LZ4/strong/lz4.csv");
+%lz49data = csvread("../data/z_not_written_now/5_Correct_Tot_data_LZ4/strong/lz49.csv");
+size = csvread("../data/uncompSize.csv");
+lz4data = csvread("../data/lz4.csv");
+lz49data = csvread("../data/lz49.csv");
 
 lz4size = lz4data(:,2); % compressed size
 lz49size = lz49data(:,2); % compressed size

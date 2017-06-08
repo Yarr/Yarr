@@ -36,7 +36,7 @@ subplot(2, 4, [1, 2]) % no compression plot
   ylabel 'Raw data size [Byte]'
   xlabel 'Iterations of size measurment'
 
-  title("Raw DigitalScan uncompressed data sizes", 'FontWeight', 'bold', 'FontSize', 13);
+  title("Raw ThresholdScan uncompressed data sizes", 'FontWeight', 'bold', 'FontSize', 13);
   legend(sprintf("Raw data size value"), ...
          sprintf("Mean = %3.2f MB", meansize/1000000), ...
          sprintf("Median = %3.2f MB", mediansize/1000000), ...
@@ -58,7 +58,7 @@ subplot(2, 4, 3) % LZ4 plot
   plot(lz4graphspan, [lz4meansize-lz4stdsize lz4meansize-lz4stdsize], 'k', 'linewidth', 2);
 
   % -----------------------------------
-  axis([lz4graphspan 1.4e5 1.8e5]);
+  %axis([lz4graphspan 1.4e5 1.8e5]);
   grid on;
   ylabel 'LZ4 compressed data size [Byte]'
   xlabel 'Iterations of compressions'
@@ -84,7 +84,7 @@ subplot(2, 4, 4) % LZ4 strong plot
   plot(lz49graphspan, [lz49meansize-lz49stdsize lz49meansize-lz49stdsize], 'k', 'linewidth', 2);
 
   % -----------------------------------
-  axis([lz49graphspan 1.4e5 1.8e5]);
+  %axis([lz49graphspan 1.4e5 1.8e5]);
   grid on;
   ylabel 'LZ4 compressed data size [Byte]'
   xlabel 'Iterations of compressions'
@@ -178,14 +178,14 @@ subplot(2, 4, 7) % Compression / decompression time
 
 
   % -----------------------------------
-  axis([lz4graphspan 9e6 6.5e7]);
+  %axis([lz4graphspan 9e6 6.5e7]);
   grid on;
   ylabel 'Duration [ns]'
   xlabel 'Iterations of compressions or decompression'
   legend(sprintf("Compression"), ...
          sprintf("Decompression") , ...
-         sprintf("Comp. mean = %3.3d us", lz4meancomp/1000000),...     
-         sprintf("Deomp. mean = %3.3d us", lz4meandecomp/1000000),...
+         sprintf("Comp. mean = %3.3d ms", lz4meancomp/1000000),...     
+         sprintf("Deomp. mean = %3.3d ms", lz4meandecomp/1000000),...
          'Location', 'northwest'
   );
   title ("LZ4 comp. and decomp. time", 'FontWeight', 'bold', 'FontSize', 13);
@@ -205,14 +205,14 @@ subplot(2, 4, 8) % Compression / decompression time for strong LZ4
 
 
   % -----------------------------------
-  axis([lz49graphspan 9e6 6.5e7]);
+  %axis([lz49graphspan 9e6 6.5e7]);
   grid on;
   ylabel 'Duration [ns]'
   xlabel 'Iterations of compressions or decompression'
   legend(sprintf("Compression"), ...
          sprintf("Decompression") , ...
-         sprintf("Comp. mean = %3.3d us", lz49meancomp/1000000),...     
-         sprintf("Deomp. mean = %3.3d us", lz49meandecomp/1000000),...
+         sprintf("Comp. mean = %3.3d ms", lz49meancomp/1000000),...     
+         sprintf("Deomp. mean = %3.3d ms", lz49meandecomp/1000000),...
          'Location', 'northwest'
   );
   title ("LZ4 strong time", 'FontWeight', 'bold', 'FontSize', 13);

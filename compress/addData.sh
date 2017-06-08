@@ -33,12 +33,14 @@ LZ49=" -9" # strong and slow compression
 
 GZIP="${ALGOFOLDER}gzip-1.2.4/gzip"
 
-
+# ==================
 # scan launch script
+# * uncomment a line to use different scan *
+#===================
 #SCAN="basicTotScan.sh"
-SCAN="basicDigitalScan.sh"
-#SCAN="basicAnalgoScan.sh"
-#SCAN="basicThresholdScan.sh"
+#SCAN="basicDigitalScan.sh"
+#SCAN="basicAnalogScan.sh"
+SCAN="basicThresholdScan.sh"
 
 # 1st arg. is compression algo, 2nd is iteration value
 # 3th is the output file, 4th for the strong comp param
