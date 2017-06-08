@@ -35,7 +35,10 @@ GZIP="${ALGOFOLDER}gzip-1.2.4/gzip"
 
 
 # scan launch script
-SCAN="basicTotScan.sh"
+#SCAN="basicTotScan.sh"
+SCAN="basicDigitalScan.sh"
+#SCAN="basicAnalgoScan.sh"
+#SCAN="basicThresholdScan.sh"
 
 # 1st arg. is compression algo, 2nd is iteration value
 # 3th is the output file, 4th for the strong comp param
@@ -55,8 +58,8 @@ function compression (){
 
 	#compression
 	STARTTIME=$(date +%s%N) # starts measure time [nanoseconds]
-	$1 $4 rawData.dat # compress
-	STOPTIME=$(date +%s%N) # stop measure time [nanoseconds]
+	$1 $4 rawData.dat       # compress
+	STOPTIME=$(date +%s%N)  # stop measure time [nanoseconds]
 
 	# save compressed size
 	if [ "$1" == "$GZIP" ]
@@ -83,13 +86,13 @@ function compression (){
 	if [ "$1" == "$GZIP" ]
 	then
 	    STARTTIME=$(date +%s%N) # starts measure time [nanoseconds]
-	    $1 -d rawData.dat.gz # decompress
-	    STOPTIME=$(date +%s%N) # stop measure time [nanoseconds]
+	    $1 -d rawData.dat.gz    # decompress
+	    STOPTIME=$(date +%s%N)  # stop measure time [nanoseconds]
 	elif [ "$1" == "$LZ4" ]||[ "$1" == "$LZ49" ]
 	then
-	    STARTTIME=$(date +%s%N) # starts measure time [nanoseconds]
-	    $1 -d rawData.dat.lz4 # decompress
-	    STOPTIME=$(date +%s%N) # stop measure time [nanoseconds]
+	    STARTTIME=$(date +%s%N) 
+	    $1 -d rawData.dat.lz4 
+	    STOPTIME=$(date +%s%N)
 	fi
 	
 	    
@@ -108,7 +111,6 @@ function compression (){
 # ---------
 if [ -z "$1" ]||[ "$1" == "--help" ]||[ "$1" == "-h" ] 
 then
-    echo
     echo Usage: addData.sh [OPTION]...[ITERATIONS]...
     echo Add size measures from Yarr emulator to a CSV file.
     echo
@@ -123,7 +125,6 @@ then
     echo -e "  -p,  --path               display the path to the useful files"
     echo
     echo When a COMPRESSION MODE is given, the raw size, compressed size, compression time and decompression time are saved.
-    echo
     exit 1
 fi
     

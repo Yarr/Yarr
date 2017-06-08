@@ -36,7 +36,7 @@ subplot(2, 4, [1, 2]) % no compression plot
   ylabel 'Raw data size [Byte]'
   xlabel 'Iterations of size measurment'
 
-  title("Raw TotScan uncompressed data sizes", 'FontWeight', 'bold', 'FontSize', 13);
+  title("Raw DigitalScan uncompressed data sizes", 'FontWeight', 'bold', 'FontSize', 13);
   legend(sprintf("Raw data size value"), ...
          sprintf("Mean = %3.2f MB", meansize/1000000), ...
          sprintf("Median = %3.2f MB", mediansize/1000000), ...
@@ -116,7 +116,7 @@ subplot(2, 4, 5) % Gain
   plot(lz4graphspan, [gainlz4meansize-gainlz4stdsize gainlz4meansize-gainlz4stdsize], 'k', 'linewidth', 2);
 
   % -----------------------------------
-  axis([lz4graphspan 0.983 0.9855]);
+  %axis([lz4graphspan 0.983 0.9855]);
   grid on;
   ylabel 'Compression gain'
   xlabel 'Iterations of compressions'
@@ -148,7 +148,7 @@ subplot(2, 4, 6) % Gain strong LZ4
   plot(lz49graphspan, [gainlz49meansize-gainlz49stdsize gainlz49meansize-gainlz49stdsize], 'k', 'linewidth', 2);
 
   % -----------------------------------
-  axis([lz49graphspan 0.983 0.9855]);
+  %axis([lz49graphspan 0.983 0.9855]);
   grid on;
   ylabel 'Compression gain'
   xlabel 'Iterations of compressions'
