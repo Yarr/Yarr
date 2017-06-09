@@ -13,14 +13,29 @@
 
 pkg load statistics % package useful for boxplot and histograms
 
-% uncomment the line to to the tests on archived data
+switch scanMode
+  case 1
+    size = csvread("../data/z_not_written_now/5_Correct_Tot_data_LZ4/strong/uncompSize.csv");
+    lz4data = csvread("../data/z_not_written_now/5_Correct_Tot_data_LZ4/strong/lz4.csv");
+    lz49data = csvread("../data/z_not_written_now/5_Correct_Tot_data_LZ4/strong/lz49.csv");
+  case 2
+    size = csvread("../data/z_not_written_now/8_Correct_Analog/uncompSize.csv");
+    lz4data = csvread("../data/z_not_written_now/8_Correct_Analog/lz4.csv");
+    lz49data = csvread("../data/z_not_written_now/8_Correct_Analog/lz49.csv");
+  case 3
+    size = csvread("../data/z_not_written_now/4_Correct_digital_data_LZ4/uncompSize.csv");
+    lz4data = csvread("../data/z_not_written_now/4_Correct_digital_data_LZ4/lz4.csv");
+    lz49data = csvread("../data/z_not_written_now/4_Correct_digital_data_LZ4/lz49.csv");
+  case 4
+    size = csvread("../data/z_not_written_now/9_Correct_Threshold/uncompSize.csv");
+    lz4data = csvread("../data/z_not_written_now/9_Correct_Threshold/lz4.csv");
+    lz49data = csvread("../data/z_not_written_now/9_Correct_Threshold/lz49.csv");
+  otherwise 
+    size = csvread("../data/uncompSize.csv");
+    lz4data = csvread("../data/lz4.csv");
+    lz49data = csvread("../data/lz49.csv");
+end
 
-%size = csvread("../data/z_not_written_now/5_Correct_Tot_data_LZ4/strong/uncompSize.csv");
-%lz4data = csvread("../data/z_not_written_now/5_Correct_Tot_data_LZ4/strong/lz4.csv");
-%lz49data = csvread("../data/z_not_written_now/5_Correct_Tot_data_LZ4/strong/lz49.csv");
-size = csvread("../data/uncompSize.csv");
-lz4data = csvread("../data/lz4.csv");
-lz49data = csvread("../data/lz49.csv");
 
 lz4size = lz4data(:,2); % compressed size
 lz49size = lz49data(:,2); % compressed size
@@ -49,8 +64,18 @@ lz49graphspan = [0 length(lz49size)]; % vector with the size of the data.
 % ------------------------------------------------------------------------------------------
 
 % for GZIP
-%gzipdata = csvread("../data/z_not_written_now/6_Correct_Tot_data_GZIP/gzip.csv");
-gzipdata = csvread("../data/gzip.csv");
+switch scanMode
+  case 1
+    gzipdata = csvread("../data/z_not_written_now/6_Correct_Tot_data_GZIP/gzip.csv");
+  case 2
+    gzipdata = csvread("../data/z_not_written_now/8_Correct_Analog/gzip.csv");
+  case 3
+    gzipdata = csvread("../data/z_not_written_now/7_Correct_digital_data_GZIP/gzip.csv");
+  case 4
+    gzipdata = csvread("../data/z_not_written_now/9_Correct_Threshold/gzip.csv");
+  otherwise 
+    gzipdata = csvread("../data/gzip.csv");
+end
 
 gzipraw = gzipdata(:,1);
 gzipsize = gzipdata(:,2);

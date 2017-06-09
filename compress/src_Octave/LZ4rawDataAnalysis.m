@@ -182,10 +182,29 @@ subplot(2, 4, 7) % Compression / decompression time
   grid on;
   ylabel 'Duration [ns]'
   xlabel 'Iterations of compressions or decompression'
+  
+  % make the right scale of the printed value
+  lz4meancompScaled = ''
+  lz4meandecompScaled = ''
+  if gzipmeancomp > 1e9
+    lz4meancompScaled = sprintf("%3.3d s", lz4meancomp/1e9)
+    lz4meandecompScaled = sprintf("%3.3d s", lz4meandecomp/1e9)
+  elseif gzipmeancomp > 1e6
+    lz4meancompScaled = sprintf("%3.3d ms", lz4meancomp/1e6)
+    lz4meandecompScaled = sprintf("%3.3d ms", lz4meandecomp/1e6)
+  elseif gzipmeancomp > 1e3
+    lz4meancompScaled = sprintf("%3.3d us", lz4meancomp/1000)
+    lz4meandecompScaled = sprintf("%3.3d us", lz4meandecomp/1000)
+  else
+    lz4meancompScaled = sprintf("%3.3d ns", lz4meancomp)
+    lz4meandecompScaled = sprintf("%3.3d ns", lz4meandecomp)
+  end
+  
+  
   legend(sprintf("Compression"), ...
          sprintf("Decompression") , ...
-         sprintf("Comp. mean = %3.3d ms", lz4meancomp/1000000),...     
-         sprintf("Deomp. mean = %3.3d ms", lz4meandecomp/1000000),...
+         sprintf("Comp. mean = %s", lz4meancompScaled),...     
+         sprintf("Deomp. mean = %s", lz4meandecompScaled),...
          'Location', 'northwest'
   );
   title ("LZ4 comp. and decomp. time", 'FontWeight', 'bold', 'FontSize', 13);
@@ -209,10 +228,29 @@ subplot(2, 4, 8) % Compression / decompression time for strong LZ4
   grid on;
   ylabel 'Duration [ns]'
   xlabel 'Iterations of compressions or decompression'
+  
+  % make the right scale of the printed value
+  lz49meancompScaled = ''
+  lz49meandecompScaled = ''
+  if gzipmeancomp > 1e9
+    lz49meancompScaled = sprintf("%3.3d s", lz49meancomp/1e9)
+    lz49meandecompScaled = sprintf("%3.3d s", lz49meandecomp/1e9)
+  elseif gzipmeancomp > 1e6
+    lz49meancompScaled = sprintf("%3.3d ms", lz49meancomp/1e6)
+    lz49meandecompScaled = sprintf("%3.3d ms", lz49meandecomp/1e6)
+  elseif gzipmeancomp > 1e3
+    lz49meancompScaled = sprintf("%3.3d us", lz49meancomp/1000)
+    lz49meandecompScaled = sprintf("%3.3d us", lz49meandecomp/1000)
+  else
+    lz49meancompScaled = sprintf("%3.3d ns", lz49meancomp)
+    lz49meandecompScaled = sprintf("%3.3d ns", lz49meandecomp)
+  end
+  
+  
   legend(sprintf("Compression"), ...
          sprintf("Decompression") , ...
-         sprintf("Comp. mean = %3.3d ms", lz49meancomp/1000000),...     
-         sprintf("Deomp. mean = %3.3d ms", lz49meandecomp/1000000),...
+         sprintf("Comp. mean = %s", lz49meancompScaled),...     
+         sprintf("Deomp. mean = %3s", lz49meandecompScaled),...
          'Location', 'northwest'
   );
   title ("LZ4 strong time", 'FontWeight', 'bold', 'FontSize', 13);

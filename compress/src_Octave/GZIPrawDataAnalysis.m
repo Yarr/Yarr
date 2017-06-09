@@ -8,6 +8,36 @@
 %
 % ====================================================   
 
+
+% ###################################################################
+
+% CHANGE VALUE HERE FOR DIFFERENT TYPE OF SCAN
+
+% ###################################################################
+% put the correct value here to have the right form for the graphic 
+% Totscan       : 1
+% Analogscan    : 2
+% Digitalscan   : 3
+% Thresholdscan : 4
+
+scanMode = 1;
+
+% ###################################################################
+
+scanTitle = '';
+switch scanMode
+  case 1
+    scanTitle = 'Totscan';
+  case 2
+    scanTitle = 'Analogscan';
+  case 3
+    scanTitle = 'Digitalscan';
+  case 4
+    scanTitle = 'Thresholdscan';
+  otherwise 
+    scanTitle = 'PLEASE ENTER A CORRECT VALUE';
+end
+
 pkg load statistics % package useful for boxplot and histograms
 
 measures
@@ -19,46 +49,82 @@ figure('Position', [20 20 1300 740]); % 720p window
 %% ===========================================================================
 subplot(2, 2, 1) % no compression plot
 
-  plot(gzipraw, '-x', 'linewidth', 0.7); % plot raw size
+  % scalling for axis
+  gziprawScale = '';
+  rawMult = 1;
+  if mean(gzipraw) > 1e9
+    gziprawScale = "GB";
+    rawMult = 1e9;
+  elseif mean(gzipraw) > 1e6
+    gziprawScale = "MB";
+    rawMult = 1e6;
+  elseif mean(gzipraw) > 1e3
+    gziprawScale = "KB";
+    rawMult = 1e3;
+  else
+    gziprawScale = "B";
+    rawMult = 1;
+  end
+
+  plot(gzipraw./rawMult, '-x', 'linewidth', 0.7); % plot raw size
   hold on;
 
   % -----------------------------------
   %axis([graphspan 7e6 8e6]);
   grid on;
-  ylabel 'Raw data size [Byte]'
+  ylabel (['Raw data size [', gziprawScale,']'])
   xlabel 'Iterations of size measurment'
 
-  title("Raw ThresholdScan uncompressed data sizes", 'FontWeight', 'bold', 'FontSize', 13);
-  legend(sprintf("Raw data size value  = %3.3f MB", gzipraw(1)/1000000), ...
-         %sprintf("Mean = %3.2f MB", meansize/1000000), ...
-         %sprintf("Median = %3.2f MB", mediansize/1000000), ...
-         %sprintf("Standard deviation = %3.2f MB (%3.3d %%)", stdsize/1000000, (stdsize/meansize)*100),...
+  title(["Raw ", scanTitle, " uncompressed data sizes"], 'FontWeight', 'bold', 'FontSize', 13);
+  legend(sprintf("Raw data size value  = %3.3f %s", gzipraw(1)/rawMult, gziprawScale), ...
          'Location', 'southwest'
   );
   
 subplot(2, 2, 2) % GZIP compression 
 
-  plot(gzipsize, '-x', 'linewidth', 0.7); % plot raw size
+  gzipcompScale = '';
+  compMult = 1;
+  if mean(gzipsize) > 1e9
+    gzipcompScale = "GB";
+    compMult = 1e9;
+  elseif mean(gzipsize) > 1e6
+    gzipcompScale = "MB";
+    compMult = 1e6;
+  elseif mean(gzipsize) > 1e3
+    gzipcompScale = "KB";
+    compMult = 1e3;
+  else
+    gzipcompScale = "B";
+    compMult = 1;
+  end
+
+  plot(gzipsize./compMult, '-x', 'linewidth', 0.7); % plot raw size
   hold on;
 
-  plot(gzipgraphspan, [gzipmeansize gzipmeansize], 'g', 'linewidth', 2); % plot mean
-  plot(gzipgraphspan, [gzipmediansize gzipmediansize], 'r', 'linewidth', 2); % plot median
+  plot(gzipgraphspan, [gzipmeansize./compMult gzipmeansize./compMult], 'g', 'linewidth', 2); % plot mean
+  plot(gzipgraphspan, [gzipmediansize./compMult gzipmediansize./compMult], 'r', 'linewidth', 2); % plot median
   % standard deviation
-  plot(gzipgraphspan, [gzipmeansize+gzipstdsize gzipmeansize+gzipstdsize], 'k', 'linewidth', 2);
-  plot(gzipgraphspan, [gzipmeansize-gzipstdsize gzipmeansize-gzipstdsize], 'k', 'linewidth', 2);
+  plot(gzipgraphspan, [(gzipmeansize+gzipstdsize)./compMult (gzipmeansize+gzipstdsize)./compMult], 'k', 'linewidth', 2);
+  plot(gzipgraphspan, [(gzipmeansize-gzipstdsize)./compMult (gzipmeansize-gzipstdsize)./compMult], 'k', 'linewidth', 2);
 
 
   % -----------------------------------
-  %axis([graphspan 7e6 8e6]);
+  if (gzipstdsize/gzipmeansize) != 0
+    axis([gzipgraphspan ...
+          ((gzipmeansize-gzipstdsize)*(1-2*(gzipstdsize/gzipmeansize)))./compMult ...
+          ((gzipmeansize+gzipstdsize)*(1+(gzipstdsize/gzipmeansize)))./compMult] ...
+        );
+  end
+  
   grid on;
-  ylabel 'Raw data size [Byte]'
+  ylabel (['Raw data size [', gzipcompScale, ']'])
   xlabel 'Iterations of size measurment'
 
   title("GZIP compressed data size value", 'FontWeight', 'bold', 'FontSize', 13);
   legend(sprintf("GZIP compressed data size value"), ...
-         sprintf("Mean = %3.2f KB", gzipmeansize/1000), ...
-         sprintf("Median = %3.2f KB", gzipmediansize/1000), ...
-         sprintf("Standard deviation = %3.2f MB (%3.3d %%)", gzipstdsize/1000000, (gzipstdsize/gzipmeansize)*100),...
+         sprintf("Mean = %3.2f %s", gzipmeansize/compMult, gzipcompScale), ...
+         sprintf("Median = %3.2f %s", gzipmediansize/compMult, gzipcompScale), ...
+         sprintf("Standard deviation = %3.2f %s (%3.3d %%)", gzipstdsize/compMult, gzipcompScale, (gzipstdsize/gzipmeansize)*100),...
          'Location', 'southwest'
   );
   
@@ -79,13 +145,16 @@ subplot(2, 2, 3) % Gain
   plot(gzipgraphspan, [gaingzipmeansize-gaingzipstdsize gaingzipmeansize-gaingzipstdsize], 'k', 'linewidth', 2);
 
   % -----------------------------------
-  %axis([lz4graphspan 0.983 0.9855]);
+  if ((gaingzipstdsize/gaingzipmeansize) > 1e-10)
+    axis([gzipgraphspan (gaingzipmeansize-gaingzipstdsize)*(1-2*(gaingzipstdsize/gaingzipmeansize)) (gaingzipmeansize+gaingzipstdsize)*(1+(gaingzipstdsize/gaingzipmeansize))]);
+  end
+  
   grid on;
   ylabel 'Compression gain'
   xlabel 'Iterations of compressions'
   set(gca, 'YTickMode','manual')
   set(gca, 'YTickLabel',num2str(100.*get(gca,'YTick')','%g%%'))
-  legend(sprintf("LZ4 compression gain"), ...
+  legend(sprintf("GZIP compression gain"), ...
          sprintf("Mean = %d %%", gaingzipmeansize*100), ...
          sprintf("Median = %d %%", gaingzipmediansize*100), ...
          sprintf("Std = %d %% (%3.3d %%)", gaingzipstdsize*100, (gaingzipstdsize/gaingzipmeansize)*100),...
@@ -96,26 +165,55 @@ subplot(2, 2, 3) % Gain
   
 subplot(2, 2, 4) % Compression / decompression time
 
-  plot(gzipdata(:,3), '-x', 'linewidth', 0.7); % plot cmpression time
+  % make the right scale of the printed value and the axis
+  gzipmeancompScaled = '';
+  gzipmeandecompScaled = '';
+  timeMult = '';
+  if gzipmeancomp > 1e9
+    gzipmeancompScaled = sprintf("%3.3d s", gzipmeancomp/1e9);
+    gzipmeandecompScaled = sprintf("%3.3d s", gzipmeandecomp/1e9);
+    timeMult = 's';
+    timeScale = 1e9;
+  elseif gzipmeancomp > 1e6
+    gzipmeancompScaled = sprintf("%3.3d ms", gzipmeancomp/1e6);
+    gzipmeandecompScaled = sprintf("%3.3d ms", gzipmeandecomp/1e6);
+    timeScale = 1e6;
+    timeMult = 'ms';
+  elseif gzipmeancomp > 1e3
+    gzipmeancompScaled = sprintf("%3.3d us", gzipmeancomp/1000);
+    gzipmeandecompScaled = sprintf("%3.3d us", gzipmeandecomp/1000);
+    timeScale = 1e3;
+    timeMult = 'us';
+  else
+    gzipmeancompScaled = sprintf("%3.3d ns", gzipmeancomp);
+    gzipmeandecompScaled = sprintf("%3.3d ns", gzipmeandecomp);
+    timeScale = 1;
+    timeMult = 'ns';
+  end
+  
+
+  plot(gzipdata(:,3)./timeScale, '-x', 'linewidth', 0.7); % plot cmpression time
   hold on;
-  plot(gzipdata(:,4), '-xr', 'linewidth', 0.7); % plot cmpression time
+  plot(gzipdata(:,4)./timeScale, '-xr', 'linewidth', 0.7); % plot cmpression time
 
   gzipmeancomp=mean(gzipdata(:,3));
   gzipmeandecomp=mean(gzipdata(:,4));
 
-  plot(gzipgraphspan, [gzipmeancomp gzipmeancomp], 'c', 'linewidth', 2);
-  plot(gzipgraphspan, [gzipmeandecomp gzipmeandecomp], 'm', 'linewidth', 2);
+  plot(gzipgraphspan, [gzipmeancomp./timeScale gzipmeancomp./timeScale], 'c', 'linewidth', 2);
+  plot(gzipgraphspan, [gzipmeandecomp./timeScale gzipmeandecomp./timeScale], 'm', 'linewidth', 2);
 
 
   % -----------------------------------
-  %axis([gzipgraphspan 9e6 6.5e7]);
+  axis([gzipgraphspan (gzipmeandecomp*0.6)./timeScale (gzipmeancomp*1.4)./timeScale]);
   grid on;
-  ylabel 'Duration [ns]'
+  ylabel (['Duration [', timeMult, ']'])
   xlabel 'Iterations of compressions or decompression'
+  
+
   legend(sprintf("Compression"), ...
          sprintf("Decompression") , ...
-         sprintf("Comp. mean = %3.3d us", gzipmeancomp/1000000),...     
-         sprintf("Deomp. mean = %3.3d us", gzipmeandecomp/1000000),...
+         sprintf("Comp. mean = %s", gzipmeancompScaled),...     
+         sprintf("Deomp. mean = %s", gzipmeandecompScaled),...
          'Location', 'northwest'
   );
   title ("GZIP comp. and decomp. time", 'FontWeight', 'bold', 'FontSize', 13);
