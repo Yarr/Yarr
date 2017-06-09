@@ -10,12 +10,8 @@
 using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 using namespace Gauss;
 
-Fei4Emu::Fei4Emu(std::string output_model_cfg, std::string input_model_cfg, std::string emu_cfg) {
+Fei4Emu::Fei4Emu(std::string output_model_cfg, std::string input_model_cfg, RingBuffer * rx, RingBuffer * tx) {
     srand(time(NULL));
-
-    std::ifstream file(emu_cfg);
-    json j;
-    j << file;
 
     m_feId = 0x00;
     m_l1IdCnt = 0x00;
@@ -24,8 +20,10 @@ Fei4Emu::Fei4Emu(std::string output_model_cfg, std::string input_model_cfg, std:
     m_feGeo = { 336, 80 };
 
     m_feCfg = std::make_shared<Fei4Cfg>();
-    m_txShm = std::make_shared<EmuShm>(j["ctrlCfg"]["cfg"]["tx"]["id"], j["ctrlCfg"]["cfg"]["tx"]["size"], 0);
-    m_rxShm = std::make_shared<EmuShm>(j["ctrlCfg"]["cfg"]["rx"]["id"], j["ctrlCfg"]["cfg"]["rx"]["size"], 0);
+//    m_txShm = std::make_shared<EmuShm>(1337, 256, 0);
+//    m_rxShm = std::make_shared<EmuShm>(1338, 256, 0);
+    m_txRingBuffer = tx;
+    m_rxRingBuffer = rx;
 
     this->initializePixelModelsFromFile(input_model_cfg);
     run = true;
@@ -66,14 +64,15 @@ void Fei4Emu::executeLoop() {
         uint32_t value;
         uint32_t bitstream[21];
 
-        if (!m_txShm->isEmpty()) {
-            command = m_txShm->read32();
+        if (!m_txRingBuffer->isEmpty()) {
+            command = m_txRingBuffer->read32();
             type = command >> 14;
 
             switch (type)
             {
                 case 0x7400:
                     handleTrigger();
+
                     break;
                 case 0x0168:
                     name = command >> 10 & 0xF;
@@ -87,14 +86,14 @@ void Fei4Emu::executeLoop() {
                             break;
                         case 2:
     //                        printf("recieved a WrRegister command\n");
-                            value = m_txShm->read32();
+                            value = m_txRingBuffer->read32();
                             value >>= 16;
                             handleWrRegister(chipid, address, value);
                             break;
                         case 4:
     //                        printf("recieved a WrFrontEnd command\n");
                             for (int i = 0; i < 21; i++) {
-                                bitstream[i] = m_txShm->read32();
+                                bitstream[i] = m_txRingBuffer->read32();
                             }
                             handleWrFrontEnd(chipid, bitstream);
                             break;
@@ -119,7 +118,6 @@ void Fei4Emu::executeLoop() {
                     break;
             }
         }
-
     }
 }
 
@@ -345,8 +343,8 @@ void Fei4Emu::handleTrigger() {
 }
 
 void Fei4Emu::pushOutput(uint32_t value) {
-    if (m_rxShm) {
-        m_rxShm->write32(value);
+    if (m_rxRingBuffer) {
+        m_rxRingBuffer->write32(value);
     }
 }
 

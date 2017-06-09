@@ -265,13 +265,16 @@ int main(int argc, char *argv[]) {
 	      hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
         } else if (ctrlCfg["ctrlCfg"]["type"] == "emu") {
             std::cout << "-> Found Emulator config" << std::endl;
-            hwCtrl = new EmuController();
+            // nikola's hack to use RingBuffer
+            RingBuffer * rx = new RingBuffer(128);
+            RingBuffer * tx = new RingBuffer(128);
+            hwCtrl = new EmuController(rx, tx);
             hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
             //TODO make nice
             std::cout << "-> Starting Emulator" << std::endl;
             std::string emuCfgFile = ctrlCfg["ctrlCfg"]["cfg"]["feCfg"];
             std::cout << emuCfgFile << std::endl;
-            emu= new Fei4Emu(emuCfgFile, emuCfgFile, ctrlCfgPath);
+            emu= new Fei4Emu(emuCfgFile, emuCfgFile, rx, tx);
             emuThreads.push_back(std::thread(&Fei4Emu::executeLoop, emu));
         } else {
             std::cerr << "#ERROR# Unknown config type: " << ctrlCfg["ctrlCfg"]["type"] << std::endl;
