@@ -20,7 +20,7 @@
 % Digitalscan   : 3
 % Thresholdscan : 4
 
-scanMode = 1;
+scanMode = 4;
 
 % ###################################################################
 
@@ -49,7 +49,7 @@ figure('Position', [20 20 1300 740]); % 720p window
 %% ===========================================================================
 subplot(2, 2, 1) % no compression plot
 
-  % scalling for axis
+  % scaling for axis
   gziprawScale = '';
   rawMult = 1;
   if mean(gzipraw) > 1e9
@@ -146,7 +146,10 @@ subplot(2, 2, 3) % Gain
 
   % -----------------------------------
   if ((gaingzipstdsize/gaingzipmeansize) > 1e-10)
-    axis([gzipgraphspan (gaingzipmeansize-gaingzipstdsize)*(1-2*(gaingzipstdsize/gaingzipmeansize)) (gaingzipmeansize+gaingzipstdsize)*(1+(gaingzipstdsize/gaingzipmeansize))]);
+    axis([gzipgraphspan ...
+         (gaingzipmeansize-gaingzipstdsize)*(1-2*(gaingzipstdsize/gaingzipmeansize)) ...
+         (gaingzipmeansize+gaingzipstdsize)*(1+(gaingzipstdsize/gaingzipmeansize))] ...
+        );
   end
   
   grid on;
