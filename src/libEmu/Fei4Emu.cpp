@@ -10,8 +10,12 @@
 using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 using namespace Gauss;
 
-Fei4Emu::Fei4Emu(std::string output_model_cfg, std::string input_model_cfg) {
+Fei4Emu::Fei4Emu(std::string output_model_cfg, std::string input_model_cfg, std::string emu_cfg) {
     srand(time(NULL));
+
+    std::ifstream file(emu_cfg);
+    json j;
+    j << file;
 
     m_feId = 0x00;
     m_l1IdCnt = 0x00;
@@ -20,8 +24,8 @@ Fei4Emu::Fei4Emu(std::string output_model_cfg, std::string input_model_cfg) {
     m_feGeo = { 336, 80 };
 
     m_feCfg = std::make_shared<Fei4Cfg>();
-    m_txShm = std::make_shared<EmuShm>(1337, 256, 0);
-    m_rxShm = std::make_shared<EmuShm>(1338, 256, 0);
+    m_txShm = std::make_shared<EmuShm>(j["ctrlCfg"]["cfg"]["tx"]["id"], j["ctrlCfg"]["cfg"]["tx"]["size"], 0);
+    m_rxShm = std::make_shared<EmuShm>(j["ctrlCfg"]["cfg"]["rx"]["id"], j["ctrlCfg"]["cfg"]["rx"]["size"], 0);
 
     this->initializePixelModelsFromFile(input_model_cfg);
     run = true;

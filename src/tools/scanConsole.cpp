@@ -271,7 +271,7 @@ int main(int argc, char *argv[]) {
             std::cout << "-> Starting Emulator" << std::endl;
             std::string emuCfgFile = ctrlCfg["ctrlCfg"]["cfg"]["feCfg"];
             std::cout << emuCfgFile << std::endl;
-            emu= new Fei4Emu(emuCfgFile, emuCfgFile);
+            emu= new Fei4Emu(emuCfgFile, emuCfgFile, ctrlCfgPath);
             emuThreads.push_back(std::thread(&Fei4Emu::executeLoop, emu));
         } else {
             std::cerr << "#ERROR# Unknown config type: " << ctrlCfg["ctrlCfg"]["type"] << std::endl;

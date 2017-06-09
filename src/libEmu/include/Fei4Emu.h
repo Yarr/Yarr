@@ -22,7 +22,7 @@
 
 class Fei4Emu {
     public:
-        Fei4Emu(std::string output_model_cfg, std::string input_model_cfg);
+        Fei4Emu(std::string output_model_cfg, std::string input_model_cfg, std::string emu_cfg);
         ~Fei4Emu();
 
         // the main loop which recieves commands from yarr
