@@ -7,6 +7,11 @@ job_build_and_test:
       - yum -y install gnuplot
       - cd src
       - make
+      - export USER=test
+      - echo $USER
+      - /bin/pwd
+      - mkdir /tmp/test
+      - ls /tmp/
       - bin/scanConsole -r configs/emuCfg.json -c configs/test.json -s digitalscan -p
       - ls
       - ls ./data/
