@@ -33,7 +33,7 @@ class RingBuffer : public EmuCom {
 		std::atomic<std::uint32_t> write_index;
 		std::atomic<std::uint32_t> read_index;
 
-                std::mutex mtx;
+		std::mutex mtx;
 		std::condition_variable cv;
 
                 sem_t read_sem;
