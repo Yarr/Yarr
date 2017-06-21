@@ -59,6 +59,7 @@
 -- CLK_OUT2___160.000______0.000______50.0______223.480____213.982
 -- CLK_OUT3____80.000______0.000______50.0______263.295____213.982
 -- CLK_OUT4____40.000______0.000______50.0______306.416____213.982
+-- CLK_OUT5____40.000_____90.000______50.0______306.416____213.982
 --
 ------------------------------------------------------------------------------
 -- "Input Clock   Freq (MHz)    Input Jitter (UI)"
@@ -84,6 +85,7 @@ port
   CLK_160          : out    std_logic;
   CLK_80          : out    std_logic;
   CLK_40          : out    std_logic;
+  CLK_40_90          : out    std_logic;
   CLKFB_OUT         : out    std_logic;
   -- Status and control signals
   RESET             : in     std_logic;
@@ -93,7 +95,7 @@ end clk_gen;
 
 architecture xilinx of clk_gen is
   attribute CORE_GENERATION_INFO : string;
-  attribute CORE_GENERATION_INFO of xilinx : architecture is "clk_gen,clk_wiz_v3_6,{component_name=clk_gen,use_phase_alignment=true,use_min_o_jitter=false,use_max_i_jitter=false,use_dyn_phase_shift=false,use_inclk_switchover=false,use_dyn_reconfig=false,feedback_source=FDBK_ONCHIP,primtype_sel=PLL_BASE,num_out_clk=4,clkin1_period=25.000,clkin2_period=25.000,use_power_down=false,use_reset=true,use_locked=true,use_inclk_stopped=false,use_status=false,use_freeze=false,use_clk_valid=false,feedback_type=SINGLE,clock_mgr_type=AUTO,manual_override=false}";
+  attribute CORE_GENERATION_INFO of xilinx : architecture is "clk_gen,clk_wiz_v3_6,{component_name=clk_gen,use_phase_alignment=true,use_min_o_jitter=false,use_max_i_jitter=false,use_dyn_phase_shift=false,use_inclk_switchover=false,use_dyn_reconfig=false,feedback_source=FDBK_ONCHIP,primtype_sel=PLL_BASE,num_out_clk=5,clkin1_period=25.000,clkin2_period=25.000,use_power_down=false,use_reset=true,use_locked=true,use_inclk_stopped=false,use_status=false,use_freeze=false,use_clk_valid=false,feedback_type=SINGLE,clock_mgr_type=AUTO,manual_override=false}";
   -- Input clock buffering / unused connectors
   signal clkin1      : std_logic;
   -- Output clock buffering / unused connectors
@@ -102,7 +104,7 @@ architecture xilinx of clk_gen is
   signal clkout1          : std_logic;
   signal clkout2          : std_logic;
   signal clkout3          : std_logic;
-  signal clkout4_unused   : std_logic;
+  signal clkout4          : std_logic;
   signal clkout5_unused   : std_logic;
   -- Unused status signals
 
@@ -140,6 +142,9 @@ begin
     CLKOUT3_DIVIDE       => 16,
     CLKOUT3_PHASE        => 0.000,
     CLKOUT3_DUTY_CYCLE   => 0.500,
+    CLKOUT4_DIVIDE       => 16,
+    CLKOUT4_PHASE        => 90.000,
+    CLKOUT4_DUTY_CYCLE   => 0.500,
     CLKIN_PERIOD         => 25.000,
     REF_JITTER           => 0.010)
   port map
@@ -149,7 +154,7 @@ begin
     CLKOUT1             => clkout1,
     CLKOUT2             => clkout2,
     CLKOUT3             => clkout3,
-    CLKOUT4             => clkout4_unused,
+    CLKOUT4             => clkout4,
     CLKOUT5             => clkout5_unused,
     -- Status and control signals
     LOCKED              => LOCKED,
@@ -170,5 +175,7 @@ begin
   CLK_80 <= clkout2;
 
   CLK_40 <= clkout3;
+
+  CLK_40_90 <= clkout4;
 
 end xilinx;
