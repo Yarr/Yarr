@@ -27,6 +27,7 @@ class EmuTxCore : virtual public TxCore {
         EmuCom* getCom() {return m_com;}
 
         void writeFifo(uint32_t value);
+        void releaseFifo() {this->writeFifo(0x0);} // Add some padding
         
         void setCmdEnable(uint32_t value) {}
         uint32_t getCmdEnable() {return 0x0;}

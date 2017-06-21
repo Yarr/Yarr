@@ -7,37 +7,10 @@
 
 #include "Fei4Emu.h"
 
-// should use a better function than this (box muller method - stolen from the internet)
-double rand_normal(double mean, double sigma, bool can_be_negative) {
-    static double n2 = 0.0;
-    static int n2_cached = 0;
-    if (!n2_cached) {
-        double x, y, r;
-        do {
-            x = 2.0 * rand() / RAND_MAX - 1;
-            y = 2.0 * rand() / RAND_MAX - 1;
+//using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+using namespace Gauss;
 
-            r = x * x + y * y;
-        } while (r == 0.0 || r > 1.0);
-        double d = sqrt(-2.0 * log(r) / r);
-        double n1 = x * d;
-        n2 = y * d;
-        double result = n1 * sigma + mean;
-        n2_cached = 1;
-        if (!can_be_negative && result < 0) {
-            rand_normal(mean, sigma, can_be_negative);
-        }
-        return result;
-    } else {
-        n2_cached = 0;
-        if (!can_be_negative && n2 * sigma + mean < 0) {
-            rand_normal(mean, sigma, can_be_negative);
-        }
-        return n2 * sigma + mean;
-    }
-}
-
-Fei4Emu::Fei4Emu() {
+Fei4Emu::Fei4Emu(std::string output_model_cfg, std::string input_model_cfg, RingBuffer * rx, RingBuffer * tx) {
     srand(time(NULL));
 
     m_feId = 0x00;
@@ -47,119 +20,33 @@ Fei4Emu::Fei4Emu() {
     m_feGeo = { 336, 80 };
 
     m_feCfg = std::make_shared<Fei4Cfg>();
-    m_txShm = std::make_shared<EmuShm>(1337, 256, 0);
-    m_rxShm = std::make_shared<EmuShm>(1338, 256, 0);
+//    m_txShm = std::make_shared<EmuShm>(1337, 256, 0);
+//    m_rxShm = std::make_shared<EmuShm>(1338, 256, 0);
+    m_txRingBuffer = tx;
+    m_rxRingBuffer = rx;
 
-    this->initializePixelModels();
+    this->initializePixelModelsFromFile(input_model_cfg);
     run = true;
 }
 
-Fei4Emu::Fei4Emu(std::string output_model_cfg): Fei4Emu() {
-    m_output_model_cfg = output_model_cfg;
-}
-
-Fei4Emu::Fei4Emu(std::string output_model_cfg, std::string input_model_cfg): Fei4Emu() {
-    this->initializePixelModelsFromFile(input_model_cfg);
-    m_output_model_cfg = output_model_cfg;
-}
-
 Fei4Emu::~Fei4Emu() {
-}
-
-void Fei4Emu::initializePixelModels() {
-    // initialize the pixel models
     for (unsigned col = 1; col <= m_feCfg->n_Col; col++) {
         for (unsigned row = 1; row <= m_feCfg->n_Row; row++) {
-            m_pixelModels[col - 1][row - 1].Vthin_mean = 22;
-            m_pixelModels[col - 1][row - 1].Vthin_sigma = 1;
-            m_pixelModels[col - 1][row - 1].Vthin_gauss = rand_normal(m_pixelModels[col - 1][row - 1].Vthin_mean, m_pixelModels[col - 1][row - 1].Vthin_sigma, 0);
-
-            m_pixelModels[col - 1][row - 1].TDACVbp_mean = 1;
-            m_pixelModels[col - 1][row - 1].TDACVbp_sigma = 0;
-            m_pixelModels[col - 1][row - 1].TDACVbp_gauss = rand_normal(m_pixelModels[col - 1][row - 1].TDACVbp_mean, m_pixelModels[col - 1][row - 1].TDACVbp_sigma, 0);
-
-            m_pixelModels[col - 1][row - 1].noise_sigma_mean = 150;
-            m_pixelModels[col - 1][row - 1].noise_sigma_sigma = 15;
-            m_pixelModels[col - 1][row - 1].noise_sigma_gauss = rand_normal(m_pixelModels[col - 1][row - 1].noise_sigma_mean, m_pixelModels[col - 1][row - 1].noise_sigma_sigma, 0);
+            delete(m_pixelModelObjects[col - 1][row - 1]);
         }
     }
 }
 
 void Fei4Emu::initializePixelModelsFromFile(std::string json_file_path) {
     std::ifstream file(json_file_path);
-    nlohmann::json j;
+    json j;
     j << file;
 
     for (unsigned col = 1; col <= m_feCfg->n_Col; col++) {
         for (unsigned row = 1; row <= m_feCfg->n_Row; row++) {
-            m_pixelModels[col - 1][row - 1].Vthin_mean = j["Vthin_mean_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)];
-            m_pixelModels[col - 1][row - 1].Vthin_sigma = j["Vthin_sigma_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)];
-            m_pixelModels[col - 1][row - 1].Vthin_gauss = j["Vthin_gauss_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)];
-
-            m_pixelModels[col - 1][row - 1].TDACVbp_mean = j["TDACVbp_mean_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)];
-            m_pixelModels[col - 1][row - 1].TDACVbp_sigma = j["TDACVbp_sigma_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)];
-            m_pixelModels[col - 1][row - 1].TDACVbp_gauss = j["TDACVbp_gauss_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)];
-
-            m_pixelModels[col - 1][row - 1].noise_sigma_mean = j["noise_sigma_mean_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)];
-            m_pixelModels[col - 1][row - 1].noise_sigma_sigma = j["noise_sigma_sigma_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)];
-            m_pixelModels[col - 1][row - 1].noise_sigma_gauss = j["noise_sigma_gauss_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)];
+            m_pixelModelObjects[col - 1][row - 1] = new PixelModel(j["Vthin_mean_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)], j["Vthin_sigma_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)], j["Vthin_gauss_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)], j["TDACVbp_mean_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)], j["TDACVbp_sigma_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)], j["TDACVbp_gauss_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)], j["noise_sigma_mean_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)], j["noise_sigma_sigma_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)], j["noise_sigma_gauss_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)]);
         }
     }
-
-    file.close();
-}
-
-void Fei4Emu::writePixelModelsToFile() {
-    if (m_output_model_cfg.size() == 0)
-    {
-        fprintf(stderr, "ERROR - m_output_model_cfg was null, but the user requested to write out the pixel model configuration - this should not happen!\n");
-        return;
-    }
-
-        std::ofstream file(m_output_model_cfg);
-    nlohmann::json j;
-
-    std::vector<float> Vthin_mean_vector; Vthin_mean_vector.reserve(m_feCfg->n_Col * m_feCfg->n_Row);
-    std::vector<float> Vthin_sigma_vector; Vthin_sigma_vector.reserve(m_feCfg->n_Col * m_feCfg->n_Row);
-    std::vector<float> Vthin_gauss_vector; Vthin_gauss_vector.reserve(m_feCfg->n_Col * m_feCfg->n_Row);
-
-    std::vector<float> TDACVbp_mean_vector; TDACVbp_mean_vector.reserve(m_feCfg->n_Col * m_feCfg->n_Row);
-    std::vector<float> TDACVbp_sigma_vector; TDACVbp_sigma_vector.reserve(m_feCfg->n_Col * m_feCfg->n_Row);
-    std::vector<float> TDACVbp_gauss_vector; TDACVbp_gauss_vector.reserve(m_feCfg->n_Col * m_feCfg->n_Row);
-
-    std::vector<float> noise_sigma_mean_vector; noise_sigma_mean_vector.reserve(m_feCfg->n_Col * m_feCfg->n_Row);
-    std::vector<float> noise_sigma_sigma_vector; noise_sigma_sigma_vector.reserve(m_feCfg->n_Col * m_feCfg->n_Row);
-    std::vector<float> noise_sigma_gauss_vector; noise_sigma_gauss_vector.reserve(m_feCfg->n_Col * m_feCfg->n_Row);
-
-    for (unsigned col = 1; col <= m_feCfg->n_Col; col++) {
-        for (unsigned row = 1; row <= m_feCfg->n_Row; row++) {
-            Vthin_mean_vector.push_back(m_pixelModels[col - 1][row - 1].Vthin_mean);
-            Vthin_sigma_vector.push_back(m_pixelModels[col - 1][row - 1].Vthin_sigma);
-            Vthin_gauss_vector.push_back(m_pixelModels[col - 1][row - 1].Vthin_gauss);
-
-            TDACVbp_mean_vector.push_back(m_pixelModels[col - 1][row - 1].TDACVbp_mean);
-            TDACVbp_sigma_vector.push_back(m_pixelModels[col - 1][row - 1].TDACVbp_sigma);
-            TDACVbp_gauss_vector.push_back(m_pixelModels[col - 1][row - 1].TDACVbp_gauss);
-
-            noise_sigma_mean_vector.push_back(m_pixelModels[col - 1][row - 1].noise_sigma_mean);
-            noise_sigma_sigma_vector.push_back(m_pixelModels[col - 1][row - 1].noise_sigma_sigma);
-            noise_sigma_gauss_vector.push_back(m_pixelModels[col - 1][row - 1].noise_sigma_gauss);
-        }
-    }
-
-    j["Vthin_mean_vector"] = Vthin_mean_vector;
-    j["Vthin_sigma_vector"] = Vthin_sigma_vector;
-    j["Vthin_gauss_vector"] = Vthin_gauss_vector;
-
-    j["TDACVbp_mean_vector"] = TDACVbp_mean_vector;
-    j["TDACVbp_sigma_vector"] = TDACVbp_sigma_vector;
-    j["TDACVbp_gauss_vector"] = TDACVbp_gauss_vector;
-
-    j["noise_sigma_mean_vector"] = noise_sigma_mean_vector;
-    j["noise_sigma_sigma_vector"] = noise_sigma_sigma_vector;
-    j["noise_sigma_gauss_vector"] = noise_sigma_gauss_vector;
-
-    file << j;
 
     file.close();
 }
@@ -168,7 +55,7 @@ void Fei4Emu::executeLoop() {
     std::cout << "Starting emulator loop" << std::endl;
     while (run)
     {
-            uint32_t command;
+        uint32_t command;
         uint32_t type;
         uint32_t name;
         uint32_t chipid;
@@ -177,14 +64,15 @@ void Fei4Emu::executeLoop() {
         uint32_t value;
         uint32_t bitstream[21];
 
-        if (!m_txShm->isEmpty()) {
-            command = m_txShm->read32();
+        if (!m_txRingBuffer->isEmpty()) {
+            command = m_txRingBuffer->read32();
             type = command >> 14;
 
             switch (type)
             {
                 case 0x7400:
                     handleTrigger();
+
                     break;
                 case 0x0168:
                     name = command >> 10 & 0xF;
@@ -198,14 +86,14 @@ void Fei4Emu::executeLoop() {
                             break;
                         case 2:
     //                        printf("recieved a WrRegister command\n");
-                            value = m_txShm->read32();
+                            value = m_txRingBuffer->read32();
                             value >>= 16;
                             handleWrRegister(chipid, address, value);
                             break;
                         case 4:
     //                        printf("recieved a WrFrontEnd command\n");
                             for (int i = 0; i < 21; i++) {
-                                bitstream[i] = m_txShm->read32();
+                                bitstream[i] = m_txRingBuffer->read32();
                             }
                             handleWrFrontEnd(chipid, bitstream);
                             break;
@@ -230,7 +118,6 @@ void Fei4Emu::executeLoop() {
                     break;
             }
         }
-
     }
 }
 
@@ -422,18 +309,21 @@ void Fei4Emu::handleTrigger() {
         for (unsigned row = 1; row <= m_feCfg->n_Row; row++) {
             for (int c = 0; c <= 1; c++) {
                 if (m_feCfg->getEn(dc * 2 + 1 + c, row)) {
-                    float injection_charge = m_feCfg->toCharge(m_feCfg->getValue(&Fei4Cfg::PlsrDAC), m_feCfg->getSCap(dc * 2 + 1 + c, row), m_feCfg->getLCap(dc * 2 + 1 + c, row));    // the injection charge is well defined
-                    float threshold_charge = calculateThreshold(dc * 2 + 1 + c, row);                                            // the threshold charge requires quite some modeling
-                    float noise_charge = rand_normal(0, m_pixelModels[dc * 2 + 1 + c - 1][row - 1].noise_sigma_gauss, 1);                            // the noise charge requires simple modeling
+                    // the injection charge is well defined
+                    float injection_charge = m_feCfg->toCharge(m_feCfg->getValue(&Fei4Cfg::PlsrDAC), m_feCfg->getSCap(dc * 2 + 1 + c, row), m_feCfg->getLCap(dc * 2 + 1 + c, row));
+                    // the threshold charge requires quite some modeling
+                    float threshold_charge = m_pixelModelObjects[dc * 2 + 1 + c - 1][row - 1]->calculateThreshold(m_feCfg->getValue(&Fei4Cfg::Vthin_Fine), m_feCfg->getValue(&Fei4Cfg::Vthin_Coarse), m_feCfg->getTDAC(dc * 2 + 1 + c, row));
+                    // the noise charge requires simple modeling
+                    float noise_charge = m_pixelModelObjects[dc * 2 + 1 + c - 1][row - 1]->calculateNoise();
 
                     uint32_t digital_tot = 0;
                     uint32_t analog_tot = 0;
 
-                    if (m_feCfg->getValue(&Fei4Cfg::DigHitIn_Sel)) {               // check if we are doing a digital hit 
+                    if (m_feCfg->getValue(&Fei4Cfg::DigHitIn_Sel)) {               // check if we are doing a digital hit
                         digital_tot = 10;
                     }
-                    else if (injection_charge + noise_charge > threshold_charge) {       // check if we are doing an analog hit 
-                        analog_tot = this->calculateToT(injection_charge + noise_charge - threshold_charge);
+                    else if (injection_charge + noise_charge > threshold_charge) {       // check if we are doing an analog hit
+                        analog_tot = m_pixelModelObjects[dc * 2 + 1 + c - 1][row - 1]->calculateToT(injection_charge + noise_charge - threshold_charge);
                     }
 
                     if (digital_tot && analog_tot) {
@@ -453,26 +343,9 @@ void Fei4Emu::handleTrigger() {
 }
 
 void Fei4Emu::pushOutput(uint32_t value) {
-    if (m_rxShm) {
-        m_rxShm->write32(value);
+    if (m_rxRingBuffer) {
+        m_rxRingBuffer->write32(value);
     }
-}
-
-// functions for modeling pixel responses
-float Fei4Emu::calculateThreshold(int col, int row) {
-    float modelVthin = m_pixelModels[col - 1][row - 1].Vthin_gauss * m_feCfg->getValue(&Fei4Cfg::Vthin_Fine) + m_pixelModels[col-1][row - 1].Vthin_gauss * m_feCfg->getValue(&Fei4Cfg::Vthin_Coarse) * 128;
-    float modelTDAC = 30.0 * m_feCfg->getTDAC(col, row);
-    float threshold = modelVthin - modelTDAC;
-
-    if (threshold < 0) {
-        threshold = 0;
-    }
-
-    return threshold;
-}
-
-uint32_t Fei4Emu::calculateToT(float charge) {
-    return (uint32_t) (charge * 9.0 / 16000.0) + 1;
 }
 
 // Assuming that first command byte is 0x01 (e.g. triger command is 0x1d0)
