@@ -22,7 +22,10 @@
 
 #include "HwController.h"
 #include "SpecController.h"
+#include "BocController.h"
+#include "KU040Controller.h"
 #include "EmuController.h"
+#include "RceController.h"
 #include "Bookkeeper.h"
 #include "Fei4.h"
 #include "ScanBase.h"
@@ -40,6 +43,8 @@
 #include <cstdlib> //I am not proud of this ):
 
 #endif
+
+using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 
 std::string toString(int value,int digitsCount)
 {
@@ -94,7 +99,7 @@ int main(int argc, char *argv[]) {
     // Init parameters
     unsigned specNum = 0;
     std::string scanType = "";
-    std::vector<std::string> cConfigPath;
+    std::vector<std::string> cConfigPaths;
     std::string outputDir = "./data/";
     std::string ctrlCfgPath = "";
     bool doPlots = false;
@@ -143,7 +148,7 @@ int main(int argc, char *argv[]) {
                 optind -= 1; //this is a bit hacky, but getopt doesn't support multiple
                              //values for one option, so it can't be helped
                 for(; optind < argc && *argv[optind] != '-'; optind += 1){
-                    cConfigPath.push_back(std::string(argv[optind]));
+                    cConfigPaths.push_back(std::string(argv[optind]));
                 }
                 break;
             case 'r':
@@ -198,7 +203,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (cConfigPath.size() == 0) {
+    if (cConfigPaths.size() == 0) {
         std::cerr << "Error: no config files given, please specify config file name under -c option, even if file does not exist!" << std::endl;
         return -1;
     }
@@ -209,7 +214,7 @@ int main(int argc, char *argv[]) {
     std::cout << " Scan Type: " << scanType << std::endl;
     
     std::cout << " Chips: " << std::endl;
-    for(std::string const& sTmp : cConfigPath){
+    for(std::string const& sTmp : cConfigPaths){
         std::cout << "    " << sTmp << std::endl;
     }
     std::cout << " Target Threshold: " << target_threshold << std::endl;
@@ -249,8 +254,8 @@ int main(int argc, char *argv[]) {
     std::cout << "# Init Hardware #" << std::endl;
     std::cout << "#################" << std::endl;
 
-    HwController *hwCtrl;
-    Fei4Emu *emu;
+    HwController *hwCtrl = NULL;
+    Fei4Emu *emu = NULL;
     std::vector<std::thread> emuThreads;
     if (ctrlCfgPath == "") {
         std::cout << "-> No controller config given, using default." << std::endl;
@@ -270,6 +275,18 @@ int main(int argc, char *argv[]) {
             std::cout << "-> Found Spec config" << std::endl;
             hwCtrl = new SpecController(); 
             hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
+        } else if ( (ctrlCfg["ctrlCfg"]["type"]=="boc") ) {
+            std::cout << "-> Found Boc config" << std::endl;
+            hwCtrl = new BocController();
+            hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
+		} else if ( (ctrlCfg["ctrlCfg"]["type"]=="ku040") ) {
+            std::cout << "-> Found KU040 config" << std::endl;
+            hwCtrl = new KU040Controller();
+            hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
+	} else if ( (ctrlCfg["ctrlCfg"]["type"]=="rce") ) {
+	    std::cout << "-> Found RCE config" << std::endl;
+	      hwCtrl = new RceController();
+	      hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
         } else if (ctrlCfg["ctrlCfg"]["type"] == "emu") {
             std::cout << "-> Found Emulator config" << std::endl;
             // nikola's hack to use RingBuffer
@@ -301,9 +318,9 @@ int main(int argc, char *argv[]) {
               << "##  Loading Configs  ##" << std::endl
               << "#######################" << std::endl;
     
-    for(std::string const& sTmp : cConfigPath){
+    for(std::string const& sTmp : cConfigPaths){
         std::string discardMe; //Error handling, wait for user
-        nlohmann::json jTmp;
+        json jTmp;
         std::ifstream iFTmp(sTmp);
 
         if (!iFTmp) {
@@ -320,10 +337,10 @@ int main(int argc, char *argv[]) {
             jTmp << iFTmp;
             if(!jTmp["FE-I4B"].is_null()){
                 std::cout << "Found FE-I4B: " << jTmp["FE-I4B"]["name"] << std::endl;
-                bookie.addFe(dynamic_cast<FrontEnd*>(new Fei4(hwCtrl)), jTmp["FE-I4B"]["txChannel"], jTmp["FE-I4B"]["txChannel"]);        
+                bookie.addFe(dynamic_cast<FrontEnd*>(new Fei4(hwCtrl)), jTmp["FE-I4B"]["txChannel"], jTmp["FE-I4B"]["rxChannel"]);        
             } else if(!jTmp["FE65-P2"].is_null()){
                 std::cout << "Found FE65-P2: " << jTmp["FE-I4B"]["name"] << std::endl;
-                bookie.addFe(dynamic_cast<FrontEnd*>(new Fe65p2(hwCtrl)), jTmp["FE65-P2"]["txChannel"], jTmp["FE-I4B"]["txChannel"]);        
+                bookie.addFe(dynamic_cast<FrontEnd*>(new Fe65p2(hwCtrl)), jTmp["FE65-P2"]["txChannel"], jTmp["FE-I4B"]["rxChannel"]);        
             } else{
                 std::cerr << "Unknown chip type or malformed config in " << sTmp << std::endl;
                 continue;
@@ -336,7 +353,7 @@ int main(int argc, char *argv[]) {
         
         // Create backup of current config
         std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getName() + ".json.after");
-        nlohmann::json backupCfg;
+        json backupCfg;
         dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
         backupCfgFile << std::setw(4) << backupCfg;
         backupCfgFile.close();
@@ -565,7 +582,7 @@ int main(int argc, char *argv[]) {
             
             // Save config
             std::cout << "-> Saving config of FE " << dynamic_cast<FrontEndCfg*>(fe)->getName() << " to " << feCfgMap.at(fe) << std::endl;
-            nlohmann::json jTmp;
+            json jTmp;
             dynamic_cast<FrontEndCfg*>(fe)->toFileJson(jTmp);
             std::ofstream oFTmp(feCfgMap.at(fe));
             oFTmp << std::setw(4) << jTmp;
@@ -573,7 +590,7 @@ int main(int argc, char *argv[]) {
 
             // Save extra config in data folder
             std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getName() + ".json.after");
-            nlohmann::json backupCfg;
+            json backupCfg;
             dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
             backupCfgFile << std::setw(4) << backupCfg;
             backupCfgFile.close(); 

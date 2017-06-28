@@ -13,9 +13,11 @@
 #include "RxCore.h"
 #include "json.hpp"
 
+using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, int32_t, uint32_t, float>;
+
 class HwController : virtual public TxCore, virtual public RxCore {
     public:
-        virtual void loadConfig(nlohmann::json &j) = 0 ;
+        virtual void loadConfig(json &j) = 0 ;
 };
 
 #endif
