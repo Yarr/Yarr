@@ -337,10 +337,10 @@ int main(int argc, char *argv[]) {
             jTmp << iFTmp;
             if(!jTmp["FE-I4B"].is_null()){
                 std::cout << "Found FE-I4B: " << jTmp["FE-I4B"]["name"] << std::endl;
-                bookie.addFe(dynamic_cast<FrontEnd*>(new Fei4(hwCtrl)), jTmp["FE-I4B"]["txChannel"], jTmp["FE-I4B"]["rxChannel"]);        
+                bookie.addFe(dynamic_cast<FrontEnd*>(new Fei4(hwCtrl)), jTmp["FE-I4B"]["rxChannel"], jTmp["FE-I4B"]["txChannel"]);        
             } else if(!jTmp["FE65-P2"].is_null()){
                 std::cout << "Found FE65-P2: " << jTmp["FE-I4B"]["name"] << std::endl;
-                bookie.addFe(dynamic_cast<FrontEnd*>(new Fe65p2(hwCtrl)), jTmp["FE65-P2"]["txChannel"], jTmp["FE-I4B"]["rxChannel"]);        
+                bookie.addFe(dynamic_cast<FrontEnd*>(new Fe65p2(hwCtrl)), jTmp["FE65-P2"]["rxChannel"], jTmp["FE-I4B"]["txChannel"]);        
             } else{
                 std::cerr << "Unknown chip type or malformed config in " << sTmp << std::endl;
                 continue;
