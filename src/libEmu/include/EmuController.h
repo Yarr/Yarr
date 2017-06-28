@@ -18,12 +18,12 @@
 
 #include "RingBuffer.h"
 
-//using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 
 class EmuController : public HwController, public EmuTxCore, public EmuRxCore {
     public:
         EmuController(RingBuffer * rx, RingBuffer * tx);
-        void loadConfig(nlohmann::json &j);
+        void loadConfig(json &j);
 };
 
 #endif

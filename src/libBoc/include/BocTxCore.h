@@ -54,7 +54,7 @@ class BocTxCore : virtual public TxCore {
 
     private:
     	// trigger configuration
-    	uint32_t m_trigWord[4];
+    	//uint32_t m_trigWord[4];
     	uint32_t m_trigCount;
     	double m_trigTime;
     	double m_trigFreq;
