@@ -13,12 +13,12 @@
 # -----------------
 # variable for path
 # -----------------
-YARRSRC="$HOME/GIT/Bachelor_Project/Yarr/src" # path to the Yarr source
+YARRSRC="$HOME/git/Bachelor/Yarr/src" # path to the Yarr source
 YARRRAWDATA="${YARRSRC}/data/rawData" # path to the Yarr raw data folder
 
 
 # Data files paths
-DATAFOLDER="$HOME/GIT/Bachelor_Project/Yarr/compress/data/"
+DATAFOLDER="$HOME/git/Bachelor/Yarr/compress/data/"
 UNCOMSIZECSV="${DATAFOLDER}uncompSize.csv" # path to the raw size data file
 LZ4CSV="${DATAFOLDER}lz4.csv" # path to the standard LZ4 data file
 LZ49CSV="${DATAFOLDER}lz49.csv" # path to the strong LZ4 data file
@@ -26,7 +26,7 @@ GZIPCSV="${DATAFOLDER}gzip.csv" # path to the standard GZIP data file
 
 
 # Algorithms paths
-ALGOFOLDER="$HOME/GIT/Bachelor_Project/Yarr/compress/algorithms/"
+ALGOFOLDER="$HOME/git/Bachelor/Yarr/compress/algorithms/"
 LZ4="${ALGOFOLDER}lz4/lz4" # base
 LZ4d=" -d" # decompression
 LZ49=" -9" # strong and slow compression
@@ -51,7 +51,7 @@ function compression (){
     for((i=1;i<=$2;i++));do # loop with the past argument
 	
 	# generate one raw data file
-	cd ~/GIT/Bachelor_Project/Yarr/src
+	cd ~/git/Bachelor/Yarr/src
 	bash $SCAN
 
 	cd $YARRRAWDATA # go to the raw data folder
