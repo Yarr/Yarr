@@ -6,7 +6,7 @@
 #include "Histo2d.h"
 #include "json.hpp"
 
-using json = nlohmann::json;
+using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {

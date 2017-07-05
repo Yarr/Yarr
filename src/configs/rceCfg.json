@@ -1,0 +1,17 @@
+{
+    "ctrlCfg" : {
+        "type": "rce",
+        "cfg" : {
+            "type" : "fei4b",
+            "tx" : {
+                "id" : 1337,
+                "size" : 256
+            },
+            "rx" : {
+                "id" : 1338,
+                "size" : 256
+            },
+            "feCfg" : "configs/emu_fe0.json"
+        }
+    }
+}

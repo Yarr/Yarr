@@ -27,6 +27,7 @@ class TxCore {
     public:
         // Write to FE interface
         virtual void writeFifo(uint32_t) = 0;
+        virtual void releaseFifo() = 0;
         virtual void setCmdEnable(uint32_t) = 0;
         virtual uint32_t getCmdEnable() = 0;
         virtual bool isCmdEmpty() = 0;
