@@ -660,6 +660,7 @@ architecture rtl of yarr is
             CLK_160          : out    std_logic;
             CLK_80           : out    std_logic;
             CLK_40           : out    std_logic;
+            CLK_40_90         : out std_logic;
             CLKFB_OUT         : out    std_logic;
       -- Status and control signals
             RESET             : in     std_logic;
@@ -706,6 +707,7 @@ architecture rtl of yarr is
     signal CLK_160 : std_logic;
     signal CLK_640 : std_logic;
     signal CLK_40_buf : std_logic;
+    signal CLK_40_90_buf : std_logic;
     signal CLK_80_buf : std_logic;
     signal CLK_160_buf : std_logic;
     signal CLK_640_buf : std_logic;
@@ -1352,6 +1354,7 @@ begin
                  CLK_160 => CLK_160_buf,
                  CLK_80 => CLK_80_buf,
                  CLK_40 => CLK_40_buf,
+                 CLK_40_90 => CLK_40_90_buf,
                  CLKFB_OUT => ioclk_fb,
         -- Status and control signals
                  RESET  => not L_RST_N,

@@ -16,8 +16,8 @@ use UNISIM.vcomponents.all;
 
 entity yarr is
   generic (
-	  g_TX_CHANNELS : integer := 4;
-	  g_RX_CHANNELS : integer := 16
+	  g_TX_CHANNELS : integer := 8;
+	  g_RX_CHANNELS : integer := 8
 	  );
   port
     (
@@ -285,7 +285,10 @@ architecture rtl of yarr is
 		-- TX
 		tx_clk_i	: in  std_logic;
 		tx_data_o	: out std_logic_vector(g_NUM_TX-1 downto 0);
-		trig_pulse_o : out std_logic
+		trig_pulse_o : out std_logic;
+
+        -- TRIGGER
+        ext_trig_i : in std_logic
 	);
 	end component;
 	
@@ -309,7 +312,8 @@ architecture rtl of yarr is
 			-- RX IN
 			rx_clk_i	: in  std_logic;
 			rx_serdes_clk_i : in std_logic;
-			rx_data_i	: in std_logic_vector(g_NUM_RX-1 downto 0);	
+			rx_data_i	: in std_logic_vector(g_NUM_RX-1 downto 0);
+            trig_tag_i : in std_logic_vector(31 downto 0);
 			-- RX OUT (sync to sys_clk)
 			rx_valid_o : out std_logic;
 			rx_data_o : out std_logic_vector(31 downto 0);
@@ -370,6 +374,42 @@ architecture rtl of yarr is
 			  sda      : inout std_logic
 			  );
 	end component;
+    
+    component wb_trigger_logic
+        port (
+            -- Sys connect
+            wb_clk_i	: in  std_logic;
+            rst_n_i		: in  std_logic;
+            
+            -- Wishbone slave interface
+            wb_adr_i	: in  std_logic_vector(31 downto 0);
+            wb_dat_i	: in  std_logic_vector(31 downto 0);
+            wb_dat_o	: out std_logic_vector(31 downto 0);
+            wb_cyc_i	: in  std_logic;
+            wb_stb_i	: in  std_logic;
+            wb_we_i		: in  std_logic;
+            wb_ack_o	: out std_logic;
+            
+            -- To/From outside world
+            ext_trig_i : in std_logic_vector(3 downto 0);
+            ext_trig_o : out std_logic;
+            ext_busy_i : in std_logic;
+            ext_busy_o : out std_logic;
+
+            -- Eudet TLU
+            eudet_clk_o : out std_logic;
+            eudet_busy_o : out std_logic;
+            eudet_trig_i : in std_logic;
+            eudet_rst_i : in std_logic;
+
+            -- To/From inside world
+            clk_i : in std_logic;
+            int_trig_i : in std_logic_vector(3 downto 0);
+            int_trig_o : out std_logic;
+            int_busy_i : in std_logic;
+            trig_tag : out std_logic_vector(31 downto 0)
+        );
+    end component;
 	
 	component ddr3_ctrl
 	  generic(
@@ -571,6 +611,7 @@ architecture rtl of yarr is
 	  CLK_160          : out    std_logic;
 	  CLK_80           : out    std_logic;
 	  CLK_40           : out    std_logic;
+      CLK_40_90         : out std_logic;
 	  CLKFB_OUT         : out    std_logic;
 	  -- Status and control signals
 	  RESET             : in     std_logic;
@@ -612,11 +653,13 @@ architecture rtl of yarr is
   
   -- IO clocks
   signal CLK_40 : std_logic;
+  signal CLK_40_90 : std_logic;
   signal CLK_80 : std_logic;
   signal CLK_125 : std_logic;
   signal CLK_160 : std_logic;
   signal CLK_640 : std_logic;
   signal CLK_40_buf : std_logic;
+  signal CLK_40_90_buf : std_logic;
   signal CLK_80_buf : std_logic;
   signal CLK_160_buf : std_logic;
   signal CLK_640_buf : std_logic;
@@ -736,8 +779,12 @@ architecture rtl of yarr is
   
   signal tx_data_o : std_logic_vector(0 downto 0);
   signal trig_pulse : std_logic;
-  	
+  signal int_trig_t : std_logic;
+  signal trig_tag_t : std_logic_vector(31 downto 0);
+
 	signal fe_cmd_o : std_logic_vector(c_TX_CHANNELS-1 downto 0);
+	signal fe_cmd_enc : std_logic_vector(c_TX_CHANNELS-1 downto 0);
+	signal fe_cmd_del : std_logic_vector(c_TX_CHANNELS-1 downto 0);
 	signal fe_clk_o : std_logic_vector(c_TX_CHANNELS-1 downto 0);
 	signal fe_data_i : std_logic_vector(c_RX_CHANNELS-1 downto 0);
 	
@@ -758,7 +805,22 @@ begin
 		port map (
 			O => fe_cmd_p(I),     -- Diff_p output (connect directly to top-level port)
 			OB => fe_cmd_n(I),   -- Diff_n output (connect directly to top-level port)
-			I => fe_cmd_o(I)      -- Buffer input 
+			I => fe_cmd_enc(I)      -- Buffer input 
+		);
+		ODDR2_manchester : ODDR2
+		generic map(
+			DDR_ALIGNMENT => "NONE", -- Sets output alignment to "NONE", "C0", "C1" 
+			INIT => '0', -- Sets initial state of the Q output to '0' or '1'
+			SRTYPE => "SYNC") -- Specifies "SYNC" or "ASYNC" set/reset
+		port map (
+			Q => fe_cmd_enc(I), -- 1-bit output data
+			C0 => clk_40, -- 1-bit clock input
+			C1 => not clk_40, -- 1-bit clock input
+			CE => '1',  -- 1-bit clock enable input
+			D0 => fe_cmd_o(I),   -- 1-bit data input (associated with C0)
+			D1 => not fe_cmd_o(I),   -- 1-bit data input (associated with C1)
+			R => not rst_n,    -- 1-bit reset input
+			S => '0'     -- 1-bit set input
 		);
 		clk_buf : OBUFDS
 		generic map (
@@ -775,11 +837,11 @@ begin
 			SRTYPE => "SYNC") -- Specifies "SYNC" or "ASYNC" set/reset
 		port map (
 			Q => fe_clk_o(I), -- 1-bit output data
-			C0 => clk_40, -- 1-bit clock input
-			C1 => not clk_40, -- 1-bit clock input
+			C0 => clk_40_90, -- 1-bit clock input
+			C1 => not clk_40_90, -- 1-bit clock input
 			CE => '1',  -- 1-bit clock enable input
-			D0 => '0',   -- 1-bit data input (associated with C0)
-			D1 => '1',   -- 1-bit data input (associated with C1)
+			D0 => '1',   -- 1-bit data input (associated with C0)
+			D1 => '0',   -- 1-bit data input (associated with C1)
 			R => not rst_n,    -- 1-bit reset input
 			S => '0'     -- 1-bit set input
 		);
@@ -890,7 +952,7 @@ begin
       dma_reg_ack_o   => wb_ack(0),
       dma_reg_stall_o => wb_stall(0),
 
-      ---------------------------------------------------------
+    ---------------------------------------------------------
       -- CSR wishbone interface (master pipelined)
       csr_clk_i   => sys_clk,
       csr_adr_o   => wbm_adr,
@@ -1011,7 +1073,9 @@ begin
 		-- TX
 		tx_clk_i => CLK_40,
 		tx_data_o => fe_cmd_o,
-		trig_pulse_o => trig_pulse
+		trig_pulse_o => trig_pulse,
+        -- Trig
+        ext_trig_i => int_trig_t
 	);
 	
 	cmp_wb_rx_core: wb_rx_core PORT MAP(
@@ -1025,11 +1089,12 @@ begin
 		wb_we_i => wb_we,
 		wb_ack_o => wb_ack(2),
 		wb_stall_o => wb_stall(2),
-		rx_clk_i => CLK_40,
-		rx_serdes_clk_i => CLK_160,
+		rx_clk_i => CLK_160,
+		rx_serdes_clk_i => CLK_640,
 		rx_data_i => fe_data_i,
 		rx_valid_o => rx_valid,
 		rx_data_o => rx_data,
+        trig_tag_i => trig_tag_T,
 		busy_o => open,
 		debug_o => debug
 	);
@@ -1086,6 +1151,30 @@ begin
 		sda => sda
 	);
 	
+	cmp_wb_trigger_logic: wb_trigger_logic PORT MAP(
+		wb_clk_i => sys_clk,
+		rst_n_i => rst_n,
+		wb_adr_i => wb_adr(31 downto 0),
+		wb_dat_i => wb_dat_o(31 downto 0),
+		wb_dat_o => wb_dat_i(191 downto 160),
+		wb_cyc_i => wb_cyc(5),
+		wb_stb_i => wb_stb,
+		wb_we_i => wb_we,
+		wb_ack_o => wb_ack(5),
+		ext_trig_i => "0000",
+		ext_trig_o => open,
+		ext_busy_i => '0',
+		ext_busy_o => open,
+		eudet_clk_o => open,
+		eudet_busy_o => open,
+		eudet_trig_i => '0',
+		eudet_rst_i => '0',
+		clk_i => CLK_40,
+		int_trig_i => "000" & trig_pulse,
+		int_trig_o => int_trig_t,
+		int_busy_i => '0',
+		trig_tag => trig_tag_t
+	);
 
   --wb_stall(1) <= '0' when wb_cyc(1) = '0' else not(wb_ack(1));
 --  wb_stall(2) <= '0' when wb_cyc(2) = '0' else not(wb_ack(2));
@@ -1211,6 +1300,7 @@ begin
 		CLK_160 => CLK_160_buf,
 		CLK_80 => CLK_80_buf,
 		CLK_40 => CLK_40_buf,
+        CLK_40_90 => CLK_40_90_buf,
 		CLKFB_OUT => ioclk_fb,
 		-- Status and control signals
 		RESET  => not L_RST_N,
@@ -1243,6 +1333,10 @@ begin
 	port map (
 		O => CLK_40,
 		I => CLK_40_buf);		
+	cmp_ioclk_40_90_buf : BUFG
+	port map (
+		O => CLK_40_90,
+		I => CLK_40_90_buf);		
 	------------------------------------------------------------------------------
 	-- Clocks distribution from 20MHz TCXO
 	--  40.000 MHz IO driver clock
