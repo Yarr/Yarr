@@ -10,7 +10,7 @@ syn_top = "yarr"
 syn_tool = "ise"
 syn_project = "yarr_spec.xise"
 
-files = ["../yarr_fe65p2_revC.ucf",
-         "../top_yarr_spec_fe65p2.vhd"]
+files = ["../yarr_spec_quad_fei4_revB.ucf",
+         "../top_yarr_spec.vhd"]
 
 fetchto = "../ip_cores"
