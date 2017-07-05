@@ -1,0 +1,19 @@
+*** /dev/null
+--- /dev/null
+***************
+*** 81
+-   signal s_input_sync   : std_logic_vector(6 downto 0);
+--- 81 -----
++   signal s_input_sync   : std_logic_vector(2 downto 0);
+***************
+*** 116,119
+-      s_input_sync(3) <= s_input_sync(2);
+-      s_input_sync(4) <= s_input_sync(3);
+-      s_input_sync(5) <= s_input_sync(4);
+-      s_input_sync(6) <= s_input_sync(5);
+--- 0 -----
+***************
+*** 124
+- s_output_pulse <= s_input_sync(1) xor s_input_sync(6);
+--- 120 -----
++ s_output_pulse <= s_input_sync(1) xor s_input_sync(2);
