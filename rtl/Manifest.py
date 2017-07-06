@@ -3,8 +3,6 @@
 
 files = [
     #TOP
-    "app_package.vhd",
-    "app.vhd",
     "fe65p2_addon.vhd",
 ]
 
