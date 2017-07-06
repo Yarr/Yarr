@@ -1,5 +1,6 @@
+*.*
+!.gitignore
 !*.ucf
 !Manifest.py
 !*.bit
 !Makefile
-*.*
