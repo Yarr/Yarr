@@ -15,6 +15,7 @@ files = [
 "wshexp_core_pkg.vhd",
 "k_bram.vhd",
 "simple_counter.vhd",
+"m_clk_sync.vhd",
 ]
 
 library = "work"

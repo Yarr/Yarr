@@ -22,6 +22,7 @@ files = [
 "mig_7series_0/mig_a.prj",
 "mig_7series_0/mig_b.prj",
 "pcie_7x_0/pcie_7x_0.xci",
+"cross_clock_fifo/cross_clock_fifo.xci",
 ]
 
 

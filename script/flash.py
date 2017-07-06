@@ -69,7 +69,7 @@ for root, dirs, files in os.walk(project_path):
 		if file.endswith(".bit"):
 			bit_file =  os.path.join(root, file)
 			bit_files.append(bit_file)
-			print "Bitfile found : " + bit_file
+			##print "Bitfile found : " + bit_file
 
 
 if len(bit_files) == 0 :

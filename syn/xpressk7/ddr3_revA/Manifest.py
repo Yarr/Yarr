@@ -1,9 +1,8 @@
 # To list file
 # ls -1 | xargs -I % echo \"%\",
 
-#modules = {"local" : ["../../../rtl/"],}
 modules = {
-"local" : ["../../../rtl","../../../ip-cores/kintex7"],
+"local" : ["../../../rtl/common","../../../rtl/kintex7","../../../rtl/i2c-master","../../../rtl/tx-core","../../../rtl/rx-core","../../../rtl/trigger-logic","../../../ip-cores/kintex7"],
 }
 
 files = [

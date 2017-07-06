@@ -1,6 +1,4 @@
 #ls -d */ | xargs -I % cp .gitignore %.
 *
 !*.xci
-!mig_a.prj
-!mig_b.prj
 !.gitignore

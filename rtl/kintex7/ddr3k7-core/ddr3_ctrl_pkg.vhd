@@ -90,6 +90,7 @@ package ddr3_ctrl_pkg is
         rd_en : IN STD_LOGIC;
         dout : OUT STD_LOGIC_VECTOR(29-1 DOWNTO 0);
         full : OUT STD_LOGIC;
+        almost_full : OUT STD_LOGIC;
         empty : OUT STD_LOGIC
       );
     END COMPONENT;
@@ -99,13 +100,14 @@ package ddr3_ctrl_pkg is
         rst : IN STD_LOGIC;
         wr_clk : IN STD_LOGIC;
         rd_clk : IN STD_LOGIC;
-        din : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+        din : IN STD_LOGIC_VECTOR(37-1 DOWNTO 0);
         wr_en : IN STD_LOGIC;
         rd_en : IN STD_LOGIC;
-        dout : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+        dout : OUT STD_LOGIC_VECTOR(37-1 DOWNTO 0);
         full : OUT STD_LOGIC;
+        almost_full : OUT STD_LOGIC;
         empty : OUT STD_LOGIC;
-        rd_data_count : OUT STD_LOGIC_VECTOR(3 DOWNTO 0)
+        rd_data_count : OUT STD_LOGIC_VECTOR(4 DOWNTO 0)
       );
     END COMPONENT;
     
@@ -119,8 +121,9 @@ package ddr3_ctrl_pkg is
         rd_en : IN STD_LOGIC;
         dout : OUT STD_LOGIC_VECTOR(511 DOWNTO 0);
         full : OUT STD_LOGIC;
+        almost_full : OUT STD_LOGIC;
         empty : OUT STD_LOGIC;
-        rd_data_count : OUT STD_LOGIC_VECTOR(3 DOWNTO 0)
+        rd_data_count : OUT STD_LOGIC_VECTOR(4 DOWNTO 0)
       );
     END COMPONENT;
     

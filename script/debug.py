@@ -29,10 +29,44 @@ cmds_debug=(
 "refresh_hw_device -update_hw_probes false [lindex [get_hw_devices] 1]\n" +
 "set_property PROBES.FILE {}{}{} [lindex [get_hw_devices] 1]\n" +
 "refresh_hw_device [lindex [get_hw_devices] 1]\n" +
-"display_hw_ila_data [ get_hw_ila_data *]\n"
+"display_hw_ila_data [ get_hw_ila_data *]\n" +
+"\n"
 )
 
+cmds_post_gui=(
+"set_property TRIGGER_COMPARE_VALUE eq1'b1 [get_hw_probes app_0/dma_ctrl_start_l2p_s_1 -of_objects [get_hw_ilas -of_objects [get_hw_devices xc7k160t_1] -filter {CELL_NAME=~\"app_0/dbg_0.axis_debug\"}]]\n" + 
+"set_property TRIGGER_COMPARE_VALUE eq1'b1 [get_hw_probes app_0/dma_ctrl_start_p2l_s_1 -of_objects [get_hw_ilas -of_objects [get_hw_devices xc7k160t_1] -filter {CELL_NAME=~\"app_0/dbg_0.axis_debug\"}]]\n" +
+"set_property CONTROL.TRIGGER_CONDITION OR [get_hw_ilas -of_objects [get_hw_devices xc7k160t_1] -filter {CELL_NAME=~\"app_0/dbg_0.axis_debug\"}]\n" +
+"set_property TRIGGER_COMPARE_VALUE eq1'b1 [get_hw_probes app_0/dma_ctrl_start_l2p_s -of_objects [get_hw_ilas -of_objects [get_hw_devices xc7k160t_1] -filter {CELL_NAME=~\"app_0/dbg_2.pipelined_wishbone_debug\"}]]\n" +
+"set_property TRIGGER_COMPARE_VALUE eq1'b1 [get_hw_probes app_0/dma_ctrl_start_p2l_s -of_objects [get_hw_ilas -of_objects [get_hw_devices xc7k160t_1] -filter {CELL_NAME=~\"app_0/dbg_2.pipelined_wishbone_debug\"}]]\n" +
+"set_property CONTROL.TRIGGER_CONDITION OR [get_hw_ilas -of_objects [get_hw_devices xc7k160t_1] -filter {CELL_NAME=~\"app_0/dbg_2.pipelined_wishbone_debug\"}]\n" +
+"set_property TRIGGER_COMPARE_VALUE eq1'b1 [get_hw_probes app_0/ddr_app_cmd_en_s -of_objects [get_hw_ilas -of_objects [get_hw_devices xc7k160t_1] -filter {CELL_NAME=~\"app_0/dbg_5.ddr_debug\"}]]\n" +
+"#set_property TRIGGER_COMPARE_VALUE eq1'b1 [get_hw_probes app_0/dma_ctrl_start_l2p_s -of_objects [get_hw_ilas -of_objects [get_hw_devices xc7k160t_1] -filter {CELL_NAME=~\"app_0/dbg_4.l2p_debug\"}]]\n"+
+#"set_property TRIGGER_COMPARE_VALUE eq3'h1 [get_hw_probes app_0/ddr_app_cmd_s -of_objects [get_hw_ilas -of_objects [get_hw_devices xc7k160t_1] -filter {CELL_NAME=~\"app_0/dbg_5.ddr_debug\"}]]\n"+
+#"set_property TRIGGER_COMPARE_VALUE eq29'h0000_2001 [get_hw_probes app_0/count_s -of_objects [get_hw_ilas -of_objects [get_hw_devices xc7k160t_1] -filter {CELL_NAME=~\"app_0/dbg_0.axis_debug\"}]]\n"+
+#"set_property TRIGGER_COMPARE_VALUE eq29'h0000_2001 [get_hw_probes app_0/gray_count_s -of_objects [get_hw_ilas -of_objects [get_hw_devices xc7k160t_1] -filter {CELL_NAME=~\"app_0/dbg_2.pipelined_wishbone_debug\"}]]\n" +
+#"set_property TRIGGER_COMPARE_VALUE eq29'h0000_2001 [get_hw_probes app_0/ddr_count_s -of_objects [get_hw_ilas -of_objects [get_hw_devices xc7k160t_1] -filter {CELL_NAME=~\"app_0/dbg_5.ddr_debug\"}]]\n" +
+"set root /home/asautaux/Yarr-fw/ila/\n"+
+"set ilafile1 ila_axis_data\n"+
+"set ilafile2 ila_wb_data\n"+
+"#set ilafile3 ila_l2p_data\n"+
+"set ilafile3 ila_ram_data\n"+
+"\n\n" +
 
+'for {set i 0} {$i < 10000} {incr i} {\n'+
+'    run_hw_ila [get_hw_ilas -of_objects [get_hw_devices xc7k160t_1]]\n'+
+'    wait_on_hw_ila -timeout 1 [get_hw_ilas -of_objects [get_hw_devices xc7k160t_1]]\n'+
+'    display_hw_ila_data [upload_hw_ila_data [get_hw_ilas -of_objects [get_hw_devices xc7k160t_1] -filter {CELL_NAME=~"app_0/dbg_0.axis_debug"}]]\n'+
+'    display_hw_ila_data [upload_hw_ila_data [get_hw_ilas -of_objects [get_hw_devices xc7k160t_1] -filter {CELL_NAME=~"app_0/dbg_2.pipelined_wishbone_debug"}]]\n'+
+'    #display_hw_ila_data [upload_hw_ila_data [get_hw_ilas -of_objects [get_hw_devices xc7k160t_1] -filter {CELL_NAME=~"app_0/dbg_4.l2p_debug"}]]\n'+
+'    display_hw_ila_data [upload_hw_ila_data [get_hw_ilas -of_objects [get_hw_devices xc7k160t_1] -filter {CELL_NAME=~"app_0/dbg_5.ddr_debug"}]]\n'+
+'    write_hw_ila_data $root$i-$ilafile1.ila hw_ila_data_1\n'+
+'    write_hw_ila_data $root$i-$ilafile2.ila hw_ila_data_2\n'+
+'    write_hw_ila_data $root$i-$ilafile3.ila hw_ila_data_3\n'+
+'    #write_hw_ila_data $root$i-$ilafile4.ila hw_ila_data_4\n'+
+'}\n'
+"\n"
+)
 
 for root, dirs, files in os.walk(project_path):
 	for file in files:
@@ -74,7 +108,7 @@ else:
 
 if (ltx_file != None):
 	ltx_file = ltx_files[nb]
-	cmds = cmds_debug.format('{',ltx_file,'}')
+	cmds = cmds_debug.format('{',ltx_file,'}') #+ cmds_post_gui
 	script_file.write(cmds)
 	script_file.flush()
 	subprocess.call(["vivado", "-mode", "batch","-source", script_path])

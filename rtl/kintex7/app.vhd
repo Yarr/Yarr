@@ -117,12 +117,14 @@ end app;
 
 architecture Behavioral of app is
     
-    constant DEBUG_C : std_logic_vector(5 downto 0) := "101111";
+    constant DEBUG_C : std_logic_vector(5 downto 0) := "000000";
     
 
     
     signal rst_n_s : std_logic;
     signal count_s : STD_LOGIC_VECTOR (28 downto 0);
+    signal gray_count_s : STD_LOGIC_VECTOR (28 downto 0); 
+    signal ddr_count_s : STD_LOGIC_VECTOR (28 downto 0);
     signal eop_s : std_logic; -- Arbiter end of operation
     signal cfg_interrupt_s : std_logic;
     signal pcie_id_s : std_logic_vector (15 downto 0); -- Completer/Requester ID
@@ -408,6 +410,8 @@ architecture Behavioral of app is
     signal ddr_rd_fifo_rd_ds : std_logic_vector(1 downto 0);
     signal ddr_rd_mask_rd_data_count_ds : std_logic_vector(3 downto 0);
     signal ddr_rd_data_rd_data_count_ds : std_logic_vector(3 downto 0);
+    signal ddr_wb_rd_mask_dout_ds : std_logic_vector(7 downto 0);
+    signal ddr_wb_rd_mask_addr_dout_ds : std_logic_vector(29-1 downto 0);
    
 	
 	---------------------------------------------------------
@@ -471,12 +475,27 @@ begin
 
     cnt:simple_counter
     port map(
+	    enable_i => dma_ctrl_irq_s(0),
         rst_i => rst_i,
         clk_i => clk_i,
-        count_o =>  count_s
+        count_o =>  count_s,
+        gray_count_o => gray_count_s
     );
     
+    cnt_sync:m_clk_sync
+        Generic map(
+            data_width_g => 29
+        )
+        Port map( 
+               rst0_i => rst_i,
+               rst1_i => ddr_app_ui_clk_sync_rst_s,
+               clk0_i => clk_i,
+               clk1_i => ddr_app_ui_clk_s,
+               data0_i => count_s,
+               data1_o => ddr_count_s
+               );
 
+    
     p2l_dec_comp:p2l_decoder
     port map(
         clk_i => clk_i,
@@ -1023,6 +1042,8 @@ begin
       wb_ack_o            => dma_ddr_ack_s,
       wb_stall_o          => dma_ddr_stall_s,
       
+      ddr_wb_rd_mask_dout_do => ddr_wb_rd_mask_dout_ds,
+      ddr_wb_rd_mask_addr_dout_do => ddr_wb_rd_mask_addr_dout_ds,
       ddr_rd_mask_rd_data_count_do => ddr_rd_mask_rd_data_count_ds,
       ddr_rd_data_rd_data_count_do => ddr_rd_data_rd_data_count_ds,
       ddr_rd_fifo_full_do => ddr_rd_fifo_full_ds,
@@ -1229,8 +1250,9 @@ begin
           probe18(0) => cfg_interrupt_s,
           probe19(0) => cfg_interrupt_rdy_i,
           probe20(0) => dma_ctrl_done_s,
-          probe21 => dma_ctrl_current_state_ds,
-          probe22(0) => tx_err_drop_i--next_item_valid_s
+          probe21 => wbm_arb_tready_s & wbm_arb_tready_s & ldm_arb_tready_s,--dma_ctrl_current_state_ds,
+          probe22(0) => tx_err_drop_i,--next_item_valid_s
+          probe23 => count_s
       );
   end generate dbg_0;
   
@@ -1288,7 +1310,9 @@ begin
           probe12(0) => dma_ctrl_start_p2l_s, 
           probe13(0) => dma_ctrl_start_next_s,
           probe14 => ddr_rd_mask_rd_data_count_ds,
-          probe15 => ddr_rd_data_rd_data_count_ds
+          probe15 => ddr_rd_data_rd_data_count_ds,
+          probe16 => ddr_wb_rd_mask_addr_dout_ds & ddr_wb_rd_mask_dout_ds,
+          probe17 => count_s
       );
   end generate dbg_2;
   
@@ -1363,7 +1387,8 @@ begin
           probe38 => addr_fifo_dout_ds, 
           probe39 => addr_fifo_din_ds,
           probe40 => std_logic_vector(wb_timeout_cnt_ds),
-          probe41 => std_logic_vector(l2p_timeout_cnt_ds)
+          probe41 => std_logic_vector(l2p_timeout_cnt_ds),
+          probe42 => count_s
       );
   end generate dbg_4;
   
@@ -1387,7 +1412,8 @@ begin
           probe10(0) => ddr_app_rdy_s, 
           probe11(0) => ddr_app_wdf_rdy_s,
           probe12(0) => ddr_app_ui_clk_sync_rst_s, 
-          probe13(0) => init_calib_complete_s
+          probe13(0) => init_calib_complete_s,
+          probe14 => ddr_count_s
 
 
       );

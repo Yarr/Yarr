@@ -317,7 +317,8 @@ begin
                     end if;
 					
                     -- Error condition, abort transfer
-                    if (tx_error_i = '1' or l2p_timeout_cnt > c_TIMEOUT or wb_timeout_cnt > c_TIMEOUT or dma_ctrl_abort_i = '1') then
+                    --if (tx_error_i = '1' or l2p_timeout_cnt > c_TIMEOUT or wb_timeout_cnt > c_TIMEOUT or dma_ctrl_abort_i = '1') then
+                    if (tx_error_i = '1' or l2p_timeout_cnt > c_TIMEOUT or dma_ctrl_abort_i = '1') then
                         l2p_dma_current_state <= L2P_ERROR;
                     end if;
                      
