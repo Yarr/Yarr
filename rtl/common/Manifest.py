@@ -8,7 +8,6 @@ files = [
 "delay_line.vhd",
 "dummy_ctrl_regs.vhd",
 "dummy_stat_regs.vhd",
-"generic_async_fifo_wrapper.vhd",
 "synchronizer.vhd",
 "wb_addr_decoder.vhd",
 "rr_arbiter.vhd",

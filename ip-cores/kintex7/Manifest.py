@@ -4,6 +4,7 @@
 
 files = [
 # IP cores
+"clk_gen/clk_gen.xci",
 "fifo_256x16/fifo_256x16.xci",
 "fifo_27x16/fifo_27x16.xci",
 "fifo_315x16/fifo_315x16.xci",
