@@ -78,13 +78,6 @@ architecture Behavioral of top_level is
     
     constant AXI_BUS_WIDTH : integer := 64;
     
-    component simple_counter is
-        Port ( 
-               rst_i : in STD_LOGIC;
-               clk_i : in STD_LOGIC;
-               count_o : out STD_LOGIC_VECTOR (28 downto 0)
-                );
-    end component;
     
     
     COMPONENT pcie_7x_0
@@ -175,10 +168,6 @@ architecture Behavioral of top_level is
     END COMPONENT;
     
     component app is
-        Generic(
-            AXI_BUS_WIDTH : integer := 64;
-            DMA_MEMORY_SELECTED : string := "DDR3"
-            );
         Port ( clk_i : in STD_LOGIC;
                sys_clk_n_i : IN STD_LOGIC;
                sys_clk_p_i : IN STD_LOGIC;
@@ -393,10 +382,6 @@ begin
       );
       
       app_0:app
-      generic map(
-        AXI_BUS_WIDTH => 64,
-	DMA_MEMORY_SELECTED => "DDR3"
-      )
       port map(
         clk_i => aclk,
         sys_clk_n_i => clk200_n,

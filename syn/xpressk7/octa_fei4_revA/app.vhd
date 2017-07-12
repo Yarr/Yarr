@@ -46,7 +46,7 @@ entity app is
         wb_address_width_c : integer := 32;
         wb_data_width_c : integer := 32;
         address_mask_c : STD_LOGIC_VECTOR(32-1 downto 0) := X"000FFFFF";
-        DMA_MEMORY_SELECTED : string := "DDR3" -- DDR3, BRAM, DEMUX
+        DMA_MEMORY_SELECTED : string := "BRAM" -- DDR3, BRAM, DEMUX
         );
     Port ( clk_i : in STD_LOGIC;
            sys_clk_n_i : IN STD_LOGIC;
@@ -387,7 +387,7 @@ begin
     port map(
 	    enable_i => '1',
         rst_i => '0',
-        clk_i => clk_640_s,
+        clk_i => clk_40_s,
         count_o =>  led_count_s,
         gray_count_o => open
     );
@@ -534,28 +534,37 @@ begin
 
   
     dma_bram_gen : if DMA_MEMORY_SELECTED = "DEMUX" or DMA_MEMORY_SELECTED = "BRAM" generate
-     dma_ram:k_bram
-     generic map (
-         ADDR_WIDTH => 9+4,
-         DATA_WIDTH => 64 
-     )
-     port map (
+
+     
+     dual_dma_ram: k_dual_bram
+     Port Map( 
          -- SYS CON
-         clk            => clk_i,
-         rst            => rst_i,
+         clk_i            => clk_i,
+         rst_i            => rst_i,
          
          -- Wishbone Slave in
-         wb_adr_i    => dma_bram_adr_s(9+4 - 1 downto 0),
-         wb_dat_i    => dma_bram_dat_m2s_s,
-         wb_we_i        => dma_bram_we_s,
-         wb_stb_i    => dma_bram_stb_s,
-         wb_cyc_i    => dma_bram_cyc_s,
-         wb_lock_i    => dma_bram_stb_s,
+         wba_adr_i            => dma_bram_adr_s,
+         wba_dat_i            => dma_bram_dat_m2s_s,
+         wba_we_i             => dma_bram_we_s,
+         wba_stb_i            => dma_bram_stb_s,
+         wba_cyc_i            => dma_bram_cyc_s, 
          
          -- Wishbone Slave out
-         wb_dat_o    => dma_bram_dat_s2m_s,
-         wb_ack_o    => dma_bram_ack_s
-     );
+         wba_dat_o            => dma_bram_dat_s2m_s,
+         wba_ack_o            => dma_bram_ack_s,
+                
+         -- Wishbone Slave in
+         wbb_adr_i            => (others => '0'),
+         wbb_dat_i            => (others => '0'),
+         wbb_we_i             => '0',
+         wbb_stb_i            => '0',
+         wbb_cyc_i            => '0', 
+         
+         -- Wishbone Slave out
+         wbb_dat_o            => open,
+         wbb_ack_o            => open
+                
+       );
      
   end generate dma_bram_gen;
 

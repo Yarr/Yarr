@@ -206,7 +206,36 @@ package app_pkg is
       );
     end component;
     
-    
+    component k_dual_bram is
+        Port ( 
+        -- SYS CON
+        clk_i            : in std_logic;
+        rst_i            : in std_logic;
+        
+        -- Wishbone Slave in
+        wba_adr_i            : in std_logic_vector(32-1 downto 0);
+        wba_dat_i            : in std_logic_vector(64-1 downto 0);
+        wba_we_i            : in std_logic;
+        wba_stb_i            : in std_logic;
+        wba_cyc_i            : in std_logic; 
+        
+        -- Wishbone Slave out
+        wba_dat_o            : out std_logic_vector(64-1 downto 0);
+        wba_ack_o            : out std_logic;
+               
+        -- Wishbone Slave in
+        wbb_adr_i            : in std_logic_vector(32-1 downto 0);
+        wbb_dat_i            : in std_logic_vector(64-1 downto 0);
+        wbb_we_i            : in std_logic;
+        wbb_stb_i            : in std_logic;
+        wbb_cyc_i            : in std_logic; 
+        
+        -- Wishbone Slave out
+        wbb_dat_o            : out std_logic_vector(64-1 downto 0);
+        wbb_ack_o            : out std_logic 
+               
+               );
+    end component;    
 
     component wb_addr_decoder is
       generic
