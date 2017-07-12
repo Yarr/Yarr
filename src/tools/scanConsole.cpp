@@ -106,6 +106,7 @@ int main(int argc, char *argv[]) {
     int target_threshold = 2500;
     int target_tot = 10;
     int target_charge = 16000;
+    int mask_opt = 1;
     
     unsigned runCounter = 0;
 
@@ -130,7 +131,7 @@ int main(int argc, char *argv[]) {
     oF.close();
 
     int c;
-    while ((c = getopt(argc, argv, "hs:n:g:r:c:t:po:")) != -1) {
+    while ((c = getopt(argc, argv, "hs:n:m:g:r:c:t:po:")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
@@ -142,6 +143,9 @@ int main(int argc, char *argv[]) {
                 break;
             case 'n':
                 specNum = atoi(optarg);
+                break;
+            case 'm':
+                mask_opt = atoi(optarg);
                 break;
             case 'c':
 //                configPath = std::string(optarg);
@@ -347,6 +351,19 @@ int main(int argc, char *argv[]) {
             }
             // Load config
             dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->fromFileJson(jTmp);
+            // Reset mask
+            if (mask_opt == 1) {
+                if (!jTmp["FE-I4B"].is_null()) {
+                    std::cout << "Resetting enable/hitbus pixel mask to all enabled!" << std::endl;
+                    Fei4 *fe = dynamic_cast<Fei4*>(bookie.getLastFe());
+                    for (unsigned int dc = 0; dc < fe->n_DC; dc++) {
+                        fe->En(dc).setAll(1);
+                        fe->Hitbus(dc).setAll(0);
+                    }
+                }
+                // TODO add FE65p2
+            }
+                
         }
         feCfgMap[bookie.getLastFe()] = sTmp;
         iFTmp.close();
@@ -494,6 +511,11 @@ int main(int argc, char *argv[]) {
                 std::cerr << "-> Aborting!" << std::endl;
                 return -1;
             }
+            // Disable masking of pixels
+            if(mask_opt == 0) {
+                std::cout << " -> Disabling masking for this scan!" << std::endl;
+                fe->ana->setMasking(false);
+            }
         }
     }
 
@@ -628,6 +650,7 @@ void printHelp() {
     std::cout << " -t <target_threshold> [<tot_target> [<charge_target>]] : Set target values for threshold, tot, charge." << std::endl;
     std::cout << " -p: Enable plotting of results." << std::endl;
     std::cout << " -o <dir> : Output directory. (Default ./data/)" << std::endl;
+    std::cout << " -m <int> : 0 = disable pixel masking, 1 = reset pixel masking, default = enable pixel masking" << std::endl;
 }
 
 void listScans() {

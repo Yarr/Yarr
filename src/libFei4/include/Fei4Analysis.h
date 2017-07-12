@@ -57,6 +57,7 @@ class AnalysisAlgorithm {
 
         void enMasking() {make_mask = true;}
         void disMasking() {make_mask = false;}
+        void setMasking(bool val) {make_mask = val;}
 
     protected:
         Bookkeeper *bookie;
@@ -93,6 +94,13 @@ class Fei4Analysis : DataProcessor {
                 algorithms[i]->setMapSize(col, row);
             }
         }
+
+        void setMasking(bool val) {
+            for (unsigned i=0; i<algorithms.size(); i++) {
+                algorithms[i]->setMasking(val);
+            }
+        }
+
 
         AnalysisAlgorithm* getLastAna() {return algorithms.back();}
             

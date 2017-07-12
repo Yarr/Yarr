@@ -4,7 +4,7 @@ if [ "$#" -lt 5 ]; then
     exit 1
 fi
 
-bin/scanConsole -s digitalscan -t $1 $2 $3 -r $4 -c ${@:5} -p
+bin/scanConsole -s digitalscan -t $1 $2 $3 -r $4 -c ${@:5} -p -m 1
 bin/scanConsole -s analogscan -t $1 $2 $3 -r $4 -c ${@:5} -p
 bin/scanConsole -s tune_globalthreshold -t $1 $2 $3 -r $4 -c ${@:5} -p
 bin/scanConsole -s tune_globalpreamp -t $1 $2 $3 -r $4 -c ${@:5} -p
