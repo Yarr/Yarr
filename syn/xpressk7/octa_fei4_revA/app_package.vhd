@@ -33,6 +33,9 @@ use IEEE.NUMERIC_STD.ALL;
 
 package app_pkg is
 
+    constant c_TX_CHANNELS : integer := 8;
+	constant c_RX_CHANNELS : integer := 8;
+    
     component simple_counter is
         Port ( 
                enable_i : in STD_LOGIC;
@@ -393,7 +396,156 @@ package app_pkg is
         );
     end component ddr3_ctrl_wb;
     
-	
+	component wb_tx_core
+    generic (
+        g_NUM_TX : integer range 1 to 32 := c_TX_CHANNELS
+    );
+    port (
+        -- Sys connect
+        wb_clk_i    : in  std_logic;
+        rst_n_i        : in  std_logic;
+
+        -- Wishbone slave interface
+        wb_adr_i    : in  std_logic_vector(31 downto 0);
+        wb_dat_i    : in  std_logic_vector(31 downto 0);
+        wb_dat_o    : out std_logic_vector(31 downto 0);
+        wb_cyc_i    : in  std_logic;
+        wb_stb_i    : in  std_logic;
+        wb_we_i        : in  std_logic;
+        wb_ack_o    : out std_logic;
+        wb_stall_o    : out std_logic;
+
+        -- TX
+        tx_clk_i    : in  std_logic;
+        tx_data_o    : out std_logic_vector(g_NUM_TX-1 downto 0);
+        trig_pulse_o : out std_logic;
+
+        -- TRIGGER
+        ext_trig_i : in std_logic
+    );
+    end component;
+    
+	component wb_rx_core
+        generic (
+            g_NUM_RX : integer range 1 to 32 := c_RX_CHANNELS
+        );
+        port (
+            -- Sys connect
+            wb_clk_i    : in  std_logic;
+            rst_n_i        : in  std_logic;
+            -- Wishbone slave interface
+            wb_adr_i    : in  std_logic_vector(31 downto 0);
+            wb_dat_i    : in  std_logic_vector(31 downto 0);
+            wb_dat_o    : out std_logic_vector(31 downto 0);
+            wb_cyc_i    : in  std_logic;
+            wb_stb_i    : in  std_logic;
+            wb_we_i        : in  std_logic;
+            wb_ack_o    : out std_logic;
+            wb_stall_o    : out std_logic;
+            -- RX IN
+            rx_clk_i    : in  std_logic;
+            rx_serdes_clk_i : in std_logic;
+            rx_data_i    : in std_logic_vector(g_NUM_RX-1 downto 0);
+            trig_tag_i : in std_logic_vector(31 downto 0);
+            -- RX OUT (sync to sys_clk)
+            rx_valid_o : out std_logic;
+            rx_data_o : out std_logic_vector(31 downto 0);
+            busy_o : out std_logic;
+            debug_o : out std_logic_vector(31 downto 0)
+        );
+    end component;
+ 
+
+        component wb_rx_bridge is
+        port (
+            -- Sys Connect
+            sys_clk_i        : in  std_logic;
+            rst_n_i            : in  std_logic;
+            -- Wishbone slave interface
+            wb_adr_i    : in  std_logic_vector(31 downto 0);
+            wb_dat_i    : in  std_logic_vector(31 downto 0);
+            wb_dat_o    : out std_logic_vector(31 downto 0);
+            wb_cyc_i    : in  std_logic;
+            wb_stb_i    : in  std_logic;
+            wb_we_i        : in  std_logic;
+            wb_ack_o    : out std_logic;
+            wb_stall_o    : out std_logic;
+            -- Wishbone DMA Master Interface
+            dma_clk_i    : in  std_logic;
+            dma_adr_o    : out std_logic_vector(31 downto 0);
+            dma_dat_o    : out std_logic_vector(31 downto 0);
+            dma_dat_i    : in  std_logic_vector(31 downto 0);
+            dma_cyc_o    : out std_logic;
+            dma_stb_o    : out std_logic;
+            dma_we_o    : out std_logic;
+            dma_ack_i    : in  std_logic;
+            dma_stall_i    : in  std_logic;
+            -- Rx Interface
+            rx_data_i     : in  std_logic_vector(31 downto 0);
+            rx_valid_i    : in  std_logic;
+            -- Status in
+            trig_pulse_i : in std_logic;
+            -- Status out
+            irq_o        : out std_logic;
+            busy_o        : out std_logic
+        );
+        end component;
+        
+        component i2c_master_wb_top
+            port (
+                  wb_clk_i : in  std_logic;
+                  wb_rst_i : in  std_logic;
+                  arst_i   : in  std_logic;
+                  wb_adr_i : in  std_logic_vector(2 downto 0);
+                  wb_dat_i : in  std_logic_vector(7 downto 0);
+                  wb_dat_o : out std_logic_vector(7 downto 0);
+                  wb_we_i  : in  std_logic;
+                  wb_stb_i : in  std_logic;
+                  wb_cyc_i : in  std_logic;
+                  wb_ack_o : out std_logic;
+                  wb_inta_o: out std_logic;
+                  scl      : inout std_logic;
+                  sda      : inout std_logic
+                  );
+        end component;
+        
+        component wb_trigger_logic
+            port (
+                -- Sys connect
+                wb_clk_i    : in  std_logic;
+                rst_n_i        : in  std_logic;
+                
+                -- Wishbone slave interface
+                wb_adr_i    : in  std_logic_vector(31 downto 0);
+                wb_dat_i    : in  std_logic_vector(31 downto 0);
+                wb_dat_o    : out std_logic_vector(31 downto 0);
+                wb_cyc_i    : in  std_logic;
+                wb_stb_i    : in  std_logic;
+                wb_we_i        : in  std_logic;
+                wb_ack_o    : out std_logic;
+                
+                -- To/From outside world
+                ext_trig_i : in std_logic_vector(3 downto 0);
+                ext_trig_o : out std_logic;
+                ext_busy_i : in std_logic;
+                ext_busy_o : out std_logic;
+    
+                -- Eudet TLU
+                eudet_clk_o : out std_logic;
+                eudet_busy_o : out std_logic;
+                eudet_trig_i : in std_logic;
+                eudet_rst_i : in std_logic;
+    
+                -- To/From inside world
+                clk_i : in std_logic;
+                int_trig_i : in std_logic_vector(3 downto 0);
+                int_trig_o : out std_logic;
+                int_busy_i : in std_logic;
+                trig_tag : out std_logic_vector(31 downto 0)
+            );
+        end component;
+
+   
     COMPONENT ila_axis
     
         PORT (

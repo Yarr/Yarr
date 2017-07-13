@@ -37,8 +37,6 @@ use work.app_pkg.all;
 
 entity app is
     Generic(
-        g_TX_CHANNELS : integer := 8;
-        g_RX_CHANNELS : integer := 8;
         AXI_BUS_WIDTH : integer := 64;
         axis_data_width_c : integer := 64;
         axis_rx_tkeep_width_c : integer := 64/8;
@@ -109,6 +107,26 @@ entity app is
            ddr3_cs_n_o     : out   std_logic_vector(0 downto 0);
            ddr3_dm_o       : out   std_logic_vector(7 downto 0);
            ddr3_odt_o      : out   std_logic_vector(0 downto 0);
+ 
+ 		   ---------------------------------------------------------
+           -- FMC
+           ---------------------------------------------------------
+           -- Trigger input
+           ext_trig_o        : out std_logic;
+           -- LVDS buffer
+           pwdn_l            : out std_logic_vector(2 downto 0);
+           -- GPIO
+           io              : inout std_logic_vector(2 downto 0);
+           -- FE-I4
+           fe_clk_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
+           fe_clk_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
+           fe_cmd_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
+           fe_cmd_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
+           fe_data_p        : in  std_logic_vector(c_RX_CHANNELS-1 downto 0);
+           fe_data_n        : in  std_logic_vector(c_RX_CHANNELS-1 downto 0);
+           -- I2c
+           sda_io                : inout std_logic;
+           scl_io                    : inout std_logic;
            
            --I/O
            usr_sw_i : in STD_LOGIC_VECTOR (2 downto 0);
@@ -130,8 +148,8 @@ architecture Behavioral of app is
     constant c_BAR0_APERTURE    : integer := 18;  -- nb of bits for 32-bit word address
     constant c_CSR_WB_SLAVES_NB : integer := 16; -- upper 4 bits used for addressing slave
     
-    constant c_TX_CHANNELS : integer := g_TX_CHANNELS;
-    constant c_RX_CHANNELS : integer := g_RX_CHANNELS;
+    --constant c_TX_CHANNELS : integer := g_TX_CHANNELS;
+    --constant c_RX_CHANNELS : integer := g_RX_CHANNELS;
   
     ------------------------------------------------------------------------------
     -- Signals declaration
@@ -240,7 +258,17 @@ architecture Behavioral of app is
 	signal dma_ack_s   :  std_logic;                      -- Acknowledge
 	signal dma_stall_s :  std_logic;                      -- for pipelined Wishbone	
 	
-
+	---------------------------------------------------------
+    -- DMA Interface (Pipelined Wishbone)
+    signal rx_dma_adr_s   :  std_logic_vector(31 downto 0);  -- Adress
+    signal rx_dma_dat_s2m_s   :  std_logic_vector(63 downto 0);  -- Data in
+    signal rx_dma_dat_m2s_s   :  std_logic_vector(63 downto 0);  -- Data out
+    signal rx_dma_sel_s   :  std_logic_vector(7 downto 0);   -- Byte select
+    signal rx_dma_cyc_s   :  std_logic;                      -- Read or write cycle
+    signal rx_dma_stb_s   :  std_logic;                      -- Read or write strobe
+    signal rx_dma_we_s    :  std_logic;                      -- Write
+    signal rx_dma_ack_s   :  std_logic;                      -- Acknowledge
+    signal rx_dma_stall_s :  std_logic;                      -- for pipelined Wishbone    
 	
 	
 	signal dummyram_sel_s      : std_logic;
@@ -334,6 +362,33 @@ architecture Behavioral of app is
 	signal ldm_arb_req_s    : std_logic;
 	--signal arb_ldm_gnt_s : std_logic;
 
+
+	signal fe_cmd_o : std_logic_vector(c_TX_CHANNELS-1 downto 0);
+	signal fe_cmd_enc : std_logic_vector(c_TX_CHANNELS-1 downto 0);
+	signal fe_cmd_del : std_logic_vector(c_TX_CHANNELS-1 downto 0);
+	signal fe_clk_o : std_logic_vector(c_TX_CHANNELS-1 downto 0);
+	signal fe_data_i : std_logic_vector(c_RX_CHANNELS-1 downto 0);
+	
+    signal tx_data_o : std_logic_vector(0 downto 0);
+    signal trig_pulse : std_logic;
+    signal int_trig_t : std_logic;
+    signal trig_tag_t : std_logic_vector(31 downto 0);
+    
+
+    signal rx_data : std_logic_vector(31 downto 0);
+    signal rx_valid : std_logic;
+    
+    signal rx_busy : std_logic;
+
+    -- I2C
+    signal scl_t : std_logic;
+    signal sda_t : std_logic;
+    
+    -- FOR TESTS
+    signal debug       : std_logic_vector(31 downto 0);
+    signal clk_div_cnt : unsigned(3 downto 0);
+    signal clk_div     : std_logic;
+
 begin
     
     rst_n_s <= not rst_i;
@@ -354,18 +409,61 @@ begin
     m_axis_tx_tvalid_o <= m_axis_tx_tvalid_s;
     m_axis_tx_tready_s <= m_axis_tx_tready_i;
     
-    
-    --cfg_interrupt_assert_o <= '0';
-    --cfg_interrupt_di_o <= (others => '0');
-    --cfg_interrupt_stat_o <= '0';
-    --cfg_pciecap_interrupt_msgnum_o <= (others => '0');
-    
-    --cfg_interrupt_o <= cfg_interrupt_s;
+
     
     pcie_id_s <= cfg_bus_number_i & cfg_device_number_i & cfg_function_number_i;
     
 
-    
+-- Differential buffers
+	tx_loop: for I in 0 to c_TX_CHANNELS-1 generate
+	begin
+		tx_buf : OBUFDS
+		generic map (
+			IOSTANDARD => "LVDS_25")
+		port map (
+			O => fe_cmd_p(I),     -- Diff_p output (connect directly to top-level port)
+			OB => fe_cmd_n(I),   -- Diff_n output (connect directly to top-level port)
+			I => fe_cmd_enc(I)      -- Buffer input 
+		);
+		ODDR2_manchester : ODDR2
+		generic map(
+			DDR_ALIGNMENT => "NONE", -- Sets output alignment to "NONE", "C0", "C1" 
+			INIT => '0', -- Sets initial state of the Q output to '0' or '1'
+			SRTYPE => "SYNC") -- Specifies "SYNC" or "ASYNC" set/reset
+		port map (
+			Q => fe_cmd_enc(I), -- 1-bit output data
+			C0 => clk_40_s, -- 1-bit clock input
+			C1 => not clk_40_s, -- 1-bit clock input
+			CE => '1',  -- 1-bit clock enable input
+			D0 => fe_cmd_o(I),   -- 1-bit data input (associated with C0)
+			D1 => not fe_cmd_o(I),   -- 1-bit data input (associated with C1)
+			R => not rst_n_s,    -- 1-bit reset input
+			S => '0'     -- 1-bit set input
+		);
+		clk_buf : OBUFDS
+		generic map (
+			IOSTANDARD => "LVDS_25")
+		port map (
+			O => fe_clk_p(I),     -- Diff_p output (connect directly to top-level port)
+			OB => fe_clk_n(I),   -- Diff_n output (connect directly to top-level port)
+			I => fe_clk_o(I)      -- Buffer input 
+		);
+		ODDR2_inst : ODDR2
+		generic map(
+			DDR_ALIGNMENT => "NONE", -- Sets output alignment to "NONE", "C0", "C1" 
+			INIT => '0', -- Sets initial state of the Q output to '0' or '1'
+			SRTYPE => "SYNC") -- Specifies "SYNC" or "ASYNC" set/reset
+		port map (
+			Q => fe_clk_o(I), -- 1-bit output data
+			C0 => clk_40_90_s, -- 1-bit clock input
+			C1 => not clk_40_90_s, -- 1-bit clock input
+			CE => '1',  -- 1-bit clock enable input
+			D0 => '1',   -- 1-bit data input (associated with C0)
+			D1 => '0',   -- 1-bit data input (associated with C1)
+			R => not rst_n_s,    -- 1-bit reset input
+			S => '0'     -- 1-bit set input
+		);
+	end generate;    
 
     
     clk_gen_cmp : clk_gen
@@ -533,6 +631,85 @@ begin
             );   
 
   
+	     cmp_wb_tx_core : wb_tx_core port map
+            (
+                -- Sys connect
+                wb_clk_i => clk_i,
+                rst_n_i => rst_n_s,
+                -- Wishbone slave interface
+                wb_adr_i => wb_adr_s,
+                wb_dat_i => wb_dat_m2s_s,
+                wb_dat_o => wb_dat_s2m_s(63 downto 32),
+                wb_cyc_i => wb_cyc_s(1),
+                wb_stb_i => wb_stb_s,
+                wb_we_i => wb_we_s,
+                wb_ack_o => wb_ack_s(1),
+                wb_stall_o => wb_stall_s(1),
+                -- TX
+                tx_clk_i => clk_40_s,
+                tx_data_o => fe_cmd_o,
+                trig_pulse_o => trig_pulse,
+                -- Trig
+                ext_trig_i => int_trig_t
+            );
+
+	cmp_wb_rx_core: wb_rx_core PORT MAP(
+		wb_clk_i => clk_i,
+		rst_n_i => rst_n_s,
+		wb_adr_i => wb_adr_s,
+		wb_dat_i => wb_dat_m2s_s,
+		wb_dat_o => wb_dat_s2m_s(95 downto 64),
+		wb_cyc_i => wb_cyc_s(2),
+		wb_stb_i => wb_stb_s,
+		wb_we_i => wb_we_s,
+		wb_ack_o => wb_ack_s(2),
+		wb_stall_o => wb_stall_s(2),
+		rx_clk_i => CLK_160_s,
+		rx_serdes_clk_i => CLK_640_s,
+		rx_data_i => fe_data_i,
+		rx_valid_o => rx_valid,
+		rx_data_o => rx_data,
+        trig_tag_i => trig_tag_T,
+		busy_o => open,
+		debug_o => debug
+	);  
+
+    
+    --TODO
+    rx_dma_dat_m2s_s(63 downto 32) <= rx_dma_dat_m2s_s(31 downto 0);
+	cmp_wb_rx_bridge : wb_rx_bridge port map (
+		-- Sys Connect
+		sys_clk_i => clk_i,
+		rst_n_i => rst_n_s,
+		-- Wishbone slave interface
+		wb_adr_i => wb_adr_s,
+		wb_dat_i => wb_dat_m2s_s,
+		wb_dat_o => wb_dat_s2m_s(127 downto 96),
+		wb_cyc_i => wb_cyc_s(3),
+		wb_stb_i => wb_stb_s,
+		wb_we_i => wb_we_s,
+		wb_ack_o => wb_ack_s(3),
+		wb_stall_o => wb_stall_s(3),
+		-- Wishbone DMA Master Interface
+		dma_clk_i => clk_i,
+		dma_adr_o => rx_dma_adr_s,
+		dma_dat_o => rx_dma_dat_m2s_s(31 downto 0),
+		dma_dat_i => rx_dma_dat_s2m_s(31 downto 0),
+		dma_cyc_o => rx_dma_cyc_s,
+		dma_stb_o => rx_dma_stb_s,
+		dma_we_o => rx_dma_we_s,
+		dma_ack_i => rx_dma_ack_s,
+		dma_stall_i => rx_dma_stall_s,
+		-- Rx Interface (sync to sys_clk)
+		rx_data_i => rx_data,
+		rx_valid_i => rx_valid,
+		-- Status in
+		trig_pulse_i => trig_pulse,
+		-- Status out
+		irq_o => open,
+		busy_o => rx_busy
+	);
+
     dma_bram_gen : if DMA_MEMORY_SELECTED = "DEMUX" or DMA_MEMORY_SELECTED = "BRAM" generate
 
      
@@ -554,15 +731,15 @@ begin
          wba_ack_o            => dma_bram_ack_s,
                 
          -- Wishbone Slave in
-         wbb_adr_i            => (others => '0'),
-         wbb_dat_i            => (others => '0'),
-         wbb_we_i             => '0',
-         wbb_stb_i            => '0',
-         wbb_cyc_i            => '0', 
+         wbb_adr_i            => rx_dma_adr_s,
+         wbb_dat_i            => rx_dma_dat_m2s_s,
+         wbb_we_i             => rx_dma_we_s,
+         wbb_stb_i            => rx_dma_stb_s,
+         wbb_cyc_i            => rx_dma_cyc_s, 
          
          -- Wishbone Slave out
-         wbb_dat_o            => open,
-         wbb_ack_o            => open
+         wbb_dat_o            => rx_dma_dat_s2m_s,
+         wbb_ack_o            => rx_dma_ack_s
                 
        );
      
@@ -767,6 +944,7 @@ begin
 
   
   usr_led_o <= led_count_s(28 downto 25);
+
 
   
   dbg_0 : if DEBUG_C(0) = '1' generate

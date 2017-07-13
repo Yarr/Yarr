@@ -25,6 +25,9 @@ use IEEE.STD_LOGIC_1164.ALL;
 library UNISIM;
 use UNISIM.VComponents.all;
 
+library work;
+use work.app_pkg.all;
+
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
 --use IEEE.NUMERIC_STD.ALL;
@@ -53,6 +56,27 @@ entity top_level is
             usr_sw_i : in STD_LOGIC_VECTOR (2 downto 0);
             usr_led_o : out STD_LOGIC_VECTOR (2 downto 0);
             --front_led_o : out STD_LOGIC_VECTOR (3 downto 0);
+            
+            ---------------------------------------------------------
+            -- FMC
+            ---------------------------------------------------------
+            -- Trigger input
+            ext_trig_o        : out std_logic;
+            -- LVDS buffer
+            pwdn_l            : out std_logic_vector(2 downto 0);
+            -- GPIO
+            io              : inout std_logic_vector(2 downto 0);
+            -- FE-I4
+            fe_clk_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
+            fe_clk_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
+            fe_cmd_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
+            fe_cmd_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
+            fe_data_p        : in  std_logic_vector(c_RX_CHANNELS-1 downto 0);
+            fe_data_n        : in  std_logic_vector(c_RX_CHANNELS-1 downto 0);
+            -- I2c
+            sda_io                : inout std_logic;
+            scl_io                    : inout std_logic;
+            
             -- . DDR3
             ddr3_dq       : inout std_logic_vector(63 downto 0);
             ddr3_dqs_p    : inout std_logic_vector(7 downto 0);
@@ -233,6 +257,26 @@ architecture Behavioral of top_level is
                ddr3_cs_n_o     : out   std_logic_vector(0 downto 0);
                ddr3_dm_o       : out   std_logic_vector(7 downto 0);
                ddr3_odt_o      : out   std_logic_vector(0 downto 0);
+               
+                ---------------------------------------------------------
+                -- FMC
+                ---------------------------------------------------------
+                -- Trigger input
+                ext_trig_o        : out std_logic;
+                -- LVDS buffer
+                pwdn_l            : out std_logic_vector(2 downto 0);
+                -- GPIO
+                io              : inout std_logic_vector(2 downto 0);
+                -- FE-I4
+                fe_clk_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
+                fe_clk_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
+                fe_cmd_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
+                fe_cmd_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
+                fe_data_p        : in  std_logic_vector(c_RX_CHANNELS-1 downto 0);
+                fe_data_n        : in  std_logic_vector(c_RX_CHANNELS-1 downto 0);
+                -- I2c
+                sda_io                : inout std_logic;
+                scl_io                    : inout std_logic;
                
                --I/O
                usr_sw_i : in STD_LOGIC_VECTOR (2 downto 0);
@@ -445,7 +489,27 @@ begin
         ddr3_cs_n_o     => ddr3_cs_n,
         ddr3_dm_o       => ddr3_dm,
         ddr3_odt_o      => ddr3_odt,
-        
+
+        ---------------------------------------------------------
+        -- FMC
+        ---------------------------------------------------------
+        -- Trigger input
+        ext_trig_o        => ext_trig_o,
+        -- LVDS buffer
+        pwdn_l            => pwdn_l,
+        -- GPIO
+        io                => io,
+        -- FE-I4
+        fe_clk_p          => fe_clk_p,
+        fe_clk_n          => fe_clk_n,
+        fe_cmd_p          => fe_cmd_p,
+        fe_cmd_n          => fe_cmd_n,
+        fe_data_p         => fe_data_p,
+        fe_data_n         => fe_data_n,
+        -- I2c
+        sda_io            => sda_io,
+        scl_io            => scl_io,
+
         --I/O
         usr_sw_i => usr_sw_i,
         usr_led_o => usr_led_s,
