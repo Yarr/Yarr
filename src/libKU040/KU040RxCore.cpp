@@ -15,12 +15,19 @@ KU040RxCore::~KU040RxCore()
 	for(int ch = 0; ch < 20; ch++)
 	{
 		std::cout << "Disabling RX channel " << ch << std::endl;
-		m_com->Write(KU040_PIXEL_RX_CONTROL(ch), 6);				// leave all RX channels ON
+		m_com->Write(KU040_PIXEL_RX_CONTROL(ch), 0);
 	}
 }
 
 void KU040RxCore::setRxEnable(uint32_t val)
 {
+	// check mask (if we are in 320 mode only even channels can be enabled)
+	if((m_linkSpeed == 320) && ((val & 0xAAAAA) != 0))
+	{
+		std::cerr << "In 320 Mbit/s mode you can only select even channels. Skipping enabling/readout of odd channels!" << std::endl;
+		val = val & 0x55555;
+	}
+
 	// save mask locally
 	m_enableMask = val;
 
@@ -34,7 +41,14 @@ void KU040RxCore::setRxEnable(uint32_t val)
 		if(m_enableMask & (1 << ch))
 		{
 			// channel is enabled
-			m_com->Write(KU040_PIXEL_RX_CONTROL(ch), 0x6);
+			switch(m_linkSpeed)
+			{
+				case 40:	m_com->Write(KU040_PIXEL_RX_CONTROL(ch), 0x184); break;
+				case 80:	m_com->Write(KU040_PIXEL_RX_CONTROL(ch), 0x185); break;
+				case 160:	m_com->Write(KU040_PIXEL_RX_CONTROL(ch), 0x186); break;
+				case 320:	m_com->Write(KU040_PIXEL_RX_CONTROL(ch), 0x187); break;
+				default:	m_com->Write(KU040_PIXEL_RX_CONTROL(ch), 0x186); break;
+			}
 		}
 		else
 		{
@@ -135,6 +149,9 @@ bool KU040RxCore::isBridgeEmpty()
 
 void KU040RxCore::setEmu(uint32_t mask, uint8_t hitcnt)
 {
+	// debug
+	std::cout << "Setting emulator mask 0x" << std::hex << mask << std::dec << " with hitcnt=" << hitcnt << std::endl;
+
 	// save mask
 	m_emuMask = mask;
 

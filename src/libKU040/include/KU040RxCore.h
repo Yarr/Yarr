@@ -34,6 +34,22 @@ class KU040RxCore : virtual public RxCore {
         void setEmu(uint32_t mask, uint8_t hitcnt = 0);
         uint32_t getEmu();
 
+		void setLinkSpeed(uint32_t speed)
+		{
+			if((speed != 40) && (speed != 80) && (speed != 160) && (speed != 320))
+			{
+				std::cerr << "Unsupported link speed " << speed << " Mbit/s. Falling back to default 160 Mbit/s." << std::endl;
+				speed = 160;
+			}
+			std::cout << "Using link speed: " << speed << " Mbit/s." << std::endl;
+			m_linkSpeed = speed;
+		}
+
+		uint32_t getLinkSpeed()
+		{
+			return m_linkSpeed;
+		}
+
 		void setSkipRecsWithErrors(bool value)
 		{
 			if(value)
@@ -61,7 +77,7 @@ class KU040RxCore : virtual public RxCore {
         }
 
     private:
-
+		uint32_t m_linkSpeed;
         uint32_t m_enableMask;
         uint32_t m_emuMask;
 		bool m_skipRecsWithErrors;
