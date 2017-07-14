@@ -14,5 +14,6 @@ files = [
 "p2l_dma_master.vhd",
 "wbmaster32.vhd",
 "gn4124_core_pkg.vhd",
+"wshexp-core.vhd",
 ]
 
