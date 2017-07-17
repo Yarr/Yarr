@@ -8,6 +8,8 @@ modules = {
 files = [
 #TOP
 "top_level.vhd",
+"app_package.vhd",
+"app.vhd",
 "xpressk7.xdc",
 "xpressk7-ddr3.xdc",
 ]

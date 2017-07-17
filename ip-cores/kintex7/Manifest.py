@@ -4,6 +4,7 @@
 
 files = [
 # IP cores
+"clk_gen/clk_gen.xci",
 "fifo_256x16/fifo_256x16.xci",
 "fifo_27x16/fifo_27x16.xci",
 "fifo_315x16/fifo_315x16.xci",
@@ -23,6 +24,10 @@ files = [
 "mig_7series_0/mig_b.prj",
 "pcie_7x_0/pcie_7x_0.xci",
 "cross_clock_fifo/cross_clock_fifo.xci",
+"tx_fifo/tx_fifo.xci",
+"rx_channel_fifo/rx_channel_fifo.xci",
+"rx_bridge_ctrl_fifo/rx_bridge_ctrl_fifo.xci",
+"rx_bridge_fifo/rx_bridge_fifo.xci",
 ]
 
 

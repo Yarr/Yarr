@@ -55,10 +55,15 @@ package common_pkg is
     rd_count_o        : out std_logic_vector(log2_ceil(g_size)-1 downto 0)
     );
   end component generic_async_fifo;
+  
+
+
+
 
 end common_pkg;
 
 package body common_pkg is
+
 
 end common_pkg;
 

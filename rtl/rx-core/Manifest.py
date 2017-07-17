@@ -1,4 +1,4 @@
-files = ["cdr_serdes.vhd",
+files = [#"cdr_serdes.vhd",
          "data_alignment.vhd",
          "fei4_rx_channel.vhd",
          "wb_rx_bridge.vhd",

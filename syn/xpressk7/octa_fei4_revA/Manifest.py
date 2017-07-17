@@ -1,8 +1,11 @@
 # To list file
 # ls -1 | xargs -I % echo \"%\",
 
+
+library = "work"
+
 modules = {
-"local" : ["../../../rtl/common","../../../rtl/kintex7","../../../rtl/i2c-master","../../../rtl/tx-core","../../../rtl/rx-core","../../../rtl/trigger-logic","../../../ip-cores/kintex7"],
+"local" : ["../../../rtl/common","../../../rtl/kintex7","../../../rtl/i2c-master","../../../rtl/tx-core","../../../rtl/rx-core","../../../rtl/trigger-logic","../../../ip-cores/kintex7","../../../rtl/rx-core/kintex7"],
 }
 
 files = [
@@ -12,9 +15,10 @@ files = [
 "app.vhd",
 "xpressk7.xdc",
 #"xpressk7-ddr3.xdc",
+"xpressk7-fmc.xdc",
 ]
 
-library = "work"
+
 
 
 target = "xilinx" 

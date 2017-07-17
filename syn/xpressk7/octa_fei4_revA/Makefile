@@ -29,56 +29,71 @@ endif
 all: bitstream
 
 SOURCES_VHDLFile := \
-app_package.vhd \
+app.vhd \
 ../../../rtl/kintex7/wshexp-core/p2l_decoder.vhd \
 ../../../rtl/common/simple_counter.vhd \
-../../../rtl/common/generic_async_fifo_wrapper.vhd \
-../../../rtl/common/bcf_bram32.vhd \
-top_level.vhd \
+../../../rtl/rx-core/decode_8b10b/decode_8b10b_wrapper.vhd \
+../../../rtl/rx-core/data_alignment.vhd \
+../../../rtl/common/k_dual_bram.vhd \
 ../../../rtl/kintex7/wshexp-core/generic_async_fifo_wrapper.vhd \
 ../../../rtl/kintex7/wshexp-core/dma_controller_wb_slave.vhd \
-../../../rtl/kintex7/wshexp-core/debugregisters.vhd \
+../../../rtl/tx-core/trigger_unit.vhd \
 ../../../rtl/kintex7/wshexp-core/p2l_dma_master.vhd \
 ../../../rtl/common/common_pkg.vhd \
+../../../rtl/rx-core/kintex7/cdr_serdes.vhd \
+../../../rtl/tx-core/serial_port.vhd \
+../../../rtl/rx-core/wb_rx_core.vhd \
 ../../../rtl/kintex7/wshexp-core/l2p_fifo.vhd \
 ../../../rtl/kintex7/wshexp-core/dma_controller.vhd \
 ../../../rtl/kintex7/ddr3k7-core/ddr3_ctrl_wb.vhd \
-../../../rtl/common/m_clk_sync.vhd \
-../../../rtl/common/k_bram.vhd \
+app_package.vhd \
+../../../rtl/rx-core/wb_rx_bridge.vhd \
+../../../rtl/kintex7/wshexp-core/wshexp-core.vhd \
+top_level.vhd \
+../../../rtl/common/wb_addr_decoder.vhd \
 ../../../rtl/kintex7/wshexp-core/wbmaster32.vhd \
 ../../../rtl/common/wshexp_core_pkg.vhd \
-app.vhd \
+../../../rtl/kintex7/wshexp-core/gn4124_core_pkg.vhd \
+../../../rtl/common/rr_arbiter.vhd \
+../../../rtl/tx-core/tx_channel.vhd \
+../../../rtl/tx-core/wb_tx_core.vhd \
+../../../rtl/rx-core/fei4_rx_channel.vhd \
 ../../../rtl/kintex7/wshexp-core/l2p_arbiter.vhd \
 ../../../rtl/kintex7/ddr3k7-core/ddr3_ctrl_pkg.vhd \
 ../../../rtl/kintex7/wshexp-core/l2p_dma_master.vhd
 
-SOURCES_XDCFile := \
-xpressk7-ddr3.xdc \
-xpressk7.xdc
-
 SOURCES_XCIFile := \
-../../../ip-cores/kintex7/fifo_32x512/fifo_32x512.xci \
+../../../ip-cores/kintex7/tx_fifo/tx_fifo.xci \
+../../../ip-cores/kintex7/fifo_27x16/fifo_27x16.xci \
+../../../ip-cores/kintex7/rx_bridge_ctrl_fifo/rx_bridge_ctrl_fifo.xci \
 ../../../ip-cores/kintex7/fifo_4x16/fifo_4x16.xci \
 ../../../ip-cores/kintex7/fifo_96x512_1/fifo_96x512.xci \
 ../../../ip-cores/kintex7/ila_axis/ila_axis.xci \
+../../../ip-cores/kintex7/mig_7series_0/mig_7series_0.xci \
 ../../../ip-cores/kintex7/cross_clock_fifo/cross_clock_fifo.xci \
 ../../../ip-cores/kintex7/ila_pd_pdm/ila_pd_pdm.xci \
 ../../../ip-cores/kintex7/ila_dma_ctrl_reg/ila_dma_ctrl_reg.xci \
-../../../ip-cores/kintex7/fifo_27x16/fifo_27x16.xci \
+../../../ip-cores/kintex7/rx_channel_fifo/rx_channel_fifo.xci \
 ../../../ip-cores/kintex7/fifo_315x16/fifo_315x16.xci \
+../../../ip-cores/kintex7/rx_bridge_fifo/rx_bridge_fifo.xci \
+../../../ip-cores/kintex7/clk_gen/clk_gen.xci \
+../../../ip-cores/kintex7/fifo_32x512/fifo_32x512.xci \
 ../../../ip-cores/kintex7/ila_l2p_dma/ila_l2p_dma.xci \
 ../../../ip-cores/kintex7/ila_wsh_pipe/ila_wsh_pipe.xci \
-../../../ip-cores/kintex7/fifo_64x512/fifo_64x512.xci \
-../../../ip-cores/kintex7/mig_7series_0/mig_7series_0.xci \
 ../../../ip-cores/kintex7/l2p_fifo64/l2p_fifo64.xci \
-../../../ip-cores/kintex7/fifo_256x16/fifo_256x16.xci \
+../../../ip-cores/kintex7/fifo_64x512/fifo_64x512.xci \
 ../../../ip-cores/kintex7/ila_ddr/ila_ddr.xci \
+../../../ip-cores/kintex7/fifo_256x16/fifo_256x16.xci \
 ../../../ip-cores/kintex7/pcie_7x_0/pcie_7x_0.xci
 
+SOURCES_XDCFile := \
+xpressk7-fmc.xdc \
+xpressk7.xdc
+
 files.tcl:
-		@$(foreach sourcefile, $(SOURCES_VHDLFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
-		@$(foreach sourcefile, $(SOURCES_XDCFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
-		@$(foreach sourcefile, $(SOURCES_XCIFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
+		@$(foreach sourcefile, $(SOURCES_VHDLFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 0 [get_files $(sourcefile)]" >> $@ &)
+		@$(foreach sourcefile, $(SOURCES_XCIFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 0 [get_files $(sourcefile)]" >> $@ &)
+		@$(foreach sourcefile, $(SOURCES_XDCFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 0 [get_files $(sourcefile)]" >> $@ &)
 
 SYN_PRE_PROJECT_CMD := 
 SYN_POST_PROJECT_CMD := 
