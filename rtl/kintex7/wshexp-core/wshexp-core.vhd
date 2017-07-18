@@ -39,6 +39,7 @@ entity wshexp_core is
     );
     Port ( 
         clk_i : in STD_LOGIC;
+        wb_clk_i : in STD_LOGIC;
         --sys_clk_n_i : IN STD_LOGIC;
         --sys_clk_p_i : IN STD_LOGIC;
         rst_i : in STD_LOGIC;
@@ -371,7 +372,7 @@ begin
         
         ---------------------------------------------------------
         -- CSR wishbone interface
-        wb_clk_i   =>  clk_i,                     -- Wishbone bus clock
+        wb_clk_i   =>  wb_clk_i,                     -- Wishbone bus clock
         wb_adr_o   =>  csr_adr_o(30 downto 0),-- Address
         wb_dat_o   =>  csr_dat_o,-- Data out
         wb_sel_o   =>  csr_sel_o, -- Byte select
@@ -444,7 +445,7 @@ begin
 
 		  ---------------------------------------------------------
 		  -- DMA Interface (Pipelined Wishbone)
-		  p2l_dma_clk_i   => clk_i,                      -- Bus clock
+		  p2l_dma_clk_i   => wb_clk_i,                      -- Bus clock
 		  p2l_dma_adr_o   => p2l_dma_adr_s,  -- Adress
 		  p2l_dma_dat_i   => p2l_dma_dat_s2m_s,  -- Data in
 		  p2l_dma_dat_o   => p2l_dma_dat_m2s_s,  -- Data out
@@ -499,7 +500,7 @@ begin
 		l2p_rdy_i  => '1',
 		tx_error_i => '0',
 
-		l2p_dma_clk_i   => clk_i,
+		l2p_dma_clk_i   => wb_clk_i,
 		l2p_dma_adr_o   => l2p_dma_adr_s,
 		l2p_dma_dat_i   => l2p_dma_dat_s2m_s,
 		l2p_dma_dat_o   => l2p_dma_dat_m2s_s,
@@ -574,7 +575,7 @@ begin
 
           ---------------------------------------------------------
           -- Wishbone slave interface
-          wb_clk_i => clk_i,                     -- Bus clock
+          wb_clk_i => wb_clk_i,                     -- Bus clock
           wb_adr_i => dma_reg_adr_i(3 downto 0),   -- Adress
           wb_dat_o => dma_reg_dat_o,  -- Data in
           wb_dat_i => dma_reg_dat_i,  -- Data out

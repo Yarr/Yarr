@@ -72,6 +72,7 @@ package app_pkg is
       clk_80          : out    std_logic;
       clk_40          : out    std_logic;
       clk_40_90          : out    std_logic;
+      clk_250          : out    std_logic;
       -- Status and control signals
       reset             : in     std_logic;
       locked            : out    std_logic
@@ -96,6 +97,7 @@ package app_pkg is
         );
         Port ( 
             clk_i : in STD_LOGIC;
+            wb_clk_i : in STD_LOGIC;
             --sys_clk_n_i : IN STD_LOGIC;
             --sys_clk_p_i : IN STD_LOGIC;
             rst_i : in STD_LOGIC;
@@ -473,8 +475,8 @@ package app_pkg is
             -- Wishbone DMA Master Interface
             dma_clk_i    : in  std_logic;
             dma_adr_o    : out std_logic_vector(31 downto 0);
-            dma_dat_o    : out std_logic_vector(31 downto 0);
-            dma_dat_i    : in  std_logic_vector(31 downto 0);
+            dma_dat_o    : out std_logic_vector(63 downto 0);
+            dma_dat_i    : in  std_logic_vector(63 downto 0);
             dma_cyc_o    : out std_logic;
             dma_stb_o    : out std_logic;
             dma_we_o    : out std_logic;

@@ -154,7 +154,8 @@ architecture Behavioral of app is
     ------------------------------------------------------------------------------
     -- Signals declaration
     ------------------------------------------------------------------------------
-
+    
+    signal wb_clk_s : std_logic;
     
     signal rst_n_s : std_logic;
     signal led_count_s : STD_LOGIC_VECTOR (28 downto 0);
@@ -476,6 +477,7 @@ begin
        clk_80 => clk_80_s,
        clk_40 => clk_40_s,
        clk_40_90 => clk_40_90_s,
+       clk_250 => wb_clk_s,
       -- Status and control signals                
        reset => rst_i,
        locked => pll_locked_s            
@@ -508,6 +510,7 @@ begin
     wb_exp_comp:wshexp_core
         Port map( 
             clk_i => clk_i,
+            wb_clk_i => wb_clk_s,
             rst_i => rst_i,
             
             ---------------------------------------------------------
@@ -602,7 +605,7 @@ begin
           port map (
             ---------------------------------------------------------
             -- GN4124 core clock and reset
-            clk_i   => clk_i,
+            clk_i   => wb_clk_s,
             rst_n_i => rst_n_s,
       
             ---------------------------------------------------------
@@ -634,7 +637,7 @@ begin
 	     cmp_wb_tx_core : wb_tx_core port map
             (
                 -- Sys connect
-                wb_clk_i => clk_i,
+                wb_clk_i => wb_clk_s,
                 rst_n_i => rst_n_s,
                 -- Wishbone slave interface
                 wb_adr_i => wb_adr_s,
@@ -654,7 +657,7 @@ begin
             );
 
 	cmp_wb_rx_core: wb_rx_core PORT MAP(
-		wb_clk_i => clk_i,
+		wb_clk_i => wb_clk_s,
 		rst_n_i => rst_n_s,
 		wb_adr_i => wb_adr_s,
 		wb_dat_i => wb_dat_m2s_s,
@@ -675,11 +678,9 @@ begin
 	);  
 
     
-    --TODO
-    rx_dma_dat_m2s_s(63 downto 32) <= rx_dma_dat_m2s_s(31 downto 0);
 	cmp_wb_rx_bridge : wb_rx_bridge port map (
 		-- Sys Connect
-		sys_clk_i => clk_i,
+		sys_clk_i => wb_clk_s,
 		rst_n_i => rst_n_s,
 		-- Wishbone slave interface
 		wb_adr_i => wb_adr_s,
@@ -691,10 +692,10 @@ begin
 		wb_ack_o => wb_ack_s(3),
 		wb_stall_o => wb_stall_s(3),
 		-- Wishbone DMA Master Interface
-		dma_clk_i => clk_i,
+		dma_clk_i => wb_clk_s,
 		dma_adr_o => rx_dma_adr_s,
-		dma_dat_o => rx_dma_dat_m2s_s(31 downto 0),
-		dma_dat_i => rx_dma_dat_s2m_s(31 downto 0),
+		dma_dat_o => rx_dma_dat_m2s_s,
+		dma_dat_i => rx_dma_dat_s2m_s,
 		dma_cyc_o => rx_dma_cyc_s,
 		dma_stb_o => rx_dma_stb_s,
 		dma_we_o => rx_dma_we_s,
@@ -710,13 +711,56 @@ begin
 		busy_o => rx_busy
 	);
 
+--	cmp_i2c_master : i2c_master_wb_top
+--	port map (
+--		wb_clk_i => clk_i,
+--		wb_rst_i => not rst_n_s,
+--		arst_i => rst_n_s,
+--		wb_adr_i => wb_adr_s(2 downto 0),
+--		wb_dat_i => wb_dat_m2s_s(7 downto 0),
+--		wb_dat_o => wb_dat_s2m_s(135 downto 128),
+--		wb_we_i => wb_we_s,
+--		wb_stb_i => wb_stb_s,
+--		wb_cyc_i => wb_cyc_s(4),
+--		wb_ack_o => wb_ack_s(4),
+--		wb_inta_o => open,
+--		scl => scl_io,
+--		sda => sda_io
+--	);
+	
+	cmp_wb_trigger_logic: wb_trigger_logic PORT MAP(
+		wb_clk_i => wb_clk_s,
+		rst_n_i => rst_n_s,
+		wb_adr_i => wb_adr_s(31 downto 0),
+		wb_dat_i => wb_dat_m2s_s(31 downto 0),
+		wb_dat_o => wb_dat_s2m_s(191 downto 160),
+		wb_cyc_i => wb_cyc_s(5),
+		wb_stb_i => wb_stb_s,
+		wb_we_i => wb_we_s,
+		wb_ack_o => wb_ack_s(5),
+		ext_trig_i => "0000",
+		ext_trig_o => open,
+		ext_busy_i => '0',
+		ext_busy_o => open,
+		eudet_clk_o => open,
+		eudet_busy_o => open,
+		eudet_trig_i => '0',
+		eudet_rst_i => '0',
+		clk_i => CLK_40_S,
+		int_trig_i => "000" & trig_pulse,
+		int_trig_o => int_trig_t,
+		int_busy_i => '0',
+		trig_tag => trig_tag_t
+	);
+
+
     dma_bram_gen : if DMA_MEMORY_SELECTED = "DEMUX" or DMA_MEMORY_SELECTED = "BRAM" generate
 
      
      dual_dma_ram: k_dual_bram
      Port Map( 
          -- SYS CON
-         clk_i            => clk_i,
+         clk_i            => wb_clk_s,
          rst_i            => rst_i,
          
          -- Wishbone Slave in
@@ -787,7 +831,7 @@ begin
       ddr_zq_ack_i        => '1',
       ddr_init_calib_complete_i => '1',
       
-      wb_clk_i            => clk_i,
+      wb_clk_i            => wb_clk_s,
       wb_sel_i            => dma_ddr_sel_s,
       wb_cyc_i            => dma_ddr_cyc_s,
       wb_stb_i            => dma_ddr_stb_s,
@@ -986,7 +1030,7 @@ begin
   dbg_2 : if DEBUG_C(2) = '1' generate
       pipelined_wishbone_debug : ila_wsh_pipe
       PORT MAP (
-          clk => clk_i,
+          clk => wb_clk_s,
       
       
       
