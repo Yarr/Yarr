@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     int target_threshold = 2500;
     int target_tot = 10;
     int target_charge = 16000;
-    int mask_opt = 1;
+    int mask_opt = -1;
     
     unsigned runCounter = 0;
 
