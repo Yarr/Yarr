@@ -142,7 +142,8 @@ architecture Behavioral of app is
     ------------------------------------------------------------------------------
     -- Constants declaration
     ------------------------------------------------------------------------------
-    constant DEBUG_C : std_logic_vector(5 downto 0) := "000000";
+    constant DEBUG_C : std_logic_vector(5 downto 0) := "000001";
+    constant wb_dev_c : std_logic := '0';
     
     --TODO
     constant c_BAR0_APERTURE    : integer := 18;  -- nb of bits for 32-bit word address
@@ -222,7 +223,7 @@ architecture Behavioral of app is
     
     
 	---------------------------------------------------------
-    -- Slave AXI-Stream from arbiter to pcie_tx
+    -- Slave AXI-Stream from wb_exp to pcie_tx_fifo
     signal s_axis_rx_tdata_s : STD_LOGIC_VECTOR (axis_data_width_c - 1 downto 0);
     signal s_axis_rx_tkeep_s : STD_LOGIC_VECTOR (axis_data_width_c/8 - 1 downto 0);
     signal s_axis_rx_tuser_s : STD_LOGIC_VECTOR (21 downto 0);
@@ -231,7 +232,7 @@ architecture Behavioral of app is
     signal s_axis_rx_tready_s : STD_LOGIC;
     
 	---------------------------------------------------------
-	-- Master AXI-Stream pcie_rx to wishbone master
+	-- Master AXI-Stream pcie_rx_fio to wb_exp
     signal m_axis_tx_tdata_s : STD_LOGIC_VECTOR (axis_data_width_c - 1 downto 0);
     signal m_axis_tx_tkeep_s : STD_LOGIC_VECTOR (axis_data_width_c/8 - 1 downto 0);
     signal m_axis_tx_tuser_s : STD_LOGIC_VECTOR (3 downto 0);
@@ -239,7 +240,23 @@ architecture Behavioral of app is
     signal m_axis_tx_tvalid_s : STD_LOGIC;
     signal m_axis_tx_tready_s : STD_LOGIC;
     
+	---------------------------------------------------------
+    -- Slave AXI-Stream from wb_exp to pcie_tx_fifo
+    signal s_axis_rx_tdata_i_s : STD_LOGIC_VECTOR (axis_data_width_c - 1 downto 0);
+    signal s_axis_rx_tkeep_i_s : STD_LOGIC_VECTOR (axis_data_width_c/8 - 1 downto 0);
+    signal s_axis_rx_tuser_i_s : STD_LOGIC_VECTOR (21 downto 0);
+    signal s_axis_rx_tlast_i_s : STD_LOGIC;
+    signal s_axis_rx_tvalid_i_s :STD_LOGIC;
+    signal s_axis_rx_tready_o_s : STD_LOGIC;
     
+    ---------------------------------------------------------
+    -- Master AXI-Stream pcie_rx_fio to wb_exp
+    signal m_axis_tx_tdata_o_s : STD_LOGIC_VECTOR (axis_data_width_c - 1 downto 0);
+    signal m_axis_tx_tkeep_o_s : STD_LOGIC_VECTOR (axis_data_width_c/8 - 1 downto 0);
+    signal m_axis_tx_tuser_o_s : STD_LOGIC_VECTOR (3 downto 0);
+    signal m_axis_tx_tlast_o_s : STD_LOGIC;
+    signal m_axis_tx_tvalid_o_s : STD_LOGIC;
+    signal m_axis_tx_tready_i_s : STD_LOGIC;    
 
 	
 	
@@ -395,76 +412,71 @@ begin
     rst_n_s <= not rst_i;
     
 
-    
-    s_axis_rx_tdata_s <= s_axis_rx_tdata_i;
-    s_axis_rx_tkeep_s <= s_axis_rx_tkeep_i;
-    s_axis_rx_tlast_s <= s_axis_rx_tlast_i;
-    s_axis_rx_tready_o <= s_axis_rx_tready_s;
-    s_axis_rx_tuser_s <= s_axis_rx_tuser_i;
-    s_axis_rx_tvalid_s <= s_axis_rx_tvalid_i;
+    -- Slave AXI-Stream
+    s_axis_rx_tdata_i_s <= s_axis_rx_tdata_i;
+    s_axis_rx_tkeep_i_s <= s_axis_rx_tkeep_i;
+    s_axis_rx_tlast_i_s <= s_axis_rx_tlast_i;
+    s_axis_rx_tready_o <= s_axis_rx_tready_o_s;
+    s_axis_rx_tuser_i_s <= s_axis_rx_tuser_i;
+    s_axis_rx_tvalid_i_s <= s_axis_rx_tvalid_i;
     -- Master AXI-Stream
-    m_axis_tx_tdata_o <= m_axis_tx_tdata_s;
-    m_axis_tx_tkeep_o <= m_axis_tx_tkeep_s;
-    m_axis_tx_tuser_o <= m_axis_tx_tuser_s;
-    m_axis_tx_tlast_o <= m_axis_tx_tlast_s;
-    m_axis_tx_tvalid_o <= m_axis_tx_tvalid_s;
-    m_axis_tx_tready_s <= m_axis_tx_tready_i;
+    m_axis_tx_tdata_o <= m_axis_tx_tdata_o_s;
+    m_axis_tx_tkeep_o <= m_axis_tx_tkeep_o_s;
+    m_axis_tx_tuser_o <= m_axis_tx_tuser_o_s;
+    m_axis_tx_tlast_o <= m_axis_tx_tlast_o_s;
+    m_axis_tx_tvalid_o <= m_axis_tx_tvalid_o_s;
+    m_axis_tx_tready_i_s <= m_axis_tx_tready_i;
     
-
+    axis_rx_fifo : axis_data_fifo_0
+      PORT MAP (
+        s_axis_aresetn => rst_n_s,
+        m_axis_aresetn => '1',
+        s_axis_aclk => clk_i,
+        s_axis_tvalid => s_axis_rx_tvalid_i_s,
+        s_axis_tready => s_axis_rx_tready_o_s,
+        s_axis_tdata => s_axis_rx_tdata_i_s,
+        s_axis_tkeep => s_axis_rx_tkeep_i_s,
+        s_axis_tlast => s_axis_rx_tlast_i_s,
+        s_axis_tuser => s_axis_rx_tuser_i_s,
+        m_axis_aclk => wb_clk_s,
+        m_axis_tvalid => s_axis_rx_tvalid_s,
+        m_axis_tready => s_axis_rx_tready_s,
+        m_axis_tdata => s_axis_rx_tdata_s,
+        m_axis_tkeep => s_axis_rx_tkeep_s,
+        m_axis_tlast => s_axis_rx_tlast_s,
+        m_axis_tuser => s_axis_rx_tuser_s,
+        axis_data_count => open,
+        axis_wr_data_count => open,
+        axis_rd_data_count => open
+      );
+      
+    axis_tx_fifo : axis_data_fifo_1
+        PORT MAP (
+          s_axis_aresetn => '1',
+          m_axis_aresetn => rst_n_s,
+          s_axis_aclk => wb_clk_s,
+          s_axis_tvalid => m_axis_tx_tvalid_s,
+          s_axis_tready => m_axis_tx_tready_s,
+          s_axis_tdata => m_axis_tx_tdata_s,
+          s_axis_tkeep => m_axis_tx_tkeep_s,
+          s_axis_tlast => m_axis_tx_tlast_s,
+          s_axis_tuser => m_axis_tx_tuser_s,
+          m_axis_aclk => clk_i,
+          m_axis_tvalid => m_axis_tx_tvalid_o_s,
+          m_axis_tready => m_axis_tx_tready_i_s,
+          m_axis_tdata => m_axis_tx_tdata_o_s,
+          m_axis_tkeep => m_axis_tx_tkeep_o_s,
+          m_axis_tlast => m_axis_tx_tlast_o_s,
+          m_axis_tuser => m_axis_tx_tuser_o_s,
+          axis_data_count => open,
+          axis_wr_data_count => open,
+          axis_rd_data_count => open
+        );
     
     pcie_id_s <= cfg_bus_number_i & cfg_device_number_i & cfg_function_number_i;
     
 
--- Differential buffers
-	tx_loop: for I in 0 to c_TX_CHANNELS-1 generate
-	begin
-		tx_buf : OBUFDS
-		generic map (
-			IOSTANDARD => "LVDS_25")
-		port map (
-			O => fe_cmd_p(I),     -- Diff_p output (connect directly to top-level port)
-			OB => fe_cmd_n(I),   -- Diff_n output (connect directly to top-level port)
-			I => fe_cmd_enc(I)      -- Buffer input 
-		);
-		ODDR2_manchester : ODDR2
-		generic map(
-			DDR_ALIGNMENT => "NONE", -- Sets output alignment to "NONE", "C0", "C1" 
-			INIT => '0', -- Sets initial state of the Q output to '0' or '1'
-			SRTYPE => "SYNC") -- Specifies "SYNC" or "ASYNC" set/reset
-		port map (
-			Q => fe_cmd_enc(I), -- 1-bit output data
-			C0 => clk_40_s, -- 1-bit clock input
-			C1 => not clk_40_s, -- 1-bit clock input
-			CE => '1',  -- 1-bit clock enable input
-			D0 => fe_cmd_o(I),   -- 1-bit data input (associated with C0)
-			D1 => not fe_cmd_o(I),   -- 1-bit data input (associated with C1)
-			R => not rst_n_s,    -- 1-bit reset input
-			S => '0'     -- 1-bit set input
-		);
-		clk_buf : OBUFDS
-		generic map (
-			IOSTANDARD => "LVDS_25")
-		port map (
-			O => fe_clk_p(I),     -- Diff_p output (connect directly to top-level port)
-			OB => fe_clk_n(I),   -- Diff_n output (connect directly to top-level port)
-			I => fe_clk_o(I)      -- Buffer input 
-		);
-		ODDR2_inst : ODDR2
-		generic map(
-			DDR_ALIGNMENT => "NONE", -- Sets output alignment to "NONE", "C0", "C1" 
-			INIT => '0', -- Sets initial state of the Q output to '0' or '1'
-			SRTYPE => "SYNC") -- Specifies "SYNC" or "ASYNC" set/reset
-		port map (
-			Q => fe_clk_o(I), -- 1-bit output data
-			C0 => clk_40_90_s, -- 1-bit clock input
-			C1 => not clk_40_90_s, -- 1-bit clock input
-			CE => '1',  -- 1-bit clock enable input
-			D0 => '1',   -- 1-bit data input (associated with C0)
-			D1 => '0',   -- 1-bit data input (associated with C1)
-			R => not rst_n_s,    -- 1-bit reset input
-			S => '0'     -- 1-bit set input
-		);
-	end generate;    
+
 
     
     clk_gen_cmp : clk_gen
@@ -509,7 +521,7 @@ begin
    
     wb_exp_comp:wshexp_core
         Port map( 
-            clk_i => clk_i,
+            clk_i => wb_clk_s,
             wb_clk_i => wb_clk_s,
             rst_i => rst_i,
             
@@ -569,7 +581,7 @@ begin
             
             ---------------------------------------------------------
             -- PCIe interrupt config
-            cfg_interrupt_o => cfg_interrupt_o,
+            cfg_interrupt_o => cfg_interrupt_s,
             cfg_interrupt_rdy_i => cfg_interrupt_rdy_i,
             cfg_interrupt_assert_o => cfg_interrupt_assert_o,
             cfg_interrupt_di_o => cfg_interrupt_di_o,
@@ -588,8 +600,8 @@ begin
             cfg_function_number_i => cfg_function_number_i
         );
 
-    
-   
+        
+        cfg_interrupt_o <= cfg_interrupt_s;
     
 
     
@@ -632,7 +644,61 @@ begin
             wb_ack_i   => wb_ack_s,
             wb_stall_i => wb_stall_s
             );   
+        
+        
+wb_dev_gen : if wb_dev_c = '1' generate        
 
+
+-- Differential buffers
+	tx_loop: for I in 0 to c_TX_CHANNELS-1 generate
+	begin
+		tx_buf : OBUFDS
+		generic map (
+			IOSTANDARD => "LVDS_25")
+		port map (
+			O => fe_cmd_p(I),     -- Diff_p output (connect directly to top-level port)
+			OB => fe_cmd_n(I),   -- Diff_n output (connect directly to top-level port)
+			I => fe_cmd_enc(I)      -- Buffer input 
+		);
+		ODDR2_manchester : ODDR2
+		generic map(
+			DDR_ALIGNMENT => "NONE", -- Sets output alignment to "NONE", "C0", "C1" 
+			INIT => '0', -- Sets initial state of the Q output to '0' or '1'
+			SRTYPE => "SYNC") -- Specifies "SYNC" or "ASYNC" set/reset
+		port map (
+			Q => fe_cmd_enc(I), -- 1-bit output data
+			C0 => clk_40_s, -- 1-bit clock input
+			C1 => not clk_40_s, -- 1-bit clock input
+			CE => '1',  -- 1-bit clock enable input
+			D0 => fe_cmd_o(I),   -- 1-bit data input (associated with C0)
+			D1 => not fe_cmd_o(I),   -- 1-bit data input (associated with C1)
+			R => not rst_n_s,    -- 1-bit reset input
+			S => '0'     -- 1-bit set input
+		);
+		clk_buf : OBUFDS
+		generic map (
+			IOSTANDARD => "LVDS_25")
+		port map (
+			O => fe_clk_p(I),     -- Diff_p output (connect directly to top-level port)
+			OB => fe_clk_n(I),   -- Diff_n output (connect directly to top-level port)
+			I => fe_clk_o(I)      -- Buffer input 
+		);
+		ODDR2_inst : ODDR2
+		generic map(
+			DDR_ALIGNMENT => "NONE", -- Sets output alignment to "NONE", "C0", "C1" 
+			INIT => '0', -- Sets initial state of the Q output to '0' or '1'
+			SRTYPE => "SYNC") -- Specifies "SYNC" or "ASYNC" set/reset
+		port map (
+			Q => fe_clk_o(I), -- 1-bit output data
+			C0 => clk_40_90_s, -- 1-bit clock input
+			C1 => not clk_40_90_s, -- 1-bit clock input
+			CE => '1',  -- 1-bit clock enable input
+			D0 => '1',   -- 1-bit data input (associated with C0)
+			D1 => '0',   -- 1-bit data input (associated with C1)
+			R => not rst_n_s,    -- 1-bit reset input
+			S => '0'     -- 1-bit set input
+		);
+	end generate;    
   
 	     cmp_wb_tx_core : wb_tx_core port map
             (
@@ -753,6 +819,7 @@ begin
 		trig_tag => trig_tag_t
 	);
 
+end generate;
 
     dma_bram_gen : if DMA_MEMORY_SELECTED = "DEMUX" or DMA_MEMORY_SELECTED = "BRAM" generate
 
@@ -998,17 +1065,17 @@ begin
       
       
       
-          probe0 => s_axis_rx_tdata_s, 
-          probe1 => s_axis_rx_tkeep_s, 
-          probe2(0) => s_axis_rx_tlast_s, 
-          probe3(0) => s_axis_rx_tvalid_s, 
-          probe4(0) => s_axis_rx_tready_s, 
-          probe5 => m_axis_tx_tdata_s, 
-          probe6 => m_axis_tx_tkeep_s, 
-          probe7(0) => m_axis_tx_tlast_s, 
-          probe8(0) => m_axis_tx_tvalid_s,
-          probe9(0) => m_axis_tx_tready_s,
-          probe10 => s_axis_rx_tuser_i, 
+          probe0 => s_axis_rx_tdata_i_s, 
+          probe1 => s_axis_rx_tkeep_i_s, 
+          probe2(0) => s_axis_rx_tlast_i_s, 
+          probe3(0) => s_axis_rx_tvalid_i_s, 
+          probe4(0) => s_axis_rx_tready_o_s, 
+          probe5 => m_axis_tx_tdata_o_s, 
+          probe6 => m_axis_tx_tkeep_o_s, 
+          probe7(0) => m_axis_tx_tlast_o_s, 
+          probe8(0) => m_axis_tx_tvalid_o_s,
+          probe9(0) => m_axis_tx_tready_i_s,
+          probe10 => s_axis_rx_tuser_i_s, 
           probe11(0) => '0',--dma_ctrl_start_l2p_s, 
           probe12(0) => '0',--dma_ctrl_start_p2l_s, 
           probe13(0) => '0',--dma_ctrl_start_next_s,
@@ -1017,11 +1084,11 @@ begin
           probe16(0) => '0',--dma_ctrl_error_s,
           probe17(0) => user_lnk_up_i,
           probe18(0) => cfg_interrupt_s,
-          probe19(0) => cfg_interrupt_rdy_i,
+          probe19(0) => '0',--cfg_interrupt_rdy_i,
           probe20(0) => '0',--dma_ctrl_done_s,
           probe21 => (others => '0'),--wbm_arb_tready_s & wbm_arb_tready_s & ldm_arb_tready_s,--dma_ctrl_current_state_ds,
           probe22(0) => tx_err_drop_i,--next_item_valid_s
-          probe23 => iteration_count_s
+          probe23 => (others => '0')--iteration_count_s
       );
   end generate dbg_0;
   

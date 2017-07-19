@@ -455,6 +455,41 @@ package wshexp_core_pkg is
 		  );
 	end component;
 
+    COMPONENT ila_axis
+    
+    PORT (
+        clk : IN STD_LOGIC;
+    
+    
+    
+        probe0 : IN STD_LOGIC_VECTOR(63 DOWNTO 0); 
+        probe1 : IN STD_LOGIC_VECTOR(7 DOWNTO 0); 
+        probe2 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe3 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe4 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe5 : IN STD_LOGIC_VECTOR(63 DOWNTO 0); 
+        probe6 : IN STD_LOGIC_VECTOR(7 DOWNTO 0); 
+        probe7 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe8 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe9 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe10 : IN STD_LOGIC_VECTOR(21 DOWNTO 0); 
+        probe11 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe12 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe13 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe14 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe15 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe16 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe17 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe18 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe19 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe20 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe21 : IN STD_LOGIC_VECTOR(2 DOWNTO 0); 
+        probe22 : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+        probe23 : IN STD_LOGIC_VECTOR(28 DOWNTO 0)
+    );
+    END COMPONENT  ;
+
+
 -----------------------------------------------------------------------------
 
 
@@ -555,5 +590,6 @@ package body wshexp_core_pkg is
       return 1 + log2_ceil((N+1)/2);
     end if;
   end;
+
 
 end wshexp_core_pkg;

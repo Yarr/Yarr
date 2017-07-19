@@ -54,47 +54,46 @@ entity top_level is
             pci_exp_rxp : in std_logic_vector(4-1 downto 0);
             -- . IO
             usr_sw_i : in STD_LOGIC_VECTOR (2 downto 0);
-            usr_led_o : out STD_LOGIC_VECTOR (2 downto 0);
+            usr_led_o : out STD_LOGIC_VECTOR (2 downto 0)--;
             --front_led_o : out STD_LOGIC_VECTOR (3 downto 0);
             
             ---------------------------------------------------------
             -- FMC
             ---------------------------------------------------------
             -- Trigger input
-            ext_trig_o        : out std_logic;
+            --ext_trig_o        : out std_logic;
             -- LVDS buffer
-            pwdn_l            : out std_logic_vector(2 downto 0);
+            --pwdn_l            : out std_logic_vector(2 downto 0);
             -- GPIO
-            io              : inout std_logic_vector(2 downto 0);
+            --io              : inout std_logic_vector(2 downto 0);
             -- FE-I4
-            fe_clk_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
-            fe_clk_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
-            fe_cmd_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
-            fe_cmd_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
-            fe_data_p        : in  std_logic_vector(c_RX_CHANNELS-1 downto 0);
-            fe_data_n        : in  std_logic_vector(c_RX_CHANNELS-1 downto 0);
+--            fe_clk_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
+--            fe_clk_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
+--            fe_cmd_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
+--            fe_cmd_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
+--            fe_data_p        : in  std_logic_vector(c_RX_CHANNELS-1 downto 0);
+--            fe_data_n        : in  std_logic_vector(c_RX_CHANNELS-1 downto 0);
             -- I2c
-            sda_io                : inout std_logic;
-            scl_io                    : inout std_logic;
+            --sda_io                : inout std_logic;
+            --scl_io                    : inout std_logic;
             
             -- . DDR3
-            ddr3_dq       : inout std_logic_vector(63 downto 0);
-            ddr3_dqs_p    : inout std_logic_vector(7 downto 0);
-            ddr3_dqs_n    : inout std_logic_vector(7 downto 0);
-            --init_calib_complete : out std_logic;
+--            ddr3_dq       : inout std_logic_vector(63 downto 0);
+--            ddr3_dqs_p    : inout std_logic_vector(7 downto 0);
+--            ddr3_dqs_n    : inout std_logic_vector(7 downto 0);
       
-            ddr3_addr     : out   std_logic_vector(14 downto 0);
-            ddr3_ba       : out   std_logic_vector(2 downto 0);
-            ddr3_ras_n    : out   std_logic;
-            ddr3_cas_n    : out   std_logic;
-            ddr3_we_n     : out   std_logic;
-            ddr3_reset_n  : out   std_logic;
-            ddr3_ck_p     : out   std_logic_vector(0 downto 0);
-            ddr3_ck_n     : out   std_logic_vector(0 downto 0);
-            ddr3_cke      : out   std_logic_vector(0 downto 0);
-            ddr3_cs_n     : out   std_logic_vector(0 downto 0);
-            ddr3_dm       : out   std_logic_vector(7 downto 0);
-            ddr3_odt      : out   std_logic_vector(0 downto 0)
+--            ddr3_addr     : out   std_logic_vector(14 downto 0);
+--            ddr3_ba       : out   std_logic_vector(2 downto 0);
+--            ddr3_ras_n    : out   std_logic;
+--            ddr3_cas_n    : out   std_logic;
+--            ddr3_we_n     : out   std_logic;
+--            ddr3_reset_n  : out   std_logic;
+--            ddr3_ck_p     : out   std_logic_vector(0 downto 0);
+--            ddr3_ck_n     : out   std_logic_vector(0 downto 0);
+--            ddr3_cke      : out   std_logic_vector(0 downto 0);
+--            ddr3_cs_n     : out   std_logic_vector(0 downto 0);
+--            ddr3_dm       : out   std_logic_vector(7 downto 0);
+--            ddr3_odt      : out   std_logic_vector(0 downto 0)
             );
 end top_level;
 
@@ -471,44 +470,44 @@ begin
         cfg_dstatus_i => cfg_dstatus_s,
         
         --DDR3
-        ddr3_dq_io       => ddr3_dq,
-        ddr3_dqs_p_io    => ddr3_dqs_p,
-        ddr3_dqs_n_io    => ddr3_dqs_n,
+        --ddr3_dq_io       => ddr3_dq,
+        --ddr3_dqs_p_io    => ddr3_dqs_p,
+        --ddr3_dqs_n_io    => ddr3_dqs_n,
         
         --init_calib_complete_o => init_calib_complete,
     
-        ddr3_addr_o     => ddr3_addr,
-        ddr3_ba_o       => ddr3_ba,
-        ddr3_ras_n_o    => ddr3_ras_n,
-        ddr3_cas_n_o    => ddr3_cas_n,
-        ddr3_we_n_o     => ddr3_we_n,
-        ddr3_reset_n_o  => ddr3_reset_n,
-        ddr3_ck_p_o     => ddr3_ck_p,
-        ddr3_ck_n_o     => ddr3_ck_n,
-        ddr3_cke_o      => ddr3_cke,
-        ddr3_cs_n_o     => ddr3_cs_n,
-        ddr3_dm_o       => ddr3_dm,
-        ddr3_odt_o      => ddr3_odt,
+        --ddr3_addr_o     => ddr3_addr,
+        --ddr3_ba_o       => ddr3_ba,
+        --ddr3_ras_n_o    => ddr3_ras_n,
+        --ddr3_cas_n_o    => ddr3_cas_n,
+        --ddr3_we_n_o     => ddr3_we_n,
+        --ddr3_reset_n_o  => ddr3_reset_n,
+        --ddr3_ck_p_o     => ddr3_ck_p,
+        --ddr3_ck_n_o     => ddr3_ck_n,
+        --ddr3_cke_o      => ddr3_cke,
+        --ddr3_cs_n_o     => ddr3_cs_n,
+        --ddr3_dm_o       => ddr3_dm,
+        --ddr3_odt_o      => ddr3_odt,
 
         ---------------------------------------------------------
         -- FMC
         ---------------------------------------------------------
         -- Trigger input
-        ext_trig_o        => ext_trig_o,
+        --ext_trig_o        => ext_trig_o,
         -- LVDS buffer
-        pwdn_l            => pwdn_l,
+        --pwdn_l            => pwdn_l,
         -- GPIO
-        io                => io,
+        --io                => io,
         -- FE-I4
-        fe_clk_p          => fe_clk_p,
-        fe_clk_n          => fe_clk_n,
-        fe_cmd_p          => fe_cmd_p,
-        fe_cmd_n          => fe_cmd_n,
-        fe_data_p         => fe_data_p,
-        fe_data_n         => fe_data_n,
+        --fe_clk_p          => fe_clk_p,
+        --fe_clk_n          => fe_clk_n,
+        --fe_cmd_p          => fe_cmd_p,
+        --fe_cmd_n          => fe_cmd_n,
+        fe_data_p         => (others => '0'),--fe_data_p,
+        fe_data_n         => (others => '0'),--fe_data_n,
         -- I2c
-        sda_io            => sda_io,
-        scl_io            => scl_io,
+        --sda_io            => sda_io,
+        --scl_io            => scl_io,
 
         --I/O
         usr_sw_i => usr_sw_i,

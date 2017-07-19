@@ -18,8 +18,8 @@ set_property PACKAGE_PIN M24 [get_ports {fe_cmd_p[6]}]
 set_property PACKAGE_PIN L24 [get_ports {fe_cmd_n[6]}]
 #la06_n
 #la06_p
-set_property PACKAGE_PIN W20 [get_ports {fe_clk_p[7]}]
 set_property PACKAGE_PIN Y21 [get_ports {fe_clk_n[7]}]
+set_property PACKAGE_PIN W20 [get_ports {fe_clk_p[7]}]
 #la07_n
 #la07_p
 set_property PACKAGE_PIN V23 [get_ports {fe_cmd_p[7]}]
@@ -43,7 +43,6 @@ set_property PACKAGE_PIN T24 [get_ports {fe_data_p[2]}]
 #la12_n
 set_property PACKAGE_PIN D24 [get_ports {io[0]}]
 #la12_p
-set_property LOC D23  [get_ports {pem_1[0]}]
 #la13_n
 #la13_p
 #la14_n
@@ -55,7 +54,6 @@ set_property PACKAGE_PIN T19 [get_ports {io[1]}]
 #la16_n
 set_property PACKAGE_PIN M20 [get_ports {io[2]}]
 #la16_p
-set_property LOC N19  [get_ports {pem_1[1]}]
 #la17_cc_n
 #la17_cc_p
 set_property PACKAGE_PIN E18 [get_ports {fe_cmd_p[4]}]
@@ -67,9 +65,7 @@ set_property PACKAGE_PIN E17 [get_ports {fe_cmd_n[5]}]
 #la19_n
 #la19_p
 #la20_n
-set_property LOC M19  [get_ports {pem_0[2]}]
 #la20_p
-set_property LOC N18  [get_ports {pem_1[2]}]
 #la21_n
 set_property PACKAGE_PIN D16 [get_ports {fe_data_n[4]}]
 #la21_p
@@ -152,6 +148,7 @@ set_property IOSTANDARD LVCMOS25 [get_ports {io[2]}]
 set_property IOSTANDARD LVCMOS25 [get_ports {pwdn_l[2]}]
 set_property IOSTANDARD LVCMOS25 [get_ports {pwdn_l[1]}]
 set_property IOSTANDARD LVCMOS25 [get_ports {pwdn_l[0]}]
+
 
 
 

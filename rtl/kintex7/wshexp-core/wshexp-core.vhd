@@ -123,6 +123,7 @@ entity wshexp_core is
 end wshexp_core;
 
 architecture Behavioral of wshexp_core is
+    constant axis_data_width_c : integer := 64;
     ---------------------------------------------------------
     -- Reset and Clocks
     signal rst_n_s : std_logic; 
@@ -131,7 +132,24 @@ architecture Behavioral of wshexp_core is
     -- PCIe
     signal cfg_interrupt_s : std_logic;
     signal pcie_id_s : std_logic_vector (15 downto 0); -- Completer/Requester ID
+
+	---------------------------------------------------------
+    -- Slave AXI-Stream from arbiter to pcie_tx
+    signal s_axis_rx_tdata_s : STD_LOGIC_VECTOR (axis_data_width_c - 1 downto 0);
+    signal s_axis_rx_tkeep_s : STD_LOGIC_VECTOR (axis_data_width_c/8 - 1 downto 0);
+    signal s_axis_rx_tuser_s : STD_LOGIC_VECTOR (21 downto 0);
+    signal s_axis_rx_tlast_s : STD_LOGIC;
+    signal s_axis_rx_tvalid_s :STD_LOGIC;
+    signal s_axis_rx_tready_s : STD_LOGIC;
     
+	---------------------------------------------------------
+	-- Master AXI-Stream pcie_rx to wishbone master
+    signal m_axis_tx_tdata_s : STD_LOGIC_VECTOR (axis_data_width_c - 1 downto 0);
+    signal m_axis_tx_tkeep_s : STD_LOGIC_VECTOR (axis_data_width_c/8 - 1 downto 0);
+    signal m_axis_tx_tuser_s : STD_LOGIC_VECTOR (3 downto 0);
+    signal m_axis_tx_tlast_s : STD_LOGIC;
+    signal m_axis_tx_tvalid_s : STD_LOGIC;
+    signal m_axis_tx_tready_s : STD_LOGIC;    
     
     ---------------------------------------------------------
     -- From Packet decoder to Wishbone master (wbm)    
@@ -253,36 +271,71 @@ begin
     
     
     wbm_pd_ready_s <= p2l_wbm_rdy_s and p2l_dma_rdy_s;
-    
+
+    s_axis_rx_tdata_s <= s_axis_rx_tdata_i;
+    s_axis_rx_tkeep_s <= s_axis_rx_tkeep_i;
+    s_axis_rx_tlast_s <= s_axis_rx_tlast_i;
+    s_axis_rx_tready_o <= s_axis_rx_tready_s;
+    s_axis_rx_tuser_s <= s_axis_rx_tuser_i;
+    s_axis_rx_tvalid_s <= s_axis_rx_tvalid_i;
+    -- Master AXI-Stream
+    m_axis_tx_tdata_o <= m_axis_tx_tdata_s;
+    m_axis_tx_tkeep_o <= m_axis_tx_tkeep_s;
+    m_axis_tx_tuser_o <= m_axis_tx_tuser_s;
+    m_axis_tx_tlast_o <= m_axis_tx_tlast_s;
+    m_axis_tx_tvalid_o <= m_axis_tx_tvalid_s;
+    m_axis_tx_tready_s <= m_axis_tx_tready_i;    
     
     ---------------------------------------------------------
-    -- PCIe interrupt configuration
+    -- PCIe interrupt and ID
     cfg_interrupt_assert_o <= '0';
     cfg_interrupt_di_o <= (others => '0');
     cfg_interrupt_stat_o <= '0';
     cfg_pciecap_interrupt_msgnum_o <= (others => '0');
     
     cfg_interrupt_o <= cfg_interrupt_s;
-    
+
+--    interrupt_p : process(rst_i,clk_i)
     interrupt_p : process(rst_i,clk_i)
     begin
+
+        if (rst_i = '1' or cfg_interrupt_rdy_i = '1') then
+            cfg_interrupt_s <= '0';   
+        elsif (dma_ctrl_irq_s /= "00") then
+            cfg_interrupt_s <= '1';
+        end if;
+        
+       
+        
+--        if (rst_i = '1') then
+--            cfg_interrupt_s <= '0';
+
+--        elsif(clk_i'event and clk_i = '1') then
+--            cfg_interrupt_s <= cfg_interrupt_s;
+--            if (cfg_interrupt_rdy_i = '1') then
+--                cfg_interrupt_s <= '0';
+--            end if;
+--            if (dma_ctrl_irq_s /= "00") then
+--                cfg_interrupt_s <= '1';
+--            end if;
+            
+    
+--        end if;
+    end process interrupt_p;
+    
+    id_p : process(rst_i,clk_i)
+    begin
         if (rst_i = '1') then
-            cfg_interrupt_s <= '0';
+            pcie_id_s <= (others=> '0');
         elsif(clk_i'event and clk_i = '1') then
-            cfg_interrupt_s <= cfg_interrupt_s;
-            if (cfg_interrupt_rdy_i = '1') then
-                cfg_interrupt_s <= '0';
-            end if;
-            if (dma_ctrl_irq_s /= "00") then
-                cfg_interrupt_s <= '1';
-            end if;
+            pcie_id_s <= cfg_bus_number_i & cfg_device_number_i & cfg_function_number_i;
             
     
         end if;
-    end process interrupt_p;
+    end process id_p;
     
     
-    pcie_id_s <= cfg_bus_number_i & cfg_device_number_i & cfg_function_number_i;
+    
     
     -- DMA registers is a classic wishbone slave supporting single pipelined cycles
     dma_reg_stall_o <= '0';
@@ -293,12 +346,12 @@ begin
         clk_i => clk_i,
         rst_i => rst_i,
         -- Slave AXI-Stream
-        s_axis_rx_tdata_i => s_axis_rx_tdata_i,
-        s_axis_rx_tkeep_i => s_axis_rx_tkeep_i,
-        s_axis_rx_tlast_i => s_axis_rx_tlast_i,
-        s_axis_rx_tready_o => s_axis_rx_tready_o,
-        s_axis_rx_tuser_i => s_axis_rx_tuser_i,
-        s_axis_rx_tvalid_i => s_axis_rx_tvalid_i,
+        s_axis_rx_tdata_i => s_axis_rx_tdata_s,
+        s_axis_rx_tkeep_i => s_axis_rx_tkeep_s,
+        s_axis_rx_tlast_i => s_axis_rx_tlast_s,
+        s_axis_rx_tready_o => s_axis_rx_tready_s,
+        s_axis_rx_tuser_i => s_axis_rx_tuser_s,
+        s_axis_rx_tvalid_i => s_axis_rx_tvalid_s,
         -- To the wishbone master
         pd_wbm_address_o => pd_wbm_address_s,
         pd_wbm_data_o => pd_wbm_data_s,
@@ -635,12 +688,12 @@ begin
         
         ---------------------------------------------------------
         -- From arbiter (arb) to pcie_tx (tx)
-        axis_tx_tdata_o => m_axis_tx_tdata_o,
-        axis_tx_tkeep_o => m_axis_tx_tkeep_o,
-        axis_tx_tuser_o => m_axis_tx_tuser_o,
-        axis_tx_tlast_o => m_axis_tx_tlast_o,
-        axis_tx_tvalid_o => m_axis_tx_tvalid_o,
-        axis_tx_tready_i => m_axis_tx_tready_i--,
+        axis_tx_tdata_o => m_axis_tx_tdata_s,
+        axis_tx_tkeep_o => m_axis_tx_tkeep_s,
+        axis_tx_tuser_o => m_axis_tx_tuser_s,
+        axis_tx_tlast_o => m_axis_tx_tlast_s,
+        axis_tx_tvalid_o => m_axis_tx_tvalid_s,
+        axis_tx_tready_i => m_axis_tx_tready_s--,
         
         ---------------------------------------------------------
         -- Debug
@@ -694,5 +747,37 @@ begin
     dma_we_o    <= dma_we_s;
     dma_ack_s   <= dma_ack_i;
     dma_stall_s <= dma_stall_i;
+    
+    axis_debug : ila_axis
+    PORT MAP (
+        clk => clk_i,
+    
+    
+    
+        probe0 => s_axis_rx_tdata_s, 
+        probe1 => s_axis_rx_tkeep_s, 
+        probe2(0) => s_axis_rx_tlast_s, 
+        probe3(0) => s_axis_rx_tvalid_s, 
+        probe4(0) => s_axis_rx_tready_s, 
+        probe5 => m_axis_tx_tdata_s, 
+        probe6 => m_axis_tx_tkeep_s, 
+        probe7(0) => m_axis_tx_tlast_s, 
+        probe8(0) => m_axis_tx_tvalid_s,
+        probe9(0) => m_axis_tx_tready_s,
+        probe10 => s_axis_rx_tuser_i, 
+        probe11(0) => dma_ctrl_start_l2p_s, 
+        probe12(0) => dma_ctrl_start_p2l_s, 
+        probe13(0) => dma_ctrl_start_next_s,
+        probe14(0) => dma_ctrl_abort_s, 
+        probe15(0) => dma_ctrl_done_s,
+        probe16(0) => dma_ctrl_error_s,
+        probe17(0) => '0',--user_lnk_up_i,
+        probe18(0) => cfg_interrupt_s,
+        probe19(0) => '0',--cfg_interrupt_rdy_i,
+        probe20(0) => '0',--dma_ctrl_done_s,
+        probe21 => (others => '0'),--wbm_arb_tready_s & wbm_arb_tready_s & ldm_arb_tready_s,--dma_ctrl_current_state_ds,
+        probe22(0) => next_item_valid_s, --tx_err_drop_i,
+        probe23 => (others => '0')--iteration_count_s
+    );
 
 end Behavioral;

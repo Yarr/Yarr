@@ -3,8 +3,8 @@ create_clock -period 10.000 -name pcie_clk -waveform {0.000 5.000} [get_ports *p
 
 set_property IOSTANDARD LVDS [get_ports clk200_n]
 set_property IOSTANDARD LVDS [get_ports clk200_p]
-set_property PACKAGE_PIN AA10 [get_ports clk200_p]
 set_property PACKAGE_PIN AB10 [get_ports clk200_n]
+set_property PACKAGE_PIN AA10 [get_ports clk200_p]
 
 #PCIe signals
 set_property PACKAGE_PIN D5 [get_ports pcie_clk_n]
@@ -20,8 +20,8 @@ set_property LOC GTXE2_CHANNEL_X0Y5 [get_cells {pcie_0/U0/inst/gt_top_i/pipe_wra
 set_property PACKAGE_PIN E4 [get_ports {pci_exp_rxp[2]}]
 set_property PACKAGE_PIN E3 [get_ports {pci_exp_rxn[2]}]
 set_property LOC GTXE2_CHANNEL_X0Y4 [get_cells {pcie_0/U0/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].gt_wrapper_i/gtx_channel.gtxe2_channel_i}]
-set_property PACKAGE_PIN G4 [get_ports {pci_exp_rxp[3]}]
 set_property PACKAGE_PIN G3 [get_ports {pci_exp_rxn[3]}]
+set_property PACKAGE_PIN G4 [get_ports {pci_exp_rxp[3]}]
 
 #set_property PACKAGE_PIN AB11 [get_ports clk_i]
 set_property PACKAGE_PIN Y20 [get_ports rst_n_i]
@@ -75,6 +75,8 @@ set_property PACKAGE_PIN U16 [get_ports sys_rst_n_i]
 #set_property C_ENABLE_CLK_DIVIDER false [get_debug_cores dbg_hub]
 #set_property C_USER_SCAN_CHAIN 1 [get_debug_cores dbg_hub]
 #connect_debug_port dbg_hub/clk [get_nets clk]
+
+
 
 
 
