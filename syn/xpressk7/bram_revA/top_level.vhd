@@ -51,26 +51,7 @@ entity top_level is
             pci_exp_rxp : in std_logic_vector(4-1 downto 0);
             -- . IO
             usr_sw_i : in STD_LOGIC_VECTOR (2 downto 0);
-            usr_led_o : out STD_LOGIC_VECTOR (2 downto 0);
-            --front_led_o : out STD_LOGIC_VECTOR (3 downto 0);
-            -- . DDR3
-            ddr3_dq       : inout std_logic_vector(63 downto 0);
-            ddr3_dqs_p    : inout std_logic_vector(7 downto 0);
-            ddr3_dqs_n    : inout std_logic_vector(7 downto 0);
-            --init_calib_complete : out std_logic;
-      
-            ddr3_addr     : out   std_logic_vector(14 downto 0);
-            ddr3_ba       : out   std_logic_vector(2 downto 0);
-            ddr3_ras_n    : out   std_logic;
-            ddr3_cas_n    : out   std_logic;
-            ddr3_we_n     : out   std_logic;
-            ddr3_reset_n  : out   std_logic;
-            ddr3_ck_p     : out   std_logic_vector(0 downto 0);
-            ddr3_ck_n     : out   std_logic_vector(0 downto 0);
-            ddr3_cke      : out   std_logic_vector(0 downto 0);
-            ddr3_cs_n     : out   std_logic_vector(0 downto 0);
-            ddr3_dm       : out   std_logic_vector(7 downto 0);
-            ddr3_odt      : out   std_logic_vector(0 downto 0)
+            usr_led_o : out STD_LOGIC_VECTOR (2 downto 0)
             );
 end top_level;
 
@@ -442,24 +423,24 @@ begin
         cfg_dstatus_i => cfg_dstatus_s,
         
         --DDR3
-        ddr3_dq_io       => ddr3_dq,
-        ddr3_dqs_p_io    => ddr3_dqs_p,
-        ddr3_dqs_n_io    => ddr3_dqs_n,
+        ddr3_dq_io       => open,
+        ddr3_dqs_p_io    => open,
+        ddr3_dqs_n_io    => open,
         
         --init_calib_complete_o => init_calib_complete,
     
-        ddr3_addr_o     => ddr3_addr,
-        ddr3_ba_o       => ddr3_ba,
-        ddr3_ras_n_o    => ddr3_ras_n,
-        ddr3_cas_n_o    => ddr3_cas_n,
-        ddr3_we_n_o     => ddr3_we_n,
-        ddr3_reset_n_o  => ddr3_reset_n,
-        ddr3_ck_p_o     => ddr3_ck_p,
-        ddr3_ck_n_o     => ddr3_ck_n,
-        ddr3_cke_o      => ddr3_cke,
-        ddr3_cs_n_o     => ddr3_cs_n,
-        ddr3_dm_o       => ddr3_dm,
-        ddr3_odt_o      => ddr3_odt,
+        ddr3_addr_o     => open,
+        ddr3_ba_o       => open,
+        ddr3_ras_n_o    => open,
+        ddr3_cas_n_o    => open,
+        ddr3_we_n_o     => open,
+        ddr3_reset_n_o  => open,
+        ddr3_ck_p_o     => open,
+        ddr3_ck_n_o     => open,
+        ddr3_cke_o      => open,
+        ddr3_cs_n_o     => open,
+        ddr3_dm_o       => open,
+        ddr3_odt_o      => open,
         
         --I/O
         usr_sw_i => usr_sw_i,
@@ -469,7 +450,5 @@ begin
       
       usr_led_o <= usr_led_s(2 downto 0);
 
-      
-      --m_axis_rx_tready_s <= '1';
   
 end Behavioral;
