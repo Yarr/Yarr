@@ -38,7 +38,7 @@ The terminal will ask you if you want to flash the flash memory or the RAM. As y
 Then shut down the computer. After the next boot firmware is ready to use.
 `$ systemctl poweroff`
 
->![Attention][attention] **Note:** A soft reboot is not enough to get the system working.
+> **Note:** A soft reboot is not enough to get the system working.
 
 ##Core debugging
 To activate the debug cores you need to modify a constant in "app.vhd".
@@ -66,6 +66,4 @@ Will you debug with this file [Y/n] ?Y
 ```
 You can launch the debug interace, going into script, then launching the debug script. At this point you can choose the debug file by pressing the belonging number. If there is only debug file you need to press ‘y’. Vivado will be launched displaying the debug interface.
 
-
-[attention]:data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAEo0lEQVR42o1We0xbZRT/zr23L9qCAZdBOgl1YSCBZBkBYcY/tiiZ8x+nKJiwiZooBOMrcdZlajQKuGRKzMx0jpkQmEMhBKPA8DVfyOaSuTAyksXYMXl2Ikqh7X19nu9rb+lzepL2np6e75zz/c7rArkBvVBkc1ffbKpzmmGnAFAKQDYwOaXEp1N6aVWh34xfV3rbpwK/p7MBqYQHb7MV3LnR3G6WhFpRIAKgdTRO8QPcPuVOCNUpaDrRZFXvG/cpnlcn17z/6eBklbMh1y4eNYngEES0yKymDCPiBL90jRJFo37fmtZc9/NKd1oH/dud+3NsYrtkAsKDxqjDGswFM2c8o8eBeWAShAxUhdLloOa576eVQ0kOuisdDS6n1GWS0LgA7B8OR0QJWLDGM+bw+m8MRUcvikrJgl/dV3/W3x118GKhtaDGZZkwm8EhcuOpMQEQ+Amq62kx03RKZJn6v5+Xy16bCni5paE7nKfsVuEhSRJY3DQxOn4fUaSlh74AwWKlE8/VEF2Rk3Q4j1+qqsNaSO+958eVenjKbXHvybdcMZsFpFiM4/mNuxvp5qffBob41eOvkNn+I0k6Bo8XBFnWteGZUCH0lNs9rkyxDaNPWy2iI4ts6zxPpKwcostBQlWZXHisgijLvrTVhbcgPr/2EgxVO0YRnrtECYycGEmM8u6mVsjb00z//G4A5j77kJYeHiILw13kt45nUuozXlMpXQ3qX8HIdseszSLkCix/SOGiW+cz8reQrcfGAESJXv+2H+YGj9GyjtMs0+Riyw7wX7kYp2/AxSoqGNLn4XS1XbFaBJGXZooblLR+SrJvr+GHVybHYXbgA1p08COu8M/EGEw8v5tGTsSdjTjQYKSKO5AiDuIIDZOS1k94NzMK+WYwuUcRsjeiOlOvNxLfmYGks+iAoAMVhirtszZrGKLYSgDJDOWdY9R2S+H69XUdls6O0uzqXcSAJTg/Tc83VhA9FIyrKHaDQBAhGizPGHXYhLtFMf4Gmx5sIZtb2uJkyt9LJDjnJc7ibXFy74k3ydWut+JkGs4nTPKX0Flq9eRniq0Sr6LwDcw3bSCVPRdAtGfGJfDaxx0wP9xDK7p+IbFyPbRGzu0th9DiTDQHKlbRvF87AI+7TO5alxkbLTKU0cGWZw8T1/1PJFUU1VTQAqtUwr5IrJyFkZNwua2JRvoAG41qn8/JhRyXvq22U5k2sY7BxATFB94nebseTjuTUtHimUEy+fJeXkYMnpWA1vvAr4F6bqF5k6ng3lzThMUsOPhiYdGZcGaDkNhEsaW4LseQqSJDZD2QkKyvfr2olL0zrXijIR4ptjTc6hS7WC6EcDqAGI1j8LEykqDDKgd5xJ5M+7V9TZdD6+PaoOMllv15GbhwJAA+9/4vQuGFQ1hiFwO659HJYPLCMejdIktDAVuZEq5Mge/haHWx5UkTNhqvIlwPuGhWr+HKbJkKpV+ZBj3pMhXsyJba7SaoxcSzJg+vz5gchNckDjWNavh20ffDX6rnvT8Ub6KtG4LwSJ7krsoS63LMwk6c5qUIG39tQTh8OI0vLeFry7llrffEnJL2teVfUUJlaN+sjcQAAAAASUVORK5CYII=
 
