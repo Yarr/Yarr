@@ -16,6 +16,7 @@ files = [
 "xpressk7.xdc",
 #"xpressk7-ddr3.xdc",
 "xpressk7-fmc.xdc",
+"xpressk7-timing.xdc",
 ]
 
 

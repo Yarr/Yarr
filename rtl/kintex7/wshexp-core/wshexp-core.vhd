@@ -295,32 +295,32 @@ begin
     
     cfg_interrupt_o <= cfg_interrupt_s;
 
---    interrupt_p : process(rst_i,clk_i)
-    interrupt_p : process(rst_i,clk_i)
+    interrupt_p : process(rst_i,clk_i,cfg_interrupt_rdy_i)
+--    interrupt_p : process(rst_i,cfg_interrupt_rdy_i,dma_ctrl_irq_s)
     begin
 
-        if (rst_i = '1' or cfg_interrupt_rdy_i = '1') then
-            cfg_interrupt_s <= '0';   
-        elsif (dma_ctrl_irq_s /= "00") then
-            cfg_interrupt_s <= '1';
-        end if;
+--        if (rst_i = '1' or cfg_interrupt_rdy_i = '1') then
+--            cfg_interrupt_s <= '0';   
+--        elsif (dma_ctrl_irq_s /= "00") then
+--            cfg_interrupt_s <= '1';
+--        end if;
         
        
         
---        if (rst_i = '1') then
---            cfg_interrupt_s <= '0';
+        if (rst_i = '1') then
+            cfg_interrupt_s <= '0';
+        elsif (cfg_interrupt_rdy_i = '1') then
+                cfg_interrupt_s <= '0';
 
---        elsif(clk_i'event and clk_i = '1') then
---            cfg_interrupt_s <= cfg_interrupt_s;
---            if (cfg_interrupt_rdy_i = '1') then
---                cfg_interrupt_s <= '0';
---            end if;
---            if (dma_ctrl_irq_s /= "00") then
---                cfg_interrupt_s <= '1';
---            end if;
+        elsif(clk_i'event and clk_i = '1') then
+            cfg_interrupt_s <= cfg_interrupt_s;
+
+            if (dma_ctrl_irq_s /= "00") then
+                cfg_interrupt_s <= '1';
+            end if;
             
     
---        end if;
+        end if;
     end process interrupt_p;
     
     id_p : process(rst_i,clk_i)
@@ -772,12 +772,38 @@ begin
         probe15(0) => dma_ctrl_done_s,
         probe16(0) => dma_ctrl_error_s,
         probe17(0) => '0',--user_lnk_up_i,
-        probe18(0) => cfg_interrupt_s,
+        probe18(0) => '0',--cfg_interrupt_s,
         probe19(0) => '0',--cfg_interrupt_rdy_i,
         probe20(0) => '0',--dma_ctrl_done_s,
         probe21 => (others => '0'),--wbm_arb_tready_s & wbm_arb_tready_s & ldm_arb_tready_s,--dma_ctrl_current_state_ds,
         probe22(0) => next_item_valid_s, --tx_err_drop_i,
         probe23 => (others => '0')--iteration_count_s
     );
+
+      pipelined_wishbone_debug : ila_wsh_pipe
+      PORT MAP (
+          clk => wb_clk_i,
+      
+      
+      
+          probe0 => dma_adr_s, 
+          probe1 => dma_dat_s2m_s, 
+          probe2 => dma_dat_m2s_s, 
+          probe3 => dma_sel_s, 
+          probe4(0) => dma_cyc_s, 
+          probe5(0) => dma_stb_s, 
+          probe6(0) => dma_we_s, 
+          probe7(0) => dma_ack_s,
+          probe8(0) => dma_stall_s, 
+          probe9(0) => l2p_dma_cyc_s,
+          probe10(0) => p2l_dma_cyc_s,
+          probe11(0) => dma_ctrl_start_l2p_s, 
+          probe12(0) => dma_ctrl_start_p2l_s, 
+          probe13(0) => dma_ctrl_start_next_s,
+          probe14 => (others => '0'),--ddr_rd_mask_rd_data_count_ds,
+          probe15 => (others => '0'),--ddr_rd_data_rd_data_count_ds,
+          probe16 => (others => '0'),--ddr_wb_rd_mask_addr_dout_ds & ddr_wb_rd_mask_dout_ds,
+          probe17 => (others => '0')--iteration_count_s
+      );
 
 end Behavioral;

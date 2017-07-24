@@ -110,7 +110,7 @@ begin
 					--if s_axis_rx_tvalid_s = '0' then
 						--state_s <= hd1_rx;
 					if s_axis_rx_tvalid_s = '1' then
-					   if s_axis_rx_tvalid_i = '1' and s_axis_rx_tlast_i = '1' then
+					   if s_axis_rx_tvalid_i = '1' and s_axis_rx_tlast_i = '1' and s_axis_rx_tvalid_i = '1' then
                             state_s <= lastdata_rx;
                         elsif s_axis_rx_tlast_s = '0' then
                             state_s <= data_rx; -- TODO: MORE DATA
@@ -126,7 +126,7 @@ begin
 				when lastdata_rx => 
 					state_s <= hd0_rx;
 				when data_rx =>
-					if s_axis_rx_tlast_i = '1' then
+					if s_axis_rx_tlast_i = '1' and s_axis_rx_tvalid_i = '1' then
 						state_s <= lastdata_rx;
 					end if;
 			end case;
@@ -148,7 +148,7 @@ begin
 			s_axis_rx_tkeep_1_s <= s_axis_rx_tkeep_s;
 			s_axis_rx_tuser_s <= s_axis_rx_tuser_i;
 			s_axis_rx_tvalid_s <= s_axis_rx_tvalid_i;
-			s_axis_rx_tlast_s <= s_axis_rx_tlast_i;
+			s_axis_rx_tlast_s <= s_axis_rx_tlast_i and s_axis_rx_tvalid_i;
 			s_axis_rx_tlast_1_s <= s_axis_rx_tlast_s;
 			previous_state_s <= state_s;
 		end if;

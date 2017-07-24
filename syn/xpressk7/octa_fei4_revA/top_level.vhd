@@ -54,25 +54,25 @@ entity top_level is
             pci_exp_rxp : in std_logic_vector(4-1 downto 0);
             -- . IO
             usr_sw_i : in STD_LOGIC_VECTOR (2 downto 0);
-            usr_led_o : out STD_LOGIC_VECTOR (2 downto 0)--;
+            usr_led_o : out STD_LOGIC_VECTOR (2 downto 0);
             --front_led_o : out STD_LOGIC_VECTOR (3 downto 0);
             
             ---------------------------------------------------------
             -- FMC
             ---------------------------------------------------------
             -- Trigger input
-            --ext_trig_o        : out std_logic;
+            ext_trig_o        : out std_logic;
             -- LVDS buffer
-            --pwdn_l            : out std_logic_vector(2 downto 0);
+            pwdn_l            : out std_logic_vector(2 downto 0);
             -- GPIO
-            --io              : inout std_logic_vector(2 downto 0);
+            io              : inout std_logic_vector(2 downto 0);
             -- FE-I4
---            fe_clk_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
---            fe_clk_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
---            fe_cmd_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
---            fe_cmd_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
---            fe_data_p        : in  std_logic_vector(c_RX_CHANNELS-1 downto 0);
---            fe_data_n        : in  std_logic_vector(c_RX_CHANNELS-1 downto 0);
+            fe_clk_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
+            fe_clk_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
+            fe_cmd_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
+            fe_cmd_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
+            fe_data_p        : in  std_logic_vector(c_RX_CHANNELS-1 downto 0);
+            fe_data_n        : in  std_logic_vector(c_RX_CHANNELS-1 downto 0)--;
             -- I2c
             --sda_io                : inout std_logic;
             --scl_io                    : inout std_logic;
@@ -493,16 +493,16 @@ begin
         -- FMC
         ---------------------------------------------------------
         -- Trigger input
-        --ext_trig_o        => ext_trig_o,
+        ext_trig_o        => ext_trig_o,
         -- LVDS buffer
-        --pwdn_l            => pwdn_l,
+        pwdn_l            => pwdn_l,
         -- GPIO
-        --io                => io,
+        io                => io,
         -- FE-I4
-        --fe_clk_p          => fe_clk_p,
-        --fe_clk_n          => fe_clk_n,
-        --fe_cmd_p          => fe_cmd_p,
-        --fe_cmd_n          => fe_cmd_n,
+        fe_clk_p          => fe_clk_p,
+        fe_clk_n          => fe_clk_n,
+        fe_cmd_p          => fe_cmd_p,
+        fe_cmd_n          => fe_cmd_n,
         fe_data_p         => (others => '0'),--fe_data_p,
         fe_data_n         => (others => '0'),--fe_data_n,
         -- I2c
@@ -518,6 +518,5 @@ begin
       usr_led_o <= usr_led_s(2 downto 0);
 
       
-      --m_axis_rx_tready_s <= '1';
   
 end Behavioral;

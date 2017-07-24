@@ -142,8 +142,8 @@ architecture Behavioral of app is
     ------------------------------------------------------------------------------
     -- Constants declaration
     ------------------------------------------------------------------------------
-    constant DEBUG_C : std_logic_vector(5 downto 0) := "000001";
-    constant wb_dev_c : std_logic := '0';
+    constant DEBUG_C : std_logic_vector(5 downto 0) := "000000";
+    constant wb_dev_c : std_logic := '1';
     
     --TODO
     constant c_BAR0_APERTURE    : integer := 18;  -- nb of bits for 32-bit word address
@@ -176,6 +176,7 @@ architecture Behavioral of app is
     
     --signal eop_s : std_logic; -- Arbiter end of operation
     signal cfg_interrupt_s : std_logic;
+    signal cfg_interrupt_rdy_s : std_logic_vector(15 downto 0);
     signal pcie_id_s : std_logic_vector (15 downto 0); -- Completer/Requester ID
     
 
@@ -516,8 +517,23 @@ begin
 --        gray_count_o => gray_iteration_count_s
 --    );
 
-    
+   
+    interrupt_rdy_p : process(rst_i,wb_clk_s,cfg_interrupt_rdy_i)
+   begin
 
+     
+       
+       if (rst_i = '1') then
+           cfg_interrupt_rdy_s <= (others => '0');
+       elsif (cfg_interrupt_rdy_i = '1') then
+            cfg_interrupt_rdy_s <= (others => '1'); 
+       elsif(clk_i'event and clk_i = '1') then
+           cfg_interrupt_rdy_s <= '0' & cfg_interrupt_rdy_s(cfg_interrupt_rdy_s'LENGTH-1 downto 1);
+
+           
+   
+       end if;
+   end process interrupt_rdy_p;
    
     wb_exp_comp:wshexp_core
         Port map( 
@@ -582,7 +598,7 @@ begin
             ---------------------------------------------------------
             -- PCIe interrupt config
             cfg_interrupt_o => cfg_interrupt_s,
-            cfg_interrupt_rdy_i => cfg_interrupt_rdy_i,
+            cfg_interrupt_rdy_i => cfg_interrupt_rdy_s(0),
             cfg_interrupt_assert_o => cfg_interrupt_assert_o,
             cfg_interrupt_di_o => cfg_interrupt_di_o,
             cfg_interrupt_do_i => cfg_interrupt_do_i,
@@ -1084,7 +1100,7 @@ end generate;
           probe16(0) => '0',--dma_ctrl_error_s,
           probe17(0) => user_lnk_up_i,
           probe18(0) => cfg_interrupt_s,
-          probe19(0) => '0',--cfg_interrupt_rdy_i,
+          probe19(0) => cfg_interrupt_rdy_i,
           probe20(0) => '0',--dma_ctrl_done_s,
           probe21 => (others => '0'),--wbm_arb_tready_s & wbm_arb_tready_s & ldm_arb_tready_s,--dma_ctrl_current_state_ds,
           probe22(0) => tx_err_drop_i,--next_item_valid_s
