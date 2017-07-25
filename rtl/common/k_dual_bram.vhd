@@ -74,7 +74,7 @@ architecture Behavioral of k_dual_bram is
     constant BLOCK_ADDR_WIDTH_C : integer := 13;
     constant DATA_WIDTH_C : integer := 64;
     constant BLOCK_ROW_C : integer := 16;
-    constant BLOCK_COL_EXP_C : integer := 3;
+    constant BLOCK_COL_EXP_C : integer := 4;
     constant BLOCK_COL_C : integer := 2**BLOCK_COL_EXP_C;
     constant BLOCK_DATA_WIDTH_C : integer := DATA_WIDTH_C/BLOCK_ROW_C;
     
@@ -98,12 +98,17 @@ architecture Behavioral of k_dual_bram is
     signal wba_stb_s            : std_logic;
     signal wba_cyc_s            : std_logic; 
     
+    signal wba_dat_o_s            : std_logic_vector(64-1 downto 0);
+    signal wba_ack_s            : std_logic;
+    
     signal wbb_adr_s            : std_logic_vector(32-1 downto 0);
     signal wbb_dat_i_s            : std_logic_vector(64-1 downto 0);
     signal wbb_we_s            : std_logic;
     signal wbb_stb_s            : std_logic;
-    signal wbb_cyc_s            : std_logic;    
+    signal wbb_cyc_s            : std_logic;
     
+    signal wbb_dat_o_s            : std_logic_vector(64-1 downto 0);    
+    signal wbb_ack_s            : std_logic;
 begin
     
     --to improve the fanout
@@ -138,20 +143,20 @@ begin
 	bram: process (clk_i, rst_i)
 	begin
 		if (rst_i ='1') then
-			wba_ack_o <= '0';
-            wbb_ack_o <= '0';
+			wba_ack_s <= '0';
+            wbb_ack_s <= '0';
 		elsif (clk_i'event and clk_i = '1') then
 		    
 			if (wba_stb_s = '1' and wba_cyc_s = '1') then
-				wba_ack_o <= '1';
+				wba_ack_s <= '1';
 			else
-				wba_ack_o <= '0';
+				wba_ack_s <= '0';
 			end if;
 			
 			if (wbb_stb_s = '1' and wbb_cyc_s = '1') then
-                wbb_ack_o <= '1';
+                wbb_ack_s <= '1';
             else
-                wbb_ack_o <= '0';
+                wbb_ack_s <= '0';
             end if;			
 			
 		end if;
@@ -170,9 +175,24 @@ begin
              (others => '0');
     WEB_S <= (others => '1') when wbb_we_s = '1' else
              (others => '0');    
-             
-   wba_dat_o <= wba_dat_a(conv_integer(selecta_s));
-   wbb_dat_o <= wbb_dat_a(conv_integer(selectb_s));
+
+	output_delay_p:process(clk_i)
+    begin   
+    	if (rst_i ='1') then
+            wba_dat_o_s <= (others => '0');
+            wbb_dat_o_s <= (others => '0');
+            wba_ack_o <= '0';
+            wbb_ack_o <= '0';
+        elsif (clk_i'event and clk_i = '1') then          
+            wba_dat_o_s <= wba_dat_a(conv_integer(selecta_s));
+            wbb_dat_o_s <= wbb_dat_a(conv_integer(selectb_s));
+            wba_ack_o <= wba_ack_s;
+            wbb_ack_o <= wbb_ack_s;
+        end if;
+   end process;
+   
+   wba_dat_o <= wba_dat_o_s;
+   wbb_dat_o <= wbb_dat_o_s;
    
    -- BRAM_TDP_MACRO: True Dual Port RAM
    --                 Kintex-7

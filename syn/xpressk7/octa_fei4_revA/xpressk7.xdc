@@ -3,8 +3,8 @@ set_property IOSTANDARD LVDS [get_ports clk200_n]
 set_property IOSTANDARD LVDS [get_ports clk200_p]
 set_property PACKAGE_PIN AA10 [get_ports clk200_p]
 set_property PACKAGE_PIN AB10 [get_ports clk200_n]
-set_property PACKAGE_PIN D5 [get_ports pcie_clk_n]
 set_property PACKAGE_PIN D6 [get_ports pcie_clk_p]
+set_property PACKAGE_PIN D5 [get_ports pcie_clk_n]
 
 
 #On-board switch reset
@@ -26,8 +26,8 @@ set_property LOC GTXE2_CHANNEL_X0Y5 [get_cells {pcie_0/U0/inst/gt_top_i/pipe_wra
 set_property PACKAGE_PIN E4 [get_ports {pci_exp_rxp[2]}]
 set_property PACKAGE_PIN E3 [get_ports {pci_exp_rxn[2]}]
 set_property LOC GTXE2_CHANNEL_X0Y4 [get_cells {pcie_0/U0/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].gt_wrapper_i/gtx_channel.gtxe2_channel_i}]
-set_property PACKAGE_PIN G4 [get_ports {pci_exp_rxp[3]}]
 set_property PACKAGE_PIN G3 [get_ports {pci_exp_rxn[3]}]
+set_property PACKAGE_PIN G4 [get_ports {pci_exp_rxp[3]}]
 
 # On-board LEDs
 set_property PACKAGE_PIN W10 [get_ports {usr_led_o[0]}]
@@ -56,6 +56,9 @@ set_property IOSTANDARD LVCMOS15 [get_ports {usr_sw_i[2]}]
 #set_property PACKAGE_PIN V7 [get_ports {front_led_o[2]}]
 #set_property PACKAGE_PIN U4 [get_ports {front_led_o[1]}]
 #set_property PACKAGE_PIN V2 [get_ports {front_led_o[0]}]
+
+
+
 
 
 

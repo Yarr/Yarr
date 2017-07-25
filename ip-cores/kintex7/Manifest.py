@@ -30,6 +30,7 @@ files = [
 "rx_bridge_fifo/rx_bridge_fifo.xci",
 "axis_data_fifo_0/axis_data_fifo_0.xci",
 "axis_data_fifo_1/axis_data_fifo_1.xci",
+"ila_rx_dma_wb/ila_rx_dma_wb.xci",
 ]
 
 

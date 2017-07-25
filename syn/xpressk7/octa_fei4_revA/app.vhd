@@ -142,7 +142,7 @@ architecture Behavioral of app is
     ------------------------------------------------------------------------------
     -- Constants declaration
     ------------------------------------------------------------------------------
-    constant DEBUG_C : std_logic_vector(5 downto 0) := "000000";
+    constant DEBUG_C : std_logic_vector(5 downto 0) := "010000";
     constant wb_dev_c : std_logic := '1';
     
     --TODO
@@ -1138,6 +1138,23 @@ end generate;
       );
   end generate dbg_2;
   
+  dbg_4 : if DEBUG_C(4) = '1' generate
+    rx_dma_wb_debug : ila_rx_dma_wb
+      PORT MAP (
+          clk => wb_clk_s,
+      
+      
+      
+          probe0 => rx_dma_adr_s, 
+          probe1 => rx_dma_dat_m2s_s, 
+          probe2 => rx_dma_dat_s2m_s, 
+          probe3(0) => rx_dma_stb_s, 
+          probe4(0) => rx_dma_cyc_s, 
+          probe5(0) => rx_dma_we_s, 
+          probe6(0) => rx_dma_ack_s,
+          probe7(0) => rx_dma_stall_s
+      );
+  end generate dbg_4;
   
   dbg_5 : if DEBUG_C(5) = '1' generate
     ddr_debug : ila_ddr

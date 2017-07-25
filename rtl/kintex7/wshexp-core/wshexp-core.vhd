@@ -748,62 +748,62 @@ begin
     dma_ack_s   <= dma_ack_i;
     dma_stall_s <= dma_stall_i;
     
-    axis_debug : ila_axis
-    PORT MAP (
-        clk => clk_i,
+--    axis_debug : ila_axis
+--    PORT MAP (
+--        clk => clk_i,
     
     
     
-        probe0 => s_axis_rx_tdata_s, 
-        probe1 => s_axis_rx_tkeep_s, 
-        probe2(0) => s_axis_rx_tlast_s, 
-        probe3(0) => s_axis_rx_tvalid_s, 
-        probe4(0) => s_axis_rx_tready_s, 
-        probe5 => m_axis_tx_tdata_s, 
-        probe6 => m_axis_tx_tkeep_s, 
-        probe7(0) => m_axis_tx_tlast_s, 
-        probe8(0) => m_axis_tx_tvalid_s,
-        probe9(0) => m_axis_tx_tready_s,
-        probe10 => s_axis_rx_tuser_i, 
-        probe11(0) => dma_ctrl_start_l2p_s, 
-        probe12(0) => dma_ctrl_start_p2l_s, 
-        probe13(0) => dma_ctrl_start_next_s,
-        probe14(0) => dma_ctrl_abort_s, 
-        probe15(0) => dma_ctrl_done_s,
-        probe16(0) => dma_ctrl_error_s,
-        probe17(0) => '0',--user_lnk_up_i,
-        probe18(0) => '0',--cfg_interrupt_s,
-        probe19(0) => '0',--cfg_interrupt_rdy_i,
-        probe20(0) => '0',--dma_ctrl_done_s,
-        probe21 => (others => '0'),--wbm_arb_tready_s & wbm_arb_tready_s & ldm_arb_tready_s,--dma_ctrl_current_state_ds,
-        probe22(0) => next_item_valid_s, --tx_err_drop_i,
-        probe23 => (others => '0')--iteration_count_s
-    );
+--        probe0 => s_axis_rx_tdata_s, 
+--        probe1 => s_axis_rx_tkeep_s, 
+--        probe2(0) => s_axis_rx_tlast_s, 
+--        probe3(0) => s_axis_rx_tvalid_s, 
+--        probe4(0) => s_axis_rx_tready_s, 
+--        probe5 => m_axis_tx_tdata_s, 
+--        probe6 => m_axis_tx_tkeep_s, 
+--        probe7(0) => m_axis_tx_tlast_s, 
+--        probe8(0) => m_axis_tx_tvalid_s,
+--        probe9(0) => m_axis_tx_tready_s,
+--        probe10 => s_axis_rx_tuser_i, 
+--        probe11(0) => dma_ctrl_start_l2p_s, 
+--        probe12(0) => dma_ctrl_start_p2l_s, 
+--        probe13(0) => dma_ctrl_start_next_s,
+--        probe14(0) => dma_ctrl_abort_s, 
+--        probe15(0) => dma_ctrl_done_s,
+--        probe16(0) => dma_ctrl_error_s,
+--        probe17(0) => '0',--user_lnk_up_i,
+--        probe18(0) => '0',--cfg_interrupt_s,
+--        probe19(0) => '0',--cfg_interrupt_rdy_i,
+--        probe20(0) => '0',--dma_ctrl_done_s,
+--        probe21 => (others => '0'),--wbm_arb_tready_s & wbm_arb_tready_s & ldm_arb_tready_s,--dma_ctrl_current_state_ds,
+--        probe22(0) => next_item_valid_s, --tx_err_drop_i,
+--        probe23 => (others => '0')--iteration_count_s
+--    );
 
-      pipelined_wishbone_debug : ila_wsh_pipe
-      PORT MAP (
-          clk => wb_clk_i,
+--      pipelined_wishbone_debug : ila_wsh_pipe
+--      PORT MAP (
+--          clk => wb_clk_i,
       
       
       
-          probe0 => dma_adr_s, 
-          probe1 => dma_dat_s2m_s, 
-          probe2 => dma_dat_m2s_s, 
-          probe3 => dma_sel_s, 
-          probe4(0) => dma_cyc_s, 
-          probe5(0) => dma_stb_s, 
-          probe6(0) => dma_we_s, 
-          probe7(0) => dma_ack_s,
-          probe8(0) => dma_stall_s, 
-          probe9(0) => l2p_dma_cyc_s,
-          probe10(0) => p2l_dma_cyc_s,
-          probe11(0) => dma_ctrl_start_l2p_s, 
-          probe12(0) => dma_ctrl_start_p2l_s, 
-          probe13(0) => dma_ctrl_start_next_s,
-          probe14 => (others => '0'),--ddr_rd_mask_rd_data_count_ds,
-          probe15 => (others => '0'),--ddr_rd_data_rd_data_count_ds,
-          probe16 => (others => '0'),--ddr_wb_rd_mask_addr_dout_ds & ddr_wb_rd_mask_dout_ds,
-          probe17 => (others => '0')--iteration_count_s
-      );
+--          probe0 => dma_adr_s, 
+--          probe1 => dma_dat_s2m_s, 
+--          probe2 => dma_dat_m2s_s, 
+--          probe3 => dma_sel_s, 
+--          probe4(0) => dma_cyc_s, 
+--          probe5(0) => dma_stb_s, 
+--          probe6(0) => dma_we_s, 
+--          probe7(0) => dma_ack_s,
+--          probe8(0) => dma_stall_s, 
+--          probe9(0) => l2p_dma_cyc_s,
+--          probe10(0) => p2l_dma_cyc_s,
+--          probe11(0) => dma_ctrl_start_l2p_s, 
+--          probe12(0) => dma_ctrl_start_p2l_s, 
+--          probe13(0) => dma_ctrl_start_next_s,
+--          probe14 => (others => '0'),--ddr_rd_mask_rd_data_count_ds,
+--          probe15 => (others => '0'),--ddr_rd_data_rd_data_count_ds,
+--          probe16 => (others => '0'),--ddr_wb_rd_mask_addr_dout_ds & ddr_wb_rd_mask_dout_ds,
+--          probe17 => (others => '0')--iteration_count_s
+--      );
 
 end Behavioral;

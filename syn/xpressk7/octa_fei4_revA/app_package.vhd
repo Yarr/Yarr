@@ -683,6 +683,24 @@ package app_pkg is
     );
     END COMPONENT  ;
 
+    COMPONENT ila_rx_dma_wb
+    
+    PORT (
+        clk : IN STD_LOGIC;
+    
+    
+    
+        probe0 : IN STD_LOGIC_VECTOR(31 DOWNTO 0); 
+        probe1 : IN STD_LOGIC_VECTOR(63 DOWNTO 0); 
+        probe2 : IN STD_LOGIC_VECTOR(63 DOWNTO 0); 
+        probe3 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe4 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe5 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe6 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe7 : IN STD_LOGIC_VECTOR(0 DOWNTO 0)
+    );
+    END COMPONENT  ;
+
 end app_pkg;
 
 
