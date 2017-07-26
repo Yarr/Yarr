@@ -492,7 +492,7 @@ begin
     p_wb_read_rtl : process (wb_read_wait_cnt,wb_rd_addr_shift_a,wb_rd_addr_ref_a,wb_rd_valid_shift_s,wb_rd_shift_flush_s,wb_rd_global_row_s,wb_rd_addr_shift_a,wb_rd_row_a,wb_rd_first_row_s)
     begin
         
-        fifo_wb_rd_addr_s <= (others => 'X');
+        fifo_wb_rd_addr_s <= (others => '0');
         wb_rd_first_row_s <= (others => '0');
         for i in (c_register_shift_size-1) downto 0 loop
             if wb_rd_global_row_s(i) = '1' then
@@ -724,7 +724,7 @@ begin
     
     
     fifo_wb_wr_rd_s <= ddr_wdf_rdy_i and ddr_rdy_i and not fifo_wb_wr_empty_s;
-    fifo_wb_rd_addr_rd_s <= ddr_rdy_i and (not fifo_wb_rd_addr_empty_s) and (not fifo_wb_rd_data_almost_full_s); -- and (not fifo_wb_rd_mask_full_s);
+    fifo_wb_rd_addr_rd_s <= ddr_rdy_i and (not fifo_wb_rd_addr_empty_s) and (not fifo_wb_rd_data_almost_full_s) and (not fifo_wb_wr_rd_s); -- and (not fifo_wb_rd_mask_full_s);
     fifo_wb_rd_data_wr_s <= ddr_rd_data_valid_i and ddr_rd_data_end_i;
     
     fifo_wb_rd_data_din_s <= ddr_rd_data_i;
@@ -734,7 +734,7 @@ begin
     --------------------------------------
     -- Stall proc
     --------------------------------------
-	wb_stall_s <= fifo_wb_wr_full_s or fifo_wb_rd_addr_almost_full_s or fifo_wb_rd_mask_almost_full_s or wb_wr_several_row_s; --or (not ddr_wdf_rdy_i) or (not ddr_rdy_i);
+	wb_stall_s <= fifo_wb_wr_full_s or fifo_wb_rd_addr_almost_full_s or fifo_wb_rd_mask_almost_full_s or wb_wr_several_row_s; --or wb_rd_several_row_s; --or (not ddr_wdf_rdy_i) or (not ddr_rdy_i);
 	wb_stall_o <= wb_stall_s;
 
 end architecture behavioral;

@@ -1236,8 +1236,8 @@ set_property SLEW FAST [get_ports {ddr3_dqs_n[0]}]
 
 set_property IOSTANDARD DIFF_SSTL15_T_DCI [get_ports {ddr3_dqs_n[0]}]
 
-set_property PACKAGE_PIN W19 [get_ports {ddr3_dqs_n[0]}]
 set_property PACKAGE_PIN W18 [get_ports {ddr3_dqs_p[0]}]
+set_property PACKAGE_PIN W19 [get_ports {ddr3_dqs_n[0]}]
 
 
 
@@ -1259,8 +1259,8 @@ set_property SLEW FAST [get_ports {ddr3_dqs_n[1]}]
 
 set_property IOSTANDARD DIFF_SSTL15_T_DCI [get_ports {ddr3_dqs_n[1]}]
 
-set_property PACKAGE_PIN AE20 [get_ports {ddr3_dqs_n[1]}]
 set_property PACKAGE_PIN AD20 [get_ports {ddr3_dqs_p[1]}]
+set_property PACKAGE_PIN AE20 [get_ports {ddr3_dqs_n[1]}]
 
 
 
@@ -1282,8 +1282,8 @@ set_property SLEW FAST [get_ports {ddr3_dqs_n[2]}]
 
 set_property IOSTANDARD DIFF_SSTL15_T_DCI [get_ports {ddr3_dqs_n[2]}]
 
-set_property PACKAGE_PIN Y16 [get_ports {ddr3_dqs_n[2]}]
 set_property PACKAGE_PIN Y15 [get_ports {ddr3_dqs_p[2]}]
+set_property PACKAGE_PIN Y16 [get_ports {ddr3_dqs_n[2]}]
 
 
 
@@ -1305,8 +1305,8 @@ set_property SLEW FAST [get_ports {ddr3_dqs_n[3]}]
 
 set_property IOSTANDARD DIFF_SSTL15_T_DCI [get_ports {ddr3_dqs_n[3]}]
 
-set_property PACKAGE_PIN AF18 [get_ports {ddr3_dqs_n[3]}]
 set_property PACKAGE_PIN AE18 [get_ports {ddr3_dqs_p[3]}]
+set_property PACKAGE_PIN AF18 [get_ports {ddr3_dqs_n[3]}]
 
 
 
@@ -1328,8 +1328,8 @@ set_property SLEW FAST [get_ports {ddr3_dqs_n[4]}]
 
 set_property IOSTANDARD DIFF_SSTL15_T_DCI [get_ports {ddr3_dqs_n[4]}]
 
-set_property PACKAGE_PIN AF4 [get_ports {ddr3_dqs_n[4]}]
 set_property PACKAGE_PIN AF5 [get_ports {ddr3_dqs_p[4]}]
+set_property PACKAGE_PIN AF4 [get_ports {ddr3_dqs_n[4]}]
 
 
 
@@ -1351,8 +1351,8 @@ set_property SLEW FAST [get_ports {ddr3_dqs_n[5]}]
 
 set_property IOSTANDARD DIFF_SSTL15_T_DCI [get_ports {ddr3_dqs_n[5]}]
 
-set_property PACKAGE_PIN AB5 [get_ports {ddr3_dqs_n[5]}]
 set_property PACKAGE_PIN AA5 [get_ports {ddr3_dqs_p[5]}]
+set_property PACKAGE_PIN AB5 [get_ports {ddr3_dqs_n[5]}]
 
 
 
@@ -1374,8 +1374,8 @@ set_property SLEW FAST [get_ports {ddr3_dqs_n[6]}]
 
 set_property IOSTANDARD DIFF_SSTL15_T_DCI [get_ports {ddr3_dqs_n[6]}]
 
-set_property PACKAGE_PIN AC1 [get_ports {ddr3_dqs_n[6]}]
 set_property PACKAGE_PIN AB1 [get_ports {ddr3_dqs_p[6]}]
+set_property PACKAGE_PIN AC1 [get_ports {ddr3_dqs_n[6]}]
 
 
 
@@ -1397,8 +1397,8 @@ set_property SLEW FAST [get_ports {ddr3_dqs_n[7]}]
 
 set_property IOSTANDARD DIFF_SSTL15_T_DCI [get_ports {ddr3_dqs_n[7]}]
 
-set_property PACKAGE_PIN W5 [get_ports {ddr3_dqs_n[7]}]
 set_property PACKAGE_PIN W6 [get_ports {ddr3_dqs_p[7]}]
+set_property PACKAGE_PIN W5 [get_ports {ddr3_dqs_n[7]}]
 
 
 
@@ -1420,15 +1420,12 @@ set_property SLEW FAST [get_ports {ddr3_ck_n[0]}]
 
 set_property IOSTANDARD DIFF_SSTL15 [get_ports {ddr3_ck_n[0]}]
 
-set_property PACKAGE_PIN AF13 [get_ports {ddr3_ck_n[0]}]
 set_property PACKAGE_PIN AE13 [get_ports {ddr3_ck_p[0]}]
+set_property PACKAGE_PIN AF13 [get_ports {ddr3_ck_n[0]}]
 
 
 
 # Dual Rank
-
-
-
 
 
 

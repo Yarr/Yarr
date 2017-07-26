@@ -44,7 +44,7 @@ entity app is
         wb_address_width_c : integer := 32;
         wb_data_width_c : integer := 32;
         address_mask_c : STD_LOGIC_VECTOR(32-1 downto 0) := X"000FFFFF";
-        DMA_MEMORY_SELECTED : string := "DDR3" -- DDR3, BRAM, DEMUX
+        DMA_MEMORY_SELECTED : string := "BRAM" -- DDR3, BRAM, DEMUX
         );
     Port ( clk_i : in STD_LOGIC;
            sys_clk_n_i : IN STD_LOGIC;
@@ -142,7 +142,7 @@ architecture Behavioral of app is
     ------------------------------------------------------------------------------
     -- Constants declaration
     ------------------------------------------------------------------------------
-    constant DEBUG_C : std_logic_vector(5 downto 0) := "000000";
+    constant DEBUG_C : std_logic_vector(5 downto 0) := "010000";
     constant wb_dev_c : std_logic := '1';
     
     --TODO
@@ -661,34 +661,6 @@ begin
             wb_stall_i => wb_stall_s
             );   
         
-nwb_dev_gen : if wb_dev_c = '0' generate 
-
--- Differential buffers
-	tx_loop: for I in 0 to c_TX_CHANNELS-1 generate
-	begin
-		tx_buf : OBUFDS
-		generic map (
-			IOSTANDARD => "LVDS_25")
-		port map (
-			O => fe_cmd_p(I),     -- Diff_p output (connect directly to top-level port)
-			OB => fe_cmd_n(I),   -- Diff_n output (connect directly to top-level port)
-			I => '0'      -- Buffer input 
-		);
-
-		clk_buf : OBUFDS
-		generic map (
-			IOSTANDARD => "LVDS_25")
-		port map (
-			O => fe_clk_p(I),     -- Diff_p output (connect directly to top-level port)
-			OB => fe_clk_n(I),   -- Diff_n output (connect directly to top-level port)
-			I => '0'     -- Buffer input 
-		);
-
-	end generate; 
-
-end generate nwb_dev_gen;
-
-
         
 wb_dev_gen : if wb_dev_c = '1' generate        
 
