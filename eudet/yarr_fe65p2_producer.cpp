@@ -28,7 +28,7 @@
 #include "Fe65p2Scans.h"
 #include "json.hpp"
 
-using json = nlohmann::json;
+using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, int32_t, uint32_t, float>;
 
 #ifdef _DEBUG
 #define DEBUG_OUT(x)  std::cout<<x<<std::endl
@@ -84,9 +84,9 @@ class YarrFe65p2Producer : public eudaq::Producer {
         YarrFe65p2Producer(const std::string & name, const std::string & runcontrol)
             : eudaq::Producer("YarrFe65p2Producer", runcontrol),
             m_run(0), m_eventCount(0) {
-                spec = new SpecController(0);    
-                tx = new TxCore(spec);
-                rx = new RxCore(spec);
+                spec = dynamic_cast<HwController*>(new SpecController());    
+                tx = dynamic_cast<TxCore*>(spec);
+                rx = dynamic_cast<RxCore*>(spec);
                 bookie = new Bookkeeper(tx, rx);
                 m_daqId = 0;
                 m_dutName = name;
@@ -109,8 +109,6 @@ class YarrFe65p2Producer : public eudaq::Producer {
         ~YarrFe65p2Producer() {
             delete s;
             delete bookie;
-            delete tx;
-            delete rx;
             delete spec;
         }
 
@@ -362,7 +360,7 @@ class YarrFe65p2Producer : public eudaq::Producer {
         }
     private:
         // YARR objects
-        SpecController *spec;
+        HwController *spec;
         TxCore *tx;
         RxCore *rx;
         Bookkeeper *bookie;
