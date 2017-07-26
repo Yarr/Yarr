@@ -296,14 +296,10 @@ begin
     cfg_interrupt_o <= cfg_interrupt_s;
 
     interrupt_p : process(rst_i,clk_i,cfg_interrupt_rdy_i)
---    interrupt_p : process(rst_i,cfg_interrupt_rdy_i,dma_ctrl_irq_s)
+--    interrupt_p : process(rst_i,clk_i)
     begin
 
---        if (rst_i = '1' or cfg_interrupt_rdy_i = '1') then
---            cfg_interrupt_s <= '0';   
---        elsif (dma_ctrl_irq_s /= "00") then
---            cfg_interrupt_s <= '1';
---        end if;
+
         
        
         
@@ -314,7 +310,8 @@ begin
 
         elsif(clk_i'event and clk_i = '1') then
             cfg_interrupt_s <= cfg_interrupt_s;
-
+            --if (cfg_interrupt_rdy_i = '1') then
+                --cfg_interrupt_s <= '0';
             if (dma_ctrl_irq_s /= "00") then
                 cfg_interrupt_s <= '1';
             end if;

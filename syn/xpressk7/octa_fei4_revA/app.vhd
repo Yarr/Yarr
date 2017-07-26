@@ -176,7 +176,7 @@ architecture Behavioral of app is
     
     --signal eop_s : std_logic; -- Arbiter end of operation
     signal cfg_interrupt_s : std_logic;
-    signal cfg_interrupt_rdy_s : std_logic_vector(15 downto 0);
+    signal cfg_interrupt_rdy_s : std_logic_vector(1 downto 0);
     signal pcie_id_s : std_logic_vector (15 downto 0); -- Completer/Requester ID
     
 

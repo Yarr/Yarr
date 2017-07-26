@@ -1,10 +1,10 @@
 #Clocks
 set_property IOSTANDARD LVDS [get_ports clk200_n]
 set_property IOSTANDARD LVDS [get_ports clk200_p]
-set_property PACKAGE_PIN AA10 [get_ports clk200_p]
 set_property PACKAGE_PIN AB10 [get_ports clk200_n]
-set_property PACKAGE_PIN D6 [get_ports pcie_clk_p]
+set_property PACKAGE_PIN AA10 [get_ports clk200_p]
 set_property PACKAGE_PIN D5 [get_ports pcie_clk_n]
+set_property PACKAGE_PIN D6 [get_ports pcie_clk_p]
 
 
 #On-board switch reset
@@ -56,6 +56,8 @@ set_property IOSTANDARD LVCMOS15 [get_ports {usr_sw_i[2]}]
 #set_property PACKAGE_PIN V7 [get_ports {front_led_o[2]}]
 #set_property PACKAGE_PIN U4 [get_ports {front_led_o[1]}]
 #set_property PACKAGE_PIN V2 [get_ports {front_led_o[0]}]
+
+
 
 
 
