@@ -1309,9 +1309,9 @@ begin
           probe11(0) => dma_ctrl_start_l2p_s, 
           probe12(0) => dma_ctrl_start_p2l_s, 
           probe13(0) => dma_ctrl_start_next_s,
-          probe14 => ddr_rd_mask_rd_data_count_ds,
-          probe15 => ddr_rd_data_rd_data_count_ds,
-          probe16 => ddr_wb_rd_mask_addr_dout_ds & ddr_wb_rd_mask_dout_ds,
+          probe14 => (others => '0'), --ddr_rd_mask_rd_data_count_ds,
+          probe15 => (others => '0'),--ddr_rd_data_rd_data_count_ds,
+          probe16 => (others => '0'),--ddr_wb_rd_mask_addr_dout_ds & ddr_wb_rd_mask_dout_ds,
           probe17 => count_s
       );
   end generate dbg_2;
