@@ -83,8 +83,8 @@ architecture behavioral of ddr3_ctrl_wb is
     --------------------------------------
     -- Constants
     --------------------------------------
-    constant c_write_wait_time : unsigned(9 downto 0) := TO_UNSIGNED(15, 10);
-    constant c_read_wait_time : unsigned(9 downto 0) := TO_UNSIGNED(15, 10);
+    constant c_write_wait_time : unsigned(7 downto 0) := TO_UNSIGNED(15, 8);
+    constant c_read_wait_time : unsigned(7 downto 0) := TO_UNSIGNED(15, 8);
     
     constant c_register_shift_size : integer := 8;
     type data_array is array (0 to c_register_shift_size-1) of std_logic_vector(g_DATA_PORT_SIZE - 1 downto 0);
@@ -96,7 +96,13 @@ architecture behavioral of ddr3_ctrl_wb is
     -- Signals
     --------------------------------------
     signal rst_s : std_logic;
-      
+
+    signal wb_sel_s   : std_logic_vector(g_MASK_SIZE - 1 downto 0);
+    signal wb_cyc_s   : std_logic;
+    signal wb_stb_s   : std_logic;
+    signal wb_we_s    : std_logic;
+    signal wb_addr_s  : std_logic_vector(32 - 1 downto 0);
+    signal wb_data_s  : std_logic_vector(g_DATA_PORT_SIZE - 1 downto 0);      
     
     
 
@@ -200,8 +206,8 @@ architecture behavioral of ddr3_ctrl_wb is
     --------------------------------------
     -- Counter
     --------------------------------------
-    signal wb_write_wait_cnt : unsigned(9 downto 0);    
-    signal wb_read_wait_cnt : unsigned(9 downto 0);
+    signal wb_write_wait_cnt : unsigned(7 downto 0);    
+    signal wb_read_wait_cnt : unsigned(7 downto 0);
 
     
     
@@ -225,11 +231,27 @@ begin
     ddr_rd_data_rd_data_count_do <= fifo_wb_rd_data_rd_data_count_s(3 downto 0);
 
     --------------------------------------
-    -- QWORD swap debug
+    -- Wishbone input delay
     --------------------------------------
     
-    
-    
+    p_wb_in : process (wb_clk_i, rst_n_i)
+    begin    
+        if (rst_n_i = '0') then
+            wb_sel_s   <= (others =>'0');
+            wb_cyc_s   <= '0';
+            wb_stb_s   <= '0';
+            wb_we_s    <= '0';
+            wb_addr_s  <= (others =>'0');
+            wb_data_s  <= (others =>'0');  
+        elsif rising_edge(wb_clk_i) then
+             wb_sel_s   <= wb_sel_i;
+             wb_cyc_s   <= wb_cyc_i;
+             wb_stb_s   <= wb_stb_i;
+             wb_we_s    <= wb_we_i;
+             wb_addr_s  <= wb_addr_i;
+             wb_data_s  <= wb_data_i;       
+        end if;
+    end process p_wb_in;
     
     --------------------------------------
     -- Wishbone ack
@@ -260,7 +282,7 @@ begin
         elsif rising_edge(wb_clk_i) then
             wb_wr_shift_flush_1_s <= wb_wr_shift_flush_s;
 
-            if (wb_cyc_i = '1' and wb_stb_i = '1' and wb_we_i = '1') then
+            if (wb_cyc_s = '1' and wb_stb_s = '1' and wb_we_s = '1') then
                 wb_wr_ack_s <= '1';
                 wb_write_wait_cnt <= c_write_wait_time;
             else
@@ -330,14 +352,14 @@ begin
     
 
     
-    p_wb_write_shift: process (wb_wr_shifting_s,wb_wr_addr_shift_a,wb_wr_data_shift_a,wb_wr_mask_shift_a,wb_wr_valid_shift_s,wb_addr_i,wb_data_i,wb_sel_i,wb_wr_flush_v_s)
+    p_wb_write_shift: process (wb_wr_shifting_s,wb_wr_addr_shift_a,wb_wr_data_shift_a,wb_wr_mask_shift_a,wb_wr_valid_shift_s,wb_addr_s,wb_data_s,wb_sel_s,wb_wr_flush_v_s)
     
     begin
         if(wb_wr_shifting_s = '1') then
-            wb_wr_addr_shift_next_a(c_register_shift_size-1) <= wb_addr_i(g_BYTE_ADDR_WIDTH-1 downto 0);
-            wb_wr_data_shift_next_a(c_register_shift_size-1) <= wb_data_i;
-            wb_wr_mask_shift_next_a(c_register_shift_size-1) <= wb_sel_i;
-            wb_wr_valid_shift_next_s(c_register_shift_size-1) <= wb_cyc_i and wb_stb_i and wb_we_i;
+            wb_wr_addr_shift_next_a(c_register_shift_size-1) <= wb_addr_s(g_BYTE_ADDR_WIDTH-1 downto 0);
+            wb_wr_data_shift_next_a(c_register_shift_size-1) <= wb_data_s;
+            wb_wr_mask_shift_next_a(c_register_shift_size-1) <= wb_sel_s;
+            wb_wr_valid_shift_next_s(c_register_shift_size-1) <= wb_cyc_s and wb_stb_s and wb_we_s;
             for i in 1 to c_register_shift_size-1 loop
                 wb_wr_addr_shift_next_a(i-1) <= wb_wr_addr_shift_a(i);
                 wb_wr_data_shift_next_a(i-1) <= wb_wr_data_shift_a(i);
@@ -365,7 +387,7 @@ begin
     end process p_wb_write_shift;
     
     wb_wr_shifting_s <= --'0' when wb_wr_several_row_s = '1' else
-                        '1' when wb_cyc_i = '1' and wb_stb_i = '1' and wb_we_i = '1' else
+                        '1' when wb_cyc_s = '1' and wb_stb_s = '1' and wb_we_s = '1' else
                         '1' when wb_write_wait_cnt = 0 else
                         '0';
     
@@ -461,7 +483,7 @@ begin
     elsif rising_edge(wb_clk_i) then
         wb_rd_shift_flush_1_s <= wb_rd_shift_flush_s;
         -- Register Shift
-        if (wb_cyc_i = '1' and wb_stb_i = '1' and wb_we_i = '0') then
+        if (wb_cyc_s = '1' and wb_stb_s = '1' and wb_we_s = '0') then
             wb_read_wait_cnt <= c_read_wait_time;
         else
           if(wb_rd_valid_shift_s /= (wb_rd_valid_shift_s'range => '0')) then
@@ -513,7 +535,7 @@ begin
     end process p_wb_read_rtl;
     
      wb_rd_shifting_s <= --'0' when wb_rd_several_row_s = '1' else
-                        '1' when wb_cyc_i = '1' and wb_stb_i = '1' and wb_we_i = '0' else
+                        '1' when wb_cyc_s = '1' and wb_stb_s = '1' and wb_we_s = '0' else
                         '1' when wb_read_wait_cnt = 0 else
                         '0';
     
@@ -533,12 +555,12 @@ begin
 
     end generate;   
     
-    p_wb_read_shift: process (wb_rd_shifting_s,wb_rd_addr_shift_a,wb_rd_valid_shift_s,wb_addr_i,wb_data_i,wb_sel_i,wb_rd_flush_v_s)
+    p_wb_read_shift: process (wb_rd_shifting_s,wb_rd_addr_shift_a,wb_rd_valid_shift_s,wb_addr_s,wb_data_s,wb_sel_s,wb_rd_flush_v_s)
     
     begin
         if(wb_rd_shifting_s = '1') then
-            wb_rd_addr_shift_next_a(c_register_shift_size-1) <= wb_addr_i(g_BYTE_ADDR_WIDTH-1 downto 0);
-            wb_rd_valid_shift_next_s(c_register_shift_size-1) <= wb_cyc_i and wb_stb_i and not wb_we_i;
+            wb_rd_addr_shift_next_a(c_register_shift_size-1) <= wb_addr_s(g_BYTE_ADDR_WIDTH-1 downto 0);
+            wb_rd_valid_shift_next_s(c_register_shift_size-1) <= wb_cyc_s and wb_stb_s and not wb_we_s;
             for i in 1 to c_register_shift_size-1 loop
                 wb_rd_addr_shift_next_a(i-1) <= wb_rd_addr_shift_a(i);
                 if wb_rd_flush_v_s(i) = '0' then
@@ -734,7 +756,7 @@ begin
     --------------------------------------
     -- Stall proc
     --------------------------------------
-	wb_stall_s <= fifo_wb_wr_full_s or fifo_wb_rd_addr_almost_full_s or fifo_wb_rd_mask_almost_full_s or wb_wr_several_row_s; --or wb_rd_several_row_s; --or (not ddr_wdf_rdy_i) or (not ddr_rdy_i);
+	wb_stall_s <= fifo_wb_wr_full_s or fifo_wb_rd_addr_almost_full_s or fifo_wb_rd_mask_almost_full_s or wb_wr_several_row_s or wb_rd_several_row_s; --or (not ddr_wdf_rdy_i) or (not ddr_rdy_i);
 	wb_stall_o <= wb_stall_s;
 
 end architecture behavioral;
