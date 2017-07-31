@@ -142,7 +142,7 @@ architecture Behavioral of app is
     ------------------------------------------------------------------------------
     -- Constants declaration
     ------------------------------------------------------------------------------
-    constant DEBUG_C : std_logic_vector(5 downto 0) := "000000";
+    constant DEBUG_C : std_logic_vector(5 downto 0) := "100000";
     constant wb_dev_c : std_logic := '1';
     
     --TODO
@@ -967,6 +967,16 @@ end generate;
       wb_ack_o            => dma_ddr_ack_s,
       wb_stall_o          => dma_ddr_stall_s,
       
+      wb1_sel_i  => rx_dma_sel_s,
+      wb1_cyc_i  => rx_dma_cyc_s,
+      wb1_stb_i  => rx_dma_stb_s,
+      wb1_we_i   => rx_dma_we_s,
+      wb1_addr_i => rx_dma_adr_s,
+      wb1_data_i => rx_dma_dat_m2s_s,
+      wb1_data_o => rx_dma_dat_s2m_s,
+      wb1_ack_o  => rx_dma_ack_s,
+      wb1_stall_o => rx_dma_stall_s,
+      
       ddr_wb_rd_mask_dout_do => ddr_wb_rd_mask_dout_ds,
       ddr_wb_rd_mask_addr_dout_do => ddr_wb_rd_mask_addr_dout_ds,
       ddr_rd_mask_rd_data_count_do => ddr_rd_mask_rd_data_count_ds,
@@ -1219,7 +1229,7 @@ end generate;
           probe11(0) => ddr_app_wdf_rdy_s,
           probe12(0) => ddr_app_ui_clk_sync_rst_s, 
           probe13(0) => init_calib_complete_s,
-          probe14 => ddr_iteration_count_s
+          probe14 => (others=>'0')--ddr_iteration_count_s
 
 
       );

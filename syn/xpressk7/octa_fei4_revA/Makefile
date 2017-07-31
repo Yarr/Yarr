@@ -21,11 +21,6 @@ SYN_GRADE := -2
 TCL_CREATE := create_project $(PROJECT) ./
 TCL_OPEN := open_project $(PROJECT_FILE)
 TCL_CLOSE := exit
-TCL_POST_CMD := echo "update_compile_order -fileset sources_1"; \
-echo "add_files -norecurse -scan_for_includes {../../../rtl/rx-core/decode_8b10b/decode_8b10b_lut.vhd ../../../rtl/rx-core/decode_8b10b/decode_8b10b_disp.vhd ../../../rtl/rx-core/decode_8b10b/decode_8b10b_pkg.vhd ../../../rtl/rx-core/decode_8b10b/decode_8b10b_rtl.vhd ../../../rtl/rx-core/decode_8b10b/decode_8b10b_bram.vhd ../../../rtl/rx-core/decode_8b10b/decode_8b10b_top.vhd ../../../rtl/rx-core/decode_8b10b/decode_8b10b_lut_base.vhd}"; \
-echo "update_compile_order -fileset sources_1"; \
-echo "set_property library decode_8b10b [get_files  {../../../rtl/rx-core/decode_8b10b/decode_8b10b_lut.vhd ../../../rtl/rx-core/decode_8b10b/decode_8b10b_disp.vhd ../../../rtl/rx-core/decode_8b10b/decode_8b10b_pkg.vhd ../../../rtl/rx-core/decode_8b10b/decode_8b10b_rtl.vhd ../../../rtl/rx-core/decode_8b10b/decode_8b10b_bram.vhd ../../../rtl/rx-core/decode_8b10b/decode_8b10b_top.vhd ../../../rtl/rx-core/decode_8b10b/decode_8b10b_lut_base.vhd}]"; \
-echo "update_compile_order -fileset sources_1";
 ifneq ($(wildcard $(PROJECT_FILE)),)
 TCL_CREATE := $(TCL_OPEN)
 endif
@@ -33,44 +28,14 @@ endif
 #target for performing local synthesis
 all: bitstream
 
-SOURCES_XCIFile := \
-../../../ip-cores/kintex7/tx_fifo/tx_fifo.xci \
-../../../ip-cores/kintex7/fifo_27x16/fifo_27x16.xci \
-../../../ip-cores/kintex7/axis_data_fifo_0/axis_data_fifo_0.xci \
-../../../ip-cores/kintex7/rx_bridge_ctrl_fifo/rx_bridge_ctrl_fifo.xci \
-../../../ip-cores/kintex7/fifo_4x16/fifo_4x16.xci \
-../../../ip-cores/kintex7/fifo_96x512_1/fifo_96x512.xci \
-../../../ip-cores/kintex7/ila_axis/ila_axis.xci \
-../../../ip-cores/kintex7/cross_clock_fifo/cross_clock_fifo.xci \
-../../../ip-cores/kintex7/ila_pd_pdm/ila_pd_pdm.xci \
-../../../ip-cores/kintex7/ila_dma_ctrl_reg/ila_dma_ctrl_reg.xci \
-../../../ip-cores/kintex7/rx_channel_fifo/rx_channel_fifo.xci \
-../../../ip-cores/kintex7/fifo_315x16/fifo_315x16.xci \
-../../../ip-cores/kintex7/rx_bridge_fifo/rx_bridge_fifo.xci \
-../../../ip-cores/kintex7/clk_gen/clk_gen.xci \
-../../../ip-cores/kintex7/fifo_32x512/fifo_32x512.xci \
-../../../ip-cores/kintex7/ila_l2p_dma/ila_l2p_dma.xci \
-../../../ip-cores/kintex7/ila_wsh_pipe/ila_wsh_pipe.xci \
-../../../ip-cores/kintex7/l2p_fifo64/l2p_fifo64.xci \
-../../../ip-cores/kintex7/fifo_64x512/fifo_64x512.xci \
-../../../ip-cores/kintex7/mig_7series_0/mig_7series_0.xci \
-../../../ip-cores/kintex7/ila_rx_dma_wb/ila_rx_dma_wb.xci \
-../../../ip-cores/kintex7/ila_ddr/ila_ddr.xci \
-../../../ip-cores/kintex7/axis_data_fifo_1/axis_data_fifo_1.xci \
-../../../ip-cores/kintex7/fifo_256x16/fifo_256x16.xci \
-../../../ip-cores/kintex7/pcie_7x_0/pcie_7x_0.xci
-
-SOURCES_XDCFile := \
-xpressk7.xdc \
-xpressk7-fmc.xdc \
-xpressk7-timing.xdc
-
 SOURCES_VHDLFile := \
 app.vhd \
+../../../rtl/kintex7/ddr3k7-core/ddr3_read_core.vhd \
 ../../../rtl/trigger-logic/wb_trigger_logic.vhd \
 ../../../rtl/common/simple_counter.vhd \
 ../../../rtl/rx-core/decode_8b10b/decode_8b10b_wrapper.vhd \
 ../../../rtl/rx-core/data_alignment.vhd \
+../../../rtl/kintex7/ddr3k7-core/ddr3_write_core.vhd \
 ../../../rtl/common/k_dual_bram.vhd \
 ../../../rtl/kintex7/wshexp-core/generic_async_fifo_wrapper.vhd \
 ../../../rtl/common/synchronizer.vhd \
@@ -99,8 +64,44 @@ app_package.vhd \
 ../../../rtl/rx-core/kintex7/wb_rx_bridge.vhd \
 ../../../rtl/rx-core/fei4_rx_channel.vhd \
 ../../../rtl/kintex7/wshexp-core/l2p_arbiter.vhd \
-../../../rtl/kintex7/ddr3k7-core/ddr3_ctrl_pkg.vhd \
 ../../../rtl/kintex7/wshexp-core/l2p_dma_master.vhd
+
+SOURCES_XCIFile := \
+../../../ip-cores/kintex7/fifo_29x32/fifo_29x32.xci \
+../../../ip-cores/kintex7/tx_fifo/tx_fifo.xci \
+../../../ip-cores/kintex7/fifo_27x16/fifo_27x16.xci \
+../../../ip-cores/kintex7/axis_data_fifo_0/axis_data_fifo_0.xci \
+../../../ip-cores/kintex7/rx_bridge_ctrl_fifo/rx_bridge_ctrl_fifo.xci \
+../../../ip-cores/kintex7/fifo_4x16/fifo_4x16.xci \
+../../../ip-cores/kintex7/fifo_96x512_1/fifo_96x512.xci \
+../../../ip-cores/kintex7/ila_axis/ila_axis.xci \
+../../../ip-cores/kintex7/fifo_605x32/fifo_605x32.xci \
+../../../ip-cores/kintex7/cross_clock_fifo/cross_clock_fifo.xci \
+../../../ip-cores/kintex7/ila_pd_pdm/ila_pd_pdm.xci \
+../../../ip-cores/kintex7/ila_dma_ctrl_reg/ila_dma_ctrl_reg.xci \
+../../../ip-cores/kintex7/rx_channel_fifo/rx_channel_fifo.xci \
+../../../ip-cores/kintex7/fifo_64x512/fifo_64x512.xci \
+../../../ip-cores/kintex7/fifo_315x16/fifo_315x16.xci \
+../../../ip-cores/kintex7/rx_bridge_fifo/rx_bridge_fifo.xci \
+../../../ip-cores/kintex7/clk_gen/clk_gen.xci \
+../../../ip-cores/kintex7/ila_l2p_dma/ila_l2p_dma.xci \
+../../../ip-cores/kintex7/ila_wsh_pipe/ila_wsh_pipe.xci \
+../../../ip-cores/kintex7/l2p_fifo64/l2p_fifo64.xci \
+../../../ip-cores/kintex7/fifo_8x32/fifo_8x32.xci \
+../../../ip-cores/kintex7/mig_7series_0/mig_7series_0.xci \
+../../../ip-cores/kintex7/ila_rx_dma_wb/ila_rx_dma_wb.xci \
+../../../ip-cores/kintex7/ila_ddr/ila_ddr.xci \
+../../../ip-cores/kintex7/axis_data_fifo_1/axis_data_fifo_1.xci \
+../../../ip-cores/kintex7/fifo_256x16/fifo_256x16.xci \
+../../../ip-cores/kintex7/pcie_7x_0/pcie_7x_0.xci \
+../../../ip-cores/kintex7/fifo_32x512/fifo_32x512.xci
+
+SOURCES_XDCFile := \
+xpressk7-ddr3.xdc \
+xpressk7.xdc \
+xpressk7-fmc.xdc \
+xpressk7-timing.xdc
+
 
 SOURCES_DECODE_8B10B_VHDLFile:= ../../../rtl/rx-core/decode_8b10b/decode_8b10b_lut.vhd \
 ../../../rtl/rx-core/decode_8b10b/decode_8b10b_disp.vhd \
@@ -111,9 +112,9 @@ SOURCES_DECODE_8B10B_VHDLFile:= ../../../rtl/rx-core/decode_8b10b/decode_8b10b_l
 ../../../rtl/rx-core/decode_8b10b/decode_8b10b_lut_base.vhd
 
 files.tcl:
-		@$(foreach sourcefile, $(SOURCES_XCIFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 0 [get_files $(sourcefile)]" >> $@ &)
-		@$(foreach sourcefile, $(SOURCES_XDCFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 0 [get_files $(sourcefile)]" >> $@ &)
-		@$(foreach sourcefile, $(SOURCES_VHDLFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 0 [get_files $(sourcefile)]" >> $@ &)
+		@$(foreach sourcefile, $(SOURCES_VHDLFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
+		@$(foreach sourcefile, $(SOURCES_XCIFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
+		@$(foreach sourcefile, $(SOURCES_XDCFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
 		@$(foreach sourcefile, $(SOURCES_DECODE_8B10B_VHDLFile), echo "add_files -norecurse $(sourcefile); set_property library decode_8b10b [get_files $(sourcefile) ]" >> $@ &)
 
 SYN_PRE_PROJECT_CMD := 
@@ -136,7 +137,6 @@ project.tcl:
 		echo source files.tcl >> $@
 		echo update_compile_order -fileset sources_1 >> $@
 		echo update_compile_order -fileset sim_1 >> $@
-		echo $(TCL_POST_CMD) >> $@
 		echo $(TCL_CLOSE) >> $@
 
 project: files.tcl project.tcl

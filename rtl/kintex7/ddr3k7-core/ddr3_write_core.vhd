@@ -31,9 +31,6 @@ use IEEE.NUMERIC_STD.ALL;
 --library UNISIM;
 --use UNISIM.VComponents.all;
 
-library work;
-use work.ddr3_ctrl_pkg.all;
-
 
 entity ddr3_write_core is
     generic (
@@ -227,27 +224,15 @@ begin
             end if;
             
             -- Erase the data sent to the FIFO
-            --if(wb_wr_shift_flush_1_s = '1') then
             if(wb_wr_shift_flush_s = '1') then
                 wb_write_wait_cnt <= c_write_wait_time;
             end if;
             
-            
-            
-            
-
             wb_wr_addr_shift_a <= wb_wr_addr_shift_next_a;
             wb_wr_data_shift_a <= wb_wr_data_shift_next_a;
             wb_wr_mask_shift_a <= wb_wr_mask_shift_next_a;
-            wb_wr_valid_shift_s <= wb_wr_valid_shift_next_s;
-              
-
-  
-            
+            wb_wr_valid_shift_s <= wb_wr_valid_shift_next_s;    
         end if;
-        
-        
-        
         
         
     end process p_wb_write;
@@ -359,14 +344,6 @@ begin
         
      end process;
 
-    
-
-    --fifo_wb_wr_din_s <= fifo_wb_wr_addr_s & 
-    --                    fifo_wb_wr_mask_s &
-    --                    wb_wr_data_shift_s;
-                        
-    --fifo_wb_wr_wr_s <= wb_wr_shift_flush_s;
-
   
     
     fifo_wb_write : fifo_605x32
@@ -385,21 +362,6 @@ begin
     --------------------------------------
     -- DDR CMD
     --------------------------------------
-    
---    p_ddr_cmd : process (ddr_ui_clk_i, rst_n_i)
---    begin
---        if (rst_n_i = '0') then
---            ddr_cmd_en_o <= '0';
---        elsif rising_edge(ddr_ui_clk_i) then
---            if(fifo_wb_wr_rd_s = '1') then
---                ddr_cmd_en_o <= '1';
---            elsif (ddr_rdy_i = '1' or ddr_gnt_i = '1') then
---                ddr_cmd_en_o <= '0';
-            
---            end if;
---        end if;
---    end process p_ddr_cmd;
-    
     ddr_cmd_en_o <= fifo_wb_wr_rd_s;
     ddr_addr_o <= fifo_wb_wr_dout_s(604 downto 576);
     ddr_cmd_o <= "000";
@@ -407,23 +369,6 @@ begin
     --------------------------------------
     -- DDR Data out
     --------------------------------------
---    p_ddr_data_out : process (ddr_ui_clk_i, rst_n_i)
---    begin
---        if (rst_n_i = '0') then
---            ddr_wdf_wren_o <= '0';
---            ddr_wdf_end_o  <= '0';        
---        elsif rising_edge(ddr_ui_clk_i) then
---            if (fifo_wb_wr_rd_s = '1') then
---                ddr_wdf_wren_o <= '1';
---                ddr_wdf_end_o  <= '1';
---            elsif (ddr_wdf_rdy_i = '1' or ddr_gnt_i = '1') then
---                ddr_wdf_wren_o <= '0';
---                ddr_wdf_end_o  <= '0';
---            end if;
---        end if;
-        
---    end process p_ddr_data_out;
-    
     ddr_wdf_wren_o <= fifo_wb_wr_rd_s;
     ddr_wdf_end_o <= fifo_wb_wr_rd_s;
     ddr_wdf_data_o <= fifo_wb_wr_dout_s(511 downto 0);

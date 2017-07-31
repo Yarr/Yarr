@@ -777,30 +777,30 @@ begin
 --        probe23 => (others => '0')--iteration_count_s
 --    );
 
---      pipelined_wishbone_debug : ila_wsh_pipe
---      PORT MAP (
---          clk => wb_clk_i,
+      pipelined_wishbone_debug : ila_wsh_pipe
+      PORT MAP (
+          clk => wb_clk_i,
       
       
       
---          probe0 => dma_adr_s, 
---          probe1 => dma_dat_s2m_s, 
---          probe2 => dma_dat_m2s_s, 
---          probe3 => dma_sel_s, 
---          probe4(0) => dma_cyc_s, 
---          probe5(0) => dma_stb_s, 
---          probe6(0) => dma_we_s, 
---          probe7(0) => dma_ack_s,
---          probe8(0) => dma_stall_s, 
---          probe9(0) => l2p_dma_cyc_s,
---          probe10(0) => p2l_dma_cyc_s,
---          probe11(0) => dma_ctrl_start_l2p_s, 
---          probe12(0) => dma_ctrl_start_p2l_s, 
---          probe13(0) => dma_ctrl_start_next_s,
---          probe14 => (others => '0'),--ddr_rd_mask_rd_data_count_ds,
---          probe15 => (others => '0'),--ddr_rd_data_rd_data_count_ds,
---          probe16 => (others => '0'),--ddr_wb_rd_mask_addr_dout_ds & ddr_wb_rd_mask_dout_ds,
---          probe17 => (others => '0')--iteration_count_s
---      );
+          probe0 => dma_adr_s, 
+          probe1 => dma_dat_s2m_s, 
+          probe2 => dma_dat_m2s_s, 
+          probe3 => dma_sel_s, 
+          probe4(0) => dma_cyc_s, 
+          probe5(0) => dma_stb_s, 
+          probe6(0) => dma_we_s, 
+          probe7(0) => dma_ack_s,
+          probe8(0) => dma_stall_s, 
+          probe9(0) => l2p_dma_cyc_s,
+          probe10(0) => p2l_dma_cyc_s,
+          probe11(0) => dma_ctrl_start_l2p_s, 
+          probe12(0) => dma_ctrl_start_p2l_s, 
+          probe13(0) => dma_ctrl_start_next_s,
+          probe14 => (others => '0'),--ddr_rd_mask_rd_data_count_ds,
+          probe15 => (others => '0'),--ddr_rd_data_rd_data_count_ds,
+          probe16 => (others => '0'),--ddr_wb_rd_mask_addr_dout_ds & ddr_wb_rd_mask_dout_ds,
+          probe17 => (others => '0')--iteration_count_s
+      );
 
 end Behavioral;

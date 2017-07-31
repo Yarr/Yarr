@@ -128,12 +128,12 @@ begin
 		elsif (clk_i'event and clk_i = '1') then
             wba_adr_s <= wba_adr_i;
             wba_dat_i_s <= wba_dat_i;
-            wba_we_s <= wba_we_i;
+            wba_we_s <= wba_we_i and wba_stb_i;
             wba_stb_s <= wba_stb_i;
             wba_cyc_s <= wba_cyc_i;
             wbb_adr_s <= wbb_adr_i;
             wbb_dat_i_s <= wbb_dat_i;
-            wbb_we_s <= wbb_we_i;
+            wbb_we_s <= wbb_we_i and wbb_stb_i;
             wbb_stb_s <= wbb_stb_i;
             wbb_cyc_s <= wbb_cyc_i;  				
 		end if;

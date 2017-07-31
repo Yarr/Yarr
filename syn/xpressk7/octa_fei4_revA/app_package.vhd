@@ -434,6 +434,19 @@ package app_pkg is
           wb_stall_o : out std_logic;
           
           ----------------------------------------------------------------------------
+          -- Wishbone bus port
+          ----------------------------------------------------------------------------
+          wb1_sel_i   : in  std_logic_vector(g_MASK_SIZE - 1 downto 0);
+          wb1_cyc_i   : in  std_logic;
+          wb1_stb_i   : in  std_logic;
+          wb1_we_i    : in  std_logic;
+          wb1_addr_i  : in  std_logic_vector(32 - 1 downto 0);
+          wb1_data_i  : in  std_logic_vector(g_DATA_PORT_SIZE - 1 downto 0);
+          wb1_data_o  : out std_logic_vector(g_DATA_PORT_SIZE - 1 downto 0);
+          wb1_ack_o   : out std_logic;
+          wb1_stall_o : out std_logic;       
+          
+          ----------------------------------------------------------------------------
           -- Debug ports
           ----------------------------------------------------------------------------
           ddr_wb_rd_mask_dout_do : out std_logic_vector(7 downto 0);
