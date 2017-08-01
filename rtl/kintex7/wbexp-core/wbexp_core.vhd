@@ -1,124 +1,126 @@
-----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
--- 
--- Create Date: 07/07/2017 04:49:03 PM
--- Design Name: 
--- Module Name: wshexp-core - Behavioral
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
--- 
--- Dependencies: 
--- 
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
--- 
-----------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- Wishbone express core
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+--! @file
+--! @brief
+--! Package for components declaration and core wide constants.
+--! Kintex7 FPGAs version.
+--------------------------------------------------------------------------------
+--! @version
+--! 0.1 | mc | 01.08.2017 | File creation and Doxygen comments
+--!
+--! @author
+--! as : Arnaud Sautaux
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+-- GNU GENERAL PUBLIC LICENSE
+--------------------------------------------------------------------------------
+-- This file is part of Wishbone Express Core.
+--
+-- Wishbone Express Core is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+--
+-- Wishbone Express Core is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+--
+-- You should have received a copy of the GNU General Public License
+-- along with Wishbone Express Core.  If not, see <http://www.gnu.org/licenses/>.
+--------------------------------------------------------------------------------
 
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
--- Uncomment the following library declaration if using
--- arithmetic functions with Signed or Unsigned values
---use IEEE.NUMERIC_STD.ALL;
-
--- Uncomment the following library declaration if instantiating
--- any Xilinx leaf cells in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
-
-use work.wshexp_core_pkg.all;
 
 entity wshexp_core is
     Generic(
         AXI_BUS_WIDTH : integer := 64
     );
     Port ( 
-        clk_i : in STD_LOGIC;
-        wb_clk_i : in STD_LOGIC;
-        --sys_clk_n_i : IN STD_LOGIC;
-        --sys_clk_p_i : IN STD_LOGIC;
-        rst_i : in STD_LOGIC;
-        --user_lnk_up_i : in STD_LOGIC;
-        --user_app_rdy_i : in STD_LOGIC;
+        clk_i    : in STD_LOGIC; --! PCIe user clock 250 MHz
+        wb_clk_i : in STD_LOGIC; --! Wishbone bus clock
+        rst_i    : in STD_LOGIC; --! Reset input active high
         
         ---------------------------------------------------------
         -- AXI-Stream bus
-        m_axis_tx_tready_i : in STD_LOGIC;
-        m_axis_tx_tdata_o : out STD_LOGIC_VECTOR(AXI_BUS_WIDTH-1 DOWNTO 0);
-        m_axis_tx_tkeep_o : out STD_LOGIC_VECTOR(AXI_BUS_WIDTH/8-1 DOWNTO 0);
-        m_axis_tx_tlast_o : out STD_LOGIC;
-        m_axis_tx_tvalid_o : out STD_LOGIC;
-        m_axis_tx_tuser_o : out STD_LOGIC_VECTOR(3 DOWNTO 0);
-        s_axis_rx_tdata_i : in STD_LOGIC_VECTOR(AXI_BUS_WIDTH-1 DOWNTO 0);
-        s_axis_rx_tkeep_i : in STD_LOGIC_VECTOR(AXI_BUS_WIDTH/8-1 DOWNTO 0);
-        s_axis_rx_tlast_i : in STD_LOGIC;
-        s_axis_rx_tvalid_i : in STD_LOGIC;
-        s_axis_rx_tready_o : out STD_LOGIC;
-        s_axis_rx_tuser_i : in STD_LOGIC_VECTOR(21 DOWNTO 0);
+        m_axis_tx_tready_i : in  STD_LOGIC;					--! AXI-Stream bus: Transmit destination ready to accept data
+        m_axis_tx_tdata_o  : out STD_LOGIC_VECTOR(AXI_BUS_WIDTH-1 DOWNTO 0);	--! AXI-Stream bus: Transmit data
+        m_axis_tx_tkeep_o  : out STD_LOGIC_VECTOR(AXI_BUS_WIDTH/8-1 DOWNTO 0);  --! AXI-Stream bus: Transmit data strobe
+        m_axis_tx_tlast_o  : out STD_LOGIC;					--! AXI-Stream bus: Indicates the last data beaf of a packet
+        m_axis_tx_tvalid_o : out STD_LOGIC;					--! AXI-Stream bus: Indicates valid transmit data
+        m_axis_tx_tuser_o  : out STD_LOGIC_VECTOR(3 DOWNTO 0);			--! AXI-Stream bus: Indicates custom informations about the transmit destination [PG054]
+        s_axis_rx_tdata_i  : in  STD_LOGIC_VECTOR(AXI_BUS_WIDTH-1 DOWNTO 0);	--! AXI-Stream bus: Receive data
+        s_axis_rx_tkeep_i  : in  STD_LOGIC_VECTOR(AXI_BUS_WIDTH/8-1 DOWNTO 0);  --! AXI-Stream bus: Receive data strobe
+        s_axis_rx_tlast_i  : in  STD_LOGIC;					--! AXI-Stream bus: Indicates the last data beaf of a packet
+        s_axis_rx_tvalid_i : in  STD_LOGIC;					--! AXI-Stream bus: Indicates valid receive data
+        s_axis_rx_tready_o : out STD_LOGIC;					--! AXI-Stream bus: Receive source ready to accept data
+        s_axis_rx_tuser_i  : in  STD_LOGIC_VECTOR(21 DOWNTO 0);			--! AXI-Stream bus: Indicates custom informations about the receive source [PG054]
 
         ---------------------------------------------------------
         -- DMA wishbone interface (master pipelined)        
-        dma_adr_o   : out std_logic_vector(31 downto 0);  -- Adress
-        dma_dat_o   : out  std_logic_vector(63 downto 0);  -- Data out
-        dma_dat_i   : in  std_logic_vector(63 downto 0);  -- Data in
-        dma_sel_o   : out std_logic_vector(7 downto 0);   -- Byte select
-        dma_cyc_o   : out std_logic;                      -- Read or write cycle
-        dma_stb_o   : out std_logic;                      -- Read or write strobe
-        dma_we_o    : out std_logic;                      -- Write
-        dma_ack_i   : in std_logic;                      -- Acknowledge
-        dma_stall_i : in std_logic;                      -- for pipelined Wishbone
+        dma_adr_o   : out std_logic_vector(31 downto 0);  --! DMA Wishbone Bus: Adress
+        dma_dat_o   : out  std_logic_vector(63 downto 0); --! DMA Wishbone Bus: Data out
+        dma_dat_i   : in  std_logic_vector(63 downto 0);  --! DMA Wishbone Bus: Data in
+        dma_sel_o   : out std_logic_vector(7 downto 0);   --! DMA Wishbone Bus: Byte select
+        dma_cyc_o   : out std_logic;                      --! DMA Wishbone Bus: Read or write cycle
+        dma_stb_o   : out std_logic;                      --! DMA Wishbone Bus: Read or write strobe
+        dma_we_o    : out std_logic;                      --! DMA Wishbone Bus: Write enable
+        dma_ack_i   : in std_logic;                       --! DMA Wishbone Bus: Acknowledge
+        dma_stall_i : in std_logic;                       --! DMA Wishbone Bus: for pipelined Wishbone
         
         ---------------------------------------------------------
         -- CSR wishbone interface (master classic)
-        csr_adr_o   : out std_logic_vector(31 downto 0);
-        csr_dat_o   : out std_logic_vector(31 downto 0);
-        csr_sel_o   : out std_logic_vector(3 downto 0);
-        csr_stb_o   : out std_logic;
-        csr_we_o    : out std_logic;
-        csr_cyc_o   : out std_logic;
-        csr_dat_i   : in  std_logic_vector(31 downto 0);
-        csr_ack_i   : in  std_logic;
-        csr_stall_i : in  std_logic;
-        csr_err_i   : in  std_logic;
-        csr_rty_i   : in  std_logic;      -- not used internally
-        csr_int_i   : in  std_logic;      -- not used internally
+        csr_adr_o   : out std_logic_vector(31 downto 0);  --! CSR Wishbone Bus: Address
+        csr_dat_o   : out std_logic_vector(31 downto 0);  --! CSR Wishbone Bus: Data out
+        csr_sel_o   : out std_logic_vector(3 downto 0);   --! CSR Wishbone Bus: Byte select
+        csr_stb_o   : out std_logic;                      --! CSR Wishbone Bus: Read or write cycle
+        csr_we_o    : out std_logic;                      --! CSR Wishbone Bus: Write enable
+        csr_cyc_o   : out std_logic;                      --! CSR Wishbone Bus: Read or write strobe
+        csr_dat_i   : in  std_logic_vector(31 downto 0);  --! CSR Wishbone Bus: Data in
+        csr_ack_i   : in  std_logic;                      --! CSR Wishbone Bus: Acknoledge
+        csr_stall_i : in  std_logic;                      --! CSR Wishbone Bus: for pipelined Wishbone
+        csr_err_i   : in  std_logic;                      --! CSR Wishbone Bus: Error
+        csr_rty_i   : in  std_logic;                      --! not used internally
+        csr_int_i   : in  std_logic;                      --! not used internally
         
         ---------------------------------------------------------
         -- DMA registers wishbone interface (slave classic)
-        dma_reg_adr_i   : in  std_logic_vector(31 downto 0);
-        dma_reg_dat_i   : in  std_logic_vector(31 downto 0);
-        dma_reg_sel_i   : in  std_logic_vector(3 downto 0);
-        dma_reg_stb_i   : in  std_logic;
-        dma_reg_we_i    : in  std_logic;
-        dma_reg_cyc_i   : in  std_logic;
-        dma_reg_dat_o   : out std_logic_vector(31 downto 0);
-        dma_reg_ack_o   : out std_logic;
-        dma_reg_stall_o : out std_logic;
+        dma_reg_adr_i   : in  std_logic_vector(31 downto 0); --! DMA Registers Bus: Address
+        dma_reg_dat_i   : in  std_logic_vector(31 downto 0); --! DMA Registers Bus: Data in
+        dma_reg_sel_i   : in  std_logic_vector(3 downto 0);  --! DMA Registers Bus: Byte select
+        dma_reg_stb_i   : in  std_logic;                     --! DMA Registers Bus: Read or write strobe
+        dma_reg_we_i    : in  std_logic;                     --! DMA Registers Bus: Write enable
+        dma_reg_cyc_i   : in  std_logic;                     --! DMA Registers Bus: Read or write cycle
+        dma_reg_dat_o   : out std_logic_vector(31 downto 0); --! DMA Registers Bus: Data out
+        dma_reg_ack_o   : out std_logic;                     --! DMA Registers Bus: Acknoledge
+        dma_reg_stall_o : out std_logic;                     --! DMA Registers Bus: for pipelined wishbone
         
         ---------------------------------------------------------
         -- PCIe interrupt config
-        cfg_interrupt_o : out STD_LOGIC;
-        cfg_interrupt_rdy_i : in STD_LOGIC;
-        cfg_interrupt_assert_o : out STD_LOGIC;
-        cfg_interrupt_di_o : out STD_LOGIC_VECTOR(7 DOWNTO 0);
-        cfg_interrupt_do_i : in STD_LOGIC_VECTOR(7 DOWNTO 0);
-        cfg_interrupt_mmenable_i : in STD_LOGIC_VECTOR(2 DOWNTO 0);
-        cfg_interrupt_msienable_i : in STD_LOGIC;
-        cfg_interrupt_msixenable_i : in STD_LOGIC;
-        cfg_interrupt_msixfm_i : in STD_LOGIC;
-        cfg_interrupt_stat_o : out STD_LOGIC;
-        cfg_pciecap_interrupt_msgnum_o : out STD_LOGIC_VECTOR(4 DOWNTO 0);
+        cfg_interrupt_o                : out STD_LOGIC;                     --! Interrupt request signal
+        cfg_interrupt_rdy_i            : in  STD_LOGIC;                     --! Interrupt grant signal
+        cfg_interrupt_assert_o         : out STD_LOGIC;                     --! Not used
+        cfg_interrupt_di_o             : out STD_LOGIC_VECTOR(7 DOWNTO 0);  --! Interrupt message data out
+        cfg_interrupt_do_i             : in  STD_LOGIC_VECTOR(7 DOWNTO 0);  --! Interrupt message data in
+        cfg_interrupt_mmenable_i       : in  STD_LOGIC_VECTOR(2 DOWNTO 0);  --! Intteurpt multiple message enable
+        cfg_interrupt_msienable_i      : in  STD_LOGIC;                     --! Not used
+        cfg_interrupt_msixenable_i     : in  STD_LOGIC;                     --! Not used
+        cfg_interrupt_msixfm_i         : in  STD_LOGIC;                     --! Not used
+        cfg_interrupt_stat_o           : out STD_LOGIC;                     --! Not used
+        cfg_pciecap_interrupt_msgnum_o : out STD_LOGIC_VECTOR(4 DOWNTO 0);  --! Not used
         
         ---------------------------------------------------------
         -- PCIe ID
-        cfg_bus_number_i : in STD_LOGIC_VECTOR(7 DOWNTO 0);
-        cfg_device_number_i : in STD_LOGIC_VECTOR(4 DOWNTO 0);
-        cfg_function_number_i : in STD_LOGIC_VECTOR(2 DOWNTO 0)
+        cfg_bus_number_i : in STD_LOGIC_VECTOR(7 DOWNTO 0);                 --! PCIe bus number (usually 0)
+        cfg_device_number_i : in STD_LOGIC_VECTOR(4 DOWNTO 0);              --! PCIe device number (lspci)
+        cfg_function_number_i : in STD_LOGIC_VECTOR(2 DOWNTO 0)             --! PCIe function number (lspci)
     );
 end wshexp_core;
 
@@ -271,7 +273,7 @@ begin
     
     
     wbm_pd_ready_s <= p2l_wbm_rdy_s and p2l_dma_rdy_s;
-
+    -- Slave AXI-Stream
     s_axis_rx_tdata_s <= s_axis_rx_tdata_i;
     s_axis_rx_tkeep_s <= s_axis_rx_tkeep_i;
     s_axis_rx_tlast_s <= s_axis_rx_tlast_i;

@@ -1,5 +1,5 @@
 --==============================================================================
---! @file gn4124_core_pkg_s6.vhd
+--! @file wbexp_core.vhd
 --==============================================================================
 
 --! Standard library
@@ -15,12 +15,13 @@ use IEEE.NUMERIC_STD.all;
 --------------------------------------------------------------------------------
 --! @brief
 --! Package for components declaration and core wide constants.
---! Spartan6 FPGAs version.
+--! Kintex7 FPGAs version.
 --------------------------------------------------------------------------------
 --! @version
---! 0.1 | mc | 01.09.2010 | File creation and Doxygen comments
+--! 0.1 | mc | 01.08.2017 | File creation and Doxygen comments
 --!
 --! @author
+--! as : Arnaud Sautaux
 --! mc : Matthieu Cattin, CERN (BE-CO-HT)
 --------------------------------------------------------------------------------
 
