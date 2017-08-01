@@ -1,4 +1,4 @@
-*.bit
+#*.bit
 *.log
 *.jou
 *.xpr

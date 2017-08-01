@@ -1,10 +1,28 @@
+----------------------------------------------------------------------------------
+-- Company: LBNL
+-- Engineer: Arnaud Sautaux
+-- 
+-- Create Date: 07/27/2017 10:50:41 AM
+-- Design Name: DDR3 Wishbone control core
+-- Module Name: ddr3_ctrl_wb - Behavioral
+-- Project Name: YARR
+-- Target Devices: 
+-- Tool Versions: Vivado v2016.2 (64 bit)
+-- Description: 
+-- Wishbone to Xilinx MiG interface
+-- Dependencies:
+-- ddr3_read_core
+-- ddr3_write_core
+-- Revision:
+-- Revision 0.01 - File Created
+-- Additional Comments:
+-- 
+----------------------------------------------------------------------------------
+
+
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
-
-
---library work;
---use work.ddr3_ctrl_pkg.all;
 
 entity ddr3_ctrl_wb is
     generic (

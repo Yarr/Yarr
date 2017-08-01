@@ -9,7 +9,6 @@ files = [
 modules = {
     "local" : ["common",
         "i2c-master",
-        "rx-core",
         "tx-core",
         "trigger-logic"],
 }

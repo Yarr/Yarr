@@ -11,7 +11,6 @@ files = [
 "synchronizer.vhd",
 "wb_addr_decoder.vhd",
 "rr_arbiter.vhd",
-"wshexp_core_pkg.vhd",
 "k_bram.vhd",
 "simple_counter.vhd",
 "m_clk_sync.vhd",

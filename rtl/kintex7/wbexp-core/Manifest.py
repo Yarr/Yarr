@@ -3,7 +3,6 @@
 
 files = [
 "bcf_bram_wbs.vhd",
-"debugregisters.vhd",
 "dma_controller.vhd",
 "dma_controller_wb_slave.vhd",
 "generic_async_fifo_wrapper.vhd",
@@ -14,6 +13,7 @@ files = [
 "p2l_dma_master.vhd",
 "wbmaster32.vhd",
 "gn4124_core_pkg.vhd",
-"wshexp-core.vhd",
+"wbexp_core.vhd",
+"wbexp_core_pkg.vhd",
 ]
 

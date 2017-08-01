@@ -3,5 +3,5 @@
 
 modules = {
     "local" : ["ddr3-core",
-        "gn4124-core"],
+        "gn4124-core","rx-core"],
 }
