@@ -5,7 +5,7 @@
 library = "work"
 
 modules = {
-"local" : ["../../../rtl/kintex7","../../../rtl/","../../../ip-cores/kintex7"],
+"local" : ["../../../rtl/common","../../../rtl/kintex7","../../../rtl/","../../../ip-cores/kintex7"],
 }
 
 files = [
@@ -14,7 +14,7 @@ files = [
 "app_package.vhd",
 "app.vhd",
 "xpressk7.xdc",
-"xpressk7-ddr3.xdc",
+#"xpressk7-ddr3.xdc",
 "xpressk7-fmc.xdc",
 "xpressk7-timing.xdc",
 ]

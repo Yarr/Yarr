@@ -31,6 +31,9 @@ files = [
 "axis_data_fifo_0/axis_data_fifo_0.xci",
 "axis_data_fifo_1/axis_data_fifo_1.xci",
 "ila_rx_dma_wb/ila_rx_dma_wb.xci",
+"fifo_605x32/fifo_605x32.xci",
+"fifo_29x32/fifo_29x32.xci",
+"fifo_8x32/fifo_8x32.xci",
 ]
 
 

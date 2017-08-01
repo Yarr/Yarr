@@ -44,7 +44,7 @@ entity app is
         wb_address_width_c : integer := 32;
         wb_data_width_c : integer := 32;
         address_mask_c : STD_LOGIC_VECTOR(32-1 downto 0) := X"000FFFFF";
-        DMA_MEMORY_SELECTED : string := "DDR3" -- DDR3, BRAM, DEMUX
+        DMA_MEMORY_SELECTED : string := "BRAM" -- DDR3, BRAM, DEMUX
         );
     Port ( clk_i : in STD_LOGIC;
            sys_clk_n_i : IN STD_LOGIC;
@@ -142,7 +142,7 @@ architecture Behavioral of app is
     ------------------------------------------------------------------------------
     -- Constants declaration
     ------------------------------------------------------------------------------
-    constant DEBUG_C : std_logic_vector(5 downto 0) := "100000";
+    constant DEBUG_C : std_logic_vector(5 downto 0) := "010000";
     constant wb_dev_c : std_logic := '1';
     
     --TODO
@@ -661,34 +661,6 @@ begin
             wb_stall_i => wb_stall_s
             );   
         
-nwb_dev_gen : if wb_dev_c = '0' generate 
-
--- Differential buffers
-	tx_loop: for I in 0 to c_TX_CHANNELS-1 generate
-	begin
-		tx_buf : OBUFDS
-		generic map (
-			IOSTANDARD => "LVDS_25")
-		port map (
-			O => fe_cmd_p(I),     -- Diff_p output (connect directly to top-level port)
-			OB => fe_cmd_n(I),   -- Diff_n output (connect directly to top-level port)
-			I => '0'      -- Buffer input 
-		);
-
-		clk_buf : OBUFDS
-		generic map (
-			IOSTANDARD => "LVDS_25")
-		port map (
-			O => fe_clk_p(I),     -- Diff_p output (connect directly to top-level port)
-			OB => fe_clk_n(I),   -- Diff_n output (connect directly to top-level port)
-			I => '0'     -- Buffer input 
-		);
-
-	end generate; 
-
-end generate nwb_dev_gen;
-
-
         
 wb_dev_gen : if wb_dev_c = '1' generate        
 
@@ -967,16 +939,6 @@ end generate;
       wb_ack_o            => dma_ddr_ack_s,
       wb_stall_o          => dma_ddr_stall_s,
       
-      wb1_sel_i  => rx_dma_sel_s,
-      wb1_cyc_i  => rx_dma_cyc_s,
-      wb1_stb_i  => rx_dma_stb_s,
-      wb1_we_i   => rx_dma_we_s,
-      wb1_addr_i => rx_dma_adr_s,
-      wb1_data_i => rx_dma_dat_m2s_s,
-      wb1_data_o => rx_dma_dat_s2m_s,
-      wb1_ack_o  => rx_dma_ack_s,
-      wb1_stall_o => rx_dma_stall_s,
-      
       ddr_wb_rd_mask_dout_do => ddr_wb_rd_mask_dout_ds,
       ddr_wb_rd_mask_addr_dout_do => ddr_wb_rd_mask_addr_dout_ds,
       ddr_rd_mask_rd_data_count_do => ddr_rd_mask_rd_data_count_ds,
@@ -1229,7 +1191,7 @@ end generate;
           probe11(0) => ddr_app_wdf_rdy_s,
           probe12(0) => ddr_app_ui_clk_sync_rst_s, 
           probe13(0) => init_calib_complete_s,
-          probe14 => (others=>'0')--ddr_iteration_count_s
+          probe14 => ddr_iteration_count_s
 
 
       );
