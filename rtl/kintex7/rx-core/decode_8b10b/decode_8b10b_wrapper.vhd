@@ -62,8 +62,8 @@
 LIBRARY IEEE;
 USE IEEE.std_logic_1164.ALL;
 
-
-LIBRARY decode_8b10b;
+library work;
+USE work.decode_8b10b_pkg.ALL;
 
 -------------------------------------------------------------------------------
 -- Entity Declaration
@@ -135,7 +135,7 @@ ARCHITECTURE xilinx OF decode_8b10b_wrapper IS
 -------------------------------------------------------------------------------
 BEGIN
 
-dec : ENTITY decode_8b10b.decode_8b10b_top
+dec : entity work.decode_8b10b_top
   GENERIC MAP (
    C_DECODE_TYPE     => 1, 
    C_HAS_BPORTS      => 0, 

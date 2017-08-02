@@ -63,8 +63,8 @@
 LIBRARY IEEE;
 USE IEEE.std_logic_1164.ALL;
 
-LIBRARY decode_8b10b;
-USE decode_8b10b.decode_8b10b_pkg.ALL;
+library work;
+USE work.decode_8b10b_pkg.ALL;
 
 ------------------------------------------------------------------------------
 --Entity Declaration

@@ -64,8 +64,8 @@ LIBRARY IEEE;
 USE IEEE.std_logic_1164.ALL;
 USE IEEE.std_logic_arith.ALL;
 
-LIBRARY decode_8b10b;
-USE decode_8b10b.decode_8b10b_pkg.ALL;
+library work;
+USE work.decode_8b10b_pkg.ALL;
 
 -----------------------------------------------------------------------------
 -- Entity Declaration
@@ -256,7 +256,7 @@ BEGIN
   -- LUT-based decoder
   -----------------------------------------------------------------------------
   glut : IF (C_DECODE_TYPE = 0) GENERATE
-    ldec : ENTITY decode_8b10b.decode_8b10b_lut
+    ldec : entity work.decode_8b10b_lut
       GENERIC MAP (
         C_HAS_BPORTS       =>  C_HAS_BPORTS,
         C_HAS_CODE_ERR     =>  C_HAS_CODE_ERR,
@@ -313,7 +313,7 @@ BEGIN
   -- BRAM-based decoder
   -----------------------------------------------------------------------------
   gbram : IF (C_DECODE_TYPE /= 0) GENERATE
-    bdec : ENTITY decode_8b10b.decode_8b10b_bram
+    bdec : entity work.decode_8b10b_bram
       GENERIC MAP (
         C_ELABORATION_DIR  =>  C_ELABORATION_DIR,
         C_HAS_BPORTS       =>  C_HAS_BPORTS,
