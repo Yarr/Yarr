@@ -63,9 +63,10 @@
 LIBRARY IEEE;
 USE IEEE.std_logic_1164.ALL;
 
+library work;
+USE work.decode_8b10b_pkg.ALL;
 
-LIBRARY decode_8b10b;
-USE decode_8b10b.decode_8b10b_pkg.ALL;
+library decode_8b10b;
 
 -------------------------------------------------------------------------------
 -- Entity Declaration
@@ -178,7 +179,7 @@ CONSTANT C_HAS_SYM_DISP_B : INTEGER := has_bport(C_HAS_BPORTS, C_HAS_SYM_DISP);
 -------------------------------------------------------------------------------
 BEGIN
 
-dec : ENTITY decode_8b10b.decode_8b10b_rtl
+dec : entity work.decode_8b10b_rtl
   GENERIC MAP (
     C_DECODE_TYPE      =>  C_DECODE_TYPE,
     C_ELABORATION_DIR  =>  "./../../src/",

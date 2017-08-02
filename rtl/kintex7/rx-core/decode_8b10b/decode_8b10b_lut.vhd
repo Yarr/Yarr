@@ -63,8 +63,6 @@
 LIBRARY IEEE;
 USE IEEE.std_logic_1164.ALL;
 
-LIBRARY decode_8b10b;
-
 -----------------------------------------------------------------------------
 -- Entity Declaration
 -----------------------------------------------------------------------------
@@ -131,7 +129,7 @@ ARCHITECTURE xilinx OF decode_8b10b_lut IS
 BEGIN
 
   ----Instantiate the first decoder (A decoder)--------------------------------
-  deca : ENTITY decode_8b10b.decode_8b10b_lut_base
+  deca : entity work.decode_8b10b_lut_base
     GENERIC MAP (
       C_HAS_CODE_ERR   => C_HAS_CODE_ERR,
       C_HAS_DISP_ERR   => C_HAS_DISP_ERR,
@@ -163,7 +161,7 @@ BEGIN
 
   gdecb : IF (C_HAS_BPORTS=1) GENERATE
   ----Instantiate second decoder (B decoder, only if bports are present)------
-  decb : ENTITY decode_8b10b.decode_8b10b_lut_base
+  decb : entity work.decode_8b10b_lut_base
     GENERIC MAP (
       C_HAS_CODE_ERR   => C_HAS_CODE_ERR_B,
       C_HAS_DISP_ERR   => C_HAS_DISP_ERR_B,

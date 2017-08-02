@@ -67,8 +67,8 @@ USE IEEE.std_logic_unsigned.ALL;
 USE STD.textio.ALL;                 -- required to initialize bram from .mif
 
 
-LIBRARY decode_8b10b;
-USE decode_8b10b.decode_8b10b_pkg.ALL;
+library work;
+USE work.decode_8b10b_pkg.ALL;
 
 -----------------------------------------------------------------------------
 -- Entity Declaration
@@ -226,7 +226,7 @@ BEGIN
   -----------------------------------------------------------------------------
   -- Instantiate disparity logic block for Decoder A
   -----------------------------------------------------------------------------
-  dla : ENTITY decode_8b10b.decode_8b10b_disp
+  dla : entity work.decode_8b10b_disp
     GENERIC MAP(
       C_SINIT_DOUT     => C_SINIT_DOUT,
       C_SINIT_RUN_DISP => C_SINIT_RUN_DISP,
@@ -293,7 +293,7 @@ BEGIN
     -----------------------------------------------------------------------------
     -- Instantiate disparity logic block for Decoder B
     -----------------------------------------------------------------------------
-    dlb : ENTITY decode_8b10b.decode_8b10b_disp
+    dlb : entity work.decode_8b10b_disp
       GENERIC MAP(
         C_SINIT_DOUT     => C_SINIT_DOUT_B,
         C_SINIT_RUN_DISP => C_SINIT_RUN_DISP_B,

@@ -38,6 +38,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
+use work.wshexp_core_pkg.ALL;
 
 entity wshexp_core is
     Generic(
