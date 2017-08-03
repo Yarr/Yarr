@@ -142,6 +142,7 @@ architecture behavioral of wb_tx_core is
     signal ext_trig_t3 : std_logic;
     signal trig_in_freq_cnt : unsigned(31 downto 0);
     signal trig_in_freq : std_logic_vector(31 downto 0);
+    signal trig_in_freq_d : std_logic_vector(31 downto 0);
     signal per_second : std_logic;
     signal per_second_cnt : unsigned(31 downto 0);
     constant ticks_per_second : integer := 40000000; -- 40 MHz clock rate
@@ -179,6 +180,7 @@ begin
             trig_count <= (others => '0');
             trig_word <= (others => '0');
             trig_abort <= '0';
+            trig_in_freq_d <= (others => '0');
 		elsif rising_edge(wb_clk_i) then
 			wb_wr_en <= (others => '0');
 			wb_ack_o <= '0';
@@ -186,6 +188,7 @@ begin
             trig_time_l_d <= trig_time_l;
 			trig_time <= trig_time_h_d & trig_time_l_d; -- delay for more flexible routing
 			trig_abort  <= '0';
+			trig_in_freq_d <= trig_in_freq; -- delay for more flexible routing
 			if (wb_cyc_i = '1' and wb_stb_i = '1') then
 				if (wb_we_i = '1') then
 					case (wb_adr_i(3 downto 0)) is
@@ -283,7 +286,7 @@ begin
 							wb_dat_o <= trig_word(127 downto 96);
 							wb_ack_o <= '1';
 						when x"F" => -- Trigger in frequency
-							wb_dat_o <= trig_in_freq;
+							wb_dat_o <= trig_in_freq_d;
 							wb_ack_o <= '1';
 						when others =>
 							wb_dat_o <= x"DEADBEEF";

@@ -74,7 +74,7 @@ architecture Behavioral of k_dual_bram is
     constant BLOCK_ADDR_WIDTH_C : integer := 13;
     constant DATA_WIDTH_C : integer := 64;
     constant BLOCK_ROW_C : integer := 16;
-    constant BLOCK_COL_EXP_C : integer := 3;
+    constant BLOCK_COL_EXP_C : integer := 4;
     constant BLOCK_COL_C : integer := 2**BLOCK_COL_EXP_C;
     constant BLOCK_DATA_WIDTH_C : integer := DATA_WIDTH_C/BLOCK_ROW_C;
     
@@ -88,27 +88,75 @@ architecture Behavioral of k_dual_bram is
     signal wba_dat_a : ram_data_bus;
     signal wbb_dat_a : ram_data_bus;
     
-    signal wba_cyc_s            : std_logic_vector(BLOCK_COL_C-1 downto 0);
-    signal wbb_cyc_s            : std_logic_vector(BLOCK_COL_C-1 downto 0);
+    signal wba_cyc_v_s            : std_logic_vector(BLOCK_COL_C-1 downto 0);
+    signal wbb_cyc_v_s            : std_logic_vector(BLOCK_COL_C-1 downto 0);
+    
+    -- Wishbone Slave in
+    signal wba_adr_s            : std_logic_vector(32-1 downto 0);
+    signal wba_dat_i_s            : std_logic_vector(64-1 downto 0);
+    signal wba_we_s            : std_logic;
+    signal wba_stb_s            : std_logic;
+    signal wba_cyc_s            : std_logic; 
+    
+    signal wba_dat_o_s            : std_logic_vector(64-1 downto 0);
+    signal wba_ack_s            : std_logic;
+    
+    signal wbb_adr_s            : std_logic_vector(32-1 downto 0);
+    signal wbb_dat_i_s            : std_logic_vector(64-1 downto 0);
+    signal wbb_we_s            : std_logic;
+    signal wbb_stb_s            : std_logic;
+    signal wbb_cyc_s            : std_logic;
+    
+    signal wbb_dat_o_s            : std_logic_vector(64-1 downto 0);    
+    signal wbb_ack_s            : std_logic;
 begin
+    
+    --to improve the fanout
+	input_delay: process (clk_i, rst_i)
+	begin
+		if (rst_i ='1') then
+            wba_adr_s <= (others => '0');
+            wba_dat_i_s <= (others => '0');
+            wba_we_s <= '0';
+            wba_stb_s <= '0';
+            wba_cyc_s <= '0';
+            wbb_adr_s <= (others => '0');
+            wbb_dat_i_s <= (others => '0');
+            wbb_we_s <= '0';
+            wbb_stb_s <= '0';
+            wbb_cyc_s <= '0';            
+		elsif (clk_i'event and clk_i = '1') then
+            wba_adr_s <= wba_adr_i;
+            wba_dat_i_s <= wba_dat_i;
+            wba_we_s <= wba_we_i and wba_stb_i;
+            wba_stb_s <= wba_stb_i;
+            wba_cyc_s <= wba_cyc_i;
+            wbb_adr_s <= wbb_adr_i;
+            wbb_dat_i_s <= wbb_dat_i;
+            wbb_we_s <= wbb_we_i and wbb_stb_i;
+            wbb_stb_s <= wbb_stb_i;
+            wbb_cyc_s <= wbb_cyc_i;  				
+		end if;
+		
+	end process input_delay;
 
 	bram: process (clk_i, rst_i)
 	begin
 		if (rst_i ='1') then
-			wba_ack_o <= '0';
-            wbb_ack_o <= '0';
+			wba_ack_s <= '0';
+            wbb_ack_s <= '0';
 		elsif (clk_i'event and clk_i = '1') then
 		    
-			if (wba_stb_i = '1' and wba_cyc_i = '1') then
-				wba_ack_o <= '1';
+			if (wba_stb_s = '1' and wba_cyc_s = '1') then
+				wba_ack_s <= '1';
 			else
-				wba_ack_o <= '0';
+				wba_ack_s <= '0';
 			end if;
 			
-			if (wbb_stb_i = '1' and wbb_cyc_i = '1') then
-                wbb_ack_o <= '1';
+			if (wbb_stb_s = '1' and wbb_cyc_s = '1') then
+                wbb_ack_s <= '1';
             else
-                wbb_ack_o <= '0';
+                wbb_ack_s <= '0';
             end if;			
 			
 		end if;
@@ -117,18 +165,34 @@ begin
 	process(clk_i)
     begin
        if (clk_i'event and clk_i = '1') then
-           selecta_s <= wba_adr_i(BLOCK_ADDR_WIDTH_C+BLOCK_COL_EXP_C-1 downto BLOCK_ADDR_WIDTH_C);
-           selectb_s <= wbb_adr_i(BLOCK_ADDR_WIDTH_C+BLOCK_COL_EXP_C-1 downto BLOCK_ADDR_WIDTH_C);
+           selecta_s <= wba_adr_s(BLOCK_ADDR_WIDTH_C+BLOCK_COL_EXP_C-1 downto BLOCK_ADDR_WIDTH_C);
+           selectb_s <= wbb_adr_s(BLOCK_ADDR_WIDTH_C+BLOCK_COL_EXP_C-1 downto BLOCK_ADDR_WIDTH_C);
+
        end if;
     end process;
 
-    WEA_S <= (others => '1') when wba_we_i = '1' else
+    WEA_S <= (others => '1') when wba_we_s = '1' else
              (others => '0');
-    WEB_S <= (others => '1') when wbb_we_i = '1' else
+    WEB_S <= (others => '1') when wbb_we_s = '1' else
              (others => '0');    
-             
-   wba_dat_o <= wba_dat_a(conv_integer(selecta_s));
-   wbb_dat_o <= wbb_dat_a(conv_integer(selectb_s));
+
+	output_delay_p:process(clk_i)
+    begin   
+    	if (rst_i ='1') then
+            wba_dat_o_s <= (others => '0');
+            wbb_dat_o_s <= (others => '0');
+            wba_ack_o <= '0';
+            wbb_ack_o <= '0';
+        elsif (clk_i'event and clk_i = '1') then          
+            wba_dat_o_s <= wba_dat_a(conv_integer(selecta_s));
+            wbb_dat_o_s <= wbb_dat_a(conv_integer(selectb_s));
+            wba_ack_o <= wba_ack_s;
+            wbb_ack_o <= wbb_ack_s;
+        end if;
+   end process;
+   
+   wba_dat_o <= wba_dat_o_s;
+   wbb_dat_o <= wbb_dat_o_s;
    
    -- BRAM_TDP_MACRO: True Dual Port RAM
    --                 Kintex-7
@@ -154,10 +218,10 @@ begin
    --------------------------------------------------------------------------
    gen_bram_col:for j in 0 to BLOCK_COL_C-1 generate
    
-   	wba_cyc_s(j)       <= wba_cyc_i when wba_adr_i(BLOCK_ADDR_WIDTH_C+BLOCK_COL_EXP_C-1 downto BLOCK_ADDR_WIDTH_C) = std_logic_vector(to_unsigned(j,BLOCK_COL_EXP_C))  
+   	wba_cyc_v_s(j)       <= '1' when wba_adr_s(BLOCK_ADDR_WIDTH_C+BLOCK_COL_EXP_C-1 downto BLOCK_ADDR_WIDTH_C) = std_logic_vector(to_unsigned(j,BLOCK_COL_EXP_C))  
                                     else '0';
    
-   	wbb_cyc_s(j)       <= wbb_cyc_i when wbb_adr_i(BLOCK_ADDR_WIDTH_C+BLOCK_COL_EXP_C-1 downto BLOCK_ADDR_WIDTH_C) = std_logic_vector(to_unsigned(j,BLOCK_COL_EXP_C))  
+   	wbb_cyc_v_s(j)       <= '1' when wbb_adr_s(BLOCK_ADDR_WIDTH_C+BLOCK_COL_EXP_C-1 downto BLOCK_ADDR_WIDTH_C) = std_logic_vector(to_unsigned(j,BLOCK_COL_EXP_C))  
                                     else '0';   
    
    gen_bram_row:for i in 0 to BLOCK_ROW_C-1 generate
@@ -336,16 +400,16 @@ begin
    port map (
       DOA => wba_dat_a(j)(BLOCK_DATA_WIDTH_C-1+BLOCK_DATA_WIDTH_C*i downto 0+BLOCK_DATA_WIDTH_C*i),       -- Output port-A data, width defined by READ_WIDTH_A parameter
       DOB => wbb_dat_a(j)(BLOCK_DATA_WIDTH_C-1+BLOCK_DATA_WIDTH_C*i downto 0+BLOCK_DATA_WIDTH_C*i),       -- Output port-B data, width defined by READ_WIDTH_B parameter
-      ADDRA => wba_adr_i(BLOCK_ADDR_WIDTH_C-1 downto 0),   -- Input port-A address, width defined by Port A depth
-      ADDRB => wbb_adr_i(BLOCK_ADDR_WIDTH_C-1 downto 0),   -- Input port-B address, width defined by Port B depth
+      ADDRA => wba_adr_s(BLOCK_ADDR_WIDTH_C-1 downto 0),   -- Input port-A address, width defined by Port A depth
+      ADDRB => wbb_adr_s(BLOCK_ADDR_WIDTH_C-1 downto 0),   -- Input port-B address, width defined by Port B depth
       CLKA => clk_i,     -- 1-bit input port-A clock
       CLKB => clk_i,     -- 1-bit input port-B clock
-      DIA => wba_dat_i(BLOCK_DATA_WIDTH_C-1+BLOCK_DATA_WIDTH_C*i downto 0+BLOCK_DATA_WIDTH_C*i),       -- Input port-A data, width defined by WRITE_WIDTH_A parameter
-      DIB => wbb_dat_i(BLOCK_DATA_WIDTH_C-1+BLOCK_DATA_WIDTH_C*i downto 0+BLOCK_DATA_WIDTH_C*i),       -- Input port-B data, width defined by WRITE_WIDTH_B parameter
-      ENA => wba_cyc_s(j),       -- 1-bit input port-A enable
-      ENB => wbb_cyc_s(j),       -- 1-bit input port-B enable
-      REGCEA => wba_stb_i, -- 1-bit input port-A output register enable
-      REGCEB => wbb_stb_i, -- 1-bit input port-B output register enable
+      DIA => wba_dat_i_s(BLOCK_DATA_WIDTH_C-1+BLOCK_DATA_WIDTH_C*i downto 0+BLOCK_DATA_WIDTH_C*i),       -- Input port-A data, width defined by WRITE_WIDTH_A parameter
+      DIB => wbb_dat_i_s(BLOCK_DATA_WIDTH_C-1+BLOCK_DATA_WIDTH_C*i downto 0+BLOCK_DATA_WIDTH_C*i),       -- Input port-B data, width defined by WRITE_WIDTH_B parameter
+      ENA => wba_cyc_v_s(j),       -- 1-bit input port-A enable
+      ENB => wbb_cyc_v_s(j),       -- 1-bit input port-B enable
+      REGCEA => wba_stb_s, -- 1-bit input port-A output register enable
+      REGCEB => wbb_stb_s, -- 1-bit input port-B output register enable
       RSTA => rst_i,     -- 1-bit input port-A reset
       RSTB => rst_i,     -- 1-bit input port-B reset
       WEA => WEA_S,       -- Input port-A write enable, width defined by Port A depth

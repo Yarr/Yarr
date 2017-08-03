@@ -28,6 +28,12 @@ files = [
 "rx_channel_fifo/rx_channel_fifo.xci",
 "rx_bridge_ctrl_fifo/rx_bridge_ctrl_fifo.xci",
 "rx_bridge_fifo/rx_bridge_fifo.xci",
+"axis_data_fifo_0/axis_data_fifo_0.xci",
+"axis_data_fifo_1/axis_data_fifo_1.xci",
+"ila_rx_dma_wb/ila_rx_dma_wb.xci",
+"fifo_605x32/fifo_605x32.xci",
+"fifo_29x32/fifo_29x32.xci",
+"fifo_8x32/fifo_8x32.xci",
 ]
 
 

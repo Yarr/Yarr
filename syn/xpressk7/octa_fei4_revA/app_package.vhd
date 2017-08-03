@@ -72,11 +72,60 @@ package app_pkg is
       clk_80          : out    std_logic;
       clk_40          : out    std_logic;
       clk_40_90          : out    std_logic;
+      clk_250          : out    std_logic;
       -- Status and control signals
       reset             : in     std_logic;
       locked            : out    std_logic
      );
     end component;
+
+    COMPONENT axis_data_fifo_0
+      PORT (
+        s_axis_aresetn : IN STD_LOGIC;
+        m_axis_aresetn : IN STD_LOGIC;
+        s_axis_aclk : IN STD_LOGIC;
+        s_axis_tvalid : IN STD_LOGIC;
+        s_axis_tready : OUT STD_LOGIC;
+        s_axis_tdata : IN STD_LOGIC_VECTOR(63 DOWNTO 0);
+        s_axis_tkeep : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+        s_axis_tlast : IN STD_LOGIC;
+        s_axis_tuser : IN STD_LOGIC_VECTOR(21 DOWNTO 0);
+        m_axis_aclk : IN STD_LOGIC;
+        m_axis_tvalid : OUT STD_LOGIC;
+        m_axis_tready : IN STD_LOGIC;
+        m_axis_tdata : OUT STD_LOGIC_VECTOR(63 DOWNTO 0);
+        m_axis_tkeep : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+        m_axis_tlast : OUT STD_LOGIC;
+        m_axis_tuser : OUT STD_LOGIC_VECTOR(21 DOWNTO 0);
+        axis_data_count : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
+        axis_wr_data_count : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
+        axis_rd_data_count : OUT STD_LOGIC_VECTOR(31 DOWNTO 0)
+      );
+    END COMPONENT;
+
+    COMPONENT axis_data_fifo_1
+      PORT (
+        s_axis_aresetn : IN STD_LOGIC;
+        m_axis_aresetn : IN STD_LOGIC;
+        s_axis_aclk : IN STD_LOGIC;
+        s_axis_tvalid : IN STD_LOGIC;
+        s_axis_tready : OUT STD_LOGIC;
+        s_axis_tdata : IN STD_LOGIC_VECTOR(63 DOWNTO 0);
+        s_axis_tkeep : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+        s_axis_tlast : IN STD_LOGIC;
+        s_axis_tuser : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+        m_axis_aclk : IN STD_LOGIC;
+        m_axis_tvalid : OUT STD_LOGIC;
+        m_axis_tready : IN STD_LOGIC;
+        m_axis_tdata : OUT STD_LOGIC_VECTOR(63 DOWNTO 0);
+        m_axis_tkeep : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+        m_axis_tlast : OUT STD_LOGIC;
+        m_axis_tuser : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+        axis_data_count : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
+        axis_wr_data_count : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
+        axis_rd_data_count : OUT STD_LOGIC_VECTOR(31 DOWNTO 0)
+      );
+    END COMPONENT;
 
     component synchronizer is
         port (
@@ -96,6 +145,7 @@ package app_pkg is
         );
         Port ( 
             clk_i : in STD_LOGIC;
+            wb_clk_i : in STD_LOGIC;
             --sys_clk_n_i : IN STD_LOGIC;
             --sys_clk_p_i : IN STD_LOGIC;
             rst_i : in STD_LOGIC;
@@ -384,6 +434,19 @@ package app_pkg is
           wb_stall_o : out std_logic;
           
           ----------------------------------------------------------------------------
+          -- Wishbone bus port
+          ----------------------------------------------------------------------------
+          wb1_sel_i   : in  std_logic_vector(g_MASK_SIZE - 1 downto 0);
+          wb1_cyc_i   : in  std_logic;
+          wb1_stb_i   : in  std_logic;
+          wb1_we_i    : in  std_logic;
+          wb1_addr_i  : in  std_logic_vector(32 - 1 downto 0);
+          wb1_data_i  : in  std_logic_vector(g_DATA_PORT_SIZE - 1 downto 0);
+          wb1_data_o  : out std_logic_vector(g_DATA_PORT_SIZE - 1 downto 0);
+          wb1_ack_o   : out std_logic;
+          wb1_stall_o : out std_logic;       
+          
+          ----------------------------------------------------------------------------
           -- Debug ports
           ----------------------------------------------------------------------------
           ddr_wb_rd_mask_dout_do : out std_logic_vector(7 downto 0);
@@ -473,8 +536,8 @@ package app_pkg is
             -- Wishbone DMA Master Interface
             dma_clk_i    : in  std_logic;
             dma_adr_o    : out std_logic_vector(31 downto 0);
-            dma_dat_o    : out std_logic_vector(31 downto 0);
-            dma_dat_i    : in  std_logic_vector(31 downto 0);
+            dma_dat_o    : out std_logic_vector(63 downto 0);
+            dma_dat_i    : in  std_logic_vector(63 downto 0);
             dma_cyc_o    : out std_logic;
             dma_stb_o    : out std_logic;
             dma_we_o    : out std_logic;
@@ -630,6 +693,24 @@ package app_pkg is
         probe12 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
         probe13 : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
         probe14 : IN STD_LOGIC_VECTOR(28 DOWNTO 0)
+    );
+    END COMPONENT  ;
+
+    COMPONENT ila_rx_dma_wb
+    
+    PORT (
+        clk : IN STD_LOGIC;
+    
+    
+    
+        probe0 : IN STD_LOGIC_VECTOR(31 DOWNTO 0); 
+        probe1 : IN STD_LOGIC_VECTOR(63 DOWNTO 0); 
+        probe2 : IN STD_LOGIC_VECTOR(63 DOWNTO 0); 
+        probe3 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe4 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe5 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe6 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe7 : IN STD_LOGIC_VECTOR(0 DOWNTO 0)
     );
     END COMPONENT  ;
 

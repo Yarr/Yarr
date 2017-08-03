@@ -81,7 +81,6 @@ entity top_level is
             ddr3_dq       : inout std_logic_vector(63 downto 0);
             ddr3_dqs_p    : inout std_logic_vector(7 downto 0);
             ddr3_dqs_n    : inout std_logic_vector(7 downto 0);
-            --init_calib_complete : out std_logic;
       
             ddr3_addr     : out   std_logic_vector(14 downto 0);
             ddr3_ba       : out   std_logic_vector(2 downto 0);
@@ -507,8 +506,8 @@ begin
         fe_data_p         => fe_data_p,
         fe_data_n         => fe_data_n,
         -- I2c
-        sda_io            => sda_io,
-        scl_io            => scl_io,
+        --sda_io            => sda_io,
+        --scl_io            => scl_io,
 
         --I/O
         usr_sw_i => usr_sw_i,
@@ -519,6 +518,5 @@ begin
       usr_led_o <= usr_led_s(2 downto 0);
 
       
-      --m_axis_rx_tready_s <= '1';
   
 end Behavioral;
