@@ -1204,7 +1204,11 @@ end generate;
           probe4(0) => rx_dma_cyc_s, 
           probe5(0) => rx_dma_we_s, 
           probe6(0) => rx_dma_ack_s,
-          probe7(0) => rx_dma_stall_s
+          probe7(0) => rx_dma_stall_s,
+          probe8 => rx_data,
+          probe9(0) => rx_valid,
+          probe10(0) => trig_pulse,
+          probe11(0) => rx_busy
       );
   end generate dbg_4;
   

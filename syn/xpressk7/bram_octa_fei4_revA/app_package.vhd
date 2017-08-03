@@ -697,7 +697,11 @@ package app_pkg is
         probe4 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
         probe5 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
         probe6 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
-        probe7 : IN STD_LOGIC_VECTOR(0 DOWNTO 0)
+        probe7 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe8 : IN STD_LOGIC_VECTOR(31 DOWNTO 0); 
+        probe9 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe10 : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+        probe11 : IN STD_LOGIC_VECTOR(0 DOWNTO 0)
     );
     END COMPONENT  ;
 
