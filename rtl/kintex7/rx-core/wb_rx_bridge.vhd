@@ -232,10 +232,10 @@ begin
 		elsif rising_edge(sys_clk_i) then
 			if (loopback = '1') then
 				data_fifo_wren <= rx_valid_local_d;
-				data_fifo_din(31 downto 0) <= rx_data_local_d;
+				data_fifo_din <= X"03000000" & rx_data_local_d;
 			else
 				data_fifo_wren <= rx_valid_i;
-				data_fifo_din(31 downto 0) <= rx_data_i;
+				data_fifo_din <= X"03000000" & rx_data_i;
 			end if;
 		end if;
 	end process data_rec;

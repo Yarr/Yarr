@@ -24,9 +24,9 @@ prm_file = "mem.prm"
 
 
 cmds_RAM=(
-"open_hw\n" +
-"connect_hw_server\n" +
-"open_hw_target\n" +
+#"open_hw\n" +
+#"connect_hw_server\n" +
+#"open_hw_target\n" +
 "current_hw_device [lindex [get_hw_devices] 1]\n" +
 "refresh_hw_device -update_hw_probes false [lindex [get_hw_devices] 1]\n" +
 "set_property PROGRAM.FILE {}{}{} [lindex [get_hw_devices] 1]\n" +
@@ -61,7 +61,12 @@ cmds_Flash=(
 "startgroup\n" +
 "if {3}![string equal [get_property PROGRAM.HW_CFGMEM_TYPE  [lindex [get_hw_devices] 1]] [get_property MEM_TYPE [get_property CFGMEM_PART [get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1 ]]]]] {4}  {3} create_hw_bitstream -hw_device [lindex [get_hw_devices] 1] [get_property PROGRAM.HW_CFGMEM_BITFILE [ lindex [get_hw_devices] 1]]; program_hw_devices [lindex [get_hw_devices] 1]; {4};\n" +
 "program_hw_cfgmem -hw_cfgmem [get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1 ]]\n" + 
-"endgroup\n"
+"endgroup\n" #+
+#RAM
+#"refresh_hw_device -update_hw_probes false [lindex [get_hw_devices] 1]\n" +
+#"set_property PROGRAM.FILE {}{}{} [lindex [get_hw_devices] 1]\n" +
+#"program_hw_devices [lindex [get_hw_devices] 1]\n"
+
 )
 
 for root, dirs, files in os.walk(project_path):
@@ -101,7 +106,7 @@ else:
 
 
 
-
+"""
 if (bit_file != None):
 	bit_file = bit_files[nb]
 	resp = raw_input ("Will you flash the RAM or the Flash [R/F] ?")
@@ -118,6 +123,14 @@ if (bit_file != None):
 		subprocess.call(["vivado", "-mode", "batch","-source", script_path])
 else:
 	print "No bit file has been written into the FPGA !"
+"""
 
-
+cmds = cmds_Flash.format(bit_file,mem_file,prm_file,'{','}')
+script_file.write(cmds)
+cmds = cmds_RAM.format('{',bit_file,'}')
+script_file.write(cmds)
+script_file.flush()
 script_file.close()
+
+subprocess.call(["vivado", "-mode", "batch","-source", script_path])
+
