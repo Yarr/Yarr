@@ -329,7 +329,7 @@ begin
 				ctrl_fifo_din(63 downto  32) <= std_logic_vector(dma_data_cnt);
 				ctrl_fifo_din(31 downto 0) <= std_logic_vector(dma_start_adr);
 				dma_start_adr <= dma_start_adr + c_PACKAGE_SIZE;
-				dma_data_cnt <= TO_UNSIGNED(1, 32);
+				dma_data_cnt <= TO_UNSIGNED(2, 32);
 				ctrl_fifo_wren <= '1';
 			elsif (dma_stb_valid = '0' and dma_data_cnt >= c_PACKAGE_SIZE and ctrl_fifo_full = '0') then
 				ctrl_fifo_din(63 downto  32) <= std_logic_vector(dma_data_cnt);
@@ -344,7 +344,7 @@ begin
 				dma_data_cnt <= TO_UNSIGNED(0, 32);
 				ctrl_fifo_wren <= '1';
 			elsif (dma_stb_valid = '1') then
-				dma_data_cnt <= dma_data_cnt + 1;
+				dma_data_cnt <= dma_data_cnt + 2;
 				ctrl_fifo_wren <= '0';
 			else
 				ctrl_fifo_wren <= '0';

@@ -125,12 +125,15 @@ else:
 	print "No bit file has been written into the FPGA !"
 """
 
-cmds = cmds_Flash.format(bit_file,mem_file,prm_file,'{','}')
-script_file.write(cmds)
-cmds = cmds_RAM.format('{',bit_file,'}')
-script_file.write(cmds)
-script_file.flush()
-script_file.close()
+if (bit_file != None):
+        bit_file = bit_files[nb]
+	print bit_files[nb]
+	cmds = cmds_Flash.format(bit_file,mem_file,prm_file,'{','}')
+	script_file.write(cmds)
+	cmds = cmds_RAM.format('{',bit_file,'}')
+	script_file.write(cmds)
+	script_file.flush()
+	script_file.close()
 
-subprocess.call(["vivado", "-mode", "batch","-source", script_path])
+	subprocess.call(["vivado", "-mode", "batch","-source", script_path])
 
