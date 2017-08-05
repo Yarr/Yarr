@@ -59,23 +59,23 @@ end wb_rx_bridge;
 
 architecture Behavioral of wb_rx_bridge is
 	-- Cmoponents
-	COMPONENT rx_bridge_fifo
-	PORT (
-		rst : IN STD_LOGIC;
-		wr_clk : IN STD_LOGIC;
-		rd_clk : IN STD_LOGIC;
-		din : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
-		wr_en : IN STD_LOGIC;
-		rd_en : IN STD_LOGIC;
-		prog_full_thresh : IN STD_LOGIC_VECTOR(10 DOWNTO 0);
-		prog_empty_thresh : IN STD_LOGIC_VECTOR(9 DOWNTO 0);
-		dout : OUT STD_LOGIC_VECTOR(63 DOWNTO 0);
-		full : OUT STD_LOGIC;
-		empty : OUT STD_LOGIC;
-		prog_full : OUT STD_LOGIC;
-		prog_empty : OUT STD_LOGIC
-	);
-	END COMPONENT;
+   COMPONENT rx_bridge_fifo
+      PORT (
+        rst : IN STD_LOGIC;
+        wr_clk : IN STD_LOGIC;
+        rd_clk : IN STD_LOGIC;
+        din : IN STD_LOGIC_VECTOR(63 DOWNTO 0);
+        wr_en : IN STD_LOGIC;
+        rd_en : IN STD_LOGIC;
+        prog_empty_thresh : IN STD_LOGIC_VECTOR(10 DOWNTO 0);
+        prog_full_thresh : IN STD_LOGIC_VECTOR(10 DOWNTO 0);
+        dout : OUT STD_LOGIC_VECTOR(63 DOWNTO 0);
+        full : OUT STD_LOGIC;
+        empty : OUT STD_LOGIC;
+        prog_full : OUT STD_LOGIC;
+        prog_empty : OUT STD_LOGIC
+      );
+    END COMPONENT;
 	
 	COMPONENT rx_bridge_ctrl_fifo
 	PORT (
@@ -92,15 +92,15 @@ architecture Behavioral of wb_rx_bridge is
 	END COMPONENT;
 	
 	-- Constants
-	constant c_ALMOST_FULL_THRESHOLD : unsigned(10 downto 0) := TO_UNSIGNED(1600, 11);
+	constant c_ALMOST_FULL_THRESHOLD : unsigned(10 downto 0) := TO_UNSIGNED(1900, 11);
 	constant c_PACKAGE_SIZE : unsigned(31 downto 0) := TO_UNSIGNED((200*256), 32); -- 200kByte
 	constant c_TIMEOUT : unsigned(31 downto 0) := TO_UNSIGNED(2**14, 32); -- Counts in 5ns = 0.1ms
 	constant c_TIME_FRAME : unsigned(31 downto 0) := TO_UNSIGNED(200000000-1, 32); -- 200MHz clock cycles in 1 sec
-	constant c_EMPTY_THRESHOLD : unsigned(9 downto 0) := TO_UNSIGNED(16, 10);
+	constant c_EMPTY_THRESHOLD : unsigned(10 downto 0) := TO_UNSIGNED(16, 11);
 	constant c_EMPTY_TIMEOUT : unsigned(10 downto 0) := TO_UNSIGNED(2000, 11);
 	
 	-- Signals
-	signal data_fifo_din : std_logic_vector(31 downto 0);
+	signal data_fifo_din : std_logic_vector(63 downto 0);
 	signal data_fifo_dout : std_logic_vector(63 downto 0);
 	signal data_fifo_wren : std_logic;
 	signal data_fifo_rden : std_logic;
@@ -232,10 +232,10 @@ begin
 		elsif rising_edge(sys_clk_i) then
 			if (loopback = '1') then
 				data_fifo_wren <= rx_valid_local_d;
-				data_fifo_din <= rx_data_local_d;
+				data_fifo_din <= X"03000000" & rx_data_local_d;
 			else
 				data_fifo_wren <= rx_valid_i;
-				data_fifo_din <= rx_data_i;
+				data_fifo_din <= X"03000000" & rx_data_i;
 			end if;
 		end if;
 	end process data_rec;
@@ -329,7 +329,7 @@ begin
 				ctrl_fifo_din(63 downto  32) <= std_logic_vector(dma_data_cnt);
 				ctrl_fifo_din(31 downto 0) <= std_logic_vector(dma_start_adr);
 				dma_start_adr <= dma_start_adr + c_PACKAGE_SIZE;
-				dma_data_cnt <= TO_UNSIGNED(1, 32);
+				dma_data_cnt <= TO_UNSIGNED(2, 32);
 				ctrl_fifo_wren <= '1';
 			elsif (dma_stb_valid = '0' and dma_data_cnt >= c_PACKAGE_SIZE and ctrl_fifo_full = '0') then
 				ctrl_fifo_din(63 downto  32) <= std_logic_vector(dma_data_cnt);
@@ -344,7 +344,7 @@ begin
 				dma_data_cnt <= TO_UNSIGNED(0, 32);
 				ctrl_fifo_wren <= '1';
 			elsif (dma_stb_valid = '1') then
-				dma_data_cnt <= dma_data_cnt + 1;
+				dma_data_cnt <= dma_data_cnt + 2;
 				ctrl_fifo_wren <= '0';
 			else
 				ctrl_fifo_wren <= '0';

@@ -1,11 +1,6 @@
 # Yarr-fw
 This firmware is made for the XpressK7 board. This document will explain step by step how to get the firmware working and launch testing programs.
 
-## Connect the board
-//Some pictures
-
-## Install Vivado
-
 ## Download the source code from the git repository
 
 Firstly, to download the files from the git repository, you need to install git. The prompt will ask your user password.
