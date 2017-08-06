@@ -5,7 +5,7 @@ files = [
 "bcf_bram_wbs.vhd",
 "dma_controller.vhd",
 "dma_controller_wb_slave.vhd",
-"generic_async_fifo_wrapper.vhd",
+#"generic_async_fifo_wrapper.vhd",
 "l2p_arbiter.vhd",
 "l2p_dma_master.vhd",
 "l2p_fifo.vhd",

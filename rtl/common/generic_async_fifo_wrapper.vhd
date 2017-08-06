@@ -28,7 +28,7 @@ use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
 
 --library work;
-use work.wshexp_core_pkg.all;
+use work.gn4124_core_pkg.all;
 
 
 entity generic_async_fifo is
