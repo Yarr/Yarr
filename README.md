@@ -1,25 +1,17 @@
 # Yarr-fw
 This firmware is made for the XpressK7 board. This document will explain step by step how to get the firmware working and launch testing programs.
 
-## Download the source code from the git repository
+## SPEC
+Firmware bit-files for the SPEC card can be found in `syn/spec/`
 
-Firstly, to download the files from the git repository, you need to install git. The prompt will ask your user password.
-`$ sudo yum install git`
-If this command works the terminal will ask you whether you want to install this package.
-`Is this ok [y/d/N]: `
-Type yes to confirm you want to install git. 
+### Flahing the SPEC card
+You can use the tool supplied with the YARR sw (https://github.com/Yarr/Yarr):
+```bash
+$ bin/program path/to/file/spec.bit
+```
 
-## Download the source files 
-You can download all the source files project.
-`$ git clone git@github.com:Yarr/Yarr-fw.git`
-Check whether the files were downloaded, by listing the folder. You should see a folder named "Yarr-fw".
-
-## Generate the bitfile
-Move in the folder where you will generate the bitfile.
-`$ cd Yarr-fw/syn/xpressk7/ddr3_revA/`
-To launch the synthesis you just need to launch make.
-`$ make`
-Prepare a coffee, it will last around 15 minutes to synthesize all the project. 
+## XpressK7
+The XpressK7 card requires an external programmer to be connected via the JTAG connector.
 
 ## Write the bitfile into the flash memory
 Move in the folder where the script file are.
@@ -38,7 +30,15 @@ Then shut down the computer. After the next boot firmware is ready to use.
 
 > **Note:** A soft reboot is not enough to get the system working.
 
-## Core debugging
+### Generate the bitfile
+Move in the folder where you will generate the bitfile.
+`$ cd Yarr-fw/syn/xpressk7/ddr3_revA/`
+To launch the synthesis you just need to launch make.
+`$ make`
+Prepare a coffee, it will last around 15 minutes to synthesize all the project. 
+
+
+### Core debugging
 To activate the debug cores you need to modify a constant in "app.vhd".
 `$ vim rtl/kintex7/app.vhd`
 At the line 120, you see a constant you can change to "000101". Each bit of this constant belongs to a debug core. You can activate any debug core as you want. Except the MSB bit ("1XXXXX") which belongs to DDR3 IP core user bus which works only if you sythesize the DDR3 version of the firmware.
