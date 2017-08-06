@@ -13,7 +13,7 @@ $ bin/program path/to/file/spec.bit
 ## XpressK7
 The XpressK7 card requires an external programmer to be connected via the JTAG connector.
 
-## Write the bitfile into the flash memory
+### Write the bitfile into the flash memory
 Move in the folder where the script file are.
 `$ cd Yarr-fw/script/`
 Launch the script for flashing the memory. At this point you can choose the bitfile by pressing the belonging number. If there is only bitfile you need to press 'y'.
