@@ -12,6 +12,7 @@ $ bin/program path/to/file/spec.bit
 
 ## XpressK7
 The XpressK7 card requires an external programmer to be connected via the JTAG connector.
+Because of this you will need an installation of Xilinx Vivado (or at least the Xilinx programming software) and source their script `$ source /opt/Xilinx/Vivado/2016.2/settings64.sh`
 
 ### Write the bitfile into the flash memory
 Move in the folder where the script file are.
@@ -26,9 +27,7 @@ Several bit files found:
 The terminal will ask you if you want to flash the flash memory or the RAM. As you want a persistent system, press F for Flash.
 `Will you flash the RAM or the Flash [R/F] ?`
 Then shut down the computer. After the next boot firmware is ready to use.
-`$ systemctl poweroff`
-
-> **Note:** A soft reboot is not enough to get the system working.
+`$ sudo reboot`
 
 ### Generate the bitfile
 Move in the folder where you will generate the bitfile.
