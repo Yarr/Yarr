@@ -12,9 +12,10 @@
 #include <iostream>
 
 #include "FrontEnd.h"
+#include "Rd53aGlobalCfg.h"
 #include "json.hpp"
 
-class Rd53aCfg : public FrontEndCfg {
+class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg {
     public:
         Rd53aCfg() {}
 

@@ -19,7 +19,7 @@ using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::i
 
 class Rd53aReg {
     public:
-        Rd53aReg();
+        Rd53aReg() {}
     
         void init(uint16_t *cfg, const unsigned bOffset, const unsigned bits, const uint16_t value) {
             m_cfg = cfg;
