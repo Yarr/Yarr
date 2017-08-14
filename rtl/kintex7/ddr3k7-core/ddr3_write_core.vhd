@@ -154,7 +154,7 @@ architecture Behavioral of ddr3_write_core is
     signal wb_write_wait_cnt : unsigned(7 downto 0);  
 
 begin
-
+    rst_s <= not rst_n_i;
     --------------------------------------
     -- Wishbone input delay
     --------------------------------------
