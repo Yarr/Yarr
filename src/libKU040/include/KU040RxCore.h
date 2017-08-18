@@ -13,6 +13,8 @@
 #include <queue>
 #include <vector>
 #include <cstdint>
+#include <thread>
+#include <mutex>
 #include "RxCore.h"
 #include "IPbus.h"
 #include "RawData.h"
@@ -76,8 +78,27 @@ class KU040RxCore : virtual public RxCore {
             return m_com;
         }
 
+	void setUDP(bool enable) {
+            m_useUDP = enable;
+        }
+
+        bool getUDP() {
+            return m_useUDP;
+        }
+
     private:
-		uint32_t m_linkSpeed;
+	uint32_t m_linkSpeed;
+
+	// UDP receiver thread
+	std::thread *m_UDPReceiveThread;
+	void UDPReceiveThreadProc();
+	volatile bool m_UDPReceiveThreadRunning;
+        bool m_useUDP;
+
+	// queue + mutex
+	std::queue<uint32_t> m_queue;
+	std::mutex m_queuemutex;
+
         uint32_t m_enableMask;
         uint32_t m_emuMask;
 		bool m_skipRecsWithErrors;
