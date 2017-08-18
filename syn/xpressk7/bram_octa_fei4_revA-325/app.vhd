@@ -114,9 +114,9 @@ entity app is
            -- Trigger input
            ext_trig_o        : out std_logic;
            -- LVDS buffer
-           pwdn_l            : out std_logic_vector(2 downto 0);
+           --pwdn_l            : out std_logic_vector(2 downto 0);
            -- GPIO
-           io              : inout std_logic_vector(2 downto 0);
+           --io              : inout std_logic_vector(2 downto 0);
            -- FE-I4
            fe_clk_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
            fe_clk_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);

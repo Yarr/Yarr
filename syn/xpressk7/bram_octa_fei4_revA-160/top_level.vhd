@@ -63,9 +63,9 @@ entity top_level is
             -- Trigger input
             ext_trig_o        : out std_logic;
             -- LVDS buffer
-            pwdn_l            : out std_logic_vector(2 downto 0);
+            --pwdn_l            : out std_logic_vector(2 downto 0);
             -- GPIO
-            io              : inout std_logic_vector(2 downto 0);
+            --io              : inout std_logic_vector(2 downto 0);
             -- FE-I4
             fe_clk_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
             fe_clk_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
@@ -263,9 +263,9 @@ architecture Behavioral of top_level is
                 -- Trigger input
                 ext_trig_o        : out std_logic;
                 -- LVDS buffer
-                pwdn_l            : out std_logic_vector(2 downto 0);
+                --pwdn_l            : out std_logic_vector(2 downto 0);
                 -- GPIO
-                io              : inout std_logic_vector(2 downto 0);
+                --io              : inout std_logic_vector(2 downto 0);
                 -- FE-I4
                 fe_clk_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
                 fe_clk_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
@@ -495,9 +495,9 @@ begin
         -- Trigger input
         ext_trig_o        => ext_trig_o,
         -- LVDS buffer
-        pwdn_l            => pwdn_l,
+        --pwdn_l            => pwdn_l,
         -- GPIO
-        io                => io,
+        --io                => io,
         -- FE-I4
         fe_clk_p          => fe_clk_p,
         fe_clk_n          => fe_clk_n,

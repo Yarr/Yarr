@@ -11,6 +11,8 @@
 *.mcs
 *.prm
 *.btree
+*.str
+.Xil
 bitstream
 par
 project

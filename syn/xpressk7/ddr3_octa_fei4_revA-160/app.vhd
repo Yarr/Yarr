@@ -142,7 +142,7 @@ architecture Behavioral of app is
     ------------------------------------------------------------------------------
     -- Constants declaration
     ------------------------------------------------------------------------------
-    constant DEBUG_C : std_logic_vector(5 downto 0) := "100000";
+    constant DEBUG_C : std_logic_vector(5 downto 0) := "110000";
     constant wb_dev_c : std_logic := '1';
     
     --TODO
