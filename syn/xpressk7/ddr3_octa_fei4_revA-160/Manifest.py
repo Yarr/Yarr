@@ -10,9 +10,9 @@ modules = {
 
 files = [
 #TOP
-"top_level.vhd",
-"app_package.vhd",
-"app.vhd",
+"../ddr3_yarr.vhd",
+"../ddr3_app_pkg.vhd",
+"../ddr3_app.vhd",
 "../xpressk7.xdc",
 "../xpressk7-ddr3.xdc",
 "../xpressk7-fmc-octa.xdc",

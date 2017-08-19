@@ -102,13 +102,13 @@ set_property PACKAGE_PIN K26 [get_ports {fe_data_n[6]}]
 set_property PACKAGE_PIN G22 [get_ports {fe_data_p[7]}]
 set_property PACKAGE_PIN F23 [get_ports {fe_data_n[7]}]
 
-
+#fake port
 #la03_p
-#set_property PACKAGE_PIN N26 [get_ports {pwdn_l[0]}]
+set_property PACKAGE_PIN M19 [get_ports {pwdn_l[0]}]
 #la03_n
-#set_property PACKAGE_PIN M26 [get_ports {pwdn_l[1]}]
+set_property PACKAGE_PIN M20 [get_ports {pwdn_l[1]}]
 #la14_p
-#set_property PACKAGE_PIN T18 [get_ports {pwdn_l[2]}]
+set_property PACKAGE_PIN M21 [get_ports {pwdn_l[2]}]
 
 #la12_n
 #set_property PACKAGE_PIN D24 [get_ports {io[0]}]
@@ -171,9 +171,9 @@ set_property IOSTANDARD LVDS_25 [get_ports {fe_clk_p[7]}]
 #set_property IOSTANDARD LVCMOS25 [get_ports {io[1]}]
 #set_property IOSTANDARD LVCMOS25 [get_ports {io[0]}]
 #set_property IOSTANDARD LVCMOS25 [get_ports {io[2]}]
-#set_property IOSTANDARD LVCMOS25 [get_ports {pwdn_l[2]}]
-#set_property IOSTANDARD LVCMOS25 [get_ports {pwdn_l[1]}]
-#set_property IOSTANDARD LVCMOS25 [get_ports {pwdn_l[0]}]
+set_property IOSTANDARD LVCMOS25 [get_ports {pwdn_l[2]}]
+set_property IOSTANDARD LVCMOS25 [get_ports {pwdn_l[1]}]
+set_property IOSTANDARD LVCMOS25 [get_ports {pwdn_l[0]}]
 
 
 
