@@ -13,6 +13,7 @@ syn_tool = "ise"
 syn_project = "yarr_spec.xise"
 
 files = ["yarr_fe65p2_revC.ucf",
-         "../top_yarr_spec_fe65p2.vhd"]
+         "../top_yarr_spec_fe65p2.vhd",
+         "board_pkg.vhd"]
 
 fetchto = "../../../ip-cores/spartan6"

@@ -9,16 +9,13 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
 use work.gn4124_core_pkg.all;
+use work.board_pkg.all;
 
 library UNISIM;
 use UNISIM.vcomponents.all;
 
 
 entity yarr is
-    generic (
-                g_TX_CHANNELS : integer := 1;
-                g_RX_CHANNELS : integer := 1
-            );
     port
     (
       -- On board 20MHz oscillator
@@ -315,7 +312,7 @@ architecture rtl of yarr is
 
     component wb_tx_core
         generic (
-        g_NUM_TX : integer range 1 to 32 := g_TX_CHANNELS
+        g_NUM_TX : integer range 1 to 32 := c_TX_CHANNELS
     );
     port (
         -- Sys connect
@@ -343,7 +340,7 @@ architecture rtl of yarr is
 
     component wb_rx_core
         generic (
-        g_NUM_RX : integer range 1 to 32 := g_RX_CHANNELS
+        g_NUM_RX : integer range 1 to 32 := c_RX_CHANNELS
     );
     port (
             -- Sys connect
@@ -689,9 +686,6 @@ architecture rtl of yarr is
   ------------------------------------------------------------------------------
     constant c_BAR0_APERTURE    : integer := 18;  -- nb of bits for 32-bit word address
     constant c_CSR_WB_SLAVES_NB : integer := 16; -- upper 4 bits used for addressing slave
-
-    constant c_TX_CHANNELS : integer := g_TX_CHANNELS;
-    constant c_RX_CHANNELS : integer := g_RX_CHANNELS;
 
   ------------------------------------------------------------------------------
   -- Signals declaration

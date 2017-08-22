@@ -4,3 +4,4 @@
 !Manifest.py
 !*.bit
 !Makefile
+!*.vhd
