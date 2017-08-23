@@ -29,6 +29,16 @@ endif
 #target for performing local synthesis
 all: bitstream
 
+SOURCES_NGCFile := \
+../../../ip-cores/spartan6/l2p_fifo.ngc \
+../../../ip-cores/spartan6/fifo_64x512.ngc \
+../../../ip-cores/spartan6/rx_channel_fifo.ngc \
+../../../ip-cores/spartan6/rx_bridge_ctrl_fifo.ngc \
+../../../ip-cores/spartan6/fifo_32x512.ngc \
+../../../ip-cores/spartan6/ila_icon.ngc \
+../../../ip-cores/spartan6/rx_bridge_fifo.ngc \
+../../../ip-cores/spartan6/ila.ngc
+
 SOURCES_VHDLFile := \
 ../../../ip-cores/spartan6/fifo_64x512.vhd \
 ../../../rtl/i2c-master/i2c_master_byte_ctrl.vhd \
@@ -36,7 +46,7 @@ SOURCES_VHDLFile := \
 ../../../rtl/i2c-master/i2c_master_registers.vhd \
 ../../../rtl/common/generic_async_fifo_wrapper.vhd \
 ../../../rtl/tx-core/wb_tx_core.vhd \
-board_pkg.vhd \
+../../../ip-cores/spartan6/rx_bridge_ctrl_fifo.vhd \
 ../../../rtl/spartan6/rx-core/fei4_rx_channel.vhd \
 ../../../rtl/i2c-master/i2c_master_bit_ctrl.vhd \
 ../../../ip-cores/spartan6/rx_channel_fifo.vhd \
@@ -72,12 +82,12 @@ board_pkg.vhd \
 ../../../rtl/common/synchronizer.vhd \
 ../../../rtl/spartan6/gn4124-core/spartan6/serdes_n_to_1_s2_se.vhd \
 ../../../rtl/spartan6/rx-core/cdr_serdes.vhd \
+board_pkg.vhd \
 ../../../rtl/spartan6/rx-core/wb_rx_core.vhd \
 ../../../rtl/spartan6/gn4124-core/wbmaster32.vhd \
 ../../../rtl/tx-core/tx_channel.vhd \
 ../../../rtl/spartan6/ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/memc3_wrapper.vhd \
 ../../../rtl/spartan6/rx-core/decode_8b10b/decode_8b10b_pkg.vhd \
-../../../ip-cores/spartan6/rx_bridge_ctrl_fifo.vhd \
 ../../../rtl/spartan6/rx-core/decode_8b10b/decode_8b10b_lut_base.vhd \
 ../../../rtl/trigger-logic/eudet_tlu.vhd \
 ../../../rtl/spartan6/ddr3-core/ddr3_ctrl_wrapper.vhd \
@@ -100,22 +110,12 @@ board_pkg.vhd \
 ../../../ip-cores/spartan6/rx_bridge_fifo.vhd
 
 SOURCES_UCFFile := \
-yarr_octa_fei4_revA.ucf
-
-SOURCES_NGCFile := \
-../../../ip-cores/spartan6/l2p_fifo.ngc \
-../../../ip-cores/spartan6/fifo_64x512.ngc \
-../../../ip-cores/spartan6/rx_bridge_ctrl_fifo.ngc \
-../../../ip-cores/spartan6/fifo_32x512.ngc \
-../../../ip-cores/spartan6/ila_icon.ngc \
-../../../ip-cores/spartan6/rx_bridge_fifo.ngc \
-../../../ip-cores/spartan6/rx_channel_fifo.ngc \
-../../../ip-cores/spartan6/ila.ngc
+yarr_spec_quad_fei4_revB.ucf
 
 files.tcl:
+		@$(foreach sourcefile, $(SOURCES_NGCFile), echo "xfile add $(sourcefile)" >> $@ &)
 		@$(foreach sourcefile, $(SOURCES_VHDLFile), echo "xfile add $(sourcefile)" >> $@ &)
 		@$(foreach sourcefile, $(SOURCES_UCFFile), echo "xfile add $(sourcefile)" >> $@ &)
-		@$(foreach sourcefile, $(SOURCES_NGCFile), echo "xfile add $(sourcefile)" >> $@ &)
 
 SYN_PRE_PROJECT_CMD := 
 SYN_POST_PROJECT_CMD := 
