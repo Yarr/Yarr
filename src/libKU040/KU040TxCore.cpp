@@ -20,6 +20,22 @@ KU040TxCore::~KU040TxCore()
     setTrigEnable(0);
 }
 
+void KU040TxCore::DumpTxCounters()
+{
+	std::cout << "===== TX counters =======" << std::endl;
+	std::cout << "channel\ttrig\tECR\tBCR\tCAL\tSLOW\tcorrupt" << std::endl;
+	for(int i = 0; i < 20; i++)
+	{
+		uint32_t count_trig = m_com->Read(KU040_PIXLE_TX_CNT_TRIG(i));
+		uint32_t count_ecr = m_com->Read(KU040_PIXLE_TX_CNT_ECR(i));
+		uint32_t count_bcr = m_com->Read(KU040_PIXLE_TX_CNT_BCR(i));
+		uint32_t count_cal = m_com->Read(KU040_PIXLE_TX_CNT_CAL(i));
+		uint32_t count_slow = m_com->Read(KU040_PIXLE_TX_CNT_SLOW(i));
+		uint32_t count_corrupt = m_com->Read(KU040_PIXLE_TX_CNT_CORRUPT(i));
+		std::cout << i << "\t" << count_trig << "\t" << count_ecr << "\t" << count_bcr << "\t" << count_cal << "\t" << count_slow << "\t" << count_corrupt << std::endl;
+	}
+}
+
 void KU040TxCore::setCmdEnable(uint32_t value)
 {
 	// save mask internally
