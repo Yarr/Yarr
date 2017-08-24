@@ -22,7 +22,7 @@ void Rd53aGlobalCfg::init() {
         m_cfg[i] = 0x00;
 
     //0
-    PixPortalHigh.init(&m_cfg[0], 8, 8, 0x0); // TODO rename odd/even
+    PixPortalHigh.init(&m_cfg[0], 8, 8, 0x0); regMap["PixPortalHigh"] = &PixPortalHigh; // TODO rename odd/even
     PixPortalLow.init(&m_cfg[0], 0, 8, 0x0);
     //1
     RegionCol.init(&m_cfg[1], 0, 8, 0x0);
