@@ -36,7 +36,8 @@ entity ddr3_write_core is
     generic (
        g_BYTE_ADDR_WIDTH : integer := 29;
        g_MASK_SIZE       : integer := 8;
-       g_DATA_PORT_SIZE  : integer := 64
+       g_DATA_PORT_SIZE  : integer := 64;
+       g_NOT_CONSECUTIVE_DETECTION : boolean := false
     );
     Port ( 
     
@@ -115,7 +116,8 @@ architecture Behavioral of ddr3_write_core is
     signal wb_we_s    : std_logic;
     signal wb_adr_s  : std_logic_vector(32 - 1 downto 0);
     signal wb_dat_s  : std_logic_vector(g_DATA_PORT_SIZE - 1 downto 0);
-    signal wb_wr_ack_s : std_logic;
+    signal wb_ack_s : std_logic;
+    signal wb_stall_s : std_logic;
 
     signal wb_wr_data_shift_a : data_array;
     signal wb_wr_data_shift_next_a : data_array;
@@ -182,9 +184,16 @@ begin
     -- Wishbone ouput
     --------------------------------------    
     
-    wb_ack_o <= wb_wr_ack_s;
+    wb_ack_o <= wb_ack_s;
     wb_dat_o <= (others => '0');
-    wb_stall_o <= fifo_wb_wr_full_s or  wb_wr_several_row_s;
+    detection_gen : if (g_NOT_CONSECUTIVE_DETECTION = true) generate
+        wb_stall_s <= fifo_wb_wr_full_s or  wb_wr_several_row_s;
+    end generate;
+    no_dectection_gen : if (g_NOT_CONSECUTIVE_DETECTION = false) generate
+        wb_stall_s <= fifo_wb_wr_full_s;
+    end generate;
+        
+    wb_stall_o <= wb_stall_s;
 
     --------------------------------------
     -- Wishbone write
@@ -203,16 +212,16 @@ begin
                 wb_wr_mask_shift_a(i) <= (others => '0');
             end loop;
 
-            wb_wr_ack_s <= '0';
+            wb_ack_s <= '0';
         elsif rising_edge(wb_clk_i) then
             wb_wr_shift_flush_1_s <= wb_wr_shift_flush_s;
 
             if (wb_cyc_s = '1' and wb_stb_s = '1' and wb_we_s = '1') then
-                wb_wr_ack_s <= '1';
+                wb_ack_s <= '1';
                 wb_write_wait_cnt <= c_write_wait_time;
             else
     
-                 wb_wr_ack_s <= '0';
+                 wb_ack_s <= '0';
                  if(wb_wr_valid_shift_s /= (wb_wr_valid_shift_s'range => '0')) then
                      
                      if (wb_write_wait_cnt /= 0) then
@@ -297,7 +306,7 @@ begin
     end process p_wb_write_shift;
     
     wb_wr_shifting_s <= --'0' when wb_wr_several_row_s = '1' else
-                        '1' when wb_cyc_s = '1' and wb_stb_s = '1' and wb_we_s = '1' else
+                        '1' when wb_cyc_s = '1' and wb_stb_s = '1' and wb_we_s = '1' else --and wb_stall_s = '0' else
                         '1' when wb_write_wait_cnt = 0 else
                         '0';
     

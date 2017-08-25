@@ -36,7 +36,8 @@ entity ddr3_read_core is
     generic (
        g_BYTE_ADDR_WIDTH : integer := 29;
        g_MASK_SIZE       : integer := 8;
-       g_DATA_PORT_SIZE  : integer := 64
+       g_DATA_PORT_SIZE  : integer := 64;
+       g_NOT_CONSECUTIVE_DETECTION : boolean := false
     );
     Port ( 
     
@@ -146,12 +147,13 @@ architecture Behavioral of ddr3_read_core is
     signal wb_we_s    : std_logic;
     signal wb_adr_s  : std_logic_vector(32 - 1 downto 0);
     signal wb_dat_s  : std_logic_vector(g_DATA_PORT_SIZE - 1 downto 0);
-    signal wb_rd_ack_s : std_logic;
+    signal wb_ack_s : std_logic;
+    signal wb_stall_s : std_logic;
 
     signal wb_rd_valid_shift_s : std_logic_vector(c_register_shift_size-1 downto 0);
     signal wb_rd_valid_shift_next_s : std_logic_vector(c_register_shift_size-1 downto 0);
     signal wb_rd_data_shift_a : data_array;
-    signal wb_rd_ack_shift_s : std_logic_vector(c_register_shift_size-1 downto 0);
+    signal wb_ack_shift_s : std_logic_vector(c_register_shift_size-1 downto 0);
     signal wb_rd_addr_shift_a : addr_array;
     signal wb_rd_addr_shift_next_a : addr_array;
     signal wb_rd_addr_ref_a : addr_array;
@@ -231,9 +233,14 @@ begin
     -- Wishbone ouput
     --------------------------------------    
     
-    wb_ack_o <= wb_rd_ack_s;
-    wb_stall_o <= fifo_wb_rd_addr_almost_full_s or fifo_wb_rd_mask_almost_full_s or wb_rd_several_row_s;
-
+    wb_ack_o <= wb_ack_s;
+    detection_gen : if (g_NOT_CONSECUTIVE_DETECTION = true) generate
+        wb_stall_s <= fifo_wb_rd_addr_almost_full_s or fifo_wb_rd_mask_almost_full_s or wb_rd_several_row_s;
+    end generate;
+    no_dectection_gen : if (g_NOT_CONSECUTIVE_DETECTION = false) generate
+        wb_stall_s <= fifo_wb_rd_addr_almost_full_s or fifo_wb_rd_mask_almost_full_s;
+    end generate;
+    wb_stall_o <= wb_stall_s;
 
     --------------------------------------
     -- Wishbone read
@@ -307,7 +314,7 @@ begin
     end process p_wb_read_rtl;
     
      wb_rd_shifting_s <= --'0' when wb_rd_several_row_s = '1' else
-                        '1' when wb_cyc_s = '1' and wb_stb_s = '1' and wb_we_s = '0' else
+                        '1' when wb_cyc_s = '1' and wb_stb_s = '1' and wb_we_s = '0' else--and wb_stall_s = '0' else
                         '1' when wb_read_wait_cnt = 0 else
                         '0';
     
@@ -360,20 +367,20 @@ begin
         if (rst_n_i = '0') then
             for i in 0 to c_register_shift_size-1 loop
                 wb_rd_data_shift_a(i) <= (others => '0');
-                wb_rd_ack_shift_s(i) <= '0';
+                wb_ack_shift_s(i) <= '0';
             end loop;
         elsif rising_edge(wb_clk_i) then
             if(fifo_wb_rd_data_rd_s = '1') then
                 for i in 0 to c_register_shift_size-1 loop
                     wb_rd_data_shift_a(i) <= fifo_wb_rd_data_dout_s(63+(i*64) downto 0+(i*64));
-                    wb_rd_ack_shift_s(i) <= fifo_wb_rd_mask_dout_s(i); -- The data are reversed
+                    wb_ack_shift_s(i) <= fifo_wb_rd_mask_dout_s(i); -- The data are reversed
                 end loop;
             else
                 wb_rd_data_shift_a(c_register_shift_size-1) <= (others => '0');
-                wb_rd_ack_shift_s(c_register_shift_size-1) <= '0';
+                wb_ack_shift_s(c_register_shift_size-1) <= '0';
                 for i in 0 to c_register_shift_size-2 loop
                     wb_rd_data_shift_a(i) <= wb_rd_data_shift_a(i+1);
-                    wb_rd_ack_shift_s(i) <= wb_rd_ack_shift_s(i+1);
+                    wb_ack_shift_s(i) <= wb_ack_shift_s(i+1);
                 end loop;                
             end if;
         end if;
@@ -404,12 +411,12 @@ begin
     --fifo_wb_rd_mask_din_s <= fifo_wb_rd_addr_s & wb_rd_valid_shift_s;
     
     
-    fifo_wb_rd_data_rd_s <= '1' when wb_rd_ack_shift_s(c_register_shift_size-1 downto 1) = "0000000" and fifo_wb_rd_mask_empty_s = '0' and fifo_wb_rd_data_empty_s = '0' else
+    fifo_wb_rd_data_rd_s <= '1' when wb_ack_shift_s(c_register_shift_size-1 downto 1) = "0000000" and fifo_wb_rd_mask_empty_s = '0' and fifo_wb_rd_data_empty_s = '0' else
                             '0';
     fifo_wb_rd_mask_rd_s <= fifo_wb_rd_data_rd_s;
     
     wb_dat_o <= wb_rd_data_shift_a(0);
-    wb_rd_ack_s <= wb_rd_ack_shift_s(0);
+    wb_ack_s <= wb_ack_shift_s(0);
     
     wb_rd_shift_flush_s <= '1' when wb_rd_flush_v_s /= (wb_rd_flush_v_s'range => '0') else
                            '0';
