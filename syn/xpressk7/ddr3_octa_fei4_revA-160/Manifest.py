@@ -11,8 +11,8 @@ modules = {
 files = [
 #TOP
 "../ddr3_yarr.vhd",
-"../ddr3_app_pkg.vhd",
-"../ddr3_app.vhd",
+"../app_pkg.vhd",
+"../app.vhd",
 "../xpressk7.xdc",
 "../xpressk7-ddr3.xdc",
 "../xpressk7-fmc-octa.xdc",

@@ -191,7 +191,12 @@ architecture Behavioral of top_level is
     END COMPONENT;
     
     component app is
-        Port ( clk_i : in STD_LOGIC;
+        Generic( 
+                DEBUG_C : std_logic_vector(3 downto 0) := "1111"; 
+                address_mask_c : STD_LOGIC_VECTOR(32-1 downto 0) := X"000FFFFF"; 
+                DMA_MEMORY_SELECTED : string := "BRAM" -- DDR3, BRAM, DEMUX 
+        );
+	Port ( clk_i : in STD_LOGIC;
                sys_clk_n_i : IN STD_LOGIC;
                sys_clk_p_i : IN STD_LOGIC;
                rst_i : in STD_LOGIC;
@@ -425,6 +430,11 @@ begin
       );
       
       app_0:app
+      Generic map( 
+		DEBUG_C => "0110",
+        address_mask_c => X"000FFFFF",
+        DMA_MEMORY_SELECTED => "BRAM" -- DDR3, BRAM, DEMUX 
+        )
       port map(
         clk_i => aclk,
         sys_clk_n_i => clk200_n,
