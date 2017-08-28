@@ -1,3 +1,9 @@
+/*
+ * Author: N. Whallon <alokin@uw.edu>
+ * Date: 2017-I
+ * Description: a class to facilitate communication between programs using shared memory
+ */
+
 #ifndef EMUSHM
 #define EMUSHM
 

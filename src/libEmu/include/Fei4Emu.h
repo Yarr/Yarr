@@ -2,6 +2,7 @@
  * Author: K. Potamianos <karolos.potamianos@cern.ch>
  * Date: 2016-VI-25
  * Description: this is a port of the FE-I4 emulator for IBLROD (2014-VI-12)
+ * Updates: addition of command decoding in execute loop, functions for handling commands, pixel modeling, shared memory communication, etc by N. Whallon <alokin@uw.edu>
  */
 
 #ifndef __FEI4_EMU_H__
@@ -11,39 +12,21 @@
 
 #include "Fei4Cfg.h"
 #include "EmuShm.h"
+#include "RingBuffer.h"
+#include "Gauss.h"
+#include "PixelModel.h"
 #include "FrontEndGeometry.h"
 #include "json.hpp"
+
+#include "RingBuffer.h"
 
 #include <cstdint>
 #include <memory>
 
-// this is temporary!!!
-typedef struct {
-    float Vthin_mean;
-    float Vthin_sigma;
-    float Vthin_gauss;
-    float TDACVbp_mean;
-    float TDACVbp_sigma;
-    float TDACVbp_gauss;
-    float noise_sigma_mean;
-    float noise_sigma_sigma;
-    float noise_sigma_gauss;
-} PixelModeling;
-
 class Fei4Emu {
     public:
-        Fei4Emu();
-        Fei4Emu(std::string output_model_cfg);
-        Fei4Emu(std::string output_model_cfg, std::string input_model_cfg);
+        Fei4Emu(std::string output_model_cfg, std::string input_model_cfg, RingBuffer * rx, RingBuffer * tx);
         ~Fei4Emu();
-
-        void initializePixelModels();
-
-        // input pixel model configuration from a json file
-        void initializePixelModelsFromFile(std::string jsonFile);
-
-        // output pixel model configuration to a json file
-        void writePixelModelsToFile();
 
         // the main loop which recieves commands from yarr
         void executeLoop();
@@ -58,18 +41,14 @@ class Fei4Emu {
         // functions for dealing with sending data to yarr
         void pushOutput(uint32_t value);
 
-        // functions for modeling pixel responses
-        float calculateThreshold(int col, int row);
-        uint32_t calculateToT(float charge);
-
         // Call getFeStream() to see response from FE
         void decodeCommand(uint8_t* cmdStream, std::size_t size);
-              
+
         // Only public function so far: to be moved to private once command decoder is fully implemented
         void addRandomHits(uint32_t nHits);
-              
+
         void addPhysicsHits();
- 
+
         /// Adds hit to output
         /// @tot1, @tot2: expressed in "real" terms (connected to ToT code later)
         void addHit(uint16_t col, uint16_t row, uint8_t tot1, uint8_t tot2);
@@ -90,8 +69,10 @@ class Fei4Emu {
         void processSLOW(uint8_t *cmdPtr);
 
 
-        std::shared_ptr<EmuShm> m_txShm;
-        std::shared_ptr<EmuShm> m_rxShm;
+//        std::shared_ptr<EmuShm> m_txShm;
+//        std::shared_ptr<EmuShm> m_rxShm;
+        RingBuffer * m_txRingBuffer;
+        RingBuffer * m_rxRingBuffer;
         std::shared_ptr<Fei4Cfg> m_feCfg;
 
         uint32_t m_modeBits;
@@ -103,8 +84,8 @@ class Fei4Emu {
         uint32_t m_l1IdCnt;
         uint32_t m_bcIdCnt;
 
-        // this is temporary!!!
-        PixelModeling m_pixelModels[80][336];
+	PixelModel* m_pixelModelObjects[80][336];
+	void initializePixelModelsFromFile(std::string json_file_path);
 
         // this is the file path to output the pixel model configuration
         std::string m_output_model_cfg;

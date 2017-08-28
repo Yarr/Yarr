@@ -1,0 +1,13 @@
+{
+    "ctrlCfg" : {
+        "type": "ku040",
+        "cfg" : {
+            "ku040Host" : "192.168.6.20",
+            "emuMask" : 1048575,
+            "emuHitCnt" : 2,
+	    "skipRecsWithErrors" : true,
+	    "linkSpeed" : 160,
+            "useUDP" : false
+        }
+    }
+}

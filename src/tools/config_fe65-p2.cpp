@@ -7,7 +7,7 @@
 
 #include "Fe65p2.h"
 
-using json = nlohmann::json;
+using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 
 int main(int argc, char *argv[]) {
 	

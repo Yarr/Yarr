@@ -6,18 +6,31 @@
 ##   Major refactoring to simplify adding features
 
 UNAME_S := $(shell uname -s)
+UNAME_P := $(shell uname -p)
+MKDIR := mkdir -p
 
 MODE = DEBUG
 
 AR = ar
 
-# Compiler
+# In case it's not set, assuming local architecture
+ARCH ?= $(UNAME_P)
+
 CPP = g++
+LD = g++
+
+ifneq ($(CROSS_COMPILE),)
+$(info Using: $(CPP))
+$(foreach D,CPP LD,$(eval $(D) = $(addprefix $(CROSS_COMPILE),$($(D)))))
+endif
+
 #CC = gcc
 ifeq ($(UNAME_S),Darwin)
-	CPP = clang++
+CPP = clang++
+LD = clang++
 else
-	LDFLAGS += -pthread
+CPPFLAGS += -pthread
+LDFLAGS += -pthread -lrt
 endif
 
 CPPFLAGS += -std=c++11 -Wall -Werror
@@ -28,15 +41,6 @@ CPPFLAGS += $(INCFLAGS)
 CPPFLAGS_DEBUG += -g -O1 -DDEBUG
 CPPFLAGS_RELEASE += -O2 -DNDEBUG
 
-# Linker
-LD = g++
-ifeq ($(UNAME_S),Darwin)
-	LD = clang++
-else
-	LDFLAGS += -pthread
-endif
-
-LDFLAGS += -std=c++11
 LDFLAGS_DEBUG +=
 LDFLAGS_RELEASE +=
 LIBS +=
@@ -45,16 +49,20 @@ BIN = bin
 BUILD = build
 LLIB = lib
 
+ifneq ($(ARCH),)
+$(foreach D,BIN BUILD LLIB,$(eval $(D) = $($(D))/$(ARCH)))
+$(shell $(MKDIR) $(BIN) $(BUILD) $(LLIB))
+endif
+
 GCC_MAJOR = $(shell $(CPP) -dumpversion | cut -d'.' -f1)
 GCC_MINOR = $(shell $(CPP) -dumpversion | cut -d'.' -f2)
 
 ifneq ($(UNAME_S), Darwin)
-	ifeq ($(shell echo ${GCC_MAJOR}\<4| bc), 1)
-		$(error $(CPP) version is too old, need atleast 4.7!)
-	endif
-	ifeq ($(shell echo ${GCC_MINOR}\<7 | bc), 1)
-		$(error $(CPP) version is too old, need atleast 4.7!)
-	endif
+ifeq ($(shell echo ${GCC_MAJOR}\<4| bc), 1)
+ifeq ($(shell echo ${GCC_MINOR}\<7 | bc), 1)
+$(error $(CPP) version is too old, need atleast 4.7!)
+endif
+endif
 endif
 
 # Set build mode specific variables
@@ -79,7 +87,7 @@ STATLIBS += $(LLIB)/$(call lc,$(2).a)
 $(BUILD)/%.o: $(2)/%.cpp
 
 $(BUILD)/%.d: $(2)/%.cpp
-	@$(CPP) $(CPPFLAGS) -MM -MT $$(patsubst $(2)/%.cpp,$(BUILD)/%.o,$$<) $$< > $$@
+	@$(CPP) $(CPPFLAGS) -MM -MT $(BUILD)/$$*.o $$< -o $$@
 
 endef
 
@@ -91,7 +99,7 @@ define uc
 $(shell echo $(1) | tr 'a-z' 'A-Z')
 endef
 
-PKGS := tools libSpec libYarr libFei4 libFe65p2 libUtil libEmu
+PKGS := tools libSpec libYarr libFei4 libFe65p2 libUtil libEmu libRce libBoc libKU040
 $(foreach P,$(PKGS),$(eval $(call addPkg,$(patsubst LIB%,%,$(call uc,$(P))),$(P))))
 TARGETS=$(patsubst %.cpp,$(BIN)/%,$(notdir $(TOOLS_FILES)))
 LIB_FILES := $(filter-out $(TOOLS_FILES),$(ALL_FILES))
@@ -120,16 +128,24 @@ $(BUILD)/%.o:
 $(BIN)/%: $(BUILD)/%.o $(LLIB)/libyarr.a
 	@echo [Linking] $@
 	@$(LD) $(LDFLAGS) $+ -o $@
+ifeq ($(ARCH),$(UNAME_P))
+	@ln -sf ../$@ bin/$*
+endif
 
 # Lib
 $(LLIB)/libyarr.a: $(LIB_OBJS)
 	@echo [Creating] $@
 	@$(AR) rcs $@ $+
+ifeq ($(ARCH),$(UNAME_P))
+	ln -sf ../$@ lib/
+endif
 
+ifneq "$(MAKECMDGOALS)" "clean"
 -include $(ALL_DEPS)
+endif
 
 clean:
-	@$(RM) $(ALL_OBJS) $(ALL_DEPS) $(TARGETS) $(LLIB)/libyarr.a
+	@$(RM) -f $(ALL_OBJS) $(ALL_DEPS) $(TARGETS) $(LLIB)/libyarr.a
 	@echo "[Clean] … done!"
 
 list:

@@ -55,6 +55,7 @@ static void specdriver_exit(void);
 //static const __devinitdata struct pci_device_id specdriver_ids[] = {
 static const struct pci_device_id specdriver_ids[] = {
 	{ PCI_DEVICE( PCIE_SPEC_VENDOR_ID, PCIE_SPEC_DEVICE_ID ) },     // PCI-E SPEC card
+	{ PCI_DEVICE( PCIE_XPRESSK7_VENDOR_ID, PCIE_XPRESSK7_DEVICE_ID ) },     // PCI-E XPRESSK7 card
 	{0,0,0,0},
 };
 

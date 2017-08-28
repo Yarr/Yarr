@@ -7,3 +7,4 @@
 #include "Fei4GlobalPreampRetune.h"
 #include "Fei4PixelThresholdTune.h"
 #include "Fei4PixelPreampTune.h"
+#include "Fei4Selftrigger.h"

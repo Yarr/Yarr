@@ -23,7 +23,10 @@
 
 #include "HwController.h"
 #include "SpecController.h"
+#include "BocController.h"
+#include "KU040Controller.h"
 #include "EmuController.h"
+#include "RceController.h"
 #include "Bookkeeper.h"
 #include "Fei4.h"
 #include "ScanBase.h"
@@ -43,6 +46,8 @@
 
 #endif
 
+using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+
 std::string toString(int value,int digitsCount)
 {
     std::ostringstream os;
@@ -57,11 +62,11 @@ std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bo
 
 // In order to build Histogrammer, bookie is not needed --> good sign!
 // Do not want to use the raw pointer ScanBase*
-void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& histogrammers, const std::string& scanType, std::vector<FrontEnd*>& feList, ScanBase* s  );
+void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& histogrammers, const std::string& scanType, std::vector<FrontEnd*>& feList, ScanBase* s, std::string outputDir);
 
 // In order to build Analysis, bookie is needed --> deep dependency!
 // Do not want to use the raw pointer ScanBase*
-void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s  );
+void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, int mask_opt);
 
 
 int main(int argc, char *argv[]) {
@@ -74,11 +79,14 @@ int main(int argc, char *argv[]) {
     // Init parameters
     unsigned specNum = 0;
     std::string scanType = "";
-    std::vector<std::string> cConfigPath;
+    std::vector<std::string> cConfigPaths;
     std::string outputDir = "./data/";
     std::string ctrlCfgPath = "";
     bool doPlots = false;
     int target_threshold = 2500;
+    int target_tot = 10;
+    int target_charge = 16000;
+    int mask_opt = -1;
     
     unsigned runCounter = 0;
 
@@ -103,7 +111,8 @@ int main(int argc, char *argv[]) {
     oF.close();
 
     int c;
-    while ((c = getopt(argc, argv, "hs:n:g:r:c:po:")) != -1) {
+    while ((c = getopt(argc, argv, "hs:n:m:g:r:c:t:po:")) != -1) {
+        int count = 0;
         switch (c) {
             case 'h':
                 printHelp();
@@ -115,12 +124,15 @@ int main(int argc, char *argv[]) {
             case 'n':
                 specNum = atoi(optarg);
                 break;
+            case 'm':
+                mask_opt = atoi(optarg);
+                break;
             case 'c':
 //                configPath = std::string(optarg);
                 optind -= 1; //this is a bit hacky, but getopt doesn't support multiple
                              //values for one option, so it can't be helped
                 for(; optind < argc && *argv[optind] != '-'; optind += 1){
-                    cConfigPath.push_back(std::string(argv[optind]));
+                    cConfigPaths.push_back(std::string(argv[optind]));
                 }
                 break;
             case 'r':
@@ -135,7 +147,26 @@ int main(int argc, char *argv[]) {
                     outputDir = outputDir + "/";
                 break;
             case 't':
-                target_threshold = atoi(optarg);
+                optind -= 1; //this is a bit hacky, but getopt doesn't support multiple
+                             //values for one option, so it can't be helped
+                for(; optind < argc && *argv[optind] != '-'; optind += 1){
+                    switch (count) {
+                        case 0:
+                            target_threshold = atoi(argv[optind]);
+                            break;
+                        case 1:
+                            target_tot = atoi(argv[optind]);
+                            break;
+                        case 2:
+                            target_charge = atoi(argv[optind]);
+                            break;
+                        default:
+                            std::cerr << "-> Can only receive max. 3 parameters with -t!!" << std::endl;
+                            break;
+                    }
+                    count++;
+
+                }
                 break;
             case '?':
                 if(optopt == 's' || optopt == 'n'){
@@ -156,7 +187,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (cConfigPath.size() == 0) {
+    if (cConfigPaths.size() == 0) {
         std::cerr << "Error: no config files given, please specify config file name under -c option, even if file does not exist!" << std::endl;
         return -1;
     }
@@ -167,10 +198,12 @@ int main(int argc, char *argv[]) {
     std::cout << " Scan Type: " << scanType << std::endl;
     
     std::cout << " Chips: " << std::endl;
-    for(std::string const& sTmp : cConfigPath){
+    for(std::string const& sTmp : cConfigPaths){
         std::cout << "    " << sTmp << std::endl;
     }
     std::cout << " Target Threshold: " << target_threshold << std::endl;
+    std::cout << " Target ToT: " << target_tot << std::endl;
+    std::cout << " Target Charge: " << target_charge << std::endl;
     std::cout << " Output Plots: " << doPlots << std::endl;
     std::cout << " Output Directory: " << outputDir << std::endl;
     
@@ -205,8 +238,8 @@ int main(int argc, char *argv[]) {
     std::cout << "# Init Hardware #" << std::endl;
     std::cout << "#################" << std::endl;
 
-    HwController *hwCtrl;
-    Fei4Emu *emu;
+    HwController *hwCtrl = NULL;
+    Fei4Emu *emu = NULL;
     std::vector<std::thread> emuThreads;
     if (ctrlCfgPath == "") {
         std::cout << "-> No controller config given, using default." << std::endl;
@@ -226,15 +259,30 @@ int main(int argc, char *argv[]) {
             std::cout << "-> Found Spec config" << std::endl;
             hwCtrl = new SpecController(); 
             hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
+        } else if ( (ctrlCfg["ctrlCfg"]["type"]=="boc") ) {
+            std::cout << "-> Found Boc config" << std::endl;
+            hwCtrl = new BocController();
+            hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
+		} else if ( (ctrlCfg["ctrlCfg"]["type"]=="ku040") ) {
+            std::cout << "-> Found KU040 config" << std::endl;
+            hwCtrl = new KU040Controller();
+            hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
+	} else if ( (ctrlCfg["ctrlCfg"]["type"]=="rce") ) {
+	    std::cout << "-> Found RCE config" << std::endl;
+	      hwCtrl = new RceController();
+	      hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
         } else if (ctrlCfg["ctrlCfg"]["type"] == "emu") {
             std::cout << "-> Found Emulator config" << std::endl;
-            hwCtrl = new EmuController();
+            // nikola's hack to use RingBuffer
+            RingBuffer * rx = new RingBuffer(128);
+            RingBuffer * tx = new RingBuffer(128);
+            hwCtrl = new EmuController(rx, tx);
             hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
             //TODO make nice
             std::cout << "-> Starting Emulator" << std::endl;
             std::string emuCfgFile = ctrlCfg["ctrlCfg"]["cfg"]["feCfg"];
             std::cout << emuCfgFile << std::endl;
-            emu= new Fei4Emu(emuCfgFile, emuCfgFile);
+            emu= new Fei4Emu(emuCfgFile, emuCfgFile, rx, tx);
             emuThreads.push_back(std::thread(&Fei4Emu::executeLoop, emu));
         } else {
             std::cerr << "#ERROR# Unknown config type: " << ctrlCfg["ctrlCfg"]["type"] << std::endl;
@@ -249,16 +297,16 @@ int main(int argc, char *argv[]) {
     std::map<FrontEnd*, std::string> feCfgMap;
 
     bookie.setTargetThreshold(target_threshold);
-    bookie.setTargetTot(10);
-    bookie.setTargetCharge(16000);
+    bookie.setTargetTot(target_tot);
+    bookie.setTargetCharge(target_charge);
 
     std::cout << "#######################" << std::endl
               << "##  Loading Configs  ##" << std::endl
               << "#######################" << std::endl;
     
-    for(std::string const& sTmp : cConfigPath){
+    for(std::string const& sTmp : cConfigPaths){
         std::string discardMe; //Error handling, wait for user
-        nlohmann::json jTmp;
+        json jTmp;
         std::ifstream iFTmp(sTmp);
 
         if (!iFTmp) {
@@ -275,23 +323,36 @@ int main(int argc, char *argv[]) {
             jTmp << iFTmp;
             if(!jTmp["FE-I4B"].is_null()){
                 std::cout << "Found FE-I4B: " << jTmp["FE-I4B"]["name"] << std::endl;
-                bookie.addFe(dynamic_cast<FrontEnd*>(new Fei4(hwCtrl)), jTmp["FE-I4B"]["txChannel"], jTmp["FE-I4B"]["txChannel"]);        
+                bookie.addFe(dynamic_cast<FrontEnd*>(new Fei4(hwCtrl)), jTmp["FE-I4B"]["txChannel"], jTmp["FE-I4B"]["rxChannel"]);        
             } else if(!jTmp["FE65-P2"].is_null()){
                 std::cout << "Found FE65-P2: " << jTmp["FE-I4B"]["name"] << std::endl;
-                bookie.addFe(dynamic_cast<FrontEnd*>(new Fe65p2(hwCtrl)), jTmp["FE65-P2"]["txChannel"], jTmp["FE-I4B"]["txChannel"]);        
+                bookie.addFe(dynamic_cast<FrontEnd*>(new Fe65p2(hwCtrl)), jTmp["FE65-P2"]["txChannel"], jTmp["FE-I4B"]["rxChannel"]);        
             } else{
                 std::cerr << "Unknown chip type or malformed config in " << sTmp << std::endl;
                 continue;
             }
             // Load config
             dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->fromFileJson(jTmp);
+            // Reset mask
+            if (mask_opt == 1) {
+                if (!jTmp["FE-I4B"].is_null()) {
+                    std::cout << "Resetting enable/hitbus pixel mask to all enabled!" << std::endl;
+                    Fei4 *fe = dynamic_cast<Fei4*>(bookie.getLastFe());
+                    for (unsigned int dc = 0; dc < fe->n_DC; dc++) {
+                        fe->En(dc).setAll(1);
+                        fe->Hitbus(dc).setAll(0);
+                    }
+                }
+                // TODO add FE65p2
+            }
+                
         }
         feCfgMap[bookie.getLastFe()] = sTmp;
         iFTmp.close();
         
         // Create backup of current config
         std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getName() + ".json.after");
-        nlohmann::json backupCfg;
+        json backupCfg;
         dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
         backupCfgFile << std::setw(4) << backupCfg;
         backupCfgFile.close();
@@ -339,8 +400,8 @@ int main(int argc, char *argv[]) {
     std::map<FrontEnd*, std::unique_ptr<DataProcessor> > analyses;
 
     // TODO not to use the raw pointer!
-    buildHistogrammers( histogrammers, scanType, bookie.feList, s.get() );
-    buildAnalyses( analyses, scanType, bookie, s.get() );
+    buildHistogrammers( histogrammers, scanType, bookie.feList, s.get(), outputDir);
+    buildAnalyses( analyses, scanType, bookie, s.get(), mask_opt);
 
     std::cout << "-> Running pre scan!" << std::endl;
     s->init();
@@ -464,7 +525,7 @@ int main(int argc, char *argv[]) {
             
             // Save config
             std::cout << "-> Saving config of FE " << dynamic_cast<FrontEndCfg*>(fe)->getName() << " to " << feCfgMap.at(fe) << std::endl;
-            nlohmann::json jTmp;
+            json jTmp;
             dynamic_cast<FrontEndCfg*>(fe)->toFileJson(jTmp);
             std::ofstream oFTmp(feCfgMap.at(fe));
             oFTmp << std::setw(4) << jTmp;
@@ -472,7 +533,7 @@ int main(int argc, char *argv[]) {
 
             // Save extra config in data folder
             std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getName() + ".json.after");
-            nlohmann::json backupCfg;
+            json backupCfg;
             dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
             backupCfgFile << std::setw(4) << backupCfg;
             backupCfgFile.close(); 
@@ -499,12 +560,14 @@ void printHelp() {
     std::cout << " -h: Shows this." << std::endl;
     std::cout << " -s <scan_type> : Scan type. Possible types:" << std::endl;
     listScans();
-    std::cout << " -n: Provide SPECboard number." << std::endl;
+    //std::cout << " -n: Provide SPECboard number." << std::endl;
     //std::cout << " -g <cfg_list.txt>: Provide list of chip configurations." << std::endl;
     std::cout << " -c <cfg1.json> [<cfg2.json> ...]: Provide chip configuration, can take multiple arguments." << std::endl;
     std::cout << " -r <ctrl.json> Provide controller configuration." << std::endl;
+    std::cout << " -t <target_threshold> [<tot_target> [<charge_target>]] : Set target values for threshold, tot, charge." << std::endl;
     std::cout << " -p: Enable plotting of results." << std::endl;
     std::cout << " -o <dir> : Output directory. (Default ./data/)" << std::endl;
+    std::cout << " -m <int> : 0 = disable pixel masking, 1 = reset pixel masking, default = enable pixel masking" << std::endl;
 }
 
 void listScans() {
@@ -517,6 +580,8 @@ void listScans() {
     std::cout << "  tune_globalpreamp" << std::endl;
     std::cout << "  tune_pixelpreamp" << std::endl;
     std::cout << "  noisescan" << std::endl;
+    std::cout << "  selftrigger" << std::endl;
+    std::cout << "  selftrigger_noise" << std::endl;
 }
 
 
@@ -566,6 +631,12 @@ std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bo
         } else if (scanType == "noisescan") {
             std::cout << "-> Found Noisescan" << std::endl;
             s.reset( new Fei4NoiseScan(&bookie) );
+        } else if (scanType == "selftrigger") {
+            std::cout << "-> Found Selftrigger" << std::endl;
+            s.reset(new Fei4Selftrigger(&bookie) );
+        } else if (scanType == "selftrigger_noise") {
+            std::cout << "-> Found Selftrigger" << std::endl;
+            s.reset(new Fei4Selftrigger(&bookie) );
         } else {
             std::cout << "-> No matching Scan found, possible:" << std::endl;
             listScans();
@@ -578,7 +649,7 @@ std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bo
 }
 
 
-void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& histogrammers, const std::string& scanType, std::vector<FrontEnd*>& feList, ScanBase* s ) {
+void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& histogrammers, const std::string& scanType, std::vector<FrontEnd*>& feList, ScanBase* s, std::string outputDir) {
     if (scanType.find("json") != std::string::npos) {
         std::cout << "-> Found Scan config, loading histogrammer and analysis ..." << std::endl;
         std::ifstream scanCfgFile(scanType);
@@ -634,14 +705,17 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
                 histogrammer.addHistogrammer(new Tot2Map());
                 histogrammer.addHistogrammer(new L1Dist());
                 histogrammer.addHistogrammer(new HitsPerEvent());
-               
+                if (scanType == "selftrigger") {
+                    // TODO set proper file name
+                    histogrammer.addHistogrammer(new DataArchiver((outputDir + "data.raw")));
+                }
             }
         }
     }
 }
 
 
-void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s ) {
+void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, int mask_opt) {
     if (scanType.find("json") != std::string::npos) {
         std::cout << "-> Found Scan config, loading histogrammer and analysis ..." << std::endl;
         std::ifstream scanCfgFile(scanType);
@@ -664,6 +738,11 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                 ana.connect(s, fe->clipHisto, fe->clipResult);
                 ana.addAlgorithm(new L1Analysis());
                 ana.addAlgorithm(new OccupancyAnalysis());
+                // Disable masking of pixels
+                if(mask_opt == 0) {
+                    std::cout << " -> Disabling masking for this scan!" << std::endl;
+                    ana.setMasking(false);
+                }
             }
         }
     } else {
@@ -693,11 +772,21 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                     ana.addAlgorithm(new TotAnalysis());
                 } else if (scanType == "noisescan") {
                     ana.addAlgorithm(new NoiseAnalysis());
+                } else if (scanType == "selftrigger") {
+                    ana.addAlgorithm(new OccupancyAnalysis());
+                    ana.getLastAna()->disMasking();
+                } else if (scanType == "selftrigger_noise") {
+                    ana.addAlgorithm(new NoiseAnalysis());
                 } else {
                     std::cout << "-> Analyses not defined for scan type" << std::endl;
                     listScans();
                     std::cerr << "-> Aborting!" << std::endl;
                     throw("buildAnalyses failure!");
+                }
+                // Disable masking of pixels
+                if(mask_opt == 0) {
+                    std::cout << " -> Disabling masking for this scan!" << std::endl;
+                    ana.setMasking(false);
                 }
             }
         }

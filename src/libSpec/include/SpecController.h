@@ -15,10 +15,12 @@
 #include "SpecRxCore.h"
 #include "json.hpp"
 
+using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+
 class SpecController : public HwController, public SpecTxCore, public SpecRxCore {
     public:
 
-        void loadConfig(nlohmann::json &j) {}
+        void loadConfig(json &j) {}
 };
 
 #endif

@@ -1,0 +1,23 @@
+job_build_and_test:
+    image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
+    stage: build
+    script:
+      - yum -y install gcc-c++
+      - yum -y install make
+      - yum -y install gnuplot
+      - cd src
+      - make
+      - export USER=test
+      - echo $USER
+      - /bin/pwd
+      - mkdir /tmp/test
+      - ls /tmp/
+      - bin/scanConsole -r configs/emuCfg.json -c configs/test.json -s digitalscan -p
+      - ls
+      - ls ./data/
+      - ls ./data/000001_digitalscan/
+      - cat ./data/000001_digitalscan/JohnDoe_OccupancyMap.dat
+      - NUM100=`cat ./data/000001_digitalscan/JohnDoe_OccupancyMap.dat | grep -o 100 | wc -l`
+      - if [ "$NUM100" != "26880" ]; then exit 2; fi
+      - cd ../
+

@@ -47,9 +47,9 @@ void Fe65p2::configurePixels() {
     uint16_t tmp7 = getValue(&Fe65p2::PrmpVbnFolDac);
     setValue(&Fe65p2::Vthin1Dac, 255);
     setValue(&Fe65p2::Vthin2Dac, 0);
-    setValue(&Fe65p2::PreCompVbnDac, 0);
-    setValue(&Fe65p2::CompVbnDac, 0);
-    //setValue(&Fe65p2::VffDac, 10);
+    //setValue(&Fe65p2::PreCompVbnDac, 0);
+    //setValue(&Fe65p2::CompVbnDac, 0);
+    setValue(&Fe65p2::VffDac, 10);
     //setValue(&Fe65p2::PrmpVbpDac, 50);
     setValue(&Fe65p2::PrmpVbnFolDac, 0);
     

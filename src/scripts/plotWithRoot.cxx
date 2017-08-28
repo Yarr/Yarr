@@ -1,9 +1,10 @@
 #include <iostream>
 #include <fstream>
 
+#include <TStyle.h>
 #include <TCanvas.h>
 #include <TH2F.h>
-
+#include <TPaveStats.h>
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         std::cout << "No file given!" << std::endl;
@@ -34,6 +35,8 @@ int main(int argc, char *argv[]) {
 
         if (type == "Histo2d") {
             infile >> ybins >> ylow >> yhigh;
+        } else {
+            ybins = 1;
         }
 
         infile >> underflow >> overflow;
@@ -50,7 +53,7 @@ int main(int argc, char *argv[]) {
         }
 
         TCanvas *c = new TCanvas("c", "c", 800, 600);
-        TH1 *h;
+        TH1 *h = NULL;
         if (type == "Histo2d") {
             h = (TH1*) new TH2F(name.c_str(), name.c_str(), xbins, xlow, xhigh, ybins, ylow, yhigh);
             h->SetStats(0);
@@ -58,12 +61,39 @@ int main(int argc, char *argv[]) {
                 for (int j=0; j<xbins; j++) {
                     double tmp;
                     infile >> tmp;
+                    std::cout << i << " " << j << " " << tmp << std::endl;
                     h->SetBinContent(j+1, i+1, tmp);
                 }
             }
             h->SetMaximum(h->GetMean()*4);
             h->Draw("colz");
+        } 
+        if (1) {
+            h = (TH1*) new TH1F(name.c_str(), "", xbins, xlow, xhigh);
+            h->GetXaxis()->SetTitle(xaxistitle.c_str());
+            h->GetYaxis()->SetTitle(yaxistitle.c_str());
+
+            for (int j=0; j<xbins; j++) {
+                double tmp;
+                infile >> tmp;
+                std::cout << j << " " << tmp << std::endl;
+                h->SetBinContent(j+1,tmp);
+            }
+            h->SetFillColor(kBlue);
+            h->SetLineColor(kBlue);
+            h->SetStats(0);
+            h->GetXaxis()->SetTitleSize(0.05);
+            h->GetXaxis()->SetTitleOffset(0.8);
+            h->GetYaxis()->SetTitleSize(0.05);
+            h->GetYaxis()->SetTitleOffset(0.8);
+            //gStyle->SetOptFit(1);
+            //h->Fit("gaus", "", "", 800, 1200);
+            //h->Draw();
+            //gStyle->SetStatY(0.8);
+            //gStyle->SetStatX(0.5);
+            h->Draw();
         }
+
         filename.replace(filename.find(".dat"), 4, "_root.pdf"); 
 
         c->Print(filename.c_str());

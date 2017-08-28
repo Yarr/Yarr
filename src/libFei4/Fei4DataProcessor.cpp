@@ -105,7 +105,9 @@ void Fei4DataProcessor::process_core() {
                 unsigned type = ((value &0x03000000) >> 24);
                 if (type == 0x1) {
                     tag[channel] = unsigned(value & 0x00FFFFFF);
-                } else {
+                } else if (type == 0x3) {
+                    // skip
+                } else if (type == 0x0) {
                     wordCount[channel]++;
                     if (__builtin_expect((value == 0xDEADBEEF), 0)) {
                         std::cout << "# ERROR # " << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << curIn->words << " " << std::hex << value << " " << std::dec << std::endl;

@@ -16,10 +16,14 @@
 #include "EmuShm.h"
 #include "json.hpp"
 
+#include "RingBuffer.h"
+
+using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+
 class EmuController : public HwController, public EmuTxCore, public EmuRxCore {
     public:
-        EmuController() {} 
-        void loadConfig(nlohmann::json &j);
+        EmuController(RingBuffer * rx, RingBuffer * tx);
+        void loadConfig(json &j);
 };
 
 #endif

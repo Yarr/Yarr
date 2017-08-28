@@ -1,3 +1,9 @@
+/*
+ * Author: N. Whallon <alokin@uw.edu>
+ * Date: 2017-I
+ * Description: a class to facilitate communication between programs using shared memory
+ */
+
 #include "EmuShm.h"
 
 EmuShm::EmuShm(key_t key, uint32_t size, bool _create)
