@@ -11,6 +11,7 @@
 
 #include <mutex>
 #include <thread>
+#include <condition_variable>
 
 class DataProcessor {
     public:
