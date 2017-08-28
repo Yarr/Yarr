@@ -11,6 +11,7 @@
 
 #include <mutex>
 #include <deque>
+#include <condition_variable>
 
 #include "RawData.h"
 #include "Fei4EventData.h"
