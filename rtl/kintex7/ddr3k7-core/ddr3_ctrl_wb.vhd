@@ -28,7 +28,8 @@ entity ddr3_ctrl_wb is
     generic (
            g_BYTE_ADDR_WIDTH : integer := 29;
            g_MASK_SIZE       : integer := 8;
-           g_DATA_PORT_SIZE  : integer := 64
+           g_DATA_PORT_SIZE  : integer := 64;
+           g_NOT_CONSECUTIVE_DETECTION : boolean := false
     );
     port (
         ----------------------------------------------------------------------------
@@ -114,7 +115,8 @@ architecture behavioral of ddr3_ctrl_wb is
         generic (
            g_BYTE_ADDR_WIDTH : integer := 29;
            g_MASK_SIZE       : integer := 8;
-           g_DATA_PORT_SIZE  : integer := 64
+           g_DATA_PORT_SIZE  : integer := 64;
+           g_NOT_CONSECUTIVE_DETECTION : boolean := false
         );
         Port ( 
         
@@ -153,7 +155,8 @@ architecture behavioral of ddr3_ctrl_wb is
         generic (
            g_BYTE_ADDR_WIDTH : integer := 29;
            g_MASK_SIZE       : integer := 8;
-           g_DATA_PORT_SIZE  : integer := 64
+           g_DATA_PORT_SIZE  : integer := 64;
+           g_NOT_CONSECUTIVE_DETECTION : boolean := false
         );
         Port ( 
         
@@ -205,11 +208,11 @@ architecture behavioral of ddr3_ctrl_wb is
     
     --------------------------------------
     -- Constants
-    --------------------------------------
-    --constant c_write_wait_time : unsigned(7 downto 0) := TO_UNSIGNED(15, 8);
-    --constant c_read_wait_time : unsigned(7 downto 0) := TO_UNSIGNED(15, 8);
-    
+    --------------------------------------   
     constant c_register_shift_size : integer := 8;
+    constant c_wb_wr0_nb : integer := 0;
+    constant c_wb_wr1_nb : integer := 1;
+    constant c_wb_rd0_nb : integer := 2;
     type data_array is array (0 to c_register_shift_size-1) of std_logic_vector(g_DATA_PORT_SIZE - 1 downto 0);
     type mask_array is array (0 to c_register_shift_size-1) of std_logic_vector(g_MASK_SIZE - 1 downto 0);
     type addr_array is array (0 to c_register_shift_size-1) of std_logic_vector(g_BYTE_ADDR_WIDTH - 1 downto 0);
@@ -219,6 +222,7 @@ architecture behavioral of ddr3_ctrl_wb is
     -- Signals
     --------------------------------------
     signal rst_s : std_logic;
+    signal rr_rst_s : std_logic;
 
     signal wb_sel_s   : std_logic_vector(g_MASK_SIZE - 1 downto 0);
     signal wb_cyc_s   : std_logic;
@@ -272,6 +276,7 @@ architecture behavioral of ddr3_ctrl_wb is
     
 begin
     rst_s <= not rst_n_i;
+    rr_rst_s <= rst_s or (not ddr_rdy_i) or (not ddr_wdf_rdy_i);
     
     ddr_sr_req_o                <= '0';
     ddr_ref_req_o               <= '0';
@@ -305,18 +310,23 @@ begin
     -- Wishbone ack and stall
     --------------------------------------    
     
-    wb_ack_o <= wb_wr_ack_s or wb1_wr_ack_s or wb_rd_ack_s;
-    wb_stall_o <= wb_wr_stall_s or wb1_wr_stall_s or wb_rd_stall_s;
+    wb_ack_o <= wb_wr_ack_s or wb_rd_ack_s;
+    wb_stall_o <= wb_wr_stall_s or wb_rd_stall_s;
+
+    wb1_ack_o <= wb1_wr_ack_s;
+    wb1_stall_o <= wb1_wr_stall_s;
 
     --------------------------------------
     -- Wishbone write
     --------------------------------------    
 
+
     ddr3_write_core_cmp0:ddr3_write_core
         generic map (
            g_BYTE_ADDR_WIDTH => g_BYTE_ADDR_WIDTH,
            g_MASK_SIZE       => g_MASK_SIZE,
-           g_DATA_PORT_SIZE  => g_DATA_PORT_SIZE
+           g_DATA_PORT_SIZE  => g_DATA_PORT_SIZE,
+           g_NOT_CONSECUTIVE_DETECTION => g_NOT_CONSECUTIVE_DETECTION
         )
         Port map ( 
         
@@ -346,15 +356,16 @@ begin
                ddr_wdf_rdy_i  => ddr_wdf_rdy_i,
                ddr_ui_clk_i   => ddr_ui_clk_i,
               
-               ddr_req_o      => arb_req_s(0),         
-               ddr_gnt_i      => arb_gnt_s(0)
+               ddr_req_o      => arb_req_s(c_wb_wr0_nb),         
+               ddr_gnt_i      => arb_gnt_s(c_wb_wr0_nb)
      );    
 
     ddr3_write_core_cmp1:ddr3_write_core
         generic map (
            g_BYTE_ADDR_WIDTH => g_BYTE_ADDR_WIDTH,
            g_MASK_SIZE       => g_MASK_SIZE,
-           g_DATA_PORT_SIZE  => g_DATA_PORT_SIZE
+           g_DATA_PORT_SIZE  => g_DATA_PORT_SIZE,
+           g_NOT_CONSECUTIVE_DETECTION => g_NOT_CONSECUTIVE_DETECTION
         )
         Port map ( 
         
@@ -369,7 +380,7 @@ begin
                wb_we_i => wb1_we_i,
                wb_adr_i => wb1_addr_i,
                wb_dat_i => wb1_data_i,
-               wb_dat_o => open,
+               wb_dat_o => wb1_data_o,
                wb_ack_o => wb1_wr_ack_s,
                wb_stall_o => wb1_wr_stall_s,
                
@@ -384,8 +395,8 @@ begin
                ddr_wdf_rdy_i  => ddr_wdf_rdy_i,
                ddr_ui_clk_i   => ddr_ui_clk_i,
               
-               ddr_req_o      => arb_req_s(2),         
-               ddr_gnt_i      => arb_gnt_s(2)
+               ddr_req_o      => arb_req_s(c_wb_wr1_nb),         
+               ddr_gnt_i      => arb_gnt_s(c_wb_wr1_nb)
      ); 
     
     
@@ -399,7 +410,8 @@ begin
         generic map (
            g_BYTE_ADDR_WIDTH => g_BYTE_ADDR_WIDTH,
            g_MASK_SIZE       => g_MASK_SIZE,
-           g_DATA_PORT_SIZE  => g_DATA_PORT_SIZE
+           g_DATA_PORT_SIZE  => g_DATA_PORT_SIZE,
+           g_NOT_CONSECUTIVE_DETECTION => g_NOT_CONSECUTIVE_DETECTION
         )
         Port map ( 
         
@@ -427,8 +439,8 @@ begin
                ddr_rdy_i      => ddr_rdy_i,
                ddr_ui_clk_i   => ddr_ui_clk_i,
               
-               ddr_req_o      => arb_req_s(1),         
-               ddr_gnt_i      => arb_gnt_s(1)
+               ddr_req_o      => arb_req_s(c_wb_rd0_nb),         
+               ddr_gnt_i      => arb_gnt_s(c_wb_rd0_nb)
                );  
     
     --------------------------------------
@@ -436,14 +448,14 @@ begin
     --------------------------------------
     
     
-    ddr_addr_o <= ddr_wr_addr_s when arb_gnt_s(0) = '1' else
-                  ddr_rd_addr_s when arb_gnt_s(1) = '1' else
-                  ddr1_wr_addr_s when arb_gnt_s(2) = '1' else
+    ddr_addr_o <= ddr_wr_addr_s when arb_gnt_s(c_wb_wr0_nb) = '1' else
+                  ddr_rd_addr_s when arb_gnt_s(c_wb_rd0_nb) = '1' else
+                  ddr1_wr_addr_s when arb_gnt_s(c_wb_wr1_nb) = '1' else
                   (others => '0');
      
-    ddr_cmd_o   <= ddr_wr_cmd_s when arb_gnt_s(0) = '1' else
-                   ddr_rd_cmd_s when arb_gnt_s(1) = '1' else
-                   ddr1_wr_cmd_s when arb_gnt_s(2) = '1' else
+    ddr_cmd_o   <= ddr_wr_cmd_s when arb_gnt_s(c_wb_wr0_nb) = '1' else
+                   ddr_rd_cmd_s when arb_gnt_s(c_wb_rd0_nb) = '1' else
+                   ddr1_wr_cmd_s when arb_gnt_s(c_wb_wr1_nb) = '1' else
                    (others => '0');
     ddr_cmd_en_o<= ddr_wr_cmd_en_s or ddr1_wr_cmd_en_s or ddr_rd_cmd_en_s;
 
@@ -454,7 +466,7 @@ begin
         port map (
             -- sys connect
             clk_i => ddr_ui_clk_i,
-            rst_i => rst_s,
+            rst_i => rr_rst_s,
             
             -- requests
             req_i => arb_req_s,
@@ -466,13 +478,13 @@ begin
     --------------------------------------
     -- DDR Data out
     --------------------------------------
-    ddr_wdf_data_o <= ddr_wdf_data_s when arb_gnt_s(0) = '1' else
+    ddr_wdf_data_o <= ddr_wdf_data_s when arb_gnt_s(c_wb_wr0_nb) = '1' else
                       ddr1_wdf_data_s;
-    ddr_wdf_end_o <= ddr_wdf_end_s when arb_gnt_s(0) = '1' else
+    ddr_wdf_end_o <= ddr_wdf_end_s when arb_gnt_s(c_wb_wr0_nb) = '1' else
                      ddr1_wdf_end_s;
-    ddr_wdf_mask_o <= ddr_wdf_mask_s when arb_gnt_s(0) = '1' else
+    ddr_wdf_mask_o <= ddr_wdf_mask_s when arb_gnt_s(c_wb_wr0_nb) = '1' else
                       ddr1_wdf_mask_s;
-    ddr_wdf_wren_o <= ddr_wdf_wren_s when arb_gnt_s(0) = '1' else
+    ddr_wdf_wren_o <= ddr_wdf_wren_s when arb_gnt_s(c_wb_wr0_nb) = '1' else
                       ddr1_wdf_wren_s;
     
     --------------------------------------

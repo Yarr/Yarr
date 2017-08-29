@@ -1,0 +1,16 @@
+#*.bit
+*.log
+*.jou
+*.xpr
+*.tcl
+*.cache
+*.hw
+*.ip_user_files
+*.runs
+*.sim
+*.srcs
+.ip.py.swp
+bitstream
+par
+project
+synthesize

@@ -191,6 +191,12 @@ architecture Behavioral of top_level is
     END COMPONENT;
     
     component app is
+        Generic(
+		DEBUG_C : std_logic_vector(3 downto 0) := "1111";
+		address_mask_c : STD_LOGIC_VECTOR(32-1 downto 0) := X"000FFFFF";
+		DMA_MEMORY_SELECTED : string := "DDR3" -- DDR3, BRAM, DEMUX
+        );
+
         Port ( clk_i : in STD_LOGIC;
                sys_clk_n_i : IN STD_LOGIC;
                sys_clk_p_i : IN STD_LOGIC;
@@ -265,7 +271,7 @@ architecture Behavioral of top_level is
                 -- LVDS buffer
                 pwdn_l            : out std_logic_vector(2 downto 0);
                 -- GPIO
-                io              : inout std_logic_vector(2 downto 0);
+                --io              : inout std_logic_vector(2 downto 0);
                 -- FE-I4
                 fe_clk_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
                 fe_clk_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
@@ -425,6 +431,11 @@ begin
       );
       
       app_0:app
+      Generic map(
+	DEBUG_C => "1110",
+	address_mask_c => X"000FFFFF",
+	DMA_MEMORY_SELECTED => "DDR3" -- DDR3, BRAM, DEMUX 
+      )
       port map(
         clk_i => aclk,
         sys_clk_n_i => clk200_n,
@@ -497,7 +508,7 @@ begin
         -- LVDS buffer
         pwdn_l            => pwdn_l,
         -- GPIO
-        io                => io,
+        --io                => io,
         -- FE-I4
         fe_clk_p          => fe_clk_p,
         fe_clk_n          => fe_clk_n,
