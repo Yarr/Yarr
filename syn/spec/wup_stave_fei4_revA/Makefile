@@ -29,6 +29,9 @@ endif
 #target for performing local synthesis
 all: bitstream
 
+SOURCES_UCFFile := \
+wup_stave_fei4_revA.ucf
+
 SOURCES_NGCFile := \
 ../../../ip-cores/spartan6/l2p_fifo.ngc \
 ../../../ip-cores/spartan6/fifo_64x512.ngc \
@@ -109,13 +112,10 @@ board_pkg.vhd \
 ../../../rtl/spartan6/rx-core/decode_8b10b/decode_8b10b_rtl.vhd \
 ../../../rtl/common/rr_arbiter.vhd
 
-SOURCES_UCFFile := \
-wup_stave_fei4_revA.ucf
-
 files.tcl:
+		@$(foreach sourcefile, $(SOURCES_UCFFile), echo "xfile add $(sourcefile)" >> $@ &)
 		@$(foreach sourcefile, $(SOURCES_NGCFile), echo "xfile add $(sourcefile)" >> $@ &)
 		@$(foreach sourcefile, $(SOURCES_VHDLFile), echo "xfile add $(sourcefile)" >> $@ &)
-		@$(foreach sourcefile, $(SOURCES_UCFFile), echo "xfile add $(sourcefile)" >> $@ &)
 
 SYN_PRE_PROJECT_CMD := 
 SYN_POST_PROJECT_CMD := 
