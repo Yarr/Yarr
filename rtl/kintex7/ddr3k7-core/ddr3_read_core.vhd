@@ -1,13 +1,13 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
+-- Company: LBNL
+-- Engineer: Arnaud Sautaux
 -- 
 -- Create Date: 07/27/2017 10:50:41 AM
--- Design Name: 
+-- Design Name: ddr3k7-core
 -- Module Name: ddr3_read_core - Behavioral
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
+-- Project Name: YARR
+-- Target Devices: xc7k160t
+-- Tool Versions: Vivado v2016.2 (64 bit)
 -- Description: 
 -- 
 -- Dependencies: 
@@ -21,16 +21,7 @@
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
-
--- Uncomment the following library declaration if using
--- arithmetic functions with Signed or Unsigned values
 use IEEE.NUMERIC_STD.ALL;
-
--- Uncomment the following library declaration if instantiating
--- any Xilinx leaf cells in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
-
 
 entity ddr3_read_core is
     generic (
@@ -159,7 +150,7 @@ architecture Behavioral of ddr3_read_core is
     signal wb_rd_addr_ref_a : addr_array;
     
     signal wb_rd_shifting_s : std_logic;
-    signal wb_rd_match_s : std_logic_vector(c_register_shift_size-1 downto 0);
+    signal wb_rd_aligned_s : std_logic_vector(c_register_shift_size-1 downto 0);
     signal wb_rd_row_a : row_array;
     signal wb_rd_global_row_s : std_logic_vector(c_register_shift_size-1 downto 0); 
     signal wb_rd_first_row_s : std_logic_vector(c_register_shift_size-1 downto 0);
@@ -261,7 +252,6 @@ begin
         
     elsif rising_edge(wb_clk_i) then
         wb_rd_shift_flush_1_s <= wb_rd_shift_flush_s;
-        -- Register Shift
         if (wb_cyc_s = '1' and wb_stb_s = '1' and wb_we_s = '0') then
             wb_read_wait_cnt <= c_read_wait_time;
         else
@@ -275,8 +265,6 @@ begin
         end if;
         
         
-        -- Erase the data sent to the FIFO
-        --if(wb_rd_shift_flush_1_s = '1') then
         if(wb_rd_shift_flush_s = '1') then
             wb_read_wait_cnt <= c_read_wait_time;
         end if;
@@ -318,17 +306,17 @@ begin
                         '1' when wb_read_wait_cnt = 0 else
                         '0';
     
-    wb_rd_global_row_s <= wb_rd_match_s and wb_rd_valid_shift_s;
+    wb_rd_global_row_s <= wb_rd_aligned_s and wb_rd_valid_shift_s;
     wb_rd_flush_v_s <= wb_rd_first_row_s;
     
 
 
     
     rd_match_g:for i in 0 to c_register_shift_size-1 generate
-        wb_rd_match_s(i) <= '1' when wb_rd_addr_shift_a(i)(2 downto 0) = std_logic_vector(to_unsigned(i,3)) else
+        wb_rd_aligned_s(i) <= '1' when wb_rd_addr_shift_a(i)(2 downto 0) = std_logic_vector(to_unsigned(i,3)) else
                             '0';        
         rd_row_g:for j in 0 to c_register_shift_size-1 generate
-            wb_rd_row_a(i)(j) <= '1' when wb_rd_addr_shift_a(i)(g_BYTE_ADDR_WIDTH-1 downto 3) = wb_rd_addr_shift_a(j)(g_BYTE_ADDR_WIDTH-1 downto 3) and wb_rd_match_s(i) = '1' and wb_rd_match_s(j) = '1' and wb_rd_valid_shift_s(i) = '1' and wb_rd_valid_shift_s(j) = '1' else
+            wb_rd_row_a(i)(j) <= '1' when wb_rd_addr_shift_a(i)(g_BYTE_ADDR_WIDTH-1 downto 3) = wb_rd_addr_shift_a(j)(g_BYTE_ADDR_WIDTH-1 downto 3) and wb_rd_aligned_s(i) = '1' and wb_rd_aligned_s(j) = '1' and wb_rd_valid_shift_s(i) = '1' and wb_rd_valid_shift_s(j) = '1' else
                                  '0';
         end generate;
 
@@ -404,11 +392,6 @@ begin
         
      end process;
  
-    --fifo_wb_rd_addr_wr_s <= wb_rd_shift_flush_s;
-    --fifo_wb_rd_mask_wr_s <= wb_rd_shift_flush_s;   
-    
-    
-    --fifo_wb_rd_mask_din_s <= fifo_wb_rd_addr_s & wb_rd_valid_shift_s;
     
     
     fifo_wb_rd_data_rd_s <= '1' when wb_ack_shift_s(c_register_shift_size-1 downto 1) = "0000000" and fifo_wb_rd_mask_empty_s = '0' and fifo_wb_rd_data_empty_s = '0' else
