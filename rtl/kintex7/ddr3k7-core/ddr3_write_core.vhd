@@ -1,13 +1,13 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
+-- Company: LBNL
+-- Engineer: Arnaud Sautaux
 -- 
 -- Create Date: 07/27/2017 10:50:41 AM
--- Design Name: 
+-- Design Name: ddr3k7-core
 -- Module Name: ddr3_write_core - Behavioral
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
+-- Project Name: YARR
+-- Target Devices: xc7k160t
+-- Tool Versions: Vivado v2016.2 (64 bit)
 -- Description: 
 -- 
 -- Dependencies: 
@@ -18,19 +18,9 @@
 -- 
 ----------------------------------------------------------------------------------
 
-
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
-
--- Uncomment the following library declaration if using
--- arithmetic functions with Signed or Unsigned values
 use IEEE.NUMERIC_STD.ALL;
-
--- Uncomment the following library declaration if instantiating
--- any Xilinx leaf cells in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
-
 
 entity ddr3_write_core is
     generic (
@@ -131,7 +121,7 @@ architecture Behavioral of ddr3_write_core is
 
     
     signal wb_wr_shifting_s : std_logic;
-    signal wb_wr_match_s : std_logic_vector(c_register_shift_size-1 downto 0);
+    signal wb_wr_aligned : std_logic_vector(c_register_shift_size-1 downto 0);
     signal wb_wr_row_a : row_array;
     signal wb_wr_global_row_s : std_logic_vector(c_register_shift_size-1 downto 0); 
     signal wb_wr_first_row_s : std_logic_vector(c_register_shift_size-1 downto 0);
@@ -196,7 +186,7 @@ begin
     wb_stall_o <= wb_stall_s;
 
     --------------------------------------
-    -- Wishbone write
+    -- Wishbone write process
     --------------------------------------
     
     p_wb_write : process (wb_clk_i, rst_n_i)
@@ -232,7 +222,6 @@ begin
                  end if;         
             end if;
             
-            -- Erase the data sent to the FIFO
             if(wb_wr_shift_flush_s = '1') then
                 wb_write_wait_cnt <= c_write_wait_time;
             end if;
@@ -246,7 +235,7 @@ begin
         
     end process p_wb_write;
 
-    p_wb_write_rtl : process (wb_write_wait_cnt,wb_wr_addr_shift_a,wb_wr_valid_shift_s,wb_wr_shift_flush_s,wb_wr_first_row_s,wb_wr_row_a,wb_wr_match_s,wb_wr_global_row_s)
+    p_wb_write_rtl : process (wb_write_wait_cnt,wb_wr_addr_shift_a,wb_wr_valid_shift_s,wb_wr_shift_flush_s,wb_wr_first_row_s,wb_wr_row_a,wb_wr_aligned,wb_wr_global_row_s)
     begin
 
         fifo_wb_wr_addr_s <= (others => '0');
@@ -310,7 +299,7 @@ begin
                         '1' when wb_write_wait_cnt = 0 else
                         '0';
     
-    wb_wr_global_row_s <= wb_wr_match_s and wb_wr_valid_shift_s;
+    wb_wr_global_row_s <= wb_wr_aligned and wb_wr_valid_shift_s;
     wb_wr_flush_v_s <= wb_wr_first_row_s;
     
     wb_wr_shift_flush_s <= '1' when wb_wr_flush_v_s /= (wb_wr_flush_v_s'range => '0') else
@@ -318,17 +307,16 @@ begin
 
     
     wr_mask_match_g:for i in 0 to c_register_shift_size-1 generate
-        wb_wr_match_s(i) <= '1' when wb_wr_addr_shift_a(i)(2 downto 0) = std_logic_vector(to_unsigned(i,3)) else
+        wb_wr_aligned(i) <= '1' when wb_wr_addr_shift_a(i)(2 downto 0) = std_logic_vector(to_unsigned(i,3)) else
                             '0';        
         wr_row_g:for j in 0 to c_register_shift_size-1 generate
-            wb_wr_row_a(i)(j) <= '1' when wb_wr_addr_shift_a(i)(g_BYTE_ADDR_WIDTH-1 downto 3) = wb_wr_addr_shift_a(j)(g_BYTE_ADDR_WIDTH-1 downto 3) and wb_wr_match_s(i) = '1' and wb_wr_match_s(j) = '1' and wb_wr_valid_shift_s(i) = '1' and wb_wr_valid_shift_s(j) = '1' else
+            wb_wr_row_a(i)(j) <= '1' when wb_wr_addr_shift_a(i)(g_BYTE_ADDR_WIDTH-1 downto 3) = wb_wr_addr_shift_a(j)(g_BYTE_ADDR_WIDTH-1 downto 3) and wb_wr_aligned(i) = '1' and wb_wr_aligned(j) = '1' and wb_wr_valid_shift_s(i) = '1' and wb_wr_valid_shift_s(j) = '1' else
                                  '0';
         end generate;
         fifo_wb_wr_mask_s((i)*8+7 downto (i)*8)   <= wb_wr_mask_shift_a(i) when wb_wr_flush_v_s(i) = '1' else (others=>'0');
     end generate;
     
     
-    -- No Little endian conversion
     wb_wr_data_shift_s <= wb_wr_data_shift_a(7) & 
                           wb_wr_data_shift_a(6) & 
                           wb_wr_data_shift_a(5) & 

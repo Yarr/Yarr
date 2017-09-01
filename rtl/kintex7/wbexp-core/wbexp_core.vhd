@@ -1,39 +1,22 @@
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
--- Wishbone express core
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
---! @file
---! @brief
---! Package for components declaration and core wide constants.
---! Kintex7 FPGAs version.
---------------------------------------------------------------------------------
---! @version
---! 0.1 | mc | 01.08.2017 | File creation and Doxygen comments
---!
---! @author
---! as : Arnaud Sautaux
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
--- GNU GENERAL PUBLIC LICENSE
---------------------------------------------------------------------------------
--- This file is part of Wishbone Express Core.
---
--- Wishbone Express Core is free software: you can redistribute it and/or modify
--- it under the terms of the GNU General Public License as published by
--- the Free Software Foundation, either version 3 of the License, or
--- (at your option) any later version.
---
--- Wishbone Express Core is distributed in the hope that it will be useful,
--- but WITHOUT ANY WARRANTY; without even the implied warranty of
--- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
--- GNU General Public License for more details.
---
--- You should have received a copy of the GNU General Public License
--- along with Wishbone Express Core.  If not, see <http://www.gnu.org/licenses/>.
---------------------------------------------------------------------------------
-
+----------------------------------------------------------------------------------
+-- Company: LBNL
+-- Engineer: Arnaud Sautaux
+-- 
+-- Create Date: 07/27/2017 10:50:41 AM
+-- Design Name: Wishbone express core
+-- Module Name: wshexp_core - Behavioral
+-- Project Name: YARR
+-- Target Devices: 
+-- Tool Versions: Vivado v2016.2 (64 bit)
+-- Description: 
+-- Wishbone express top level
+-- Dependencies:
+-- wbexp_core_pkg
+-- Revision:
+-- Revision 0.01 - File Created
+-- Additional Comments:
+-- 
+----------------------------------------------------------------------------------
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;

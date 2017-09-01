@@ -1,6 +1,11 @@
 # Yarr-fw
 This firmware is made for the XpressK7 board. This document will explain step by step how to get the firmware working and launch testing programs.
 
+## Cores docs
+
+* Wishbone-Express core : (https://github.com/Yarr/Yarr-fw/blob/master/rtl/kintex7/wbexp-core/README.md)
+* DDR3K7 core : (https://github.com/Yarr/Yarr-fw/tree/master/rtl/kintex7/ddr3k7-core/README.md)
+
 ## SPEC
 Firmware bit-files for the SPEC card can be found in `syn/spec/`
 
@@ -31,22 +36,35 @@ Then shut down the computer. After the next boot firmware is ready to use.
 
 ### Generate the bitfile
 Move in the folder where you will generate the bitfile.
-`$ cd Yarr-fw/syn/xpressk7/ddr3_revA/`
+> Before generating any bitfile, generate the ddr3_octa_fei4_revA-160 version bitfile. Otherwise You would get errors because the IP are designed for the FPGA xc7k160. Then you can generate any bitfile.
+`$ cd Yarr-fw/syn/xpressk7/bram_octa_fei4_revA-160`
 To launch the synthesis you just need to launch make.
 `$ make`
 Prepare a coffee, it will last around 15 minutes to synthesize all the project. 
 
 
 ### Core debugging
-To activate the debug cores you need to modify a constant in "app.vhd".
+To activate the debug cores you need to modify a constant in "bram_yarr.vhd" or "ddr3_yarr.vhd".
 `$ vim rtl/kintex7/app.vhd`
-At the line 120, you see a constant you can change to "000101". Each bit of this constant belongs to a debug core. You can activate any debug core as you want. Except the MSB bit ("1XXXXX") which belongs to DDR3 IP core user bus which works only if you sythesize the DDR3 version of the firmware.
+At the line 432, you see a constant you can change to "0110". Each bit of this constant belongs to a debug core. You can activate any debug core as you want. Except the MSB bit ("1XXX") which belongs to DDR3 IP core user bus which works only if you sythesize the DDR3 version of the firmware.
 ```VHDL
-    constant DEBUG_C : std_logic_vector(5 downto 0) := "000000";
+      app_0:app
+      Generic map(
+        DEBUG_C => "0000", 
+        address_mask_c => X"000FFFFF",
+        DMA_MEMORY_SELECTED => "BRAM" -- DDR3, BRAM 
+        )
+
 ```
 Above no debug cores are activated. Below the 1st and 3rd debug cores are activated.
 ```VHDL
-    constant DEBUG_C : std_logic_vector(5 downto 0) := "000101";
+      app_0:app
+      Generic map(
+        DEBUG_C => "0110", 
+        address_mask_c => X"000FFFFF",
+        DMA_MEMORY_SELECTED => "BRAM" -- DDR3, BRAM 
+        )
+
 ```
 After modifying, launch the synthesis. It will last a while.
 `$ cd syn/xpressk7/bram_revA/`
@@ -58,7 +76,7 @@ by launching the python script in the "script" folder.
 ```bash
 $ cd script
 $ python debug.py 
-Debug file found : /home/asautaux/Documents/master/Yarr-fw/syn/xpressk7/bram_revA/yarr.runs/impl_1/debug_nets.ltx
+Debug file found : /home/asautaux/Documents/master/Yarr-fw/syn/xpressk7/bram_quad_fei4_revA-325/debug_nets.ltx
 Will you debug with this file [Y/n] ?Y
 ```
 You can launch the debug interace, going into script, then launching the debug script. At this point you can choose the debug file by pressing the belonging number. If there is only debug file you need to press ‘y’. Vivado will be launched displaying the debug interface.

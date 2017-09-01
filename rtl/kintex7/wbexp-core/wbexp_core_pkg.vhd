@@ -1,43 +1,28 @@
---==============================================================================
---! @file wbexp_core.vhd
---==============================================================================
+---------------------------------------------------------------------------------- 
+-- Company: LBNL 
+-- Engineer: Arnaud Sautaux 
+--  
+-- Create Date: 07/27/2017 10:50:41 AM 
+-- Design Name: Wishbone express core 
+-- Module Name: wshexp_core - Behavioral 
+-- Project Name: YARR 
+-- Target Devices:  
+-- Tool Versions: Vivado v2016.2 (64 bit) 
+-- Description:  
+-- Wishbone express package
+-- Dependencies: 
+-- Revision: 
+-- Revision 0.01 - File Created 
+-- Additional Comments: 
+--  
+---------------------------------------------------------------------------------- 
 
---! Standard library
+
+
 library IEEE;
---! Standard packages
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
 
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
--- Package for gn4124 core
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
---! @brief
---! Package for components declaration and core wide constants.
---! Kintex7 FPGAs version.
---------------------------------------------------------------------------------
---! @version
---! 0.1 | mc | 01.08.2017 | File creation and Doxygen comments
---!
---! @author
---! as : Arnaud Sautaux
---! mc : Matthieu Cattin, CERN (BE-CO-HT)
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
--- GNU LESSER GENERAL PUBLIC LICENSE
---------------------------------------------------------------------------------
--- This source file is free software; you can redistribute it and/or modify it
--- under the terms of the GNU Lesser General Public License as published by the
--- Free Software Foundation; either version 2.1 of the License, or (at your
--- option) any later version. This source is distributed in the hope that it
--- will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
--- of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
--- See the GNU Lesser General Public License for more details. You should have
--- received a copy of the GNU Lesser General Public License along with this
--- source; if not, download it from http://www.gnu.org/licenses/lgpl-2.1.html
---------------------------------------------------------------------------------
 
 
 --==============================================================================

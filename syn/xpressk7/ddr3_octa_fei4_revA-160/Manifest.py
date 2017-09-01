@@ -1,4 +1,4 @@
-# To list file
+#rr-fw/syn/xpressk7/ddr3_octa_fei4_revA-160 To list file
 # ls -1 | xargs -I % echo \"%\",
 
 

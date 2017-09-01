@@ -34,13 +34,12 @@
 -- last changes: 23-09-2010 (mcattin) Add FF on data path and
 --                                    change valid request logic
 -- 26.02.2014 (theim) Changed priority order (swapped LDM <-> PDM)
+-- 20.12.2016 (astaux) Apdapted for AXI-Stream bus
 -------------------------------------------------------------------------------
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
---use work.gn4124_core_pkg.all;
---use work.common_pkg.all;
 
 
 entity l2p_arbiter is

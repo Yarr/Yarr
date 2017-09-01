@@ -39,7 +39,7 @@ When the core receive Memory write and read request with a double word payload, 
 | wb_cyc_o    | Read or write strobe   |
 | wb_dat_i    | Data in                |
 | wb_ack_i    | Acknowledge            |
-| wb_stall_i  | for pipelined Wishbone |
+| wb_stall_i  | For pipelined Wishbone |
 
 ### DMA wishbone registers interface
 This is wishbone slave interface connected to registers which set the pipelined wishbone transfer performed by the DMA masters.
