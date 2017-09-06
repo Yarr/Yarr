@@ -1,5 +1,5 @@
 # Yarr-fw
-This firmware is made for the XpressK7 board. This document will explain step by step how to get the firmware working and launch testing programs.
+This firmware is made for the XpressK7 and the SPEC board. This document will explain step by step how to get the firmware working and launch testing programs.
 
 ## Cores docs
 
@@ -19,7 +19,7 @@ $ bin/program path/to/file/spec.bit
 The XpressK7 card requires an external programmer to be connected via the JTAG connector.
 Because of this you will need an installation of Xilinx Vivado (or at least the Xilinx programming software) and source their script `$ source /opt/Xilinx/Vivado/2016.2/settings64.sh`
 
-### Write the bitfile into the flash memory
+### Write the bitfile into the flash memory and the FPGA
 Move in the folder where the script file are.
 `$ cd Yarr-fw/script/`
 Launch the script for flashing the memory. At this point you can choose the bitfile by pressing the belonging number. If there is only bitfile you need to press 'y'.
@@ -29,19 +29,30 @@ Several bit files found:
 0: /home/***/Yarr-fw/syn/xpressk7/ddr3_revA/yarr.runs/impl_1/top_level.bit
 1: /home/***/Yarr-fw/syn/xpressk7/bram_revA/yarr.runs/impl_1/top_level.bit
 ```
-The terminal will ask you if you want to flash the flash memory or the RAM. As you want a persistent system, press F for Flash.
-`Will you flash the RAM or the Flash [R/F] ?`
-Then shut down the computer. After the next boot firmware is ready to use.
+![functional diagram](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/board_on_board_leds.jpeg)
+
+The LEDs on the board should blink. If they don't, check the FMC/JTAG switch, press the configuration push button.
+
+![functional diagram](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/board_board_configuration_components.jpeg)
+
+Once the LEDs are blinking, reboot the computer. After the next boot firmware is ready to use.
 `$ sudo reboot`
+
+
+You can check if the PCIe communication works by typing the command below.
+```bash
+$ lspci | grep 7024
+01:00.0 Signal processing controller: Xilinx Corporation Device 7024
+```
 
 ### Generate the bitfile
 Move in the folder where you will generate the bitfile.
 > Before generating any bitfile, generate the ddr3_octa_fei4_revA-160 version bitfile. Otherwise You would get errors because the IP are designed for the FPGA xc7k160. Then you can generate any bitfile.
+
 `$ cd Yarr-fw/syn/xpressk7/bram_octa_fei4_revA-160`
 To launch the synthesis you just need to launch make.
 `$ make`
 Prepare a coffee, it will last around 15 minutes to synthesize all the project. 
-
 
 ### Core debugging
 To activate the debug cores you need to modify a constant in "bram_yarr.vhd" or "ddr3_yarr.vhd".
