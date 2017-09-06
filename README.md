@@ -29,11 +29,11 @@ Several bit files found:
 0: /home/***/Yarr-fw/syn/xpressk7/ddr3_revA/yarr.runs/impl_1/top_level.bit
 1: /home/***/Yarr-fw/syn/xpressk7/bram_revA/yarr.runs/impl_1/top_level.bit
 ```
-![functional diagram](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/board_on_board_leds.jpg)
+![Image not available](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/board_on_board_leds.jpg)
 
 The LEDs on the board should blink. If they don't, check the FMC/JTAG switch, press the configuration push button.
 
-![functional diagram](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/board_board_configuration_components.jpg)
+![Image not available](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/board_board_configuration_components.jpg)
 
 Once the LEDs are blinking, reboot the computer. After the next boot firmware is ready to use.
 `$ sudo reboot`
