@@ -29,10 +29,22 @@ Several bit files found:
 0: /home/***/Yarr-fw/syn/xpressk7/ddr3_revA/yarr.runs/impl_1/top_level.bit
 1: /home/***/Yarr-fw/syn/xpressk7/bram_revA/yarr.runs/impl_1/top_level.bit
 ```
-The terminal will ask you if you want to flash the flash memory or the RAM. As you want a persistent system, press F for Flash.
-`Will you flash the RAM or the Flash [R/F] ?`
-Then shut down the computer. After the next boot firmware is ready to use.
+![functional diagram](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/board_on_board_leds.jpeg)
+
+The LEDs on the board should blink. If they don't, check the FMC/JTAG switch, press the configuration push button.
+
+![functional diagram](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/board_board_configuration_components.jpeg)
+
+Once the LEDs are blinking, reboot the computer. After the next boot firmware is ready to use.
 `$ sudo reboot`
+
+
+You can check if the PCIe communication works by typing the command below.
+```bash
+$ lspci | grep 7024
+01:00.0 Signal processing controller: Xilinx Corporation Device 7024
+```
+
 
 ### Generate the bitfile
 Move in the folder where you will generate the bitfile.

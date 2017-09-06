@@ -1,14 +1,14 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
+-- Company: LBNL
+-- Engineer: Arnaud Sautaux
 -- 
 -- Create Date: 09/27/2016 04:46:45 PM
--- Design Name: 
+-- Design Name: YARR Top Level DDR3 version
 -- Module Name: top_level - Behavioral
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
+-- Project Name: YARR
+-- Target Devices: XC7k160T
+-- Tool Versions: Vivado v2016.2 (64-bit)
+-- Description: The YARR top level for the DDR3 version
 -- 
 -- Dependencies: 
 -- 
@@ -17,7 +17,6 @@
 -- Additional Comments:
 -- 
 ----------------------------------------------------------------------------------
-
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;

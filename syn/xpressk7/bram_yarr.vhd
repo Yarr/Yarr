@@ -1,14 +1,14 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
+-- Company: LBNL
+-- Engineer: Arnaud Sautaux
 -- 
 -- Create Date: 09/27/2016 04:46:45 PM
--- Design Name: 
+-- Design Name: YARR Top Level BRAM version
 -- Module Name: top_level - Behavioral
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
+-- Project Name: YARR
+-- Target Devices: XC7k160T
+-- Tool Versions: Vivado v2016.2 (64-bit)
+-- Description: The YARR top level for the BRAM version
 -- 
 -- Dependencies: 
 -- 
@@ -28,14 +28,6 @@ use UNISIM.VComponents.all;
 library work;
 use work.app_pkg.all;
 
--- Uncomment the following library declaration if using
--- arithmetic functions with Signed or Unsigned values
---use IEEE.NUMERIC_STD.ALL;
-
--- Uncomment the following library declaration if instantiating
--- any Xilinx leaf cells in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
 
 entity top_level is
     Port (  ---------------------------------------------------------------------------
