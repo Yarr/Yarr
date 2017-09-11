@@ -12,10 +12,12 @@ Two techniques are shwown in this domcument to flash the PROM and the FPGA. The 
 
 #### Step 1: Open the hadware manager
 First open Vivavo and then the Open Hardware Manger.
+
 ![Image not availabe](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/flash_step_1.png)
 
 #### Step 2: Memory Configuration file generation
 A memory configuration file has to be generated. So, click "Generate Memory Configuration File".
+
 ![Image not availabe](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/flash_step_2.png)
 
 A window will appear with a form to fill out. Fill the forms and chek the box as if it's shown in the the list and picture below.
@@ -34,41 +36,52 @@ A window will appear with a form to fill out. Fill the forms and chek the box as
  * Overwrite : depending if you want to overwrite an existing memory configuration file
 
 As soon as you have done this, clik Ok to generate the file.
+
 ![Image not availabe](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/flash_step_3.png)
 
 #### Step 3: Write the firmware into the PROM
 Connect the board to the JTAG debugger.
+
 ![Image not availabe](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/flash_step_4.png)
 
 Vivado needs information about the flash memory.
+
 ![Image not availabe](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/flash_step_6.png)
 
 Choose again the 28f00ap30b-bpi-x16 memory.
+
 ![Image not availabe](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/flash_step_7.png)
 
 Click ok to perform to program the PROM memory.
+
 ![Image not availabe](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/flash_step_8.png)
 
 Fill out the window with the same previous informations. The configuration file and PRM file were generated previously at the Memory Configuration File generation step. When you have done, click on the ok button.
+
 ![Image not availabe](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/flash_step_9.png)
 
 A window wil show the progress. It will last a while.
+
 ![Image not availabe](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/flash_step_10.png)
 
 ![Image not availabe](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/flash_step_11.png)
 
 #### Step 4: Tranfer the firmware to the FPGA
 Two solutions are available to transfer the firmware to the FPGA. First you can simply press the configuration button, to tranfer that from the PROM.!
+
 [Image not available](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/board_board_configuration_components.jpg)
 
 To see the debug, you need to refresh the device.
+
 ![Image not availabe](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/flash_step_12.png)
 
 Then you get an window like the one below.
+
 ![Image not availabe](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/flash_step_13.png)
 
 
 If you don't have an easy acces to the borad, you can program the FPGA from Vivado. It will send the bitfile from the JTAG programmer directly to the FPGA
+
 ![Image not availabe](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/flash_step_5.png)
 
 
@@ -87,6 +100,7 @@ Several bit files found:
 ```
 
 #### Step 2: Check if the firmware is running
+
 ![Image not availabe](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/board_on_board_leds.jpg)
 
 The LEDs on the board should blink. If they don't, check the FMC/JTAG switch, press the configuration push button.
