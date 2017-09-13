@@ -1,3 +1,11 @@
+#################################
+# Author: Arnaud Sautaux
+# Email: asautaux at lbl.gov
+# Project: Yarr
+# Description: Script that opens the Vivado debug interface
+# Comment: 
+################################
+
 import os
 import subprocess
 
@@ -11,7 +19,7 @@ project_path = os.getcwd()
 
 script_file.write(
 "######################################################\n" +
-"# Generated file to open the virtual logic analyyer\n" +
+"# Generated file to open the virtual logic analyzer\n" +
 "######################################################\n" +
 "\n\n" + 
 "#Run " + __file__+ " to generate this file\n\n")

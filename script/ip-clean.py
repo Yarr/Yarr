@@ -1,3 +1,12 @@
+#################################
+# Author: Arnaud Sautaux
+# Email: asautaux at lbl.gov
+# Project: Yarr
+# Description: Cleaning the ip folder
+# Comment: 
+################################
+
+
 import os
 import subprocess
 

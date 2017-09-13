@@ -1,3 +1,11 @@
+#################################
+# Author: Arnaud Sautaux
+# Email: asautaux at lbl.gov
+# Project: Yarr
+# Description: Script that generates bitfile
+# Comment: 
+################################
+
 import os
 import subprocess
 
