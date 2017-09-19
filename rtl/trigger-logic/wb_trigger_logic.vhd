@@ -117,7 +117,7 @@ architecture rtl of wb_trigger_logic is
     
     -- Local signals
 	signal trig_logic : std_logic_vector(31 downto 0); -- This should be 2^9=512 bits wide to support 9 bit trigger states
-	signal trig_mux_in : std_logic_vector(8 downto 0); 
+	signal trig_mux_sel : std_logic_vector(8 downto 0); 
     signal sync_ext_trig_i : std_logic_vector(3 downto 0);
     signal sync_ext_busy_i : std_logic;
     signal master_trig_t : std_logic;
@@ -191,7 +191,7 @@ begin
     master_busy_t <= sync_ext_busy_i or int_busy_i or busy_t;
 			    
     -- Trigger logic
-    trig_mux_in <= ( 0 => sync_ext_trig_i(0),
+    trig_mux_sel <= ( 0 => sync_ext_trig_i(0),
                      1 => sync_ext_trig_i(1),
                      2 => sync_ext_trig_i(2),
                      3 => sync_ext_trig_i(3),
@@ -202,7 +202,7 @@ begin
                      8 => eudet_trig_t,
                      others => '0' );
 				
-    master_trig_t <= trig_logic(to_integer(unsigned(trig_mux_in and trig_mask(8 downto 0))));
+    master_trig_t <= trig_logic(to_integer(unsigned(trig_mux_sel and trig_mask(8 downto 0))));
     
     -- find edge
     master_trig_sel_edge <= master_trig_pos_edge; -- TODO hardcoded
