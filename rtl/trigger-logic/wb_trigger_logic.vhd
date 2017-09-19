@@ -101,7 +101,7 @@ architecture rtl of wb_trigger_logic is
     signal C_DEADTIME : integer := 300; -- clk_i cycles
     
     -- Registers
-    signal trig_mask : std_logic_vector(8 downto 0);
+    signal trig_mask : std_logic_vector(31 downto 0);
     signal trig_tag_mode : std_logic_vector(7 downto 0);
     
     -- Local signals
@@ -142,7 +142,7 @@ begin
                 if (wb_we_i = '1') then
                     case (wb_adr_i(7 downto 0)) is
                         when x"00" =>
-                            trig_mask <= wb_dat_i(8 downto 0);
+                            trig_mask <= wb_dat_i;
                         when x"01" =>
                             trig_logic(to_integer(unsigned(wb_dat_i))) <= '1';
                         when x"02" =>
@@ -156,7 +156,7 @@ begin
                 else
                     case (wb_adr_i(7 downto 0)) is
                         when x"00" =>
-                            wb_dat_o <= "000000" & trig_mask;
+                            wb_dat_o <= trig_mask;
                         when others =>
                             wb_dat_o <= x"DEADBEEF";
                     end case;
@@ -189,7 +189,7 @@ begin
                       
 	 trigger: process(trig_logic, trig_mux_in)
 	 begin
-		master_trig_t <= trig_logic(to_integer(unsigned(trig_mux_in and trig_mask)));
+		master_trig_t <= trig_logic(to_integer(unsigned(trig_mux_in and trig_mask(8 downto 0))));
 	 end process trigger;
     
     -- find edge
