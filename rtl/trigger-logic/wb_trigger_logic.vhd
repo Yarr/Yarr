@@ -189,23 +189,20 @@ begin
     cmp_sync_busy: synchronizer port map(clk_i => clk_i, rst_n_i => rst_n_i, async_in => ext_busy_i, sync_out => sync_ext_busy_i);
     
     master_busy_t <= sync_ext_busy_i or int_busy_i or busy_t;
-	 
-	 -- Trigger logic
-	 trig_mux_in <= ( 0 => sync_ext_trig_i(0),
-                      1 => sync_ext_trig_i(1),
-                      2 => sync_ext_trig_i(2),
-                      3 => sync_ext_trig_i(3),
-                      4 => int_trig_i(0),
-                      5 => int_trig_i(1),
-                      6 => int_trig_i(2),
-                      7 => int_trig_i(3),
-                      8 => eudet_trig_t,
-                      others => '0' );
-                      
-	 trigger: process(trig_logic, trig_mux_in)
-	 begin
-		master_trig_t <= trig_logic(to_integer(unsigned(trig_mux_in and trig_mask(8 downto 0))));
-	 end process trigger;
+			    
+    -- Trigger logic
+    trig_mux_in <= ( 0 => sync_ext_trig_i(0),
+                     1 => sync_ext_trig_i(1),
+                     2 => sync_ext_trig_i(2),
+                     3 => sync_ext_trig_i(3),
+                     4 => int_trig_i(0),
+                     5 => int_trig_i(1),
+                     6 => int_trig_i(2),
+                     7 => int_trig_i(3),
+                     8 => eudet_trig_t,
+                     others => '0' );
+				
+    master_trig_t <= trig_logic(to_integer(unsigned(trig_mux_in and trig_mask(8 downto 0))));
     
     -- find edge
     master_trig_sel_edge <= master_trig_pos_edge; -- TODO hardcoded
