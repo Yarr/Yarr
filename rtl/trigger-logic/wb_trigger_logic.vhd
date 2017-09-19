@@ -9,21 +9,16 @@
 -- # Adress Map:
 -- #
 -- # 0x0 - Trigger mask (see trigger menu below)
--- #
--- # 0x1 - Trigger behavior:
--- #   [8:0]  = trigger state (see trigger menu below)
--- #   [31]   = assert to trigger on this state, deassert to veto
--- #   [30:9] = ignored
--- #   
+-- # 0x1 - Enable trigger state
+-- # 0x2 - Disable trigger state
 -- #   Trigger menu: 
 -- #     [3:0] ext, [7:4] int, [8] eudet
--- # 
--- # 0x2 - Trigger tag mode
+-- # 0x3 - Trigger tag mode
 -- #    0 = trigger counter
 -- #    1 = clk_i timestamp
 -- #    2 = eudet input
 -- #
--- # Eg. trigger_mask = 000000111, then send 1000...0011 to trigger on
+-- # Eg. 0x0 <- 000000111, then 0x1 <- 000000011 to trigger on
 -- #     coincidences of ext(0) and ext(1) but not if ext(2) is active,
 -- #     regardless of what's happening on all other channels
 
@@ -149,8 +144,10 @@ begin
                         when x"00" =>
                             trig_mask <= wb_dat_i(8 downto 0);
                         when x"01" =>
-                            trig_logic(to_integer(unsigned(wb_dat_i(8 downto 0)))) <= wb_dat_i(31);
+                            trig_logic(to_integer(unsigned(wb_dat_i))) <= '1';
                         when x"02" =>
+                            trig_logic(to_integer(unsigned(wb_dat_i))) <= '0';
+                        when x"03" =>
                             trig_tag_mode <= wb_dat_i(7 downto 0);
                         when x"FF" =>
                             local_reset <= '1'; -- Pulse local reset
@@ -159,9 +156,7 @@ begin
                 else
                     case (wb_adr_i(7 downto 0)) is
                         when x"00" =>
-                            wb_dat_o <= trig_mask;
-                        when x"01" =>
-                            wb_dat_o <= trig_logic;
+                            wb_dat_o <= "000000" & trig_mask;
                         when others =>
                             wb_dat_o <= x"DEADBEEF";
                     end case;
@@ -183,14 +178,14 @@ begin
 	 -- Trigger logic
 	 trig_mux_in <= ( 0 => sync_ext_trig_i(0),
                       1 => sync_ext_trig_i(1),
-					  2 => sync_ext_trig_i(2),
-					  3 => sync_ext_trig_i(3),
-					  4 => int_trig_i(0),
-					  5 => int_trig_i(1),
-					  6 => int_trig_i(2),
-					  7 => int_trig_i(3),
-					  8 => eudet_trig_t,
-					  others => '0' );
+                      2 => sync_ext_trig_i(2),
+                      3 => sync_ext_trig_i(3),
+                      4 => int_trig_i(0),
+                      5 => int_trig_i(1),
+                      6 => int_trig_i(2),
+                      7 => int_trig_i(3),
+                      8 => eudet_trig_t,
+                      others => '0' );
                       
 	 trigger: process(trig_logic, trig_mux_in)
 	 begin
