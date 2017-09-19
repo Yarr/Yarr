@@ -17,10 +17,13 @@
 -- #    0 = trigger counter
 -- #    1 = clk_i timestamp
 -- #    2 = eudet input
+-- # 0x4 - Trigger config (entire config word used as input to multiplexor)
 -- #
 -- # Eg. 0x0 <- 000000111, then 0x1 <- 000000011 to trigger on
 -- #     coincidences of ext(0) and ext(1) but not if ext(2) is active,
--- #     regardless of what's happening on all other channels
+-- #     regardless of what's happening on all other channels. Then
+-- #     0x1 <- 000000101 to also trigger on coincidences of ext(0)
+-- #     and ext(2) but not if ext(1) is active.
 
 library IEEE;
 use ieee.std_logic_1164.all;
@@ -149,6 +152,8 @@ begin
                             trig_logic(to_integer(unsigned(wb_dat_i))) <= '0';
                         when x"03" =>
                             trig_tag_mode <= wb_dat_i(7 downto 0);
+                        when x"04" =>
+		            trig_logic <= wb_dat_i;
                         when x"FF" =>
                             local_reset <= '1'; -- Pulse local reset
                         when others =>
@@ -157,6 +162,8 @@ begin
                     case (wb_adr_i(7 downto 0)) is
                         when x"00" =>
                             wb_dat_o <= trig_mask;
+			when x"04" =>
+			    wb_dat_0 <= trig_logic;
                         when others =>
                             wb_dat_o <= x"DEADBEEF";
                     end case;
