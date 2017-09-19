@@ -58,16 +58,16 @@ entity wb_trigger_logic is
         ext_trig_o : out std_logic;
         ext_busy_i : in std_logic;
         ext_busy_o : out std_logic;
-
-        -- To/From inside world
-        clk_i : in std_logic;
-        trig_tag : out std_logic_vector(31 downto 0)
 	    
-	-- Eudet TLU
+        -- Eudet TLU
         eudet_clk_o : out std_logic;
         eudet_busy_o : out std_logic;
         eudet_trig_i : in std_logic;
         eudet_rst_i : in std_logic;
+
+        -- To/From inside world
+        clk_i : in std_logic;
+        trig_tag : out std_logic_vector(31 downto 0)
     );
 end wb_trigger_logic;
 
@@ -159,7 +159,7 @@ begin
                         when x"03" =>
                             trig_tag_mode <= wb_dat_i(7 downto 0);
                         when x"04" =>
-		            trig_logic <= wb_dat_i;
+                            trig_logic <= wb_dat_i;
                         when x"FF" =>
                             local_reset <= '1'; -- Pulse local reset
                         when others =>
@@ -168,8 +168,8 @@ begin
                     case (wb_adr_i(7 downto 0)) is
                         when x"00" =>
                             wb_dat_o <= trig_mask;
-			when x"04" =>
-			    wb_dat_0 <= trig_logic;
+                        when x"04" =>
+                            wb_dat_o <= trig_logic;
                         when others =>
                             wb_dat_o <= x"DEADBEEF";
                     end case;
