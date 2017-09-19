@@ -19,11 +19,19 @@
 -- #    2 = eudet input
 -- # 0x4 - Trigger config (entire config word used as input to multiplexor)
 -- #
--- # Eg. 0x0 <- 000000111, then 0x1 <- 000000011 to trigger on
+-- # Eg. 
+-- #     0x0 <- 000000111 to mask all but channels ext(0), ext(1), and ext(2).
+-- # 
+-- #     Then 0x1 <- 000000011 to trigger on
 -- #     coincidences of ext(0) and ext(1) but not if ext(2) is active,
 -- #     regardless of what's happening on all other channels. Then
 -- #     0x1 <- 000000101 to also trigger on coincidences of ext(0)
 -- #     and ext(2) but not if ext(1) is active.
+-- #
+-- #     In this example, 0x1 <- 000000011 will set bit [3] of
+-- #     trig_logic, then 0x1 <- 000000101 sets the bit [5], so the
+-- #     same trigger config could have been achieved with:
+-- #     0x4 <- 000...0000101000
 
 library IEEE;
 use ieee.std_logic_1164.all;
