@@ -12,7 +12,8 @@
 -- # 0x1 - Enable trigger state
 -- # 0x2 - Disable trigger state
 -- #    Trigger mask/state is a 5 bit vector where each bit represents a trigger
--- #    input channel. 1 = enable(mask)/on(state), 0 = disable(mask)/off(state).
+-- #    input channel. Channel 4 is the eudet tlu. 1 = enable(mask)/on(state),
+-- #    0 = disable(mask)/off(state).
 -- # 0x3 - Trigger tag mode
 -- #    0 = trigger counter
 -- #    1 = clk_i timestamp
@@ -53,7 +54,7 @@ entity wb_trigger_logic is
 		wb_ack_o	: out std_logic;
         
         -- To/From outside world
-        ext_trig_i : in std_logic_vector(4 downto 0);
+        ext_trig_i : in std_logic_vector(3 downto 0);
         ext_trig_o : out std_logic;
         ext_busy_i : in std_logic;
         ext_busy_o : out std_logic;
@@ -61,6 +62,12 @@ entity wb_trigger_logic is
         -- To/From inside world
         clk_i : in std_logic;
         trig_tag : out std_logic_vector(31 downto 0)
+	    
+	-- Eudet TLU
+        eudet_clk_o : out std_logic;
+        eudet_busy_o : out std_logic;
+        eudet_trig_i : in std_logic;
+        eudet_rst_i : in std_logic;
     );
 end wb_trigger_logic;
 
@@ -77,6 +84,28 @@ architecture rtl of wb_trigger_logic is
             sync_out : out std_logic
         );
     end component;
+	
+    component eudet_tlu
+        port (
+            -- Sys connect
+            clk_i : IN std_logic;
+            rst_n_i : IN std_logic;
+            
+            -- Eudet signals
+            eudet_trig_i : IN std_logic;
+            eudet_rst_i : IN std_logic;
+            eudet_busy_o : OUT std_logic;
+            eudet_clk_o : OUT std_logic;
+
+            -- From logic
+            busy_i : IN std_logic;
+            simple_mode_i : IN std_logic;
+            -- To logic
+            trig_o : OUT std_logic;
+            rst_o : OUT std_logic;
+            trig_tag_o : OUT std_logic_vector(15 downto 0)
+        );
+    end component;
 
     signal C_DEADTIME : integer := 300; -- clk_i cycles
     
@@ -86,7 +115,7 @@ architecture rtl of wb_trigger_logic is
     
     -- Local signals
     signal trig_logic : std_logic_vector(31 downto 0);
-    signal sync_ext_trig_i : std_logic_vector(4 downto 0);
+    signal sync_ext_trig_i : std_logic_vector(3 downto 0);
     signal sync_ext_busy_i : std_logic;
     signal master_trig_t : std_logic;
     signal master_trig_d1 : std_logic;
@@ -95,6 +124,8 @@ architecture rtl of wb_trigger_logic is
     signal master_trig_pos_edge : std_logic;
     signal master_trig_neg_edge : std_logic;
     signal master_busy_t : std_logic;
+    signal eudet_trig_t : std_logic;
+    signal eudet_trig_tag_t : std_logic_vector(15 downto 0);
     signal trig_counter : unsigned (31 downto 0);
     signal timestamp_cnt : unsigned(31 downto 0);
     signal local_reset : std_logic;
@@ -148,7 +179,7 @@ begin
     end process wb_proc;
 
     -- Sync inputs
-    trig_inputs: for I in 0 to 4 generate
+    trig_inputs: for I in 0 to 3 generate
     begin
         cmp_sync_trig: synchronizer port map(clk_i => clk_i, rst_n_i => rst_n_i, async_in => ext_trig_i(I), sync_out => sync_ext_trig_i(I));
     end generate trig_inputs;
@@ -157,7 +188,7 @@ begin
     master_busy_t <= sync_ext_busy_i or busy_t;
 			    
     -- Trigger logic
-    master_trig_t <= trig_logic(to_integer(unsigned(sync_ext_trig_i and trig_mask(4 downto 0))));
+    master_trig_t <= trig_logic(to_integer(unsigned((eudet_trig_i & sync_ext_trig_i) and trig_mask(4 downto 0))));
     
     -- find edge
     master_trig_sel_edge <= master_trig_pos_edge; -- TODO hardcoded
@@ -246,4 +277,19 @@ begin
         end if;
     end process out_proc;
 
+    cmp_eudet_tlu: eudet_tlu
+    port map (
+        clk_i => clk_i,
+        rst_n_i => rst_n_i,
+        eudet_trig_i => eudet_trig_i,
+        eudet_rst_i => eudet_rst_i,
+        eudet_busy_o => eudet_busy_o,
+        eudet_clk_o => eudet_clk_o,
+        busy_i => '0',
+        simple_mode_i => '0',
+        trig_o => eudet_trig_t,
+        rst_o => open,
+        trig_tag_o => eudet_trig_tag_t
+    );
+		    
 end rtl;
