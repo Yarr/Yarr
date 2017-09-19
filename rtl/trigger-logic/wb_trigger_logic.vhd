@@ -150,6 +150,7 @@ begin
             wb_dat_o <= (others => '0');
             local_reset <= '0';
             if (wb_cyc_i = '1' and wb_stb_i = '1') then
+                wb_ack_o <= '1';
                 if (wb_we_i = '1') then
                     case (wb_adr_i(7 downto 0)) is
                         when x"00" =>
@@ -176,7 +177,6 @@ begin
                             wb_dat_o <= x"DEADBEEF";
                     end case;
                 end if;
-                wb_ack_o <= '1';
             end if;
         end if;
     end process wb_proc;
