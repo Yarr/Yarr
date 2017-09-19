@@ -7,11 +7,25 @@
 -- # Outputs are synchronous to clk_i
 -- ####################################
 -- # Adress Map:
--- # 0x0 - Trigger Mask [3:0] ext, [7:4] int, [8] eudet
--- # 0x1 - Trigger tag mode
+-- #
+-- # 0x0 - Trigger mask (see trigger menu below)
+-- #
+-- # 0x1 - Trigger behavior:
+-- #   [8:0]  = trigger state (see trigger menu below)
+-- #   [31]   = assert to trigger on this state, deassert to veto
+-- #   [30:9] = ignored
+-- #   
+-- #   Trigger menu: 
+-- #     [3:0] ext, [7:4] int, [8] eudet
+-- # 
+-- # 0x2 - Trigger tag mode
 -- #    0 = trigger counter
 -- #    1 = clk_i timestamp
 -- #    2 = eudet input
+-- #
+-- # Eg. trigger_mask = 000000111, then send 1000...0011 to trigger on
+-- #     coincidences of ext(0) and ext(1) but not if ext(2) is active,
+-- #     regardless of what's happening on all other channels
 
 library IEEE;
 use ieee.std_logic_1164.all;
@@ -92,10 +106,12 @@ architecture rtl of wb_trigger_logic is
     signal C_DEADTIME : integer := 300; -- clk_i cycles
     
     -- Registers
-    signal trig_mask : std_logic_vector(31 downto 0);
+    signal trig_mask : std_logic_vector(8 downto 0);
     signal trig_tag_mode : std_logic_vector(7 downto 0);
     
     -- Local signals
+	signal trig_logic : std_logic_vector(31 downto 0); -- This should be 2^9=512 bits wide to support 9 bit trigger states
+	signal trig_mux_in : std_logic_vector(8 downto 0); 
     signal sync_ext_trig_i : std_logic_vector(3 downto 0);
     signal sync_ext_busy_i : std_logic;
     signal master_trig_t : std_logic;
@@ -120,19 +136,21 @@ begin
         if (rst_n_i = '0') then
             wb_dat_o <= (others => '0');
             wb_ack_o <= '0';
-            trig_mask <= x"00000010"; -- auto enable internal
+            trig_mask  <= (others => '0');
+            trig_logic <= (others => '0');
             trig_tag_mode <= x"01";
         elsif rising_edge(wb_clk_i) then
             wb_ack_o <= '0';
             wb_dat_o <= (others => '0');
             local_reset <= '0';
             if (wb_cyc_i = '1' and wb_stb_i = '1') then
-                wb_ack_o <= '1';
                 if (wb_we_i = '1') then
                     case (wb_adr_i(7 downto 0)) is
                         when x"00" =>
-                            trig_mask <= wb_dat_i;
+                            trig_mask <= wb_dat_i(8 downto 0);
                         when x"01" =>
+                            trig_logic(to_integer(unsigned(wb_dat_i(8 downto 0)))) <= wb_dat_i(31);
+                        when x"02" =>
                             trig_tag_mode <= wb_dat_i(7 downto 0);
                         when x"FF" =>
                             local_reset <= '1'; -- Pulse local reset
@@ -142,10 +160,13 @@ begin
                     case (wb_adr_i(7 downto 0)) is
                         when x"00" =>
                             wb_dat_o <= trig_mask;
+                        when x"01" =>
+                            wb_dat_o <= trig_logic;
                         when others =>
                             wb_dat_o <= x"DEADBEEF";
                     end case;
                 end if;
+                wb_ack_o <= '1';
             end if;
         end if;
     end process wb_proc;
@@ -158,18 +179,24 @@ begin
     cmp_sync_busy: synchronizer port map(clk_i => clk_i, rst_n_i => rst_n_i, async_in => ext_busy_i, sync_out => sync_ext_busy_i);
     
     master_busy_t <= sync_ext_busy_i or int_busy_i or busy_t;
-
-    -- Apply trigger mask to inputs
-    master_trig_t <= (sync_ext_trig_i(0) and trig_mask(0))
-                    or (sync_ext_trig_i(1) and trig_mask(1))
-                    or (sync_ext_trig_i(2) and trig_mask(2))
-                    or (sync_ext_trig_i(3) and trig_mask(3))
-                    or (int_trig_i(0) and trig_mask(4))
-                    or (int_trig_i(1) and trig_mask(5))
-                    or (int_trig_i(2) and trig_mask(6))
-                    or (int_trig_i(3) and trig_mask(7))
-                    or (eudet_trig_t and trig_mask(8));
-                    
+	 
+	 -- Trigger logic
+	 trig_mux_in <= ( 0 => sync_ext_trig_i(0),
+                      1 => sync_ext_trig_i(1),
+					  2 => sync_ext_trig_i(2),
+					  3 => sync_ext_trig_i(3),
+					  4 => int_trig_i(0),
+					  5 => int_trig_i(1),
+					  6 => int_trig_i(2),
+					  7 => int_trig_i(3),
+					  8 => eudet_trig_t,
+					  others => '0' );
+                      
+	 trigger: process(trig_logic, trig_mux_in)
+	 begin
+		master_trig_t <= trig_logic(to_integer(unsigned(trig_mux_in and trig_mask)));
+	 end process trigger;
+    
     -- find edge
     master_trig_sel_edge <= master_trig_pos_edge; -- TODO hardcoded
     edge_proc: process(clk_i, rst_n_i)
