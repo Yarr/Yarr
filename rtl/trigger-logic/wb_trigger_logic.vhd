@@ -84,6 +84,17 @@ architecture rtl of wb_trigger_logic is
             sync_out : out std_logic
         );
     end component;
+    
+    component delayer
+        generic (N : integer);
+        port (
+            clk_i : in std_logic;
+            rst_n_i : in std_logic;
+            dat_i : in std_logic;
+            dat_o : out std_logic;
+            delay : in integer range 0 to N-1
+        );
+    end component;
 	
     component eudet_tlu
         port (
@@ -115,6 +126,7 @@ architecture rtl of wb_trigger_logic is
     
     -- Local signals
     signal trig_logic : std_logic_vector(31 downto 0);
+    signal del_ext_trig_i : std_logic_vector(3 downto 0);
     signal sync_ext_trig_i : std_logic_vector(3 downto 0);
     signal sync_ext_busy_i : std_logic;
     signal master_trig_t : std_logic;
@@ -178,17 +190,21 @@ begin
         end if;
     end process wb_proc;
 
-    -- Sync inputs
+    -- Sync/delay inputs
     trig_inputs: for I in 0 to 3 generate
     begin
-        cmp_sync_trig: synchronizer port map(clk_i => clk_i, rst_n_i => rst_n_i, async_in => ext_trig_i(I), sync_out => sync_ext_trig_i(I));
+        cmp_sync_trig: synchronizer
+            port map(clk_i => clk_i, rst_n_i => rst_n_i, async_in => ext_trig_i(I), sync_out => sync_ext_trig_i(I));
+        cmp_delay_trig: delayer
+            generic map(N => 8)
+            port map(clk_i => clk_i, rst_n_i => rst_n_i, dat_i => sync_ext_trig_i(I), dat_o => del_ext_trig_i(I), delay => 5);
     end generate trig_inputs;
     cmp_sync_busy: synchronizer port map(clk_i => clk_i, rst_n_i => rst_n_i, async_in => ext_busy_i, sync_out => sync_ext_busy_i);
     
     master_busy_t <= sync_ext_busy_i or busy_t;
 			    
     -- Trigger logic
-    master_trig_t <= trig_logic(to_integer(unsigned((eudet_trig_i & sync_ext_trig_i) and trig_mask(4 downto 0))));
+    master_trig_t <= trig_logic(to_integer(unsigned((eudet_trig_i & del_ext_trig_i) and trig_mask(4 downto 0))));
     
     -- find edge
     master_trig_sel_edge <= master_trig_pos_edge; -- TODO hardcoded
