@@ -73,6 +73,17 @@ end wb_trigger_logic;
 
 architecture rtl of wb_trigger_logic is
     -- Components
+    component edge_detector
+        port (
+            clk_i : in std_logic;
+            rst_n_i : in std_logic;
+
+            dat_i : in std_logic;
+            rising_o : out std_logic;
+            falling_o : out std_logic
+        );
+    end component;
+    
     component synchronizer
         port (
             -- Sys connect
@@ -125,16 +136,12 @@ architecture rtl of wb_trigger_logic is
     signal trig_tag_mode : std_logic_vector(7 downto 0);
     
     -- Local signals
-    signal trig_logic : std_logic_vector(31 downto 0);
-    signal del_ext_trig_i : std_logic_vector(3 downto 0);
+    signal trig_logic : std_logic_vector(31 downto 0); 
+    signal edge_ext_trig_i : std_logic_vector(3 downto 0);
     signal sync_ext_trig_i : std_logic_vector(3 downto 0);
+    signal del_ext_trig_i : std_logic_vector(3 downto 0);
     signal sync_ext_busy_i : std_logic;
     signal master_trig_t : std_logic;
-    signal master_trig_d1 : std_logic;
-    signal master_trig_d2 : std_logic;
-    signal master_trig_sel_edge : std_logic;
-    signal master_trig_pos_edge : std_logic;
-    signal master_trig_neg_edge : std_logic;
     signal master_busy_t : std_logic;
     signal eudet_trig_t : std_logic;
     signal eudet_trig_tag_t : std_logic_vector(15 downto 0);
@@ -195,9 +202,12 @@ begin
     begin
         cmp_sync_trig: synchronizer
             port map(clk_i => clk_i, rst_n_i => rst_n_i, async_in => ext_trig_i(I), sync_out => sync_ext_trig_i(I));
+        cmp_edge_trig: edge_detector
+            port map(clk_i => clk_i, rst_n_i => rst_n_i, dat_i => sync_ext_trig_i(I),
+                     falling_o => edge_ext_trig_i(I), rising_o => open );
         cmp_delay_trig: delayer
             generic map(N => 8)
-            port map(clk_i => clk_i, rst_n_i => rst_n_i, dat_i => sync_ext_trig_i(I), dat_o => del_ext_trig_i(I), delay => 5);
+            port map(clk_i => clk_i, rst_n_i => rst_n_i, dat_i => edge_ext_trig_i(I), dat_o => del_ext_trig_i(I), delay => 5);
     end generate trig_inputs;
     cmp_sync_busy: synchronizer port map(clk_i => clk_i, rst_n_i => rst_n_i, async_in => ext_busy_i, sync_out => sync_ext_busy_i);
     
@@ -205,29 +215,6 @@ begin
 			    
     -- Trigger logic
     master_trig_t <= trig_logic(to_integer(unsigned((eudet_trig_i & del_ext_trig_i) and trig_mask(4 downto 0))));
-    
-    -- find edge
-    master_trig_sel_edge <= master_trig_pos_edge; -- TODO hardcoded
-    edge_proc: process(clk_i, rst_n_i)
-    begin
-        if (rst_n_i = '0') then
-            master_trig_d1 <= '0';
-            master_trig_d2 <= '0';
-            master_trig_pos_edge <= '0';
-            master_trig_neg_edge <= '0';
-        elsif rising_edge(clk_i) then
-            master_trig_d1 <= master_trig_t;
-            master_trig_d2 <= master_trig_d1;
-            master_trig_pos_edge <= '0';
-            master_trig_neg_edge <= '0';
-            if (master_trig_d2 = '0' and master_trig_d1 = '1') then
-                master_trig_pos_edge <= '1';
-            end if;
-            if (master_trig_d1 = '0' and master_trig_d2 = '1') then
-                master_trig_neg_edge <= '1';
-            end if;
-        end if;
-    end process edge_proc; 
     
     -- trig tag gen
     trig_tag_proc: process(clk_i, rst_n_i)
@@ -240,7 +227,7 @@ begin
             -- TODO need reset
             if (local_reset = '1') then
                 trig_counter <= (others => '0');    
-            elsif (master_trig_sel_edge = '1') then
+            elsif (master_trig_t = '1') then
                 trig_counter <= trig_counter + 1;
             end if;
 
@@ -250,7 +237,7 @@ begin
                 timestamp_cnt <= timestamp_cnt + 1;
             end if;
             
-            if (master_trig_sel_edge = '1' and master_busy_t = '0') then
+            if (master_trig_t = '1' and master_busy_t = '0') then
                 case (trig_tag_mode) is
                     when x"00" =>
                         trig_tag <= std_logic_vector(trig_counter);
@@ -275,13 +262,13 @@ begin
             busy_t <= '0';
         elsif rising_edge(clk_i) then
             if (master_busy_t = '0') then
-                ext_trig_o <= master_trig_sel_edge;
+                ext_trig_o <= master_trig_t;
                 ext_busy_o <= '0';
             else
                 ext_busy_o <= '1';
             end if;
 
-            if (master_trig_sel_edge = '1') then
+            if (master_trig_t = '1') then
                 deadtime_cnt <= TO_UNSIGNED(C_DEADTIME, 16);
             end if;
             if (deadtime_cnt > 0) then
