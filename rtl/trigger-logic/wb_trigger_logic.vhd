@@ -38,6 +38,7 @@ library IEEE;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+
 entity wb_trigger_logic is
     port (
 		-- Sys connect
@@ -103,7 +104,7 @@ architecture rtl of wb_trigger_logic is
             rst_n_i : in std_logic;
             dat_i : in std_logic;
             dat_o : out std_logic;
-            delay : in integer range 0 to N-1
+            delay : in std_logic_vector
         );
     end component;
 	
@@ -207,7 +208,8 @@ begin
                      falling_o => edge_ext_trig_i(I), rising_o => open );
         cmp_delay_trig: delayer
             generic map(N => 8)
-            port map(clk_i => clk_i, rst_n_i => rst_n_i, dat_i => edge_ext_trig_i(I), dat_o => del_ext_trig_i(I), delay => 5);
+            port map(clk_i => clk_i, rst_n_i => rst_n_i, dat_i => edge_ext_trig_i(I),
+                     dat_o => del_ext_trig_i(I), delay => "101");
     end generate trig_inputs;
     cmp_sync_busy: synchronizer port map(clk_i => clk_i, rst_n_i => rst_n_i, async_in => ext_busy_i, sync_out => sync_ext_busy_i);
     
