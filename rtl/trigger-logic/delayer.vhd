@@ -22,16 +22,6 @@ entity delayer is
         dat_o : out std_logic;
         delay : in std_logic_vector(integer(ceil(log2(real(N))))-1 downto 0)  -- TODO: make it log2_ceil(N)-1 downto 0
     );
-    function log2_ceil(N : natural) return positive is
-    begin
-      if N <= 2 then
-        return 1;
-      elsif N mod 2 = 0 then
-        return 1 + log2_ceil(N/2);
-      else
-        return 1 + log2_ceil((N+1)/2);
-      end if;
-    end;
 
 end delayer;
 
