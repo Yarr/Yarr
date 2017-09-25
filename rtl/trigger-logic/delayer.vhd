@@ -20,7 +20,7 @@ entity delayer is
         rst_n_i : in std_logic;
         dat_i : in std_logic;
         dat_o : out std_logic;
-        delay : in std_logic_vector(integer(ceil(log2(real(N))))-1 downto 0)  -- TODO: make it log2_ceil(N)-1 downto 0
+        delay : in std_logic_vector(integer(ceil(log2(real(N))))-1 downto 0)
     );
 
 end delayer;
