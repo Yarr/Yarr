@@ -54,29 +54,35 @@ void Rd53aEmu::executeLoop() {
     {
         if (!m_txRingBuffer->isEmpty()) {
             m_header = m_txRingBuffer->read32();
-            printf("Rd53aEmu got the header word: %x\n", m_header);
+            printf("Rd53aEmu got the header word: 0x%x\n", m_header);
 
-            if (m_header == 0x6666)
+            if (m_header == 0)
+            {
+            }
+            else if (m_header == 0x6666) // wrRegister
             {
               m_id_address_some_data = m_txRingBuffer->read32();
-              printf("Rd53aEmu got the id_address_some_data word: %x\n", m_id_address_some_data);
+//              printf("Rd53aEmu got the id_address_some_data word: 0x%x\n", m_id_address_some_data);
 
               uint8_t byte1 = (m_id_address_some_data >> 16) >> 8;
               uint8_t byte2 = (m_id_address_some_data >> 16) & 0x00FF;
               uint8_t byte3 = (m_id_address_some_data & 0x0000FFFF) >> 8;
               uint8_t byte4 = (m_id_address_some_data & 0x0000FFFF) & 0x00FF;
-
-              printf("%x decoded into: %x\n", byte1, eightToFive[byte1]);
-              printf("%x decoded into: %x\n", byte2, eightToFive[byte2]);
-              printf("%x decoded into: %x\n", byte3, eightToFive[byte3]);
-              printf("%x decoded into: %x\n", byte4, eightToFive[byte4]);
-
+/*
+              printf("0x%x decoded into: 0x%x\n", byte1, eightToFive[byte1]);
+              printf("0x%x decoded into: 0x%x\n", byte2, eightToFive[byte2]);
+              printf("0x%x decoded into: 0x%x\n", byte3, eightToFive[byte3]);
+              printf("0x%x decoded into: 0x%x\n", byte4, eightToFive[byte4]);
+*/
               byte1 = eightToFive[byte1];
               byte2 = eightToFive[byte2];
               byte3 = eightToFive[byte3];
               byte4 = eightToFive[byte4];
 
-              if (byte1 & 0x01)
+              uint32_t address = (byte2 << 4) + (byte3 >> 1);
+              printf("address: 0x%x, %d\n", address, address);
+
+              if (byte1 & 0x01) // check the bit which determines whether big data or small data should be read
               {
                 printf("big data expected\n");
                 // 50(?) more bits of data
@@ -86,22 +92,36 @@ void Rd53aEmu::executeLoop() {
                 printf("small data expected\n");
                 // 10(?) more bits of data
                 m_small_data = m_txRingBuffer->read32();
-                printf("Rd53aEmu got the small_data word %x\n", m_small_data);
+//                printf("Rd53aEmu got the small_data word 0x%x\n", m_small_data);
 
                 uint8_t data_byte1 = (m_small_data >> 16) >> 8;
                 uint8_t data_byte2 = (m_small_data >> 16) & 0x00FF;
                 uint8_t data_byte3 = (m_small_data & 0x0000FFFF) >> 8;
                 uint8_t data_byte4 = (m_small_data & 0x0000FFFF) & 0x00FF;
-
-                printf("%x decoded into: %x\n", data_byte1, eightToFive[data_byte1]);
-                printf("%x decoded into: %x\n", data_byte2, eightToFive[data_byte2]);
-                printf("%x decoded into: %x\n", data_byte3, eightToFive[data_byte3]);
-                printf("%x decoded into: %x\n", data_byte4, eightToFive[data_byte4]);
-
+/*
+                printf("0x%x decoded into: 0x%x\n", data_byte1, eightToFive[data_byte1]);
+                printf("0x%x decoded into: 0x%x\n", data_byte2, eightToFive[data_byte2]);
+                printf("0x%x decoded into: 0x%x\n", data_byte3, eightToFive[data_byte3]);
+                printf("0x%x decoded into: 0x%x\n", data_byte4, eightToFive[data_byte4]);
+*/
                 data_byte1 = eightToFive[data_byte1];
                 data_byte2 = eightToFive[data_byte2];
                 data_byte3 = eightToFive[data_byte3];
                 data_byte4 = eightToFive[data_byte4];
+
+                uint32_t data = data_byte2 + (data_byte1 << 5) + (byte4 << 10) + ((byte3 & 0x1) << 15);
+                printf("data: 0x%x, %d\n", data, data);
+//              m_feCfg->WriteGR(address, data); // need this kind of function!
+              }
+
+              if (address == 0) // configure pixels based on what's in the GR
+              {
+                printf("being asked to configure pixels\n");
+                if (m_feCfg->PixMode.read() == 0x2) // auto col = 0, auto row = 1, broadcast = 0
+                {
+                  // configure all pixels in row m_feCfg->RegionRow.read() with value m_feCfg->PixPortalHigh.read() << 16) + m_feCfg->PixPortalLow.read()
+                  // increment m_feCfg->RegionRow
+                }
               }
             }
             else

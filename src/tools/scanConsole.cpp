@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
         iF >> runCounter;
         runCounter += 1;
     } else {
-        system("echo \"1\n\" > ~/.yarr/runCounter");
+//        system("echo \"1\n\" > ~/.yarr/runCounter");
         runCounter = 1;
     }
     iF.close();

@@ -8,6 +8,8 @@
 #include "EmuController.h"
 
 int main(void) {
+    Rd53aCfg *feCfg = new Rd53aCfg();
+
     HwController *hwCtrl = NULL;
     Rd53aEmu *emu = NULL;
 
@@ -27,7 +29,20 @@ int main(void) {
     emuThreads.push_back(std::thread(&Rd53aEmu::executeLoop, emu));
 
     Rd53a* myRd53a = new Rd53a((TxCore*) hwCtrl);
-    myRd53a->wrRegister(6, 6, 6);
+//    myRd53a->wrRegister(4, 6, 6);
+
+    // set some value for pixel registers
+    feCfg->PixPortalHigh.write(0xFF);
+    feCfg->PixPortalLow.write(0xFF);
+
+    // these commands should register all pixel registers
+    myRd53a->wrRegister(0, 0, (uint32_t) 0xFF);
+    myRd53a->wrRegister(4, 1, (uint32_t) 0xFF); // 1 = RegionCol
+    myRd53a->wrRegister(4, 2, (uint32_t) 2); // 2 = RegionRow
+    myRd53a->wrRegister(4, 3, 0x00000017); // 3 = PixMode + BMask; 0x17 = 0x010111 bits = auto col, auto row, broadcast, fe flavor 1, fe flavor 2, fe flavor 3;
+    for (int i = 0; i < 1; i++) { // make this loop to i < 193 in order to loop over all rows
+        myRd53a->wrRegister(4, 0, (feCfg->PixPortalHigh.read() << 8) + feCfg->PixPortalLow.read()); // do we actually need to send the data here?
+    }
 
     sleep(10);
 
