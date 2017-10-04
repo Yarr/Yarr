@@ -33,3 +33,7 @@ Rd53a::Rd53a(TxCore *core, unsigned arg_txChannel, unsigned arg_rxChannel) : Fro
 	active = true;
 }
 
+void Rd53a::writeRegister(uint32_t chipId, Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value) {
+        unsigned test = (this->*ref).addr();
+        wrRegister(chipId, test, value);
+}

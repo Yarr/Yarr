@@ -21,7 +21,8 @@ class Rd53aReg {
     public:
         Rd53aReg() {}
 
-        void init(uint16_t *cfg, const unsigned bOffset, const unsigned bits, const uint16_t value) {
+        void init(unsigned addr, uint16_t *cfg, const unsigned bOffset, const unsigned bits, const uint16_t value) {
+            m_addr = addr;
             m_cfg = cfg;
             m_bOffset = bOffset;
             m_bits = bits;
@@ -37,11 +38,16 @@ class Rd53aReg {
             unsigned mask = (1<<m_bits)-1;
             return ((*m_cfg >> m_bOffset) & mask);
         }
+
+        unsigned addr() const{
+          return m_addr;
+        }
     protected:
     private:
         uint16_t *m_cfg;
         unsigned m_bOffset;
         unsigned m_bits;
+        unsigned m_addr;
 };
 
 class Rd53aGlobalCfg {
@@ -50,6 +56,11 @@ class Rd53aGlobalCfg {
         Rd53aGlobalCfg();
         ~Rd53aGlobalCfg();
         void init();
+
+        uint16_t getValue(Rd53aReg Rd53aGlobalCfg::*ref) {
+            return (this->*ref).read();
+        }
+
     protected:
         void toFileJson(json &j);
         void fromFileJson(json &j);

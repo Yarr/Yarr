@@ -120,7 +120,9 @@ int main(int argc, char *argv[]) {
         iF >> runCounter;
         runCounter += 1;
     } else {
-//        system("echo \"1\n\" > ~/.yarr/runCounter");
+        if (system("echo \"1\n\" > ~/.yarr/runCounter") < 0) {
+            std::cerr << "#ERROR# trying to run echo!" << std::endl;
+        }
         runCounter = 1;
     }
     iF.close();

@@ -27,6 +27,8 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
         void configure() {}
         void configureGlobal();
         void configurePixels();
+
+        void writeRegister(uint32_t chipId, Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value);
     protected:
     private:
 };

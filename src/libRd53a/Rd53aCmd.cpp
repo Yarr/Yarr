@@ -7,6 +7,7 @@
 // ################################
 
 #include "Rd53aCmd.h"
+#include <fstream>
 
 Rd53aCmd::Rd53aCmd(TxCore *arg_core) {
     verbose = false;
@@ -51,9 +52,12 @@ void Rd53aCmd::cal(uint32_t chipId, uint32_t mode, uint32_t delay, uint32_t dura
 }
 
 void Rd53aCmd::wrRegister(uint32_t chipId, uint32_t address, uint32_t value) {
+std::ofstream commandFile;
+commandFile.open("commandList.txt", std::ofstream::out | std::ofstream::app);
     if (verbose) std::cout << __PRETTY_FUNCTION__ << " : ID(" << chipId << ") ADR(" << address << ") VAL(0x" << std::hex << value << std::dec << ")" << std::endl;
     // Header
     core->writeFifo(0x6666);
+commandFile << std::hex << 0x6666;
     uint32_t tmp = 0x0;
     // ID[3:0],0 | ADR[8:4]
     tmp += (this->encode5to8((chipId & 0xF) << 1)) << 24;
@@ -62,11 +66,15 @@ void Rd53aCmd::wrRegister(uint32_t chipId, uint32_t address, uint32_t value) {
     tmp += (this->encode5to8(((address & 0xF) << 1) + ((value >> 15) & 0x1)) << 8);
     tmp += (this->encode5to8((value >> 10) & 0x1F));
     core->writeFifo(tmp);
+commandFile << std::hex << tmp;
     // VAL[9:5] | VAL [4:0]
     tmp = (this->encode5to8((value >> 5) & 0x1F) << 24);
     tmp += (this->encode5to8(value & 0x1F)) << 16;
     core->writeFifo(tmp);
+commandFile << std::hex << tmp;
     core->releaseFifo();
+commandFile << "\n";
+commandFile.close();
 }
 
 void Rd53aCmd::wrRegister(uint32_t chipId, uint32_t address, uint32_t values[3]) {
