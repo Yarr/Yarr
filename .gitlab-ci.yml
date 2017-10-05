@@ -21,3 +21,13 @@ job_build_and_test:
       - if [ "$NUM100" != "26880" ]; then exit 2; fi
       - cd ../
 
+job_build_cmake:
+    image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
+    stage: build
+    script:
+      - yum -y install gcc-c++
+      - yum -y install make
+      - mkdir -p src/cmake_build
+      - cd src/cmake_build
+      - cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
+      - make -j4
