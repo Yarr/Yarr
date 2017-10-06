@@ -113,7 +113,8 @@ component.
 
 The width of the delayers can be chosen (default = 8). This is the max
 number of clock cycles a given channel can be delayed. The delay of
-each individual channel can be hardcoded.
+each individual channel can be hardcoded. TODO: allow delay config
+over WB bus?
 
 
 ## Eudet stuff
