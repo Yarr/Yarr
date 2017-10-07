@@ -10,6 +10,14 @@ inputs. The output (ext_trig_o) can be any boolean function of the 5
 inputs. The unit also reads out a trigger tag (trig_tag) which is
 either a counter, clk_i timestamp, or the tag from the eudet_tlu.
 
+## Quick Configuration Example
+
+All configuration is done over the Wishbone bus. The following sequence of writes shows a barebones configuration:
+
+| Address   | Function                  |
+| --------- | ------------------------- |
+
+
 ## Configuration
 
 Both the trigger logic and tag are configured over the wishbone bus
