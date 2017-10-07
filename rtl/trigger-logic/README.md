@@ -3,10 +3,12 @@
 ## Introduction
 
 The trigger unit has 4 external inputs (ext_trig_i) and 1 eudet input
-(see section "Eudet stuff"). The output (ext_trig_o) can be any
-boolean function of the 5 inputs. The unit also reads out a trigger
-tag (trig_tag) which is either a counter, clk_i timestamp, or the tag
-from the eudet_tlu.
+(see section "Eudet stuff"). All external inputs are sent through a
+synchronizer to deglitch and lock the inputs to clk_i, an edge
+detector, and a shift register to introduce time delays between the 5
+inputs. The output (ext_trig_o) can be any boolean function of the 5
+inputs. The unit also reads out a trigger tag (trig_tag) which is
+either a counter, clk_i timestamp, or the tag from the eudet_tlu.
 
 ## Configuration
 
@@ -99,12 +101,9 @@ Wishbone bus. trig_tag_mode must be one of the following:
 
 ### Edge detector/delayer
 
-All external inputs are sent through a synchronizer to deglitch and
-lock the inputs to clk_i, an edge detector, and a shift register to
-introduce time delays between the 5 inputs. These are not currently
-configurable from outside the wb_trigger_logic component, but within
-wb_trigger_logic some code changes can perform the following
-configuration tasks:
+The edge detector/delayer are not configurable from outside the
+wb_trigger_logic component, but within wb_trigger_logic some code
+changes can perform the following configuration tasks:
 
 The edge detector can be configured to pick up
 either rising or falling edges by connecting the intermediate signal
