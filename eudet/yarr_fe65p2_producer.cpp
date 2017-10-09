@@ -82,7 +82,7 @@ class YarrFe65p2Producer : public eudaq::Producer {
         // The constructor must call the eudaq::Producer constructor with the name
         // and the runcontrol connection string, and initialize any member variables.
         YarrFe65p2Producer(const int &prodid, const int &specid, const std::string & name, const std::string & runcontrol)
-            : eudaq::Producer("YarrFe65p2Producer", runcontrol),
+            : eudaq::Producer(("YarrFe65p2Producer_"+std::to_string(prodid)), runcontrol),
             m_run(0), m_eventCount(0) {
                 spec = dynamic_cast<HwController*>(new SpecController());
                 dynamic_cast<SpecController*>(spec)->init(specid);
