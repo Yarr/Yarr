@@ -7,32 +7,25 @@
 -- # Outputs are synchronous to clk_i
 -- ####################################
 -- # Adress Map:
+-- # (when multiple addresses are given, the lowest is
+-- #  the setting for ext[0], and the highest for eudet)
 -- #
--- # 0x0 - Trigger mask
--- # 0x1 - Enable trigger state
--- # 0x2 - Disable trigger state
--- #    Trigger mask/state is a 5 bit vector where each bit represents a trigger
--- #    input channel. Channel 4 is the eudet tlu. 1 = enable(mask)/on(state),
--- #    0 = disable(mask)/off(state).
--- # 0x3 - Trigger tag mode
--- #    0 = trigger counter
--- #    1 = clk_i timestamp
--- #    2 = eudet input
--- # 0x4 - Trigger config (entire config word used as input to multiplexor)
+-- # 0x0      - Trigger mask [3:0] ext, [4] eudet
+-- #              0 = off
+-- #              1 = on
+-- # 0x1      - Trigger tag mode
+-- #              0 = trigger counter
+-- #              1 = clk_i timestamp
+-- #              2 = eudet input
+-- # 0x2      - Concidence/veto logic (entire config word used
+-- #            as selector of multiplexor)
+-- # 0x3      - Trigger edge [3:0] ext, [4] eudet
+-- #              0 = rising
+-- #              1 = falling
+-- # 0x4..0x8 - Per-channel delay (clk_i cycles, max 8)
+-- # 0x9      - deadtime (clk_i cycles)
 -- #
--- # Eg. 
--- #     0x0 <- 000000111 to mask all but channels ext(0), ext(1), and ext(2).
--- # 
--- #     Then 0x1 <- 000000011 to trigger on
--- #     coincidences of ext(0) and ext(1) but not if ext(2) is active,
--- #     regardless of what's happening on all other channels. Then
--- #     0x1 <- 000000101 to also trigger on coincidences of ext(0)
--- #     and ext(2) but not if ext(1) is active.
--- #
--- #     In this example, 0x1 <- 000000011 will set bit [3] of
--- #     trig_logic, then 0x1 <- 000000101 sets the bit [5], so the
--- #     same trigger config could have been achieved with:
--- #     0x4 <- 000...0000101000
+-- # See ./README.md for more detailed instructions
 
 library IEEE;
 use ieee.std_logic_1164.all;
@@ -130,14 +123,17 @@ architecture rtl of wb_trigger_logic is
         );
     end component;
 
+    constant delay_width : integer := 3;
     signal C_DEADTIME : integer := 300; -- clk_i cycles
     
     -- Registers
     signal trig_mask : std_logic_vector(31 downto 0);
     signal trig_tag_mode : std_logic_vector(7 downto 0);
+    signal trig_logic : std_logic_vector(31 downto 0);
+    signal trig_edge : std_logic_vector(4 downto 0);
+    signal delay : std_logic_vector(5*delay_width downto 0);
     
     -- Local signals
-    signal trig_logic : std_logic_vector(31 downto 0); 
     signal edge_ext_trig_i : std_logic_vector(3 downto 0);
     signal sync_ext_trig_i : std_logic_vector(3 downto 0);
     signal del_ext_trig_i : std_logic_vector(3 downto 0);
@@ -160,8 +156,10 @@ begin
             wb_dat_o <= (others => '0');
             wb_ack_o <= '0';
             trig_mask  <= (others => '0');
-            trig_logic <= (others => '0');
             trig_tag_mode <= x"01";
+            trig_logic <= (others => '0');
+            trig_edge <= (others => 0);
+            delay <= (others => 0);
         elsif rising_edge(wb_clk_i) then
             wb_ack_o <= '0';
             wb_dat_o <= (others => '0');
@@ -169,18 +167,21 @@ begin
             if (wb_cyc_i = '1' and wb_stb_i = '1') then
                 wb_ack_o <= '1';
                 if (wb_we_i = '1') then
-                    case (wb_adr_i(7 downto 0)) is
-                        when x"00" =>
+                    alias addr : integer(wb_addr_i(7 downto 0));
+                    case (addr) is
+                        when 00 =>
                             trig_mask <= wb_dat_i;
-                        when x"01" =>
-                            trig_logic(to_integer(unsigned(wb_dat_i))) <= '1';
-                        when x"02" =>
-                            trig_logic(to_integer(unsigned(wb_dat_i))) <= '0';
-                        when x"03" =>
+                        when 01 =>
                             trig_tag_mode <= wb_dat_i(7 downto 0);
-                        when x"04" =>
+                        when 02 =>
                             trig_logic <= wb_dat_i;
-                        when x"FF" =>
+                        when 03 =>
+                            trig_edge <= wb_dat_i;
+                        when 04 to 08 =>
+                            delay((addr-3)*delay_width downto (addr-4)*delay_width) <= wb_dat_i(delay_width downto 0);
+                        when 09 =>
+                            C_DEADTIME <= wb_dat_i;
+                        when FF =>
                             local_reset <= '1'; -- Pulse local reset
                         when others =>
                     end case;
