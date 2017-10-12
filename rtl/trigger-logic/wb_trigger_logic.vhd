@@ -7,8 +7,6 @@
 -- # Outputs are synchronous to clk_i
 -- ####################################
 -- # Adress Map:
--- # (when multiple addresses are given, the lowest is
--- #  the setting for ext[0], and the highest for eudet)
 -- #
 -- # 0x0      - Trigger mask [3:0] ext, [4] eudet
 -- #              0 = off
@@ -19,11 +17,12 @@
 -- #              2 = eudet input
 -- # 0x2      - Concidence/veto logic (entire config word used
 -- #            as selector of multiplexor)
--- # 0x3      - Trigger edge [3:0] ext, [4] eudet
+-- # 0x3      - Trigger edge [3:0] ext, [:4] ignored
 -- #              0 = rising
 -- #              1 = falling
--- # 0x4..0x8 - Per-channel delay (clk_i cycles, max 8)
--- # 0x9      - deadtime (clk_i cycles)
+-- # 0x4..0x7 - Per-channel delay (clk_i cycles, max 8)
+-- #              0x4 = ext[0] ... 0x7 = ext[3]
+-- # 0x8      - deadtime (clk_i cycles)
 -- #
 -- # See ./README.md for more detailed instructions
 
@@ -124,17 +123,20 @@ architecture rtl of wb_trigger_logic is
     end component;
 
     constant delay_width : integer := 3;
-    signal C_DEADTIME : integer := 300; -- clk_i cycles
+    signal C_DEADTIME : std_logic_vector(16 downto 0); -- clk_i cycles
     
     -- Registers
     signal trig_mask : std_logic_vector(31 downto 0);
     signal trig_tag_mode : std_logic_vector(7 downto 0);
     signal trig_logic : std_logic_vector(31 downto 0);
     signal trig_edge : std_logic_vector(4 downto 0);
-    signal delay : std_logic_vector(5*delay_width downto 0);
+    signal ch_delay : std_logic_vector(4*delay_width-1 downto 0);
     
     -- Local signals
+    signal wb_addr : integer;
     signal edge_ext_trig_i : std_logic_vector(3 downto 0);
+    signal edge_r : std_logic_vector(3 downto 0);
+    signal edge_f : std_logic_vector(3 downto 0);
     signal sync_ext_trig_i : std_logic_vector(3 downto 0);
     signal del_ext_trig_i : std_logic_vector(3 downto 0);
     signal sync_ext_busy_i : std_logic;
@@ -155,41 +157,43 @@ begin
         if (rst_n_i = '0') then
             wb_dat_o <= (others => '0');
             wb_ack_o <= '0';
+            wb_addr <= 0;
             trig_mask  <= (others => '0');
             trig_tag_mode <= x"01";
             trig_logic <= (others => '0');
-            trig_edge <= (others => 0);
-            delay <= (others => 0);
+            trig_edge <= (others => '0');
+            ch_delay <= (others => '0');
+            c_deadtime <= std_logic_vector(to_unsigned(300, 16));
         elsif rising_edge(wb_clk_i) then
             wb_ack_o <= '0';
             wb_dat_o <= (others => '0');
             local_reset <= '0';
+            wb_addr <= to_integer(signed(wb_adr_i(7 downto 0)));
             if (wb_cyc_i = '1' and wb_stb_i = '1') then
                 wb_ack_o <= '1';
                 if (wb_we_i = '1') then
-                    alias addr : integer(wb_addr_i(7 downto 0));
-                    case (addr) is
-                        when 00 =>
+                    case (wb_addr) is
+                        when 0 =>
                             trig_mask <= wb_dat_i;
-                        when 01 =>
+                        when 1 =>
                             trig_tag_mode <= wb_dat_i(7 downto 0);
-                        when 02 =>
+                        when 2 =>
                             trig_logic <= wb_dat_i;
-                        when 03 =>
-                            trig_edge <= wb_dat_i;
-                        when 04 to 08 =>
-                            delay((addr-3)*delay_width downto (addr-4)*delay_width) <= wb_dat_i(delay_width downto 0);
-                        when 09 =>
-                            C_DEADTIME <= wb_dat_i;
-                        when FF =>
+                        when 3 =>
+                            trig_edge <= wb_dat_i(4 downto 0);
+                        when 4 to 7 =>
+                            ch_delay((wb_addr-3)*delay_width downto (wb_addr-4)*delay_width) <= wb_dat_i(delay_width downto 0);
+                        when 8 =>
+                            C_DEADTIME <= wb_dat_i(16 downto 0);
+                        when 16#FF# =>
                             local_reset <= '1'; -- Pulse local reset
                         when others =>
                     end case;
                 else
-                    case (wb_adr_i(7 downto 0)) is
-                        when x"00" =>
+                    case (wb_addr) is
+                        when 0 =>
                             wb_dat_o <= trig_mask;
-                        when x"04" =>
+                        when 2 =>
                             wb_dat_o <= trig_logic;
                         when others =>
                             wb_dat_o <= x"DEADBEEF";
@@ -206,17 +210,20 @@ begin
             port map(clk_i => clk_i, rst_n_i => rst_n_i, async_in => ext_trig_i(I), sync_out => sync_ext_trig_i(I));
         cmp_edge_trig: edge_detector
             port map(clk_i => clk_i, rst_n_i => rst_n_i, dat_i => sync_ext_trig_i(I),
-                     falling_o => edge_ext_trig_i(I), rising_o => open );
+                     falling_o => edge_f(I), rising_o => edge_r(I) );
+        edge_ext_trig_i(I) <= edge_f(I) when trig_edge(I) = '1' else
+                              edge_r(I) when trig_edge(I) = '0';
         cmp_delay_trig: delayer
-            generic map(N => 8)
+            generic map(N => 2**delay_width)
             port map(clk_i => clk_i, rst_n_i => rst_n_i, dat_i => edge_ext_trig_i(I),
-                     dat_o => del_ext_trig_i(I), delay => "101");
+                     dat_o => del_ext_trig_i(I),
+                     delay => ch_delay((I+1)*delay_width-1 downto I*delay_width));
     end generate trig_inputs;
     cmp_sync_busy: synchronizer port map(clk_i => clk_i, rst_n_i => rst_n_i, async_in => ext_busy_i, sync_out => sync_ext_busy_i);
     
     master_busy_t <= sync_ext_busy_i or busy_t;
-			    
-    -- Trigger logic
+	
+    -- Apply coincidence/veto logic
     master_trig_t <= trig_logic(to_integer(unsigned((eudet_trig_i & del_ext_trig_i) and trig_mask(4 downto 0))));
     
     -- trig tag gen
@@ -272,7 +279,7 @@ begin
             end if;
 
             if (master_trig_t = '1') then
-                deadtime_cnt <= TO_UNSIGNED(C_DEADTIME, 16);
+                deadtime_cnt <= UNSIGNED(C_DEADTIME);
             end if;
             if (deadtime_cnt > 0) then
                 deadtime_cnt <= deadtime_cnt - 1;
