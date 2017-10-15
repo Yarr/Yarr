@@ -45,10 +45,13 @@ like (see following sections for detail):
 | Address   | Function                  |
 | --------- | ------------------------- |
 | 0x00      | Trigger mask              |
-| 0x01      | Enable trigger state      |
-| 0x02      | Disable trigger state     |
-| 0x03      | Trigger tag mode          |
-| 0x04      | Full trigger logic config |
+| 0x01      | Trigger tag mode          |
+| 0x02      | Boolean logic config      |
+| 0x03      | Edge selection            |
+| 0x04      | ext[0] delay setting      |
+| 0x05      | ext[1] delay setting      |
+| 0x06      | ext[2] delay setting      |
+| 0x07      | ext[3] delay setting      |
 
 ### Trigger logic
 
