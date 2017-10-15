@@ -16,11 +16,11 @@ All configuration is done over the Wishbone bus. The following sequence of write
 
 | Address   | Data   | Function                                                                    |
 | --------- | ------ | --------------------------------------------------------------------------- |
-|           | 0x00   | Use rising edge for all channels (default)                                  |
-|           | 0x01   | Trigger tag is clk_i timestamp                                              |
-|           | 0x07   | Mask-in ext[2:0], do not use ext[3] and eudet                               |
-|           | 0x02   | Put input channel ext[0] on a 2 clock cycle delay                           |
-|           | 0x5E   | (0x5E = 0b110100) Trigger on patterns 011, 101, 110 (see truth table below) |
+| 0x3       | 0x00   | Use rising edge for all channels (default)                                  |
+| 0x1       | 0x01   | Trigger tag is clk_i timestamp                                              |
+| 0x0       | 0x07   | Mask-in ext[2:0], do not use ext[3] and eudet                               |
+| 0x4       | 0x02   | Put input channel ext[0] on a 2 clock cycle delay                           |
+| 0x2       | 0x5E   | (0x5E = 0b110100) Trigger on patterns 011, 101, 110 (see truth table below) |
 
 With this configuration (0x5E = 0b110100), the unit outputs as follows:
 
@@ -74,14 +74,14 @@ eg. 0x00 <- 000000111 to mask out all but channels ext(0), ext(1), and ext(2)
 
 To configure what function of the inputs should appear at the output,
 compute the configuration word and write it to 0x04. The configuration
-word should have one bit set to 1 for each input pattern to accept.
+word should have a bit set to 1 for each input pattern to accept.
 Which bit to set for a given pattern can be computed by interpreting
 the bit pattern as a binary number (where each bit corresponds to an
-input as above in the section on configuring the mask).
+input channel as above in the section on configuring the mask).
 
-For example,
-to trigger on a hit on ext[0] but no other channels, set bit [1] of
-the configuration word.
+For example, to trigger on a hit on ext[0] but no other channels,
+set bit [1] (0b00001) of the configuration word. To trigger on a hit
+on eudet and ext[2] but no other channels, set bit [20] (0b10100).
 
 Any bits that are zero'd out in trig_mask will be ignored. 
 
@@ -111,10 +111,10 @@ particular input:
 
 | Address | Channel |
 | ------- | ------- |
-|         | ext[3]  |
-|         | ext[2]  |
-|         | ext[1]  |
-|         | ext[0]  |
+| 0x7     | ext[3]  |
+| 0x6     | ext[2]  |
+| 0x5     | ext[1]  |
+| 0x4     | ext[0]  |
 
 
 ## Eudet stuff
