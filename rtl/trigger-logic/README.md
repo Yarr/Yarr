@@ -99,11 +99,22 @@ Wishbone bus. trig_tag_mode must be one of the following:
 ### Edge detector
 
 The edge detector can be configured to pick up
-either rising or falling edges by
+either rising or falling edges by writing to 0x03. Each bit corresponds to
+an input channel as above in the section on configuring the mask. Here,
+0 = positive and 1 = negative edge.
 
 ### Per-channel delay
 
+The external inputs can be individually delayed (relative to the eudet input).
+Write the delay in clk_i cycles (max of 8) to the appropriate address for a
+particular input:
 
+| Address | Channel |
+| ------- | ------- |
+|         | ext[3]  |
+|         | ext[2]  |
+|         | ext[1]  |
+|         | ext[0]  |
 
 
 ## Eudet stuff
