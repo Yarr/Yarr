@@ -3,7 +3,7 @@
 ## Introduction
 
 The trigger unit has 4 external inputs (ext_trig_i) and 1 eudet input
-(see section "Eudet stuff"). All external inputs are sent through a
+(see section "Eudet stuff"). The external inputs are sent through a
 synchronizer to deglitch and lock the inputs to clk_i, an edge
 detector, and a shift register to introduce time delays between the 5
 inputs. The output (ext_trig_o) can be any boolean function of the 5
@@ -12,11 +12,28 @@ either a counter, clk_i timestamp, or the tag from the eudet_tlu.
 
 ## Quick Configuration Example
 
-All configuration is done over the Wishbone bus. The following sequence of writes shows a barebones configuration:
+All configuration is done over the Wishbone bus. The following sequence of writes shows an example configuration:
 
-| Address   | Function                  |
-| --------- | ------------------------- |
+| Address   | Data   | Function                                                                    |
+| --------- | ------ | --------------------------------------------------------------------------- |
+|           | 0x00   | Use rising edge for all channels (default)                                  |
+|           | 0x01   | Trigger tag is clk_i timestamp                                              |
+|           | 0x07   | Mask-in ext[2:0], do not use ext[3] and eudet                               |
+|           | 0x02   | Put input channel ext[0] on a 2 clock cycle delay                           |
+|           | 0x5E   | (0x5E = 0b110100) Trigger on patterns 011, 101, 110 (see truth table below) |
 
+With this configuration (0x5E = 0b110100), the unit outputs as follows:
+
+| ext[2] | ext[1] | ext[0] | output | note                      |
+| ------ | ------ | ------ | ------ | ------------------------- |
+| 1      | 1      | 1      | 0      | bit [7] of config not set |
+| 1      | 1      | 0      | 1      | bit [6] of config is set  |
+| 1      | 0      | 1      | 1      | bit [5] of config is set  |
+| 1      | 0      | 0      | 0      | bit [4] of config not set |
+| 0      | 1      | 1      | 1      | bit [3] of config is set  |
+| 0      | 1      | 0      | 0      | bit [2] of config not set |
+| 0      | 0      | 1      | 0      | bit [1] of config not set |
+| 0      | 0      | 0      | 0      | bit [0] of config not set |
 
 ## Configuration
 
@@ -35,10 +52,7 @@ like (see following sections for detail):
 
 ### Trigger logic
 
-You can select which input patterns to trigger on one by one, or
-compute a configuration word and write it in one transaction.
-
-#### Trigger mask
+#### Trigger mask (optional)
 
 In configuring the boolean logic, you may find it helpful to first
 mask out inputs you aren't using. The state of these inputs is ignored
@@ -56,72 +70,40 @@ the mask in the 5 LSBs (1 = use, 0 = ignore):
 
 eg. 0x00 <- 000000111 to mask out all but channels ext(0), ext(1), and ext(2)
 
-#### Boolean logic, one by one
+#### Boolean logic
 
-To trigger on a particular input pattern, write the pattern to 0x01 on
-the Wishbone bus. The pattern should look like:
+To configure what function of the inputs should appear at the output,
+compute the configuration word and write it to 0x04. The configuration
+word should have one bit set to 1 for each input pattern to accept.
+Which bit to set for a given pattern can be computed by interpreting
+the bit pattern as a binary number (where each bit corresponds to an
+input as above in the section on configuring the mask).
 
-| pattern bit     | Describes input trigger...  |
-| --------------- | --------------------------- |
-| pattern[31:5]   | (ignored)                   |
-| pattern[4]      | eudet_trig_i                |
-| pattern[3:0]    | ext_trig_i[3:0]             |
+For example,
+to trigger on a hit on ext[0] but no other channels, set bit [1] of
+the configuration word.
 
-A given pattern matches the current trigger state when they are
-bitwise equivalent, ignoring bits [31:5] as well as any bits that are
-zero'd out in trig_mask.
-
-To deselect a given pattern, write it to 0x02 on the Wishbone bus.
-
-eg. If we write 0x01 <- 000000011, then 0x01 <- 000000101, we will
-trigger on 1.) concidences of ext_trig_i[0] and ext_trig_i[1] when
-ext_trig[2] is not active, and 2.) concidences of ext_trig_i[0] and
-ext_trig_i[2] when ext_trig[1] is not active.
-
-If we then write 0x02 <- 000000011, we will only trigger on 2.)
-
-#### Boolean logic, one configuration word
-
-To configure all the trigger logic in one Wishbone transaction,
-compute the configuration word and write it to 0x04 on the Wishbone
-bus. To compute the configuration word, start with all zeros, write
-down all the patterns you want to accept (as described in the previous
-section), convert them all to numbers (interpret as binary), and set
-the corresponding bits of the configuration word.
-
-eg. In the example of the previous section, pattern 1.) corresponds to
-bit [3] of the configuration word, and pattern 2.) corresponds to bit
-[5], so the same trigger config could have been achieved with:
-0x4 <- 000...0000101000
-
-Then to deselect pattern 1.), we can write 0x4 <- 000...0000100000
+Any bits that are zero'd out in trig_mask will be ignored. 
 
 ### Trig tag
 
 To configure the trig_tag output, write trig_tag_mode to 0x04 on the
 Wishbone bus. trig_tag_mode must be one of the following:
 
-| trig_tag_mode | trig_tag behavior |
-| ------------- | ----------------- |
-|             0 | trigger counter   |
-|             1 | clk_i timestamp   |
-|             2 | eudet input       |
+| trig_tag_mode | trig_tag behavior           |
+| ------------- | --------------------------- |
+|             0 | trigger counter (default)   |
+|             1 | clk_i timestamp             |
+|             2 | eudet input                 |
 
-### Edge detector/delayer
-
-The edge detector/delayer are not configurable from outside the
-wb_trigger_logic component, but within wb_trigger_logic some code
-changes can perform the following configuration tasks:
+### Edge detector
 
 The edge detector can be configured to pick up
-either rising or falling edges by connecting the intermediate signal
-edge_ext_trig_i to the appropriate output of the edge detector
-component.
+either rising or falling edges by
 
-The width of the delayers can be chosen (default = 8). This is the max
-number of clock cycles a given channel can be delayed. The delay of
-each individual channel can be hardcoded. TODO: allow delay config
-over WB bus?
+### Per-channel delay
+
+
 
 
 ## Eudet stuff
