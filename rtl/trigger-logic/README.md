@@ -147,7 +147,7 @@ The debug port is hooked up to the following signals
 | debug_o[20]    | master_busy_t    | Busy signal*                        |
 | debug_o[21]    | trig_counter     | Number of trigger events            |
 
-* = internal, ie before output process
+\* = internal, ie before output process
 
 ## Eudet stuff
 
