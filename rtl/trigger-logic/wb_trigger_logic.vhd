@@ -60,7 +60,9 @@ entity wb_trigger_logic is
 
         -- To/From inside world
         clk_i : in std_logic;
-        trig_tag : out std_logic_vector(31 downto 0)
+        trig_tag : out std_logic_vector(31 downto 0);
+
+        debug_o : out std_logic_vector(31 downto 0)
     );
 end wb_trigger_logic;
 
@@ -123,7 +125,7 @@ architecture rtl of wb_trigger_logic is
     end component;
 
     constant delay_width : integer := 3;
-    signal C_DEADTIME : std_logic_vector(16 downto 0); -- clk_i cycles
+    signal deadtime : std_logic_vector(16 downto 0); -- clk_i cycles
     
     -- Registers
     signal trig_mask : std_logic_vector(31 downto 0);
@@ -136,10 +138,10 @@ architecture rtl of wb_trigger_logic is
     signal ch3_delay : std_logic_vector(delay_width-1 downto 0);
     
     -- Local signals
-    signal edge_ext_trig_i : std_logic_vector(3 downto 0);
     signal edge_r : std_logic_vector(3 downto 0);
     signal edge_f : std_logic_vector(3 downto 0);
     signal sync_ext_trig_i : std_logic_vector(3 downto 0);
+    signal edge_ext_trig_i : std_logic_vector(3 downto 0);
     signal del_ext_trig_i : std_logic_vector(3 downto 0);
     signal sync_ext_busy_i : std_logic;
     signal master_trig_t : std_logic;
@@ -153,6 +155,14 @@ architecture rtl of wb_trigger_logic is
     signal busy_t : std_logic;
 
 begin
+
+    debug_o(3 downto 0) <= ext_trig_i;
+    debug_o(7 downto 4) <= sync_ext_trig_i;
+    debug_o(11 downto 7) <= edge_ext_trig_i;
+    debug_o(15 downto 12) <= del_ext_trig_i;
+    debug_o(19) <= master_trig_t;
+    debug_o(20) <= master_busy_t;
+  
     -- WB interface
     wb_proc: process(wb_clk_i, rst_n_i)
     begin
@@ -167,7 +177,7 @@ begin
             ch1_delay <= (others => '0');
             ch2_delay <= (others => '0');
             ch3_delay <= (others => '0');
-            c_deadtime <= std_logic_vector(to_unsigned(300, 16));
+            deadtime <= std_logic_vector(to_unsigned(300, 16));
         elsif rising_edge(wb_clk_i) then
             wb_ack_o <= '0';
             wb_dat_o <= (others => '0');
@@ -193,7 +203,7 @@ begin
                         when x"07" =>
                             ch3_delay <= wb_dat_i(delay_width-1 downto 0);
                         when x"08" =>
-                            C_DEADTIME <= wb_dat_i(16 downto 0);
+                            deadtime <= wb_dat_i(16 downto 0);
                         when x"FF" =>
                             local_reset <= '1'; -- Pulse local reset
                         when others =>
@@ -217,7 +227,7 @@ begin
                         when x"07" =>
                             wb_dat_o <= ch3_delay;
                         when x"08" =>
-                            wb_dat_o <= C_DEADTIME;
+                            wb_dat_o <= deadtime;
                         when others =>
                             wb_dat_o <= x"DEADBEEF";
                     end case;
@@ -315,7 +325,7 @@ begin
             end if;
 
             if (master_trig_t = '1') then
-                deadtime_cnt <= UNSIGNED(C_DEADTIME);
+                deadtime_cnt <= UNSIGNED(deadtime);
             end if;
             if (deadtime_cnt > 0) then
                 deadtime_cnt <= deadtime_cnt - 1;

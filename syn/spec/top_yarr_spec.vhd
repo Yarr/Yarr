@@ -403,7 +403,9 @@ architecture rtl of yarr is
 
             -- To/From inside world
             clk_i : in std_logic;
-            trig_tag : out std_logic_vector(31 downto 0)
+            trig_tag : out std_logic_vector(31 downto 0);
+
+            debug_o : out std_logic_vector(31 downto 0)
         );
     end component;
 	

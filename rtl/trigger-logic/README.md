@@ -133,6 +133,22 @@ The unit does not respond to inputs for a configurable amount of time
 after a trigger. To configure this, write the number of clk_i cycles
 to 0x8.
 
+## Debug port
+
+The debug port is hooked up to the following signals
+
+| Debug bits     | Value            | Description                         |
+| -------------- | ---------------- | ----------------------------------- |
+| debug_o[3:0]   | ext_trig_i       | Trigger inputs                      |
+| debug_o[7:4]   | sync_ext_trig_i  | Inputs after synchronizer           |
+| debug_o[11:7]  | edge_ext_trig_i  | Inputs after edge detector          |
+| debug_o[15:12] | del_ext_trig_i   | Inputs after delay                  |
+| debug_o[19]    | master_trig_t    | Trigger out*                        |
+| debug_o[20]    | master_busy_t    | Busy signal*                        |
+| debug_o[21]    | trig_counter     | Number of trigger events            |
+
+* = internal, ie before output process
+
 ## Eudet stuff
 
 (to be written by Timon)
