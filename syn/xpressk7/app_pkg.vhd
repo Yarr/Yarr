@@ -575,32 +575,35 @@ package app_pkg is
         component wb_trigger_logic
             port (
                 -- Sys connect
-                wb_clk_i	: in  std_logic;
-                rst_n_i		: in  std_logic;
+                wb_clk_i    : in  std_logic;
+                rst_n_i        : in  std_logic;
                 
                 -- Wishbone slave interface
-                wb_adr_i	: in  std_logic_vector(31 downto 0);
-                wb_dat_i	: in  std_logic_vector(31 downto 0);
-                wb_dat_o	: out std_logic_vector(31 downto 0);
-                wb_cyc_i	: in  std_logic;
-                wb_stb_i	: in  std_logic;
-                wb_we_i		: in  std_logic;
-                wb_ack_o	: out std_logic;
+                wb_adr_i    : in  std_logic_vector(31 downto 0);
+                wb_dat_i    : in  std_logic_vector(31 downto 0);
+                wb_dat_o    : out std_logic_vector(31 downto 0);
+                wb_cyc_i    : in  std_logic;
+                wb_stb_i    : in  std_logic;
+                wb_we_i        : in  std_logic;
+                wb_ack_o    : out std_logic;
                 
                 -- To/From outside world
                 ext_trig_i : in std_logic_vector(3 downto 0);
                 ext_trig_o : out std_logic;
                 ext_busy_i : in std_logic;
                 ext_busy_o : out std_logic;
-                
+    
                 -- Eudet TLU
                 eudet_clk_o : out std_logic;
                 eudet_busy_o : out std_logic;
                 eudet_trig_i : in std_logic;
                 eudet_rst_i : in std_logic;
-
+    
                 -- To/From inside world
                 clk_i : in std_logic;
+                int_trig_i : in std_logic_vector(3 downto 0);
+                int_trig_o : out std_logic;
+                int_busy_i : in std_logic;
                 trig_tag : out std_logic_vector(31 downto 0)
             );
         end component;
