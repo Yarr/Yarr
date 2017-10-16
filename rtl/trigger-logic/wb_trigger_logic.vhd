@@ -160,8 +160,8 @@ begin
     debug_o(7 downto 4) <= sync_ext_trig_i;
     debug_o(11 downto 7) <= edge_ext_trig_i;
     debug_o(15 downto 12) <= del_ext_trig_i;
-    debug_o(19) <= master_trig_t;
-    debug_o(20) <= master_busy_t;
+    debug_o(16) <= master_trig_t;
+    debug_o(17) <= master_busy_t;
   
     -- WB interface
     wb_proc: process(wb_clk_i, rst_n_i)

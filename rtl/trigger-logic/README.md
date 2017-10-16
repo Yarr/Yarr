@@ -143,9 +143,8 @@ The debug port is hooked up to the following signals
 | debug_o[7:4]   | sync_ext_trig_i  | Inputs after synchronizer           |
 | debug_o[11:7]  | edge_ext_trig_i  | Inputs after edge detector          |
 | debug_o[15:12] | del_ext_trig_i   | Inputs after delay                  |
-| debug_o[19]    | master_trig_t    | Trigger out*                        |
-| debug_o[20]    | master_busy_t    | Busy signal*                        |
-| debug_o[21]    | trig_counter     | Number of trigger events            |
+| debug_o[16]    | master_trig_t    | Trigger out*                        |
+| debug_o[17]    | master_busy_t    | Busy signal*                        |
 
 * = internal, ie before output process
 
