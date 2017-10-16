@@ -78,7 +78,7 @@ eg. 0x00 <- 000000111 to mask out all but channels ext(0), ext(1), and ext(2)
 #### Boolean logic
 
 To configure what function of the inputs should appear at the output,
-compute the configuration word and write it to 0x04. The configuration
+compute the configuration word and write it to 0x02. The configuration
 word should have a bit set to 1 for each input pattern to accept.
 Which bit to set for a given pattern can be computed by interpreting
 the bit pattern as a binary number (where each bit corresponds to an
@@ -92,7 +92,7 @@ Any bits that are zero'd out in trig_mask will be ignored.
 
 ### Trig tag
 
-To configure the trig_tag output, write trig_tag_mode to 0x04 on the
+To configure the trig_tag output, write trig_tag_mode to 0x01 on the
 Wishbone bus. trig_tag_mode must be one of the following:
 
 | trig_tag_mode | trig_tag behavior           |
