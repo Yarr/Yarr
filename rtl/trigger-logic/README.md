@@ -146,7 +146,7 @@ The debug port is hooked up to the following signals
 | debug_o[16]    | master_trig_t    | Trigger out*                        |
 | debug_o[17]    | master_busy_t    | Busy signal*                        |
 
-* = internal, ie before output process
+\* = internal, ie before output process
 
 ## Eudet stuff
 
