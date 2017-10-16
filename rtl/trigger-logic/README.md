@@ -121,6 +121,9 @@ particular input:
 | 0x5     | ext[1]  |
 | 0x4     | ext[0]  |
 
+Note that the synchronizer/edge detector introduce a 6 clk_i cycle
+delay for all external inputs even when the channel delay is set to 0
+
 
 ## Eudet stuff
 
