@@ -20,6 +20,7 @@ All configuration is done over the Wishbone bus. The following sequence of write
 | --------- | ------ | --------------------------------------------------------------------------- |
 | 0x3       | 0x00   | Use rising edge for all channels (default)                                  |
 | 0x1       | 0x01   | Trigger tag is clk_i timestamp                                              |
+| 0x8       | 0xC8   | Set deadtime to 200 clk_i cycles                                            |
 | 0x0       | 0x07   | Mask-in ext[2:0], do not use ext[3] and eudet                               |
 | 0x4       | 0x02   | Put input channel ext[0] on a 2 clock cycle delay                           |
 | 0x2       | 0x5E   | (0x5E = 0b110100) Trigger on patterns 011, 101, 110 (see truth table below) |
@@ -55,6 +56,7 @@ like (see following sections for detail):
 | 0x05      | ext[1] delay setting      |
 | 0x06      | ext[2] delay setting      |
 | 0x07      | ext[3] delay setting      |
+| 0x08      | deadtime setting          |
 
 ### Trigger logic
 
@@ -125,6 +127,11 @@ particular input:
 Note that the synchronizer/edge detector introduce a 6 clk_i cycle
 delay for all external inputs even when the channel delay is set to 0
 
+### Deadtime
+
+The unit does not respond to inputs for a configurable amount of time
+after a trigger. To configure this, write the number of clk_i cycles
+to 0x8.
 
 ## Eudet stuff
 
