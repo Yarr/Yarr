@@ -226,7 +226,7 @@ begin
         end if;
     end process wb_proc;
 
-    -- Sync/delay inputs
+    -- Sync/edge detector inputs
     trig_inputs: for I in 0 to 3 generate
     begin
         cmp_sync_trig: synchronizer
@@ -234,36 +234,27 @@ begin
         cmp_edge_trig: edge_detector
             port map(clk_i => clk_i, rst_n_i => rst_n_i, dat_i => sync_ext_trig_i(I),
                      falling_o => edge_f(I), rising_o => edge_r(I) );
+        edge_ext_trig_i(I) <= edge_f(I) when trig_edge(0) = '1' else
+                              edge_r(I);
     end generate trig_inputs;
     
-    edge_ext_trig_i(0) <= edge_f(0) when trig_edge(0) = '1' else
-                          edge_r(0);
-    edge_ext_trig_i(1) <= edge_f(1) when trig_edge(1) = '1' else
-                          edge_r(1);
-    edge_ext_trig_i(2) <= edge_f(2) when trig_edge(2) = '1' else
-                          edge_r(2);
-    edge_ext_trig_i(3) <= edge_f(3) when trig_edge(3) = '1' else
-                          edge_r(3);
     cmp_delay_trig0: delayer
         generic map(N => 2**delay_width)
         port map(clk_i => clk_i, rst_n_i => rst_n_i, dat_i => edge_ext_trig_i(0),
-                 dat_o => del_ext_trig_i(0),
-                 delay => ch0_delay);
+                 dat_o => del_ext_trig_i(0), delay => ch0_delay);
     cmp_delay_trig1: delayer
         generic map(N => 2**delay_width)
         port map(clk_i => clk_i, rst_n_i => rst_n_i, dat_i => edge_ext_trig_i(1),
-                 dat_o => del_ext_trig_i(1),
-                 delay => ch1_delay);
+                 dat_o => del_ext_trig_i(1), delay => ch1_delay);
     cmp_delay_trig2: delayer
         generic map(N => 2**delay_width)
         port map(clk_i => clk_i, rst_n_i => rst_n_i, dat_i => edge_ext_trig_i(2),
-                 dat_o => del_ext_trig_i(2),
-                 delay => ch2_delay);
+                 dat_o => del_ext_trig_i(2), delay => ch2_delay);
     cmp_delay_trig3: delayer
         generic map(N => 2**delay_width)
         port map(clk_i => clk_i, rst_n_i => rst_n_i, dat_i => edge_ext_trig_i(3),
-                 dat_o => del_ext_trig_i(3),
-                 delay => ch3_delay);
+                 dat_o => del_ext_trig_i(3), delay => ch3_delay);
+                 
     cmp_sync_busy: synchronizer port map(clk_i => clk_i, rst_n_i => rst_n_i, async_in => ext_busy_i, sync_out => sync_ext_busy_i);
     
     master_busy_t <= sync_ext_busy_i or busy_t;
