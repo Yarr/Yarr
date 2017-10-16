@@ -239,19 +239,19 @@ begin
     end generate trig_inputs;
     
     cmp_delay_trig0: delayer
-        generic map(N => 2**delay_width)
+        generic map(N => delay_width)
         port map(clk_i => clk_i, rst_n_i => rst_n_i, dat_i => edge_ext_trig_i(0),
                  dat_o => del_ext_trig_i(0), delay => ch0_delay);
     cmp_delay_trig1: delayer
-        generic map(N => 2**delay_width)
+        generic map(N => delay_width)
         port map(clk_i => clk_i, rst_n_i => rst_n_i, dat_i => edge_ext_trig_i(1),
                  dat_o => del_ext_trig_i(1), delay => ch1_delay);
     cmp_delay_trig2: delayer
-        generic map(N => 2**delay_width)
+        generic map(N => delay_width)
         port map(clk_i => clk_i, rst_n_i => rst_n_i, dat_i => edge_ext_trig_i(2),
                  dat_o => del_ext_trig_i(2), delay => ch2_delay);
     cmp_delay_trig3: delayer
-        generic map(N => 2**delay_width)
+        generic map(N => delay_width)
         port map(clk_i => clk_i, rst_n_i => rst_n_i, dat_i => edge_ext_trig_i(3),
                  dat_o => del_ext_trig_i(3), delay => ch3_delay);
                  
