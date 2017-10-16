@@ -24,7 +24,8 @@ All configuration is done over the Wishbone bus. The following sequence of write
 | 0x4       | 0x02   | Put input channel ext[0] on a 2 clock cycle delay                           |
 | 0x2       | 0x5E   | (0x5E = 0b110100) Trigger on patterns 011, 101, 110 (see truth table below) |
 
-With this configuration (0x5E = 0b110100), the unit outputs as follows:
+With this configuration (logic: 0x5E = 0b110100, mask: 0x7 = 0b00111),
+the unit outputs as follows:
 
 | ext[2] | ext[1] | ext[0] | output | note                      |
 | ------ | ------ | ------ | ------ | ------------------------- |
