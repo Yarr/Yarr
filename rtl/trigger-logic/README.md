@@ -10,7 +10,7 @@ inputs. The output (ext_trig_o) can be any boolean function of the 5
 inputs. The unit also reads out a trigger tag (trig_tag) which is
 either a counter, clk_i timestamp, or the tag from the eudet_tlu.
 
-![functional diagram](https://raw.githubusercontent.com/VBaratham/Yarr-fw/trigger/doc/Trigger%20logic%20core.png)
+![functional diagram](https://raw.githubusercontent.com/VBaratham/Yarr-fw/d4ac8fb55ea8841d49615f19a224feff78507fab/doc/Trigger%20logic%20core.png)
 
 ## Quick Configuration Example
 
