@@ -91,7 +91,7 @@ class SpecTxCore : virtual public TxCore, virtual public SpecCom{
         void setTriggerEdge(uint32_t edge) {
             SpecCom:writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_EDGE, edge);
         }
-        void setTriggerDelay(uint32_t channel, uint32 delay) {
+        void setTriggerDelay(uint32_t channel, uint32_t delay) {
             if (channel < NCHANNELS) 
                 SpecCom:writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_DELAY + channel, delay);
         }
