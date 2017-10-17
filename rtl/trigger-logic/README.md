@@ -131,7 +131,7 @@ delay for all external inputs even when the channel delay is set to 0
 
 The unit does not respond to inputs for a configurable amount of time
 after a trigger. To configure this, write the number of clk_i cycles
-to 0x8.
+to 0x8. (default = 300 clk_i cycles)
 
 ## Debug port
 
