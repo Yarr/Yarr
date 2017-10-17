@@ -158,7 +158,7 @@ begin
 
     debug_o(3 downto 0) <= ext_trig_i;
     debug_o(7 downto 4) <= sync_ext_trig_i;
-    debug_o(11 downto 7) <= edge_ext_trig_i;
+    debug_o(11 downto 8) <= edge_ext_trig_i;
     debug_o(15 downto 12) <= del_ext_trig_i;
     debug_o(16) <= master_trig_t;
     debug_o(17) <= master_busy_t;
