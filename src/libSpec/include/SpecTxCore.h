@@ -89,14 +89,14 @@ class SpecTxCore : virtual public TxCore, virtual public SpecCom{
             SpecCom::writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_CONFIG, config);
         }
         void setTriggerEdge(uint32_t edge) {
-            SpecCom:writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_EDGE, edge);
+            SpecCom::writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_EDGE, edge);
         }
         void setTriggerDelay(uint32_t channel, uint32_t delay) {
             if (channel < NCHANNELS) 
-                SpecCom:writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_DELAY + channel, delay);
+                SpecCom::writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_DELAY + channel, delay);
         }
         void setTriggerDeadtime(uint32_t deadtime) {
-            SpecCom:writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_DEADTIME, deadtime);
+            SpecCom::writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_DEADTIME, deadtime);
         }
 
         void resetTriggerLogic() {
