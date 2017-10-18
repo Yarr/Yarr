@@ -1090,7 +1090,7 @@ begin
 		rx_data_i => fe_data_i,
 		rx_valid_o => rx_valid,
 		rx_data_o => rx_data,
-        trig_tag_i => trig_tag_T,
+        trig_tag_i => trig_tag_t,
 		busy_o => open,
 		debug_o => debug
 	);
@@ -1157,10 +1157,10 @@ begin
 		wb_stb_i => wb_stb,
 		wb_we_i => wb_we,
 		wb_ack_o => wb_ack(5),
-		ext_trig_i => "0000",
-		ext_trig_o => open,
+		ext_trig_i => "00" & io(2) & trig_pulse,
+		ext_trig_o => io(1),
 		ext_busy_i => '0',
-		ext_busy_o => open,
+		ext_busy_o => io(0),
 		eudet_clk_o => open,
 		eudet_busy_o => open,
 		eudet_trig_i => '0',
