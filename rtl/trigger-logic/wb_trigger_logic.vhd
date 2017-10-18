@@ -244,8 +244,7 @@ begin
         cmp_edge_trig: edge_detector
             port map(clk_i => clk_i, rst_n_i => rst_n_i, dat_i => sync_ext_trig_i(I),
                      falling_o => edge_f(I), rising_o => edge_r(I) );
-        edge_ext_trig_i(I) <= edge_f(I) when trig_edge(0) = '1' else
-                              edge_r(I);
+        edge_ext_trig_i(I) <= edge_f(I) when trig_edge(0) = '1' else edge_r(I);
     end generate trig_inputs;
     
     cmp_delay_trig0: delayer
