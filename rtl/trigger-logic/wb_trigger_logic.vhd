@@ -125,7 +125,7 @@ architecture rtl of wb_trigger_logic is
     end component;
 
     constant delay_width : integer := 3;
-    signal deadtime : std_logic_vector(16 downto 0); -- clk_i cycles
+    signal deadtime : std_logic_vector(15 downto 0); -- clk_i cycles
     
     -- Registers
     signal trig_mask : std_logic_vector(31 downto 0);
@@ -203,7 +203,7 @@ begin
                         when x"07" =>
                             ch3_delay <= wb_dat_i(delay_width-1 downto 0);
                         when x"08" =>
-                            deadtime <= wb_dat_i(16 downto 0);
+                            deadtime <= wb_dat_i(15 downto 0);
                         when x"FF" =>
                             local_reset <= '1'; -- Pulse local reset
                         when others =>
@@ -213,21 +213,21 @@ begin
                         when x"00" =>
                             wb_dat_o <= trig_mask;
                         when x"01" =>
-                            wb_dat_o <= trig_tag_mode;
+                            wb_dat_o <= std_logic_vector(resize(unsigned(trig_tag_mode), 32));
                         when x"02" =>
                             wb_dat_o <= trig_logic;
                         when x"03" =>
-                            wb_dat_o <= trig_edge;
+                            wb_dat_o <= std_logic_vector(resize(unsigned(trig_edge), 32));
                         when x"04" =>
-                            wb_dat_o <= ch0_delay;
+                            wb_dat_o <= std_logic_vector(resize(unsigned(ch0_delay), 32));
                         when x"05" =>
-                            wb_dat_o <= ch1_delay;
+                            wb_dat_o <= std_logic_vector(resize(unsigned(ch1_delay), 32));
                         when x"06" =>
-                            wb_dat_o <= ch2_delay;
+                            wb_dat_o <= std_logic_vector(resize(unsigned(ch2_delay), 32));
                         when x"07" =>
-                            wb_dat_o <= ch3_delay;
+                            wb_dat_o <= std_logic_vector(resize(unsigned(ch3_delay), 32));
                         when x"08" =>
-                            wb_dat_o <= deadtime;
+                            wb_dat_o <= std_logic_vector(resize(unsigned(deadtime), 32));
                         when others =>
                             wb_dat_o <= x"DEADBEEF";
                     end case;
