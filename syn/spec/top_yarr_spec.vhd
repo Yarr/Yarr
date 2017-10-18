@@ -768,6 +768,7 @@ architecture rtl of yarr is
   signal TRIG1_t : STD_LOGIC_VECTOR(31 DOWNTO 0);
   signal TRIG2_t : STD_LOGIC_VECTOR(31 DOWNTO 0);
   signal debug_dma : std_logic_vector(31 downto 0);
+  signal debug_trig : std_logic_vector(31 downto 0);
   
   signal ddr_status : std_logic_vector(31 downto 0);
   signal gn4124_core_Status : std_logic_vector(31 downto 0);
@@ -1165,7 +1166,8 @@ begin
 		eudet_trig_i => '0',
 		eudet_rst_i => '0',
 		clk_i => CLK_40,
-		trig_tag => trig_tag_t
+		trig_tag => trig_tag_t,
+                debug_o => debug_trig
 	);
 
   --wb_stall(1) <= '0' when wb_cyc(1) = '0' else not(wb_ack(1));
@@ -1206,7 +1208,7 @@ begin
 	TRIG0(3) <= fe_cmd_o(0);
 	TRIG0(31 downto 4) <= (others => '0');
 	TRIG1 <= rx_data;
-	TRIG2 <= debug;
+	TRIG2 <= debug_trig;
 --		TRIG0(0) <= scl;
 --		TRIG0(1) <= sda;
 --		TRIG0(2) <= wb_stb;
