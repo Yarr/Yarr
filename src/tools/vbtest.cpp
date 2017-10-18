@@ -17,24 +17,13 @@ int main(int argc, char **argv) {
     if (argc == 2)
         specNum = atoi(argv[1]);
     SpecTxCore mySpec(specNum);
-    std::string tmp;
-    const size_t size = 256*8;
     unsigned err_count = 0;
     
-    uint32_t *data = new uint32_t[size];
-    for(unsigned i=0; i<size;i++)
-        data[i] = i;
-
     trig_mask = 0x7; // 0b00111
     trig_logic = 0x28; // Trigger on 011 and 111
     trig_deadtime = 200;
 
-    uint32_t *resp = new uint32_t[size];
-
     std::cout << "Starting trigger config test ..." << std::endl;
-
-    // std::cout << "Starting DMA write/read test ..." << std::endl;
-    // memset(resp, size*4, 0x5A);
     
     mySpec.setTriggerLogicMask(trig_mask);
     std::cout << "... set trigger mask to " << trig_mask << std::endl;
@@ -58,9 +47,6 @@ int main(int argc, char **argv) {
 
     if (err_count == 0)
         std::cout << "Success! No errors." << std::endl;
-    
-    delete[] data;
-    delete[] resp;
 
     return 0;
 }
