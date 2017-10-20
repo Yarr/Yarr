@@ -131,7 +131,7 @@ architecture rtl of wb_trigger_logic is
     signal trig_mask : std_logic_vector(31 downto 0);
     signal trig_tag_mode : std_logic_vector(7 downto 0);
     signal trig_logic : std_logic_vector(31 downto 0);
-    signal trig_edge : std_logic_vector(4 downto 0);
+    signal trig_edge : std_logic_vector(3 downto 0);
     signal ch0_delay : std_logic_vector(delay_width-1 downto 0);
     signal ch1_delay : std_logic_vector(delay_width-1 downto 0);
     signal ch2_delay : std_logic_vector(delay_width-1 downto 0);
@@ -163,7 +163,7 @@ begin
     debug_o(16) <= master_trig_t;
     debug_o(17) <= master_busy_t;
     -- debug_o(19 downto 18) used in top lvl for outputs
-    debug_o(24 downto 20) <= trig_edge;
+    debug_o(23 downto 20) <= trig_edge;
   
     -- WB interface
     wb_proc: process(wb_clk_i, rst_n_i)
@@ -195,7 +195,7 @@ begin
                         when x"02" =>
                             trig_logic <= wb_dat_i;
                         when x"03" =>
-                            trig_edge <= wb_dat_i(4 downto 0);
+                            trig_edge <= wb_dat_i(3 downto 0);
                         when x"04" =>
                             ch0_delay <= wb_dat_i(delay_width-1 downto 0);
                         when x"05" =>
@@ -246,7 +246,7 @@ begin
         cmp_edge_trig: edge_detector
             port map(clk_i => clk_i, rst_n_i => rst_n_i, dat_i => sync_ext_trig_i(I),
                      falling_o => edge_f(I), rising_o => edge_r(I) );
-        edge_ext_trig_i(I) <= edge_f(I) when trig_edge(0) = '1' else edge_r(I);
+        edge_ext_trig_i(I) <= edge_f(I) when trig_edge(I) = '1' else edge_r(I);
     end generate trig_inputs;
     
     cmp_delay_trig0: delayer
