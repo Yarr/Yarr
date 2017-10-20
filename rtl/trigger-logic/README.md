@@ -23,9 +23,9 @@ All configuration is done over the Wishbone bus. The following sequence of write
 | 0x8       | 0xC8   | Set deadtime to 200 clk_i cycles                                            |
 | 0x0       | 0x07   | Mask-in ext[2:0], do not use ext[3] and eudet                               |
 | 0x4       | 0x02   | Put input channel ext[0] on a 2 clock cycle delay                           |
-| 0x2       | 0x5E   | (0x5E = 0b110100) Trigger on patterns 011, 101, 110 (see truth table below) |
+| 0x2       | 0x5E   | (0x68 = 0b1101000) Trigger on patterns 011, 101, 110 (see truth table below) |
 
-With this configuration (logic: 0x5E = 0b110100, mask: 0x7 = 0b00111),
+With this configuration (logic: 0x68 = 0b1101000, mask: 0x7 = 0b00111),
 the unit outputs as follows:
 
 | ext[2] | ext[1] | ext[0] | output | note                      |
