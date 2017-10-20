@@ -1208,7 +1208,10 @@ begin
 	TRIG0(3) <= fe_cmd_o(0);
 	TRIG0(31 downto 4) <= (others => '0');
 	TRIG1 <= rx_data;
-	TRIG2 <= debug_trig;
+	TRIG2(17 downto 0) <= debug_trig(17 downto 0);
+    TRIG2(18) <= io(1); -- ext_trig_o
+    TRIG2(19) <= io(2); -- ext_busy_o
+    TRIG2(31 downto 20) <= debug_trig(31 downto 20);
 --		TRIG0(0) <= scl;
 --		TRIG0(1) <= sda;
 --		TRIG0(2) <= wb_stb;
