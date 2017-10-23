@@ -327,7 +327,7 @@ begin
             end if;
             
             if (prev_master_trig_t = '1') then
-                ext_trig_o <= '1' and not busy_t;
+                ext_trig_o <= '1' and not master_busy_t;
             else
                 ext_trig_o <= '0';
             end if;
