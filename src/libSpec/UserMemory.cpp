@@ -100,8 +100,9 @@ UserMemory::~UserMemory()
 	uh.vma = vma;
 	uh.size = size;
 
-	if (ioctl(device->getHandle(), SPECDRIVER_IOC_UMEM_SGUNMAP, &uh) != 0)
-		throw Exception(Exception::INTERNAL_ERROR);
+	if (ioctl(device->getHandle(), SPECDRIVER_IOC_UMEM_SGUNMAP, &uh) != 0);
+        // TODO figure out correct behaviour
+		//throw Exception(Exception::INTERNAL_ERROR);
 }
 
 /**
