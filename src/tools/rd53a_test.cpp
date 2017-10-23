@@ -182,7 +182,6 @@ int main(void) {
     myRd53a->writeRegister(4, &Rd53aGlobalCfg::PixPortalHigh, 0xAA);
     myRd53a->writeRegister(4, &Rd53aGlobalCfg::RegionCol, 0xFF);
 
-/*
     // these commands should register all pixel registers
     myRd53a->wrRegister(4, 0, (uint32_t) 0xFF);
     myRd53a->wrRegister(4, 1, (uint32_t) 0xFF); // 1 = RegionCol
@@ -191,7 +190,6 @@ int main(void) {
     for (int i = 0; i < 1; i++) { // make this loop to i < 193 in order to loop over all rows
         myRd53a->wrRegister(4, 0, (feCfg->PixPortalHigh.read() << 8) + feCfg->PixPortalLow.read()); // do we actually need to send the data here?
     }
-*/
 
     sleep(2);
 

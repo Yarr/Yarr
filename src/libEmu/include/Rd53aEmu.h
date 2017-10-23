@@ -31,6 +31,8 @@ class Rd53aEmu {
         RingBuffer * m_rxRingBuffer;
         std::shared_ptr<Rd53aCfg> m_feCfg;
 
+	uint8_t m_pixelRegisters[400][192];
+
         uint32_t m_header;
         uint32_t m_id_address_some_data;
         uint32_t m_small_data;

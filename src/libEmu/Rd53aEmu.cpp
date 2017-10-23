@@ -111,16 +111,32 @@ void Rd53aEmu::executeLoop() {
 
                 uint32_t data = data_byte2 + (data_byte1 << 5) + (byte4 << 10) + ((byte3 & 0x1) << 15);
                 printf("data: 0x%x, %d\n", data, data);
-                m_feCfg->m_cfg[address] = data; // this is basically where we actually write to the global register
-              }
 
-              if (address == 0) // configure pixels based on what's in the GR
-              {
-                printf("being asked to configure pixels\n");
-                if (m_feCfg->PixMode.read() == 0x2) // auto col = 0, auto row = 1, broadcast = 0
+                if (address == 0) // configure pixels based on what's in the GR
                 {
-                  // configure all pixels in row m_feCfg->RegionRow.read() with value sent
-                  // increment m_feCfg->RegionRow
+                  printf("being asked to configure pixels\n");
+                  if (m_feCfg->PixMode.read() == 0x2) // auto col = 0, auto row = 1, broadcast = 0
+                  {
+                    // configure all pixels in row m_feCfg->RegionRow.read() with value sent
+                    for (unsigned dc = 0; dc < 200; dc++)
+                    {
+                      m_pixelRegisters[dc][m_feCfg->RegionRow.read()] = (uint8_t) (data & 0x00FF);
+                      m_pixelRegisters[dc * 2 + 1][m_feCfg->RegionRow.read()] = (uint8_t) (data >> 8);
+                    }
+                    // increment m_feCfg->RegionRow
+                    if (m_feCfg->RegionRow.read() + 1 < 400)
+                    {
+                      m_feCfg->RegionRow.write(m_feCfg->RegionRow.read() + 1);
+                    }
+                    else
+                    {
+                      m_feCfg->RegionRow.write(0);
+                    }
+                  }
+                }
+                else // configure the global reguster
+                {
+                  m_feCfg->m_cfg[address] = data; // this is basically where we actually write to the global register
                 }
               }
             }
