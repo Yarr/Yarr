@@ -398,7 +398,7 @@ architecture rtl of yarr is
             -- Eudet TLU
             eudet_clk_o : out std_logic;
             eudet_busy_o : out std_logic;
-            eudet_trig_i : in std_logic;
+            eudet_trig_t : in std_logic;
             eudet_rst_i : in std_logic;
 
             -- To/From inside world
@@ -1163,7 +1163,7 @@ begin
 		ext_busy_o => io(0),
 		eudet_clk_o => open,
 		eudet_busy_o => open,
-		eudet_trig_i => '0',
+		eudet_trig_t => '0',
 		eudet_rst_i => '0',
 		clk_i => CLK_40,
 		trig_tag => trig_tag_t,
