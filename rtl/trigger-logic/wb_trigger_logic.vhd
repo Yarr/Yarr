@@ -56,7 +56,7 @@ entity wb_trigger_logic is
         -- Eudet TLU
         eudet_clk_o : out std_logic;
         eudet_busy_o : out std_logic;
-        eudet_trig_i : in std_logic;
+        eudet_trig_t : in std_logic;
         eudet_rst_i : in std_logic;
 
         -- To/From inside world
@@ -110,7 +110,7 @@ architecture rtl of wb_trigger_logic is
             rst_n_i : IN std_logic;
             
             -- Eudet signals
-            eudet_trig_i : IN std_logic;
+            eudet_trig_t : IN std_logic;
             eudet_rst_i : IN std_logic;
             eudet_busy_o : OUT std_logic;
             eudet_clk_o : OUT std_logic;
@@ -146,8 +146,9 @@ architecture rtl of wb_trigger_logic is
     signal del_ext_trig_i : std_logic_vector(3 downto 0);
     signal sync_ext_busy_i : std_logic;
     signal master_trig_t : std_logic;
+    signal prev_master_trig_t : std_logic; -- delay output one clk to sync w/ busy signal
     signal master_busy_t : std_logic;
-    signal eudet_trig_t : std_logic;
+    signal lcl_eudet_trig_t : std_logic;
     signal eudet_trig_tag_t : std_logic_vector(15 downto 0);
     signal trig_counter : unsigned (31 downto 0);
     signal timestamp_cnt : unsigned(31 downto 0);
@@ -270,9 +271,10 @@ begin
     cmp_sync_busy: synchronizer port map(clk_i => clk_i, rst_n_i => rst_n_i, async_in => ext_busy_i, sync_out => sync_ext_busy_i);
     
     master_busy_t <= sync_ext_busy_i or busy_t;
+    ext_busy_o <= master_busy_t;
 	
     -- Apply coincidence/veto logic
-    master_trig_t <= trig_logic(to_integer(unsigned((eudet_trig_i & del_ext_trig_i) and trig_mask(4 downto 0))));
+    master_trig_t <= trig_logic(to_integer(unsigned((lcl_eudet_trig_t & del_ext_trig_i) and trig_mask(4 downto 0))));
     
     -- trig tag gen
     trig_tag_proc: process(clk_i, rst_n_i)
@@ -315,20 +317,29 @@ begin
     begin
         if (rst_n_i = '0') then
             ext_trig_o <= '0';
-            ext_busy_o <= '0';
             deadtime_cnt <= (others => '0');
             busy_t <= '0';
+            prev_master_trig_t <= '0';
         elsif rising_edge(clk_i) then
             if (master_busy_t = '0') then
-                ext_trig_o <= master_trig_t;
-                ext_busy_o <= '0';
+                ext_trig_o <= prev_master_trig_t;
+                prev_master_trig_t <= master_trig_t;
+            end if;
+            
+            if (prev_master_trig_t = '1') then
+                ext_trig_o <= '1' and not busy_t;
             else
-                ext_busy_o <= '1';
+                ext_trig_o <= '0';
             end if;
 
+            -- Since we check master_trig_t (not prev_master_trig_t),
+            -- this happens one clk cycle before ext_trig_o pulses...
             if (master_trig_t = '1') then
                 deadtime_cnt <= UNSIGNED(deadtime);
             end if;
+            
+            -- ...and this happens on the next clk cycle (ie, when
+            -- ext_trig_o pulses), immediately setting ext_busy_o to '1'
             if (deadtime_cnt > 0) then
                 deadtime_cnt <= deadtime_cnt - 1;
                 busy_t <= '1';
@@ -342,15 +353,15 @@ begin
     port map (
         clk_i => clk_i,
         rst_n_i => rst_n_i,
-        eudet_trig_i => eudet_trig_i,
+        eudet_trig_t => eudet_trig_t,
         eudet_rst_i => eudet_rst_i,
         eudet_busy_o => eudet_busy_o,
         eudet_clk_o => eudet_clk_o,
         busy_i => '0',
         simple_mode_i => '0',
-        trig_o => eudet_trig_t,
+        trig_o => lcl_eudet_trig_t,
         rst_o => open,
         trig_tag_o => eudet_trig_tag_t
     );
 		    
-end rtl;
+ end rtl;
