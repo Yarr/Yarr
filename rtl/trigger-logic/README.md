@@ -46,17 +46,18 @@ Both the trigger logic and tag are configured over the wishbone bus
 for the Wishbone interface specification. The address space looks
 like (see following sections for detail):
 
-| Address   | Function                  |
-| --------- | ------------------------- |
-| 0x00      | Trigger mask              |
-| 0x01      | Trigger tag mode          |
-| 0x02      | Boolean logic config      |
-| 0x03      | Edge selection            |
-| 0x04      | ext[0] delay setting      |
-| 0x05      | ext[1] delay setting      |
-| 0x06      | ext[2] delay setting      |
-| 0x07      | ext[3] delay setting      |
-| 0x08      | deadtime setting          |
+| Address   | Function                               |
+| --------- | -------------------------------------- |
+| 0x00      | Trigger mask                           |
+| 0x01      | Trigger tag mode                       |
+| 0x02      | Boolean logic config                   |
+| 0x03      | Edge selection                         |
+| 0x04      | ext[0] delay setting                   |
+| 0x05      | ext[1] delay setting                   |
+| 0x06      | ext[2] delay setting                   |
+| 0x07      | ext[3] delay setting                   |
+| 0x08      | deadtime setting                       |
+| 0xFF      | local reset (reset trigger tag values) |
 
 ### Trigger logic
 

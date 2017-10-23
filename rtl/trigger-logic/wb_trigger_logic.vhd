@@ -23,6 +23,7 @@
 -- # 0x4..0x7 - Per-channel delay (clk_i cycles, max 8)
 -- #              0x4 = ext[0] ... 0x7 = ext[3]
 -- # 0x8      - deadtime (clk_i cycles)
+-- # 0xFF     - local reset (reset trigger tag values)
 -- #
 -- # See ./README.md for more detailed instructions
 
