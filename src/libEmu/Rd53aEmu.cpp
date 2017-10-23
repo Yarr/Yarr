@@ -111,7 +111,7 @@ void Rd53aEmu::executeLoop() {
 
                 uint32_t data = data_byte2 + (data_byte1 << 5) + (byte4 << 10) + ((byte3 & 0x1) << 15);
                 printf("data: 0x%x, %d\n", data, data);
-//              m_feCfg->WriteGR(address, data); // need this kind of function!
+                m_feCfg->m_cfg[address] = data; // this is basically where we actually write to the global register
               }
 
               if (address == 0) // configure pixels based on what's in the GR
@@ -119,7 +119,7 @@ void Rd53aEmu::executeLoop() {
                 printf("being asked to configure pixels\n");
                 if (m_feCfg->PixMode.read() == 0x2) // auto col = 0, auto row = 1, broadcast = 0
                 {
-                  // configure all pixels in row m_feCfg->RegionRow.read() with value m_feCfg->PixPortalHigh.read() << 16) + m_feCfg->PixPortalLow.read()
+                  // configure all pixels in row m_feCfg->RegionRow.read() with value sent
                   // increment m_feCfg->RegionRow
                 }
               }
