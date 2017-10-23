@@ -331,14 +331,8 @@ begin
             else
                 ext_trig_o <= '0';
             end if;
-
-            -- Since we check master_trig_t (not prev_master_trig_t),
-            -- this happens one clk cycle before ext_trig_o pulses...
-            if (master_trig_t = '1') then
-                deadtime_cnt <= UNSIGNED(deadtime);
-            end if;
             
-            -- ...and this happens on the next clk cycle (ie, when
+            -- This happens on the clk cycle after master_trig_t pulses (ie, when
             -- ext_trig_o pulses), immediately setting ext_busy_o to '1'
             if (deadtime_cnt > 0) then
                 deadtime_cnt <= deadtime_cnt - 1;
@@ -346,6 +340,13 @@ begin
             else
                 busy_t <= '0';
             end if;
+        
+            -- This happens one clk before ext_trig_o pulses because we
+            -- are checking master_trig_t and not prev_master_trig_t.
+            if (master_trig_t = '1') then
+                deadtime_cnt <= UNSIGNED(deadtime);
+            end if;
+
         end if;
     end process out_proc;
 

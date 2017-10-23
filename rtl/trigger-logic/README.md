@@ -16,13 +16,13 @@ either a counter, clk_i timestamp, or the tag from the eudet_tlu.
 
 All configuration is done over the Wishbone bus. The following sequence of writes shows an example configuration:
 
-| Address   | Data   | Function                                                                    |
-| --------- | ------ | --------------------------------------------------------------------------- |
-| 0x3       | 0x00   | Use rising edge for all channels (default)                                  |
-| 0x1       | 0x01   | Trigger tag is clk_i timestamp                                              |
-| 0x8       | 0xC8   | Set deadtime to 200 clk_i cycles                                            |
-| 0x0       | 0x07   | Mask-in ext[2:0], do not use ext[3] and eudet                               |
-| 0x4       | 0x02   | Put input channel ext[0] on a 2 clock cycle delay                           |
+| Address   | Data   | Function                                                                     |
+| --------- | ------ | ---------------------------------------------------------------------------- |
+| 0x3       | 0x00   | Use rising edge for all channels (default)                                   |
+| 0x1       | 0x01   | Trigger tag is clk_i timestamp                                               |
+| 0x8       | 0xC8   | Set deadtime to 200 clk_i cycles                                             |
+| 0x0       | 0x07   | Mask-in ext[2:0], do not use ext[3] and eudet                                |
+| 0x4       | 0x02   | Put input channel ext[0] on a 2 clock cycle delay                            |
 | 0x2       | 0x5E   | (0x68 = 0b1101000) Trigger on patterns 011, 101, 110 (see truth table below) |
 
 With this configuration (logic: 0x68 = 0b1101000, mask: 0x7 = 0b00111),
@@ -125,8 +125,8 @@ particular input:
 | 0x5     | ext[1]  |
 | 0x4     | ext[0]  |
 
-Note that the synchronizer/edge detector introduce a 6 clk_i cycle
-delay for all external inputs even when the channel delay is set to 0
+Note that there is some delay present in all external channels, see
+"Latency" in the "Operational Notes" section below.
 
 ### Deadtime
 
@@ -152,3 +152,47 @@ The debug port is hooked up to the following signals
 ## Eudet stuff
 
 (to be written by Timon)
+
+## Operational Notes
+
+### Output process
+
+In order for ext_busy_o to be set at the same time as ext_trig_o, we
+need to delay the output of the (internal) trigger signal
+master_trig_t by holding it in prev_master_trig_t and outputting it on
+the next clock cycle only if the (internal) busy signal master_busy_t
+is still zero. With deadtime = 300, the behavior is as follows:
+
+| Clock cycle | master_trig_t | prev_master_trig_t | master_busy_t | deadtime_cnt | ext_trig_o | ext_busy_o |
+| ----------- | ------------- | ------------------ | ------------- | ------------ | ---------- | ---------- |
+| 1           | 0             | 0                  | 0             | 0            | 0          | 0          |
+| 2           | 1             | 0                  | 0             | 0            | 0          | 0          |
+| 3           | 0             | 1                  | 0             | 300          | 0          | 0          |
+| 4           | 0             | 0                  | 1             | 299          | 1          | 1          |
+| ...         | 0             | 0                  | 1             | ...          | 0          | 1          |
+| 301         | 0             | 0                  | 1             | 2            | 0          | 1          |
+| 302         | 0             | 0                  | 1             | 1            | 0          | 1          |
+| 303         | 0             | 0                  | 1             | 0            | 0          | 1          |
+| 304         | 0             | 0                  | 1             | 0            | 0          | 0          |
+
+### Latency
+
+There is some latency in the processing of input signals (which we
+calculate here) and in the output process (which is shown in the table
+above).
+
+The synchronizer introduces a 2 clock cycle delay (from the first
+clock edge where the input signal is '1') because it passes the signal
+through a chain of 2 flip-flops to deglitch.
+
+The edge detector introduces a 1 clock cycle delay becase it compares
+the incoming signal to its value on the previous clock cycle (which
+requires buffering it for one clock).
+
+The delayer (with delay set to 0) introduces a 2 clock cycle delay.
+
+master_trig_t gets set after these 5 clock cycles, then (as seen in
+the table above) it's 2 more clock cycles until ext_trig_o and
+ext_busy_o are set, for a total of 7 clock cycles between the input
+and output.
+
