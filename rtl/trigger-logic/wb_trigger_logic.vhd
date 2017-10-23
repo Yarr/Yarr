@@ -332,19 +332,16 @@ begin
                 ext_trig_o <= '0';
             end if;
             
-            -- This happens on the clk cycle after master_trig_t pulses (ie, when
-            -- ext_trig_o pulses), immediately setting ext_busy_o to '1'
             if (deadtime_cnt > 0) then
+                -- This happens on the clk cycle after master_trig_t pulses (ie, when
+                -- ext_trig_o pulses), immediately setting ext_busy_o to '1'
                 deadtime_cnt <= deadtime_cnt - 1;
                 busy_t <= '1';
+            elsif (master_trig_t = '1') then
+                -- This happens on the clk cycle before ext_trig_o pulses
+                deadtime_cnt <= UNSIGNED(deadtime);
             else
                 busy_t <= '0';
-            end if;
-        
-            -- This happens one clk before ext_trig_o pulses because we
-            -- are checking master_trig_t and not prev_master_trig_t.
-            if (master_trig_t = '1') then
-                deadtime_cnt <= UNSIGNED(deadtime);
             end if;
 
         end if;

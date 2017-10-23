@@ -189,7 +189,8 @@ The edge detector introduces a 1 clock cycle delay becase it compares
 the incoming signal to its value on the previous clock cycle (which
 requires buffering it for one clock).
 
-The delayer (with delay set to 0) introduces a 2 clock cycle delay.
+The delayer (with delay set to 0) introduces a 2 clock cycle delay
+(one to move the data into the shift register, one to move it out).
 
 master_trig_t gets set after these 5 clock cycles, then (as seen in
 the table above) it's 2 more clock cycles until ext_trig_o and
