@@ -526,7 +526,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         hh1->setYaxisTitle("Number of Pixels");
                         timeDist[outerIdent] = hh1;
                     }
-                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin)/16.0) {
+                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0) {
                         FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
                         thrMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0]));
                         thrDist[outerIdent]->fill(feCfg->toCharge(par[0]));
