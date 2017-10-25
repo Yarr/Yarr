@@ -1157,10 +1157,10 @@ begin
 		wb_stb_i => wb_stb,
 		wb_we_i => wb_we,
 		wb_ack_o => wb_ack(5),
-		ext_trig_i => "00" & io(2) & trig_pulse,
-		ext_trig_o => io(1),
+		ext_trig_i => "0" & io(2 downto 1) & trig_pulse,
+		ext_trig_o => io(0),
 		ext_busy_i => '0',
-		ext_busy_o => io(0),
+		ext_busy_o => open,
 		eudet_clk_o => open,
 		eudet_busy_o => open,
 		eudet_trig_t => '0',
@@ -1209,7 +1209,6 @@ begin
 	TRIG0(31 downto 4) <= (others => '0');
 	TRIG1 <= rx_data;
 	TRIG2(17 downto 0) <= debug_trig(17 downto 0);
-    TRIG2(18) <= io(1); -- ext_trig_o
     TRIG2(19) <= io(0); -- ext_busy_o
     TRIG2(31 downto 20) <= debug_trig(31 downto 20);
 --		TRIG0(0) <= scl;
