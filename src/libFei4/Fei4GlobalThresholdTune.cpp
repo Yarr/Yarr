@@ -85,7 +85,7 @@ void Fei4GlobalThresholdTune::preScan() {
     g_fe->writeRegister(&Fei4::Trig_Count, 12);
     g_fe->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
     g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
-    while(!g_tx->isCmdEmpty());
+    while(!g_tx->isCmdEmpty()){}
 
 	for(unsigned int k=0; k<b->feList.size(); k++) {
         Fei4 *fe = dynamic_cast<Fei4*>(b->feList[k]);
@@ -99,7 +99,7 @@ void Fei4GlobalThresholdTune::preScan() {
             for (unsigned row=1; row<337; row++)
                 fe->setTDAC(col, row, 16);
         fe->configurePixels();
-        while(!g_tx->isCmdEmpty());
+        while(!g_tx->isCmdEmpty()){}
 	}
 	g_tx->setCmdEnable(b->getTxMask());
 }

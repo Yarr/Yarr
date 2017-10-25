@@ -3,9 +3,11 @@
         "type": "ku040",
         "cfg" : {
             "ku040Host" : "192.168.6.20",
-            "emuMask" : 0,
+            "emuMask" : 1048575,
             "emuHitCnt" : 2,
-			"skipRecsWithErrors" : false
+	    "skipRecsWithErrors" : true,
+	    "linkSpeed" : 160,
+            "useUDP" : false
         }
     }
 }

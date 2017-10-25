@@ -44,6 +44,8 @@ class KU040TxCore : virtual public TxCore {
         void resetTriggerLogic();
         uint32_t getTrigInCount();
 
+		void DumpTxCounters();
+
         void setCom(IPbus *com) {
             m_com = com;
         }

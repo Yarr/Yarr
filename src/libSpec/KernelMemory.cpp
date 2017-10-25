@@ -86,8 +86,9 @@ KernelMemory::~KernelMemory()
 	kh.handle_id = handle_id;
 	kh.size = size;
 	kh.pa = pa;
-	if (ioctl(device->getHandle(), SPECDRIVER_IOC_KMEM_FREE, &kh) != 0)
-		throw Exception(Exception::INTERNAL_ERROR);
+	if (ioctl(device->getHandle(), SPECDRIVER_IOC_KMEM_FREE, &kh) != 0){}
+        // TODO figure out correct behaviour
+		//throw Exception(Exception::INTERNAL_ERROR);
 }
 
 /**

@@ -2,7 +2,7 @@
     "ctrlCfg" : {
         "type": "boc",
         "cfg" : {
-            "bocHost" : "192.168.0.10",
+            "bocHost" : "192.168.2.110",
             "emuMask" : 1,
             "emuHitCnt" : 2
         }
