@@ -408,6 +408,17 @@ void ScurveFitter::init(ScanBase *s) {
             Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
             injections = trigLoop->getTrigCnt();
         }
+
+	// check injection capacitor for FEI-4
+	if(l->type() == typeid(Fei4MaskLoop*)) {
+	  std::shared_ptr<Fei4MaskLoop> msk = std::dynamic_pointer_cast<Fei4MaskLoop>(l);
+	  bool useScap = msk->getScap();
+	  bool useLcap = msk->getLcap();
+	  Fei4Cfg *fei4Cfg = dynamic_cast<Fei4Cfg*>(bookie->getFe(channel));
+	  fei4Cfg->setuseofScap(useScap);
+	  fei4Cfg->setuseofLcap(useLcap);
+	}
+
     }
 
     for (unsigned i=vcalMin; i<=vcalMax; i+=vcalStep) {
@@ -526,12 +537,12 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         hh1->setYaxisTitle("Number of Pixels");
                         timeDist[outerIdent] = hh1;
                     }
-                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin)/16.0) {
+                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0) {
                         FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
                         thrMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0]));
                         thrDist[outerIdent]->fill(feCfg->toCharge(par[0]));
-                        sigMap[outerIdent]->fill(col, row, feCfg->toCharge(par[1]));
-                        sigDist[outerIdent]->fill(feCfg->toCharge(par[1]));
+                        sigMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0]+par[1])-feCfg->toCharge(par[0]));
+                        sigDist[outerIdent]->fill(feCfg->toCharge(par[0]+par[1])-feCfg->toCharge(par[0]));
                         chiDist[outerIdent]->fill(status.fnorm/(double)status.nfev);
                         timeDist[outerIdent]->fill(fitTime.count());
                     }
