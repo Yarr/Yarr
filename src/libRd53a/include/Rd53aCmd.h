@@ -24,15 +24,14 @@ class Rd53aCmd {
         void wrRegister(uint32_t chipId, uint32_t address, uint32_t values[3]);
         void rdRegister(uint32_t chipId, uint32_t address);
 
-    protected:
-        Rd53aCmd(TxCore *arg_core);
-        ~Rd53aCmd();
-
         // Fast Commands
         void trigger(uint32_t bc, uint32_t tag);
         void ecr();
         void bcr();
 
+    protected:
+        Rd53aCmd(TxCore *arg_core);
+        ~Rd53aCmd();
 
         TxCore *core;
     private:

@@ -17,4 +17,8 @@ job_build_and_test:
       - ls ./data/
       - ls ./data/000001_digitalscan/
       - cat ./data/000001_digitalscan/JohnDoe_OccupancyMap.dat
+      - NUM100=`cat ./data/000001_digitalscan/JohnDoe_OccupancyMap.dat | grep -o 100 | wc -l`
+      - if [ "$NUM100" != "26880" ]; then exit 2; fi
+      - $TOTALHITS=`bin/rd53a_test | grep 70656 | awk '{print $3}'`
+      - if [ "$TOTALHITS" != 70656 ]; then exit 2; fit
       - cd ../

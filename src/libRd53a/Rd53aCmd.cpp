@@ -32,7 +32,7 @@ uint32_t Rd53aCmd::encode5to8(uint32_t val) {
 }
 
 void Rd53aCmd::trigger(uint32_t bc, uint32_t tag) {
-
+  core->writeFifo(bc);
 }
 
 void Rd53aCmd::ecr() {

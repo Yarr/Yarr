@@ -87,15 +87,15 @@ void Rd53aGlobalCfg::init() {
     SldoAnalogTrim.init(99, &m_cfg[31], 5, 5, 16);
     SldoDigitalTrim.init(99, &m_cfg[31], 0, 5, 16);
     //32
-    EnCoreColSync.init(99, &m_cfg[32], 0, 16, 0xFFFF);
+    EnCoreColSync.init(32, &m_cfg[32], 0, 16, 0xFFFF);
     //33
-    EnCoreColLin1.init(99, &m_cfg[33], 0, 16, 0xFFFF);
+    EnCoreColLin1.init(33, &m_cfg[33], 0, 16, 0xFFFF);
     //34
-    EnCoreColLin2.init(99, &m_cfg[34], 0, 1, 1);
+    EnCoreColLin2.init(34, &m_cfg[34], 0, 1, 1);
     //35
-    EnCoreColDiff1.init(99, &m_cfg[35], 0, 16, 0xFF);
+    EnCoreColDiff1.init(35, &m_cfg[35], 0, 16, 0xFFFF);
     //36
-    EnCoreColDiff2.init(99, &m_cfg[36], 0, 1, 1);
+    EnCoreColDiff2.init(36, &m_cfg[36], 0, 1, 1);
     //37
     LatencyConfig.init(99, &m_cfg[37], 0, 9, 500);
     //38
@@ -113,33 +113,33 @@ void Rd53aGlobalCfg::init() {
     //44
     GlobalPulseRt.init(99, &m_cfg[44], 0, 16, 0);
     //46
-    CalColprSync1.init(99, &m_cfg[46], 0, 16, 0xFFFF);
+    CalColprSync1.init(46, &m_cfg[46], 0, 16, 0xFFFF);
     //47
-    CalColprSync2.init(99, &m_cfg[47], 0, 16, 0xFFFF);
+    CalColprSync2.init(47, &m_cfg[47], 0, 16, 0xFFFF);
     //48
-    CalColprSync3.init(99, &m_cfg[48], 0, 16, 0xFFFF);
+    CalColprSync3.init(48, &m_cfg[48], 0, 16, 0xFFFF);
     //49
-    CalColprSync4.init(99, &m_cfg[49], 0, 16, 0xFFFF);
+    CalColprSync4.init(49, &m_cfg[49], 0, 16, 0xFFFF);
     //50
-    CalColprLin1.init(99, &m_cfg[50], 0, 16, 0xFFFF);
+    CalColprLin1.init(50, &m_cfg[50], 0, 16, 0xFFFF);
     //51
-    CalColprLin2.init(99, &m_cfg[51], 0, 16, 0xFFFF);
+    CalColprLin2.init(51, &m_cfg[51], 0, 16, 0xFFFF);
     //52
-    CalColprLin3.init(99, &m_cfg[52], 0, 16, 0xFFFF);
+    CalColprLin3.init(52, &m_cfg[52], 0, 16, 0xFFFF);
     //53
-    CalColprLin4.init(99, &m_cfg[53], 0, 16, 0xFFFF);
+    CalColprLin4.init(53, &m_cfg[53], 0, 16, 0xFFFF);
     //54
-    CalColprLin5.init(99, &m_cfg[54], 0, 4, 0xF);
+    CalColprLin5.init(54, &m_cfg[54], 0, 4, 0xF);
     //55
-    CalColprDiff1.init(99, &m_cfg[55], 0, 16, 0xFFFF);
+    CalColprDiff1.init(55, &m_cfg[55], 0, 16, 0xFFFF);
     //56
-    CalColprDiff2.init(99, &m_cfg[56], 0, 16, 0xFFFF);
+    CalColprDiff2.init(56, &m_cfg[56], 0, 16, 0xFFFF);
     //57
-    CalColprDiff3.init(99, &m_cfg[57], 0, 16, 0xFFFF);
+    CalColprDiff3.init(57, &m_cfg[57], 0, 16, 0xFFFF);
     //58
-    CalColprDiff4.init(99, &m_cfg[58], 0, 16, 0xFFFF);
+    CalColprDiff4.init(58, &m_cfg[58], 0, 16, 0xFFFF);
     //59
-    CalColprDiff5.init(99, &m_cfg[59], 0, 4, 0xF);
+    CalColprDiff5.init(59, &m_cfg[59], 0, 4, 0xF);
     //60
     DebugConfig.init(99, &m_cfg[60], 0, 16, 0);
 }

@@ -185,11 +185,18 @@ int main(void) {
     // these commands should register all pixel registers
     myRd53a->wrRegister(4, 0, (uint32_t) 0xFF);
     myRd53a->wrRegister(4, 1, (uint32_t) 0xFF); // 1 = RegionCol
-    myRd53a->wrRegister(4, 2, (uint32_t) 2); // 2 = RegionRow
-    myRd53a->wrRegister(4, 3, 0x00000017); // 3 = PixMode + BMask; 0x17 = 0x010111 bits = auto col, auto row, broadcast, fe flavor 1, fe flavor 2, fe flavor 3;
-    for (int i = 0; i < 1; i++) { // make this loop to i < 193 in order to loop over all rows
-        myRd53a->wrRegister(4, 0, (feCfg->PixPortalHigh.read() << 8) + feCfg->PixPortalLow.read()); // do we actually need to send the data here?
+    myRd53a->wrRegister(4, 2, (uint32_t) 0); // 2 = RegionRow
+    myRd53a->wrRegister(4, 3, 0x00000027); // 3 = PixMode + BMask; 0x17 = 0x100111 bits = auto col, auto row, broadcast, fe flavor 1, fe flavor 2, fe flavor 3;
+    for (int i = 0; i < 192; i++) { // since se set auto col to 1, but not auto row, the chip/emulator will loop over all columns, but we must here manually loop over all rows
+        myRd53a->wrRegister(4, 0, (feCfg->PixPortalHigh.read() << 8) + feCfg->PixPortalLow.read()); // do we actually need to send the data here? - I think yes
     }
+
+    // try to mask some columns
+//    myRd53a->writeRegister(4, &Rd53aGlobalCfg::EnCoreColSync, 0x0000);
+    myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprDiff3, 0x0000);
+
+    // send a trigger - this could be put into a loop with various ways of masking
+    myRd53a->trigger(0x2B, 0);
 
     sleep(2);
 
