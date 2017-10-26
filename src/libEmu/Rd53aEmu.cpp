@@ -1,6 +1,9 @@
 #include "Rd53aEmu.h"
 
+#include "Gauss.h"
+
 Rd53aEmu::Rd53aEmu(RingBuffer * rx, RingBuffer * tx) {
+    srand(time(NULL));
 
     m_feCfg = std::make_shared<Rd53aCfg>();
     m_txRingBuffer = tx;
@@ -62,7 +65,11 @@ void Rd53aEmu::executeLoop() {
             else if (m_header == 0x2B) { // Trigger_01
 //              printf("got Trigger_01 command\n");
 
-                int totalHits = 0; // temporary counter to count hits
+                // temporary counters to count hits
+                int totalDigitalHits = 0;
+                int diffAnalogHits = 0;
+                int linAnalogHits = 0;
+                int syncAnalogHits = 0;
                 for (unsigned dc = 0; dc < 200; dc++) {
                     // put these checks into a function maybe
                     // check pixels to see if the digital enable is set for "octo-columns" (columns of cores)
@@ -88,13 +95,72 @@ void Rd53aEmu::executeLoop() {
                     if (196 <= dc && dc < 200 && !((m_feCfg->CalColprDiff5.read() >> (dc - 196) & 0x1))) continue;
 
                     for (unsigned row = 0; row < 192; row++) {
-                        // check the final pixel enable, and for now, just increment the number of hits - eventually, we should really just be writing hit data back to YARR
-                        if (m_pixelRegisters[dc * 2][row] & 0x1) totalHits += 1;
-                        if (m_pixelRegisters[dc * 2 + 1][row] & 0x1) totalHits += 1;
+                        float capacitance_times_coulomb = 800; // change this to the correct value later
+
+                        float maximum_injection_voltage = 1.2;
+//                      printf("m_feCfg->VcalHigh.read() = %d\n", m_feCfg->VcalHigh.read());
+//                      printf("m_feCfg->VcalMed.read() = %d\n", m_feCfg->VcalMed.read());
+//                      printf("m_feCfg->VcalHigh.read() - m_feCfg->VcalMed.read() = %d\n", m_feCfg->VcalHigh.read() - m_feCfg->VcalMed.read());
+                        float injection_voltage = (m_feCfg->VcalHigh.read() - m_feCfg->VcalMed.read()) * maximum_injection_voltage / 4096.0;
+                        float injection_charge = injection_voltage * capacitance_times_coulomb;
+//                      printf("injection_voltage = %f\n", injection_voltage);
+
+                        float noise_charge = Gauss::rand_normal(0, 100, 1);
+
+                        // sync front end
+                        if (0 <= dc && dc < 64) {
+                            // check the final pixel enable, and for now, just increment the number of hits - eventually, we should really just be writing hit data back to YARR
+                            if (m_pixelRegisters[dc * 2][row] & 0x1) totalDigitalHits += 1;
+                            if (m_pixelRegisters[dc * 2 + 1][row] & 0x1) totalDigitalHits += 1;
+                        }
+                        // linear front end
+                        if (64 <= dc && dc < 132) {
+                            float lin_maximum_global_threshold_voltage = 1.2; // what should this actually be?
+//                          printf("m_feCfg->VthresholdLin.read() = %d\n", m_feCfg->VthresholdLin.read());
+                            float lin_global_threshold_voltage = (m_feCfg->VthresholdLin.read()) * lin_maximum_global_threshold_voltage / 1024.0;
+                            float lin_global_threshold_charge = lin_global_threshold_voltage * capacitance_times_coulomb; // I imagine this might need a different capacitance
+//                          printf("lin_global_threshold_voltage = %f\n", lin_global_threshold_voltage);
+//                          printf("injection_charge = %f\n", injection_charge);
+//                          printf("noise_charge = %f\n", noise_charge);
+//                          printf("lin_global_threshold_charge = %f\n", lin_global_threshold_charge);
+
+                            if (injection_charge + noise_charge - lin_global_threshold_charge > 0) {
+                                // check the final pixel enable, and for now, just increment the number of hits - eventually, we should really just be writing hit data back to YARR
+                                if (m_pixelRegisters[dc * 2][row] & 0x1) linAnalogHits += 1;
+                                if (m_pixelRegisters[dc * 2 + 1][row] & 0x1) linAnalogHits += 1;
+                            }
+
+                            if (m_pixelRegisters[dc * 2][row] & 0x1) totalDigitalHits += 1;
+                            if (m_pixelRegisters[dc * 2 + 1][row] & 0x1) totalDigitalHits += 1;
+                        }
+                        // differential front end
+                        if (132 <= dc && dc < 200) {
+                            float diff_maximum_global_threshold_voltage = 1.2; // what should this actually be?
+//                          printf("m_feCfg->Vth1Diff.read() = %d\n", m_feCfg->Vth1Diff.read());
+//                          printf("m_feCfg->Vth2Diff.read() = %d\n", m_feCfg->Vth2Diff.read());
+                            float diff_global_threshold_voltage = (m_feCfg->Vth1Diff.read() - m_feCfg->Vth2Diff.read()) * diff_maximum_global_threshold_voltage / 1024.0;
+                            float diff_global_threshold_charge = diff_global_threshold_voltage * capacitance_times_coulomb; // I imagine this might need a different capacitance
+//                          printf("diff_global_threshold_voltage = %f\n", diff_global_threshold_voltage);
+//                          printf("injection_charge = %f\n", injection_charge);
+//                          printf("noise_charge = %f\n", noise_charge);
+//                          printf("diff_global_threshold_charge = %f\n", diff_global_threshold_charge);
+
+                            if (injection_charge + noise_charge - diff_global_threshold_charge > 0) {
+                                // check the final pixel enable, and for now, just increment the number of hits - eventually, we should really just be writing hit data back to YARR
+                                if (m_pixelRegisters[dc * 2][row] & 0x1) diffAnalogHits += 1;
+                                if (m_pixelRegisters[dc * 2 + 1][row] & 0x1) diffAnalogHits += 1;
+                            }
+
+                            if (m_pixelRegisters[dc * 2][row] & 0x1) totalDigitalHits += 1;
+                            if (m_pixelRegisters[dc * 2 + 1][row] & 0x1) totalDigitalHits += 1;
+                        }
                     }
                 }
                 // for now, print the total number of hits - eventually, we should really just be writing hit data back to YARR
-                printf("totalHits = %d\n", totalHits);
+                printf("totalDigitalHits = %d\n", totalDigitalHits);
+                printf("diffAnalogHits = %d\n", diffAnalogHits);
+                printf("linAnalogHits = %d\n", linAnalogHits);
+                printf("syncAnalogHits = %d\n", syncAnalogHits);
             }
             else if (m_header == 0x6666) { // wrRegister
                 m_id_address_some_data = m_txRingBuffer->read32();

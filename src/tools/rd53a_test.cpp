@@ -195,6 +195,13 @@ int main(void) {
 //    myRd53a->writeRegister(4, &Rd53aGlobalCfg::EnCoreColSync, 0x0000);
     myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprDiff3, 0x0000);
 
+    // increase the injection voltage (charge)
+    myRd53a->writeRegister(4, &Rd53aGlobalCfg::VcalHigh, 2200);
+
+    // change some of the threshold voltages
+    myRd53a->writeRegister(4, &Rd53aGlobalCfg::Vth1Diff, 500);
+    myRd53a->writeRegister(4, &Rd53aGlobalCfg::VthresholdLin, 500);
+
     // send a trigger - this could be put into a loop with various ways of masking
     myRd53a->trigger(0x2B, 0);
 

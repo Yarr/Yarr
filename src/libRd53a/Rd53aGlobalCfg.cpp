@@ -36,56 +36,56 @@ void Rd53aGlobalCfg::init() {
     //5
     Ibiasp1Sync.init(5, &m_cfg[5], 0, 9, 100);
     //6
-    Ibiasp2Sync.init(99, &m_cfg[6], 0, 9, 150);
+    Ibiasp2Sync.init(6, &m_cfg[6], 0, 9, 150);
     //7
-    IbiasSfSync.init(99, &m_cfg[7], 0, 9, 100);
+    IbiasSfSync.init(7, &m_cfg[7], 0, 9, 100);
     //8
-    IbiasKrumSync.init(99, &m_cfg[8], 0, 9, 140);
+    IbiasKrumSync.init(8, &m_cfg[8], 0, 9, 140);
     //9
-    IbiasDiscSync.init(99, &m_cfg[9], 0, 9, 200);
+    IbiasDiscSync.init(9, &m_cfg[9], 0, 9, 200);
     //10
-    IctrlSynctSync.init(99, &m_cfg[10], 0, 10, 100);
+    IctrlSynctSync.init(10, &m_cfg[10], 0, 10, 100);
     //11
-    VblSync.init(99, &m_cfg[11], 0, 10, 450);
+    VblSync.init(11, &m_cfg[11], 0, 10, 450);
     //12
-    VthSync.init(99, &m_cfg[12], 0, 10, 300);
+    VthSync.init(12, &m_cfg[12], 0, 10, 300);
     //13
-    VrefKrumSync.init(99, &m_cfg[13], 0, 10, 490);
+    VrefKrumSync.init(13, &m_cfg[13], 0, 10, 490);
     //14
-    PaInBiasLin.init(99, &m_cfg[14], 0, 9, 300);
+    PaInBiasLin.init(14, &m_cfg[14], 0, 9, 300);
     //15
-    FcBiasLin.init(99, &m_cfg[15], 0, 8, 20);
+    FcBiasLin.init(15, &m_cfg[15], 0, 8, 20);
     //16
-    KrumCurrLin.init(99, &m_cfg[16], 0, 9, 50);
+    KrumCurrLin.init(16, &m_cfg[16], 0, 9, 50);
     //17
-    LdacLin.init(99, &m_cfg[17], 0, 10, 80);
+    LdacLin.init(17, &m_cfg[17], 0, 10, 80);
     //18
-    CompLin.init(99, &m_cfg[18], 0, 9, 110);
+    CompLin.init(18, &m_cfg[18], 0, 9, 110);
     //19
-    RefKrumLin.init(99, &m_cfg[19], 0, 10, 300);
+    RefKrumLin.init(19, &m_cfg[19], 0, 10, 300);
     //20
-    VthresholdLin.init(99, &m_cfg[20], 0, 10, 408);
+    VthresholdLin.init(20, &m_cfg[20], 0, 10, 408);
     //21
-    PrmpDiff.init(99, &m_cfg[21], 0, 10, 533);
+    PrmpDiff.init(21, &m_cfg[21], 0, 10, 533);
     //22
-    FolDiff.init(99, &m_cfg[22], 0, 10, 542);
+    FolDiff.init(22, &m_cfg[22], 0, 10, 542);
     //23
-    PrecompDiff.init(99, &m_cfg[23], 0, 10, 551);
+    PrecompDiff.init(23, &m_cfg[23], 0, 10, 551);
     //24
-    CompDiff.init(99, &m_cfg[24], 0, 10, 528);
+    CompDiff.init(24, &m_cfg[24], 0, 10, 528);
     //25
-    VffDiff.init(99, &m_cfg[25], 0, 10, 164);
+    VffDiff.init(25, &m_cfg[25], 0, 10, 164);
     //26
-    Vth1Diff.init(99, &m_cfg[26], 0, 10, 1023);
+    Vth1Diff.init(26, &m_cfg[26], 0, 10, 1023);
     //27
-    Vth2Diff.init(99, &m_cfg[27], 0, 10, 0);
+    Vth2Diff.init(27, &m_cfg[27], 0, 10, 0);
     //28
-    LccDiff.init(99, &m_cfg[28], 0, 10, 20);
+    LccDiff.init(28, &m_cfg[28], 0, 10, 20);
     //29
-    ConfFeDiff.init(99, &m_cfg[29], 0, 2, 2); // not sure about value
+    ConfFeDiff.init(29, &m_cfg[29], 0, 2, 2); // not sure about value
     //31
-    SldoAnalogTrim.init(99, &m_cfg[31], 5, 5, 16);
-    SldoDigitalTrim.init(99, &m_cfg[31], 0, 5, 16);
+    SldoAnalogTrim.init(31, &m_cfg[31], 5, 5, 16);
+    SldoDigitalTrim.init(31, &m_cfg[31], 0, 5, 16);
     //32
     EnCoreColSync.init(32, &m_cfg[32], 0, 16, 0xFFFF);
     //33
@@ -97,21 +97,21 @@ void Rd53aGlobalCfg::init() {
     //36
     EnCoreColDiff2.init(36, &m_cfg[36], 0, 1, 1);
     //37
-    LatencyConfig.init(99, &m_cfg[37], 0, 9, 500);
+    LatencyConfig.init(37, &m_cfg[37], 0, 9, 500);
     //38
-    WrSyncDelaySync.init(99, &m_cfg[38], 0, 5, 16);
+    WrSyncDelaySync.init(38, &m_cfg[38], 0, 5, 16);
     //39
-    InjModeDel.init(99, &m_cfg[39], 0, 6, 32); // not sure about value
+    InjModeDel.init(39, &m_cfg[39], 0, 6, 32); // not sure about value
     //40
-    ClkDataDelay.init(99, &m_cfg[40], 0, 9, 0);
+    ClkDataDelay.init(40, &m_cfg[40], 0, 9, 0);
     //41
-    VcalHigh.init(99, &m_cfg[41], 0, 11, 500);
+    VcalHigh.init(41, &m_cfg[41], 0, 12, 500);
     //42
-    VcalMed.init(99, &m_cfg[42], 0, 11, 300);
+    VcalMed.init(42, &m_cfg[42], 0, 12, 300);
     //43
-    ChSyncConf.init(99, &m_cfg[43], 0, 10, 0); // not sure about value
+    ChSyncConf.init(43, &m_cfg[43], 0, 10, 0); // not sure about value
     //44
-    GlobalPulseRt.init(99, &m_cfg[44], 0, 16, 0);
+    GlobalPulseRt.init(44, &m_cfg[44], 0, 16, 0);
     //46
     CalColprSync1.init(46, &m_cfg[46], 0, 16, 0xFFFF);
     //47
@@ -141,5 +141,5 @@ void Rd53aGlobalCfg::init() {
     //59
     CalColprDiff5.init(59, &m_cfg[59], 0, 4, 0xF);
     //60
-    DebugConfig.init(99, &m_cfg[60], 0, 16, 0);
+    DebugConfig.init(60, &m_cfg[60], 0, 16, 0);
 }
