@@ -7,9 +7,11 @@
 #include "EmuShm.h"
 #include "RingBuffer.h"
 #include "Gauss.h"
-#include "PixelModel.h"
+#include "Rd53aLinPixelModel.h"
 #include "FrontEndGeometry.h"
 #include "json.hpp"
+
+#include "Histo1d.h"
 
 #include "RingBuffer.h"
 
@@ -32,12 +34,16 @@ class Rd53aEmu {
         std::shared_ptr<Rd53aCfg> m_feCfg;
 
 	uint8_t m_pixelRegisters[400][192];
+	Rd53aLinPixelModel* m_rd53aLinPixelModelObjects[136][192];
 
         uint32_t m_header;
         uint32_t m_id_address_some_data;
         uint32_t m_small_data;
 
         volatile bool run;
+
+        Histo1d* linScurve[136][192];
+        Histo1d* linThreshold;
 };
 
 #endif //__RD53A_EMU_H__

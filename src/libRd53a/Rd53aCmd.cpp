@@ -21,7 +21,7 @@ Rd53aCmd::~Rd53aCmd() {
 const uint16_t Rd53aCmd::enc5to8[32] = {0x6A, 0x6C, 0x71, 0x72,
                              0x74, 0x8B, 0x8D, 0x8E,
                              0x93, 0x95, 0x96, 0x99,
-                             0x9A, 0x95, 0xA3, 0xA5,
+                             0x9A, 0x9C, 0xA3, 0xA5,
                              0xA6, 0xA9, 0xAA, 0xAC, 
                              0xB1, 0xB2, 0xB4, 0xC3, 
                              0xC5, 0xC6, 0xC9, 0xCA, 
@@ -58,6 +58,7 @@ commandFile.open("commandList.txt", std::ofstream::out | std::ofstream::app);
     // Header
     core->writeFifo(0x6666);
 commandFile << std::hex << 0x6666;
+  if (value == 2464 || value == 2480 || value == 2336 || value == 2352) commandFile << "\n";
     uint32_t tmp = 0x0;
     // ID[3:0],0 | ADR[8:4]
     tmp += (this->encode5to8((chipId & 0xF) << 1)) << 24;

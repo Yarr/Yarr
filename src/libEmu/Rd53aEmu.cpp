@@ -10,6 +10,16 @@ Rd53aEmu::Rd53aEmu(RingBuffer * rx, RingBuffer * tx) {
     m_rxRingBuffer = rx;
 
     run = true;
+
+    for (int col = 0; col < 136; col++) {
+        for (int row = 0; row < 192; row++) {
+            std::string name = "linScurveCol" + std::to_string(col) + "Row" + std::to_string(row);
+            linScurve[col][row] = new Histo1d(name.c_str(), 256, -0.5, 4095.5, typeid(void));
+
+            m_rd53aLinPixelModelObjects[col][row] = new Rd53aLinPixelModel(10, 2, 100, 100);
+        }
+    }
+    linThreshold = new Histo1d("linThreshold", 256, -0.5, 4095.5, typeid(void));
 }
 
 Rd53aEmu::~Rd53aEmu() {
@@ -62,6 +72,26 @@ void Rd53aEmu::executeLoop() {
 
             if (m_header == 0) { // ignore
             }
+            else if (m_header == 0xFFFF) { // temporary command which says we must plot
+                for (int col = 0; col < 136; col++) {
+                    for (int row = 0; row < 192; row++) {
+                        if (linScurve[col][row]->getEntries() != 0 ) {
+                            linScurve[col][row]->scale(1.0/10.0); // hardcoded for now - the number of times we scan the same pixel
+                            for (int bin = 0; bin < 256; bin++) {
+
+                                if (linScurve[col][row]->getBin(bin) > 0.5) {
+                                    linThreshold->fill(bin * 16);
+                                    break;
+                                }
+                            }
+                              if (col == 0 && row == 0) linScurve[col][row]->plot("scurve", "");
+//                            if (col == 0 && row == 0) linScurve[col][row]->toFile("scurve", "", 0);
+                        }
+                    }
+                }
+                linThreshold->plot("threshold", "");
+                m_rxRingBuffer->write32(0xA); // rest writing back
+            }
             else if (m_header == 0x2B) { // Trigger_01
 //              printf("got Trigger_01 command\n");
 
@@ -69,7 +99,7 @@ void Rd53aEmu::executeLoop() {
                 int totalDigitalHits = 0;
                 int diffAnalogHits = 0;
                 int linAnalogHits = 0;
-                int syncAnalogHits = 0;
+//              int syncAnalogHits = 0;
                 for (unsigned dc = 0; dc < 200; dc++) {
                     // put these checks into a function maybe
                     // check pixels to see if the digital enable is set for "octo-columns" (columns of cores)
@@ -105,7 +135,7 @@ void Rd53aEmu::executeLoop() {
                         float injection_charge = injection_voltage * capacitance_times_coulomb;
 //                      printf("injection_voltage = %f\n", injection_voltage);
 
-                        float noise_charge = Gauss::rand_normal(0, 100, 1);
+                        float noise_charge = Gauss::rand_normal(0, 50, 1); // generic, should remove
 
                         // sync front end
                         if (0 <= dc && dc < 64) {
@@ -115,23 +145,30 @@ void Rd53aEmu::executeLoop() {
                         }
                         // linear front end
                         if (64 <= dc && dc < 132) {
-                            float lin_maximum_global_threshold_voltage = 1.2; // what should this actually be?
-//                          printf("m_feCfg->VthresholdLin.read() = %d\n", m_feCfg->VthresholdLin.read());
-                            float lin_global_threshold_voltage = (m_feCfg->VthresholdLin.read()) * lin_maximum_global_threshold_voltage / 1024.0;
-                            float lin_global_threshold_charge = lin_global_threshold_voltage * capacitance_times_coulomb; // I imagine this might need a different capacitance
-//                          printf("lin_global_threshold_voltage = %f\n", lin_global_threshold_voltage);
-//                          printf("injection_charge = %f\n", injection_charge);
-//                          printf("noise_charge = %f\n", noise_charge);
-//                          printf("lin_global_threshold_charge = %f\n", lin_global_threshold_charge);
+                            for (int pix = 0; pix <= 1; pix++) {
+                                noise_charge = m_rd53aLinPixelModelObjects[dc * 2 + pix - 128][row]->calculateNoise(); // overwrite the previous generic initialization
+                                float lin_maximum_global_threshold_voltage = 1.2; // what should this actually be?
+//                              printf("m_feCfg->VthresholdLin.read() = %d\n", m_feCfg->VthresholdLin.read());
+                                float lin_global_threshold_with_smearing = m_rd53aLinPixelModelObjects[dc * 2 + pix - 128][row]->calculateThreshold(m_feCfg->VthresholdLin.read());
+                                float lin_global_threshold_voltage = (lin_global_threshold_with_smearing) * lin_maximum_global_threshold_voltage / 1024.0;
+                                float lin_global_threshold_charge = lin_global_threshold_voltage * capacitance_times_coulomb; // I imagine this might need a different capacitance
 
-                            if (injection_charge + noise_charge - lin_global_threshold_charge > 0) {
-                                // check the final pixel enable, and for now, just increment the number of hits - eventually, we should really just be writing hit data back to YARR
-                                if (m_pixelRegisters[dc * 2][row] & 0x1) linAnalogHits += 1;
-                                if (m_pixelRegisters[dc * 2 + 1][row] & 0x1) linAnalogHits += 1;
+//                              printf("lin_global_threshold_voltage = %f\n", lin_global_threshold_voltage);
+//                              printf("injection_charge = %f\n", injection_charge);
+//                              printf("noise_charge = %f\n", noise_charge);
+//                              printf("lin_global_threshold_charge = %f\n", lin_global_threshold_charge);
+
+                                if (injection_charge + noise_charge - lin_global_threshold_charge > 0) {
+                                    // check the final pixel enable, and for now, just increment the number of hits - eventually, we should really just be writing hit data back to YARR
+                                    if (m_pixelRegisters[dc * 2 + pix][row] & 0x1) linAnalogHits += 1;
+
+//                                  if (m_pixelRegisters[dc * 2 + pix][row] & 0x1) printf("lin %d %d %d %d\n", dc * 2 + 1, row, (m_feCfg->VcalHigh.read() - m_feCfg->VcalMed.read()), 1);
+
+                                    if (m_pixelRegisters[dc * 2 + pix][row] & 0x1) linScurve[dc * 2 + pix - 128][row]->fill((m_feCfg->VcalHigh.read() - m_feCfg->VcalMed.read()));
+                                }
+
+                                if (m_pixelRegisters[dc * 2 + pix][row] & 0x1) totalDigitalHits += 1;
                             }
-
-                            if (m_pixelRegisters[dc * 2][row] & 0x1) totalDigitalHits += 1;
-                            if (m_pixelRegisters[dc * 2 + 1][row] & 0x1) totalDigitalHits += 1;
                         }
                         // differential front end
                         if (132 <= dc && dc < 200) {
@@ -157,14 +194,15 @@ void Rd53aEmu::executeLoop() {
                     }
                 }
                 // for now, print the total number of hits - eventually, we should really just be writing hit data back to YARR
-                printf("totalDigitalHits = %d\n", totalDigitalHits);
-                printf("diffAnalogHits = %d\n", diffAnalogHits);
-                printf("linAnalogHits = %d\n", linAnalogHits);
-                printf("syncAnalogHits = %d\n", syncAnalogHits);
+//              printf("totalDigitalHits = %d\n", totalDigitalHits);
+//              printf("diffAnalogHits = %d\n", diffAnalogHits);
+//              printf("linAnalogHits = %d\n", linAnalogHits);
+//              printf("syncAnalogHits = %d\n", syncAnalogHits);
+//              printf("m_feCfg->VcalHigh.read() = %d\n", m_feCfg->VcalHigh.read());
             }
             else if (m_header == 0x6666) { // wrRegister
                 m_id_address_some_data = m_txRingBuffer->read32();
-//              printf("Rd53aEmu got the id_address_some_data word: 0x%x\n", m_id_address_some_data);
+//              printf("Rd53aEmu got id_address_some_data word: 0x%x\n", m_id_address_some_data);
 
                 uint8_t byte1 = (m_id_address_some_data >> 16) >> 8;
                 uint8_t byte2 = (m_id_address_some_data >> 16) & 0x00FF;
