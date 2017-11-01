@@ -174,9 +174,9 @@ begin
         if (rst_n_i = '0') then
             wb_dat_o <= (others => '0');
             wb_ack_o <= '0';
-            trig_mask <= x"00000010"; -- auto enable internal
+            trig_mask <= x"00000001"; -- auto enable internal
             trig_tag_mode <= x"01";
-            trig_logic <= (others => '0');
+            trig_logic <= (1 => '1', others => '0'); -- auto enable internal
             trig_edge <= (others => '0');
             ch0_delay <= (others => '0');
             ch1_delay <= (others => '0');
