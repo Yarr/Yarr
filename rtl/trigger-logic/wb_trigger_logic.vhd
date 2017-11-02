@@ -158,14 +158,14 @@ architecture rtl of wb_trigger_logic is
 
 begin
 
+    -- Debug port
     debug_o(3 downto 0) <= ext_trig_i;
     debug_o(7 downto 4) <= sync_ext_trig_i;
     debug_o(11 downto 8) <= edge_ext_trig_i;
     debug_o(15 downto 12) <= del_ext_trig_i;
     debug_o(16) <= master_trig_t;
     debug_o(17) <= master_busy_t;
-    -- debug_o(19 downto 18) used in top lvl for outputs
-    -- debug_o(27 downto 20) <= trig_tag(7 downto 0); -- can't do this; get it from top lvl
+    debug_o(25 downto 18) <= trig_tag_mode;
   
     -- WB interface
     wb_proc: process(wb_clk_i, rst_n_i)
