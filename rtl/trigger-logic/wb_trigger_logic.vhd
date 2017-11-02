@@ -165,8 +165,7 @@ begin
     debug_o(16) <= master_trig_t;
     debug_o(17) <= master_busy_t;
     -- debug_o(19 downto 18) used in top lvl for outputs
-    debug_o(23 downto 20) <= trig_edge;
-    debug_o(26 downto 24) <= ch1_delay; 
+    -- debug_o(27 downto 20) <= trig_tag(7 downto 0); -- can't do this; get it from top lvl
   
     -- WB interface
     wb_proc: process(wb_clk_i, rst_n_i)
