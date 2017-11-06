@@ -31,12 +31,9 @@ class Fei4Cfg : public FrontEndCfg, public Fei4GlobalCfg, public Fei4PixelCfg {
             lCap = 3.8;
             vcalOffset = 0;
             vcalSlope = 1.5;
-	    useScap = true;
-	    useLcap = true;
 	}
 
-        /* double toCharge(double vcal) {return this->toCharge(vcal, true, true);} */
-	double toCharge(double vcal) {return this->toCharge(vcal, useScap, useLcap);}
+        double toCharge(double vcal) {return this->toCharge(vcal, true, true);}
         double toCharge(double vcal, bool sCapOn=true, bool lCapOn=true) {
             // Q = C*V
             double C = 0;
@@ -58,8 +55,6 @@ class Fei4Cfg : public FrontEndCfg, public Fei4GlobalCfg, public Fei4PixelCfg {
 
         void setScap(double c) {sCap = c;}
         void setLcap(double c) {lCap = c;}
-	void setuseofScap(bool v) {useScap = v;}
-	void setuseofLcap(bool v) {useLcap = v;}
 	void setVcalSlope(double s) {vcalSlope = s;}
         void setVcalOffset(double o) {vcalOffset = o;}
 
@@ -83,8 +78,6 @@ class Fei4Cfg : public FrontEndCfg, public Fei4GlobalCfg, public Fei4PixelCfg {
         double lCap; // fF
         double vcalOffset; // mV
         double vcalSlope; // mV
-	bool useScap;
-	bool useLcap;
 };
 
 #endif
