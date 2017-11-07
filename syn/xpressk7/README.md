@@ -1,14 +1,83 @@
 # XpressK7
-The XpressK7 card requires an external programmer to be connected via the JTAG connector.
-Because of this you will need an installation of Xilinx Vivado (or at least the Xilinx programming software) and source their script `$ source /opt/Xilinx/Vivado/2016.2/settings64.sh`
+The Reflex CES XpressK7 card contains a Kintex-7 FPGA and provides 4 Multi-Gigabit links (MGTs/GTXs) on the HPC-FMC connector. This means that for future use, up to four 5 Gbit/s links could be read out per card. For full functionality, it requires an additional RAM memory module.
 
-## Write the bitfile into the PROM memory and the FPGA
+## Installation: Get your stuff together
+#### Get a suitable PC with at least one PCIe 4x slot
+We got [this one](https://pcpartpicker.com/list/MrXM3F). Beware of Dell or HP systems.
 
-To get the board with the firmware working inside, the FPGA has a volatile. So, to save the firmware till the next reconfiguration, the firmware have to be written in a non-volatile memory which is outside of the FPGA.
+#### Get an FPGA card
+Get an XpressK7 card, usually via a group order (RD53, Luis Miguel Jara Casas) or order it yourself from Reflex CES. Prices may vary, but usually should be below 2 kEUR. In principle, the XpressK7 version using the XC7K160T-2FBG676C would be sufficient, but the RD53 bulk order got the larger FPGA XC7K325T-2FBG676C at roughly the same cost.
 
-Two techniques are shwown in this domcument to flash the PROM and the FPGA. The first one shows how to pertorm that with Vivado and the second with a script made to simplify this operation.
+#### Get a memory module
+Get a Crucial CT4G3S1339MCEU 4 GB module, follow e.g. [this link](https://geizhals.eu/crucial-memory-for-mac-so-dimm-4gb-ct4g3s1339mceu-a816841.html) to find suppliers. Insert module into XpressK7, install in computer
 
-### Using the Vivado GUI
+#### Get a JTAG programmer
+We successfully used a Digilent JTAG-HS2, see e.g. [here](http://store.digilentinc.com/jtag-hs2-programming-cable/), but you can also get it from many other sources, e.g. RS components. Attach the 7x2 pin header to the XpressK7 and the USB cable to your DAQ PC. 
+
+#### Install Vivado Lab Solutions
+You can get this from [here](https://www.xilinx.com/support/download.html), the "Lab Edition" is enough. After installation (and in any case before trying to use the JTAG programmer) source the script `$ source /opt/Xilinx/Vivado_Lab/2017.2/settings64.sh` (your path may differ!)
+
+#### Get Yarr-fw
+`$ git clone https://github.com/Yarr/Yarr-fw.git Yarr-fw`
+
+## Installation: Install the firmware (i.e. write the bitfile into the PROM memory and the FPGA)
+The firmware/bitfile needs to be written into the FPGA; to ease your life, it will be written into a non-volatile memory (outside of the FPGA) and automatically loaded onto the FPGA after each power cycle.
+
+Two techniques are shown in this document to flash the PROM and the FPGA. The first one shows how to perform that with a Python script, and the second one directly with Vivado if the script should not work.
+
+### Using the python script
+
+A python script was created to simplify the FPGA configuration.
+#### Step 1: Lauch the script
+Move in the folder where the script file are.
+`$ cd Yarr-fw/script/`
+Launch the script for flashing the memory. At this point you can choose the bitfile by pressing the belonging number. If there is only one bitfile you just need to press 'y'. To understand the list, keep in mind that there are two different FPGAs on XpressK7 cards (the XC7K**325**T-2FBG676C and the XC7K**160**T-2FBG676C) and also different FMC adapter boards (a quad-FE-I4-card and one for up to eight ("octa") FE-I4s).
+  
+```bash
+$ python flash.py 
+Several bit files found: 
+0: /home/***/Yarr-fw/syn/spec/fe65p2_revB/fe65p2_revB.bit
+1: /home/***/Yarr-fw/syn/spec/fe65p2_revC/fe65p2_revC.bit
+2: /home/***/Yarr-fw/syn/spec/octa_fei4_revA/octa_fei4_revA.bit
+3: /home/***/Yarr-fw/syn/spec/quad_fei4_revA/quad_fei4_revA.bit
+4: /home/***/Yarr-fw/syn/spec/quad_fei4_revB/quad_fei4_revB.bit
+5: /home/***/Yarr-fw/syn/spec/wup_stave_fei4_revA/wup_stave_fei4_revA.bit
+6: /home/***/Yarr-fw/syn/xpressk7/bram_octa_fei4_revA-160/bram_octa_fei4_revA-160.bit
+7: /home/***/Yarr-fw/syn/xpressk7/bram_octa_fei4_revA-325/bram_octa_fei4_revA-325.bit
+8: /home/***/Yarr-fw/syn/xpressk7/bram_quad_fei4_revA-160/bram_quad_fei4_revA-160.bit
+9: /home/***/Yarr-fw/syn/xpressk7/bram_quad_fei4_revA-325/bram_quad_fei4_revA-325.bit
+10: /home/***/Yarr-fw/syn/xpressk7/ddr3_octa_fei4_revA-160/ddr3_octa_fei4_revA-160.bit
+11: /home/***/Yarr-fw/syn/xpressk7/ddr3_octa_fei4_revA-325/ddr3_octa_fei4_revA-325.bit
+12: /home/***/Yarr-fw/syn/xpressk7/ddr3_quad_fei4_revA-160/ddr3_quad_fei4_revA-160.bit
+13: /home/***/Yarr-fw/syn/xpressk7/ddr3_quad_fei4_revA-325/ddr3_quad_fei4_revA-325.bit
+```
+
+If the script does not work, check whether you sourced the Vivado script as instructed above and check the paths inside the script. The actual flashing does take a few minutes, don't get scared by the wait.
+
+#### Step 2: Check if the firmware is running
+
+![Image not availabe](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/board_on_board_leds.jpg)
+
+The LEDs on the board should blink. If they don't, check the FMC/JTAG switch, press the configuration push button.
+
+![Image not availabe](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/board_board_configuration_components.jpg)
+
+Once the LEDs are blinking, reboot the computer. After the next boot firmware is ready to use.
+`$ sudo reboot`
+
+
+You can check if the PCIe communication works by typing the command below.
+```bash
+$ lspci | grep 7024
+01:00.0 Signal processing controller: Xilinx Corporation Device 7024
+```
+
+Now you are ready to install the Yarr/ITK-SW software - have a look [here](https://github.com/Yarr/Yarr) and follow the instructions!
+
+## Expert stuff
+
+
+### If the python script does not work: using the Vivado GUI
 
 #### Step 1: Open the hadware manager
 First open Vivavo and then the Open Hardware Manger.
@@ -85,39 +154,8 @@ If you don't have an easy acces to the borad, you can program the FPGA from Viva
 ![Image not availabe](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/flash_step_5.png)
 
 
-### Using the python script
 
-A python script was created to simplify the FPGA configuration.
-#### Step 1: Laucnch the script
-Move in the folder where the script file are.
-`$ cd Yarr-fw/script/`
-Launch the script for flashing the memory. At this point you can choose the bitfile by pressing the belonging number. If there is only bitfile you need to press 'y'.
-```bash
-$ python flash.py
-Several bit files found: 
-0: /home/***/Yarr-fw/syn/xpressk7/ddr3_revA/yarr.runs/impl_1/top_level.bit
-1: /home/***/Yarr-fw/syn/xpressk7/bram_revA/yarr.runs/impl_1/top_level.bit
-```
-
-#### Step 2: Check if the firmware is running
-
-![Image not availabe](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/board_on_board_leds.jpg)
-
-The LEDs on the board should blink. If they don't, check the FMC/JTAG switch, press the configuration push button.
-
-![Image not availabe](https://raw.githubusercontent.com/Yarr/Yarr-fw/master/doc/board_board_configuration_components.jpg)
-
-Once the LEDs are blinking, reboot the computer. After the next boot firmware is ready to use.
-`$ sudo reboot`
-
-
-You can check if the PCIe communication works by typing the command below.
-```bash
-$ lspci | grep 7024
-01:00.0 Signal processing controller: Xilinx Corporation Device 7024
-```
-
-## Generate the bitfile
+## For experts: generate the bitfile
 Move in the folder where you will generate the bitfile.
 > Before generating any bitfile, generate the ddr3_octa_fei4_revA-160 version bitfile. Otherwise You would get errors because the IP are designed for the FPGA xc7k160. Then you can generate any bitfile.
 
@@ -126,7 +164,7 @@ To launch the synthesis you just need to launch make.
 `$ make`
 Prepare a coffee, it will last around 15 minutes to synthesize all the project. 
 
-## Core debugging
+## For experts: core debugging
 To activate the debug cores you need to modify a constant in "bram_yarr.vhd" or "ddr3_yarr.vhd".
 `$ vim rtl/kintex7/app.vhd`
 At the line 432, you see a constant you can change to "0110". Each bit of this constant belongs to a debug core. You can activate any debug core as you want. Except the MSB bit ("1XXX") which belongs to DDR3 IP core user bus which works only if you sythesize the DDR3 version of the firmware.
