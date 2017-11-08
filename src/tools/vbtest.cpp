@@ -19,9 +19,10 @@ int main(int argc, char **argv) {
     SpecTxCore mySpec(specNum);
     unsigned err_count = 0;
     
-    trig_mask = 0x7; // 0b00111
-    trig_logic = 0x28; // Trigger on 011 and 111
-    trig_deadtime = 200;
+    int trig_mask = 0x2; // 0b00010
+    int trig_edge = 0x0; // 0b00000
+    int trig_logic = 0x4; // 0b100 Trigger on single hit ch1
+    int trig_deadtime = 200;
 
     std::cout << "Starting trigger config test ..." << std::endl;
     
@@ -32,7 +33,7 @@ int main(int argc, char **argv) {
     mySpec.setTriggerEdge(trig_edge);
     std::cout << "... set trigger edge to " << trig_edge << std::endl;
     mySpec.setTriggerDelay(1, 3);
-    mySpec.setTriggerDelay(2, 6);
+    // mySpec.setTriggerDelay(2, 6); 
     mySpec.setTriggerDelay(10, 0); // invalid channel
     std::cout << "... set trigger delays" << std::endl;
     mySpec.setTriggerDeadtime(trig_deadtime);
@@ -41,8 +42,8 @@ int main(int argc, char **argv) {
     check(TRIG_LOGIC_ADR | TRIG_LOGIC_MASK, trig_mask, &mySpec, &err_count);
     check(TRIG_LOGIC_ADR | TRIG_LOGIC_CONFIG, trig_logic, &mySpec, &err_count);
     check(TRIG_LOGIC_ADR | TRIG_LOGIC_EDGE, trig_edge, &mySpec, &err_count);
-    check(TRIG_LOGIC_ADR | TRIG_LOGIC_DELAY + 1, 3, &mySpec, &err_count);
-    check(TRIG_LOGIC_ADR | TRIG_LOGIC_DELAY + 2, 6, &mySpec, &err_count);
+    check((TRIG_LOGIC_ADR | TRIG_LOGIC_DELAY) + 1, 3, &mySpec, &err_count);
+    // check(TRIG_LOGIC_ADR | TRIG_LOGIC_DELAY + 2, 6, &mySpec, &err_count);
     check(TRIG_LOGIC_ADR | TRIG_LOGIC_DEADTIME, trig_deadtime, &mySpec, &err_count);
 
     if (err_count == 0)
