@@ -165,7 +165,8 @@ begin
     debug_o(15 downto 12) <= del_ext_trig_i;
     debug_o(16) <= master_trig_t;
     debug_o(17) <= master_busy_t;
-    debug_o(25 downto 18) <= trig_tag_mode;
+    debug_o(22 downto 18) <= trig_mask(4 downto 0);
+    debug_o(31 downto 23) <= trig_logic(8 downto 0);
   
     -- WB interface
     wb_proc: process(wb_clk_i, rst_n_i)
