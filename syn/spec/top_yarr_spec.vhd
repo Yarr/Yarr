@@ -1204,8 +1204,8 @@ begin
 --   TRIG0(31 downto 25) <= (others => '0');
 	TRIG0(0) <= rx_valid;
 	TRIG0(1) <= fe_cmd_o(7);
-	TRIG0(2) <= trig_pulse;
-	TRIG0(3) <= fe_cmd_o(7);
+	TRIG0(2) <= fe_cmd_p(7)
+	TRIG0(3) <= fe_cmd_n(7);
 	TRIG0(31 downto 4) <= (others => '0');
 	TRIG1 <= trig_tag_t;
 	TRIG2 <= debug_trig;
