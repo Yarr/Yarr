@@ -1158,7 +1158,7 @@ begin
 		wb_we_i => wb_we,
 		wb_ack_o => wb_ack(5),
 		ext_trig_i => io(2 downto 0) & trig_pulse,
-		ext_trig_o => open,
+		ext_trig_o => int_trig_t,
 		ext_busy_i => '0',
 		ext_busy_o => open,
 		eudet_clk_o => open,
