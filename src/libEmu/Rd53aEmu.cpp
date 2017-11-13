@@ -13,13 +13,19 @@ Rd53aEmu::Rd53aEmu(RingBuffer * rx, RingBuffer * tx) {
 
     for (int col = 0; col < 136; col++) {
         for (int row = 0; row < 192; row++) {
-            std::string name = "linScurveCol" + std::to_string(col) + "Row" + std::to_string(row);
-            linScurve[col][row] = new Histo1d(name.c_str(), 256, -0.5, 4095.5, typeid(void));
+            std::string linName = "linScurveCol" + std::to_string(col) + "Row" + std::to_string(row);
+            linScurve[col][row] = new Histo1d(linName.c_str(), 256, -0.5, 4095.5, typeid(void));
+            m_rd53aLinPixelModelObjects[col][row] = new Rd53aLinPixelModel(10, 2, 400, 100);
 
-            m_rd53aLinPixelModelObjects[col][row] = new Rd53aLinPixelModel(10, 2, 100, 100);
+            std::string diffName = "diffScurveCol" + std::to_string(col) + "Row" + std::to_string(row);
+            diffScurve[col][row] = new Histo1d(diffName.c_str(), 256, -0.5, 4095.5, typeid(void));
+            m_rd53aDiffPixelModelObjects[col][row] = new Rd53aDiffPixelModel(10, 0, 10, 10);
         }
     }
     linThreshold = new Histo1d("linThreshold", 256, -0.5, 4095.5, typeid(void));
+    diffThreshold = new Histo1d("diffThreshold", 256, -0.5, 4095.5, typeid(void));
+
+    analogHits = new Histo2d("analogHits", 400, -0.5, 399.5, 192, -0.5, 191.5, typeid(void));
 }
 
 Rd53aEmu::~Rd53aEmu() {
@@ -75,8 +81,21 @@ void Rd53aEmu::executeLoop() {
             else if (m_header == 0xFFFF) { // temporary command which says we must plot
                 for (int col = 0; col < 136; col++) {
                     for (int row = 0; row < 192; row++) {
+                        if (diffScurve[col][row]->getEntries() != 0 ) {
+                            diffScurve[col][row]->scale(1.0/100.0); // hardcoded for now - the number of times we scan the same pixel
+                            for (int bin = 0; bin < 256; bin++) {
+
+                                if (diffScurve[col][row]->getBin(bin) > 0.5) {
+                                    diffThreshold->fill(bin * 16);
+                                    break;
+                                }
+                            }
+                              if (col == 0 && row == 0) diffScurve[col][row]->plot("scurve", "");
+//                            if (col == 0 && row == 0) diffScurve[col][row]->toFile("scurve", "", 0);
+                        }
+
                         if (linScurve[col][row]->getEntries() != 0 ) {
-                            linScurve[col][row]->scale(1.0/10.0); // hardcoded for now - the number of times we scan the same pixel
+                            linScurve[col][row]->scale(1.0/100.0); // hardcoded for now - the number of times we scan the same pixel
                             for (int bin = 0; bin < 256; bin++) {
 
                                 if (linScurve[col][row]->getBin(bin) > 0.5) {
@@ -89,8 +108,11 @@ void Rd53aEmu::executeLoop() {
                         }
                     }
                 }
+
+                diffThreshold->plot("threshold", "");
                 linThreshold->plot("threshold", "");
-                m_rxRingBuffer->write32(0xA); // rest writing back
+                analogHits->plot("analogHits", "");
+                m_rxRingBuffer->write32(0xA); // test writing back
             }
             else if (m_header == 0x2B) { // Trigger_01
 //              printf("got Trigger_01 command\n");
@@ -125,7 +147,7 @@ void Rd53aEmu::executeLoop() {
                     if (196 <= dc && dc < 200 && !((m_feCfg->CalColprDiff5.read() >> (dc - 196) & 0x1))) continue;
 
                     for (unsigned row = 0; row < 192; row++) {
-                        float capacitance_times_coulomb = 800; // change this to the correct value later
+                        float capacitance_times_coulomb = 8000; // change this to the correct value later
 
                         float maximum_injection_voltage = 1.2;
 //                      printf("m_feCfg->VcalHigh.read() = %d\n", m_feCfg->VcalHigh.read());
@@ -160,11 +182,11 @@ void Rd53aEmu::executeLoop() {
 
                                 if (injection_charge + noise_charge - lin_global_threshold_charge > 0) {
                                     // check the final pixel enable, and for now, just increment the number of hits - eventually, we should really just be writing hit data back to YARR
-                                    if (m_pixelRegisters[dc * 2 + pix][row] & 0x1) linAnalogHits += 1;
-
-//                                  if (m_pixelRegisters[dc * 2 + pix][row] & 0x1) printf("lin %d %d %d %d\n", dc * 2 + 1, row, (m_feCfg->VcalHigh.read() - m_feCfg->VcalMed.read()), 1);
-
-                                    if (m_pixelRegisters[dc * 2 + pix][row] & 0x1) linScurve[dc * 2 + pix - 128][row]->fill((m_feCfg->VcalHigh.read() - m_feCfg->VcalMed.read()));
+                                    if (m_pixelRegisters[dc * 2 + pix][row] & 0x1) {
+                                      linAnalogHits += 1;
+                                      analogHits->fill(dc * 2 + pix, row);
+                                      linScurve[dc * 2 + pix - 128][row]->fill((m_feCfg->VcalHigh.read() - m_feCfg->VcalMed.read()));
+                                    }
                                 }
 
                                 if (m_pixelRegisters[dc * 2 + pix][row] & 0x1) totalDigitalHits += 1;
@@ -172,24 +194,31 @@ void Rd53aEmu::executeLoop() {
                         }
                         // differential front end
                         if (132 <= dc && dc < 200) {
-                            float diff_maximum_global_threshold_voltage = 1.2; // what should this actually be?
-//                          printf("m_feCfg->Vth1Diff.read() = %d\n", m_feCfg->Vth1Diff.read());
-//                          printf("m_feCfg->Vth2Diff.read() = %d\n", m_feCfg->Vth2Diff.read());
-                            float diff_global_threshold_voltage = (m_feCfg->Vth1Diff.read() - m_feCfg->Vth2Diff.read()) * diff_maximum_global_threshold_voltage / 1024.0;
-                            float diff_global_threshold_charge = diff_global_threshold_voltage * capacitance_times_coulomb; // I imagine this might need a different capacitance
-//                          printf("diff_global_threshold_voltage = %f\n", diff_global_threshold_voltage);
-//                          printf("injection_charge = %f\n", injection_charge);
-//                          printf("noise_charge = %f\n", noise_charge);
-//                          printf("diff_global_threshold_charge = %f\n", diff_global_threshold_charge);
+                            for (int pix = 0; pix <= 1; pix++) {
+                                noise_charge = m_rd53aDiffPixelModelObjects[dc * 2 + pix - 264][row]->calculateNoise(); // overwrite the previous generic initialization
+                                float diff_maximum_global_threshold_voltage = 1.2; // what should this actually be?
+//                              printf("m_feCfg->Vth1Diff.read() = %d\n", m_feCfg->Vth1Diff.read());
+//                              printf("m_feCfg->Vth2Diff.read() = %d\n", m_feCfg->Vth2Diff.read());
+                                float diff_global_threshold_with_smearing = m_rd53aDiffPixelModelObjects[dc * 2 + pix - 264][row]->calculateThreshold(m_feCfg->Vth1Diff.read(), m_feCfg->Vth2Diff.read());
+                                float diff_global_threshold_voltage = (diff_global_threshold_with_smearing) * diff_maximum_global_threshold_voltage / 1024.0;
+                                float diff_global_threshold_charge = diff_global_threshold_voltage * capacitance_times_coulomb; // I imagine this might need a different capacitance
 
-                            if (injection_charge + noise_charge - diff_global_threshold_charge > 0) {
-                                // check the final pixel enable, and for now, just increment the number of hits - eventually, we should really just be writing hit data back to YARR
-                                if (m_pixelRegisters[dc * 2][row] & 0x1) diffAnalogHits += 1;
-                                if (m_pixelRegisters[dc * 2 + 1][row] & 0x1) diffAnalogHits += 1;
+//                              printf("diff_global_threshold_voltage = %f\n", diff_global_threshold_voltage);
+//                              printf("injection_charge = %f\n", injection_charge);
+//                              printf("noise_charge = %f\n", noise_charge);
+//                              printf("diff_global_threshold_charge = %f\n", diff_global_threshold_charge);
+
+                                if (injection_charge + noise_charge - diff_global_threshold_charge > 0) {
+                                    // check the final pixel enable, and for now, just increment the number of hits - eventually, we should really just be writing hit data back to YARR
+                                    if (m_pixelRegisters[dc * 2 + pix][row] & 0x1) {
+                                      diffAnalogHits += 1;
+                                      analogHits->fill(dc * 2 + pix, row);
+                                      diffScurve[dc * 2 + pix - 264][row]->fill((m_feCfg->VcalHigh.read() - m_feCfg->VcalMed.read()));
+                                    }
+                                }
+
+                                if (m_pixelRegisters[dc * 2 + pix][row] & 0x1) totalDigitalHits += 1;
                             }
-
-                            if (m_pixelRegisters[dc * 2][row] & 0x1) totalDigitalHits += 1;
-                            if (m_pixelRegisters[dc * 2 + 1][row] & 0x1) totalDigitalHits += 1;
                         }
                     }
                 }

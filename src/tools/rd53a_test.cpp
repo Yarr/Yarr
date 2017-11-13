@@ -181,28 +181,32 @@ int main(void) {
     myRd53a->wrRegister(4, 2, (uint32_t) 0); // 2 = RegionRow
     myRd53a->wrRegister(4, 3, 0x00000027); // 3 = PixMode + BMask; 0x17 = 0x100111 bits = auto col, auto row, broadcast, fe flavor 1, fe flavor 2, fe flavor 3;
     for (int i = 0; i < 192; i++) { // since se set auto col to 1, but not auto row, the chip/emulator will loop over all columns, but we must here manually loop over all rows
-        myRd53a->wrRegister(4, 0, (feCfg->PixPortalHigh.read() << 8) + feCfg->PixPortalLow.read()); // do we actually need to send the data here? - I think yes
-
-        if (i == 4) {
-//          feCfg->PixPortalHigh.write(0x00);
-//          feCfg->PixPortalLow.write(0x00);
+        if (i % 4 != 0) {
+          feCfg->PixPortalHigh.write(0x00);
+          feCfg->PixPortalLow.write(0x00);
+          myRd53a->wrRegister(4, 0, (feCfg->PixPortalHigh.read() << 8) + feCfg->PixPortalLow.read()); // do we actually need to send the data here? - I think yes
+        }
+        else {
+          feCfg->PixPortalHigh.write(0xFF);
+          feCfg->PixPortalLow.write(0xFF);
+          myRd53a->wrRegister(4, 0, (feCfg->PixPortalHigh.read() << 8) + feCfg->PixPortalLow.read()); // do we actually need to send the data here? - I think yes
         }
     }
 
     // try to mask some columns
 //    myRd53a->writeRegister(4, &Rd53aGlobalCfg::EnCoreColSync, 0x0000);
 
-    myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprDiff1, 0x0000);
-    myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprDiff2, 0x0000);
-    myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprDiff3, 0x0000);
-    myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprDiff4, 0x0000);
-    myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprDiff5, 0x0000);
+    myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprDiff1, 0x1111);
+    myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprDiff2, 0x1111);
+    myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprDiff3, 0x1111);
+    myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprDiff4, 0x1111);
+    myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprDiff5, 0x1111);
 
-    myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprLin1, 0xFFFF);
-    myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprLin2, 0xFFFF);
-    myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprLin3, 0xFFFF);
-    myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprLin4, 0xFFFF);
-    myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprLin5, 0xFFFF);
+    myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprLin1, 0x1111);
+    myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprLin2, 0x1111);
+    myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprLin3, 0x1111);
+    myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprLin4, 0x1111);
+    myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprLin5, 0x1111);
 
     myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprSync1, 0x0000);
     myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprSync2, 0x0000);
@@ -211,13 +215,16 @@ int main(void) {
 
     // change some of the threshold voltages
     myRd53a->writeRegister(4, &Rd53aGlobalCfg::Vth1Diff, 500);		// diff
+    myRd53a->writeRegister(4, &Rd53aGlobalCfg::Vth2Diff, 0);		// diff
     myRd53a->writeRegister(4, &Rd53aGlobalCfg::VthresholdLin, 500);	// lin
 
+    myRd53a->writeRegister(4, &Rd53aGlobalCfg::VcalMed, 0);		// injection
     // loop over injection charges
-    for (int stats = 0; stats < 10; stats++) {
+    for (int stats = 0; stats < 100; stats++) {
         for (int i = 0; i <= 4095; i += 16) {
             // increase the injection voltage (charge)
             myRd53a->writeRegister(4, &Rd53aGlobalCfg::VcalHigh, i);
+            myRd53a->writeRegister(4, &Rd53aGlobalCfg::VcalMed, 0);
 
             // send a trigger - this could be put into a loop with various ways of masking
             myRd53a->trigger(0x2B, 0);
@@ -228,9 +235,9 @@ int main(void) {
     // send this temporary custum trigger word to tell the emulation to output the plots
     myRd53a->trigger(0xFFFF, 0);
 
-    sleep(1);
+    sleep(10);
 
-printf("test = 0x%x\n", hwCtrl->readData()->buf[0]);
+    printf("test = 0x%x\n", hwCtrl->readData()->buf[0]);
 
     emu->run = false;
     emuThreads[0].join();
