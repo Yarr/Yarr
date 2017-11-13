@@ -125,13 +125,13 @@ void Rd53aEmu::executeLoop() {
                 for (unsigned dc = 0; dc < 200; dc++) {
                     // put these checks into a function maybe
                     // check pixels to see if the digital enable is set for "octo-columns" (columns of cores)
-                    if (0   <= dc && dc < 64  && !((m_feCfg->EnCoreColSync.read()  >> ((dc - 0)   / 4)) & 0x1)) continue;
+                    if (             dc < 64  && !((m_feCfg->EnCoreColSync.read()  >> ((dc - 0)   / 4)) & 0x1)) continue;
                     if (64  <= dc && dc < 128 && !((m_feCfg->EnCoreColLin1.read()  >> ((dc - 64)  / 4)) & 0x1)) continue;
                     if (128 <= dc && dc < 132 && !((m_feCfg->EnCoreColLin2.read()  >> ((dc - 128) / 4)) & 0x1)) continue;
                     if (132 <= dc && dc < 196 && !((m_feCfg->EnCoreColDiff1.read() >> ((dc - 132) / 4)) & 0x1)) continue;
                     if (196 <= dc && dc < 200 && !((m_feCfg->EnCoreColDiff2.read() >> ((dc - 196) / 4)) & 0x1)) continue;
                     // check pixels to see if double columns are enabled for injections
-                    if (0   <= dc && dc < 16  && !((m_feCfg->CalColprSync1.read() >> (dc - 0)   & 0x1))) continue;
+                    if (             dc < 16  && !((m_feCfg->CalColprSync1.read() >> (dc - 0)   & 0x1))) continue;
                     if (16  <= dc && dc < 32  && !((m_feCfg->CalColprSync2.read() >> (dc - 16)  & 0x1))) continue;
                     if (32  <= dc && dc < 48  && !((m_feCfg->CalColprSync3.read() >> (dc - 32)  & 0x1))) continue;
                     if (48  <= dc && dc < 64  && !((m_feCfg->CalColprSync4.read() >> (dc - 48)  & 0x1))) continue;
@@ -160,7 +160,7 @@ void Rd53aEmu::executeLoop() {
                         float noise_charge = Gauss::rand_normal(0, 50, 1); // generic, should remove
 
                         // sync front end
-                        if (0 <= dc && dc < 64) {
+                        if (dc < 64) {
                             // check the final pixel enable, and for now, just increment the number of hits - eventually, we should really just be writing hit data back to YARR
                             if (m_pixelRegisters[dc * 2][row] & 0x1) totalDigitalHits += 1;
                             if (m_pixelRegisters[dc * 2 + 1][row] & 0x1) totalDigitalHits += 1;
