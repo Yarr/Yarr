@@ -29,8 +29,8 @@ ifeq ($(UNAME_S),Darwin)
 CPP = clang++
 LD = clang++
 else
-CPPFLAGS += -pthread
-LDFLAGS += -pthread -lrt
+CPPFLAGS += -pthread -fPIC
+LDFLAGS += -pthread -lrt -fPIC
 endif
 
 CPPFLAGS += -std=c++11 -Wall -Werror
