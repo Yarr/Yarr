@@ -2,7 +2,7 @@
 #include "StdDataGatherer.h"
 
 #ifndef ALLSTDACTIONS_H
-#define ALLSTD4ACTIONS_H
+#define ALLSTDACTIONS_H
 
 #include "LoopActionBase.h"
 #include <string>
