@@ -38,6 +38,11 @@ class Fe65p2Cfg : public FrontEndCfg, public Fe65p2GlobalCfg, public Fe65p2Pixel
             return (cap * 1.0e-15)*(((1.0e-3*vcal_slope)*vcal)+(vcal_offset*1.0e-3))/ELECTRON_CHARGE;
         }
 
+        // Only one cap
+        double toCharge(double vcal, bool scap, bool lcap) {
+            return this->toCharge(vcal);
+        }
+
         unsigned toVcal(double charge) {
             // V = Q/C
             return floor((((charge*ELECTRON_CHARGE)/(cap * 1.0e-15))-(vcal_offset*1.0e-3))/(vcal_slope*1.0e-3));
