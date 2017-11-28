@@ -9,6 +9,7 @@
 
 #include <cstdint>
 
+/// How big is this chip.
 struct FrontEndGeometry {
     uint32_t nRow, nCol;
 };

@@ -35,7 +35,11 @@ enum LoopStyle {
     LOOP_STYLE_END
 };
 
-/// Store of position within the scan hierarchy
+/**
+ * Representation of current position in a scan loop.
+ *
+ * Also used as a description of the loop hierarchy.
+ */
 class LoopStatus {
     private:
         static const size_t MAX_LOOP_SIZE = 8;
@@ -45,6 +49,7 @@ class LoopStatus {
         std::array<LoopStyle, MAX_LOOP_SIZE> styleVec;
 
     public:
+        /** Create LoopStatus */
         LoopStatus()=default;
 
         LoopStatus(std::initializer_list<unsigned> vec, std::initializer_list<LoopStyle> vec_s) : statCount(vec.size())
@@ -68,6 +73,7 @@ class LoopStatus {
         
         unsigned getStyle(unsigned i) const { return styleVec[i]; }
 
+        /** Compare with another LoopStatus */
         bool operator==(const LoopStatus &l){
                 return statVec == l.statVec;
         }
@@ -75,39 +81,61 @@ class LoopStatus {
         bool is_end_of_iteration = true;
 };
 
-/// Where we are in the scan engine (this one gets updated)
+/**
+ * Representation of current location in the scan engine.
+ *
+ * This gets updated during the scan and LoopStatus is recorded to tag bits of data.
+ */
 class LoopStatusMaster {
     public:
         LoopStatusMaster() = default;
 
         LoopStatusMaster(const LoopStatusMaster &l) = delete;
+        /** Copy LoopStatus */
         LoopStatus& operator=(const LoopStatus &l) = delete;
 
         /// Used to take a snapshot of where we are
         LoopStatus record() const { return LoopStatus(statVec, styleVec); }
 
+        /** Initialise */
         void init(unsigned i) {
             statVec.resize(i);
             styleVec.resize(i);
             loopVec.resize(i);
         }
+        /**
+         * Add a layer.
+         *
+         * @param i The layer index.
+         * @param l The layer object.
+         * @param loopStyle The type of the layer.
+         */
         void addLoop(unsigned i, LoopActionBase *l, LoopStyle loopStyle) {
             statMap[l] = &statVec[i];
             styleVec[i] = loopStyle;
             loopVec[i] = l;
         }
         
+        /** Set position at layer */
         void set(unsigned i, unsigned v) {statVec[i] = v;}
+        /** Set position at layer given by type */
         void set(LoopActionBase *l, unsigned v) {
             *(statMap[l]) = v;
         }
+        /** Retrieve stats for layer */
         unsigned get(unsigned i) const {return statVec[i];}
+        /** Retrieve implementer for scan layer */
         LoopActionBase* getPointer(unsigned i) const {return loopVec[i];}
+        /** Retrieve position using type */
         unsigned get(LoopActionBase *l) {return *(statMap[l]);}
+        /** Return number of loops */
         unsigned size() const {return statVec.size();}
 
+        /** Get map from type to stat */
         const std::map<LoopActionBase*, unsigned*> &getMap() const {return statMap;}
+        /** Get array of loop positions */
         const std::vector<unsigned> &getVector() const {return statVec;}
+        /** Get map from layer number to loop object */
         const std::vector<LoopActionBase*> &getPointer() const {return loopVec;}
     private:
         /// Location within scan loop hierarchy

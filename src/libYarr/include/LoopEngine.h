@@ -17,15 +17,24 @@ class LoopActionBase;
 
 typedef EngineTBase< std::vector< std::shared_ptr<LoopActionBase> > > Engine;
 
+/**
+ * Top level engine, link all the loop levels together.
+ */
 class LoopEngine : public Engine {
     public:
+        /** Create engine */
         LoopEngine(Bookkeeper *k);
+        /** Destroy engine */
         ~LoopEngine();
         
+        /** Add loop action to this engine */
         void addAction(Engine::element_value_type el);
         
+        /** Initialise all the layers of the scan */
         void init();
+        /** Run the scan */
         void execute();
+        /** Called at the end of the scan */
         void end();
 
     private:

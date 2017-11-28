@@ -16,23 +16,34 @@
 
 #include "storage.hpp"
 
+/**
+ * Representation of configuration for a FrontEnd chip.
+ *
+ * Each is attached to a rx/tx channel via FrontEndConnectivity.
+ */
 class FrontEndCfg : public FrontEndConnectivity {
     public:
+        /** Default config */
         FrontEndCfg() : FrontEndConnectivity() {
             name = "JohnDoe";
             enforceChipIdInName = false;
         }
 
-	    FrontEndCfg(FrontEndCfg& cfg) : FrontEndConnectivity(cfg) {
-	        name = cfg.getName();
-	        enforceChipIdInName = cfg.checkChipIdInName();
-	    }
+        /** Copy constructor */
+        FrontEndCfg(FrontEndCfg& cfg) : FrontEndConnectivity(cfg) {
+            name = cfg.getName();
+            enforceChipIdInName = cfg.checkChipIdInName();
+        }
 
         virtual ~FrontEndCfg()= default;
         
+        /** Convert voltage to charge based on response stored in configuration */
         virtual double toCharge(double)=0;
+        /** Convert voltage to charge, with some flags */
         virtual double toCharge(double, bool, bool)=0;
+        /** Store in json object */
         virtual void writeConfig(json &) =0;
+        /** Load from json object */
         virtual void loadConfig(const json &)=0;
 
         virtual unsigned getPixelEn(unsigned col, unsigned row, bool doAltMask = false) = 0;
@@ -43,6 +54,7 @@ class FrontEndCfg : public FrontEndConnectivity {
 
         virtual std::tuple<json, std::vector<json>> getPreset(const std::string& systemType="SingleChip");
 
+        /** Return name of this FE */
         std::string getName() {return name;}
         bool checkChipIdInName() { return enforceChipIdInName; }
 
