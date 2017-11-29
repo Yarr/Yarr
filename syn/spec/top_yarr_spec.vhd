@@ -1157,7 +1157,7 @@ begin
 		wb_stb_i => wb_stb,
 		wb_we_i => wb_we,
 		wb_ack_o => wb_ack(5),
-		ext_trig_i => io(2 downto 0) & trig_pulse,
+		ext_trig_i => io(2) & "00" & trig_pulse,
 		ext_trig_o => int_trig_t,
 		ext_busy_i => '0',
 		ext_busy_o => open,
@@ -1169,6 +1169,9 @@ begin
 		trig_tag => trig_tag_t,
                 debug_o => debug_trig
 	);
+    
+    io(1) <= int_trig_t;
+    io(0) <= int_trig_t;
 
   --wb_stall(1) <= '0' when wb_cyc(1) = '0' else not(wb_ack(1));
 --  wb_stall(2) <= '0' when wb_cyc(2) = '0' else not(wb_ack(2));
@@ -1203,9 +1206,9 @@ begin
 --   TRIG0(24) <= rx_busy;
 --   TRIG0(31 downto 25) <= (others => '0');
 	TRIG0(0) <= rx_valid;
-	TRIG0(1) <= fe_cmd_o(7);
-	TRIG0(2) <= fe_cmd_p(7);
-	TRIG0(3) <= fe_cmd_n(7);
+	TRIG0(1) <= fe_cmd_o(6);
+	TRIG0(2) <= fe_cmd_o(7);
+    TRIG0(3) <= int_trig_t;
 	TRIG0(31 downto 4) <= (others => '0');
 	TRIG1 <= trig_tag_t;
 	TRIG2 <= debug_trig;
