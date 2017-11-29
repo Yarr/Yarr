@@ -126,7 +126,6 @@ architecture rtl of wb_trigger_logic is
     end component;
 
     constant delay_width : integer := 3;
-    signal deadtime : std_logic_vector(15 downto 0); -- clk_i cycles
     
     -- Registers
     signal trig_mask : std_logic_vector(31 downto 0);
@@ -137,6 +136,7 @@ architecture rtl of wb_trigger_logic is
     signal ch1_delay : std_logic_vector(delay_width-1 downto 0);
     signal ch2_delay : std_logic_vector(delay_width-1 downto 0);
     signal ch3_delay : std_logic_vector(delay_width-1 downto 0);
+    signal deadtime : std_logic_vector(15 downto 0); -- clk_i cycles
     
     -- Local signals
     signal edge_r : std_logic_vector(3 downto 0);
