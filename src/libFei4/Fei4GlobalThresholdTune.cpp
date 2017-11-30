@@ -67,16 +67,17 @@ void Fei4GlobalThresholdTune::init() {
 // Do necessary pre-scan configuration
 void Fei4GlobalThresholdTune::preScan() {
     // Global config
-	g_tx->setCmdEnable(g_bk->getTxMask());
+    g_tx->setCmdEnable(g_bk->getTxMask());
     g_bk->globalFe<Fei4>()->writeRegister(&Fei4::Trig_Count, 12);
     g_bk->globalFe<Fei4>()->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
     g_bk->globalFe<Fei4>()->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
-    while(!g_tx->isCmdEmpty());
+    while(!g_tx->isCmdEmpty())
+        ;
 
-	for(unsigned int k=0; k<g_bk->feList.size(); k++) {
+    for(unsigned int k=0; k<g_bk->feList.size(); k++) {
         Fei4 *fe = dynamic_cast<Fei4*>(g_bk->feList[k]);
         // Set to single channel tx
-		g_tx->setCmdEnable(0x1 << fe->getTxChannel());
+        g_tx->setCmdEnable(0x1 << fe->getTxChannel());
         // Set specific pulser DAC
     	fe->writeRegister(&Fei4::PlsrDAC, fe->toVcal(target, useScap, useLcap));
         // Reset all TDACs
@@ -85,7 +86,8 @@ void Fei4GlobalThresholdTune::preScan() {
             for (unsigned row=1; row<337; row++)
                 fe->setTDAC(col, row, 16);
         fe->configurePixels();
-        while(!g_tx->isCmdEmpty());
-	}
-	g_tx->setCmdEnable(g_bk->getTxMask());
+        while(!g_tx->isCmdEmpty())
+            ;
+    }
+    g_tx->setCmdEnable(g_bk->getTxMask());
 }
