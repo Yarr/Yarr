@@ -9,6 +9,7 @@ int main(void) {
 
     std::cout << "Initialising .." << std::endl;
     SpecController spec;
+    spec.init(0);
     Bookkeeper bookie(&spec, &spec);
     bookie.initGlobalFe(new Fe65p2(&spec));
 

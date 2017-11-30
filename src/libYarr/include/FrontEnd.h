@@ -52,6 +52,7 @@ class FrontEndCfg {
         }
 
         virtual double toCharge(double)=0;
+        virtual double toCharge(double, bool, bool)=0;
         virtual void toFileJson(json&)=0;
         virtual void fromFileJson(json&)=0;
         virtual void toFileBinary(std::string)=0;

@@ -410,6 +410,8 @@ void ScurveFitter::init(ScanBase *s) {
     n_count = nCol*nRow;
     vcalLoop = 0;
     injections = 50;
+    useScap = true;
+    useLcap = true;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if (l->type() != typeid(Fei4TriggerLoop*) &&
@@ -447,6 +449,14 @@ void ScurveFitter::init(ScanBase *s) {
             Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
             injections = trigLoop->getTrigCnt();
         }
+
+	// check injection capacitor for FEI-4
+	if(l->type() == typeid(Fei4MaskLoop*)) {
+	  std::shared_ptr<Fei4MaskLoop> msk = std::dynamic_pointer_cast<Fei4MaskLoop>(l);
+	  useScap = msk->getScap();
+	  useLcap = msk->getLcap();
+	}
+
     }
 
     for (unsigned i=vcalMin; i<=vcalMax; i+=vcalStep) {
@@ -565,12 +575,12 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         hh1->setYaxisTitle("Number of Pixels");
                         timeDist[outerIdent] = hh1;
                     }
-                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin)/16.0) {
+                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0) {
                         FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
-                        thrMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0]));
-                        thrDist[outerIdent]->fill(feCfg->toCharge(par[0]));
-                        sigMap[outerIdent]->fill(col, row, feCfg->toCharge(par[1]));
-                        sigDist[outerIdent]->fill(feCfg->toCharge(par[1]));
+                        thrMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0], useScap, useLcap));
+                        thrDist[outerIdent]->fill(feCfg->toCharge(par[0], useScap, useLcap));
+                        sigMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0]+par[1], useScap, useLcap)-feCfg->toCharge(par[0], useScap, useLcap));
+                        sigDist[outerIdent]->fill(feCfg->toCharge(par[0]+par[1], useScap, useLcap)-feCfg->toCharge(par[0], useScap, useLcap));
                         chiDist[outerIdent]->fill(status.fnorm/(double)status.nfev);
                         timeDist[outerIdent]->fill(fitTime.count());
                     }

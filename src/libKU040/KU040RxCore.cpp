@@ -277,6 +277,7 @@ void KU040RxCore::UDPReceiveThreadProc()
         setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout_socket, sizeof(timeout_socket));
 
 	// prepare buffers
+#ifndef __APPLE__
 	struct mmsghdr msgs[VLEN];
 	struct iovec iovecs[VLEN];
         unsigned char bufs[VLEN][BUFSIZE+1];
@@ -333,5 +334,6 @@ void KU040RxCore::UDPReceiveThreadProc()
 
 	std::cout << "Stopping UDP receive" << std::endl;
 	std::cout << "Received " << packets << " UDP packets with total size " << packets_size << std::endl;
+#endif
 }
 

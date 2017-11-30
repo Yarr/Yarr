@@ -81,14 +81,15 @@ class YarrFe65p2Producer : public eudaq::Producer {
         };
         // The constructor must call the eudaq::Producer constructor with the name
         // and the runcontrol connection string, and initialize any member variables.
-        YarrFe65p2Producer(const std::string & name, const std::string & runcontrol)
-            : eudaq::Producer("YarrFe65p2Producer", runcontrol),
+        YarrFe65p2Producer(const int &prodid, const int &specid, const std::string & name, const std::string & runcontrol)
+            : eudaq::Producer(("YarrFe65p2Producer_"+std::to_string(prodid)), runcontrol),
             m_run(0), m_eventCount(0) {
-                spec = dynamic_cast<HwController*>(new SpecController());    
+                spec = dynamic_cast<HwController*>(new SpecController());
+                dynamic_cast<SpecController*>(spec)->init(specid);
                 tx = dynamic_cast<TxCore*>(spec);
                 rx = dynamic_cast<RxCore*>(spec);
                 bookie = new Bookkeeper(tx, rx);
-                m_daqId = 0;
+                m_daqId = prodid;
                 m_dutName = name;
                 m_trigMultiplier = 5;
                 m_trigLatency = 200; 
@@ -435,7 +436,10 @@ int main(int /*argc*/, const char ** argv) {
             "The minimum level for displaying log messages locally");
     eudaq::Option<std::string> name(op, "n", "name", "fe65p2", "string",
             "Module name");
-
+    eudaq::Option<int> specid(op, "i", "specid", 0, "int",
+            "SPEC Id (/dev/specX)");
+    eudaq::Option<int> prodid(op, "p", "prodid", 0, "int",
+            "Producer Id");
     try {
         // This will look through the command-line arguments and set the options
         op.Parse(argv);
@@ -449,7 +453,7 @@ int main(int /*argc*/, const char ** argv) {
         std::cout << "-> Module: " << name.Value() << std::endl;   
         eudaq::mSleep(3000);
         // Create a producer
-        YarrFe65p2Producer producer(name.Value(), rctrl.Value());
+        YarrFe65p2Producer producer(specid.Value(), prodid.Value(), name.Value(), rctrl.Value());
         // And set it running...
         producer.ReadoutLoop();
         // When the readout loop terminates, it is time to go

@@ -12,7 +12,8 @@ using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::i
 int main(int argc, char *argv[]) {
 	
 	SpecController mySpec;
-	
+    mySpec.init(0);
+
 	mySpec.setCmdEnable(0x1);
 	
 	Fe65p2 fe(&mySpec);

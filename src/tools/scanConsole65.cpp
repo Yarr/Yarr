@@ -141,6 +141,7 @@ int main(int argc, char *argv[]) {
 
     std::cout << "-> Init SPEC " << specNum << " : " << std::endl;
     SpecController spec;
+    spec.init(specNum);
     Bookkeeper bookie(&spec, &spec);
     bookie.initGlobalFe(new Fe65p2(&spec));
     bookie.setTargetThreshold(800);

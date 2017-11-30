@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
     }
 
     SpecController mySpec;
-
+    mySpec.init(0);
     Fe65p2 *fe = new Fe65p2(&mySpec);
     Fe65p2 *g_fe = new Fe65p2(&mySpec);
 
