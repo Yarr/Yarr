@@ -34,6 +34,7 @@ use UNISIM.VComponents.all;
 
 library work;
 use work.app_pkg.all;
+use work.board_pkg.all;
 
 entity app is
     Generic(
@@ -123,8 +124,8 @@ entity app is
            fe_clk_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
            fe_cmd_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
            fe_cmd_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
-           fe_data_p        : in  std_logic_vector(c_RX_CHANNELS-1 downto 0);
-           fe_data_n        : in  std_logic_vector(c_RX_CHANNELS-1 downto 0);
+           fe_data_p        : in  std_logic_vector((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0);
+           fe_data_n        : in  std_logic_vector((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0);
            -- I2c
            sda_io                : inout std_logic;
            scl_io                    : inout std_logic;
@@ -387,7 +388,7 @@ architecture Behavioral of app is
 	signal fe_cmd_enc : std_logic_vector(c_TX_CHANNELS-1 downto 0);
 	signal fe_cmd_del : std_logic_vector(c_TX_CHANNELS-1 downto 0);
 	signal fe_clk_o : std_logic_vector(c_TX_CHANNELS-1 downto 0);
-	signal fe_data_i : std_logic_vector(c_RX_CHANNELS-1 downto 0);
+	signal fe_data_i : std_logic_vector((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0);
 	
     signal tx_data_o : std_logic_vector(0 downto 0);
     signal trig_pulse : std_logic;
@@ -395,7 +396,7 @@ architecture Behavioral of app is
     signal trig_tag_t : std_logic_vector(31 downto 0);
     
 
-    signal rx_data : std_logic_vector(31 downto 0);
+    signal rx_data : std_logic_vector(63 downto 0);
     signal rx_valid : std_logic;
     
     signal rx_busy : std_logic;
@@ -771,20 +772,6 @@ wb_dev_gen : if wb_dev_c = '1' generate
                 ext_trig_i => int_trig_t
             );
 
-	rx_loop: for I in 0 to c_RX_CHANNELS-1 generate
-	begin
-		rx_buf : IBUFDS
-		generic map (
-			DIFF_TERM => TRUE, -- Differential Termination 
-			IBUF_LOW_PWR => FALSE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
-			IOSTANDARD => "LVDS_25")
-		port map (
-			O => fe_data_i(I),  -- Buffer output
-			I => fe_data_p(I),  -- Diff_p buffer input (connect directly to top-level port)
-			IB => fe_data_n(I) -- Diff_n buffer input (connect directly to top-level port)
-		);
-	end generate;
-
 	cmp_wb_rx_core: wb_rx_core PORT MAP(
 		wb_clk_i => wb_clk_s,
 		rst_n_i => rst_n_s,
@@ -798,7 +785,8 @@ wb_dev_gen : if wb_dev_c = '1' generate
 		wb_stall_o => wb_stall_s(2),
 		rx_clk_i => CLK_160_s,
 		rx_serdes_clk_i => CLK_640_s,
-		rx_data_i => fe_data_i,
+		rx_data_i_p => fe_data_p((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0),
+		rx_data_i_n => fe_data_n((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0),
 		rx_valid_o => rx_valid,
 		rx_data_o => rx_data,
         trig_tag_i => trig_tag_T,
@@ -1178,7 +1166,7 @@ end generate;
           probe5(0) => rx_dma_we_s, 
           probe6(0) => rx_dma_ack_s,
           probe7(0) => rx_dma_stall_s,
-          probe8 => rx_data,
+          probe8 => rx_data(31 downto 0),
           probe9(0) => rx_valid,
           probe10(0) => trig_pulse,
           probe11(0) => rx_busy

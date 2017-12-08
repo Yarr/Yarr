@@ -27,7 +27,7 @@ use UNISIM.VComponents.all;
 
 library work;
 use work.app_pkg.all;
-
+use work.board_pkg.all;
 
 entity top_level is
     Port (  ---------------------------------------------------------------------------
@@ -63,8 +63,8 @@ entity top_level is
             fe_clk_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
             fe_cmd_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
             fe_cmd_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
-            fe_data_p        : in  std_logic_vector(c_RX_CHANNELS-1 downto 0);
-            fe_data_n        : in  std_logic_vector(c_RX_CHANNELS-1 downto 0)--;
+            fe_data_p        : in  std_logic_vector((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0);
+            fe_data_n        : in  std_logic_vector((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0)--;
             -- I2c
             --sda_io                : inout std_logic;
             --scl_io                    : inout std_logic;
@@ -268,8 +268,8 @@ architecture Behavioral of top_level is
                 fe_clk_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
                 fe_cmd_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
                 fe_cmd_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
-                fe_data_p        : in  std_logic_vector(c_RX_CHANNELS-1 downto 0);
-                fe_data_n        : in  std_logic_vector(c_RX_CHANNELS-1 downto 0);
+                fe_data_p        : in  std_logic_vector((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0);
+                fe_data_n        : in  std_logic_vector((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0);
                 -- I2c
                 sda_io                : inout std_logic;
                 scl_io                    : inout std_logic;

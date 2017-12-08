@@ -30,20 +30,20 @@ all: bitstream
 
 SOURCES_XCIFile := \
 ../../../ip-cores/kintex7/fifo_29x32/fifo_29x32.xci \
-../../../ip-cores/kintex7/fifo_32x512/fifo_32x512.xci \
+../../../ip-cores/kintex7/fifo_605x32/fifo_605x32.xci \
 ../../../ip-cores/kintex7/axis_data_fifo_1/axis_data_fifo_1.xci \
 ../../../ip-cores/kintex7/ila_wsh_pipe/ila_wsh_pipe.xci \
 ../../../ip-cores/kintex7/axis_data_fifo_0/axis_data_fifo_0.xci \
 ../../../ip-cores/kintex7/tx_fifo/tx_fifo.xci \
-../../../ip-cores/kintex7/fifo_605x32/fifo_605x32.xci \
+../../../ip-cores/kintex7/fifo_32x512/fifo_32x512.xci \
 ../../../ip-cores/kintex7/fifo_96x512_1/fifo_96x512.xci \
 ../../../ip-cores/kintex7/mig_7series_0/mig_7series_0.xci \
 ../../../ip-cores/kintex7/rx_channel_fifo/rx_channel_fifo.xci \
 ../../../ip-cores/kintex7/ila_ddr/ila_ddr.xci \
 ../../../ip-cores/kintex7/l2p_fifo64/l2p_fifo64.xci \
 ../../../ip-cores/kintex7/fifo_8x32/fifo_8x32.xci \
-../../../ip-cores/kintex7/pcie_7x_0/pcie_7x_0.xci \
 ../../../ip-cores/kintex7/rx_bridge_ctrl_fifo/rx_bridge_ctrl_fifo.xci \
+../../../ip-cores/kintex7/pcie_7x_0/pcie_7x_0.xci \
 ../../../ip-cores/kintex7/ila_axis/ila_axis.xci \
 ../../../ip-cores/kintex7/fifo_256x16/fifo_256x16.xci \
 ../../../ip-cores/kintex7/fifo_64x512/fifo_64x512.xci \
@@ -55,6 +55,7 @@ SOURCES_VHDLFile := \
 ../../../rtl/kintex7/rx-core/wb_rx_bridge.vhd \
 ../../../rtl/tx-core/wb_tx_core.vhd \
 ../../../rtl/common/generic_async_fifo_wrapper.vhd \
+board_pkg.vhd \
 ../../../rtl/common/k_dual_bram.vhd \
 ../../../rtl/kintex7/rx-core/decode_8b10b/decode_8b10b_bram.vhd \
 ../../../rtl/kintex7/rx-core/wb_rx_core.vhd \
@@ -87,10 +88,10 @@ SOURCES_VHDLFile := \
 ../../../rtl/kintex7/wbexp-core/dma_controller_wb_slave.vhd \
 ../../../rtl/kintex7/ddr3k7-core/ddr3_read_core.vhd \
 ../../../rtl/tx-core/serial_port.vhd \
+../../../rtl/kintex7/rx-core/aurora_rx_channel.vhd \
 ../../../rtl/kintex7/wbexp-core/p2l_dma_master.vhd \
 ../../../rtl/kintex7/rx-core/decode_8b10b/decode_8b10b_rtl.vhd \
 ../../../rtl/tx-core/trigger_unit.vhd \
-board_pkg.vhd \
 ../../../rtl/kintex7/rx-core/cdr_serdes.vhd \
 ../../../rtl/kintex7/rx-core/data_alignment.vhd \
 ../../../rtl/tx-core/tx_channel.vhd \
@@ -98,7 +99,7 @@ board_pkg.vhd \
 ../../../rtl/common/simple_counter.vhd
 
 SOURCES_XDCFile := \
-../xpressk7-fmc-octa.xdc \
+../xpressk7-fmc-quad-dp.xdc \
 ../xpressk7.xdc \
 ../xpressk7-timing.xdc
 
@@ -124,6 +125,7 @@ project.tcl:
 		echo set_property "part" "$(SYN_DEVICE)$(SYN_PACKAGE)$(SYN_GRADE)" [current_project] >> $@
 		echo set_property "target_language" "VHDL" [current_project] >> $@
 		echo set_property "top" "$(TOP_MODULE)" [get_property srcset [current_run]] >> $@
+		echo set_property "ip_repo_paths" "../../../ip-cores" [current_fileset] >> $@
 		echo source files.tcl >> $@
 		echo update_compile_order -fileset sources_1 >> $@
 		echo update_compile_order -fileset sim_1 >> $@

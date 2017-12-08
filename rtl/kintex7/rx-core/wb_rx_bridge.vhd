@@ -44,7 +44,7 @@ entity wb_rx_bridge is
 		dma_stall_i	: in  std_logic;
 		
 		-- Rx Interface
-		rx_data_i 	: in  std_logic_vector(31 downto 0);
+		rx_data_i 	: in  std_logic_vector(63 downto 0);
 		rx_valid_i	: in  std_logic;
 		
 		-- Status In
@@ -235,7 +235,7 @@ begin
 				data_fifo_din <= X"03000000" & rx_data_local_d;
 			else
 				data_fifo_wren <= rx_valid_i;
-				data_fifo_din <= X"03000000" & rx_data_i;
+				data_fifo_din <=  rx_data_i;
 			end if;
 		end if;
 	end process data_rec;

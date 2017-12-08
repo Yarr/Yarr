@@ -14,9 +14,14 @@ library IEEE;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library UNISIM;
+use UNISIM.VComponents.all;
+
 entity wb_rx_core is
 	generic (
-		g_NUM_RX : integer range 1 to 32 := 1
+		g_NUM_RX : integer range 1 to 32 := 1;
+        g_TYPE : string := "FEI4";
+        g_NUM_LANES : integer range 1 to 4 := 1
 	);
 	port (
 		-- Sys connect
@@ -36,12 +41,13 @@ entity wb_rx_core is
 		-- RX IN
 		rx_clk_i	: in  std_logic;
 		rx_serdes_clk_i : in std_logic;
-		rx_data_i	: in std_logic_vector(g_NUM_RX-1 downto 0);
+		rx_data_i_p	: in std_logic_vector((g_NUM_RX*g_NUM_LANES)-1 downto 0);
+		rx_data_i_n	: in std_logic_vector((g_NUM_RX*g_NUM_LANES)-1 downto 0);
         trig_tag_i : in std_logic_vector(31 downto 0);
 		
 		-- RX OUT (sync to sys_clk)
 		rx_valid_o : out std_logic;
-		rx_data_o : out std_logic_vector(31 downto 0);
+		rx_data_o : out std_logic_vector(63 downto 0);
 		busy_o : out std_logic;
 		
 		debug_o : out std_logic_vector(31 downto 0)
@@ -95,25 +101,46 @@ architecture behavioral of wb_rx_core is
 			rx_data_raw_o : out std_logic_vector(7 downto 0)
 		);
 	end component;
+
+    component aurora_rx_channel
+        generic (
+            g_NUM_LANES : integer range 1 to 4 := g_NUM_LANES
+        );
+        port (
+            rst_n_i : in std_logic;
+            clk_rx_i : in std_logic; -- Fabric clock (serdes/8)
+            clk_serdes_i : in std_logic; -- IO clock
+            -- Input
+            enable_i : in std_logic;
+            rx_data_i_p : in std_logic_vector(g_NUM_LANES-1 downto 0);
+            rx_data_i_n : in std_logic_vector(g_NUM_LANES-1 downto 0);
+            trig_tag_i : in std_logic_vector(63 downto 0);
+            -- Output
+            rx_data_o : out std_logic_vector(63 downto 0);
+            rx_valid_o : out std_logic;
+            rx_stat_o : out std_logic_vector(7 downto 0)
+        );
+    end component aurora_rx_channel;
 	
 	COMPONENT rx_channel_fifo
 		PORT (
 			rst : IN STD_LOGIC;
 			wr_clk : IN STD_LOGIC;
 			rd_clk : IN STD_LOGIC;
-			din : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+			din : IN STD_LOGIC_VECTOR(63 DOWNTO 0);
 			wr_en : IN STD_LOGIC;
 			rd_en : IN STD_LOGIC;
-			dout : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
+			dout : OUT STD_LOGIC_VECTOR(63 DOWNTO 0);
 			full : OUT STD_LOGIC;
 			empty : OUT STD_LOGIC
 		);
 	END COMPONENT;
 	
-	type rx_data_array is array (g_NUM_RX-1 downto 0) of std_logic_vector(25 downto 0);
-	type rx_data_fifo_array is array (g_NUM_RX-1 downto 0) of std_logic_vector(31 downto 0);
+	type rx_data_array is array (g_NUM_RX-1 downto 0) of std_logic_vector(63 downto 0);
+	type rx_data_fifo_array is array (g_NUM_RX-1 downto 0) of std_logic_vector(63 downto 0);
 	type rx_stat_array is array (g_NUM_RX-1 downto 0) of std_logic_vector(7 downto 0);
-	signal rx_data : rx_data_array;
+    signal rx_data_i : std_logic_vector((g_NUM_RX*g_NUM_LANES)-1 downto 0);
+    signal rx_data : rx_data_array;
 	signal rx_valid : std_logic_vector(g_NUM_RX-1 downto 0);
 	signal rx_stat : rx_stat_array;
 	signal rx_data_raw : rx_stat_array;
@@ -139,7 +166,9 @@ begin
 	debug(15 downto 8) <= rx_data_raw(0);
 	debug(16) <= rx_valid(0);
 
-	wb_proc: process (wb_clk_i, rst_n_i)
+
+
+    wb_proc: process (wb_clk_i, rst_n_i)
 	begin
 		if (rst_n_i = '0') then
 			wb_dat_o <= (others => '0');
@@ -191,32 +220,66 @@ begin
 			channel <= log2_ceil(to_integer(unsigned(rx_fifo_rden_t)));
 			if (unsigned(rx_fifo_rden) = 0 or ((rx_fifo_rden and rx_fifo_empty) = rx_fifo_rden)) then
 				rx_valid_o <= '0';
-				rx_data_o <= x"DEADBEEF";
+				rx_data_o <= x"DEADBEEFDEADBEEF";
 			else
 				rx_valid_o <= '1';
 				rx_data_o <= rx_fifo_dout(channel);
 			end if;
 		end if;
 	end process reg_proc;
+    
+    fei4_iobuf: if g_TYPE = "FEI4" generate
+        rx_loop: for I in 0 to (g_NUM_RX*g_NUM_LANES)-1 generate
+        begin
+            rx_buf : IBUFDS
+            generic map (
+                DIFF_TERM => TRUE, -- Differential Termination 
+                IBUF_LOW_PWR => FALSE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+                IOSTANDARD => "LVDS_25")
+            port map (
+                O => rx_data_i(I),  -- Buffer output
+                I => rx_data_i_p(I),  -- Diff_p buffer input (connect directly to top-level port)
+                IB => rx_data_i_n(I) -- Diff_n buffer input (connect directly to top-level port)
+            );
+        end generate;
+    end generate fei4_iobuf;
 	
-	-- Generate Rx Channels
+    -- Generate Rx Channels
 	busy_o <= '0' when (rx_fifo_full = c_ALL_ZEROS) else '1';
 	rx_channels: for I in 0 to g_NUM_RX-1 generate
 	begin
-		cmp_fei4_rx_channel: fei4_rx_channel PORT MAP(
-			rst_n_i => rst_n_i,
-			clk_160_i => rx_clk_i,
-			clk_640_i => rx_serdes_clk_i,
-			enable_i => rx_enable(I),
-			rx_data_i => rx_data_i(I),
-            trig_tag_i => trig_tag_i,
-			rx_data_o => rx_data(I),
-			rx_valid_o => rx_valid(I),
-			rx_stat_o => rx_stat(I),
-			rx_data_raw_o => rx_data_raw(I)
-		);
+        fei4_type: if g_TYPE = "FEI4" generate
+            cmp_fei4_rx_channel: fei4_rx_channel PORT MAP(
+                rst_n_i => rst_n_i,
+                clk_160_i => rx_clk_i,
+                clk_640_i => rx_serdes_clk_i,
+                enable_i => rx_enable(I),
+                rx_data_i => rx_data_i(I),
+                trig_tag_i => trig_tag_i,
+                rx_data_o => rx_data(I)(25 downto 0),
+                rx_valid_o => rx_valid(I),
+                rx_stat_o => rx_stat(I),
+                rx_data_raw_o => rx_data_raw(I)
+            );
+		    rx_fifo_din(I) <= x"03000000" & STD_LOGIC_VECTOR(TO_UNSIGNED(I,6)) & rx_data(I)(25 downto 0);
+        end generate fei4_type;
+
+        rd53_type: if g_TYPE = "RD53" generate
+            cmp_aurora_rx_channel : aurora_rx_channel PORT MAP (
+                rst_n_i => rst_n_i,
+                clk_rx_i => rx_clk_i,
+                clk_serdes_i => rx_serdes_clk_i,
+                enable_i => rx_enable(I),
+                rx_data_i_p => rx_data_i_p((I+1)*g_NUM_LANES-1 downto (I*g_NUM_LANES)),
+                rx_data_i_n => rx_data_i_n((I+1)*g_NUM_LANES-1 downto (I*g_NUM_LANES)),
+                trig_tag_i => x"00000000" & trig_tag_i,
+                rx_data_o => rx_data(I),
+                rx_valid_o => rx_valid(I),
+                rx_stat_o => rx_stat(I)
+            );
+		    rx_fifo_din(I) <= rx_data(I);
+        end generate rd53_type;
 		
-		rx_fifo_din(I) <= STD_LOGIC_VECTOR(TO_UNSIGNED(I,6)) & rx_data(I);
 		rx_fifo_wren(I) <= rx_valid(I) and rx_enable(I);
 		cmp_rx_channel_fifo : rx_channel_fifo PORT MAP (
 			rst => not rst_n_i,

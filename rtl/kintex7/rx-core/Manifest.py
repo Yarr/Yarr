@@ -4,6 +4,7 @@ files = [#"cdr_serdes.vhd",
          "wb_rx_core.vhd",
 	 "cdr_serdes.vhd",
          "wb_rx_bridge.vhd",
+         "aurora_rx_channel.vhd",
          ]
 
 modules = {"local" : ["decode_8b10b"],}

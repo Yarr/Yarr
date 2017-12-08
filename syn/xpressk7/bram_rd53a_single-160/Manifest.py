@@ -6,17 +6,21 @@ library = "work"
 
 modules = {
 "local" : ["../../../rtl/common","../../../rtl/kintex7","../../../rtl/","../../../ip-cores/kintex7"],
+"git" : ["https://bitbucket.org/levkurilenko/aurora_rx.git"]
 }
+
+fetchto = "../../../ip-cores"
 
 files = [
 #TOP
-"board_pkg.vhd",
 "../bram_yarr.vhd",
 "../app_pkg.vhd",
+"board_pkg.vhd",
 "../app.vhd",
 "../xpressk7.xdc",
 #"../xpressk7-ddr3.xdc",
-"../xpressk7-fmc-octa.xdc",
+"../xpressk7-fmc-quad-dp.xdc",
+#"../TEF1001-fmc-octa.xdc",
 "../xpressk7-timing.xdc",
 ]
 
