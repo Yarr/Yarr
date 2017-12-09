@@ -138,6 +138,39 @@ void Fei4::loadIntoPixel(unsigned pixel_latch) {
     writeRegister(&Fei4::Pixel_latch_strobe, 0x0);
 }
 
+void Fei4::readPixelRegister(unsigned colpr_addr, unsigned latch) {
+  // Select DC(s) for operations
+  writeRegister(&Fei4::Colpr_Mode, 0x0);
+  writeRegister(&Fei4::Colpr_Addr, colpr_addr);
+  // Select SR in Parallel Input Mode
+  writeRegister(&Fei4::S1, 0x1);
+  writeRegister(&Fei4::S0, 0x1);
+  writeRegister(&Fei4::HitLD, 0x0);
+  // Select Pixel latch to copy into SR
+  writeRegister(&Fei4::Pixel_latch_strobe, latch);
+
+  writeRegister(&Fei4::SR_Clock, 0x1);
+
+  // Copy from Latches into SR
+  globalPulse(chipId, 10);
+
+  // Reset SR regs
+  writeRegister(&Fei4::S1, 0x0);
+  writeRegister(&Fei4::S0, 0x0);
+  writeRegister(&Fei4::HitLD, 0x0);
+  writeRegister(&Fei4::Pixel_latch_strobe, 0x0);
+
+  writeRegister(&Fei4::SR_Clock, 0x0);
+
+  writeRegister(&Fei4::SRRead, 0x1);
+
+  uint32_t bitstream[21] = {0};
+  wrFrontEnd(chipId, bitstream);
+
+  writeRegister(&Fei4::SRRead, 0x0);
+
+}
+
 void Fei4::shiftByOne() {
     // Normal Shift Mode
     writeRegister(&Fei4::S1, 0x0);
