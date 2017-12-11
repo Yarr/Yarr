@@ -36,5 +36,9 @@ end aurora_rx_channel;
 architecture behavioral of aurora_rx_channel is
 
 begin
+    
+    lane_loop: for I in 0 to g_NUM_LANES-1 generate
+    end generate lane_loop;
+
 
 end behavioral;

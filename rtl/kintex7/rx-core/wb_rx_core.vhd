@@ -110,6 +110,7 @@ architecture behavioral of wb_rx_core is
             rst_n_i : in std_logic;
             clk_rx_i : in std_logic; -- Fabric clock (serdes/8)
             clk_serdes_i : in std_logic; -- IO clock
+            clk_iodelay_i : in std_logic; -- iodelay ref clk
             -- Input
             enable_i : in std_logic;
             rx_data_i_p : in std_logic_vector(g_NUM_LANES-1 downto 0);
@@ -269,6 +270,7 @@ begin
                 rst_n_i => rst_n_i,
                 clk_rx_i => rx_clk_i,
                 clk_serdes_i => rx_serdes_clk_i,
+                clk_iodelay_i => ,
                 enable_i => rx_enable(I),
                 rx_data_i_p => rx_data_i_p((I+1)*g_NUM_LANES-1 downto (I*g_NUM_LANES)),
                 rx_data_i_n => rx_data_i_n((I+1)*g_NUM_LANES-1 downto (I*g_NUM_LANES)),
