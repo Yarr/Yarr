@@ -6,7 +6,7 @@ library = "work"
 
 modules = {
 "local" : ["../../../rtl/common","../../../rtl/kintex7","../../../rtl/","../../../ip-cores/kintex7"],
-"git" : ["https://bitbucket.org/levkurilenko/aurora_rx.git"]
+#"git" : ["https://bitbucket.org/levkurilenko/aurora_rx.git"]
 }
 
 fetchto = "../../../ip-cores"

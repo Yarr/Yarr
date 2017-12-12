@@ -169,12 +169,12 @@ begin
 debug <= "0000000" & del_debug(1 downto 0) & cdataout & s_delay_val_out & m_delay_val_out & bitslip & initial_delay ;
 rx_lckd <= not reset;-- not not_rx_lckd_intd4 and su_locked ;
 bit_time_value <= bt_val ;
-system_clk_int <= system_clk ;
-not_rxclk <= not rxclk;
+system_clk_int <= system_clk ; -- theim: use external 
+not_rxclk <= not rxclk; 
 clock_sweep <= clock_sweep_int ;
-rxclk_int <= rxclk ;
+rxclk_int <= rxclk ; -- theim: use external;
 bt_val_d2 <= '0' & bt_val(4 downto 1) ;
-cdataout <= "0011" -- theim: hardcoded
+cdataout <= "0011"; -- theim: hardcoded
 
 loop11a : if REF_FREQ <= 210.0 generate				-- Generate tap number to be used for input bit rate (200 MHz ref clock)
 bt_val <= "00111" when bit_rate_value > X"1984" else

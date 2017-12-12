@@ -23,6 +23,7 @@ entity aurora_rx_lane is
 
         -- Output
         rx_data_o : out std_logic_vector(63 downto 0);
+        rx_header_o : out std_logic_vector(1 downto 0);
         rx_valid_o : out std_logic;
         rx_stat_o : out std_logic_vector(7 downto 0)
     );
@@ -74,10 +75,13 @@ architecture behavioral of aurora_rx_lane is
             data66_valid_o : out std_logic
         );
     end component gearbox32to66;
-            
+     
+    constant c_DATA_HEADER : std_logic_vector(1 downto 0) := "01";
+    constant c_CMD_HEADER : std_logic_vector(1 downto 0) := "10";
+    constant c_SYNC_MAX : unsigned(7 downto 0) := to_unsigned(16, 8);
 
     -- Serdes
-    signal serdes_bitslip : std_logic;
+    signal serdes_slip : std_logic;
     signal serdes_idelay_rdy : std_logic;
     signal serdes_data8 : std_logic_vector(7 downto 0);
 
@@ -89,18 +93,24 @@ architecture behavioral of aurora_rx_lane is
 
     -- Gearbox
     signal gearbox_data66 : std_logic_vector(65 downto 0);
-    signal gerbox_data66_valid : std_logic;
+    signal gearbox_data66_valid : std_logic;
+    signal gearbox_slip : std_logic;
+
+    -- Block Sync
+    signal sync_cnt : unsigned(7 downto 0);
+    signal slip_cnt : unsigned(2 downto 0);
+
 begin
 
     serdes_cmp: serdes_1_to_468_idelay_ddr port map (
-        datain_p => rx_data_in_p,
-        datain_n => rx_data_in_n,
+        datain_p(0) => rx_data_i_p,
+        datain_n(0) => rx_data_i_n,
         enable_phase_detector => '1',
         enable_monitor => '0',
         reset => not rst_n_i,
-        bitslip => serdes_bitslip,
+        bitslip => serdes_slip,
         idelay_rdy => serdes_idelay_rdy,
-        rx_clk => clk_serdes_i,
+        rxclk => clk_serdes_i,
         system_clk => clk_rx_i,
         rx_lckd => open,
         rx_data => serdes_data8,
@@ -113,7 +123,7 @@ begin
         clock_sweep => open
     );
 
-    8to32_proc : process(clk_rx_i, rst_n_i)
+    serdes_8to32_proc : process(clk_rx_i, rst_n_i)
     begin
         if (rst_n_i = '0') then
             serdes_data32 <= (others => '0');
@@ -130,16 +140,57 @@ begin
                 serdes_data32_valid <= '1';
             end if;
         end if;
-    end process 8to32_proc;
+    end process serdes_8to32_proc;
 
     gearbox32to66_cmp : gearbox32to66 port map (
         rst_i => not rst_n_i,
         clk_i => clk_rx_i,
         data32_i => serdes_data32,
         data32_valid_i => serdes_data32_valid,
+        slip_i => gearbox_slip,
         data66_o => gearbox_data66,
         data66_valid_o => gearbox_data66_valid
     );
+
+    block_sync_proc: process(clk_rx_i, rst_n_i)
+    begin
+        if (rst_n_i = '0') then
+            sync_cnt <= (others => '0');
+            slip_cnt <= (others => '0');
+            rx_valid_o <= '0';
+            rx_data_o <= (others => '0');
+            rx_header_o <= "00";
+        elsif rising_edge(clk_rx_i) then
+            serdes_slip <= '0';
+            rx_valid_o <= '1';
+            if (gearbox_data66_valid = '1') then
+                gearbox_slip <= '1'; -- Keep high until next valid so gearbox sees it
+                if ((gearbox_data66(65 downto 64) = c_DATA_HEADER) or
+                    (gearbox_data66(65 downto 64) = c_CMD_HEADER)) then
+                    if (sync_cnt < c_SYNC_MAX) then
+                        sync_cnt <= sync_cnt + 1;
+                    end if;
+                else
+                    sync_cnt <= (others => '0');
+                    if (slip_cnt = 7) then
+                        gearbox_slip <= '1';
+                        serdes_slip <= '1';
+                        slip_cnt <= (others => '1');
+                    else
+                        serdes_slip <= '1';
+                        slip_cnt <= slip_cnt + 1;
+                    end if;
+                end if;
+                -- Output proc
+                if (sync_cnt = c_SYNC_MAX) then
+                    rx_data_o <= gearbox_data66(63 downto 0);
+                    rx_header_o <= gearbox_data66(65 downto 64);
+                    rx_valid_o <= '1';
+                end if;
+            end if;
+        end if;
+    end process block_sync_proc;
+
 
 
 end behavioral;
