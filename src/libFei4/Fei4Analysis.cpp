@@ -538,10 +538,10 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     }
                     if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0) {
                         FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
-                        thrMap[outerIdent]->fill(col, row, dynamic_cast<Fei4Cfg*>(feCfg)->toCharge(par[0], useScap, useLcap));
-                        thrDist[outerIdent]->fill(dynamic_cast<Fei4Cfg*>(feCfg)->toCharge(par[0], useScap, useLcap));
-                        sigMap[outerIdent]->fill(col, row, dynamic_cast<Fei4Cfg*>(feCfg)->toCharge(par[0]+par[1], useScap, useLcap)-dynamic_cast<Fei4Cfg*>(feCfg)->toCharge(par[0], useScap, useLcap));
-                        sigDist[outerIdent]->fill(dynamic_cast<Fei4Cfg*>(feCfg)->toCharge(par[0]+par[1], useScap, useLcap)-dynamic_cast<Fei4Cfg*>(feCfg)->toCharge(par[0], useScap, useLcap));
+                        thrMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0], useScap, useLcap));
+                        thrDist[outerIdent]->fill(feCfg->toCharge(par[0], useScap, useLcap));
+                        sigMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0]+par[1], useScap, useLcap)-feCfg->toCharge(par[0], useScap, useLcap));
+                        sigDist[outerIdent]->fill(feCfg->toCharge(par[0]+par[1], useScap, useLcap)-feCfg->toCharge(par[0], useScap, useLcap));
                         chiDist[outerIdent]->fill(status.fnorm/(double)status.nfev);
                         timeDist[outerIdent]->fill(fitTime.count());
                     }
