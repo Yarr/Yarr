@@ -9,6 +9,9 @@ library IEEE;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library work;
+use work.board_pkg.all;
+
 entity tx_channel is
 	port (
 		-- Sys connect
@@ -45,6 +48,7 @@ architecture rtl of tx_channel is
         -- Input
         enable_i    : in std_logic;
         data_i      : in std_logic_vector(31 downto 0);
+        idle_i      : in std_logic_vector(31 downto 0);
         data_valid_i : in std_logic;
         -- Output
         data_o      : out std_logic;
@@ -93,6 +97,7 @@ begin
 		rst_n_i => rst_n_i,
 		enable_i => tx_enable_i,
 		data_i => tx_fifo_dout,
+		idle_i => c_TX_IDLE_WORD,
 		data_valid_i => not tx_fifo_empty,
 		data_o => tx_data_o,
 		data_read_o => tx_fifo_rd

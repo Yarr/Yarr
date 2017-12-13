@@ -74,7 +74,7 @@ architecture Behavioral of k_dual_bram is
     constant BLOCK_ADDR_WIDTH_C : integer := 13;
     constant DATA_WIDTH_C : integer := 64;
     constant BLOCK_ROW_C : integer := 16;
-    constant BLOCK_COL_EXP_C : integer := 4;
+    constant BLOCK_COL_EXP_C : integer := 2;
     constant BLOCK_COL_C : integer := 2**BLOCK_COL_EXP_C;
     constant BLOCK_DATA_WIDTH_C : integer := DATA_WIDTH_C/BLOCK_ROW_C;
     

@@ -21,6 +21,7 @@ entity serial_port is
         -- Input
         enable_i    : in std_logic;
         data_i      : in std_logic_vector(g_PORT_WIDTH-1 downto 0);
+        idle_i      : in std_logic_vector(g_PORT_WIDTH-1 downto 0);
         data_valid_i : in std_logic;
         -- Output
         data_o      : out std_logic;
@@ -57,6 +58,10 @@ begin
 			if (enable_i = '1') then
 				if (bit_count = g_PORT_WIDTH-1 and data_valid_i = '1') then
 					sreg <= data_i;
+					data_read_o <= '1';
+					bit_count <= (others => '0');
+                elsif (bit_count = g_PORT_WIDTH-1 and data_valid_i = '0') then
+					sreg <= idle_i;
 					data_read_o <= '1';
 					bit_count <= (others => '0');
 				else

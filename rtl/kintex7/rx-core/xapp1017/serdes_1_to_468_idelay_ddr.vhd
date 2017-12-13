@@ -164,6 +164,9 @@ signal	initial_delay		: std_logic_vector(4 downto 0) ;
 
 constant RX_SWAP_MASK 	: std_logic_vector(D-1 downto 0) := (others => '0') ;	-- pinswap mask for input data bits (0 = no swap (default), 1 = swap). Allows inputs to be connected the wrong way round to ease PCB routing.
 
+    attribute IODELAY_GROUP : STRING;
+
+
 begin
 
 debug <= "0000000" & del_debug(1 downto 0) & cdataout & s_delay_val_out & m_delay_val_out & bitslip & initial_delay ;
@@ -174,7 +177,7 @@ not_rxclk <= not rxclk;
 clock_sweep <= clock_sweep_int ;
 rxclk_int <= rxclk ; -- theim: use external;
 bt_val_d2 <= '0' & bt_val(4 downto 1) ;
-cdataout <= "0011"; -- theim: hardcoded
+cdataout <= m_serdes(3 downto 0); -- theim: hardcoded
 
 loop11a : if REF_FREQ <= 210.0 generate				-- Generate tap number to be used for input bit rate (200 MHz ref clock)
 bt_val <= "00111" when bit_rate_value > X"1984" else
@@ -324,6 +327,7 @@ port map (
 	enable_phase_detector	=> enable_phase_detector,
 	enable_monitor		=> enable_monitor,
 	reset			=> not_rx_lckd_intd4,
+	--reset			=> reset,
 	clk			=> system_clk_int,
 	c_delay_in		=> initial_delay,
 	m_delay_out		=> m_delay_val_in(5*i+4 downto 5*i),
@@ -340,6 +344,9 @@ end generate ;
 -- Data bit Receivers 
 
 loop0 : for i in 0 to D-1 generate
+    attribute IODELAY_GROUP of idelay_m : label is "aurora";
+    attribute IODELAY_GROUP of idelay_s : label is "aurora";
+begin
 loop1 : for j in 0 to S-1 generate			-- Assign data bits to correct serdes according to required format
 	loop1a : if DATA_FORMAT = "PER_CLOCK" generate
 		rx_data(D*j+i) <= mdataoutd(S*i+j) ;

@@ -5,6 +5,8 @@
 -- # Comments: RX lane
 -- # Aurora style single rx lane
 -- ####################################
+-- # RX STATUS:
+-- # [0] -> Sync
 
 library IEEE;
 use ieee.std_logic_1164.all;
@@ -75,15 +77,30 @@ architecture behavioral of aurora_rx_lane is
             data66_valid_o : out std_logic
         );
     end component gearbox32to66;
-     
+    
+    component descrambler
+        port (
+            data_in : in std_logic_vector(0 to 65);
+            data_out : out std_logic_vector(63 downto 0);
+            enable : in std_logic;
+            sync_info : out std_logic_vector(1 downto 0);
+            clk : in std_logic;
+            rst : in std_logic
+        );
+    end component descrambler;
+
     constant c_DATA_HEADER : std_logic_vector(1 downto 0) := "01";
     constant c_CMD_HEADER : std_logic_vector(1 downto 0) := "10";
-    constant c_SYNC_MAX : unsigned(7 downto 0) := to_unsigned(16, 8);
+    constant c_SYNC_MAX : unsigned(7 downto 0) := to_unsigned(32, 8);
+    constant c_VALID_WAIT : unsigned(7 downto 0) := to_unsigned(16, 8);
+
+    signal rst : std_logic;
 
     -- Serdes
     signal serdes_slip : std_logic;
     signal serdes_idelay_rdy : std_logic;
     signal serdes_data8 : std_logic_vector(7 downto 0);
+    signal serdes_data8_d : std_logic_vector(7 downto 0);
 
     -- 8 to 32
     signal serdes_data32_shift : std_logic_vector(31 downto 0);
@@ -94,26 +111,85 @@ architecture behavioral of aurora_rx_lane is
     -- Gearbox
     signal gearbox_data66 : std_logic_vector(65 downto 0);
     signal gearbox_data66_valid : std_logic;
+    signal gearbox_data66_valid_d : std_logic;
     signal gearbox_slip : std_logic;
+
+    -- Scrambler
+    signal scrambled_data66 : std_logic_vector(65 downto 0);
+    signal scrambled_data_valid : std_logic;
+    signal scrambled_data_valid_d : std_logic;
+    signal descrambled_data : std_logic_vector(63 downto 0);
+    signal descrambled_header : std_logic_vector(1 downto 0);
+    signal descrambled_data_valid : std_logic;
+    
 
     -- Block Sync
     signal sync_cnt : unsigned(7 downto 0);
-    signal slip_cnt : unsigned(2 downto 0);
+    signal slip_cnt : unsigned(3 downto 0);
+    signal valid_cnt : unsigned(7 downto 0);
+    
+    -- DEBUG
+        -- DEBUG
+    COMPONENT ila_rx_dma_wb
+    PORT (
+        clk : IN STD_LOGIC;
+        probe0 : IN STD_LOGIC_VECTOR(31 DOWNTO 0); 
+        probe1 : IN STD_LOGIC_VECTOR(63 DOWNTO 0); 
+        probe2 : IN STD_LOGIC_VECTOR(63 DOWNTO 0); 
+        probe3 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe4 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe5 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe6 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe7 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe8 : IN STD_LOGIC_VECTOR(31 DOWNTO 0); 
+        probe9 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe10 : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+        probe11 : IN STD_LOGIC_VECTOR(0 DOWNTO 0)
+    );
+    END COMPONENT  ;
 
 begin
+    rx_dma_wb_debug : ila_rx_dma_wb
+    PORT MAP (
+      clk => clk_rx_i,
+      probe0 => serdes_data32, 
+      probe1 => gearbox_data66(63 downto 0), 
+      probe2 => descrambled_data(63 downto 0), 
+      probe3(0) => serdes_data32_valid,
+      probe4(0) => gearbox_data66_valid, 
+      probe5(0) => gearbox_slip, 
+      probe6(0) => serdes_slip,
+      probe7(0) => descrambled_data_valid,
+      probe8 => std_logic_vector(sync_cnt) & x"0" & std_logic_vector(slip_cnt) & x"000" &  descrambled_header & gearbox_data66(65 downto 64),
+      probe9(0) => '0',
+      probe10(0) => '0',
+      probe11(0) => '0'
+    );
 
+    rst <= not rst_n_i;
+
+    serdes_idelay_rdy <= rst_n_i;
     serdes_cmp: serdes_1_to_468_idelay_ddr port map (
         datain_p(0) => rx_data_i_p,
         datain_n(0) => rx_data_i_n,
         enable_phase_detector => '1',
         enable_monitor => '0',
-        reset => not rst_n_i,
+        reset => rst,
+        --bitslip => '0',
         bitslip => serdes_slip,
         idelay_rdy => serdes_idelay_rdy,
         rxclk => clk_serdes_i,
         system_clk => clk_rx_i,
         rx_lckd => open,
-        rx_data => serdes_data8,
+        --rx_data => serdes_data8,
+        rx_data(0) => serdes_data8(7),
+        rx_data(1) => serdes_data8(6),
+        rx_data(2) => serdes_data8(5),
+        rx_data(3) => serdes_data8(4),
+        rx_data(4) => serdes_data8(3),
+        rx_data(5) => serdes_data8(2),
+        rx_data(6) => serdes_data8(1),
+        rx_data(7) => serdes_data8(0),
         bit_rate_value => x"1280", -- TODO make generic
         dcd_correct => '0',
         bit_time_value => open,
@@ -130,8 +206,10 @@ begin
             serdes_data32_shift <= (others => '0');
             serdes_data32_valid <= '0';
             serdes_cnt <= (others => '0');
+            serdes_data8_d <= (others => '0');
         elsif rising_edge(clk_rx_i) then
             serdes_cnt <= serdes_cnt + 1;
+            serdes_data8_d <= serdes_data8;
             serdes_data32_valid <= '0';
             serdes_data32_shift(31 downto 8) <= serdes_data32_shift(23 downto 0);
             serdes_data32_shift(7 downto 0) <= serdes_data8;
@@ -143,7 +221,7 @@ begin
     end process serdes_8to32_proc;
 
     gearbox32to66_cmp : gearbox32to66 port map (
-        rst_i => not rst_n_i,
+        rst_i => rst,
         clk_i => clk_rx_i,
         data32_i => serdes_data32,
         data32_valid_i => serdes_data32_valid,
@@ -157,40 +235,88 @@ begin
         if (rst_n_i = '0') then
             sync_cnt <= (others => '0');
             slip_cnt <= (others => '0');
-            rx_valid_o <= '0';
-            rx_data_o <= (others => '0');
-            rx_header_o <= "00";
+            serdes_slip <= '0';
+            valid_cnt <= (others => '0');
+            scrambled_data66 <= (others => '0');
+            scrambled_data_valid <= '0';
+            gearbox_slip <= '0';
         elsif rising_edge(clk_rx_i) then
             serdes_slip <= '0';
-            rx_valid_o <= '1';
+            scrambled_data_valid <= '0';
             if (gearbox_data66_valid = '1') then
-                gearbox_slip <= '1'; -- Keep high until next valid so gearbox sees it
+                gearbox_slip <= '0'; -- Keep high until next valid so gearbox sees it
+                if (valid_cnt < c_VALID_WAIT) then
+                    valid_cnt <= valid_cnt + 1;
+                end if;
                 if ((gearbox_data66(65 downto 64) = c_DATA_HEADER) or
                     (gearbox_data66(65 downto 64) = c_CMD_HEADER)) then
                     if (sync_cnt < c_SYNC_MAX) then
                         sync_cnt <= sync_cnt + 1;
                     end if;
-                else
-                    sync_cnt <= (others => '0');
-                    if (slip_cnt = 7) then
+                elsif (valid_cnt = c_VALID_WAIT) then
+                    sync_cnt <= (others => '0');       
+                    if (slip_cnt = 8) then
                         gearbox_slip <= '1';
-                        serdes_slip <= '1';
-                        slip_cnt <= (others => '1');
+                        serdes_slip <= '0';
+                        slip_cnt <= (others => '0');
                     else
                         serdes_slip <= '1';
                         slip_cnt <= slip_cnt + 1;
                     end if;
+                    valid_cnt <= (others => '0');
                 end if;
                 -- Output proc
                 if (sync_cnt = c_SYNC_MAX) then
-                    rx_data_o <= gearbox_data66(63 downto 0);
-                    rx_header_o <= gearbox_data66(65 downto 64);
-                    rx_valid_o <= '1';
+                    scrambled_data66 <= gearbox_data66(65 downto 0);
+                    scrambled_data_valid <= '1';
                 end if;
             end if;
         end if;
     end process block_sync_proc;
 
+    descrambler_cmp : descrambler port map (
+        data_in => scrambled_data66,
+        data_out => descrambled_data,
+        enable => scrambled_data_valid,
+        sync_info => descrambled_header,
+        clk => clk_rx_i,
+        rst => rst
+        );
 
-
+    descrambler_proc: process(clk_rx_i, rst_n_i)
+    begin
+        if (rst_n_i = '0') then
+            descrambled_data_valid <= '0';
+            scrambled_data_valid_d <= '0';
+            gearbox_data66_valid_d <= '0';
+            rx_data_o <= (others => '0');
+            rx_header_o <= "00";
+            rx_valid_o <= '0';
+        elsif rising_edge(clk_rx_i) then
+            gearbox_data66_valid_d <= gearbox_data66_valid;
+            if (gearbox_data66_valid_d = '1') then
+                scrambled_data_valid_d <= scrambled_data_valid;
+            end if;
+            descrambled_data_valid <= scrambled_data_valid and scrambled_data_valid_d; -- Only valid after two valid descrambles
+            
+            -- Output
+            if (descrambled_data_valid = '1') then
+                rx_data_o <= descrambled_data;
+                rx_header_o <= descrambled_header;
+            end if;
+            rx_valid_o <= descrambled_data_valid;
+        end if;
+    end process descrambler_proc;
+    
+    stat_out_proc: process(clk_rx_i, rst_n_i)
+    begin
+        if (rst_n_i = '0') then
+            rx_stat_o <= (others => '0');
+        elsif rising_edge(clk_rx_i) then
+            rx_stat_o <= (others => '0');
+            if (sync_cnt = c_SYNC_MAX) then
+                rx_stat_o(0) <= '1'; -- Sync Out
+            end if;
+        end if;
+    end process stat_out_proc;
 end behavioral;
