@@ -70,6 +70,7 @@ package app_pkg is
      (-- Clock in ports
       clk_250_in           : in     std_logic;
       -- Clock out ports
+      clk_300           : out std_logic;
       clk_640          : out    std_logic;
       clk_160          : out    std_logic;
       clk_80          : out    std_logic;

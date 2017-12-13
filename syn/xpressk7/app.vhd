@@ -35,6 +35,7 @@ use UNISIM.VComponents.all;
 library work;
 use work.app_pkg.all;
 use work.board_pkg.all;
+use work.common_pkg.all;
 
 entity app is
     Generic(
@@ -129,6 +130,10 @@ entity app is
            -- I2c
            sda_io                : inout std_logic;
            scl_io                    : inout std_logic;
+           -- SPI
+           scl_o            : out std_logic;
+           sda_o            : out std_logic;
+           latch_o          : out std_logic;
            
            --I/O
            usr_sw_i : in STD_LOGIC_VECTOR (2 downto 0);
@@ -168,6 +173,7 @@ architecture Behavioral of app is
     
     signal rst_640_s : std_logic;
     
+    signal clk_300_s : std_logic;
     signal clk_640_s : std_logic;
     signal clk_160_s : std_logic;
     signal clk_80_s : std_logic;
@@ -409,6 +415,9 @@ architecture Behavioral of app is
     signal debug       : std_logic_vector(31 downto 0);
     signal clk_div_cnt : unsigned(3 downto 0);
     signal clk_div     : std_logic;
+    
+    attribute IODELAY_GROUP : STRING;
+    attribute IODELAY_GROUP of IDELAYCTRL_inst : label is "aurora";
 
 begin
     
@@ -490,7 +499,8 @@ begin
        port map ( 
        -- Clock in ports
        clk_250_in => clk_i,
-      -- Clock out ports  
+      -- Clock out ports
+       clk_300 => clk_300_s,  
        clk_640 => clk_640_s,
        clk_160 => clk_160_s,
        clk_80 => clk_80_s,
@@ -500,6 +510,13 @@ begin
       -- Status and control signals                
        reset => rst_i,
        locked => pll_locked_s            
+     );
+     
+    IDELAYCTRL_inst : IDELAYCTRL
+     port map (
+        RDY => open,       -- 1-bit output: Ready output
+        REFCLK => clk_300_s, -- 1-bit input: Reference clock input
+        RST => not rst_n_s       -- 1-bit input: Active high reset input
      );
 
     led_cnt:simple_counter
@@ -702,29 +719,43 @@ wb_dev_gen : if wb_dev_c = '1' generate
 -- Differential buffers
 	tx_loop: for I in 0 to c_TX_CHANNELS-1 generate
 	begin
-		tx_buf : OBUFDS
-		generic map (
-			IOSTANDARD => "LVDS_25")
-		port map (
-			O => fe_cmd_p(I),     -- Diff_p output (connect directly to top-level port)
-			OB => fe_cmd_n(I),   -- Diff_n output (connect directly to top-level port)
-			I => fe_cmd_enc(I)      -- Buffer input 
-		);
-		ODDR2_manchester : ODDR2
-		generic map(
-			DDR_ALIGNMENT => "NONE", -- Sets output alignment to "NONE", "C0", "C1" 
-			INIT => '0', -- Sets initial state of the Q output to '0' or '1'
-			SRTYPE => "SYNC") -- Specifies "SYNC" or "ASYNC" set/reset
-		port map (
-			Q => fe_cmd_enc(I), -- 1-bit output data
-			C0 => clk_40_s, -- 1-bit clock input
-			C1 => not clk_40_s, -- 1-bit clock input
-			CE => '1',  -- 1-bit clock enable input
-			D0 => fe_cmd_o(I),   -- 1-bit data input (associated with C0)
-			D1 => not fe_cmd_o(I),   -- 1-bit data input (associated with C1)
-			R => not rst_n_s,    -- 1-bit reset input
-			S => '0'     -- 1-bit set input
-		);
+	   nrz_gen: if c_TX_ENCODING = "NRZ" generate
+           tx_buf : OBUFDS
+           generic map (
+               IOSTANDARD => "LVDS_25")
+           port map (
+               O => fe_cmd_p(I),     -- Diff_p output (connect directly to top-level port)
+               OB => fe_cmd_n(I),   -- Diff_n output (connect directly to top-level port)
+               I => fe_cmd_o(I)      -- Buffer input 
+           );	   
+	   end generate;
+	   
+	   man_gen: if c_TX_ENCODING = "MANCHESTER" generate
+            tx_buf : OBUFDS
+            generic map (
+                IOSTANDARD => "LVDS_25")
+            port map (
+                O => fe_cmd_p(I),     -- Diff_p output (connect directly to top-level port)
+                OB => fe_cmd_n(I),   -- Diff_n output (connect directly to top-level port)
+                I => fe_cmd_enc(I)      -- Buffer input 
+            );
+            ODDR2_manchester : ODDR2
+            generic map(
+                DDR_ALIGNMENT => "NONE", -- Sets output alignment to "NONE", "C0", "C1" 
+                INIT => '0', -- Sets initial state of the Q output to '0' or '1'
+                SRTYPE => "SYNC") -- Specifies "SYNC" or "ASYNC" set/reset
+            port map (
+                Q => fe_cmd_enc(I), -- 1-bit output data
+                C0 => clk_40_s, -- 1-bit clock input
+                C1 => not clk_40_s, -- 1-bit clock input
+                CE => '1',  -- 1-bit clock enable input
+                D0 => fe_cmd_o(I),   -- 1-bit data input (associated with C0)
+                D1 => not fe_cmd_o(I),   -- 1-bit data input (associated with C1)
+                R => not rst_n_s,    -- 1-bit reset input
+                S => '0'     -- 1-bit set input
+            );
+		end generate;
+		
 		clk_buf : OBUFDS
 		generic map (
 			IOSTANDARD => "LVDS_25")
@@ -750,27 +781,27 @@ wb_dev_gen : if wb_dev_c = '1' generate
 		);
 	end generate;    
   
-	     cmp_wb_tx_core : wb_tx_core port map
-            (
-                -- Sys connect
-                wb_clk_i => wb_clk_s,
-                rst_n_i => rst_n_s,
-                -- Wishbone slave interface
-                wb_adr_i => wb_adr_s,
-                wb_dat_i => wb_dat_m2s_s,
-                wb_dat_o => wb_dat_s2m_s(63 downto 32),
-                wb_cyc_i => wb_cyc_s(1),
-                wb_stb_i => wb_stb_s,
-                wb_we_i => wb_we_s,
-                wb_ack_o => wb_ack_s(1),
-                wb_stall_o => wb_stall_s(1),
-                -- TX
-                tx_clk_i => clk_40_s,
-                tx_data_o => fe_cmd_o,
-                trig_pulse_o => trig_pulse,
-                -- Trig
-                ext_trig_i => int_trig_t
-            );
+     cmp_wb_tx_core : wb_tx_core port map
+        (
+            -- Sys connect
+            wb_clk_i => wb_clk_s,
+            rst_n_i => rst_n_s,
+            -- Wishbone slave interface
+            wb_adr_i => wb_adr_s,
+            wb_dat_i => wb_dat_m2s_s,
+            wb_dat_o => wb_dat_s2m_s(63 downto 32),
+            wb_cyc_i => wb_cyc_s(1),
+            wb_stb_i => wb_stb_s,
+            wb_we_i => wb_we_s,
+            wb_ack_o => wb_ack_s(1),
+            wb_stall_o => wb_stall_s(1),
+            -- TX
+            tx_clk_i => clk_40_s,
+            tx_data_o => fe_cmd_o,
+            trig_pulse_o => trig_pulse,
+            -- Trig
+            ext_trig_i => int_trig_t
+        );
 
 	cmp_wb_rx_core: wb_rx_core PORT MAP(
 		wb_clk_i => wb_clk_s,
@@ -869,6 +900,21 @@ wb_dev_gen : if wb_dev_c = '1' generate
 		int_busy_i => '0',
 		trig_tag => trig_tag_t
 	);
+	
+	cmp_wb_spi: wb_spi port map (
+        wb_clk_i => wb_clk_s,
+        rst_n_i => rst_n_s,
+        wb_adr_i => wb_adr_s(31 downto 0),
+        wb_dat_i => wb_dat_m2s_s(31 downto 0),
+        wb_dat_o => wb_dat_s2m_s(223 downto 192),
+        wb_cyc_i => wb_cyc_s(6),
+        wb_stb_i => wb_stb_s,
+        wb_we_i => wb_we_s,
+        wb_ack_o => wb_ack_s(6),
+        sda_o => sda_o,
+        scl_o => scl_o,
+        latch_o => latch_o
+        );	
 
 end generate;
 

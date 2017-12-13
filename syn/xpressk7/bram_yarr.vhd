@@ -53,9 +53,9 @@ entity top_level is
             -- FMC
             ---------------------------------------------------------
             -- Trigger input
-            ext_trig_o        : out std_logic;
+            --ext_trig_o        : out std_logic;
             -- LVDS buffer
-            pwdn_l            : out std_logic_vector(2 downto 0);
+            --pwdn_l            : out std_logic_vector(2 downto 0);
             -- GPIO
             --io              : inout std_logic_vector(2 downto 0);
             -- FE-I4
@@ -64,10 +64,14 @@ entity top_level is
             fe_cmd_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
             fe_cmd_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
             fe_data_p        : in  std_logic_vector((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0);
-            fe_data_n        : in  std_logic_vector((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0)--;
+            fe_data_n        : in  std_logic_vector((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0);
             -- I2c
             --sda_io                : inout std_logic;
             --scl_io                    : inout std_logic;
+            -- SPI
+            scl_o   : out std_logic;
+            sda_o   : out std_logic;
+            latch_o : out std_logic
             
             -- . DDR3
 --            ddr3_dq       : inout std_logic_vector(63 downto 0);
@@ -273,6 +277,10 @@ architecture Behavioral of top_level is
                 -- I2c
                 sda_io                : inout std_logic;
                 scl_io                    : inout std_logic;
+                -- SPI
+                scl_o   : out std_logic;
+                sda_o   : out std_logic;
+                latch_o : out std_logic;
                
                --I/O
                usr_sw_i : in STD_LOGIC_VECTOR (2 downto 0);
@@ -495,9 +503,9 @@ begin
         -- FMC
         ---------------------------------------------------------
         -- Trigger input
-        ext_trig_o        => ext_trig_o,
+        ext_trig_o        => open,
         -- LVDS buffer
-        pwdn_l            => pwdn_l,
+        pwdn_l            => open,
         -- GPIO
         --io                => io,
         -- FE-I4
@@ -510,7 +518,12 @@ begin
         -- I2c
         --sda_io            => sda_io,
         --scl_io            => scl_io,
-
+        
+        --SPI
+        scl_o => scl_o,
+        sda_o => sda_o,
+        latch_o => latch_o,
+        
         --I/O
         usr_sw_i => usr_sw_i,
         usr_led_o => usr_led_s,
