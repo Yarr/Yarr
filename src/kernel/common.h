@@ -72,6 +72,8 @@ typedef struct  {
 /* Identifies the SPEC card */
 #define PCIE_SPEC_VENDOR_ID 0x10DC
 #define PCIE_SPEC_DEVICE_ID 0x018d
+#define PCIE_XPRESSK7_VENDOR_ID 0x10ee
+#define PCIE_XPRESSK7_DEVICE_ID 0x7024
 
 /*************************************************************************/
 /* Some nice defines that make code more readable */

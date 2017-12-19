@@ -20,6 +20,7 @@
 #include <GennumRegMap.h>
 #include <BitOps.h>
 
+
 SpecCom::SpecCom(unsigned int id) {
     specId = id;
     is_initialized = false;
@@ -36,7 +37,8 @@ SpecCom::SpecCom(unsigned int id) {
 
 SpecCom::~SpecCom() {
     spec->unmapBAR(0, bar0);
-    spec->unmapBAR(4, bar4);
+    if (bar4 != NULL)
+        spec->unmapBAR(4, bar4);
     spec->close();
     delete spec;
 }
@@ -104,8 +106,7 @@ int SpecCom::writeDma(uint32_t off, uint32_t *data, size_t words) {
 
         struct dma_linked_list *llist = this->prepDmaList(um, km, off, 1);
 
-        uint32_t *addr = (uint32_t*) bar0+DMACSTARTR;
-        memcpy(addr, &llist[0], sizeof(struct dma_linked_list));
+        this->writeBlock(bar0, DMACSTARTR, (uint32_t*) &llist[0], sizeof(struct dma_linked_list)/sizeof(uint32_t));
         this->startDma();
 
         if (spec->waitForInterrupt(0) < 1) {
@@ -115,8 +116,10 @@ int SpecCom::writeDma(uint32_t off, uint32_t *data, size_t words) {
         }
 
         // Ackowledge interrupt
-        volatile uint32_t irq_ack = this->read32(bar4, GNGPIO_INT_STATUS/4);
-        (void) irq_ack;
+        if (bar4 != NULL) {
+            volatile uint32_t irq_ack = this->read32(bar4, GNGPIO_INT_STATUS/4);
+            (void) irq_ack;
+        }
 
         delete km;
         delete um;
@@ -136,8 +139,7 @@ int SpecCom::readDma(uint32_t off, uint32_t *data, size_t words) {
 
         struct dma_linked_list *llist = this->prepDmaList(um, km, off, 0);
         
-        uint32_t *addr = (uint32_t*) bar0+DMACSTARTR;
-        memcpy(addr, &llist[0], sizeof(struct dma_linked_list));
+        this->writeBlock(bar0, DMACSTARTR, (uint32_t*) &llist[0], sizeof(struct dma_linked_list)/sizeof(uint32_t));
         this->startDma();
 
         if (spec->waitForInterrupt(0) < 1) {
@@ -147,9 +149,10 @@ int SpecCom::readDma(uint32_t off, uint32_t *data, size_t words) {
         }
         
         // Ackowledge interrupt
-        volatile uint32_t irq_ack = this->read32(bar4, GNGPIO_INT_STATUS/4);
-        (void) irq_ack;
-
+        if (bar4 != NULL) {
+            volatile uint32_t irq_ack = this->read32(bar4, GNGPIO_INT_STATUS/4);
+            (void) irq_ack;
+        }
         um->sync(UserMemory::BIDIRECTIONAL);
 
         delete km;
@@ -193,6 +196,12 @@ void SpecCom::init() {
         std::cout << __PRETTY_FUNCTION__ << " -> Mapped BAR0 at 0x" << std::hex << bar0 
             << " with size 0x" << spec->getBARsize(0) << std::dec << std::endl;
 #endif
+    } catch (Exception &e) {
+        std::cerr << __PRETTY_FUNCTION__ << " -> " << e.toString() << std::endl;
+        throw Exception(Exception::INIT_FAILED);
+        return;
+    }
+    try {
         bar4 = spec->mapBAR(4);
 #ifdef DEBUG
         std::cout << __PRETTY_FUNCTION__ << " -> Mapped BAR4 at 0x" << std::hex << bar4 
@@ -200,65 +209,66 @@ void SpecCom::init() {
 #endif
     } catch (Exception &e) {
         std::cerr << __PRETTY_FUNCTION__ << " -> " << e.toString() << std::endl;
-        throw Exception(Exception::INIT_FAILED);
-        return;
+        // TODO check if it's the right firmware
+        std::cerr << __PRETTY_FUNCTION__ << " -> Could not map BAR4, this might be OK!" << std::endl;
+        bar4 = NULL;
     }
     return;
 }
 
 void SpecCom::configure() {
+    if (bar4 != NULL) {
 #ifdef DEBUG
         std::cout << __PRETTY_FUNCTION__ << " -> Configuring GN412X" << std::endl;
 #endif
-     
-    // Activate MSI if necessary
-    if (read32(bar4, GNPPCI_MSI_CONTROL/4) != 0x00A55805) {
+        // Activate MSI if necessary
+        if (read32(bar4, GNPPCI_MSI_CONTROL/4) != 0x00A55805) {
 #ifdef DEBUG
-        std::cout << __PRETTY_FUNCTION__ << " -> MSI needs to be configured!" << std::endl;
+            std::cout << __PRETTY_FUNCTION__ << " -> MSI needs to be configured!" << std::endl;
 #endif
-        this->write32(bar4,GNPPCI_MSI_CONTROL/4, 0x00A55805);
+            this->write32(bar4,GNPPCI_MSI_CONTROL/4, 0x00A55805);
+        }
+        
+        // Reset INTx vectors
+        for (int i=0; i<8; i++) this->write32(bar4, GNINT_CFG(i)/4, 0x0);
+
+        // Configure INTx vector given by MSI_DATA&0x3
+        this->write32(bar4,GNINT_CFG(this->read32(bar4, GNPPCI_MSI_DATA/4)&0x3)/4, 0x800c); 
+
+        // We are using GPIO8/9 as interrupt, make sure they are not in bypass mode
+        this->write32(bar4,GNGPIO_BYPASS_MODE/4, 0x0000); 
+
+        // Set intterupt GPIO 8 and 9 to be in input mode = 1
+        this->write32(bar4,GNGPIO_DIRECTION_MODE/4, 0xFFFF);
+        
+        // Disable output
+        this->write32(bar4,GNGPIO_OUTPUT_ENABLE/4, 0x0000);
+        
+        // Edge trigger mode = 0
+        this->write32(bar4,GNGPIO_INT_TYPE/4, 0x0);
+
+        // Trigger on high value = 1
+        this->write32(bar4,GNGPIO_INT_VALUE/4, 0x300);
+
+        // Trigger on edge specified in GNGPIO_INT_TYPE
+        this->write32(bar4,GNGPIO_INT_ON_ANY/4, 0x0);
+        
+        // Enable our GPIOs as an interrupt source and disable all others
+        this->write32(bar4,GNGPIO_INT_MASK_SET/4, 0xFFFF);
+        this->write32(bar4,GNGPIO_INT_MASK_CLR/4, 0x0300);
+
+        // Clear All IRQs
+        this->write32(bar4,GNINT_STAT/4, 0xFFF0);
+        this->write32(bar4,GNINT_STAT/4, 0x0000);
+        volatile uint32_t res1 = this->read32(bar4,GNINT_STAT/4);
+        (void) res1;
+
+        // Reset GPIO INT STATUS
+        volatile uint32_t res2 = this->read32(bar4,GNGPIO_INT_STATUS/4);
+        (void) res2;
+
+        usleep(200);
     }
-    
-    // Reset INTx vectors
-    for (int i=0; i<8; i++) this->write32(bar4, GNINT_CFG(i)/4, 0x0);
-
-    // Configure INTx vector given by MSI_DATA&0x3
-    this->write32(bar4,GNINT_CFG(this->read32(bar4, GNPPCI_MSI_DATA/4)&0x3)/4, 0x800c); 
-
-    // We are using GPIO8/9 as interrupt, make sure they are not in bypass mode
-    this->write32(bar4,GNGPIO_BYPASS_MODE/4, 0x0000); 
-
-    // Set intterupt GPIO 8 and 9 to be in input mode = 1
-    this->write32(bar4,GNGPIO_DIRECTION_MODE/4, 0xFFFF);
-    
-    // Disable output
-    this->write32(bar4,GNGPIO_OUTPUT_ENABLE/4, 0x0000);
-    
-    // Edge trigger mode = 0
-	this->write32(bar4,GNGPIO_INT_TYPE/4, 0x0);
-
-    // Trigger on high value = 1
-	this->write32(bar4,GNGPIO_INT_VALUE/4, 0x300);
-
-    // Trigger on edge specified in GNGPIO_INT_TYPE
-	this->write32(bar4,GNGPIO_INT_ON_ANY/4, 0x0);
-    
-    // Enable our GPIOs as an interrupt source and disable all others
-	this->write32(bar4,GNGPIO_INT_MASK_SET/4, 0xFFFF);
-    this->write32(bar4,GNGPIO_INT_MASK_CLR/4, 0x0300);
-
-    // Clear All IRQs
-    this->write32(bar4,GNINT_STAT/4, 0xFFF0);
-    this->write32(bar4,GNINT_STAT/4, 0x0000);
-    volatile uint32_t res1 = this->read32(bar4,GNINT_STAT/4);
-    (void) res1;
-
-    // Reset GPIO INT STATUS
-    volatile uint32_t res2 = this->read32(bar4,GNGPIO_INT_STATUS/4);
-    (void) res2;
-
-    usleep(200);
-
     // Clear IRQ queues
     spec->clearInterruptQueue(0);
     spec->clearInterruptQueue(1);
@@ -283,8 +293,10 @@ void SpecCom::mask32(void *bar, uint32_t off, uint32_t mask, uint32_t val) {
 }
 
 void SpecCom::writeBlock(void *bar, uint32_t off, uint32_t *val, size_t words) {
-    uint32_t *addr = (uint32_t*) bar+off;
-    memcpy(addr, val, words*4);
+    for (unsigned i=0; i<words; i++) {
+        volatile uint32_t *addr = (uint32_t*) bar+off+(i);
+        *addr = val[i];
+    }
 }
 
 void SpecCom::write32(void *bar, uint32_t off, uint32_t *val, size_t words) {
