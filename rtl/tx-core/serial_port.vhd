@@ -43,6 +43,7 @@ architecture behavioral of serial_port is
     -- Signals
     signal bit_count : unsigned(log2_ceil(g_PORT_WIDTH) downto 0);
     signal sreg      : std_logic_vector(g_PORT_WIDTH-1 downto 0);
+    signal sync_cnt : unsigned(7 downto 0);
 begin
 
     -- Tie offs
@@ -54,16 +55,24 @@ begin
 			sreg <= (others => '0');
 			bit_count <= (others => '0');
 			data_read_o <= '0';
+			sync_cnt <= (others => '0');
 		elsif rising_edge(clk_i) then
-			if (enable_i = '1') then
-				if (bit_count = g_PORT_WIDTH-1 and data_valid_i = '1') then
+			if (enable_i = '1') then  
+				if (bit_count = g_PORT_WIDTH-1 and sync_cnt = to_unsigned(31, 8)) then --
+					sreg <= x"817e6969";
+                    --data_read_o <= '1';
+                    bit_count <= (others => '0');
+                    sync_cnt <= (others => '0');				        
+				elsif (bit_count = g_PORT_WIDTH-1 and data_valid_i = '1') then
 					sreg <= data_i;
 					data_read_o <= '1';
 					bit_count <= (others => '0');
+					sync_cnt <= sync_cnt + 1;
                 elsif (bit_count = g_PORT_WIDTH-1 and data_valid_i = '0') then
 					sreg <= idle_i;
-					data_read_o <= '1';
+					--data_read_o <= '1';
 					bit_count <= (others => '0');
+					sync_cnt <= sync_cnt + 1;
 				else
 					sreg <= sreg(g_PORT_WIDTH-2 downto 0) & '0';
 					data_read_o <= '0';

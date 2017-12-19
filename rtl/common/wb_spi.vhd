@@ -19,8 +19,9 @@ entity wb_spi is
 		wb_we_i		: in  std_logic;
 		wb_ack_o	: out std_logic;
         -- SPI out
-        sda_o : out std_logic;
         scl_o : out std_logic;
+        sda_o : out std_logic;
+        sdi_i : in std_logic;
         latch_o : out std_logic
     );
 end wb_spi;
@@ -32,6 +33,7 @@ architecture rtl of wb_spi is
     signal wait_cnt : unsigned(7 downto 0);
     signal start : std_logic;
     signal busy : std_logic;
+    signal data_in : std_logic_vector(31 downto 0);
 begin
 
     wb_proc: process(wb_clk_i, rst_n_i)
@@ -62,6 +64,9 @@ begin
                             wb_dat_o(31 downto 1) <= (others => '0');
                             wb_dat_o(0) <= busy;
                             wb_ack_o <= '1';
+                        when x"2" =>
+                                wb_dat_o <= data_in;
+                                wb_ack_o <= '1';
                         when others =>
                             wb_dat_o <= x"DEADBEEF";
                             wb_ack_o <= '1';
@@ -81,6 +86,7 @@ begin
             scl_o <= '0';
             sda_o <= '0';
             latch_o <= '0';
+            data_in <= (others => '0');
         elsif rising_edge(wb_clk_i) then
             if (start = '1') then
                 sreg <= data_word;
@@ -96,6 +102,7 @@ begin
                     scl_o <= '0';
                     sreg <= sreg(30 downto 0) & '0';
                     shift_cnt <= shift_cnt - 1;
+                    data_in <= data_in(30 downto 0) & sdi_i;
                 elsif (wait_cnt=to_unsigned(g_CLK_DIVIDER/2, 8)) then
                     scl_o <= '1';
                     wait_cnt <= wait_cnt + 1;

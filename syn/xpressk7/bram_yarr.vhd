@@ -71,6 +71,7 @@ entity top_level is
             -- SPI
             scl_o   : out std_logic;
             sda_o   : out std_logic;
+            sdi_i   : in std_logic;
             latch_o : out std_logic
             
             -- . DDR3
@@ -188,7 +189,7 @@ architecture Behavioral of top_level is
     
     component app is
         Generic( 
-                DEBUG_C : std_logic_vector(3 downto 0) := "1111"; 
+                DEBUG_C : std_logic_vector(3 downto 0) := "0100"; 
                 address_mask_c : STD_LOGIC_VECTOR(32-1 downto 0) := X"000FFFFF"; 
                 DMA_MEMORY_SELECTED : string := "BRAM" -- DDR3, BRAM, DEMUX 
         );
@@ -280,8 +281,9 @@ architecture Behavioral of top_level is
                 -- SPI
                 scl_o   : out std_logic;
                 sda_o   : out std_logic;
+                sdi_i : in std_logic;
                 latch_o : out std_logic;
-               
+            
                --I/O
                usr_sw_i : in STD_LOGIC_VECTOR (2 downto 0);
                usr_led_o : out STD_LOGIC_VECTOR (3 downto 0);
@@ -431,7 +433,7 @@ begin
       
       app_0:app
       Generic map( 
-	DEBUG_C => "0110",
+	   DEBUG_C => "0100",
         address_mask_c => X"000FFFFF",
         DMA_MEMORY_SELECTED => "BRAM" -- DDR3, BRAM 
         )
@@ -522,6 +524,7 @@ begin
         --SPI
         scl_o => scl_o,
         sda_o => sda_o,
+        sdi_i => sdi_i,
         latch_o => latch_o,
         
         --I/O

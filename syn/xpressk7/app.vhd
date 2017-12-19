@@ -133,6 +133,7 @@ entity app is
            -- SPI
            scl_o            : out std_logic;
            sda_o            : out std_logic;
+           sdi_i : in std_logic;
            latch_o          : out std_logic;
            
            --I/O
@@ -415,6 +416,12 @@ architecture Behavioral of app is
     signal debug       : std_logic_vector(31 downto 0);
     signal clk_div_cnt : unsigned(3 downto 0);
     signal clk_div     : std_logic;
+
+    -- SPI
+    signal scl_s : std_logic;
+    signal sda_s : std_logic;
+    signal latch_s : std_logic;
+    signal sdi_s : std_logic;
     
     attribute IODELAY_GROUP : STRING;
     attribute IODELAY_GROUP of IDELAYCTRL_inst : label is "aurora";
@@ -719,16 +726,16 @@ wb_dev_gen : if wb_dev_c = '1' generate
 -- Differential buffers
 	tx_loop: for I in 0 to c_TX_CHANNELS-1 generate
 	begin
-	   nrz_gen: if c_TX_ENCODING = "NRZ" generate
+	   --nrz_gen: if c_TX_ENCODING = "NRZ" generate
            tx_buf : OBUFDS
            generic map (
                IOSTANDARD => "LVDS_25")
            port map (
                O => fe_cmd_p(I),     -- Diff_p output (connect directly to top-level port)
                OB => fe_cmd_n(I),   -- Diff_n output (connect directly to top-level port)
-               I => fe_cmd_o(I)      -- Buffer input 
+               I => not fe_cmd_o(I)      -- Buffer input 
            );	   
-	   end generate;
+	   --end generate nrz_gen;
 	   
 	   man_gen: if c_TX_ENCODING = "MANCHESTER" generate
             tx_buf : OBUFDS
@@ -754,7 +761,7 @@ wb_dev_gen : if wb_dev_c = '1' generate
                 R => not rst_n_s,    -- 1-bit reset input
                 S => '0'     -- 1-bit set input
             );
-		end generate;
+		end generate man_gen;
 		
 		clk_buf : OBUFDS
 		generic map (
@@ -780,28 +787,53 @@ wb_dev_gen : if wb_dev_c = '1' generate
 			S => '0'     -- 1-bit set input
 		);
 	end generate;    
-  
-     cmp_wb_tx_core : wb_tx_core port map
-        (
-            -- Sys connect
-            wb_clk_i => wb_clk_s,
-            rst_n_i => rst_n_s,
-            -- Wishbone slave interface
-            wb_adr_i => wb_adr_s,
-            wb_dat_i => wb_dat_m2s_s,
-            wb_dat_o => wb_dat_s2m_s(63 downto 32),
-            wb_cyc_i => wb_cyc_s(1),
-            wb_stb_i => wb_stb_s,
-            wb_we_i => wb_we_s,
-            wb_ack_o => wb_ack_s(1),
-            wb_stall_o => wb_stall_s(1),
-            -- TX
-            tx_clk_i => clk_40_s,
-            tx_data_o => fe_cmd_o,
-            trig_pulse_o => trig_pulse,
-            -- Trig
-            ext_trig_i => int_trig_t
-        );
+    
+    fei4_type: if c_FE_TYPE = "FEI4" generate 
+         cmp_wb_tx_core : wb_tx_core port map
+            (
+                -- Sys connect
+                wb_clk_i => wb_clk_s,
+                rst_n_i => rst_n_s,
+                -- Wishbone slave interface
+                wb_adr_i => wb_adr_s,
+                wb_dat_i => wb_dat_m2s_s,
+                wb_dat_o => wb_dat_s2m_s(63 downto 32),
+                wb_cyc_i => wb_cyc_s(1),
+                wb_stb_i => wb_stb_s,
+                wb_we_i => wb_we_s,
+                wb_ack_o => wb_ack_s(1),
+                wb_stall_o => wb_stall_s(1),
+                -- TX
+                tx_clk_i => clk_40_s,
+                tx_data_o => fe_cmd_o,
+                trig_pulse_o => trig_pulse,
+                -- Trig
+                ext_trig_i => int_trig_t
+            );
+     end generate fei4_type;
+     rd53_type: if c_FE_TYPE = "RD53" generate 
+         cmp_wb_tx_core : wb_tx_core port map
+            (
+                -- Sys connect
+                wb_clk_i => wb_clk_s,
+                rst_n_i => rst_n_s,
+                -- Wishbone slave interface
+                wb_adr_i => wb_adr_s,
+                wb_dat_i => wb_dat_m2s_s,
+                wb_dat_o => wb_dat_s2m_s(63 downto 32),
+                wb_cyc_i => wb_cyc_s(1),
+                wb_stb_i => wb_stb_s,
+                wb_we_i => wb_we_s,
+                wb_ack_o => wb_ack_s(1),
+                wb_stall_o => wb_stall_s(1),
+                -- TX
+                tx_clk_i => clk_160_s,
+                tx_data_o => fe_cmd_o,
+                trig_pulse_o => trig_pulse,
+                -- Trig
+                ext_trig_i => int_trig_t
+            );
+     end generate rd53_type;
 
 	cmp_wb_rx_core: wb_rx_core PORT MAP(
 		wb_clk_i => wb_clk_s,
@@ -901,6 +933,12 @@ wb_dev_gen : if wb_dev_c = '1' generate
 		trig_tag => trig_tag_t
 	);
 	
+
+    scl_o <= scl_s;
+    sda_o <= sda_s;
+    sdi_s <= sdi_i;
+    latch_o <= latch_s;
+    
 	cmp_wb_spi: wb_spi port map (
         wb_clk_i => wb_clk_s,
         rst_n_i => rst_n_s,
@@ -911,9 +949,10 @@ wb_dev_gen : if wb_dev_c = '1' generate
         wb_stb_i => wb_stb_s,
         wb_we_i => wb_we_s,
         wb_ack_o => wb_ack_s(6),
-        sda_o => sda_o,
-        scl_o => scl_o,
-        latch_o => latch_o
+        scl_o => scl_s,
+        sda_o => sda_s,
+        sdi_i => sdi_s,
+        latch_o => latch_s
         );	
 
 end generate;
@@ -1210,12 +1249,17 @@ end generate;
           probe3(0) => rx_dma_stb_s, 
           probe4(0) => rx_dma_cyc_s, 
           probe5(0) => rx_dma_we_s, 
-          probe6(0) => rx_dma_ack_s,
-          probe7(0) => rx_dma_stall_s,
+          --probe6(0) => rx_dma_ack_s,
+          probe6(0) => sdi_s,
+          --probe7(0) => rx_dma_stall_s,
+          probe7(0) => fe_cmd_o(0),
           probe8 => rx_data(31 downto 0),
-          probe9(0) => rx_valid,
-          probe10(0) => trig_pulse,
-          probe11(0) => rx_busy
+          probe9(0) => scl_s,
+          --probe9(0) => rx_valid,
+          probe10(0) => sda_s,
+          --probe10(0) => trig_pulse,
+          probe11(0) => latch_s
+          --probe11(0) => rx_busy
       );
   end generate dbg_2;
   

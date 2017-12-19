@@ -73,8 +73,9 @@ package common_pkg is
           wb_we_i        : in  std_logic := '0';
           wb_ack_o    : out std_logic;
           -- SPI out
-          sda_o : out std_logic;
           scl_o : out std_logic;
+          sda_o : out std_logic;
+          sdi_i : in std_logic;
           latch_o : out std_logic
       );
     end component;

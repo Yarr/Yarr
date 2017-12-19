@@ -495,7 +495,7 @@ package app_pkg is
 	component wb_rx_core
         generic (
             g_NUM_RX : integer range 1 to 32 := c_RX_CHANNELS;
-            g_TYPE : string := c_RX_TYPE;
+            g_TYPE : string := c_FE_TYPE;
             g_NUM_LANES : integer range 1 to 4 := c_RX_NUM_LANES
         );
         port (

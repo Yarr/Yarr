@@ -28,32 +28,6 @@ endif
 #target for performing local synthesis
 all: bitstream
 
-SOURCES_VerilogFile := \
-../../../rtl/kintex7/rx-core/descrambler.v
-
-SOURCES_XCIFile := \
-../../../ip-cores/kintex7/fifo_29x32/fifo_29x32.xci \
-../../../ip-cores/kintex7/fifo_605x32/fifo_605x32.xci \
-../../../ip-cores/kintex7/axis_data_fifo_1/axis_data_fifo_1.xci \
-../../../ip-cores/kintex7/ila_wsh_pipe/ila_wsh_pipe.xci \
-../../../ip-cores/kintex7/axis_data_fifo_0/axis_data_fifo_0.xci \
-../../../ip-cores/kintex7/mig_7series_0/mig_7series_0.xci \
-../../../ip-cores/kintex7/tx_fifo/tx_fifo.xci \
-../../../ip-cores/kintex7/rx_bridge_ctrl_fifo/rx_bridge_ctrl_fifo.xci \
-../../../ip-cores/kintex7/fifo_32x512/fifo_32x512.xci \
-../../../ip-cores/kintex7/fifo_96x512_1/fifo_96x512.xci \
-../../../ip-cores/kintex7/rx_channel_fifo/rx_channel_fifo.xci \
-../../../ip-cores/kintex7/ila_ddr/ila_ddr.xci \
-../../../ip-cores/kintex7/l2p_fifo64/l2p_fifo64.xci \
-../../../ip-cores/kintex7/fifo_8x32/fifo_8x32.xci \
-../../../ip-cores/kintex7/pcie_7x_0/pcie_7x_0.xci \
-../../../ip-cores/kintex7/ila_axis/ila_axis.xci \
-../../../ip-cores/kintex7/fifo_256x16/fifo_256x16.xci \
-../../../ip-cores/kintex7/fifo_64x512/fifo_64x512.xci \
-../../../ip-cores/kintex7/rx_bridge_fifo/rx_bridge_fifo.xci \
-../../../ip-cores/kintex7/ila_rx_dma_wb/ila_rx_dma_wb.xci \
-../../../ip-cores/kintex7/clk_gen/clk_gen.xci
-
 SOURCES_VHDLFile := \
 ../../../rtl/kintex7/rx-core/wb_rx_bridge.vhd \
 ../../../rtl/tx-core/wb_tx_core.vhd \
@@ -66,7 +40,7 @@ board_pkg.vhd \
 ../../../rtl/kintex7/rx-core/decode_8b10b/decode_8b10b_lut.vhd \
 ../../../rtl/kintex7/wbexp-core/l2p_arbiter.vhd \
 ../../../rtl/common/common_pkg.vhd \
-../../../rtl/kintex7/wbexp-core/gn4124_core_pkg.vhd \
+../../../rtl/kintex7/wbexp-core/l2p_dma_master.vhd \
 ../../../rtl/kintex7/rx-core/decode_8b10b/decode_8b10b_wrapper.vhd \
 ../../../rtl/trigger-logic/eudet_tlu.vhd \
 ../app.vhd \
@@ -77,7 +51,7 @@ board_pkg.vhd \
 ../../../rtl/kintex7/rx-core/gearbox32to66.vhd \
 ../../../rtl/kintex7/ddr3k7-core/ddr3_ctrl_wb.vhd \
 ../../../rtl/kintex7/rx-core/decode_8b10b/decode_8b10b_lut_base.vhd \
-../../../rtl/kintex7/wbexp-core/l2p_dma_master.vhd \
+../../../rtl/kintex7/wbexp-core/gn4124_core_pkg.vhd \
 ../app_pkg.vhd \
 ../../../rtl/kintex7/wbexp-core/wbexp_core_pkg.vhd \
 ../../../rtl/common/rr_arbiter.vhd \
@@ -111,11 +85,37 @@ SOURCES_XDCFile := \
 ../xpressk7.xdc \
 ../xpressk7-timing.xdc
 
+SOURCES_XCIFile := \
+../../../ip-cores/kintex7/fifo_29x32/fifo_29x32.xci \
+../../../ip-cores/kintex7/fifo_605x32/fifo_605x32.xci \
+../../../ip-cores/kintex7/axis_data_fifo_1/axis_data_fifo_1.xci \
+../../../ip-cores/kintex7/ila_wsh_pipe/ila_wsh_pipe.xci \
+../../../ip-cores/kintex7/axis_data_fifo_0/axis_data_fifo_0.xci \
+../../../ip-cores/kintex7/mig_7series_0/mig_7series_0.xci \
+../../../ip-cores/kintex7/tx_fifo/tx_fifo.xci \
+../../../ip-cores/kintex7/rx_bridge_ctrl_fifo/rx_bridge_ctrl_fifo.xci \
+../../../ip-cores/kintex7/fifo_32x512/fifo_32x512.xci \
+../../../ip-cores/kintex7/fifo_96x512_1/fifo_96x512.xci \
+../../../ip-cores/kintex7/rx_channel_fifo/rx_channel_fifo.xci \
+../../../ip-cores/kintex7/ila_ddr/ila_ddr.xci \
+../../../ip-cores/kintex7/l2p_fifo64/l2p_fifo64.xci \
+../../../ip-cores/kintex7/fifo_8x32/fifo_8x32.xci \
+../../../ip-cores/kintex7/pcie_7x_0/pcie_7x_0.xci \
+../../../ip-cores/kintex7/ila_axis/ila_axis.xci \
+../../../ip-cores/kintex7/fifo_256x16/fifo_256x16.xci \
+../../../ip-cores/kintex7/fifo_64x512/fifo_64x512.xci \
+../../../ip-cores/kintex7/rx_bridge_fifo/rx_bridge_fifo.xci \
+../../../ip-cores/kintex7/ila_rx_dma_wb/ila_rx_dma_wb.xci \
+../../../ip-cores/kintex7/clk_gen/clk_gen.xci
+
+SOURCES_VerilogFile := \
+../../../rtl/kintex7/rx-core/descrambler.v
+
 files.tcl:
-		@$(foreach sourcefile, $(SOURCES_VerilogFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
-		@$(foreach sourcefile, $(SOURCES_XCIFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
 		@$(foreach sourcefile, $(SOURCES_VHDLFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
 		@$(foreach sourcefile, $(SOURCES_XDCFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
+		@$(foreach sourcefile, $(SOURCES_XCIFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
+		@$(foreach sourcefile, $(SOURCES_VerilogFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
 
 SYN_PRE_PROJECT_CMD := 
 SYN_POST_PROJECT_CMD := 

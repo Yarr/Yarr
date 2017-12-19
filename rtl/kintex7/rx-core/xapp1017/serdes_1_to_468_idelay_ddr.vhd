@@ -177,7 +177,7 @@ not_rxclk <= not rxclk;
 clock_sweep <= clock_sweep_int ;
 rxclk_int <= rxclk ; -- theim: use external;
 bt_val_d2 <= '0' & bt_val(4 downto 1) ;
-cdataout <= m_serdes(3 downto 0); -- theim: hardcoded
+--cdataout <= m_serdes(3 downto 0); -- theim: hardcoded
 
 loop11a : if REF_FREQ <= 210.0 generate				-- Generate tap number to be used for input bit rate (200 MHz ref clock)
 bt_val <= "00111" when bit_rate_value > X"1984" else
@@ -326,8 +326,8 @@ port map (
 	s_datain		=> sdataout(S*i+S-1 downto S*i),
 	enable_phase_detector	=> enable_phase_detector,
 	enable_monitor		=> enable_monitor,
-	reset			=> not_rx_lckd_intd4,
-	--reset			=> reset,
+	--reset			=> not_rx_lckd_intd4,
+	reset			=> reset,
 	clk			=> system_clk_int,
 	c_delay_in		=> initial_delay,
 	m_delay_out		=> m_delay_val_in(5*i+4 downto 5*i),
@@ -357,7 +357,8 @@ loop1 : for j in 0 to S-1 generate			-- Assign data bits to correct serdes accor
 end generate ;
 
 data_in : IBUFDS_DIFF_OUT generic map(
-	IBUF_LOW_PWR		=> FALSE)
+	IBUF_LOW_PWR		=> FALSE,
+    DIFF_TERM => TRUE)
 port map (                      
 	I    			=> datain_p(i),
 	IB       		=> datain_n(i),
