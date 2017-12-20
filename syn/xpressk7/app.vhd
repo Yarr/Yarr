@@ -164,6 +164,8 @@ architecture Behavioral of app is
     -- Signals declaration
     ------------------------------------------------------------------------------
     
+    signal logic_rst : std_logic;
+    
     signal wb_clk_s : std_logic;
     
     signal rst_n_s : std_logic;
@@ -425,10 +427,11 @@ architecture Behavioral of app is
     
     attribute IODELAY_GROUP : STRING;
     attribute IODELAY_GROUP of IDELAYCTRL_inst : label is "aurora";
+    signal idelay_rdy : std_logic;
 
 begin
     
-    rst_n_s <= not rst_i;
+    rst_n_s <= (not rst_i) or pll_locked_s or idelay_rdy;
 
 		
     -- Activate LVDS buffer		
@@ -453,7 +456,7 @@ begin
     axis_rx_fifo : axis_data_fifo_0
       PORT MAP (
         s_axis_aresetn => rst_n_s,
-        m_axis_aresetn => '1',
+        m_axis_aresetn => rst_n_s,
         s_axis_aclk => clk_i,
         s_axis_tvalid => s_axis_rx_tvalid_i_s,
         s_axis_tready => s_axis_rx_tready_o_s,
@@ -475,7 +478,7 @@ begin
       
     axis_tx_fifo : axis_data_fifo_1
         PORT MAP (
-          s_axis_aresetn => '1',
+          s_axis_aresetn => rst_n_s,
           m_axis_aresetn => rst_n_s,
           s_axis_aclk => wb_clk_s,
           s_axis_tvalid => m_axis_tx_tvalid_s,
@@ -521,15 +524,15 @@ begin
      
     IDELAYCTRL_inst : IDELAYCTRL
      port map (
-        RDY => open,       -- 1-bit output: Ready output
+        RDY => idelay_rdy,       -- 1-bit output: Ready output
         REFCLK => clk_300_s, -- 1-bit input: Reference clock input
-        RST => not rst_n_s       -- 1-bit input: Active high reset input
+        RST => rst_i and not pll_locked_s      -- 1-bit input: Active high reset input
      );
 
     led_cnt:simple_counter
     port map(
 	    enable_i => '1',
-        rst_i => '0',
+        rst_i => not rst_n_s,
         clk_i => clk_40_s,
         count_o =>  led_count_s,
         gray_count_o => open
@@ -541,19 +544,19 @@ begin
 --    iterations_cnt:simple_counter
 --    port map(
 --	    enable_i => dma_ctrl_irq_s(0),
---        rst_i => rst_i,
+--        rst_i => not rst_n_s,
 --        clk_i => clk_i,
 --        count_o =>  iteration_count_s,
 --        gray_count_o => gray_iteration_count_s
 --    );
 
    
-    interrupt_rdy_p : process(rst_i,wb_clk_s,cfg_interrupt_rdy_i)
+    interrupt_rdy_p : process(rst_n_s,wb_clk_s,cfg_interrupt_rdy_i)
    begin
 
      
        
-       if (rst_i = '1') then
+       if (rst_n_s = '0') then
            cfg_interrupt_rdy_s <= (others => '0');
        elsif (cfg_interrupt_rdy_i = '1') then
             cfg_interrupt_rdy_s <= (others => '1'); 
@@ -569,7 +572,7 @@ begin
         Port map( 
             clk_i => wb_clk_s,
             wb_clk_i => wb_clk_s,
-            rst_i => rst_i,
+            rst_i => not rst_n_s,
             
             ---------------------------------------------------------
             -- AXI-Stream bus
@@ -733,7 +736,7 @@ wb_dev_gen : if wb_dev_c = '1' generate
            port map (
                O => fe_cmd_p(I),     -- Diff_p output (connect directly to top-level port)
                OB => fe_cmd_n(I),   -- Diff_n output (connect directly to top-level port)
-               I => not fe_cmd_o(I)      -- Buffer input 
+               I => fe_cmd_o(I)      -- Buffer input 
            );	   
 	   --end generate nrz_gen;
 	   
@@ -895,7 +898,7 @@ wb_dev_gen : if wb_dev_c = '1' generate
 --	port map (
 --		wb_clk_i => clk_i,
 --		wb_rst_i => not rst_n_s,
---		arst_i => rst_n_s,
+--		arst_i => not rst_n_s,
 --		wb_adr_i => wb_adr_s(2 downto 0),
 --		wb_dat_i => wb_dat_m2s_s(7 downto 0),
 --		wb_dat_o => wb_dat_s2m_s(135 downto 128),
@@ -964,7 +967,7 @@ end generate;
      Port Map( 
          -- SYS CON
          clk_i            => wb_clk_s,
-         rst_i            => rst_i,
+         rst_i            => not rst_n_s,
          
          -- Wishbone Slave in
          wba_adr_i            => dma_bram_adr_s,
@@ -1110,7 +1113,7 @@ end generate;
             -- System Clock Ports
             sys_clk_p                       => sys_clk_p_i,
             sys_clk_n                       => sys_clk_n_i,
-            sys_rst                        => rst_i
+            sys_rst                        => not rst_n_s
         );
      
     --DDR3

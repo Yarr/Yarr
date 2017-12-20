@@ -122,11 +122,15 @@ architecture behavioral of aurora_rx_lane is
     signal descrambled_header : std_logic_vector(1 downto 0);
     signal descrambled_data_valid : std_logic;
     
-
     -- Block Sync
     signal sync_cnt : unsigned(7 downto 0);
     signal slip_cnt : unsigned(3 downto 0);
     signal valid_cnt : unsigned(7 downto 0);
+    
+    -- SERDES debug
+    signal bit_time_value : std_logic_vector(4 downto 0);
+    signal eye_info : std_logic_vector(31 downto 0);
+    signal m_delay_1hot : std_logic_vector(31 downto 0);
     
     -- DEBUG
         -- DEBUG
@@ -153,14 +157,14 @@ begin
     PORT MAP (
       clk => clk_rx_i,
       probe0 => serdes_data32, 
-      probe1 => gearbox_data66(63 downto 0), 
+      probe1 => m_delay_1hot & eye_info, 
       probe2 => descrambled_data(63 downto 0), 
       probe3(0) => serdes_data32_valid,
       probe4(0) => gearbox_data66_valid, 
       probe5(0) => gearbox_slip, 
       probe6(0) => serdes_slip,
       probe7(0) => descrambled_data_valid,
-      probe8 => std_logic_vector(sync_cnt) & x"0" & std_logic_vector(slip_cnt) & x"000" &  descrambled_header & gearbox_data66(65 downto 64),
+      probe8 => std_logic_vector(sync_cnt) & x"0" & std_logic_vector(slip_cnt) & bit_time_value & descrambled_header,
       probe9(0) => '0',
       probe10(0) => '0',
       probe11(0) => '0'
@@ -173,7 +177,7 @@ begin
         datain_p(0) => rx_data_i_p,
         datain_n(0) => rx_data_i_n,
         enable_phase_detector => '1',
-        enable_monitor => '0',
+        enable_monitor => '1',
         reset => rst,
         --bitslip => '0',
         bitslip => serdes_slip,
@@ -192,10 +196,10 @@ begin
         rx_data(7) => serdes_data8(0),
         bit_rate_value => x"1280", -- TODO make generic
         dcd_correct => '0',
-        bit_time_value => open,
+        bit_time_value => bit_time_value,
         debug => open,
-        eye_info => open,
-        m_delay_1hot => open,
+        eye_info => eye_info,
+        m_delay_1hot => m_delay_1hot,
         clock_sweep => open
     );
 
