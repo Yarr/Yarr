@@ -14,6 +14,14 @@ Mailing list
 =====================
 Subscribe to the CERN mailing list: `yarr-user <https://e-groups.cern.ch/e-groups/EgroupsSubscription.do?egroupName=yarr-users>`_ 
 
+Supported Hardware:
+====================
+The YARR SW supports multiple hardware platforms which have been integrated:
+    - YARR PCIe cards (SPEC and XpressK7): link
+    - IBL BOC: link
+    - Wup KU40: link
+    - RCE HSIO2: link
+
 Requirements
 =====================
 Hardware:

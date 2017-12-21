@@ -21,6 +21,11 @@
 #include <BitOps.h>
 
 
+SpecCom::SpecCom() {
+    is_initialized = false;
+    specId = 0;
+}
+
 SpecCom::SpecCom(unsigned int id) {
     specId = id;
     is_initialized = false;

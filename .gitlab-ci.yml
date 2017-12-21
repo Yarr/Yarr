@@ -22,3 +22,4 @@ job_build_and_test:
       - TEST=`bin/rd53a_test | grep -o 0xa | wc -l`
       - if [ "$TEST" != "1" ]; then exit 2; fi
       - cd ../
+

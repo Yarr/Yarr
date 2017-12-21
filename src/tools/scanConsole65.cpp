@@ -139,6 +139,7 @@ int main(int argc, char *argv[]) {
 
     std::cout << "-> Init SPEC " << specNum << " : " << std::endl;
     SpecController spec;
+    spec.init(specNum);
     Bookkeeper bookie(&spec, &spec);
     bookie.setTargetThreshold(800);
    

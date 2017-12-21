@@ -39,7 +39,7 @@ int main(void) {
     spec.writeSingle(0x6<<14 | 0x0, EN_RX1 | EN_RX3 | EN_RX4 | EN_RX5);
     spec.writeSingle(0x6<<14 | 0x1, 0xF);
     spec.setCmdEnable(0x1);
-    //spec.writeFifo(0x6666d271);
+    spec.writeFifo(0x6666d271);
     //spec.writeFifo(0x6a6c6ac6);
     //spec.writeFifo(0x69696969);
     //spec.writeFifo(0x5a5a6969);
