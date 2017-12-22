@@ -160,15 +160,21 @@ void Fei4::readPixelRegister(unsigned colpr_addr, unsigned latch) {
   writeRegister(&Fei4::HitLD, 0x0);
   writeRegister(&Fei4::Pixel_latch_strobe, 0x0);
 
+  // Read back SR values
   writeRegister(&Fei4::SR_Clock, 0x0);
-
   writeRegister(&Fei4::SRRead, 0x1);
-
   uint32_t bitstream[21] = {0};
   wrFrontEnd(chipId, bitstream);
 
   writeRegister(&Fei4::SRRead, 0x0);
+}
 
+void Fei4::dummyCmd() {
+  writeRegister(&Fei4::Colpr_Mode, 0x0);
+  writeRegister(&Fei4::Colpr_Addr, Fei4PixelCfg::n_DC-1);
+  uint32_t bitstream[21] = {0};
+  wrFrontEnd(chipId, bitstream);
+  while(core->isCmdEmpty() == 0);
 }
 
 void Fei4::shiftByOne() {
