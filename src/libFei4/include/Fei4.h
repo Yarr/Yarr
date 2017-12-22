@@ -58,6 +58,7 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
         void loadIntoPixel(unsigned pixel_latch);
         void shiftByOne();
 	void readPixelRegister(unsigned colpr_addr, unsigned latch);
+	void dummyCmd();
 
 
 
