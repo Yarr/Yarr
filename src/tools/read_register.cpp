@@ -228,6 +228,11 @@ int main(int argc, char *argv[]) {
   dummy.toFileJson(replica);
 
 
+  //----------------------------------------------------------------
+  // config again to avoid changing global registers
+  fe.dummyCmd();
+  while(!mySpec.isCmdEmpty()) {}
+
 
   //----------------------------------------------------------------
   // print comparison results
@@ -283,8 +288,8 @@ int main(int argc, char *argv[]) {
 }
 
 void printHelp() {
-    std::cout << "Help:" << std::endl;
-    std::cout << " -c <cfg1.json>: Provide chip configuration, canNOT take multiple arguments." << std::endl;
-    std::cout << " -i: Configure chip." << std::endl;
-    std::cout << " -v: Verbose mode" << std::endl;
+  std::cout << "Help:" << std::endl;
+  std::cout << " -c <cfg1.json>: Provide chip configuration, canNOT take multiple arguments." << std::endl;
+  std::cout << " -i: Configure chip." << std::endl;
+  std::cout << " -v: Verbose mode" << std::endl;
 }
