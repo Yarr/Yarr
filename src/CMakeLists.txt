@@ -27,8 +27,11 @@ add_compile_options(-Wfatal-errors)
 add_compile_options(-Wno-deprecated)
 add_compile_options(-std=c++11)
 
+# Add -fPIC for (e.g. linking to shared libraries)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 #add libraries
-list(APPEND libs Yarr Spec Util Emu Fe65p2 Fei4 Rce Boc)
+list(APPEND libs Yarr Spec Util Emu Fe65p2 Fei4 Rce Boc KU040)
 foreach(lib ${libs})
 include_directories(lib${lib}/include)
 file(GLOB SrcFiles lib${lib}/*.cpp)
