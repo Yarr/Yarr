@@ -154,6 +154,7 @@ architecture behavioral of wb_rx_core is
 	signal rx_fifo_wren : std_logic_vector(g_NUM_RX-1 downto 0);
 
 	signal rx_enable : std_logic_vector(31 downto 0);
+	signal rx_enable_d : std_logic_vector(31 downto 0);
 	
 	signal channel : integer range 0 to g_NUM_RX-1;
 
@@ -243,6 +244,15 @@ begin
             );
         end generate;
     end generate fei4_iobuf;
+    
+    enable_sync: process (rx_clk_i, rst_n_i)
+    begin
+        if (rst_n_i = '1') then
+            rx_enable_d <= (others => '0');
+        elsif rising_edge(rx_clk_i) then
+            rx_enable_d <= rx_enable;
+        end if;
+   end process enable_sync;
 	
     -- Generate Rx Channels
 	busy_o <= '0' when (rx_fifo_full = c_ALL_ZEROS) else '1';
@@ -253,7 +263,7 @@ begin
                 rst_n_i => rst_n_i,
                 clk_160_i => rx_clk_i,
                 clk_640_i => rx_serdes_clk_i,
-                enable_i => rx_enable(I),
+                enable_i => rx_enable_d(I),
                 rx_data_i => rx_data_i(I),
                 trig_tag_i => trig_tag_i,
                 rx_data_o => rx_data(I)(25 downto 0),
@@ -279,7 +289,7 @@ begin
 		    rx_fifo_din(I) <= rx_data(I);
         end generate rd53_type;
 		
-		rx_fifo_wren(I) <= rx_valid(I) and rx_enable(I);
+		rx_fifo_wren(I) <= rx_valid(I) and rx_enable_d(I);
 		cmp_rx_channel_fifo : rx_channel_fifo PORT MAP (
 			rst => not rst_n_i,
 			wr_clk => rx_clk_i,

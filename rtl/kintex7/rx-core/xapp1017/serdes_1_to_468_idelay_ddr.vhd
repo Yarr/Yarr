@@ -329,7 +329,8 @@ port map (
 	--reset			=> not_rx_lckd_intd4,
 	reset			=> reset,
 	clk			=> system_clk_int,
-	c_delay_in		=> initial_delay,
+	--c_delay_in		=> initial_delay,
+	c_delay_in		=> "10000",
 	m_delay_out		=> m_delay_val_in(5*i+4 downto 5*i),
 	s_delay_out		=> s_delay_val_in(5*i+4 downto 5*i),
 	data_out		=> mdataoutd(S*i+S-1 downto S*i),
@@ -357,8 +358,7 @@ loop1 : for j in 0 to S-1 generate			-- Assign data bits to correct serdes accor
 end generate ;
 
 data_in : IBUFDS_DIFF_OUT generic map(
-	IBUF_LOW_PWR		=> FALSE,
-    DIFF_TERM => TRUE)
+	IBUF_LOW_PWR		=> FALSE)
 port map (                      
 	I    			=> datain_p(i),
 	IB       		=> datain_n(i),
@@ -371,9 +371,9 @@ rx_data_in_s(i) <= rx_data_in_n(i) xor RX_SWAP_MASK(i) ;
 idelay_m : IDELAYE2 generic map(
 	REFCLK_FREQUENCY 	=> REF_FREQ,
  	HIGH_PERFORMANCE_MODE 	=> HIGH_PERFORMANCE_MODE,
-      	IDELAY_VALUE		=> 0,
+      	IDELAY_VALUE		=> 16,
       	DELAY_SRC		=> "IDATAIN",
-      	IDELAY_TYPE		=> "VAR_LOAD")
+      	IDELAY_TYPE		=> "FIXED")
 port map(                
 	DATAOUT			=> rx_data_in_md(i),
 	C			=> system_clk_int,
@@ -428,9 +428,9 @@ port map (
 idelay_s : IDELAYE2 generic map(
 	REFCLK_FREQUENCY 	=> REF_FREQ,
  	HIGH_PERFORMANCE_MODE 	=> HIGH_PERFORMANCE_MODE,
-      	IDELAY_VALUE		=> 0,
+      	IDELAY_VALUE		=> 16,
       	DELAY_SRC		=> "IDATAIN",
-      	IDELAY_TYPE		=> "VAR_LOAD")
+      	IDELAY_TYPE		=> "FIXED")
 port map(                
 	DATAOUT			=> rx_data_in_sd(i),
 	C			=> system_clk_int,

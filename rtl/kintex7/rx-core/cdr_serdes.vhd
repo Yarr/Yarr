@@ -18,6 +18,7 @@ entity cdr_serdes is
 
 		-- data input
 		din : in std_logic;
+		slip : in std_logic;
 
 		-- data output
 		data_value : out std_logic_vector(1 downto 0);
@@ -106,7 +107,7 @@ serdes : ISERDESE2
       -- SHIFTOUT1, SHIFTOUT2: 1-bit (each) output: Data width expansion output ports
       SHIFTOUT1 => open,
       SHIFTOUT2 => open,
-      BITSLIP => '0',           -- 1-bit input: The BITSLIP pin performs a Bitslip operation synchronous to
+      BITSLIP => slip,           -- 1-bit input: The BITSLIP pin performs a Bitslip operation synchronous to
                                     -- CLKDIV when asserted (active High). Subsequently, the data seen on the
                                     -- Q1 to Q8 output ports will shift, as in a barrel-shifter operation, one
                                     -- position every time Bitslip is invoked (DDR operation is different from

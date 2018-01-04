@@ -732,11 +732,12 @@ wb_dev_gen : if wb_dev_c = '1' generate
 	   --nrz_gen: if c_TX_ENCODING = "NRZ" generate
            tx_buf : OBUFDS
            generic map (
-               IOSTANDARD => "LVDS_25")
+               IOSTANDARD => "LVDS_25",
+               SLEW => "FAST")
            port map (
                O => fe_cmd_p(I),     -- Diff_p output (connect directly to top-level port)
                OB => fe_cmd_n(I),   -- Diff_n output (connect directly to top-level port)
-               I => fe_cmd_o(I)      -- Buffer input 
+               I => not fe_cmd_o(I)      -- Buffer input 
            );	   
 	   --end generate nrz_gen;
 	   
@@ -781,8 +782,8 @@ wb_dev_gen : if wb_dev_c = '1' generate
 			SRTYPE => "SYNC") -- Specifies "SYNC" or "ASYNC" set/reset
 		port map (
 			Q => fe_clk_o(I), -- 1-bit output data
-			C0 => clk_40_90_s, -- 1-bit clock input
-			C1 => not clk_40_90_s, -- 1-bit clock input
+			C0 => clk_640_s, -- 1-bit clock input
+			C1 => not clk_640_s, -- 1-bit clock input
 			CE => '1',  -- 1-bit clock enable input
 			D0 => '1',   -- 1-bit data input (associated with C0)
 			D1 => '0',   -- 1-bit data input (associated with C1)

@@ -12,6 +12,9 @@ library IEEE;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library unisim ;
+use unisim.vcomponents.all ;
+
 entity aurora_rx_lane is 
     port (
         -- Sys connect
@@ -63,6 +66,19 @@ architecture behavioral of aurora_rx_lane is
         );
     end component serdes_1_to_468_idelay_ddr;
 
+    component cdr_serdes
+        port (
+            clk160 : in std_logic;
+            clk640 : in std_logic;
+            reset : in std_logic;
+            din : in std_logic;
+            slip : in std_logic;
+            data_value : out std_logic_vector(1 downto 0);
+            data_valid : out std_logic_vector(1 downto 0);
+            data_lock : out std_logic
+        );
+    end component cdr_serdes;
+
     component gearbox32to66
         port (
             -- Sys connect
@@ -89,6 +105,12 @@ architecture behavioral of aurora_rx_lane is
         );
     end component descrambler;
 
+    constant g_SERDES_TYPE : string := "CUSTOM";
+    constant c_SLIP_SERDES_MAX : unsigned(7 downto 0) := to_unsigned(0, 8); 
+    
+--    constant g_SERDES_TYPE : string := "XAPP1017";
+--    constant c_SLIP_SERDES_MAX : unsigned(7 downto 0) := to_unsigned(8, 8); 
+
     constant c_DATA_HEADER : std_logic_vector(1 downto 0) := "01";
     constant c_CMD_HEADER : std_logic_vector(1 downto 0) := "10";
     constant c_SYNC_MAX : unsigned(7 downto 0) := to_unsigned(32, 8);
@@ -102,11 +124,18 @@ architecture behavioral of aurora_rx_lane is
     signal serdes_data8 : std_logic_vector(7 downto 0);
     signal serdes_data8_d : std_logic_vector(7 downto 0);
 
+    signal datain_p : std_logic;
+    signal datain_n : std_logic;
+    signal serdes_data2 : std_logic_vector(1 downto 0);
+    signal serdes_data2_d : std_logic_vector(1 downto 0);
+    signal serdes_data2_valid : std_logic_vector(1 downto 0);
+    signal serdes_lock : std_logic;
+
     -- 8 to 32
-    signal serdes_data32_shift : std_logic_vector(31 downto 0);
+    signal serdes_data32_shift : std_logic_vector(32 downto 0);
     signal serdes_data32 : std_logic_vector(31 downto 0);
     signal serdes_data32_valid : std_logic;
-    signal serdes_cnt : unsigned(1 downto 0);
+    signal serdes_cnt : unsigned(5 downto 0);
 
     -- Gearbox
     signal gearbox_data66 : std_logic_vector(65 downto 0);
@@ -151,9 +180,12 @@ architecture behavioral of aurora_rx_lane is
         probe11 : IN STD_LOGIC_VECTOR(0 DOWNTO 0)
     );
     END COMPONENT  ;
-
+    
 begin
-    rx_dma_wb_debug : ila_rx_dma_wb
+    
+    rst <= not rst_n_i;
+    
+    aurora_lane_debug : ila_rx_dma_wb
     PORT MAP (
       clk => clk_rx_i,
       probe0 => serdes_data32, 
@@ -164,65 +196,125 @@ begin
       probe5(0) => gearbox_slip, 
       probe6(0) => serdes_slip,
       probe7(0) => descrambled_data_valid,
-      probe8 => std_logic_vector(sync_cnt) & x"0" & std_logic_vector(slip_cnt) & bit_time_value & descrambled_header,
+      probe8 => x"00" & std_logic_vector(sync_cnt) & x"0" & serdes_lock & std_logic_vector(slip_cnt) & bit_time_value & descrambled_header,
       probe9(0) => '0',
       probe10(0) => '0',
       probe11(0) => '0'
     );
 
-    rst <= not rst_n_i;
+    -- XAPP1017 style SERDES with auto-phase detection up to 1.6Gbps
+    xapp1017_serdes: if g_SERDES_TYPE = "XAPP1017" generate
+        serdes_idelay_rdy <= rst_n_i;
+        serdes_cmp: serdes_1_to_468_idelay_ddr port map (
+            datain_p(0) => rx_data_i_p,
+            datain_n(0) => rx_data_i_n,
+            enable_phase_detector => '0',
+            enable_monitor => '1',
+            reset => rst,
+            --bitslip => '0',
+            bitslip => serdes_slip,
+            idelay_rdy => serdes_idelay_rdy,
+            rxclk => clk_serdes_i,
+            system_clk => clk_rx_i,
+            rx_lckd => serdes_lock,
+            --rx_data => serdes_data8,
+            rx_data(0) => serdes_data8(7),
+            rx_data(1) => serdes_data8(6),
+            rx_data(2) => serdes_data8(5),
+            rx_data(3) => serdes_data8(4),
+            rx_data(4) => serdes_data8(3),
+            rx_data(5) => serdes_data8(2),
+            rx_data(6) => serdes_data8(1),
+            rx_data(7) => serdes_data8(0),
+            bit_rate_value => x"0625", -- TODO make generic
+            dcd_correct => '0',
+            bit_time_value => bit_time_value,
+            debug => open,
+            eye_info => eye_info,
+            m_delay_1hot => m_delay_1hot,
+            clock_sweep => open
+        );
 
-    serdes_idelay_rdy <= rst_n_i;
-    serdes_cmp: serdes_1_to_468_idelay_ddr port map (
-        datain_p(0) => rx_data_i_p,
-        datain_n(0) => rx_data_i_n,
-        enable_phase_detector => '1',
-        enable_monitor => '1',
-        reset => rst,
-        --bitslip => '0',
-        bitslip => serdes_slip,
-        idelay_rdy => serdes_idelay_rdy,
-        rxclk => clk_serdes_i,
-        system_clk => clk_rx_i,
-        rx_lckd => open,
-        --rx_data => serdes_data8,
-        rx_data(0) => serdes_data8(7),
-        rx_data(1) => serdes_data8(6),
-        rx_data(2) => serdes_data8(5),
-        rx_data(3) => serdes_data8(4),
-        rx_data(4) => serdes_data8(3),
-        rx_data(5) => serdes_data8(2),
-        rx_data(6) => serdes_data8(1),
-        rx_data(7) => serdes_data8(0),
-        bit_rate_value => x"1280", -- TODO make generic
-        dcd_correct => '0',
-        bit_time_value => bit_time_value,
-        debug => open,
-        eye_info => eye_info,
-        m_delay_1hot => m_delay_1hot,
-        clock_sweep => open
-    );
-
-    serdes_8to32_proc : process(clk_rx_i, rst_n_i)
-    begin
-        if (rst_n_i = '0') then
-            serdes_data32 <= (others => '0');
-            serdes_data32_shift <= (others => '0');
-            serdes_data32_valid <= '0';
-            serdes_cnt <= (others => '0');
-            serdes_data8_d <= (others => '0');
-        elsif rising_edge(clk_rx_i) then
-            serdes_cnt <= serdes_cnt + 1;
-            serdes_data8_d <= serdes_data8;
-            serdes_data32_valid <= '0';
-            serdes_data32_shift(31 downto 8) <= serdes_data32_shift(23 downto 0);
-            serdes_data32_shift(7 downto 0) <= serdes_data8;
-            if (serdes_cnt = "11") then
-                serdes_data32 <= serdes_data32_shift;
-                serdes_data32_valid <= '1';
+        serdes_8to32_proc : process(clk_rx_i, rst_n_i)
+        begin
+            if (rst_n_i = '0') then
+                serdes_data32 <= (others => '0');
+                serdes_data32_shift <= (others => '0');
+                serdes_data32_valid <= '0';
+                serdes_cnt <= (others => '0');
+                serdes_data8_d <= (others => '0');
+            elsif rising_edge(clk_rx_i) then
+                serdes_cnt <= serdes_cnt + 1;
+                serdes_data8_d <= serdes_data8;
+                serdes_data32_valid <= '0';
+                serdes_data32_shift(31 downto 8) <= serdes_data32_shift(23 downto 0);
+                serdes_data32_shift(7 downto 0) <= serdes_data8;
+                if (serdes_cnt = to_unsigned(3, 6)) then
+                    serdes_data32 <= serdes_data32_shift(31 downto 0);
+                    serdes_data32_valid <= '1';
+                    serdes_cnt <= (others => '0');
+                end if;
             end if;
-        end if;
-    end process serdes_8to32_proc;
+        end process serdes_8to32_proc;
+    end generate xapp1017_serdes;
+
+    -- Quad-Oversampling style SERDES with auto-phase detection up to 160Mpbs
+    custom_serdes: if g_SERDES_TYPE = "CUSTOM" generate
+         
+        data_in : IBUFDS_DIFF_OUT generic map(
+            IBUF_LOW_PWR		=> FALSE)
+        port map (                      
+            I         		=> rx_data_i_p,
+            IB         		=> rx_data_i_n,
+            O    			=> datain_p,
+            OB               => datain_n
+        );
+        
+        cmp_cdr_serdes: cdr_serdes port map (
+            clk160 => clk_rx_i,
+            clk640 => clk_serdes_i,
+            reset => rst,
+            din => datain_p,
+            slip => serdes_slip,
+            data_value => serdes_data2,
+            data_valid => serdes_data2_valid,
+            data_lock => serdes_lock
+        );
+
+        serdes_2to32_proc : process(clk_rx_i, rst_n_i)
+        begin
+            if (rst_n_i = '0') then
+                serdes_data32 <= (others => '0');
+                serdes_data32_shift <= (others => '0');
+                serdes_data32_valid <= '0';
+                serdes_cnt <= (others => '0');
+            elsif rising_edge(clk_rx_i) then
+                serdes_data32_valid <= '0';
+                
+                if (serdes_data2_valid = "01") then
+                    serdes_data32_shift <= serdes_data32_shift(31 downto 0) & serdes_data2(0);
+                    serdes_cnt <= serdes_cnt + 1;
+                elsif (serdes_data2_valid = "10") then
+                    serdes_data32_shift <= serdes_data32_shift(31 downto 0) & serdes_data2(1);
+                    serdes_cnt <= serdes_cnt + 1;
+                elsif (serdes_data2_valid = "11") then
+                    serdes_data32_shift <= serdes_data32_shift(30 downto 0) & serdes_data2(1 downto 0);
+                    serdes_cnt <= serdes_cnt + 2;
+                end if;
+
+                if (serdes_cnt = to_unsigned(31, 6)) then
+                    serdes_data32 <= serdes_data32_shift(31 downto 0);
+                    serdes_data32_valid <= '1';
+                    serdes_cnt <= (others => '0');
+                elsif (serdes_cnt = to_unsigned(32, 6)) then
+                    serdes_data32 <= serdes_data32_shift(32 downto 1);
+                    serdes_data32_valid <= '1';
+                    serdes_cnt <= (others => '0');
+                end if;
+            end if;
+        end process serdes_2to32_proc;
+
+    end generate custom_serdes;
 
     gearbox32to66_cmp : gearbox32to66 port map (
         rst_i => rst,
@@ -259,7 +351,7 @@ begin
                     end if;
                 elsif (valid_cnt = c_VALID_WAIT) then
                     sync_cnt <= (others => '0');       
-                    if (slip_cnt = 8) then
+                    if (slip_cnt = c_SLIP_SERDES_MAX) then
                         gearbox_slip <= '1';
                         serdes_slip <= '0';
                         slip_cnt <= (others => '0');
