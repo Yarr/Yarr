@@ -21,7 +21,7 @@ class Rd53aCmd {
         void globalPulse(uint32_t chipId, uint32_t duration);
         void cal(uint32_t chipId, uint32_t mode, uint32_t delay, uint32_t duration, uint32_t aux_mode=0, uint32_t aux_delay=0);
         void wrRegister(uint32_t chipId, uint32_t address, uint32_t value);
-        void wrRegister(uint32_t chipId, uint32_t address, uint32_t values[3]);
+        //void wrRegister(uint32_t chipId, uint32_t address, uint32_t values[3]);
         void rdRegister(uint32_t chipId, uint32_t address);
 
         // Fast Commands

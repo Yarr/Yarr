@@ -56,7 +56,7 @@ std::ofstream commandFile;
 commandFile.open("commandList.txt", std::ofstream::out | std::ofstream::app);
     if (verbose) std::cout << __PRETTY_FUNCTION__ << " : ID(" << chipId << ") ADR(" << address << ") VAL(0x" << std::hex << value << std::dec << ")" << std::endl;
     // Header
-    core->writeFifo(0x6666);
+    core->writeFifo(0x69696666);
 commandFile << std::hex << 0x6666;
   if (value == 2464 || value == 2480 || value == 2336 || value == 2352) commandFile << "\n";
     uint32_t tmp = 0x0;
@@ -71,6 +71,7 @@ commandFile << std::hex << tmp;
     // VAL[9:5] | VAL [4:0]
     tmp = (this->encode5to8((value >> 5) & 0x1F) << 24);
     tmp += (this->encode5to8(value & 0x1F)) << 16;
+    tmp += 0x6969;
     core->writeFifo(tmp);
 commandFile << std::hex << tmp;
     core->releaseFifo();
@@ -78,9 +79,9 @@ commandFile << "\n";
 commandFile.close();
 }
 
-void Rd53aCmd::wrRegister(uint32_t chipId, uint32_t address, uint32_t values[3]) {
+/*void Rd53aCmd::wrRegister(uint32_t chipId, uint32_t address, uint32_t values[3]) {
 
-}
+}*/
 
 void Rd53aCmd::rdRegister(uint32_t chipId, uint32_t address) {
 
