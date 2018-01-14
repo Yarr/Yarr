@@ -31,7 +31,7 @@ class Fei4Cfg : public FrontEndCfg, public Fei4GlobalCfg, public Fei4PixelCfg {
             lCap = 3.8;
             vcalOffset = 0;
             vcalSlope = 1.5;
-        }
+	}
 
         double toCharge(double vcal) {return this->toCharge(vcal, true, true);}
         double toCharge(double vcal, bool sCapOn=true, bool lCapOn=true) {
@@ -55,7 +55,7 @@ class Fei4Cfg : public FrontEndCfg, public Fei4GlobalCfg, public Fei4PixelCfg {
 
         void setScap(double c) {sCap = c;}
         void setLcap(double c) {lCap = c;}
-        void setVcalSlope(double s) {vcalSlope = s;}
+	void setVcalSlope(double s) {vcalSlope = s;}
         void setVcalOffset(double o) {vcalOffset = o;}
 
 		unsigned getChipId();

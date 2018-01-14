@@ -184,6 +184,8 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::map<unsigned, Histo1d*> chiDist;
         std::map<unsigned, Histo1d*> timeDist;
         std::map<unsigned, unsigned> innerCnt;
+	bool useScap;
+	bool useLcap;
 };
 
 class OccGlobalThresholdTune : public AnalysisAlgorithm {
