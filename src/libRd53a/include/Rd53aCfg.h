@@ -20,6 +20,7 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg {
         Rd53aCfg() {}
 
         double toCharge(double) {return 0;}
+        double toCharge(double, bool, bool) {return 0;}
 
         void toFileJson(json&) {};
         void fromFileJson(json&) {};
