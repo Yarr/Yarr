@@ -153,7 +153,7 @@ void Rd53aEmu::executeLoop() {
 //                      printf("m_feCfg->VcalHigh.read() = %d\n", m_feCfg->VcalHigh.read());
 //                      printf("m_feCfg->VcalMed.read() = %d\n", m_feCfg->VcalMed.read());
 //                      printf("m_feCfg->VcalHigh.read() - m_feCfg->VcalMed.read() = %d\n", m_feCfg->VcalHigh.read() - m_feCfg->VcalMed.read());
-                        float injection_voltage = (m_feCfg->VcalHigh.read() - m_feCfg->VcalMed.read()) * maximum_injection_voltage / 4096.0;
+                        float injection_voltage = (m_feCfg->InjVcalHigh.read() - m_feCfg->InjVcalMed.read()) * maximum_injection_voltage / 4096.0;
                         float injection_charge = injection_voltage * capacitance_times_coulomb;
 //                      printf("injection_voltage = %f\n", injection_voltage);
 
@@ -171,7 +171,7 @@ void Rd53aEmu::executeLoop() {
                                 noise_charge = m_rd53aLinPixelModelObjects[dc * 2 + pix - 128][row]->calculateNoise(); // overwrite the previous generic initialization
                                 float lin_maximum_global_threshold_voltage = 1.2; // what should this actually be?
 //                              printf("m_feCfg->VthresholdLin.read() = %d\n", m_feCfg->VthresholdLin.read());
-                                float lin_global_threshold_with_smearing = m_rd53aLinPixelModelObjects[dc * 2 + pix - 128][row]->calculateThreshold(m_feCfg->VthresholdLin.read());
+                                float lin_global_threshold_with_smearing = m_rd53aLinPixelModelObjects[dc * 2 + pix - 128][row]->calculateThreshold(m_feCfg->LinVth.read());
                                 float lin_global_threshold_voltage = (lin_global_threshold_with_smearing) * lin_maximum_global_threshold_voltage / 1024.0;
                                 float lin_global_threshold_charge = lin_global_threshold_voltage * capacitance_times_coulomb; // I imagine this might need a different capacitance
 
@@ -185,7 +185,7 @@ void Rd53aEmu::executeLoop() {
                                     if (m_pixelRegisters[dc * 2 + pix][row] & 0x1) {
                                       linAnalogHits += 1;
                                       analogHits->fill(dc * 2 + pix, row);
-                                      linScurve[dc * 2 + pix - 128][row]->fill((m_feCfg->VcalHigh.read() - m_feCfg->VcalMed.read()));
+                                      linScurve[dc * 2 + pix - 128][row]->fill((m_feCfg->InjVcalHigh.read() - m_feCfg->InjVcalMed.read()));
                                     }
                                 }
 
@@ -199,7 +199,7 @@ void Rd53aEmu::executeLoop() {
                                 float diff_maximum_global_threshold_voltage = 1.2; // what should this actually be?
 //                              printf("m_feCfg->Vth1Diff.read() = %d\n", m_feCfg->Vth1Diff.read());
 //                              printf("m_feCfg->Vth2Diff.read() = %d\n", m_feCfg->Vth2Diff.read());
-                                float diff_global_threshold_with_smearing = m_rd53aDiffPixelModelObjects[dc * 2 + pix - 264][row]->calculateThreshold(m_feCfg->Vth1Diff.read(), m_feCfg->Vth2Diff.read());
+                                float diff_global_threshold_with_smearing = m_rd53aDiffPixelModelObjects[dc * 2 + pix - 264][row]->calculateThreshold(m_feCfg->DiffVth1.read(), m_feCfg->DiffVth2.read());
                                 float diff_global_threshold_voltage = (diff_global_threshold_with_smearing) * diff_maximum_global_threshold_voltage / 1024.0;
                                 float diff_global_threshold_charge = diff_global_threshold_voltage * capacitance_times_coulomb; // I imagine this might need a different capacitance
 
@@ -213,7 +213,7 @@ void Rd53aEmu::executeLoop() {
                                     if (m_pixelRegisters[dc * 2 + pix][row] & 0x1) {
                                       diffAnalogHits += 1;
                                       analogHits->fill(dc * 2 + pix, row);
-                                      diffScurve[dc * 2 + pix - 264][row]->fill((m_feCfg->VcalHigh.read() - m_feCfg->VcalMed.read()));
+                                      diffScurve[dc * 2 + pix - 264][row]->fill((m_feCfg->InjVcalHigh.read() - m_feCfg->InjVcalMed.read()));
                                     }
                                 }
 
@@ -286,16 +286,16 @@ void Rd53aEmu::executeLoop() {
                         if (m_feCfg->PixMode.read() == 0x2) { // auto col = 1, auto row = 0, broadcast = 0
                             // configure all pixels in row m_feCfg->RegionRow.read() with value sent
                             for (unsigned dc = 0; dc < 200; dc++) {
-                                m_pixelRegisters[dc * 2][m_feCfg->RegionRow.read()] = (uint8_t) (data & 0x00FF);
-                                m_pixelRegisters[dc * 2 + 1][m_feCfg->RegionRow.read()] = (uint8_t) (data >> 8);
+                                m_pixelRegisters[dc * 2][m_feCfg->PixRegionRow.read()] = (uint8_t) (data & 0x00FF);
+                                m_pixelRegisters[dc * 2 + 1][m_feCfg->PixRegionRow.read()] = (uint8_t) (data >> 8);
 //                              printf("pixel %d %d 0x%x\n", dc * 2, m_feCfg->RegionRow.read(), data & 0x00FF);
                             }
                             // increment m_feCfg->RegionRow
-                            if (m_feCfg->RegionRow.read() + 1 < 400) {
-                                m_feCfg->RegionRow.write(m_feCfg->RegionRow.read() + 1);
+                            if (m_feCfg->PixRegionRow.read() + 1 < 400) {
+                                m_feCfg->PixRegionRow.write(m_feCfg->PixRegionRow.read() + 1);
                             }
                             else {
-                                m_feCfg->RegionRow.write(0);
+                                m_feCfg->PixRegionRow.write(0);
                             }
                         }
                     }

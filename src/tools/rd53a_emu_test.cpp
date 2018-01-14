@@ -214,17 +214,17 @@ int main(void) {
     myRd53a->writeRegister(4, &Rd53aGlobalCfg::CalColprSync4, 0x0000);
 
     // change some of the threshold voltages
-    myRd53a->writeRegister(4, &Rd53aGlobalCfg::Vth1Diff, 500);		// diff
-    myRd53a->writeRegister(4, &Rd53aGlobalCfg::Vth2Diff, 0);		// diff
-    myRd53a->writeRegister(4, &Rd53aGlobalCfg::VthresholdLin, 500);	// lin
+    myRd53a->writeRegister(4, &Rd53aGlobalCfg::DiffVth1, 500);		// diff
+    myRd53a->writeRegister(4, &Rd53aGlobalCfg::DiffVth2, 0);		// diff
+    myRd53a->writeRegister(4, &Rd53aGlobalCfg::LinVth, 500);	// lin
 
-    myRd53a->writeRegister(4, &Rd53aGlobalCfg::VcalMed, 0);		// injection
+    myRd53a->writeRegister(4, &Rd53aGlobalCfg::InjVcalMed, 0);		// injection
     // loop over injection charges
     for (int stats = 0; stats < 100; stats++) {
         for (int i = 0; i <= 4095; i += 16) {
             // increase the injection voltage (charge)
-            myRd53a->writeRegister(4, &Rd53aGlobalCfg::VcalHigh, i);
-            myRd53a->writeRegister(4, &Rd53aGlobalCfg::VcalMed, 0);
+            myRd53a->writeRegister(4, &Rd53aGlobalCfg::InjVcalHigh, i);
+            myRd53a->writeRegister(4, &Rd53aGlobalCfg::InjVcalMed, 0);
 
             // send a trigger - this could be put into a loop with various ways of masking
             myRd53a->trigger(0x2B, 0);

@@ -40,7 +40,7 @@ class Rd53aReg {
         }
 
         unsigned addr() const{
-          return m_addr;
+            return m_addr;
         }
     protected:
     private:
@@ -52,7 +52,7 @@ class Rd53aReg {
 
 class Rd53aGlobalCfg {
     public:
-        static const unsigned numRegs = 137;
+        static const unsigned numRegs = 138;
         Rd53aGlobalCfg();
         ~Rd53aGlobalCfg();
         void init();
@@ -73,67 +73,83 @@ class Rd53aGlobalCfg {
         Rd53aReg PixPortalHigh;
         Rd53aReg PixPortalLow;
         //1
-        Rd53aReg RegionCol;
+        Rd53aReg PixRegionCol;
         //2
-        Rd53aReg RegionRow;
+        Rd53aReg PixRegionRow;
         //3
         Rd53aReg PixMode;
-        Rd53aReg BMask;
+        Rd53aReg PixBMask;
         //4
         Rd53aReg PixDefaultConfig;
+
+        // Sync FE
         //5
-        Rd53aReg Ibiasp1Sync;
+        Rd53aReg SyncIbiasp1;
         //6
-        Rd53aReg Ibiasp2Sync;
+        Rd53aReg SyncIbiasp2;
         //7
-        Rd53aReg IbiasSfSync;
+        Rd53aReg SyncIbiasSf;
         //8
-        Rd53aReg IbiasKrumSync;
+        Rd53aReg SyncIbiasKrum;
         //9
-        Rd53aReg IbiasDiscSync;
+        Rd53aReg SyncIbiasDisc;
         //10
-        Rd53aReg IctrlSynctSync;
+        Rd53aReg SyncIctrlSynct;
         //11
-        Rd53aReg VblSync;
+        Rd53aReg SyncVbl;
         //12
-        Rd53aReg VthSync;
+        Rd53aReg SyncVth;
         //13
-        Rd53aReg VrefKrumSync;
+        Rd53aReg SyncVrefKrum;
+        //30 ***ooo
+        Rd53aReg SyncAutoZero;
+        Rd53aReg SyncSelC2F;
+        Rd53aReg SyncSelC4F;
+        Rd53aReg SyncFastTot;
+
+        // Linear FE
         //14
-        Rd53aReg PaInBiasLin;
+        Rd53aReg LinPaInBias;
         //15
-        Rd53aReg FcBiasLin;
+        Rd53aReg LinFcBias;
         //16
-        Rd53aReg KrumCurrLin;
+        Rd53aReg LinKrumCurr;
         //17
-        Rd53aReg LdacLin;
+        Rd53aReg LinLdac;
         //18
-        Rd53aReg CompLin;
+        Rd53aReg LinComp;
         //19
-        Rd53aReg RefKrumLin;
+        Rd53aReg LinRefKrum;
         //20
-        Rd53aReg VthresholdLin;
+        Rd53aReg LinVth;
+
+        // Diff FE
         //21
-        Rd53aReg PrmpDiff;
+        Rd53aReg DiffPrmp;
         //22
-        Rd53aReg FolDiff;
+        Rd53aReg DiffFol;
         //23
-        Rd53aReg PrecompDiff;
+        Rd53aReg DiffPrecomp;
         //24
-        Rd53aReg CompDiff;
+        Rd53aReg DiffComp;
         //25
-        Rd53aReg VffDiff;
+        Rd53aReg DiffVff;
         //26
-        Rd53aReg Vth1Diff;
+        Rd53aReg DiffVth1;
         //27
-        Rd53aReg Vth2Diff;
+        Rd53aReg DiffVth2;
         //28
-        Rd53aReg LccDiff;
+        Rd53aReg DiffLcc;
         //29
-        Rd53aReg ConfFeDiff;
+        Rd53aReg DiffLccEn;
+        Rd53aReg DiffFbCapEn;
+
+        // Power
         //31
         Rd53aReg SldoAnalogTrim;
         Rd53aReg SldoDigitalTrim;
+
+        // Digital Matrix
         //32
         Rd53aReg EnCoreColSync;
         //33
@@ -148,18 +164,16 @@ class Rd53aGlobalCfg {
         Rd53aReg LatencyConfig;
         //38
         Rd53aReg WrSyncDelaySync;
+
+        // Injection
         //39
-        Rd53aReg InjModeDel; // split
-        //40
-        Rd53aReg ClkDataDelay; // split
+        Rd53aReg InjEnDig;
+        Rd53aReg InjAnaMode;
+        Rd53aReg InjDelay;
         //41
-        Rd53aReg VcalHigh;
+        Rd53aReg InjVcalHigh;
         //42
-        Rd53aReg VcalMed;
-        //43
-        Rd53aReg ChSyncConf; // split
-        //44
-        Rd53aReg GlobalPulseRt;
+        Rd53aReg InjVcalMed;
         //46
         Rd53aReg CalColprSync1;
         //47
@@ -188,10 +202,27 @@ class Rd53aGlobalCfg {
         Rd53aReg CalColprDiff4;
         //59
         Rd53aReg CalColprDiff5;
+
+        // Digital Functions
+        //40 ***ooo
+        Rd53aReg ClkDelaySel;
+        Rd53aReg ClkDelay;
+        Rd53aReg CmdDelay;
+        //43
+        Rd53aReg ChSyncPhase;
+        Rd53aReg ChSyncLock;
+        Rd53aReg ChSyncUnlock;
+        //44
+        Rd53aReg GlobalPulseRt;
+
+        // I/O
         //60
         Rd53aReg DebugConfig;
         //61
-        Rd53aReg OutputConfig; // split
+        Rd53aReg OutputDataReadDelay;
+        Rd53aReg OutputSerType;
+        Rd53aReg OutputActiveLanes;
+        Rd53aReg OutputFmt;
         //62
         Rd53aReg OutPadConfig;
         //63
@@ -205,26 +236,129 @@ class Rd53aGlobalCfg {
         //67
         Rd53aReg VcoIbias;
         //68
-        Rd53aReg SerSelOut;
+        Rd53aReg SerSelOut0;
+        Rd53aReg SerSelOut1;
+        Rd53aReg SerSelOut2;
+        Rd53aReg SerSelOut3;
         //69
-        Rd53aReg CmlConfig; // TODO: this is composed of SER_INV_TAP, SER_EN_TAP, enable CMLs - how should this be broken up?
+        Rd53aReg CmlInvTap;
+        Rd53aReg CmlEnTap;
+        Rd53aReg CmlEn;
         //70
         Rd53aReg CmlTapBias0;
         //71
         Rd53aReg CmlTapBias1;
         //72
-        Rd53aReg CmlTampBias2;
+        Rd53aReg CmlTapBias2;
         //73
-        Rd53aReg AuroraCcCfg; // split
+        Rd53aReg AuroraCcWait;
+        Rd53aReg AuroraCcSend;
         //74
-        Rd53aReg AuroraCbCfg0; // split
+        Rd53aReg AuroraCbWaitLow;
+        Rd53aReg AuroraCbSend;
         //75
-        Rd53aReg AuroraCbCfg1;
+        Rd53aReg AuroraCbWaitHigh;
         //76
         Rd53aReg AuroraInitWait;
+        //45
+        Rd53aReg MonFrameSkip;
+        //101
+        Rd53aReg AutoReadA0;
+        //102
+        Rd53aReg AutoReadB0;
+        //103
+        Rd53aReg AutoReadA1;
+        //104
+        Rd53aReg AutoReadB1;
+        //105
+        Rd53aReg AutoReadA2;
+        //106
+        Rd53aReg AutoReadB2;
+        //107
+        Rd53aReg AutoReadA3;
+        //108
+        Rd53aReg AutoReadB3;
+
+        // Test & Monitoring
         //77
-        Rd53aReg MonitorMux; // split
-        //78-97 TODO: what should the naming scheme be?
+        Rd53aReg MonitorEnable;
+        Rd53aReg MonitorImonMux;
+        Rd53aReg MonitorVmonMux;
+        //78-81
+        Rd53aReg HitOr0MaskSync;
+        Rd53aReg HitOr1MaskSync;
+        Rd53aReg HitOr2MaskSync;
+        Rd53aReg HitOr3MaskSync;
+        //82-89
+        Rd53aReg HitOr0MaskLin0;
+        Rd53aReg HitOr0MaskLin1;
+        Rd53aReg HitOr1MaskLin0;
+        Rd53aReg HitOr1MaskLin1;
+        Rd53aReg HitOr2MaskLin0;
+        Rd53aReg HitOr2MaskLin1;
+        Rd53aReg HitOr3MaskLin0;
+        Rd53aReg HitOr3MaskLin1;
+        //90-97
+        Rd53aReg HitOr0MaskDiff0;
+        Rd53aReg HitOr0MaskDiff1;
+        Rd53aReg HitOr1MaskDiff0;
+        Rd53aReg HitOr1MaskDiff1;
+        Rd53aReg HitOr2MaskDiff0;
+        Rd53aReg HitOr2MaskDiff1;
+        Rd53aReg HitOr3MaskDiff0;
+        Rd53aReg HitOr3MaskDiff1;
+        //98
+        Rd53aReg AdcRefTrim;
+        Rd53aReg AdcTrim;
+        //99
+        Rd53aReg SensorCfg0;
+        Rd53aReg SensorCfg1;
+        //109
+        Rd53aReg RingOscEn;
+        //110-117
+        Rd53aReg RingOsc0;
+        Rd53aReg RingOsc1;
+        Rd53aReg RingOsc2;
+        Rd53aReg RingOsc3;
+        Rd53aReg RingOsc4;
+        Rd53aReg RingOsc5;
+        Rd53aReg RingOsc6;
+        Rd53aReg RingOsc7;
+        //118
+        Rd53aReg BcCounter;
+        //119
+        Rd53aReg TrigCounter;
+        //120
+        Rd53aReg LockLossCounter;
+        //121
+        Rd53aReg BflipWarnCounter;
+        //122
+        Rd53aReg BflipErrCounter;
+        //123
+        Rd53aReg CmdErrCounter;
+        //124-127
+        Rd53aReg FifoFullCounter0;
+        Rd53aReg FifoFullCounter1;
+        Rd53aReg FifoFullCounter2;
+        Rd53aReg FifoFullCounter3;
+        //128
+        Rd53aReg AiPixCol;
+        //129
+        Rd53aReg AiPixRow;
+        //130-133
+        Rd53aReg HitOrCounter0;
+        Rd53aReg HitOrCounter1;
+        Rd53aReg HitOrCounter2;
+        Rd53aReg HitOrCounter3;
+        //134
+        Rd53aReg SkipTriggerCounter;
+        //135
+        Rd53aReg ErrMask;
+        //136
+        Rd53aReg AdcRead;
+        //137
+        Rd53aReg SelfTrigEn;
+
 };
 #endif
 
