@@ -306,3 +306,19 @@ void Rd53aGlobalCfg::init() {
     //137
     SelfTrigEn.init(137, &m_cfg[137], 0, 4, 0); regMap["SelfTrigEn"] = &SelfTrigEn;
 }
+
+void Rd53aGlobalCfg::toFileJson(json &j) {
+    for(auto it : regMap) {
+         j["RD53A"]["GlobalConfig"][it.first] = it.second->read();
+    }    
+}
+
+void Rd53aGlobalCfg::fromFileJson(json &j) {
+    for (auto it : regMap) {
+        if (!j["RD53A"]["GlobalConfig"][it.first].empty()) {
+            it.second->write(j["RD53A"]["GlobalConfig"][it.first]);
+        } else {
+            std::cerr << " --> Error: Could not find register \"" << it.first << "\", using default!" << std::endl;
+        }
+    }
+}

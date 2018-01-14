@@ -61,6 +61,27 @@ class Rd53aGlobalCfg {
             return (this->*ref).read();
         }
 
+        uint16_t getValue(std::string name) {
+            if (regMap.find(name) != regMap.end()) {
+                return regMap[name]->read();
+            } else {
+                std::cerr << " --> Error: Could not find register \"" << name << "\"" << std::endl;
+            }
+            return 0;
+        }
+
+        void setValue(Rd53aReg Rd53aGlobalCfg::*ref, uint16_t val) {
+            (this->*ref).write(val);
+        }
+
+        void setValue(std::string name, uint16_t val) {
+            if (regMap.find(name) != regMap.end()) {
+                regMap[name]->write(val);
+            } else {
+                std::cerr << " --> Error: Could not find register \"" << name << "\"" << std::endl;
+            }
+        }
+
     protected:
         void toFileJson(json &j);
         void fromFileJson(json &j);
