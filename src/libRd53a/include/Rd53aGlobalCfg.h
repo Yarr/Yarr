@@ -19,7 +19,9 @@ using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::i
 
 class Rd53aReg {
     public:
-        Rd53aReg() {}
+        Rd53aReg() {
+            m_addr = 999;
+        }
 
         void init(unsigned addr, uint16_t *cfg, const unsigned bOffset, const unsigned bits, const uint16_t value) {
             m_addr = addr;
@@ -35,6 +37,7 @@ class Rd53aReg {
         }
 
         uint16_t read() const {
+            std::cout << m_addr << std::endl;
             unsigned mask = (1<<m_bits)-1;
             return ((*m_cfg >> m_bOffset) & mask);
         }

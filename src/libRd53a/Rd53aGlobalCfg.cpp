@@ -86,8 +86,7 @@ void Rd53aGlobalCfg::init() {
     DiffComp.init(24, &m_cfg[24], 0, 10, 528); regMap["DiffComp"] = &DiffComp;
     //25
     DiffVff.init(25, &m_cfg[25], 0, 10, 164); regMap["DiffVff"] = &DiffVff;
-    //26        //60
-        Rd53aReg DebugConfig;
+    //26
     DiffVth1.init(26, &m_cfg[26], 0, 10, 1023); regMap["DiffVth1"] = &DiffVth1;
     //27
     DiffVth2.init(27, &m_cfg[27], 0, 10, 0); regMap["DiffVth2"] = &DiffVth2;
@@ -214,46 +213,46 @@ void Rd53aGlobalCfg::init() {
     //45
     MonFrameSkip.init(45, &m_cfg[45], 0, 8, 50); regMap["MonFrameSkip"] = &MonFrameSkip;
     //101-102
-    AutoReadA0.init(101, &m_cfg[101], 0, 9, 136); regMap[""] = &AutoReadA0;
-    AutoReadB0.init(102, &m_cfg[102], 0, 9, 130); regMap[""] = &AutoReadB0;
+    AutoReadA0.init(101, &m_cfg[101], 0, 9, 136); regMap["AutoReadA0"] = &AutoReadA0;
+    AutoReadB0.init(102, &m_cfg[102], 0, 9, 130); regMap["AutoReadB0"] = &AutoReadB0;
     //103-104
-    AutoReadA1.init(103, &m_cfg[103], 0, 9, 118); regMap[""] = &AutoReadA1;
-    AutoReadB1.init(104, &m_cfg[104], 0, 9, 119); regMap[""] = &AutoReadB1;
+    AutoReadA1.init(103, &m_cfg[103], 0, 9, 118); regMap["AutoReadA1"] = &AutoReadA1;
+    AutoReadB1.init(104, &m_cfg[104], 0, 9, 119); regMap["AutoReadB1"] = &AutoReadB1;
     //105-106
-    AutoReadA2.init(105, &m_cfg[105], 0, 9, 120); regMap[""] = &AutoReadA2;
-    AutoReadB2.init(106, &m_cfg[106], 0, 9, 121); regMap[""] = &AutoReadB2;
+    AutoReadA2.init(105, &m_cfg[105], 0, 9, 120); regMap["AutoReadA2"] = &AutoReadA2;
+    AutoReadB2.init(106, &m_cfg[106], 0, 9, 121); regMap["AutoReadB2"] = &AutoReadB2;
     //107-108
-    AutoReadA3.init(107, &m_cfg[107], 0, 9, 122); regMap[""] = &AutoReadA3;
-    AutoReadB3.init(108, &m_cfg[108], 0, 9, 123); regMap[""] = &AutoReadB3;
+    AutoReadA3.init(107, &m_cfg[107], 0, 9, 122); regMap["AutoReadA3"] = &AutoReadA3;
+    AutoReadB3.init(108, &m_cfg[108], 0, 9, 123); regMap["AutoReadB3"] = &AutoReadB3;
 
     // Test & Monitoring
     //77
-    MonitorEnable.init(77, &m_cfg[77], 13, 1, 0); regMap[""] = &MonitorEnable;
-    MonitorImonMux.init(77, &m_cfg[77], 7, 6, 63); regMap[""] = &MonitorImonMux;
-    MonitorVmonMux.init(77, &m_cfg[77], 0, 7, 127); regMap[""] = &MonitorVmonMux;
+    MonitorEnable.init(77, &m_cfg[77], 13, 1, 0); regMap["MonitorEnable"] = &MonitorEnable;
+    MonitorImonMux.init(77, &m_cfg[77], 7, 6, 63); regMap["MonitorImonMux"] = &MonitorImonMux;
+    MonitorVmonMux.init(77, &m_cfg[77], 0, 7, 127); regMap["MonitorVmonMux"] = &MonitorVmonMux;
     //78-81
-    HitOr0MaskSync.init(78, &m_cfg[78], 0, 16, 0); regMap[""] = &HitOr0MaskSync;
-    HitOr1MaskSync.init(79, &m_cfg[79], 0, 16, 0); regMap[""] = &HitOr1MaskSync;
-    HitOr2MaskSync.init(80, &m_cfg[80], 0, 16, 0); regMap[""] = &HitOr2MaskSync;
-    HitOr3MaskSync.init(81, &m_cfg[81], 0, 16, 0); regMap[""] = &HitOr3MaskSync;
+    HitOr0MaskSync.init(78, &m_cfg[78], 0, 16, 0); regMap["HitOr0MaskSync"] = &HitOr0MaskSync;
+    HitOr1MaskSync.init(79, &m_cfg[79], 0, 16, 0); regMap["HitOr1MaskSync"] = &HitOr1MaskSync;
+    HitOr2MaskSync.init(80, &m_cfg[80], 0, 16, 0); regMap["HitOr2MaskSync"] = &HitOr2MaskSync;
+    HitOr3MaskSync.init(81, &m_cfg[81], 0, 16, 0); regMap["HitOr3MaskSync"] = &HitOr3MaskSync;
     //82-89
-    HitOr0MaskLin0.init(82, &m_cfg[82], 0, 16, 0); regMap[""] = &HitOr0MaskLin0;
-    HitOr0MaskLin1.init(83, &m_cfg[83], 0, 16, 0); regMap[""] = &HitOr0MaskLin1;
-    HitOr1MaskLin0.init(84, &m_cfg[84], 0, 16, 0); regMap[""] = &HitOr1MaskLin0;
-    HitOr1MaskLin1.init(85, &m_cfg[85], 0, 16, 0); regMap[""] = &HitOr1MaskLin1;
-    HitOr2MaskLin0.init(86, &m_cfg[86], 0, 16, 0); regMap[""] = &HitOr2MaskLin0;
-    HitOr2MaskLin1.init(87, &m_cfg[87], 0, 16, 0); regMap[""] = &HitOr2MaskLin1;
-    HitOr3MaskLin0.init(88, &m_cfg[88], 0, 16, 0); regMap[""] = &HitOr3MaskLin0;
-    HitOr3MaskLin1.init(89, &m_cfg[89], 0, 16, 0); regMap[""] = &HitOr3MaskLin1;
+    HitOr0MaskLin0.init(82, &m_cfg[82], 0, 16, 0); regMap["HitOr0MaskLin0"] = &HitOr0MaskLin0;
+    HitOr0MaskLin1.init(83, &m_cfg[83], 0, 16, 0); regMap["HitOr0MaskLin1"] = &HitOr0MaskLin1;
+    HitOr1MaskLin0.init(84, &m_cfg[84], 0, 16, 0); regMap["HitOr1MaskLin0"] = &HitOr1MaskLin0;
+    HitOr1MaskLin1.init(85, &m_cfg[85], 0, 16, 0); regMap["HitOr1MaskLin1"] = &HitOr1MaskLin1;
+    HitOr2MaskLin0.init(86, &m_cfg[86], 0, 16, 0); regMap["HitOr2MaskLin0"] = &HitOr2MaskLin0;
+    HitOr2MaskLin1.init(87, &m_cfg[87], 0, 16, 0); regMap["HitOr2MaskLin1"] = &HitOr2MaskLin1;
+    HitOr3MaskLin0.init(88, &m_cfg[88], 0, 16, 0); regMap["HitOr3MaskLin0"] = &HitOr3MaskLin0;
+    HitOr3MaskLin1.init(89, &m_cfg[89], 0, 16, 0); regMap["HitOr3MaskLin1"] = &HitOr3MaskLin1;
     //90-97
-    HitOr0MaskDiff0.init(90, &m_cfg[90], 0, 16, 0); regMap[""] = &HitOr0MaskDiff0;
-    HitOr0MaskDiff1.init(91, &m_cfg[91], 0, 16, 0); regMap[""] = &HitOr0MaskDiff1;
-    HitOr1MaskDiff0.init(92, &m_cfg[92], 0, 16, 0); regMap[""] = &HitOr1MaskDiff0;
-    HitOr1MaskDiff1.init(93, &m_cfg[93], 0, 16, 0); regMap[""] = &HitOr1MaskDiff1;
-    HitOr2MaskDiff0.init(94, &m_cfg[94], 0, 16, 0); regMap[""] = &HitOr2MaskDiff0;
-    HitOr2MaskDiff1.init(95, &m_cfg[95], 0, 16, 0); regMap[""] = &HitOr2MaskDiff1;
-    HitOr3MaskDiff0.init(96, &m_cfg[96], 0, 16, 0); regMap[""] = &HitOr3MaskDiff0;
-    HitOr3MaskDiff1.init(97, &m_cfg[97], 0, 16, 0); regMap[""] = &HitOr3MaskDiff1;
+    HitOr0MaskDiff0.init(90, &m_cfg[90], 0, 16, 0); regMap["HitOr0MaskDiff0"] = &HitOr0MaskDiff0;
+    HitOr0MaskDiff1.init(91, &m_cfg[91], 0, 16, 0); regMap["HitOr0MaskDiff1"] = &HitOr0MaskDiff1;
+    HitOr1MaskDiff0.init(92, &m_cfg[92], 0, 16, 0); regMap["HitOr1MaskDiff0"] = &HitOr1MaskDiff0;
+    HitOr1MaskDiff1.init(93, &m_cfg[93], 0, 16, 0); regMap["HitOr1MaskDiff1"] = &HitOr1MaskDiff1;
+    HitOr2MaskDiff0.init(94, &m_cfg[94], 0, 16, 0); regMap["HitOr2MaskDiff0"] = &HitOr2MaskDiff0;
+    HitOr2MaskDiff1.init(95, &m_cfg[95], 0, 16, 0); regMap["HitOr2MaskDiff1"] = &HitOr2MaskDiff1;
+    HitOr3MaskDiff0.init(96, &m_cfg[96], 0, 16, 0); regMap["HitOr3MaskDiff0"] = &HitOr3MaskDiff0;
+    HitOr3MaskDiff1.init(97, &m_cfg[97], 0, 16, 0); regMap["HitOr3MaskDiff1"] = &HitOr3MaskDiff1;
     //98
     AdcRefTrim.init(98, &m_cfg[98], 6, 4, 0); regMap["AdcRefTrim"] = &AdcRefTrim;
     AdcTrim.init(98, &m_cfg[98], 0, 6, 0); regMap["AdcTrim"] = &AdcTrim;
@@ -309,7 +308,8 @@ void Rd53aGlobalCfg::init() {
 
 void Rd53aGlobalCfg::toFileJson(json &j) {
     for(auto it : regMap) {
-         j["RD53A"]["GlobalConfig"][it.first] = it.second->read();
+        std::cout << it.first << std::endl;
+        j["RD53A"]["GlobalConfig"][it.first] = it.second->read();
     }    
 }
 
