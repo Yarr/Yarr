@@ -87,7 +87,7 @@ class Rd53aGlobalCfg {
         void fromFileJson(json &j);
     private:
     public:
-        uint16_t m_cfg[numRegs];
+        std::array<uint16_t, numRegs> m_cfg;
         std::map<std::string, Rd53aReg*> regMap;
 
         //0
