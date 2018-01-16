@@ -23,8 +23,9 @@ union pixelBits {
 };
 
 Rd53aPixelCfg::Rd53aPixelCfg() {
-    for(auto pixReg: pixRegs)
+    for(uint16_t &pixReg: pixRegs) {
         pixReg = 0x0;
+    }
 }
 
 uint16_t Rd53aPixelCfg::maskBits(uint16_t val, unsigned mask) {
