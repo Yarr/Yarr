@@ -8,6 +8,7 @@
 #include "EmuController.h"
 
 int main(void) {
+#if 0
     Rd53aCfg *feCfg = new Rd53aCfg();
 
     HwController *hwCtrl = NULL;
@@ -247,5 +248,6 @@ int main(void) {
 //    for (uint32_t i=0; i<32; i++)
 //        std::cout << "[" << i << "] = " << std::hex << "0x" << Rd53a::encode5to8(i) << std::dec << std::endl;
 
+#endif
     return 0;
 }

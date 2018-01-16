@@ -11,6 +11,8 @@
 // #################################
 
 #include <iostream>
+#include <chrono>
+#include <thread>
 
 #include "FrontEnd.h"
 #include "TxCore.h"
@@ -24,11 +26,12 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
         Rd53a(TxCore *arg_core, unsigned arg_channel);
         Rd53a(TxCore *arg_core, unsigned arg_txchannel, unsigned arg_rxchannel);
 
-        void configure() {}
+        void init();
+        void configure();
         void configureGlobal();
         void configurePixels();
 
-        void writeRegister(uint32_t chipId, Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value);
+        void writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value);
     protected:
     private:
 };

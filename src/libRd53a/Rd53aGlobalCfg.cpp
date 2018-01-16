@@ -22,15 +22,16 @@ void Rd53aGlobalCfg::init() {
         m_cfg[i] = 0x00;
 
     //0
-    PixPortalHigh.init(0, &m_cfg[0], 8, 8, 0x0); regMap["PixPortalHigh"] = &PixPortalHigh; // TODO rename odd/even
-    PixPortalLow.init(0, &m_cfg[0], 0, 8, 0x0); regMap["PixPortalLow"] = &PixPortalLow;
+    PixPortal.init(0, &m_cfg[0], 0, 16, 0x0); regMap["PixPortal"] = &PixPortal;
     //1
     PixRegionCol.init(1, &m_cfg[1], 0, 8, 0x0); regMap["PixRegionCol"] = &PixRegionCol;
     //2
     PixRegionRow.init(2, &m_cfg[2], 0, 9, 0x0); regMap["PixRegionRow"] = &PixRegionRow;
     //3
-    PixMode.init(3, &m_cfg[3], 4, 3, 0x0); regMap["PixMode"] = &PixMode;
-    PixBMask.init(3, &m_cfg[3], 0, 3, 0x0); regMap["PixBMask"] = &PixBMask;
+    PixBroadcastEn.init(3, &m_cfg[3], 5, 1, 0x0); regMap["PixBroadcastEn"] = &PixBroadcastEn;
+    PixAutoCol.init(3, &m_cfg[3], 4, 1, 0x0); regMap["PixAutoCol"] = &PixAutoCol;
+    PixAutoRow.init(3, &m_cfg[3], 3, 1, 0x0); regMap["PixAutoRow"] = &PixAutoRow;
+    PixBroadcastMask.init(3, &m_cfg[3], 0, 3, 0x0); regMap["PixBroadcastMask"] = &PixBroadcastMask;
     //4
     PixDefaultConfig.init(4, &m_cfg[4], 0, 16, 0x9CE2);  regMap["PixDefaultConfig"] = &PixDefaultConfig;
 

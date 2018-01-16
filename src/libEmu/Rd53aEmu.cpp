@@ -283,7 +283,7 @@ void Rd53aEmu::executeLoop() {
 //                      printf("being asked to configure pixels\n");
 //                      printf("m_feCfg->PixMode.read() = 0x%x\n", m_feCfg->PixMode.read());
 //                      printf("m_feCfg->BMask.read() = 0x%x\n", m_feCfg->BMask.read());
-                        if (m_feCfg->PixMode.read() == 0x2) { // auto col = 1, auto row = 0, broadcast = 0
+                        if (m_feCfg->PixAutoCol.read() == 0x1) { // auto col = 1, auto row = 0, broadcast = 0
                             // configure all pixels in row m_feCfg->RegionRow.read() with value sent
                             for (unsigned dc = 0; dc < 200; dc++) {
                                 m_pixelRegisters[dc * 2][m_feCfg->PixRegionRow.read()] = (uint8_t) (data & 0x00FF);

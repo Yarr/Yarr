@@ -56,6 +56,8 @@ class Rd53aReg {
 class Rd53aGlobalCfg {
     public:
         static const unsigned numRegs = 138;
+        std::array<uint16_t, numRegs> m_cfg;
+        
         Rd53aGlobalCfg();
         ~Rd53aGlobalCfg();
         void init();
@@ -90,19 +92,19 @@ class Rd53aGlobalCfg {
         void fromFileJson(json &j);
     private:
     public:
-        std::array<uint16_t, numRegs> m_cfg;
         std::map<std::string, Rd53aReg*> regMap;
 
         //0
-        Rd53aReg PixPortalHigh;
-        Rd53aReg PixPortalLow;
+        Rd53aReg PixPortal;
         //1
         Rd53aReg PixRegionCol;
         //2
         Rd53aReg PixRegionRow;
         //3
-        Rd53aReg PixMode;
-        Rd53aReg PixBMask;
+        Rd53aReg PixBroadcastEn;
+        Rd53aReg PixAutoCol;
+        Rd53aReg PixAutoRow;
+        Rd53aReg PixBroadcastMask;
         //4
         Rd53aReg PixDefaultConfig;
 

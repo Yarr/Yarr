@@ -33,7 +33,47 @@ Rd53a::Rd53a(TxCore *core, unsigned arg_txChannel, unsigned arg_rxChannel) : Fro
 	active = true;
 }
 
-void Rd53a::writeRegister(uint32_t chipId, Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value) {
-        unsigned test = (this->*ref).addr();
-        wrRegister(chipId, test, value);
+void Rd53a::writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value) {
+        (this->*ref).write(value);
+        wrRegister(m_chipId, (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
+}
+
+void Rd53a::init() {
+    this->ecr();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    this->bcr();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+}
+
+void Rd53a::configure() {
+    this->init();
+    this->configureGlobal();
+    while(!core->isCmdEmpty()){;}
+    this->configurePixels();
+    while(!core->isCmdEmpty()){;}
+}
+
+void Rd53a::configureGlobal() {
+    for (unsigned addr=0; addr<numRegs; addr++) {
+        this->wrRegister(m_chipId, addr, m_cfg[addr]);
+        if (addr % 20 == 0)
+            while(!core->isCmdEmpty()){;}
+    }
+}
+
+void Rd53a::configurePixels() {
+    // Setup pixel programming
+    this->writeRegister(&Rd53a::PixRegionCol, 0); 
+    this->writeRegister(&Rd53a::PixRegionRow, 0); 
+    this->writeRegister(&Rd53a::PixAutoCol, 1);
+    this->writeRegister(&Rd53a::PixAutoRow, 1);
+
+    // Writing two columns and six rows at the same time
+    for (unsigned col=0; col<n_Col; col+=2) {
+        for (unsigned row=0; row<n_Row; row+=6) {
+            this->wrRegisterBlock(m_chipId, 0, &pixRegs[Rd53aPixelCfg::toIndex(col, row)]);
+            if (row % 24 == 0)
+                while(!core->isCmdEmpty()){;}
+        }
+    }
 }

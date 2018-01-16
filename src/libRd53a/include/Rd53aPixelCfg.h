@@ -21,8 +21,8 @@ class Rd53aPixelCfg {
         static const unsigned n_DC= 200;
         static const unsigned n_Col = 400;
         static const unsigned n_Row = 192;
-    private:
         std::array<uint16_t, n_DC*n_Row> pixRegs;
+    private:
 
         inline uint16_t maskBits(uint16_t val, unsigned mask);
     public:
@@ -38,7 +38,10 @@ class Rd53aPixelCfg {
         unsigned getInjEn(unsigned col, unsigned row);
         unsigned getTDAC(unsigned col, unsigned row);
 
-        inline unsigned toIndex(unsigned col, unsigned row);
+        inline unsigned toIndex(unsigned col, unsigned row) {
+            return (col/2)*n_Row+row;
+        }
+
     protected:
         void toFileJson(json &j);
         void fromFileJson(json &j);

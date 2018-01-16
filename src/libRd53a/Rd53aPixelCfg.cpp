@@ -27,10 +27,6 @@ Rd53aPixelCfg::Rd53aPixelCfg() {
         pixReg = 0x0;
 }
 
-unsigned Rd53aPixelCfg::toIndex(unsigned col, unsigned row) {
-    return (col/2)*n_Row+row;
-}
-
 uint16_t Rd53aPixelCfg::maskBits(uint16_t val, unsigned mask) {
     return (val & (0xFFFF & (~mask)));
 }
