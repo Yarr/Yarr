@@ -177,7 +177,7 @@ void Rd53aGlobalCfg::init() {
     OutputActiveLanes.init(61, &m_cfg[61], 2, 4, 0xF); regMap["OutputActiveLanes"] = &OutputActiveLanes;
     OutputFmt.init(61, &m_cfg[61], 0, 2, 0); regMap["OutputFmt"] = &OutputFmt;
     //62
-    OutPadConfig.init(62, &m_cfg[62], 0, 13, 0); regMap["OutPadConfig"] = &OutPadConfig;
+    OutPadConfig.init(62, &m_cfg[62], 0, 13, 0x1404); regMap["OutPadConfig"] = &OutPadConfig;
     //63
     GpLvdsRoute.init(63, &m_cfg[63], 0, 3, 0); regMap["GpLvdsRoute"] = &GpLvdsRoute;
     //64
