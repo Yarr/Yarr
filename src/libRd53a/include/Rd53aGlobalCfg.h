@@ -254,7 +254,12 @@ class Rd53aGlobalCfg {
         //63
         Rd53aReg GpLvdsRoute;
         //64
-        Rd53aReg CdrConfig;
+        Rd53aReg CdrSelDelClk;
+        Rd53aReg CdrPdSel;
+        Rd53aReg CdrPdDel;
+        Rd53aReg CdrEnGck;
+        Rd53aReg CdrVcoGain;
+        Rd53aReg CdrSelSerClk;
         //65
         Rd53aReg VcoBuffBias;
         //66

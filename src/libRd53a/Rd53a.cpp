@@ -38,19 +38,23 @@ void Rd53a::writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value) {
         wrRegister(m_chipId, (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
 }
 
-void Rd53a::init() {
-    this->ecr();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    this->bcr();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-}
-
 void Rd53a::configure() {
     this->init();
     this->configureGlobal();
     while(!core->isCmdEmpty()){;}
     this->configurePixels();
     while(!core->isCmdEmpty()){;}
+}
+
+void Rd53a::init() {
+    this->ecr();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    this->bcr();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    this->writeRegister(&Rd53a::GlobalPulseRt, 0x17F); // Reset a whole bunch of things
+    this->globalPulse(m_chipId, 10);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    this->writeRegister(&Rd53a::GlobalPulseRt, 0x0);
 }
 
 void Rd53a::configureGlobal() {

@@ -114,7 +114,7 @@ void Rd53aGlobalCfg::init() {
     //36
     EnCoreColDiff2.init(36, &m_cfg[36], 0, 1, 1); regMap["EnCoreColDiff2"] = &EnCoreColDiff2;
     //37
-    LatencyConfig.init(37, &m_cfg[37], 0, 9, 500); regMap["LatencyConfig"] = &LatencyConfig;
+    LatencyConfig.init(37, &m_cfg[37], 0, 9, 64); regMap["LatencyConfig"] = &LatencyConfig;
     //38
     WrSyncDelaySync.init(38, &m_cfg[38], 0, 5, 16); regMap["WrSyncDelaySync"] = &WrSyncDelaySync;
 
@@ -181,7 +181,12 @@ void Rd53aGlobalCfg::init() {
     //63
     GpLvdsRoute.init(63, &m_cfg[63], 0, 3, 0); regMap["GpLvdsRoute"] = &GpLvdsRoute;
     //64
-    CdrConfig.init(64, &m_cfg[64], 0, 13, 0); regMap["CdrConfig"] = &CdrConfig;
+    CdrSelDelClk.init(64, &m_cfg[64], 13, 1, 0); regMap["CdrSelDelClk"] = &CdrSelDelClk;
+    CdrPdSel.init(64, &m_cfg[64], 11, 2, 0); regMap["CdrPdSel"] = &CdrPdSel;
+    CdrPdDel.init(64, &m_cfg[64], 7, 4, 8); regMap["CdrPdDel"] = &CdrPdDel;
+    CdrEnGck.init(64, &m_cfg[64], 6, 1, 0); regMap["CdrEnGck"] = &CdrEnGck;
+    CdrVcoGain.init(64, &m_cfg[64], 3, 3, 3); regMap["CdrVcoGain"] = &CdrVcoGain;
+    CdrSelSerClk.init(64, &m_cfg[64], 0, 3, 3); regMap["CdrSelSerClk"] = &CdrSelSerClk;
     //65
     VcoBuffBias.init(65, &m_cfg[65], 0, 10, 400); regMap["VcoBuffBias"] = &VcoBuffBias;
     //66
@@ -212,7 +217,7 @@ void Rd53aGlobalCfg::init() {
     //76
     AuroraInitWait.init(76, &m_cfg[76], 0, 11, 32); regMap["AuroraInitWait"] = &AuroraInitWait;
     //45
-    MonFrameSkip.init(45, &m_cfg[45], 0, 8, 50); regMap["MonFrameSkip"] = &MonFrameSkip;
+    MonFrameSkip.init(45, &m_cfg[45], 0, 8, 200); regMap["MonFrameSkip"] = &MonFrameSkip;
     //101-102
     AutoReadA0.init(101, &m_cfg[101], 0, 9, 136); regMap["AutoReadA0"] = &AutoReadA0;
     AutoReadB0.init(102, &m_cfg[102], 0, 9, 130); regMap["AutoReadB0"] = &AutoReadB0;
