@@ -162,9 +162,9 @@ void Rd53aGlobalCfg::init() {
     ClkDelay.init(40, &m_cfg[40], 4, 4, 0); regMap["ClkDelay"] = &ClkDelay;
     CmdDelay.init(40, &m_cfg[40], 0, 4, 0); regMap["CmdDelay"] = &CmdDelay;
     //43
-    ChSyncPhase.init(43, &m_cfg[43], 8, 2, 0); regMap["ChSyncPhase"] = &ChSyncPhase;
-    ChSyncLock.init(43, &m_cfg[43], 4, 4, 0); regMap["ChSyncLock"] = &ChSyncLock;
-    ChSyncUnlock.init(43, &m_cfg[43], 0, 4, 0); regMap["ChSyncUnlock"] = &ChSyncUnlock;
+    ChSyncPhase.init(43, &m_cfg[43], 10, 2, 0); regMap["ChSyncPhase"] = &ChSyncPhase;
+    ChSyncLock.init(43, &m_cfg[43], 5, 5, 16); regMap["ChSyncLock"] = &ChSyncLock;
+    ChSyncUnlock.init(43, &m_cfg[43], 0, 5, 8); regMap["ChSyncUnlock"] = &ChSyncUnlock;
     //44
     GlobalPulseRt.init(44, &m_cfg[44], 0, 16, 0); regMap["GlobalPulseRt"] = &GlobalPulseRt;
 
@@ -203,9 +203,9 @@ void Rd53aGlobalCfg::init() {
     CmlEnTap.init(69, &m_cfg[69], 4, 2, 0x3); regMap["CmlEnTap"] = &CmlEnTap;
     CmlEn.init(69, &m_cfg[69], 0, 4, 0xF); regMap["CmlEn"] = &CmlEn;
     //70-72
-    CmlTapBias0.init(70, &m_cfg[70], 10, 0, 500); regMap["CmlTapBias0"] = &CmlTapBias0;
-    CmlTapBias1.init(71, &m_cfg[71], 10, 0, 0); regMap["CmlTapBias1"] = &CmlTapBias1;
-    CmlTapBias2.init(72, &m_cfg[72], 10, 0, 0); regMap["CmlTapBias2"] = &CmlTapBias2;
+    CmlTapBias0.init(70, &m_cfg[70], 0, 10, 500); regMap["CmlTapBias0"] = &CmlTapBias0;
+    CmlTapBias1.init(71, &m_cfg[71], 0, 10, 0); regMap["CmlTapBias1"] = &CmlTapBias1;
+    CmlTapBias2.init(72, &m_cfg[72], 0, 10, 0); regMap["CmlTapBias2"] = &CmlTapBias2;
     //73
     AuroraCcWait.init(73, &m_cfg[73], 2, 6, 25); regMap["AuroraCcWait"] = &AuroraCcWait;
     AuroraCcSend.init(73, &m_cfg[73], 0, 2, 3); regMap["AuroraCcSend"] = &AuroraCcSend;
