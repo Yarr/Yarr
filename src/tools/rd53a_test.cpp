@@ -43,8 +43,52 @@ int main(void) {
     //spec.writeFifo(0x6666d271);
     
     Rd53a fe(&spec);
-    fe.configure();
+    //fe.configure();
+
+    fe.configureGlobal();
+    fe.configurePixels();
+    
+    fe.writeRegister(&Rd53a::InjEnDig, 1);
+    fe.writeRegister(&Rd53a::LatencyConfig, 32);
+    fe.writeRegister(&Rd53a::CalColprSync1, 0xFFFF);
+    //unsigned lin_start = 128;
+    //unsigned lin_end = 263;
+    //for (unsigned col=lin_start; col<lin_end; col++) {
+    /*
+        for (unsigned row=0; row<192; row+=8) {
+            fe.setEn(1, 128, row);
+            fe.setInjEn(1, 128, row);
+        }
+        fe.configurePixels();
+    */
+    fe.writeRegister(&Rd53a::PixRegionCol, 100);
+    fe.writeRegister(&Rd53a::PixRegionRow, 0);
+    fe.writeRegister(&Rd53a::PixPortal, 0xFFFF);
+    fe.writeRegister(&Rd53a::PixRegionRow, 1);
+    fe.writeRegister(&Rd53a::PixPortal, 0xFFFF);
+    fe.writeRegister(&Rd53a::PixRegionRow, 2);
+    fe.writeRegister(&Rd53a::PixPortal, 0xFFFF);
+    sleep(1);
+
+// {Cal,Cal}{ChipId[3:0],CalEdgeMode,CalEdgeDelay[2:0],CalEdgeWidth[5:4]}{CalEdgeWidth[3:0],CalAuxMode,CalAuxDly[4:0]}
+//void Rd53aCmd::cal(uint32_t chipId, uint32_t mode, uint32_t delay, uint32_t duration, uint32_t aux_mode, uint32_t aux_delay) {
+    for (unsigned i=0; i<1; i++) {
+        std::cout << "Trigger: " << i << std::endl;
+        //fe.cal(0, 0, 0, 10, 0, 0);
+        //std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        //spec.writeFifo(0x69696969);
+        fe.trigger(0, 0, 0x8, 15);
+        fe.cal(0, 1, 0, 50, 0, 0);
+        fe.trigger(0x1, 7, 0, 0);
+        spec.writeFifo(0x69696969);
+        spec.writeFifo(0x69696969);
+        fe.trigger(0, 0, 0xF, 1);
+        fe.trigger(0xF, 2, 0xF, 3);
+        sleep(1);
+    }
+        
 #if 0
+    //}
     fe.wrRegister(0xF, 44, 0x4); // Reset aurora global pulse route
     spec.writeFifo(0x5c5cd28b); // Global pulse
 

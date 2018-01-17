@@ -67,15 +67,16 @@ void Rd53a::configureGlobal() {
 
 void Rd53a::configurePixels() {
     // Setup pixel programming
-    this->writeRegister(&Rd53a::PixRegionCol, 0); 
-    this->writeRegister(&Rd53a::PixRegionRow, 0); 
-    this->writeRegister(&Rd53a::PixAutoCol, 1);
+    this->writeRegister(&Rd53a::PixAutoCol, 0);
     this->writeRegister(&Rd53a::PixAutoRow, 1);
 
     // Writing two columns and six rows at the same time
-    for (unsigned col=0; col<n_Col; col+=2) {
-        for (unsigned row=0; row<n_Row; row+=6) {
-            this->wrRegisterBlock(m_chipId, 0, &pixRegs[Rd53aPixelCfg::toIndex(col, row)]);
+    for (unsigned col=0; col<n_DC; col++) {
+        this->writeRegister(&Rd53a::PixRegionCol, col);
+        this->writeRegister(&Rd53a::PixRegionRow, 0); 
+        for (unsigned row=0; row<n_Row; row+=1) {
+            //this->wrRegisterBlock(m_chipId, 0, &pixRegs[Rd53aPixelCfg::toIndex(col, row)]);
+            this->wrRegister(m_chipId, 0, pixRegs[Rd53aPixelCfg::toIndex(col, row)]);
             if (row % 24 == 0)
                 while(!core->isCmdEmpty()){;}
         }

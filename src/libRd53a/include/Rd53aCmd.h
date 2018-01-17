@@ -26,7 +26,7 @@ class Rd53aCmd {
         void rdRegister(uint32_t chipId, uint32_t address);
 
         // Fast Commands
-        void trigger(uint32_t bc, uint32_t tag);
+        void trigger(uint32_t bc, uint32_t tag, uint32_t bc2=0, uint32_t tag2=0);
         void ecr();
         void bcr();
 

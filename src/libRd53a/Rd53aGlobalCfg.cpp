@@ -33,7 +33,7 @@ void Rd53aGlobalCfg::init() {
     PixAutoRow.init(3, &m_cfg[3], 3, 1, 0x0); regMap["PixAutoRow"] = &PixAutoRow;
     PixBroadcastMask.init(3, &m_cfg[3], 0, 3, 0x0); regMap["PixBroadcastMask"] = &PixBroadcastMask;
     //4
-    PixDefaultConfig.init(4, &m_cfg[4], 0, 16, 0x9CE2);  regMap["PixDefaultConfig"] = &PixDefaultConfig;
+    PixDefaultConfig.init(4, &m_cfg[4], 0, 16, 0x0);  regMap["PixDefaultConfig"] = &PixDefaultConfig;
 
     // Sync FE
     //5
@@ -120,8 +120,8 @@ void Rd53aGlobalCfg::init() {
 
     // Injection
     //39
-    InjEnDig.init(39, &m_cfg[39], 5, 1, 0); regMap["InjEnDig"] = &InjEnDig;
-    InjAnaMode.init(39, &m_cfg[39], 4, 1, 1); regMap["InjAnaMode"] = &InjAnaMode;
+    InjAnaMode.init(39, &m_cfg[39], 5, 1, 0); regMap["InjAnaMode"] = &InjAnaMode;
+    InjEnDig.init(39, &m_cfg[39], 4, 1, 0); regMap["InjEnDig"] = &InjEnDig;
     InjDelay.init(39, &m_cfg[39], 0, 4, 0); regMap["InjDelay"] = &InjDelay;
     //41
     InjVcalHigh.init(41, &m_cfg[41], 0, 12, 500); regMap["InjVcalHigh"] = &InjVcalHigh;

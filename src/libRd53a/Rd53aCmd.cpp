@@ -36,8 +36,19 @@ uint32_t Rd53aCmd::encode5to8(uint32_t val) {
     return Rd53aCmd::enc5to8[val & 0x1F];
 }
 
-void Rd53aCmd::trigger(uint32_t bc, uint32_t tag) {
-    core->writeFifo((Rd53aCmd::encTrigger[0xF & bc] << 16) | (Rd53aCmd::enc5to8[tag & 0x1F]));
+void Rd53aCmd::trigger(uint32_t bc, uint32_t tag, uint32_t bc2, uint32_t tag2) {
+    uint32_t tmp = 0;
+    if (bc>0) {
+        tmp += ((Rd53aCmd::encTrigger[0xF & bc] << 24) | (Rd53aCmd::enc5to8[tag & 0x1F] << 16));
+    } else {
+        tmp += 0x69690000;
+    }
+    if (bc2 >0 ) {
+        tmp += ((Rd53aCmd::encTrigger[0xF & bc2] << 8) | (Rd53aCmd::enc5to8[tag2 & 0x1F]));
+    } else {
+        tmp += 0x6969;
+    }
+    core->writeFifo(tmp);
     core->releaseFifo();
 }
 
