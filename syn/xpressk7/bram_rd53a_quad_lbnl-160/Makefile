@@ -28,9 +28,6 @@ endif
 #target for performing local synthesis
 all: bitstream
 
-SOURCES_VerilogFile := \
-../../../rtl/kintex7/rx-core/descrambler.v
-
 SOURCES_XCIFile := \
 ../../../ip-cores/kintex7/fifo_29x32/fifo_29x32.xci \
 ../../../ip-cores/kintex7/fifo_605x32/fifo_605x32.xci \
@@ -54,11 +51,13 @@ SOURCES_XCIFile := \
 ../../../ip-cores/kintex7/ila_rx_dma_wb/ila_rx_dma_wb.xci \
 ../../../ip-cores/kintex7/clk_gen/clk_gen.xci
 
+SOURCES_VerilogFile := \
+../../../rtl/kintex7/rx-core/descrambler.v
+
 SOURCES_VHDLFile := \
 ../../../rtl/kintex7/rx-core/wb_rx_bridge.vhd \
 ../../../rtl/tx-core/wb_tx_core.vhd \
 ../../../rtl/common/generic_async_fifo_wrapper.vhd \
-board_pkg.vhd \
 ../../../rtl/common/k_dual_bram.vhd \
 ../../../rtl/kintex7/rx-core/decode_8b10b/decode_8b10b_bram.vhd \
 ../../../rtl/kintex7/rx-core/wb_rx_core.vhd \
@@ -98,6 +97,7 @@ board_pkg.vhd \
 ../../../rtl/kintex7/wbexp-core/p2l_dma_master.vhd \
 ../../../rtl/kintex7/rx-core/decode_8b10b/decode_8b10b_rtl.vhd \
 ../../../rtl/tx-core/trigger_unit.vhd \
+board_pkg.vhd \
 ../../../rtl/common/wb_addr_decoder.vhd \
 ../../../rtl/kintex7/rx-core/cdr_serdes.vhd \
 ../../../rtl/kintex7/rx-core/data_alignment.vhd \
@@ -107,13 +107,13 @@ board_pkg.vhd \
 ../../../rtl/common/simple_counter.vhd
 
 SOURCES_XDCFile := \
-../xpressk7-fmc-quad-dp.xdc \
+../xpressk7-fmc-quad-dp-lbnl.xdc \
 ../xpressk7.xdc \
 ../xpressk7-timing.xdc
 
 files.tcl:
-		@$(foreach sourcefile, $(SOURCES_VerilogFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
 		@$(foreach sourcefile, $(SOURCES_XCIFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
+		@$(foreach sourcefile, $(SOURCES_VerilogFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
 		@$(foreach sourcefile, $(SOURCES_VHDLFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
 		@$(foreach sourcefile, $(SOURCES_XDCFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
 

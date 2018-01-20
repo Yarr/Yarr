@@ -63,10 +63,9 @@ SOURCES_VHDLFile := \
 ../../../rtl/kintex7/rx-core/wb_rx_core.vhd \
 ../../../rtl/kintex7/wbexp-core/p2l_decoder.vhd \
 ../../../rtl/kintex7/rx-core/decode_8b10b/decode_8b10b_lut.vhd \
-board_pkg.vhd \
 ../../../rtl/kintex7/wbexp-core/l2p_arbiter.vhd \
 ../../../rtl/common/common_pkg.vhd \
-../../../rtl/kintex7/wbexp-core/gn4124_core_pkg.vhd \
+../../../rtl/kintex7/wbexp-core/l2p_dma_master.vhd \
 ../../../rtl/kintex7/rx-core/decode_8b10b/decode_8b10b_wrapper.vhd \
 ../../../rtl/trigger-logic/eudet_tlu.vhd \
 ../app.vhd \
@@ -76,8 +75,9 @@ board_pkg.vhd \
 ../../../rtl/kintex7/wbexp-core/wbmaster32.vhd \
 ../../../rtl/kintex7/rx-core/gearbox32to66.vhd \
 ../../../rtl/kintex7/ddr3k7-core/ddr3_ctrl_wb.vhd \
+board_pkg.vhd \
 ../../../rtl/kintex7/rx-core/decode_8b10b/decode_8b10b_lut_base.vhd \
-../../../rtl/kintex7/wbexp-core/l2p_dma_master.vhd \
+../../../rtl/kintex7/wbexp-core/gn4124_core_pkg.vhd \
 ../app_pkg.vhd \
 ../../../rtl/kintex7/wbexp-core/wbexp_core_pkg.vhd \
 ../../../rtl/common/rr_arbiter.vhd \
@@ -107,7 +107,7 @@ board_pkg.vhd \
 ../../../rtl/common/simple_counter.vhd
 
 SOURCES_XDCFile := \
-../xpressk7-fmc-quad-dp.xdc \
+../xpressk7-fmc-quad-dp-lbnl.xdc \
 ../xpressk7.xdc \
 ../xpressk7-timing.xdc
 
