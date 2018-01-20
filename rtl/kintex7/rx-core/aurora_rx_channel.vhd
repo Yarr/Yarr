@@ -10,6 +10,9 @@ library IEEE;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library unisim ;
+use unisim.vcomponents.all ;
+
 entity aurora_rx_channel is
     generic (
         g_NUM_LANES : integer range 1 to 4 := 1
@@ -97,13 +100,18 @@ architecture behavioral of aurora_rx_channel is
         );
     END COMPONENT;
     
-    constant c_RD53_IDLE : std_logic_vector(7 downto 0) := x"78";
+    constant c_AURORA_IDLE : std_logic_vector(7 downto 0) := x"78";
+    constant c_AURORA_SEP : std_logic_vector(7 downto 0) := x"1E";
     
+    signal rx_data_s : std_logic_vector(63 downto 0);
+    signal rx_valid_s : std_logic;
 
     type rx_data_array is array (g_NUM_LANES-1 downto 0) of std_logic_vector(63 downto 0);
     signal rx_data : rx_data_array;
     type rx_header_array is array (g_NUM_LANES-1 downto 0) of std_logic_vector(1 downto 0);
     signal rx_header : rx_header_array;
+    type rx_status_array is array (g_NUM_LANES-1 downto 0) of std_logic_vector(7 downto 0);
+    signal rx_status : rx_status_array;
     signal rx_data_valid : std_logic_vector(g_NUM_LANES-1 downto 0);
     
     signal rx_fifo_dout :rx_data_array;
@@ -115,9 +123,29 @@ architecture behavioral of aurora_rx_channel is
     signal rx_fifo_wren : std_logic_vector(g_NUM_LANES-1 downto 0);
     
     signal channel : integer range 0 to g_NUM_LANES-1;
+    
+    COMPONENT ila_rx_dma_wb
+    PORT (
+        clk : IN STD_LOGIC;
+        probe0 : IN STD_LOGIC_VECTOR(31 DOWNTO 0); 
+        probe1 : IN STD_LOGIC_VECTOR(63 DOWNTO 0); 
+        probe2 : IN STD_LOGIC_VECTOR(63 DOWNTO 0); 
+        probe3 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe4 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe5 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe6 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe7 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe8 : IN STD_LOGIC_VECTOR(31 DOWNTO 0); 
+        probe9 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe10 : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+        probe11 : IN STD_LOGIC_VECTOR(0 DOWNTO 0)
+    );
+    END COMPONENT  ;
             
 begin
 
+    rx_data_o <= rx_data_s;
+    rx_valid_o <= rx_valid_s;
 	
 	-- Arbiter
 	cmp_rr_arbiter : rr_arbiter port map (
@@ -131,17 +159,18 @@ begin
     begin
         if (rst_n_i = '0') then
             rx_fifo_rden <= (others => '0');
-            rx_valid_o <= '0';
+            rx_data_s <= (others => '0');
+            rx_valid_s <= '0';
             channel <= 0;            
         elsif rising_edge(clk_rx_i) then
             rx_fifo_rden <= rx_fifo_rden_t;
             channel <= log2_ceil(to_integer(unsigned(rx_fifo_rden_t)));
             if (unsigned(rx_fifo_rden) = 0 or ((rx_fifo_rden and rx_fifo_empty) = rx_fifo_rden)) then
-                rx_valid_o <= '0';
-                rx_data_o <= x"DEADBEEFDEADBEEF";
+                rx_valid_s <= '0';
+                rx_data_s <= x"DEADBEEFDEADBEEF";
             else
-                rx_valid_o <= '1';
-                rx_data_o <= rx_fifo_dout(channel);
+                rx_valid_s <= '1';
+                rx_data_s <= rx_fifo_dout(channel);
             end if;
         end if;
     end process reg_proc;
@@ -156,22 +185,55 @@ begin
             rx_data_o => rx_data(I),
             rx_header_o => rx_header(I),
             rx_valid_o => rx_data_valid(I),
-            rx_stat_o => open
+            rx_stat_o => rx_status(I)
         );
-        rx_fifo_din(I) <= rx_data(I);
-        rx_fifo_wren(I) <= rx_data_valid(I) when (rx_data(I)(63 downto 56) /= c_RD53_IDLE) else '0';
-        cmp_rx_channel_fifo : rx_channel_fifo PORT MAP (
+        
+        -- TODO need to save register reads!
+        -- TODO use 
+        
+        -- We expect these types of data:
+        -- b01 - D[63:0] - 64 bit data
+        -- b10 - 0x1E - 0x04 - 0xXXXX - D[31:0] - 32 bit data
+        -- b10 - 0x1E - 0x00 - 0x0000 - 0x00000000 - 0 bit data
+        -- b10 - 0x78 - Flag[7:0] - 0xXXXX - 0xXXXXXXXX - Idle
+        -- b10 - 0xB4 - D[55:0] - Register read (MM)
+        
+        -- Swapping [63:32] and [31:0] to reverse swapping by casting 64-bit to uint32_t
+        rx_fifo_din(I) <= rx_data(I)(31 downto 0) & rx_data(I)(63 downto 32) when (rx_header(I) = "01") else
+                          rx_data(I)(31 downto 0) & x"FFFFFFFF" when (rx_data(I)(63 downto 56) = c_AURORA_SEP) else
+                          x"FFFFFFFFFFFFFFFF";
+        rx_fifo_wren(I) <= rx_data_valid(I) when (rx_header(I) = "01") else
+                           rx_data_valid(I) when ((rx_data(I)(63 downto 56) = c_AURORA_SEP) and (rx_data(I)(55 downto 48) = x"04")) else
+                           '0';
+                           
+        cmp_lane_fifo : rx_channel_fifo PORT MAP (
             rst => not rst_n_i,
             wr_clk => clk_rx_i,
             rd_clk => clk_rx_i,
             din => rx_fifo_din(I),
-            wr_en => rx_fifo_wren(I),
+            wr_en => rx_fifo_wren(I) and enable_i,
             rd_en => rx_fifo_rden(I),
             dout => rx_fifo_dout(I),
             full => rx_fifo_full(I),
             empty => rx_fifo_empty(I)
         );        
     end generate lane_loop;
-
-
+    
+    aurora_channel_debug : ila_rx_dma_wb
+    PORT MAP (
+      clk => clk_rx_i,
+      probe0 => x"00000000", 
+      probe1 => rx_data_s, 
+      probe2 => rx_fifo_din(0), 
+      probe3(0) => rx_fifo_wren(0),
+      probe4(0) => rx_fifo_wren(1),
+      probe5(0) => rx_fifo_wren(2), 
+      probe6(0) => rx_fifo_wren(3),
+      probe7(0) => rx_valid_s,
+      probe8 => x"00000000",
+      probe9(0) => rx_fifo_rden(0),
+      probe10(0) => rx_fifo_empty(0),
+      probe11(0) => '0'
+    );
+    
 end behavioral;

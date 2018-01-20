@@ -106,7 +106,7 @@ architecture behavioral of aurora_rx_lane is
     end component descrambler;
 
     constant g_SERDES_TYPE : string := "CUSTOM";
-    constant c_SLIP_SERDES_MAX : unsigned(7 downto 0) := to_unsigned(0, 8); 
+    constant c_SLIP_SERDES_MAX : unsigned(7 downto 0) := to_unsigned(1, 8); 
     
 --    constant g_SERDES_TYPE : string := "XAPP1017";
 --    constant c_SLIP_SERDES_MAX : unsigned(7 downto 0) := to_unsigned(8, 8); 
@@ -129,6 +129,7 @@ architecture behavioral of aurora_rx_lane is
     signal serdes_data2 : std_logic_vector(1 downto 0);
     signal serdes_data2_d : std_logic_vector(1 downto 0);
     signal serdes_data2_valid : std_logic_vector(1 downto 0);
+    signal serdes_data2_sel : std_logic;
     signal serdes_lock : std_logic;
 
     -- 8 to 32
@@ -196,7 +197,7 @@ begin
       probe5(0) => gearbox_slip, 
       probe6(0) => serdes_slip,
       probe7(0) => descrambled_data_valid,
-      probe8 => x"00" & std_logic_vector(sync_cnt) & x"0" & serdes_lock & std_logic_vector(slip_cnt) & bit_time_value & descrambled_header,
+      probe8 => x"00" & std_logic_vector(sync_cnt) & "00" & serdes_data2_valid & serdes_lock & std_logic_vector(slip_cnt) & bit_time_value & descrambled_header,
       probe9(0) => '0',
       probe10(0) => '0',
       probe11(0) => '0'
@@ -275,7 +276,7 @@ begin
             clk640 => clk_serdes_i,
             reset => rst,
             din => datain_p,
-            slip => serdes_slip,
+            slip => '0',
             data_value => serdes_data2,
             data_valid => serdes_data2_valid,
             data_lock => serdes_lock
@@ -294,11 +295,11 @@ begin
                 if (serdes_data2_valid = "01") then
                     serdes_data32_shift <= serdes_data32_shift(31 downto 0) & serdes_data2(0);
                     serdes_cnt <= serdes_cnt + 1;
-                elsif (serdes_data2_valid = "10") then
-                    serdes_data32_shift <= serdes_data32_shift(31 downto 0) & serdes_data2(1);
-                    serdes_cnt <= serdes_cnt + 1;
+--                elsif (serdes_data2_valid = "10") then
+--                    serdes_data32_shift <= serdes_data32_shift(31 downto 0) & serdes_data2(1);
+--                    serdes_cnt <= serdes_cnt + 1;
                 elsif (serdes_data2_valid = "11") then
-                    serdes_data32_shift <= serdes_data32_shift(30 downto 0) & serdes_data2(1 downto 0);
+                    serdes_data32_shift <= serdes_data32_shift(30 downto 0) & serdes_data2(0) & serdes_data2(1);
                     serdes_cnt <= serdes_cnt + 2;
                 end if;
 
@@ -306,10 +307,23 @@ begin
                     serdes_data32 <= serdes_data32_shift(31 downto 0);
                     serdes_data32_valid <= '1';
                     serdes_cnt <= (others => '0');
+                    if (serdes_data2_valid = "11") then
+                        serdes_cnt <= to_unsigned(1, 6);
+                    else
+                        serdes_cnt <= to_unsigned(0, 6);
+                    end if;
                 elsif (serdes_cnt = to_unsigned(32, 6)) then
                     serdes_data32 <= serdes_data32_shift(32 downto 1);
                     serdes_data32_valid <= '1';
-                    serdes_cnt <= (others => '0');
+                    if (serdes_data2_valid = "11") then
+                        serdes_cnt <= to_unsigned(2, 6);
+                    else
+                        serdes_cnt <= to_unsigned(1, 6);
+                    end if;
+                end if;
+                
+                if (serdes_slip = '1') then
+                    serdes_cnt <= serdes_cnt;
                 end if;
             end if;
         end process serdes_2to32_proc;
@@ -410,8 +424,9 @@ begin
             rx_stat_o <= (others => '0');
         elsif rising_edge(clk_rx_i) then
             rx_stat_o <= (others => '0');
+            rx_stat_o(0) <= serdes_lock; -- SERDES Sync Out
             if (sync_cnt = c_SYNC_MAX) then
-                rx_stat_o(0) <= '1'; -- Sync Out
+                rx_stat_o(1) <= '1'; -- Gearbox Sync Out
             end if;
         end if;
     end process stat_out_proc;

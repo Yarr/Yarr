@@ -68,7 +68,7 @@ architecture rtl of cdr_serdes is
 
 	signal valid_int : std_logic_vector(1 downto 0) := "00";
 
-	signal lockcnt : integer range 0 to 31 := 0;
+	signal lockcnt : integer range 0 to 128 := 0;
 begin
 
 serdes : ISERDESE2
@@ -211,7 +211,7 @@ process begin
 		
 		-- if we found an edge
 		if (use_A or use_B or use_C or use_D) = '1' then
-			lockcnt <= 31;
+			lockcnt <= 127;
 			pipe_ce0 <= '1';	-- sync marker
 			pipe_ce1 <= '1';
 		else

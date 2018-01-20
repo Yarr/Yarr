@@ -49,6 +49,8 @@ architecture rtl of tx_channel is
         enable_i    : in std_logic;
         data_i      : in std_logic_vector(31 downto 0);
         idle_i      : in std_logic_vector(31 downto 0);
+        sync_i      : in std_logic_vector(31 downto 0);
+        sync_interval_i : in std_logic_vector(7 downto 0);
         data_valid_i : in std_logic;
         -- Output
         data_o      : out std_logic;
@@ -98,6 +100,8 @@ begin
 		enable_i => tx_enable_i,
 		data_i => tx_fifo_dout,
 		idle_i => c_TX_IDLE_WORD,
+		sync_i => c_TX_SYNC_WORD,
+		sync_interval_i => std_logic_vector(c_TX_SYNC_INTERVAL),
 		data_valid_i => not tx_fifo_empty,
 		data_o => tx_data_o,
 		data_read_o => tx_fifo_rd

@@ -22,6 +22,9 @@ entity serial_port is
         enable_i    : in std_logic;
         data_i      : in std_logic_vector(g_PORT_WIDTH-1 downto 0);
         idle_i      : in std_logic_vector(g_PORT_WIDTH-1 downto 0);
+        sync_i      : in std_logic_vector(g_PORT_WIDTH-1 downto 0);
+        sync_interval_i : in std_logic_vector(7 downto 0);
+        
         data_valid_i : in std_logic;
         -- Output
         data_o      : out std_logic;
@@ -41,6 +44,7 @@ architecture behavioral of serial_port is
 		end if;
 	end;
     -- Signals
+    constant c_ZEROS : std_logic_vector(g_PORT_WIDTH-1 downto 0) := (others => '0');
     signal bit_count : unsigned(log2_ceil(g_PORT_WIDTH) downto 0);
     signal sreg      : std_logic_vector(g_PORT_WIDTH-1 downto 0);
     signal sync_cnt : unsigned(7 downto 0);
@@ -58,8 +62,8 @@ begin
 			sync_cnt <= (others => '0');
 		elsif rising_edge(clk_i) then
 			if (enable_i = '1') then  
-				if (bit_count = g_PORT_WIDTH-1 and sync_cnt = to_unsigned(31, 8)) then --
-					sreg <= x"817e6969";
+				if (bit_count = g_PORT_WIDTH-1 and sync_cnt = unsigned(sync_interval_i) and (sync_i /= c_ZEROS)) then --
+					sreg <= sync_i;
                     --data_read_o <= '1';
                     bit_count <= (others => '0');
                     sync_cnt <= (others => '0');				        

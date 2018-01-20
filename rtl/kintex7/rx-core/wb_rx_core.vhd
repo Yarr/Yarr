@@ -247,7 +247,7 @@ begin
     
     enable_sync: process (rx_clk_i, rst_n_i)
     begin
-        if (rst_n_i = '1') then
+        if (rst_n_i = '0') then
             rx_enable_d <= (others => '0');
         elsif rising_edge(rx_clk_i) then
             rx_enable_d <= rx_enable;
@@ -273,6 +273,7 @@ begin
             );
 		    rx_fifo_din(I) <= x"03000000" & STD_LOGIC_VECTOR(TO_UNSIGNED(I,6)) & rx_data(I)(25 downto 0);
         end generate fei4_type;
+        
         rd53_type: if g_TYPE = "RD53" generate
             cmp_aurora_rx_channel : aurora_rx_channel PORT MAP (
                 rst_n_i => rst_n_i,
