@@ -19,7 +19,7 @@ files = [
 "../app.vhd",
 "../xpressk7.xdc",
 #"../xpressk7-ddr3.xdc",
-"../xpressk7-fmc-quad-dp.xdc",
+"../xpressk7-fmc-quad-dp-lbnl.xdc",
 #"../TEF1001-fmc-octa.xdc",
 "../xpressk7-timing.xdc",
 ]
