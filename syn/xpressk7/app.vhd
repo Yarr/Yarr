@@ -729,7 +729,7 @@ wb_dev_gen : if wb_dev_c = '1' generate
 -- Differential buffers
 	tx_loop: for I in 0 to c_TX_CHANNELS-1 generate
 	begin
-	   --nrz_gen: if c_TX_ENCODING = "NRZ" generate
+	   nrz_gen: if c_TX_ENCODING = "NRZ" generate
            tx_buf : OBUFDS
            generic map (
                IOSTANDARD => "LVDS_25",
@@ -739,7 +739,7 @@ wb_dev_gen : if wb_dev_c = '1' generate
                OB => fe_cmd_n(I),   -- Diff_n output (connect directly to top-level port)
                I => not fe_cmd_o(I)      -- Buffer input 
            );	   
-	   --end generate nrz_gen;
+	   end generate nrz_gen;
 	   
 	   man_gen: if c_TX_ENCODING = "MANCHESTER" generate
             tx_buf : OBUFDS
