@@ -38,6 +38,10 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
         void toFileBinary() {};
         void fromFileBinary() {};
 
+        void setChipId(unsigned id) {
+            m_chipId = id;
+        }
+
     protected:
         unsigned m_chipId;
 

@@ -10,7 +10,7 @@
 #include <fstream>
 
 Rd53aCmd::Rd53aCmd(TxCore *arg_core) {
-    verbose = true;
+    verbose = false;
     core = arg_core;
 }
 

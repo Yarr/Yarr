@@ -47,14 +47,14 @@ void Rd53a::configure() {
 }
 
 void Rd53a::init() {
-    this->ecr();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    this->bcr();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
     this->writeRegister(&Rd53a::GlobalPulseRt, 0x17F); // Reset a whole bunch of things
     this->globalPulse(m_chipId, 10);
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     this->writeRegister(&Rd53a::GlobalPulseRt, 0x0);
+    this->ecr();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    this->bcr();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
 void Rd53a::configureGlobal() {
