@@ -87,7 +87,7 @@ STATLIBS += $(LLIB)/$(call lc,$(2).a)
 $(BUILD)/%.o: $(2)/%.cpp
 
 $(BUILD)/%.d: $(2)/%.cpp
-	@$(CPP) $(CPPFLAGS) -MM -MT $(BUILD)/$$*.o $$< -o $$@
+	@$(CPP) $(CPPFLAGS) -MP -MM -MT $(BUILD)/$$*.o $$< -o $$@
 
 endef
 
