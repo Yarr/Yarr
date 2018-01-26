@@ -23,7 +23,7 @@ Fei4DataProcessor::~Fei4DataProcessor() {
 
 void Fei4DataProcessor::init() {
   std::cout << __PRETTY_FUNCTION__ << std::endl;
-    for(std::map<unsigned, ClipBoard<Fei4Data> >::iterator it = outMap->begin(); it != outMap->end(); ++it) {
+    for(std::map<unsigned, ClipBoard<EventDataBase> >::iterator it = outMap->begin(); it != outMap->end(); ++it) {
         activeChannels.push_back(it->first);
     }
     scanDone = false;

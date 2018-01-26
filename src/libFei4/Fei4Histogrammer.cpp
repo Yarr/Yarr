@@ -62,7 +62,7 @@ void Fei4Histogrammer::process() {
 
 void Fei4Histogrammer::process_core() {
     while (!input->empty()) {
-        Fei4Data *data = input->popData();
+        Fei4Data *data = dynamic_cast<Fei4Data*>(input->popData());
         if (data == NULL)
             continue;
         for (unsigned i=0; i<algorithms.size(); i++) {

@@ -13,13 +13,9 @@
 #include "json.hpp"
 #include "ClipBoard.h"
 #include "HistogramBase.h"
-#include "Fei4EventData.h"
-
+#include "EventDataBase.h"
 
 using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
-
-class Fei4Analysis;
-class Fei4Histogrammer;
 
 class FrontEnd {
     public:
@@ -32,7 +28,8 @@ class FrontEnd {
        
         virtual void configure() = 0;
 
-        ClipBoard<Fei4Data> *clipDataFei4;
+        // Set of events
+        ClipBoard<EventDataBase> *clipData;
         ClipBoard<HistogramBase> *clipHisto;
         ClipBoard<HistogramBase> *clipResult;
 

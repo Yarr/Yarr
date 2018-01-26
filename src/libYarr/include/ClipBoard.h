@@ -14,7 +14,6 @@
 #include <condition_variable>
 
 #include "RawData.h"
-#include "Fei4EventData.h"
 
 #include <iostream>
 #include <typeinfo>
@@ -85,7 +84,7 @@ class ClipBoard {
 };
 
 template class ClipBoard<RawData>;
-template class ClipBoard<Fei4Data>;
+// template class ClipBoard<Fei4Data>;
 
 
 #endif
