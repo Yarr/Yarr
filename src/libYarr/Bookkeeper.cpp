@@ -32,7 +32,8 @@ void Bookkeeper::addFe(FrontEnd *fe, unsigned txChannel, unsigned rxChannel) {
         std::cerr << __PRETTY_FUNCTION__ << " -> Error rx channel already in use, not adding FE" << std::endl;
     } else {
         feList.push_back(fe);
-        dynamic_cast<FrontEndCfg*>(feList.back())->setChannel(txChannel, rxChannel);
+        FrontEndCfg *cfg = dynamic_cast<FrontEndCfg*>(feList.back());
+        if(cfg) cfg->setChannel(txChannel, rxChannel);
         eventMap[rxChannel];
         histoMap[rxChannel];
         resultMap[rxChannel];
