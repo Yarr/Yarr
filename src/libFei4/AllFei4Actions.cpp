@@ -1,15 +1,17 @@
+#include "AllStdActions.h"
+
 #include "AllFei4Actions.h"
 
-namespace Fei4Dict {
-     LoopActionBase* getLoopAction(std::string name) {
-        if (name == "Fei4DcLoop") {
-            return (LoopActionBase*) new Fei4DcLoop;
-        } else if (name == "Fei4MaskLoop") {
-            return (LoopActionBase*) new Fei4MaskLoop;
-        } else if (name == "Fei4TriggerLoop") {
-            return (LoopActionBase*) new Fei4TriggerLoop;
-        } else {
-            return NULL;
-        }
-     }
+namespace AllFei4ActionsRegistry {
+  using StdDict::registerLoopAction;
+
+  bool dc_loop_registered =
+    registerLoopAction("Fei4DcLoop",
+                       []() { return std::unique_ptr<LoopActionBase>(new Fei4DcLoop); });
+  bool mask_loop_registered =
+    registerLoopAction("Fei4MaskLoop",
+                       []() { return std::unique_ptr<LoopActionBase>(new Fei4MaskLoop); });
+  bool trigger_loop_registered =
+    registerLoopAction("Fei4TriggerLoop",
+                       []() { return std::unique_ptr<LoopActionBase>(new Fei4TriggerLoop); });
 }

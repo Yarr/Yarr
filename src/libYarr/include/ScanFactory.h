@@ -12,9 +12,6 @@
 #include "ScanBase.h"
 #include "json.hpp"
 
-#include "AllStdActions.h"
-#include "AllFei4Actions.h"
-
 using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 
 class ScanFactory : public ScanBase {

@@ -7,6 +7,9 @@
 // ################################
 
 #include "ScanFactory.h"
+#include "AllStdActions.h"
+
+#include "Fei4.h"
 
 ScanFactory::ScanFactory(Bookkeeper *k) : ScanBase(k) {
 }
@@ -21,7 +24,9 @@ void ScanFactory::init() {
 void ScanFactory::preScan() {
     std::cout << __PRETTY_FUNCTION__ << std::endl;
     // TODO no clue how to get around this
-    for (json::iterator it = m_config["scan"]["prescan"]["FE-I4B"]["GlobalConfig"].begin(); it != m_config["scan"]["prescan"]["FE-I4B"]["GlobalConfig"].end(); ++it) {
+
+    auto &config_list = m_config["scan"]["prescan"]["FE-I4B"]["GlobalConfig"];
+    for (json::iterator it = config_list.begin(); it != config_list.end(); ++it) {
         g_bk->globalFe<Fei4>()->writeRegister(g_bk->globalFe<Fei4>()->regMap[it.key()], it.value());
     }
 }
@@ -43,12 +48,10 @@ void ScanFactory::loadConfig(json &scanCfg) {
         std::cout << "  Loading Loop #" << i << std::endl;
         std::string loopAction = scanCfg["scan"]["loops"][i]["loopAction"];
         std::cout << "  Type: " << loopAction << std::endl;
-        std::shared_ptr<LoopActionBase> action;
-        if (loopAction.find("Std") != std::string::npos) {
-            action.reset(StdDict::getLoopAction(loopAction));
-        } else if (loopAction.find("Fei4") != std::string::npos) {
-            action.reset(Fei4Dict::getLoopAction(loopAction));
-        } else {
+        std::shared_ptr<LoopActionBase> action
+          = StdDict::getLoopAction(loopAction);
+
+        if (action == nullptr) {
             std::cout << "### ERROR ### => Unknown Loop Action: " << loopAction << " ... skipping!" << std::endl;
         }
 
