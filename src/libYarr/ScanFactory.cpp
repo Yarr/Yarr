@@ -9,8 +9,6 @@
 #include "ScanFactory.h"
 #include "AllStdActions.h"
 
-#include "Fei4.h"
-
 ScanFactory::ScanFactory(Bookkeeper *k) : ScanBase(k) {
 }
 
@@ -27,7 +25,8 @@ void ScanFactory::preScan() {
 
     auto &config_list = m_config["scan"]["prescan"]["FE-I4B"]["GlobalConfig"];
     for (json::iterator it = config_list.begin(); it != config_list.end(); ++it) {
-        g_bk->globalFe<Fei4>()->writeRegister(g_bk->globalFe<Fei4>()->regMap[it.key()], it.value());
+        FrontEnd &fe = *g_bk->getGlobalFe();
+        fe.writeNamedRegister(it.key(), it.value());
     }
 }
 

@@ -133,3 +133,7 @@ void Fe65p2::configurePixels() {
     configureGlobal();
 
 }
+
+void Fe65p2::writeNamedRegister(std::string name, uint16_t reg_value) {
+    regMap[name]->write(reg_value);
+}
