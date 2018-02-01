@@ -737,7 +737,7 @@ wb_dev_gen : if wb_dev_c = '1' generate
            port map (
                O => fe_cmd_p(I),     -- Diff_p output (connect directly to top-level port)
                OB => fe_cmd_n(I),   -- Diff_n output (connect directly to top-level port)
-               I => not fe_cmd_o(I)      -- Buffer input 
+               I => fe_cmd_o(I)      -- Buffer input 
            );	   
 	   end generate nrz_gen;
 	   
