@@ -127,7 +127,8 @@ $(BUILD)/%.o:
 # Target
 $(BIN)/%: $(BUILD)/%.o $(LLIB)/libyarr.a
 	@echo [Linking] $@
-	@$(LD) $(LDFLAGS) $+ -o $@
+        # Whole-archive means not to drop symbols from Yarr.
+	@$(LD) $(LDFLAGS) $< -Wl,--whole-archive $(LLIB)/libyarr.a -Wl,--no-whole-archive -o $@
 ifeq ($(ARCH),$(UNAME_P))
 	@ln -sf ../$@ bin/$*
 endif
