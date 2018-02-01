@@ -1,7 +1,7 @@
 #la32_n
 #la32_p
-set_property PACKAGE_PIN F8 [get_ports {fe_data_p[1]}]
 set_property PACKAGE_PIN F9 [get_ports {fe_data_p[1]}]
+set_property PACKAGE_PIN F8 [get_ports {fe_data_n[1]}]
 #la30_n
 #la30_p
 set_property PACKAGE_PIN H12 [get_ports {fe_data_p[2]}]
