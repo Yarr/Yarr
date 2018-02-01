@@ -75,6 +75,12 @@ architecture behavioral of wb_tx_core is
 			tx_clk_i		: in  std_logic;
 			tx_data_o		: out std_logic;
 			tx_enable_i		: in std_logic;
+                    
+            -- Word Looper
+            loop_pulse_i    : in std_logic;
+            loop_mode_i     : in std_logic;
+            loop_word_i     : in std_logic_vector(127 downto 0);
+            loop_word_bytes_i : in std_logic_vector(7 downto 0);
 			
 			-- Status
 			tx_underrun_o	: out std_logic;
@@ -90,15 +96,15 @@ architecture behavioral of wb_tx_core is
 			rst_n_i	: in  std_logic;
 			
 			-- Serial Trigger Out
-			trig_o : out std_logic;
+			--trig_o : out std_logic;
 			trig_pulse_o : out std_logic;
 			
 			-- Trigger In (async)
 			ext_trig_i	: in std_logic;
 			
 			-- Config
-			trig_word_i : in std_logic_vector(127 downto 0); -- Trigger command
-			trig_word_length_i : in std_logic_vector(31 downto 0); -- Trigger command length
+			--trig_word_i : in std_logic_vector(127 downto 0); -- Trigger command
+			--trig_word_length_i : in std_logic_vector(31 downto 0); -- Trigger command length
 			trig_freq_i : in std_logic_vector(31 downto 0); -- Number of clock cycles between triggers
 			trig_time_i : in std_logic_vector(63 downto 0); -- Clock cycles
 			trig_count_i : in std_logic_vector(31 downto 0); -- Fixed number of triggers
@@ -310,6 +316,11 @@ begin
 			tx_clk_i => tx_clk_i,
 			tx_data_o => tx_data_cmd(I),
 			tx_enable_i => tx_enable(I),
+			-- Looper
+			loop_pulse_i => tx_trig_pulse,
+			loop_mode_i => trig_en,
+			loop_word_i => trig_word,
+			loop_word_bytes_i => trig_word_length(7 downto 0),
 			-- Status
 			tx_underrun_o => tx_underrun(I),
 			tx_overrun_o => tx_overrun(I),
@@ -336,13 +347,13 @@ begin
 		clk_i => tx_clk_i,
 		rst_n_i => rst_n_i,
 		-- Serial Trigger Out
-		trig_o => tx_data_trig,
+		--trig_o => tx_data_trig,
 		trig_pulse_o=> tx_trig_pulse,
 		-- Trigger In (async)
 		ext_trig_i => ext_trig_i,
 		-- Config
-		trig_word_i => trig_word,
-		trig_word_length_i => trig_word_length,
+		--trig_word_i => trig_word,
+		--trig_word_length_i => trig_word_length,
 		trig_freq_i => trig_freq,
 		trig_time_i => trig_time,
 		trig_count_i => trig_count,

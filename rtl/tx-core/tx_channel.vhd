@@ -27,6 +27,12 @@ entity tx_channel is
 		tx_data_o		: out std_logic;
 		tx_enable_i		: in std_logic;
 		
+		-- Word Looper
+		loop_pulse_i    : in std_logic;
+		loop_mode_i     : in std_logic; -- (WB clk domain)
+		loop_word_i     : in std_logic_vector(127 downto 0); -- (WB clk domain)
+		loop_word_bytes_i : in std_logic_vector(7 downto 0); -- (WB clk domain)
+		
 		-- Status
 		tx_underrun_o	: out std_logic;
 		tx_overrun_o	: out std_logic;
@@ -73,6 +79,8 @@ architecture rtl of tx_channel is
 	);
 	end component;
 	
+	--constant c_MAX_LOOP_CNT : unsigned(7 downto 0) := to_unsigned(4,8);
+	
 	signal tx_fifo_rd : std_logic;
 	signal tx_fifo_wr : std_logic;
 	signal tx_fifo_din : std_logic_vector(31 downto 0);
@@ -80,6 +88,16 @@ architecture rtl of tx_channel is
 	signal tx_fifo_full : std_logic;
 	signal tx_fifo_empty : std_logic;
 	signal tx_fifo_almost_full : std_logic;
+	
+	signal sport_data_valid : std_logic;
+	signal sport_data : std_logic_vector(31 downto 0);
+	signal sport_data_read : std_logic;
+	
+	signal loop_cnt : unsigned(7 downto 0);
+	signal loop_empty : std_logic;
+	signal loop_mode_s : std_logic;
+	signal loop_word_s : std_logic_vector(127 downto 0);
+    signal loop_word_bytes_s : std_logic_vector(7 downto 0);
 	
 begin
 
@@ -94,17 +112,51 @@ begin
 	tx_almost_full_o <= tx_fifo_almost_full;
 	tx_empty_o <= tx_fifo_empty;
 	
+	loop_proc: process(tx_clk_i, rst_n_i)
+	begin
+	   if (rst_n_i = '0') then
+	       loop_cnt <= (others => '0');
+	       loop_empty <= '1';
+	       loop_mode_s <= '0';
+           loop_word_s <= (others => '0');
+           loop_word_bytes_s <= (others => '0');
+	   elsif rising_edge(tx_clk_i) then
+	       loop_empty <= '1';
+	       loop_mode_s <= loop_mode_i;
+	       loop_word_s <= loop_word_i;
+	       loop_word_bytes_s <= loop_word_bytes_i;
+	       if (loop_mode_s = '1') then
+	     	   loop_empty <= '0';      
+	           if (loop_pulse_i = '1') then
+	               loop_cnt <= unsigned(loop_word_bytes_s); -- reload counter
+	           elsif (sport_data_read = '1') then
+	               loop_cnt <= loop_cnt - 1; -- sport read one word
+	           elsif (loop_cnt = to_unsigned(0,8)) then
+	               loop_empty <= '1'; -- no more words to read
+	           end if;
+	       end if;	   
+	   end if;
+	end process loop_proc;
+	
+	sport_data_valid <= not tx_fifo_empty when (loop_mode_i = '0') else not loop_empty;
+	tx_fifo_rd <= sport_data_read when (loop_mode_i = '0') else '0';
+	sport_data <= tx_fifo_dout when (loop_mode_i = '0') else 
+	           loop_word_s(127 downto 96) when (loop_cnt = to_unsigned(4, 8)) else
+	           loop_word_s(95 downto 64) when (loop_cnt = to_unsigned(3, 8)) else
+	           loop_word_s(63 downto 32) when (loop_cnt = to_unsigned(2, 8)) else
+	           loop_word_s(31 downto 0) when (loop_cnt = to_unsigned(1, 8));
+	
 	cmp_sport: serial_port PORT MAP(
 		clk_i => tx_clk_i,
 		rst_n_i => rst_n_i,
 		enable_i => tx_enable_i,
-		data_i => tx_fifo_dout,
+		data_i => sport_data,
 		idle_i => c_TX_IDLE_WORD,
 		sync_i => c_TX_SYNC_WORD,
 		sync_interval_i => std_logic_vector(c_TX_SYNC_INTERVAL),
-		data_valid_i => not tx_fifo_empty,
+		data_valid_i => sport_data_valid,
 		data_o => tx_data_o,
-		data_read_o => tx_fifo_rd
+		data_read_o => sport_data_read
 	);
 	
 	cmp_tx_fifo : tx_fifo PORT MAP (

@@ -15,15 +15,15 @@ entity trigger_unit is
 		rst_n_i	: in  std_logic;
 		
 		-- Serial Trigger Out
-		trig_o : out std_logic;
+		--trig_o : out std_logic;
 		trig_pulse_o : out std_logic;
 		
 		-- Trigger In (async)
 		ext_trig_i	: in std_logic;
 		
 		-- Config
-		trig_word_i : in std_logic_vector(127 downto 0); -- Trigger command
-		trig_word_length_i : in std_logic_vector(31 downto 0);
+		--trig_word_i : in std_logic_vector(127 downto 0); -- Trigger command
+		--trig_word_length_i : in std_logic_vector(31 downto 0);
 		trig_freq_i : in std_logic_vector(31 downto 0); -- Number of clock cycles between triggers
 		trig_time_i : in std_logic_vector(63 downto 0); -- Clock cycles
 		trig_count_i : in std_logic_vector(31 downto 0); -- Fixed number of triggers
@@ -159,33 +159,33 @@ begin
 	end process trig_pulse_proc;
 
     -- Tie offs
-    trig_o <= sreg(127);
-    -- Serializer proc
-    serialize: process(clk_i, rst_n_i)
-    begin
-		if (rst_n_i = '0') then
-			sreg <= (others => '0');
-			bit_count <= (others => '0');
-		elsif rising_edge(clk_i) then
-			if (trig_pulse = '1') then
-				sreg <= trig_word;
-				bit_count <= (others => '0');
---			elsif (bit_count <= unsigned(trig_word_length(7 downto 0))) then
-			else
-				sreg <= sreg(126 downto 0) & '0';
---				bit_count <= bit_count + 1;
+--    trig_o <= sreg(127);
+--    -- Serializer proc
+--    serialize: process(clk_i, rst_n_i)
+--    begin
+--		if (rst_n_i = '0') then
+--			sreg <= (others => '0');
+--			bit_count <= (others => '0');
+--		elsif rising_edge(clk_i) then
+--			if (trig_pulse = '1') then
+--				sreg <= trig_word;
+--				bit_count <= (others => '0');
+----			elsif (bit_count <= unsigned(trig_word_length(7 downto 0))) then
 --			else
---				sreg <= (others => '0');
-			end if;
-		end if;
-    end process serialize;
+--				sreg <= sreg(126 downto 0) & '0';
+----				bit_count <= bit_count + 1;
+----			else
+----				sreg <= (others => '0');
+--			end if;
+--		end if;
+--    end process serialize;
 	
 	-- Sync proc
 	sync_proc : process (clk_i, rst_n_i)
 	begin
 		if (rst_n_i = '0') then
-			trig_word <= (others => '0');
-			trig_word_length <= (others => '0');
+			--trig_word <= (others => '0');
+			--trig_word_length <= (others => '0');
 			trig_freq <= (others => '0');
 			trig_time <= (others => '0');
 			trig_count <= (others => '0');
@@ -232,8 +232,8 @@ begin
 			end if;
 			
 			if (trig_en_pos = '1') then		
-				trig_word <= trig_word_i;
-				trig_word_length <= trig_word_length_i;
+				--trig_word <= trig_word_i;
+				--trig_word_length <= trig_word_length_i;
 				trig_freq <= trig_freq_i;
 				trig_time <= trig_time_i;
 				trig_count <= trig_count_i;

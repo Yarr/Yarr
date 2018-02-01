@@ -62,19 +62,17 @@ begin
 			sync_cnt <= (others => '0');
 		elsif rising_edge(clk_i) then
 			if (enable_i = '1') then  
-				if (bit_count = g_PORT_WIDTH-1 and sync_cnt = unsigned(sync_interval_i) and (sync_i /= c_ZEROS)) then --
+				if (bit_count = g_PORT_WIDTH-1 and data_valid_i = '1') then
+                    sreg <= data_i;
+                    data_read_o <= '1';
+                    bit_count <= (others => '0');
+                    sync_cnt <= sync_cnt + 1;
+				elsif (bit_count = g_PORT_WIDTH-1 and sync_cnt >= unsigned(sync_interval_i) and (sync_i /= c_ZEROS)) then --
 					sreg <= sync_i;
-                    --data_read_o <= '1';
                     bit_count <= (others => '0');
                     sync_cnt <= (others => '0');				        
-				elsif (bit_count = g_PORT_WIDTH-1 and data_valid_i = '1') then
-					sreg <= data_i;
-					data_read_o <= '1';
-					bit_count <= (others => '0');
-					sync_cnt <= sync_cnt + 1;
                 elsif (bit_count = g_PORT_WIDTH-1 and data_valid_i = '0') then
 					sreg <= idle_i;
-					--data_read_o <= '1';
 					bit_count <= (others => '0');
 					sync_cnt <= sync_cnt + 1;
 				else
