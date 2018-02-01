@@ -22,11 +22,9 @@
 #include <sstream>
 
 #include "HwController.h"
-#include "SpecController.h"
-#include "BocController.h"
-#include "KU040Controller.h"
-#include "EmuController.h"
-#include "RceController.h"
+
+#include "AllHwControllers.h"
+
 #include "Bookkeeper.h"
 #include "Fei4.h"
 #include "ScanBase.h"
@@ -35,8 +33,6 @@
 #include "Fei4Histogrammer.h"
 #include "Fei4Analysis.h"
 #include "Fei4Scans.h"
-
-#include "Fei4Emu.h"
 
 #if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
 
@@ -207,6 +203,10 @@ int main(int argc, char *argv[]) {
     std::cout << " Output Plots: " << doPlots << std::endl;
     std::cout << " Output Directory: " << outputDir << std::endl;
 
+    std::cout << " Known HwControllers:\n";
+    for(auto &h: StdDict::listHwControllers()) {
+      std::cout << "   " << h << std::endl;
+    }
     std::cout << " Known ScanLoop actions:\n";
     for(auto &la: StdDict::listLoopActions()) {
       std::cout << "   " << la << std::endl;
@@ -243,13 +243,11 @@ int main(int argc, char *argv[]) {
     std::cout << "# Init Hardware #" << std::endl;
     std::cout << "#################" << std::endl;
 
-    HwController *hwCtrl = NULL;
-    Fei4Emu *emu = NULL;
-    std::vector<std::thread> emuThreads;
+    std::unique_ptr<HwController> hwCtrl = nullptr;
     if (ctrlCfgPath == "") {
         std::cout << "-> No controller config given, using default." << std::endl;
         std::cout << "-> Init SPEC " << specNum << " : " << std::endl;
-        hwCtrl = new SpecController(); // TODO fix me with specnum
+        hwCtrl = StdDict::getHwController("Spec"); // TODO fix me with specnum
     } else {
         // Open controller config file
         std::cout << "-> Opening controller config: " << ctrlCfgPath << std::endl;
@@ -260,44 +258,27 @@ int main(int argc, char *argv[]) {
         }
         json ctrlCfg;
         ctrlCfg << ctrlCfgFile;
-        if (ctrlCfg["ctrlCfg"]["type"] == "spec") {
-            std::cout << "-> Found Spec config" << std::endl;
-            hwCtrl = new SpecController(); 
-            hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
-        } else if ( (ctrlCfg["ctrlCfg"]["type"]=="boc") ) {
-            std::cout << "-> Found Boc config" << std::endl;
-            hwCtrl = new BocController();
-            hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
-		} else if ( (ctrlCfg["ctrlCfg"]["type"]=="ku040") ) {
-            std::cout << "-> Found KU040 config" << std::endl;
-            hwCtrl = new KU040Controller();
-            hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
-	} else if ( (ctrlCfg["ctrlCfg"]["type"]=="rce") ) {
-	    std::cout << "-> Found RCE config" << std::endl;
-	      hwCtrl = new RceController();
-	      hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
-        } else if (ctrlCfg["ctrlCfg"]["type"] == "emu") {
-            std::cout << "-> Found Emulator config" << std::endl;
-            // nikola's hack to use RingBuffer
-            RingBuffer * rx = new RingBuffer(128);
-            RingBuffer * tx = new RingBuffer(128);
-            hwCtrl = new EmuController(rx, tx);
-            hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
-            //TODO make nice
-            std::cout << "-> Starting Emulator" << std::endl;
-            std::string emuCfgFile = ctrlCfg["ctrlCfg"]["cfg"]["feCfg"];
-            std::cout << emuCfgFile << std::endl;
-            emu= new Fei4Emu(emuCfgFile, emuCfgFile, rx, tx);
-            emuThreads.push_back(std::thread(&Fei4Emu::executeLoop, emu));
+        std::string controller = ctrlCfg["ctrlCfg"]["type"];
+
+        hwCtrl = StdDict::getHwController(controller);
+
+        if(hwCtrl) {
+          std::cout << "-> Found config for controller " << controller << std::endl;
+
+          hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
         } else {
             std::cerr << "#ERROR# Unknown config type: " << ctrlCfg["ctrlCfg"]["type"] << std::endl;
+            std::cout << " Known HW controllers:\n";
+            for(auto &h: StdDict::listHwControllers()) {
+              std::cout << "  " << h << std::endl;
+            }
             std::cerr << "Aborting!" << std::endl;
             return -1;
         }
     }
 
-    Bookkeeper bookie(hwCtrl, hwCtrl);
-    bookie.initGlobalFe(new Fei4(hwCtrl)); // TODO dynamic depending on current FE type
+    Bookkeeper bookie(&*hwCtrl, &*hwCtrl);
+    bookie.initGlobalFe(new Fei4(&*hwCtrl)); // TODO dynamic depending on current FE type
 
     std::map<FrontEnd*, std::string> feCfgMap;
 
@@ -323,15 +304,15 @@ int main(int argc, char *argv[]) {
                     break;
             }
             std::cout << "Rx " << i << " seems to be free, assuming same Tx channel." << std::endl;
-            bookie.addFe(dynamic_cast<FrontEnd*>(new Fei4(hwCtrl)), i, i);
+            bookie.addFe(dynamic_cast<FrontEnd*>(new Fei4(&*hwCtrl)), i, i);
         } else {
             jTmp << iFTmp;
             if(!jTmp["FE-I4B"].is_null()){
                 std::cout << "Found FE-I4B: " << jTmp["FE-I4B"]["name"] << std::endl;
-                bookie.addFe(dynamic_cast<FrontEnd*>(new Fei4(hwCtrl)), jTmp["FE-I4B"]["txChannel"], jTmp["FE-I4B"]["rxChannel"]);        
+                bookie.addFe(dynamic_cast<FrontEnd*>(new Fei4(&*hwCtrl)), jTmp["FE-I4B"]["txChannel"], jTmp["FE-I4B"]["rxChannel"]);        
             } else if(!jTmp["FE65-P2"].is_null()){
                 std::cout << "Found FE65-P2: " << jTmp["FE-I4B"]["name"] << std::endl;
-                bookie.addFe(dynamic_cast<FrontEnd*>(new Fe65p2(hwCtrl)), jTmp["FE65-P2"]["txChannel"], jTmp["FE-I4B"]["rxChannel"]);        
+                bookie.addFe(dynamic_cast<FrontEnd*>(new Fe65p2(&*hwCtrl)), jTmp["FE65-P2"]["txChannel"], jTmp["FE-I4B"]["rxChannel"]);        
             } else{
                 std::cerr << "Unknown chip type or malformed config in " << sTmp << std::endl;
                 continue;
@@ -510,12 +491,8 @@ int main(int argc, char *argv[]) {
     std::cout << "# Cleanup #" << std::endl;
     std::cout << "###########" << std::endl;
 
-    if (emu) {
-        emu->run = false;
-        emuThreads[0].join();
-        delete emu;
-    }
-    //delete hwCtrl; //TODO add deconstructor
+    // Call constructor (eg shutdown Emu threads)
+    hwCtrl.reset();
 
     // Need this folder to plot
     if (system("mkdir -p /tmp/$USER") < 0) {
