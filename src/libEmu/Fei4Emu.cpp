@@ -45,7 +45,17 @@ void Fei4Emu::initializePixelModelsFromFile(std::string json_file_path) {
 
     for (unsigned col = 1; col <= m_feCfg->n_Col; col++) {
         for (unsigned row = 1; row <= m_feCfg->n_Row; row++) {
-            m_pixelModelObjects[col - 1][row - 1] = new PixelModel(j["Vthin_mean_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)], j["Vthin_sigma_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)], j["Vthin_gauss_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)], j["TDACVbp_mean_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)], j["TDACVbp_sigma_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)], j["TDACVbp_gauss_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)], j["noise_sigma_mean_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)], j["noise_sigma_sigma_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)], j["noise_sigma_gauss_vector"][(col - 1) * m_feCfg->n_Row + (row - 1)]);
+            size_t index = (col - 1) * m_feCfg->n_Row + (row - 1);
+            m_pixelModelObjects[col - 1][row - 1] = new PixelModel
+              (j["Vthin_mean_vector"][index],
+               j["Vthin_sigma_vector"][index],
+               j["Vthin_gauss_vector"][index],
+               j["TDACVbp_mean_vector"][index],
+               j["TDACVbp_sigma_vector"][index],
+               j["TDACVbp_gauss_vector"][index],
+               j["noise_sigma_mean_vector"][index],
+               j["noise_sigma_sigma_vector"][index],
+               j["noise_sigma_gauss_vector"][index]);
         }
     }
 
