@@ -57,7 +57,7 @@ class Fei4Histogrammer : public DataProcessor {
         Fei4Histogrammer();
         ~Fei4Histogrammer();
 
-        void connect(ClipBoard<Fei4Data> *arg_input, ClipBoard<HistogramBase> *arg_output) {
+        void connect(ClipBoard<EventDataBase> *arg_input, ClipBoard<HistogramBase> *arg_output) {
             input = arg_input;
             output = arg_output;
         }
@@ -83,12 +83,12 @@ class Fei4Histogrammer : public DataProcessor {
         void toFile(std::string basename);
         void plot(std::string basename);
 
-        ClipBoard<Fei4Data>& getInput() { return *input; }
+        ClipBoard<EventDataBase>& getInput() { return *input; }
 
         static bool processorDone;
         
     private:
-        ClipBoard<Fei4Data> *input;
+        ClipBoard<EventDataBase> *input;
         ClipBoard<HistogramBase> *output;
         std::unique_ptr<std::thread> thread_ptr;
 

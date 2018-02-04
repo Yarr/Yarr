@@ -15,6 +15,7 @@
 #include <string>
 #include <unistd.h>
 
+#include "EventDataBase.h"
 #include "LoopStatus.h"
 
 struct Fei4Hit {
@@ -117,7 +118,7 @@ class Fei4Event {
         std::vector<Fei4Cluster> clusters;
 };
 
-class Fei4Data {
+class Fei4Data : public EventDataBase {
     public:
         static const unsigned numServiceRecords = 32;
         Fei4Data() {

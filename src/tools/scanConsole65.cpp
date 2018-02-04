@@ -312,7 +312,7 @@ int main(int argc, char *argv[]) {
             // Init histogrammer per FE
             histogrammers[fe] = std::unique_ptr<Fei4Histogrammer>( new Fei4Histogrammer );
             auto& histogrammer = histogrammers[fe];
-            histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
+            histogrammer->connect(fe->clipData, fe->clipHisto);
             // Add generic histograms
             histogrammer->addHistogrammer(new OccupancyMap());
             histogrammer->addHistogrammer(new TotMap());

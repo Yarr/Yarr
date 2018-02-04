@@ -17,9 +17,6 @@
 #include "ClipBoard.h"
 #include "HistogramBase.h"
 
-class Fei4Analysis;
-class Fei4Histogrammer;
-
 class Fe65p2 : public FrontEnd, public Fe65p2Cfg, public Fe65p2Cmd {
     public:
         Fe65p2(TxCore *arg_core);
@@ -32,6 +29,8 @@ class Fe65p2 : public FrontEnd, public Fe65p2Cfg, public Fe65p2Cmd {
         void configureGlobal();
         void configurePixels();
         void configDac();
+
+        void writeNamedRegister(std::string name, uint16_t value) override;
 
     private:
 };

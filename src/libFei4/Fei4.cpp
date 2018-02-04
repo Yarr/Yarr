@@ -167,3 +167,7 @@ void Fei4::wrGR16(unsigned int mOffset, unsigned int bOffset, unsigned int mask,
 
     return;
 }
+
+void Fei4::writeNamedRegister(std::string name, uint16_t reg_value) {
+    writeRegister(regMap[name], reg_value);
+}

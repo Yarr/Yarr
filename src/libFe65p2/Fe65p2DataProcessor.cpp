@@ -8,6 +8,8 @@
 
 #include "Fe65p2DataProcessor.h"
 
+#include "Fei4EventData.h"
+
 bool Fe65p2DataProcessor::scanDone = false;
 
 Fe65p2DataProcessor::Fe65p2DataProcessor() : DataProcessor() {
@@ -18,7 +20,7 @@ Fe65p2DataProcessor::~Fe65p2DataProcessor() {
 }
 
 void Fe65p2DataProcessor::init() {
-    for(std::map<unsigned, ClipBoard<Fei4Data> >::iterator it = outMap->begin(); it != outMap->end(); ++it) {
+    for(std::map<unsigned, ClipBoard<EventDataBase> >::iterator it = outMap->begin(); it != outMap->end(); ++it) {
         activeChannels.push_back(it->first);
     }
     scanDone = false;

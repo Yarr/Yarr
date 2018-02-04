@@ -14,7 +14,7 @@
 #include <deque>
 
 #include "RawData.h"
-#include "Fei4EventData.h"
+#include "EventDataBase.h"
 #include "HistogramBase.h"
 #include "ResultBase.h"
 #include "ClipBoard.h"
@@ -70,7 +70,7 @@ class Bookkeeper {
         ClipBoard<RawDataContainer> rawData;
 
         // per rx link
-	    std::map<unsigned, ClipBoard<Fei4Data> > eventMap;
+	    std::map<unsigned, ClipBoard<EventDataBase> > eventMap;
 	    std::map<unsigned, ClipBoard<HistogramBase> > histoMap;
 	    std::map<unsigned, ClipBoard<HistogramBase> > resultMap;
 		std::map<unsigned, std::mutex> mutexMap;	

@@ -58,6 +58,8 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
         void loadIntoPixel(unsigned pixel_latch);
         void shiftByOne();
         
+        void writeNamedRegister(std::string name, uint16_t value) override;
+
         void writeRegister(Fei4Register Fei4GlobalCfg::*ref, uint16_t cfgBits){
             setValue(ref, cfgBits);
             writeRegister(ref);

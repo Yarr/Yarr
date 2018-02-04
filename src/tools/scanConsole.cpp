@@ -457,7 +457,7 @@ int main(int argc, char *argv[]) {
     for (unsigned i=0; i<bookie.feList.size(); i++) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
-          fe->clipDataFei4->cv.notify_all();
+          fe->clipData->cv.notify_all();
         }
     }
     
@@ -669,7 +669,7 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
                 histogrammers[fe].reset( new Fei4Histogrammer );
                 auto& histogrammer = static_cast<Fei4Histogrammer&>( *(histogrammers[fe]) );
                 
-                histogrammer.connect(fe->clipDataFei4, fe->clipHisto);
+                histogrammer.connect(fe->clipData, fe->clipHisto);
                 int nHistos = histoCfg["n_count"];
                 std::cout << nHistos << std::endl;
                 for (int j=0; j<nHistos; j++) {
@@ -698,7 +698,7 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
                 histogrammers[fe].reset( new Fei4Histogrammer );
                 auto& histogrammer = static_cast<Fei4Histogrammer&>( *(histogrammers[fe]) );
                 
-                histogrammer.connect(fe->clipDataFei4, fe->clipHisto);
+                histogrammer.connect(fe->clipData, fe->clipHisto);
                 // Add generic histograms
                 histogrammer.addHistogrammer(new OccupancyMap());
                 histogrammer.addHistogrammer(new TotMap());
