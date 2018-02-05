@@ -37,7 +37,6 @@ class Rd53aReg {
         }
 
         uint16_t read() const {
-            std::cout << m_addr << std::endl;
             unsigned mask = (1<<m_bits)-1;
             return ((*m_cfg >> m_bOffset) & mask);
         }

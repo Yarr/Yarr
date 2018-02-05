@@ -10,11 +10,9 @@
 
 struct pixelFields {
     unsigned en : 1;
-    unsigned hitbus : 1;
     unsigned injen : 1;
+    unsigned hitbus : 1;
     unsigned tdac : 5;
-    unsigned unused: 1;
-
 };
 
 union pixelBits {
@@ -35,38 +33,45 @@ uint16_t Rd53aPixelCfg::maskBits(uint16_t val, unsigned mask) {
 // TODO optimise this
 void Rd53aPixelCfg::setEn(unsigned col, unsigned row, unsigned v) {
     pixelBits tmp;
-    // Get pixel bits to replace
-    tmp.u8 = (pixRegs[this->toIndex(col, row)] >> ((col%2)*8)) & 0xFF; 
+    pixelBits mask;
+    mask.u8 = 0x0;
+    mask.s.en = 0x1;
     // Set bit
     tmp.s.en = v;
     // Save other pixel bits
-    pixRegs[this->toIndex(col, row)]  = pixRegs[this->toIndex(col, row)] & (0xFFFF & ~(0xFF<<((col%2)*8)));
+    pixRegs[this->toIndex(col, row)] = pixRegs[this->toIndex(col, row)] & (0xFFFF & ~(mask.u8<<((col&0x1)*8)));
     // Write these pixel bits
-    pixRegs[this->toIndex(col, row)] += (0xFF & tmp.u8) << ((col%2)*8);
+    pixRegs[this->toIndex(col, row)] |= ((0xFF & tmp.u8) << ((col&0x1)*8));
 }
 
 void Rd53aPixelCfg::setHitbus(unsigned col, unsigned row, unsigned v) {
     pixelBits tmp;
-    tmp.u8 = (pixRegs[this->toIndex(col, row)] >> ((col%2)*8)) & 0xFF; 
+    pixelBits mask;
+    mask.u8 = 0x0;
+    mask.s.hitbus = 0x1;
     tmp.s.hitbus = v;
-    pixRegs[this->toIndex(col, row)]  = pixRegs[this->toIndex(col, row)] & (0xFFFF & ~(0xFF<<((col%2)*8)));
-    pixRegs[this->toIndex(col, row)] += (0xFF & tmp.u8) << ((col%2)*8);
+    pixRegs[this->toIndex(col, row)] = pixRegs[this->toIndex(col, row)] & (0xFFFF & ~(mask.u8<<((col&0x1)*8)));
+    pixRegs[this->toIndex(col, row)] |= ((0xFF & tmp.u8) << ((col&0x1)*8));
 }
 
 void Rd53aPixelCfg::setInjEn(unsigned col, unsigned row, unsigned v) {
     pixelBits tmp;
-    tmp.u8 = (pixRegs[this->toIndex(col, row)] >> ((col%2)*8)) & 0xFF; 
+    pixelBits mask;
+    mask.u8 = 0x0;
+    mask.s.injen = 0x1;
     tmp.s.injen = v;
-    pixRegs[this->toIndex(col, row)]  = pixRegs[this->toIndex(col, row)] & (0xFFFF & ~(0xFF<<((col%2)*8)));
-    pixRegs[this->toIndex(col, row)] += (0xFF & tmp.u8) << ((col%2)*8);
+    pixRegs[this->toIndex(col, row)] = pixRegs[this->toIndex(col, row)] & (0xFFFF & ~(mask.u8<<((col&0x1)*8)));
+    pixRegs[this->toIndex(col, row)] |= ((0xFF & tmp.u8) << ((col&0x1)*8));
 }
 
 void Rd53aPixelCfg::setTDAC(unsigned col, unsigned row, unsigned v) {
     pixelBits tmp;
-    tmp.u8 = (pixRegs[this->toIndex(col, row)] >> ((col%2)*8)) & 0xFF; 
+    pixelBits mask;
+    mask.u8 = 0x0;
+    mask.s.tdac = 0x1F;
     tmp.s.tdac = v; // TODO this needs reinterpretation depending on col
-    pixRegs[this->toIndex(col, row)]  = pixRegs[this->toIndex(col, row)] & (0xFFFF & ~(0xFF<<((col%2)*8)));
-    pixRegs[this->toIndex(col, row)] += (0xFF & tmp.u8) << ((col%2)*8);
+    pixRegs[this->toIndex(col, row)]  = pixRegs[this->toIndex(col, row)] & (0xFFFF & ~(mask.u8<<((col&0x1)*8)));
+    pixRegs[this->toIndex(col, row)] |= (0xFF & tmp.u8) << ((col&0x1)*8);
 }
 
 unsigned Rd53aPixelCfg::getEn(unsigned col, unsigned row) {

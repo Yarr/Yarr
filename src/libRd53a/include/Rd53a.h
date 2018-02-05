@@ -32,6 +32,10 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
         void configurePixels();
 
         void writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value);
+
+        void enableCalCol(unsigned col);
+        void disableCalCol(unsigned col);
+
     protected:
     private:
 };

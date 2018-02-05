@@ -203,7 +203,7 @@ void Rd53aGlobalCfg::init() {
     CmlEnTap.init(69, &m_cfg[69], 4, 2, 0x3); regMap["CmlEnTap"] = &CmlEnTap;
     CmlEn.init(69, &m_cfg[69], 0, 4, 0xF); regMap["CmlEn"] = &CmlEn;
     //70-72
-    CmlTapBias0.init(70, &m_cfg[70], 0, 10, 500); regMap["CmlTapBias0"] = &CmlTapBias0;
+    CmlTapBias0.init(70, &m_cfg[70], 0, 10, 400); regMap["CmlTapBias0"] = &CmlTapBias0;
     CmlTapBias1.init(71, &m_cfg[71], 0, 10, 0); regMap["CmlTapBias1"] = &CmlTapBias1;
     CmlTapBias2.init(72, &m_cfg[72], 0, 10, 0); regMap["CmlTapBias2"] = &CmlTapBias2;
     //73
@@ -314,7 +314,6 @@ void Rd53aGlobalCfg::init() {
 
 void Rd53aGlobalCfg::toFileJson(json &j) {
     for(auto it : regMap) {
-        std::cout << it.first << std::endl;
         j["RD53A"]["GlobalConfig"][it.first] = it.second->read();
     }    
 }
