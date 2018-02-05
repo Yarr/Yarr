@@ -17,6 +17,7 @@ files = [
 #"../xpressk7-ddr3.xdc",
 "../xpressk7-fmc-octa.xdc",
 "../xpressk7-timing.xdc",
+"board_pkg.vhd",
 ]
 
 
