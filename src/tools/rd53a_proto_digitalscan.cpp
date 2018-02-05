@@ -79,7 +79,7 @@ Histo2d* decode(RawData *data, unsigned &hits) {
     return h;
 }
 
-int main(void) {
+int main(int argc, char *argv[]) {
 
     int specNum = 0;
     if (argc > 1)
