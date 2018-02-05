@@ -55,7 +55,7 @@ void Rd53aGlobalCfg::init() {
     //13
     SyncVrefKrum.init(13, &m_cfg[13], 0, 10, 490); regMap["SyncVrefKrum"] = &SyncVrefKrum;
     //30
-    SyncAutoZero.init(30, &m_cfg[30], 3, 1, 0); regMap["SyncAutoZero"] = &SyncAutoZero;
+    SyncAutoZero.init(30, &m_cfg[30], 3, 2, 0); regMap["SyncAutoZero"] = &SyncAutoZero;
     SyncSelC2F.init(30, &m_cfg[30], 2, 1, 1); regMap["SyncSelC2F"] = &SyncSelC2F;
     SyncSelC4F.init(30, &m_cfg[30], 1, 1, 0); regMap["SyncSelC4F"] = &SyncSelC4F;
     SyncFastTot.init(30, &m_cfg[30], 0, 1, 0); regMap["SyncFastTot"] = &SyncFastTot;
@@ -78,23 +78,23 @@ void Rd53aGlobalCfg::init() {
 
     // Diff FE
     //21
-    DiffPrmp.init(21, &m_cfg[21], 0, 10, 533); regMap["DiffPrmp"] = &DiffPrmp;
+    DiffPrmp.init(21, &m_cfg[21], 0, 10, 500); regMap["DiffPrmp"] = &DiffPrmp;
     //22
-    DiffFol.init(22, &m_cfg[22], 0, 10, 542); regMap["DiffFol"] = &DiffFol;
+    DiffFol.init(22, &m_cfg[22], 0, 10, 500); regMap["DiffFol"] = &DiffFol;
     //23
-    DiffPrecomp.init(23, &m_cfg[23], 0, 10, 551); regMap["DiffPrecomp"] = &DiffPrecomp;
+    DiffPrecomp.init(23, &m_cfg[23], 0, 10, 500); regMap["DiffPrecomp"] = &DiffPrecomp;
     //24
     DiffComp.init(24, &m_cfg[24], 0, 10, 528); regMap["DiffComp"] = &DiffComp;
     //25
-    DiffVff.init(25, &m_cfg[25], 0, 10, 164); regMap["DiffVff"] = &DiffVff;
+    DiffVff.init(25, &m_cfg[25], 0, 10, 80); regMap["DiffVff"] = &DiffVff;
     //26
-    DiffVth1.init(26, &m_cfg[26], 0, 10, 1023); regMap["DiffVth1"] = &DiffVth1;
+    DiffVth1.init(26, &m_cfg[26], 0, 10, 250); regMap["DiffVth1"] = &DiffVth1;
     //27
-    DiffVth2.init(27, &m_cfg[27], 0, 10, 0); regMap["DiffVth2"] = &DiffVth2;
+    DiffVth2.init(27, &m_cfg[27], 0, 10, 50); regMap["DiffVth2"] = &DiffVth2;
     //28
     DiffLcc.init(28, &m_cfg[28], 0, 10, 20); regMap["DiffLcc"] = &DiffLcc;
     //29
-    DiffLccEn.init(29, &m_cfg[29], 1, 1, 1); regMap["DiffLccEn"] = &DiffLccEn;
+    DiffLccEn.init(29, &m_cfg[29], 1, 1, 0); regMap["DiffLccEn"] = &DiffLccEn;
     DiffFbCapEn.init(29, &m_cfg[29], 0, 1, 0); regMap["DiffFbCapEn"] = &DiffFbCapEn;
 
     //Power

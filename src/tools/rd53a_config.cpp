@@ -22,7 +22,8 @@ int main(int argc, char *argv[]) {
 
     //fe.setEn(1, 0, 1);
 
-    
+
+    // Write config
     if (argc > 1) {
         json cfg;
         fe.toFileJson(cfg);

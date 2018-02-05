@@ -56,13 +56,19 @@ void decode(RawData *data) {
     }
 }
 
-int main(void) {
+int main(int argc, char *argv[]) {
+
+    int specNum = 0;
+    if (argc > 1)
+        specNum = std::stoi(argv[1]);
 
     SpecController spec;
-    spec.init(0);
+    spec.init(specNum);
     
     //Send IO config to active FMC
-    spec.writeSingle(0x6<<14 | 0x0, EN_RX1 | EN_RX3 | EN_RX4 | EN_RX5);
+    //spec.writeSingle(0x6<<14 | 0x0, EN_RX1 | EN_RX3 | EN_RX4 | EN_RX5);
+    //spec.writeSingle(0x6<<14 | 0x0, 0xFFFFFFE);
+    spec.writeSingle(0x6<<14 | 0x0, 0x080000);
     spec.writeSingle(0x6<<14 | 0x1, 0xF);
     spec.setCmdEnable(0x1);
     spec.setRxEnable(0x0);
@@ -94,9 +100,17 @@ int main(void) {
     std::cout << ">>> Enabling digital injection" << std::endl;
     fe.writeRegister(&Rd53a::InjEnDig, 1);
     fe.writeRegister(&Rd53a::LatencyConfig, 40);
-    fe.writeRegister(&Rd53a::CalColprSync1, 0xFFFF);
    
     std::cout << ">>> Enabling some pixels" << std::endl;
+    
+    fe.setEn(100, 0, 1);
+    fe.setInjEn(100, 0, 1);
+    fe.setEn(102, 0, 1);
+    fe.setInjEn(102, 0, 1);
+    fe.setEn(102, 1, 1);
+    fe.setInjEn(102, 1, 1);
+
+    /*
     fe.writeRegister(&Rd53a::PixRegionCol, 100);
     fe.writeRegister(&Rd53a::PixRegionRow, 0);
     fe.writeRegister(&Rd53a::PixPortal, 0xFFFF);
@@ -104,6 +118,8 @@ int main(void) {
     fe.writeRegister(&Rd53a::PixPortal, 0xFFFF);
     fe.writeRegister(&Rd53a::PixRegionRow, 2);
     fe.writeRegister(&Rd53a::PixPortal, 0xFFFF);
+    */
+    fe.configurePixels();
     sleep(1);
     
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -115,7 +131,7 @@ int main(void) {
     spec.writeFifo(0x69696969); // 16
     spec.writeFifo(0x69696969); // 24
     spec.writeFifo(0x69696969); // 32
-    fe.trigger(0xF, 1, 0xF, 2);
+    fe.trigger(0xF, 31, 0xF, 2);
 
     {
         RawData *data = NULL;

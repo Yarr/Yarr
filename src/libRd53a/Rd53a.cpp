@@ -113,7 +113,6 @@ void Rd53a::configurePixels() {
 void Rd53a::enableCalCol(unsigned col) {
     if (col < 16) {
         this->writeRegister(&Rd53a::CalColprSync1, CalColprSync1.read() | (0x1 << col));
-        std::cout << std::hex << "0x" <<  CalColprSync1.read() << std::dec << std::endl;
     } else if (col < 32) {
         this->writeRegister(&Rd53a::CalColprSync2, CalColprSync2.read() | (0x1 << (col-16)));
     } else if (col < 48) {
@@ -148,7 +147,6 @@ void Rd53a::enableCalCol(unsigned col) {
 void Rd53a::disableCalCol(unsigned col) {
     if (col < 16) {
         this->writeRegister(&Rd53a::CalColprSync1, CalColprSync1.read()  & ~(0x1 << col));
-        std::cout << std::hex << "0x" <<  CalColprSync1.read() << std::dec << std::endl;
     } else if (col < 32) {
         this->writeRegister(&Rd53a::CalColprSync2, CalColprSync2.read() & ~(0x1 << (col-16)));
     } else if (col < 48) {
