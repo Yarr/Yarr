@@ -8,6 +8,18 @@
 
 #include "Fei4ThresholdScan.h"
 
+#include "ScanFactory.h"
+
+namespace Fei4ScansRegistry {
+  using StdDict::registerScan;
+
+  bool threshold_scan_registered =
+    registerScan("thresholdscan",
+                 [](Bookkeeper *k) {
+                   return std::unique_ptr<ScanBase>(new Fei4ThresholdScan(k));
+                 });
+}
+
 Fei4ThresholdScan::Fei4ThresholdScan(Bookkeeper *b) : ScanBase(b) {
     mask = MASK_16;
     dcMode = QUAD_DC;

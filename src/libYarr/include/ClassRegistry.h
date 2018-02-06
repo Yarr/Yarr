@@ -2,10 +2,10 @@
 #include <map>
 #include <string>
 
-template <typename T>
+template <typename T, typename... A>
 class ClassRegistry {
 
-    typedef std::function<std::unique_ptr<T>()> FunctionType;
+    typedef std::function<std::unique_ptr<T>(A... args)> FunctionType;
     typedef std::map<std::string, FunctionType> MapType;
 
     MapType registry;
@@ -18,9 +18,9 @@ class ClassRegistry {
         return true;
     }
 
-    std::unique_ptr<T> makeClass(std::string name) {
+    std::unique_ptr<T> makeClass(std::string name, A... args) {
         try {
-            return registry.at(name)();
+            return registry.at(name)(args...);
         } catch(std::out_of_range &e) {
             return nullptr;
         }

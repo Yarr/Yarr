@@ -8,6 +8,18 @@
 
 #include "Fei4PixelPreampTune.h"
 
+#include "ScanFactory.h"
+
+namespace Fei4ScansRegistry {
+  using StdDict::registerScan;
+
+  bool pixel_preamp_retune_scan_registered =
+    registerScan("tune_pixelpreamp",
+                 [](Bookkeeper *k) {
+                   return std::unique_ptr<ScanBase>(new Fei4PixelPreampTune(k));
+                 });
+}
+
 Fei4PixelPreampTune::Fei4PixelPreampTune(Bookkeeper *b) : ScanBase(b) {
     mask = MASK_16;
     dcMode = QUAD_DC;

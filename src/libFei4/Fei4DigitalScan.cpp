@@ -8,6 +8,18 @@
 
 #include "Fei4DigitalScan.h"
 
+#include "ScanFactory.h"
+
+namespace Fei4ScansRegistry {
+  using StdDict::registerScan;
+
+  bool digital_scan_registered =
+    registerScan("digitalscan",
+                 [](Bookkeeper *k) {
+                   return std::unique_ptr<ScanBase>(new Fei4DigitalScan(k));
+                 });
+}
+
 Fei4DigitalScan::Fei4DigitalScan(Bookkeeper *k) : ScanBase(k) {
     mask = MASK_32;
     dcMode = QUAD_DC;

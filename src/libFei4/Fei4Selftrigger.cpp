@@ -8,6 +8,24 @@
 
 #include "Fei4Selftrigger.h"
 
+#include "ScanFactory.h"
+
+namespace Fei4ScansRegistry {
+  using StdDict::registerScan;
+
+  bool self_trigger_scan_registered =
+    registerScan("selftrigger",
+                 [](Bookkeeper *k) {
+                   return std::unique_ptr<ScanBase>(new Fei4Selftrigger(k));
+                 });
+  // No difference ???
+  bool self_trigger_noise_scan_registered =
+    registerScan("selftrigger_noise",
+                 [](Bookkeeper *k) {
+                   return std::unique_ptr<ScanBase>(new Fei4Selftrigger(k));
+                 });
+}
+
 Fei4Selftrigger::Fei4Selftrigger(Bookkeeper *k) : ScanBase(k) {
     triggerFrequency = 1e4;
     triggerTime = 30;

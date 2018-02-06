@@ -8,6 +8,7 @@
 
 #include "ScanFactory.h"
 #include "AllStdActions.h"
+#include "ClassRegistry.h"
 
 ScanFactory::ScanFactory(Bookkeeper *k) : ScanBase(k) {
 }
@@ -74,4 +75,32 @@ void ScanFactory::loadConfig(json &scanCfg) {
     }
                     
 
+}
+
+namespace StdDict {
+    typedef ClassRegistry<ScanBase, Bookkeeper *> OurRegistry;
+
+    static OurRegistry &registry() {
+        static OurRegistry instance;
+        return instance;
+    }
+
+    bool registerScan(std::string name,
+                      std::function<std::unique_ptr<ScanBase>(Bookkeeper *k)> f)
+    {
+      return registry().registerClass(name, f);
+
+    }
+
+    std::unique_ptr<ScanBase> getScan(std::string name, Bookkeeper *b) {
+        auto result = registry().makeClass(name, b);
+        if(result == nullptr) {
+            std::cout << "No Scan class matching '" << name << "' found\n";
+        }
+        return result;
+    }
+
+    std::vector<std::string> listScans() {
+        return registry().listClasses();
+    }
 }

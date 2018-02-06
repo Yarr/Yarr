@@ -8,6 +8,18 @@
 
 #include "Fei4AnalogScan.h"
 
+#include "ScanFactory.h"
+
+namespace Fei4ScansRegistry {
+  using StdDict::registerScan;
+
+  bool analogue_scan_registered =
+    registerScan("analogscan",
+                 [](Bookkeeper *k) {
+                   return std::unique_ptr<ScanBase>(new Fei4AnalogScan(k));
+                 });
+}
+
 Fei4AnalogScan::Fei4AnalogScan(Bookkeeper *k) : ScanBase(k) {
     mask = MASK_32;
     dcMode = QUAD_DC;

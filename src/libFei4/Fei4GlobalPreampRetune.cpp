@@ -8,6 +8,18 @@
 
 #include "Fei4GlobalPreampRetune.h"
 
+#include "ScanFactory.h"
+
+namespace Fei4ScansRegistry {
+  using StdDict::registerScan;
+
+  bool global_preamp_retune_scan_registered =
+    registerScan("retune_globalpreamp",
+                 [](Bookkeeper *k) {
+                   return std::unique_ptr<ScanBase>(new Fei4GlobalPreampRetune(k));
+                 });
+}
+
 Fei4GlobalPreampRetune::Fei4GlobalPreampRetune(Bookkeeper *b) : ScanBase(b) {
     mask = MASK_16;
     dcMode = QUAD_DC;

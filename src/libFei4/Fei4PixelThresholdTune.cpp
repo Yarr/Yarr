@@ -8,6 +8,18 @@
 
 #include "Fei4PixelThresholdTune.h"
 
+#include "ScanFactory.h"
+
+namespace Fei4ScansRegistry {
+  using StdDict::registerScan;
+
+  bool pixel_threshold_scan_registered =
+    registerScan("tune_pixelthreshold",
+                 [](Bookkeeper *k) {
+                   return std::unique_ptr<ScanBase>(new Fei4PixelThresholdTune(k));
+                 });
+}
+
 Fei4PixelThresholdTune::Fei4PixelThresholdTune(Bookkeeper *b) : ScanBase(b) {
     mask = MASK_16;
     dcMode = QUAD_DC;

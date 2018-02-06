@@ -32,7 +32,6 @@
 #include "Fei4DataProcessor.h"
 #include "Fei4Histogrammer.h"
 #include "Fei4Analysis.h"
-#include "Fei4Scans.h"
 
 #if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
 
@@ -53,6 +52,7 @@ std::string toString(int value,int digitsCount)
 
 void printHelp();
 void listScans();
+void listKnown();
 
 std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie );
 
@@ -107,13 +107,16 @@ int main(int argc, char *argv[]) {
     oF.close();
 
     int c;
-    while ((c = getopt(argc, argv, "hs:n:m:g:r:c:t:po:")) != -1) {
+    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
                 printHelp();
                 return 0;
                 break;
+            case 'k':
+                listKnown();
+                return 0;
             case 's':
                 scanType = std::string(optarg);
                 break;
@@ -541,22 +544,37 @@ void printHelp() {
     std::cout << " -p: Enable plotting of results." << std::endl;
     std::cout << " -o <dir> : Output directory. (Default ./data/)" << std::endl;
     std::cout << " -m <int> : 0 = disable pixel masking, 1 = reset pixel masking, default = enable pixel masking" << std::endl;
+    std::cout << " -k: Report known items (Scans, Hardware etc.)\n";
 }
 
 void listScans() {
-    std::cout << "  digitalscan" << std::endl;
-    std::cout << "  analogscan" << std::endl;
-    std::cout << "  thresholdscan" << std::endl;
-    std::cout << "  totscan" << std::endl;
-    std::cout << "  tune_globalthreshold" << std::endl;
-    std::cout << "  tune_pixelthreshold" << std::endl;
-    std::cout << "  tune_globalpreamp" << std::endl;
-    std::cout << "  tune_pixelpreamp" << std::endl;
-    std::cout << "  noisescan" << std::endl;
-    std::cout << "  selftrigger" << std::endl;
-    std::cout << "  selftrigger_noise" << std::endl;
+    for(std::string &scan_name: StdDict::listScans()) {
+        std::cout << "  " << scan_name << "\n";
+    }
 }
 
+void listControllers() {
+    for(auto &h: StdDict::listHwControllers()) {
+        std::cout << "  " << h << std::endl;
+    }
+}
+
+void listScanLoopActions() {
+    for(auto &la: StdDict::listLoopActions()) {
+        std::cout << "  " << la << std::endl;
+    }
+}
+
+void listKnown() {
+    std::cout << " Known Scans:\n";
+    listScans();
+
+    std::cout << " Known ScanLoop actions:\n";
+    listScanLoopActions();
+
+    std::cout << " Known HW controllers:\n";
+    listControllers();
+}
 
 std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie ) {
   std::unique_ptr<ScanBase> s ( nullptr );
@@ -574,42 +592,10 @@ std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bo
         dynamic_cast<ScanFactory&>(*s).loadConfig(scanCfg);
     } else {
         std::cout << "-> Selecting Scan: " << scanType << std::endl;
-        if (scanType == "digitalscan") {
-            std::cout << "-> Found Digital Scan" << std::endl;
-            s.reset( new Fei4DigitalScan(&bookie) );
-        } else if (scanType == "analogscan") {
-            std::cout << "-> Found Analog Scan" << std::endl;
-            s.reset( new Fei4AnalogScan(&bookie) );
-        } else if (scanType == "thresholdscan") {
-            std::cout << "-> Found Threshold Scan" << std::endl;
-            s.reset( new Fei4ThresholdScan(&bookie) );
-        } else if (scanType == "totscan") {
-            std::cout << "-> Found ToT Scan" << std::endl;
-            s.reset( new Fei4TotScan(&bookie) );
-        } else if (scanType == "tune_globalthreshold") {
-            std::cout << "-> Found Global Threshold Tuning" << std::endl;
-            s.reset( new Fei4GlobalThresholdTune(&bookie) );
-        } else if (scanType == "tune_pixelthreshold") {
-            std::cout << "-> Found Pixel Threshold Tuning" << std::endl;
-            s.reset( new Fei4PixelThresholdTune(&bookie) );
-        } else if (scanType == "tune_globalpreamp") {
-            std::cout << "-> Found Global Preamp Tuning" << std::endl;
-            s.reset( new Fei4GlobalPreampTune(&bookie) );
-        } else if (scanType == "retune_globalpreamp") {
-            std::cout << "-> Found Global Preamp Retuning" << std::endl;
-            s.reset( new Fei4GlobalPreampRetune(&bookie) );
-        } else if (scanType == "tune_pixelpreamp") {
-            std::cout << "-> Found Pixel Preamp Tuning" << std::endl;
-            s.reset( new Fei4PixelPreampTune(&bookie) );
-        } else if (scanType == "noisescan") {
-            std::cout << "-> Found Noisescan" << std::endl;
-            s.reset( new Fei4NoiseScan(&bookie) );
-        } else if (scanType == "selftrigger") {
-            std::cout << "-> Found Selftrigger" << std::endl;
-            s.reset(new Fei4Selftrigger(&bookie) );
-        } else if (scanType == "selftrigger_noise") {
-            std::cout << "-> Found Selftrigger" << std::endl;
-            s.reset(new Fei4Selftrigger(&bookie) );
+        auto scan = StdDict::getScan(scanType, &bookie);
+        if (scan != nullptr) {
+            std::cout << "-> Found Scan for " << scanType << std::endl;
+            s = std::move(scan);
         } else {
             std::cout << "-> No matching Scan found, possible:" << std::endl;
             listScans();
@@ -647,18 +633,19 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
                 std::cout << nHistos << std::endl;
                 for (int j=0; j<nHistos; j++) {
                     std::cout << j << std::endl;
-                    if (histoCfg[std::to_string(j)]["algorithm"] == "OccupancyMap") {
+                    std::string algo_name = histoCfg[std::to_string(j)]["algorithm"];
+                    if (algo_name == "OccupancyMap") {
                         histogrammer.addHistogrammer(new OccupancyMap());
-                    } else if (histoCfg[std::to_string(j)]["algorithm"] == "TotMap") {
+                    } else if (algo_name == "TotMap") {
                         histogrammer.addHistogrammer(new TotMap());
-                    } else if (histoCfg[std::to_string(j)]["algorithm"] == "Tot2Map") {
+                    } else if (algo_name == "Tot2Map") {
                         histogrammer.addHistogrammer(new Tot2Map());
-                    } else if (histoCfg[std::to_string(j)]["algorithm"] == "L1Dist") {
+                    } else if (algo_name == "L1Dist") {
                         histogrammer.addHistogrammer(new L1Dist());
-                    } else if (histoCfg[std::to_string(j)]["algorithm"] == "HitsPerEvent") {
+                    } else if (algo_name == "HitsPerEvent") {
                         histogrammer.addHistogrammer(new HitsPerEvent());
                     } else {
-                        std::cerr << "#ERROR# Histogrammer \"" << histoCfg[std::to_string(j)]["algorithm"] << "\" unknown, skipping!" << std::endl;
+                        std::cerr << "#ERROR# Histogrammer \"" << algo_name << "\" unknown, skipping!" << std::endl;
                     }
                 }
             }

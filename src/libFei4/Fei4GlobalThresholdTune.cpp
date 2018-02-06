@@ -8,6 +8,18 @@
 
 #include "Fei4GlobalThresholdTune.h"
 
+#include "ScanFactory.h"
+
+namespace Fei4ScansRegistry {
+  using StdDict::registerScan;
+
+  bool global_threshold_scan_registered =
+    registerScan("tune_globalthreshold",
+                 [](Bookkeeper *k) {
+                   return std::unique_ptr<ScanBase>(new Fei4GlobalThresholdTune(k));
+                 });
+}
+
 Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Bookkeeper *b) : ScanBase(b) {
     mask = MASK_16;
     dcMode = QUAD_DC;
