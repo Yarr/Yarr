@@ -201,9 +201,15 @@ begin
         -- Swapping [63:32] and [31:0] to reverse swapping by casting 64-bit to uint32_t
         rx_fifo_din(I) <= rx_data(I)(31 downto 0) & rx_data(I)(63 downto 32) when (rx_header(I) = "01") else
                           rx_data(I)(31 downto 0) & x"FFFFFFFF" when (rx_data(I)(63 downto 56) = c_AURORA_SEP) else
+                          rx_data(I)(31 downto 0) & rx_data(I)(63 downto 32) when ((rx_header(I) = "10") and (rx_data(I)(63 downto 56) = x"55")) else
+                          rx_data(I)(31 downto 0) & rx_data(I)(63 downto 32) when ((rx_header(I) = "10") and (rx_data(I)(63 downto 56) = x"99")) else
+                          rx_data(I)(31 downto 0) & rx_data(I)(63 downto 32) when ((rx_header(I) = "10") and (rx_data(I)(63 downto 56) = x"D2")) else
                           x"FFFFFFFFFFFFFFFF";
         rx_fifo_wren(I) <= rx_data_valid(I) when (rx_header(I) = "01") else
                            rx_data_valid(I) when ((rx_data(I)(63 downto 56) = c_AURORA_SEP) and (rx_data(I)(55 downto 48) = x"04")) else
+                           rx_data_valid(I) when ((rx_header(I) = "10") and (rx_data(I)(63 downto 56) = x"55")) else
+                           rx_data_valid(I) when ((rx_header(I) = "10") and (rx_data(I)(63 downto 56) = x"99")) else
+                           rx_data_valid(I) when ((rx_header(I) = "10") and (rx_data(I)(63 downto 56) = x"D2")) else
                            '0';
                            
         cmp_lane_fifo : rx_channel_fifo PORT MAP (
