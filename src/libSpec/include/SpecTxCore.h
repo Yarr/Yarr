@@ -49,7 +49,7 @@ class SpecTxCore : virtual public TxCore, virtual public SpecCom{
         void setVerbose(bool v=true);
 
         void writeFifo(uint32_t value);
-        void releaseFifo() {this->writeFifo(0x0);} // Add some padding
+        void releaseFifo() {};
         
         void setCmdEnable(uint32_t value);
         uint32_t getCmdEnable();

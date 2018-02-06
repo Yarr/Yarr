@@ -19,5 +19,7 @@ job_build_and_test:
       - cat ./data/000001_digitalscan/JohnDoe_OccupancyMap.dat
       - NUM100=`cat ./data/000001_digitalscan/JohnDoe_OccupancyMap.dat | grep -o 100 | wc -l`
       - if [ "$NUM100" != "26880" ]; then exit 2; fi
-      - cd ../
+        #      - TEST=`bin/rd53a_test | grep -o 0xa | wc -l`
+        #      - if [ "$TEST" != "1" ]; then exit 2; fi
+        #      - cd ../
 
