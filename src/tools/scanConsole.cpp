@@ -203,15 +203,6 @@ int main(int argc, char *argv[]) {
     std::cout << " Output Plots: " << doPlots << std::endl;
     std::cout << " Output Directory: " << outputDir << std::endl;
 
-    std::cout << " Known HwControllers:\n";
-    for(auto &h: StdDict::listHwControllers()) {
-      std::cout << "   " << h << std::endl;
-    }
-    std::cout << " Known ScanLoop actions:\n";
-    for(auto &la: StdDict::listLoopActions()) {
-      std::cout << "   " << la << std::endl;
-    }
-    
     // Create folder
     //for some reason, 'make' issues that mkdir is an undefined reference
     //a test program on another machine has worked fine

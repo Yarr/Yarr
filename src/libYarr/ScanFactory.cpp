@@ -52,6 +52,13 @@ void ScanFactory::loadConfig(json &scanCfg) {
 
         if (action == nullptr) {
             std::cout << "### ERROR ### => Unknown Loop Action: " << loopAction << " ... skipping!" << std::endl;
+
+            std::cout << " Known ScanLoop actions:\n";
+            for(auto &la: StdDict::listLoopActions()) {
+              std::cout << "   " << la << std::endl;
+            }
+
+            continue;
         }
 
         if (!scanCfg["scan"]["loops"][i]["config"].empty()) {
