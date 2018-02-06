@@ -16,7 +16,8 @@ files = [
 "simple_counter.vhd",
 "m_clk_sync.vhd",
 "k_dual_bram.vhd",
-"wb_traffic_gen.vhd"
+"wb_traffic_gen.vhd",
+"wb_spi.vhd"
 ]
 
 library = "work"

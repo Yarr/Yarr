@@ -56,7 +56,29 @@ package common_pkg is
     );
   end component generic_async_fifo;
   
-
+    component wb_spi
+      generic (
+          g_CLK_DIVIDER : positive := 20
+      );
+      port (
+          -- Sys Connect
+          wb_clk_i : in std_logic;
+          rst_n_i : in std_logic;
+          -- Wishbone slave interface
+          wb_adr_i    : in  std_logic_vector(31 downto 0) := (others => '0');
+          wb_dat_i    : in  std_logic_vector(31 downto 0) := (others => '0');
+          wb_dat_o    : out std_logic_vector(31 downto 0);
+          wb_cyc_i    : in  std_logic := '0';
+          wb_stb_i    : in  std_logic := '0';
+          wb_we_i        : in  std_logic := '0';
+          wb_ack_o    : out std_logic;
+          -- SPI out
+          scl_o : out std_logic;
+          sda_o : out std_logic;
+          sdi_i : in std_logic;
+          latch_o : out std_logic
+      );
+    end component;
 
 
 

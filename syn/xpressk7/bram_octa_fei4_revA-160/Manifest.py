@@ -10,6 +10,7 @@ modules = {
 
 files = [
 #TOP
+"board_pkg.vhd",
 "../bram_yarr.vhd",
 "../app_pkg.vhd",
 "../app.vhd",

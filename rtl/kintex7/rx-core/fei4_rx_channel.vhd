@@ -46,6 +46,7 @@ architecture behavioral of fei4_rx_channel is
 
 			-- data input
 			din : in std_logic;
+			slip : in std_logic;
 
 			-- data output
 			data_value : out std_logic_vector(1 downto 0);
@@ -191,6 +192,7 @@ begin
 		clk640 => clk_640_i, 
 		reset => not rst_n_i,
 		din => rx_data_i,
+		slip => '0',
 		data_value => data_raw_value,
 		data_valid => data_raw_valid,
 		data_lock => data_raw_lock

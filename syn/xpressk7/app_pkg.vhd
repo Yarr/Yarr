@@ -31,10 +31,13 @@ use IEEE.NUMERIC_STD.ALL;
 --library UNISIM;
 --use UNISIM.VComponents.all;
 
+library work;
+use work.board_pkg.all;
+
 package app_pkg is
 
-    constant c_TX_CHANNELS : integer := 8;
-	constant c_RX_CHANNELS : integer := 8;
+    --constant c_TX_CHANNELS : integer := 8;
+	--constant c_RX_CHANNELS : integer := 8;
     
     component simple_counter is
         Port ( 
@@ -67,6 +70,7 @@ package app_pkg is
      (-- Clock in ports
       clk_250_in           : in     std_logic;
       -- Clock out ports
+      clk_300           : out std_logic;
       clk_640          : out    std_logic;
       clk_160          : out    std_logic;
       clk_80          : out    std_logic;
@@ -490,7 +494,9 @@ package app_pkg is
     
 	component wb_rx_core
         generic (
-            g_NUM_RX : integer range 1 to 32 := c_RX_CHANNELS
+            g_NUM_RX : integer range 1 to 32 := c_RX_CHANNELS;
+            g_TYPE : string := c_FE_TYPE;
+            g_NUM_LANES : integer range 1 to 4 := c_RX_NUM_LANES
         );
         port (
             -- Sys connect
@@ -508,11 +514,12 @@ package app_pkg is
             -- RX IN
             rx_clk_i    : in  std_logic;
             rx_serdes_clk_i : in std_logic;
-            rx_data_i    : in std_logic_vector(g_NUM_RX-1 downto 0);
+            rx_data_i_p    : in std_logic_vector((g_NUM_RX*g_NUM_LANES)-1 downto 0);
+            rx_data_i_n    : in std_logic_vector((g_NUM_RX*g_NUM_LANES)-1 downto 0);
             trig_tag_i : in std_logic_vector(31 downto 0);
             -- RX OUT (sync to sys_clk)
             rx_valid_o : out std_logic;
-            rx_data_o : out std_logic_vector(31 downto 0);
+            rx_data_o : out std_logic_vector(63 downto 0);
             busy_o : out std_logic;
             debug_o : out std_logic_vector(31 downto 0)
         );
@@ -544,7 +551,7 @@ package app_pkg is
             dma_ack_i    : in  std_logic;
             dma_stall_i    : in  std_logic;
             -- Rx Interface
-            rx_data_i     : in  std_logic_vector(31 downto 0);
+            rx_data_i     : in  std_logic_vector(63 downto 0);
             rx_valid_i    : in  std_logic;
             -- Status in
             trig_pulse_i : in std_logic;

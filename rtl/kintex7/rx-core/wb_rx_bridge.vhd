@@ -44,7 +44,7 @@ entity wb_rx_bridge is
 		dma_stall_i	: in  std_logic;
 		
 		-- Rx Interface
-		rx_data_i 	: in  std_logic_vector(31 downto 0);
+		rx_data_i 	: in  std_logic_vector(63 downto 0);
 		rx_valid_i	: in  std_logic;
 		
 		-- Status In
@@ -67,8 +67,8 @@ architecture Behavioral of wb_rx_bridge is
         din : IN STD_LOGIC_VECTOR(63 DOWNTO 0);
         wr_en : IN STD_LOGIC;
         rd_en : IN STD_LOGIC;
-        prog_empty_thresh : IN STD_LOGIC_VECTOR(10 DOWNTO 0);
-        prog_full_thresh : IN STD_LOGIC_VECTOR(10 DOWNTO 0);
+        prog_empty_thresh : IN STD_LOGIC_VECTOR(9 DOWNTO 0);
+        prog_full_thresh : IN STD_LOGIC_VECTOR(9 DOWNTO 0);
         dout : OUT STD_LOGIC_VECTOR(63 DOWNTO 0);
         full : OUT STD_LOGIC;
         empty : OUT STD_LOGIC;
@@ -92,12 +92,12 @@ architecture Behavioral of wb_rx_bridge is
 	END COMPONENT;
 	
 	-- Constants
-	constant c_ALMOST_FULL_THRESHOLD : unsigned(10 downto 0) := TO_UNSIGNED(1900, 11);
+	constant c_ALMOST_FULL_THRESHOLD : unsigned(9 downto 0) := TO_UNSIGNED(900, 10);
 	constant c_PACKAGE_SIZE : unsigned(31 downto 0) := TO_UNSIGNED((200*256), 32); -- 200kByte
 	constant c_TIMEOUT : unsigned(31 downto 0) := TO_UNSIGNED(2**14, 32); -- Counts in 5ns = 0.1ms
 	constant c_TIME_FRAME : unsigned(31 downto 0) := TO_UNSIGNED(200000000-1, 32); -- 200MHz clock cycles in 1 sec
-	constant c_EMPTY_THRESHOLD : unsigned(10 downto 0) := TO_UNSIGNED(16, 11);
-	constant c_EMPTY_TIMEOUT : unsigned(10 downto 0) := TO_UNSIGNED(2000, 11);
+	constant c_EMPTY_THRESHOLD : unsigned(9 downto 0) := TO_UNSIGNED(16, 10);
+	constant c_EMPTY_TIMEOUT : unsigned(9 downto 0) := TO_UNSIGNED(2000, 10);
 	
 	-- Signals
 	signal data_fifo_din : std_logic_vector(63 downto 0);
@@ -235,7 +235,7 @@ begin
 				data_fifo_din <= X"03000000" & rx_data_local_d;
 			else
 				data_fifo_wren <= rx_valid_i;
-				data_fifo_din <= X"03000000" & rx_data_i;
+				data_fifo_din <=  rx_data_i;
 			end if;
 		end if;
 	end process data_rec;
