@@ -106,5 +106,7 @@ class SpecCom {
         void startDma();
         void abortDma();
         uint32_t getDmaStatus();
+
+        void flushDma();
 };
 #endif
