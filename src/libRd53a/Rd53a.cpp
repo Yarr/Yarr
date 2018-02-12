@@ -38,6 +38,10 @@ void Rd53a::writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value) {
         wrRegister(m_chipId, (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
 }
 
+void Rd53a::readRegister(Rd53aReg Rd53aGlobalCfg::*ref) {
+        rdRegister(m_chipId, (this->*ref).addr());
+}
+
 void Rd53a::configure() {
     this->init();
     // Turn off clock to matrix
