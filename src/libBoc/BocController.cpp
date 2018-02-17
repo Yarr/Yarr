@@ -1,5 +1,11 @@
 #include "BocController.h"
 
+#include "AllHwControllers.h"
+
+bool boc_registered =
+  StdDict::registerHwController("boc",
+                                []() { return std::unique_ptr<HwController>(new BocController); });
+
 void BocController::loadConfig(json &j) {
 	m_com = new BocCom(static_cast<const std::string & >(j["bocHost"]));
 	BocTxCore::setCom(m_com);

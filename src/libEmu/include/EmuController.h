@@ -16,13 +16,19 @@
 #include "EmuShm.h"
 #include "json.hpp"
 
+#include "Fei4Emu.h"
+
 #include "RingBuffer.h"
 
 using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 
 class EmuController : public HwController, public EmuTxCore, public EmuRxCore {
+    Fei4Emu *emu;
+    std::vector<std::thread> emuThreads;
+
     public:
         EmuController(RingBuffer * rx, RingBuffer * tx);
+        ~EmuController();
         void loadConfig(json &j);
 };
 

@@ -11,6 +11,8 @@ namespace StdDict {
     bool registerLoopAction(std::string name,
                             std::function<std::unique_ptr<LoopActionBase>()> f);
     std::unique_ptr<LoopActionBase> getLoopAction(std::string name);
+
+    std::vector<std::string> listLoopActions();
 }
 
 #endif

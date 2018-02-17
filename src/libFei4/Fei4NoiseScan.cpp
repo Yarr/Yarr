@@ -8,6 +8,18 @@
 
 #include "Fei4NoiseScan.h"
 
+#include "ScanFactory.h"
+
+namespace Fei4ScansRegistry {
+  using StdDict::registerScan;
+
+  bool noise_scan_registered =
+    registerScan("noisescan",
+                 [](Bookkeeper *k) {
+                   return std::unique_ptr<ScanBase>(new Fei4NoiseScan(k));
+                 });
+}
+
 Fei4NoiseScan::Fei4NoiseScan(Bookkeeper *k) : ScanBase(k) {
     triggerFrequency = 1e4;
     triggerTime = 30;

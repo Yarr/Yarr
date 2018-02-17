@@ -47,8 +47,9 @@ get_filename_component(srcfile ${target} NAME)
 add_executable(${execname} tools/${srcfile})
 add_dependencies(${execname} Yarr)
 set_target_properties(${execname} PROPERTIES LINKER_LANGUAGE CXX)
-target_link_libraries(${execname} Yarr pthread ) 
+# Whole-archive means not to drop symbols from Yarr.
+# Mainly this is about making sure the auto-registration works.
+set(WRAPPED_YARR -Wl,--whole-archive Yarr -Wl,--no-whole-archive)
+# Not sure why rt is not linked by default here
+target_link_libraries(${execname} ${WRAPPED_YARR} pthread rt) 
 endforeach()
-
-
-

@@ -8,6 +8,18 @@
 
 #include "Fei4TotScan.h"
 
+#include "ScanFactory.h"
+
+namespace Fei4ScansRegistry {
+  using StdDict::registerScan;
+
+  bool tot_scan_registered =
+    registerScan("totscan",
+                 [](Bookkeeper *k) {
+                   return std::unique_ptr<ScanBase>(new Fei4TotScan(k));
+                 });
+}
+
 Fei4TotScan::Fei4TotScan(Bookkeeper *b) : ScanBase(b) {
     mask = MASK_16;
     dcMode = QUAD_DC;
