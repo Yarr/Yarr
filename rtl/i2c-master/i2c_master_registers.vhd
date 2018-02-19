@@ -69,6 +69,10 @@ end;
 
 architecture arch of i2c_master_registers is
 
+signal prer_s : std_logic_vector(15 downto 0);
+signal ctr_int_s : std_logic_vector(7 downto 0);
+signal cr_int_s : std_logic_vector(7 downto 0);
+signal txr_s : std_logic_vector(7 downto 0);
 
 signal ctr_int : std_logic_vector(7 downto 0);
 signal cr_int : std_logic_vector(7 downto 0);
@@ -87,17 +91,23 @@ begin
 		prer <= (others => '1');
 		ctr_int <= (others => '0');
 		txr <= (others => '0');
+		prer_s <= (others => '1');
+		ctr_int_s <= (others => '0');
+		txr_s <= (others => '0');
 	elsif rising_edge(wb_clk_i) then
+        prer <= prer_s;
+        ctr_int <= ctr_int_s;
+        txr <= txr_s;
 		if (wb_rst_i = '1') then
 			prer <= (others => '1');
 			ctr_int <= (others => '0');
 			txr <= (others => '0');
 		elsif (wb_wacc = '1') then
 			case (wb_adr_i) is
-				when "000" => prer(7 downto 0)	<= wb_dat_i;
-				when "001" => prer(15 downto 8)	<= wb_dat_i;
-				when "010" => ctr_int			<= wb_dat_i;
-				when "011" => txr				<= wb_dat_i;
+				when "000" => prer_s(7 downto 0)	<= wb_dat_i;
+				when "001" => prer_s(15 downto 8)	<= wb_dat_i;
+				when "010" => ctr_int_s		<= wb_dat_i;
+				when "011" => txr_s				<= wb_dat_i;
 				when others => NULL;
 			end case;
 		end if;
@@ -111,19 +121,21 @@ process(wb_clk_i,rst_i)
 begin
 	if (rst_i = '0') then
 		cr_int <= (others => '0');
+		cr_int_s <= (others => '0');
 	elsif rising_edge(wb_clk_i) then
+        cr_int <= cr_int_s;
 		if (wb_rst_i = '1') then
 			cr_int <= (others => '0');
 		elsif (wb_wacc = '1') then
 			if ((ctr_int(7) = '1') AND (wb_adr_i = "100")) then
-				cr_int <= wb_dat_i;
+				cr_int_s <= wb_dat_i;
 			end if;
 		else
 			if ((done = '1') OR (i2c_al = '1')) then
-				cr_int(7 downto 4) <= "0000";	-- clear command b
+				cr_int_s(7 downto 4) <= "0000";	-- clear command b
 			end if;							-- or when aribitr
-			cr_int(2 downto 1) <= "00";			-- reserved bits
-			cr_int(0) <= '0';					-- clear IRQ_ACK b
+			cr_int_s(2 downto 1) <= "00";			-- reserved bits
+			cr_int_s(0) <= '0';					-- clear IRQ_ACK b
 		end if;
 	end if;
 end process;
