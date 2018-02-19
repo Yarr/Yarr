@@ -27,7 +27,7 @@ The currently supported readout chips are:
 
 
 ## Folder Structure
-```
+```bash
 .
 |-- doc : Documentation
 |-- eudet : Eudet telescope producer
