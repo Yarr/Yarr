@@ -74,11 +74,7 @@ $ make -j4
 <Lots of text>
 ```
 
-## Setting up your hardware
+## Next step
 
-Hardware setup depends on the hardware platform, check list below for installation guides:
-
-- [PCIe cards](pcie.md) (e.g. XpressK7, KC705, Trenz TEF1001, SPEC, ...)
-- more to come
-
+Install the PCIe kernel driver: [Kernel Driver Installation](kernel_driver.md)
 

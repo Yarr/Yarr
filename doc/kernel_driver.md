@@ -1,6 +1,7 @@
 # Kernel Driver Installation
 
-- For both cards the custom PCIe kernel driver is required. It can be installed in the followin way:
+For both cards the custom PCIe kernel driver is required. 
+It can be installed in the followin way:
 ```bash
 $ cd Yarr/src/kernel
 $ make
@@ -13,7 +14,7 @@ $ sudo modprobe -v specDriver
 insmod /lib/modules/3.10.0-229.14.1.el7.x86_64/extra/specDriver.ko
 ```
 
-- You can test if the driver is installed loaded properly by looking at the `dmesg` output:
+You can test if the driver is installed loaded properly by looking at the `dmesg` output:
 ```bash
 $ dmesg
 <Lots of text>
@@ -31,9 +32,9 @@ $ dmesg
 [246519.713527] Module loaded
 ```
 
-- The installation of the kernel driver is only required once and sometimes after a kernel update.
+The installation of the kernel driver is only required once and sometimes after a kernel update.
 
-- In case you run into a problem during ``modprobe`` which looks like this: ``modprobe: ERROR: could not insert 'specDriver': Required key not available``. Do the following:
+In case you run into a problem during ``modprobe`` which looks like this: ``modprobe: ERROR: could not insert 'specDriver': Required key not available``. Do the following:
 ```bash
 $ sudo yum install mokutil
 $ sudo mokutil -disable-validation
