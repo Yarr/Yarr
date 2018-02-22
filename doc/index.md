@@ -20,9 +20,10 @@ The currently supported readout chips are:
     * [PCIe Kernel Driver Installation](kernel_driver.md)
     * [PCIe Firmware Setup](pcie.md)
 * [ScanConsole](scanconsole.md)
-* [FE-I4](fei4.md)
-* [FE65-P2](fe65p2.md)
-* [RD53A](rd53a.md)
+    * [FE-I4](fei4.md)
+    * [FE65-P2](fe65p2.md)
+    * [RD53A](rd53a.md)
+* [Troubleshooting](troubleshooting.md)
 
 
 ## Folder Structure
