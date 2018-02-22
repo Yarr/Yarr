@@ -3,7 +3,8 @@
 In order to setuo the DAQ system the following two steps are needed:
 
 1. Install the YARR SW package
-2. Prepare and setup the DAQ hardware
+2. Install the custom PCIe kernel driver
+3. Prepare and setup the DAQ hardware
 
 ## Software installation
 
@@ -21,6 +22,7 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ```bash
 $ source /afs/cern.ch/sw/lcg/contrib/gcc/4.8/x86_64-slc6/setup.sh
 ```
+- Newer GCC version are supported as well and can be installed via
 - If not installed before, you need some standard packages:
 ```bash
 $ sudo yum install gnuplot texlive-epstopdf cmake
