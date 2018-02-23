@@ -155,6 +155,8 @@ architecture behavioral of wb_rx_core is
 
 	signal rx_enable : std_logic_vector(31 downto 0);
 	signal rx_enable_d : std_logic_vector(31 downto 0);
+    signal rx_status : std_logic_vector(31 downto 0);
+    signal rx_status_s : std_logic_vector(31 downto 0);
 	
 	signal channel : integer range 0 to g_NUM_RX-1;
 
@@ -190,6 +192,9 @@ begin
 					if (wb_adr_i(3 downto 0) = x"0") then -- Read enable mask
 						wb_dat_o <= rx_enable;
 						wb_ack_o <= '1';
+                    elsif (wb_adr_i(3 downto 0) = x"1") then -- Link status
+                        wb_dat_o <= rx_status;
+                        wb_ack_o <= '1';
 					else
 						wb_dat_o <= x"DEADBEEF";
 						wb_ack_o <= '1';
@@ -249,8 +254,10 @@ begin
     begin
         if (rst_n_i = '0') then
             rx_enable_d <= (others => '0');
+            rx_status <= (others => '0');
         elsif rising_edge(rx_clk_i) then
             rx_enable_d <= rx_enable;
+            rx_status <= rx_status_s;
         end if;
    end process enable_sync;
 	
@@ -287,6 +294,9 @@ begin
                 rx_valid_o => rx_valid(I),
                 rx_stat_o => rx_stat(I)
             );
+            rx_status_s(I) <= '1' when rx_stat(I)(1) = '1' else
+                              '1' when rx_enable(I) = '0' else
+                              '0';
 		    rx_fifo_din(I) <= rx_data(I);
         end generate rd53_type;
 		
