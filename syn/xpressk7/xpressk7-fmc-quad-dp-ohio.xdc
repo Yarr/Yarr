@@ -116,6 +116,9 @@ set_property PACKAGE_PIN R20 [get_ports {scl_o}]
 #set_property IOSTANDARD LVDS_25 [get_ports fe_cmd_*]
 #set_property SLEW FAST [get_ports fe_cmd*]
 
+set property PACKAGE_PIN N16 [get_ports {sda_io}]
+set property PACKAGE_PIN J14 [get_ports {scl_io}]
+
 set_property IOSTANDARD LVDS_25 [get_ports fe_data_*]
 set_property DIFF_TERM TRUE [get_ports fe_data_*]
 set_property IBUF_LOW_PWR FALSE [get_ports fe_data_*]
@@ -127,6 +130,11 @@ set_property IOSTANDARD LVCMOS25 [get_ports {scl_o}]
 set_property IOSTANDARD LVCMOS25 [get_ports {sda_o}]
 set_property IOSTANDARD LVCMOS25 [get_ports {latch_o}]
 set_property IOSTANDARD LVCMOS25 [get_ports {sdi_i}]
+
+set_property IOSTANDARD LVCMOS25 [get_ports {sda_io}]
+set_property IOSTANDARD LVCMOS25 [get_ports {scl_io}]
+
+
 
 
 
