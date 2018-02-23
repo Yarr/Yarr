@@ -15,7 +15,7 @@ files = [
 "../app.vhd",
 "../xpressk7.xdc",
 "../xpressk7-ddr3.xdc",
-"../xpressk7-fmc-quad.xdc",
+"../xpressk7-fmc-quad-fei4.xdc",
 "../xpressk7-timing.xdc",
 ]
 

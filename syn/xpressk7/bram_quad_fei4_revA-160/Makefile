@@ -44,10 +44,10 @@ SOURCES_XCIFile := \
 ../../../ip-cores/kintex7/fifo_96x512_1/fifo_96x512.xci \
 ../../../ip-cores/kintex7/rx_channel_fifo/rx_channel_fifo.xci \
 ../../../ip-cores/kintex7/ila_ddr/ila_ddr.xci \
-../../../ip-cores/kintex7/l2p_fifo64/l2p_fifo64.xci \
 ../../../ip-cores/kintex7/fifo_8x32/fifo_8x32.xci \
 ../../../ip-cores/kintex7/pcie_7x_0/pcie_7x_0.xci \
 ../../../ip-cores/kintex7/ila_axis/ila_axis.xci \
+../../../ip-cores/kintex7/l2p_fifo64/l2p_fifo64.xci \
 ../../../ip-cores/kintex7/fifo_256x16/fifo_256x16.xci \
 ../../../ip-cores/kintex7/fifo_64x512/fifo_64x512.xci \
 ../../../ip-cores/kintex7/rx_bridge_fifo/rx_bridge_fifo.xci \
@@ -65,7 +65,7 @@ SOURCES_VHDLFile := \
 ../../../rtl/kintex7/rx-core/decode_8b10b/decode_8b10b_lut.vhd \
 ../../../rtl/kintex7/wbexp-core/l2p_arbiter.vhd \
 ../../../rtl/common/common_pkg.vhd \
-../../../rtl/kintex7/wbexp-core/gn4124_core_pkg.vhd \
+../../../rtl/kintex7/wbexp-core/l2p_dma_master.vhd \
 ../../../rtl/kintex7/rx-core/decode_8b10b/decode_8b10b_wrapper.vhd \
 ../../../rtl/trigger-logic/eudet_tlu.vhd \
 ../app.vhd \
@@ -76,11 +76,14 @@ SOURCES_VHDLFile := \
 ../../../rtl/kintex7/rx-core/gearbox32to66.vhd \
 ../../../rtl/kintex7/ddr3k7-core/ddr3_ctrl_wb.vhd \
 ../../../rtl/kintex7/rx-core/decode_8b10b/decode_8b10b_lut_base.vhd \
-../../../rtl/kintex7/wbexp-core/l2p_dma_master.vhd \
+../../../rtl/i2c-master/i2c_master_registers.vhd \
+../../../rtl/kintex7/wbexp-core/gn4124_core_pkg.vhd \
 ../app_pkg.vhd \
 ../../../rtl/kintex7/wbexp-core/wbexp_core_pkg.vhd \
 ../../../rtl/common/rr_arbiter.vhd \
 ../../../rtl/kintex7/rx-core/decode_8b10b/decode_8b10b_top.vhd \
+../../../rtl/i2c-master/i2c_master_byte_ctrl.vhd \
+../../../rtl/i2c-master/i2c_master_wb_top.vhd \
 ../../../rtl/kintex7/rx-core/fei4_rx_channel.vhd \
 ../bram_yarr.vhd \
 ../../../rtl/kintex7/ddr3k7-core/ddr3_write_core.vhd \
@@ -91,6 +94,7 @@ SOURCES_VHDLFile := \
 ../../../rtl/trigger-logic/wb_trigger_logic.vhd \
 ../../../rtl/kintex7/rx-core/xapp1017/delay_controller_wrap.vhd \
 ../../../rtl/kintex7/wbexp-core/dma_controller_wb_slave.vhd \
+../../../rtl/i2c-master/i2c_master_bit_ctrl.vhd \
 ../../../rtl/kintex7/ddr3k7-core/ddr3_read_core.vhd \
 ../../../rtl/tx-core/serial_port.vhd \
 ../../../rtl/kintex7/rx-core/aurora_rx_channel.vhd \
@@ -107,7 +111,7 @@ SOURCES_VHDLFile := \
 board_pkg.vhd
 
 SOURCES_XDCFile := \
-../xpressk7-fmc-quad.xdc \
+../xpressk7-fmc-quad-fei4.xdc \
 ../xpressk7.xdc \
 ../xpressk7-timing.xdc
 
