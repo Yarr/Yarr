@@ -333,11 +333,11 @@ begin
 			if (rst_n_i = '0') then
 				tx_data_o(I) <= '0';
 			elsif rising_edge(tx_clk_i) then
-				if (tx_enable(I) = '1' and trig_en = '1') then
-					tx_data_o(I) <= tx_data_trig;
-				else
+				--if (tx_enable(I) = '1' and trig_en = '1') then
+				--	tx_data_o(I) <= tx_data_trig;
+				--else
 					tx_data_o(I) <= tx_data_cmd(I);
-				end if;
+				--end if;
 			end if;
 		end process;
 	end generate tx_channels;

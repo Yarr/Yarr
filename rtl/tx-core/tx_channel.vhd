@@ -138,13 +138,13 @@ begin
 	   end if;
 	end process loop_proc;
 	
-	sport_data_valid <= not tx_fifo_empty when (loop_mode_i = '0') else not loop_empty;
-	tx_fifo_rd <= sport_data_read when (loop_mode_i = '0') else '0';
-	sport_data <= tx_fifo_dout when (loop_mode_i = '0') else 
-	           loop_word_s(127 downto 96) when (loop_cnt = to_unsigned(4, 8)) else
-	           loop_word_s(95 downto 64) when (loop_cnt = to_unsigned(3, 8)) else
-	           loop_word_s(63 downto 32) when (loop_cnt = to_unsigned(2, 8)) else
-	           loop_word_s(31 downto 0) when (loop_cnt = to_unsigned(1, 8));
+	sport_data_valid <= not tx_fifo_empty when (loop_mode_s = '0') else not loop_empty;
+	tx_fifo_rd <= sport_data_read when (loop_mode_s = '0') else '0';
+	sport_data <= tx_fifo_dout when (loop_mode_s = '0') else 
+	           loop_word_s(127 downto 96) when (loop_cnt = to_unsigned(1, 8)) else
+	           loop_word_s(95 downto 64) when (loop_cnt = to_unsigned(2, 8)) else
+	           loop_word_s(63 downto 32) when (loop_cnt = to_unsigned(3, 8)) else
+	           loop_word_s(31 downto 0) when (loop_cnt = to_unsigned(4, 8));
 	
 	cmp_sport: serial_port PORT MAP(
 		clk_i => tx_clk_i,
