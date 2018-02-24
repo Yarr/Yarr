@@ -108,9 +108,9 @@ void Fei4GlobalCfg::init() {
     HitOr.initReg(cfg, 0, 27, 0x5, 1); regMap["HitOr"] = &Fei4GlobalCfg::HitOr;
     CalEn.initReg(cfg, 0, 27, 0x4, 1); regMap["CalEn"] = &Fei4GlobalCfg::CalEn;
     SRClr.initReg(cfg, 0, 27, 0x3, 1); regMap["SRClr"] = &Fei4GlobalCfg::SRClr;
-    Latch_Enable.initReg(cfg, 0, 25, 0x2, 1); regMap["Latch_Enable"] = &Fei4GlobalCfg::Latch_Enable;
-    SR_Clock.initReg(cfg, 0, 25, 0x1, 1); regMap["SR_Clock"] = &Fei4GlobalCfg::SR_Clock;
-    M13.initReg(cfg, 0, 25, 0x0, 1); regMap["M13"] = &Fei4GlobalCfg::M13;
+    Latch_Enable.initReg(cfg, 0, 27, 0x2, 1); regMap["Latch_Enable"] = &Fei4GlobalCfg::Latch_Enable;
+    SR_Clock.initReg(cfg, 0, 27, 0x1, 1); regMap["SR_Clock"] = &Fei4GlobalCfg::SR_Clock;
+    M13.initReg(cfg, 0, 27, 0x0, 1); regMap["M13"] = &Fei4GlobalCfg::M13;
     // 28
     LVDSDrvSet06.initReg(cfg, 1, 28, 0xF, 1); regMap["LVDSDrvSet06"] = &Fei4GlobalCfg::LVDSDrvSet06;
     EN_40M.initReg(cfg, 1, 28, 0x9, 1); regMap["EN_40M"] = &Fei4GlobalCfg::EN_40M;
