@@ -141,6 +141,17 @@ void Rd53aCmd::wrRegisterBlock(uint32_t chipId, uint32_t address, uint16_t value
 }
 
 void Rd53aCmd::rdRegister(uint32_t chipId, uint32_t address) {
-
+    if (verbose) std::cout << __PRETTY_FUNCTION__ << " : ID(" << chipId << ") ADR(" << address << ")" << std::endl;
+    // Header
+    core->writeFifo(0x69696565);
+    uint32_t tmp = 0x0;
+    // ID[3:0],0 | ADR[8:4]
+    tmp += (this->encode5to8((chipId & 0xF) << 1)) << 24;
+    tmp += (this->encode5to8((address >> 4) & 0x1F)) << 16;
+    // ADR[3:0],0
+    tmp += (this->encode5to8((address & 0xF) << 1)) << 8;
+    tmp += (this->encode5to8(0x0)) << 0;
+    core->writeFifo(tmp);
+    core->releaseFifo();
 }
 

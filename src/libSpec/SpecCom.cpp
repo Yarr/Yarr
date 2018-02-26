@@ -82,7 +82,7 @@ void SpecCom::writeSingle(uint32_t off, uint32_t val) {
 }
 
 uint32_t SpecCom::readSingle(uint32_t off) {
-    uint32_t tmp = this->read32(bar0, off);
+    volatile uint32_t tmp = this->read32(bar0, off);
     return tmp; 
 }
 
@@ -218,6 +218,7 @@ void SpecCom::init() {
         std::cerr << __PRETTY_FUNCTION__ << " -> Could not map BAR4, this might be OK!" << std::endl;
         bar4 = NULL;
     }
+    this->flushDma();
     return;
 }
 
@@ -856,5 +857,23 @@ void SpecCom::getSbeFile(std::string pathname, uint8_t * buffer, uint32_t length
     }
 
     return;
+}
+
+void SpecCom::flushDma() {
+    volatile uint32_t dma_addr = 1;
+    volatile uint32_t dma_count = 1;
+    unsigned cnt = 0;
+    unsigned timeout = 10000000;
+    do {
+        dma_addr = readSingle((0x3<<14) | 0x0);
+        dma_count = readSingle((0x3<<14) | 0x1);
+        cnt++;
+        (void) dma_addr;
+        (void) dma_count;
+    } while (dma_count > 0 && cnt < timeout);
+    if (cnt == timeout) {
+        std::cerr << __PRETTY_FUNCTION__ << " -> Timed out while flushing buffers, might read rubbish!" << std::endl;
+        exit(-1);
+    }
 }
 
