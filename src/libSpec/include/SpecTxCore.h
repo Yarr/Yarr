@@ -50,7 +50,6 @@
 class SpecTxCore : virtual public TxCore, virtual public SpecCom{
     public:
         SpecTxCore();
-	SpecTxCore(unsigned int id);
 
         void setVerbose(bool v=true);
 

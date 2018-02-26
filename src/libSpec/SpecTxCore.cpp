@@ -13,9 +13,6 @@ SpecTxCore::SpecTxCore() {
     enMask = 0x0;
 }
 
-SpecTxCore::SpecTxCore(unsigned int id) : SpecCom(id) {
-}
-
 void SpecTxCore::writeFifo(uint32_t value) {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ 
