@@ -895,22 +895,22 @@ wb_dev_gen : if wb_dev_c = '1' generate
 		busy_o => rx_busy
 	);
 
---	cmp_i2c_master : i2c_master_wb_top
---	port map (
---		wb_clk_i => clk_i,
---		wb_rst_i => not rst_n_s,
---		arst_i => not rst_n_s,
---		wb_adr_i => wb_adr_s(2 downto 0),
---		wb_dat_i => wb_dat_m2s_s(7 downto 0),
---		wb_dat_o => wb_dat_s2m_s(135 downto 128),
---		wb_we_i => wb_we_s,
---		wb_stb_i => wb_stb_s,
---		wb_cyc_i => wb_cyc_s(4),
---		wb_ack_o => wb_ack_s(4),
---		wb_inta_o => open,
---		scl => scl_io,
---		sda => sda_io
---	);
+  	cmp_i2c_master : i2c_master_wb_top
+  	port map (
+  		wb_clk_i => wb_clk_s,
+  		wb_rst_i => not rst_n_s,
+  		arst_i => rst_n_s,
+  		wb_adr_i => wb_adr_s(2 downto 0),
+  		wb_dat_i => wb_dat_m2s_s(7 downto 0),
+  		wb_dat_o => wb_dat_s2m_s(135 downto 128),
+  		wb_we_i => wb_we_s,
+  		wb_stb_i => wb_stb_s,
+  		wb_cyc_i => wb_cyc_s(4),
+  		wb_ack_o => wb_ack_s(4),
+  		wb_inta_o => open,
+  		scl => scl_io,
+  		sda => sda_io
+  	);
 	
 	cmp_wb_trigger_logic: wb_trigger_logic PORT MAP(
 		wb_clk_i => wb_clk_s,
