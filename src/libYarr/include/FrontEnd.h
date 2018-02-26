@@ -26,7 +26,7 @@ class FrontEnd {
 		bool isActive();
 		void setActive(bool active);
        
-        virtual void configure() = 0;
+        virtual void configure()=0;
 
         /// Write to a register using a string name (most likely from json)
         virtual void writeNamedRegister(std::string name, uint16_t value) = 0;

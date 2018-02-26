@@ -43,7 +43,7 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
 
 		~Fei4();
         
-        void configure();
+        void configure() override;
         void configureGlobal();
         void configurePixels(unsigned lsb=0, unsigned msb=Fei4PixelCfg::n_Bits);
 
