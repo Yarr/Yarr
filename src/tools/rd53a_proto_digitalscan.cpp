@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
         for (unsigned col_stage=0; col_stage<max_col_stage; col_stage+=4) {
 
             fe.globalPulse(0, 20);
-            while(!spec.isCmdEmpty());
+            while(!spec.isCmdEmpty()) {}
             std::cout << "Mask = " << mask_stage << " , Col Loop = " << col_stage << std::endl;
             unsigned col_cnt = 0;
             for (unsigned col=0; col<200; col+=4) {
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
                     fe.disableCalCol(col+3);
                 }
             }
-            while(!spec.isCmdEmpty());
+            while(!spec.isCmdEmpty()) {}
             unsigned hits = 0;
             std::this_thread::sleep_for(std::chrono::microseconds(10));
             
@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
                 spec.writeFifo(0x69696969);
                 spec.writeFifo(0x69696969);
                 spec.writeFifo(0x69696969);
-                while(!spec.isCmdEmpty());
+                while(!spec.isCmdEmpty()) {}
 
                 {
                     RawData *data = NULL;
