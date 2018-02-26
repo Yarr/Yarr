@@ -394,19 +394,18 @@ architecture rtl of yarr is
             ext_trig_o : out std_logic;
             ext_busy_i : in std_logic;
             ext_busy_o : out std_logic;
-
+            
             -- Eudet TLU
             eudet_clk_o : out std_logic;
             eudet_busy_o : out std_logic;
-            eudet_trig_i : in std_logic;
+            eudet_trig_t : in std_logic;
             eudet_rst_i : in std_logic;
 
             -- To/From inside world
             clk_i : in std_logic;
-            int_trig_i : in std_logic_vector(3 downto 0);
-            int_trig_o : out std_logic;
-            int_busy_i : in std_logic;
-            trig_tag : out std_logic_vector(31 downto 0)
+            trig_tag : out std_logic_vector(31 downto 0);
+
+            debug_o : out std_logic_vector(31 downto 0)
         );
     end component;
 	
@@ -769,6 +768,7 @@ architecture rtl of yarr is
   signal TRIG1_t : STD_LOGIC_VECTOR(31 DOWNTO 0);
   signal TRIG2_t : STD_LOGIC_VECTOR(31 DOWNTO 0);
   signal debug_dma : std_logic_vector(31 downto 0);
+  signal debug_trig : std_logic_vector(31 downto 0);
   
   signal ddr_status : std_logic_vector(31 downto 0);
   signal gn4124_core_Status : std_logic_vector(31 downto 0);
@@ -1090,7 +1090,7 @@ begin
 		rx_data_i => fe_data_i,
 		rx_valid_o => rx_valid,
 		rx_data_o => rx_data,
-        trig_tag_i => trig_tag_T,
+        trig_tag_i => trig_tag_t,
 		busy_o => open,
 		debug_o => debug
 	);
@@ -1157,20 +1157,21 @@ begin
 		wb_stb_i => wb_stb,
 		wb_we_i => wb_we,
 		wb_ack_o => wb_ack(5),
-		ext_trig_i => "0000",
-		ext_trig_o => open,
+		ext_trig_i => io(2) & "00" & trig_pulse,
+		ext_trig_o => int_trig_t,
 		ext_busy_i => '0',
 		ext_busy_o => open,
 		eudet_clk_o => open,
 		eudet_busy_o => open,
-		eudet_trig_i => '0',
+		eudet_trig_t => '0',
 		eudet_rst_i => '0',
 		clk_i => CLK_40,
-		int_trig_i => "000" & trig_pulse,
-		int_trig_o => int_trig_t,
-		int_busy_i => '0',
-		trig_tag => trig_tag_t
+		trig_tag => trig_tag_t,
+                debug_o => debug_trig
 	);
+    
+    io(1) <= int_trig_t;
+    io(0) <= int_trig_t;
 
   --wb_stall(1) <= '0' when wb_cyc(1) = '0' else not(wb_ack(1));
 --  wb_stall(2) <= '0' when wb_cyc(2) = '0' else not(wb_ack(2));
@@ -1205,12 +1206,12 @@ begin
 --   TRIG0(24) <= rx_busy;
 --   TRIG0(31 downto 25) <= (others => '0');
 	TRIG0(0) <= rx_valid;
-	TRIG0(1) <= fe_cmd_o(0);
-	TRIG0(2) <= trig_pulse;
-	TRIG0(3) <= fe_cmd_o(0);
+	TRIG0(1) <= fe_cmd_o(6);
+	TRIG0(2) <= fe_cmd_o(7);
+    TRIG0(3) <= int_trig_t;
 	TRIG0(31 downto 4) <= (others => '0');
-	TRIG1 <= rx_data;
-	TRIG2 <= debug;
+	TRIG1 <= trig_tag_t;
+	TRIG2 <= debug_trig;
 --		TRIG0(0) <= scl;
 --		TRIG0(1) <= sda;
 --		TRIG0(2) <= wb_stb;

@@ -931,9 +931,6 @@ wb_dev_gen : if wb_dev_c = '1' generate
 		eudet_trig_i => '0',
 		eudet_rst_i => '0',
 		clk_i => CLK_40_S,
-		int_trig_i => "000" & trig_pulse,
-		int_trig_o => int_trig_t,
-		int_busy_i => '0',
 		trig_tag => trig_tag_t
 	);
 	
