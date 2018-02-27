@@ -922,8 +922,8 @@ wb_dev_gen : if wb_dev_c = '1' generate
 		wb_stb_i => wb_stb_s,
 		wb_we_i => wb_we_s,
 		wb_ack_o => wb_ack_s(5),
-		ext_trig_i => "0000",
-		ext_trig_o => open,
+		ext_trig_i => "000" & trig_pulse,
+		ext_trig_o => int_trig_t,
 		ext_busy_i => '0',
 		ext_busy_o => open,
 		eudet_clk_o => open,
@@ -931,7 +931,8 @@ wb_dev_gen : if wb_dev_c = '1' generate
 		eudet_trig_i => '0',
 		eudet_rst_i => '0',
 		clk_i => CLK_40_S,
-		trig_tag => trig_tag_t
+		trig_tag => trig_tag_t,
+        debug_o => open
 	);
 	
 

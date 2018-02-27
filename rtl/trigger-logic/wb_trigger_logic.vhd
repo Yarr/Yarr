@@ -56,7 +56,7 @@ entity wb_trigger_logic is
         -- Eudet TLU
         eudet_clk_o : out std_logic;
         eudet_busy_o : out std_logic;
-        eudet_trig_t : in std_logic;
+        eudet_trig_i : in std_logic;
         eudet_rst_i : in std_logic;
 
         -- To/From inside world
@@ -110,7 +110,7 @@ architecture rtl of wb_trigger_logic is
             rst_n_i : IN std_logic;
             
             -- Eudet signals
-            eudet_trig_t : IN std_logic;
+            eudet_trig_i : IN std_logic;
             eudet_rst_i : IN std_logic;
             eudet_busy_o : OUT std_logic;
             eudet_clk_o : OUT std_logic;
@@ -352,7 +352,7 @@ begin
     port map (
         clk_i => clk_i,
         rst_n_i => rst_n_i,
-        eudet_trig_t => eudet_trig_t,
+        eudet_trig_i => eudet_trig_i,
         eudet_rst_i => eudet_rst_i,
         eudet_busy_o => eudet_busy_o,
         eudet_clk_o => eudet_clk_o,
