@@ -33,7 +33,7 @@
 #define EN_RX23 0x800000
 
 Histo2d* decode(RawData *data, unsigned &hits) {
-    Histo2d *h = new Histo2d("tmp", 400, -0.5, 399.5, 192, -0.5, 191.5, typeid(void));
+    Histo2d *h = new Histo2d("tmp", 400, -.5, 399.5, 192, -0.5, 191.5, typeid(void));
     if (data != NULL) {
         for (unsigned i=0; i<data->words; i++) {
             if (data->buf[i] != 0xFFFFFFFF) {
@@ -107,8 +107,8 @@ int main(int argc, char *argv[]) {
     std::cout << ">>> Enabling digital injection" << std::endl;
     fe.writeRegister(&Rd53a::InjEnDig, 0);
     fe.writeRegister(&Rd53a::InjAnaMode, 1);
-    fe.writeRegister(&Rd53a::InjVcalHigh, 4000);
-    fe.writeRegister(&Rd53a::InjVcalMed, 300);
+    fe.writeRegister(&Rd53a::InjVcalHigh, 1500);
+    fe.writeRegister(&Rd53a::InjVcalMed, 1000);
     fe.writeRegister(&Rd53a::LatencyConfig, 48);
     fe.writeRegister(&Rd53a::GlobalPulseRt, 0x4000);
 
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
     unsigned max_mask_stage = 32; // Must be divisible by 192
     unsigned max_col_stage = 20; //Must be divisble by 400
 
-    Histo2d *h = new Histo2d("Occupancy", 400, -0.5, 399.5, 192, -0.5, 191.5, typeid(void));
+    Histo2d *h = new Histo2d("Occupancy", 400, -.5, 399.5, 192, -0.5, 191.5, typeid(void));
 
     unsigned total_hits = 0;
     for (unsigned mask_stage=0; mask_stage<max_mask_stage; mask_stage++) {
@@ -140,6 +140,8 @@ int main(int argc, char *argv[]) {
         fe.configurePixels();
         std::cout << "Enabled " << act_pix << " pixels" << std::endl;
         std::this_thread::sleep_for(std::chrono::microseconds(10));
+        
+        spec.setTrigConfig(EXT_TRIGGER);
 
         for (unsigned col_stage=0; col_stage<max_col_stage; col_stage+=4) {
 
@@ -166,7 +168,8 @@ int main(int argc, char *argv[]) {
             unsigned hits = 0;
             std::this_thread::sleep_for(std::chrono::microseconds(10));
             
-            for (unsigned i=0; i<10; i++) {
+            for (unsigned i=0; i<100; i++) {
+                spec.setTrigEnable(0x1);
                 spec.writeFifo(0x69696969); 
                 spec.writeFifo(0x69696969); 
                 fe.globalPulse(0, 20);
@@ -182,7 +185,6 @@ int main(int argc, char *argv[]) {
                 spec.writeFifo(0x69696969);
                 spec.writeFifo(0x69696969);
                 spec.writeFifo(0x69696969);
-                while(!spec.isCmdEmpty()) {}
                 spec.writeFifo(0x69696969);
                 spec.writeFifo(0x69696969);
                 fe.cal(0, 0, 0, 1, 0, 0);
@@ -198,6 +200,7 @@ int main(int argc, char *argv[]) {
                 spec.writeFifo(0x69696969);
                 spec.writeFifo(0x69696969);
                 spec.writeFifo(0x69696969);
+                spec.setTrigEnable(0x0);
                 while(!spec.isCmdEmpty()) {}
 
                 {

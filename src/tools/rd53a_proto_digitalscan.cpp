@@ -141,6 +141,8 @@ int main(int argc, char *argv[]) {
         std::cout << "Enabled " << act_pix << " pixels" << std::endl;
         std::this_thread::sleep_for(std::chrono::microseconds(10));
 
+        spec.setTrigConfig(EXT_TRIGGER);
+
         for (unsigned col_stage=0; col_stage<max_col_stage; col_stage+=4) {
 
             fe.globalPulse(0, 20);
@@ -167,6 +169,7 @@ int main(int argc, char *argv[]) {
             std::this_thread::sleep_for(std::chrono::microseconds(10));
             
             for (unsigned i=0; i<10; i++) {
+                spec.setTrigEnable(0x1);
                 spec.writeFifo(0x69696969);
                 spec.writeFifo(0x69696969);
                 fe.cal(0, 1, 0, 40, 0, 0);
@@ -182,6 +185,7 @@ int main(int argc, char *argv[]) {
                 spec.writeFifo(0x69696969);
                 spec.writeFifo(0x69696969);
                 spec.writeFifo(0x69696969);
+                spec.setTrigEnable(0x0);
                 while(!spec.isCmdEmpty()) {}
 
                 {
