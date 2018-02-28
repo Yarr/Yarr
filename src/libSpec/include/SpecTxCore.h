@@ -39,7 +39,12 @@
 #define TRIG_LOGIC_ADR (0x5 << 14)
 #define TRIG_LOGIC_MASK 0x0
 #define TRIG_LOGIC_MODE 0x1
+#define TRIG_LOGIC_CONFIG 0x2
+#define TRIG_LOGIC_EDGE 0x3
+#define TRIG_LOGIC_DELAY 0x4 // And the next 3 addresses up to 0x7
+#define TRIG_LOGIC_DEADTIME 0x8
 
+#define NCHANNELS 4
 
 
 class SpecTxCore : virtual public TxCore, virtual public SpecCom{
@@ -79,6 +84,19 @@ class SpecTxCore : virtual public TxCore, virtual public SpecCom{
         };
         void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) {
             SpecCom::writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_MODE, (uint32_t) mode);
+        }
+        void setTriggerLogicConfig(uint32_t config) {
+            SpecCom::writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_CONFIG, config);
+        }
+        void setTriggerEdge(uint32_t edge) {
+            SpecCom::writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_EDGE, edge);
+        }
+        void setTriggerDelay(uint32_t channel, uint32_t delay) {
+            if (channel < NCHANNELS) 
+                SpecCom::writeSingle((TRIG_LOGIC_ADR | TRIG_LOGIC_DELAY) + channel, delay);
+        }
+        void setTriggerDeadtime(uint32_t deadtime) {
+            SpecCom::writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_DEADTIME, deadtime);
         }
 
         void resetTriggerLogic() {

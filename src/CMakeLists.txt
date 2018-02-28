@@ -28,7 +28,7 @@ add_compile_options(-Wno-deprecated)
 add_compile_options(-std=c++11)
 
 #add libraries
-list(APPEND libs Yarr Spec Util Emu Fe65p2 Fei4 Rce Boc Rd53a)
+list(APPEND libs Yarr Spec Util Emu Fe65p2 Fei4 Rce Boc Rd53a KU040)
 foreach(lib ${libs})
 include_directories(lib${lib}/include)
 file(GLOB SrcFiles lib${lib}/*.cpp)

@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
   const unsigned nRow = Fei4PixelCfg::n_Row;
   const unsigned nCol = Fei4PixelCfg::n_Col;
 
-  bool bits[Fei4PixelCfg::n_Bits][nRow][nCol] = {0};
+  bool bits[Fei4PixelCfg::n_Bits][nRow][nCol];
 
   // unsigned dc = 0; // 0-39
   for (unsigned dc=0; dc<Fei4PixelCfg::n_DC; dc++) {
