@@ -36,7 +36,7 @@ uint32_t Rd53aCmd::encode5to8(uint32_t val) {
     return Rd53aCmd::enc5to8[val & 0x1F];
 }
 
-void Rd53aCmd::trigger(uint32_t bc, uint32_t tag, uint32_t bc2, uint32_t tag2) {
+inline uint32_t Rd53aCmd::genTrigger(uint32_t bc, uint32_t tag, uint32_t bc2, uint32_t tag2) {
     uint32_t tmp = 0;
     if (bc>0) {
         tmp += ((Rd53aCmd::encTrigger[0xF & bc] << 24) | (Rd53aCmd::enc5to8[tag & 0x1F] << 16));
@@ -48,7 +48,12 @@ void Rd53aCmd::trigger(uint32_t bc, uint32_t tag, uint32_t bc2, uint32_t tag2) {
     } else {
         tmp += 0x6969;
     }
-    core->writeFifo(tmp);
+    return tmp;
+}
+
+
+void Rd53aCmd::trigger(uint32_t bc, uint32_t tag, uint32_t bc2, uint32_t tag2) {
+    core->writeFifo(Rd53aCmd::genTrigger(bc, tag, bc2, tag2));
     core->releaseFifo();
 }
 
@@ -67,14 +72,18 @@ void Rd53aCmd::globalPulse(uint32_t chipId, uint32_t duration) {
     core->releaseFifo();
 }
 
+// Does not include the header!
 // {Cal,Cal}{ChipId[3:0],CalEdgeMode,CalEdgeDelay[2:0],CalEdgeWidth[5:4]}{CalEdgeWidth[3:0],CalAuxMode,CalAuxDly[4:0]}
-void Rd53aCmd::cal(uint32_t chipId, uint32_t mode, uint32_t delay, uint32_t duration, uint32_t aux_mode, uint32_t aux_delay) {
-    core->writeFifo(0x69696363); 
-    
-    core->writeFifo((Rd53aCmd::encode5to8((chipId<<1)+(mode&0x1)) << 24)
+inline uint32_t Rd53aCmd::genCal(uint32_t chipId, uint32_t mode, uint32_t delay, uint32_t duration, uint32_t aux_mode, uint32_t aux_delay) {
+    return ((Rd53aCmd::encode5to8((chipId<<1)+(mode&0x1)) << 24)
                 + (Rd53aCmd::encode5to8((delay<<2)+((duration>>4)&0x3)) << 16)
                 + (Rd53aCmd::encode5to8(((duration&0xF)<<1)+(aux_mode&0x1)) << 8)
                 + (Rd53aCmd::encode5to8(aux_delay) << 0));
+}
+
+void Rd53aCmd::cal(uint32_t chipId, uint32_t mode, uint32_t delay, uint32_t duration, uint32_t aux_mode, uint32_t aux_delay) {
+    core->writeFifo(0x69696363); 
+    core->writeFifo(Rd53aCmd::genCal(chipId, mode, delay, duration, aux_mode, aux_delay));
     core->releaseFifo();
 }
 
