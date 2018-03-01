@@ -92,11 +92,19 @@ void SpecTxCore::setTrigWordLength(uint32_t length) {
     SpecCom::writeSingle(TX_ADDR | TRIG_WORD_LENGTH, length);
 }
 
-void SpecTxCore::setTrigWord(uint32_t *word) {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Word 0x" << std::hex 
-            << word[4] << word[3] << word[2] << word[1] << std::dec << std::endl;
-    SpecCom::writeBlock(TX_ADDR | TRIG_WORD, word, 4);
+void SpecTxCore::setTrigWord(uint32_t *word, uint32_t length) {
+    if (verbose) {
+        std::cout << __PRETTY_FUNCTION__ << " : " << std::hex << std::endl;
+        for (unsigned i=0; i<length; i++) {
+            std::cout << "     [" << i << "] = 0x " << word[i] <<std::endl;
+        }
+        std::cout << std::dec;
+    }
+
+    for (unsigned i=0; i<length; i++) {
+        SpecCom::writeSingle(TX_ADDR | TRIG_WORD_POINTER, i);
+        SpecCom::writeSingle(TX_ADDR | TRIG_WORD, word[i]);
+    }
 }
 
 void SpecTxCore::toggleTrigAbort() {

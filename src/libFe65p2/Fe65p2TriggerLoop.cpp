@@ -14,6 +14,7 @@ Fe65p2TriggerLoop::Fe65p2TriggerLoop() : LoopActionBase() {
     m_trigWord[1] = 0x00;
     m_trigWord[2] = 0x00;
     m_trigWord[3] = MOJO_HEADER + (PULSE_REG << 16) + PULSE_INJECT;
+    m_trigWordLength = 4;
     min = 0;
     max = 0;
     step = 1;
@@ -29,7 +30,7 @@ void Fe65p2TriggerLoop::init() {
     g_tx->setTrigFreq(m_trigFreq);
     g_tx->setTrigCnt(m_trigCnt);
     g_tx->setTrigWordLength(m_trigWordLength);
-    g_tx->setTrigWord(m_trigWord);
+    g_tx->setTrigWord(m_trigWord, m_trigWordLength);
     g_tx->setTrigTime(m_trigTime);
 }
 

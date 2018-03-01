@@ -30,6 +30,7 @@
 #define TRIG_COUNT 0x9
 #define TRIG_WORD_LENGTH 0xA
 #define TRIG_WORD 0xB
+#define TRIG_WORD_POINTER 0xC
 #define TRIG_ABORT 0xF
 #define TRIG_IN_CNT 0xF
 
@@ -69,7 +70,7 @@ class SpecTxCore : virtual public TxCore, virtual public SpecCom{
         void setTrigCnt(uint32_t count);
         void setTrigTime(double time); // in s
         void setTrigWordLength(uint32_t length); // From Msb
-        void setTrigWord(uint32_t *word); // 4 words, start at Msb
+        void setTrigWord(uint32_t *word, uint32_t length); // 4 words, start at Msb
 
         void toggleTrigAbort();
 

@@ -274,8 +274,10 @@ void BocTxCore::setTrigWordLength(uint32_t length)
 
 }
 
-void BocTxCore::setTrigWord(uint32_t *word)
+void BocTxCore::setTrigWord(uint32_t *word, uint32_t length)
 {
+
+    // TODO fix me
     // convert trigger word to bytes
     uint8_t trigBytes[16];
     trigBytes[0] = (word[3] >> 24) & 0xFF;

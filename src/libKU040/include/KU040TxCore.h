@@ -35,7 +35,7 @@ class KU040TxCore : virtual public TxCore {
         void setTrigCnt(uint32_t count);
         void setTrigTime(double time); // in s
         void setTrigWordLength(uint32_t length); // From Msb
-        void setTrigWord(uint32_t *word); // 4 words, start at Msb
+        void setTrigWord(uint32_t *word, uint32_t length); // 4 words, start at Msb
         void toggleTrigAbort();
 
         // Trigger interface
