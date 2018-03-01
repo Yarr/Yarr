@@ -79,7 +79,7 @@ architecture behavioral of wb_tx_core is
             -- Word Looper
             loop_pulse_i    : in std_logic;
             loop_mode_i     : in std_logic;
-            loop_word_i     : in std_logic_vector(127 downto 0);
+            loop_word_i     : in std_logic_vector(511 downto 0);
             loop_word_bytes_i : in std_logic_vector(7 downto 0);
 			
 			-- Status
@@ -140,7 +140,8 @@ architecture behavioral of wb_tx_core is
 	signal trig_en : std_logic;
 	signal trig_done : std_logic;
 	signal trig_word_length : std_logic_vector(31 downto 0);
-	signal trig_word : std_logic_vector(127 downto 0);
+	signal trig_word : std_logic_vector(511 downto 0);
+	signal trig_word_pointer : unsigned(3 downto 0);
     
     -- Trig input freq counter
     signal ext_trig_t1 : std_logic;
@@ -185,6 +186,7 @@ begin
             trig_time_l_d <= (others => '0');
             trig_count <= (others => '0');
             trig_word <= (others => '0');
+            trig_word_pointer <= (others => '0');
             trig_abort <= '0';
             trig_in_freq_d <= (others => '0');
 		elsif rising_edge(wb_clk_i) then
@@ -226,17 +228,11 @@ begin
 						when x"A" => -- Set trigger word length (bits)
 							trig_word_length <= wb_dat_i;
 							wb_ack_o <= '1';
-						when x"B" => -- Set trigger word [31:0]
-							trig_word(31 downto 0) <= wb_dat_i;
+						when x"B" => -- Set trigger word as specified in pointer
+							trig_word(((to_integer(trig_word_pointer)+1)*32)-1 downto (to_integer(trig_word_pointer))*32) <= wb_dat_i;
 							wb_ack_o <= '1';
-						when x"C" => -- Set trigger word [63:32]
-							trig_word(63 downto 32) <= wb_dat_i;
-							wb_ack_o <= '1';
-						when x"D" => -- Set trigger word [95:64]
-							trig_word(95 downto 64) <= wb_dat_i;
-							wb_ack_o <= '1';
-						when x"E" => -- Set trigger word [127:96]
-							trig_word(127 downto 96) <= wb_dat_i;
+						when x"C" => -- Set trigger word pointer
+							trig_word_pointer <= unsigned(wb_dat_i(3 downto 0));
 							wb_ack_o <= '1';
 						when x"F" => -- Toggle trigger abort
 							trig_abort <= wb_dat_i(0);
@@ -279,17 +275,12 @@ begin
 						when x"A" => -- Set trigger word length (bits)
 							wb_dat_o <= trig_word_length;
 							wb_ack_o <= '1';
-						when x"B" => -- Set trigger word [31:0]
-							wb_dat_o <= trig_word(31 downto 0);
+						when x"B" =>
+							wb_dat_o <= trig_word(((to_integer(trig_word_pointer)+1)*32)-1 downto (to_integer(trig_word_pointer))*32);
 							wb_ack_o <= '1';
-						when x"C" => -- Set trigger word [63:32]
-							wb_dat_o <= trig_word(63 downto 32);
-							wb_ack_o <= '1';
-						when x"D" => -- Set trigger word [95:64]
-							wb_dat_o <= trig_word(95 downto 64);
-							wb_ack_o <= '1';
-						when x"E" => -- Set trigger word [127:96]
-							wb_dat_o <= trig_word(127 downto 96);
+						when x"C" =>
+                            wb_dat_o <= (others => '0');
+							wb_dat_o(3 downto 0) <= std_logic_vector(trig_word_pointer);
 							wb_ack_o <= '1';
 						when x"F" => -- Trigger in frequency
 							wb_dat_o <= trig_in_freq_d;
