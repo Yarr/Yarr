@@ -46,10 +46,10 @@ Histo2d* decode(RawData *data, unsigned &hits) {
                     unsigned core_col = 0x3F & (data->buf[i] >> 26);
                     unsigned core_row = 0x3F & (data->buf[i] >> 20);
                     unsigned region = 0xF & (data->buf[i] >> 16);
-                    unsigned tot0 = 0xF & (data->buf[i] >> 12); //left most
-                    unsigned tot1 = 0xF & (data->buf[i] >> 8);
-                    unsigned tot2 = 0xF & (data->buf[i] >> 4);
-                    unsigned tot3 = 0xF & (data->buf[i] >> 0);
+                    unsigned tot0 = 0xF & (data->buf[i] >> 0); //left most
+                    unsigned tot1 = 0xF & (data->buf[i] >> 4);
+                    unsigned tot2 = 0xF & (data->buf[i] >> 8);
+                    unsigned tot3 = 0xF & (data->buf[i] >> 12);
 
                     unsigned pix_col = core_col*8+((region&0x1)*4);
                     unsigned pix_row = core_row*8+(0x7&(region>>1));
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
     std::cout << ">>> Enabling digital injection" << std::endl;
     fe.writeRegister(&Rd53a::InjEnDig, 0);
     fe.writeRegister(&Rd53a::InjAnaMode, 1);
-    fe.writeRegister(&Rd53a::InjVcalHigh, 1500);
+    fe.writeRegister(&Rd53a::InjVcalHigh, 4000);
     fe.writeRegister(&Rd53a::InjVcalMed, 1000);
     fe.writeRegister(&Rd53a::LatencyConfig, 48);
     fe.writeRegister(&Rd53a::GlobalPulseRt, 0x4000);
@@ -117,6 +117,20 @@ int main(int argc, char *argv[]) {
     unsigned max_col_stage = 20; //Must be divisble by 400
 
     Histo2d *h = new Histo2d("Occupancy", 400, -.5, 399.5, 192, -0.5, 191.5, typeid(void));
+            
+    spec.setTrigFreq(1000);
+    spec.setTrigCnt(50);
+    spec.setTrigWordLength(16);
+    std::array<uint32_t, 16> trigWord;
+    trigWord.fill(0x69696969);
+    trigWord[15] = 0x69696363;
+    trigWord[14] = fe.genCal(8, 0, 0, 1, 0, 0); // Inject
+    trigWord[8] = fe.genTrigger(0xF, 4, 0xF, 8); // Trigger
+    trigWord[7] = fe.genTrigger(0xF, 4, 0xF, 8); // Trigger
+    trigWord[1] = 0x69696363;
+    trigWord[0] = fe.genCal(8, 1, 0, 0, 0, 0); // Arm inject
+    spec.setTrigWord(&trigWord[0], 16);
+    spec.setTrigConfig(INT_COUNT);
 
     unsigned total_hits = 0;
     for (unsigned mask_stage=0; mask_stage<max_mask_stage; mask_stage++) {
@@ -138,85 +152,47 @@ int main(int argc, char *argv[]) {
             }
         }
         fe.configurePixels();
+        while(!spec.isCmdEmpty()) {}
         std::cout << "Enabled " << act_pix << " pixels" << std::endl;
-        std::this_thread::sleep_for(std::chrono::microseconds(10));
-        
-        spec.setTrigConfig(EXT_TRIGGER);
 
         for (unsigned col_stage=0; col_stage<max_col_stage; col_stage+=4) {
 
-            fe.globalPulse(0, 20);
-            while(!spec.isCmdEmpty()) {}
             std::cout << "Mask = " << mask_stage << " , Col Loop = " << col_stage << std::endl;
             unsigned col_cnt = 0;
             for (unsigned col=0; col<200; col+=4) {
                 // Enable cores for injection
+                fe.disableCalCol(col);
+                fe.disableCalCol(col+1);
+                fe.disableCalCol(col+2);
+                fe.disableCalCol(col+3);
                 if ((col%max_col_stage) == col_stage) {
-                    fe.enableCalCol(col);
-                    fe.enableCalCol(col+1);
-                    fe.enableCalCol(col+2);
-                    fe.enableCalCol(col+3);
+                    fe.enableCalCol(col+(mask_stage/16));
+                    fe.enableCalCol(col+(mask_stage/16)+2);
                     col_cnt+=4;
-                } else {
-                    fe.disableCalCol(col);
-                    fe.disableCalCol(col+1);
-                    fe.disableCalCol(col+2);
-                    fe.disableCalCol(col+3);
                 }
             }
-            while(!spec.isCmdEmpty()) {}
             unsigned hits = 0;
-            std::this_thread::sleep_for(std::chrono::microseconds(10));
+            while(!spec.isCmdEmpty()) {}
+            std::this_thread::sleep_for(std::chrono::microseconds(200));
+            fe.globalPulse(0, 40);
+            std::this_thread::sleep_for(std::chrono::microseconds(200));
             
-            for (unsigned i=0; i<100; i++) {
-                spec.setTrigEnable(0x1);
-                spec.writeFifo(0x69696969); 
-                spec.writeFifo(0x69696969); 
-                fe.globalPulse(0, 20);
-                spec.writeFifo(0x69696969); 
-                spec.writeFifo(0x69696969);
-                spec.writeFifo(0x69696969);
-                spec.writeFifo(0x69696969);
-                spec.writeFifo(0x69696969);
-                fe.cal(0, 1, 0, 0, 0, 0); // Arm cal
-                spec.writeFifo(0x69696969); 
-                spec.writeFifo(0x69696969);
-                spec.writeFifo(0x69696969);
-                spec.writeFifo(0x69696969);
-                spec.writeFifo(0x69696969);
-                spec.writeFifo(0x69696969);
-                spec.writeFifo(0x69696969);
-                spec.writeFifo(0x69696969);
-                fe.cal(0, 0, 0, 1, 0, 0);
-                spec.writeFifo(0x69696969); // Two idles = 8 BCs
-                spec.writeFifo(0x69696969); // 16
-                spec.writeFifo(0x69696969); // 24
-                spec.writeFifo(0x69696969); // 32
-                spec.writeFifo(0x69696969); // 40
-                fe.trigger(0xF, 1, 0xF, 2);
-                fe.trigger(0xF, 3, 0xF, 4);
-                spec.writeFifo(0x69696969); 
-                spec.writeFifo(0x69696969);
-                spec.writeFifo(0x69696969);
-                spec.writeFifo(0x69696969);
-                spec.writeFifo(0x69696969);
-                spec.setTrigEnable(0x0);
-                while(!spec.isCmdEmpty()) {}
+            spec.setTrigEnable(1);
 
-                {
-                    RawData *data = NULL;
-                    do {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-                        if (data != NULL)
-                            delete data;
-                        data = spec.readData();
-                        Histo2d *tmp_h = decode(data, hits);
-                        h->add(*tmp_h);
-                        delete tmp_h;
-                    } while (data != NULL);
+            while (!spec.isTrigDone()) {
+                RawData *data = NULL;
+                do {
+                    std::this_thread::sleep_for(std::chrono::microseconds(200));
+                    if (data != NULL)
+                        delete data;
+                    data = spec.readData();
+                    Histo2d *tmp_h = decode(data, hits);
+                    h->add(*tmp_h);
+                    delete tmp_h;
+                } while (data != NULL);
 
-                }
             }
+            spec.setTrigEnable(0);
             std::cout << "Got " << hits << " hits" << std::endl;
             total_hits += hits;
 

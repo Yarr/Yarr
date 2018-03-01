@@ -114,9 +114,20 @@ int main(int argc, char *argv[]) {
 
     std::cout << ">>> Enabling some pixels" << std::endl;
     unsigned max_mask_stage = 32; // Must be divisible by 192
-    unsigned max_col_stage = 20; //Must be divisble by 400
+    unsigned max_col_stage = 12; //Must be divisble by 400
 
     Histo2d *h = new Histo2d("Occupancy", 400, -0.5, 399.5, 192, -0.5, 191.5, typeid(void));
+
+    spec.setTrigFreq(1000);
+    spec.setTrigCnt(50);
+    spec.setTrigWordLength(8);
+    std::array<uint32_t, 8> trigWord;
+    trigWord.fill(0x69696969);
+    trigWord[7] = 0x69696363;
+    trigWord[6] = fe.genCal(8, 1, 0, 50, 0, 0);
+    trigWord[0] = fe.genTrigger(0xF, 4, 0xF, 8);
+    spec.setTrigWord(&trigWord[0], 8);
+    spec.setTrigConfig(INT_COUNT);
 
     unsigned total_hits = 0;
     for (unsigned mask_stage=0; mask_stage<max_mask_stage; mask_stage++) {
@@ -138,15 +149,11 @@ int main(int argc, char *argv[]) {
             }
         }
         fe.configurePixels();
+        while(!spec.isCmdEmpty()) {}
         std::cout << "Enabled " << act_pix << " pixels" << std::endl;
-        std::this_thread::sleep_for(std::chrono::microseconds(10));
-
-        spec.setTrigConfig(EXT_TRIGGER);
 
         for (unsigned col_stage=0; col_stage<max_col_stage; col_stage+=4) {
 
-            fe.globalPulse(0, 20);
-            while(!spec.isCmdEmpty()) {}
             std::cout << "Mask = " << mask_stage << " , Col Loop = " << col_stage << std::endl;
             unsigned col_cnt = 0;
             for (unsigned col=0; col<200; col+=4) {
@@ -166,44 +173,25 @@ int main(int argc, char *argv[]) {
             }
             while(!spec.isCmdEmpty()) {}
             unsigned hits = 0;
-            std::this_thread::sleep_for(std::chrono::microseconds(10));
             
-            for (unsigned i=0; i<10; i++) {
-                spec.setTrigEnable(0x1);
-                spec.writeFifo(0x69696969);
-                spec.writeFifo(0x69696969);
-                fe.cal(0, 1, 0, 40, 0, 0);
-                spec.writeFifo(0x69696969); // Two idles = 8 BCs
-                spec.writeFifo(0x69696969); // 16
-                spec.writeFifo(0x69696969); // 24
-                spec.writeFifo(0x69696969); // 32
-                spec.writeFifo(0x69696969); // 40
-                fe.trigger(0xF, 1, 0xF, 2);
-                fe.trigger(0xF, 3, 0xF, 4);
-                spec.writeFifo(0x69696969); 
-                spec.writeFifo(0x69696969);
-                spec.writeFifo(0x69696969);
-                spec.writeFifo(0x69696969);
-                spec.writeFifo(0x69696969);
-                spec.setTrigEnable(0x0);
-                while(!spec.isCmdEmpty()) {}
+            spec.setTrigEnable(1);
 
-                {
-                    RawData *data = NULL;
-                    do {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-                        if (data != NULL)
-                            delete data;
-                        data = spec.readData();
-                        Histo2d *tmp_h = decode(data, hits);
-                        h->add(*tmp_h);
-                        delete tmp_h;
-                    } while (data != NULL);
-
-                }
+            while (!spec.isTrigDone()) {
+                RawData *data = NULL;
+                do {
+                    std::this_thread::sleep_for(std::chrono::microseconds(200));
+                    if (data != NULL)
+                        delete data;
+                    data = spec.readData();
+                    Histo2d *tmp_h = decode(data, hits);
+                    h->add(*tmp_h);
+                    delete tmp_h;
+                } while (data != NULL);
             }
+
             std::cout << "Got " << hits << " hits" << std::endl;
             total_hits += hits;
+            spec.setTrigEnable(0);
 
 
         }

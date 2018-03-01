@@ -64,6 +64,7 @@ int main(int argc, char *argv[]) {
 
     SpecController spec;
     spec.init(specNum);
+    spec.setTrigEnable(0);
     
     //Send IO config to active FMC
     //spec.writeSingle(0x6<<14 | 0x0, EN_RX1 | EN_RX3 | EN_RX4 | EN_RX5);
@@ -99,7 +100,7 @@ int main(int argc, char *argv[]) {
     
     std::cout << ">>> Enabling digital injection" << std::endl;
     fe.writeRegister(&Rd53a::InjEnDig, 1);
-    fe.writeRegister(&Rd53a::LatencyConfig, 40);
+    fe.writeRegister(&Rd53a::LatencyConfig, 48);
    
     std::cout << ">>> Enabling some pixels" << std::endl;
     
@@ -120,20 +121,34 @@ int main(int argc, char *argv[]) {
     fe.writeRegister(&Rd53a::PixPortal, 0xFFFF);
     */
     fe.configurePixels();
-    sleep(1);
-    
+    while (!spec.isCmdEmpty()) {}
+
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     std::cout << ">>> Digital inject test:" << std::endl;
+    
     // {Cal,Cal}{ChipId[3:0],CalEdgeMode,CalEdgeDelay[2:0],CalEdgeWidth[5:4]}{CalEdgeWidth[3:0],CalAuxMode,CalAuxDly[4:0]}
     //void Rd53aCmd::cal(uint32_t chipId, uint32_t mode, uint32_t delay, uint32_t duration, uint32_t aux_mode, uint32_t aux_delay) {
+    /*
     fe.cal(0, 1, 0, 50, 0, 0);
     spec.writeFifo(0x69696969); // Two idles = 8 BCs
     spec.writeFifo(0x69696969); // 16
     spec.writeFifo(0x69696969); // 24
     spec.writeFifo(0x69696969); // 32
     fe.trigger(0xF, 31, 0xF, 2);
-
-    {
+    */
+    
+    spec.setTrigFreq(1000);
+    spec.setTrigCnt(10);
+    spec.setTrigWordLength(8);
+    std::array<uint32_t, 8> trigWord;
+    trigWord.fill(0x69696969);
+    trigWord[7] = 0x69696363;
+    trigWord[6] = fe.genCal(8, 1, 0, 50, 0, 0);
+    trigWord[0] = fe.genTrigger(0xF, 4, 0xF, 8);
+    spec.setTrigWord(&trigWord[0], 8);
+    spec.setTrigConfig(INT_COUNT);
+    spec.setTrigEnable(1);
+    while(!spec.isTrigDone()) {
         RawData *data = NULL;
         do {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -144,6 +159,7 @@ int main(int argc, char *argv[]) {
         } while (data != NULL);
 
     }
+    spec.setTrigEnable(0);
     spec.setRxEnable(0x0);
     return 0;
 }
