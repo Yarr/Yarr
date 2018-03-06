@@ -66,7 +66,8 @@ If the test program fails, e.g. the current doesn't change during the test progr
 - Check that the power is 1.65 - 1.80 V and the current is above 0.41 A
 - Try operating in direct powering.
 
-![Jumper configuration for direct powering on the SCC ](images/IMG_20180305_170121.jpg):
+![Jumper configuration for direct powering on the SCC ](images/IMG_20180305_170121.jpg)
+
 - PWR_A and PWR_D: VDDA and VDDD (direct powering)
 - VDD_PLL_SEL: VDDA (PLL driver from VDDA supply)
 - VDD_CML_SEL: VDDA (CML driver from VDDA supply)
