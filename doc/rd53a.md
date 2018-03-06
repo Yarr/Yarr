@@ -8,12 +8,12 @@ More details about the SCC [Single Chip Card](https://twiki.cern.ch/twiki/bin/vi
 ![Jumper configuration on the SCC ](images/IMG_20180305_162546.jpg)
 
 Default settings for operation in LDO mode
-* PWR_A and PWR_D: VINA and VIND (LDO operation)
-* VDD_PLL_SEL: VDDA (PLL driver from VDDA supply)
-* VDD_CML_SEL: VDDA (CML driver from VDDA supply)
-* VREF_ADC (internal ADC voltage reference)
-* IREF_IO (internal current refetrence)
-* IREF_TRIM: Jumper to 3 to set the internal reference current at 4 μA
+- PWR_A and PWR_D: VINA and VIND (LDO operation)
+- VDD_PLL_SEL: VDDA (PLL driver from VDDA supply)
+- VDD_CML_SEL: VDDA (CML driver from VDDA supply)
+- VREF_ADC (internal ADC voltage reference)
+- IREF_IO (internal current refetrence)
+- IREF_TRIM: Jumper to 3 to set the internal reference current at 4 μA
 
 After all jumpers are placed on the SCC, connect the DisplayPort cable to DP1 and power cable to PWR_IN.
 
