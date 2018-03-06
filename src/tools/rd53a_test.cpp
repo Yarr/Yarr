@@ -82,6 +82,16 @@ int main(int argc, char *argv[]) {
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
     // TODO check link sync
+    
+    uint32_t linkStatus = spec.readSingle(RX_ADDR | RX_STATUS);
+    std::cout << ">>> Checking link status: 0x" << std::hex << linkStatus << std::dec << std::endl;
+    if (linkStatus > 0x0) {
+        std::cout << "   All links are synced!" << std::endl;
+    } else {
+        std::cerr << "   #ERROR# Not all 4 lanes are synced! Aborting!" << std::endl;
+        return 0;
+    }
+
     spec.setRxEnable(0x1);
 
     std::cout << ">>> Trigger test:" << std::endl;
@@ -138,7 +148,7 @@ int main(int argc, char *argv[]) {
     */
     
     spec.setTrigFreq(1000);
-    spec.setTrigCnt(10);
+    spec.setTrigCnt(1);
     spec.setTrigWordLength(8);
     std::array<uint32_t, 8> trigWord;
     trigWord.fill(0x69696969);
