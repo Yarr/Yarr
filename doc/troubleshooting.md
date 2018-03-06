@@ -79,7 +79,7 @@ If the test program fails, e.g. the current doesn't change during the test progr
 ### Problem with the digital scan
 
 If the digital scan looks blocky:
-![Digital scan example](rd53a_proto_digital_Occupancy.png)
+![Digital scan example](images/rd53a_proto_digital_Occupancy.png)
 check that aurora lines are connected and running. The jumpers JP10 and JP11 on the SCC have to be closed in order to use LANE 2 and LANE 3.
 
 
