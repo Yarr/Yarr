@@ -61,9 +61,36 @@ Success! No errors.
 
 If the test program fails, e.g. the current doesn't change during the test program and there is no output
 ```
-./bin/rd53a_test
+$ ./bin/rd53a_test
+void SpecCom::init() -> Opening SPEC with id #0
+void SpecCom::init() -> Mapping BARs
+void SpecCom::init() -> Mapped BAR0 at 0x0x7f45464ee000 with size 0x100000
+void SpecCom::init() -> Mmap failed
+void SpecCom::init() -> Could not map BAR4, this might be OK!
+>>> Configuring chip with default config ...
+... done.
+>>> Checking link status: 0x1
+All links are synced!
+>>> Trigger test:
+Trigger: 1
+Trigger: 2
+Trigger: 3
+Trigger: 4
+Trigger: 5
+Trigger: 6
+Trigger: 7
+Trigger: 8
+Trigger: 9
+Trigger: 10
+Trigger: 11
+Trigger: 12
+Trigger: 13
+Trigger: 14
+Trigger: 15
+>>> Enabling digital injection
+>>> Enabling some pixels
+>>> Digital inject test:
 ```
-(ToDo add output)
 
 - Make sure if you turned off the command from the FPGA before powering the chip, as explained [RD53A](rd53a.md)
 - Check that the power is 1.80 V and the current is above 0.41 A
