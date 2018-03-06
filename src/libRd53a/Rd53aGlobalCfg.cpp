@@ -86,7 +86,7 @@ void Rd53aGlobalCfg::init() {
     //24
     DiffComp.init(24, &m_cfg[24], 0, 10, 528); regMap["DiffComp"] = &DiffComp;
     //25
-    DiffVff.init(25, &m_cfg[25], 0, 10, 80); regMap["DiffVff"] = &DiffVff;
+    DiffVff.init(25, &m_cfg[25], 0, 10, 160); regMap["DiffVff"] = &DiffVff;
     //26
     DiffVth1.init(26, &m_cfg[26], 0, 10, 250); regMap["DiffVth1"] = &DiffVth1;
     //27

@@ -72,10 +72,10 @@ void Rd53a::configure() {
 
 void Rd53a::init() {
     this->writeRegister(&Rd53a::GlobalPulseRt, 0x007F); // Reset a whole bunch of things
-    this->globalPulse(m_chipId, 10);
+    this->globalPulse(m_chipId, 8);
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    this->writeRegister(&Rd53a::GlobalPulseRt, 0x4100);
-    this->globalPulse(m_chipId, 10);
+    this->writeRegister(&Rd53a::GlobalPulseRt, 0x4100); //activate monitor and reset sync FE
+    this->globalPulse(m_chipId, 8);
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     this->ecr();
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
