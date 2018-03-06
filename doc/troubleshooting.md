@@ -61,7 +61,7 @@ Success! No errors.
 
 If the test program fails, e.g. the current doesn't change during the test program and there is no output
 ```
-/bin/rd53a_test
+./bin/rd53a_test
 ```
 
 (ToDo add output)
@@ -91,5 +91,5 @@ check that aurora lines are connected and running. The jumpers JP10 and JP11 on 
 
 ### Endless readout loop
 
-We noticed for one chip when running the `/bin/rd53a_test` the readout loop is never ending. We are still debugging this!
+We noticed for one chip when running the `./bin/rd53a_test` the readout loop is never ending. We are still debugging this!
 

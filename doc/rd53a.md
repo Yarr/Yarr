@@ -37,7 +37,7 @@ Set the power supply to <span style="color:red">**1.80**</span> V, the current s
 
 Check if the test program runs succesfully:
 ```
-$ /bin/rd53a_test
+$ ./bin/rd53a_test
 void SpecCom::init() -> Opening SPEC with id #0
 void SpecCom::init() -> Mapping BARs
 void SpecCom::init() -> Mapped BAR0 at 0x0x7f4b2c166000 with size 0x100000
@@ -61,7 +61,7 @@ Trigger: 1
 
 ### Digital Scan
 ```
-$ /bin/rd53a_proto_digitalscan
+$ ./bin/rd53a_proto_digitalscan
 void SpecCom::init() -> Opening SPEC with id #0
 void SpecCom::init() -> Mapping BARs
 void SpecCom::init() -> Mapped BAR0 at 0x0x7fa7d4ce5000 with size 0x100000
@@ -95,9 +95,11 @@ Got 295 hits
 
 ### Analog Scan
 ```
-/bin/rd53a_proto_analogscan
+./bin/rd53a_proto_analogscan
+
+<More Text>
 ```
-(ToDo: add output and picture)
+![Analog scan](images/rd53a_proto_analog_Occupancy.png)
 
 
 ### Scan Console
