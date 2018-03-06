@@ -70,7 +70,7 @@ If the test program fails, e.g. the current doesn't change during the test progr
 - Check that the power is 1.80 V and the current is above 0.41 A
 - Try operating in direct powering.
 
-![Jumper configuration for direct powering on the SCC ](images/IMG_20180305_170121.jpg)
+![Jumper configuration for **direct powering** on the SCC ](images/IMG_20180305_170121.jpg)
 
 - PWR_A and PWR_D: VDDA and VDDD (direct powering)
 - VDD_PLL_SEL: VDDA (PLL driver from VDDA supply)
@@ -80,6 +80,8 @@ If the test program fails, e.g. the current doesn't change during the test progr
 - IREF_TRIM: Jumper to 3 to set the internal reference current at 4 μA
 - Set the power supply to 1.30 V, the current should be 0.41 A
 - Turn off the command from the FPGA and turn on the power supply
+
+**Make sure that the jumper configuration marked in red is correct before powering the chip!!! <span style="color:red"> Do not apply higher voltage than **1.30 V**</span>. Applying too high voltage may kill the chip.**
 
 ### Problem with the digital scan
 

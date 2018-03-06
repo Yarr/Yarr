@@ -33,7 +33,7 @@ void SpecCom::init() -> Could not map BAR4, this might be OK!
 Now it is safe to turn on the power on the chip.
 ```
 
-Set the power supply to <span style="color:red">**1.80**</span> V, the current should be around 0.41 A and power on the chip. For the LDO operation, e.g. the jumper configuration shown in previous figure, make sure to <span style="color:red"> not apply higher voltage than **1.80 V**</span>.
+Set the power supply to <span style="color:red">**1.80**</span> V, the current should be around 0.41 A and power on the chip. For the LDO operation, e.g. the jumper configuration shown in previous figure, make sure <span style="color:red"> not to apply higher voltage than **1.80 V**</span>.
 
 Check if the test program runs succesfully:
 ```
