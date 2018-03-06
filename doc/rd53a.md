@@ -9,13 +9,13 @@ More details about the SCC [Single Chip Card](https://twiki.cern.ch/twiki/bin/vi
 
 1. Default settings for operation in LDO mode
 
-- PWR_A and PWR_D: VINA and VIND (LDO operation)
-- VDD_PLL_SEL: VDDA (PLL driver from VDDA supply)
-- VDD_CML_SEL: VDDA (CML driver from VDDA supply)
-- VREF_ADC (internal ADC voltage reference)
-- IREF_IO (internal current refetrence)
-- IREF_TRIM: Jumper to 3 to set the internal reference current at 4 μA
-- Jumpers JP10 and JP11 should be closed in order to use LANE 2 and 3
+    - PWR_A and PWR_D: VINA and VIND (LDO operation)
+    - VDD_PLL_SEL: VDDA (PLL driver from VDDA supply)
+    - VDD_CML_SEL: VDDA (CML driver from VDDA supply)
+    - VREF_ADC (internal ADC voltage reference)
+    - IREF_IO (internal current refetrence)
+    - IREF_TRIM: Jumper to 3 to set the internal reference current at 4 μA
+    - Jumpers JP10 and JP11 should be closed in order to use LANE 2 and 3
 
 **Make sure that the jumper configuration marked in red is correct before powering the chip!!! Applying too high voltage may kill the chip.**
 
