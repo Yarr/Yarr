@@ -86,7 +86,7 @@ void Rd53aGlobalCfg::init() {
     //24
     DiffComp.init(24, &m_cfg[24], 0, 10, 528); regMap["DiffComp"] = &DiffComp;
     //25
-    DiffVff.init(25, &m_cfg[25], 0, 10, 160); regMap["DiffVff"] = &DiffVff;
+    DiffVff.init(25, &m_cfg[25], 0, 10, 100); regMap["DiffVff"] = &DiffVff;
     //26
     DiffVth1.init(26, &m_cfg[26], 0, 10, 250); regMap["DiffVth1"] = &DiffVth1;
     //27
@@ -99,8 +99,8 @@ void Rd53aGlobalCfg::init() {
 
     //Power
     //31
-    SldoAnalogTrim.init(31, &m_cfg[31], 5, 5, 16); regMap["SldoAnalogTrim"] = &SldoAnalogTrim;
-    SldoDigitalTrim.init(31, &m_cfg[31], 0, 5, 16); regMap["SldoDigitalTrim"] = &SldoDigitalTrim;
+    SldoAnalogTrim.init(31, &m_cfg[31], 5, 5, 20); regMap["SldoAnalogTrim"] = &SldoAnalogTrim;
+    SldoDigitalTrim.init(31, &m_cfg[31], 0, 5, 20); regMap["SldoDigitalTrim"] = &SldoDigitalTrim;
 
     // Digital Matrix
     //32
