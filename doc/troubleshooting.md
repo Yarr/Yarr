@@ -59,11 +59,14 @@ Success! No errors.
 
 ### Chip is not configuring
 
-If the test program fails, e.g. the current doesn't change during the test program and there is no output:
+If the test program fails, e.g. the current doesn't change during the test program and there is no output
+
 ```./bin/rd53a_test```
+
 (ToDo add output)
+
 - Make sure if you turned off the command from the FPGA before powering the chip, as explained [RD53A](rd53a.md)
-- Check that the power is 1.65 - 1.80 V and the current is above 0.41 A
+- Check that the power is 1.80 V and the current is above 0.41 A
 - Try operating in direct powering.
 
 ![Jumper configuration for direct powering on the SCC ](images/IMG_20180305_170121.jpg)
@@ -79,8 +82,10 @@ If the test program fails, e.g. the current doesn't change during the test progr
 
 ### Problem with the digital scan
 
-If the digital scan looks blocky:
+If the digital scan looks blocky
+
 ![Digital scan example](images/rd53a_proto_digital_Occupancy.png)
+
 check that aurora lines are connected and running. The jumpers JP10 and JP11 on the SCC have to be closed in order to use LANE 2 and LANE 3.
 
 
