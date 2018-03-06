@@ -21,6 +21,7 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
     m_trigWord[7] = Rd53aCmd::genTrigger(0xF, 4, 0xF, 8); // Trigger
     m_trigWord[1] = 0x69696363; // TODO might include ECR?
     m_trigWord[0] = Rd53aCmd::genCal(8, 1, 0, 0, 0, 0); // Arm inject
+    m_noInject = false;
 
     min = 0;
     max = 0;
@@ -92,5 +93,15 @@ void Rd53aTriggerLoop::writeConfig(json &config) {
 }
 
 void Rd53aTriggerLoop::loadConfig(json &config) {
-    // TODO implement me
+    if (!config["count"].empty())
+        m_trigCnt = config["count"];
+    if (!config["frequency"].empty())
+        m_trigFreq = config["frequency"];
+    if (!config["time"].empty())
+        m_trigTime = config["time"];
+    if (!config["delay"].empty())
+        m_trigDelay = config["delay"];
+    if (!config["noInject"].empty())
+        m_noInject = config["noInject"];
+    this->setTrigDelay(m_trigDelay);
 }
