@@ -23,28 +23,44 @@ More details about the SCC [Single Chip Card](https://twiki.cern.ch/twiki/bin/vi
 
 3. Before powering the chip, run the script that turns off the command from the FPGA:
 ```
-./bin/rd53a_PowerOn
+/bin/rd53a_PowerOn
 ```
 
-4. Set the power supply to <span style="color:red">**1.80**</span> V, the current should be around 0.41 A and power on the chip. For the LDO operation, e.g. the jumper configuration shown in previous figure, make sure to not apply higher voltage than **1.80 V**.
+4. Set the power supply to <span style="color:red">**1.80**</span> V, the current should be around 0.41 A and power on the chip. For the LDO operation, e.g. the jumper configuration shown in previous figure, make sure to <span style="color:red"> not apply higher voltage than **1.80 V**</span>.
 
 5. Check if the test program runs succesfully:
 ```
-./bin/rd53a_test
+$ /bin/rd53a_test
+void SpecCom::init() -> Opening SPEC with id #0
+void SpecCom::init() -> Mapping BARs
+void SpecCom::init() -> Mapped BAR0 at 0x0x7f4b2c166000 with size 0x100000
+void SpecCom::init() -> Mmap failed
+void SpecCom::init() -> Could not map BAR4, this might be OK!
+>>> Configuring chip with default config ...
+... done.
+>>> Trigger test:
+Trigger: 1
+[Header] : L1ID(24) L1Tag(1) BCID(27785)
+[Header] : L1ID(18) L1Tag(19) BCID(19530)
+[Data] : COL(62) ROW(13) PAR(0) TOT(8,11,13,0)
+[Data] : COL(32) ROW(48) PAR(1) TOT(15,7,3,8)
+[Data] : COL(5) ROW(51) PAR(0) TOT(1,3,13,1)
+[Data] : COL(53) ROW(19) PAR(1) TOT(6,6,4,6)
+[Header] : L1ID(7) L1Tag(24) BCID(7031)
+[Header] : L1ID(29) L1Tag(16) BCID(23787)
+[Header] : L1ID(16) L1Tag(0) BCID(7099)
 ```
-(ToDo: add output)
-
 
 ### Digital Scan
 ```
-./bin/rd53a_proto_digitalscan
+/bin/rd53a_proto_digitalscan
 ```
 (ToDo: add output and picture)
 
 
 ### Analog Scan
 ```
-./bin/rd53a_proto_analogscan
+/bin/rd53a_proto_analogscan
 ```
 (ToDo: add output and picture)
 
