@@ -16,7 +16,7 @@ class Rd53aCmd {
     public:
         const static uint16_t enc5to8[32];
         const static uint16_t encTrigger[16];
-        static inline uint32_t encode5to8(uint32_t val); // custom 5b to 8b encoding
+        static uint32_t encode5to8(uint32_t val); // custom 5b to 8b encoding
 
         // Slow Commands
         void globalPulse(uint32_t chipId, uint32_t duration);

@@ -118,6 +118,7 @@ int main(int argc, char *argv[]) {
 
     Histo2d *h = new Histo2d("Occupancy", 400, -.5, 399.5, 192, -0.5, 191.5, typeid(void));
             
+    uint32_t duration = 0x4;
     spec.setTrigFreq(1000);
     spec.setTrigCnt(50);
     spec.setTrigWordLength(16);
@@ -127,6 +128,7 @@ int main(int argc, char *argv[]) {
     trigWord[14] = fe.genCal(8, 0, 0, 1, 0, 0); // Inject
     trigWord[8] = fe.genTrigger(0xF, 4, 0xF, 8); // Trigger
     trigWord[7] = fe.genTrigger(0xF, 4, 0xF, 8); // Trigger
+    trigWord[2] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(duration)); // global pulse for sync FE
     trigWord[1] = 0x69696363;
     trigWord[0] = fe.genCal(8, 1, 0, 0, 0, 0); // Arm inject
     spec.setTrigWord(&trigWord[0], 16);
@@ -174,7 +176,7 @@ int main(int argc, char *argv[]) {
             unsigned hits = 0;
             while(!spec.isCmdEmpty()) {}
             std::this_thread::sleep_for(std::chrono::microseconds(200));
-            fe.globalPulse(0, 40);
+            fe.globalPulse(8, 4);
             std::this_thread::sleep_for(std::chrono::microseconds(200));
             
             spec.setTrigEnable(1);
