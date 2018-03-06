@@ -60,8 +60,9 @@ Success! No errors.
 ### Chip is not configuring
 
 If the test program fails, e.g. the current doesn't change during the test program and there is no output
-
-```./bin/rd53a_test```
+```
+./bin/rd53a_test
+```
 
 (ToDo add output)
 
@@ -88,4 +89,7 @@ If the digital scan looks blocky
 
 check that aurora lines are connected and running. The jumpers JP10 and JP11 on the SCC have to be closed in order to use LANE 2 and LANE 3.
 
+### Endless readout loop
+
+We noticed for one chip when running the `./bin/rd53a_test` the readout loop is never ending. We are still debugging this!
 

@@ -7,7 +7,7 @@ More details about the SCC [Single Chip Card](https://twiki.cern.ch/twiki/bin/vi
 
 ![Jumper configuration on the SCC ](images/IMG_20180305_162546.jpg)
 
-Default settings for operation in LDO mode
+1. Default settings for operation in LDO mode
 
 - PWR_A and PWR_D: VINA and VIND (LDO operation)
 - VDD_PLL_SEL: VDDA (PLL driver from VDDA supply)
@@ -19,32 +19,33 @@ Default settings for operation in LDO mode
 
 **Make sure that the jumper configuration marked in red is correct before powering the chip!!! Applying too high voltage may kill the chip.**
 
-After all jumpers are placed on the SCC, connect the DisplayPort cable to DP1 and power cable to PWR_IN.
+2. After all jumpers are placed on the SCC, connect the DisplayPort cable to DP1 and power cable to PWR_IN.
 
-Before powering the chip, run the script that turns off the command from the FPGA:
+3. Before powering the chip, run the script that turns off the command from the FPGA:
+```
+./bin/rd53a_PowerOn
+```
 
-```./bin/rd53a_PowerOn```
+4. Set the power supply to <span style="color:red">**1.80**</span> V, the current should be around 0.41 A and power on the chip. For the LDO operation, e.g. the jumper configuration shown in previous figure, make sure to not apply higher voltage than **1.80 V**.
 
-Set the power supply to 1.80 V, the current should be around 0.41 A and power on the chip.
-
-Check if the test program runs succesfully:
-
-```./bin/rd53a_test```
-
+5. Check if the test program runs succesfully:
+```
+./bin/rd53a_test
+```
 (ToDo: add output)
 
 
 ### Digital Scan
-
-```./bin/rd53a_proto_digitalscan```
-
+```
+./bin/rd53a_proto_digitalscan
+```
 (ToDo: add output and picture)
 
 
 ### Analog Scan
-
-```./bin/rd53a_proto_analogscan```
-
+```
+./bin/rd53a_proto_analogscan
+```
 (ToDo: add output and picture)
 
 
