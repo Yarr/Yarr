@@ -82,3 +82,15 @@ void Rd53aTriggerLoop::end() {
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     //Nothing to do
 }
+
+void Rd53aTriggerLoop::writeConfig(json &config) {
+    config["count"] = m_trigCnt;
+    config["frequency"] = m_trigFreq;
+    config["time"] = m_trigTime;
+    config["delay"] = m_trigDelay;
+    config["noInject"] = m_noInject;
+}
+
+void Rd53aTriggerLoop::loadConfig(json &config) {
+    // TODO implement me
+}

@@ -22,6 +22,8 @@ class Rd53aTriggerLoop: public LoopActionBase {
         void setTrigFreq(double freq) {m_trigFreq = freq;}
         void setTrigDelay(uint32_t delay);
         
+        void writeConfig(json &config);
+        void loadConfig(json &config);
 
     private:
         uint32_t m_trigCnt;
