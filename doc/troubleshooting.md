@@ -63,7 +63,6 @@ If the test program fails, e.g. the current doesn't change during the test progr
 ```
 ./bin/rd53a_test
 ```
-
 (ToDo add output)
 
 - Make sure if you turned off the command from the FPGA before powering the chip, as explained [RD53A](rd53a.md)
@@ -71,6 +70,8 @@ If the test program fails, e.g. the current doesn't change during the test progr
 - Try operating in direct powering.
 
 ![Jumper configuration for **direct powering** on the SCC ](images/IMG_20180305_170121.jpg)
+
+Jumper configuration for **direct powering**
 
 - PWR_A and PWR_D: VDDA and VDDD (direct powering)
 - VDD_PLL_SEL: VDDA (PLL driver from VDDA supply)
@@ -81,7 +82,7 @@ If the test program fails, e.g. the current doesn't change during the test progr
 - Set the power supply to 1.30 V, the current should be 0.41 A
 - Turn off the command from the FPGA and turn on the power supply
 
-**Make sure that the jumper configuration marked in red is correct before powering the chip!!! <span style="color:red"> Do not apply higher voltage than **1.30 V**</span>. Applying too high voltage may kill the chip.**
+**Make sure that the jumper configuration marked in red is correct before powering the chip!!! <span style="color:red"> Do not apply higher voltage than 1.30 V</span>. Applying too high voltage may kill the chip.**
 
 ### Problem with the digital scan
 
