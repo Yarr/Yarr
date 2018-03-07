@@ -187,6 +187,7 @@ Got 24000 hits
 ```
 ![Analog scan](images/rd53a_proto_analogD_Occupancy.png)
 
+*The pattern in the differential FE is expected for the default configuration of Vff.*
 
 ### Scan Console
 Coming soon!
