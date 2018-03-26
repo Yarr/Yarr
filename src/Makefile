@@ -28,9 +28,10 @@ endif
 ifeq ($(UNAME_S),Darwin)
 CPP = clang++
 LD = clang++
+LDFLAGS += -Wl,-all_load
 else
 CPPFLAGS += -pthread -fPIC
-LDFLAGS += -pthread -lrt -fPIC
+LDFLAGS += -pthread -lrt -fPIC -Wl,-all_load
 endif
 
 CPPFLAGS += -std=c++11 -Wall -Werror
