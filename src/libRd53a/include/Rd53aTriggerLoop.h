@@ -22,6 +22,8 @@ class Rd53aTriggerLoop: public LoopActionBase {
         void setTrigFreq(double freq) {m_trigFreq = freq;}
         void setTrigDelay(uint32_t delay);
         
+        void writeConfig(json &config);
+        void loadConfig(json &config);
 
     private:
         uint32_t m_trigCnt;
@@ -30,6 +32,7 @@ class Rd53aTriggerLoop: public LoopActionBase {
         double m_trigFreq;
         std::array<uint32_t, 16> m_trigWord;
         uint32_t m_trigWordLength;
+        bool m_noInject;
 
         bool isInner;
         void init();

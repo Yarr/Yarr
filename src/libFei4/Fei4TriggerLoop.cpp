@@ -112,7 +112,7 @@ void Fei4TriggerLoop::setNoInject() {
     m_trigWord[1] = 0;
     m_trigWord[2] = 0;
     m_trigWord[3] = TRIG_CMD;
-    m_trigWordLength = 5;
+    m_trigWordLength = 4;
 }
 
 void Fei4TriggerLoop::setNoWord() {
