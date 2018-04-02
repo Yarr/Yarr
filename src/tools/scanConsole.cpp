@@ -286,10 +286,10 @@ int main(int argc, char *argv[]) {
               << "##  Loading Configs  ##" << std::endl
               << "#######################" << std::endl;
 
-    // NEW
     int success = 0;
     std::string chipType;
 
+    // Loop over setup files
     for(std::string const& sTmp : cConfigPaths){
         std::cout << "Opening global config: " << sTmp << std::endl;
         std::ifstream gConfig(sTmp);
@@ -307,6 +307,7 @@ int main(int argc, char *argv[]) {
             chipType = config["chipType"];
             std::cout << "Chip Type: " << chipType << std::endl;
             std::cout << "Found " << config["chips"].size() << " chips defined!" << std::endl;
+            // Loop over chips
             for (unsigned i=0; i<config["chips"].size(); i++) {
                 std::cout << "Loading chip #" << i << std::endl;
                 try { 
@@ -316,6 +317,7 @@ int main(int argc, char *argv[]) {
                     bookie.getLastFe()->init(&*hwCtrl, chip["tx"], chip["rx"]);
                     std::ifstream cfgFile(chip["config"].get<std::string>());
                     if (cfgFile) {
+                        // Load config
                         std::cout << "Loading config file: " << chip["config"] << std::endl;
                         json cfg = json::parse(cfgFile);
                         dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->fromFileJson(cfg);

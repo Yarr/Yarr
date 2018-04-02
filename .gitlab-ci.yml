@@ -2,7 +2,7 @@ job_build_and_test:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     stage: build
     script:
-      - yum -y install gcc-c++
+      - yum -y install devtoolset-7-gcc-c++
       - yum -y install make
       - yum -y install gnuplot
       - cd src
@@ -25,7 +25,7 @@ job_build_cmake:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     stage: build
     script:
-      - yum -y install gcc-c++
+      - yum -y install devtoolset-7-gcc-c++
       - yum -y install make
       - mkdir -p src/cmake_build
       - cd src/cmake_build
@@ -37,6 +37,6 @@ job_build_gcc7:
     stage: build
     script:
       - yum -y install make
-      - . /cvmfs/sft.cern.ch/lcg/releases/gcc/7.1.0/x86_64-slc6/setup.sh
+      - source /cvmfs/sft.cern.ch/lcg/releases/gcc/7.1.0/x86_64-slc6/setup.sh
       - cd src
       - make -j4
