@@ -3,12 +3,13 @@ job_build_and_test:
     stage: build
     script:
       - yum -y install centos-release-scl-rh
-      - yum -y install devtoolset-7-gcc-c++
+      - yum -y install devtoolset-7
       - yum -y install make
       - yum -y install gnuplot
       - scl enable devtoolset-7 bash
       - cd src
       - which g++
+      - ls /opt/rh
       - make
       - export USER=test
       - echo $USER
