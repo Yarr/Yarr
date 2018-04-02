@@ -14,6 +14,7 @@
 #include "ClipBoard.h"
 #include "HistogramBase.h"
 #include "EventDataBase.h"
+#include "TxCore.h"
 
 using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 
@@ -21,6 +22,8 @@ class FrontEnd {
     public:
         FrontEnd() {}
         virtual ~FrontEnd() {}
+        
+        virtual void init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel)=0;
 
         bool getActive();
 		bool isActive();
@@ -50,6 +53,7 @@ class FrontEndCfg {
             txChannel = 99;
             rxChannel = 99;
         }
+        
 
         virtual double toCharge(double)=0;
         virtual double toCharge(double, bool, bool)=0;
@@ -68,10 +72,15 @@ class FrontEndCfg {
         void setChannel(unsigned channel) {txChannel = channel; rxChannel = channel;}
 		void setChannel(unsigned arg_txChannel, unsigned arg_rxChannel) {txChannel = arg_txChannel; rxChannel = arg_rxChannel;}
         void setName(std::string arg_name) {name = arg_name;}
+
+        void setConfigFile(std::string arg_configFile) {configFile = arg_configFile;}
+        std::string getConfigFile() {return configFile;}
+    
     protected:
         std::string name;
         unsigned txChannel;
         unsigned rxChannel;
+        std::string configFile;
 };
 
 #endif

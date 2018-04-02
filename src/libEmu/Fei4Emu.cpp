@@ -41,7 +41,7 @@ Fei4Emu::~Fei4Emu() {
 void Fei4Emu::initializePixelModelsFromFile(std::string json_file_path) {
     std::ifstream file(json_file_path);
     json j;
-    j << file;
+    j= json::parse(file);
 
     for (unsigned col = 1; col <= m_feCfg->n_Col; col++) {
         for (unsigned row = 1; row <= m_feCfg->n_Row; row++) {

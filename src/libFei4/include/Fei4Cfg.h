@@ -33,8 +33,8 @@ class Fei4Cfg : public FrontEndCfg, public Fei4GlobalCfg, public Fei4PixelCfg {
             vcalSlope = 1.5;
 	}
 
-        double toCharge(double vcal) {return this->toCharge(vcal, true, true);}
-        double toCharge(double vcal, bool sCapOn=true, bool lCapOn=true) {
+        double toCharge(double vcal) override {return this->toCharge(vcal, true, true);}
+        double toCharge(double vcal, bool sCapOn=true, bool lCapOn=true) override {
             // Q = C*V
             double C = 0;
             if (sCapOn) C += sCap*1e-15;
@@ -61,13 +61,13 @@ class Fei4Cfg : public FrontEndCfg, public Fei4GlobalCfg, public Fei4PixelCfg {
 		unsigned getChipId();
 		void setChipId(unsigned chipId);
         
-        void toFileBinary(std::string filename);
-        void toFileBinary();
-        void fromFileBinary(std::string filename);
-        void fromFileBinary();
+        void toFileBinary(std::string filename) override;
+        void toFileBinary() override;
+        void fromFileBinary(std::string filename) override;
+        void fromFileBinary() override;
         void toFileXml(tinyxml2::XMLDocument *doc);
-        void toFileJson(json &j);
-        void fromFileJson(json &j);
+        void toFileJson(json &j) override;
+        void fromFileJson(json &j) override;
 
     protected:
         unsigned chipId;

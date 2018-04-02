@@ -8,6 +8,15 @@
 
 #include "Fei4Cmd.h"
 
+Fei4Cmd::Fei4Cmd() {
+    verbose = false;
+    core = NULL;
+}
+
+void Fei4Cmd::setCore(TxCore *arg_core) {
+    core = arg_core;
+}
+
 Fei4Cmd::Fei4Cmd(TxCore *arg_core) {
     verbose = false;
     core = arg_core;

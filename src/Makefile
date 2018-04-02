@@ -28,6 +28,7 @@ endif
 ifeq ($(UNAME_S),Darwin)
 CPP = clang++
 LD = clang++
+CPPFLAGS += -pthread
 LDFLAGS += -Wl,-all_load
 else
 CPPFLAGS += -pthread -fPIC

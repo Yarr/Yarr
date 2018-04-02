@@ -45,8 +45,11 @@
 
 class Fe65p2Cmd {
     public:
+        Fe65p2Cmd();
         Fe65p2Cmd(TxCore *arg_core);
         ~Fe65p2Cmd();
+        
+        void setCore(TxCore *arg_core);
 
         void writeGlobal(uint16_t *cfg);
         void writePixel(uint16_t *bitstream);

@@ -25,6 +25,8 @@
 
 #include "AllHwControllers.h"
 
+#include "AllChips.h"
+
 #include "Bookkeeper.h"
 #include "Fei4.h"
 #include "ScanBase.h"
@@ -251,7 +253,7 @@ int main(int argc, char *argv[]) {
             return -1;
         }
         json ctrlCfg;
-        ctrlCfg << ctrlCfgFile;
+        ctrlCfg = json::parse(ctrlCfgFile);
         std::string controller = ctrlCfg["ctrlCfg"]["type"];
 
         hwCtrl = StdDict::getHwController(controller);
@@ -283,59 +285,76 @@ int main(int argc, char *argv[]) {
     std::cout << "#######################" << std::endl
               << "##  Loading Configs  ##" << std::endl
               << "#######################" << std::endl;
-    
-    for(std::string const& sTmp : cConfigPaths){
-        std::string discardMe; //Error handling, wait for user
-        json jTmp;
-        std::ifstream iFTmp(sTmp);
 
-        if (!iFTmp) {
-            std::cerr << "File not found: " << sTmp << std::endl;
-            std::cerr << "Creating new config (type FE-I4B) ..." << std::endl;
-            unsigned i=0;
-            for (; i<16; i++) {
-                if (bookie.getFe(i) == NULL)
-                    break;
-            }
-            std::cout << "Rx " << i << " seems to be free, assuming same Tx channel." << std::endl;
-            bookie.addFe(dynamic_cast<FrontEnd*>(new Fei4(&*hwCtrl)), i, i);
-        } else {
-            jTmp << iFTmp;
-            if(!jTmp["FE-I4B"].is_null()){
-                std::cout << "Found FE-I4B: " << jTmp["FE-I4B"]["name"] << std::endl;
-                bookie.addFe(dynamic_cast<FrontEnd*>(new Fei4(&*hwCtrl)), jTmp["FE-I4B"]["txChannel"], jTmp["FE-I4B"]["rxChannel"]);        
-            } else if(!jTmp["FE65-P2"].is_null()){
-                std::cout << "Found FE65-P2: " << jTmp["FE-I4B"]["name"] << std::endl;
-                bookie.addFe(dynamic_cast<FrontEnd*>(new Fe65p2(&*hwCtrl)), jTmp["FE65-P2"]["txChannel"], jTmp["FE-I4B"]["rxChannel"]);        
-            } else{
-                std::cerr << "Unknown chip type or malformed config in " << sTmp << std::endl;
-                continue;
-            }
-            // Load config
-            dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->fromFileJson(jTmp);
-            // Reset mask
-            if (mask_opt == 1) {
-                if (!jTmp["FE-I4B"].is_null()) {
-                    std::cout << "Resetting enable/hitbus pixel mask to all enabled!" << std::endl;
-                    Fei4 *fe = dynamic_cast<Fei4*>(bookie.getLastFe());
-                    for (unsigned int dc = 0; dc < fe->n_DC; dc++) {
-                        fe->En(dc).setAll(1);
-                        fe->Hitbus(dc).setAll(0);
-                    }
-                }
-                // TODO add FE65p2
-            }
-                
+    // NEW
+    int success = 0;
+    std::string chipType;
+
+    for(std::string const& sTmp : cConfigPaths){
+        std::cout << "Opening global config: " << sTmp << std::endl;
+        std::ifstream gConfig(sTmp);
+        json config;
+        try {
+            config = json::parse(gConfig);
+        } catch(json::parse_error &e) {
+            std::cerr << __PRETTY_FUNCTION__ << " : " << e.what() << std::endl;
         }
-        feCfgMap[bookie.getLastFe()] = sTmp;
-        iFTmp.close();
-        
-        // Create backup of current config
-        std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getName() + ".json.after");
-        json backupCfg;
-        dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
-        backupCfgFile << std::setw(4) << backupCfg;
-        backupCfgFile.close();
+
+        if (config["chipType"].empty() || config["chips"].empty()) {
+            std::cerr << __PRETTY_FUNCTION__ << " : invalid config, chip type or chips not specified!" << std::endl;
+            return 0;
+        } else {
+            chipType = config["chipType"];
+            std::cout << "Chip Type: " << chipType << std::endl;
+            std::cout << "Found " << config["chips"].size() << " chips defined!" << std::endl;
+            for (unsigned i=0; i<config["chips"].size(); i++) {
+                std::cout << "Loading chip #" << i << std::endl;
+                try { 
+                    json chip = config["chips"][i];
+                    // TODO should be a shared pointer
+                    bookie.addFe(StdDict::getFrontEnd(chipType).release(), chip["tx"], chip["rx"]);
+                    bookie.getLastFe()->init(&*hwCtrl, chip["tx"], chip["rx"]);
+                    std::ifstream cfgFile(chip["config"].get<std::string>());
+                    if (cfgFile) {
+                        std::cout << "Loading config file: " << chip["config"] << std::endl;
+                        json cfg = json::parse(cfgFile);
+                        dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->fromFileJson(cfg);
+                        cfgFile.close();
+                    } else {
+                        std::cout << "Config file not found, using default!" << std::endl;
+                    }
+                    success++;
+                    // Save path to config
+                    feCfgMap[bookie.getLastFe()] = sTmp;
+                    dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->setConfigFile(chip["config"]);
+                    
+                    // Create backup of current config
+                    // TODO fix folder
+                    std::ofstream backupCfgFile(dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getConfigFile() + ".before");
+                    json backupCfg;
+                    dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
+                    backupCfgFile << std::setw(4) << backupCfg;
+                    backupCfgFile.close();
+                    
+                } catch (json::parse_error &e) {
+                    std::cerr << __PRETTY_FUNCTION__ << " : " << e.what() << std::endl;
+                }
+            }
+        }
+    }
+    
+    // Reset masks
+    if (mask_opt == 1) {
+        for (FrontEnd* fe : bookie.feList) {
+            if (chipType == "FEI4B") {
+                std::cout << "Resetting enable/hitbus pixel mask to all enabled!" << std::endl;
+                for (unsigned int dc = 0; dc < dynamic_cast<Fei4*>(fe)->n_DC; dc++) {
+                    dynamic_cast<Fei4*>(fe)->En(dc).setAll(1);
+                    dynamic_cast<Fei4*>(fe)->Hitbus(dc).setAll(0);
+                }
+            }
+        }
+        // TODO add FE65p2
     }
     
     std::cout << std::endl;
@@ -547,6 +566,12 @@ void printHelp() {
     std::cout << " -k: Report known items (Scans, Hardware etc.)\n";
 }
 
+void listChips() {
+    for(std::string &chip_type: StdDict::listFrontEnds()) {
+        std::cout << "  " << chip_type << "\n";
+    }
+}
+
 void listScans() {
     for(std::string &scan_name: StdDict::listScans()) {
         std::cout << "  " << scan_name << "\n";
@@ -566,14 +591,17 @@ void listScanLoopActions() {
 }
 
 void listKnown() {
+    std::cout << " Known Chips:\n";
+    listChips();
+
+    std::cout << " Known HW controllers:\n";
+    listControllers();
+
     std::cout << " Known Scans:\n";
     listScans();
 
     std::cout << " Known ScanLoop actions:\n";
     listScanLoopActions();
-
-    std::cout << " Known HW controllers:\n";
-    listControllers();
 }
 
 std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie ) {
@@ -588,7 +616,7 @@ std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bo
             throw("buildScan failure!");
         }
         json scanCfg;
-        scanCfg << scanCfgFile;
+        scanCfg = json::parse(scanCfgFile);
         dynamic_cast<ScanFactory&>(*s).loadConfig(scanCfg);
     } else {
         std::cout << "-> Selecting Scan: " << scanType << std::endl;
@@ -617,7 +645,7 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
             throw("buildHistogrammers failure!");
         }
         json scanCfg;
-        scanCfg << scanCfgFile;
+        scanCfg= json::parse(scanCfgFile);
         json histoCfg = scanCfg["scan"]["histogrammer"];
         json anaCfg = scanCfg["scan"]["analysis"];
 
@@ -684,7 +712,7 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
             throw( "buildAnalyses failed" );
         }
         json scanCfg;
-        scanCfg << scanCfgFile;
+        scanCfg = json::parse(scanCfgFile);
         json histoCfg = scanCfg["scan"]["histogrammer"];
         json anaCfg = scanCfg["scan"]["analysis"];
 

@@ -6,7 +6,18 @@
 // # Comment: FEI4 Base class
 // ################################
 
+#include "AllChips.h"
 #include "Fei4.h"
+
+bool fei4_registered =
+  StdDict::registerFrontEnd("FEI4B",
+                                []() { return std::unique_ptr<FrontEnd>(new Fei4());});
+
+Fei4::Fei4() : Fei4Cfg(), Fei4Cmd(), FrontEnd() {
+    txChannel = 99;
+    rxChannel = 99;
+    active = false;
+}
 
 Fei4::Fei4(TxCore *core) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
     txChannel = 99;
@@ -34,6 +45,13 @@ Fei4::Fei4(TxCore *core, unsigned arg_txChannel, unsigned arg_rxChannel) : Fei4C
 
 Fei4::~Fei4() {	
 
+}
+
+void Fei4::init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
+    this->setCore(arg_core);
+    txChannel = arg_txChannel;
+    rxChannel = arg_rxChannel;
+    active = true;
 }
 
 void Fei4::configure() {
