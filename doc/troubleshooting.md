@@ -56,3 +56,70 @@ Success! No errors.
 ## FE65-P2 Troubleshooting
 
 ## RD53A Troubleshooting
+
+### Chip is not configuring
+
+If the test program fails, e.g. the current doesn't change during the test program and there is no output
+```
+$ ./bin/rd53a_test
+void SpecCom::init() -> Opening SPEC with id #0
+void SpecCom::init() -> Mapping BARs
+void SpecCom::init() -> Mapped BAR0 at 0x0x7f45464ee000 with size 0x100000
+void SpecCom::init() -> Mmap failed
+void SpecCom::init() -> Could not map BAR4, this might be OK!
+>>> Configuring chip with default config ...
+... done.
+>>> Checking link status: 0x1
+All links are synced!
+>>> Trigger test:
+Trigger: 1
+Trigger: 2
+Trigger: 3
+Trigger: 4
+Trigger: 5
+Trigger: 6
+Trigger: 7
+Trigger: 8
+Trigger: 9
+Trigger: 10
+Trigger: 11
+Trigger: 12
+Trigger: 13
+Trigger: 14
+Trigger: 15
+>>> Enabling digital injection
+>>> Enabling some pixels
+>>> Digital inject test:
+```
+
+- Make sure if you turned off the command from the FPGA before powering the chip, as explained [RD53A](rd53a.md)
+- Check that the power is 1.80 V and the current is above 0.41 A
+- Try operating in direct powering.
+
+![Jumper configuration for **direct powering** on the SCC ](images/IMG_20180305_170121.jpg)
+
+Jumper configuration for **direct powering**
+
+- PWR_A and PWR_D: VDDA and VDDD (direct powering)
+- VDD_PLL_SEL: VDDA (PLL driver from VDDA supply)
+- VDD_CML_SEL: VDDA (CML driver from VDDA supply)
+- VREF_ADC (internal ADC voltage reference)
+- IREF_IO (internal current refetrence)
+- IREF_TRIM: Jumper to 3 to set the internal reference current at 4 μA
+- Set the power supply to 1.30 V, the current should be 0.41 A
+- Turn off the command from the FPGA and turn on the power supply
+
+**Make sure that the jumper configuration marked in red is correct before powering the chip!!! <span style="color:red"> Do not apply higher voltage than 1.30 V</span>. Applying too high voltage may kill the chip.**
+
+### Problem with the digital scan
+
+If the digital scan looks blocky
+
+![Digital scan example](images/rd53a_proto_digital_Occupancy.png)
+
+check that aurora lines are connected and running. The jumpers JP10 and JP11 on the SCC have to be closed in order to use LANE 2 and LANE 3.
+
+### Endless readout loop
+
+We noticed for one chip when running the `./bin/rd53a_test` the readout loop is never ending. We are still debugging this!
+
