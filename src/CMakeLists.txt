@@ -31,7 +31,7 @@ add_compile_options(-std=c++11)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 #add libraries
-list(APPEND libs Yarr Spec Util Emu Fe65p2 Fei4 Rce Boc KU040)
+list(APPEND libs Yarr Spec Util Emu Fe65p2 Fei4 Rce Boc Rd53a KU040)
 foreach(lib ${libs})
 include_directories(lib${lib}/include)
 file(GLOB SrcFiles lib${lib}/*.cpp)

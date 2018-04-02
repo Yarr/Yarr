@@ -81,7 +81,8 @@ int main(int argc, char *argv[]) {
             trigWord[1] = 0x00;
             trigWord[2] = 0x00;
             trigWord[3] = MOJO_HEADER + (PULSE_REG << 16) + PULSE_INJECT;
-            mySpec.setTrigWord(trigWord);
+            mySpec.setTrigWord(trigWord, 4);
+            mySpec.setTrigWordLength(4);
 
             mySpec.setTrigEnable(0x1);
             while(!mySpec.isTrigDone());

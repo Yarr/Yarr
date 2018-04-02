@@ -44,7 +44,7 @@ class TxCore {
         virtual void setTrigCnt(uint32_t count) = 0;
         virtual void setTrigTime(double time) = 0; // in s
         virtual void setTrigWordLength(uint32_t length) = 0; // From Msb
-        virtual void setTrigWord(uint32_t *word) = 0; // 4 words, start at Msb
+        virtual void setTrigWord(uint32_t *word, uint32_t length) = 0; // 4 words, start at Msb
         virtual void toggleTrigAbort() = 0;
 
         // Trigger interface

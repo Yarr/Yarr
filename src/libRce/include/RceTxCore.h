@@ -35,7 +35,7 @@ class RceTxCore : virtual public TxCore {
         void setTrigCnt(uint32_t count);
         void setTrigTime(double time) {m_trigTime = time;}
         void setTrigWordLength(uint32_t length) {} // TODO length here is bits, should be words
-        void setTrigWord(uint32_t *word) {for(unsigned i=0; i<4; i++) m_trigWord[i] = word[i];} 
+        void setTrigWord(uint32_t *word, uint32_t length) {for(unsigned i=0; i<length; i++) m_trigWord[i] = word[i];} 
 
         void toggleTrigAbort() {}
 
@@ -69,7 +69,7 @@ class RceTxCore : virtual public TxCore {
 
         enum TRIG_CONF_VALUE m_trigCfg;
         unsigned m_trigCnt;
-        uint32_t m_trigWord[4]; // Repeated bitstream max length is 128 bits, in software there is not really a limit
+        uint32_t m_trigWord[16]; // Repeated bitstream max length is 512 bits, in software there is not really a limit
         double m_trigFreq;
         double m_trigTime;
 };

@@ -224,9 +224,9 @@ void KU040TxCore::setTrigWordLength(uint32_t length)
 
 }
 
-void KU040TxCore::setTrigWord(uint32_t *word)
+void KU040TxCore::setTrigWord(uint32_t *word, uint32_t length)
 {
-	m_com->Write(KU040_PIXEL_TRIGGEN_WORD1, word, 4, false);
+	m_com->Write(KU040_PIXEL_TRIGGEN_WORD1, word, length, false);
 }
 
 void KU040TxCore::setTriggerLogicMask(uint32_t mask)

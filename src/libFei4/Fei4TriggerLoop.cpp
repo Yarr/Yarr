@@ -38,7 +38,7 @@ void Fei4TriggerLoop::init() {
     g_tx->setTrigFreq(m_trigFreq);
     g_tx->setTrigCnt(m_trigCnt);
     g_tx->setTrigWordLength(m_trigWordLength);
-    g_tx->setTrigWord(m_trigWord);
+    g_tx->setTrigWord(m_trigWord, m_trigWordLength);
     g_tx->setTrigTime(m_trigTime);
     // Set active Modules into runmode
     // TODO ISSUE: This makes problems
@@ -112,7 +112,7 @@ void Fei4TriggerLoop::setNoInject() {
     m_trigWord[1] = 0;
     m_trigWord[2] = 0;
     m_trigWord[3] = TRIG_CMD;
-    m_trigWordLength = 5;
+    m_trigWordLength = 4;
 }
 
 void Fei4TriggerLoop::setNoWord() {

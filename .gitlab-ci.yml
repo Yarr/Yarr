@@ -33,3 +33,4 @@ job_build_cmake:
       - cd src/cmake_build
       - cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
       - make -j4
+      - bin/scanConsole -k

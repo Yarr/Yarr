@@ -19,6 +19,7 @@
 #define RX_BRIDGE (0x3 << 14)
 
 #define RX_ENABLE 0x0
+#define RX_STATUS 0x1
 
 #define RX_START_ADDR 0x0
 #define RX_DATA_COUNT 0x1

@@ -42,7 +42,7 @@ class EmuTxCore : virtual public TxCore {
         void setTrigCnt(uint32_t count);
         void setTrigTime(double time) {}
         void setTrigWordLength(uint32_t length) {}
-        void setTrigWord(uint32_t *word) {}
+        void setTrigWord(uint32_t *word, uint32_t length) {}
 
         void toggleTrigAbort() {}
 

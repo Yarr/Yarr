@@ -60,8 +60,9 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
         void loadIntoShiftReg(unsigned pixel_latch);
         void loadIntoPixel(unsigned pixel_latch);
         void shiftByOne();
-        
         void writeNamedRegister(std::string name, uint16_t value) override;
+        void readPixelRegister(unsigned colpr_addr, unsigned latch);
+        void dummyCmd();
 
         void writeRegister(Fei4Register Fei4GlobalCfg::*ref, uint16_t cfgBits){
             setValue(ref, cfgBits);
@@ -75,6 +76,10 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
         uint16_t readRegister(Fei4Register Fei4GlobalCfg::*ref){
             return getValue(ref);
         }
+
+	void readRegister(unsigned addr) {
+	  this->rdRegister(chipId, addr);
+	}
 
         void wrGR16(unsigned int mOffset, unsigned int bOffset, unsigned int mask, bool msbRight, uint16_t cfgBits);
     private:
