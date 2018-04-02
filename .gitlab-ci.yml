@@ -2,6 +2,7 @@ job_build_and_test:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     stage: build
     script:
+      - yum -y install centos-release-scl-rh
       - yum -y install devtoolset-7-gcc-c++
       - yum -y install make
       - yum -y install gnuplot
