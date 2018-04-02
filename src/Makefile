@@ -32,7 +32,7 @@ CPPFLAGS += -pthread
 LDFLAGS += -Wl,-all_load
 else
 CPPFLAGS += -pthread -fPIC
-LDFLAGS += -pthread -lrt -fPIC -Wl,-all_load
+LDFLAGS += -pthread -lrt -fPIC -Wl,--whole-archive
 endif
 
 CPPFLAGS += -std=c++11 -Wall -Werror

@@ -2,10 +2,7 @@ job_build_and_test:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     stage: build
     script:
-      - yum -y install centos-release-scl-rh
-      - yum -y install devtoolset-7
-      - yum -y install make
-      - yum -y install gnuplot
+      - yum -y install centos-release-scl-rh devtoolset-7 make gnuplot
       - scl enable devtoolset-7 bash
       - source /opt/rh/devtoolset-7/enable
       - cd src
@@ -29,9 +26,9 @@ job_build_cmake:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     stage: build
     script:
-      - yum -y install devtoolset-7-gcc-c++
-      - yum -y install make
+      - yum -y install centos-release-scl-rh devtoolset-7 make cmake gnuplot
       - scl enable devtoolset-7 bash
+      - source /opt/rh/devtoolset-7/enable
       - mkdir -p src/cmake_build
       - cd src/cmake_build
       - cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
