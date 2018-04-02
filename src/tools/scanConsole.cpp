@@ -253,7 +253,12 @@ int main(int argc, char *argv[]) {
             return -1;
         }
         json ctrlCfg;
-        ctrlCfg = json::parse(ctrlCfgFile);
+        try {
+            ctrlCfg = json::parse(ctrlCfgFile);
+        } catch (json::parse_error &e) {
+            std::cerr << "#ERROR# Could not parse config: " << e.what() << std::endl;
+            return 0;
+        }
         std::string controller = ctrlCfg["ctrlCfg"]["type"];
 
         hwCtrl = StdDict::getHwController(controller);
@@ -618,7 +623,11 @@ std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bo
             throw("buildScan failure!");
         }
         json scanCfg;
-        scanCfg = json::parse(scanCfgFile);
+        try {
+            scanCfg = json::parse(scanCfgFile);
+        } catch (json::parse_error &e) {
+            std::cerr << "#ERROR# Could not parse config: " << e.what() << std::endl;
+        }
         dynamic_cast<ScanFactory&>(*s).loadConfig(scanCfg);
     } else {
         std::cout << "-> Selecting Scan: " << scanType << std::endl;
