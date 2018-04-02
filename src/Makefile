@@ -33,6 +33,7 @@ LDFLAGS += -Wl,-all_load
 else
 CPPFLAGS += -pthread -fPIC
 LDFLAGS += -pthread -lrt -fPIC -Wl,--whole-archive
+PLDFLAGS = -Wl,--no-whole-archive
 endif
 
 CPPFLAGS += -std=c++11 -Wall -Werror
@@ -129,8 +130,7 @@ $(BUILD)/%.o:
 # Target
 $(BIN)/%: $(BUILD)/%.o $(LLIB)/libyarr.a
 	@echo [Linking] $@
-        # Whole-archive means not to drop symbols from Yarr.
-	@$(LD) $(LDFLAGS) $< $(LLIB)/libyarr.a -o $@
+	@$(LD) $(LDFLAGS) $< $(LLIB)/libyarr.a $(PLDFLAGS) -o $@
 ifeq ($(ARCH),$(UNAME_P))
 	@ln -sf ../$@ bin/$*
 endif
