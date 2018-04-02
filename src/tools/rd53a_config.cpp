@@ -9,13 +9,13 @@ using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::i
 int main(int argc, char *argv[]) {
     
     // Init
-    Rd53a fe(NULL);
+    Rd53a fe;
     
     // Load config
     if (argc > 2) {
         json cfg;
         std::ifstream cfgFile(argv[2]);
-        cfg << cfgFile;
+        cfg = json::parse(cfgFile);
         fe.fromFileJson(cfg);
         cfgFile.close();
     }

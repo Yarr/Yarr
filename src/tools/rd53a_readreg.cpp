@@ -118,7 +118,7 @@ int main(void) {
     // std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
 
-    fe.init();
+    fe.configureInit();
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     // following registers have to be set to different values from the default values

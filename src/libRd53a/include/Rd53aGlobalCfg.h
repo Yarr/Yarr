@@ -67,7 +67,7 @@ class Rd53aGlobalCfg {
 
         uint16_t getValue(std::string name) {
             if (regMap.find(name) != regMap.end()) {
-                return regMap[name]->read();
+                return (this->*regMap[name]).read();
             } else {
                 std::cerr << " --> Error: Could not find register \"" << name << "\"" << std::endl;
             }
@@ -80,7 +80,7 @@ class Rd53aGlobalCfg {
 
         void setValue(std::string name, uint16_t val) {
             if (regMap.find(name) != regMap.end()) {
-                regMap[name]->write(val);
+                (this->*regMap[name]).write(val);
             } else {
                 std::cerr << " --> Error: Could not find register \"" << name << "\"" << std::endl;
             }
@@ -91,7 +91,7 @@ class Rd53aGlobalCfg {
         void fromFileJson(json &j);
     private:
     public:
-        std::map<std::string, Rd53aReg*> regMap;
+        std::map<std::string, Rd53aReg Rd53aGlobalCfg::*> regMap;
 
         //0
         Rd53aReg PixPortal;

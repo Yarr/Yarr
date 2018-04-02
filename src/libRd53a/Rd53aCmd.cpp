@@ -9,6 +9,11 @@
 #include "Rd53aCmd.h"
 #include <fstream>
 
+Rd53aCmd::Rd53aCmd() {
+    verbose = false;
+    core = NULL;
+}
+
 Rd53aCmd::Rd53aCmd(TxCore *arg_core) {
     verbose = false;
     core = arg_core;

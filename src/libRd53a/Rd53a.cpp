@@ -9,28 +9,34 @@
 
 #include "Rd53a.h"
 
+Rd53a::Rd53a() : FrontEnd(), Rd53aCfg(), Rd53aCmd() {
+    txChannel = 99;
+    rxChannel = 99;
+	active = true;
+}
+
 Rd53a::Rd53a(TxCore *core) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
     txChannel = 99;
     rxChannel = 99;
-	histogrammer = NULL;
-	ana = NULL;
 	active = true;
 }
 
 Rd53a::Rd53a(TxCore *core, unsigned arg_channel) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
 	txChannel = arg_channel;
 	rxChannel = arg_channel;
-	histogrammer = NULL;
-	ana = NULL;
 	active = true;
 }
 
 Rd53a::Rd53a(TxCore *core, unsigned arg_txChannel, unsigned arg_rxChannel) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
 	txChannel = arg_txChannel;
 	rxChannel = arg_rxChannel;
-	histogrammer = NULL;
-	ana = NULL;
 	active = true;
+}
+
+void Rd53a::init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
+    this->setCore(arg_core);
+    txChannel = arg_txChannel;
+    rxChannel = arg_rxChannel;
 }
 
 void Rd53a::writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value) {
@@ -43,7 +49,7 @@ void Rd53a::readRegister(Rd53aReg Rd53aGlobalCfg::*ref) {
 }
 
 void Rd53a::configure() {
-    this->init();
+    this->configureInit();
     // Turn off clock to matrix
     uint16_t tmp_enCoreColSync = EnCoreColSync.read();
     uint16_t tmp_enCoreColLin1 = EnCoreColLin1.read();
@@ -70,7 +76,7 @@ void Rd53a::configure() {
     while(!core->isCmdEmpty()){;}
 }
 
-void Rd53a::init() {
+void Rd53a::configureInit() {
     this->writeRegister(&Rd53a::GlobalPulseRt, 0x007F); // Reset a whole bunch of things
     this->globalPulse(m_chipId, 8);
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -110,6 +116,10 @@ void Rd53a::configurePixels() {
                 while(!core->isCmdEmpty()){;}
         }
     }
+}
+
+void Rd53a::writeNamedRegister(std::string name, uint16_t value) {
+    writeRegister(regMap[name], value);
 }
 
 // TODO remove magic numbers
