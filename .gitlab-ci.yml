@@ -5,6 +5,7 @@ job_build_and_test:
       - yum -y install devtoolset-7-gcc-c++
       - yum -y install make
       - yum -y install gnuplot
+      - scl enable devtoolset-7 bash
       - cd src
       - make
       - export USER=test
@@ -27,6 +28,7 @@ job_build_cmake:
     script:
       - yum -y install devtoolset-7-gcc-c++
       - yum -y install make
+      - scl enable devtoolset-7 bash
       - mkdir -p src/cmake_build
       - cd src/cmake_build
       - cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
