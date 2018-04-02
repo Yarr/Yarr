@@ -7,7 +7,7 @@ job_build_and_test:
       - yum -y install make
       - yum -y install gnuplot
       - scl enable devtoolset-7 bash
-      - ls /opt/rh/devtoolset-7
+      - source /opt/rh/devtoolset-7/enable
       - cd src
       - which g++
       - make
