@@ -325,7 +325,7 @@ int main(int argc, char *argv[]) {
                     }
                     success++;
                     // Save path to config
-                    feCfgMap[bookie.getLastFe()] = sTmp;
+                    feCfgMap[bookie.getLastFe()] = chip["config"];
                     dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->setConfigFile(chip["config"]);
                     
                     // Create backup of current config

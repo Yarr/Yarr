@@ -1,0 +1,10 @@
+{
+    "chipType" : "FEI4B",
+    "chips" : [
+        {
+            "config" : "configs/test.json",
+            "tx" : 0,
+            "rx" : 0
+        }
+    ]
+}

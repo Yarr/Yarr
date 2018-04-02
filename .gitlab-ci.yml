@@ -12,7 +12,7 @@ job_build_and_test:
       - /bin/pwd
       - mkdir /tmp/test
       - ls /tmp/
-      - bin/scanConsole -r configs/emuCfg.json -c configs/test.json -s digitalscan -p
+      - bin/scanConsole -r configs/emuCfg.json -c configs/example_setup.json -s digitalscan -p
       - ls
       - ls ./data/
       - ls ./data/000001_digitalscan/
