@@ -2,6 +2,7 @@ job_build_and_test:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     stage: build
     script:
+      - mkdir /opt
       - yum -y install centos-release-scl-rh
       - yum -y install devtoolset-7
       - yum -y install make
