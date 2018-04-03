@@ -11,6 +11,10 @@
 
 class Fei4ParameterLoop : public LoopActionBase{
     public:
+        Fei4ParameterLoop() {
+            loopType = typeid(this);
+        }
+
         Fei4ParameterLoop(Fei4Register Fei4GlobalCfg::*ref) : parPtr(ref){ 
             loopType = typeid(this);
         };

@@ -7,7 +7,11 @@
 // # Date: Jun 2017
 // ################################
 
+#include "AllChips.h"
 #include "Rd53a.h"
+
+bool rd53a_registred =
+    StdDict::registerFrontEnd("RD53A", [](){return std::unique_ptr<FrontEnd>(new Rd53a());});
 
 Rd53a::Rd53a() : FrontEnd(), Rd53aCfg(), Rd53aCmd() {
     txChannel = 99;

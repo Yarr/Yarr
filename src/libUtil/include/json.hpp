@@ -8394,7 +8394,7 @@ class serializer
 
                 if (pretty_print)
                 {
-                    o->write_characters("[\n", 2);
+                    o->write_characters("\n[", 2);
 
                     // variable to hold indentation for recursive calls
                     const auto new_indent = current_indent + indent_step;
@@ -8407,19 +8407,19 @@ class serializer
                     for (auto i = val.m_value.array->cbegin();
                             i != val.m_value.array->cend() - 1; ++i)
                     {
-                        o->write_characters(indent_string.c_str(), new_indent);
+                        //o->write_characters(indent_string.c_str(), new_indent);
                         dump(*i, true, ensure_ascii, indent_step, new_indent);
-                        o->write_characters(",\n", 2);
+                        o->write_character(',');
                     }
 
                     // last element
                     assert(not val.m_value.array->empty());
-                    o->write_characters(indent_string.c_str(), new_indent);
+                    //o->write_characters(indent_string.c_str(), new_indent);
                     dump(val.m_value.array->back(), true, ensure_ascii, indent_step, new_indent);
 
-                    o->write_character('\n');
-                    o->write_characters(indent_string.c_str(), current_indent);
+                    //o->write_characters(indent_string.c_str(), current_indent);
                     o->write_character(']');
+                    o->write_character('\n');
                 }
                 else
                 {
