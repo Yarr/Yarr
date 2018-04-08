@@ -22,6 +22,7 @@ void Rd53aCoreColLoop::init() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     m_done = false;
+    m_cur = 0;
 }
 
 void Rd53aCoreColLoop::execPart1() {

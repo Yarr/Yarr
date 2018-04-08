@@ -66,12 +66,12 @@
     ],
     "name": "DigitalScan",
     "prescan": {
-      "FE-I4B": {
+      "RD53A": {
         "GlobalConfig": {
-          "DigHitIn_Sel": 1,
-          "Trig_Count": 10,
-          "Trig_Lat": 220,
-          "Vthin_Coarse": 200
+          "InjEnDig": 1,
+          "InjAnaMode": 0,
+          "LatencyConfig": 48,
+          "GlobalPulseRt": 16384
         }
       }
     }
