@@ -99,7 +99,7 @@ void Rd53aGlobalCfg::init() {
 
     //Power
     //31
-    SldoAnalogTrim.init(31, &m_cfg[31], 5, 5, 20); regMap["SldoAnalogTrim"] = &Rd53aGlobalCfg::SldoAnalogTrim;
+    SldoAnalogTrim.init(31, &m_cfg[31], 5, 5, 26); regMap["SldoAnalogTrim"] = &Rd53aGlobalCfg::SldoAnalogTrim;
     SldoDigitalTrim.init(31, &m_cfg[31], 0, 5, 20); regMap["SldoDigitalTrim"] = &Rd53aGlobalCfg::SldoDigitalTrim;
 
     // Digital Matrix
@@ -200,10 +200,10 @@ void Rd53aGlobalCfg::init() {
     SerSelOut3.init(68, &m_cfg[68], 6, 2, 1); regMap["SerSelOut3"] = &Rd53aGlobalCfg::SerSelOut3;
     //69
     CmlInvTap.init(69, &m_cfg[69], 6, 2, 0x0); regMap["CmlInvTap"] = &Rd53aGlobalCfg::CmlInvTap;
-    CmlEnTap.init(69, &m_cfg[69], 4, 2, 0x3); regMap["CmlEnTap"] = &Rd53aGlobalCfg::CmlEnTap;
+    CmlEnTap.init(69, &m_cfg[69], 4, 2, 0x1); regMap["CmlEnTap"] = &Rd53aGlobalCfg::CmlEnTap;
     CmlEn.init(69, &m_cfg[69], 0, 4, 0xF); regMap["CmlEn"] = &Rd53aGlobalCfg::CmlEn;
     //70-72
-    CmlTapBias0.init(70, &m_cfg[70], 0, 10, 400); regMap["CmlTapBias0"] = &Rd53aGlobalCfg::CmlTapBias0;
+    CmlTapBias0.init(70, &m_cfg[70], 0, 10, 600); regMap["CmlTapBias0"] = &Rd53aGlobalCfg::CmlTapBias0;
     CmlTapBias1.init(71, &m_cfg[71], 0, 10, 0); regMap["CmlTapBias1"] = &Rd53aGlobalCfg::CmlTapBias1;
     CmlTapBias2.init(72, &m_cfg[72], 0, 10, 0); regMap["CmlTapBias2"] = &Rd53aGlobalCfg::CmlTapBias2;
     //73
