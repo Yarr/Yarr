@@ -1,13 +1,17 @@
+#include "AllProcessors.h"
 #include "Fei4DataProcessor.h"
+#include "LoopStatus.h"
 
 #include <iostream>
 
-#include "LoopStatus.h"
+
+bool fei4_proc_registered =
+    StdDict::registerDataProcessor("FEI4B", []() { return std::unique_ptr<DataProcessor>(new Fei4DataProcessor());});
 
 bool Fei4DataProcessor::scanDone = false;
 
 Fei4DataProcessor::Fei4DataProcessor(unsigned arg_hitDiscCfg) : DataProcessor(){
-  std::cout << __PRETTY_FUNCTION__ << std::endl;
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
     input = NULL;
     hitDiscCfg = arg_hitDiscCfg;
     totCode = {{{{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 14, 0}},
@@ -22,7 +26,7 @@ Fei4DataProcessor::~Fei4DataProcessor() {
 }
 
 void Fei4DataProcessor::init() {
-  std::cout << __PRETTY_FUNCTION__ << std::endl;
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
     for(std::map<unsigned, ClipBoard<EventDataBase> >::iterator it = outMap->begin(); it != outMap->end(); ++it) {
         activeChannels.push_back(it->first);
     }
@@ -30,38 +34,38 @@ void Fei4DataProcessor::init() {
 }
 
 void Fei4DataProcessor::run() {
-  std::cout << __PRETTY_FUNCTION__ << std::endl;
-  const unsigned int numThreads = std::thread::hardware_concurrency();
-  for (unsigned i=0; i<numThreads; i++) {
-    thread_ptrs.emplace_back( new std::thread(&Fei4DataProcessor::process, this) );
-    std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
-  }
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
+    const unsigned int numThreads = std::thread::hardware_concurrency();
+    for (unsigned i=0; i<numThreads; i++) {
+        thread_ptrs.emplace_back( new std::thread(&Fei4DataProcessor::process, this) );
+        std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
+    }
 }
 
 void Fei4DataProcessor::join() {
-  for( auto& thread : thread_ptrs ) {
-    if( thread->joinable() ) thread->join();
-  }
+    for( auto& thread : thread_ptrs ) {
+        if( thread->joinable() ) thread->join();
+    }
 }
 
 
 void Fei4DataProcessor::process() {
-  while(true) {
-    std::unique_lock<std::mutex> lk(mtx);
-    input->cv.wait( lk, [&] { return scanDone || !input->empty(); } );
-    
-    process_core();
-    
-    if( scanDone ) {
-        process_core(); // this line is needed if the data comes in before scanDone is changed.
-        for (unsigned i=0; i<activeChannels.size(); i++) {
-            outMap->at(activeChannels[i]).cv.notify_all(); // notification to the downstream
+    while(true) {
+        std::unique_lock<std::mutex> lk(mtx);
+        input->cv.wait( lk, [&] { return scanDone || !input->empty(); } );
+
+        process_core();
+
+        if( scanDone ) {
+            process_core(); // this line is needed if the data comes in before scanDone is changed.
+            for (unsigned i=0; i<activeChannels.size(); i++) {
+                outMap->at(activeChannels[i]).cv.notify_all(); // notification to the downstream
+            }
+            break;
         }
-        break;
     }
-  }
-  
-  process_core();
+
+    process_core();
 }
 
 void Fei4DataProcessor::process_core() {
@@ -81,7 +85,7 @@ void Fei4DataProcessor::process_core() {
         RawDataContainer *curInV = input->popData();
         if (curInV == NULL)
             continue;
-        
+
         // Create Output Container
         std::map<unsigned, Fei4Data*> curOut;
         std::map<unsigned, int> events;
@@ -93,7 +97,7 @@ void Fei4DataProcessor::process_core() {
 
         unsigned size = curInV->size();
         //if (size == 0)
-            //std::cout << "Empty!" << std::endl;
+        //std::cout << "Empty!" << std::endl;
         for(unsigned c=0; c<size; c++) {
             RawData *curIn = new RawData(curInV->adr[c], curInV->buf[c], curInV->words[c]);
             // Process
@@ -125,37 +129,37 @@ void Fei4DataProcessor::process_core() {
                         unsigned code = (value & 0xFC00) >> 10;
                         unsigned number = value & 0x03FF;
                         curOut[channel]->serviceRecords[code]+=number;
-                    //} else if (header == 0xea) {
+                        //} else if (header == 0xea) {
                         // Address Record
-                    //} else if (header == 0xec) {
+                        //} else if (header == 0xec) {
                         // Value Record
+                } else {
+                    uint16_t col = (value & 0xFE0000) >> 17;
+                    uint16_t row = (value & 0x01FF00) >> 8;
+                    uint8_t tot1 = (value & 0xF0) >> 4;
+                    uint8_t tot2 = (value & 0xF);
+                    if (events[channel] == 0 ) {
+                        std::cout << "# WARNING # " << channel << " no header in data fragment!" << std::endl;
+                        curOut[channel]->newEvent(0xDEADBEEF, l1id[channel], bcid[channel]);
+                        events[channel]++;
+                        //hits[channel] = 0;
+                    }
+                    if (__builtin_expect((col == 0 || row == 0 || col > 80 || row > 336), 0)) {
+                        badCnt++;
+                        std::cout << dataCnt << " [" << channel << "] Received data not valid: #" << i << " #" << curIn->words << " 0x" << std::hex << value << " " << std::dec << std::endl;
                     } else {
-                        uint16_t col = (value & 0xFE0000) >> 17;
-                        uint16_t row = (value & 0x01FF00) >> 8;
-                        uint8_t tot1 = (value & 0xF0) >> 4;
-                        uint8_t tot2 = (value & 0xF);
-                        if (events[channel] == 0 ) {
-                            std::cout << "# ERROR # " << channel << " no header in data fragment!" << std::endl;
-                            curOut[channel]->newEvent(0xDEADBEEF, l1id[channel], bcid[channel]);
-                            events[channel]++;
-                            //hits[channel] = 0;
+                        unsigned dec_tot1 = totCode[hitDiscCfg][tot1];
+                        unsigned dec_tot2 = totCode[hitDiscCfg][tot2];
+                        if (dec_tot1 > 0) {
+                            curOut[channel]->curEvent->addHit(row, col, dec_tot1);
+                            hits[channel]++;
                         }
-                        if (__builtin_expect((col == 0 || row == 0 || col > 80 || row > 336), 0)) {
-                            badCnt++;
-                            std::cout << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << curIn->words << " " << std::hex << value << " " << std::dec << std::endl;
-                        } else {
-                            unsigned dec_tot1 = totCode[hitDiscCfg][tot1];
-                            unsigned dec_tot2 = totCode[hitDiscCfg][tot2];
-                            if (dec_tot1 > 0) {
-                                curOut[channel]->curEvent->addHit(row, col, dec_tot1);
-                                hits[channel]++;
-                            }
-                            if (dec_tot2 > 0) {
-                                curOut[channel]->curEvent->addHit(row+1, col, dec_tot2);
-                                hits[channel]++;
-                            }
+                        if (dec_tot2 > 0) {
+                            curOut[channel]->curEvent->addHit(row+1, col, dec_tot2);
+                            hits[channel]++;
                         }
                     }
+                }
                 }
                 if (badCnt > 10)
                     break;

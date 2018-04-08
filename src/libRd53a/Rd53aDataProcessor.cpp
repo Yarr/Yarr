@@ -1,0 +1,169 @@
+// #################################
+// # Author: Timon Heim
+// # Email: timon.heim at cern.ch
+// # Project: Yarr
+// # Description: RD53A Data Processor
+// # Date: Apr 2018
+// ################################
+
+#include "Rd53aDataProcessor.h"
+#include "AllProcessors.h"
+
+bool rd53a_proc_registered =
+    StdDict::registerDataProcessor("RD53A", []() { return std::unique_ptr<DataProcessor>(new Rd53aDataProcessor());});
+
+
+bool Rd53aDataProcessor::scanDone = false;
+
+Rd53aDataProcessor::Rd53aDataProcessor() {
+    verbose = false;
+    m_input = NULL;
+}
+
+Rd53aDataProcessor::~Rd53aDataProcessor() {
+
+}
+
+void Rd53aDataProcessor::init() {
+    if (verbose)
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
+
+    for (auto &it : *m_outMap) {
+        activeChannels.push_back(it.first);
+    }
+}
+
+void Rd53aDataProcessor::run() {
+    if (verbose)
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    const unsigned int numThreads = std::thread::hardware_concurrency();
+    for (unsigned i=0; i<numThreads; i++) {
+        thread_ptrs.emplace_back(new std::thread(&Rd53aDataProcessor::process, this));
+        std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
+    }
+}
+
+void Rd53aDataProcessor::join() {
+    for( auto& thread : thread_ptrs ) {
+        if( thread->joinable() ) thread->join();
+    }
+}
+
+void Rd53aDataProcessor::process() {
+    while(true) {
+        std::unique_lock<std::mutex> lk(mtx);
+        m_input->cv.wait( lk, [&] { return scanDone || !m_input->empty(); } );
+
+        process_core();
+
+        if( scanDone ) {
+            process_core(); // this line is needed if the data comes in before scanDone is changed.
+            for (unsigned i=0; i<activeChannels.size(); i++) {
+                m_outMap->at(activeChannels[i]).cv.notify_all(); // notification to the downstream
+            }
+            break;
+        }
+    }
+
+    process_core();
+}
+
+void Rd53aDataProcessor::process_core() {
+    // TODO put data from channels back into input, so other processors can use it
+    for (auto &i : activeChannels) {
+        tag[i] = 0;
+        l1id[i] = 0;
+        bcid[i] = 0;
+        wordCount[i] = 0;
+        hits[i] = 0;
+    }
+
+    unsigned dataCnt = 0;
+    while(!m_input->empty()) {
+        // Get data containers
+        RawDataContainer *curInV = m_input->popData();
+        if (curInV == NULL)
+            continue;
+
+        // Create Output Container
+        std::map<unsigned, Fei4Data*> curOut;
+        std::map<unsigned, int> events;
+        for (unsigned i=0; i<activeChannels.size(); i++) {
+            curOut[activeChannels[i]] = new Fei4Data();
+            curOut[activeChannels[i]]->lStat = curInV->stat;
+            events[activeChannels[i]] = 0;
+        }
+
+        unsigned size = curInV->size();
+        for(unsigned c=0; c<size; c++) {
+            RawData *curIn = new RawData(curInV->adr[c], curInV->buf[c], curInV->words[c]);
+            // Process
+            unsigned words = curIn->words;
+            for (unsigned i=0; i<words; i++) {
+                // Decode content
+                // TODO this needs review, can't deal with user-k data
+                uint32_t data = curIn->buf[i];
+                unsigned channel = 0;
+                if (__builtin_expect((data != 0xFFFFFFFF), 0)) {
+                    if ((data >> 25) & 0x1) { // is header
+                        l1id[channel] = 0x1F & (data >> 20);
+                        tag[channel] = 0x1F & (data >> 15);
+                        bcid[channel] = 0x7FFF & data;
+                        // Create new event
+                        curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
+                        events[channel]++;
+                    } else { // is hit data
+                        unsigned core_col = 0x3F & (data >> 26);
+                        unsigned core_row = 0x3F & (data >> 20);
+                        unsigned region = 0xF & (data >> 16);
+                        unsigned tot0 = 0xF & (data >> 0); //left most
+                        unsigned tot1 = 0xF & (data >> 4);
+                        unsigned tot2 = 0xF & (data >> 8);
+                        unsigned tot3 = 0xF & (data >> 12);
+
+                        unsigned pix_col = core_col*8+((region&0x1)*4);
+                        unsigned pix_row = core_row*8+(0x7&(region>>1));
+
+                        if (__builtin_expect((pix_col < Rd53a::n_Col && pix_row < Rd53a::n_Row), 1)) {
+                            // Check if there is already an event
+                            if (events[channel] == 0) {
+                                std::cout << "# WARNING # " << channel << " no header in data fragment!" << std::endl;
+                                curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
+                                events[channel]++;
+                            }
+                            if (tot0 != 0xF) {
+                                curOut[channel]->curEvent->addHit(pix_row, pix_col, tot0);
+                                hits[channel]++;
+                            }
+                            if (tot1 != 0xF) {
+                                curOut[channel]->curEvent->addHit(pix_row, pix_col+1, tot1);
+                                hits[channel]++;
+                            }
+                            if (tot2 != 0xF) {
+                                curOut[channel]->curEvent->addHit(pix_row, pix_col+1, tot2);
+                                hits[channel]++;
+                            }
+                            if (tot3 != 0xF) {
+                                curOut[channel]->curEvent->addHit(pix_row, pix_col+1, tot3);
+                                hits[channel]++;
+                            }
+                        } else {
+                            std::cout << dataCnt << " [" << channel << "] Received data not valid: [" << i << "," << curIn->words << "] = 0x" << std::hex << data << " " << std::dec << std::endl;
+                        }
+
+                    }
+                }
+            }
+            delete curIn;
+        }
+
+        // Push data out
+        for (unsigned i=0; i<activeChannels.size(); i++) {
+            m_outMap->at(activeChannels[i]).pushData(curOut[activeChannels[i]]);
+        }
+        //Cleanup
+        delete curInV;
+        dataCnt++;
+    }
+
+}

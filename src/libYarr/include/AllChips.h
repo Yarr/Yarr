@@ -3,7 +3,9 @@
 
 #include "FrontEnd.h"
 
+#include <iostream>
 #include <string>
+#include <vector>
 
 namespace StdDict {
     bool registerFrontEnd(std::string name,

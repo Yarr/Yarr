@@ -24,8 +24,8 @@
 #include "HwController.h"
 
 #include "AllHwControllers.h"
-
 #include "AllChips.h"
+#include "AllProcessors.h"
 
 #include "Bookkeeper.h"
 #include "Fei4.h"
@@ -355,6 +355,7 @@ int main(int argc, char *argv[]) {
     // Reset masks
     if (mask_opt == 1) {
         for (FrontEnd* fe : bookie.feList) {
+            // TODO make mask generic?
             if (chipType == "FEI4B") {
                 std::cout << "Resetting enable/hitbus pixel mask to all enabled!" << std::endl;
                 for (unsigned int dc = 0; dc < dynamic_cast<Fei4*>(fe)->n_DC; dc++) {
@@ -431,10 +432,11 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    Fei4DataProcessor proc(bookie.globalFe<Fei4>()->getValue(&Fei4::HitDiscCnfg));
-    proc.connect( &bookie.rawData, &bookie.eventMap );
-    proc.init();
-    proc.run();
+    std::shared_ptr<DataProcessor> proc = StdDict::getDataProcessor(chipType);
+    //Fei4DataProcessor proc(bookie.globalFe<Fei4>()->getValue(&Fei4::HitDiscCnfg));
+    proc->connect( &bookie.rawData, &bookie.eventMap );
+    proc->init();
+    proc->run();
 
     // Now the all downstream processors are ready --> Run scan
 
@@ -457,7 +459,7 @@ int main(int argc, char *argv[]) {
     std::chrono::steady_clock::time_point scan_done = std::chrono::steady_clock::now();
     std::cout << "-> Waiting for processors to finish ..." << std::endl;
     // Join Fei4DataProcessor
-    proc.join();
+    proc->join();
     std::chrono::steady_clock::time_point processor_done = std::chrono::steady_clock::now();
     
     std::cout << "-> Processor done, waiting for histogrammer ..." << std::endl;
@@ -583,6 +585,12 @@ void listChips() {
     }
 }
 
+void listProcessors() {
+    for(std::string &proc_type: StdDict::listDataProcessors()) {
+        std::cout << "  " << proc_type << "\n";
+    }
+}
+
 void listScans() {
     for(std::string &scan_name: StdDict::listScans()) {
         std::cout << "  " << scan_name << "\n";
@@ -602,11 +610,14 @@ void listScanLoopActions() {
 }
 
 void listKnown() {
+    std::cout << " Known HW controllers:\n";
+    listControllers();
+    
     std::cout << " Known Chips:\n";
     listChips();
 
-    std::cout << " Known HW controllers:\n";
-    listControllers();
+    std::cout << " Known Processors:\n";
+    listProcessors();
 
     std::cout << " Known Scans:\n";
     listScans();

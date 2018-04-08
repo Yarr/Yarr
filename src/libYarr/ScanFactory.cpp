@@ -68,10 +68,10 @@ void ScanFactory::loadConfig(json &scanCfg) {
         }
         this->addLoop(action);
 
-        //std::cout << " Check config: " << std::endl;
-        //json tCfg;
-        //action->writeConfig(tCfg);
-        //std::cout << std::setw(4) << tCfg;
+        std::cout << " Check config: " << std::endl;
+        json tCfg;
+        action->writeConfig(tCfg);
+        std::cout << std::setw(4) << tCfg;
     }
                     
 
