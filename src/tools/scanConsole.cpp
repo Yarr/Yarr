@@ -411,8 +411,6 @@ int main(int argc, char *argv[]) {
     buildHistogrammers( histogrammers, scanType, bookie.feList, s.get(), outputDir);
     buildAnalyses( analyses, scanType, bookie, s.get(), mask_opt);
 
-    return 0;
-
     std::cout << "-> Running pre scan!" << std::endl;
     s->init();
     s->preScan();

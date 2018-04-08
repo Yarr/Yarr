@@ -15,6 +15,7 @@ Rd53aCoreColLoop::Rd53aCoreColLoop() : LoopActionBase() {
     m_cur = 0;
     loopType = typeid(this);
     m_done = false;
+    verbose = true;
 }
 
 void Rd53aCoreColLoop::init() {
@@ -70,7 +71,7 @@ void Rd53aCoreColLoop::loadConfig(json &j) {
     if (!j["min"].empty())
         min = j["min"];
     if (!j["max"].empty())
-        max = j["step"];
+        max = j["max"];
     if (!j["step"].empty())
         step = j["step"];
 }

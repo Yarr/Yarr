@@ -15,6 +15,7 @@ Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase() {
     m_cur = 0;
     loopType = typeid(this);
     m_done = false;
+    verbose = true;
 }
 
 void Rd53aMaskLoop::init() {
@@ -77,7 +78,7 @@ void Rd53aMaskLoop::loadConfig(json &j) {
     if (!j["min"].empty())
         min = j["min"];
     if (!j["max"].empty())
-        max = j["step"];
+        max = j["max"];
     if (!j["step"].empty())
         step = j["step"];
 }
