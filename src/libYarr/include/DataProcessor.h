@@ -33,6 +33,8 @@ class DataProcessor {
         virtual void process() {}
         virtual void run() = 0;
         virtual void join() = 0;
+
+        bool scanDone;
     protected:
         std::condition_variable cv;
         std::mutex mtx;

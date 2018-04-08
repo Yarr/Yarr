@@ -30,8 +30,6 @@ class Fe65p2DataProcessor : public DataProcessor {
         void process();
         void process_core();
 
-        static bool scanDone;
-           
     private:
         std::vector<std::unique_ptr<std::thread>> thread_ptrs;
         ClipBoard<RawDataContainer> *input;

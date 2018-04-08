@@ -35,8 +35,6 @@ class Rd53aDataProcessor : public DataProcessor {
         void process();
         void process_core();
 
-        static bool scanDone;
-
     private:
         std::vector<std::unique_ptr<std::thread>> thread_ptrs;
         ClipBoard<RawDataContainer> *m_input;

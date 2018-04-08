@@ -13,8 +13,6 @@ bool rd53a_proc_registered =
     StdDict::registerDataProcessor("RD53A", []() { return std::unique_ptr<DataProcessor>(new Rd53aDataProcessor());});
 
 
-bool Rd53aDataProcessor::scanDone = false;
-
 Rd53aDataProcessor::Rd53aDataProcessor() {
     verbose = false;
     m_input = NULL;

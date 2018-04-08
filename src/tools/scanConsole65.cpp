@@ -405,7 +405,7 @@ int main(int argc, char *argv[]) {
     s->postScan();
     std::cout << "-> Scan done!" << std::endl;
     
-    Fe65p2DataProcessor::scanDone = true;
+    proc.scanDone = true;
     bookie.rawData.cv.notify_all();
     
     std::chrono::steady_clock::time_point scan_done = std::chrono::steady_clock::now();

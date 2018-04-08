@@ -20,6 +20,7 @@
 
 class Fei4DataProcessor : public DataProcessor {
     public:
+        // TODO processor should receive whole chip config seperatly
         Fei4DataProcessor(unsigned arg_hitDiscCfg=0);
         ~Fei4DataProcessor();
         
@@ -33,8 +34,6 @@ class Fei4DataProcessor : public DataProcessor {
         void join();
         void process();
         void process_core();
-
-        static bool scanDone;
 
     private:
         std::vector<std::unique_ptr<std::thread>> thread_ptrs;

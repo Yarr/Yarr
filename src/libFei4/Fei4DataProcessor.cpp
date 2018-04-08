@@ -8,8 +8,6 @@
 bool fei4_proc_registered =
     StdDict::registerDataProcessor("FEI4B", []() { return std::unique_ptr<DataProcessor>(new Fei4DataProcessor());});
 
-bool Fei4DataProcessor::scanDone = false;
-
 Fei4DataProcessor::Fei4DataProcessor(unsigned arg_hitDiscCfg) : DataProcessor(){
     std::cout << __PRETTY_FUNCTION__ << std::endl;
     input = NULL;
