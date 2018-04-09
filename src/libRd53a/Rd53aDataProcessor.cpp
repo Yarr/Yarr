@@ -14,7 +14,7 @@ bool rd53a_proc_registered =
 
 
 Rd53aDataProcessor::Rd53aDataProcessor() {
-    verbose = false;
+    verbose = true;
     m_input = NULL;
 }
 
@@ -29,6 +29,7 @@ void Rd53aDataProcessor::init() {
     for (auto &it : *m_outMap) {
         activeChannels.push_back(it.first);
     }
+    scanDone = false;
 }
 
 void Rd53aDataProcessor::run() {
@@ -110,6 +111,8 @@ void Rd53aDataProcessor::process_core() {
                         // Create new event
                         curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
                         events[channel]++;
+                        //std::cout << "[Header] : L1ID(" << l1id[channel] 
+                        //    << ") TAG(" << tag[channel] << ") BCID(" << bcid[channel] << ")" << std::endl;
                     } else { // is hit data
                         unsigned core_col = 0x3F & (data >> 26);
                         unsigned core_row = 0x3F & (data >> 20);
@@ -121,6 +124,9 @@ void Rd53aDataProcessor::process_core() {
 
                         unsigned pix_col = core_col*8+((region&0x1)*4);
                         unsigned pix_row = core_row*8+(0x7&(region>>1));
+                        //std::cout << "[Data] : COL(" << core_col << ") ROW(" << core_row  << ") Region(" << region
+                        //    << ") TOT(" << tot3 << "," << tot2 << "," << tot1 << "," << tot0 
+                        //    << ") RAW(0x" << std::hex << data << std::dec << ")" << std::endl;
 
                         if (__builtin_expect((pix_col < Rd53a::n_Col && pix_row < Rd53a::n_Row), 1)) {
                             // Check if there is already an event

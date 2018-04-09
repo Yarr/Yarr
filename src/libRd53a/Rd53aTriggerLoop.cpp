@@ -29,6 +29,7 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
 
     isInner = false;
     loopType = typeid(this);
+    verbose = true;
 }
 
 void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
@@ -103,5 +104,5 @@ void Rd53aTriggerLoop::loadConfig(json &config) {
         m_trigDelay = config["delay"];
     if (!config["noInject"].empty())
         m_noInject = config["noInject"];
-    this->setTrigDelay(m_trigDelay);
+    //this->setTrigDelay(m_trigDelay);
 }

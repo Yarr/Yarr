@@ -10,8 +10,8 @@
 #include "Fei4.h"
 
 bool fei4_registered =
-  StdDict::registerFrontEnd("FEI4B",
-                                []() { return std::unique_ptr<FrontEnd>(new Fei4());});
+StdDict::registerFrontEnd("FEI4B",
+        []() { return std::unique_ptr<FrontEnd>(new Fei4());});
 
 Fei4::Fei4() : Fei4Cfg(), Fei4Cmd(), FrontEnd() {
     txChannel = 99;
@@ -22,25 +22,25 @@ Fei4::Fei4() : Fei4Cfg(), Fei4Cmd(), FrontEnd() {
 Fei4::Fei4(TxCore *core) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
     txChannel = 99;
     rxChannel = 99;
-	//histogrammer = NULL;
-	//ana = NULL;
-	active = true;
+    //histogrammer = NULL;
+    //ana = NULL;
+    active = true;
 }
 
 Fei4::Fei4(TxCore *core, unsigned arg_channel) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
-	txChannel = arg_channel;
-	rxChannel = arg_channel;
-	//histogrammer = NULL;
-	//ana = NULL;
-	active = true;
+    txChannel = arg_channel;
+    rxChannel = arg_channel;
+    //histogrammer = NULL;
+    //ana = NULL;
+    active = true;
 }
 
 Fei4::Fei4(TxCore *core, unsigned arg_txChannel, unsigned arg_rxChannel) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
-	txChannel = arg_txChannel;
-	rxChannel = arg_rxChannel;
-	//histogrammer = NULL;
-	//ana = NULL;
-	active = true;
+    txChannel = arg_txChannel;
+    rxChannel = arg_rxChannel;
+    //histogrammer = NULL;
+    //ana = NULL;
+    active = true;
 }
 
 Fei4::~Fei4() {	
@@ -61,7 +61,7 @@ void Fei4::configure() {
 
 void Fei4::configureGlobal() {
     runMode(chipId, false);
-    
+
     // Increase threshold
     uint16_t tmp = getValue(&Fei4::Vthin_Coarse);
     writeRegister(&Fei4::Vthin_Coarse, 255);
@@ -69,7 +69,7 @@ void Fei4::configureGlobal() {
     for (unsigned i=0; i<numRegs; i++) {
         wrRegister(chipId, i, cfg[i]);
     }
-    
+
     // Request all Service Records
     writeRegister(&Fei4::ReadErrorReq, 0x1);
     globalPulse(chipId, 10);
@@ -85,7 +85,7 @@ void Fei4::configurePixels(unsigned lsb, unsigned msb) {
     // Increase threshold
     uint16_t tmp = getValue(&Fei4::Vthin_Coarse);
     writeRegister(&Fei4::Vthin_Coarse, 255);
-    
+
     // Write Pixel Mask
     writeRegister(&Fei4::Colpr_Mode, 0x0);
     for (unsigned dc=0; dc<Fei4PixelCfg::n_DC; dc++) {
@@ -144,7 +144,7 @@ void Fei4::loadIntoShiftReg(unsigned pixel_latch) {
 void Fei4::loadIntoPixel(unsigned pixel_latch) {
     // Select Pixel latch to copy into SR
     writeRegister(&Fei4::Pixel_latch_strobe, pixel_latch);
-    
+
     // Enable Latches
     writeRegister(&Fei4::Latch_Enable, 0x1);
 
@@ -157,42 +157,42 @@ void Fei4::loadIntoPixel(unsigned pixel_latch) {
 }
 
 void Fei4::readPixelRegister(unsigned colpr_addr, unsigned latch) {
-  // Select DC(s) for operations
-  writeRegister(&Fei4::Colpr_Mode, 0x0);
-  writeRegister(&Fei4::Colpr_Addr, colpr_addr);
-  // Select SR in Parallel Input Mode
-  writeRegister(&Fei4::S1, 0x1);
-  writeRegister(&Fei4::S0, 0x1);
-  writeRegister(&Fei4::HitLD, 0x0);
-  // Select Pixel latch to copy into SR
-  writeRegister(&Fei4::Pixel_latch_strobe, latch);
+    // Select DC(s) for operations
+    writeRegister(&Fei4::Colpr_Mode, 0x0);
+    writeRegister(&Fei4::Colpr_Addr, colpr_addr);
+    // Select SR in Parallel Input Mode
+    writeRegister(&Fei4::S1, 0x1);
+    writeRegister(&Fei4::S0, 0x1);
+    writeRegister(&Fei4::HitLD, 0x0);
+    // Select Pixel latch to copy into SR
+    writeRegister(&Fei4::Pixel_latch_strobe, latch);
 
-  writeRegister(&Fei4::SR_Clock, 0x1);
+    writeRegister(&Fei4::SR_Clock, 0x1);
 
-  // Copy from Latches into SR
-  globalPulse(chipId, 10);
+    // Copy from Latches into SR
+    globalPulse(chipId, 10);
 
-  // Reset SR regs
-  writeRegister(&Fei4::S1, 0x0);
-  writeRegister(&Fei4::S0, 0x0);
-  writeRegister(&Fei4::HitLD, 0x0);
-  writeRegister(&Fei4::Pixel_latch_strobe, 0x0);
+    // Reset SR regs
+    writeRegister(&Fei4::S1, 0x0);
+    writeRegister(&Fei4::S0, 0x0);
+    writeRegister(&Fei4::HitLD, 0x0);
+    writeRegister(&Fei4::Pixel_latch_strobe, 0x0);
 
-  // Read back SR values
-  writeRegister(&Fei4::SR_Clock, 0x0);
-  writeRegister(&Fei4::SRRead, 0x1);
-  uint32_t bitstream[21] = {0};
-  wrFrontEnd(chipId, bitstream);
+    // Read back SR values
+    writeRegister(&Fei4::SR_Clock, 0x0);
+    writeRegister(&Fei4::SRRead, 0x1);
+    uint32_t bitstream[21] = {0};
+    wrFrontEnd(chipId, bitstream);
 
-  writeRegister(&Fei4::SRRead, 0x0);
+    writeRegister(&Fei4::SRRead, 0x0);
 }
 
 void Fei4::dummyCmd() {
-  writeRegister(&Fei4::Colpr_Mode, 0x0);
-  writeRegister(&Fei4::Colpr_Addr, Fei4PixelCfg::n_DC-1);
-  uint32_t bitstream[21] = {0};
-  wrFrontEnd(chipId, bitstream);
-  while(core->isCmdEmpty() == 0);
+    writeRegister(&Fei4::Colpr_Mode, 0x0);
+    writeRegister(&Fei4::Colpr_Addr, Fei4PixelCfg::n_DC-1);
+    uint32_t bitstream[21] = {0};
+    wrFrontEnd(chipId, bitstream);
+    while(core->isCmdEmpty() == 0);
 }
 
 void Fei4::shiftByOne() {
@@ -218,7 +218,7 @@ void Fei4::wrGR16(unsigned int mOffset, unsigned int bOffset, unsigned int mask,
     //then ORs both values
     unsigned maskBits = (1 << mask) - 1;
     cfg[mOffset]=(cfg[mOffset]&(~(maskBits<<bOffset))) |
-                 (((msbRight?BitOps::reverse_bits(cfgBits, mask):cfgBits)&maskBits)<<bOffset);
+        (((msbRight?BitOps::reverse_bits(cfgBits, mask):cfgBits)&maskBits)<<bOffset);
     //Now actually write the new value to the FE-I4 Global Register
     wrRegister(chipId, mOffset, cfg[mOffset]);
 
@@ -226,5 +226,6 @@ void Fei4::wrGR16(unsigned int mOffset, unsigned int bOffset, unsigned int mask,
 }
 
 void Fei4::writeNamedRegister(std::string name, uint16_t reg_value) {
+    std::cout << __PRETTY_FUNCTION__ << " : " << name << " -> " << reg_value << std::endl;
     writeRegister(regMap[name], reg_value);
 }

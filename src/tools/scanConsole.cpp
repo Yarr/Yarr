@@ -281,7 +281,6 @@ int main(int argc, char *argv[]) {
     }
 
     Bookkeeper bookie(&*hwCtrl, &*hwCtrl);
-    bookie.initGlobalFe(new Fei4(&*hwCtrl)); // TODO dynamic depending on current FE type
 
     std::map<FrontEnd*, std::string> feCfgMap;
 
@@ -366,6 +365,10 @@ int main(int argc, char *argv[]) {
         }
         // TODO add FE65p2
     }
+    
+    bookie.initGlobalFe(StdDict::getFrontEnd(chipType).release());
+    bookie.getGlobalFe()->makeGlobal();
+    bookie.getGlobalFe()->init(&*hwCtrl, 0, 0);
     
     std::cout << std::endl;
     std::cout << "#################" << std::endl;

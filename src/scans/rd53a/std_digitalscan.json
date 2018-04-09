@@ -35,9 +35,9 @@
     "loops": [
       {
         "config": {
-          "max": 64,
+          "max": 32,
           "min": 0,
-          "step": 1
+          "step": 32
         },
         "loopAction": "Rd53aMaskLoop"
       },
@@ -66,14 +66,10 @@
     ],
     "name": "DigitalScan",
     "prescan": {
-      "RD53A": {
-        "GlobalConfig": {
-          "InjEnDig": 1,
-          "InjAnaMode": 0,
-          "LatencyConfig": 48,
-          "GlobalPulseRt": 16384
-        }
-      }
+        "InjEnDig": 1,
+        "InjAnaMode": 0,
+        "LatencyConfig": 48,
+        "GlobalPulseRt": 16384
     }
   }
 }

@@ -37,7 +37,9 @@ void Rd53aCoreColLoop::execPart1() {
             dynamic_cast<Rd53a*>(fe)->disableCalCol(dc+1);
             dynamic_cast<Rd53a*>(fe)->disableCalCol(dc+2);
             dynamic_cast<Rd53a*>(fe)->disableCalCol(dc+3);
-            if ((dc%max) == m_cur) {
+            if (((dc/4)%max) == m_cur) {
+                if (verbose) 
+                    std::cout << __PRETTY_FUNCTION__ << " : Enabling QC -> " << dc << std::endl;
                 dynamic_cast<Rd53a*>(fe)->enableCalCol(dc);
                 dynamic_cast<Rd53a*>(fe)->enableCalCol(dc+1);
                 dynamic_cast<Rd53a*>(fe)->enableCalCol(dc+2);

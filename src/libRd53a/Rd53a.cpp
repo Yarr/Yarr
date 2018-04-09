@@ -123,6 +123,7 @@ void Rd53a::configurePixels() {
 }
 
 void Rd53a::writeNamedRegister(std::string name, uint16_t value) {
+    std::cout << __PRETTY_FUNCTION__ << " : " << name << " -> " << value << std::endl;
     writeRegister(regMap[name], value);
 }
 

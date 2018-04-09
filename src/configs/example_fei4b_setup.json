@@ -2,7 +2,7 @@
     "chipType" : "FEI4B",
     "chips" : [
         {
-            "config" : "configs/test.json",
+            "config" : "configs/fei4b_test.json",
             "tx" : 0,
             "rx" : 0
         }

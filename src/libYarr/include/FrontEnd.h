@@ -28,6 +28,7 @@ class FrontEnd {
         bool getActive();
 		bool isActive();
 		void setActive(bool active);
+        virtual void makeGlobal(){};
        
         virtual void configure()=0;
 

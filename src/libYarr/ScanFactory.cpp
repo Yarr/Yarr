@@ -24,7 +24,7 @@ void ScanFactory::preScan() {
     std::cout << __PRETTY_FUNCTION__ << std::endl;
     // TODO no clue how to get around this
 
-    auto &config_list = m_config["scan"]["prescan"]["FE-I4B"]["GlobalConfig"];
+    auto &config_list = m_config["scan"]["prescan"];
     for (json::iterator it = config_list.begin(); it != config_list.end(); ++it) {
         FrontEnd &fe = *g_bk->getGlobalFe();
         fe.writeNamedRegister(it.key(), it.value());

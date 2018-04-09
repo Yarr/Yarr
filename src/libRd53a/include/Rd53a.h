@@ -28,6 +28,9 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
         Rd53a(TxCore *arg_core, unsigned arg_txchannel, unsigned arg_rxchannel);
     
         void init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel);
+        void makeGloba() {
+            m_chipId = 8;
+        }
 
         void configure();
         void configureInit();
