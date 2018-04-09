@@ -82,7 +82,7 @@ void StdDataLoop::execPart2() {
     rdc->stat = *g_stat;
     storage->pushData(rdc);
         
-    if (true)
+    if (verbose)
         std::cout << " --> Received " << count << " words! " << iterations << std::endl;
     m_done = true;
     counter++;

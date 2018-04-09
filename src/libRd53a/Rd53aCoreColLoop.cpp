@@ -15,7 +15,7 @@ Rd53aCoreColLoop::Rd53aCoreColLoop() : LoopActionBase() {
     m_cur = 0;
     loopType = typeid(this);
     m_done = false;
-    verbose = true;
+    verbose = false;
 }
 
 void Rd53aCoreColLoop::init() {

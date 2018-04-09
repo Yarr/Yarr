@@ -494,7 +494,7 @@ int main(int argc, char *argv[]) {
 
     // Joining is done.
 
-    hwCtrl->setCmdEnable(0x0);
+    //hwCtrl->setCmdEnable(0x0);
     hwCtrl->setRxEnable(0x0);
 
     std::cout << std::endl;

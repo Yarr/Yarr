@@ -15,7 +15,7 @@ Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase() {
     m_cur = 0;
     loopType = typeid(this);
     m_done = false;
-    verbose = true;
+    verbose = false;
 }
 
 void Rd53aMaskLoop::init() {

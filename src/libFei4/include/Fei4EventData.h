@@ -19,10 +19,9 @@
 #include "LoopStatus.h"
 
 struct Fei4Hit {
-    unsigned col : 7;
-    unsigned row : 9;
-    unsigned tot : 5;
-    unsigned unused : 11;
+    unsigned col : 12;
+    unsigned row : 12;
+    unsigned tot : 8;
 };
 
 class Fei4Cluster {
@@ -90,7 +89,7 @@ class Fei4Event {
         }
 
         void addHit(unsigned arg_row, unsigned arg_col, unsigned arg_tot) {
-            struct Fei4Hit tmp = {arg_col, arg_row, arg_tot, 0};
+            struct Fei4Hit tmp = {arg_col, arg_row, arg_tot};
             //tmp.col = arg_col;
             //tmp.row = arg_row;
             //tmp.tot = arg_tot;

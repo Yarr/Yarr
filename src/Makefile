@@ -61,10 +61,10 @@ GCC_MAJOR = $(shell $(CPP) -dumpversion | cut -d'.' -f1)
 GCC_MINOR = $(shell $(CPP) -dumpversion | cut -d'.' -f2)
 
 ifneq ($(UNAME_S), Darwin)
-ifeq ($(findstring $(GCC_MAJOR),3),$(GCC_MAJOR))
-ifeq ($(findstring $(GCC_MINOR),0123456),$(GCC_MINOR))
-$(error $(CPP) version is too old, need atleast 4.7! Found $(GCC_MAJOR).$(GCC_MINOR))
-endif
+ifeq ($(findstring $(GCC_MAJOR),0123456),$(GCC_MAJOR))
+#ifeq ($(findstring $(GCC_MINOR),0),$(GCC_MINOR))
+$(error $(CPP) version is too old, need atleast 7.0! Found $(GCC_MAJOR).$(GCC_MINOR))
+#endif
 endif
 endif
 
