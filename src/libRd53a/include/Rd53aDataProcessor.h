@@ -24,15 +24,15 @@ class Rd53aDataProcessor : public DataProcessor {
         Rd53aDataProcessor();
         ~Rd53aDataProcessor();
 
-        void connect(ClipBoard<RawDataContainer> *input, std::map<unsigned, ClipBoard<EventDataBase> > *outMap) {
+        void connect(ClipBoard<RawDataContainer> *input, std::map<unsigned, ClipBoard<EventDataBase> > *outMap) override {
             m_input = input;
             m_outMap = outMap;
         }
 
-        void init();
-        void run();
-        void join();
-        void process();
+        void init() override;
+        void run() override;
+        void join() override; 
+        void process() override;
         void process_core();
 
     private:

@@ -22,8 +22,8 @@ void ScanFactory::init() {
 
 void ScanFactory::preScan() {
     std::cout << __PRETTY_FUNCTION__ << std::endl;
-    // TODO no clue how to get around this
 
+    // Load scan specific registers from config
     auto &config_list = m_config["scan"]["prescan"];
     for (json::iterator it = config_list.begin(); it != config_list.end(); ++it) {
         FrontEnd &fe = *g_bk->getGlobalFe();
@@ -71,7 +71,11 @@ void ScanFactory::loadConfig(json &scanCfg) {
         std::cout << " Check config: " << std::endl;
         json tCfg;
         action->writeConfig(tCfg);
-        std::cout << std::setw(4) << tCfg;
+        if (!tCfg.empty()) {
+            std::cout << std::setw(4) << tCfg << std::endl;
+        } else {
+            std::cout << "  Config empty." << std::endl;
+        }
     }
                     
 

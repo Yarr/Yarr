@@ -68,14 +68,13 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
 
 
 int main(int argc, char *argv[]) {
-    std::cout << "#####################################" << std::endl;
-    std::cout << "# Welcome to the YARR Scan Console! #" << std::endl;
-    std::cout << "#####################################" << std::endl;
+    std::cout << "\033[1;31m#####################################\033[0m" << std::endl;
+    std::cout << "\033[1;31m# Welcome to the YARR Scan Console! #\033[0m" << std::endl;
+    std::cout << "\033[1;31m#####################################\033[0m" << std::endl;
 
-    std::cout << "-> Parsing command line parameters ..." << std::endl;
+    std::cout << "\033[1;-> Parsing command line parameters ..." << std::endl;
     
     // Init parameters
-    unsigned specNum = 0;
     std::string scanType = "";
     std::vector<std::string> cConfigPaths;
     std::string outputDir = "./data/";
@@ -123,9 +122,6 @@ int main(int argc, char *argv[]) {
                 return 0;
             case 's':
                 scanType = std::string(optarg);
-                break;
-            case 'n':
-                specNum = atoi(optarg);
                 break;
             case 'm':
                 mask_opt = atoi(optarg);
@@ -197,7 +193,6 @@ int main(int argc, char *argv[]) {
 
     outputDir += (toString(runCounter, 6) + "_" + scanType + "/");
     
-    std::cout << " SPEC Nr: " << specNum << std::endl;
     std::cout << " Scan Type: " << scanType << std::endl;
     
     std::cout << " Chips: " << std::endl;
@@ -237,15 +232,14 @@ int main(int argc, char *argv[]) {
     std::cout << "Run Number: " << runCounter;
 
     std::cout << std::endl;
-    std::cout << "#################" << std::endl;
-    std::cout << "# Init Hardware #" << std::endl;
-    std::cout << "#################" << std::endl;
+    std::cout << "\033[1;31m#################\033[0m" << std::endl;
+    std::cout << "\033[1;31m# Init Hardware #\033[0m" << std::endl;
+    std::cout << "\033[1;31m#################\033[0m" << std::endl;
 
     std::unique_ptr<HwController> hwCtrl = nullptr;
     if (ctrlCfgPath == "") {
-        std::cout << "-> No controller config given, using default." << std::endl;
-        std::cout << "-> Init SPEC " << specNum << " : " << std::endl;
-        hwCtrl = StdDict::getHwController("Spec"); // TODO fix me with specnum
+        std::cout << "#ERRROR# No controller config given, aborting." << std::endl;
+        return -1;
     } else {
         // Open controller config file
         std::cout << "-> Opening controller config: " << ctrlCfgPath << std::endl;
@@ -288,9 +282,9 @@ int main(int argc, char *argv[]) {
     bookie.setTargetTot(target_tot);
     bookie.setTargetCharge(target_charge);
 
-    std::cout << "#######################" << std::endl
-              << "##  Loading Configs  ##" << std::endl
-              << "#######################" << std::endl;
+    std::cout << "\033[1;31m#######################\033[0m" << std::endl
+              << "\033[1;31m##  Loading Configs  ##\033[0m" << std::endl
+              << "\033[1;31m#######################\033[0m" << std::endl;
 
     int success = 0;
     std::string chipType;
@@ -371,9 +365,9 @@ int main(int argc, char *argv[]) {
     bookie.getGlobalFe()->init(&*hwCtrl, 0, 0);
     
     std::cout << std::endl;
-    std::cout << "#################" << std::endl;
-    std::cout << "# Configure FEs #" << std::endl;
-    std::cout << "#################" << std::endl;
+    std::cout << "\033[1;31m#################\033[0m" << std::endl;
+    std::cout << "\033[1;31m# Configure FEs #\033[0m" << std::endl;
+    std::cout << "\033[1;31m#################\033[0m" << std::endl;
     
     std::chrono::steady_clock::time_point cfg_start = std::chrono::steady_clock::now();
     for ( FrontEnd* fe : bookie.feList ) {
@@ -400,9 +394,9 @@ int main(int argc, char *argv[]) {
     std::cout << "-> Setting Rx Mask to: 0x" << std::hex << bookie.getRxMask() << std::dec << std::endl;
     
     std::cout << std::endl;
-    std::cout << "##############" << std::endl;
-    std::cout << "# Setup Scan #" << std::endl;
-    std::cout << "##############" << std::endl;
+    std::cout << "\033[1;31m##############\033[0m" << std::endl;
+    std::cout << "\033[1;31m# Setup Scan #\033[0m" << std::endl;
+    std::cout << "\033[1;31m##############\033[0m" << std::endl;
 
     // TODO Make this nice
     std::unique_ptr<ScanBase> s = buildScan(scanType, bookie );
@@ -442,9 +436,9 @@ int main(int argc, char *argv[]) {
     // Now the all downstream processors are ready --> Run scan
 
     std::cout << std::endl;
-    std::cout << "########" << std::endl;
-    std::cout << "# Scan #" << std::endl;
-    std::cout << "########" << std::endl;
+    std::cout << "\033[1;31m########\033[0m" << std::endl;
+    std::cout << "\033[1;31m# Scan #\033[0m" << std::endl;
+    std::cout << "\033[1;31m########\033[0m" << std::endl;
 
     std::cout << "-> Starting scan!" << std::endl;
     std::chrono::steady_clock::time_point scan_start = std::chrono::steady_clock::now();
@@ -504,9 +498,9 @@ int main(int argc, char *argv[]) {
     hwCtrl->setRxEnable(0x0);
 
     std::cout << std::endl;
-    std::cout << "##########" << std::endl;
-    std::cout << "# Timing #" << std::endl;
-    std::cout << "##########" << std::endl;
+    std::cout << "\033[1;31m##########\033[0m" << std::endl;
+    std::cout << "\033[1;31m# Timing #\033[0m" << std::endl;
+    std::cout << "\033[1;31m##########\033[0m" << std::endl;
 
     std::cout << "-> Configuration: " << std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count() << " ms" << std::endl;
     std::cout << "-> Scan:          " << std::chrono::duration_cast<std::chrono::milliseconds>(scan_done-scan_start).count() << " ms" << std::endl;
@@ -514,9 +508,9 @@ int main(int argc, char *argv[]) {
     std::cout << "-> Analysis:      " << std::chrono::duration_cast<std::chrono::milliseconds>(all_done-processor_done).count() << " ms" << std::endl;
 
     std::cout << std::endl;
-    std::cout << "###########" << std::endl;
-    std::cout << "# Cleanup #" << std::endl;
-    std::cout << "###########" << std::endl;
+    std::cout << "\033[1;31m###########\033[0m" << std::endl;
+    std::cout << "\033[1;31m# Cleanup #\033[0m" << std::endl;
+    std::cout << "\033[1;31m###########\033[0m" << std::endl;
 
     // Call constructor (eg shutdown Emu threads)
     hwCtrl.reset();
@@ -687,22 +681,27 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
                 int nHistos = histoCfg["n_count"];
                 std::cout << nHistos << std::endl;
                 for (int j=0; j<nHistos; j++) {
-                    std::cout << j << std::endl;
                     std::string algo_name = histoCfg[std::to_string(j)]["algorithm"];
                     if (algo_name == "OccupancyMap") {
+                        std::cout << "  ... adding " << algo_name << std::endl;
                         histogrammer.addHistogrammer(new OccupancyMap());
                     } else if (algo_name == "TotMap") {
+                        std::cout << "  ... adding " << algo_name << std::endl;
                         histogrammer.addHistogrammer(new TotMap());
                     } else if (algo_name == "Tot2Map") {
+                        std::cout << "  ... adding " << algo_name << std::endl;
                         histogrammer.addHistogrammer(new Tot2Map());
                     } else if (algo_name == "L1Dist") {
                         histogrammer.addHistogrammer(new L1Dist());
+                        std::cout << "  ... adding " << algo_name << std::endl;
                     } else if (algo_name == "HitsPerEvent") {
                         histogrammer.addHistogrammer(new HitsPerEvent());
+                        std::cout << "  ... adding " << algo_name << std::endl;
                     } else {
                         std::cerr << "#ERROR# Histogrammer \"" << algo_name << "\" unknown, skipping!" << std::endl;
                     }
                 }
+                histogrammer.setMapSize(fe->geo.nCol, fe->geo.nRow);
             }
         }
     } else {
@@ -724,6 +723,7 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
                     // TODO set proper file name
                     histogrammer.addHistogrammer(new DataArchiver((outputDir + "data.raw")));
                 }
+                histogrammer.setMapSize(fe->geo.nCol, fe->geo.nRow);
             }
         }
     }
@@ -758,6 +758,7 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                     std::cout << " -> Disabling masking for this scan!" << std::endl;
                     ana.setMasking(false);
                 }
+                ana.setMapSize(fe->geo.nCol, fe->geo.nRow);
             }
         }
     } else {
@@ -803,6 +804,7 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                     std::cout << " -> Disabling masking for this scan!" << std::endl;
                     ana.setMasking(false);
                 }
+                ana.setMapSize(fe->geo.nCol, fe->geo.nRow);
             }
         }
     }

@@ -17,30 +17,40 @@ Rd53a::Rd53a() : FrontEnd(), Rd53aCfg(), Rd53aCmd() {
     txChannel = 99;
     rxChannel = 99;
 	active = true;
+    geo.nRow = 192;
+    geo.nCol = 400;
 }
 
 Rd53a::Rd53a(TxCore *core) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
     txChannel = 99;
     rxChannel = 99;
 	active = true;
+    geo.nRow = 192;
+    geo.nCol = 400;
 }
 
 Rd53a::Rd53a(TxCore *core, unsigned arg_channel) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
 	txChannel = arg_channel;
 	rxChannel = arg_channel;
 	active = true;
+    geo.nRow = 192;
+    geo.nCol = 400;
 }
 
 Rd53a::Rd53a(TxCore *core, unsigned arg_txChannel, unsigned arg_rxChannel) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
 	txChannel = arg_txChannel;
 	rxChannel = arg_rxChannel;
 	active = true;
+    geo.nRow = 192;
+    geo.nCol = 400;
 }
 
 void Rd53a::init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
     this->setCore(arg_core);
     txChannel = arg_txChannel;
     rxChannel = arg_rxChannel;
+    geo.nRow = 192;
+    geo.nCol = 400;
 }
 
 void Rd53a::writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value) {

@@ -17,6 +17,8 @@ Fei4::Fei4() : Fei4Cfg(), Fei4Cmd(), FrontEnd() {
     txChannel = 99;
     rxChannel = 99;
     active = false;
+    geo.nRow = 336;
+    geo.nCol = 80;
 }
 
 Fei4::Fei4(TxCore *core) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
@@ -25,6 +27,8 @@ Fei4::Fei4(TxCore *core) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
     //histogrammer = NULL;
     //ana = NULL;
     active = true;
+    geo.nRow = 336;
+    geo.nCol = 80;
 }
 
 Fei4::Fei4(TxCore *core, unsigned arg_channel) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
@@ -33,6 +37,8 @@ Fei4::Fei4(TxCore *core, unsigned arg_channel) : Fei4Cfg(), Fei4Cmd(core), Front
     //histogrammer = NULL;
     //ana = NULL;
     active = true;
+    geo.nRow = 336;
+    geo.nCol = 80;
 }
 
 Fei4::Fei4(TxCore *core, unsigned arg_txChannel, unsigned arg_rxChannel) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
@@ -41,6 +47,8 @@ Fei4::Fei4(TxCore *core, unsigned arg_txChannel, unsigned arg_rxChannel) : Fei4C
     //histogrammer = NULL;
     //ana = NULL;
     active = true;
+    geo.nRow = 336;
+    geo.nCol = 80;
 }
 
 Fei4::~Fei4() {	

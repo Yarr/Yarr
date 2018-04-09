@@ -10,7 +10,7 @@
 #include <cstdint>
 
 struct FrontEndGeometry {
-  uint32_t nRow, nCol;
+    uint32_t nRow, nCol;
 };
 
 #endif // __FRONT_END_GEOMETRY__

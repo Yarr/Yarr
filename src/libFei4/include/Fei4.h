@@ -54,7 +54,7 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
             runMode(chipId, mode);
         }
 
-        void makeGlobal() {
+        void makeGlobal() override {
             chipId = 8;
         }
 
