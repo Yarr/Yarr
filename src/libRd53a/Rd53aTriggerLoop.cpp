@@ -29,7 +29,7 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
 
     isInner = false;
     loopType = typeid(this);
-    verbose = true;
+    verbose = false;
 }
 
 void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
@@ -47,6 +47,7 @@ void Rd53aTriggerLoop::init() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
 
+    this->setTrigDelay(m_trigDelay);
     if (m_trigCnt > 0) {
         g_tx->setTrigConfig(INT_COUNT);
     } else {
@@ -65,6 +66,7 @@ void Rd53aTriggerLoop::init() {
 void Rd53aTriggerLoop::execPart1() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
+    //std::this_thread::sleep_for(std::chrono::milliseconds(200));
     g_tx->setTrigEnable(0x1);
 
 }
@@ -104,5 +106,5 @@ void Rd53aTriggerLoop::loadConfig(json &config) {
         m_trigDelay = config["delay"];
     if (!config["noInject"].empty())
         m_noInject = config["noInject"];
-    //this->setTrigDelay(m_trigDelay);
+    this->setTrigDelay(m_trigDelay);
 }

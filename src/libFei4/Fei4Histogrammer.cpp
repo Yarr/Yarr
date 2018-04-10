@@ -19,7 +19,7 @@ Fei4Histogrammer::~Fei4Histogrammer() {
 }
 
 void Fei4Histogrammer::init() {
-  processorDone = false;
+    processorDone = false;
 }
 
 void Fei4Histogrammer::clearHistogrammers() {
@@ -31,33 +31,37 @@ void Fei4Histogrammer::clearHistogrammers() {
 
 
 void Fei4Histogrammer::run() {
-  thread_ptr.reset( new std::thread( &Fei4Histogrammer::process, this ) );
+    thread_ptr.reset( new std::thread( &Fei4Histogrammer::process, this ) );
 }
 
 void Fei4Histogrammer::join() {
-  if( thread_ptr->joinable() ) thread_ptr->join();
+    if( thread_ptr->joinable() ) thread_ptr->join();
 }
 
 void Fei4Histogrammer::process() {
-  while( true ) {
+    while( true ) {
 
-    //std::cout << __PRETTY_FUNCTION__ << std::endl;
-    
-    std::unique_lock<std::mutex> lk(mtx);
-    input->cv.wait( lk, [&] { return processorDone || !input->empty(); } );
+        //std::cout << __PRETTY_FUNCTION__ << std::endl;
+
+        std::unique_lock<std::mutex> lk(mtx);
+        input->cv.wait( lk, [&] { return processorDone || !input->empty(); } );
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        process_core();
+        output->cv.notify_all();  // notification to the downstream
+
+        if( processorDone ) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            process_core();  // this line is needed if the data comes in before scanDone is changed.
+            std::cout << __PRETTY_FUNCTION__ << ": processorDone!" << std::endl;
+            output->cv.notify_all();  // notification to the downstream
+            break;
+        }
+    }
 
     process_core();
+    output->cv.notify_all();  // notification to the downstream
 
-    if( processorDone ) {
-      process_core();  // this line is needed if the data comes in before scanDone is changed.
-      std::cout << __PRETTY_FUNCTION__ << ": processorDone!" << std::endl;
-      output->cv.notify_all();  // notification to the downstream
-      break;
-    }
-  }
-
-  process_core();
-  
 }
 
 void Fei4Histogrammer::process_core() {
@@ -163,7 +167,7 @@ void L1Dist::processEvent(Fei4Data *data) {
         h->fill(delta_bcid, curEvent.nHits);
     }
 }
-    
+
 void HitsPerEvent::processEvent(Fei4Data *data) {
     // Event Loop
     for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   

@@ -19,9 +19,9 @@
 #include "LoopStatus.h"
 
 struct Fei4Hit {
-    unsigned col : 12;
-    unsigned row : 12;
-    unsigned tot : 8;
+    unsigned col;
+    unsigned row;
+    unsigned tot;
 };
 
 class Fei4Cluster {
@@ -40,9 +40,9 @@ class Fei4Cluster {
             int min = 999999;
             int max = -1;
             for (unsigned i=0; i<hits.size(); i++) {
-                if (hits[i]->col > max)
+                if ((int)hits[i]->col > max)
                     max = hits[i]->col;
-                if (hits[i]->col < min)
+                if ((int)hits[i]->col < min)
                     min = hits[i]->col;
             }
             return max-min+1;
@@ -52,9 +52,9 @@ class Fei4Cluster {
             int min = 999999;
             int max = -1;
             for (unsigned i=0; i<hits.size(); i++) {
-                if (hits[i]->row > max)
+                if ((int)hits[i]->row > max)
                     max = hits[i]->row;
-                if (hits[i]->row < min)
+                if ((int)hits[i]->row < min)
                     min = hits[i]->row;
             }
             return max-min+1;
@@ -89,10 +89,10 @@ class Fei4Event {
         }
 
         void addHit(unsigned arg_row, unsigned arg_col, unsigned arg_tot) {
-            struct Fei4Hit tmp = {arg_col, arg_row, arg_tot};
-            //tmp.col = arg_col;
-            //tmp.row = arg_row;
-            //tmp.tot = arg_tot;
+            struct Fei4Hit tmp;// = {arg_col, arg_row, arg_tot};
+            tmp.col = arg_col;
+            tmp.row = arg_row;
+            tmp.tot = arg_tot;
             //tmp.unused = 0;
             hits.push_back(Fei4Hit(tmp));
             nHits++;

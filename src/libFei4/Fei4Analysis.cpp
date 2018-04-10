@@ -51,10 +51,12 @@ void Fei4Analysis::process() {
     std::unique_lock<std::mutex> lk(mtx);
     input->cv.wait( lk, [&] { return histogrammerDone || !input->empty(); } );
 
-
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
     process_core();
-    
+    output->cv.notify_all();  // notification to the downstream
+
     if( histogrammerDone ) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
         process_core();  // this line is needed if the data comes in before scanDone is changed.
         std::cout << __PRETTY_FUNCTION__ << ": histogrammerDone!" << std::endl;
         output->cv.notify_all();  // notification to the downstream
@@ -122,6 +124,9 @@ void OccupancyAnalysis::init(ScanBase *s) {
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
+                    l->type() != typeid(Rd53aMaskLoop*) &&
+                    l->type() != typeid(Rd53aTriggerLoop*) &&
+                    l->type() != typeid(Rd53aCoreColLoop*) &&
                     l->type() != typeid(Fe65p2MaskLoop*) &&
                     l->type() != typeid(Fe65p2TriggerLoop*) &&
                     l->type() != typeid(Fe65p2QcLoop*) &&
@@ -142,6 +147,10 @@ void OccupancyAnalysis::init(ScanBase *s) {
         }
         if (l->type() == typeid(Fe65p2TriggerLoop*)) {
             Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
+        if (l->type() == typeid(Rd53aTriggerLoop*)) {
+            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
             injections = trigLoop->getTrigCnt();
         }
     }
@@ -218,6 +227,9 @@ void TotAnalysis::init(ScanBase *s) {
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
+                    l->type() != typeid(Rd53aMaskLoop*) &&
+                    l->type() != typeid(Rd53aTriggerLoop*) &&
+                    l->type() != typeid(Rd53aCoreColLoop*) &&
                     l->type() != typeid(Fe65p2MaskLoop*) &&
                     l->type() != typeid(Fe65p2TriggerLoop*) &&
                     l->type() != typeid(Fe65p2QcLoop*) &&
@@ -240,6 +252,11 @@ void TotAnalysis::init(ScanBase *s) {
 
         if (l->type() == typeid(Fe65p2TriggerLoop*)) {
             Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
+        
+        if (l->type() == typeid(Rd53aTriggerLoop*)) {
+            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
             injections = trigLoop->getTrigCnt();
         }
 
@@ -415,6 +432,9 @@ void ScurveFitter::init(ScanBase *s) {
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if (l->type() != typeid(Fei4TriggerLoop*) &&
+                l->type() != typeid(Rd53aMaskLoop*) &&
+                l->type() != typeid(Rd53aTriggerLoop*) &&
+                l->type() != typeid(Rd53aCoreColLoop*) &&
                 l->type() != typeid(Fe65p2TriggerLoop*) &&
                 l->type() != typeid(Fei4MaskLoop*) &&
                 l->type() != typeid(Fe65p2MaskLoop*) &&
@@ -447,6 +467,10 @@ void ScurveFitter::init(ScanBase *s) {
         }
         if (l->type() == typeid(Fe65p2TriggerLoop*)) {
             Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
+        if (l->type() == typeid(Rd53aTriggerLoop*)) {
+            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
             injections = trigLoop->getTrigCnt();
         }
 
@@ -621,6 +645,9 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
+                    l->type() != typeid(Rd53aMaskLoop*) &&
+                    l->type() != typeid(Rd53aTriggerLoop*) &&
+                    l->type() != typeid(Rd53aCoreColLoop*) &&
                     l->type() != typeid(Fe65p2TriggerLoop*) &&
                     l->type() != typeid(Fei4MaskLoop*) &&
                     l->type() != typeid(Fe65p2MaskLoop*) &&
@@ -643,6 +670,11 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
 
         if (l->type() == typeid(Fe65p2TriggerLoop*)) {
             Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
+        
+        if (l->type() == typeid(Rd53aTriggerLoop*)) {
+            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
             injections = trigLoop->getTrigCnt();
         }
 
@@ -734,6 +766,9 @@ void OccPixelThresholdTune::init(ScanBase *s) {
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
+                    l->type() != typeid(Rd53aMaskLoop*) &&
+                    l->type() != typeid(Rd53aTriggerLoop*) &&
+                    l->type() != typeid(Rd53aCoreColLoop*) &&
                     l->type() != typeid(Fe65p2TriggerLoop*) &&
                     l->type() != typeid(Fei4MaskLoop*) &&
                     l->type() != typeid(Fe65p2MaskLoop*) &&
@@ -756,6 +791,11 @@ void OccPixelThresholdTune::init(ScanBase *s) {
 
         if (l->type() == typeid(Fe65p2TriggerLoop*)) {
             Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
+        
+        if (l->type() == typeid(Rd53aTriggerLoop*)) {
+            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
             injections = trigLoop->getTrigCnt();
         }
 
@@ -842,9 +882,12 @@ void L1Analysis::init(ScanBase *s) {
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
-                    l->type() != typeid(Fei4MaskLoop*) &&
-                    l->type() != typeid(StdDataLoop*) &&
-                    l->type() != typeid(Fei4DcLoop*)) &&
+                l->type() != typeid(Rd53aMaskLoop*) &&
+                l->type() != typeid(Rd53aTriggerLoop*) &&
+                l->type() != typeid(Rd53aCoreColLoop*) &&
+                l->type() != typeid(Fei4MaskLoop*) &&
+                l->type() != typeid(StdDataLoop*) &&
+                l->type() != typeid(Fei4DcLoop*)) &&
                 l->type() != typeid(Fe65p2MaskLoop*) &&
                 l->type() != typeid(Fe65p2QcLoop*) &&
                 l->type() != typeid(Fe65p2TriggerLoop*) &&
@@ -862,8 +905,14 @@ void L1Analysis::init(ScanBase *s) {
             Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
             injections = trigLoop->getTrigCnt();
         }
+        
         if (l->type() == typeid(Fe65p2TriggerLoop*)) {
             Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
+        
+        if (l->type() == typeid(Rd53aTriggerLoop*)) {
+            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
             injections = trigLoop->getTrigCnt();
         }
     }
@@ -913,9 +962,12 @@ void TotDistPlotter::init(ScanBase *s) {
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
-                    l->type() != typeid(Fei4MaskLoop*) &&
-                    l->type() != typeid(StdDataLoop*) &&
-                    l->type() != typeid(Fei4DcLoop*)) &&
+                l->type() != typeid(Rd53aMaskLoop*) &&
+                l->type() != typeid(Rd53aTriggerLoop*) &&
+                l->type() != typeid(Rd53aCoreColLoop*) &&
+                l->type() != typeid(Fei4MaskLoop*) &&
+                l->type() != typeid(StdDataLoop*) &&
+                l->type() != typeid(Fei4DcLoop*)) &&
                 l->type() != typeid(Fe65p2MaskLoop*) &&
                 l->type() != typeid(Fe65p2QcLoop*) &&
                 l->type() != typeid(Fe65p2TriggerLoop*) &&

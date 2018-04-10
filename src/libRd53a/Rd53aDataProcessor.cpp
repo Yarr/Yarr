@@ -54,8 +54,13 @@ void Rd53aDataProcessor::process() {
         m_input->cv.wait( lk, [&] { return scanDone || !m_input->empty(); } );
 
         process_core();
-
+        for (unsigned i=0; i<activeChannels.size(); i++) {
+            m_outMap->at(activeChannels[i]).cv.notify_all(); // notification to the downstream
+        }
+        // TODO the timing on these seems sensitive
+        std::this_thread::sleep_for(std::chrono::microseconds(200));
         if( scanDone ) {
+            std::this_thread::sleep_for(std::chrono::microseconds(200));
             process_core(); // this line is needed if the data comes in before scanDone is changed.
             for (unsigned i=0; i<activeChannels.size(); i++) {
                 m_outMap->at(activeChannels[i]).cv.notify_all(); // notification to the downstream
@@ -98,6 +103,7 @@ void Rd53aDataProcessor::process_core() {
             RawData *curIn = new RawData(curInV->adr[c], curInV->buf[c], curInV->words[c]);
             // Process
             unsigned words = curIn->words;
+            dataCnt += words;
             for (unsigned i=0; i<words; i++) {
                 // Decode content
                 // TODO this needs review, can't deal with user-k data
@@ -135,6 +141,9 @@ void Rd53aDataProcessor::process_core() {
                                 curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
                                 events[channel]++;
                             }
+                            // TODO Make decision on pixel address start 0,0 or 1,1
+                            pix_row++;
+                            pix_col++;
                             if (tot0 != 0xF) {
                                 curOut[channel]->curEvent->addHit(pix_row, pix_col, tot0);
                                 hits[channel]++;
@@ -144,11 +153,11 @@ void Rd53aDataProcessor::process_core() {
                                 hits[channel]++;
                             }
                             if (tot2 != 0xF) {
-                                curOut[channel]->curEvent->addHit(pix_row, pix_col+1, tot2);
+                                curOut[channel]->curEvent->addHit(pix_row, pix_col+2, tot2);
                                 hits[channel]++;
                             }
                             if (tot3 != 0xF) {
-                                curOut[channel]->curEvent->addHit(pix_row, pix_col+1, tot3);
+                                curOut[channel]->curEvent->addHit(pix_row, pix_col+3, tot3);
                                 hits[channel]++;
                             }
                         } else {
@@ -167,7 +176,6 @@ void Rd53aDataProcessor::process_core() {
         }
         //Cleanup
         delete curInV;
-        dataCnt++;
     }
 
 }

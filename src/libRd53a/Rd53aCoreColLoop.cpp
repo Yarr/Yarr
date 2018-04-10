@@ -47,6 +47,7 @@ void Rd53aCoreColLoop::execPart1() {
             }
         }
     }
+    while(!g_tx->isCmdEmpty()) {}
 }
 
 void Rd53aCoreColLoop::execPart2() {

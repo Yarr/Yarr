@@ -35,7 +35,7 @@
     "loops": [
       {
         "config": {
-          "max": 32,
+          "max": 64,
           "min": 0,
           "step": 1
         },
@@ -43,7 +43,7 @@
       },
       {
         "config": {
-          "max": 10,
+          "max": 20,
           "min": 0,
           "step": 1
         },
@@ -52,9 +52,9 @@
       {
         "config": {
           "count": 100,
-          "delay": 30,
+          "delay": 32,
           "extTrigger": false,
-          "frequency": 1000,
+          "frequency": 10000,
           "noInject": false,
           "time": 0
         },
@@ -68,7 +68,7 @@
     "prescan": {
         "InjEnDig": 1,
         "InjAnaMode": 0,
-        "LatencyConfig": 48,
+        "LatencyConfig": 54,
         "GlobalPulseRt": 16384
     }
   }
