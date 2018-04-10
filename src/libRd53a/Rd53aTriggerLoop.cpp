@@ -14,14 +14,19 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
     m_trigFreq = 1e3;
     m_trigTime = 10;
     m_trigWordLength = 16;
+    m_pulseDuration = 4;
     m_trigWord.fill(0x69696969);
     m_trigWord[15] = 0x69696363;
     m_trigWord[14] = Rd53aCmd::genCal(8, 0, 0, 1, 0, 0); // Inject
-    m_trigWord[8] = Rd53aCmd::genTrigger(0xF, 4, 0xF, 8); // Trigger
-    m_trigWord[7] = Rd53aCmd::genTrigger(0xF, 4, 0xF, 8); // Trigger
+    m_trigWord[8] = Rd53aCmd::genTrigger(0xF, 1, 0xF, 2); // Trigger
+    m_trigWord[7] = Rd53aCmd::genTrigger(0xF, 3, 0xF, 4); // Trigger
+    m_trigWord[2] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(m_pulseDuration)); // global pulse for sync FE
     m_trigWord[1] = 0x69696363; // TODO might include ECR?
     m_trigWord[0] = Rd53aCmd::genCal(8, 1, 0, 0, 0, 0); // Arm inject
     m_noInject = false;
+
+    m_edgeMode = false;
+    m_edgeDuration = 10;
 
     min = 0;
     max = 0;
@@ -33,14 +38,29 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
 }
 
 void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
-    if ((delay >= 8) && (delay <= 88)) {
+    m_trigWord.fill(0x69696969);
+    // Inject
+    m_trigWord[15] = 0x69696363;
+    m_trigWord[14] = Rd53aCmd::genCal(8, 0, 0, 1, 0, 0); // Inject
+    // Pulse
+    m_trigWord[2] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(m_pulseDuration)); // global pulse for sync FE
+    // Rearm
+    m_trigWord[1] = 0x69696363; // TODO might include ECR?
+    m_trigWord[0] = Rd53aCmd::genCal(8, 1, 0, 0, 0, 0); // Arm inject
+    if ((delay >= 16) && (delay <= 88)) {
         m_trigDelay = delay;
-        m_trigWord[(13-(delay/8)+1)] = Rd53aCmd::genTrigger(0xF, 4, 0xF, 8); // Trigger
-        m_trigWord[(13-(delay/8))] = Rd53aCmd::genTrigger(0xF, 4, 0xF, 8); // Trigger
+        m_trigWord[(13-(delay/8)+1)] = Rd53aCmd::genTrigger(0xF, 1, 0xF, 2); // Trigger
+        m_trigWord[(13-(delay/8))] = Rd53aCmd::genTrigger(0xF, 3, 0xF, 4); // Trigger
     } else {
         std::cerr << __PRETTY_FUNCTION__ << " : Delay is either too small or too large!" << std::endl;
     }
 }
+
+void Rd53aTriggerLoop::setEdgeMode(uint32_t duration) {
+    // Assumes CAL command to be in index 14
+    m_trigWord[14] = Rd53aCmd::genCal(8, 1, 0, 10, 0, 0); // Inject
+}
+
 
 void Rd53aTriggerLoop::init() {
     m_done = false;
@@ -48,6 +68,8 @@ void Rd53aTriggerLoop::init() {
         std::cout << __PRETTY_FUNCTION__ << std::endl;
 
     this->setTrigDelay(m_trigDelay);
+    if (m_edgeMode)
+        this->setEdgeMode(m_edgeDuration);
     if (m_trigCnt > 0) {
         g_tx->setTrigConfig(INT_COUNT);
     } else {
@@ -106,5 +128,7 @@ void Rd53aTriggerLoop::loadConfig(json &config) {
         m_trigDelay = config["delay"];
     if (!config["noInject"].empty())
         m_noInject = config["noInject"];
+    if (!config["edgeMode"].empty())
+        m_edgeMode = config["edgeMode"];
     this->setTrigDelay(m_trigDelay);
 }

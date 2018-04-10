@@ -159,8 +159,12 @@ void L1Dist::processEvent(Fei4Data *data) {
         Fei4Event curEvent = *eventIt;
         if(curEvent.l1id != l1id) {
             l1id = curEvent.l1id;
-            bcid_offset = curEvent.bcid;
+            if (curEvent.bcid - bcid_offset > 16) {
+                bcid_offset = curEvent.bcid;
+            }
         }
+
+
         int delta_bcid = curEvent.bcid - bcid_offset;
         if (delta_bcid < 0)
             delta_bcid += 0x400;

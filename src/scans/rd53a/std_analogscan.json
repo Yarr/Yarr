@@ -52,12 +52,11 @@
       {
         "config": {
           "count": 100,
-          "delay": 56,
+          "delay": 48,
           "extTrigger": false,
-          "frequency": 10000,
+          "frequency": 5000,
           "noInject": false,
-          "time": 0,
-          "edgeMode": true
+          "time": 0
         },
         "loopAction": "Rd53aTriggerLoop"
       },
@@ -67,10 +66,12 @@
     ],
     "name": "DigitalScan",
     "prescan": {
-        "InjEnDig": 1,
-        "InjAnaMode": 0,
-        "LatencyConfig": 64,
-        "GlobalPulseRt": 16384
+        "InjEnDig": 0,
+        "InjAnaMode": 1,
+        "LatencyConfig": 50,
+        "GlobalPulseRt": 16384,
+        "InjVcalMed": 500,
+        "InjVcalHigh": 2500
     }
   }
 }
