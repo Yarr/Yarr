@@ -10,25 +10,36 @@ In order to setuo the DAQ system the following two steps are needed:
 
 ### Dependencies
 
-- Make sure you have GCC version 4.8 or higher installed:
+- Make sure you have GCC version 7.0 or higher installed:
 ```bash
 $ g++ --version
-g++ (GCC) 4.8.3 20140911 (Red Hat 4.8.3-9)
-Copyright (C) 2013 Free Software Foundation, Inc.
-This is free software; see the source for copying conditions.  There is NO
-warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+g++ (GCC) 7.2.1 20170829 (Red Hat 7.2.1-1)
 ```
-- If not a specifc version can also be sourced from AFS (CERN AFS access necessary):
+- By default an older version of GCC is installed on CentOs7, you can install newer GCC versions via:
 ```bash
-$ source /afs/cern.ch/sw/lcg/contrib/gcc/4.8/x86_64-slc6/setup.sh
+# 1. Install a package with repository for your system:
+# On CentOS, install package centos-release-scl available in CentOS repository:
+$ sudo yum install centos-release-scl
+
+# On RHEL, enable RHSCL repository for you system:
+$ sudo yum-config-manager --enable rhel-server-rhscl-7-rpms
+
+# 2. Install the collection:
+$ sudo yum install devtoolset-7
 ```
-- Newer GCC version are supported as well and can be installed via
+-- In order to use this newer version instead of your default one execute:
+```bash
+# Source the setup script
+$ source /opt/rh/devtoolset-7/enable
+# Add it to your bash_profile to enable it by default
+$ echo "source /opt/rh/devtoolset-7/enable" >> ~/.bash_profile 
+```
 - If not installed before, you need some standard packages:
 ```bash
 $ sudo yum install gnuplot texlive-epstopdf cmake
 ```
-### Initialise repository
 
+### Initialise repository
 - Clone the repository to your local machine:
 ```bash
 $ git clone https://github.com/Yarr/Yarr.git Yarr
