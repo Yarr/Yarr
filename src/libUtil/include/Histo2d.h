@@ -14,6 +14,7 @@
 #include <typeinfo>
 #include <typeindex>
 #include <stdio.h>
+#include <cmath>
 
 #include "HistogramBase.h"
 #include "ResultBase.h"
@@ -39,6 +40,9 @@ class Histo2d : public HistogramBase {
         void divide(const Histo2d &h);
         void scale(const double s);
         void setBin(unsigned x, double v);
+
+        double getMean();
+        double getStdDev();
         
         double getBin(unsigned n) const;
         int binNum(double x, double y);
@@ -80,6 +84,8 @@ class Histo2d : public HistogramBase {
         double max;
         double min;
         unsigned entries;
+
+        std::map<unsigned, bool> isFilled;
 };
 
 #endif
