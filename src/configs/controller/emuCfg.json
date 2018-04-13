@@ -11,7 +11,7 @@
                 "id" : 1338,
                 "size" : 256
             },
-            "feCfg" : "configs/emu_fe0.json"
+            "feCfg" : "configs/emulator/emu_fe0.json"
         }
     }
 }
