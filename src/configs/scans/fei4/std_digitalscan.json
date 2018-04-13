@@ -1,7 +1,7 @@
 {
   "scan": {
     "analysis": {
-      "1": {
+      "0": {
         "algorithm": "OccupancyAnalysis",
         "config": {
           "createMask": true
@@ -27,7 +27,7 @@
         "config": {}
       },
       "4": {
-        "algorithm": "HitDist",
+        "algorithm": "HitPerEvent",
         "config": {}
       },
       "n_count": 5
