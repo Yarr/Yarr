@@ -25,7 +25,8 @@ Rd53aParameterLoop::Rd53aParameterLoop(Rd53aReg Rd53aGlobalCfg::*ref): parPtr(re
 }
 
 void Rd53aParameterLoop::init() {
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
+    if (verbose)
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
     m_done = false;
     m_cur = min;
     parPtr = keeper->globalFe<Rd53a>()->regMap[parName];
@@ -71,7 +72,7 @@ void Rd53aParameterLoop::loadConfig(json &j) {
     if (!j["step"].empty())
         step = j["step"];
     if (!j["parameter"].empty()) {
-        std::cout << "Linking parameter: " << j["parameter"] <<std::endl;
+        std::cout << "  Linking parameter: " << j["parameter"] <<std::endl;
         parName = j["parameter"];
     }
 

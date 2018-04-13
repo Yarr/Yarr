@@ -191,11 +191,20 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    outputDir += (toString(runCounter, 6) + "_" + scanType + "/");
+    std::size_t pathPos = scanType.find_last_of('/');
+    std::size_t suffixPos = scanType.find_last_of('.');
+    std::string strippedScan;
+    if (pathPos != std::string::npos && suffixPos != std::string::npos) {
+        strippedScan = scanType.substr(pathPos+1, suffixPos-pathPos-1);
+    } else {
+        strippedScan = scanType;
+    }
+
+    outputDir += (toString(runCounter, 6) + "_" + strippedScan + "/");
     
-    std::cout << " Scan Type: " << scanType << std::endl;
+    std::cout << " Scan Type/Config: " << scanType << std::endl;
     
-    std::cout << " Chips: " << std::endl;
+    std::cout << " Connectivity: " << std::endl;
     for(std::string const& sTmp : cConfigPaths){
         std::cout << "    " << sTmp << std::endl;
     }
@@ -312,13 +321,14 @@ int main(int argc, char *argv[]) {
                 std::cout << "Loading chip #" << i << std::endl;
                 try { 
                     json chip = config["chips"][i];
+                    std::string chipConfigPath = chip["config"];
                     // TODO should be a shared pointer
                     bookie.addFe(StdDict::getFrontEnd(chipType).release(), chip["tx"], chip["rx"]);
                     bookie.getLastFe()->init(&*hwCtrl, chip["tx"], chip["rx"]);
-                    std::ifstream cfgFile(chip["config"].get<std::string>());
+                    std::ifstream cfgFile(chipConfigPath);
                     if (cfgFile) {
                         // Load config
-                        std::cout << "Loading config file: " << chip["config"] << std::endl;
+                        std::cout << "Loading config file: " << chipConfigPath << std::endl;
                         json cfg = json::parse(cfgFile);
                         dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->fromFileJson(cfg);
                         cfgFile.close();
@@ -327,12 +337,13 @@ int main(int argc, char *argv[]) {
                     }
                     success++;
                     // Save path to config
-                    feCfgMap[bookie.getLastFe()] = chip["config"];
-                    dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->setConfigFile(chip["config"]);
+                    std::size_t botDirPos = chipConfigPath.find_last_of("/");
+                    feCfgMap[bookie.getLastFe()] = chipConfigPath;
+                    dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->setConfigFile(chipConfigPath.substr(botDirPos, chipConfigPath.length()));
                     
                     // Create backup of current config
                     // TODO fix folder
-                    std::ofstream backupCfgFile(dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getConfigFile() + ".before");
+                    std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getConfigFile() + ".before");
                     json backupCfg;
                     dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
                     backupCfgFile << std::setw(4) << backupCfg;
@@ -535,7 +546,7 @@ int main(int argc, char *argv[]) {
             oFTmp.close();
 
             // Save extra config in data folder
-            std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getName() + ".json.after");
+            std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getConfigFile() + ".after");
             json backupCfg;
             dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
             backupCfgFile << std::setw(4) << backupCfg;
@@ -561,11 +572,10 @@ int main(int argc, char *argv[]) {
 void printHelp() {
     std::cout << "Help:" << std::endl;
     std::cout << " -h: Shows this." << std::endl;
-    std::cout << " -s <scan_type> : Scan type. Possible types:" << std::endl;
-    listScans();
+    std::cout << " -s <scan_type> : Scan config" << std::endl;
     //std::cout << " -n: Provide SPECboard number." << std::endl;
     //std::cout << " -g <cfg_list.txt>: Provide list of chip configurations." << std::endl;
-    std::cout << " -c <cfg1.json> [<cfg2.json> ...]: Provide chip configuration, can take multiple arguments." << std::endl;
+    std::cout << " -c <cfg1.json> [<cfg2.json> ...]: Provide connectivity configuration, can take multiple arguments." << std::endl;
     std::cout << " -r <ctrl.json> Provide controller configuration." << std::endl;
     std::cout << " -t <target_threshold> [<tot_target> [<charge_target>]] : Set target values for threshold, tot, charge." << std::endl;
     std::cout << " -p: Enable plotting of results." << std::endl;
@@ -751,9 +761,9 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                 auto& ana = static_cast<Fei4Analysis&>( *(analyses[fe]) );
                 ana.connect(s, fe->clipHisto, fe->clipResult);
                 
-                int nHistos = anaCfg["n_count"];
-                std::cout << nHistos << std::endl;
-                for (int j=0; j<nHistos; j++) {
+                int nAnas = anaCfg["n_count"];
+                std::cout << "Found " << nAnas << " Analysis!" << std::endl;
+                for (int j=0; j<nAnas; j++) {
                     std::string algo_name = anaCfg[std::to_string(j)]["algorithm"];
                     if (algo_name == "OccupancyAnalysis") {
                         std::cout << "  ... adding " << algo_name << std::endl;

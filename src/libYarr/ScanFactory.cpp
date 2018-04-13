@@ -72,9 +72,13 @@ void ScanFactory::loadConfig(json &scanCfg) {
         json tCfg;
         action->writeConfig(tCfg);
         if (!tCfg.empty()) {
+            std::cout << "~~~~~~~~~~" << std::endl;
             std::cout << std::setw(4) << tCfg << std::endl;
+            std::cout << "~~~~~~~~~~" << std::endl;
         } else {
+            std::cout << "~~~~~~~~~~" << std::endl;
             std::cout << "  Config empty." << std::endl;
+            std::cout << "~~~~~~~~~~" << std::endl;
         }
     }
                     

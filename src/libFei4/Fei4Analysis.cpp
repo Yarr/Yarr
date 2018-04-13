@@ -39,7 +39,6 @@ void Fei4Analysis::run() {
 }
 
 void Fei4Analysis::join() {
-  std::cout << __PRETTY_FUNCTION__ << std::endl;
   if( thread_ptr->joinable() ) thread_ptr->join();
 }
 
@@ -462,7 +461,6 @@ void ScurveFitter::init(ScanBase *s) {
             vcalMin = l->getMin();
             vcalStep = l->getStep();
             vcalBins = (vcalMax-vcalMin)/vcalStep;
-            std::cout << vcalMax << " " << vcalMin << " " << vcalStep << std::endl;
         }
 
         if (l->type() == typeid(Fei4TriggerLoop*)) {
@@ -583,26 +581,6 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         hh2->setZaxisTitle("Noise [e]");
                         sigMap[outerIdent] = hh2;
                         
-                        /*
-                        int bin_width = 10;
-                        int xlow = bookie->getTargetThreshold()-1000-bin_width/2;
-                        if (xlow < 0) xlow = -1*bin_width/2;
-                        int xhigh = bookie->getTargetThreshold()+1000+bin_width/2;
-                        if ((xhigh-xlow)%bin_width != 0)
-                            xhigh += ((xhigh-xlow)%bin_width);
-                        int bins = (xhigh-xlow)/bin_width;
-                        
-                        Histo1d *hh1 = new Histo1d("ThresholdDist", bins, xlow, xhigh, typeid(this));
-                        //Histo1d *hh1 = new Histo1d("ThresholdDist", 201, bookie->getTargetThreshold()-1005, bookie->getTargetThreshold()+1005, typeid(this));
-                        //Histo1d *hh1 = new Histo1d("ThresholdDist", 201, -2.5, 1002.5, typeid(this));
-                        hh1->setXaxisTitle("Threshold [e]");
-                        hh1->setYaxisTitle("Number of Pixels");
-                        thrDist[outerIdent] = hh1;
-                        hh1 = new Histo1d("NoiseDist", 76, -1, 151, typeid(this));
-                        hh1->setXaxisTitle("Noise [e]");
-                        hh1->setYaxisTitle("Number of Pixels");
-                        sigDist[outerIdent] = hh1;
-                        */
                         Histo1d *hh1 = new Histo1d("Chi2Dist", 51, -0.025, 2.525, typeid(this));
                         hh1->setXaxisTitle("Fit Chi/ndf");
                         hh1->setYaxisTitle("Number of Pixels");
@@ -615,9 +593,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0) {
                         FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
                         thrMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0], useScap, useLcap));
-                        //thrDist[outerIdent]->fill(feCfg->toCharge(par[0], useScap, useLcap));
                         sigMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0]+par[1], useScap, useLcap)-feCfg->toCharge(par[0], useScap, useLcap));
-                        //sigDist[outerIdent]->fill(feCfg->toCharge(par[0]+par[1], useScap, useLcap)-feCfg->toCharge(par[0], useScap, useLcap));
                         chiDist[outerIdent]->fill(status.fnorm/(double)status.nfev);
                         timeDist[outerIdent]->fill(fitTime.count());
                     }
@@ -629,7 +605,6 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 }
 
 void ScurveFitter::end() {
-    std::cout << __PRETTY_FUNCTION__ << std::endl; 
     if (thrMap[0] != NULL) {
         int bin_width, xlow, xhigh, bins;
         double thrMean = thrMap[0]->getMean();
@@ -649,7 +624,6 @@ void ScurveFitter::end() {
             xhigh += ((xhigh-xlow)%bin_width);
         bins = (xhigh-xlow)/bin_width;
         
-        std::cout << "__1__ " << bins << " " << xlow << " " << xhigh << std::endl;
         Histo1d *hh1 = new Histo1d("ThresholdDist", bins, xlow, xhigh, typeid(this));
         hh1->setXaxisTitle("Threshold [e]");
         hh1->setYaxisTitle("Number of Pixels");
@@ -665,13 +639,11 @@ void ScurveFitter::end() {
             xhigh += ((xhigh-xlow)%bin_width);
         bins = (xhigh-xlow)/bin_width;
         
-        std::cout << "__2__" << std::endl;
         hh1 = new Histo1d("NoiseDist", bins, xlow, xhigh, typeid(this));
         hh1->setXaxisTitle("Noise [e]");
         hh1->setYaxisTitle("Number of Pixels");
         sigDist[0] = hh1;
         
-        std::cout << "__3__" << std::endl;
         for(unsigned bin=0; bin<(nCol*nRow); bin++) {
             if (thrMap[0]->getBin(bin) != 0)
                 thrDist[0]->fill(thrMap[0]->getBin(bin));
@@ -679,37 +651,22 @@ void ScurveFitter::end() {
                 sigDist[0]->fill(sigMap[0]->getBin(bin));
         }
         
-        std::cout << "[" << channel << "] Threashold Mean = " << thrMap[0]->getMean() << " +- " << thrMap[0]->getStdDev() << std::endl;
+        std::cout << "\033[1;33m[" << channel << "] Threashold Mean = " << thrMap[0]->getMean() << " +- " << thrMap[0]->getStdDev() << "\033[0m" << std::endl;
         output->pushData(sCurve[0]);
         output->pushData(thrDist[0]);
         output->pushData(thrMap[0]);
         output->pushData(sigDist[0]);
-        std::cout << "[" << channel << "] Noise Mean = " << sigMap[0]->getMean() << " +- " << sigMap[0]->getStdDev() << std::endl;
+        std::cout << "\033[1;33m[" << channel << "] Noise Mean = " << sigMap[0]->getMean() << " +- " << sigMap[0]->getStdDev() << "\033[0m" <<  std::endl;
         output->pushData(sigMap[0]);
         output->pushData(chiDist[0]);
         output->pushData(timeDist[0]);
     }
 
 
-    int plotCount = 0;
-    for(unsigned bin=0; bin<(nCol*nRow); bin++) {
-        if (histos[bin] != NULL && plotCount < 20) {
-            if (histos[bin]->getEntries() > 10) {
-                output->pushData(histos[bin]);
-                plotCount++;
-            }
-        }
-        /*
-        if (bin%((nCol*nRow)/10)==0) {
-            // Save some s-curves
-            std::cout << "Saving S-curve #" << bin << std::endl;
+    for(unsigned bin=0; bin<(nCol*nRow); bin+=((nCol*nRow)/20)) {
+        if (histos[bin]) {
             output->pushData(histos[bin]);
-        } else {
-            // Delete s-curve
-            delete histos[bin];
-            histos[bin] = NULL;
         }
-        */
     }
 }
 

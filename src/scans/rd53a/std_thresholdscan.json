@@ -27,7 +27,7 @@
         "config": {}
       },
       "4": {
-        "algorithm": "HitDist",
+        "algorithm": "HitsPerEvent",
         "config": {}
       },
       "n_count": 5
