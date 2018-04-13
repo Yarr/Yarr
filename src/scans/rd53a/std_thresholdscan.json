@@ -2,15 +2,12 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "OccupancyAnalysis",
-        "config": {
-          "createMask": true
-        }
+        "algorithm": "ScurveFitter"
       },
       "1": {
-        "algorithm": "L1Analysis"
+        "algorithm": "OccupancyAnalysis"
       },
-      "n_count": 2
+      "n_count": 1
     },
     "histogrammer": {
       "0": {
@@ -30,7 +27,7 @@
         "config": {}
       },
       "4": {
-        "algorithm": "HitsPerEvent",
+        "algorithm": "HitDist",
         "config": {}
       },
       "n_count": 5
@@ -46,6 +43,15 @@
       },
       {
         "config": {
+          "max": 1000,
+          "min": 0,
+          "step": 10,
+          "parameter":"InjVcalDiff"
+        },
+        "loopAction": "Rd53aParameterLoop"
+      },
+      {
+        "config": {
           "max": 50,
           "min": 0,
           "step": 1,
@@ -55,13 +61,12 @@
       },
       {
         "config": {
-          "count": 100,
-          "delay": 56,
+          "count": 50,
+          "delay": 48,
           "extTrigger": false,
-          "frequency": 5000,
+          "frequency": 1000,
           "noInject": false,
-          "time": 0,
-          "edgeMode": true
+          "time": 0
         },
         "loopAction": "Rd53aTriggerLoop"
       },
@@ -69,12 +74,14 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "DigitalScan",
+    "name": "ThresholdScan",
     "prescan": {
-        "InjEnDig": 1,
-        "InjAnaMode": 0,
-        "LatencyConfig": 58,
-        "GlobalPulseRt": 16384
+        "InjEnDig": 0,
+        "InjAnaMode": 1,
+        "LatencyConfig": 50,
+        "GlobalPulseRt": 16384,
+        "InjVcalMed": 0,
+        "InjVcalHigh": 0
     }
   }
 }

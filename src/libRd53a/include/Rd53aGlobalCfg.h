@@ -12,6 +12,7 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <cmath>
 
 #include "json.hpp"
 
@@ -31,12 +32,12 @@ class Rd53aReg {
             this->write(value);
         }
 
-        void write(const uint16_t value) {
+        virtual void write(const uint16_t value) {
             unsigned mask = (1<<m_bits)-1;
             *m_cfg = (*m_cfg&(~(mask<<m_bOffset))) | ((value&mask)<<m_bOffset);
         }
 
-        uint16_t read() const {
+        virtual uint16_t read() const {
             unsigned mask = (1<<m_bits)-1;
             return ((*m_cfg >> m_bOffset) & mask);
         }
@@ -44,12 +45,64 @@ class Rd53aReg {
         unsigned addr() const{
             return m_addr;
         }
+
+        unsigned bits() const {
+            return m_bits;
+        }
+
     protected:
-    private:
         uint16_t *m_cfg;
         unsigned m_bOffset;
         unsigned m_bits;
         unsigned m_addr;
+    private:
+};
+
+class Rd53aDiffReg : public Rd53aReg {
+    public:
+        void init(Rd53aReg *arg_lowRef, Rd53aReg *arg_highRef, bool changeHigh) {
+            lowRef = arg_lowRef;
+            highRef = arg_highRef;
+            m_cfg = NULL; // Not needed
+            m_bOffset = 0; // Not needed
+            m_bits = 0; // Not needed
+            m_changeHigh = changeHigh;
+            if (m_changeHigh) {
+                m_addr = highRef->addr(); // Write register asks for the address, only want to modify highRef
+            } else {
+                m_addr = lowRef->addr();
+            }
+
+        }
+
+        void write(const uint16_t value) override {
+            uint16_t highValue = highRef->read();
+            uint16_t lowValue = lowRef->read();
+            if (m_changeHigh) {
+                if (lowValue + value < pow(2, highRef->bits())) {
+                    highRef->write(value + lowValue);
+                } else {
+                    std::cerr << "#ERROR# Could not write value to Rd53aDiffReg! Out of range!" << std::endl;
+                }
+            } else {
+                if (highValue - value >= 0) {
+                    lowRef->write(highValue - value);
+                } else {
+                    std::cerr << "#ERROR# Could not write value to Rd53aDiffReg! Out of range!" << std::endl;
+                }
+            }
+
+        }
+
+        uint16_t read() const override {
+            uint16_t lowValue = lowRef->read();
+            uint16_t highValue = highRef->read();
+            return highValue - lowValue;
+        }
+    private:
+        Rd53aReg *lowRef;
+        Rd53aReg *highRef;
+        bool m_changeHigh;
 };
 
 class Rd53aGlobalCfg {
@@ -92,6 +145,9 @@ class Rd53aGlobalCfg {
     private:
     public:
         std::map<std::string, Rd53aReg Rd53aGlobalCfg::*> regMap;
+
+        //Special diff registers
+        Rd53aDiffReg InjVcalDiff;
 
         //0
         Rd53aReg PixPortal;

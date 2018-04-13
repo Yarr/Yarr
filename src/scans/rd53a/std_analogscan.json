@@ -1,13 +1,16 @@
 {
   "scan": {
     "analysis": {
-      "1": {
+      "0": {
         "algorithm": "OccupancyAnalysis",
         "config": {
           "createMask": true
         }
       },
-      "n_count": 1
+      "1": {
+        "algorithm": "L1Analysis"
+      },
+      "n_count": 2
     },
     "histogrammer": {
       "0": {
@@ -37,15 +40,16 @@
         "config": {
           "max": 64,
           "min": 0,
-          "step": 1
+          "step": 8
         },
         "loopAction": "Rd53aMaskLoop"
       },
       {
         "config": {
-          "max": 20,
+          "max": 50,
           "min": 0,
-          "step": 1
+          "step": 1,
+          "nSteps": 10
         },
         "loopAction": "Rd53aCoreColLoop"
       },
@@ -64,7 +68,7 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "DigitalScan",
+    "name": "AnalogScan",
     "prescan": {
         "InjEnDig": 0,
         "InjAnaMode": 1,

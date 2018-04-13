@@ -184,6 +184,7 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         std::map<unsigned, Histo1d*> histos;
+        std::map<unsigned, Histo2d*> sCurve;
         std::map<unsigned, Histo2d*> thrMap;
         std::map<unsigned, Histo1d*> thrDist;
         std::map<unsigned, Histo2d*> sigMap;

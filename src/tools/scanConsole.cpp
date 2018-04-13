@@ -659,7 +659,7 @@ std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bo
 
 void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& histogrammers, const std::string& scanType, std::vector<FrontEnd*>& feList, ScanBase* s, std::string outputDir) {
     if (scanType.find("json") != std::string::npos) {
-        std::cout << "-> Found Scan config, loading histogrammer and analysis ..." << std::endl;
+        std::cout << "-> Found Scan config, loading histogrammer ..." << std::endl;
         std::ifstream scanCfgFile(scanType);
         if (!scanCfgFile) {
             std::cerr << "#ERROR# Could not open scan config: " << scanType << std::endl;
@@ -732,7 +732,7 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
 
 void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, int mask_opt) {
     if (scanType.find("json") != std::string::npos) {
-        std::cout << "-> Found Scan config, loading histogrammer and analysis ..." << std::endl;
+        std::cout << "-> Found Scan config, loading analysis ..." << std::endl;
         std::ifstream scanCfgFile(scanType);
         if (!scanCfgFile) {
             std::cerr << "#ERROR# Could not open scan config: " << scanType << std::endl;
@@ -746,13 +746,27 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
         for (FrontEnd *fe : bookie.feList ) {
             if (fe->isActive()) {
                 // TODO this loads only FE-i4 specific stuff, bad
-                // Load histogrammer
                 // TODO hardcoded
                 analyses[fe].reset( new Fei4Analysis(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) );
                 auto& ana = static_cast<Fei4Analysis&>( *(analyses[fe]) );
                 ana.connect(s, fe->clipHisto, fe->clipResult);
-                ana.addAlgorithm(new L1Analysis());
-                ana.addAlgorithm(new OccupancyAnalysis());
+                
+                int nHistos = anaCfg["n_count"];
+                std::cout << nHistos << std::endl;
+                for (int j=0; j<nHistos; j++) {
+                    std::string algo_name = anaCfg[std::to_string(j)]["algorithm"];
+                    if (algo_name == "OccupancyAnalysis") {
+                        std::cout << "  ... adding " << algo_name << std::endl;
+                        ana.addAlgorithm(new OccupancyAnalysis());
+                     } else if (algo_name == "L1Analysis") {
+                        std::cout << "  ... adding " << algo_name << std::endl;
+                        ana.addAlgorithm(new L1Analysis());
+                     } else if (algo_name == "ScurveFitter") {
+                        std::cout << "  ... adding " << algo_name << std::endl;
+                        ana.addAlgorithm(new ScurveFitter());
+                     }
+
+                }
                 // Disable masking of pixels
                 if(mask_opt == 0) {
                     std::cout << " -> Disabling masking for this scan!" << std::endl;

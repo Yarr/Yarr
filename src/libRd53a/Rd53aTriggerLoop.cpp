@@ -58,6 +58,7 @@ void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
 
 void Rd53aTriggerLoop::setEdgeMode(uint32_t duration) {
     // Assumes CAL command to be in index 14
+    std::cout << "Enabling Edge mode with duration " << duration << std::endl;
     m_trigWord[14] = Rd53aCmd::genCal(8, 1, 0, 10, 0, 0); // Inject
 }
 

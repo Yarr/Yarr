@@ -1,37 +1,36 @@
-#ifndef RD53ACORECOLLOOP_H
-#define RD53ACORECOLLOOP_H
-
+#ifndef RD53APARAMETERLOOP_H
+#define RD53APARAMETERLOOP_H
 // #################################
 // # Author: Timon Heim
 // # Email: timon.heim at cern.ch
 // # Project: Yarr
-// # Description: Loop over core columns for RD53A
+// # Description: Parameter Loop for RD53A
 // # Date: 03/2018
 // ################################
 
 #include <iostream>
 
-#include "FrontEnd.h"
-#include "Rd53a.h"
 #include "LoopActionBase.h"
+#include "Rd53a.h"
 
-class Rd53aCoreColLoop : public LoopActionBase {
+class Rd53aParameterLoop : public LoopActionBase {
     public:
-        Rd53aCoreColLoop();
-        
+        Rd53aParameterLoop();
+        Rd53aParameterLoop(Rd53aReg Rd53aGlobalCfg::*ref);
+
         void writeConfig(json &j);
         void loadConfig(json &j);
+
     private:
+        Rd53aReg Rd53aGlobalCfg::*parPtr;
+        std::string parName;
+        void writePar();
         unsigned m_cur;
-        unsigned nSteps;
-        unsigned maxCore;
-        unsigned minCore;
+
         void init();
         void end();
         void execPart1();
         void execPart2();
 };
 
-
 #endif
-

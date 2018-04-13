@@ -310,6 +310,9 @@ void Rd53aGlobalCfg::init() {
     AdcRead.init(136, &m_cfg[136], 0, 11, 0); regMap["AdcRead"] = &Rd53aGlobalCfg::AdcRead;
     //137
     SelfTrigEn.init(137, &m_cfg[137], 0, 4, 0); regMap["SelfTrigEn"] = &Rd53aGlobalCfg::SelfTrigEn;
+
+    // Special diff registers
+    InjVcalDiff.init(&InjVcalMed, &InjVcalHigh, true); regMap["InjVcalDiff"] = (Rd53aReg Rd53aGlobalCfg::*)&Rd53aGlobalCfg::InjVcalDiff;
 }
 
 void Rd53aGlobalCfg::toFileJson(json &j) {

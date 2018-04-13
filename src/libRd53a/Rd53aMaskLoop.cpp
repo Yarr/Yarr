@@ -23,6 +23,17 @@ void Rd53aMaskLoop::init() {
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     m_done = false;
     m_cur = 0;
+    for(FrontEnd *fe : keeper->feList) {
+        for(unsigned col=0; col<Rd53a::n_Col; col++) {
+            for(unsigned row=0; row<Rd53a::n_Row; row++) {
+                dynamic_cast<Rd53a*>(fe)->setEn(col, row, 1);
+                dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 1);
+            }
+        }
+        // TODO make configrue for subset
+        dynamic_cast<Rd53a*>(fe)->configurePixels();
+        while(!g_tx->isCmdEmpty()) {}
+    }
 }
 
 void Rd53aMaskLoop::execPart1() {
@@ -48,11 +59,13 @@ void Rd53aMaskLoop::execPart1() {
             }
         }
         // TODO make configrue for subset
+        // TODO set cmeEnable correctly
         dynamic_cast<Rd53a*>(fe)->configurePixels();
         while(!g_tx->isCmdEmpty()) {}
     }
     g_stat->set(this, m_cur);
     std::cout << " ---> Mask Stage " << m_cur << std::endl;
+    //std::this_thread::sleep_for(std::chrono::milliseconds(20));
 }
 
 void Rd53aMaskLoop::execPart2() {
