@@ -198,23 +198,23 @@ Will repeatably send a 512-bit command from the burst buffer to the FE.
 
 Config paramters:
     
-- count <int>: number of injections, if 0 will run for specified time (default 50/100)
-- delay <int>: time gap in bunch crossings between injection and trigger, should be divisible by 8 (default 56)
-- extTrigger <bool>: enable external triggering, requires proper trigger processors configuration (default false)
-- frequency <int>: trigger(/injection)frequency in Hz (default 5000)
-- noInject <bool>: disable charge injection (e.g. for noise scan) (default false)
-- time <int>: time in seconds, if count is set to 0 will run for this amount of time (default 0)
-- edgeMode <bool>: switches cal injection command to edge mode, e.g. for digital scan (default false)
+- count ``<int>``: number of injections, if 0 will run for specified time (default 50/100)
+- delay ``<int>``: time gap in bunch crossings between injection and trigger, should be divisible by 8 (default 56)
+- extTrigger ``<bool>``: enable external triggering, requires proper trigger processors configuration (default false)
+- frequency ``<int>``: trigger(/injection)frequency in Hz (default 5000)
+- noInject ``<bool>``: disable charge injection (e.g. for noise scan) (default false)
+- time ``<int>``: time in seconds, if count is set to 0 will run for this amount of time (default 0)
+- edgeMode ``<bool>``: switches cal injection command to edge mode, e.g. for digital scan (default false)
 
 #### Rd53aCoreColLoop
 Loops of core columns in specified pattern
 
 Config parameters:
     
-- max <int>: upper bound of cores to scan
-- min <int>: lower bound of cores to scan
-- step <int>: step size (1 will scan all cores, more than 1 will skip cores)
-- nSteps <int>: how many steps should be used to scan over cores
+- max ``<int>``: upper bound of cores to scan
+- min ``<int>``: lower bound of cores to scan
+- step ``<int>``: step size (1 will scan all cores, more than 1 will skip cores)
+- nSteps ``<int>``: how many steps should be used to scan over cores
 
 #### Rd53aMaskLoop
 Loops over pixels. All pixels in one core column are serialised on the following fashion.
@@ -243,6 +243,6 @@ The maximum of the loops defines how many pixels should be activated at one time
 
 Config parameters:
     
- - max <int>: number of mask stages
- - min <int>: mask stage to start with
- - step <int>: step size of mask stage
+ - max ``<int>``: number of mask stages
+ - min ``<int>``: mask stage to start with
+ - step ``<int>``: step size of mask stage
