@@ -197,6 +197,7 @@ List of available loop actions and their configuration parameters.
 Will repeatably send a 512-bit command from the burst buffer to the FE.
 
 Config paramters:
+    
     - count <int>: number of injections, if 0 will run for specified time (default 50/100)
     - delay <int>: time gap in bunch crossings between injection and trigger, should be divisible by 8 (default 56)
     - extTrigger <bool>: enable external triggering, requires proper trigger processors configuration (default false)
@@ -209,6 +210,7 @@ Config paramters:
 Loops of core columns in specified pattern
 
 Config parameters:
+    
     - max <int>: upper bound of cores to scan
     - min <int>: lower bound of cores to scan
     - step <int>: step size (1 will scan all cores, more than 1 will skip cores)
@@ -240,6 +242,7 @@ Loops over pixels. All pixels in one core column are serialised on the following
 The maximum of the loops defines how many pixels should be activated at one time. E.g. if the max is 64 that means every 64th pixel (1 pixel per core) and requires 64 steps to loop over all pixels.
 
 Config parameters:
+    
      - max <int>: number of mask stages
      - min <int>: mask stage to start with
      - step <int>: step size of mask stage
