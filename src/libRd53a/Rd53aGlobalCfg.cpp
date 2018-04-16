@@ -74,7 +74,7 @@ void Rd53aGlobalCfg::init() {
     //19
     LinRefKrum.init(19, &m_cfg[19], 0, 10, 300); regMap["LinRefKrum"] = &Rd53aGlobalCfg::LinRefKrum;
     //20
-    LinVth.init(20, &m_cfg[20], 0, 10, 408); regMap["LinVth"] = &Rd53aGlobalCfg::LinVth;
+    LinVth.init(20, &m_cfg[20], 0, 10, 350); regMap["LinVth"] = &Rd53aGlobalCfg::LinVth;
 
     // Diff FE
     //21
@@ -84,7 +84,7 @@ void Rd53aGlobalCfg::init() {
     //23
     DiffPrecomp.init(23, &m_cfg[23], 0, 10, 500); regMap["DiffPrecomp"] = &Rd53aGlobalCfg::DiffPrecomp;
     //24
-    DiffComp.init(24, &m_cfg[24], 0, 10, 528); regMap["DiffComp"] = &Rd53aGlobalCfg::DiffComp;
+    DiffComp.init(24, &m_cfg[24], 0, 10, 1000); regMap["DiffComp"] = &Rd53aGlobalCfg::DiffComp;
     //25
     DiffVff.init(25, &m_cfg[25], 0, 10, 100); regMap["DiffVff"] = &Rd53aGlobalCfg::DiffVff;
     //26
