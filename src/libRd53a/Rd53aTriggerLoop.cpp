@@ -14,13 +14,13 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
     m_trigFreq = 1e3;
     m_trigTime = 10;
     m_trigWordLength = 16;
-    m_pulseDuration = 4;
+    m_pulseDuration = 8;
     m_trigWord.fill(0x69696969);
     m_trigWord[15] = 0x69696363;
     m_trigWord[14] = Rd53aCmd::genCal(8, 0, 0, 1, 0, 0); // Inject
     m_trigWord[8] = Rd53aCmd::genTrigger(0xF, 1, 0xF, 2); // Trigger
     m_trigWord[7] = Rd53aCmd::genTrigger(0xF, 3, 0xF, 4); // Trigger
-    m_trigWord[2] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(m_pulseDuration)); // global pulse for sync FE
+    m_trigWord[2] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(m_pulseDuration<<1)); // global pulse for sync FE
     m_trigWord[1] = 0x69696363; // TODO might include ECR?
     m_trigWord[0] = Rd53aCmd::genCal(8, 1, 0, 0, 0, 0); // Arm inject
     m_noInject = false;
@@ -43,7 +43,7 @@ void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
     m_trigWord[15] = 0x69696363;
     m_trigWord[14] = Rd53aCmd::genCal(8, 0, 0, 1, 0, 0); // Inject
     // Pulse
-    m_trigWord[2] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(m_pulseDuration)); // global pulse for sync FE
+    m_trigWord[2] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(m_pulseDuration<<1)); // global pulse for sync FE
     // Rearm
     m_trigWord[1] = 0x69696363; // TODO might include ECR?
     m_trigWord[0] = Rd53aCmd::genCal(8, 1, 0, 0, 0, 0); // Arm inject
@@ -58,10 +58,17 @@ void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
 
 void Rd53aTriggerLoop::setEdgeMode(uint32_t duration) {
     // Assumes CAL command to be in index 14
-    std::cout << "Enabling Edge mode with duration " << duration << std::endl;
     m_trigWord[14] = Rd53aCmd::genCal(8, 1, 0, 10, 0, 0); // Inject
 }
 
+void Rd53aTriggerLoop::setNoInject() {
+    m_trigWord[15] = 0x69696969;
+    m_trigWord[15] = 0x69696969;
+    m_trigWord[2] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(m_pulseDuration<<1)); // global pulse for sync FE
+    m_trigWord[1] = 0x69696969;
+    m_trigWord[0] = 0x69696969;
+
+}
 
 void Rd53aTriggerLoop::init() {
     m_done = false;
@@ -75,6 +82,9 @@ void Rd53aTriggerLoop::init() {
         g_tx->setTrigConfig(INT_COUNT);
     } else {
         g_tx->setTrigConfig(INT_TIME);
+    }
+    if (m_noInject) {
+        setNoInject();
     }
     g_tx->setTrigFreq(m_trigFreq);
     g_tx->setTrigCnt(m_trigCnt);
