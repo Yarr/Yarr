@@ -13,6 +13,11 @@ The currently supported readout chips are:
 * FE65-P2
 * RD53A
 
+## Support
+
+Support for YARR can be found in the [YARR Matter Most channel.](https://mattermost.web.cern.ch/yarr/ "YARR MatterMost")
+
+
 ## Content
    
 * [Software Installation](install.md)
