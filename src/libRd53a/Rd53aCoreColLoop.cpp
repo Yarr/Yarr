@@ -45,10 +45,14 @@ void Rd53aCoreColLoop::execPart1() {
     for(FrontEnd *fe : keeper->feList) {
         // Loop over cores, i.e. activate in pairs of 4 DC
         for (unsigned dc=(minCore*4), i=0; dc<(maxCore*4); dc+=4, i++) {
-            dynamic_cast<Rd53a*>(fe)->disableCalCol(dc);
-            dynamic_cast<Rd53a*>(fe)->disableCalCol(dc+1);
-            dynamic_cast<Rd53a*>(fe)->disableCalCol(dc+2);
-            dynamic_cast<Rd53a*>(fe)->disableCalCol(dc+3);
+            // Disable previous columns
+            if (m_cur>0 && ((i%nSteps) == (m_cur-step))) {
+                dynamic_cast<Rd53a*>(fe)->disableCalCol(dc);
+                dynamic_cast<Rd53a*>(fe)->disableCalCol(dc+1);
+                dynamic_cast<Rd53a*>(fe)->disableCalCol(dc+2);
+                dynamic_cast<Rd53a*>(fe)->disableCalCol(dc+3);
+            }
+            // Enable next columns
             if (i%nSteps == m_cur) {
                 if (verbose)
                     std::cout << __PRETTY_FUNCTION__ << " : Enabling QC -> " << dc << std::endl;
@@ -77,6 +81,7 @@ void Rd53aCoreColLoop::end() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     
+    /*
     for(FrontEnd *fe : keeper->feList) {
         // Loop over cores, i.e. activate in pairs of 4 DC
         for (unsigned dc=0; dc<Rd53a::n_DC; dc+=4) {
@@ -87,6 +92,7 @@ void Rd53aCoreColLoop::end() {
         }
     }
     while(!g_tx->isCmdEmpty()) {}
+    */
     //std::this_thread::sleep_for(std::chrono::milliseconds(20));
 }
 
