@@ -351,12 +351,12 @@ begin
     cmp_eudet_tlu: eudet_tlu
     port map (
         clk_i => clk_i,
-        rst_n_i => rst_n_i,
+        rst_n_i => rst_n_i and (not local_reset),
         eudet_trig_i => eudet_trig_i,
         eudet_rst_i => eudet_rst_i,
         eudet_busy_o => eudet_busy_o,
         eudet_clk_o => eudet_clk_o,
-        busy_i => '0',
+        busy_i => busy_t,
         simple_mode_i => '0',
         trig_o => lcl_eudet_trig_t,
         rst_o => open,

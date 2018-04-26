@@ -49,8 +49,8 @@ architecture rtl of eudet_tlu is
     end component;
 
     -- constants
-    signal C_DEADTIME : integer := 300; -- clk_i cycles
-    signal C_CLKDIVIDER : integer := 4; -- 40 MHz -> 10Mhz
+    signal C_DEADTIME : integer := 2000; -- clk_i cycles
+    signal C_CLKDIVIDER : integer := 16; -- 160 MHz -> 10Mhz
 
     -- State machine
     type state_type is (IDLE, TRIGGER, RECEIVE, DEAD);
@@ -64,9 +64,9 @@ architecture rtl of eudet_tlu is
     signal eudet_busy_t : std_logic;
     signal eudet_clk_t : std_logic;
     signal eudet_bust_t : std_logic;
-    signal clk_counter : unsigned (3 downto 0);
+    signal clk_counter : unsigned (7 downto 0);
     signal bit_counter : unsigned (4 downto 0);
-    signal dead_counter : unsigned (9 downto 0);
+    signal dead_counter : unsigned (15 downto 0);
 begin
     -- Sync async inputs
     trig_sync: synchronizer port map(clk_i => clk_i, rst_n_i => rst_n_i, async_in => eudet_trig_i, sync_out => sync_eudet_trig_t);
@@ -141,7 +141,7 @@ begin
                         trig_o <= '1'; -- Trigger now (16 clock cycles after the inital trigger?)
                     end if;
                     dead_counter <= dead_counter + 1;
-                    if (dead_counter = C_DEADTIME) then
+                    if (dead_counter = C_DEADTIME and busy_i = '0') then
                         state <= IDLE;
                     end if;
 
