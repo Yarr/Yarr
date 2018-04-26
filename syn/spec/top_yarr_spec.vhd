@@ -10,6 +10,7 @@ use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
 use work.gn4124_core_pkg.all;
 use work.board_pkg.all;
+use work.common_pkg.all;
 
 library UNISIM;
 use UNISIM.vcomponents.all;
@@ -103,11 +104,11 @@ entity yarr is
         -- FMC
 		---------------------------------------------------------
 		-- Trigger input
-		ext_trig		: out std_logic;
+		--ext_trig		: out std_logic;
 		-- LVDS buffer
-		pwdn_l			: out std_logic_vector(2 downto 0);
+		--pwdn_l			: out std_logic_vector(2 downto 0);
         -- GPIO
-        io              : inout std_logic_vector(2 downto 0);
+        --io              : inout std_logic_vector(2 downto 0);
 		-- FE-I4
 		fe_clk_p		: out std_logic_vector(c_TX_CHANNELS-1 downto 0);
 		fe_clk_n		: out std_logic_vector(c_TX_CHANNELS-1 downto 0);
@@ -116,8 +117,13 @@ entity yarr is
 		fe_data_p		: in  std_logic_vector(c_RX_CHANNELS-1 downto 0);
 		fe_data_n		: in  std_logic_vector(c_RX_CHANNELS-1 downto 0);
 		-- I2c
-		sda				: inout std_logic;
-		scl					: inout std_logic
+		--sda				: inout std_logic;
+		--scl					: inout std_logic;
+       -- SPI
+       scl_o            : out std_logic;
+       sda_o            : out std_logic;
+       sdi_i : in std_logic;
+       latch_o          : out std_logic
       );
 end yarr;
 
@@ -311,6 +317,7 @@ architecture rtl of yarr is
 			-- RX IN
 			rx_clk_i	: in  std_logic;
 			rx_serdes_clk_i : in std_logic;
+			rx_clk_locked_i : in std_logic;
 			rx_data_i	: in std_logic_vector(g_NUM_RX-1 downto 0);
             trig_tag_i : in std_logic_vector(31 downto 0);
 			-- RX OUT (sync to sys_clk)
@@ -748,6 +755,12 @@ architecture rtl of yarr is
   signal scl_t : std_logic;
   signal sda_t : std_logic;
 
+  -- SPI
+  signal scl_s : std_logic;
+  signal sda_s : std_logic;
+  signal latch_s : std_logic;
+  signal sdi_s : std_logic;
+  
   -- FOR TESTS
   signal debug       : std_logic_vector(31 downto 0);
   signal clk_div_cnt : unsigned(3 downto 0);
@@ -790,7 +803,7 @@ architecture rtl of yarr is
 	signal rx_busy : std_logic;
 begin
 	-- Activate LVDS buffer
-	pwdn_l <= (others => '1');
+	--pwdn_l <= (others => '1');
 	
 	-- Differential buffers
 	tx_loop: for I in 0 to c_TX_CHANNELS-1 generate
@@ -1042,15 +1055,15 @@ begin
 --      dummy_stat_reg_switch_i => dummy_stat_reg_switch
 --      );
 	  
-	     OBUF_tx : OBUF
-   generic map (
-      DRIVE => 12,
-      IOSTANDARD => "DEFAULT",
-      SLEW => "FAST")
-   port map (
-      O => ext_trig,     -- Buffer output (connect directly to top-level port)
-      I => fe_data_i(0)      -- Buffer input 
-   );
+--	     OBUF_tx : OBUF
+--   generic map (
+--      DRIVE => 12,
+--      IOSTANDARD => "DEFAULT",
+--      SLEW => "FAST")
+--   port map (
+--      O => ext_trig,     -- Buffer output (connect directly to top-level port)
+--      I => fe_data_i(0)      -- Buffer input 
+--   );
 	  
 	cmp_wb_tx_core : wb_tx_core port map
 	(
@@ -1086,7 +1099,8 @@ begin
 		wb_ack_o => wb_ack(2),
 		wb_stall_o => wb_stall(2),
 		rx_clk_i => CLK_160,
-		rx_serdes_clk_i => CLK_640,
+		rx_serdes_clk_i => CLK_640_buf,
+		rx_clk_locked_i => locked,
 		rx_data_i => fe_data_i,
 		rx_valid_o => rx_valid,
 		rx_data_o => rx_data,
@@ -1130,22 +1144,22 @@ begin
 	
 	wb_dat_i(159 downto 136) <= (others => '0');
 	
-	cmp_i2c_master : i2c_master_wb_top
-	port map (
-		wb_clk_i => sys_clk,
-		wb_rst_i => not rst_n,
-		arst_i => rst_n,
-		wb_adr_i => wb_adr(2 downto 0),
-		wb_dat_i => wb_dat_o(7 downto 0),
-		wb_dat_o => wb_dat_i(135 downto 128),
-		wb_we_i => wb_we,
-		wb_stb_i => wb_stb,
-		wb_cyc_i => wb_cyc(4),
-		wb_ack_o => wb_ack(4),
-		wb_inta_o => open,
-		scl => scl,
-		sda => sda
-	);
+--	cmp_i2c_master : i2c_master_wb_top
+--	port map (
+--		wb_clk_i => sys_clk,
+--		wb_rst_i => not rst_n,
+--		arst_i => rst_n,
+--		wb_adr_i => wb_adr(2 downto 0),
+--		wb_dat_i => wb_dat_o(7 downto 0),
+--		wb_dat_o => wb_dat_i(135 downto 128),
+--		wb_we_i => wb_we,
+--		wb_stb_i => wb_stb,
+--		wb_cyc_i => wb_cyc(4),
+--		wb_ack_o => wb_ack(4),
+--		wb_inta_o => open,
+--		scl => open,
+--		sda => open
+--	);
 	
 	cmp_wb_trigger_logic: wb_trigger_logic PORT MAP(
 		wb_clk_i => sys_clk,
@@ -1171,6 +1185,27 @@ begin
 		int_busy_i => '0',
 		trig_tag => trig_tag_t
 	);
+    
+    scl_o <= scl_s;
+    sda_o <= sda_s;
+    sdi_s <= sdi_i;
+    latch_o <= latch_s;
+    
+	cmp_wb_spi: wb_spi port map (
+        wb_clk_i => sys_clk,
+        rst_n_i => rst_n,
+        wb_adr_i => wb_adr(31 downto 0),
+        wb_dat_i => wb_dat_o(31 downto 0),
+        wb_dat_o => wb_dat_i(223 downto 192),
+        wb_cyc_i => wb_cyc(6),
+        wb_stb_i => wb_stb,
+        wb_we_i => wb_we,
+        wb_ack_o => wb_ack(6),
+        scl_o => scl_s,
+        sda_o => sda_s,
+        sdi_i => sdi_s,
+        latch_o => latch_s
+        );	
 
   --wb_stall(1) <= '0' when wb_cyc(1) = '0' else not(wb_ack(1));
 --  wb_stall(2) <= '0' when wb_cyc(2) = '0' else not(wb_ack(2));
@@ -1219,18 +1254,18 @@ begin
 --		TRIG1 <= wb_adr;
 --		TRIG2 <= wb_dat_o;
    
-	ila_i : ila
-	  port map (
-		 CONTROL => CONTROL,
-		 CLK => CLK_40,
---		 CLK => sys_clk,
-		 TRIG0 => TRIG0,
-		 TRIG1 => TRIG1,
-		 TRIG2 => TRIG2);
-		 
-	ila_icon_i : ila_icon
-		port map (
-    CONTROL0 => CONTROL);
+--	ila_i : ila
+--	  port map (
+--		 CONTROL => CONTROL,
+--		 CLK => CLK_40,
+----		 CLK => sys_clk,
+--		 TRIG0 => TRIG0,
+--		 TRIG1 => TRIG1,
+--		 TRIG2 => TRIG2);
+--		 
+--	ila_icon_i : ila_icon
+--		port map (
+--    CONTROL0 => CONTROL);
 	 
   ------------------------------------------------------------------------------
   -- Interrupt stuff
@@ -1303,20 +1338,23 @@ begin
 		LOCKED => locked
 	);
 	
-	BUFPLL_640 : BUFPLL
-	generic map (
-		DIVIDE => 4,         -- DIVCLK divider (1-8)
-		ENABLE_SYNC => TRUE  -- Enable synchrnonization between PLL and GCLK (TRUE/FALSE)
-	)
-	port map (
-		IOCLK => CLK_640,               -- 1-bit output: Output I/O clock
-		LOCK => open,                 -- 1-bit output: Synchronized LOCK output
-		SERDESSTROBE => open, -- 1-bit output: Output SERDES strobe (connect to ISERDES2/OSERDES2)
-		GCLK => CLK_160,                 -- 1-bit input: BUFG clock input
-		LOCKED => locked,             -- 1-bit input: LOCKED input from PLL
-		PLLIN => clk_640_buf                -- 1-bit input: Clock input from PLL
-	);
-
+--	BUFPLL_640 : BUFPLL
+--	generic map (
+--		DIVIDE => 4,         -- DIVCLK divider (1-8)
+--		ENABLE_SYNC => TRUE  -- Enable synchrnonization between PLL and GCLK (TRUE/FALSE)
+--	)
+--	port map (
+--		IOCLK => CLK_640,               -- 1-bit output: Output I/O clock
+--		LOCK => open,                 -- 1-bit output: Synchronized LOCK output
+--		SERDESSTROBE => open, -- 1-bit output: Output SERDES strobe (connect to ISERDES2/OSERDES2)
+--		GCLK => CLK_160,                 -- 1-bit input: BUFG clock input
+--		LOCKED => locked,             -- 1-bit input: LOCKED input from PLL
+--		PLLIN => clk_640_buf                -- 1-bit input: Clock input from PLL
+--	);
+--	cmp_ioclk_640_buf : BUFG
+--	port map (
+--		O => CLK_640,
+--		I => CLK_640_buf);
 	cmp_ioclk_160_buf : BUFG
 	port map (
 		O => CLK_160,

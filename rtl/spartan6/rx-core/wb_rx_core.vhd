@@ -14,6 +14,9 @@ library IEEE;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library unisim;
+use unisim.vcomponents.all;
+
 entity wb_rx_core is
 	generic (
 		g_NUM_RX : integer range 1 to 32 := 1
@@ -36,6 +39,7 @@ entity wb_rx_core is
 		-- RX IN
 		rx_clk_i	: in  std_logic;
 		rx_serdes_clk_i : in std_logic;
+		rx_clk_locked_i : in std_logic;
 		rx_data_i	: in std_logic_vector(g_NUM_RX-1 downto 0);
         trig_tag_i : in std_logic_vector(31 downto 0);
 		
@@ -128,6 +132,8 @@ architecture behavioral of wb_rx_core is
 
 	signal rx_enable : std_logic_vector(31 downto 0);
 	
+	signal rx_serdes_clk : std_logic_vector(3 downto 0);
+	
 	signal channel : integer range 0 to g_NUM_RX-1;
 
 	signal debug : std_logic_vector(31 downto 0);
@@ -198,23 +204,94 @@ begin
 			end if;
 		end if;
 	end process reg_proc;
+
+--	cmp_ioclk_640_buf_0 : BUFG
+--	port map (
+--		O => rx_serdes_clk(0),
+--		I => rx_serdes_clk_i);
+--
+--	cmp_ioclk_640_buf_1 : BUFG
+--	port map (
+--		O => rx_serdes_clk(1),
+--		I => rx_serdes_clk_i);
+	
+    BUFPLL_640_A : BUFPLL
+	generic map (
+		DIVIDE => 4,         -- DIVCLK divider (1-8)
+		ENABLE_SYNC => TRUE  -- Enable synchrnonization between PLL and GCLK (TRUE/FALSE)
+	)
+	port map (
+		IOCLK => rx_serdes_clk(0),               -- 1-bit output: Output I/O clock
+		LOCK => open,                 -- 1-bit output: Synchronized LOCK output
+		SERDESSTROBE => open, -- 1-bit output: Output SERDES strobe (connect to ISERDES2/OSERDES2)
+		GCLK => rx_clk_i,                 -- 1-bit input: BUFG clock input
+		LOCKED => rx_clk_locked_i,             -- 1-bit input: LOCKED input from PLL
+		PLLIN => rx_serdes_clk_i                -- 1-bit input: Clock input from PLL
+	);
+    
+    BUFPLL_640_B : BUFPLL
+	generic map (
+		DIVIDE => 4,         -- DIVCLK divider (1-8)
+		ENABLE_SYNC => TRUE  -- Enable synchrnonization between PLL and GCLK (TRUE/FALSE)
+	)
+	port map (
+		IOCLK => rx_serdes_clk(1),               -- 1-bit output: Output I/O clock
+		LOCK => open,                 -- 1-bit output: Synchronized LOCK output
+		SERDESSTROBE => open, -- 1-bit output: Output SERDES strobe (connect to ISERDES2/OSERDES2)
+		GCLK => rx_clk_i,                 -- 1-bit input: BUFG clock input
+		LOCKED => rx_clk_locked_i,             -- 1-bit input: LOCKED input from PLL
+		PLLIN => rx_serdes_clk_i                -- 1-bit input: Clock input from PLL
+	);
 	
 	-- Generate Rx Channels
 	busy_o <= '0' when (rx_fifo_full = c_ALL_ZEROS) else '1';
 	rx_channels: for I in 0 to g_NUM_RX-1 generate
 	begin
-		cmp_fei4_rx_channel: fei4_rx_channel PORT MAP(
-			rst_n_i => rst_n_i,
-			clk_160_i => rx_clk_i,
-			clk_640_i => rx_serdes_clk_i,
-			enable_i => rx_enable(I),
-			rx_data_i => rx_data_i(I),
-            trig_tag_i => trig_tag_i,
-			rx_data_o => rx_data(I),
-			rx_valid_o => rx_valid(I),
-			rx_stat_o => rx_stat(I),
-			rx_data_raw_o => rx_data_raw(I)
-		);
+        bank2_1: if I<4 generate
+            begin
+            cmp_fei4_rx_channel: fei4_rx_channel PORT MAP(
+                rst_n_i => rst_n_i,
+                clk_160_i => rx_clk_i,
+                clk_640_i => rx_serdes_clk(0),
+                enable_i => rx_enable(I),
+                rx_data_i => rx_data_i(I),
+                trig_tag_i => trig_tag_i,
+                rx_data_o => rx_data(I),
+                rx_valid_o => rx_valid(I),
+                rx_stat_o => rx_stat(I),
+                rx_data_raw_o => rx_data_raw(I)
+            );
+        end generate bank2_1;
+        bank2_2: if (I>3 and I<15) generate
+            begin
+            cmp_fei4_rx_channel: fei4_rx_channel PORT MAP(
+                rst_n_i => rst_n_i,
+                clk_160_i => rx_clk_i,
+                clk_640_i => rx_serdes_clk(0),
+                enable_i => rx_enable(I),
+                rx_data_i => not rx_data_i(I),
+                trig_tag_i => trig_tag_i,
+                rx_data_o => rx_data(I),
+                rx_valid_o => rx_valid(I),
+                rx_stat_o => rx_stat(I),
+                rx_data_raw_o => rx_data_raw(I)
+            );
+        end generate bank2_2;
+        bank0: if I>=15 generate
+            begin
+            cmp_fei4_rx_channel: fei4_rx_channel PORT MAP(
+                rst_n_i => rst_n_i,
+                clk_160_i => rx_clk_i,
+                clk_640_i => rx_serdes_clk(1),
+                enable_i => rx_enable(I),
+                rx_data_i => not rx_data_i(I),
+                trig_tag_i => trig_tag_i,
+                rx_data_o => rx_data(I),
+                rx_valid_o => rx_valid(I),
+                rx_stat_o => rx_stat(I),
+                rx_data_raw_o => rx_data_raw(I)
+            );
+        end generate bank0;
 		
 		rx_fifo_din(I) <= STD_LOGIC_VECTOR(TO_UNSIGNED(I,6)) & rx_data(I);
 		rx_fifo_wren(I) <= rx_valid(I) and rx_enable(I);
