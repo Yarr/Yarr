@@ -3,14 +3,45 @@
 # Email: asautaux at lbl.gov
 # Project: Yarr
 # Description: Script that generates bitfile
-# Comment: 
+# Comment: Added vivado program/version check by Charilou (clabitan@lbl.gov).
 ################################
 
 import os
 import subprocess
 
+vivado_programs = ["/opt/Xilinx/Vivado_Lab/", "/opt/Xilinx/Vivado/"]
+vivado_subdirs = []
+
+original_directory = os.getcwd() #Need to change working directory to get ctime of subdirectories.
+
+#Find a Vivado program (Vivado or Vivado_Lab). If not, exit. If so, find and use latest version.
+found_directory = False
+for i in vivado_programs:
+	if os.path.exists(i):
+		if "_Lab" in i:
+			vivado_execute = "vivado_lab" #Know which program to execute when writing to the FPGA.
+		else:
+			vivado_execute = "vivado"
+		os.chdir(i)
+		all_subdirs = [d for d in os.listdir('.') if os.path.isdir(d)]
+		latest_subdir = max(all_subdirs, key=os.path.getctime)
+		vivado_ver_path = i + latest_subdir
+		found_directory = True
+		break
+	
+if not found_directory:
+	print("Cannot find Vivado or Vivado_Lab in /opt/Xilinx. Please install. Exiting program.")
+	raise SystemExit
+
+try:
+	assert os.path.exists(vivado_ver_path + "/settings64.sh") #Find 'settings64.sh' in latest version of Vivado(_Lab). If not, exit.
+
+except Exception as e:
+	print("Cannot find settings64.sh in " + vivado_ver_path + ". Exiting program.")	
+	raise SystemExit
 
 
+os.chdir(original_directory)
 script_path = os.getcwd() + "/" + os.path.splitext(__file__)[0] + ".tcl"
 script_file = open(script_path, "w+")	
 
@@ -128,7 +159,7 @@ if (bit_file != None):
 	if cmds != None:
 		script_file.write(cmds)
 		script_file.flush()
-		subprocess.call(["vivado", "-mode", "batch","-source", script_path])
+		subprocess.call([vivado_execute, "-mode", "batch","-source", script_path])
 else:
 	print "No bit file has been written into the FPGA !"
 """
@@ -143,5 +174,5 @@ if (bit_file != None):
 	script_file.flush()
 	script_file.close()
 
-	subprocess.call(["vivado", "-mode", "batch","-source", script_path])
+	subprocess.call([vivado_execute, "-mode", "batch","-source", script_path])
 
