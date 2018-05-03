@@ -12,7 +12,8 @@ struct pixelFields {
     unsigned en : 1;
     unsigned injen : 1;
     unsigned hitbus : 1;
-    unsigned tdac : 5;
+    unsigned tdac : 4;
+    unsigned sign : 1;
 };
 
 union pixelBits {
@@ -64,12 +65,18 @@ void Rd53aPixelCfg::setInjEn(unsigned col, unsigned row, unsigned v) {
     pixRegs[this->toIndex(col, row)] |= ((0xFF & tmp.u8) << ((col&0x1)*8));
 }
 
-void Rd53aPixelCfg::setTDAC(unsigned col, unsigned row, unsigned v) {
+void Rd53aPixelCfg::setTDAC(unsigned col, unsigned row, int v) {
     pixelBits tmp;
     pixelBits mask;
     mask.u8 = 0x0;
-    mask.s.tdac = 0x1F;
+    mask.s.tdac = 0xF;
+    mask.s.sign = 0x1;
     tmp.s.tdac = v; // TODO this needs reinterpretation depending on col
+    if (v < 0) {
+        tmp.s.sign = 0x1;
+    } else {
+        tmp.s.sign = 0x0;
+    }
     pixRegs[this->toIndex(col, row)]  = pixRegs[this->toIndex(col, row)] & (0xFFFF & ~(mask.u8<<((col&0x1)*8)));
     pixRegs[this->toIndex(col, row)] |= (0xFF & tmp.u8) << ((col&0x1)*8);
 }
@@ -92,10 +99,14 @@ unsigned Rd53aPixelCfg::getInjEn(unsigned col, unsigned row) {
     return tmp.s.injen;
 }
 
-unsigned Rd53aPixelCfg::getTDAC(unsigned col, unsigned row) {
+int Rd53aPixelCfg::getTDAC(unsigned col, unsigned row) {
     pixelBits tmp;
     tmp.u8 = (pixRegs[this->toIndex(col, row)] >> ((col%2)*8)) & 0xFF;
-    return tmp.s.tdac; // TODO this requires reinterpreation
+    int tdac = tmp.s.tdac;
+    if (tmp.s.sign == 0x1) {
+        tdac = tdac*-1;
+    }
+    return tdac;
 }
 
 void Rd53aPixelCfg::toFileJson(json &j) {

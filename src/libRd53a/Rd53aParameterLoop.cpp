@@ -21,6 +21,7 @@ Rd53aParameterLoop::Rd53aParameterLoop(Rd53aReg Rd53aGlobalCfg::*ref): parPtr(re
     min = 0;
     max = 100;
     step = 1;
+    //TODO parName not set
 
 }
 
@@ -62,6 +63,7 @@ void Rd53aParameterLoop::writeConfig(json &j) {
     j["min"] = min;
     j["max"] = max;
     j["step"] = step;
+    j["parameter"] = parName;
 }
 
 void Rd53aParameterLoop::loadConfig(json &j) {
