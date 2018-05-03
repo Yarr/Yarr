@@ -76,5 +76,5 @@ void Fe65p2MaskLoop::execPart1() {
 
 void Fe65p2MaskLoop::execPart2() {
    m_cur += step;
-   if (!(m_cur<max)) m_done = true;
+   if (!((int)m_cur<max)) m_done = true;
 }

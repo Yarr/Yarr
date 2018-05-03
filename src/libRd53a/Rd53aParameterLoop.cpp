@@ -43,7 +43,7 @@ void Rd53aParameterLoop::execPart1() {
 
 void Rd53aParameterLoop::execPart2() {
     m_cur += step;
-    if (m_cur > max) m_done = true;
+    if ((int)m_cur > max) m_done = true;
     this->writePar();
 }
 

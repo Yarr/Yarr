@@ -57,7 +57,7 @@ void Fei4MaskLoop::execPart2() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     m_cur += step;
-    if (!(m_cur < max)) m_done = true;
+    if (!((int)m_cur < max)) m_done = true;
     // Shift Enable mask by step size
     for(unsigned i=0; i<step; i++) {
         keeper->globalFe<Fei4>()->writeRegister(&Fei4::Colpr_Mode, 0x3);

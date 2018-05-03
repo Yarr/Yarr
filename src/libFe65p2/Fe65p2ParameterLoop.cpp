@@ -37,5 +37,5 @@ void Fe65p2ParameterLoop::execPart1() {
 
 void Fe65p2ParameterLoop::execPart2() {
     cur += step;
-    if (cur > max) m_done = true;
+    if ((int)cur > max) m_done = true;
 }

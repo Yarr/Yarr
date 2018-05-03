@@ -83,7 +83,7 @@ void Rd53aMaskLoop::execPart2() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     m_cur += step;
-    if (!(m_cur < max)) m_done = true;
+    if (!((int)m_cur < max)) m_done = true;
     // Nothing else to do here?
 }
 

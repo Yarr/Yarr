@@ -42,7 +42,7 @@ class Fei4ParameterLoop : public LoopActionBase{
 
         void execPart2() {
             cur += step;
-            if (cur > max) m_done = true;
+            if ((int)cur > max) m_done = true;
             this->writePar();
         }
 
