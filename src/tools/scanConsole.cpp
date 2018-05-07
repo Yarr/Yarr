@@ -771,9 +771,21 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                      } else if (algo_name == "L1Analysis") {
                         std::cout << "  ... adding " << algo_name << std::endl;
                         ana.addAlgorithm(new L1Analysis());
+                     } else if (algo_name == "TotAnalysis") {
+                        std::cout << "  ... adding " << algo_name << std::endl;
+                        ana.addAlgorithm(new TotAnalysis());
+                     } else if (algo_name == "NoiseAnalysis") {
+                        std::cout << "  ... adding " << algo_name << std::endl;
+                        ana.addAlgorithm(new NoiseAnalysis());
                      } else if (algo_name == "ScurveFitter") {
                         std::cout << "  ... adding " << algo_name << std::endl;
                         ana.addAlgorithm(new ScurveFitter());
+                     } else if (algo_name == "OccGlobalThresholdTune") {
+                        std::cout << "  ... adding " << algo_name << std::endl;
+                        ana.addAlgorithm(new OccGlobalThresholdTune());
+                     } else if (algo_name == "OccPixelThresholdTune") {
+                        std::cout << "  ... adding " << algo_name << std::endl;
+                        ana.addAlgorithm(new OccPixelThresholdTune());
                      }
 
                 }

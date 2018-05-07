@@ -64,7 +64,7 @@
           "count": 50,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 1000,
+          "frequency": 5000,
           "noInject": false,
           "time": 0
         },
@@ -77,7 +77,6 @@
     "name": "ThresholdScan",
     "prescan": {
         "InjEnDig": 0,
-        "InjAnaMode": 1,
         "LatencyConfig": 50,
         "GlobalPulseRt": 16384,
         "InjVcalMed": 0,

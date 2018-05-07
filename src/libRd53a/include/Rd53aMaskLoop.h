@@ -9,6 +9,8 @@
 // ################################
 
 #include <iostream>
+#include <vector>
+#include <tuple>
 
 #include "FrontEnd.h"
 #include "Rd53a.h"

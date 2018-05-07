@@ -47,9 +47,9 @@
       {
         "config": {
           "max": 50,
-          "min": 0,
+          "min": 33,
           "step": 1,
-          "nSteps": 10
+          "nSteps": 4
         },
         "loopAction": "Rd53aCoreColLoop"
       },
@@ -73,9 +73,8 @@
         "InjEnDig": 0,
         "LatencyConfig": 50,
         "GlobalPulseRt": 16384,
-        "InjVcalDiff": 0,
-        "InjVcalHigh": 2500,
-        "InjVcalMed": 500
+        "InjVcalMed": 2500,
+        "InjVcalHigh": 500
     }
   }
 }

@@ -61,7 +61,7 @@ void Fei4DcLoop::execPart2() {
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     // Check Loop condition
     m_col+=step;
-    if (!(m_col < max)) m_done = true;
+    if (!((int)m_col < max)) m_done = true;
 }
 
 void Fei4DcLoop::setMode(enum DC_MODE mode) {

@@ -132,6 +132,28 @@ void Rd53a::configurePixels() {
     }
 }
 
+void Rd53a::configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels) {
+    // Setup pixel programming
+    this->writeRegister(&Rd53a::PixAutoCol, 0);
+    this->writeRegister(&Rd53a::PixAutoRow, 0);
+    int counter = 0;
+    int old_col = -1;
+    //std::cout << "Seeing " << pixels.size() << " modified pixels!" << std::endl;
+    for (auto &pixel : pixels) {
+        if (old_col != (int)pixel.first/2) {
+            this->writeRegister(&Rd53a::PixRegionCol, pixel.first/2);
+            old_col = pixel.first/2;
+        }
+        this->writeRegister(&Rd53a::PixRegionRow, pixel.second); 
+        this->writeRegister(&Rd53a::PixPortal, pixRegs[Rd53aPixelCfg::toIndex(pixel.first, pixel.second)]);
+        counter++;
+        if (counter == 20 ) {
+            while(!core->isCmdEmpty()){;}
+            counter = 0;
+        }
+    }
+}
+
 void Rd53a::writeNamedRegister(std::string name, uint16_t value) {
     std::cout << __PRETTY_FUNCTION__ << " : " << name << " -> " << value << std::endl;
     writeRegister(regMap[name], value);

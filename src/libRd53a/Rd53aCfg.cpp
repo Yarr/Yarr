@@ -20,13 +20,13 @@ void Rd53aCfg::toFileJson(json &j) {
 
 void Rd53aCfg::fromFileJson(json &j) {
     if (!j["RD53A"]["Parameter"]["Name"].empty())
-        j["RD53A"]["Parameter"]["Name"] = name;
+        name = j["RD53A"]["Parameter"]["Name"];
     if (!j["RD53A"]["Parameter"]["ChipId"].empty())
-        j["RD53A"]["Parameter"]["ChipId"] = m_chipId;
+        m_chipId = j["RD53A"]["Parameter"]["ChipId"];
     if (!j["RD53A"]["Parameter"]["InjCap"].empty())
-        j["RD53A"]["Parameter"]["InjCap"] = m_injCap;
+        m_injCap = j["RD53A"]["Parameter"]["InjCap"];
     if (!j["RD53A"]["Parameter"]["VcalPar"].empty())
-        j["RD53A"]["Parameter"]["VcalPar"] = m_vcalPar;
+        m_vcalPar = j["RD53A"]["Parameter"]["VcalPar"];
     Rd53aGlobalCfg::fromFileJson(j);
     Rd53aPixelCfg::fromFileJson(j);
 }

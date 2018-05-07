@@ -84,7 +84,7 @@ void Fe65p2PixelFeedback::addFeedback(unsigned ch) {
                 int v = this->getPixel(ch,col, row);
                 v = v + (step)*(-1*sign); // Invert as we are using FE-I4 analysis
                 if (v < 0) v = 0;
-                if ((unsigned)v > max) v = max;
+                if (v > max) v = max;
                 this->setPixel(ch,col, row, v);
                 //std::cout << v << " ";
             }

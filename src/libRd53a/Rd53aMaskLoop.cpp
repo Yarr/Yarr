@@ -24,16 +24,19 @@ void Rd53aMaskLoop::init() {
     m_done = false;
     m_cur = 0;
     for(FrontEnd *fe : keeper->feList) {
+        g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         for(unsigned col=0; col<Rd53a::n_Col; col++) {
             for(unsigned row=0; row<Rd53a::n_Row; row++) {
-                dynamic_cast<Rd53a*>(fe)->setEn(col, row, 1);
-                dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 1);
+                dynamic_cast<Rd53a*>(fe)->setEn(col, row, 0);
+                dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 0);
             }
         }
         // TODO make configrue for subset
         dynamic_cast<Rd53a*>(fe)->configurePixels();
         while(!g_tx->isCmdEmpty()) {}
     }
+    // Reset CMD mask
+    g_tx->setCmdEnable(keeper->getTxMask());
 }
 
 void Rd53aMaskLoop::execPart1() {
@@ -42,6 +45,8 @@ void Rd53aMaskLoop::execPart1() {
     
     // Loop over FrontEnds
     for(FrontEnd *fe : keeper->feList) {
+        g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+        std::vector<std::pair<unsigned, unsigned>> modPixels;
         for(unsigned col=0; col<Rd53a::n_Col; col++) {
             for(unsigned row=0; row<Rd53a::n_Row; row++) {
                 // Loop in terms of digital cores
@@ -52,17 +57,23 @@ void Rd53aMaskLoop::execPart1() {
                 if ((serial%max) == m_cur) {
                     dynamic_cast<Rd53a*>(fe)->setEn(col, row, 1);
                     dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 1);
+                    modPixels.push_back(std::make_pair(col, row));
                 } else {
-                    dynamic_cast<Rd53a*>(fe)->setEn(col, row, 0);
-                    dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 0);
+                    if (dynamic_cast<Rd53a*>(fe)->getInjEn(col, row) == 1) {
+                        dynamic_cast<Rd53a*>(fe)->setEn(col, row, 0);
+                        dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 0);
+                        modPixels.push_back(std::make_pair(col, row));
+                    }
                 }
             }
         }
         // TODO make configrue for subset
         // TODO set cmeEnable correctly
-        dynamic_cast<Rd53a*>(fe)->configurePixels();
+        dynamic_cast<Rd53a*>(fe)->configurePixels(modPixels);
         while(!g_tx->isCmdEmpty()) {}
     }
+    // Reset CMD mask
+    g_tx->setCmdEnable(keeper->getTxMask());
     g_stat->set(this, m_cur);
     std::cout << " ---> Mask Stage " << m_cur << std::endl;
     //std::this_thread::sleep_for(std::chrono::milliseconds(20));
@@ -72,7 +83,7 @@ void Rd53aMaskLoop::execPart2() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     m_cur += step;
-    if (!(m_cur < max)) m_done = true;
+    if (!((int)m_cur < max)) m_done = true;
     // Nothing else to do here?
 }
 

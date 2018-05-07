@@ -2,15 +2,9 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "OccupancyAnalysis",
-        "config": {
-          "createMask": true
-        }
+        "algorithm": "OccGlobalThresholdTune"
       },
-      "1": {
-        "algorithm": "L1Analysis"
-      },
-      "n_count": 2
+      "n_count": 1
     },
     "histogrammer": {
       "0": {
@@ -36,6 +30,14 @@
       "n_count": 5
     },
     "loops": [
+      { "config": {
+          "max": 420,
+          "min": 0,
+          "step": 16,
+          "parameter": "DiffVth1"
+        },
+        "loopAction": "Rd53aGlobalFeedback"
+      },
       {
         "config": {
           "max": 64,
@@ -47,9 +49,9 @@
       {
         "config": {
           "max": 50,
-          "min": 0,
+          "min": 33,
           "step": 1,
-          "nSteps": 10
+          "nSteps": 17
         },
         "loopAction": "Rd53aCoreColLoop"
       },
@@ -58,7 +60,7 @@
           "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 10000,
+          "frequency": 5000,
           "noInject": false,
           "time": 0
         },
@@ -68,13 +70,12 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "AnalogScan",
+    "name": "DiffGlobalThresholdTune",
     "prescan": {
         "InjEnDig": 0,
         "LatencyConfig": 50,
         "GlobalPulseRt": 16384,
-        "InjVcalDiff": 0,
-        "InjVcalHigh": 2500,
+        "InjVcalHigh": 750,
         "InjVcalMed": 500
     }
   }

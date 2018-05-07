@@ -21,7 +21,18 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
     public:
 
         void loadConfig(json &j) {
-            this->SpecCom::init(j["specNum"]);
+            if (!j["specNum"].empty())
+                this->SpecCom::init(j["specNum"]);
+            
+            if (!j["spiConfig"].empty()) {
+                // TODO make proper function
+                this->writeSingle(0x6<<14 | 0x0, (uint32_t)j["spiConfig"]);
+                this->writeSingle(0x6<<14 | 0x1, 0xF);
+            }
+
+            if (!j["trigConfig"].empty()) {
+                // TODO implement me
+            }
         }
 };
 

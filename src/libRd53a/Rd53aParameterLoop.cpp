@@ -21,6 +21,7 @@ Rd53aParameterLoop::Rd53aParameterLoop(Rd53aReg Rd53aGlobalCfg::*ref): parPtr(re
     min = 0;
     max = 100;
     step = 1;
+    //TODO parName not set
 
 }
 
@@ -31,7 +32,7 @@ void Rd53aParameterLoop::init() {
     m_cur = min;
     parPtr = keeper->globalFe<Rd53a>()->regMap[parName];
     this->writePar();
-    //std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
 void Rd53aParameterLoop::execPart1() {
@@ -42,7 +43,7 @@ void Rd53aParameterLoop::execPart1() {
 
 void Rd53aParameterLoop::execPart2() {
     m_cur += step;
-    if (m_cur > max) m_done = true;
+    if ((int)m_cur > max) m_done = true;
     this->writePar();
 }
 
@@ -62,6 +63,7 @@ void Rd53aParameterLoop::writeConfig(json &j) {
     j["min"] = min;
     j["max"] = max;
     j["step"] = step;
+    j["parameter"] = parName;
 }
 
 void Rd53aParameterLoop::loadConfig(json &j) {

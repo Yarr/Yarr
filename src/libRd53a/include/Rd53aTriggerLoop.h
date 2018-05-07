@@ -25,6 +25,7 @@ class Rd53aTriggerLoop: public LoopActionBase {
         void setTrigFreq(double freq) {m_trigFreq = freq;}
         void setTrigDelay(uint32_t delay);
         void setEdgeMode(uint32_t duration);
+        void setNoInject();
         
         void writeConfig(json &config);
         void loadConfig(json &config);

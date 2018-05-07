@@ -58,8 +58,8 @@ class LoopActionBase {
 		bool g_done;
         bool verbose;
 
-        unsigned min;
-        unsigned max;
+        int min;
+        int max;
         unsigned step;
 
         LoopStatus *g_stat;

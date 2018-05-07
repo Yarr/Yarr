@@ -2,7 +2,8 @@
     "ctrlCfg" : {
         "type": "spec",
         "cfg" : {
-            "specNum" : 0
+            "specNum" : 0,
+            "spiConfig" : 524288
         }
     }
 }

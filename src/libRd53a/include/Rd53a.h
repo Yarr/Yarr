@@ -13,6 +13,8 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <tuple>
+#include <vector>
 
 #include "FrontEnd.h"
 #include "TxCore.h"
@@ -36,6 +38,7 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
         void configureInit();
         void configureGlobal();
         void configurePixels();
+        void configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels);
 
         void writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value);
         void writeNamedRegister(std::string name, uint16_t value);
