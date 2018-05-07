@@ -77,7 +77,6 @@
     "name": "ThresholdScan",
     "prescan": {
         "InjEnDig": 0,
-        "InjAnaMode": 1,
         "LatencyConfig": 50,
         "GlobalPulseRt": 16384,
         "InjVcalMed": 0,

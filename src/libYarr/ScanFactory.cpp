@@ -29,6 +29,7 @@ void ScanFactory::preScan() {
         FrontEnd &fe = *g_bk->getGlobalFe();
         fe.writeNamedRegister(it.key(), it.value());
     }
+    while(!g_tx->isCmdEmpty()){}
 }
 
 void ScanFactory::postScan() {

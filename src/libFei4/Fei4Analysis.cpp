@@ -590,10 +590,10 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         hh1->setYaxisTitle("Number of Pixels");
                         timeDist[outerIdent] = hh1;
                     }
-                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0) {
+                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin)) {
                         FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
                         thrMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0], useScap, useLcap));
-                        sigMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0]+par[1], useScap, useLcap)-feCfg->toCharge(par[0], useScap, useLcap));
+                        sigMap[outerIdent]->fill(col, row, feCfg->toCharge(par[1], useScap, useLcap));
                         chiDist[outerIdent]->fill(status.fnorm/(double)status.nfev);
                         timeDist[outerIdent]->fill(fitTime.count());
                     }
@@ -673,6 +673,7 @@ void ScurveFitter::end() {
 void OccGlobalThresholdTune::init(ScanBase *s) {
     std::shared_ptr<LoopActionBase> tmpVthinFb(new Fei4GlobalFeedback(&Fei4::Vthin_Fine));
     std::shared_ptr<LoopActionBase> tmpVthinFb2(new Fe65p2GlobalFeedback(&Fe65p2::Vthin1Dac));
+    std::shared_ptr<LoopActionBase> tmpVthinFb3(new Rd53aGlobalFeedback());
     n_count = 1;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
@@ -710,7 +711,9 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
             injections = trigLoop->getTrigCnt();
         }
 
-        if (l->type() == tmpVthinFb->type() || l->type() == tmpVthinFb2->type()) {
+        if (l->type() == tmpVthinFb->type() 
+                || l->type() == tmpVthinFb2->type()
+                || l->type() == tmpVthinFb3->type()) {
             fb = dynamic_cast<GlobalFeedbackBase*>(l.get()); 
             lb = (LoopActionBase*) l.get(); 
         }
@@ -744,7 +747,9 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
         hh->setYaxisTitle("Row");
         hh->setZaxisTitle("Hits");
         occMaps[ident] = hh;
-        Histo1d *hhh = new Histo1d(name2, injections+1, -0.5, injections+0.5, typeid(this));
+        //Histo1d *hhh = new Histo1d(name2, injections+1, -0.5, injections+0.5, typeid(this));
+        // Ignore first and last bin to dismiss masked or not functioning pixels
+        Histo1d *hhh = new Histo1d(name2, injections-1, 0.5, injections-0.5, typeid(this));
         hhh->setXaxisTitle("Occupancy");
         hhh->setYaxisTitle("Number of Pixels");
         occDists[ident] = hhh;
@@ -779,7 +784,7 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
             done = true;
         }
 
-        std::cout << "Calling feedback" << std::endl;
+        std::cout << "Calling feedback " << sign << std::endl;
         fb->feedback(this->channel, sign, done);
         std::cout << "After feedback" << std::endl;
         output->pushData(occMaps[ident]);
@@ -837,6 +842,9 @@ void OccPixelThresholdTune::init(ScanBase *s) {
         if (l->type() == typeid(Fe65p2PixelFeedback*)) {
             fb = (PixelFeedbackBase*)((Fe65p2PixelFeedback*) l.get());  
         }
+        if (l->type() == typeid(Rd53aPixelFeedback*)) {
+            fb = (PixelFeedbackBase*)((Rd53aPixelFeedback*) l.get());  
+        }
     }
 
 }
@@ -877,7 +885,7 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
     if (innerCnt[ident] == n_count) {
         double mean = 0;
         Histo2d *fbHisto = new Histo2d("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
-        Histo1d *occDist = new Histo1d(name2, injections+1, -0.5, injections+0.5, typeid(this));
+        Histo1d *occDist = new Histo1d(name2, injections-1, 0.5, injections-0.5, typeid(this));
         occDist->setXaxisTitle("Occupancy");
         occDist->setYaxisTitle("Number of Pixels");
         for (unsigned i=0; i<fbHisto->size(); i++) {

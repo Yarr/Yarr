@@ -25,6 +25,17 @@ Rd53aPixelCfg::Rd53aPixelCfg() {
     for(uint16_t &pixReg: pixRegs) {
         pixReg = 0x0;
     }
+    for (unsigned col=0; col<n_Col; col++) {
+        for (unsigned row=0; row<n_Row; row++) {
+            this->setEn(col, row, 1);
+            if (col < 264) { // Lin
+                this->setTDAC(col, row, 7);
+            } else { // Diff
+                this->setTDAC(col, row, 0);
+            }
+
+        }
+    }
 }
 
 uint16_t Rd53aPixelCfg::maskBits(uint16_t val, unsigned mask) {
@@ -71,10 +82,16 @@ void Rd53aPixelCfg::setTDAC(unsigned col, unsigned row, int v) {
     mask.u8 = 0x0;
     mask.s.tdac = 0xF;
     mask.s.sign = 0x1;
-    tmp.s.tdac = v; // TODO this needs reinterpretation depending on col
-    if (v < 0) {
+    tmp.s.tdac = 0x0; // TODO this needs reinterpretation depending on col
+    tmp.s.sign = 0x0;
+    if (col < 264 && v >= 0) { // Lin FE
+        tmp.s.tdac = 15-v;
+        tmp.s.sign = 0x0;
+    } else if (v < 0 && col >= 264) { // Diff FE
+        tmp.s.tdac = abs(v);
         tmp.s.sign = 0x1;
     } else {
+        tmp.s.tdac = abs(v);
         tmp.s.sign = 0x0;
     }
     pixRegs[this->toIndex(col, row)]  = pixRegs[this->toIndex(col, row)] & (0xFFFF & ~(mask.u8<<((col&0x1)*8)));

@@ -68,7 +68,7 @@ void Rd53aGlobalCfg::init() {
     //16
     LinKrumCurr.init(16, &m_cfg[16], 0, 9, 50); regMap["LinKrumCurr"] = &Rd53aGlobalCfg::LinKrumCurr;
     //17
-    LinLdac.init(17, &m_cfg[17], 0, 10, 80); regMap["LinLdac"] = &Rd53aGlobalCfg::LinLdac;
+    LinLdac.init(17, &m_cfg[17], 0, 10, 60); regMap["LinLdac"] = &Rd53aGlobalCfg::LinLdac;
     //18
     LinComp.init(18, &m_cfg[18], 0, 9, 110); regMap["LinComp"] = &Rd53aGlobalCfg::LinComp;
     //19
@@ -82,11 +82,11 @@ void Rd53aGlobalCfg::init() {
     //22
     DiffFol.init(22, &m_cfg[22], 0, 10, 500); regMap["DiffFol"] = &Rd53aGlobalCfg::DiffFol;
     //23
-    DiffPrecomp.init(23, &m_cfg[23], 0, 10, 500); regMap["DiffPrecomp"] = &Rd53aGlobalCfg::DiffPrecomp;
+    DiffPrecomp.init(23, &m_cfg[23], 0, 10, 400); regMap["DiffPrecomp"] = &Rd53aGlobalCfg::DiffPrecomp;
     //24
     DiffComp.init(24, &m_cfg[24], 0, 10, 1000); regMap["DiffComp"] = &Rd53aGlobalCfg::DiffComp;
     //25
-    DiffVff.init(25, &m_cfg[25], 0, 10, 100); regMap["DiffVff"] = &Rd53aGlobalCfg::DiffVff;
+    DiffVff.init(25, &m_cfg[25], 0, 10, 50); regMap["DiffVff"] = &Rd53aGlobalCfg::DiffVff;
     //26
     DiffVth1.init(26, &m_cfg[26], 0, 10, 250); regMap["DiffVth1"] = &Rd53aGlobalCfg::DiffVth1;
     //27
@@ -203,7 +203,7 @@ void Rd53aGlobalCfg::init() {
     CmlEnTap.init(69, &m_cfg[69], 4, 2, 0x1); regMap["CmlEnTap"] = &Rd53aGlobalCfg::CmlEnTap;
     CmlEn.init(69, &m_cfg[69], 0, 4, 0xF); regMap["CmlEn"] = &Rd53aGlobalCfg::CmlEn;
     //70-72
-    CmlTapBias0.init(70, &m_cfg[70], 0, 10, 500); regMap["CmlTapBias0"] = &Rd53aGlobalCfg::CmlTapBias0;
+    CmlTapBias0.init(70, &m_cfg[70], 0, 10, 600); regMap["CmlTapBias0"] = &Rd53aGlobalCfg::CmlTapBias0;
     CmlTapBias1.init(71, &m_cfg[71], 0, 10, 0); regMap["CmlTapBias1"] = &Rd53aGlobalCfg::CmlTapBias1;
     CmlTapBias2.init(72, &m_cfg[72], 0, 10, 0); regMap["CmlTapBias2"] = &Rd53aGlobalCfg::CmlTapBias2;
     //73

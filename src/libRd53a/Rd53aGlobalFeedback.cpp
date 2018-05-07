@@ -53,23 +53,25 @@ void Rd53aGlobalFeedback::loadConfig(json &j) {
 
 void Rd53aGlobalFeedback::feedback(unsigned channel, double sign, bool last) {
     // Calculate new step and val
+    std::cout << __PRETTY_FUNCTION__ << " : " << channel << " " << sign << " " << m_oldSign[channel] << std::endl;    
     if (sign != m_oldSign[channel]) {
+        std::cout << "bla" << std::endl;
         m_oldSign[channel] = 0;
         m_localStep[channel] = m_localStep[channel]/2;
     }
     int val = (m_values[channel]+(m_localStep[channel]*sign));
     if (val > (int)max) val = max;
-    if (val < 0) val = 0;
+    if (val < min) val = min;
     m_values[channel] = val;
     m_doneMap[channel] |= last;
 
-    if (m_localStep[channel] == 1) {
-        doneMap[channel] = true;
+    if (m_localStep[channel] == 1 || val == min) {
+        m_doneMap[channel] = true;
     }
 
     // Abort if we are getting to low
-    if (val < min) {
-        doneMap[channel] = true;
+    if (val <= min) {
+        m_doneMap[channel] = true;
     }
     // Unlock the mutex to let the scan proceed
     keeper->mutexMap[channel].unlock();
@@ -126,6 +128,7 @@ void Rd53aGlobalFeedback::init() {
     for (auto *fe : keeper->feList) {
         if (fe->getActive()) {
             unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
+            std::cout << __PRETTY_FUNCTION__ << " : " << ch << std::endl;
             m_localStep[ch] = step;
             m_values[ch] = max;
             m_oldSign[ch] = -1;
@@ -163,7 +166,6 @@ void Rd53aGlobalFeedback::end() {
     for (auto fe: keeper->feList) {
         if (fe->getActive()) {
             unsigned rx = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-            keeper->mutexMap[rx].lock();
             std::cout << " --> Final parameter for Channel " << rx << " is " << m_values[rx] << std::endl;
         }
     }

@@ -780,6 +780,12 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                      } else if (algo_name == "ScurveFitter") {
                         std::cout << "  ... adding " << algo_name << std::endl;
                         ana.addAlgorithm(new ScurveFitter());
+                     } else if (algo_name == "OccGlobalThresholdTune") {
+                        std::cout << "  ... adding " << algo_name << std::endl;
+                        ana.addAlgorithm(new OccGlobalThresholdTune());
+                     } else if (algo_name == "OccPixelThresholdTune") {
+                        std::cout << "  ... adding " << algo_name << std::endl;
+                        ana.addAlgorithm(new OccPixelThresholdTune());
                      }
 
                 }

@@ -40,7 +40,7 @@ class Rd53aGlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
         std::mutex m_fbMutex;
         std::map<unsigned, unsigned> m_values;
         std::map<unsigned, unsigned> m_localStep;
-        std::map<unsigned, unsigned> m_oldSign;
+        std::map<unsigned, int> m_oldSign;
         std::map<unsigned, bool> m_doneMap;
 
         void writePar();
