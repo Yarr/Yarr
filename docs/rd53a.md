@@ -21,18 +21,6 @@ Default settings for operation in **LDO mode**
 
 After all jumpers are placed on the SCC, connect the DisplayPort cable to DP1 and power cable to PWR_IN.
 
-Before powering the chip, run the script that turns off the command from the FPGA:
-```
-$ cd Yarr/src
-$ ./bin/rd53a_PowerOn
-void SpecCom::init() -> Opening SPEC with id #0
-void SpecCom::init() -> Mapping BARs
-void SpecCom::init() -> Mapped BAR0 at 0x0x7f8f0dcde000 with size 0x100000
-void SpecCom::init() -> Mmap failed
-void SpecCom::init() -> Could not map BAR4, this might be OK!
-Now it is safe to turn on the power on the chip.
-```
-
 Set the power supply to <span style="color:red">**1.80**</span> V, the current should be around 0.41 A and power on the chip. For the LDO operation, e.g. the jumper configuration shown in previous figure, make sure <span style="color:red"> not to apply higher voltage than **1.80 V**</span>.
 
 Check if the test program runs succesfully:
