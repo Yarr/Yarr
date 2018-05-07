@@ -68,7 +68,7 @@ void Rd53aGlobalCfg::init() {
     //16
     LinKrumCurr.init(16, &m_cfg[16], 0, 9, 50); regMap["LinKrumCurr"] = &Rd53aGlobalCfg::LinKrumCurr;
     //17
-    LinLdac.init(17, &m_cfg[17], 0, 10, 60); regMap["LinLdac"] = &Rd53aGlobalCfg::LinLdac;
+    LinLdac.init(17, &m_cfg[17], 0, 10, 130); regMap["LinLdac"] = &Rd53aGlobalCfg::LinLdac;
     //18
     LinComp.init(18, &m_cfg[18], 0, 9, 110); regMap["LinComp"] = &Rd53aGlobalCfg::LinComp;
     //19

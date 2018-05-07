@@ -85,7 +85,7 @@ void Rd53aPixelCfg::setTDAC(unsigned col, unsigned row, int v) {
     tmp.s.tdac = 0x0; // TODO this needs reinterpretation depending on col
     tmp.s.sign = 0x0;
     if (col < 264 && v >= 0) { // Lin FE
-        tmp.s.tdac = 15-v;
+        tmp.s.tdac = v;
         tmp.s.sign = 0x0;
     } else if (v < 0 && col >= 264) { // Diff FE
         tmp.s.tdac = abs(v);

@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
     spec.setRxEnable(0x0);
     
     Rd53a fe(&spec);
-    fe.setChipId(0);
+    fe.setChipId(8);
     std::cout << ">>> Configuring chip with default config ..." << std::endl;
     fe.configure();
     std::cout << " ... done." << std::endl;

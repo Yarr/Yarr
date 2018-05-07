@@ -52,7 +52,11 @@ void Rd53aPixelFeedback::addFeedback(unsigned ch) {
             for (unsigned col=1; col<=Rd53a::n_Col; col++) {
                 int sign = m_fb[ch]->getBin(m_fb[ch]->binNum(col, row));
                 int v = dynamic_cast<Rd53a*>(keeper->getFe(ch))->getTDAC(col-1, row-1);
-                v = v + (step*sign*-1);
+                if (col<265) {
+                    v = v + (step*sign);
+                } else {
+                    v = v + (step*sign*-1);
+                }
                 if (v<min) v = min;
                 if (v>max) v = max;
                 dynamic_cast<Rd53a*>(keeper->getFe(ch))->setTDAC(col-1, row-1, v);
