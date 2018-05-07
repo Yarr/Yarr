@@ -1,11 +1,37 @@
 #include "AllStdActions.h"
+#include "ClassRegistry.h"
+
+typedef ClassRegistry<LoopActionBase> OurRegistry;
+
+static OurRegistry &registry() {
+  static OurRegistry instance;
+  return instance;
+}
+
+namespace AllStdActionsRegistry {
+  using StdDict::registerLoopAction;
+
+  bool data_loop_registered =
+    registerLoopAction("StdDataLoop",
+                       []() { return std::unique_ptr<LoopActionBase>(new StdDataLoop); });
+}
 
 namespace StdDict {
-     LoopActionBase* getLoopAction(std::string name) {
-        if (name == "StdDataLoop") {
-            return (LoopActionBase*) new StdDataLoop;
-        } else {
-            return NULL;
+    bool registerLoopAction(std::string name,
+                            std::function<std::unique_ptr<LoopActionBase>()> f)
+    {
+        return registry().registerClass(name, f);
+    }
+
+    std::unique_ptr<LoopActionBase> getLoopAction(std::string name) {
+        auto result = registry().makeClass(name);
+        if(result == nullptr) {
+            std::cout << "No LoopAction matching '" << name << "' found\n";
         }
-     }
+        return result;
+    }
+
+    std::vector<std::string> listLoopActions() {
+        return registry().listClasses();
+    }
 }

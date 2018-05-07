@@ -9,6 +9,7 @@
 #include <iostream>
 
 #include "LoopActionBase.h"
+#include "Fe65p2.h"
 
 class Fe65p2MaskLoop : public LoopActionBase {
     public:

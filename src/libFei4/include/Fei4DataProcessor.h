@@ -20,20 +20,25 @@
 
 class Fei4DataProcessor : public DataProcessor {
     public:
-        Fei4DataProcessor(unsigned arg_hitDiscCfg);
+        // TODO processor should receive whole chip config seperatly
+        Fei4DataProcessor(unsigned arg_hitDiscCfg=0);
         ~Fei4DataProcessor();
         
-        void connect(ClipBoard<RawDataContainer> *arg_input, std::map<unsigned, ClipBoard<Fei4Data> > *arg_outMap) {
+        void connect(ClipBoard<RawDataContainer> *arg_input, std::map<unsigned, ClipBoard<EventDataBase> > *arg_outMap) {
             input = arg_input;
             outMap = arg_outMap;
         }
     
         void init();
+        void run();
+        void join();
         void process();
+        void process_core();
 
     private:
+        std::vector<std::unique_ptr<std::thread>> thread_ptrs;
         ClipBoard<RawDataContainer> *input;
-        std::map<unsigned, ClipBoard<Fei4Data> > *outMap;
+        std::map<unsigned, ClipBoard<EventDataBase> > *outMap;
         std::vector<unsigned> activeChannels;
         unsigned hitDiscCfg;
         std::array<std::array<unsigned, 16>, 3> totCode;

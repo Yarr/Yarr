@@ -31,12 +31,12 @@ class Rd53aPixelCfg {
         void setEn(unsigned col, unsigned row, unsigned v);
         void setHitbus(unsigned col, unsigned row, unsigned v);
         void setInjEn(unsigned col, unsigned row, unsigned v);
-        void setTDAC(unsigned col, unsigned row, unsigned v);
+        void setTDAC(unsigned col, unsigned row, int v);
 
         unsigned getEn(unsigned col, unsigned row);
         unsigned getHitbus(unsigned col, unsigned row);
         unsigned getInjEn(unsigned col, unsigned row);
-        unsigned getTDAC(unsigned col, unsigned row);
+        int getTDAC(unsigned col, unsigned row);
 
         inline unsigned toIndex(unsigned col, unsigned row) {
             return (col/2)*n_Row+row;

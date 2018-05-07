@@ -154,7 +154,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
                         int v = getPixel(dynamic_cast<Fei4*>(keeper->getFe(ch)),col, row);
                         v = v + (step)*sign;
                         if (v < 0) v = 0;
-                        if ((unsigned)v > max) v = max;
+                        if (v > max) v = max;
                         this->setPixel(dynamic_cast<Fei4*>(keeper->getFe(ch)),col, row, v);
                     }
                 }

@@ -7,30 +7,50 @@
 // # Date: Jun 2017
 // ################################
 
+#include "AllChips.h"
 #include "Rd53a.h"
+
+bool rd53a_registred =
+    StdDict::registerFrontEnd("RD53A", [](){return std::unique_ptr<FrontEnd>(new Rd53a());});
+
+Rd53a::Rd53a() : FrontEnd(), Rd53aCfg(), Rd53aCmd() {
+    txChannel = 99;
+    rxChannel = 99;
+	active = true;
+    geo.nRow = 192;
+    geo.nCol = 400;
+}
 
 Rd53a::Rd53a(TxCore *core) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
     txChannel = 99;
     rxChannel = 99;
-	histogrammer = NULL;
-	ana = NULL;
 	active = true;
+    geo.nRow = 192;
+    geo.nCol = 400;
 }
 
 Rd53a::Rd53a(TxCore *core, unsigned arg_channel) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
 	txChannel = arg_channel;
 	rxChannel = arg_channel;
-	histogrammer = NULL;
-	ana = NULL;
 	active = true;
+    geo.nRow = 192;
+    geo.nCol = 400;
 }
 
 Rd53a::Rd53a(TxCore *core, unsigned arg_txChannel, unsigned arg_rxChannel) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
 	txChannel = arg_txChannel;
 	rxChannel = arg_rxChannel;
-	histogrammer = NULL;
-	ana = NULL;
 	active = true;
+    geo.nRow = 192;
+    geo.nCol = 400;
+}
+
+void Rd53a::init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
+    this->setCore(arg_core);
+    txChannel = arg_txChannel;
+    rxChannel = arg_rxChannel;
+    geo.nRow = 192;
+    geo.nCol = 400;
 }
 
 void Rd53a::writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value) {
@@ -43,7 +63,7 @@ void Rd53a::readRegister(Rd53aReg Rd53aGlobalCfg::*ref) {
 }
 
 void Rd53a::configure() {
-    this->init();
+    this->configureInit();
     // Turn off clock to matrix
     uint16_t tmp_enCoreColSync = EnCoreColSync.read();
     uint16_t tmp_enCoreColLin1 = EnCoreColLin1.read();
@@ -70,7 +90,7 @@ void Rd53a::configure() {
     while(!core->isCmdEmpty()){;}
 }
 
-void Rd53a::init() {
+void Rd53a::configureInit() {
     this->writeRegister(&Rd53a::GlobalPulseRt, 0x007F); // Reset a whole bunch of things
     this->globalPulse(m_chipId, 8);
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -110,6 +130,33 @@ void Rd53a::configurePixels() {
                 while(!core->isCmdEmpty()){;}
         }
     }
+}
+
+void Rd53a::configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels) {
+    // Setup pixel programming
+    this->writeRegister(&Rd53a::PixAutoCol, 0);
+    this->writeRegister(&Rd53a::PixAutoRow, 0);
+    int counter = 0;
+    int old_col = -1;
+    //std::cout << "Seeing " << pixels.size() << " modified pixels!" << std::endl;
+    for (auto &pixel : pixels) {
+        if (old_col != (int)pixel.first/2) {
+            this->writeRegister(&Rd53a::PixRegionCol, pixel.first/2);
+            old_col = pixel.first/2;
+        }
+        this->writeRegister(&Rd53a::PixRegionRow, pixel.second); 
+        this->writeRegister(&Rd53a::PixPortal, pixRegs[Rd53aPixelCfg::toIndex(pixel.first, pixel.second)]);
+        counter++;
+        if (counter == 20 ) {
+            while(!core->isCmdEmpty()){;}
+            counter = 0;
+        }
+    }
+}
+
+void Rd53a::writeNamedRegister(std::string name, uint16_t value) {
+    std::cout << __PRETTY_FUNCTION__ << " : " << name << " -> " << value << std::endl;
+    writeRegister(regMap[name], value);
 }
 
 // TODO remove magic numbers

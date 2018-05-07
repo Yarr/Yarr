@@ -12,14 +12,11 @@
 #include "ScanBase.h"
 #include "json.hpp"
 
-#include "AllStdActions.h"
-#include "AllFei4Actions.h"
-
 using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 
-class ScanFactory {
+class ScanFactory : public ScanBase {
     public:
-        ScanFactory();
+        ScanFactory(Bookkeeper *k);
 
         void loadConfig(json &scanCfg);
 
@@ -29,5 +26,13 @@ class ScanFactory {
     private:
         json m_config;
 };
+
+namespace StdDict {
+    bool registerScan(std::string name,
+                      std::function<std::unique_ptr<ScanBase>(Bookkeeper *k)> f);
+    std::unique_ptr<ScanBase> getScan(std::string name, Bookkeeper *k);
+
+    std::vector<std::string> listScans();
+}
 
 #endif

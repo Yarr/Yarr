@@ -7,6 +7,12 @@
 // ################################
 
 #include "Fe65p2DataProcessor.h"
+#include "Fei4EventData.h"
+#include "AllProcessors.h"
+
+bool fe65p2_proc_registered =
+    StdDict::registerDataProcessor("FE65P2", []() { return std::unique_ptr<DataProcessor>(new Fe65p2DataProcessor());});
+
 
 Fe65p2DataProcessor::Fe65p2DataProcessor() : DataProcessor() {
     input = NULL;
@@ -16,12 +22,45 @@ Fe65p2DataProcessor::~Fe65p2DataProcessor() {
 }
 
 void Fe65p2DataProcessor::init() {
-    for(std::map<unsigned, ClipBoard<Fei4Data> >::iterator it = outMap->begin(); it != outMap->end(); ++it) {
+    for(std::map<unsigned, ClipBoard<EventDataBase> >::iterator it = outMap->begin(); it != outMap->end(); ++it) {
         activeChannels.push_back(it->first);
     }
+    scanDone = false;
 }
 
+void Fe65p2DataProcessor::run() {
+  std::cout << __PRETTY_FUNCTION__ << std::endl;
+  const unsigned int numThreads = std::thread::hardware_concurrency();
+  for (unsigned i=0; i<numThreads; i++) {
+    thread_ptrs.emplace_back( new std::thread(&Fe65p2DataProcessor::process, this) );
+    std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
+  }
+}
+
+void Fe65p2DataProcessor::join() {
+  for( auto& thread : thread_ptrs ) {
+    if( thread->joinable() ) thread->join();
+  }
+}
+
+
 void Fe65p2DataProcessor::process() {
+  while(true) {
+    std::unique_lock<std::mutex> lk(mtx);
+    input->cv.wait( lk, [&] { return scanDone or !input->empty(); } );
+    
+    process_core();
+    
+    if( scanDone ) {
+      input->cv.notify_all();
+      break;
+    }
+  }
+  
+  process_core();
+}
+
+void Fe65p2DataProcessor::process_core() {
     unsigned badCnt = 0;
     for (unsigned i=0; i<activeChannels.size(); i++) {
         tag[activeChannels[i]] = 0;

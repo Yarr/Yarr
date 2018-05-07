@@ -10,7 +10,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-
 class IPbusException : public std::exception {
     public:
         IPbusException(const std::string &ErrorMessage)

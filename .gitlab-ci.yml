@@ -2,24 +2,35 @@ job_build_and_test:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     stage: build
     script:
-      - yum -y install gcc-c++
-      - yum -y install make
-      - yum -y install gnuplot
+      - yum -y install centos-release-scl-rh devtoolset-7 make gnuplot
+      - scl enable devtoolset-7 bash
+      - source /opt/rh/devtoolset-7/enable
       - cd src
+      - which g++
       - make
       - export USER=test
       - echo $USER
       - /bin/pwd
       - mkdir /tmp/test
       - ls /tmp/
-      - bin/scanConsole -r configs/emuCfg.json -c configs/test.json -s digitalscan -p
+      - bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p
       - ls
       - ls ./data/
-      - ls ./data/000001_digitalscan/
-      - cat ./data/000001_digitalscan/JohnDoe_OccupancyMap.dat
-      - NUM100=`cat ./data/000001_digitalscan/JohnDoe_OccupancyMap.dat | grep -o 100 | wc -l`
+      - ls ./data/000001_std_digitalscan/
+      - cat ./data/000001_std_digitalscan/JohnDoe_OccupancyMap.dat
+      - NUM100=`cat ./data/000001_std_digitalscan/JohnDoe_OccupancyMap.dat | grep -o 100 | wc -l`
       - if [ "$NUM100" != "26880" ]; then exit 2; fi
-        #      - TEST=`bin/rd53a_test | grep -o 0xa | wc -l`
-        #      - if [ "$TEST" != "1" ]; then exit 2; fi
-        #      - cd ../
+      - bin/scanConsole -k
 
+job_build_cmake:
+    image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
+    stage: build
+    script:
+      - yum -y install centos-release-scl-rh devtoolset-7 make cmake gnuplot
+      - scl enable devtoolset-7 bash
+      - source /opt/rh/devtoolset-7/enable
+      - mkdir -p src/cmake_build
+      - cd src/cmake_build
+      - cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
+      - make -j4
+      - bin/scanConsole -k

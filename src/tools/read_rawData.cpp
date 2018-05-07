@@ -68,85 +68,108 @@ int main(int argc, char* argv[]) {
         int max_bcid = 0;
         int trigger = 0;
         int old_l1id = -1;
+    
+        Fei4Event *next_event = new Fei4Event;
+        Fei4Event *prev_event = new Fei4Event;
+        
+        next_event->fromFileBinary(file);
         while (file) {
-            //int now = file.tellg();
-            //std::cout << "\r" << (double)now/(double)size*100 << "%                    " << std::flush;
-            Fei4Event event;
-            event.fromFileBinary(file);
+            int now = file.tellg();
+            std::cout << "\r" << (double)now/(double)size*100 << "%\t\t" << std::flush;
+                
+            Fei4Event *event = new Fei4Event(*next_event);
+            delete prev_event;
+            prev_event = next_event;
+            next_event = new Fei4Event;
+
+            next_event->fromFileBinary(file);
             if (!file)
                 break;
+            while ((((int)next_event->bcid+65535) - (int)prev_event->bcid)%65535 == 1) {
+                event->addEvent(*next_event);
+                delete prev_event;
+                prev_event = next_event;
+                next_event = new Fei4Event;
+                next_event->fromFileBinary(file);
+                if (!file)
+                    break;
+            }
+            
+            /*
             std::cout << "############" << std::endl;
-            std::cout << "Tag: " << event.tag << std::endl;
-            std::cout << "L1Id: " << event.l1id << std::endl;
-            std::cout << "BCId: " << event.bcid << std::endl;
-            std::cout << "Hits: " << event.nHits << std::endl;
+            std::cout << "Tag: " << event->tag << std::endl;
+            std::cout << "L1Id: " << event->l1id << std::endl;
+            std::cout << "BCId: " << event->bcid << std::endl;
+            std::cout << "Hits: " << event->nHits << std::endl;
+            */
 
-            hitsPerEvent.fill(event.nHits);
-            l1id.fill(event.l1id);
+            hitsPerEvent.fill(event->nHits);
+            l1id.fill(event->l1id);
 
 
-            if (max_bcid < event.bcid)
-                max_bcid = event.bcid;
+            if (max_bcid < event->bcid)
+                max_bcid = event->bcid;
 
-            if ((event.l1id - old_l1id) > 0|| event.l1id < old_l1id) {
+            if ((event->l1id - old_l1id) > 0|| event->l1id < old_l1id) {
                 trigger++;
             }
-            old_l1id = event.l1id;
+            old_l1id = event->l1id;
 
-            //std::cout << "Tag: " << event.tag << std::endl;
+            //std::cout << "Tag: " << event->tag << std::endl;
             if (count==0)
-                other_old_bcid = event.bcid;
+                other_old_bcid = event->bcid;
             (void)other_old_bcid;
 
-            bcid.fill(event.bcid, event.nHits);
+            bcid.fill(event->bcid, event->nHits);
 
-            if ((int)event.bcid - old_bcid < 0 && ((int)event.bcid-old_bcid+65535) > 10) {// wrap around, just reset
-                bcidDiff.fill((int)event.bcid-old_bcid+65535);
-                old_bcid = event.bcid;
-            } else if ((int)event.bcid - old_bcid > 10) { 
-                bcidDiff.fill((int)event.bcid-old_bcid);
-                old_bcid = event.bcid;
+            if ((int)event->bcid - old_bcid < 0 && ((int)event->bcid-old_bcid+65535) > 10) {// wrap around, just reset
+                bcidDiff.fill((int)event->bcid-old_bcid+65535);
+                old_bcid = event->bcid;
+            } else if ((int)event->bcid - old_bcid > 10) { 
+                bcidDiff.fill((int)event->bcid-old_bcid);
+                old_bcid = event->bcid;
             }
 
-            if (event.nHits > 0) {
-                event.doClustering();
-                clustersPerEvent.fill(event.clusters.size());
+            if (event->nHits > 0) {
+                event->doClustering();
+                clustersPerEvent.fill(event->clusters.size());
                 nonZero_cnt++;
-                for (unsigned i=0; i<event.nHits; i++) {
-                    occupancy.fill(event.hits[i].col, event.hits[i].row);
+                for (auto hit : event->hits) {
+                    occupancy.fill(hit.col, hit.row);
                 }
             }
 
-            for (unsigned i=0; i<event.clusters.size(); i++) {
-                hitsPerCluster.fill(event.clusters[i].nHits);
-                if (event.clusters[i].nHits > 1) {
-                    clusterColLength.fill(event.clusters[i].getColLength());
-                    clusterRowWidth.fill(event.clusters[i].getRowWidth());
-                    clusterWidthLengthCorr.fill(event.clusters[i].getColLength(), event.clusters[i].getRowWidth());
+            for (auto cluster : event->clusters) {
+                hitsPerCluster.fill(cluster.nHits);
+                if (cluster.nHits > 1) {
+                    clusterColLength.fill(cluster.getColLength());
+                    clusterRowWidth.fill(cluster.getRowWidth());
+                    clusterWidthLengthCorr.fill(cluster.getColLength(), cluster.getRowWidth());
                 }
 
             }
-            if (event.clusters.size() > 0 && plotIt < 10) {
-                if (nonZero_cnt%50 == 0 && eventScreen != NULL) {
-                    //eventScreen->plot(std::to_string(plotIt));
-                    plotIt++;
-                    delete eventScreen;
-                    eventScreen = NULL;
-                }
+            if (event->clusters.size() > 0 && plotIt < 100) {
 
-                if (eventScreen == NULL) {
-                    eventScreen = new Histo2d((std::to_string(nonZero_cnt) + "-eventScreen"), 64, 0.5, 64.5, 64, 0.5, 64.5, typeid(void));
-                    eventScreen->setXaxisTitle("Column");
-                    eventScreen->setYaxisTitle("Row");
-                    eventScreen->setZaxisTitle("ToT");
-                }
+                eventScreen = new Histo2d((std::to_string(nonZero_cnt) + "-eventScreen"), 64, 0.5, 64.5, 64, 0.5, 64.5, typeid(void));
+                eventScreen->setXaxisTitle("Column");
+                eventScreen->setYaxisTitle("Row");
+                eventScreen->setZaxisTitle("ToT");
 
-                for (unsigned i=0; i<event.nHits; i++) {
-                    eventScreen->fill(event.hits[i].col, event.hits[i].row, event.hits[i].tot);
+                int cluster_cnt = 1;
+                for (auto cluster: event->clusters) {
+                    for (auto hit : cluster.hits) {
+                        std::cout << hit->col << " " << hit->row << std::endl;
+                        eventScreen->fill(hit->col, hit->row, hit->tot);
+                    }
+                    cluster_cnt++;
                 }
+                eventScreen->plot(std::to_string(plotIt));
+                plotIt++;
+                delete eventScreen;
             }
 
             count ++;
+            delete event;
         }
         std::cout << std::endl;
         file.close();

@@ -1,27 +1,51 @@
+#include "AllChips.h"
 #include "Fe65p2.h"
+
+bool fe65p2_registered =
+  StdDict::registerFrontEnd("FE65P2",
+                                []() { return std::unique_ptr<FrontEnd>(new Fe65p2());});
+
+Fe65p2::Fe65p2() : Fe65p2Cmd() {
+    txChannel = 99;
+    rxChannel = 99;
+    geo.nRow = 64;
+    geo.nCol = 64;
+}
 
 Fe65p2::Fe65p2(TxCore *arg_core) : Fe65p2Cmd(arg_core) {
     txChannel = 99;
     rxChannel = 99;
+    geo.nRow = 64;
+    geo.nCol = 64;
 }
 
 Fe65p2::Fe65p2(TxCore *arg_core, unsigned arg_channel) : Fe65p2Cmd(arg_core){
     txChannel = arg_channel;
     rxChannel = arg_channel;
+    geo.nRow = 64;
+    geo.nCol = 64;
 }
 
 Fe65p2::Fe65p2(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) : Fe65p2Cmd(arg_core){
     txChannel = arg_txChannel;
     rxChannel = arg_rxChannel;
+    geo.nRow = 64;
+    geo.nCol = 64;
+}
+
+void Fe65p2::init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
+    this->setCore(arg_core);
+    txChannel = arg_txChannel;
+    rxChannel = arg_rxChannel;
 }
 
 void Fe65p2::configure() {
-    this->init();
+    this->configureInit();
     this->configureGlobal();
     this->configurePixels();
 }
 
-void Fe65p2::init() {
+void Fe65p2::configureInit() {
     clocksOn();
     reset();
 }
@@ -132,4 +156,8 @@ void Fe65p2::configurePixels() {
     setValue(&Fe65p2::ColEn, colEn);
     configureGlobal();
 
+}
+
+void Fe65p2::writeNamedRegister(std::string name, uint16_t reg_value) {
+    regMap[name]->write(reg_value);
 }

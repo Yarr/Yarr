@@ -14,14 +14,12 @@
 #include <deque>
 
 #include "RawData.h"
-#include "Fei4EventData.h"
+#include "EventDataBase.h"
 #include "HistogramBase.h"
 #include "ResultBase.h"
 #include "ClipBoard.h"
 
 #include "FrontEnd.h"
-#include "Fei4.h"
-#include "Fe65p2.h"
 #include "TxCore.h"
 #include "RxCore.h"
 
@@ -29,7 +27,9 @@ class Bookkeeper {
     public:
         Bookkeeper(TxCore *arg_tx, RxCore *arg_rx);
         ~Bookkeeper();
-        
+
+        void initGlobalFe(FrontEnd *fe) {g_fe = fe;}
+
         // TODO should only add generic Fe class
         void addFe(FrontEnd *fe, unsigned txChannel, unsigned rxChannel);
         void addFe(FrontEnd *fe, unsigned channel);
@@ -59,9 +59,9 @@ class Bookkeeper {
         void setTargetThreshold(int v) {target_threshold = v;}
         int getTargetThreshold() {return target_threshold;}
         
+        template<typename T> T* globalFe() {return dynamic_cast<T*>(g_fe);}
         // TODO make private, not nice like that
-        Fei4 *g_fe;
-        Fe65p2 *g_fe65p2;
+        FrontEnd *g_fe;
         TxCore *tx;
         RxCore *rx;
         
@@ -70,7 +70,7 @@ class Bookkeeper {
         ClipBoard<RawDataContainer> rawData;
 
         // per rx link
-	    std::map<unsigned, ClipBoard<Fei4Data> > eventMap;
+	    std::map<unsigned, ClipBoard<EventDataBase> > eventMap;
 	    std::map<unsigned, ClipBoard<HistogramBase> > histoMap;
 	    std::map<unsigned, ClipBoard<HistogramBase> > resultMap;
 		std::map<unsigned, std::mutex> mutexMap;	

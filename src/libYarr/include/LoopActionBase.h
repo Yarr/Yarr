@@ -12,8 +12,6 @@
 #include <typeindex>
 #include <string>
 
-#include "Fei4.h"
-#include "Fe65p2.h"
 #include "TxCore.h"
 #include "RxCore.h"
 #include "LoopStatus.h"
@@ -29,7 +27,6 @@ class LoopActionBase {
         LoopActionBase();
 
         void setVerbose(bool v=true);
-        void setup(LoopStatus *stat, Fei4 *fe, TxCore *tx, RxCore *rx);
         void setup(LoopStatus *stat, Bookkeeper *k);
         void setNext(shared_ptr<LoopActionBase>& ptr);
         void execute();
@@ -61,13 +58,12 @@ class LoopActionBase {
 		bool g_done;
         bool verbose;
 
-        unsigned min;
-        unsigned max;
+        int min;
+        int max;
         unsigned step;
 
         LoopStatus *g_stat;
-        Fei4 *g_fe;
-        Fe65p2 *g_fe65p2;
+        FrontEnd *g_fe;
         TxCore *g_tx;
         RxCore *g_rx;
 		Bookkeeper *keeper;

@@ -10,7 +10,8 @@
 //using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 using namespace Gauss;
 
-Fei4Emu::Fei4Emu(std::string output_model_cfg, std::string input_model_cfg, RingBuffer * rx, RingBuffer * tx) {
+Fei4Emu::Fei4Emu(std::string output_model_cfg, std::string input_model_cfg,
+                 EmuCom * rx, EmuCom * tx) {
     srand(time(NULL));
 
     m_feId = 0x00;
@@ -40,7 +41,7 @@ Fei4Emu::~Fei4Emu() {
 void Fei4Emu::initializePixelModelsFromFile(std::string json_file_path) {
     std::ifstream file(json_file_path);
     json j;
-    j << file;
+    j= json::parse(file);
 
     for (unsigned col = 1; col <= m_feCfg->n_Col; col++) {
         for (unsigned row = 1; row <= m_feCfg->n_Row; row++) {

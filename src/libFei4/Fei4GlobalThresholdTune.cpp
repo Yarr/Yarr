@@ -8,18 +8,16 @@
 
 #include "Fei4GlobalThresholdTune.h"
 
-Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data) : ScanBase(fe, tx, rx, data) {
-    mask = MASK_16;
-    dcMode = QUAD_DC;
-    numOfTriggers = 200;
-    triggerFrequency = 10e3;
-    triggerDelay = 50;
+#include "ScanFactory.h"
 
-    useScap = true;
-    useLcap = true;
+namespace Fei4ScansRegistry {
+  using StdDict::registerScan;
 
-    target = 3000;
-    verbose = false;
+  bool global_threshold_scan_registered =
+    registerScan("tune_globalthreshold",
+                 [](Bookkeeper *k) {
+                   return std::unique_ptr<ScanBase>(new Fei4GlobalThresholdTune(k));
+                 });
 }
 
 Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Bookkeeper *b) : ScanBase(b) {
@@ -32,7 +30,7 @@ Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Bookkeeper *b) : ScanBase(b) {
     useScap = true;
     useLcap = true;
 
-    target = b->getTargetThreshold();
+    target = g_bk->getTargetThreshold();
     verbose = false;
 }
 
@@ -40,7 +38,7 @@ Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Bookkeeper *b) : ScanBase(b) {
 // Initialize Loops
 void Fei4GlobalThresholdTune::init() {
     // Loop 0: Feedback, start with max fine threshold
-    std::shared_ptr<Fei4GlobalFeedbackBase> fbLoop(Fei4GlobalFeedbackBuilder(&Fei4::Vthin_Fine));
+    std::shared_ptr<Fei4GlobalFeedback> fbLoop(new Fei4GlobalFeedback(&Fei4::Vthin_Fine));
     fbLoop->setStep(16);
     fbLoop->setMax(255);
     fbLoop->setVerbose(true);
@@ -81,16 +79,17 @@ void Fei4GlobalThresholdTune::init() {
 // Do necessary pre-scan configuration
 void Fei4GlobalThresholdTune::preScan() {
     // Global config
-	g_tx->setCmdEnable(b->getTxMask());
-    g_fe->writeRegister(&Fei4::Trig_Count, 12);
-    g_fe->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
-    g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
-    while(!g_tx->isCmdEmpty()){}
+    g_tx->setCmdEnable(g_bk->getTxMask());
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::Trig_Count, 12);
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
+    while(!g_tx->isCmdEmpty())
+        ;
 
-	for(unsigned int k=0; k<b->feList.size(); k++) {
-        Fei4 *fe = dynamic_cast<Fei4*>(b->feList[k]);
+    for(unsigned int k=0; k<g_bk->feList.size(); k++) {
+        Fei4 *fe = dynamic_cast<Fei4*>(g_bk->feList[k]);
         // Set to single channel tx
-		g_tx->setCmdEnable(0x1 << fe->getTxChannel());
+        g_tx->setCmdEnable(0x1 << fe->getTxChannel());
         // Set specific pulser DAC
     	fe->writeRegister(&Fei4::PlsrDAC, fe->toVcal(target, useScap, useLcap));
         // Reset all TDACs
@@ -99,7 +98,8 @@ void Fei4GlobalThresholdTune::preScan() {
             for (unsigned row=1; row<337; row++)
                 fe->setTDAC(col, row, 16);
         fe->configurePixels();
-        while(!g_tx->isCmdEmpty()){}
-	}
-	g_tx->setCmdEnable(b->getTxMask());
+        while(!g_tx->isCmdEmpty())
+            ;
+    }
+    g_tx->setCmdEnable(g_bk->getTxMask());
 }

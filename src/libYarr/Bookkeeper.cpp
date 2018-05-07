@@ -11,9 +11,7 @@
 Bookkeeper::Bookkeeper(TxCore *arg_tx, RxCore *arg_rx) {
     tx = arg_tx;
     rx = arg_rx;
-    g_fe = new Fei4(tx); // Broadcast to all
-    g_fe->setChipId(8);
-    g_fe65p2 = new Fe65p2(tx); // Hardware only allows single FE65-P2
+    g_fe = NULL; //Type not yet known
     target_tot = 10;
     target_charge = 16000;
     target_threshold = 3000;
@@ -26,7 +24,6 @@ Bookkeeper::~Bookkeeper() {
         feList.erase(feList.begin() + k);
     }
     delete g_fe;
-    delete g_fe65p2;
 }
 
 // RxChannel is unique ident
@@ -35,11 +32,12 @@ void Bookkeeper::addFe(FrontEnd *fe, unsigned txChannel, unsigned rxChannel) {
         std::cerr << __PRETTY_FUNCTION__ << " -> Error rx channel already in use, not adding FE" << std::endl;
     } else {
         feList.push_back(fe);
-        dynamic_cast<FrontEndCfg*>(feList.back())->setChannel(txChannel, rxChannel);
+        FrontEndCfg *cfg = dynamic_cast<FrontEndCfg*>(feList.back());
+        if(cfg) cfg->setChannel(txChannel, rxChannel);
         eventMap[rxChannel];
         histoMap[rxChannel];
         resultMap[rxChannel];
-        feList.back()->clipDataFei4 = &eventMap[rxChannel];
+        feList.back()->clipData = &eventMap[rxChannel];
         feList.back()->clipHisto = &histoMap[rxChannel];
         feList.back()->clipResult = &resultMap[rxChannel];
         mutexMap[rxChannel];

@@ -9,6 +9,7 @@
 // # Comment: FE65-p2 Global Register container
 // ################################
 
+#include <iostream>
 #include <stdint.h>
 #include <array>
 #include <map>

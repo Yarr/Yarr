@@ -8,18 +8,16 @@
 
 #include "Fei4TotScan.h"
 
-Fei4TotScan::Fei4TotScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data) : ScanBase(fe, tx, rx, data) {
-    mask = MASK_16;
-    dcMode = QUAD_DC;
-    numOfTriggers = 100;
-    triggerFrequency = 10e3;
-    triggerDelay = 50;
-    useScap = true;
-    useLcap = true;
+#include "ScanFactory.h"
 
-    target = 16000;
+namespace Fei4ScansRegistry {
+  using StdDict::registerScan;
 
-    verbose = false;
+  bool tot_scan_registered =
+    registerScan("totscan",
+                 [](Bookkeeper *k) {
+                   return std::unique_ptr<ScanBase>(new Fei4TotScan(k));
+                 });
 }
 
 Fei4TotScan::Fei4TotScan(Bookkeeper *b) : ScanBase(b) {
@@ -72,21 +70,22 @@ void Fei4TotScan::init() {
 
 // Do necessary pre-scan configuration
 void Fei4TotScan::preScan() {
-	g_tx->setCmdEnable(b->getTxMask());
-    g_fe->writeRegister(&Fei4::Trig_Count, 12);
-    g_fe->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
-    g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
-    while(!g_tx->isCmdEmpty()){}
+    g_tx->setCmdEnable(g_bk->getTxMask());
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::Trig_Count, 12);
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
+    while(!g_tx->isCmdEmpty())
+      ;
     
-	for(unsigned int k=0; k<b->feList.size(); k++) {
-        Fei4 *fe = dynamic_cast<Fei4*>(b->feList[k]);
-        if (fe->isActive()) {
-            // Set to single channel tx
-            g_tx->setCmdEnable(0x1 << fe->getTxChannel());
-            // Set specific pulser DAC
-            fe->writeRegister(&Fei4::PlsrDAC, fe->toVcal(target, useScap, useLcap));
-            while(!g_tx->isCmdEmpty()){}
-        }
-	}
-	g_tx->setCmdEnable(b->getTxMask());
+    for(unsigned int k=0; k<g_bk->feList.size(); k++) {
+      Fei4 *fe = dynamic_cast<Fei4*>(g_bk->feList[k]);
+      if (fe->isActive()) {
+        // Set to single channel tx
+        g_tx->setCmdEnable(0x1 << fe->getTxChannel());
+        // Set specific pulser DAC
+        fe->writeRegister(&Fei4::PlsrDAC, fe->toVcal(target, useScap, useLcap));
+        while(!g_tx->isCmdEmpty());
+      }
+    }
+    g_tx->setCmdEnable(g_bk->getTxMask());
 }

@@ -101,6 +101,7 @@ void Histo2d::fill(double x, double y, double v) {
             max = v;
         if (v < min)
             min = v;
+        isFilled[ybin+(xbin*ybins)] = true;
     }
     entries++;
 }
@@ -149,6 +150,33 @@ void Histo2d::scale(const double s) {
     for (unsigned int i=0; i<(xbins*ybins); i++) {
         data[i] = data[i]*s;
     }
+}
+
+double Histo2d::getMean() {
+    double sum = 0;
+    double entries = 0;
+    for (unsigned int i=0; i<(xbins*ybins); i++) {
+        if (isFilled[i]) {
+            sum += data[i];
+            entries++;
+        }
+    }
+    if (entries < 1) return 0;
+    return sum/entries;
+}
+
+double Histo2d::getStdDev() {
+    double mean = this->getMean();
+    double mu = 0;
+    double entries = 0;
+    for (unsigned int i=0; i<(xbins*ybins); i++) {
+        if (isFilled[i]) {
+             mu += pow(data[i]-mean, 2);
+             entries++;
+        }
+    }
+    if (entries < 2) return 0;
+    return sqrt(mu/(double)(entries-1));
 }
 
 

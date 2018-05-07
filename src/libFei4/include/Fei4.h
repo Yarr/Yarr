@@ -37,18 +37,25 @@ enum DC_MODE {
 
 class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
     public:
+        Fei4();
         Fei4(TxCore *arg_core);
         Fei4(TxCore *arg_core, unsigned arg_channel);
         Fei4(TxCore *arg_core, unsigned arg_txchannel, unsigned arg_rxchannel);
 
-		~Fei4();
-        
-        void configure();
+        void init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override;
+
+        ~Fei4();
+
+        void configure() override;
         void configureGlobal();
         void configurePixels(unsigned lsb=0, unsigned msb=Fei4PixelCfg::n_Bits);
 
         void setRunMode(bool mode=true) {
             runMode(chipId, mode);
+        }
+
+        void makeGlobal() override {
+            chipId = 8;
         }
 
         void initMask(enum MASK_STAGE mask);
@@ -57,30 +64,26 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
         void loadIntoShiftReg(unsigned pixel_latch);
         void loadIntoPixel(unsigned pixel_latch);
         void shiftByOne();
-	void readPixelRegister(unsigned colpr_addr, unsigned latch);
-	void dummyCmd();
+        void writeNamedRegister(std::string name, uint16_t value) override;
+        void readPixelRegister(unsigned colpr_addr, unsigned latch);
+        void dummyCmd();
 
+        void writeRegister(Fei4Register Fei4GlobalCfg::*ref, uint16_t cfgBits){
+            setValue(ref, cfgBits);
+            writeRegister(ref);
+        }
 
+        void writeRegister(Fei4Register Fei4GlobalCfg::*ref){
+            wrRegister(chipId, getAddr(ref), cfg[getAddr(ref)]);
+        }
 
-        template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight>
-            void writeRegister(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref, uint16_t cfgBits){
-                setValue(ref, cfgBits);
-                writeRegister(ref);
-            }
+        uint16_t readRegister(Fei4Register Fei4GlobalCfg::*ref){
+            return getValue(ref);
+        }
 
-        template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight>
-            void writeRegister(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref){
-                wrRegister(chipId, getAddr(ref), cfg[getAddr(ref)]);
-            }
-        
-        template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight>
-            T readRegister(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref){
-                return getValue(ref);
-            }
-
-	void readRegister(unsigned addr) {
-	  this->rdRegister(chipId, addr);
-	}
+        void readRegister(unsigned addr) {
+            this->rdRegister(chipId, addr);
+        }
 
         void wrGR16(unsigned int mOffset, unsigned int bOffset, unsigned int mask, bool msbRight, uint16_t cfgBits);
     private:

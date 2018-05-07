@@ -32,6 +32,7 @@ using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::i
 void printHelp();
 void listScans();
 
+#if 0
 // TODO replace me with proper variable type not global
 bool scanDone = false;
 bool processorDone = false;
@@ -64,6 +65,7 @@ void analysis(Fei4Histogrammer *h, Fei4Analysis *a) {
 
     a->end();
 }
+#endif
 
 int main(int argc, char *argv[]) {
     std::cout << "#####################################" << std::endl;
@@ -141,6 +143,7 @@ int main(int argc, char *argv[]) {
     SpecController spec;
     spec.init(specNum);
     Bookkeeper bookie(&spec, &spec);
+    bookie.initGlobalFe(new Fe65p2(&spec));
     bookie.setTargetThreshold(800);
    
     // TODO move me somwhere else
@@ -195,7 +198,7 @@ int main(int argc, char *argv[]) {
     //bookie.getLastFe()->setVcalSlope(0.564);
     //bookie.getLastFe()->setVcalOffset(0.011);
 
-    //Fe65p2 *fe = bookie.g_fe65p2;
+    //Fe65p2 *fe = bookie.globalFe<Fe65p2>();
     //fe->setName("fe65p2");
     //fe->clipDataFei4 = &bookie.eventMap[0];
     //fe->clipHisto = &bookie.histoMap[0];
@@ -206,7 +209,7 @@ int main(int argc, char *argv[]) {
     if (icfg_file) {
         std::fstream backup((dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getName()+".json.backup").c_str(), std::ios::out);
         icfg_file >> icfg;
-        bookie.g_fe65p2->fromFileJson(icfg);
+        bookie.globalFe<Fe65p2>()->fromFileJson(icfg);
         dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->fromFileJson(icfg);
         dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->setName("fe65p2");
         backup << std::setw(4) << icfg;
@@ -234,7 +237,7 @@ int main(int argc, char *argv[]) {
         while(!spec.isCmdEmpty());
     }*/
     spec.setCmdEnable(0x1);
-    bookie.g_fe65p2->configure();
+    bookie.globalFe<Fe65p2>()->configure();
     while(!spec.isCmdEmpty());
 
     std::chrono::steady_clock::time_point cfg_end = std::chrono::steady_clock::now();
@@ -300,57 +303,61 @@ int main(int argc, char *argv[]) {
         return -1;
     }
     
+    std::map<FrontEnd*, std::unique_ptr<Fei4Histogrammer> > histogrammers;
+    std::map<FrontEnd*, std::unique_ptr<Fei4Analysis> >     analyses;
+    
     // Init histogrammer and analysis
-    for (unsigned i=0; i<bookie.feList.size(); i++) {
-        FrontEnd *fe = bookie.feList[i];
+    for (FrontEnd *fe : bookie.feList ) {
         if (fe->isActive()) {
             // Init histogrammer per FE
-            fe->histogrammer = new Fei4Histogrammer();
-            fe->histogrammer->connect(fe->clipDataFei4, fe->clipHisto);
+            histogrammers[fe] = std::unique_ptr<Fei4Histogrammer>( new Fei4Histogrammer );
+            auto& histogrammer = histogrammers[fe];
+            histogrammer->connect(fe->clipData, fe->clipHisto);
             // Add generic histograms
-            fe->histogrammer->addHistogrammer(new OccupancyMap());
-            fe->histogrammer->addHistogrammer(new TotMap());
-            fe->histogrammer->addHistogrammer(new Tot2Map());
-            fe->histogrammer->addHistogrammer(new L1Dist());
-            fe->histogrammer->addHistogrammer(new HitsPerEvent());
-            fe->histogrammer->addHistogrammer(new TotDist());
-            fe->histogrammer->addHistogrammer(new DataArchiver("rawData.dat"));
+            histogrammer->addHistogrammer(new OccupancyMap());
+            histogrammer->addHistogrammer(new TotMap());
+            histogrammer->addHistogrammer(new Tot2Map());
+            histogrammer->addHistogrammer(new L1Dist());
+            histogrammer->addHistogrammer(new HitsPerEvent());
+            histogrammer->addHistogrammer(new TotDist());
+            histogrammer->addHistogrammer(new DataArchiver("rawData.dat"));
             // Fe65p2 specific
-            fe->histogrammer->setMapSize(64, 64);
+            histogrammer->setMapSize(64, 64);
            
             // Init analysis per FE and depending on scan type
-            fe->ana = new Fei4Analysis(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
-            fe->ana->connect(s, fe->clipHisto, fe->clipResult);
-            fe->ana->addAlgorithm(new L1Analysis());
-            fe->ana->addAlgorithm(new TotDistPlotter());
+            analyses[fe] = std::unique_ptr<Fei4Analysis>( new Fei4Analysis(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) );
+            auto& ana = analyses[fe];
+            ana->connect(s, fe->clipHisto, fe->clipResult);
+            ana->addAlgorithm(new L1Analysis());
+            ana->addAlgorithm(new TotDistPlotter());
             if (scanType == "digitalscan") {
-                fe->ana->addAlgorithm(new OccupancyAnalysis());
+                ana->addAlgorithm(new OccupancyAnalysis());
             } else if (scanType == "analogscan") {
-                fe->ana->addAlgorithm(new OccupancyAnalysis());
+                ana->addAlgorithm(new OccupancyAnalysis());
             } else if (scanType == "thresholdscan") {
-                //fe->ana->addAlgorithm(new OccupancyAnalysis());
-                fe->ana->addAlgorithm(new ScurveFitter());
+                //ana->addAlgorithm(new OccupancyAnalysis());
+                ana->addAlgorithm(new ScurveFitter());
             } else if (scanType == "totscan") {
-	            fe->ana->addAlgorithm(new TotAnalysis());
+	            ana->addAlgorithm(new TotAnalysis());
             } else if (scanType == "tune_globalthreshold") {
-                fe->ana->addAlgorithm(new OccGlobalThresholdTune());
+                ana->addAlgorithm(new OccGlobalThresholdTune());
             } else if (scanType == "tune_pixelthreshold") {
-                fe->ana->addAlgorithm(new OccPixelThresholdTune());
+                ana->addAlgorithm(new OccPixelThresholdTune());
             } else if (scanType == "tune_globalpreamp") {
-                fe->ana->addAlgorithm(new TotAnalysis());
+                ana->addAlgorithm(new TotAnalysis());
             } else if (scanType == "tune_pixelpreamp") {
-                fe->ana->addAlgorithm(new TotAnalysis());
+                ana->addAlgorithm(new TotAnalysis());
             } else if (scanType == "noisescan") {
-                fe->ana->addAlgorithm(new NoiseAnalysis());
+                ana->addAlgorithm(new NoiseAnalysis());
             } else if (scanType == "exttrigger") {
-                fe->ana->addAlgorithm(new OccupancyAnalysis());
+                ana->addAlgorithm(new OccupancyAnalysis());
             } else {
                 std::cout << "-> Analyses not defined for scan type" << std::endl;
                 listScans();
                 std::cerr << "-> Aborting!" << std::endl;
                 return -1;
             }
-            fe->ana->setMapSize(64, 64);
+            ana->setMapSize(64, 64);
         }
     }
 
@@ -358,6 +365,7 @@ int main(int argc, char *argv[]) {
     s->init();
     s->preScan();
 
+#if 0
     unsigned int numThreads = std::thread::hardware_concurrency();
     std::cout << "-> Starting " << numThreads << " processor Threads:" << std::endl; 
     std::vector<std::thread> procThreads;
@@ -365,16 +373,26 @@ int main(int argc, char *argv[]) {
         procThreads.push_back(std::thread(process, &bookie));
         std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
     }
+#endif
 
     std::vector<std::thread> anaThreads;
     std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
-    for (unsigned i=0; i<bookie.feList.size(); i++) {
-        FrontEnd *fe = bookie.feList[i];
+    for ( FrontEnd* fe : bookie.feList ) {
         if (fe->isActive()) {
-            anaThreads.push_back(std::thread(analysis, fe->histogrammer, fe->ana));
-            std::cout << "  -> Analysis thread of Fe " << dynamic_cast<FrontEndCfg*>(fe)->getRxChannel() << std::endl;
+          analyses[fe]->init();
+          analyses[fe]->run();
+          
+          histogrammers[fe]->init();
+          histogrammers[fe]->run();
+          
+          std::cout << "  -> Analysis thread of Fe " << dynamic_cast<FrontEndCfg*>(fe)->getRxChannel() << std::endl;
         }
     }
+
+    Fe65p2DataProcessor proc;
+    proc.connect( &bookie.rawData, &bookie.eventMap );
+    proc.init();
+    proc.run();
 
     std::cout << std::endl;
     std::cout << "########" << std::endl;
@@ -386,18 +404,24 @@ int main(int argc, char *argv[]) {
     s->run();
     s->postScan();
     std::cout << "-> Scan done!" << std::endl;
-    scanDone = true;
+    
+    proc.scanDone = true;
+    bookie.rawData.cv.notify_all();
+    
     std::chrono::steady_clock::time_point scan_done = std::chrono::steady_clock::now();
     std::cout << "-> Waiting for processors to finish ..." << std::endl;
-    for (unsigned i=0; i<numThreads; i++) {
-        procThreads[i].join();
-    }
+    proc.join();
+    
     std::chrono::steady_clock::time_point processor_done = std::chrono::steady_clock::now();
-    processorDone = true;
-    std::cout << "-> Processor done, waiting for analysis ..." << std::endl;
-    for (unsigned i=0; i<anaThreads.size(); i++) {
-        anaThreads[i].join();
+    Fei4Histogrammer::processorDone = true;
+    Fei4Analysis::histogrammerDone = true;
+    for( auto& histogrammer : histogrammers ) {
+      histogrammer.second->join();
     }
+    for( auto& ana : analyses ) {
+      ana.second->join();
+    }
+    std::cout << "-> Processor done, waiting for analysis ..." << std::endl;
     std::chrono::steady_clock::time_point all_done = std::chrono::steady_clock::now();
     std::cout << "-> All done!" << std::endl;
 
@@ -421,8 +445,7 @@ int main(int argc, char *argv[]) {
     
     // Cleanup
     delete s;
-    for (unsigned i=0; i<bookie.feList.size(); i++) {
-        FrontEnd *fe = bookie.feList[i];
+    for ( FrontEnd* fe : bookie.feList ) {
         if (fe->isActive()) {
             // Save config
             std::cout << "-> Saving config of FE " << dynamic_cast<FrontEndCfg*>(fe)->getName() << std::endl;
@@ -434,14 +457,9 @@ int main(int argc, char *argv[]) {
             // Plot
             if (doPlots) {
                 std::cout << "-> Plotting histograms of FE " << dynamic_cast<FrontEndCfg*>(fe)->getRxChannel() << std::endl;
-                fe->ana->plot(/*std::string(timestamp) + "-" + */dynamic_cast<FrontEndCfg*>(fe)->getName() + "_ch" + std::to_string(dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) + "_" + scanType, outputDir);
-                fe->ana->toFile(/*std::string(timestamp) + "-" + */dynamic_cast<FrontEndCfg*>(fe)->getName() + "_ch" + std::to_string(dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) + "_" + scanType, outputDir);
+                analyses[fe]->plot(/*std::string(timestamp) + "-" + */dynamic_cast<FrontEndCfg*>(fe)->getName() + "_ch" + std::to_string(dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) + "_" + scanType, outputDir);
+                analyses[fe]->toFile(/*std::string(timestamp) + "-" + */dynamic_cast<FrontEndCfg*>(fe)->getName() + "_ch" + std::to_string(dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) + "_" + scanType, outputDir);
             }
-            // Free
-            delete fe->histogrammer;
-            fe->histogrammer = NULL;
-            delete fe->ana;
-            fe->ana = NULL;
         }
     }
     return 0;

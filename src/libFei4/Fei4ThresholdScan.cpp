@@ -8,17 +8,16 @@
 
 #include "Fei4ThresholdScan.h"
 
-Fei4ThresholdScan::Fei4ThresholdScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data) : ScanBase(fe, tx, rx, data) {
-    mask = MASK_16;
-    dcMode = QUAD_DC;
-    numOfTriggers = 100;
-    triggerFrequency = 10e3;
-    triggerDelay = 50;
-    minVcal = 10;
-    maxVcal = 100;
-    stepVcal = 1;
+#include "ScanFactory.h"
 
-    verbose = false;
+namespace Fei4ScansRegistry {
+  using StdDict::registerScan;
+
+  bool threshold_scan_registered =
+    registerScan("thresholdscan",
+                 [](Bookkeeper *k) {
+                   return std::unique_ptr<ScanBase>(new Fei4ThresholdScan(k));
+                 });
 }
 
 Fei4ThresholdScan::Fei4ThresholdScan(Bookkeeper *b) : ScanBase(b) {
@@ -49,7 +48,7 @@ void Fei4ThresholdScan::init() {
     dcLoop->setMode(dcMode);
 
     // Loop 1: Parameter Loop
-    std::shared_ptr<Fei4ParameterLoopBase> parLoop( Fei4ParameterLoopBuilder(&Fei4::PlsrDAC) );
+    std::shared_ptr<Fei4ParameterLoop> parLoop(new Fei4ParameterLoop(&Fei4::PlsrDAC));
     parLoop->setRange(minVcal, maxVcal, stepVcal);
     parLoop->setVerbose(false);
 
@@ -76,9 +75,9 @@ void Fei4ThresholdScan::init() {
 
 // Do necessary pre-scan configuration
 void Fei4ThresholdScan::preScan() {
-    g_fe->writeRegister(&Fei4::Trig_Count, 8);
-    g_fe->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)+0);
-    g_fe->writeRegister(&Fei4::PlsrDAC, 300);
-    g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::Trig_Count, 8);
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)+0);
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::PlsrDAC, 300);
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
     while(!g_tx->isCmdEmpty());
 }

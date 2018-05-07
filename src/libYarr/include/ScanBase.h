@@ -14,8 +14,6 @@
 #include <map>
 #include <typeindex>
 
-#include "Fei4.h"
-#include "Fe65p2.h"
 #include "TxCore.h"
 #include "RxCore.h"
 #include "LoopEngine.h"
@@ -30,7 +28,6 @@ using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::i
 
 class ScanBase {
     public:
-        ScanBase(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data);
         ScanBase(Bookkeeper *k);
         virtual ~ScanBase() {}
 
@@ -49,12 +46,9 @@ class ScanBase {
     protected:
         LoopEngine engine;
         void addLoop(std::shared_ptr<LoopActionBase> l);
-        Bookkeeper *b;
-
-        Fei4 *g_fe;
-        Fe65p2 *g_fe65p2;
         TxCore *g_tx;
         RxCore *g_rx;
+        Bookkeeper *g_bk;
         ClipBoard<RawDataContainer> *g_data;
 
     private:

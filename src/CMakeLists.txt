@@ -27,6 +27,9 @@ add_compile_options(-Wfatal-errors)
 add_compile_options(-Wno-deprecated)
 add_compile_options(-std=c++11)
 
+# Add -fPIC for (e.g. linking to shared libraries)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 #add libraries
 list(APPEND libs Yarr Spec Util Emu Fe65p2 Fei4 Rce Boc Rd53a KU040)
 foreach(lib ${libs})
@@ -44,8 +47,9 @@ get_filename_component(srcfile ${target} NAME)
 add_executable(${execname} tools/${srcfile})
 add_dependencies(${execname} Yarr)
 set_target_properties(${execname} PROPERTIES LINKER_LANGUAGE CXX)
-target_link_libraries(${execname} Yarr pthread ) 
+# Whole-archive means not to drop symbols from Yarr.
+# Mainly this is about making sure the auto-registration works.
+set(WRAPPED_YARR -Wl,--whole-archive Yarr -Wl,--no-whole-archive)
+# Not sure why rt is not linked by default here
+target_link_libraries(${execname} ${WRAPPED_YARR} pthread rt) 
 endforeach()
-
-
-

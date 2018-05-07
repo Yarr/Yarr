@@ -17,19 +17,26 @@
 
 #include "json.hpp"
 
+#define ELECTRON_CHARGE 1.602e-19
+
 class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg {
     public:
         Rd53aCfg() {
             m_chipId = 0;
+            m_vcalPar[0] = -1.0;
+            m_vcalPar[1] = 0.2;
             m_vcalPar[0] = 0;
-            m_vcalPar[1] = 1.17;
             m_vcalPar[0] = 0;
-            m_vcalPar[0] = 0;
-            m_injCap = 8.5;
+            m_injCap = 8.2;
         }
 
-        double toCharge(double) {return 0;}
-        double toCharge(double, bool, bool) {return 0;}
+        double toCharge(double vcal) {
+            // Q = C*V
+            // Linear is good enough
+            double V = (m_vcalPar[0]*1.0e-3 + m_vcalPar[1]*vcal*1.0e-3)/ELECTRON_CHARGE;
+            return V*m_injCap*1.0e-15;
+        }
+        double toCharge(double vcal, bool sCap, bool lCap) {return this->toCharge(vcal);}
 
         void toFileJson(json&);
         void fromFileJson(json&);

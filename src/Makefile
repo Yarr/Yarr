@@ -28,9 +28,12 @@ endif
 ifeq ($(UNAME_S),Darwin)
 CPP = clang++
 LD = clang++
-else
 CPPFLAGS += -pthread
-LDFLAGS += -pthread -lrt
+LDFLAGS += -Wl,-all_load
+else
+CPPFLAGS += -pthread -fPIC
+LDFLAGS += -pthread -lrt -fPIC -Wl,--whole-archive
+PLDFLAGS = -Wl,--no-whole-archive
 endif
 
 CPPFLAGS += -std=c++11 -Wall -Werror
@@ -58,10 +61,10 @@ GCC_MAJOR = $(shell $(CPP) -dumpversion | cut -d'.' -f1)
 GCC_MINOR = $(shell $(CPP) -dumpversion | cut -d'.' -f2)
 
 ifneq ($(UNAME_S), Darwin)
-ifeq ($(shell echo ${GCC_MAJOR}\<4| bc), 1)
-ifeq ($(shell echo ${GCC_MINOR}\<7 | bc), 1)
-$(error $(CPP) version is too old, need atleast 4.7!)
-endif
+ifeq ($(findstring $(GCC_MAJOR),0123456),$(GCC_MAJOR))
+#ifeq ($(findstring $(GCC_MINOR),0),$(GCC_MINOR))
+$(error $(CPP) version is too old, need atleast 7.0! Found $(GCC_MAJOR).$(GCC_MINOR))
+#endif
 endif
 endif
 
@@ -87,7 +90,7 @@ STATLIBS += $(LLIB)/$(call lc,$(2).a)
 $(BUILD)/%.o: $(2)/%.cpp
 
 $(BUILD)/%.d: $(2)/%.cpp
-	@$(CPP) $(CPPFLAGS) -MM -MT $(BUILD)/$$*.o $$< -o $$@
+	@$(CPP) $(CPPFLAGS) -MP -MM -MT $(BUILD)/$$*.o $$< -o $$@
 
 endef
 
@@ -127,7 +130,7 @@ $(BUILD)/%.o:
 # Target
 $(BIN)/%: $(BUILD)/%.o $(LLIB)/libyarr.a
 	@echo [Linking] $@
-	@$(LD) $(LDFLAGS) $+ -o $@
+	@$(LD) $(LDFLAGS) $< $(LLIB)/libyarr.a $(PLDFLAGS) -o $@
 ifeq ($(ARCH),$(UNAME_P))
 	@ln -sf ../$@ bin/$*
 endif

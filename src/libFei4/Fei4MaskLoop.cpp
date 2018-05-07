@@ -21,13 +21,13 @@ void Fei4MaskLoop::init() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     // Shift Mask into all pixels
-    g_fe->writeRegister(&Fei4::Colpr_Mode, 0x3);
-    g_fe->writeRegister(&Fei4::Colpr_Addr, 0x0);
-    g_fe->initMask(MASK_1);
-    if (enable_lCap) g_fe->loadIntoPixel(1 << 6);
-    if (enable_sCap) g_fe->loadIntoPixel(1 << 7);
-    g_fe->initMask(m_mask);
-    g_fe->loadIntoPixel(1 << 0);
+    keeper->globalFe<Fei4>()->writeRegister(&Fei4::Colpr_Mode, 0x3);
+    keeper->globalFe<Fei4>()->writeRegister(&Fei4::Colpr_Addr, 0x0);
+    keeper->globalFe<Fei4>()->initMask(MASK_1);
+    if (enable_lCap) keeper->globalFe<Fei4>()->loadIntoPixel(1 << 6);
+    if (enable_sCap) keeper->globalFe<Fei4>()->loadIntoPixel(1 << 7);
+    keeper->globalFe<Fei4>()->initMask(m_mask);
+    keeper->globalFe<Fei4>()->loadIntoPixel(1 << 0);
     m_cur = min;
     while(g_tx->isCmdEmpty() == 0);
 }
@@ -36,12 +36,12 @@ void Fei4MaskLoop::end() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     // Disable all pixels
-    g_fe->writeRegister(&Fei4::Colpr_Mode, 0x3);
-    g_fe->writeRegister(&Fei4::Colpr_Addr, 0x0);
-    g_fe->initMask(MASK_NONE);
-    g_fe->loadIntoPixel(1 << 0);
-    if (enable_lCap) g_fe->loadIntoPixel(1 << 6);
-    if (enable_sCap) g_fe->loadIntoPixel(1 << 7);
+    keeper->globalFe<Fei4>()->writeRegister(&Fei4::Colpr_Mode, 0x3);
+    keeper->globalFe<Fei4>()->writeRegister(&Fei4::Colpr_Addr, 0x0);
+    keeper->globalFe<Fei4>()->initMask(MASK_NONE);
+    keeper->globalFe<Fei4>()->loadIntoPixel(1 << 0);
+    if (enable_lCap) keeper->globalFe<Fei4>()->loadIntoPixel(1 << 6);
+    if (enable_sCap) keeper->globalFe<Fei4>()->loadIntoPixel(1 << 7);
     while(g_tx->isCmdEmpty() == 0);
 }
 
@@ -57,15 +57,15 @@ void Fei4MaskLoop::execPart2() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     m_cur += step;
-    if (!(m_cur < max)) m_done = true;
+    if (!((int)m_cur < max)) m_done = true;
     // Shift Enable mask by step size
     for(unsigned i=0; i<step; i++) {
-        g_fe->writeRegister(&Fei4::Colpr_Mode, 0x3);
-        g_fe->writeRegister(&Fei4::Colpr_Addr, 0x0);
-        g_fe->shiftMask();
-        g_fe->loadIntoPixel(1 << 0);
-        //if (enable_lCap) g_fe->loadIntoPixel(1 << 6);
-        //if (enable_sCap) g_fe->loadIntoPixel(1 << 7);
+        keeper->globalFe<Fei4>()->writeRegister(&Fei4::Colpr_Mode, 0x3);
+        keeper->globalFe<Fei4>()->writeRegister(&Fei4::Colpr_Addr, 0x0);
+        keeper->globalFe<Fei4>()->shiftMask();
+        keeper->globalFe<Fei4>()->loadIntoPixel(1 << 0);
+        //if (enable_lCap) keeper->globalFe<Fei4>()->loadIntoPixel(1 << 6);
+        //if (enable_sCap) keeper->globalFe<Fei4>()->loadIntoPixel(1 << 7);
         while(g_tx->isCmdEmpty() == 0);
     }
 }

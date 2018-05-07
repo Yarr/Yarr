@@ -1,0 +1,82 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "OccGlobalThresholdTune"
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "1": {
+        "algorithm": "TotMap",
+        "config": {}
+      },
+      "2": {
+        "algorithm": "Tot2Map",
+        "config": {}
+      },
+      "3": {
+        "algorithm": "L1Dist",
+        "config": {}
+      },
+      "4": {
+        "algorithm": "HitsPerEvent",
+        "config": {}
+      },
+      "n_count": 5
+    },
+    "loops": [
+      { "config": {
+          "max": 400,
+          "min": 0,
+          "step": 16,
+          "parameter": "LinVth"
+        },
+        "loopAction": "Rd53aGlobalFeedback"
+      },
+      {
+        "config": {
+          "max": 64,
+          "min": 0,
+          "step": 1
+        },
+        "loopAction": "Rd53aMaskLoop"
+      },
+      {
+        "config": {
+          "max": 33,
+          "min": 16,
+          "step": 1,
+          "nSteps": 17
+        },
+        "loopAction": "Rd53aCoreColLoop"
+      },
+      {
+        "config": {
+          "count": 100,
+          "delay": 48,
+          "extTrigger": false,
+          "frequency": 5000,
+          "noInject": false,
+          "time": 0
+        },
+        "loopAction": "Rd53aTriggerLoop"
+      },
+      {
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "DiffGlobalThresholdTune",
+    "prescan": {
+        "InjEnDig": 0,
+        "LatencyConfig": 50,
+        "GlobalPulseRt": 16384,
+        "InjVcalHigh": 750,
+        "InjVcalMed": 500
+    }
+  }
+}

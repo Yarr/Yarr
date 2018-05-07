@@ -12,20 +12,19 @@
 
 #include "Fei4Cfg.h"
 #include "EmuShm.h"
-#include "RingBuffer.h"
+#include "EmuCom.h"
 #include "Gauss.h"
 #include "PixelModel.h"
 #include "FrontEndGeometry.h"
 #include "json.hpp"
-
-#include "RingBuffer.h"
 
 #include <cstdint>
 #include <memory>
 
 class Fei4Emu {
     public:
-        Fei4Emu(std::string output_model_cfg, std::string input_model_cfg, RingBuffer * rx, RingBuffer * tx);
+        Fei4Emu(std::string output_model_cfg, std::string input_model_cfg,
+                EmuCom * rx, EmuCom * tx);
         ~Fei4Emu();
 
         // the main loop which recieves commands from yarr
@@ -71,8 +70,8 @@ class Fei4Emu {
 
 //        std::shared_ptr<EmuShm> m_txShm;
 //        std::shared_ptr<EmuShm> m_rxShm;
-        RingBuffer * m_txRingBuffer;
-        RingBuffer * m_rxRingBuffer;
+        EmuCom * m_txRingBuffer;
+        EmuCom * m_rxRingBuffer;
         std::shared_ptr<Fei4Cfg> m_feCfg;
 
         uint32_t m_modeBits;

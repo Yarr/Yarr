@@ -11,9 +11,9 @@
 
 #include <mutex>
 #include <deque>
+#include <condition_variable>
 
 #include "RawData.h"
-#include "Fei4EventData.h"
 
 #include <iostream>
 #include <typeinfo>
@@ -36,6 +36,7 @@ class ClipBoard {
             queueMutex.unlock();
             //static unsigned cnt = 0;
             //std::cout << "Pushed " << cnt++ << " " << typeid(T).name() << " objects so far" << std::endl;
+            cv.notify_all();
         }
 
         // User has to take of deletin popped data
@@ -74,6 +75,8 @@ class ClipBoard {
             }
         }
 
+        std::condition_variable cv;
+        
     private:
         std::mutex queueMutex;
         std::deque<T*> dataQueue;
@@ -81,7 +84,7 @@ class ClipBoard {
 };
 
 template class ClipBoard<RawData>;
-template class ClipBoard<Fei4Data>;
+// template class ClipBoard<Fei4Data>;
 
 
 #endif

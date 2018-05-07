@@ -12,24 +12,28 @@
 #include "DataProcessor.h"
 #include "ClipBoard.h"
 #include "RawData.h"
-#include "Fei4EventData.h"
+#include "EventDataBase.h"
 
 class Fe65p2DataProcessor : public DataProcessor {
     public:
         Fe65p2DataProcessor();
         ~Fe65p2DataProcessor();
 
-        void connect(ClipBoard<RawDataContainer> *arg_input, std::map<unsigned, ClipBoard<Fei4Data> > *arg_outMap) {
+        void connect(ClipBoard<RawDataContainer> *arg_input, std::map<unsigned, ClipBoard<EventDataBase> > *arg_outMap) {
             input = arg_input;
             outMap = arg_outMap;
         }
 
         void init();
+        void run();
+        void join();
         void process();
+        void process_core();
 
     private:
+        std::vector<std::unique_ptr<std::thread>> thread_ptrs;
         ClipBoard<RawDataContainer> *input;
-        std::map<unsigned, ClipBoard<Fei4Data> > *outMap;
+        std::map<unsigned, ClipBoard<EventDataBase> > *outMap;
         std::vector<unsigned> activeChannels;
         std::map<unsigned, unsigned> tag;
         std::map<unsigned, unsigned> l1id;

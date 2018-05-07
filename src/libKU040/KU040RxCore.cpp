@@ -17,6 +17,13 @@
 #define VLEN    30
 #define BUFSIZE 256
 
+#ifdef __APPLE__
+struct mmsghdr {
+    struct msghdr msg_hdr;  /* Message header */
+    unsigned int  msg_len;  /* Number of received bytes for header */
+};
+#endif
+
 KU040RxCore::KU040RxCore()
 {
 	m_enableMask = 0;
@@ -287,7 +294,9 @@ void KU040RxCore::UDPReceiveThreadProc()
 	unsigned int packets_size = 0;
 	while(m_UDPReceiveThreadRunning)
 	{
-		std::vector<uint32_t> records;
+        std::vector<uint32_t> records;
+        
+#ifndef __APPLE__ //TODO recvmmsg not defined on osx, possible workaround: https://github.com/eQu1NoX/trinity-osx/tree/master/syscalls
 		int n = recvmmsg(sockfd, msgs, VLEN, 0, NULL);
 		if(n > 0)
 		{
@@ -320,6 +329,7 @@ void KU040RxCore::UDPReceiveThreadProc()
 			}
 			m_queuemutex.unlock();
 		}
+#endif
 	}
 
 	std::cout << "Stopping UDP receive" << std::endl;

@@ -9,6 +9,11 @@
 #include "Rd53aCmd.h"
 #include <fstream>
 
+Rd53aCmd::Rd53aCmd() {
+    verbose = false;
+    core = NULL;
+}
+
 Rd53aCmd::Rd53aCmd(TxCore *arg_core) {
     verbose = false;
     core = arg_core;
@@ -68,7 +73,7 @@ void Rd53aCmd::bcr() {
 }
 
 void Rd53aCmd::globalPulse(uint32_t chipId, uint32_t duration) {
-    core->writeFifo(0x5C5C0000 + (Rd53aCmd::encode5to8(chipId<<1)<<8) + Rd53aCmd::encode5to8(duration));
+    core->writeFifo(0x5C5C0000 + (Rd53aCmd::encode5to8(chipId<<1)<<8) + Rd53aCmd::encode5to8(duration<<1));
     core->releaseFifo();
 }
 

@@ -16,7 +16,6 @@
 
 class Fei4AnalogScan : public ScanBase {
     public:
-        Fei4AnalogScan(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data);
 		Fei4AnalogScan(Bookkeeper *k);
 
         void init();

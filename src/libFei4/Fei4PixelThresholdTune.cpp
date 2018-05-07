@@ -8,18 +8,16 @@
 
 #include "Fei4PixelThresholdTune.h"
 
-Fei4PixelThresholdTune::Fei4PixelThresholdTune(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data) : ScanBase(fe, tx, rx, data) {
-    mask = MASK_16;
-    dcMode = QUAD_DC;
-    numOfTriggers = 200;
-    triggerFrequency = 10e3;
-    triggerDelay = 50;
-    
-    useScap = true;
-    useLcap = true;
+#include "ScanFactory.h"
 
-    target = 3000;
-    verbose = false;
+namespace Fei4ScansRegistry {
+  using StdDict::registerScan;
+
+  bool pixel_threshold_scan_registered =
+    registerScan("tune_pixelthreshold",
+                 [](Bookkeeper *k) {
+                   return std::unique_ptr<ScanBase>(new Fei4PixelThresholdTune(k));
+                 });
 }
 
 Fei4PixelThresholdTune::Fei4PixelThresholdTune(Bookkeeper *b) : ScanBase(b) {
@@ -32,7 +30,7 @@ Fei4PixelThresholdTune::Fei4PixelThresholdTune(Bookkeeper *b) : ScanBase(b) {
     useScap = true;
     useLcap = true;
 
-    target = b->getTargetThreshold();
+    target = g_bk->getTargetThreshold();
     verbose = false;
 }
 
@@ -77,14 +75,15 @@ void Fei4PixelThresholdTune::init() {
 // Do necessary pre-scan configuration
 void Fei4PixelThresholdTune::preScan() {
     // Global config
-	g_tx->setCmdEnable(b->getTxMask());
-    g_fe->writeRegister(&Fei4::Trig_Count, 12);
-    g_fe->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
-    g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
-    while(!g_tx->isCmdEmpty()){}
+    g_tx->setCmdEnable(g_bk->getTxMask());
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::Trig_Count, 12);
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
+    while(!g_tx->isCmdEmpty())
+        ;
 
-	for(unsigned int k=0; k<b->feList.size(); k++) {
-        Fei4 *fe = dynamic_cast<Fei4*>(b->feList[k]);
+    for(unsigned int k=0; k<g_bk->feList.size(); k++) {
+        Fei4 *fe = dynamic_cast<Fei4*>(g_bk->feList[k]);
         if (fe->isActive()) {
             // Set to single channel tx
             g_tx->setCmdEnable(0x1 << fe->getTxChannel());
@@ -94,8 +93,9 @@ void Fei4PixelThresholdTune::preScan() {
             for (unsigned col=1; col<81; col++)
                 for (unsigned row=1; row<337; row++)
                     fe->setTDAC(col, row, 16);
-            while(!g_tx->isCmdEmpty()){}
+            while(!g_tx->isCmdEmpty())
+                ;
         }
-	}
-	g_tx->setCmdEnable(b->getTxMask());
+    }
+    g_tx->setCmdEnable(g_bk->getTxMask());
 }

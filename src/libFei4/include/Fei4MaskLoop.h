@@ -8,6 +8,7 @@
 
 #include <iostream>
 
+#include "Fei4.h"
 #include "LoopActionBase.h"
 
 class Fei4MaskLoop : public LoopActionBase {

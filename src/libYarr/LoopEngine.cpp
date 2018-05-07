@@ -6,16 +6,7 @@
 #include "LoopEngine.h"
 
 // Our LoopEngine will take care of distributing the global Fe to each loop item
-LoopEngine::LoopEngine(Fei4 *fe, TxCore *tx, RxCore *rx) {
-    g_fe = fe;
-    g_tx = tx;
-    g_rx = rx;
-}
-
 LoopEngine::LoopEngine(Bookkeeper *k) {
-    g_fe = k->g_fe;
-    g_tx = k->tx;
-    g_rx = k->rx;
     g_bk = k;
 }
 

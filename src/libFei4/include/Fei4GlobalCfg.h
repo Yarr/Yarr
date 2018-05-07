@@ -20,42 +20,50 @@
 
 using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 
-template<typename T>
-class FieldOperator {
-    public:
-        virtual unsigned value() const = 0;
-        virtual void write(const T& cfgBits) = 0;
-};
-
-template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight = false>
-class Field : public FieldOperator<T> {
+class Fei4Register {
     private:
-        T* m_cfg;
+        uint16_t *m_cfg;
+        unsigned m_mOffset;
+        unsigned m_bOffset;
+        unsigned m_mask;
+        bool m_msbRight;
 
     public:
-        Field(){};
+        Fei4Register() {
+            m_cfg = NULL;
+            m_mOffset = 0;
+            m_bOffset = 0;
+            m_mask = 0;
+            m_msbRight = false;
+        };
         
-        void initField(T* cfg, const T& cfgBits) {
+        void initReg(uint16_t* cfg, const uint16_t &cfgBits, 
+                const unsigned &mOffset, const unsigned &bOffset, 
+                const unsigned &mask, const bool &msbRight=false) {
             m_cfg = cfg;
+            m_mOffset = mOffset;
+            m_bOffset = bOffset;
+            m_mask = mask;
+            m_msbRight = msbRight;
             this->write(cfgBits);
         }
 
         // Get value of field
         unsigned value() const{
-            unsigned maskBits = (1<<mask)-1;
-            unsigned tmp = ((m_cfg[mOffset]&(maskBits<<bOffset))>>bOffset);
-            return (msbRight?BitOps::reverse_bits(tmp, mask):tmp);
+            unsigned maskBits = (1<<m_mask)-1;
+            unsigned tmp = ((m_cfg[m_mOffset]&(maskBits<<m_bOffset))>>m_bOffset);
+            return (m_msbRight?BitOps::reverse_bits(tmp, m_mask):tmp);
         }
 
         // Write value to field and config
-        void write(const T& cfgBits) {
-            unsigned maskBits = (1<<mask)-1;
-            m_cfg[mOffset]=(m_cfg[mOffset]&(~(maskBits<<bOffset))) | 
-                (((msbRight?BitOps::reverse_bits(cfgBits, mask):cfgBits)&maskBits)<<bOffset);
+        void write(const uint16_t& cfgBits) {
+            unsigned maskBits = (1<<m_mask)-1;
+            m_cfg[m_mOffset]=(m_cfg[m_mOffset]&(~(maskBits<<m_bOffset))) | 
+                (((m_msbRight?BitOps::reverse_bits(cfgBits, m_mask):cfgBits)&maskBits)<<m_bOffset);
         }
 
         unsigned addr() const{
-            return mOffset;
+            return m_mOffset;
         }
 
 };
@@ -77,24 +85,21 @@ class Fei4GlobalCfg {
 
         void toFileXml(tinyxml2::XMLDocument *doc, tinyxml2::XMLElement *node);
 
-        template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight>
-            void setValue(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref, const T& cfgBits) {
+        void setValue(Fei4Register Fei4GlobalCfg::*ref, const uint16_t& cfgBits) {
                 (this->*ref).write(cfgBits);
             }
 
-        template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight>
-            uint16_t getValue(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref) {
+        uint16_t getValue(Fei4Register Fei4GlobalCfg::*ref) {
                 return (this->*ref).value();
             }
         
-        template<typename T, unsigned mOffset, unsigned bOffset, unsigned mask, bool msbRight>
-            uint16_t getAddr(Field<T, mOffset, bOffset, mask, msbRight> Fei4GlobalCfg::*ref) {
+        uint16_t getAddr(Fei4Register Fei4GlobalCfg::*ref) {
                 return (this->*ref).addr();
             }
 
         uint16_t getValue(std::string regName) {
-            if (fieldMap.find(regName) != fieldMap.end()) {
-                return fieldMap[regName]->value();
+            if (regMap.find(regName) != regMap.end()) {
+                return (this->*regMap[regName]).value();
             } else {
                 std::cerr << " --> Error: Could not find register \""<< regName << "\"" << std::endl;
             }
@@ -102,148 +107,146 @@ class Fei4GlobalCfg {
         }
 
         void setValue(std::string regName, uint16_t value) {
-            if (fieldMap.find(regName) != fieldMap.end()) {
-                fieldMap[regName]->write(value);
+            if (regMap.find(regName) != regMap.end()) {
+                (this->*regMap[regName]).write(value);
             } else {
                 std::cerr << " --> Error: Could not find register \""<< regName << "\"" << std::endl;
             }
         }
 
-        std::map<std::string, FieldOperator<uint16_t>*> fieldMap;
+        std::map<std::string, Fei4Register Fei4GlobalCfg::*> regMap;
 
         // Fe-I4 global registers, see page 118 FE-I4B Manual
         //1
-        Field<uint16_t, 1, 0x8, 1> SME;
-        Field<uint16_t, 1, 0x0, 8, true> EventLimit;
+        Fei4Register SME;
+        Fei4Register EventLimit;
         //2
-        Field<uint16_t, 2, 0xC, 4> Trig_Count;
-        Field<uint16_t, 2, 0xB, 1> Conf_AddrEnable;
+        Fei4Register Trig_Count;
+        Fei4Register Conf_AddrEnable;
         //3
-        Field<uint16_t, 3, 0x0, 16> ErrorMask_0;
+        Fei4Register ErrorMask_0;
         //4
-        Field<uint16_t, 4, 0x0, 16> ErrorMask_1;
+        Fei4Register ErrorMask_1;
         //5
-        Field<uint16_t, 5, 0x8, 8, true> PrmpVbp_R;
-        Field<uint16_t, 5, 0x0, 8,true> BufVgOpAmp;
-        //Field<uint16_t, 5, 0x0, 8,true> GADCVref;
+        Fei4Register PrmpVbp_R;
+        Fei4Register BufVgOpAmp;
+        //Fei4Register GADCVref;
         //6
-        Field<uint16_t, 6, 0x0, 8, true> PrmpVbp;
+        Fei4Register PrmpVbp;
         //7
-        Field<uint16_t, 7, 0x8, 8, true> TDACVbp;
-        Field<uint16_t, 7, 0x0, 8, true> DisVbn;
+        Fei4Register TDACVbp;
+        Fei4Register DisVbn;
         //8
-        Field<uint16_t, 8, 0x8, 8, true> Amp2Vbn;
-        Field<uint16_t, 8, 0x0, 8, true> Amp2VbpFol;
+        Fei4Register Amp2Vbn;
+        Fei4Register Amp2VbpFol;
         //9
-        Field<uint16_t, 9, 0x0, 8, true> Amp2Vbp;
+        Fei4Register Amp2Vbp;
         //10
-        Field<uint16_t, 10, 0x8, 8, true> FDACVbn;
-        Field<uint16_t, 10, 0x0, 8, true> Amp2Vbpff;
+        Fei4Register FDACVbn;
+        Fei4Register Amp2Vbpff;
         //11
-        Field<uint16_t, 11, 0x8, 8, true> PrmpVbnFol;
-        Field<uint16_t, 11, 0x0, 8, true> PrmpVbp_L;
+        Fei4Register PrmpVbnFol;
+        Fei4Register PrmpVbp_L;
         //12
-        Field<uint16_t, 12, 0x8, 8, true> PrmpVbpf;
-        Field<uint16_t, 12, 0x0, 8, true> PrmpVbnLCC;
+        Fei4Register PrmpVbpf;
+        Fei4Register PrmpVbnLCC;
         //13
-        Field<uint16_t, 13, 0xF, 1> S1;
-        Field<uint16_t, 13, 0xE, 1> S0;
-        Field<uint16_t, 13, 0x1, 13, true> Pixel_latch_strobe;
+        Fei4Register S1;
+        Fei4Register S0;
+        Fei4Register Pixel_latch_strobe;
         //14
-        Field<uint16_t, 14, 0x8, 8, true> LVDSDrvIref;
-        Field<uint16_t, 14, 0x0, 8, true> GADCCompBias;
+        Fei4Register LVDSDrvIref;
+        Fei4Register GADCCompBias;
         //15
-        Field<uint16_t, 15, 0x8, 8, true> PllIbias;
-        Field<uint16_t, 15, 0x0, 8, true> LVDSDrvVos;
+        Fei4Register PllIbias;
+        Fei4Register LVDSDrvVos;
         //16
-        Field<uint16_t, 16, 0x8, 8, true> TempSensIbias;
-        Field<uint16_t, 16, 0x0, 8, true> PllIcp;
+        Fei4Register TempSensIbias;
+        Fei4Register PllIcp;
         //17
-        Field<uint16_t, 17, 0x0, 8, true> PlsrIDACRamp;
+        Fei4Register PlsrIDACRamp;
         //18
-        Field<uint16_t, 18, 0x8, 8, true> VrefDigTune;
-        Field<uint16_t, 18, 0x0, 8, true> PlsrVgOpAmp;
+        Fei4Register VrefDigTune;
+        Fei4Register PlsrVgOpAmp;
         //19
-        Field<uint16_t, 19, 0x8, 8, true> PlsrDACbias;
-        Field<uint16_t, 19, 0x0, 8, true> VrefAnTune;
+        Fei4Register PlsrDACbias;
+        Fei4Register VrefAnTune;
         //20
-        Field<uint16_t, 20, 0x8, 8,true> Vthin_Coarse;
-        Field<uint16_t, 20, 0x0, 8, true> Vthin_Fine;
+        Fei4Register Vthin_Coarse;
+        Fei4Register Vthin_Fine;
         //21
-        Field<uint16_t, 21, 0xC, 1> HitLD;
-        Field<uint16_t, 21, 0xB, 1> DJO;
-        Field<uint16_t, 21, 0xA, 1> DigHitIn_Sel;
-        Field<uint16_t, 21, 0x0, 10, true> PlsrDAC;
+        Fei4Register HitLD;
+        Fei4Register DJO;
+        Fei4Register DigHitIn_Sel;
+        Fei4Register PlsrDAC;
         //22
-        Field<uint16_t, 22, 0x8, 2, true> Colpr_Mode;
-        Field<uint16_t, 22, 0x2, 6, true> Colpr_Addr;
+        Fei4Register Colpr_Mode;
+        Fei4Register Colpr_Addr;
         //23
-        Field<uint16_t, 23, 0x0, 16> DisableColCnfg0;
+        Fei4Register DisableColCnfg0;
         //24
-        Field<uint16_t, 24, 0x0, 16> DisableColCnfg1;
+        Fei4Register DisableColCnfg1;
         //25
-        Field<uint16_t, 25, 0x8, 8> Trig_Lat;
-        Field<uint16_t, 25, 0x0, 8> DisableColCnfg2;
+        Fei4Register Trig_Lat;
+        Fei4Register DisableColCnfg2;
         //26
-        Field<uint16_t, 26, 0x3, 13> CMDcnt12;
-        Field<uint16_t, 26, 0x3, 8> CalPulseWidth;
-        Field<uint16_t, 26, 0xB, 5> CalPulseDelay;
-        Field<uint16_t, 26, 0x2, 1> StopModeConfig;
-        Field<uint16_t, 26, 0x0, 2> HitDiscCnfg;
+        Fei4Register CMDcnt12;
+        Fei4Register CalPulseWidth;
+        Fei4Register CalPulseDelay;
+        Fei4Register StopModeConfig;
+        Fei4Register HitDiscCnfg;
         //27
-        Field<uint16_t, 27, 0xF, 1> PLL_Enable;
-        Field<uint16_t, 27, 0xE, 1> EFS;
-        Field<uint16_t, 27, 0xD, 1> StopClkPulse;
-        Field<uint16_t, 27, 0xC, 1> ReadErrorReq;
-        Field<uint16_t, 27, 0xA, 1> GADC_En;
-        Field<uint16_t, 27, 0x9, 1> SRRead;
-        Field<uint16_t, 27, 0x5, 1> HitOr;
-        Field<uint16_t, 27, 0x4, 1> CalEn;
-        Field<uint16_t, 27, 0x3, 1> SRClr;
-        Field<uint16_t, 27, 0x2, 1> Latch_Enable;
-        Field<uint16_t, 27, 0x1, 1> SR_Clock;
-        Field<uint16_t, 27, 0x0, 1> M13;
+        Fei4Register PLL_Enable;
+        Fei4Register EFS;
+        Fei4Register StopClkPulse;
+        Fei4Register ReadErrorReq;
+        Fei4Register GADC_En;
+        Fei4Register SRRead;
+        Fei4Register HitOr;
+        Fei4Register CalEn;
+        Fei4Register SRClr;
+        Fei4Register Latch_Enable;
+        Fei4Register SR_Clock;
+        Fei4Register M13;
         //28
-        Field<uint16_t, 28, 0xF, 1> LVDSDrvSet06;
-        Field<uint16_t, 28, 0x9, 1> EN_40M;
-        Field<uint16_t, 28, 0x8, 1> EN_80M;
-        Field<uint16_t, 28, 0x7, 1> CLK1_S0;
-        Field<uint16_t, 28, 0x6, 1> CLK1_S1;
-        Field<uint16_t, 28, 0x5, 1> CLK1_S2;
-        Field<uint16_t, 28, 0x4, 1> CLK0_S0;
-        Field<uint16_t, 28, 0x3, 1> CLK0_S1;
-        Field<uint16_t, 28, 0x2, 1> CLK0_S2;
-        Field<uint16_t, 28, 0x1, 1> EN_160;
-        Field<uint16_t, 28, 0x0, 1> EN_320;
+        Fei4Register LVDSDrvSet06;
+        Fei4Register EN_40M;
+        Fei4Register EN_80M;
+        Fei4Register CLK1_S0;
+        Fei4Register CLK1_S1;
+        Fei4Register CLK1_S2;
+        Fei4Register CLK0_S0;
+        Fei4Register CLK0_S1;
+        Fei4Register CLK0_S2;
+        Fei4Register EN_160;
+        Fei4Register EN_320;
         //29
-        Field<uint16_t, 29, 0xD, 1> No8b10b;
-        Field<uint16_t, 29, 0xC, 1> Clk2Out;
-        Field<uint16_t, 29, 0x4, 8> EmptyRecordCnfg;
-        Field<uint16_t, 29, 0x2, 1> LVDSDrvEn;
-        Field<uint16_t, 29, 0x1, 1> LVDSDrvSet30;
-        Field<uint16_t, 29, 0x0, 1> LVDSDrvSet12;
+        Fei4Register No8b10b;
+        Fei4Register Clk2Out;
+        Fei4Register EmptyRecordCnfg;
+        Fei4Register LVDSDrvEn;
+        Fei4Register LVDSDrvSet30;
+        Fei4Register LVDSDrvSet12;
         //30
-        Field<uint16_t, 30, 0xE, 2> TmpSensDiodeSel;
-        Field<uint16_t, 30, 0xD, 1> TmpSensDisable;
-        Field<uint16_t, 30, 0xC, 1> IleakRange;
+        Fei4Register TmpSensDiodeSel;
+        Fei4Register TmpSensDisable;
+        Fei4Register IleakRange;
         //31
-        Field<uint16_t, 31, 0xD, 3> PlsrRiseUpTau;
-        Field<uint16_t, 31, 0xC, 1> PlsrPwr;
-        Field<uint16_t, 31, 0x6, 6, true> PlsrDelay;
-        Field<uint16_t, 31, 0x5, 1> ExtDigCalSW;
-        Field<uint16_t, 31, 0x4, 1> ExtAnaCalSW;
-        Field<uint16_t, 31, 0x0, 3> GADCSel;
+        Fei4Register PlsrRiseUpTau;
+        Fei4Register PlsrPwr;
+        Fei4Register PlsrDelay;
+        Fei4Register ExtDigCalSW;
+        Fei4Register ExtAnaCalSW;
+        Fei4Register GADCSel;
         //32
-        Field<uint16_t, 32, 0x0, 16> SELB0;
+        Fei4Register SELB0;
         //33
-        Field<uint16_t, 33, 0x0, 16> SELB1;
+        Fei4Register SELB1;
         //34
-        Field<uint16_t, 34, 0x8, 8> SELB2;
-        Field<uint16_t, 34, 0x4, 1> PrmpVbpMsbEn;
+        Fei4Register SELB2;
+        Fei4Register PrmpVbpMsbEn;
         //35
-        Field<uint16_t, 35, 0x0, 16> EFUSE;
-
-
+        Fei4Register EFUSE;
 };
 
 #endif

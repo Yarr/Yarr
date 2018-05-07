@@ -37,11 +37,11 @@ void Fe65p2DigitalScan::init() {
 }
 
 void Fe65p2DigitalScan::preScan() {
-    g_fe65p2->setLatency(60);
-    g_fe65p2->setValue(&Fe65p2::TestHit, 0x1);
-    g_fe65p2->setValue(&Fe65p2::Latency, 60);
-    g_fe65p2->setValue(&Fe65p2::Vthin1Dac, 255);
-    g_fe65p2->setValue(&Fe65p2::Vthin2Dac, 10);
-    g_fe65p2->configureGlobal();
+    g_bk->globalFe<Fe65p2>()->setLatency(60);
+    g_bk->globalFe<Fe65p2>()->setValue(&Fe65p2::TestHit, 0x1);
+    g_bk->globalFe<Fe65p2>()->setValue(&Fe65p2::Latency, 60);
+    g_bk->globalFe<Fe65p2>()->setValue(&Fe65p2::Vthin1Dac, 255);
+    g_bk->globalFe<Fe65p2>()->setValue(&Fe65p2::Vthin2Dac, 10);
+    g_bk->globalFe<Fe65p2>()->configureGlobal();
     while(g_tx->isCmdEmpty() == 0);
 }

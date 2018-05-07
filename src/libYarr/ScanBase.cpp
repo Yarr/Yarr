@@ -8,21 +8,11 @@
 
 #include "ScanBase.h"
 
-ScanBase::ScanBase(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data) : engine(fe, tx, rx){
-    g_fe = fe;
-    g_fe65p2 =NULL;
-    g_tx = tx;
-    g_rx = rx;
-    g_data = data;
-}
-
 ScanBase::ScanBase(Bookkeeper *k) : engine(k) {
-    g_fe = k->g_fe;
-    g_fe65p2 = k->g_fe65p2;
+    g_data = &k->rawData;
+    g_bk = k;
     g_tx = k->tx;
     g_rx = k->rx;
-    g_data = &k->rawData;
-    b = k;
 }
 
 void ScanBase::run() {

@@ -1,6 +1,14 @@
 #include "Fe65p2Cmd.h"
 
+Fe65p2Cmd::Fe65p2Cmd() {
+    core = NULL;
+}
+
 Fe65p2Cmd::Fe65p2Cmd(TxCore *arg_core) {
+    core = arg_core;
+}
+
+void Fe65p2Cmd::setCore(TxCore *arg_core) {
     core = arg_core;
 }
 

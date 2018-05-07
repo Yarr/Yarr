@@ -7,6 +7,7 @@
 #define FEI4TRIGGERLOOP_H
 
 #include "LoopActionBase.h"
+#include "Fei4.h"
 
 #define TRIG_CMD 0xe8000000
 #define CAL_CMD  0x00000164

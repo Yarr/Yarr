@@ -59,9 +59,12 @@ double Histo1d::getMean() {
     if (sum == 0)
         return 0;
     double weighted_sum = 0;
-    for (unsigned i=0; i<bins; i++)
+    double entries = 0;
+    for (unsigned i=0; i<bins; i++) {
         weighted_sum += data[i]*(((i+1)*binWidth)+xlow+(binWidth/2.0));
-    return weighted_sum/sum;
+        entries += data[i];
+    }
+    return weighted_sum/entries;
 }
 
 double Histo1d::getStdDev() {

@@ -1,0 +1,79 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "OccupancyAnalysis",
+        "config": {
+          "createMask": true
+        }
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "1": {
+        "algorithm": "TotMap",
+        "config": {}
+      },
+      "2": {
+        "algorithm": "Tot2Map",
+        "config": {}
+      },
+      "3": {
+        "algorithm": "L1Dist",
+        "config": {}
+      },
+      "4": {
+        "algorithm": "HitPerEvent",
+        "config": {}
+      },
+      "n_count": 5
+    },
+    "loops": [
+      {
+        "config": {
+          "enable_lcap": true,
+          "enable_scap": true,
+          "mask": 65537,
+          "max": 16,
+          "min": 0,
+          "step": 1
+        },
+        "loopAction": "Fei4MaskLoop"
+      },
+      {
+        "config": {
+          "max": 4,
+          "min": 0,
+          "mode": 1,
+          "step": 1
+        },
+        "loopAction": "Fei4DcLoop"
+      },
+      {
+        "config": {
+          "count": 100,
+          "delay": 30,
+          "extTrigger": false,
+          "frequency": 1000,
+          "noInject": false,
+          "time": 0
+        },
+        "loopAction": "Fei4TriggerLoop"
+      },
+      {
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "DigitalScan",
+    "prescan": {
+        "DigHitIn_Sel": 1,
+        "Trig_Count": 10,
+        "Trig_Lat": 220,
+        "Vthin_Coarse": 200
+    }
+  }
+}

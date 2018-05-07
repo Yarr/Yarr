@@ -8,21 +8,16 @@
 
 #include "Fei4GlobalPreampTune.h"
 
-Fei4GlobalPreampTune::Fei4GlobalPreampTune(Fei4 *fe, TxCore *tx, RxCore *rx, ClipBoard<RawDataContainer> *data) : ScanBase(fe, tx, rx, data) {
-    mask = MASK_16;
-    dcMode = QUAD_DC;
-    numOfTriggers = 100;
-    triggerFrequency = 10e3;
-    triggerDelay = 50;
-    minVcal = 10;
-    maxVcal = 100;
-    stepVcal = 1;
+#include "ScanFactory.h"
 
-    useScap = true;
-    useLcap = true;
+namespace Fei4ScansRegistry {
+  using StdDict::registerScan;
 
-    target = 16000;
-    verbose = false;
+  bool global_preamp_scan_registered =
+    registerScan("tune_globalpreamp",
+                 [](Bookkeeper *k) {
+                   return std::unique_ptr<ScanBase>(new Fei4GlobalPreampTune(k));
+                 });
 }
 
 Fei4GlobalPreampTune::Fei4GlobalPreampTune(Bookkeeper *b) : ScanBase(b) {
@@ -38,14 +33,14 @@ Fei4GlobalPreampTune::Fei4GlobalPreampTune(Bookkeeper *b) : ScanBase(b) {
     useScap = true;
     useLcap = true;
 
-    target = b->getTargetCharge();
+    target = g_bk->getTargetCharge();
     verbose = false;
 }
 
 // Initialize Loops
 void Fei4GlobalPreampTune::init() {
     // Loop 0: Feedback
-    std::shared_ptr<Fei4GlobalFeedbackBase> fbLoop(Fei4GlobalFeedbackBuilder(&Fei4::PrmpVbpf));
+    std::shared_ptr<Fei4GlobalFeedback> fbLoop(new Fei4GlobalFeedback(&Fei4::PrmpVbpf));
     fbLoop->setStep(64);
     fbLoop->setMax(128);
     fbLoop->setVerbose(true);
@@ -88,16 +83,17 @@ void Fei4GlobalPreampTune::init() {
 // Do necessary pre-scan configuration
 void Fei4GlobalPreampTune::preScan() {
     // Global config
-	g_tx->setCmdEnable(b->getTxMask());
-    g_fe->writeRegister(&Fei4::Trig_Count, 12);
-    g_fe->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
-    g_fe->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
-    while(!g_tx->isCmdEmpty()){}
-    
-	for(unsigned int k=0; k<b->feList.size(); k++) {
-        Fei4 *fe = dynamic_cast<Fei4*>(b->feList[k]);
+    g_tx->setCmdEnable(g_bk->getTxMask());
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::Trig_Count, 12);
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::Trig_Lat, (255-triggerDelay)-4);
+    g_bk->globalFe<Fei4>()->writeRegister(&Fei4::CalPulseWidth, 20); // Longer than max ToT 
+    while(!g_tx->isCmdEmpty())
+        ;
+
+    for(unsigned int k=0; k<g_bk->feList.size(); k++) {
+        Fei4 *fe = dynamic_cast<Fei4*>(g_bk->feList[k]);
         // Set to single channel tx
-		g_tx->setCmdEnable(0x1 << fe->getTxChannel());
+        g_tx->setCmdEnable(0x1 << fe->getTxChannel());
         // Set specific pulser DAC
         fe->writeRegister(&Fei4::PlsrDAC, fe->toVcal(target, useScap, useLcap));
         // Reset all TDACs
@@ -106,7 +102,8 @@ void Fei4GlobalPreampTune::preScan() {
             for (unsigned row=1; row<337; row++)
                 fe->setFDAC(col, row, 8);
         fe->configurePixels();
-        while(!g_tx->isCmdEmpty()){}
-	}
-	g_tx->setCmdEnable(b->getTxMask());
+        while(!g_tx->isCmdEmpty())
+            ;
+    }
+    g_tx->setCmdEnable(g_bk->getTxMask());
 }
