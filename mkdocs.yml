@@ -1,0 +1,12 @@
+site_name: YARR Docs
+pages:
+    - Home: index.md
+    - SW Installation: install.md
+    - Kernel Driver: kernel_driver.md
+    - PCIe Firmware: pcie.md
+    - ScanConsole: scanconsole.md
+    - FE-I4: fei4.md
+    - FE65-P2: fe65p2.md
+    - RD53A: rd53a.md
+    - Troubleshooting: troubleshooting.md
+theme: readthedocs

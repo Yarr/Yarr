@@ -97,7 +97,7 @@ Several bit files found:
 <More files listed>
 Choose a file by typing a number:
 ```
-- From the list select the correct firmware you want to program. Generally you have to choose the one specific to your PCIe card, FPGA, and Adapter card. A guide on how to choose firmware can be found [here](fw_guide.md) *TODO*
+- From the list select the correct firmware you want to program. Generally you have to choose the one specific to your PCIe card, FPGA, and Adapter card. A guide on how to choose firmware can be found [here](fw_guide.md)
 
 - Once you entered the number it will take a few minutes to flash the firmware
 

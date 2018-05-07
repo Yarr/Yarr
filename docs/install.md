@@ -1,6 +1,6 @@
 # Hardware Setup and Software Installation
 
-In order to setuo the DAQ system the following two steps are needed:
+In order to setup the DAQ system the following two steps are needed:
 
 1. Install the YARR SW package
 2. Install the custom PCIe kernel driver
