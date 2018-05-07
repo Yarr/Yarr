@@ -26,10 +26,8 @@ Hardware:
 Software:
 
 - SLC6 (Scientific Linux CERN 6) or CC7 (CERN CentOs 7)
-- GCC version 4.8 or higher
-    - for example from devtoolset-4, instruction can be found here https://www.softwarecollections.org/en/scls/rhscl/devtoolset-4
-- QT5 for graphical user interface
-- Xilinx ISE 14.7 and `hdlmake <http://www.ohwr.org/projects/hdl-make/wiki>`_ (only to rebuild firmware)
+- GCC version 7.0 or higher
+    - for example from devtoolset-7, instruction can be found here https://www.softwarecollections.org/en/scls/rhscl/devtoolset-4
 
 Quick Install Guide:
 - Using make:
