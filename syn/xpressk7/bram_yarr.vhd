@@ -63,8 +63,6 @@ entity top_level is
             fe_clk_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
             fe_cmd_p        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
             fe_cmd_n        : out std_logic_vector(c_TX_CHANNELS-1 downto 0);
-            fe_cmd_copy_p        : out std_logic;
-            fe_cmd_copy_n        : out std_logic;
             fe_data_p        : in  std_logic_vector((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0);
             fe_data_n        : in  std_logic_vector((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0);
             -- I2c
@@ -296,8 +294,7 @@ architecture Behavioral of top_level is
     
 
     
-    signal fe_cmd_p_s : std_logic_vector(C_TX_CHANNELS-1 downto 0);
-    signal fe_cmd_n_s : std_logic_vector(C_TX_CHANNELS-1 downto 0);
+
     
     --Clocks
     signal sys_clk : STD_LOGIC;
@@ -433,11 +430,6 @@ begin
         sys_clk => sys_clk,
         sys_rst_n => sys_rst_n_i
       );
-
-      fe_cmd_p <= fe_cmd_p_s;
-      fe_cmd_n <= fe_cmd_n_s;
-      fe_cmd_copy_p <= fe_cmd_p_s(0);
-      fe_cmd_copy_n <= fe_cmd_n_s(0);
       
       app_0:app
       Generic map( 
@@ -521,8 +513,8 @@ begin
         -- FE-I4
         fe_clk_p          => fe_clk_p,
         fe_clk_n          => fe_clk_n,
-        fe_cmd_p          => fe_cmd_p_s,
-        fe_cmd_n          => fe_cmd_n_s,
+        fe_cmd_p          => fe_cmd_p,
+        fe_cmd_n          => fe_cmd_n,
         fe_data_p         => fe_data_p,
         fe_data_n         => fe_data_n,
         -- I2c
