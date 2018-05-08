@@ -23,15 +23,26 @@ void ScanFactory::init() {
 void ScanFactory::preScan() {
     std::cout << __PRETTY_FUNCTION__ << std::endl;
 
-    FrontEnd &fe = *g_bk->getGlobalFe();
-    fe.setInjCharge(g_bk->getTargetCharge(), true, true); // TODO need sCap/lCap for FEI4
 
     // Load scan specific registers from config
     auto &config_list = m_config["scan"]["prescan"];
     for (json::iterator it = config_list.begin(); it != config_list.end(); ++it) {
+        FrontEnd &fe = *g_bk->getGlobalFe();
         fe.writeNamedRegister(it.key(), it.value());
     }
     while(!g_tx->isCmdEmpty()){}
+
+    for (auto *fe : g_bk->feList) {
+        if(fe->getActive()) {
+            // Enable single channel
+            g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+            // Write parameter
+            fe->setInjCharge(g_bk->getTargetCharge(), true, true); // TODO need sCap/lCap for FEI4
+            while(!g_tx->isCmdEmpty()){}
+        }
+    }
+    // Reset CMD mask
+    g_tx->setCmdEnable(g_bk->getTxMask());
 }
 
 void ScanFactory::postScan() {
