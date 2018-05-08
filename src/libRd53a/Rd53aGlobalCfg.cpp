@@ -43,17 +43,17 @@ void Rd53aGlobalCfg::init() {
     //7
     SyncIbiasSf.init(7, &m_cfg[7], 0, 9, 100); regMap["SyncIbiasSf"] = &Rd53aGlobalCfg::SyncIbiasSf;
     //8
-    SyncIbiasKrum.init(8, &m_cfg[8], 0, 9, 140); regMap["SyncIbiasKrum"] = &Rd53aGlobalCfg::SyncIbiasKrum;
+    SyncIbiasKrum.init(8, &m_cfg[8], 0, 9, 40); regMap["SyncIbiasKrum"] = &Rd53aGlobalCfg::SyncIbiasKrum;
     //9
-    SyncIbiasDisc.init(9, &m_cfg[9], 0, 9, 200); regMap["SyncIbiasDisc"] = &Rd53aGlobalCfg::SyncIbiasDisc;
+    SyncIbiasDisc.init(9, &m_cfg[9], 0, 9, 300); regMap["SyncIbiasDisc"] = &Rd53aGlobalCfg::SyncIbiasDisc;
     //10
     SyncIctrlSynct.init(10, &m_cfg[10], 0, 10, 100); regMap["SyncIctrlSynct"] = &Rd53aGlobalCfg::SyncIctrlSynct;
     //11
-    SyncVbl.init(11, &m_cfg[11], 0, 10, 450); regMap["SyncVbl"] = &Rd53aGlobalCfg::SyncVbl;
+    SyncVbl.init(11, &m_cfg[11], 0, 10, 400); regMap["SyncVbl"] = &Rd53aGlobalCfg::SyncVbl;
     //12
     SyncVth.init(12, &m_cfg[12], 0, 10, 300); regMap["SyncVth"] = &Rd53aGlobalCfg::SyncVth;
     //13
-    SyncVrefKrum.init(13, &m_cfg[13], 0, 10, 490); regMap["SyncVrefKrum"] = &Rd53aGlobalCfg::SyncVrefKrum;
+    SyncVrefKrum.init(13, &m_cfg[13], 0, 10, 450); regMap["SyncVrefKrum"] = &Rd53aGlobalCfg::SyncVrefKrum;
     //30
     SyncAutoZero.init(30, &m_cfg[30], 3, 2, 0); regMap["SyncAutoZero"] = &Rd53aGlobalCfg::SyncAutoZero;
     SyncSelC2F.init(30, &m_cfg[30], 2, 1, 1); regMap["SyncSelC2F"] = &Rd53aGlobalCfg::SyncSelC2F;
@@ -74,7 +74,7 @@ void Rd53aGlobalCfg::init() {
     //19
     LinRefKrum.init(19, &m_cfg[19], 0, 10, 300); regMap["LinRefKrum"] = &Rd53aGlobalCfg::LinRefKrum;
     //20
-    LinVth.init(20, &m_cfg[20], 0, 10, 350); regMap["LinVth"] = &Rd53aGlobalCfg::LinVth;
+    LinVth.init(20, &m_cfg[20], 0, 10, 400); regMap["LinVth"] = &Rd53aGlobalCfg::LinVth;
 
     // Diff FE
     //21

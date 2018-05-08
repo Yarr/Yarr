@@ -14,7 +14,7 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
     m_trigFreq = 1e3;
     m_trigTime = 10;
     m_trigWordLength = 16;
-    m_pulseDuration = 8;
+    m_pulseDuration = 9;
     m_trigWord.fill(0x69696969);
     m_trigWord[15] = 0x69696363;
     m_trigWord[14] = Rd53aCmd::genCal(8, 0, 0, 1, 0, 0); // Inject

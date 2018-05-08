@@ -278,6 +278,9 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    // Disable trigger in-case
+    hwCtrl->setTrigEnable(0);
+ 
     Bookkeeper bookie(&*hwCtrl, &*hwCtrl);
 
     std::map<FrontEnd*, std::string> feCfgMap;
