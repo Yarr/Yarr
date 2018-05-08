@@ -35,7 +35,7 @@ void EmuTxCore::setTrigCnt(uint32_t count) {
 void EmuTxCore::setTrigEnable(uint32_t value) {
     // TODO value should reflect channel
     if(value == 0) {
-        triggerProc.join();
+        if (triggerProc.joinable()) triggerProc.join();
     } else {
         trigProcRunning = true;
         triggerProc = std::thread(&EmuTxCore::doTrigger, this);

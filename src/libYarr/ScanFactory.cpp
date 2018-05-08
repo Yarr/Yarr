@@ -32,17 +32,19 @@ void ScanFactory::preScan() {
     }
     while(!g_tx->isCmdEmpty()){}
 
-    for (auto *fe : g_bk->feList) {
-        if(fe->getActive()) {
-            // Enable single channel
-            g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
-            // Write parameter
-            fe->setInjCharge(g_bk->getTargetCharge(), true, true); // TODO need sCap/lCap for FEI4
-            while(!g_tx->isCmdEmpty()){}
+    if (g_bk->getTargetCharge() > 0) {
+        for (auto *fe : g_bk->feList) {
+            if(fe->getActive()) {
+                // Enable single channel
+                g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+                // Write parameter
+                fe->setInjCharge(g_bk->getTargetCharge(), true, true); // TODO need sCap/lCap for FEI4
+                while(!g_tx->isCmdEmpty()){}
+            }
         }
+        // Reset CMD mask
+        g_tx->setCmdEnable(g_bk->getTxMask());
     }
-    // Reset CMD mask
-    g_tx->setCmdEnable(g_bk->getTxMask());
 }
 
 void ScanFactory::postScan() {
