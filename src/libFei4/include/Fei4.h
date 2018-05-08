@@ -85,7 +85,7 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
             this->rdRegister(chipId, addr);
         }
         
-        void setInjCharge(double charge, bool use_sCap=true, bool use_lCap=true) {
+        void setInjCharge(double charge, bool use_sCap=true, bool use_lCap=true) override final {
             this->writeRegister(&Fei4GlobalCfg::PlsrDAC, this->toVcal(charge, use_sCap, use_lCap));
         }
 

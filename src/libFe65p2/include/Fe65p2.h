@@ -35,7 +35,7 @@ class Fe65p2 : public FrontEnd, public Fe65p2Cfg, public Fe65p2Cmd {
 
         void writeNamedRegister(std::string name, uint16_t value) override;
         
-        void setInjCharge(double charge, bool sCap=true, bool lCap=true) {
+        void setInjCharge(double charge, bool sCap=true, bool lCap=true) override final {
             this->setValue(&Fe65p2GlobalCfg::PlsrDac, this->toVcal(charge));
             this->configDac();
         }
