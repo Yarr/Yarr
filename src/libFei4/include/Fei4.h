@@ -84,6 +84,10 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
         void readRegister(unsigned addr) {
             this->rdRegister(chipId, addr);
         }
+        
+        void setInjCharge(double charge, bool use_sCap=true, bool use_lCap=true) {
+            this->writeRegister(&Fei4GlobalCfg::PlsrDAC, this->toVcal(charge, use_sCap, use_lCap));
+        }
 
         void wrGR16(unsigned int mOffset, unsigned int bOffset, unsigned int mask, bool msbRight, uint16_t cfgBits);
     private:

@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
     spec.setRxEnable(0x0);
     
     Rd53a fe(&spec);
-    fe.setChipId(8);
+    fe.setChipId(0);
     std::cout << ">>> Configuring chip with default config ..." << std::endl;
     fe.configure();
     std::cout << " ... done." << std::endl;
@@ -114,12 +114,12 @@ int main(int argc, char *argv[]) {
    
     std::cout << ">>> Enabling some pixels" << std::endl;
     
-    fe.setEn(100, 0, 1);
-    fe.setInjEn(100, 0, 1);
-    fe.setEn(102, 0, 1);
-    fe.setInjEn(102, 0, 1);
-    fe.setEn(102, 1, 1);
-    fe.setInjEn(102, 1, 1);
+    fe.setEn(150, 0, 1);
+    fe.setInjEn(150, 0, 1);
+    fe.setEn(165, 0, 1);
+    fe.setInjEn(165, 0, 1);
+    fe.setEn(165, 1, 1);
+    fe.setInjEn(165, 1, 1);
 
     /*
     fe.writeRegister(&Rd53a::PixRegionCol, 100);
@@ -152,9 +152,13 @@ int main(int argc, char *argv[]) {
     spec.setTrigWordLength(8);
     std::array<uint32_t, 8> trigWord;
     trigWord.fill(0x69696969);
-    trigWord[7] = 0x69696363;
-    trigWord[6] = fe.genCal(8, 1, 0, 50, 0, 0);
-    trigWord[0] = fe.genTrigger(0xF, 4, 0xF, 8);
+    trigWord[15] = 0x69696363;
+    trigWord[14] = Rd53aCmd::genCal(8, 0, 0, 1, 0, 0); // Inject
+    trigWord[8] = Rd53aCmd::genTrigger(0xF, 1, 0xF, 2); // Trigger
+    //trigWord[7] = Rd53aCmd::genTrigger(0xF, 3, 0xF, 4); // Trigger
+    trigWord[2] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(8<<1)); // global pulse for sync FE
+    trigWord[1] = 0x5a5a6363; // ECR + header
+    trigWord[0] = Rd53aCmd::genCal(8, 1, 0, 0, 0, 0); // Arm inject
     spec.setTrigWord(&trigWord[0], 8);
     spec.setTrigConfig(INT_COUNT);
     spec.setTrigEnable(1);

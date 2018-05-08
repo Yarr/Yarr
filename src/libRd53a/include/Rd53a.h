@@ -41,8 +41,13 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
         void configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels);
 
         void writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value);
-        void writeNamedRegister(std::string name, uint16_t value);
         void readRegister(Rd53aReg Rd53aGlobalCfg::*ref);
+        void writeNamedRegister(std::string name, uint16_t value);
+        
+        void setInjCharge(double charge, bool sCap=true, bool lCap=true) {
+            this->writeRegister((Rd53aReg Rd53aGlobalCfg::*)&Rd53aGlobalCfg::InjVcalDiff, this->toVcal(charge));
+        }
+        
         void enableCalCol(unsigned col);
         void disableCalCol(unsigned col);
 

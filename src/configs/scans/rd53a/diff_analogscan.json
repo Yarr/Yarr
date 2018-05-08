@@ -73,8 +73,8 @@
         "InjEnDig": 0,
         "LatencyConfig": 50,
         "GlobalPulseRt": 16384,
-        "InjVcalMed": 2500,
-        "InjVcalHigh": 500
+        "InjVcalHigh": 2500,
+        "InjVcalMed": 500
     }
   }
 }

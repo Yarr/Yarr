@@ -80,9 +80,8 @@ int main(int argc, char *argv[]) {
     std::string outputDir = "./data/";
     std::string ctrlCfgPath = "";
     bool doPlots = false;
-    int target_threshold = 2500;
-    int target_tot = 10;
-    int target_charge = 16000;
+    int target_charge = -1;
+    int target_tot = -1;
     int mask_opt = -1;
     
     unsigned runCounter = 0;
@@ -151,16 +150,13 @@ int main(int argc, char *argv[]) {
                 for(; optind < argc && *argv[optind] != '-'; optind += 1){
                     switch (count) {
                         case 0:
-                            target_threshold = atoi(argv[optind]);
+                            target_charge = atoi(argv[optind]);
                             break;
                         case 1:
                             target_tot = atoi(argv[optind]);
                             break;
-                        case 2:
-                            target_charge = atoi(argv[optind]);
-                            break;
                         default:
-                            std::cerr << "-> Can only receive max. 3 parameters with -t!!" << std::endl;
+                            std::cerr << "-> Can only receive max. 2 parameters with -t!!" << std::endl;
                             break;
                     }
                     count++;
@@ -208,7 +204,6 @@ int main(int argc, char *argv[]) {
     for(std::string const& sTmp : cConfigPaths){
         std::cout << "    " << sTmp << std::endl;
     }
-    std::cout << " Target Threshold: " << target_threshold << std::endl;
     std::cout << " Target ToT: " << target_tot << std::endl;
     std::cout << " Target Charge: " << target_charge << std::endl;
     std::cout << " Output Plots: " << doPlots << std::endl;
@@ -287,7 +282,6 @@ int main(int argc, char *argv[]) {
 
     std::map<FrontEnd*, std::string> feCfgMap;
 
-    bookie.setTargetThreshold(target_threshold);
     bookie.setTargetTot(target_tot);
     bookie.setTargetCharge(target_charge);
 
@@ -577,7 +571,7 @@ void printHelp() {
     //std::cout << " -g <cfg_list.txt>: Provide list of chip configurations." << std::endl;
     std::cout << " -c <cfg1.json> [<cfg2.json> ...]: Provide connectivity configuration, can take multiple arguments." << std::endl;
     std::cout << " -r <ctrl.json> Provide controller configuration." << std::endl;
-    std::cout << " -t <target_threshold> [<tot_target> [<charge_target>]] : Set target values for threshold, tot, charge." << std::endl;
+    std::cout << " -t <target_charge> [<tot_target>] : Set target values for threshold/charge (and tot)." << std::endl;
     std::cout << " -p: Enable plotting of results." << std::endl;
     std::cout << " -o <dir> : Output directory. (Default ./data/)" << std::endl;
     std::cout << " -m <int> : 0 = disable pixel masking, 1 = reset pixel masking, default = enable pixel masking" << std::endl;

@@ -41,7 +41,7 @@ void Fe65p2PixelThresholdTune::init() {
 }
 
 void Fe65p2PixelThresholdTune::preScan() {
-    g_bk->globalFe<Fe65p2>()->setValue(&Fe65p2::PlsrDac, g_bk->globalFe<Fe65p2>()->toVcal(g_bk->getTargetThreshold())); // Set high injection
+    g_bk->globalFe<Fe65p2>()->setValue(&Fe65p2::PlsrDac, g_bk->globalFe<Fe65p2>()->toVcal(g_bk->getTargetCharge())); // Set high injection
     g_bk->globalFe<Fe65p2>()->configDac();
     
     g_bk->globalFe<Fe65p2>()->setLatency(60+5);

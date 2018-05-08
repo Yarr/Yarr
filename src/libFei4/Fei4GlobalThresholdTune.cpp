@@ -30,7 +30,7 @@ Fei4GlobalThresholdTune::Fei4GlobalThresholdTune(Bookkeeper *b) : ScanBase(b) {
     useScap = true;
     useLcap = true;
 
-    target = g_bk->getTargetThreshold();
+    target = g_bk->getTargetCharge();
     verbose = false;
 }
 

@@ -47,7 +47,7 @@ void Fe65p2GlobalThresholdTune::preScan() {
     g_bk->globalFe<Fe65p2>()->setLatency(60+5);
     g_bk->globalFe<Fe65p2>()->setValue(&Fe65p2::TestHit, 0x0);
     g_bk->globalFe<Fe65p2>()->setValue(&Fe65p2::Vthin1Dac, 255); // Set Threshold not too low, not too high
-    g_bk->globalFe<Fe65p2>()->setValue(&Fe65p2::PlsrDac, g_bk->globalFe<Fe65p2>()->toVcal(g_bk->getTargetThreshold())); // Set high injection
+    g_bk->globalFe<Fe65p2>()->setValue(&Fe65p2::PlsrDac, g_bk->globalFe<Fe65p2>()->toVcal(g_bk->getTargetCharge())); // Set high injection
     g_bk->globalFe<Fe65p2>()->configDac();
     g_bk->globalFe<Fe65p2>()->enAnaInj();
     g_bk->globalFe<Fe65p2>()->setValue(&Fe65p2::Latency, 60);

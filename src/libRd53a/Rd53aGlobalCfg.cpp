@@ -124,9 +124,9 @@ void Rd53aGlobalCfg::init() {
     InjEnDig.init(39, &m_cfg[39], 4, 1, 0); regMap["InjEnDig"] = &Rd53aGlobalCfg::InjEnDig;
     InjDelay.init(39, &m_cfg[39], 0, 4, 0); regMap["InjDelay"] = &Rd53aGlobalCfg::InjDelay;
     //41
-    InjVcalHigh.init(41, &m_cfg[41], 0, 12, 500); regMap["InjVcalHigh"] = &Rd53aGlobalCfg::InjVcalHigh;
+    InjVcalHigh.init(41, &m_cfg[41], 0, 12, 1000); regMap["InjVcalHigh"] = &Rd53aGlobalCfg::InjVcalHigh;
     //42
-    InjVcalMed.init(42, &m_cfg[42], 0, 12, 300); regMap["InjVcalMed"] = &Rd53aGlobalCfg::InjVcalMed;
+    InjVcalMed.init(42, &m_cfg[42], 0, 12, 1000); regMap["InjVcalMed"] = &Rd53aGlobalCfg::InjVcalMed;
     //46
     CalColprSync1.init(46, &m_cfg[46], 0, 16, 0xFFFF); regMap["CalColprSync1"] = &Rd53aGlobalCfg::CalColprSync1;
     //47

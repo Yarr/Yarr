@@ -23,10 +23,12 @@ void ScanFactory::init() {
 void ScanFactory::preScan() {
     std::cout << __PRETTY_FUNCTION__ << std::endl;
 
+    FrontEnd &fe = *g_bk->getGlobalFe();
+    fe.setInjCharge(g_bk->getTargetCharge(), true, true); // TODO need sCap/lCap for FEI4
+
     // Load scan specific registers from config
     auto &config_list = m_config["scan"]["prescan"];
     for (json::iterator it = config_list.begin(); it != config_list.end(); ++it) {
-        FrontEnd &fe = *g_bk->getGlobalFe();
         fe.writeNamedRegister(it.key(), it.value());
     }
     while(!g_tx->isCmdEmpty()){}

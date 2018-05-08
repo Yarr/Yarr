@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
     spec.init(specNum);
     Bookkeeper bookie(&spec, &spec);
     bookie.initGlobalFe(new Fe65p2(&spec));
-    bookie.setTargetThreshold(800);
+    bookie.setTargetCharge(800);
    
     // TODO move me somwhere else
     spec.setTriggerLogicMask(0x010);

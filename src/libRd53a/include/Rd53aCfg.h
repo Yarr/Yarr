@@ -38,6 +38,11 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
         }
         double toCharge(double vcal, bool sCap, bool lCap) {return this->toCharge(vcal);}
 
+        unsigned toVcal(double charge) {
+            double V= (charge*ELECTRON_CHARGE)/(m_injCap*1.0e-15);
+            return (unsigned) round((V-(m_vcalPar[0]*1.0e-3))/(m_vcalPar[1]*1.0e-3));
+        }
+
         void toFileJson(json&);
         void fromFileJson(json&);
         void toFileBinary(std::string) {};

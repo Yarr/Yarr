@@ -56,9 +56,6 @@ class Bookkeeper {
         void setTargetCharge(int v) {target_charge = v;}
         int getTargetCharge() {return target_charge;}
 
-        void setTargetThreshold(int v) {target_threshold = v;}
-        int getTargetThreshold() {return target_threshold;}
-        
         template<typename T> T* globalFe() {return dynamic_cast<T*>(g_fe);}
         // TODO make private, not nice like that
         FrontEnd *g_fe;

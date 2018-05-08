@@ -35,6 +35,8 @@ class FrontEnd {
 
         /// Write to a register using a string name (most likely from json)
         virtual void writeNamedRegister(std::string name, uint16_t value) = 0;
+        
+        virtual void setInjCharge(double, bool, bool) = 0;
 
         // Set of events
         ClipBoard<EventDataBase> *clipData;

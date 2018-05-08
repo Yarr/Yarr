@@ -47,7 +47,7 @@ class Fe65p2Cfg : public FrontEndCfg, public Fe65p2GlobalCfg, public Fe65p2Pixel
             // V = Q/C
             return floor((((charge*ELECTRON_CHARGE)/(cap * 1.0e-15))-(vcal_offset*1.0e-3))/(vcal_slope*1.0e-3));
         }
-
+        
         void toFileJson(json &j);
         void fromFileJson(json &j);
         void toFileBinary(std::string) {};
