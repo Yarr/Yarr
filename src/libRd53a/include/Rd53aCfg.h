@@ -25,8 +25,8 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
             m_chipId = 0;
             m_vcalPar[0] = -1.0;
             m_vcalPar[1] = 0.2;
-            m_vcalPar[0] = 0;
-            m_vcalPar[0] = 0;
+            m_vcalPar[2] = 0;
+            m_vcalPar[3] = 0;
             m_injCap = 8.2;
         }
 
@@ -40,7 +40,8 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
 
         unsigned toVcal(double charge) {
             double V= (charge*ELECTRON_CHARGE)/(m_injCap*1.0e-15);
-            return (unsigned) round((V-(m_vcalPar[0]*1.0e-3))/(m_vcalPar[1]*1.0e-3));
+            unsigned vcal = (unsigned) round((V-(m_vcalPar[0]*1.0e-3))/(m_vcalPar[1]*1.0e-3));
+            return vcal;
         }
 
         void toFileJson(json&);

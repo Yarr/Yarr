@@ -31,7 +31,7 @@
     },
     "loops": [
       { "config": {
-          "max": 420,
+          "max": 450,
           "min": 0,
           "step": 16,
           "parameter": "DiffVth1"

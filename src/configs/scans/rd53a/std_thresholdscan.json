@@ -78,9 +78,7 @@
     "prescan": {
         "InjEnDig": 0,
         "LatencyConfig": 50,
-        "GlobalPulseRt": 16384,
-        "InjVcalMed": 0,
-        "InjVcalHigh": 0
+        "GlobalPulseRt": 16384
     }
   }
 }

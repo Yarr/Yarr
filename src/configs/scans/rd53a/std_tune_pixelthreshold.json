@@ -51,7 +51,7 @@
           "max": 50,
           "min": 16,
           "step": 1,
-          "nSteps": 17
+          "nSteps": 4
         },
         "loopAction": "Rd53aCoreColLoop"
       },
@@ -70,7 +70,7 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "DiffGlobalThresholdTune",
+    "name": "DiffPixelThresholdTune",
     "prescan": {
         "InjEnDig": 0,
         "LatencyConfig": 50,

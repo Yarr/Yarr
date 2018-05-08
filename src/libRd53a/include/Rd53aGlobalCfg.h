@@ -78,6 +78,7 @@ class Rd53aDiffReg : public Rd53aReg {
         void write(const uint16_t value) override {
             uint16_t highValue = highRef->read();
             uint16_t lowValue = lowRef->read();
+            //std::cout << __PRETTY_FUNCTION__ << " : " << value << " " << highValue << " " << lowValue <<  std::endl;
             if (m_changeHigh) {
                 if (lowValue + value < pow(2, highRef->bits())) {
                     highRef->write(value + lowValue);
