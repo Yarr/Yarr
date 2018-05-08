@@ -8,5 +8,7 @@ pages:
     - FE-I4: fei4.md
     - FE65-P2: fe65p2.md
     - RD53A: rd53a.md
+    - Firmware Guide: fw_guide.md
     - Troubleshooting: troubleshooting.md
+    - Version Log: version.md
 theme: readthedocs
