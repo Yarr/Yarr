@@ -72,6 +72,11 @@ void Rd53aCmd::bcr() {
     core->releaseFifo();
 }
 
+void Rd53aCmd::sync() {
+    core->writeFifo(0x6969817e);
+    core->releaseFifo();
+}
+
 void Rd53aCmd::globalPulse(uint32_t chipId, uint32_t duration) {
     core->writeFifo(0x5C5C0000 + (Rd53aCmd::encode5to8(chipId<<1)<<8) + Rd53aCmd::encode5to8(duration<<1));
     core->releaseFifo();
