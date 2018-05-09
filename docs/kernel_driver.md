@@ -20,7 +20,7 @@ $ dmesg
 [246519.713527] Module loaded
 ```
 
-PCIe kernel driver can be installed in the followin way:
+PCIe kernel driver can be installed in the following way:
 ```bash
 $ cd Yarr/src/kernel
 $ make
