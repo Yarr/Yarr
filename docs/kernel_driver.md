@@ -1,20 +1,8 @@
 # Kernel Driver Installation
 
-For both cards the custom PCIe kernel driver is required. 
-It can be installed in the followin way:
-```bash
-$ cd Yarr/src/kernel
-$ make
-<Lots of text>
-$ sudo make install
-<Copying files>
-$ sudo depmod
-<Builds dependencies>
-$ sudo modprobe -v specDriver
-insmod /lib/modules/3.10.0-229.14.1.el7.x86_64/extra/specDriver.ko
-```
+For both cards the custom PCIe kernel driver is required.  <span style="color:red">The installation of the kernel driver is only required once and sometimes after a kernel update.</span>
 
-You can test if the driver is installed loaded properly by looking at the `dmesg` output:
+You can test if the driver is installed and loaded properly by looking at the `dmesg` output:
 ```bash
 $ dmesg
 <Lots of text>
@@ -32,7 +20,18 @@ $ dmesg
 [246519.713527] Module loaded
 ```
 
-The installation of the kernel driver is only required once and sometimes after a kernel update.
+PCIe kernel driver can be installed in the following way:
+```bash
+$ cd Yarr/src/kernel
+$ make
+<Lots of text>
+$ sudo make install
+<Copying files>
+$ sudo depmod
+<Builds dependencies>
+$ sudo modprobe -v specDriver
+insmod /lib/modules/3.10.0-229.14.1.el7.x86_64/extra/specDriver.ko
+```
 
 In case you run into a problem during ``modprobe`` which looks like this: ``modprobe: ERROR: could not insert 'specDriver': Required key not available``. Do the following:
 ```bash
@@ -40,3 +39,5 @@ $ sudo yum install mokutil
 $ sudo mokutil -disable-validation
 ```
 This will require you to create a password with at least 8 characters. Reboot after that and the UEFI will ask you to change the security settings. Choose "yes", reenter the password or whatever it asks for.
+
+

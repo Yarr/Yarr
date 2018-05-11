@@ -1,11 +1,9 @@
-# RD53A
+# RD53A testing with the Single Chip Card
+More details about the SCC can be found here: [Single Chip Card](https://twiki.cern.ch/twiki/bin/viewauth/RD53/RD53ATesting#RD53A_Single_Chip_Card_SCC)
 
-## RD53A testing with the Single Chip Card
-More details about the SCC [Single Chip Card](https://twiki.cern.ch/twiki/bin/viewauth/RD53/RD53ATesting#RD53A_Single_Chip_Card_SCC)
+## Jumper configuration and power on
 
-### Jumper configuration and power on
-
-![Jumper configuration on the SCC ](images/IMG_20180305_162546.jpg)
+![Jumper configuration on the SCC ](images/SCC_JumperConfiguration.jpg)
 
 Default settings for operation in **LDO mode**
 
@@ -16,97 +14,129 @@ Default settings for operation in **LDO mode**
 - IREF_IO (internal current refetrence)
 - IREF_TRIM: Jumper to 3 to set the internal reference current at 4 μA
 - Jumpers JP10 and JP11 should be closed in order to use LANE 2 and 3
+- Add a PLL_RST jumper
+- Add a 5 kΩ resistor for R3 to pull up Vctrl to Vdd (back side of the SCC)
 
 **Make sure that the jumper configuration marked in red is correct before powering the chip!!! Applying too high voltage may kill the chip.**
 
 After all jumpers are placed on the SCC, connect the DisplayPort cable to DP1 and power cable to PWR_IN.
 
-Set the power supply to <span style="color:red">**1.80**</span> V, the current should be around 0.41 A and power on the chip. For the LDO operation, e.g. the jumper configuration shown in previous figure, make sure <span style="color:red"> not to apply higher voltage than **1.80 V**</span>.
+Set the power supply to <span style="color:red">**1.85**</span> V, the current should be around 0.5 A and power on the chip. For the LDO operation, e.g. the jumper configuration shown in previous figure, make sure <span style="color:red"> not to apply higher voltage than **1.85 V**</span>.
 
-Check if the test program runs succesfully:
+# Scan Console for RD53A
+
+More information about ScanConsole can be found on the main page: [ScanConsole](ScanConsole).
+
+## Digital Scan
+
+To run a digital scan for RD53A with the default configuration execute the following command:
+```bash
+bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json -p
 ```
-$ ./bin/rd53a_test
-void SpecCom::init() -> Opening SPEC with id #0
-void SpecCom::init() -> Mapping BARs
-void SpecCom::init() -> Mapped BAR0 at 0x0x7fa5c8e0c000 with size 0x100000
-void SpecCom::init() -> Mmap failed
-void SpecCom::init() -> Could not map BAR4, this might be OK!
->>> Configuring chip with default config ...
-... done.
->>> Checking link status: 0x1
-All links are synced!
->>> Trigger test:
-Trigger: 1
-[Header] : L1ID(0) L1Tag(1) BCID(20616)
-Trigger: 2
-[Header] : L1ID(1) L1Tag(2) BCID(18489)
-Trigger: 3
-[Header] : L1ID(2) L1Tag(3) BCID(10360)
-[Header] : L1ID(3) L1Tag(3) BCID(10361)
-Trigger: 4
-[Header] : L1ID(4) L1Tag(0) BCID(3634)
-Trigger: 5
-[Header] : L1ID(5) L1Tag(5) BCID(29688)
-[Header] : L1ID(6) L1Tag(0) BCID(29690)
-Trigger: 6
-[Header] : L1ID(7) L1Tag(6) BCID(31433)
-[Header] : L1ID(8) L1Tag(0) BCID(31434)
-Trigger: 7
-[Header] : L1ID(9) L1Tag(7) BCID(32464)
-[Header] : L1ID(10) L1Tag(7) BCID(32465)
-[Header] : L1ID(11) L1Tag(0) BCID(32466)
-Trigger: 8
-[Header] : L1ID(12) L1Tag(0) BCID(27067)
-Trigger: 9
-[Header] : L1ID(13) L1Tag(9) BCID(24960)
-[Header] : L1ID(14) L1Tag(0) BCID(24963)
-Trigger: 10
-[Header] : L1ID(15) L1Tag(10) BCID(20377)
-[Header] : L1ID(16) L1Tag(0) BCID(20379)
-Trigger: 11
-[Header] : L1ID(17) L1Tag(11) BCID(17424)
-[Header] : L1ID(18) L1Tag(11) BCID(17425)
-[Header] : L1ID(19) L1Tag(0) BCID(17427)
-Trigger: 12
-[Header] : L1ID(20) L1Tag(0) BCID(13546)
-[Header] : L1ID(21) L1Tag(0) BCID(13547)
-Trigger: 13
-[Header] : L1ID(22) L1Tag(13) BCID(10592)
-[Header] : L1ID(23) L1Tag(0) BCID(10594)
-[Header] : L1ID(24) L1Tag(0) BCID(10595)
-Trigger: 14
-[Header] : L1ID(25) L1Tag(14) BCID(9657)
-[Header] : L1ID(26) L1Tag(0) BCID(9658)
-[Header] : L1ID(27) L1Tag(0) BCID(9659)
-Trigger: 15
-[Header] : L1ID(28) L1Tag(15) BCID(7352)
-[Header] : L1ID(29) L1Tag(15) BCID(7353)
-[Header] : L1ID(30) L1Tag(0) BCID(7354)
-[Header] : L1ID(31) L1Tag(0) BCID(7355)
->>> Enabling digital injection
->>> Enabling some pixels
->>> Digital inject test:
-[Header] : L1ID(0) L1Tag(4) BCID(14304)
-[Header] : L1ID(1) L1Tag(4) BCID(14305)
-[Header] : L1ID(2) L1Tag(8) BCID(14306)
-[Header] : L1ID(3) L1Tag(8) BCID(14307)
-[Header] : L1ID(4) L1Tag(8) BCID(14308)
-[Data] : COL(12) ROW(0) PAR(1) TOT(15,11,15,11)
-[Data] : COL(12) ROW(1) PAR(1) TOT(15,11,15,15)
-[Header] : L1ID(5) L1Tag(8) BCID(14309)
-[Header] : L1ID(6) L1Tag(0) BCID(14310)
-[Header] : L1ID(7) L1Tag(0) BCID(14311)
+The occupancy map after a successful digital scan is given below.
+![Occupancy map digital scan](images/JohnDoe_DigitalScan_OccupancyMap.png)
+
+## Analog Scan
+
+To run a analog scan for RD53A with the default configuration execute the following command:
+```bash
+bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_analogscan.json -p
 ```
+The occupancy map after a successful analog scan is given below.
+![Occupancy map analog scan](images/JohnDoe_AnalogScan_OccupancyMap.png)
+- The implementation of the analog scan for the synchronous FE is coming soon!
+
+### Analog scan for only differential FrontEnd
+
+```bash
+bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/diff_analogscan.json -p
+```
+![Occupancy map analog scan for DIFF FE](images/JohnDoe_AnalogScanDiff_OccupancyMap.png)
+- The pattern in the differential FE is expected for the default configuration of Vff.
+
+## Threshold Scan
+
+To run a threshold scan for RD53A with the default configuration execute the following command:
+```bash
+bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_thresholdscan.json -p
+```
+The noise and threshold mean value will be given in the output of the code, for example:
+```text
+[0] Threashold Mean = 3245.7 +- 801.668
+[0] Noise Mean = 125.784 +- 312.594
+```
+Example of the s-curve, threshold distribution, threshold map and noise distribution are given below:
+![S-curve threshold scan](images/JohnDoe_ThresholdScan_sCurve.png)
+![Threshold distribution](images/JohnDoe_ThresholdDist.png)
+![Threshold map](images/JohnDoe_ThresholdMap.png)
+![Noise distribution](images/JohnDoe_NoiseDist.png)
+
+## Time over Threshold Scan
+
+```bash
+bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_totscan.json -t 5000 -t
+```
+The ToT mean value will be given in the output of the code, for example:
+```text
+[0] ToT Mean = 3.54881 +- 3.00684
+```
+Example distributions are coming soon!
 
 
-### Loop Actions
+## Tuning
+
+The tuning should be started with a global tuning of the linear FrontEnd. The example command with a target threshold of 2500e is:
+```bash
+bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/lin_tune_globalthreshold.json -t 2500 -p
+```
+| ![Occupancy distribution](images/JohnDoe_OccupancyDist-0-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-1-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-3-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-4-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-5-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-6-LinTuning.png) |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+
+
+After the global tuning of the linear FrontEnd, one should tune the differential with the same target threshold:
+```bash
+bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/diff_tune_globalthreshold.json -t 2500 -p
+```
+| ![Occupancy distribution](images/JohnDoe_OccupancyDist-0_DiffTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-1_DiffTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-2_DiffTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-3_DiffTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-4_DiffTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-5_DiffTuning.png) |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+
+The the tuning of the synchronous FrontEnd is in progress. Currently the linear FrontEnd can be tuned bellow 2500e.  Note: *The TDAC values are not reset with the global threshold tuning.*
+
+Then, pixel tuning is performed on all FrontEnds simultaneously.
+```bash
+bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_tune_pixelthreshold.json -t 2500 -p
+```
+| ![Occupancy distribution](images/JohnDoe_OccupancyDist-0.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-1.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-2.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-3.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-4.png) |
+|:---:|:---:|:---:|:---:|:---:|
+
+
+Running the threshold scan shows the result of the tuning:
+```text
+[0] Threashold Mean = 2576.14 +- 351.621
+[0] Noise Mean = 107.643 +- 554.819
+```
+![Threshold distribution after tuning](images/JohnDoe_ThresholdDist_AfterTuning.png)
+![Noise distribution after tuning](images/JohnDoe_NoiseDist_AfterTuning.png)
+![S-curve threshold scan after tuning](images/JohnDoe_sCurve_AfterTuning.png)
+![Threshold map after tuning](images/JohnDoe_ThresholdMap_AfterTuning.png)
+
+### Recommended tuning procedure:
+- Digital scan
+- Analog scan
+- Global tuning of the linear FE
+- Global tuning of the differential FE
+- Pixel tuning
+- Threshold scan
+
+
+# Loop Actions
 
 List of available loop actions and their configuration parameters.
 
-#### Rd53aTriggerLoop
+## Rd53aTriggerLoop
 Will repeatably send a 512-bit command from the burst buffer to the FE.
 
-Config paramters:
+Config parameters:
     
 - count ``<int>``: number of injections, if 0 will run for specified time (default 50/100)
 - delay ``<int>``: time gap in bunch crossings between injection and trigger, should be divisible by 8 (default 56)
@@ -116,7 +146,7 @@ Config paramters:
 - time ``<int>``: time in seconds, if count is set to 0 will run for this amount of time (default 0)
 - edgeMode ``<bool>``: switches cal injection command to edge mode, e.g. for digital scan (default false)
 
-#### Rd53aCoreColLoop
+## Rd53aCoreColLoop
 Loops of core columns in specified pattern
 
 Config parameters:
@@ -126,8 +156,8 @@ Config parameters:
 - step ``<int>``: step size (1 will scan all cores, more than 1 will skip cores)
 - nSteps ``<int>``: how many steps should be used to scan over cores
 
-#### Rd53aMaskLoop
-Loops over pixels. All pixels in one core column are serialised on the following fashion.
+## Rd53aMaskLoop
+Loops over pixels. All pixels in one core column are serialized on the following fashion.
     
 ```
 ...
@@ -152,86 +182,8 @@ Loops over pixels. All pixels in one core column are serialised on the following
 The maximum of the loops defines how many pixels should be activated at one time. E.g. if the max is 64 that means every 64th pixel (1 pixel per core) and requires 64 steps to loop over all pixels.
 
 Config parameters:
-    
+
  - max ``<int>``: number of mask stages
  - min ``<int>``: mask stage to start with
  - step ``<int>``: step size of mask stage
 
-### Proto Digital Scan
-```
-$ ./bin/rd53a_proto_digitalscan
->>> Configuring chip with default config ...
-... done.
->>> Enabling digital injection
->>> Enabling some pixels
-Enabled 2400 pixels
-Mask = 0 , Col Loop = 0
-Got 40800 hits
-Mask = 0 , Col Loop = 4
-Got 40800 hits
-Mask = 0 , Col Loop = 8
-Got 38400 hits
-Enabled 2400 pixels
-Mask = 1 , Col Loop = 0
-Got 40800 hits
-Mask = 1 , Col Loop = 4
-Got 40800 hits
-Mask = 1 , Col Loop = 8
-Got 38400 hits
-Enabled 2400 pixels
-Mask = 2 , Col Loop = 0
-Got 40800 hits
-Mask = 2 , Col Loop = 4
-Got 40800 hits
-Mask = 2 , Col Loop = 8
-Got 38400 hits
-Enabled 2400 pixels
-Mask = 3 , Col Loop = 0
-<More Text>
-```
-![Digital scan](images/rd53a_proto_digitalD_Occupancy.png)
-
-
-
-### Proto Analog Scan
-```
-./bin/rd53a_proto_analogscan
-void SpecCom::init() -> Opening SPEC with id #0
-void SpecCom::init() -> Mapping BARs
-void SpecCom::init() -> Mapped BAR0 at 0x0x7f060367a000 with size 0x100000
-void SpecCom::init() -> Mmap failed
-void SpecCom::init() -> Could not map BAR4, this might be OK!
->>> Configuring chip with default config ...
-... done.
->>> Enabling digital injection
->>> Enabling some pixels
-Enabled 2400 pixels
-Mask = 0 , Col Loop = 0
-Got 23999 hits
-Mask = 0 , Col Loop = 4
-Got 24000 hits
-Mask = 0 , Col Loop = 8
-Got 24000 hits
-Mask = 0 , Col Loop = 12
-Got 24000 hits
-Mask = 0 , Col Loop = 16
-Got 24000 hits
-Enabled 2400 pixels
-Mask = 1 , Col Loop = 0
-Got 24000 hits
-Mask = 1 , Col Loop = 4
-Got 24000 hits
-Mask = 1 , Col Loop = 8
-Got 24000 hits
-Mask = 1 , Col Loop = 12
-Got 24000 hits
-Mask = 1 , Col Loop = 16
-Got 24000 hits
-Enabled 2400 pixels
-Mask = 2 , Col Loop = 0
-Got 24000 hits
-<More Text>
-```
-![Analog scan](images/rd53a_proto_analogD_Occupancy.png)
-
-*The pattern in the differential FE is expected for the default configuration of Vff.*
