@@ -33,7 +33,10 @@ int main(int argc, char *argv[]) {
         std::getline(infile, zaxistitle);
         infile >> xbins >> xlow >> xhigh;
 
+        type = type.substr(0,7); // EOL char kept by getline()
+
         if (type == "Histo2d") {
+            std::cout << " ... detecting 2d histogram" << std::endl;
             infile >> ybins >> ylow >> yhigh;
         } else {
             ybins = 1;
@@ -57,6 +60,10 @@ int main(int argc, char *argv[]) {
         if (type == "Histo2d") {
             h = (TH1*) new TH2F(name.c_str(), name.c_str(), xbins, xlow, xhigh, ybins, ylow, yhigh);
             h->SetStats(0);
+            h->GetXaxis()->SetTitle(xaxistitle.c_str());
+            h->GetYaxis()->SetTitle(yaxistitle.c_str());
+            h->GetZaxis()->SetTitle(zaxistitle.c_str());
+            c->SetRightMargin(0.2);
             for (int i=0; i<ybins; i++) {
                 for (int j=0; j<xbins; j++) {
                     double tmp;
@@ -65,10 +72,11 @@ int main(int argc, char *argv[]) {
                     h->SetBinContent(j+1, i+1, tmp);
                 }
             }
-            h->SetMaximum(h->GetMean()*4);
+            h->SetMaximum(3500);
+            h->SetMinimum(1500);
             h->Draw("colz");
         } 
-        if (1) {
+        if (type == "Histo1d") {
             h = (TH1*) new TH1F(name.c_str(), "", xbins, xlow, xhigh);
             h->GetXaxis()->SetTitle(xaxistitle.c_str());
             h->GetYaxis()->SetTitle(yaxistitle.c_str());
