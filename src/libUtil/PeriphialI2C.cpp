@@ -7,6 +7,7 @@
 // ################################
 
 #include "PeriphialI2C.h"
+#include "I2CRegs.h"
 #include <unistd.h>
 
 PeriphialI2C::PeriphialI2C(SpecCom *arg_spec) {
