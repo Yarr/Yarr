@@ -18,9 +18,9 @@ using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::i
 
 class Rd53aPixelCfg {
     public:
-        static const unsigned n_DC= 200;
-        static const unsigned n_Col = 400;
-        static const unsigned n_Row = 192;
+        static constexpr unsigned n_DC= 200;
+        static constexpr unsigned n_Col = 400;
+        static constexpr unsigned n_Row = 192;
         std::array<uint16_t, n_DC*n_Row> pixRegs;
     private:
 

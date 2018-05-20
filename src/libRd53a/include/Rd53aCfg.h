@@ -17,7 +17,8 @@
 
 #include "json.hpp"
 
-#define ELECTRON_CHARGE 1.602e-19
+#include "Constants.h"
+#include "Units.h"
 
 class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg {
     public:
@@ -33,14 +34,14 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
         double toCharge(double vcal) {
             // Q = C*V
             // Linear is good enough
-            double V = (m_vcalPar[0]*1.0e-3 + m_vcalPar[1]*vcal*1.0e-3)/ELECTRON_CHARGE;
-            return V*m_injCap*1.0e-15;
+            double V = (m_vcalPar[0]*Unit::Milli + m_vcalPar[1]*vcal*Unit::Milli)/Physics::ElectronCharge;
+            return V*m_injCap*Unit::Femto;
         }
         double toCharge(double vcal, bool sCap, bool lCap) {return this->toCharge(vcal);}
 
         unsigned toVcal(double charge) {
-            double V= (charge*ELECTRON_CHARGE)/(m_injCap*1.0e-15);
-            unsigned vcal = (unsigned) round((V-(m_vcalPar[0]*1.0e-3))/(m_vcalPar[1]*1.0e-3));
+            double V= (charge*Physics::ElectronCharge)/(m_injCap*Unit::Femto);
+            unsigned vcal = (unsigned) round((V-(m_vcalPar[0]*Unit::Milli))/(m_vcalPar[1]*Unit::Milli));
             return vcal;
         }
 
