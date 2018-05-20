@@ -9,37 +9,15 @@
 #include "Rd53aCmd.h"
 #include <fstream>
 
-Rd53aCmd::Rd53aCmd() {
-    verbose = false;
-    core = NULL;
-}
+Rd53aCmd::Rd53aCmd() : core( nullptr ), verbose( false ) {}
 
-Rd53aCmd::Rd53aCmd(TxCore *arg_core) {
-    verbose = false;
-    core = arg_core;
-}
+Rd53aCmd::Rd53aCmd(TxCore *arg_core) : core( arg_core ), verbose( false ) {}
 
-Rd53aCmd::~Rd53aCmd() {
+Rd53aCmd::~Rd53aCmd() {}
 
-}
-
-const uint16_t Rd53aCmd::enc5to8[32] = {0x6A, 0x6C, 0x71, 0x72,
-                             0x74, 0x8B, 0x8D, 0x8E,
-                             0x93, 0x95, 0x96, 0x99,
-                             0x9A, 0x9C, 0xA3, 0xA5,
-                             0xA6, 0xA9, 0xAA, 0xAC, 
-                             0xB1, 0xB2, 0xB4, 0xC3, 
-                             0xC5, 0xC6, 0xC9, 0xCA, 
-                             0xCC, 0xD1, 0xD2, 0xD4};
-
-const uint16_t Rd53aCmd::encTrigger[16] = {0x00, 0x2B, 0x2D, 0x2E,
-                                           0x33, 0x35, 0x36, 0x39,
-                                           0x3A, 0x3C, 0x4B, 0x4D,
-                                           0x4E, 0x53, 0x55, 0x56};
-
-uint32_t Rd53aCmd::encode5to8(uint32_t val) {
-    return Rd53aCmd::enc5to8[val & 0x1F];
-}
+// These definitions are needed for constexpr
+constexpr uint16_t Rd53aCmd::enc5to8[];
+constexpr uint16_t Rd53aCmd::encTrigger[];
 
 uint32_t Rd53aCmd::genTrigger(uint32_t bc, uint32_t tag, uint32_t bc2, uint32_t tag2) {
     uint32_t tmp = 0;
