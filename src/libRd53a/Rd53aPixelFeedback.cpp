@@ -8,6 +8,11 @@
 // ################################
 
 #include "Rd53aPixelFeedback.h"
+#include "Rd53a.h"
+
+#include <iostream>
+#include <queue>
+#include <mutex>
 
 class Rd53aPixelFeedback::Impl {
 public:
@@ -16,8 +21,6 @@ public:
     
     std::map<unsigned, Histo2d*> m_fb;
     
-    void addFeedback(unsigned ch);
-    void writePixelCfg(Rd53a *fe);
 };
 
 Rd53aPixelFeedback::Rd53aPixelFeedback() {
@@ -76,9 +79,9 @@ void Rd53aPixelFeedback::addFeedback(unsigned ch) {
     }
 }
 
-void Rd53aPixelFeedback::writePixelCfg(Rd53a *fe) {
-    g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
-    fe->configurePixels();
+void Rd53aPixelFeedback::writePixelCfg(Rd53a& fe) {
+    g_tx->setCmdEnable(1 << fe.getTxChannel());
+    fe.configurePixels();
     g_tx->setCmdEnable(keeper->getTxMask());
     while(!g_tx->isCmdEmpty());
 }
@@ -116,7 +119,7 @@ void Rd53aPixelFeedback::execPart1() {
     for (auto fe : keeper->feList) {
         if (fe->getActive()) {
             keeper->mutexMap[dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()].try_lock();
-            this->writePixelCfg(dynamic_cast<Rd53a*>(fe));
+            this->writePixelCfg( *( dynamic_cast<Rd53a*>(fe) ) );
         }
     }
 }

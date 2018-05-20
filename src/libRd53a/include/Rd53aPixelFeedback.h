@@ -10,14 +10,10 @@
 // # Date: April 2018
 // ################################
 
-
-#include <iostream>
-#include <queue>
-#include <mutex>
-
 #include "LoopActionBase.h"
 #include "FeedbackBase.h"
-#include "Rd53a.h"
+
+class Rd53a;
 
 class Rd53aPixelFeedback : public LoopActionBase, public PixelFeedbackBase {
     public:
@@ -35,7 +31,7 @@ class Rd53aPixelFeedback : public LoopActionBase, public PixelFeedbackBase {
         std::unique_ptr<Impl> m_impl;
 
         void addFeedback(unsigned ch);
-        void writePixelCfg(Rd53a *fe);
+        void writePixelCfg(Rd53a& fe);
         
         void init()      override final;
         void end()       override final;
