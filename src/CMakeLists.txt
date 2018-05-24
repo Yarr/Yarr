@@ -23,7 +23,7 @@ add_compile_options(-g)
 else()
 add_compile_options(-O4)
 endif()
-add_compile_options(-Wfatal-errors) 
+add_compile_options(-Wfatal-errors)
 add_compile_options(-Wno-deprecated)
 add_compile_options(-std=c++11)
 
@@ -49,7 +49,12 @@ add_dependencies(${execname} Yarr)
 set_target_properties(${execname} PROPERTIES LINKER_LANGUAGE CXX)
 # Whole-archive means not to drop symbols from Yarr.
 # Mainly this is about making sure the auto-registration works.
-set(WRAPPED_YARR -Wl,--whole-archive Yarr -Wl,--no-whole-archive)
+if(APPLE)
+    set(WRAPPED_YARR -Wl,-all_load Yarr)
+    target_link_libraries(${execname} ${WRAPPED_YARR} pthread)
+elseif(UNIX)
+    set(WRAPPED_YARR -Wl,--whole-archive Yarr -Wl,--no-whole-archive)
+    target_link_libraries(${execname} ${WRAPPED_YARR} pthread rt)
+endif()
 # Not sure why rt is not linked by default here
-target_link_libraries(${execname} ${WRAPPED_YARR} pthread rt) 
 endforeach()

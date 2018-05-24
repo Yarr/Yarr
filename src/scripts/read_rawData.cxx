@@ -63,12 +63,14 @@ int main(int argc, char* argv[]) {
 	    nhits = event.nHits;
 	    bcid = event.bcid;
 	    l1id = event.l1id;
-            for (unsigned i=0; i<event.nHits; i++) {
-	      col[i] = event.hits[i].col;
-	      row[i] = event.hits[i].row;
-	      tot[i] = event.hits[i].tot;
-	      pixel_cluster_id[i] = -1;
-            }
+        unsigned i =0;
+        for (auto &hit : event.hits) {
+            col[i] = hit.col;
+            row[i] = hit.row;
+            tot[i] = hit.tot;
+            pixel_cluster_id[i] = -1;
+            i++;
+        }
             //std::cout << "Now: " << file.tellg() << std::endl;
 
 	    //Let's now run a CCA for clustering.

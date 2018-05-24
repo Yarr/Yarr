@@ -30,64 +30,103 @@ More information about ScanConsole can be found on the main page: [ScanConsole](
 ## Digital Scan
 
 To run a digital scan for RD53A with the default configuration execute the following command:
-
 ```bash
 bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json -p
 ```
-
-The occupancy map after a succesful digital scan is given below.
-
+The occupancy map after a successful digital scan is given below.
 ![Occupancy map digital scan](images/JohnDoe_DigitalScan_OccupancyMap.png)
 
 ## Analog Scan
 
-To run a digital scan for RD53A with the default configuration execute the following command:
-
+To run a analog scan for RD53A with the default configuration execute the following command:
 ```bash
 bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_analogscan.json -p
 ```
-
-The occupancy map after a succesful analog scan is given below.
-
-![Occupancy map digital scan](images/JohnDoe_AnalogScan_OccupancyMap.png)
-
-- The pattern in the differential FE is expected for the default configuration of Vff.
-- The implementation of the analog scan for the synhrotronys FE is comming soon!
+The occupancy map after a successful analog scan is given below.
+![Occupancy map analog scan](images/JohnDoe_AnalogScan_OccupancyMap.png)
+- The implementation of the analog scan for the synchronous FE is coming soon!
 
 ### Analog scan for only differential FrontEnd
 
 ```bash
 bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/diff_analogscan.json -p
 ```
-![Occupancy map digital scan for DIFF FE](images/JohnDoe_AnalogScanDiff_OccupancyMap.png)
+![Occupancy map analog scan for DIFF FE](images/JohnDoe_AnalogScanDiff_OccupancyMap.png)
+- The pattern in the differential FE is expected for the default configuration of Vff.
 
 ## Threshold Scan
 
+To run a threshold scan for RD53A with the default configuration execute the following command:
 ```bash
 bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_thresholdscan.json -p
 ```
+The noise and threshold mean value will be given in the output of the code, for example:
+```text
+[0] Threashold Mean = 3245.7 +- 801.668
+[0] Noise Mean = 125.784 +- 312.594
+```
+Example of the s-curve, threshold distribution, threshold map and noise distribution are given below:
+![S-curve threshold scan](images/JohnDoe_ThresholdScan_sCurve.png)
+![Threshold distribution](images/JohnDoe_ThresholdDist.png)
+![Threshold map](images/JohnDoe_ThresholdMap.png)
+![Noise distribution](images/JohnDoe_NoiseDist.png)
 
 ## Time over Threshold Scan
 
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_totscan.json -p -t 5000
+bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_totscan.json -t 5000 -t
 ```
+The ToT mean value will be given in the output of the code, for example:
+```text
+[0] ToT Mean = 3.54881 +- 3.00684
+```
+Example distributions are coming soon!
 
 
 ## Tuning
 
+The tuning should be started with a global tuning of the linear FrontEnd. The example command with a target threshold of 2500e is:
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/diff_tune_globalthreshold.json -p
+bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/lin_tune_globalthreshold.json -t 2500 -p
 ```
+| ![Occupancy distribution](images/JohnDoe_OccupancyDist-0-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-1-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-3-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-4-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-5-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-6-LinTuning.png) |
+|:---:|:---:|:---:|:---:|:---:|:---:|
 
+
+After the global tuning of the linear FrontEnd, one should tune the differential with the same target threshold:
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/lin_tune_globalthreshold.json -p
+bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/diff_tune_globalthreshold.json -t 2500 -p
 ```
+| ![Occupancy distribution](images/JohnDoe_OccupancyDist-0_DiffTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-1_DiffTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-2_DiffTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-3_DiffTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-4_DiffTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-5_DiffTuning.png) |
+|:---:|:---:|:---:|:---:|:---:|:---:|
 
+The the tuning of the synchronous FrontEnd is in progress. Currently the linear FrontEnd can be tuned bellow 2500e.  Note: *The TDAC values are not reset with the global threshold tuning.*
+
+Then, pixel tuning is performed on all FrontEnds simultaneously.
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_tune_pixelthreshold.json -p
+bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_tune_pixelthreshold.json -t 2500 -p
 ```
+| ![Occupancy distribution](images/JohnDoe_OccupancyDist-0.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-1.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-2.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-3.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-4.png) |
+|:---:|:---:|:---:|:---:|:---:|
 
+
+Running the threshold scan shows the result of the tuning:
+```text
+[0] Threashold Mean = 2576.14 +- 351.621
+[0] Noise Mean = 107.643 +- 554.819
+```
+![Threshold distribution after tuning](images/JohnDoe_ThresholdDist_AfterTuning.png)
+![Noise distribution after tuning](images/JohnDoe_NoiseDist_AfterTuning.png)
+![S-curve threshold scan after tuning](images/JohnDoe_sCurve_AfterTuning.png)
+![Threshold map after tuning](images/JohnDoe_ThresholdMap_AfterTuning.png)
+
+### Recommended tuning procedure:
+- Digital scan
+- Analog scan
+- Global tuning of the linear FE
+- Global tuning of the differential FE
+- Pixel tuning
+- Threshold scan
 
 
 # Loop Actions
@@ -97,7 +136,7 @@ List of available loop actions and their configuration parameters.
 ## Rd53aTriggerLoop
 Will repeatably send a 512-bit command from the burst buffer to the FE.
 
-Config paramters:
+Config parameters:
     
 - count ``<int>``: number of injections, if 0 will run for specified time (default 50/100)
 - delay ``<int>``: time gap in bunch crossings between injection and trigger, should be divisible by 8 (default 56)
@@ -118,7 +157,7 @@ Config parameters:
 - nSteps ``<int>``: how many steps should be used to scan over cores
 
 ## Rd53aMaskLoop
-Loops over pixels. All pixels in one core column are serialised on the following fashion.
+Loops over pixels. All pixels in one core column are serialized on the following fashion.
     
 ```
 ...
