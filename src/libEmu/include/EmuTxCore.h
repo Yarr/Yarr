@@ -17,6 +17,7 @@
 #include "TxCore.h"
 #include "EmuCom.h"
 
+template<class FE>
 class EmuTxCore : virtual public TxCore {
     public:
         EmuTxCore(EmuCom *com);
@@ -41,8 +42,8 @@ class EmuTxCore : virtual public TxCore {
         void setTrigFreq(double freq) {}
         void setTrigCnt(uint32_t count);
         void setTrigTime(double time) {}
-        void setTrigWordLength(uint32_t length) {}
-        void setTrigWord(uint32_t *word, uint32_t length) {}
+    void setTrigWordLength(uint32_t length) { trigLength = length; }
+    void setTrigWord(uint32_t *word, uint32_t length) { trigWord = word; trigLength = length; }
 
         void toggleTrigAbort() {}
 
@@ -68,7 +69,48 @@ class EmuTxCore : virtual public TxCore {
         std::mutex accMutex;
         std::thread triggerProc;
         bool trigProcRunning;
+    uint32_t* trigWord;
+    uint32_t trigLength;
         void doTrigger();
 };
+
+template<class FE>
+EmuTxCore<FE>::EmuTxCore(EmuCom *com) {
+    m_com = com;
+    m_trigCnt = 0;
+    trigProcRunning = false;
+}
+
+template<class FE>
+EmuTxCore<FE>::EmuTxCore() {
+    m_com = NULL;
+    m_trigCnt = 0;
+    trigProcRunning = false;
+}
+
+template<class FE>
+EmuTxCore<FE>::~EmuTxCore() {}
+
+template<class FE>
+void EmuTxCore<FE>::writeFifo(uint32_t value) {
+    // TODO need to check channel
+    m_com->write32(value);
+}
+
+template<class FE>
+void EmuTxCore<FE>::setTrigCnt(uint32_t count) {
+    m_trigCnt = count;
+}
+
+template<class FE>
+void EmuTxCore<FE>::setTrigEnable(uint32_t value) {
+    // TODO value should reflect channel
+    if(value == 0) {
+        if (triggerProc.joinable()) triggerProc.join();
+    } else {
+        trigProcRunning = true;
+        triggerProc = std::thread(&EmuTxCore::doTrigger, this);
+    }
+}
 
 #endif

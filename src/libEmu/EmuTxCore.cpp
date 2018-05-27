@@ -8,41 +8,12 @@
 // ################################
 
 #include "EmuTxCore.h"
+#include "Fei4.h"
+#include "Rd53a.h"
+#include "Rd53aEmu.h"
 
-EmuTxCore::EmuTxCore(EmuCom *com) {
-    m_com = com;
-    m_trigCnt = 0;
-    trigProcRunning = false;
-}
-
-EmuTxCore::EmuTxCore() {
-    m_com = NULL;
-    m_trigCnt = 0;
-    trigProcRunning = false;
-}
-
-EmuTxCore::~EmuTxCore() {}
-
-void EmuTxCore::writeFifo(uint32_t value) {
-    // TODO need to check channel
-    m_com->write32(value);
-}
-
-void EmuTxCore::setTrigCnt(uint32_t count) {
-    m_trigCnt = count;
-}
-
-void EmuTxCore::setTrigEnable(uint32_t value) {
-    // TODO value should reflect channel
-    if(value == 0) {
-        if (triggerProc.joinable()) triggerProc.join();
-    } else {
-        trigProcRunning = true;
-        triggerProc = std::thread(&EmuTxCore::doTrigger, this);
-    }
-}
-
-void EmuTxCore::doTrigger() {
+template<>
+void EmuTxCore<Fei4>::doTrigger() {
     for(unsigned i=0; i<m_trigCnt; i++) {
         m_com->write32(0x1D000000 + i);
     }
@@ -50,3 +21,19 @@ void EmuTxCore::doTrigger() {
     while(!m_com->isEmpty());
     trigProcRunning = false;
 }
+
+
+template<>
+void EmuTxCore<Rd53a>::doTrigger() {
+    for(unsigned i=0; i<m_trigCnt; i++) {
+        for( int j =0; j<trigLength; j++) {
+            m_com->write32( trigWord[trigLength-j-1] );
+        }
+    }
+    m_com->write32(0x0);
+    while(!m_com->isEmpty());
+    trigProcRunning = false;
+    //std::cout << __PRETTY_FUNCTION__ << ": doTrigger() is done." << std::endl;
+}
+
+

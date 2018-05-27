@@ -16,14 +16,16 @@
 #include "EmuShm.h"
 #include "json.hpp"
 
-#include "Fei4Emu.h"
-
 #include "RingBuffer.h"
 
 using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 
-class EmuController : public HwController, public EmuTxCore, public EmuRxCore {
-    Fei4Emu *emu;
+class Fei4;
+class Rd53a;
+
+template<class FE, class ChipEmu>
+class EmuController : public HwController, public EmuTxCore<FE>, public EmuRxCore<FE> {
+    ChipEmu *emu;
     std::vector<std::thread> emuThreads;
 
     public:
@@ -31,5 +33,23 @@ class EmuController : public HwController, public EmuTxCore, public EmuRxCore {
         ~EmuController();
         void loadConfig(json &j);
 };
+
+template<class FE, class ChipEmu>
+EmuController<FE, ChipEmu>::EmuController(RingBuffer * rx, RingBuffer * tx)
+  : emu(nullptr) {
+    EmuTxCore<FE>::setCom(tx);
+    EmuRxCore<FE>::setCom(rx);
+}
+
+template<class FE, class ChipEmu>
+EmuController<FE, ChipEmu>::~EmuController() {
+  if(emu) {
+    emu->run = false;
+  }
+  emuThreads[0].join();
+}
+
+
+
 
 #endif
