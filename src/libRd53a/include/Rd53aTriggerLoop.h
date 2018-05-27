@@ -9,44 +9,66 @@
 // # Date: 02/2018
 // ################################
 
-#include <array>
-#include <chrono>
-#include <thread>
 #include "LoopActionBase.h"
-#include "Rd53aCmd.h"
 
-class Rd53aTriggerLoop: public LoopActionBase {
+class Rd53aTriggerLoop final: public LoopActionBase {
     public:
         Rd53aTriggerLoop();
  
-        uint32_t getTrigCnt() {return m_trigCnt;}
-        void setTrigCnt(uint32_t cnt) {m_trigCnt = cnt;}
-        void setTrigTime(double time) {m_trigTime = time;}
-        void setTrigFreq(double freq) {m_trigFreq = freq;}
-        void setTrigDelay(uint32_t delay);
-        void setEdgeMode(uint32_t duration);
+       /**
+        * Get the specified trigger count number
+        */
+        uint32_t getTrigCnt() const;
+    
+       /**
+        * Set the trigger count number
+        */
+        void setTrigCnt(uint32_t /*cnt*/);
+    
+       /**
+        * Set the trigger time in [s]? ( default = 10. )
+        */
+        void setTrigTime(double /*time*/);
+
+       /**
+        * Set the frequency of the trigger rate in [Hz] ( default = 1000. )
+        */
+        void setTrigFreq(double /*freq*/);
+    
+       /**
+        * This function sets not only the internal trigger delay value in the class,
+        * but also resets trigWords to be consistent with the specified size of the delay.
+        */
+        void setTrigDelay(uint32_t /*delay*/);
+    
+       /**
+        * Set the edge mode
+        * Note that the argument duration is not really used
+        * right at the moment and hard-coded. (HO: 2018-MAY-27)
+        */
+        void setEdgeMode(uint32_t /*duration*/);
+    
+       /**
+        * Reset the trigger words to the no-injection mode
+        */
         void setNoInject();
         
-        void writeConfig(json &config);
-        void loadConfig(json &config);
+        void writeConfig(json & /*config*/) override final;
+        void loadConfig(json & /*config*/)  override final;
 
     private:
-        uint32_t m_trigCnt;
-        uint32_t m_trigDelay;
-        double m_trigTime;
-        double m_trigFreq;
-        std::array<uint32_t, 16> m_trigWord;
-        uint32_t m_trigWordLength;
-        bool m_noInject;
-        bool m_edgeMode;
-        uint32_t m_edgeDuration;
-        uint32_t m_pulseDuration;
-
-        bool isInner;
-        void init();
-        void execPart1();
-        void execPart2();
-        void end();
+    
+       /**
+        * Concrete implementations are encapsulated in this Impl class
+        * Only forward declaration is given in the header file.
+        */
+        class Impl;    
+        std::unique_ptr<Impl> m_impl;
+        
+        void init()       override final;
+        void execPart1()  override final;
+        void execPart2()  override final;
+        void end()        override final;
 };
 
 #endif
