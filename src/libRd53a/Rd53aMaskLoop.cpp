@@ -7,6 +7,12 @@
 // ################################
 
 #include "Rd53aMaskLoop.h"
+#include "FrontEnd.h"
+#include "Rd53a.h"
+
+#include <iostream>
+#include <vector>
+#include <tuple>
 
 Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase() {
     min = 0;
