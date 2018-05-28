@@ -69,7 +69,7 @@ Rd53aEmu::Rd53aEmu(RingBuffer * rx, RingBuffer * tx)
         m_rd53aLinPixelModelObjects .emplace_back( std::vector< std::unique_ptr<Rd53aLinPixelModel > > {} );
         m_rd53aDiffPixelModelObjects.emplace_back( std::vector< std::unique_ptr<Rd53aDiffPixelModel> > {} );
         
-        for (int row = 0; row < Rd53aPixelCfg::n_Col; row++) {
+        for (unsigned row = 0; row < Rd53aPixelCfg::n_Col; row++) {
             std::string linName = "linScurveCol" + std::to_string(col) + "Row" + std::to_string(row);
             linScurve[col][row] = new Histo1d(linName.c_str(), 256, -0.5, 4095.5, typeid(void));
             m_rd53aLinPixelModelObjects[col].emplace_back( new Rd53aLinPixelModel(10, 2, 400, 100) );
@@ -541,7 +541,7 @@ void Rd53aEmu::doDump( Rd53aEmu* emu ) {
     emu->m_async.clear();
     
     for (int col = 0; col < 136; col++) {
-        for (int row = 0; row < Rd53aPixelCfg::n_Row; row++) {
+        for (unsigned row = 0; row < Rd53aPixelCfg::n_Row; row++) {
             if (emu->diffScurve[col][row]->getEntries() != 0 ) {
                 emu->diffScurve[col][row]->scale(1.0/100.0); // hardcoded for now - the number of times we scan the same pixel
                 for (int bin = 0; bin < 256; bin++) {
