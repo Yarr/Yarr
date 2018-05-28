@@ -503,7 +503,7 @@ void Rd53aEmu::writeRegAsync( Rd53aEmu* emu, const uint32_t data, const uint32_t
                 if( emu->verbose ) printf("pixel %d %d 0x%x\n", dc * 2, emu->m_feCfg->PixRegionRow.read(), data & 0x00FF);
             }
             // increment m_feCfg->RegionRow
-            if (emu->m_feCfg->PixRegionRow.read() + 1 < Rd53aPixelCfg::n_Col) {
+            if ( static_cast<unsigned>( emu->m_feCfg->PixRegionRow.read() + 1 ) < Rd53aPixelCfg::n_Col) {
                 emu->m_feCfg->PixRegionRow.write(emu->m_feCfg->PixRegionRow.read() + 1);
             }
             else {
