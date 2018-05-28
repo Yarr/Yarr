@@ -72,15 +72,7 @@ Rd53aEmu::Rd53aEmu(RingBuffer * rx, RingBuffer * tx)
 
 }
 
-Rd53aEmu::~Rd53aEmu() {
-}
-
-
-void Rd53aEmu::push_word(uint32_t d) {
-    //std::cout << "push_back(): adding word = " << HEXF(8, d ) << std::endl;
-    stream.push_back( (d & 0xFFFF0000) >> 16 );
-    stream.push_back( (d & 0x0000FFFF) );
-}
+Rd53aEmu::~Rd53aEmu() {}
 
 
 void Rd53aEmu::executeLoop() {
@@ -103,8 +95,8 @@ void Rd53aEmu::executeLoop() {
         if( verbose && stream.size() ) {
             std::cout << __PRETTY_FUNCTION__ << ": L" << __LINE__ << ": front = " << HEXF(4, stream.front() ) << ", size = " << stream.size() << std::endl;
         }
-            
 
+        
         ///////////////////////////////////////////////////////////////////
         // 
         // For the moment, all trigger commands are degenerate for simplicity
@@ -112,38 +104,53 @@ void Rd53aEmu::executeLoop() {
         // properly implemented.
         //
 
-        if( triggerFuncs.find( static_cast<Triggers>( stream.front()>>8 ) ) != triggerFuncs.end() ) {
-
-            auto triggerKey = static_cast<Triggers>( stream.front()>>8 );
-            ( this->*triggerFuncs.at( triggerKey ) )();
+        const auto triggerKey = static_cast<Triggers>( stream.front()>>8 );
+        auto triggerFunc_itr = triggerFuncs.find( triggerKey );
+        
+        if( triggerFunc_itr != triggerFuncs.end() ) {
+            
+            // The following grammer is for member function pointer
+            ( this->*(triggerFunc_itr->second) )();
+            
+            continue;
         }
-
+        
             
         ///////////////////////////////////////////////////////////////////
         // 
         // All the rest commands are grouped here
         //
 
-        else if( commandFuncs.find( static_cast<Commands>( stream.front() ) ) != commandFuncs.end() ) {
-
-            auto commandKey = static_cast<Commands>( stream.front() );
-            ( this->*commandFuncs.at( commandKey ) )();
-                
-        }
+        const auto commandKey = static_cast<Commands>( stream.front() );
+        auto commandFunc_itr = commandFuncs.find( commandKey );
+        
+        if( commandFunc_itr != commandFuncs.end() ) {
             
-
+            ( this->*(commandFunc_itr->second ) )();
+            
+            continue;
+        }
+        
+        
         ///////////////////////////////////////////////////////////////////
         // 
         // Exception
         //
-
-        else {
-            printf("unrecognized header 0x%x, skipping for now (will eventually elegantly crash)\n", stream.front() );
-            stream.pop_front();
-            exit(1);
-        }
+        
+        printf("unrecognized header 0x%x, skipping for now (will eventually elegantly crash)\n", stream.front() );
+        stream.pop_front();
+        exit(1);
+        
     }
     
+}
+
+
+
+void Rd53aEmu::push_word(uint32_t d) {
+    //std::cout << "push_back(): adding word = " << HEXF(8, d ) << std::endl;
+    stream.push_back( (d & 0xFFFF0000) >> 16 );
+    stream.push_back( (d & 0x0000FFFF) );
 }
 
 
@@ -209,6 +216,7 @@ void Rd53aEmu::doGlobalPulse() {
     if( verbose ) std::cout << __PRETTY_FUNCTION__ << ": L" << __LINE__ << ": GlobalPulse = " << HEXF(4, stream.front() ) << std::endl;
     stream.pop_front();
 
+#if 0
     auto word  = stream.front();
     auto byte1 = ( word & 0xFF00 ) >> 8;
     auto byte2 = ( word & 0x00FF );
@@ -216,6 +224,7 @@ void Rd53aEmu::doGlobalPulse() {
     auto data  = to5bit(byte2);
 
     std::cout << "id = " << HEXF(4, id) << ", data = " << HEXF(5, data) << std::endl;
+#endif
     stream.pop_front();
 }
 
@@ -228,6 +237,11 @@ void Rd53aEmu::doCal() {
     
     if( verbose ) std::cout << __PRETTY_FUNCTION__ << ": L" << __LINE__ << ": Cal = " << HEXF(4, stream.front() ) << std::endl;
     stream.pop_front();
+
+    // ToDo
+    // For the moment, only pops 2x16-bit words
+    // Informations stored there need to be used properly
+    // See RD53a Manual section 9.2, p.47
     
     push_word( m_txRingBuffer->read32() );
     stream.pop_front();
@@ -255,35 +269,12 @@ void Rd53aEmu::doTrigger() {
     linAnalogHits    = 0;
     syncAnalogHits   = 0;
 
-
+    // Streeam is already popped,
+    // then the following part can be run in parallel.
     for (unsigned dc = 0; dc < Rd53aPixelCfg::n_DC; dc++) {
-        // put these checks into a function maybe
-        // check pixels to see if the digital enable is set for "octo-columns" (columns of cores)
-        if (             dc < 64  && !((m_feCfg->EnCoreColSync.read()  >> ((dc - 0)   / 4)) & 0x1)) continue;
-        if (64  <= dc && dc < 128 && !((m_feCfg->EnCoreColLin1.read()  >> ((dc - 64)  / 4)) & 0x1)) continue;
-        if (128 <= dc && dc < 132 && !((m_feCfg->EnCoreColLin2.read()  >> ((dc - 128) / 4)) & 0x1)) continue;
-        if (132 <= dc && dc < 196 && !((m_feCfg->EnCoreColDiff1.read() >> ((dc - 132) / 4)) & 0x1)) continue;
-        if (196 <= dc && dc < 200 && !((m_feCfg->EnCoreColDiff2.read() >> ((dc - 196) / 4)) & 0x1)) continue;
-        // check pixels to see if double columns are enabled for injections
-        if (             dc < 16  && !((m_feCfg->CalColprSync1.read() >> (dc - 0)   & 0x1))) continue;
-        if (16  <= dc && dc < 32  && !((m_feCfg->CalColprSync2.read() >> (dc - 16)  & 0x1))) continue;
-        if (32  <= dc && dc < 48  && !((m_feCfg->CalColprSync3.read() >> (dc - 32)  & 0x1))) continue;
-        if (48  <= dc && dc < 64  && !((m_feCfg->CalColprSync4.read() >> (dc - 48)  & 0x1))) continue;
-        if (64  <= dc && dc < 80  && !((m_feCfg->CalColprLin1.read()  >> (dc - 64)  & 0x1))) continue;
-        if (80  <= dc && dc < 96  && !((m_feCfg->CalColprLin2.read()  >> (dc - 80)  & 0x1))) continue;
-        if (96  <= dc && dc < 112 && !((m_feCfg->CalColprLin3.read()  >> (dc - 96)  & 0x1))) continue;
-        if (112 <= dc && dc < 128 && !((m_feCfg->CalColprLin4.read()  >> (dc - 112) & 0x1))) continue;
-        if (128 <= dc && dc < 132 && !((m_feCfg->CalColprLin5.read()  >> (dc - 128) & 0x1))) continue;
-        if (132 <= dc && dc < 148 && !((m_feCfg->CalColprDiff1.read() >> (dc - 132) & 0x1))) continue;
-        if (148 <= dc && dc < 164 && !((m_feCfg->CalColprDiff2.read() >> (dc - 148) & 0x1))) continue;
-        if (164 <= dc && dc < 180 && !((m_feCfg->CalColprDiff3.read() >> (dc - 164) & 0x1))) continue;
-        if (180 <= dc && dc < 196 && !((m_feCfg->CalColprDiff4.read() >> (dc - 180) & 0x1))) continue;
-        if (196 <= dc && dc < 200 && !((m_feCfg->CalColprDiff5.read() >> (dc - 196) & 0x1))) continue;
-
-        if( verbose ) std::cout << "dc = " << dc << std::endl;
-
-        m_async.emplace_back( std::async(std::launch::async, &Rd53aEmu::triggerAsync, this, dc ) );
-
+        
+        m_async.emplace_back( std::async( std::launch::deferred, &Rd53aEmu::triggerAsync, this, dc ) );
+        
     }
 
     // Finish all async processes before next step
@@ -299,6 +290,32 @@ void Rd53aEmu::doTrigger() {
 
 
 void Rd53aEmu::triggerAsync(const unsigned dc) {
+    
+    // put these checks into a function maybe
+    // check pixels to see if the digital enable is set for "octo-columns" (columns of cores)
+    if (             dc < 64  && !((m_feCfg->EnCoreColSync.read()  >> ((dc - 0)   / 4)) & 0x1)) return;
+    if (64  <= dc && dc < 128 && !((m_feCfg->EnCoreColLin1.read()  >> ((dc - 64)  / 4)) & 0x1)) return;
+    if (128 <= dc && dc < 132 && !((m_feCfg->EnCoreColLin2.read()  >> ((dc - 128) / 4)) & 0x1)) return;
+    if (132 <= dc && dc < 196 && !((m_feCfg->EnCoreColDiff1.read() >> ((dc - 132) / 4)) & 0x1)) return;
+    if (196 <= dc && dc < 200 && !((m_feCfg->EnCoreColDiff2.read() >> ((dc - 196) / 4)) & 0x1)) return;
+    // check pixels to see if double columns are enabled for injections
+    if (             dc < 16  && !((m_feCfg->CalColprSync1.read() >> (dc - 0)   & 0x1))) return;
+    if (16  <= dc && dc < 32  && !((m_feCfg->CalColprSync2.read() >> (dc - 16)  & 0x1))) return;
+    if (32  <= dc && dc < 48  && !((m_feCfg->CalColprSync3.read() >> (dc - 32)  & 0x1))) return;
+    if (48  <= dc && dc < 64  && !((m_feCfg->CalColprSync4.read() >> (dc - 48)  & 0x1))) return;
+    if (64  <= dc && dc < 80  && !((m_feCfg->CalColprLin1.read()  >> (dc - 64)  & 0x1))) return;
+    if (80  <= dc && dc < 96  && !((m_feCfg->CalColprLin2.read()  >> (dc - 80)  & 0x1))) return;
+    if (96  <= dc && dc < 112 && !((m_feCfg->CalColprLin3.read()  >> (dc - 96)  & 0x1))) return;
+    if (112 <= dc && dc < 128 && !((m_feCfg->CalColprLin4.read()  >> (dc - 112) & 0x1))) return;
+    if (128 <= dc && dc < 132 && !((m_feCfg->CalColprLin5.read()  >> (dc - 128) & 0x1))) return;
+    if (132 <= dc && dc < 148 && !((m_feCfg->CalColprDiff1.read() >> (dc - 132) & 0x1))) return;
+    if (148 <= dc && dc < 164 && !((m_feCfg->CalColprDiff2.read() >> (dc - 148) & 0x1))) return;
+    if (164 <= dc && dc < 180 && !((m_feCfg->CalColprDiff3.read() >> (dc - 164) & 0x1))) return;
+    if (180 <= dc && dc < 196 && !((m_feCfg->CalColprDiff4.read() >> (dc - 180) & 0x1))) return;
+    if (196 <= dc && dc < 200 && !((m_feCfg->CalColprDiff5.read() >> (dc - 196) & 0x1))) return;
+
+    if( verbose ) std::cout << "dc = " << dc << std::endl;
+
     for (unsigned row = 0; row < Rd53aPixelCfg::n_Row; row++) {
         float capacitance_times_coulomb = 8000; // change this to the correct value later
 
@@ -438,8 +455,7 @@ void Rd53aEmu::doWrReg() {
 
         if( verbose ) std::cout << __PRETTY_FUNCTION__ << ": " << __LINE__ << ": stream front = " << HEXF(4, stream.front() ) << std::endl;
 
-        //writeRegAsync( data, address );
-        m_async.emplace_back( std::async(std::launch::async, &Rd53aEmu::writeRegAsync, this, data, address ) );
+        m_async.emplace_back( std::async(std::launch::deferred, &Rd53aEmu::writeRegAsync, this, data, address ) );
 
     }
     
