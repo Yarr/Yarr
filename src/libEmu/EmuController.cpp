@@ -21,7 +21,7 @@ bool emu_registered_Fei4 =
                                 makeEmu<Fei4, Fei4Emu>);
 
 bool emu_registered_Rd53a =
-  StdDict::registerHwController("emu",
+  StdDict::registerHwController("emu_Rd53a",
                                 makeEmu<Rd53a, Rd53aEmu>);
 
 template<>
