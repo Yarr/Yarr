@@ -27,6 +27,32 @@
 #include <atomic>
 
 class Rd53aEmu {
+
+    /*********************************
+     *
+     * [[ Structure ]]
+     *
+     * std::deque<uint16_t> Rd53aEmu::stream is used as the internal buffer of the command.
+     * Commands are digested in executeLoop(), and depending on the command, the corresponding
+     * strategy functions (commandFunc or triggerFunc) are called.
+     * Used command words are popped from stream.
+     *
+     * Partially these command functions can run asynchronously using std::async.
+     * 
+     * Data generation and output is not implemented yet.
+     *
+     * The image of the data flow is as the following diagram:
+     *
+     *
+     *                                              +--> commandFunc (e.g. ECR) -->--+
+     *                                [Rd53aEmu]    |                                |
+     * (Tx ring buffer) -->retrieve()--> (stream) --+--> commandFunc (e.g. Cal) -->--+--> (outStream) -->pushOutput()-->(Rx ring buffer)
+     *                                              |                                |
+     *                                              +--> commandFunc (e.g. Trg) -->--+
+     *                                              |                                |
+     *                                              +-->          ....          -->--+
+     */
+    
 public:
 
     /** The ownsership of these ring buffers need to be designed properly */
@@ -43,6 +69,11 @@ public:
     
 private:
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Static part
+    //
+    
     static constexpr size_t sizeOf8bit = 256;
     
     static constexpr std::array<uint8_t, sizeOf8bit> eightToFive {{
@@ -108,6 +139,9 @@ private:
 #endif
 
 
+    /** Conversion function 8bit->5bit, with a simple input validation */
+    static uint8_t to5bit( uint8_t );
+
     
     /** List of the first 8-bit of the trigger command word */
     enum class Triggers {
@@ -123,12 +157,55 @@ private:
     };
 
 
-    
-    /** Conversion function 8bit->5bit, with a simple input validation */
-    static uint8_t to5bit( uint8_t );
+    /** Concrete implementations */
+    using CommandFunc = void(*)( Rd53aEmu* );
 
+    static void doNoop        ( Rd53aEmu* );
+    static void doECR         ( Rd53aEmu* );
+    static void doBCR         ( Rd53aEmu* );
+    static void doZero        ( Rd53aEmu* );
+    static void doSync        ( Rd53aEmu* );
+    static void doGlobalPulse ( Rd53aEmu* );
+    static void doWrReg       ( Rd53aEmu* );
+    static void doRdReg       ( Rd53aEmu* );
+    static void doCal         ( Rd53aEmu* );
+    static void doDump        ( Rd53aEmu* );
+    static void doTrigger     ( Rd53aEmu* );
     
-    /** ToDo: encapsulate these members by pImpl */
+    
+    /** Container of the command and trigger (static) functions
+        as function tables.
+     */
+    static const std::map<enum Commands, CommandFunc> commandFuncs;
+    static const std::map<enum Triggers, CommandFunc> triggerFuncs;
+    
+
+    /** This part of WrReg process will run asynchronously with threads
+        Concurrent running helps speed-up a little.
+     */
+    static void writeRegAsync( Rd53aEmu*, const uint32_t /*data*/, const uint32_t /*address*/);
+    
+    
+    /** This part of trigger process will run asynchronously with threads
+        Concurrent running helps speed-up a little.
+     */
+    static void triggerAsync( Rd53aEmu*, const unsigned /*dc*/);
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Non-static part
+    //
+    // In principle, the following parts can be all encapsulated by the pImpl indiom:
+    //
+    // class Impl;
+    // std::unique_ptr<Impl> m_impl;
+    // 
+
+
+    /** ToDo
+        ownership of these ring buffers need to be designed and revisited
+    */
     RingBuffer * m_txRingBuffer;
     RingBuffer * m_rxRingBuffer;
     
@@ -137,6 +214,7 @@ private:
         Not supposed to be shared with other instances ==> unique_ptr.
      */
     std::unique_ptr<Rd53aCfg> m_feCfg;
+    
 
     /** This variable mimicks the hardware's reigsrer for each pixel.
         First loop is for column, second loop is rows.
@@ -150,6 +228,7 @@ private:
     */
     std::vector<std::vector< std::unique_ptr<Rd53aLinPixelModel> > >  m_rd53aLinPixelModelObjects;
     std::vector<std::vector< std::unique_ptr<Rd53aDiffPixelModel> > > m_rd53aDiffPixelModelObjects;
+
     
     /** This variable stream holds input commands
         as a format of 16bit data FIFO queue.
@@ -158,53 +237,25 @@ private:
     */
     std::deque<uint16_t> stream;
 
+    
     /** Emulator receives commands from the Ring buffer by 32bit words.
         This function pushes back the command words as a format of
         16bit data to the deque defined above.
     */
-    void push_word(uint32_t d);
+    void retrieve();
+    
 
     /** log level control */
     bool verbose  { false };
 
     
-    /** Concrete implementations */
-    using CommandFunc = void(Rd53aEmu::*)();
-
-    void doNoop();
-    void doECR();
-    void doBCR();
-    void doZero();
-    void doSync();
-    void doGlobalPulse();
-    void doWrReg();
-    void doRdReg();
-    void doCal();
-    void doDump();
-    void doTrigger();
-
-    /** Container of the command and trigger functions */
-    std::map<enum Commands, CommandFunc> commandFuncs;
-    std::map<enum Triggers, CommandFunc> triggerFuncs;
-
-
-    /** This part of WrReg process will run asynchronously with threads
-        Concurrent running helps speed-up a little.
-     */
-    void writeRegAsync(const uint32_t data, const uint32_t address);
-    
-    /** This part of trigger process will run asynchronously with threads
-        Concurrent running helps speed-up a little.
-     */
-    void triggerAsync(const unsigned dc);
-
     /** container for async processing */
     std::vector<std::future<void> > m_async;
     
     
     /** Temporary used to keep records of hits,
         but we should rather ship-out data to software.
-        ==> To be removed
+        ==> To be removed?
     */
     Histo1d* linScurve[136][Rd53aPixelCfg::n_Row];
     Histo1d* linThreshold;
@@ -213,9 +264,11 @@ private:
     Histo1d* diffThreshold;
     
     Histo2d* analogHits;
+    
 
     /**
     * temporary counters to count hits
+    * using atomic for concurrency
     */
     std::atomic<int> totalDigitalHits;
     std::atomic<int> diffAnalogHits;
