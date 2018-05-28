@@ -26,7 +26,7 @@ void EmuTxCore<Fei4>::doTrigger() {
 template<>
 void EmuTxCore<Rd53a>::doTrigger() {
     for(unsigned i=0; i<m_trigCnt; i++) {
-        for( int j =0; j<trigLength; j++) {
+        for( uint32_t j =0; j<trigLength; j++) {
             m_com->write32( trigWord[trigLength-j-1] );
         }
     }
