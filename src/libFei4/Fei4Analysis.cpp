@@ -590,10 +590,11 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         hh1->setYaxisTitle("Number of Pixels");
                         timeDist[outerIdent] = hh1;
                     }
-                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin)) {
+                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0) {
                         FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
                         thrMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0], useScap, useLcap));
-                        sigMap[outerIdent]->fill(col, row, feCfg->toCharge(par[1], useScap, useLcap));
+                        // Reudce affect of vcal offset on this, don't want to probe at low vcal
+                        sigMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0]+par[1], useScap, useLcap)-feCfg->toCharge(par[0], useScap, useLcap));
                         chiDist[outerIdent]->fill(status.fnorm/(double)status.nfev);
                         timeDist[outerIdent]->fill(fitTime.count());
                     }
