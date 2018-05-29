@@ -58,7 +58,7 @@
           "count": 100,
           "delay": 56,
           "extTrigger": false,
-          "frequency": 5000,
+          "frequency": 2000,
           "noInject": false,
           "time": 0,
           "edgeMode": true
@@ -73,7 +73,7 @@
     "prescan": {
         "InjEnDig": 1,
         "InjAnaMode": 0,
-        "LatencyConfig": 58,
+        "LatencyConfig": 54,
         "GlobalPulseRt": 16384
     }
   }

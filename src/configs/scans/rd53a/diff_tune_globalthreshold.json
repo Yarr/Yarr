@@ -73,8 +73,10 @@
     "name": "DiffGlobalThresholdTune",
     "prescan": {
         "InjEnDig": 0,
-        "LatencyConfig": 50,
-        "GlobalPulseRt": 16384
+        "LatencyConfig": 48,
+        "GlobalPulseRt": 16384,
+        "SyncVth":500,
+        "LinVth": 500
     }
   }
 }

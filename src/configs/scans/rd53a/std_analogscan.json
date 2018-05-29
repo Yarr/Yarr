@@ -71,7 +71,7 @@
     "name": "AnalogScan",
     "prescan": {
         "InjEnDig": 0,
-        "LatencyConfig": 50,
+        "LatencyConfig": 48,
         "GlobalPulseRt": 16384,
         "InjVcalDiff": 0,
         "InjVcalHigh": 2500,

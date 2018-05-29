@@ -43,9 +43,9 @@
       },
       {
         "config": {
-          "max": 1000,
-          "min": 0,
-          "step": 10,
+          "max": 600,
+          "min": 100,
+          "step": 5,
           "parameter":"InjVcalDiff"
         },
         "loopAction": "Rd53aParameterLoop"
@@ -77,7 +77,7 @@
     "name": "ThresholdScan",
     "prescan": {
         "InjEnDig": 0,
-        "LatencyConfig": 50,
+        "LatencyConfig": 48,
         "GlobalPulseRt": 16384
     }
   }
