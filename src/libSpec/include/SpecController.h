@@ -31,7 +31,29 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
             }
 
             if (!j["trigConfig"].empty()) {
-                // TODO implement me
+                if(!j["trigConfig"]["mask"].empty())
+                    this->setTriggerLogicMask(j["trigConfig"]["mask"]);
+                
+                if(!j["trigConfig"]["mode"].empty())
+                    this->setTriggerLogicMode(j["trigConfig"]["mode"]);
+                
+                if(!j["trigConfig"]["config"].empty())
+                    this->setTriggerLogicConfig(j["trigConfig"]["config"]);
+                
+                if(!j["trigConfig"]["edge"].empty())
+                    this->setTriggerEdge(j["trigConfig"]["edge"]);
+                
+                if(!j["trigConfig"]["delay"].empty()) {
+                    if(j["trigConfig"]["delay"].size() == 4) {
+                        for (unsigned i=0; i<4; i++) {
+                            this->setTriggerDelay(i, j["trigConfig"]["delay"][i]);
+                        }
+                    }
+                }
+                
+                if(!j["trigConfig"]["deadtime"].empty())
+                    this->setTriggerDeadtime(j["trigConfig"]["deadtime"]);
+                    
             }
         }
 };
