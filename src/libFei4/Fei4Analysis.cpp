@@ -201,11 +201,7 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
                 mask->setBin(i, 1);
             } else {
                 if (make_mask) {
-                    if(dynamic_cast<Fei4*>(bookie->getFe(channel))) {;
-                        Fei4 *fe = dynamic_cast<Fei4*>(bookie->getFe(channel));
-                        fe->setEn((i/nRow)+1, (i%nRow)+1, 0);
-                        fe->setHitbus((i/nRow)+1, (i%nRow)+1, 1);
-                    }
+                    bookie->getFe(channel)->maskPixel((i/nRow), (i%nRow));
                 }
             }
         }
@@ -1104,11 +1100,7 @@ void NoiseAnalysis::end() {
         if (noiseOcc->getBin(i) > noiseThr) {
             mask->setBin(i, 0);
             if (make_mask) {
-                if(dynamic_cast<Fei4*>(bookie->getFe(channel))) {;
-                    Fei4 *fe = dynamic_cast<Fei4*>(bookie->getFe(channel));
-                    fe->setEn((i/nRow)+1, (i%nRow)+1, 0);
-                    fe->setHitbus((i/nRow)+1, (i%nRow)+1, 1);
-                }
+                bookie->getFe(channel)->maskPixel((i/nRow), (i%nRow));
             }
         } else {
             mask->setBin(i, 1);
