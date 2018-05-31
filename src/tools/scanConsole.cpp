@@ -363,6 +363,14 @@ int main(int argc, char *argv[]) {
                     dynamic_cast<Fei4*>(fe)->En(dc).setAll(1);
                     dynamic_cast<Fei4*>(fe)->Hitbus(dc).setAll(0);
                 }
+            } else if (chipType == "RD53A") {
+                std::cout << "Resetting enable/hitbus pixel mask to all enabled!" << std::endl;
+                for (unsigned int col = 0; col < dynamic_cast<Rd53a*>(fe)->n_Col; col++) {
+                    for (unsigned row = 0; row < dynamic_cast<Rd53a*>(fe)->n_Row; row ++) {
+                        dynamic_cast<Rd53a*>(fe)->setEn(col, row, 1);
+                        dynamic_cast<Rd53a*>(fe)->setHitbus(col, row, 1);
+                    }
+                }
             }
         }
         // TODO add FE65p2
