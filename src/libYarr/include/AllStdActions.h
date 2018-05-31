@@ -1,5 +1,6 @@
 #include "StdDataLoop.h"
 #include "StdDataGatherer.h"
+#include "StdDataAction.h"
 
 #ifndef ALLSTDACTIONS_H
 #define ALLSTDACTIONS_H
