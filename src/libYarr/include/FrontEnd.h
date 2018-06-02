@@ -26,6 +26,9 @@ class FrontEnd {
         
         virtual void init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel)=0;
 
+        // col/row starting at 0,0
+        virtual void maskPixel(unsigned col, unsigned row) = 0;
+
         bool getActive();
 		bool isActive();
 		void setActive(bool active);

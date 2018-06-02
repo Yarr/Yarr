@@ -68,6 +68,11 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
         void readPixelRegister(unsigned colpr_addr, unsigned latch);
         void dummyCmd();
 
+        void maskPixel(unsigned col, unsigned row) override {
+            this->setEn(col+1, row+1, 0);
+            this->setHitbus(col+1, row+1, 1);
+        }
+
         void writeRegister(Fei4Register Fei4GlobalCfg::*ref, uint16_t cfgBits){
             setValue(ref, cfgBits);
             writeRegister(ref);

@@ -23,8 +23,8 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
     public:
         Rd53aCfg() {
             m_chipId = 0;
-            m_vcalPar[0] = -1.0;
-            m_vcalPar[1] = 0.2;
+            m_vcalPar[0] = 1.0;
+            m_vcalPar[1] = 0.195;
             m_vcalPar[2] = 0;
             m_vcalPar[3] = 0;
             m_injCap = 8.2;

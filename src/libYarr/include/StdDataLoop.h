@@ -7,17 +7,18 @@
 #define STDDATALOOP_H
 
 #include "LoopActionBase.h"
+#include "StdDataAction.h"
 #include "ClipBoard.h"
 #include "RawData.h"
 #include <signal.h>
 
-class StdDataLoop: public LoopActionBase {
+class StdDataLoop: public LoopActionBase, public StdDataAction {
     public:
         StdDataLoop();
-        void connect(ClipBoard<RawDataContainer> *clipboard);
+        //void connect(ClipBoard<RawDataContainer> *clipboard);
         
     private:
-        ClipBoard<RawDataContainer> *storage;
+        //ClipBoard<RawDataContainer> *storage;
         unsigned counter;
         void init();
         void end();

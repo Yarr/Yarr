@@ -84,6 +84,6 @@ void StdDataGatherer::execPart2() {
     counter++;
 }
 
-void StdDataGatherer::connect(ClipBoard<RawDataContainer> *clipboard) {
-    storage = clipboard;
-}
+//void StdDataGatherer::connect(ClipBoard<RawDataContainer> *clipboard) {
+//    storage = clipboard;
+//}

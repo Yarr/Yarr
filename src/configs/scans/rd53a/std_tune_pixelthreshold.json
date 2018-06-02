@@ -70,10 +70,10 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "DiffPixelThresholdTune",
+    "name": "StdPixelThresholdTune",
     "prescan": {
         "InjEnDig": 0,
-        "LatencyConfig": 50,
+        "LatencyConfig": 48,
         "GlobalPulseRt": 16384
     }
   }

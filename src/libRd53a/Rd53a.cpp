@@ -94,13 +94,14 @@ void Rd53a::configureInit() {
     this->writeRegister(&Rd53a::GlobalPulseRt, 0x007F); // Reset a whole bunch of things
     this->globalPulse(m_chipId, 8);
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    this->writeRegister(&Rd53a::GlobalPulseRt, 0x4100); //activate monitor and reset sync FE
+    this->writeRegister(&Rd53a::GlobalPulseRt, 0x4100); //activate monitor and prime sync FE AZ
     this->globalPulse(m_chipId, 8);
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     this->ecr();
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     this->bcr();
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    while(!core->isCmdEmpty()){;}
 }
 
 void Rd53a::configureGlobal() {
@@ -156,7 +157,8 @@ void Rd53a::configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels) 
 
 void Rd53a::writeNamedRegister(std::string name, uint16_t value) {
     std::cout << __PRETTY_FUNCTION__ << " : " << name << " -> " << value << std::endl;
-    writeRegister(regMap[name], value);
+    if (regMap.find(name) != regMap.end())
+        writeRegister(regMap[name], value);
 }
 
 // TODO remove magic numbers

@@ -2,7 +2,7 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "OccupancyAnalysis",
+        "algorithm": "NoiseAnalysis",
         "config": {
           "createMask": true
         }
@@ -38,43 +38,22 @@
     "loops": [
       {
         "config": {
-          "max": 64,
-          "min": 0,
-          "step": 1
-        },
-        "loopAction": "Rd53aMaskLoop"
-      },
-      {
-        "config": {
-          "max": 34,
-          "min": 16,
-          "step": 1,
-          "nSteps": 4
-        },
-        "loopAction": "Rd53aCoreColLoop"
-      },
-      {
-        "config": {
-          "count": 100,
+          "count": 0,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 10000,
-          "noInject": false,
-          "time": 0
+          "frequency": 5000,
+          "noInject": true,
+          "time": 30
         },
         "loopAction": "Rd53aTriggerLoop"
       },
       {
-        "loopAction": "StdDataLoop"
+        "loopAction": "StdDataGatherer"
       }
     ],
     "name": "AnalogScan",
     "prescan": {
-        "InjEnDig": 0,
-        "LatencyConfig": 45,
-        "GlobalPulseRt": 16384,
-        "InjVcalHigh": 2500,
-        "InjVcalMed": 500
+        "LatencyConfig": 48
     }
   }
 }
