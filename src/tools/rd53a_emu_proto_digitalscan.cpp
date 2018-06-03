@@ -54,9 +54,10 @@ Histo2d* decode(RawData *data, unsigned &hits) {
 
                     unsigned pix_col = core_col*8+((region&0x1)*4);
                     unsigned pix_row = core_row*8+(0x7&(region>>1));
-                    //std::cout << "[Data] : COL(" << core_col << ") ROW(" << core_row  << ") Region(" << region
-                    //    << ") TOT(" << tot3 << "," << tot2 << "," << tot1 << "," << tot0 
-                    //    << ") RAW(0x" << std::hex << data->buf[i] << std::dec << ")" << std::endl;
+                    // std::cout << "[Data] : COL(" << core_col << ") ROW(" << core_row  << ") Region(" << region
+                    //           << ") pix_col(" << pix_col << ") pix_row(" << pix_row
+                    //     << ") TOT(" << tot3 << "," << tot2 << "," << tot1 << "," << tot0 
+                    //     << ") RAW(0x" << std::hex << data->buf[i] << std::dec << ")" << std::endl;
                     if (tot0 != 0xF) {
                         hits++;
                         h->fill(pix_col, pix_row);
@@ -84,8 +85,8 @@ int main(int argc, char *argv[]) {
 
     Rd53aEmu *emu = nullptr;
 
-    RingBuffer * rx = new RingBuffer(128);
-    RingBuffer * tx = new RingBuffer(128);
+    RingBuffer * rx = new RingBuffer(4096*8);
+    RingBuffer * tx = new RingBuffer(4096*8);
 
     EmuController<Rd53a, Rd53aEmu> emuCtrl(rx, tx);
 
@@ -114,7 +115,7 @@ int main(int argc, char *argv[]) {
 
     std::cout << ">>> Enabling some pixels" << std::endl;
     unsigned max_mask_stage = 32; // Must be divisible by 192
-    unsigned max_col_stage = 12; //Must be divisble by 400
+    unsigned max_col_stage = 8; //Must be divisble by 400
 
     Histo2d *h = new Histo2d("Occupancy", 400, -0.5, 399.5, 192, -0.5, 191.5, typeid(void));
 
@@ -196,6 +197,13 @@ int main(int argc, char *argv[]) {
 
         }
     }
+
+    emu->run = false;
+    
+    for( auto& t : emuThreads ) {
+        t.join();
+    }
+    
     h->plot("rd53a_proto_digital");
     std::cout << "Saw " << total_hits << " hits!" << std::endl;
 

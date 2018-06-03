@@ -38,7 +38,7 @@ class Rd53aPixelCfg {
         unsigned getInjEn(unsigned col, unsigned row);
         int getTDAC(unsigned col, unsigned row);
 
-        inline unsigned toIndex(unsigned col, unsigned row) {
+        inline static unsigned toIndex(unsigned col, unsigned row) {
             return (col/2)*n_Row+row;
         }
 

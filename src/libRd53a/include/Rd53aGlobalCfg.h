@@ -108,7 +108,7 @@ class Rd53aDiffReg : public Rd53aReg {
 
 class Rd53aGlobalCfg {
     public:
-        static const unsigned numRegs = 138;
+        static constexpr unsigned numRegs = 138;
         std::array<uint16_t, numRegs> m_cfg;
         
         Rd53aGlobalCfg();
@@ -139,6 +139,18 @@ class Rd53aGlobalCfg {
                 std::cerr << " --> Error: Could not find register \"" << name << "\"" << std::endl;
             }
         }
+
+    std::string regName(const unsigned addr) const {
+        std::string name = "null_register";
+
+        for( auto& pair : regMap ) {
+            if( addr == (this->*pair.second).addr() ) {
+                name = pair.first;
+                break;
+            }
+        }
+        return name;
+    }
 
     protected:
         void toFileJson(json &j);

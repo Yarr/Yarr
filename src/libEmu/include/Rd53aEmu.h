@@ -8,6 +8,7 @@
 
 #include "EmuShm.h"
 #include "RingBuffer.h"
+#include "AnyType.h"
 #include "Gauss.h"
 
 #include "Rd53aLinPixelModel.h"
@@ -20,11 +21,18 @@
 #include "Histo2d.h"
 
 #include "RingBuffer.h"
+//#include "ThreadPool.h"
 
 #include <cstdint>
 #include <memory>
 #include <future>
 #include <atomic>
+
+// Temporarily substituting with Lin model
+// To be replaced in the future
+using Rd53aSyncPixelModel = Rd53aLinPixelModel;
+
+
 
 class Rd53aEmu {
 
@@ -39,18 +47,16 @@ class Rd53aEmu {
      *
      * Partially these command functions can run asynchronously using std::async.
      * 
-     * Data generation and output is not implemented yet.
-     *
      * The image of the data flow is as the following diagram:
      *
      *
-     *                                              +--> commandFunc (e.g. ECR) -->--+
-     *                                [Rd53aEmu]    |                                |
-     * (Tx ring buffer) -->retrieve()--> (stream) --+--> commandFunc (e.g. Cal) -->--+--> (outStream) -->pushOutput()-->(Rx ring buffer)
-     *                                              |                                |
-     *                                              +--> commandFunc (e.g. Trg) -->--+
-     *                                              |                                |
-     *                                              +-->          ....          -->--+
+     *                                                     +--> commandFunc (e.g. ECR) -->--+
+     *                                   [Rd53aEmu]        |                                |
+     * (Tx ring buffer) -->retrieve()--> (commandStream) --+--> commandFunc (e.g. Cal) -->--+--> (outWords) -->pushOutput()-->(Rx ring buffer)
+     *                                                     |                                |
+     *                                                     +--> commandFunc (e.g. Trg) -->--+
+     *                                                     |                                |
+     *                                                     +-->          ....          -->--+
      */
     
 public:
@@ -69,13 +75,32 @@ public:
     
 private:
 
+    
     //////////////////////////////////////////////////////////////////////////////////////////////////
     //
     // Static part
     //
     
-    static constexpr size_t sizeOf8bit = 256;
+    /** Pixel Core is the 8x8 pixels */
+
+    static constexpr unsigned n_corePixelCols = 8;
+    static constexpr unsigned n_corePixelRows = 8;
     
+    using PixelCore = std::array< std::array< anytype, n_corePixelRows>, n_corePixelCols> ;
+
+    template<unsigned CoreCols, unsigned CoreRows>
+    using PixelCoreArray = std::array< std::array< PixelCore, CoreRows>, CoreCols>;
+
+    /** PixelCoreArray is the 2-dim array of PixelCores */
+
+    static constexpr unsigned n_coreCols = 50;
+    static constexpr unsigned n_coreRows = 24;
+    
+    
+    /** Input commands */
+    
+    static constexpr size_t sizeOf8bit = 256;
+
     static constexpr std::array<uint8_t, sizeOf8bit> eightToFive {{
              //         0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
              /* 0 */ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
@@ -159,6 +184,7 @@ private:
 
     /** Concrete implementations */
     using CommandFunc = void(*)( Rd53aEmu* );
+    using TriggerFunc = void(*)( Rd53aEmu*, const uint8_t, const uint8_t );
 
     static void doNoop        ( Rd53aEmu* );
     static void doECR         ( Rd53aEmu* );
@@ -170,28 +196,40 @@ private:
     static void doRdReg       ( Rd53aEmu* );
     static void doCal         ( Rd53aEmu* );
     static void doDump        ( Rd53aEmu* );
-    static void doTrigger     ( Rd53aEmu* );
+    
+    static void doTrigger     ( Rd53aEmu*, const uint8_t /*pattern*/, const uint8_t /*tag*/ );
     
     
     /** Container of the command and trigger (static) functions
         as function tables.
      */
     static const std::map<enum Commands, CommandFunc> commandFuncs;
-    static const std::map<enum Triggers, CommandFunc> triggerFuncs;
-    
+    static const std::map<enum Triggers, TriggerFunc> triggerFuncs;
+    static const std::map<enum Triggers, uint8_t>     triggerPatterns;
+
+    std::map<enum Triggers, unsigned> triggerCounters;
+    std::map<unsigned, unsigned>      triggerTagCounters;
 
     /** This part of WrReg process will run asynchronously with threads
         Concurrent running helps speed-up a little.
      */
-    static void writeRegAsync( Rd53aEmu*, const uint32_t /*data*/, const uint32_t /*address*/);
+    static void writeRegAsync( Rd53aEmu*, const uint16_t /*data*/, const uint32_t /*address*/);
     
     
     /** This part of trigger process will run asynchronously with threads
         Concurrent running helps speed-up a little.
      */
-    static void triggerAsync( Rd53aEmu*, const unsigned /*dc*/);
+    void triggerAsync( const unsigned /*coreCol*/, const unsigned /*coreRow*/);
 
 
+    /** Parameters for analog FE */
+    static constexpr float capacitance_times_coulomb = 8000; // change this to the correct value later
+    static constexpr float maximum_injection_voltage = 1.2;
+    static constexpr float lin_maximum_global_threshold_voltage = 1.2; // what should this actually be?
+    static constexpr float diff_maximum_global_threshold_voltage = 1.2; // what should this actually be?
+    
+
+    
     //////////////////////////////////////////////////////////////////////////////////////////////////
     //
     // Non-static part
@@ -203,31 +241,28 @@ private:
     // 
 
 
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Pixel geometries
+    //
+
+    PixelCoreArray<n_coreCols, n_coreRows> m_coreArray;
+
+
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Communication interface
+    //
+
+    
     /** ToDo
         ownership of these ring buffers need to be designed and revisited
     */
+    
     RingBuffer * m_txRingBuffer;
     RingBuffer * m_rxRingBuffer;
-    
-    /** Rd53a configuration
-        This is the emulation of the chip hardware global/pixel registers.
-        Not supposed to be shared with other instances ==> unique_ptr.
-     */
-    std::unique_ptr<Rd53aCfg> m_feCfg;
-    
-
-    /** This variable mimicks the hardware's reigsrer for each pixel.
-        First loop is for column, second loop is rows.
-     */
-    std::array< std::array<uint8_t, Rd53aPixelCfg::n_Row>, Rd53aPixelCfg::n_Col> m_pixelRegisters;
-
-    
-    /** It's unclear if we need such a large number of instances
-        and these realistically needs to work as each pixel's emulation...
-        Can't we think of flyweight design patter??
-    */
-    std::vector<std::vector< std::unique_ptr<Rd53aLinPixelModel> > >  m_rd53aLinPixelModelObjects;
-    std::vector<std::vector< std::unique_ptr<Rd53aDiffPixelModel> > > m_rd53aDiffPixelModelObjects;
 
     
     /** This variable stream holds input commands
@@ -235,15 +270,46 @@ private:
         Once the command is digested, the words are
         removed from the queue by pop_front().
     */
-    std::deque<uint16_t> stream;
-
+    std::deque<uint16_t> commandStream;
     
+
+    /**
+     * Temporary output word candidate storatege
+     */
+
+    ClipBoard<uint32_t> outWords;
+    
+
     /** Emulator receives commands from the Ring buffer by 32bit words.
         This function pushes back the command words as a format of
         16bit data to the deque defined above.
     */
     void retrieve();
     
+
+    
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Internal states
+    //
+
+    /** Rd53a configuration
+        This is the emulation of the chip hardware global/pixel registers.
+        Not supposed to be shared with other instances ==> unique_ptr.
+     */
+    std::unique_ptr<Rd53aCfg> m_feCfg;
+
+    
+    /**
+     * Chip-internal state: timing counter after CAL
+     */
+
+    unsigned calTiming;
+    unsigned injectTiming;
+    uint32_t l1id;
+    uint32_t bcid;
+
 
     /** log level control */
     bool verbose  { false };
@@ -253,18 +319,9 @@ private:
     std::vector<std::future<void> > m_async;
     
     
-    /** Temporary used to keep records of hits,
-        but we should rather ship-out data to software.
-        ==> To be removed?
-    */
-    Histo1d* linScurve[136][Rd53aPixelCfg::n_Row];
-    Histo1d* linThreshold;
-    
-    Histo1d* diffScurve[136][Rd53aPixelCfg::n_Row];
-    Histo1d* diffThreshold;
-    
-    Histo2d* analogHits;
-    
+    /** Temporary used to keep records of hits, */
+    std::unique_ptr<Histo2d> analogHits;
+
 
     /**
     * temporary counters to count hits
@@ -276,6 +333,49 @@ private:
     std::atomic<int> syncAnalogHits;
     
 
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Analog FE details
+    //
+
+    /** Analog FE calculations */
+    
+    uint8_t calculateToT( Rd53aLinPixelModel&  /*analogFE*/ );
+    uint8_t calculateToT( Rd53aDiffPixelModel& /*analogFE*/ );
+    //uint8_t calculateToT( Rd53aSyncPixelModel& /*analogFE*/ ); // To be implemented later
+    
+
+    template<class PIXEL>
+    void calculateSignal( anytype& pixel, const uint32_t coreCol, const uint32_t coreRow, const uint32_t subCol, const uint32_t subRow ) {
+        
+        auto& model    = pixel.getVar<PIXEL>();
+        auto& reg      = model.m_register;
+        auto& analogFE = model.m_analogFEModel;
+
+        // See Manual Table 30 (p.72) for the behavior of the pixel register
+        // Bit [0]   : pixel power or enable
+        // Bit [1]   : injection enable
+        // Bit [2]   : Hitbus enable
+        // Bit [3]   : TDAC sign   (only for Diff)
+        // Bit [4-7] : TDAC b[0-3] (only for Diff)
+                
+        if( !( reg & 0x1 >>0 ) ) return;
+        if( !( reg & 0x2 >>1 ) ) return;
+
+        // Need to implement the pixel model to calculate the ToT
+        auto ToT = calculateToT( analogFE );
+
+        formatWords( coreCol, coreRow, subCol, subRow, ToT );
+    }
+
+
+    /**
+     * This function creates the encoded hit words
+     * and store it to the temporary output buffer
+     */
+    void formatWords( const uint32_t /*coreCol*/, const uint32_t /*coreRow*/, const uint32_t /*subcol*/, const uint32_t /*subrow*/, uint32_t /*ToT*/ );
+    
 };
 
 #endif //__RD53A_EMU_H__
