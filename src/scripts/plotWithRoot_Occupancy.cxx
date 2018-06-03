@@ -43,7 +43,6 @@ int main(int argc, char *argv[]) {
 		xbins = 6;
 		xlow = -0.5;
 		xhigh = 5.5;	
-		ybins = rowno*colno;
 
 		infile >> underflow >> overflow;
 
@@ -60,6 +59,7 @@ int main(int argc, char *argv[]) {
 		TCanvas *c = new TCanvas("c", "c", 800, 600);
 		TH1 *h = NULL;
 		h = (TH1*) new TH1F(name.c_str(), "", xbins, xlow, xhigh);
+		h->SetTitle("Occupancy % Range");
 		h->GetXaxis()->SetTitle(xaxistitle.c_str());
 		h->GetYaxis()->SetTitle(yaxistitle.c_str());
 
@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
 		h->Draw();
 		//      }
 
-		filename.replace(filename.find(".dat"), 4, "_root.pdf"); 
+		filename.replace(filename.find(".dat"), 4, "_occroot.pdf"); 
 
 		c->Print(filename.c_str());
 		delete h;
