@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
 		std::string xaxistitle, yaxistitle;
 		std::string line;	
 
-		int xbins, ybins;
+		int xbins;
 		double xlow; 
 		double xhigh;
 		int underflow, overflow;
@@ -97,13 +97,15 @@ int main(int argc, char *argv[]) {
 		const char *LabelName[6] = {"0%", "0-98%", "98-100%", "100%", "100-102%", ">102%"};
 		for (int i=1; i<=6; i++) h->GetXaxis()->SetBinLabel(i,LabelName[i-1]);
 		h->GetXaxis()->LabelsOption("h");
+		h->GetXaxis()->SetLabelSize(0.05);
+		h->GetYaxis()->SetLabelSize(0.03);
 		h->SetFillColor(kBlue);
 		h->SetLineColor(kBlue);
-		h->SetStats(0);
-		h->GetXaxis()->SetTitleSize(0.05);
-		h->GetXaxis()->SetTitleOffset(0.8);
+		h->SetStats(1);//0
+		h->GetXaxis()->SetTitleSize(0.05); //0.05
+		h->GetXaxis()->SetTitleOffset(0.99);
 		h->GetYaxis()->SetTitleSize(0.05);
-		h->GetYaxis()->SetTitleOffset(0.8);
+		h->GetYaxis()->SetTitleOffset(0.99); //0.8
 		//gStyle->SetOptFit(1);
 		//h->Fit("gaus", "", "", 800, 1200);
 		//h->Draw();
