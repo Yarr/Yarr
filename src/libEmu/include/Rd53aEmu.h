@@ -1,36 +1,28 @@
 #ifndef __RD53A_EMU_H__
 #define __RD53A_EMU_H__
 
-#define HEXF(x,y) std::hex << "0x" << std::hex << std::setw(x) << std::setfill('0') << static_cast<int>(y) << std::dec
-
 #include "Rd53aCfg.h"
-#include "Rd53aPixelCfg.h"
-
-#include "EmuShm.h"
-#include "RingBuffer.h"
 #include "AnyType.h"
-#include "Gauss.h"
-
-#include "Rd53aLinPixelModel.h"
-#include "Rd53aDiffPixelModel.h"
-
-#include "FrontEndGeometry.h"
-#include "json.hpp"
-
-#include "Histo1d.h"
-#include "Histo2d.h"
-
-#include "RingBuffer.h"
 //#include "ThreadPool.h"
 
-#include <cstdint>
 #include <memory>
 #include <future>
 #include <atomic>
 
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Forward declarations
+//
+
+class RingBuffer;
+class Rd53aLinPixelModel;
+class Rd53aDiffPixelModel;
+class Histo2d;
+
 // Temporarily substituting with Lin model
 // To be replaced in the future
 using Rd53aSyncPixelModel = Rd53aLinPixelModel;
+
 
 
 
@@ -67,9 +59,6 @@ public:
     
     // the main loop which recieves commands from yarr
     void executeLoop();
-    
-    // functions for dealing with sending data to yarr
-    void pushOutput(uint32_t value);
     
     volatile bool run;
     
@@ -178,7 +167,7 @@ private:
     /** List of the 16-bit command words */
     enum class Commands {
         ECR = 0x5a5a, BCR = 0x5959, GlobalPulse = 0x5c5c, Cal = 0x6363,
-        WrReg = 0x6666, RdReg = 0x6565, Noop = 0x6969, Sync = 0x817e, Zero = 0x0000, Dump = 0xffff
+        WrReg = 0x6666, RdReg = 0x6565, Noop = 0x6969, Sync = 0x817e, Zero = 0x0000
     };
 
 
@@ -287,6 +276,9 @@ private:
     void retrieve();
     
 
+    // functions for dealing with sending data to yarr
+    void pushOutput(uint32_t value);
+    
     
 
     //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -363,10 +355,7 @@ private:
         if( !( reg & 0x1 >>0 ) ) return;
         if( !( reg & 0x2 >>1 ) ) return;
 
-        // Need to implement the pixel model to calculate the ToT
-        auto ToT = calculateToT( analogFE );
-
-        formatWords( coreCol, coreRow, subCol, subRow, ToT );
+        formatWords( coreCol, coreRow, subCol, subRow, calculateToT( analogFE ) );
     }
 
 

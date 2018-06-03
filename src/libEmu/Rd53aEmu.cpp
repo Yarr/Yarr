@@ -1,6 +1,12 @@
 #include "Rd53aEmu.h"
+#include "Rd53aLinPixelModel.h"
+#include "Rd53aDiffPixelModel.h"
+#include "RingBuffer.h"
+#include "Histo2d.h"
+
 #include "Gauss.h"
 
+#define HEXF(x,y) std::hex << "0x" << std::hex << std::setw(x) << std::setfill('0') << static_cast<int>(y) << std::dec
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -23,8 +29,7 @@ const std::map<enum Rd53aEmu::Commands, Rd53aEmu::CommandFunc> Rd53aEmu::command
     { Rd53aEmu::Commands::Zero        , &Rd53aEmu::doZero        },
     { Rd53aEmu::Commands::GlobalPulse , &Rd53aEmu::doGlobalPulse },
     { Rd53aEmu::Commands::Noop        , &Rd53aEmu::doNoop        },
-    { Rd53aEmu::Commands::Sync        , &Rd53aEmu::doSync        },
-    { Rd53aEmu::Commands::Dump        , &Rd53aEmu::doDump        }
+    { Rd53aEmu::Commands::Sync        , &Rd53aEmu::doSync        }
 };
 
 
@@ -647,26 +652,20 @@ void Rd53aEmu::writeRegAsync( Rd53aEmu* emu, const uint16_t data, const uint32_t
             //auto& pixel2 = emu->m_coreArray[CORECOL][COREROW][DCOL%4+1][ROW%8];
 
             // Sync Pixel Model
-            if( pixel1.type() == typeid( PixelModel<Rd53aLinPixelModel> ) ) {
-                pixel1.getVar< PixelModel<Rd53aLinPixelModel> >().m_register = static_cast<uint8_t>(data & 0x00FF);
-            }
-            if( pixel1.type() == typeid( PixelModel<Rd53aDiffPixelModel> ) ) {
-                pixel1.getVar< PixelModel<Rd53aDiffPixelModel> >().m_register = static_cast<uint8_t>(data & 0x00FF);
+            if( pixel1.type() == typeid( PixelModel<Rd53aSyncPixelModel> ) ) {
+                pixel1.getVar< PixelModel<Rd53aSyncPixelModel> >().m_register = static_cast<uint8_t>(data & 0x00FF);
+                pixel2.getVar< PixelModel<Rd53aSyncPixelModel> >().m_register = static_cast<uint8_t>( data >> 8 );
             }
             
             // Linear Pixel Model
             if( pixel1.type() == typeid( PixelModel<Rd53aLinPixelModel> ) ) {
                 pixel1.getVar< PixelModel<Rd53aLinPixelModel> >().m_register = static_cast<uint8_t>(data & 0x00FF);
-            }
-            if( pixel1.type() == typeid( PixelModel<Rd53aDiffPixelModel> ) ) {
-                pixel1.getVar< PixelModel<Rd53aDiffPixelModel> >().m_register = static_cast<uint8_t>(data & 0x00FF);
+                pixel2.getVar< PixelModel<Rd53aLinPixelModel> >().m_register = static_cast<uint8_t>( data >> 8 );
             }
             
             // Diff Pixel Model
-            if( pixel2.type() == typeid( PixelModel<Rd53aLinPixelModel> ) ) {
-                pixel2.getVar< PixelModel<Rd53aLinPixelModel> >().m_register = static_cast<uint8_t>( data >> 8 );
-            }
-            if( pixel2.type() == typeid( PixelModel<Rd53aDiffPixelModel> ) ) {
+            if( pixel1.type() == typeid( PixelModel<Rd53aDiffPixelModel> ) ) {
+                pixel1.getVar< PixelModel<Rd53aDiffPixelModel> >().m_register = static_cast<uint8_t>(data & 0x00FF);
                 pixel2.getVar< PixelModel<Rd53aDiffPixelModel> >().m_register = static_cast<uint8_t>( data >> 8 );
             }
             
@@ -702,42 +701,8 @@ void Rd53aEmu::doDump( Rd53aEmu* emu ) {
     for( auto& async : emu->m_async ) { async.get(); }
     emu->m_async.clear();
     
-#if 0
-    for (int col = 0; col < 136; col++) {
-        for (unsigned row = 0; row < Rd53aPixelCfg::n_Row; row++) {
-            if (emu->diffScurve[col][row]->getEntries() != 0 ) {
-                emu->diffScurve[col][row]->scale(1.0/100.0); // hardcoded for now - the number of times we scan the same pixel
-                for (int bin = 0; bin < 256; bin++) {
-                    
-                    if (emu->diffScurve[col][row]->getBin(bin) > 0.5) {
-                        emu->diffThreshold->fill(bin * 16);
-                        break;
-                    }
-                }
-                if (col == 0 && row == 0) emu->diffScurve[col][row]->plot("scurve", "");
-                //                            if (col == 0 && row == 0) emu->diffScurve[col][row]->toFile("scurve", "", 0);
-            }
-            
-            if (emu->linScurve[col][row]->getEntries() != 0 ) {
-                emu->linScurve[col][row]->scale(1.0/100.0); // hardcoded for now - the number of times we scan the same pixel
-                for (int bin = 0; bin < 256; bin++) {
-                    
-                    if (emu->linScurve[col][row]->getBin(bin) > 0.5) {
-                        emu->linThreshold->fill(bin * 16);
-                        break;
-                    }
-                }
-                if (col == 0 && row == 0) emu->linScurve[col][row]->plot("scurve", "");
-                //                            if (col == 0 && row == 0) emu->linScurve[col][row]->toFile("scurve", "", 0);
-            }
-        }
-    }
-#endif
-    
-    //emu->diffThreshold->plot("threshold", "");
-    //emu->linThreshold->plot("threshold", "");
     emu->analogHits->plot("analogHits", "");
-    //emu->m_rxRingBuffer->write32(0xA); // test writing back
+    
     std::cout << "analogHits entries = " << emu->analogHits->numOfEntries() << std::endl;
     
     for( auto& pair : emu->triggerCounters ) {
