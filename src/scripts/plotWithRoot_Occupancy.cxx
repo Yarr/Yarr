@@ -64,15 +64,22 @@ int main(int argc, char *argv[]) {
 		h->GetYaxis()->SetTitle(yaxistitle.c_str());
 
 		int zero=0, less98=0, less100=0, hundred=0, less102=0, more102=0;
+		int sync_only=0, lin_only=0, diff_only=0, syn_lin=0, syn_diff = 0, lin_diff=0;
 		for (int i=0; i<rowno; i++) {
 			for (int j=0; j<(colno); j++) {
 
-				if(i==192) {
-					
-				}
 				double tmp;
 				infile >> tmp;
-				std::cout << i*j << " " << tmp << std::endl;
+				//std::cout << i*j << " " << tmp << std::endl;
+				if(i==49 or i==182) {	//Check for masked pixels. With Diff FE only data, it sees as Sync FE if you choose the last row.
+					if (j > 128) sync_only = sync_only + tmp;
+					if (j < 128 or j > 264) lin_only = lin_only + tmp;
+					if (j < 264) diff_only = diff_only + tmp;			
+					if (j > 264) syn_lin = syn_lin + tmp;
+					if (j > 128 and j < 264) syn_diff = syn_diff +tmp;
+					if (j < 128) lin_diff = lin_diff + tmp;
+				}
+
 				if (tmp == 0.0){
 					zero++;
 					h->SetBinContent(0,zero);
@@ -94,6 +101,29 @@ int main(int argc, char *argv[]) {
 				}
 			}
 		}
+		//Subtract masked pixels
+		if (sync_only == 0) {
+			std::cout << "Detecting Sync FE only plot. Removing other FE events." << std::endl;
+			zero = zero - 272*rowno;
+		} else if (lin_only == 0) {
+			std::cout << "Detecting Lin FE only plot. Removing other FE events." << std::endl;
+			zero = zero - 272*rowno;
+		} else if (diff_only == 0) {
+			std::cout << "Detecting Diff FE only plot. Removing other FE events." << std::endl;
+			zero = zero - 264*rowno;
+		} else if (syn_lin == 0) {
+			std::cout << "Detecting Sync and Lin FE only plot. Removing Diff FE events." << std::endl;
+			zero = zero - 136*rowno;
+		} else if (syn_diff == 0) {
+			std::cout << "Detecting Sync and Diff FE only plot. Removing Lin FE events." << std::endl;
+			zero = zero - 128*rowno;
+		} else if (lin_diff == 0) {
+			std::cout << "Detecting Lin and Diff FE only plot. Removing Sync FE events." << std::endl;
+			zero = zero - 128*rowno;
+		}
+
+		h->SetBinContent(0, zero);
+
 		const char *LabelName[6] = {"0%", "0-98%", "98-100%", "100%", "100-102%", ">102%"};
 		for (int i=1; i<=6; i++) h->GetXaxis()->SetBinLabel(i,LabelName[i-1]);
 		h->GetXaxis()->LabelsOption("h");
