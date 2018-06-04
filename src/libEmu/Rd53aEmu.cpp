@@ -395,8 +395,8 @@ void Rd53aEmu::doTrigger( Rd53aEmu* emu,  const uint8_t pattern, const uint8_t t
 
     enum { Async, Pool };
 
-    auto mode { Pool };
-    auto level { 1 };
+    auto mode { Async };
+    auto level { 0 };
     
     // Finish all async processes before triggering
     while( emu->m_pool->taskSize() ) { std::this_thread::sleep_for( std::chrono::microseconds(10) ); }
@@ -420,44 +420,48 @@ void Rd53aEmu::doTrigger( Rd53aEmu* emu,  const uint8_t pattern, const uint8_t t
         
         if( ( ( pattern >> (3-iBC) ) & 0x1 ) ) {
             
-            for( size_t icoreCol = 0; icoreCol < n_coreCols; ++icoreCol ) {
+            switch( level ) {
 
+            case 0:
+                
+                if( mode == Async ) {
+                    emu->m_async.emplace_back( std::async( std::launch::deferred, &Rd53aEmu::triggerAsync0, emu, tag ) );
+                } else {
+                    emu->m_pool->enqueue( &Rd53aEmu::triggerAsync0, emu, tag );
+                }
 
-                switch( level ) {
+                break;
 
-                case 0:
-                    if( mode == Async ) {
-                        emu->m_async.emplace_back( std::async( std::launch::deferred, &Rd53aEmu::triggerAsync0, emu, tag ) );
-                    } else {
-                        emu->m_pool->enqueue( &Rd53aEmu::triggerAsync0, emu, tag );
-                    }
-
-                    break;
-
-                case 1:
+            case 1:
+                    
+                for( size_t icoreCol = 0; icoreCol < n_coreCols; ++icoreCol ) {
+                        
                     if( mode == Async ) {
                         emu->m_async.emplace_back( std::async( std::launch::deferred, &Rd53aEmu::triggerAsync1, emu, tag, icoreCol ) );
                     } else {
                         emu->m_pool->enqueue( &Rd53aEmu::triggerAsync1, emu, tag, icoreCol );
                     }
-
-                    break;
-
-                case 2:
-                    for( size_t icoreRow = 0; icoreRow < n_coreRows; ++icoreRow ) {
                         
-                        if( mode == Async ) {
-                            emu->m_async.emplace_back( std::async( std::launch::deferred, &Rd53aEmu::triggerAsync2, emu, tag, icoreCol, icoreRow ) );
-                        } else {
-                            emu->m_pool->enqueue( &Rd53aEmu::triggerAsync2, emu, tag, icoreCol, icoreRow );
-                        }
-                        
-                    }
-                    break;
-                default:
-                    break;
                 }
+                break;
+
+            case 2:
                 
+                for( size_t icoreCol = 0; icoreCol < n_coreCols; ++icoreCol ) {
+                for( size_t icoreRow = 0; icoreRow < n_coreRows; ++icoreRow ) {
+                    
+                    if( mode == Async ) {
+                        emu->m_async.emplace_back( std::async( std::launch::deferred, &Rd53aEmu::triggerAsync2, emu, tag, icoreCol, icoreRow ) );
+                    } else {
+                        emu->m_pool->enqueue( &Rd53aEmu::triggerAsync2, emu, tag, icoreCol, icoreRow );
+                    }
+                    
+                }}
+                break;
+                
+            default:
+                break;
+                    
             }
             
             if( mode == Async ) {
