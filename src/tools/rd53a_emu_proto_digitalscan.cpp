@@ -93,6 +93,7 @@ int main(int argc, char *argv[]) {
     std::vector<std::thread> emuThreads;
     emu = new Rd53aEmu(rx, tx);
     emuThreads.push_back(std::thread(&Rd53aEmu::executeLoop, emu));
+    //emuThreads.push_back(std::thread(&Rd53aEmu::outputLoop,  emu));
     
 
     Rd53a fe(&emuCtrl);

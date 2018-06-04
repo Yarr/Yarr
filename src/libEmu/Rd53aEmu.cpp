@@ -20,9 +20,26 @@
 constexpr std::array<uint8_t, Rd53aEmu::sizeOf8bit> Rd53aEmu::eightToFive;
 
 
+namespace std
+{
+template<>
+struct hash<Rd53aEmu::Commands> {
+    size_t operator()(const Rd53aEmu::Commands command) const {
+        return static_cast<unsigned>(command);
+    }
+};
+template<>
+struct hash<Rd53aEmu::Triggers> {
+    size_t operator()(const Rd53aEmu::Triggers trigger) const {
+        return static_cast<unsigned>(trigger);
+    }
+};
+}
+
+
 //____________________________________________________________________________________________________
 // Instantiation of static const members with initializer-list
-const std::map<enum Rd53aEmu::Commands, Rd53aEmu::CommandFunc> Rd53aEmu::commandFuncs {
+const std::unordered_map<enum Rd53aEmu::Commands, Rd53aEmu::CommandFunc> Rd53aEmu::commandFuncs {
     { Rd53aEmu::Commands::WrReg       , &Rd53aEmu::doWrReg       },
     { Rd53aEmu::Commands::RdReg       , &Rd53aEmu::doRdReg       },
     { Rd53aEmu::Commands::Cal         , &Rd53aEmu::doCal         },
@@ -37,28 +54,7 @@ const std::map<enum Rd53aEmu::Commands, Rd53aEmu::CommandFunc> Rd53aEmu::command
 
 //____________________________________________________________________________________________________
 // For the moment, all functions are identical -- later, different implemenation should be implemented
-const std::map<enum Rd53aEmu::Triggers, Rd53aEmu::TriggerFunc> Rd53aEmu::triggerFuncs {
-    { Rd53aEmu::Triggers::Trg01, &Rd53aEmu::doTrigger },
-    { Rd53aEmu::Triggers::Trg02, &Rd53aEmu::doTrigger },
-    { Rd53aEmu::Triggers::Trg03, &Rd53aEmu::doTrigger },
-    { Rd53aEmu::Triggers::Trg04, &Rd53aEmu::doTrigger },
-    { Rd53aEmu::Triggers::Trg05, &Rd53aEmu::doTrigger },
-    { Rd53aEmu::Triggers::Trg06, &Rd53aEmu::doTrigger },
-    { Rd53aEmu::Triggers::Trg07, &Rd53aEmu::doTrigger },
-    { Rd53aEmu::Triggers::Trg08, &Rd53aEmu::doTrigger },
-    { Rd53aEmu::Triggers::Trg09, &Rd53aEmu::doTrigger },
-    { Rd53aEmu::Triggers::Trg10, &Rd53aEmu::doTrigger },
-    { Rd53aEmu::Triggers::Trg11, &Rd53aEmu::doTrigger },
-    { Rd53aEmu::Triggers::Trg12, &Rd53aEmu::doTrigger },
-    { Rd53aEmu::Triggers::Trg13, &Rd53aEmu::doTrigger },
-    { Rd53aEmu::Triggers::Trg14, &Rd53aEmu::doTrigger },
-    { Rd53aEmu::Triggers::Trg15, &Rd53aEmu::doTrigger }
-};
-
-
-//____________________________________________________________________________________________________
-// For the moment, all functions are identical -- later, different implemenation should be implemented
-const std::map<enum Rd53aEmu::Triggers, uint8_t> Rd53aEmu::triggerPatterns {
+const std::unordered_map<enum Rd53aEmu::Triggers, uint8_t> Rd53aEmu::triggerPatterns {
     { Rd53aEmu::Triggers::Trg01, 0x1 },
     { Rd53aEmu::Triggers::Trg02, 0x2 },
     { Rd53aEmu::Triggers::Trg03, 0x3 },
@@ -108,6 +104,7 @@ Rd53aEmu::Rd53aEmu(RingBuffer * rx, RingBuffer * tx)
     , m_rxRingBuffer ( rx )
     , m_feCfg        ( new Rd53aCfg )
     , m_pool         ( new ThreadPool(1) )
+    , m_pool2        ( new ThreadPool(2) )
     , analogHits     ( new Histo2d("analogHits", Rd53aPixelCfg::n_Col, -0.5, 399.5, Rd53aPixelCfg::n_Row, -0.5, 191.5, typeid(void)) )
 {
     
@@ -167,7 +164,6 @@ Rd53aEmu::Rd53aEmu(RingBuffer * rx, RingBuffer * tx)
         triggerCounters[Triggers::Trg15] = 0;
     }
 
-    outWords.reserve(50*24*8*8);
 }
 
 
@@ -197,7 +193,8 @@ void Rd53aEmu::executeLoop() {
         if( verbose && commandStream.size() ) {
             std::cout << __PRETTY_FUNCTION__ << ": L" << __LINE__ << ": front = " << HEXF(4, commandStream.front() ) << ", size = " << commandStream.size() << std::endl;
         }
-        
+
+
         
         ///////////////////////////////////////////////////////////////////
         // 
@@ -205,6 +202,7 @@ void Rd53aEmu::executeLoop() {
         //
         
         const auto commandKey = static_cast<Commands>( commandStream.front() );
+        
         auto commandFunc_itr = commandFuncs.find( commandKey );
         
         if( commandFunc_itr != commandFuncs.end() ) {
@@ -231,14 +229,16 @@ void Rd53aEmu::executeLoop() {
         
         const auto triggerKey = static_cast<Triggers>( commandStream.front()>>8 );
         
-        auto triggerFunc_itr = triggerFuncs.find( triggerKey );
+        auto triggerPattern_itr = triggerPatterns.find( triggerKey );
         
-        if( triggerFunc_itr != triggerFuncs.end() ) {
+        if( triggerPattern_itr != triggerPatterns.end() ) {
             
             // The following grammer is for static member function pointer ( passing this )
-            ( triggerFunc_itr->second )( this, ( commandStream.front()>>8 ), ( commandStream.front() & 0x00ff ) );
+            doTrigger( this, triggerPattern_itr->second, ( commandStream.front() & 0x00ff ) );
             
             commandStream.pop_front();
+            
+            triggerCounters.at( triggerPattern_itr->first )++;
             
             continue;
         }
@@ -256,8 +256,42 @@ void Rd53aEmu::executeLoop() {
     }
     
     doDump( this );
+
+    condition.notify_one();
 }
 
+
+//____________________________________________________________________________________________________
+void Rd53aEmu::outputLoop() {
+        auto tag = outTags.front();
+
+        //////////////////////////////////////////////////////////////////////////////
+        //
+        // push the data out
+        //
+        
+        uint32_t header = (0x7f << 25 ) | ( (l1id & 0x1f)<<20 ) | ( (tag & 0x1f) << 15 ) | (bcid & 0x7fff);
+        pushOutput( header );
+        
+        //std::cout << "header = " << HEXF(8, header) << ", outWords size = " << outWords.size() << std::endl;
+        
+        for( auto& w : outWords[tag] ) {
+            
+            if( 0 == w ) continue;
+            
+            // ToT fields w/o hits need to be filled with 0xf.
+            if( ( (w & 0x000f) >>  0 ) == 0x0 ) { w |= 0x000f; }
+            if( ( (w & 0x00f0) >>  4 ) == 0x0 ) { w |= 0x00f0; }
+            if( ( (w & 0x0f00) >>  8 ) == 0x0 ) { w |= 0x0f00; }
+            if( ( (w & 0xf000) >> 12 ) == 0x0 ) { w |= 0xf000; }
+            
+            pushOutput( w );
+        }
+
+        outWords.erase( outWords.find( tag ) );
+        outTags.pop_front();
+
+}
 
 
 //____________________________________________________________________________________________________
@@ -361,14 +395,14 @@ void Rd53aEmu::doTrigger( Rd53aEmu* emu,  const uint8_t pattern, const uint8_t t
 
     enum { Async, Pool };
 
-    auto mode { Async };
+    auto mode { Pool };
+    auto level { 1 };
     
     // Finish all async processes before triggering
     while( emu->m_pool->taskSize() ) { std::this_thread::sleep_for( std::chrono::microseconds(10) ); }
             
     //std::cout << __PRETTY_FUNCTION__ << std::endl;
     
-    emu->triggerCounters.at( static_cast<Triggers>(pattern) )++;
     emu->triggerTagCounters[tag]++;
     
     emu->totalDigitalHits = 0;
@@ -376,90 +410,86 @@ void Rd53aEmu::doTrigger( Rd53aEmu* emu,  const uint8_t pattern, const uint8_t t
     emu->linAnalogHits    = 0;
     emu->syncAnalogHits   = 0;
 
-    emu->outWords.resize(100*192);
-    for( size_t i=0; i < 100*192; ++i ) {
-        emu->outWords[i] = 0;
-    }
+    emu->outWords[tag] = std::array<uint32_t, 100*192> {{ 0 }};
     
     // Streeam is already popped,
     // then the following part can be run in parallel.
     
-#define TRGPATTERN ( triggerPatterns.at( static_cast<Triggers>(pattern) ) )
-    
     // Loop over 4 BCs
     for( size_t iBC = 0; iBC < 4; iBC++ ) {
         
-        if( ( ( TRGPATTERN >> (3-iBC) ) & 0x1 ) ) {
+        if( ( ( pattern >> (3-iBC) ) & 0x1 ) ) {
             
             for( size_t icoreCol = 0; icoreCol < n_coreCols; ++icoreCol ) {
-                for( size_t icoreRow = 0; icoreRow < n_coreRows; ++icoreRow ) {
 
+
+                switch( level ) {
+
+                case 0:
                     if( mode == Async ) {
-                        emu->m_async.emplace_back( std::async( std::launch::deferred, &Rd53aEmu::triggerAsync, emu, icoreCol, icoreRow ) );
+                        emu->m_async.emplace_back( std::async( std::launch::deferred, &Rd53aEmu::triggerAsync0, emu, tag ) );
                     } else {
-                        emu->m_pool->enqueue( &Rd53aEmu::triggerAsync, emu, icoreCol, icoreRow );
+                        emu->m_pool->enqueue( &Rd53aEmu::triggerAsync0, emu, tag );
                     }
-                    
+
+                    break;
+
+                case 1:
+                    if( mode == Async ) {
+                        emu->m_async.emplace_back( std::async( std::launch::deferred, &Rd53aEmu::triggerAsync1, emu, tag, icoreCol ) );
+                    } else {
+                        emu->m_pool->enqueue( &Rd53aEmu::triggerAsync1, emu, tag, icoreCol );
+                    }
+
+                    break;
+
+                case 2:
+                    for( size_t icoreRow = 0; icoreRow < n_coreRows; ++icoreRow ) {
+                        
+                        if( mode == Async ) {
+                            emu->m_async.emplace_back( std::async( std::launch::deferred, &Rd53aEmu::triggerAsync2, emu, tag, icoreCol, icoreRow ) );
+                        } else {
+                            emu->m_pool->enqueue( &Rd53aEmu::triggerAsync2, emu, tag, icoreCol, icoreRow );
+                        }
+                        
+                    }
+                    break;
+                default:
+                    break;
                 }
-            }
-        }
-
-        
-        if( mode == Async ) {
-            // Finish all async processes before next step
-            for( auto& async : emu->m_async ) { async.get(); }
-            emu->m_async.clear();
-            
-        } else {
-        
-            while( emu->m_pool->taskSize() ) {
-                //std::cout << "waiting for thread pool to empty... " << emu->m_pool->taskSize() << std::endl;
-                std::this_thread::sleep_for( std::chrono::microseconds(10) );
-            }
-            
-            //std::cout << "wthread pool is empty... " << emu->m_pool->taskSize() << std::endl;
-        }
-        
-        
-        //////////////////////////////////////////////////////////////////////////////
-        //
-        // push the data out
-        //
-        
-        if( emu->outWords.size() > 0 ) {
-
-            uint32_t header = (0x7f << 25 ) | ( (emu->l1id & 0x1f)<<20 ) | ( (tag & 0x1f) << 15 ) | (emu->bcid & 0x7fff);
-            emu->pushOutput( header );
-            
-            //std::cout << "header = " << HEXF(8, header) << ", outWords size = " << emu->outWords.size() << std::endl;
-            
-            for( auto& w : emu->outWords ) {
-
-                if( 0 == w ) continue;
                 
-                // ToT fields w/o hits need to be filled with 0xf.
-                if( ( (w & 0x000f) >>  0 ) == 0x0 ) { w |= 0x000f; }
-                if( ( (w & 0x00f0) >>  4 ) == 0x0 ) { w |= 0x00f0; }
-                if( ( (w & 0x0f00) >>  8 ) == 0x0 ) { w |= 0x0f00; }
-                if( ( (w & 0xf000) >> 12 ) == 0x0 ) { w |= 0xf000; }
-                
-                emu->pushOutput( w );
             }
+            
+            if( mode == Async ) {
+                // Finish all async processes before next step
+                for( auto& async : emu->m_async ) { async.get(); }
+                emu->m_async.clear();
+            
+            } else {
+        
+                while( emu->m_pool->taskSize() ) {
+                    //std::cout << "waiting for thread pool to empty... " << emu->m_pool->taskSize() << std::endl;
+                    std::this_thread::sleep_for( std::chrono::microseconds(10) );
+                }
+            
+                //std::cout << "wthread pool is empty... " << emu->m_pool->taskSize() << std::endl;
+            }
+
+            std::unique_lock<std::mutex> lock(emu->queue_mutex);
+            emu->outTags.emplace_back( tag );
+            //emu->condition.notify_one();
+            emu->outputLoop();
+        
+            // Increment the timing counter
+            emu->calTiming++;
+            emu->bcid++;
+        
         }
         
-        for( size_t i=0; i < 100*192; ++i ) {
-            emu->outWords[i] = 0;
-        }
-        
-        // Increment the timing counter
-        emu->calTiming++;
-        emu->bcid++;
     }
     
     emu->l1id++;
     
-    
-#undef TRGPATTERN
     
     // for now, print the total number of hits - eventually, we should really just be writing hit data back to YARR
     //printf("Hits: total = %d [diif = %d, lin = %d]\n", static_cast<int>(emu->totalDigitalHits), static_cast<int>(emu->diffAnalogHits), static_cast<int>(emu->linAnalogHits) );
@@ -470,7 +500,253 @@ void Rd53aEmu::doTrigger( Rd53aEmu* emu,  const uint8_t pattern, const uint8_t t
 
 
 //____________________________________________________________________________________________________
-void Rd53aEmu::triggerAsync( const unsigned coreCol, const unsigned coreRow) {
+void Rd53aEmu::triggerAsync0( const uint32_t tag) {
+    
+    enum { CoreColSync = 32, CoreColLin1 = 33, CoreColLin2 = 34, CoreColDiff1 = 35, CoreColDiff2 = 36,
+           CalColPrSync1 = 46, CalColPrSync2 = 47, CalColPrSync3 = 48, CalColPrSync4 = 49,
+           CalColPrLin1  = 50, CalColPrLin2  = 51, CalColPrLin3  = 52, CalColPrLin4  = 53, CalColPrLin5  = 54,
+           CalColPrDiff1 = 55, CalColPrDiff2 = 56, CalColPrDiff3 = 57, CalColPrDiff4 = 58, CalColPrDiff5 = 59
+    };
+    
+#if 0
+    auto coreColAddress = []( const unsigned& coreCol ) -> std::pair<unsigned, unsigned> {
+        if        ( coreCol < 16 ) {
+            return std::pair<unsigned, unsigned> { CoreColSync, coreCol };
+        } else if ( coreCol < 32 ) {
+            return std::pair<unsigned, unsigned> { CoreColLin1, coreCol-16 };
+        } else if ( coreCol < 33 ) {
+            return std::pair<unsigned, unsigned> { CoreColLin2, coreCol-32 };
+        } else if ( coreCol < 49 ) {
+            return std::pair<unsigned, unsigned> { CoreColLin2, coreCol-33 };
+        } else {
+            return std::pair<unsigned, unsigned> { CoreColLin2, coreCol-49 };
+        }
+    };
+#endif
+    
+    auto colAddress = []( const unsigned& coreCol, const unsigned& icol ) -> std::pair<unsigned, unsigned> {
+        // 0 [0:7] -> 46
+        // 1 [0:7] -> 46
+        // 2       -> 47
+        // ...
+        // 30[0:7] -> 53
+        // 31[0:7] -> 53
+        // 32[0:7] -> 54 /* last of Lin */
+        // 33[0:7] -> 55
+        // 34[0:7] -> 55
+        
+        if( coreCol < 33 ) {
+            return std::pair<unsigned, unsigned> { CalColPrSync1 + coreCol/4,      icol/2 + (coreCol%4)*n_corePixelCols/2 };
+        } else {
+            return std::pair<unsigned, unsigned> { CalColPrDiff1 + (coreCol-33)/4, icol/2 + ((coreCol-33)%4)*n_corePixelCols/2 };
+        }
+    };
+    
+    
+    /////////////////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Hits are only created when the CAL injection timing matches
+    // If we want to emulate time-walk behavior, this needs to be properly implemented
+    // depending on the analog FE modeling.
+    //
+    
+    if( injectTiming != calTiming ) return;
+    
+
+    for( size_t coreCol = 0; coreCol < n_coreCols; ++coreCol ) {
+#if 0
+    // put these checks into a function maybe
+    // check pixels to see if the digital enable is set for "octo-columns" (columns of cores)
+    if (             dc < 64  && !((m_feCfg->EnCoreColSync.read()  >> ((dc - 0)   / 4)) & 0x1)) return;
+    if (64  <= dc && dc < 128 && !((m_feCfg->EnCoreColLin1.read()  >> ((dc - 64)  / 4)) & 0x1)) return;
+    if (128 <= dc && dc < 132 && !((m_feCfg->EnCoreColLin2.read()  >> ((dc - 128) / 4)) & 0x1)) return;
+    if (132 <= dc && dc < 196 && !((m_feCfg->EnCoreColDiff1.read() >> ((dc - 132) / 4)) & 0x1)) return;
+    if (196 <= dc && dc < 200 && !((m_feCfg->EnCoreColDiff2.read() >> ((dc - 196) / 4)) & 0x1)) return;
+#endif
+    
+#if 0
+    auto coreColAddr = coreColAddress( coreCol );
+    if(! ( ( ( m_feCfg->m_cfg.at( coreColAddr.first ) ) >> coreColAddr.second ) & 0x1 ) ) return;
+#endif
+
+    for( size_t coreRow = 0; coreRow < n_coreRows; ++coreRow ) {
+        
+        auto& core = m_coreArray[coreCol][coreRow];
+    
+    
+        for( size_t icol = 0; icol < n_corePixelCols; ++icol ) {
+        
+            auto colAddr = colAddress( coreCol, icol );
+        
+        
+#define calflag ( ( ( m_feCfg->m_cfg.at( colAddr.first ) ) >> colAddr.second ) & 0x1 )
+        
+            /*
+              std::cout << "coreCol = " << coreCol << ", icol = " << icol << " ==> colAddr = (" << colAddr.first << ", " << colAddr.second << ") ==> " << HEXF(4, m_feCfg->m_cfg.at( colAddr.first ))
+              << ", flag = " << calflag << std::endl;
+            */
+        
+            if( !calflag ) continue;
+        
+#undef calflag
+        
+        
+            for( size_t irow = 0; irow < n_corePixelRows; ++irow ) {
+            
+                auto& pixel = core[icol][irow];
+            
+                if( pixel.type() == typeid( PixelModel<Rd53aLinPixelModel> ) ) {
+                
+                    calculateSignal< PixelModel<Rd53aLinPixelModel> >( pixel, coreCol, coreRow, icol, irow, tag );
+                
+                } else if( pixel.type() == typeid( PixelModel<Rd53aDiffPixelModel> ) ) {
+                
+                    calculateSignal< PixelModel<Rd53aDiffPixelModel> >( pixel, coreCol, coreRow, icol, irow, tag );
+                
+                } else if( pixel.type() == typeid( PixelModel<Rd53aSyncPixelModel> ) ) {
+
+                    // So far this is fake -- needs to create Rd53aSyncPixelModel!!
+                    calculateSignal< PixelModel<Rd53aSyncPixelModel> >( pixel, coreCol, coreRow, icol, irow, tag );
+                
+                } else {
+
+                    throw std::runtime_error( "Invalid Rd53a analog FE model was detected!" );
+                
+                }
+            
+            }
+        }
+    
+    }
+    }
+    
+}
+
+
+//____________________________________________________________________________________________________
+void Rd53aEmu::triggerAsync1( const uint32_t tag, const unsigned coreCol) {
+    
+    enum { CoreColSync = 32, CoreColLin1 = 33, CoreColLin2 = 34, CoreColDiff1 = 35, CoreColDiff2 = 36,
+           CalColPrSync1 = 46, CalColPrSync2 = 47, CalColPrSync3 = 48, CalColPrSync4 = 49,
+           CalColPrLin1  = 50, CalColPrLin2  = 51, CalColPrLin3  = 52, CalColPrLin4  = 53, CalColPrLin5  = 54,
+           CalColPrDiff1 = 55, CalColPrDiff2 = 56, CalColPrDiff3 = 57, CalColPrDiff4 = 58, CalColPrDiff5 = 59
+    };
+    
+#if 0
+    auto coreColAddress = []( const unsigned& coreCol ) -> std::pair<unsigned, unsigned> {
+        if        ( coreCol < 16 ) {
+            return std::pair<unsigned, unsigned> { CoreColSync, coreCol };
+        } else if ( coreCol < 32 ) {
+            return std::pair<unsigned, unsigned> { CoreColLin1, coreCol-16 };
+        } else if ( coreCol < 33 ) {
+            return std::pair<unsigned, unsigned> { CoreColLin2, coreCol-32 };
+        } else if ( coreCol < 49 ) {
+            return std::pair<unsigned, unsigned> { CoreColLin2, coreCol-33 };
+        } else {
+            return std::pair<unsigned, unsigned> { CoreColLin2, coreCol-49 };
+        }
+    };
+#endif
+    
+    auto colAddress = []( const unsigned& coreCol, const unsigned& icol ) -> std::pair<unsigned, unsigned> {
+        // 0 [0:7] -> 46
+        // 1 [0:7] -> 46
+        // 2       -> 47
+        // ...
+        // 30[0:7] -> 53
+        // 31[0:7] -> 53
+        // 32[0:7] -> 54 /* last of Lin */
+        // 33[0:7] -> 55
+        // 34[0:7] -> 55
+        
+        if( coreCol < 33 ) {
+            return std::pair<unsigned, unsigned> { CalColPrSync1 + coreCol/4,      icol/2 + (coreCol%4)*n_corePixelCols/2 };
+        } else {
+            return std::pair<unsigned, unsigned> { CalColPrDiff1 + (coreCol-33)/4, icol/2 + ((coreCol-33)%4)*n_corePixelCols/2 };
+        }
+    };
+    
+    
+    /////////////////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Hits are only created when the CAL injection timing matches
+    // If we want to emulate time-walk behavior, this needs to be properly implemented
+    // depending on the analog FE modeling.
+    //
+    
+    if( injectTiming != calTiming ) return;
+    
+    
+#if 0
+    // put these checks into a function maybe
+    // check pixels to see if the digital enable is set for "octo-columns" (columns of cores)
+    if (             dc < 64  && !((m_feCfg->EnCoreColSync.read()  >> ((dc - 0)   / 4)) & 0x1)) return;
+    if (64  <= dc && dc < 128 && !((m_feCfg->EnCoreColLin1.read()  >> ((dc - 64)  / 4)) & 0x1)) return;
+    if (128 <= dc && dc < 132 && !((m_feCfg->EnCoreColLin2.read()  >> ((dc - 128) / 4)) & 0x1)) return;
+    if (132 <= dc && dc < 196 && !((m_feCfg->EnCoreColDiff1.read() >> ((dc - 132) / 4)) & 0x1)) return;
+    if (196 <= dc && dc < 200 && !((m_feCfg->EnCoreColDiff2.read() >> ((dc - 196) / 4)) & 0x1)) return;
+#endif
+    
+#if 0
+    auto coreColAddr = coreColAddress( coreCol );
+    if(! ( ( ( m_feCfg->m_cfg.at( coreColAddr.first ) ) >> coreColAddr.second ) & 0x1 ) ) return;
+#endif
+
+    for( size_t coreRow = 0; coreRow < n_coreRows; ++coreRow ) {
+        
+        auto& core = m_coreArray[coreCol][coreRow];
+    
+    
+        for( size_t icol = 0; icol < n_corePixelCols; ++icol ) {
+        
+            auto colAddr = colAddress( coreCol, icol );
+        
+        
+#define calflag ( ( ( m_feCfg->m_cfg.at( colAddr.first ) ) >> colAddr.second ) & 0x1 )
+        
+            /*
+              std::cout << "coreCol = " << coreCol << ", icol = " << icol << " ==> colAddr = (" << colAddr.first << ", " << colAddr.second << ") ==> " << HEXF(4, m_feCfg->m_cfg.at( colAddr.first ))
+              << ", flag = " << calflag << std::endl;
+            */
+        
+            if( !calflag ) continue;
+        
+#undef calflag
+        
+        
+            for( size_t irow = 0; irow < n_corePixelRows; ++irow ) {
+            
+                auto& pixel = core[icol][irow];
+            
+                if( pixel.type() == typeid( PixelModel<Rd53aLinPixelModel> ) ) {
+                
+                    calculateSignal< PixelModel<Rd53aLinPixelModel> >( pixel, coreCol, coreRow, icol, irow, tag );
+                
+                } else if( pixel.type() == typeid( PixelModel<Rd53aDiffPixelModel> ) ) {
+                
+                    calculateSignal< PixelModel<Rd53aDiffPixelModel> >( pixel, coreCol, coreRow, icol, irow, tag );
+                
+                } else if( pixel.type() == typeid( PixelModel<Rd53aSyncPixelModel> ) ) {
+
+                    // So far this is fake -- needs to create Rd53aSyncPixelModel!!
+                    calculateSignal< PixelModel<Rd53aSyncPixelModel> >( pixel, coreCol, coreRow, icol, irow, tag );
+                
+                } else {
+
+                    throw std::runtime_error( "Invalid Rd53a analog FE model was detected!" );
+                
+                }
+            
+            }
+        }
+    
+    }
+    
+}
+
+
+//____________________________________________________________________________________________________
+void Rd53aEmu::triggerAsync2( const uint32_t tag, const unsigned coreCol, const unsigned coreRow) {
     
     enum { CoreColSync = 32, CoreColLin1 = 33, CoreColLin2 = 34, CoreColDiff1 = 35, CoreColDiff2 = 36,
            CalColPrSync1 = 46, CalColPrSync2 = 47, CalColPrSync3 = 48, CalColPrSync4 = 49,
@@ -564,16 +840,16 @@ void Rd53aEmu::triggerAsync( const unsigned coreCol, const unsigned coreRow) {
             
             if( pixel.type() == typeid( PixelModel<Rd53aLinPixelModel> ) ) {
                 
-                calculateSignal< PixelModel<Rd53aLinPixelModel> >( pixel, coreCol, coreRow, icol, irow );
+                calculateSignal< PixelModel<Rd53aLinPixelModel> >( pixel, coreCol, coreRow, icol, irow, tag );
                 
             } else if( pixel.type() == typeid( PixelModel<Rd53aDiffPixelModel> ) ) {
                 
-                calculateSignal< PixelModel<Rd53aDiffPixelModel> >( pixel, coreCol, coreRow, icol, irow );
+                calculateSignal< PixelModel<Rd53aDiffPixelModel> >( pixel, coreCol, coreRow, icol, irow, tag );
                 
             } else if( pixel.type() == typeid( PixelModel<Rd53aSyncPixelModel> ) ) {
 
                 // So far this is fake -- needs to create Rd53aSyncPixelModel!!
-                calculateSignal< PixelModel<Rd53aSyncPixelModel> >( pixel, coreCol, coreRow, icol, irow );
+                calculateSignal< PixelModel<Rd53aSyncPixelModel> >( pixel, coreCol, coreRow, icol, irow, tag );
                 
             } else {
 
@@ -644,7 +920,6 @@ void Rd53aEmu::doWrReg( Rd53aEmu* emu ) {
 #undef ID
 #undef ADDRESS
 }
-
 
 
 //____________________________________________________________________________________________________
@@ -763,7 +1038,7 @@ void Rd53aEmu::doDump( Rd53aEmu* emu ) {
 
 
 //____________________________________________________________________________________________________
-void Rd53aEmu::formatWords( const uint32_t coreCol, const uint32_t coreRow, const uint32_t subCol, const uint32_t subRow, const uint32_t ToT ) {
+void Rd53aEmu::formatWords( const uint32_t coreCol, const uint32_t coreRow, const uint32_t subCol, const uint32_t subRow, const uint32_t ToT, uint32_t tag ) {
     //std::cout << __PRETTY_FUNCTION__ << std::endl;
     
     // This function creates the output data format
@@ -773,7 +1048,10 @@ void Rd53aEmu::formatWords( const uint32_t coreCol, const uint32_t coreRow, cons
     
     size_t coord = (coreCol*2+subCol/4)*192 + (coreRow*8+subRow);
 
-    outWords.at(coord) |= word;
+    {
+        std::unique_lock<std::mutex> lock(this->queue_mutex);
+        outWords[tag].at(coord) |= word;
+    }
 
     totalDigitalHits++;
     analogHits->fill( coreCol*n_corePixelCols + subCol, coreRow*n_corePixelRows + subRow);

@@ -5,6 +5,7 @@
 #include "AnyType.h"
 #include "ThreadPool.h"
 
+#include <unordered_map>
 #include <memory>
 #include <future>
 #include <atomic>
@@ -53,6 +54,20 @@ class Rd53aEmu {
     
 public:
 
+    /** List of the first 8-bit of the trigger command word */
+    enum class Triggers {
+        Trg01 = 0x2b, Trg02 = 0x2d, Trg03 = 0x2e, Trg04 = 0x33, Trg05 = 0x35, Trg06 = 0x36, Trg07 = 0x39, Trg08 = 0x3a,
+        Trg09 = 0x3c, Trg10 = 0x4b, Trg11 = 0x4d, Trg12 = 0x4e, Trg13 = 0x53, Trg14 = 0x55, Trg15 = 0x56
+    };
+    
+
+    /** List of the 16-bit command words */
+    enum class Commands {
+        ECR = 0x5a5a, BCR = 0x5959, GlobalPulse = 0x5c5c, Cal = 0x6363,
+        WrReg = 0x6666, RdReg = 0x6565, Noop = 0x6969, Sync = 0x817e, Zero = 0x0000
+    };
+
+
     /** The ownsership of these ring buffers need to be designed properly */
     Rd53aEmu(RingBuffer * rx, RingBuffer * tx);
     ~Rd53aEmu();
@@ -60,6 +75,9 @@ public:
     // the main loop which recieves commands from yarr
     void executeLoop();
     
+    /** another thread for writing out data */
+    void outputLoop();
+
     volatile bool run;
     
 private:
@@ -157,44 +175,29 @@ private:
     static uint8_t to5bit( uint8_t );
 
     
-    /** List of the first 8-bit of the trigger command word */
-    enum class Triggers {
-        Trg01 = 0x2b, Trg02 = 0x2d, Trg03 = 0x2e, Trg04 = 0x33, Trg05 = 0x35, Trg06 = 0x36, Trg07 = 0x39, Trg08 = 0x3a,
-        Trg09 = 0x3c, Trg10 = 0x4b, Trg11 = 0x4d, Trg12 = 0x4e, Trg13 = 0x53, Trg14 = 0x55, Trg15 = 0x56
-    };
-    
-
-    /** List of the 16-bit command words */
-    enum class Commands {
-        ECR = 0x5a5a, BCR = 0x5959, GlobalPulse = 0x5c5c, Cal = 0x6363,
-        WrReg = 0x6666, RdReg = 0x6565, Noop = 0x6969, Sync = 0x817e, Zero = 0x0000
-    };
-
-
     /** Concrete implementations */
     using CommandFunc = void(*)( Rd53aEmu* );
     using TriggerFunc = void(*)( Rd53aEmu*, const uint8_t, const uint8_t );
 
-    static void doNoop        ( Rd53aEmu* );
-    static void doECR         ( Rd53aEmu* );
-    static void doBCR         ( Rd53aEmu* );
-    static void doZero        ( Rd53aEmu* );
-    static void doSync        ( Rd53aEmu* );
-    static void doGlobalPulse ( Rd53aEmu* );
-    static void doWrReg       ( Rd53aEmu* );
-    static void doRdReg       ( Rd53aEmu* );
-    static void doCal         ( Rd53aEmu* );
-    static void doDump        ( Rd53aEmu* );
+    inline static void doNoop        ( Rd53aEmu* );
+    inline static void doECR         ( Rd53aEmu* );
+    inline static void doBCR         ( Rd53aEmu* );
+    inline static void doZero        ( Rd53aEmu* );
+    inline static void doSync        ( Rd53aEmu* );
+    inline static void doGlobalPulse ( Rd53aEmu* );
+    inline static void doWrReg       ( Rd53aEmu* );
+    inline static void doRdReg       ( Rd53aEmu* );
+    inline static void doCal         ( Rd53aEmu* );
+    inline static void doDump        ( Rd53aEmu* );
     
-    static void doTrigger     ( Rd53aEmu*, const uint8_t /*pattern*/, const uint8_t /*tag*/ );
-    
+    inline static void doTrigger     ( Rd53aEmu*, const uint8_t /*pattern*/, const uint8_t /*tag*/ );
+
     
     /** Container of the command and trigger (static) functions
         as function tables.
      */
-    static const std::map<enum Commands, CommandFunc> commandFuncs;
-    static const std::map<enum Triggers, TriggerFunc> triggerFuncs;
-    static const std::map<enum Triggers, uint8_t>     triggerPatterns;
+    static const std::unordered_map<enum Commands, CommandFunc> commandFuncs;
+    static const std::unordered_map<enum Triggers, uint8_t>     triggerPatterns;
 
     std::map<enum Triggers, unsigned> triggerCounters;
     std::map<unsigned, unsigned>      triggerTagCounters;
@@ -208,7 +211,9 @@ private:
     /** This part of trigger process will run asynchronously with threads
         Concurrent running helps speed-up a little.
      */
-    void triggerAsync( const unsigned /*coreCol*/, const unsigned /*coreRow*/);
+    void triggerAsync0( const uint32_t /*tag*/);
+    void triggerAsync1( const uint32_t /*tag*/, const unsigned /*coreCol*/);
+    void triggerAsync2( const uint32_t /*tag*/, const unsigned /*coreCol*/, const unsigned /*coreRow*/);
 
 
     /** Parameters for analog FE */
@@ -266,7 +271,13 @@ private:
      * Temporary output word candidate storatege
      */
 
-    std::vector<uint32_t> outWords;
+    std::mutex queue_mutex;
+    std::condition_variable condition;
+    
+    // first = trigger tag, second = output words
+    std::map< uint32_t, std::array<uint32_t, 400*192/4> > outWords;
+    std::deque<uint32_t> outTags;
+    //std::vector<uint32_t> outWords;
     
 
     /** Emulator receives commands from the Ring buffer by 32bit words.
@@ -274,7 +285,6 @@ private:
         16bit data to the deque defined above.
     */
     void retrieve();
-    
 
     // functions for dealing with sending data to yarr
     void pushOutput(uint32_t value);
@@ -309,6 +319,7 @@ private:
     
     /** container for async processing */
     std::unique_ptr<ThreadPool>     m_pool;
+    std::unique_ptr<ThreadPool>     m_pool2;
     std::vector<std::future<void> > m_async;
     
     
@@ -340,7 +351,7 @@ private:
     
 
     template<class PIXEL>
-    void calculateSignal( anytype& pixel, const uint32_t coreCol, const uint32_t coreRow, const uint32_t subCol, const uint32_t subRow ) {
+    void calculateSignal( anytype& pixel, const uint32_t coreCol, const uint32_t coreRow, const uint32_t subCol, const uint32_t subRow, uint32_t tag ) {
         
         auto& model    = pixel.getVar<PIXEL>();
         auto& reg      = model.m_register;
@@ -356,7 +367,7 @@ private:
         if( !( reg & 0x1 >>0 ) ) return;
         if( !( reg & 0x2 >>1 ) ) return;
 
-        formatWords( coreCol, coreRow, subCol, subRow, calculateToT( analogFE ) );
+        formatWords( coreCol, coreRow, subCol, subRow, calculateToT( analogFE ), tag );
     }
 
 
@@ -364,7 +375,7 @@ private:
      * This function creates the encoded hit words
      * and store it to the temporary output buffer
      */
-    void formatWords( const uint32_t /*coreCol*/, const uint32_t /*coreRow*/, const uint32_t /*subcol*/, const uint32_t /*subrow*/, uint32_t /*ToT*/ );
+    void formatWords( const uint32_t /*coreCol*/, const uint32_t /*coreRow*/, const uint32_t /*subcol*/, const uint32_t /*subrow*/, uint32_t /*ToT*/, uint32_t /*tag*/ );
     
 };
 
