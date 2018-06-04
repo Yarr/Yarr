@@ -3,7 +3,7 @@
 
 #include "Rd53aCfg.h"
 #include "AnyType.h"
-//#include "ThreadPool.h"
+#include "ThreadPool.h"
 
 #include <memory>
 #include <future>
@@ -266,7 +266,7 @@ private:
      * Temporary output word candidate storatege
      */
 
-    ClipBoard<uint32_t> outWords;
+    std::vector<uint32_t> outWords;
     
 
     /** Emulator receives commands from the Ring buffer by 32bit words.
@@ -308,6 +308,7 @@ private:
 
     
     /** container for async processing */
+    std::unique_ptr<ThreadPool>     m_pool;
     std::vector<std::future<void> > m_async;
     
     

@@ -6,6 +6,8 @@
 
 #include "Gauss.h"
 
+#include <chrono>
+
 #define HEXF(x,y) std::hex << "0x" << std::hex << std::setw(x) << std::setfill('0') << static_cast<int>(y) << std::dec
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -105,8 +107,8 @@ Rd53aEmu::Rd53aEmu(RingBuffer * rx, RingBuffer * tx)
     : m_txRingBuffer ( tx )
     , m_rxRingBuffer ( rx )
     , m_feCfg        ( new Rd53aCfg )
+    , m_pool         ( new ThreadPool(1) )
     , analogHits     ( new Histo2d("analogHits", Rd53aPixelCfg::n_Col, -0.5, 399.5, Rd53aPixelCfg::n_Row, -0.5, 191.5, typeid(void)) )
-      //, m_pool( 4 )
 {
     
     srand(time(NULL));
@@ -164,6 +166,8 @@ Rd53aEmu::Rd53aEmu(RingBuffer * rx, RingBuffer * tx)
         triggerCounters[Triggers::Trg14] = 0;
         triggerCounters[Triggers::Trg15] = 0;
     }
+
+    outWords.reserve(50*24*8*8);
 }
 
 
@@ -210,7 +214,7 @@ void Rd53aEmu::executeLoop() {
             
             for( auto& async : m_async ) { async.get(); }
             m_async.clear();
-            
+
             // The following grammer is for static member function pointer ( passing this )
             ( commandFunc_itr->second )( this );
             
@@ -281,11 +285,17 @@ void Rd53aEmu::pushOutput(uint32_t value) {
 
 
 //____________________________________________________________________________________________________
-void Rd53aEmu::doECR( Rd53aEmu* emu ) { emu->l1id = 0; }
+void Rd53aEmu::doECR( Rd53aEmu* emu ) {
+    emu->l1id = 0;
+    while( emu->m_pool->taskSize() ) { std::this_thread::sleep_for( std::chrono::microseconds(10) ); }
+}
 
 
 //____________________________________________________________________________________________________
-void Rd53aEmu::doBCR( Rd53aEmu* emu ) { emu->bcid = 0; }
+void Rd53aEmu::doBCR( Rd53aEmu* emu ) {
+    emu->bcid = 0;
+    while( emu->m_pool->taskSize() ) { std::this_thread::sleep_for( std::chrono::microseconds(10) ); }
+}
 
 
 //____________________________________________________________________________________________________
@@ -300,11 +310,15 @@ void Rd53aEmu::doZero( Rd53aEmu* emu ) {}
 
 
 //____________________________________________________________________________________________________
-void Rd53aEmu::doSync( Rd53aEmu* emu ) {}
+void Rd53aEmu::doSync( Rd53aEmu* emu ) {
+    while( emu->m_pool->taskSize() ) { std::this_thread::sleep_for( std::chrono::microseconds(10) ); }
+}
 
 
 //____________________________________________________________________________________________________
 void Rd53aEmu::doGlobalPulse( Rd53aEmu* emu ) {
+    
+    while( emu->m_pool->taskSize() ) { std::this_thread::sleep_for( std::chrono::microseconds(10) ); }
     
 #if 0
     auto word  = emu->commandStream.front();
@@ -322,6 +336,8 @@ void Rd53aEmu::doGlobalPulse( Rd53aEmu* emu ) {
 
 //____________________________________________________________________________________________________
 void Rd53aEmu::doCal( Rd53aEmu* emu ) {
+    
+    while( emu->m_pool->taskSize() ) { std::this_thread::sleep_for( std::chrono::microseconds(10) ); }
     
     // ToDo
     // For the moment, only pops 2x16-bit words
@@ -342,10 +358,15 @@ void Rd53aEmu::doCal( Rd53aEmu* emu ) {
 
 //____________________________________________________________________________________________________
 void Rd53aEmu::doTrigger( Rd53aEmu* emu,  const uint8_t pattern, const uint8_t tag ) {
+
+    enum { Async, Pool };
+
+    auto mode { Async };
     
     // Finish all async processes before triggering
-    for( auto& async : emu->m_async ) { async.get(); }
-    emu->m_async.clear();
+    while( emu->m_pool->taskSize() ) { std::this_thread::sleep_for( std::chrono::microseconds(10) ); }
+            
+    //std::cout << __PRETTY_FUNCTION__ << std::endl;
     
     emu->triggerCounters.at( static_cast<Triggers>(pattern) )++;
     emu->triggerTagCounters[tag]++;
@@ -354,7 +375,11 @@ void Rd53aEmu::doTrigger( Rd53aEmu* emu,  const uint8_t pattern, const uint8_t t
     emu->diffAnalogHits   = 0;
     emu->linAnalogHits    = 0;
     emu->syncAnalogHits   = 0;
-    
+
+    emu->outWords.resize(100*192);
+    for( size_t i=0; i < 100*192; ++i ) {
+        emu->outWords[i] = 0;
+    }
     
     // Streeam is already popped,
     // then the following part can be run in parallel.
@@ -368,16 +393,32 @@ void Rd53aEmu::doTrigger( Rd53aEmu* emu,  const uint8_t pattern, const uint8_t t
             
             for( size_t icoreCol = 0; icoreCol < n_coreCols; ++icoreCol ) {
                 for( size_t icoreRow = 0; icoreRow < n_coreRows; ++icoreRow ) {
-                    
-                    emu->m_async.emplace_back( std::async( std::launch::deferred, &Rd53aEmu::triggerAsync, emu, icoreCol, icoreRow ) );
+
+                    if( mode == Async ) {
+                        emu->m_async.emplace_back( std::async( std::launch::deferred, &Rd53aEmu::triggerAsync, emu, icoreCol, icoreRow ) );
+                    } else {
+                        emu->m_pool->enqueue( &Rd53aEmu::triggerAsync, emu, icoreCol, icoreRow );
+                    }
                     
                 }
             }
         }
+
         
-        // Finish all async processes before next step
-        for( auto& async : emu->m_async ) { async.get(); }
-        emu->m_async.clear();
+        if( mode == Async ) {
+            // Finish all async processes before next step
+            for( auto& async : emu->m_async ) { async.get(); }
+            emu->m_async.clear();
+            
+        } else {
+        
+            while( emu->m_pool->taskSize() ) {
+                //std::cout << "waiting for thread pool to empty... " << emu->m_pool->taskSize() << std::endl;
+                std::this_thread::sleep_for( std::chrono::microseconds(10) );
+            }
+            
+            //std::cout << "wthread pool is empty... " << emu->m_pool->taskSize() << std::endl;
+        }
         
         
         //////////////////////////////////////////////////////////////////////////////
@@ -386,24 +427,29 @@ void Rd53aEmu::doTrigger( Rd53aEmu* emu,  const uint8_t pattern, const uint8_t t
         //
         
         if( emu->outWords.size() > 0 ) {
-            
+
             uint32_t header = (0x7f << 25 ) | ( (emu->l1id & 0x1f)<<20 ) | ( (tag & 0x1f) << 15 ) | (emu->bcid & 0x7fff);
             emu->pushOutput( header );
             
             //std::cout << "header = " << HEXF(8, header) << ", outWords size = " << emu->outWords.size() << std::endl;
             
             for( auto& w : emu->outWords ) {
+
+                if( 0 == w ) continue;
                 
                 // ToT fields w/o hits need to be filled with 0xf.
-                if( ( (*w & 0x000f) >>  0 ) == 0x0 ) { *w |= 0x000f; }
-                if( ( (*w & 0x00f0) >>  4 ) == 0x0 ) { *w |= 0x00f0; }
-                if( ( (*w & 0x0f00) >>  8 ) == 0x0 ) { *w |= 0x0f00; }
-                if( ( (*w & 0xf000) >> 12 ) == 0x0 ) { *w |= 0xf000; }
+                if( ( (w & 0x000f) >>  0 ) == 0x0 ) { w |= 0x000f; }
+                if( ( (w & 0x00f0) >>  4 ) == 0x0 ) { w |= 0x00f0; }
+                if( ( (w & 0x0f00) >>  8 ) == 0x0 ) { w |= 0x0f00; }
+                if( ( (w & 0xf000) >> 12 ) == 0x0 ) { w |= 0xf000; }
                 
-                emu->pushOutput( *w );
+                emu->pushOutput( w );
             }
         }
-        emu->outWords.clear();
+        
+        for( size_t i=0; i < 100*192; ++i ) {
+            emu->outWords[i] = 0;
+        }
         
         // Increment the timing counter
         emu->calTiming++;
@@ -504,7 +550,7 @@ void Rd53aEmu::triggerAsync( const unsigned coreCol, const unsigned coreRow) {
         
         /*
           std::cout << "coreCol = " << coreCol << ", icol = " << icol << " ==> colAddr = (" << colAddr.first << ", " << colAddr.second << ") ==> " << HEXF(4, m_feCfg->m_cfg.at( colAddr.first ))
-          << ", flag = " << flag << std::endl;
+          << ", flag = " << calflag << std::endl;
         */
         
         if( !calflag ) continue;
@@ -545,7 +591,8 @@ void Rd53aEmu::triggerAsync( const unsigned coreCol, const unsigned coreRow) {
 void Rd53aEmu::doWrReg( Rd53aEmu* emu ) {
     
     emu->retrieve();
-    
+    emu->retrieve();
+        
     //m_id_address_some_data = m_txRingBuffer->read32();
     //              printf("Rd53aEmu got id_address_some_data word: 0x%x\n", m_id_address_some_data);
     
@@ -563,12 +610,11 @@ void Rd53aEmu::doWrReg( Rd53aEmu* emu ) {
         
         emu->commandStream.pop_front();
         emu->commandStream.pop_front();
+        emu->commandStream.pop_front();
     }
     
     else {
         //printf("small data expected\n");
-        
-        emu->retrieve();
         
 #define byte5 ( (emu->commandStream.at(2) & 0xFF00 ) >> 8 )
 #define byte6 ( (emu->commandStream.at(2) & 0x00FF ) )
@@ -576,8 +622,9 @@ void Rd53aEmu::doWrReg( Rd53aEmu* emu ) {
         
         //if( emu->verbose ) printf(" >> WrReg: id: 0x%x, address: 0x%x, data = 0x%x\n", ID, ADDRESS, DATA);
         //if( emu->verbose ) std::cout << __PRETTY_FUNCTION__ << ": " << __LINE__ << ": commandStream front = " << HEXF(4, emu->commandStream.front() ) << std::endl;
-        
-        emu->m_async.emplace_back( std::async(std::launch::deferred, &Rd53aEmu::writeRegAsync, emu, DATA, ADDRESS ) );
+
+        emu->m_pool->enqueue( &Rd53aEmu::writeRegAsync, emu, DATA, ADDRESS );
+        //emu->m_async.emplace_back( std::async(std::launch::deferred, &Rd53aEmu::writeRegAsync, emu, DATA, ADDRESS ) );
         
         emu->commandStream.pop_front();
         emu->commandStream.pop_front();
@@ -612,12 +659,12 @@ void Rd53aEmu::writeRegAsync( Rd53aEmu* emu, const uint16_t data, const uint32_t
 #define COREROW      ( ROW / 8 )
     
     if (address == 0x0) { // configure pixels based on what's in the GR
-        
-#if 0
+
+        /*
         if( emu->verbose ) {
             printf("being asked to configure pixels; Broadcast = %d, AutoCol = %d, AutoRow = %d, RegionRow = %d\n", BROADCAST_EN, AUTOCOL, AUTOROW, ROW );
         }
-#endif
+        */
         
         if (BROADCAST_EN == 0x1) { // auto col = 1, auto row = 0, broadcast = 0
 #if 0
@@ -639,35 +686,35 @@ void Rd53aEmu::writeRegAsync( Rd53aEmu* emu, const uint16_t data, const uint32_t
         }
         
         else {
-#if 0
+            /*
             if ( ROW==0 ) std::cout << "pixel cfg: core = (" << CORECOL << ", " << COREROW << "), region(col, row) = (" << DCOL << ", " << ROW
                                     << "), data = " << HEXF(2, data&0xff) << ", " << HEXF(2, data>>8)
                                     << std::endl;
-#endif
+            */
             
 #define pixel1 ( emu->m_coreArray[CORECOL][COREROW][2*(DCOL%4)+0][ROW%8] )
 #define pixel2 ( emu->m_coreArray[CORECOL][COREROW][2*(DCOL%4)+1][ROW%8] )
             
-            //auto& pixel1 = emu->m_coreArray[CORECOL][COREROW][DCOL%4+0][ROW%8];
-            //auto& pixel2 = emu->m_coreArray[CORECOL][COREROW][DCOL%4+1][ROW%8];
-
             // Sync Pixel Model
             if( pixel1.type() == typeid( PixelModel<Rd53aSyncPixelModel> ) ) {
-                pixel1.getVar< PixelModel<Rd53aSyncPixelModel> >().m_register = static_cast<uint8_t>(data & 0x00FF);
+                pixel1.getVar< PixelModel<Rd53aSyncPixelModel> >().m_register = static_cast<uint8_t>( data & 0x00FF);
                 pixel2.getVar< PixelModel<Rd53aSyncPixelModel> >().m_register = static_cast<uint8_t>( data >> 8 );
             }
             
             // Linear Pixel Model
             if( pixel1.type() == typeid( PixelModel<Rd53aLinPixelModel> ) ) {
-                pixel1.getVar< PixelModel<Rd53aLinPixelModel> >().m_register = static_cast<uint8_t>(data & 0x00FF);
+                pixel1.getVar< PixelModel<Rd53aLinPixelModel> >().m_register = static_cast<uint8_t>( data & 0x00FF);
                 pixel2.getVar< PixelModel<Rd53aLinPixelModel> >().m_register = static_cast<uint8_t>( data >> 8 );
             }
             
             // Diff Pixel Model
             if( pixel1.type() == typeid( PixelModel<Rd53aDiffPixelModel> ) ) {
-                pixel1.getVar< PixelModel<Rd53aDiffPixelModel> >().m_register = static_cast<uint8_t>(data & 0x00FF);
+                pixel1.getVar< PixelModel<Rd53aDiffPixelModel> >().m_register = static_cast<uint8_t>( data & 0x00FF);
                 pixel2.getVar< PixelModel<Rd53aDiffPixelModel> >().m_register = static_cast<uint8_t>( data >> 8 );
             }
+
+#undef pixel1
+#undef pixel2
             
         }
     }
@@ -717,30 +764,21 @@ void Rd53aEmu::doDump( Rd53aEmu* emu ) {
 
 //____________________________________________________________________________________________________
 void Rd53aEmu::formatWords( const uint32_t coreCol, const uint32_t coreRow, const uint32_t subCol, const uint32_t subRow, const uint32_t ToT ) {
+    //std::cout << __PRETTY_FUNCTION__ << std::endl;
     
     // This function creates the output data format
     // and store it to the temporary buffer
     
-    auto* word = new uint32_t( (coreCol<<26) + (coreRow<<20) + (subRow<<17) + ( (subCol/4)<<16 ) + (ToT <<(4*(3-subCol%4))) );
+    uint32_t word = ( (coreCol<<26) + (coreRow<<20) + (subRow<<17) + ( (subCol/4)<<16 ) + (ToT <<(4*(3-subCol%4))) );
     
-    bool flag { false };
-    
-    for( auto& w : outWords ) {
-        if( (*w >> 16) == (*word>>16) ) {
-            *w |= *word;
-            flag = true;
-        }
-    }
-    if( !flag ) {
-        outWords.pushData( word );
-    } else {
-        delete word;
-    }
-    
+    size_t coord = (coreCol*2+subCol/4)*192 + (coreRow*8+subRow);
+
+    outWords.at(coord) |= word;
+
     totalDigitalHits++;
     analogHits->fill( coreCol*n_corePixelCols + subCol, coreRow*n_corePixelRows + subRow);
     
-    //std::cout << "core(" << coreCol << ", " << coreRow << "), pixel(" << subCol << ", " << subRow << "), reg = " << HEXF(2, linPixel.m_register) << ", word = " << HEXF(8, word) << std::endl;
+    //std::cout << "core(" << coreCol << ", " << coreRow << "), pixel(" << subCol << ", " << subRow << "), word = " << HEXF(8, word) << std::endl;
 };
 
 
