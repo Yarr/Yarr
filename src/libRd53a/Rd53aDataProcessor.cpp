@@ -172,7 +172,8 @@ void Rd53aDataProcessor::process_core() {
 
         // Push data out
         for (unsigned i=0; i<activeChannels.size(); i++) {
-            m_outMap->at(activeChannels[i]).pushData(curOut[activeChannels[i]]);
+            if (events[activeChannels[i]] > 0)
+                m_outMap->at(activeChannels[i]).pushData(curOut[activeChannels[i]]);
         }
         //Cleanup
         delete curInV;
