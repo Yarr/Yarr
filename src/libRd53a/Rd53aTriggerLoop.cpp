@@ -41,7 +41,7 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
 void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
     m_trigWord.fill(0x69696969);
     // Inject
-    m_trigWord[31] = 0x69695a5a;
+    //m_trigWord[31] = 0x69695a5a;
     m_trigWord[15] = 0x69696363; // Header
     m_trigWord[14] = Rd53aCmd::genCal(8, 0, 0, 1, 0, 0); // Inject
     // Rearm
