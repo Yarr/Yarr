@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 		if ( strstr( file_path, "OccupancyMap") != NULL) { //if filename contains string declared in argument.
 			if (strstr(file_path, ".dat") != NULL) {
 
-				chipnum = file_name.substr(0, file_name.find(delimiter)); //get chip # from file name
+				chipnum = "Chip SN: " + file_name.substr(0, file_name.find(delimiter)); //get chip # from file name
 
 				std::cout << "Opening file: " << filepath.c_str() << std::endl;
 				std::string filename = filepath.c_str();
@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				TLatex *tname= new TLatex();
 				latex_Chip(tname);
 				tname->DrawLatex(0.21,0.93,"RD53A");
-				tname->DrawLatex(0.88, 0.93, chipnum.c_str());
+				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
 				TLegend *syn_legend = new TLegend(0.7,0.77,0.88,0.88);
 				syn_legend->SetHeader("Analog FEs", "C");
 				syn_legend->AddEntry(h_Syn, "Synchronous", "f");
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				h_Lin->SetMarkerSize(1.8);
 				h_Lin->Draw("TEXT0 SAME");
 				tname->DrawLatex(0.21,0.93,"RD53A");
-				tname->DrawLatex(0.88, 0.93, chipnum.c_str());
+				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
 				TLegend *lin_legend = new TLegend(0.7,0.77,0.86,0.88);
 				lin_legend->SetHeader("Analog FEs", "C");
 				lin_legend->AddEntry(h_Lin, "Linear", "f");
@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				h_Diff->SetMarkerSize(1.8);
 				h_Diff->Draw("TEXT0 SAME");
 				tname->DrawLatex(0.21,0.93,"RD53A");
-				tname->DrawLatex(0.88, 0.93, chipnum.c_str());
+				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
 				TLegend *diff_legend = new TLegend(0.7,0.77,0.87,0.88);
 				diff_legend->SetHeader("Analog FEs", "C");
 				diff_legend->AddEntry(h_Diff, "Differential", "f");
@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				hs->GetXaxis()->SetLabelSize(0.05);
 				hs->GetYaxis()->SetLabelSize(0.03);
 				tname->DrawLatex(0.21,0.93,"RD53A");
-				tname->DrawLatex(0.88, 0.93, chipnum.c_str());
+				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
 
 				filename4 = filename.replace(filename.find("_DIFFroot.pdf"), 14, "_STACKroot.pdf");
 				c_Stack->Print(filename4.c_str());
