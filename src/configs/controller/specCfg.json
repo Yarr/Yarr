@@ -3,7 +3,11 @@
         "type": "spec",
         "cfg" : {
             "specNum" : 0,
-            "spiConfig" : 524288
+            "spiConfig" : 524288,
+            "autoZero" : {
+                "word" : 1549575834,
+                "interval" : 400
+            }
         }
     }
 }
