@@ -24,12 +24,14 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
             if (!j["specNum"].empty())
                 this->SpecCom::init(j["specNum"]);
             
+            // Set direction of LVDS lines
             if (!j["spiConfig"].empty()) {
                 // TODO make proper function
                 this->writeSingle(0x6<<14 | 0x0, (uint32_t)j["spiConfig"]);
                 this->writeSingle(0x6<<14 | 0x1, 0xF);
             }
 
+            // Configure trigger logic
             if (!j["trigConfig"].empty()) {
                 if(!j["trigConfig"]["mask"].empty())
                     this->setTriggerLogicMask(j["trigConfig"]["mask"]);
@@ -50,10 +52,16 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
                         }
                     }
                 }
-                
                 if(!j["trigConfig"]["deadtime"].empty())
                     this->setTriggerDeadtime(j["trigConfig"]["deadtime"]);
-                    
+            }
+
+            // Configure auto-zero logic
+            if (!j["autoZero"].empty()) {
+                if (!j["autoZero"]["word"].empty())
+                    this->setAzWord(j["autoZero"]["word"]);
+                if (!j["autoZero"]["interval"].empty())
+                    this->setAzInterval(j["autoZero"]["interval"]);
             }
         }
 };
