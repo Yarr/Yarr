@@ -79,19 +79,19 @@ int whichBin(double value, double occnum) {
 
 int whichSigma(double value, double mean, double sigma) {
 	int hist_bin;
-	if ( value < (mean - 5*sigma)) hist_bin = 1;
-	else if ( value >= (mean - 5*sigma) && value < (mean - 4*sigma)) hist_bin = 2;
-	else if ( value	>= (mean - 4*sigma) && value < (mean - 3*sigma)) hist_bin = 3;
-	else if ( value >= (mean - 3*sigma) && value < (mean - 2*sigma)) hist_bin = 4;
-	else if ( value >= (mean - 2*sigma) && value < (mean - sigma)) hist_bin = 5;
-	else if ( value >= (mean - sigma) && value < mean) hist_bin = 6;
-	else if ( value == mean) hist_bin = 7;
-	else if ( value > mean && value <= (mean + sigma)) hist_bin = 8;
-	else if ( value > (mean + sigma) && value <= (mean + 2*sigma)) hist_bin = 9;
-	else if ( value > (mean + 2*sigma) && value <= (mean + 3*sigma)) hist_bin = 10;
-	else if ( value > (mean + 3*sigma) && value <= (mean + 4*sigma)) hist_bin = 11;
-	else if ( value > (mean + 4*sigma) && value <= (mean + 5*sigma)) hist_bin = 12;
-	else if ( value > (mean + 5*sigma)) hist_bin = 13;
+	if ( value < (mean - 5*sigma)) hist_bin = 6;
+	else if ( value >= (mean - 5*sigma) && value < (mean - 4*sigma)) hist_bin = 5;
+	else if ( value	>= (mean - 4*sigma) && value < (mean - 3*sigma)) hist_bin = 4;
+	else if ( value >= (mean - 3*sigma) && value < (mean - 2*sigma)) hist_bin = 3;
+	else if ( value >= (mean - 2*sigma) && value < (mean - sigma)) hist_bin = 2;
+	else if ( value >= (mean - sigma) && value < mean) hist_bin = 1;
+	//else if ( value == mean) hist_bin = 7;
+	else if ( value > mean && value <= (mean + sigma)) hist_bin = 1;
+	else if ( value > (mean + sigma) && value <= (mean + 2*sigma)) hist_bin = 2;
+	else if ( value > (mean + 2*sigma) && value <= (mean + 3*sigma)) hist_bin = 3;
+	else if ( value > (mean + 3*sigma) && value <= (mean + 4*sigma)) hist_bin = 4;
+	else if ( value > (mean + 4*sigma) && value <= (mean + 5*sigma)) hist_bin = 5;
+	else if ( value > (mean + 5*sigma)) hist_bin = 6;
 	return hist_bin;
 }
 

@@ -126,8 +126,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				}
 
 				//Synchronous FE Plot	
-				h_Syn->SetFillColor(kRed);
-				h_Syn->SetLineColor(kRed);
+				h_Syn->SetFillColor(kOrange+6);
+				h_Syn->SetLineColor(kOrange+6);
 				TCanvas *c_Syn = new TCanvas("c_Syn", "c_Syn", 800, 600);
 				style_TH1canvas(c_Syn);
 				h_Syn->Draw();
@@ -146,8 +146,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				c_Syn->Print(filename1.c_str());
 
 				//Linear FE Plot
-				h_Lin->SetFillColor(kGreen+2);
-				h_Lin->SetLineColor(kGreen+2);
+				h_Lin->SetFillColor(kSpring+4);
+				h_Lin->SetLineColor(kSpring+4);
 				TCanvas *c_Lin = new TCanvas("c_Lin", "c_Lin", 800, 600);
 				style_TH1canvas(c_Lin);
 				h_Lin->Draw();
@@ -164,8 +164,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				c_Lin->Print(filename2.c_str());
 
 				//Diff FE Plot
-				h_Diff->SetFillColor(kBlue);
-				h_Diff->SetLineColor(kBlue);
+				h_Diff->SetFillColor(kAzure+5);
+				h_Diff->SetLineColor(kAzure+5);
 				TCanvas *c_Diff = new TCanvas("c_Diff", "c_Diff", 800, 600);
 				style_TH1canvas(c_Diff);
 				h_Diff->Draw();

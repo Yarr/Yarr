@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				double chisq_DOF_Diff, mean_hDiff, rms_hDiff;	
 				double fit_all_par[4], fit_all_err[4], fit_all_range[2];
 				double chisq_DOF_all, mean_all, rms_all;
-				const char *LabelName[13] = {"<-5", "-5", "-4", "-3", "-2", "-1", "0", "1", "2", "3", "4", "5", ">5"};	
+				const char *LabelName[6] = {"1","2","3","4","5",">5"};	
 			
 				rowno = 192;
 				colno = 400;
@@ -87,11 +87,11 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				yaxistitle = "Number of Pixels";
 				xrangetitle = "Deviation from the Mean [#sigma] ";
 				xbins = 500;
-				range_bins = 13;
+				range_bins = 6;
 				xlow = -0.5;
 				xhigh = 10000.5;
 				range_low = 0;
-				range_high = 13;
+				range_high = 6;
 
 				infile >> underflow >> overflow;
 
@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				mean_sigma->SetNDC();
 				mean_sigma->SetTextAlign(13);
 				mean_sigma->SetTextFont(63);
-				mean_sigma->SetTextSizePixels(27);
+				mean_sigma->SetTextSizePixels(24);
 				sprintf(mean_Syn, "Mean = %.1f #pm %.1f", fit_Syn_par[1], fit_Syn_err[1]);
 				mean_sigma->DrawLatex(0.18,0.88, mean_Syn);
 				sprintf(sigma_Syn, "#sigma = %.1f #pm %.1f", fit_Syn_par[2], fit_Syn_err[2]);
@@ -233,7 +233,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				h_Lin->Draw();
 				tname->DrawLatex(0.21,0.93,"RD53A");
 				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
-				TLegend *lin_legend = new TLegend(0.7,0.77,0.86,0.88);
+				TLegend *lin_legend = new TLegend(0.75,0.77,0.93,0.88);
 				lin_legend->SetHeader("Analog FEs", "C");
 				lin_legend->AddEntry(h_Lin, "Linear", "f");
 				lin_legend->SetBorderSize(0);
@@ -290,7 +290,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				h_Diff->Draw();
 				tname->DrawLatex(0.21,0.93,"RD53A");
 				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
-				TLegend *diff_legend = new TLegend(0.7,0.77,0.87,0.88);
+				TLegend *diff_legend = new TLegend(0.75,0.77,0.93,0.88);
 				diff_legend->SetHeader("Analog FEs", "C");
 				diff_legend->AddEntry(h_Diff, "Differential", "f");
 				diff_legend->SetBorderSize(0);
@@ -350,7 +350,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				h_all->Draw();
 				tname->DrawLatex(0.21,0.93,"RD53A");
 				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
-				TLegend *all_legend = new TLegend(0.7,0.77,0.87,0.88);
+				TLegend *all_legend = new TLegend(0.75,0.77,0.93,0.88);
 				all_legend->SetHeader("Analog FEs", "C");
 				all_legend->AddEntry(h_all, "All", "f");
 				all_legend->SetBorderSize(0);
@@ -411,10 +411,10 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				style_THStack(hs, xaxistitle.c_str(), yaxistitle.c_str());
 				hs->GetXaxis()->SetLabelSize(0.065);
 				hs->GetYaxis()->SetLabelSize(0.045);
-				gPad->SetLogy(1);
+				gPad->SetLogy(0);
 				c_Stack->Modified();
 				gStyle->SetOptStat(0);
-				TLegend *stack_legend = new TLegend(0.7,0.65,0.88,0.88);
+				TLegend *stack_legend = new TLegend(0.75,0.65,0.93,0.88);
 				stack_legend->SetHeader("Analog FEs", "C");
 				stack_legend->AddEntry(h_Syn, "Synchronous", "f");
 				stack_legend->AddEntry(h_Lin, "Linear", "f");
@@ -475,15 +475,15 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				zeros->SetNDC();
 				zeros->SetTextAlign(13);
 				zeros->SetTextFont(63);
-				zeros->SetTextSizePixels(27);
+				zeros->SetTextSizePixels(20);
 				sprintf(zeros_Syn, "Untuned Pixels = %.0i", zero_Syn);
 				zeros->DrawLatex(0.18,0.88, zeros_Syn);
-				TLegend *syn_range_legend = new TLegend(0.75,0.77,0.93,0.88);
+				TLegend *syn_range_legend = new TLegend(0.7,0.78,0.88,0.89);
 				syn_range_legend->SetHeader("Analog FEs", "C");
 				syn_range_legend->AddEntry(h_range_Syn, "Synchronous", "f");
 				syn_range_legend->SetBorderSize(0);
 				syn_range_legend->Draw();		
-				h_range_Syn->SetMaximum((h_range_Syn->GetMaximum())*1.15);
+				h_range_Syn->SetMaximum((h_range_Syn->GetMaximum())*1.25);
 				c_range_Syn->Update();				
 				filename6 = filename.replace(filename.find("_STACKroot.pdf"), 14, "_SYNRroot.pdf");
 				c_range_Syn->Print(filename6.c_str());
@@ -501,12 +501,12 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
 				sprintf(zeros_Lin, "Untuned Pixels = %.0i", zero_Lin);
 				zeros->DrawLatex(0.18,0.88, zeros_Lin);
-				TLegend *lin_range_legend = new TLegend(0.7,0.77,0.88,0.88);
+				TLegend *lin_range_legend = new TLegend(0.7,0.78,0.88,0.89);
 				lin_range_legend->SetHeader("Analog FEs", "C");
 				lin_range_legend->AddEntry(h_range_Lin, "Linear", "f");
 				lin_range_legend->SetBorderSize(0);
 				lin_range_legend->Draw();		
-				h_range_Lin->SetMaximum((h_range_Lin->GetMaximum())*1.15);
+				h_range_Lin->SetMaximum((h_range_Lin->GetMaximum())*1.25);
 				c_range_Lin->Update();				
 				filename7 = filename.replace(filename.find("_SYNRroot.pdf"), 14, "_LINRroot.pdf");
 				c_range_Lin->Print(filename7.c_str());
@@ -524,12 +524,12 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
 				sprintf(zeros_Diff, "Untuned Pixels = %.0i", zero_Syn);
 				zeros->DrawLatex(0.18,0.88, zeros_Diff);
-				TLegend *diff_range_legend = new TLegend(0.7,0.77,0.88,0.88);
+				TLegend *diff_range_legend = new TLegend(0.7,0.78,0.88,0.89);
 				diff_range_legend->SetHeader("Analog FEs", "C");
 				diff_range_legend->AddEntry(h_range_Diff, "Differential", "f");
 				diff_range_legend->SetBorderSize(0);
 				diff_range_legend->Draw();		
-				h_range_Diff->SetMaximum((h_range_Diff->GetMaximum())*1.15);
+				h_range_Diff->SetMaximum((h_range_Diff->GetMaximum())*1.25);
 				c_range_Diff->Update();				
 				filename8 = filename.replace(filename.find("_LINRroot.pdf"), 15, "_DIFFRroot.pdf");
 				c_range_Diff->Print(filename8.c_str());
@@ -548,7 +548,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				style_THStack(hs_range, xrangetitle.c_str(), yaxistitle.c_str());
 				hs_range->GetXaxis()->SetLabelSize(0.065);
 				hs_range->GetYaxis()->SetLabelSize(0.045);
-				gPad->SetLogy(1);
+				gPad->SetLogy(0);
 				c_Stackr->Modified();
 				gStyle->SetOptStat(0);
 				TLegend *stackr_legend = new TLegend(0.75,0.65,0.93,0.88);
