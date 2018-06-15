@@ -85,7 +85,7 @@ int whichSigma(double value, double mean, double sigma) {
 	else if ( value >= (mean - 3*sigma) && value < (mean - 2*sigma)) hist_bin = 3;
 	else if ( value >= (mean - 2*sigma) && value < (mean - sigma)) hist_bin = 2;
 	else if ( value >= (mean - sigma) && value < mean) hist_bin = 1;
-	//else if ( value == mean) hist_bin = 7;
+	else if ( value == mean) hist_bin = 1;
 	else if ( value > mean && value <= (mean + sigma)) hist_bin = 1;
 	else if ( value > (mean + sigma) && value <= (mean + 2*sigma)) hist_bin = 2;
 	else if ( value > (mean + 2*sigma) && value <= (mean + 3*sigma)) hist_bin = 3;
