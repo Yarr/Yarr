@@ -95,4 +95,3 @@ int whichSigma(double value, double mean, double sigma) {
 	return hist_bin;
 }
 
-
