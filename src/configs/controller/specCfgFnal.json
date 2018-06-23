@@ -1,0 +1,21 @@
+{
+    "ctrlCfg" : {
+        "type": "spec",
+        "cfg" : {
+            "specNum" : 0,
+            "spiConfig" : 524288,
+            "trigConfig" : {
+                "mask" : 1,
+                "mode" : 0,
+                "config" : 65534,
+                "edge" : 0,
+                "delay" : [0, 0, 0, 0],
+                "deadtime" : 300
+            },
+            "autoZero" : {
+                "word" : 1549575834,
+                "interval" : 100
+            }
+        }
+    }
+}

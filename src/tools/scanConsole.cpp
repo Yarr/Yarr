@@ -712,6 +712,9 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
                     } else if (algo_name == "HitsPerEvent") {
                         histogrammer.addHistogrammer(new HitsPerEvent());
                         std::cout << "  ... adding " << algo_name << std::endl;
+                    } else if (algo_name == "DataArchiver") {
+                        histogrammer.addHistogrammer(new DataArchiver((outputDir + "data.raw")));
+                        std::cout << "  ... adding " << algo_name << std::endl;
                     } else {
                         std::cerr << "#ERROR# Histogrammer \"" << algo_name << "\" unknown, skipping!" << std::endl;
                     }
