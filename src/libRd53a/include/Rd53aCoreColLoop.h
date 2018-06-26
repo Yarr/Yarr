@@ -11,25 +11,28 @@
 
 #include <iostream>
 
-#include "FrontEnd.h"
-#include "Rd53a.h"
 #include "LoopActionBase.h"
 
 class Rd53aCoreColLoop : public LoopActionBase {
     public:
         Rd53aCoreColLoop();
         
-        void writeConfig(json &j);
-        void loadConfig(json &j);
+        void writeConfig(json &j) override final;
+        void loadConfig(json &j)  override final;
+    
     private:
-        unsigned m_cur;
-        unsigned nSteps;
-        unsigned maxCore;
-        unsigned minCore;
-        void init();
-        void end();
-        void execPart1();
-        void execPart2();
+        /**
+         * Encapsulating details to class Impl
+         * Only forward declaration here
+         * Class definition is given in the cpp file
+         */
+        class Impl;
+        std::unique_ptr<Impl> m_impl;
+        
+        void init()      override final;
+        void end()       override final;
+        void execPart1() override final;
+        void execPart2() override final;
 };
 
 

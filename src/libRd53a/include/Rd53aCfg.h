@@ -17,33 +17,32 @@
 
 #include "json.hpp"
 
-#define ELECTRON_CHARGE 1.602e-19
-
 class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg {
     public:
-        Rd53aCfg() {
-            m_chipId = 0;
-            m_vcalPar[0] = 1.0;
-            m_vcalPar[1] = 0.195;
-            m_vcalPar[2] = 0;
-            m_vcalPar[3] = 0;
-            m_injCap = 8.2;
-        }
+        Rd53aCfg();
 
-        double toCharge(double vcal) {
-            // Q = C*V
-            // Linear is good enough
-            double V = (m_vcalPar[0]*1.0e-3 + m_vcalPar[1]*vcal*1.0e-3)/ELECTRON_CHARGE;
-            return V*m_injCap*1.0e-15;
-        }
-        double toCharge(double vcal, bool sCap, bool lCap) {return this->toCharge(vcal);}
+        /**
+         * Obtain the corresponding charge [e] from the input VCal
+         */
+        double toCharge(double vcal);
+    
+        /**
+         * Obtain the corresponding charge [e] from the input VCal, small&large capacitances(?)
+         * Not fully implmented yet.
+         */
+        double toCharge(double vcal, bool sCap, bool lCap);
 
-        unsigned toVcal(double charge) {
-            double V= (charge*ELECTRON_CHARGE)/(m_injCap*1.0e-15);
-            unsigned vcal = (unsigned) round((V-(m_vcalPar[0]*1.0e-3))/(m_vcalPar[1]*1.0e-3));
-            return vcal;
-        }
+    
+        /**
+         * Obtain the corresponding VCal from the input charge [e]
+         */
+        unsigned toVcal(double charge);
 
+        /**
+         * Format converters
+         * These can be possibly templated:
+         * template<YARR::IOFormat IN, YARR::IOFormat OUT> void convert( IN&); ?
+         */
         void toFileJson(json&);
         void fromFileJson(json&);
         void toFileBinary(std::string) {};
@@ -51,9 +50,10 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
         void toFileBinary() {};
         void fromFileBinary() {};
 
-        void setChipId(unsigned id) {
-            m_chipId = id;
-        }
+        /**
+         * set the chip ID
+         */
+        void setChipId(unsigned id);
 
     protected:
         unsigned m_chipId;

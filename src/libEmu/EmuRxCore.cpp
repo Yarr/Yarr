@@ -1,3 +1,5 @@
+#if 0
+
 // #################################
 // # Author: Timon Heim
 // # Email: timon.heim at cern.ch
@@ -39,3 +41,5 @@ RawData* EmuRxCore::readData() {
     }
     return NULL;
 }
+
+#endif
