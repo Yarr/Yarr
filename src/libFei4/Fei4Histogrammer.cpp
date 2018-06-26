@@ -163,7 +163,7 @@ void L1Dist::processEvent(Fei4Data *data) {
                 bcid_offset = curEvent.bcid;
                 current_tag++;
             } else if ((curEvent.bcid+32768) - bcid_offset > 16 &&
-                    curEvent.bcid - bcid_offset < 0) {
+                       static_cast<int>(curEvent.bcid) - static_cast<int>(bcid_offset) < 0) {
                 bcid_offset = curEvent.bcid;
                 current_tag++;
             }

@@ -18,10 +18,10 @@
 #include "Fei4PixelCfg.h"
 #include "tinyxml2.h"
 #include "json.hpp"
+#include "Constants.h"
+#include "Units.h"
 
 using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
-
-#define ELECTRON_CHARGE 1.602e-19
 
 class Fei4Cfg : public FrontEndCfg, public Fei4GlobalCfg, public Fei4PixelCfg {
     public:
@@ -37,20 +37,20 @@ class Fei4Cfg : public FrontEndCfg, public Fei4GlobalCfg, public Fei4PixelCfg {
         double toCharge(double vcal, bool sCapOn=true, bool lCapOn=true) override {
             // Q = C*V
             double C = 0;
-            if (sCapOn) C += sCap*1e-15;
-            if (lCapOn) C += lCap*1e-15;
-            double V = ((vcalOffset*1e-3) + ((vcalSlope*1e-3)*vcal))/ELECTRON_CHARGE;
+            if (sCapOn) C += sCap*Unit::Femto;
+            if (lCapOn) C += lCap*Unit::Femto;
+            double V = ((vcalOffset*Unit::Milli) + ((vcalSlope*Unit::Milli)*vcal))/Physics::ElectronCharge;
             return C*V;
         }
 
         unsigned toVcal(double charge, bool sCapOn=true, bool lCapOn=true) {
             // V = Q/C
             double C = 0;
-            if (sCapOn) C += sCap*1e-15;
-            if (lCapOn) C += lCap*1e-15;
+            if (sCapOn) C += sCap*Unit::Femto;
+            if (lCapOn) C += lCap*Unit::Femto;
             if (C==0) return 0;
-            double V = (charge*ELECTRON_CHARGE)/C;
-            return (unsigned) round((V - vcalOffset*1e-3)/(vcalSlope*1e-3));
+            double V = (charge*Physics::ElectronCharge)/C;
+            return (unsigned) round((V - vcalOffset*Unit::Milli)/(vcalSlope*Unit::Milli));
         }
 
         void setScap(double c) {sCap = c;}
