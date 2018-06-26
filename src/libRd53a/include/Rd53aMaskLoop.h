@@ -8,27 +8,21 @@
 // # Date: 03/2018
 // ################################
 
-#include <iostream>
-#include <vector>
-#include <tuple>
-
-#include "FrontEnd.h"
-#include "Rd53a.h"
 #include "LoopActionBase.h"
 
-class Rd53aMaskLoop : public LoopActionBase {
+class Rd53aMaskLoop final : public LoopActionBase {
     public:
         Rd53aMaskLoop();
 
-        void writeConfig(json &j);
-        void loadConfig(json &j);
+        void writeConfig(json & /*j*/) override final;
+        void loadConfig (json & /*j*/) override final;
     private:
         unsigned m_cur;
 
-        void init();
-        void end();
-        void execPart1();
-        void execPart2();
+        void init()      override final;
+        void end()       override final;
+        void execPart1() override final;
+        void execPart2() override final;
 };
 
 #endif
