@@ -14,6 +14,8 @@
 #include "FrontEnd.h"
 #include "Rd53aGlobalCfg.h"
 #include "Rd53aPixelCfg.h"
+#include "Constants.h"
+#include "Units.h"
 
 #include "json.hpp"
 
@@ -35,12 +37,7 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
         /**
          * Obtain the corresponding VCal from the input charge [e]
          */
-        unsigned toVcal(double charge) {
-            double V= (charge*ELECTRON_CHARGE)/(m_injCap*1.0e-15);
-            unsigned vcal = (unsigned) round((V)/(m_vcalPar[1]*1.0e-3));
-            return vcal;
-        }
-
+        unsigned toVcal(double charge);
         /**
          * Format converters
          * These can be possibly templated:

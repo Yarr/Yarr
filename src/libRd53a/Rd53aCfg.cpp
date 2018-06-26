@@ -7,8 +7,6 @@
 // ################################
 
 #include "Rd53aCfg.h"
-#include "Constants.h"
-#include "Units.h"
 
 Rd53aCfg::Rd53aCfg()
     : m_chipId  ( 0 )
@@ -27,7 +25,7 @@ double Rd53aCfg::toCharge(double vcal, bool sCap, bool lCap) { return toCharge(v
 
 unsigned Rd53aCfg::toVcal(double charge) {
     double V= (charge*Physics::ElectronCharge)/(m_injCap*Unit::Femto);
-    unsigned vcal = (unsigned) round((V-(m_vcalPar[0]*Unit::Milli))/(m_vcalPar[1]*Unit::Milli));
+    unsigned vcal = (unsigned) round((V)/(m_vcalPar[1]*Unit::Milli)); // Note: no offset applied
     return vcal;
 }
 
