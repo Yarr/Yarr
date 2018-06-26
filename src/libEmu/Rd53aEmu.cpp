@@ -14,6 +14,8 @@
 //
 // Static members and functions
 
+// The following SLEEP_TIME was tuned by macOS 10.12.6, (2.2 GHz Intel Core i7)
+#define SLEEP_TIME std::chrono::nanoseconds(10)
 
 //____________________________________________________________________________________________________
 // Instantiation is needed for constexpr
@@ -178,7 +180,10 @@ void Rd53aEmu::executeLoop() {
     
     while (run) {
         
-        if ( m_txRingBuffer->isEmpty()) continue;
+        if ( m_txRingBuffer->isEmpty()) {
+            std::this_thread::sleep_for( SLEEP_TIME );
+            continue;
+        }
         
         
         if( verbose ) std::cout << __PRETTY_FUNCTION__ << ": -----------------------------------------------------------" << std::endl;
@@ -297,7 +302,7 @@ void Rd53aEmu::outputLoop() {
 //____________________________________________________________________________________________________
 void Rd53aEmu::retrieve() {
     uint32_t d = m_txRingBuffer->read32();
-    //std::cout << "push_back(): adding word = " << HEXF(8, d ) << std::endl;
+    //std::cout << "push_back(): adding word = " << HEXF(8, d) << std::endl;
     commandStream.push_back( (d & 0xFFFF0000) >> 16 );
     commandStream.push_back( (d & 0x0000FFFF) );
 }
@@ -321,14 +326,14 @@ void Rd53aEmu::pushOutput(uint32_t value) {
 //____________________________________________________________________________________________________
 void Rd53aEmu::doECR( Rd53aEmu* emu ) {
     emu->l1id = 0;
-    while( emu->m_pool->taskSize() ) { std::this_thread::sleep_for( std::chrono::microseconds(10) ); }
+    while( emu->m_pool->taskSize() ) { std::this_thread::sleep_for( SLEEP_TIME ); }
 }
 
 
 //____________________________________________________________________________________________________
 void Rd53aEmu::doBCR( Rd53aEmu* emu ) {
     emu->bcid = 0;
-    while( emu->m_pool->taskSize() ) { std::this_thread::sleep_for( std::chrono::microseconds(10) ); }
+    while( emu->m_pool->taskSize() ) { std::this_thread::sleep_for( SLEEP_TIME ); }
 }
 
 
@@ -345,14 +350,14 @@ void Rd53aEmu::doZero( Rd53aEmu* emu ) {}
 
 //____________________________________________________________________________________________________
 void Rd53aEmu::doSync( Rd53aEmu* emu ) {
-    while( emu->m_pool->taskSize() ) { std::this_thread::sleep_for( std::chrono::microseconds(10) ); }
+    while( emu->m_pool->taskSize() ) { std::this_thread::sleep_for( SLEEP_TIME ); }
 }
 
 
 //____________________________________________________________________________________________________
 void Rd53aEmu::doGlobalPulse( Rd53aEmu* emu ) {
     
-    while( emu->m_pool->taskSize() ) { std::this_thread::sleep_for( std::chrono::microseconds(10) ); }
+    while( emu->m_pool->taskSize() ) { std::this_thread::sleep_for( SLEEP_TIME ); }
     
 #if 0
     auto word  = emu->commandStream.front();
@@ -371,14 +376,14 @@ void Rd53aEmu::doGlobalPulse( Rd53aEmu* emu ) {
 //____________________________________________________________________________________________________
 void Rd53aEmu::doCal( Rd53aEmu* emu ) {
     
-    while( emu->m_pool->taskSize() ) { std::this_thread::sleep_for( std::chrono::microseconds(10) ); }
+    while( emu->m_pool->taskSize() ) { std::this_thread::sleep_for( SLEEP_TIME ); }
     
     // ToDo
     // For the moment, only pops 2x16-bit words
     // Informations stored there need to be used properly
     // See RD53a Manual section 9.2, p.47
     
-    emu->retrieve();
+    while( emu->commandStream.size() == 0 ) emu->retrieve();
     emu->commandStream.pop_front();
     emu->commandStream.pop_front();
     
@@ -399,7 +404,7 @@ void Rd53aEmu::doTrigger( Rd53aEmu* emu,  const uint8_t pattern, const uint8_t t
     auto level { 0 };
     
     // Finish all async processes before triggering
-    while( emu->m_pool->taskSize() ) { std::this_thread::sleep_for( std::chrono::microseconds(10) ); }
+    while( emu->m_pool->taskSize() ) { std::this_thread::sleep_for( SLEEP_TIME ); }
             
     //std::cout << __PRETTY_FUNCTION__ << std::endl;
     
@@ -473,7 +478,7 @@ void Rd53aEmu::doTrigger( Rd53aEmu* emu,  const uint8_t pattern, const uint8_t t
         
                 while( emu->m_pool->taskSize() ) {
                     //std::cout << "waiting for thread pool to empty... " << emu->m_pool->taskSize() << std::endl;
-                    std::this_thread::sleep_for( std::chrono::microseconds(10) );
+                    std::this_thread::sleep_for( SLEEP_TIME );
                 }
             
                 //std::cout << "wthread pool is empty... " << emu->m_pool->taskSize() << std::endl;
@@ -870,8 +875,9 @@ void Rd53aEmu::triggerAsync2( const uint32_t tag, const unsigned coreCol, const 
 //____________________________________________________________________________________________________
 void Rd53aEmu::doWrReg( Rd53aEmu* emu ) {
     
-    emu->retrieve();
-    emu->retrieve();
+    while( emu->commandStream.size() < 3 ) {
+        emu->retrieve();
+    }
         
     //m_id_address_some_data = m_txRingBuffer->read32();
     //              printf("Rd53aEmu got id_address_some_data word: 0x%x\n", m_id_address_some_data);
