@@ -17,9 +17,10 @@
 #include "Fe65p2PixelCfg.h"
 #include "json.hpp"
 
-using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+#include "Constants.h"
+#include "Units.h"
 
-#define ELECTRON_CHARGE 1.602e-19
+using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 
 class Fe65p2Cfg : public FrontEndCfg, public Fe65p2GlobalCfg, public Fe65p2PixelCfg{
     public:
@@ -35,7 +36,7 @@ class Fe65p2Cfg : public FrontEndCfg, public Fe65p2GlobalCfg, public Fe65p2Pixel
         
         double toCharge(double vcal) {
             // Q = C*V
-            return (cap * 1.0e-15)*(((1.0e-3*vcal_slope)*vcal)+(vcal_offset*1.0e-3))/ELECTRON_CHARGE;
+            return (cap * Unit::Femto)*(((Unit::Milli*vcal_slope)*vcal)+(vcal_offset*Unit::Milli))/Physics::ElectronCharge;
         }
 
         // Only one cap
@@ -45,7 +46,7 @@ class Fe65p2Cfg : public FrontEndCfg, public Fe65p2GlobalCfg, public Fe65p2Pixel
 
         unsigned toVcal(double charge) {
             // V = Q/C
-            return floor((((charge*ELECTRON_CHARGE)/(cap * 1.0e-15))-(vcal_offset*1.0e-3))/(vcal_slope*1.0e-3));
+            return floor((((charge*Physics::ElectronCharge)/(cap * Unit::Femto))-(vcal_offset*Unit::Milli))/(vcal_slope*Unit::Milli));
         }
         
         void toFileJson(json &j);
