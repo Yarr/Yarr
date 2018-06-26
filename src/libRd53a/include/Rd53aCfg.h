@@ -40,7 +40,8 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
 
         unsigned toVcal(double charge) {
             double V= (charge*ELECTRON_CHARGE)/(m_injCap*1.0e-15);
-            unsigned vcal = (unsigned) round((V-(m_vcalPar[0]*1.0e-3))/(m_vcalPar[1]*1.0e-3));
+            unsigned vcal = (unsigned) round((V)/(m_vcalPar[1]*1.0e-3));
+            std::cout << __PRETTY_FUNCTION__ << "Return VCAL: " << vcal << std::endl;
             return vcal;
         }
 
