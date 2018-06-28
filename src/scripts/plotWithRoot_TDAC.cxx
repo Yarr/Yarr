@@ -59,8 +59,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_TDAC Directory_name
 				std::string filename1, filename2, filename3, filename4, filename5;
 
 
-				int xbins, range_bins;
-				double xlow, xhigh, range_low, range_high, xyzero; 
+				int lin_bins, diff_bins, range_bins;
+				double xlow, xhigh, range_low, range_high, xyzero, lin_low; 
 				int rowno, colno;
 				char mean_Lin[100]={}, mean_Diff[100]={};
 				char rms_Lin[100]={}, rms_Diff[100]={};
@@ -74,10 +74,12 @@ int main(int argc, char *argv[]) { //./plotWithRoot_TDAC Directory_name
 				xaxistitle = "TDAC";
 				yaxistitle = "Number of pixels";
 				xrangetitle = "Deviation from the Mean [RMS] ";
-				xbins = 31;
+				lin_bins = 16;
+				diff_bins = 31;
 				range_bins = 6;
 				xlow = -15.5;
 				xhigh = 15.5;
+				lin_low = -0.5;	
 				xyzero = 0;
 				range_low = 0;
 				range_high = 6;
@@ -97,10 +99,10 @@ int main(int argc, char *argv[]) { //./plotWithRoot_TDAC Directory_name
 				}
 			
 				TH1 *h_Lin = NULL;
-				h_Lin = (TH1*) new TH1F("h_Lin","", xbins, xyzero, xhigh);
+				h_Lin = (TH1*) new TH1F("h_Lin","", lin_bins, lin_low, xhigh);
 
 				TH1 *h_Diff = NULL;
-				h_Diff = (TH1*) new TH1F("h_Diff","", xbins, xlow, xhigh);
+				h_Diff = (TH1*) new TH1F("h_Diff","", diff_bins, xlow, xhigh);
 
 				TH1 *h_range_Lin = NULL;
 				h_range_Lin = (TH1*) new TH1F("h_range_Lin","", range_bins, xyzero, range_high);
