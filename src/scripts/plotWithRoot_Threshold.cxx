@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				int xbins, range_bins;
 				double xlow, xhigh, range_low, range_high; 
 				int underflow, overflow;
-				int rowno, colno, total_pix;
+				int rowno, colno;
 				char mean_Syn[100]={}, mean_Lin[100]={}, mean_Diff[100]={};
 				char sigma_Syn[100]={}, sigma_Lin[100]={}, sigma_Diff[100]={};
 				char zeros_Syn[100]={}, zeros_Lin[100]={}, zeros_Diff[100]={};
@@ -82,7 +82,6 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 			
 				rowno = 192;
 				colno = 400;
-				total_pix = rowno*colno;
 				xaxistitle = "Threshold [e]";
 				yaxistitle = "Number of Pixels";
 				xrangetitle = "Deviation from the Mean [#sigma] ";
@@ -128,7 +127,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 					
 				TH1* fe_hist[3] = {h_Syn, h_Lin, h_Diff};
 				TH1* range_hist[3] = {h_range_Syn, h_range_Lin, h_range_Diff};
-				std::vector <double> pix_values[total_pix];
+				std::vector <double> pix_values;
 
 				//Fill Threshold plots	
 				for (int i=0; i<rowno; i++) {
@@ -137,7 +136,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 						double tmp;
 						infile >> tmp;
 						//std::cout << i*j << " " << tmp << std::endl;
-						pix_values[0].push_back(tmp);
+						pix_values.push_back(tmp);
 						if (tmp != 0) {	
 							h_all->Fill(tmp);
 							fe_hist[whichFE(j)]->Fill(tmp);
@@ -386,6 +385,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 
 				std::cout << "Chi^2 is "  << fit_all->GetChisquare() << "	DOF is " << fit_all->GetNDF() << "	Prob is " << fit_all->GetProb() << std::endl;
 				
+				h_all->SetMaximum((h_all->GetMaximum())*1.15);
 				h_all->GetXaxis()->SetRangeUser(mean_all - 3*rms_all, mean_all + 3*rms_all);
 				c_all->Update();				
 
@@ -414,7 +414,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				gPad->SetLogy(0);
 				c_Stack->Modified();
 				gStyle->SetOptStat(0);
-				TLegend *stack_legend = new TLegend(0.75,0.65,0.93,0.88);
+				TLegend *stack_legend = new TLegend(0.45,0.8,0.93,0.88);
+				stack_legend->SetNColumns(3);
 				stack_legend->SetHeader("Analog FEs", "C");
 				stack_legend->AddEntry(h_Syn, "Synchronous", "f");
 				stack_legend->AddEntry(h_Lin, "Linear", "f");
@@ -433,6 +434,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 					std::cout<<"\n \033[1;38;5;202;5m Your threshold is crap. Choose a new threshold. \033[0m \n"<<std::endl;
 				}
 
+				hs->SetMaximum((h_all->GetMaximum())*1.15);
 				hs->GetXaxis()->SetRangeUser(mean_all - 3*rms_all, mean_all + 3*rms_all);
 				c_Stack->Update();				
 				
@@ -445,7 +447,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				//Fill range histograms
 				for (int i=0; i<rowno; i++) {
 					for (int j=0; j<colno; j++) {
-						double *tmp_p = &pix_values[0][n];
+						double *tmp_p = &pix_values[n];
 						n++;
 						double tmp = *tmp_p;		
 						int bin_num = whichSigma(tmp, fits[whichFE(j)]->GetParameter(1), fits[whichFE(j)]->GetParameter(2));
@@ -522,7 +524,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				h_range_Diff->Draw("TEXT0 SAME");
 				tname->DrawLatex(0.21,0.93,"RD53A");
 				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
-				sprintf(zeros_Diff, "Untuned Pixels = %.0i", zero_Syn);
+				sprintf(zeros_Diff, "Untuned Pixels = %.0i", zero_Diff);
 				zeros->DrawLatex(0.18,0.88, zeros_Diff);
 				TLegend *diff_range_legend = new TLegend(0.7,0.78,0.88,0.89);
 				diff_range_legend->SetHeader("Analog FEs", "C");
@@ -551,7 +553,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				gPad->SetLogy(0);
 				c_Stackr->Modified();
 				gStyle->SetOptStat(0);
-				TLegend *stackr_legend = new TLegend(0.75,0.65,0.93,0.88);
+				TLegend *stackr_legend = new TLegend(0.45,0.8,0.93,0.88);
+				stackr_legend->SetNColumns(3);
 				stackr_legend->SetHeader("Analog FEs", "C");
 				stackr_legend->AddEntry(h_range_Syn, "Synchronous", "f");
 				stackr_legend->AddEntry(h_range_Lin, "Linear", "f");
@@ -562,6 +565,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				hs_range->GetYaxis()->SetLabelSize(0.03);
 				tname->DrawLatex(0.21,0.93,"RD53A");
 				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
+				hs_range->SetMaximum((hs_range->GetMaximum())*1.15);
+				c_Stackr->Update();
 				filename9 = filename.replace(filename.find("_DIFFRroot.pdf"), 15, "_STACKRroot.pdf");
 				c_Stackr->Print(filename9.c_str());
 				
