@@ -43,7 +43,6 @@ int main(int argc, char *argv[]) { //./plotWithRoot_TDAC Directory_name
 		if (strstr(file_path,".pdf")) continue;
 
 		if ( strstr( file_path, ".json") != NULL) { //if filename contains string declared in argument.
-			//if (strstr(file_path, ".pdf") != NULL) {
 
 				std::cout << "Opening file: " << filepath.c_str() << std::endl;
 				std::string filename = filepath.c_str();
@@ -308,7 +307,6 @@ int main(int argc, char *argv[]) { //./plotWithRoot_TDAC Directory_name
 				delete h_plot;
 				delete c_plot;
 
-		//	}	
 		}
 	}
 
