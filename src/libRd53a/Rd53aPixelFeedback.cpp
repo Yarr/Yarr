@@ -8,26 +8,12 @@
 // ################################
 
 #include "Rd53aPixelFeedback.h"
-#include "Rd53a.h"
-
-#include <iostream>
-#include <queue>
-#include <mutex>
-
-class Rd53aPixelFeedback::Impl {
-public:
-    int m_cur;
-    unsigned oldStep;
-    
-    std::map<unsigned, Histo2d*> m_fb;
-    
-};
 
 Rd53aPixelFeedback::Rd53aPixelFeedback() {
     min = 0;
     max = 15;
     step = 1;
-    m_impl->m_cur = 0;
+    m_cur = 0;
     loopType = typeid(this);
     m_done = false;
     verbose = false;
@@ -55,16 +41,16 @@ void Rd53aPixelFeedback::feedback(unsigned channel, Histo2d *h) {
             << " --> ERROR : Wrong type of feedback histogram on channel " << channel << std::endl;
         doneMap[channel] = true;
     } else {
-        m_impl->m_fb[channel] = h;
+        m_fb[channel] = h;
     }
     keeper->mutexMap[channel].unlock();
 }
 
 void Rd53aPixelFeedback::addFeedback(unsigned ch) {
-    if (m_impl->m_fb[ch] != nullptr) {
+    if (m_fb[ch] != NULL) {
         for (unsigned row=1; row<=Rd53a::n_Row; row++) {
             for (unsigned col=1; col<=Rd53a::n_Col; col++) {
-                int sign = m_impl->m_fb[ch]->getBin(m_impl->m_fb[ch]->binNum(col, row));
+                int sign = m_fb[ch]->getBin(m_fb[ch]->binNum(col, row));
                 int v = dynamic_cast<Rd53a*>(keeper->getFe(ch))->getTDAC(col-1, row-1);
                 if (col<265) {
                     v = v + (step*sign);
@@ -79,9 +65,9 @@ void Rd53aPixelFeedback::addFeedback(unsigned ch) {
     }
 }
 
-void Rd53aPixelFeedback::writePixelCfg(Rd53a& fe) {
-    g_tx->setCmdEnable(1 << fe.getTxChannel());
-    fe.configurePixels();
+void Rd53aPixelFeedback::writePixelCfg(Rd53a *fe) {
+    g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+    fe->configurePixels();
     g_tx->setCmdEnable(keeper->getTxMask());
     while(!g_tx->isCmdEmpty());
 }
@@ -90,14 +76,14 @@ void Rd53aPixelFeedback::init() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     m_done = false;
-    m_impl->m_cur = 0;
-    m_impl->oldStep = step;
+    m_cur = 0;
+    oldStep = step;
     // Init maps
     std::cout << "Starting at TDAC = " << ceil(sqrt((max*max)-(min*min))/2.0) << std::endl;
     for (auto *fe : keeper->feList) {
         if (fe->getActive()) {
             unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-            m_impl->m_fb[ch] = nullptr;
+            m_fb[ch] = NULL;
             for (unsigned col=1; col<=Rd53a::n_Col; col++) {
                 for (unsigned row=1; row<=Rd53a::n_Row; row++) {
                     //Initial TDAC in mid of the range
@@ -114,12 +100,12 @@ void Rd53aPixelFeedback::init() {
 }
 
 void Rd53aPixelFeedback::execPart1() {
-    g_stat->set(this, m_impl->m_cur);
+    g_stat->set(this, m_cur);
     // Lock all mutexes
     for (auto fe : keeper->feList) {
         if (fe->getActive()) {
             keeper->mutexMap[dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()].try_lock();
-            this->writePixelCfg( *( dynamic_cast<Rd53a*>(fe) ) );
+            this->writePixelCfg(dynamic_cast<Rd53a*>(fe));
         }
     }
 }
@@ -134,16 +120,16 @@ void Rd53aPixelFeedback::execPart2() {
         }
     }
     // Execute last step twice to get full range
-    //if (step == 1 && m_impl->oldStep == 1)
+    //if (step == 1 && oldStep == 1)
     //if (step == 1)
-    if (m_impl->m_cur == 4)
+    if (m_cur == 4)
         m_done = true;
-    m_impl->oldStep = step;
+    oldStep = step;
     step = step/2;
     if(step == 0)
         step = 1;
 
-    m_impl->m_cur++;
+    m_cur++;
 }
 
 void Rd53aPixelFeedback::end() {

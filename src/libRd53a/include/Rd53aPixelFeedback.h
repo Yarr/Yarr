@@ -10,33 +10,38 @@
 // # Date: April 2018
 // ################################
 
+
+#include <iostream>
+#include <queue>
+#include <mutex>
+
 #include "LoopActionBase.h"
 #include "FeedbackBase.h"
-
-class Rd53a;
+#include "Rd53a.h"
 
 class Rd53aPixelFeedback : public LoopActionBase, public PixelFeedbackBase {
     public:
         Rd53aPixelFeedback();
 
-        void writeConfig(json &j) override final;
-        void loadConfig(json &j)  override final;
+        void writeConfig(json &j);
+        void loadConfig(json &j);
 
-        void feedback(unsigned channel, Histo2d *h) override final;
+        void feedback(unsigned channel, Histo2d *h);
 
     protected:
     private:
+        int m_cur;
+        unsigned oldStep;
 
-        class Impl;
-        std::unique_ptr<Impl> m_impl;
+        std::map<unsigned, Histo2d*> m_fb;
 
         void addFeedback(unsigned ch);
-        void writePixelCfg(Rd53a& fe);
-        
-        void init()      override final;
-        void end()       override final;
-        void execPart1() override final;
-        void execPart2() override final;
+        void writePixelCfg(Rd53a *fe);
+
+        void init();
+        void end();
+        void execPart1();
+        void execPart2();
 };
 
 
