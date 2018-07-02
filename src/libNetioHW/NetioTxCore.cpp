@@ -10,8 +10,6 @@
 using namespace std;
 using namespace netio;
 
-DECLARE_TXCORE(NetioTxCore)
-
 NetioTxCore::NetioTxCore() : m_nioh{NetioHandler::getInstance()} {
   m_enableMask = 0;
   m_trigEnabled = false;

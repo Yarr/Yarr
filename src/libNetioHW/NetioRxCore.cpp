@@ -5,8 +5,6 @@
 #include <iomanip>
 #include "felixbase/client.hpp"
 
-DECLARE_RXCORE(NetioRxCore)
-
 using namespace std;
 using namespace netio;
  

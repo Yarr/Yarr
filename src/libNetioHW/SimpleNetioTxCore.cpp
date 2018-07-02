@@ -9,8 +9,6 @@
 using namespace std;
 using namespace netio;
 
-DECLARE_TXCORE(SimpleNetioTxCore)
-
 SimpleNetioTxCore::SimpleNetioTxCore(){
   m_enableMask = 0;
   m_trigEnabled = false;
