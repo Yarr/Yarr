@@ -30,8 +30,12 @@ entity tx_channel is
 		-- Word Looper
 		loop_pulse_i    : in std_logic;
 		loop_mode_i     : in std_logic; -- (WB clk domain)
-		loop_word_i     : in std_logic_vector(511 downto 0); -- (WB clk domain)
+		loop_word_i     : in std_logic_vector(1023 downto 0); -- (WB clk domain)
 		loop_word_bytes_i : in std_logic_vector(7 downto 0); -- (WB clk domain)
+            
+        -- Auto-zero
+        az_word_i       : in std_logic_vector(31 downto 0);
+        az_interval_i   : in std_logic_vector(15 downto 0);
 		
 		-- Status
 		tx_underrun_o	: out std_logic;
@@ -57,6 +61,8 @@ architecture rtl of tx_channel is
         idle_i      : in std_logic_vector(31 downto 0);
         sync_i      : in std_logic_vector(31 downto 0);
         sync_interval_i : in std_logic_vector(7 downto 0);
+        az_i      : in std_logic_vector(31 downto 0);
+        az_interval_i : in std_logic_vector(15 downto 0);
         data_valid_i : in std_logic;
         -- Output
         data_o      : out std_logic;
@@ -96,9 +102,11 @@ architecture rtl of tx_channel is
 	signal loop_cnt : unsigned(7 downto 0);
 	signal loop_empty : std_logic;
 	signal loop_mode_s : std_logic;
-	signal loop_word_s : std_logic_vector(511 downto 0);
+	signal loop_word_s : std_logic_vector(1023 downto 0);
     signal loop_word_bytes_s : std_logic_vector(7 downto 0);
 	
+    signal az_word_s : std_logic_vector(31 downto 0);
+    signal az_interval_s : std_logic_vector(15 downto 0);
 begin
 
 	-- Write to FiFo
@@ -120,6 +128,8 @@ begin
 	       loop_mode_s <= '0';
            loop_word_s <= (others => '0');
            loop_word_bytes_s <= (others => '0');
+           az_word_s <= c_TX_AZ_WORD;
+           az_interval_s <= std_logic_vector(c_TX_AZ_INTERVAL);
 	   elsif rising_edge(tx_clk_i) then
 	       loop_empty <= '1';
 	       loop_mode_s <= loop_mode_i;
@@ -127,7 +137,7 @@ begin
 	       loop_word_bytes_s <= loop_word_bytes_i;
 	       if (loop_mode_s = '1') then
 	           loop_empty <= '1';
-	           if (loop_pulse_i = '1') then
+	           if (loop_pulse_i = '1') then -- new pulse will restart the counter
 	               loop_cnt <= unsigned(loop_word_bytes_s); -- reload counter
 	     	       loop_empty <= '0';      
                elsif (sport_data_read = '1' and loop_cnt /= to_unsigned(0, 8)) then
@@ -136,14 +146,32 @@ begin
 	           elsif (loop_cnt > to_unsigned(0,8)) then
 	               loop_empty <= '0';
 	           end if;
-	       end if;	   
+	       end if;
+           az_word_s <= az_word_i;
+           az_interval_s <= az_interval_i;
 	   end if;
 	end process loop_proc;
 	
 	sport_data_valid <= not tx_fifo_empty when (loop_mode_s = '0') else not loop_empty;
 	tx_fifo_rd <= sport_data_read when (loop_mode_s = '0') else '0';
 	sport_data <= tx_fifo_dout when (loop_mode_s = '0') else 
-	           loop_word_s(511 downto 480) when (loop_cnt = to_unsigned(16, 8)) else -- MSB first
+	           loop_word_s(1023 downto 992) when (loop_cnt = to_unsigned(32, 8)) else -- MSB first
+	           loop_word_s(991 downto 960) when (loop_cnt = to_unsigned(31, 8)) else 
+	           loop_word_s(959 downto 928) when (loop_cnt = to_unsigned(30, 8)) else 
+	           loop_word_s(927 downto 896) when (loop_cnt = to_unsigned(29, 8)) else 
+	           loop_word_s(895 downto 864) when (loop_cnt = to_unsigned(28, 8)) else 
+	           loop_word_s(863 downto 832) when (loop_cnt = to_unsigned(27, 8)) else 
+	           loop_word_s(831 downto 800) when (loop_cnt = to_unsigned(26, 8)) else 
+	           loop_word_s(799 downto 768) when (loop_cnt = to_unsigned(25, 8)) else 
+	           loop_word_s(767 downto 736) when (loop_cnt = to_unsigned(24, 8)) else 
+	           loop_word_s(735 downto 704) when (loop_cnt = to_unsigned(23, 8)) else 
+	           loop_word_s(703 downto 672) when (loop_cnt = to_unsigned(22, 8)) else 
+	           loop_word_s(671 downto 640) when (loop_cnt = to_unsigned(21, 8)) else 
+	           loop_word_s(639 downto 608) when (loop_cnt = to_unsigned(20, 8)) else 
+	           loop_word_s(607 downto 576) when (loop_cnt = to_unsigned(19, 8)) else 
+	           loop_word_s(575 downto 544) when (loop_cnt = to_unsigned(18, 8)) else 
+	           loop_word_s(543 downto 512) when (loop_cnt = to_unsigned(17, 8)) else 
+	           loop_word_s(511 downto 480) when (loop_cnt = to_unsigned(16, 8)) else 
 	           loop_word_s(479 downto 448) when (loop_cnt = to_unsigned(15, 8)) else
 	           loop_word_s(447 downto 416) when (loop_cnt = to_unsigned(14, 8)) else
 	           loop_word_s(415 downto 384) when (loop_cnt = to_unsigned(13, 8)) else
@@ -168,6 +196,8 @@ begin
 		idle_i => c_TX_IDLE_WORD,
 		sync_i => c_TX_SYNC_WORD,
 		sync_interval_i => std_logic_vector(c_TX_SYNC_INTERVAL),
+		az_i => az_word_s,
+		az_interval_i => az_interval_s,
 		data_valid_i => sport_data_valid,
 		data_o => tx_data_o,
 		data_read_o => sport_data_read

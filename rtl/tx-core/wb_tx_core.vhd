@@ -23,13 +23,15 @@
 -- #   0x9 - Trigger Count (RW)
 -- #   0xA - Trigger Word Length (RW)
 -- #   0xB - Trigger Word [31:0] (RW)
--- #   0xC - Trigger Word [63:32] (RW)
--- #   0xD - Trigger Word [95:64] (RW)
--- #   0xE - Trigger Word [127:96] (RW)
+-- #   0xC - Trigger Pointer (RW)
+-- #   0xF - Toggle trigger abort
 
 library IEEE;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+
+library work;
+use work.board_pkg.all;
 
 entity wb_tx_core is
 	generic (
@@ -79,8 +81,12 @@ architecture behavioral of wb_tx_core is
             -- Word Looper
             loop_pulse_i    : in std_logic;
             loop_mode_i     : in std_logic;
-            loop_word_i     : in std_logic_vector(511 downto 0);
+            loop_word_i     : in std_logic_vector(1023 downto 0);
             loop_word_bytes_i : in std_logic_vector(7 downto 0);
+
+            -- Auto-zero
+            az_word_i       : in std_logic_vector(31 downto 0);
+            az_interval_i   : in std_logic_vector(15 downto 0);
 			
 			-- Status
 			tx_underrun_o	: out std_logic;
@@ -140,8 +146,8 @@ architecture behavioral of wb_tx_core is
 	signal trig_en : std_logic;
 	signal trig_done : std_logic;
 	signal trig_word_length : std_logic_vector(31 downto 0);
-	signal trig_word : std_logic_vector(511 downto 0);
-	signal trig_word_pointer : unsigned(3 downto 0);
+	signal trig_word : std_logic_vector(1023 downto 0);
+	signal trig_word_pointer : unsigned(4 downto 0);
     
     -- Trig input freq counter
     signal ext_trig_t1 : std_logic;
@@ -152,9 +158,7 @@ architecture behavioral of wb_tx_core is
     signal trig_in_freq_d : std_logic_vector(31 downto 0);
     signal per_second : std_logic;
     signal per_second_cnt : unsigned(31 downto 0);
-    constant ticks_per_second : integer := 40000000; -- 40 MHz clock rate
-    
-    
+    constant ticks_per_second : integer := 160000000; -- 160 MHz clock rate TODO make it set via board_pkg
     
 	signal trig_abort : std_logic;
 	
@@ -162,6 +166,9 @@ architecture behavioral of wb_tx_core is
 	signal wb_dat_t : std_logic_vector(31 downto 0);
 	
 	signal channel : integer range 0 to 31;
+
+    signal az_word : std_logic_vector(31 downto 0);
+    signal az_interval : std_logic_vector(15 downto 0);
 
 begin
 
@@ -189,6 +196,8 @@ begin
             trig_word_pointer <= (others => '0');
             trig_abort <= '0';
             trig_in_freq_d <= (others => '0');
+            az_word <= c_TX_AZ_WORD;
+            az_interval <= std_logic_vector(c_TX_AZ_INTERVAL);
 		elsif rising_edge(wb_clk_i) then
 			wb_wr_en <= (others => '0');
 			wb_ack_o <= '0';
@@ -232,7 +241,13 @@ begin
 							trig_word(((to_integer(trig_word_pointer)+1)*32)-1 downto (to_integer(trig_word_pointer))*32) <= wb_dat_i;
 							wb_ack_o <= '1';
 						when x"C" => -- Set trigger word pointer
-							trig_word_pointer <= unsigned(wb_dat_i(3 downto 0));
+							trig_word_pointer <= unsigned(wb_dat_i(4 downto 0));
+							wb_ack_o <= '1';
+						when x"D" => -- Set trigger word pointer
+							az_word <= wb_dat_i(31 downto 0);
+							wb_ack_o <= '1';
+						when x"E" => -- Set trigger word pointer
+							az_interval <= wb_dat_i(15 downto 0);
 							wb_ack_o <= '1';
 						when x"F" => -- Toggle trigger abort
 							trig_abort <= wb_dat_i(0);
@@ -280,7 +295,14 @@ begin
 							wb_ack_o <= '1';
 						when x"C" =>
                             wb_dat_o <= (others => '0');
-							wb_dat_o(3 downto 0) <= std_logic_vector(trig_word_pointer);
+							wb_dat_o(4 downto 0) <= std_logic_vector(trig_word_pointer);
+							wb_ack_o <= '1';
+						when x"D" => -- autozero word
+							wb_dat_o(31 downto 0) <= az_word;
+							wb_ack_o <= '1';
+						when x"E" => -- autozero interval
+                            wb_dat_o <= (others => '0');
+							wb_dat_o(15 downto 0) <= az_interval;
 							wb_ack_o <= '1';
 						when x"F" => -- Trigger in frequency
 							wb_dat_o <= trig_in_freq_d;
@@ -312,6 +334,9 @@ begin
 			loop_mode_i => trig_en,
 			loop_word_i => trig_word,
 			loop_word_bytes_i => trig_word_length(7 downto 0),
+            -- Autozeroing
+            az_word_i => az_word,
+            az_interval_i => az_interval,
 			-- Status
 			tx_underrun_o => tx_underrun(I),
 			tx_overrun_o => tx_overrun(I),

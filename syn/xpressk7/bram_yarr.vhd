@@ -53,7 +53,10 @@ entity top_level is
             -- FMC
             ---------------------------------------------------------
             -- Trigger input
-            --ext_trig_o        : out std_logic;
+            ext_trig_i_p       : in std_logic_vector(3 downto 0);
+            ext_trig_i_n       : in std_logic_vector(3 downto 0);
+            --ext_busy_o_p       : out std_logic;
+            --ext_busy_o_n       : out std_logic;
             -- LVDS buffer
             --pwdn_l            : out std_logic_vector(2 downto 0);
             -- GPIO
@@ -68,6 +71,15 @@ entity top_level is
             -- I2c
             --sda_io                : inout std_logic;
             --scl_io                    : inout std_logic;
+            -- EUDET TLU
+            eudet_trig_p : in std_logic;
+            eudet_trig_n : in std_logic;
+            eudet_busy_p : out std_logic;
+            eudet_busy_n : out std_logic;
+            eudet_rst_p : in std_logic;
+            eudet_rst_n : in std_logic;
+            eudet_clk_p : out std_logic;
+            eudet_clk_n : out std_logic;
             -- SPI
             scl_o   : out std_logic;
             sda_o   : out std_logic;
@@ -263,7 +275,8 @@ architecture Behavioral of top_level is
                 -- FMC
                 ---------------------------------------------------------
                 -- Trigger input
-                ext_trig_o        : out std_logic;
+                ext_trig_i        : in std_logic_vector(3 downto 0);
+                --ext_busy_o        : out std_logic;
                 -- LVDS buffer
                 pwdn_l            : out std_logic_vector(2 downto 0);
                 -- GPIO
@@ -278,6 +291,11 @@ architecture Behavioral of top_level is
                 -- I2c
                 sda_io                : inout std_logic;
                 scl_io                    : inout std_logic;
+                -- EUDET
+                eudet_clk_o : out std_logic;
+                eudet_trig_i : in std_logic;
+                eudet_rst_i : in std_logic;
+                eudet_busy_o : out std_logic;
                 -- SPI
                 scl_o   : out std_logic;
                 sda_o   : out std_logic;
@@ -347,6 +365,16 @@ architecture Behavioral of top_level is
     
     --PCIE debug
     signal cfg_dstatus_s : STD_LOGIC_VECTOR(15 DOWNTO 0);
+
+    -- EUDET
+    signal eudet_clk_s : std_logic;
+    signal eudet_trig_s : std_logic;
+    signal eudet_busy_s : std_logic;
+    signal eudet_rst_s : std_logic;
+
+
+    signal ext_trig_i : std_logic_vector(3 downto 0);
+    signal ext_busy_o : std_logic;
     
 begin
 
@@ -366,8 +394,20 @@ begin
 --      CLK_IN_D_clk_n(0) => pcie_clk_n,
 --      CLK_IN_D_clk_p(0) => pcie_clk_p,
 --      IBUF_OUT(0) => sys_clk
---    );
-  
+--    );    
+
+    -- EUDET buffer
+    eudet_clk_buf : OBUFDS port map (O => eudet_clk_p, OB => eudet_clk_n, I => not eudet_clk_s);
+    eudet_busy_buf : OBUFDS port map (O => eudet_busy_p, OB => eudet_busy_n, I => not eudet_busy_s);
+    eudet_rst_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => eudet_rst_s, I => eudet_rst_p, IB => eudet_rst_n);
+    eudet_trig_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => eudet_trig_s, I => eudet_trig_p, IB => eudet_trig_n);
+    -- HitOr
+    ext_trig_buf_0 : IBUFDS generic map (DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => ext_trig_i(0), I => ext_trig_i_p(0), IB => ext_trig_i_n(0));
+    ext_trig_buf_1 : IBUFDS generic map (DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => ext_trig_i(1), I => ext_trig_i_p(1), IB => ext_trig_i_n(1));
+    ext_trig_buf_2 : IBUFDS generic map (DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => ext_trig_i(2), I => ext_trig_i_p(2), IB => ext_trig_i_n(2));
+    ext_trig_buf_3 : IBUFDS generic map (DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => ext_trig_i(3), I => ext_trig_i_p(3), IB => ext_trig_i_n(3));
+    --ext_busy_buf : OBUFDS port map (O => ext_busy_o_p, OB => ext_busy_o_n, I => ext_busy_o);
+
   
    refclk_ibuf : IBUFDS_GTE2
        port map(
@@ -505,7 +545,8 @@ begin
         -- FMC
         ---------------------------------------------------------
         -- Trigger input
-        ext_trig_o        => open,
+        ext_trig_i        => ext_trig_i,
+        --ext_busy_o      => ext_busy_o,
         -- LVDS buffer
         pwdn_l            => open,
         -- GPIO
@@ -520,7 +561,11 @@ begin
         -- I2c
         --sda_io            => sda_io,
         --scl_io            => scl_io,
-        
+        --EUDET
+        eudet_clk_o => eudet_clk_s,
+        eudet_trig_i => not eudet_trig_s,
+        eudet_rst_i => eudet_rst_s,
+        eudet_busy_o => eudet_busy_s,
         --SPI
         scl_o => scl_o,
         sda_o => sda_o,
