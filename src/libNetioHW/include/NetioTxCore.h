@@ -20,6 +20,9 @@
 #include <vector>
 #include <mutex>
 
+#include "json.hpp"
+
+using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 
 /**
  * @brief Implementation of the RxCore for NetIO communication.

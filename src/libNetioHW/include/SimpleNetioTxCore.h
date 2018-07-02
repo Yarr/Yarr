@@ -18,6 +18,10 @@
 #include <vector>
 #include <mutex>
 
+#include "json.hpp"
+
+using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+
 /**
  * @brief Simple implementation of the NetIO TxCore.
  * This class creates a single socket connection to Felix.
