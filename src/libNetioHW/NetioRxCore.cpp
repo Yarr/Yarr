@@ -1,6 +1,5 @@
 #include "NetioRxCore.h"
 #include "NetioTools.h"
-#include "NetioFei4Records.h"
 
 #include <iomanip>
 #include "felixbase/client.hpp"
@@ -8,7 +7,8 @@
 using namespace std;
 using namespace netio;
  
-NetioRxCore::NetioRxCore() :  m_nioh{ NetioHandler::getInstance() }                                    
+NetioRxCore::NetioRxCore(NetioHandler &nh)
+  : m_nioh(nh)
 {
   m_t0 = std::chrono::steady_clock::now();
   string cntx = "posix";
@@ -51,14 +51,6 @@ NetioRxCore::~NetioRxCore(){
   m_statistics.join();
 }
 
-
-void NetioRxCore::connect(){
-  cout << "Start monitoring thread..." << endl;
-  //m_nioh.monitorSetup(100, 50);
-  m_nioh.configureMonitors(500, 50);
-  m_nioh.startChecking();
-}
-
 void NetioRxCore::enableChannel(uint64_t elink){
   if(m_verbose) cout << "Enable RX elink: 0x" << hex << elink << dec << endl;
   if(m_elinks.find(elink)==m_elinks.end()){
@@ -74,41 +66,51 @@ void NetioRxCore::disableChannel(uint64_t elink){
   // We don't disable channels...
 }
 
-RawDataContainer* NetioRxCore::readAllData() {         // Read all data from Queues.
-  RawDataContainer *rdc = new RawDataContainer();      // Container for all channels.
+void NetioRxCore::setRxEnable(uint32_t val) {
+  for(int chan=0; chan<32; chan++) {
+    if((1<<chan) & val) {
+      enableChannel(chan);
+    } else {
+      disableChannel(chan);
+    }
+  }
+}
+
+void NetioRxCore::maskRxEnable(uint32_t val, uint32_t mask) {
+  for(int chan=0; chan<32; chan++) {
+    if(!((1<<chan) & mask)) {
+      continue;
+    }
+
+    if((1<<chan) & val) {
+      enableChannel(chan);
+    } else {
+      disableChannel(chan);
+    }
+  }
+}
+
+RawData* NetioRxCore::readData(){
+  // Loop over all links looking for data
+  // Return the first one we find (slow?)
+
   map<uint64_t,bool>::iterator it;
   for(it=m_elinks.begin();it!=m_elinks.end();it++){    // For every channel's queue:
     if(!it->second) continue;
     uint32_t elink=it->first;
-    if(m_verbose) cout << "NetioRxCore::readAllData()  elink number " << elink << endl;
+    if(m_verbose) cout << "NetioRxCore::readData()  elink number " << elink << endl;
     size_t queueSize = m_nioh.getQueue(elink)->sizeGuess(); //   -Stable queues should have correct size.
     std::cout << "Pushing out " << queueSize << " FEI4_RECORDS...\n";
     uint32_t *buffer = new uint32_t[queueSize];        //   -Allocate buffer for queueSize words.
     for (size_t i=0; i<queueSize; ++i){
       m_nioh.getQueue(elink)->read(std::ref(buffer[i]));
     }
-    RawData* chnData = new RawData(elink, buffer, queueSize); //Create raw data with channel ID
-    rdc->add(chnData); // Add channel RawData to RDC.
+    return new RawData(elink, buffer, queueSize);
   }
-  return rdc; 
+
+  return nullptr;
 }
 
-RawData* NetioRxCore::readData(uint64_t elink){
-  RawData * chnData = NULL;
-  size_t queueSize = m_nioh.getQueue(elink)->sizeGuess(); //stable queues have correct size.
-  if (queueSize==0) return chnData;
-  std::cout << "Pushing out " << queueSize << " FEI4_RECORDS... for elink " << elink << '\n';
-  uint32_t *buffer = new uint32_t[queueSize];        //   -Allocate buffer for queueSize words.
-  for (size_t i=0; i<queueSize; ++i){
-    m_nioh.getQueue(elink)->read(std::ref(buffer[i]));
-  }
-  size_t qs = m_nioh.getQueue(elink)->sizeGuess();
-  if (qs!=0) { std::cout << "WOOF WOOF WOOF -> Queue size changed during data read! Bad omen!\n"; } 
-  chnData = new RawData(elink, buffer, queueSize); //Create raw data with channel ID
-  return chnData;
-} 
-
-        
 uint32_t NetioRxCore::getDataRate(){ 
   return m_rate;
 }
@@ -117,12 +119,8 @@ uint32_t NetioRxCore::getCurCount(){
   return 0;
 }
 
-bool NetioRxCore::isDataReady(){ // True, if queues are stable. 
+bool NetioRxCore::isBridgeEmpty(){ // True, if queues are stable. 
   return m_nioh.isAllStable();
-}
-
-void NetioRxCore::setVerbose(bool enable){
-  m_verbose = enable;
 }
 
 void NetioRxCore::toString(string &s) {}

@@ -82,11 +82,6 @@ void SimpleNetioRxCore::decode(netio::endpoint& ep, netio::message& msg){
   } 
 }
 
-
-void SimpleNetioRxCore::connect(){
-  //Nothing to do yet
-}
-
 void SimpleNetioRxCore::enableChannel(uint64_t chn){
   tag elink = chn*2;
   if(m_elinks.find(elink)!=m_elinks.end()){return;}
@@ -117,16 +112,29 @@ void SimpleNetioRxCore::disableChannel(uint64_t chn){
   m_elinks.erase(elink);
 }
 
-RawDataContainer* SimpleNetioRxCore::readAllData() {         
-  RawDataContainer *rdc = new RawDataContainer();      
-  map<tag,uint32_t>::iterator it;
-  for(it=m_elinks.begin();it!=m_elinks.end();it++){
-    RawData * chnData = readData(it->second);
-    rdc->add(chnData); 
+void SimpleNetioRxCore::setRxEnable(uint32_t val) {
+  for(int chan=0; chan<32; chan++) {
+    if((1<<chan) & val) {
+      enableChannel(chan);
+    } else {
+      disableChannel(chan);
+    }
   }
-  return rdc; 
 }
 
+void SimpleNetioRxCore::maskRxEnable(uint32_t val, uint32_t mask) {
+  for(int chan=0; chan<32; chan++) {
+    if(!((1<<chan) & mask)) {
+      continue;
+    }
+
+    if((1<<chan) & val) {
+      enableChannel(chan);
+    } else {
+      disableChannel(chan);
+    }
+  }
+}
 
 RawData* SimpleNetioRxCore::readData(uint64_t chn){ 
   tag elink = chn*2;
@@ -154,7 +162,17 @@ RawData* SimpleNetioRxCore::readData(uint64_t chn){
   chnData = new RawData(chn, buffer, size);    
   return chnData;
 }
-        
+
+RawData* SimpleNetioRxCore::readData() {
+  map<tag,uint32_t>::iterator it;
+  for(it=m_elinks.begin();it!=m_elinks.end();it++){
+    RawData * chnData = readData(it->second);
+    if(chnData) 
+      return chnData;
+  }
+  return nullptr;
+}
+
 uint32_t SimpleNetioRxCore::getDataRate(){ 
   return m_rate;
 }
@@ -163,18 +181,7 @@ uint32_t SimpleNetioRxCore::getCurCount(){
   return 0;
 }
 
-void SimpleNetioRxCore::flush(){
-  map<tag,queue<uint8_t> >::iterator it;
-  for(it=m_data.begin();it!=m_data.end();it++){
-    m_mutex.lock();
-    while (!it->second.empty()){
-      it->second.pop();
-    }
-    m_mutex.unlock();
-  }
-}
-
-bool SimpleNetioRxCore::isDataReady(){
+bool SimpleNetioRxCore::isBridgeEmpty(){
   //return true;
   
   bool somedata=false;
@@ -187,11 +194,7 @@ bool SimpleNetioRxCore::isDataReady(){
   return somedata; 
   
 }
-
-void SimpleNetioRxCore::setVerbose(bool enable){
-  m_verbose = enable;
-}
-
+      
 void SimpleNetioRxCore::toString(string &s) {
   ostringstream os;
   os << m_felixhost << ":" << m_felixport;
@@ -217,4 +220,3 @@ void SimpleNetioRxCore::fromFileJson(json &j) {
   m_felixhost = j["NetIO"]["host"];
   m_felixport = j["NetIO"]["rxport"];
 }
-

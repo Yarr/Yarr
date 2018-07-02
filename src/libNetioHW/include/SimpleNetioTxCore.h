@@ -9,7 +9,7 @@
  *********************************/
 
 #include "TxCore.h"
-#include "BitStream.h"
+
 #include "netio/netio.hpp"
 #include "felixbase/client.hpp"
 
@@ -26,23 +26,23 @@ using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::i
  * @brief Simple implementation of the NetIO TxCore.
  * This class creates a single socket connection to Felix.
  * The host and port can be defined with the methods
- * SimpleNetioTxCore::parseJson or SimpleNetioTxCore::parseString. 
- * Enabling and disabling of the read out of a channel is done 
+ * SimpleNetioTxCore::parseJson or SimpleNetioTxCore::parseString.
+ * Enabling and disabling of the read out of a channel is done
  * with the SimpleNetioTxCore::enableChannel SimpleNetioTxCore::disableChannel.
- * Each channel has an independent FIFO that can be addressed with 
- * SimpleNetioTxCore::writeFifo. Commands are sent to the FrontEnd 
+ * Each channel has an independent FIFO that can be addressed with
+ * SimpleNetioTxCore::writeFifo. Commands are sent to the FrontEnd
  * with the SimpleNetioTxCore::releaseFifo methods.
  **/
 
 class SimpleNetioTxCore : virtual public TxCore {
 public:
-		
+
   /**
    * @brief Default constructor.
    * Create NetIO context and low_latency_send_socket.
    **/
   SimpleNetioTxCore();
-  
+
   /**
    * @brief Destructor
    * Join the trigger thread, and close the socket
@@ -51,190 +51,123 @@ public:
 
   /**
    * @brief append to fifo
-   * @param hexStr command as hex string
-   **/
-  void writeFifo(std::string hexStr);
-
-  /**
-   * @brief append to fifo
    * @param value command
    **/
-  void writeFifo(uint32_t value);
+  void writeFifo(uint32_t value) override;
 
-  /**
-   * @brief append to fifo for given channel
-   * @param channel channel (elink)
-   * @param hexStr command as hex string
-   **/
-  void writeFifo(uint32_t channel, std::string hexStr);
-
-  /**
-   * @brief append to fifo for given channel
-   * @param channel channel (elink)
-   * @param value command
-   **/
-  void writeFifo(uint32_t channel, uint32_t value);
-  
   /**
    * @brief release the fifo for all enabled channels
    **/
-  void releaseFifo();
-  
-  /**
-   * @brief release the fifo for all given channel
-   * @param channel channel (elink)
-   **/
-  void releaseFifo(uint32_t channel);
+  void releaseFifo() override;
 
-  /**
-   * @brief release the fifo for all trigger channels
-   **/
-  void releaseFifo(bool trigChns);
-  
- /**
-   * @brief Get Mutex object to lock the core
-   * @return reference to the mutex
-   **/
-  std::mutex & getMutex();
-  
-  /**
-   * @brief enable a given channel (elink)
-   * @param channel channel (elink) to enable
-   **/
-  void enableChannel(uint64_t channel);
-
-  /**
-   * @brief disable a given channel (elink)
-   * @param channel channel (elink) to disable
-   **/
-  void disableChannel(uint64_t channel);
+  void setCmdEnable(uint32_t) override;
+  uint32_t getCmdEnable() override;
 
   /**
    * @brief check if the fifo of commands is empty
    * @return bool true if fifo is empty
    **/
-  bool isCmdEmpty();
+  bool isCmdEmpty() override;
 
   /**
    * @brief enable the trigger
    * @param value value of the trigger
    **/
-  void setTrigEnable(uint32_t value);
-  
+  void setTrigEnable(uint32_t value) override;
+
   /**
    * @brief get if the trigger is enabled
    * @return uint32_t get trigger enable
    **/
-  uint32_t getTrigEnable();
-  
-  /**
-   * @brief enable a trigger channel
-   * @param channel channel (elink) to enable
-   * @param enable bool enable or disable
-   **/
-  void setTrigChannel(uint64_t channel, bool enable);
+  uint32_t getTrigEnable() override;
+
+  void maskTrigEnable(uint32_t value, uint32_t mask) override;
 
   /**
    * @brief check if the trigger is done
    * @return bool is trigger done
    **/
-  bool isTrigDone();
-  
+  bool isTrigDone() override;
+
   /**
    * @brief set the trigger config
    * @param cfg TRIG_CONF_VALUE config value
    **/
-  void setTrigConfig(enum TRIG_CONF_VALUE cfg);
-  
+  void setTrigConfig(enum TRIG_CONF_VALUE cfg) override;
+
   /**
    * @brief set the trigger frequency
    * @param freq frequency in Hz
    **/
-  void setTrigFreq(double freq); 
-  
+  void setTrigFreq(double freq) override;
+
   /**
    * @param count the number of desired triggers
    **/
-  void setTrigCnt(uint32_t count);
-  
-  /**
-   * @return uint32_t count number of desired triggers
-   **/
-  uint32_t getTrigCnt();
-  
+  void setTrigCnt(uint32_t count) override;
+
   /**
    * @param time the duration of the trigger in seconds
    **/
-  void setTrigTime(double time);
-  
-  /**
-   * @return get the trigger duration in seconds
-   **/
-  double getTrigTime();
-  
+  void setTrigTime(double time) override;
+
   /**
    * @param length length of the trigger word starting at MSB
    **/
-  void setTrigWordLength(uint32_t length);
-  
+  void setTrigWordLength(uint32_t length) override;
+
   /**
    * @param word pointer to trigger words
    * @param size the number of words
    **/
-  void setTrigWord(uint32_t *word, uint32_t size); 
-  
+  void setTrigWord(uint32_t *word, uint32_t size) override;
+
   /**
    * @brief abort the trigger
    **/
-  void toggleTrigAbort();
-  
+  void toggleTrigAbort() override;
+
   /**
    * @brief set the trigger logic mask
    * @param mask mask of the trigger logic
    **/
-  void setTriggerLogicMask(uint32_t mask);
-  
+  void setTriggerLogicMask(uint32_t mask) override;
+
   /**
    * @brief set the trigger logic mode
    * @param mode TRIG_LOGIC_MODE_VALUE trigger logic mode
    **/
-  void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode);
-  
+  void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) override;
+
   /**
    * @brief reset the trigger logic
    **/
-  void resetTriggerLogic();
-  
+  void resetTriggerLogic() override;
+
   /**
    * @brief get the number of input triggers
    * @return uint32_t the number of trigger counts
    **/
-  uint32_t getTrigInCount();
-  
-  /**
-   * @brief Enable/Disable the verbose mode
-   * @param enable bool the new state
-   **/
-  void setVerbose(bool enable);
-  
+  uint32_t getTrigInCount() override;
+
   /**
    * @brief read configuration from json
    * @param j reference to json
    **/
   void fromFileJson(json& j);
-  
+
   /**
    * @brief read configuration from string
    * @param s string configuration to decode
    **/
   void fromString(std::string s);
-  
+
   /**
    * @brief write configuration to json
    * @param j reference to json
    **/
   void toFileJson(json& j);
-  
+
   /**
    * @brief write configuration to string
    * @param s string path
@@ -248,7 +181,7 @@ private:
   bool m_trigEnabled;                        //! trigger is enabled
   uint32_t m_trigMode;                       //! trigger mode
   uint32_t m_trigMask;                       //! trigger mask
-  uint32_t m_enableMask;                     //! enable mask   
+  uint32_t m_enableMask;                     //! enable mask
   uint32_t m_trigCnt;                        //! number of triggers
   uint32_t m_trigTime;                       //! trigger time
   uint32_t m_trigFreq;                       //! trigger frequency
@@ -265,12 +198,16 @@ private:
   std::thread m_trigProc;                    //! trigger thread
   std::mutex m_mutex;
 
-  BitStream m_fifoBits;
-
   void connect();
   void doTriggerCnt();                       //! loop for a fixed number of triggers
   void doTriggerTime();                      //! loop to trigger during a time slot
-  void printFifo(); 
+  void printFifo();
+
+  void releaseFifo(bool trigChns);
+
+  void enableChannel(uint64_t channel);
+  void disableChannel(uint64_t channel);
+
   uint32_t m_elinkSize;
   bool m_padding;
   bool m_flip;

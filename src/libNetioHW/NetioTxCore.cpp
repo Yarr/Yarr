@@ -4,13 +4,14 @@
 #include <iostream>
 #include <iomanip>
 #include <chrono>
-#include "NetioFei4Records.h"
+
 #include "felixbase/client.hpp"
 
 using namespace std;
 using namespace netio;
 
-NetioTxCore::NetioTxCore() : m_nioh{NetioHandler::getInstance()} {
+NetioTxCore::NetioTxCore()
+{
   m_enableMask = 0;
   m_trigEnabled = false;
   m_trigWordLength = 4;
@@ -35,10 +36,6 @@ NetioTxCore::~NetioTxCore(){
   if(m_socket->is_open()) m_socket->disconnect();
   delete m_socket;
   delete m_context;
-}
-
-mutex & NetioTxCore::getMutex(){
-  return m_mutex;
 }
 
 void NetioTxCore::connect(){
@@ -69,12 +66,21 @@ void NetioTxCore::disableChannel(uint64_t elink){
   //if(m_verbose) cout << "Disable TX elink: 0x" << hex << elink << dec << endl;
 }
 
-void NetioTxCore::writeFifo(std::string hexStr){
-  if(m_debug) cout << "NetioTxCore::writeFifo str=0x" << hex << hexStr << dec << endl;
-  map<uint64_t,bool>::iterator it;
+void NetioTxCore::setCmdEnable(uint32_t mask) {
+  for(int chan; chan<32; chan++) {
+    if((1<<chan) & mask) {
+      enableChannel(chan);
+    } else {
+      disableChannel(chan);
+    }
+  }
+}
 
-  for(it=m_elinks.begin();it!=m_elinks.end();it++){
-    writeFifo(it->first,hexStr);
+uint32_t NetioTxCore::getCmdEnable() {
+  uint32_t mask = 0;
+  for(auto it=m_elinks.begin();it!=m_elinks.end();it++) {
+    auto link = it->second;
+    mask |= 1<<link;
   }
 }
 
@@ -84,17 +90,6 @@ void NetioTxCore::writeFifo(uint32_t value){
 
   for(it=m_elinks.begin();it!=m_elinks.end();it++){
     writeFifo(it->first,value);
-  }
-}
-
-void NetioTxCore::writeFifo(uint32_t chn, std::string hexStr){
-  if(m_debug) cout << "NetioTxCore::writeFifo chn=" << chn << " str=0x" << hex << hexStr << dec << endl;
-  uint64_t elink=chn;
-  m_fifoBits.Clear();
-  m_fifoBits.FromHex(hexStr);
-  m_fifoBits.Pack();
-  for (uint32_t i=0; i<m_fifoBits.GetSize(); ++i){
-    writeFifo(elink,m_fifoBits.GetWord(i));
   }
 }
 
@@ -163,40 +158,6 @@ void NetioTxCore::prepareFifo(vector<uint8_t> *fifo){
       fifo->at(i) = (tmp&0xCC && clk) | (tmp&0x33 && !clk);
     }
   }
-
-}
-
-void NetioTxCore::releaseFifo(uint32_t chn){
-  uint64_t elink=chn;
-
-  if(m_debug) cout << "NetioTxCore::releaseFifo chn=" << chn << endl;
-
-  //try to connect
-  connect();
-
-  //pad and flip
-  prepareFifo(&m_fifo[elink]);
-  if(m_debug) printFifo(elink);
-  
-  //prepare the data
-  m_headers[elink].elinkid=elink;
-  m_headers[elink].length=m_fifo[elink].size();
-  m_data.push_back((uint8_t*)&(m_headers[elink]));
-  m_size.push_back(sizeof(felix::base::ToFELIXHeader));
-  m_data.push_back((uint8_t*)&m_fifo[elink][0]);
-  m_size.push_back(m_fifo[elink].size());	
-
-  if(m_debug) cout << "m_data size " << m_data.size() << " " << "fifo size " << m_fifo[elink].size() << endl;
-
-  //create the netio message
-  message msg(m_data,m_size);
-  //Send through the socket
-  m_socket->send(msg);
-
-  m_fifo[elink].clear();
-  m_size.clear(); 
-  m_data.clear();
-
 }
 
 void NetioTxCore::releaseFifo(){
@@ -305,8 +266,15 @@ uint32_t NetioTxCore::getTrigEnable(){
   return m_trigEnabled;
 }
 
-void NetioTxCore::setTrigChannel(uint64_t elink, bool enable){
-  m_trigElinks[elink]=enable;
+void NetioTxCore::maskTrigEnable(uint32_t value, uint32_t mask) {
+  for(int chn=0; chn<32; chn++) {
+    if(!((1<<chn) & mask)) continue;
+
+    bool enable = (1<<chn) & value;
+    tag elink = chn*2;
+    if(enable) m_trigElinks[elink]=chn;  
+    else m_trigElinks.erase(elink);
+  }
 }
 
 void NetioTxCore::toggleTrigAbort(){
@@ -331,16 +299,8 @@ void NetioTxCore::setTrigCnt(uint32_t count){
   m_trigCnt = count;
 }
 
-uint32_t NetioTxCore::getTrigCnt(){
-  return m_trigCnt;
-}
-
 void NetioTxCore::setTrigTime(double time){
   m_trigTime = time;
-}
-
-double NetioTxCore::getTrigTime(){
-  return m_trigTime;
 }
 
 void NetioTxCore::setTrigWordLength(uint32_t length){
@@ -429,10 +389,6 @@ void NetioTxCore::printFifo(uint64_t elink){
     cout << setfill('0') << setw(2) << (uint32_t)(m_fifo[elink][i]&0xFF);
   }
   cout << dec << endl;
-}
-
-void NetioTxCore::setVerbose(bool enable){
-  m_verbose = enable;
 }
 
 void NetioTxCore::toString(string &s) {}

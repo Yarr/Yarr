@@ -34,7 +34,7 @@ public:
    * @brief Default constructor
    * Initialize the netio context and start statistics thread
    **/
-  NetioRxCore();
+  NetioRxCore(NetioHandler &);
   
   /**
    * @brief Default destructor
@@ -42,66 +42,28 @@ public:
    **/
   ~NetioRxCore();
   
-  //! setRxEnable
-  //void setRxEnable(uint32_t val);
-  
-  /**
-   * @brief enable channel
-   * @param chn the channel (elink) to enable
-   * Add the channel to the NetioHandler.
-   * Add channel to elink map.
-   **/
-  void enableChannel(uint64_t chn);
-  
-  /**
-   * @brief disable channel
-   * @param chn the channel (elink) to disable
-   * Remove channel from elink map.
-   **/
-  void disableChannel(uint64_t chn);
-  
-  /**
-   * @brief read data
-   * @param chn channel (elink) to read-out
-   * Read all the data available in given channel
-   **/
-  RawData* readData(uint64_t chn);
+  void setRxEnable(uint32_t val) override;
+  void maskRxEnable(uint32_t val, uint32_t mask) override;
 
-  /**
-   * @brief read all data available in this netio socket
-   * @return RawDataContainer pointer containing the 
-   *         RawData for each enabled channel
-   **/ 
-  RawDataContainer* readAllData();
-        
+  RawData* readData() override;
+
   /**
    * @brief get rate of events
    * @return number of events read counted by the statistics thread
    **/
-  uint32_t getDataRate();
+  uint32_t getDataRate() override;
 
   /**
    * @brief get the estimated size of the first queue
    * @return the size of the first queue in bytes
    **/
-  uint32_t getCurCount();
+  uint32_t getCurCount() override;
 
   /**
    * @brief check if the NetioHandler is not receiving data still
    * @return true if the NetioHanlder is not receiving data
    **/
-  bool isDataReady();
-  
-  /**
-   * @brief Start checking the queues in NetioHandler
-   **/
-  void connect();
-
-  /**
-   * @brief enable or disable the verbose mode
-   * @param enable boolean value
-   **/
-  void setVerbose(bool enable);
+  bool isBridgeEmpty() override;
 
   /**
    * @brief write configuration to string
@@ -132,6 +94,9 @@ public:
   void fromFileJson(json &j);
 
 private:
+
+  void enableChannel(uint64_t chn);
+  void disableChannel(uint64_t chn);
 
   std::string m_felixhost;          //! felix hostname
   uint16_t m_felixport;             //! felix port for reading

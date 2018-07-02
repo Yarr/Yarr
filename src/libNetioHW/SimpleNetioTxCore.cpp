@@ -36,10 +36,6 @@ SimpleNetioTxCore::~SimpleNetioTxCore(){
   delete m_context;
 }
 
-mutex & SimpleNetioTxCore::getMutex(){
-  return m_mutex;
-}
-
 void SimpleNetioTxCore::connect(){
   if(!m_socket->is_open()){
     try{
@@ -63,21 +59,22 @@ void SimpleNetioTxCore::disableChannel(uint64_t chn){
   //if(m_verbose) cout << "Disable TX elink: 0x" << hex << elink << dec << endl;
 }
 
-void SimpleNetioTxCore::writeFifo(uint32_t chn, std::string hexStr){
-
-}
-
-void SimpleNetioTxCore::writeFifo(std::string hexStr){
-  m_fifoBits.Clear();
-  m_fifoBits.FromHex(hexStr);
-  m_fifoBits.Pack();
-  for (uint32_t i=0; i<m_fifoBits.GetSize(); ++i){
-    writeFifo(m_fifoBits.GetWord(i));
+void SimpleNetioTxCore::setCmdEnable(uint32_t mask) {
+  for(int chan; chan<32; chan++) {
+    if((1<<chan) & mask) {
+      enableChannel(chan);
+    } else {
+      disableChannel(chan);
+    }
   }
 }
 
-void SimpleNetioTxCore::writeFifo(uint32_t chn, uint32_t value){
-
+uint32_t SimpleNetioTxCore::getCmdEnable() {
+  uint32_t mask = 0;
+  for(auto it=m_elinks.begin();it!=m_elinks.end();it++) {
+    auto link = it->second;
+    mask |= 1<<link;
+  }
 }
 
 void SimpleNetioTxCore::writeFifo(uint32_t value){
@@ -105,9 +102,6 @@ void SimpleNetioTxCore::writeFifo(uint32_t value){
   //auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(stop-start);
   //std::cout << "FIFO write in " << milliseconds.count() << "ms\n";
 }
-
-void SimpleNetioTxCore::releaseFifo(uint32_t chn){}
-
 
 void SimpleNetioTxCore::releaseFifo(){
   releaseFifo(false);
@@ -221,10 +215,15 @@ uint32_t SimpleNetioTxCore::getTrigEnable(){
   return m_trigEnabled;
 }
 
-void SimpleNetioTxCore::setTrigChannel(uint64_t chn, bool enable){
-  tag elink = chn*2;
-  if(enable) m_trigChns[elink]=chn;  
-  else m_trigChns.erase(elink);
+void SimpleNetioTxCore::maskTrigEnable(uint32_t value, uint32_t mask) {
+  for(int chn=0; chn<32; chn++) {
+    if(!((1<<chn) & mask)) continue;
+
+    bool enable = (1<<chn) & value;
+    tag elink = chn*2;
+    if(enable) m_trigChns[elink]=chn;  
+    else m_trigChns.erase(elink);
+  }
 }
 
 void SimpleNetioTxCore::toggleTrigAbort(){
@@ -248,16 +247,8 @@ void SimpleNetioTxCore::setTrigCnt(uint32_t count){
   m_trigCnt = count;
 }
 
-uint32_t SimpleNetioTxCore::getTrigCnt(){
-  return m_trigCnt;
-}
-
 void SimpleNetioTxCore::setTrigTime(double time){
   m_trigTime = time;
-}
-
-double SimpleNetioTxCore::getTrigTime(){
-  return m_trigTime;
 }
 
 void SimpleNetioTxCore::setTrigWordLength(uint32_t length){
@@ -329,10 +320,6 @@ void SimpleNetioTxCore::printFifo(){
     cout << setfill('0') << setw(2) << (uint32_t)(m_fifo[i]&0xFF);
   }
   cout << dec << endl;
-}
-
-void SimpleNetioTxCore::setVerbose(bool enable){
-  m_verbose = enable;
 }
 
 void SimpleNetioTxCore::toString(string &s) {}

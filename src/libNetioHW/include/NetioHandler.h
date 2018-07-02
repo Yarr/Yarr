@@ -23,13 +23,6 @@
 class NetioHandler
 {
 public:
-  // Singleton
-  static NetioHandler& getInstance(){
-    static NetioHandler myInstance;
-    // Return a reference to our instance.
-    return myInstance;
-  }
-
   // Prevent copying and moving.
   NetioHandler(NetioHandler const&) = delete;             // Copy construct
   NetioHandler(NetioHandler&&) = delete;                  // Move construct
@@ -57,12 +50,11 @@ public:
   void setFelixRXPort(uint16_t felixRXPort){m_felixRXPort=felixRXPort;}
   void setFelixTXPort(uint16_t felixTXPort){m_felixTXPort=felixTXPort;}
 
-protected:
-  // Singleton mode
+public:
   NetioHandler(std::string contextStr, std::string felixHost, 
                uint16_t felixTXPort, uint16_t felixRXPort,
                size_t queueSize, bool verbose); 
-  NetioHandler();
+
   ~NetioHandler();
 
 private:

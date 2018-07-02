@@ -1,13 +1,6 @@
 #include "NetioHandler.h"
+
 #include "NetioFei4Records.h"
-
-//NetioHandler::NetioHandler() : NetioHandler("posix", "lhepat25-atlas-felix", 12340, 12345, 10000000, true)
-//{
-//}
-
-NetioHandler::NetioHandler() : NetioHandler("posix", "pcatlidros01.cern.ch", 12340, 12345, 50000000, true)
-{
-}
 
 NetioHandler::NetioHandler(std::string contextStr="posix", std::string felixHost="localhost",
                uint16_t felixTXPort=12340, uint16_t felixRXPort=12345,

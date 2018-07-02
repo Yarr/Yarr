@@ -18,46 +18,30 @@
 #include <mutex>
 
 #include "json.hpp"
+
 using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 
 class SimpleNetioRxCore : virtual public RxCore {
 public:
-  
+
   //! Constructor
   SimpleNetioRxCore();
-  
+
   //! Destructor
   ~SimpleNetioRxCore();
-  
-  //! enable channel
-  void enableChannel(uint64_t chn);
-  
-  //! disable channel
-  void disableChannel(uint64_t chn);
-  
-  //! read data
-  RawData* readData(uint64_t chn);
 
-  //! read all data available
-  RawDataContainer* readAllData();
-        
+  void setRxEnable(uint32_t val) override;
+  void maskRxEnable(uint32_t val, uint32_t mask) override;
+
+  RawData* readData() override;
+
   //! getDataRate
-  uint32_t getDataRate();
+  uint32_t getDataRate() override;
 
   //! getCurCount
-  uint32_t getCurCount();
+  uint32_t getCurCount() override;
 
-  //! isBridgeEmpty = isDataReady
-  bool isDataReady();
-
-  //! flushQueues = flush
-  void flush();
-  
-  //! startChecking
-  void connect();
-
-  //! setVerbose
-  void setVerbose(bool enable);
+  bool isBridgeEmpty() override;
 
   // Configuration
   void toString(std::string &s);
@@ -77,8 +61,16 @@ private:
   netio::context * m_context;
   netio::low_latency_subscribe_socket * m_socket;
   void decode(netio::endpoint& ep, netio::message& msg);
-  
-  
+
+  //! read data
+  RawData* readData(uint64_t chn);
+
+  //! enable channel
+  void enableChannel(uint64_t chn);
+
+  //! disable channel
+  void disableChannel(uint64_t chn);
+
   std::thread m_bgthread;
   std::chrono::steady_clock::time_point m_t0;
   double m_rate;
