@@ -1,4 +1,4 @@
-#include "NetioHW/NetioTools.h"
+#include "NetioTools.h"
 #include <iostream>
 
 using namespace std;

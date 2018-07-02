@@ -1,5 +1,5 @@
-#include "NetioHW/NetioHandler.h"
-#include "NetioHW/NetioFei4Records.h"
+#include "NetioHandler.h"
+#include "NetioFei4Records.h"
 
 //NetioHandler::NetioHandler() : NetioHandler("posix", "lhepat25-atlas-felix", 12340, 12345, 10000000, true)
 //{

@@ -1,6 +1,7 @@
-#include "NetioHW/NetioRxCore.h"
-#include "NetioHW/NetioTools.h"
-#include "NetioHW/NetioFei4Records.h"
+#include "NetioRxCore.h"
+#include "NetioTools.h"
+#include "NetioFei4Records.h"
+
 #include <iomanip>
 #include "felixbase/client.hpp"
 

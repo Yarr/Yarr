@@ -1,10 +1,10 @@
-#include "NetioHW/NetioTxCore.h"
-#include "NetioHW/NetioTools.h"
+#include "NetioTxCore.h"
+#include "NetioTools.h"
 #include <cstdint>
 #include <iostream>
 #include <iomanip>
 #include <chrono>
-#include "NetioHW/NetioFei4Records.h"
+#include "NetioFei4Records.h"
 #include "felixbase/client.hpp"
 
 using namespace std;
