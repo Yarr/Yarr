@@ -1,21 +1,11 @@
-#include "NetioHW/BitStream.h"
-#include <cmdl/cmdargs.h>
+#include "BitStream.h"
+
 #include <iostream>
 #include <iomanip>
 
 using namespace std;
 
 int main(int argc, char** argv){
-
-  /*CmdArgInt clink ('e',(const char*)"link", (const char*)"link",(const char*)"link");
-  
-  CmdLine cmdl(*argv,&clink, NULL);
-  CmdArgvIter arg_iter(argc-1,argv+1);
-
-  clink = 0;
-
-  cmdl.parse(arg_iter);
-  */
 
   cout << "Create BitStream" << endl;
   BitStream * cmd = new BitStream();

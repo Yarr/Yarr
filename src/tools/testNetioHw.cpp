@@ -1,14 +1,22 @@
-#include "NetioHW/NetioTxCore.h"
-#include "NetioHW/NetioRxCore.h"
+#include "NetioTxCore.h"
+#include "NetioRxCore.h"
+#include "AllHwControllers.h"
 #include "BitStream.h"
 #include "RawData.h"
-#include <cmdl/cmdargs.h>
+#include "HwController.h"
+
 #include <iostream>
 #include <map>
 #include <iomanip>
 #include <sstream>
 
+#include "json.hpp"
+
+using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+
 using namespace std;
+
+static void printHelp();
 
 uint32_t readConfig(TxCore * txcore, RxCore * rxcore, uint32_t addr){
   uint32_t rdreg = 0x5A0600 | addr;
@@ -18,13 +26,16 @@ uint32_t readConfig(TxCore * txcore, RxCore * rxcore, uint32_t addr){
     txcore->writeFifo(rdreg);
     txcore->releaseFifo();
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    RawDataContainer * cnt = rxcore->readAllData();
-    if(cnt==NULL){cout << "Timeout." << endl; continue;}
-    for(uint32_t c=0;c<cnt->size();c++){
-      
-      for(uint32_t i=0;i<cnt->words[c];i++){
-        uint32_t hdr=(cnt->buf[c][i]>>16)&0xFF;
-        uint32_t val=(cnt->buf[c][i]&0xFFFF);
+    while(1) {
+      RawData * data = rxcore->readData();
+      if(data == nullptr) {
+        cout << "Timeout." << endl;
+        continue;
+      }
+
+      for(uint32_t i=0;i<data->words;i++){
+        uint32_t hdr=(data->buf[i]>>16)&0xFF;
+        uint32_t val=(data->buf[i]&0xFFFF);
         if(hdr==0xEA && val!=addr){
           cout << "Something went wrong1: " << hex 
                << " hdr=" << hdr
@@ -45,51 +56,54 @@ void printConfig(uint32_t addr, uint32_t value){
 }
 
 int main(int argc, char** argv){
+  std::string chost = "localhost";
+  int cetx = 0;
+  int cerx = 0;
+  int chid = 8;
+  int cptx = 12340;
+  int cprx = 12345;
+  bool verbose = false;
 
-  CmdArgStr chost ('H',"host","host","host (localhost)");
-  CmdArgInt cptx  ('T',"txport","port","TX port number (12340)");
-  CmdArgInt cprx  ('R',"rxport","port","RX port number (12345)");
-  CmdArgInt cetx  ('t',"txelink","elink","TX e-link number (0)");
-  CmdArgInt cerx  ('r',"rxelink","elink","RX e-link number (0)");
-  CmdArgInt chid  ('c',"chipid","chipid","Chip ID (8)");
-  CmdArgBool verbose ('v',"verbose","enable verbose mode");
-  
-  CmdLine cmdl(*argv,&chost,&cptx,&cprx,&cetx,&cerx,&chid,&verbose, NULL);
-  CmdArgvIter arg_iter(argc-1,argv+1);
+  int c;
+  while ((c = getopt(argc, argv, "H:T:R:t:r:c:vh")) != -1) {
+    switch(c) {
+    case 'H': chost = std::string(optarg); break;
+    case 'T': cptx = atoi(optarg); break;
+    case 'R': cprx = atoi(optarg); break;
+    case 't': cetx = atoi(optarg); break;
+    case 'r': cerx = atoi(optarg); break;
+    case 'c': chid = atoi(optarg); break;
+    case 'v': verbose = true; break;
+    case 'h': printHelp(); return 0;
+    default: std::cout << "Error parsing command line\n"; return -1;
+    }
+  }
 
-  chost = "localhost";
-  cetx = 0;
-  cerx = 0;
-  chid = 8;
-  cptx = 12340;
-  cprx = 12345;
-  
-  cmdl.parse(arg_iter);
+  json j;
+  j["NetIO"]["host"] = chost;
+  j["NetIO"]["txport"] = cptx;
+  j["NetIO"]["rxport"] = cprx;
 
-  ostringstream os;
-  os << chost << ":" << cptx;
-  string txcfg = os.str();
-  os.str("");
-  os << chost << ":" << cprx;
-  string rxcfg = os.str();
-  os.str("");
+  cout << "Create NetIO with options\n";
+  cout << j << endl;
 
-  cout << "Create RxCore" << endl;
-  RxCore * rxcore = new NetioRxCore();
-  rxcore->setVerbose(verbose);
-  rxcore->fromString(rxcfg);
+  std::unique_ptr<HwController> hw = StdDict::getHwController("Netio");
+  // new NetioController;
+  hw->loadConfig(j);
+
+  RxCore * rxcore = static_cast<RxCore*>(&*hw);
+  //  rxcore->setVerbose(verbose);
 
   cout << "Enable rx e-link: " << cerx << endl;
-  rxcore->enableChannel(cerx);
+  rxcore->setRxEnable(1<<cerx);
 
   cout << "Create TxCore" << endl;
-  TxCore * txcore = new NetioTxCore();
-  txcore->setVerbose(verbose);
-  txcore->fromString(txcfg);
+  TxCore * txcore = static_cast<TxCore*>(&*hw);
+  //txcore->setVerbose(verbose);
 
   cout << "Enable tx e-link: " << cetx << endl;
-  txcore->enableChannel(cetx);
-  txcore->setTrigChannel(cetx,true);
+  txcore->setCmdEnable(1<<cetx);
+  txcore->setTrigEnable(1<<cetx);
   
   cout << "Enable CFG" << endl;
   txcore->writeFifo(0x5A2A07);
@@ -356,7 +370,7 @@ int main(int argc, char** argv){
   cout << "Read-out" << endl;
   RawDataContainer datav;
   do{
-	RawData * data = rxcore->readData(cerx);
+	RawData * data = rxcore->readData();
 	if(data==NULL){std::this_thread::sleep_for(std::chrono::milliseconds(100));cout<<"."<<flush;continue;}
 	datav.add(data);
 	cout << "Event " << datav.size() << endl;
@@ -369,9 +383,21 @@ int main(int argc, char** argv){
   }
   
   cout << "Clean the house" << endl;
-  delete rxcore;
-  delete txcore;
+  // delete rxcore;
+  // delete txcore;
 
   cout << "Have a nice day" << endl;
   return 0;
+}
+
+void printHelp() {
+  std::cout << "Help:\n";
+  std::cout << "  -H  host  server hostname (locahost)\n";
+  std::cout << "  -T  txport  TX port number (12340)\n";
+  std::cout << "  -R  rxport  RX port number (12345)\n";
+  std::cout << "  -t  tx-elink  TX elink number (0)\n";
+  std::cout << "  -r  rx-elink  RX elink number (0)\n";
+  std::cout << "  -r  rx-elink  RX elink number (0)\n";
+  std::cout << "  -c  chipid    Chip ID (8)\n";
+  std::cout << "  -v      Set verbose mode\n";
 }

@@ -1,40 +1,51 @@
-#include "NetioHW/NetioRxCore.h"
-#include "NetioHW/NetioTxCore.h"
+#include "AllHwControllers.h"
 #include "BitStream.h"
 #include "RawData.h"
-#include <cmdl/cmdargs.h>
 
 #include <iostream>
 #include <sstream>
 #include <fstream>
 #include <chrono>
-#include <time.h>
+#include <thread>
+
+#include <unistd.h>
 
 using namespace std;
 
 int main(int argc, char** argv){
+  int clink = 0;
+  std::string cfile = "";
 
-  CmdArgInt clink ('e',(const char*)"link", (const char*)"link",(const char*)"link");
-  CmdArgStr cfile ('f',(const char*)"file", (const char*)"file",(const char*)"file");
-  CmdLine cmdl(*argv,&clink,&cfile, NULL);
-  CmdArgvIter arg_iter(argc-1,argv+1);
-  cfile = "";
-  clink = 0;
-  cmdl.parse(arg_iter);
+  int c;
+  while ((c = getopt(argc, argv, "e:f:")) != -1) {
+    switch(c) {
+    case 'e':
+      clink = stoi(std::string(optarg));
+      break;
+    case 'f':
+      cfile = std::string(optarg);
+      break;
 
-  cout << "Create RxCore" << endl;
-  RxCore * rxcore = new NetioRxCore();
+    default:
+      std::cerr << "-> Error while parsing command line parameters!" << std::endl;
+      return -1;
+    }
+  }
+
+  std::unique_ptr<HwController> hw = StdDict::getHwController("Netio");
+
+  cout << "Create NetIO" << endl;
+
+  RxCore * rxcore = &*hw;;
 
   cout << "Enable rx channel: " << clink << endl;
-  rxcore->enableChannel(clink);
+  rxcore->setRxEnable(1<<clink);
 
-  cout << "Create TxCore" << endl;
-  TxCore * txcore = new NetioTxCore();
+  TxCore * txcore = &*hw;
 
   cout << "Enable tx channel: " << clink << endl;
-  txcore->enableChannel(clink);
-  txcore->setTrigChannel(clink,true);
-
+  txcore->setCmdEnable(1<<clink);
+  //  txcore->setTrigChannel(clink,true);
 
   BitStream cmd;
 
@@ -82,7 +93,8 @@ int main(int argc, char** argv){
     endtime = curtime + 1;
 
     while (curtime < endtime){
-	  RawData * data = rxcore->readData(clink);
+	  RawData * data = rxcore->readData();
+          // Check which place it came from? (clink?)
 	  if(data==NULL){std::this_thread::sleep_for(std::chrono::milliseconds(100));cout<<"."<<flush;continue;}
 	  for(uint32_t i=0;i<data->words;i++){
 		cout << hex << data->buf[i] << dec << endl;
@@ -98,11 +110,6 @@ int main(int argc, char** argv){
 		   << "BCID: "<< (datav.buf[i][0]&0x3FF) << endl;
 	}
 	
-  
-
-  delete rxcore;
-  delete txcore;
   cout << "Have a nice day" << endl;
   return 0;
-
 }
