@@ -15,6 +15,7 @@ Fei4TriggerLoop::Fei4TriggerLoop() : LoopActionBase() {
     m_trigWord[1] = TRIG_CMD;
     m_trigWord[2] = 0x00;
     m_trigWord[3] = CAL_CMD;
+    m_trigWordLength = 4;
     m_noInject = false;
     m_extTrigger = false;
     isInner = false;
