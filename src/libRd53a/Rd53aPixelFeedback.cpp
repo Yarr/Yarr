@@ -17,12 +17,16 @@ Rd53aPixelFeedback::Rd53aPixelFeedback() {
     loopType = typeid(this);
     m_done = false;
     verbose = false;
+    tuneLin = true;
+    tuneDiff = true;
 }
 
 void Rd53aPixelFeedback::writeConfig(json &j) {
     j["min"] = min;
     j["max"] = max;
     j["step"] = step;
+    j["tuneDiff"] = tuneDiff;
+    j["tuneLin"] = tuneLin;
 }
 
 void Rd53aPixelFeedback::loadConfig(json &j) {
@@ -32,6 +36,10 @@ void Rd53aPixelFeedback::loadConfig(json &j) {
         max = j["max"];
     if (!j["step"].empty())
         step = j["step"];
+    if (!j["tuneDiff"].empty())
+        tuneDiff = j["tuneDiff"];
+    if (!j["tuneLin"].empty())
+        tuneLin = j["tuneLin"];
 }
 
 void Rd53aPixelFeedback::feedback(unsigned channel, Histo2d *h) {
@@ -48,13 +56,17 @@ void Rd53aPixelFeedback::feedback(unsigned channel, Histo2d *h) {
 
 void Rd53aPixelFeedback::addFeedback(unsigned ch) {
     if (m_fb[ch] != NULL) {
+        int linCnt = 0;
+        int diffCnt = 0;
         for (unsigned row=1; row<=Rd53a::n_Row; row++) {
             for (unsigned col=1; col<=Rd53a::n_Col; col++) {
                 int sign = m_fb[ch]->getBin(m_fb[ch]->binNum(col, row));
                 int v = dynamic_cast<Rd53a*>(keeper->getFe(ch))->getTDAC(col-1, row-1);
-                if (col<265) {
+                if (128<col && col<=264 && tuneLin) {
+                    linCnt++;
                     v = v + (step*sign);
-                } else {
+                } else if (264<col && tuneDiff) {
+                    diffCnt++;
                     v = v + (step*sign*-1);
                 }
                 if (v<min) v = min;
@@ -62,6 +74,8 @@ void Rd53aPixelFeedback::addFeedback(unsigned ch) {
                 dynamic_cast<Rd53a*>(keeper->getFe(ch))->setTDAC(col-1, row-1, v);
             }
         }
+        std::cout << "Modified " << linCnt << " lin FE pixels!" << std::endl;
+        std::cout << "Modified " << diffCnt << " diff FE pixels!" << std::endl;
     }
 }
 
@@ -73,27 +87,32 @@ void Rd53aPixelFeedback::writePixelCfg(Rd53a *fe) {
 }
 
 void Rd53aPixelFeedback::init() {
-    if (verbose)
+    if (1)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     m_done = false;
     m_cur = 0;
     oldStep = step;
     // Init maps
-    std::cout << "Starting at TDAC = " << ceil(sqrt((max*max)-(min*min))/2.0) << std::endl;
     for (auto *fe : keeper->feList) {
         if (fe->getActive()) {
             unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
             m_fb[ch] = NULL;
+            int linCnt = 0;
+            int diffCnt = 0;
             for (unsigned col=1; col<=Rd53a::n_Col; col++) {
                 for (unsigned row=1; row<=Rd53a::n_Row; row++) {
                     //Initial TDAC in mid of the range
-                    if (col <=264) {
+                    if (128<col && col<=264 && tuneLin) {
                         dynamic_cast<Rd53a*>(keeper->getFe(ch))->setTDAC(col-1, row-1, 7);
-                    } else {
+                        linCnt++;
+                    } else if (264<col && tuneDiff) {
                         dynamic_cast<Rd53a*>(keeper->getFe(ch))->setTDAC(col-1, row-1, 0);
+                        diffCnt++;
                     }
                 }
             }
+            std::cout << "Reset " << linCnt << " lin FE pixels!" << std::endl;
+            std::cout << "Reset " << diffCnt << " diff FE pixels!" << std::endl;
         }
                 
     }
@@ -120,9 +139,7 @@ void Rd53aPixelFeedback::execPart2() {
         }
     }
     // Execute last step twice to get full range
-    //if (step == 1 && oldStep == 1)
-    //if (step == 1)
-    if (m_cur == 4)
+    if (step == 1 && oldStep == 1)
         m_done = true;
     oldStep = step;
     step = step/2;

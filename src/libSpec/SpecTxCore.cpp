@@ -82,7 +82,7 @@ void SpecTxCore::setTrigCnt(uint32_t count) {
   
 void SpecTxCore::setTrigTime(double time) {
     if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Time " << time << " s" <<std::endl;
+        std::cout << __PRETTY_FUNCTION__ << " : Time " << time << " s, period " << m_clk_period <<std::endl;
     uint64_t tmp = (1.0/(double)m_clk_period)*time;
     SpecCom::writeBlock(TX_ADDR | TRIG_TIME, (uint32_t*)&tmp, 2);
 }

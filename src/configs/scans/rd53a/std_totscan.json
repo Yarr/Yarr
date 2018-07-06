@@ -7,7 +7,7 @@
       "1": {
         "algorithm": "OccupancyAnalysis",
         "config": {
-          "createMask": true
+          "createMask": false
         }
       },
       "2": {
@@ -61,7 +61,7 @@
           "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 10000,
+          "frequency": 5000,
           "noInject": false,
           "time": 0
         },
@@ -74,12 +74,8 @@
     "name": "AnalogScan",
     "prescan": {
         "InjEnDig": 0,
-        "InjAnaMode": 1,
         "LatencyConfig": 50,
-        "GlobalPulseRt": 16384,
-        "InjVcalMed": 500,
-        "InjVcalHigh": 2500,
-        "InjVcalDiff": 1200
+        "GlobalPulseRt": 16384
     }
   }
 }

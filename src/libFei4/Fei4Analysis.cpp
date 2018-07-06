@@ -887,9 +887,9 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
         occDist->setYaxisTitle("Number of Pixels");
         for (unsigned i=0; i<fbHisto->size(); i++) {
             double occ = occMaps[ident]->getBin(i);
-            if ((occ/(double)injections) > 0.65) {
+            if ((occ/(double)injections) > 0.7) {
                 fbHisto->setBin(i, -1);
-            } else if ((occ/(double)injections) < 0.35) {
+            } else if ((occ/(double)injections) < 0.3) {
                 fbHisto->setBin(i, +1);
             } else {
                 fbHisto->setBin(i, 0);
