@@ -178,7 +178,8 @@ Example:
     "GlobalPulseRt": 16384
 }
 ```
-Loop actions and the pre scan procdure (specific register settings) are specific to the FrontEnd type and are listed on the respective FrontEnd page:
+The 'prescan' config includes specific FrontEnd registers which are necessary for the scan and overwrite whatever is in the chip config (however these values will not be transferred into the chip config, they only exist for the time of the scan). Register names in the 'prescan' need to match those in the chip configuration.
+Loop actions are specific to the FrontEnd type and are listed on the respective FrontEnd page:
     
 - [RD53A](rd53a)
 - [FE-I4](fei4)
