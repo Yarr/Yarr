@@ -1127,13 +1127,20 @@ void NoiseAnalysis::end() {
     output->pushData(mask);
 }
 
+<<<<<<< HEAD
 void NoiseTuning::init(ScanBase *s) {
     n_count = 1;
+=======
+void ChargeVsTotAnalysis::init(ScanBase *s) {
+    n_count = 1;
+    injections = 1;
+>>>>>>> Modified to use charge vs tot and time walk in Fei4Analysis.cpp
     pixelFb = NULL;
     globalFb = NULL;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
+<<<<<<< HEAD
                 l->type() != typeid(Rd53aMaskLoop*) &&
                 l->type() != typeid(Rd53aTriggerLoop*) &&
                 l->type() != typeid(Rd53aCoreColLoop*) &&
@@ -1144,6 +1151,17 @@ void NoiseTuning::init(ScanBase *s) {
                 l->type() != typeid(Fe65p2QcLoop*) &&
                 l->type() != typeid(Fe65p2TriggerLoop*) &&
                 l->type() != typeid(StdRepeater*)) {
+=======
+                    l->type() != typeid(Rd53aMaskLoop*) &&
+                    l->type() != typeid(Rd53aTriggerLoop*) &&
+                    l->type() != typeid(Rd53aCoreColLoop*) &&
+                    l->type() != typeid(Fe65p2MaskLoop*) &&
+                    l->type() != typeid(Fe65p2TriggerLoop*) &&
+                    l->type() != typeid(Fe65p2QcLoop*) &&
+                    l->type() != typeid(Fei4MaskLoop*) &&
+                    l->type() != typeid(StdDataLoop*) &&
+                    l->type() != typeid(Fei4DcLoop*))) {
+>>>>>>> Modified to use charge vs tot and time walk in Fei4Analysis.cpp
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -1152,6 +1170,7 @@ void NoiseTuning::init(ScanBase *s) {
                 cnt = 1;
             n_count = n_count*cnt;
         }
+<<<<<<< HEAD
     
         std::shared_ptr<LoopActionBase> tmpPrmpFb(new Fei4GlobalFeedback(&Fei4::PrmpVbpf));
         if (l->type() == tmpPrmpFb->type()) {
@@ -1159,19 +1178,44 @@ void NoiseTuning::init(ScanBase *s) {
         }
 
         if (l->type() == typeid(Rd53aGlobalFeedback*)) {
+=======
+
+        if (l->type() == typeid(Fei4TriggerLoop*)) {
+            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
+
+        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
+            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
+        
+        if (l->type() == typeid(Rd53aTriggerLoop*)) {
+            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
+
+        std::shared_ptr<LoopActionBase> tmpPrmpFb(new Fei4GlobalFeedback(&Fei4::PrmpVbpf));
+        if (l->type() == tmpPrmpFb->type()) {
+>>>>>>> Modified to use charge vs tot and time walk in Fei4Analysis.cpp
             globalFb = dynamic_cast<GlobalFeedbackBase*>(l.get());  
         }
 
         if (l->type() == typeid(Fei4PixelFeedback*)) {
+<<<<<<< HEAD
             pixelFb = dynamic_cast<PixelFeedbackBase*>(l.get());  
         }
         
         if (l->type() == typeid(Rd53aPixelFeedback*)) {
             pixelFb = dynamic_cast<PixelFeedbackBase*>(l.get());  
+=======
+            pixelFb = dynamic_cast<PixelFeedbackBase*>(l.get());
+>>>>>>> Modified to use charge vs tot and time walk in Fei4Analysis.cpp
         }
     }
 }
 
+<<<<<<< HEAD
 void NoiseTuning::processHistogram(HistogramBase *h) {
     if (!(h->getType() == typeid(OccupancyMap*)))
         return;
@@ -1182,18 +1226,37 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
     
     // Determine identifier
     std::string name = "OccMap";
+=======
+void ChargeVsTotAnalysis::processHistogram(HistogramBase *h) {
+    // Select correct output container
+    unsigned ident = 0;
+    unsigned offset = 0;
+    // Determine identifier
+    std::string name = "OccMap";
+    std::string name2 = "TotMap";
+    std::string name3 = "Tot2Map";
+>>>>>>> Modified to use charge vs tot and time walk in Fei4Analysis.cpp
     for (unsigned n=0; n<loops.size(); n++) {
         ident += h->getStat().get(loops[n])+offset;
         offset += loopMax[n];
         name += "-" + std::to_string(h->getStat().get(loops[n]));
+<<<<<<< HEAD
     }
 
     
+=======
+        name2 += "-" + std::to_string(h->getStat().get(loops[n]));
+        name3 += "-" + std::to_string(h->getStat().get(loops[n]));
+    }
+
+    // Check if Histogram exists
+>>>>>>> Modified to use charge vs tot and time walk in Fei4Analysis.cpp
     if (occMaps[ident] == NULL) {
         Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
         hh->setZaxisTitle("Hits");
+<<<<<<< HEAD
         innerCnt[ident] = 0;
         occMaps[ident] = hh;
     }
@@ -1242,4 +1305,292 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
 }
 
 void NoiseTuning::end() {
+=======
+        occMaps[ident] = hh;
+        occInnerCnt[ident] = 0;
+        hh = new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        hh->setXaxisTitle("Column");
+        hh->setYaxisTitle("Row");
+        hh->setZaxisTitle("{/Symbol S}(ToT)");
+        totMaps[ident] = hh;
+        totInnerCnt[ident] = 0;
+        hh = new Histo2d(name3, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        hh->setXaxisTitle("Column");
+        hh->setYaxisTitle("Row");
+        hh->setZaxisTitle("{/Symbol S}(ToT^2)");
+        tot2Maps[ident] = hh;
+        tot2InnerCnt[ident] = 0;
+    }
+
+    // Gather Histogram
+    if (h->getType() == typeid(OccupancyMap*)) {
+        occMaps[ident]->add(*(Histo2d*)h);
+        occInnerCnt[ident]++;
+    } else if (h->getType() == typeid(TotMap*)) {
+        totMaps[ident]->add(*(Histo2d*)h);
+        totInnerCnt[ident]++;
+    } else if (h->getType() == typeid(Tot2Map*)) {
+        tot2Maps[ident]->add(*(Histo2d*)h);
+        tot2InnerCnt[ident]++;
+    } else {
+        return;
+    }
+
+    // Got all data, finish up Analysis
+    if (occInnerCnt[ident] == n_count &&
+            totInnerCnt[ident] == n_count &&
+            tot2InnerCnt[ident] == n_count) {
+        Histo2d *meanTotMap = new Histo2d("MeanTotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        meanTotMap->setXaxisTitle("Column");
+        meanTotMap->setYaxisTitle("Row");
+        meanTotMap->setZaxisTitle("Mean ToT [bc]");
+        Histo2d *sumTotMap = new Histo2d("SumTotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        sumTotMap->setXaxisTitle("Column");
+        sumTotMap->setYaxisTitle("Row");
+        sumTotMap->setZaxisTitle("Mean ToT [bc]");
+        Histo2d *sumTot2Map = new Histo2d("MeanTot2Map", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        sumTot2Map->setXaxisTitle("Column");
+        sumTot2Map->setYaxisTitle("Row");
+        sumTot2Map->setZaxisTitle("Mean ToT^2 [bc^2]");
+        Histo2d *sigmaTotMap = new Histo2d("SigmaTotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        sigmaTotMap->setXaxisTitle("Column");
+        sigmaTotMap->setYaxisTitle("Row");
+        sigmaTotMap->setZaxisTitle("Sigma ToT [bc]");
+        Histo1d *meanTotDist = new Histo1d("MeanTotDist_"+std::to_string(ident), 161, -0.05, 16.05, typeid(this));
+        meanTotDist->setXaxisTitle("Mean ToT [bc]");
+        meanTotDist->setYaxisTitle("Number of Pixels");
+        Histo1d *sigmaTotDist = new Histo1d("SigmaTotDist", 101, -0.05, 1.05, typeid(this));
+        sigmaTotDist->setXaxisTitle("Sigma ToT [bc]");
+        sigmaTotDist->setYaxisTitle("Number of Pixels");
+
+        // Histo
+        if (flg == 0) {
+//            Fei4 *fe = dynamic_cast<Fei4*>(bookie->feList[0]);
+//            chargeMin = fe->toCharge(10, true, true);
+//            chargeMax = fe->toCharge(560, true, true);
+//            chargeStep = fe->toCharge(20, true, true)-fe->toCharge(10, true, true);
+            chargeMin = 0;
+            chargeMax = 30000;
+            chargeStep = 1000;
+            chargeVsTotMap = new Histo2d("ChargeVsTotMap", (int)(chargeMax-chargeMin)/chargeStep+1, chargeMin-chargeStep/2, chargeMax+chargeStep/2, 161, -0.05, 16.05, typeid(void));
+            chargeVsTotMap->setXaxisTitle("Injected charge [e]");
+            chargeVsTotMap->setYaxisTitle("Mean ToT");
+            chargeVsTotMap->setZaxisTitle("Pixel");
+            injectedCharge = chargeMin;
+            flg++;
+        }
+        else {
+            injectedCharge += chargeStep;
+        }
+
+        meanTotMap->add(*totMaps[ident]);
+        meanTotMap->divide(*occMaps[ident]);
+        sumTotMap->add(*totMaps[ident]);
+        sumTot2Map->add(*tot2Maps[ident]);
+        for(unsigned i=0; i<meanTotMap->size(); i++) {
+            double sigma = sqrt(fabs((sumTot2Map->getBin(i) - ((sumTotMap->getBin(i)*sumTotMap->getBin(i))/injections))/(injections-1)));
+            sigmaTotMap->setBin(i, sigma);
+            meanTotDist->fill(meanTotMap->getBin(i));
+            sigmaTotDist->fill(sigma);
+        }
+        for (unsigned i=0; i<meanTotDist->size(); i++) {
+            chargeVsTotMap->fill(injectedCharge, -0.05+(i+1)*(16.05+0.05)/161-0.05, log10(meanTotDist->getBin(i)));
+        }
+        x_injectedCharge.push_back(injectedCharge);
+        y_meanTot.push_back(meanTotDist->getMean());
+        y_sigmaTot.push_back(meanTotDist->getStdDev());
+
+        std::cout << "[" << channel << "] ToT Mean = " << meanTotDist->getMean() << " +- " << meanTotDist->getStdDev() << std::endl;
+
+        if (globalFb != NULL) {
+            double mean = 0;
+            for (unsigned i=0; i<meanTotMap->size(); i++)
+                mean += meanTotMap->getBin(i);
+            mean = mean/(double)meanTotMap->size();
+            std::cout << "Mean is: " << mean << std::endl;
+
+            // TODO Get this from somewhere
+            double targetTot = 10.0;
+            int sign = 0;
+            bool last = false;
+            if (mean < (targetTot-0.1)) {
+                sign = -1;
+            } else if (mean > (targetTot+0.1)) {
+                sign = +1;
+            } else {
+                sign = 0;
+                last = true;
+            }
+            globalFb->feedbackBinary(channel, sign, last);
+        }
+
+        if (pixelFb != NULL) {
+            double targetTot = bookie->getTargetTot();
+            Histo2d *fbHisto = new Histo2d("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+            for (unsigned i=0; i<meanTotMap->size(); i++) {
+                int sign = 0;
+                double mean = meanTotMap->getBin(i);
+                if (mean < (targetTot-0.05)) {
+                    sign = -1;
+                } else if (mean > (targetTot+0.05)) {
+                    sign = +1;
+                } else {
+                    sign = 0;
+                }
+                fbHisto->setBin(i, sign);
+            }
+
+            pixelFb->feedback(channel, fbHisto);
+        }
+
+        if ((int)injectedCharge == (int)chargeMax) {
+            chargeVsTotGraph = new GraphErrors("ChargeVsTotGraph", x_injectedCharge.size(), &x_injectedCharge[0], &y_meanTot[0], 0, &y_sigmaTot[0], typeid(void));
+            chargeVsTotGraph->setXaxisTitle("Injected charge [e]");
+            chargeVsTotGraph->setYaxisTitle("mean of Mean ToT");
+            output->pushData(chargeVsTotGraph);
+            output->pushData(chargeVsTotMap);
+        }
+
+
+//        output->pushData(meanTotMap);
+//        output->pushData(sigmaTotMap);
+        output->pushData(meanTotDist);
+//        output->pushData(sigmaTotDist);
+        delete sumTot2Map;
+        delete sumTotMap;
+
+        delete occMaps[ident];
+        delete totMaps[ident];
+        delete tot2Maps[ident];
+        occInnerCnt[ident] = 0;
+        totInnerCnt[ident] = 0;
+        tot2InnerCnt[ident] = 0;
+    }
+}
+
+void TimeWalkAnalysis::init(ScanBase *s) {
+    n_count = 1;
+    injections = 0;
+    std::shared_ptr<LoopActionBase> tmpVcalLoop(new Fei4ParameterLoop(&Fei4::PlsrDAC));
+    std::shared_ptr<LoopActionBase> tmpVcalLoop2(new Fe65p2ParameterLoop(&Fe65p2::PlsrDac));
+    for (unsigned n=0; n<s->size(); n++) {
+        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        if ((l->type() != typeid(Fei4TriggerLoop*) &&
+                l->type() != typeid(Rd53aMaskLoop*) &&
+                l->type() != typeid(Rd53aTriggerLoop*) &&
+                l->type() != typeid(Rd53aCoreColLoop*) &&
+                l->type() != typeid(Fei4MaskLoop*) &&
+                l->type() != typeid(StdDataLoop*) &&
+                l->type() != typeid(Fei4DcLoop*)) &&
+                l->type() != typeid(Fe65p2MaskLoop*) &&
+                l->type() != typeid(Fe65p2QcLoop*) &&
+                l->type() != typeid(Fe65p2TriggerLoop*) &&
+                l->type() != tmpVcalLoop->type() &&
+                l->type() != tmpVcalLoop2->type()) {
+            loops.push_back(n);
+            loopMax.push_back((unsigned)l->getMax());
+        } else {
+            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            if (cnt == 0)
+                cnt = 1;
+            n_count = n_count*cnt;
+        }
+        if (l->type() == typeid(Fei4TriggerLoop*)) {
+            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
+        
+        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
+            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
+        
+        if (l->type() == typeid(Rd53aTriggerLoop*)) {
+            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
+    }
+}
+
+void TimeWalkAnalysis::processHistogram(HistogramBase *h) {
+    // Check if right Histogram
+    if (h->getType() != typeid(L1Dist*))
+        return;
+
+    // Select correct output container
+    unsigned ident = 0;
+    unsigned offset = 0;
+
+    // Determine identifier
+    std::string name = "L1Dist";
+    for (unsigned n=0; n<loops.size(); n++) {
+        ident += h->getStat().get(loops[n])+offset;
+        offset += loopMax[n];
+        name += "-" + std::to_string(h->getStat().get(loops[n]));
+    }
+
+    // Check if Histogram exists
+    if (l1Histos[ident] == NULL) {
+        Histo1d *hh = new Histo1d(name, 16, -0.5, 15.5, typeid(this));
+        hh->setXaxisTitle("L1Id");
+        hh->setYaxisTitle("Hits");
+        l1Histos[ident] = hh;
+        innerCnt[ident] = 0;
+    }
+
+    // Add up Histograms
+    if (h->getType() == typeid(L1Dist*)) {
+        l1Histos[ident]->add(*(Histo1d*)h);
+        innerCnt[ident]++;
+    }
+
+    // Got all data, finish up Analysis
+    if (innerCnt[ident] == n_count) {
+        Histo1d *L1Dist = new Histo1d("L1Dist_"+std::to_string(ident), 16, -0.5, 15.5, typeid(this));
+        L1Dist->setXaxisTitle("L1Id");
+        L1Dist->setYaxisTitle("Hits");
+        L1Dist->add(*l1Histos[ident]);
+
+        // Calculate injected charge and construct histogram for first time
+        if (flg) {
+//            Fei4 *fe = dynamic_cast<Fei4*>(bookie->feList[0]);
+//            chargeMin = fe->toCharge(0, true, true);
+//            chargeMax = fe->toCharge(100, true, true);
+//            chargeStep = fe->toCharge(10, true, true)-fe->toCharge(0, true, true);
+            chargeMin = 0; // Need to fix
+            chargeMax = 5000; // Need to fix
+            chargeStep = 250; // Need to fix
+            timeWalkMap = new Histo2d("TimeWalkMap", (chargeMax-chargeMin)/chargeStep+1, chargeMin-chargeStep/2, chargeMax+chargeStep/2, 16, -0.5, 15.5, typeid(void));
+            timeWalkMap->setXaxisTitle("Injected charge [e]");
+            timeWalkMap->setYaxisTitle("L1");
+            timeWalkMap->setZaxisTitle("Pixels");
+            injectedCharge = chargeMin;
+            flg = false;
+        }
+        else {
+            injectedCharge += chargeStep;
+        }
+
+        for (unsigned i=0; i<L1Dist->size(); i++) {
+            timeWalkMap->fill(injectedCharge, -0.5+(i+1)*(15.5+0.5)/16-0.5, log10(L1Dist->getBin(i)));
+        }
+        x_injectedCharge.push_back(injectedCharge);
+        y_meanL1.push_back(L1Dist->getMean());
+        y_sigmaL1.push_back(L1Dist->getStdDev());
+
+        if ((int)injectedCharge == (int)chargeMax) {
+            GraphErrors *timeWalkGraph = new GraphErrors("TimeWalkGraph", x_injectedCharge.size(), &x_injectedCharge[0], &y_meanL1[0], 0, &y_sigmaL1[0], typeid(void));
+            timeWalkGraph->setXaxisTitle("Injected charge [e]");
+            timeWalkGraph->setYaxisTitle("mean of L1");
+            output->pushData(timeWalkGraph);
+            output->pushData(timeWalkMap);
+        }
+
+        output->pushData(L1Dist);
+
+        delete l1Histos[ident];
+
+        innerCnt[ident] = 0;
+    }
+>>>>>>> Modified to use charge vs tot and time walk in Fei4Analysis.cpp
 }

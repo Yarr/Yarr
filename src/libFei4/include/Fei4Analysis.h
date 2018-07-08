@@ -21,6 +21,7 @@
 #include "DataProcessor.h"
 #include "HistogramBase.h"
 #include "Histo2d.h"
+#include "GraphErrors.h"
 #include "Fei4Histogrammer.h"
 #include "lmcurve.h"
 
@@ -307,6 +308,7 @@ class NoiseAnalysis : public AnalysisAlgorithm {
         Histo2d* occ;        
 };
 
+<<<<<<< HEAD
 class NoiseTuning : public AnalysisAlgorithm {
     public:
         NoiseTuning() : AnalysisAlgorithm() {};
@@ -315,15 +317,75 @@ class NoiseTuning : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
+=======
+class ChargeVsTotAnalysis : public AnalysisAlgorithm {
+    public:
+        ChargeVsTotAnalysis() : AnalysisAlgorithm() {};
+        ~ChargeVsTotAnalysis() {};
+
+        void init(ScanBase *s);
+        void processHistogram(HistogramBase *h);
+        void end() {}
+>>>>>>> Modified to use charge vs tot and time walk in Fei4Analysis.cpp
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         unsigned n_count;
+<<<<<<< HEAD
         std::map<unsigned, Histo2d*> occMaps;
         std::map<unsigned, unsigned> innerCnt;
         GlobalFeedbackBase *globalFb;
         PixelFeedbackBase *pixelFb;
         unsigned n_trigger;
+=======
+        double injections;
+        std::map<unsigned, Histo2d*> occMaps;
+        std::map<unsigned, unsigned> occInnerCnt;
+        std::map<unsigned, Histo2d*> totMaps;
+        std::map<unsigned, unsigned> totInnerCnt;
+        std::map<unsigned, Histo2d*> tot2Maps;
+        std::map<unsigned, unsigned> tot2InnerCnt;
+        GlobalFeedbackBase *globalFb;
+        PixelFeedbackBase *pixelFb;
+        unsigned flg = 0;
+        Histo2d *chargeVsTotMap;
+        double injectedCharge = 0;
+        double chargeMax;
+        double chargeMin;
+        double chargeStep;
+        GraphErrors *chargeVsTotGraph;
+        std::vector<double> x_injectedCharge;
+        std::vector<double> y_meanTot;
+        std::vector<double> y_sigmaTot;
+};
+
+class TimeWalkAnalysis : public AnalysisAlgorithm {
+    public:
+        TimeWalkAnalysis() : AnalysisAlgorithm() {};
+        ~TimeWalkAnalysis() {};
+
+        void init(ScanBase *s);
+        void processHistogram(HistogramBase *h);
+        void end() {}
+    private:
+        std::vector<unsigned> loops;
+        std::vector<unsigned> loopMax;
+        unsigned n_count;
+        unsigned injections;
+        std::map<unsigned, Histo1d*> l1Histos;
+        std::map<unsigned, unsigned> innerCnt;
+        bool flg = true;
+        Histo2d *timeWalkMap;
+        double injectedCharge = 0;
+        double chargeMax;
+        double chargeMin;
+        double chargeStep;
+        //GraphErrors *timeWalkGraph;
+        std::vector<double> x_injectedCharge;
+        std::vector<double> y_meanL1;
+        std::vector<double> y_sigmaL1;
+
+>>>>>>> Modified to use charge vs tot and time walk in Fei4Analysis.cpp
 };
 
 #endif
