@@ -6,14 +6,21 @@
 #include <sys/stat.h>
 
 #include <TStyle.h>
+#include <TPaletteAxis.h>
 #include <TF1.h>
 #include <TGaxis.h>
 #include <plotWithRoot.h>
+#include <RD53Style.h>
 #include "json.hpp"
 
 using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 
-int main(int argc, char *argv[]) { //./plotWithRoot_TDAC Directory_name
+int main(int argc, char *argv[]) { //./plotWithRoot_TDAC path/to/directory
+
+	SetRD53Style();
+	gStyle->SetTickLength(0.02);
+	gStyle->SetTextFont();
+
 	if (argc < 2) {
 		std::cout << "No directory given!" << std::endl;
 		return -1;
@@ -136,8 +143,6 @@ int main(int argc, char *argv[]) { //./plotWithRoot_TDAC Directory_name
 					style_TH1(range_hist[i], xrangetitle.c_str(), yaxistitle.c_str());
 					for (int j=1; j<=range_bins; j++) range_hist[i]->GetXaxis()->SetBinLabel(j, LabelName[j-1]);
 					range_hist[i]->GetXaxis()->LabelsOption("h");
-					range_hist[i]->GetXaxis()->SetLabelSize(0.065);
-					range_hist[i]->GetYaxis()->SetLabelSize(0.045);
 				}
 	
 				//Linear FE Plot
@@ -146,15 +151,16 @@ int main(int argc, char *argv[]) { //./plotWithRoot_TDAC Directory_name
 				h_Lin->SetStats(0);
 				TCanvas *c_Lin = new TCanvas("c_Lin", "c_Lin", 800, 600);
 				style_TH1canvas(c_Lin);
+				h_Lin->GetXaxis()->SetLabelSize(0.035);
 				h_Lin->Draw();
 				TLatex *tname= new TLatex();
 				tname->SetNDC();
 				tname->SetTextAlign(22);
 				tname->SetTextFont(73);
 				tname->SetTextSizePixels(30);
-				tname->DrawLatex(0.21,0.93,"RD53A");
-				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
-				TLegend *lin_legend = new TLegend(0.75,0.77,0.93,0.88);
+				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
+				TLegend *lin_legend = new TLegend(0.7,0.82,0.87,0.91);
 				lin_legend->SetHeader("Analog FEs", "C");
 				lin_legend->AddEntry(h_Lin, "Linear", "f");
 				lin_legend->SetBorderSize(0);
@@ -168,9 +174,9 @@ int main(int argc, char *argv[]) { //./plotWithRoot_TDAC Directory_name
 				mean_rms->SetTextFont(63);
 				mean_rms->SetTextSizePixels(24);
 				sprintf(mean_Lin, "Mean = %.1f #pm %.1f", h_Lin->GetMean(), h_Lin->GetMeanError());
-				mean_rms->DrawLatex(0.18,0.88, mean_Lin);
+				mean_rms->DrawLatex(0.18,0.91, mean_Lin);
 				sprintf(rms_Lin, "RMS = %.1f #pm %.1f", h_Lin->GetRMS(), h_Lin->GetRMSError());
-				mean_rms->DrawLatex(0.18,0.84, rms_Lin);
+				mean_rms->DrawLatex(0.18,0.87, rms_Lin);
 
 				//h_Lin->GetXaxis()->SetRangeUser(mean_hLin - 3*rms_hLin, mean_hLin + 3*rms_hLin);
 				h_Lin->SetMaximum((h_Lin->GetMaximum())*1.25);
@@ -185,10 +191,11 @@ int main(int argc, char *argv[]) { //./plotWithRoot_TDAC Directory_name
 				h_Diff->SetStats(0);
 				TCanvas *c_Diff = new TCanvas("c_Diff", "c_Diff", 800, 600);
 				style_TH1canvas(c_Diff);
+				h_Diff->GetXaxis()->SetLabelSize(0.035);
 				h_Diff->Draw();
-				tname->DrawLatex(0.21,0.93,"RD53A");
-				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
-				TLegend *diff_legend = new TLegend(0.75,0.77,0.93,0.88);
+				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
+				TLegend *diff_legend = new TLegend(0.7,0.82,0.87,0.91);
 				diff_legend->SetHeader("Analog FEs", "C");
 				diff_legend->AddEntry(h_Diff, "Differential", "f");
 				diff_legend->SetBorderSize(0);
@@ -198,9 +205,9 @@ int main(int argc, char *argv[]) { //./plotWithRoot_TDAC Directory_name
 				rms_hDiff = h_Diff->GetRMS();
 				
 				sprintf(mean_Diff, "Mean = %.1f #pm %.1f", h_Diff->GetMean(), h_Diff->GetMeanError());
-				mean_rms->DrawLatex(0.18,0.88, mean_Diff);
+				mean_rms->DrawLatex(0.18,0.91, mean_Diff);
 				sprintf(rms_Diff, "RMS = %.1f #pm %.1f", h_Diff->GetRMS(), h_Diff->GetRMSError());
-				mean_rms->DrawLatex(0.18,0.84, rms_Diff);
+				mean_rms->DrawLatex(0.18,0.87, rms_Diff);
 
 				h_Diff->SetMaximum((h_Diff->GetMaximum())*1.25);
 				//h_Diff->GetXaxis()->SetRangeUser(mean_hDiff - 3*rms_hDiff, mean_hDiff + 3*rms_hDiff);
@@ -240,17 +247,18 @@ int main(int argc, char *argv[]) { //./plotWithRoot_TDAC Directory_name
 				style_TH1canvas(c_range_Lin);
 				h_range_Lin->Draw();
 				h_range_Lin->SetMarkerSize(1.8);
+				h_range_Lin->SetMarkerColor(1);
 				h_range_Lin->Draw("TEXT0 SAME");
-				tname->DrawLatex(0.21,0.93,"RD53A");
-				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
+				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 				TLatex *zeros = new TLatex();
 				zeros->SetNDC();
 				zeros->SetTextAlign(13);
 				zeros->SetTextFont(63);
 				zeros->SetTextSizePixels(20);
 				sprintf(zeros_Lin, "Untuned Pixels = %.0i", zero_Lin);
-				zeros->DrawLatex(0.18,0.88, zeros_Lin);
-				TLegend *lin_range_legend = new TLegend(0.7,0.78,0.88,0.89);
+				zeros->DrawLatex(0.18,0.91, zeros_Lin);
+				TLegend *lin_range_legend = new TLegend(0.7,0.82,0.87,0.91);
 				lin_range_legend->SetHeader("Analog FEs", "C");
 				lin_range_legend->AddEntry(h_range_Lin, "Linear", "f");
 				lin_range_legend->SetBorderSize(0);
@@ -268,12 +276,13 @@ int main(int argc, char *argv[]) { //./plotWithRoot_TDAC Directory_name
 				style_TH1canvas(c_range_Diff);
 				h_range_Diff->Draw();
 				h_range_Diff->SetMarkerSize(1.8);
+				h_range_Diff->SetMarkerColor(1);
 				h_range_Diff->Draw("TEXT0 SAME");
-				tname->DrawLatex(0.21,0.93,"RD53A");
-				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
+				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 				sprintf(zeros_Diff, "Untuned Pixels = %.0i", zero_Diff);
-				zeros->DrawLatex(0.18,0.88, zeros_Diff);
-				TLegend *diff_range_legend = new TLegend(0.7,0.78,0.88,0.89);
+				zeros->DrawLatex(0.18,0.91, zeros_Diff);
+				TLegend *diff_range_legend = new TLegend(0.7,0.82,0.87,0.91);
 				diff_range_legend->SetHeader("Analog FEs", "C");
 				diff_range_legend->AddEntry(h_range_Diff, "Differential", "f");
 				diff_range_legend->SetBorderSize(0);
@@ -285,16 +294,22 @@ int main(int argc, char *argv[]) { //./plotWithRoot_TDAC Directory_name
 	
 				
 				//Map of Pixels
-				style_TH2(h_plot, "Column", "Row"); 
+				style_TH2(h_plot, "Column", "Row", xaxistitle.c_str()); 
 				TCanvas *c_plot = new TCanvas("c_plot", "c_plot", 800, 600);
 				style_TH2canvas(c_plot);
+				h_plot->GetZaxis()->SetTitleOffset(1.2);
+				c_plot->SetRightMargin(0.12);	
 				h_plot->Draw("colz");
 				h_plot->Draw("colz X+ Y+ SAME");
-				tname->DrawLatex(0.21,0.93,"RD53A");
-				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
+				h_plot->GetXaxis()->SetLabelSize(0.04);
+				h_plot->GetYaxis()->SetLabelSize(0.04);
+				tname->DrawLatex(0.16,0.96,"RD53A");
+				tname->DrawLatex(0.72, 0.96, chipnum.c_str());
 				gStyle->SetOptStat(0);
-				filename5=filename.replace(filename.find("_DIFFRTdac.pdf"), 14, "PLOTTdac.pdf");				
 				c_plot->RedrawAxis();
+				c_plot->Update();
+				h_plot->GetZaxis()->SetLabelSize(0.04);
+				filename5=filename.replace(filename.find("_DIFFRTdac.pdf"), 14, "PLOTTdac.pdf");				
 				c_plot->Print(filename5.c_str());
 				
 

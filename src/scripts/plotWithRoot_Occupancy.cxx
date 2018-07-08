@@ -5,9 +5,13 @@
 #include <sys/stat.h>
 
 #include <plotWithRoot.h>
+#include <RD53Style.h>
 
+int main(int argc, char *argv[]) { //./plotWithRoot_Occupancy path/to/directory
+	SetRD53Style();
+	gStyle->SetTickLength(0.02);
+	gStyle->SetTextFont();
 
-int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 	if (argc < 2) {
 		std::cout << "No directory given!" << std::endl;
 		return -1;
@@ -120,8 +124,6 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 					style_TH1(fe_hist[i], xaxistitle.c_str(), yaxistitle.c_str());
 					for (int j=1; j<=xbins; j++) fe_hist[i]->GetXaxis()->SetBinLabel(j,LabelName[j-1]);
 					fe_hist[i]->GetXaxis()->LabelsOption("h");
-					fe_hist[i]->GetXaxis()->SetLabelSize(0.065);
-					fe_hist[i]->GetYaxis()->SetLabelSize(0.045);
 
 				}
 
@@ -132,17 +134,20 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				style_TH1canvas(c_Syn);
 				h_Syn->Draw();
 				h_Syn->SetMarkerSize(1.8);
+				h_Syn->SetMarkerColor(1);
 				h_Syn->Draw("TEXT0 SAME");
 				TLatex *tname= new TLatex();
 				latex_Chip(tname);
-				tname->DrawLatex(0.21,0.93,"RD53A");
-				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
-				TLegend *syn_legend = new TLegend(0.7,0.77,0.88,0.88);
+				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
+				TLegend *syn_legend = new TLegend(0.7,0.82,0.88,0.91);
 				syn_legend->SetHeader("Analog FEs", "C");
 				syn_legend->AddEntry(h_Syn, "Synchronous", "f");
 				syn_legend->SetBorderSize(0);
 				syn_legend->Draw();		
-				filename1 = filename.replace(filename.find(".dat"), 12, "_SYNroot.pdf"); 
+				h_Syn->SetMaximum((h_Syn->GetMaximum())*1.21);
+				c_Syn->Update();
+				filename1 = filename.replace(filename.find(".dat"), 8, "_SYN.pdf"); 
 				c_Syn->Print(filename1.c_str());
 
 				//Linear FE Plot
@@ -152,15 +157,18 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				style_TH1canvas(c_Lin);
 				h_Lin->Draw();
 				h_Lin->SetMarkerSize(1.8);
+				h_Lin->SetMarkerColor(1);
 				h_Lin->Draw("TEXT0 SAME");
-				tname->DrawLatex(0.21,0.93,"RD53A");
-				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
-				TLegend *lin_legend = new TLegend(0.7,0.77,0.86,0.88);
+				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
+				TLegend *lin_legend = new TLegend(0.7,0.82,0.87,0.91);
 				lin_legend->SetHeader("Analog FEs", "C");
 				lin_legend->AddEntry(h_Lin, "Linear", "f");
 				lin_legend->SetBorderSize(0);
 				lin_legend->Draw();		
-				filename2 = filename.replace(filename.find("_SYNroot.pdf"), 12, "_LINroot.pdf"); 
+				h_Lin->SetMaximum((h_Lin->GetMaximum())*1.21);
+				c_Lin->Update();
+				filename2 = filename.replace(filename.find("_SYN.pdf"), 8, "_LIN.pdf"); 
 				c_Lin->Print(filename2.c_str());
 
 				//Diff FE Plot
@@ -170,15 +178,18 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				style_TH1canvas(c_Diff);
 				h_Diff->Draw();
 				h_Diff->SetMarkerSize(1.8);
+				h_Diff->SetMarkerColor(1);
 				h_Diff->Draw("TEXT0 SAME");
-				tname->DrawLatex(0.21,0.93,"RD53A");
-				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
-				TLegend *diff_legend = new TLegend(0.7,0.77,0.87,0.88);
+				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
+				TLegend *diff_legend = new TLegend(0.7,0.82,0.87,0.91);
 				diff_legend->SetHeader("Analog FEs", "C");
 				diff_legend->AddEntry(h_Diff, "Differential", "f");
 				diff_legend->SetBorderSize(0);
 				diff_legend->Draw();		
-				filename3 = filename.replace(filename.find("_LINroot.pdf"), 13, "_DIFFroot.pdf"); 
+				h_Diff->SetMaximum((h_Diff->GetMaximum())*1.21);
+				c_Diff->Update();
+				filename3 = filename.replace(filename.find("_LIN.pdf"), 9, "_DIFF.pdf"); 
 				c_Diff->Print(filename3.c_str());
 
 				//Stack Plot for all 3 FEs
@@ -186,16 +197,14 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				hs->Add(h_Lin);
 				hs->Add(h_Diff);
 				TCanvas *c_Stack = new TCanvas("c_Stack", "c_Stack", 800, 600);
-				c_Stack->SetLeftMargin(0.15);
-				c_Stack->SetRightMargin(0.05);
-				c_Stack->SetBottomMargin(0.1225);
+				style_TH1canvas(c_Stack);
 				hs->Draw(); 
-				//hs->Draw("TEXt0 SAME"); //Works, but the text layers on top of each other if the values are too low
 				//Setting the title for THStack plots has to be after Draw(), and needs canvas->Modified() after
 				style_THStack(hs, xaxistitle.c_str(), yaxistitle.c_str());	
 				c_Stack->Modified();
 				gStyle->SetOptStat(0);
-				TLegend *stack_legend = new TLegend(0.7,0.65,0.88,0.88);
+				TLegend *stack_legend = new TLegend(0.33,0.82,0.93,0.91);
+				stack_legend->SetNColumns(3);
 				stack_legend->SetHeader("Analog FEs", "C");
 				stack_legend->AddEntry(h_Syn, "Synchronous", "f");
 				stack_legend->AddEntry(h_Lin, "Linear", "f");
@@ -204,19 +213,16 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				stack_legend->Draw();
 				for (int i=1; i<=6; i++) hs->GetXaxis()->SetBinLabel(i,LabelName[i-1]);
 				hs->GetXaxis()->LabelsOption("h");	
-				hs->GetXaxis()->SetLabelSize(0.05);
-				hs->GetYaxis()->SetLabelSize(0.03);
-				tname->DrawLatex(0.21,0.93,"RD53A");
-				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
-
-				filename4 = filename.replace(filename.find("_DIFFroot.pdf"), 14, "_STACKroot.pdf");
+				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
+				hs->SetMaximum((hs->GetMaximum())*1.2);
+				c_Stack->Update();				
+				filename4 = filename.replace(filename.find("_DIFF.pdf"), 10, "_STACK.pdf");
 				c_Stack->Print(filename4.c_str());
 
-				delete h_Syn;
+				for (int i=0; i<3; i++) delete fe_hist[i];
 				delete c_Syn;
-				delete h_Lin;
 				delete c_Lin;
-				delete h_Diff;
 				delete c_Diff;
 				delete hs;
 				delete c_Stack;
