@@ -8,8 +8,13 @@
 #include <TStyle.h>
 #include <TF1.h>
 #include <plotWithRoot.h>
+#include <RD53Style.h>
 
 int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
+	SetRD53Style();
+	gStyle->SetTickLength(0.02);
+	gStyle->SetTextFont();
+
 	if (argc < 2) {
 		std::cout << "No directory given!" << std::endl;
 		return -1;
@@ -68,7 +73,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				int xbins, range_bins;
 				double xlow, xhigh, range_low, range_high; 
 				int underflow, overflow;
-				int rowno, colno, total_pix;
+				int rowno, colno;
 				char mean_Syn[100]={}, mean_Lin[100]={}, mean_Diff[100]={};
 				char rms_Syn[100]={}, rms_Lin[100]={}, rms_Diff[100]={};
 				double mean_hSyn, mean_hLin, mean_hDiff;
@@ -78,11 +83,10 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 			
 				rowno = 192;
 				colno = 400;
-				total_pix = rowno*colno;
 				xaxistitle = "Noise [e]";
 				yaxistitle = "Number of Pixels";
 				xrangetitle = "Deviation from the Mean [RMS] ";
-				xbins = 500;
+				xbins = 2000;	//5e per bin
 				range_bins = 6;
 				xlow = -0.5;
 				xhigh = 10000.5;
@@ -124,7 +128,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 					
 				TH1* fe_hist[3] = {h_Syn, h_Lin, h_Diff};
 				TH1* range_hist[3] = {h_range_Syn, h_range_Lin, h_range_Diff};
-				std::vector <double> pix_values[total_pix];
+				std::vector <double> pix_values;
 
 				//Fill Threshold plots	
 				for (int i=0; i<rowno; i++) {
@@ -133,7 +137,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 						double tmp;
 						infile >> tmp;
 						//std::cout << i*j << " " << tmp << std::endl;
-						pix_values[0].push_back(tmp);
+						pix_values.push_back(tmp);
 						if (tmp != 0) {	
 							h_all->Fill(tmp);
 							fe_hist[whichFE(j)]->Fill(tmp);
@@ -146,9 +150,41 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 					style_TH1(range_hist[i], xrangetitle.c_str(), yaxistitle.c_str());
 					for (int j=1; j<=range_bins; j++) range_hist[i]->GetXaxis()->SetBinLabel(j, LabelName[j-1]);
 					range_hist[i]->GetXaxis()->LabelsOption("h");
-					range_hist[i]->GetXaxis()->SetLabelSize(0.065);
-					range_hist[i]->GetYaxis()->SetLabelSize(0.045);
+					fe_hist[i]->GetXaxis()->SetLabelSize(0.035);
 				}
+
+				//All histograms plot; just need for the fit.			
+				style_TH1(h_all, xaxistitle.c_str(), yaxistitle.c_str());				
+				h_all->SetFillColor(kOrange);
+				h_all->SetLineColor(kOrange);
+				h_all->SetStats(0);
+				TCanvas *c_all = new TCanvas("c_all", "c_all", 800, 600);
+				style_TH1canvas(c_all);
+				h_all->Draw();
+				TLatex *tname= new TLatex();
+				tname->SetNDC();
+				tname->SetTextAlign(22);
+				tname->SetTextFont(73);
+				tname->SetTextSizePixels(30);
+				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
+				TLegend *all_legend = new TLegend(0.7,0.82,0.87,0.91);
+				all_legend->SetHeader("Analog FEs", "C");
+				all_legend->AddEntry(h_all, "All", "f");
+				all_legend->SetBorderSize(0);
+				all_legend->Draw();
+				
+				double mean_all, rms_all;
+				mean_all = h_all->GetMean();
+				rms_all = h_all->GetRMS();	
+
+				h_all->SetMaximum((h_all->GetMaximum())*1.21);
+				h_all->GetXaxis()->SetRangeUser((mean_all - 3*rms_all < 0) ? -0.5 : (mean_all- 3*rms_all)  , mean_all + 3*rms_all);
+				c_all->Update();				
+
+				filename1 = filename.replace(filename.find(".dat"), 8, "_ALL.pdf"); 
+				c_all->Print(filename1.c_str());
+	
 				//Synchronous FE Plot
 				h_Syn->SetFillColor(kOrange+6);
 				h_Syn->SetLineColor(kOrange+6);
@@ -156,14 +192,9 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				TCanvas *c_Syn = new TCanvas("c_Syn", "c_Syn", 800, 600);
 				style_TH1canvas(c_Syn);
 				h_Syn->Draw();
-				TLatex *tname= new TLatex();
-				tname->SetNDC();
-				tname->SetTextAlign(22);
-				tname->SetTextFont(73);
-				tname->SetTextSizePixels(30);
-				tname->DrawLatex(0.21,0.93,"RD53A");
-				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
-				TLegend *syn_legend = new TLegend(0.75,0.77,0.93,0.88);
+				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
+				TLegend *syn_legend = new TLegend(0.7,0.82,0.87,0.91);
 				syn_legend->SetHeader("Analog FEs", "C");
 				syn_legend->AddEntry(h_Syn, "Synchronous", "f");
 				syn_legend->SetBorderSize(0);
@@ -178,16 +209,16 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				mean_rms->SetTextFont(63);
 				mean_rms->SetTextSizePixels(24);
 				sprintf(mean_Syn, "Mean = %.1f #pm %.1f", h_Syn->GetMean(), h_Syn->GetMeanError());
-				mean_rms->DrawLatex(0.18,0.88, mean_Syn);
+				mean_rms->DrawLatex(0.18,0.91, mean_Syn);
 				sprintf(rms_Syn, "RMS = %.1f #pm %.1f", h_Syn->GetRMS(), h_Syn->GetRMSError());
-				mean_rms->DrawLatex(0.18,0.84, rms_Syn);
+				mean_rms->DrawLatex(0.18,0.87, rms_Syn);
 
-				h_Syn->SetMaximum((h_Syn->GetMaximum())*1.15);
-				h_Syn->GetXaxis()->SetRangeUser(mean_hSyn - 3*rms_hSyn, mean_hSyn + 3*rms_hSyn);
+				h_Syn->SetMaximum((h_Syn->GetMaximum())*1.21);
+				h_Syn->GetXaxis()->SetRangeUser((mean_hSyn - 3*rms_hSyn < 0) ? -0.5 : (mean_hSyn- 3*rms_hSyn)  , mean_hSyn + 3*rms_hSyn);
 				c_Syn->Update();				
 	
-				filename1 = filename.replace(filename.find(".dat"), 12, "_SYNroot.pdf"); 
-				c_Syn->Print(filename1.c_str());
+				filename2 = filename.replace(filename.find("_ALL.pdf"), 8, "_SYN.pdf"); 
+				c_Syn->Print(filename2.c_str());
 
 
 				//Linear FE Plot
@@ -197,9 +228,9 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				TCanvas *c_Lin = new TCanvas("c_Lin", "c_Lin", 800, 600);
 				style_TH1canvas(c_Lin);
 				h_Lin->Draw();
-				tname->DrawLatex(0.21,0.93,"RD53A");
-				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
-				TLegend *lin_legend = new TLegend(0.75,0.77,0.93,0.88);
+				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
+				TLegend *lin_legend = new TLegend(0.7,0.82,0.87,0.91);
 				lin_legend->SetHeader("Analog FEs", "C");
 				lin_legend->AddEntry(h_Lin, "Linear", "f");
 				lin_legend->SetBorderSize(0);
@@ -208,16 +239,16 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				rms_hLin = h_Lin->GetRMS();
 
 				sprintf(mean_Lin, "Mean = %.1f #pm %.1f", h_Lin->GetMean(), h_Lin->GetMeanError());
-				mean_rms->DrawLatex(0.18,0.88, mean_Lin);
+				mean_rms->DrawLatex(0.18,0.91, mean_Lin);
 				sprintf(rms_Lin, "RMS = %.1f #pm %.1f", h_Lin->GetRMS(), h_Lin->GetRMSError());
-				mean_rms->DrawLatex(0.18,0.84, rms_Lin);
+				mean_rms->DrawLatex(0.18,0.87, rms_Lin);
 
-				h_Lin->GetXaxis()->SetRangeUser(mean_hLin - 3*rms_hLin, mean_hLin + 3*rms_hLin);
-				h_Lin->SetMaximum((h_Lin->GetMaximum())*1.15);
+				h_Lin->GetXaxis()->SetRangeUser((mean_hLin - 3*rms_hLin < 0) ? -0.5 : (mean_hLin- 3*rms_hLin)  , mean_hLin + 3*rms_hLin);
+				h_Lin->SetMaximum((h_Lin->GetMaximum())*1.21);
 				c_Lin->Update();				
 	
-				filename2 = filename.replace(filename.find("_SYNroot.pdf"), 12, "_LINroot.pdf"); 
-				c_Lin->Print(filename2.c_str());
+				filename3 = filename.replace(filename.find("_SYN.pdf"), 8, "_LIN.pdf"); 
+				c_Lin->Print(filename3.c_str());
 
 				//Diff FE Plot
 				h_Diff->SetFillColor(kAzure+5);
@@ -226,9 +257,9 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				TCanvas *c_Diff = new TCanvas("c_Diff", "c_Diff", 800, 600);
 				style_TH1canvas(c_Diff);
 				h_Diff->Draw();
-				tname->DrawLatex(0.21,0.93,"RD53A");
-				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
-				TLegend *diff_legend = new TLegend(0.75,0.77,0.93,0.88);
+				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
+				TLegend *diff_legend = new TLegend(0.7,0.82,0.87,0.91);
 				diff_legend->SetHeader("Analog FEs", "C");
 				diff_legend->AddEntry(h_Diff, "Differential", "f");
 				diff_legend->SetBorderSize(0);
@@ -238,42 +269,18 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				rms_hDiff = h_Diff->GetRMS();
 				
 				sprintf(mean_Diff, "Mean = %.1f #pm %.1f", h_Diff->GetMean(), h_Diff->GetMeanError());
-				mean_rms->DrawLatex(0.18,0.88, mean_Diff);
+				mean_rms->DrawLatex(0.18,0.91, mean_Diff);
 				sprintf(rms_Diff, "RMS = %.1f #pm %.1f", h_Diff->GetRMS(), h_Diff->GetRMSError());
-				mean_rms->DrawLatex(0.18,0.84, rms_Diff);
+				mean_rms->DrawLatex(0.18,0.87, rms_Diff);
 
-				h_Diff->SetMaximum((h_Diff->GetMaximum())*1.15);
-				h_Diff->GetXaxis()->SetRangeUser(mean_hDiff - 3*rms_hDiff, mean_hDiff + 3*rms_hDiff);
+				//h_Diff->GetYaxis()->SetRangeUser(0,5000);
+				//std::cout << "Maximum	" << h_Diff->GetMaximum() << std::endl;
+				h_Diff->SetMaximum((h_Diff->GetMaximum())*1.21);
+				h_Diff->GetXaxis()->SetRangeUser((mean_hDiff - 3*rms_hDiff < 0) ? -0.5 : (mean_hDiff- 3*rms_hDiff)  , mean_hDiff + 3*rms_hDiff);
 				c_Diff->Update();				
 
-				filename3 = filename.replace(filename.find("_LINroot.pdf"), 13, "_DIFFroot.pdf"); 
-				c_Diff->Print(filename3.c_str());
-
-				//All histograms plot; just need for the fit.			
-				style_TH1(h_all, xaxistitle.c_str(), yaxistitle.c_str());				
-				h_all->SetFillColor(kOrange);
-				h_all->SetLineColor(kOrange);
-				h_all->SetStats(0);
-				TCanvas *c_all = new TCanvas("c_all", "c_all", 800, 600);
-				style_TH1canvas(c_all);
-				h_all->Draw();
-				tname->DrawLatex(0.21,0.93,"RD53A");
-				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
-				TLegend *all_legend = new TLegend(0.75,0.77,0.93,0.88);
-				all_legend->SetHeader("Analog FEs", "C");
-				all_legend->AddEntry(h_all, "All", "f");
-				all_legend->SetBorderSize(0);
-				all_legend->Draw();
-				
-				double mean_all, rms_all;
-				mean_all = h_all->GetMean();
-				rms_all = h_all->GetRMS();	
-
-				h_all->GetXaxis()->SetRangeUser(mean_all - 3*rms_all, mean_all + 3*rms_all);
-				c_all->Update();				
-
-				filename4 = filename.replace(filename.find("_DIFFroot.pdf"), 14, "_ALLroot.pdf"); 
-				c_all->Print(filename4.c_str());
+				filename4 = filename.replace(filename.find("_LIN.pdf"), 9, "_DIFF.pdf"); 
+				c_Diff->Print(filename4.c_str());
 
 				//Stack Plot for all 3 FEs
 				THStack *hs = new THStack("hs","");
@@ -292,7 +299,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				gPad->SetLogy(0);
 				c_Stack->Modified();
 				gStyle->SetOptStat(0);
-				TLegend *stack_legend = new TLegend(0.75,0.65,0.93,0.88);
+				TLegend *stack_legend = new TLegend(0.33,0.82,0.93,0.91);
+				stack_legend->SetNColumns(3);
 				stack_legend->SetHeader("Analog FEs", "C");
 				stack_legend->AddEntry(h_Syn, "Synchronous", "f");
 				stack_legend->AddEntry(h_Lin, "Linear", "f");
@@ -301,13 +309,14 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				stack_legend->Draw();
 				hs->GetXaxis()->SetLabelSize(0.05);
 				hs->GetYaxis()->SetLabelSize(0.03);
-				tname->DrawLatex(0.21,0.93,"RD53A");
-				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
+				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 
-				hs->GetXaxis()->SetRangeUser(mean_all - 3*rms_all, mean_all + 3*rms_all);
+				hs->SetMaximum((h_all->GetMaximum())*1.21);
+				hs->GetXaxis()->SetRangeUser((mean_all - 3*rms_all < 0) ? -0.5 : (mean_all- 3*rms_all)  , mean_all + 3*rms_all);
 				c_Stack->Update();				
 				
-				filename5 = filename.replace(filename.find("_ALLroot.pdf"), 14, "_STACKroot.pdf");
+				filename5 = filename.replace(filename.find("_DIFF.pdf"), 10, "_STACK.pdf");
 				c_Stack->Print(filename5.c_str());
 
 				double mean_h[3] = {mean_hSyn, mean_hLin, mean_hDiff};
@@ -317,7 +326,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				//Fill range histograms
 				for (int i=0; i<rowno; i++) {
 					for (int j=0; j<colno; j++) {
-						double *tmp_p = &pix_values[0][n];
+						double *tmp_p = &pix_values[n];
 						n++;
 						double tmp = *tmp_p;		
 						int bin_num = whichSigma(tmp, mean_h[whichFE(j)], rms_h[whichFE(j)]);
@@ -340,24 +349,25 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				style_TH1canvas(c_range_Syn);
 				h_range_Syn->Draw();
 				h_range_Syn->SetMarkerSize(1.8);
+				h_range_Syn->SetMarkerColor(1);
 				h_range_Syn->Draw("TEXT0 SAME");
-				tname->DrawLatex(0.21,0.93,"RD53A");
-				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
+				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 				TLatex *zeros = new TLatex();
 				zeros->SetNDC();
 				zeros->SetTextAlign(13);
 				zeros->SetTextFont(63);
 				zeros->SetTextSizePixels(20);
 				sprintf(zeros_Syn, "Untuned Pixels = %.0i", zero_Syn);
-				zeros->DrawLatex(0.18,0.88, zeros_Syn);
-				TLegend *syn_range_legend = new TLegend(0.7,0.78,0.88,0.89);
+				zeros->DrawLatex(0.18,0.91, zeros_Syn);
+				TLegend *syn_range_legend = new TLegend(0.7,0.82,0.87,0.91);
 				syn_range_legend->SetHeader("Analog FEs", "C");
 				syn_range_legend->AddEntry(h_range_Syn, "Synchronous", "f");
 				syn_range_legend->SetBorderSize(0);
 				syn_range_legend->Draw();		
 				h_range_Syn->SetMaximum((h_range_Syn->GetMaximum())*1.25);
 				c_range_Syn->Update();				
-				filename6 = filename.replace(filename.find("_STACKroot.pdf"), 14, "_SYNRroot.pdf");
+				filename6 = filename.replace(filename.find("_STACK.pdf"), 13, "_SYNrange.pdf");
 				c_range_Syn->Print(filename6.c_str());
 
 				//Lin Range Plot
@@ -368,19 +378,20 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				style_TH1canvas(c_range_Lin);
 				h_range_Lin->Draw();
 				h_range_Lin->SetMarkerSize(1.8);
+				h_range_Lin->SetMarkerColor(1);
 				h_range_Lin->Draw("TEXT0 SAME");
-				tname->DrawLatex(0.21,0.93,"RD53A");
-				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
+				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 				sprintf(zeros_Lin, "Untuned Pixels = %.0i", zero_Lin);
-				zeros->DrawLatex(0.18,0.88, zeros_Lin);
-				TLegend *lin_range_legend = new TLegend(0.7,0.78,0.88,0.89);
+				zeros->DrawLatex(0.18,0.91, zeros_Lin);
+				TLegend *lin_range_legend = new TLegend(0.7,0.82,0.87,0.91);
 				lin_range_legend->SetHeader("Analog FEs", "C");
 				lin_range_legend->AddEntry(h_range_Lin, "Linear", "f");
 				lin_range_legend->SetBorderSize(0);
 				lin_range_legend->Draw();		
 				h_range_Lin->SetMaximum((h_range_Lin->GetMaximum())*1.25);
 				c_range_Lin->Update();				
-				filename7 = filename.replace(filename.find("_SYNRroot.pdf"), 14, "_LINRroot.pdf");
+				filename7 = filename.replace(filename.find("_SYNrange.pdf"), 13, "_LINrange.pdf");
 				c_range_Lin->Print(filename7.c_str());
 
 				//Diff Range Plot
@@ -391,19 +402,20 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				style_TH1canvas(c_range_Diff);
 				h_range_Diff->Draw();
 				h_range_Diff->SetMarkerSize(1.8);
+				h_range_Diff->SetMarkerColor(1);
 				h_range_Diff->Draw("TEXT0 SAME");
-				tname->DrawLatex(0.21,0.93,"RD53A");
-				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
+				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 				sprintf(zeros_Diff, "Untuned Pixels = %.0i", zero_Syn);
-				zeros->DrawLatex(0.18,0.88, zeros_Diff);
-				TLegend *diff_range_legend = new TLegend(0.7,0.78,0.88,0.89);
+				zeros->DrawLatex(0.18,0.91, zeros_Diff);
+				TLegend *diff_range_legend = new TLegend(0.7,0.82,0.87,0.91);
 				diff_range_legend->SetHeader("Analog FEs", "C");
 				diff_range_legend->AddEntry(h_range_Diff, "Differential", "f");
 				diff_range_legend->SetBorderSize(0);
 				diff_range_legend->Draw();		
 				h_range_Diff->SetMaximum((h_range_Diff->GetMaximum())*1.25);
 				c_range_Diff->Update();				
-				filename8 = filename.replace(filename.find("_LINRroot.pdf"), 15, "_DIFFRroot.pdf");
+				filename8 = filename.replace(filename.find("_LINrange.pdf"), 14, "_DIFFrange.pdf");
 				c_range_Diff->Print(filename8.c_str());
 	
 				//Stacked Range Plot
@@ -423,7 +435,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				gPad->SetLogy(0);
 				c_Stackr->Modified();
 				gStyle->SetOptStat(0);
-				TLegend *stackr_legend = new TLegend(0.75,0.65,0.93,0.88);
+				TLegend *stackr_legend = new TLegend(0.33,0.82,0.93,0.91);
+				stackr_legend->SetNColumns(3);	
 				stackr_legend->SetHeader("Analog FEs", "C");
 				stackr_legend->AddEntry(h_range_Syn, "Synchronous", "f");
 				stackr_legend->AddEntry(h_range_Lin, "Linear", "f");
@@ -432,9 +445,11 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				stackr_legend->Draw();
 				hs_range->GetXaxis()->SetLabelSize(0.05);
 				hs_range->GetYaxis()->SetLabelSize(0.03);
-				tname->DrawLatex(0.21,0.93,"RD53A");
-				tname->DrawLatex(0.8, 0.93, chipnum.c_str());
-				filename9 = filename.replace(filename.find("_DIFFRroot.pdf"), 15, "_STACKRroot.pdf");
+				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
+				hs_range->SetMaximum((hs_range->GetMaximum())*1.21);
+				c_Stackr->Update();
+				filename9 = filename.replace(filename.find("_DIFFrange.pdf"), 15, "_STACKrange.pdf");
 				c_Stackr->Print(filename9.c_str());
 				
 
