@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				std::string xaxistitle, yaxistitle, xrangetitle;
 				std::string line;	
 
-				std::string filename1, filename2, filename3, filename4, filename5, filename6, filename7, filename8, filename9;
+				std::string filename1, filename2, filename3, filename4, filename5, filename6, filename7, filename8, filename9, filename10;
 
 	
 				std::getline(infile, type);
@@ -125,6 +125,10 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 
 				TH1 *h_range_Diff = NULL;
 				h_range_Diff = (TH1*) new TH1F("h_range_Diff","", range_bins, range_low, range_high);
+
+
+				TH2F *h_plot = NULL;
+				h_plot = new TH2F("h_plot", "", colno, 0, colno, rowno, 0, rowno); 
 					
 				TH1* fe_hist[3] = {h_Syn, h_Lin, h_Diff};
 				TH1* range_hist[3] = {h_range_Syn, h_range_Lin, h_range_Diff};
@@ -142,6 +146,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 							h_all->Fill(tmp);
 							fe_hist[whichFE(j)]->Fill(tmp);
 						}	
+						h_plot->SetBinContent(j+1,i+1,tmp);	
 					}
 				}
 			
@@ -282,6 +287,26 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				filename4 = filename.replace(filename.find("_LIN.pdf"), 9, "_DIFF.pdf"); 
 				c_Diff->Print(filename4.c_str());
 
+
+				//Map of Pixels
+				style_TH2(h_plot, "Column", "Row", xaxistitle.c_str()); 
+				TCanvas *c_plot = new TCanvas("c_plot", "c_plot", 800, 600);
+				style_TH2canvas(c_plot);
+				h_plot->Draw("colz");
+				//h_plot->Draw("colz X+ Y+ SAME");
+				h_plot->GetXaxis()->SetLabelSize(0.04);
+				h_plot->GetYaxis()->SetLabelSize(0.04);
+				tname->DrawLatex(0.16,0.96,"RD53A");
+				tname->DrawLatex(0.72, 0.96, chipnum.c_str());
+				gStyle->SetOptStat(0);
+				c_plot->RedrawAxis();
+				c_plot->Update();
+				h_plot->GetZaxis()->SetRangeUser((mean_all - 3*rms_all < 0) ? -0.5 : (mean_all- 3*rms_all)  , mean_all + 3*rms_all);	
+				h_plot->GetZaxis()->SetLabelSize(0.04);
+				filename5=filename.replace(filename.find("_DIFF.pdf"), 9, "_PLOT.pdf");				
+				c_plot->Print(filename5.c_str());
+
+
 				//Stack Plot for all 3 FEs
 				THStack *hs = new THStack("hs","");
 				hs->Add(h_Syn);
@@ -316,8 +341,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				hs->GetXaxis()->SetRangeUser((mean_all - 3*rms_all < 0) ? -0.5 : (mean_all- 3*rms_all)  , mean_all + 3*rms_all);
 				c_Stack->Update();				
 				
-				filename5 = filename.replace(filename.find("_DIFF.pdf"), 10, "_STACK.pdf");
-				c_Stack->Print(filename5.c_str());
+				filename6 = filename.replace(filename.find("_PLOT.pdf"), 10, "_STACK.pdf");
+				c_Stack->Print(filename6.c_str());
 
 				double mean_h[3] = {mean_hSyn, mean_hLin, mean_hDiff};
 				double rms_h[3] = {rms_hSyn, rms_hLin, rms_hDiff};
@@ -367,8 +392,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				syn_range_legend->Draw();		
 				h_range_Syn->SetMaximum((h_range_Syn->GetMaximum())*1.25);
 				c_range_Syn->Update();				
-				filename6 = filename.replace(filename.find("_STACK.pdf"), 13, "_SYNrange.pdf");
-				c_range_Syn->Print(filename6.c_str());
+				filename7 = filename.replace(filename.find("_STACK.pdf"), 13, "_SYNrange.pdf");
+				c_range_Syn->Print(filename7.c_str());
 
 				//Lin Range Plot
 				h_range_Lin->SetFillColor(kSpring+4);
@@ -391,8 +416,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				lin_range_legend->Draw();		
 				h_range_Lin->SetMaximum((h_range_Lin->GetMaximum())*1.25);
 				c_range_Lin->Update();				
-				filename7 = filename.replace(filename.find("_SYNrange.pdf"), 13, "_LINrange.pdf");
-				c_range_Lin->Print(filename7.c_str());
+				filename8 = filename.replace(filename.find("_SYNrange.pdf"), 13, "_LINrange.pdf");
+				c_range_Lin->Print(filename8.c_str());
 
 				//Diff Range Plot
 				h_range_Diff->SetFillColor(kAzure+5);
@@ -415,8 +440,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				diff_range_legend->Draw();		
 				h_range_Diff->SetMaximum((h_range_Diff->GetMaximum())*1.25);
 				c_range_Diff->Update();				
-				filename8 = filename.replace(filename.find("_LINrange.pdf"), 14, "_DIFFrange.pdf");
-				c_range_Diff->Print(filename8.c_str());
+				filename9 = filename.replace(filename.find("_LINrange.pdf"), 14, "_DIFFrange.pdf");
+				c_range_Diff->Print(filename9.c_str());
 	
 				//Stacked Range Plot
 				THStack *hs_range = new THStack("hs","");
@@ -449,8 +474,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
 				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 				hs_range->SetMaximum((hs_range->GetMaximum())*1.21);
 				c_Stackr->Update();
-				filename9 = filename.replace(filename.find("_DIFFrange.pdf"), 15, "_STACKrange.pdf");
-				c_Stackr->Print(filename9.c_str());
+				filename10 = filename.replace(filename.find("_DIFFrange.pdf"), 15, "_STACKrange.pdf");
+				c_Stackr->Print(filename10.c_str());
 				
 
 				delete h_Syn;
