@@ -20,12 +20,11 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ThresholdTDAC path/to/direct
 
 	int thr_found=0;
 	int rowno, colno, total_pix;
-	int xbins, xlow, xhigh, xyzero;
+	int xbins, xlow, xhigh;
 	std::string chipnum, filename, filename1, filename2;
 	rowno = 192;
 	colno = 400;
 	total_pix = rowno*colno;
-	xyzero = 0;
 	xbins = 500;
 	xlow = -0.5;
 	xhigh = 10000.5;
@@ -240,8 +239,12 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ThresholdTDAC path/to/direct
 
 
 	std::cout << thr_found << "		" <<  thr_values.size() << "	" << tdac_values.size() << std::endl;
+	
+	int num_thr_values = thr_values.size();
+	int num_tdac_values = tdac_values.size(); 
+	
 
-	if ( thr_values.size() == total_pix && tdac_values.size() == total_pix ) { 	
+	if ( num_thr_values == total_pix && num_tdac_values == total_pix ) { 	
 		int zero_Lin=0, zero_Diff=0, n=0;
 		//Fill histogram
 		for (int i=0; i<rowno; i++) {
