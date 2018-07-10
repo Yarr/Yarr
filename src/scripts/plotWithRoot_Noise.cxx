@@ -10,7 +10,7 @@
 #include <plotWithRoot.h>
 #include <RD53Style.h>
 
-int main(int argc, char *argv[]) { //./plotWithRoot_Occupancydir Directory_name
+int main(int argc, char *argv[]) { //./plotWithRoot_Noise path/to/directory
 	SetRD53Style();
 	gStyle->SetTickLength(0.02);
 	gStyle->SetTextFont();
