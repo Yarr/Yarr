@@ -11,6 +11,8 @@
 #include <iostream>
 #include <vector>
 #include <tuple>
+#include <array>
+#include <utility>
 
 #include "FrontEnd.h"
 #include "Rd53a.h"
@@ -24,6 +26,7 @@ class Rd53aMaskLoop : public LoopActionBase {
         void loadConfig(json &j);
     private:
         unsigned m_cur;
+	std::string m_scanType;
 
         void init();
         void end();
@@ -31,6 +34,16 @@ class Rd53aMaskLoop : public LoopActionBase {
         void execPart2();
 
         std::map<FrontEnd*, std::array<uint16_t, Rd53a::n_DC*Rd53a::n_Row>> m_pixRegs;
+	
+	//Needed for cross-talk mask
+	std::array< std::pair<int,int>, 8> Mask8x8;
+	std::array< std::array<int, 5>, 4> mask_edges;
+	std::array< std::array<int, 3>, 4> mask_corners;
+	
+	bool getNeighboursMap(int col, int row,  std::vector<std::pair<int, int>> &neighbours);
+	int IdentifyCorner(int col, int row);
+	int IdentifyPixel(int col, int row);
+
 };
 
 #endif
