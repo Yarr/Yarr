@@ -51,6 +51,7 @@ $ ./plotWithRoot_Threshold path/to/directory
 Examples of some of the Threshold plots given below: 
 
 ![Threshold Plots Preview](images/ThresholdPlots_Preview.png)
+
 ![Threshold2D Plot Preview](images/Threshold2DPlot_Preview.png){:height="30% width="30%"}
 
 
@@ -67,6 +68,7 @@ $ ./plotWithRoot_Noise path/to/directory
 Examples of some of the Noise plots given below: 
 
 ![Noise Plots Preview](images/NoisePlots_Preview.png)
+
 ![Noise2D Plot Preview](images/Noise2DPlot_Preview.png){:height="30%" width="30%"}
 
 ###TDAC Plots
