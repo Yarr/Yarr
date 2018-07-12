@@ -69,7 +69,7 @@ Examples of some of the Noise plots given below:
 
 ![Noise Plots Preview](images/NoisePlots_Preview.png)
 
-![Noise2D Plot Preview](images/Noise2DPlot_Preview.png){:height="30%" width="30%"}
+![Noise2D Plot Preview](images/Noise2DPlot_Preview.png){width=30%}
 
 ###TDAC Plots
 
