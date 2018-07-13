@@ -52,7 +52,7 @@ Examples of some of the Threshold plots given below:
 
 ![Threshold Plots Preview](images/ThresholdPlots_Preview.png)
 
-![Threshold2D Plot Preview](images/Threshold2DPlot_Preview.png){:height="30% width="30%"}
+<div style="text-align:center"><img src="images/Threshold2DPlot_Preview.png" width="600">
 
 
 ###Noise Plots
@@ -69,7 +69,7 @@ Examples of some of the Noise plots given below:
 
 ![Noise Plots Preview](images/NoisePlots_Preview.png)
 
-![Noise2D Plot Preview](images/Noise2DPlot_Preview.png =600x400)
+<div style="text-align:center"><img src="images/Noise2DPlot_Preview.png" width="600">
 
 ###TDAC Plots
 
