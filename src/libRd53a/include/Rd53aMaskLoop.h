@@ -26,14 +26,17 @@ class Rd53aMaskLoop : public LoopActionBase {
         void loadConfig(json &j);
     private:
         unsigned m_cur;
-	std::string m_scanType;
+	int m_maskType;
 
         void init();
         void end();
         void execPart1();
         void execPart2();
 
-        std::map<FrontEnd*, std::array<uint16_t, Rd53a::n_DC*Rd53a::n_Row>> m_pixRegs;
+	
+	bool ApplyMask(int col, int row);
+        
+	std::map<FrontEnd*, std::array<uint16_t, Rd53a::n_DC*Rd53a::n_Row>> m_pixRegs;
 	
 	//Needed for cross-talk mask
 	std::array< std::pair<int,int>, 8> Mask8x8;
