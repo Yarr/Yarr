@@ -10,7 +10,7 @@
 
 enum PixelCategories  {LeftEdge, BottomEdge, RightEdge, UpperEdge, Corner, Middle};
 enum CornerCategories {UpperLeft, BottomLeft, BottomRight, UpperRight, NotCorner};
-enum MaskType {StandardMask,CrossTalkMask,CrossTalkMaskv2};
+enum MaskType {StandardMask =0 ,CrossTalkMask=1 ,CrossTalkMaskv2 =2};
 
 Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase() {
     min = 0;

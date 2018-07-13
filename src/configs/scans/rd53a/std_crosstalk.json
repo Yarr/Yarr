@@ -44,7 +44,7 @@
           "max": 1536,
           "min": 0,
           "step": 1,
-	  "scanType" : "crosstalk"
+	  "scanType" : 1
         },
         "loopAction": "Rd53aMaskLoop"
       },
