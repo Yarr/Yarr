@@ -744,6 +744,64 @@ wb_dev_gen : if wb_dev_c = '1' generate
 -- Differential buffers
 	tx_loop: for I in 0 to c_TX_CHANNELS-1 generate
 	begin
+       ddr_buf_gen: if c_TX_ENCODING = "OSERDES" generate
+           tx_buf : OBUFDS
+           generic map (
+               IOSTANDARD => "LVDS_25")
+           port map (
+               O => fe_cmd_p(I),     -- Diff_p output (connect directly to top-level port)
+               OB => fe_cmd_n(I),   -- Diff_n output (connect directly to top-level port)
+               I => fe_cmd_enc(I)      -- Buffer input 
+           );
+       OSERDESE2_inst : OSERDESE2
+           generic map (
+              DATA_RATE_OQ => "DDR",   -- DDR, SDR
+              DATA_RATE_TQ => "DDR",   -- DDR, BUF, SDR
+              DATA_WIDTH => 8,         -- Parallel data width (2-8,10,14)
+              INIT_OQ => '0',          -- Initial value of OQ output (1'b0,1'b1)
+              INIT_TQ => '0',          -- Initial value of TQ output (1'b0,1'b1)
+              SERDES_MODE => "MASTER", -- MASTER, SLAVE
+              SRVAL_OQ => '0',         -- OQ output value when SR is used (1'b0,1'b1)
+              SRVAL_TQ => '0',         -- TQ output value when SR is used (1'b0,1'b1)
+              TBYTE_CTL => "FALSE",    -- Enable tristate byte operation (FALSE, TRUE)
+              TBYTE_SRC => "FALSE",    -- Tristate byte source (FALSE, TRUE)
+              TRISTATE_WIDTH => 1      -- 3-state converter width (1,4)
+           )
+           port map (
+              OFB => open,             -- 1-bit output: Feedback path for data
+              OQ => fe_cmd_enc(I),               -- 1-bit output: Data path output
+              -- SHIFTOUT1 / SHIFTOUT2: 1-bit (each) output: Data output expansion (1-bit each)
+              SHIFTOUT1 => open,
+              SHIFTOUT2 => open,
+              TBYTEOUT => open,   -- 1-bit output: Byte group tristate
+              TFB => open,             -- 1-bit output: 3-state control
+              TQ => open,               -- 1-bit output: 3-state control
+              CLK => clk_640_s,             -- 1-bit input: High speed clock
+              CLKDIV => clk_160_s,       -- 1-bit input: Divided clock
+              -- D1 - D8: 1-bit (each) input: Parallel data inputs (1-bit each)
+              D1 => fe_cmd_o(I),
+              D2 => fe_cmd_o(I),
+              D3 => fe_cmd_o(I),
+              D4 => fe_cmd_o(I),
+              D5 => fe_cmd_o(I),
+              D6 => fe_cmd_o(I),
+              D7 => fe_cmd_o(I),
+              D8 => fe_cmd_o(I),
+              OCE => '1',             -- 1-bit input: Output data clock enable
+              RST => not rst_n_s,             -- 1-bit input: Reset
+              -- SHIFTIN1 / SHIFTIN2: 1-bit (each) input: Data input expansion (1-bit each)
+              SHIFTIN1 => '0',
+              SHIFTIN2 => '0',
+              -- T1 - T4: 1-bit (each) input: Parallel 3-state inputs
+              T1 => '0',
+              T2 => '0',
+              T3 => '0',
+              T4 => '0',
+              TBYTEIN => '0',     -- 1-bit input: Byte group tristate
+              TCE => '0'              -- 1-bit input: 3-state clock enable
+           );
+       end generate ddr_buf_gen;
+
 	   nrz_gen: if c_TX_ENCODING = "NRZ" generate
            tx_buf : OBUFDS
            generic map (

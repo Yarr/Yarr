@@ -397,8 +397,8 @@ begin
 --    );    
 
     -- EUDET buffer
-    eudet_clk_buf : OBUFDS port map (O => eudet_clk_p, OB => eudet_clk_n, I => not eudet_clk_s);
-    eudet_busy_buf : OBUFDS port map (O => eudet_busy_p, OB => eudet_busy_n, I => not eudet_busy_s);
+    eudet_clk_buf : OBUFDS port map (O => eudet_clk_p, OB => eudet_clk_n, I => eudet_clk_s);
+    eudet_busy_buf : OBUFDS port map (O => eudet_busy_p, OB => eudet_busy_n, I => eudet_busy_s);
     eudet_rst_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => eudet_rst_s, I => eudet_rst_p, IB => eudet_rst_n);
     eudet_trig_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => eudet_trig_s, I => eudet_trig_p, IB => eudet_trig_n);
     -- HitOr
@@ -563,8 +563,8 @@ begin
         --scl_io            => scl_io,
         --EUDET
         eudet_clk_o => eudet_clk_s,
-        eudet_trig_i => not eudet_trig_s,
-        eudet_rst_i => eudet_rst_s,
+        eudet_trig_i => eudet_trig_s,
+        eudet_rst_i => not eudet_rst_s,
         eudet_busy_o => eudet_busy_s,
         --SPI
         scl_o => scl_o,

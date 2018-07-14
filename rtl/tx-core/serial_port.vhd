@@ -53,8 +53,6 @@ architecture behavioral of serial_port is
     signal az_cnt : unsigned(15 downto 0);
 begin
 
-    -- Tie offs
-    data_o <= sreg(g_PORT_WIDTH-1);
     -- Serializer proc
     serialize: process(clk_i, rst_n_i)
     begin
@@ -64,7 +62,10 @@ begin
 			data_read_o <= '0';
 			sync_cnt <= (others => '0');
 			az_cnt <= (others => '0');
+            data_o <= '0';
 		elsif rising_edge(clk_i) then
+            -- Output register
+            data_o <= sreg(g_PORT_WIDTH-1);
             -- Priority encoder
             -- 1. Input via data_i port (fifo/looper) [only when enabled]
             -- 3. Autozero word [only when enabled]
