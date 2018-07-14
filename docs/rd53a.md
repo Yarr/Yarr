@@ -186,4 +186,4 @@ Config parameters:
  - max ``<int>``: number of mask stages
  - min ``<int>``: mask stage to start with
  - step ``<int>``: step size of mask stage
-
+ - maskType  ``<int>``: mask type for standard scans (0), or for cross-talk (1 and 2, depending on the definition)

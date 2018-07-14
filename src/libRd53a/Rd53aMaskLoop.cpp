@@ -205,7 +205,7 @@ void Rd53aMaskLoop::writeConfig(json &j) {
     j["min"] = min;
     j["max"] = max;
     j["step"] = step;
-    j["scanType"] = m_maskType;
+    j["maskType"] = m_maskType;
     
 }
 
@@ -216,8 +216,8 @@ void Rd53aMaskLoop::loadConfig(json &j) {
         max = j["max"];
     if (!j["step"].empty())
         step = j["step"];
-    if (!j["scanType"].empty())
-      m_maskType = j["scanType"];
+    if (!j["maskType"].empty())
+      m_maskType = j["maskType"];
 }
 
 
