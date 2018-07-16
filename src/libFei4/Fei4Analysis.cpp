@@ -770,9 +770,12 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
         }
 
         double meanOcc = occDists[ident]->getMean()/(double)injections;
+        double entries = occDists[ident]->getEntries();
         std::cout << "[" << channel << "]Mean Occupancy: " << meanOcc << std::endl;
 
-        if ((meanOcc > 0.51) && !done) {
+        if (entries < (nCol*nRow)*0.01) { // Want at least 1% of all pixels to fire
+            sign = -1;
+        } else if ((meanOcc > 0.51) && !done) {
             sign = +1;
         } else if ((meanOcc < 0.49) && !done) {
             sign = -1;
