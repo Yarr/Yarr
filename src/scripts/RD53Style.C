@@ -9,7 +9,7 @@
 void SetRD53Style()
 {
   static TStyle* rd53Style = 0;
-  std::cout << "\nApplying RD53 ploting style settings...\n" << std::endl ;
+  std::cout << "\nApplying RD53 plotting style settings...\n" << std::endl ;
   if ( rd53Style==0 ) rd53Style = RD53Style();
   gROOT->SetStyle("RD53");
   gROOT->ForceStyle();

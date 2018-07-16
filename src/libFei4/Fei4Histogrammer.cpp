@@ -161,11 +161,11 @@ void L1Dist::processEvent(Fei4Data *data) {
             l1id = curEvent.l1id;
             if (curEvent.bcid - bcid_offset > 16) {
                 bcid_offset = curEvent.bcid;
-                current_tag++;
+                //current_tag++;
             } else if ((curEvent.bcid+32768) - bcid_offset > 16 &&
                        static_cast<int>(curEvent.bcid) - static_cast<int>(bcid_offset) < 0) {
                 bcid_offset = curEvent.bcid;
-                current_tag++;
+                //current_tag++;
             }
         }
 
@@ -176,7 +176,7 @@ void L1Dist::processEvent(Fei4Data *data) {
         h->fill(delta_bcid, curEvent.nHits);
 
         //TODO hack to generate proper tag, should come from FE/FW
-        curEvent.tag = current_tag;
+        //curEvent.tag = current_tag;
 
     }
 }

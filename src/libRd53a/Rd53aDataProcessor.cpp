@@ -75,9 +75,9 @@ void Rd53aDataProcessor::process() {
 void Rd53aDataProcessor::process_core() {
     // TODO put data from channels back into input, so other processors can use it
     for (auto &i : activeChannels) {
-        tag[i] = 0;
-        l1id[i] = 0;
-        bcid[i] = 0;
+        tag[i] = 666;
+        l1id[i] = 666;
+        bcid[i] = 666;
         wordCount[i] = 0;
         hits[i] = 0;
     }

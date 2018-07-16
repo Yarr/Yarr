@@ -4,15 +4,15 @@ if [ "$#" -lt 5 ]; then
     exit 1
 fi
 
-bin/scanConsole -s digitalscan -t $1 $2 $3 -r $4 -c ${@:5} -p -m 1
-bin/scanConsole -s analogscan -t $1 $2 $3 -r $4 -c ${@:5} -p
-bin/scanConsole -s tune_globalthreshold -t $1 $2 $3 -r $4 -c ${@:5} -p
-bin/scanConsole -s tune_globalpreamp -t $1 $2 $3 -r $4 -c ${@:5} -p
-bin/scanConsole -s tune_globalthreshold -t $1 $2 $3 -r $4 -c ${@:5} -p
-bin/scanConsole -s tune_pixelthreshold -t $1 $2 $3 -r $4 -c ${@:5} -p
-bin/scanConsole -s tune_globalpreamp -t $1 $2 $3 -r $4 -c ${@:5} -p
-bin/scanConsole -s tune_pixelpreamp -t $1 $2 $3 -r $4 -c ${@:5} -p
-bin/scanConsole -s tune_pixelthreshold -t $1 $2 $3 -r $4 -c ${@:5} -p
-bin/scanConsole -s noisescan -t $1 $2 $3 -r $4 -c ${@:5} -p
-bin/scanConsole -s totscan -t $1 $2 $3 -r $4 -c ${@:5} -p
-bin/scanConsole -s thresholdscan -t $1 $2 $3 -r $4 -c ${@:5} -p
+bin/scanConsole -s digitalscan -r $4 -c ${@:5} -p -m 1
+bin/scanConsole -s analogscan -r $4 -c ${@:5} -p
+bin/scanConsole -s tune_globalthreshold -t $1 -r $4 -c ${@:5} -p
+bin/scanConsole -s tune_globalpreamp -t $2 $3 -r $4 -c ${@:5} -p
+bin/scanConsole -s tune_globalthreshold -t $1 -r $4 -c ${@:5} -p
+bin/scanConsole -s tune_pixelthreshold -t $1 -r $4 -c ${@:5} -p
+bin/scanConsole -s tune_globalpreamp -t $2 $3 -r $4 -c ${@:5} -p
+bin/scanConsole -s tune_pixelpreamp -t $2 $3 -r $4 -c ${@:5} -p
+bin/scanConsole -s tune_pixelthreshold -t $1 -r $4 -c ${@:5} -p
+bin/scanConsole -s noisescan -r $4 -c ${@:5} -p
+bin/scanConsole -s totscan -t $2 $3 -r $4 -c ${@:5} -p
+bin/scanConsole -s thresholdscan -r $4 -c ${@:5} -p

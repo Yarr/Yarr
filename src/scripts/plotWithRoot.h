@@ -18,6 +18,9 @@ void style_TH1(TH1* hist_TH1, const char* Xtitle, const char* Ytitle ){
 	hist_TH1->GetYaxis()->SetTitleSize(0.05);
 	hist_TH1->GetYaxis()->SetTitleOffset(1.5);
 	hist_TH1->SetStats(0);
+	hist_TH1->GetXaxis()->SetLabelSize(0.05);
+	hist_TH1->GetYaxis()->SetLabelSize(0.035);
+
 }
 
 //Style for THStack (TH1)
@@ -28,6 +31,22 @@ void style_THStack(THStack* hist_Stack, const char* Xtitle, const char*Ytitle){
 	hist_Stack->GetXaxis()->SetTitleOffset(1.25);
 	hist_Stack->GetYaxis()->SetTitleSize(0.05);
 	hist_Stack->GetYaxis()->SetTitleOffset(1.5);
+	hist_Stack->GetXaxis()->SetLabelSize(0.05);
+	hist_Stack->GetYaxis()->SetLabelSize(0.035);
+}
+
+//Style for TH2
+void style_TH2(TH2* hist_TH2, const char* Xtitle, const char*Ytitle, const char* Ztitle){
+	hist_TH2->GetXaxis()->SetTitle(Xtitle);
+	hist_TH2->GetYaxis()->SetTitle(Ytitle);
+	hist_TH2->GetZaxis()->SetTitle(Ztitle);
+	hist_TH2->GetXaxis()->SetTitleSize(0.045);
+	hist_TH2->GetXaxis()->SetTitleOffset(1.1);
+	hist_TH2->GetYaxis()->SetTitleSize(0.05);
+	hist_TH2->GetYaxis()->SetTitleOffset(1);
+	hist_TH2->GetZaxis()->SetTitleSize(0.05);
+	hist_TH2->GetZaxis()->SetTitleOffset(1.2);
+
 }
 
 //Style for TH1 Canvas
@@ -35,6 +54,14 @@ void style_TH1canvas(TCanvas *c){
 	c->SetLeftMargin(0.15);
 	c->SetRightMargin(0.05);
 	c->SetBottomMargin(0.1225);
+
+}
+
+//Style for TH2 Canvas
+void style_TH2canvas(TCanvas *c){
+	c->SetLeftMargin(0.1);
+	c->SetRightMargin(0.18);
+	c->SetBottomMargin(0.1);
 
 }
 
@@ -49,7 +76,6 @@ void latex_Chip(TLatex* name){
 
 //Function for if pixel was in certain FE
 int whichFE(int col) {
-	//const char fe_type[3] = ["syn", "lin", "diff"];
 	int division1 = 128, division2 = 264;
 	int which_fe = 10; //add if 10, give error in .cxx file
 	if (col<division1){ //Syn FE
@@ -94,4 +120,27 @@ int whichSigma(double value, double mean, double sigma) {
 	else if ( value > (mean + 5*sigma)) hist_bin = 6;
 	return hist_bin;
 }
-
+int goodDiff(int row, int col) {
+	int good = 10;
+	int start_col = 264;
+	
+	std::array<std::array<unsigned, 8>, 8> mask;
+	mask[0] = {{0, 1, 1, 1, 0, 0, 0, 0}};
+	mask[1] = {{0, 0, 1, 1, 1, 0, 0, 0}};
+	mask[2] = {{0, 1, 0, 1, 1, 0, 0, 0}};
+	mask[3] = {{0, 1, 0, 1, 1, 0, 0, 0}};
+	mask[4] = {{0, 0, 1, 1, 0, 0, 0, 0}};
+	mask[5] = {{0, 0, 1, 1, 0, 0, 0, 0}};
+	mask[6] = {{0, 0, 1, 0, 0, 0, 0, 0}};
+	mask[7] = {{0, 0, 1, 1, 0, 0, 0, 0}};
+	
+	if (col < start_col) {
+		//std::cout << "This pixel is not part of the differential FE." << std::endl;	
+	}	
+	else {
+		if (mask[row%8][col%8] == 1) good = 1;
+		else good = 0;
+		}
+	
+	return good;
+}
