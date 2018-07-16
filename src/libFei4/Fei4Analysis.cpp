@@ -260,6 +260,10 @@ void TotAnalysis::init(ScanBase *s) {
             globalFb = dynamic_cast<GlobalFeedbackBase*>(l.get());  
         }
 
+        if (l->type() == typeid(Rd53aGlobalFeedback*)) {
+            globalFb = dynamic_cast<GlobalFeedbackBase*>(l.get());  
+        }
+
         if (l->type() == typeid(Fei4PixelFeedback*)) {
             pixelFb = dynamic_cast<PixelFeedbackBase*>(l.get());  
         }
@@ -322,26 +326,26 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
     if (occInnerCnt[ident] == n_count &&
             totInnerCnt[ident] == n_count &&
             tot2InnerCnt[ident] == n_count) {
-        Histo2d *meanTotMap = new Histo2d("MeanTotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        Histo2d *meanTotMap = new Histo2d("MeanTotMap"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         meanTotMap->setXaxisTitle("Column");
         meanTotMap->setYaxisTitle("Row");
         meanTotMap->setZaxisTitle("Mean ToT [bc]");
-        Histo2d *sumTotMap = new Histo2d("SumTotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        Histo2d *sumTotMap = new Histo2d("SumTotMap"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         sumTotMap->setXaxisTitle("Column");
         sumTotMap->setYaxisTitle("Row");
         sumTotMap->setZaxisTitle("Mean ToT [bc]");
-        Histo2d *sumTot2Map = new Histo2d("MeanTot2Map", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        Histo2d *sumTot2Map = new Histo2d("MeanTot2Map"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         sumTot2Map->setXaxisTitle("Column");
         sumTot2Map->setYaxisTitle("Row");
         sumTot2Map->setZaxisTitle("Mean ToT^2 [bc^2]");
-        Histo2d *sigmaTotMap = new Histo2d("SigmaTotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        Histo2d *sigmaTotMap = new Histo2d("SigmaTotMap"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         sigmaTotMap->setXaxisTitle("Column");
         sigmaTotMap->setYaxisTitle("Row");
         sigmaTotMap->setZaxisTitle("Sigma ToT [bc]");
-        Histo1d *meanTotDist = new Histo1d("MeanTotDist_"+std::to_string(ident), 161, -0.05, 16.05, typeid(this));
+        Histo1d *meanTotDist = new Histo1d("MeanTotDist_"+std::to_string(ident), 16, 0.5, 16.5, typeid(this));
         meanTotDist->setXaxisTitle("Mean ToT [bc]");
         meanTotDist->setYaxisTitle("Number of Pixels");
-        Histo1d *sigmaTotDist = new Histo1d("SigmaTotDist", 101, -0.05, 1.05, typeid(this));
+        Histo1d *sigmaTotDist = new Histo1d("SigmaTotDist"+std::to_string(ident), 101, -0.05, 1.05, typeid(this));
         sigmaTotDist->setXaxisTitle("Sigma ToT [bc]");
         sigmaTotDist->setYaxisTitle("Number of Pixels");
 
@@ -360,13 +364,20 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
 
         if (globalFb != NULL) {
             double mean = 0;
-            for (unsigned i=0; i<meanTotMap->size(); i++)
-                mean += meanTotMap->getBin(i);
-            mean = mean/(double)meanTotMap->size();
+            double entries = 0;
+            for (unsigned i=0; i<meanTotMap->size(); i++) {
+                if (occMaps[ident]->getBin(i) == injections) {
+                    mean += meanTotMap->getBin(i);
+                    entries++;
+                } 
+            }
+            if (entries > 0) {
+                mean = mean/entries;
+            }
             std::cout << "Mean is: " << mean << std::endl;
 
             // TODO Get this from somewhere
-            double targetTot = 10.0;
+            double targetTot = bookie->getTargetTot();
             int sign = 0;
             bool last = false;
             if (mean < (targetTot-0.1)) {

@@ -53,6 +53,7 @@
     ],
     "name": "AnalogScan",
     "prescan": {
+        "GlobalPulseRt": 0,
         "LatencyConfig": 48
     }
   }
