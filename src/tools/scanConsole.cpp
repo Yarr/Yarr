@@ -277,6 +277,7 @@ int main(int argc, char *argv[]) {
             return -1;
         }
     }
+    hwCtrl->setupMode();
 
     // Disable trigger in-case
     hwCtrl->setTrigEnable(0);
@@ -409,6 +410,8 @@ int main(int argc, char *argv[]) {
     hwCtrl->setRxEnable(bookie.getRxMask());
     std::cout << "-> Setting Rx Mask to: 0x" << std::hex << bookie.getRxMask() << std::dec << std::endl;
     
+    hwCtrl->runMode();
+
     std::cout << std::endl;
     std::cout << "\033[1;31m##############\033[0m" << std::endl;
     std::cout << "\033[1;31m# Setup Scan #\033[0m" << std::endl;

@@ -18,6 +18,10 @@ using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, int32_
 class HwController : virtual public TxCore, virtual public RxCore {
     public:
         virtual void loadConfig(json &j) = 0 ;
+        
+        virtual void setupMode() {}
+        virtual void runMode() {}
+
         virtual ~HwController() {}
 };
 

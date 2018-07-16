@@ -58,12 +58,28 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
 
             // Configure auto-zero logic
             if (!j["autoZero"].empty()) {
-                if (!j["autoZero"]["word"].empty())
+                if (!j["autoZero"]["word"].empty()) {
                     this->setAzWord(j["autoZero"]["word"]);
-                if (!j["autoZero"]["interval"].empty())
+                    m_azWord = j["autoZero"]["word"];
+                }
+                if (!j["autoZero"]["interval"].empty()) {
                     this->setAzInterval(j["autoZero"]["interval"]);
+                    m_azInterval = j["autoZero"]["interval"];
+                }
             }
         }
+
+        void setupMode() override final{
+            this->setAzWord(0x0);
+        }
+
+        void runMode() override final {
+            this->setAzWord(m_azWord);
+        }
+
+    private:
+        uint32_t m_azWord;
+        uint32_t m_azInterval;
 };
 
 #endif
