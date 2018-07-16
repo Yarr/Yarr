@@ -154,7 +154,38 @@ set_property IOSTANDARD LVCMOS25 [get_ports {sdi_i}]
 set_property IOSTANDARD LVCMOS25 [get_ports {sda_io}]
 set_property IOSTANDARD LVCMOS25 [get_ports {scl_io}]
 
+#  Rising Edge Source Synchronous Outputs 
+#
+#  Source synchronous output interfaces can be constrained either by the max data skew
+#  relative to the generated clock or by the destination device setup/hold requirements.
+#
+#  Max Skew Case:
+#  The skew requirements for FPGA are known from system level analysis.
+#
+# forwarded                _____________        
+# clock        ___________|             |_________
+#                         |                        
+#                 bre_skew|are_skew          
+#                 <------>|<------>        
+#           ______        |        ____________    
+# data      ______XXXXXXXXXXXXXXXXX____________XXXXX
+#
+# Example of creating generated clock at clock output port
+# create_generated_clock -name <gen_clock_name> -multiply_by 1 -source [get_pins <source_pin>] [get_ports <output_clock_port>]
+# gen_clock_name is the name of forwarded clock here. It should be used below for defining "fwclk".	
 
+set fwclk       	clk_160_s;	# forwarded clock name (generated using create_generated_clock at output clock port)
+set fwclk_period 	6.25;	# forwarded clock period
+set bre_skew 		-0.050;			# skew requirement before rising edge
+set are_skew 		0.050;			# skew requirement after rising edge
+set output_ports 	fe_cmd_*;	# list of output ports
+
+# Output Delay Constraints
+set_output_delay -clock $fwclk -max [expr $fwclk_period - $are_skew] [get_ports $output_ports];
+set_output_delay -clock $fwclk -min $bre_skew                        [get_ports $output_ports];
+
+# Report Timing Template
+# report_timing -to [get_ports $output_ports] -max_paths 20 -nworst 1 -delay_type min_max -name src_sync_pos_out -file src_sync_pos_out.txt;
 
 
 
