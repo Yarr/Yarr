@@ -1394,7 +1394,7 @@ void NoiseTuning::end() {
             sigmaTotDist->fill(sigma);
         }
         for (unsigned i=0; i<meanTotDist->size(); i++) {
-            chargeVsTotMap->fill(injectedCharge, -0.05+(i+1)*(16.05+0.05)/161-0.05, log10(meanTotDist->getBin(i)));
+            chargeVsTotMap->fill(injectedCharge, -0.05+(i+1)*(16.05+0.05)/161-0.05, meanTotDist->getBin(i));
         }
         x_injectedCharge.push_back(injectedCharge);
         y_meanTot.push_back(meanTotDist->getMean());
@@ -1558,7 +1558,7 @@ void TimeWalkAnalysis::processHistogram(HistogramBase *h) {
 //            chargeMax = fe->toCharge(100, true, true);
 //            chargeStep = fe->toCharge(10, true, true)-fe->toCharge(0, true, true);
             chargeMin = 0; // Need to fix
-            chargeMax = 5000; // Need to fix
+            chargeMax = 10000; // Need to fix
             chargeStep = 250; // Need to fix
             timeWalkMap = new Histo2d("TimeWalkMap", (chargeMax-chargeMin)/chargeStep+1, chargeMin-chargeStep/2, chargeMax+chargeStep/2, 16, -0.5, 15.5, typeid(void));
             timeWalkMap->setXaxisTitle("Injected charge [e]");
@@ -1572,7 +1572,7 @@ void TimeWalkAnalysis::processHistogram(HistogramBase *h) {
         }
 
         for (unsigned i=0; i<L1Dist->size(); i++) {
-            timeWalkMap->fill(injectedCharge, -0.5+(i+1)*(15.5+0.5)/16-0.5, log10(L1Dist->getBin(i)));
+            timeWalkMap->fill(injectedCharge, -0.5+(i+1)*(15.5+0.5)/16-0.5, L1Dist->getBin(i));
         }
         x_injectedCharge.push_back(injectedCharge);
         y_meanL1.push_back(L1Dist->getMean());
