@@ -123,24 +123,10 @@ bool NetioRxCore::isBridgeEmpty(){ // True, if queues are stable.
   return m_nioh.isAllStable();
 }
 
-void NetioRxCore::toString(string &s) {}
-
-void NetioRxCore::fromString(string s) {
-  //Decode "host:port"
-  size_t pos1 = 0;
-  size_t pos2 = s.find("{");
-  if(pos2!=string::npos){
-    pos1=pos2+1;
-  }
-  pos2 = s.find(":",pos1);
-  m_felixhost = s.substr(pos1,pos2-pos1);
-  pos1 = pos2;
-  m_felixport = atoi(s.substr(pos1+1).c_str());
-  m_nioh.setFelixHost(m_felixhost);
-  m_nioh.setFelixRXPort(m_felixport);
+void NetioRxCore::toFileJson(json &j) {
+  j["NetIO"]["host"] = m_felixhost;
+  j["NetIO"]["rxport"] = m_felixport;
 }
-
-void NetioRxCore::toFileJson(json &j) {}
 
 void NetioRxCore::fromFileJson(json &j) {
   m_felixhost = j["NetIO"]["host"];

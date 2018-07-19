@@ -391,52 +391,13 @@ void NetioTxCore::printFifo(uint64_t elink){
   cout << dec << endl;
 }
 
-void NetioTxCore::toString(string &s) {}
-
-void Tokenize(const string& str,
-              vector<string>& tokens,
-              const string& delimiters = " "){
-  // Skip delimiters at beginning.
-  string::size_type lastPos = str.find_first_not_of(delimiters, 0);
-  // Find first "non-delimiter".
-  string::size_type pos     = str.find_first_of(delimiters, lastPos);
-
-  while (string::npos != pos || string::npos != lastPos){
-    // Found a token, add it to the vector.
-    tokens.push_back(str.substr(lastPos, pos - lastPos));
-    // Skip delimiters.  Note the "not_of"
-    lastPos = str.find_first_not_of(delimiters, pos);
-    // Find next "non-delimiter"
-    pos = str.find_first_of(delimiters, lastPos);
-  }
+void NetioTxCore::toFileJson(json &j)  {
+  j["NetIO"]["host"] = m_felixhost;
+  j["NetIO"]["txport"] = m_felixport;
+  j["NetIO"]["manchester"] = m_manchester;
+  j["NetIO"]["flip"] = m_flip;
+  j["NetIO"]["extend"] = (m_extend == 4);
 }
-
-void NetioTxCore::fromString(string s) {
-  //Decode "host:port"
-  /* size_t pos1 = 0;
-  size_t pos2 = s.find("{");
-  if(pos2!=string::npos){
-    pos1=pos2+1;
-  }
-  pos2 = s.find(":",pos1);
-  m_felixhost = s.substr(pos1,pos2-pos1);
-  pos1 = pos2;
-  m_felixport = atoi(s.substr(pos1+1).c_str());
-  */
-  std::vector<string> tokens;
-  Tokenize(s,tokens,":");
-  if(tokens.size()>0) m_felixhost = tokens[0];
-  if(tokens.size()>1) m_felixport = atoi(tokens[1].c_str());
-  if(tokens.size()>2) m_extend = atoi(tokens[2].c_str());
-  if(tokens.size()>3) m_flip = atoi(tokens[3].c_str());
-  if(tokens.size()>4) m_manchester = atoi(tokens[4].c_str());
-  cout << "NetioTxCore: " << endl
-       << " manchester=" << m_manchester << endl
-       << " flip=" << m_flip << endl
-       << " extend=" << m_extend << endl;
-}
-
-void NetioTxCore::toFileJson(json &j)  {}
 
 void NetioTxCore::fromFileJson(json &j){
    m_felixhost  = j["NetIO"]["host"];
@@ -450,4 +411,3 @@ void NetioTxCore::fromFileJson(json &j){
         << " flip=" << m_flip << endl
         << " extend=" << m_extend << endl;
 }
-

@@ -195,26 +195,10 @@ bool SimpleNetioRxCore::isBridgeEmpty(){
 
 }
 
-void SimpleNetioRxCore::toString(string &s) {
-  ostringstream os;
-  os << m_felixhost << ":" << m_felixport;
-  s.append(os.str());
+void SimpleNetioRxCore::toFileJson(json &j) {
+  j["NetIO"]["host"] = m_felixhost;
+  j["NetIO"]["rxport"] = m_felixport;
 }
-
-void SimpleNetioRxCore::fromString(string s) {
-  //Decode "host:port"
-  size_t pos1 = 0;
-  size_t pos2 = s.find("{");
-  if(pos2!=string::npos){
-    pos1=pos2+1;
-  }
-  pos2 = s.find(":",pos1);
-  m_felixhost = s.substr(pos1,pos2-pos1);
-  pos1 = pos2;
-  m_felixport = atoi(s.substr(pos1+1).c_str());
-}
-
-void SimpleNetioRxCore::toFileJson(json &j) {}
 
 void SimpleNetioRxCore::fromFileJson(json &j) {
   m_felixhost = j["NetIO"]["host"];

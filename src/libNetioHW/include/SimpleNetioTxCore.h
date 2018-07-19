@@ -157,22 +157,10 @@ public:
   void fromFileJson(json& j);
 
   /**
-   * @brief read configuration from string
-   * @param s string configuration to decode
-   **/
-  void fromString(std::string s);
-
-  /**
    * @brief write configuration to json
    * @param j reference to json
    **/
   void toFileJson(json& j);
-
-  /**
-   * @brief write configuration to string
-   * @param s string path
-   **/
-  void toString(std::string& s);
 
 private:
 

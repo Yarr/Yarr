@@ -44,8 +44,6 @@ public:
   bool isBridgeEmpty() override;
 
   // Configuration
-  void toString(std::string &s);
-  void fromString(std::string s);
   void toFileJson(json &j);
   void fromFileJson(json &j);
 

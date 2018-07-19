@@ -66,20 +66,6 @@ public:
   bool isBridgeEmpty() override;
 
   /**
-   * @brief write configuration to string
-   * @param s reference to string where to write the configuration to
-   * Not implemented
-   **/
-  void toString(std::string &s);
-
-  /**
-   * @brief read configuration from string
-   * @param s reference to string where to read the configuration from
-   * String structure should be "hostname":port
-   **/
-  void fromString(std::string s);
-
-  /**
    * @brief write configuration to json
    * @param j reference to json where to write the configuration to
    * Not implemented
