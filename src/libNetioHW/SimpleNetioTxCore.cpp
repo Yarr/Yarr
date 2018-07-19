@@ -1,6 +1,6 @@
 #include "SimpleNetioTxCore.h"
 #include "NetioTools.h"
-#include "BitStream.h"
+
 #include <cstdint>
 #include <iostream>
 #include <iomanip>
