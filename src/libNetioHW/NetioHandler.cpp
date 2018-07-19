@@ -6,16 +6,16 @@ NetioHandler::NetioHandler(std::string contextStr="posix", std::string felixHost
                uint16_t felixTXPort=12340, uint16_t felixRXPort=12345,
                size_t queueSize=10000000, bool verbose=false) :
     m_felixHost(felixHost), m_felixTXPort(felixTXPort), m_felixRXPort(felixRXPort),
-    m_queueSize(queueSize), m_verbose(verbose) 
+    m_queueSize(queueSize), m_verbose(verbose)
 {
-  if (m_verbose) { std::cout << "### NetioHandler::NetioHandler() -> Setting up context. \n"; } 
+  if (m_verbose) { std::cout << "### NetioHandler::NetioHandler() -> Setting up context. \n"; }
   m_activeChannels=0;
   m_context = new netio::context(contextStr);
   m_netio_bg_thread = std::thread( [&](){m_context->event_loop()->run_forever();} );
 }
 
 NetioHandler::~NetioHandler() {
-  if (m_verbose) { std::cout << "### NetioHandler::~NetioHandler()\n"; }  
+  if (m_verbose) { std::cout << "### NetioHandler::~NetioHandler()\n"; }
   if (m_verbose) { std::cout << "###  Stopping communication with FELIX:\n"
                              << "###   -> Closing send sockets...\n"; }
   for (auto socketIt : m_send_sockets ) {
@@ -28,7 +28,7 @@ NetioHandler::~NetioHandler() {
   m_context->event_loop()->stop();
   if (m_verbose) { std::cout << "###   -> Background thread joining...\n"; }
   m_netio_bg_thread.join();
-  if (m_verbose) { std::cout << "###  Cleaning up buffers and utilities:\n" 
+  if (m_verbose) { std::cout << "###  Cleaning up buffers and utilities:\n"
                              << "###   -> Clearing monitors...\n"; }
   m_monitors.clear();
 
@@ -44,15 +44,15 @@ NetioHandler::~NetioHandler() {
   if (m_verbose) { std::cout << "### NetioHandler::~NetioHandler() -> Clean shutdown. \n"; }
 }
 
-void NetioHandler::monitorSetup(size_t sensitivity, size_t delay, size_t numOf){ 
+void NetioHandler::monitorSetup(size_t sensitivity, size_t delay, size_t numOf){
   m_sensitivity=sensitivity;
-  m_delay=delay; 
+  m_delay=delay;
   if (numOf==0) {
     for (uint32_t i=0; i<m_activeChannels; ++i){
       m_monitors.push_back( QueueMonitor(i, std::ref(m_monitor_config_basic[i]), m_pcqs, m_sensitivity, m_delay) );
     }
   } else {
-    for (uint32_t i=0; i<numOf; ++i){ 
+    for (uint32_t i=0; i<numOf; ++i){
       m_monitors.push_back( QueueMonitor(i, std::ref(m_monitor_config[i]), m_pcqs, m_sensitivity, m_delay) );
     }
   }
@@ -60,9 +60,9 @@ void NetioHandler::monitorSetup(size_t sensitivity, size_t delay, size_t numOf){
 
 void NetioHandler::configureMonitors(size_t sensitivity, size_t delay) {
   m_sensitivity=sensitivity;
-  m_delay=delay; 
-  if (m_verbose) { 
-    std::cout << "### NetioHandler::configureMonitors(sensitivity=" << sensitivity << ", delay=" << delay <<")\n" 
+  m_delay=delay;
+  if (m_verbose) {
+    std::cout << "### NetioHandler::configureMonitors(sensitivity=" << sensitivity << ", delay=" << delay <<")\n"
               << "###   -> Making monitor mapping for active channels: " << m_activeChannels << "\n";
   }
   switch(m_monitor_mode)
@@ -86,7 +86,7 @@ void NetioHandler::configureMonitors(size_t sensitivity, size_t delay) {
         }
       }
       break;
-    case quad: 
+    case quad:
       {
         //if (m_activeChannels/2 != 0) { std::cout << "### ERROR -> Active channels number are not the "}
         std::cout << "###  -> 1 Monitor per 4 elink mode.\n";
@@ -102,7 +102,7 @@ void NetioHandler::configureMonitors(size_t sensitivity, size_t delay) {
 void NetioHandler::startChecking(){
   for (uint32_t i=0; i<m_monitors.size(); ++i) {
     m_monitors[i].startMonitor();
-  }  
+  }
 }
 
 void NetioHandler::stopChecking(){
@@ -144,7 +144,7 @@ void NetioHandler::addChannel(uint64_t chn){
     //m_send_sockets[chn]->connect(netio::endpoint(m_felixHost, m_felixTXPort));
     m_sub_sockets[chn] =  new netio::low_latency_subscribe_socket(
       // FIXME: This is really ugly... AddChannel should also get a callback function ptr, and bind it to the socket.
-      //netio::low_latency_subscribe_socket( 
+      //netio::low_latency_subscribe_socket(
       m_context, [&](netio::endpoint& ep, netio::message& msg) {
         //std::cout << "NETIO: NEW MSG!!!\n";
         uint32_t cid = chn;
@@ -159,7 +159,7 @@ void NetioHandler::addChannel(uint64_t chn){
           // RS: Remove header parse
           felix::base::FromFELIXHeader header; // Parse header
           memcpy(&header, (const void*)&data[offset], sizeof(header));
-          offset+=sizeof(header); // useful words start from end of header. 
+          offset+=sizeof(header); // useful words start from end of header.
 
      //     //if(m_verbose) std::cout << "NetIO msg elinkid:" << header.elinkid << ", gbtid:" << header.gbtid << std::endl;
           //uint32_t chn=(header.elinkid>>1);
@@ -174,9 +174,9 @@ void NetioHandler::addChannel(uint64_t chn){
           for(uint32_t i=0; i<numFei4Words; ++i){
             YARR_RECORD rec(0);
             rec.inner.payload1 = static_cast<uint8_t>(data[offset+2]); // field1[8:0]
-            rec.inner.payload2 = static_cast<uint8_t>(data[offset+1]); // field2[8:0] 
+            rec.inner.payload2 = static_cast<uint8_t>(data[offset+1]); // field2[8:0]
             rec.inner.payload3 = static_cast<uint8_t>(data[offset]);   // rest[16:0]
-            rec.inner.type = false; // Do we need to change this hardcode? 
+            rec.inner.type = false; // Do we need to change this hardcode?
             rec.inner.channel = static_cast<uint8_t>(chn);
             m_pcqs[chn]->write( std::move(rec.allfields) ); // write to channel's queue
             offset+=m_datasize; // datasize is 3, the FEI4 word size.
@@ -190,17 +190,17 @@ void NetioHandler::addChannel(uint64_t chn){
     std::cout << "### NetioHandler::addChannel(" << chn << ") -> ERROR. Failed to activate channel.\n";
     return;
   }
-  if (m_verbose) { std::cout << "### NetioHandler::addChannel(" << chn 
+  if (m_verbose) { std::cout << "### NetioHandler::addChannel(" << chn
                              << ") -> Success. Queue and socket-pair created, subscribed. \n"; }
   m_activeChannels++;
-} 
+}
 
 void NetioHandler::delChannel(uint64_t chn){
     if (m_verbose) { std::cout << "### NetioHandler::delChannel(" << chn << ")" << std::endl; }
   std::vector<uint64_t>::iterator it;
   it=std::find (m_channels.begin(),m_channels.end(),chn);
   if(it!=m_channels.end()){
-    if (m_verbose) { std::cout << "### NetioHandler::delChannel(" << chn << ")" 
+    if (m_verbose) { std::cout << "### NetioHandler::delChannel(" << chn << ")"
                                << " -> unsubscribe" << std::endl; }
     m_channels.erase(it);
     //SHIT: please do not unsubscribe: because felixcore/netio doesn't like it

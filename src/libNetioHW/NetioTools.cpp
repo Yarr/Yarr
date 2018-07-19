@@ -41,7 +41,7 @@ uint32_t NetioTools::conv4(uint32_t num, int32_t pos){
 uint32_t NetioTools::conv4R(uint32_t num, uint32_t pos){
   uint32_t rnum = 0;
   for(uint32_t i=pos*8; i<(pos+1)*8; i++){
-	if((num & (1 << i))) rnum |= 0xF << (32-(i+1)*4);  
+	if((num & (1 << i))) rnum |= 0xF << (32-(i+1)*4);
   }
   return rnum;
 }

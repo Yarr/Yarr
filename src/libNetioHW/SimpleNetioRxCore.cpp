@@ -4,7 +4,7 @@
 
 using namespace std;
 using namespace netio;
- 
+
 SimpleNetioRxCore::SimpleNetioRxCore(){
   m_t0 = std::chrono::steady_clock::now();
   m_datasize = 3;
@@ -16,7 +16,7 @@ SimpleNetioRxCore::SimpleNetioRxCore(){
   m_bytesReceived = 0;
   m_context = new context(cntx);
   m_socket = new low_latency_subscribe_socket(m_context,[&](netio::endpoint& ep, netio::message& msg){decode(ep,msg);});
-  
+
   /*m_statistics = thread([&](){
                           while (true) {
                             m_mutex.lock();
@@ -32,7 +32,7 @@ SimpleNetioRxCore::SimpleNetioRxCore(){
                           }
                         });
   */
-  
+
   m_bgthread = thread([&](){m_context->event_loop()->run_forever();});
 }
 
@@ -42,7 +42,7 @@ SimpleNetioRxCore::~SimpleNetioRxCore(){
     cout << "Unsubscribe elink: 0x" << hex << it->first << dec << endl;
     m_socket->unsubscribe(it->first, endpoint(m_felixhost,m_felixport));
   }
-  
+
   m_context->event_loop()->stop();
   m_bgthread.join();
   delete m_socket;
@@ -59,13 +59,13 @@ void SimpleNetioRxCore::decode(netio::endpoint& ep, netio::message& msg){
     //Parse header
     felix::base::FromFELIXHeader header;
     memcpy(&header, (const void*)&data[offset], sizeof(header));
-    offset+=sizeof(header); 
-    
+    offset+=sizeof(header);
+
     //extract channel id
     uint32_t chn=(header.elinkid>>1);
     if(header.gbtid<=1){chn+=header.gbtid*32;}
-    //if(m_verbose) cout << "NetIO msg elinkid:" << header.elinkid << ", gbtid:" << header.gbtid << endl; 
-    
+    //if(m_verbose) cout << "NetIO msg elinkid:" << header.elinkid << ", gbtid:" << header.gbtid << endl;
+
     //copy the data to the local buffers
     uint32_t numWords=header.length-sizeof(header);
     m_mutex.lock();
@@ -79,7 +79,7 @@ void SimpleNetioRxCore::decode(netio::endpoint& ep, netio::message& msg){
     }
     if(m_debug) cout << endl;
     m_mutex.unlock();
-  } 
+  }
 }
 
 void SimpleNetioRxCore::enableChannel(uint64_t chn){
@@ -92,11 +92,11 @@ void SimpleNetioRxCore::enableChannel(uint64_t chn){
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     m_elinks[elink]=chn;
   }catch(...){
-    cout << "Error subscribing to elink: 0x" << hex << elink << dec 
+    cout << "Error subscribing to elink: 0x" << hex << elink << dec
          << " at " << m_felixhost << ":" << m_felixport << endl;
   }
 }
-  
+
 void SimpleNetioRxCore::disableChannel(uint64_t chn){
   tag elink = chn*2;
   if(m_elinks.find(elink)==m_elinks.end()){return;}
@@ -106,7 +106,7 @@ void SimpleNetioRxCore::disableChannel(uint64_t chn){
     m_socket->unsubscribe(elink, endpoint(m_felixhost,m_felixport));
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }catch(...){
-    cout << "Error unsubscribing to elink " << elink << " in " 
+    cout << "Error unsubscribing to elink " << elink << " in "
          << m_felixhost << ":" << m_felixport << endl;
   }
   m_elinks.erase(elink);
@@ -136,7 +136,7 @@ void SimpleNetioRxCore::maskRxEnable(uint32_t val, uint32_t mask) {
   }
 }
 
-RawData* SimpleNetioRxCore::readData(uint64_t chn){ 
+RawData* SimpleNetioRxCore::readData(uint64_t chn){
   tag elink = chn*2;
   RawData * chnData = NULL;
   queue<uint8_t>* data = &m_data[elink];
@@ -152,14 +152,14 @@ RawData* SimpleNetioRxCore::readData(uint64_t chn){
     for(uint32_t j=0; j<m_datasize;j++){
       m_mutex.lock();
       uint32_t v = data->front();
-      data->pop();      
+      data->pop();
       m_mutex.unlock();
       buffer[i] |= (v<<(8*(m_datasize-j-1)));
       if(m_debug) cout << setw(2) << setfill('0') << v;
     }
     if(m_debug) cout << " => 0x" << setw(6) << setfill('0') << buffer[i] << dec << endl;
   }
-  chnData = new RawData(chn, buffer, size);    
+  chnData = new RawData(chn, buffer, size);
   return chnData;
 }
 
@@ -167,23 +167,23 @@ RawData* SimpleNetioRxCore::readData() {
   map<tag,uint32_t>::iterator it;
   for(it=m_elinks.begin();it!=m_elinks.end();it++){
     RawData * chnData = readData(it->second);
-    if(chnData) 
+    if(chnData)
       return chnData;
   }
   return nullptr;
 }
 
-uint32_t SimpleNetioRxCore::getDataRate(){ 
+uint32_t SimpleNetioRxCore::getDataRate(){
   return m_rate;
 }
 
-uint32_t SimpleNetioRxCore::getCurCount(){ 
+uint32_t SimpleNetioRxCore::getCurCount(){
   return 0;
 }
 
 bool SimpleNetioRxCore::isBridgeEmpty(){
   //return true;
-  
+
   bool somedata=false;
   map<tag,queue<uint8_t> >::iterator it;
   for(it=m_data.begin();it!=m_data.end();it++){
@@ -191,10 +191,10 @@ bool SimpleNetioRxCore::isBridgeEmpty(){
     if(it->second.size()>0){somedata=true;}
     //m_mutex.unlock();
   }
-  return somedata; 
-  
+  return somedata;
+
 }
-      
+
 void SimpleNetioRxCore::toString(string &s) {
   ostringstream os;
   os << m_felixhost << ":" << m_felixport;

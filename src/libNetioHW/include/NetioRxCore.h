@@ -29,19 +29,19 @@ using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::i
  **/
 class NetioRxCore : virtual public RxCore {
 public:
-  
+
   /**
    * @brief Default constructor
    * Initialize the netio context and start statistics thread
    **/
   NetioRxCore(NetioHandler &);
-  
+
   /**
    * @brief Default destructor
    * Stop the NetioHandler. Delete the channels from the NetioHandler.
    **/
   ~NetioRxCore();
-  
+
   void setRxEnable(uint32_t val) override;
   void maskRxEnable(uint32_t val, uint32_t mask) override;
 
@@ -71,21 +71,21 @@ public:
    * Not implemented
    **/
   void toString(std::string &s);
-  
+
   /**
    * @brief read configuration from string
    * @param s reference to string where to read the configuration from
    * String structure should be "hostname":port
    **/
   void fromString(std::string s);
-  
+
   /**
    * @brief write configuration to json
    * @param j reference to json where to write the configuration to
    * Not implemented
    **/
   void toFileJson(json &j);
-  
+
   /**
    * @brief read configuration from json
    * @param j reference to string where to write the configuration from
@@ -102,7 +102,7 @@ private:
   uint16_t m_felixport;             //! felix port for reading
 
   netio::context * m_context;       //! the netio context
-  
+
   std::map<uint64_t,bool> m_elinks; //! elinks map
   bool m_verbose;                   //! verbose mode
 

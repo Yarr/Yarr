@@ -4,8 +4,8 @@
 /********************************
  * NetioHandler
  * Author: Roland.Sipos@cern.ch
- * Description: Wrapper class for 
- *   NETIO sockets and folly SPSC 
+ * Description: Wrapper class for
+ *   NETIO sockets and folly SPSC
  *   circular buffers.
  * Date: November 2017
  *********************************/
@@ -27,7 +27,7 @@ public:
   NetioHandler(NetioHandler const&) = delete;             // Copy construct
   NetioHandler(NetioHandler&&) = delete;                  // Move construct
   NetioHandler& operator=(NetioHandler const&) = delete;  // Copy assign
-  NetioHandler& operator=(NetioHandler &&) = delete;      // Move assign 
+  NetioHandler& operator=(NetioHandler &&) = delete;      // Move assign
 
   // Custom types
   typedef folly::ProducerConsumerQueue<uint32_t> FollyQueue;
@@ -51,9 +51,9 @@ public:
   void setFelixTXPort(uint16_t felixTXPort){m_felixTXPort=felixTXPort;}
 
 public:
-  NetioHandler(std::string contextStr, std::string felixHost, 
+  NetioHandler(std::string contextStr, std::string felixHost,
                uint16_t felixTXPort, uint16_t felixRXPort,
-               size_t queueSize, bool verbose); 
+               size_t queueSize, bool verbose);
 
   ~NetioHandler();
 
@@ -85,20 +85,20 @@ private:
   std::string m_felixHost;    // hostname
   uint16_t m_felixTXPort;     // TX port (ususally 12340)
   uint16_t m_felixRXPort;     // RX port (ususally 12345)
-  std::thread m_netio_bg_thread; 
+  std::thread m_netio_bg_thread;
   std::map<uint64_t, netio::low_latency_subscribe_socket*> m_sub_sockets; // subscribe sockets.
   std::map<uint64_t, netio::low_latency_send_socket*> m_send_sockets;     // send sockets.
 
   size_t m_activeChannels;
 
-  // Statistic thread options 
+  // Statistic thread options
   size_t m_sensitivity;
   size_t m_delay;
   size_t m_queueSize;
 
   // Verbosity
   bool m_verbose;
- 
+
   // Queues and the stability check threads
   std::map<uint64_t, SharedQueue> m_pcqs; // Queues for elink RX.
   std::vector<QueueMonitor> m_monitors;   // Queue monitoring threads.

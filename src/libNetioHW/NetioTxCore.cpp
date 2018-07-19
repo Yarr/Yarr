@@ -58,10 +58,10 @@ void NetioTxCore::disableChannel(uint64_t elink){
 
   m_elinks[elink]=false;
   if(m_elinks.find(elink)==m_elinks.end()){return;}
-  
+
   // We don't disable channels...
-  if(m_verbose) cout << "Disable TX elink: 0x" << hex << elink << dec << endl;  
-  
+  if(m_verbose) cout << "Disable TX elink: 0x" << hex << elink << dec << endl;
+
   //m_elinks[elink]=false;
   //if(m_verbose) cout << "Disable TX elink: 0x" << hex << elink << dec << endl;
 }
@@ -94,10 +94,10 @@ void NetioTxCore::writeFifo(uint32_t value){
 }
 
 void NetioTxCore::writeFifo(uint32_t chn, uint32_t value){
-  if(m_debug) cout << "NetioTxCore::writeFifo chn=" << chn 
+  if(m_debug) cout << "NetioTxCore::writeFifo chn=" << chn
                    << " val=0x" << hex << setw(8) << setfill('0') << value << dec << endl;
   uint64_t elink=chn;
-  writeFifo(&m_fifo[elink],value);  
+  writeFifo(&m_fifo[elink],value);
 }
 
 void NetioTxCore::writeFifo(vector<uint8_t> *fifo, uint32_t value){
@@ -120,7 +120,7 @@ void NetioTxCore::writeFifo(vector<uint8_t> *fifo, uint32_t value){
 
 void NetioTxCore::prepareFifo(vector<uint8_t> *fifo){
 
-  if(m_padding==true){ 
+  if(m_padding==true){
     if(m_debug) cout << "Padding" << endl;
     uint32_t i0=0;
     if(m_debug){cout << "Find the first byte" << endl;}
@@ -135,9 +135,9 @@ void NetioTxCore::prepareFifo(vector<uint8_t> *fifo){
     for(uint32_t i=0; i<i0; i++){
       fifo->pop_back();
     }
-    if(m_debug){cout << "Pop back" << endl;}  
+    if(m_debug){cout << "Pop back" << endl;}
   }
-  
+
   if(m_flip==true){
     if(m_debug) cout << "Flipping" << endl;
     if(fifo->size()%2==1){
@@ -154,7 +154,7 @@ void NetioTxCore::prepareFifo(vector<uint8_t> *fifo){
     bool clk=true;
     fifo->insert(fifo->begin(),2,0x0); //16 extra leading zeroes
     for(uint32_t i=0; i<fifo->size(); i++){
-      uint32_t tmp = fifo->at(i);      
+      uint32_t tmp = fifo->at(i);
       fifo->at(i) = (tmp&0xCC && clk) | (tmp&0x33 && !clk);
     }
   }
@@ -164,11 +164,11 @@ void NetioTxCore::releaseFifo(){
 
   //try to connect
   connect();
-  
+
   if(m_debug) cout << "NetioTxCore::releaseFifo " << endl;
   //create the message for NetIO
   map<uint64_t,bool>::iterator it;
-    
+
   for(it=m_elinks.begin();it!=m_elinks.end();it++){
     if(it->second==false) continue;
     prepareFifo(&m_fifo[it->first]);
@@ -182,7 +182,7 @@ void NetioTxCore::releaseFifo(){
   }
 
   message msg(m_data,m_size);
-   
+
   //Send through the socket
   m_socket->send(msg);
 
@@ -190,7 +190,7 @@ void NetioTxCore::releaseFifo(){
     if(it->second==false) continue;
     m_fifo[it->first].clear();
   }
-  m_size.clear(); 
+  m_size.clear();
   m_data.clear();
 
 }
@@ -199,15 +199,15 @@ void NetioTxCore::trigger(){
 
   //try to connect
   connect();
-  
-  map<tag,felix::base::ToFELIXHeader> headers; 
+
+  map<tag,felix::base::ToFELIXHeader> headers;
   vector<const uint8_t*> data;
   vector<size_t> size;
 
   if(m_debug) cout << "NetioTxCore::trigger " << endl;
   //create the message for NetIO
   map<uint64_t,bool>::iterator it;
-    
+
   for(it=m_elinks.begin();it!=m_elinks.end();it++){
     if(it->second==false) continue;
     //prepareFifo(&m_trigFifo[it->first]);
@@ -220,7 +220,7 @@ void NetioTxCore::trigger(){
   }
 
   message msg(data,size);
-   
+
   //Send through the socket
   m_socket->send(msg);
 
@@ -228,12 +228,12 @@ void NetioTxCore::trigger(){
     if(it->second==false) continue;
     //m_trigFifo[it->first].clear();
   }
-  size.clear(); 
+  size.clear();
   data.clear();
 
 }
 
-bool NetioTxCore::isCmdEmpty(){ 
+bool NetioTxCore::isCmdEmpty(){
   map<uint64_t,bool>::iterator it;
   for(it=m_elinks.begin();it!=m_elinks.end();it++){
     if(it->second==false) continue;
@@ -272,7 +272,7 @@ void NetioTxCore::maskTrigEnable(uint32_t value, uint32_t mask) {
 
     bool enable = (1<<chn) & value;
     tag elink = chn*2;
-    if(enable) m_trigElinks[elink]=chn;  
+    if(enable) m_trigElinks[elink]=chn;
     else m_trigElinks.erase(elink);
   }
 }
@@ -282,7 +282,7 @@ void NetioTxCore::toggleTrigAbort(){
   //Abort trigger -> Empty the CircularBuffer + ensure stable 0 size?
 }
 
-bool NetioTxCore::isTrigDone(){ 
+bool NetioTxCore::isTrigDone(){
   if (!m_trigEnabled && isCmdEmpty()){ return true; }
   return false;
 }
@@ -307,7 +307,7 @@ void NetioTxCore::setTrigWordLength(uint32_t length){
   m_trigWordLength=length;
 }
 
-void NetioTxCore::setTrigWord(uint32_t *word, uint32_t size){ 
+void NetioTxCore::setTrigWord(uint32_t *word, uint32_t size){
   m_trigWords.clear();
   for(uint32_t i=0;i<size;i++){m_trigWords.push_back(word[i]);}
 }
@@ -338,14 +338,14 @@ void NetioTxCore::prepareTrigger(){
     prepareFifo(&m_trigFifo[it->first]);
   }
 }
-  
+
 void NetioTxCore::doTriggerCnt() {
-  
+
   prepareTrigger();
-  
+
   uint32_t trigs=0;
   for(uint32_t i=0; i<m_trigCnt; i++) {
-    if(m_trigEnabled==false) break;    
+    if(m_trigEnabled==false) break;
     trigs++;
     trigger();
     std::this_thread::sleep_for(std::chrono::microseconds((int)(1e6/m_trigFreq))); // Frequency in Hz
@@ -360,7 +360,7 @@ void NetioTxCore::doTriggerCnt() {
 }
 
 void NetioTxCore::doTriggerTime() {
-  
+
   //PrepareTrigger
   prepareTrigger();
 
@@ -400,7 +400,7 @@ void Tokenize(const string& str,
   string::size_type lastPos = str.find_first_not_of(delimiters, 0);
   // Find first "non-delimiter".
   string::size_type pos     = str.find_first_of(delimiters, lastPos);
-  
+
   while (string::npos != pos || string::npos != lastPos){
     // Found a token, add it to the vector.
     tokens.push_back(str.substr(lastPos, pos - lastPos));
@@ -449,7 +449,5 @@ void NetioTxCore::fromFileJson(json &j){
         << " manchester=" << m_manchester << endl
         << " flip=" << m_flip << endl
         << " extend=" << m_extend << endl;
-     
-   
 }
 

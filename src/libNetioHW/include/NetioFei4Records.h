@@ -12,7 +12,7 @@
 // [31:26] channel (0-63)
 union YARR_RECORD {
   struct{
-    uint8_t payload1 : 8; 
+    uint8_t payload1 : 8;
     uint8_t payload2 : 8;
     uint8_t payload3 : 8;
     uint8_t type     : 1;
@@ -24,7 +24,7 @@ union YARR_RECORD {
               << " type: " << std::hex << inner.type << std::dec << std::endl;
   }
   uint32_t allfields;
-  YARR_RECORD(uint32_t data):allfields(data){} 
+  YARR_RECORD(uint32_t data):allfields(data){}
 };
 
 union FEI4_RECORD { // FEI4 24bit Record Word
@@ -172,7 +172,7 @@ union FEI4_SR_CN{
   struct {
     uint8_t code : 8;
     uint16_t num : 10;
-  } inner; 
+  } inner;
   void printBits(){
     std::cout << " -> as hex: " << std::hex << static_cast<uint32_t>(allfields) << std::dec << std::endl;
     std::bitset<16> bscn(allfields);
@@ -198,7 +198,7 @@ union FEI4_SR {
   }
   uint16_t getCodeNum(){
     return inner.codeNum;
-  }   
+  }
   void print(){
     std::cout << " -> field1: " << unsigned(inner.field1)
               << " code: " << unsigned(inner.codeNum) << std::endl;

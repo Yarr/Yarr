@@ -21,7 +21,7 @@ SimpleNetioTxCore::SimpleNetioTxCore(){
   m_verbose = false;
   m_debug = false;
   m_trigAbort = false;
-  
+
   m_felixhost = "felix";
   m_felixport = 12340;
 
@@ -48,13 +48,13 @@ void SimpleNetioTxCore::connect(){
 }
 
 void SimpleNetioTxCore::enableChannel(uint64_t chn){
-  tag elink = chn*2; 
+  tag elink = chn*2;
   m_elinks[elink]=chn;
   if(m_verbose) cout << "Enable TX elink: 0x" << hex << elink << dec << endl;
 }
 
 void SimpleNetioTxCore::disableChannel(uint64_t chn){
-  tag elink = chn*2; 
+  tag elink = chn*2;
   m_elinks.erase(elink);
   //if(m_verbose) cout << "Disable TX elink: 0x" << hex << elink << dec << endl;
 }
@@ -111,19 +111,19 @@ void SimpleNetioTxCore::releaseFifo(bool trigChns){
 
   //try to connect
   connect();
-  
-  //auto start = std::chrono::high_resolution_clock::now(); 
+
+  //auto start = std::chrono::high_resolution_clock::now();
   if(m_verbose) cout << "release FIFO:" << endl;
 
   if(m_fifo.size()==0){
     cout << "Roland FIFO is zero" << endl;
     m_fifo.clear();
-    m_size.clear(); 
+    m_size.clear();
     m_data.clear();
   }
 
   //Padding to the first bit
-  if(m_padding==true){ 
+  if(m_padding==true){
     uint32_t i0=0;
     for(uint32_t i=1; i<m_fifo.size(); i++){
       if(m_fifo[i]!=0){i0=i-1;break;}
@@ -135,7 +135,7 @@ void SimpleNetioTxCore::releaseFifo(bool trigChns){
     for(uint32_t i=0; i<i0; i++){
       m_fifo.pop_back();
     }
-    if(m_debug){cout << "Pop back" << endl; printFifo();}  
+    if(m_debug){cout << "Pop back" << endl; printFifo();}
   }
   if(m_flip==true){
     if(m_fifo.size()%2==1){
@@ -147,10 +147,10 @@ void SimpleNetioTxCore::releaseFifo(bool trigChns){
     }
     if(m_debug){cout << "Flip half bytes: " << endl;printFifo();}
   }
-  
+
   //create the message for NetIO
   std::map<netio::tag,uint32_t>::iterator it;
-  
+
   if(trigChns){
     for(it=m_trigChns.begin();it!=m_trigChns.end();it++){
       m_headers[it->first].elinkid=it->first;
@@ -183,7 +183,7 @@ void SimpleNetioTxCore::releaseFifo(bool trigChns){
   m_socket->send(msg);
 
   m_fifo.clear();
-  m_size.clear(); 
+  m_size.clear();
   m_data.clear();
 }
 
@@ -221,7 +221,7 @@ void SimpleNetioTxCore::maskTrigEnable(uint32_t value, uint32_t mask) {
 
     bool enable = (1<<chn) & value;
     tag elink = chn*2;
-    if(enable) m_trigChns[elink]=chn;  
+    if(enable) m_trigChns[elink]=chn;
     else m_trigChns.erase(elink);
   }
 }
@@ -255,7 +255,7 @@ void SimpleNetioTxCore::setTrigWordLength(uint32_t length){
   m_trigWordLength=length;
 }
 
-void SimpleNetioTxCore::setTrigWord(uint32_t *word, uint32_t size){ 
+void SimpleNetioTxCore::setTrigWord(uint32_t *word, uint32_t size){
   m_trigWords.clear();
   for(uint32_t i=0;i<size;i++){m_trigWords.push_back(word[i]);}
 }

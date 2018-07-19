@@ -6,7 +6,7 @@
 
 using namespace std;
 using namespace netio;
- 
+
 NetioRxCore::NetioRxCore(NetioHandler &nh)
   : m_nioh(nh)
 {
@@ -32,7 +32,7 @@ NetioRxCore::NetioRxCore(NetioHandler &nh)
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
   });
-  
+
   m_verbose = false;
 }
 
@@ -58,10 +58,10 @@ void NetioRxCore::enableChannel(uint64_t elink){
   }
   m_elinks[elink]=true;
 }
-  
+
 void NetioRxCore::disableChannel(uint64_t elink){
-  if(m_verbose) cout << "Disable RX elink: 0x" << hex << elink << dec << endl;  
-  //m_nioh.stopChecking(); 
+  if(m_verbose) cout << "Disable RX elink: 0x" << hex << elink << dec << endl;
+  //m_nioh.stopChecking();
   //m_elinks[elink]=false;
   // We don't disable channels...
 }
@@ -111,15 +111,15 @@ RawData* NetioRxCore::readData(){
   return nullptr;
 }
 
-uint32_t NetioRxCore::getDataRate(){ 
+uint32_t NetioRxCore::getDataRate(){
   return m_rate;
 }
 
-uint32_t NetioRxCore::getCurCount(){ 
+uint32_t NetioRxCore::getCurCount(){
   return 0;
 }
 
-bool NetioRxCore::isBridgeEmpty(){ // True, if queues are stable. 
+bool NetioRxCore::isBridgeEmpty(){ // True, if queues are stable.
   return m_nioh.isAllStable();
 }
 
