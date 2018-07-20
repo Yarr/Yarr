@@ -72,14 +72,14 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "AnalogScan",
+  "name": "AnalogScan",
     "prescan": {
         "InjEnDig": 0,
         "LatencyConfig": 50,
         "GlobalPulseRt": 16384,
-        "InjVcalDiff": 0,
-        "InjVcalHigh": 4000,
-        "InjVcalMed": 500
+	"InjVcalDiff": 0,
+        "InjVcalHigh": 940,
+        "InjVcalMed": 0
     }
   }
 }

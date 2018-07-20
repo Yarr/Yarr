@@ -120,6 +120,31 @@ Running the threshold scan shows the result of the tuning:
 ![S-curve threshold scan after tuning](images/JohnDoe_sCurve_AfterTuning.png)
 ![Threshold map after tuning](images/JohnDoe_ThresholdMap_AfterTuning.png)
 
+
+## Cross-talk
+
+At the moment, the cross-talk is evaluated injecting in the 8-neighboring pixels and checking the occupancy in the central pixel. Update will come shortly to provide option to inject only in the 4 neighbouring pixels (ignoring corners), or 2 neighbouring pixles. 
+
+To check if there is cross-talk for your chip+sensor, use the following command:
+```bash
+bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_crosstalk.json  -p
+```
+For the defaul settings and a fully depleated sensor, the OccupancyMap.png plot should show hits in half of the pixels.
+
+## Cross-talk scan
+
+To identify the threhsold at which cross-talk appear, run the following command:
+```bash
+bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a//std_crosstalk_scan.json  -p
+```
+Example of the s-curve, threshold distribution, threshold map and noise distribution for the tuned linear front-end are given below:
+![S-curve threshold scan](images/JohnDoe_crosstalkscan_sCurve.png)
+![Threshold distribution](images/JohnDoe_crosstalkscan_ThrehsoldDist.png)
+![Threshold map](images/images/JohnDoe_crosstalkscan_ThrehsoldMap.png)
+![Noise distribution](images/JohnDoe_crosstalkscan_NoideDist.png)
+
+
+
 ### Recommended tuning procedure:
 - Digital scan
 - Analog scan
@@ -186,4 +211,4 @@ Config parameters:
  - max ``<int>``: number of mask stages
  - min ``<int>``: mask stage to start with
  - step ``<int>``: step size of mask stage
- - maskType  ``<int>``: mask type for standard scans (0), or for cross-talk (1 and 2, depending on the definition)
+ - maskType  ``<int>``: mask type for standard scans (0), or for cross-talk (1 and 2, depending on the cross-talk definition)
