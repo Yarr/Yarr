@@ -140,8 +140,6 @@ bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/examp
 Example of the s-curve, threshold distribution, threshold map and noise distribution for the tuned linear front-end are given below:
 ![S-curve threshold scan](images/JohnDoe_crosstalkscan_sCurve.png)
 ![Threshold distribution](images/JohnDoe_crosstalkscan_ThrehsoldDist.png)
-![Threshold map](images/images/JohnDoe_crosstalkscan_ThrehsoldMap.png)
-![Noise distribution](images/JohnDoe_crosstalkscan_NoideDist.png)
 
 
 
