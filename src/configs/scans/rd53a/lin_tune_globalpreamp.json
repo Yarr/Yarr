@@ -2,10 +2,7 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "ScurveFitter"
-      },
-      "1": {
-        "algorithm": "OccupancyAnalysis"
+        "algorithm": "OccGlobalThresholdTune"
       },
       "n_count": 1
     },
@@ -33,6 +30,14 @@
       "n_count": 5
     },
     "loops": [
+      { "config": {
+          "max": 64,
+          "min": 0,
+          "step": 32,
+          "parameter": "LinKrumCur"
+        },
+        "loopAction": "Rd53aGlobalFeedback"
+      },
       {
         "config": {
           "max": 64,
@@ -43,28 +48,19 @@
       },
       {
         "config": {
-          "max": 500,
-          "min": 0,
-          "step": 5,
-          "parameter":"InjVcalDiff"
-        },
-        "loopAction": "Rd53aParameterLoop"
-      },
-      {
-        "config": {
-          "max": 50,
-          "min": 0,
+          "max": 33,
+          "min": 16,
           "step": 1,
-          "nSteps": 5
+          "nSteps": 4
         },
         "loopAction": "Rd53aCoreColLoop"
       },
       {
         "config": {
-          "count": 50,
+          "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 1000,
+          "frequency": 5000,
           "noInject": false,
           "time": 0
         },
@@ -74,11 +70,13 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "ThresholdScan",
+    "name": "LinGlobalPreampTune",
     "prescan": {
         "InjEnDig": 0,
         "LatencyConfig": 48,
-        "GlobalPulseRt": 16384
+        "GlobalPulseRt": 16384,
+        "DiffVth1": 500,
+        "SyncVth": 500
     }
   }
 }

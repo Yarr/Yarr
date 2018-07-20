@@ -35,7 +35,7 @@ $ ./plotWithRoot_Occupancy path/to/directory
 
 Examples of all the Occupancy plots given below: 
 
-<div style="text-align:center"><img src="/images/OccupancyPlots_Preview.png" width="1000"></div>
+![Occupancy Plots Preview](images/OccupancyPlots_Preview.png)
 
 ###Threshold Plots
 
@@ -50,8 +50,9 @@ $ ./plotWithRoot_Threshold path/to/directory
 
 Examples of some of the Threshold plots given below: 
 
-<div style="text-align:center"><img src="/images/ThresholdPlots_Preview.png" width="1000"></div>
-<div style="text-align:center"><img src="/images/Threshold2DPlot_Preview.png" width="600"></div>
+![Threshold Plots Preview](images/ThresholdPlots_Preview.png)
+
+<div style="text-align:center"><img src="images/Threshold2DPlot_Preview.png" width="600"></div>
 
 
 ###Noise Plots
@@ -66,8 +67,9 @@ $ ./plotWithRoot_Noise path/to/directory
 
 Examples of some of the Noise plots given below: 
 
-<div style="text-align:center"><img src="/images/NoisePlots_Preview.png" width="1000"></div>
-<div style="text-align:center"><img src="/images/Noise2DPlot_Preview.png" width="600"></div>
+![Noise Plots Preview](images/NoisePlots_Preview.png)
+
+<div style="text-align:center"><img src="images/Noise2DPlot_Preview.png" width="600"></div>
 
 ###TDAC Plots
 
@@ -81,7 +83,7 @@ $ ./plotWithRoot_TDAC path/to/directory
 
 Examples of some of the TDAC plots given below: 
 
-<div style="text-align:center"><img src="/images/TDACPlots_Preview.png" width="1000"></div>
+![TDAC Plots Preview](images/TDACPlots_Preview.png)
 
 ###Threshold/TDAC plots
 
@@ -94,7 +96,7 @@ $ ./plotWithRoot_ThresholdTDAC path/to/directory
 
 Examples of some of the ThresholdTDAC plots given below: 
 
-<div style="text-align:center"><img src="/images/TDACPlots_Preview.png" width="1000"></div>
+![ThresholdTDAC Plots Preview](images/ThresholdTDACPlots_Preview.png)
 
 
 

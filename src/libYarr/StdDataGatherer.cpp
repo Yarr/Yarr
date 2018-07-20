@@ -68,6 +68,7 @@ void StdDataGatherer::execPart2() {
                 rdc->add(newData);
                 count += newData->words;
             }
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
         } while (newData != NULL);
         delete newData;
         rdc->stat = *g_stat;

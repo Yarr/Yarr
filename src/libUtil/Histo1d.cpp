@@ -92,9 +92,9 @@ void Histo1d::fill(double x, double v) {
             max = v;
         if (v < min)
             min = v;
+        entries++;
+        sum+=v;
     }
-    entries++;
-    sum+=v;
 }
 
 void Histo1d::setBin(unsigned n, double v) {
