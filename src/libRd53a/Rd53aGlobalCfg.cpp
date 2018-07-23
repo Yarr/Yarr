@@ -56,8 +56,8 @@ void Rd53aGlobalCfg::init() {
     SyncVrefKrum.init(13, &m_cfg[13], 0, 10, 450); regMap["SyncVrefKrum"] = &Rd53aGlobalCfg::SyncVrefKrum;
     //30
     SyncAutoZero.init(30, &m_cfg[30], 3, 2, 0); regMap["SyncAutoZero"] = &Rd53aGlobalCfg::SyncAutoZero;
-    SyncSelC2F.init(30, &m_cfg[30], 2, 1, 1); regMap["SyncSelC2F"] = &Rd53aGlobalCfg::SyncSelC2F;
-    SyncSelC4F.init(30, &m_cfg[30], 1, 1, 0); regMap["SyncSelC4F"] = &Rd53aGlobalCfg::SyncSelC4F;
+    SyncSelC2F.init(30, &m_cfg[30], 2, 1, 0); regMap["SyncSelC2F"] = &Rd53aGlobalCfg::SyncSelC2F;
+    SyncSelC4F.init(30, &m_cfg[30], 1, 1, 1); regMap["SyncSelC4F"] = &Rd53aGlobalCfg::SyncSelC4F;
     SyncFastTot.init(30, &m_cfg[30], 0, 1, 0); regMap["SyncFastTot"] = &Rd53aGlobalCfg::SyncFastTot;
 
     // Linear FE
@@ -68,7 +68,7 @@ void Rd53aGlobalCfg::init() {
     //16
     LinKrumCurr.init(16, &m_cfg[16], 0, 9, 50); regMap["LinKrumCurr"] = &Rd53aGlobalCfg::LinKrumCurr;
     //17
-    LinLdac.init(17, &m_cfg[17], 0, 10, 130); regMap["LinLdac"] = &Rd53aGlobalCfg::LinLdac;
+    LinLdac.init(17, &m_cfg[17], 0, 10, 100); regMap["LinLdac"] = &Rd53aGlobalCfg::LinLdac;
     //18
     LinComp.init(18, &m_cfg[18], 0, 9, 110); regMap["LinComp"] = &Rd53aGlobalCfg::LinComp;
     //19
