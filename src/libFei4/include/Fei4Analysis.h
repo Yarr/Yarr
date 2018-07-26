@@ -345,18 +345,12 @@ class ChargeVsTotAnalysis : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> totInnerCnt;
         std::map<unsigned, Histo2d*> tot2Maps;
         std::map<unsigned, unsigned> tot2InnerCnt;
-        GlobalFeedbackBase *globalFb;
-        PixelFeedbackBase *pixelFb;
-        unsigned flg = 0;
-        Histo2d *chargeVsTotMap;
+
+        Histo2d *chargeVsTotMap = NULL;
         double injectedCharge = 0;
-        double chargeMax;
-        double chargeMin;
-        double chargeStep;
-        GraphErrors *chargeVsTotGraph;
-        std::vector<double> x_injectedCharge;
-        std::vector<double> y_meanTot;
-        std::vector<double> y_sigmaTot;
+        double chargeMin = 0;
+        double chargeMax = 0;
+        double chargeStep = 0;
 };
 
 class TimeWalkAnalysis : public AnalysisAlgorithm {
@@ -374,18 +368,20 @@ class TimeWalkAnalysis : public AnalysisAlgorithm {
         unsigned injections;
         std::map<unsigned, Histo1d*> l1Histos;
         std::map<unsigned, unsigned> innerCnt;
-        bool flg = true;
-        Histo2d *timeWalkMap;
+
+        Histo2d *timeWalkMap = NULL;
         double injectedCharge = 0;
-        double chargeMax;
-        double chargeMin;
-        double chargeStep;
-        //GraphErrors *timeWalkGraph;
+        double chargeMin = 0;
+        double chargeMax = 0;
+        double chargeStep = 0;
         std::vector<double> x_injectedCharge;
         std::vector<double> y_meanL1;
         std::vector<double> y_sigmaL1;
+<<<<<<< HEAD
 
 >>>>>>> Modified to use charge vs tot and time walk in Fei4Analysis.cpp
+=======
+>>>>>>> Clean up timewalk and chargevstot analysis
 };
 
 #endif

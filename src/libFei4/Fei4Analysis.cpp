@@ -1134,9 +1134,12 @@ void NoiseTuning::init(ScanBase *s) {
 void ChargeVsTotAnalysis::init(ScanBase *s) {
     n_count = 1;
     injections = 1;
+<<<<<<< HEAD
 >>>>>>> Modified to use charge vs tot and time walk in Fei4Analysis.cpp
     pixelFb = NULL;
     globalFb = NULL;
+=======
+>>>>>>> Clean up timewalk and chargevstot analysis
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
@@ -1194,6 +1197,7 @@ void ChargeVsTotAnalysis::init(ScanBase *s) {
             Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
             injections = trigLoop->getTrigCnt();
         }
+<<<<<<< HEAD
 
         std::shared_ptr<LoopActionBase> tmpPrmpFb(new Fei4GlobalFeedback(&Fei4::PrmpVbpf));
         if (l->type() == tmpPrmpFb->type()) {
@@ -1220,6 +1224,8 @@ void ChargeVsTotAnalysis::init(ScanBase *s) {
             pixelFb = dynamic_cast<PixelFeedbackBase*>(l.get());  
 >>>>>>> Modified for timewalk and charge vs tot
         }
+=======
+>>>>>>> Clean up timewalk and chargevstot analysis
     }
 }
 
@@ -1330,6 +1336,20 @@ void NoiseTuning::end() {
         tot2InnerCnt[ident] = 0;
     }
 
+    // Get min/max/step charge info.
+    if (chargeMin == 0) chargeMin = ident*10;
+    if (chargeMax == 0) chargeMax = loopMax[0]*10;
+    if (chargeStep == 0 && ident*10>chargeMin) chargeStep = ident*10 - chargeMin;
+
+    // Construct ChargeVsTot Map
+    if (chargeVsTotMap == NULL && chargeStep>0) {
+        //chargeVsTotMap = new Histo2d("ChargeVsTotMap", (int)(chargeMax-chargeMin)/chargeStep+1, chargeMin-chargeStep/2, chargeMax+chargeStep/2, 160, 0.05, 16.05, typeid(void));
+        chargeVsTotMap = new Histo2d("ChargeVsTotMap", (int)(chargeMax-chargeMin)/chargeStep+1, chargeMin-chargeStep/2, chargeMax+chargeStep/2, 16, 0.5, 16.5, typeid(void));
+        chargeVsTotMap->setXaxisTitle("Injected charge [e]");
+        chargeVsTotMap->setYaxisTitle("Mean ToT");
+        chargeVsTotMap->setZaxisTitle("Pixel");
+    }
+
     // Gather Histogram
     if (h->getType() == typeid(OccupancyMap*)) {
         occMaps[ident]->add(*(Histo2d*)h);
@@ -1372,26 +1392,7 @@ void NoiseTuning::end() {
         sigmaTotDist->setXaxisTitle("Sigma ToT [bc]");
         sigmaTotDist->setYaxisTitle("Number of Pixels");
 
-        // Histo
-        if (flg == 0) {
-//            Fei4 *fe = dynamic_cast<Fei4*>(bookie->feList[0]);
-//            chargeMin = fe->toCharge(10, true, true);
-//            chargeMax = fe->toCharge(560, true, true);
-//            chargeStep = fe->toCharge(20, true, true)-fe->toCharge(10, true, true);
-            chargeMin = 0;
-            chargeMax = 30000;
-            chargeStep = 1000;
-            //chargeVsTotMap = new Histo2d("ChargeVsTotMap", (int)(chargeMax-chargeMin)/chargeStep+1, chargeMin-chargeStep/2, chargeMax+chargeStep/2, 160, 0.05, 16.05, typeid(void));
-            chargeVsTotMap = new Histo2d("ChargeVsTotMap", (int)(chargeMax-chargeMin)/chargeStep+1, chargeMin-chargeStep/2, chargeMax+chargeStep/2, 16, 0.5, 16.5, typeid(void));
-            chargeVsTotMap->setXaxisTitle("Injected charge [e]");
-            chargeVsTotMap->setYaxisTitle("Mean ToT");
-            chargeVsTotMap->setZaxisTitle("Pixel");
-            injectedCharge = chargeMin;
-            flg++;
-        }
-        else {
-            injectedCharge += chargeStep;
-        }
+        injectedCharge = ident*10;
 
         meanTotMap->add(*totMaps[ident]);
         meanTotMap->divide(*occMaps[ident]);
@@ -1407,21 +1408,12 @@ void NoiseTuning::end() {
             //chargeVsTotMap->fill(injectedCharge, (i+1)*(16.05-0.05)/160, meanTotDist->getBin(i));
             chargeVsTotMap->fill(injectedCharge, (i+1)*(16.5-0.5)/16, meanTotDist->getBin(i));
         }
-        x_injectedCharge.push_back(injectedCharge);
-        y_meanTot.push_back(meanTotDist->getMean());
-        y_sigmaTot.push_back(meanTotDist->getStdDev());
 
         std::cout << "[" << channel << "] ToT Mean = " << meanTotDist->getMean() << " +- " << meanTotDist->getStdDev() << std::endl;
 
-        if ((int)injectedCharge == (int)chargeMax) {
-            chargeVsTotGraph = new GraphErrors("ChargeVsTotGraph", x_injectedCharge.size(), &x_injectedCharge[0], &y_meanTot[0], 0, &y_sigmaTot[0], typeid(void));
-            chargeVsTotGraph->setXaxisTitle("Injected charge [e]");
-            chargeVsTotGraph->setYaxisTitle("mean of Mean ToT");
-            output->pushData(chargeVsTotGraph);
-            output->pushData(chargeVsTotMap);
-        }
+        if ((int)injectedCharge == (int)chargeMax) output->pushData(chargeVsTotMap);
 
-        output->pushData(meanTotMap);
+//        output->pushData(meanTotMap);
 //        output->pushData(sigmaTotMap);
         output->pushData(meanTotDist);
 //        output->pushData(sigmaTotDist);
@@ -1507,6 +1499,19 @@ void TimeWalkAnalysis::processHistogram(HistogramBase *h) {
         innerCnt[ident] = 0;
     }
 
+    // Get min/max/step charge info.
+    if (chargeMin == 0) chargeMin = ident*10;
+    if (chargeMax == 0) chargeMax = loopMax[0]*10;
+    if (chargeStep == 0 && ident*10>chargeMin) chargeStep = ident*10 - chargeMin;
+
+    // Construct TimeWalk Map
+    if (timeWalkMap == NULL && chargeStep>0) {
+        timeWalkMap = new Histo2d("TimeWalkMap", (chargeMax-chargeMin)/chargeStep+1, chargeMin-chargeStep/2, chargeMax+chargeStep/2, 16, -0.5, 15.5, typeid(void));
+        timeWalkMap->setXaxisTitle("Injected charge [e]");
+        timeWalkMap->setYaxisTitle("L1");
+        timeWalkMap->setZaxisTitle("Pixels");
+    }
+
     // Add up Histograms
     if (h->getType() == typeid(L1Dist*)) {
         l1Histos[ident]->add(*(Histo1d*)h);
@@ -1520,38 +1525,20 @@ void TimeWalkAnalysis::processHistogram(HistogramBase *h) {
         L1Dist->setYaxisTitle("Hits");
         L1Dist->add(*l1Histos[ident]);
 
-        // Calculate injected charge and construct histogram for first time
-        if (flg) {
-//            Fei4 *fe = dynamic_cast<Fei4*>(bookie->feList[0]);
-//            chargeMin = fe->toCharge(0, true, true);
-//            chargeMax = fe->toCharge(100, true, true);
-//            chargeStep = fe->toCharge(10, true, true)-fe->toCharge(0, true, true);
-            chargeMin = 0; // Need to fix
-            chargeMax = 10000; // Need to fix
-            chargeStep = 250; // Need to fix
-            timeWalkMap = new Histo2d("TimeWalkMap", (chargeMax-chargeMin)/chargeStep+1, chargeMin-chargeStep/2, chargeMax+chargeStep/2, 16, -0.5, 15.5, typeid(void));
-            timeWalkMap->setXaxisTitle("Injected charge [e]");
-            timeWalkMap->setYaxisTitle("L1");
-            timeWalkMap->setZaxisTitle("Pixels");
-            injectedCharge = chargeMin;
-            flg = false;
-        }
-        else {
-            injectedCharge += chargeStep;
-        }
+        injectedCharge = ident*10;
 
         for (unsigned i=0; i<L1Dist->size(); i++) {
-            timeWalkMap->fill(injectedCharge, -0.5+(i+1)*(15.5+0.5)/16-0.5, L1Dist->getBin(i));
+            timeWalkMap->fill(injectedCharge, (i+1)*(15.5+0.5)/16-1.0, L1Dist->getBin(i));
         }
-        x_injectedCharge.push_back(injectedCharge);
-        y_meanL1.push_back(L1Dist->getMean());
-        y_sigmaL1.push_back(L1Dist->getStdDev());
+//        x_injectedCharge.push_back(injectedCharge);
+//        y_meanL1.push_back(L1Dist->getMean());
+//        y_sigmaL1.push_back(L1Dist->getStdDev());
 
         if ((int)injectedCharge == (int)chargeMax) {
-            GraphErrors *timeWalkGraph = new GraphErrors("TimeWalkGraph", x_injectedCharge.size(), &x_injectedCharge[0], &y_meanL1[0], 0, &y_sigmaL1[0], typeid(void));
-            timeWalkGraph->setXaxisTitle("Injected charge [e]");
-            timeWalkGraph->setYaxisTitle("mean of L1");
-            output->pushData(timeWalkGraph);
+//            GraphErrors *timeWalkGraph = new GraphErrors("TimeWalkGraph", x_injectedCharge.size(), &x_injectedCharge[0], &y_meanL1[0], 0, &y_sigmaL1[0], typeid(void));
+//            timeWalkGraph->setXaxisTitle("Injected charge [e]");
+//            timeWalkGraph->setYaxisTitle("mean of L1");
+//            output->pushData(timeWalkGraph);
             output->pushData(timeWalkMap);
         }
 
