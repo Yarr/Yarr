@@ -30,7 +30,7 @@ entity tx_channel is
 		-- Word Looper
 		loop_pulse_i    : in std_logic;
 		loop_mode_i     : in std_logic; -- (WB clk domain)
-		loop_word_i     : in std_logic_vector(127 downto 0); -- (WB clk domain)
+		loop_word_i     : in std_logic_vector(511 downto 0); -- (WB clk domain)
 		loop_word_bytes_i : in std_logic_vector(7 downto 0); -- (WB clk domain)
 		
 		-- Status
@@ -96,7 +96,7 @@ architecture rtl of tx_channel is
 	signal loop_cnt : unsigned(7 downto 0);
 	signal loop_empty : std_logic;
 	signal loop_mode_s : std_logic;
-	signal loop_word_s : std_logic_vector(127 downto 0);
+	signal loop_word_s : std_logic_vector(511 downto 0);
     signal loop_word_bytes_s : std_logic_vector(7 downto 0);
 	
 begin
@@ -126,21 +126,35 @@ begin
 	       loop_word_s <= loop_word_i;
 	       loop_word_bytes_s <= loop_word_bytes_i;
 	       if (loop_mode_s = '1') then
-	     	   loop_empty <= '0';      
+	           loop_empty <= '1';
 	           if (loop_pulse_i = '1') then
 	               loop_cnt <= unsigned(loop_word_bytes_s); -- reload counter
-	           elsif (sport_data_read = '1') then
+	     	       loop_empty <= '0';      
+               elsif (sport_data_read = '1' and loop_cnt /= to_unsigned(0, 8)) then
 	               loop_cnt <= loop_cnt - 1; -- sport read one word
-	           elsif (loop_cnt = to_unsigned(0,8)) then
-	               loop_empty <= '1'; -- no more words to read
+	     	       loop_empty <= '0';      
+	           elsif (loop_cnt > to_unsigned(0,8)) then
+	               loop_empty <= '0';
 	           end if;
 	       end if;	   
 	   end if;
 	end process loop_proc;
 	
-	sport_data_valid <= not tx_fifo_empty when (loop_mode_i = '0') else not loop_empty;
-	tx_fifo_rd <= sport_data_read when (loop_mode_i = '0') else '0';
-	sport_data <= tx_fifo_dout when (loop_mode_i = '0') else 
+	sport_data_valid <= not tx_fifo_empty when (loop_mode_s = '0') else not loop_empty;
+	tx_fifo_rd <= sport_data_read when (loop_mode_s = '0') else '0';
+	sport_data <= tx_fifo_dout when (loop_mode_s = '0') else 
+	           loop_word_s(511 downto 480) when (loop_cnt = to_unsigned(16, 8)) else -- MSB first
+	           loop_word_s(479 downto 448) when (loop_cnt = to_unsigned(15, 8)) else
+	           loop_word_s(447 downto 416) when (loop_cnt = to_unsigned(14, 8)) else
+	           loop_word_s(415 downto 384) when (loop_cnt = to_unsigned(13, 8)) else
+	           loop_word_s(383 downto 352) when (loop_cnt = to_unsigned(12, 8)) else
+	           loop_word_s(351 downto 320) when (loop_cnt = to_unsigned(11, 8)) else
+	           loop_word_s(319 downto 288) when (loop_cnt = to_unsigned(10, 8)) else
+	           loop_word_s(287 downto 256) when (loop_cnt = to_unsigned(9, 8)) else
+	           loop_word_s(255 downto 224) when (loop_cnt = to_unsigned(8, 8)) else
+	           loop_word_s(223 downto 192) when (loop_cnt = to_unsigned(7, 8)) else
+	           loop_word_s(191 downto 160) when (loop_cnt = to_unsigned(6, 8)) else
+	           loop_word_s(159 downto 128) when (loop_cnt = to_unsigned(5, 8)) else
 	           loop_word_s(127 downto 96) when (loop_cnt = to_unsigned(4, 8)) else
 	           loop_word_s(95 downto 64) when (loop_cnt = to_unsigned(3, 8)) else
 	           loop_word_s(63 downto 32) when (loop_cnt = to_unsigned(2, 8)) else

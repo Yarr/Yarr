@@ -410,10 +410,9 @@ architecture rtl of yarr is
 
             -- To/From inside world
             clk_i : in std_logic;
-            int_trig_i : in std_logic_vector(3 downto 0);
-            int_trig_o : out std_logic;
-            int_busy_i : in std_logic;
-            trig_tag : out std_logic_vector(31 downto 0)
+            trig_tag : out std_logic_vector(31 downto 0);
+
+            debug_o : out std_logic_vector(31 downto 0)
         );
     end component;
 	
@@ -782,6 +781,7 @@ architecture rtl of yarr is
   signal TRIG1_t : STD_LOGIC_VECTOR(31 DOWNTO 0);
   signal TRIG2_t : STD_LOGIC_VECTOR(31 DOWNTO 0);
   signal debug_dma : std_logic_vector(31 downto 0);
+  signal debug_trig : std_logic_vector(31 downto 0);
   
   signal ddr_status : std_logic_vector(31 downto 0);
   signal gn4124_core_Status : std_logic_vector(31 downto 0);
@@ -1104,7 +1104,7 @@ begin
 		rx_data_i => fe_data_i,
 		rx_valid_o => rx_valid,
 		rx_data_o => rx_data,
-        trig_tag_i => trig_tag_T,
+        trig_tag_i => trig_tag_t,
 		busy_o => open,
 		debug_o => debug
 	);
@@ -1172,7 +1172,7 @@ begin
 		wb_we_i => wb_we,
 		wb_ack_o => wb_ack(5),
 		ext_trig_i => "0000",
-		ext_trig_o => open,
+		ext_trig_o => int_trig_t,
 		ext_busy_i => '0',
 		ext_busy_o => open,
 		eudet_clk_o => open,
@@ -1180,10 +1180,8 @@ begin
 		eudet_trig_i => '0',
 		eudet_rst_i => '0',
 		clk_i => CLK_40,
-		int_trig_i => "000" & trig_pulse,
-		int_trig_o => int_trig_t,
-		int_busy_i => '0',
-		trig_tag => trig_tag_t
+		trig_tag => trig_tag_t,
+        debug_o => debug_trig
 	);
     
     scl_o <= scl_s;

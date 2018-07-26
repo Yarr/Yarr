@@ -599,7 +599,7 @@ package app_pkg is
                 ext_trig_o : out std_logic;
                 ext_busy_i : in std_logic;
                 ext_busy_o : out std_logic;
-    
+                
                 -- Eudet TLU
                 eudet_clk_o : out std_logic;
                 eudet_busy_o : out std_logic;
@@ -608,10 +608,11 @@ package app_pkg is
     
                 -- To/From inside world
                 clk_i : in std_logic;
-                int_trig_i : in std_logic_vector(3 downto 0);
-                int_trig_o : out std_logic;
-                int_busy_i : in std_logic;
-                trig_tag : out std_logic_vector(31 downto 0)
+                --int_trig_i : in std_logic_vector(3 downto 0);
+                --int_trig_o : out std_logic;
+                --int_busy_i : in std_logic;
+                trig_tag : out std_logic_vector(31 downto 0);
+                debug_o : out std_logic_vector(31 downto 0)
             );
         end component;
 

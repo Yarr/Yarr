@@ -187,6 +187,7 @@ begin
             rx_valid_o => rx_data_valid(I),
             rx_stat_o => rx_status(I)
         );
+        rx_stat_o(I) <= rx_status(I)(1);
         
         -- TODO need to save register reads!
         -- TODO use 

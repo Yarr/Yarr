@@ -57,7 +57,7 @@ architecture rtl of eudet_tlu is
     signal state : state_type;
 
     -- Sync inputs
-    signal sync_eudet_trig_i : std_logic;
+    signal sync_eudet_trig_t : std_logic;
     signal sync_eudet_rst_i : std_logic;
 
     signal trig_tag_t : std_logic_vector(15 downto 0); -- only 15:1 good
@@ -69,7 +69,7 @@ architecture rtl of eudet_tlu is
     signal dead_counter : unsigned (9 downto 0);
 begin
     -- Sync async inputs
-    trig_sync: synchronizer port map(clk_i => clk_i, rst_n_i => rst_n_i, async_in => eudet_trig_i, sync_out => sync_eudet_trig_i);
+    trig_sync: synchronizer port map(clk_i => clk_i, rst_n_i => rst_n_i, async_in => eudet_trig_i, sync_out => sync_eudet_trig_t);
     rst_sync: synchronizer port map(clk_i => clk_i, rst_n_i => rst_n_i, async_in => eudet_rst_i, sync_out => sync_eudet_rst_i);
 
     eudet_busy_o <= eudet_busy_t;
@@ -96,7 +96,7 @@ begin
                     clk_counter <= (others => '0');
                     bit_counter <= (others => '0');
                     trig_o <= '0';
-                    if (sync_eudet_trig_i = '1') then
+                    if (sync_eudet_trig_t = '1') then
                         state <= TRIGGER;
                     end if;
 
@@ -109,9 +109,9 @@ begin
                     bit_counter <= (others => '0');
                     trig_tag_t <= (others => '0');
                     dead_counter <= (others => '0');
-                    if (sync_eudet_trig_i = '0' and simple_mode_i = '0') then
+                    if (sync_eudet_trig_t = '0' and simple_mode_i = '0') then
                         state <= RECEIVE;
-                    elsif (sync_eudet_trig_i = '0' and simple_mode_i = '1') then
+                    elsif (sync_eudet_trig_t = '0' and simple_mode_i = '1') then
                         state <= DEAD;
                     end if;
 
