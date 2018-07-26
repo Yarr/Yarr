@@ -74,7 +74,7 @@ Example of the s-curve, threshold distribution, threshold map and noise distribu
 ## Time over Threshold Scan
 
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_totscan.json -t 5000 -p
+bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_totscan.json -t 5000 -t
 ```
 The ToT mean value will be given in the output of the code, for example:
 ```text
