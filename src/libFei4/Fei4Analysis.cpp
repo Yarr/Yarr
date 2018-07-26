@@ -1201,7 +1201,12 @@ void ChargeVsTotAnalysis::init(ScanBase *s) {
             globalFb = dynamic_cast<GlobalFeedbackBase*>(l.get());  
         }
 
+        if (l->type() == typeid(Rd53aGlobalFeedback*)) {
+            globalFb = dynamic_cast<GlobalFeedbackBase*>(l.get());  
+        }
+
         if (l->type() == typeid(Fei4PixelFeedback*)) {
+<<<<<<< HEAD
 <<<<<<< HEAD
             pixelFb = dynamic_cast<PixelFeedbackBase*>(l.get());  
         }
@@ -1211,6 +1216,9 @@ void ChargeVsTotAnalysis::init(ScanBase *s) {
 =======
             pixelFb = dynamic_cast<PixelFeedbackBase*>(l.get());
 >>>>>>> Modified to use charge vs tot and time walk in Fei4Analysis.cpp
+=======
+            pixelFb = dynamic_cast<PixelFeedbackBase*>(l.get());  
+>>>>>>> Modified for timewalk and charge vs tot
         }
     }
 }
@@ -1340,26 +1348,27 @@ void NoiseTuning::end() {
     if (occInnerCnt[ident] == n_count &&
             totInnerCnt[ident] == n_count &&
             tot2InnerCnt[ident] == n_count) {
-        Histo2d *meanTotMap = new Histo2d("MeanTotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        Histo2d *meanTotMap = new Histo2d("MeanTotMap"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         meanTotMap->setXaxisTitle("Column");
         meanTotMap->setYaxisTitle("Row");
         meanTotMap->setZaxisTitle("Mean ToT [bc]");
-        Histo2d *sumTotMap = new Histo2d("SumTotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        Histo2d *sumTotMap = new Histo2d("SumTotMap"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         sumTotMap->setXaxisTitle("Column");
         sumTotMap->setYaxisTitle("Row");
         sumTotMap->setZaxisTitle("Mean ToT [bc]");
-        Histo2d *sumTot2Map = new Histo2d("MeanTot2Map", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        Histo2d *sumTot2Map = new Histo2d("MeanTot2Map"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         sumTot2Map->setXaxisTitle("Column");
         sumTot2Map->setYaxisTitle("Row");
         sumTot2Map->setZaxisTitle("Mean ToT^2 [bc^2]");
-        Histo2d *sigmaTotMap = new Histo2d("SigmaTotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        Histo2d *sigmaTotMap = new Histo2d("SigmaTotMap"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         sigmaTotMap->setXaxisTitle("Column");
         sigmaTotMap->setYaxisTitle("Row");
         sigmaTotMap->setZaxisTitle("Sigma ToT [bc]");
-        Histo1d *meanTotDist = new Histo1d("MeanTotDist_"+std::to_string(ident), 161, -0.05, 16.05, typeid(this));
+        //Histo1d *meanTotDist = new Histo1d("MeanTotDist_"+std::to_string(ident), 160, 0.05, 16.05, typeid(this));
+        Histo1d *meanTotDist = new Histo1d("MeanTotDist_"+std::to_string(ident), 16, 0.5, 16.5, typeid(this));
         meanTotDist->setXaxisTitle("Mean ToT [bc]");
         meanTotDist->setYaxisTitle("Number of Pixels");
-        Histo1d *sigmaTotDist = new Histo1d("SigmaTotDist", 101, -0.05, 1.05, typeid(this));
+        Histo1d *sigmaTotDist = new Histo1d("SigmaTotDist"+std::to_string(ident), 101, -0.05, 1.05, typeid(this));
         sigmaTotDist->setXaxisTitle("Sigma ToT [bc]");
         sigmaTotDist->setYaxisTitle("Number of Pixels");
 
@@ -1372,7 +1381,8 @@ void NoiseTuning::end() {
             chargeMin = 0;
             chargeMax = 30000;
             chargeStep = 1000;
-            chargeVsTotMap = new Histo2d("ChargeVsTotMap", (int)(chargeMax-chargeMin)/chargeStep+1, chargeMin-chargeStep/2, chargeMax+chargeStep/2, 161, -0.05, 16.05, typeid(void));
+            //chargeVsTotMap = new Histo2d("ChargeVsTotMap", (int)(chargeMax-chargeMin)/chargeStep+1, chargeMin-chargeStep/2, chargeMax+chargeStep/2, 160, 0.05, 16.05, typeid(void));
+            chargeVsTotMap = new Histo2d("ChargeVsTotMap", (int)(chargeMax-chargeMin)/chargeStep+1, chargeMin-chargeStep/2, chargeMax+chargeStep/2, 16, 0.5, 16.5, typeid(void));
             chargeVsTotMap->setXaxisTitle("Injected charge [e]");
             chargeVsTotMap->setYaxisTitle("Mean ToT");
             chargeVsTotMap->setZaxisTitle("Pixel");
@@ -1394,54 +1404,14 @@ void NoiseTuning::end() {
             sigmaTotDist->fill(sigma);
         }
         for (unsigned i=0; i<meanTotDist->size(); i++) {
-            chargeVsTotMap->fill(injectedCharge, -0.05+(i+1)*(16.05+0.05)/161-0.05, meanTotDist->getBin(i));
+            //chargeVsTotMap->fill(injectedCharge, (i+1)*(16.05-0.05)/160, meanTotDist->getBin(i));
+            chargeVsTotMap->fill(injectedCharge, (i+1)*(16.5-0.5)/16, meanTotDist->getBin(i));
         }
         x_injectedCharge.push_back(injectedCharge);
         y_meanTot.push_back(meanTotDist->getMean());
         y_sigmaTot.push_back(meanTotDist->getStdDev());
 
         std::cout << "[" << channel << "] ToT Mean = " << meanTotDist->getMean() << " +- " << meanTotDist->getStdDev() << std::endl;
-
-        if (globalFb != NULL) {
-            double mean = 0;
-            for (unsigned i=0; i<meanTotMap->size(); i++)
-                mean += meanTotMap->getBin(i);
-            mean = mean/(double)meanTotMap->size();
-            std::cout << "Mean is: " << mean << std::endl;
-
-            // TODO Get this from somewhere
-            double targetTot = 10.0;
-            int sign = 0;
-            bool last = false;
-            if (mean < (targetTot-0.1)) {
-                sign = -1;
-            } else if (mean > (targetTot+0.1)) {
-                sign = +1;
-            } else {
-                sign = 0;
-                last = true;
-            }
-            globalFb->feedbackBinary(channel, sign, last);
-        }
-
-        if (pixelFb != NULL) {
-            double targetTot = bookie->getTargetTot();
-            Histo2d *fbHisto = new Histo2d("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
-            for (unsigned i=0; i<meanTotMap->size(); i++) {
-                int sign = 0;
-                double mean = meanTotMap->getBin(i);
-                if (mean < (targetTot-0.05)) {
-                    sign = -1;
-                } else if (mean > (targetTot+0.05)) {
-                    sign = +1;
-                } else {
-                    sign = 0;
-                }
-                fbHisto->setBin(i, sign);
-            }
-
-            pixelFb->feedback(channel, fbHisto);
-        }
 
         if ((int)injectedCharge == (int)chargeMax) {
             chargeVsTotGraph = new GraphErrors("ChargeVsTotGraph", x_injectedCharge.size(), &x_injectedCharge[0], &y_meanTot[0], 0, &y_sigmaTot[0], typeid(void));
@@ -1451,8 +1421,7 @@ void NoiseTuning::end() {
             output->pushData(chargeVsTotMap);
         }
 
-
-//        output->pushData(meanTotMap);
+        output->pushData(meanTotMap);
 //        output->pushData(sigmaTotMap);
         output->pushData(meanTotDist);
 //        output->pushData(sigmaTotDist);

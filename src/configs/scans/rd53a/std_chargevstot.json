@@ -4,9 +4,6 @@
       "0": {
         "algorithm": "ChargeVsTot"
       },
-      "1": {
-        "algorithm": "OccupancyAnalysis"
-      },
       "n_count": 1
     },
     "histogrammer": {
@@ -53,7 +50,7 @@
       {
         "config": {
           "max": 34,
-          "min": 16,
+          "min": 33,
           "step": 1,
           "nSteps": 5
         },
@@ -74,14 +71,11 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "ThresholdScan",
+    "name": "ChargeVsTotScan",
     "prescan": {
         "InjEnDig": 0,
-        "InjAnaMode": 1,
         "LatencyConfig": 50,
-        "GlobalPulseRt": 16384,
-        "InjVcalMed": 0,
-        "InjVcalHigh": 0
+        "GlobalPulseRt": 16384
     }
   }
 }
