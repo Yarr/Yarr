@@ -194,7 +194,7 @@
         <net name="app_0/rx_dma_dat_s2m_s[0]"/>
       </nets>
     </probe>
-    <probe type="ila" busType="net" source="netlist" spec="ILA_V2_RT">
+    <probe type="ila" busType="bus" source="netlist" spec="ILA_V2_RT">
       <probeOptions Id="DebugProbeParams">
         <Option Id="CORE_LOCATION" value="1:0"/>
         <Option Id="HW_ILA" value="app_0/dbg_2.rx_dma_wb_debug"/>
@@ -203,10 +203,10 @@
         <Option Id="PROBE_PORT_BIT_COUNT" value="1"/>
       </probeOptions>
       <nets>
-        <net name="app_0/rx_dma_stb_s"/>
+        <net name="app_0/ext_trig_i_1[0]"/>
       </nets>
     </probe>
-    <probe type="ila" busType="net" source="netlist" spec="ILA_V2_RT">
+    <probe type="ila" busType="bus" source="netlist" spec="ILA_V2_RT">
       <probeOptions Id="DebugProbeParams">
         <Option Id="CORE_LOCATION" value="1:0"/>
         <Option Id="HW_ILA" value="app_0/dbg_2.rx_dma_wb_debug"/>
@@ -215,10 +215,10 @@
         <Option Id="PROBE_PORT_BIT_COUNT" value="1"/>
       </probeOptions>
       <nets>
-        <net name="app_0/rx_dma_cyc_s"/>
+        <net name="app_0/ext_trig_i_2[1]"/>
       </nets>
     </probe>
-    <probe type="ila" busType="net" source="netlist" spec="ILA_V2_RT">
+    <probe type="ila" busType="bus" source="netlist" spec="ILA_V2_RT">
       <probeOptions Id="DebugProbeParams">
         <Option Id="CORE_LOCATION" value="1:0"/>
         <Option Id="HW_ILA" value="app_0/dbg_2.rx_dma_wb_debug"/>
@@ -227,10 +227,10 @@
         <Option Id="PROBE_PORT_BIT_COUNT" value="1"/>
       </probeOptions>
       <nets>
-        <net name="app_0/rx_dma_we_s"/>
+        <net name="app_0/ext_trig_i_3[2]"/>
       </nets>
     </probe>
-    <probe type="ila" busType="net" source="netlist" spec="ILA_V2_RT">
+    <probe type="ila" busType="bus" source="netlist" spec="ILA_V2_RT">
       <probeOptions Id="DebugProbeParams">
         <Option Id="CORE_LOCATION" value="1:0"/>
         <Option Id="HW_ILA" value="app_0/dbg_2.rx_dma_wb_debug"/>
@@ -239,7 +239,7 @@
         <Option Id="PROBE_PORT_BIT_COUNT" value="1"/>
       </probeOptions>
       <nets>
-        <net name="app_0/sdi_s"/>
+        <net name="app_0/ext_trig_i[3]"/>
       </nets>
     </probe>
     <probe type="ila" busType="net" source="netlist" spec="ILA_V2_RT">
@@ -251,7 +251,7 @@
         <Option Id="PROBE_PORT_BIT_COUNT" value="1"/>
       </probeOptions>
       <nets>
-        <net name="app_0/fe_cmd_o"/>
+        <net name="app_0/int_trig_t"/>
       </nets>
     </probe>
     <probe type="ila" busType="bus" source="netlist" spec="ILA_V2_RT">
@@ -306,7 +306,7 @@
         <Option Id="PROBE_PORT_BIT_COUNT" value="1"/>
       </probeOptions>
       <nets>
-        <net name="app_0/scl_s"/>
+        <net name="app_0/eudet_trig_s"/>
       </nets>
     </probe>
     <probe type="ila" busType="net" source="netlist" spec="ILA_V2_RT">
@@ -318,7 +318,7 @@
         <Option Id="PROBE_PORT_BIT_COUNT" value="1"/>
       </probeOptions>
       <nets>
-        <net name="app_0/sda_s"/>
+        <net name="app_0/eudet_clk_s"/>
       </nets>
     </probe>
     <probe type="ila" busType="net" source="netlist" spec="ILA_V2_RT">
@@ -330,7 +330,7 @@
         <Option Id="PROBE_PORT_BIT_COUNT" value="1"/>
       </probeOptions>
       <nets>
-        <net name="app_0/latch_s"/>
+        <net name="app_0/eudet_busy_s"/>
       </nets>
     </probe>
     <probe type="ila" busType="bus" source="netlist" spec="ILA_V2_RT">

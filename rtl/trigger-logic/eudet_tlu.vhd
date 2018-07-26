@@ -27,6 +27,8 @@ entity eudet_tlu is
         -- From logic
         busy_i : IN std_logic;
         simple_mode_i : IN std_logic;
+        deadtime_i : IN std_logic_vector(15 downto 0);
+
         -- To logic
         trig_o : OUT std_logic;
         rst_o : OUT std_logic;
@@ -49,8 +51,8 @@ architecture rtl of eudet_tlu is
     end component;
 
     -- constants
-    signal C_DEADTIME : integer := 300; -- clk_i cycles
-    signal C_CLKDIVIDER : integer := 4; -- 40 MHz -> 10Mhz
+    signal C_DEADTIME : integer := 2000; -- clk_i cycles
+    signal C_CLKDIVIDER : integer := 16; -- 160 MHz -> 10Mhz
 
     -- State machine
     type state_type is (IDLE, TRIGGER, RECEIVE, DEAD);
@@ -64,9 +66,10 @@ architecture rtl of eudet_tlu is
     signal eudet_busy_t : std_logic;
     signal eudet_clk_t : std_logic;
     signal eudet_bust_t : std_logic;
-    signal clk_counter : unsigned (3 downto 0);
+    signal clk_counter : unsigned (7 downto 0);
     signal bit_counter : unsigned (4 downto 0);
-    signal dead_counter : unsigned (9 downto 0);
+    signal dead_counter : unsigned (15 downto 0);
+    signal deadtime_t : std_logic_vector(15 downto 0);
 begin
     -- Sync async inputs
     trig_sync: synchronizer port map(clk_i => clk_i, rst_n_i => rst_n_i, async_in => eudet_trig_i, sync_out => sync_eudet_trig_t);
@@ -85,6 +88,7 @@ begin
             clk_counter <= (others => '0');
             bit_counter <= (others => '0');
             dead_counter <= (others => '0');
+            deadtime_t <= (others => '0');
             trig_tag_t <= (others => '0');
             trig_tag_o <= (others => '0');
             trig_o <= '0';
@@ -101,7 +105,7 @@ begin
                     end if;
 
                 when TRIGGER =>
-                    -- Raise busy and wit until trigger is negated
+                    -- Raise busy and wait until trigger is negated
                     eudet_busy_t <= '1';
                     eudet_clk_t <= '0';
                     trig_o <= '0';
@@ -138,10 +142,10 @@ begin
                     eudet_clk_t <= '0';
                     trig_o <= '0';
                     if (dead_counter = 0) then
-                        trig_o <= '1'; -- Trigger now (16 clock cycles after the inital trigger?)
+                        trig_o <= '1'; -- Trigger now (16 clock cycles after the initial trigger?)
                     end if;
                     dead_counter <= dead_counter + 1;
-                    if (dead_counter = C_DEADTIME) then
+                    if (dead_counter >= unsigned(deadtime_t) and busy_i = '0') then
                         state <= IDLE;
                     end if;
 
@@ -153,6 +157,7 @@ begin
                     bit_counter <= (others => '0');
                     state <= IDLE;
             end case;
+            deadtime_t <= deadtime_i;
         end if;
     end process state_machine;
 

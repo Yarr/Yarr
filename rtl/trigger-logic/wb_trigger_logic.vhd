@@ -118,6 +118,7 @@ architecture rtl of wb_trigger_logic is
             -- From logic
             busy_i : IN std_logic;
             simple_mode_i : IN std_logic;
+            deadtime_i : IN std_logic_vector(15 downto 0);
             -- To logic
             trig_o : OUT std_logic;
             rst_o : OUT std_logic;
@@ -351,13 +352,14 @@ begin
     cmp_eudet_tlu: eudet_tlu
     port map (
         clk_i => clk_i,
-        rst_n_i => rst_n_i,
+        rst_n_i => rst_n_i and (not local_reset),
         eudet_trig_i => eudet_trig_i,
         eudet_rst_i => eudet_rst_i,
         eudet_busy_o => eudet_busy_o,
         eudet_clk_o => eudet_clk_o,
-        busy_i => '0',
+        busy_i => busy_t,
         simple_mode_i => '0',
+        deadtime_i => deadtime,
         trig_o => lcl_eudet_trig_t,
         rst_o => open,
         trig_tag_o => eudet_trig_tag_t

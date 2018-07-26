@@ -115,7 +115,8 @@ entity app is
            -- FMC
            ---------------------------------------------------------
            -- Trigger input
-           ext_trig_o        : out std_logic;
+           ext_trig_i        : in std_logic_vector(3 downto 0);
+           --ext_busy_o       : out std_logic;
            -- LVDS buffer
            pwdn_l            : out std_logic_vector(2 downto 0);
            -- GPIO
@@ -130,6 +131,12 @@ entity app is
            -- I2c
            sda_io                : inout std_logic;
            scl_io                    : inout std_logic;
+           -- EUDET
+           eudet_clk_o : out std_logic;
+           eudet_trig_i : in std_logic;
+           eudet_rst_i : in std_logic;
+           eudet_busy_o : out std_logic;
+
            -- SPI
            scl_o            : out std_logic;
            sda_o            : out std_logic;
@@ -413,7 +420,15 @@ architecture Behavioral of app is
     -- I2C
     signal scl_t : std_logic;
     signal sda_t : std_logic;
-    
+   
+    -- EUDET
+    signal eudet_clk_s : std_logic;
+    signal eudet_busy_s : std_logic;
+    signal eudet_rst_s : std_logic;
+    signal eudet_trig_s : std_logic;
+
+    signal ext_busy_s : std_logic;
+
     -- FOR TESTS
     signal debug       : std_logic_vector(31 downto 0);
     signal clk_div_cnt : unsigned(3 downto 0);
@@ -729,6 +744,64 @@ wb_dev_gen : if wb_dev_c = '1' generate
 -- Differential buffers
 	tx_loop: for I in 0 to c_TX_CHANNELS-1 generate
 	begin
+       ddr_buf_gen: if c_TX_ENCODING = "OSERDES" generate
+           tx_buf : OBUFDS
+           generic map (
+               IOSTANDARD => "LVDS_25")
+           port map (
+               O => fe_cmd_p(I),     -- Diff_p output (connect directly to top-level port)
+               OB => fe_cmd_n(I),   -- Diff_n output (connect directly to top-level port)
+               I => fe_cmd_enc(I)      -- Buffer input 
+           );
+       OSERDESE2_inst : OSERDESE2
+           generic map (
+              DATA_RATE_OQ => "DDR",   -- DDR, SDR
+              DATA_RATE_TQ => "DDR",   -- DDR, BUF, SDR
+              DATA_WIDTH => 8,         -- Parallel data width (2-8,10,14)
+              INIT_OQ => '0',          -- Initial value of OQ output (1'b0,1'b1)
+              INIT_TQ => '0',          -- Initial value of TQ output (1'b0,1'b1)
+              SERDES_MODE => "MASTER", -- MASTER, SLAVE
+              SRVAL_OQ => '0',         -- OQ output value when SR is used (1'b0,1'b1)
+              SRVAL_TQ => '0',         -- TQ output value when SR is used (1'b0,1'b1)
+              TBYTE_CTL => "FALSE",    -- Enable tristate byte operation (FALSE, TRUE)
+              TBYTE_SRC => "FALSE",    -- Tristate byte source (FALSE, TRUE)
+              TRISTATE_WIDTH => 1      -- 3-state converter width (1,4)
+           )
+           port map (
+              OFB => open,             -- 1-bit output: Feedback path for data
+              OQ => fe_cmd_enc(I),               -- 1-bit output: Data path output
+              -- SHIFTOUT1 / SHIFTOUT2: 1-bit (each) output: Data output expansion (1-bit each)
+              SHIFTOUT1 => open,
+              SHIFTOUT2 => open,
+              TBYTEOUT => open,   -- 1-bit output: Byte group tristate
+              TFB => open,             -- 1-bit output: 3-state control
+              TQ => open,               -- 1-bit output: 3-state control
+              CLK => clk_640_s,             -- 1-bit input: High speed clock
+              CLKDIV => clk_160_s,       -- 1-bit input: Divided clock
+              -- D1 - D8: 1-bit (each) input: Parallel data inputs (1-bit each)
+              D1 => fe_cmd_o(I),
+              D2 => fe_cmd_o(I),
+              D3 => fe_cmd_o(I),
+              D4 => fe_cmd_o(I),
+              D5 => fe_cmd_o(I),
+              D6 => fe_cmd_o(I),
+              D7 => fe_cmd_o(I),
+              D8 => fe_cmd_o(I),
+              OCE => '1',             -- 1-bit input: Output data clock enable
+              RST => not rst_n_s,             -- 1-bit input: Reset
+              -- SHIFTIN1 / SHIFTIN2: 1-bit (each) input: Data input expansion (1-bit each)
+              SHIFTIN1 => '0',
+              SHIFTIN2 => '0',
+              -- T1 - T4: 1-bit (each) input: Parallel 3-state inputs
+              T1 => '0',
+              T2 => '0',
+              T3 => '0',
+              T4 => '0',
+              TBYTEIN => '0',     -- 1-bit input: Byte group tristate
+              TCE => '0'              -- 1-bit input: 3-state clock enable
+           );
+       end generate ddr_buf_gen;
+
 	   nrz_gen: if c_TX_ENCODING = "NRZ" generate
            tx_buf : OBUFDS
            generic map (
@@ -911,6 +984,13 @@ wb_dev_gen : if wb_dev_c = '1' generate
   		scl => scl_io,
   		sda => sda_io
   	);
+
+    eudet_clk_o <= eudet_clk_s;
+    eudet_busy_o <= eudet_busy_s;
+    eudet_trig_s <= eudet_trig_i;
+    eudet_rst_s <= eudet_rst_i;
+
+    --ext_busy_o <= ext_busy_s;
 	
 	cmp_wb_trigger_logic: wb_trigger_logic PORT MAP(
 		wb_clk_i => wb_clk_s,
@@ -922,15 +1002,15 @@ wb_dev_gen : if wb_dev_c = '1' generate
 		wb_stb_i => wb_stb_s,
 		wb_we_i => wb_we_s,
 		wb_ack_o => wb_ack_s(5),
-		ext_trig_i => "000" & trig_pulse,
+		ext_trig_i => ext_trig_i,
 		ext_trig_o => int_trig_t,
 		ext_busy_i => '0',
-		ext_busy_o => open,
-		eudet_clk_o => open,
-		eudet_busy_o => open,
-		eudet_trig_i => '0',
-		eudet_rst_i => '0',
-		clk_i => CLK_40_S,
+		ext_busy_o => ext_busy_s,
+		eudet_clk_o => eudet_clk_s,
+		eudet_busy_o => eudet_busy_s,
+		eudet_trig_i => eudet_trig_s,
+		eudet_rst_i => eudet_rst_s,
+		clk_i => CLK_160_S,
 		trig_tag => trig_tag_t,
         debug_o => open
 	);
@@ -1248,19 +1328,19 @@ end generate;
           probe0 => rx_dma_adr_s, 
           probe1 => rx_dma_dat_m2s_s, 
           probe2 => rx_dma_dat_s2m_s, 
-          probe3(0) => rx_dma_stb_s, 
-          probe4(0) => rx_dma_cyc_s, 
-          probe5(0) => rx_dma_we_s, 
+          probe3(0) => ext_trig_i(0), 
+          probe4(0) => ext_trig_i(1), 
+          probe5(0) => ext_trig_i(2), 
           --probe6(0) => rx_dma_ack_s,
-          probe6(0) => sdi_s,
+          probe6(0) => ext_trig_i(3),
           --probe7(0) => rx_dma_stall_s,
-          probe7(0) => fe_cmd_o(0),
+          probe7(0) => int_trig_t,
           probe8 => rx_data(31 downto 0),
-          probe9(0) => scl_s,
+          probe9(0) => eudet_trig_s,
           --probe9(0) => rx_valid,
-          probe10(0) => sda_s,
+          probe10(0) => eudet_clk_s,
           --probe10(0) => trig_pulse,
-          probe11(0) => latch_s
+          probe11(0) => eudet_busy_s
           --probe11(0) => rx_busy
       );
   end generate dbg_2;

@@ -28,8 +28,10 @@ endif
 #target for performing local synthesis
 all: bitstream
 
-SOURCES_VerilogFile := \
-../../../rtl/kintex7/rx-core/descrambler.v
+SOURCES_XDCFile := \
+../xpressk7-fmc-quad-dp-ohio.xdc \
+../xpressk7.xdc \
+../xpressk7-timing.xdc
 
 SOURCES_XCIFile := \
 ../../../ip-cores/kintex7/fifo_605x32/fifo_605x32.xci \
@@ -53,6 +55,9 @@ SOURCES_XCIFile := \
 ../../../ip-cores/kintex7/rx_bridge_fifo/rx_bridge_fifo.xci \
 ../../../ip-cores/kintex7/ila_rx_dma_wb/ila_rx_dma_wb.xci \
 ../../../ip-cores/kintex7/clk_gen/clk_gen.xci
+
+SOURCES_VerilogFile := \
+../../../rtl/kintex7/rx-core/descrambler.v
 
 SOURCES_VHDLFile := \
 ../../../rtl/kintex7/rx-core/wb_rx_bridge.vhd \
@@ -112,16 +117,11 @@ board_pkg.vhd \
 ../../../rtl/common/wb_spi.vhd \
 ../../../rtl/common/simple_counter.vhd
 
-SOURCES_XDCFile := \
-../xpressk7-fmc-quad-dp-ohio.xdc \
-../xpressk7.xdc \
-../xpressk7-timing.xdc
-
 files.tcl:
-		@$(foreach sourcefile, $(SOURCES_VerilogFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
-		@$(foreach sourcefile, $(SOURCES_XCIFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
-		@$(foreach sourcefile, $(SOURCES_VHDLFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
 		@$(foreach sourcefile, $(SOURCES_XDCFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
+		@$(foreach sourcefile, $(SOURCES_XCIFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
+		@$(foreach sourcefile, $(SOURCES_VerilogFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
+		@$(foreach sourcefile, $(SOURCES_VHDLFile), echo "add_files -norecurse $(sourcefile); set_property IS_GLOBAL_INCLUDE 1 [get_files $(sourcefile)]" >> $@ &)
 
 SYN_PRE_PROJECT_CMD := 
 SYN_POST_PROJECT_CMD := 

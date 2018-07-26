@@ -24,6 +24,8 @@ entity serial_port is
         idle_i      : in std_logic_vector(g_PORT_WIDTH-1 downto 0);
         sync_i      : in std_logic_vector(g_PORT_WIDTH-1 downto 0);
         sync_interval_i : in std_logic_vector(7 downto 0);
+        az_i      : in std_logic_vector(g_PORT_WIDTH-1 downto 0);
+        az_interval_i : in std_logic_vector(15 downto 0);
         
         data_valid_i : in std_logic;
         -- Output
@@ -48,10 +50,9 @@ architecture behavioral of serial_port is
     signal bit_count : unsigned(log2_ceil(g_PORT_WIDTH) downto 0);
     signal sreg      : std_logic_vector(g_PORT_WIDTH-1 downto 0);
     signal sync_cnt : unsigned(7 downto 0);
+    signal az_cnt : unsigned(15 downto 0);
 begin
 
-    -- Tie offs
-    data_o <= sreg(g_PORT_WIDTH-1);
     -- Serializer proc
     serialize: process(clk_i, rst_n_i)
     begin
@@ -60,31 +61,42 @@ begin
 			bit_count <= (others => '0');
 			data_read_o <= '0';
 			sync_cnt <= (others => '0');
+			az_cnt <= (others => '0');
+            data_o <= '0';
 		elsif rising_edge(clk_i) then
-			if (enable_i = '1') then  
-				if (bit_count = g_PORT_WIDTH-1 and data_valid_i = '1') then
-                    sreg <= data_i;
-                    data_read_o <= '1';
-                    bit_count <= (others => '0');
-                    sync_cnt <= sync_cnt + 1;
-				elsif (bit_count = g_PORT_WIDTH-1 and sync_cnt >= unsigned(sync_interval_i) and (sync_i /= c_ZEROS)) then --
-					sreg <= sync_i;
-                    bit_count <= (others => '0');
-                    sync_cnt <= (others => '0');				        
-                elsif (bit_count = g_PORT_WIDTH-1 and data_valid_i = '0') then
-					sreg <= idle_i;
-					bit_count <= (others => '0');
-					sync_cnt <= sync_cnt + 1;
-				else
-					sreg <= sreg(g_PORT_WIDTH-2 downto 0) & '0';
-					data_read_o <= '0';
-					bit_count <= bit_count + 1;
-				end if;
-			else
-			   sreg <= (others => '0');
-			   data_read_o <= '0';
-			   bit_count <= TO_UNSIGNED(g_PORT_WIDTH-1, bit_count'length);
-			end if;
+            -- Output register
+            data_o <= sreg(g_PORT_WIDTH-1);
+            -- Priority encoder
+            -- 1. Input via data_i port (fifo/looper) [only when enabled]
+            -- 3. Autozero word [only when enabled]
+            -- 2. Sync word
+            -- 4. Idle
+            if (bit_count = g_PORT_WIDTH-1 and data_valid_i = '1' and enable_i = '1') then
+                sreg <= data_i;
+                data_read_o <= '1';
+                bit_count <= (others => '0');
+                sync_cnt <= sync_cnt + 1;
+                az_cnt <= az_cnt + 1;
+            elsif (bit_count = g_PORT_WIDTH-1 and az_cnt >= unsigned(az_interval_i) and (az_i /= c_ZEROS) and (enable_i = '1')) then --
+                sreg <= az_i;
+                bit_count <= (others => '0');
+                sync_cnt <= sync_cnt + 1;				        
+                az_cnt <= (others => '0');
+            elsif (bit_count = g_PORT_WIDTH-1 and sync_cnt >= unsigned(sync_interval_i) and (sync_i /= c_ZEROS)) then
+                sreg <= sync_i;
+                bit_count <= (others => '0');
+                sync_cnt <= (others => '0');
+                az_cnt <= az_cnt + 1;
+            elsif (bit_count = g_PORT_WIDTH-1 and data_valid_i = '0') then
+                sreg <= idle_i;
+                bit_count <= (others => '0');
+                sync_cnt <= sync_cnt + 1;
+                az_cnt <= az_cnt + 1;
+            else
+                sreg <= sreg(g_PORT_WIDTH-2 downto 0) & '0';
+                data_read_o <= '0';
+                bit_count <= bit_count + 1;
+            end if;
 		end if;
     end process serialize;
 end behavioral;
