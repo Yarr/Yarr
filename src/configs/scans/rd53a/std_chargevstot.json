@@ -27,7 +27,11 @@
         "algorithm": "HitsPerEvent",
         "config": {}
       },
-      "n_count": 5
+      "5": {
+        "algorithm": "Tot3d",
+        "config": {}
+      },
+      "n_count": 6
     },
     "loops": [
       {
@@ -49,8 +53,8 @@
       },
       {
         "config": {
-          "max": 34,
-          "min": 33,
+          "max": 33,
+          "min": 16,
           "step": 1,
           "nSteps": 5
         },

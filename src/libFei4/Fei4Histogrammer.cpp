@@ -153,6 +153,17 @@ void TotDist::processEvent(Fei4Data *data) {
     }
 }
 
+void Tot3d::processEvent(Fei4Data *data) {
+    for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
+        Fei4Event curEvent = *eventIt;
+        for (std::list<Fei4Hit>::iterator hitIt = curEvent.hits.begin(); hitIt!=curEvent.hits.end(); ++hitIt) {   
+            Fei4Hit curHit = *hitIt;
+            if(curHit.tot > 0)
+                h->fill(curHit.col, curHit.row, curHit.tot);
+        }
+    }
+}
+
 void L1Dist::processEvent(Fei4Data *data) {
     // Event Loop
     for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
@@ -178,6 +189,31 @@ void L1Dist::processEvent(Fei4Data *data) {
         //TODO hack to generate proper tag, should come from FE/FW
         //curEvent.tag = current_tag;
 
+    }
+}
+
+void L13d::processEvent(Fei4Data *data) {
+    for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
+        Fei4Event curEvent = *eventIt;
+        if(curEvent.l1id != l1id) {
+            l1id = curEvent.l1id;
+            if (curEvent.bcid - bcid_offset > 16) {
+                bcid_offset = curEvent.bcid;
+            } else if ((curEvent.bcid+32768) - bcid_offset > 16 &&
+                       static_cast<int>(curEvent.bcid) - static_cast<int>(bcid_offset) < 0) {
+                bcid_offset = curEvent.bcid;
+            }
+        }
+
+        int delta_bcid = curEvent.bcid - bcid_offset;
+        if (delta_bcid < 0)
+            delta_bcid += 32768;
+
+        for (std::list<Fei4Hit>::iterator hitIt = curEvent.hits.begin(); hitIt!=curEvent.hits.end(); ++hitIt) {   
+            Fei4Hit curHit = *hitIt;
+            if(curHit.tot > 0)
+                h->fill(curHit.col, curHit.row, delta_bcid);
+        }
     }
 }
 

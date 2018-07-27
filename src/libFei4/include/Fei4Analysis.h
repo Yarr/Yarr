@@ -345,12 +345,17 @@ class ChargeVsTotAnalysis : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> totInnerCnt;
         std::map<unsigned, Histo2d*> tot2Maps;
         std::map<unsigned, unsigned> tot2InnerCnt;
+        std::map<unsigned, Histo3d*> tot3ds;
+        std::map<unsigned, unsigned> tot3dInnerCnt;
 
         Histo2d *chargeVsTotMap = NULL;
         double injectedCharge = 0;
         double chargeMin = 0;
         double chargeMax = 0;
         double chargeStep = 0;
+        Histo2d *chargeVsTotPixelMap[8] = {NULL};
+        std::vector<unsigned> pixelCols;
+        std::vector<unsigned> pixelRows;
 };
 
 class TimeWalkAnalysis : public AnalysisAlgorithm {
@@ -368,6 +373,8 @@ class TimeWalkAnalysis : public AnalysisAlgorithm {
         unsigned injections;
         std::map<unsigned, Histo1d*> l1Histos;
         std::map<unsigned, unsigned> innerCnt;
+        std::map<unsigned, Histo3d*> l13ds;
+        std::map<unsigned, unsigned> l13dinnerCnt;
 
         Histo2d *timeWalkMap = NULL;
         double injectedCharge = 0;
@@ -378,10 +385,16 @@ class TimeWalkAnalysis : public AnalysisAlgorithm {
         std::vector<double> y_meanL1;
         std::vector<double> y_sigmaL1;
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 >>>>>>> Modified to use charge vs tot and time walk in Fei4Analysis.cpp
 =======
 >>>>>>> Clean up timewalk and chargevstot analysis
+=======
+        Histo2d *timeWalkPixelMap[8] = {NULL};
+        std::vector<unsigned> pixelCols;
+        std::vector<unsigned> pixelRows;
+>>>>>>> Added per pixel scan for timewalk and chargevstot
 };
 
 #endif

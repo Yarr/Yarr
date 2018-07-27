@@ -27,7 +27,11 @@
         "algorithm": "HitsPerEvent",
         "config": {}
       },
-      "n_count": 5
+      "5": {
+        "algorithm": "L13d",
+        "config": {}
+      },
+      "n_count": 6
     },
     "loops": [
       {
@@ -40,8 +44,8 @@
       },
       {
         "config": {
-          "max": 1000,
-          "min": 100,
+          "max": 800,
+          "min": 25,
           "step": 25,
           "parameter":"InjVcalDiff"
         },
@@ -49,8 +53,8 @@
       },
       {
         "config": {
-          "max": 34,
-          "min": 33,
+          "max": 33,
+          "min": 16,
           "step": 1,
           "nSteps": 5
         },

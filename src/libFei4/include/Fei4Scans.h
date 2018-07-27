@@ -8,5 +8,3 @@
 #include "Fei4PixelThresholdTune.h"
 #include "Fei4PixelPreampTune.h"
 #include "Fei4Selftrigger.h"
-#include "Fei4ChargeVsTot.h"
-#include "Fei4TimeWalk.h"
