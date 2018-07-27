@@ -992,28 +992,54 @@ wb_dev_gen : if wb_dev_c = '1' generate
 
     --ext_busy_o <= ext_busy_s;
 	
-	cmp_wb_trigger_logic: wb_trigger_logic PORT MAP(
-		wb_clk_i => wb_clk_s,
-		rst_n_i => rst_n_s,
-		wb_adr_i => wb_adr_s(31 downto 0),
-		wb_dat_i => wb_dat_m2s_s(31 downto 0),
-		wb_dat_o => wb_dat_s2m_s(191 downto 160),
-		wb_cyc_i => wb_cyc_s(5),
-		wb_stb_i => wb_stb_s,
-		wb_we_i => wb_we_s,
-		wb_ack_o => wb_ack_s(5),
-		ext_trig_i => ext_trig_i,
-		ext_trig_o => int_trig_t,
-		ext_busy_i => '0',
-		ext_busy_o => ext_busy_s,
-		eudet_clk_o => eudet_clk_s,
-		eudet_busy_o => eudet_busy_s,
-		eudet_trig_i => eudet_trig_s,
-		eudet_rst_i => eudet_rst_s,
-		clk_i => CLK_160_S,
-		trig_tag => trig_tag_t,
-        debug_o => open
-	);
+    fei4_type: if c_FE_TYPE = "FEI4" generate 
+        cmp_wb_trigger_logic: wb_trigger_logic PORT MAP(
+            wb_clk_i => wb_clk_s,
+            rst_n_i => rst_n_s,
+            wb_adr_i => wb_adr_s(31 downto 0),
+            wb_dat_i => wb_dat_m2s_s(31 downto 0),
+            wb_dat_o => wb_dat_s2m_s(191 downto 160),
+            wb_cyc_i => wb_cyc_s(5),
+            wb_stb_i => wb_stb_s,
+            wb_we_i => wb_we_s,
+            wb_ack_o => wb_ack_s(5),
+            ext_trig_i => ext_trig_i,
+            ext_trig_o => int_trig_t,
+            ext_busy_i => '0',
+            ext_busy_o => ext_busy_s,
+            eudet_clk_o => eudet_clk_s,
+            eudet_busy_o => eudet_busy_s,
+            eudet_trig_i => eudet_trig_s,
+            eudet_rst_i => eudet_rst_s,
+            clk_i => CLK_40_S,
+            trig_tag => trig_tag_t,
+            debug_o => open
+        );
+     end generate fei4_type;
+     rd53_type: if c_FE_TYPE = "RD53" generate 
+        cmp_wb_trigger_logic: wb_trigger_logic PORT MAP(
+            wb_clk_i => wb_clk_s,
+            rst_n_i => rst_n_s,
+            wb_adr_i => wb_adr_s(31 downto 0),
+            wb_dat_i => wb_dat_m2s_s(31 downto 0),
+            wb_dat_o => wb_dat_s2m_s(191 downto 160),
+            wb_cyc_i => wb_cyc_s(5),
+            wb_stb_i => wb_stb_s,
+            wb_we_i => wb_we_s,
+            wb_ack_o => wb_ack_s(5),
+            ext_trig_i => ext_trig_i,
+            ext_trig_o => int_trig_t,
+            ext_busy_i => '0',
+            ext_busy_o => ext_busy_s,
+            eudet_clk_o => eudet_clk_s,
+            eudet_busy_o => eudet_busy_s,
+            eudet_trig_i => eudet_trig_s,
+            eudet_rst_i => eudet_rst_s,
+            clk_i => CLK_160_S,
+            trig_tag => trig_tag_t,
+            debug_o => open
+        );
+     end generate rd53_type;
 	
 
     scl_o <= scl_s;
