@@ -15,7 +15,6 @@ Fei4TriggerLoop::Fei4TriggerLoop() : LoopActionBase() {
     m_trigWord[1] = TRIG_CMD;
     m_trigWord[2] = 0x00;
     m_trigWord[3] = CAL_CMD;
-    m_trigWordLength = 4;
     m_noInject = false;
     m_extTrigger = false;
     isInner = false;
@@ -105,7 +104,7 @@ void Fei4TriggerLoop::setTrigDelay(unsigned int delay) {
             m_trigWord[2-1-word] = (TRIG_CMD<<(5-(32-pos)));
         m_trigDelay = delay;
     }
-    m_trigWordLength = 4;
+    m_trigWordLength = 32 + delay;
 }
 
 void Fei4TriggerLoop::setNoInject() {
