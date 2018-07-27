@@ -11,5 +11,7 @@ package board_pkg is
     constant c_TX_IDLE_WORD : std_logic_vector(31 downto 0) := x"00000000";
     constant c_TX_SYNC_WORD : std_logic_vector(31 downto 0) := x"00000000";
     constant c_TX_SYNC_INTERVAL : unsigned(7 downto 0) := to_unsigned(31,8);
+    constant c_tx_az_word : std_logic_vector(31 downto 0) := x"0";
+    constant c_tx_az_interval : unsigned(15 downto 0) := to_unsigned(500,16);
 end board_pkg;
 
