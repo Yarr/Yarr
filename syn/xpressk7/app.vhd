@@ -865,7 +865,7 @@ wb_dev_gen : if wb_dev_c = '1' generate
 		);
 	end generate;    
     
-    fei4_type: if c_FE_TYPE = "FEI4" generate 
+    fei4_type_tx: if c_FE_TYPE = "FEI4" generate 
          cmp_wb_tx_core : wb_tx_core port map
             (
                 -- Sys connect
@@ -887,8 +887,8 @@ wb_dev_gen : if wb_dev_c = '1' generate
                 -- Trig
                 ext_trig_i => int_trig_t
             );
-     end generate fei4_type;
-     rd53_type: if c_FE_TYPE = "RD53" generate 
+     end generate fei4_type_tx;
+     rd53_type_tx: if c_FE_TYPE = "RD53" generate 
          cmp_wb_tx_core : wb_tx_core port map
             (
                 -- Sys connect
@@ -910,7 +910,7 @@ wb_dev_gen : if wb_dev_c = '1' generate
                 -- Trig
                 ext_trig_i => int_trig_t
             );
-     end generate rd53_type;
+     end generate rd53_type_tx;
 
 	cmp_wb_rx_core: wb_rx_core PORT MAP(
 		wb_clk_i => wb_clk_s,
@@ -992,7 +992,7 @@ wb_dev_gen : if wb_dev_c = '1' generate
 
     --ext_busy_o <= ext_busy_s;
 	
-    fei4_type: if c_FE_TYPE = "FEI4" generate 
+    fei4_type_trig: if c_FE_TYPE = "FEI4" generate 
         cmp_wb_trigger_logic: wb_trigger_logic PORT MAP(
             wb_clk_i => wb_clk_s,
             rst_n_i => rst_n_s,
@@ -1015,8 +1015,8 @@ wb_dev_gen : if wb_dev_c = '1' generate
             trig_tag => trig_tag_t,
             debug_o => open
         );
-     end generate fei4_type;
-     rd53_type: if c_FE_TYPE = "RD53" generate 
+     end generate fei4_type_trig;
+     rd53_type_trig: if c_FE_TYPE = "RD53" generate 
         cmp_wb_trigger_logic: wb_trigger_logic PORT MAP(
             wb_clk_i => wb_clk_s,
             rst_n_i => rst_n_s,
@@ -1039,7 +1039,7 @@ wb_dev_gen : if wb_dev_c = '1' generate
             trig_tag => trig_tag_t,
             debug_o => open
         );
-     end generate rd53_type;
+     end generate rd53_type_trig;
 	
 
     scl_o <= scl_s;
