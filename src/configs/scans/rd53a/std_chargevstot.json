@@ -53,8 +53,8 @@
       },
       {
         "config": {
-          "max": 33,
-          "min": 16,
+          "max": 50,
+          "min": 33,
           "step": 1,
           "nSteps": 5
         },
@@ -79,7 +79,8 @@
     "prescan": {
         "InjEnDig": 0,
         "LatencyConfig": 50,
-        "GlobalPulseRt": 16384
+        "GlobalPulseRt": 16384,
+        "InjVcalMed": 500
     }
   }
 }

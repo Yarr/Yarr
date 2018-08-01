@@ -325,8 +325,12 @@ class ChargeVsTotAnalysis : public AnalysisAlgorithm {
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
+<<<<<<< HEAD
         void end() {}
 >>>>>>> Modified to use charge vs tot and time walk in Fei4Analysis.cpp
+=======
+        void end();
+>>>>>>> Fixed hard-cored charge value and others
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -339,23 +343,26 @@ class ChargeVsTotAnalysis : public AnalysisAlgorithm {
         unsigned n_trigger;
 =======
         double injections;
+        bool useScap;
+        bool useLcap;
+        unsigned vcalLoop;
+        unsigned vcalMin;
+        unsigned vcalMax;
+        unsigned vcalStep;
+        unsigned vcalBins;
         std::map<unsigned, Histo2d*> occMaps;
         std::map<unsigned, unsigned> occInnerCnt;
         std::map<unsigned, Histo2d*> totMaps;
         std::map<unsigned, unsigned> totInnerCnt;
-        std::map<unsigned, Histo2d*> tot2Maps;
-        std::map<unsigned, unsigned> tot2InnerCnt;
         std::map<unsigned, Histo3d*> tot3ds;
         std::map<unsigned, unsigned> tot3dInnerCnt;
 
-        Histo2d *chargeVsTotMap = NULL;
-        double injectedCharge = 0;
-        double chargeMin = 0;
-        double chargeMax = 0;
-        double chargeStep = 0;
-        Histo2d *chargeVsTotPixelMap[8] = {NULL};
-        std::vector<unsigned> pixelCols;
-        std::vector<unsigned> pixelRows;
+        std::map<unsigned, Histo2d*> chargeVsTotMap;
+        std::map<unsigned, Histo2d*> chargeVsTotPixelMap;
+        double chargeMin;
+        double chargeMax;
+        double chargeStep;
+        double injectedCharge;
 };
 
 class TimeWalkAnalysis : public AnalysisAlgorithm {
@@ -365,24 +372,32 @@ class TimeWalkAnalysis : public AnalysisAlgorithm {
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
-        void end() {}
+        void end();
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         unsigned n_count;
         unsigned injections;
+        bool useScap;
+        bool useLcap;
+        unsigned vcalLoop;
+        unsigned vcalMin;
+        unsigned vcalMax;
+        unsigned vcalStep;
+        unsigned vcalBins;
         std::map<unsigned, Histo1d*> l1Histos;
         std::map<unsigned, unsigned> innerCnt;
         std::map<unsigned, Histo3d*> l13ds;
         std::map<unsigned, unsigned> l13dinnerCnt;
 
         Histo2d *timeWalkMap = NULL;
-        double injectedCharge = 0;
-        double chargeMin = 0;
-        double chargeMax = 0;
-        double chargeStep = 0;
+        double injectedCharge;
+        double chargeMin;
+        double chargeMax;
+        double chargeStep;
         std::vector<double> x_injectedCharge;
         std::vector<double> y_meanL1;
+<<<<<<< HEAD
         std::vector<double> y_sigmaL1;
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -395,6 +410,10 @@ class TimeWalkAnalysis : public AnalysisAlgorithm {
         std::vector<unsigned> pixelCols;
         std::vector<unsigned> pixelRows;
 >>>>>>> Added per pixel scan for timewalk and chargevstot
+=======
+        std::vector<double> y_err_L1;
+        std::map<unsigned, Histo2d*> timeWalkPixelMap;
+>>>>>>> Fixed hard-cored charge value and others
 };
 
 #endif
