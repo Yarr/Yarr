@@ -71,7 +71,7 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "AnalogScan",
+    "name": "TotScan",
     "prescan": {
         "InjEnDig": 0,
         "LatencyConfig": 50,

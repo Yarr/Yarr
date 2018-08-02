@@ -5,7 +5,7 @@
         "algorithm": "ScurveFitter"
       },
       "1": {
-        "algorithm": "OccupancyAnalysis"
+        "algorithm": "L1Analysis"
       },
       "n_count": 1
     },
@@ -35,7 +35,7 @@
     "loops": [
       {
         "config": {
-          "max": 64,
+         "max": 384,
           "min": 0,
           "step": 1
         },
@@ -43,8 +43,17 @@
       },
       {
         "config": {
-          "max": 500,
+          "max": 16,
           "min": 0,
+          "step": 1,
+          "nSteps": 4
+        },
+        "loopAction": "Rd53aCoreColLoop"
+      },
+      {
+        "config": {
+          "max": 350,
+          "min": 150,
           "step": 10,
           "parameter":"InjVcalDiff"
         },
@@ -52,19 +61,10 @@
       },
       {
         "config": {
-          "max": 16,
-          "min": 0,
-          "step": 1,
-          "nSteps": 16
-        },
-        "loopAction": "Rd53aCoreColLoop"
-      },
-      {
-        "config": {
-          "count": 50,
+          "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 20000,
+          "frequency": 10000,
           "noInject": false,
           "time": 0
         },
@@ -80,7 +80,11 @@
         "LatencyConfig": 48,
         "GlobalPulseRt": 16384,
         "InjVcalMed": 1000,
-        "InjVcalHigh": 1000
+        "InjVcalHigh": 1000,
+        "EnCoreColLin1": 0,
+        "EnCoreColLin2": 0,
+        "EnCoreColDiff1": 0,
+        "EnCoreColDiff2": 0
     }
   }
 }
