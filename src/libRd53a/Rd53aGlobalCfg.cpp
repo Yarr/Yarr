@@ -37,13 +37,13 @@ void Rd53aGlobalCfg::init() {
 
     // Sync FE
     //5
-    SyncIbiasp1.init(5, &m_cfg[5], 0, 9, 100); regMap["SyncIbiasp1"] = &Rd53aGlobalCfg::SyncIbiasp1;
+    SyncIbiasp1.init(5, &m_cfg[5], 0, 9, 80); regMap["SyncIbiasp1"] = &Rd53aGlobalCfg::SyncIbiasp1;
     //6
-    SyncIbiasp2.init(6, &m_cfg[6], 0, 9, 150); regMap["SyncIbiasp2"] = &Rd53aGlobalCfg::SyncIbiasp2;
+    SyncIbiasp2.init(6, &m_cfg[6], 0, 9, 120); regMap["SyncIbiasp2"] = &Rd53aGlobalCfg::SyncIbiasp2;
     //7
-    SyncIbiasSf.init(7, &m_cfg[7], 0, 9, 100); regMap["SyncIbiasSf"] = &Rd53aGlobalCfg::SyncIbiasSf;
+    SyncIbiasSf.init(7, &m_cfg[7], 0, 9, 80); regMap["SyncIbiasSf"] = &Rd53aGlobalCfg::SyncIbiasSf;
     //8
-    SyncIbiasKrum.init(8, &m_cfg[8], 0, 9, 40); regMap["SyncIbiasKrum"] = &Rd53aGlobalCfg::SyncIbiasKrum;
+    SyncIbiasKrum.init(8, &m_cfg[8], 0, 9, 55); regMap["SyncIbiasKrum"] = &Rd53aGlobalCfg::SyncIbiasKrum;
     //9
     SyncIbiasDisc.init(9, &m_cfg[9], 0, 9, 300); regMap["SyncIbiasDisc"] = &Rd53aGlobalCfg::SyncIbiasDisc;
     //10
@@ -100,7 +100,7 @@ void Rd53aGlobalCfg::init() {
     //Power
     //31
     SldoAnalogTrim.init(31, &m_cfg[31], 5, 5, 26); regMap["SldoAnalogTrim"] = &Rd53aGlobalCfg::SldoAnalogTrim;
-    SldoDigitalTrim.init(31, &m_cfg[31], 0, 5, 20); regMap["SldoDigitalTrim"] = &Rd53aGlobalCfg::SldoDigitalTrim;
+    SldoDigitalTrim.init(31, &m_cfg[31], 0, 5, 26); regMap["SldoDigitalTrim"] = &Rd53aGlobalCfg::SldoDigitalTrim;
 
     // Digital Matrix
     //32
