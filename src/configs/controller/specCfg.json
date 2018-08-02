@@ -6,8 +6,9 @@
             "spiConfig" : 524288,
             "autoZero" : {
                 "word" : 1549575846,
-                "interval" : 100
-            }
+                "interval" : 500
+            },
+            "cmdPeriod" : 6.25e-9
         }
     }
 }

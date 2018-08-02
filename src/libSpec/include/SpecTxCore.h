@@ -113,10 +113,11 @@ class SpecTxCore : virtual public TxCore, virtual public SpecCom{
         void resetTriggerLogic() {
             SpecCom::writeSingle(TRIG_LOGIC_ADR | 0xFF, 0x1);
         }
+    protected:
+        double m_clk_period;
 
     private:
         bool verbose;
-        double m_clk_period;
         //uint32_t enMask;
 };
 

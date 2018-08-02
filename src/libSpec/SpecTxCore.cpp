@@ -11,7 +11,8 @@
 SpecTxCore::SpecTxCore() {
     verbose = false;
     enMask = 0x0;
-    m_clk_period = 6.25e-9; // 160MHz base for RD53A
+    //m_clk_period = 6.25e-9; // 160MHz base for RD53A
+    m_clk_period = 25.0e-9; // 40MHz base for FE-I4
 }
 
 void SpecTxCore::writeFifo(uint32_t value) {
