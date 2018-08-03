@@ -47,7 +47,8 @@
           "max": 1536,
           "min": 0,
           "step": 1,
-	  "maskType" : 1
+	  "maskType" : 1,
+	  "maskSize" : 1
         },
         "loopAction": "Rd53aMaskLoop"
       },

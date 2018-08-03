@@ -10,7 +10,13 @@
 
 enum PixelCategories  {LeftEdge, BottomEdge, RightEdge, UpperEdge, Corner, Middle};
 enum CornerCategories {UpperLeft, BottomLeft, BottomRight, UpperRight, NotCorner};
-enum MaskType {StandardMask =0 ,CrossTalkMask=1 ,CrossTalkMaskv2 =2};
+enum MaskType {StandardMask =0 , CrossTalkMask=1,CrossTalkMaskv2 =2};
+
+//Elements of mask_size
+enum MaskSize {CrossTalkMask8=0, CrossTalkMask4=1, 
+	       CrossTalkMask2ud=2, CrossTalkMask2rl=3, 
+	       CrossTalkMask1u=4, CrossTalkMask1d=5,
+	       CrossTalkMask1r=6, CrossTalkMask1l=7};
 
 Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase() {
     min = 0;
@@ -20,21 +26,50 @@ Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase() {
     loopType = typeid(this);
     m_done = false;
     verbose = false;
-    m_maskType = StandardMask ; //the alternative is crosstalk or crosstalkv2   
+    m_maskType = StandardMask ; //the alternative is crosstalk or crosstalkv2  
+    m_maskSize = CrossTalkMask4; 
 
     //Change in address mapping the 8 pixels around any pixel. {Col,Row} 
-    Mask8x8={{ std::make_pair(0,1),
-	       std::make_pair(1,1),
-	       std::make_pair(1,0),
-	       std::make_pair(1,-1),
-	       std::make_pair(0,-1),
-	       std::make_pair(-1,-1),
-	       std::make_pair(-1,0),
-	       std::make_pair(-1,1) }};
+    m_allNeighboursCoordinates={{ std::make_pair(0,1),
+				std::make_pair(1,1),
+				std::make_pair(1,0),
+				std::make_pair(1,-1),
+				std::make_pair(0,-1),
+				std::make_pair(-1,-1),
+				std::make_pair(-1,0),
+				std::make_pair(-1,1) }};
 
-    //Special cases: edges and corner
-    mask_edges   = {{{0,1,2,3,4},{2,3,4,5,6},{4,5,6,7,0},{6,7,0,1,2}}};
-    mask_corners = {{{0,1,2},{2,3,4},{4,5,6},{6,7,0}}};
+    //Which elements of allNeighboursCoordinate corresponds to the neighbours of an edge pixel
+    m_mask_edges = {{
+	{1,1,1,1,1,0,0,0},         
+	{0,0,1,1,1,1,1,0},         
+	{1,0,0,0,1,1,1,1},         
+	{1,1,1,0,0,0,1,1}
+      }};
+
+    //Which elements of allNeighboursCoordinate corresponds to the neighbours of a corner pixel
+    m_mask_corners = {{
+	{1,1,1,0,0,0,0,0},         
+	{0,0,1,1,1,0,0,0},         
+	{0,0,0,0,1,1,1,0},         
+	{1,0,0,0,0,0,1,1}                      
+      }};
+
+    //How many and which pixels to consider for cross-talk (1: consider, 0: ignore)
+    m_mask_size = {{
+	{1,1,1,1,1,1,1,1},         //8
+	{1,0,1,0,1,0,1,0},         //4
+	{1,0,0,0,1,0,0,0},         //2up-down
+	{0,0,1,0,0,0,1,0},         //2right-left
+	{0,0,0,0,1,0,0,0},         //1up
+	{1,0,0,0,0,0,0,0},         //1down
+	{0,0,1,0,0,0,0,0},	   //1right
+	{0,0,0,0,0,0,1,0},         //1left    
+      }}; 
+
+
+
+
 }
 
 void Rd53aMaskLoop::init() {
@@ -86,7 +121,7 @@ void Rd53aMaskLoop::execPart1() {
 		  // std cross-talk scan, inj in surrounding pixels and read out the central one
 		  //---------------------------------------------------------------------------------		    
 		  std::vector<std::pair<int, int>> neighbours;		 
-		  getNeighboursMap(col,row, neighbours);
+		  getNeighboursMap(col,row, m_maskSize, neighbours);
 		  //Read-only central pixel
 		  dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 0);		
 		  dynamic_cast<Rd53a*>(fe)->setEn(col, row, 1);
@@ -103,7 +138,7 @@ void Rd53aMaskLoop::execPart1() {
 		  // alternative cross-talk scan, inj central pixel, read out the surrounding ones
 		  //---------------------------------------------------------------------------------
 		  std::vector<std::pair<int, int>> neighbours;		 
-		  getNeighboursMap(col,row, neighbours);
+		  getNeighboursMap(col,row, m_maskSize, neighbours);
 		  //Read-only central pixel
 		  dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 1);		
 		  dynamic_cast<Rd53a*>(fe)->setEn(col, row, 0);
@@ -157,7 +192,7 @@ void Rd53aMaskLoop::execPart2() {
 	    if (ApplyMask(col,row)){
 	      std::vector<std::pair<int, int>> neighbours;		 
 	      //switch off central pixel
-	      getNeighboursMap(col,row, neighbours);
+	      getNeighboursMap(col,row, m_maskSize, neighbours);
 	      dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 0);		
 	      dynamic_cast<Rd53a*>(fe)->setEn(col, row, 0);
 	      modPixels.push_back(std::make_pair(col, row));
@@ -206,6 +241,7 @@ void Rd53aMaskLoop::writeConfig(json &j) {
     j["max"] = max;
     j["step"] = step;
     j["maskType"] = m_maskType;
+    j["maskSize"] = m_maskSize;
     
 }
 
@@ -218,11 +254,14 @@ void Rd53aMaskLoop::loadConfig(json &j) {
         step = j["step"];
     if (!j["maskType"].empty())
       m_maskType = j["maskType"];
+    if (!j["maskSize"].empty())
+      m_maskSize = j["maskSize"];
+
 }
 
 
 
-bool Rd53aMaskLoop::getNeighboursMap(int col, int row,  std::vector<std::pair<int, int>>  &neighboursindex){
+bool Rd53aMaskLoop::getNeighboursMap(int col, int row, int maskSize,  std::vector<std::pair<int, int>>  &neighboursindex){
 
   bool filled=true;
 
@@ -230,27 +269,40 @@ bool Rd53aMaskLoop::getNeighboursMap(int col, int row,  std::vector<std::pair<in
   if (IdentifyPixel (col,row)==Corner){
     
     int whichCorner = IdentifyCorner(col,row);
-    for (int i : mask_corners[whichCorner] ){
-      int shift_col=Mask8x8[i].first;
-      int shift_row=Mask8x8[i].second;
+
+    int i=0;
+    for (int active : m_mask_corners[whichCorner] ){
+      if (active==0 or m_mask_size[m_maskSize][i]==0) {i++; continue;}
+
+      int shift_col=m_allNeighboursCoordinates[i].first;
+      int shift_row=m_allNeighboursCoordinates[i].second;
       neighboursindex.push_back(std::make_pair(col+shift_col, row+shift_row));      
+      i++;
     }
   }
   //In case it's a edge pixel
   else if (IdentifyPixel (col,row)!=Corner && IdentifyPixel (col,row)!=Middle ){
     int whichEdge = IdentifyPixel(col,row);
-    for (int i : mask_edges[whichEdge] ){
-      int shift_col=Mask8x8[i].first;
-      int shift_row=Mask8x8[i].second;
+    int i=0;
+    for (int active : m_mask_edges[whichEdge] ){
+      if (active==0 or m_mask_size[m_maskSize][i]==0) {i++; continue;}
+
+      int shift_col=m_allNeighboursCoordinates[i].first;
+      int shift_row=m_allNeighboursCoordinates[i].second;
       neighboursindex.push_back(std::make_pair(col+shift_col, row+shift_row));
+      i++;
     }
   }
   //In case it's in the middle
   else if (IdentifyPixel (col,row)==Middle){
-    for ( auto& p : Mask8x8 ){
+    int i=0;
+    for ( auto& p : m_allNeighboursCoordinates ){
+       if (m_mask_size[m_maskSize][i]==0) { i++; continue;}
+
       int shift_col=p.first;
       int shift_row=p.second;
       neighboursindex.push_back(std::make_pair(col+shift_col, row+shift_row));
+      i++;
     }
   }
   else 
