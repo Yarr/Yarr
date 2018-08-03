@@ -29,7 +29,9 @@ Rd53aPixelCfg::Rd53aPixelCfg() {
         for (unsigned row=0; row<n_Row; row++) {
             this->setEn(col, row, 1);
             this->setHitbus(col, row, 1);
-            if (col < 264) { // Lin
+            if (col < 128) { //Sync
+                this->setTDAC(col, row, 0);
+            } else if (col < 264) { // Lin
                 this->setTDAC(col, row, 7);
             } else { // Diff
                 this->setTDAC(col, row, 0);
