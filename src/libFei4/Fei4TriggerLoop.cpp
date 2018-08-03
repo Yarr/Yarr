@@ -104,7 +104,7 @@ void Fei4TriggerLoop::setTrigDelay(unsigned int delay) {
             m_trigWord[2-1-word] = (TRIG_CMD<<(5-(32-pos)));
         m_trigDelay = delay;
     }
-    m_trigWordLength = 32 + delay;
+    m_trigWordLength = 4;
 }
 
 void Fei4TriggerLoop::setNoInject() {
