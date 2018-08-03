@@ -58,7 +58,7 @@
           "count": 100,
           "delay": 56,
           "extTrigger": false,
-          "frequency": 2000,
+          "frequency": 5000,
           "noInject": false,
           "time": 0,
           "edgeMode": true

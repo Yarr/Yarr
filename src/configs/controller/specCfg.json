@@ -5,9 +5,10 @@
             "specNum" : 0,
             "spiConfig" : 524288,
             "autoZero" : {
-                "word" : 1549575834,
-                "interval" : 400
-            }
+                "word" : 1549575846,
+                "interval" : 500
+            },
+            "cmdPeriod" : 6.25e-9
         }
     }
 }

@@ -40,8 +40,7 @@
         "config": {
           "count": 0,
           "delay": 48,
-          "extTrigger": false,
-          "frequency": 5000,
+          "frequency": 20000,
           "noInject": true,
           "extTrig" : true,
           "time": 30

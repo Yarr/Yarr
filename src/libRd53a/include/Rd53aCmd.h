@@ -47,6 +47,7 @@ class Rd53aCmd {
         void ecr();
         void bcr();
         void sync();
+        void idle();
 
         static uint32_t genTrigger(uint32_t bc, uint32_t tag, uint32_t bc2=0, uint32_t tag2=0);
         static uint32_t genCal(uint32_t chipId, uint32_t mode, uint32_t delay, uint32_t duration, uint32_t aux_mode, uint32_t aux_delay);
