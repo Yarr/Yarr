@@ -80,8 +80,6 @@ class Fei4Histogrammer : public DataProcessor {
         void process();
         void process_core();
         void publish();
-        void toFile(std::string basename);
-        void plot(std::string basename);
 
         ClipBoard<EventDataBase>& getInput() { return *input; }
 

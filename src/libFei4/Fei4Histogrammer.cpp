@@ -86,20 +86,6 @@ void Fei4Histogrammer::publish() {
     }
 }
 
-void Fei4Histogrammer::toFile(std::string basename) {
-    for (std::deque<HistogramBase*>::iterator it = output->begin(); it != output->end(); ++it) {
-        std::cout << "Saving : " << (*it)->getName() << std::endl;
-        (*it)->toFile(basename);
-    }
-}
-
-void Fei4Histogrammer::plot(std::string basename) {
-    for (std::deque<HistogramBase*>::iterator it = output->begin(); it != output->end(); ++it) {
-        std::cout << "Plotting : " << (*it)->getName() << std::endl;
-        (*it)->plot(basename);
-    }    
-}
-
 void DataArchiver::processEvent(Fei4Data *data) {
     for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
         Fei4Event curEvent = *eventIt;

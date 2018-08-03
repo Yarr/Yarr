@@ -89,9 +89,7 @@ class Fei4Analysis : public DataProcessor {
         void end();
 
         void addAlgorithm(AnalysisAlgorithm *a);
-		void addAlgorithm(AnalysisAlgorithm *a, unsigned ch);
-        void plot(std::string basename, std::string dir = "");
-        void toFile(std::string basename, std::string dir = "");
+        void addAlgorithm(AnalysisAlgorithm *a, unsigned ch);
 
         void setMapSize(unsigned col, unsigned row) {
             for (unsigned i=0; i<algorithms.size(); i++) {

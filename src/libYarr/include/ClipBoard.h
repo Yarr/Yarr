@@ -55,26 +55,6 @@ class ClipBoard {
             return dataQueue.empty();
         }
 
-        unsigned size() {
-            return dataQueue.size();
-        }
-
-        typename std::deque<T*>::iterator begin() {
-            return dataQueue.begin();
-        }
-       
-
-        typename std::deque<T*>::iterator end() {
-            return dataQueue.end();
-        }
-
-        void clear() {
-            while(!dataQueue.empty()) {
-                T* tmp = this->popData();
-                delete tmp;
-            }
-        }
-
         std::condition_variable cv;
         
     private:
