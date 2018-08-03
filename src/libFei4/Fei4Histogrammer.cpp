@@ -66,14 +66,14 @@ void Fei4Histogrammer::process() {
 
 void Fei4Histogrammer::process_core() {
     while (!input->empty()) {
-        Fei4Data *data = dynamic_cast<Fei4Data*>(input->popData());
-        if (data == NULL)
+        auto d = input->popData();
+        Fei4Data *data = dynamic_cast<Fei4Data*>(d.get());
+        if (data == nullptr)
             continue;
         for (unsigned i=0; i<algorithms.size(); i++) {
             algorithms[i]->create(data->lStat);
             algorithms[i]->processEvent(data);
         }
-        delete data;
         this->publish();
     }
 }
@@ -81,7 +81,7 @@ void Fei4Histogrammer::process_core() {
 void Fei4Histogrammer::publish() {
     for (unsigned i=0; i<algorithms.size(); i++) {
         if (algorithms[i]->getHisto() != NULL) {
-            output->pushData(algorithms[i]->getHisto());
+            output->pushData(std::move(algorithms[i]->getHisto()));
         }
     }
 }

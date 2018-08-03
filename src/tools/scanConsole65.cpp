@@ -462,7 +462,7 @@ int main(int argc, char *argv[]) {
                 std::string name = /*std::string(timestamp) + "-" + */dynamic_cast<FrontEndCfg*>(fe)->getName() + "_ch" + std::to_string(dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) + "_" + scanType;
 
                 while(!output.empty()) {
-                    HistogramBase *histo = output.popData();
+                    std::unique_ptr<HistogramBase> histo = output.popData();
                     histo->plot(name, outputDir);
                     histo->toFile(name, outputDir);
                 }

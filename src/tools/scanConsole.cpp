@@ -569,7 +569,7 @@ int main(int argc, char *argv[]) {
                 std::string name = dynamic_cast<FrontEndCfg*>(fe)->getName();
 
                 while(!output.empty()) {
-                    HistogramBase *histo = output.popData();
+                    std::unique_ptr<HistogramBase> histo = output.popData();
                     histo->plot(name, outputDirTmp);
                     histo->toFile(name, outputDir);
                 }
