@@ -55,7 +55,8 @@ void Rd53aMaskLoop::execPart1() {
                 //unsigned core_col = col/8;
                 unsigned core_row = row/8;
                 // Serialise core column
-                unsigned serial = (core_row*64)+(col%8)*8+row%8;
+                unsigned serial = (core_row*64)+((col+(core_row%8))%8)*8+row%8;
+                //unsigned serial = (core_row*64)+(col%8)*8+row%8;
                 if ((serial%max) == m_cur) {
                     dynamic_cast<Rd53a*>(fe)->setEn(col, row, 1);
                     dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 1);
