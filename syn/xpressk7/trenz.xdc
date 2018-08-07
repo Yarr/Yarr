@@ -13,7 +13,7 @@ set_property PACKAGE_PIN K5 [get_ports pcie_clk_n]
 #set_property IOSTANDARD LVCMOS25 [get_ports rst_n_i]
 
 #PCIe reset
-set_property IOSTANDARD LVCMOS18 [get_ports sys_rst_n_i]
+set_property IOSTANDARD LVCMOS25 [get_ports sys_rst_n_i]
 set_property PACKAGE_PIN B20 [get_ports sys_rst_n_i]
 
 #PCIe signals
@@ -32,7 +32,7 @@ set_property PACKAGE_PIN R4 [get_ports {pci_exp_rxp[3]}]
 
 # On-board LEDs
 set_property PACKAGE_PIN B21 [get_ports {usr_led_o[0]}]
-set_property IOSTANDARD LVCMOS18 [get_ports {usr_led_o[0]}]
+set_property IOSTANDARD LVCMOS25 [get_ports {usr_led_o[0]}]
 
 set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
 set_property BITSTREAM.CONFIG.CONFIGRATE 66 [current_design]

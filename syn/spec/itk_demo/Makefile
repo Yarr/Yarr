@@ -32,85 +32,87 @@ all: bitstream
 SOURCES_UCFFile := \
 itk_demo.ucf
 
+SOURCES_NGCFile := \
+../../../ip-cores/spartan6/fifo_64x512.ngc \
+../../../ip-cores/spartan6/rx_channel_fifo.ngc \
+../../../ip-cores/spartan6/l2p_fifo.ngc \
+../../../ip-cores/spartan6/ila_icon.ngc \
+../../../ip-cores/spartan6/rx_bridge_fifo.ngc \
+../../../ip-cores/spartan6/ila.ngc \
+../../../ip-cores/spartan6/fifo_32x512.ngc \
+../../../ip-cores/spartan6/rx_bridge_ctrl_fifo.ngc
+
 SOURCES_VHDLFile := \
-../../../ip-cores/spartan6/rx_bridge_ctrl_fifo.vhd \
-../../../rtl/spartan6/rx-core/wb_rx_core.vhd \
-../../../rtl/spartan6/ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/memc3_wrapper.vhd \
-../../../rtl/spartan6/ddr3-core/ddr3_ctrl_wrapper_pkg.vhd \
+../../../ip-cores/spartan6/l2p_fifo.vhd \
+../../../rtl/trigger-logic/edge_detector.vhd \
 board_pkg.vhd \
-../../../ip-cores/spartan6/rx_channel_fifo.vhd \
-../../../rtl/spartan6/rx-core/decode_8b10b/decode_8b10b_pkg.vhd \
-../../../rtl/spartan6/gn4124-core/spartan6/pulse_sync_rtl.vhd \
+../../../rtl/spartan6/gn4124-core/spartan6/gn4124_core.vhd \
 ../../../rtl/spartan6/rx-core/decode_8b10b/decode_8b10b_top.vhd \
-../../../rtl/spartan6/gn4124-core/spartan6/p2l_des.vhd \
-../../../ip-cores/spartan6/clk_gen.vhd \
-../../../rtl/tx-core/serial_port.vhd \
-../../../rtl/common/common_pkg.vhd \
-../../../rtl/spartan6/gn4124-core/dma_controller_wb_slave.vhd \
-../../../ip-cores/spartan6/fifo_32x512.vhd \
-../../../rtl/spartan6/ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/iodrp_mcb_controller.vhd \
-../../../rtl/spartan6/rx-core/decode_8b10b/decode_8b10b_disp.vhd \
-../../../rtl/spartan6/rx-core/decode_8b10b/decode_8b10b_lut_base.vhd \
-../../../rtl/spartan6/gn4124-core/p2l_dma_master.vhd \
-../../../rtl/trigger-logic/wb_trigger_logic.vhd \
+../../../rtl/common/generic_async_fifo_wrapper.vhd \
+../../../rtl/common/rr_arbiter.vhd \
+../../../rtl/spartan6/ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/memc3_wrapper.vhd \
+../../../rtl/spartan6/ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/iodrp_controller.vhd \
+../../../rtl/spartan6/gn4124-core/p2l_decode32.vhd \
 ../../../rtl/spartan6/ddr3-core/ddr3_ctrl.vhd \
-../../../rtl/spartan6/ddr3-core/ddr3_ctrl_pkg.vhd \
+../../../rtl/spartan6/ddr3-core/ddr3_ctrl_wrapper_pkg.vhd \
+../../../rtl/spartan6/gn4124-core/spartan6/pulse_sync_rtl.vhd \
 ../../../rtl/spartan6/ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/mcb_raw_wrapper.vhd \
-../../../rtl/spartan6/rx-core/decode_8b10b/decode_8b10b_bram.vhd \
+../../../rtl/spartan6/ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/memc3_infrastructure.vhd \
+../../../rtl/spartan6/rx-core/decode_8b10b/decode_8b10b_rtl.vhd \
+../top_yarr_spec.vhd \
+../../../ip-cores/spartan6/rx_bridge_ctrl_fifo.vhd \
 ../../../rtl/spartan6/gn4124-core/dma_controller.vhd \
-../../../ip-cores/spartan6/fifo_64x512.vhd \
+../../../rtl/spartan6/rx-core/decode_8b10b/decode_8b10b_lut.vhd \
+../../../rtl/tx-core/wb_tx_core.vhd \
+../../../rtl/spartan6/rx-core/wb_rx_core.vhd \
+../../../rtl/common/common_pkg.vhd \
+../../../rtl/spartan6/ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/ddr3_ctrl_spec_bank3_32b_32b.vhd \
+../../../rtl/spartan6/rx-core/cdr_serdes.vhd \
+../../../rtl/spartan6/gn4124-core/spartan6/l2p_ser.vhd \
+../../../rtl/spartan6/rx-core/fei4_rx_channel.vhd \
+../../../rtl/spartan6/gn4124-core/spartan6/serdes_n_to_1_s2_diff.vhd \
+../../../rtl/spartan6/gn4124-core/l2p_dma_master.vhd \
+../../../rtl/spartan6/rx-core/decode_8b10b/decode_8b10b_bram.vhd \
+../../../ip-cores/spartan6/rx_bridge_fifo.vhd \
+../../../rtl/spartan6/gn4124-core/spartan6/p2l_des.vhd \
+../../../rtl/spartan6/ddr3-core/ddr3_ctrl_wrapper.vhd \
+../../../rtl/spartan6/rx-core/decode_8b10b/decode_8b10b_disp.vhd \
+../../../ip-cores/spartan6/clk_gen.vhd \
+../../../rtl/spartan6/ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/mcb_soft_calibration.vhd \
+../../../ip-cores/spartan6/fifo_32x512.vhd \
+../../../rtl/spartan6/gn4124-core/p2l_dma_master.vhd \
+../../../rtl/common/synchronizer.vhd \
+../../../rtl/trigger-logic/eudet_tlu.vhd \
+../../../rtl/spartan6/gn4124-core/spartan6/serdes_n_to_1_s2_se.vhd \
+../../../rtl/spartan6/rx-core/decode_8b10b/decode_8b10b_pkg.vhd \
+../../../rtl/tx-core/serial_port.vhd \
+../../../rtl/trigger-logic/wb_trigger_logic.vhd \
+../../../rtl/spartan6/ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/iodrp_mcb_controller.vhd \
 ../../../rtl/spartan6/gn4124-core/spartan6/gn4124_core_pkg.vhd \
 ../../../rtl/spartan6/ddr3-core/ddr3_ctrl_wb.vhd \
-../../../rtl/spartan6/ddr3-core/ddr3_ctrl_wrapper.vhd \
-../../../rtl/trigger-logic/eudet_tlu.vhd \
-../../../rtl/common/generic_async_fifo_wrapper.vhd \
-../../../rtl/spartan6/rx-core/wb_rx_bridge.vhd \
-../../../rtl/tx-core/wb_tx_core.vhd \
-../../../rtl/common/synchronizer.vhd \
-../../../rtl/spartan6/gn4124-core/spartan6/serdes_1_to_n_data_s2_se.vhd \
-../../../rtl/spartan6/ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/iodrp_controller.vhd \
-../../../rtl/spartan6/rx-core/fei4_rx_channel.vhd \
-../../../rtl/spartan6/gn4124-core/spartan6/serdes_n_to_1_s2_se.vhd \
-../../../rtl/spartan6/gn4124-core/spartan6/serdes_n_to_1_s2_diff.vhd \
-../top_yarr_spec.vhd \
-../../../rtl/spartan6/rx-core/decode_8b10b/decode_8b10b_lut.vhd \
-../../../rtl/spartan6/rx-core/cdr_serdes.vhd \
-../../../rtl/spartan6/gn4124-core/p2l_decode32.vhd \
-../../../rtl/spartan6/gn4124-core/spartan6/l2p_ser.vhd \
-../../../rtl/spartan6/ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/mcb_soft_calibration_top.vhd \
+../../../rtl/spartan6/gn4124-core/dma_controller_wb_slave.vhd \
 ../../../rtl/common/wb_spi.vhd \
-../../../ip-cores/spartan6/l2p_fifo.vhd \
-../../../rtl/spartan6/gn4124-core/spartan6/serdes_1_to_n_clk_pll_s2_diff.vhd \
-../../../rtl/common/rr_arbiter.vhd \
-../../../rtl/spartan6/ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/memc3_infrastructure.vhd \
 ../../../rtl/tx-core/trigger_unit.vhd \
-../../../rtl/spartan6/ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/ddr3_ctrl_spec_bank3_32b_32b.vhd \
-../../../rtl/common/wb_addr_decoder.vhd \
-../../../ip-cores/spartan6/rx_bridge_fifo.vhd \
-../../../rtl/spartan6/gn4124-core/l2p_dma_master.vhd \
-../../../rtl/spartan6/rx-core/decode_8b10b/decode_8b10b_rtl.vhd \
-../../../rtl/tx-core/tx_channel.vhd \
-../../../rtl/spartan6/gn4124-core/wbmaster32.vhd \
-../../../rtl/spartan6/rx-core/data_alignment.vhd \
-../../../rtl/spartan6/ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/mcb_soft_calibration.vhd \
+../../../rtl/trigger-logic/delayer.vhd \
+../../../rtl/spartan6/gn4124-core/spartan6/serdes_1_to_n_clk_pll_s2_diff.vhd \
+../../../ip-cores/spartan6/rx_channel_fifo.vhd \
+../../../rtl/spartan6/rx-core/wb_rx_bridge.vhd \
+../../../rtl/spartan6/rx-core/decode_8b10b/decode_8b10b_lut_base.vhd \
 ../../../rtl/spartan6/gn4124-core/l2p_arbiter.vhd \
+../../../rtl/spartan6/gn4124-core/wbmaster32.vhd \
+../../../ip-cores/spartan6/fifo_64x512.vhd \
+../../../rtl/spartan6/ddr3-core/ip_cores/ddr3_ctrl_spec_bank3_32b_32b/user_design/rtl/mcb_soft_calibration_top.vhd \
 ../../../rtl/spartan6/rx-core/decode_8b10b/decode_8b10b_wrapper.vhd \
-../../../rtl/spartan6/gn4124-core/spartan6/gn4124_core.vhd
-
-SOURCES_NGCFile := \
-../../../ip-cores/spartan6/rx_channel_fifo.ngc \
-../../../ip-cores/spartan6/ila_icon.ngc \
-../../../ip-cores/spartan6/ila.ngc \
-../../../ip-cores/spartan6/l2p_fifo.ngc \
-../../../ip-cores/spartan6/rx_bridge_fifo.ngc \
-../../../ip-cores/spartan6/fifo_32x512.ngc \
-../../../ip-cores/spartan6/rx_bridge_ctrl_fifo.ngc \
-../../../ip-cores/spartan6/fifo_64x512.ngc
+../../../rtl/tx-core/tx_channel.vhd \
+../../../rtl/common/wb_addr_decoder.vhd \
+../../../rtl/spartan6/gn4124-core/spartan6/serdes_1_to_n_data_s2_se.vhd \
+../../../rtl/spartan6/ddr3-core/ddr3_ctrl_pkg.vhd \
+../../../rtl/spartan6/rx-core/data_alignment.vhd
 
 files.tcl:
 		@$(foreach sourcefile, $(SOURCES_UCFFile), echo "xfile add $(sourcefile)" >> $@ &)
-		@$(foreach sourcefile, $(SOURCES_VHDLFile), echo "xfile add $(sourcefile)" >> $@ &)
 		@$(foreach sourcefile, $(SOURCES_NGCFile), echo "xfile add $(sourcefile)" >> $@ &)
+		@$(foreach sourcefile, $(SOURCES_VHDLFile), echo "xfile add $(sourcefile)" >> $@ &)
 
 SYN_PRE_PROJECT_CMD := 
 SYN_POST_PROJECT_CMD := 

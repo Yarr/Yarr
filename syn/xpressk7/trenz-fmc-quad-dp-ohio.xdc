@@ -8,34 +8,34 @@ set_property PACKAGE_PIN H16 [get_ports {ext_trig_i_p[2]}]
 set_property PACKAGE_PIN G16 [get_ports {ext_trig_i_n[2]}] 
 #la29_p
 #la29_n
-set_property PACKAGE_PIN G30 [get_ports {ext_trig_i_p[1]}] 
-set_property PACKAGE_PIN G31 [get_ports {ext_trig_i_n[1]}] 
+set_property PACKAGE_PIN J18 [get_ports {ext_trig_i_p[1]}] 
+set_property PACKAGE_PIN J19 [get_ports {ext_trig_i_n[1]}] 
 #la22_p
 #la22_n
-set_property PACKAGE_PIN G24 [get_ports {ext_trig_i_p[3]}] 
-set_property PACKAGE_PIN G25 [get_ports {ext_trig_i_n[3]}] 
+set_property PACKAGE_PIN C17 [get_ports {ext_trig_i_p[3]}] 
+set_property PACKAGE_PIN C18 [get_ports {ext_trig_i_n[3]}] 
 #la21_p
 #la21_n
-set_property PACKAGE_PIN H25 [get_ports {ext_trig_i_p[0]}] 
-set_property PACKAGE_PIN H26 [get_ports {ext_trig_i_n[0]}] 
+set_property PACKAGE_PIN C16 [get_ports {ext_trig_i_p[0]}] 
+set_property PACKAGE_PIN B16 [get_ports {ext_trig_i_n[0]}] 
 
 #Wrong polarity in comment
 #la32_n
 #la32_p
-set_property PACKAGE_PIN H37 [get_ports {fe_data_p[1]}]
-set_property PACKAGE_PIN H38 [get_ports {fe_data_n[1]}]
+set_property PACKAGE_PIN L17 [get_ports {fe_data_p[1]}]
+set_property PACKAGE_PIN K18 [get_ports {fe_data_n[1]}]
 #la30_n
 #la30_p
-set_property PACKAGE_PIN H34 [get_ports {fe_data_p[2]}]
-set_property PACKAGE_PIN H35 [get_ports {fe_data_n[2]}]
+set_property PACKAGE_PIN K16 [get_ports {fe_data_p[2]}]
+set_property PACKAGE_PIN K17 [get_ports {fe_data_n[2]}]
 #la28_n
 #la28_p
-set_property PACKAGE_PIN H31 [get_ports {fe_data_p[3]}]
-set_property PACKAGE_PIN H32 [get_ports {fe_data_n[3]}]
+set_property PACKAGE_PIN L19 [get_ports {fe_data_p[3]}]
+set_property PACKAGE_PIN L20 [get_ports {fe_data_n[3]}]
 #la26_n
 #la26_p
-#set_property PACKAGE_PIN D26 [get_ports {fe_clk_p[3]}]
-#set_property PACKAGE_PIN D27 [get_ports {fe_clk_n[3]}]
+#set_property PACKAGE_PIN E15 [get_ports {fe_clk_p[3]}]
+#set_property PACKAGE_PIN E16 [get_ports {fe_clk_n[3]}]
 #la00_cc_n
 #la00_cc_p
 set_property PACKAGE_PIN N21 [get_ports {eudet_rst_p}]
@@ -62,8 +62,8 @@ set_property PACKAGE_PIN R20 [get_ports {eudet_trig_n}]
 #set_property PACKAGE_PIN T23 [get_ports {fe_data_n[2]}]
 #la33_n
 #la33_p
-set_property PACKAGE_PIN G36 [get_ports {fe_cmd_p[0]}]
-set_property PACKAGE_PIN G37 [get_ports {fe_cmd_n[0]}]
+set_property PACKAGE_PIN M17 [get_ports {fe_cmd_p[0]}]
+set_property PACKAGE_PIN L18 [get_ports {fe_cmd_n[0]}]
 #la05_n
 #la05_p
 set_property PACKAGE_PIN T24 [get_ports {latch_o}]
@@ -74,12 +74,12 @@ set_property PACKAGE_PIN T25 [get_ports {sdi_i}]
 
 #la31_n
 #la31_p
-set_property PACKAGE_PIN G33 [get_ports {fe_data_p[0]}]
-set_property PACKAGE_PIN G34 [get_ports {fe_data_n[0]}]
+set_property PACKAGE_PIN J15 [get_ports {fe_data_p[0]}]
+set_property PACKAGE_PIN J16 [get_ports {fe_data_n[0]}]
 #la27_n
 #la27_p
-set_property PACKAGE_PIN C26 [get_ports {fe_clk_p[0]}]
-set_property PACKAGE_PIN C27 [get_ports {fe_clk_n[0]}]
+set_property PACKAGE_PIN G15 [get_ports {fe_clk_p[0]}]
+set_property PACKAGE_PIN F15 [get_ports {fe_clk_n[0]}]
 #la07_n
 #la07_p
 #set_property PACKAGE_PIN P16 [get_ports {fe_cmd_p[7]}]
@@ -87,12 +87,12 @@ set_property PACKAGE_PIN C27 [get_ports {fe_clk_n[0]}]
 
 #la24_n
 #la24_p
-#set_property PACKAGE_PIN H28 [get_ports {fe_data_p[0]}]
-#set_property PACKAGE_PIN H29 [get_ports {fe_data_n[0]}]
+#set_property PACKAGE_PIN C19 [get_ports {fe_data_p[0]}]
+#set_property PACKAGE_PIN B19 [get_ports {fe_data_n[0]}]
 #la23_n
 #la23_p
-#set_property PACKAGE_PIN D23 [get_ports {fe_data_p[1]}]
-#set_property PACKAGE_PIN D24 [get_ports {fe_data_n[1]}]
+#set_property PACKAGE_PIN B17 [get_ports {fe_data_p[1]}]
+#set_property PACKAGE_PIN A17 [get_ports {fe_data_n[1]}]
 #la11_n
 #la11_p
 #set_property PACKAGE_PIN M25 [get_ports {fe_data_p[2]}]
