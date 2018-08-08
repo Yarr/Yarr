@@ -66,10 +66,10 @@ cmds_RAM=(
 #"open_hw\n" +
 #"connect_hw_server\n" +
 #"open_hw_target\n" +
-"current_hw_device [lindex [get_hw_devices] 1]\n" +
-"refresh_hw_device -update_hw_probes false [lindex [get_hw_devices] 1]\n" +
-"set_property PROGRAM.FILE {}{}{} [lindex [get_hw_devices] 1]\n" +
-"program_hw_devices [lindex [get_hw_devices] 1]\n"
+"current_hw_device [lindex [get_hw_devices] 0]\n" +
+"refresh_hw_device -update_hw_probes false [lindex [get_hw_devices] 0]\n" +
+"set_property PROGRAM.FILE {}{}{} [lindex [get_hw_devices] 0]\n" +
+"program_hw_devices [lindex [get_hw_devices] 0]\n"
 )
 
 #format bit_file mem_file prm_file { }
@@ -77,34 +77,34 @@ cmds_Flash=(
 "open_hw\n" +
 "connect_hw_server\n" +
 "open_hw_target\n" +
-"current_hw_device [lindex [get_hw_devices] 1]\n" +
-"refresh_hw_device -update_hw_probes false [lindex [get_hw_devices] 1]\n"
+"current_hw_device [lindex [get_hw_devices] 0]\n" +
+"refresh_hw_device -update_hw_probes false [lindex [get_hw_devices] 0]\n"
 'write_cfgmem -format mcs -size 32 -interface SPIx4 -loadbit "up 0x00000000 {0} " -checksum -force -file "{1}"\n' +
-"create_hw_cfgmem -hw_device [lindex [get_hw_devices] 1] -mem_dev  [lindex [get_cfgmem_parts {3}n25q256-1.8v-spi-x1_x2_x4{4}] 0]\n" +
-"set_property PROGRAM.BLANK_CHECK  0 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1 ]]\n" +
-"set_property PROGRAM.ERASE  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1 ]]\n" +
-"set_property PROGRAM.CFG_PROGRAM  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1 ]]\n" +
-"set_property PROGRAM.VERIFY  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1 ]]\n" +
-"set_property PROGRAM.CHECKSUM  0 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1 ]]\n" +
-"refresh_hw_device [lindex [get_hw_devices] 1]\n" +
-"set_property PROGRAM.ADDRESS_RANGE  {3}use_file{4} [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1 ]]\n" +
-'set_property PROGRAM.FILES [list "{1}" ] [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1]]\n' +
-"set_property PROGRAM.PRM_FILE {3}{2}{4} [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1]]\n" +
-"set_property PROGRAM.BPI_RS_PINS {3}none{4} [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1 ]]\n" +
-"set_property PROGRAM.UNUSED_PIN_TERMINATION {3}pull-none{4} [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1 ]]\n" +
-"set_property PROGRAM.BLANK_CHECK  0 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1 ]]\n" +
-"set_property PROGRAM.ERASE  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1 ]]\n" +
-"set_property PROGRAM.CFG_PROGRAM  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1 ]]\n" +
-"set_property PROGRAM.VERIFY  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1 ]]\n" +
-"set_property PROGRAM.CHECKSUM  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1 ]]\n" +
+"create_hw_cfgmem -hw_device [lindex [get_hw_devices] 0] -mem_dev  [lindex [get_cfgmem_parts {3}n25q256-1.8v-spi-x1_x2_x4{4}] 0]\n" +
+"set_property PROGRAM.BLANK_CHECK  0 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]\n" +
+"set_property PROGRAM.ERASE  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]\n" +
+"set_property PROGRAM.CFG_PROGRAM  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]\n" +
+"set_property PROGRAM.VERIFY  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]\n" +
+"set_property PROGRAM.CHECKSUM  0 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]\n" +
+"refresh_hw_device [lindex [get_hw_devices] 0]\n" +
+"set_property PROGRAM.ADDRESS_RANGE  {3}use_file{4} [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]\n" +
+'set_property PROGRAM.FILES [list "{1}" ] [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0]]\n' +
+"set_property PROGRAM.PRM_FILE {3}{2}{4} [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0]]\n" +
+"set_property PROGRAM.BPI_RS_PINS {3}none{4} [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]\n" +
+"set_property PROGRAM.UNUSED_PIN_TERMINATION {3}pull-none{4} [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]\n" +
+"set_property PROGRAM.BLANK_CHECK  0 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]\n" +
+"set_property PROGRAM.ERASE  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]\n" +
+"set_property PROGRAM.CFG_PROGRAM  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]\n" +
+"set_property PROGRAM.VERIFY  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]\n" +
+"set_property PROGRAM.CHECKSUM  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]\n" +
 "startgroup\n" +
-"if {3}![string equal [get_property PROGRAM.HW_CFGMEM_TYPE  [lindex [get_hw_devices] 1]] [get_property MEM_TYPE [get_property CFGMEM_PART [get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1 ]]]]] {4}  {3} create_hw_bitstream -hw_device [lindex [get_hw_devices] 1] [get_property PROGRAM.HW_CFGMEM_BITFILE [ lindex [get_hw_devices] 1]]; program_hw_devices [lindex [get_hw_devices] 1]; {4};\n" +
-"program_hw_cfgmem -hw_cfgmem [get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1 ]]\n" +
+"if {3}![string equal [get_property PROGRAM.HW_CFGMEM_TYPE  [lindex [get_hw_devices] 0]] [get_property MEM_TYPE [get_property CFGMEM_PART [get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]]]] {4}  {3} create_hw_bitstream -hw_device [lindex [get_hw_devices] 0] [get_property PROGRAM.HW_CFGMEM_BITFILE [ lindex [get_hw_devices] 0]]; program_hw_devices [lindex [get_hw_devices] 0]; {4};\n" +
+"program_hw_cfgmem -hw_cfgmem [get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]\n" +
 "endgroup\n" #+
 #RAM
-#"refresh_hw_device -update_hw_probes false [lindex [get_hw_devices] 1]\n" +
-#"set_property PROGRAM.FILE {}{}{} [lindex [get_hw_devices] 1]\n" +
-#"program_hw_devices [lindex [get_hw_devices] 1]\n"
+#"refresh_hw_device -update_hw_probes false [lindex [get_hw_devices] 0]\n" +
+#"set_property PROGRAM.FILE {}{}{} [lindex [get_hw_devices] 0]\n" +
+#"program_hw_devices [lindex [get_hw_devices] 0]\n"
 
 )
 
