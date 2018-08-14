@@ -80,8 +80,9 @@ void Fei4Histogrammer::process_core() {
 
 void Fei4Histogrammer::publish() {
     for (unsigned i=0; i<algorithms.size(); i++) {
-        if (algorithms[i]->getHisto() != NULL) {
-            output->pushData(std::move(algorithms[i]->getHisto()));
+        auto ptr = algorithms[i]->getHisto();
+        if(ptr) {
+            output->pushData(std::move(ptr));
         }
     }
 }
