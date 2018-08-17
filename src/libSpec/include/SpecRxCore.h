@@ -37,6 +37,7 @@ class SpecRxCore : virtual public RxCore, virtual public SpecCom{
         void maskRxEnable(uint32_t val, uint32_t mask);
 
         RawData* readData();
+        void flushBuffer();
         
         uint32_t getDataRate();
         uint32_t getCurCount();

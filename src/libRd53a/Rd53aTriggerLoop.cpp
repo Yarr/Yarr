@@ -41,7 +41,8 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
 void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
     m_trigWord.fill(0x69696969);
     // Inject
-    //m_trigWord[31] = 0x69695a5a;
+    //m_trigWord[27] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(m_pulseDuration<<1)); // global pulse for sync FE
+    //m_trigWord[26] = 0x5a5a6969;
     m_trigWord[15] = 0x69696363; // Header
     m_trigWord[14] = Rd53aCmd::genCal(8, 0, 0, 1, 0, 0); // Inject
     // Rearm
@@ -99,14 +100,19 @@ void Rd53aTriggerLoop::init() {
 
     g_tx->setCmdEnable(keeper->getTxMask());
     while(!g_tx->isCmdEmpty());
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    //std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
 void Rd53aTriggerLoop::execPart1() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     dynamic_cast<Rd53a*>(g_fe)->ecr();
-    //std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    dynamic_cast<Rd53a*>(g_fe)->idle();
+    dynamic_cast<Rd53a*>(g_fe)->idle();
+    dynamic_cast<Rd53a*>(g_fe)->idle();
+    dynamic_cast<Rd53a*>(g_fe)->idle();
+    std::this_thread::sleep_for(std::chrono::microseconds(200));
+    g_rx->flushBuffer();
     while(!g_tx->isCmdEmpty());
     g_tx->setTrigEnable(0x1);
 

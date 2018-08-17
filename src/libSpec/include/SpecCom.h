@@ -82,6 +82,8 @@ class SpecCom {
         uint32_t writeEeprom(uint8_t * buffer, uint32_t len, uint32_t offs);
         void createSbeFile(std::string fnKeyword, uint8_t * buffer, uint32_t length);
         void getSbeFile(std::string pathname, uint8_t * buffer, uint32_t length);
+    protected:
+        void flushDma();
 
     private:
         unsigned int specId;
@@ -107,6 +109,5 @@ class SpecCom {
         void abortDma();
         uint32_t getDmaStatus();
 
-        void flushDma();
 };
 #endif
