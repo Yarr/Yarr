@@ -235,6 +235,13 @@ int main(int argc, char *argv[]) {
     std::cout << "Timestamp: " << timestamp << std::endl;
     std::cout << "Run Number: " << runCounter;
 
+    json scanLog;
+    // Add to scan log
+    scanLog["timestamp"] = timestamp;
+    scanLog["runNumber"] = runCounter;
+    scanLog["targetCharge"] = target_charge;
+    scanLog["targetTot"] = target_tot;
+
     std::cout << std::endl;
     std::cout << "\033[1;31m#################\033[0m" << std::endl;
     std::cout << "\033[1;31m# Init Hardware #\033[0m" << std::endl;
@@ -260,6 +267,8 @@ int main(int argc, char *argv[]) {
             return 0;
         }
         std::string controller = ctrlCfg["ctrlCfg"]["type"];
+        // Add to scan log
+        scanLog["ctrlCfg"] = ctrlCfg;
 
         hwCtrl = StdDict::getHwController(controller);
 
@@ -306,6 +315,7 @@ int main(int argc, char *argv[]) {
         } catch(json::parse_error &e) {
             std::cerr << __PRETTY_FUNCTION__ << " : " << e.what() << std::endl;
         }
+        scanLog["connectivity"] = config;
 
         if (config["chipType"].empty() || config["chips"].empty()) {
             std::cerr << __PRETTY_FUNCTION__ << " : invalid config, chip type or chips not specified!" << std::endl;
@@ -416,6 +426,18 @@ int main(int argc, char *argv[]) {
     std::cout << "\033[1;31m##############\033[0m" << std::endl;
     std::cout << "\033[1;31m# Setup Scan #\033[0m" << std::endl;
     std::cout << "\033[1;31m##############\033[0m" << std::endl;
+
+    // Make backup of scan config
+    
+    // Create backup of current config
+    if (scanType.find("json") != std::string::npos) {
+        // TODO fix folder
+        std::ifstream cfgFile(scanType);
+        std::ofstream backupCfgFile(outputDir + strippedScan + ".json");
+        backupCfgFile << cfgFile.rdbuf();
+        backupCfgFile.close();
+        cfgFile.close();
+    }
 
     // TODO Make this nice
     std::unique_ptr<ScanBase> s = buildScan(scanType, bookie );
@@ -533,6 +555,11 @@ int main(int argc, char *argv[]) {
 
     // Call constructor (eg shutdown Emu threads)
     hwCtrl.reset();
+
+    // Save scan log
+    std::ofstream scanLogFile(outputDir + "scanLog.json");
+    scanLogFile << std::setw(4) << scanLog;
+    scanLogFile.close();
 
     // Need this folder to plot
     if (system("mkdir -p /tmp/$USER") < 0) {
@@ -788,6 +815,9 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                      } else if (algo_name == "NoiseAnalysis") {
                         std::cout << "  ... adding " << algo_name << std::endl;
                         ana.addAlgorithm(new NoiseAnalysis());
+                     } else if (algo_name == "NoiseTuning") {
+                        std::cout << "  ... adding " << algo_name << std::endl;
+                        ana.addAlgorithm(new NoiseTuning());
                      } else if (algo_name == "ScurveFitter") {
                         std::cout << "  ... adding " << algo_name << std::endl;
                         ana.addAlgorithm(new ScurveFitter());
