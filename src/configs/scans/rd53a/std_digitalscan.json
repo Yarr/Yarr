@@ -74,7 +74,7 @@
         "InjEnDig": 1,
         "InjAnaMode": 0,
         "LatencyConfig": 58,
-        "GlobalPulseRt": 0
+        "GlobalPulseRt": 16384
     }
   }
 }
