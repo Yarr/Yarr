@@ -196,6 +196,7 @@ int main(int argc, char *argv[]) {
         strippedScan = scanType;
     }
 
+    std::string dataDir = outputDir;
     outputDir += (toString(runCounter, 6) + "_" + strippedScan + "/");
     
     std::cout << " Scan Type/Config: " << scanType << std::endl;
@@ -225,6 +226,13 @@ int main(int argc, char *argv[]) {
     //read errno variable and catch some errors, if necessary
     //errno=1 is permission denied, errno = 17 is dir already exists, ...
     //see /usr/include/asm-generic/errno-base.h and [...]/errno.h for all codes
+    
+    // Make symlink
+    cmdStr = "rm -f " + dataDir + "last_scan && ln -s " + toString(runCounter, 6) + "_" + strippedScan + " " + dataDir + "last_scan";
+    sysExSt = system(cmdStr.c_str());
+    if(sysExSt != 0){
+        std::cerr << "Error creating symlink to output directory!" << std::endl;
+    }
 
     // Timestamp
     std::time_t now = std::time(NULL);
@@ -339,6 +347,8 @@ int main(int argc, char *argv[]) {
                         std::cout << "Loading config file: " << chipConfigPath << std::endl;
                         json cfg = json::parse(cfgFile);
                         dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->fromFileJson(cfg);
+                        if (!chip["locked"].empty())
+                            dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->setLocked(chip["locked"]);
                         cfgFile.close();
                     } else {
                         std::cout << "Config file not found, using default!" << std::endl;
@@ -573,12 +583,16 @@ int main(int argc, char *argv[]) {
         if (fe->isActive()) {
             
             // Save config
-            std::cout << "-> Saving config of FE " << dynamic_cast<FrontEndCfg*>(fe)->getName() << " to " << feCfgMap.at(fe) << std::endl;
-            json jTmp;
-            dynamic_cast<FrontEndCfg*>(fe)->toFileJson(jTmp);
-            std::ofstream oFTmp(feCfgMap.at(fe));
-            oFTmp << std::setw(4) << jTmp;
-            oFTmp.close();
+            if (!dynamic_cast<FrontEndCfg*>(fe)->isLocked()) {
+                std::cout << "-> Saving config of FE " << dynamic_cast<FrontEndCfg*>(fe)->getName() << " to " << feCfgMap.at(fe) << std::endl;
+                json jTmp;
+                dynamic_cast<FrontEndCfg*>(fe)->toFileJson(jTmp);
+                std::ofstream oFTmp(feCfgMap.at(fe));
+                oFTmp << std::setw(4) << jTmp;
+                oFTmp.close();
+            } else {
+                std::cout << "Not saving config for FE " << dynamic_cast<FrontEndCfg*>(fe)->getName() << " as it is protected!" << std::endl;
+            }
 
             // Save extra config in data folder
             std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getConfigFile() + ".after");
@@ -597,9 +611,9 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-    std::string lsCmd = "ls -1 " + outputDir + "*.p*";
+    std::string lsCmd = "ls -1 " + dataDir + "last_scan/*.p*";
     if (system(lsCmd.c_str()) < 0) {
-        std::cout << "Find plots in: " << outputDir << std::endl;
+        std::cout << "Find plots in: " << dataDir + "last_scan" << std::endl;
     }
     return 0;
 }
