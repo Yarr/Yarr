@@ -80,7 +80,7 @@ cmds_Flash=(
 "current_hw_device [lindex [get_hw_devices] 0]\n" +
 "refresh_hw_device -update_hw_probes false [lindex [get_hw_devices] 0]\n"
 'write_cfgmem -format mcs -size 32 -interface SPIx4 -loadbit "up 0x00000000 {0} " -checksum -force -file "{1}"\n' +
-"create_hw_cfgmem -hw_device [lindex [get_hw_devices] 0] -mem_dev  [lindex [get_cfgmem_parts {3}n25q256-1.8v-spi-x1_x2_x4{4}] 0]\n" +
+"create_hw_cfgmem -hw_device [lindex [get_hw_devices] 0] -mem_dev  [lindex [get_cfgmem_parts {3}mt25qu256-spi-x1_x2_x4{4}] 0]\n" +
 "set_property PROGRAM.BLANK_CHECK  0 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]\n" +
 "set_property PROGRAM.ERASE  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]\n" +
 "set_property PROGRAM.CFG_PROGRAM  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]\n" +
