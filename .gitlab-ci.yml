@@ -42,3 +42,28 @@ job_test_json:
       - yum -y install npm
       - npm install jsonlint -g
       - for file in $(find src/configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
+
+job_build_with_felix:
+    # This is an image with the felix dependencies set up
+    image: gitlab-registry.cern.ch/atlas-tdaq-felix/gitlab_ci_runner:cc7
+    variables:
+     CONFIG: x86_64-centos7-gcc62-opt
+    when: manual
+    tags:
+     - cvmfs
+    script:
+     - yum -y install make cmake gnuplot tbb tbb-devel
+     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.cern.ch/atlas-tdaq-felix/software.git felix
+     - cd felix
+     - ./clone_all.sh gitlab
+     - pwd && ls
+     - source cmake_tdaq/bin/setup.sh ${CONFIG}
+     - cmake_config ${CONFIG}
+     - cd ${CONFIG} && make
+     - cd distribution && ./build.sh felix ${CONFIG} 87
+     - cd ..
+     - mkdir -p src/cmake_build
+     - cd src/cmake_build
+     - cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DENABLE_NETIO:BOOL=ON -DNETIO_DIR:PATH=../../felix
+     - make -j4
+     - bin/scanConsole -k
