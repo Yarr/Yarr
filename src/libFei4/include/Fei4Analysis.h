@@ -312,4 +312,23 @@ class NoiseAnalysis : public AnalysisAlgorithm {
         Histo2d* occ;        
 };
 
+class NoiseTuning : public AnalysisAlgorithm {
+    public:
+        NoiseTuning() : AnalysisAlgorithm() {};
+        ~NoiseTuning() {};
+
+        void init(ScanBase *s);
+        void processHistogram(HistogramBase *h);
+        void end();
+    private:
+        std::vector<unsigned> loops;
+        std::vector<unsigned> loopMax;
+        unsigned n_count;
+        std::map<unsigned, Histo2d*> occMaps;
+        std::map<unsigned, unsigned> innerCnt;
+        GlobalFeedbackBase *globalFb;
+        PixelFeedbackBase *pixelFb;
+        unsigned n_trigger;
+};
+
 #endif

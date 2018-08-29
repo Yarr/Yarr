@@ -1145,6 +1145,7 @@ void NoiseAnalysis::end() {
 
     noiseOcc->add(occ);
     noiseOcc->scale(1.0/(double)n_trigger);
+    std::cout << "[" << channel << "] Received " << n_trigger << " total trigger!" << std::endl;
     double noiseThr = 1e-6; 
     for (unsigned i=0; i<noiseOcc->size(); i++) {
         if (noiseOcc->getBin(i) > noiseThr) {
@@ -1160,4 +1161,121 @@ void NoiseAnalysis::end() {
     output->pushData(occ);
     output->pushData(noiseOcc);
     output->pushData(mask);
+}
+
+void NoiseTuning::init(ScanBase *s) {
+    n_count = 1;
+    pixelFb = NULL;
+    globalFb = NULL;
+    for (unsigned n=0; n<s->size(); n++) {
+        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        if ((l->type() != typeid(Fei4TriggerLoop*) &&
+                l->type() != typeid(Rd53aMaskLoop*) &&
+                l->type() != typeid(Rd53aTriggerLoop*) &&
+                l->type() != typeid(Rd53aCoreColLoop*) &&
+                l->type() != typeid(Fei4MaskLoop*) &&
+                l->type() != typeid(StdDataLoop*) &&
+                l->type() != typeid(Fei4DcLoop*)) &&
+                l->type() != typeid(Fe65p2MaskLoop*) &&
+                l->type() != typeid(Fe65p2QcLoop*) &&
+                l->type() != typeid(Fe65p2TriggerLoop*) &&
+                l->type() != typeid(StdRepeater*)) {
+            loops.push_back(n);
+            loopMax.push_back((unsigned)l->getMax());
+        } else {
+            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            if (cnt == 0)
+                cnt = 1;
+            n_count = n_count*cnt;
+        }
+    
+        std::shared_ptr<LoopActionBase> tmpPrmpFb(new Fei4GlobalFeedback(&Fei4::PrmpVbpf));
+        if (l->type() == tmpPrmpFb->type()) {
+            globalFb = dynamic_cast<GlobalFeedbackBase*>(l.get());  
+        }
+
+        if (l->type() == typeid(Rd53aGlobalFeedback*)) {
+            globalFb = dynamic_cast<GlobalFeedbackBase*>(l.get());  
+        }
+
+        if (l->type() == typeid(Fei4PixelFeedback*)) {
+            pixelFb = dynamic_cast<PixelFeedbackBase*>(l.get());  
+        }
+        
+        if (l->type() == typeid(Rd53aPixelFeedback*)) {
+            pixelFb = dynamic_cast<PixelFeedbackBase*>(l.get());  
+        }
+    }
+}
+
+void NoiseTuning::processHistogram(HistogramBase *h) {
+    if (!(h->getType() == typeid(OccupancyMap*)))
+        return;
+    
+    // Select correct output container
+    unsigned ident = 0;
+    unsigned offset = 0;
+    
+    // Determine identifier
+    std::string name = "OccMap";
+    for (unsigned n=0; n<loops.size(); n++) {
+        ident += h->getStat().get(loops[n])+offset;
+        offset += loopMax[n];
+        name += "-" + std::to_string(h->getStat().get(loops[n]));
+    }
+
+    
+    if (occMaps[ident] == NULL) {
+        Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        hh->setXaxisTitle("Column");
+        hh->setYaxisTitle("Row");
+        hh->setZaxisTitle("Hits");
+        innerCnt[ident] = 0;
+        occMaps[ident] = hh;
+    }
+    
+    //Easy make it pretty
+    occMaps[ident]->add(*(Histo2d*)h);
+    innerCnt[ident]++;
+    
+    if (innerCnt[ident] == n_count) {
+        std::cout << __PRETTY_FUNCTION__ << " full set " <<  std::endl;
+        if (globalFb != NULL) { // Global Threshold Tuning
+            std::cout << __PRETTY_FUNCTION__ << " has globalfeedback " <<  std::endl;
+            unsigned numOfHits = 0;
+            for (unsigned i=0; i<occMaps[ident]->size(); i++) {
+                if (occMaps[ident]->getBin(i) > 1) {
+                    numOfHits++;
+                }
+            }
+            std::cout << "[" << channel << "] Number of pixel with hits: " << numOfHits << std::endl;
+            if (numOfHits < 10) { // TODO not hardcode this value
+                globalFb->feedbackStep(channel, -1, false);
+            } else {
+                globalFb->feedbackStep(channel, 0, true);
+            }
+        }
+
+        if (pixelFb != NULL) { // Pixel Threshold Tuning
+            Histo2d *fbHisto = new Histo2d("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+            std::cout << __PRETTY_FUNCTION__ << " has pixelfeedback " <<  std::endl;
+            unsigned pixelWoHits = 0;
+            for (unsigned i=0; i<occMaps[ident]->size(); i++) {
+                if (occMaps[ident]->getBin(i) < 2) { //TODO un-hardcode this
+                    fbHisto->setBin(i, -1);
+                    pixelWoHits++;
+                } else {
+                    fbHisto->setBin(i, 0);
+                }
+            }
+            std::cout << "[" << channel << "] Number of pixel without hits: " << pixelWoHits << std::endl;
+
+            pixelFb->feedbackStep(channel, fbHisto);
+        }
+        output->pushData(occMaps[ident]);
+        occMaps[ident] = NULL;
+    }
+}
+
+void NoiseTuning::end() {
 }

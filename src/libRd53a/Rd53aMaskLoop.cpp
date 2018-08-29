@@ -102,7 +102,6 @@ void Rd53aMaskLoop::execPart1() {
 	//Loop over all pixels - n_Col=400, n_Row=192 - from Rd53aPixelCfg.h
         for(unsigned col=0; col<Rd53a::n_Col; col++) {
             for(unsigned row=0; row<Rd53a::n_Row; row++) {
-	      
 	      if (ApplyMask(col,row)){
 		if (m_maskType == StandardMask){	       
 		//------------------------------------------------------------------------
@@ -295,7 +294,8 @@ bool Rd53aMaskLoop::getNeighboursMap(int col, int row,int sensorType, int maskSi
 bool Rd53aMaskLoop::ApplyMask(int col, int row){
 
   unsigned core_row = row/8;
-  unsigned serial = (core_row*64)+(col%8)*8+row%8;
+  unsigned serial = (core_row*64)+((col+(core_row%8))%8)*8+row%8;
+  //unsigned serial = (core_row*64)+(col%8)*8+row%8;
   if ((serial%max) == m_cur)
     return true;
   else
