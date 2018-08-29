@@ -180,6 +180,7 @@ class ScurveFitter : public AnalysisAlgorithm {
         unsigned n_count;
         unsigned injections;
         unsigned cnt;
+	unsigned n_failedfit;
         std::vector<double> x;
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -188,7 +189,11 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::map<unsigned, Histo2d*> thrMap;
         std::map<unsigned, Histo1d*> thrDist;
         std::map<unsigned, Histo2d*> sigMap;
-        std::map<unsigned, Histo1d*> sigDist;
+        std::map<unsigned, Histo2d*> chi2Map;
+        std::map<unsigned, Histo2d*> statusMap;
+	std::map<unsigned, Histo1d*> statusDist;
+
+        std::map<unsigned, Histo1d*> sigDist;	
         std::map<unsigned, Histo1d*> chiDist;
         std::map<unsigned, Histo1d*> timeDist;
         std::map<unsigned, unsigned> innerCnt;

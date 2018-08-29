@@ -5,18 +5,9 @@
         "algorithm": "ScurveFitter"
       },
       "1": {
-        "algorithm": "TotAnalysis"
+        "algorithm": "OccupancyAnalysis"
       },
-      "2": {
-        "algorithm": "OccupancyAnalysis",
-        "config": {
-          "createMask": true
-        }
-      },
-      "3": {
-        "algorithm": "L1Analysis"
-      },
-      "n_count": 4
+      "n_count": 2
     },
     "histogrammer": {
       "0": {
@@ -46,16 +37,17 @@
         "config": {
           "max": 1536,
           "min": 0,
-          "step": 1,
+          "step": 64,
 	  "maskType" : 1,
-	  "maskSize" : 1
+	  "maskSize" : 2,
+	  "sensorType" : 1
         },
         "loopAction": "Rd53aMaskLoop"
       },
 	{
           "config": {
-          "max": 4000,
-          "min": 100,
+          "max": 2000,
+          "min": 200,
           "step": 50,
           "parameter":"InjVcalDiff"
         },

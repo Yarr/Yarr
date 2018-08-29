@@ -43,8 +43,10 @@
         "config": {
           "max": 1536,
           "min": 0,
-          "step": 1,
-	  "maskType" : 1
+          "step": 64,
+	  "maskType" : 1,
+	  "maskSize" : 1,
+	  "sensorType" : 1
         },
         "loopAction": "Rd53aMaskLoop"
       },
@@ -78,8 +80,8 @@
         "LatencyConfig": 50,
         "GlobalPulseRt": 16384,
 	"InjVcalDiff": 0,
-        "InjVcalHigh": 940,
-        "InjVcalMed": 0
+        "InjVcalHigh": 1000,
+        "InjVcalMed": 100
     }
   }
 }

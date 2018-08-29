@@ -8,8 +8,9 @@
 
 #include "Rd53aMaskLoop.h"
 
-enum PixelCategories  {LeftEdge, BottomEdge, RightEdge, UpperEdge, Corner, Middle};
-enum CornerCategories {UpperLeft, BottomLeft, BottomRight, UpperRight, NotCorner};
+//enum PixelCategories  {LeftEdge, BottomEdge, RightEdge, UpperEdge, Corner, Middle};
+//enum CornerCategories {UpperLeft, BottomLeft, BottomRight, UpperRight, NotCorner};
+
 enum MaskType {StandardMask =0 , CrossTalkMask=1,CrossTalkMaskv2 =2};
 
 //Elements of mask_size
@@ -17,6 +18,8 @@ enum MaskSize {CrossTalkMask8=0, CrossTalkMask4=1,
 	       CrossTalkMask2ud=2, CrossTalkMask2rl=3, 
 	       CrossTalkMask1u=4, CrossTalkMask1d=5,
 	       CrossTalkMask1r=6, CrossTalkMask1l=7};
+
+enum SensorType { SquareSensor=0, RecSensorUpDown=1, RecSensorDownUp=2 };
 
 Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase() {
     min = 0;
@@ -27,33 +30,29 @@ Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase() {
     m_done = false;
     verbose = false;
     m_maskType = StandardMask ; //the alternative is crosstalk or crosstalkv2  
+
+    //-----Parameter related to cross-talk-------------------
     m_maskSize = CrossTalkMask4; 
+    m_sensorType = SquareSensor; //assume a 50x50 sensor
 
-    //Change in address mapping the 8 pixels around any pixel. {Col,Row} 
-    m_allNeighboursCoordinates={{ std::make_pair(0,1),
-				std::make_pair(1,1),
-				std::make_pair(1,0),
-				std::make_pair(1,-1),
-				std::make_pair(0,-1),
-				std::make_pair(-1,-1),
-				std::make_pair(-1,0),
-				std::make_pair(-1,1) }};
+    //Change of address for the neighbours:
+    //50x50: Same behaviour for even and odd columns
+    //Even
+    AllNeighboursCoordinates["50x50"][0]= {{ std::make_pair(0,1),std::make_pair(1,1),std::make_pair(1,0),std::make_pair(1,-1), std::make_pair(0,-1), std::make_pair(-1,-1),std::make_pair(-1,0),std::make_pair(-1,1) }};
+    //Odd
+    AllNeighboursCoordinates["50x50"][1]={{ std::make_pair(0,1),std::make_pair(1,1),std::make_pair(1,0),std::make_pair(1,-1), std::make_pair(0,-1), std::make_pair(-1,-1),std::make_pair(-1,0),std::make_pair(-1,1) }}; 
+    
+    //25x100, up down -RecSensorUpDown
+    //Even
+    AllNeighboursCoordinates["25x100_updown"][0] ={{std::make_pair(1,0),std::make_pair(3,0),std::make_pair(2,0),std::make_pair(3,1),std::make_pair(1,-1),std::make_pair(-1,-1),std::make_pair(-2,0),std::make_pair(-1,0)}}; 
+    //Down
+    AllNeighboursCoordinates["25x100_updown"][1] ={{std::make_pair(-1,1),std::make_pair(1,1),std::make_pair(2,0),std::make_pair(1,0),std::make_pair(-1,0),std::make_pair(-3,0),std::make_pair(-2,0),std::make_pair(-3,1)}}; 
 
-    //Which elements of allNeighboursCoordinate corresponds to the neighbours of an edge pixel
-    m_mask_edges = {{
-	{1,1,1,1,1,0,0,0},         
-	{0,0,1,1,1,1,1,0},         
-	{1,0,0,0,1,1,1,1},         
-	{1,1,1,0,0,0,1,1}
-      }};
-
-    //Which elements of allNeighboursCoordinate corresponds to the neighbours of a corner pixel
-    m_mask_corners = {{
-	{1,1,1,0,0,0,0,0},         
-	{0,0,1,1,1,0,0,0},         
-	{0,0,0,0,1,1,1,0},         
-	{1,0,0,0,0,0,1,1}                      
-      }};
+    //25x100, down up -RecSensorDownUp
+    //Even
+    AllNeighboursCoordinates["25x100_downup"][0] ={{std::make_pair(1,1),std::make_pair(3,1),std::make_pair(2,0),std::make_pair(3,0),std::make_pair(1,0),std::make_pair(-1,0),std::make_pair(-2,0),std::make_pair(-1,-1)}};
+    //Odd
+    AllNeighboursCoordinates["25x100_downup"][0] ={{std::make_pair(-1,0),std::make_pair(1,0),std::make_pair(2,0),std::make_pair(1,-1),std::make_pair(-1,-1),std::make_pair(-3,-1),std::make_pair(-2,0),std::make_pair(-3,0)}};
 
     //How many and which pixels to consider for cross-talk (1: consider, 0: ignore)
     m_mask_size = {{
@@ -66,9 +65,6 @@ Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase() {
 	{0,0,1,0,0,0,0,0},	   //1right
 	{0,0,0,0,0,0,1,0},         //1left    
       }}; 
-
-
-
 
 }
 
@@ -121,13 +117,13 @@ void Rd53aMaskLoop::execPart1() {
 		  // std cross-talk scan, inj in surrounding pixels and read out the central one
 		  //---------------------------------------------------------------------------------		    
 		  std::vector<std::pair<int, int>> neighbours;		 
-		  getNeighboursMap(col,row, m_maskSize, neighbours);
+		  getNeighboursMap(col,row,m_sensorType, m_maskSize, neighbours);
 		  //Read-only central pixel
 		  dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 0);		
 		  dynamic_cast<Rd53a*>(fe)->setEn(col, row, 1);
 		  modPixels.push_back(std::make_pair(col, row));
 		  //Inject only neighbours
-		  for (auto n: neighbours){ 		  	       
+		  for (auto n: neighbours){ 
 		    dynamic_cast<Rd53a*>(fe)->setInjEn(n.first, n.second, 1);
 		    dynamic_cast<Rd53a*>(fe)->setEn(n.first, n.second, 0);
 		    modPixels.push_back(std::make_pair(n.first, n.second));
@@ -138,7 +134,7 @@ void Rd53aMaskLoop::execPart1() {
 		  // alternative cross-talk scan, inj central pixel, read out the surrounding ones
 		  //---------------------------------------------------------------------------------
 		  std::vector<std::pair<int, int>> neighbours;		 
-		  getNeighboursMap(col,row, m_maskSize, neighbours);
+		  getNeighboursMap(col,row, m_sensorType,m_maskSize,neighbours);
 		  //Read-only central pixel
 		  dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 1);		
 		  dynamic_cast<Rd53a*>(fe)->setEn(col, row, 0);
@@ -192,11 +188,11 @@ void Rd53aMaskLoop::execPart2() {
 	    if (ApplyMask(col,row)){
 	      std::vector<std::pair<int, int>> neighbours;		 
 	      //switch off central pixel
-	      getNeighboursMap(col,row, m_maskSize, neighbours);
 	      dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 0);		
 	      dynamic_cast<Rd53a*>(fe)->setEn(col, row, 0);
 	      modPixels.push_back(std::make_pair(col, row));
 	      //switch off neighbours
+	      getNeighboursMap(col,row, m_sensorType,m_maskSize, neighbours);
 	      for (auto n: neighbours){ 		  	       
 		dynamic_cast<Rd53a*>(fe)->setInjEn(n.first, n.second, 0);
 		dynamic_cast<Rd53a*>(fe)->setEn(n.first, n.second, 0);
@@ -242,6 +238,7 @@ void Rd53aMaskLoop::writeConfig(json &j) {
     j["step"] = step;
     j["maskType"] = m_maskType;
     j["maskSize"] = m_maskSize;
+    j["sensorType"] = m_sensorType;
     
 }
 
@@ -256,88 +253,42 @@ void Rd53aMaskLoop::loadConfig(json &j) {
       m_maskType = j["maskType"];
     if (!j["maskSize"].empty())
       m_maskSize = j["maskSize"];
+    if (!j["sensorType"].empty())
+      m_sensorType = j["sensorType"];
 
 }
 
 
 
-bool Rd53aMaskLoop::getNeighboursMap(int col, int row, int maskSize,  std::vector<std::pair<int, int>>  &neighboursindex){
+bool Rd53aMaskLoop::getNeighboursMap(int col, int row,int sensorType, int maskSize,  std::vector<std::pair<int, int>>  &neighboursindex){
 
   bool filled=true;
 
-  //In case it's a corner pixel
-  if (IdentifyPixel (col,row)==Corner){
+  std::string sensor;
+  if (sensorType==SquareSensor)
+    sensor="50x50";
+  else if (sensorType==RecSensorUpDown)
+    sensor="25x100_updown";
+  else if (sensorType==RecSensorUpDown)
+    sensor="25x100_updown";
+  else
+    std::cout<<"ERROR: sensor Type does not exist"<<std::endl;
+
+
+  int i=0;
+  for ( auto& p : AllNeighboursCoordinates[sensor][col%2]){
+    if (m_mask_size[maskSize][i]==0) { i++; continue;}
     
-    int whichCorner = IdentifyCorner(col,row);
-
-    int i=0;
-    for (int active : m_mask_corners[whichCorner] ){
-      if (active==0 or m_mask_size[m_maskSize][i]==0) {i++; continue;}
-
-      int shift_col=m_allNeighboursCoordinates[i].first;
-      int shift_row=m_allNeighboursCoordinates[i].second;
-      neighboursindex.push_back(std::make_pair(col+shift_col, row+shift_row));      
-      i++;
-    }
+    int shift_col=p.first;
+    int shift_row=p.second;
+    //Make sure that the pixel is within the sensor
+    if ( row+shift_row<0  || col+shift_col<0 )  continue;
+    if (static_cast<unsigned int>(col+shift_col) >(Rd53a::n_Col-1) || static_cast<unsigned int>(row+shift_row) >(Rd53a::n_Row-1)  )  continue;
+    neighboursindex.push_back(std::make_pair(col+shift_col, row+shift_row));
+    i++;    
   }
-  //In case it's a edge pixel
-  else if (IdentifyPixel (col,row)!=Corner && IdentifyPixel (col,row)!=Middle ){
-    int whichEdge = IdentifyPixel(col,row);
-    int i=0;
-    for (int active : m_mask_edges[whichEdge] ){
-      if (active==0 or m_mask_size[m_maskSize][i]==0) {i++; continue;}
-
-      int shift_col=m_allNeighboursCoordinates[i].first;
-      int shift_row=m_allNeighboursCoordinates[i].second;
-      neighboursindex.push_back(std::make_pair(col+shift_col, row+shift_row));
-      i++;
-    }
-  }
-  //In case it's in the middle
-  else if (IdentifyPixel (col,row)==Middle){
-    int i=0;
-    for ( auto& p : m_allNeighboursCoordinates ){
-       if (m_mask_size[m_maskSize][i]==0) { i++; continue;}
-
-      int shift_col=p.first;
-      int shift_row=p.second;
-      neighboursindex.push_back(std::make_pair(col+shift_col, row+shift_row));
-      i++;
-    }
-  }
-  else 
-    filled=false;
   
   return filled;
-}
-int Rd53aMaskLoop::IdentifyCorner(int col, int row){
-
-   if (col==0 && row==0)
-     return UpperLeft;
-   else if (col==0 && row==(Rd53a::n_Row-1))
-     return BottomLeft;  
-   else if (col==(Rd53a::n_Col-1) && row==(Rd53a::n_Row-1))
-     return BottomRight;
-   else if (col==(Rd53a::n_Col-1) && row==0)
-     return UpperRight;  
-   else 
-     return NotCorner;
-
-}
-int Rd53aMaskLoop::IdentifyPixel(int col, int row){
-
-  if (IdentifyCorner(col,row)!=NotCorner)
-    return Corner;  
-  else if (col==0)
-    return LeftEdge;
-  else if (row==(Rd53a::n_Row)-1)
-    return BottomEdge;
-  else if (col==(Rd53a::n_Col-1))
-    return RightEdge;
-  else if (row==0)
-    return UpperEdge;
-  else 
-    return Middle;   
 }
 
 //Return true if the pixel should be considered for this scan step, or false if it should be ignored
