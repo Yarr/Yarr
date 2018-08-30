@@ -308,7 +308,6 @@ class NoiseAnalysis : public AnalysisAlgorithm {
         Histo2d* occ;        
 };
 
-<<<<<<< HEAD
 class NoiseTuning : public AnalysisAlgorithm {
     public:
         NoiseTuning() : AnalysisAlgorithm() {};
@@ -317,7 +316,17 @@ class NoiseTuning : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-=======
+    private:
+        std::vector<unsigned> loops;
+        std::vector<unsigned> loopMax;
+        unsigned n_count;
+        std::map<unsigned, Histo2d*> occMaps;
+        std::map<unsigned, unsigned> innerCnt;
+        GlobalFeedbackBase *globalFb;
+        PixelFeedbackBase *pixelFb;
+        unsigned n_trigger;
+};
+
 class ChargeVsTotAnalysis : public AnalysisAlgorithm {
     public:
         ChargeVsTotAnalysis() : AnalysisAlgorithm() {};
@@ -325,23 +334,11 @@ class ChargeVsTotAnalysis : public AnalysisAlgorithm {
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
-<<<<<<< HEAD
-        void end() {}
->>>>>>> Modified to use charge vs tot and time walk in Fei4Analysis.cpp
-=======
         void end();
->>>>>>> Fixed hard-cored charge value and others
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         unsigned n_count;
-<<<<<<< HEAD
-        std::map<unsigned, Histo2d*> occMaps;
-        std::map<unsigned, unsigned> innerCnt;
-        GlobalFeedbackBase *globalFb;
-        PixelFeedbackBase *pixelFb;
-        unsigned n_trigger;
-=======
         double injections;
         bool useScap;
         bool useLcap;
@@ -397,23 +394,8 @@ class TimeWalkAnalysis : public AnalysisAlgorithm {
         double chargeStep;
         std::vector<double> x_injectedCharge;
         std::vector<double> y_meanL1;
-<<<<<<< HEAD
-        std::vector<double> y_sigmaL1;
-<<<<<<< HEAD
-<<<<<<< HEAD
-
->>>>>>> Modified to use charge vs tot and time walk in Fei4Analysis.cpp
-=======
->>>>>>> Clean up timewalk and chargevstot analysis
-=======
-        Histo2d *timeWalkPixelMap[8] = {NULL};
-        std::vector<unsigned> pixelCols;
-        std::vector<unsigned> pixelRows;
->>>>>>> Added per pixel scan for timewalk and chargevstot
-=======
         std::vector<double> y_err_L1;
         std::map<unsigned, Histo2d*> timeWalkPixelMap;
->>>>>>> Fixed hard-cored charge value and others
 };
 
 #endif
