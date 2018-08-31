@@ -125,8 +125,6 @@ Running the threshold scan shows the result of the tuning:
 
 The cross-talk is evaluated injecting in the neighboring pixels and checking the occupancy in the central pixel. 
 
-  Update will come shortly to provide option to inject only in the 4 neighbouring pixels (ignoring corners), or 2 neighbouring pixles. 
-
 To check if there is cross-talk for your chip+sensor, use the following command:
 ```bash
 bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_crosstalk.json  -p
