@@ -46,8 +46,8 @@
       },
 	{
           "config": {
-          "max": 2000,
-          "min": 200,
+          "max": 4000,
+          "min": 900,
           "step": 50,
           "parameter":"InjVcalDiff"
         },
