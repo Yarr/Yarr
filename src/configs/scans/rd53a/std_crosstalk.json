@@ -80,7 +80,7 @@
         "LatencyConfig": 50,
         "GlobalPulseRt": 16384,
 	"InjVcalDiff": 0,
-        "InjVcalHigh": 1000,
+        "InjVcalHigh": 3500,
         "InjVcalMed": 100
     }
   }

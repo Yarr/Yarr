@@ -579,7 +579,6 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     start = std::chrono::high_resolution_clock::now();
                     lmcurve(n_par, par, vcalBins, &x[0], histos[ident]->getData(), scurveFct, &control, &status);
                     end = std::chrono::high_resolution_clock::now();
-		    //std::cout<<"Betta: "<<" "<<col<<" "<<row<<" "<<ident<<" "<<histos[ident]->getName()<<" "<<  status.fnorm<<" "<<status.nfev<<" ChiSquared: "<<status.fnorm/(double)status.nfev<<" Status: "<<status.outcome <<std::endl;
                     std::chrono::microseconds fitTime = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
                     if (thrMap[outerIdent] == NULL) {
 		        Histo2d *hh2 = new Histo2d("ThresholdMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
@@ -623,7 +622,6 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 		    
 		    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0 && chi2 < 2.5) {
 		      FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
-		      //std::cout<<"Betta 2: "<<col<<" "<<row<<" "<<feCfg->toCharge(par[0], useScap, useLcap)<<" "<<feCfg->toCharge(par[1], useScap, useLcap)<<" "<<feCfg->toCharge(par[2], useScap, useLcap)<<std::endl;		      		    
 		      thrMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0], useScap, useLcap));
 		      // Reudce affect of vcal offset on this, don't want to probe at low vcal
 		      sigMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0]+par[1], useScap, useLcap)-feCfg->toCharge(par[0], useScap, useLcap));
@@ -707,7 +705,7 @@ void ScurveFitter::end() {
    
 
     for(unsigned bin=0; bin<(nCol*nRow); bin+=((nCol*nRow)/20)) {
-      //for(unsigned bin=0; bin<(nCol*nRow); bin+=1) {
+    //for(unsigned bin=0; bin<(nCol*nRow); bin+=1) {
       if (histos[bin]) {
 	output->pushData(histos[bin]);
       }

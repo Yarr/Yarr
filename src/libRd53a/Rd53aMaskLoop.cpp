@@ -19,6 +19,13 @@ enum MaskSize {CrossTalkMask8=0, CrossTalkMask4=1,
 	       CrossTalkMask1u=4, CrossTalkMask1d=5,
 	       CrossTalkMask1r=6, CrossTalkMask1l=7};
 
+//////////////////////////////////////////////////////////////////////////////
+//The bump-bond in 25x100 micro-m^2 sensors can be done in two configurations:
+//RecSensorUpDown: 
+//the bump-bond at col=0, row=0 is associated with the pixel at the corner
+//RecSensorDownUp: 
+//the bump-bond at col=0, row=1 is associated with the pixel at the corner
+//////////////////////////////////////////////////////////////////////////////
 enum SensorType { SquareSensor=0, RecSensorUpDown=1, RecSensorDownUp=2 };
 
 Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase() {
