@@ -132,7 +132,7 @@ void Rd53aGlobalFeedback::init() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     m_done = false;
-    m_cur = min;
+    m_cur = 0;
     parPtr = keeper->globalFe<Rd53a>()->regMap[parName];
     // Init maps
     for (auto *fe : keeper->feList) {
@@ -158,7 +158,7 @@ void Rd53aGlobalFeedback::init() {
                         for (unsigned row=1; row<=Rd53a::n_Row; row++) {
                             //Initial TDAC in mid of the range
                             if (128<col && col<=264) {
-                                rd53a->setTDAC(col-1, row-1, 7);
+                                rd53a->setTDAC(col-1, row-1, 8);
                             } else if (264<col) {
                                 rd53a->setTDAC(col-1, row-1, 0);
                             }
@@ -170,7 +170,7 @@ void Rd53aGlobalFeedback::init() {
                         for (unsigned row=1; row<=Rd53a::n_Row; row++) {
                             //Initial TDAC in mid of the range
                             if (128<col && col<=264) {
-                                rd53a->setTDAC(col-1, row-1, 15);
+                                rd53a->setTDAC(col-1, row-1, 0);
                             } else if (264<col) {
                                 rd53a->setTDAC(col-1, row-1, -15);
                             }
@@ -182,7 +182,7 @@ void Rd53aGlobalFeedback::init() {
                         for (unsigned row=1; row<=Rd53a::n_Row; row++) {
                             //Initial TDAC in mid of the range
                             if (128<col && col<=264) {
-                                rd53a->setTDAC(col-1, row-1, 0);
+                                rd53a->setTDAC(col-1, row-1, 15);
                             } else if (264<col) {
                                 rd53a->setTDAC(col-1, row-1, 15);
                             }
