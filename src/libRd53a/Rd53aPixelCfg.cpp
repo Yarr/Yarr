@@ -32,7 +32,7 @@ Rd53aPixelCfg::Rd53aPixelCfg() {
             if (col < 128) { //Sync
                 this->setTDAC(col, row, 0);
             } else if (col < 264) { // Lin
-                this->setTDAC(col, row, 7);
+                this->setTDAC(col, row, 8);
             } else { // Diff
                 this->setTDAC(col, row, 0);
             }
@@ -89,7 +89,7 @@ void Rd53aPixelCfg::setTDAC(unsigned col, unsigned row, int v) {
     tmp.s.sign = 0x0;
     if (col < 264 && v >= 0) { // Lin FE
         tmp.s.tdac = v;
-        tmp.s.sign = 0x0;
+        tmp.s.sign = 0x1;
     } else if (v < 0 && col >= 264) { // Diff FE
         tmp.s.tdac = abs(v);
         tmp.s.sign = 0x1;
@@ -123,7 +123,7 @@ int Rd53aPixelCfg::getTDAC(unsigned col, unsigned row) {
     pixelBits tmp;
     tmp.u8 = (pixRegs[this->toIndex(col, row)] >> ((col%2)*8)) & 0xFF;
     int tdac = tmp.s.tdac;
-    if (tmp.s.sign == 0x1) {
+    if (tmp.s.sign == 0x1 && col >= 264) {
         tdac = tdac*-1;
     }
     return tdac;
