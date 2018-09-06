@@ -53,7 +53,7 @@
       {
         "config": {
           "max": 50,
-          "min": 34,
+          "min": 33,
           "step": 1,
           "nSteps": 4
         },
