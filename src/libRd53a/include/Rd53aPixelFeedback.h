@@ -27,6 +27,7 @@ class Rd53aPixelFeedback : public LoopActionBase, public PixelFeedbackBase {
         void loadConfig(json &j);
 
         void feedback(unsigned channel, Histo2d *h);
+        void feedbackStep(unsigned channel, Histo2d *h);
 
     protected:
     private:
@@ -34,6 +35,7 @@ class Rd53aPixelFeedback : public LoopActionBase, public PixelFeedbackBase {
         unsigned oldStep;
         bool tuneLin;
         bool tuneDiff;
+        bool m_resetTdac;
 
         std::map<unsigned, Histo2d*> m_fb;
 
