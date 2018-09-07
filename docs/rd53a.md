@@ -48,6 +48,7 @@ Basics tuning routine:
 - `std_noisescan.json` (measure noise occupancy, will mask noisy pixels, might fail if too noisy)
 
 If you also want to tune the ToT conversion we need to insert those tunings and also some threshold retunings. For a bsic routine including those see below:
+
 - `std_digitalscan.json` (with `-m 1` to reset masks)
 - `std_analogscan.json`
 - `diff_tune_globalthreshold.json` (good starting threshold target is 1000e, resets prev. TDACs)
@@ -209,23 +210,7 @@ Config parameters:
 Loops over pixels. All pixels in one core column are serialized on the following fashion.
     
 ```
-...
-==Core Col 2==
-71  ..... 127
-.   .....  .
-66  ..... 121
-65  ..... 120
-64  ..... 119
-==Core Col 1==
-7   15  ..  63
-6   14  ..  62
-5   13  ..  61
-4   12  ..  60
-3   11  ..  59
-2   10  ..  58
-1   9   ..  57
-0   8   ..  56
-==Core Col 0==
+unsigned serial = (core_row*64)+((col+(core_row%8))%8)*8+row%8;
 ```
 
 The maximum of the loops defines how many pixels should be activated at one time. E.g. if the max is 64 that means every 64th pixel (1 pixel per core) and requires 64 steps to loop over all pixels.
@@ -235,4 +220,37 @@ Config parameters:
  - max ``<int>``: number of mask stages
  - min ``<int>``: mask stage to start with
  - step ``<int>``: step size of mask stage
+
+## Rd53aParameterLoop
+Loops over a specifed range of an RD53A global register
+
+Config parameters:
+
+- min ``<int>``: start value (inclusive)
+- max ``<int>``: end value (inclusive)
+- step ``<int>``: parameter step size
+- parameter ``<string>``: name of the global register (as in chip config)
+
+## Rd53aGlobalFeedback
+Receives feedback from the selected analysis algorithm and adjusts the selected RD53A global register.
+
+Config parameters:
+
+- min ``<int>``: absolute minimum register setting
+- max ``<int>``: start value
+- step ``<int>``: stepsize of tuning (might change depending on algorithm)
+- parameter ``<string>``: name of the global register (as in chip config) to tune
+- pixelRegs ``<0,1,2,3>``: `0` (default) does not change TDACs, `1` sets all TDACs to default, `2` sets all TDACs to max, `3` sets all TDACs to min 
+
+## Rd53aPixelFeedback
+Receives feedback from the selected analysis algorithm and adjusts the selected RD53A pixel TDAC register.
+
+Config parameters:
+
+- min ``<int>``: absolute minium setting
+- max ``<int>``: absolute max setting
+- steps ``<array<int>>``: size and number of tuning steps to be performed
+- tuneDiff ``<bool>``: enable adjustment of diff FE pixel regs
+- tuneLin ``<bool>``: enable adjustment of lin FE pixel regs
+- resetTdac ``<bool>``: reset TDACs to defaults
 
