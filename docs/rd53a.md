@@ -139,32 +139,32 @@ ToT scan shown here is after tuning to 8ToT at 10000
 ## Tuning
 *To be updated with latest sw changes!*
 
-The tuning should be started with a global tuning of the linear FrontEnd. The example command with a target threshold of 2500e is:
+The tuning usually starts by tuning the global threshold DAC of the FrontEnd you want to tune:
+
+- `DiffVth1` for the differential FE
+- `SyncVth` for the synchronous FE
+- `LinVth` for the linear FE
+
+Below is an example of tuning the global threshold of the linear FE to 2500e. The goal is too reach 50% occupancy, this usually looks like a symmetric bathtub when the per pixel threshold is untuned.
+In a similar manner the differential and synchronous global threshold DAC can be tuned.
+
 ```bash
 bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/lin_tune_globalthreshold.json -t 2500 -p
 ```
 | ![Occupancy distribution](images/JohnDoe_OccupancyDist-0-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-1-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-3-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-4-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-5-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-6-LinTuning.png) |
 |:---:|:---:|:---:|:---:|:---:|:---:|
 
+**Plots to be updated**
+Then, the pixel tuning can be performed. See below an example of tuning the differential pixel TDACs to 2500e. The initial bathtub of the global threshold tune appear again, but with each step the values should converge more and more towards the center. In a similar manner the pixel TDACs of the linear FE can be tuned.
 
-After the global tuning of the linear FrontEnd, one should tune the differential with the same target threshold:
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/diff_tune_globalthreshold.json -t 2500 -p
-```
-| ![Occupancy distribution](images/JohnDoe_OccupancyDist-0_DiffTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-1_DiffTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-2_DiffTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-3_DiffTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-4_DiffTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-5_DiffTuning.png) |
-|:---:|:---:|:---:|:---:|:---:|:---:|
-
-The the tuning of the synchronous FrontEnd is in progress. Currently the linear FrontEnd can be tuned bellow 2500e.  Note: *The TDAC values are not reset with the global threshold tuning.*
-
-Then, pixel tuning is performed on all FrontEnds simultaneously.
-```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_tune_pixelthreshold.json -t 2500 -p
+bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/diff_tune_pixelthreshold.json -t 2500 -p
 ```
 | ![Occupancy distribution](images/JohnDoe_OccupancyDist-0.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-1.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-2.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-3.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-4.png) |
 |:---:|:---:|:---:|:---:|:---:|
 
+Once the full tuning routine (as outlined in the beginning of this page) has been performed, you can verify the tuning with a threshold scan:
 
-Running the threshold scan shows the result of the tuning:
 ```text
 [0] Threashold Mean = 1050.66 +- 182.54
 [0] Noise Mean = 161.395 +- 144.716
