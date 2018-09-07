@@ -7,6 +7,7 @@
 // ################################
 
 #include "Rd53aParameterLoop.h"
+#include <cstddef>
 
 Rd53aParameterLoop::Rd53aParameterLoop() {
     loopType = typeid(this);
@@ -21,6 +22,7 @@ Rd53aParameterLoop::Rd53aParameterLoop(Rd53aReg Rd53aGlobalCfg::*ref): parPtr(re
     min = 0;
     max = 100;
     step = 1;
+
     //TODO parName not set
 
 }
@@ -29,32 +31,64 @@ void Rd53aParameterLoop::init() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     m_done = false;
-    m_cur = min;
-    parPtr = keeper->globalFe<Rd53a>()->regMap[parName];
-    this->writePar();
+    for(std::vector<int>::size_type i = 0; i != m_cur.size(); i++){
+        if(i==0){
+            m_cur[i] = min;
+            parPtr = keeper->globalFe<Rd53a>()->regMap[parName];
+        }
+        else{
+            m_cur[i] = minMultiple[i-1];
+            parPtr = keeper->globalFe<Rd53a>()->regMap[parNameMultiple[i-1]];
+        }
+        this->writePar(parPtr, m_cur[i]);
+    }
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
 void Rd53aParameterLoop::execPart1() {
-    if (verbose)
-        std::cout << " : ParameterLoop at -> " << m_cur << std::endl;
-    g_stat->set(this, m_cur);
+    for(std::vector<int>::size_type i = 0; i != m_cur.size(); i++){
+        std::string p;
+        if(i==0){p = parName;}
+        else{p = parNameMultiple[i-1];}
+        if (verbose){
+            std::cout << " : ParameterLoop parameter " << p << " at -> " << m_cur[i] << std::endl;
+        }
+    }
+    g_stat->set(this, m_cur[m_curToLog] + add);
 }
 
 void Rd53aParameterLoop::execPart2() {
-    m_cur += step;
-    if ((int)m_cur > max) m_done = true;
-    this->writePar();
+    for(std::vector<int>::size_type i = 0; i != m_cur.size(); i++){
+        if(i==0){
+            m_cur[i] += step;
+            parPtr = keeper->globalFe<Rd53a>()->regMap[parName];
+            if ((int)m_cur[i] > max) m_done = true;
+        }else{
+            m_cur[i] += stepMultiple[i-1];
+            parPtr = keeper->globalFe<Rd53a>()->regMap[parNameMultiple[i-1]];
+            if ((int)m_cur[i] > maxMultiple[i-1]) m_done = true;
+        }
+        this->writePar(parPtr, m_cur[i]);
+    }
 }
 
 void Rd53aParameterLoop::end() {
     // Reset to min
-    m_cur = min;
-    this->writePar();
+    for(std::vector<int>::size_type i = 0; i != m_cur.size(); i++){
+        if(i==0){
+            m_cur[i] = min;
+            parPtr = keeper->globalFe<Rd53a>()->regMap[parName];
+        }else{
+            m_cur[i] = minMultiple[i-1];
+            parPtr = keeper->globalFe<Rd53a>()->regMap[parNameMultiple[i-1]];
+        }
+        this->writePar(parPtr, m_cur[i]);
+    }
+
 }
 
-void Rd53aParameterLoop::writePar() {
-    keeper->globalFe<Rd53a>()->writeRegister(parPtr, m_cur);
+void Rd53aParameterLoop::writePar(Rd53aReg Rd53aGlobalCfg::*p, uint32_t m) {
+    keeper->globalFe<Rd53a>()->writeRegister(p, m);
     while(!g_tx->isCmdEmpty());
     //std::this_thread::sleep_for(std::chrono::milliseconds(20));
 }
@@ -67,15 +101,88 @@ void Rd53aParameterLoop::writeConfig(json &j) {
 }
 
 void Rd53aParameterLoop::loadConfig(json &j) {
-    if (!j["min"].empty())
-        min = j["min"];
-    if (!j["max"].empty())
-        max = j["max"];
-    if (!j["step"].empty())
-        step = j["step"];
-    if (!j["parameter"].empty()) {
-        std::cout << "  Linking parameter: " << j["parameter"] <<std::endl;
-        parName = j["parameter"];
+    //Figure out if j contains dicts named 1, 2, 3, etc. each containing a min, max, step, and parname.
+    //If an element named "1" is found, we assume multiple parameters to step has been given.
+    //If not element named "1" is found, we assume only one parameter is to be stepped.
+    json j_a;
+    bool multiple;
+    if ( j.find("1") == j.end() ) {
+        j_a = j;
+        multiple = false;
+    } else {
+        j_a = j["1"];
+        multiple = true;
     }
 
+    if (!j_a["min"].empty())
+        min = j_a["min"];
+    if (!j_a["max"].empty())
+        max = j_a["max"];
+    if (!j_a["step"].empty())
+        step = j_a["step"];
+    if (!j_a["parameter"].empty()) {
+        std::cout << "  Linking parameter: " << j_a["parameter"] <<std::endl;
+        parName = j_a["parameter"];
+    }
+
+    if (multiple){
+        for (auto it = j.begin(); it != j.end(); ++it){
+            if (it.key()!="1"){
+                //json object j contains multiple types of objects: 
+                //1: Dictionaries named "1", "2", etc, each with min, max, step, and parameter.
+                //2: Settings, namely "addValue" (int) and "log" (string).
+                //We must only parse those objects which are json objects, i.e. _not_ one of the settings.
+                j_a = it.value();
+                if (j_a.type() == json::value_t::object){
+                    if (!j_a["min"].empty()){
+                        minMultiple.push_back(j_a["min"]);
+                    }else{
+                        minMultiple.push_back(0); //Default values are needed to keep all values (max, min, step, parameter) and the same index n in all the vectors.
+                    }
+                    if (!j_a["max"].empty()){
+                        maxMultiple.push_back(j_a["max"]);
+                    }else{
+                        maxMultiple.push_back(0); //Default values are needed to keep all values (max, min, step, parameter) and the same index n in all the vectors.
+                    }
+                    if (!j_a["step"].empty()){
+                        stepMultiple.push_back(j_a["step"]);
+                    }else{
+                        stepMultiple.push_back(0); //Default values are needed to keep all values (max, min, step, parameter) and the same index n in all the vectors.
+                    }
+                    if (!j_a["parameter"].empty()) {
+                        std::cout << "  Linking parameter: " << j_a["parameter"] <<std::endl;
+                        parNameMultiple.push_back(j_a["parameter"]);
+                    }else{
+                        parNameMultiple.push_back(""); //Default values are needed to keep all values (max, min, step, parameter) and the same index n in all the vectors.
+                    }
+                }
+            }
+        }
+    }
+        
+    //We have a parameter which allows us to add a value to the logged value. This enables us to set offsets.
+    if (!j["addValue"].empty()){
+        add = j["addValue"];
+    }
+    //Parameter "log" lets the user decide which parameter to use for logging and analysis (i.e. g_stat.set()). 
+    //It is optional and defaults to the first parameter in the list of parameters to concurrently step.
+    //If the parameter is not in the list of parameters to concurrently step it defaults to the first parameter.
+    bool def = true; //Use default?
+    if (!j["log"].empty()){
+        for(std::vector<int>::size_type i = 0; i != parNameMultiple.size(); i++){	
+            if (parNameMultiple[i]==j["log"]){
+                std::cout << "Logging parameter " << parNameMultiple[i] << std::endl;
+                m_curToLog = i+1;
+                def = false;
+            }
+        }
+    }
+    if (def){
+        //"log" was either empty, or not found in the extra parameters to step. 
+        //Therefore, either the user specified to log the first parameter, or he/she gave a parameter that does not exist. In either way we log the first parameter.
+        std::cout << "Logging default parameter " << parName << std::endl;
+        m_curToLog = 0;
+    }
+    
+    m_cur.resize(1+parNameMultiple.size());
 }

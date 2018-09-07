@@ -24,9 +24,13 @@ class Rd53aParameterLoop : public LoopActionBase {
     private:
         Rd53aReg Rd53aGlobalCfg::*parPtr;
         std::string parName;
-        void writePar();
-        unsigned m_cur;
-
+        std::vector<std::string> parNameMultiple;
+        void writePar(Rd53aReg Rd53aGlobalCfg::*p, uint32_t m);
+        std::vector<unsigned> m_cur;
+        signed add = 0;
+        bool logDiff = false;
+        int m_curToLog = 0;
+        
         void init();
         void end();
         void execPart1();
