@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
     occupancy.setYaxisTitle("Row");
     occupancy.setZaxisTitle("Hits");
 
-    const std::array<int, 16> l1ToTag = {{1,1,2,2,2,2,3,3,3,3,4,4,4,4,0,0}};
+    const std::array<unsigned, 16> l1ToTag = {{1,1,2,2,2,2,3,3,3,3,4,4,4,4,0,0}};
 
     for (int i=1; i<argc; i++) {
         std::cout << "Opening file: " << argv[i] << std::endl;
@@ -94,21 +94,22 @@ int main(int argc, char* argv[]) {
             next_event = new Fei4Event;
 
             next_event->fromFileBinary(file);
-            
+
             if (l1ToTag[prev_event->l1id%16] != prev_event->tag)
                 continue;
-            
-            if (!file)
+
+            if (!file) {
                 break;
+            }
 
 
-                if (l1ToTag[prev_event->l1id%16] != prev_event->tag) {
-                    std::cout << "############" << std::endl;
-                    std::cout << "Tag: " << prev_event->tag << std::endl;
-                    std::cout << "L1Id: " << prev_event->l1id << std::endl;
-                    std::cout << "BCId: " << prev_event->bcid << std::endl;
-                    std::cout << "Hits: " << prev_event->nHits << std::endl;
-                }
+            if (l1ToTag[prev_event->l1id%16] != prev_event->tag) {
+                std::cout << "############" << std::endl;
+                std::cout << "Tag: " << prev_event->tag << std::endl;
+                std::cout << "L1Id: " << prev_event->l1id << std::endl;
+                std::cout << "BCId: " << prev_event->bcid << std::endl;
+                std::cout << "Hits: " << prev_event->nHits << std::endl;
+            }
 
             int l1_count = 1;
             while ((((int)next_event->bcid+32768) - (int)prev_event->bcid)%32768 == 1) {
