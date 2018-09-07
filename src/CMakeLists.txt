@@ -79,7 +79,7 @@ elseif(UNIX)
     target_link_libraries(${execname} ${WRAPPED_YARR} pthread rt)
 
     if(ENABLE_NETIO)
-        target_link_libraries(${execname} "${NETIO_DIR}/x86_64-slc6-gcc62-opt/netio/libnetio.so")
+        target_link_libraries(${execname} "${NETIO_DIR}/${NETIO_TAG}/netio/libnetio.so")
     endif()
 endif()
 # Not sure why rt is not linked by default here
