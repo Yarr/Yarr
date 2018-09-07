@@ -10,7 +10,7 @@
 #include "Rd53aPixelFeedback.h"
 
 Rd53aPixelFeedback::Rd53aPixelFeedback() {
-    min = 0;
+    min = -15;
     max = 15;
     step = 1;
     m_cur = 0;
@@ -64,11 +64,13 @@ void Rd53aPixelFeedback::feedback(unsigned channel, Histo2d *h) {
                 int v = dynamic_cast<Rd53a*>(keeper->getFe(channel))->getTDAC(col-1, row-1);
                 if (128<col && col<=264 && tuneLin) {
                     v = v + ((m_steps[m_cur])*sign);
+                    if (v<min) v = min;
+                    if (v>max) v = max;
                 } else if (264<col && tuneDiff) {
                     v = v + (m_steps[m_cur]*sign*-1);
+                    if (v<min) v = min;
+                    if (v>max) v = max;
                 }
-                if (v<min) v = min;
-                if (v>max) v = max;
                 dynamic_cast<Rd53a*>(keeper->getFe(channel))->setTDAC(col-1, row-1, v);
             }
         }
