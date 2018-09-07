@@ -112,8 +112,8 @@ bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/examp
 ```
 The threshold and noise mean and dispersion value (for everything scanned) will be given in the output of the code, for example:
 ```text
-[0] Threashold Mean = 1050.66 +- 822.444
-[0] Noise Mean = 161.395 +- 144.716
+[0] Threashold Mean = 3245.7 +- 801.668
+[0] Noise Mean = 125.784 +- 312.594
 ```
 Example of the s-curve, threshold distribution, threshold map and noise distribution are given below:
 ![S-curve threshold scan](images/JohnDoe_ThresholdScan_sCurve.png)
@@ -134,6 +134,7 @@ Example distributions are coming soon!
 
 
 ## Tuning
+*To be updated with latest sw changes!*
 
 The tuning should be started with a global tuning of the linear FrontEnd. The example command with a target threshold of 2500e is:
 ```bash
@@ -162,21 +163,15 @@ bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/examp
 
 Running the threshold scan shows the result of the tuning:
 ```text
-[0] Threashold Mean = 2576.14 +- 351.621
-[0] Noise Mean = 107.643 +- 554.819
+[0] Threashold Mean = 1050.66 +- 182.54
+[0] Noise Mean = 161.395 +- 144.716
+
 ```
 ![Threshold distribution after tuning](images/JohnDoe_ThresholdDist_AfterTuning.png)
 ![Noise distribution after tuning](images/JohnDoe_NoiseDist_AfterTuning.png)
 ![S-curve threshold scan after tuning](images/JohnDoe_sCurve_AfterTuning.png)
 ![Threshold map after tuning](images/JohnDoe_ThresholdMap_AfterTuning.png)
-
-### Recommended tuning procedure:
-- Digital scan
-- Analog scan
-- Global tuning of the linear FE
-- Global tuning of the differential FE
-- Pixel tuning
-- Threshold scan
+![Noise map after tuning](images/JohnDoe_NoiseMap_AfterTuning.png)
 
 
 # Loop Actions
