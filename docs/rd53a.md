@@ -25,7 +25,57 @@ Set the power supply to <span style="color:red">**1.85**</span> V, the current s
 
 # Scan Console for RD53A
 
-More information about ScanConsole can be found on the main page: [ScanConsole](ScanConsole).
+More general information about hwo to use the scanConsole, can be found on the main page: [ScanConsole](ScanConsole).
+
+In case you run into problems or have abnormal results please consult the troubleshooting page here: [Troubleshooting](troubleshooting)
+
+## Tuning routine
+
+Examples of the result and how to run different scans is shown below. If you have mastered the basics, you probably just need this information.
+Basics tuning routine:
+
+- `std_digitalscan.json` (with `-m 1` to reset masks)
+- `std_analogscan.json`
+- `diff_tune_globalthreshold.json` (good starting threshold target is 1000e, resets prev. TDACs)
+- `diff_tune_pixelthreshold.json` (1000e target again)
+- `lin_tune_globalthreshold.json` (good starting threshold target is 2000e, resets prev. TDACs)
+- `lin_tune_pixelthreshold.json` (2000e again)
+- `lin_retune_globalthreshold.json` (now retuning from 2000e to 1000e target)
+- `lin_retune_pixelthreshold.json` (1000e again)
+- `syn_tune_globalthreshold.json` (can be as low as 1000e, but keep noise occupancy in check)
+- `std_thresholdscan.json` (verify thresholds, use root plot script for nice plots, see [here](rootscripts))
+- `std_totscan.json` (with target charge equal to MIP, e.g. 12ke)
+- `std_noisescan.json` (measure noise occupancy, will mask noisy pixels, might fail if too noisy)
+
+If you also want to tune the ToT conversion we need to insert those tunings and also some threshold retunings. For a bsic routine including those see below:
+- `std_digitalscan.json` (with `-m 1` to reset masks)
+- `std_analogscan.json`
+- `diff_tune_globalthreshold.json` (good starting threshold target is 1000e, resets prev. TDACs)
+- `diff_tune_pixelthreshold.json` (1000e target again)
+- `diff_tune_globalpreamp.json` (use mid of the range ToT values, e.g. 10000e at 8ToT)
+- `diff_tune_pixelthreshold.json` (1000e target again)
+- `lin_tune_globalthreshold.json` (good starting threshold target is 2000e, resets prev. TDACs)
+- `lin_tune_pixelthreshold.json` (2000e again)
+- `lin_retune_globalthreshold.json` (now retuning from 2000e to 1000e target)
+- `lin_retune_pixelthreshold.json` (1000e again)
+- `lin_tune_globalpreamp.json` (use mid of the range ToT values, e.g. 10000e at 8ToT)
+- `lin_retune_pixelthreshold.json` (1000e again)
+- `syn_tune_globalthreshold.json` (can be as low as 1000e, but keep noise occupancy in check)
+- `syn_tune_globalpreamp.json` (use mid of the range ToT values, e.g. 10000e at 8ToT)
+- `syn_tune_globalthreshold.json` (can be as low as 1000e, but keep noise occupancy in check)
+- `std_thresholdscan.json` (verify thresholds, use root plot script for nice plots, see [here](rootscripts))
+- `std_totscan.json` (with target charge equal to MIP, e.g. 12ke)
+- `std_noisescan.json` (measure noise occupancy, will mask noisy pixels, might fail if too noisy)
+
+## Common misconceptions and issues
+
+Some general tips when operating RD53A with YARR:
+
+- Most scans use a mask loop to scan over pixels, this (currently) ignores the enable mask written to the config. Only data-taking like scans (e.g. noisescan or external trigger scan) will use the enable mask written to the chip config. If for example you run a noise scan and it is completly empty, check the enable mask in your config.
+- The target charge command line argument is interpreted in different ways depending on the scan. For a threshold tuning it is used as the threshold target, for a totscan it is used as the value of charge for the injections, and in case of a preamp tuning it is also used the target charge for achieve the specified ToT (second argument).
+- There can be interference between the analog FEs, for instance when one FE is badly tuned and very noisy it might radiate noise into other FEs. Hence one should make sure that even when only using one FE type, that the other FEs are in a decent state (e.g. high threshold).
+- Auto-zeroing is performed by the hardware and therefore the auto-zero frequency is set by the hardware controller.
+- Auto-zeroing can cause transients on the power line which can cause other FEs to be noisy. So if someone chooses not to use the sync FE, one should also turn-off auto-zeroing in the controller config (by setting the auto-zero word to `0`).
 
 ## Digital Scan
 
@@ -33,7 +83,7 @@ To run a digital scan for RD53A with the default configuration execute the follo
 ```bash
 bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json -p
 ```
-The occupancy map after a successful digital scan is given below.
+An example of occupancy map after a successful digital scan is given below.
 ![Occupancy map digital scan](images/JohnDoe_DigitalScan_OccupancyMap.png)
 
 ## Analog Scan
@@ -42,17 +92,16 @@ To run a analog scan for RD53A with the default configuration execute the follow
 ```bash
 bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_analogscan.json -p
 ```
-The occupancy map after a successful analog scan is given below.
+An example of the occupancy map after a successful analog scan is given below.
 ![Occupancy map analog scan](images/JohnDoe_AnalogScan_OccupancyMap.png)
-- The implementation of the analog scan for the synchronous FE is coming soon!
 
-### Analog scan for only differential FrontEnd
+### Analog scan for only one analog FrontEnd
 
 ```bash
 bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/diff_analogscan.json -p
 ```
 ![Occupancy map analog scan for DIFF FE](images/JohnDoe_AnalogScanDiff_OccupancyMap.png)
-- The pattern in the differential FE is expected for the default configuration of Vff.
+- There are similar scan configs for the linear and sync FE
 
 ## Threshold Scan
 
@@ -60,10 +109,10 @@ To run a threshold scan for RD53A with the default configuration execute the fol
 ```bash
 bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_thresholdscan.json -p
 ```
-The noise and threshold mean value will be given in the output of the code, for example:
+The threshold and noise mean and dispersion value (for everything scanned) will be given in the output of the code, for example:
 ```text
-[0] Threashold Mean = 3245.7 +- 801.668
-[0] Noise Mean = 125.784 +- 312.594
+[0] Threashold Mean = 1050.66 +- 822.444
+[0] Noise Mean = 161.395 +- 144.716
 ```
 Example of the s-curve, threshold distribution, threshold map and noise distribution are given below:
 ![S-curve threshold scan](images/JohnDoe_ThresholdScan_sCurve.png)
