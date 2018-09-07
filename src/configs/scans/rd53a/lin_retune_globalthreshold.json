@@ -2,7 +2,7 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "TotAnalysis"
+        "algorithm": "OccGlobalThresholdTune"
       },
       "n_count": 1
     },
@@ -31,10 +31,11 @@
     },
     "loops": [
       { "config": {
-          "max": 64,
+          "max": 350,
           "min": 0,
-          "step": 32,
-          "parameter": "LinKrumCurr"
+          "step": 4,
+          "parameter": "LinVth",
+          "pixelRegs": 0
         },
         "loopAction": "Rd53aGlobalFeedback"
       },
@@ -42,7 +43,7 @@
         "config": {
           "max": 64,
           "min": 0,
-          "step": 1
+          "step": 4
         },
         "loopAction": "Rd53aMaskLoop"
       },
@@ -51,7 +52,7 @@
           "max": 33,
           "min": 16,
           "step": 1,
-          "nSteps": 4
+          "nSteps": 17
         },
         "loopAction": "Rd53aCoreColLoop"
       },
@@ -70,7 +71,7 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "LinGlobalPreampTune",
+    "name": "LinGlobalThresholdTune",
     "prescan": {
         "InjEnDig": 0,
         "LatencyConfig": 48,
