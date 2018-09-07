@@ -18,7 +18,7 @@
 class Rd53aTriggerLoop: public LoopActionBase {
     public:
         Rd53aTriggerLoop();
- 
+
         uint32_t getTrigCnt() {return m_trigCnt;}
         void setTrigCnt(uint32_t cnt) {m_trigCnt = cnt;}
         void setTrigTime(double time) {m_trigTime = time;}
@@ -41,7 +41,10 @@ class Rd53aTriggerLoop: public LoopActionBase {
         bool m_edgeMode;
         uint32_t m_edgeDuration;
         uint32_t m_pulseDuration;
-
+        uint32_t m_edgeDelay;
+        uint32_t m_auxMode;
+        uint32_t m_auxDelay;
+        
         bool isInner;
         void init();
         void execPart1();

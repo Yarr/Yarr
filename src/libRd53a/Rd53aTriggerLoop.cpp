@@ -15,6 +15,11 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
     m_trigTime = 10;
     m_trigWordLength = 16;
     m_pulseDuration = 9;
+    m_edgeDelay = 0;
+    m_edgeDuration = 10;
+    m_edgeMode = false;
+    m_auxMode = 0;
+    m_auxDelay = 0;
     m_trigWord.fill(0x69696969);
     m_trigWord[15] = 0x69696363;
     m_trigWord[14] = Rd53aCmd::genCal(8, 0, 0, 1, 0, 0); // Inject
@@ -25,8 +30,6 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
     m_trigWord[0] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(m_pulseDuration<<1)); // global pulse for sync FE
     m_noInject = false;
 
-    m_edgeMode = false;
-    m_edgeDuration = 10;
 
     min = 0;
     max = 0;
@@ -41,10 +44,10 @@ void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
     m_trigWord.fill(0x69696969);
     // Inject
     m_trigWord[15] = 0x69696363;
-    m_trigWord[14] = Rd53aCmd::genCal(8, 0, 0, 1, 0, 0); // Inject
+    m_trigWord[14] = Rd53aCmd::genCal(8, m_edgeMode, m_edgeDelay, m_edgeDuration, m_auxMode, m_auxDelay); // Inject
     // Rearm
     m_trigWord[2] = 0x69696363; // TODO might include ECR?
-    m_trigWord[1] = Rd53aCmd::genCal(8, 1, 0, 0, 0, 0); // Arm inject
+    m_trigWord[1] = Rd53aCmd::genCal(8, 1, 0, 4, 0, 0); // Arm inject
     // Pulse
     m_trigWord[0] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(m_pulseDuration<<1)); // global pulse for sync FE
     if ((delay >= 16) && (delay <= 88)) {
@@ -76,8 +79,8 @@ void Rd53aTriggerLoop::init() {
         std::cout << __PRETTY_FUNCTION__ << std::endl;
 
     this->setTrigDelay(m_trigDelay);
-    if (m_edgeMode)
-        this->setEdgeMode(m_edgeDuration);
+    //if (m_edgeMode) Deprecated. Edge mode set directly in setTrigDelay along with all other injection settings.
+        //this->setEdgeMode(m_edgeDuration); 
     if (m_trigCnt > 0) {
         g_tx->setTrigConfig(INT_COUNT);
     } else {
@@ -141,5 +144,13 @@ void Rd53aTriggerLoop::loadConfig(json &config) {
         m_noInject = config["noInject"];
     if (!config["edgeMode"].empty())
         m_edgeMode = config["edgeMode"];
+    if (!config["edgeDelay"].empty())
+        m_edgeDelay = config["edgeDelay"];
+    if (!config["edgeDuration"].empty())
+        m_edgeDuration = config["edgeDuration"];
+    if (!config["auxMode"].empty())
+        m_auxMode = config["auxMode"];
+    if (!config["auxDelay"].empty())
+        m_auxDelay = config["auxDelay"];
     this->setTrigDelay(m_trigDelay);
 }
