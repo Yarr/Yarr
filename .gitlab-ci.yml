@@ -60,10 +60,9 @@ job_build_with_felix:
      - source cmake_tdaq/bin/setup.sh ${CONFIG}
      - cmake_config ${CONFIG}
      - cd ${CONFIG} && make
-     - cd distribution && ./build.sh felix ${CONFIG} 87
-     - cd ..
+     - cd ../..
      - mkdir -p src/cmake_build
      - cd src/cmake_build
-     - cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DENABLE_NETIO:BOOL=ON -DNETIO_DIR:PATH=../..//felix -DNETIO_TAG:STRING=${CONFIG}
+     - cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DENABLE_NETIO:BOOL=ON -DNETIO_DIR:PATH=../../felix -DNETIO_TAG:STRING=${CONFIG}
      - make -j4
      - bin/scanConsole -k
