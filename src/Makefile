@@ -40,7 +40,7 @@ CPPFLAGS += -std=c++11 -Wall -Werror
 INC_DIRS := $(wildcard */include)
 
 ifneq (${NETIO_DIR},)
-  INC_DIRS+= $(NETIO_DIR)/felixbase $(NETIO_DIR)/netio
+  INC_DIRS+= $(NETIO_DIR)/include
 endif
 
 INCFLAGS += $(addprefix -I,$(INC_DIRS))

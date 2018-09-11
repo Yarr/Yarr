@@ -46,11 +46,10 @@ endforeach()
 add_library(Yarr STATIC ${LibSrcFiles})
 
 set(NETIO_DIR "/path/to/felix/software" CACHE
-    PATH "Path to FELIX software for NetIO library")
+    PATH "Path to FELIX software distribution for NetIO library")
 
 if(ENABLE_NETIO)
-  include_directories("${NETIO_DIR}/felixbase")
-  include_directories("${NETIO_DIR}/netio")
+  include_directories("${NETIO_DIR}/include")
 endif()
 
 #add executables
@@ -79,7 +78,7 @@ elseif(UNIX)
     target_link_libraries(${execname} ${WRAPPED_YARR} pthread rt)
 
     if(ENABLE_NETIO)
-        target_link_libraries(${execname} "${NETIO_DIR}/${NETIO_TAG}/netio/libnetio.so")
+        target_link_libraries(${execname} "${NETIO_DIR}/lib/libnetio.so")
     endif()
 endif()
 # Not sure why rt is not linked by default here
