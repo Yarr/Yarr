@@ -1,0 +1,64 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "OccupancyAnalysis",
+        "config": {
+          "createMask": false
+        }
+      },
+      "1": {
+        "algorithm": "L1Analysis"
+      },
+      "n_count": 2
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "1": {
+        "algorithm": "TotMap",
+        "config": {}
+      },
+      "2": {
+        "algorithm": "Tot2Map",
+        "config": {}
+      },
+      "3": {
+        "algorithm": "L1Dist",
+        "config": {}
+      },
+      "4": {
+        "algorithm": "HitsPerEvent",
+        "config": {}
+      },
+      "5": {
+          "algorithm": "DataArchiver",
+          "config": {}
+      },
+      "n_count": 6
+    },
+    "loops": [
+      {
+        "config": {
+          "count": 0,
+          "delay": 48,
+          "extTrigger": false,
+          "frequency": 20000,
+          "noInject": true,
+          "extTrig" : true,
+          "time": 30
+        },
+        "loopAction": "Rd53aTriggerLoop"
+      },
+      {
+        "loopAction": "StdDataGatherer"
+      }
+    ],
+    "name": "Exttrigger",
+    "prescan": {
+        "LatencyConfig": 125
+    }
+  }
+}

@@ -59,6 +59,8 @@ Success! No errors.
 
 ### Chip is not configuring
 
+**Sympton**: Current does not change after a power-cycle when starting a scan and the scan results are empty or not there.
+
 If the test program fails, e.g. the current doesn't change during the test program and there is no output
 ```
 $ ./bin/rd53a_test
@@ -91,10 +93,14 @@ Trigger: 15
 >>> Enabling some pixels
 >>> Digital inject test:
 ```
+**Resolve by:**
 
-- Make sure if you turned off the command from the FPGA before powering the chip, as explained [RD53A](rd53a.md)
-- Check that the power is 1.80 V and the current is above 0.41 A
-- Try operating in direct powering.
+- Try power-cycling the chip.
+- Make sure the DP cable is plugged into the right ports and you have selected the correct Tx/Rx links in the connectivity.
+- Check that the power is 1.80 V and the current is above 0.41 A, if this is not the case check your power cable.
+- Test a different possibly shorter DisplayPort cable.
+- Meausure the analog regulator output voltage, if below 1.1V consider installing a Vref hack (ask experts).
+- If all above fails: try operating in direct powering.
 
 ![Jumper configuration for **direct powering** on the SCC ](images/IMG_20180305_170121.jpg)
 
@@ -113,13 +119,32 @@ Jumper configuration for **direct powering**
 
 ### Problem with the digital scan
 
-If the digital scan looks blocky
+**Sympton:** The digital scan looks blocky (see picture)
 
 ![Digital scan example](images/rd53a_proto_digital_Occupancy.png)
 
-check that aurora lines are connected and running. The jumpers JP10 and JP11 on the SCC have to be closed in order to use LANE 2 and LANE 3.
+**Resolve by:** check that aurora lines are connected and running. The jumpers JP10 and JP11 on the SCC have to be closed in order to use LANE 2 and LANE 3.
 
-### Endless readout loop
+### Endless readout loop or data corruption
 
-We noticed for one chip when running the `./bin/rd53a_test` the readout loop is never ending. We are still debugging this!
+**Sympton:**
+
+- when running `./bin/rd53a_test` the readout loop is never ending
+- When running a scan there are `Data not valid` mentioned in the log
+
+**Resolve by:**
+
+- Try increasing/decreasing the analog/digital voltage trim settings (`SldoAnalogTrim` and `SldoDigitalTrim`).
+- Try a different possibly shorter DisplayPort cable
+- Make sure the scan you are running does not put the chip under very high load (e.g. noise scan with too low threshold).
+
+### Noise Scan is empty
+
+**Sympton:**
+
+- Noise scan (or similar) has 0 hits
+
+**Resolve by:**
+
+- Check that your enable mask is not all `0`
 

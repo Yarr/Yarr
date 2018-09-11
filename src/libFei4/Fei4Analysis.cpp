@@ -201,11 +201,7 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
                 mask->setBin(i, 1);
             } else {
                 if (make_mask) {
-                    if(dynamic_cast<Fei4*>(bookie->getFe(channel))) {;
-                        Fei4 *fe = dynamic_cast<Fei4*>(bookie->getFe(channel));
-                        fe->setEn((i/nRow)+1, (i%nRow)+1, 0);
-                        fe->setHitbus((i/nRow)+1, (i%nRow)+1, 1);
-                    }
+                    bookie->getFe(channel)->maskPixel((i/nRow), (i%nRow));
                 }
             }
         }
@@ -261,6 +257,10 @@ void TotAnalysis::init(ScanBase *s) {
 
         std::shared_ptr<LoopActionBase> tmpPrmpFb(new Fei4GlobalFeedback(&Fei4::PrmpVbpf));
         if (l->type() == tmpPrmpFb->type()) {
+            globalFb = dynamic_cast<GlobalFeedbackBase*>(l.get());  
+        }
+
+        if (l->type() == typeid(Rd53aGlobalFeedback*)) {
             globalFb = dynamic_cast<GlobalFeedbackBase*>(l.get());  
         }
 
@@ -326,26 +326,26 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
     if (occInnerCnt[ident] == n_count &&
             totInnerCnt[ident] == n_count &&
             tot2InnerCnt[ident] == n_count) {
-        Histo2d *meanTotMap = new Histo2d("MeanTotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        Histo2d *meanTotMap = new Histo2d("MeanTotMap"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         meanTotMap->setXaxisTitle("Column");
         meanTotMap->setYaxisTitle("Row");
         meanTotMap->setZaxisTitle("Mean ToT [bc]");
-        Histo2d *sumTotMap = new Histo2d("SumTotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        Histo2d *sumTotMap = new Histo2d("SumTotMap"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         sumTotMap->setXaxisTitle("Column");
         sumTotMap->setYaxisTitle("Row");
         sumTotMap->setZaxisTitle("Mean ToT [bc]");
-        Histo2d *sumTot2Map = new Histo2d("MeanTot2Map", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        Histo2d *sumTot2Map = new Histo2d("MeanTot2Map"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         sumTot2Map->setXaxisTitle("Column");
         sumTot2Map->setYaxisTitle("Row");
         sumTot2Map->setZaxisTitle("Mean ToT^2 [bc^2]");
-        Histo2d *sigmaTotMap = new Histo2d("SigmaTotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        Histo2d *sigmaTotMap = new Histo2d("SigmaTotMap"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         sigmaTotMap->setXaxisTitle("Column");
         sigmaTotMap->setYaxisTitle("Row");
         sigmaTotMap->setZaxisTitle("Sigma ToT [bc]");
-        Histo1d *meanTotDist = new Histo1d("MeanTotDist_"+std::to_string(ident), 161, -0.05, 16.05, typeid(this));
+        Histo1d *meanTotDist = new Histo1d("MeanTotDist_"+std::to_string(ident), 16, 0.5, 16.5, typeid(this));
         meanTotDist->setXaxisTitle("Mean ToT [bc]");
         meanTotDist->setYaxisTitle("Number of Pixels");
-        Histo1d *sigmaTotDist = new Histo1d("SigmaTotDist", 101, -0.05, 1.05, typeid(this));
+        Histo1d *sigmaTotDist = new Histo1d("SigmaTotDist"+std::to_string(ident), 101, -0.05, 1.05, typeid(this));
         sigmaTotDist->setXaxisTitle("Sigma ToT [bc]");
         sigmaTotDist->setYaxisTitle("Number of Pixels");
 
@@ -364,13 +364,20 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
 
         if (globalFb != NULL) {
             double mean = 0;
-            for (unsigned i=0; i<meanTotMap->size(); i++)
-                mean += meanTotMap->getBin(i);
-            mean = mean/(double)meanTotMap->size();
+            double entries = 0;
+            for (unsigned i=0; i<meanTotMap->size(); i++) {
+                if (occMaps[ident]->getBin(i) == injections) {
+                    mean += meanTotMap->getBin(i);
+                    entries++;
+                } 
+            }
+            if (entries > 0) {
+                mean = mean/entries;
+            }
             std::cout << "Mean is: " << mean << std::endl;
 
             // TODO Get this from somewhere
-            double targetTot = 10.0;
+            double targetTot = bookie->getTargetTot();
             int sign = 0;
             bool last = false;
             if (mean < (targetTot-0.1)) {
@@ -590,10 +597,11 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         hh1->setYaxisTitle("Number of Pixels");
                         timeDist[outerIdent] = hh1;
                     }
-                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin)) {
+                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0) {
                         FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
                         thrMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0], useScap, useLcap));
-                        sigMap[outerIdent]->fill(col, row, feCfg->toCharge(par[1], useScap, useLcap));
+                        // Reudce affect of vcal offset on this, don't want to probe at low vcal
+                        sigMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0]+par[1], useScap, useLcap)-feCfg->toCharge(par[0], useScap, useLcap));
                         chiDist[outerIdent]->fill(status.fnorm/(double)status.nfev);
                         timeDist[outerIdent]->fill(fitTime.count());
                     }
@@ -773,9 +781,12 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
         }
 
         double meanOcc = occDists[ident]->getMean()/(double)injections;
+        double entries = occDists[ident]->getEntries();
         std::cout << "[" << channel << "]Mean Occupancy: " << meanOcc << std::endl;
 
-        if ((meanOcc > 0.51) && !done) {
+        if (entries < (nCol*nRow)*0.01) { // Want at least 1% of all pixels to fire
+            sign = -1;
+        } else if ((meanOcc > 0.51) && !done) {
             sign = +1;
         } else if ((meanOcc < 0.49) && !done) {
             sign = -1;
@@ -890,9 +901,9 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
         occDist->setYaxisTitle("Number of Pixels");
         for (unsigned i=0; i<fbHisto->size(); i++) {
             double occ = occMaps[ident]->getBin(i);
-            if ((occ/(double)injections) > 0.65) {
+            if ((occ/(double)injections) > 0.7) {
                 fbHisto->setBin(i, -1);
-            } else if ((occ/(double)injections) < 0.35) {
+            } else if ((occ/(double)injections) < 0.3) {
                 fbHisto->setBin(i, +1);
             } else {
                 fbHisto->setBin(i, 0);
@@ -1098,16 +1109,13 @@ void NoiseAnalysis::end() {
 
     noiseOcc->add(occ);
     noiseOcc->scale(1.0/(double)n_trigger);
+    std::cout << "[" << channel << "] Received " << n_trigger << " total trigger!" << std::endl;
     double noiseThr = 1e-6; 
     for (unsigned i=0; i<noiseOcc->size(); i++) {
         if (noiseOcc->getBin(i) > noiseThr) {
             mask->setBin(i, 0);
             if (make_mask) {
-                if(dynamic_cast<Fei4*>(bookie->getFe(channel))) {;
-                    Fei4 *fe = dynamic_cast<Fei4*>(bookie->getFe(channel));
-                    fe->setEn((i/nRow)+1, (i%nRow)+1, 0);
-                    fe->setHitbus((i/nRow)+1, (i%nRow)+1, 1);
-                }
+                bookie->getFe(channel)->maskPixel((i/nRow), (i%nRow));
             }
         } else {
             mask->setBin(i, 1);
@@ -1117,4 +1125,121 @@ void NoiseAnalysis::end() {
     output->pushData(occ);
     output->pushData(noiseOcc);
     output->pushData(mask);
+}
+
+void NoiseTuning::init(ScanBase *s) {
+    n_count = 1;
+    pixelFb = NULL;
+    globalFb = NULL;
+    for (unsigned n=0; n<s->size(); n++) {
+        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        if ((l->type() != typeid(Fei4TriggerLoop*) &&
+                l->type() != typeid(Rd53aMaskLoop*) &&
+                l->type() != typeid(Rd53aTriggerLoop*) &&
+                l->type() != typeid(Rd53aCoreColLoop*) &&
+                l->type() != typeid(Fei4MaskLoop*) &&
+                l->type() != typeid(StdDataLoop*) &&
+                l->type() != typeid(Fei4DcLoop*)) &&
+                l->type() != typeid(Fe65p2MaskLoop*) &&
+                l->type() != typeid(Fe65p2QcLoop*) &&
+                l->type() != typeid(Fe65p2TriggerLoop*) &&
+                l->type() != typeid(StdRepeater*)) {
+            loops.push_back(n);
+            loopMax.push_back((unsigned)l->getMax());
+        } else {
+            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            if (cnt == 0)
+                cnt = 1;
+            n_count = n_count*cnt;
+        }
+    
+        std::shared_ptr<LoopActionBase> tmpPrmpFb(new Fei4GlobalFeedback(&Fei4::PrmpVbpf));
+        if (l->type() == tmpPrmpFb->type()) {
+            globalFb = dynamic_cast<GlobalFeedbackBase*>(l.get());  
+        }
+
+        if (l->type() == typeid(Rd53aGlobalFeedback*)) {
+            globalFb = dynamic_cast<GlobalFeedbackBase*>(l.get());  
+        }
+
+        if (l->type() == typeid(Fei4PixelFeedback*)) {
+            pixelFb = dynamic_cast<PixelFeedbackBase*>(l.get());  
+        }
+        
+        if (l->type() == typeid(Rd53aPixelFeedback*)) {
+            pixelFb = dynamic_cast<PixelFeedbackBase*>(l.get());  
+        }
+    }
+}
+
+void NoiseTuning::processHistogram(HistogramBase *h) {
+    if (!(h->getType() == typeid(OccupancyMap*)))
+        return;
+    
+    // Select correct output container
+    unsigned ident = 0;
+    unsigned offset = 0;
+    
+    // Determine identifier
+    std::string name = "OccMap";
+    for (unsigned n=0; n<loops.size(); n++) {
+        ident += h->getStat().get(loops[n])+offset;
+        offset += loopMax[n];
+        name += "-" + std::to_string(h->getStat().get(loops[n]));
+    }
+
+    
+    if (occMaps[ident] == NULL) {
+        Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        hh->setXaxisTitle("Column");
+        hh->setYaxisTitle("Row");
+        hh->setZaxisTitle("Hits");
+        innerCnt[ident] = 0;
+        occMaps[ident] = hh;
+    }
+    
+    //Easy make it pretty
+    occMaps[ident]->add(*(Histo2d*)h);
+    innerCnt[ident]++;
+    
+    if (innerCnt[ident] == n_count) {
+        std::cout << __PRETTY_FUNCTION__ << " full set " <<  std::endl;
+        if (globalFb != NULL) { // Global Threshold Tuning
+            std::cout << __PRETTY_FUNCTION__ << " has globalfeedback " <<  std::endl;
+            unsigned numOfHits = 0;
+            for (unsigned i=0; i<occMaps[ident]->size(); i++) {
+                if (occMaps[ident]->getBin(i) > 1) {
+                    numOfHits++;
+                }
+            }
+            std::cout << "[" << channel << "] Number of pixel with hits: " << numOfHits << std::endl;
+            if (numOfHits < 10) { // TODO not hardcode this value
+                globalFb->feedbackStep(channel, -1, false);
+            } else {
+                globalFb->feedbackStep(channel, 0, true);
+            }
+        }
+
+        if (pixelFb != NULL) { // Pixel Threshold Tuning
+            Histo2d *fbHisto = new Histo2d("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+            std::cout << __PRETTY_FUNCTION__ << " has pixelfeedback " <<  std::endl;
+            unsigned pixelWoHits = 0;
+            for (unsigned i=0; i<occMaps[ident]->size(); i++) {
+                if (occMaps[ident]->getBin(i) < 2) { //TODO un-hardcode this
+                    fbHisto->setBin(i, -1);
+                    pixelWoHits++;
+                } else {
+                    fbHisto->setBin(i, 0);
+                }
+            }
+            std::cout << "[" << channel << "] Number of pixel without hits: " << pixelWoHits << std::endl;
+
+            pixelFb->feedbackStep(channel, fbHisto);
+        }
+        output->pushData(occMaps[ident]);
+        occMaps[ident] = NULL;
+    }
+}
+
+void NoiseTuning::end() {
 }

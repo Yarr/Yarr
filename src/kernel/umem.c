@@ -92,11 +92,21 @@ int specdriver_umem_sgmap(specdriver_privdata_t *privdata, umem_handle_t *umem_h
 
 	/* Get the page information */
 	down_read(&current->mm->mmap_sem);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,6,0)
 	res = get_user_pages_remote(
 #else
 	res = get_user_pages(
 #endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,9,0)
+				current,
+				current->mm,
+				umem_handle->vma,
+				nr_pages,
+                FOLL_WRITE, //gup flags
+				pages,
+				NULL,
+                NULL); // if there is an error here your version is between 4.9 and 4.10
+#else
 				current,
 				current->mm,
 				umem_handle->vma,
@@ -105,6 +115,7 @@ int specdriver_umem_sgmap(specdriver_privdata_t *privdata, umem_handle_t *umem_h
 				0,  /* do not force, FIXME: shall I? */
 				pages,
 				NULL );
+#endif
 	up_read(&current->mm->mmap_sem);
 
 	/* Error, not all pages mapped */

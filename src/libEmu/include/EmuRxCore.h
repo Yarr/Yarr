@@ -15,6 +15,7 @@
 #include "RxCore.h"
 #include "EmuCom.h"
 
+template<class FE>
 class EmuRxCore : virtual public RxCore {
     public:
         EmuRxCore(EmuCom *com);
@@ -37,4 +38,28 @@ class EmuRxCore : virtual public RxCore {
         EmuCom *m_com;
 };
 
+template<class FE>
+EmuRxCore<FE>::EmuRxCore(EmuCom *com) {
+    m_com = com;
+}
+
+template<class FE>
+EmuRxCore<FE>::~EmuRxCore() {}
+
+template<class FE>
+RawData* EmuRxCore<FE>::readData() {
+    //std::this_thread::sleep_for(std::chrono::microseconds(1));
+    uint32_t words = this->getCurCount()/sizeof(uint32_t);
+    if (words > 0) {
+        uint32_t *buf = new uint32_t[words];
+        //for(unsigned i=0; i<words; i++)
+        //    buf[i] = m_com->read32();
+        if (m_com->readBlock32(buf, words)) {
+            return new RawData(0x0, buf, words);
+        } else {
+            delete[] buf;
+        }
+    }
+    return NULL;
+}
 #endif

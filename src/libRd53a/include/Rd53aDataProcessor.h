@@ -24,16 +24,15 @@ class Rd53aDataProcessor : public DataProcessor {
         Rd53aDataProcessor();
         ~Rd53aDataProcessor();
 
-        void connect(ClipBoard<RawDataContainer> *input, std::map<unsigned, ClipBoard<EventDataBase> > *outMap) override {
+        void connect(ClipBoard<RawDataContainer> *input, std::map<unsigned, ClipBoard<EventDataBase> > *outMap) override final {
             m_input = input;
             m_outMap = outMap;
         }
 
-        void init() override;
-        void run() override;
-        void join() override; 
-        void process() override;
-        void process_core();
+        void init()    override final;
+        void run()     override final;
+        void join()    override final; 
+        void process() override final;
 
     private:
         std::vector<std::unique_ptr<std::thread>> thread_ptrs;
@@ -49,6 +48,8 @@ class Rd53aDataProcessor : public DataProcessor {
 
         bool verbose;
 
+        void process_core();
+    
 };
 
 #endif

@@ -52,10 +52,15 @@ class TxCore {
         virtual void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) = 0;
         virtual void resetTriggerLogic() = 0;
         virtual uint32_t getTrigInCount() = 0;
+
+        void setClkPeriod(double period) {
+            m_clk_period = period;
+        }
     protected:
         TxCore();
         ~TxCore();
         uint32_t enMask;
+        double m_clk_period;
 };
 
 #endif

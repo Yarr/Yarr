@@ -26,6 +26,9 @@ class FrontEnd {
         
         virtual void init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel)=0;
 
+        // col/row starting at 0,0
+        virtual void maskPixel(unsigned col, unsigned row) = 0;
+
         bool getActive();
 		bool isActive();
 		void setActive(bool active);
@@ -58,6 +61,7 @@ class FrontEndCfg {
             name = "JohnDoe";
             txChannel = 99;
             rxChannel = 99;
+            lockCfg = false;
         }
         
 
@@ -82,11 +86,14 @@ class FrontEndCfg {
         void setConfigFile(std::string arg_configFile) {configFile = arg_configFile;}
         std::string getConfigFile() {return configFile;}
     
+        bool isLocked() {return lockCfg;}
+        void setLocked(bool v) {lockCfg = v;}
     protected:
         std::string name;
         unsigned txChannel;
         unsigned rxChannel;
         std::string configFile;
+        bool lockCfg;
 };
 
 #endif

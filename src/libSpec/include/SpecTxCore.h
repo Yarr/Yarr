@@ -31,6 +31,8 @@
 #define TRIG_WORD_LENGTH 0xA
 #define TRIG_WORD 0xB
 #define TRIG_WORD_POINTER 0xC
+#define TX_AZ_WORD 0xD
+#define TX_AZ_INTERVAL 0xE
 #define TRIG_ABORT 0xF
 #define TRIG_IN_CNT 0xF
 
@@ -100,9 +102,19 @@ class SpecTxCore : virtual public TxCore, virtual public SpecCom{
             SpecCom::writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_DEADTIME, deadtime);
         }
 
+        void setAzWord(uint32_t word) {
+            SpecCom::writeSingle(TX_ADDR | TX_AZ_WORD, word);
+        }
+
+        void setAzInterval(uint32_t interval) {
+            SpecCom::writeSingle(TX_ADDR | TX_AZ_INTERVAL, interval & 0xFFFF);
+        }
+
         void resetTriggerLogic() {
             SpecCom::writeSingle(TRIG_LOGIC_ADR | 0xFF, 0x1);
         }
+    protected:
+        double m_clk_period;
 
     private:
         bool verbose;

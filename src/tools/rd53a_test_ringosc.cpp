@@ -163,6 +163,7 @@ int main(int argc, char *argv[]) {
 
     SpecController spec;
     spec.init(specid);
+    spec.setupMode();
 
     //Send IO config to active FMC
     spec.writeSingle(0x6<<14 | 0x0, 0x080000);
@@ -231,6 +232,7 @@ int main(int argc, char *argv[]) {
         for(int r=0; r<chunk; r++) {
             std::cout << "pulse" << std::endl;
             fe.globalPulse(chipId, duration);
+            usleep(1000);
         }
 
         // read values

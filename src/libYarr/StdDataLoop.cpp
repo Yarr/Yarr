@@ -88,6 +88,6 @@ void StdDataLoop::execPart2() {
     counter++;
 }
 
-void StdDataLoop::connect(ClipBoard<RawDataContainer> *clipboard) {
-    storage = clipboard;
-}
+//void StdDataLoop::connect(ClipBoard<RawDataContainer> *clipboard) {
+//    storage = clipboard;
+//}

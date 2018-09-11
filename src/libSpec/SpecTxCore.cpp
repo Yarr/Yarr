@@ -11,6 +11,8 @@
 SpecTxCore::SpecTxCore() {
     verbose = false;
     enMask = 0x0;
+    m_clk_period = 6.25e-9; // 160MHz base for RD53A
+    //m_clk_period = 25.0e-9; // 40MHz base for FE-I4
 }
 
 void SpecTxCore::writeFifo(uint32_t value) {
@@ -68,7 +70,7 @@ void SpecTxCore::setTrigConfig(enum TRIG_CONF_VALUE cfg) {
 void SpecTxCore::setTrigFreq(double freq) {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << " : Frequency " << freq/1.0e3 << " kHz" <<std::endl;
-    uint32_t tmp = 1.0/((double)TX_CLK_PERIOD * freq);
+    uint32_t tmp = 1.0/((double)m_clk_period * freq);
     SpecCom::writeSingle(TX_ADDR | TRIG_FREQ, tmp);
 }
 
@@ -81,8 +83,8 @@ void SpecTxCore::setTrigCnt(uint32_t count) {
   
 void SpecTxCore::setTrigTime(double time) {
     if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Time " << time << " s" <<std::endl;
-    uint64_t tmp = (1.0/(double)TX_CLK_PERIOD)*time;
+        std::cout << __PRETTY_FUNCTION__ << " : Time " << time << " s, period " << m_clk_period <<std::endl;
+    uint64_t tmp = (1.0/(double)m_clk_period)*time;
     SpecCom::writeBlock(TX_ADDR | TRIG_TIME, (uint32_t*)&tmp, 2);
 }
 

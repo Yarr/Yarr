@@ -24,6 +24,8 @@ void Rd53aMaskLoop::init() {
     m_done = false;
     m_cur = 0;
     for(FrontEnd *fe : keeper->feList) {
+        // Make copy of pixRegs
+        m_pixRegs[fe] = dynamic_cast<Rd53a*>(fe)->pixRegs;
         g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         for(unsigned col=0; col<Rd53a::n_Col; col++) {
             for(unsigned row=0; row<Rd53a::n_Row; row++) {
@@ -53,7 +55,8 @@ void Rd53aMaskLoop::execPart1() {
                 //unsigned core_col = col/8;
                 unsigned core_row = row/8;
                 // Serialise core column
-                unsigned serial = (core_row*64)+(col%8)*8+row%8;
+                unsigned serial = (core_row*64)+((col+(core_row%8))%8)*8+row%8;
+                //unsigned serial = (core_row*64)+(col%8)*8+row%8;
                 if ((serial%max) == m_cur) {
                     dynamic_cast<Rd53a*>(fe)->setEn(col, row, 1);
                     dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 1);
@@ -90,6 +93,16 @@ void Rd53aMaskLoop::execPart2() {
 void Rd53aMaskLoop::end() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
+    
+    for(FrontEnd *fe : keeper->feList) {
+        // Copy original registers back
+        // TODO need to make sure analysis modifies the right config
+        // TODO not thread safe
+        dynamic_cast<Rd53a*>(fe)->pixRegs = m_pixRegs[fe];
+    }
+    // Reset CMD mask
+    g_tx->setCmdEnable(keeper->getTxMask());
+
     // Nothing to do here?
 }
 

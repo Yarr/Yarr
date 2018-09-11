@@ -64,6 +64,7 @@ int main(int argc, char *argv[]) {
 
     SpecController spec;
     spec.init(specNum);
+    spec.toggleTrigAbort();
     spec.setTrigEnable(0);
     
     //Send IO config to active FMC
@@ -76,6 +77,11 @@ int main(int argc, char *argv[]) {
     
     Rd53a fe(&spec);
     fe.setChipId(0);
+    for (unsigned col=0; col<Rd53a::n_Col; col++) {
+        for(unsigned row=0; row<Rd53a::n_Row; row++) {
+            fe.setEn(col, row, 0); // Disable all to avoid noise
+        }
+    }
     std::cout << ">>> Configuring chip with default config ..." << std::endl;
     fe.configure();
     std::cout << " ... done." << std::endl;
@@ -91,7 +97,7 @@ int main(int argc, char *argv[]) {
         std::cerr << "   #ERROR# Not all 4 lanes are synced! Aborting!" << std::endl;
         return 0;
     }
-
+    
     spec.setRxEnable(0x1);
 
     std::cout << ">>> Trigger test:" << std::endl;
@@ -111,6 +117,8 @@ int main(int argc, char *argv[]) {
     std::cout << ">>> Enabling digital injection" << std::endl;
     fe.writeRegister(&Rd53a::InjEnDig, 1);
     fe.writeRegister(&Rd53a::LatencyConfig, 48);
+    fe.writeRegister(&Rd53a::GlobalPulseRt, 16384);
+    fe.writeRegister(&Rd53a::EnCoreColSync, 0x0);
    
     std::cout << ">>> Enabling some pixels" << std::endl;
     
@@ -147,19 +155,19 @@ int main(int argc, char *argv[]) {
     fe.trigger(0xF, 31, 0xF, 2);
     */
     
-    spec.setTrigFreq(1000);
+    spec.setTrigFreq(5000);
     spec.setTrigCnt(1);
-    spec.setTrigWordLength(8);
-    std::array<uint32_t, 8> trigWord;
+    spec.setTrigWordLength(16);
+    std::array<uint32_t, 32> trigWord;
     trigWord.fill(0x69696969);
     trigWord[15] = 0x69696363;
-    trigWord[14] = Rd53aCmd::genCal(8, 0, 0, 1, 0, 0); // Inject
+    trigWord[14] = Rd53aCmd::genCal(8, 1, 0, 10, 0, 0); // Inject
     trigWord[8] = Rd53aCmd::genTrigger(0xF, 1, 0xF, 2); // Trigger
     //trigWord[7] = Rd53aCmd::genTrigger(0xF, 3, 0xF, 4); // Trigger
-    trigWord[2] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(8<<1)); // global pulse for sync FE
-    trigWord[1] = 0x5a5a6363; // ECR + header
-    trigWord[0] = Rd53aCmd::genCal(8, 1, 0, 0, 0, 0); // Arm inject
-    spec.setTrigWord(&trigWord[0], 8);
+    //trigWord[2] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(8<<1)); // global pulse for sync FE
+    //trigWord[1] = 0x5a5a6363; // ECR + header
+    //trigWord[0] = Rd53aCmd::genCal(8, 1, 0, 0, 0, 0); // Arm inject
+    spec.setTrigWord(&trigWord[0], 32);
     spec.setTrigConfig(INT_COUNT);
     spec.setTrigEnable(1);
     while(!spec.isTrigDone()) {

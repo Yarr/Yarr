@@ -40,11 +40,17 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
         void configurePixels();
         void configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels);
 
+        void maskPixel(unsigned col, unsigned row) {
+            this->setEn(col, row, 0);
+            this->setHitbus(col, row, 0);
+        }
+
         void writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value);
         void readRegister(Rd53aReg Rd53aGlobalCfg::*ref);
         void writeNamedRegister(std::string name, uint16_t value);
         
         void setInjCharge(double charge, bool sCap=true, bool lCap=true) {
+            std::cout << __PRETTY_FUNCTION__ << " " << charge << std::endl;
             this->writeRegister((Rd53aReg Rd53aGlobalCfg::*)&Rd53aGlobalCfg::InjVcalDiff, this->toVcal(charge));
         }
         

@@ -56,19 +56,22 @@ unsigned Histo1d::getEntries() const {
 }
 
 double Histo1d::getMean() {
-    if (sum == 0)
+    if (sum == 0 || entries == 0)
         return 0;
     double weighted_sum = 0;
-    double entries = 0;
+    double n = 0;
     for (unsigned i=0; i<bins; i++) {
         weighted_sum += data[i]*(((i+1)*binWidth)+xlow+(binWidth/2.0));
-        entries += data[i];
+        n += data[i];
     }
-    return weighted_sum/entries;
+    if (n == 0) {
+        return 0;
+    }
+    return weighted_sum/n;
 }
 
 double Histo1d::getStdDev() {
-    if (sum == 0)
+    if (sum == 0 || entries == 0)
         return 0;
     double mean = this->getMean();
     double mu = 0;
@@ -89,9 +92,9 @@ void Histo1d::fill(double x, double v) {
             max = v;
         if (v < min)
             min = v;
+        entries++;
+        sum+=v;
     }
-    entries++;
-    sum+=v;
 }
 
 void Histo1d::setBin(unsigned n, double v) {

@@ -13,6 +13,7 @@
 #include <chrono>
 #include <thread>
 #include "LoopActionBase.h"
+#include "Rd53a.h"
 #include "Rd53aCmd.h"
 
 class Rd53aTriggerLoop: public LoopActionBase {
@@ -35,10 +36,11 @@ class Rd53aTriggerLoop: public LoopActionBase {
         uint32_t m_trigDelay;
         double m_trigTime;
         double m_trigFreq;
-        std::array<uint32_t, 16> m_trigWord;
+        std::array<uint32_t, 32> m_trigWord;
         uint32_t m_trigWordLength;
         bool m_noInject;
         bool m_edgeMode;
+        bool m_extTrig;
         uint32_t m_edgeDuration;
         uint32_t m_pulseDuration;
         uint32_t m_edgeDelay;
