@@ -36,7 +36,7 @@
                 "min": -15,
                 "steps": [1,1,1,1,1],
                 "tuneDiff": true,
-                "tuneLin": false
+                "tuneLin": false,
                 "resetTdac": false
             },
             "loopAction": "Rd53aPixelFeedback"
