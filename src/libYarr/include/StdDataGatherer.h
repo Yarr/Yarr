@@ -7,20 +7,21 @@
 #define STDDATAGATHERER_H
 
 #include "LoopActionBase.h"
+#include "StdDataAction.h"
 #include "ClipBoard.h"
 #include "RawData.h"
 #include <signal.h>
 
-class StdDataGatherer: public LoopActionBase {
+class StdDataGatherer: public LoopActionBase, public StdDataAction {
     public:
         StdDataGatherer();
-        void connect(ClipBoard<RawDataContainer> *clipboard);
+        //void connect(ClipBoard<RawDataContainer> *clipboard);
 
         void kill() {
             killswitch = true;
         }
     private:
-        ClipBoard<RawDataContainer> *storage;
+        //ClipBoard<RawDataContainer> *storage;
         unsigned counter;
         void init();
         void end();

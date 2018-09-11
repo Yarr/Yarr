@@ -199,6 +199,7 @@ class L1Dist : public HistogramAlgorithm {
         L1Dist() : HistogramAlgorithm() {
             h = NULL;
             r = NULL;
+            current_tag = 0;
         }
 
         ~L1Dist() {
@@ -218,6 +219,7 @@ class L1Dist : public HistogramAlgorithm {
         Histo1d *h;
         unsigned l1id;
         unsigned bcid_offset;
+        unsigned current_tag;
 };
 
 class HitsPerEvent : public HistogramAlgorithm {

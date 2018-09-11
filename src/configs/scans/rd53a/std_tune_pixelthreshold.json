@@ -34,7 +34,10 @@
         "config": {
           "max": 15,
           "min": -15,
-          "step": 8
+          "step": 8,
+          "tuneDiff": true,
+          "tuneLin": true
+
         },
         "loopAction": "Rd53aPixelFeedback"
       },
@@ -60,7 +63,7 @@
           "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 5000,
+          "frequency": 20000,
           "noInject": false,
           "time": 0
         },
@@ -70,10 +73,10 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "DiffPixelThresholdTune",
+    "name": "StdPixelThresholdTune",
     "prescan": {
         "InjEnDig": 0,
-        "LatencyConfig": 50,
+        "LatencyConfig": 48,
         "GlobalPulseRt": 16384
     }
   }

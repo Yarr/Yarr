@@ -196,6 +196,7 @@ int main(int argc, char *argv[]) {
         strippedScan = scanType;
     }
 
+    std::string dataDir = outputDir;
     outputDir += (toString(runCounter, 6) + "_" + strippedScan + "/");
     
     std::cout << " Scan Type/Config: " << scanType << std::endl;
@@ -225,6 +226,13 @@ int main(int argc, char *argv[]) {
     //read errno variable and catch some errors, if necessary
     //errno=1 is permission denied, errno = 17 is dir already exists, ...
     //see /usr/include/asm-generic/errno-base.h and [...]/errno.h for all codes
+    
+    // Make symlink
+    cmdStr = "rm -f " + dataDir + "last_scan && ln -s " + toString(runCounter, 6) + "_" + strippedScan + " " + dataDir + "last_scan";
+    sysExSt = system(cmdStr.c_str());
+    if(sysExSt != 0){
+        std::cerr << "Error creating symlink to output directory!" << std::endl;
+    }
 
     // Timestamp
     std::time_t now = std::time(NULL);
@@ -234,6 +242,13 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl;
     std::cout << "Timestamp: " << timestamp << std::endl;
     std::cout << "Run Number: " << runCounter;
+
+    json scanLog;
+    // Add to scan log
+    scanLog["timestamp"] = timestamp;
+    scanLog["runNumber"] = runCounter;
+    scanLog["targetCharge"] = target_charge;
+    scanLog["targetTot"] = target_tot;
 
     std::cout << std::endl;
     std::cout << "\033[1;31m#################\033[0m" << std::endl;
@@ -260,6 +275,8 @@ int main(int argc, char *argv[]) {
             return 0;
         }
         std::string controller = ctrlCfg["ctrlCfg"]["type"];
+        // Add to scan log
+        scanLog["ctrlCfg"] = ctrlCfg;
 
         hwCtrl = StdDict::getHwController(controller);
 
@@ -277,6 +294,7 @@ int main(int argc, char *argv[]) {
             return -1;
         }
     }
+    hwCtrl->setupMode();
 
     // Disable trigger in-case
     hwCtrl->setTrigEnable(0);
@@ -305,6 +323,7 @@ int main(int argc, char *argv[]) {
         } catch(json::parse_error &e) {
             std::cerr << __PRETTY_FUNCTION__ << " : " << e.what() << std::endl;
         }
+        scanLog["connectivity"] = config;
 
         if (config["chipType"].empty() || config["chips"].empty()) {
             std::cerr << __PRETTY_FUNCTION__ << " : invalid config, chip type or chips not specified!" << std::endl;
@@ -328,6 +347,8 @@ int main(int argc, char *argv[]) {
                         std::cout << "Loading config file: " << chipConfigPath << std::endl;
                         json cfg = json::parse(cfgFile);
                         dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->fromFileJson(cfg);
+                        if (!chip["locked"].empty())
+                            dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->setLocked(chip["locked"]);
                         cfgFile.close();
                     } else {
                         std::cout << "Config file not found, using default!" << std::endl;
@@ -362,6 +383,14 @@ int main(int argc, char *argv[]) {
                 for (unsigned int dc = 0; dc < dynamic_cast<Fei4*>(fe)->n_DC; dc++) {
                     dynamic_cast<Fei4*>(fe)->En(dc).setAll(1);
                     dynamic_cast<Fei4*>(fe)->Hitbus(dc).setAll(0);
+                }
+            } else if (chipType == "RD53A") {
+                std::cout << "Resetting enable/hitbus pixel mask to all enabled!" << std::endl;
+                for (unsigned int col = 0; col < dynamic_cast<Rd53a*>(fe)->n_Col; col++) {
+                    for (unsigned row = 0; row < dynamic_cast<Rd53a*>(fe)->n_Row; row ++) {
+                        dynamic_cast<Rd53a*>(fe)->setEn(col, row, 1);
+                        dynamic_cast<Rd53a*>(fe)->setHitbus(col, row, 1);
+                    }
                 }
             }
         }
@@ -401,10 +430,24 @@ int main(int argc, char *argv[]) {
     hwCtrl->setRxEnable(bookie.getRxMask());
     std::cout << "-> Setting Rx Mask to: 0x" << std::hex << bookie.getRxMask() << std::dec << std::endl;
     
+    hwCtrl->runMode();
+
     std::cout << std::endl;
     std::cout << "\033[1;31m##############\033[0m" << std::endl;
     std::cout << "\033[1;31m# Setup Scan #\033[0m" << std::endl;
     std::cout << "\033[1;31m##############\033[0m" << std::endl;
+
+    // Make backup of scan config
+    
+    // Create backup of current config
+    if (scanType.find("json") != std::string::npos) {
+        // TODO fix folder
+        std::ifstream cfgFile(scanType);
+        std::ofstream backupCfgFile(outputDir + strippedScan + ".json");
+        backupCfgFile << cfgFile.rdbuf();
+        backupCfgFile.close();
+        cfgFile.close();
+    }
 
     // TODO Make this nice
     std::unique_ptr<ScanBase> s = buildScan(scanType, bookie );
@@ -523,6 +566,11 @@ int main(int argc, char *argv[]) {
     // Call constructor (eg shutdown Emu threads)
     hwCtrl.reset();
 
+    // Save scan log
+    std::ofstream scanLogFile(outputDir + "scanLog.json");
+    scanLogFile << std::setw(4) << scanLog;
+    scanLogFile.close();
+
     // Need this folder to plot
     if (system("mkdir -p /tmp/$USER") < 0) {
         std::cerr << "#ERROR# Problem creating /tmp/$USER folder. Plots might work." << std::endl;
@@ -535,12 +583,16 @@ int main(int argc, char *argv[]) {
         if (fe->isActive()) {
             
             // Save config
-            std::cout << "-> Saving config of FE " << dynamic_cast<FrontEndCfg*>(fe)->getName() << " to " << feCfgMap.at(fe) << std::endl;
-            json jTmp;
-            dynamic_cast<FrontEndCfg*>(fe)->toFileJson(jTmp);
-            std::ofstream oFTmp(feCfgMap.at(fe));
-            oFTmp << std::setw(4) << jTmp;
-            oFTmp.close();
+            if (!dynamic_cast<FrontEndCfg*>(fe)->isLocked()) {
+                std::cout << "-> Saving config of FE " << dynamic_cast<FrontEndCfg*>(fe)->getName() << " to " << feCfgMap.at(fe) << std::endl;
+                json jTmp;
+                dynamic_cast<FrontEndCfg*>(fe)->toFileJson(jTmp);
+                std::ofstream oFTmp(feCfgMap.at(fe));
+                oFTmp << std::setw(4) << jTmp;
+                oFTmp.close();
+            } else {
+                std::cout << "Not saving config for FE " << dynamic_cast<FrontEndCfg*>(fe)->getName() << " as it is protected!" << std::endl;
+            }
 
             // Save extra config in data folder
             std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getConfigFile() + ".after");
@@ -559,9 +611,9 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-    std::string lsCmd = "ls -1 " + outputDir + "*.p*";
+    std::string lsCmd = "ls -1 " + dataDir + "last_scan/*.p*";
     if (system(lsCmd.c_str()) < 0) {
-        std::cout << "Find plots in: " << outputDir << std::endl;
+        std::cout << "Find plots in: " << dataDir + "last_scan" << std::endl;
     }
     return 0;
 }
@@ -704,6 +756,9 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
                     } else if (algo_name == "HitsPerEvent") {
                         histogrammer.addHistogrammer(new HitsPerEvent());
                         std::cout << "  ... adding " << algo_name << std::endl;
+                    } else if (algo_name == "DataArchiver") {
+                        histogrammer.addHistogrammer(new DataArchiver((outputDir + "data.raw")));
+                        std::cout << "  ... adding " << algo_name << std::endl;
                     } else {
                         std::cerr << "#ERROR# Histogrammer \"" << algo_name << "\" unknown, skipping!" << std::endl;
                     }
@@ -774,6 +829,9 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                      } else if (algo_name == "NoiseAnalysis") {
                         std::cout << "  ... adding " << algo_name << std::endl;
                         ana.addAlgorithm(new NoiseAnalysis());
+                     } else if (algo_name == "NoiseTuning") {
+                        std::cout << "  ... adding " << algo_name << std::endl;
+                        ana.addAlgorithm(new NoiseTuning());
                      } else if (algo_name == "ScurveFitter") {
                         std::cout << "  ... adding " << algo_name << std::endl;
                         ana.addAlgorithm(new ScurveFitter());

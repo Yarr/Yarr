@@ -42,11 +42,11 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
         Fei4(TxCore *arg_core, unsigned arg_channel);
         Fei4(TxCore *arg_core, unsigned arg_txchannel, unsigned arg_rxchannel);
 
-        void init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override;
+        void init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override final;
 
         ~Fei4();
 
-        void configure() override;
+        void configure() override final;
         void configureGlobal();
         void configurePixels(unsigned lsb=0, unsigned msb=Fei4PixelCfg::n_Bits);
 
@@ -54,7 +54,7 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
             runMode(chipId, mode);
         }
 
-        void makeGlobal() override {
+        void makeGlobal() override final {
             chipId = 8;
         }
 
@@ -64,9 +64,14 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
         void loadIntoShiftReg(unsigned pixel_latch);
         void loadIntoPixel(unsigned pixel_latch);
         void shiftByOne();
-        void writeNamedRegister(std::string name, uint16_t value) override;
+        void writeNamedRegister(std::string name, uint16_t value) override final;
         void readPixelRegister(unsigned colpr_addr, unsigned latch);
         void dummyCmd();
+
+        void maskPixel(unsigned col, unsigned row) override {
+            this->setEn(col+1, row+1, 0);
+            this->setHitbus(col+1, row+1, 1);
+        }
 
         void writeRegister(Fei4Register Fei4GlobalCfg::*ref, uint16_t cfgBits){
             setValue(ref, cfgBits);

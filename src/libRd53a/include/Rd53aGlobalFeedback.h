@@ -30,6 +30,7 @@ class Rd53aGlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
         // TODO should probably register a single function
         void feedback(unsigned channel, double sign, bool last = false);
         void feedbackBinary(unsigned channel, double sign, bool last = false);
+        void feedbackStep(unsigned channel, double sign, bool last = false);
 
     protected:
     private:
@@ -42,6 +43,7 @@ class Rd53aGlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
         std::map<unsigned, unsigned> m_localStep;
         std::map<unsigned, int> m_oldSign;
         std::map<unsigned, bool> m_doneMap;
+        unsigned m_pixelReg;
 
         void writePar();
         bool allDone();

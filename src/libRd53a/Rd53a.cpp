@@ -27,6 +27,7 @@ Rd53a::Rd53a(TxCore *core) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
 	active = true;
     geo.nRow = 192;
     geo.nCol = 400;
+    core->setClkPeriod(6.25e-9);
 }
 
 Rd53a::Rd53a(TxCore *core, unsigned arg_channel) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
@@ -35,6 +36,7 @@ Rd53a::Rd53a(TxCore *core, unsigned arg_channel) : FrontEnd(), Rd53aCfg(), Rd53a
 	active = true;
     geo.nRow = 192;
     geo.nCol = 400;
+    core->setClkPeriod(6.25e-9);
 }
 
 Rd53a::Rd53a(TxCore *core, unsigned arg_txChannel, unsigned arg_rxChannel) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
@@ -43,6 +45,7 @@ Rd53a::Rd53a(TxCore *core, unsigned arg_txChannel, unsigned arg_rxChannel) : Fro
 	active = true;
     geo.nRow = 192;
     geo.nCol = 400;
+    core->setClkPeriod(6.25e-9);
 }
 
 void Rd53a::init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
@@ -51,6 +54,7 @@ void Rd53a::init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChanne
     rxChannel = arg_rxChannel;
     geo.nRow = 192;
     geo.nCol = 400;
+    core->setClkPeriod(6.25e-9);
 }
 
 void Rd53a::writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value) {
@@ -94,13 +98,14 @@ void Rd53a::configureInit() {
     this->writeRegister(&Rd53a::GlobalPulseRt, 0x007F); // Reset a whole bunch of things
     this->globalPulse(m_chipId, 8);
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    this->writeRegister(&Rd53a::GlobalPulseRt, 0x4100); //activate monitor and reset sync FE
+    this->writeRegister(&Rd53a::GlobalPulseRt, 0x4100); //activate monitor and prime sync FE AZ
     this->globalPulse(m_chipId, 8);
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     this->ecr();
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     this->bcr();
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    while(!core->isCmdEmpty()){;}
 }
 
 void Rd53a::configureGlobal() {
@@ -156,7 +161,8 @@ void Rd53a::configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels) 
 
 void Rd53a::writeNamedRegister(std::string name, uint16_t value) {
     std::cout << __PRETTY_FUNCTION__ << " : " << name << " -> " << value << std::endl;
-    writeRegister(regMap[name], value);
+    if (regMap.find(name) != regMap.end())
+        writeRegister(regMap[name], value);
 }
 
 // TODO remove magic numbers

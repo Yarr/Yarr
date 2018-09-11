@@ -29,6 +29,8 @@ class Rd53aMaskLoop : public LoopActionBase {
         void end();
         void execPart1();
         void execPart2();
+
+        std::map<FrontEnd*, std::array<uint16_t, Rd53a::n_DC*Rd53a::n_Row>> m_pixRegs;
 };
 
 #endif

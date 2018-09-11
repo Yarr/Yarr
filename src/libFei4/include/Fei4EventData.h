@@ -19,9 +19,9 @@
 #include "LoopStatus.h"
 
 struct Fei4Hit {
-    unsigned col;
-    unsigned row;
-    unsigned tot;
+    uint16_t col;
+    uint16_t row;
+    uint16_t tot;
 };
 
 class Fei4Cluster {

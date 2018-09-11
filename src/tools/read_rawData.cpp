@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <array>
 
 #include "Fei4EventData.h"
 #include "Histo1d.h"
@@ -42,14 +43,24 @@ int main(int argc, char* argv[]) {
     hitsPerTrigger.setXaxisTitle("# of Clusters");
     hitsPerTrigger.setYaxisTitle("# of Events");
 
-    Histo1d bcid("bcid", 65536, -0.5, 65535.5, typeid(void));
-    Histo1d bcidDiff("bcidDiff", 1001, -0.5, 1000.5, typeid(void));
-    Histo1d l1id("l1id", 1001, -0.5, 1000.5, typeid(void));
+    Histo1d bcid("bcid", 32768, -0.5, 32767.5, typeid(void));
+    bcid.setXaxisTitle("BCID");
+    bcid.setYaxisTitle("Number of Trigger");
 
-    Histo2d occupancy("occupancy", 64, 0.5, 64.5, 64, 0.5, 64.5, typeid(void));
+    Histo1d bcidDiff("bcidDiff", 32768, -0.5, 32767.5, typeid(void));
+    bcidDiff.setXaxisTitle("Delta BCID");
+    bcidDiff.setYaxisTitle("Number of Trigger");
+
+    Histo1d l1id("l1id", 32, -0.5, 31.5, typeid(void));
+    l1id.setXaxisTitle("L1Id");
+    l1id.setYaxisTitle("Number of Trigger");
+
+    Histo2d occupancy("occupancy", 400, 0.5, 400.5, 192, 0.5, 192.5, typeid(void));
     occupancy.setXaxisTitle("Column");
     occupancy.setYaxisTitle("Row");
     occupancy.setZaxisTitle("Hits");
+
+    const std::array<unsigned, 16> l1ToTag = {{1,1,2,2,2,2,3,3,3,3,4,4,4,4,0,0}};
 
     for (int i=1; i<argc; i++) {
         std::cout << "Opening file: " << argv[i] << std::endl;
@@ -68,40 +79,75 @@ int main(int argc, char* argv[]) {
         int max_bcid = 0;
         int trigger = 0;
         int old_l1id = -1;
-    
+
         Fei4Event *next_event = new Fei4Event;
         Fei4Event *prev_event = new Fei4Event;
-        
+
         next_event->fromFileBinary(file);
         while (file) {
-            int now = file.tellg();
-            std::cout << "\r" << (double)now/(double)size*100 << "%\t\t" << std::flush;
-                
+            //int now = file.tellg();
+            //std::cout << "\r" << (double)now/(double)size*100 << "%\t\t" << std::flush;
+
             Fei4Event *event = new Fei4Event(*next_event);
             delete prev_event;
             prev_event = next_event;
             next_event = new Fei4Event;
 
             next_event->fromFileBinary(file);
-            if (!file)
+
+            if (l1ToTag[prev_event->l1id%16] != prev_event->tag)
+                continue;
+
+            if (!file) {
                 break;
-            while ((((int)next_event->bcid+65535) - (int)prev_event->bcid)%65535 == 1) {
+            }
+
+
+            if (l1ToTag[prev_event->l1id%16] != prev_event->tag) {
+                std::cout << "############" << std::endl;
+                std::cout << "Tag: " << prev_event->tag << std::endl;
+                std::cout << "L1Id: " << prev_event->l1id << std::endl;
+                std::cout << "BCId: " << prev_event->bcid << std::endl;
+                std::cout << "Hits: " << prev_event->nHits << std::endl;
+            }
+
+            int l1_count = 1;
+            while ((((int)next_event->bcid+32768) - (int)prev_event->bcid)%32768 == 1) {
                 event->addEvent(*next_event);
+                l1_count++;
+                if (l1_count > 16 && false) {
+                    std::cout << "############" << std::endl;
+                    std::cout << "Tag: " << next_event->tag << std::endl;
+                    std::cout << "L1Id: " << next_event->l1id << std::endl;
+                    std::cout << "BCId: " << next_event->bcid << std::endl;
+                    std::cout << "Hits: " << next_event->nHits << std::endl;
+
+                }
+                if (l1ToTag[prev_event->l1id%16] != prev_event->tag) {
+                    std::cout << "############" << std::endl;
+                    std::cout << "Tag: " << next_event->tag << std::endl;
+                    std::cout << "L1Id: " << next_event->l1id << std::endl;
+                    std::cout << "BCId: " << next_event->bcid << std::endl;
+                    std::cout << "Hits: " << next_event->nHits << std::endl;
+                }
+
                 delete prev_event;
                 prev_event = next_event;
                 next_event = new Fei4Event;
                 next_event->fromFileBinary(file);
                 if (!file)
                     break;
+
             }
-            
-            /*
-            std::cout << "############" << std::endl;
-            std::cout << "Tag: " << event->tag << std::endl;
-            std::cout << "L1Id: " << event->l1id << std::endl;
-            std::cout << "BCId: " << event->bcid << std::endl;
-            std::cout << "Hits: " << event->nHits << std::endl;
-            */
+
+            if (l1_count != 16)
+                std::cout << "L1 count: " << l1_count << " at event " << count << " L1ID(" << event->l1id <<") BCID(" << event->bcid << ") TAG(" << event->tag << ") HITS(" << event->nHits << ")" << std::endl;
+
+            if (event->l1id == 0 && event->bcid == 0 && event->tag == 0) {
+                for (auto hit : event->hits) {
+                    std::cout << "Col(" << hit.col << ") Row(" << hit.row << ") ToT(" << hit.tot << ")" << std::endl;
+                }
+            }
 
             hitsPerEvent.fill(event->nHits);
             l1id.fill(event->l1id);
@@ -110,7 +156,7 @@ int main(int argc, char* argv[]) {
             if (max_bcid < event->bcid)
                 max_bcid = event->bcid;
 
-            if ((event->l1id - old_l1id) > 0|| event->l1id < old_l1id) {
+            if ((event->l1id - old_l1id) > 0 || event->l1id < old_l1id) {
                 trigger++;
             }
             old_l1id = event->l1id;
@@ -122,10 +168,10 @@ int main(int argc, char* argv[]) {
 
             bcid.fill(event->bcid, event->nHits);
 
-            if ((int)event->bcid - old_bcid < 0 && ((int)event->bcid-old_bcid+65535) > 10) {// wrap around, just reset
-                bcidDiff.fill((int)event->bcid-old_bcid+65535);
+            if ((int)event->bcid - old_bcid < 0 && ((int)event->bcid-old_bcid+32768) > 16) {// wrap around, just reset
+                bcidDiff.fill((int)event->bcid-old_bcid+32768);
                 old_bcid = event->bcid;
-            } else if ((int)event->bcid - old_bcid > 10) { 
+            } else if ((int)event->bcid - old_bcid > 16) { 
                 bcidDiff.fill((int)event->bcid-old_bcid);
                 old_bcid = event->bcid;
             }
@@ -149,23 +195,29 @@ int main(int argc, char* argv[]) {
 
             }
             if (event->clusters.size() > 0 && plotIt < 100) {
-
-                eventScreen = new Histo2d((std::to_string(nonZero_cnt) + "-eventScreen"), 64, 0.5, 64.5, 64, 0.5, 64.5, typeid(void));
-                eventScreen->setXaxisTitle("Column");
-                eventScreen->setYaxisTitle("Row");
-                eventScreen->setZaxisTitle("ToT");
-
+                if (eventScreen == NULL) {
+                    eventScreen = new Histo2d((std::to_string(nonZero_cnt) + "-eventScreen"), 400, 0.5, 400.5, 192, 0.5, 192.5, typeid(void));
+                    eventScreen->setXaxisTitle("Column");
+                    eventScreen->setYaxisTitle("Row");
+                    eventScreen->setZaxisTitle("ToT");
+                }
                 int cluster_cnt = 1;
                 for (auto cluster: event->clusters) {
                     for (auto hit : cluster.hits) {
-                        std::cout << hit->col << " " << hit->row << std::endl;
+                        //std::cout << hit->col << " " << hit->row << std::endl;
                         eventScreen->fill(hit->col, hit->row, hit->tot);
                     }
                     cluster_cnt++;
                 }
-                eventScreen->plot(std::to_string(plotIt));
+                if (plotIt%10 == 9) {
+                    eventScreen->plot(std::to_string(plotIt), "offline/");
+                    delete eventScreen;
+                    eventScreen = new Histo2d((std::to_string(nonZero_cnt) + "-eventScreen"), 400, 0.5, 400.5, 192, 0.5, 192.5, typeid(void));
+                    eventScreen->setXaxisTitle("Column");
+                    eventScreen->setYaxisTitle("Row");
+                    eventScreen->setZaxisTitle("ToT");
+                }
                 plotIt++;
-                delete eventScreen;
             }
 
             count ++;
@@ -178,12 +230,14 @@ int main(int argc, char* argv[]) {
     }
 
     int sum = 0;
-    for (unsigned i=0; i<64*64; i++) {
+    for (unsigned i=0; i<400*192; i++) {
         sum += occupancy.getBin(i);
     }
-    double mean=(double)sum/4096.0;
+    double mean=(double)sum/(400.0*192.0);
     std::cout << "Occupancy mean = " << mean << std::endl;
-    for (unsigned i=0; i<64*64; i++) {
+    if (mean < 3.0) 
+        mean = 3;
+    for (unsigned i=0; i<400*192; i++) {
         if (occupancy.getBin(i) > (mean*5)) {
             std::cout << "Flagged bin " << i << " nosiy " << occupancy.getBin(i) << std::endl;
             occupancy.setBin(i, 0);
@@ -192,16 +246,16 @@ int main(int argc, char* argv[]) {
 
 
 
-    bcid.plot("offline");
-    l1id.plot("offline");
-    bcidDiff.plot("offline");
-    hitsPerEvent.plot("offline");
-    hitsPerCluster.plot("offline");
-    clusterColLength.plot("offline");
-    clusterRowWidth.plot("offline");
-    clusterWidthLengthCorr.plot("offline");
-    clustersPerEvent.plot("offline");
-    occupancy.plot("offline");
+    bcid.plot("offline", "offline/");
+    l1id.plot("offline", "offline/");
+    bcidDiff.plot("offline", "offline/");
+    hitsPerEvent.plot("offline", "offline/");
+    hitsPerCluster.plot("offline", "offline/");
+    clusterColLength.plot("offline", "offline/");
+    clusterRowWidth.plot("offline", "offline/");
+    clusterWidthLengthCorr.plot("offline", "offline/");
+    clustersPerEvent.plot("offline", "offline/");
+    occupancy.plot("offline", "offline/");
 
     std::cout << "Cluster Column Length mean: " << clusterColLength.getMean() << " +- " << clusterColLength.getStdDev() << std::endl;
     std::cout << "Cluster Row Width mean:     " << clusterRowWidth.getMean() << " +- " << clusterRowWidth.getStdDev() << std::endl;
@@ -209,6 +263,6 @@ int main(int argc, char* argv[]) {
     std::cout << "BCIDdiff entries: " << bcidDiff.getEntries() << std::endl;
     std::cout << "Number of clusters: " << clustersPerEvent.getEntries() << std::endl;
     std::cout << "Number of events: " << hitsPerEvent.getEntries() << std::endl;
-    
+
     return 0;
 }

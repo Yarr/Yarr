@@ -37,13 +37,13 @@ void Rd53aGlobalCfg::init() {
 
     // Sync FE
     //5
-    SyncIbiasp1.init(5, &m_cfg[5], 0, 9, 100); regMap["SyncIbiasp1"] = &Rd53aGlobalCfg::SyncIbiasp1;
+    SyncIbiasp1.init(5, &m_cfg[5], 0, 9, 80); regMap["SyncIbiasp1"] = &Rd53aGlobalCfg::SyncIbiasp1;
     //6
-    SyncIbiasp2.init(6, &m_cfg[6], 0, 9, 150); regMap["SyncIbiasp2"] = &Rd53aGlobalCfg::SyncIbiasp2;
+    SyncIbiasp2.init(6, &m_cfg[6], 0, 9, 120); regMap["SyncIbiasp2"] = &Rd53aGlobalCfg::SyncIbiasp2;
     //7
-    SyncIbiasSf.init(7, &m_cfg[7], 0, 9, 100); regMap["SyncIbiasSf"] = &Rd53aGlobalCfg::SyncIbiasSf;
+    SyncIbiasSf.init(7, &m_cfg[7], 0, 9, 80); regMap["SyncIbiasSf"] = &Rd53aGlobalCfg::SyncIbiasSf;
     //8
-    SyncIbiasKrum.init(8, &m_cfg[8], 0, 9, 40); regMap["SyncIbiasKrum"] = &Rd53aGlobalCfg::SyncIbiasKrum;
+    SyncIbiasKrum.init(8, &m_cfg[8], 0, 9, 55); regMap["SyncIbiasKrum"] = &Rd53aGlobalCfg::SyncIbiasKrum;
     //9
     SyncIbiasDisc.init(9, &m_cfg[9], 0, 9, 300); regMap["SyncIbiasDisc"] = &Rd53aGlobalCfg::SyncIbiasDisc;
     //10
@@ -56,8 +56,8 @@ void Rd53aGlobalCfg::init() {
     SyncVrefKrum.init(13, &m_cfg[13], 0, 10, 450); regMap["SyncVrefKrum"] = &Rd53aGlobalCfg::SyncVrefKrum;
     //30
     SyncAutoZero.init(30, &m_cfg[30], 3, 2, 0); regMap["SyncAutoZero"] = &Rd53aGlobalCfg::SyncAutoZero;
-    SyncSelC2F.init(30, &m_cfg[30], 2, 1, 1); regMap["SyncSelC2F"] = &Rd53aGlobalCfg::SyncSelC2F;
-    SyncSelC4F.init(30, &m_cfg[30], 1, 1, 0); regMap["SyncSelC4F"] = &Rd53aGlobalCfg::SyncSelC4F;
+    SyncSelC2F.init(30, &m_cfg[30], 2, 1, 0); regMap["SyncSelC2F"] = &Rd53aGlobalCfg::SyncSelC2F;
+    SyncSelC4F.init(30, &m_cfg[30], 1, 1, 1); regMap["SyncSelC4F"] = &Rd53aGlobalCfg::SyncSelC4F;
     SyncFastTot.init(30, &m_cfg[30], 0, 1, 0); regMap["SyncFastTot"] = &Rd53aGlobalCfg::SyncFastTot;
 
     // Linear FE
@@ -68,7 +68,7 @@ void Rd53aGlobalCfg::init() {
     //16
     LinKrumCurr.init(16, &m_cfg[16], 0, 9, 50); regMap["LinKrumCurr"] = &Rd53aGlobalCfg::LinKrumCurr;
     //17
-    LinLdac.init(17, &m_cfg[17], 0, 10, 130); regMap["LinLdac"] = &Rd53aGlobalCfg::LinLdac;
+    LinLdac.init(17, &m_cfg[17], 0, 10, 100); regMap["LinLdac"] = &Rd53aGlobalCfg::LinLdac;
     //18
     LinComp.init(18, &m_cfg[18], 0, 9, 110); regMap["LinComp"] = &Rd53aGlobalCfg::LinComp;
     //19
@@ -100,7 +100,7 @@ void Rd53aGlobalCfg::init() {
     //Power
     //31
     SldoAnalogTrim.init(31, &m_cfg[31], 5, 5, 26); regMap["SldoAnalogTrim"] = &Rd53aGlobalCfg::SldoAnalogTrim;
-    SldoDigitalTrim.init(31, &m_cfg[31], 0, 5, 20); regMap["SldoDigitalTrim"] = &Rd53aGlobalCfg::SldoDigitalTrim;
+    SldoDigitalTrim.init(31, &m_cfg[31], 0, 5, 26); regMap["SldoDigitalTrim"] = &Rd53aGlobalCfg::SldoDigitalTrim;
 
     // Digital Matrix
     //32
@@ -243,22 +243,22 @@ void Rd53aGlobalCfg::init() {
     HitOr3MaskSync.init(81, &m_cfg[81], 0, 16, 0); regMap["HitOr3MaskSync"] = &Rd53aGlobalCfg::HitOr3MaskSync;
     //82-89
     HitOr0MaskLin0.init(82, &m_cfg[82], 0, 16, 0); regMap["HitOr0MaskLin0"] = &Rd53aGlobalCfg::HitOr0MaskLin0;
-    HitOr0MaskLin1.init(83, &m_cfg[83], 0, 16, 0); regMap["HitOr0MaskLin1"] = &Rd53aGlobalCfg::HitOr0MaskLin1;
+    HitOr0MaskLin1.init(83, &m_cfg[83], 0, 1, 0); regMap["HitOr0MaskLin1"] = &Rd53aGlobalCfg::HitOr0MaskLin1;
     HitOr1MaskLin0.init(84, &m_cfg[84], 0, 16, 0); regMap["HitOr1MaskLin0"] = &Rd53aGlobalCfg::HitOr1MaskLin0;
-    HitOr1MaskLin1.init(85, &m_cfg[85], 0, 16, 0); regMap["HitOr1MaskLin1"] = &Rd53aGlobalCfg::HitOr1MaskLin1;
+    HitOr1MaskLin1.init(85, &m_cfg[85], 0, 1, 0); regMap["HitOr1MaskLin1"] = &Rd53aGlobalCfg::HitOr1MaskLin1;
     HitOr2MaskLin0.init(86, &m_cfg[86], 0, 16, 0); regMap["HitOr2MaskLin0"] = &Rd53aGlobalCfg::HitOr2MaskLin0;
-    HitOr2MaskLin1.init(87, &m_cfg[87], 0, 16, 0); regMap["HitOr2MaskLin1"] = &Rd53aGlobalCfg::HitOr2MaskLin1;
+    HitOr2MaskLin1.init(87, &m_cfg[87], 0, 1, 0); regMap["HitOr2MaskLin1"] = &Rd53aGlobalCfg::HitOr2MaskLin1;
     HitOr3MaskLin0.init(88, &m_cfg[88], 0, 16, 0); regMap["HitOr3MaskLin0"] = &Rd53aGlobalCfg::HitOr3MaskLin0;
-    HitOr3MaskLin1.init(89, &m_cfg[89], 0, 16, 0); regMap["HitOr3MaskLin1"] = &Rd53aGlobalCfg::HitOr3MaskLin1;
+    HitOr3MaskLin1.init(89, &m_cfg[89], 0, 1, 0); regMap["HitOr3MaskLin1"] = &Rd53aGlobalCfg::HitOr3MaskLin1;
     //90-97
     HitOr0MaskDiff0.init(90, &m_cfg[90], 0, 16, 0); regMap["HitOr0MaskDiff0"] = &Rd53aGlobalCfg::HitOr0MaskDiff0;
-    HitOr0MaskDiff1.init(91, &m_cfg[91], 0, 16, 0); regMap["HitOr0MaskDiff1"] = &Rd53aGlobalCfg::HitOr0MaskDiff1;
+    HitOr0MaskDiff1.init(91, &m_cfg[91], 0, 1, 0); regMap["HitOr0MaskDiff1"] = &Rd53aGlobalCfg::HitOr0MaskDiff1;
     HitOr1MaskDiff0.init(92, &m_cfg[92], 0, 16, 0); regMap["HitOr1MaskDiff0"] = &Rd53aGlobalCfg::HitOr1MaskDiff0;
-    HitOr1MaskDiff1.init(93, &m_cfg[93], 0, 16, 0); regMap["HitOr1MaskDiff1"] = &Rd53aGlobalCfg::HitOr1MaskDiff1;
+    HitOr1MaskDiff1.init(93, &m_cfg[93], 0, 1, 0); regMap["HitOr1MaskDiff1"] = &Rd53aGlobalCfg::HitOr1MaskDiff1;
     HitOr2MaskDiff0.init(94, &m_cfg[94], 0, 16, 0); regMap["HitOr2MaskDiff0"] = &Rd53aGlobalCfg::HitOr2MaskDiff0;
-    HitOr2MaskDiff1.init(95, &m_cfg[95], 0, 16, 0); regMap["HitOr2MaskDiff1"] = &Rd53aGlobalCfg::HitOr2MaskDiff1;
+    HitOr2MaskDiff1.init(95, &m_cfg[95], 0, 1, 0); regMap["HitOr2MaskDiff1"] = &Rd53aGlobalCfg::HitOr2MaskDiff1;
     HitOr3MaskDiff0.init(96, &m_cfg[96], 0, 16, 0); regMap["HitOr3MaskDiff0"] = &Rd53aGlobalCfg::HitOr3MaskDiff0;
-    HitOr3MaskDiff1.init(97, &m_cfg[97], 0, 16, 0); regMap["HitOr3MaskDiff1"] = &Rd53aGlobalCfg::HitOr3MaskDiff1;
+    HitOr3MaskDiff1.init(97, &m_cfg[97], 0, 1, 0); regMap["HitOr3MaskDiff1"] = &Rd53aGlobalCfg::HitOr3MaskDiff1;
     //98
     AdcRefTrim.init(98, &m_cfg[98], 6, 4, 0); regMap["AdcRefTrim"] = &Rd53aGlobalCfg::AdcRefTrim;
     AdcTrim.init(98, &m_cfg[98], 0, 6, 0); regMap["AdcTrim"] = &Rd53aGlobalCfg::AdcTrim;

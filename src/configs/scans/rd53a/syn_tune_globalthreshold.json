@@ -60,7 +60,7 @@
           "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 5000,
+          "frequency": 20000,
           "noInject": false,
           "time": 0
         },
@@ -70,11 +70,13 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "DiffGlobalThresholdTune",
+    "name": "SyncGlobalThresholdTune",
     "prescan": {
         "InjEnDig": 0,
-        "LatencyConfig": 50,
-        "GlobalPulseRt": 16384
+        "LatencyConfig": 48,
+        "GlobalPulseRt": 16384,
+        "LinVth": 500,
+        "DiffVth1": 500
     }
   }
 }

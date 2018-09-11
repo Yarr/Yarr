@@ -15,7 +15,7 @@ ScanFactory::ScanFactory(Bookkeeper *k) : ScanBase(k) {
 
 void ScanFactory::init() {
     // TODO I don't like this, we assume the innermost loops get the data
-    dynamic_cast<StdDataLoop*>((this->getLoop(this->size()-1)).get())->connect(g_data);    
+    dynamic_cast<StdDataAction*>((this->getLoop(this->size()-1)).get())->connect(g_data);    
     
     engine.init();
 }

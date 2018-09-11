@@ -58,7 +58,7 @@
           "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 5000,
+          "frequency": 20000,
           "noInject": false,
           "time": 0
         },
@@ -71,7 +71,7 @@
     "name": "AnalogScan",
     "prescan": {
         "InjEnDig": 0,
-        "LatencyConfig": 50,
+        "LatencyConfig": 48,
         "GlobalPulseRt": 16384,
         "InjVcalDiff": 0,
         "InjVcalHigh": 2500,

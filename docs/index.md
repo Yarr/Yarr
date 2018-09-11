@@ -55,10 +55,11 @@ Support for YARR can be found in the [YARR Matter Most channel.](https://matterm
     |-- libFei4 : FE-I4B implementation
     |-- libKU040 : KU040 hw driver
     |-- libRce : HSIO2 hw driver
+    |-- libRd53a: RD53a implementation
     |-- libSpec : PCIe hw driver
     |-- libUtil : Suppert library
     |-- libYarr : YARR core libraries 
-    |-- scripts : Scripts to interface with extenral libraries (e.g. ROOT)
+    |-- scripts : Scripts to interface with extenral libraries (e.g. ROOT), primarily to produce plots
     |-- tools : Main executeables
     `-- util : Utility scrips and files
 ```

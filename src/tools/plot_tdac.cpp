@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
     
     Histo1d h1("TDacDist", 31, -15.5, 15.5, typeid(void));
     Histo2d h2("TDacMap", 400, 0.5, 400.5, 192, 0.5, 192.5, typeid(void));
-    for (unsigned col = 128; col<400; col++) {
+    for (unsigned col = 128; col<=400; col++) {
         for (unsigned row = 1; row<=192; row++) {
             int tdac = cfg["RD53A"]["PixelConfig"][col-1]["TDAC"][row-1];
             h1.fill(tdac);     
