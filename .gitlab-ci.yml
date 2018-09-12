@@ -41,4 +41,4 @@ job_test_json:
     script:
       - yum -y install npm
       - npm install jsonlint -g
-      - find src/configs/ -iname "*.json" | xargs jsonlint -q
+      - for file in $(find src/configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
