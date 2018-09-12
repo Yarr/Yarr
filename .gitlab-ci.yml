@@ -40,5 +40,5 @@ job_test_json:
     stage: build
     script:
       - yum -y install npm
-      - npm install jsonlint
+      - npm install jsonlint -g
       - jsonlint src/tune-fei4.sh
