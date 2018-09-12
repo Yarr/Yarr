@@ -35,11 +35,10 @@ job_build_cmake:
       - make -j4
       - bin/scanConsole -k
 
-job_test_json
+job_test_json:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     stage: build
     script:
       - yum -y install npm
       - npm install jsonlint
-      - jsonlint -q src/tune-fei4.sh
 
