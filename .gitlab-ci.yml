@@ -34,3 +34,11 @@ job_build_cmake:
       - cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
       - make -j4
       - bin/scanConsole -k
+
+job_test_json:
+    image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
+    stage: build
+    script:
+      - yum -y install npm
+      - npm install jsonlint -g
+      - for file in $(find src/configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
