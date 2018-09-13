@@ -3,9 +3,9 @@
 The ScanConsole is the main program which should be used to perform scans on FrontEnd ASICs.
 It currently supports three types of FrontEnds:
     
-- [FE-I4B](fei4)
-- [FE65-P2](fe65p2)
-- [RD53A](rd53a)
+- FE-I4B
+- FE65-P2
+- RD53A
 
 ## Quick Start
 
@@ -15,7 +15,7 @@ If you just want to see something running, execute the following:
 $ bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p
 ```
 
-This runs a digitalscan with the FE-I4B emulator.
+This runs a digitalscan with the FE-I4B emulator. This does not use or require any hardware and will run purely in software.
 
 ## Command Line Arguments
 
@@ -27,8 +27,8 @@ ScanConsole requires at min. three types of configuration files (more details be
 
 Additional command line arguements for the scanConsole are:
     
-- **-h** : prints all available command line arguments
-- **-t  <target_threshold> [<tot_target> [<charge_target>]]** : Set target values for threshold, tot, charge.
+- **-h** : this, prints all available command line arguments
+- **-t  <target_charge> [<target_tot>]** : Set target values for threshold (charge only) and tot (charge and tot).
 - **-p** : Enable plotting of results.
 - **-o <dir>** : Output directory. (Default ./data/)
 - **-m <int>** : 0 = disable pixel masking, 1 = reset pixel masking, default = enable pixel masking

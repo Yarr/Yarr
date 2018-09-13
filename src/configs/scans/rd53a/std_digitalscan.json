@@ -33,7 +33,11 @@
         "algorithm": "HitsPerEvent",
         "config": {}
       },
-      "n_count": 5
+      "5": {
+        "algorithm": "DataArchiver",
+        "config": {}
+      },
+      "n_count": 6
     },
     "loops": [
       {
@@ -74,7 +78,10 @@
         "InjEnDig": 1,
         "InjAnaMode": 0,
         "LatencyConfig": 58,
-        "GlobalPulseRt": 16384
+        "GlobalPulseRt": 16384,
+        "SyncVth": 500,
+        "LinVth" : 500,
+        "DiffVth1": 500
     }
   }
 }

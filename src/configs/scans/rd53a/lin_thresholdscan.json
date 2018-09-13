@@ -7,7 +7,7 @@
       "1": {
         "algorithm": "L1Analysis"
       },
-      "n_count": 2
+      "n_count": 1
     },
     "histogrammer": {
       "0": {
@@ -43,9 +43,9 @@
       },
       {
         "config": {
-          "max": 1000,
-          "min": 100,
-          "step": 10,
+          "max": 350,
+          "min": 50,
+          "step": 5,
           "parameter":"InjVcalDiff"
         },
         "loopAction": "Rd53aParameterLoop"
@@ -80,7 +80,10 @@
         "LatencyConfig": 50,
         "GlobalPulseRt": 16384,
         "InjVcalMed": 1000,
-        "InjVcalHigh": 1000
+        "InjVcalHigh": 1000,
+        "EnCorColDiff1": 0,
+        "EnCoreColDiff2": 0,
+        "EnCoreColSync":0
     }
   }
 }

@@ -2,7 +2,7 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "OccGlobalThresholdTune"
+        "algorithm": "OccPixelThresholdTune"
       },
       "n_count": 1
     },
@@ -30,14 +30,16 @@
       "n_count": 5
     },
     "loops": [
-      { "config": {
-          "max": 400,
-          "min": 0,
-          "step": 8,
-          "parameter": "LinVth",
-          "pixelRegs": 1
+      { 
+        "config": {
+          "max": 15,
+          "min": -15,
+          "steps": [1,1,1,1],
+          "tuneDiff": false,
+          "tuneLin": true,
+          "resetTdac": false  
         },
-        "loopAction": "Rd53aGlobalFeedback"
+        "loopAction": "Rd53aPixelFeedback"
       },
       {
         "config": {
@@ -49,10 +51,10 @@
       },
       {
         "config": {
-          "max": 33,
+          "max": 50,
           "min": 16,
           "step": 1,
-          "nSteps": 4
+          "nSteps": 17
         },
         "loopAction": "Rd53aCoreColLoop"
       },
@@ -71,13 +73,14 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "LinGlobalThresholdTune",
+    "name": "StdPixelThresholdTune",
     "prescan": {
         "InjEnDig": 0,
         "LatencyConfig": 48,
-        "GlobalPulseRt": 16384,
-        "DiffVth1": 500,
-        "SyncVth": 500
+        "GlobalPulseRt": 0,
+        "EnCoreColDiff1": 0,
+        "EnCoreColDiff2": 0,
+        "EnCoreColSync": 0
     }
   }
 }

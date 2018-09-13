@@ -31,11 +31,11 @@
     },
     "loops": [
       { "config": {
-          "max": 400,
+          "max": 500,
           "min": 0,
-          "step": 8,
-          "parameter": "LinVth",
-          "pixelRegs": 1
+          "step": 16,
+          "parameter": "DiffVth1",
+          "pixelRegs": 0
         },
         "loopAction": "Rd53aGlobalFeedback"
       },
@@ -49,8 +49,8 @@
       },
       {
         "config": {
-          "max": 33,
-          "min": 16,
+          "max": 50,
+          "min": 33,
           "step": 1,
           "nSteps": 4
         },
@@ -71,13 +71,13 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "LinGlobalThresholdTune",
+    "name": "DiffGlobalThresholdTune",
     "prescan": {
         "InjEnDig": 0,
         "LatencyConfig": 48,
         "GlobalPulseRt": 16384,
-        "DiffVth1": 500,
-        "SyncVth": 500
+        "SyncVth":500,
+        "LinVth": 500
     }
   }
 }

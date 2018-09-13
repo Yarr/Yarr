@@ -34,10 +34,10 @@
             "config": {
                 "max": 15,
                 "min": -15,
-                "steps": [8,4,2,1,1],
+                "steps": [1,1,1,1,1],
                 "tuneDiff": true,
                 "tuneLin": false,
-                "resetTdac": true
+                "resetTdac": false
             },
             "loopAction": "Rd53aPixelFeedback"
         },
