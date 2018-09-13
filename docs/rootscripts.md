@@ -37,6 +37,7 @@ Examples of all the Occupancy plots given below:
 
 ![Occupancy Plots Preview](images/OccupancyPlots_Preview.png)
 
+
 ###Threshold Plots
 
 Plots and fits 1D histograms showing [Number of Pixels] versus [Threshold Value (e)] for each of the RD53A FEs and one stacked plot; the combined plot is used to get the fit for the stacked plot.
@@ -51,8 +52,7 @@ $ ./plotWithRoot_Threshold path/to/directory
 Examples of some of the Threshold plots given below: 
 
 ![Threshold Plots Preview](images/ThresholdPlots_Preview.png)
-
-<div style="text-align:center"><img src="images/Threshold2DPlot_Preview.png" width="600"></div>
+![Threshold 2D Plot Preview](images/Threshold2DPlot_Preview.png)
 
 
 ###Noise Plots
@@ -68,8 +68,7 @@ $ ./plotWithRoot_Noise path/to/directory
 Examples of some of the Noise plots given below: 
 
 ![Noise Plots Preview](images/NoisePlots_Preview.png)
-
-<div style="text-align:center"><img src="images/Noise2DPlot_Preview.png" width="600"></div>
+![Noise 2D Plot Preview](images/Noise2DPlot_Preview.png)
 
 ###TDAC Plots
 
@@ -88,7 +87,7 @@ Examples of some of the TDAC plots given below:
 ###Threshold/TDAC plots
 
 Plots a stacked histogram for all thresholds and their corresponding TDACs.
-Uses .json.after and ThresholdMap.dat files; this program is currently uses the first of each file found.
+Uses .json.after and ThresholdMap.dat files; this program currently uses the first of each file found.
 
 ```bash
 $ ./plotWithRoot_ThresholdTDAC path/to/directory

@@ -134,13 +134,12 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Noise path/to/directory
 				TH1* range_hist[3] = {h_range_Syn, h_range_Lin, h_range_Diff};
 				std::vector <double> pix_values;
 
-				//Fill Threshold plots	
+				//Fill Noise plots	
 				for (int i=0; i<rowno; i++) {
 					for (int j=0; j<colno; j++) {
 
 						double tmp;
 						infile >> tmp;
-						//std::cout << i*j << " " << tmp << std::endl;
 						pix_values.push_back(tmp);
 						if (tmp != 0) {	
 							h_all->Fill(tmp);
@@ -278,8 +277,6 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Noise path/to/directory
 				sprintf(rms_Diff, "RMS = %.1f #pm %.1f", h_Diff->GetRMS(), h_Diff->GetRMSError());
 				mean_rms->DrawLatex(0.18,0.87, rms_Diff);
 
-				//h_Diff->GetYaxis()->SetRangeUser(0,5000);
-				//std::cout << "Maximum	" << h_Diff->GetMaximum() << std::endl;
 				h_Diff->SetMaximum((h_Diff->GetMaximum())*1.21);
 				h_Diff->GetXaxis()->SetRangeUser((mean_hDiff - 3*rms_hDiff < 0) ? -0.5 : (mean_hDiff- 3*rms_hDiff)  , mean_hDiff + 3*rms_hDiff);
 				c_Diff->Update();				
