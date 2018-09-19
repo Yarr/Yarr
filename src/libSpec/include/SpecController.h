@@ -67,6 +67,11 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
                     m_azInterval = j["autoZero"]["interval"];
                 }
             }
+
+            // Configure Tx speed
+            if (!j["cmdPeriod"].empty()) {
+                SpecTxCore::m_clk_period = j["cmdPeriod"];
+            }
         }
 
         void setupMode() override final{

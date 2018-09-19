@@ -34,7 +34,7 @@
         "config": {
           "max": 15,
           "min": -15,
-          "step": 4,
+          "steps": [1,1,1,1,1,1,1,1],
           "tuneDiff": false,
           "tuneLin": true
 
@@ -63,7 +63,7 @@
           "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 5000,
+          "frequency": 20000,
           "noInject": false,
           "time": 0
         },

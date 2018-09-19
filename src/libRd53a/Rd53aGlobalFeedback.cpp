@@ -35,6 +35,7 @@ void Rd53aGlobalFeedback::writeConfig(json &j) {
     j["max"] = max;
     j["step"] = step;
     j["parameter"] = parName;
+    j["pixelRegs"] = m_pixelReg;
 }
 
 void Rd53aGlobalFeedback::loadConfig(json &j) {
@@ -48,7 +49,9 @@ void Rd53aGlobalFeedback::loadConfig(json &j) {
         std::cout << "  Linking parameter: " << j["parameter"] <<std::endl;
         parName = j["parameter"];
     }
-
+    if (!j["pixelRegs"].empty()) {
+        m_pixelReg = j["pixelRegs"];
+    }
 }
 
 void Rd53aGlobalFeedback::feedback(unsigned channel, double sign, bool last) {
@@ -94,6 +97,13 @@ void Rd53aGlobalFeedback::feedbackBinary(unsigned channel, double sign, bool las
 
 }
 
+void Rd53aGlobalFeedback::feedbackStep(unsigned channel, double sign, bool last) {
+    m_values[channel] = m_values[channel] + sign;
+    m_doneMap[channel] |= last;
+    keeper->mutexMap[channel].unlock();
+}
+
+
 bool Rd53aGlobalFeedback::allDone() {
     for (auto *fe : keeper->feList) {
         if (fe->getActive()) {
@@ -122,7 +132,7 @@ void Rd53aGlobalFeedback::init() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     m_done = false;
-    m_cur = min;
+    m_cur = 0;
     parPtr = keeper->globalFe<Rd53a>()->regMap[parName];
     // Init maps
     for (auto *fe : keeper->feList) {
@@ -136,6 +146,54 @@ void Rd53aGlobalFeedback::init() {
         }
     }
     this->writePar();
+
+    for (auto *fe : keeper->feList) {
+        if (fe->getActive()) {
+            Rd53a *rd53a = dynamic_cast<Rd53a*>(fe);
+            switch (m_pixelReg) {
+                case 0: // Leave TDACs as config setting
+                    break;
+                case 1: // Put TDACs to default
+                    for (unsigned col=1; col<=Rd53a::n_Col; col++) {
+                        for (unsigned row=1; row<=Rd53a::n_Row; row++) {
+                            //Initial TDAC in mid of the range
+                            if (128<col && col<=264) {
+                                rd53a->setTDAC(col-1, row-1, 8);
+                            } else if (264<col) {
+                                rd53a->setTDAC(col-1, row-1, 0);
+                            }
+                        }
+                    }
+                    break;
+                case 2: // Put TDACs to max
+                    for (unsigned col=1; col<=Rd53a::n_Col; col++) {
+                        for (unsigned row=1; row<=Rd53a::n_Row; row++) {
+                            //Initial TDAC in mid of the range
+                            if (128<col && col<=264) {
+                                rd53a->setTDAC(col-1, row-1, 0);
+                            } else if (264<col) {
+                                rd53a->setTDAC(col-1, row-1, -15);
+                            }
+                        }
+                    }
+                    break;
+                case 3: // Put TDACs to min
+                    for (unsigned col=1; col<=Rd53a::n_Col; col++) {
+                        for (unsigned row=1; row<=Rd53a::n_Row; row++) {
+                            //Initial TDAC in mid of the range
+                            if (128<col && col<=264) {
+                                rd53a->setTDAC(col-1, row-1, 15);
+                            } else if (264<col) {
+                                rd53a->setTDAC(col-1, row-1, 15);
+                            }
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
 }
 
 void Rd53aGlobalFeedback::execPart1() {
@@ -146,7 +204,6 @@ void Rd53aGlobalFeedback::execPart1() {
             keeper->mutexMap[dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()].try_lock();
         }
     }
-    m_done = this->allDone();
 }
 
 void Rd53aGlobalFeedback::execPart2() {
@@ -160,6 +217,7 @@ void Rd53aGlobalFeedback::execPart2() {
     }
     m_cur++;
     this->writePar();
+    m_done = this->allDone();
 }
 
 void Rd53aGlobalFeedback::end() {

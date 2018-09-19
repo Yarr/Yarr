@@ -1,0 +1,14 @@
+{
+    "ctrlCfg" : {
+        "type": "spec",
+        "cfg" : {
+            "specNum" : 2,
+            "spiConfig" : 3435973836,
+            "autoZero" : {
+                "word" : 0,
+                "interval" : 100
+            }
+        },
+        "cmdPeriod" : 25e-9
+    }
+}

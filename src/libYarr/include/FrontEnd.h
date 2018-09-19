@@ -61,6 +61,7 @@ class FrontEndCfg {
             name = "JohnDoe";
             txChannel = 99;
             rxChannel = 99;
+            lockCfg = false;
         }
         
 
@@ -85,11 +86,14 @@ class FrontEndCfg {
         void setConfigFile(std::string arg_configFile) {configFile = arg_configFile;}
         std::string getConfigFile() {return configFile;}
     
+        bool isLocked() {return lockCfg;}
+        void setLocked(bool v) {lockCfg = v;}
     protected:
         std::string name;
         unsigned txChannel;
         unsigned rxChannel;
         std::string configFile;
+        bool lockCfg;
 };
 
 #endif

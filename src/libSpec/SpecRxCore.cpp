@@ -44,6 +44,12 @@ RawData* SpecRxCore::readData() {
     }
 }
 
+void SpecRxCore::flushBuffer() {
+    if (verbose)
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SpecCom::flushDma();
+}
+
 uint32_t SpecRxCore::getDataRate() {
     return SpecCom::readSingle(RX_BRIDGE | RX_DATA_RATE);
 }

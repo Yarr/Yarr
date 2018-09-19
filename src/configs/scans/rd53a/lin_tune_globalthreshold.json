@@ -31,10 +31,11 @@
     },
     "loops": [
       { "config": {
-          "max": 350,
+          "max": 400,
           "min": 0,
           "step": 8,
-          "parameter": "LinVth"
+          "parameter": "LinVth",
+          "pixelRegs": 1
         },
         "loopAction": "Rd53aGlobalFeedback"
       },
@@ -60,7 +61,7 @@
           "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 5000,
+          "frequency": 20000,
           "noInject": false,
           "time": 0
         },

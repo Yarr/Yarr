@@ -43,7 +43,7 @@
       },
       {
         "config": {
-          "max": 500,
+          "max": 400,
           "min": 0,
           "step": 5,
           "parameter":"InjVcalDiff"
@@ -64,7 +64,7 @@
           "count": 50,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 1000,
+          "frequency": 20000,
           "noInject": false,
           "time": 0
         },

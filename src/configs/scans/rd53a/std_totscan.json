@@ -61,7 +61,7 @@
           "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 5000,
+          "frequency": 20000,
           "noInject": false,
           "time": 0
         },
@@ -71,7 +71,7 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "AnalogScan",
+    "name": "TotScan",
     "prescan": {
         "InjEnDig": 0,
         "LatencyConfig": 50,

@@ -20,6 +20,7 @@ class RxCore {
         virtual void maskRxEnable(uint32_t val, uint32_t mask) = 0;
 
         virtual RawData* readData() = 0;
+        virtual void flushBuffer() {}
         
         virtual uint32_t getDataRate() = 0;
         virtual uint32_t getCurCount() = 0;

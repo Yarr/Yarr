@@ -30,10 +30,11 @@ class Rd53aPixelFeedback : public LoopActionBase, public PixelFeedbackBase {
 
     protected:
     private:
-        int m_cur;
-        unsigned oldStep;
+        unsigned m_cur;
         bool tuneLin;
         bool tuneDiff;
+        bool m_resetTdac;
+        std::vector<unsigned> m_steps;
 
         std::map<unsigned, Histo2d*> m_fb;
 

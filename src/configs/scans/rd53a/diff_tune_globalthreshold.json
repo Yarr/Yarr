@@ -34,7 +34,9 @@
           "max": 500,
           "min": 0,
           "step": 16,
-          "parameter": "DiffVth1"
+          "parameter": "DiffVth1",
+          "pixelRegs": 1
+
         },
         "loopAction": "Rd53aGlobalFeedback"
       },
@@ -60,7 +62,7 @@
           "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 5000,
+          "frequency": 20000,
           "noInject": false,
           "time": 0
         },

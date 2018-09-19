@@ -64,7 +64,7 @@ The FPGA programming for the Series 7 FPGAs is somewhat more complicated, as in 
 
 ### Prerequisites
 
-* Xilinx Vivado Design Suite 2016.4 or Vivado Lab Solutions 2016.4
+* Xilinx Vivado Design Suite 2016.2 or latest Vivado Lab Solutions
 * A JTAG programmer attached to the JTAG port to the PCIe card
   * I can recommend the [Digilent JTAG HS3](https://www.digikey.com/product-detail/en/digilent-inc/210-299/1286-1047-ND/5015666)
 * Install the Xilinx cable driver, refer to [UG973](https://www.xilinx.com/support/documentation/sw_manuals/xilinx2016_4/ug973-vivado-release-notes-install-license.pdf)
