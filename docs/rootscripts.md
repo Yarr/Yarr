@@ -107,7 +107,7 @@ Examples of some of the json plots given below:
 ###Threshold/TDAC plots
 
 Plots a stacked histogram for all thresholds and their corresponding TDACs.
-Uses .json.after and ThresholdMap.dat files; this program currently uses the first of each file found.
+Uses .json.after and ThresholdMap.dat files; this program currently uses the first of each file found. If less than 25% of the pixels have values of 0, circle those pixels.
 
 ```bash
 $ ./plotWithRoot_ThresholdTDAC path/to/directory file_ext
@@ -120,7 +120,7 @@ Examples of some of the ThresholdTDAC plots given below:
 
 ###Noise Occupancy Plot
 
-Plots the noise occupancy value for each pixel.
+Plots the noise occupancy value for each pixel. If less than 25% of the pixels have values of 0, circle those pixels. 
 Uses NoiseOccupancy.dat files.
 
 ```bash
