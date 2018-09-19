@@ -164,7 +164,6 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancy path/to/directory 
 				c_Lin->Update();
 				std::string lin_ext = "_LIN.";
 				filename2 = filename.replace(filename.find(syn_ext), 8, lin_ext.append(ext)); 
-
 				c_Lin->Print(filename2.c_str());
 
 				//Diff FE Plot
