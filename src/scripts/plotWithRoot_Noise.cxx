@@ -118,7 +118,6 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Noise path/to/directory file
 			tname->SetTextFont(73);
 			tname->SetTextSizePixels(30);
 
-
 			//Map of Pixels
 			style_TH2(h_plot, xaxistitle.c_str(), yaxistitle.c_str(), zaxistitle.c_str()); 
 			TCanvas *c_plot = new TCanvas("c_plot", "c_plot", 800, 600);
