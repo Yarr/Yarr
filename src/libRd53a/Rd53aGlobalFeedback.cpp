@@ -17,7 +17,6 @@ Rd53aGlobalFeedback::Rd53aGlobalFeedback() {
     loopType = typeid(this);
     m_done = false;
     verbose = false;
-    m_pixelReg = 0;
 }
 
 Rd53aGlobalFeedback::Rd53aGlobalFeedback(Rd53aReg Rd53aGlobalCfg::*ref) : parPtr(ref) {
@@ -28,7 +27,7 @@ Rd53aGlobalFeedback::Rd53aGlobalFeedback(Rd53aReg Rd53aGlobalCfg::*ref) : parPtr
     loopType = typeid(this);
     m_done = false;
     verbose = false;
-    m_pixelReg = 0;
+    
 }
 
 void Rd53aGlobalFeedback::writeConfig(json &j) {

@@ -33,7 +33,7 @@
       { 
         "config": {
           "max": 15,
-          "min": 0,
+          "min": -15,
           "steps": [1,1,1,1],
           "tuneDiff": false,
           "tuneLin": true,
