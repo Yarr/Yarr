@@ -6,8 +6,22 @@
 #include <THStack.h>
 #include <TLegend.h>
 #include <TLatex.h>
+#include <TGraph.h>
 
 #include <RD53Style.C>
+
+//Style for TGraph
+void style_TGraph(TGraph* hist_TGraph, const char* Xtitle, const char* Ytitle ){
+	hist_TGraph->GetXaxis()->SetTitle(Xtitle);
+	hist_TGraph->GetYaxis()->SetTitle(Ytitle);
+	hist_TGraph->GetXaxis()->SetTitleSize(0.045);
+	hist_TGraph->GetXaxis()->SetTitleOffset(1.25);
+	hist_TGraph->GetYaxis()->SetTitleSize(0.05);
+	hist_TGraph->GetYaxis()->SetTitleOffset(1.5);
+	hist_TGraph->GetXaxis()->SetLabelSize(0.05);
+	hist_TGraph->GetYaxis()->SetLabelSize(0.035);
+
+}
 
 //Style for TH1
 void style_TH1(TH1* hist_TH1, const char* Xtitle, const char* Ytitle ){
