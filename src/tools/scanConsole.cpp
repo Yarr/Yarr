@@ -847,9 +847,6 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                      } else if (algo_name == "OccPixelThresholdTune") {
                         std::cout << "  ... adding " << algo_name << std::endl;
                         ana.addAlgorithm(new OccPixelThresholdTune());
-                     } else if (algo_name == "ChargeVsTot") {
-                        std::cout << "  ... adding " << algo_name << std::endl;
-                        ana.addAlgorithm(new ChargeVsTotAnalysis());
                      } else if (algo_name == "TimeWalk") {
                         std::cout << "  ... adding " << algo_name << std::endl;
                         ana.addAlgorithm(new TimeWalkAnalysis());
@@ -896,8 +893,6 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                     ana.getLastAna()->disMasking();
                 } else if (scanType == "selftrigger_noise") {
                     ana.addAlgorithm(new NoiseAnalysis());
-                } else if (scanType == "chargevstotscan") {
-                    ana.addAlgorithm(new ChargeVsTotAnalysis());
                 } else if (scanType == "timewalk") {
                     ana.addAlgorithm(new TimeWalkAnalysis());
                 } else {

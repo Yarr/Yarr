@@ -147,7 +147,7 @@ class TotAnalysis : public AnalysisAlgorithm {
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
-        void end() {}
+        void end();
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -159,8 +159,18 @@ class TotAnalysis : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> totInnerCnt;
         std::map<unsigned, Histo2d*> tot2Maps;
         std::map<unsigned, unsigned> tot2InnerCnt;
+        std::map<unsigned, Histo3d*> tot3ds;
+        std::map<unsigned, unsigned> tot3dInnerCnt;
         GlobalFeedbackBase *globalFb;
         PixelFeedbackBase *pixelFb;
+        bool useScap;
+        bool useLcap;
+        unsigned vcalMin;
+        unsigned vcalMax;
+        unsigned vcalStep;
+        unsigned vcalBins;
+        Histo2d *chargeVsTotMap = NULL;
+        std::map<unsigned, Histo2d*> chargeVsTotPixelMap;
 };
 
 class ScurveFitter : public AnalysisAlgorithm {
@@ -325,41 +335,6 @@ class NoiseTuning : public AnalysisAlgorithm {
         GlobalFeedbackBase *globalFb;
         PixelFeedbackBase *pixelFb;
         unsigned n_trigger;
-};
-
-class ChargeVsTotAnalysis : public AnalysisAlgorithm {
-    public:
-        ChargeVsTotAnalysis() : AnalysisAlgorithm() {};
-        ~ChargeVsTotAnalysis() {};
-
-        void init(ScanBase *s);
-        void processHistogram(HistogramBase *h);
-        void end();
-    private:
-        std::vector<unsigned> loops;
-        std::vector<unsigned> loopMax;
-        unsigned n_count;
-        double injections;
-        bool useScap;
-        bool useLcap;
-        unsigned vcalLoop;
-        unsigned vcalMin;
-        unsigned vcalMax;
-        unsigned vcalStep;
-        unsigned vcalBins;
-        std::map<unsigned, Histo2d*> occMaps;
-        std::map<unsigned, unsigned> occInnerCnt;
-        std::map<unsigned, Histo2d*> totMaps;
-        std::map<unsigned, unsigned> totInnerCnt;
-        std::map<unsigned, Histo3d*> tot3ds;
-        std::map<unsigned, unsigned> tot3dInnerCnt;
-
-        std::map<unsigned, Histo2d*> chargeVsTotMap;
-        std::map<unsigned, Histo2d*> chargeVsTotPixelMap;
-        double chargeMin;
-        double chargeMax;
-        double chargeStep;
-        double injectedCharge;
 };
 
 class TimeWalkAnalysis : public AnalysisAlgorithm {

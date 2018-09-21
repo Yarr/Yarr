@@ -215,6 +215,12 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
 }
 
 void TotAnalysis::init(ScanBase *s) {
+    std::shared_ptr<LoopActionBase> tmpVcalLoop(new Fei4ParameterLoop(&Fei4::PlsrDAC));
+    std::shared_ptr<LoopActionBase> tmpVcalLoop2(new Fe65p2ParameterLoop(&Fe65p2::PlsrDac));
+    std::shared_ptr<LoopActionBase> tmpVcalLoop3(new Rd53aParameterLoop());
+
+    useScap = true;
+    useLcap = true;
     n_count = 1;
     injections = 1;
     pixelFb = NULL;
@@ -267,6 +273,16 @@ void TotAnalysis::init(ScanBase *s) {
         if (l->type() == typeid(Fei4PixelFeedback*)) {
             pixelFb = dynamic_cast<PixelFeedbackBase*>(l.get());  
         }
+
+        // Vcal Loop
+        if (l->type() == tmpVcalLoop->type() ||
+                l->type() == tmpVcalLoop2->type() ||
+                l->type() == tmpVcalLoop3->type()) {
+            vcalMax = l->getMax();
+            vcalMin = l->getMin();
+            vcalStep = l->getStep();
+            vcalBins = (vcalMax-vcalMin)/vcalStep;
+        }
     }
 }
 
@@ -306,6 +322,39 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         hh->setZaxisTitle("{/Symbol S}(ToT^2)");
         tot2Maps[ident] = hh;
         tot2InnerCnt[ident] = 0;
+        Histo3d *hhh = new Histo3d(name2+"3d", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, 16, 0.5, 16.5, typeid(this));
+        hhh->setXaxisTitle("Column");
+        hhh->setYaxisTitle("Row");
+        hhh->setZaxisTitle("ToT");
+        tot3ds[ident] = hhh;
+        tot3dInnerCnt[ident] = 0;
+    }
+    if (chargeVsTotMap == NULL) {
+        FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
+        double chargeMin = feCfg->toCharge(vcalMin, useScap, useLcap);
+        double chargeMax = feCfg->toCharge(vcalMax, useScap, useLcap);
+        double chargeStep = feCfg->toCharge(vcalStep, useScap, useLcap);
+
+        Histo2d *hh = new Histo2d("ChargeVsTotMap", vcalBins+1, chargeMin-chargeStep/2, chargeMax+chargeStep/2, 160, 0.05, 16.05, typeid(this));
+        hh->setXaxisTitle("Injected Charge [e]");
+        hh->setYaxisTitle("ToT");
+        hh->setZaxisTitle("Pixels");
+        chargeVsTotMap = hh;
+
+        // For per pixel maps
+        for(unsigned col=0; col<nCol; col++) {
+            //for (unsigned row=0; row<nRow; row++) {
+            unsigned row = 100;
+            if (col%8 == 0) { // pixels every core column
+                unsigned i = row + col*nRow;
+                hh = new Histo2d("ChargeVsTotPixelMap-"+std::to_string(col)+"-"+std::to_string(row), 
+                                              vcalBins+1, chargeMin-chargeStep/2, chargeMax+chargeStep/2, 16, 0.5, 16.5, typeid(this));
+                hh->setXaxisTitle("Injected Charge [e]");
+                hh->setYaxisTitle("ToT");
+                hh->setZaxisTitle("Hits");
+                chargeVsTotPixelMap[i] = hh;
+            }
+        }
     }
 
     // Gather Histogram
@@ -318,6 +367,9 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
     } else if (h->getType() == typeid(Tot2Map*)) {
         tot2Maps[ident]->add(*(Histo2d*)h);
         tot2InnerCnt[ident]++;
+    } else if (h->getType() == typeid(Tot3d*)) {
+        tot3ds[ident]->add(*(Histo3d*)h);
+        tot3dInnerCnt[ident]++;
     } else {
         return;
     }
@@ -348,6 +400,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         Histo1d *sigmaTotDist = new Histo1d("SigmaTotDist"+std::to_string(ident), 101, -0.05, 1.05, typeid(this));
         sigmaTotDist->setXaxisTitle("Sigma ToT [bc]");
         sigmaTotDist->setYaxisTitle("Number of Pixels");
+        Histo1d *tempMeanTotDist = new Histo1d("MeanTotDistFine_"+std::to_string(ident), 160, 0.05, 16.05, typeid(this));
 
         meanTotMap->add(*totMaps[ident]);
         meanTotMap->divide(*occMaps[ident]);
@@ -357,7 +410,24 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
             double sigma = sqrt(fabs((sumTot2Map->getBin(i) - ((sumTotMap->getBin(i)*sumTotMap->getBin(i))/injections))/(injections-1)));
             sigmaTotMap->setBin(i, sigma);
             meanTotDist->fill(meanTotMap->getBin(i));
+            tempMeanTotDist->fill(meanTotMap->getBin(i));
             sigmaTotDist->fill(sigma);
+        }
+        // Tot vs charge map
+        FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
+        double currentCharge = feCfg->toCharge(ident, useScap, useLcap);
+        for (unsigned i=0; i<tempMeanTotDist->size(); i++) {
+            chargeVsTotMap->fill(currentCharge, (i+1)*0.1, tempMeanTotDist->getBin(i));
+        }
+        for(unsigned col=0; col<nCol; col++) {
+            //for (unsigned row=0; row<nRow; row++) {
+            unsigned row = 100;
+            if (col%8 == 0) {
+                unsigned i = row + col*nRow;
+                for (unsigned k=0; k<16; k++) { // Tot from 1 to 16
+                    chargeVsTotPixelMap[i]->fill(currentCharge, k+1, tot3ds[ident]->getBin((i)*16+k));
+                }
+            }
         }
 
         std::cout << "[" << channel << "] ToT Mean = " << meanTotDist->getMean() << " +- " << meanTotDist->getStdDev() << std::endl;
@@ -420,9 +490,25 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         delete occMaps[ident];
         delete totMaps[ident];
         delete tot2Maps[ident];
+        //delete tot3ds[ident];
         occInnerCnt[ident] = 0;
         totInnerCnt[ident] = 0;
         tot2InnerCnt[ident] = 0;
+        tot3dInnerCnt[ident] = 0;
+    }
+}
+
+void TotAnalysis::end() {
+    if (loops.size() != 0) { // output if it is vcal loop
+        output->pushData(chargeVsTotMap);
+        for(unsigned col=0; col<nCol; col++) {
+            //for (unsigned row=0; row<nRow; row++) {
+            unsigned row = 100;
+            if (col%8 == 0) {
+                unsigned i = row + col*nRow;
+                output->pushData(chargeVsTotPixelMap[i]);
+            }
+        }
     }
 }
 
@@ -1242,208 +1328,6 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
 }
 
 void NoiseTuning::end() {
-}
-
-void ChargeVsTotAnalysis::init(ScanBase *s) {
-    std::shared_ptr<LoopActionBase> tmpVcalLoop(new Fei4ParameterLoop(&Fei4::PlsrDAC));
-    std::shared_ptr<LoopActionBase> tmpVcalLoop2(new Fe65p2ParameterLoop(&Fe65p2::PlsrDac));
-    std::shared_ptr<LoopActionBase> tmpVcalLoop3(new Rd53aParameterLoop());
-    n_count = 1;
-    injections = 1;
-    useScap = true;
-    useLcap = true;
-    for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ((l->type() != typeid(Fei4TriggerLoop*) &&
-                    l->type() != typeid(Rd53aMaskLoop*) &&
-                    l->type() != typeid(Rd53aTriggerLoop*) &&
-                    l->type() != typeid(Rd53aCoreColLoop*) &&
-                    l->type() != typeid(Fe65p2MaskLoop*) &&
-                    l->type() != typeid(Fe65p2TriggerLoop*) &&
-                    l->type() != typeid(Fe65p2QcLoop*) &&
-                    l->type() != typeid(Fei4MaskLoop*) &&
-                    l->type() != typeid(StdDataLoop*) &&
-                    l->type() != typeid(Fei4DcLoop*))) {
-            loops.push_back(n);
-            loopMax.push_back((unsigned)l->getMax());
-        } else {
-            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
-            if (cnt == 0)
-                cnt = 1;
-            n_count = n_count*cnt;
-        }
-        if (l->type() == typeid(Fei4TriggerLoop*)) {
-            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
-            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-        if (l->type() == typeid(Rd53aTriggerLoop*)) {
-            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-        // Vcal Loop
-        if (l->type() == tmpVcalLoop->type() ||
-                l->type() == tmpVcalLoop2->type() ||
-                l->type() == tmpVcalLoop3->type()) {
-            vcalLoop = n;
-            vcalMax = l->getMax();
-            vcalMin = l->getMin();
-            vcalStep = l->getStep();
-            vcalBins = (vcalMax-vcalMin)/vcalStep+1;
-        }
-    }
-
-    // Get min/max/step charge info.
-    FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
-    chargeMin = feCfg->toCharge(vcalMin, useScap, useLcap);
-    chargeMax = feCfg->toCharge(vcalMax, useScap, useLcap);
-    chargeStep = feCfg->toCharge(vcalStep, useScap, useLcap);
-
-    // Initialize maps
-    if (chargeVsTotMap[0] == NULL) {
-        // For all pixels map
-        Histo2d *hh = new Histo2d("ChargeVsTotMap", vcalBins, chargeMin-chargeStep/2, chargeMax+chargeStep/2, 16, 0.5, 16.5, typeid(this));
-        hh->setXaxisTitle("Injected charge [e]");
-        hh->setYaxisTitle("Mean ToT");
-        hh->setZaxisTitle("Pixels");
-        chargeVsTotMap[0] = hh; // default bin
-        hh = new Histo2d("ChargeVsTotMap-finebin", vcalBins, chargeMin-chargeStep/2, chargeMax+chargeStep/2, 160, 0.05, 16.05, typeid(this));
-        hh->setXaxisTitle("Injected charge [e]");
-        hh->setYaxisTitle("Mean ToT");
-        hh->setZaxisTitle("Pixels");
-        chargeVsTotMap[1] = hh; // fine bin
-
-        // For per pixel maps
-        for(unsigned col=0; col<nCol; col++) {
-            //for (unsigned row=0; row<nRow; row++) {
-            unsigned row = 100;
-            if (col%8 == 0) { // pixels every core column
-                unsigned i = row + col*nRow;
-                Histo2d *hh = new Histo2d("ChargeVsTotPixelMap-"+std::to_string(col)+"-"+std::to_string(row), 
-                                              vcalBins, chargeMin-chargeStep/2, chargeMax+chargeStep/2, 16, 0.5, 16.5, typeid(this));
-                hh->setXaxisTitle("Injected charge [e]");
-                hh->setYaxisTitle("ToT");
-                hh->setZaxisTitle("Hits");
-                chargeVsTotPixelMap[i] = hh;
-            }
-        }
-    }
-}
-
-void ChargeVsTotAnalysis::processHistogram(HistogramBase *h) {
-    // Select correct output container
-    unsigned ident = 0;
-    unsigned offset = 0;
-    // Determine identifier
-    std::string name = "OccMap";
-    std::string name2 = "TotMap";
-    for (unsigned n=0; n<loops.size(); n++) {
-        ident += h->getStat().get(loops[n])+offset;
-        offset += loopMax[n];
-        name += "-" + std::to_string(h->getStat().get(loops[n]));
-        name2 += "-" + std::to_string(h->getStat().get(loops[n]));
-    }
-
-    // Check if Histogram exists
-    if (occMaps[ident] == NULL) {
-        Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
-        hh->setXaxisTitle("Column");
-        hh->setYaxisTitle("Row");
-        hh->setZaxisTitle("Hits");
-        occMaps[ident] = hh;
-        occInnerCnt[ident] = 0;
-        hh = new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
-        hh->setXaxisTitle("Column");
-        hh->setYaxisTitle("Row");
-        hh->setZaxisTitle("{/Symbol S}(ToT)");
-        totMaps[ident] = hh;
-        totInnerCnt[ident] = 0;
-        Histo3d *hhh = new Histo3d(name2+"3d", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, 16, 0.5, 16.5, typeid(this));
-        hhh->setXaxisTitle("Column");
-        hhh->setYaxisTitle("Row");
-        hhh->setZaxisTitle("ToT");
-        tot3ds[ident] = hhh;
-        tot3dInnerCnt[ident] = 0;
-    }
-
-    // Gather Histogram
-    if (h->getType() == typeid(OccupancyMap*)) {
-        occMaps[ident]->add(*(Histo2d*)h);
-        occInnerCnt[ident]++;
-    } else if (h->getType() == typeid(TotMap*)) {
-        totMaps[ident]->add(*(Histo2d*)h);
-        totInnerCnt[ident]++;
-    } else if (h->getType() == typeid(Tot3d*)) {
-        tot3ds[ident]->add(*(Histo3d*)h);
-        tot3dInnerCnt[ident]++;
-    } else {
-        return;
-    }
-
-    // Got all data, finish up Analysis
-    if (occInnerCnt[ident] == n_count &&
-            totInnerCnt[ident] == n_count &&
-            tot3dInnerCnt[ident] == n_count) {
-        Histo2d *meanTotMap = new Histo2d("MeanTotMap"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
-        meanTotMap->setXaxisTitle("Column");
-        meanTotMap->setYaxisTitle("Row");
-        meanTotMap->setZaxisTitle("Mean ToT [bc]");
-        Histo1d *meanTotDist = new Histo1d("MeanTotDist_"+std::to_string(ident), 160, 0.05, 16.05, typeid(this));
-        meanTotDist->setXaxisTitle("Mean ToT [bc]");
-        meanTotDist->setYaxisTitle("Number of Pixels");
-
-        meanTotMap->add(*totMaps[ident]);
-        meanTotMap->divide(*occMaps[ident]);
-
-        FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
-        injectedCharge = feCfg->toCharge(ident, useScap, useLcap);
-
-        // Fill histograms
-        for(unsigned i=0; i<meanTotMap->size(); i++) {
-            meanTotDist->fill(meanTotMap->getBin(i));
-        }
-        for (unsigned i=0; i<meanTotDist->size(); i++) {
-            for (unsigned j=0; j<2; j++) chargeVsTotMap[j]->fill(injectedCharge, (i+1)*0.1, meanTotDist->getBin(i));
-        }
-        for(unsigned col=0; col<nCol; col++) {
-            //for (unsigned row=0; row<nRow; row++) {
-            unsigned row = 100;
-            if (col%8 == 0) {
-                unsigned i = row + col*nRow;
-                for (unsigned k=0; k<16; k++) { // Tot from 1 to 16
-                    chargeVsTotPixelMap[i]->fill(injectedCharge, k+1, tot3ds[ident]->getBin((row+col*nRow)*16+k));
-                }
-            }
-        }
-
-        std::cout << "[" << channel << "] ToT Mean = " << meanTotDist->getMean() << " +- " << meanTotDist->getStdDev() << std::endl;
-
-        output->pushData(meanTotDist);
-
-        delete occMaps[ident];
-        delete totMaps[ident];
-        delete tot3ds[ident];
-        occInnerCnt[ident] = 0;
-        totInnerCnt[ident] = 0;
-        tot3dInnerCnt[ident] = 0;
-    }
-}
-
-void ChargeVsTotAnalysis::end() {
-    // output
-    for (unsigned i=0; i<2; i++) output->pushData(chargeVsTotMap[i]);
-
-    for(unsigned col=0; col<nCol; col++) {
-        //for (unsigned row=0; row<nRow; row++) {
-        unsigned row = 100;
-        if (col%8 == 0) {
-            unsigned i = row + col*nRow;
-            output->pushData(chargeVsTotPixelMap[i]);
-        }
-    }
 }
 
 void TimeWalkAnalysis::init(ScanBase *s) {
