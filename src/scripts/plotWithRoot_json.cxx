@@ -271,7 +271,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_json path/to/directory file_
 				zeros->SetTextAlign(13);
 				zeros->SetTextFont(63);
 				zeros->SetTextSizePixels(20);
-				sprintf(zeros_Lin, "Untuned Pixels = %.0i", zero_Lin);
+				sprintf(zeros_Lin, "Untuned Pixels = %i", zero_Lin);
 				zeros->DrawLatex(0.18,0.91, zeros_Lin);
 				TLegend *lin_range_legend = new TLegend(0.7,0.82,0.87,0.91);
 				lin_range_legend->SetHeader("Analog FEs", "C");
@@ -297,7 +297,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_json path/to/directory file_
 				h_range_Diff->Draw("TEXT0 SAME");
 				tname->DrawLatex(0.21,0.96,"RD53A");
 				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
-				sprintf(zeros_Diff, "Untuned Pixels = %.0i", zero_Diff);
+				sprintf(zeros_Diff, "Untuned Pixels = %i", zero_Diff);
 				zeros->DrawLatex(0.18,0.91, zeros_Diff);
 				TLegend *diff_range_legend = new TLegend(0.7,0.82,0.87,0.91);
 				diff_range_legend->SetHeader("Analog FEs", "C");

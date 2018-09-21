@@ -313,7 +313,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory f
 				tname->DrawLatex(0.21,0.96,"RD53A");
 				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 
-				sprintf(zeros_char[i], "Untuned Pixels = %.0i", zeros_FE[i]);
+				sprintf(zeros_char[i], "Untuned Pixels = %i", zeros_FE[i]);
 				zeros->DrawLatex(0.18,0.91, zeros_char[i]);
 
 				range_legend[i] = new TLegend(0.7, 0.82, 0.87, 0.91);
