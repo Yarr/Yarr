@@ -6,6 +6,8 @@ Requires root6.
 
 ##Compile with Makefile
 
+In order to use the scripts, you must first compile using make.
+
 ```bash
 $ cd Yarr/src/scripts
 $ make
@@ -23,6 +25,8 @@ $ make
 [Linking] plotWithRoot_json
 [Compiling] plotWithRoot_NoiseMap.o
 [Linking] plotWithRoot_NoiseMap
+[Compiling] plotWithRoot_ToT.o
+[Linking] plotWithRoot_ToT
 ```
 
 ##Scripts
@@ -30,7 +34,7 @@ $ make
 ###Occupancy Plots
 
 Plots 1D histograms showing [Number of Pixels] versus [Range of Occupancy Values (%)] for each of the RD53A front ends (FEs) as well as a stacked histogram.
-Uses *OccupancyMap.dat files.
+Uses OccupancyMap.dat files.
 Currently the script assumes the targeted occupancy value is 100 injections.
 
 ```bash
@@ -45,9 +49,9 @@ Examples of all the Occupancy plots given below:
 ###Threshold Plots
 
 Plots and fits 1D histograms showing [Number of Pixels] versus [Threshold Value (e)] for each of the RD53A FEs and one stacked plot; the combined plot is used to get the fit for the stacked plot.
-Plots 1D histograms showing [Number of Pixels] versus [Range of Threshold Values (deviation from the mean)] for each of the RD53A FEs.
+Plots 1D histograms showing [Number of Pixels] versus [Range of Threshold Values (deviation from the mean)] for each of the RD53A FEs and one stacked plot.
 Plots 2D histogram showing the [Threshold Value (e)] for each pixel.
-
+Uses ThresholdMap.dat files.
 
 ```bash
 $ ./plotWithRoot_Threshold path/to/directory file_ext
@@ -61,9 +65,10 @@ Examples of some of the Threshold plots given below:
 
 ###NoiseMap Plots
 
-Plots and fits 1D histograms showing [Number of Pixels] versus [Noise (e)] for each of the RD53A FEs and one stacked plot.
-Plots 1D histograms showing [Number of Pixels] versus [Range of Noise (deviation from the mean)] for each of the RD53A FEs.
+Plots 1D histograms showing [Number of Pixels] versus [Noise (e)] for each of the RD53A FEs and one stacked plot.
+Plots 1D histograms showing [Number of Pixels] versus [Range of Noise (deviation from the mean)] for each of the RD53A FEs and one stacked plot.
 Plots 2D histogram showing the [Noise (e)] for each pixel.
+Uses NoiseMap.dat files.
 
 ```bash
 $ ./plotWithRoot_NoiseMap path/to/directory file_ext
@@ -90,10 +95,10 @@ Example S-curve plot given below:
 
 ###Json Plots
 
-Plots and fits 1D histograms showing [Number of Pixels] versus [TDAC setting] for the linear and differential RD53A FEs and one stacked plot.
+Plots 1D histograms showing [Number of Pixels] versus [TDAC setting] for the linear and differential RD53A FEs.
 Plots 1D histograms showing [Number of Pixels] versus [Range of TDAC settings (deviation from the mean)] for each of the RD53A FEs.
-Plots 2D histograms showing the [TDAC setting], [Hitbus], and [EnableMask] for each pixel.
-
+Plots 2D histograms showing the [TDAC setting], [Hitbus], and [EnableMask] for each pixel. For the [Hitbus] and [EnableMask] plots, circle the pixels with values of 0, if the number of pixels of value 0 are less than 25% of the total pixels.
+Uses rd53a .json files.
 
 ```bash
 $ ./plotWithRoot_json path/to/directory file_ext
@@ -118,9 +123,22 @@ Examples of some of the ThresholdTDAC plots given below:
 ![ThresholdTDAC Plots Preview](images/ThresholdTDACPlots_Preview.png)
 
 
+###ToT Plots
+
+Plots 1D histograms showing [Number of Pixels] versus [Mean ToT (bc) ] and [Number of Pixels] versus [Sigma ToT (bc)] for each of the RD53A FEs and one stacked plot.
+Plots 2D histograms showing the [Mean ToT (bc)] and [Sigma ToT (bc)] for each pixel.
+Uses TotMap0.dat files.
+
+```bash
+$ ./plotWithRoot_ToT path/to/directory file_ext
+```
+
+Examples of some of the ToT plots given below: 
+
+
 ###Noise Occupancy Plot
 
-Plots the noise occupancy value for each pixel. If less than 25% of the pixels have values of 0, circle those pixels. 
+Plots the [Noise Occupancy (hits/bc)] for each pixel. If less than 25% of the pixels have values of 0, circle those pixels. 
 Uses NoiseOccupancy.dat files.
 
 ```bash
