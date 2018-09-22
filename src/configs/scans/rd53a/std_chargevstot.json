@@ -2,7 +2,7 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "ChargeVsTot"
+        "algorithm": "TotAnalysis"
       },
       "n_count": 1
     },
