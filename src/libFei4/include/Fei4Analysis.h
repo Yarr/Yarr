@@ -350,40 +350,4 @@ class NoiseTuning : public AnalysisAlgorithm {
         unsigned n_trigger;
 };
 
-class TimeWalkAnalysis : public AnalysisAlgorithm {
-    public:
-        TimeWalkAnalysis() : AnalysisAlgorithm() {};
-        ~TimeWalkAnalysis() {};
-
-        void init(ScanBase *s);
-        void processHistogram(HistogramBase *h);
-        void end();
-    private:
-        std::vector<unsigned> loops;
-        std::vector<unsigned> loopMax;
-        unsigned n_count;
-        unsigned injections;
-        bool useScap;
-        bool useLcap;
-        unsigned vcalLoop;
-        unsigned vcalMin;
-        unsigned vcalMax;
-        unsigned vcalStep;
-        unsigned vcalBins;
-        std::map<unsigned, Histo1d*> l1Histos;
-        std::map<unsigned, unsigned> innerCnt;
-        std::map<unsigned, Histo3d*> l13ds;
-        std::map<unsigned, unsigned> l13dinnerCnt;
-
-        Histo2d *timeWalkMap = NULL;
-        double injectedCharge;
-        double chargeMin;
-        double chargeMax;
-        double chargeStep;
-        std::vector<double> x_injectedCharge;
-        std::vector<double> y_meanL1;
-        std::vector<double> y_err_L1;
-        std::map<unsigned, Histo2d*> timeWalkPixelMap;
-};
-
 #endif
