@@ -2,7 +2,7 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "TimeWalk"
+        "algorithm": "L1Analysis"
       },
       "n_count": 1
     },
