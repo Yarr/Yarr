@@ -278,7 +278,7 @@ class L1Analysis : public AnalysisAlgorithm {
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
-        void end() {}
+        void end();
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -286,6 +286,19 @@ class L1Analysis : public AnalysisAlgorithm {
         unsigned injections;
         std::map<unsigned, Histo1d*> l1Histos;
         std::map<unsigned, unsigned> innerCnt;
+
+        bool useScap;
+        bool useLcap;
+        bool isVcalLoop;
+        unsigned vcalLoop;
+        unsigned vcalMin;
+        unsigned vcalMax;
+        unsigned vcalStep;
+        unsigned vcalBins;
+        std::map<unsigned, Histo3d*> l13ds;
+        std::map<unsigned, unsigned> l13dinnerCnt;
+        Histo2d *timeWalkMap = NULL;
+        std::map<unsigned, Histo2d*> timeWalkPixelMap;
 };
 
 class TotDistPlotter : public AnalysisAlgorithm {

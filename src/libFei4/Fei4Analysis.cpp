@@ -1012,10 +1012,14 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
 
 // TODO exclude every loop
 void L1Analysis::init(ScanBase *s) {
+    useScap = true;
+    useLcap = true;
+    isVcalLoop = false;
     n_count = 1;
     injections = 0;
     std::shared_ptr<LoopActionBase> tmpVcalLoop(new Fei4ParameterLoop(&Fei4::PlsrDAC));
     std::shared_ptr<LoopActionBase> tmpVcalLoop2(new Fe65p2ParameterLoop(&Fe65p2::PlsrDac));
+    std::shared_ptr<LoopActionBase> tmpVcalLoop3(new Rd53aParameterLoop());
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
@@ -1052,14 +1056,21 @@ void L1Analysis::init(ScanBase *s) {
             Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
             injections = trigLoop->getTrigCnt();
         }
+        // Vcal Loop
+        if (l->type() == tmpVcalLoop->type() ||
+                l->type() == tmpVcalLoop2->type() ||
+                l->type() == tmpVcalLoop3->type()) {
+            vcalLoop = n;
+            vcalMax = l->getMax();
+            vcalMin = l->getMin();
+            vcalStep = l->getStep();
+            vcalBins = (vcalMax-vcalMin)/vcalStep+1;
+            isVcalLoop = true;
+        }
     }
 }
 
 void L1Analysis::processHistogram(HistogramBase *h) {
-    // Check if right Histogram
-    if (h->getType() != typeid(L1Dist*))
-        return;
-
     // Select correct output container
     unsigned ident = 0;
     unsigned offset = 0;
@@ -1079,15 +1090,95 @@ void L1Analysis::processHistogram(HistogramBase *h) {
         hh->setYaxisTitle("Hits");
         l1Histos[ident] = hh;
         innerCnt[ident] = 0;
+        Histo3d *hhh = new Histo3d(name+"3d", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, 16, -0.5, 15.5, typeid(this));
+        hhh->setXaxisTitle("Col");
+        hhh->setYaxisTitle("Row");
+        hhh->setZaxisTitle("L1A");
+        l13ds[ident] = hhh;
+        l13dinnerCnt[ident] = 0;
+    }
+    if (timeWalkMap == NULL) {
+        FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
+        double chargeMin = feCfg->toCharge(vcalMin, useScap, useLcap);
+        double chargeMax = feCfg->toCharge(vcalMax, useScap, useLcap);
+        double chargeStep = feCfg->toCharge(vcalStep, useScap, useLcap);
+
+        // For all pixels map
+        timeWalkMap = new Histo2d("TimeWalkMap", vcalBins, chargeMin-chargeStep/2, chargeMax+chargeStep/2, 16, -0.5, 15.5, typeid(void));
+        timeWalkMap->setXaxisTitle("Injected charge [e]");
+        timeWalkMap->setYaxisTitle("L1A");
+        timeWalkMap->setZaxisTitle("Pixels");
+
+        // For per pixel map
+        for(unsigned col=0; col<nCol; col++) {
+            //for (unsigned row=0; row<nRow; row++) {
+            unsigned row = 100;
+            if (col%8 == 0) { // pixels every core column
+                unsigned i = row + col*nRow;
+                Histo2d *hh = new Histo2d("TimeWalkPixelMap-"+std::to_string(col)+"-"+std::to_string(row), 
+                                              vcalBins, chargeMin-chargeStep/2, chargeMax+chargeStep/2, 16, -0.5, 15.5, typeid(void));
+                hh->setXaxisTitle("Injected charge [e]");
+                hh->setYaxisTitle("L1A");
+                hh->setZaxisTitle("Hits");
+                timeWalkPixelMap[i] = hh;
+            }
+        }
     }
 
     // Add up Histograms
-    l1Histos[ident]->add(*(Histo1d*)h);
-    innerCnt[ident]++;
+    if (h->getType() == typeid(L1Dist*)) {
+        l1Histos[ident]->add(*(Histo1d*)h);
+        innerCnt[ident]++;
+    } else if (h->getType() == typeid(L13d*)) {
+        l13ds[ident]->add(*(Histo3d*)h);
+        l13dinnerCnt[ident]++;
+    } else {
+        return;
+    }
 
     // Got all data, finish up Analysis
     if (innerCnt[ident] == n_count) {
+        if (isVcalLoop) {
+            FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
+            double currentCharge = feCfg->toCharge(ident, useScap, useLcap);
+
+            // Fill map
+            for (unsigned i=0; i<l1Histos[ident]->size(); i++) {
+                timeWalkMap->fill(currentCharge, (i+1)*(15.5+0.5)/16-1.0, l1Histos[ident]->getBin(i));
+            }
+            for(unsigned col=0; col<nCol; col++) {
+                //for (unsigned row=0; row<nRow; row++) {
+                unsigned row = 100;
+                if (col%8 == 0) {
+                    unsigned i = row + col*nRow;
+                    for (unsigned k=0; k<16; k++) { // L1A from 0 to 15
+                        timeWalkPixelMap[i]->fill(currentCharge, k, l13ds[ident]->getBin((row+col*nRow)*16+k));
+                    }
+                }
+            }
+        }
+
         output->pushData(l1Histos[ident]);
+
+        delete l13ds[ident];
+
+        innerCnt[ident] = 0;
+        l13dinnerCnt[ident] = 0;
+    }
+}
+
+void L1Analysis::end() {
+    if (isVcalLoop) {
+        output->pushData(timeWalkMap);
+
+        for(unsigned col=0; col<nCol; col++) {
+            //for (unsigned row=0; row<nRow; row++) {
+            unsigned row = 100;
+            if (col%8 == 0) { // Pixels every core column
+                unsigned i = row + col*nRow;
+                output->pushData(timeWalkPixelMap[i]);
+            }
+        }
     }
 }
 
