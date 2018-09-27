@@ -83,8 +83,7 @@ set_property PACKAGE_PIN V24 [get_ports {fe_data_n[3]}]
 #la10_n
 #la10_p
 set_property PACKAGE_PIN U22 [get_ports {fe_data_p[4]}]
-set_property PACKAGE_PIN V22 [get_ports {fe_data_n
-[4]}]
+set_property PACKAGE_PIN V22 [get_ports {fe_data_n[4]}]
 #la11_n
 #la11_p
 set_property PACKAGE_PIN T24 [get_ports {fe_data_p[5]}]
@@ -239,8 +238,3 @@ set_property IOSTANDARD LVCMOS25 [get_ports {sdi_i}]
 #set_property IOSTANDARD LVCMOS25 [get_ports {pwdn_l[2]}]
 #set_property IOSTANDARD LVCMOS25 [get_ports {pwdn_l[1]}]
 #set_property IOSTANDARD LVCMOS25 [get_ports {pwdn_l[0]}]
-
-
-
-
-
