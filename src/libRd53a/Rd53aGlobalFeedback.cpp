@@ -17,7 +17,8 @@ Rd53aGlobalFeedback::Rd53aGlobalFeedback() {
     loopType = typeid(this);
     m_done = false;
     verbose = false;
-    m_pixelReg = 0;
+    m_pixelReg.resize(2);
+    m_pixelReg = {{0}, {0}};
 }
 
 Rd53aGlobalFeedback::Rd53aGlobalFeedback(Rd53aReg Rd53aGlobalCfg::*ref) : parPtr(ref) {
@@ -28,7 +29,8 @@ Rd53aGlobalFeedback::Rd53aGlobalFeedback(Rd53aReg Rd53aGlobalCfg::*ref) : parPtr
     loopType = typeid(this);
     m_done = false;
     verbose = false;
-    m_pixelReg = 0;
+    m_pixelReg.resize(2);
+    m_pixelReg = {{0}, {0}};
 }
 
 void Rd53aGlobalFeedback::writeConfig(json &j) {
@@ -51,7 +53,12 @@ void Rd53aGlobalFeedback::loadConfig(json &j) {
         parName = j["parameter"];
     }
     if (!j["pixelRegs"].empty()) {
-        m_pixelReg = j["pixelRegs"];
+        m_pixelReg.clear();
+        for(auto i: j["pixelRegs"])
+            m_pixelReg.push_back(i);
+        if (m_pixelReg.size() != 2) {
+            std::cerr << __PRETTY_FUNCTION__ << " --> Expected 2 values, got " << m_pixelReg.size() << std::endl;
+        }
     }
 }
 
@@ -151,42 +158,54 @@ void Rd53aGlobalFeedback::init() {
     for (auto *fe : keeper->feList) {
         if (fe->getActive()) {
             Rd53a *rd53a = dynamic_cast<Rd53a*>(fe);
-            switch (m_pixelReg) {
+            switch (m_pixelReg[0]) { // Lin regs
                 case 0: // Leave TDACs as config setting
                     break;
                 case 1: // Put TDACs to default
-                    for (unsigned col=1; col<=Rd53a::n_Col; col++) {
+                    for (unsigned col=129; col<=264; col++) {
                         for (unsigned row=1; row<=Rd53a::n_Row; row++) {
-                            //Initial TDAC in mid of the range
-                            if (128<col && col<=264) {
-                                rd53a->setTDAC(col-1, row-1, 8);
-                            } else if (264<col) {
-                                rd53a->setTDAC(col-1, row-1, 0);
-                            }
+                            rd53a->setTDAC(col-1, row-1, 8);
                         }
                     }
                     break;
                 case 2: // Put TDACs to max
-                    for (unsigned col=1; col<=Rd53a::n_Col; col++) {
+                    for (unsigned col=129; col<=264; col++) {
                         for (unsigned row=1; row<=Rd53a::n_Row; row++) {
-                            //Initial TDAC in mid of the range
-                            if (128<col && col<=264) {
-                                rd53a->setTDAC(col-1, row-1, 0);
-                            } else if (264<col) {
-                                rd53a->setTDAC(col-1, row-1, -15);
-                            }
+                            rd53a->setTDAC(col-1, row-1, 0);
                         }
                     }
                     break;
                 case 3: // Put TDACs to min
-                    for (unsigned col=1; col<=Rd53a::n_Col; col++) {
+                    for (unsigned col=129; col<=264; col++) {
                         for (unsigned row=1; row<=Rd53a::n_Row; row++) {
-                            //Initial TDAC in mid of the range
-                            if (128<col && col<=264) {
-                                rd53a->setTDAC(col-1, row-1, 15);
-                            } else if (264<col) {
-                                rd53a->setTDAC(col-1, row-1, 15);
-                            }
+                            rd53a->setTDAC(col-1, row-1, 15);
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+            switch (m_pixelReg[1]) { // Diff regs
+                case 0: // Leave TDACs as config setting
+                    break;
+                case 1: // Put TDACs to default
+                    for (unsigned col=265; col<=400; col++) {
+                        for (unsigned row=1; row<=Rd53a::n_Row; row++) {
+                            rd53a->setTDAC(col-1, row-1, 0);
+                        }
+                    }
+                    break;
+                case 2: // Put TDACs to max
+                    for (unsigned col=265; col<=400; col++) {
+                        for (unsigned row=1; row<=Rd53a::n_Row; row++) {
+                            rd53a->setTDAC(col-1, row-1, 15);
+                        }
+                    }
+                    break;
+                case 3: // Put TDACs to min
+                    for (unsigned col=265; col<=400; col++) {
+                        for (unsigned row=1; row<=Rd53a::n_Row; row++) {
+                            rd53a->setTDAC(col-1, row-1, -15);
                         }
                     }
                     break;
