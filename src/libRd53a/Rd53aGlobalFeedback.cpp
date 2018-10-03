@@ -18,7 +18,7 @@ Rd53aGlobalFeedback::Rd53aGlobalFeedback() {
     m_done = false;
     verbose = false;
     m_pixelReg.resize(2);
-    m_pixelReg = {{0}, {0}};
+    m_pixelReg = {0, 0};
 }
 
 Rd53aGlobalFeedback::Rd53aGlobalFeedback(Rd53aReg Rd53aGlobalCfg::*ref) : parPtr(ref) {
@@ -30,7 +30,7 @@ Rd53aGlobalFeedback::Rd53aGlobalFeedback(Rd53aReg Rd53aGlobalCfg::*ref) : parPtr
     m_done = false;
     verbose = false;
     m_pixelReg.resize(2);
-    m_pixelReg = {{0}, {0}};
+    m_pixelReg = {0, 0};
 }
 
 void Rd53aGlobalFeedback::writeConfig(json &j) {
