@@ -8,7 +8,7 @@
 #include <RD53Style.h>
 
 int main(int argc, char *argv[]) { //./plotWithRoot_Occupancy path/to/directory file_ext
-	//Example file extensions: png, pdf, C	
+	//Example file extensions: png, pdf, C, root	
 
 	SetRD53Style();
 	gStyle->SetTickLength(0.02);
@@ -89,7 +89,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancy path/to/directory 
 					return -1;
 				}
 
-
+			
+				//Create histograms
 				TH1 *h_Syn = NULL;
 				h_Syn = (TH1*) new TH1F("h_Syn", "", xbins, xlow, xhigh);
 
@@ -104,6 +105,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancy path/to/directory 
 				TH1* fe_hist[3] = {h_Syn, h_Lin, h_Diff};
 				const char *LabelName[6] = {"0%", " 0-98%", " 98-100%", "100%", "100-102%", " >102%"};
 
+				//Fill histograms
 				for (int i=0; i<rowno; i++) {
 					for (int j=0; j<colno; j++) {
 
@@ -115,6 +117,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancy path/to/directory 
 					}
 				}
 
+				//Formatting histograms
 				for(int i=0; i<3; i++){
 					style_TH1(fe_hist[i], xaxistitle.c_str(), yaxistitle.c_str());
 					for (int j=1; j<=xbins; j++) fe_hist[i]->GetXaxis()->SetBinLabel(j,LabelName[j-1]);
@@ -123,6 +126,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancy path/to/directory 
 					fe_hist[i]->SetMarkerSize(1.8);
 					fe_hist[i]->SetMarkerColor(1);
 				}
+
+				std::string rd53 = "RD53A Internal";
 
 				//Synchronous FE Plot	
 				h_Syn->SetFillColor(kOrange+6);
@@ -133,7 +138,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancy path/to/directory 
 				h_Syn->Draw("TEXT0 SAME");
 				TLatex *tname= new TLatex();
 				latex_Chip(tname);
-				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.28,0.96,rd53.c_str());
 				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 				TLegend *syn_legend = new TLegend(0.7,0.82,0.88,0.91);
 				syn_legend->SetHeader("Analog FEs", "C");
@@ -143,7 +148,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancy path/to/directory 
 				h_Syn->SetMaximum((h_Syn->GetMaximum())*1.21);
 				c_Syn->Update();
 				std::string syn_ext = "_SYN.";
-				filename1 = filename.replace(filename.find(".dat"), 8, syn_ext.append(ext)); 
+				filename1 = filename.replace(filename.find(".dat"), 9, syn_ext.append(ext)); 
 				c_Syn->Print(filename1.c_str());
 
 				//Linear FE Plot
@@ -153,7 +158,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancy path/to/directory 
 				style_TH1canvas(c_Lin);
 				h_Lin->Draw();
 				h_Lin->Draw("TEXT0 SAME");
-				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.28,0.96, rd53.c_str());
 				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 				TLegend *lin_legend = new TLegend(0.7,0.82,0.87,0.91);
 				lin_legend->SetHeader("Analog FEs", "C");
@@ -163,7 +168,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancy path/to/directory 
 				h_Lin->SetMaximum((h_Lin->GetMaximum())*1.21);
 				c_Lin->Update();
 				std::string lin_ext = "_LIN.";
-				filename2 = filename.replace(filename.find(syn_ext), 8, lin_ext.append(ext)); 
+				filename2 = filename.replace(filename.find(syn_ext), 9, lin_ext.append(ext)); 
 				c_Lin->Print(filename2.c_str());
 
 				//Diff FE Plot
@@ -173,7 +178,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancy path/to/directory 
 				style_TH1canvas(c_Diff);
 				h_Diff->Draw();
 				h_Diff->Draw("TEXT0 SAME");
-				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.28,0.96, rd53.c_str());
 				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 				TLegend *diff_legend = new TLegend(0.7,0.82,0.87,0.91);
 				diff_legend->SetHeader("Analog FEs", "C");
@@ -183,7 +188,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancy path/to/directory 
 				h_Diff->SetMaximum((h_Diff->GetMaximum())*1.21);
 				c_Diff->Update();
 				std::string diff_ext = "_DIFF.";
-				filename3 = filename.replace(filename.find(lin_ext), 9, diff_ext.append(ext)); 
+				filename3 = filename.replace(filename.find(lin_ext), 10, diff_ext.append(ext)); 
 				c_Diff->Print(filename3.c_str());
 
 				//Stack Plot for all 3 FEs
@@ -207,12 +212,12 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Occupancy path/to/directory 
 				stack_legend->Draw();
 				for (int i=1; i<=6; i++) hs->GetXaxis()->SetBinLabel(i,LabelName[i-1]);
 				hs->GetXaxis()->LabelsOption("h");	
-				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.28,0.96, rd53.c_str());
 				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 				hs->SetMaximum((hs->GetMaximum())*1.2);
 				c_Stack->Update();		
 				std::string stack_ext = "_STACK.";
-				filename4 = filename.replace(filename.find(diff_ext), 10, stack_ext.append(ext));
+				filename4 = filename.replace(filename.find(diff_ext), 11, stack_ext.append(ext));
 				c_Stack->Print(filename4.c_str());
 
 				for (int i=0; i<3; i++) delete fe_hist[i];

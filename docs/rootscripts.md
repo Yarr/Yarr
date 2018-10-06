@@ -7,10 +7,19 @@ Requires root6.
 ##Compile with Makefile
 
 In order to use the scripts, you must first compile using make.
+Note: You must do make in Yarr/src/scripts. These do not compile when using make in Yarr/src. 
 
 ```bash
 $ cd Yarr/src/scripts
 $ make
+[Compiling] plotWithRoot_Scurve.o
+[Linking] plotWithRoot_Scurve
+[Compiling] plotWithRoot.o
+[Linking] plotWithRoot
+[Compiling] plotWithRoot_ToT.o
+[Linking] plotWithRoot_ToT
+[Compiling] plotWithRoot_json.o
+[Linking] plotWithRoot_json
 [Compiling] plotWithRoot_ThresholdTDAC.o
 [Linking] plotWithRoot_ThresholdTDAC
 [Compiling] plotWithRoot_Threshold.o
@@ -19,10 +28,6 @@ $ make
 [Linking] plotWithRoot_Occupancy
 [Compiling] plotWithRoot_Noise.o
 [Linking] plotWithRoot_Noise
-[Compiling] plotWithRoot_Scurve.o
-[Linking] plotWithRoot_Scurve
-[Compiling] plotWithRoot_json.o
-[Linking] plotWithRoot_json
 [Compiling] plotWithRoot_NoiseMap.o
 [Linking] plotWithRoot_NoiseMap
 [Compiling] plotWithRoot_ToT.o
@@ -112,7 +117,7 @@ Examples of some of the json plots given below:
 ###Threshold/TDAC plots
 
 Plots a stacked histogram for all thresholds and their corresponding TDACs.
-Uses .json.after and ThresholdMap.dat files; this program currently uses the first of each file found. If less than 25% of the pixels have values of 0, circle those pixels.
+Uses .json.after and ThresholdMap.dat files; this program currently uses the first of each file found.
 
 ```bash
 $ ./plotWithRoot_ThresholdTDAC path/to/directory file_ext
@@ -122,6 +127,18 @@ Examples of some of the ThresholdTDAC plots given below:
 
 ![ThresholdTDAC Plots Preview](images/ThresholdTDACPlots_Preview.png)
 
+###ToT Plots
+
+Plots 1D histograms showing [Number of Pixels] vs [Mean ToT (bc)] and [Sigma ToT (bc)] and one stacked plot.
+Plots 2D histograms showing the [Mean ToT (bc)] and [Sigma ToT (bc)] for each pixel.
+Uses ToTMap0.dat files.
+
+```bash
+$ ./plotWithRoot_ToT path/to/directory file_ext
+```
+
+Examples of some of the ToT plots given below:
+![ToT Plots Preview](images/ToTPlots_Preview.png)
 
 ###ToT Plots
 

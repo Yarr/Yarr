@@ -18,7 +18,7 @@
 using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 
 int main(int argc, char *argv[]) { //./plotWithRoot_json path/to/directory file_ext
-	//Example file extensions: png, pdf, C	
+	//Example file extensions: png, pdf, C, root	
 
 	SetRD53Style();
 	gStyle->SetTickLength(0.02);
@@ -52,9 +52,9 @@ int main(int argc, char *argv[]) { //./plotWithRoot_json path/to/directory file_
 
 		if (stat(filepath.c_str(), &filestat)) continue; //skip if file is invalid
 		if (S_ISDIR(filestat.st_mode)) continue; //skip if file is a directory
-		if (strstr(file_path,".pdf")) continue; //skip if file is a pdf
+		if (strstr(file_path,"before_") != NULL || strstr(file_path,"after_") != NULL) continue; //skip if file is a pdf
 
-		if ( strstr(file_path, ".json") != NULL && strstr(file_path, "rd53a") !=NULL ) { //if filename contains string declared in argument.
+		else if ( strstr(file_path, ".json") != NULL && strstr(file_path, "rd53a") !=NULL ) { //if filename contains string declared in argument.
 
 				std::cout << "Opening file: " << filepath.c_str() << std::endl;
 				std::string filename = filepath.c_str();
@@ -97,12 +97,14 @@ int main(int argc, char *argv[]) { //./plotWithRoot_json path/to/directory file_
 				chipnum = "Chip SN: ";
 				chipnumber = cfg["RD53A"]["Parameter"]["Name"];
 				chipnum.append(chipnumber);
-
+				std::string rd53 = "RD53A Internal";
+	
 				if (!cfgfile) {
 					std::cout << "Something wrong with file ..." << std::endl;
 					return -1;
 				}
-			
+		
+				//Create Histograms				
 				TH1 *h_Lin = NULL;
 				h_Lin = (TH1*) new TH1F("h_Lin","", lin_bins, lin_low, xhigh);
 
@@ -171,7 +173,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_json path/to/directory file_
 				tname->SetTextAlign(22);
 				tname->SetTextFont(73);
 				tname->SetTextSizePixels(30);
-				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.28,0.96, rd53.c_str());
 				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 				TLegend *lin_legend = new TLegend(0.7,0.82,0.87,0.91);
 				lin_legend->SetHeader("Analog FEs", "C");
@@ -181,6 +183,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_json path/to/directory file_
 				mean_hLin = h_Lin->GetMean();
 				rms_hLin = h_Lin->GetRMS();
 
+				//Write Mean and RMS
 				TLatex *mean_rms = new TLatex;
 				mean_rms->SetNDC();
 				mean_rms->SetTextAlign(13);
@@ -191,7 +194,6 @@ int main(int argc, char *argv[]) { //./plotWithRoot_json path/to/directory file_
 				sprintf(rms_Lin, "RMS = %.1f #pm %.1f", h_Lin->GetRMS(), h_Lin->GetRMSError());
 				mean_rms->DrawLatex(0.18,0.87, rms_Lin);
 
-				//h_Lin->GetXaxis()->SetRangeUser(mean_hLin - 3*rms_hLin, mean_hLin + 3*rms_hLin);
 				h_Lin->SetMaximum((h_Lin->GetMaximum())*1.25);
 				c_Lin->Update();				
 				
@@ -207,7 +209,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_json path/to/directory file_
 				style_TH1canvas(c_Diff);
 				h_Diff->GetXaxis()->SetLabelSize(0.035);
 				h_Diff->Draw();
-				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.28,0.96, rd53.c_str());
 				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 				TLegend *diff_legend = new TLegend(0.7,0.82,0.87,0.91);
 				diff_legend->SetHeader("Analog FEs", "C");
@@ -224,11 +226,10 @@ int main(int argc, char *argv[]) { //./plotWithRoot_json path/to/directory file_
 				mean_rms->DrawLatex(0.18,0.87, rms_Diff);
 
 				h_Diff->SetMaximum((h_Diff->GetMaximum())*1.25);
-				//h_Diff->GetXaxis()->SetRangeUser(mean_hDiff - 3*rms_hDiff, mean_hDiff + 3*rms_hDiff);
 				c_Diff->Update();				
 				
 				std::string diff_ext = "_DIFFTdac.";
-				filename2 = filename.replace(filename.find(lin_ext), 13, diff_ext.append(ext)); 
+				filename2 = filename.replace(filename.find(lin_ext), 14, diff_ext.append(ext)); 
 				c_Diff->Print(filename2.c_str());
 
 				double mean_h[2] = {mean_hLin, mean_hDiff};
@@ -264,7 +265,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_json path/to/directory file_
 				h_range_Lin->SetMarkerSize(1.8);
 				h_range_Lin->SetMarkerColor(1);
 				h_range_Lin->Draw("TEXT0 SAME");
-				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.28,0.96, rd53.c_str());
 				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 				TLatex *zeros = new TLatex();
 				zeros->SetNDC();
@@ -282,7 +283,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_json path/to/directory file_
 				c_range_Lin->Update();			
 				
 				std::string linr_ext = "_LINRTdac.";	
-				filename3 = filename.replace(filename.find(diff_ext), 14, linr_ext.append(ext));
+				filename3 = filename.replace(filename.find(diff_ext), 15, linr_ext.append(ext));
 				c_range_Lin->Print(filename3.c_str());
 
 				//Diff Range TDAC Plot
@@ -295,7 +296,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_json path/to/directory file_
 				h_range_Diff->SetMarkerSize(1.8);
 				h_range_Diff->SetMarkerColor(1);
 				h_range_Diff->Draw("TEXT0 SAME");
-				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.28,0.96, rd53.c_str());
 				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 				sprintf(zeros_Diff, "Untuned Pixels = %i", zero_Diff);
 				zeros->DrawLatex(0.18,0.91, zeros_Diff);
@@ -307,7 +308,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_json path/to/directory file_
 				h_range_Diff->SetMaximum((h_range_Diff->GetMaximum())*1.25);
 				c_range_Diff->Update();			
 				std::string diffr_ext = "_DIFFRTdac.";	
-				filename4 = filename.replace(filename.find(linr_ext), 15,diffr_ext.append(ext));
+				filename4 = filename.replace(filename.find(linr_ext), 16,diffr_ext.append(ext));
 				c_range_Diff->Print(filename4.c_str());
 	
 				std::string c_name[3] = {"c_TDAC", "c_En", "c_HitOr"};	
@@ -328,12 +329,14 @@ int main(int argc, char *argv[]) { //./plotWithRoot_json path/to/directory file_
 					h_2D[i]->Draw("colz X+ Y+ SAME");
 					h_2D[i]->GetXaxis()->SetLabelSize(0.04);
 					h_2D[i]->GetYaxis()->SetLabelSize(0.04);
-					tname->DrawLatex(0.16,0.96,"RD53A");
+					tname->DrawLatex(0.23,0.96,rd53.c_str());
 					tname->DrawLatex(0.72, 0.96, chipnum.c_str());
 					gStyle->SetOptStat(0);
 					c_2D[i]->RedrawAxis();
 					c_2D[i]->Update();
 					h_2D[i]->GetZaxis()->SetLabelSize(0.04);
+				
+					//For the Hitbus and EnableMask, the only values are 0 and 1, so scale is changed accordingly. If <= 25% of pixels have value= 0, draw a red circle around them.
 					if (i>0) {
 						h_2D[i]->GetZaxis()->SetRangeUser(0,1.05);
 						if ((i==1 && en_counter <= rowno*colno*0.25) || (i==2 && hit_counter <= rowno*colno*0.25)) {
@@ -351,7 +354,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_json path/to/directory file_
 							}
 						}
 					}
-					filename5=filename.replace(filename.find(plot_ext[i].c_str()), 14, plot_ext[i+1].c_str());				
+					filename5=filename.replace(filename.find(plot_ext[i].c_str()), 15, plot_ext[i+1].c_str());				
 					c_2D[i]->Print(filename5.c_str());
 				}
 
