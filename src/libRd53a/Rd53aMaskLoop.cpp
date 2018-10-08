@@ -51,13 +51,13 @@ Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase() {
     
     //25x100, up down -RecSensorUpDown
     //Even
-    AllNeighboursCoordinates["25x100_updown"][0] ={{std::make_pair(1,0),std::make_pair(3,0),std::make_pair(2,0),std::make_pair(3,1),std::make_pair(1,-1),std::make_pair(-1,-1),std::make_pair(-2,0),std::make_pair(-1,0)}}; 
+    AllNeighboursCoordinates["25x100_updown"][0] ={{std::make_pair(1,0),std::make_pair(3,0),std::make_pair(2,0),std::make_pair(3,-1),std::make_pair(1,-1),std::make_pair(-1,-1),std::make_pair(-2,0),std::make_pair(-1,0)}}; 
     //Down
     AllNeighboursCoordinates["25x100_updown"][1] ={{std::make_pair(-1,1),std::make_pair(1,1),std::make_pair(2,0),std::make_pair(1,0),std::make_pair(-1,0),std::make_pair(-3,0),std::make_pair(-2,0),std::make_pair(-3,1)}}; 
 
     //25x100, down up -RecSensorDownUp
     //Even
-    AllNeighboursCoordinates["25x100_downup"][0] ={{std::make_pair(1,1),std::make_pair(3,1),std::make_pair(2,0),std::make_pair(3,0),std::make_pair(1,0),std::make_pair(-1,0),std::make_pair(-2,0),std::make_pair(-1,-1)}};
+    AllNeighboursCoordinates["25x100_downup"][0] ={{std::make_pair(1,1),std::make_pair(3,1),std::make_pair(2,0),std::make_pair(3,0),std::make_pair(1,0),std::make_pair(-1,0),std::make_pair(-2,0),std::make_pair(-1,1)}};
     //Odd
     AllNeighboursCoordinates["25x100_downup"][0] ={{std::make_pair(-1,0),std::make_pair(1,0),std::make_pair(2,0),std::make_pair(1,-1),std::make_pair(-1,-1),std::make_pair(-3,-1),std::make_pair(-2,0),std::make_pair(-3,0)}};
 
@@ -101,7 +101,7 @@ void Rd53aMaskLoop::init() {
 void Rd53aMaskLoop::execPart1() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
-    
+
     // Loop over FrontEnds
     for(FrontEnd *fe : keeper->feList) {
         g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
@@ -121,7 +121,7 @@ void Rd53aMaskLoop::execPart1() {
 		if (m_maskType == CrossTalkMask  ){	      
 		  //---------------------------------------------------------------------------------
 		  // std cross-talk scan, inj in surrounding pixels and read out the central one
-		  //---------------------------------------------------------------------------------		    
+		  //---------------------------------------------------------------------------------		    		  
 		  std::vector<std::pair<int, int>> neighbours;		 
 		  getNeighboursMap(col,row,m_sensorType, m_maskSize, neighbours);
 		  //Read-only central pixel
@@ -138,7 +138,7 @@ void Rd53aMaskLoop::execPart1() {
 		else if (m_maskType == CrossTalkMaskv2 ){	      
 		  //---------------------------------------------------------------------------------
 		  // alternative cross-talk scan, inj central pixel, read out the surrounding ones
-		  //---------------------------------------------------------------------------------
+		  //--------------------------------------------------------------------------------		  
 		  std::vector<std::pair<int, int>> neighbours;		 
 		  getNeighboursMap(col,row, m_sensorType,m_maskSize,neighbours);
 		  //Read-only central pixel
@@ -146,7 +146,7 @@ void Rd53aMaskLoop::execPart1() {
 		  dynamic_cast<Rd53a*>(fe)->setEn(col, row, 0);
 		  modPixels.push_back(std::make_pair(col, row));
 		  //Inject only neighbours
-		    for (auto n: neighbours){ 		  	       
+		  for (auto n: neighbours){ 		  	       
 		      dynamic_cast<Rd53a*>(fe)->setInjEn(n.first, n.second, 0);
 		      dynamic_cast<Rd53a*>(fe)->setEn(n.first, n.second, 1);
 		      modPixels.push_back(std::make_pair(n.first, n.second));
@@ -273,23 +273,26 @@ bool Rd53aMaskLoop::getNeighboursMap(int col, int row,int sensorType, int maskSi
   std::string sensor;
   if (sensorType==SquareSensor)
     sensor="50x50";
-  else if (sensorType==RecSensorUpDown)
-    sensor="25x100_updown";
+  else if (sensorType==RecSensorDownUp)
+    sensor="25x100_downup";
   else if (sensorType==RecSensorUpDown)
     sensor="25x100_updown";
   else
     std::cout<<"ERROR: sensor Type does not exist"<<std::endl;
 
-
   int i=0;
   for ( auto& p : AllNeighboursCoordinates[sensor][col%2]){
+
+    
     if (m_mask_size[maskSize][i]==0) { i++; continue;}
     
     int shift_col=p.first;
     int shift_row=p.second;
+    
     //Make sure that the pixel is within the sensor
-    if ( row+shift_row<0  || col+shift_col<0 )  continue;
-    if (static_cast<unsigned int>(col+shift_col) >(Rd53a::n_Col-1) || static_cast<unsigned int>(row+shift_row) >(Rd53a::n_Row-1)  )  continue;
+    if ( row+shift_row<0  || col+shift_col<0 ) {i++;  continue;}
+    if (static_cast<unsigned int>(col+shift_col) >(Rd53a::n_Col-1) || static_cast<unsigned int>(row+shift_row) >(Rd53a::n_Row-1)  ) {i++; continue;}
+    if (static_cast<unsigned int>(col+shift_col) >(Rd53a::n_Col-1) || static_cast<unsigned int>(row+shift_row) >(Rd53a::n_Row-1)  ) {i++; continue;}
     neighboursindex.push_back(std::make_pair(col+shift_col, row+shift_row));
     i++;    
   }
@@ -302,9 +305,9 @@ bool Rd53aMaskLoop::ApplyMask(int col, int row){
 
   unsigned core_row = row/8;
   unsigned serial = (core_row*64)+((col+(core_row%8))%8)*8+row%8;
-  //unsigned serial = (core_row*64)+(col%8)*8+row%8;
-  if ((serial%max) == m_cur)
+  if ((serial%max) == m_cur){
     return true;
+  }
   else
     return false;
   

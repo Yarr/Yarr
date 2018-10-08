@@ -1,19 +1,19 @@
 {
   "scan": {
-    "analysis": {
-      "0": {
-        "algorithm": "TotAnalysis"
-      },
-      "1": {
-        "algorithm": "OccupancyAnalysis",
-        "config": {
-          "createMask": true
-        }
-      },
-      "2": {
-        "algorithm": "L1Analysis"
-      },
-      "n_count": 3
+      "analysis": {
+	  "0": {
+              "algorithm": "TotAnalysis"
+	  },
+	  "1": {
+              "algorithm": "OccupancyAnalysis"
+	  },
+	  "2": {
+              "algorithm": "TotAnalysis"	    
+	  },
+	  "3": {
+              "algorithm": "L1Analysis"
+	  },
+      "n_count": 4
     },
     "histogrammer": {
       "0": {
@@ -43,10 +43,10 @@
         "config": {
           "max": 1536,
           "min": 0,
-          "step": 64,
+          "step": 32,
 	  "maskType" : 1,
-	  "maskSize" : 1,
-	  "sensorType" : 1
+	  "maskSize" : 2,
+	  "sensorType" : 0
         },
         "loopAction": "Rd53aMaskLoop"
       },
@@ -80,8 +80,8 @@
         "LatencyConfig": 50,
         "GlobalPulseRt": 16384,
 	"InjVcalDiff": 0,
-        "InjVcalHigh": 3500,
-        "InjVcalMed": 100
+        "InjVcalHigh": 4090,
+        "InjVcalMed": 0
     }
   }
 }

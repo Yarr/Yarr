@@ -3,10 +3,10 @@
     "analysis": {
       "0": {
         "algorithm": "ScurveFitter"
-      },
-      "1": {
-        "algorithm": "OccupancyAnalysis"
-      },
+      },	
+	"1": {
+            "algorithm": "OccupancyAnalysis"
+	},
       "n_count": 2
     },
     "histogrammer": {
@@ -15,39 +15,31 @@
         "config": {}
       },
       "1": {
-        "algorithm": "TotMap",
-        "config": {}
-      },
-      "2": {
-        "algorithm": "Tot2Map",
-        "config": {}
-      },
-      "3": {
         "algorithm": "L1Dist",
         "config": {}
       },
-      "4": {
+      "2": {
         "algorithm": "HitsPerEvent",
         "config": {}
       },
-      "n_count": 5
+      "n_count": 3
     },
     "loops": [
       {
         "config": {
           "max": 1536,
           "min": 0,
-          "step": 64,
+          "step": 32,
 	  "maskType" : 1,
-	  "maskSize" : 2,
-	  "sensorType" : 1
+	  "maskSize" : 3,
+	  "sensorType" : 0
         },
         "loopAction": "Rd53aMaskLoop"
       },
 	{
           "config": {
           "max": 4000,
-          "min": 900,
+          "min": 500,
           "step": 50,
           "parameter":"InjVcalDiff"
         },
