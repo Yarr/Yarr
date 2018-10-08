@@ -328,7 +328,6 @@ class NoiseTuning : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> innerCnt;
         GlobalFeedbackBase *globalFb;
         PixelFeedbackBase *pixelFb;
-        unsigned n_trigger;
 };
 
 #endif
