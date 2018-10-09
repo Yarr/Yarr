@@ -152,6 +152,7 @@ $ ./plotWithRoot_ToT path/to/directory file_ext
 
 Examples of some of the ToT plots given below: 
 
+![ToT Plot Preview](images/ToTPlots_Preview.png)
 
 ###Noise Occupancy Plot
 
