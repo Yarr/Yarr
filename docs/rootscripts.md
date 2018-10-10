@@ -140,20 +140,6 @@ $ ./plotWithRoot_ToT path/to/directory file_ext
 Examples of some of the ToT plots given below:
 ![ToT Plots Preview](images/ToTPlots_Preview.png)
 
-###ToT Plots
-
-Plots 1D histograms showing [Number of Pixels] versus [Mean ToT (bc) ] and [Number of Pixels] versus [Sigma ToT (bc)] for each of the RD53A FEs and one stacked plot.
-Plots 2D histograms showing the [Mean ToT (bc)] and [Sigma ToT (bc)] for each pixel.
-Uses TotMap0.dat files.
-
-```bash
-$ ./plotWithRoot_ToT path/to/directory file_ext
-```
-
-Examples of some of the ToT plots given below: 
-
-![ToT Plot Preview](images/ToTPlots_Preview.png)
-
 ###Noise Occupancy Plot
 
 Plots the [Noise Occupancy (hits/bc)] for each pixel. If less than 25% of the pixels have values of 0, circle those pixels. 
