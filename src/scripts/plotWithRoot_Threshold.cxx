@@ -12,7 +12,7 @@
 #include <RD53Style.h>
 
 int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory file_ext
-	//Example file extensions: png, pdf, C	
+	//Example file extensions: png, pdf, C, root	
 
 	SetRD53Style();	
 	gStyle->SetTickLength(0.02);
@@ -102,6 +102,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 				return -1;
 			}
 
+			
+			//Create histograms
 			std::string fe_hist_names[4] = {"h_all", "h_Syn", "h_Lin", "h_Diff"};
 			TH1 *fe_hist[4];
 			for (unsigned i=0; i<4; i++) fe_hist[i] = new TH1F(fe_hist_names[i].c_str(),"", xbins, xlow, xhigh);
@@ -148,6 +150,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			tname->SetTextAlign(22);
 			tname->SetTextFont(73);
 			tname->SetTextSizePixels(30);
+			std::string rd53 = "RD53A Internal";
 
 			//For the Mean and Sigma of the Gaussian Fit 
 			TLatex *mean_sigma = new TLatex;
@@ -156,7 +159,6 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			mean_sigma->SetTextFont(63);
 			mean_sigma->SetTextSizePixels(24);
 
-
 			TLegend* fe_legend[4];
 			std::string legend_name[4] = {"All", "Synchronous", "Linear", "Differential"};					
 			TF1* fe_fit[4];
@@ -164,6 +166,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 
 			int color[4] = {800, 806, 824, 865}; //(kOrange, kOrange+6, kSpring+4, kAzure+5)
 
+			//Create canvases
 			std::string c_name[4]  = {"c_All", "c_Syn", "c_Lin", "c_Diff"};
 			TCanvas* fe_c[4];
 
@@ -182,9 +185,11 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 				style_TH1canvas(fe_c[i]);
 				fe_hist[i]->Draw();
 
-				tname->DrawLatex(0.21,0.96,"RD53A");
+				//Write RD53A and Chip ID
+				tname->DrawLatex(0.28,0.96, rd53.c_str());
 				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 
+				//Create legend
 				fe_legend[i] = new TLegend(0.7, 0.82, 0.87, 0.91);
 				fe_legend[i]->SetHeader("Analog FEs", "C");
 				fe_legend[i]->AddEntry(fe_hist[i], legend_name[i].c_str(), "f");
@@ -225,6 +230,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 
 				chisq_DOF[i] = (fe_fit[i]->GetChisquare())/(fe_fit[i]->GetNDF());
 
+				//If Chi Squared divided by Degrees of Freedom is less than 10, draw the fit. If not, warn user.
 				if (chisq_DOF[i] < 10) {
 					if ( i == 0 ) fe_hist[i]->Fit("fit_all", "B", "I", xlow, xhigh); //Plot over full range
 					if ( i > 0 ) fe_hist[3]->Fit("fit_Diff", "B", "I", xlow, xhigh); //Plot over full range.
@@ -234,12 +240,11 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 
 				std::cout << "Chi^2 is "  << fe_fit[i]->GetChisquare() << "	DOF is " << fe_fit[i]->GetNDF() << "	Prob is " << fe_fit[i]->GetProb() << std::endl;
 
-
-				fe_hist[i]->SetMaximum((fe_hist[i]->GetMaximum())*1.21);
-				fe_hist[i]->GetXaxis()->SetRangeUser((mean_h[i] - 3*rms_h[i] < 0) ? -0.5 : (mean_h[i]- 3*rms_h[i]), mean_h[i] + 3*rms_h[i]);
+				fe_hist[i]->SetMaximum((fe_hist[i]->GetMaximum())*1.21); //Leave extra room for legend
+				fe_hist[i]->GetXaxis()->SetRangeUser((mean_h[i] - 3*rms_h[i] < 0) ? -0.5 : (mean_h[i]- 3*rms_h[i]), mean_h[i] + 3*rms_h[i]); //Change the x-axis range to be the Mean +/- 3*RMS. If the lower bound is less than -0.5, make it -0.5. 
 				fe_c[i]->Update();
 
-				filename1 = filename.replace(filename.find(plot_ext[i].c_str()), 9, plot_ext[i+1].c_str()); 
+				filename1 = filename.replace(filename.find(plot_ext[i].c_str()), 10, plot_ext[i+1].c_str()); 
 				fe_c[i]->Print(filename1.c_str());
 			}
 
@@ -252,17 +257,17 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			//h_plot->Draw("colz X+ Y+ SAME");
 			h_plot->GetXaxis()->SetLabelSize(0.04);
 			h_plot->GetYaxis()->SetLabelSize(0.04);
-			tname->DrawLatex(0.16,0.96,"RD53A");
+			tname->DrawLatex(0.23,0.96, rd53.c_str());
 			tname->DrawLatex(0.72, 0.96, chipnum.c_str());
 			gStyle->SetOptStat(0);
 			c_plot->RedrawAxis();
 			c_plot->Update();
 			h_plot->GetZaxis()->SetRangeUser((mean_h[0] - 3*rms_h[0] < 0) ? -0.5 : (mean_h[0]- 3*rms_h[0])  , mean_h[0] + 3*rms_h[0]);	
 			h_plot->GetZaxis()->SetLabelSize(0.04);
-			filename2 = filename.replace(filename.find(plot_ext[4].c_str()), 9, plot_ext[5].c_str());
+			filename2 = filename.replace(filename.find(plot_ext[4].c_str()), 10, plot_ext[5].c_str());
 			c_plot->Print(filename2.c_str());
 
-			//Remove fit lines from histograms
+			//Remove fit lines from histograms for the stack plot
 			for (int i=1; i<4; i++) fe_hist[i]->Fit(fit_name[i].c_str(), "0", "", fit_range[(2*i)], fit_range[(2*i)+1]);
 
 			//Stack Plot for all 3 FEs
@@ -285,7 +290,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			for (int i=1; i<4; i++) stack_legend->AddEntry(fe_hist[i], legend_name[i].c_str(), "f"); 
 			stack_legend->SetBorderSize(0);
 			stack_legend->Draw();
-			tname->DrawLatex(0.21,0.96,"RD53A");
+			tname->DrawLatex(0.28,0.96, rd53.c_str());
 			tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 
 			if ( chisq_DOF[0] < 10 ) {
@@ -297,7 +302,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			hs->SetMaximum((fe_hist[0]->GetMaximum())*1.21);
 			hs->GetXaxis()->SetRangeUser((mean_h[0] - 3*rms_h[0] < 0) ? -0.5 : (mean_h[0]- 3*rms_h[0])  , mean_h[0] + 3*rms_h[0]);	
 			c_Stack->Update();				
-			filename3 = filename.replace(filename.find(plot_ext[5].c_str()), 10, plot_ext[6].c_str());
+			filename3 = filename.replace(filename.find(plot_ext[5].c_str()), 11, plot_ext[6].c_str());
 			c_Stack->Print(filename3.c_str());
 
 
@@ -348,7 +353,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 				range_hist[i]->SetMarkerColor(1);
 				range_hist[i]->Draw("TEXT0 SAME");	
 
-				tname->DrawLatex(0.21,0.96,"RD53A");
+				tname->DrawLatex(0.28,0.96, rd53.c_str());
 				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 
 				sprintf(zeros_char[i], "Untuned Pixels = %i", zeros_FE[i]);
@@ -363,7 +368,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 				range_hist[i]->SetMaximum((range_hist[i]->GetMaximum())*1.25);
 				range_c[i]->Update();
 
-				filename4 = filename.replace(filename.find(plot_ext[i+6].c_str()), 14, plot_ext[i+7].c_str()); 
+				filename4 = filename.replace(filename.find(plot_ext[i+6].c_str()), 15, plot_ext[i+7].c_str()); 
 				range_c[i]->Print(filename4.c_str());
 
 			}
@@ -388,11 +393,11 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			for (int i=0; i<3; i++) stackr_legend->AddEntry(range_hist[i], legend_name[i+1].c_str(), "f"); 
 			stackr_legend->SetBorderSize(0);
 			stackr_legend->Draw();
-			tname->DrawLatex(0.21,0.96,"RD53A");
+			tname->DrawLatex(0.28,0.96, rd53.c_str());
 			tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 			hs_range->SetMaximum((hs_range->GetMaximum())*1.21);
 			c_Stackr->Update();
-			filename5 = filename.replace(filename.find(plot_ext[9].c_str()), 15, plot_ext[10].c_str());
+			filename5 = filename.replace(filename.find(plot_ext[9].c_str()), 16, plot_ext[10].c_str());
 			c_Stackr->Print(filename5.c_str());
 
 			for (int i=0; i<4; i++) {

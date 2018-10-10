@@ -13,7 +13,7 @@
 #include <RD53Style.h>
 
 int main(int argc, char *argv[]) { //./plotWithRoot_Noise path/to/directory file_ext
-	//Example file extensions: png, pdf, C	
+	//Example file extensions: png, pdf, C, root	
 
 	SetRD53Style();
 	gStyle->SetTickLength(0.02);
@@ -95,11 +95,12 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Noise path/to/directory file
 				return -1;
 			}
 
+			//Create histogram
 			TH2F *h_plot = NULL;
 			h_plot = new TH2F("h_plot", "", colno, 0, colno, rowno, 0, rowno); 
 
 			int zero_counter = 0;
-			//Fill Noise plots	
+			//Fill Noise plot	
 			for (int i=0; i<rowno; i++) {
 				for (int j=0; j<colno; j++) {
 
@@ -117,6 +118,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Noise path/to/directory file
 			tname->SetTextAlign(22);
 			tname->SetTextFont(73);
 			tname->SetTextSizePixels(30);
+			std::string rd53 = "RD53A Internal";
 
 			//Map of Pixels
 			style_TH2(h_plot, xaxistitle.c_str(), yaxistitle.c_str(), zaxistitle.c_str()); 
@@ -125,13 +127,14 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Noise path/to/directory file
 			h_plot->Draw("colz");
 			h_plot->GetXaxis()->SetLabelSize(0.04);
 			h_plot->GetYaxis()->SetLabelSize(0.04);
-			tname->DrawLatex(0.16,0.96,"RD53A");
+			tname->DrawLatex(0.23,0.96, rd53.c_str());
 			tname->DrawLatex(0.72, 0.96, chipnum.c_str());
 			gStyle->SetOptStat(0);
 			c_plot->RedrawAxis();
 			c_plot->Update();
 			h_plot->GetZaxis()->SetLabelSize(0.04);
 
+			//If <= 25% of pixels have value= 0, draw a red circle around them.
 			if ( zero_counter <= rowno*colno*0.25) {
 				for (int j=0; j<colno; j++) {
 					for (int k=0; k<rowno; k++) {
@@ -147,7 +150,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Noise path/to/directory file
 			}
 
 			std::string plot_ext = "_PLOT.";
-			filename1 = filename.replace(filename.find(".dat"), 9, plot_ext.append(ext));
+			filename1 = filename.replace(filename.find(".dat"), 10, plot_ext.append(ext));
 			c_plot->Print(filename1.c_str());
 
 			delete h_plot;
