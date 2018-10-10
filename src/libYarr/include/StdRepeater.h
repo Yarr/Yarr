@@ -17,10 +17,10 @@ class StdRepeater: public LoopActionBase {
     
     private:
         int m_cur;
-        void init();
-        void end();
-        void execPart1();
-        void execPart2();
+        void init() override;
+        void end() override;
+        void execPart1() override;
+        void execPart2() override; 
 };
 
 #endif

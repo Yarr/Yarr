@@ -20,7 +20,7 @@ using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::i
 class SpecController : public HwController, public SpecTxCore, public SpecRxCore {
     public:
 
-        void loadConfig(json &j) {
+        void loadConfig(json &j) override {
             if (!j["specNum"].empty())
                 this->SpecCom::init(j["specNum"]);
             

@@ -2,9 +2,18 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "OccGlobalThresholdTune"
+        "algorithm": "TotAnalysis"
       },
-      "n_count": 1
+      "1": {
+        "algorithm": "OccupancyAnalysis",
+        "config": {
+          "createMask": false
+        }
+      },
+      "2": {
+        "algorithm": "L1Analysis"
+      },
+      "n_count": 2
     },
     "histogrammer": {
       "0": {
@@ -31,12 +40,10 @@
     },
     "loops": [
       { "config": {
-          "max": 500,
+          "max": 60,
           "min": 0,
-          "step": 16,
-          "parameter": "DiffVth1",
-          "pixelRegs": [0, 1]
-
+          "step": 32,
+          "parameter": "SyncIbiasKrum"
         },
         "loopAction": "Rd53aGlobalFeedback"
       },
@@ -50,8 +57,8 @@
       },
       {
         "config": {
-          "max": 50,
-          "min": 33,
+          "max": 16,
+          "min": 0,
           "step": 1,
           "nSteps": 4
         },
@@ -72,12 +79,12 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "DiffGlobalThresholdTune",
+    "name": "SynGlobalPreampTune",
     "prescan": {
         "InjEnDig": 0,
         "LatencyConfig": 48,
         "GlobalPulseRt": 16384,
-        "SyncVth":500,
+        "DiffVth1":500,
         "LinVth": 500
     }
   }

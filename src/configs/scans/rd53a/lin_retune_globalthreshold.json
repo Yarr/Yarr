@@ -35,7 +35,7 @@
           "min": 0,
           "step": 4,
           "parameter": "LinVth",
-          "pixelRegs": 0
+          "pixelRegs": [0, 0]
         },
         "loopAction": "Rd53aGlobalFeedback"
       },
