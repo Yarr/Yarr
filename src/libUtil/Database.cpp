@@ -535,7 +535,6 @@ void Database::writeAttachment(std::string i_ctr_oid_str, std::string i_file_pat
 }
 
 
-
 //*****************************************************************************************************
 // Protected fuctions
 //
