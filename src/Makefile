@@ -35,6 +35,8 @@ CPPFLAGS += -pthread -fPIC
 LDFLAGS += -pthread -lrt -fPIC -Wl,--whole-archive
 PLDFLAGS = -Wl,--no-whole-archive
 endif
+CPPFLAGS += -I/opt/rh/rh-mongodb36/root/usr/include/mongocxx/v_noabi -I/opt/rh/rh-mongodb36/root/usr/include/bsoncxx/v_noabi -I/opt/rh/rh-mongodb36/root/usr/include/boost
+LDFLAGS += -L/opt/rh/rh-mongodb36/root/usr/lib64 -lmongocxx -lbsoncxx
 
 CPPFLAGS += -std=c++11 -Wall -Werror
 INC_DIRS := $(wildcard */include)

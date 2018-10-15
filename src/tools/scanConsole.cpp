@@ -35,6 +35,8 @@
 #include "Fei4Histogrammer.h"
 #include "Fei4Analysis.h"
 
+#include "Database.h"
+
 #if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
 
 //  #include <errno.h>
@@ -83,6 +85,10 @@ int main(int argc, char *argv[]) {
     int target_charge = -1;
     int target_tot = -1;
     int mask_opt = -1;
+
+    bool dbUse = false;
+    std::string dbSerialNumber;
+    std::string dbInfoJsonPath = "";
     
     unsigned runCounter = 0;
 
@@ -109,7 +115,7 @@ int main(int argc, char *argv[]) {
     oF.close();
 
     int c;
-    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:")) != -1) {
+    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:WI:")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
@@ -162,6 +168,12 @@ int main(int argc, char *argv[]) {
                     count++;
 
                 }
+                break;
+            case 'W': // Write to DB
+                dbUse = true;
+                break;
+            case 'I':
+                dbInfoJsonPath = std::string(optarg);
                 break;
             case '?':
                 if(optopt == 's' || optopt == 'n'){
@@ -638,6 +650,15 @@ int main(int argc, char *argv[]) {
     if (system(lsCmd.c_str()) < 0) {
         std::cout << "Find plots in: " << dataDir + "last_scan" << std::endl;
     }
+
+    if (dbUse) {
+        Database *database = new Database();
+        database->setTestRunInfo(dbInfoJsonPath);
+        database->setConnCfg(cConfigPaths);
+        database->write(dbSerialNumber, strippedScan, runCounter, outputDir);
+        delete database;
+    }
+
     return 0;
 }
 

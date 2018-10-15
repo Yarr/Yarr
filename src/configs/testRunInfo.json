@@ -1,0 +1,39 @@
+{
+   "assembly": {
+        "stage": "encapsulation",
+        "userIdentity": "Shuichi_Fujino",
+        "institution": "Kyushu_University"
+    },
+    "environments": [
+        {
+            "key": "lv",
+            "value": "1.8",
+            "description": "Low voltage [V]"
+        },
+        {
+            "key": "lv_current",
+            "value": "1.0",
+            "description": "Low voltage current [A]"
+        },
+        {
+            "key": "hv",
+            "value": "0",
+            "description": "High voltage [V]"
+        },
+        {
+            "key": "hv_current",
+            "value": "0",
+            "description": "High voltage current [A]"
+        },
+        {
+            "key": "temperature",
+            "value": "25",
+            "description": "Room temperature [C]"
+        },
+        {
+            "key": "module_temperature",
+            "value": "25",
+            "description": "Temperature on Al side [C]"
+        }
+    ]
+}
