@@ -1,0 +1,64 @@
+#ifndef DATABASE_H
+#define DATABASE_H
+
+#include <cstdlib>
+#include <fstream>
+#include <iostream>
+#include <string>
+#include "json.hpp"
+
+// bsoncxx
+#include <bsoncxx/builder/stream/array.hpp>
+#include <bsoncxx/builder/stream/document.hpp>
+#include <bsoncxx/builder/stream/helpers.hpp>
+#include <bsoncxx/json.hpp>
+#include <bsoncxx/types.hpp>
+// mongocxx v3.2 driver
+#include <mongocxx/client.hpp>
+#include <mongocxx/exception/exception.hpp>
+#include <mongocxx/instance.hpp>
+
+using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+
+class Database {
+    public:
+        Database(std::string i_host_ip = "mongodb://localhost:27017");
+        ~Database();
+
+        void write(std::string, int, std::string);
+        std::string uploadFromJson(std::string, std::string);
+
+    protected:
+        std::string registerComponentTestRun(std::string, std::string, int);
+        std::string registerTestRun(std::string, int);
+        void addComment(std::string, std::string, std::string);
+        void addAttachment(std::string, std::string, std::string, std::string, std::string, std::string, std::string);
+        void addDefect(std::string, std::string, std::string, std::string);
+        std::string uploadAttachment(std::string, std::string);
+        void uploadFromDirectory(std::string, std::string, std::string);
+
+//        bsoncxx::builder::stream::document addSys() {
+//            bsoncxx::builder::stream::document i_doc_value;
+//            i_doc_value <<
+//            "sys" << open_document <<
+//                "rev" << 0 << // revision number
+//                "cts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // creation timestamp
+//                "mts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // modification timestamp
+//            close_document;
+//            return i_doc_value;
+//        };
+
+    private:
+        // Mongo c++
+        mongocxx::client client;
+        mongocxx::database db;
+        std::string m_database_name;
+        std::string m_collection_name;
+
+        bool DB_DEBUG;
+
+        // Schema bson object
+
+};
+
+#endif

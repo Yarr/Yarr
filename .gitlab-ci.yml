@@ -2,9 +2,10 @@ job_build_and_test:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     stage: build
     script:
-      - yum -y install centos-release-scl-rh devtoolset-7 make gnuplot
+      - yum -y install centos-release-scl-rh devtoolset-7 make gnuplot rh-mongodb36-mongo-cxx-driver-devel rh-mongodb36-boost-devel
       - scl enable devtoolset-7 bash
       - source /opt/rh/devtoolset-7/enable
+      - source /opt/rh/rh-mongodb36/enable
       - cd src
       - which g++
       - make
@@ -26,9 +27,10 @@ job_build_cmake:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     stage: build
     script:
-      - yum -y install centos-release-scl-rh devtoolset-7 make cmake gnuplot
+      - yum -y install centos-release-scl-rh devtoolset-7 make cmake gnuplot rh-mongodb36-mongo-cxx-driver-devel rh-mongodb36-boost-devel
       - scl enable devtoolset-7 bash
       - source /opt/rh/devtoolset-7/enable
+      - source /opt/rh/rh-mongodb36/enable
       - mkdir -p src/cmake_build
       - cd src/cmake_build
       - cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
