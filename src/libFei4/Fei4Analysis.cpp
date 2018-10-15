@@ -463,10 +463,14 @@ void ScurveFitter::init(ScanBase *s) {
         if (l->type() == tmpVcalLoop->type() ||
                 l->type() == tmpVcalLoop2->type() ||
                 l->type() == tmpVcalLoop3->type()) {
+            std::cout << "In Scurve analysis. Found Vcal-loop." << std::endl;
             vcalLoop = n;
             vcalMax = l->getMax();
+            std::cout << "vcalMax: " << vcalMax << std::endl;
             vcalMin = l->getMin();
+            std::cout << "vcalMin: " << vcalMin << std::endl;
             vcalStep = l->getStep();
+            std::cout << "vcalStep: " << vcalStep << std::endl;
             vcalBins = (vcalMax-vcalMin)/vcalStep;
         }
 
@@ -481,6 +485,8 @@ void ScurveFitter::init(ScanBase *s) {
         if (l->type() == typeid(Rd53aTriggerLoop*)) {
             Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
             injections = trigLoop->getTrigCnt();
+            isDoubleInject = trigLoop->getDoubleInject();
+            if(isDoubleInject){injections=injections*2;}
         }
 
 	// check injection capacitor for FEI-4
@@ -503,9 +509,10 @@ void ScurveFitter::init(ScanBase *s) {
 // par[0] = Mean
 // par[1] = Sigma
 // par[2] = Normlization
+// par[3] = Constant
 #define SQRT2 1.414213562
 double scurveFct(double x, const double *par) {
-    return 0.5*(2-erfc((x-par[0])/(par[1]*SQRT2)))*par[2];
+    return par[3] + 0.5*(2-erfc((x-par[0])/(par[1]*SQRT2)))*par[2];
 }
 
 void ScurveFitter::processHistogram(HistogramBase *h) {
@@ -568,8 +575,8 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     lm_control_struct control;
                     control = lm_control_float;
                     control.verbosity = 0;
-                    const unsigned n_par = 3;
-                    double par[n_par] = {((vcalMax-vcalMin)/2.0)+vcalMin, 5, (double) injections};
+                    const unsigned n_par = 4;
+                    double par[n_par] = {((vcalMax-vcalMin)/2.0)+vcalMin, 5, (double) injections/2, (double) injections/2};
                     std::chrono::high_resolution_clock::time_point start;
                     std::chrono::high_resolution_clock::time_point end;
                     start = std::chrono::high_resolution_clock::now();
@@ -658,7 +665,17 @@ void ScurveFitter::end() {
             if (sigMap[0]->getBin(bin) != 0)
                 sigDist[0]->fill(sigMap[0]->getBin(bin));
         }
-        
+        if(isDoubleInject){
+          for(uint n=0; n<sCurve.size(); n++){
+            if(sCurve[n]->getName() == "sCurve"){
+              int k = sCurve[n]->binNum(sCurve[n]->getXlow(),injections/2);
+              int ybins = sCurve[n]->getYbins();
+              for(uint i=0; i<sCurve[n]->getXbins(); i++){
+                sCurve[n]->setBin(k + ybins*i,0);
+              }
+            }
+          }
+        }
         std::cout << "\033[1;33m[" << channel << "] Threashold Mean = " << thrMap[0]->getMean() << " +- " << thrMap[0]->getStdDev() << "\033[0m" << std::endl;
         output->pushData(sCurve[0]);
         output->pushData(thrDist[0]);

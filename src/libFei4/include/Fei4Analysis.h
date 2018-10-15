@@ -180,6 +180,7 @@ class ScurveFitter : public AnalysisAlgorithm {
         unsigned n_count;
         unsigned injections;
         unsigned cnt;
+        bool isDoubleInject;
         std::vector<double> x;
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
