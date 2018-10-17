@@ -12,18 +12,19 @@
 
 int main(int argc, char *argv[]){
 	if(argc == 1) {
-		std::cout << "No imput collection name" << std::endl;
+		std::cout << "No imput json name" << std::endl;
 		return -1;
 	}
-	if(argc == 2) {
-		std::cout << "No imput json file name" << std::endl;
-		return -1;
-	}
-	std::cout << "collection : " << argv[1] << " json : " << argv[2] << std::endl;
+	std::cout << "json : " << argv[1] << std::endl;
+	std::string collection = "component_test";
+	std::string json = argv[1];
+
   Database *database = new Database();
-	std::string id = database->uploadFromJson("collection_test","test.json");
+	std::string id = database->uploadFromJson(collection,json);
 	std::cout<<id<<std::endl;
 
   delete database;
+
+	return 0;
 }
 
