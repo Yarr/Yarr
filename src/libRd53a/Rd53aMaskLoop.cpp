@@ -19,6 +19,9 @@ enum MaskSize {CrossTalkMask8=0, CrossTalkMask4=1,
 	       CrossTalkMask1u=4, CrossTalkMask1d=5,
 	       CrossTalkMask1r=6, CrossTalkMask1l=7};
 
+//Switch for including/excluding edges pixels
+enum IncludedPixels {includeEdges=0 ,removeEdgesFullSensor=1, removeEdgesSynFE=2, removeEdgesLinFE=3, removeEdgesDifFE=4,only00CornerForBumpBonding=5 };
+
 //////////////////////////////////////////////////////////////////////////////
 //The bump-bond in 25x100 micro-m^2 sensors can be done in two configurations:
 //RecSensorUpDown: 
@@ -27,6 +30,7 @@ enum MaskSize {CrossTalkMask8=0, CrossTalkMask4=1,
 //the bump-bond at col=0, row=1 is associated with the pixel at the corner
 //////////////////////////////////////////////////////////////////////////////
 enum SensorType { SquareSensor=0, RecSensorUpDown=1, RecSensorDownUp=2 };
+
 
 Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase() {
     min = 0;
@@ -41,6 +45,7 @@ Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase() {
     //-----Parameter related to cross-talk-------------------
     m_maskSize = CrossTalkMask4; 
     m_sensorType = SquareSensor; //assume a 50x50 sensor
+    m_includedPixels= includeEdges; //include all edges
 
     //Change of address for the neighbours:
     //50x50: Same behaviour for even and odd columns
@@ -130,7 +135,7 @@ void Rd53aMaskLoop::execPart1() {
 		  modPixels.push_back(std::make_pair(col, row));
 		  //Inject only neighbours
 		  for (auto n: neighbours){ 
-		    dynamic_cast<Rd53a*>(fe)->setInjEn(n.first, n.second, 1);
+		    dynamic_cast<Rd53a*>(fe)->setInjEn(n.first, n.second,1);
 		    dynamic_cast<Rd53a*>(fe)->setEn(n.first, n.second, 0);
 		    modPixels.push_back(std::make_pair(n.first, n.second));
 		  }
@@ -142,13 +147,13 @@ void Rd53aMaskLoop::execPart1() {
 		  std::vector<std::pair<int, int>> neighbours;		 
 		  getNeighboursMap(col,row, m_sensorType,m_maskSize,neighbours);
 		  //Read-only central pixel
-		  dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 1);		
-		  dynamic_cast<Rd53a*>(fe)->setEn(col, row, 0);
+		  dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 0);		
+		  dynamic_cast<Rd53a*>(fe)->setEn(col, row, 1);
 		  modPixels.push_back(std::make_pair(col, row));
 		  //Inject only neighbours
 		  for (auto n: neighbours){ 		  	       
-		      dynamic_cast<Rd53a*>(fe)->setInjEn(n.first, n.second, 0);
-		      dynamic_cast<Rd53a*>(fe)->setEn(n.first, n.second, 1);
+		      dynamic_cast<Rd53a*>(fe)->setInjEn(n.first, n.second, 1);
+		      dynamic_cast<Rd53a*>(fe)->setEn(n.first, n.second, 0);
 		      modPixels.push_back(std::make_pair(n.first, n.second));
 		    }
 		}
@@ -157,7 +162,7 @@ void Rd53aMaskLoop::execPart1() {
 		if (m_maskType == StandardMask){	       
 		  //---------------------------------------------------------------------------------
 		  // clean pixels for standardmask
-		  //---------------------------------------------------------------------------------		  
+		  //--------------------------------------------------------------------------------- 		  
 		  if (dynamic_cast<Rd53a*>(fe)->getInjEn(col, row) == 1) {
 		    dynamic_cast<Rd53a*>(fe)->setEn(col, row, 0);
 		    dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 0);
@@ -245,6 +250,7 @@ void Rd53aMaskLoop::writeConfig(json &j) {
     j["maskType"] = m_maskType;
     j["maskSize"] = m_maskSize;
     j["sensorType"] = m_sensorType;
+    j["includedPixels"] = m_includedPixels;
     
 }
 
@@ -261,7 +267,9 @@ void Rd53aMaskLoop::loadConfig(json &j) {
       m_maskSize = j["maskSize"];
     if (!j["sensorType"].empty())
       m_sensorType = j["sensorType"];
-
+    if (!j["includedPixels"].empty())
+      m_includedPixels = j["includedPixels"];
+    
 }
 
 
@@ -280,14 +288,19 @@ bool Rd53aMaskLoop::getNeighboursMap(int col, int row,int sensorType, int maskSi
   else
     std::cout<<"ERROR: sensor Type does not exist"<<std::endl;
 
+  //if (row==8)
+  // std::cout<<"-- Central pixel:"<< col<<" "<< row<<std::endl;
+      
   int i=0;
   for ( auto& p : AllNeighboursCoordinates[sensor][col%2]){
 
-    
+
     if (m_mask_size[maskSize][i]==0) { i++; continue;}
     
     int shift_col=p.first;
     int shift_row=p.second;
+    //if (row==8)
+    //  std::cout<<i<<"  ("<<shift_row<<" "<<shift_col<<") ";
     
     //Make sure that the pixel is within the sensor
     if ( row+shift_row<0  || col+shift_col<0 ) {i++;  continue;}
@@ -296,12 +309,17 @@ bool Rd53aMaskLoop::getNeighboursMap(int col, int row,int sensorType, int maskSi
     neighboursindex.push_back(std::make_pair(col+shift_col, row+shift_row));
     i++;    
   }
+  //std::cout<<std::endl;
   
   return filled;
 }
 
 //Return true if the pixel should be considered for this scan step, or false if it should be ignored
 bool Rd53aMaskLoop::ApplyMask(int col, int row){
+
+
+  //Do not run over edges pixels, if not explicity requested
+  if (IgnorePixel(col, row)) return false;
 
   unsigned core_row = row/8;
   unsigned serial = (core_row*64)+((col+(core_row%8))%8)*8+row%8;
@@ -311,4 +329,47 @@ bool Rd53aMaskLoop::ApplyMask(int col, int row){
   else
     return false;
   
+}
+
+
+bool Rd53aMaskLoop::IgnorePixel(int col, int row){
+  
+  //if checking bump bonding connections for rectangular sensors, only use (0,0) pixel
+  if ( m_includedPixels == only00CornerForBumpBonding){
+    if (col==0 and row==0) return false;
+    else return true;
+  }
+
+  //check if all pixels are requested:
+  if (m_includedPixels == includeEdges) return false;
+
+  //if not, remove the edges depending on the FE type
+  if (m_sensorType==SquareSensor){
+    if ((col==0 or col==Rd53a::n_Col-1) or (row==0 or row==Rd53a::n_Row-1)) return true;
+    
+    if (m_includedPixels==removeEdgesLinFE and (col<=128 or col>=263)) return true;
+    
+    if (m_includedPixels==removeEdgesSynFE and col>=127) return true;
+    
+    if (m_includedPixels==removeEdgesDifFE and col<=264) return true;
+  }
+  //Missing implementation for rectangular sensor
+  if (m_sensorType!=SquareSensor){
+    if (col==0 or col==1 or col==Rd53a::n_Col-1 or col==Rd53a::n_Col-2) return true;
+
+    if (m_sensorType==RecSensorUpDown)
+      if ( ( (col%2)==0 and row==0) or ( (col%2==1 and row==Rd53a::n_Row-1))) return true;
+
+    if (m_sensorType==RecSensorDownUp)
+      if ( ( (col%2)==1 and row==0) or ( (col%2==0 and row==Rd53a::n_Row-1))) return true;
+      
+    
+    if (m_includedPixels==removeEdgesLinFE and (col<=129 or col>=262)) return true;
+    
+    if (m_includedPixels==removeEdgesSynFE and col>=126) return true;
+    
+    if (m_includedPixels==removeEdgesDifFE and col<=265) return true;
+  }
+  
+  return false;
 }

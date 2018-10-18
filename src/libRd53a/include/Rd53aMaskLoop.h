@@ -31,6 +31,7 @@ class Rd53aMaskLoop : public LoopActionBase {
 	int m_maskType;
 	int m_maskSize;
 	int m_sensorType;
+	int m_includedPixels;
 
         void init();
         void end();
@@ -45,17 +46,16 @@ class Rd53aMaskLoop : public LoopActionBase {
 	//Needed for cross-talk mask
 	std::map< std:: string,  std::array< std::array<   std::pair<int, int> , 8 >, 2>    > AllNeighboursCoordinates;
 
-	//std::array< std::pair<int,int>, 8> m_allNeighboursCoordinates;
-	//std::array< std::array<int, 8>, 4> m_mask_edges;
-	//std::array< std::array<int, 8>, 4> m_mask_corners;
 	std::array< std::array<int, 8>, 8> m_mask_size;
-	
+		
 	
 	bool getNeighboursMap(int col, int row, int sensorType, int maskSize, std::vector<std::pair<int, int>> &neighbours);
 
 	//int IdentifyCorner(int col, int row);
 	//int IdentifyPixel(int col, int row);
 
+	bool IgnorePixel(int col, int row);
+	
 };
 
 #endif

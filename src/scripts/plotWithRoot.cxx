@@ -72,8 +72,10 @@ int main(int argc, char *argv[]) {
                     h->SetBinContent(j+1, i+1, tmp);
                 }
             }
-            h->SetMaximum(3500);
-            h->SetMinimum(1500);
+	    h->SetMaximum(3500);
+	    h->SetMinimum(1500);
+            //h->SetMaximum(150);
+            //h->SetMinimum(0);
             h->Draw("colz");
         } 
         if (type == "Histo1d") {

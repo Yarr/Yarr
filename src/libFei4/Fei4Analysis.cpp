@@ -705,7 +705,7 @@ void ScurveFitter::end() {
    
 
     for(unsigned bin=0; bin<(nCol*nRow); bin+=((nCol*nRow)/20)) {
-    //for(unsigned bin=0; bin<(nCol*nRow); bin+=1) {
+      //for(unsigned bin=0; bin<(nCol*nRow); bin+=1) {
       if (histos[bin]) {
 	output->pushData(histos[bin]);
       }
