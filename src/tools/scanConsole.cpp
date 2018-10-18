@@ -86,7 +86,8 @@ int main(int argc, char *argv[]) {
     int target_tot = -1;
     int mask_opt = -1;
 
-    bool doDBWrite = false;
+    bool dbUse = false;
+    std::string dbSerialNumber;
     
     unsigned runCounter = 0;
 
@@ -113,7 +114,7 @@ int main(int argc, char *argv[]) {
     oF.close();
 
     int c;
-    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:W")) != -1) {
+    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:W:")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
@@ -168,7 +169,8 @@ int main(int argc, char *argv[]) {
                 }
                 break;
             case 'W': // Write to DB
-                doDBWrite = true;
+                dbUse = true;
+                dbSerialNumber = std::string(optarg);
                 break;
             case '?':
                 if(optopt == 's' || optopt == 'n'){
@@ -629,9 +631,9 @@ int main(int argc, char *argv[]) {
         std::cout << "Find plots in: " << dataDir + "last_scan" << std::endl;
     }
 
-    if (doDBWrite) {
+    if (dbUse) {
         Database *database = new Database();
-        database->write(strippedScan, runCounter, outputDir);
+        database->write(dbSerialNumber, strippedScan, runCounter, outputDir);
         delete database;
     }
 

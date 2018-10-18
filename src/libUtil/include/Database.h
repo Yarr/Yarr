@@ -25,11 +25,12 @@ class Database {
         Database(std::string i_host_ip = "mongodb://localhost:27017");
         ~Database();
 
-        void write(std::string, int, std::string);
+        void write(std::string, std::string, int, std::string);
         std::string uploadFromJson(std::string, std::string);
 
     protected:
-        std::string registerComponentTestRun(std::string, std::string, int);
+        std::string findComponent(std::string);
+        std::string registerComponentTestRun(std::string, std::string, std::string, int);
         std::string registerTestRun(std::string, int);
         void addComment(std::string, std::string, std::string);
         void addAttachment(std::string, std::string, std::string, std::string, std::string, std::string, std::string);

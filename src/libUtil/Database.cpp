@@ -30,12 +30,14 @@ Database::~Database() {
 //*****************************************************************************************************
 // Public functions
 //
-void Database::write(std::string i_test_type, int i_run_number, std::string i_output_dir) {
+void Database::write(std::string i_serial_number, std::string i_test_type, int i_run_number, std::string i_output_dir) {
     if (DB_DEBUG) std::cout << "Database: Write" << std::endl;
+    std::string component_oid_str = this->findComponent(i_serial_number);
     std::string test_run_oid_str = this->registerTestRun(i_test_type, i_run_number);
-    this->registerComponentTestRun(i_test_type, test_run_oid_str, i_run_number);
-    this->addComment("testRun", test_run_oid_str, "hoge!!");
+    this->registerComponentTestRun(component_oid_str, test_run_oid_str, i_test_type, i_run_number);
     this->uploadFromDirectory(i_output_dir, test_run_oid_str, "testRun");
+
+    //this->addComment("testRun", test_run_oid_str, "hoge!!");
 }
 
 std::string Database::uploadFromJson(std::string i_collection_name, std::string i_json_path) {
@@ -55,8 +57,21 @@ std::string Database::uploadFromJson(std::string i_collection_name, std::string 
 //*****************************************************************************************************
 // Protected fuctions
 //
+std::string Database::findComponent(std::string i_serial_number){
+    mongocxx::collection collection = db["component"];
+    bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "serialNumber" << i_serial_number << finalize);
+    if(maybe_result) {
+        bsoncxx::document::element element = maybe_result->view()["_id"];
+        bsoncxx::oid oid = element.get_oid().value;
+        return oid.to_string();
+    }
+    else {
+        abort();
+        return "ERROR";
+    }
+}
 
-std::string Database::registerComponentTestRun(std::string i_test_type, std::string i_test_run_oid_str, int i_run_number) {
+std::string Database::registerComponentTestRun(std::string i_component_oid_str, std::string i_test_run_oid_str, std::string i_test_type, int i_run_number) {
     if (DB_DEBUG) std::cout << "\tDatabase: Register Com-Test Run" << std::endl;
     bsoncxx::document::value doc_value = document{} <<  
         "sys" << open_document <<
@@ -64,7 +79,7 @@ std::string Database::registerComponentTestRun(std::string i_test_type, std::str
             "cts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // creation timestamp
             "mts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // modification timestamp
         close_document <<
-        "component" << "..." << // id of component
+        "component" << i_component_oid_str << // id of component
         "state" << "..." << // code of test run state
         "stage" << "..." << // code of current stage of the component
         "testType" << i_test_type << // id of test type
