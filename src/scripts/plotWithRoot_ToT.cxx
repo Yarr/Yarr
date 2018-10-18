@@ -5,20 +5,21 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include <TH1.h>
 #include <TStyle.h>
 #include <TF1.h>
 #include <plotWithRoot.h>
 #include <RD53Style.h>
 
-int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory file_ext
+int main(int argc, char *argv[]) { //./plotWithRoot_ToT path/to/directory file_ext
 	//Example file extensions: png, pdf, C, root	
 
-	SetRD53Style();
+	SetRD53Style();	
 	gStyle->SetTickLength(0.02);
 	gStyle->SetTextFont();
 
 	if (argc < 3) {
-		std::cout << "No directory and/or image plot extension given! \nExample: ./plotWithRoot_NoiseMap path/to/directory/ pdf" << std::endl;
+		std::cout << "No directory and/or image plot extension given! \nExample: ./plotWithRoot_ToT path/to/directory/ pdf" << std::endl;
 		return -1;
 	}
 
@@ -47,7 +48,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory f
 		if (stat(filepath.c_str(), &filestat)) continue; //skip if file is invalid
 		if (S_ISDIR(filestat.st_mode)) continue; //skip if file is a directory
 
-		if ( strstr( file_path, "NoiseMap.dat") != NULL) { //if filename contains string declared in argument.
+		if ( strstr( file_path, "TotMap0.dat") != NULL && ( strstr( file_path, "Mean") != NULL || strstr( file_path, "Sigma") != NULL)  ) { //if filename contains string declared in argument.
 
 			chipnum = "Chip SN: " + file_name.substr(0, file_name.find(delimiter)); //get chip # from file name
 
@@ -58,35 +59,37 @@ int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory f
 			std::string type;
 			std::string name;
 
-			std::string xaxistitle, yaxistitle, xrangetitle;
+			std::string xaxistitle, yaxistitle;
 			std::string line;	
 
-			std::string filename1, filename2, filename3, filename4, filename5;
+			std::string filename1, filename2, filename3;
+
 
 			std::getline(infile, type);
 			std::getline(infile, name);
 			std::getline(infile, line); //skip "Column"
 			std::getline(infile, line); //skip "Rows"
-			std::getline(infile, line); //skip "Hits"
+			std::getline(infile, xaxistitle); //get xaxistitle "Mean ToT [bc]" or "Sigma ToT [bc]"
 			std::getline(infile, line); //skip x range
 			std::getline(infile, line); // skip y range
 
-			int xbins, range_bins;
-			double xlow, xhigh, range_low, range_high; 
+			int xbins;
+			double xlow, xhigh;
 			int underflow, overflow;
 			int rowno, colno;
 
 			rowno = 192;
 			colno = 400;
-			xaxistitle = "Noise [e]";
 			yaxistitle = "Number of Pixels";
-			xrangetitle = "Deviation from the Mean [RMS] ";
-			xbins = 2000;	//5e per bin
-			range_bins = 6;
-			xlow = -0.5;
-			xhigh = 10000.5;
-			range_low = 0;
-			range_high = 6;
+			xbins = 14;
+			xlow = 0.5;
+			xhigh = 14.5;
+
+			if ( strstr( file_path, "Sigma") != NULL ) {
+				xlow = -0.05;
+				xhigh = 10.05;
+				xbins = 101;
+			}
 
 			infile >> underflow >> overflow;
 
@@ -101,32 +104,27 @@ int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory f
 			}
 
 			//Create histograms
-			TH1* fe_hist[4];
-			TH1* range_hist[3];
-			std::string fe_name[4] = {"h_all", "h_Syn", "h_Lin", "h_Diff"};
-			std::string range_name[3] = {"h_range_Syn", "h_range_Lin", "h_range_Diff"};
-
-			for (int i=0; i<4; i++) {
-				fe_hist[i] = new TH1F(fe_name[i].c_str(), "", xbins, xlow, xhigh);
-				if (i<3) range_hist[i] = new TH1F(range_name[i].c_str(), "", range_bins, range_low, range_high);
-			}
+			std::string fe_hist_names[4] = {"h_all", "h_Syn", "h_Lin", "h_Diff"};
+			TH1 *fe_hist[4];
+			for (unsigned i=0; i<4; i++) fe_hist[i] = new TH1F(fe_hist_names[i].c_str(),"", xbins, xlow, xhigh);
 
 			TH2F *h_plot = NULL;
 			h_plot = new TH2F("h_plot", "", colno, 0, colno, rowno, 0, rowno); 
 
-			std::vector <double> pix_values;
-
-			//Fill Noise Map plots	
+			int zeros_FE[3] = { 0, 0, 0};
+			char zeros_Syn[100]={}, zeros_Lin[100]={}, zeros_Diff[100]={};
+			char* zeros_char[3] = {zeros_Syn, zeros_Lin, zeros_Diff};
+			//Fill Threshold plots	
 			for (int i=0; i<rowno; i++) {
 				for (int j=0; j<colno; j++) {
 
 					double tmp;
 					infile >> tmp;
-					pix_values.push_back(tmp);
+					if (tmp == 0) zeros_FE[whichFE(j)]++;				
 					if (tmp != 0) {	
 						fe_hist[0]->Fill(tmp);
 						fe_hist[whichFE(j)+1]->Fill(tmp);
-					}	
+					}
 					h_plot->SetBinContent(j+1,i+1,tmp);	
 				}
 			}
@@ -136,9 +134,6 @@ int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory f
 
 			char* mean_char[3] = {mean_Syn, mean_Lin, mean_Diff};
 			char* rms_char[3] = {rms_Syn, rms_Lin, rms_Diff};
-			double mean_h[4];
-			double rms_h[4]; 	
-			const char *LabelName[6] = {"1","2","3","4","5",">5"};	
 
 			//For RD53A and Chip ID labels.
 			TLatex *tname= new TLatex();
@@ -149,27 +144,27 @@ int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory f
 			std::string rd53 = "RD53A Internal";
 
 			//For Mean and RMS labels
-			TLatex *mean_rms = new TLatex;
-			mean_rms->SetNDC();
-			mean_rms->SetTextAlign(13);
-			mean_rms->SetTextFont(63);
-			mean_rms->SetTextSizePixels(24);
+			TLatex *mean_rms_z = new TLatex;
+			mean_rms_z->SetNDC();
+			mean_rms_z->SetTextAlign(13);
+			mean_rms_z->SetTextFont(63);
+			mean_rms_z->SetTextSizePixels(24);
 
 			TLegend* fe_legend[4];
 			std::string legend_name[4] = {"All", "Synchronous", "Linear", "Differential"};					
+
 			int color[4] = {800, 806, 824, 865}; //(kOrange, kOrange+6, kSpring+4, kAzure+5)
 
-			//Create canvases
+			//Create canvases	
 			std::string c_name[4]  = {"c_All", "c_Syn", "c_Lin", "c_Diff"};
 			TCanvas* fe_c[4];
 
 			//Create filename extensions
-			std::string plot_ext[11] = {".dat", "_All.", "_SYN.", "_LIN.", "_DIFF.", "_PLOT.", "_STACK.", "_SYNrange.", "_LINrange.", "_DIFFrange.", "_STACKrange."};
-			for (int i=1; i<11; i++) plot_ext[i].append(ext);
+			std::string plot_ext[7] = {".dat", "_All.", "_SYN.", "_LIN.", "_DIFF.", "_PLOT.", "_STACK."};
+			for (int i=1; i<7; i++) plot_ext[i].append(ext);
 
 			//Plots for All, Synchronous, Linear, and Differential FEs
 			for (int i=0; i<4; i++) {
-
 				style_TH1(fe_hist[i], xaxistitle.c_str(), yaxistitle.c_str());
 				fe_hist[i]->SetFillColor(color[i]);
 				fe_hist[i]->SetLineColor(color[i]);
@@ -179,7 +174,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory f
 				fe_c[i] = new TCanvas(c_name[i].c_str(), c_name[i].c_str(), 800, 600);
 				style_TH1canvas(fe_c[i]);
 				fe_hist[i]->Draw();
-			
+
 				//Write RD53A and Chip ID
 				tname->DrawLatex(0.28,0.96, rd53.c_str());
 				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
@@ -191,31 +186,32 @@ int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory f
 				fe_legend[i]->SetBorderSize(0);
 				fe_legend[i]->Draw();
 
-				mean_h[i] = fe_hist[i]->GetMean();
-				rms_h[i] = fe_hist[i]->GetRMS();
-
-				//Write Mean and RMS
+				//Write the Mean, RMS, and number of untuned pixels
 				if (i>0) {
 					sprintf(mean_char[i-1], "Mean = %.1f #pm %.1f", fe_hist[i]->GetMean(), fe_hist[i]->GetMeanError());
-					mean_rms->DrawLatex(0.18,0.91, mean_char[i-1]);
+					mean_rms_z->DrawLatex(0.18,0.91, mean_char[i-1]);
 					sprintf(rms_char[i-1], "RMS = %.1f #pm %.1f", fe_hist[i]->GetRMS(), fe_hist[i]->GetRMSError());
-					mean_rms->DrawLatex(0.18,0.87, rms_char[i-1]);
+					mean_rms_z->DrawLatex(0.18,0.87, rms_char[i-1]);
+					sprintf(zeros_char[i-1], "Untuned Pixels = %i", zeros_FE[i]);
+					mean_rms_z->DrawLatex(0.18,0.83, zeros_char[i-1]);
 				}					
 
-				fe_hist[i]->SetMaximum((fe_hist[i]->GetMaximum())*1.21); //Leave extra room for legend
-				fe_hist[i]->GetXaxis()->SetRangeUser((mean_h[i] - 3*rms_h[i] < 0) ? -0.5 : (mean_h[i]- 3*rms_h[i]), mean_h[i] + 3*rms_h[i]); //Change the x-axis range to be the Mean +/- 3*RMS. If the lower bound is less than -0.5, make it -0.5.
+				fe_hist[i]->SetMaximum((fe_hist[i]->GetMaximum())*1.21); //Leave extra room for legend.
+				if ( strstr( file_path, "Sigma") != NULL ) fe_hist[i]->GetXaxis()->SetRangeUser(((fe_hist[i]->GetMean()) - 2*(fe_hist[i]->GetRMS()) < 0) ? 0 : ((fe_hist[i]->GetMean())- 2*(fe_hist[i]->GetRMS())), (fe_hist[i]->GetMean()) + 2*(fe_hist[i]->GetRMS())); //Change the x-axis range to be the Mean +/- 2*RMS. If the lower bound is less than 0, make it 0.
 				fe_c[i]->Update();
 
 				filename1 = filename.replace(filename.find(plot_ext[i].c_str()), 10, plot_ext[i+1].c_str()); 
 				fe_c[i]->Print(filename1.c_str());
-
 			}
+
 
 			//Map of Pixels
 			style_TH2(h_plot, "Column", "Row", xaxistitle.c_str()); 
 			TCanvas *c_plot = new TCanvas("c_plot", "c_plot", 800, 600);
 			style_TH2canvas(c_plot);
+			//gStyle->SetPalette(kTemperatureMap);
 			h_plot->Draw("colz");
+			//h_plot->Draw("colz X+ Y+ SAME");
 			h_plot->GetXaxis()->SetLabelSize(0.04);
 			h_plot->GetYaxis()->SetLabelSize(0.04);
 			tname->DrawLatex(0.23,0.96, rd53.c_str());
@@ -223,11 +219,10 @@ int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory f
 			gStyle->SetOptStat(0);
 			c_plot->RedrawAxis();
 			c_plot->Update();
-			h_plot->GetZaxis()->SetRangeUser((mean_h[0] - 3*rms_h[0] < 0) ? -0.5 : (mean_h[0]- 3*rms_h[0])  , mean_h[0] + 3*rms_h[0]);	
+			if ( strstr( file_path, "Sigma") != NULL ) h_plot->GetZaxis()->SetRangeUser(((fe_hist[0]->GetMean()) - 2*(fe_hist[0]->GetRMS()) < 0) ? 0 : ((fe_hist[0]->GetMean())- 2*(fe_hist[0]->GetRMS())), (fe_hist[0]->GetMean()) + 2*(fe_hist[0]->GetRMS()));
 			h_plot->GetZaxis()->SetLabelSize(0.04);
 			filename2 = filename.replace(filename.find(plot_ext[4].c_str()), 10, plot_ext[5].c_str());
 			c_plot->Print(filename2.c_str());
-
 
 			//Stack Plot for all 3 FEs
 			THStack *hs = new THStack("hs","");
@@ -239,143 +234,35 @@ int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory f
 			hs->Draw(); 
 			//Setting the title for THStack plots has to be after Draw(), and needs canvas->Modified() after
 			style_THStack(hs, xaxistitle.c_str(), yaxistitle.c_str());
-			hs->GetXaxis()->SetLabelSize(0.065);
-			hs->GetYaxis()->SetLabelSize(0.045);
+			hs->GetXaxis()->SetLabelSize(0.035);
 			gPad->SetLogy(0);
 			c_Stack->Modified();
 			gStyle->SetOptStat(0);
 			TLegend *stack_legend = new TLegend(0.33,0.82,0.93,0.91);
 			stack_legend->SetNColumns(3);
 			stack_legend->SetHeader("Analog FEs", "C");
-
 			for (int i=1; i<4; i++) stack_legend->AddEntry(fe_hist[i], legend_name[i].c_str(), "f"); 
 			stack_legend->SetBorderSize(0);
 			stack_legend->Draw();
-			hs->GetXaxis()->SetLabelSize(0.05);
-			hs->GetYaxis()->SetLabelSize(0.03);
 			tname->DrawLatex(0.28,0.96, rd53.c_str());
 			tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 
 			hs->SetMaximum((fe_hist[0]->GetMaximum())*1.21);
-			hs->GetXaxis()->SetRangeUser((mean_h[0] - 3*rms_h[0] < 0) ? -0.5 : (mean_h[0]- 3*rms_h[0])  , mean_h[0] + 3*rms_h[0]);
+			if ( strstr( file_path, "Sigma") != NULL ) hs->GetXaxis()->SetRangeUser(((fe_hist[0]->GetMean()) - 2*(fe_hist[0]->GetRMS()) < 0) ? 0 : ((fe_hist[0]->GetMean())- 2*(fe_hist[0]->GetRMS())), (fe_hist[0]->GetMean()) + 2*(fe_hist[0]->GetRMS()));
 			c_Stack->Update();				
-
 			filename3 = filename.replace(filename.find(plot_ext[5].c_str()), 11, plot_ext[6].c_str());
 			c_Stack->Print(filename3.c_str());
 
 
-			int zeros_FE[3] = { 0, 0, 0};
-			int n=0;
-			char zeros_Syn[100]={}, zeros_Lin[100]={}, zeros_Diff[100]={};
-			char* zeros_char[3] = {zeros_Syn, zeros_Lin, zeros_Diff};
-
-			//Fill range histograms
-			for (int i=0; i<rowno; i++) {
-				for (int j=0; j<colno; j++) {
-					double *tmp_p = &pix_values[n];
-					n++;
-					double tmp = *tmp_p;		
-					int bin_num = whichSigma(tmp, mean_h[whichFE(j)+1], rms_h[whichFE(j)+1]);
-					range_hist[whichFE(j)]->AddBinContent(bin_num);
-					if (tmp == 0) zeros_FE[whichFE(j)]++;				
-				}
-			}
-
-			std::cout << "\n \n \n Number of Zeros are	 " << zeros_FE[0] << "	" << zeros_FE[1] << "	" << zeros_FE[2] << std::endl;
-
-			//Label for untuned pixels
-			TLatex *zeros = new TLatex();
-			zeros->SetNDC();
-			zeros->SetTextAlign(13);
-			zeros->SetTextFont(63);
-			zeros->SetTextSizePixels(20);
-
-			std::string cr_name[3]  = {"cr_Syn", "cr_Lin", "cr_Diff"};
-			TCanvas* range_c[3];
-			TLegend* range_legend[3];
-
-			//Plot Range histograms for Synchronous, Linear, and Differential FEs.	
-			for (int i=0; i<3; i++) {
-
-				style_TH1(range_hist[i], xrangetitle.c_str(), yaxistitle.c_str());
-				for (int j=1; j<=range_bins; j++) range_hist[i]->GetXaxis()->SetBinLabel(j, LabelName[j-1]);
-				range_hist[i]->GetXaxis()->LabelsOption("h");
-				range_hist[i]->SetFillColor(color[i+1]);
-				range_hist[i]->SetLineColor(color[i+1]);
-				range_hist[i]->SetStats(0);
-
-				range_c[i] = new TCanvas(cr_name[i].c_str(), cr_name[i].c_str(), 800, 600);
-				style_TH1canvas(range_c[i]);
-				range_hist[i]->Draw();
-				range_hist[i]->SetMarkerSize(1.8);
-				range_hist[i]->SetMarkerColor(1);
-				range_hist[i]->Draw("TEXT0 SAME");	
-
-				tname->DrawLatex(0.28,0.96, rd53.c_str());
-				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
-
-				sprintf(zeros_char[i], "Untuned Pixels = %i", zeros_FE[i]);
-				zeros->DrawLatex(0.18,0.91, zeros_char[i]);
-
-				range_legend[i] = new TLegend(0.7, 0.82, 0.87, 0.91);
-				range_legend[i]->SetHeader("Analog FEs", "C");
-				range_legend[i]->AddEntry(range_hist[i], legend_name[i+1].c_str(), "f");
-				range_legend[i]->SetBorderSize(0);
-				range_legend[i]->Draw();
-
-				range_hist[i]->SetMaximum((range_hist[i]->GetMaximum())*1.25);
-				range_c[i]->Update();
-
-				filename4 = filename.replace(filename.find(plot_ext[i+6].c_str()), 15, plot_ext[i+7].c_str()); 
-				range_c[i]->Print(filename4.c_str());
-
-			}
-
-			//Stacked Range Plot
-			THStack *hs_range = new THStack("hs","");
-			for (int i=0; i<3; i++) hs_range->Add(range_hist[i]);
-			TCanvas *c_Stackr = new TCanvas("c_Stackr", "c_Stackr", 800, 600);
-			c_Stackr->SetLeftMargin(0.15);
-			c_Stackr->SetRightMargin(0.05);
-			c_Stackr->SetBottomMargin(0.1225);
-			hs_range->Draw(); 
-			//Setting the title for THStack plots has to be after Draw(), and needs canvas->Modified() after
-			style_THStack(hs_range, xrangetitle.c_str(), yaxistitle.c_str());
-			hs_range->GetXaxis()->SetLabelSize(0.065);
-			hs_range->GetYaxis()->SetLabelSize(0.045);
-			gPad->SetLogy(0);
-			c_Stackr->Modified();
-			gStyle->SetOptStat(0);
-			TLegend *stackr_legend = new TLegend(0.33,0.82,0.93,0.91);
-			stackr_legend->SetNColumns(3);	
-			stackr_legend->SetHeader("Analog FEs", "C");
-			for (int i=0; i<3; i++) stackr_legend->AddEntry(range_hist[i], legend_name[i+1].c_str(), "f"); 
-			stackr_legend->SetBorderSize(0);
-			stackr_legend->Draw();
-			hs_range->GetXaxis()->SetLabelSize(0.05);
-			hs_range->GetYaxis()->SetLabelSize(0.03);
-			tname->DrawLatex(0.28,0.96, rd53.c_str());
-			tname->DrawLatex(0.8, 0.96, chipnum.c_str());
-			hs_range->SetMaximum((hs_range->GetMaximum())*1.21);
-			c_Stackr->Update();
-			filename5 = filename.replace(filename.find(plot_ext[9].c_str()), 16, plot_ext[10].c_str());
-			c_Stackr->Print(filename5.c_str());
-
 			for (int i=0; i<4; i++) {
 				delete fe_hist[i];
 				delete fe_c[i];
-				if (i<3) {
-					delete range_hist[i];
-					delete range_c[i];
-				}
 			}
 
 			delete h_plot;
 			delete c_plot;
 			delete hs;
 			delete c_Stack;
-			delete hs_range;
-			delete c_Stackr;
 
 		}
 	}

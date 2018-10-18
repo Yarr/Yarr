@@ -11,7 +11,7 @@
 #include <RD53Style.h>
 
 int main(int argc, char *argv[]) { //./plotWithRoot_Scurve path/to/directory file_ext
-	//Example file extensions: png, pdf, C
+	//Example file extensions: png, pdf, C, root
 	
 	SetRD53Style();
 	gStyle->SetTickLength(0.02);
@@ -85,9 +85,9 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Scurve path/to/directory fil
 					return -1;
 				}
 
+				//Create plot
 				TH2F *h_plot = NULL;
 				h_plot = new TH2F("h_plot", "", xbins, xlow, xhigh, ybins, ylow, yhigh); 
-					
 				//Fill S-curve plot	
 				for (int i=0; i<ybins; i++) {
 					for (int j=0; j<xbins; j++) {
@@ -96,7 +96,10 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Scurve path/to/directory fil
 						if (tmp != 0) h_plot->SetBinContent(j+1,i+1,tmp);	
 					}
 				}
-			
+		
+
+				std::string rd53 = "RD53A Internal";
+	
 				//S-curve plot
 				style_TH2(h_plot, xaxistitle.c_str(), yaxistitle.c_str(), zaxistitle.c_str()); 
 				TCanvas *c_plot = new TCanvas("c_plot", "c_plot", 800, 600);
@@ -105,19 +108,22 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Scurve path/to/directory fil
 				h_plot->Draw("colz");
 				h_plot->GetXaxis()->SetLabelSize(0.04);
 				h_plot->GetYaxis()->SetLabelSize(0.04);
+				
+				//Write RD53A and Chip ID
 				TLatex *tname= new TLatex();
 				tname->SetNDC();
 				tname->SetTextAlign(22);
 				tname->SetTextFont(73);
 				tname->SetTextSizePixels(30);
-				tname->DrawLatex(0.16,0.96,"RD53A");
+				tname->DrawLatex(0.23,0.96, rd53.c_str());
 				tname->DrawLatex(0.72, 0.96, chipnum.c_str());
+				
 				gStyle->SetOptStat(0);
 				c_plot->RedrawAxis();
 				c_plot->Update();
 				h_plot->GetZaxis()->SetLabelSize(0.04);
 				std::string plot_ext = "_PLOT.";	
-				filename1=filename.replace(filename.find(".dat"), 9, plot_ext.append(argv[2]));				
+				filename1=filename.replace(filename.find(".dat"), 10, plot_ext.append(argv[2]));				
 				c_plot->Print(filename1.c_str());
 
 		}

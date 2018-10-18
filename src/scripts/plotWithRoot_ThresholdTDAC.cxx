@@ -15,7 +15,7 @@ using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::i
 
 
 int main(int argc, char *argv[]) { //./plotWithRoot_ThresholdTDAC path/to/directory file_ext
-	//Example file extensions: png, pdf, C	
+	//Example file extensions: png, pdf, C, root	
 
 	SetRD53Style();
 
@@ -108,8 +108,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ThresholdTDAC path/to/direct
 		}
 
 		//Open .json.after file
-		if ( strstr( file_path, "json.after") != NULL) { //if filename contains string declared in argument.
-			if (strstr(file_path, ".pdf") != NULL) continue; 
+		if ( strstr(file_path, ".json.after") != NULL && strstr(file_path, "rd53a") !=NULL ) { //if filename contains string declared in argument.
+			if (strstr(file_path, "before_") != NULL || strstr(file_path, "after_") != NULL) continue; 
 			else {
 				std::cout << "Opening file: " << filepath.c_str() << std::endl;
 				std::string filename = filepath.c_str();
@@ -129,15 +129,17 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ThresholdTDAC path/to/direct
 
 	}
 
-
+	//Number of TDACs in Linear and Differential FE.
 	int lin_plot=16, diff_plot=31;		
 
+	//Create Plots to get range
 	TH1* lin_all = NULL;
 	lin_all =  (TH1*) new TH1F("lin_all", "", xbins, xlow, xhigh);
 
 	TH1* diff_all = NULL;
 	diff_all =  (TH1*) new TH1F("diff_all", "", xbins, xlow, xhigh);
 
+	//Create Plots -- 1 for each TDAC value
 	std::string lin_names[lin_plot] = {"lin0", "lin1", "lin2", "lin3", "lin4", "lin5", "lin6", "lin7", "lin8", "lin9", "lin10", "lin11", "lin12", "lin13", "lin14", "lin15"};
 	TH1* histLin[lin_plot];
 	for (int i=0; i<lin_plot;i++) histLin[i] = new TH1F(lin_names[i].c_str(), "", xbins, xlow, xhigh);	
@@ -146,6 +148,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ThresholdTDAC path/to/direct
 	TH1* histDiff[diff_plot];
 	for (int i=0; i<diff_plot; i++) histDiff[i] = new TH1F(diff_names[i].c_str(),"", xbins, xlow, xhigh);
 
+	//Write Legend labels
 	std::string lin_num[lin_plot] = {"0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15"};
 	std::string diff_num[diff_plot] = {"-15", "-14", "-13", "-12", "-11", "-10", "-9", "-8", "-7", "-6", "-5", "-4", "-3", "-2", "-1", "0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15"};
 
@@ -190,6 +193,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ThresholdTDAC path/to/direct
 			}
 		}
 
+		std::string rd53 = "RD53A Internal";
+
 		//Linear FE Threshold TDAC plot
 		THStack *hs_Lin = new THStack("hs_Lin","");
 		gStyle->SetPalette(kBird);
@@ -199,7 +204,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ThresholdTDAC path/to/direct
 		cs_Lin->SetRightMargin(0.10);
 		cs_Lin->SetBottomMargin(0.1225);
 		//hs_Lin->Draw();
-		hs_Lin->Draw("PFC"); 
+		hs_Lin->Draw("PFC"); //Fill using the colours in the chosen palette 
 		//Setting the title for THStack plots has to be after Draw(), and needs canvas->Modified() after
 		style_THStack(hs_Lin, "Threshold [e]", "Number of Pixels");
 		hs_Lin->GetXaxis()->SetLabelSize(0.065);
@@ -221,14 +226,14 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ThresholdTDAC path/to/direct
 		tname->SetTextAlign(22);
 		tname->SetTextFont(73);
 		tname->SetTextSizePixels(30);
-		tname->DrawLatex(0.21,0.96,"RD53A");
+		tname->DrawLatex(0.28,0.96, rd53.c_str());
 		tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 		
 		//hs_Lin->SetMaximum((hs_Lin->GetMaximum())*1.15);
-		hs_Lin->GetXaxis()->SetRangeUser((lin_all->GetMean() - 3*(lin_all->GetRMS())), (lin_all->GetMean() + 3*(lin_all->GetRMS())));
+		hs_Lin->GetXaxis()->SetRangeUser((lin_all->GetMean() - 2*(lin_all->GetRMS())), (lin_all->GetMean() + 2*(lin_all->GetRMS()))); //Set the x-axis range to be the Mean +/- 2*RMS
 		cs_Lin->Update();
 		std::string lin_ext = "_LINThrTDAC."; 
-		filename1 = filename.replace(filename.find(".dat"), 15, lin_ext.append(ext)); 
+		filename1 = filename.replace(filename.find(".dat"), 16, lin_ext.append(ext)); 
 		cs_Lin->Print(filename1.c_str());
 
 		//Differential FE Threshold TDAC Plot
@@ -257,13 +262,13 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ThresholdTDAC path/to/direct
 		hs_Diff_legend->SetTextSize(0.03);
 		hs_Diff_legend->Draw();
 
-		tname->DrawLatex(0.21,0.96,"RD53A");
+		tname->DrawLatex(0.28,0.96, rd53.c_str());
 		tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 		//hs_Diff->SetMaximum((hs_Diff->GetMaximum())*1.15);
-		hs_Diff->GetXaxis()->SetRangeUser((diff_all->GetMean() - 3*(diff_all->GetRMS())), (diff_all->GetMean() + 3*(diff_all->GetRMS())));
+		hs_Diff->GetXaxis()->SetRangeUser((diff_all->GetMean() - 2*(diff_all->GetRMS())), (diff_all->GetMean() + 2*(diff_all->GetRMS())));
 		cs_Diff->Update();
 		std::string diff_ext = "_DIFFThrTDAC.";
-		filename2 = filename.replace(filename.find(lin_ext), 16, diff_ext.append(ext)); 
+		filename2 = filename.replace(filename.find(lin_ext), 17, diff_ext.append(ext)); 
 		cs_Diff->Print(filename2.c_str());
 
 		for (int i=0; i<diff_plot; i++) {
