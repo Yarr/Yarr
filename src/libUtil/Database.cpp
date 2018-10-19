@@ -32,12 +32,26 @@ Database::~Database() {
 //
 void Database::write(std::string i_serial_number, std::string i_test_type, int i_run_number, std::string i_output_dir) {
     if (DB_DEBUG) std::cout << "Database: Write" << std::endl;
-    std::string component_oid_str = this->findComponent(i_serial_number);
-    std::string test_run_oid_str = this->registerTestRun(i_test_type, i_run_number);
-    this->registerComponentTestRun(component_oid_str, test_run_oid_str, i_test_type, i_run_number);
-    this->uploadFromDirectory(i_output_dir, test_run_oid_str, "testRun");
-
-    //this->addComment("testRun", test_run_oid_str, "hoge!!");
+    std::string component_type_str = this->getValue("component", "serialNumber", i_serial_number, "componentType");
+    if (component_type_str == "Module") {
+        std::string module_oid_str = this->getValue("component", "serialNumber", i_serial_number, "_id", "oid");
+        mongocxx::collection collection = db["childParentRelation"];
+        mongocxx::cursor cursor = collection.find(document{} << "parent" << module_oid_str << finalize);
+        for (auto doc : cursor) {
+            bsoncxx::document::element element = doc["child"];
+            std::string child_oid_str = element.get_utf8().value.to_string();
+            std::string test_run_oid_str = this->registerTestRun(i_test_type, i_run_number);
+            this->registerComponentTestRun(child_oid_str, test_run_oid_str, i_test_type, i_run_number);
+            this->uploadFromDirectory("testRun", test_run_oid_str, i_output_dir);
+        }
+    }
+    else {
+        std::string component_oid_str = this->getValue("component", "serialNumber", i_serial_number, "_id", "oid");
+        std::string test_run_oid_str = this->registerTestRun(i_test_type, i_run_number);
+        this->registerComponentTestRun(component_oid_str, test_run_oid_str, i_test_type, i_run_number);
+        this->uploadFromDirectory("testRun", test_run_oid_str, i_output_dir);
+        //this->addComment("testRun", test_run_oid_str, "hoge!!");
+    }
 }
 
 std::string Database::uploadFromJson(std::string i_collection_name, std::string i_json_path) {
@@ -54,18 +68,49 @@ std::string Database::uploadFromJson(std::string i_collection_name, std::string 
     return oid.to_string();
 }
 
+void Database::registerChildParentRelationFromJson(std::string i_json_path) {
+    std::ifstream json_ifs(i_json_path);
+    if (!json_ifs) {
+        std::cerr <<"#ERROR# Cannot open register json file: " << i_json_path << std::endl;
+        return;
+    }
+    json json = json::parse(json_ifs);
+
+    for (int i=0; i<json["chipNumber"]; i++) {
+        bsoncxx::document::value doc_value = document{} <<  
+            "sys" << open_document <<
+                "rev" << 0 << // revision number
+                "cts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // creation timestamp
+                "mts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // modification timestamp
+            close_document <<
+            "parent" << this->getValue("component", "serialNumber", json["parent"], "_id", "oid") << // id of parent
+            "child" << this->getValue("component", "serialNumber", json["chip"][i]["child"], "_id", "oid") << // id of child
+        finalize;
+     
+        mongocxx::collection collection = db["childParentRelation"];
+        auto result = collection.insert_one(doc_value.view());
+    }
+    return;
+}
+
 //*****************************************************************************************************
 // Protected fuctions
 //
-std::string Database::findComponent(std::string i_serial_number){
-    mongocxx::collection collection = db["component"];
-    bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "serialNumber" << i_serial_number << finalize);
-    if(maybe_result) {
-        bsoncxx::document::element element = maybe_result->view()["_id"];
-        bsoncxx::oid oid = element.get_oid().value;
-        return oid.to_string();
+std::string Database::getValue(std::string i_collection_name, std::string i_member_key, std::string i_member_value, std::string i_key, std::string i_bson_type){
+    mongocxx::collection collection = db[i_collection_name];
+    bsoncxx::stdx::optional<bsoncxx::document::value> result = collection.find_one(document{} << i_member_key << i_member_value << finalize);
+    if(result) {
+        if (i_bson_type == "oid") {
+            bsoncxx::document::element element = result->view()["_id"];
+            return element.get_oid().value.to_string();
+        }
+        else {
+            bsoncxx::document::element element = result->view()[i_key];
+            return element.get_utf8().value.to_string();
+        }
     }
     else {
+        std::cerr <<"#ERROR# Cannot find " << i_key << " from member " << i_member_key << ": " << i_member_value << " in collection name: " << i_collection_name << std::endl;
         abort();
         return "ERROR";
     }
@@ -183,7 +228,7 @@ std::string Database::uploadAttachment(std::string i_file_path, std::string i_fi
     return result.id().get_oid().value.to_string();
 }
 
-void Database::uploadFromDirectory(std::string outputDir, std::string i_test_run_oid_str, std::string i_collection_name) {
+void Database::uploadFromDirectory(std::string i_collection_name, std::string i_test_run_oid_str, std::string outputDir) {
     if (DB_DEBUG) std::cout << "\t\tDatabase: upload from directory" << std::endl;
     // Get file path from directory
     std::array<char, 128> buffer;

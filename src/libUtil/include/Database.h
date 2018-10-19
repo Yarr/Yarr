@@ -27,9 +27,10 @@ class Database {
 
         void write(std::string, std::string, int, std::string);
         std::string uploadFromJson(std::string, std::string);
+        void registerChildParentRelationFromJson(std::string);
 
     protected:
-        std::string findComponent(std::string);
+        std::string getValue(std::string, std::string, std::string, std::string, std::string i_bson_type="string");
         std::string registerComponentTestRun(std::string, std::string, std::string, int);
         std::string registerTestRun(std::string, int);
         void addComment(std::string, std::string, std::string);
