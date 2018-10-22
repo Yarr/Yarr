@@ -38,6 +38,11 @@ endif
 
 CPPFLAGS += -std=c++11 -Wall -Werror
 INC_DIRS := $(wildcard */include)
+
+ifneq (${NETIO_DIR},)
+  INC_DIRS+= $(NETIO_DIR)/include
+endif
+
 INCFLAGS += $(addprefix -I,$(INC_DIRS))
 CPPFLAGS += $(INCFLAGS)
 
@@ -104,10 +109,19 @@ endef
 
 PKGS := tools libSpec libYarr libFei4 libFe65p2 libUtil libEmu libRce libBoc libKU040 libRd53a
 $(foreach P,$(PKGS),$(eval $(call addPkg,$(patsubst LIB%,%,$(call uc,$(P))),$(P))))
+
+ifeq (${NETIO_DIR},)
+  TOOLS_FILES := $(filter-out tools/testNetioHw.cpp tools/testScan.cpp tools/testBitStream.cpp,$(TOOLS_FILES))
+# $(info $(TOOLS_FILES))
+endif
+
 TARGETS=$(patsubst %.cpp,$(BIN)/%,$(notdir $(TOOLS_FILES)))
 LIB_FILES := $(filter-out $(TOOLS_FILES),$(ALL_FILES))
 LIB_OBJS := $(patsubst %.cpp,$(BUILD)/%.o,$(notdir $(LIB_FILES)))
 
+ifneq (${NETIO_DIR},)
+  PKGS+= libNetioHW
+endif
 
 ######
 ##  Targets
