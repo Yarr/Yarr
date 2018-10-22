@@ -41,8 +41,9 @@ void Database::write(std::string i_serial_number, std::string i_test_type, int i
             bsoncxx::document::element element = doc["child"];
             std::string child_oid_str = element.get_utf8().value.to_string();
             std::string test_run_oid_str = this->registerTestRun(i_test_type, i_run_number);
+            std::string chip_name_str = this->getValueByOid("component", child_oid_str, "name");
             this->registerComponentTestRun(child_oid_str, test_run_oid_str, i_test_type, i_run_number);
-            this->uploadFromDirectory("testRun", test_run_oid_str, i_output_dir);
+            this->uploadFromDirectory("testRun", test_run_oid_str, i_output_dir, chip_name_str);
         }
     }
     else {
@@ -55,6 +56,7 @@ void Database::write(std::string i_serial_number, std::string i_test_type, int i
 }
 
 std::string Database::uploadFromJson(std::string i_collection_name, std::string i_json_path) {
+    if (DB_DEBUG) std::cout << "Database: Upload from json" << std::endl;
     std::ifstream json_ifs(i_json_path);
     if (!json_ifs) {
         std::cerr <<"#ERROR# Cannot open register json file: " << i_json_path << std::endl;
@@ -68,35 +70,81 @@ std::string Database::uploadFromJson(std::string i_collection_name, std::string 
     return oid.to_string();
 }
 
-void Database::registerChildParentRelationFromJson(std::string i_json_path) {
+void Database::registerFromConnectivity(std::string i_json_path) {
+    if (DB_DEBUG) std::cout << "Database: Register from connectivity" << std::endl;
     std::ifstream json_ifs(i_json_path);
     if (!json_ifs) {
-        std::cerr <<"#ERROR# Cannot open register json file: " << i_json_path << std::endl;
+        std::cerr << "#ERROR# Cannot open register json file: " << i_json_path << std::endl;
         return;
     }
-    json json = json::parse(json_ifs);
+    json conn_json = json::parse(json_ifs);
 
-    for (int i=0; i<json["chipNumber"]; i++) {
+    // chip component
+    for (unsigned i=0; i<conn_json["chips"].size(); i++) {
+        std::ifstream j_ifs(conn_json["chips"][i]["config"].get<std::string>());
+        if (!j_ifs) {
+            std::cerr << "#ERROR# Cannot open register chip config file" << std::endl;
+            return;
+        }
+        json jj = json::parse(j_ifs);
+        std::string chipType;
+        if (conn_json["chipType"] == "FEI4B") chipType = "FE-I4B";
+
         bsoncxx::document::value doc_value = document{} <<  
             "sys" << open_document <<
                 "rev" << 0 << // revision number
                 "cts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // creation timestamp
                 "mts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // modification timestamp
             close_document <<
-            "parent" << this->getValue("component", "serialNumber", json["parent"], "_id", "oid") << // id of parent
-            "child" << this->getValue("component", "serialNumber", json["chip"][i]["child"], "_id", "oid") << // id of child
+            "serialNumber" << conn_json["chips"][i]["serialNumber"].get<std::string>() <<
+            "componentType" << conn_json["chipType"].get<std::string>() <<
+            "name" << jj[chipType]["name"].get<std::string>() <<
         finalize;
      
-        mongocxx::collection collection = db["childParentRelation"];
-        auto result = collection.insert_one(doc_value.view());
+        mongocxx::collection collection = db["component"];
+        collection.insert_one(doc_value.view());
     }
-    return;
+
+    // module component
+    if (conn_json["module"].empty() || conn_json["module"]["serialNumber"].empty()) {
+        std::cout << "\tDatabase: no module info in connectivity! skip register module" << std::endl;
+    } else {
+        bsoncxx::document::value doc_value = document{} <<  
+            "sys" << open_document <<
+                "rev" << 0 << // revision number
+                "cts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // creation timestamp
+                "mts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // modification timestamp
+            close_document <<
+            "serialNumber" << conn_json["module"]["serialNumber"].get<std::string>() <<
+            "componentType" << conn_json["module"]["componentType"].get<std::string>() <<
+        finalize;
+ 
+        mongocxx::collection collection = db["component"];
+        collection.insert_one(doc_value.view());
+
+        // CP relation
+        for (unsigned i=0; i<conn_json["chips"].size(); i++) {
+            bsoncxx::document::value doc_value = document{} <<  
+                "sys" << open_document <<
+                    "rev" << 0 << // revision number
+                    "cts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // creation timestamp
+                    "mts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // modification timestamp
+                close_document <<
+                "parent" << getValue("component", "serialNumber", conn_json["module"]["serialNumber"], "_id", "oid") <<
+                "child" << getValue("component", "serialNumber", conn_json["chips"][i]["serialNumber"], "_id", "oid") <<
+            finalize;
+ 
+            mongocxx::collection collection = db["childParentRelation"];
+            collection.insert_one(doc_value.view());
+        }
+    }
 }
 
 //*****************************************************************************************************
 // Protected fuctions
 //
 std::string Database::getValue(std::string i_collection_name, std::string i_member_key, std::string i_member_value, std::string i_key, std::string i_bson_type){
+    if (DB_DEBUG) std::cout << "\tDatabase: get value" << std::endl;
     mongocxx::collection collection = db[i_collection_name];
     bsoncxx::stdx::optional<bsoncxx::document::value> result = collection.find_one(document{} << i_member_key << i_member_value << finalize);
     if(result) {
@@ -111,6 +159,27 @@ std::string Database::getValue(std::string i_collection_name, std::string i_memb
     }
     else {
         std::cerr <<"#ERROR# Cannot find " << i_key << " from member " << i_member_key << ": " << i_member_value << " in collection name: " << i_collection_name << std::endl;
+        abort();
+        return "ERROR";
+    }
+}
+
+std::string Database::getValueByOid(std::string i_collection_name, std::string i_member_value, std::string i_key, std::string i_bson_type){
+    if (DB_DEBUG) std::cout << "\tDatabase: get value by oid" << std::endl;
+    mongocxx::collection collection = db[i_collection_name];
+    bsoncxx::stdx::optional<bsoncxx::document::value> result = collection.find_one(document{} << "_id" << bsoncxx::oid(i_member_value) << finalize);
+    if(result) {
+        if (i_bson_type == "oid") {
+            bsoncxx::document::element element = result->view()["_id"];
+            return element.get_oid().value.to_string();
+        }
+        else {
+            bsoncxx::document::element element = result->view()[i_key];
+            return element.get_utf8().value.to_string();
+        }
+    }
+    else {
+        std::cerr <<"#ERROR# Cannot find " << i_key << " from member _id : " << i_member_value << " in collection name: " << i_collection_name << std::endl;
         abort();
         return "ERROR";
     }
@@ -228,7 +297,7 @@ std::string Database::uploadAttachment(std::string i_file_path, std::string i_fi
     return result.id().get_oid().value.to_string();
 }
 
-void Database::uploadFromDirectory(std::string i_collection_name, std::string i_test_run_oid_str, std::string outputDir) {
+void Database::uploadFromDirectory(std::string i_collection_name, std::string i_test_run_oid_str, std::string outputDir, std::string i_filter) {
     if (DB_DEBUG) std::cout << "\t\tDatabase: upload from directory" << std::endl;
     // Get file path from directory
     std::array<char, 128> buffer;
@@ -240,13 +309,16 @@ void Database::uploadFromDirectory(std::string i_collection_name, std::string i_
     while (!feof(pipe.get())) {
         if (fgets(buffer.data(), 128, pipe.get()) != nullptr) {
             std::string file_path = buffer.data();
-            file_path = file_path.substr(0, file_path.size()-1); // remove indent
-            std::size_t pathPos = file_path.find_last_of('/');
-            std::size_t suffixPos = file_path.find_last_of('.');
-            std::string filename;
-            filename = file_path.substr(pathPos+1, suffixPos-pathPos-1);
-            std::string oid_str = this->uploadAttachment(file_path, filename);
-            this->addAttachment(i_test_run_oid_str, i_collection_name, oid_str, "title", "descrip", "type", filename);
+            std::size_t pos =  file_path.find(i_filter);
+            if (pos != std::string::npos) {
+                file_path = file_path.substr(0, file_path.size()-1); // remove indent
+                std::size_t pathPos = file_path.find_last_of('/');
+                std::size_t suffixPos = file_path.find_last_of('.');
+                std::string filename;
+                filename = file_path.substr(pathPos+1, suffixPos-pathPos-1);
+                std::string oid_str = this->uploadAttachment(file_path, filename);
+                this->addAttachment(i_test_run_oid_str, i_collection_name, oid_str, "title", "descrip", "type", filename);
+            }
         }
     }
 }

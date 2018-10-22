@@ -27,17 +27,18 @@ class Database {
 
         void write(std::string, std::string, int, std::string);
         std::string uploadFromJson(std::string, std::string);
-        void registerChildParentRelationFromJson(std::string);
+        void registerFromConnectivity(std::string);
 
     protected:
         std::string getValue(std::string, std::string, std::string, std::string, std::string i_bson_type="string");
+        std::string getValueByOid(std::string, std::string, std::string, std::string i_bson_type="string");
         std::string registerComponentTestRun(std::string, std::string, std::string, int);
         std::string registerTestRun(std::string, int);
         void addComment(std::string, std::string, std::string);
         void addAttachment(std::string, std::string, std::string, std::string, std::string, std::string, std::string);
         void addDefect(std::string, std::string, std::string, std::string);
         std::string uploadAttachment(std::string, std::string);
-        void uploadFromDirectory(std::string, std::string, std::string);
+        void uploadFromDirectory(std::string, std::string, std::string, std::string i_filter="");
 
 //        bsoncxx::builder::stream::document addSys() {
 //            bsoncxx::builder::stream::document i_doc_value;
