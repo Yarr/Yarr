@@ -147,13 +147,13 @@ void Rd53aMaskLoop::execPart1() {
 		  std::vector<std::pair<int, int>> neighbours;		 
 		  getNeighboursMap(col,row, m_sensorType,m_maskSize,neighbours);
 		  //Read-only central pixel
-		  dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 0);		
-		  dynamic_cast<Rd53a*>(fe)->setEn(col, row, 1);
+		  dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 1);		
+		  dynamic_cast<Rd53a*>(fe)->setEn(col, row, 0);
 		  modPixels.push_back(std::make_pair(col, row));
 		  //Inject only neighbours
 		  for (auto n: neighbours){ 		  	       
-		      dynamic_cast<Rd53a*>(fe)->setInjEn(n.first, n.second, 1);
-		      dynamic_cast<Rd53a*>(fe)->setEn(n.first, n.second, 0);
+		      dynamic_cast<Rd53a*>(fe)->setInjEn(n.first, n.second, 0);
+		      dynamic_cast<Rd53a*>(fe)->setEn(n.first, n.second, 1);
 		      modPixels.push_back(std::make_pair(n.first, n.second));
 		    }
 		}
