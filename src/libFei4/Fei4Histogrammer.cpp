@@ -66,38 +66,25 @@ void Fei4Histogrammer::process() {
 
 void Fei4Histogrammer::process_core() {
     while (!input->empty()) {
-        Fei4Data *data = dynamic_cast<Fei4Data*>(input->popData());
-        if (data == NULL)
+        auto d = input->popData();
+        Fei4Data *data = dynamic_cast<Fei4Data*>(d.get());
+        if (data == nullptr)
             continue;
         for (unsigned i=0; i<algorithms.size(); i++) {
             algorithms[i]->create(data->lStat);
             algorithms[i]->processEvent(data);
         }
-        delete data;
         this->publish();
     }
 }
 
 void Fei4Histogrammer::publish() {
     for (unsigned i=0; i<algorithms.size(); i++) {
-        if (algorithms[i]->getHisto() != NULL) {
-            output->pushData(algorithms[i]->getHisto());
+        auto ptr = algorithms[i]->getHisto();
+        if(ptr) {
+            output->pushData(std::move(ptr));
         }
     }
-}
-
-void Fei4Histogrammer::toFile(std::string basename) {
-    for (std::deque<HistogramBase*>::iterator it = output->begin(); it != output->end(); ++it) {
-        std::cout << "Saving : " << (*it)->getName() << std::endl;
-        (*it)->toFile(basename);
-    }
-}
-
-void Fei4Histogrammer::plot(std::string basename) {
-    for (std::deque<HistogramBase*>::iterator it = output->begin(); it != output->end(); ++it) {
-        std::cout << "Plotting : " << (*it)->getName() << std::endl;
-        (*it)->plot(basename);
-    }    
 }
 
 void DataArchiver::processEvent(Fei4Data *data) {

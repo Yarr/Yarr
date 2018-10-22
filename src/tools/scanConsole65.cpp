@@ -457,8 +457,15 @@ int main(int argc, char *argv[]) {
             // Plot
             if (doPlots) {
                 std::cout << "-> Plotting histograms of FE " << dynamic_cast<FrontEndCfg*>(fe)->getRxChannel() << std::endl;
-                analyses[fe]->plot(/*std::string(timestamp) + "-" + */dynamic_cast<FrontEndCfg*>(fe)->getName() + "_ch" + std::to_string(dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) + "_" + scanType, outputDir);
-                analyses[fe]->toFile(/*std::string(timestamp) + "-" + */dynamic_cast<FrontEndCfg*>(fe)->getName() + "_ch" + std::to_string(dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) + "_" + scanType, outputDir);
+                auto &output = *fe->clipResult;
+
+                std::string name = /*std::string(timestamp) + "-" + */dynamic_cast<FrontEndCfg*>(fe)->getName() + "_ch" + std::to_string(dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) + "_" + scanType;
+
+                while(!output.empty()) {
+                    std::unique_ptr<HistogramBase> histo = output.popData();
+                    histo->plot(name, outputDir);
+                    histo->toFile(name, outputDir);
+                }
             }
         }
     }
