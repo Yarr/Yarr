@@ -5,6 +5,8 @@ job_build_and_test:
       - yum -y install gcc-c++
       - yum -y install make
       - yum -y install gnuplot
+      - yum -y install centos-release-scl-rh rh-mongodb36-mongo-cxx-driver-devel rh-mongodb36-boost-devel
+      - source /opt/rh/rh-mongodb36/enable
       - cd src
       - make
       - export USER=test

@@ -36,6 +36,8 @@
 
 #include "Fei4Emu.h"
 
+#include "Database.h"
+
 #if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
 
 //  #include <errno.h>
@@ -108,6 +110,9 @@ int main(int argc, char *argv[]) {
     int target_charge = 16000;
     int mask_opt = -1;
     
+    bool dbUse = false;
+    std::string dbSerialNumber;
+
     unsigned runCounter = 0;
 
     // Load run counter
@@ -131,7 +136,7 @@ int main(int argc, char *argv[]) {
     oF.close();
 
     int c;
-    while ((c = getopt(argc, argv, "hs:n:m:g:r:c:t:po:")) != -1) {
+    while ((c = getopt(argc, argv, "hs:n:m:g:r:c:t:po:W:")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
@@ -187,6 +192,10 @@ int main(int argc, char *argv[]) {
                     count++;
 
                 }
+                break;
+            case 'W': // Write to DB
+                dbUse = true;
+                dbSerialNumber = std::string(optarg);
                 break;
             case '?':
                 if(optopt == 's' || optopt == 'n'){
@@ -635,6 +644,13 @@ int main(int argc, char *argv[]) {
     if (system(lsCmd.c_str()) < 0) {
         std::cout << "Find plots in: " << outputDir << std::endl;
     }
+
+    if (dbUse) {
+        Database *database = new Database();
+        database->write(dbSerialNumber, scanType, runCounter, outputDir);
+        delete database;
+    }
+
     return 0;
 }
 
