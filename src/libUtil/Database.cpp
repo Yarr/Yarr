@@ -7,10 +7,6 @@ using bsoncxx::builder::stream::finalize;
 using bsoncxx::builder::stream::open_array;
 using bsoncxx::builder::stream::open_document;
 
-using bsoncxx::builder::basic::kvp;
-using bsoncxx::builder::basic::make_array;
-using bsoncxx::builder::basic::make_document;
-
 Database::Database(std::string i_host_ip) {
     DB_DEBUG = true;
     if (DB_DEBUG) std::cout<<"Database: Initialize" << std::endl;
@@ -314,10 +310,10 @@ void Database::uploadFromDirectory(std::string i_collection_name, std::string i_
                 file_path = file_path.substr(0, file_path.size()-1); // remove indent
                 std::size_t pathPos = file_path.find_last_of('/');
                 std::size_t suffixPos = file_path.find_last_of('.');
-                std::string filename;
-                filename = file_path.substr(pathPos+1, suffixPos-pathPos-1);
+                std::string filename = file_path.substr(pathPos+1, suffixPos-pathPos-1);
+                std::string fileextension = file_path.substr(suffixPos + 1);
                 std::string oid_str = this->uploadAttachment(file_path, filename);
-                this->addAttachment(i_test_run_oid_str, i_collection_name, oid_str, "title", "descrip", "type", filename);
+                this->addAttachment(i_test_run_oid_str, i_collection_name, oid_str, "title", "describe", fileextension, filename);
             }
         }
     }
