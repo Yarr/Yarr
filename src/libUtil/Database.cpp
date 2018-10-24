@@ -77,8 +77,10 @@ void Database::registerFromConnectivity(std::string i_json_path) {
 
     // chip component
     for (unsigned i=0; i<conn_json["chips"].size(); i++) {
+        mongocxx::collection collection = db["component"];
         std::string serialNumber = conn_json["chips"][i]["serialNumber"];
-        if (getValue("component", "serialNumber", serialNumber, "serialNumber") == serialNumber) continue;
+        bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "serialNumber" << serialNumber << finalize);
+        if (maybe_result) continue;
 
         std::ifstream j_ifs(conn_json["chips"][i]["config"].get<std::string>());
         if (!j_ifs) {
@@ -100,7 +102,6 @@ void Database::registerFromConnectivity(std::string i_json_path) {
             "name" << jj[chipType]["name"].get<std::string>() <<
         finalize;
      
-        mongocxx::collection collection = db["component"];
         collection.insert_one(doc_value.view());
     }
 
@@ -109,7 +110,9 @@ void Database::registerFromConnectivity(std::string i_json_path) {
         std::cout << "\tDatabase: no module info in connectivity! skip register module" << std::endl;
     } else {
         std::string serialNumber = conn_json["module"]["serialNumber"];
-        if (getValue("component", "serialNumber", serialNumber, "serialNumber") != serialNumber) {
+        mongocxx::collection collection = db["component"];
+        bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "serialNumber" << serialNumber << finalize);
+        if (maybe_result) {
             bsoncxx::document::value doc_value = document{} <<  
                 "sys" << open_document <<
                     "rev" << 0 << // revision number
@@ -120,7 +123,6 @@ void Database::registerFromConnectivity(std::string i_json_path) {
                 "componentType" << conn_json["module"]["componentType"].get<std::string>() <<
             finalize;
      
-            mongocxx::collection collection = db["component"];
             collection.insert_one(doc_value.view());
     
             // CP relation
