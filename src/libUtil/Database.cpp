@@ -251,7 +251,7 @@ void Database::addComment(std::string i_collection_name, std::string i_oid_str, 
 }
 
 void Database::addAttachment(std::string i_oid_str, std::string i_collection_name, std::string i_file_oid_str, std::string i_title, std::string i_description, std::string i_content_type, std::string i_filename) {
-    if (DB_DEBUG) std::cout << "\t\tDatabase: Add attachment" << std::endl;
+    if (DB_DEBUG) std::cout << "\t\tDatabase: Add attachment: " << i_filename << "." << i_content_type << std::endl;
     bsoncxx::oid i_oid(i_oid_str);
     db[i_collection_name].update_one(
         document{} << "_id" << i_oid << finalize,
@@ -312,30 +312,9 @@ void Database::uploadFromDirectory(std::string i_collection_name, std::string i_
                 std::size_t suffixPos = file_path.find_last_of('.');
                 std::string filename = file_path.substr(pathPos+1, suffixPos-pathPos-1);
                 std::string fileextension = file_path.substr(suffixPos + 1);
-                std::string oid_str = this->uploadAttachment(file_path, filename);
+                std::string oid_str = this->uploadAttachment(file_path, filename+"."+fileextension);
                 this->addAttachment(i_test_run_oid_str, i_collection_name, oid_str, "title", "describe", fileextension, filename);
             }
         }
     }
 }
-
-//void Database::insertScan() {
-//    client.insert(m_database_name+"."m_collection_name,
-//        BSON("serialNumber" << "qwertyuiop"),
-//        BSON("$set" << BSON(
-//            "scan" << BSON_ARRAY(BSON(
-//                "id" << "0123456789abcdef" <<
-//                "dateTime" << BSON::DATENOW <<
-//                "testType" << "" <<
-//                "runNumber" << "" <<
-//                "confidId" << "" <<
-//                "resultId" << ""
-//                ))
-//            )
-//        )
-//   );
-//}
-//
-//std::string Database::getSN() {
-//
-//}
