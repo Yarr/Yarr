@@ -39,7 +39,7 @@ void Rd53aParameterLoop::execPart1() {
     if (verbose)
         std::cout << " : ParameterLoop at -> " << m_cur << std::endl;
     g_stat->set(this, m_cur);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    //std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
 void Rd53aParameterLoop::execPart2() {
@@ -57,7 +57,7 @@ void Rd53aParameterLoop::end() {
 void Rd53aParameterLoop::writePar() {
     keeper->globalFe<Rd53a>()->writeRegister(parPtr, m_cur);
     while(!g_tx->isCmdEmpty());
-    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    //std::this_thread::sleep_for(std::chrono::milliseconds(20));
 }
 
 void Rd53aParameterLoop::writeConfig(json &j) {
