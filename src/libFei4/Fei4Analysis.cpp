@@ -483,7 +483,7 @@ void ScurveFitter::init(ScanBase *s) {
 // par[2] = Normlization
 #define SQRT2 1.414213562
 double scurveFct(double x, const double *par) {
-    return 0.5*(2-erfc((x-par[0])/(par[1]*SQRT2)))*par[2];
+  return 0.5*( 2-erfc( (x-par[0])/(par[1]*SQRT2) ) )*par[2];
 }
 
 void ScurveFitter::processHistogram(HistogramBase *h) {
@@ -492,12 +492,14 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
     if (h->getType() != typeid(OccupancyMap*))
         return;
 
+
+    n_failedfit =0;
     Histo2d *hh = (Histo2d*) h;
     for(unsigned col=1; col<=nCol; col++) {
         for (unsigned row=1; row<=nRow; row++) {
             unsigned bin = hh->binNum(col, row);
             if (hh->getBin(bin) != 0) {
-                // Select correct output container
+                // Select correct output containe
                 unsigned ident = bin;
                 unsigned outerIdent = 0;
                 unsigned offset = nCol*nRow;
@@ -545,9 +547,11 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     lm_status_struct status;
                     lm_control_struct control;
                     control = lm_control_float;
-                    control.verbosity = 0;
+		    //control.verbosity = 3;
+		    control.verbosity = 0;
                     const unsigned n_par = 3;
-                    double par[n_par] = {((vcalMax-vcalMin)/2.0)+vcalMin, 5, (double) injections};
+                    //double par[n_par] = {((vcalMax-vcalMin)/2.0)+vcalMin,  5 , (double) injections};
+                    double par[n_par] = {((vcalMax-vcalMin)/2.0)+vcalMin,  0.05*(((vcalMax-vcalMin)/2.0)+vcalMin)  , (double) injections};
                     std::chrono::high_resolution_clock::time_point start;
                     std::chrono::high_resolution_clock::time_point end;
                     start = std::chrono::high_resolution_clock::now();
@@ -555,7 +559,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     end = std::chrono::high_resolution_clock::now();
                     std::chrono::microseconds fitTime = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
                     if (thrMap[outerIdent] == NULL) {
-                        Histo2d *hh2 = new Histo2d("ThresholdMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+		        Histo2d *hh2 = new Histo2d("ThresholdMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
                         hh2->setXaxisTitle("Column");
                         hh2->setYaxisTitle("Row");
                         hh2->setZaxisTitle("Threshold [e]");
@@ -564,29 +568,57 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         hh2->setXaxisTitle("Column");
                         hh2->setYaxisTitle("Row");
                         hh2->setZaxisTitle("Noise [e]");
+
                         sigMap[outerIdent].reset(hh2);
                         
                         Histo1d *hh1 = new Histo1d("Chi2Dist", 51, -0.025, 2.525, typeid(this));
                         hh1->setXaxisTitle("Fit Chi/ndf");
                         hh1->setYaxisTitle("Number of Pixels");
                         chiDist[outerIdent].reset(hh1);
+
+			hh2 = new Histo2d("Chi2Map", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+                        hh2->setXaxisTitle("Column");
+                        hh2->setYaxisTitle("Row");
+                        hh2->setZaxisTitle("Chi2");
+                        chi2Map[outerIdent].reset(hh2);     
+                   
+			hh2 = new Histo2d("StatusMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+                        hh2->setXaxisTitle("Column");
+                        hh2->setYaxisTitle("Row");
+                        hh2->setZaxisTitle("Fit Status");
+                        statusMap[outerIdent].reset(hh2);
+
+
+                        hh1 = new Histo1d("StatusDist", 11, 0, 11, typeid(this));
+                        hh1->setXaxisTitle("Fit Status ");
+                        hh1->setYaxisTitle("Number of Pixels");
+                        statusDist[outerIdent].reset(hh1);
+
                         hh1 = new Histo1d("TimePerFitDist", 201, -1, 401, typeid(this));
                         hh1->setXaxisTitle("Fit Time [us]");
                         hh1->setYaxisTitle("Number of Pixels");
                         timeDist[outerIdent].reset(hh1);
                     }
-                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0) {
-                        FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
-                        thrMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0], useScap, useLcap));
-                        // Reudce affect of vcal offset on this, don't want to probe at low vcal
-                        sigMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0]+par[1], useScap, useLcap)-feCfg->toCharge(par[0], useScap, useLcap));
-                        chiDist[outerIdent]->fill(status.fnorm/(double)status.nfev);
-                        timeDist[outerIdent]->fill(fitTime.count());
-                    }
 
-                }
-            }
-        }
+		    double chi2= status.fnorm/(double)status.nfev;
+		    
+		    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0 && chi2 < 2.5) {
+		      FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
+		      thrMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0], useScap, useLcap));
+		      // Reudce affect of vcal offset on this, don't want to probe at low vcal
+		      sigMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0]+par[1], useScap, useLcap)-feCfg->toCharge(par[0], useScap, useLcap));
+		      chiDist[outerIdent]->fill(status.fnorm/(double)status.nfev);
+		      timeDist[outerIdent]->fill(fitTime.count());
+		      chi2Map[outerIdent]->fill(col, row,chi2 );
+		      statusMap[outerIdent]->fill(col, row, status.outcome);
+		      statusDist[outerIdent]->fill(status.outcome);
+
+                    }else
+		      n_failedfit++;
+		    
+		}
+	    }
+	}
     }
 }
 
@@ -643,16 +675,20 @@ void ScurveFitter::end() {
         output->pushData(std::move(thrMap[0]));
         output->pushData(std::move(sigDist[0]));
         std::cout << "\033[1;33m[" << channel << "] Noise Mean = " << sigMap[0]->getMean() << " +- " << sigMap[0]->getStdDev() << "\033[0m" <<  std::endl;
-        output->pushData(std::move(sigMap[0]));
-        output->pushData(std::move(chiDist[0]));
-        output->pushData(std::move(timeDist[0]));
-    }
+        std::cout << "\033[1;33m[" << channel << "] Number of failed fits = " <<     n_failedfit << "\033[0m" <<  std::endl;
 
+    }
+    
+    output->pushData(std::move(sigMap[0]));
+    output->pushData(std::move(chiDist[0]));
+    output->pushData(std::move(timeDist[0]));
+    
+   
 
     for(unsigned bin=0; bin<(nCol*nRow); bin+=((nCol*nRow)/20)) {
-        if (histos[bin]) {
-            output->pushData(std::move(histos[bin]));
-        }
+      if (histos[bin]) {
+	output->pushData(std::move(histos[bin]));
+      }
     }
 }
 

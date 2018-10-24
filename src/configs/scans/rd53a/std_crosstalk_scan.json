@@ -1,0 +1,81 @@
+{
+    "scan": {
+        "analysis": {
+            "0": {
+                "algorithm": "ScurveFitter"
+            }, 
+            "1": {
+                "algorithm": "OccupancyAnalysis"
+            }, 
+            "n_count": 2
+        }, 
+        "histogrammer": {
+            "0": {
+                "algorithm": "OccupancyMap", 
+                "config": {}
+            }, 
+            "1": {
+                "algorithm": "L1Dist", 
+                "config": {}
+            }, 
+            "2": {
+                "algorithm": "HitsPerEvent", 
+                "config": {}
+            }, 
+            "n_count": 3
+        }, 
+        "loops": [
+            {
+                "config": {
+                    "max": 1536, 
+                    "min": 0, 
+                    "step": 32, 
+                    "maskType": 1, 
+                    "maskSize": 2, 
+                    "includedPixels": 0, 
+                    "sensorType": 0
+                }, 
+                "loopAction": "Rd53aMaskLoop"
+            }, 
+            {
+                "config": {
+                    "max": 4000, 
+                    "min": 500, 
+                    "step": 50, 
+                    "parameter": "InjVcalDiff"
+                }, 
+                "loopAction": "Rd53aParameterLoop"
+            }, 
+            {
+                "config": {
+                    "max": 50, 
+                    "min": 0, 
+                    "step": 1, 
+                    "nSteps": 1
+                }, 
+                "loopAction": "Rd53aCoreColLoop"
+            }, 
+            {
+                "config": {
+                    "count": 100, 
+                    "delay": 48, 
+                    "extTrigger": false, 
+                    "frequency": 5000, 
+                    "noInject": false, 
+                    "time": 0
+                }, 
+                "loopAction": "Rd53aTriggerLoop"
+            }, 
+            {
+                "loopAction": "StdDataLoop"
+            }
+        ], 
+        "name": "AnalogScan", 
+        "prescan": {
+            "InjEnDig": 0, 
+            "LatencyConfig": 50, 
+            "GlobalPulseRt": 16384, 
+            "InjVcalMed": 0
+        }
+    }
+}

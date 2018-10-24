@@ -178,9 +178,11 @@ class ScurveFitter : public AnalysisAlgorithm {
         unsigned n_count;
         unsigned injections;
         unsigned cnt;
+	unsigned n_failedfit;
         std::vector<double> x;
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
+     
         std::map<unsigned, std::unique_ptr<Histo1d>> histos;
         std::map<unsigned, std::unique_ptr<Histo2d>> sCurve;
         std::map<unsigned, std::unique_ptr<Histo2d>> thrMap;
@@ -189,6 +191,11 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::map<unsigned, std::unique_ptr<Histo1d>> sigDist;
         std::map<unsigned, std::unique_ptr<Histo1d>> chiDist;
         std::map<unsigned, std::unique_ptr<Histo1d>> timeDist;
+
+        std::map<unsigned, std::unique_ptr<Histo2d>> chi2Map;   
+        std::map<unsigned, std::unique_ptr<Histo2d>> statusMap; 
+        std::map<unsigned, std::unique_ptr<Histo1d>> statusDist;
+
         std::map<unsigned, unsigned> innerCnt;
 	bool useScap;
 	bool useLcap;
