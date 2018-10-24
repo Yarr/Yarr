@@ -317,7 +317,7 @@ class NoiseTuning : public AnalysisAlgorithm {
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         unsigned n_count;
-        std::map<unsigned, Histo2d*> occMaps;
+        std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
         std::map<unsigned, unsigned> innerCnt;
         GlobalFeedbackBase *globalFb;
         PixelFeedbackBase *pixelFb;

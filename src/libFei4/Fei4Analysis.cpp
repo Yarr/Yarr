@@ -1173,11 +1173,11 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
         hh->setYaxisTitle("Row");
         hh->setZaxisTitle("Hits");
         innerCnt[ident] = 0;
-        occMaps[ident] = hh;
+        occMaps[ident].reset(hh);
     }
     
     //Easy make it pretty
-    occMaps[ident]->add(*(Histo2d*)h);
+    occMaps[ident]->add(&*(Histo2d*)h);
     innerCnt[ident]++;
     
     if (innerCnt[ident] == n_count) {
@@ -1214,7 +1214,7 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
 
             pixelFb->feedbackStep(channel, fbHisto);
         }
-        output->pushData(occMaps[ident]);
+        output->pushData(std::move(occMaps[ident]));
         occMaps[ident] = NULL;
     }
 }
