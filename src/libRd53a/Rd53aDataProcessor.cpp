@@ -145,19 +145,19 @@ void Rd53aDataProcessor::process_core() {
                             pix_row++;
                             pix_col++;
                             if (tot0 != 0xF) {
-                                curOut[channel]->curEvent->addHit(pix_row, pix_col, tot0);
+                                curOut[channel]->curEvent->addHit(pix_row, pix_col, tot0+1);
                                 hits[channel]++;
                             }
                             if (tot1 != 0xF) {
-                                curOut[channel]->curEvent->addHit(pix_row, pix_col+1, tot1);
+                                curOut[channel]->curEvent->addHit(pix_row, pix_col+1, tot1+1);
                                 hits[channel]++;
                             }
                             if (tot2 != 0xF) {
-                                curOut[channel]->curEvent->addHit(pix_row, pix_col+2, tot2);
+                                curOut[channel]->curEvent->addHit(pix_row, pix_col+2, tot2+1);
                                 hits[channel]++;
                             }
                             if (tot3 != 0xF) {
-                                curOut[channel]->curEvent->addHit(pix_row, pix_col+3, tot3);
+                                curOut[channel]->curEvent->addHit(pix_row, pix_col+3, tot3+1);
                                 hits[channel]++;
                             }
                         } else {
