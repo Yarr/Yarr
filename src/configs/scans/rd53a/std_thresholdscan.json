@@ -7,7 +7,7 @@
      "1": {
         "algorithm": "OccupancyAnalysis"
       },
-      "n_count": 2
+      "n_count": 1
     },
     "histogrammer": {
       "0": {
