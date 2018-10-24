@@ -77,6 +77,9 @@ void Database::registerFromConnectivity(std::string i_json_path) {
 
     // chip component
     for (unsigned i=0; i<conn_json["chips"].size(); i++) {
+        std::string serialNumber = conn_json["chips"][i]["serialNumber"];
+        if (getValue("component", "serialNumber", serialNumber, "serialNumber") == serialNumber) continue;
+
         std::ifstream j_ifs(conn_json["chips"][i]["config"].get<std::string>());
         if (!j_ifs) {
             std::cerr << "#ERROR# Cannot open register chip config file" << std::endl;
@@ -92,8 +95,8 @@ void Database::registerFromConnectivity(std::string i_json_path) {
                 "cts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // creation timestamp
                 "mts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // modification timestamp
             close_document <<
-            "serialNumber" << conn_json["chips"][i]["serialNumber"].get<std::string>() <<
-            "componentType" << conn_json["chipType"].get<std::string>() <<
+            "serialNumber" << serialNumber <<
+            "componentType" << chipType <<
             "name" << jj[chipType]["name"].get<std::string>() <<
         finalize;
      
@@ -105,33 +108,36 @@ void Database::registerFromConnectivity(std::string i_json_path) {
     if (conn_json["module"].empty() || conn_json["module"]["serialNumber"].empty()) {
         std::cout << "\tDatabase: no module info in connectivity! skip register module" << std::endl;
     } else {
-        bsoncxx::document::value doc_value = document{} <<  
-            "sys" << open_document <<
-                "rev" << 0 << // revision number
-                "cts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // creation timestamp
-                "mts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // modification timestamp
-            close_document <<
-            "serialNumber" << conn_json["module"]["serialNumber"].get<std::string>() <<
-            "componentType" << conn_json["module"]["componentType"].get<std::string>() <<
-        finalize;
- 
-        mongocxx::collection collection = db["component"];
-        collection.insert_one(doc_value.view());
-
-        // CP relation
-        for (unsigned i=0; i<conn_json["chips"].size(); i++) {
+        std::string serialNumber = conn_json["module"]["serialNumber"];
+        if (getValue("component", "serialNumber", serialNumber, "serialNumber") != serialNumber) {
             bsoncxx::document::value doc_value = document{} <<  
                 "sys" << open_document <<
                     "rev" << 0 << // revision number
                     "cts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // creation timestamp
                     "mts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // modification timestamp
                 close_document <<
-                "parent" << getValue("component", "serialNumber", conn_json["module"]["serialNumber"], "_id", "oid") <<
-                "child" << getValue("component", "serialNumber", conn_json["chips"][i]["serialNumber"], "_id", "oid") <<
+                "serialNumber" << serialNumber <<
+                "componentType" << conn_json["module"]["componentType"].get<std::string>() <<
             finalize;
- 
-            mongocxx::collection collection = db["childParentRelation"];
+     
+            mongocxx::collection collection = db["component"];
             collection.insert_one(doc_value.view());
+    
+            // CP relation
+            for (unsigned i=0; i<conn_json["chips"].size(); i++) {
+                bsoncxx::document::value doc_value = document{} <<  
+                    "sys" << open_document <<
+                        "rev" << 0 << // revision number
+                        "cts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // creation timestamp
+                        "mts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // modification timestamp
+                    close_document <<
+                    "parent" << getValue("component", "serialNumber", conn_json["module"]["serialNumber"], "_id", "oid") <<
+                    "child" << getValue("component", "serialNumber", conn_json["chips"][i]["serialNumber"], "_id", "oid") <<
+                finalize;
+     
+                mongocxx::collection collection = db["childParentRelation"];
+                collection.insert_one(doc_value.view());
+            }
         }
     }
 }
