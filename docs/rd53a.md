@@ -200,6 +200,7 @@ Config parameters:
  - step ``<int>``: step size of mask stage (do not use a value lower than 64)
  - maskType  ``<int>``: for standard threshold scans (0), or for cross-talk (1 and 2, depending on the cross-talk definition)
  - maskSize  ``<int>``: define in which neighbouring pixels charge is injected
+ - includedPixels ``<int>``: define if and which pixel edges are not considered to measure cross-talk 
  - sensorType  ``<int>``: square sensor (0), rectangular sensor with bump-bond (0,0) bonded with the pixel at the corner (1), and rectangular sensor with bump-bond (0,1) bonded with the pixel at the corner (2)
 
 
