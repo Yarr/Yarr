@@ -51,7 +51,7 @@ void StdDataLoop::execPart2() {
 
     std::vector<RawData*> tmp_storage;
     RawData *newData = NULL;
-    RawDataContainer *rdc = new RawDataContainer();
+    std::unique_ptr<RawDataContainer> rdc(new RawDataContainer());
     while (done == 0) {
         //rate = g_rx->getDataRate();
         //curCnt = g_rx->getCurCount();
@@ -80,7 +80,7 @@ void StdDataLoop::execPart2() {
     delete newData;
     
     rdc->stat = *g_stat;
-    storage->pushData(rdc);
+    storage->pushData(std::move(rdc));
         
     if (verbose)
         std::cout << " --> Received " << count << " words! " << iterations << std::endl;
