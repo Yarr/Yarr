@@ -85,15 +85,15 @@ void Rd53aDataProcessor::process_core() {
     unsigned dataCnt = 0;
     while(!m_input->empty()) {
         // Get data containers
-        RawDataContainer *curInV = m_input->popData();
-        if (curInV == NULL)
+        auto curInV = m_input->popData();
+        if (curInV == nullptr)
             continue;
 
         // Create Output Container
-        std::map<unsigned, Fei4Data*> curOut;
+        std::map<unsigned, std::unique_ptr<Fei4Data>> curOut;
         std::map<unsigned, int> events;
         for (unsigned i=0; i<activeChannels.size(); i++) {
-            curOut[activeChannels[i]] = new Fei4Data();
+            curOut[activeChannels[i]].reset(new Fei4Data());
             curOut[activeChannels[i]]->lStat = curInV->stat;
             events[activeChannels[i]] = 0;
         }
@@ -173,13 +173,14 @@ void Rd53aDataProcessor::process_core() {
         // Push data out
         for (unsigned i=0; i<activeChannels.size(); i++) {
             if (events[activeChannels[i]] > 0) {
-                m_outMap->at(activeChannels[i]).pushData(curOut[activeChannels[i]]);
+                m_outMap->at(activeChannels[i]).pushData(std::move(curOut[activeChannels[i]]));
             } else {
-               delete  curOut[activeChannels[i]];
+                // Maybe wait for end of method instead of deleting here?
+                curOut[activeChannels[i]].reset();
             }
+
         }
         //Cleanup
-        delete curInV;
     }
 
 }

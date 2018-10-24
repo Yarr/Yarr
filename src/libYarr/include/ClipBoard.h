@@ -25,14 +25,13 @@ class ClipBoard {
         ClipBoard(){}
         ~ClipBoard() {
             while(!dataQueue.empty()) {
-                T* tmp = this->popData();
-                delete tmp;
+                std::unique_ptr<T> tmp = this->popData();
             }
         }
 
-        void pushData(T *data) {
+        void pushData(std::unique_ptr<T> data) {
             queueMutex.lock();
-            if (data != NULL) dataQueue.push_back(data);
+            if (data != NULL) dataQueue.push_back(std::move(data));
             queueMutex.unlock();
             //static unsigned cnt = 0;
             //std::cout << "Pushed " << cnt++ << " " << typeid(T).name() << " objects so far" << std::endl;
@@ -40,11 +39,11 @@ class ClipBoard {
         }
 
         // User has to take of deletin popped data
-        T* popData() {
+        std::unique_ptr<T> popData() {
             queueMutex.lock();
-            T *tmp = NULL;
+            std::unique_ptr<T> tmp;
             if(!dataQueue.empty()) {
-                tmp = dataQueue.front();
+                tmp = std::move(dataQueue.front());
                 dataQueue.pop_front();
             }
             queueMutex.unlock();
@@ -55,31 +54,11 @@ class ClipBoard {
             return dataQueue.empty();
         }
 
-        unsigned size() {
-            return dataQueue.size();
-        }
-
-        typename std::deque<T*>::iterator begin() {
-            return dataQueue.begin();
-        }
-       
-
-        typename std::deque<T*>::iterator end() {
-            return dataQueue.end();
-        }
-
-        void clear() {
-            while(!dataQueue.empty()) {
-                T* tmp = this->popData();
-                delete tmp;
-            }
-        }
-
         std::condition_variable cv;
         
     private:
         std::mutex queueMutex;
-        std::deque<T*> dataQueue;
+        std::deque<std::unique_ptr<T>> dataQueue;
 
 };
 

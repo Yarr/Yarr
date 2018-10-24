@@ -605,9 +605,15 @@ int main(int argc, char *argv[]) {
             if (doPlots) {
                 std::cout << "-> Plotting histograms of FE " << dynamic_cast<FrontEndCfg*>(fe)->getRxChannel() << std::endl;
                 std::string outputDirTmp = outputDir;
-                auto& ana = static_cast<Fei4Analysis&>( *(analyses[fe]) );
-                ana.plot(dynamic_cast<FrontEndCfg*>(fe)->getName(), outputDirTmp);
-                ana.toFile(dynamic_cast<FrontEndCfg*>(fe)->getName(), outputDir);
+
+                auto &output = *fe->clipResult;
+                std::string name = dynamic_cast<FrontEndCfg*>(fe)->getName();
+
+                while(!output.empty()) {
+                    std::unique_ptr<HistogramBase> histo = output.popData();
+                    histo->plot(name, outputDirTmp);
+                    histo->toFile(name, outputDir);
+                }
             }
         }
     }
