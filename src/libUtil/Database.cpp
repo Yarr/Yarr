@@ -17,6 +17,10 @@ Database::Database(std::string i_host_ip) {
     std::string m_database_name = "yarrdb";
     std::string m_collection_name = "yarrcoll";
     db = client[m_database_name];
+
+    m_flag_hv = false; m_hv = 0;
+    m_flag_cool = false; m_cool_temp = 25;
+    m_flag_encap = false; m_stage = "ASSEMBLED";
 }
 
 Database::~Database() {
@@ -26,6 +30,33 @@ Database::~Database() {
 //*****************************************************************************************************
 // Public functions
 //
+void Database::setFlags(std::vector<std::string> i_flags) {
+    if (DB_DEBUG) std::cout << "Database: Flags" << std::endl;
+    for (unsigned i=0; i<i_flags.size(); i++) {
+        std::string flag_name = i_flags[i];
+        if (flag_name == "hv") {
+            m_flag_hv = true;
+            i++;
+            m_hv = std::stod(i_flags[i]);
+        }
+        else if (flag_name == "cool") {
+            m_flag_cool = true;
+            i++;
+            m_cool_temp = std::stod(i_flags[i]);
+        }
+        else if (flag_name == "encap") {
+            m_flag_encap = true;
+            i++;
+            m_stage = flag_name;
+        }
+    }
+    std::cout << "Set flags, ";
+    if (m_flag_hv) std::cout << "HV: " << m_hv << " V, ";
+    if (m_flag_cool) std::cout << "COOL: " << m_cool_temp << " C, ";
+    if (m_flag_encap) std::cout << "ENCAP: YES, ";
+    std::cout << std::endl;
+}
+
 void Database::write(std::string i_serial_number, std::string i_test_type, int i_run_number, std::string i_output_dir) {
     if (DB_DEBUG) std::cout << "Database: Write" << std::endl;
     std::string component_type_str = this->getValue("component", "serialNumber", i_serial_number, "componentType");
@@ -229,6 +260,9 @@ std::string Database::registerTestRun(std::string i_test_type, int i_run_number)
         "passed" << true << // flag if test passed
         "problems" << true << // flag if any problem occured
         "state" << "ready" << // state of component ["ready", "requestedToTrash", "trashed"]
+        "hv" << m_hv << 
+        "cool" << m_cool_temp << 
+        "stage" << m_stage << 
         "comments" << open_array << // array of comments
         close_array <<
         "attachments" << open_array << // array of attachments
