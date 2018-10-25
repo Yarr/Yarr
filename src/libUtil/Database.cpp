@@ -19,9 +19,9 @@ Database::Database(std::string i_host_ip) {
     db = client[m_database_name];
 
     m_has_flags = false;
-    m_flag_hv = false; m_hv = 0;
-    m_flag_cool = false; m_cool_temp = 25;
-    m_flag_encap = false; m_stage = "ASSEMBLED";
+    m_hv = 0;
+    m_cool_temp = 25;
+    m_stage = "ASSEMBLED";
 }
 
 Database::~Database() {
@@ -33,30 +33,29 @@ Database::~Database() {
 //
 void Database::setFlags(std::vector<std::string> i_flags) {
     if (DB_DEBUG) std::cout << "Database: Flags" << std::endl;
-    if (i_flags.size() != 0) m_has_flags = true;
-    for (unsigned i=0; i<i_flags.size(); i++) {
-        std::string flag_name = i_flags[i];
-        if (flag_name == "hv") {
-            m_flag_hv = true;
-            i++;
-            m_hv = std::stod(i_flags[i]);
+    if (i_flags.size() != 0) {
+        m_has_flags = true;
+        std::cout << "Set flags, ";
+        for (unsigned i=0; i<i_flags.size(); i++) {
+            std::string flag_name = i_flags[i];
+            if (flag_name == "hv") {
+                std::cout << "HV: " << m_hv << " V, ";
+                i++;
+                m_hv = std::stod(i_flags[i]);
+            }
+            else if (flag_name == "cool") {
+                std::cout << "COOL: " << m_cool_temp << " C, ";
+                i++;
+                m_cool_temp = std::stod(i_flags[i]);
+            }
+            else if (flag_name == "encap") {
+                std::cout << "ENCAP: YES, ";
+                i++;
+                m_stage = flag_name;
+            }
         }
-        else if (flag_name == "cool") {
-            m_flag_cool = true;
-            i++;
-            m_cool_temp = std::stod(i_flags[i]);
-        }
-        else if (flag_name == "encap") {
-            m_flag_encap = true;
-            i++;
-            m_stage = flag_name;
-        }
+        std::cout << std::endl;
     }
-    std::cout << "Set flags, ";
-    if (m_flag_hv) std::cout << "HV: " << m_hv << " V, ";
-    if (m_flag_cool) std::cout << "COOL: " << m_cool_temp << " C, ";
-    if (m_flag_encap) std::cout << "ENCAP: YES, ";
-    std::cout << std::endl;
 }
 
 void Database::write(std::string i_serial_number, std::string i_test_type, int i_run_number, std::string i_output_dir) {
@@ -127,17 +126,15 @@ void Database::registerFromConnectivity(std::string i_json_path) {
         if (conn_json["chipType"] == "FEI4B") chipType = "FE-I4B";
 
         bsoncxx::document::value doc_value = document{} <<  
-            "sys" << open_document <<
-                "rev" << 0 << // revision number
-                "cts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // creation timestamp
-                "mts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // modification timestamp
-            close_document <<
+            "sys" << open_document << close_document <<
             "serialNumber" << serialNumber <<
             "componentType" << chipType <<
             "name" << jj[chipType]["name"].get<std::string>() <<
         finalize;
      
-        collection.insert_one(doc_value.view());
+        auto result = collection.insert_one(doc_value.view());
+        bsoncxx::oid oid = result->inserted_id().get_oid().value;
+        this->addSys(oid.to_string(), "component");
     }
 
     // module component
@@ -149,31 +146,27 @@ void Database::registerFromConnectivity(std::string i_json_path) {
         bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "serialNumber" << serialNumber << finalize);
         if (!maybe_result) {
             bsoncxx::document::value doc_value = document{} <<  
-                "sys" << open_document <<
-                    "rev" << 0 << // revision number
-                    "cts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // creation timestamp
-                    "mts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // modification timestamp
-                close_document <<
+                "sys" << open_document << close_document <<
                 "serialNumber" << serialNumber <<
                 "componentType" << conn_json["module"]["componentType"].get<std::string>() <<
             finalize;
      
-            collection.insert_one(doc_value.view());
+            auto result = collection.insert_one(doc_value.view());
+            bsoncxx::oid oid = result->inserted_id().get_oid().value;
+            this->addSys(oid.to_string(), "component");
     
             // CP relation
             for (unsigned i=0; i<conn_json["chips"].size(); i++) {
                 bsoncxx::document::value doc_value = document{} <<  
-                    "sys" << open_document <<
-                        "rev" << 0 << // revision number
-                        "cts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // creation timestamp
-                        "mts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // modification timestamp
-                    close_document <<
+                    "sys" << open_document << close_document <<
                     "parent" << getValue("component", "serialNumber", conn_json["module"]["serialNumber"], "_id", "oid") <<
                     "child" << getValue("component", "serialNumber", conn_json["chips"][i]["serialNumber"], "_id", "oid") <<
                 finalize;
      
                 mongocxx::collection collection = db["childParentRelation"];
-                collection.insert_one(doc_value.view());
+                auto result = collection.insert_one(doc_value.view());
+                bsoncxx::oid oid = result->inserted_id().get_oid().value;
+                this->addSys(oid.to_string(), "childParentRelation");
             }
         }
     }
@@ -227,11 +220,7 @@ std::string Database::getValueByOid(std::string i_collection_name, std::string i
 std::string Database::registerComponentTestRun(std::string i_component_oid_str, std::string i_test_run_oid_str, std::string i_test_type, int i_run_number) {
     if (DB_DEBUG) std::cout << "\tDatabase: Register Com-Test Run" << std::endl;
     bsoncxx::document::value doc_value = document{} <<  
-        "sys" << open_document <<
-            "rev" << 0 << // revision number
-            "cts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // creation timestamp
-            "mts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // modification timestamp
-        close_document <<
+        "sys" << open_document << close_document <<
         "component" << i_component_oid_str << // id of component
         "state" << "..." << // code of test run state
         "stage" << "..." << // code of current stage of the component
@@ -245,17 +234,14 @@ std::string Database::registerComponentTestRun(std::string i_component_oid_str, 
     mongocxx::collection collection = db["componentTestRun"];
     auto result = collection.insert_one(doc_value.view());
     bsoncxx::oid oid = result->inserted_id().get_oid().value;
+    this->addSys(oid.to_string(), "componentTestRun");
     return oid.to_string();
 }
 
 std::string Database::registerTestRun(std::string i_test_type, int i_run_number) {
     if (DB_DEBUG) std::cout << "\tDatabase: Register Test Run" << std::endl;
     bsoncxx::document::value doc_value = document{} <<  
-        "sys" << open_document <<
-            "rev" << 0 << // revision number
-            "cts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // creation timestamp
-            "mts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // modification timestamp
-        close_document <<
+        "sys" << open_document << close_document <<
         "testType" << i_test_type << // id of test type //TODO make it id
         "runNumber" << i_run_number << // number of test run
         "date" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // date when the test run was taken
@@ -276,6 +262,7 @@ std::string Database::registerTestRun(std::string i_test_type, int i_run_number)
     mongocxx::collection collection = db["testRun"];
     auto result = collection.insert_one(doc_value.view());
     bsoncxx::oid oid = result->inserted_id().get_oid().value;
+    this->addSys(oid.to_string(), "testRun");
     return oid.to_string();
 }
 
@@ -321,6 +308,7 @@ void Database::addDefect(std::string i_oid_str, std::string i_collection_name, s
         document{} << "$push" << open_document <<
             "defects" << open_document <<
                 "code" << "01234567890abcdef01234567890abcdef" << // generated unique code
+                "dateTime" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // attachment creation timestamp
                 "name" << i_defect_name << // defect name
                 "description" << i_description << // defect description
                 "properties" << "..." << // properties object, optional
@@ -379,4 +367,20 @@ void Database::addEnvironment(std::string i_oid_str, std::string i_collection_na
     );
 }
 
+void Database::addSys(std::string i_oid_str, std::string i_collection_name) {
+    if (DB_DEBUG) std::cout << "\t\tDatabase: Add environment" << std::endl;
+    bsoncxx::oid i_oid(i_oid_str);
+    db[i_collection_name].update_one(
+        document{} << "_id" << i_oid << finalize,
+        document{} << "$set" << open_document <<
+            "sys" << open_document <<
+                "rev" << 0 << // revision number
+                "cts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // creation timestamp
+                "mts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // modification timestamp
+            close_document <<
+        close_document << finalize
+    );
+}
+
+//
 
