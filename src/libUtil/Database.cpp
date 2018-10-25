@@ -17,6 +17,11 @@ Database::Database(std::string i_host_ip) {
     std::string m_database_name = "yarrdb";
     std::string m_collection_name = "yarrcoll";
     db = client[m_database_name];
+
+    m_has_flags = false;
+    m_flag_hv = false; m_hv = 0;
+    m_flag_cool = false; m_cool_temp = 25;
+    m_flag_encap = false; m_stage = "ASSEMBLED";
 }
 
 Database::~Database() {
@@ -26,6 +31,34 @@ Database::~Database() {
 //*****************************************************************************************************
 // Public functions
 //
+void Database::setFlags(std::vector<std::string> i_flags) {
+    if (DB_DEBUG) std::cout << "Database: Flags" << std::endl;
+    if (i_flags.size() != 0) m_has_flags = true;
+    for (unsigned i=0; i<i_flags.size(); i++) {
+        std::string flag_name = i_flags[i];
+        if (flag_name == "hv") {
+            m_flag_hv = true;
+            i++;
+            m_hv = std::stod(i_flags[i]);
+        }
+        else if (flag_name == "cool") {
+            m_flag_cool = true;
+            i++;
+            m_cool_temp = std::stod(i_flags[i]);
+        }
+        else if (flag_name == "encap") {
+            m_flag_encap = true;
+            i++;
+            m_stage = flag_name;
+        }
+    }
+    std::cout << "Set flags, ";
+    if (m_flag_hv) std::cout << "HV: " << m_hv << " V, ";
+    if (m_flag_cool) std::cout << "COOL: " << m_cool_temp << " C, ";
+    if (m_flag_encap) std::cout << "ENCAP: YES, ";
+    std::cout << std::endl;
+}
+
 void Database::write(std::string i_serial_number, std::string i_test_type, int i_run_number, std::string i_output_dir) {
     if (DB_DEBUG) std::cout << "Database: Write" << std::endl;
     std::string component_type_str = this->getValue("component", "serialNumber", i_serial_number, "componentType");
@@ -40,6 +73,7 @@ void Database::write(std::string i_serial_number, std::string i_test_type, int i
             std::string chip_name_str = this->getValueByOid("component", child_oid_str, "name");
             this->registerComponentTestRun(child_oid_str, test_run_oid_str, i_test_type, i_run_number);
             this->uploadFromDirectory("testRun", test_run_oid_str, i_output_dir, chip_name_str);
+            if (m_has_flags) this->addEnvironment(test_run_oid_str, "testRun");
         }
     }
     else {
@@ -48,6 +82,7 @@ void Database::write(std::string i_serial_number, std::string i_test_type, int i
         this->registerComponentTestRun(component_oid_str, test_run_oid_str, i_test_type, i_run_number);
         this->uploadFromDirectory("testRun", test_run_oid_str, i_output_dir);
         //this->addComment("testRun", test_run_oid_str, "hoge!!");
+        if (m_has_flags) this->addEnvironment(test_run_oid_str, "testRun");
     }
 }
 
@@ -112,7 +147,7 @@ void Database::registerFromConnectivity(std::string i_json_path) {
         std::string serialNumber = conn_json["module"]["serialNumber"];
         mongocxx::collection collection = db["component"];
         bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "serialNumber" << serialNumber << finalize);
-        if (maybe_result) {
+        if (!maybe_result) {
             bsoncxx::document::value doc_value = document{} <<  
                 "sys" << open_document <<
                     "rev" << 0 << // revision number
@@ -229,6 +264,8 @@ std::string Database::registerTestRun(std::string i_test_type, int i_run_number)
         "passed" << true << // flag if test passed
         "problems" << true << // flag if any problem occured
         "state" << "ready" << // state of component ["ready", "requestedToTrash", "trashed"]
+        "environment" << open_document <<
+        close_document <<
         "comments" << open_array << // array of comments
         close_array <<
         "attachments" << open_array << // array of attachments
@@ -326,3 +363,20 @@ void Database::uploadFromDirectory(std::string i_collection_name, std::string i_
         }
     }
 }
+
+void Database::addEnvironment(std::string i_oid_str, std::string i_collection_name) {
+    if (DB_DEBUG) std::cout << "\t\tDatabase: Add environment" << std::endl;
+    bsoncxx::oid i_oid(i_oid_str);
+    db[i_collection_name].update_one(
+        document{} << "_id" << i_oid << finalize,
+        document{} << "$set" << open_document <<
+            "environment" << open_document <<
+                "hv" << m_hv << 
+                "cool" << m_cool_temp << 
+                "stage" << m_stage << 
+            close_document <<
+        close_document << finalize
+    );
+}
+
+
