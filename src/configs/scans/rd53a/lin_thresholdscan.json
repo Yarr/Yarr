@@ -81,7 +81,7 @@
         "GlobalPulseRt": 16384,
         "InjVcalMed": 1000,
         "InjVcalHigh": 1000,
-        "EnCorColDiff1": 0,
+        "EnCoreColDiff1": 0,
         "EnCoreColDiff2": 0,
         "EnCoreColSync":0
     }
