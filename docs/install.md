@@ -6,6 +6,9 @@ In order to setup the DAQ system the following two steps are needed:
 2. Install the custom PCIe kernel driver
 3. Prepare and setup the DAQ hardware
 
+NB for some hardware controllers there are extra dependencies requried,
+for instance [NetIO](netio.md).
+
 ## Software installation
 
 ### Dependencies

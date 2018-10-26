@@ -8,6 +8,7 @@ YARR is a readout system based around the concept of moving intelligence from th
 * ATLAS IBL BOC
 * Wuppertal's KU040
 * FELIX + NETIO
+
 The currently supported readout chips are:
 * FE-I4B
 * FE65-P2
@@ -54,6 +55,7 @@ Support for YARR can be found in the [YARR Matter Most channel.](https://matterm
     |-- libFe65p2 : FE65p2 implementation
     |-- libFei4 : FE-I4B implementation
     |-- libKU040 : KU040 hw driver
+    |-- libNetioHW : FELIX driver
     |-- libRce : HSIO2 hw driver
     |-- libRd53a: RD53a implementation
     |-- libSpec : PCIe hw driver

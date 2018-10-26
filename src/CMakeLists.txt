@@ -30,8 +30,14 @@ add_compile_options(-std=c++11)
 # Add -fPIC for (e.g. linking to shared libraries)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+option(ENABLE_NETIO "Enable NetIO, needs NETIO_DIR setting separately" OFF)
+
 #add libraries
 list(APPEND libs Yarr Spec Util Emu Fe65p2 Fei4 Rce Boc Rd53a KU040)
+if(ENABLE_NETIO)
+    list(APPEND libs NetioHW)
+endif()
+
 foreach(lib ${libs})
 include_directories(lib${lib}/include)
 file(GLOB SrcFiles lib${lib}/*.cpp)
@@ -39,8 +45,23 @@ list(APPEND LibSrcFiles ${SrcFiles})
 endforeach()
 add_library(Yarr STATIC ${LibSrcFiles})
 
+set(NETIO_DIR "/path/to/felix/software" CACHE
+    PATH "Path to FELIX software distribution for NetIO library")
+
+if(ENABLE_NETIO)
+  include_directories("${NETIO_DIR}/include")
+endif()
+
 #add executables
 file(GLOB tools tools/*.cpp)
+if(NOT ENABLE_NETIO)
+  file(GLOB tools_netio tools/testNetioHw.cpp tools/testScan.cpp tools/testBitStream.cpp)
+  list(REMOVE_ITEM tools ${tools_netio})
+  # CMake 3. something has filter command
+  ## list(FILTER tools EXCLUDE REGEX tools/testNetioHw.cpp tools/testBitStream.cpp tools/testScan.cpp)
+  # message(${tools})
+endif()
+
 foreach(target ${tools})
 get_filename_component(execname ${target} NAME_WE)
 get_filename_component(srcfile ${target} NAME)
@@ -55,6 +76,10 @@ if(APPLE)
 elseif(UNIX)
     set(WRAPPED_YARR -Wl,--whole-archive Yarr -Wl,--no-whole-archive)
     target_link_libraries(${execname} ${WRAPPED_YARR} pthread rt)
+
+    if(ENABLE_NETIO)
+        target_link_libraries(${execname} "${NETIO_DIR}/lib/libnetio.so")
+    endif()
 endif()
 # Not sure why rt is not linked by default here
 endforeach()

@@ -174,7 +174,39 @@ Once the full tuning routine (as outlined in the beginning of this page) has bee
 ![Noise distribution after tuning](images/JohnDoe_NoiseDist_AfterTuning.png)
 ![S-curve threshold scan after tuning](images/JohnDoe_sCurve_AfterTuning.png)
 ![Threshold map after tuning](images/JohnDoe_ThresholdMap_AfterTuning.png)
-![Noise map after tuning](images/JohnDoe_NoiseMap_AfterTuning.png)
+
+
+## Cross-talk
+
+The cross-talk is evaluated injecting in the neighboring pixels and checking the occupancy in the central pixel. 
+
+To check if there is cross-talk for your chip+sensor, use the following command:
+```bash
+bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_crosstalk.json  -p
+```
+For the defaul settings and a fully depleated sensor, the OccupancyMap.png plot should show hits in half of the pixels.
+
+## Cross-talk scan
+
+To identify the threhsold at which cross-talk appear, run the following command:
+```bash
+bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_crosstalk_scan.json  -p
+```
+
+Config parameters:
+
+ - max ``<int>``: number of mask stages
+ - min ``<int>``: mask stage to start with
+ - step ``<int>``: step size of mask stage (do not use a value lower than 64)
+ - maskType  ``<int>``: for standard threshold scans (0), or for cross-talk (1 and 2, depending on the cross-talk definition)
+ - maskSize  ``<int>``: define in which neighbouring pixels charge is injected
+ - includedPixels ``<int>``: define if and which pixel edges are not considered to measure cross-talk 
+ - sensorType  ``<int>``: square sensor (0), rectangular sensor with bump-bond (0,0) bonded with the pixel at the corner (1), and rectangular sensor with bump-bond (0,1) bonded with the pixel at the corner (2)
+
+
+Example of the s-curve, threshold distribution, threshold map and noise distribution for the tuned linear front-end are given below:
+![S-curve threshold scan](images/JohnDoe_crosstalkscan_sCurve.png)
+![Threshold distribution](images/JohnDoe_crosstalkscan_ThrehsoldDist.png)
 
 
 # Loop Actions
@@ -218,6 +250,8 @@ Config parameters:
  - max ``<int>``: number of mask stages
  - min ``<int>``: mask stage to start with
  - step ``<int>``: step size of mask stage
+<<<<<<< HEAD
+=======
 
 ## Rd53aParameterLoop
 Loops over a specifed range of an RD53A global register
@@ -252,3 +286,4 @@ Config parameters:
 - tuneLin ``<bool>``: enable adjustment of lin FE pixel regs
 - resetTdac ``<bool>``: reset TDACs to defaults
 
+>>>>>>> upstream/devel

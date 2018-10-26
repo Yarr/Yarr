@@ -1,13 +1,19 @@
 {
   "scan": {
-    "analysis": {
-      "0": {
-        "algorithm": "ScurveFitter"
-      },
-     "1": {
-        "algorithm": "OccupancyAnalysis"
-      },
-      "n_count": 1
+      "analysis": {
+	  "0": {
+              "algorithm": "TotAnalysis"
+	  },
+	  "1": {
+              "algorithm": "OccupancyAnalysis"
+	  },
+	  "2": {
+              "algorithm": "TotAnalysis"	    
+	  },
+	  "3": {
+              "algorithm": "L1Analysis"
+	  },
+      "n_count": 4
     },
     "histogrammer": {
       "0": {
@@ -35,36 +41,30 @@
     "loops": [
       {
         "config": {
-          "max": 64,
+          "max": 1536,
           "min": 0,
-          "step": 1
+          "step": 32,
+	  "maskType" : 1,
+	  "maskSize" : 2,
+	  "sensorType" : 0
         },
         "loopAction": "Rd53aMaskLoop"
-      },
-      {
-        "config": {
-          "max": 400,
-          "min": 0,
-          "step": 5,
-          "parameter":"InjVcalDiff"
-        },
-        "loopAction": "Rd53aParameterLoop"
       },
       {
         "config": {
           "max": 50,
           "min": 0,
           "step": 1,
-          "nSteps": 5
+          "nSteps": 1
         },
         "loopAction": "Rd53aCoreColLoop"
       },
       {
         "config": {
-          "count": 50,
+          "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 20000,
+          "frequency": 5000,
           "noInject": false,
           "time": 0
         },
@@ -74,11 +74,14 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "ThresholdScan",
+  "name": "AnalogScan",
     "prescan": {
         "InjEnDig": 0,
-        "LatencyConfig": 48,
-        "GlobalPulseRt": 16384
+        "LatencyConfig": 50,
+        "GlobalPulseRt": 16384,
+	"InjVcalDiff": 0,
+        "InjVcalHigh": 4090,
+        "InjVcalMed": 0
     }
   }
 }

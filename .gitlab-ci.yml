@@ -42,3 +42,33 @@ job_test_json:
       - yum -y install npm
       - npm install jsonlint -g
       - for file in $(find src/configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
+
+job_build_with_felix:
+    # Image of pre-built felix software
+    image: gitlab-registry.cern.ch/atlas-tdaq-felix/felix-image:cc7
+    variables:
+     # This is what is in the docker image!
+     FELIX_DIR: /opt/felix/felix-nightly
+     # LCG style config identifier
+     CONFIG: x86_64-centos7-gcc62-opt
+     GCC_SCRIPT: /cvmfs/sft.cern.ch/lcg/releases/gcc/6.2.0/x86_64-centos7/setup.sh
+    when: manual
+    tags:
+     - cvmfs
+    script:
+     # Which versions are present
+     - ls ${FELIX_DIR}/..
+     # Which configurations are present
+     - ls ${FELIX_DIR}
+     - yum -y install make cmake gnuplot glibc-devel which
+     # TBB lib is in FELIX image, but we need the includes to build
+     - yum -y install tbb tbb-devel
+     # Run setup for YARR
+     - source ${FELIX_DIR}/${CONFIG}/setup.sh
+     - source ${GCC_SCRIPT}
+     - gcc --version
+     - mkdir -p src/cmake_build
+     - cd src/cmake_build
+     - cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DENABLE_NETIO:BOOL=ON -DNETIO_DIR:PATH=${FELIX_DIR}/${CONFIG}
+     - make -j4
+     - bin/scanConsole -k
