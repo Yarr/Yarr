@@ -29,6 +29,7 @@ class Database {
         void write(std::string, std::string, int, std::string);
         std::string uploadFromJson(std::string, std::string);
         void registerFromConnectivity(std::string);
+        void viewer();
 
     protected:
         std::string getValue(std::string, std::string, std::string, std::string, std::string i_bson_type="string");

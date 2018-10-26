@@ -8,7 +8,7 @@ using bsoncxx::builder::stream::open_array;
 using bsoncxx::builder::stream::open_document;
 
 Database::Database(std::string i_host_ip) {
-    DB_DEBUG = true;
+    DB_DEBUG = false;
     if (DB_DEBUG) std::cout<<"Database: Initialize" << std::endl;
 
     mongocxx::instance inst{};
@@ -205,6 +205,20 @@ std::string Database::getValueByOid(std::string i_collection_name, std::string i
             bsoncxx::document::element element = result->view()["_id"];
             return element.get_oid().value.to_string();
         }
+        else if (i_bson_type == "sys_datetime") {
+            bsoncxx::document::element element = result->view()["sys"]["cts"];
+            std::chrono::seconds s = std::chrono::duration_cast<std::chrono::seconds>(element.get_date().value);
+            std::time_t t = s.count();
+            std::tm time_tm = *std::localtime(&t);
+            char buffer[80];
+            strftime(buffer,sizeof(buffer),"%Y-%m-%d %H:%M:%S",&time_tm);
+            std::string str(buffer);
+            return str;
+        }
+        else if (i_bson_type == "int") {
+            bsoncxx::document::element element = result->view()[i_key];
+            return std::to_string(element.get_int32().value);
+        }
         else {
             bsoncxx::document::element element = result->view()[i_key];
             return element.get_utf8().value.to_string();
@@ -382,5 +396,50 @@ void Database::addSys(std::string i_oid_str, std::string i_collection_name) {
     );
 }
 
-//
-
+void Database::viewer() {
+    std::string input;
+    while (1) {
+        std::cout << "Type \"module\" to select module" << std::endl;
+        std::cout << "Type \"chip\" to select chip" << std::endl;
+        std::cout << "Type \"q\" to quit." << std::endl;
+        mongocxx::collection collection = db["component"];
+        mongocxx::cursor cursor = collection.find({document() << "componentType" << "Module" << finalize});
+        for (auto doc : cursor) {
+            bsoncxx::document::element element = doc["serialNumber"];
+            std::string sn_str = element.get_utf8().value.to_string();
+            std::cout << "SN: " << sn_str << std::endl;
+        }
+        std::cin >> input;
+        if (input == "q") break;
+        else if (input == "module") {
+            std::cout << "Input module SN" << std::endl;
+            std::cin >> input;
+            if (input == "q") break;
+            else {
+                mongocxx::collection collection = db["childParentRelation"];
+                mongocxx::cursor cursor = collection.find({document() << "parent" << getValue("component", "serialNumber", input, "_id", "oid") << finalize});
+                for (auto doc : cursor) {
+                    bsoncxx::document::element element = doc["child"];
+                    std::string id_str = element.get_utf8().value.to_string();
+                    std::cout << "\tSN: " << getValueByOid("component", id_str, "serialNumber") << " - " << getValueByOid("component", id_str, "componentType") << std::endl;
+                }
+            }
+        }
+        else if (input == "chip") {
+            std::cout << "Input chip SN" << std::endl;
+            std::cin >> input;
+            if (input == "q") break;
+            else {
+                mongocxx::collection collection = db["componentTestRun"];
+                mongocxx::cursor cursor = collection.find({document() << "component" << getValue("component", "serialNumber", input, "_id", "oid") << finalize});
+                for (auto doc : cursor) {
+                    bsoncxx::document::element element = doc["testRun"];
+                    std::string id_str = element.get_utf8().value.to_string();
+                    std::cout << "\t\tTest Type: " << getValueByOid("testRun", id_str, "testType") << " - " << 
+                        getValueByOid("testRun", id_str, "", "sys_datetime") << " - " <<
+                        getValueByOid("testRun", id_str, "runNumber", "int") << std::endl;
+                }
+            }
+        }
+    }
+}
