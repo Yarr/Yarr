@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
     oF.close();
 
     int c;
-    while ((c = getopt(argc, argv, "hs:n:m:g:r:c:t:po:W:")) != -1) {
+    while ((c = getopt(argc, argv, "hs:n:m:g:r:c:t:po:W:F:")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':

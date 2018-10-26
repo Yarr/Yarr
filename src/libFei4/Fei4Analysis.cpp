@@ -523,7 +523,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         hh1->setXaxisTitle("Threshold [e]");
                         hh1->setYaxisTitle("Number of Pixels");
                         thrDist[outerIdent] = hh1;
-                        hh1 = new Histo1d("NoiseDist", 76, -1, 151, typeid(this));
+                        hh1 = new Histo1d("NoiseDist", 1001, -1, 1000, typeid(this));
                         hh1->setXaxisTitle("Noise [e]");
                         hh1->setYaxisTitle("Number of Pixels");
                         sigDist[outerIdent] = hh1;
