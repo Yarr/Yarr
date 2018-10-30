@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 	gStyle->SetTextFont();
 
 	if (argc < 4) {
-		std::cout << "No directory, image plot extension, and/or good differential FE pixels option given! \n For only good differential FE pixels, write '1'. \n./plotWithRoot_Threshold path/to/directory/ file_ext goodDiff_On \nExample: ./plotWithRoot_Threshold path/to/directory/ pdf 1" << std::endl;
+		std::cout << "No directory, image plot extension, and/or good differential FE pixels option given! \nFor only good differential FE pixels, write '1'. \n./plotWithRoot_Threshold path/to/directory/ file_ext goodDiff_On \nExample: ./plotWithRoot_Threshold path/to/directory/ pdf 1" << std::endl;
 		return -1;
 	}
 
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 
 					double tmp;
 					infile >> tmp;
-					if (whichFE(j) != 2) {		//if not in Differential FE
+					if (good_Diff != "1" || whichFE(j) != 2 ) {		//if not in Differential FE
 						if (tmp > 0) {
 							fe_hist[0]->Fill(tmp);
 							fe_hist[whichFE(j)+1]->Fill(tmp);
@@ -133,18 +133,10 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 						pix_values.push_back(tmp);
 					}
 					else {
-						if(good_Diff != "1") {
-						if (tmp > 0) {
-							fe_hist[0]->Fill(tmp);
-							fe_hist[whichFE(j)+1]->Fill(tmp);
-							}
-							h_plot->SetBinContent(j+1,i+1,tmp);	
-							pix_values.push_back(tmp);
-						}
-						else if (good_Diff == "1" && goodDiff(i,j) == 1) {
-						if (tmp > 0) {
-							fe_hist[0]->Fill(tmp);
-							fe_hist[whichFE(j)+1]->Fill(tmp);
+						if (good_Diff == "1" && goodDiff(i,j) == 1) {
+							if (tmp > 0) {
+								fe_hist[0]->Fill(tmp);
+								fe_hist[whichFE(j)+1]->Fill(tmp);
 							}
 							h_plot->SetBinContent(j+1,i+1,tmp);	
 							pix_values.push_back(tmp);

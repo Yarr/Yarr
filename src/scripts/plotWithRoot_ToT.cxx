@@ -11,15 +11,15 @@
 #include <plotWithRoot.h>
 #include <RD53Style.h>
 
-int main(int argc, char *argv[]) { //./plotWithRoot_ToT path/to/directory file_ext
+int main(int argc, char *argv[]) { //./plotWithRoot_ToT path/to/directory file_ext goodDiff_On
 	//Example file extensions: png, pdf, C, root	
 
 	SetRD53Style();	
 	gStyle->SetTickLength(0.02);
 	gStyle->SetTextFont();
 
-	if (argc < 3) {
-		std::cout << "No directory and/or image plot extension given! \nExample: ./plotWithRoot_ToT path/to/directory/ pdf" << std::endl;
+	if (argc < 4) {
+		std::cout << "No directory, image plot extension, and/or good differential FE pixels option given! \nFor only good differential FE pixels, write '1'. \n./plotWithRoot_ToT path/to/directory/ file_ext goodDiff_On \nExample: ./plotWithRoot_ToT path/to/directory/ pdf 1" << std::endl;
 		return -1;
 	}
 
@@ -30,6 +30,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ToT path/to/directory file_e
 
 	std::string delimiter = "_";
 	std::string ext = argv[2];
+	std::string good_Diff = argv[3];
 
 	dp = opendir(argv[1]);	//open directory
 	if (dp==NULL) {	//if directory doesn't exist
@@ -114,18 +115,33 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ToT path/to/directory file_e
 			int zeros_FE[3] = { 0, 0, 0};
 			char zeros_Syn[100]={}, zeros_Lin[100]={}, zeros_Diff[100]={};
 			char* zeros_char[3] = {zeros_Syn, zeros_Lin, zeros_Diff};
-			//Fill Threshold plots	
+			//Fill ToT plots	
 			for (int i=0; i<rowno; i++) {
 				for (int j=0; j<colno; j++) {
 
 					double tmp;
 					infile >> tmp;
-					if (tmp == 0) zeros_FE[whichFE(j)]++;				
-					if (tmp != 0) {	
-						fe_hist[0]->Fill(tmp);
-						fe_hist[whichFE(j)+1]->Fill(tmp);
+					if(whichFE(j) != 2 || good_Diff != "1") {
+						if (tmp == 0) zeros_FE[whichFE(j)]++;				
+						if (tmp != 0) {	
+							fe_hist[0]->Fill(tmp);
+							fe_hist[whichFE(j)+1]->Fill(tmp);
+						}
+						h_plot->SetBinContent(j+1,i+1,tmp);	
 					}
-					h_plot->SetBinContent(j+1,i+1,tmp);	
+					else {
+						if (good_Diff == "1" && goodDiff(i,j) == 1) {
+							if (tmp == 0) zeros_FE[whichFE(j)]++;				
+							if (tmp != 0) {	
+								fe_hist[0]->Fill(tmp);
+								fe_hist[whichFE(j)+1]->Fill(tmp);
+							}
+							h_plot->SetBinContent(j+1,i+1,tmp);	
+						}	
+						else if (good_Diff == "1" && goodDiff(i,j) == 0) {
+							h_plot->SetBinContent(j+1,i+1,-1);	
+						}
+					}
 				}
 			}
 
@@ -219,6 +235,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ToT path/to/directory file_e
 			gStyle->SetOptStat(0);
 			c_plot->RedrawAxis();
 			c_plot->Update();
+			if ( strstr(file_path, "Mean") != NULL ) h_plot->GetZaxis()->SetRangeUser(0,15);
 			if ( strstr( file_path, "Sigma") != NULL ) h_plot->GetZaxis()->SetRangeUser(((fe_hist[0]->GetMean()) - 2*(fe_hist[0]->GetRMS()) < 0) ? 0 : ((fe_hist[0]->GetMean())- 2*(fe_hist[0]->GetRMS())), (fe_hist[0]->GetMean()) + 2*(fe_hist[0]->GetRMS()));
 			h_plot->GetZaxis()->SetLabelSize(0.04);
 			filename2 = filename.replace(filename.find(plot_ext[4].c_str()), 10, plot_ext[5].c_str());
