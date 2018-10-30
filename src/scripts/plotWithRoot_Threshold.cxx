@@ -11,15 +11,15 @@
 #include <plotWithRoot.h>
 #include <RD53Style.h>
 
-int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory file_ext
+int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory file_ext goodDiff_On
 	//Example file extensions: png, pdf, C, root	
 
 	SetRD53Style();	
 	gStyle->SetTickLength(0.02);
 	gStyle->SetTextFont();
 
-	if (argc < 3) {
-		std::cout << "No directory and/or image plot extension given! \nExample: ./plotWithRoot_Threshold path/to/directory/ pdf" << std::endl;
+	if (argc < 4) {
+		std::cout << "No directory, image plot extension, and/or good differential FE pixels option given! \nFor only good differential FE pixels, write '1'. \n./plotWithRoot_Threshold path/to/directory/ file_ext goodDiff_On \nExample: ./plotWithRoot_Threshold path/to/directory/ pdf 1" << std::endl;
 		return -1;
 	}
 
@@ -30,6 +30,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 
 	std::string delimiter = "_";
 	std::string ext = argv[2];
+	std::string good_Diff = argv[3];
 
 	dp = opendir(argv[1]);	//open directory
 	if (dp==NULL) {	//if directory doesn't exist
@@ -123,12 +124,28 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 
 					double tmp;
 					infile >> tmp;
-					pix_values.push_back(tmp);
-					if (tmp != 0) {	
-						fe_hist[0]->Fill(tmp);
-						fe_hist[whichFE(j)+1]->Fill(tmp);
+					if (good_Diff != "1" || whichFE(j) != 2 ) {		//if not in Differential FE
+						if (tmp > 0) {
+							fe_hist[0]->Fill(tmp);
+							fe_hist[whichFE(j)+1]->Fill(tmp);
+						}
+						h_plot->SetBinContent(j+1,i+1,tmp);	
+						pix_values.push_back(tmp);
 					}
-					h_plot->SetBinContent(j+1,i+1,tmp);	
+					else {
+						if (good_Diff == "1" && goodDiff(i,j) == 1) {
+							if (tmp > 0) {
+								fe_hist[0]->Fill(tmp);
+								fe_hist[whichFE(j)+1]->Fill(tmp);
+							}
+							h_plot->SetBinContent(j+1,i+1,tmp);	
+							pix_values.push_back(tmp);
+						}
+						else if (good_Diff == "1" && goodDiff(i,j) == 0) {
+							h_plot->SetBinContent(j+1,i+1,-1);	
+							pix_values.push_back(-1);
+						}
+					}
 				}
 			}
 
@@ -317,8 +334,10 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 					double *tmp_p = &pix_values[n];
 					n++;
 					double tmp = *tmp_p;		
-					int bin_num = whichSigma(tmp, fe_fit[whichFE(j)+1]->GetParameter(1), fe_fit[whichFE(j)+1]->GetParameter(2));
-					range_hist[whichFE(j)]->AddBinContent(bin_num);
+					if (tmp != -1) {
+						int bin_num = whichSigma(tmp, fe_fit[whichFE(j)+1]->GetParameter(1), fe_fit[whichFE(j)+1]->GetParameter(2));
+						range_hist[whichFE(j)]->AddBinContent(bin_num);
+						}
 					if (tmp == 0) zeros_FE[whichFE(j)]++;	
 				}
 			}
