@@ -1,33 +1,33 @@
 {
     "module": {
-        "serialNumber": "KK-00",
+        "serialNumber": "__MODULE_ID__",
         "componentType": "Module"
     },
     "chipType" : "FEI4B",
     "chips" : [
         {
-            "serialNumber": "MA-00",
+            "serialNumber": "__MODULE_ID___chipID1",
             "componentType": "Front-end Chip",
             "config" : "configs/fei4b_test0.json",
             "tx" : 0,
             "rx" : 0
         },
         {
-            "serialNumber": "MA-01",
+            "serialNumber": "__MODULE_ID___chipID2",
             "componentType": "Front-end Chip",
             "config" : "configs/fei4b_test1.json",
             "tx" : 1,
             "rx" : 1
         },
         {
-            "serialNumber": "MA-02",
+            "serialNumber": "__MODULE_ID___chipID3",
             "componentType": "Front-end Chip",
             "config" : "configs/fei4b_test2.json",
             "tx" : 2,
             "rx" : 2
         },
         {
-            "serialNumber": "MA-03",
+            "serialNumber": "__MODULE_ID___chipID4",
             "componentType": "Front-end Chip",
             "config" : "configs/fei4b_test3.json",
             "tx" : 3,
