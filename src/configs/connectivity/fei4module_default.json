@@ -6,30 +6,30 @@
     "chipType" : "FEI4B",
     "chips" : [
         {
-            "serialNumber": "__MODULE_ID___chipID1",
+            "serialNumber": "__MODULE_ID___chipId1",
             "componentType": "Front-end Chip",
-            "config" : "configs/fei4b_test0.json",
+            "config" : "configs/__MODULE_ID___fei4b_chipId1.json",
             "tx" : 0,
             "rx" : 0
         },
         {
-            "serialNumber": "__MODULE_ID___chipID2",
+            "serialNumber": "__MODULE_ID___chipId2",
             "componentType": "Front-end Chip",
-            "config" : "configs/fei4b_test1.json",
+            "config" : "configs/__MODULE_ID___fei4b_chipId2.json",
             "tx" : 1,
             "rx" : 1
         },
         {
-            "serialNumber": "__MODULE_ID___chipID3",
+            "serialNumber": "__MODULE_ID___chipId3",
             "componentType": "Front-end Chip",
-            "config" : "configs/fei4b_test2.json",
+            "config" : "configs/__MODULE_ID___fei4b_chipId3.json",
             "tx" : 2,
             "rx" : 2
         },
         {
-            "serialNumber": "__MODULE_ID___chipID4",
+            "serialNumber": "__MODULE_ID___chipId4",
             "componentType": "Front-end Chip",
-            "config" : "configs/fei4b_test3.json",
+            "config" : "configs/__MODULE_ID___fei4b_chipId4.json",
             "tx" : 3,
             "rx" : 3
         }
