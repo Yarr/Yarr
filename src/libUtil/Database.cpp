@@ -48,9 +48,12 @@ void Database::setFlags(std::vector<std::string> i_flags) {
                 i++;
                 m_cool_temp = std::stod(i_flags[i]);
             }
-            else if (flag_name == "encap") {
-                std::cout << "ENCAP: YES, ";
-                i++;
+            else if (flag_name == "encapsulation") {
+                std::cout << "After encapsulation, ";
+                m_stage = flag_name;
+            }
+            else if (flag_name == "wirebond") {
+                std::cout << "After wirebond, ";
                 m_stage = flag_name;
             }
         }
