@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ToT path/to/directory file_e
 					mean_rms_z->DrawLatex(0.18,0.91, mean_char[i-1]);
 					sprintf(rms_char[i-1], "RMS = %.1f #pm %.1f", fe_hist[i]->GetRMS(), fe_hist[i]->GetRMSError());
 					mean_rms_z->DrawLatex(0.18,0.87, rms_char[i-1]);
-					sprintf(zeros_char[i-1], "Untuned Pixels = %i", zeros_FE[i]);
+					sprintf(zeros_char[i-1], "Untuned Pixels = %i", zeros_FE[i-1]);
 					mean_rms_z->DrawLatex(0.18,0.83, zeros_char[i-1]);
 				}					
 
