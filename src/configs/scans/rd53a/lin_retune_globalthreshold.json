@@ -31,7 +31,7 @@
     },
     "loops": [
       { "config": {
-          "max": 350,
+          "max": 400,
           "min": 0,
           "step": 4,
           "parameter": "LinVth",
@@ -43,7 +43,7 @@
         "config": {
           "max": 64,
           "min": 0,
-          "step": 4
+          "step": 8
         },
         "loopAction": "Rd53aMaskLoop"
       },
@@ -75,9 +75,12 @@
     "prescan": {
         "InjEnDig": 0,
         "LatencyConfig": 48,
-        "GlobalPulseRt": 16384,
+        "GlobalPulseRt": 0,
         "DiffVth1": 500,
-        "SyncVth": 500
+        "SyncVth": 500,
+        "EnCoreColDiff1": 0,
+        "EnCoreColDiff2": 0,
+        "EnCoreColSync": 0
     }
   }
 }
