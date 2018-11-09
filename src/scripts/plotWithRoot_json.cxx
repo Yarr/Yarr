@@ -189,9 +189,9 @@ int main(int argc, char *argv[]) { //./plotWithRoot_json path/to/directory file_
 				mean_rms->SetTextAlign(13);
 				mean_rms->SetTextFont(63);
 				mean_rms->SetTextSizePixels(24);
-				sprintf(mean_Lin, "Mean = %.1f #pm %.1f", h_Lin->GetMean(), h_Lin->GetMeanError());
+				sprintf(mean_Lin, "Mean = %.1f", h_Lin->GetMean());
 				mean_rms->DrawLatex(0.18,0.91, mean_Lin);
-				sprintf(rms_Lin, "RMS = %.1f #pm %.1f", h_Lin->GetRMS(), h_Lin->GetRMSError());
+				sprintf(rms_Lin, "RMS = %.1f", h_Lin->GetRMS());
 				mean_rms->DrawLatex(0.18,0.87, rms_Lin);
 
 				h_Lin->SetMaximum((h_Lin->GetMaximum())*1.25);
@@ -220,9 +220,9 @@ int main(int argc, char *argv[]) { //./plotWithRoot_json path/to/directory file_
 				mean_hDiff = h_Diff->GetMean();
 				rms_hDiff = h_Diff->GetRMS();
 				
-				sprintf(mean_Diff, "Mean = %.1f #pm %.1f", h_Diff->GetMean(), h_Diff->GetMeanError());
+				sprintf(mean_Diff, "Mean = %.1f", h_Diff->GetMean());
 				mean_rms->DrawLatex(0.18,0.91, mean_Diff);
-				sprintf(rms_Diff, "RMS = %.1f #pm %.1f", h_Diff->GetRMS(), h_Diff->GetRMSError());
+				sprintf(rms_Diff, "RMS = %.1f", h_Diff->GetRMS());
 				mean_rms->DrawLatex(0.18,0.87, rms_Diff);
 
 				h_Diff->SetMaximum((h_Diff->GetMaximum())*1.25);

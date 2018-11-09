@@ -341,6 +341,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			mean_rms->DrawLatex(0.18,0.91, mean_char[0]);
 			mean_rms->DrawLatex(0.18,0.86, rms_char[0]);
 
+			hs->SetMaximum((hs->GetMaximum())*1.1);
 			hs->GetXaxis()->SetRangeUser((mean_h[0] - 5*rms_h[0] < 0) ? -0.5 : (mean_h[0]- 5*rms_h[0])  , mean_h[0] + 5*rms_h[0]);	
 			c_Stack->Update();				
 			filename3 = filename.replace(filename.find(plot_ext[5].c_str()), 11, plot_ext[6].c_str());

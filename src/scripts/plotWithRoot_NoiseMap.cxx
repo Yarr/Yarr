@@ -268,6 +268,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory f
 				sprintf(chidof_char[i], "#chi^{2} / DOF = %.1f / %i", fe_fit[i]->GetChisquare(), fe_fit[i]->GetNDF());
 				mean_rms->DrawLatex(0.18, 0.71, chidof_char[i]);	
 
+
 				fe_hist[i]->GetYaxis()->SetRangeUser(0,((fe_hist[i]->GetMaximum())*1.5)); //Leave extra room for legend
 				fe_hist[i]->GetXaxis()->SetRangeUser((mean_h[i] - 5*rms_h[i] < 0) ? -0.5 : (mean_h[i]- 5*rms_h[i]), mean_h[i] + 5*rms_h[i]); //Change the x-axis range to be the Mean +/- 5*RMS. If the lower bound is less than -0.5, make it -0.5.
 				fe_c[i]->Update();
@@ -331,7 +332,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory f
 			hs->GetXaxis()->SetLabelSize(0.05);
 			hs->GetYaxis()->SetLabelSize(0.03);
 
-			hs->SetMaximum((fe_hist[0]->GetMaximum())*1.05);
+			hs->SetMaximum((hs->GetMaximum())*1.2);
 			hs->GetXaxis()->SetRangeUser((mean_h[0] - 5*rms_h[0] < 0) ? -0.5 : (mean_h[0]- 5*rms_h[0])  , mean_h[0] + 5*rms_h[0]);
 			c_Stack->Update();				
 
