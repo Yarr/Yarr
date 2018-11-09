@@ -8,7 +8,7 @@ using bsoncxx::builder::stream::open_array;
 using bsoncxx::builder::stream::open_document;
 
 Database::Database(std::string i_host_ip) {
-    DB_DEBUG = false;
+    DB_DEBUG = true;
     if (DB_DEBUG) std::cout<<"Database: Initialize" << std::endl;
 
     mongocxx::instance inst{};
@@ -48,9 +48,12 @@ void Database::setFlags(std::vector<std::string> i_flags) {
                 i++;
                 m_cool_temp = std::stod(i_flags[i]);
             }
-            else if (flag_name == "encap") {
-                std::cout << "ENCAP: YES, ";
-                i++;
+            else if (flag_name == "encapsulation") {
+                std::cout << "After encapsulation, ";
+                m_stage = flag_name;
+            }
+            else if (flag_name == "wirebond") {
+                std::cout << "After wirebond, ";
                 m_stage = flag_name;
             }
         }
@@ -84,6 +87,58 @@ void Database::write(std::string i_serial_number, std::string i_test_type, int i
         if (m_has_flags) this->addEnvironment(test_run_oid_str, "testRun");
     }
 }
+
+void Database::writeFiles(std::string i_serial_number, int i_run_number_s, int i_run_number_e) {
+    if (DB_DEBUG) std::cout << "Database: Write files" << std::endl;
+
+    // get component id
+    std::string component_oid_str = this->getValue("component", "serialNumber", i_serial_number, "_id", "oid");
+    // find testrun of run number
+    mongocxx::collection ctr_collection = db["componentTestRun"];
+    mongocxx::cursor cursor = ctr_collection.find(document{} << "component" << component_oid_str << finalize);
+    for (auto doc : cursor) {
+        bsoncxx::document::element tr_element = doc["testRun"];
+        std::string tr_oid_str = tr_element.get_utf8().value.to_string();
+
+        mongocxx::collection tr_collection = db["testRun"];
+        bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = tr_collection.find_one(document{} << "_id" << bsoncxx::oid(tr_oid_str) << finalize);
+
+        if (maybe_result) {
+            json result_json = json::parse(bsoncxx::to_json(*maybe_result)); // testRun
+            int runNumber = result_json["runNumber"];
+            std::string testType = result_json["testType"];
+            std::cout << runNumber << ", " << testType << std::endl;
+            for (auto attachment : result_json["attachments"]) {
+                std::string code = attachment["code"];
+                std::string filename = attachment["filename"];
+                std::string fileextension = attachment["contentType"];
+                std::cout << code << ", " << filename << "." << fileextension << std::endl;
+
+                mongocxx::collection fc_collection = db["fs.chunks"];
+                bsoncxx::stdx::optional<bsoncxx::document::value> fc_result = fc_collection.find_one(document{} << "files_id" << bsoncxx::oid(code) << finalize);
+
+                if (!fc_result) {
+                    std::cout << "Not Found!" << std::endl;
+                    std::ostringstream os;
+                    os << std::setfill('0') << std::setw(6) << runNumber;
+                    std::string outputDir = ("./data/" + os.str() + "_" + testType + "/");
+                    std::cout << outputDir << filename << "." << fileextension << std::endl;
+                    std::string fs_str = uploadAttachment(outputDir+filename+"."+fileextension, filename+"."+fileextension);
+                    //this->addAttachment(i_test_run_oid_str, i_collection_name, oid_str, "title", "describe", fileextension, filename);
+
+                    db["testRun"].update_one(
+                        document{} << "_id" << bsoncxx::oid(tr_oid_str) << "attachments.code" << code << finalize,
+                        document{} << "$set" << open_document <<
+                            "attachments.$.code" << fs_str <<
+                        close_document << finalize
+                    );
+                }
+                else std::cout << "Found!" << std::endl;
+            }
+        }
+    }
+}
+
 
 std::string Database::uploadFromJson(std::string i_collection_name, std::string i_json_path) {
     if (DB_DEBUG) std::cout << "Database: Upload from json" << std::endl;
@@ -396,6 +451,7 @@ void Database::addSys(std::string i_oid_str, std::string i_collection_name) {
     );
 }
 
+//To be deleted in the future
 void Database::viewer() {
     std::string input;
     while (1) {

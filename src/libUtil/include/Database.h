@@ -30,6 +30,7 @@ class Database {
         std::string uploadFromJson(std::string, std::string);
         void registerFromConnectivity(std::string);
         void viewer();
+        void writeFiles(std::string, int, int);
 
     protected:
         std::string getValue(std::string, std::string, std::string, std::string, std::string i_bson_type="string");
