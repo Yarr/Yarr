@@ -517,7 +517,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			filename5 = filename.replace(filename.find(plot_ext[13].c_str()), 20, plot_ext[14].c_str());
 			c_Stackgaus->Print(filename5.c_str());
 
-
+			float outlierSpread = meanDeviation(pix_values);
+			std::cout << "\033[1;31m Range of values (excluding 0.997 or 0.95 times the mean.) : \033[0m" << outlierSpread << std::endl; 
 
 			for (int i=0; i<4; i++) {
 				delete fe_hist[i];
