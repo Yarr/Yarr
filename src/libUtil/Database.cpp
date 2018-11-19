@@ -34,7 +34,8 @@ void Database::setConnCfg(std::vector<std::string> i_connCfgPath) {
         json config = json::parse(gConfig);
         // Get module serial #
         try {
-            m_serial_number = config["module"]["serialNumber"];
+            if (config.find("module") != config.end()) m_serial_number = config["module"]["serialNumber"];
+            else m_serial_number = config["chips"][0]["serialNumber"];
         } catch(json::parse_error &e) {
             std::cerr << __PRETTY_FUNCTION__ << " : " << e.what() << std::endl;
         }
@@ -156,7 +157,7 @@ void Database::registerFromConnectivity(std::string i_json_path) {
     }
     json conn_json = json::parse(json_ifs);
 
-    // chip component
+    // Register chip component
     for (unsigned i=0; i<conn_json["chips"].size(); i++) {
         mongocxx::collection collection = db["component"];
         std::string serialNumber = conn_json["chips"][i]["serialNumber"];
@@ -184,37 +185,40 @@ void Database::registerFromConnectivity(std::string i_json_path) {
         this->addSys(oid.to_string(), "component");
     }
 
-    // module component
+    // Register module component
+    // If there is no module SN in conn. cgf, use chip 0 SN instead
     if (conn_json["module"].empty() || conn_json["module"]["serialNumber"].empty()) {
-        std::cout << "\tDatabase: no module info in connectivity! skip register module" << std::endl;
+        std::cout << "\tDatabase: no module info in connectivity! use chip 0 SN!" << std::endl;
+        m_serial_number += "_module";
     } else {
-        std::string serialNumber = conn_json["module"]["serialNumber"];
-        mongocxx::collection collection = db["component"];
-        bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "serialNumber" << serialNumber << finalize);
-        if (!maybe_result) {
+        m_serial_number = conn_json["module"]["serialNumber"];
+    }
+    std::string serialNumber = m_serial_number;
+    mongocxx::collection collection = db["component"];
+    bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "serialNumber" << serialNumber << finalize);
+    if (!maybe_result) {
+        bsoncxx::document::value doc_value = document{} <<  
+            "sys" << open_document << close_document <<
+            "serialNumber" << serialNumber <<
+            "componentType" << "Module" <<
+        finalize;
+    
+        auto result = collection.insert_one(doc_value.view());
+        bsoncxx::oid oid = result->inserted_id().get_oid().value;
+        this->addSys(oid.to_string(), "component");
+    
+        // CP relation
+        for (unsigned i=0; i<conn_json["chips"].size(); i++) {
             bsoncxx::document::value doc_value = document{} <<  
                 "sys" << open_document << close_document <<
-                "serialNumber" << serialNumber <<
-                "componentType" << conn_json["module"]["componentType"].get<std::string>() <<
+                "parent" << getValue("component", "serialNumber", serialNumber, "_id", "oid") <<
+                "child" << getValue("component", "serialNumber", conn_json["chips"][i]["serialNumber"], "_id", "oid") <<
             finalize;
-     
+    
+            mongocxx::collection collection = db["childParentRelation"];
             auto result = collection.insert_one(doc_value.view());
             bsoncxx::oid oid = result->inserted_id().get_oid().value;
-            this->addSys(oid.to_string(), "component");
-    
-            // CP relation
-            for (unsigned i=0; i<conn_json["chips"].size(); i++) {
-                bsoncxx::document::value doc_value = document{} <<  
-                    "sys" << open_document << close_document <<
-                    "parent" << getValue("component", "serialNumber", conn_json["module"]["serialNumber"], "_id", "oid") <<
-                    "child" << getValue("component", "serialNumber", conn_json["chips"][i]["serialNumber"], "_id", "oid") <<
-                finalize;
-     
-                mongocxx::collection collection = db["childParentRelation"];
-                auto result = collection.insert_one(doc_value.view());
-                bsoncxx::oid oid = result->inserted_id().get_oid().value;
-                this->addSys(oid.to_string(), "childParentRelation");
-            }
+            this->addSys(oid.to_string(), "childParentRelation");
         }
     }
 }
@@ -451,7 +455,7 @@ void Database::addTestRunEnv(std::string i_oid_str, std::string i_collection_nam
 }
 
 void Database::addSys(std::string i_oid_str, std::string i_collection_name) {
-    if (DB_DEBUG) std::cout << "\t\tDatabase: Add environment" << std::endl;
+    if (DB_DEBUG) std::cout << "\t\tDatabase: Add sys" << std::endl;
     bsoncxx::oid i_oid(i_oid_str);
     db[i_collection_name].update_one(
         document{} << "_id" << i_oid << finalize,
