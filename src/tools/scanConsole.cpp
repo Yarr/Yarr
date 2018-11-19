@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
 
     bool dbUse = false;
     std::string dbSerialNumber;
-    std::vector<std::string> dbFlags;
+    std::string dbEnvCfgPath = "";
     
     unsigned runCounter = 0;
 
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
     oF.close();
 
     int c;
-    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:WF:")) != -1) {
+    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:WE:")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
@@ -172,11 +172,8 @@ int main(int argc, char *argv[]) {
             case 'W': // Write to DB
                 dbUse = true;
                 break;
-            case 'F':
-                optind -= 1;
-                for(; optind < argc && *argv[optind] != '-'; optind += 1){
-                    dbFlags.push_back(std::string(argv[optind]));
-                }
+            case 'E':
+                dbEnvCfgPath = std::string(optarg);
                 break;
             case '?':
                 if(optopt == 's' || optopt == 'n'){
@@ -640,7 +637,7 @@ int main(int argc, char *argv[]) {
     if (dbUse) {
         Database *database = new Database();
         database->setConnCfg(cConfigPaths);
-        database->setFlags(dbFlags);
+        database->setTestRunEnv(dbEnvCfgPath);
         database->write(dbSerialNumber, strippedScan, runCounter, outputDir);
         delete database;
     }

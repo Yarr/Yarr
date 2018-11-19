@@ -18,9 +18,6 @@ Database::Database(std::string i_host_ip) {
     db = client[m_database_name];
 
     m_has_flags = false;
-    m_hv = 0;
-    m_cool_temp = 25;
-    m_stage = "ASSEMBLED";
 }
 
 Database::~Database() {
@@ -48,33 +45,11 @@ void Database::setConnCfg(std::vector<std::string> i_connCfgPath) {
     }
 }
 
-void Database::setFlags(std::vector<std::string> i_flags) {
-    if (DB_DEBUG) std::cout << "Database: Flags" << std::endl;
-    if (i_flags.size() != 0) {
+void Database::setTestRunEnv(std::string i_test_run_env_cfg_path) {
+    if (DB_DEBUG) std::cout << "Database: Test Run Environment path" << std::endl;
+    if (i_test_run_env_cfg_path != "") {
         m_has_flags = true;
-        std::cout << "Set flags, ";
-        for (unsigned i=0; i<i_flags.size(); i++) {
-            std::string flag_name = i_flags[i];
-            if (flag_name == "hv") {
-                std::cout << "HV: " << m_hv << " V, ";
-                i++;
-                m_hv = std::stod(i_flags[i]);
-            }
-            else if (flag_name == "cool") {
-                std::cout << "COOL: " << m_cool_temp << " C, ";
-                i++;
-                m_cool_temp = std::stod(i_flags[i]);
-            }
-            else if (flag_name == "encapsulation") {
-                std::cout << "After encapsulation, ";
-                m_stage = flag_name;
-            }
-            else if (flag_name == "wirebond") {
-                std::cout << "After wirebond, ";
-                m_stage = flag_name;
-            }
-        }
-        std::cout << std::endl;
+        m_test_run_env_cfg_path = i_test_run_env_cfg_path;
     }
 }
 
@@ -92,7 +67,7 @@ void Database::write(std::string i_serial_number, std::string i_test_type, int i
             std::string chip_name_str = this->getValueByOid("component", child_oid_str, "name");
             this->registerComponentTestRun(child_oid_str, test_run_oid_str, i_test_type, i_run_number);
             this->uploadFromDirectory("testRun", test_run_oid_str, i_output_dir, chip_name_str);
-            if (m_has_flags) this->addEnvironment(test_run_oid_str, "testRun");
+            if (m_has_flags) this->addTestRunEnv(test_run_oid_str, "testRun");
         }
     }
     else {
@@ -101,7 +76,7 @@ void Database::write(std::string i_serial_number, std::string i_test_type, int i
         this->registerComponentTestRun(component_oid_str, test_run_oid_str, i_test_type, i_run_number);
         this->uploadFromDirectory("testRun", test_run_oid_str, i_output_dir);
         //this->addComment("testRun", test_run_oid_str, "hoge!!");
-        if (m_has_flags) this->addEnvironment(test_run_oid_str, "testRun");
+        if (m_has_flags) this->addTestRunEnv(test_run_oid_str, "testRun");
     }
 }
 
@@ -438,19 +413,41 @@ void Database::uploadFromDirectory(std::string i_collection_name, std::string i_
     }
 }
 
-void Database::addEnvironment(std::string i_oid_str, std::string i_collection_name) {
-    if (DB_DEBUG) std::cout << "\t\tDatabase: Add environment" << std::endl;
-    bsoncxx::oid i_oid(i_oid_str);
-    db[i_collection_name].update_one(
-        document{} << "_id" << i_oid << finalize,
-        document{} << "$set" << open_document <<
-            "environment" << open_document <<
-                "hv" << m_hv << 
-                "cool" << m_cool_temp << 
-                "stage" << m_stage << 
-            close_document <<
-        close_document << finalize
-    );
+void Database::addTestRunEnv(std::string i_oid_str, std::string i_collection_name) {
+    if (DB_DEBUG) std::cout << "\t\tDatabase: Add test run environment: " << m_test_run_env_cfg_path << std::endl;
+    std::ifstream env_cfg_ifs(m_test_run_env_cfg_path);
+    json env_cfg_j = json::parse(env_cfg_ifs);
+    if (DB_DEBUG) std::cout << env_cfg_j.dump(4) << std::endl;
+
+    // Environment info
+    for (auto doc_array : env_cfg_j["environments"]) {
+        // Push doc array to test run
+        bsoncxx::oid i_oid(i_oid_str);
+        db[i_collection_name].update_one(
+            document{} << "_id" << i_oid << finalize,
+            document{} << "$push" << open_document <<
+                "environments" << open_document <<
+                    "key" << doc_array["key"].get<std::string>() << 
+                    "value" << doc_array["value"].get<std::string>() << 
+                    "description" << doc_array["description"].get<std::string>() << 
+                close_document <<
+            close_document << finalize
+        );
+    }
+
+    // For assembly
+    //if (env_cfg_j["assenbly"]) {
+    for (auto doc_array : env_cfg_j["assembly"]) {
+        bsoncxx::oid i_oid(i_oid_str);
+        db[i_collection_name].update_one(
+            document{} << "_id" << i_oid << finalize,
+            document{} << "$push" << open_document <<
+                "assembly" << open_document <<
+                    "stage" << doc_array["stage"].get<std::string>() << // "encapsulation" or "wirebond"
+                close_document <<
+            close_document << finalize
+        );
+    }
 }
 
 void Database::addSys(std::string i_oid_str, std::string i_collection_name) {

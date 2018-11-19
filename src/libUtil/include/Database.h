@@ -26,7 +26,7 @@ class Database {
         ~Database();
 
         void setConnCfg(std::vector<std::string>);
-        void setFlags(std::vector<std::string>);
+        void setTestRunEnv(std::string);
         void write(std::string, std::string, int, std::string);
         std::string uploadFromJson(std::string, std::string);
         void registerFromConnectivity(std::string);
@@ -43,7 +43,7 @@ class Database {
         void addDefect(std::string, std::string, std::string, std::string);
         std::string uploadAttachment(std::string, std::string);
         void uploadFromDirectory(std::string, std::string, std::string, std::string i_filter="");
-        void addEnvironment(std::string, std::string);
+        void addTestRunEnv(std::string, std::string);
         void addSys(std::string, std::string);
 
     private:
@@ -52,12 +52,10 @@ class Database {
         mongocxx::database db;
         std::string m_database_name;
         std::string m_serial_number;
+        std::string m_test_run_env_cfg_path;
 
         bool DB_DEBUG;
         bool m_has_flags;
-        double m_hv;
-        double m_cool_temp;
-        std::string m_stage;
 
         // Schema bson object
 };
