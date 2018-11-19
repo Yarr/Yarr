@@ -25,6 +25,7 @@ class Database {
         Database(std::string i_host_ip = "mongodb://localhost:27017");
         ~Database();
 
+        void setConnCfg(std::vector<std::string>);
         void setFlags(std::vector<std::string>);
         void write(std::string, std::string, int, std::string);
         std::string uploadFromJson(std::string, std::string);
@@ -45,23 +46,12 @@ class Database {
         void addEnvironment(std::string, std::string);
         void addSys(std::string, std::string);
 
-//        bsoncxx::builder::stream::document addSys() {
-//            bsoncxx::builder::stream::document i_doc_value;
-//            i_doc_value <<
-//            "sys" << open_document <<
-//                "rev" << 0 << // revision number
-//                "cts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // creation timestamp
-//                "mts" << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // modification timestamp
-//            close_document;
-//            return i_doc_value;
-//        };
-
     private:
         // Mongo c++
         mongocxx::client client;
         mongocxx::database db;
         std::string m_database_name;
-        std::string m_collection_name;
+        std::string m_serial_number;
 
         bool DB_DEBUG;
         bool m_has_flags;

@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
     oF.close();
 
     int c;
-    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:W:F:")) != -1) {
+    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:WF:")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
@@ -171,7 +171,6 @@ int main(int argc, char *argv[]) {
                 break;
             case 'W': // Write to DB
                 dbUse = true;
-                dbSerialNumber = std::string(optarg);
                 break;
             case 'F':
                 optind -= 1;
@@ -640,6 +639,7 @@ int main(int argc, char *argv[]) {
 
     if (dbUse) {
         Database *database = new Database();
+        database->setConnCfg(cConfigPaths);
         database->setFlags(dbFlags);
         database->write(dbSerialNumber, strippedScan, runCounter, outputDir);
         delete database;

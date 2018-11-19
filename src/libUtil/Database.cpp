@@ -9,13 +9,12 @@ using bsoncxx::builder::stream::open_document;
 
 Database::Database(std::string i_host_ip) {
     DB_DEBUG = true;
-    if (DB_DEBUG) std::cout<<"Database: Initialize" << std::endl;
+    if (DB_DEBUG) std::cout << "Database: Initialize" << std::endl;
 
     mongocxx::instance inst{};
     client = mongocxx::client{mongocxx::uri{i_host_ip}};
 
     std::string m_database_name = "yarrdb";
-    std::string m_collection_name = "yarrcoll";
     db = client[m_database_name];
 
     m_has_flags = false;
@@ -31,6 +30,24 @@ Database::~Database() {
 //*****************************************************************************************************
 // Public functions
 //
+void Database::setConnCfg(std::vector<std::string> i_connCfgPath) {
+    if (DB_DEBUG) std::cout << "Database: Connectivity Cfg" << std::endl;
+    for (auto sTmp : i_connCfgPath) {
+        std::ifstream gConfig(sTmp);
+        json config = json::parse(gConfig);
+        // Get module serial #
+        try {
+            m_serial_number = config["module"]["serialNumber"];
+        } catch(json::parse_error &e) {
+            std::cerr << __PRETTY_FUNCTION__ << " : " << e.what() << std::endl;
+        }
+
+        // Register module
+        // If already registered, it will not register again
+        this->registerFromConnectivity(sTmp);
+    }
+}
+
 void Database::setFlags(std::vector<std::string> i_flags) {
     if (DB_DEBUG) std::cout << "Database: Flags" << std::endl;
     if (i_flags.size() != 0) {
@@ -63,9 +80,9 @@ void Database::setFlags(std::vector<std::string> i_flags) {
 
 void Database::write(std::string i_serial_number, std::string i_test_type, int i_run_number, std::string i_output_dir) {
     if (DB_DEBUG) std::cout << "Database: Write" << std::endl;
-    std::string component_type_str = this->getValue("component", "serialNumber", i_serial_number, "componentType");
+    std::string component_type_str = this->getValue("component", "serialNumber", m_serial_number, "componentType");
     if (component_type_str == "Module") {
-        std::string module_oid_str = this->getValue("component", "serialNumber", i_serial_number, "_id", "oid");
+        std::string module_oid_str = this->getValue("component", "serialNumber", m_serial_number, "_id", "oid");
         mongocxx::collection collection = db["childParentRelation"];
         mongocxx::cursor cursor = collection.find(document{} << "parent" << module_oid_str << finalize);
         for (auto doc : cursor) {
@@ -79,7 +96,7 @@ void Database::write(std::string i_serial_number, std::string i_test_type, int i
         }
     }
     else {
-        std::string component_oid_str = this->getValue("component", "serialNumber", i_serial_number, "_id", "oid");
+        std::string component_oid_str = this->getValue("component", "serialNumber", m_serial_number, "_id", "oid");
         std::string test_run_oid_str = this->registerTestRun(i_test_type, i_run_number);
         this->registerComponentTestRun(component_oid_str, test_run_oid_str, i_test_type, i_run_number);
         this->uploadFromDirectory("testRun", test_run_oid_str, i_output_dir);
