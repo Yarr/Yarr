@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory f
 			std::string xaxistitle, yaxistitle, rmsrangetitle, gausrangetitle;
 			std::string line;	
 
-			std::string filename1, filename2, filename3, filename4, filename5;
+			std::string filename1, filename2, filename3, filename4, filename5, filename6;
 
 			std::getline(infile, type);
 			std::getline(infile, name);
@@ -199,8 +199,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory f
 			TCanvas* fe_c[4];
 
 			//Create filename extensions
-			std::string plot_ext[15] = {".dat", "_All.", "_SYN.", "_LIN.", "_DIFF.", "_PLOT.", "_STACK.", "_SYNrmsrange.", "_LINrmsrange.", "_DIFFrmsrange.", "_STACKrmsrange.", "_SYNgaussrange.", "_LINgaussrange.", "_DIFFgaussrange.", "_STACKgaussrange."};
-			for (int i=1; i<15; i++) plot_ext[i].append(ext);
+			std::string plot_ext[21] = {".dat", "_All.", "_SYN.", "_LIN.", "_DIFF.", "_PLOT.", "_STACK.", "_SYNrmsrange.", "_LINrmsrange.", "_DIFFrmsrange.", "_STACKrmsrange.", "_SYNgaussrange.", "_LINgaussrange.", "_DIFFgaussrange.", "_STACKgaussrange.", "_SYNrmsrangenorm.", "_LINrmsrangenorm.", "_DIFFrmsrangenorm.", "_SYNgaussrangenorm.", "_LINgaussrangenorm.", "_DIFFgaussrangenorm."};
+			for (int i=1; i<21; i++) plot_ext[i].append(ext);
 
 			//Plots for All, Synchronous, Linear, and Differential FEs
 			for (int i=0; i<4; i++) {
@@ -268,6 +268,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory f
 				sprintf(chidof_char[i], "#chi^{2} / DOF = %.1f / %i", fe_fit[i]->GetChisquare(), fe_fit[i]->GetNDF());
 				mean_rms->DrawLatex(0.18, 0.71, chidof_char[i]);	
 
+
 				fe_hist[i]->GetYaxis()->SetRangeUser(0,((fe_hist[i]->GetMaximum())*1.5)); //Leave extra room for legend
 				fe_hist[i]->GetXaxis()->SetRangeUser((mean_h[i] - 5*rms_h[i] < 0) ? -0.5 : (mean_h[i]- 5*rms_h[i]), mean_h[i] + 5*rms_h[i]); //Change the x-axis range to be the Mean +/- 5*RMS. If the lower bound is less than -0.5, make it -0.5.
 				fe_c[i]->Update();
@@ -331,7 +332,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory f
 			hs->GetXaxis()->SetLabelSize(0.05);
 			hs->GetYaxis()->SetLabelSize(0.03);
 
-			hs->SetMaximum((fe_hist[0]->GetMaximum())*1.05);
+			hs->SetMaximum((hs->GetMaximum())*1.2);
 			hs->GetXaxis()->SetRangeUser((mean_h[0] - 5*rms_h[0] < 0) ? -0.5 : (mean_h[0]- 5*rms_h[0])  , mean_h[0] + 5*rms_h[0]);
 			c_Stack->Update();				
 
@@ -523,21 +524,86 @@ int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory f
 			filename5 = filename.replace(filename.find(plot_ext[13].c_str()), 20, plot_ext[14].c_str());
 			c_Stackgaus->Print(filename5.c_str());
 
+			//Normalized Plots for RMS Range
+			TH1* rms_norm[3];
+			TCanvas* rmsnorm_c[3];
+			std::string rmsnorm_names[3] = {"rmsn_SYN", "rmsn_LIN", "rmsn_DIFF"}; 
+			
+			for (int i=0; i<3; i++) {
+				rmsnorm_c[i] = new TCanvas(rmsnorm_names[i].c_str(), rmsnorm_names[i].c_str(), 800, 600);
+				style_TH1canvas(rmsnorm_c[i]);
+				rms_norm[i] = range_rms[i]->DrawNormalized();
+				rms_norm[i]->Draw();
+				
+				gStyle->SetPaintTextFormat(".4f");	
+				rms_norm[i]->SetMarkerSize(1.8);
+				rms_norm[i]->SetMarkerColor(1);
+				rms_norm[i]->Draw("TEXT0 SAME");	
+			
+				tname->DrawLatex(0.28,0.96, rd53.c_str());
+				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
+				
+				rmsrange_legend[i]->Draw();
+
+				rms_norm[i]->GetYaxis()->SetRangeUser(0,1.05);
+				rmsnorm_c[i]->Update();
+
+				filename6 = filename.replace(filename.find(plot_ext[i+14].c_str()), 20, plot_ext[i+15].c_str()); 
+				rmsnorm_c[i]->Print(filename6.c_str());
+			}
+
+			//Normalized Plots for Gaussian Range
+			TH1* gaus_norm[3];
+			TCanvas* gausnorm_c[3];
+			std::string gausnorm_names[3] = {"gausn_SYN", "gausn_LIN", "gausn_DIFF"}; 
+			
+			for (int i=0; i<3; i++) {
+				gausnorm_c[i] = new TCanvas(gausnorm_names[i].c_str(), gausnorm_names[i].c_str(), 800, 600);
+				style_TH1canvas(gausnorm_c[i]);
+				gaus_norm[i] = range_gaus[i]->DrawNormalized();
+				gaus_norm[i]->Draw();
+				
+				gStyle->SetPaintTextFormat(".4f");	
+				gaus_norm[i]->SetMarkerSize(1.8);
+				gaus_norm[i]->SetMarkerColor(1);
+				gaus_norm[i]->Draw("TEXT0 SAME");	
+			
+				tname->DrawLatex(0.28,0.96, rd53.c_str());
+				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
+				
+				gausrange_legend[i]->Draw();
+
+				gaus_norm[i]->GetYaxis()->SetRangeUser(0,1.05);
+				gausnorm_c[i]->Update();
+
+				filename6 = filename.replace(filename.find(plot_ext[i+17].c_str()), 22, plot_ext[i+18].c_str()); 
+				gausnorm_c[i]->Print(filename6.c_str());
+			}
+
+
 			for (int i=0; i<4; i++) {
 				delete fe_hist[i];
 				delete fe_c[i];
 				if (i<3) {
 					delete range_rms[i];
 					delete rmsrange_c[i];
+					delete range_gaus[i];
+					delete gausrange_c[i];			
+					delete rms_norm[i];
+					delete rmsnorm_c[i];
+					delete gaus_norm[i];
+					delete gausnorm_c[i];	
 				}
 			}
-
+			
 			delete h_plot;
 			delete c_plot;
 			delete hs;
 			delete c_Stack;
 			delete hs_rmsrange;
 			delete c_Stackrms;
+			delete hs_gausrange;
+			delete c_Stackgaus;
 
 		}
 	}
