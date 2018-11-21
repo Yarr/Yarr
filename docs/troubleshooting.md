@@ -117,6 +117,23 @@ Jumper configuration for **direct powering**
 
 **Make sure that the jumper configuration marked in red is correct before powering the chip!!! <span style="color:red"> Do not apply higher voltage than 1.30 V</span>. Applying too high voltage may kill the chip.**
 
+### Readout errors
+
+**Sympton:** You see a lot of readout errors during a scan, like this
+
+```
+16848 [0] Received data not valid: [4245,16848] = 0x3dee006f 
+16848 [0] Received data not valid: [4246,16848] = 0xc58f9fff 
+16848 [0] Received data not valid: [4250,16848] = 0xe51ff9ff 
+16848 [0] Received data not valid: [4959,16848] = 0x9dbfffd9 
+```
+
+**Resolve by:**
+
+- Increase or decrease the ``SldoTrimAna`` and ``SldoTrimDig`` register (try going in steps by 5) or tune them to output 1.2V
+- Increase or decrease the ``CmlTapBias0`` register (try testing in steps of 100)
+- Try a different kind of DisplayPort cable (typically short is better)
+
 ### Problem with the digital scan
 
 **Sympton:** The digital scan looks blocky (see picture)
