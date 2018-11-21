@@ -235,6 +235,7 @@ void Histo2d::toFile(std::string prefix, std::string dir, bool header) {
 }
 
 void Histo2d::plot(std::string prefix, std::string dir) {
+    std::cout << "Plotting " << HistogramBase::name << std::endl;
     // Put raw histo data in tmp file
     std::string tmp_name = std::string(getenv("USER")) + "/tmp_yarr_histo2d_" + prefix;
     this->toFile(tmp_name, "/tmp/", false);
