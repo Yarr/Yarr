@@ -449,8 +449,14 @@ int main(int argc, char *argv[]) {
         cfgFile.close();
     }
 
-    // TODO Make this nice
-    std::unique_ptr<ScanBase> s = buildScan(scanType, bookie );
+    // TODO Make this nice 
+    std::unique_ptr<ScanBase> s;
+    try {
+        s = buildScan(scanType, bookie );
+    } catch (const char *msg) {
+        std::cout << " -> Warning! No scan to run, exiting with msg: " << msg << std::endl;
+        return 0;
+    }
 
     // Use the abstract class instead of concrete -- in the future, this will be useful...
     std::map<FrontEnd*, std::unique_ptr<DataProcessor> > histogrammers;
