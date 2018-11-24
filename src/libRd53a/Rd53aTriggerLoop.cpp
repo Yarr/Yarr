@@ -59,10 +59,9 @@ void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
     m_trigWord[2] = 0x69696363; // Header
     m_trigWord[1] = Rd53aCmd::genCal(8, 1, 0, 0, 0, 0); // Arm inject
     // Pulse
-    m_trigWord[0] = 0x69696969;
     //m_trigWord[0] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(m_pulseDuration<<1)); // global pulse for sync FE
     
-    if (1) {
+    if (verbose) {
         std::cout << "Trigger buffer set to:" << std::endl;
         for (unsigned i=0; i<m_trigWordLength; i++) {
             std::cout << "[" << 31-i << "] : 0x" << std::hex << m_trigWord[31-i] << std::dec << std::endl;
