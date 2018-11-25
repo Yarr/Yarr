@@ -1,4 +1,9 @@
 {
+   "assembly": {
+        "stage": "encapsulation",
+        "userIdentity": "Shuichi_Fujino",
+        "institution": "Kyushu_University"
+    },
     "environments": [
         {
             "key": "lv",
@@ -29,11 +34,6 @@
             "key": "module_temperature",
             "value": "25",
             "description": "Temperature on Al side [C]"
-        }
-    ],
-    "assembly": [
-        {
-            "stage": "wirebond"
         }
     ]
 }
