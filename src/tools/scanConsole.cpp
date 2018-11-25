@@ -112,7 +112,8 @@ int main(int argc, char *argv[]) {
     
     bool dbUse = false;
     std::string dbSerialNumber;
-    std::vector<std::string> dbFlags;
+    std::string dbInfoJsonPath = "";
+    std::vector<std::string> dbConnPaths; // Only for old yarr sw to include connectivity config
 
     unsigned runCounter = 0;
 
@@ -137,7 +138,7 @@ int main(int argc, char *argv[]) {
     oF.close();
 
     int c;
-    while ((c = getopt(argc, argv, "hs:n:m:g:r:c:t:po:W:F:")) != -1) {
+    while ((c = getopt(argc, argv, "hs:n:m:g:r:c:t:po:W:I:")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
@@ -196,13 +197,14 @@ int main(int argc, char *argv[]) {
                 break;
             case 'W': // Write to DB
                 dbUse = true;
-                dbSerialNumber = std::string(optarg);
-                break;
-            case 'F':
-                optind -= 1;
+                optind -= 1; //this is a bit hacky, but getopt doesn't support multiple
+                             //values for one option, so it can't be helped
                 for(; optind < argc && *argv[optind] != '-'; optind += 1){
-                    dbFlags.push_back(std::string(argv[optind]));
+                    dbConnPaths.push_back(std::string(argv[optind]));
                 }
+                break;
+            case 'I':
+                dbInfoJsonPath = std::string(optarg);
                 break;
             case '?':
                 if(optopt == 's' || optopt == 'n'){
@@ -654,7 +656,8 @@ int main(int argc, char *argv[]) {
 
     if (dbUse) {
         Database *database = new Database();
-        database->setFlags(dbFlags);
+        database->setTestRunInfo(dbInfoJsonPath);
+        database->setConnCfg(dbConnPaths);
         database->write(dbSerialNumber, scanType, runCounter, outputDir);
         delete database;
     }

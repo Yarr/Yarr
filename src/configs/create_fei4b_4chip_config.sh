@@ -18,10 +18,10 @@ do
     sed -i "/\"name\"/s/Example/${mod_id}_chipId$i/g" ${mod_id}_fei4b_chipId$i.json
 done
 
-sed "s/__MODULE_ID__/${mod_id}/g" connectivity/fei4module_default.json > connectivity/fei4module.json
+sed "s/__MODULE_ID__/${mod_id}/g" connectivity/fei4module_default.json > connectivity/${mod_id}_fei4module.json
 
 cd ../
 
 source ../setup.sh
 
-./bin/dbRegisterComponent configs/connectivity/fei4module.json
+./bin/dbRegisterComponent configs/connectivity/${mod_id}_fei4module.json
