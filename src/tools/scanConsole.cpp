@@ -771,6 +771,12 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
                     } else if (algo_name == "DataArchiver") {
                         histogrammer.addHistogrammer(new DataArchiver((outputDir + "data.raw")));
                         std::cout << "  ... adding " << algo_name << std::endl;
+                    } else if (algo_name == "Tot3d") {
+                        std::cout << "  ... adding " << algo_name << std::endl;
+                        histogrammer.addHistogrammer(new Tot3d());
+                    } else if (algo_name == "L13d") {
+                        std::cout << "  ... adding " << algo_name << std::endl;
+                        histogrammer.addHistogrammer(new L13d());
                     } else {
                         std::cerr << "#ERROR# Histogrammer \"" << algo_name << "\" unknown, skipping!" << std::endl;
                     }

@@ -1,0 +1,86 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "L1Analysis"
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "1": {
+        "algorithm": "TotMap",
+        "config": {}
+      },
+      "2": {
+        "algorithm": "Tot2Map",
+        "config": {}
+      },
+      "3": {
+        "algorithm": "L1Dist",
+        "config": {}
+      },
+      "4": {
+        "algorithm": "HitsPerEvent",
+        "config": {}
+      },
+      "5": {
+        "algorithm": "L13d",
+        "config": {}
+      },
+      "n_count": 6
+    },
+    "loops": [
+      {
+        "config": {
+          "max": 64,
+          "min": 0,
+          "step": 1
+        },
+        "loopAction": "Rd53aMaskLoop"
+      },
+      {
+        "config": {
+          "max": 800,
+          "min": 25,
+          "step": 25,
+          "parameter":"InjVcalDiff"
+        },
+        "loopAction": "Rd53aParameterLoop"
+      },
+      {
+        "config": {
+          "max": 50,
+          "min": 33,
+          "step": 1,
+          "nSteps": 5
+        },
+        "loopAction": "Rd53aCoreColLoop"
+      },
+      {
+        "config": {
+          "count": 100,
+          "delay": 48,
+          "extTrigger": false,
+          "frequency": 1000,
+          "noInject": false,
+          "time": 0
+        },
+        "loopAction": "Rd53aTriggerLoop"
+      },
+      {
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "TimeWalkScan",
+    "prescan": {
+        "InjEnDig": 0,
+        "LatencyConfig": 50,
+        "GlobalPulseRt": 16384,
+        "InjVcalMed": 500
+    }
+  }
+}

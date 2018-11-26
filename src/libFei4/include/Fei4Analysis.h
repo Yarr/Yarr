@@ -21,6 +21,7 @@
 #include "DataProcessor.h"
 #include "HistogramBase.h"
 #include "Histo2d.h"
+#include "GraphErrors.h"
 #include "Fei4Histogrammer.h"
 #include "lmcurve.h"
 
@@ -144,7 +145,7 @@ class TotAnalysis : public AnalysisAlgorithm {
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
-        void end() {}
+        void end();
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -156,8 +157,18 @@ class TotAnalysis : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> totInnerCnt;
         std::map<unsigned, Histo2d*> tot2Maps;
         std::map<unsigned, unsigned> tot2InnerCnt;
+        std::map<unsigned, Histo3d*> tot3ds;
+        std::map<unsigned, unsigned> tot3dInnerCnt;
         GlobalFeedbackBase *globalFb;
         PixelFeedbackBase *pixelFb;
+        bool useScap;
+        bool useLcap;
+        unsigned vcalMin;
+        unsigned vcalMax;
+        unsigned vcalStep;
+        unsigned vcalBins;
+        Histo2d *chargeVsTotMap = NULL;
+        std::map<unsigned, Histo2d*> chargeVsTotPixelMap;
 };
 
 class ScurveFitter : public AnalysisAlgorithm {
@@ -272,7 +283,7 @@ class L1Analysis : public AnalysisAlgorithm {
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
-        void end() {}
+        void end();
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -280,6 +291,19 @@ class L1Analysis : public AnalysisAlgorithm {
         unsigned injections;
         std::map<unsigned, std::unique_ptr<Histo1d>> l1Histos;
         std::map<unsigned, unsigned> innerCnt;
+
+        bool useScap;
+        bool useLcap;
+        bool isVcalLoop;
+        unsigned vcalLoop;
+        unsigned vcalMin;
+        unsigned vcalMax;
+        unsigned vcalStep;
+        unsigned vcalBins;
+        std::map<unsigned, Histo3d*> l13ds;
+        std::map<unsigned, unsigned> l13dinnerCnt;
+        Histo2d *timeWalkMap = NULL;
+        std::map<unsigned, Histo2d*> timeWalkPixelMap;
 };
 
 class TotDistPlotter : public AnalysisAlgorithm {
