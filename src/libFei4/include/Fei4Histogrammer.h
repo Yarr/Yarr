@@ -207,7 +207,7 @@ class Tot3d : public HistogramAlgorithm {
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
             h->setZaxisTitle("ToT");
-            r = (HistogramBase*) h;
+            r.reset(h);
         }
 
         void processEvent(Fei4Data *data);
@@ -258,7 +258,7 @@ class L13d : public HistogramAlgorithm {
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
             h->setZaxisTitle("L1A");
-            r = (HistogramBase*) h;
+            r.reset(h);
             l1id = 33;
             bcid_offset = 0;
         }

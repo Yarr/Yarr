@@ -151,13 +151,13 @@ class TotAnalysis : public AnalysisAlgorithm {
         std::vector<unsigned> loopMax;
         unsigned n_count;
         double injections;
-        std::map<unsigned, Histo2d*> occMaps;
+        std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
         std::map<unsigned, unsigned> occInnerCnt;
-        std::map<unsigned, Histo2d*> totMaps;
+        std::map<unsigned, std::unique_ptr<Histo2d>> totMaps;
         std::map<unsigned, unsigned> totInnerCnt;
-        std::map<unsigned, Histo2d*> tot2Maps;
+        std::map<unsigned, std::unique_ptr<Histo2d>> tot2Maps;
         std::map<unsigned, unsigned> tot2InnerCnt;
-        std::map<unsigned, Histo3d*> tot3ds;
+        std::map<unsigned, std::unique_ptr<Histo3d>> tot3ds;
         std::map<unsigned, unsigned> tot3dInnerCnt;
         GlobalFeedbackBase *globalFb;
         PixelFeedbackBase *pixelFb;
@@ -167,8 +167,8 @@ class TotAnalysis : public AnalysisAlgorithm {
         unsigned vcalMax;
         unsigned vcalStep;
         unsigned vcalBins;
-        Histo2d *chargeVsTotMap = NULL;
-        std::map<unsigned, Histo2d*> chargeVsTotPixelMap;
+        std::unique_ptr<Histo2d> chargeVsTotMap;
+        std::map<unsigned, std::unique_ptr<Histo2d>> chargeVsTotPixelMap;
 };
 
 class ScurveFitter : public AnalysisAlgorithm {
@@ -189,7 +189,8 @@ class ScurveFitter : public AnalysisAlgorithm {
         unsigned n_count;
         unsigned injections;
         unsigned cnt;
-	unsigned n_failedfit;
+	    unsigned n_failedfit;
+        
         std::vector<double> x;
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -208,8 +209,8 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::map<unsigned, std::unique_ptr<Histo1d>> statusDist;
 
         std::map<unsigned, unsigned> innerCnt;
-	bool useScap;
-	bool useLcap;
+        bool useScap;
+        bool useLcap;
 };
 
 class OccGlobalThresholdTune : public AnalysisAlgorithm {
@@ -300,10 +301,10 @@ class L1Analysis : public AnalysisAlgorithm {
         unsigned vcalMax;
         unsigned vcalStep;
         unsigned vcalBins;
-        std::map<unsigned, Histo3d*> l13ds;
+        std::map<unsigned, std::unique_ptr<Histo3d>> l13ds;
         std::map<unsigned, unsigned> l13dinnerCnt;
-        Histo2d *timeWalkMap = NULL;
-        std::map<unsigned, Histo2d*> timeWalkPixelMap;
+        std::unique_ptr<Histo2d> timeWalkMap;
+        std::map<unsigned, std::unique_ptr<Histo2d>> timeWalkPixelMap;
 };
 
 class TotDistPlotter : public AnalysisAlgorithm {

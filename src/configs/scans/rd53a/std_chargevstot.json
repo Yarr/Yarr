@@ -45,8 +45,8 @@
       {
         "config": {
           "max": 3000,
-          "min": 100,
-          "step": 100,
+          "min": 0,
+          "step": 50,
           "parameter":"InjVcalDiff"
         },
         "loopAction": "Rd53aParameterLoop"
@@ -54,9 +54,9 @@
       {
         "config": {
           "max": 50,
-          "min": 33,
+          "min": 0,
           "step": 1,
-          "nSteps": 5
+          "nSteps": 25
         },
         "loopAction": "Rd53aCoreColLoop"
       },
@@ -65,7 +65,7 @@
           "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 1000,
+          "frequency": 20000,
           "noInject": false,
           "time": 0
         },
@@ -78,7 +78,7 @@
     "name": "ChargeVsTotScan",
     "prescan": {
         "InjEnDig": 0,
-        "LatencyConfig": 50,
+        "LatencyConfig": 48,
         "GlobalPulseRt": 16384,
         "InjVcalMed": 500
     }
