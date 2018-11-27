@@ -441,16 +441,8 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
 }
 
 void TotAnalysis::end() {
-    if (loops.size() != 0) { // output if it is vcal loop
+    if (hasVcalLoop) {
         output->pushData(std::move(chargeVsTotMap));
-        for(unsigned col=0; col<nCol; col++) {
-            //for (unsigned row=0; row<nRow; row++) 
-            unsigned row = 100;
-            if (col%8 == 0) {
-                unsigned i = row + col*nRow;
-                output->pushData(std::move(chargeVsTotPixelMap[i]));
-            }
-        }
     }
 }
 

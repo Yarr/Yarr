@@ -167,7 +167,6 @@ class TotAnalysis : public AnalysisAlgorithm {
         unsigned vcalStep;
         unsigned vcalBins;
         std::unique_ptr<Histo2d> chargeVsTotMap;
-        std::map<unsigned, std::unique_ptr<Histo2d>> chargeVsTotPixelMap;
 };
 
 class ScurveFitter : public AnalysisAlgorithm {
