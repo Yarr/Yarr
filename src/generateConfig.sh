@@ -1,14 +1,18 @@
 #!/bin/bash
 # Takes a config file and creates six config files with different settings for AFE review measurement
-# Run: config ChipID SldoAnalogTrim SldoDigitalTrim BareChip/Sensor50/Sensor25
-### ./generateConfig configs/rd53a_test.json 0x0786 28 20 BareChip
+# Run: config ChipID SldoAnalogTrim SldoDigitalTrim BareChip/Sensor50/Sensor25 Cold/Warm
+### ./generateConfig configs/rd53a_test.json 0x0786 28 20 BareChip Cold
 
+if [ "$#" -ne 6 ]; then
+	echo "You need to specify 6 arguments: initialConfig ChipID SldoAnalogTrim SldoDigitalTrim BareChip/Sensor50/Sensor25 Cold/Warm"
+	exit
+fi
 
 echo "Original config is $1"
 echo "ChipID is $2"
 echo "SldoAnalogTrim is $3"
 echo "SldoDigitalTrim is $4"
-echo "This files are generated for $5 for testing at cold"
+echo "This files are generated for $5 for testing at $6"
 
 cp $1 configs/rd53a_${5}_OL30.json
 cp $1 configs/rd53a_${5}_OL35.json
@@ -49,6 +53,8 @@ sed -i "s/\"Name\": \"JohnDoe\"/\"Name\": \"${2}\"/g" configs/rd53a_${5}_IL55.js
         sed -i "s/\"LinFcBias\": ${value}/\"LinFcBias\": 20/g" configs/rd53a_${5}_IL40.json
         sed -i "s/\"LinFcBias\": ${value}/\"LinFcBias\": 20/g" configs/rd53a_${5}_IL50.json
         sed -i "s/\"LinFcBias\": ${value}/\"LinFcBias\": 20/g" configs/rd53a_${5}_IL55.json
+if [ ${6} == "Cold" ]
+then
         value=`grep LinComp configs/rd53a_test.json | grep -o '[0-9]*'`
         sed -i "s/\"LinComp\": ${value}/\"LinComp\": 90/g" configs/rd53a_${5}_OL30.json
         sed -i "s/\"LinComp\": ${value}/\"LinComp\": 90/g" configs/rd53a_${5}_OL35.json
@@ -70,6 +76,31 @@ sed -i "s/\"Name\": \"JohnDoe\"/\"Name\": \"${2}\"/g" configs/rd53a_${5}_IL55.js
         sed -i "s/\"LinPaInBias\": ${value}/\"LinPaInBias\": 270/g" configs/rd53a_${5}_IL40.json
         sed -i "s/\"LinPaInBias\": ${value}/\"LinPaInBias\": 370/g" configs/rd53a_${5}_IL50.json
         sed -i "s/\"LinPaInBias\": ${value}/\"LinPaInBias\": 420/g" configs/rd53a_${5}_IL55.json
+fi
+if [ ${6} == "Warm" ]
+then
+        value=`grep LinComp configs/rd53a_test.json | grep -o '[0-9]*'`
+        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 110/g" configs/rd53a_${5}_OL30.json
+        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 110/g" configs/rd53a_${5}_OL35.json
+        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 110/g" configs/rd53a_${5}_OL40.json
+        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 110/g" configs/rd53a_${5}_IL40.json
+        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 110/g" configs/rd53a_${5}_IL50.json
+        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 110/g" configs/rd53a_${5}_IL55.json
+        value=`grep LinLdac configs/rd53a_test.json | grep -o '[0-9]*'`
+        sed -i "s/\"LinLdac\": ${value}/\"LinLdac\": 130/g" configs/rd53a_${5}_OL30.json
+        sed -i "s/\"LinLdac\": ${value}/\"LinLdac\": 130/g" configs/rd53a_${5}_OL35.json
+        sed -i "s/\"LinLdac\": ${value}/\"LinLdac\": 130/g" configs/rd53a_${5}_OL40.json
+        sed -i "s/\"LinLdac\": ${value}/\"LinLdac\": 130/g" configs/rd53a_${5}_IL40.json
+        sed -i "s/\"LinLdac\": ${value}/\"LinLdac\": 130/g" configs/rd53a_${5}_IL50.json
+        sed -i "s/\"LinLdac\": ${value}/\"LinLdac\": 130/g" configs/rd53a_${5}_IL55.json
+        value=`grep LinPaInBias configs/rd53a_test.json | grep -o '[0-9]*'`
+        sed -i "s/\"LinPaInBias\": ${value}/\"LinPaInBias\": 140/g" configs/rd53a_${5}_OL30.json
+        sed -i "s/\"LinPaInBias\": ${value}/\"LinPaInBias\": 200/g" configs/rd53a_${5}_OL35.json
+        sed -i "s/\"LinPaInBias\": ${value}/\"LinPaInBias\": 250/g" configs/rd53a_${5}_OL40.json
+        sed -i "s/\"LinPaInBias\": ${value}/\"LinPaInBias\": 250/g" configs/rd53a_${5}_IL40.json
+        sed -i "s/\"LinPaInBias\": ${value}/\"LinPaInBias\": 350/g" configs/rd53a_${5}_IL50.json
+        sed -i "s/\"LinPaInBias\": ${value}/\"LinPaInBias\": 400/g" configs/rd53a_${5}_IL55.json
+fi
         value=`grep LinRefKrum configs/rd53a_test.json | grep -o '[0-9]*'`
         sed -i "s/\"LinRefKrum\": ${value}/\"LinRefKrum\": 300/g" configs/rd53a_${5}_OL30.json
         sed -i "s/\"LinRefKrum\": ${value}/\"LinRefKrum\": 300/g" configs/rd53a_${5}_OL35.json
@@ -173,7 +204,6 @@ then
         sed -i "s/\"SyncVrefKrum\": ${value}/\"SyncVrefKrum\": 450/g" configs/rd53a_${5}_IL40.json
         sed -i "s/\"SyncVrefKrum\": ${value}/\"SyncVrefKrum\": 450/g" configs/rd53a_${5}_IL50.json
         sed -i "s/\"SyncVrefKrum\": ${value}/\"SyncVrefKrum\": 450/g" configs/rd53a_${5}_IL55.json
-###Sync add Gain and FastTot
 fi
 
 if [ ${5} == "Sensor50" ]
@@ -227,7 +257,6 @@ then
         sed -i "s/\"SyncVrefKrum\": ${value}/\"SyncVrefKrum\": 450/g" configs/rd53a_${5}_IL40.json
         sed -i "s/\"SyncVrefKrum\": ${value}/\"SyncVrefKrum\": 450/g" configs/rd53a_${5}_IL50.json
         sed -i "s/\"SyncVrefKrum\": ${value}/\"SyncVrefKrum\": 450/g" configs/rd53a_${5}_IL55.json
-###Sync add Gain and FastTot
 fi
 
 if [ ${5} == "Sensor25" ]
@@ -281,7 +310,21 @@ then
         sed -i "s/\"SyncVrefKrum\": ${value}/\"SyncVrefKrum\": 450/g" configs/rd53a_${5}_IL40.json
         sed -i "s/\"SyncVrefKrum\": ${value}/\"SyncVrefKrum\": 450/g" configs/rd53a_${5}_IL50.json
         sed -i "s/\"SyncVrefKrum\": ${value}/\"SyncVrefKrum\": 450/g" configs/rd53a_${5}_IL55.json
-###Sync add Gain and FastTot
+        value=`grep SyncSelC4F configs/rd53a_test.json | grep -o '[0-9]*' | sed -n 2p`
+        sed -i "s/\"SyncSelC4F\": ${value}/\"SyncSelC4F\": 0/g" configs/rd53a_${5}_OL30.json
+        sed -i "s/\"SyncSelC4F\": ${value}/\"SyncSelC4F\": 0/g" configs/rd53a_${5}_OL35.json
+        sed -i "s/\"SyncSelC4F\": ${value}/\"SyncSelC4F\": 1/g" configs/rd53a_${5}_OL40.json
+        sed -i "s/\"SyncSelC4F\": ${value}/\"SyncSelC4F\": 0/g" configs/rd53a_${5}_IL40.json
+        sed -i "s/\"SyncSelC4F\": ${value}/\"SyncSelC4F\": 0/g" configs/rd53a_${5}_IL50.json
+        sed -i "s/\"SyncSelC4F\": ${value}/\"SyncSelC4F\": 1/g" configs/rd53a_${5}_IL55.json
+        value=`grep SyncSelC2F configs/rd53a_test.json | grep -o '[0-9]*' | sed -n 2p`
+        sed -i "s/\"SyncSelC2F\": ${value}/\"SyncSelC2F\": 1/g" configs/rd53a_${5}_OL30.json
+        sed -i "s/\"SyncSelC2F\": ${value}/\"SyncSelC2F\": 1/g" configs/rd53a_${5}_OL35.json
+        sed -i "s/\"SyncSelC2F\": ${value}/\"SyncSelC2F\": 0/g" configs/rd53a_${5}_OL40.json
+        sed -i "s/\"SyncSelC2F\": ${value}/\"SyncSelC2F\": 1/g" configs/rd53a_${5}_IL40.json
+        sed -i "s/\"SyncSelC2F\": ${value}/\"SyncSelC2F\": 1/g" configs/rd53a_${5}_IL50.json
+        sed -i "s/\"SyncSelC2F\": ${value}/\"SyncSelC2F\": 0/g" configs/rd53a_${5}_IL55.json
+
 fi
 
 
