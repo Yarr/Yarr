@@ -8,7 +8,7 @@ echo "Original config is $1"
 echo "ChipID is $2"
 echo "SldoAnalogTrim is $3"
 echo "SldoDigitalTrim is $4"
-echo "This files are generated for $5"
+echo "This files are generated for $5 for testing at cold"
 
 cp $1 configs/rd53a_${5}_OL30.json
 cp $1 configs/rd53a_${5}_OL35.json
@@ -50,12 +50,12 @@ sed -i "s/\"Name\": \"JohnDoe\"/\"Name\": \"${2}\"/g" configs/rd53a_${5}_IL55.js
         sed -i "s/\"LinFcBias\": ${value}/\"LinFcBias\": 20/g" configs/rd53a_${5}_IL50.json
         sed -i "s/\"LinFcBias\": ${value}/\"LinFcBias\": 20/g" configs/rd53a_${5}_IL55.json
         value=`grep LinComp configs/rd53a_test.json | grep -o '[0-9]*'`
-        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 110/g" configs/rd53a_${5}_OL30.json
-        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 110/g" configs/rd53a_${5}_OL35.json
-        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 110/g" configs/rd53a_${5}_OL40.json
-        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 110/g" configs/rd53a_${5}_IL40.json
-        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 110/g" configs/rd53a_${5}_IL50.json
-        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 110/g" configs/rd53a_${5}_IL55.json
+        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 90/g" configs/rd53a_${5}_OL30.json
+        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 90/g" configs/rd53a_${5}_OL35.json
+        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 90/g" configs/rd53a_${5}_OL40.json
+        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 90/g" configs/rd53a_${5}_IL40.json
+        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 90/g" configs/rd53a_${5}_IL50.json
+        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 90/g" configs/rd53a_${5}_IL55.json
         value=`grep LinLdac configs/rd53a_test.json | grep -o '[0-9]*'`
         sed -i "s/\"LinLdac\": ${value}/\"LinLdac\": 185/g" configs/rd53a_${5}_OL30.json
         sed -i "s/\"LinLdac\": ${value}/\"LinLdac\": 185/g" configs/rd53a_${5}_OL35.json
@@ -64,12 +64,12 @@ sed -i "s/\"Name\": \"JohnDoe\"/\"Name\": \"${2}\"/g" configs/rd53a_${5}_IL55.js
         sed -i "s/\"LinLdac\": ${value}/\"LinLdac\": 185/g" configs/rd53a_${5}_IL50.json
         sed -i "s/\"LinLdac\": ${value}/\"LinLdac\": 185/g" configs/rd53a_${5}_IL55.json
         value=`grep LinPaInBias configs/rd53a_test.json | grep -o '[0-9]*'`
-        sed -i "s/\"LinPaInBias\": ${value}/\"LinPaInBias\": 140/g" configs/rd53a_${5}_OL30.json
-        sed -i "s/\"LinPaInBias\": ${value}/\"LinPaInBias\": 200/g" configs/rd53a_${5}_OL35.json
-        sed -i "s/\"LinPaInBias\": ${value}/\"LinPaInBias\": 250/g" configs/rd53a_${5}_OL40.json
-        sed -i "s/\"LinPaInBias\": ${value}/\"LinPaInBias\": 250/g" configs/rd53a_${5}_IL40.json
-        sed -i "s/\"LinPaInBias\": ${value}/\"LinPaInBias\": 350/g" configs/rd53a_${5}_IL50.json
-        sed -i "s/\"LinPaInBias\": ${value}/\"LinPaInBias\": 400/g" configs/rd53a_${5}_IL55.json
+        sed -i "s/\"LinPaInBias\": ${value}/\"LinPaInBias\": 160/g" configs/rd53a_${5}_OL30.json
+        sed -i "s/\"LinPaInBias\": ${value}/\"LinPaInBias\": 220/g" configs/rd53a_${5}_OL35.json
+        sed -i "s/\"LinPaInBias\": ${value}/\"LinPaInBias\": 270/g" configs/rd53a_${5}_OL40.json
+        sed -i "s/\"LinPaInBias\": ${value}/\"LinPaInBias\": 270/g" configs/rd53a_${5}_IL40.json
+        sed -i "s/\"LinPaInBias\": ${value}/\"LinPaInBias\": 370/g" configs/rd53a_${5}_IL50.json
+        sed -i "s/\"LinPaInBias\": ${value}/\"LinPaInBias\": 420/g" configs/rd53a_${5}_IL55.json
         value=`grep LinRefKrum configs/rd53a_test.json | grep -o '[0-9]*'`
         sed -i "s/\"LinRefKrum\": ${value}/\"LinRefKrum\": 300/g" configs/rd53a_${5}_OL30.json
         sed -i "s/\"LinRefKrum\": ${value}/\"LinRefKrum\": 300/g" configs/rd53a_${5}_OL35.json
