@@ -157,12 +157,11 @@ class TotAnalysis : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> totInnerCnt;
         std::map<unsigned, std::unique_ptr<Histo2d>> tot2Maps;
         std::map<unsigned, unsigned> tot2InnerCnt;
-        std::map<unsigned, std::unique_ptr<Histo3d>> tot3ds;
-        std::map<unsigned, unsigned> tot3dInnerCnt;
         GlobalFeedbackBase *globalFb;
         PixelFeedbackBase *pixelFb;
         bool useScap;
         bool useLcap;
+        bool hasVcalLoop;
         unsigned vcalMin;
         unsigned vcalMax;
         unsigned vcalStep;
@@ -355,4 +354,30 @@ class NoiseTuning : public AnalysisAlgorithm {
         PixelFeedbackBase *pixelFb;
 };
 
+class DelayAnalysis : public AnalysisAlgorithm {
+    public:
+        DelayAnalysis() : AnalysisAlgorithm() {};
+        ~DelayAnalysis() {};
+
+        void init(ScanBase *s);
+        void processHistogram(HistogramBase *h);
+        void end();
+
+    private:
+        std::vector<unsigned> loops;
+        std::vector<unsigned> loopMax;
+        unsigned n_count;
+        std::map<unsigned, std::unique_ptr<Histo3d>> occMaps;
+        std::map<unsigned, std::unique_ptr<Histo1d>> histos;
+        std::map<unsigned, unsigned> innerCnt;
+        unsigned injections;
+
+        std::unique_ptr<Histo2d> delayMap;
+
+        unsigned delayLoop;
+        unsigned delayMin;
+        unsigned delayMax;
+        unsigned delayStep;
+        unsigned count;
+};
 #endif
