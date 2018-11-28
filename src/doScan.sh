@@ -13,4 +13,4 @@ do
     fi
 done
 
-./bin/scanConsole -r configs/specCfg.json -c configs/${mod_id}_fei4b_chipId1.json -c configs/${mod_id}_fei4b_chipId2.json -c configs/${mod_id}_fei4b_chipId3.json -c configs/${mod_id}_fei4b_chipId4.json -p -W configs/connectivity/${mod_id}_fei4module.json -t 2668 9 14941 -s ${scan_type}
+./bin/scanConsole -r configs/specCfg.json -c configs/${mod_id}_fei4b_chipId1.json -c configs/${mod_id}_fei4b_chipId2.json -c configs/${mod_id}_fei4b_chipId3.json -c configs/${mod_id}_fei4b_chipId4.json -p -W configs/connectivity/${mod_id}_fei4module.json -I configs/testRunInfo.json -t 2668 9 14941 -s ${scan_type}

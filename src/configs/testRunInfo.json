@@ -3,5 +3,12 @@
         "stage": "encapsulation",
         "userIdentity": "Shuichi_Fujino",
         "institution": "Kyushu_University"
-    }
+    },
+    "environments": [
+        {
+            "key": "hv",
+            "value": "-80",
+            "description": "High voltage [V]"
+        }
+    ]
 }
