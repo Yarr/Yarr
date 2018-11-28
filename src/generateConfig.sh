@@ -56,12 +56,12 @@ sed -i "s/\"Name\": \"JohnDoe\"/\"Name\": \"${2}\"/g" configs/rd53a_${5}_IL55.js
 if [ ${6} == "Cold" ]
 then
         value=`grep LinComp configs/rd53a_test.json | grep -o '[0-9]*'`
-        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 90/g" configs/rd53a_${5}_OL30.json
-        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 90/g" configs/rd53a_${5}_OL35.json
-        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 90/g" configs/rd53a_${5}_OL40.json
-        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 90/g" configs/rd53a_${5}_IL40.json
-        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 90/g" configs/rd53a_${5}_IL50.json
-        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 90/g" configs/rd53a_${5}_IL55.json
+        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 110/g" configs/rd53a_${5}_OL30.json
+        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 110/g" configs/rd53a_${5}_OL35.json
+        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 110/g" configs/rd53a_${5}_OL40.json
+        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 110/g" configs/rd53a_${5}_IL40.json
+        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 110/g" configs/rd53a_${5}_IL50.json
+        sed -i "s/\"LinComp\": ${value}/\"LinComp\": 110/g" configs/rd53a_${5}_IL55.json
         value=`grep LinLdac configs/rd53a_test.json | grep -o '[0-9]*'`
         sed -i "s/\"LinLdac\": ${value}/\"LinLdac\": 185/g" configs/rd53a_${5}_OL30.json
         sed -i "s/\"LinLdac\": ${value}/\"LinLdac\": 185/g" configs/rd53a_${5}_OL35.json
