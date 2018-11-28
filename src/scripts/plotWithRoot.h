@@ -122,23 +122,18 @@ int whichBin(double value, double occnum) {
 	return hist_bin;
 }
 
-int whichSigma(double value, double mean, double sigma) {
-	int hist_bin;
-	if ( value < (mean - 5*sigma)) hist_bin = 6;
-	else if ( value >= (mean - 5*sigma) && value < (mean - 4*sigma)) hist_bin = 5;
-	else if ( value	>= (mean - 4*sigma) && value < (mean - 3*sigma)) hist_bin = 4;
-	else if ( value >= (mean - 3*sigma) && value < (mean - 2*sigma)) hist_bin = 3;
-	else if ( value >= (mean - 2*sigma) && value < (mean - sigma)) hist_bin = 2;
-	else if ( value >= (mean - sigma) && value < mean) hist_bin = 1;
-	else if ( value == mean) hist_bin = 1;
-	else if ( value > mean && value <= (mean + sigma)) hist_bin = 1;
-	else if ( value > (mean + sigma) && value <= (mean + 2*sigma)) hist_bin = 2;
-	else if ( value > (mean + 2*sigma) && value <= (mean + 3*sigma)) hist_bin = 3;
-	else if ( value > (mean + 3*sigma) && value <= (mean + 4*sigma)) hist_bin = 4;
-	else if ( value > (mean + 4*sigma) && value <= (mean + 5*sigma)) hist_bin = 5;
-	else if ( value > (mean + 5*sigma)) hist_bin = 6;
+int whichSigma(double value, double mean, double sigma, double bin_width, int bin_num) {
+	int hist_bin = -1;
+	for (int i=1; i<bin_num+1; i++) {
+		if ( fabs(mean-value) >= ((i-1)*bin_width*sigma) && fabs(mean-value) < (i*bin_width*sigma) ) hist_bin=i;
+	}
+
+	if ( fabs(mean-value) >= (bin_num*bin_width*sigma) ) hist_bin=bin_num;
+	else if ( fabs(mean-value) < (bin_width*sigma) ) hist_bin=1;
+
 	return hist_bin;
 }
+
 int goodDiff(int row, int col) {
 	int good = 10;
 	int start_col = 264;
@@ -170,12 +165,15 @@ bool sortbysec(const std::pair<double, float> &a, const std::pair<double, float>
 
 float meanDeviation(std::vector <double> pix_values) {
 	int rowno=192, colno=400;
-	float diff;	
+	int activePixels=0;
 
 	//Find Mean
 	double sumValue=0;
-	for (int i=0; i<(rowno*colno); i++) sumValue+=pix_values[i];
-	double avgValue = sumValue/(rowno*colno);
+	for (int i=0; i<(rowno*colno); i++) {
+		sumValue+=pix_values[i];
+		if (pix_values[i] > 0) activePixels++;
+	}
+	double avgValue = sumValue(activePixels);
 
 	//Create vector of pairs <value, value-mean>
 	std::vector < std::pair<double,float>> mean_Diff; 	
@@ -194,7 +192,7 @@ float meanDeviation(std::vector <double> pix_values) {
 		}	
 
 	}
-	diff = mean_Diff[maxIndex].first - mean_Diff[0].first; 
+	float diff = mean_Diff[maxIndex].first - mean_Diff[0].first; 
 	return diff;
 } 
 
