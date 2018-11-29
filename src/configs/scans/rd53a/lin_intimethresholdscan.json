@@ -52,11 +52,11 @@
       },
       {
         "config": {
-          "max": 23,
-          "min": 18,
+          "max": 33,
+          "min": 16,
           "step": 1,
-          "nSteps": 5,
-	  "delayArray": [12]
+          "nSteps": 17,
+	  "delayArray": [14,14,14,14,14,14,14,14,14,14,14,14,13,13,13,13,13]
         },
         "loopAction": "Rd53aCoreColLoop"
       },
