@@ -31,7 +31,7 @@
     },
     "loops": [
       { "config": {
-          "max": 400,
+          "max": 385,
           "min": 0,
           "step": 4,
           "parameter": "LinVth",
@@ -43,7 +43,7 @@
         "config": {
           "max": 64,
           "min": 0,
-          "step": 8
+          "step": 1
         },
         "loopAction": "Rd53aMaskLoop"
       },

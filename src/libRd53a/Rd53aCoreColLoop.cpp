@@ -72,6 +72,12 @@ void Rd53aCoreColLoop::execPart1() {
                 dynamic_cast<Rd53a*>(fe)->enableCalCol(dc+2);
                 dynamic_cast<Rd53a*>(fe)->enableCalCol(dc+3);
             }
+	    //Add fine delay
+	    if ( m_delayArray.size() > 0 ) {
+		if ( m_delayArray.size() == (m_impl->maxCore-m_impl->minCore) ) 
+		    dynamic_cast<Rd53a*>(fe)->writeRegister(&Rd53a::InjDelay,m_delayArray[i]);
+		dynamic_cast<Rd53a*>(fe)->writeRegister(&Rd53a::InjDelay,m_delayArray[0]);
+	    }
         }
     }
     while(!g_tx->isCmdEmpty()) {}
@@ -112,6 +118,7 @@ void Rd53aCoreColLoop::writeConfig(json &j) {
     j["max"] = m_impl->maxCore;
     j["step"] = step;
     j["nSteps"] = m_impl->nSteps;
+    j["delayArray"] = m_delayArray;
 }
 
 void Rd53aCoreColLoop::loadConfig(json &j) {
@@ -125,4 +132,15 @@ void Rd53aCoreColLoop::loadConfig(json &j) {
         m_impl->nSteps = j["nSteps"];
     min = 0;
     max = m_impl->nSteps;
+    if (!j["delayArray"].empty()) {
+        m_delayArray.clear();
+        for(auto i: j["delayArray"])
+            m_delayArray.push_back(i);
+        std::cout << "Number of injection delay array elements is " << m_delayArray.size() << std::endl;
+    }
+    // Fine delay scan check
+    if (m_impl->nSteps != (m_impl->maxCore-m_impl->minCore) )
+	std::cout << "The number of steps " << m_impl->nSteps << " is diffenrent from " << m_impl->maxCore-m_impl->minCore << std::endl;
+    else if ( m_delayArray.size() != m_impl->nSteps )
+	std::cout << "Fine delay array size is not matching the number of injected columns, only the first fine delay number will be used!!! " << std::endl;
 }

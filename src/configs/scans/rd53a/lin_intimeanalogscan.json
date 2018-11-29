@@ -2,9 +2,15 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "OccPixelThresholdTune"
+        "algorithm": "OccupancyAnalysis",
+        "config": {
+          "createMask": true
+        }
       },
-      "n_count": 1
+      "1": {
+        "algorithm": "L1Analysis"
+      },
+      "n_count": 2
     },
     "histogrammer": {
       "0": {
@@ -30,17 +36,6 @@
       "n_count": 5
     },
     "loops": [
-      { 
-        "config": {
-          "max": 15,
-          "min": 0,
-          "steps": [1,1,1,1,1,1,1,1],
-          "tuneDiff": false,
-          "tuneLin": true
-
-        },
-        "loopAction": "Rd53aPixelFeedback"
-      },
       {
         "config": {
           "max": 64,
@@ -51,10 +46,11 @@
       },
       {
         "config": {
-          "max": 50,
+          "max": 33,
           "min": 16,
           "step": 1,
-          "nSteps": 17
+          "nSteps": 17,
+          "delayArray": [14,14,14,14,14,14,14,14,14,14,14,14,13,13,13,13,13]
         },
         "loopAction": "Rd53aCoreColLoop"
       },
@@ -65,7 +61,8 @@
           "extTrigger": false,
           "frequency": 20000,
           "noInject": false,
-          "time": 0
+          "time": 0,
+          "trigMultiplier": 1
         },
         "loopAction": "Rd53aTriggerLoop"
       },
@@ -73,16 +70,15 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "StdPixelThresholdTune",
+    "name": "AnalogScan",
     "prescan": {
         "InjEnDig": 0,
-        "LatencyConfig": 48,
-        "GlobalPulseRt": 0,
-        "DiffVth1": 500,
-        "SyncVth": 500,
-        "EnCoreColDiff1": 0,
-        "EnCoreColDiff2": 0,
-        "EnCoreColSync":0
+        "LatencyConfig": 42,
+	"OutputActiveLanes": 1,
+        "GlobalPulseRt": 16384,
+        "InjVcalDiff": 0,
+        "InjVcalHigh": 2500,
+        "InjVcalMed": 500
     }
   }
 }
