@@ -31,7 +31,7 @@ Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     max = 0;
     underflow = 0;
     overflow = 0;
-    data = new double[xbins*ybins*zbins];
+    data = new uint16_t[xbins*ybins*zbins];
     this->setAll(0);
     entries = 0;
 
@@ -60,7 +60,7 @@ Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     max = 0;
     underflow = 0;
     overflow = 0;
-    data = new double[xbins*ybins*zbins];
+    data = new uint16_t[xbins*ybins*zbins];
     this->setAll(0);
     entries = 0;
 }
@@ -87,7 +87,7 @@ Histo3d::Histo3d(Histo3d *h) : HistogramBase(h->getName(), h->getType()) {
     underflow = h->getUnderflow();
     overflow = h->getOverflow();
 
-    data = new double[xbins*ybins*zbins];
+    data = new uint16_t[xbins*ybins*zbins];
     for(unsigned i=0; i<xbins*ybins*zbins; i++)
         data[i] = h->getBin(i);
     entries = h->getNumOfEntries();
@@ -117,12 +117,12 @@ void Histo3d::fill(double x, double y, double z, double v) {
         unsigned xbin = (x-xlow)/xbinWidth;
         unsigned ybin = (y-ylow)/ybinWidth;
         unsigned zbin = (z-zlow)/zbinWidth;
-        data[(ybin+(xbin*ybins))*zbins+zbin]+=v;
+        data[((ybin+(xbin*ybins))*zbins)+zbin]+=v;
         if (v > max)
             max = v;
         if (v < min)
             min = v;
-        isFilled[(ybin+(xbin*ybins))*zbins+zbin] = true;
+        isFilled[((ybin+(xbin*ybins))*zbins)+zbin] = true;
     }
     entries++;
 }
@@ -229,7 +229,7 @@ int Histo3d::binNum(double x, double y, double z) {
         unsigned xbin = (x-xlow)/xbinWidth;
         unsigned ybin = (y-ylow)/ybinWidth;
         unsigned zbin = (z-zlow)/zbinWidth;
-        return ((ybin+(xbin*ybins)*zbins+zbin));
+        return ((((ybin+(xbin*ybins))*zbins)+zbin));
     }
 }
 
