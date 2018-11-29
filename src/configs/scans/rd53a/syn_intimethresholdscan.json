@@ -79,7 +79,7 @@
     "name": "ThresholdScan",
     "prescan": {
         "InjEnDig": 0,
-        "LatencyConfig": 43,
+        "LatencyConfig": 42,
         "OutputActiveLanes": 1,
         "GlobalPulseRt": 16384
     }
