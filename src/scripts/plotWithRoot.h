@@ -163,36 +163,72 @@ bool sortbysec(const std::pair<double, float> &a, const std::pair<double, float>
 		return (a.second < b.second);
 }
 
-float meanDeviation(std::vector <double> pix_values) {
-	int rowno=192, colno=400;
-	int activePixels=0;
+std::vector <float> thresholdPercent(std::vector <double> pix_values, int whichFrontEnd, int goodDiffPix,  double gaussMean, double percentValue) {
+	//whichFrontEnd --> Synchronous=0, Linear=1, Differential=2. goodDiffPix --> all pixels=0, only good Differential pixels=1
+	int rowno=192, colno=400, numPix;
+	float numPixels;
+	int FEcol[4] = {0, 128, 264, 400};
+	if ( whichFrontEnd == 2 && goodDiffPix == 1) numPixels = (FEcol[whichFrontEnd+1] - FEcol[whichFrontEnd]) * rowno * 0.1875 ; //Only account for good Differential pixels (0.1875 = 12/64 pixels in core)
+	else numPixels = (FEcol[whichFrontEnd+1] - FEcol[whichFrontEnd]) * rowno; 
+	numPix = numPixels * percentValue * 0.01;
 
-	//Find Mean
-	double sumValue=0;
-	for (int i=0; i<(rowno*colno); i++) {
-		sumValue+=pix_values[i];
-		if (pix_values[i] > 0) activePixels++;
-	}
-	double avgValue = sumValue(activePixels);
-
-	//Create vector of pairs <value, value-mean>
-	std::vector < std::pair<double,float>> mean_Diff; 	
-	for (int i=0; i<(rowno*colno); i++) {
-		if (pix_values[i] != (avgValue*0.003) || pix_values[i] != (avgValue*0.05)) mean_Diff.push_back( std::make_pair(pix_values[i], (fabs(pix_values[i]-avgValue))) ); //ignore values that are 99.7% or 95% of the mean
+	//Create vector of pairs <value, value-gaussMean>
+	std::vector < std::pair<float,float> > mean_Diff;
+	int inDex = 0;
+	for (int i=0; i<rowno; i++ ) {
+		for (int j=0; j<colno; j++ ) { 
+			if (whichFrontEnd == 2 && goodDiffPix == 1) {
+				if ( goodDiff(i, j) == 1 )  mean_Diff.push_back( std::make_pair(pix_values[inDex], (fabs(pix_values[inDex]-gaussMean))) );
+			}
+			else {
+				if ( j>=FEcol[whichFrontEnd] && j<FEcol[whichFrontEnd+1]) 
+					mean_Diff.push_back( std::make_pair(pix_values[inDex], (fabs(pix_values[inDex]-gaussMean))) );
+			}
+			inDex++;
+		}
 	}
 
 	std::sort (mean_Diff.begin(), mean_Diff.end(), sortbysec); //sort from least to greatest for the second element of the pair.
-	
-	//Get the difference between the highest value and the lowest value; ignore if original value= 0
-	int maxIndex;
-	for (unsigned i=mean_Diff.size(); i>0; i--) {
-		if (mean_Diff[i].first != 0) {
-			maxIndex = i;
+
+	//Find the value corresponding to X% num of pix. Look at the values around X% of pixels and choose the min/max from there. Save how many iterations it took. 
+	float diffMax, diffMin, tryMax, tryMin;
+	for (int i=0; i<2000; i++) {
+		if (mean_Diff[numPix-i].first > gaussMean) {
+			diffMax = mean_Diff[numPix-i].first;
+			tryMax=i*-1;
 			break;
-		}	
-
+		}
+		else if (mean_Diff[numPix+i].first > gaussMean) {
+			diffMax = mean_Diff[numPix+i].first;
+			tryMax=i;
+			break;
+		}
+	}	
+	
+	for (int i=0; i<2000; i++) {
+		if (mean_Diff[numPix-i].first < gaussMean && mean_Diff[numPix-i].first >= 0) {	//include >=0 for min
+			diffMin = mean_Diff[numPix-i].first;
+			tryMin=i*-1;
+			break;
+		}
+		else if (mean_Diff[numPix+i].first < gaussMean && mean_Diff[numPix+i].first >= 0) {
+			diffMin = mean_Diff[numPix+i].first;
+			tryMin=i;
+			break;
+		}
+	}	
+	
+	unsigned checkSize = numPixels;
+	if ( mean_Diff.size() != checkSize ) {
+		diffMax = -100000;
+		diffMin = -100000;
 	}
-	float diff = mean_Diff[maxIndex].first - mean_Diff[0].first; 
-	return diff;
-} 
 
+	float maxMin[5] = {numPixels, diffMin, tryMin, diffMax, tryMax};
+	std::vector <float> results;
+	for (int i=0; i<5; i++) {
+		results.push_back(maxMin[i]);
+	}	
+	
+	return results;
+}
