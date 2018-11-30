@@ -291,18 +291,6 @@ class L1Analysis : public AnalysisAlgorithm {
         std::map<unsigned, std::unique_ptr<Histo1d>> l1Histos;
         std::map<unsigned, unsigned> innerCnt;
 
-        bool useScap;
-        bool useLcap;
-        bool isVcalLoop;
-        unsigned vcalLoop;
-        unsigned vcalMin;
-        unsigned vcalMax;
-        unsigned vcalStep;
-        unsigned vcalBins;
-        std::map<unsigned, std::unique_ptr<Histo3d>> l13ds;
-        std::map<unsigned, unsigned> l13dinnerCnt;
-        std::unique_ptr<Histo2d> timeWalkMap;
-        std::map<unsigned, std::unique_ptr<Histo2d>> timeWalkPixelMap;
 };
 
 class TotDistPlotter : public AnalysisAlgorithm {
@@ -372,6 +360,7 @@ class DelayAnalysis : public AnalysisAlgorithm {
         unsigned injections;
 
         std::unique_ptr<Histo2d> delayMap;
+        std::unique_ptr<Histo2d> rmsMap;
 
         unsigned delayLoop;
         unsigned delayMin;
