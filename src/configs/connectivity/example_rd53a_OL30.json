@@ -1,0 +1,10 @@
+{
+    "chipType" : "RD53A",
+    "chips" : [
+        {
+            "config" : "configs/rd53a_BareChip_OL30.json",
+            "tx" : 0,
+            "rx" : 0
+        }
+    ]
+}
