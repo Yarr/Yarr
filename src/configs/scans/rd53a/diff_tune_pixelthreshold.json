@@ -77,7 +77,7 @@
             "prescan": {
                 "InjEnDig": 0,
                 "LatencyConfig": 48,
-                "GlobalPulseRt": 16384,
+                "GlobalPulseRt": 0,
                 "EnCoreColSync": 0,
                 "EnCoreColLin1": 0,
                 "EnCoreColLin2": 0
