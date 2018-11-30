@@ -52,11 +52,11 @@
       },
       {
         "config": {
-          "max": 13,
-          "min": 6,
+          "max": 16,
+          "min": 0,
           "step": 1,
-          "nSteps": 7,
-	  "delayArray": [13]
+          "nSteps": 16,
+	  "delayArray": [13,13,13,13,13,14,14,14,14,14,14,14,14,14,13,13]
         },
         "loopAction": "Rd53aCoreColLoop"
       },
@@ -79,7 +79,7 @@
     "name": "ThresholdScan",
     "prescan": {
         "InjEnDig": 0,
-        "LatencyConfig": 43,
+        "LatencyConfig": 42,
         "OutputActiveLanes": 1,
         "GlobalPulseRt": 16384
     }

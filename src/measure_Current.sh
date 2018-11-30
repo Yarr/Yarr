@@ -15,7 +15,7 @@ DigitalI=`./bin/agilent_measure -c 2 -p /dev/ttyUSB0 -g 3 get-current`
 echo "Analog current is ${AnalogI}"
 echo "Digital current is ${DigitalI}"
 
-
+cd -
 
 exit 0
 
