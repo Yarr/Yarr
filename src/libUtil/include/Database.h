@@ -30,7 +30,6 @@ class Database {
         void write(std::string, std::string, int, std::string);
         std::string uploadFromJson(std::string, std::string);
         void registerFromConnectivity(std::string);
-        void viewer();
         void writeFiles(std::string, int, int);
 
     protected:
@@ -51,7 +50,6 @@ class Database {
         // Mongo c++
         mongocxx::client client;
         mongocxx::database db;
-        std::string m_database_name;
         std::string m_serial_number;
         std::string m_tr_info_json_path;
 

@@ -1,21 +1,24 @@
 #include "Database.h"
 
-using bsoncxx::builder::stream::document;
-using bsoncxx::builder::stream::finalize;
-using bsoncxx::builder::stream::open_document;
-using bsoncxx::builder::stream::close_document;
-using bsoncxx::builder::stream::open_array;
-using bsoncxx::builder::stream::close_array;
+// Using bson::builder::stream, an iostream like interface to construct BSON objects.
+// And these 'using ~' are greatly useful to reduce coding lines and make it readable.
+// Please see example to understand what they are for.
+// https://github.com/mongodb/mongo-cxx-driver/blob/r3.2.0-rc1/examples/bsoncxx/builder_stream.cpp
+using bsoncxx::builder::stream::document;       // = '{', begining of document
+using bsoncxx::builder::stream::finalize;       // = '}'
+using bsoncxx::builder::stream::open_document;  // = '{', begining of subdocument
+using bsoncxx::builder::stream::close_document; // = '}'
+using bsoncxx::builder::stream::open_array;     // = '['
+using bsoncxx::builder::stream::close_array;    // = ']'
 
 Database::Database(std::string i_host_ip) {
-    DB_DEBUG = true;
+    DB_DEBUG = false;
     if (DB_DEBUG) std::cout << "Database: Initialize" << std::endl;
 
     mongocxx::instance inst{};
     client = mongocxx::client{mongocxx::uri{i_host_ip}};
 
-    std::string m_database_name = "yarrdb";
-    db = client[m_database_name];
+    db = client["yarrdb"]; // Database name is 'yarrdb'
 
     m_has_flags = false;
 }
@@ -28,15 +31,26 @@ Database::~Database() {
 // Public functions
 //
 void Database::setConnCfg(std::vector<std::string> i_connCfgPath) {
-    if (DB_DEBUG) std::cout << "Database: Connectivity Cfg" << std::endl;
+    if (DB_DEBUG) std::cout << "Database: Connectivity Cfg: ";
     for (auto sTmp : i_connCfgPath) {
+        if (DB_DEBUG) std::cout << sTmp << std::endl;
         std::ifstream gConfig(sTmp);
         json config = json::parse(gConfig);
         // Get module serial #
+//        if (config["module"]["serialNumber"].empty()) {
+//            if (!config["chips"][0]["serialNumber"].empty()) m_serial_number = config["chips"][0]["serialNumber"];
+//            else {
+//                std::cerr <<"#ERROR# No serialNumber in Connectivity! " << sTmp << std::endl;
+//                abort(); return;
+//            }
+//        }
+//        else m_serial_number = config["module"]["serialNumber"]
+
         try {
-            if (config.find("module") != config.end()) m_serial_number = config["module"]["serialNumber"];
-            else m_serial_number = config["chips"][0]["serialNumber"];
+            if (config["module"]["serialNumber"].empty()) m_serial_number = config["chips"][0]["serialNumber"];
+            else m_serial_number = config["module"]["serialNumber"];
         } catch(json::parse_error &e) {
+            std::cerr <<"#ERROR# Cannot get SN! " << sTmp << std::endl;
             std::cerr << __PRETTY_FUNCTION__ << " : " << e.what() << std::endl;
         }
 
@@ -47,7 +61,7 @@ void Database::setConnCfg(std::vector<std::string> i_connCfgPath) {
 }
 
 void Database::setTestRunInfo(std::string i_test_run_env_cfg_path) {
-    if (DB_DEBUG) std::cout << "Database: Test Run Environment path" << std::endl;
+    if (DB_DEBUG) std::cout << "Database: Test Run Environment path: " << i_test_run_env_cfg_path << std::endl;
     if (i_test_run_env_cfg_path != "") {
         m_has_flags = true;
         m_tr_info_json_path = i_test_run_env_cfg_path;
@@ -55,7 +69,7 @@ void Database::setTestRunInfo(std::string i_test_run_env_cfg_path) {
 }
 
 void Database::write(std::string i_serial_number, std::string i_test_type, int i_run_number, std::string i_output_dir) {
-    if (DB_DEBUG) std::cout << "Database: Write" << std::endl;
+    if (DB_DEBUG) std::cout << "Database: Write for SN: " << i_serial_number << std::endl;
     std::string component_type_str = this->getValue("component", "serialNumber", m_serial_number, "", "componentType");
     if (component_type_str == "Module") {
         std::string module_oid_str = this->getValue("component", "serialNumber", m_serial_number, "", "_id", "oid");
@@ -83,6 +97,7 @@ void Database::write(std::string i_serial_number, std::string i_test_type, int i
     }
 }
 
+// Will be deleted
 void Database::writeFiles(std::string i_serial_number, int i_run_number_s, int i_run_number_e) {
     if (DB_DEBUG) std::cout << "Database: Write files" << std::endl;
 
@@ -135,11 +150,11 @@ void Database::writeFiles(std::string i_serial_number, int i_run_number_s, int i
 }
 
 std::string Database::uploadFromJson(std::string i_collection_name, std::string i_json_path) {
-    if (DB_DEBUG) std::cout << "Database: Upload from json" << std::endl;
+    if (DB_DEBUG) std::cout << "Database: Upload from json: " << i_json_path << std::endl;
     std::ifstream json_ifs(i_json_path);
     if (!json_ifs) {
         std::cerr <<"#ERROR# Cannot open register json file: " << i_json_path << std::endl;
-        return "ERROR";
+        abort(); return "ERROR";
     }
     json json = json::parse(json_ifs);
     bsoncxx::document::value doc_value = bsoncxx::from_json(json.dump()); 
@@ -150,11 +165,11 @@ std::string Database::uploadFromJson(std::string i_collection_name, std::string 
 }
 
 void Database::registerFromConnectivity(std::string i_json_path) {
-    if (DB_DEBUG) std::cout << "Database: Register from connectivity" << std::endl;
+    if (DB_DEBUG) std::cout << "Database: Register from connectivity: " << i_json_path << ", SN: " << m_serial_number << std::endl;
     std::ifstream json_ifs(i_json_path);
     if (!json_ifs) {
         std::cerr << "#ERROR# Cannot open register json file: " << i_json_path << std::endl;
-        return;
+        abort(); return;
     }
     json conn_json = json::parse(json_ifs);
 
@@ -168,17 +183,22 @@ void Database::registerFromConnectivity(std::string i_json_path) {
         std::ifstream j_ifs(conn_json["chips"][i]["config"].get<std::string>());
         if (!j_ifs) {
             std::cerr << "#ERROR# Cannot open register chip config file" << std::endl;
-            return;
+            abort(); return;
         }
         json jj = json::parse(j_ifs);
-        std::string chipType;
-        if (conn_json["chipType"] == "FEI4B") chipType = "FE-I4B";
+        std::string chip_name = "Moomin";
+        std::string chipType = conn_json["chipType"];
+        if (chipType == "FEI4B") {
+            chipType = "FE-I4B";
+            chip_name = jj[chipType]["name"];
+        }
+        else if (chipType == "RD53A") chip_name = jj[chipType]["Parameter"]["Name"];
 
         bsoncxx::document::value doc_value = document{} <<  
             "sys" << open_document << close_document <<
             "serialNumber" << serialNumber <<
             "componentType" << chipType <<
-            "name" << jj[chipType]["name"].get<std::string>() <<
+            "name" << chip_name <<
         finalize;
      
         auto result = collection.insert_one(doc_value.view());
@@ -230,12 +250,12 @@ void Database::registerFromConnectivity(std::string i_json_path) {
 // Protected fuctions
 //
 std::string Database::getValue(std::string i_collection_name, std::string i_member_key, std::string i_member_value, std::string i_member_bson_type, std::string i_key, std::string i_bson_type){
-    if (DB_DEBUG) std::cout << "\tDatabase: get value from: " << i_collection_name << ", key: " << i_member_key << std::endl;
+    if (DB_DEBUG) std::cout << "\tDatabase: get value of key: '" << i_key << "' from: '" << i_collection_name << "', '{" << i_member_key << ": '" << i_member_value << "'}" << std::endl;
     mongocxx::collection collection = db[i_collection_name];
-    //bsoncxx::stdx::optional<bsoncxx::document::value> result;
-    bsoncxx::stdx::optional<bsoncxx::document::value> result = collection.find_one({});
-    if (i_member_bson_type == "oid") result = collection.find_one(document{} << i_member_key << bsoncxx::oid(i_member_value) << finalize);
-    else result = collection.find_one(document{} << i_member_key << i_member_value << finalize);
+    auto query = document{};
+    if (i_member_bson_type == "oid") query << i_member_key << bsoncxx::oid(i_member_value);
+    else query << i_member_key << i_member_value;
+    bsoncxx::stdx::optional<bsoncxx::document::value> result = collection.find_one(query.view());
     if(result) {
         if (i_bson_type == "oid") {
             bsoncxx::document::element element = result->view()["_id"];
@@ -261,9 +281,8 @@ std::string Database::getValue(std::string i_collection_name, std::string i_memb
         }
     }
     else {
-        std::cerr <<"#ERROR# Cannot find " << i_key << " from member " << i_member_key << ": " << i_member_value << " in collection name: " << i_collection_name << std::endl;
-        abort();
-        return "ERROR";
+        std::cerr <<"#ERROR# Cannot find '" << i_key << "' from member '" << i_member_key << ": " << i_member_value << "' in collection name: '" << i_collection_name << "'" << std::endl;
+        abort(); return "ERROR";
     }
 }
 
@@ -314,7 +333,7 @@ std::string Database::registerTestRun(std::string i_test_type, int i_run_number)
     return oid.to_string();
 }
 
-void Database::addComment(std::string i_collection_name, std::string i_oid_str, std::string i_comment) {
+void Database::addComment(std::string i_collection_name, std::string i_oid_str, std::string i_comment) { // To be deleted or seperated
     if (DB_DEBUG) std::cout << "\t\tDatabase: Add comment" << std::endl;
     bsoncxx::oid i_oid(i_oid_str);
     db[i_collection_name].update_one(
@@ -348,8 +367,7 @@ void Database::addAttachment(std::string i_oid_str, std::string i_collection_nam
     );
 }
 
-// Not use currently
-void Database::addDefect(std::string i_oid_str, std::string i_collection_name, std::string i_defect_name, std::string i_description) {
+void Database::addDefect(std::string i_oid_str, std::string i_collection_name, std::string i_defect_name, std::string i_description) { // To de deleted
     if (DB_DEBUG) std::cout << "\t\tDatabase: Add defect" << std::endl;
     bsoncxx::oid i_oid(i_oid_str);
     db[i_collection_name].update_one(
@@ -477,53 +495,4 @@ void Database::addSys(std::string i_oid_str, std::string i_collection_name) {
             close_document <<
         close_document << finalize
     );
-}
-
-//To be deleted in the future
-void Database::viewer() {
-    std::string input;
-    while (1) {
-        std::cout << "Type \"module\" to select module" << std::endl;
-        std::cout << "Type \"chip\" to select chip" << std::endl;
-        std::cout << "Type \"q\" to quit." << std::endl;
-        mongocxx::collection collection = db["component"];
-        mongocxx::cursor cursor = collection.find({document() << "componentType" << "Module" << finalize});
-        for (auto doc : cursor) {
-            bsoncxx::document::element element = doc["serialNumber"];
-            std::string sn_str = element.get_utf8().value.to_string();
-            std::cout << "SN: " << sn_str << std::endl;
-        }
-        std::cin >> input;
-        if (input == "q") break;
-        else if (input == "module") {
-            std::cout << "Input module SN" << std::endl;
-            std::cin >> input;
-            if (input == "q") break;
-            else {
-                mongocxx::collection collection = db["childParentRelation"];
-                mongocxx::cursor cursor = collection.find({document() << "parent" << getValue("component", "serialNumber", input, "", "_id", "oid") << finalize});
-                for (auto doc : cursor) {
-                    bsoncxx::document::element element = doc["child"];
-                    std::string id_str = element.get_utf8().value.to_string();
-                    std::cout << "\tSN: " << getValue("component", "_id", id_str, "oid", "serialNumber") << " - " << getValue("component", "_id", id_str, "oid", "componentType") << std::endl;
-                }
-            }
-        }
-        else if (input == "chip") {
-            std::cout << "Input chip SN" << std::endl;
-            std::cin >> input;
-            if (input == "q") break;
-            else {
-                mongocxx::collection collection = db["componentTestRun"];
-                mongocxx::cursor cursor = collection.find({document() << "component" << getValue("component", "serialNumber", input, "","_id", "oid") << finalize});
-                for (auto doc : cursor) {
-                    bsoncxx::document::element element = doc["testRun"];
-                    std::string id_str = element.get_utf8().value.to_string();
-                    std::cout << "\t\tTest Type: " << getValue("testRun", "_id", id_str, "oid", "testType") << " - " << 
-                        getValue("testRun", "_id", id_str, "oid", "", "sys_datetime") << " - " <<
-                        getValue("testRun", "_id", id_str, "oid", "runNumber", "int") << std::endl;
-                }
-            }
-        }
-    }
 }
