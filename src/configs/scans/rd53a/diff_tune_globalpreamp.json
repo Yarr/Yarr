@@ -40,7 +40,7 @@
     },
     "loops": [
       { "config": {
-          "max": 128,
+          "max": 64,
           "min": 0,
           "step": 64,
           "parameter": "DiffVff"
@@ -60,7 +60,7 @@
           "max": 50,
           "min": 33,
           "step": 1,
-          "nSteps": 4
+          "nSteps": 17
         },
         "loopAction": "Rd53aCoreColLoop"
       },
@@ -83,9 +83,12 @@
     "prescan": {
         "InjEnDig": 0,
         "LatencyConfig": 48,
-        "GlobalPulseRt": 16384,
+        "GlobalPulseRt": 0,
         "SyncVth":500,
-        "LinVth": 500
+        "LinVth": 500,
+        "EnCoreColLin1": 0,
+        "EnCoreColLin2": 0,
+        "EnCoreColSync": 0
     }
   }
 }

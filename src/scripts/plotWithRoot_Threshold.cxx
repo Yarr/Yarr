@@ -104,12 +104,12 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 				return -1;
 			}
 
-			
+
 			//Create histograms
 			TH1 *fe_hist[4];
 			TH1 *range_rms[3];
 			TH1 *range_gaus[3];
-			
+
 			std::string fe_name[4] = {"h_all", "h_Syn", "h_Lin", "h_Diff"};
 			std::string rms_names[3] = {"hrms_Syn", "hrms_Lin", "hrms_Diff"};
 			std::string gaus_names[3] = {"hgaus_Syn", "hgaus_Lin", "hgaus_Diff"};
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 				for (int j=0; j<colno; j++) {
 					double tmp;
 					infile >> tmp;
-					if (good_Diff != "1" || whichFE(j) != 2 ) {		//if not in Differential FE
+					if (whichFE(j) != 2 || good_Diff != "1" ) {		//if not in Differential FE
 						if (tmp > 0) {
 							fe_hist[0]->Fill(tmp);
 							fe_hist[whichFE(j)+1]->Fill(tmp);
@@ -162,12 +162,17 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			char gmean_All[100]={}, gmean_Syn[100]={}, gmean_Lin[100]={}, gmean_Diff[100]={};
 			char gsigma_All[100]={}, gsigma_Syn[100]={}, gsigma_Lin[100]={}, gsigma_Diff[100]={};
 			char chidof_All[100]={}, chidof_Syn[100]={}, chidof_Lin[100]={}, chidof_Diff[100]={};
+			char minmax95_Syn[100]={}, minmax95_Lin[100]={}, minmax95_Diff[100]={};
+			char minmax997_Syn[100]={}, minmax997_Lin[100]={}, minmax997_Diff[100]={};
 
 			char* mean_char[4] = {mean_All, mean_Syn, mean_Lin, mean_Diff};
 			char* rms_char[4] = {rms_All, rms_Syn, rms_Lin, rms_Diff};
 			char* gmean_char[4] = {gmean_All, gmean_Syn, gmean_Lin, gmean_Diff};
 			char* gsigma_char[4] = {gsigma_All, gsigma_Syn, gsigma_Lin, gsigma_Diff};
 			char* chidof_char[4] = {chidof_All, chidof_Syn, chidof_Lin, chidof_Diff};
+			char* minmax95_char[3] = {minmax95_Syn, minmax95_Lin, minmax95_Diff};
+			char* minmax997_char[3] = {minmax997_Syn, minmax997_Lin, minmax997_Diff};
+ 
 			double mean_h[4];
 			double rms_h[4]; 	
 			double fit_par[4], fit_err[4], fit_range[8];
@@ -204,6 +209,11 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			std::string plot_ext[21] = {".dat", "_All.", "_SYN.", "_LIN.", "_DIFF.", "_PLOT.", "_STACK.", "_SYNrmsrange.", "_LINrmsrange.", "_DIFFrmsrange.", "_STACKrmsrange.", "_SYNgaussrange.", "_LINgaussrange.", "_DIFFgaussrange.", "_STACKgaussrange.", "_SYNrmsrangenorm.", "_LINrmsrangenorm.", "_DIFFrmsrangenorm.", "_SYNgaussrangenorm.", "_LINgaussrangenorm.", "_DIFFgaussrangenorm."};
 			for (int i=1; i<21; i++) plot_ext[i].append(ext);
 
+			// For FE Review --> 99.7% and 95% of pixels.
+			double perCent[2] = { 95, 99.7};
+			std::vector <float> results[6];
+
+
 			//Plots for All, Synchronous, Linear, and Differential FEs
 			for (int i=0; i<4; i++) {
 				style_TH1(fe_hist[i], xaxistitle.c_str(), yaxistitle.c_str());
@@ -234,12 +244,10 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 				if (i == 0) {	
 					fe_fit[i] = new TF1(fit_name[i].c_str(), "gaus", xlow, xhigh);
 					fe_hist[i]->Fit(fit_name[i].c_str(), "0", "", xlow, xhigh);
-
 				}	
 				if (i > 0) {
 					fe_fit[i] = new TF1(fit_name[i].c_str(), "gaus", mean_h[i]-rms_h[i], mean_h[i]+rms_h[i]);
 					fe_hist[i]->Fit(fit_name[i].c_str(), "0", "", mean_h[i]-rms_h[i], mean_h[i]+rms_h[i]);			
-
 				}
 
 				//Change range and refit 5 times to get better fit.	
@@ -262,6 +270,20 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 
 				std::cout << "Chi^2 is "  << fe_fit[i]->GetChisquare() << "	DOF is " << fe_fit[i]->GetNDF() << "	Prob is " << fe_fit[i]->GetProb() << std::endl;
 
+				for (int j=0; j<2; j++ ) { 
+					if  ( i > 0) {
+						std::cout << legend_name[i] << "	" << perCent[j] << "%" << std::endl;
+						int inDex = ((i-1)*2)+j; 
+						results[inDex] = thresholdPercent(pix_values, i-1, std::stoi(good_Diff), fe_fit[i]->GetParameter(1), perCent[j]);
+						std::string explain[5] = {"Number of Pixels Analyzed", "Minimum Value", "Iterations to get to the Minimum Value", "Maximum Value", "Iterations to get to the Maximum Value"};
+						for (int k=0; k<5; k++) {
+							std::cout << explain[k] << ": " << results[inDex][k] << ".	";
+						}
+						double pixSpread = fe_hist[i]->Integral(fe_hist[i]->FindBin(results[inDex][1]), fe_hist[i]->FindBin(results[inDex][3]));
+						std::cout << "\nIntegral (from minimum value to maximum value) is " << pixSpread << " which is " << (pixSpread/results[inDex][0])*100 << "\% of pixels \n" << std::endl;
+					}
+				}
+
 				//Write the Gaussian mean/sigma and the histogram mean/rms on the plot.
 				sprintf(mean_char[i], "Mean_{hist} = %.1f", mean_h[i]);
 				mean_rms->DrawLatex(0.18,0.91, mean_char[i]);
@@ -274,6 +296,13 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 				sprintf(chidof_char[i], "#chi^{2} / DOF = %.1f / %i", fe_fit[i]->GetChisquare(), fe_fit[i]->GetNDF());
 				mean_rms->DrawLatex(0.18, 0.71, chidof_char[i]);	
 
+				if ( i > 0 ) {
+					sprintf(minmax997_char[i-1], "( %.2f / %.2f )_{99.7%%}", results[((i-1)*2)+1][1], results[((i-1)*2)+1][3]);
+					mean_rms->DrawLatex(0.63, 0.81, minmax997_char[i-1]);
+					sprintf(minmax95_char[i-1], "( %.2f / %.2f )_{95%%}", results[(i-1)*2][1], results[(i-1)*2][3]);
+					mean_rms->DrawLatex(0.63, 0.76, minmax95_char[i-1]);
+				}
+
 				fe_hist[i]->GetYaxis()->SetRangeUser(0,((fe_hist[i]->GetMaximum())*1.5)); //Leave extra room for legend
 				fe_hist[i]->GetXaxis()->SetRangeUser((mean_h[i] - 5*rms_h[i] < 0) ? -0.5 : (mean_h[i]- 5*rms_h[i]), mean_h[i] + 5*rms_h[i]); //Change the x-axis range to be the Mean +/- 5*RMS. If the lower bound is less than -0.5, make it -0.5. 
 				fe_c[i]->Update();
@@ -281,7 +310,6 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 				filename1 = filename.replace(filename.find(plot_ext[i].c_str()), 10, plot_ext[i+1].c_str()); 
 				fe_c[i]->Print(filename1.c_str());
 			}
-
 
 			//Map of Pixels
 			style_TH2(h_plot, "Column", "Row", xaxistitle.c_str()); 
@@ -311,14 +339,14 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			c_Stack->SetRightMargin(0.05);
 			c_Stack->SetBottomMargin(0.1225);
 			hs->Draw(); 
-		
+
 			//Setting the title for THStack plots has to be after Draw(), and needs canvas->Modified() after
 			style_THStack(hs, xaxistitle.c_str(), yaxistitle.c_str());
 			hs->GetXaxis()->SetLabelSize(0.035);
 			gPad->SetLogy(0);
 			c_Stack->Modified();
 			gStyle->SetOptStat(0);
-			
+
 			TLegend *stack_legend = new TLegend(0.7, 0.7, 0.87, 0.91);
 			stack_legend->SetHeader("Analog FEs", "C");
 			for (int i=1; i<4; i++) stack_legend->AddEntry(fe_hist[i], legend_name[i].c_str(), "f"); 
@@ -336,7 +364,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			//Write RD53A Internal and the Chip ID
 			tname->DrawLatex(0.28,0.96, rd53.c_str());
 			tname->DrawLatex(0.8, 0.96, chipnum.c_str());
-			
+
 			//Write the Gaussian mean/sigma and the histogram mean/rms on the plot.
 			mean_rms->DrawLatex(0.18,0.91, mean_char[0]);
 			mean_rms->DrawLatex(0.18,0.86, rms_char[0]);
@@ -360,12 +388,11 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 					n++;
 					double tmp = *tmp_p;		
 					if (tmp != -1) {
-						int bin_rms = whichSigma(tmp, mean_h[whichFE(j)+1], rms_h[whichFE(j+1)]);
+						int bin_rms = whichSigma(tmp, mean_h[whichFE(j)+1], rms_h[whichFE(j+1)], 1, range_bins);
 						range_rms[whichFE(j)]->AddBinContent(bin_rms);
-						
-						int bin_gaus = whichSigma(tmp, fe_fit[whichFE(j)+1]->GetParameter(1), fe_fit[whichFE(j)+1]->GetParameter(2));
-						range_gaus[whichFE(j)]->AddBinContent(bin_gaus);
 
+						int bin_gaus = whichSigma(tmp, fe_fit[whichFE(j)+1]->GetParameter(1), fe_fit[whichFE(j)+1]->GetParameter(2), 1, range_bins);
+						range_gaus[whichFE(j)]->AddBinContent(bin_gaus);
 					}
 					if (tmp == 0) zeros_FE[whichFE(j)]++;	
 				}
@@ -434,17 +461,17 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			gPad->SetLogy(0);
 			c_Stackrms->Modified();
 			gStyle->SetOptStat(0);
-			
+
 			TLegend *stackrms_legend = new TLegend(0.33,0.82,0.93,0.91);
 			stackrms_legend->SetNColumns(3);
 			stackrms_legend->SetHeader("Analog FEs", "C");
 			for (int i=0; i<3; i++) stackrms_legend->AddEntry(range_rms[i], legend_name[i+1].c_str(), "f"); 
 			stackrms_legend->SetBorderSize(0);
 			stackrms_legend->Draw();
-			
+
 			tname->DrawLatex(0.28,0.96, rd53.c_str());
 			tname->DrawLatex(0.8, 0.96, chipnum.c_str());
-			
+
 			hs_rmsrange->GetYaxis()->SetRangeUser(0,((hs_rmsrange->GetMaximum())*1.21));
 			c_Stackrms->Update();
 			filename5 = filename.replace(filename.find(plot_ext[9].c_str()), 19, plot_ext[10].c_str());
@@ -521,21 +548,21 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			TH1* rms_norm[3];
 			TCanvas* rmsnorm_c[3];
 			std::string rmsnorm_names[3] = {"rmsn_SYN", "rmsn_LIN", "rmsn_DIFF"}; 
-			
+
 			for (int i=0; i<3; i++) {
 				rmsnorm_c[i] = new TCanvas(rmsnorm_names[i].c_str(), rmsnorm_names[i].c_str(), 800, 600);
 				style_TH1canvas(rmsnorm_c[i]);
 				rms_norm[i] = range_rms[i]->DrawNormalized();
 				rms_norm[i]->Draw();
-				
+
 				gStyle->SetPaintTextFormat(".4f");	
 				rms_norm[i]->SetMarkerSize(1.8);
 				rms_norm[i]->SetMarkerColor(1);
 				rms_norm[i]->Draw("TEXT0 SAME");	
-			
+
 				tname->DrawLatex(0.28,0.96, rd53.c_str());
 				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
-				
+
 				rmsrange_legend[i]->Draw();
 
 				rms_norm[i]->GetYaxis()->SetRangeUser(0,1.05);
@@ -549,21 +576,21 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			TH1* gaus_norm[3];
 			TCanvas* gausnorm_c[3];
 			std::string gausnorm_names[3] = {"gausn_SYN", "gausn_LIN", "gausn_DIFF"}; 
-			
+
 			for (int i=0; i<3; i++) {
 				gausnorm_c[i] = new TCanvas(gausnorm_names[i].c_str(), gausnorm_names[i].c_str(), 800, 600);
 				style_TH1canvas(gausnorm_c[i]);
 				gaus_norm[i] = range_gaus[i]->DrawNormalized();
 				gaus_norm[i]->Draw();
-				
+
 				gStyle->SetPaintTextFormat(".4f");	
 				gaus_norm[i]->SetMarkerSize(1.8);
 				gaus_norm[i]->SetMarkerColor(1);
 				gaus_norm[i]->Draw("TEXT0 SAME");	
-			
+
 				tname->DrawLatex(0.28,0.96, rd53.c_str());
 				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
-				
+
 				gausrange_legend[i]->Draw();
 
 				gaus_norm[i]->GetYaxis()->SetRangeUser(0,1.05);
@@ -572,10 +599,6 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 				filename6 = filename.replace(filename.find(plot_ext[i+17].c_str()), 22, plot_ext[i+18].c_str()); 
 				gausnorm_c[i]->Print(filename6.c_str());
 			}
-
-
-			float outlierSpread = meanDeviation(pix_values);
-			std::cout << "\033[1;31m Range of values (excluding 0.997 or 0.95 times the mean.) : \033[0m" << outlierSpread << std::endl; 
 
 			for (int i=0; i<4; i++) {
 				delete fe_hist[i];
@@ -588,7 +611,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 					delete rms_norm[i];
 					delete rmsnorm_c[i];
 					delete gaus_norm[i];
-					delete gausnorm_c[i];	
+					delete gausnorm_c[i];
 				}
 			}
 

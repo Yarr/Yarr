@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_json path/to/directory file_
 						n++;
 						double tmp = *tmp_p;
 						if (whichFE(j) != 0) {		
-							int bin_num = whichSigma(tmp, mean_h[whichFE(j)-1], rms_h[whichFE(j)-1]);
+							int bin_num = whichSigma(tmp, mean_h[whichFE(j)-1], rms_h[whichFE(j)-1], 1, range_bins);
 							range_hist[whichFE(j)-1]->AddBinContent(bin_num);
 							if (tmp == 0) {
 								if(whichFE(j)==1) zero_Lin++;

@@ -7,10 +7,7 @@
           "createMask": true
         }
       },
-      "1": {
-        "algorithm": "L1Analysis"
-      },
-      "n_count": 2
+      "n_count": 1
     },
     "histogrammer": {
       "0": {
@@ -41,7 +38,7 @@
           "count": 0,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 20000,
+          "frequency": 5000,
           "noInject": true,
           "time": 300
         },

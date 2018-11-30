@@ -52,7 +52,7 @@
           "max": 50,
           "min": 0,
           "step": 1,
-          "nSteps": 10
+          "nSteps": 25
         },
         "loopAction": "Rd53aCoreColLoop"
       },

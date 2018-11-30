@@ -35,7 +35,7 @@
     "loops": [
       {
         "config": {
-         "max": 384,
+         "max": 64,
           "min": 0,
           "step": 1
         },
@@ -43,28 +43,28 @@
       },
       {
         "config": {
-          "max": 16,
-          "min": 0,
-          "step": 1,
-          "nSteps": 4
-        },
-        "loopAction": "Rd53aCoreColLoop"
-      },
-      {
-        "config": {
-          "max": 350,
-          "min": 150,
-          "step": 10,
+          "max": 200,
+          "min": 50,
+          "step": 5,
           "parameter":"InjVcalDiff"
         },
         "loopAction": "Rd53aParameterLoop"
       },
       {
         "config": {
+          "max": 16,
+          "min": 0,
+          "step": 1,
+          "nSteps": 16
+        },
+        "loopAction": "Rd53aCoreColLoop"
+      },
+      {
+        "config": {
           "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 10000,
+          "frequency": 20000,
           "noInject": false,
           "time": 0
         },

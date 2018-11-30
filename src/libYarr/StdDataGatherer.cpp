@@ -67,10 +67,12 @@ void StdDataGatherer::execPart2() {
             if (newData != NULL) {
                 rdc->add(newData);
                 count += newData->words;
+		newData = NULL;
             }
             std::this_thread::sleep_for(std::chrono::microseconds(100));
-        } while (newData != NULL);
-        delete newData;
+        } while (newData != NULL && signaled == 0 && !killswitch);
+        if (newData != NULL)
+		delete newData;
         rdc->stat = *g_stat;
         storage->pushData(std::move(rdc));
         if (signaled == 1 || killswitch) {

@@ -42,7 +42,7 @@
         "config": {
           "max": 64,
           "min": 0,
-          "step": 1
+          "step": 8
         },
         "loopAction": "Rd53aMaskLoop"
       },
@@ -51,7 +51,7 @@
           "max": 16,
           "min": 0,
           "step": 1,
-          "nSteps": 4
+          "nSteps": 16
         },
         "loopAction": "Rd53aCoreColLoop"
       },
