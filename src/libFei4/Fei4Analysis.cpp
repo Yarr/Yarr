@@ -840,7 +840,7 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
         double entries = occDists[ident]->getEntries();
         std::cout << "[" << channel << "]Mean Occupancy: " << meanOcc << std::endl;
 
-        if (entries < (nCol*nRow)*0.01) { // Want at least 1% of all pixels to fire
+        if (entries < (nCol*nRow)*0.005) { // Want at least 1% of all pixels to fire
             sign = -1;
         } else if ((meanOcc > 0.51) && !done) {
             sign = +1;
@@ -1365,7 +1365,7 @@ void DelayAnalysis::processHistogram(HistogramBase *h) {
                 if (hh->getBin(bin) != 0) {
                     //std::cout << col << " " << row << " " << l1 << " " << bin << std::endl;
                     // Select correct output containe
-                    unsigned ident = row+(col*(nRow));
+                    unsigned ident = (row-1)+((col-1)*(nRow));
                     unsigned delay = hh->getStat().get(delayLoop);
                     // Determine identifier
                     std::string name = "Delay";
@@ -1405,8 +1405,15 @@ void DelayAnalysis::processHistogram(HistogramBase *h) {
                             delayMap->setYaxisTitle("Row");
                             delayMap->setZaxisTitle("Mean Delay");
                         }
+                        if (rmsMap == nullptr) {
+                            rmsMap.reset(new Histo2d("RmsMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this)));
+                            rmsMap->setXaxisTitle("Col");
+                            rmsMap->setYaxisTitle("Row");
+                            rmsMap->setZaxisTitle("RMS");
+                        }
                         if (histos[ident]->getMean() > 0 && histos[ident]->getMean() < 256) {
                             delayMap->setBin(ident, histos[ident]->getMean());
+                            rmsMap->setBin(ident, histos[ident]->getStdDev());
                         }
                     }
                 }
@@ -1417,6 +1424,7 @@ void DelayAnalysis::processHistogram(HistogramBase *h) {
 
 void DelayAnalysis::end() {
     output->pushData(std::move(delayMap));
+    output->pushData(std::move(rmsMap));
     for(unsigned bin=0; bin<(nRow*nCol); bin++) {
         if (histos[bin]) {
             output->pushData(std::move(histos[bin]));
