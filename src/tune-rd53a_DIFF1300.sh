@@ -20,4 +20,4 @@ scripts/plotWithRoot_ThresholdTDAC ${3}/last_scan pdf 1
 scripts/plotWithRoot_NoiseMap ${3}/last_scan pdf 1
 ./bin/scanConsole -r $1 -c $2 -s configs/scans/rd53a/std_totscan.json -p -m 0 -t 6000 -o $3
 scripts/plotWithRoot_ToT ${3}/last_scan pdf 1
-./bin/scanConsole -r $1 -c $2 -s configs/scans/rd53a/std_noisescan.json -p
+./bin/scanConsole -r $1 -c $2 -s configs/scans/rd53a/std_noisescan.json -p -o $3
