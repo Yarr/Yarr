@@ -109,7 +109,7 @@ void Rd53aDataProcessor::process_core() {
                 // TODO this needs review, can't deal with user-k data
                 uint32_t data = curIn->buf[i];
                 unsigned channel = 0;
-                if (__builtin_expect((data != 0xFFFFFFFF), 0)) {
+                if (__builtin_expect((data != 0xFFFFFFFF), 1)) {
                     if ((data >> 25) & 0x1) { // is header
                         l1id[channel] = 0x1F & (data >> 20);
                         tag[channel] = 0x1F & (data >> 15);

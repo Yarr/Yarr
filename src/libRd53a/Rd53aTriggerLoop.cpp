@@ -16,15 +16,9 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
     m_trigWordLength = 32;
     m_pulseDuration = 8;
     m_trigWord.fill(0x69696969);
-    m_trigWord[15] = 0x69696363;
-    m_trigWord[14] = Rd53aCmd::genCal(8, 0, 0, 1, 0, 0); // Inject
-    m_trigWord[8] = Rd53aCmd::genTrigger(0xF, 1, 0xF, 2); // Trigger
-    m_trigWord[7] = Rd53aCmd::genTrigger(0xF, 3, 0xF, 4); // Trigger
-    m_trigWord[2] = 0x69696363; // Header
-    m_trigWord[1] = Rd53aCmd::genCal(8, 1, 0, 0, 0, 0); // Arm inject
-    m_trigWord[0] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(m_pulseDuration<<1)); // global pulse for sync FE
     m_noInject = false;
     m_extTrig = false;
+    m_trigMultiplier = 16;
 
     m_edgeMode = false;
     m_edgeDuration = 10;
@@ -41,22 +35,37 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
 void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
     m_trigWord.fill(0x69696969);
     // Inject
-    //m_trigWord[27] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(m_pulseDuration<<1)); // global pulse for sync FE
-    //m_trigWord[26] = 0x5a5a6969;
+    //m_trigWord[31] = 0x5a5a6969;
+    m_trigWord[16] = 0x59596969;
     m_trigWord[15] = 0x69696363; // Header
     m_trigWord[14] = Rd53aCmd::genCal(8, 0, 0, 1, 0, 0); // Inject
+    uint64_t trigStream = 0;
+
+    // Generate stream of ones for each trigger
+    for (unsigned i=0; i<m_trigMultiplier; i++)
+        trigStream |= 1 << i;
+    trigStream = trigStream << delay%8;
+
+    for (unsigned i=0; i<(m_trigMultiplier/8)+1; i++) {
+        if (((14-(delay/8)-i) > 2) && delay > 16) {
+            uint32_t bc1 = (trigStream >> (2*i*4)) & 0xF;
+            uint32_t bc2 = (trigStream >> ((2*i*4)+4)) & 0xF;
+            m_trigWord[14-(delay/8)-i] = Rd53aCmd::genTrigger(bc1, 2*i, bc2, (2*i)+1);
+        } else {
+            std::cerr << __PRETTY_FUNCTION__ << " : Delay is either too small or too large!" << std::endl;
+        }
+    }
     // Rearm
     m_trigWord[2] = 0x69696363; // Header
     m_trigWord[1] = Rd53aCmd::genCal(8, 1, 0, 0, 0, 0); // Arm inject
     // Pulse
-    m_trigWord[0] = 0x69696969;
     //m_trigWord[0] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(m_pulseDuration<<1)); // global pulse for sync FE
-    if ((delay >= 16) && (delay <= 88)) {
-        m_trigDelay = delay;
-        m_trigWord[(13-(delay/8)+1)] = Rd53aCmd::genTrigger(0xF, 1, 0xF, 2); // Trigger
-        m_trigWord[(13-(delay/8))] = Rd53aCmd::genTrigger(0xF, 3, 0xF, 4); // Trigger
-    } else {
-        std::cerr << __PRETTY_FUNCTION__ << " : Delay is either too small or too large!" << std::endl;
+    
+    if (verbose) {
+        std::cout << "Trigger buffer set to:" << std::endl;
+        for (unsigned i=0; i<m_trigWordLength; i++) {
+            std::cout << "[" << 31-i << "] : 0x" << std::hex << m_trigWord[31-i] << std::dec << std::endl;
+        }
     }
 }
 
@@ -141,6 +150,7 @@ void Rd53aTriggerLoop::writeConfig(json &config) {
     config["delay"] = m_trigDelay;
     config["noInject"] = m_noInject;
     config["extTrigger"] = m_extTrig;
+    config["trigMultiplier"] = m_trigMultiplier;
 }
 
 void Rd53aTriggerLoop::loadConfig(json &config) {
@@ -158,5 +168,7 @@ void Rd53aTriggerLoop::loadConfig(json &config) {
         m_edgeMode = config["edgeMode"];
     if (!config["extTrig"].empty())
         m_extTrig = config["extTrig"];
+    if (!config["trigMultiplier"].empty())
+        m_trigMultiplier = config["trigMultiplier"];
     this->setTrigDelay(m_trigDelay);
 }

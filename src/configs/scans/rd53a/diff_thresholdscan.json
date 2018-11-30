@@ -43,9 +43,9 @@
       },
       {
         "config": {
-          "max": 300,
-          "min": 0,
-          "step": 1,
+          "max": 200,
+          "min": 50,
+          "step": 5,
           "parameter":"InjVcalDiff"
         },
         "loopAction": "Rd53aParameterLoop"
@@ -55,7 +55,7 @@
           "max": 50,
           "min": 33,
           "step": 1,
-          "nSteps": 4
+          "nSteps": 17
         },
         "loopAction": "Rd53aCoreColLoop"
       },
@@ -78,11 +78,14 @@
     "prescan": {
         "InjEnDig": 0,
         "LatencyConfig": 48,
-        "GlobalPulseRt": 16384,
+        "GlobalPulseRt": 0,
         "InjVcalMed": 1000,
         "InjVcalHigh": 1000,
         "SyncVth": 500,
-        "LinVth": 500
+        "LinVth": 500,
+        "EnCoreColLin1": 0,
+        "EnCoreColLin2": 0,
+        "EnCoreColSync": 0
     }
   }
 }

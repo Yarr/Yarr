@@ -61,7 +61,7 @@ double Histo1d::getMean() {
     double weighted_sum = 0;
     double n = 0;
     for (unsigned i=0; i<bins; i++) {
-        weighted_sum += data[i]*(((i+1)*binWidth)+xlow+(binWidth/2.0));
+        weighted_sum += data[i]*(((i)*binWidth)+xlow+(binWidth/2.0));
         n += data[i];
     }
     if (n == 0) {
@@ -76,7 +76,7 @@ double Histo1d::getStdDev() {
     double mean = this->getMean();
     double mu = 0;
     for (unsigned i=0; i<bins; i++)
-        mu += data[i] * pow((((i+1)*binWidth)+xlow+(binWidth/2.0))-mean,2);
+        mu += data[i] * pow((((i)*binWidth)+xlow+(binWidth/2.0))-mean,2);
     return sqrt(mu/(double)sum);
 }
 
@@ -158,6 +158,7 @@ void Histo1d::toFile(std::string prefix, std::string dir, bool header) {
 }
 
 void Histo1d::plot(std::string prefix, std::string dir) {
+    std::cout << "Plotting: " << HistogramBase::name << std::endl;
     // Put raw histo data in tmp file
     std::string tmp_name = std::string(getenv("USER")) + "/tmp_yarr_histo1d_" + prefix;
     this->toFile(tmp_name, "/tmp/", false);

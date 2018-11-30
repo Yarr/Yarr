@@ -2,7 +2,7 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "OccGlobalThresholdTune"
+        "algorithm": "L1Analysis"
       },
       "n_count": 1
     },
@@ -27,32 +27,36 @@
         "algorithm": "HitsPerEvent",
         "config": {}
       },
-      "n_count": 5
+      "5": {
+        "algorithm": "L13d",
+        "config": {}
+      },
+      "n_count": 6
     },
     "loops": [
-      { "config": {
-          "max": 500,
-          "min": 0,
-          "step": 16,
-          "parameter": "DiffVth1",
-          "pixelRegs": [0, 0]
-        },
-        "loopAction": "Rd53aGlobalFeedback"
-      },
       {
         "config": {
           "max": 64,
           "min": 0,
-          "step": 8
+          "step": 1
         },
         "loopAction": "Rd53aMaskLoop"
+      },
+      {
+        "config": {
+          "max": 800,
+          "min": 25,
+          "step": 25,
+          "parameter":"InjVcalDiff"
+        },
+        "loopAction": "Rd53aParameterLoop"
       },
       {
         "config": {
           "max": 50,
           "min": 33,
           "step": 1,
-          "nSteps": 4
+          "nSteps": 5
         },
         "loopAction": "Rd53aCoreColLoop"
       },
@@ -61,7 +65,7 @@
           "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 20000,
+          "frequency": 1000,
           "noInject": false,
           "time": 0
         },
@@ -71,16 +75,12 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "DiffGlobalThresholdTune",
+    "name": "TimeWalkScan",
     "prescan": {
         "InjEnDig": 0,
-        "LatencyConfig": 48,
-        "GlobalPulseRt": 0,
-        "SyncVth":500,
-        "LinVth": 500,
-        "EnCoreColLin1": 0,
-        "EnCoreColLin2": 0,
-        "EnCoreColSync": 0
+        "LatencyConfig": 50,
+        "GlobalPulseRt": 16384,
+        "InjVcalMed": 500
     }
   }
 }
