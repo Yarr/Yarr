@@ -28,13 +28,13 @@ echo "Target Threshold for inner layers is ${TargetTh_IL} and for outer layers $
 
 echo "Tune DIFF FE, Vddd trimed at 1.2 V"
 
-./tune-rd53a_DIFF1000.sh configs/controller/specCfg.json configs/connectivity/example_rd53a_IL45.json $1 ${TargetTh_IL}
+./tune-rd53a_DIFF1000.sh configs/controller/specCfg.json configs/connectivity/example_rd53a_IL45.json $1 $[${TargetTh_IL}+50]
 ./measure_Current.sh
-./tune-rd53a_DIFF1000.sh configs/controller/specCfg.json configs/connectivity/example_rd53a_IL50.json $1 ${TargetTh_IL}
+./tune-rd53a_DIFF1000.sh configs/controller/specCfg.json configs/connectivity/example_rd53a_IL50.json $1 $[${TargetTh_IL}+50]
 ./measure_Current.sh
-./tune-rd53a_DIFF1300.sh configs/controller/specCfg.json configs/connectivity/example_rd53a_OL30.json $1 ${TargetTh_OL}
+./tune-rd53a_DIFF1300.sh configs/controller/specCfg.json configs/connectivity/example_rd53a_OL30.json $1 $[${TargetTh_OL}+50]
 ./measure_Current.sh
-./tune-rd53a_DIFF1300.sh configs/controller/specCfg.json configs/connectivity/example_rd53a_OL35.json $1 ${TargetTh_OL}
+./tune-rd53a_DIFF1300.sh configs/controller/specCfg.json configs/connectivity/example_rd53a_OL35.json $1 $[${TargetTh_OL}+50]
 ./measure_Current.sh
 
 echo "Tune SYNC FE, Vddd trimed at 1.2 V"
