@@ -9,7 +9,7 @@
 ./bin/scanConsole -r $1 -c $2 -s configs/scans/rd53a/lin_tune_pixelthreshold.json -t 2000 -p -m 0 -o $3
 ./bin/scanConsole -r $1 -c $2 -s configs/scans/rd53a/lin_retune_globalthreshold.json -t $4 -p -m 0 -o $3
 ./bin/scanConsole -r $1 -c $2 -s configs/scans/rd53a/lin_retune_pixelthreshold.json -t $4 -p -m 0 -o $3
-./bin/scanConsole -r $1 -c $2 -s configs/scans/rd53a/lin_tune_globalpreamp.json -t 6000 9 -p -m 0 -o $3
+./bin/scanConsole -r $1 -c $2 -s configs/scans/rd53a/lin_tune_globalpreamp.json -t 6000 10 -p -m 0 -o $3
 ./bin/scanConsole -r $1 -c $2 -s configs/scans/rd53a/lin_retune_pixelthreshold.json -t $4 -p -m 0 -o $3
 
 ./bin/scanConsole -r $1 -c $2 -s configs/scans/rd53a/lin_thresholdscan.json -p -m 0 -o $3
