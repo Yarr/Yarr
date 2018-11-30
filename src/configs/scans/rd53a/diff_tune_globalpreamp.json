@@ -42,7 +42,7 @@
       { "config": {
           "max": 64,
           "min": 0,
-          "step": 64,
+          "step": 32,
           "parameter": "DiffVff"
         },
         "loopAction": "Rd53aGlobalFeedback"
