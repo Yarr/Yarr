@@ -81,7 +81,10 @@
         "InjEnDig": 0,
         "LatencyConfig": 42,
         "OutputActiveLanes": 1,
-        "GlobalPulseRt": 16384
+        "GlobalPulseRt": 0,
+        "EnCoreColSync": 0,
+        "EnCoreColDiff1": 0,
+        "EnCoreColDiff2": 0
     }
   }
 }
