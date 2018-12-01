@@ -29,12 +29,12 @@ cp configs/connectivity/example_rd53a_setup.json configs/connectivity/example_rd
 cp configs/connectivity/example_rd53a_setup.json configs/connectivity/example_rd53a_IL55.json
 
 value=`grep configs configs/connectivity/example_rd53a_setup.json | grep -o "configs/.*.json"`
-sed -i "s:\${value}:\"configs/rd53a_${5}_OL30.json\":g" configs/connectivity/example_rd53a_OL30.json
-sed -i "s:\${value}:\"configs/rd53a_${5}_OL35.json\":g" configs/connectivity/example_rd53a_OL35.json
-sed -i "s:\${value}:\"configs/rd53a_${5}_OL40.json\":g" configs/connectivity/example_rd53a_OL40.json
-sed -i "s:\${value}:\"configs/rd53a_${5}_IL45.json\":g" configs/connectivity/example_rd53a_IL45.json
-sed -i "s:\${value}:\"configs/rd53a_${5}_IL50.json\":g" configs/connectivity/example_rd53a_IL50.json
-sed -i "s:\${value}:\"configs/rd53a_${5}_IL55.json\":g" configs/connectivity/example_rd53a_IL55.json
+sed -i "s:${value}:configs/rd53a_${5}_OL30.json:g" configs/connectivity/example_rd53a_OL30.json
+sed -i "s:${value}:configs/rd53a_${5}_OL35.json:g" configs/connectivity/example_rd53a_OL35.json
+sed -i "s:${value}:configs/rd53a_${5}_OL40.json:g" configs/connectivity/example_rd53a_OL40.json
+sed -i "s:${value}:configs/rd53a_${5}_IL45.json:g" configs/connectivity/example_rd53a_IL45.json
+sed -i "s:${value}:configs/rd53a_${5}_IL50.json:g" configs/connectivity/example_rd53a_IL50.json
+sed -i "s:${value}:configs/rd53a_${5}_IL55.json:g" configs/connectivity/example_rd53a_IL55.json
 
 value=`grep SldoAnalogTrim configs/rd53a_test.json | grep -o '[0-9]*'`
 sed -i "s/\"SldoAnalogTrim\": ${value}/\"SldoAnalogTrim\": ${3}/g" configs/rd53a_${5}_OL30.json
