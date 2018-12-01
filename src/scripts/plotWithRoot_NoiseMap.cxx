@@ -358,7 +358,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory f
 						range_gaus[whichFE(j)]->AddBinContent(bin_gaus);
 
 					}
-					if (tmp == 0) zeros_FE[whichFE(j)]++;				
+					if (tmp <= 0) zeros_FE[whichFE(j)]++;				
 				}
 			}
 
