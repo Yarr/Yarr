@@ -122,14 +122,14 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ToT path/to/directory file_e
 					double tmp;
 					infile >> tmp;
 					if(whichFE(j) != 2 || good_Diff != "1") {
-						//if (tmp == 0) zeros_FE[whichFE(j)]++;				
+						//if (tmp <= 0) zeros_FE[whichFE(j)]++;				
 						fe_hist[0]->Fill(tmp);
 						fe_hist[whichFE(j)+1]->Fill(tmp);
 						h_plot->SetBinContent(j+1,i+1,tmp);	
 					}
 					else {
 						if (good_Diff == "1" && goodDiff(i,j) == 1) {
-							//if (tmp == 0) zeros_FE[whichFE(j)]++;				
+							//if (tmp <= 0) zeros_FE[whichFE(j)]++;				
 							fe_hist[0]->Fill(tmp);
 							fe_hist[whichFE(j)+1]->Fill(tmp);
 							h_plot->SetBinContent(j+1,i+1,tmp);	

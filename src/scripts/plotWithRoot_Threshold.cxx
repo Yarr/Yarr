@@ -127,6 +127,10 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 
 			std::vector <double> pix_values;
 
+			int zeros_FE[3] = { 0, 0, 0};
+			char zeros_Syn[100]={}, zeros_Lin[100]={}, zeros_Diff[100]={};
+			char* zeros_char[3] = {zeros_Syn, zeros_Lin, zeros_Diff};
+
 			//Fill Threshold plots	
 			for (int i=0; i<rowno; i++) {
 				for (int j=0; j<colno; j++) {
@@ -137,6 +141,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 							fe_hist[0]->Fill(tmp);
 							fe_hist[whichFE(j)+1]->Fill(tmp);
 						}
+						else if (tmp <= 0) zeros_FE[whichFE(j)]++;	
 						h_plot->SetBinContent(j+1,i+1,tmp);	
 						pix_values.push_back(tmp);
 					}
@@ -146,6 +151,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 								fe_hist[0]->Fill(tmp);
 								fe_hist[whichFE(j)+1]->Fill(tmp);
 							}
+							else if (tmp <= 0) zeros_FE[whichFE(j)]++;	
 							h_plot->SetBinContent(j+1,i+1,tmp);	
 							pix_values.push_back(tmp);
 						}
@@ -154,8 +160,11 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 							pix_values.push_back(-1);
 						}
 					}
+					if (tmp > 0 && tmp < 1) std::cout << tmp << std::endl;
 				}
 			}
+
+			std::cout << "\n \n \n Number of Zeros are	 " << zeros_FE[0] << "	" << zeros_FE[1] << "	" << zeros_FE[2] << std::endl;
 
 			char mean_All[100]={}, mean_Syn[100]={}, mean_Lin[100]={}, mean_Diff[100]={};
 			char rms_All[100]={}, rms_Syn[100]={}, rms_Lin[100]={}, rms_Diff[100]={};
@@ -172,7 +181,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			char* chidof_char[4] = {chidof_All, chidof_Syn, chidof_Lin, chidof_Diff};
 			char* minmax95_char[3] = {minmax95_Syn, minmax95_Lin, minmax95_Diff};
 			char* minmax997_char[3] = {minmax997_Syn, minmax997_Lin, minmax997_Diff};
- 
+
 			double mean_h[4];
 			double rms_h[4]; 	
 			double fit_par[4], fit_err[4], fit_range[8];
@@ -296,11 +305,14 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 				sprintf(chidof_char[i], "#chi^{2} / DOF = %.1f / %i", fe_fit[i]->GetChisquare(), fe_fit[i]->GetNDF());
 				mean_rms->DrawLatex(0.18, 0.71, chidof_char[i]);	
 
-				if ( i > 0 ) {
+				if ( i > 0 ) { 
+					sprintf(zeros_char[i-1], "Untuned Pixels = %i", zeros_FE[i-1]);
+					mean_rms->DrawLatex(0.63,0.81, zeros_char[i-1]);
+
 					sprintf(minmax997_char[i-1], "( %.2f / %.2f )_{99.7%%}", results[((i-1)*2)+1][1], results[((i-1)*2)+1][3]);
-					mean_rms->DrawLatex(0.63, 0.81, minmax997_char[i-1]);
+					mean_rms->DrawLatex(0.63, 0.76, minmax997_char[i-1]);
 					sprintf(minmax95_char[i-1], "( %.2f / %.2f )_{95%%}", results[(i-1)*2][1], results[(i-1)*2][3]);
-					mean_rms->DrawLatex(0.63, 0.76, minmax95_char[i-1]);
+					mean_rms->DrawLatex(0.63, 0.70, minmax95_char[i-1]);
 				}
 
 				fe_hist[i]->GetYaxis()->SetRangeUser(0,((fe_hist[i]->GetMaximum())*1.5)); //Leave extra room for legend
@@ -375,11 +387,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			filename3 = filename.replace(filename.find(plot_ext[5].c_str()), 11, plot_ext[6].c_str());
 			c_Stack->Print(filename3.c_str());
 
-
-			int zeros_FE[3] = { 0, 0, 0};
 			int n=0;
-			char zeros_Syn[100]={}, zeros_Lin[100]={}, zeros_Diff[100]={};
-			char* zeros_char[3] = {zeros_Syn, zeros_Lin, zeros_Diff};
 
 			//Fill range histograms
 			for (int i=0; i<rowno; i++) {
@@ -394,11 +402,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 						int bin_gaus = whichSigma(tmp, fe_fit[whichFE(j)+1]->GetParameter(1), fe_fit[whichFE(j)+1]->GetParameter(2), 1, range_bins);
 						range_gaus[whichFE(j)]->AddBinContent(bin_gaus);
 					}
-					if (tmp == 0) zeros_FE[whichFE(j)]++;	
 				}
 			}
-
-			std::cout << "\n \n \n Number of Zeros are	 " << zeros_FE[0] << "	" << zeros_FE[1] << "	" << zeros_FE[2] << std::endl;
 
 			//Label for untuned pixels
 			TLatex *zeros = new TLatex();
@@ -431,7 +436,6 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 				tname->DrawLatex(0.28,0.96, rd53.c_str());
 				tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 
-				sprintf(zeros_char[i], "Untuned Pixels = %i", zeros_FE[i]);
 				zeros->DrawLatex(0.18,0.91, zeros_char[i]);
 
 				rmsrange_legend[i] = new TLegend(0.7, 0.82, 0.87, 0.91);
