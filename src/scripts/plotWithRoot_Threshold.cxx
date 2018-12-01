@@ -289,7 +289,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 							std::cout << explain[k] << ": " << results[inDex][k] << ".	";
 						}
 						double pixSpread = fe_hist[i]->Integral(fe_hist[i]->FindBin(results[inDex][1]), fe_hist[i]->FindBin(results[inDex][3]));
-						std::cout << "\nIntegral (from minimum value to maximum value) is " << pixSpread << " which is " << (pixSpread/results[inDex][0])*100 << "\% of pixels \n" << std::endl;
+						std::cout << "\nIntegral (from minimum value to maximum value) is " << pixSpread << " which is " << (pixSpread/results[inDex][0])*100 << "\% of pixels (after exclusions!) \n" << std::endl;
 					}
 				}
 
