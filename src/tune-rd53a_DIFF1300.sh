@@ -9,6 +9,7 @@
 ./bin/scanConsole -r $1 -c $2 -s configs/scans/rd53a/diff_tune_pixelthreshold.json -t $4 -p -m 0 -o $3
 ./bin/scanConsole -r $1 -c $2 -s configs/scans/rd53a/diff_tune_globalpreamp.json -t 6000 10 -p -m 0 -o $3
 ./bin/scanConsole -r $1 -c $2 -s configs/scans/rd53a/diff_retune_pixelthreshold.json -t $4 -p -m 0 -o $3
+./bin/scanConsole -r $1 -c $2 -s configs/scans/rd53a/diff_retune_pixelthreshold.json -t $4 -p -m 0 -o $3
 
 ./bin/scanConsole -r $1 -c $2 -s configs/scans/rd53a/diff_thresholdscan.json -p -m 0 -o $3
 scripts/plotWithRoot_Threshold ${3}/last_scan pdf 1
