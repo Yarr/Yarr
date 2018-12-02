@@ -278,7 +278,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 
 
 				std::cout << "Chi^2 is "  << fe_fit[i]->GetChisquare() << "	DOF is " << fe_fit[i]->GetNDF() << "	Prob is " << fe_fit[i]->GetProb() << std::endl;
-
+if (fe_fit[i]->GetParameter(1)>0)
+{
 				for (int j=0; j<2; j++ ) { 
 					if  ( i > 0) {
 						std::cout << legend_name[i] << "	" << perCent[j] << "%" << std::endl;
@@ -314,7 +315,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 					sprintf(minmax95_char[i-1], "( %.2f / %.2f )_{95%%}", results[(i-1)*2][1], results[(i-1)*2][3]);
 					mean_rms->DrawLatex(0.63, 0.70, minmax95_char[i-1]);
 				}
-
+}
 				fe_hist[i]->GetYaxis()->SetRangeUser(0,((fe_hist[i]->GetMaximum())*1.5)); //Leave extra room for legend
 				fe_hist[i]->GetXaxis()->SetRangeUser((mean_h[i] - 5*rms_h[i] < 0) ? -0.5 : (mean_h[i]- 5*rms_h[i]), mean_h[i] + 5*rms_h[i]); //Change the x-axis range to be the Mean +/- 5*RMS. If the lower bound is less than -0.5, make it -0.5. 
 				fe_c[i]->Update();
