@@ -125,6 +125,7 @@ void OccupancyAnalysis::init(ScanBase *s) {
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
                     l->type() != typeid(Rd53aMaskLoop*) &&
                     l->type() != typeid(Rd53aTriggerLoop*) &&
+                    l->type() != typeid(Rd53a2TriggerLoop*) &&
                     l->type() != typeid(Rd53aCoreColLoop*) &&
                     l->type() != typeid(Fe65p2MaskLoop*) &&
                     l->type() != typeid(Fe65p2TriggerLoop*) &&
@@ -135,7 +136,12 @@ void OccupancyAnalysis::init(ScanBase *s) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
-            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            unsigned cnt;
+            if(l->type() == typeid(Rd53aMaskLoop*)){
+                cnt = l->getNruns();
+            }else{
+                cnt = (l->getMax() - l->getMin())/l->getStep();
+            }
             if (cnt == 0)
                 cnt = 1;
             n_count = n_count*cnt;
@@ -224,6 +230,7 @@ void TotAnalysis::init(ScanBase *s) {
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
                     l->type() != typeid(Rd53aMaskLoop*) &&
                     l->type() != typeid(Rd53aTriggerLoop*) &&
+                    l->type() != typeid(Rd53a2TriggerLoop*) &&
                     l->type() != typeid(Rd53aCoreColLoop*) &&
                     l->type() != typeid(Fe65p2MaskLoop*) &&
                     l->type() != typeid(Fe65p2TriggerLoop*) &&
@@ -234,7 +241,12 @@ void TotAnalysis::init(ScanBase *s) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
-            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            unsigned cnt;
+            if(l->type() == typeid(Rd53aMaskLoop*)){
+                cnt = l->getNruns();
+            }else{
+                cnt = (l->getMax() - l->getMin())/l->getStep();
+            }
             if (cnt == 0)
                 cnt = 1;
             n_count = n_count*cnt;
@@ -441,6 +453,7 @@ void ScurveFitter::init(ScanBase *s) {
         if (l->type() != typeid(Fei4TriggerLoop*) &&
                 l->type() != typeid(Rd53aMaskLoop*) &&
                 l->type() != typeid(Rd53aTriggerLoop*) &&
+                    l->type() != typeid(Rd53a2TriggerLoop*) &&
                 l->type() != typeid(Rd53aCoreColLoop*) &&
                 l->type() != typeid(Fe65p2TriggerLoop*) &&
                 l->type() != typeid(Fei4MaskLoop*) &&
@@ -454,7 +467,12 @@ void ScurveFitter::init(ScanBase *s) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
-            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            unsigned cnt;
+            if(l->type() == typeid(Rd53aMaskLoop*)){
+                cnt = l->getNruns();
+            }else{
+                cnt = (l->getMax() - l->getMin())/l->getStep();
+            }
             if (cnt == 0)
                 cnt = 1;
             n_count = n_count*cnt;
@@ -705,6 +723,7 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
                     l->type() != typeid(Rd53aMaskLoop*) &&
                     l->type() != typeid(Rd53aTriggerLoop*) &&
+                    l->type() != typeid(Rd53a2TriggerLoop*) &&
                     l->type() != typeid(Rd53aCoreColLoop*) &&
                     l->type() != typeid(Fe65p2TriggerLoop*) &&
                     l->type() != typeid(Fei4MaskLoop*) &&
@@ -715,7 +734,12 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
-            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            unsigned cnt;
+            if(l->type() == typeid(Rd53aMaskLoop*)){
+                cnt = l->getNruns();
+            }else{
+                cnt = (l->getMax() - l->getMin())/l->getStep();
+            }
             if (cnt == 0)
                 cnt = 1;
             n_count = n_count*cnt;
@@ -833,6 +857,7 @@ void OccPixelThresholdTune::init(ScanBase *s) {
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
                     l->type() != typeid(Rd53aMaskLoop*) &&
                     l->type() != typeid(Rd53aTriggerLoop*) &&
+                    l->type() != typeid(Rd53a2TriggerLoop*) &&
                     l->type() != typeid(Rd53aCoreColLoop*) &&
                     l->type() != typeid(Fe65p2TriggerLoop*) &&
                     l->type() != typeid(Fei4MaskLoop*) &&
@@ -843,7 +868,12 @@ void OccPixelThresholdTune::init(ScanBase *s) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
-            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            unsigned cnt;
+            if(l->type() == typeid(Rd53aMaskLoop*)){
+                cnt = l->getNruns();
+            }else{
+                cnt = (l->getMax() - l->getMin())/l->getStep();
+            }
             if (cnt == 0)
                 cnt = 1;
             n_count = n_count*cnt;
@@ -952,6 +982,7 @@ void L1Analysis::init(ScanBase *s) {
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
                 l->type() != typeid(Rd53aMaskLoop*) &&
                 l->type() != typeid(Rd53aTriggerLoop*) &&
+                l->type() != typeid(Rd53a2TriggerLoop*) &&
                 l->type() != typeid(Rd53aCoreColLoop*) &&
                 l->type() != typeid(Fei4MaskLoop*) &&
                 l->type() != typeid(StdDataLoop*) &&
@@ -964,7 +995,12 @@ void L1Analysis::init(ScanBase *s) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
-            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            unsigned cnt;
+            if(l->type() == typeid(Rd53aMaskLoop*)){
+                cnt = l->getNruns();
+            }else{
+                cnt = (l->getMax() - l->getMin())/l->getStep();
+            }
             if (cnt == 0)
                 cnt = 1;
             n_count = n_count*cnt;
@@ -1032,6 +1068,7 @@ void TotDistPlotter::init(ScanBase *s) {
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
                 l->type() != typeid(Rd53aMaskLoop*) &&
                 l->type() != typeid(Rd53aTriggerLoop*) &&
+                l->type() != typeid(Rd53a2TriggerLoop*) &&
                 l->type() != typeid(Rd53aCoreColLoop*) &&
                 l->type() != typeid(Fei4MaskLoop*) &&
                 l->type() != typeid(StdDataLoop*) &&
@@ -1044,7 +1081,12 @@ void TotDistPlotter::init(ScanBase *s) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
-            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            unsigned cnt;
+            if(l->type() == typeid(Rd53aMaskLoop*)){
+                cnt = l->getNruns();
+            }else{
+                cnt = (l->getMax() - l->getMin())/l->getStep();
+            }
             if (cnt == 0)
                 cnt = 1;
             n_count = n_count*cnt;
@@ -1153,6 +1195,7 @@ void NoiseTuning::init(ScanBase *s) {
         if ((l->type() != typeid(Fei4TriggerLoop*) &&
                 l->type() != typeid(Rd53aMaskLoop*) &&
                 l->type() != typeid(Rd53aTriggerLoop*) &&
+                l->type() != typeid(Rd53a2TriggerLoop*) &&
                 l->type() != typeid(Rd53aCoreColLoop*) &&
                 l->type() != typeid(Fei4MaskLoop*) &&
                 l->type() != typeid(StdDataLoop*) &&
