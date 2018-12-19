@@ -11,6 +11,8 @@
 #include <iostream>
 #include <vector>
 #include <tuple>
+#include <algorithm>
+#include <iterator>
 
 #include "FrontEnd.h"
 #include "Rd53a.h"
@@ -24,12 +26,14 @@ class Rd53aMaskLoop : public LoopActionBase {
         void loadConfig(json &j);
     private:
         unsigned m_cur;
+        std::vector<int> goodPixels;
 
         void init();
         void end();
         void execPart1();
         void execPart2();
-
+        void calcNruns();
+        
         std::map<FrontEnd*, std::array<uint16_t, Rd53a::n_DC*Rd53a::n_Row>> m_pixRegs;
 };
 

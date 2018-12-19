@@ -38,6 +38,8 @@ class LoopActionBase {
         unsigned getMin();
         unsigned getMax();
         unsigned getStep();
+        unsigned getNruns();
+        
         void setMin(unsigned v);
         void setMax(unsigned v);
         void setStep(unsigned v);
@@ -52,15 +54,18 @@ class LoopActionBase {
         virtual void end() {}
         virtual void execPart1() {}
         virtual void execPart2() {}
+        virtual void calcNruns() {}
         virtual bool done();
 
         bool m_done;
 		bool g_done;
         bool verbose;
-
+        
         int min;
         int max;
         unsigned step;
+        int Nruns = -1;
+        
 		//minMultiple, maxMultiple, and stepMultiple used by Rd53aTriggerLoop, which can take multiple parameter values for concurrent stepping.
 		//These vectors contain any additional parameters to step. The first parameter in the list is put in min, max, and step (above).
 		std::vector<int> minMultiple;

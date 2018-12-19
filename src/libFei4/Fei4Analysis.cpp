@@ -503,10 +503,12 @@ void ScurveFitter::init(ScanBase *s) {
         if (l->type() == typeid(Rd53aTriggerLoop*)) {
             Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
             injections = trigLoop->getTrigCnt();
-            isDoubleInject = trigLoop->getDoubleInject();
-            if(isDoubleInject){injections=injections*2;}
         }
-
+        if (l->type() == typeid(Rd53a2TriggerLoop*)) {
+            Rd53a2TriggerLoop *trigLoop = (Rd53a2TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt()*2;
+        }
+        
 	// check injection capacitor for FEI-4
 	if(l->type() == typeid(Fei4MaskLoop*)) {
 	  std::shared_ptr<Fei4MaskLoop> msk = std::dynamic_pointer_cast<Fei4MaskLoop>(l);
@@ -1207,7 +1209,12 @@ void NoiseTuning::init(ScanBase *s) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
-            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            unsigned cnt;
+            if(l->type() == typeid(Rd53aMaskLoop*)){
+                cnt = l->getNruns();
+            }else{
+                cnt = (l->getMax() - l->getMin())/l->getStep();
+            }
             if (cnt == 0)
                 cnt = 1;
             n_count = n_count*cnt;
