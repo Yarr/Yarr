@@ -12,25 +12,21 @@
 #include <array>
 #include <chrono>
 #include <thread>
-#include <math.h>
 #include "LoopActionBase.h"
 #include "Rd53a.h"
 #include "Rd53aCmd.h"
 
-
 class Rd53aTriggerLoop: public LoopActionBase {
     public:
         Rd53aTriggerLoop();
-
+ 
         uint32_t getTrigCnt() {return m_trigCnt;}
-        bool getDoubleInject() {return m_doubleInject;}
         void setTrigCnt(uint32_t cnt) {m_trigCnt = cnt;}
         void setTrigTime(double time) {m_trigTime = time;}
         void setTrigFreq(double freq) {m_trigFreq = freq;}
-        void setTrigDelay(uint32_t delay, bool isSecond);
-        void setEdgeMode(uint32_t duration);
+        void setTrigDelay(uint32_t delay);
+        void setEdgeMode();
         void setNoInject();
-        void setDoubleInject();
         
         void writeConfig(json &config);
         void loadConfig(json &config);
@@ -42,20 +38,15 @@ class Rd53aTriggerLoop: public LoopActionBase {
         double m_trigFreq;
         std::array<uint32_t, 32> m_trigWord;
         uint32_t m_trigWordLength;
-        uint32_t m_requiredTrigWordLength;
         bool m_noInject;
         bool m_edgeMode;
         bool m_extTrig;
         uint32_t m_edgeDuration;
-        uint32_t m_pulseDuration;
         uint32_t m_edgeDelay;
-        uint32_t m_auxMode;
+        bool m_auxMode;
         uint32_t m_auxDelay;
-        bool m_doubleInject;
-        float m_doubleDelay;
-        bool m_BCReset;
-        uint32_t m_doubleInjectOffset;
-        
+        uint32_t m_pulseDuration;
+
         bool isInner;
         void init();
         void execPart1();
