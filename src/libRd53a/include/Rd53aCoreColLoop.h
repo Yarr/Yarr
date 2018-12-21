@@ -28,6 +28,7 @@ class Rd53aCoreColLoop : public LoopActionBase {
          */
         class Impl;
         std::unique_ptr<Impl> m_impl;
+        std::vector<unsigned> m_delayArray;
         
         void init()      override final;
         void end()       override final;
