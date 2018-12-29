@@ -53,8 +53,8 @@
     ],
     "name": "NoiseScan",
     "prescan": {
-        "GlobalPulseRt": 0,
-        "LatencyConfig": 48
+        "GlobalPulseRt": 16384,
+        "LatencyConfig": 80
     }
   }
 }

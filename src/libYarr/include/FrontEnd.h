@@ -63,6 +63,7 @@ class FrontEndCfg {
             rxChannel = 99;
             lockCfg = false;
         }
+        virtual ~FrontEndCfg(){}
         
 
         virtual double toCharge(double)=0;

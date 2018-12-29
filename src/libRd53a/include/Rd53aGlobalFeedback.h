@@ -43,7 +43,7 @@ class Rd53aGlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
         std::map<unsigned, unsigned> m_localStep;
         std::map<unsigned, int> m_oldSign;
         std::map<unsigned, bool> m_doneMap;
-        unsigned m_pixelReg;
+        std::vector<unsigned> m_pixelReg;
 
         void writePar();
         bool allDone();

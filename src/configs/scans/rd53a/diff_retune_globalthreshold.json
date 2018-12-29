@@ -35,7 +35,7 @@
           "min": 0,
           "step": 16,
           "parameter": "DiffVth1",
-          "pixelRegs": 0
+          "pixelRegs": [0, 0]
         },
         "loopAction": "Rd53aGlobalFeedback"
       },
