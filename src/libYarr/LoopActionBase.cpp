@@ -70,13 +70,6 @@ unsigned LoopActionBase::getStep() {
     return step;
 }
 
-unsigned LoopActionBase::getNruns() {
-    if (Nruns ==-1){
-        calcNruns();
-    }
-    return Nruns;
-}
-
 void LoopActionBase::setMax(unsigned v) {
     max = v;
 }

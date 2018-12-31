@@ -25,7 +25,7 @@ class Rd53aTriggerLoop: public LoopActionBase {
         void setTrigTime(double time) {m_trigTime = time;}
         void setTrigFreq(double freq) {m_trigFreq = freq;}
         void setTrigDelay(uint32_t delay);
-        void setEdgeMode();
+        void setEdgeMode(uint32_t duration);
         void setNoInject();
         
         void writeConfig(json &config);
@@ -42,9 +42,6 @@ class Rd53aTriggerLoop: public LoopActionBase {
         bool m_edgeMode;
         bool m_extTrig;
         uint32_t m_edgeDuration;
-        uint32_t m_edgeDelay;
-        bool m_auxMode;
-        uint32_t m_auxDelay;
         uint32_t m_pulseDuration;
 
         bool isInner;

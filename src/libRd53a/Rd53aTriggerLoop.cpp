@@ -28,10 +28,7 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
 
     m_edgeMode = false;
     m_edgeDuration = 10;
-    m_edgeDelay = 0;
-    m_auxMode = 0;
-    m_auxDelay = 20;
-    
+
     min = 0;
     max = 0;
     step = 1;
@@ -63,9 +60,9 @@ void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
     }
 }
 
-void Rd53aTriggerLoop::setEdgeMode() {
+void Rd53aTriggerLoop::setEdgeMode(uint32_t duration) {
     // Assumes CAL command to be in index 14
-    m_trigWord[14] = Rd53aCmd::genCal(8, 1, m_edgeDelay, m_edgeDuration, m_auxMode, m_auxDelay); // Inject
+    m_trigWord[14] = Rd53aCmd::genCal(8, 1, 0, 40, 0, 0); // Inject
 }
 
 void Rd53aTriggerLoop::setNoInject() {
@@ -84,7 +81,7 @@ void Rd53aTriggerLoop::init() {
 
     this->setTrigDelay(m_trigDelay);
     if (m_edgeMode)
-        this->setEdgeMode();
+        this->setEdgeMode(m_edgeDuration);
     if (m_extTrig) {
         g_tx->setTrigConfig(EXT_TRIGGER);
     } else if (m_trigCnt > 0) {
@@ -159,14 +156,6 @@ void Rd53aTriggerLoop::loadConfig(json &config) {
         m_noInject = config["noInject"];
     if (!config["edgeMode"].empty())
         m_edgeMode = config["edgeMode"];
-    if (!config["edgeDuration"].empty())
-        m_edgeDuration = config["edgeDuration"];
-    if (!config["edgeDelay"].empty())
-        m_edgeDelay = config["edgeDelay"];
-    if (!config["auxMode"].empty())
-        m_auxMode = config["auxMode"];
-    if (!config["auxDelay"].empty())
-        m_auxDelay = config["auxDelay"];
     if (!config["extTrig"].empty())
         m_extTrig = config["extTrig"];
     this->setTrigDelay(m_trigDelay);
