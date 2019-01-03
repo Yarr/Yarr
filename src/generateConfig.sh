@@ -164,20 +164,6 @@ fi
 
 if [ ${5} == "BareChip" ]
 then
-        value=`grep InjDelay configs/rd53a_test.json | grep -o '[0-9]*'`
-        sed -i "s/\"InjDelay\": ${value}/\"InjDelay\": 11/g" configs/rd53a_${5}_OL30.json
-        sed -i "s/\"InjDelay\": ${value}/\"InjDelay\": 11/g" configs/rd53a_${5}_OL35.json
-        sed -i "s/\"InjDelay\": ${value}/\"InjDelay\": 11/g" configs/rd53a_${5}_OL40.json
-        sed -i "s/\"InjDelay\": ${value}/\"InjDelay\": 11/g" configs/rd53a_${5}_IL45.json
-        sed -i "s/\"InjDelay\": ${value}/\"InjDelay\": 12/g" configs/rd53a_${5}_IL50.json
-        sed -i "s/\"InjDelay\": ${value}/\"InjDelay\": 12/g" configs/rd53a_${5}_IL55.json
-        value=`grep LinKrumCurr configs/rd53a_test.json | grep -o '[0-9]*'`
-        sed -i "s/\"LinKrumCurr\": ${value}/\"LinKrumCurr\": 15/g" configs/rd53a_${5}_OL30.json
-        sed -i "s/\"LinKrumCurr\": ${value}/\"LinKrumCurr\": 16/g" configs/rd53a_${5}_OL35.json
-        sed -i "s/\"LinKrumCurr\": ${value}/\"LinKrumCurr\": 15/g" configs/rd53a_${5}_OL40.json
-        sed -i "s/\"LinKrumCurr\": ${value}/\"LinKrumCurr\": 30/g" configs/rd53a_${5}_IL45.json
-        sed -i "s/\"LinKrumCurr\": ${value}/\"LinKrumCurr\": 32/g" configs/rd53a_${5}_IL50.json
-        sed -i "s/\"LinKrumCurr\": ${value}/\"LinKrumCurr\": 30/g" configs/rd53a_${5}_IL55.json
         value=`grep SyncIbiasp1 configs/rd53a_test.json | grep -o '[0-9]*' | sed -n 2p`
         sed -i "s/\"SyncIbiasp1\": ${value}/\"SyncIbiasp1\": 50/g" configs/rd53a_${5}_OL30.json
         sed -i "s/\"SyncIbiasp1\": ${value}/\"SyncIbiasp1\": 60/g" configs/rd53a_${5}_OL35.json
@@ -231,20 +217,6 @@ fi
 
 if [ ${5} == "Sensor50" ]
 then
-        value=`grep InjDelay configs/rd53a_test.json | grep -o '[0-9]*'`
-        sed -i "s/\"InjDelay\": ${value}/\"InjDelay\": 11/g" configs/rd53a_${5}_OL30.json
-        sed -i "s/\"InjDelay\": ${value}/\"InjDelay\": 9/g" configs/rd53a_${5}_OL35.json
-        sed -i "s/\"InjDelay\": ${value}/\"InjDelay\": 11/g" configs/rd53a_${5}_OL40.json
-        sed -i "s/\"InjDelay\": ${value}/\"InjDelay\": 11/g" configs/rd53a_${5}_IL45.json
-        sed -i "s/\"InjDelay\": ${value}/\"InjDelay\": 12/g" configs/rd53a_${5}_IL50.json
-        sed -i "s/\"InjDelay\": ${value}/\"InjDelay\": 12/g" configs/rd53a_${5}_IL55.json
-        value=`grep LinKrumCurr configs/rd53a_test.json | grep -o '[0-9]*'`
-        sed -i "s/\"LinKrumCurr\": ${value}/\"LinKrumCurr\": 15/g" configs/rd53a_${5}_OL30.json
-        sed -i "s/\"LinKrumCurr\": ${value}/\"LinKrumCurr\": 15/g" configs/rd53a_${5}_OL35.json
-        sed -i "s/\"LinKrumCurr\": ${value}/\"LinKrumCurr\": 15/g" configs/rd53a_${5}_OL40.json
-        sed -i "s/\"LinKrumCurr\": ${value}/\"LinKrumCurr\": 30/g" configs/rd53a_${5}_IL45.json
-        sed -i "s/\"LinKrumCurr\": ${value}/\"LinKrumCurr\": 29/g" configs/rd53a_${5}_IL50.json
-        sed -i "s/\"LinKrumCurr\": ${value}/\"LinKrumCurr\": 30/g" configs/rd53a_${5}_IL55.json
         value=`grep SyncIbiasp1 configs/rd53a_test.json | grep -o '[0-9]*' | sed -n 2p`
         sed -i "s/\"SyncIbiasp1\": ${value}/\"SyncIbiasp1\": 50/g" configs/rd53a_${5}_OL30.json
         sed -i "s/\"SyncIbiasp1\": ${value}/\"SyncIbiasp1\": 60/g" configs/rd53a_${5}_OL35.json
@@ -298,47 +270,33 @@ fi
 
 if [ ${5} == "Sensor25" ]
 then
-        value=`grep InjDelay configs/rd53a_test.json | grep -o '[0-9]*'`
-        sed -i "s/\"InjDelay\": ${value}/\"InjDelay\": 11/g" configs/rd53a_${5}_OL30.json
-        sed -i "s/\"InjDelay\": ${value}/\"InjDelay\": 11/g" configs/rd53a_${5}_OL35.json ##no value provided in manual
-        sed -i "s/\"InjDelay\": ${value}/\"InjDelay\": 11/g" configs/rd53a_${5}_OL40.json
-        sed -i "s/\"InjDelay\": ${value}/\"InjDelay\": 11/g" configs/rd53a_${5}_IL45.json
-        sed -i "s/\"InjDelay\": ${value}/\"InjDelay\": 10/g" configs/rd53a_${5}_IL50.json
-        sed -i "s/\"InjDelay\": ${value}/\"InjDelay\": 12/g" configs/rd53a_${5}_IL55.json
-        value=`grep LinKrumCurr configs/rd53a_test.json | grep -o '[0-9]*'`
-        sed -i "s/\"LinKrumCurr\": ${value}/\"LinKrumCurr\": 15/g" configs/rd53a_${5}_OL30.json
-        sed -i "s/\"LinKrumCurr\": ${value}/\"LinKrumCurr\": 16/g" configs/rd53a_${5}_OL35.json
-        sed -i "s/\"LinKrumCurr\": ${value}/\"LinKrumCurr\": 15/g" configs/rd53a_${5}_OL40.json
-        sed -i "s/\"LinKrumCurr\": ${value}/\"LinKrumCurr\": 30/g" configs/rd53a_${5}_IL45.json
-        sed -i "s/\"LinKrumCurr\": ${value}/\"LinKrumCurr\": 29/g" configs/rd53a_${5}_IL50.json
-        sed -i "s/\"LinKrumCurr\": ${value}/\"LinKrumCurr\": 30/g" configs/rd53a_${5}_IL55.json
         value=`grep SyncIbiasp1 configs/rd53a_test.json | grep -o '[0-9]*' | sed -n 2p`
         sed -i "s/\"SyncIbiasp1\": ${value}/\"SyncIbiasp1\": 50/g" configs/rd53a_${5}_OL30.json
         sed -i "s/\"SyncIbiasp1\": ${value}/\"SyncIbiasp1\": 60/g" configs/rd53a_${5}_OL35.json
         sed -i "s/\"SyncIbiasp1\": ${value}/\"SyncIbiasp1\": 60/g" configs/rd53a_${5}_OL40.json
         sed -i "s/\"SyncIbiasp1\": ${value}/\"SyncIbiasp1\": 70/g" configs/rd53a_${5}_IL45.json
-        sed -i "s/\"SyncIbiasp1\": ${value}/\"SyncIbiasp1\": 80/g" configs/rd53a_${5}_IL50.json
-        sed -i "s/\"SyncIbiasp1\": ${value}/\"SyncIbiasp1\": 105/g" configs/rd53a_${5}_IL55.json
+        sed -i "s/\"SyncIbiasp1\": ${value}/\"SyncIbiasp1\": 110/g" configs/rd53a_${5}_IL50.json
+        sed -i "s/\"SyncIbiasp1\": ${value}/\"SyncIbiasp1\": 115/g" configs/rd53a_${5}_IL55.json
         value=`grep SyncIbiasp2 configs/rd53a_test.json | grep -o '[0-9]*' | sed -n 2p`
         sed -i "s/\"SyncIbiasp2\": ${value}/\"SyncIbiasp2\": 75/g" configs/rd53a_${5}_OL30.json
         sed -i "s/\"SyncIbiasp2\": ${value}/\"SyncIbiasp2\": 90/g" configs/rd53a_${5}_OL35.json
         sed -i "s/\"SyncIbiasp2\": ${value}/\"SyncIbiasp2\": 90/g" configs/rd53a_${5}_OL40.json
         sed -i "s/\"SyncIbiasp2\": ${value}/\"SyncIbiasp2\": 105/g" configs/rd53a_${5}_IL45.json
-        sed -i "s/\"SyncIbiasp2\": ${value}/\"SyncIbiasp2\": 120/g" configs/rd53a_${5}_IL50.json
-        sed -i "s/\"SyncIbiasp2\": ${value}/\"SyncIbiasp2\": 160/g" configs/rd53a_${5}_IL55.json
+        sed -i "s/\"SyncIbiasp2\": ${value}/\"SyncIbiasp2\": 165/g" configs/rd53a_${5}_IL50.json
+        sed -i "s/\"SyncIbiasp2\": ${value}/\"SyncIbiasp2\": 170/g" configs/rd53a_${5}_IL55.json
         value=`grep SyncIbiasSf configs/rd53a_test.json | grep -o '[0-9]*'`
         sed -i "s/\"SyncIbiasSf\": ${value}/\"SyncIbiasSf\": 45/g" configs/rd53a_${5}_OL30.json
         sed -i "s/\"SyncIbiasSf\": ${value}/\"SyncIbiasSf\": 50/g" configs/rd53a_${5}_OL35.json
         sed -i "s/\"SyncIbiasSf\": ${value}/\"SyncIbiasSf\": 50/g" configs/rd53a_${5}_OL40.json
         sed -i "s/\"SyncIbiasSf\": ${value}/\"SyncIbiasSf\": 50/g" configs/rd53a_${5}_IL45.json
-        sed -i "s/\"SyncIbiasSf\": ${value}/\"SyncIbiasSf\": 60/g" configs/rd53a_${5}_IL50.json
-        sed -i "s/\"SyncIbiasSf\": ${value}/\"SyncIbiasSf\": 60/g" configs/rd53a_${5}_IL55.json
+        sed -i "s/\"SyncIbiasSf\": ${value}/\"SyncIbiasSf\": 80/g" configs/rd53a_${5}_IL50.json
+        sed -i "s/\"SyncIbiasSf\": ${value}/\"SyncIbiasSf\": 80/g" configs/rd53a_${5}_IL55.json
         value=`grep SyncIbiasDisc configs/rd53a_test.json | grep -o '[0-9]*'`
         sed -i "s/\"SyncIbiasDisc\": ${value}/\"SyncIbiasDisc\": 140/g" configs/rd53a_${5}_OL30.json
         sed -i "s/\"SyncIbiasDisc\": ${value}/\"SyncIbiasDisc\": 180/g" configs/rd53a_${5}_OL35.json
         sed -i "s/\"SyncIbiasDisc\": ${value}/\"SyncIbiasDisc\": 180/g" configs/rd53a_${5}_OL40.json
         sed -i "s/\"SyncIbiasDisc\": ${value}/\"SyncIbiasDisc\": 250/g" configs/rd53a_${5}_IL45.json
-        sed -i "s/\"SyncIbiasDisc\": ${value}/\"SyncIbiasDisc\": 350/g" configs/rd53a_${5}_IL50.json
+        sed -i "s/\"SyncIbiasDisc\": ${value}/\"SyncIbiasDisc\": 240/g" configs/rd53a_${5}_IL50.json
         sed -i "s/\"SyncIbiasDisc\": ${value}/\"SyncIbiasDisc\": 280/g" configs/rd53a_${5}_IL55.json
         value=`grep SyncIctrlSynct configs/rd53a_test.json | grep -o '[0-9]*'`
         sed -i "s/\"SyncIctrlSynct\": ${value}/\"SyncIctrlSynct\": 100/g" configs/rd53a_${5}_OL30.json
