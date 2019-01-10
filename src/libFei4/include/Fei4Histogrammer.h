@@ -24,6 +24,7 @@
 #include "HistogramBase.h"
 #include "Histo1d.h"
 #include "Histo2d.h"
+#include "Histo3d.h"
 #include "LoopStatus.h"
 
 class HistogramAlgorithm {
@@ -192,6 +193,28 @@ class TotDist : public HistogramAlgorithm {
         Histo1d *h;
 };
 
+class Tot3d : public HistogramAlgorithm {
+    public:
+        Tot3d() : HistogramAlgorithm() {
+            h = NULL;
+            r = NULL;
+        }
+        ~Tot3d() {
+        }
+
+        void create(LoopStatus &stat) {
+            h = new Histo3d("Tot3d", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, 16, 0.5, 16.5, typeid(this), stat);
+            h->setXaxisTitle("Column");
+            h->setYaxisTitle("Row");
+            h->setZaxisTitle("ToT");
+            r.reset(h);
+        }
+
+        void processEvent(Fei4Data *data);
+    private:
+        Histo3d *h;
+};
+
 class L1Dist : public HistogramAlgorithm {
     public:
         L1Dist() : HistogramAlgorithm() {
@@ -215,6 +238,34 @@ class L1Dist : public HistogramAlgorithm {
         void processEvent(Fei4Data *data);
     private:
         Histo1d *h;
+        unsigned l1id;
+        unsigned bcid_offset;
+        unsigned current_tag;
+};
+
+class L13d : public HistogramAlgorithm {
+    public:
+        L13d() : HistogramAlgorithm() {
+            h = NULL;
+            r = NULL;
+            current_tag = 0;
+        }
+        ~L13d() {
+        }
+
+        void create(LoopStatus &stat) {
+            h = new Histo3d("L13d", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, 16, -0.5, 15.5, typeid(this), stat);
+            h->setXaxisTitle("Column");
+            h->setYaxisTitle("Row");
+            h->setZaxisTitle("L1A");
+            r.reset(h);
+            l1id = 33;
+            bcid_offset = 0;
+        }
+
+        void processEvent(Fei4Data *data);
+    private:
+        Histo3d *h;
         unsigned l1id;
         unsigned bcid_offset;
         unsigned current_tag;

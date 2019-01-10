@@ -2,7 +2,10 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "OccGlobalThresholdTune"
+        "algorithm": "ScurveFitter"
+      },
+     "1": {
+        "algorithm": "OccupancyAnalysis"
       },
       "n_count": 1
     },
@@ -30,40 +33,42 @@
       "n_count": 5
     },
     "loops": [
-      { "config": {
-          "max": 500,
-          "min": 0,
-          "step": 16,
-          "parameter": "DiffVth1",
-          "pixelRegs": [0, 0]
-        },
-        "loopAction": "Rd53aGlobalFeedback"
-      },
       {
         "config": {
           "max": 64,
           "min": 0,
-          "step": 8
+          "step": 1
         },
         "loopAction": "Rd53aMaskLoop"
       },
       {
         "config": {
-          "max": 50,
-          "min": 33,
+          "max": 200,
+          "min": 50,
+          "step": 5,
+          "parameter":"InjVcalDiff"
+        },
+        "loopAction": "Rd53aParameterLoop"
+      },
+      {
+        "config": {
+          "max": 33,
+          "min": 16,
           "step": 1,
-          "nSteps": 4
+          "nSteps": 17,
+	  "delayArray": [14,14,14,14,14,14,14,14,14,14,14,14,13,13,13,13,13]
         },
         "loopAction": "Rd53aCoreColLoop"
       },
       {
         "config": {
-          "count": 100,
+          "count": 50,
           "delay": 48,
           "extTrigger": false,
           "frequency": 20000,
           "noInject": false,
-          "time": 0
+          "time": 0,
+	  "trigMultiplier": 1
         },
         "loopAction": "Rd53aTriggerLoop"
       },
@@ -71,16 +76,12 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "DiffGlobalThresholdTune",
+    "name": "ThresholdScan",
     "prescan": {
         "InjEnDig": 0,
-        "LatencyConfig": 48,
-        "GlobalPulseRt": 0,
-        "SyncVth":500,
-        "LinVth": 500,
-        "EnCoreColLin1": 0,
-        "EnCoreColLin2": 0,
-        "EnCoreColSync": 0
+        "LatencyConfig": 42,
+        "OutputActiveLanes": 1,
+        "GlobalPulseRt": 16384
     }
   }
 }

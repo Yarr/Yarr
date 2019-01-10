@@ -112,9 +112,9 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ToT path/to/directory file_e
 			TH2F *h_plot = NULL;
 			h_plot = new TH2F("h_plot", "", colno, 0, colno, rowno, 0, rowno); 
 
-			int zeros_FE[3] = { 0, 0, 0};
-			char zeros_Syn[100]={}, zeros_Lin[100]={}, zeros_Diff[100]={};
-			char* zeros_char[3] = {zeros_Syn, zeros_Lin, zeros_Diff};
+			//int zeros_FE[3] = { 0, 0, 0};
+			//char zeros_Syn[100]={}, zeros_Lin[100]={}, zeros_Diff[100]={};
+			//char* zeros_char[3] = {zeros_Syn, zeros_Lin, zeros_Diff};
 			//Fill ToT plots	
 			for (int i=0; i<rowno; i++) {
 				for (int j=0; j<colno; j++) {
@@ -122,20 +122,16 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ToT path/to/directory file_e
 					double tmp;
 					infile >> tmp;
 					if(whichFE(j) != 2 || good_Diff != "1") {
-						if (tmp == 0) zeros_FE[whichFE(j)]++;				
-						if (tmp != 0) {	
-							fe_hist[0]->Fill(tmp);
-							fe_hist[whichFE(j)+1]->Fill(tmp);
-						}
+						//if (tmp <= 0) zeros_FE[whichFE(j)]++;				
+						fe_hist[0]->Fill(tmp);
+						fe_hist[whichFE(j)+1]->Fill(tmp);
 						h_plot->SetBinContent(j+1,i+1,tmp);	
 					}
 					else {
 						if (good_Diff == "1" && goodDiff(i,j) == 1) {
-							if (tmp == 0) zeros_FE[whichFE(j)]++;				
-							if (tmp != 0) {	
-								fe_hist[0]->Fill(tmp);
-								fe_hist[whichFE(j)+1]->Fill(tmp);
-							}
+							//if (tmp <= 0) zeros_FE[whichFE(j)]++;				
+							fe_hist[0]->Fill(tmp);
+							fe_hist[whichFE(j)+1]->Fill(tmp);
 							h_plot->SetBinContent(j+1,i+1,tmp);	
 						}	
 						else if (good_Diff == "1" && goodDiff(i,j) == 0) {
@@ -204,9 +200,9 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ToT path/to/directory file_e
 
 				//Write the Mean, RMS, and number of untuned pixels
 				if (i>0) {
-					sprintf(mean_char[i-1], "Mean = %.1f #pm %.1f", fe_hist[i]->GetMean(), fe_hist[i]->GetMeanError());
+					sprintf(mean_char[i-1], "Mean = %.1f", fe_hist[i]->GetMean());
 					mean_rms_z->DrawLatex(0.18,0.91, mean_char[i-1]);
-					sprintf(rms_char[i-1], "RMS = %.1f #pm %.1f", fe_hist[i]->GetRMS(), fe_hist[i]->GetRMSError());
+					sprintf(rms_char[i-1], "RMS = %.1f", fe_hist[i]->GetRMS());
 					mean_rms_z->DrawLatex(0.18,0.87, rms_char[i-1]);
 					sprintf(zeros_char[i-1], "Untuned Pixels = %i", zeros_FE[i-1]);
 					mean_rms_z->DrawLatex(0.18,0.83, zeros_char[i-1]);
@@ -219,7 +215,6 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ToT path/to/directory file_e
 				filename1 = filename.replace(filename.find(plot_ext[i].c_str()), 10, plot_ext[i+1].c_str()); 
 				fe_c[i]->Print(filename1.c_str());
 			}
-
 
 			//Map of Pixels
 			style_TH2(h_plot, "Column", "Row", xaxistitle.c_str()); 

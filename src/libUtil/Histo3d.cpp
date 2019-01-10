@@ -6,10 +6,12 @@
 // # Comment: 
 // ################################
 
-#include "Histo2d.h"
+#include "Histo3d.h"
 
-Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
-        unsigned arg_ybins, double arg_ylow, double arg_yhigh, std::type_index t) : HistogramBase(arg_name, t) {
+Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
+        unsigned arg_ybins, double arg_ylow, double arg_yhigh, 
+        unsigned arg_zbins, double arg_zlow, double arg_zhigh, 
+        std::type_index t) : HistogramBase(arg_name, t) {
     xbins = arg_xbins;
     xlow = arg_xlow;
     xhigh = arg_xhigh;
@@ -20,18 +22,25 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     yhigh = arg_yhigh;
     ybinWidth = (yhigh - ylow)/ybins;
     
+    zbins = arg_zbins;
+    zlow = arg_zlow;
+    zhigh = arg_zhigh;
+    zbinWidth = (zhigh - zlow)/zbins;
+ 
     min = 0;
     max = 0;
     underflow = 0;
     overflow = 0;
-    data = new double[xbins*ybins];
+    data = new uint16_t[xbins*ybins*zbins];
     this->setAll(0);
     entries = 0;
 
 }
 
-Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
-        unsigned arg_ybins, double arg_ylow, double arg_yhigh, std::type_index t, LoopStatus &stat) : HistogramBase(arg_name, t, stat) {
+Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
+        unsigned arg_ybins, double arg_ylow, double arg_yhigh, 
+        unsigned arg_zbins, double arg_zlow, double arg_zhigh, 
+        std::type_index t, LoopStatus &stat) : HistogramBase(arg_name, t, stat) {
     xbins = arg_xbins;
     xlow = arg_xlow;
     xhigh = arg_xhigh;
@@ -41,17 +50,22 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     ylow = arg_ylow;
     yhigh = arg_yhigh;
     ybinWidth = (yhigh - ylow)/ybins;
-    
+
+    zbins = arg_zbins;
+    zlow = arg_zlow;
+    zhigh = arg_zhigh;
+    zbinWidth = (zhigh - zlow)/zbins;
+ 
     min = 0;
     max = 0;
     underflow = 0;
     overflow = 0;
-    data = new double[xbins*ybins];
+    data = new uint16_t[xbins*ybins*zbins];
     this->setAll(0);
     entries = 0;
 }
 
-Histo2d::Histo2d(Histo2d *h) : HistogramBase(h->getName(), h->getType()) {
+Histo3d::Histo3d(Histo3d *h) : HistogramBase(h->getName(), h->getType()) {
     xbins = h->getXbins();
     xlow = h->getXlow();
     xhigh = h->getXhigh();
@@ -62,72 +76,81 @@ Histo2d::Histo2d(Histo2d *h) : HistogramBase(h->getName(), h->getType()) {
     yhigh = h->getYhigh();
     ybinWidth = h->getYbinWidth();
 
+    
+    zbins = h->getZbins();
+    zlow = h->getZbins();
+    zhigh = h->getZbins();
+    zbinWidth = h->getZbins();
+ 
     min = h->getMin();
     max = h->getMax();
     underflow = h->getUnderflow();
     overflow = h->getOverflow();
 
-    data = new double[xbins*ybins];
-    for(unsigned i=0; i<xbins*ybins; i++)
+    data = new uint16_t[xbins*ybins*zbins];
+    for(unsigned i=0; i<xbins*ybins*zbins; i++)
         data[i] = h->getBin(i);
     entries = h->getNumOfEntries();
     lStat = h->getStat();
 }
 
-Histo2d::~Histo2d() {
+Histo3d::~Histo3d() {
     delete[] data;
 }
 
-unsigned Histo2d::size() const {
-    return xbins*ybins;
+unsigned Histo3d::size() const {
+    return xbins*ybins*zbins;
 }
 
-unsigned Histo2d::numOfEntries() const {
+unsigned Histo3d::numOfEntries() const {
     return entries;
 }
 
-void Histo2d::fill(double x, double y, double v) {
-    if (x < xlow || y < ylow) {
+void Histo3d::fill(double x, double y, double z, double v) {
+    if (x < xlow || y < ylow || z < zlow) {
         //std::cout << "Underflow " << x << " " << y << std::endl;
         underflow += v;
-    } else if (x > xhigh || y > yhigh) {
+    } else if (x > xhigh || y > yhigh || z > zhigh) {
         //std::cout << "Overflow " << x << " " << y << std::endl;
         overflow += v;
     } else {
         unsigned xbin = (x-xlow)/xbinWidth;
         unsigned ybin = (y-ylow)/ybinWidth;
-        data[ybin+(xbin*ybins)]+=v;
+        unsigned zbin = (z-zlow)/zbinWidth;
+        data[((ybin+(xbin*ybins))*zbins)+zbin]+=v;
         if (v > max)
             max = v;
         if (v < min)
             min = v;
-        isFilled[ybin+(xbin*ybins)] = true;
+        isFilled[((ybin+(xbin*ybins))*zbins)+zbin] = true;
     }
     entries++;
 }
 
-void Histo2d::setAll(double v) {
+void Histo3d::setAll(double v) {
     for (unsigned int i=0; i<ybins; i++) {
         for (unsigned int j=0; j<xbins; j++) {
-            data[i+(j*ybins)] = v;
-            entries++;
+            for (unsigned int k=0; k<zbins; k++) {
+                data[(i+(j*ybins))*zbins+k] = v;
+                entries++;
+            }
         }
     }
 }
 
-void Histo2d::add(const Histo2d &h) {
+void Histo3d::add(const Histo3d &h) {
     if (this->size() != h.size())
         return;
-    for (unsigned int i=0; i<(xbins*ybins); i++) {
+    for (unsigned int i=0; i<(xbins*ybins*zbins); i++) {
         data[i] += h.getBin(i);
     }
     entries += h.numOfEntries();
 }
 
-void Histo2d::divide(const Histo2d &h) {
+void Histo3d::divide(const Histo3d &h) {
     if (this->size() != h.size())
         return;
-    for (unsigned int i=0; i<(xbins*ybins); i++) {
+    for (unsigned int i=0; i<(xbins*ybins*zbins); i++) {
         if (h.getBin(i) == 0) {
             data[i] = 0;
         } else {
@@ -137,25 +160,25 @@ void Histo2d::divide(const Histo2d &h) {
     entries += h.numOfEntries();
 }
 
-void Histo2d::multiply(const Histo2d &h) {
+void Histo3d::multiply(const Histo3d &h) {
     if (this->size() != h.size())
         return;
-    for (unsigned int i=0; i<(xbins*ybins); i++) {
+    for (unsigned int i=0; i<(xbins*ybins*zbins); i++) {
         data[i] = data[i]*h.getBin(i);
     }
     entries += h.numOfEntries();
 }
 
-void Histo2d::scale(const double s) {
-    for (unsigned int i=0; i<(xbins*ybins); i++) {
+void Histo3d::scale(const double s) {
+    for (unsigned int i=0; i<(xbins*ybins*zbins); i++) {
         data[i] = data[i]*s;
     }
 }
 
-double Histo2d::getMean() {
+double Histo3d::getMean() {
     double sum = 0;
     double entries = 0;
-    for (unsigned int i=0; i<(xbins*ybins); i++) {
+    for (unsigned int i=0; i<(xbins*ybins*zbins); i++) {
         if (isFilled[i]) {
             sum += data[i];
             entries++;
@@ -165,11 +188,11 @@ double Histo2d::getMean() {
     return sum/entries;
 }
 
-double Histo2d::getStdDev() {
+double Histo3d::getStdDev() {
     double mean = this->getMean();
     double mu = 0;
     double entries = 0;
-    for (unsigned int i=0; i<(xbins*ybins); i++) {
+    for (unsigned int i=0; i<(xbins*ybins*zbins); i++) {
         if (isFilled[i]) {
              mu += pow(data[i]-mean, 2);
              entries++;
@@ -180,7 +203,7 @@ double Histo2d::getStdDev() {
 }
 
 
-double Histo2d::getBin(unsigned n) const {
+double Histo3d::getBin(unsigned n) const {
     if (n < this->size()) {
         return data[n];
     } else {
@@ -188,54 +211,57 @@ double Histo2d::getBin(unsigned n) const {
     }
 }
 
-void Histo2d::setBin(unsigned n, double v) {
+void Histo3d::setBin(unsigned n, double v) {
     if (n < this->size()) {
         data[n] = v;
     }
 }
 
 
-int Histo2d::binNum(double x, double y) {
-    if (x < xlow || y < ylow) {
+int Histo3d::binNum(double x, double y, double z) {
+    if (x < xlow || y < ylow || z < zlow) {
         //std::cout << "Underflow " << x << " " << y << std::endl;
         return -1;
-    } else if (x > xhigh || y > yhigh) {
+    } else if (x > xhigh || y > yhigh || z > zhigh) {
         //std::cout << "Overflow " << x << " " << y << std::endl;
         return -1;
     } else {
         unsigned xbin = (x-xlow)/xbinWidth;
         unsigned ybin = (y-ylow)/ybinWidth;
-        return (ybin+(xbin*ybins));
+        unsigned zbin = (z-zlow)/zbinWidth;
+        return ((((ybin+(xbin*ybins))*zbins)+zbin));
     }
 }
 
 
-void Histo2d::toFile(std::string prefix, std::string dir, bool header) {
+void Histo3d::toFile(std::string prefix, std::string dir, bool header) {
     std::string filename = dir + prefix + "_" + name + ".dat";
     std::fstream file(filename, std::fstream::out | std::fstream::trunc);
     // Header
     if (header) {
-        file << "Histo2d " <<  std::endl;
+        file << "Histo3d " <<  std::endl;
         file << name << std::endl;
         file << xAxisTitle << std::endl;
         file << yAxisTitle << std::endl; 
         file << zAxisTitle << std::endl;
         file << xbins << " " << xlow << " " << xhigh << std::endl;
         file << ybins << " " << ylow << " " << yhigh << std::endl;
+        file << zbins << " " << zlow << " " << zhigh << std::endl;
         file << underflow << " " << overflow << std::endl;
     }
     // Data
     for (unsigned int i=0; i<ybins; i++) {
         for (unsigned int j=0; j<xbins; j++) {
-            file << data[i+(j*ybins)] << " ";
+            for (unsigned int k=0; k<zbins; k++) {
+                file << data[(i+(j*ybins))*zbins+k] << " ";
+            }
         }
         file << std::endl;
     }
     file.close();
 }
 
-void Histo2d::plot(std::string prefix, std::string dir) {
-    std::cout << "Plotting " << HistogramBase::name << std::endl;
+void Histo3d::plot(std::string prefix, std::string dir) {
     // Put raw histo data in tmp file
     std::string tmp_name = std::string(getenv("USER")) + "/tmp_yarr_histo2d_" + prefix;
     this->toFile(tmp_name, "/tmp/", false);
@@ -266,4 +292,3 @@ void Histo2d::plot(std::string prefix, std::string dir) {
    // fprintf(gnu, "plot \"%s\" matrix u (($1)):(($2)):3 with image\n", ("/tmp/" + tmp_name + "_" + name + ".dat").c_str());
     pclose(gnu);
 }
-

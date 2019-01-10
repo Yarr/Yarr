@@ -1,5 +1,10 @@
 //Header file for plotWithRoot
 
+#include <math.h> //for fabs()
+#include <utility> //for pairs
+#include <vector>
+#include <algorithm> //for std::sort()
+
 #include <TCanvas.h>
 #include <TH2F.h>
 #include <TPaveStats.h>
@@ -117,27 +122,22 @@ int whichBin(double value, double occnum) {
 	return hist_bin;
 }
 
-int whichSigma(double value, double mean, double sigma) {
-	int hist_bin;
-	if ( value < (mean - 5*sigma)) hist_bin = 6;
-	else if ( value >= (mean - 5*sigma) && value < (mean - 4*sigma)) hist_bin = 5;
-	else if ( value	>= (mean - 4*sigma) && value < (mean - 3*sigma)) hist_bin = 4;
-	else if ( value >= (mean - 3*sigma) && value < (mean - 2*sigma)) hist_bin = 3;
-	else if ( value >= (mean - 2*sigma) && value < (mean - sigma)) hist_bin = 2;
-	else if ( value >= (mean - sigma) && value < mean) hist_bin = 1;
-	else if ( value == mean) hist_bin = 1;
-	else if ( value > mean && value <= (mean + sigma)) hist_bin = 1;
-	else if ( value > (mean + sigma) && value <= (mean + 2*sigma)) hist_bin = 2;
-	else if ( value > (mean + 2*sigma) && value <= (mean + 3*sigma)) hist_bin = 3;
-	else if ( value > (mean + 3*sigma) && value <= (mean + 4*sigma)) hist_bin = 4;
-	else if ( value > (mean + 4*sigma) && value <= (mean + 5*sigma)) hist_bin = 5;
-	else if ( value > (mean + 5*sigma)) hist_bin = 6;
+int whichSigma(double value, double mean, double sigma, double bin_width, int bin_num) {
+	int hist_bin = -1;
+	for (int i=1; i<bin_num+1; i++) {
+		if ( fabs(mean-value) >= ((i-1)*bin_width*sigma) && fabs(mean-value) < (i*bin_width*sigma) ) hist_bin=i;
+	}
+
+	if ( fabs(mean-value) >= (bin_num*bin_width*sigma) ) hist_bin=bin_num;
+	else if ( fabs(mean-value) < (bin_width*sigma) ) hist_bin=1;
+
 	return hist_bin;
 }
+
 int goodDiff(int row, int col) {
 	int good = 10;
 	int start_col = 264;
-	
+
 	std::array<std::array<unsigned, 8>, 8> mask;
 	mask[0] = {{0, 0, 1, 1, 0, 0, 0, 0}};
 	mask[1] = {{0, 0, 0, 1, 0, 0, 0, 0}};
@@ -147,14 +147,98 @@ int goodDiff(int row, int col) {
 	mask[5] = {{0, 0, 0, 1, 1, 0, 0, 0}};
 	mask[6] = {{0, 0, 0, 1, 0, 0, 0, 0}};
 	mask[7] = {{0, 0, 0, 0, 1, 0, 0, 0}};
-	
+
 	if (col < start_col) {
 		//std::cout << "This pixel is not part of the differential FE." << std::endl;	
 	}	
 	else {
 		if (mask[row%8][col%8] == 1) good = 1;
 		else good = 0;
-		}
-	
+	}
+
 	return good;
+}
+
+bool sortbysec(const std::pair<double, float> &a, const std::pair<double, float> &b) {	//sort using second element of pairs in vector.
+		return (a.second < b.second);
+}
+
+std::vector <float> thresholdPercent(std::vector <double> pix_values, int whichFrontEnd, int goodDiffPix,  double gaussMean, double percentValue) {
+	//whichFrontEnd --> Synchronous=0, Linear=1, Differential=2. goodDiffPix --> all pixels=0, only good Differential pixels=1
+	int rowno=192, colno=400, numPix;
+	float numPixels;
+	int FEcol[4] = {0, 128, 264, 400};
+	if ( whichFrontEnd == 2 && goodDiffPix == 1) numPixels = (FEcol[whichFrontEnd+1] - FEcol[whichFrontEnd]) * rowno * 0.1875 ; //Only account for good Differential pixels (0.1875 = 12/64 pixels in core)
+	else numPixels = (FEcol[whichFrontEnd+1] - FEcol[whichFrontEnd]) * rowno; 
+
+	//Create vector of pairs <value, value-gaussMean>. Exclude values less than 0 or greater than 5*Gaussian Mean
+	std::vector < std::pair<float,float> > mean_Diff;
+	int inDex = 0, zeroCounter=0, overCounter=0;
+	for (int i=0; i<rowno; i++ ) {
+		for (int j=0; j<colno; j++ ) { 
+			if (whichFrontEnd == 2 && goodDiffPix == 1) {
+				if ( goodDiff(i, j) == 1 && pix_values[inDex] > 0 && pix_values[inDex] <= 5*gaussMean)  mean_Diff.push_back( std::make_pair(pix_values[inDex], (fabs(pix_values[inDex]-gaussMean))) );
+				else if ( goodDiff(i,j) == 1 && pix_values[inDex] <= 0 ) zeroCounter++; 
+				else if ( goodDiff(i,j) == 1 && pix_values[inDex] > 5*gaussMean ) zeroCounter++; 
+			}
+			else {
+				if ( j>=FEcol[whichFrontEnd] && j<FEcol[whichFrontEnd+1] && pix_values[inDex] > 0 && pix_values[inDex] <= 5*gaussMean) mean_Diff.push_back( std::make_pair(pix_values[inDex], (fabs(pix_values[inDex]-gaussMean))) );
+				else if ( j>=FEcol[whichFrontEnd] && j<FEcol[whichFrontEnd+1] &&  pix_values[inDex] <= 0 ) zeroCounter++;	
+				else if ( j>=FEcol[whichFrontEnd] && j<FEcol[whichFrontEnd+1] && pix_values[inDex] > 5*gaussMean ) overCounter++;	
+			}
+			inDex++;
+		}
+	}
+
+	std::cout << "\033[1;31mWarning!\033[0m Excluding " << zeroCounter << " pixels with threshold<0 and " << overCounter << " pixels with threshold>5*(GaussianMean)." << std::endl;
+	
+	numPix = (numPixels - (zeroCounter+overCounter)) * percentValue * 0.01;
+
+	std::sort (mean_Diff.begin(), mean_Diff.end(), sortbysec); //sort from least to greatest for the second element of the pair.
+
+	float vectorSize = mean_Diff.size();
+
+	//Find the value corresponding to X% num of pix. Look at the values around X% of pixels and choose the min/max from there. Save how many iterations it took. 
+	float diffMax=99999999.0, diffMin=999999999.0, tryMax, tryMin;
+	for (int i=0; i<2000; i++) {
+		if (mean_Diff[numPix-i].first > gaussMean) {
+			diffMax = mean_Diff[numPix-i].first;
+			tryMax=i*-1;
+			break;
+		}
+		else if (mean_Diff[numPix+i].first > gaussMean && numPix+i < vectorSize) {
+			diffMax = mean_Diff[numPix+i].first;
+			tryMax=i;
+			break;
+		}
+	}	
+	if (numPix+tryMax >= vectorSize) std::cout << "\033[1;31mWarning!\033[0m Have reached the maximum in the + direction for the maximum value." << std::endl;
+	
+	for (int i=0; i<2000; i++) {
+		if (mean_Diff[numPix-i].first < gaussMean) {
+			diffMin = mean_Diff[numPix-i].first;
+			tryMin=i*-1;
+			break;
+		}
+		else if (mean_Diff[numPix+i].first < gaussMean && numPix+i < vectorSize) {
+			diffMin = mean_Diff[numPix+i].first;
+			tryMin=i;
+			break;
+		}
+	}	
+	if (numPix+tryMax >= vectorSize) std::cout << "\033[1;31mWarning!\033[0m Have reached the maximum in the + direction for the minimum." << std::endl;
+	
+	float checkSize = numPixels - (zeroCounter+overCounter);
+	if ( vectorSize != checkSize ) {
+		diffMax = -100000;
+		diffMin = -100000;
+	}
+
+	float maxMin[5] = {vectorSize, diffMin, tryMin, diffMax, tryMax};
+	std::vector <float> results;
+	for (int i=0; i<5; i++) {
+		results.push_back(maxMin[i]);
+	}	
+	
+	return results;
 }

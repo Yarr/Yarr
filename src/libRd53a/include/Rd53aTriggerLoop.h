@@ -43,6 +43,7 @@ class Rd53aTriggerLoop: public LoopActionBase {
         bool m_extTrig;
         uint32_t m_edgeDuration;
         uint32_t m_pulseDuration;
+        uint32_t m_trigMultiplier;
 
         bool isInner;
         void init();

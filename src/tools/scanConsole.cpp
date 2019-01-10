@@ -449,8 +449,14 @@ int main(int argc, char *argv[]) {
         cfgFile.close();
     }
 
-    // TODO Make this nice
-    std::unique_ptr<ScanBase> s = buildScan(scanType, bookie );
+    // TODO Make this nice 
+    std::unique_ptr<ScanBase> s;
+    try {
+        s = buildScan(scanType, bookie );
+    } catch (const char *msg) {
+        std::cout << " -> Warning! No scan to run, exiting with msg: " << msg << std::endl;
+        return 0;
+    }
 
     // Use the abstract class instead of concrete -- in the future, this will be useful...
     std::map<FrontEnd*, std::unique_ptr<DataProcessor> > histogrammers;
@@ -765,6 +771,12 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
                     } else if (algo_name == "DataArchiver") {
                         histogrammer.addHistogrammer(new DataArchiver((outputDir + "data.raw")));
                         std::cout << "  ... adding " << algo_name << std::endl;
+                    } else if (algo_name == "Tot3d") {
+                        std::cout << "  ... adding " << algo_name << std::endl;
+                        histogrammer.addHistogrammer(new Tot3d());
+                    } else if (algo_name == "L13d") {
+                        std::cout << "  ... adding " << algo_name << std::endl;
+                        histogrammer.addHistogrammer(new L13d());
                     } else {
                         std::cerr << "#ERROR# Histogrammer \"" << algo_name << "\" unknown, skipping!" << std::endl;
                     }
