@@ -396,7 +396,7 @@ if (fe_fit[i]->GetParameter(1)>0)
 					double *tmp_p = &pix_values[n];
 					n++;
 					double tmp = *tmp_p;		
-					if (tmp != -1 || tmp != 0) {
+					if (tmp != -1 && tmp != 0) {
 						int bin_rms = whichSigma(tmp, mean_h[whichFE(j)+1], rms_h[whichFE(j+1)], 1, range_bins);
 						range_rms[whichFE(j)]->AddBinContent(bin_rms);
 
