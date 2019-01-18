@@ -73,15 +73,14 @@ if ! sudo firewall-cmd --list-ports --zone=public --permanent | grep 5000/tcp > 
     echo "Firewall: opening port=5000/tcp for viewer application."
 fi
 for svc in ${services[@]}; do
-    if ! systemctl status ${svc} | grep running > /dev/null; then
+    if ! systemctl status ${svc} 2>&1 | grep running > /dev/null; then
         echo "Start: ${svc}"
     fi
-    if ! systemctl list-unit-files -t service|grep enabled | grep ${svc} > /dev/null; then
+    if ! systemctl list-unit-files -t service|grep enabled 2>&1 | grep ${svc} > /dev/null; then
         echo "Enable: ${svc}"
     fi
 done
 echo "----------------------------------------------------"
-exit
 
 #installing necessary packages if not yet installed
 echo "Start installing necessary packages..."
@@ -136,43 +135,43 @@ for pac in ${pypackages[@]}; do
     fi
 done
 
-#installing CERN ROOT if it's not setup.
-echo ""
-echo "Start checking if the ROOT software is available..."
-rootver="root_v6.16.00"
-rootloc+=`pwd`"/root/bin/thisroot.sh"
-if which root 2>&1| grep "no root in" > /dev/null; then
-    if [ -e ./${rootver}/bin ]; then
-        echo "ROOT directory was found. Skip downloading it..."
-    else
-        echo "ROOT not found. Downloading the pre-compiled version of ${rootver}..."
-        wget https://root.cern.ch/download/${rootver}.Linux-centos7-x86_64-gcc4.8.tar.gz
-        tar zxf ${rootver}.Linux-centos7-x86_64-gcc4.8.tar.gz
-        rm -f ${rootver}.Linux-centos7-x86_64-gcc4.8.tar.gz
-    fi
-    if grep "thisroot.sh" ~/.bashrc > /dev/null; then
-        echo "thisroot.sh is already sourced in your .bashrc."
-    else
-        echo -e "\n#added by the mongoDB install script" >> ~/.bashrc
-        echo "source ${rootloc}" >> ~/.bashrc
-    fi
-    source root/bin/thisroot.sh
-else
-    echo "ROOT was found. Checking if PyROOT is available"
-    pyroot_found="false"
-    for ii in 1 2 3 4; do
-	if pydoc modules | cut -d " " -f${ii} | grep -x ROOT > /dev/null; then
-	    pyroot_found="true"
-	fi
-    done
-    if [ ${pyroot_found} != "true" ]; then
-	echo "WARNING: PyROOT is not available."
-	echo "Check if PYTHONPATH is properly set or if you compiled ROOT with the PyROOT option enabled."
-	echo "You need a manual fix to enable some features in the viewer."
-    else
-	echo "PyROOT is available in your environment."
-    fi
-fi
+##installing CERN ROOT if it's not setup.
+#echo ""
+#echo "Start checking if the ROOT software is available..."
+#rootver="root_v6.16.00"
+#rootloc+=`pwd`"/root/bin/thisroot.sh"
+#if which root 2>&1| grep "no root in" > /dev/null; then
+#    if [ -e ./${rootver}/bin ]; then
+#        echo "ROOT directory was found. Skip downloading it..."
+#    else
+#        echo "ROOT not found. Downloading the pre-compiled version of ${rootver}..."
+#        wget https://root.cern.ch/download/${rootver}.Linux-centos7-x86_64-gcc4.8.tar.gz
+#        tar zxf ${rootver}.Linux-centos7-x86_64-gcc4.8.tar.gz
+#        rm -f ${rootver}.Linux-centos7-x86_64-gcc4.8.tar.gz
+#    fi
+#    if grep "thisroot.sh" ~/.bashrc > /dev/null; then
+#        echo "thisroot.sh is already sourced in your .bashrc."
+#    else
+#        echo -e "\n#added by the mongoDB install script" >> ~/.bashrc
+#        echo "source ${rootloc}" >> ~/.bashrc
+#    fi
+#    source root/bin/thisroot.sh
+#else
+#    echo "ROOT was found. Checking if PyROOT is available"
+#    pyroot_found="false"
+#    for ii in 1 2 3 4; do
+#	if pydoc modules | cut -d " " -f${ii} | grep -x ROOT > /dev/null; then
+#	    pyroot_found="true"
+#	fi
+#    done
+#    if [ ${pyroot_found} != "true" ]; then
+#	echo "WARNING: PyROOT is not available."
+#	echo "Check if PYTHONPATH is properly set or if you compiled ROOT with the PyROOT option enabled."
+#	echo "You need a manual fix to enable some features in the viewer."
+#    else
+#	echo "PyROOT is available in your environment."
+#    fi
+#fi
 
 #setting up web-base DB viewer
 echo ""
