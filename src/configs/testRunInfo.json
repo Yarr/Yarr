@@ -3,41 +3,5 @@
         "stage": "Testing"
     },
     "environments": [
-        {
-            "key": "lv",
-            "value": 1.8,
-            "description": "Low voltage [V]",
-            "path": "/tmp/lv.dat"
-        },
-        {
-            "key": "lv_current",
-            "value": 1.0,
-            "description": "Low voltage current [A]",
-            "path": "/tmp/lv.dat"
-        },
-        {
-            "key": "hv",
-            "value": 0,
-            "description": "High voltage [V]",
-            "path": "/tmp/hv.dat"
-        },
-        {
-            "key": "hv_current",
-            "value": 0,
-            "description": "High voltage current [A]",
-            "path": "/tmp/hv.dat"
-        },
-        {
-            "key": "temperature",
-            "value": 25,
-            "description": "Room temperature [C]",
-            "path": "/tmp/temp.dat"
-        },
-        {
-            "key": "temperature",
-            "value": 25,
-            "description": "Temperature on Al side [C]",
-            "path": "/tmp/temp.dat"
-        }
     ]
 }

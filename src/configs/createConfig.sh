@@ -97,6 +97,11 @@ if "${reset}"; then
     fi
     echo "Continue to remake config files ... [y/n] "
     read answer
+    while [ -z ${answer} ]; 
+    do
+        echo "Continue to remake config files ... [y/n] "
+        read answer
+    done
     if [ "${answer}" == "n" ]; then
         exit
     elif [ "${answer}" != "y" ]; then
@@ -127,6 +132,15 @@ if [ -f ${asic}/${sn}/connectivity.json ]; then
         fi
     fi
 
+    # Make connectivity config
+    for file in `\find ${asic}/${sn} -path "${asic}/${sn}/${sn}_chip*.json"` ; do
+        cfgname=`cat ${file} | grep ${name} | awk -F'["]' '{print $4}'`
+        cfgid=`cat ${file} | grep \"${chipid}\" | awk '{print $2}'`
+        echo "Reset ${file##*/}"
+        cp defaults/default_${asic}.json ${file}
+        sed -i "/${chipid}/s/0,/${cfgid}/g" ${file}
+        sed -i "/${name}/s/JohnDoe/${cfgname}/g" ${file}
+    done
 else    # first creation
     # chips
     if [ -z ${chips} ]; then
@@ -162,6 +176,77 @@ else    # first creation
         exit
     fi
 
+    cnt=0
+    chipIds=()
+    chipNames=()
+    while [ ${cnt} -lt ${chips} ]; do
+        cnt=$(( cnt + 1 ))
+        echo "Create ${asic}/${sn}/${sn}_chip${cnt}.json"
+        echo "---------------------"
+        echo "name: ${sn}_chip${cnt}"
+        echo "chipId: ${cnt}"
+        echo "---------------------"
+        echo "Change name ... [<chipName>/n] "
+        read answer
+        while [ -z ${answer} ]; 
+        do
+            echo "Change name ... [<chipName>/n] "
+            read answer
+        done
+        if [ "${answer}" != "n" ]; then
+            chipName=${answer}
+        else
+            chipName="${sn}_chip${cnt}"
+        fi
+        chipNames+=( ${chipName} )
+        echo "Change chipId ... [#(chipId)/n] "
+        read answer
+        while [ -z ${answer} ]; 
+        do
+            echo "Change chipId ... [#(chipId)/n] "
+        done
+        if [ "${answer}" != "n" ]; then
+            echo ${answer} | grep [^0-9] > /dev/null 2>&1
+            if [ $? -eq 0 ]; then
+                echo "Please give an integral as chipId. "
+                exit
+            else
+                id=${answer}
+            fi
+        else
+            id=${cnt}
+        fi
+        chipIds+=( ${id} )
+    done
+
+    # Confirmation
+    cnt=0
+    echo " "
+    echo "serial number: ${sn}"
+    echo "controller config: ${controller}"
+    echo "dcs config: ${user}"
+    echo "num of chips: ${chips}"
+    while [ ${cnt} -lt ${chips} ]; do
+        cnt=$(( cnt + 1 ))
+        echo "** ${sn}_chip${cnt}"
+        echo "    name: ${chipNames[$((cnt-1))]}"
+        echo "    chipId: ${chipIds[$((cnt-1))]}"
+    done
+    echo " "
+    echo "Make sure? [y/n]"
+    read answer
+    while [ -z ${answer} ]; 
+    do
+        echo "Make sure? [y/n] "
+        read answer
+    done
+    if [ "${answer}" == "n" ]; then
+        exit
+    elif [ "${answer}" != "y" ]; then
+        echo "Unexpected token ${answer}"
+        exit
+    fi
+
     # Make config directory
     if [ ! -d ${asic}/${sn} ]; then
         echo "Created config directory ${asic}/${sn}"
@@ -179,10 +264,8 @@ else    # first creation
         echo "Created ${asic}/${sn}/info.json"
         cp ${user} ${asic}/${sn}/info.json
     fi
-fi
 
-# Make config file for each chip and connectivity
-if [ ! -f ${asic}/${sn}/connectivity.json ]; then
+    # Make connectivity.json
     echo "Created ${asic}/${sn}/connectivity.json"
     echo "{" > ${asic}/${sn}/connectivity.json
     echo "    \"module\": {" >> ${asic}/${sn}/connectivity.json
@@ -195,42 +278,16 @@ if [ ! -f ${asic}/${sn}/connectivity.json ]; then
     echo "    \"chips\" : [" >> ${asic}/${sn}/connectivity.json
     while [ ${cnt} -lt ${chips} ]; do
         cnt=$(( cnt + 1 ))
-        echo "Create ${asic}/${sn}/${sn}_chip${cnt}.json"
-        echo "---------------------"
-        echo "name: ${sn}_chip${cnt}"
-        echo "chipId: ${cnt}"
-        echo "---------------------"
-        echo "Change name ... [<chipName>/n] "
-        read answer
-        if [ "${answer}" != "n" ]; then
-            chipName=${answer}
-        else
-            chipName="${sn}_chip${cnt}"
-        fi
-        echo "Change chipId ... [#(chipId)/n] "
-        read answer
-        if [ "${answer}" != "n" ]; then
-            echo ${answer} | grep [^0-9] > /dev/null 2>&1
-            if [ $? -eq 0 ]; then
-                echo "Please give an integral as chipId. "
-                exit
-            else
-                id=${answer}
-            fi
-        else
-            id=${cnt}
-        fi
-
         echo "Created ${sn}_chip${cnt}.json"
         cp defaults/default_${asic}.json ${asic}/${sn}/${sn}_chip${cnt}.json
-        sed -i "/${chipid}/s/0/${id}/g" ${asic}/${sn}/${sn}_chip${cnt}.json
-        sed -i "/${name}/s/JohnDoe/${chipName}/g" ${asic}/${sn}/${sn}_chip${cnt}.json
+        sed -i "/${chipid}/s/0/${chipIds[$((cnt-1))]}/g" ${asic}/${sn}/${sn}_chip${cnt}.json
+        sed -i "/${name}/s/JohnDoe/${chipNames[$((cnt-1))]}/g" ${asic}/${sn}/${sn}_chip${cnt}.json
     
         rx_ch=$(( cnt - 1 + rx_start ))
         echo "        {" >> ${asic}/${sn}/connectivity.json
-        echo "            \"serialNumber\": \"${chipName}\"," >> ${asic}/${sn}/connectivity.json
+        echo "            \"serialNumber\": \"${chipNames[$((cnt-1))]}\"," >> ${asic}/${sn}/connectivity.json
         echo "            \"componentType\": \"Front-end Chip\"," >> ${asic}/${sn}/connectivity.json
-        echo "            \"chipId\": ${id}," >> ${asic}/${sn}/connectivity.json
+        echo "            \"chipId\": ${chipIds[$((cnt-1))]}," >> ${asic}/${sn}/connectivity.json
         echo "            \"config\" : \"configs/${asic}/${sn}/${sn}_chip${cnt}.json\"," >> ${asic}/${sn}/connectivity.json
         echo "            \"tx\" : ${tx_fix}," >> ${asic}/${sn}/connectivity.json
         echo "            \"rx\" : ${rx_ch}" >> ${asic}/${sn}/connectivity.json
@@ -242,15 +299,6 @@ if [ ! -f ${asic}/${sn}/connectivity.json ]; then
     done
     echo "    ]" >> ${asic}/${sn}/connectivity.json
     echo "}" >> ${asic}/${sn}/connectivity.json
-else
-    for file in `\find ${asic}/${sn} -path "${asic}/${sn}/${sn}_chip*.json"` ; do
-        cfgname=`cat ${file} | grep ${name} | awk -F'["]' '{print $4}'`
-        cfgid=`cat ${file} | grep \"${chipid}\" | awk '{print $2}'`
-        echo "Reset ${file##*/}"
-        cp defaults/default_${asic}.json ${file}
-        sed -i "/${chipid}/s/0,/${cfgid}/g" ${file}
-        sed -i "/${name}/s/JohnDoe/${cfgname}/g" ${file}
-    done
 fi
 
 cd ../
