@@ -11,7 +11,8 @@
 set -e
 
 LOGFILE="instlog."`date "+%Y%m%d_%H%M%S"`
-exec 2>&1> >(awk '{print strftime("[%Y-%m-%d %H:%M:%S] "),$0 } { fflush() } ' | tee $LOGFILE)
+#exec 2>&1> >(awk '{print strftime("[%Y-%m-%d %H:%M:%S] "),$0 } { fflush() } ' | tee $LOGFILE)
+exec 2> >(awk '{print strftime("[%Y-%m-%d %H:%M:%S] "),$0 } { fflush() } ' | tee $LOGFILE) 1>&2
 
 trap 'echo ""; echo "Installation stopped by SIGINT!!"; echo "You may be in unknown state."; echo "Check ${LOGFILE} for debugging in case of a problem of re-executing this script."; exit 1' 2
 
@@ -71,6 +72,7 @@ for sw in ${scl_sw[@]}; do
 done
 
 #install python packages by pip for the DB viewer
+sudo pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org --upgrade pip
 packages=(
     "Flask-PyMongo"
     "pdf2image"
@@ -84,7 +86,7 @@ for pac in ${packages[@]}; do
         echo "${pac} already installed. Nothing to do."
     else
         echo "${pac} not found. Starting to install..."
-        sudo pip install ${pac}
+        sudo pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org ${pac}
     fi
 done
 
@@ -215,8 +217,8 @@ for svc in ${services[@]}; do
 done
 
 #Needed to avoid tons of warnings by mongod in /var/log/messages
-sudo sh -c "ausearch -c 'ftdc' --raw | audit2allow -M my-ftdc"
-sudo sh -c "semodule -i my-ftdc.pp"
+#sudo sh -c "ausearch -c 'ftdc' --raw | audit2allow -M my-ftdc"
+#sudo sh -c "semodule -i my-ftdc.pp"
 
 ip=`ip -f inet -o addr show| grep -e en -e eth|cut -d\  -f 7 | cut -d/ -f 1`
 echo ""
