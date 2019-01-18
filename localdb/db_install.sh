@@ -16,6 +16,73 @@ exec 2> >(awk '{print strftime("[%Y-%m-%d %H:%M:%S] "),$0 } { fflush() } ' | tee
 
 trap 'echo ""; echo "Installation stopped by SIGINT!!"; echo "You may be in unknown state."; echo "Check ${LOGFILE} for debugging in case of a problem of re-executing this script."; exit 1' 2
 
+#packages list to be required
+yumpackages=(
+    "epel-release.noarch"
+    "centos-release-scl.noarch"
+    "bc.x86_64"
+    "wget.x86_64"
+    "rh-mongodb36-mongo-cxx-driver-devel.x86_64"
+    "rh-mongodb36-boost-devel.x86_64"
+    "mongodb-org.x86_64"
+    "devtoolset-7.x86_64"
+    "gnuplot.x86_64"
+    "python.x86_64"
+    "python27-python-pip.noarch"
+    "httpd.x86_64"
+)
+pypackages=(
+    "Flask-PyMongo"
+    "pdf2image"
+    "Pillow"
+    "python-dateutil"
+    "Flask-HTTPAuth"
+    "pyyaml"
+)
+services=(
+    "mongod"
+    "httpd"
+)
+
+#checking what is missing for localDB and viewer
+echo "Looking for missing things for Yarr-localDB and its viewer..."
+echo "-------------------------------------------------------------"
+if [ ! -e "/etc/yum.repos.d/mongodb-org-3.6.repo" ]; then
+    echo "Add: mongodb-org-3.6 repository in /etc/yum.repos.d/mongodb-org-3.6.repo."
+fi
+for pac in ${yumpackages[@]}; do
+    if ! yum info ${pac} 2>&1 | grep "Installed Packages" > /dev/null; then
+	echo "yum install: ${pac}"
+    fi
+done
+for pac in ${pypackages[@]}; do
+    if ! pip show ${pac} 2>&1 | grep -i "Name: ${pac}" > /dev/null; then
+	echo "pip install: ${pac}"
+    fi
+done
+if [ ! -e /var/www/localDB-tools ]; then
+    echo "Install: localDB-tools"
+fi
+if ! getsebool httpd_can_network_connect | grep off > /dev/null; then
+    echo "SELinux: turning on httpd_can_network_connect"
+fi
+if ! sudo firewall-cmd --list-all | grep http > /dev/null; then
+    echo "Firewall: opening port=80/tcp for appache."
+fi
+if ! sudo firewall-cmd --list-ports --zone=public --permanent | grep 5000/tcp > /dev/null; then
+    echo "Firewall: opening port=5000/tcp for viewer application."
+fi
+for svc in ${services[@]}; do
+    if ! systemctl status ${svc} | grep running > /dev/null; then
+        echo "Start: ${svc}"
+    fi
+    if ! systemctl list-unit-files -t service|grep enabled | grep ${svc} > /dev/null; then
+        echo "Enable: ${svc}"
+    fi
+done
+echo "----------------------------------------------------"
+exit
+
 #installing necessary packages if not yet installed
 echo "Start installing necessary packages..."
 #adding mongoDB repository and installing mongoDB
@@ -30,21 +97,8 @@ gpgcheck=1
 enabled=1
 gpgkey=https://www.mongodb.org/static/pgp/server-3.6.asc\" > /etc/yum.repos.d/mongodb-org-3.6.repo"
 fi
-packages=(
-    "epel-release.noarch"
-    "centos-release-scl.noarch"
-    "bc.x86_64"
-    "wget.x86_64"
-    "rh-mongodb36-mongo-cxx-driver-devel.x86_64"
-    "rh-mongodb36-boost-devel.x86_64"
-    "mongodb-org.x86_64"
-    "devtoolset-7.x86_64"
-    "gnuplot.x86_64"
-    "python.x86_64"
-    "python27-python-pip.noarch"
-    "httpd.x86_64"
-)
-for pac in ${packages[@]}; do
+#installing yum packages
+for pac in ${yumpackages[@]}; do
     if yum info ${pac} | grep "Installed Packages" > /dev/null; then
         echo "${pac} already installed. Nothing to do."
     else
@@ -73,16 +127,8 @@ done
 
 #install python packages by pip for the DB viewer
 sudo pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org --upgrade pip
-packages=(
-    "Flask-PyMongo"
-    "pdf2image"
-    "Pillow"
-    "python-dateutil"
-    "Flask-HTTPAuth"
-    "pyyaml"
-)
-for pac in ${packages[@]}; do
-    if pip show ${pac} | grep "Name: ${pac}" > /dev/null; then
+for pac in ${pypackages[@]}; do
+    if pip show ${pac} | grep -i "Name: ${pac}" > /dev/null; then
         echo "${pac} already installed. Nothing to do."
     else
         echo "${pac} not found. Starting to install..."
