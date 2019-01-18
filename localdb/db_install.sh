@@ -183,12 +183,13 @@ else
     sudo mkdir -p /var/lib/mongo
 fi
 #wget https://cernbox.cern.ch/index.php/s/kNz1xyhZ5bov7Iu
-#echo "Unarchiving..."
-#tar zxf mongo-201811291822.tar.gz
-#sudo mv ./var/lib/mongo /var/lib
-#sudo rm -rf ./var
-#sudo chcon -R -u system_u -t mongod_var_lib_t /var/lib/mongo/
-#sudo chown -R mongod:mongod /var/lib/mongo
+wget https://osksn2.hep.sci.osaka-u.ac.jp/~hirose/mongo_expmple.tar.gz
+echo "Unarchiving..."
+tar zxf mongo_expmple.tar.gz
+sudo mv ./var/lib/mongo /var/lib
+sudo rm -rf ./var
+sudo chcon -R -u system_u -t mongod_var_lib_t /var/lib/mongo/
+sudo chown -R mongod:mongod /var/lib/mongo
 
 #starting and enabling DB and http servers
 services=(
