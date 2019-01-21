@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# Change fixed tx channel and rx start channel
+tx_fix=4
+rx_start=4
+
 mod_id=$1
 conn_path=$2
 now=`date +"%y%m%d%H%M"`
@@ -23,10 +27,6 @@ else
     echo "usage: ./create_fei4b_4chip_config.sh <serial number> [<environmental configuration>]"
     exit
 fi
-
-# Change fixed tx channel and rx start channel
-tx_fix=4
-rx_start=4
 
 for i in 1 2 3 4
 do
