@@ -45,7 +45,7 @@
         "config": {
           "max": 200,
           "min": 0,
-          "step": 1,
+          "step": 5,
           "parameter":"InjVcalDiff"
         },
         "loopAction": "Rd53aParameterLoop"

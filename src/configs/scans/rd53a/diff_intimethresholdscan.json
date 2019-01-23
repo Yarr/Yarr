@@ -45,7 +45,7 @@
         "config": {
           "max": 250,
           "min": 0,
-          "step": 1,
+          "step": 5,
           "parameter":"InjVcalDiff"
         },
         "loopAction": "Rd53aParameterLoop"
@@ -56,7 +56,7 @@
           "min": 33,
           "step": 1,
           "nSteps": 17,
-	  "delayArray": [9,9,8,8,8,8,8,8,8,7,7,6,7,6,6,7,6]
+	  "delayArray": [9,8,8,8,8,8,8,7,8,7,7,6,7,6,6,7,6]
         },
         "loopAction": "Rd53aCoreColLoop"
       },
