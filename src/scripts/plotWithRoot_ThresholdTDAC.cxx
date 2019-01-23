@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ThresholdTDAC path/to/direct
 
 		//Linear FE Threshold TDAC plot
 		THStack *hs_Lin = new THStack("hs_Lin","");
-		gStyle->SetPalette(kBird);
+		gStyle->SetPalette(kRainBow);
 		for (int i=0; i<lin_plot; i++) hs_Lin->Add(histLin[i]);
 		TCanvas *cs_Lin = new TCanvas("cs_Lin", "cs_Lin", 800, 600);
 		cs_Lin->SetLeftMargin(0.15);
