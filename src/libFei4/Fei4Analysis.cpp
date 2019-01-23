@@ -670,17 +670,17 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
                     double chi2= status.fnorm/(double)status.nfev;
 
-                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0 && chi2 < 2.5) {
+                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0 && chi2 < 2.5
+			&& thrMap[outerIdent]->getBin(bin) == 0) {
                         FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
                         thrMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0], useScap, useLcap));
                         // Reudce affect of vcal offset on this, don't want to probe at low vcal
                         sigMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0]+par[1], useScap, useLcap)-feCfg->toCharge(par[0], useScap, useLcap));
                         chiDist[outerIdent]->fill(status.fnorm/(double)status.nfev);
                         timeDist[outerIdent]->fill(fitTime.count());
-                        chi2Map[outerIdent]->fill(col, row,chi2 );
+                        chi2Map[outerIdent]->fill(col, row, chi2 );
                         statusMap[outerIdent]->fill(col, row, status.outcome);
                         statusDist[outerIdent]->fill(status.outcome);
-
                     } else {
                         n_failedfit++;
                     }
