@@ -327,7 +327,6 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 					}
 
 				}
-}
 				fe_hist[i]->GetYaxis()->SetRangeUser(0,((fe_hist[i]->GetMaximum())*1.5)); //Leave extra room for legend
 				if (argc < 4) fe_hist[i]->GetXaxis()->SetRangeUser((mean_h[i] - 5*rms_h[i] < 0) ? -0.5 : (mean_h[i]- 5*rms_h[i]), mean_h[i] + 5*rms_h[i]); //Change the x-axis range to be the Mean +/- 5*RMS. If the lower bound is less than -0.5, make it -0.5. 
 				else if (argc > 4) {

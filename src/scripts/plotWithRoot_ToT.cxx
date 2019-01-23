@@ -112,9 +112,9 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ToT path/to/directory file_e
 			TH2F *h_plot = NULL;
 			h_plot = new TH2F("h_plot", "", colno, 0, colno, rowno, 0, rowno); 
 
-			//int zeros_FE[3] = { 0, 0, 0};
-			//char zeros_Syn[100]={}, zeros_Lin[100]={}, zeros_Diff[100]={};
-			//char* zeros_char[3] = {zeros_Syn, zeros_Lin, zeros_Diff};
+			int zeros_FE[3] = { 0, 0, 0};
+			char zeros_Syn[100]={}, zeros_Lin[100]={}, zeros_Diff[100]={};
+			char* zeros_char[3] = {zeros_Syn, zeros_Lin, zeros_Diff};
 			//Fill ToT plots	
 			for (int i=0; i<rowno; i++) {
 				for (int j=0; j<colno; j++) {
