@@ -18,8 +18,9 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 	gStyle->SetTickLength(0.02);
 	gStyle->SetTextFont();
 
-	if (argc < 4) {
-		std::cout << "No directory, image plot extension, and/or good differential FE pixels option given! \nFor only good differential FE pixels, write '1'. \n./plotWithRoot_Threshold path/to/directory/ file_ext goodDiff_On \nExample: ./plotWithRoot_Threshold path/to/directory/ pdf 1" << std::endl;
+	if (argc < 4 || ( argc > 4 && argc < 6) ) {
+		std::cout << "No directory, image plot extension, and/or good differential FE pixels option given! \nExtra settings for the threshold plot x-axis: minimum value, maximum value, and # of bins [e per bin=(xhigh-xlow)/xbins]. \nFor only good differential FE pixels, write '1'. \n./plotWithRoot_Threshold path/to/directory/ file_ext goodDiff_On xlow(optional) xhigh(optional) xbins(optional)" << std::endl;
+		std::cout << "Example: ./plotWithRoot_Threshold path/to/directory/ pdf 1 \nExample: ./plotWithRoot_Threshold path/to/directory/pdf 0 -0.5 10000.5 500" << std::endl;
 		return -1;
 	}
 
@@ -28,17 +29,25 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 	struct dirent *dirp;
 	struct stat filestat;
 
-	std::string delimiter = "_";
-	std::string ext = argv[2];
-	std::string good_Diff = argv[3];
-
 	dp = opendir(argv[1]);	//open directory
 	if (dp==NULL) {	//if directory doesn't exist
 		std::cout << "Directory not found. " << std::endl;
 		return -1;
 	}
 
+	std::string delimiter = "_";
 	dir = argv[1];
+	std::string ext = argv[2];
+	std::string good_Diff = argv[3];
+
+	int overwriteBins=0;
+	double overwriteXmin=0, overwriteXmax=0, setElectrons=0;
+	if (argc > 4) {
+		overwriteXmin = std::stof(argv[4]);
+		overwriteXmax = std::stof(argv[5]);
+		overwriteBins = std::stoi(argv[6]);
+		setElectrons = (overwriteXmax - overwriteXmin) / overwriteBins;
+	}
 
 	while ((dirp = readdir(dp))) { //pointer to structure representing directory entry at current position in directory stream, and positions directory stream at the next entry. Returns a null pointer at the end of the directory stream.
 
@@ -49,7 +58,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 		if (stat(filepath.c_str(), &filestat)) continue; //skip if file is invalid
 		if (S_ISDIR(filestat.st_mode)) continue; //skip if file is a directory
 
-		if ( strstr( file_path, "ThresholdMap.dat") != NULL) { //if filename contains string declared in argument.
+		if ( strstr( file_path, "ThresholdMap-0.dat") != NULL) { //if filename contains string declared in argument.
 
 			chipnum = "Chip SN: " + file_name.substr(0, file_name.find(delimiter)); //get chip # from file name
 
@@ -85,7 +94,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			yaxistitle = "Number of Pixels";
 			gausrangetitle = "Deviation from the Mean [#sigma] ";
 			rmsrangetitle = "Deviation from the Mean [RMS] ";
-			xbins = 500;
+			if (argc < 4) xbins = 500;
+			else if (argc > 4 ) xbins = 10000/setElectrons; 
 			range_bins = 6;
 			xlow = -0.5;
 			xhigh = 10000.5;
@@ -222,7 +232,6 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			double perCent[2] = { 95, 99.7};
 			std::vector <float> results[6];
 
-
 			//Plots for All, Synchronous, Linear, and Differential FEs
 			for (int i=0; i<4; i++) {
 				style_TH1(fe_hist[i], xaxistitle.c_str(), yaxistitle.c_str());
@@ -278,46 +287,52 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 
 
 				std::cout << "Chi^2 is "  << fe_fit[i]->GetChisquare() << "	DOF is " << fe_fit[i]->GetNDF() << "	Prob is " << fe_fit[i]->GetProb() << std::endl;
-if (fe_fit[i]->GetParameter(1)>0)
-{
-				for (int j=0; j<2; j++ ) { 
-					if  ( i > 0) {
-						std::cout << legend_name[i] << "	" << perCent[j] << "%" << std::endl;
-						int inDex = ((i-1)*2)+j; 
-						results[inDex] = thresholdPercent(pix_values, i-1, std::stoi(good_Diff), fe_fit[i]->GetParameter(1), perCent[j]);
-						std::string explain[5] = {"Number of Pixels Analyzed", "Minimum Value", "Iterations to get to the Minimum Value", "Maximum Value", "Iterations to get to the Maximum Value"};
-						for (int k=0; k<5; k++) {
-							std::cout << explain[k] << ": " << results[inDex][k] << ".	";
+
+				if (fe_fit[i]->GetParameter(1) > 0) {
+
+					for (int j=0; j<2; j++ ) { 
+						if  ( i > 0) {
+							std::cout << legend_name[i] << "	" << perCent[j] << "%" << std::endl;
+							int inDex = ((i-1)*2)+j; 
+							results[inDex] = thresholdPercent(pix_values, i-1, std::stoi(good_Diff), fe_fit[i]->GetParameter(1), perCent[j]);
+							std::string explain[5] = {"Number of Pixels Analyzed", "Minimum Value", "Iterations to get to the Minimum Value", "Maximum Value", "Iterations to get to the Maximum Value"};
+							for (int k=0; k<5; k++) {
+								std::cout << explain[k] << ": " << results[inDex][k] << ".	";
+							}
+							double pixSpread = fe_hist[i]->Integral(fe_hist[i]->FindBin(results[inDex][1]), fe_hist[i]->FindBin(results[inDex][3]));
+							std::cout << "\nIntegral (from minimum value to maximum value) is " << pixSpread << " which is " << (pixSpread/results[inDex][0])*100 << "\% of pixels (after exclusions!) \n" << std::endl;
 						}
-						double pixSpread = fe_hist[i]->Integral(fe_hist[i]->FindBin(results[inDex][1]), fe_hist[i]->FindBin(results[inDex][3]));
-						std::cout << "\nIntegral (from minimum value to maximum value) is " << pixSpread << " which is " << (pixSpread/results[inDex][0])*100 << "\% of pixels (after exclusions!) \n" << std::endl;
 					}
+
+					//Write the Gaussian mean/sigma and the histogram mean/rms on the plot.
+					sprintf(mean_char[i], "Mean_{hist} = %.1f", mean_h[i]);
+					mean_rms->DrawLatex(0.18,0.91, mean_char[i]);
+					sprintf(rms_char[i], "RMS_{hist} = %.1f", rms_h[i]);
+					mean_rms->DrawLatex(0.18,0.86, rms_char[i]);
+					sprintf(gmean_char[i], "Mean_{gaus} = %.1f #pm %.1f", fit_par[1], fit_err[1]);
+					mean_rms->DrawLatex(0.18, 0.81, gmean_char[i]);
+					sprintf(gsigma_char[i], "#sigma_{gaus} = %.1f #pm %.1f", fit_par[2], fit_err[2]);
+					mean_rms->DrawLatex(0.18, 0.76, gsigma_char[i]);
+					sprintf(chidof_char[i], "#chi^{2} / DOF = %.1f / %i", fe_fit[i]->GetChisquare(), fe_fit[i]->GetNDF());
+					mean_rms->DrawLatex(0.18, 0.71, chidof_char[i]);	
+
+					if ( i > 0 ) { 
+						sprintf(zeros_char[i-1], "Untuned Pixels = %i", zeros_FE[i-1]);
+						mean_rms->DrawLatex(0.63,0.81, zeros_char[i-1]);
+
+						sprintf(minmax997_char[i-1], "( %.2f / %.2f )_{99.7%%}", results[((i-1)*2)+1][1], results[((i-1)*2)+1][3]);
+						mean_rms->DrawLatex(0.63, 0.76, minmax997_char[i-1]);
+						sprintf(minmax95_char[i-1], "( %.2f / %.2f )_{95%%}", results[(i-1)*2][1], results[(i-1)*2][3]);
+						mean_rms->DrawLatex(0.63, 0.70, minmax95_char[i-1]);
+					}
+
 				}
-
-				//Write the Gaussian mean/sigma and the histogram mean/rms on the plot.
-				sprintf(mean_char[i], "Mean_{hist} = %.1f", mean_h[i]);
-				mean_rms->DrawLatex(0.18,0.91, mean_char[i]);
-				sprintf(rms_char[i], "RMS_{hist} = %.1f", rms_h[i]);
-				mean_rms->DrawLatex(0.18,0.86, rms_char[i]);
-				sprintf(gmean_char[i], "Mean_{gaus} = %.1f #pm %.1f", fit_par[1], fit_err[1]);
-				mean_rms->DrawLatex(0.18, 0.81, gmean_char[i]);
-				sprintf(gsigma_char[i], "#sigma_{gaus} = %.1f #pm %.1f", fit_par[2], fit_err[2]);
-				mean_rms->DrawLatex(0.18, 0.76, gsigma_char[i]);
-				sprintf(chidof_char[i], "#chi^{2} / DOF = %.1f / %i", fe_fit[i]->GetChisquare(), fe_fit[i]->GetNDF());
-				mean_rms->DrawLatex(0.18, 0.71, chidof_char[i]);	
-
-				if ( i > 0 ) { 
-					sprintf(zeros_char[i-1], "Untuned Pixels = %i", zeros_FE[i-1]);
-					mean_rms->DrawLatex(0.63,0.81, zeros_char[i-1]);
-
-					sprintf(minmax997_char[i-1], "( %.2f / %.2f )_{99.7%%}", results[((i-1)*2)+1][1], results[((i-1)*2)+1][3]);
-					mean_rms->DrawLatex(0.63, 0.76, minmax997_char[i-1]);
-					sprintf(minmax95_char[i-1], "( %.2f / %.2f )_{95%%}", results[(i-1)*2][1], results[(i-1)*2][3]);
-					mean_rms->DrawLatex(0.63, 0.70, minmax95_char[i-1]);
-				}
-}
 				fe_hist[i]->GetYaxis()->SetRangeUser(0,((fe_hist[i]->GetMaximum())*1.5)); //Leave extra room for legend
-				fe_hist[i]->GetXaxis()->SetRangeUser((mean_h[i] - 5*rms_h[i] < 0) ? -0.5 : (mean_h[i]- 5*rms_h[i]), mean_h[i] + 5*rms_h[i]); //Change the x-axis range to be the Mean +/- 5*RMS. If the lower bound is less than -0.5, make it -0.5. 
+				if (argc < 4) fe_hist[i]->GetXaxis()->SetRangeUser((mean_h[i] - 5*rms_h[i] < 0) ? -0.5 : (mean_h[i]- 5*rms_h[i]), mean_h[i] + 5*rms_h[i]); //Change the x-axis range to be the Mean +/- 5*RMS. If the lower bound is less than -0.5, make it -0.5. 
+				else if (argc > 4) {
+					fe_hist[i]->GetXaxis()->SetRangeUser(overwriteXmin, overwriteXmax);
+				}
+
 				fe_c[i]->Update();
 
 				filename1 = filename.replace(filename.find(plot_ext[i].c_str()), 10, plot_ext[i+1].c_str()); 
@@ -336,7 +351,8 @@ if (fe_fit[i]->GetParameter(1)>0)
 			gStyle->SetOptStat(0);
 			c_plot->RedrawAxis();
 			c_plot->Update();
-			h_plot->GetZaxis()->SetRangeUser((mean_h[0] - 5*rms_h[0] < 0) ? -0.5 : (mean_h[0]- 5*rms_h[0])  , mean_h[0] + 5*rms_h[0]);	
+			if (argc < 4) h_plot->GetZaxis()->SetRangeUser((mean_h[0] - 5*rms_h[0] < 0) ? -0.5 : (mean_h[0]- 5*rms_h[0])  , mean_h[0] + 5*rms_h[0]);
+			else if (argc > 4) { h_plot->GetZaxis()->SetRangeUser(overwriteXmin, overwriteXmax); }	
 			h_plot->GetZaxis()->SetLabelSize(0.04);
 			filename2 = filename.replace(filename.find(plot_ext[4].c_str()), 10, plot_ext[5].c_str());
 			c_plot->Print(filename2.c_str());
@@ -383,7 +399,8 @@ if (fe_fit[i]->GetParameter(1)>0)
 			mean_rms->DrawLatex(0.18,0.86, rms_char[0]);
 
 			hs->SetMaximum((hs->GetMaximum())*1.1);
-			hs->GetXaxis()->SetRangeUser((mean_h[0] - 5*rms_h[0] < 0) ? -0.5 : (mean_h[0]- 5*rms_h[0])  , mean_h[0] + 5*rms_h[0]);	
+			if (argc < 4) hs->GetXaxis()->SetRangeUser((mean_h[0] - 5*rms_h[0] < 0) ? -0.5 : (mean_h[0]- 5*rms_h[0])  , mean_h[0] + 5*rms_h[0]);	
+			else if (argc > 4) { hs->GetXaxis()->SetRangeUser(overwriteXmin, overwriteXmax); }
 			c_Stack->Update();				
 			filename3 = filename.replace(filename.find(plot_ext[5].c_str()), 11, plot_ext[6].c_str());
 			c_Stack->Print(filename3.c_str());

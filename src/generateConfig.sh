@@ -140,12 +140,12 @@ fi
         sed -i "s/\"DiffPrecomp\": ${value}/\"DiffPrecomp\": 512/g" configs/rd53a_${5}_IL50.json
         sed -i "s/\"DiffPrecomp\": ${value}/\"DiffPrecomp\": 512/g" configs/rd53a_${5}_IL55.json
         value=`grep DiffComp configs/rd53a_test.json | grep -o '[0-9]*'`
-        sed -i "s/\"DiffComp\": ${value}/\"DiffComp\": 528/g" configs/rd53a_${5}_OL30.json
-        sed -i "s/\"DiffComp\": ${value}/\"DiffComp\": 528/g" configs/rd53a_${5}_OL35.json
-        sed -i "s/\"DiffComp\": ${value}/\"DiffComp\": 528/g" configs/rd53a_${5}_OL40.json
-        sed -i "s/\"DiffComp\": ${value}/\"DiffComp\": 528/g" configs/rd53a_${5}_IL45.json
-        sed -i "s/\"DiffComp\": ${value}/\"DiffComp\": 528/g" configs/rd53a_${5}_IL50.json
-        sed -i "s/\"DiffComp\": ${value}/\"DiffComp\": 528/g" configs/rd53a_${5}_IL55.json
+        sed -i "s/\"DiffComp\": ${value}/\"DiffComp\": 700/g" configs/rd53a_${5}_OL30.json
+        sed -i "s/\"DiffComp\": ${value}/\"DiffComp\": 700/g" configs/rd53a_${5}_OL35.json
+        sed -i "s/\"DiffComp\": ${value}/\"DiffComp\": 700/g" configs/rd53a_${5}_OL40.json
+        sed -i "s/\"DiffComp\": ${value}/\"DiffComp\": 700/g" configs/rd53a_${5}_IL45.json
+        sed -i "s/\"DiffComp\": ${value}/\"DiffComp\": 700/g" configs/rd53a_${5}_IL50.json
+        sed -i "s/\"DiffComp\": ${value}/\"DiffComp\": 700/g" configs/rd53a_${5}_IL55.json
         value=`grep DiffVth2 configs/rd53a_test.json | grep -o '[0-9]*' | sed -n 2p`
         sed -i "s/\"DiffVth2\": ${value}/\"DiffVth2\": 100/g" configs/rd53a_${5}_OL30.json
         sed -i "s/\"DiffVth2\": ${value}/\"DiffVth2\": 100/g" configs/rd53a_${5}_OL35.json

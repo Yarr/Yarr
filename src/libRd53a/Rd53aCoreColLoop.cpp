@@ -76,7 +76,7 @@ void Rd53aCoreColLoop::execPart1() {
 	    if ( m_delayArray.size() > 0 ) {
 		if ( m_delayArray.size() == (m_impl->maxCore-m_impl->minCore) ) 
 		    dynamic_cast<Rd53a*>(fe)->writeRegister(&Rd53a::InjDelay,m_delayArray[i]);
-		dynamic_cast<Rd53a*>(fe)->writeRegister(&Rd53a::InjDelay,m_delayArray[0]);
+		else dynamic_cast<Rd53a*>(fe)->writeRegister(&Rd53a::InjDelay,m_delayArray[0]);
 	    }
         }
     }

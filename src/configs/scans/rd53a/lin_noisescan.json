@@ -1,0 +1,62 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "NoiseAnalysis",
+        "config": {
+          "createMask": true
+        }
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "1": {
+        "algorithm": "TotMap",
+        "config": {}
+      },
+      "2": {
+        "algorithm": "Tot2Map",
+        "config": {}
+      },
+      "3": {
+        "algorithm": "L1Dist",
+        "config": {}
+      },
+      "4": {
+        "algorithm": "HitsPerEvent",
+        "config": {}
+      },
+      "n_count": 5
+    },
+    "loops": [
+      {
+        "config": {
+          "count": 0,
+          "delay": 48,
+          "extTrigger": false,
+          "frequency": 5000,
+          "noInject": true,
+          "time": 30
+        },
+        "loopAction": "Rd53aTriggerLoop"
+      },
+      {
+        "loopAction": "StdDataGatherer"
+      }
+    ],
+    "name": "NoiseScan",
+    "prescan": {
+        "GlobalPulseRt": 0,
+        "LatencyConfig": 80,
+	"DiffVth1": 500,
+        "SyncVth": 500,
+        "EnCoreColDiff1": 0,
+        "EnCoreColDiff2": 0,
+        "EnCoreColSync":0
+    }
+  }
+}

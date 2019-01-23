@@ -450,8 +450,9 @@ void ScurveFitter::init(ScanBase *s) {
     std::shared_ptr<LoopActionBase> tmpVcalLoop(new Fei4ParameterLoop(&Fei4::PlsrDAC));
     std::shared_ptr<LoopActionBase> tmpVcalLoop2(new Fe65p2ParameterLoop(&Fe65p2::PlsrDac));
     std::shared_ptr<LoopActionBase> tmpVcalLoop3(new Rd53aParameterLoop());
+    fb = NULL;
     scan = s;
-    n_count = nCol*nRow;
+    n_count = 1;
     vcalLoop = 0;
     injections = 50;
     useScap = true;
@@ -475,6 +476,11 @@ void ScurveFitter::init(ScanBase *s) {
             loopMax.push_back((unsigned)l->getMax());
         } else {
             unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            if (l->type() == tmpVcalLoop3->type() ||
+                l->type() == tmpVcalLoop2->type() ||
+                l->type() == tmpVcalLoop->type()) {
+                cnt++; // Parameter loop interval is inclusive
+            }
             if (cnt == 0)
                 cnt = 1;
             n_count = n_count*cnt;
@@ -509,6 +515,17 @@ void ScurveFitter::init(ScanBase *s) {
             useScap = msk->getScap();
             useLcap = msk->getLcap();
         }
+        
+        // Find potential pixel feedback
+        if (l->type() == typeid(Fei4PixelFeedback*)) {
+            fb = (PixelFeedbackBase*)((Fei4PixelFeedback*) l.get());  
+        }
+        if (l->type() == typeid(Fe65p2PixelFeedback*)) {
+            fb = (PixelFeedbackBase*)((Fe65p2PixelFeedback*) l.get());  
+        }
+        if (l->type() == typeid(Rd53aPixelFeedback*)) {
+            fb = (PixelFeedbackBase*)((Rd53aPixelFeedback*) l.get());  
+        }
 
     }
 
@@ -516,7 +533,9 @@ void ScurveFitter::init(ScanBase *s) {
         x.push_back(i);
     }
     cnt = 0;
-
+    n_failedfit =0;
+    prevOuter = 0;
+    thrTarget = bookie->getTargetCharge();
 }
 
 // Errorfunction
@@ -534,18 +553,27 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
     if (h->getType() != typeid(OccupancyMap*))
         return;
 
-
-    n_failedfit =0;
     Histo2d *hh = (Histo2d*) h;
+
+    unsigned medIdent = 0;
+    unsigned medOffset = 0;
+    unsigned outerIdent = 0;
+    unsigned outerOffset = 0;
+    for (unsigned n=0; n<loops.size(); n++) {
+        outerIdent += hh->getStat().get(loops[n])+outerOffset;
+        medIdent += hh->getStat().get(loops[n])+medOffset;
+        medOffset += loopMax[n];
+        outerOffset += loopMax[n];
+    }
+    medCnt[medIdent]++;
+
     for(unsigned col=1; col<=nCol; col++) {
         for (unsigned row=1; row<=nRow; row++) {
             unsigned bin = hh->binNum(col, row);
             if (hh->getBin(bin) != 0) {
                 // Select correct output containe
                 unsigned ident = bin;
-                unsigned outerIdent = 0;
                 unsigned offset = nCol*nRow;
-                unsigned outerOffset = 0;
                 unsigned vcal = hh->getStat().get(vcalLoop);
                 //std::cout << "VCAL = " << vcal << std::endl;
                 // Determine identifier
@@ -554,9 +582,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                 // Check for other loops
                 for (unsigned n=0; n<loops.size(); n++) {
                     ident += hh->getStat().get(loops[n])+offset;
-                    outerIdent += hh->getStat().get(loops[n])+offset;
                     offset += loopMax[n];
-                    outerOffset += loopMax[n];
                     name += "-" + std::to_string(hh->getStat().get(loops[n]));
                 }
 
@@ -569,7 +595,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     innerCnt[ident] = 0;
                 }
                 if (sCurve[outerIdent] == NULL) {
-                    Histo2d *hhh = new Histo2d("sCurve", vcalBins+1, vcalMin-((double)vcalStep/2.0), vcalMax+((double)vcalStep/2.0), injections-1, 0.5, injections-0.5, typeid(this));
+                    Histo2d *hhh = new Histo2d("sCurve-" + std::to_string(outerIdent), vcalBins+1, vcalMin-((double)vcalStep/2.0), vcalMax+((double)vcalStep/2.0), injections-1, 0.5, injections-0.5, typeid(this));
                     hhh->setXaxisTitle("Vcal");
                     hhh->setYaxisTitle("Occupancy");
                     hhh->setZaxisTitle("Number of pixels");
@@ -601,42 +627,42 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     end = std::chrono::high_resolution_clock::now();
                     std::chrono::microseconds fitTime = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
                     if (thrMap[outerIdent] == NULL) {
-                        Histo2d *hh2 = new Histo2d("ThresholdMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+                        Histo2d *hh2 = new Histo2d("ThresholdMap-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
                         hh2->setXaxisTitle("Column");
                         hh2->setYaxisTitle("Row");
                         hh2->setZaxisTitle("Threshold [e]");
                         thrMap[outerIdent].reset(hh2);
-                        hh2 = new Histo2d("NoiseMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+                        hh2 = new Histo2d("NoiseMap-"+std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
                         hh2->setXaxisTitle("Column");
                         hh2->setYaxisTitle("Row");
                         hh2->setZaxisTitle("Noise [e]");
 
                         sigMap[outerIdent].reset(hh2);
 
-                        Histo1d *hh1 = new Histo1d("Chi2Dist", 51, -0.025, 2.525, typeid(this));
+                        Histo1d *hh1 = new Histo1d("Chi2Dist-"+std::to_string(outerIdent), 51, -0.025, 2.525, typeid(this));
                         hh1->setXaxisTitle("Fit Chi/ndf");
                         hh1->setYaxisTitle("Number of Pixels");
                         chiDist[outerIdent].reset(hh1);
 
-                        hh2 = new Histo2d("Chi2Map", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+                        hh2 = new Histo2d("Chi2Map-"+std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
                         hh2->setXaxisTitle("Column");
                         hh2->setYaxisTitle("Row");
                         hh2->setZaxisTitle("Chi2");
                         chi2Map[outerIdent].reset(hh2);     
 
-                        hh2 = new Histo2d("StatusMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+                        hh2 = new Histo2d("StatusMap-"+std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
                         hh2->setXaxisTitle("Column");
                         hh2->setYaxisTitle("Row");
                         hh2->setZaxisTitle("Fit Status");
                         statusMap[outerIdent].reset(hh2);
 
 
-                        hh1 = new Histo1d("StatusDist", 11, 0, 11, typeid(this));
+                        hh1 = new Histo1d("StatusDist-"+std::to_string(outerIdent), 11, 0, 11, typeid(this));
                         hh1->setXaxisTitle("Fit Status ");
                         hh1->setYaxisTitle("Number of Pixels");
                         statusDist[outerIdent].reset(hh1);
 
-                        hh1 = new Histo1d("TimePerFitDist", 201, -1, 401, typeid(this));
+                        hh1 = new Histo1d("TimePerFitDist-"+std::to_string(outerIdent), 201, -1, 401, typeid(this));
                         hh1->setXaxisTitle("Fit Time [us]");
                         hh1->setYaxisTitle("Number of Pixels");
                         timeDist[outerIdent].reset(hh1);
@@ -644,94 +670,163 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
                     double chi2= status.fnorm/(double)status.nfev;
 
-                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0 && chi2 < 2.5) {
+                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0 && chi2 < 2.5
+			&& thrMap[outerIdent]->getBin(bin) == 0) {
                         FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
                         thrMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0], useScap, useLcap));
                         // Reudce affect of vcal offset on this, don't want to probe at low vcal
                         sigMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0]+par[1], useScap, useLcap)-feCfg->toCharge(par[0], useScap, useLcap));
                         chiDist[outerIdent]->fill(status.fnorm/(double)status.nfev);
                         timeDist[outerIdent]->fill(fitTime.count());
-                        chi2Map[outerIdent]->fill(col, row,chi2 );
+                        chi2Map[outerIdent]->fill(col, row, chi2 );
                         statusMap[outerIdent]->fill(col, row, status.outcome);
                         statusDist[outerIdent]->fill(status.outcome);
-
-                    }else
+                    } else {
                         n_failedfit++;
-
+                    }
+                    if (row == nRow/2 && col%5 == 0) {
+                        output->pushData(std::move(histos[ident]));
+                    }
+                    histos[ident].reset(nullptr);
                 }
             }
         }
     }
+
+    // Finished full vcal loop, if feedback loop provide TDAC feedback
+    // Requires odd number of TDAC steps, optimised for 3 iterations
+    if (medCnt[medIdent] == n_count && fb != nullptr) {
+        if (outerIdent == 0) {
+            thrTarget = thrMap[outerIdent]->getMean();
+        }
+
+        if (step[outerIdent] == nullptr) {
+            Histo2d *hh2 = new Histo2d("StepMap" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+            hh2->setXaxisTitle("Column");
+            hh2->setYaxisTitle("Row");
+            hh2->setZaxisTitle("TDAC change");
+            step[outerIdent].reset(hh2);
+        }
+        
+        if (deltaThr[outerIdent] == nullptr) {
+            Histo2d *hh2 = new Histo2d("DeltaThreshold-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+            hh2->setXaxisTitle("Column");
+            hh2->setYaxisTitle("Row");
+            hh2->setZaxisTitle("Delta Threshold [e]");
+            deltaThr[outerIdent].reset(hh2);
+        }
+
+        for(unsigned col=1; col<=nCol; col++) {
+            for (unsigned row=1; row<=nRow; row++) {
+                unsigned bin = thrMap[outerIdent]->binNum(col, row);
+                step[outerIdent]->setBin(bin, 0);
+                if (thrMap[outerIdent]->getBin(bin) != 0) {
+                    double curDeltaThr = thrTarget - thrMap[outerIdent]->getBin(bin);
+                    if (outerIdent == 0) { // First time
+                        if (curDeltaThr > 25) { // Increase Threshold
+                            step[outerIdent]->setBin(bin, -1);
+                        } else if (curDeltaThr < -25) { //Decrease Threshold
+                            step[outerIdent]->setBin(bin, +1);
+                        }
+                    } else { // Second or higher loop
+                        if (fabs(curDeltaThr) < fabs(deltaThr[prevOuter]->getBin(bin))) {
+                            // Did the sign change?
+                            if ( ((curDeltaThr < 0) ? -1 : (curDeltaThr > 0)) != ((deltaThr[prevOuter]->getBin(bin) < 0) ? -1 : (deltaThr[prevOuter]->getBin(bin) > 0)) ) {
+                                step[outerIdent]->setBin(bin, 0); // Best setting
+                            } else {
+                                step[outerIdent]->setBin(bin, step[prevOuter]->getBin(bin)); // Move in the same direction
+                            }
+                        } else {
+                            // Last setting was better
+                            step[outerIdent]->setBin(bin, step[prevOuter]->getBin(bin)*-1);
+                        }
+                    }
+                } 
+                deltaThr[outerIdent]->setBin(bin, thrTarget - thrMap[outerIdent]->getBin(bin));
+            }
+        }
+        prevOuter = outerIdent;
+        std::cout << "[" << this->channel << "] --> Sending feedback #" << outerIdent << std::endl;
+        fb->feedback(this->channel, step[outerIdent].get());
+    }
 }
 
 void ScurveFitter::end() {
-    if (thrMap[0] != NULL) {
-        int bin_width, xlow, xhigh, bins;
-        double thrMean = thrMap[0]->getMean();
-        double thrRms = thrMap[0]->getStdDev();
-        double sigMean = sigMap[0]->getMean();
-        double sigRms = sigMap[0]->getStdDev();
 
-
-        // TODO Loop over outerIdent
-        bin_width = 10;
-        int rThrMean = (int)(thrMean) - (int)(thrMean)%bin_width;
-        int rThrRms = (int)(thrRms) - (int)(thrRms)%bin_width;
-        xlow = rThrMean-(rThrRms*5)-bin_width/2.0;
-        if (xlow < 0) xlow = -1*bin_width/2.0;
-        xhigh = rThrMean+(rThrRms*5)+bin_width/2.0;
-        if ((xhigh-xlow)%bin_width != 0)
-            xhigh += ((xhigh-xlow)%bin_width);
-        bins = (xhigh-xlow)/bin_width;
-
-        Histo1d *hh1 = new Histo1d("ThresholdDist", bins, xlow, xhigh, typeid(this));
-        hh1->setXaxisTitle("Threshold [e]");
-        hh1->setYaxisTitle("Number of Pixels");
-        thrDist[0].reset(hh1);
-
-        bin_width = 5;
-        int rSigMean = (int)(sigMean) - (int)(sigMean)%bin_width;
-        int rSigRms = (int)(sigRms) - (int)(sigRms)%bin_width;
-        xlow = rSigMean-(rSigRms*5)-bin_width/2.0;
-        if (xlow < 0) xlow = -1*bin_width/2.0;
-        xhigh = rSigMean+(rSigRms*5)+bin_width/2.0;
-        if ((xhigh-xlow)%bin_width != 0)
-            xhigh += ((xhigh-xlow)%bin_width);
-        bins = (xhigh-xlow)/bin_width;
-
-        hh1 = new Histo1d("NoiseDist", bins, xlow, xhigh, typeid(this));
-        hh1->setXaxisTitle("Noise [e]");
-        hh1->setYaxisTitle("Number of Pixels");
-        sigDist[0].reset(hh1);
-
-        for(unsigned bin=0; bin<(nCol*nRow); bin++) {
-            if (thrMap[0]->getBin(bin) != 0)
-                thrDist[0]->fill(thrMap[0]->getBin(bin));
-            if (sigMap[0]->getBin(bin) != 0)
-                sigDist[0]->fill(sigMap[0]->getBin(bin));
-        }
-
-        std::cout << "\033[1;33m[" << channel << "] Threashold Mean = " << thrMap[0]->getMean() << " +- " << thrMap[0]->getStdDev() << "\033[0m" << std::endl;
-        output->pushData(std::move(sCurve[0]));
-        output->pushData(std::move(thrDist[0]));
-        output->pushData(std::move(thrMap[0]));
-        output->pushData(std::move(sigDist[0]));
-        std::cout << "\033[1;33m[" << channel << "] Noise Mean = " << sigMap[0]->getMean() << " +- " << sigMap[0]->getStdDev() << "\033[0m" <<  std::endl;
-        std::cout << "\033[1;33m[" << channel << "] Number of failed fits = " <<     n_failedfit << "\033[0m" <<  std::endl;
-
+    if (fb != nullptr) {
+        std::cout << " Tuned to ==> " << thrTarget << std::endl;
     }
 
-    output->pushData(std::move(sigMap[0]));
-    output->pushData(std::move(chiDist[0]));
-    output->pushData(std::move(timeDist[0]));
+    // TODO Loop over outerIdent
+    for (unsigned i=0; i<thrMap.size(); i++) {
+        if (thrMap[i] != NULL) {
 
 
+            int bin_width, xlow, xhigh, bins;
+            double thrMean = thrMap[i]->getMean();
+            double thrRms = thrMap[i]->getStdDev();
+            double sigMean = sigMap[i]->getMean();
+            double sigRms = sigMap[i]->getStdDev();
 
-    for(unsigned bin=0; bin<(nCol*nRow); bin+=((nCol*nRow)/20)) {
-        if (histos[bin]) {
-            output->pushData(std::move(histos[bin]));
+
+            bin_width = 10;
+            int rThrMean = (int)(thrMean) - (int)(thrMean)%bin_width;
+            int rThrRms = (int)(thrRms) - (int)(thrRms)%bin_width;
+            xlow = rThrMean-(rThrRms*5)-bin_width/2.0;
+            if (xlow < 0) xlow = -1*bin_width/2.0;
+            xhigh = rThrMean+(rThrRms*5)+bin_width/2.0;
+            if ((xhigh-xlow)%bin_width != 0)
+                xhigh += ((xhigh-xlow)%bin_width);
+            bins = (xhigh-xlow)/bin_width;
+
+            Histo1d *hh1 = new Histo1d("ThresholdDist-" + std::to_string(i), bins, xlow, xhigh, typeid(this));
+            hh1->setXaxisTitle("Threshold [e]");
+            hh1->setYaxisTitle("Number of Pixels");
+            thrDist[i].reset(hh1);
+
+            bin_width = 5;
+            int rSigMean = (int)(sigMean) - (int)(sigMean)%bin_width;
+            int rSigRms = (int)(sigRms) - (int)(sigRms)%bin_width;
+            xlow = rSigMean-(rSigRms*5)-bin_width/2.0;
+            if (xlow < 0) xlow = -1*bin_width/2.0;
+            xhigh = rSigMean+(rSigRms*5)+bin_width/2.0;
+            if ((xhigh-xlow)%bin_width != 0)
+                xhigh += ((xhigh-xlow)%bin_width);
+            bins = (xhigh-xlow)/bin_width;
+
+            hh1 = new Histo1d("NoiseDist" + std::to_string(i), bins, xlow, xhigh, typeid(this));
+            hh1->setXaxisTitle("Noise [e]");
+            hh1->setYaxisTitle("Number of Pixels");
+            sigDist[i].reset(hh1);
+
+            for(unsigned bin=0; bin<(nCol*nRow); bin++) {
+                if (thrMap[i]->getBin(bin) != 0)
+                    thrDist[i]->fill(thrMap[i]->getBin(bin));
+                if (sigMap[i]->getBin(bin) != 0)
+                    sigDist[i]->fill(sigMap[i]->getBin(bin));
+            }
+
+            std::cout << "\033[1;33m[" << channel << "][" << i << "] Threashold Mean = " << thrMap[i]->getMean() << " +- " << thrMap[i]->getStdDev() << "\033[0m" << std::endl;
+            output->pushData(std::move(sCurve[i]));
+            output->pushData(std::move(thrDist[i]));
+            output->pushData(std::move(thrMap[i]));
+            output->pushData(std::move(sigDist[i]));
+            output->pushData(std::move(chi2Map[i]));
+            output->pushData(std::move(statusMap[i]));
+            output->pushData(std::move(statusDist[i]));
+            output->pushData(std::move(step[i]));
+            output->pushData(std::move(deltaThr[i]));
+            std::cout << "\033[1;33m[" << channel << "][" << i << "] Noise Mean = " << sigMap[i]->getMean() << " +- " << sigMap[i]->getStdDev() << "\033[0m" <<  std::endl;
+            std::cout << "\033[1;33m[" << channel << "][" << i << "] Number of failed fits = " <<     n_failedfit << "\033[0m" <<  std::endl;
+
         }
+
+        output->pushData(std::move(sigMap[i]));
+        output->pushData(std::move(chiDist[i]));
+        output->pushData(std::move(timeDist[i]));
     }
+
+
 }
 
 void OccGlobalThresholdTune::init(ScanBase *s) {
@@ -1394,7 +1489,7 @@ void DelayAnalysis::processHistogram(HistogramBase *h) {
                     }
 
                     // Add up Histograms
-                    histos[ident]->fill(16*(15-l1)+delay, hh->getBin(bin));
+                    histos[ident]->fill((16*l1)+delay, hh->getBin(bin));
                     innerCnt[ident]++;
 
                     // Got all data, finish up Analysis
