@@ -32,7 +32,7 @@ else
 CPPFLAGS += -pthread
 LDFLAGS += -pthread -lrt
 endif
-CPPFLAGS += -I/opt/rh/rh-mongodb36/root/usr/include/mongocxx/v_noabi -I/opt/rh/rh-mongodb36/root/usr/include/bsoncxx/v_noabi
+CPPFLAGS += -I/opt/rh/rh-mongodb36/root/usr/include -I/opt/rh/rh-mongodb36/root/usr/include/mongocxx/v_noabi -I/opt/rh/rh-mongodb36/root/usr/include/bsoncxx/v_noabi
 LDFLAGS += -L/opt/rh/rh-mongodb36/root/usr/lib64 -lmongocxx -lbsoncxx
 
 CPPFLAGS += -std=c++11 -Wall -Werror
