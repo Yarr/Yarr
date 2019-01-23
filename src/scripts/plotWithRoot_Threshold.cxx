@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 		if (stat(filepath.c_str(), &filestat)) continue; //skip if file is invalid
 		if (S_ISDIR(filestat.st_mode)) continue; //skip if file is a directory
 
-		if ( strstr( file_path, "ThresholdMap.dat") != NULL) { //if filename contains string declared in argument.
+		if ( strstr( file_path, "ThresholdMap-0.dat") != NULL) { //if filename contains string declared in argument.
 
 			chipnum = "Chip SN: " + file_name.substr(0, file_name.find(delimiter)); //get chip # from file name
 
