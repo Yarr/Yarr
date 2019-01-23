@@ -2,7 +2,7 @@
 
 
 ./bin/scanConsole -r $1 -c $2 -s configs/scans/rd53a/std_digitalscan.json -p -m 1 -o $3
-./bin/scanConsole -r $1 -c $2 -s configs/scans/rd53a/syn_analogscan.json -p -m 1 -o $3
+./bin/scanConsole -r $1 -c $2 -s configs/scans/rd53a/syn_analogscan.json -p -o $3
 ./bin/scanConsole -r $1 -c $2 -s configs/scans/rd53a/syn_intimeanalogscan.json -p -m 0 -o $3
 
 ./bin/scanConsole -r $1 -c $2 -s configs/scans/rd53a/syn_tune_globalthreshold.json -t $4 -p -m 0 -o $3
