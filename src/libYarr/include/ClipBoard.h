@@ -9,6 +9,7 @@
 // # Comment: Saves data between processes
 // ################################
 
+#include <memory>
 #include <mutex>
 #include <deque>
 #include <condition_variable>
