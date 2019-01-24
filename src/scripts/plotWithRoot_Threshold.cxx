@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 	gStyle->SetTickLength(0.02);
 	gStyle->SetTextFont();
 
-	if (argc < 4 || ( argc > 4 && argc < 6) ) {
+	if (!(argc == 4 || argc == 7) ) {
 		std::cout << "No directory, image plot extension, and/or good differential FE pixels option given! \nExtra settings for the threshold plot x-axis: minimum value, maximum value, and # of bins [e per bin=(xhigh-xlow)/xbins]. \nFor only good differential FE pixels, write '1'. \n./plotWithRoot_Threshold path/to/directory/ file_ext goodDiff_On xlow(optional) xhigh(optional) xbins(optional)" << std::endl;
 		std::cout << "Example: ./plotWithRoot_Threshold path/to/directory/ pdf 1 \nExample: ./plotWithRoot_Threshold path/to/directory/pdf 0 -0.5 10000.5 500" << std::endl;
 		return -1;
@@ -94,11 +94,11 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			yaxistitle = "Number of Pixels";
 			gausrangetitle = "Deviation from the Mean [#sigma] ";
 			rmsrangetitle = "Deviation from the Mean [RMS] ";
-			if (argc < 4) xbins = 500;
+			if (argc <= 4) xbins = 500;
 			else if (argc > 4 ) xbins = 10000/setElectrons; 
 			range_bins = 6;
-			xlow = -0.5;
-			xhigh = 10000.5;
+			xlow = -10;
+			xhigh = 9990;
 			range_low = 0;
 			range_high = 6;
 
@@ -259,15 +259,13 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 				rms_h[i] = fe_hist[i]->GetRMS();
 
 				//Fit plot with Gaussian; for single FE plots
-				if (i == 0) {	
-					fe_fit[i] = new TF1(fit_name[i].c_str(), "gaus", xlow, xhigh);
-					fe_hist[i]->Fit(fit_name[i].c_str(), "0", "", xlow, xhigh);
-				}	
-				if (i > 0) {
-					fe_fit[i] = new TF1(fit_name[i].c_str(), "gaus", mean_h[i]-rms_h[i], mean_h[i]+rms_h[i]);
-					fe_hist[i]->Fit(fit_name[i].c_str(), "0", "", mean_h[i]-rms_h[i], mean_h[i]+rms_h[i]);			
-				}
+                fe_fit[i] = new TF1(fit_name[i].c_str(), "gaus", (mean_h[i] - 5*rms_h[i] < 0) ? -0.5 : (mean_h[i]- 5*rms_h[i]), mean_h[i] + 5*rms_h[i]);
+                fe_fit[i]->SetParameter(0, fe_hist[i]->GetEntries());
+                fe_fit[i]->SetParameter(1, mean_h[i]);
+                fe_fit[i]->SetParameter(2, rms_h[i]);
+                fe_hist[i]->Fit(fit_name[i].c_str(), "", "", (mean_h[i] - 5*rms_h[i] < 0) ? -0.5 : (mean_h[i]- 5*rms_h[i]), mean_h[i] + 5*rms_h[i]);			
 
+                /*
 				//Change range and refit 5 times to get better fit.	
 				for (int j=0; j<5; j++) {
 					for (int k = 0; k<3; k++) {
@@ -278,11 +276,11 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 					fit_range[(2*i)+1] = fit_par[1] + (2* fit_par[2]);
 					fe_hist[i]->Fit(fit_name[i].c_str(), "0", "", fit_range[(2*i)], fit_range[(2*i)+1] );
 				}
-
+                */
 				chisq_DOF[i] = (fe_fit[i]->GetChisquare())/(fe_fit[i]->GetNDF());
 
 				//If Chi Squared divided by Degrees of Freedom is more than 10, warn user.
-				fe_hist[i]->Fit(fit_name[i].c_str(), "B", "I", xlow, xhigh); //Plot over full range
+				//fe_hist[i]->Fit(fit_name[i].c_str(), "B", "I", (mean_h[i] - 5*rms_h[i] < 0) ? -0.5 : (mean_h[i]- 5*rms_h[i]), mean_h[i] + 5*rms_h[i]); //Plot over full range
 				if (chisq_DOF[i] > 10)  std::cout<<"\n \033[1;38;5;202;5m Your threshold is crap. Choose a new threshold. \033[0m \n"<<std::endl;
 
 
@@ -309,9 +307,9 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 					mean_rms->DrawLatex(0.18,0.91, mean_char[i]);
 					sprintf(rms_char[i], "RMS_{hist} = %.1f", rms_h[i]);
 					mean_rms->DrawLatex(0.18,0.86, rms_char[i]);
-					sprintf(gmean_char[i], "Mean_{gaus} = %.1f #pm %.1f", fit_par[1], fit_err[1]);
+					sprintf(gmean_char[i], "Mean_{gaus} = %.1f #pm %.1f", fe_fit[i]->GetParameter(1), fe_fit[i]->GetParError(1));
 					mean_rms->DrawLatex(0.18, 0.81, gmean_char[i]);
-					sprintf(gsigma_char[i], "#sigma_{gaus} = %.1f #pm %.1f", fit_par[2], fit_err[2]);
+					sprintf(gsigma_char[i], "#sigma_{gaus} = %.1f #pm %.1f", fe_fit[i]->GetParameter(2), fe_fit[i]->GetParError(2));
 					mean_rms->DrawLatex(0.18, 0.76, gsigma_char[i]);
 					sprintf(chidof_char[i], "#chi^{2} / DOF = %.1f / %i", fe_fit[i]->GetChisquare(), fe_fit[i]->GetNDF());
 					mean_rms->DrawLatex(0.18, 0.71, chidof_char[i]);	
@@ -328,7 +326,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 
 				}
 				fe_hist[i]->GetYaxis()->SetRangeUser(0,((fe_hist[i]->GetMaximum())*1.5)); //Leave extra room for legend
-				if (argc < 4) fe_hist[i]->GetXaxis()->SetRangeUser((mean_h[i] - 5*rms_h[i] < 0) ? -0.5 : (mean_h[i]- 5*rms_h[i]), mean_h[i] + 5*rms_h[i]); //Change the x-axis range to be the Mean +/- 5*RMS. If the lower bound is less than -0.5, make it -0.5. 
+				if (argc <= 4) fe_hist[i]->GetXaxis()->SetRangeUser((mean_h[i] - 5*rms_h[i] < 0) ? -0.5 : (mean_h[i]- 5*rms_h[i]), mean_h[i] + 5*rms_h[i]); //Change the x-axis range to be the Mean +/- 5*RMS. If the lower bound is less than -0.5, make it -0.5. 
 				else if (argc > 4) {
 					fe_hist[i]->GetXaxis()->SetRangeUser(overwriteXmin, overwriteXmax);
 				}
@@ -351,14 +349,14 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			gStyle->SetOptStat(0);
 			c_plot->RedrawAxis();
 			c_plot->Update();
-			if (argc < 4) h_plot->GetZaxis()->SetRangeUser((mean_h[0] - 5*rms_h[0] < 0) ? -0.5 : (mean_h[0]- 5*rms_h[0])  , mean_h[0] + 5*rms_h[0]);
+			if (argc <= 4) h_plot->GetZaxis()->SetRangeUser((mean_h[0] - 5*rms_h[0] < 0) ? -0.5 : (mean_h[0]- 5*rms_h[0])  , mean_h[0] + 5*rms_h[0]);
 			else if (argc > 4) { h_plot->GetZaxis()->SetRangeUser(overwriteXmin, overwriteXmax); }	
 			h_plot->GetZaxis()->SetLabelSize(0.04);
 			filename2 = filename.replace(filename.find(plot_ext[4].c_str()), 10, plot_ext[5].c_str());
 			c_plot->Print(filename2.c_str());
 
 			//Remove fit lines from histograms for the stack plot
-			for (int i=1; i<4; i++) fe_hist[i]->Fit(fit_name[i].c_str(), "0", "", fit_range[(2*i)], fit_range[(2*i)+1]);
+			//for (int i=1; i<4; i++) fe_hist[i]->Fit(fit_name[i].c_str(), "0", "", fit_range[(2*i)], fit_range[(2*i)+1]);
 
 			//Stack Plot for all 3 FEs
 			THStack *hs = new THStack("hs","");
@@ -399,7 +397,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			mean_rms->DrawLatex(0.18,0.86, rms_char[0]);
 
 			hs->SetMaximum((hs->GetMaximum())*1.1);
-			if (argc < 4) hs->GetXaxis()->SetRangeUser((mean_h[0] - 5*rms_h[0] < 0) ? -0.5 : (mean_h[0]- 5*rms_h[0])  , mean_h[0] + 5*rms_h[0]);	
+			if (argc <= 4) hs->GetXaxis()->SetRangeUser((mean_h[0] - 5*rms_h[0] < 0) ? -0.5 : (mean_h[0]- 5*rms_h[0])  , mean_h[0] + 5*rms_h[0]);	
 			else if (argc > 4) { hs->GetXaxis()->SetRangeUser(overwriteXmin, overwriteXmax); }
 			c_Stack->Update();				
 			filename3 = filename.replace(filename.find(plot_ext[5].c_str()), 11, plot_ext[6].c_str());
