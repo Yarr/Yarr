@@ -656,8 +656,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         hh2->setZaxisTitle("Fit Status");
                         statusMap[outerIdent].reset(hh2);
 
-
-                        hh1 = new Histo1d("StatusDist-"+std::to_string(outerIdent), 11, 0, 11, typeid(this));
+                        hh1 = new Histo1d("StatusDist-"+std::to_string(outerIdent), 11, -0.5, 10.5, typeid(this));
                         hh1->setXaxisTitle("Fit Status ");
                         hh1->setYaxisTitle("Number of Pixels");
                         statusDist[outerIdent].reset(hh1);
@@ -671,7 +670,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     double chi2= status.fnorm/(double)status.nfev;
 
                     if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0 && chi2 < 2.5
-			&& thrMap[outerIdent]->getBin(bin) == 0) {
+			&& statusMap[outerIdent]->getBin(bin) > 0 && statusMap[outerIdent]->getBin(bin) < 4) {
                         FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
                         thrMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0], useScap, useLcap));
                         // Reudce affect of vcal offset on this, don't want to probe at low vcal
