@@ -191,6 +191,7 @@ double Histo2d::getBin(unsigned n) const {
 void Histo2d::setBin(unsigned n, double v) {
     if (n < this->size()) {
         data[n] = v;
+        isFilled[n] = true;
     }
 }
 

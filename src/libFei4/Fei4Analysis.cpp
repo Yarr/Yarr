@@ -669,16 +669,15 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
                     double chi2= status.fnorm/(double)status.nfev;
 
-                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0 && chi2 < 2.5
-			&& statusMap[outerIdent]->getBin(bin) > 0 && statusMap[outerIdent]->getBin(bin) < 4) {
+                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0 && chi2 < 2.5) {
                         FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
-                        thrMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0], useScap, useLcap));
+                        thrMap[outerIdent]->setBin(bin, feCfg->toCharge(par[0], useScap, useLcap));
                         // Reudce affect of vcal offset on this, don't want to probe at low vcal
-                        sigMap[outerIdent]->fill(col, row, feCfg->toCharge(par[0]+par[1], useScap, useLcap)-feCfg->toCharge(par[0], useScap, useLcap));
+                        sigMap[outerIdent]->setBin(bin, feCfg->toCharge(par[0]+par[1], useScap, useLcap)-feCfg->toCharge(par[0], useScap, useLcap));
                         chiDist[outerIdent]->fill(status.fnorm/(double)status.nfev);
                         timeDist[outerIdent]->fill(fitTime.count());
-                        chi2Map[outerIdent]->fill(col, row, chi2 );
-                        statusMap[outerIdent]->fill(col, row, status.outcome);
+                        chi2Map[outerIdent]->setBin(bin, chi2 );
+                        statusMap[outerIdent]->setBin(bin, status.outcome);
                         statusDist[outerIdent]->fill(status.outcome);
                     } else {
                         n_failedfit++;
@@ -722,12 +721,12 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                 if (thrMap[outerIdent]->getBin(bin) != 0) {
                     double curDeltaThr = thrTarget - thrMap[outerIdent]->getBin(bin);
                     if (outerIdent == 0) { // First time
-                        if (curDeltaThr > 25) { // Increase Threshold
+                        if (curDeltaThr > 5) { // Increase Threshold
                             step[outerIdent]->setBin(bin, -1);
-                        } else if (curDeltaThr < -25) { //Decrease Threshold
+                        } else if (curDeltaThr < -5) { //Decrease Threshold
                             step[outerIdent]->setBin(bin, +1);
                         }
-                    } else { // Second or higher loop
+                    } else if (step[prevOuter]->getBin(bin) != 0) { // Second or higher loop
                         if (fabs(curDeltaThr) < fabs(deltaThr[prevOuter]->getBin(bin))) {
                             // Did the sign change?
                             if ( ((curDeltaThr < 0) ? -1 : (curDeltaThr > 0)) != ((deltaThr[prevOuter]->getBin(bin) < 0) ? -1 : (deltaThr[prevOuter]->getBin(bin) > 0)) ) {
