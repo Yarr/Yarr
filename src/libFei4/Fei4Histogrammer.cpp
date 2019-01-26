@@ -182,7 +182,8 @@ void L1Dist::processEvent(Fei4Data *data) {
 void L13d::processEvent(Fei4Data *data) {
     for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
         Fei4Event curEvent = *eventIt;
-        if(curEvent.l1id != l1id) {
+        
+        /*if(curEvent.l1id != l1id) {
             l1id = curEvent.l1id;
             if (curEvent.bcid - bcid_offset > 16) {
                 bcid_offset = curEvent.bcid;
@@ -195,11 +196,11 @@ void L13d::processEvent(Fei4Data *data) {
         int delta_bcid = curEvent.bcid - bcid_offset;
         if (delta_bcid < 0)
             delta_bcid += 32768;
-
+        */
         for (std::list<Fei4Hit>::iterator hitIt = curEvent.hits.begin(); hitIt!=curEvent.hits.end(); ++hitIt) {   
             Fei4Hit curHit = *hitIt;
             if(curHit.tot > 0)
-                h->fill(curHit.col, curHit.row, delta_bcid);
+                h->fill(curHit.col, curHit.row, curEvent.l1id%16);
         }
     }
 }
