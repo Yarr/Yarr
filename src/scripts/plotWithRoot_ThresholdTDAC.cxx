@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ThresholdTDAC path/to/direct
 
 		//Open ThresholdMap.dat file
 		if ( thr_found != 1) { //if Threshold Map has not been found
-			if (strstr(file_path, "ThresholdMap.dat") != NULL) {	//if filename contains string declared in argument
+			if (strstr(file_path, "ThresholdMap-0.dat") != NULL) {	//if filename contains string declared in argument
 				thr_found = 1;
 				chipnum = "Chip SN: " + file_name.substr(0, file_name.find(delimiter)); //get chip # from file name
 
