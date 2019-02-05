@@ -53,7 +53,7 @@
           "min": 16,
           "step": 1,
           "nSteps": 17,
-	  "delayArray": [14,14,14,14,14,14,14,14,13,13,13,13,13,13,13,12,12]
+	  "delayArray": [0]
         },
         "loopAction": "Rd53aCoreColLoop"
       },
@@ -75,7 +75,7 @@
     "name": "LinGlobalThresholdTune",
     "prescan": {
         "InjEnDig": 0,
-        "LatencyConfig": 42,
+        "LatencyConfig": 48,
         "GlobalPulseRt": 0,
         "DiffVth1": 500,
         "SyncVth": 500,
