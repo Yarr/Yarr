@@ -67,7 +67,7 @@
                 "min": 33,
                 "step": 1,
                 "nSteps": 17,
-		"delayArray": [14,14,14,14,13,13,13,13,12,12,12,12,13,12,12,12,12]
+		"delayArray": [0]
             },
             "loopAction": "Rd53aCoreColLoop"
         },
@@ -89,7 +89,7 @@
             "name": "FinePixelTuning",
             "prescan": {
                 "InjEnDig": 0,
-                "LatencyConfig": 41,
+                "LatencyConfig": 48,
                 "GlobalPulseRt": 0,
                 "InjVcalMed": 1000,
                 "InjVcalHigh": 1000,

@@ -55,7 +55,7 @@
                 "min": 33,
                 "step": 1,
                 "nSteps": 17,
-          	"delayArray": [14,14,14,14,13,13,13,13,12,12,12,12,13,12,12,12,12]
+          	"delayArray": [0]
             },
             "loopAction": "Rd53aCoreColLoop"
         },
@@ -77,7 +77,7 @@
             "name": "StdPixelThresholdTune",
             "prescan": {
                 "InjEnDig": 0,
-                "LatencyConfig": 41,
+                "LatencyConfig": 48,
                 "GlobalPulseRt": 0,
                 "EnCoreColSync": 0,
                 "EnCoreColLin1": 0,
