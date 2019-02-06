@@ -19,8 +19,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ThresholdTDAC path/to/direct
 
 	SetRD53Style();
 
-	if (argc < 3) {
-		std::cout << "No directory and/or image plot extension given! \nExample: ./plotWithRoot_ThresholdTDAC path/to/directory/ pdf" << std::endl;
+	if (argc < 4) {
+		std::cout << "No directory and/or image plot extension given! \nExample: ./plotWithRoot_ThresholdTDAC path/to/directory/ pdf 1" << std::endl;
 		return -1;
 	}
 
@@ -45,6 +45,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ThresholdTDAC path/to/direct
 
 	std::string delimiter = "_";
 	std::string ext = argv[2];
+	std::string good_Diff = argv[3];
 
 	dp = opendir(argv[1]);	//open directory
 	if (dp==NULL) { 	//if directory doesn't exist
@@ -132,6 +133,8 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ThresholdTDAC path/to/direct
 	//Number of TDACs in Linear and Differential FE.
 	int lin_plot=16, diff_plot=31;		
 
+    TH2F *corr_diff = new TH2F("corr_diff", "", xbins, xlow, xhigh, 31, -15.5, 15.5);
+
 	//Create Plots to get range
 	TH1* lin_all = NULL;
 	lin_all =  (TH1*) new TH1F("lin_all", "", xbins, xlow, xhigh);
@@ -172,9 +175,12 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ThresholdTDAC path/to/direct
 
 				//Fill Differential Plots
 				if (whichFE(j)==2) {
-					if (thr_v == 0) zero_Diff++;
-					histDiff[tdac_v+15]->Fill(thr_v);
-					diff_all->Fill(thr_v);
+                    if ((good_Diff == "1" && goodDiff(i, j)) || (good_Diff == "0")) {
+                        if (thr_v == 0) zero_Diff++;
+                        histDiff[tdac_v+15]->Fill(thr_v);
+                        diff_all->Fill(thr_v);
+                        corr_diff->Fill(thr_v, tdac_v);
+                    }
 				}
 				
 				n++;
@@ -194,6 +200,29 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ThresholdTDAC path/to/direct
 		}
 
 		std::string rd53 = "RD53A Internal";
+		
+        TLatex *tname= new TLatex();
+		tname->SetNDC();
+		tname->SetTextAlign(22);
+		tname->SetTextFont(73);
+		tname->SetTextSizePixels(30);
+        
+        TCanvas *c_corr_diff = new TCanvas("c_corr_diff", "c_corr_diff", 800, 600);
+		c_corr_diff->SetLeftMargin(0.15);
+		c_corr_diff->SetRightMargin(0.2);
+		c_corr_diff->SetBottomMargin(0.15);
+        corr_diff->GetXaxis()->SetTitle("Threshold [e]");
+        corr_diff->GetYaxis()->SetTitle("TDAC");
+        corr_diff->GetZaxis()->SetTitle("# of Pixels");
+		corr_diff->GetXaxis()->SetLabelSize(0.04);
+		corr_diff->GetYaxis()->SetLabelSize(0.04);
+		corr_diff->GetXaxis()->SetRangeUser((diff_all->GetMean() - 2*(diff_all->GetRMS())), (diff_all->GetMean() + 2*(diff_all->GetRMS()))); //Set the x-axis range to be the Mean +/- 2*RMS
+        corr_diff->Draw("colz");
+		tname->DrawLatex(0.28,0.96, rd53.c_str());
+		tname->DrawLatex(0.8, 0.96, chipnum.c_str());
+        std::string filename0 = filename.substr(0, filename.find(".dat")); 
+        c_corr_diff->Print((filename0 + "_DIFFThrTDACcorr." + ext).c_str());
+        
 
 		//Linear FE Threshold TDAC plot
 		THStack *hs_Lin = new THStack("hs_Lin","");
@@ -221,13 +250,6 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ThresholdTDAC path/to/direct
 		hs_Lin_legend->SetTextSize(0.04);
 		hs_Lin_legend->Draw();
 
-		TLatex *tname= new TLatex();
-		tname->SetNDC();
-		tname->SetTextAlign(22);
-		tname->SetTextFont(73);
-		tname->SetTextSizePixels(30);
-		tname->DrawLatex(0.28,0.96, rd53.c_str());
-		tname->DrawLatex(0.8, 0.96, chipnum.c_str());
 		
 		//hs_Lin->SetMaximum((hs_Lin->GetMaximum())*1.15);
 		hs_Lin->GetXaxis()->SetRangeUser((lin_all->GetMean() - 2*(lin_all->GetRMS())), (lin_all->GetMean() + 2*(lin_all->GetRMS()))); //Set the x-axis range to be the Mean +/- 2*RMS
