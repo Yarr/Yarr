@@ -37,22 +37,14 @@ void Database::setConnCfg(std::vector<std::string> i_connCfgPath) {
         std::ifstream gConfig(sTmp);
         json config = json::parse(gConfig);
         // Get module serial #
-//        if (config["module"]["serialNumber"].empty()) {
-//            if (!config["chips"][0]["serialNumber"].empty()) m_serial_number = config["chips"][0]["serialNumber"];
-//            else {
-//                std::cerr <<"#ERROR# No serialNumber in Connectivity! " << sTmp << std::endl;
-//                abort(); return;
-//            }
-//        }
-//        else m_serial_number = config["module"]["serialNumber"]
-
-        try {
-            if (config["module"]["serialNumber"].empty()) m_serial_number = config["chips"][0]["serialNumber"];
-            else m_serial_number = config["module"]["serialNumber"];
-        } catch(json::parse_error &e) {
-            std::cerr <<"#ERROR# Cannot get SN! " << sTmp << std::endl;
-            std::cerr << __PRETTY_FUNCTION__ << " : " << e.what() << std::endl;
+        if (config["module"]["serialNumber"].empty()) {
+            if (!config["chips"][0]["serialNumber"].empty()) m_serial_number = config["chips"][0]["serialNumber"];
+            else {
+                std::cerr <<"#ERROR# No serialNumber in Connectivity! " << sTmp << std::endl;
+                abort(); return;
+            }
         }
+        else m_serial_number = config["module"]["serialNumber"];
 
         // Register module
         // If already registered, it will not register again
@@ -177,6 +169,8 @@ void Database::registerFromConnectivity(std::string i_json_path) {
     for (unsigned i=0; i<conn_json["chips"].size(); i++) {
         mongocxx::collection collection = db["component"];
         std::string serialNumber = conn_json["chips"][i]["serialNumber"];
+        //std::string chipType = conn_json["chipType"];
+        //bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "serialNumber" << serialNumber << "componentType" << chipType << finalize);
         bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "serialNumber" << serialNumber << finalize);
         if (maybe_result) continue;
 
