@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 
 	if (argc < 4 || ( argc > 4 && argc < 6) ) {
 		std::cout << "No directory, image plot extension, and/or good differential FE pixels option given! \nExtra settings for the threshold plot x-axis: minimum value, maximum value, and # of bins [e per bin=(xhigh-xlow)/xbins]. \nFor only good differential FE pixels, write '1'. \n./plotWithRoot_Threshold path/to/directory/ file_ext goodDiff_On xlow(optional) xhigh(optional) xbins(optional)" << std::endl;
-		std::cout << "Example: ./plotWithRoot_Threshold path/to/directory/ pdf 1 \nExample: ./plotWithRoot_Threshold path/to/directory/pdf 0 -0.5 10000.5 500" << std::endl;
+		std::cout << "Example: ./plotWithRoot_Threshold path/to/directory/ pdf 1 \nExample: ./plotWithRoot_Threshold path/to/directory/pdf 0 -10 10010 501" << std::endl;
 		return -1;
 	}
 
@@ -94,11 +94,11 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			yaxistitle = "Number of Pixels";
 			gausrangetitle = "Deviation from the Mean [#sigma] ";
 			rmsrangetitle = "Deviation from the Mean [RMS] ";
-			if (argc < 4) xbins = 500;
+			if (argc < 5) xbins = 501;
 			else if (argc > 4 ) xbins = 10000/setElectrons; 
 			range_bins = 6;
-			xlow = -0.5;
-			xhigh = 10000.5;
+			xlow = -10;
+			xhigh = 10010;
 			range_low = 0;
 			range_high = 6;
 
@@ -329,7 +329,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 				}
 
 				fe_hist[i]->GetYaxis()->SetRangeUser(0,((fe_hist[i]->GetMaximum())*1.5)); //Leave extra room for legend
-				if (argc < 4) fe_hist[i]->GetXaxis()->SetRangeUser((mean_h[i] - 5*rms_h[i] < 0) ? -0.5 : (mean_h[i]- 5*rms_h[i]), mean_h[i] + 5*rms_h[i]); //Change the x-axis range to be the Mean +/- 5*RMS. If the lower bound is less than -0.5, make it -0.5. 
+				if (argc < 5) fe_hist[i]->GetXaxis()->SetRangeUser((mean_h[i] - 5*rms_h[i] < 0) ? -0.5 : (mean_h[i]- 5*rms_h[i]), mean_h[i] + 5*rms_h[i]); //Change the x-axis range to be the Mean +/- 5*RMS. If the lower bound is less than -0.5, make it -0.5. 
 				else if (argc > 4) {
 					fe_hist[i]->GetXaxis()->SetRangeUser(overwriteXmin, overwriteXmax);
 				}
@@ -352,7 +352,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			gStyle->SetOptStat(0);
 			c_plot->RedrawAxis();
 			c_plot->Update();
-			if (argc < 4) h_plot->GetZaxis()->SetRangeUser((mean_h[0] - 5*rms_h[0] < 0) ? -0.5 : (mean_h[0]- 5*rms_h[0])  , mean_h[0] + 5*rms_h[0]);
+			if (argc < 5) h_plot->GetZaxis()->SetRangeUser((mean_h[0] - 5*rms_h[0] < 0) ? -0.5 : (mean_h[0]- 5*rms_h[0])  , mean_h[0] + 5*rms_h[0]);
 			else if (argc > 4) { h_plot->GetZaxis()->SetRangeUser(overwriteXmin, overwriteXmax); }	
 			h_plot->GetZaxis()->SetLabelSize(0.04);
 			filename2 = filename.replace(filename.find(plot_ext[4].c_str()), 10, plot_ext[5].c_str());
@@ -400,7 +400,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			mean_rms->DrawLatex(0.18,0.86, rms_char[0]);
 
 			hs->SetMaximum((hs->GetMaximum())*1.1);
-			if (argc < 4) hs->GetXaxis()->SetRangeUser((mean_h[0] - 5*rms_h[0] < 0) ? -0.5 : (mean_h[0]- 5*rms_h[0])  , mean_h[0] + 5*rms_h[0]);	
+			if (argc < 5) hs->GetXaxis()->SetRangeUser((mean_h[0] - 5*rms_h[0] < 0) ? -0.5 : (mean_h[0]- 5*rms_h[0])  , mean_h[0] + 5*rms_h[0]);	
 			else if (argc > 4) { hs->GetXaxis()->SetRangeUser(overwriteXmin, overwriteXmax); }
 			c_Stack->Update();				
 			filename3 = filename.replace(filename.find(plot_ext[5].c_str()), 11, plot_ext[6].c_str());

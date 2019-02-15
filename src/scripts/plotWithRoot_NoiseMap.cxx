@@ -83,10 +83,10 @@ int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory f
 			yaxistitle = "Number of Pixels";
 			rmsrangetitle = "Deviation from the Mean [RMS] ";
 			gausrangetitle = "Deviation from the Mean [#sigma]";
-			xbins = 2000;	//5e per bin
+			xbins = 2001;	//5e per bin
 			range_bins = 6;
-			xlow = -0.5;
-			xhigh = 10000.5;
+			xlow = -2.5;
+			xhigh = 10002.5;
 			range_low = 0;
 			range_high = 6;
 
@@ -270,7 +270,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory f
 
 
 				fe_hist[i]->GetYaxis()->SetRangeUser(0,((fe_hist[i]->GetMaximum())*1.5)); //Leave extra room for legend
-				fe_hist[i]->GetXaxis()->SetRangeUser((mean_h[i] - 5*rms_h[i] < 0) ? -0.5 : (mean_h[i]- 5*rms_h[i]), mean_h[i] + 5*rms_h[i]); //Change the x-axis range to be the Mean +/- 5*RMS. If the lower bound is less than -0.5, make it -0.5.
+				fe_hist[i]->GetXaxis()->SetRangeUser((mean_h[i] - 5*rms_h[i] < 0) ? -5 : (mean_h[i]- 5*rms_h[i]), mean_h[i] + 5*rms_h[i]); //Change the x-axis range to be the Mean +/- 5*RMS. If the lower bound is less than -5, make it -5.
 				fe_c[i]->Update();
 
 				filename1 = filename.replace(filename.find(plot_ext[i].c_str()), 10, plot_ext[i+1].c_str()); 
@@ -290,7 +290,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory f
 			gStyle->SetOptStat(0);
 			c_plot->RedrawAxis();
 			c_plot->Update();
-			h_plot->GetZaxis()->SetRangeUser((mean_h[0] - 5*rms_h[0] < 0) ? -0.5 : (mean_h[0]- 5*rms_h[0])  , mean_h[0] + 5*rms_h[0]);	
+			h_plot->GetZaxis()->SetRangeUser((mean_h[0] - 5*rms_h[0] < 0) ? -5 : (mean_h[0]- 5*rms_h[0])  , mean_h[0] + 5*rms_h[0]);	
 			h_plot->GetZaxis()->SetLabelSize(0.04);
 			filename2 = filename.replace(filename.find(plot_ext[4].c_str()), 10, plot_ext[5].c_str());
 			c_plot->Print(filename2.c_str());
@@ -333,7 +333,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_NoiseMap path/to/directory f
 			hs->GetYaxis()->SetLabelSize(0.03);
 
 			hs->SetMaximum((hs->GetMaximum())*1.2);
-			hs->GetXaxis()->SetRangeUser((mean_h[0] - 5*rms_h[0] < 0) ? -0.5 : (mean_h[0]- 5*rms_h[0])  , mean_h[0] + 5*rms_h[0]);
+			hs->GetXaxis()->SetRangeUser((mean_h[0] - 5*rms_h[0] < 0) ? -5 : (mean_h[0]- 5*rms_h[0])  , mean_h[0] + 5*rms_h[0]);
 			c_Stack->Update();				
 
 			filename3 = filename.replace(filename.find(plot_ext[5].c_str()), 11, plot_ext[6].c_str());
