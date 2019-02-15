@@ -6,7 +6,7 @@
 #include <algorithm> //for std::sort()
 
 #include <TCanvas.h>
-#include <TH2F.h>
+#include <TH2.h>
 #include <TPaveStats.h>
 #include <THStack.h>
 #include <TLegend.h>
