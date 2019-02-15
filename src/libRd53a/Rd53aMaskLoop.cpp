@@ -84,7 +84,7 @@ void Rd53aMaskLoop::init() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     m_done = false;
-    m_cur = 0;
+    m_cur = min;
     for(FrontEnd *fe : keeper->feList) {
         // Make copy of pixRegs
         m_pixRegs[fe] = dynamic_cast<Rd53a*>(fe)->pixRegs;

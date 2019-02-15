@@ -206,7 +206,15 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::map<unsigned, std::unique_ptr<Histo2d>> statusMap; 
         std::map<unsigned, std::unique_ptr<Histo1d>> statusDist;
 
+        PixelFeedbackBase *fb;
+        std::map<unsigned, std::unique_ptr<Histo2d>> step;
+        std::map<unsigned, std::unique_ptr<Histo2d>> deltaThr;
+        unsigned prevOuter;
+        double thrTarget;
+        
         std::map<unsigned, unsigned> innerCnt;
+        std::map<unsigned, unsigned> medCnt;
+        std::map<unsigned, unsigned> vcalCnt;
         bool useScap;
         bool useLcap;
 };
