@@ -87,8 +87,7 @@ int main(int argc, char *argv[]) {
     int mask_opt = -1;
 
     bool dbUse = false;
-    std::string dbSerialNumber;
-    std::string dbInfoJsonPath = "";
+    std::string dbTestInfo = "";
     
     unsigned runCounter = 0;
 
@@ -173,7 +172,7 @@ int main(int argc, char *argv[]) {
                 dbUse = true;
                 break;
             case 'I':
-                dbInfoJsonPath = std::string(optarg);
+                dbTestInfo = std::string(optarg);
                 break;
             case '?':
                 if(optopt == 's' || optopt == 'n'){
@@ -244,6 +243,25 @@ int main(int argc, char *argv[]) {
     sysExSt = system(cmdStr.c_str());
     if(sysExSt != 0){
         std::cerr << "Error creating symlink to output directory!" << std::endl;
+    }
+
+    // Initial setting local Database
+    Database *database = new Database();
+    if (dbUse) {
+        std::cout << std::endl;
+        std::cout << "\033[1;31m################\033[0m" << std::endl;
+        std::cout << "\033[1;31m# Set Database #\033[0m" << std::endl;
+        std::cout << "\033[1;31m################\033[0m" << std::endl;
+        std::cout << "-> Setting user's information" << std::endl;
+        database->setUserInstitution();
+        std::cout << "-> Setting Connectivity Configs" << std::endl;
+        database->setConnCfg(cConfigPaths);
+        std::cout << "-> Setting TestRun Info" << std::endl;
+        std::cout << "-> Setting Target ToT: " << target_tot << std::endl;
+        std::cout << "-> Setting Target Charge: " << target_charge << std::endl;
+        database->registerEnvironment(dbTestInfo);
+        database->startTestRun(ctrlCfgPath, scanType, strippedScan, runCounter, target_charge, target_tot);
+        database->setTestRunInfo(dbTestInfo);
     }
 
     // Timestamp
@@ -345,6 +363,11 @@ int main(int argc, char *argv[]) {
             std::cerr << __PRETTY_FUNCTION__ << " : invalid config, chip type or chips not specified!" << std::endl;
             return 0;
         } else {
+            if (dbUse) {
+                if (!config["module"]["serialNumber"].empty()) {
+                    database->writeComponentTestRun(config["module"]["serialNumber"], -1, -1);
+                }
+            }
             chipType = config["chipType"];
             std::cout << "Chip Type: " << chipType << std::endl;
             std::cout << "Found " << config["chips"].size() << " chips defined!" << std::endl;
@@ -388,6 +411,10 @@ int main(int argc, char *argv[]) {
                         dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
                         backupCfgFile << std::setw(4) << backupCfg;
                         backupCfgFile.close();
+                        if (dbUse) {
+                            feCfg->setDbId(database->writeComponentTestRun(chip["serialNumber"], chip["tx"], chip["rx"]));
+                            database->writeConfig(feCfg->getDbId(), backupCfg, "beforeCfg");
+                        }
                     }
                 } catch (json::parse_error &e) {
                     std::cerr << __PRETTY_FUNCTION__ << " : " << e.what() << std::endl;
@@ -628,9 +655,12 @@ int main(int argc, char *argv[]) {
             dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
             backupCfgFile << std::setw(4) << backupCfg;
             backupCfgFile.close(); 
+            if (dbUse) {
+                database->writeConfig(dynamic_cast<FrontEndCfg*>(fe)->getDbId(), backupCfg, "afterCfg");
+            }
 
             // Plot
-            if (doPlots) {
+            if (doPlots||dbUse) {
                 std::cout << "-> Plotting histograms of FE " << dynamic_cast<FrontEndCfg*>(fe)->getRxChannel() << std::endl;
                 std::string outputDirTmp = outputDir;
 
@@ -641,6 +671,11 @@ int main(int argc, char *argv[]) {
                     std::unique_ptr<HistogramBase> histo = output.popData();
                     histo->plot(name, outputDirTmp);
                     histo->toFile(name, outputDir);
+                    if (dbUse) {
+                        database->setHistoName(histo->getName());
+                        std::string file_path = outputDir + name + "_" + histo->getName();
+                        database->writeAttachment(dynamic_cast<FrontEndCfg*>(fe)->getDbId(), file_path, histo->getName());
+                    }
                 }
             }
         }
@@ -651,13 +686,26 @@ int main(int argc, char *argv[]) {
         std::cout << "Find plots in: " << dataDir + "last_scan" << std::endl;
     }
 
+    // Register test info into database
     if (dbUse) {
-        Database *database = new Database();
-        database->setTestRunInfo(dbInfoJsonPath);
-        database->setConnCfg(cConfigPaths);
-        database->write(dbSerialNumber, strippedScan, runCounter, outputDir);
-        delete database;
+        std::cout << std::endl;
+        std::cout << "\033[1;31m##################\033[0m" << std::endl;
+        std::cout << "\033[1;31m# Write Database #\033[0m" << std::endl;
+        std::cout << "\033[1;31m##################\033[0m" << std::endl;
+
+        std::cout << "Run Number: " << runCounter << std::endl;
+        std::cout << "Test Type: " << strippedScan << std::endl;
+        std::cout << "Target Charge: " << target_charge << std::endl;
+        std::cout << "Target ToT: " << target_tot << std::endl;
+        std::cout << "Path to Test Configuration: " << scanType << std::endl;
+        std::cout << "Path to Controller Configuration: " << scanType << std::endl;
+        std::cout << "Path to Test Run Information: " << dbTestInfo << std::endl;
+
+        database->writeTestRun(ctrlCfgPath, scanType, strippedScan, runCounter, outputDir, target_charge, target_tot);
+        database->registerEnvironment(dbTestInfo);
+        std::cout << std::endl;
     }
+    delete database;
 
     return 0;
 }

@@ -79,10 +79,12 @@ class FrontEndCfg {
 		unsigned getTxChannel() {return txChannel;}
 		unsigned getRxChannel() {return rxChannel;}
         std::string getName() {return name;}
+        std::string getDbId() {return dbId;}
         
         void setChannel(unsigned channel) {txChannel = channel; rxChannel = channel;}
-		void setChannel(unsigned arg_txChannel, unsigned arg_rxChannel) {txChannel = arg_txChannel; rxChannel = arg_rxChannel;}
+		    void setChannel(unsigned arg_txChannel, unsigned arg_rxChannel) {txChannel = arg_txChannel; rxChannel = arg_rxChannel;}
         void setName(std::string arg_name) {name = arg_name;}
+        void setDbId(std::string arg_dbId) {dbId = arg_dbId;}
 
         void setConfigFile(std::string arg_configFile) {configFile = arg_configFile;}
         std::string getConfigFile() {return configFile;}
@@ -91,6 +93,7 @@ class FrontEndCfg {
         void setLocked(bool v) {lockCfg = v;}
     protected:
         std::string name;
+        std::string dbId;
         unsigned txChannel;
         unsigned rxChannel;
         std::string configFile;
