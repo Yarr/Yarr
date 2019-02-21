@@ -158,6 +158,7 @@ void Rd53aGlobalFeedback::init() {
     for (auto *fe : keeper->feList) {
         if (fe->getActive()) {
             Rd53a *rd53a = dynamic_cast<Rd53a*>(fe);
+            g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
             switch (m_pixelReg[0]) { // Lin regs
                 case 0: // Leave TDACs as config setting
                     break;
@@ -213,7 +214,9 @@ void Rd53aGlobalFeedback::init() {
                     break;
             }
         }
+        while(!g_tx->isCmdEmpty()){}
     }
+    g_tx->setCmdEnable(keeper->getTxMask());
 }
 
 void Rd53aGlobalFeedback::execPart1() {

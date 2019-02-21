@@ -37,6 +37,7 @@ void Rd53aCoreColLoop::init() {
     m_impl->m_cur = 0;
     // Disable all to begin with
     for(FrontEnd *fe : keeper->feList) {
+        g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         // Loop over cores, i.e. activate in pairs of 4 DC
         for (unsigned dc=0; dc<Rd53a::n_DC; dc+=4) {
             dynamic_cast<Rd53a*>(fe)->disableCalCol(dc);
@@ -44,8 +45,9 @@ void Rd53aCoreColLoop::init() {
             dynamic_cast<Rd53a*>(fe)->disableCalCol(dc+2);
             dynamic_cast<Rd53a*>(fe)->disableCalCol(dc+3);
         }
+        while(!g_tx->isCmdEmpty()) {}
     }
-    while(!g_tx->isCmdEmpty()) {}
+    g_tx->setCmdEnable(keeper->getTxMask());
 }
 
 void Rd53aCoreColLoop::execPart1() {
@@ -53,7 +55,9 @@ void Rd53aCoreColLoop::execPart1() {
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     
     // Loop over FrontEnds
+    // TODO could use global FE here? except for timing
     for(FrontEnd *fe : keeper->feList) {
+        g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         // Loop over cores, i.e. activate in pairs of 4 DC
         for (unsigned dc=(m_impl->minCore*4), i=0; dc<(m_impl->maxCore*4); dc+=4, i++) {
             // Disable previous columns
@@ -73,14 +77,16 @@ void Rd53aCoreColLoop::execPart1() {
                 dynamic_cast<Rd53a*>(fe)->enableCalCol(dc+3);
             }
 	    //Add fine delay
-	    if ( m_delayArray.size() > 0 ) {
-		if ( m_delayArray.size() == (m_impl->maxCore-m_impl->minCore) ) 
-		    dynamic_cast<Rd53a*>(fe)->writeRegister(&Rd53a::InjDelay,m_delayArray[i]);
-		else dynamic_cast<Rd53a*>(fe)->writeRegister(&Rd53a::InjDelay,m_delayArray[0]);
-	    }
+            if ( m_delayArray.size() > 0 ) {
+                if ( m_delayArray.size() == (m_impl->maxCore-m_impl->minCore) ) 
+                    dynamic_cast<Rd53a*>(fe)->writeRegister(&Rd53a::InjDelay,m_delayArray[i]);
+                else 
+                    dynamic_cast<Rd53a*>(fe)->writeRegister(&Rd53a::InjDelay,m_delayArray[0]);
+            }
         }
+        while(!g_tx->isCmdEmpty()) {}
     }
-    while(!g_tx->isCmdEmpty()) {}
+    g_tx->setCmdEnable(keeper->getTxMask());
     g_stat->set(this, m_impl->m_cur);
     //std::this_thread::sleep_for(std::chrono::milliseconds(20));
 }
@@ -98,6 +104,7 @@ void Rd53aCoreColLoop::end() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     
+    // TODO should restore original config here
     /*
     for(FrontEnd *fe : keeper->feList) {
         // Loop over cores, i.e. activate in pairs of 4 DC

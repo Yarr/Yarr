@@ -35,7 +35,8 @@ void Rd53aDataProcessor::init() {
 void Rd53aDataProcessor::run() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
-    const unsigned int numThreads = std::thread::hardware_concurrency();
+    unsigned int numThreads = std::thread::hardware_concurrency();
+    if (numThreads > 4) numThreads = 4;
     for (unsigned i=0; i<numThreads; i++) {
         thread_ptrs.emplace_back(new std::thread(&Rd53aDataProcessor::process, this));
         std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
@@ -108,7 +109,8 @@ void Rd53aDataProcessor::process_core() {
                 // Decode content
                 // TODO this needs review, can't deal with user-k data
                 uint32_t data = curIn->buf[i];
-                unsigned channel = 0;
+                unsigned channel = activeChannels[(i/2)%activeChannels.size()];
+                //std::cout << "[" << i << "]\t\t[" << channel << "] = 0x" << std::hex << data << std::dec << std::endl;
                 if (__builtin_expect((data != 0xFFFFFFFF), 1)) {
                     if ((data >> 25) & 0x1) { // is header
                         l1id[channel] = 0x1F & (data >> 20);

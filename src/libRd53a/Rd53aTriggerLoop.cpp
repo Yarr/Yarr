@@ -36,7 +36,7 @@ void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
     m_trigWord.fill(0x69696969);
     // Inject
     //m_trigWord[31] = 0x5a5a6969;
-    m_trigWord[16] = 0x59596969;
+    //m_trigWord[30] = 0x59596969;
     m_trigWord[15] = 0x69696363; // Header
     m_trigWord[14] = Rd53aCmd::genCal(8, 0, 0, 1, 0, 0); // Inject
     uint64_t trigStream = 0;
@@ -115,6 +115,7 @@ void Rd53aTriggerLoop::init() {
 void Rd53aTriggerLoop::execPart1() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
+    g_tx->setCmdEnable(keeper->getTxMask());
     dynamic_cast<Rd53a*>(g_fe)->ecr();
     dynamic_cast<Rd53a*>(g_fe)->idle();
     dynamic_cast<Rd53a*>(g_fe)->idle();
