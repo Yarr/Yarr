@@ -111,7 +111,7 @@ void Rd53aDataProcessor::process_core() {
                 uint32_t data = curIn->buf[i];
                 unsigned channel = activeChannels[(i/2)%activeChannels.size()];
                 //std::cout << "[" << i << "]\t\t[" << channel << "] = 0x" << std::hex << data << std::dec << std::endl;
-                if (__builtin_expect((data != 0xFFFFFFFF), 1)) {
+                if (__builtin_expect(((data & 0xFFFF0000) != 0xFFFF0000 ), 1)) {
                     if ((data >> 25) & 0x1) { // is header
                         l1id[channel] = 0x1F & (data >> 20);
                         tag[channel] = 0x1F & (data >> 15);
