@@ -680,10 +680,13 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         chi2Map[outerIdent]->setBin(bin, chi2 );
                         statusMap[outerIdent]->setBin(bin, status.outcome);
                         statusDist[outerIdent]->fill(status.outcome);
+
                     } else {
                         n_failedfit++;
+                           // std::cout << "Col(" << col << ") Row(" << row << ") Threshold(" << thrMap[outerIdent]->getBin(bin) << ") Chi2(" << chi2 << ") Status(" << status.outcome << ") Entries(" 
+                           //     << histos[ident]->getEntries() << ") Mean(" << histos[ident]->getMean() << ")" << std::endl;
                     }
-                    if (row == nRow/2 && col%5 == 0) {
+                    if (row == nRow/2 && col%10 == 0) {
                         output->pushData(std::move(histos[ident]));
                     }
                     histos[ident].reset(nullptr);
