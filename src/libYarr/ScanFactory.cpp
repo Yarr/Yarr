@@ -23,7 +23,7 @@ void ScanFactory::init() {
 void ScanFactory::preScan() {
     std::cout << __PRETTY_FUNCTION__ << std::endl;
 
-
+    g_tx->setCmdEnable(g_bk->getTxMask());
     // Load scan specific registers from config
     auto &config_list = m_config["scan"]["prescan"];
     for (json::iterator it = config_list.begin(); it != config_list.end(); ++it) {
