@@ -243,8 +243,12 @@ int main(int argc, char *argv[]) {
     std::cout << "Timestamp: " << timestamp << std::endl;
     std::cout << "Run Number: " << runCounter;
 
+    std::string commandLineStr= "";
+    for (int i=1;i<argc;i++) commandLineStr.append(std::string(argv[i]).append(" "));
+    
     json scanLog;
     // Add to scan log
+    scanLog["exec"] = commandLineStr;
     scanLog["timestamp"] = timestamp;
     scanLog["runNumber"] = runCounter;
     scanLog["targetCharge"] = target_charge;
@@ -338,35 +342,38 @@ int main(int argc, char *argv[]) {
                 try { 
                     json chip = config["chips"][i];
                     std::string chipConfigPath = chip["config"];
-                    // TODO should be a shared pointer
-                    bookie.addFe(StdDict::getFrontEnd(chipType).release(), chip["tx"], chip["rx"]);
-                    bookie.getLastFe()->init(&*hwCtrl, chip["tx"], chip["rx"]);
-                    std::ifstream cfgFile(chipConfigPath);
-                    if (cfgFile) {
-                        // Load config
-                        std::cout << "Loading config file: " << chipConfigPath << std::endl;
-                        json cfg = json::parse(cfgFile);
-                        dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->fromFileJson(cfg);
-                        if (!chip["locked"].empty())
-                            dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->setLocked(chip["locked"]);
-                        cfgFile.close();
+                    if (chip["enable"] == 0) {
+                        std::cout << " ... chip not enabled, skipping!" << std::endl;
                     } else {
-                        std::cout << "Config file not found, using default!" << std::endl;
+                        // TODO should be a shared pointer
+                        bookie.addFe(StdDict::getFrontEnd(chipType).release(), chip["tx"], chip["rx"]);
+                        bookie.getLastFe()->init(&*hwCtrl, chip["tx"], chip["rx"]);
+                        std::ifstream cfgFile(chipConfigPath);
+                        if (cfgFile) {
+                            // Load config
+                            std::cout << "Loading config file: " << chipConfigPath << std::endl;
+                            json cfg = json::parse(cfgFile);
+                            dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->fromFileJson(cfg);
+                            if (!chip["locked"].empty())
+                                dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->setLocked(chip["locked"]);
+                            cfgFile.close();
+                        } else {
+                            std::cout << "Config file not found, using default!" << std::endl;
+                        }
+                        success++;
+                        // Save path to config
+                        std::size_t botDirPos = chipConfigPath.find_last_of("/");
+                        feCfgMap[bookie.getLastFe()] = chipConfigPath;
+                        dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->setConfigFile(chipConfigPath.substr(botDirPos, chipConfigPath.length()));
+                        
+                        // Create backup of current config
+                        // TODO fix folder
+                        std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getConfigFile() + ".before");
+                        json backupCfg;
+                        dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
+                        backupCfgFile << std::setw(4) << backupCfg;
+                        backupCfgFile.close();
                     }
-                    success++;
-                    // Save path to config
-                    std::size_t botDirPos = chipConfigPath.find_last_of("/");
-                    feCfgMap[bookie.getLastFe()] = chipConfigPath;
-                    dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->setConfigFile(chipConfigPath.substr(botDirPos, chipConfigPath.length()));
-                    
-                    // Create backup of current config
-                    // TODO fix folder
-                    std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getConfigFile() + ".before");
-                    json backupCfg;
-                    dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
-                    backupCfgFile << std::setw(4) << backupCfg;
-                    backupCfgFile.close();
-                    
                 } catch (json::parse_error &e) {
                     std::cerr << __PRETTY_FUNCTION__ << " : " << e.what() << std::endl;
                 }
@@ -859,6 +866,9 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                      } else if (algo_name == "OccPixelThresholdTune") {
                         std::cout << "  ... adding " << algo_name << std::endl;
                         ana.addAlgorithm(new OccPixelThresholdTune());
+                     } else if (algo_name == "DelayAnalysis") {
+                        std::cout << "  ... adding " << algo_name << std::endl;
+                        ana.addAlgorithm(new DelayAnalysis());
                      }
 
                 }
