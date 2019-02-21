@@ -4,7 +4,8 @@
         {
             "config" : "configs/rd53a_test.json",
             "tx" : 0,
-            "rx" : 0
+            "rx" : 0,
+            "enable" : 1
         }
     ]
 }
