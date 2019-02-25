@@ -10,6 +10,9 @@ library IEEE;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library work;
+use work.board_pkg.all;
+
 entity serial_port is
 	generic (
         g_PORT_WIDTH : integer := 32
@@ -51,6 +54,7 @@ architecture behavioral of serial_port is
     signal sreg      : std_logic_vector(g_PORT_WIDTH-1 downto 0);
     signal sync_cnt : unsigned(7 downto 0);
     signal az_cnt : unsigned(15 downto 0);
+    signal bx_tick : std_logic;
 begin
 
     -- Serializer proc
@@ -87,7 +91,8 @@ begin
                 bit_count <= (others => '0');
                 sync_cnt <= (others => '0');
                 az_cnt <= az_cnt + 1;
-            elsif (bit_count = g_PORT_WIDTH-1 and data_valid_i = '0') then
+            --elsif (bit_count = g_PORT_WIDTH-1 and data_valid_i = '0') then
+            elsif (bit_count = g_PORT_WIDTH-1) then
                 sreg <= idle_i;
                 bit_count <= (others => '0');
                 sync_cnt <= sync_cnt + 1;
@@ -96,6 +101,11 @@ begin
                 sreg <= sreg(g_PORT_WIDTH-2 downto 0) & '0';
                 data_read_o <= '0';
                 bit_count <= bit_count + 1;
+            end if;
+
+            bx_tick <= '0';
+            if (bit_count mod c_TX_40_DIVIDER = 0) then
+                bx_tick <= '1';
             end if;
 		end if;
     end process serialize;

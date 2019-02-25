@@ -69,7 +69,7 @@ architecture behavioral of wb_rx_core is
 
 	constant c_ALL_ZEROS : std_logic_vector(g_NUM_RX-1 downto 0) := (others => '0');
 	
-	component rr_arbiter
+	component frr_arbiter
 		generic (
 			g_CHANNELS : integer := g_NUM_RX
 		);
@@ -79,10 +79,11 @@ architecture behavioral of wb_rx_core is
 			rst_i : in std_logic;
 			-- requests
 			req_i : in std_logic_vector(g_CHANNELS-1 downto 0);
+            en_i : in std_logic_vector(g_CHANNELS-1 downto 0);
 			-- grants
 			gnt_o : out std_logic_vector(g_CHANNELS-1 downto 0)
 		);
-	end component rr_arbiter;
+	end component frr_arbiter;
 
 	component fei4_rx_channel
 		port (
@@ -136,7 +137,25 @@ architecture behavioral of wb_rx_core is
 		);
 	END COMPONENT;
 	
-	type rx_data_array is array (g_NUM_RX-1 downto 0) of std_logic_vector(63 downto 0);
+    COMPONENT ila_rx_dma_wb
+    PORT (
+        clk : IN STD_LOGIC;
+        probe0 : IN STD_LOGIC_VECTOR(31 DOWNTO 0); 
+        probe1 : IN STD_LOGIC_VECTOR(63 DOWNTO 0); 
+        probe2 : IN STD_LOGIC_VECTOR(63 DOWNTO 0); 
+        probe3 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe4 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe5 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe6 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe7 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe8 : IN STD_LOGIC_VECTOR(31 DOWNTO 0); 
+        probe9 : IN STD_LOGIC_VECTOR(0 DOWNTO 0); 
+        probe10 : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+        probe11 : IN STD_LOGIC_VECTOR(0 DOWNTO 0)
+    );
+    END COMPONENT  ;
+	
+    type rx_data_array is array (g_NUM_RX-1 downto 0) of std_logic_vector(63 downto 0);
 	type rx_data_fifo_array is array (g_NUM_RX-1 downto 0) of std_logic_vector(63 downto 0);
 	type rx_stat_array is array (g_NUM_RX-1 downto 0) of std_logic_vector(7 downto 0);
     signal rx_data_i : std_logic_vector((g_NUM_RX*g_NUM_LANES)-1 downto 0);
@@ -146,9 +165,11 @@ architecture behavioral of wb_rx_core is
 	signal rx_data_raw : rx_stat_array;
 	
 	signal rx_fifo_dout :rx_data_fifo_array;
+	signal rx_fifo_dout_t :rx_data_fifo_array;
 	signal rx_fifo_din : rx_data_fifo_array;
 	signal rx_fifo_full : std_logic_vector(g_NUM_RX-1 downto 0);
 	signal rx_fifo_empty : std_logic_vector(g_NUM_RX-1 downto 0);
+	signal rx_fifo_empty_t : std_logic_vector(g_NUM_RX-1 downto 0);
 	signal rx_fifo_rden : std_logic_vector(g_NUM_RX-1 downto 0);
 	signal rx_fifo_rden_t : std_logic_vector(g_NUM_RX-1 downto 0);
 	signal rx_fifo_wren : std_logic_vector(g_NUM_RX-1 downto 0);
@@ -169,6 +190,22 @@ begin
 	debug(15 downto 8) <= rx_data_raw(0);
 	debug(16) <= rx_valid(0);
 
+    wb_core_debug : ila_rx_dma_wb
+    PORT MAP (
+      clk => wb_clk_i,
+      probe0 => (others => '0'), 
+      probe1 => (others => '0'), 
+      probe2 => (others => '0'), 
+      probe3(0) => rx_fifo_empty(0),
+      probe4(0) => rx_fifo_empty(1),
+      probe5(0) => rx_enable_d(0), 
+      probe6(0) => rx_enable_d(1),
+      probe7(0) => '0',
+      probe8 => (others => '0'),
+      probe9(0) => '0',
+      probe10(0) => rx_fifo_rden_t(0),
+      probe11(0) => rx_fifo_rden_t(1)
+    );
 
 
     wb_proc: process (wb_clk_i, rst_n_i)
@@ -205,10 +242,11 @@ begin
 	end process wb_proc;
 	
 	-- Arbiter
-	cmp_rr_arbiter : rr_arbiter port map (
+	cmp_frr_arbiter : frr_arbiter port map (
 		clk_i => wb_clk_i,
 		rst_i => not rst_n_i,
-		req_i => not rx_fifo_empty,
+		req_i => not rx_fifo_empty_t,
+        en_i => rx_enable_d(g_NUM_RX-1 downto 0), 
 		gnt_o => rx_fifo_rden_t
 	);
 	
@@ -218,16 +256,24 @@ begin
 	reg_proc : process(wb_clk_i, rst_n_i)
 	begin
 		if (rst_n_i = '0') then
-			rx_fifo_rden <= (others => '0');
+			--rx_fifo_rden <= (others => '0');
 			rx_valid_o <= '0';
-			channel <= 0;			
+			channel <= 0;
+            rx_fifo_dout <= (others => (others => '0'));
+            rx_fifo_rden <= (others => '0');
+            rx_fifo_empty <= (others => '0');
 		elsif rising_edge(wb_clk_i) then
-			rx_fifo_rden <= rx_fifo_rden_t;
-			channel <= log2_ceil(to_integer(unsigned(rx_fifo_rden_t)));
-			if (unsigned(rx_fifo_rden) = 0 or ((rx_fifo_rden and rx_fifo_empty) = rx_fifo_rden)) then
+            rx_fifo_dout  <= rx_fifo_dout_t;
+            rx_fifo_rden <= rx_fifo_rden_t;
+            rx_fifo_empty <= rx_fifo_empty_t;
+            channel <= log2_ceil(to_integer(unsigned(rx_fifo_rden_t)));
+			if (unsigned(rx_fifo_rden) = 0) then -- no channel being filled right now
 				rx_valid_o <= '0';
 				rx_data_o <= x"DEADBEEFDEADBEEF";
-			else
+            elsif ((rx_fifo_rden and rx_fifo_empty) = rx_fifo_rden) then -- channel being read is empty, add empty word
+				rx_valid_o <= '1';
+				rx_data_o <= x"FFFFDEADFFFFDEAD";
+            else -- channel being read is not empty
 				rx_valid_o <= '1';
 				rx_data_o <= rx_fifo_dout(channel);
 			end if;
@@ -307,10 +353,10 @@ begin
 			rd_clk => wb_clk_i,
 			din => rx_fifo_din(I),
 			wr_en => rx_fifo_wren(I),
-			rd_en => rx_fifo_rden(I),
-			dout => rx_fifo_dout(I),
+			rd_en => rx_fifo_rden_t(I),
+			dout => rx_fifo_dout_t(I),
 			full => rx_fifo_full(I),
-			empty => rx_fifo_empty(I)
+			empty => rx_fifo_empty_t(I)
 		);
 	end generate;
 end behavioral;

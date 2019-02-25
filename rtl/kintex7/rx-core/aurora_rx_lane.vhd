@@ -186,22 +186,22 @@ begin
     
     rst <= not rst_n_i;
     
-    aurora_lane_debug : ila_rx_dma_wb
-    PORT MAP (
-      clk => clk_rx_i,
-      probe0 => serdes_data32, 
-      probe1 => m_delay_1hot & eye_info, 
-      probe2 => descrambled_data(63 downto 0), 
-      probe3(0) => serdes_data32_valid,
-      probe4(0) => gearbox_data66_valid, 
-      probe5(0) => gearbox_slip, 
-      probe6(0) => serdes_slip,
-      probe7(0) => descrambled_data_valid,
-      probe8 => x"00" & std_logic_vector(sync_cnt) & "00" & serdes_data2_valid & serdes_lock & std_logic_vector(slip_cnt) & bit_time_value & descrambled_header,
-      probe9(0) => '0',
-      probe10(0) => '0',
-      probe11(0) => '0'
-    );
+--    aurora_lane_debug : ila_rx_dma_wb
+--    PORT MAP (
+--      clk => clk_rx_i,
+--      probe0 => serdes_data32, 
+--      probe1 => m_delay_1hot & eye_info, 
+--      probe2 => descrambled_data(63 downto 0), 
+--      probe3(0) => serdes_data32_valid,
+--      probe4(0) => gearbox_data66_valid, 
+--      probe5(0) => gearbox_slip, 
+--      probe6(0) => serdes_slip,
+--      probe7(0) => descrambled_data_valid,
+--      probe8 => x"00" & std_logic_vector(sync_cnt) & "00" & serdes_data2_valid & serdes_lock & std_logic_vector(slip_cnt) & bit_time_value & descrambled_header,
+--      probe9(0) => '0',
+--      probe10(0) => '0',
+--      probe11(0) => '0'
+--    );
 
     -- XAPP1017 style SERDES with auto-phase detection up to 1.6Gbps
     xapp1017_serdes: if g_SERDES_TYPE = "XAPP1017" generate
