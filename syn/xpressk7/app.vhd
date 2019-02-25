@@ -116,7 +116,7 @@ entity app is
            ---------------------------------------------------------
            -- Trigger input
            ext_trig_i        : in std_logic_vector(3 downto 0);
-           --ext_busy_o       : out std_logic;
+           ext_busy_o       : out std_logic;
            -- LVDS buffer
            pwdn_l            : out std_logic_vector(2 downto 0);
            -- GPIO
@@ -990,7 +990,7 @@ wb_dev_gen : if wb_dev_c = '1' generate
     eudet_trig_s <= eudet_trig_i;
     eudet_rst_s <= eudet_rst_i;
 
-    --ext_busy_o <= ext_busy_s;
+    ext_busy_o <= ext_busy_s;
 	
     fei4_type_trig: if c_FE_TYPE = "FEI4" generate 
         cmp_wb_trigger_logic: wb_trigger_logic PORT MAP(
