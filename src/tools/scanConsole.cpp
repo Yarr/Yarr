@@ -348,17 +348,20 @@ int main(int argc, char *argv[]) {
                         // TODO should be a shared pointer
                         bookie.addFe(StdDict::getFrontEnd(chipType).release(), chip["tx"], chip["rx"]);
                         bookie.getLastFe()->init(&*hwCtrl, chip["tx"], chip["rx"]);
+                        FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie.getLastFe());
                         std::ifstream cfgFile(chipConfigPath);
                         if (cfgFile) {
                             // Load config
                             std::cout << "Loading config file: " << chipConfigPath << std::endl;
                             json cfg = json::parse(cfgFile);
-                            dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->fromFileJson(cfg);
+                            feCfg->fromFileJson(cfg);
                             if (!chip["locked"].empty())
-                                dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->setLocked(chip["locked"]);
+                                feCfg->setLocked(chip["locked"]);
                             cfgFile.close();
                         } else {
                             std::cout << "Config file not found, using default!" << std::endl;
+                            // Rename in case of multiple default configs
+                            feCfg->setName(feCfg->getName() + "_" + std::to_string((int)chip["rx"]));
                         }
                         success++;
                         // Save path to config
@@ -631,6 +634,7 @@ int main(int argc, char *argv[]) {
         }
     }
     std::string lsCmd = "ls -1 " + dataDir + "last_scan/*.p*";
+    std::cout << "Finishing run: " << runCounter << std::endl;
     if (system(lsCmd.c_str()) < 0) {
         std::cout << "Find plots in: " << dataDir + "last_scan" << std::endl;
     }
@@ -648,7 +652,7 @@ void printHelp() {
     std::cout << " -t <target_charge> [<tot_target>] : Set target values for threshold/charge (and tot)." << std::endl;
     std::cout << " -p: Enable plotting of results." << std::endl;
     std::cout << " -o <dir> : Output directory. (Default ./data/)" << std::endl;
-    std::cout << " -m <int> : 0 = disable pixel masking, 1 = reset pixel masking, default = enable pixel masking" << std::endl;
+    std::cout << " -m <int> : 0 = pixel masking disabled, 1 = start with fresh pixel mask, default = pixel masking enabled" << std::endl;
     std::cout << " -k: Report known items (Scans, Hardware etc.)\n";
 }
 
@@ -757,7 +761,6 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
                 
                 histogrammer.connect(fe->clipData, fe->clipHisto);
                 int nHistos = histoCfg["n_count"];
-                std::cout << nHistos << std::endl;
                 for (int j=0; j<nHistos; j++) {
                     std::string algo_name = histoCfg[std::to_string(j)]["algorithm"];
                     if (algo_name == "OccupancyMap") {
@@ -776,7 +779,7 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
                         histogrammer.addHistogrammer(new HitsPerEvent());
                         std::cout << "  ... adding " << algo_name << std::endl;
                     } else if (algo_name == "DataArchiver") {
-                        histogrammer.addHistogrammer(new DataArchiver((outputDir + "data.raw")));
+                        histogrammer.addHistogrammer(new DataArchiver((outputDir + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_data.raw")));
                         std::cout << "  ... adding " << algo_name << std::endl;
                     } else if (algo_name == "Tot3d") {
                         std::cout << "  ... adding " << algo_name << std::endl;
