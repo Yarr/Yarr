@@ -18,7 +18,7 @@ job_build_and_test:
       - ls ./data/
       - ls ./data/000001_std_digitalscan/
       - cat ./data/000001_std_digitalscan/JohnDoe_OccupancyMap.dat
-      - NUM100=`cat ./data/000001_std_digitalscan/JohnDoe_OccupancyMap.dat | grep -o 100 | wc -l`
+      - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.dat | grep -o 100 | wc -l`
       - if [ "$NUM100" != "26880" ]; then exit 2; fi
       - bin/scanConsole -k
 
