@@ -36,57 +36,53 @@ void Rd53aCoreColLoop::init() {
     m_done = false;
     m_impl->m_cur = 0;
     // Disable all to begin with
-    for(FrontEnd *fe : keeper->feList) {
-        g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
-        // Loop over cores, i.e. activate in pairs of 4 DC
-        for (unsigned dc=0; dc<Rd53a::n_DC; dc+=4) {
-            dynamic_cast<Rd53a*>(fe)->disableCalCol(dc);
-            dynamic_cast<Rd53a*>(fe)->disableCalCol(dc+1);
-            dynamic_cast<Rd53a*>(fe)->disableCalCol(dc+2);
-            dynamic_cast<Rd53a*>(fe)->disableCalCol(dc+3);
-        }
-        while(!g_tx->isCmdEmpty()) {}
-    }
     g_tx->setCmdEnable(keeper->getTxMask());
+    // Loop over cores, i.e. activate in pairs of 4 DC
+    for (unsigned dc=0; dc<Rd53a::n_DC; dc+=4) {
+        dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc);
+        dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc+1);
+        dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc+2);
+        dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc+3);
+    }
+    while(!g_tx->isCmdEmpty()) {}
 }
 
 void Rd53aCoreColLoop::execPart1() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     
-    // Loop over FrontEnds
-    // TODO could use global FE here? except for timing
-    for(FrontEnd *fe : keeper->feList) {
-        g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
-        // Loop over cores, i.e. activate in pairs of 4 DC
-        for (unsigned dc=(m_impl->minCore*4), i=0; dc<(m_impl->maxCore*4); dc+=4, i++) {
-            // Disable previous columns
-            if (m_impl->m_cur>0 && ((i%m_impl->nSteps) == (m_impl->m_cur-step))) {
-                dynamic_cast<Rd53a*>(fe)->disableCalCol(dc);
-                dynamic_cast<Rd53a*>(fe)->disableCalCol(dc+1);
-                dynamic_cast<Rd53a*>(fe)->disableCalCol(dc+2);
-                dynamic_cast<Rd53a*>(fe)->disableCalCol(dc+3);
-            }
-            // Enable next columns
-            if (i%m_impl->nSteps == m_impl->m_cur) {
-                if (verbose)
-                    std::cout << __PRETTY_FUNCTION__ << " : Enabling QC -> " << dc << std::endl;
-                dynamic_cast<Rd53a*>(fe)->enableCalCol(dc);
-                dynamic_cast<Rd53a*>(fe)->enableCalCol(dc+1);
-                dynamic_cast<Rd53a*>(fe)->enableCalCol(dc+2);
-                dynamic_cast<Rd53a*>(fe)->enableCalCol(dc+3);
-            }
-	    //Add fine delay
-            if ( m_delayArray.size() > 0 ) {
-                if ( m_delayArray.size() == (m_impl->maxCore-m_impl->minCore) ) 
-                    dynamic_cast<Rd53a*>(fe)->writeRegister(&Rd53a::InjDelay,m_delayArray[i]);
-                else 
-                    dynamic_cast<Rd53a*>(fe)->writeRegister(&Rd53a::InjDelay,m_delayArray[0]);
-            }
+    g_tx->setCmdEnable(keeper->getTxMask());
+    // Loop over cores, i.e. activate in pairs of 4 DC
+    for (unsigned dc=(m_impl->minCore*4), i=0; dc<(m_impl->maxCore*4); dc+=4, i++) {
+        // Disable previous columns
+        if (m_impl->m_cur>0 && ((i%m_impl->nSteps) == (m_impl->m_cur-step))) {
+            dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc);
+            dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc+1);
+            dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc+2);
+            dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc+3);
         }
+        // Enable next columns
+        if (i%m_impl->nSteps == m_impl->m_cur) {
+            if (verbose)
+                std::cout << __PRETTY_FUNCTION__ << " : Enabling QC -> " << dc << std::endl;
+            dynamic_cast<Rd53a*>(g_fe)->enableCalCol(dc);
+            dynamic_cast<Rd53a*>(g_fe)->enableCalCol(dc+1);
+            dynamic_cast<Rd53a*>(g_fe)->enableCalCol(dc+2);
+            dynamic_cast<Rd53a*>(g_fe)->enableCalCol(dc+3);
+        }
+    //Add fine delay
         while(!g_tx->isCmdEmpty()) {}
     }
-    g_tx->setCmdEnable(keeper->getTxMask());
+
+    // TODO this needs to be changed to be per FE
+    if ( m_delayArray.size() > 0 ) {
+        if ( m_delayArray.size() == (m_impl->maxCore-m_impl->minCore) ) 
+            dynamic_cast<Rd53a*>(g_fe)->writeRegister(&Rd53a::InjDelay,m_delayArray[m_impl->m_cur]);
+        else 
+            dynamic_cast<Rd53a*>(g_fe)->writeRegister(&Rd53a::InjDelay,m_delayArray[0]);
+    }
+    while(!g_tx->isCmdEmpty()) {}
+    
     g_stat->set(this, m_impl->m_cur);
     //std::this_thread::sleep_for(std::chrono::milliseconds(20));
 }
