@@ -26,6 +26,7 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
     min = 0;
     max = 0;
     step = 1;
+    progress = 0;
 
     isInner = false;
     loopType = typeid(this);
@@ -124,6 +125,7 @@ void Rd53aTriggerLoop::execPart1() {
     std::this_thread::sleep_for(std::chrono::microseconds(200));
     g_rx->flushBuffer();
     while(!g_tx->isCmdEmpty());
+    std::this_thread::sleep_for(std::chrono::microseconds(10));
     g_tx->setTrigEnable(0x1);
 
 }
@@ -136,6 +138,7 @@ void Rd53aTriggerLoop::execPart2() {
     // Disable Trigger
     g_tx->setTrigEnable(0x0);
     m_done = true;
+    progress = 1;
 }
 
 void Rd53aTriggerLoop::end() {
@@ -150,7 +153,7 @@ void Rd53aTriggerLoop::writeConfig(json &config) {
     config["time"] = m_trigTime;
     config["delay"] = m_trigDelay;
     config["noInject"] = m_noInject;
-    config["extTrigger"] = m_extTrig;
+    config["extTrig"] = m_extTrig;
     config["trigMultiplier"] = m_trigMultiplier;
 }
 
