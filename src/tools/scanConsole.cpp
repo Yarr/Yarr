@@ -356,7 +356,7 @@ int main(int argc, char *argv[]) {
                             json cfg = json::parse(cfgFile);
                             feCfg->fromFileJson(cfg);
                             if (!chip["locked"].empty())
-                                feCfg->setLocked(chip["locked"]);
+                                feCfg->setLocked((int)chip["locked"]);
                             cfgFile.close();
                         } else {
                             std::cout << "Config file not found, using default!" << std::endl;
