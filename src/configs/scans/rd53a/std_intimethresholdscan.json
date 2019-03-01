@@ -65,7 +65,7 @@
           "count": 50,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 20000,
+          "frequency": 18000,
           "noInject": false,
           "time": 0,
 	  "trigMultiplier": 1
