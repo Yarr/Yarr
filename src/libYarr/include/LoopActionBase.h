@@ -63,6 +63,8 @@ class LoopActionBase {
         int max;
         unsigned step;
 
+        double progress;
+
         LoopStatus *g_stat;
         FrontEnd *g_fe;
         TxCore *g_tx;
