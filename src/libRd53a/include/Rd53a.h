@@ -29,27 +29,27 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
         Rd53a(TxCore *arg_core, unsigned arg_channel);
         Rd53a(TxCore *arg_core, unsigned arg_txchannel, unsigned arg_rxchannel);
     
-        void init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel);
+        void init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override;
         void makeGlobal() override {
             m_chipId = 8;
         }
 
-        void configure();
+        void configure() override;
         void configureInit();
         void configureGlobal();
         void configurePixels();
         void configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels);
 
-        void maskPixel(unsigned col, unsigned row) {
+        void maskPixel(unsigned col, unsigned row) override {
             this->setEn(col, row, 0);
             this->setHitbus(col, row, 0);
         }
 
         void writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value);
         void readRegister(Rd53aReg Rd53aGlobalCfg::*ref);
-        void writeNamedRegister(std::string name, uint16_t value);
+        void writeNamedRegister(std::string name, uint16_t value) override;
         
-        void setInjCharge(double charge, bool sCap=true, bool lCap=true) {
+        void setInjCharge(double charge, bool sCap=true, bool lCap=true) override {
             std::cout << __PRETTY_FUNCTION__ << " " << charge << std::endl;
             this->writeRegister((Rd53aReg Rd53aGlobalCfg::*)&Rd53aGlobalCfg::InjVcalDiff, this->toVcal(charge));
         }
