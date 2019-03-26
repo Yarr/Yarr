@@ -613,7 +613,7 @@ int main(int argc, char *argv[]) {
             // Save extra config in data folder
             std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(fe)->getConfigFile() + ".after");
             json backupCfg;
-            dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
+            dynamic_cast<FrontEndCfg*>(fe)->toFileJson(backupCfg);
             backupCfgFile << std::setw(4) << backupCfg;
             backupCfgFile.close(); 
 
