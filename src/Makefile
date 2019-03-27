@@ -49,13 +49,13 @@ CPPFLAGS += $(INCFLAGS)
 # Check mongodb driver source
 ifeq ($(findstring rh-mongodb36, $(CPATH)), rh-mongodb36)
   $(info MongoDB C++ Driver found!)
+  CPPFLAGS += -I./libDb/
   CPPFLAGS += -I/opt/rh/rh-mongodb36/root/usr/include/mongocxx/v_noabi -I/opt/rh/rh-mongodb36/root/usr/include/bsoncxx/v_noabi -I/opt/rh/rh-mongodb36/root/usr/include/boost
   LDFLAGS += -L/opt/rh/rh-mongodb36/root/usr/lib64 -lmongocxx -lbsoncxx
-  $(shell cp -p ./.libDb/Database.cpp ./libUtil/Database.cpp && cp -p ./.libDb/Database.h ./libUtil/include/Database.h)
+  IF_MONGOCXX_FOUND=YES
 else
   $(warning No MongoDB C++ Driver found! Database.h will be skipped!)
-  #LIB_FILES := $(patsubst libUtil/Database.cpp,./libUtil/DatabaseEmpty.cpp,$(LIB_FILES))
-  $(shell cp -p ./.libDb/DatabaseEmpty.cpp ./libUtil/Database.cpp && cp -p ./.libDb/DatabaseEmpty.h ./libUtil/include/Database.h)
+  CPPFLAGS += -I./libDb/empty/
   #$(shell echo -n "proceed? [y/N] " && read ans && [ $$ans = "y" ] || [ $$ans = "Y" ] || (echo "Exit..." && exit 1))
   #$(shell echo "Do 'make clean' if get any problem...")
 endif
@@ -122,6 +122,9 @@ $(shell echo $(1) | tr 'a-z' 'A-Z')
 endef
 
 PKGS := tools libSpec libYarr libFei4 libFe65p2 libUtil libEmu libRce libBoc libKU040 libRd53a
+ifeq ($(IF_MONGOCXX_FOUND), YES)
+  PKGS += libDb
+endif
 $(foreach P,$(PKGS),$(eval $(call addPkg,$(patsubst LIB%,%,$(call uc,$(P))),$(P))))
 
 ifeq (${NETIO_DIR},)
@@ -136,6 +139,8 @@ LIB_OBJS := $(patsubst %.cpp,$(BUILD)/%.o,$(notdir $(LIB_FILES)))
 ifneq (${NETIO_DIR},)
   PKGS+= libNetioHW
 endif
+
+
 
 ######
 ##  Targets
