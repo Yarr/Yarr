@@ -35,8 +35,6 @@ CPPFLAGS += -pthread -fPIC
 LDFLAGS += -pthread -lrt -fPIC -Wl,--whole-archive
 PLDFLAGS = -Wl,--no-whole-archive
 endif
-CPPFLAGS += -I/opt/rh/rh-mongodb36/root/usr/include/mongocxx/v_noabi -I/opt/rh/rh-mongodb36/root/usr/include/bsoncxx/v_noabi -I/opt/rh/rh-mongodb36/root/usr/include/boost
-LDFLAGS += -L/opt/rh/rh-mongodb36/root/usr/lib64 -lmongocxx -lbsoncxx
 
 CPPFLAGS += -std=c++11 -Wall -Werror
 INC_DIRS := $(wildcard */include)
@@ -47,6 +45,20 @@ endif
 
 INCFLAGS += $(addprefix -I,$(INC_DIRS))
 CPPFLAGS += $(INCFLAGS)
+
+# Check mongodb driver source
+ifeq ($(findstring rh-mongodb36, $(CPATH)), rh-mongodb36)
+  $(info MongoDB C++ Driver found!)
+  CPPFLAGS += -I/opt/rh/rh-mongodb36/root/usr/include/mongocxx/v_noabi -I/opt/rh/rh-mongodb36/root/usr/include/bsoncxx/v_noabi -I/opt/rh/rh-mongodb36/root/usr/include/boost
+  LDFLAGS += -L/opt/rh/rh-mongodb36/root/usr/lib64 -lmongocxx -lbsoncxx
+  $(shell cp -p ./.libDb/Database.cpp ./libUtil/Database.cpp && cp -p ./.libDb/Database.h ./libUtil/include/Database.h)
+else
+  $(warning No MongoDB C++ Driver found! Database.h will be skipped!)
+  #LIB_FILES := $(patsubst libUtil/Database.cpp,./libUtil/DatabaseEmpty.cpp,$(LIB_FILES))
+  $(shell cp -p ./.libDb/DatabaseEmpty.cpp ./libUtil/Database.cpp && cp -p ./.libDb/DatabaseEmpty.h ./libUtil/include/Database.h)
+  #$(shell echo -n "proceed? [y/N] " && read ans && [ $$ans = "y" ] || [ $$ans = "Y" ] || (echo "Exit..." && exit 1))
+  #$(shell echo "Do 'make clean' if get any problem...")
+endif
 
 CPPFLAGS_DEBUG += -g -O1 -DDEBUG
 CPPFLAGS_RELEASE += -O2 -DNDEBUG
