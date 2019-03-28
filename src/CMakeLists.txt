@@ -27,6 +27,12 @@ add_compile_options(-Wfatal-errors)
 add_compile_options(-Wno-deprecated)
 add_compile_options(-std=c++11)
 
+# Check if mongocxx exist
+string(FIND "$ENV{CPATH}" "rh-mongodb36" MONGOCXX_RESULT)
+if(NOT ${MONGOCXX_RESULT} EQUAL -1)
+    set(ENABLE_MONGODB ON)
+endif()
+
 # Add -fPIC for (e.g. linking to shared libraries)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -37,9 +43,12 @@ list(APPEND libs Yarr Spec Util Emu Fe65p2 Fei4 Rce Boc Rd53a KU040)
 if(ENABLE_NETIO)
     list(APPEND libs NetioHW)
 endif()
+if(ENABLE_MONGODB)
+    list(APPEND libs Db)
+endif()
 
 foreach(lib ${libs})
-include_directories(lib${lib}/include /opt/rh/rh-mongodb36/root/usr/include/mongocxx/v_noabi /opt/rh/rh-mongodb36/root/usr/include/bsoncxx/v_noabi)
+include_directories(lib${lib}/include)
 file(GLOB SrcFiles lib${lib}/*.cpp)
 list(APPEND LibSrcFiles ${SrcFiles})
 endforeach()
@@ -50,6 +59,11 @@ set(NETIO_DIR "/path/to/felix/software" CACHE
 
 if(ENABLE_NETIO)
   include_directories("${NETIO_DIR}/include")
+endif()
+if(ENABLE_MONGODB)
+    include_directories(libDb /opt/rh/rh-mongodb36/root/usr/include/mongocxx/v_noabi /opt/rh/rh-mongodb36/root/usr/include/bsoncxx/v_noabi)
+else()
+    include_directories(libDb/empty)
 endif()
 
 #add executables
@@ -75,10 +89,13 @@ if(APPLE)
     target_link_libraries(${execname} ${WRAPPED_YARR} pthread)
 elseif(UNIX)
     set(WRAPPED_YARR -Wl,--whole-archive Yarr -Wl,--no-whole-archive)
-    target_link_libraries(${execname} ${WRAPPED_YARR} pthread rt /opt/rh/rh-mongodb36/root/usr/lib64 mongocxx bsoncxx)
+    target_link_libraries(${execname} ${WRAPPED_YARR} pthread rt)
 
     if(ENABLE_NETIO)
         target_link_libraries(${execname} "${NETIO_DIR}/lib/libnetio.so")
+    endif()
+    if(ENABLE_MONGODB)
+        target_link_libraries(${execname} /opt/rh/rh-mongodb36/root/usr/lib64 mongocxx bsoncxx)
     endif()
 endif()
 # Not sure why rt is not linked by default here
