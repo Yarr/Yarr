@@ -4,7 +4,6 @@
 // ################################
 // ./bin/writeDb -j <json_file> -c <collection>
 
-
 #include <iostream>
 #include <cstdlib>
 #include <string>

@@ -36,9 +36,6 @@
 #include "Fei4Analysis.h"
 
 #include "Database.h"
-
-#include "Database.h"
-
 #if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
 
 //  #include <errno.h>
@@ -91,11 +88,6 @@ int main(int argc, char *argv[]) {
     bool dbUse = false;
     std::string dbTestInfo = "";
     
-    bool dbUse = false;
-    std::string dbSerialNumber;
-    std::string dbInfoJsonPath = "";
-    std::vector<std::string> dbConnPaths; // Only for old yarr sw to include connectivity config
-
     unsigned runCounter = 0;
 
     // Load run counter
