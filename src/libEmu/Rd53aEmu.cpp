@@ -7,6 +7,7 @@
 #include "Gauss.h"
 
 #include <chrono>
+#include <iomanip>
 
 #define HEXF(x,y) std::hex << "0x" << std::hex << std::setw(x) << std::setfill('0') << static_cast<int>(y) << std::dec
 
