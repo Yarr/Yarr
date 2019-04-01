@@ -166424,6 +166424,8 @@
                 ]
             }
         ],
-        "name": "JohnDoe"
+        "name": "JohnDoe",
+        "rxChannel": 0,
+        "txChannel": 0
     }
 }
