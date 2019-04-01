@@ -66,11 +66,17 @@ GCC_MAJOR = $(shell $(CPP) -dumpversion | cut -d'.' -f1)
 GCC_MINOR = $(shell $(CPP) -dumpversion | cut -d'.' -f2)
 
 ifneq ($(UNAME_S), Darwin)
-ifeq ($(findstring $(GCC_MAJOR),0123456),$(GCC_MAJOR))
-#ifeq ($(findstring $(GCC_MINOR),0),$(GCC_MINOR))
-$(error $(CPP) version is too old, need atleast 7.0! Found $(GCC_MAJOR).$(GCC_MINOR))
-#endif
-endif
+ ifeq ($(findstring $(GCC_MAJOR),4),$(GCC_MAJOR))
+  ifeq ($(findstring $(GCC_MINOR),01234567),$(GCC_MINOR))
+   $(warning $(CPP) version is deprecated, support for 4.8 is limited! Found $(GCC_MAJOR).$(GCC_MINOR))
+  else
+   $(error $(CPP) version 4 is too old, try something more recent! Found $(GCC_MAJOR).$(GCC_MINOR))
+  endif
+ else ifeq ($(findstring $(GCC_MAJOR),0123456),$(GCC_MAJOR))
+  # ifeq ($(findstring $(GCC_MINOR),0),$(GCC_MINOR))
+   $(error $(CPP) version is too old, need atleast 7.0! Found $(GCC_MAJOR).$(GCC_MINOR))
+  # endif
+ endif
 endif
 
 # Set build mode specific variables
