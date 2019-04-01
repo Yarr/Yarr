@@ -7,6 +7,9 @@
 // ################################
 
 #include "ScanFactory.h"
+
+#include <iomanip>
+
 #include "AllStdActions.h"
 #include "ClassRegistry.h"
 
