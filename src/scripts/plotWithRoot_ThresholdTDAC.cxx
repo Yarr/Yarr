@@ -31,9 +31,9 @@ int main(int argc, char *argv[]) { //./plotWithRoot_ThresholdTDAC path/to/direct
 	rowno = 192;
 	colno = 400;
 	total_pix = rowno*colno;
-	xbins = 500;
-	xlow = -0.5;
-	xhigh = 10000.5;
+	xbins = 501;
+	xlow = -10;
+	xhigh = 10010;
 
 	std::vector <double> thr_values;
 	std::vector <int> tdac_values;

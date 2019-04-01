@@ -30,8 +30,6 @@ $ make
 [Linking] plotWithRoot_Noise
 [Compiling] plotWithRoot_NoiseMap.o
 [Linking] plotWithRoot_NoiseMap
-[Compiling] plotWithRoot_ToT.o
-[Linking] plotWithRoot_ToT
 ```
 
 ##Scripts
@@ -54,12 +52,13 @@ Examples of all the Occupancy plots given below:
 ###Threshold Plots
 
 Plots and fits 1D histograms showing [Number of Pixels] versus [Threshold Value (e)] for each of the RD53A FEs and one stacked plot; the combined plot is used to get the fit for the stacked plot.
-Plots 1D histograms showing [Number of Pixels] versus [Range of Threshold Values (deviation from the mean)] for each of the RD53A FEs and one stacked plot.
+Plots 1D histograms (regular and normalized) showing [Number of Pixels] versus [Range of Threshold Values (deviation from the Gaussian Mean or histogram RMS)] for each of the RD53A FEs and one stacked plot.
 Plots 2D histogram showing the [Threshold Value (e)] for each pixel.
-Uses ThresholdMap.dat files.
+Uses ThresholdMap.dat files. To use the good Differential pixel mask, set goodDiff_On to 1.
+Optional settings to change the xrange and number of bins.
 
 ```bash
-$ ./plotWithRoot_Threshold path/to/directory file_ext
+$ ./plotWithRoot_Threshold path/to/directory file_ext goodDiff_On xlow (optional) xhigh(optional) xbins(optional)
 ```
 
 Examples of some of the Threshold plots given below: 
@@ -71,12 +70,12 @@ Examples of some of the Threshold plots given below:
 ###NoiseMap Plots
 
 Plots 1D histograms showing [Number of Pixels] versus [Noise (e)] for each of the RD53A FEs and one stacked plot.
-Plots 1D histograms showing [Number of Pixels] versus [Range of Noise (deviation from the mean)] for each of the RD53A FEs and one stacked plot.
+Plots 1D histograms (regular and normalized) showing [Number of Pixels] versus [Range of Noise (deviation from the Gaussian Mean or histogram RMS)] for each of the RD53A FEs and one stacked plot.
 Plots 2D histogram showing the [Noise (e)] for each pixel.
-Uses NoiseMap.dat files.
+Uses NoiseMap.dat files. To use the good Differential pixel mask, set goodDiff_On to 1.
 
 ```bash
-$ ./plotWithRoot_NoiseMap path/to/directory file_ext
+$ ./plotWithRoot_NoiseMap path/to/directory file_ext goodDiff_On
 ```
 
 Examples of some of the Noise plots given below: 
@@ -98,12 +97,12 @@ Example S-curve plot given below:
 
 ![SCurve Plots Preview](images/SCurvePlot_Preview.png)
 
-###Json Plots
+###TDAC, Hitbus, and EnableMask Plots
 
 Plots 1D histograms showing [Number of Pixels] versus [TDAC setting] for the linear and differential RD53A FEs.
 Plots 1D histograms showing [Number of Pixels] versus [Range of TDAC settings (deviation from the mean)] for each of the RD53A FEs.
 Plots 2D histograms showing the [TDAC setting], [Hitbus], and [EnableMask] for each pixel. For the [Hitbus] and [EnableMask] plots, circle the pixels with values of 0, if the number of pixels of value 0 are less than 25% of the total pixels.
-Uses rd53a .json files.
+Uses rd53a\*.json files.
 
 ```bash
 $ ./plotWithRoot_json path/to/directory file_ext
@@ -131,10 +130,10 @@ Examples of some of the ThresholdTDAC plots given below:
 
 Plots 1D histograms showing [Number of Pixels] vs [Mean ToT (bc)] and [Sigma ToT (bc)] and one stacked plot.
 Plots 2D histograms showing the [Mean ToT (bc)] and [Sigma ToT (bc)] for each pixel.
-Uses ToTMap0.dat files.
+Uses ToTMap0.dat files. To use good Differential pixel mask, set goodDiff_On to 1.
 
 ```bash
-$ ./plotWithRoot_ToT path/to/directory file_ext
+$ ./plotWithRoot_ToT path/to/directory file_ext goodDiff_On
 ```
 
 Examples of some of the ToT plots given below:

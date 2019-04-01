@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 
 	if (!(argc == 4 || argc == 7) ) {
 		std::cout << "No directory, image plot extension, and/or good differential FE pixels option given! \nExtra settings for the threshold plot x-axis: minimum value, maximum value, and # of bins [e per bin=(xhigh-xlow)/xbins]. \nFor only good differential FE pixels, write '1'. \n./plotWithRoot_Threshold path/to/directory/ file_ext goodDiff_On xlow(optional) xhigh(optional) xbins(optional)" << std::endl;
-		std::cout << "Example: ./plotWithRoot_Threshold path/to/directory/ pdf 1 \nExample: ./plotWithRoot_Threshold path/to/directory/pdf 0 -0.5 10000.5 500" << std::endl;
+		std::cout << "Example: ./plotWithRoot_Threshold path/to/directory/ pdf 1 \nExample: ./plotWithRoot_Threshold path/to/directory/pdf 0 -10 10010 501" << std::endl;
 		return -1;
 	}
 
