@@ -258,7 +258,6 @@ int main(int argc, char *argv[]) {
         std::cout << "-> Setting TestRun Info" << std::endl;
         std::cout << "-> Setting Target ToT: " << target_tot << std::endl;
         std::cout << "-> Setting Target Charge: " << target_charge << std::endl;
-        database->registerEnvironment(dbTestInfo);
         database->startTestRun(ctrlCfgPath, scanType, strippedScan, runCounter, target_charge, target_tot);
         database->setTestRunInfo(dbTestInfo);
     }
@@ -701,7 +700,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Path to Test Run Information: " << dbTestInfo << std::endl;
 
         database->writeTestRun(ctrlCfgPath, scanType, strippedScan, runCounter, outputDir, target_charge, target_tot);
-        database->registerEnvironment(dbTestInfo);
+        database->registerEnvironment("env.dat", "");
         std::cout << std::endl;
     }
     delete database;

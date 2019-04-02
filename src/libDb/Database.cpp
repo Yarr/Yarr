@@ -23,6 +23,7 @@ Database::Database(std::string i_host_ip) {
     std::string home = getenv("HOME"); 
     m_home_dir = home  + "/.yarr/";
     m_db_version = 2;
+    m_start_time = "";
 }
 
 Database::~Database() {
@@ -474,25 +475,141 @@ void Database::registerFromConnectivity(std::string i_conn_path) {
     }
 }
 
-void Database::registerEnvironment(std::string i_env_cfg_path) {
-//TODO make it to upload environmental information automatically
-    if (DB_DEBUG) std::cout << "Database: Register Environment: " << i_env_cfg_path << std::endl;
-    if (i_env_cfg_path != "") {
-        std::ifstream env_cfg_ifs(i_env_cfg_path);
-        json env_json = json::parse(env_cfg_ifs);
-        for (auto doc_array : env_json["environments"]) {
-            // Push doc array to test run
-            mongocxx::collection collection = db["environment"];
-            bsoncxx::document::value doc_value = document{} << "description" << doc_array["description"].get<std::string>() <<
-                                                               "key"         << doc_array["key"].get<std::string>() <<
-                                                               "value"       << doc_array["value"].get<std::string>() <<
-                                                               "date"        << bsoncxx::types::b_date{std::chrono::system_clock::now()} <<
-                                                               "address"        << m_address << finalize;
+void Database::registerEnvironment(std::string i_env_key, std::string i_description) {
+    if (DB_DEBUG) std::cout << "Database: Register Environment: " << i_env_key << std::endl;
+
+    mongocxx::collection collection = db["environment"];
+    if (i_description != "") {
+        if (i_env_key == "") {
+            std::cerr <<"#DB ERROR# Cannot load environmental config key: " << i_description << std::endl;
+            return;
+        }
+        bsoncxx::document::value doc_value = document{} <<  
+            "key"         << i_env_key <<
+            "type"        << "description" <<
+            "description" << i_description <<
+        finalize;
+        bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(doc_value.view());
+        if (!maybe_result) {
+            if (DB_DEBUG) std::cout << "\tDatabase: Register Environment Description: " << i_description << std::endl;
             auto result = collection.insert_one(doc_value.view());
             bsoncxx::oid oid = result->inserted_id().get_oid().value;
             this->addSys(oid.to_string(), "environment");
             this->addVersion("environment", "_id", oid.to_string(), "oid");
-       }
+        }
+    } else {
+        std::string env_cfg_path;
+        if (i_env_key != "") env_cfg_path = i_env_key;
+        else env_cfg_path = "/tmp/" + std::string(getenv("USER")) + "env.dat";
+        std::ifstream env_cfg_ifs(env_cfg_path);
+        if (!env_cfg_ifs) {
+            std::cerr <<"#DB ERROR# Cannot open environmental config file: " << env_cfg_path << std::endl;
+            return;
+        }
+        
+        // get start time from scan data
+        bsoncxx::oid i_oid(m_tr_oid_str);
+        mongocxx::collection tr_collection = db["testRun"];
+        bsoncxx::stdx::optional<bsoncxx::document::value> run_result = tr_collection.find_one(document{} << "_id" << i_oid << finalize);
+        if (!run_result) return;
+        bsoncxx::document::element element = run_result->view()["startTime"];
+        std::chrono::seconds s = std::chrono::duration_cast<std::chrono::seconds>(element.get_date().value);
+        std::time_t starttime = s.count();
+        if (DB_DEBUG) {
+            char buf[80];
+            struct tm *lt = std::localtime(&starttime);
+            strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", lt);
+            std::cout << "\tDatabase: Register Environment Start Time: " << buf << std::endl;
+        }
+
+        std::string line, tmp;
+        std::stringstream key_line;
+        std::getline(env_cfg_ifs, line);
+        key_line << line;
+        std::vector<std::string> env_key;
+        std::vector<std::string> description;
+        int key_num = 0;
+        while (key_line>>tmp) {
+            env_key.push_back(tmp);
+            key_num++;
+            if (tmp != "time") {
+                bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "key" << tmp << "type" << "description" << finalize);
+                if (!maybe_result) {
+                    std::cerr << "#DB ERROR# This environmental key was not registerd, abort..." << std::endl;
+                    std::cerr << "\tCheck the environmental config: " << env_cfg_path << std::endl;
+                    return;
+                }
+                bsoncxx::document::element element = maybe_result->view()["description"];
+                description.push_back(element.get_utf8().value.to_string());
+            } else {
+                description.push_back("time");
+            }
+        }
+
+        int data_num = 0;
+        std::vector<std::string> key_value[key_num];
+        std::vector<std::string> date;
+        while (!env_cfg_ifs.eof()) {
+            std::string datetime = "";
+            std::string tmp[key_num];
+            for (int i=0;i<key_num;i++) {
+                env_cfg_ifs>>tmp[i];
+                if (tmp[i] == "") break;
+                if (env_key[i] == "time") datetime = tmp[i];
+            }
+            if (datetime == "") break; 
+            struct tm timepoint;
+            memset(&timepoint, 0X00, sizeof(struct tm));
+            strptime(datetime.c_str(), "%Y-%m-%dT%H:%M:%S", &timepoint);
+
+            char buffer[80];
+            strftime(buffer,sizeof(buffer),"%Y-%m-%d %H:%M:%S",&timepoint);
+
+            std::time_t timestamp  = mktime(&timepoint);
+            if (difftime(starttime,timestamp)<60) { // store data from 1 minute before the starting time of the scan
+                for (int i=0;i<key_num;i++) {
+                    key_value[i].push_back(tmp[i]);
+                    if (env_key[i] == "time") date.push_back(tmp[i]);
+                }
+                data_num++;
+            }
+        }
+        document builder{};
+        auto in_array = builder << "data" << open_array;
+        for (int i=0;i<key_num;i++) {
+            if (env_key[i] == "time") continue;
+            document doc_builder{};
+            auto array_builder = bsoncxx::builder::basic::array{};
+            for (int j=0;j<data_num;j++) {
+                struct tm timepoint;
+                memset(&timepoint, 0X00, sizeof(struct tm));
+                strptime(date[j].c_str(), "%Y-%m-%dT%H:%M:%S", &timepoint);
+                std::time_t timestamp  = mktime(&timepoint);
+                array_builder.append(
+                    document{} << 
+                        "date"        << bsoncxx::types::b_date{std::chrono::system_clock::from_time_t(timestamp)} <<
+                        "value"       << std::stof(key_value[i][j]) <<
+                    finalize
+                ); 
+            }
+            auto in_doc = doc_builder <<
+                "key"         << env_key[i] <<
+                "description" << description[i] <<
+                "value"       << open_array << 
+                    array_builder << 
+                close_array << 
+            finalize;
+            in_array = in_array << in_doc;
+        }
+        auto after_array = in_array << close_array;
+        bsoncxx::document::value doc_value = after_array << finalize;
+
+        auto result = collection.insert_one(doc_value.view());
+        bsoncxx::oid oid = result->inserted_id().get_oid().value;
+        this->addSys(oid.to_string(), "environment");
+        this->addVersion("environment", "_id", oid.to_string(), "oid");
+
+        this->addDocument(m_tr_oid_str, "testRun", "environment", oid.to_string());
    }
 }
 
@@ -601,12 +718,18 @@ std::string Database::registerComponentTestRun(std::string i_component_oid_str, 
 std::string Database::registerTestRun(std::string i_test_type, int i_run_number, int i_target_charge=-1, int i_target_tot=-1) {
     if (DB_DEBUG) std::cout << "\tDatabase: Register Test Run" << std::endl;
 
-    document builder{};
+    std::chrono::system_clock::time_point startTime = std::chrono::system_clock::now();
+    std::time_t now = std::chrono::system_clock::to_time_t(startTime);
+    struct tm *lt = std::localtime(&now);
+    char buf[80];
+    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", lt);
+    m_start_time = buf;
 
+    document builder{};
     auto docs = builder << "sys"          << open_document << close_document <<
                            "testType"     << i_test_type << // id of test type //TODO make it id
                            "runNumber"    << i_run_number << // number of test run
-                           "startTime"    << bsoncxx::types::b_date{std::chrono::system_clock::now()} << // date when the test run was taken
+                           "startTime"    << bsoncxx::types::b_date{startTime} << // date when the test run was taken
                            "passed"       << true << // flag if test passed
                            "problems"     << true << // flag if any problem occured
                            "state"        << "ready" << // state of component ["ready", "requestedToTrash", "trashed"]
@@ -952,5 +1075,4 @@ std::string Database::writeJsonCode(json &i_json, std::string i_filename, std::s
     }
     return oid_str;
 }
-
 

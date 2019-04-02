@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <string>
 #include "json.hpp"
+#include <unistd.h>
 
 #include "Database.h"
 
@@ -27,10 +28,16 @@ int main(int argc, char *argv[]){
 	std::string dbUserCfgPath = "";
 
   // register address
-  std::string dbCite = "";
+  std::string dbAddress = "";
+
+  // register environment
+  std::string dbEnvPath = "";
+  // register environment key
+  std::string dbEnvKey = "";
+  std::string dbEnvDescription = "";
 
   int c;
-  while ((c = getopt(argc, argv, "hU:C:n:u:i:p:c:")) != -1 ){
+  while ((c = getopt(argc, argv, "hU:C:E:n:u:i:p:c:k:d:")) != -1 ){
     switch (c) {
         case 'h':
             printHelp();
@@ -44,6 +51,10 @@ int main(int argc, char *argv[]){
             registerType = "Component";
             dbConnPath = std::string(optarg);
             break;
+        case 'E':
+            registerType = "Environment";
+            dbEnvPath = std::string(optarg);
+            break;
         case 'n':
             dbUserName = std::string(optarg);
             break;
@@ -54,13 +65,20 @@ int main(int argc, char *argv[]){
             dbUserIdentity = std::string(optarg);
             break;
         case 'c':
-            dbCite = std::string(optarg);
+            dbAddress = std::string(optarg);
             break;
+        case 'k':
+            dbEnvKey = std::string(optarg);
+            break;
+        case 'd':
+            dbEnvDescription = std::string(optarg);
+            break;
+
         case 'p':
             dbUserCfgPath = std::string(optarg);
             break;
         case '?':
-            if(optopt == 'U'||optopt == 'C'){
+            if(optopt == 'U'||optopt == 'C'||optopt == 'E'){
                 std::cerr << "-> Option " << (char)optopt
                           << " requires a parameter! Aborting... " << std::endl;
                 return -1;
@@ -108,16 +126,12 @@ int main(int argc, char *argv[]){
   	std::cout << "\tuser identity : " << dbUserIdentity << std::endl;
     std::cout << std::endl;
 
-    //setenv("DBUSER", dbUserAccount.c_str(), 1);
-
-  	std::string collection = "user";
-  
     Database *database = new Database();
-  	database->registerUserInstitution(dbUserName, dbInstitution, dbUserIdentity, dbCite);
+  	database->registerUserInstitution(dbUserName, dbInstitution, dbUserIdentity, dbAddress);
     delete database;
   }
 
-  // register user
+  // register component
   if (registerType == "Component") {
     if (dbConnPath == "") {
         std::cerr << "Error: no connectivity config file given, please specify file name under -C option!" << std::endl;
@@ -126,11 +140,39 @@ int main(int argc, char *argv[]){
 
     std::cout << "Database: Register Component:" << std::endl;
 	  std::cout << "\tconnecitivity config file : " << dbConnPath << std::endl;
-	  std::string collection = "component";
 
     Database *database = new Database();
     database->setUserInstitution();
 	  database->registerFromConnectivity(dbConnPath);
+
+    delete database;
+  }
+
+  // register environment
+  if (registerType == "Environment") {
+    if (dbEnvPath == "") {
+        std::cerr << "Error: no environmental config file given, please specify file name under -E option!" << std::endl;
+        return -1;
+    }
+
+    std::cout << "Database: Register Environment:" << std::endl;
+	  std::cout << "\tenvironmental config file : " << dbEnvPath << std::endl;
+
+    Database *database = new Database();
+    database->setUserInstitution();
+	  database->registerEnvironment(dbEnvPath, "");
+
+    delete database;
+  }
+
+  // register environment key
+  if (dbEnvKey != ""&&dbEnvDescription != "") {
+    std::cout << "Database: Register Environment List:" << std::endl;
+	  std::cout << "\tenvironmental key : " << dbEnvKey << std::endl;
+	  std::cout << "\tenvironmental description : " << dbEnvDescription << std::endl;
+    
+    Database *database = new Database();
+	  database->registerEnvironment(dbEnvKey, dbEnvDescription);
 
     delete database;
   }

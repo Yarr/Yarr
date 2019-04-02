@@ -37,7 +37,7 @@ class Database {
         std::string uploadFromJson(std::string, std::string);
         void registerUserInstitution(std::string, std::string, std::string, std::string);
         void registerFromConnectivity(std::string);
-        void registerEnvironment(std::string);
+        void registerEnvironment(std::string, std::string);
         void writeAttachment(std::string, std::string, std::string);
 
     protected:
@@ -69,6 +69,7 @@ class Database {
         std::string m_address;
         std::string m_tr_oid_str;
         std::string m_chip_type;
+        std::string m_start_time;
 
         int m_db_version;
 
