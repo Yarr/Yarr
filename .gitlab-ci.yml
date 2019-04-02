@@ -72,3 +72,27 @@ job_build_with_felix:
      - cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DENABLE_NETIO:BOOL=ON -DNETIO_DIR:PATH=${FELIX_DIR}/${CONFIG}
      - make -j4
      - bin/scanConsole -k
+
+job_build_make_with_felix:
+    # Image of pre-built felix software
+    image: gitlab-registry.cern.ch/atlas-tdaq-felix/felix-image:cc7
+    variables:
+     # This is what is in the docker image!
+     FELIX_DIR: /opt/felix/felix-nightly
+     # LCG style config identifier
+     CONFIG: x86_64-centos7-gcc8-opt
+     GCC_SCRIPT: /cvmfs/sft.cern.ch/lcg/releases/gcc/8.2.0/x86_64-centos7/setup.sh
+    when: manual
+    tags:
+     - cvmfs
+    script:
+     - yum -y install make gnuplot glibc-devel which
+     # TBB lib is in FELIX image, but we need the includes to build
+     - yum -y install tbb tbb-devel
+     # Run setup for YARR
+     - source ${FELIX_DIR}/${CONFIG}/setup.sh
+     - source ${GCC_SCRIPT}
+     - gcc --version
+     - cd src
+     - make NETIO_DIR=${FELIX_DIR}/${CONFIG}
+     - bin/scanConsole -k
