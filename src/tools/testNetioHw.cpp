@@ -1,7 +1,6 @@
 #include "NetioTxCore.h"
 #include "NetioRxCore.h"
 #include "AllHwControllers.h"
-#include "BitStream.h"
 #include "RawData.h"
 #include "HwController.h"
 
@@ -137,16 +136,21 @@ int main(int argc, char** argv){
 					0x0000,0xd200,0x0002,0x8000, //24-27: 0000,c900,0058,8200
 					0x8206,0x0007,0x0000,0xf400}; //28-31:
 
-  BitStream bs;
   for(int32_t i=0;i<32;i++){
-    bs.Add(5,0x16).Add(4,0x8).Add(4,0x2).Add(4,chid).Add(6,i).Add(16,cfg[i]);
-    bs.Pack();
-    for(uint32_t j=0;j<bs.GetSize();j++){
-      txcore->writeFifo(bs.GetWord(j));
-    }
+    // 5|0x16 4|0x8 4|0x2 4|chid 6|i 16|cfg[i]
+    uint64_t pattern = 0b10110'1000'0010;
+    pattern <<= 4;
+    pattern |= chid;
+    pattern <<= 6;
+    pattern |= i;
+    pattern <<= 16;
+    pattern |= cfg[i];
+
+    txcore->writeFifo((pattern >> 32) & 0xffffffff);
+    txcore->writeFifo(pattern & 0xffffffff);
+
     cout << setw(2) << i << ": 0x" << hex << setw(4) << setfill('0') << cfg[i] << dec << endl;
     txcore->releaseFifo();
-    bs.Clear();
   }
   /*
   cout << "One trigger at a time" << endl;
