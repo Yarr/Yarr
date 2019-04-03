@@ -52,7 +52,6 @@ job_build_with_felix:
      # LCG style config identifier
      CONFIG: x86_64-centos7-gcc62-opt
      GCC_SCRIPT: /cvmfs/sft.cern.ch/lcg/releases/gcc/6.2.0/x86_64-centos7/setup.sh
-    when: manual
     tags:
      - cvmfs
     script:
@@ -82,7 +81,6 @@ job_build_make_with_felix:
      # LCG style config identifier
      CONFIG: x86_64-centos7-gcc8-opt
      GCC_SCRIPT: /cvmfs/sft.cern.ch/lcg/releases/gcc/8.2.0/x86_64-centos7/setup.sh
-    when: manual
     tags:
      - cvmfs
     script:
