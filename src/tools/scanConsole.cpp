@@ -87,6 +87,7 @@ int main(int argc, char *argv[]) {
 
     bool dbUse = false;
     std::string dbTestInfo = "";
+    std::string dbEnvInfo = "";
     
     unsigned runCounter = 0;
 
@@ -113,7 +114,7 @@ int main(int argc, char *argv[]) {
     oF.close();
 
     int c;
-    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:WI:")) != -1) {
+    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:WI:E:")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
@@ -172,6 +173,9 @@ int main(int argc, char *argv[]) {
                 break;
             case 'I':
                 dbTestInfo = std::string(optarg);
+                break;
+            case 'E':
+                dbEnvInfo = std::string(optarg);
                 break;
             case '?':
                 if(optopt == 's' || optopt == 'n'){
@@ -700,8 +704,8 @@ int main(int argc, char *argv[]) {
         std::cout << "Path to Test Run Information: " << dbTestInfo << std::endl;
 
         database->writeTestRun(ctrlCfgPath, scanType, strippedScan, runCounter, outputDir, target_charge, target_tot);
-        database->registerEnvironment("env.dat", "");
-        std::cout << std::endl;
+        database->registerEnvironment(dbEnvInfo,"");
+        std::cout << "Done."<< std::endl;
     }
     delete database;
 

@@ -35,9 +35,14 @@ int main(int argc, char *argv[]){
   // register environment key
   std::string dbEnvKey = "";
   std::string dbEnvDescription = "";
+  // register json
+  std::string dbJsonPath = "";
+  std::string dbJsonType = "";
+  // get json
+  std::string dbJsonId = "";
 
   int c;
-  while ((c = getopt(argc, argv, "hU:C:E:n:u:i:p:c:k:d:")) != -1 ){
+  while ((c = getopt(argc, argv, "hU:C:J:E:G:n:u:i:p:c:k:d:j:")) != -1 ){
     switch (c) {
         case 'h':
             printHelp();
@@ -55,11 +60,20 @@ int main(int argc, char *argv[]){
             registerType = "Environment";
             dbEnvPath = std::string(optarg);
             break;
+        case 'J':
+            registerType = "Json";
+            dbJsonPath = std::string(optarg);
+            break;
+        case 'G':
+            registerType = "getJson";
+            dbJsonPath = std::string(optarg);
+            break;
         case 'n':
             dbUserName = std::string(optarg);
             break;
         case 'i':
             dbInstitution = std::string(optarg);
+            dbJsonId = dbInstitution;
             break;
         case 'u':
             dbUserIdentity = std::string(optarg);
@@ -73,7 +87,9 @@ int main(int argc, char *argv[]){
         case 'd':
             dbEnvDescription = std::string(optarg);
             break;
-
+        case 'j':
+            dbJsonType = std::string(optarg);
+            break;
         case 'p':
             dbUserCfgPath = std::string(optarg);
             break;
@@ -177,17 +193,57 @@ int main(int argc, char *argv[]){
     delete database;
   }
 
+  // register Json
+  if (registerType == "Json") {
+    std::cout << "Database: Register Json:" << std::endl;
+	  std::cout << "\tjson file : " << dbJsonPath << std::endl;
+    
+    std::ifstream jsonFile(dbJsonPath);
+    if (!jsonFile) {
+        std::cerr <<"#ERROR# Cannot open json file: " << dbJsonPath << std::endl;
+        return -1;
+    }
+    json j;
+    try {
+        j = json::parse(jsonFile);
+        Database *database = new Database();
+	      database->writeJsonCode(j, "testfile", "testtitle", dbJsonType);
+        delete database;
+    } catch (json::parse_error &e) {
+        std::cerr << "#ERROR# Could not parse config: " << e.what() << std::endl;
+        std::abort();
+    }
+  }
+
+  // get Json
+  if (registerType == "getJson") {
+      std::cout << "Database: Get Json:" << std::endl;
+	    std::cout << "\tsave json file : " << dbJsonPath << std::endl;
+      
+      Database *database = new Database();
+	    //database->getJsonCode(dbJsonId, dbJsonPath);
+	    database->getJsonCode(dbJsonId, dbJsonPath);
+      delete database;
+  }
+
+
 	return 0;
 }
 
 void printHelp() {
     std::cout << "Help:" << std::endl;
     std::cout << " -h: Shows this." << std::endl;
-    std::cout << " -C <conn.json> : Register component data into database. Provide connectivity config." << std::endl;
+    std::cout << " -C <path/to/conn.json> : Register component data into database. Provide connectivity config." << std::endl;
     std::cout << " -U <user account> : Register user data into database. Provide user information with options. (Default: -p ~/.yarr/<user account>_user.json)" << std::endl;
     std::cout << "\t -n <user name>" << std::endl;
     std::cout << "\t -i <institution>" << std::endl;
     std::cout << "\t -u <user identity>" << std::endl;
     std::cout << "\t -p <user config path>" << std::endl;
     std::cout << "\t -c <test place> (Default: ~/.yarr/address)" << std::endl;
+    std::cout << " -J <path/to/config.json> : Register config data into database. Provide the path to config.json." << std::endl;
+    std::cout << "\t -j <format type>" << std::endl;
+    std::cout << " -G <path/to/save.json> : Download config data from database. Provide the path to save.json." << std::endl;
+    std::cout << "\t -i <config id in database>" << std::endl;
+    std::cout << " -E <path/to/env.json> : Register environmental information into database. Provide the path to env.json." << std::endl;
+    std::cout << " -k <env key> -d <env description> : Register environmental key into database. Provide the environmental key and the description." << std::endl;
 }

@@ -23,7 +23,7 @@ Database::Database(std::string i_host_ip) {
     std::string home = getenv("HOME"); 
     m_home_dir = home  + "/.yarr/";
     m_db_version = 2;
-    m_start_time = "";
+    m_tr_oid_str = "";
 }
 
 Database::~Database() {
@@ -162,7 +162,7 @@ void Database::startTestRun(std::string i_ctrl_path, std::string i_scan_path, st
         if (DB_DEBUG) std::cout << "\tWrite scan config file: " << i_scan_path << std::endl;
         json scanCfg;
         scanCfg = json::parse(scanCfgFile);
-        std::string scan_oid_str = this->writeJsonCode(scanCfg, i_test_type+".json", "scanCfg");
+        std::string scan_oid_str = this->writeJsonCode(scanCfg, i_test_type+".json", "scanCfg", "j");
         this->addDocument(test_run_oid_str, "testRun", "scanCfg", scan_oid_str);
     }
 
@@ -172,7 +172,7 @@ void Database::startTestRun(std::string i_ctrl_path, std::string i_scan_path, st
         if (DB_DEBUG) std::cout << "\tWrite controller config file: " << i_ctrl_path << std::endl;
         json ctrlCfg;
         ctrlCfg = json::parse(ctrlCfgFile);
-        std::string ctrl_oid_str = this->writeJsonCode(ctrlCfg, "controller.json", "ctrlCfg");
+        std::string ctrl_oid_str = this->writeJsonCode(ctrlCfg, "controller.json", "ctrlCfg", "j");
         this->addDocument(test_run_oid_str, "testRun", "ctrlCfg", ctrl_oid_str);
     }
 
@@ -194,7 +194,7 @@ std::string Database::writeComponentTestRun(std::string i_serial_number, int i_c
 void Database::writeConfig(std::string i_ctr_oid_str, json &i_config, std::string i_title) {
     if (DB_DEBUG) std::cout << "Database: Write Config Json." << std::endl;
 
-    std::string cfg_oid_str = this->writeJsonCode(i_config, i_title+".json", "chipCfg");
+    std::string cfg_oid_str = this->writeJsonCode(i_config, i_title+".json", "chipCfg", "j");
     this->addDocument(i_ctr_oid_str, "componentTestRun", i_title, cfg_oid_str);
 }
 
@@ -481,7 +481,7 @@ void Database::registerEnvironment(std::string i_env_key, std::string i_descript
     mongocxx::collection collection = db["environment"];
     if (i_description != "") {
         if (i_env_key == "") {
-            std::cerr <<"#DB ERROR# Cannot load environmental config key: " << i_description << std::endl;
+            std::cerr <<"#DB WORNING# Cannot load environmental description: " << i_description << std::endl;
             return;
         }
         bsoncxx::document::value doc_value = document{} <<  
@@ -498,119 +498,142 @@ void Database::registerEnvironment(std::string i_env_key, std::string i_descript
             this->addVersion("environment", "_id", oid.to_string(), "oid");
         }
     } else {
-        std::string env_cfg_path;
-        if (i_env_key != "") env_cfg_path = i_env_key;
-        else env_cfg_path = "/tmp/" + std::string(getenv("USER")) + "env.dat";
-        std::ifstream env_cfg_ifs(env_cfg_path);
-        if (!env_cfg_ifs) {
-            std::cerr <<"#DB ERROR# Cannot open environmental config file: " << env_cfg_path << std::endl;
+        std::ifstream env_ifs(i_env_key);
+        if (!env_ifs) {
+            std::cerr <<"#DB WORNING# Cannot open environmental config file: " << i_env_key << std::endl;
             return;
         }
-        
-        // get start time from scan data
-        bsoncxx::oid i_oid(m_tr_oid_str);
-        mongocxx::collection tr_collection = db["testRun"];
-        bsoncxx::stdx::optional<bsoncxx::document::value> run_result = tr_collection.find_one(document{} << "_id" << i_oid << finalize);
-        if (!run_result) return;
-        bsoncxx::document::element element = run_result->view()["startTime"];
-        std::chrono::seconds s = std::chrono::duration_cast<std::chrono::seconds>(element.get_date().value);
-        std::time_t starttime = s.count();
-        if (DB_DEBUG) {
-            char buf[80];
-            struct tm *lt = std::localtime(&starttime);
-            strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", lt);
-            std::cout << "\tDatabase: Register Environment Start Time: " << buf << std::endl;
-        }
-
-        std::string line, tmp;
-        std::stringstream key_line;
-        std::getline(env_cfg_ifs, line);
-        key_line << line;
+        // get env key to upload into DB from json file
+        json env_json = json::parse(env_ifs);
         std::vector<std::string> env_key;
         std::vector<std::string> description;
-        int key_num = 0;
-        while (key_line>>tmp) {
-            env_key.push_back(tmp);
-            key_num++;
-            if (tmp != "time") {
-                bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "key" << tmp << "type" << "description" << finalize);
-                if (!maybe_result) {
-                    std::cerr << "#DB ERROR# This environmental key was not registerd, abort..." << std::endl;
-                    std::cerr << "\tCheck the environmental config: " << env_cfg_path << std::endl;
-                    return;
+        std::vector<std::string> env_path;
+        std::vector<std::string> env_val;
+        for (json::iterator it = env_json.begin(); it != env_json.end(); ++it) {
+            bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "key" << it.key() << "type" << "description" << finalize);
+            if (!maybe_result) {
+                std::cerr << "#DB WORNING# This environmental key was not registerd: " << it.key() << std::endl;
+                std::cerr << "\tCheck the environmental config: " << i_env_key << std::endl;
+                break;
+            }
+            bsoncxx::document::element element = maybe_result->view()["description"];
+            if (env_json[it.key()]["path"].empty()&&env_json[it.key()]["value"].empty()) break;
+            else {
+                if (!env_json[it.key()]["path"].empty()) env_path.push_back(env_json[it.key()]["path"]);
+                else env_path.push_back("null");
+                if (!env_json[it.key()]["value"].empty()) {
+                    std::string val = env_json[it.key()]["value"].dump();
+                    env_val.push_back(val);
+                } else env_val.push_back("null");
+            }
+            env_key.push_back(it.key());
+            if (!env_json[it.key()]["description"].empty()) description.push_back(env_json[it.key()]["description"]);
+            else description.push_back(element.get_utf8().value.to_string());
+        }
+
+        // get start time from scan data
+        std::time_t starttime;
+        if(m_tr_oid_str!=""){
+            bsoncxx::oid i_oid(m_tr_oid_str);
+            mongocxx::collection tr_collection = db["testRun"];
+            bsoncxx::stdx::optional<bsoncxx::document::value> run_result = tr_collection.find_one(document{} << "_id" << i_oid << finalize);
+            if (!run_result) return;
+            bsoncxx::document::element element = run_result->view()["startTime"];
+            std::chrono::seconds s = std::chrono::duration_cast<std::chrono::seconds>(element.get_date().value);
+            starttime = s.count();
+            if (DB_DEBUG) {
+                char buf[80];
+                struct tm *lt = std::localtime(&starttime);
+                strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", lt);
+                std::cout << "\tDatabase: Register Environment Start Time: " << buf << std::endl;
+            }
+        }else{
+            std::chrono::system_clock::time_point startTime = std::chrono::system_clock::now();
+            starttime = std::chrono::system_clock::to_time_t(startTime);
+        }
+
+        // insert environment doc
+        auto result = collection.insert_one(document{} << "type" << "data" << finalize);
+        bsoncxx::oid env_oid = result->inserted_id().get_oid().value;
+
+        for (int i=0; i<(int)env_key.size(); i++) {
+            if (DB_DEBUG) std::cout << "\tDatabase: Register Environment: " << env_key[i] << std::endl;
+            if (env_path[i]!="null") {
+                std::string env_cfg_path = env_path[i];
+                std::ifstream env_cfg_ifs(env_cfg_path);
+                if (!env_cfg_ifs) {
+                    std::cerr <<"#DB WORNING# Cannot open environmental config file: " << env_cfg_path << std::endl;
+                    break;
                 }
-                bsoncxx::document::element element = maybe_result->view()["description"];
-                description.push_back(element.get_utf8().value.to_string());
+                int data_num = 0;
+                std::vector<std::string> key_value;
+                std::vector<std::string> date;
+                while (!env_cfg_ifs.eof()) {
+                    std::string datetime = "";
+                    std::string tmp;
+                    env_cfg_ifs >> datetime >> tmp;
+                    if (tmp == ""||datetime == "") break;
+                    struct tm timepoint;
+                    memset(&timepoint, 0X00, sizeof(struct tm));
+                    strptime(datetime.c_str(), "%Y-%m-%dT%H:%M:%S", &timepoint);
+
+                    char buffer[80];
+                    strftime(buffer,sizeof(buffer),"%Y-%m-%d %H:%M:%S",&timepoint);
+
+                    std::time_t timestamp  = mktime(&timepoint);
+                    if (difftime(starttime,timestamp)<60) { // store data from 1 minute before the starting time of the scan
+                        key_value.push_back(tmp);
+                        date.push_back(datetime);
+                        data_num++;
+                    }
+                }
+                auto array_builder = bsoncxx::builder::basic::array{};
+                for (int j=0;j<data_num;j++) {
+                    struct tm timepoint;
+                    memset(&timepoint, 0X00, sizeof(struct tm));
+                    strptime(date[j].c_str(), "%Y-%m-%dT%H:%M:%S", &timepoint);
+                    std::time_t timestamp  = mktime(&timepoint);
+                    array_builder.append(
+                        document{} << 
+                            "date"        << bsoncxx::types::b_date{std::chrono::system_clock::from_time_t(timestamp)} <<
+                            "value"       << std::stof(key_value[j]) <<
+                        finalize
+                    ); 
+                }
+                collection.update_one(
+                    document{} << "_id" << env_oid << finalize,
+                    document{} << "$set" << open_document <<
+                        env_key[i] << open_document <<
+                            "data" << array_builder <<
+                            "description" << description[i] <<
+                        close_document <<
+                    close_document << finalize
+                );
             } else {
-                description.push_back("time");
-            }
-        }
-
-        int data_num = 0;
-        std::vector<std::string> key_value[key_num];
-        std::vector<std::string> date;
-        while (!env_cfg_ifs.eof()) {
-            std::string datetime = "";
-            std::string tmp[key_num];
-            for (int i=0;i<key_num;i++) {
-                env_cfg_ifs>>tmp[i];
-                if (tmp[i] == "") break;
-                if (env_key[i] == "time") datetime = tmp[i];
-            }
-            if (datetime == "") break; 
-            struct tm timepoint;
-            memset(&timepoint, 0X00, sizeof(struct tm));
-            strptime(datetime.c_str(), "%Y-%m-%dT%H:%M:%S", &timepoint);
-
-            char buffer[80];
-            strftime(buffer,sizeof(buffer),"%Y-%m-%d %H:%M:%S",&timepoint);
-
-            std::time_t timestamp  = mktime(&timepoint);
-            if (difftime(starttime,timestamp)<60) { // store data from 1 minute before the starting time of the scan
-                for (int i=0;i<key_num;i++) {
-                    key_value[i].push_back(tmp[i]);
-                    if (env_key[i] == "time") date.push_back(tmp[i]);
-                }
-                data_num++;
-            }
-        }
-        document builder{};
-        auto in_array = builder << "data" << open_array;
-        for (int i=0;i<key_num;i++) {
-            if (env_key[i] == "time") continue;
-            document doc_builder{};
-            auto array_builder = bsoncxx::builder::basic::array{};
-            for (int j=0;j<data_num;j++) {
-                struct tm timepoint;
-                memset(&timepoint, 0X00, sizeof(struct tm));
-                strptime(date[j].c_str(), "%Y-%m-%dT%H:%M:%S", &timepoint);
-                std::time_t timestamp  = mktime(&timepoint);
+                auto array_builder = bsoncxx::builder::basic::array{};
                 array_builder.append(
                     document{} << 
-                        "date"        << bsoncxx::types::b_date{std::chrono::system_clock::from_time_t(timestamp)} <<
-                        "value"       << std::stof(key_value[i][j]) <<
+                        "date"        << bsoncxx::types::b_date{std::chrono::system_clock::from_time_t(starttime)} <<
+                        "value"       << std::stof(env_val[i]) <<
                     finalize
                 ); 
+                collection.update_one(
+                    document{} << "_id" << env_oid << finalize,
+                    document{} << "$set" << open_document <<
+                        env_key[i] << open_document <<
+                            "data" << array_builder <<
+                            "description" << description[i] <<
+                        close_document <<
+                    close_document << finalize
+                );
             }
-            auto in_doc = doc_builder <<
-                "key"         << env_key[i] <<
-                "description" << description[i] <<
-                "value"       << open_array << 
-                    array_builder << 
-                close_array << 
-            finalize;
-            in_array = in_array << in_doc;
         }
-        auto after_array = in_array << close_array;
-        bsoncxx::document::value doc_value = after_array << finalize;
-
-        auto result = collection.insert_one(doc_value.view());
-        bsoncxx::oid oid = result->inserted_id().get_oid().value;
-        this->addSys(oid.to_string(), "environment");
-        this->addVersion("environment", "_id", oid.to_string(), "oid");
-
-        this->addDocument(m_tr_oid_str, "testRun", "environment", oid.to_string());
-   }
+        this->addSys(env_oid.to_string(), "environment");
+        this->addVersion("environment", "_id", env_oid.to_string(), "oid");
+        if(m_tr_oid_str!=""){
+            this->addDocument(m_tr_oid_str, "testRun", "environment", env_oid.to_string());
+        }
+    }
 }
 
 void Database::writeAttachment(std::string i_ctr_oid_str, std::string i_file_path, std::string i_histo_name) {
@@ -650,6 +673,138 @@ void Database::writeAttachment(std::string i_ctr_oid_str, std::string i_file_pat
         file_fs.close();
     }
 }
+
+std::string Database::writeJsonCode(json &i_json, std::string i_filename, std::string i_title, std::string i_type) {
+    if (DB_DEBUG) std::cout << "\tDatabase: upload json file" << std::endl;
+
+    std::string type_doc;
+    std::string data_id;
+    if (i_type == "b") {
+        data_id = writeJsonCode_Bson(i_json, i_filename, i_title);
+        type_doc = "bson";
+    } else if (i_type == "j") {
+        data_id = writeJsonCode_Json(i_json, i_filename, i_title);
+        type_doc = "json";
+    } else if (i_type == "m") {
+        data_id = writeJsonCode_Msgpack(i_json, i_filename, i_title);
+        type_doc = "msgpack";
+    } else if (i_type == "gj") {
+        data_id = writeJsonCode_Gridfs(i_json, i_filename, i_title);
+        type_doc = "fs.files";
+    } else if (i_type == "gm") {
+    }
+    mongocxx::collection collection = db["config"];
+    bsoncxx::document::value doc_value = document{} << 
+      "filename"  << i_filename  <<
+      "chipType"  << m_chip_type << 
+      "title"     << i_title     <<
+      "format"    << type_doc    <<
+      "dataType"  << "default"   <<
+      "data_id"   << data_id     <<
+    finalize; 
+    auto result = collection.insert_one(doc_value.view());
+    std::string oid_str = result->inserted_id().get_oid().value.to_string();
+    this->addSys(oid_str, "config");
+    this->addVersion("config", "_id", oid_str, "oid");
+    
+    //bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "data" << json_doc.view() << "filename" << i_filename << "chipType" << m_chip_type << finalize);
+    //std::string oid_str = "";
+    //if (maybe_result) {
+    //    bsoncxx::document::element element = maybe_result->view()["_id"];
+    //    oid_str = element.get_oid().value.to_string();
+    //} else {
+    //    bsoncxx::stdx::optional<bsoncxx::document::value> maybe_original = collection.find_one(
+    //        document{} << "title"    << i_title     << 
+    //                      "chipType" << m_chip_type << 
+    //                      "dataType" << "original"  << finalize
+    //    );
+    //    document builder{};
+    //    auto docs = builder << "data"      << json_doc.view() <<
+    //                           "filename"  << i_filename      <<
+    //                           "chipType"  << m_chip_type     << 
+    //                           "title"     << i_title;
+    //    if (maybe_original) {
+    //        json original_json = json::parse(bsoncxx::to_json(*maybe_original));
+    //        json diff_json = json::diff(original_json["data"], i_json);
+    //        bsoncxx::document::element element = maybe_original->view()["_id"];
+    //        oid_str = element.get_oid().value.to_string();
+    //        bsoncxx::document::value patch_doc = bsoncxx::from_json(diff_json.dump()); 
+    //        docs = docs << "dataType" << "diff"  <<
+    //                       "original" << oid_str <<
+    //                       "patch"    << patch_doc.view(); 
+    //    } else {
+    //        docs = docs << "dataType" << "default"; 
+    //    }
+    //    bsoncxx::document::value doc_value = docs << finalize;
+    //    auto result = collection.insert_one(doc_value.view());
+    //    oid_str = result->inserted_id().get_oid().value.to_string();
+    //    this->addVersion("json", "_id", oid_str, "oid");
+    //}
+    return oid_str;
+}
+
+void Database::getJsonCode(std::string i_oid_str, std::string i_filename) {
+    if (DB_DEBUG) std::cout << "\tDatabase: download json file" << std::endl;
+
+    mongocxx::collection collection = db["config"];
+
+    bsoncxx::oid i_oid(i_oid_str);
+    bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "_id" << i_oid << finalize);
+    if (maybe_result) {
+        std::string format  = getValue("config", "_id", i_oid_str, "oid", "format");
+        std::string data_id = getValue("config", "_id", i_oid_str, "oid", "data_id");
+        bsoncxx::oid data_oid(data_id);
+        mongocxx::collection data_collection = db[format];
+        bsoncxx::stdx::optional<bsoncxx::document::value> result = data_collection.find_one(document{} << "_id" << data_oid << finalize);
+        if (result) {
+            std::ofstream cfgFile(i_filename.c_str());
+            json data;
+            if(format=="bson"||format=="json") {
+                json json_doc = json::parse(bsoncxx::to_json(*result));
+                if(format == "bson") {
+                    data = json_doc["data"];
+                } else if (format == "json") {
+                    std::string json_data = json_doc["data"];
+                    data = json::parse(json_data);
+                }
+            } else if (format == "msgpack") {
+                bsoncxx::document::element element_gl = result->view()["data"]["GlobalConfig"];
+                auto array_element_gl = element_gl.get_array();
+                bsoncxx::array::view subarray_gl{array_element_gl.value};
+                std::vector<uint8_t> gl_msgpack;
+                for (bsoncxx::array::element ele : subarray_gl){
+                    gl_msgpack.push_back(ele.get_value().get_int32());
+                }
+                json gl = json::from_msgpack(gl_msgpack);
+
+                bsoncxx::document::element element_pi = result->view()["data"]["PixelConfig"];
+                auto array_element_pi = element_pi.get_array();
+                bsoncxx::array::view subarray_pi{array_element_pi.value};
+                std::vector<uint8_t> pi_msgpack;
+                for (bsoncxx::array::element ele : subarray_pi){
+                    pi_msgpack.push_back(ele.get_value().get_int32());
+                }
+                json pi = json::from_msgpack(pi_msgpack);
+
+                json par_doc = json::parse(bsoncxx::to_json(result->view()["data"]["Parameter"].get_document()));
+
+                data["RD53A"]["GlobalConfig"] = gl; 
+                data["RD53A"]["PixelConfig"] = pi; 
+                data["RD53A"]["Parameter"] = par_doc; 
+            } else {
+                mongocxx::gridfs::bucket gb = db.gridfs_bucket();
+                std::ostringstream os;
+                bsoncxx::types::value d_id{bsoncxx::types::b_oid{data_oid}};
+                gb.download_to_stream(d_id, &os);
+                std::string str = os.str();
+                data = json::parse(str);
+            }
+            cfgFile << std::setw(4) << data;
+            cfgFile.close();
+        }
+    }
+}
+
 
 
 //*****************************************************************************************************
@@ -719,11 +874,6 @@ std::string Database::registerTestRun(std::string i_test_type, int i_run_number,
     if (DB_DEBUG) std::cout << "\tDatabase: Register Test Run" << std::endl;
 
     std::chrono::system_clock::time_point startTime = std::chrono::system_clock::now();
-    std::time_t now = std::chrono::system_clock::to_time_t(startTime);
-    struct tm *lt = std::localtime(&now);
-    char buf[80];
-    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", lt);
-    m_start_time = buf;
 
     document builder{};
     auto docs = builder << "sys"          << open_document << close_document <<
@@ -1035,44 +1185,99 @@ std::string Database::writeGridFsFile(std::string i_file_path, std::string i_fil
     return result.id().get_oid().value.to_string();
 }
 
-std::string Database::writeJsonCode(json &i_json, std::string i_filename, std::string i_title) {
+std::string Database::writeJsonCode_Bson(json &i_json, std::string i_filename, std::string i_title) {
     if (DB_DEBUG) std::cout << "\tDatabase: upload json file" << std::endl;
 
     bsoncxx::document::value json_doc = bsoncxx::from_json(i_json.dump()); 
-    mongocxx::collection collection = db["json"];
-    bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "data" << json_doc.view() << "filename" << i_filename << "chipType" << m_chip_type << finalize);
+    mongocxx::collection collection = db["bson"];
     std::string oid_str = "";
-    if (maybe_result) {
-        bsoncxx::document::element element = maybe_result->view()["_id"];
-        oid_str = element.get_oid().value.to_string();
-    } else {
-        bsoncxx::stdx::optional<bsoncxx::document::value> maybe_original = collection.find_one(
-            document{} << "title"    << i_title     << 
-                          "chipType" << m_chip_type << 
-                          "dataType" << "original"  << finalize
-        );
-        document builder{};
-        auto docs = builder << "data"      << json_doc.view() <<
-                               "filename"  << i_filename      <<
-                               "chipType"  << m_chip_type     << 
-                               "title"     << i_title;
-        if (maybe_original) {
-            json original_json = json::parse(bsoncxx::to_json(*maybe_original));
-            json diff_json = json::diff(original_json["data"], i_json);
-            bsoncxx::document::element element = maybe_original->view()["_id"];
-            oid_str = element.get_oid().value.to_string();
-            bsoncxx::document::value patch_doc = bsoncxx::from_json(diff_json.dump()); 
-            docs = docs << "dataType" << "diff"  <<
-                           "original" << oid_str <<
-                           "patch"    << patch_doc.view(); 
-        } else {
-            docs = docs << "dataType" << "default"; 
-        }
-        bsoncxx::document::value doc_value = docs << finalize;
-        auto result = collection.insert_one(doc_value.view());
-        oid_str = result->inserted_id().get_oid().value.to_string();
-        this->addVersion("json", "_id", oid_str, "oid");
+    //bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "data" << json_doc.view() << finalize);
+    //if (maybe_result) {
+    //    bsoncxx::document::element element = maybe_result->view()["_id"];
+    //    oid_str = element.get_oid().value.to_string();
+    //    return oid_str;
+    //}
+    bsoncxx::document::value doc_value = document{} << 
+        "data"     << json_doc.view() << 
+        "dataType" << "default"       <<
+    finalize; 
+    auto result = collection.insert_one(doc_value.view());
+    oid_str = result->inserted_id().get_oid().value.to_string();
+    this->addVersion("json", "_id", oid_str, "oid");
+    return oid_str;
+}
+
+std::string Database::writeJsonCode_Json(json &i_json, std::string i_filename, std::string i_title) {
+    if (DB_DEBUG) std::cout << "\tDatabase: upload json file" << std::endl;
+
+    std::string json_doc = i_json.dump(); 
+    mongocxx::collection collection = db["json"];
+    std::string oid_str = "";
+    //bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "data" << json_doc.view() << finalize);
+    //if (maybe_result) {
+    //    bsoncxx::document::element element = maybe_result->view()["_id"];
+    //    oid_str = element.get_oid().value.to_string();
+    //    return oid_str;
+    //}
+    bsoncxx::document::value doc_value = document{} << 
+        "data"     << json_doc  << 
+        "dataType" << "default" <<
+    finalize; 
+    auto result = collection.insert_one(doc_value.view());
+    oid_str = result->inserted_id().get_oid().value.to_string();
+    this->addVersion("json", "_id", oid_str, "oid");
+    return oid_str;
+}
+
+std::string Database::writeJsonCode_Msgpack(json &i_json, std::string i_filename, std::string i_title) {
+    if (DB_DEBUG) std::cout << "\tDatabase: upload json file" << std::endl;
+
+    mongocxx::collection collection = db["msgpack"];
+    std::string oid_str = "";
+
+    json gCfg = i_json["RD53A"]["GlobalConfig"];
+    std::vector<uint8_t> gl_msgpack = json::to_msgpack(gCfg);
+    auto array_builder_gl = bsoncxx::builder::basic::array{};
+    for (auto tmp : gl_msgpack) {
+        array_builder_gl.append( tmp );
     }
+
+    json pCfg = i_json["RD53A"]["PixelConfig"];
+    std::vector<uint8_t> pi_msgpack = json::to_msgpack(i_json["RD53A"]["PixelConfig"]);
+    auto array_builder_pi = bsoncxx::builder::basic::array{};
+    for (auto tmp : pi_msgpack) {
+        array_builder_pi.append( tmp );
+    }
+
+    json par = i_json["RD53A"]["Parameter"];
+    bsoncxx::document::value par_doc = bsoncxx::from_json(par.dump()); 
+
+    bsoncxx::document::value doc_value = document{} << 
+        "data"     << open_document <<
+            "GlobalConfig" << array_builder_gl << 
+            "Parameter"    << par_doc.view() << 
+            "PixelConfig"  << array_builder_pi << close_document <<
+        "dataType" << "default" <<
+    finalize; 
+    auto result = collection.insert_one(doc_value.view());
+    oid_str = result->inserted_id().get_oid().value.to_string();
+    this->addVersion("json", "_id", oid_str, "oid");
+    return oid_str;
+}
+
+std::string Database::writeJsonCode_Gridfs(json &i_json, std::string i_filename, std::string i_title) {
+    if (DB_DEBUG) std::cout << "\tDatabase: upload json file" << std::endl;
+
+    mongocxx::gridfs::bucket gb = db.gridfs_bucket();
+    std::string json_doc = i_json.dump(); 
+    std::stringbuf json_buf( json_doc.c_str() );
+    std::istream file_is(&json_buf);
+    auto result = gb.upload_from_stream(i_filename, &file_is);
+    std::string oid_str = "";
+    oid_str = result.id().get_oid().value.to_string();
+    this->addVersion("fs.files", "_id", result.id().get_oid().value.to_string(), "oid");
+    this->addVersion("fs.chunks", "files_id", result.id().get_oid().value.to_string(), "oid");
+    return result.id().get_oid().value.to_string();
     return oid_str;
 }
 

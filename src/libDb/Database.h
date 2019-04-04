@@ -39,6 +39,8 @@ class Database {
         void registerFromConnectivity(std::string);
         void registerEnvironment(std::string, std::string);
         void writeAttachment(std::string, std::string, std::string);
+        std::string writeJsonCode(json&, std::string, std::string, std::string);
+        void getJsonCode(std::string, std::string);
 
     protected:
         std::string getValue(std::string, std::string, std::string, std::string, std::string, std::string i_bson_type="string");
@@ -55,7 +57,10 @@ class Database {
         void addVersion(std::string, std::string, std::string, std::string);
         std::string writeDatFile(std::string, std::string);
         std::string writeGridFsFile(std::string, std::string);
-        std::string writeJsonCode(json&, std::string, std::string);
+        std::string writeJsonCode_Json(json&, std::string, std::string);
+        std::string writeJsonCode_Bson(json&, std::string, std::string);
+        std::string writeJsonCode_Msgpack(json&, std::string, std::string);
+        std::string writeJsonCode_Gridfs(json&, std::string, std::string);
 
     private:
         // Mongo c++
@@ -69,7 +74,6 @@ class Database {
         std::string m_address;
         std::string m_tr_oid_str;
         std::string m_chip_type;
-        std::string m_start_time;
 
         int m_db_version;
 

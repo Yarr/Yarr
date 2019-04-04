@@ -45,6 +45,7 @@ class Database {
         std::string writeDatFile(std::string, std::string){return "ERROR";};
         std::string writeGridFsFile(std::string, std::string){return "ERROR";};
         std::string writeJsonCode(json&, std::string, std::string){return "ERROR";};
+        std::string writeJsonCode_Json(json&, std::string, std::string){return "ERROR";};
 
     private:
 };
