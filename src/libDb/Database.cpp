@@ -61,7 +61,6 @@ void Database::setConnCfg(std::vector<std::string> i_connCfgPath) {
     }
 }
 
-//TODO make it to upload environmental information automatically
 void Database::setTestRunInfo(std::string i_tr_info_cfg_path) {
     if (DB_DEBUG) std::cout << "Database: Test Run Environment path: " << i_tr_info_cfg_path << std::endl;
     if (i_tr_info_cfg_path != "") {
@@ -73,7 +72,6 @@ void Database::setTestRunInfo(std::string i_tr_info_cfg_path) {
     }
 }
 
-//TODO make login tools to set user information
 void Database::setUserInstitution() {
     if (getenv("DBUSER") == NULL) {
         std::cerr << "#DB ERROR# Not logged in Database, abort..." << std::endl;
@@ -194,7 +192,7 @@ std::string Database::writeComponentTestRun(std::string i_serial_number, int i_c
 void Database::writeConfig(std::string i_ctr_oid_str, json &i_config, std::string i_title) {
     if (DB_DEBUG) std::cout << "Database: Write Config Json." << std::endl;
 
-    std::string cfg_oid_str = this->writeJsonCode(i_config, i_title+".json", "chipCfg", "j");
+    std::string cfg_oid_str = this->writeJsonCode(i_config, i_title+".json", "chipCfg", "gj");
     this->addDocument(i_ctr_oid_str, "componentTestRun", i_title, cfg_oid_str);
 }
 
@@ -479,6 +477,7 @@ void Database::registerEnvironment(std::string i_env_key, std::string i_descript
     if (DB_DEBUG) std::cout << "Database: Register Environment: " << i_env_key << std::endl;
 
     mongocxx::collection collection = db["environment"];
+    // register the environmental key and description
     if (i_description != "") {
         if (i_env_key == "") {
             std::cerr <<"#DB WORNING# Cannot load environmental description: " << i_description << std::endl;
@@ -504,30 +503,39 @@ void Database::registerEnvironment(std::string i_env_key, std::string i_descript
             return;
         }
         // get env key to upload into DB from json file
-        json env_json = json::parse(env_ifs);
+        json test_json = json::parse(env_ifs);
+        if (test_json["environments"].empty()) return;
+        json env_json = test_json["environments"];
         std::vector<std::string> env_key;
         std::vector<std::string> description;
         std::vector<std::string> env_path;
         std::vector<std::string> env_val;
-        for (json::iterator it = env_json.begin(); it != env_json.end(); ++it) {
-            bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "key" << it.key() << "type" << "description" << finalize);
+        for (auto j: env_json) {
+            std::string j_key = j["key"];
+            bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "key" << j_key << "type" << "description" << finalize);
             if (!maybe_result) {
-                std::cerr << "#DB WORNING# This environmental key was not registerd: " << it.key() << std::endl;
+                std::cerr << "#DB WORNING# This environmental key was not registered: " << j_key << std::endl;
                 std::cerr << "\tCheck the environmental config: " << i_env_key << std::endl;
                 break;
             }
             bsoncxx::document::element element = maybe_result->view()["description"];
-            if (env_json[it.key()]["path"].empty()&&env_json[it.key()]["value"].empty()) break;
+            if (j["path"].empty()&&j["value"].empty()) break;
             else {
-                if (!env_json[it.key()]["path"].empty()) env_path.push_back(env_json[it.key()]["path"]);
-                else env_path.push_back("null");
-                if (!env_json[it.key()]["value"].empty()) {
-                    std::string val = env_json[it.key()]["value"].dump();
+                if (!j["path"].empty()) {
+                    std::string j_path = j["path"];
+                    env_path.push_back(j_path);
+                } else {
+                    env_path.push_back("null");
+                }
+                if (!j["value"].empty()) {
+                    std::string val = j["value"].dump();
                     env_val.push_back(val);
-                } else env_val.push_back("null");
+                } else {
+                    env_val.push_back("null");
+                }
             }
-            env_key.push_back(it.key());
-            if (!env_json[it.key()]["description"].empty()) description.push_back(env_json[it.key()]["description"]);
+            env_key.push_back(j_key);
+            if (!j["description"].empty()) description.push_back(j["description"]);
             else description.push_back(element.get_utf8().value.to_string());
         }
 
@@ -602,9 +610,9 @@ void Database::registerEnvironment(std::string i_env_key, std::string i_descript
                 }
                 collection.update_one(
                     document{} << "_id" << env_oid << finalize,
-                    document{} << "$set" << open_document <<
+                    document{} << "$push" << open_document <<
                         env_key[i] << open_document <<
-                            "data" << array_builder <<
+                            "data"        << array_builder <<
                             "description" << description[i] <<
                         close_document <<
                     close_document << finalize
@@ -619,9 +627,9 @@ void Database::registerEnvironment(std::string i_env_key, std::string i_descript
                 ); 
                 collection.update_one(
                     document{} << "_id" << env_oid << finalize,
-                    document{} << "$set" << open_document <<
+                    document{} << "$push" << open_document <<
                         env_key[i] << open_document <<
-                            "data" << array_builder <<
+                            "data"        << array_builder <<
                             "description" << description[i] <<
                         close_document <<
                     close_document << finalize
@@ -642,33 +650,15 @@ void Database::writeAttachment(std::string i_ctr_oid_str, std::string i_file_pat
     std::string fileextension;
     std::string oid_str;
 
-    {
-        fileextension = "dat";
+    for (int i=0;i<3;i++) {
+        if (i==0) fileextension = "dat";
+        if (i==1) fileextension = "png";
+        if (i==2) fileextension = "pdf";
         std::string file_path = i_file_path + "." + fileextension;
         std::fstream file_fs(file_path.c_str(), std::ios::in);
         if (file_fs) {
-            oid_str = this->writeDatFile(file_path, i_histo_name + ".dat");
-            this->addAttachment(i_ctr_oid_str, "componentTestRun", oid_str, i_histo_name, "describe", fileextension, i_histo_name+".dat");
-        }
-        file_fs.close();
-    }
-    {
-        fileextension = "png";
-        std::string file_path = i_file_path + "." + fileextension;
-        std::fstream file_fs(file_path.c_str(), std::ios::in);
-        if (file_fs) {
-            oid_str = this->writeGridFsFile(file_path, i_histo_name + ".png");
-            this->addAttachment(i_ctr_oid_str, "componentTestRun", oid_str, i_histo_name, "describe", fileextension, i_histo_name+".png");
-        }
-        file_fs.close();
-    }
-    {
-        fileextension = "pdf";
-        std::string file_path = i_file_path + "." + fileextension;
-        std::fstream file_fs(file_path.c_str(), std::ios::in);
-        if (file_fs) {
-            oid_str = this->writeGridFsFile(file_path, i_histo_name + ".pdf");
-            this->addAttachment(i_ctr_oid_str, "componentTestRun", oid_str, i_histo_name, "describe", fileextension, i_histo_name+".pdf");
+            oid_str = this->writeGridFsFile(file_path, i_histo_name + "." + fileextension);
+            this->addAttachment(i_ctr_oid_str, "componentTestRun", oid_str, i_histo_name, "describe", fileextension, i_histo_name+"."+fileextension);
         }
         file_fs.close();
     }
@@ -706,40 +696,6 @@ std::string Database::writeJsonCode(json &i_json, std::string i_filename, std::s
     std::string oid_str = result->inserted_id().get_oid().value.to_string();
     this->addSys(oid_str, "config");
     this->addVersion("config", "_id", oid_str, "oid");
-    
-    //bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "data" << json_doc.view() << "filename" << i_filename << "chipType" << m_chip_type << finalize);
-    //std::string oid_str = "";
-    //if (maybe_result) {
-    //    bsoncxx::document::element element = maybe_result->view()["_id"];
-    //    oid_str = element.get_oid().value.to_string();
-    //} else {
-    //    bsoncxx::stdx::optional<bsoncxx::document::value> maybe_original = collection.find_one(
-    //        document{} << "title"    << i_title     << 
-    //                      "chipType" << m_chip_type << 
-    //                      "dataType" << "original"  << finalize
-    //    );
-    //    document builder{};
-    //    auto docs = builder << "data"      << json_doc.view() <<
-    //                           "filename"  << i_filename      <<
-    //                           "chipType"  << m_chip_type     << 
-    //                           "title"     << i_title;
-    //    if (maybe_original) {
-    //        json original_json = json::parse(bsoncxx::to_json(*maybe_original));
-    //        json diff_json = json::diff(original_json["data"], i_json);
-    //        bsoncxx::document::element element = maybe_original->view()["_id"];
-    //        oid_str = element.get_oid().value.to_string();
-    //        bsoncxx::document::value patch_doc = bsoncxx::from_json(diff_json.dump()); 
-    //        docs = docs << "dataType" << "diff"  <<
-    //                       "original" << oid_str <<
-    //                       "patch"    << patch_doc.view(); 
-    //    } else {
-    //        docs = docs << "dataType" << "default"; 
-    //    }
-    //    bsoncxx::document::value doc_value = docs << finalize;
-    //    auto result = collection.insert_one(doc_value.view());
-    //    oid_str = result->inserted_id().get_oid().value.to_string();
-    //    this->addVersion("json", "_id", oid_str, "oid");
-    //}
     return oid_str;
 }
 
@@ -1158,24 +1114,15 @@ std::string Database::writeDatFile(std::string i_file_path, std::string i_filena
     bsoncxx::document::value doc_value = after_array << finalize;
     mongocxx::collection collection = db["dat"];
 
-    // TODO  soleve the speed to upload data into database in the case checking that the data has been already uploaded
-    //bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "data" << doc_value.view() << "filename" << i_filename << finalize);
-    std::string oid_str = "";
-    //if (maybe_result) {
-    //    bsoncxx::document::element element = maybe_result->view()["_id"];
-    //    oid_str = element.get_oid().value.to_string();
-    //} else {
-    //    auto result = collection.insert_one( document{} << "data" << doc_value.view() << "filename" << i_filename << "dbVersion" << m_db_version << finalize );
-    //    oid_str = result->inserted_id().get_oid().value.to_string();
-    //}
     auto result = collection.insert_one( document{} << "data" << doc_value.view() << "filename" << i_filename << "dbVersion" << m_db_version << finalize );
-    oid_str = result->inserted_id().get_oid().value.to_string();
+    std::string oid_str = result->inserted_id().get_oid().value.to_string();
 
     return oid_str;
 }
 
 std::string Database::writeGridFsFile(std::string i_file_path, std::string i_filename) {
     if (DB_DEBUG) std::cout << "\tDatabase: upload attachment" << std::endl;
+    // TODO store the hash key of the file
     mongocxx::gridfs::bucket gb = db.gridfs_bucket();
     std::ifstream file_ifs(i_file_path);
     std::istream &file_is = file_ifs;
@@ -1190,19 +1137,12 @@ std::string Database::writeJsonCode_Bson(json &i_json, std::string i_filename, s
 
     bsoncxx::document::value json_doc = bsoncxx::from_json(i_json.dump()); 
     mongocxx::collection collection = db["bson"];
-    std::string oid_str = "";
-    //bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "data" << json_doc.view() << finalize);
-    //if (maybe_result) {
-    //    bsoncxx::document::element element = maybe_result->view()["_id"];
-    //    oid_str = element.get_oid().value.to_string();
-    //    return oid_str;
-    //}
     bsoncxx::document::value doc_value = document{} << 
         "data"     << json_doc.view() << 
         "dataType" << "default"       <<
     finalize; 
     auto result = collection.insert_one(doc_value.view());
-    oid_str = result->inserted_id().get_oid().value.to_string();
+    std::string oid_str = result->inserted_id().get_oid().value.to_string();
     this->addVersion("json", "_id", oid_str, "oid");
     return oid_str;
 }
@@ -1212,19 +1152,12 @@ std::string Database::writeJsonCode_Json(json &i_json, std::string i_filename, s
 
     std::string json_doc = i_json.dump(); 
     mongocxx::collection collection = db["json"];
-    std::string oid_str = "";
-    //bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "data" << json_doc.view() << finalize);
-    //if (maybe_result) {
-    //    bsoncxx::document::element element = maybe_result->view()["_id"];
-    //    oid_str = element.get_oid().value.to_string();
-    //    return oid_str;
-    //}
     bsoncxx::document::value doc_value = document{} << 
         "data"     << json_doc  << 
         "dataType" << "default" <<
     finalize; 
     auto result = collection.insert_one(doc_value.view());
-    oid_str = result->inserted_id().get_oid().value.to_string();
+    std::string oid_str = result->inserted_id().get_oid().value.to_string();
     this->addVersion("json", "_id", oid_str, "oid");
     return oid_str;
 }
@@ -1233,7 +1166,6 @@ std::string Database::writeJsonCode_Msgpack(json &i_json, std::string i_filename
     if (DB_DEBUG) std::cout << "\tDatabase: upload json file" << std::endl;
 
     mongocxx::collection collection = db["msgpack"];
-    std::string oid_str = "";
 
     json gCfg = i_json["RD53A"]["GlobalConfig"];
     std::vector<uint8_t> gl_msgpack = json::to_msgpack(gCfg);
@@ -1260,7 +1192,7 @@ std::string Database::writeJsonCode_Msgpack(json &i_json, std::string i_filename
         "dataType" << "default" <<
     finalize; 
     auto result = collection.insert_one(doc_value.view());
-    oid_str = result->inserted_id().get_oid().value.to_string();
+    std::string oid_str = result->inserted_id().get_oid().value.to_string();
     this->addVersion("json", "_id", oid_str, "oid");
     return oid_str;
 }
@@ -1273,8 +1205,7 @@ std::string Database::writeJsonCode_Gridfs(json &i_json, std::string i_filename,
     std::stringbuf json_buf( json_doc.c_str() );
     std::istream file_is(&json_buf);
     auto result = gb.upload_from_stream(i_filename, &file_is);
-    std::string oid_str = "";
-    oid_str = result.id().get_oid().value.to_string();
+    std::string oid_str = result.id().get_oid().value.to_string();
     this->addVersion("fs.files", "_id", result.id().get_oid().value.to_string(), "oid");
     this->addVersion("fs.chunks", "files_id", result.id().get_oid().value.to_string(), "oid");
     return result.id().get_oid().value.to_string();

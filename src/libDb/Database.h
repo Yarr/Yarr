@@ -22,7 +22,7 @@ using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::i
 
 class Database {
     public:
-        Database(std::string i_host_ip = "mongodb://localhost:27017");
+        Database(std::string i_host_ip = "mongodb://192.168.1.43:27017");
         ~Database();
 
         void setConnCfg(std::vector<std::string>);
