@@ -14,6 +14,9 @@
 #include "QueueMonitor.h"
 #include "netio/netio.hpp"
 
+#include "RawData.h"
+#include "ClipBoard.h"
+
 #include <map>
 #include <memory>
 #include <thread>
@@ -32,6 +35,9 @@ public:
   // Custom types
   typedef folly::ProducerConsumerQueue<uint32_t> FollyQueue;
   typedef std::shared_ptr<FollyQueue> SharedQueue;
+
+  ClipBoard<RawData> rawData;
+  void setFlushBuffer(bool);
 
   // Functionalities
   void addChannel(uint64_t chn); // Enable an elink (prepare a queue, socket-pairs and sub to elink.

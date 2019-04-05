@@ -109,6 +109,10 @@ void Rd53aDataProcessor::process_core() {
                 // Decode content
                 // TODO this needs review, can't deal with user-k data
                 uint32_t data = curIn->buf[i];
+
+                if (i == (words -2) &&  (data>>16) == 0x0 ) //To deal with the E-frames from FELIX output. TODO
+                    continue;
+
                 unsigned channel = activeChannels[(i/2)%activeChannels.size()];
                 //std::cout << "[" << i << "]\t\t[" << channel << "] = 0x" << std::hex << data << std::dec << std::endl;
                 if (__builtin_expect(((data & 0xFFFF0000) != 0xFFFF0000 ), 1)) {

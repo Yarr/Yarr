@@ -45,6 +45,7 @@ public:
   void setRxEnable(uint32_t val) override;
   void maskRxEnable(uint32_t val, uint32_t mask) override;
 
+  void flushBuffer() override;
   RawData* readData() override;
 
   /**

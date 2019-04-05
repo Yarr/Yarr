@@ -331,7 +331,11 @@ uint32_t NetioTxCore::getTrigInCount(){
 void NetioTxCore::prepareTrigger(){
   for(auto it=m_elinks.begin();it!=m_elinks.end();it++){
     m_trigFifo[it->first].clear();
-    for(int32_t j=3; j>=0;j--){
+
+    // send a sync to make sure the following commands are not interrrupted for a while
+    writeFifo(&m_trigFifo[it->first],0x817e817e);
+
+    for(int32_t j=15; j>=0;j--){
       writeFifo(&m_trigFifo[it->first],m_trigWords[j]);
     }
     writeFifo(&m_trigFifo[it->first],0x0);

@@ -29,7 +29,7 @@ NetioRxCore::NetioRxCore(NetioHandler &nh)
         m_bytesReceived = 0;
         m_t0=chrono::steady_clock::now();
       }
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      std::this_thread::sleep_for(std::chrono::milliseconds(1)); // Note: is this needed; can it be shortened?
     }
   });
 
@@ -90,25 +90,44 @@ void NetioRxCore::maskRxEnable(uint32_t val, uint32_t mask) {
   }
 }
 
+void NetioRxCore::flushBuffer(){
+    // This function is intended to remove junk data received after
+    // an ECR command is sent
+    m_nioh.setFlushBuffer(true);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    m_nioh.setFlushBuffer(false);
+
+    // seems to need more time in the beginning 
+    static int loop_count = 0;
+    if (loop_count < 2){
+        std::this_thread::sleep_for(std::chrono::seconds(4));
+        ++loop_count;
+    }
+
+}
+
 RawData* NetioRxCore::readData(){
   // Loop over all links looking for data
   // Return the first one we find (slow?)
 
-  map<uint64_t,bool>::iterator it;
-  for(it=m_elinks.begin();it!=m_elinks.end();it++){    // For every channel's queue:
-    if(!it->second) continue;
-    uint32_t elink=it->first;
-    if(m_verbose) cout << "NetioRxCore::readData()  elink number " << elink << endl;
-    size_t queueSize = m_nioh.getQueue(elink)->sizeGuess(); //   -Stable queues should have correct size.
-    std::cout << "Pushing out " << queueSize << " FEI4_RECORDS...\n";
-    uint32_t *buffer = new uint32_t[queueSize];        //   -Allocate buffer for queueSize words.
-    for (size_t i=0; i<queueSize; ++i){
-      m_nioh.getQueue(elink)->read(std::ref(buffer[i]));
-    }
-    return new RawData(elink, buffer, queueSize);
-  }
+  //map<uint64_t,bool>::iterator it;
+  //for(it=m_elinks.begin();it!=m_elinks.end();it++){    // For every channel's queue:
+    //if(!it->second) continue;
+    //uint64_t elink=it->first;
 
-  return nullptr;
+    if(m_verbose) cout << "NetioRxCore::readData()"<<endl; //  elink number " << elink << endl;
+
+    std::unique_ptr<RawData> rdp = m_nioh.rawData.popData();
+    if(rdp != NULL){
+	auto buffer = rdp.get()->buf;
+	auto address = rdp.get()->adr;
+	auto words = rdp.get()->words;
+
+	RawData* new_rdp = new RawData(address, buffer, words);
+	return new_rdp;
+
+  }
+  return NULL;
 }
 
 uint32_t NetioRxCore::getDataRate(){
