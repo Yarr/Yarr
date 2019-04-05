@@ -160,7 +160,7 @@ void Database::startTestRun(std::string i_ctrl_path, std::string i_scan_path, st
         if (DB_DEBUG) std::cout << "\tWrite scan config file: " << i_scan_path << std::endl;
         json scanCfg;
         scanCfg = json::parse(scanCfgFile);
-        std::string scan_oid_str = this->writeJsonCode(scanCfg, i_test_type+".json", "scanCfg", "j");
+        std::string scan_oid_str = this->writeJsonCode(scanCfg, i_test_type+".json", "scanCfg", "gj");
         this->addDocument(test_run_oid_str, "testRun", "scanCfg", scan_oid_str);
     }
 
@@ -170,7 +170,7 @@ void Database::startTestRun(std::string i_ctrl_path, std::string i_scan_path, st
         if (DB_DEBUG) std::cout << "\tWrite controller config file: " << i_ctrl_path << std::endl;
         json ctrlCfg;
         ctrlCfg = json::parse(ctrlCfgFile);
-        std::string ctrl_oid_str = this->writeJsonCode(ctrlCfg, "controller.json", "ctrlCfg", "j");
+        std::string ctrl_oid_str = this->writeJsonCode(ctrlCfg, "controller.json", "ctrlCfg", "gj");
         this->addDocument(test_run_oid_str, "testRun", "ctrlCfg", ctrl_oid_str);
     }
 
@@ -428,13 +428,10 @@ void Database::registerFromConnectivity(std::string i_conn_path) {
             abort(); return;
         }
         json chip_cfg_json = json::parse(chip_cfg_ifs);
-        std::string chip_name = "Moomin";
         int chip_id = 0;
         if (m_chip_type == "FE-I4B") {
-            chip_name = chip_cfg_json[chipType]["name"];
             chip_id   = chip_cfg_json[chipType]["Parameter"]["chipId"];
         } else if (m_chip_type == "RD53A") {
-            chip_name = chip_cfg_json[chipType]["Parameter"]["Name"];
             chip_id   = chip_cfg_json[chipType]["Parameter"]["ChipId"];
         }
 
@@ -446,7 +443,6 @@ void Database::registerFromConnectivity(std::string i_conn_path) {
                 "serialNumber"  << serialNumber <<
                 "componentType" << componentType <<
                 "chipType"      << m_chip_type <<
-                "name"          << chip_name <<
                 "chipId"        << chip_id <<
             finalize;
      
