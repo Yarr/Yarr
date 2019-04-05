@@ -22,7 +22,7 @@ Database::Database(std::string i_host_ip) {
 
     std::string home = getenv("HOME"); 
     m_home_dir = home  + "/.yarr/";
-    m_db_version = 2;
+    m_db_version = 0.8;
     m_tr_oid_str = "";
 }
 
