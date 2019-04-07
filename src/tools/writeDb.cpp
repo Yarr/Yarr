@@ -1,8 +1,11 @@
 // #################################
-// # Author: Arisa Kubota
+// # Contacts: Arisa Kubota
+// # Email: arisa.kubota at cern.ch
+// # Date: April 2019
+// # Project: Local Database for Yarr
 // # Description: upload to mongoDB
+// # Usage: ./bin/writeDb -j <json_file> -c <collection>
 // ################################
-// ./bin/writeDb -j <json_file> -c <collection>
 
 #include <iostream>
 #include <cstdlib>

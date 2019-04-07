@@ -1,13 +1,12 @@
 #!/bin/bash
 #################################
-# Contacts: Eunchong Kim (kim@hep.phys.titech.ac.jp)
-# Contacts: Arisa Kubota (akubota@hep.phys.titech.ac.jp)
-# Contacts: Shohei Yamagaya (yamagaya@champ.hep.sci.osaka-u.ac.jp) 
-# Project: Yarr
+# Contacts: Eunchong Kim, Arisa Kubota, Shohei Yamagaya
+# Email: eunchong.kim at cern.ch, arisa.kubota at cern.ch, yamagaya at champ.hep.sci.osaka-u.ac.jp
+# Date: April 2019
+# Project: Local Database for Yarr
 # Description: Run scan
 # Usage: ./doScan_fei4b.sh [-m <SerialNumber>*] [-s <ScanType>*] [-r <ControllerCfg>] [-n <ConnecitiityCfg>] [-i <EnvironmentalCfg>] [-c <TargetCharge>] [-t <TargetTot>] [-p <TargetPreamp>] [-M <mask>] [-d] [-l]
 # * is required item
-# Date: Feb 2019
 ################################
 
 # default parameters

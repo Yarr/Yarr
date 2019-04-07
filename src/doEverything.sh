@@ -1,13 +1,12 @@
 #!/bin/bash
 #################################
-# Contacts: Eunchong Kim (kim@hep.phys.titech.ac.jp)
-# Contacts: Arisa Kubota (akubota@hep.phys.titech.ac.jp)
-# Conracts: Shohei Yamagaya(yamagaya@champ.hep.sci.osaka-u.ac.jp)
-# Project: Yarr
+# Contacts: Eunchong Kim, Arisa Kubota, Shohei Yamagaya
+# Email: eunchong.kim at cern.ch, arisa.kubota at cern.ch, yamagaya at champ.hep.sci.osaka-u.ac.jp
+# Date: April 2019
+# Project: Local Database for Yarr
 # Description: Run QA scan
 # Usage: ./doEverything.sh [-a <rd53a/fei4b>*] [-m <SerialNumber>*] [-i <Environment>] [-r <Controller>] [-c <ChipNum>] [-d] [-R]
 # * is required parameter
-# Date: Feb 2019
 ################################
 
 mkdir -p log

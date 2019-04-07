@@ -1,6 +1,14 @@
 #include "Database.h"
 #ifdef MONGOCXX_INCLUDE
 
+// #################################
+// # Author: Eunchong Kim, Arisa Kubota
+// # Email: eunchong.kim at cern.ch, arisa.kubota at cern.ch
+// # Date : April 2019
+// # Project: Local Database for Yarr
+// # Description: Database functions
+// ################################
+
 // Using bson::builder::stream, an iostream like interface to construct BSON objects.
 // And these 'using ~' are greatly useful to reduce coding lines and make it readable.
 // Please see example to understand what they are for.

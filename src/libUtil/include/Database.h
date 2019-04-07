@@ -1,6 +1,14 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 
+// #################################
+// # Author: Eunchong Kim, Arisa Kubota
+// # Email: eunchong.kim at cern.ch, arisa.kubota at cern.ch
+// # Date : April 2019
+// # Project: Local Database for Yarr
+// # Description: Database functions
+// ################################
+
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -81,8 +89,6 @@ class Database {
         int m_db_version;
 
         bool DB_DEBUG;
-
-        // Schema bson object
 };
 #else
 using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;

@@ -1,10 +1,11 @@
 #!/bin/bash
 #################################
-# Contacts: Arisa Kubota (akubota@hep.phys.titech.ac.jp)
-# Project: Yarr
+# Contacts: Arisa Kubota
+# Email: arisa.kubota at cern.ch
+# Date: April 2019
+# Project: Local Database for Yarr
 # Description: Login Database 
 # Usage: ./login_db.sh [-U <user account>*]
-# Date: Mar 2019
 ################################
 
 DEBUG=false

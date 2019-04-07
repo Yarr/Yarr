@@ -1,8 +1,11 @@
 // #################################
-// # Author: Eunchong Kim
-// # Description: Database viewer
+// # Contacts: Eunchong Kim
+// # Email: eunchong.kim at cern.ch
+// # Date: April 2019
+// # Project: Local Database for Yarr
+// # Description: write to DB from directory in a range
 // ################################
-
+//
 #include <iostream>
 #include <cstdlib>
 #include <string>

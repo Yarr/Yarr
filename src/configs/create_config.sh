@@ -1,11 +1,11 @@
 #!/bin/bash
 #################################
-# Contacts: Eunchong Kim (kim@hep.phys.titech.ac.jp)
-# Contacts: Arisa Kubota (akubota@hep.phys.titech.ac.jp)
-# Project: Yarr
+# Contacts: Eunchong Kim, Arisa Kubota
+# Email: eunchong.kim at cern.ch, arisa.kubota at cern.ch
+# Date: April 2019
+# Project: Local Database for Yarr
 # Description: Create config file 
 # Usage: ./create_config.sh [-a <rd53a/fei4b>*] [-m <SerialNumber>*] [-c <ChipNum>] [-i <UserCfg>] [-r <ControllerCfg>] [-d] [-R]
-# Date: Jan 2019
 ################################
 
 # Change fixed tx channel and rx start channel
