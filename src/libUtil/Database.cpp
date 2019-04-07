@@ -1,4 +1,5 @@
 #include "Database.h"
+#ifdef MONGOCXX_INCLUDE
 
 // Using bson::builder::stream, an iostream like interface to construct BSON objects.
 // And these 'using ~' are greatly useful to reduce coding lines and make it readable.
@@ -1243,3 +1244,4 @@ std::string Database::writeJsonCode_Gridfs(json &i_json, std::string i_filename,
     return oid_str;
 }
 
+#endif // End of ifdef MONGOCXX_INCLUDE
