@@ -42,7 +42,7 @@ int main(int argc, char *argv[]){
   std::string dbJsonId = "";
 
   int c;
-  while ((c = getopt(argc, argv, "hU:C:J:E:G:n:u:i:p:c:k:d:j:")) != -1 ){
+  while ((c = getopt(argc, argv, "hU:C:J:E:K:G:n:u:i:p:c:d:j:")) != -1 ){
     switch (c) {
         case 'h':
             printHelp();
@@ -59,6 +59,10 @@ int main(int argc, char *argv[]){
         case 'E':
             registerType = "Environment";
             dbEnvPath = std::string(optarg);
+            break;
+        case 'K':
+            registerType = "EnvironmentKey";
+            dbEnvKey = std::string(optarg);
             break;
         case 'J':
             registerType = "Json";
@@ -81,9 +85,6 @@ int main(int argc, char *argv[]){
         case 'c':
             dbAddress = std::string(optarg);
             break;
-        case 'k':
-            dbEnvKey = std::string(optarg);
-            break;
         case 'd':
             dbEnvDescription = std::string(optarg);
             break;
@@ -94,7 +95,7 @@ int main(int argc, char *argv[]){
             dbUserCfgPath = std::string(optarg);
             break;
         case '?':
-            if(optopt == 'U'||optopt == 'C'||optopt == 'E'){
+            if(optopt == 'U'||optopt == 'C'||optopt == 'E'||optopt == 'K'||optopt == 'J'||optopt == 'G'){
                 std::cerr << "-> Option " << (char)optopt
                           << " requires a parameter! Aborting... " << std::endl;
                 return -1;
@@ -107,6 +108,8 @@ int main(int argc, char *argv[]){
             return -1;
     }
   }
+
+  if (registerType == "") printHelp();
 
   // register user
   if (registerType == "User") {
@@ -149,11 +152,6 @@ int main(int argc, char *argv[]){
 
   // register component
   if (registerType == "Component") {
-    if (dbConnPath == "") {
-        std::cerr << "Error: no connectivity config file given, please specify file name under -C option!" << std::endl;
-        return -1;
-    }
-
     std::cout << "Database: Register Component:" << std::endl;
 	  std::cout << "\tconnecitivity config file : " << dbConnPath << std::endl;
 
@@ -166,11 +164,6 @@ int main(int argc, char *argv[]){
 
   // register environment
   if (registerType == "Environment") {
-    if (dbEnvPath == "") {
-        std::cerr << "Error: no environmental config file given, please specify file name under -E option!" << std::endl;
-        return -1;
-    }
-
     std::cout << "Database: Register Environment:" << std::endl;
 	  std::cout << "\tenvironmental config file : " << dbEnvPath << std::endl;
 
@@ -182,7 +175,11 @@ int main(int argc, char *argv[]){
   }
 
   // register environment key
-  if (dbEnvKey != ""&&dbEnvDescription != "") {
+  if (registerType == "EnvironmentKey") {
+      if (dbEnvDescription == "") {
+        std::cerr << "Error: no environmental description given, please specify environmental description under -d option!" << std::endl;
+        return -1;
+    }
     std::cout << "Database: Register Environment List:" << std::endl;
 	  std::cout << "\tenvironmental key : " << dbEnvKey << std::endl;
 	  std::cout << "\tenvironmental description : " << dbEnvDescription << std::endl;
@@ -195,6 +192,10 @@ int main(int argc, char *argv[]){
 
   // register Json
   if (registerType == "Json") {
+    if (dbJsonType == "") {
+        std::cerr << "Error: no upload format given, please specify upload format under -j option!" << std::endl;
+        return -1;
+    }
     std::cout << "Database: Register Json:" << std::endl;
 	  std::cout << "\tjson file : " << dbJsonPath << std::endl;
     
@@ -217,15 +218,17 @@ int main(int argc, char *argv[]){
 
   // get Json
   if (registerType == "getJson") {
-      std::cout << "Database: Get Json:" << std::endl;
-	    std::cout << "\tsave json file : " << dbJsonPath << std::endl;
-      
-      Database *database = new Database();
-	    //database->getJsonCode(dbJsonId, dbJsonPath);
-	    database->getJsonCode(dbJsonId, dbJsonPath);
-      delete database;
+    if (dbJsonId == "") {
+        std::cerr << "Error: no config id given, please specify config id under -i option!" << std::endl;
+        return -1;
+    }
+    std::cout << "Database: Get Json:" << std::endl;
+	  std::cout << "\tsave json file : " << dbJsonPath << std::endl;
+    
+    Database *database = new Database();
+	  database->getJsonCode(dbJsonId, dbJsonPath);
+    delete database;
   }
-
 
 	return 0;
 }
@@ -245,5 +248,6 @@ void printHelp() {
     std::cout << " -G <path/to/save.json> : Download config data from database. Provide the path to save.json." << std::endl;
     std::cout << "\t -i <config id in database>" << std::endl;
     std::cout << " -E <path/to/env.json> : Register environmental information into database. Provide the path to env.json." << std::endl;
-    std::cout << " -k <env key> -d <env description> : Register environmental key into database. Provide the environmental key and the description." << std::endl;
+    std::cout << " -K <env key> : Register environmental key into database. Provide the environmental key." << std::endl;
+    std::cout << "\t -d <env description>" << std::endl;
 }

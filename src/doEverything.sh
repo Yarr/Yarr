@@ -329,7 +329,8 @@ do
         target_c="-c ${first_target_charge}"
     elif [ `echo "${scan_type}" | grep "lin_tune_pixelthreshold"` ]; then
         target_c="-c ${first_target_charge}"
-    elif [ `echo "${scan_type}" | grep "threshold"` ];then
+    #elif [ `echo "${scan_type}" | grep "threshold"` ];then
+    else
         target_c="-c ${target_charge}"
     fi
     if "${DEBUG}"; then

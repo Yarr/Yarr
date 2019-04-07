@@ -22,7 +22,7 @@ Database::Database(std::string i_host_ip) {
 
     std::string home = getenv("HOME"); 
     m_home_dir = home  + "/.yarr/";
-    m_db_version = 0.8;
+    m_db_version = 0;
     m_tr_oid_str = "";
 }
 
@@ -1118,11 +1118,32 @@ std::string Database::writeDatFile(std::string i_file_path, std::string i_filena
 
 std::string Database::writeGridFsFile(std::string i_file_path, std::string i_filename) {
     if (DB_DEBUG) std::cout << "\tDatabase: upload attachment" << std::endl;
-    // TODO store the hash key of the file
     mongocxx::gridfs::bucket gb = db.gridfs_bucket();
+    mongocxx::collection collection = db["fs.files"];
+      
+//    //TODO confirm the reliability of the hash value
+//    std::ifstream hash_ifs(i_file_path);
+//    std::stringstream file_stream;
+//    file_stream << hash_ifs.rdbuf();
+//    hash_ifs.close();
+//    std::string data( file_stream.str() );
+//    std::size_t hash = std::hash<std::string>()(data);
+//    bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(
+//        document{} << "hash" << bsoncxx::types::b_int32{(int)hash} << finalize
+//    );
+//    if (maybe_result) return maybe_result->view()["_id"].get_oid().value.to_string();
+
     std::ifstream file_ifs(i_file_path);
     std::istream &file_is = file_ifs;
     auto result = gb.upload_from_stream(i_filename, &file_is);
+//    collection.update_one(
+//        document{} << "_id" << result.id().get_oid().value << finalize,
+//        document{} << "$set" << open_document <<
+//            "hash" << bsoncxx::types::b_int32{(int)hash} << 
+//        close_document << finalize
+//    );
+    file_ifs.close();
+
     this->addVersion("fs.files", "_id", result.id().get_oid().value.to_string(), "oid");
     this->addVersion("fs.chunks", "files_id", result.id().get_oid().value.to_string(), "oid");
     return result.id().get_oid().value.to_string();
@@ -1197,14 +1218,28 @@ std::string Database::writeJsonCode_Gridfs(json &i_json, std::string i_filename,
     if (DB_DEBUG) std::cout << "\tDatabase: upload json file" << std::endl;
 
     mongocxx::gridfs::bucket gb = db.gridfs_bucket();
+    mongocxx::collection collection = db["fs.files"];
     std::string json_doc = i_json.dump(); 
+//    //TODO confirm the reliability of the hash value
+//    std::size_t hash = std::hash<std::string>()(json_doc);
+//    bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(
+//        document{} << "hash" << bsoncxx::types::b_int32{(int)hash} << finalize
+//    );
+//    if (maybe_result) return maybe_result->view()["_id"].get_oid().value.to_string();
+
     std::stringbuf json_buf( json_doc.c_str() );
     std::istream file_is(&json_buf);
     auto result = gb.upload_from_stream(i_filename, &file_is);
+//    collection.update_one(
+//        document{} << "_id" << result.id().get_oid().value << finalize,
+//        document{} << "$set" << open_document <<
+//            "hash" << bsoncxx::types::b_int32{(int)hash} << 
+//        close_document << finalize
+//    );
+
     std::string oid_str = result.id().get_oid().value.to_string();
     this->addVersion("fs.files", "_id", result.id().get_oid().value.to_string(), "oid");
     this->addVersion("fs.chunks", "files_id", result.id().get_oid().value.to_string(), "oid");
-    return result.id().get_oid().value.to_string();
     return oid_str;
 }
 
