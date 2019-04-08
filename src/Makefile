@@ -132,8 +132,6 @@ ifneq (${NETIO_DIR},)
   PKGS+= libNetioHW
 endif
 
-
-
 ######
 ##  Targets
 all: $(TARGETS) $(LLIB)/libyarr.a

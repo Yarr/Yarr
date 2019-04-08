@@ -90,7 +90,7 @@ class Database {
 
         bool DB_DEBUG;
 };
-#else
+#else // if no mongocxx driver, disable database function
 using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 class Database {
     public:

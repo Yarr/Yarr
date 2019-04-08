@@ -1,5 +1,4 @@
 #include "Database.h"
-#ifdef MONGOCXX_INCLUDE
 
 // #################################
 // # Author: Eunchong Kim, Arisa Kubota
@@ -9,6 +8,7 @@
 // # Description: Database functions
 // ################################
 
+#ifdef MONGOCXX_INCLUDE
 // Using bson::builder::stream, an iostream like interface to construct BSON objects.
 // And these 'using ~' are greatly useful to reduce coding lines and make it readable.
 // Please see example to understand what they are for.
