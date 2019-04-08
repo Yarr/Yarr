@@ -5,7 +5,7 @@
 # Date: April 2019
 # Project: Local Database for Yarr
 # Description: Create config file 
-# Usage: ./create_config.sh [-a <rd53a/fei4b>*] [-m <SerialNumber>*] [-c <ChipNum>] [-i <UserCfg>] [-r <ControllerCfg>] [-d] [-R]
+# Usage: ./createConfig.sh [-a <rd53a/fei4b>*] [-m <SerialNumber>*] [-c <ChipNum>] [-i <UserCfg>] [-r <ControllerCfg>] [-d] [-R]
 ################################
 
 # Change fixed tx channel and rx start channel
