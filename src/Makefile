@@ -41,6 +41,7 @@ INC_DIRS := $(wildcard */include)
 
 ifneq (${NETIO_DIR},)
   INC_DIRS+= $(NETIO_DIR)/include
+  LDFLAGS += -L$(NETIO_DIR)/lib -lnetio
 endif
 
 INCFLAGS += $(addprefix -I,$(INC_DIRS))
@@ -114,6 +115,9 @@ $(shell echo $(1) | tr 'a-z' 'A-Z')
 endef
 
 PKGS := tools libSpec libYarr libFei4 libFe65p2 libUtil libEmu libRce libBoc libKU040 libRd53a
+ifneq (${NETIO_DIR},)
+  PKGS+= libNetioHW
+endif
 $(foreach P,$(PKGS),$(eval $(call addPkg,$(patsubst LIB%,%,$(call uc,$(P))),$(P))))
 
 ifeq (${NETIO_DIR},)
@@ -124,10 +128,6 @@ endif
 TARGETS=$(patsubst %.cpp,$(BIN)/%,$(notdir $(TOOLS_FILES)))
 LIB_FILES := $(filter-out $(TOOLS_FILES),$(ALL_FILES))
 LIB_OBJS := $(patsubst %.cpp,$(BUILD)/%.o,$(notdir $(LIB_FILES)))
-
-ifneq (${NETIO_DIR},)
-  PKGS+= libNetioHW
-endif
 
 ######
 ##  Targets

@@ -34,7 +34,7 @@ public:
    * @brief Default constructor
    * Initialize the netio context and start statistics thread
    **/
-  NetioRxCore(NetioHandler &);
+  NetioRxCore();
 
   /**
    * @brief Default destructor
@@ -98,7 +98,7 @@ private:
   std::mutex m_mutex;               //! mutex to increase bytes in statistics thread
   std::thread m_statistics;         //! statistics thread
 
-  NetioHandler& m_nioh;             //! NetioHandler object
+  NetioHandler m_nioh;              //! NetioHandler object
   std::chrono::steady_clock::time_point m_t0; //! clock used for time measurements
 
 };

@@ -7,8 +7,8 @@
 using namespace std;
 using namespace netio;
 
-NetioRxCore::NetioRxCore(NetioHandler &nh)
-  : m_nioh(nh)
+NetioRxCore::NetioRxCore()
+  : m_nioh("posix", "localhost", 12340, 12345, 50000000, true)
 {
   m_t0 = std::chrono::steady_clock::now();
   string cntx = "posix";

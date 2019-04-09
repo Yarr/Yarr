@@ -60,7 +60,7 @@ void SimpleNetioTxCore::disableChannel(uint64_t chn){
 }
 
 void SimpleNetioTxCore::setCmdEnable(uint32_t mask) {
-  for(int chan; chan<32; chan++) {
+  for(int chan=0; chan<32; chan++) {
     if((1<<chan) & mask) {
       enableChannel(chan);
     } else {
@@ -75,6 +75,7 @@ uint32_t SimpleNetioTxCore::getCmdEnable() {
     auto link = it->second;
     mask |= 1<<link;
   }
+  return mask;
 }
 
 void SimpleNetioTxCore::writeFifo(uint32_t value){

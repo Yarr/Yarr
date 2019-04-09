@@ -79,6 +79,10 @@ int main(int argc, char** argv){
     }
   }
 
+  if(verbose) {
+    std::cout << "Verbose not supported yet\n";
+  }
+
   json j;
   j["NetIO"]["host"] = chost;
   j["NetIO"]["txport"] = cptx;
