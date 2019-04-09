@@ -86,7 +86,7 @@ class Database {
         std::string m_tr_oid_str;
         std::string m_chip_type;
 
-        int m_db_version;
+        double m_db_version;
 
         bool DB_DEBUG;
 };
