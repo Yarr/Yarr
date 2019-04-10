@@ -9,10 +9,6 @@
 # * is required parameter
 ################################
 
-mkdir -p log
-LOGFILE="log/${mod_id}_doEverything."`date "+%Y%m%d_%H%M%S"`
-exec 2>&1> >(awk '{print strftime("[%Y-%m-%d %H:%M:%S]"),$0 }{ fflush()}' | tee $LOGFILE)
-
 DEBUG=false
 if "${DEBUG}"; then
     echo "DEBUG: ON"
@@ -58,6 +54,10 @@ do
             exit ;;
     esac
 done
+
+mkdir -p log
+LOGFILE="log/${mod_id}_doEverything."`date "+%Y%m%d_%H%M%S"`
+exec 2>&1> >(awk '{print strftime("[%Y-%m-%d %H:%M:%S]"),$0 }{ fflush()}' | tee $LOGFILE)
 
 # asic type
 if "${DEBUG}"; then
@@ -162,9 +162,9 @@ if [ ! -f configs/${asic_type}/${mod_id}/connectivity.json ]; then
     # create config
     cd configs
         if "${DEBUG}"; then
-            echo "./create_config.sh -a ${asic_type} -m ${mod_id} -i ${run_info#*/} -c ${chips} -r ${controller#*/} ${database}"
+            echo "./createConfig.sh -a ${asic_type} -m ${mod_id} -i ${run_info#*/} -c ${chips} -r ${controller#*/} ${database}"
         fi
-        ./create_config.sh -a ${asic_type} -m ${mod_id} -i ${run_info#*/} -c ${chips} -r ${controller#*/} ${database}
+        ./createConfig.sh -a ${asic_type} -m ${mod_id} -i ${run_info#*/} -c ${chips} -r ${controller#*/} ${database}
     cd ../
     reset=false
     controller=configs/${asic_type}/${mod_id}/controller.json
@@ -246,14 +246,14 @@ if "${reset}"; then
     cd configs
         if [ "${database}" = "-d" ]; then
             if "${DEBUG}"; then
-                echo "./create_config.sh -a ${asic_type} -m ${mod_id} -i ${run_info#*/} -r ${controller#*/} -d"
+                echo "./createConfig.sh -a ${asic_type} -m ${mod_id} -i ${run_info#*/} -r ${controller#*/} -d"
             fi
-            ./create_config.sh -a ${asic_type} -m ${mod_id} -i ${run_info#*/} -r ${controller#*/} -d
+            ./createConfig.sh -a ${asic_type} -m ${mod_id} -i ${run_info#*/} -r ${controller#*/} -d
         else 
             if "${DEBUG}"; then
-                echo "./create_config.sh -a ${asic_type} -m ${mod_id} -i ${run_info#*/} -r ${controller#*/} -d"
+                echo "./createConfig.sh -a ${asic_type} -m ${mod_id} -i ${run_info#*/} -r ${controller#*/} -d"
             fi
-            ./create_config.sh -a ${asic_type} -m ${mod_id} -i ${run_info#*/} -r ${controller#*/}
+            ./createConfig.sh -a ${asic_type} -m ${mod_id} -i ${run_info#*/} -r ${controller#*/}
         fi
     cd ../
 fi
@@ -328,7 +328,6 @@ do
         target_c="-c ${first_target_charge}"
     elif [ `echo "${scan_type}" | grep "lin_tune_pixelthreshold"` ]; then
         target_c="-c ${first_target_charge}"
-    #elif [ `echo "${scan_type}" | grep "threshold"` ];then
     else
         target_c="-c ${target_charge}"
     fi

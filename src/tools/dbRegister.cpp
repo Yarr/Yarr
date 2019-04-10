@@ -36,9 +36,6 @@ int main(int argc, char *argv[]){
 
   // register environment
   std::string dbEnvPath = "";
-  // register environment key
-  std::string dbEnvKey = "";
-  std::string dbEnvDescription = "";
   // register json
   std::string dbJsonPath = "";
   std::string dbJsonType = "";
@@ -46,7 +43,7 @@ int main(int argc, char *argv[]){
   std::string dbJsonId = "";
 
   int c;
-  while ((c = getopt(argc, argv, "hU:C:J:E:K:G:n:u:i:p:c:d:j:")) != -1 ){
+  while ((c = getopt(argc, argv, "hU:C:J:E:G:n:u:i:p:c:d:j:")) != -1 ){
     switch (c) {
         case 'h':
             printHelp();
@@ -63,10 +60,6 @@ int main(int argc, char *argv[]){
         case 'E':
             registerType = "Environment";
             dbEnvPath = std::string(optarg);
-            break;
-        case 'K':
-            registerType = "EnvironmentKey";
-            dbEnvKey = std::string(optarg);
             break;
         case 'J':
             registerType = "Json";
@@ -89,9 +82,6 @@ int main(int argc, char *argv[]){
         case 'c':
             dbAddress = std::string(optarg);
             break;
-        case 'd':
-            dbEnvDescription = std::string(optarg);
-            break;
         case 'j':
             dbJsonType = std::string(optarg);
             break;
@@ -99,7 +89,7 @@ int main(int argc, char *argv[]){
             dbUserCfgPath = std::string(optarg);
             break;
         case '?':
-            if(optopt == 'U'||optopt == 'C'||optopt == 'E'||optopt == 'K'||optopt == 'J'||optopt == 'G'){
+            if(optopt == 'U'||optopt == 'C'||optopt == 'E'||optopt == 'J'||optopt == 'G'){
                 std::cerr << "-> Option " << (char)optopt
                           << " requires a parameter! Aborting... " << std::endl;
                 return -1;
@@ -150,7 +140,7 @@ int main(int argc, char *argv[]){
     std::cout << std::endl;
 
     Database *database = new Database();
-  	database->registerUserInstitution(dbUserName, dbInstitution, dbUserIdentity, dbAddress);
+  	database->registerUser(dbUserName, dbInstitution, dbUserIdentity, dbAddress);
     delete database;
   }
 
@@ -160,8 +150,8 @@ int main(int argc, char *argv[]){
 	  std::cout << "\tconnecitivity config file : " << dbConnPath << std::endl;
 
     Database *database = new Database();
-    database->setUserInstitution();
-	  database->registerFromConnectivity(dbConnPath);
+    database->setUser();
+	  database->registerComponent(dbConnPath);
 
     delete database;
   }
@@ -172,24 +162,9 @@ int main(int argc, char *argv[]){
 	  std::cout << "\tenvironmental config file : " << dbEnvPath << std::endl;
 
     Database *database = new Database();
-    database->setUserInstitution();
-	  database->registerEnvironment(dbEnvPath, "");
-
-    delete database;
-  }
-
-  // register environment key
-  if (registerType == "EnvironmentKey") {
-      if (dbEnvDescription == "") {
-        std::cerr << "Error: no environmental description given, please specify environmental description under -d option!" << std::endl;
-        return -1;
-    }
-    std::cout << "Database: Register Environment List:" << std::endl;
-	  std::cout << "\tenvironmental key : " << dbEnvKey << std::endl;
-	  std::cout << "\tenvironmental description : " << dbEnvDescription << std::endl;
-    
-    Database *database = new Database();
-	  database->registerEnvironment(dbEnvKey, dbEnvDescription);
+    database->setUser();
+    database->setTestRunInfo(dbEnvPath);
+	  database->registerEnvironment();
 
     delete database;
   }
@@ -252,6 +227,4 @@ void printHelp() {
     std::cout << " -G <path/to/save.json> : Download config data from database. Provide the path to save.json." << std::endl;
     std::cout << "\t -i <config id in database>" << std::endl;
     std::cout << " -E <path/to/env.json> : Register environmental information into database. Provide the path to env.json." << std::endl;
-    std::cout << " -K <env key> : Register environmental key into database. Provide the environmental key." << std::endl;
-    std::cout << "\t -d <env description>" << std::endl;
 }

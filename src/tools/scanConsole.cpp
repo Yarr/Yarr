@@ -252,14 +252,16 @@ int main(int argc, char *argv[]) {
         std::cout << "\033[1;31m# Set Database #\033[0m" << std::endl;
         std::cout << "\033[1;31m################\033[0m" << std::endl;
         std::cout << "-> Setting user's information" << std::endl;
-        database->setUserInstitution();
+        database->setUser();
+        database->setTestRunInfo(dbTestInfo);
         std::cout << "-> Setting Connectivity Configs" << std::endl;
         database->setConnCfg(cConfigPaths);
         std::cout << "-> Setting TestRun Info" << std::endl;
         std::cout << "-> Setting Target ToT: " << target_tot << std::endl;
         std::cout << "-> Setting Target Charge: " << target_charge << std::endl;
-        database->startTestRun(ctrlCfgPath, scanType, strippedScan, runCounter, target_charge, target_tot);
-        database->setTestRunInfo(dbTestInfo);
+        database->writeTestRunStart(strippedScan, cConfigPaths, runCounter, target_charge, target_tot);
+        database->writeConfig("", ctrlCfgPath, "controller", "ctrlCfg", "testRun"); //controller config
+        database->writeConfig("", scanType, strippedScan, "scanCfg", "testRun"); //scan config
     }
 
     // Timestamp
@@ -361,11 +363,6 @@ int main(int argc, char *argv[]) {
             std::cerr << __PRETTY_FUNCTION__ << " : invalid config, chip type or chips not specified!" << std::endl;
             return 0;
         } else {
-            if (dbUse) {
-                if (!config["module"]["serialNumber"].empty()) {
-                    database->writeComponentTestRun(config["module"]["serialNumber"], -1, -1);
-                }
-            }
             chipType = config["chipType"];
             std::cout << "Chip Type: " << chipType << std::endl;
             std::cout << "Found " << config["chips"].size() << " chips defined!" << std::endl;
@@ -410,8 +407,10 @@ int main(int argc, char *argv[]) {
                         backupCfgFile << std::setw(4) << backupCfg;
                         backupCfgFile.close();
                         if (dbUse) {
-                            feCfg->setDbId(database->writeComponentTestRun(chip["serialNumber"], chip["tx"], chip["rx"]));
-                            database->writeConfig(feCfg->getDbId(), backupCfg, "beforeCfg");
+                            std::string serialNumber = config["module"]["serialNumber"];
+                            int chipId = chip["chipId"];
+                            feCfg->setDbId(database->getComponentTestRun(serialNumber, chipId));
+                            database->writeConfig(feCfg->getDbId(), outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getConfigFile() + ".before", "beforeCfg", "chipCfg", "componentTestRun");
                         }
                     }
                 } catch (json::parse_error &e) {
@@ -650,11 +649,11 @@ int main(int argc, char *argv[]) {
             // Save extra config in data folder
             std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(fe)->getConfigFile() + ".after");
             json backupCfg;
-            dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
+            dynamic_cast<FrontEndCfg*>(fe)->toFileJson(backupCfg);
             backupCfgFile << std::setw(4) << backupCfg;
             backupCfgFile.close(); 
             if (dbUse) {
-                database->writeConfig(dynamic_cast<FrontEndCfg*>(fe)->getDbId(), backupCfg, "afterCfg");
+                database->writeConfig(dynamic_cast<FrontEndCfg*>(fe)->getDbId(), outputDir + dynamic_cast<FrontEndCfg*>(fe)->getConfigFile() + ".after", "afterCfg", "chipCfg", "componentTestRun");
             }
 
             // Plot
@@ -670,7 +669,6 @@ int main(int argc, char *argv[]) {
                     histo->plot(name, outputDirTmp);
                     histo->toFile(name, outputDir);
                     if (dbUse) {
-                        database->setHistoName(histo->getName());
                         std::string file_path = outputDir + name + "_" + histo->getName();
                         database->writeAttachment(dynamic_cast<FrontEndCfg*>(fe)->getDbId(), file_path, histo->getName());
                     }
@@ -699,8 +697,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Path to Controller Configuration: " << scanType << std::endl;
         std::cout << "Path to Test Run Information: " << dbTestInfo << std::endl;
 
-        database->writeTestRun(ctrlCfgPath, scanType, strippedScan, runCounter, outputDir, target_charge, target_tot);
-        database->registerEnvironment(dbTestInfo,"");
+        database->writeTestRunFinish(strippedScan, cConfigPaths, runCounter, target_charge, target_tot);
         std::cout << "Done."<< std::endl;
     }
     delete database;

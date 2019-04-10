@@ -205,7 +205,7 @@ if [ ! -f ${asic}/${sn}/connectivity.json ]; then
         if [ "${answer}" != "n" ]; then
             chipName=${answer}
         else
-            chipName="chip${cnt}"
+            chipName="${sn}_chip${cnt}"
         fi
         echo "Change chipId ... [#(chipId)/n] "
         read answer
@@ -228,8 +228,9 @@ if [ ! -f ${asic}/${sn}/connectivity.json ]; then
     
         rx_ch=$(( cnt - 1 + rx_start ))
         echo "        {" >> ${asic}/${sn}/connectivity.json
-        echo "            \"serialNumber\": \"${sn}_${chipName}\"," >> ${asic}/${sn}/connectivity.json
+        echo "            \"serialNumber\": \"${chipName}\"," >> ${asic}/${sn}/connectivity.json
         echo "            \"componentType\": \"Front-end Chip\"," >> ${asic}/${sn}/connectivity.json
+        echo "            \"chipId\": ${id}," >> ${asic}/${sn}/connectivity.json
         echo "            \"config\" : \"configs/${asic}/${sn}/${chipName}.json\"," >> ${asic}/${sn}/connectivity.json
         echo "            \"tx\" : ${tx_fix}," >> ${asic}/${sn}/connectivity.json
         echo "            \"rx\" : ${rx_ch}" >> ${asic}/${sn}/connectivity.json

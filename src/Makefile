@@ -50,7 +50,7 @@ CPPFLAGS += $(INCFLAGS)
 ifeq ($(findstring rh-mongodb36, $(CPATH)), rh-mongodb36)
   $(info MongoDB C++ Driver found! Hooray!)
   CPPFLAGS += -I/opt/rh/rh-mongodb36/root/usr/include/mongocxx/v_noabi -I/opt/rh/rh-mongodb36/root/usr/include/bsoncxx/v_noabi -I/opt/rh/rh-mongodb36/root/usr/include/boost -DMONGOCXX_INCLUDE
-  LDFLAGS += -L/opt/rh/rh-mongodb36/root/usr/lib64 -lmongocxx -lbsoncxx
+  LDFLAGS += -L/opt/rh/rh-mongodb36/root/usr/lib64 -lmongocxx -lbsoncxx -lcrypto
 else
   $(warning Oops! No MongoDB C++ Driver found! Database function will be disabled!)
 endif

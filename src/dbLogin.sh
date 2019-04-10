@@ -33,6 +33,7 @@ function unset_variable {
     unset DEV
     unset nic
     unset address
+    unset dbcfg 
 }
 
 account=$1
@@ -121,11 +122,46 @@ do
     read answer
 done
 
+dbcfg=${HOME}/.yarr/database.json
+if [ ! -f ${dbcfg} ]; then
+    echo "{" > ${dbcfg}
+    echo "    \"stage\": [" >> ${dbcfg}
+    echo "        \"Bare Module\"," >> ${dbcfg}
+    echo "        \"Wire Bonded\"," >> ${dbcfg}
+    echo "        \"Potted\"," >> ${dbcfg}
+    echo "        \"Final Electrical\"," >> ${dbcfg}
+    echo "        \"Complete\"," >> ${dbcfg}
+    echo "        \"Loaded\"," >> ${dbcfg}
+    echo "        \"Parylene\"," >> ${dbcfg}
+    echo "        \"Initial Electrical\"," >> ${dbcfg}
+    echo "        \"Thermal Cycling\"," >> ${dbcfg}
+    echo "        \"Flex + Bare Module Attachment\"" >> ${dbcfg}
+    echo "    ]," >> ${dbcfg}
+    echo "    \"environment\": [" >> ${dbcfg}
+    echo "        \"lv\"," >> ${dbcfg}
+    echo "        \"hv\"," >> ${dbcfg}
+    echo "        \"lv_current\"," >> ${dbcfg}
+    echo "        \"hv_current\"," >> ${dbcfg}
+    echo "        \"temperture\"" >> ${dbcfg}
+    echo "    ]," >> ${dbcfg}
+    echo "    \"component\": [" >> ${dbcfg}
+    echo "        \"Front-end Chip\"," >> ${dbcfg}
+    echo "        \"Front-end Chips Wafer\"," >> ${dbcfg}
+    echo "        \"Hybrid\"," >> ${dbcfg}
+    echo "        \"Module\"," >> ${dbcfg}
+    echo "        \"Sensor Tile\"," >> ${dbcfg}
+    echo "        \"Sensor Wafer\"" >> ${dbcfg}
+    echo "    ]" >> ${dbcfg}
+    echo "}" >> ${dbcfg}
+    echo "Create DB Config file: ${dbcfg}"
+    echo " "
+fi
 if [ ${answer} == "y" ]; then
     echo "{" > ${cfg}
     echo "    \"userName\": \"${name}\"," >> ${cfg}
     echo "    \"institution\": \"${institution}\"," >> ${cfg}
-    echo "    \"userIdentity\": \"${identity}\"" >> ${cfg}
+    echo "    \"userIdentity\": \"${identity}\"," >> ${cfg}
+    echo "    \"dbCfg\": \"${dbcfg}\"" >> ${cfg}
     echo "}" >> ${cfg}
     echo " "
     if "${DEBUG}"; then
