@@ -8,7 +8,15 @@
 // # Description: Database functions
 // ################################
 
-#ifdef MONGOCXX_INCLUDE
+#ifdef MONGOCXX_INCLUDE // When use macro "-DMONGOCXX_INCLUDE" in makefile
+
+// bsoncxx
+#include <bsoncxx/builder/stream/array.hpp>
+#include <bsoncxx/builder/stream/document.hpp>
+#include <bsoncxx/builder/stream/helpers.hpp>
+#include <bsoncxx/json.hpp>
+#include <bsoncxx/types.hpp>
+
 // Using bson::builder::stream, an iostream like interface to construct BSON objects.
 // And these 'using ~' are greatly useful to reduce coding lines and make it readable.
 // Please see example to understand what they are for.
@@ -1251,5 +1259,26 @@ std::string Database::writeJsonCode_Gridfs(json &i_json, std::string i_filename,
     this->addVersion("fs.chunks", "files_id", result.id().get_oid().value.to_string(), "oid");
     return oid_str;
 }
+
+#else // Else if there is no MONGOCXX_INCLUDE
+
+Database::Database(std::string i_host_ip) {std::cout << "[LDB] Warning! Database function is disabled!" << std::endl;}
+Database::~Database() {}
+void Database::setConnCfg(std::vector<std::string> i_connCfgPath) {}
+void Database::setTestRunInfo(std::string i_tr_info_cfg_path) {}
+void Database::setUserInstitution() {}
+void Database::setHistoName(std::string i_histo_name) {}
+void Database::startTestRun(std::string i_ctrl_path, std::string i_scan_path, std::string i_test_type, int i_run_number, int i_target_charge, int i_target_tot) {}
+std::string Database::writeComponentTestRun(std::string i_serial_number, int i_chip_tx, int i_chip_rx) {return "ERROR";}
+void Database::writeConfig(std::string i_ctr_oid_str, json &i_config, std::string i_title) {}
+void Database::writeTestRun(std::string i_ctrl_path, std::string i_scan_path, std::string i_test_type, int i_run_number, std::string i_output_dir, int i_target_charge=-1, int i_target_tot=-1) {}
+void Database::writeFiles(std::string i_serial_number, int i_run_number_s, int i_run_number_e) {}
+std::string Database::uploadFromJson(std::string i_collection_name, std::string i_json_path) {return "ERROR";}
+void Database::registerUserInstitution(std::string i_user_name, std::string i_institution, std::string i_user_identity, std::string i_address="") {}
+void Database::registerFromConnectivity(std::string i_conn_path) {}
+void Database::registerEnvironment(std::string i_env_key, std::string i_description) {}
+void Database::writeAttachment(std::string i_ctr_oid_str, std::string i_file_path, std::string i_histo_name) {}
+std::string Database::writeJsonCode(json &i_json, std::string i_filename, std::string i_title, std::string i_type) {return "ERROR";}
+void Database::getJsonCode(std::string i_oid_str, std::string i_filename) {}
 
 #endif // End of ifdef MONGOCXX_INCLUDE
