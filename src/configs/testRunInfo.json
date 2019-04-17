@@ -1,6 +1,6 @@
 {
    "assembly": {
-        "stage": "encapsulation"
+        "stage": "Testing"
     },
     "environments": [
         {
@@ -13,7 +13,7 @@
             "key": "lv_current",
             "value": "1.0",
             "description": "Low voltage current [A]",
-            "path": "/tmp/lvc.dat"
+            "path": "/tmp/lv.dat"
         },
         {
             "key": "hv",
@@ -25,7 +25,7 @@
             "key": "hv_current",
             "value": "0",
             "description": "High voltage current [A]",
-            "path": "/tmp/hvc.dat"
+            "path": "/tmp/hv.dat"
         },
         {
             "key": "temperature",

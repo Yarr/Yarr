@@ -35,7 +35,7 @@ std::vector<std::string> Database::m_comp_list{};
 Database::Database(std::string i_host_ip):
 client(), db(), 
 m_home_dir(), m_info_path(""), m_tr_oid_str(""), m_user_oid_str(), m_address(), m_chip_type(),
-m_histo_names(), m_db_version(0.9), DB_DEBUG(false)
+m_histo_names(), m_db_version(1.0), DB_DEBUG(false)
 {
     if (DB_DEBUG) std::cout << "Database: Initialize" << std::endl;
 
@@ -159,14 +159,32 @@ void Database::setTestRunInfo(std::string i_info_path) {//TODO make it enable to
                     abort(); return;
                 }
                 std::string key = "";
-                int cnt = 0;
-                while (j_key!=key) {
-                    if (cnt==items) {
-                        std::cerr << "#DB ERROR# Environmental key '" << j_key << "' was not matched: " << env_path << std::endl;
+                for (int i=0;i<items;i++) {
+                    std::string tmp;
+                    env_ifs >> tmp;
+                    if (j_key==tmp) key = tmp;
+                }
+                if (key=="") {
+                    std::cerr << "#DB ERROR# Environmental key '" << j_key << "' was not matched: " << env_path << std::endl;
+                    abort(); return;
+                }
+                std::string datetime;
+                env_ifs >> datetime;
+                struct tm timepoint;
+                memset(&timepoint, 0X00, sizeof(struct tm));
+                if (strptime(datetime.c_str(), "%Y-%m-%d_%H:%M:%S", &timepoint)==NULL) {
+                    std::cerr <<"#DB ERROR# Datetime is not written in the correct format: " << env_path << std::endl;
+                    abort(); return;
+                }
+                std::string value;
+                for (int i=0;i<items;i++) {
+                    env_ifs >> value;
+                    try {
+                        std::stof(value);
+                    } catch (const std::invalid_argument& e) {
+                        std::cerr << __PRETTY_FUNCTION__ << "#DB ERROR# Could not convert to float: " << e.what() << std::endl;
                         abort(); return;
                     }
-                    env_ifs >> key;
-                    cnt++;
                 }
             }
         }
@@ -335,10 +353,7 @@ void Database::writeConfig(std::string i_ctr_oid_str, std::string i_file_path, s
     if (DB_DEBUG) std::cout << "Database: Write Config Json." << std::endl;
 
     std::ifstream file_ifs(i_file_path);
-    if (!file_ifs) {
-        std::cerr <<"#DB ERROR# Cannot open the config file: " << i_file_path << std::endl;
-        abort(); return;
-    }
+    if (!file_ifs) return;
     json file_json;
     try {
         file_json = json::parse(file_ifs);
@@ -350,10 +365,17 @@ void Database::writeConfig(std::string i_ctr_oid_str, std::string i_file_path, s
 
     std::string cfg_oid_str = this->writeJsonCode(i_file_path, i_filename+".json", i_title, "gj");
     std::string oid_str = "";
-    if (i_collection == "testRun") oid_str = m_tr_oid_str;
-    if (i_collection == "componentTestRun") oid_str = i_ctr_oid_str;
+    std::string key = "";
+    if (i_collection == "testRun") {
+        oid_str = m_tr_oid_str;
+        key = i_title;
+    }
+    if (i_collection == "componentTestRun") {
+        oid_str = i_ctr_oid_str;
+        key = i_filename;
+    }
     if (oid_str!="") {
-        this->addValue(oid_str, i_collection, i_filename, cfg_oid_str);
+        this->addValue(oid_str, i_collection, key, cfg_oid_str);
     }
 }
 
@@ -639,21 +661,30 @@ void Database::registerEnvironment() {
             int data_num = 0;
             std::vector<std::string> key_values;
             std::vector<std::string> dates;
+            int items;
+            env_ifs >> items;
+            int key=-1;
+            for (int j=0;j<items;j++) {
+                std::string tmp;
+                env_ifs >> tmp;
+                if (env_keys[i]==tmp) key=j;
+            }
             while (!env_ifs.eof()) {
                 std::string datetime = "";
-                std::string tmp;
-                env_ifs >> datetime >> tmp;
-                if (tmp == ""||datetime == "") break;
+                std::string value = "";
+                env_ifs >> datetime;
+                for (int j=0;j<items;j++) {
+                    std::string tmp;
+                    env_ifs >> tmp;
+                    if (j==key) value = tmp;
+                }
+                if (value == ""||datetime == "") break;
                 struct tm timepoint;
                 memset(&timepoint, 0X00, sizeof(struct tm));
-                strptime(datetime.c_str(), "%Y-%m-%dT%H:%M:%S", &timepoint);
-
-                char buffer[80];
-                strftime(buffer,sizeof(buffer),"%Y-%m-%d %H:%M:%S",&timepoint);
-
+                strptime(datetime.c_str(), "%Y-%m-%d_%H:%M:%S", &timepoint);
                 std::time_t timestamp  = mktime(&timepoint);
                 if (difftime(starttime,timestamp)<60) { // store data from 1 minute before the starting time of the scan
-                    key_values.push_back(tmp);
+                    key_values.push_back(value);
                     dates.push_back(datetime);
                     data_num++;
                 }
@@ -662,7 +693,7 @@ void Database::registerEnvironment() {
             for (int j=0;j<data_num;j++) {
                 struct tm timepoint;
                 memset(&timepoint, 0X00, sizeof(struct tm));
-                strptime(dates[j].c_str(), "%Y-%m-%dT%H:%M:%S", &timepoint);
+                strptime(dates[j].c_str(), "%Y-%m-%d_%H:%M:%S", &timepoint);
                 std::time_t timestamp  = mktime(&timepoint);
                 array_builder.append(
                     document{} << 

@@ -88,7 +88,7 @@ if "${reset}"; then
         rsync -a ${asic}/${sn}/ ${asic}/${sn}/backup/${now} --exclude '/backup/'
         if [ -f ${asic}/${sn}/connectivity.json ]; then
             rm ${asic}/${sn}/connectivity.json
-            rm ${asic}/${sn}/chip*.json
+            rm ${asic}/${sn}/${sn}_chip*.json
         else
             echo "Not exist connectivity.json and nothing was done."
         fi
@@ -114,7 +114,7 @@ if [ -f ${asic}/${sn}/connectivity.json ]; then
     # Make user config 
     if [ ! -z ${user} ]; then
         if [ ${user} != ${asic}/${sn}/info.json ]; then
-            echo "Create info.json"
+            echo "Created ${asic}/${sn}/info.json"
             cp ${user} ${asic}/${sn}/info.json
         fi
     fi
@@ -122,7 +122,7 @@ if [ -f ${asic}/${sn}/connectivity.json ]; then
     # Make controller for this module
     if [ ! -z ${controller} ]; then
         if [ ${controller} != ${asic}/${sn}/controller.json ]; then
-            echo "Create controller.json"
+            echo "Created ${asic}/${sn}/controller.json"
             cp ${controller} ${asic}/${sn}/controller.json
         fi
     fi
@@ -164,26 +164,26 @@ else    # first creation
 
     # Make config directory
     if [ ! -d ${asic}/${sn} ]; then
-        echo "Create config directory ${asic}/${sn}"
+        echo "Created config directory ${asic}/${sn}"
         mkdir -p ${asic}/${sn}/backup
     fi
 
     # Make controller for this module
     if [ ${controller} != ${asic}/${sn}/controller.json ]; then
-        echo "Create controller.json"
+        echo "Created ${asic}/${sn}/controller.json"
         cp ${controller} ${asic}/${sn}/controller.json
     fi
     
     # Make user config 
     if [ ${user} != ${asic}/${sn}/info.json ]; then
-        echo "Create info.json"
+        echo "Created ${asic}/${sn}/info.json"
         cp ${user} ${asic}/${sn}/info.json
     fi
 fi
 
 # Make config file for each chip and connectivity
 if [ ! -f ${asic}/${sn}/connectivity.json ]; then
-    echo "Create connectivity.json"
+    echo "Created ${asic}/${sn}/connectivity.json"
     echo "{" > ${asic}/${sn}/connectivity.json
     echo "    \"module\": {" >> ${asic}/${sn}/connectivity.json
     echo "        \"serialNumber\": \"${sn}\"," >> ${asic}/${sn}/connectivity.json
@@ -195,7 +195,7 @@ if [ ! -f ${asic}/${sn}/connectivity.json ]; then
     echo "    \"chips\" : [" >> ${asic}/${sn}/connectivity.json
     while [ ${cnt} -lt ${chips} ]; do
         cnt=$(( cnt + 1 ))
-        echo "Create chip${cnt}.json"
+        echo "Create ${asic}/${sn}/${sn}_chip${cnt}.json"
         echo "---------------------"
         echo "name: ${sn}_chip${cnt}"
         echo "chipId: ${cnt}"
@@ -221,17 +221,17 @@ if [ ! -f ${asic}/${sn}/connectivity.json ]; then
             id=${cnt}
         fi
 
-        echo "Create ${chipName}.json"
-        cp defaults/default_${asic}.json ${asic}/${sn}/${chipName}.json
-        sed -i "/${chipid}/s/0/${id}/g" ${asic}/${sn}/${chipName}.json
-        sed -i "/${name}/s/JohnDoe/${chipName}/g" ${asic}/${sn}/${chipName}.json
+        echo "Created ${sn}_chip${cnt}.json"
+        cp defaults/default_${asic}.json ${asic}/${sn}/${sn}_chip${cnt}.json
+        sed -i "/${chipid}/s/0/${id}/g" ${asic}/${sn}/${sn}_chip${cnt}.json
+        sed -i "/${name}/s/JohnDoe/${chipName}/g" ${asic}/${sn}/${sn}_chip${cnt}.json
     
         rx_ch=$(( cnt - 1 + rx_start ))
         echo "        {" >> ${asic}/${sn}/connectivity.json
         echo "            \"serialNumber\": \"${chipName}\"," >> ${asic}/${sn}/connectivity.json
         echo "            \"componentType\": \"Front-end Chip\"," >> ${asic}/${sn}/connectivity.json
         echo "            \"chipId\": ${id}," >> ${asic}/${sn}/connectivity.json
-        echo "            \"config\" : \"configs/${asic}/${sn}/${chipName}.json\"," >> ${asic}/${sn}/connectivity.json
+        echo "            \"config\" : \"configs/${asic}/${sn}/${sn}_chip${cnt}.json\"," >> ${asic}/${sn}/connectivity.json
         echo "            \"tx\" : ${tx_fix}," >> ${asic}/${sn}/connectivity.json
         echo "            \"rx\" : ${rx_ch}" >> ${asic}/${sn}/connectivity.json
         if [ ${cnt} -ne ${chips} ]; then
@@ -243,7 +243,7 @@ if [ ! -f ${asic}/${sn}/connectivity.json ]; then
     echo "    ]" >> ${asic}/${sn}/connectivity.json
     echo "}" >> ${asic}/${sn}/connectivity.json
 else
-    for file in `\find ${asic}/${sn} -path "${asic}/${sn}/chip*.json"` ; do
+    for file in `\find ${asic}/${sn} -path "${asic}/${sn}/${sn}_chip*.json"` ; do
         cfgname=`cat ${file} | grep ${name} | awk -F'["]' '{print $4}'`
         cfgid=`cat ${file} | grep \"${chipid}\" | awk '{print $2}'`
         echo "Reset ${file##*/}"
