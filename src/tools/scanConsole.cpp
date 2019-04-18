@@ -35,7 +35,7 @@
 #include "Fei4Histogrammer.h"
 #include "Fei4Analysis.h"
 
-#include "Database.h"
+#include "DBHandler.h"
 #if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
 
 //  #include <errno.h>
@@ -244,8 +244,8 @@ int main(int argc, char *argv[]) {
         std::cerr << "Error creating symlink to output directory!" << std::endl;
     }
 
-    // Initial setting local Database
-    Database *database = new Database();
+    // Initial setting local DBHandler
+    DBHandler *database = new DBHandler();
     if (dbUse) {
         std::cout << std::endl;
         std::cout << "\033[1;31m################\033[0m" << std::endl;

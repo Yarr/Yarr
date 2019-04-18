@@ -5,8 +5,8 @@
 // # Author: Eunchong Kim, Arisa Kubota
 // # Email: eunchong.kim at cern.ch, arisa.kubota at cern.ch
 // # Date : April 2019
-// # Project: Local Database for Yarr
-// # Description: Database functions
+// # Project: Local DBHandler for Yarr
+// # Description: DBHandler functions
 // ################################
 
 #include <cstdlib>
@@ -28,10 +28,10 @@
 
 using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 
-class Database {
+class DBHandler {
     public:
-        Database(std::string i_host_ip = "mongodb://localhost:27017");
-        ~Database();
+        DBHandler(std::string i_host_ip = "mongodb://localhost:27017");
+        ~DBHandler();
 
         //// Functions for setting before scan (not included writeDB function)
         /// Confirm and set component from connectivity config 
@@ -80,8 +80,9 @@ class Database {
         /// Register user, institution, and identity key from $HOME/.yarr/$DBUSER_user.json, and MAC address from $HOME/.yarr/address 
         void registerUser(std::string /*i_user_name*/, 
                           std::string /*i_institution*/, 
-                          std::string /*i_user_identity*/,
-                          std::string /*i_address*/);
+                          std::string /*i_user_identity*/);
+        /// Register address and institution
+        void registerSite();
         /// Register component data from connectivity config 
         void registerComponent(std::string /*i_conn_path*/);
         /// Register environmental data 

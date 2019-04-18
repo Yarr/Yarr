@@ -46,6 +46,10 @@ if [ -z ${account} ]; then
     return 0
 fi
 
+if [ ! -e ${HOME}/.yarr ]; then
+    mkdir ${HOME}/.yarr
+fi
+
 cfg=${HOME}/.yarr/${account}_user.json
 if [ ! -f ${cfg} ]; then
     echo "User Config file is not exist: ${cfg}"
@@ -142,7 +146,7 @@ if [ ! -f ${dbcfg} ]; then
     echo "        \"hv\"," >> ${dbcfg}
     echo "        \"lv_current\"," >> ${dbcfg}
     echo "        \"hv_current\"," >> ${dbcfg}
-    echo "        \"temperture\"" >> ${dbcfg}
+    echo "        \"temperature\"" >> ${dbcfg}
     echo "    ]," >> ${dbcfg}
     echo "    \"component\": [" >> ${dbcfg}
     echo "        \"Front-end Chip\"," >> ${dbcfg}
@@ -166,20 +170,22 @@ if [ ${answer} == "y" ]; then
     echo " "
     if "${DEBUG}"; then
         echo "export DBUSER=\"${account}\""
+        echo " "
     fi
     export DBUSER=${account}
     if "${DEBUG}"; then
         echo "./bin/dbRegister -U ${account}"
+        echo " "
     fi
     ./bin/dbRegister -U ${account}
-    echo " "
     echo "Create User Config file: ${cfg}"
+    echo " "
 else
     echo "Exit ..."
+    echo " "
     unset_variable
     return 0
 fi
-
 
 declare -a nic=()  
 num=0
@@ -190,6 +196,7 @@ do
 done
 if [ ${num} != 1 ]; then
     echo "Select the number before NIC name for the information of this machine."
+    echo " "
     cnt=0
     while [ ${cnt} -lt ${num} ]; do
         echo ${nic[0]}
@@ -199,11 +206,14 @@ if [ ${num} != 1 ]; then
     while [ -z ${answer} ]; 
     do
         echo "Select the number before NIC name for the information of this machine."
+        echo " "
         read answer
     done
     echo ${answer} | grep [^0-9] > /dev/null 2>&1
     if [ $? -eq 0 ]; then
         echo "Please give an integral as the number before NIC name."
+        echo " "
+        unset_variable
         return 0
     fi
     dbnic="${nic[${answer}]}"
@@ -212,6 +222,12 @@ else
 fi
 address=${HOME}/.yarr/address
 echo `ifconfig ${dbnic} | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}'` > ${address}
+
+if "${DEBUG}"; then
+    echo "./bin/dbRegister -S"
+    echo " "
+fi
+./bin/dbRegister -S
 
 unset_variable
 
