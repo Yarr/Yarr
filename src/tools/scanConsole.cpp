@@ -635,7 +635,7 @@ int main(int argc, char *argv[]) {
     }
     std::string lsCmd = "ls -1 " + dataDir + "last_scan/*.p*";
     std::cout << "Finishing run: " << runCounter << std::endl;
-    if (system(lsCmd.c_str()) < 0) {
+    if(doPlots && (system(lsCmd.c_str()) < 0)) {
         std::cout << "Find plots in: " << dataDir + "last_scan" << std::endl;
     }
     return 0;
