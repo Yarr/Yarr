@@ -760,9 +760,8 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
                 auto& histogrammer = static_cast<Fei4Histogrammer&>( *(histogrammers[fe]) );
                 
                 histogrammer.connect(fe->clipData, fe->clipHisto);
-                int nHistos = histoCfg["n_count"];
-                for (int j=0; j<nHistos; j++) {
-                    std::string algo_name = histoCfg[std::to_string(j)]["algorithm"];
+
+                auto add_histo = [&](std::string algo_name) {
                     if (algo_name == "OccupancyMap") {
                         std::cout << "  ... adding " << algo_name << std::endl;
                         histogrammer.addHistogrammer(new OccupancyMap());
@@ -790,6 +789,21 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
                     } else {
                         std::cerr << "#ERROR# Histogrammer \"" << algo_name << "\" unknown, skipping!" << std::endl;
                     }
+                };
+
+                try {
+                  int nHistos = histoCfg["n_count"];
+
+                  for (int j=0; j<nHistos; j++) {
+                    std::string algo_name = histoCfg[std::to_string(j)]["algorithm"];
+                    add_histo(algo_name);
+                  }
+                } catch(json::type_error &te) {
+                  int nHistos = histoCfg.size();
+                  for (int j=0; j<nHistos; j++) {
+                    std::string algo_name = histoCfg[j]["algorithm"];
+                    add_histo(algo_name);
+                  }
                 }
                 histogrammer.setMapSize(fe->geo.nCol, fe->geo.nRow);
             }
@@ -840,11 +854,8 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                 analyses[fe].reset( new Fei4Analysis(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) );
                 auto& ana = static_cast<Fei4Analysis&>( *(analyses[fe]) );
                 ana.connect(s, fe->clipHisto, fe->clipResult);
-                
-                int nAnas = anaCfg["n_count"];
-                std::cout << "Found " << nAnas << " Analysis!" << std::endl;
-                for (int j=0; j<nAnas; j++) {
-                    std::string algo_name = anaCfg[std::to_string(j)]["algorithm"];
+
+                auto add_analysis = [&](std::string algo_name) {
                     if (algo_name == "OccupancyAnalysis") {
                         std::cout << "  ... adding " << algo_name << std::endl;
                         ana.addAlgorithm(new OccupancyAnalysis());
@@ -873,8 +884,24 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                         std::cout << "  ... adding " << algo_name << std::endl;
                         ana.addAlgorithm(new DelayAnalysis());
                      }
+                };
 
+                try {
+                  int nAnas = anaCfg["n_count"];
+                  std::cout << "Found " << nAnas << " Analysis!" << std::endl;
+                  for (int j=0; j<nAnas; j++) {
+                    std::string algo_name = anaCfg[std::to_string(j)]["algorithm"];
+                    add_analysis(algo_name);
+                  }
+                } catch(json::type_error &te) {
+                  int nAnas = anaCfg.size();
+                  std::cout << "Found " << nAnas << " Analysis!" << std::endl;
+                  for (int j=0; j<nAnas; j++) {
+                    std::string algo_name = anaCfg[j]["algorithm"];
+                    add_analysis(algo_name);
+                  }
                 }
+
                 // Disable masking of pixels
                 if(mask_opt == 0) {
                     std::cout << " -> Disabling masking for this scan!" << std::endl;
