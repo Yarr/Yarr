@@ -71,6 +71,11 @@ job_build_with_felix:
      - ls ${FELIX_DIR}/..
      # Which configurations are present
      - ls ${FELIX_DIR}
+     # Which include files exist
+     - find ${FELIX_DIR}/${CONFIG}/include -type f
+     # Temporary fix for unexpected change in container (Apr '19)
+     - "[[ -d ${FELIX_DIR}/${CONFIG}/include/netio ]] || mkdir ${FELIX_DIR}/${CONFIG}/include/netio"
+     - "[[ -f ${FELIX_DIR}/${CONFIG}/include/netio/netio.hpp ]] || mv ${FELIX_DIR}/${CONFIG}/include/{,netio/}netio.hpp"
      - yum -y install make cmake gnuplot glibc-devel which
      # TBB lib is in FELIX image, but we need the includes to build
      - yum -y install tbb tbb-devel
@@ -96,6 +101,9 @@ job_build_make_with_felix:
     tags:
      - cvmfs
     script:
+     # Temporary fix for unexpected change in container (Apr '19)
+     - "[[ -d ${FELIX_DIR}/${CONFIG}/include/netio ]] || mkdir ${FELIX_DIR}/${CONFIG}/include/netio"
+     - "[[ -f ${FELIX_DIR}/${CONFIG}/include/netio/netio.hpp ]] || mv ${FELIX_DIR}/${CONFIG}/include/{,netio/}netio.hpp"
      - yum -y install make gnuplot glibc-devel which
      # TBB lib is in FELIX image, but we need the includes to build
      - yum -y install tbb tbb-devel
