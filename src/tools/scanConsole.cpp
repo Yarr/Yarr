@@ -283,6 +283,7 @@ int main(int argc, char *argv[]) {
     scanLog["runNumber"] = runCounter;
     scanLog["targetCharge"] = target_charge;
     scanLog["targetTot"] = target_tot;
+    scanLog["scanType"] = strippedScan;
 
     std::cout << std::endl;
     std::cout << "\033[1;31m#################\033[0m" << std::endl;
@@ -619,6 +620,30 @@ int main(int argc, char *argv[]) {
     hwCtrl.reset();
 
     // Save scan log
+    if (dbUse) {
+        json database;
+        database["start"] = timestamp;
+        now = std::time(NULL);
+        lt = std::localtime(&now);
+        strftime(timestamp, 20, "%F_%H:%M:%S", lt);
+        database["finish"] = timestamp;
+        std::string dbuser = getenv("DBUSER");
+        std::string user_path = home + "/.yarr/" + dbuser + "_user.json";
+        std::ifstream user_ifs(user_path);
+        json user_json = json::parse(user_ifs);
+        database["userCfg"] = user_json;
+        if (dbTestInfo != "") {
+            std::ifstream info_ifs(dbTestInfo);
+            json tr_info_j = json::parse(info_ifs);
+            database["testInfo"] = tr_info_j;
+        }
+        std::string address_path = home + "/.yarr/address";
+        std::ifstream address_ifs(address_path);
+        std::string address;
+        address_ifs >> address;
+        database["address"] = address;
+        scanLog["database"] = database;
+    }
     std::ofstream scanLogFile(outputDir + "scanLog.json");
     scanLogFile << std::setw(4) << scanLog;
     scanLogFile.close();

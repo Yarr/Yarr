@@ -33,18 +33,31 @@ int main(int argc, char *argv[]){
 
     // register environment
     std::string dbEnvPath = "";
+    
     // register json
     std::string dbJsonPath = "";
     std::string dbJsonType = "";
+    std::string dbJsonTitle = "";
+
     // get json
     std::string dbJsonId = "";
+    std::string dbChipId = "0";
+    std::string dbName = "test";
+    std::string dbType = "";
+
+    // register from directory
+    std::string dbDir = "";
 
     int c;
-    while ((c = getopt(argc, argv, "hU:C:J:E:G:Sn:u:i:p:c:d:j:")) != -1 ){
+    while ((c = getopt(argc, argv, "hD:U:C:J:E:G:Sn:u:i:p:c:d:j:t:")) != -1 ){
         switch (c) {
             case 'h':
                 printHelp();
                 return 0;
+                break;
+            case 'D':
+                registerType = "Directory";
+                dbDir = std::string(optarg);
                 break;
             case 'U':
                 registerType = "User";
@@ -71,10 +84,11 @@ int main(int argc, char *argv[]){
                 break;
             case 'n':
                 dbUserName = std::string(optarg);
+                dbName = std::string(optarg);
                 break;
             case 'i':
                 dbInstitution = std::string(optarg);
-                dbJsonId = dbInstitution;
+                dbJsonId = std::string(optarg);
                 break;
             case 'u':
                 dbUserIdentity = std::string(optarg);
@@ -85,8 +99,15 @@ int main(int argc, char *argv[]){
             case 'p':
                 dbUserCfgPath = std::string(optarg);
                 break;
+            case 'c':
+                dbChipId = std::string(optarg);
+                break;
+            case 't':
+                dbType = std::string(optarg);
+                dbJsonTitle = std::string(optarg);
+                break;
             case '?':
-                if(optopt == 'U'||optopt == 'C'||optopt == 'E'||optopt == 'J'||optopt == 'G'){
+                if(optopt == 'D'||optopt == 'U'||optopt == 'C'||optopt == 'E'||optopt == 'J'||optopt == 'G'){
                     std::cerr << "-> Option " << (char)optopt
                               << " requires a parameter! Aborting... " << std::endl;
                     return -1;
@@ -102,6 +123,15 @@ int main(int argc, char *argv[]){
 
     if (registerType == "") printHelp();
 
+//    // register from directory
+//    if (registerType == "Directory") {
+//        std::cout << "DBHandler: Register directory: " << dbDir << std::endl;
+//
+//        DBHandler *database = new DBHandler();
+//    	  database->writeFromDirectory("","",dbDir,"");
+//        delete database;
+//    }
+//
     // register user
     if (registerType == "User") {
         std::cout << "DBHandler: Login user: \n\taccount: " << dbUserAccount << std::endl;
@@ -179,6 +209,10 @@ int main(int argc, char *argv[]){
             std::cerr << "Error: no upload format given, please specify upload format under -j option!" << std::endl;
             return -1;
         }
+        if (dbJsonTitle == "") {
+            std::cerr << "Error: no config title given, please specify config title under -t option!" << std::endl;
+            return -1;
+        }
         std::cout << "DBHandler: Register Json:" << std::endl;
 	      std::cout << "\tjson file : " << dbJsonPath << std::endl;
         
@@ -191,7 +225,7 @@ int main(int argc, char *argv[]){
         try {
             j = json::parse(jsonFile);
             DBHandler *database = new DBHandler();
-	          database->writeJsonCode(j, "testfile", "testtitle", dbJsonType);
+            database->writeJsonCode(dbJsonPath, dbJsonTitle + ".json", dbJsonTitle, dbJsonType); 
             delete database;
         } catch (json::parse_error &e) {
             std::cerr << "#ERROR# Could not parse config: " << e.what() << std::endl;
@@ -205,11 +239,18 @@ int main(int argc, char *argv[]){
             std::cerr << "Error: no config id given, please specify config id under -i option!" << std::endl;
             return -1;
         }
+        if (dbType == "") {
+            std::cerr << "Error: no config type given, please specify config type under -t option!" << std::endl;
+            std::cerr << "\t-t chipCfg" << std::endl;
+            std::cerr << "\t-t ctrlCfg" << std::endl;
+            std::cerr << "\t-t scanCfg" << std::endl;
+            return -1;
+        }
         std::cout << "DBHandler: Get Json:" << std::endl;
 	      std::cout << "\tsave json file : " << dbJsonPath << std::endl;
         
         DBHandler *database = new DBHandler();
-	      database->getJsonCode(dbJsonId, dbJsonPath);
+	      database->getJsonCode(dbJsonId, dbJsonPath, dbName, dbType, std::atoi(dbChipId.c_str()));
         delete database;
     }
 	  return 0;
@@ -229,7 +270,9 @@ void printHelp() {
     std::cout << "\t -i <institution>" << std::endl;
     std::cout << " -J <path/to/config.json> : Register config data into database. Provide the path to config.json." << std::endl;
     std::cout << "\t -j <format type>" << std::endl;
+    std::cout << "\t -t <config title>" << std::endl;
     std::cout << " -G <path/to/save.json> : Download config data from database. Provide the path to save.json." << std::endl;
     std::cout << "\t -i <config id in database>" << std::endl;
+    std::cout << "\t -t <config type in database>" << std::endl;
     std::cout << " -E <path/to/env.json> : Register environmental information into database. Provide the path to env.json." << std::endl;
 }

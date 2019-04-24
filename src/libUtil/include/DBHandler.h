@@ -91,7 +91,10 @@ class DBHandler {
         //// Functions for get value from DB
         /// Get json data into json file 
         void getJsonCode(std::string /*i_oid_str*/, 
-                         std::string /*i_filename*/);
+                         std::string /*i_filename*/,
+                         std::string /*i_name*/,
+                         std::string /*i_type*/,
+                         int /*i_chip_id*/);
         /// Get componentTestRun Id
         std::string getComponentTestRun(std::string /*i_serial_number*/,
                                         int /*i_chip_id*/);
@@ -191,6 +194,11 @@ class DBHandler {
         std::string writeJsonCode_Gridfs(std::string /*i_file_path*/, 
                                          std::string /*i_filename*/, 
                                          std::string /*i_title*/);
+
+        std::string writeJsonCode_Test(std::string /*i_file_path*/, 
+                                       std::string /*i_filename*/, 
+                                       std::string /*i_title*/);
+
     private:
         // Mongo c++
         mongocxx::client client;

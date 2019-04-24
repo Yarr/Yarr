@@ -16,6 +16,7 @@
 #include <bsoncxx/builder/stream/helpers.hpp>
 #include <bsoncxx/json.hpp>
 #include <bsoncxx/types.hpp>
+//#include <bsoncxx/builder/basic/kvp.hpp>
 
 // Using bson::builder::stream, an iostream like interface to construct BSON objects.
 // And these 'using ~' are greatly useful to reduce coding lines and make it readable.
@@ -27,6 +28,9 @@ using bsoncxx::builder::stream::open_document;  // = '{', begining of subdocumen
 using bsoncxx::builder::stream::close_document; // = '}'
 using bsoncxx::builder::stream::open_array;     // = '['
 using bsoncxx::builder::stream::close_array;    // = ']'
+//using bsoncxx::builder::basic::kvp;
+//using bsoncxx::builder::basic::make_array;
+//using bsoncxx::builder::basic::make_document;
 
 std::vector<std::string> DBHandler::m_stage_list{};
 std::vector<std::string> DBHandler::m_env_list{};
@@ -34,7 +38,7 @@ std::vector<std::string> DBHandler::m_comp_list{};
 
 DBHandler::DBHandler(std::string i_host_ip):
 client(), db(), 
-m_home_dir(), m_info_path(""), m_tr_oid_str(""), m_user_oid_str(), m_address(), m_chip_type(),
+m_home_dir(), m_info_path(""), m_tr_oid_str(""), m_user_oid_str(), m_address(), m_chip_type(""),
 m_histo_names(), m_db_version(1.0), DB_DEBUG(false)
 {
     if (DB_DEBUG) std::cout << "DBHandler: Initialize" << std::endl;
@@ -45,6 +49,9 @@ m_histo_names(), m_db_version(1.0), DB_DEBUG(false)
 
     std::string home = getenv("HOME"); 
     m_home_dir = home  + "/.yarr/";
+
+    // set index in fs.files
+    db["fs.files"].create_index( document{} << "hash" << 1 << "_id" << 1 << finalize );
 }
 
 DBHandler::~DBHandler() {
@@ -91,6 +98,10 @@ void DBHandler::setConnCfg(std::vector<std::string> i_conn_paths) {
             if (!maybe_result) {
                 std::cerr <<"#DB ERROR# This Relationship between Module '" << mo_serial_number << "' and Chip 'chipId" << std::to_string(chip_id) << "' was not registered." << std::endl;
                 abort(); return;
+            }
+            if (!conn_json["chips"][i]["dbconfig"].empty()) {
+                this->getJsonCode(conn_json["chips"][i]["dbconfig"], conn_json["chips"][i]["config"], conn_json["chips"][i]["serialNumber"], "chipCfg", conn_json["chips"][i]["chipId"]);
+                std::cout << conn_json["chips"][i]["config"] << std::endl;
             }
         }
         mongocxx::cursor cursor = db["childParentRelation"].find(document{} << "parent" << mo_oid_str <<
@@ -484,6 +495,7 @@ void DBHandler::registerUser(std::string i_user_name, std::string i_institution,
         "userIdentity"  << i_user_identity <<
         "institution"   << i_institution <<
         "userType"      << "readWrite" <<
+        "dbVersion"     << -1 <<
     finalize;
     auto result = db["user"].insert_one(doc_value.view());
     bsoncxx::oid oid = result->inserted_id().get_oid().value;
@@ -534,6 +546,7 @@ void DBHandler::registerSite() {
         "name"        << name <<
         "institution" << institution <<
         "address"     << address <<
+        "dbVersion"     << -1 <<
     finalize;
     auto result = db["institution"].insert_one(doc_value.view());
     bsoncxx::oid oid = result->inserted_id().get_oid().value;
@@ -603,6 +616,9 @@ void DBHandler::registerComponent(std::string i_conn_path) {
             "chipType"      << m_chip_type <<
             "componentType" << componentType <<
             "children"      << chips <<
+            "dbVersion"     << -1 <<
+            "address"       << "..." <<
+            "user_id"       << "..." <<
         finalize;
         auto result = db["component"].insert_one(doc_value.view());
         bsoncxx::oid oid = result->inserted_id().get_oid().value;
@@ -630,6 +646,9 @@ void DBHandler::registerComponent(std::string i_conn_path) {
                 "componentType" << componentType <<
                 "chipType"      << m_chip_type <<
                 "chipId"        << chip_id <<
+                "dbVersion"     << -1 <<
+                "address"       << "..." <<
+                "user_id"       << "..." <<
             finalize;
      
             auto result = db["component"].insert_one(insert_doc.view());
@@ -646,6 +665,7 @@ void DBHandler::registerComponent(std::string i_conn_path) {
                 "child"     << getValue("component", "serialNumber", serial_number, "", "_id", "oid") <<
                 "chipId"    << chip_id <<
                 "status"    << "active" <<
+                "dbVersion"     << -1 <<
             finalize;
 
             auto result = db["childParentRelation"].insert_one(doc_value.view());
@@ -832,15 +852,20 @@ std::string DBHandler::writeJsonCode(std::string i_file_path, std::string i_file
         data_id = writeJsonCode_Gridfs(i_file_path, i_filename, i_title);
         type_doc = "fs.files";
     } else if (i_type == "gm") {
+    } else if (i_type == "t") {
+        data_id = writeJsonCode_Test(i_file_path, i_filename, i_title);
+        type_doc = "fs.files";
     }
 
     mongocxx::collection collection = db["config"];
     bsoncxx::document::value doc_value = document{} << 
-      "filename"  << i_filename  <<
+      "sys"       << open_document << close_document <<
+      "filename"  << i_filename <<
       "chipType"  << m_chip_type << 
-      "title"     << i_title     <<
-      "format"    << type_doc    <<
-      "data_id"   << data_id     <<
+      "title"     << i_title <<
+      "format"    << type_doc <<
+      "data_id"   << data_id <<
+      "dbVersion" << -1 <<
     finalize; 
     auto result = collection.insert_one(doc_value.view());
     std::string oid_str = result->inserted_id().get_oid().value.to_string();
@@ -849,16 +874,32 @@ std::string DBHandler::writeJsonCode(std::string i_file_path, std::string i_file
     return oid_str;
 }
 
-void DBHandler::getJsonCode(std::string i_oid_str, std::string i_filename) {
+void DBHandler::getJsonCode(std::string i_oid_str, std::string i_filename, std::string i_name, std::string i_type, int i_chip_id) {
     if (DB_DEBUG) std::cout << "\tDBHandler: download json file" << std::endl;
 
     mongocxx::collection collection = db["config"];
 
     bsoncxx::oid i_oid(i_oid_str);
     auto maybe_result = collection.find_one(document{} << "_id" << i_oid << finalize);
-    if (maybe_result) {
+    if (!maybe_result) {
+        std::cout << "Not found config data!" << std::endl;
+        abort(); return;
+    } else {
         std::string format  = getValue("config", "_id", i_oid_str, "oid", "format");
         std::string data_id = getValue("config", "_id", i_oid_str, "oid", "data_id");
+        if (m_chip_type!="") {
+            if (getValue("config", "_id", i_oid_str, "oid", "chipType") != m_chip_type) {
+                std::cout << "Not found config data of this chip type: " << m_chip_type << std::endl;
+                abort(); return;
+            }
+        } else {
+            m_chip_type = getValue("config", "_id", i_oid_str, "oid", "chipType");
+        }
+        //if (getValue("config", "_id", i_oid_str, "oid", "filename") != "chipCfg.json") return;
+        if (getValue("config", "_id", i_oid_str, "oid", "title") != i_type) {
+            std::cout << "Not match config type: " << i_type << std::endl;
+            abort(); return;
+        }
         bsoncxx::oid data_oid(data_id);
         mongocxx::collection data_collection = db[format];
         auto result = data_collection.find_one(document{} << "_id" << data_oid << finalize);
@@ -915,6 +956,15 @@ void DBHandler::getJsonCode(std::string i_oid_str, std::string i_filename) {
                     abort(); return;
                 }
             }
+            if (i_type == "chipCfg") {
+                if (m_chip_type == "FE-I4B") {
+                    data[m_chip_type]["Parameter"]["chipId"] = i_chip_id;
+                    data[m_chip_type]["name"] = i_name;
+                } else if (m_chip_type == "RD53A") { 
+                    data[m_chip_type]["Parameter"]["ChipId"] = i_chip_id;
+                    data[m_chip_type]["Parameter"]["Name"] = i_name;
+                }
+            }
             cfgFile << std::setw(4) << data;
             cfgFile.close();
         }
@@ -947,7 +997,7 @@ std::string DBHandler::getValue(std::string i_collection_name, std::string i_mem
     mongocxx::collection collection = db[i_collection_name];
     auto query = document{};
     if (i_member_bson_type == "oid") query << i_member_key << bsoncxx::oid(i_member_value);
-    else query << i_member_key << i_member_value;
+    else query << i_member_key << i_member_value; 
     auto result = collection.find_one(query.view());
     if(result) {
         if (i_bson_type == "oid") {
@@ -1047,17 +1097,21 @@ std::string DBHandler::getHash(std::string i_file_path) {
 std::string DBHandler::registerComponentTestRun(std::string i_cmp_oid_str, std::string i_tr_oid_str, std::string i_test_type, int i_run_number, int i_chip_tx, int i_chip_rx) {
     if (DB_DEBUG) std::cout << "\tDBHandler: Register Com-Test Run" << std::endl;
     bsoncxx::document::value doc_value = document{} <<  
-        "sys"       << open_document << close_document <<
-        "component" << i_cmp_oid_str << // id of component
-        "state"     << "..." << // code of test run state
-        "testType"  << i_test_type << // id of test type
-        "testRun"   << i_tr_oid_str << // id of test run, test is planned if it is null
-        "qaTest"    << false << // flag if it is the QA test
-        "runNumber" << i_run_number << // run number
-        "passed"    << true << // flag if the test passed
-        "problems"  << true << // flag if any problem occured
-        "tx"        << i_chip_tx <<
-        "rx"        << i_chip_rx <<
+        "sys"         << open_document << close_document <<
+        "component"   << i_cmp_oid_str << // id of component
+        "state"       << "..." << // code of test run state
+        "testType"    << i_test_type << // id of test type
+        "testRun"     << i_tr_oid_str << // id of test run, test is planned if it is null
+        "qaTest"      << false << // flag if it is the QA test
+        "runNumber"   << i_run_number << // run number
+        "passed"      << true << // flag if the test passed
+        "problems"    << true << // flag if any problem occured
+        "attachments" << open_array << close_array <<
+        "tx"          << i_chip_tx <<
+        "rx"          << i_chip_rx <<
+        "beforeCfg"   << NULL <<
+        "afterCfg"    << NULL <<
+        "dbVersion"   << -1 <<
     finalize;
     mongocxx::collection collection = db["componentTestRun"];
     auto result = collection.insert_one(doc_value.view());
@@ -1080,23 +1134,26 @@ std::string DBHandler::registerTestRun(std::string i_test_type, int i_run_number
         }
     } 
 
-    document builder{};
-    auto docs = builder << "sys"          << open_document << close_document <<
-                           "testType"     << i_test_type << // id of test type //TODO make it id
-                           "runNumber"    << i_run_number << // number of test run
-                           "startTime"    << bsoncxx::types::b_date{startTime} << // date when the test run was taken
-                           "passed"       << true << // flag if test passed
-                           "problems"     << true << // flag if any problem occured
-                           "state"        << "ready" << // state of component ["ready", "requestedToTrash", "trashed"]
-                           "stage"        << stage <<
-                           "targetCharge" << i_target_charge <<
-                           "targetTot"    << i_target_tot <<
-                           "comments"     << open_array << // array of comments
-                                             close_array <<
-                           "defects"      << open_array << // array of defects
-                                             close_array; 
-
-    bsoncxx::document::value doc_value = docs << finalize;
+    bsoncxx::document::value doc_value = document{} <<  
+        "sys"          << open_document << close_document <<
+        "testType"     << i_test_type << // id of test type //TODO make it id
+        "runNumber"    << i_run_number << // number of test run
+        "startTime"    << bsoncxx::types::b_date{startTime} << // date when the test run was taken
+        "passed"       << true << // flag if test passed
+        "problems"     << true << // flag if any problem occured
+        "state"        << "ready" << // state of component ["ready", "requestedToTrash", "trashed"]
+        "stage"        << stage <<
+        "targetCharge" << i_target_charge <<
+        "targetTot"    << i_target_tot <<
+        "comments"     << open_array << close_array <<
+        "defects"      << open_array << close_array <<
+        "finishTime"   << bsoncxx::types::b_date{startTime} <<
+        "plots"        << open_array << close_array <<
+        "ctrlCfg"      << NULL << 
+        "scanCfg"      << NULL <<
+        "environment"  << NULL <<
+        "dbVersion"    << -1 << 
+    finalize;
 
     mongocxx::collection collection = db["testRun"];
     auto result = collection.insert_one(doc_value.view());
@@ -1370,8 +1427,10 @@ std::string DBHandler::writeJsonCode_Json(std::string i_file_path, std::string i
 
     mongocxx::collection collection = db["json"];
     std::string hash = this->getHash(i_file_path);
+    mongocxx::options::find opts;
     bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(
-        document{} << "hash" << hash << finalize
+        document{} << "hash" << hash << finalize,
+        opts.return_key(true)
     );
     if (maybe_result) return maybe_result->view()["_id"].get_oid().value.to_string();
 
@@ -1379,8 +1438,9 @@ std::string DBHandler::writeJsonCode_Json(std::string i_file_path, std::string i
     json file_json = json::parse(file_ifs);
     std::string json_doc = file_json.dump(); 
     bsoncxx::document::value doc_value = document{} << 
-        "data" << json_doc  << 
-        "hash" << hash << 
+        "data"      << json_doc  << 
+        "hash"      << hash << 
+        "dbVersion" << -1 << 
     finalize; 
     auto result = collection.insert_one(doc_value.view());
     std::string oid_str = result->inserted_id().get_oid().value.to_string();
@@ -1393,8 +1453,10 @@ std::string DBHandler::writeJsonCode_Msgpack(std::string i_file_path, std::strin
 
     mongocxx::collection collection = db["msgpack"];
     std::string hash = this->getHash(i_file_path);
+    mongocxx::options::find opts;
     bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(
-        document{} << "hash" << hash << finalize
+        document{} << "hash" << hash << finalize,
+        opts.return_key(true)
     );
     if (maybe_result) return maybe_result->view()["_id"].get_oid().value.to_string();
 
@@ -1424,6 +1486,7 @@ std::string DBHandler::writeJsonCode_Msgpack(std::string i_file_path, std::strin
             "PixelConfig"  << array_builder_pi << 
         close_document <<
         "hash" << hash <<
+        "dbVersion" << -1 << 
     finalize; 
     auto result = collection.insert_one(doc_value.view());
     std::string oid_str = result->inserted_id().get_oid().value.to_string();
@@ -1435,8 +1498,10 @@ std::string DBHandler::writeJsonCode_Gridfs(std::string i_file_path, std::string
     if (DB_DEBUG) std::cout << "\tDBHandler: upload json file" << std::endl;
 
     std::string hash = this->getHash(i_file_path);
+    mongocxx::options::find opts;
     bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = db["fs.files"].find_one(
-        document{} << "hash" << hash << finalize
+        document{} << "hash" << hash << finalize,
+        opts.return_key(true)
     );
     if (maybe_result) return maybe_result->view()["_id"].get_oid().value.to_string();
 
@@ -1451,6 +1516,21 @@ std::string DBHandler::writeJsonCode_Gridfs(std::string i_file_path, std::string
     this->addVersion("fs.chunks", "files_id", oid_str, "oid");
     return oid_str;
 }
+
+std::string DBHandler::writeJsonCode_Test(std::string i_file_path, std::string i_filename, std::string i_title) {
+    std::string hash = this->getHash(i_file_path);
+    std::string oid_str = this->writeGridFsFile(i_file_path, i_filename); 
+    db["fs.files"].update_one(
+        document{} << "_id" << bsoncxx::oid(oid_str) << finalize,
+        document{} << "$set" << open_document <<
+            "hash" << hash << 
+        close_document << finalize
+    );
+    this->addVersion("fs.files", "_id", oid_str, "oid");
+    this->addVersion("fs.chunks", "files_id", oid_str, "oid");
+    return oid_str;
+}
+
 #else // Else if there is no MONGOCXX_INCLUDE
 
 DBHandler::DBHandler(std::string i_host_ip) {std::cout << "[LDB] Warning! DBHandler function is disabled!" << std::endl;}
@@ -1469,7 +1549,7 @@ void DBHandler::registerComponent(std::string i_conn_path) {}
 void DBHandler::registerEnvironment() {}
 void DBHandler::writeAttachment(std::string i_ctr_oid_str, std::string i_file_path, std::string i_histo_name) {}
 std::string DBHandler::writeJsonCode(std::string i_file_path, std::string i_filename, std::string i_title, std::string i_type) {return "ERROR";}
-void DBHandler::getJsonCode(std::string i_oid_str, std::string i_filename) {}
+void DBHandler::getJsonCode(std::string i_oid_str, std::string i_filename, std::string i_name, std::string i_type, int i_chip_id) {}
 std::string DBHandler::getComponentTestRun(std::string i_serial_number, int i_chip_id) {}
 
 #endif // End of ifdef MONGOCXX_INCLUDE
