@@ -46,6 +46,8 @@ job_build_clang:
       - make install -j4
       - cd ..
       - bin/scanConsole -k
+      # Start with FrontEnd configs
+      - for file in $(find ../src/configs/defaults -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t FRONT_END || break; done
 
 job_test_json:
     stage: build
