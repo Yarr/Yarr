@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Initial setting local DBHandler
-    DBHandler *database = new DBHandler();
+    DBHandler *database = new DBHandler(dbUse);
     if (dbUse) {
         std::cout << std::endl;
         std::cout << "\033[1;31m################\033[0m" << std::endl;

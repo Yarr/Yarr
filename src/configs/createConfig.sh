@@ -257,6 +257,6 @@ cd ../
 
 # Register module and chips component to DB
 if "${database}"; then
-    echo "./bin/dbRegister -C configs/${asic}/${sn}/connectivity.json "
-    ./bin/dbRegister -C configs/${asic}/${sn}/connectivity.json
+    echo "./bin/dbAccessor -C configs/${asic}/${sn}/connectivity.json "
+    ./bin/dbAccessor -C configs/${asic}/${sn}/connectivity.json
 fi

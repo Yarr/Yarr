@@ -174,10 +174,10 @@ if [ ${answer} == "y" ]; then
     fi
     export DBUSER=${account}
     if "${DEBUG}"; then
-        echo "./bin/dbRegister -U ${account}"
+        echo "./bin/dbAccessor -U ${account}"
         echo " "
     fi
-    ./bin/dbRegister -U ${account}
+    ./bin/dbAccessor -U ${account}
     echo "Create User Config file: ${cfg}"
     echo " "
 else
@@ -224,10 +224,10 @@ address=${HOME}/.yarr/address
 echo `ifconfig ${dbnic} | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}'` > ${address}
 
 if "${DEBUG}"; then
-    echo "./bin/dbRegister -S"
+    echo "./bin/dbAccessor -S"
     echo " "
 fi
-./bin/dbRegister -S
+./bin/dbAccessor -S
 
 unset_variable
 

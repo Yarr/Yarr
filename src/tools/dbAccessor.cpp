@@ -6,18 +6,22 @@
 // # Description: upload to mongoDB
 // ################################
 
-
-#include <iostream>
-#include <cstdlib>
 #include <string>
-#include "json.hpp"
+#include <cstdlib>
+#include <iostream>
 #include <unistd.h>
-
 #include "DBHandler.h"
+
+#ifdef MONGOCXX_INCLUDE // When use macro "-DMONGOCXX_INCLUDE" in makefile
+
+#include "json.hpp"
 
 void printHelp();
 
 int main(int argc, char *argv[]){
+
+    //std::string hostIp = "mongodb://localhost:27017";
+    DBHandler *database = new DBHandler(true);
 
     std::string registerType = "";
 
@@ -45,11 +49,15 @@ int main(int argc, char *argv[]){
     std::string dbName = "test";
     std::string dbType = "";
 
+    // get data
+    std::string dbDataPath = "";
+    std::string dbDataId = "";
+
     // register from directory
     std::string dbDir = "";
 
     int c;
-    while ((c = getopt(argc, argv, "hD:U:C:J:E:G:Sn:u:i:p:c:d:j:t:")) != -1 ){
+    while ((c = getopt(argc, argv, "hD:U:C:J:E:G:T:Sn:u:i:p:c:d:j:t:")) != -1 ){
         switch (c) {
             case 'h':
                 printHelp();
@@ -79,6 +87,10 @@ int main(int argc, char *argv[]){
                 registerType = "getJson";
                 dbJsonPath = std::string(optarg);
                 break;
+            case 'T':
+                registerType = "getDat";
+                dbDataPath = std::string(optarg);
+                break;
             case 'S':
                 registerType = "Site";
                 break;
@@ -89,6 +101,7 @@ int main(int argc, char *argv[]){
             case 'i':
                 dbInstitution = std::string(optarg);
                 dbJsonId = std::string(optarg);
+                dbDataId = std::string(optarg);
                 break;
             case 'u':
                 dbUserIdentity = std::string(optarg);
@@ -166,14 +179,12 @@ int main(int argc, char *argv[]){
     	  std::cout << "\tuser identity : " << dbUserIdentity << std::endl;
         std::cout << std::endl;
 
-        DBHandler *database = new DBHandler();
     	  database->registerUser(dbUserName, dbInstitution, dbUserIdentity);
         delete database;
     }
 
     // register site
     if (registerType == "Site") {
-        DBHandler *database = new DBHandler();
     	  database->registerSite();
         delete database;
     }
@@ -183,7 +194,6 @@ int main(int argc, char *argv[]){
         std::cout << "DBHandler: Register Component:" << std::endl;
 	      std::cout << "\tconnecitivity config file : " << dbConnPath << std::endl;
 
-        DBHandler *database = new DBHandler();
         database->setUser();
 	      database->registerComponent(dbConnPath);
 
@@ -195,10 +205,9 @@ int main(int argc, char *argv[]){
         std::cout << "DBHandler: Register Environment:" << std::endl;
 	      std::cout << "\tenvironmental config file : " << dbEnvPath << std::endl;
 
-        DBHandler *database = new DBHandler();
         database->setUser();
         database->setTestRunInfo(dbEnvPath);
-	      database->registerEnvironment();
+	      database->registerEnvironment(dbEnvPath);
 
         delete database;
     }
@@ -224,7 +233,6 @@ int main(int argc, char *argv[]){
         json j;
         try {
             j = json::parse(jsonFile);
-            DBHandler *database = new DBHandler();
             database->writeJsonCode(dbJsonPath, dbJsonTitle + ".json", dbJsonTitle, dbJsonType); 
             delete database;
         } catch (json::parse_error &e) {
@@ -249,10 +257,23 @@ int main(int argc, char *argv[]){
         std::cout << "DBHandler: Get Json:" << std::endl;
 	      std::cout << "\tsave json file : " << dbJsonPath << std::endl;
         
-        DBHandler *database = new DBHandler();
 	      database->getJsonCode(dbJsonId, dbJsonPath, dbName, dbType, std::atoi(dbChipId.c_str()));
         delete database;
     }
+
+    // get Dat
+    if (registerType == "getDat") {
+        if (dbDataId == "") {
+            std::cerr << "Error: no data id given, please specify data id under -i option!" << std::endl;
+            return -1;
+        }
+        std::cout << "DBHandler: Get Data:" << std::endl;
+	      std::cout << "\tsave data file : " << dbDataPath << std::endl;
+        
+	      database->getDatCode(dbDataId, dbDataPath);
+        delete database;
+    }
+
 	  return 0;
 }
 
@@ -276,3 +297,12 @@ void printHelp() {
     std::cout << "\t -t <config type in database>" << std::endl;
     std::cout << " -E <path/to/env.json> : Register environmental information into database. Provide the path to env.json." << std::endl;
 }
+
+#else // Else if there is no MONGOCXX_INCLUDE
+
+int main(int argc, char *argv[]){
+    std::cout << "#ERROR# No MongoDB C++ Driver found, Database function is disabled" << std::endl;
+    return 1;
+}
+
+#endif // End of ifdef MONGOCXX_INCLUDE

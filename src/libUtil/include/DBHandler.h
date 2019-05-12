@@ -13,9 +13,11 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include "json.hpp"
+#include <vector>
 
 #ifdef MONGOCXX_INCLUDE // When use macro "-DMONGOCXX_INCLUDE" in makefile
+
+#include "json.hpp"
 
 // mongocxx v3.2 driver
 #include <mongocxx/client.hpp>
@@ -24,13 +26,13 @@
 // openssl
 #include <openssl/sha.h>
 
-#endif // End of ifdef MONGOCXX_INCLUDE
-
 using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+
+#endif // End of ifdef MONGOCXX_INCLUDE
 
 class DBHandler {
     public:
-        DBHandler(std::string i_host_ip = "mongodb://localhost:27017");
+        DBHandler(bool i_db_use = false, std::string i_host_ip = "mongodb://localhost:27017");
         ~DBHandler();
 
         //// Functions for setting before scan (not included writeDB function)
@@ -68,6 +70,7 @@ class DBHandler {
                                   std::string /*i_filename*/, 
                                   std::string /*i_title*/, 
                                   std::string /*i_type*/);
+
         /// Will be deleted //TODO
         void writeFiles(std::string /*i_serial_number*/, 
                         int /*i_run_number_s*/, 
@@ -86,7 +89,7 @@ class DBHandler {
         /// Register component data from connectivity config 
         void registerComponent(std::string /*i_conn_path*/);
         /// Register environmental data 
-        void registerEnvironment();
+        void registerEnvironment(std::string /*i_env_path*/);
 
         //// Functions for get value from DB
         /// Get json data into json file 
@@ -95,6 +98,8 @@ class DBHandler {
                          std::string /*i_name*/,
                          std::string /*i_type*/,
                          int /*i_chip_id*/);
+        void getDatCode(std::string /*i_oid_str*/, 
+                        std::string /*i_filename*/);
         /// Get componentTestRun Id
         std::string getComponentTestRun(std::string /*i_serial_number*/,
                                         int /*i_chip_id*/);
