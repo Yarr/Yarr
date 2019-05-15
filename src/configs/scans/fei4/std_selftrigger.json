@@ -1,0 +1,62 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "OccupancyAnalysis",
+        "config": {
+          "createMask": false
+        }
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "1": {
+        "algorithm": "TotMap",
+        "config": {}
+      },
+      "2": {
+        "algorithm": "Tot2Map",
+        "config": {}
+      },
+      "3": {
+        "algorithm": "L1Dist",
+        "config": {}
+      },
+      "4": {
+        "algorithm": "HitPerEvent",
+        "config": {}
+      },
+      "5":{
+	"algorithm": "DataArchiver",
+	"config": {}
+      },
+      "n_count": 6
+    },
+    "loops": [
+      {
+        "config": {
+          "count": 0,
+          "delay": 30,
+          "extTrigger": false,
+          "frequency": 10000,
+          "noInject": false,
+          "time": 30
+        },
+        "loopAction": "Fei4TriggerLoop"
+      },
+      {
+        "loopAction": "StdDataGatherer"
+      }
+    ],
+    "name": "Selftrigger",
+    "prescan": {
+        "Trig_Count": 5,
+        "Trig_Lat": 235,
+        "HitOr": 1
+    }
+  }
+}
