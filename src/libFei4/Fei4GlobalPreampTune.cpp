@@ -105,5 +105,6 @@ void Fei4GlobalPreampTune::preScan() {
         while(!g_tx->isCmdEmpty())
             ;
     }
+
     g_tx->setCmdEnable(g_bk->getTxMask());
 }

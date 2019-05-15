@@ -1,0 +1,87 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "ScurveFitter"
+      },
+      "1": {
+	"algorithm": "L1Analysis"
+      },
+      "n_count": 2
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "1": {
+        "algorithm": "TotMap",
+        "config": {}
+      },
+      "2": {
+        "algorithm": "Tot2Map",
+        "config": {}
+      },
+      "3": {
+        "algorithm": "L1Dist",
+        "config": {}
+      },
+      "4": {
+        "algorithm": "HitPerEvent",
+        "config": {}
+      },
+      "n_count": 5
+    },
+    "loops": [
+      {
+        "config": {
+          "enable_lcap": true,
+          "enable_scap": true,
+          "max": 16,
+          "min": 0,
+          "step": 1
+        },
+        "loopAction": "Fei4MaskLoop"
+      },
+      {
+        "config": {
+          "max": 4,
+          "min": 0,
+          "mode": 1,
+          "step": 1
+        },
+        "loopAction": "Fei4DcLoop"
+      },
+      {
+        "config": {
+          "max": 100,
+          "min": 10,
+          "step": 1,
+	  "parameter": "PlsrDAC"
+        },
+        "loopAction": "Fei4ParameterLoop"
+      },
+      {
+        "config": {
+          "count": 100,
+          "delay": 50,
+          "extTrigger": false,
+          "frequency": 10000,
+          "noInject": false,
+          "time": 0
+        },
+        "loopAction": "Fei4TriggerLoop"
+      },
+      {
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "ThresholdScan",
+    "prescan": {
+        "Trig_Count": 10,
+        "Trig_Lat": 205,
+	"PlsrDAC": 300,
+        "CalPulseWidth": 20
+    }
+  }
+}

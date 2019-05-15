@@ -150,7 +150,6 @@ void lmmin( int n, double *x, int m, const void *data,
     S->nfev = 0;      /* function evaluation counter */
 
 /***  Check input parameters for errors.  ***/
-
     if ( n <= 0 ) {
         fprintf( stderr, "lmmin: invalid number of parameters %i\n", n );
         S->outcome = 10; /* invalid parameter */
