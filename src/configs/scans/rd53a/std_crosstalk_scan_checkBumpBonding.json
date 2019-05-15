@@ -32,7 +32,7 @@
           "step": 32,
 	  "maskType" : 1,
 	  "maskSize" : 4,
-	  "removeEdges" :5,
+	  "includedPixels" :5,
 	  "sensorType" : 0
         },
         "loopAction": "Rd53aMaskLoop"

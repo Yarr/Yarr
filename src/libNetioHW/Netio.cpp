@@ -7,13 +7,9 @@
 class NetioController
   : public HwController, public NetioTxCore, public NetioRxCore
 {
-  NetioHandler m_nioh;
 public:
   NetioController()
-    : m_nioh("posix", "localhost", 12340, 12345, 50000000, true),
-      NetioRxCore(m_nioh)
-  {
-  }
+  {}
 
   void loadConfig(json &j) override;
 };
