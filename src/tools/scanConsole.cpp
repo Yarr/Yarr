@@ -875,6 +875,7 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                      }
 
                 }
+		ana.loadConfig(anaCfg);
                 // Disable masking of pixels
                 if(mask_opt == 0) {
                     std::cout << " -> Disabling masking for this scan!" << std::endl;
