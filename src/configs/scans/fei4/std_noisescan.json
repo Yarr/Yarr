@@ -1,0 +1,54 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "NoiseAnalysis"
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "1": {
+        "algorithm": "TotMap",
+        "config": {}
+      },
+      "2": {
+        "algorithm": "Tot2Map",
+        "config": {}
+      },
+      "3": {
+        "algorithm": "L1Dist",
+        "config": {}
+      },
+      "4": {
+        "algorithm": "HitPerEvent",
+        "config": {}
+      },
+      "n_count": 5
+    },
+    "loops": [
+      {
+        "config": {
+          "count": 0,
+          "delay": 50,
+          "extTrigger": false,
+          "frequency": 10000,
+          "noInject": true,
+          "time": 5
+        },
+        "loopAction": "Fei4TriggerLoop"
+      },
+      {
+        "loopAction": "StdDataGatherer"
+      }
+    ],
+    "name": "NoiseScan",
+    "prescan": {
+        "Trig_Count": 5,
+        "Trig_Lat": 235
+    }
+  }
+}

@@ -8,11 +8,16 @@
 
 #include <queue>
 #include <mutex>
+#include "Fei4.h"
 #include "LoopActionBase.h"
 #include "FeedbackBase.h"
 
 class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
     public:
+        Fei4GlobalFeedback() {
+            loopType = typeid(this);
+        };
+
         Fei4GlobalFeedback(Fei4Register Fei4GlobalCfg::*ref) :parPtr(ref) { 
             loopType = typeid(this);
         };
@@ -58,9 +63,10 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
             // Unlock the mutex to let the scan proceed
 			keeper->mutexMap[channel].unlock();
         }
-
-        
+	void writeConfig(json &config);
+	void loadConfig(json &config);
     private:
+	std::string parName = "";
         void init() {
             m_done = false;
             cur = 0;
@@ -113,6 +119,9 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
         }
 
         void writePar() {
+	   if(parName!=""){
+	    parPtr = keeper->globalFe<Fei4>()->regMap[parName];
+	   }
 			for(unsigned int k=0; k<keeper->feList.size(); k++) {
 				if(keeper->feList[k]->getActive()) {
 					g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getTxChannel());

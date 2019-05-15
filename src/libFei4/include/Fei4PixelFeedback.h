@@ -20,6 +20,9 @@ enum FeedbackType {
 
 class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
     public:
+        Fei4PixelFeedback() : LoopActionBase(){
+            loopType = typeid(this);
+        }
         Fei4PixelFeedback(enum FeedbackType type) : LoopActionBase(){
             fbType = type;
             switch (fbType) {
@@ -49,8 +52,30 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
 
             keeper->mutexMap[channel].unlock();
         }
-
+        void writeConfig(json &config){
+	    config["min"]=min;
+	    config["max"]=max;
+            config["step"]=step;
+            config["parameter"] = parName;
+        }
+        void loadConfig(json &config){
+	    if (!config["min"].empty())
+	      min = config["min"];
+	    if (!config["max"].empty())
+	      max = config["max"];
+	    if (!config["step"].empty())
+	      step = config["step"];
+	    if (!config["parameter"].empty())
+	      parName = config["parameter"];
+	    if(parName=="TDAC_FB"){
+	      fbType=TDAC_FB;
+	    }
+	    else if(parName=="FDAC_FB"){
+	      fbType=FDAC_FB;
+	    }
+        }
     private:
+	std::string parName="";
         void init() {
             m_done = false;
             cur = 0;

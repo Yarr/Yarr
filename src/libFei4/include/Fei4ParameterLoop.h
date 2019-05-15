@@ -12,10 +12,16 @@
 class Fei4ParameterLoop : public LoopActionBase{
     public:
         Fei4ParameterLoop() {
+	  min=0;
+	  max=100;
+	  step=1;
             loopType = typeid(this);
         }
 
         Fei4ParameterLoop(Fei4Register Fei4GlobalCfg::*ref) : parPtr(ref){ 
+	  min=0;
+	  max=100;
+	  step=1;
             loopType = typeid(this);
         };
 
@@ -24,12 +30,18 @@ class Fei4ParameterLoop : public LoopActionBase{
             max = arg_max;
             step = arg_step;
         }
+	void writeConfig(json &j);
+	void loadConfig(json &j);
 
 
     private:
+	std::string parName = "";
         void init() {
             m_done = false;
             cur = min;
+	    if(parName!=""){
+	      parPtr = keeper->globalFe<Fei4>()->regMap[parName];
+	    }
             this->writePar();
         }
 
