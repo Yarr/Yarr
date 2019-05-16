@@ -6,6 +6,10 @@
 
 #include "EmuShm.h"
 
+#include <cstdio>
+#include <cstring>
+#include <iostream>
+
 EmuShm::EmuShm(key_t key, uint32_t size, bool _create)
 {
     create = _create;

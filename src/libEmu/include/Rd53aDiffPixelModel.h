@@ -7,19 +7,7 @@
 #ifndef RD53ADiffPIXELMODEL
 #define RD53ADiffPIXELMODEL
 
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <semaphore.h>
-#include <pthread.h>
-#include <signal.h>
-#include <fcntl.h>
-#include <stdint.h>
-#include <string.h>
-#include <iostream>
+#include <cstdint>
 
 class Rd53aDiffPixelModel {
 	public:

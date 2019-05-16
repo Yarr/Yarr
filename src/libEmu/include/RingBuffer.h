@@ -7,9 +7,7 @@
 #ifndef RINGBUFFER
 #define RINGBUFFER
 
-#include <stdint.h>
-#include <string.h>
-#include <iostream>
+#include <cstdint>
 #include <mutex>
 #include <atomic>
 #include <condition_variable>
