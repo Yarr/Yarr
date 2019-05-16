@@ -8,6 +8,9 @@
 
 #include "Histo3d.h"
 
+#include <cmath>
+#include <fstream>
+
 Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
         unsigned arg_ybins, double arg_ylow, double arg_yhigh, 
         unsigned arg_zbins, double arg_zlow, double arg_zhigh, 

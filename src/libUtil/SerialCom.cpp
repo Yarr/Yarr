@@ -1,5 +1,11 @@
 #include "SerialCom.h"
 
+#include <iostream>
+#include <string>
+
+#include <fcntl.h>
+#include <unistd.h>
+
 SerialCom::SerialCom() {
     dev = 0;
     baudrate = B115200;

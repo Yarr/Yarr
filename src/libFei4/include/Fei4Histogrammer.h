@@ -9,14 +9,10 @@
 // # Comment: 
 // ################################
 
-#include <iostream>
-#include <deque>
-#include <map>
-#include <list>
+#include <fstream>
 #include <vector>
 #include <typeinfo>
-#include <unistd.h>
-#include <fcntl.h>
+#include <thread>
 
 #include "DataProcessor.h"
 #include "ClipBoard.h"

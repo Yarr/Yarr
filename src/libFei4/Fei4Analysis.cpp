@@ -38,6 +38,14 @@ void Fei4Analysis::run() {
     thread_ptr.reset( new std::thread( &Fei4Analysis::process, this ) );
 }
 
+void Fei4Analysis::loadConfig(json &j){
+    for (unsigned i=0; i<algorithms.size(); i++) {
+        if (!j[std::to_string(i)]["config"].empty()){
+	    algorithms[i]->loadConfig(j[std::to_string(i)]["config"]);
+	}
+    }
+}
+
 void Fei4Analysis::join() {
     if( thread_ptr->joinable() ) thread_ptr->join();
 }
@@ -98,6 +106,7 @@ void Fei4Analysis::addAlgorithm(AnalysisAlgorithm *a, unsigned ch) {
 }
 
 void OccupancyAnalysis::init(ScanBase *s) {
+    createMask=true;
     n_count = 1;
     injections = 0;
     for (unsigned n=0; n<s->size(); n++) {
@@ -167,7 +176,6 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
     // Add up Histograms
     occMaps[ident]->add(*(Histo2d*)h);
     innerCnt[ident]++;
-
     // Got all data, finish up Analysis
     if (innerCnt[ident] == n_count) {
         std::unique_ptr<Histo2d> mask(new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this)));
@@ -180,7 +188,7 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
             if (occMaps[ident]->getBin(i) == injections) {
                 mask->setBin(i, 1);
             } else {
-                if (make_mask) {
+                if (make_mask&&createMask) {
                     bookie->getFe(channel)->maskPixel((i/nRow), (i%nRow));
                 }
             }
@@ -191,6 +199,12 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
 
         //delete occMaps[ident];
         //occMaps[ident] = NULL;
+    }
+}
+void OccupancyAnalysis::loadConfig(json &j){
+    if (!j["createMask"].empty()){
+        createMask=j["createMask"];
+	//	std::cout << "createMask =" << createMask << std::endl;
     }
 }
 

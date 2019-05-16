@@ -8,6 +8,8 @@
 
 #include "Bookkeeper.h"
 
+#include <iostream>
+
 Bookkeeper::Bookkeeper(TxCore *arg_tx, RxCore *arg_rx) {
     tx = arg_tx;
     rx = arg_rx;

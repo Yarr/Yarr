@@ -1,5 +1,8 @@
 #include "Gauss.h"
 
+#include <cmath>
+#include <cstdlib>
+
 namespace Gauss {
 // should use a better function than this (box muller method - stolen from the internet)
 double rand_normal(double mean, double sigma, bool can_be_negative) {

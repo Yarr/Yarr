@@ -1,5 +1,6 @@
 #include "BocRxCore.h"
 #include <cstring>
+#include <iostream>
 
 BocRxCore::BocRxCore()
 {

@@ -5,6 +5,8 @@
 
 #include "StdRepeater.h"
 
+#include <iostream>
+
 StdRepeater::StdRepeater() : LoopActionBase() {
     loopType = typeid(this);
     min = 0;

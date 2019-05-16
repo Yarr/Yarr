@@ -10,11 +10,8 @@
 // ################################
 
 #include <string>
-#include <fstream>
 #include <typeinfo>
 #include <typeindex>
-#include <stdio.h>
-#include <cmath>
 
 #include "HistogramBase.h"
 #include "ResultBase.h"

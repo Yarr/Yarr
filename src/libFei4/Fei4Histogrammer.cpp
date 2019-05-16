@@ -8,6 +8,8 @@
 
 #include "Fei4Histogrammer.h"
 
+#include <iostream>
+
 bool Fei4Histogrammer::processorDone = false;
 
 Fei4Histogrammer::Fei4Histogrammer() {

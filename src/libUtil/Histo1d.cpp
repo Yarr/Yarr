@@ -7,7 +7,10 @@
 // ################################
 
 #include "Histo1d.h"
-#include <stdio.h>
+
+#include <iostream>
+#include <fstream>
+#include <cmath>
 
 Histo1d::Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh, std::type_index t) : HistogramBase(arg_name, t) {
     bins = arg_bins;

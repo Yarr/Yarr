@@ -8,8 +8,6 @@
 // # Comment: Base class for I2C devices
 // ################################
 
-#include <iostream>
-
 #include "SpecCom.h"
 
 class PeriphialI2C {

@@ -6,6 +6,9 @@
 
 #include "RingBuffer.h"
 
+#include <cstring>
+#include <iostream>
+
 RingBuffer::RingBuffer(uint32_t size)
 {
     ringbuffer_size = size;
