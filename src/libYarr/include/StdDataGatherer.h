@@ -10,7 +10,6 @@
 #include "StdDataAction.h"
 #include "ClipBoard.h"
 #include "RawData.h"
-#include <signal.h>
 
 class StdDataGatherer: public LoopActionBase, public StdDataAction {
     public:
