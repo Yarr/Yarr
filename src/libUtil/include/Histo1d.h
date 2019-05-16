@@ -9,12 +9,9 @@
 // # Comment: 
 // ################################
 
-#include <iostream>
-#include <fstream>
 #include <string>
 #include <typeinfo>
 #include <typeindex>
-#include <cmath>
 
 #include "HistogramBase.h"
 

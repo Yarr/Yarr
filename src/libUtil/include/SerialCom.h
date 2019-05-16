@@ -1,11 +1,9 @@
 #ifndef SERIALCOM_H
 #define SERIALCOM_H
 
-#include <iostream>
 #include <string>
-#include <fcntl.h>
-#include <unistd.h>
 #include <termios.h>
+
 class SerialCom {
     public:
         SerialCom();
