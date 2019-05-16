@@ -11,6 +11,7 @@
 bool Fei4Analysis::histogrammerDone = false;
 
 Fei4Analysis::Fei4Analysis() {
+
 }
 
 Fei4Analysis::Fei4Analysis(Bookkeeper *b, unsigned ch) {
