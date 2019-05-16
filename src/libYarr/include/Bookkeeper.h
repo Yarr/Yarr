@@ -9,9 +9,7 @@
 // # Comment: Global container for data
 // ################################
 
-#include <iostream>
 #include <mutex>
-#include <deque>
 
 #include "RawData.h"
 #include "EventDataBase.h"

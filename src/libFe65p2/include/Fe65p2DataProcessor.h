@@ -9,6 +9,8 @@
 // # Comment: 
 // ################################
 
+#include <thread>
+
 #include "DataProcessor.h"
 #include "ClipBoard.h"
 #include "RawData.h"

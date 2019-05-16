@@ -6,7 +6,6 @@
 #ifndef LOOPSTATUS_H
 #define LOOPSTATUS_H
 
-#include <iostream>
 #include <vector>
 #include <map>
 

@@ -6,8 +6,11 @@
 #include "StdDataGatherer.h"
 
 #include <chrono>
+#include <iostream>
 #include <thread>
 #include <algorithm>
+
+#include <signal.h>
 
 StdDataGatherer::StdDataGatherer() : LoopActionBase() {
     storage = NULL;

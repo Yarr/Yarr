@@ -7,8 +7,8 @@
 // ################################
 
 #include "Histo1d.h"
-#include <stdio.h>
 
+#include <iostream>
 #include <fstream>
 #include <cmath>
 

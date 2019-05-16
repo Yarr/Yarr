@@ -10,6 +10,8 @@
 #include "Fei4EventData.h"
 #include "AllProcessors.h"
 
+#include <iostream>
+
 bool fe65p2_proc_registered =
     StdDict::registerDataProcessor("FE65P2", []() { return std::unique_ptr<DataProcessor>(new Fe65p2DataProcessor());});
 

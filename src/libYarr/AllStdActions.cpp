@@ -1,6 +1,8 @@
 #include "AllStdActions.h"
 #include "ClassRegistry.h"
 
+#include <iostream>
+
 typedef ClassRegistry<LoopActionBase> OurRegistry;
 
 static OurRegistry &registry() {

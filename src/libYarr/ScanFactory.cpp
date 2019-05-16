@@ -9,6 +9,7 @@
 #include "ScanFactory.h"
 
 #include <iomanip>
+#include <iostream>
 
 #include "AllStdActions.h"
 #include "ClassRegistry.h"
