@@ -114,7 +114,7 @@ bool testScanConfig(json config) {
     s.loadConfig(config);
 
     {
-      json histo = config["scan"]["histogrammers"];
+      json histo = config["scan"]["histogrammer"];
 
       int n = histo["n_count"];
       for(int i=0; i<n; i++) {
