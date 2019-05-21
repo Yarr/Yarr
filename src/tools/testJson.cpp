@@ -72,6 +72,7 @@ bool testConnectivity(json config) {
 
     auto chipType = config["chipType"];
 
+    /* Comment out the checking for the configure fiels, as they are only generated after running
     // Loop over chips
     for (unsigned i=0; i<config["chips"].size(); i++) {
       json chip = config["chips"][i];
@@ -88,7 +89,7 @@ bool testConnectivity(json config) {
         return false;
       }
 
-      json cfg = json::parse(cfgFile);
+      //json cfg = json::parse(cfgFile);
       FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(&*fe);
       feCfg->fromFileJson(cfg);
 
@@ -97,6 +98,7 @@ bool testConnectivity(json config) {
 
       cfgFile.close();
     }
+    */
   } catch(json::type_error &te) {
     std::cout << "Connectivity read failed: " << te.what() << "\n";
     return false;
