@@ -33,16 +33,21 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 option(ENABLE_NETIO "Enable NetIO, needs NETIO_DIR setting separately" OFF)
 
 #add libraries
-list(APPEND libs Yarr Spec Util Emu Fe65p2 Fei4 Rce Boc Rd53a KU040)
+list(APPEND libs Yarr Spec Util Emu Fe65p2 Fei4 Rce Boc Rd53a KU040 Rogue)
 if(ENABLE_NETIO)
     list(APPEND libs NetioHW)
 endif()
 
+link_directories(${PROJECT_BINARY_DIR}/../external/src/rogue/lib)
+
 foreach(lib ${libs})
 include_directories(lib${lib}/include)
+include_directories(${PROJECT_BINARY_DIR}/../external/src/rogue/include)
+add_definitions( -DNO_PYTHON )
 file(GLOB SrcFiles lib${lib}/*.cpp)
 list(APPEND LibSrcFiles ${SrcFiles})
 endforeach()
+
 add_library(Yarr STATIC ${LibSrcFiles})
 
 set(NETIO_DIR "/path/to/felix/software" CACHE
@@ -66,7 +71,7 @@ foreach(target ${tools})
 get_filename_component(execname ${target} NAME_WE)
 get_filename_component(srcfile ${target} NAME)
 add_executable(${execname} tools/${srcfile})
-add_dependencies(${execname} Yarr)
+add_dependencies(${execname} Yarr rogue)
 set_target_properties(${execname} PROPERTIES LINKER_LANGUAGE CXX)
 # Whole-archive means not to drop symbols from Yarr.
 # Mainly this is about making sure the auto-registration works.
@@ -75,7 +80,7 @@ if(APPLE)
     target_link_libraries(${execname} ${WRAPPED_YARR} pthread)
 elseif(UNIX)
     set(WRAPPED_YARR -Wl,--whole-archive Yarr -Wl,--no-whole-archive)
-    target_link_libraries(${execname} ${WRAPPED_YARR} pthread rt)
+    target_link_libraries(${execname} ${WRAPPED_YARR} rogue-core pthread rt)
 
     if(ENABLE_NETIO)
         target_link_libraries(${execname} "${NETIO_DIR}/lib/libnetio.so")
