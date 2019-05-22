@@ -16,7 +16,7 @@ The YARR SW supports multiple hardware platforms which have been integrated:
 - YARR PCIe cards (SPEC and XpressK7): link
 - IBL BOC: link
 - Wup KU40: link
-- RCE HSIO2: link
+- Rogue HSIO2/ZCU102: link
 
 ## Requirements
 Hardware:
@@ -25,29 +25,24 @@ Hardware:
 
 Software:
 
-- SLC6 (Scientific Linux CERN 6) or CC7 (CERN CentOs 7)
-- GCC version 7.0 or higher
-    - for example from devtoolset-7, instruction can be found here https://www.softwarecollections.org/en/scls/rhscl/devtoolset-4
+- CentOS 7
+- GCC version 7 or higher
+    - for example from devtoolset-7, instruction can be found here https://www.softwarecollections.org/en/scls/rhscl/devtoolset-7
 
 Quick Install Guide:
-- Using make:
-    - cd YARR/src
-    - make
 - Using cmake:
-    - cmake version 2.8 or higher
-        - for MacOS consider installing cmake from homebrew: http://brew.sh
-    - Atlas RCE SDK for cross compilation and running on RCEs (HSIO2 or COB)
-    - to install in /opt/AtlasRceSDK
-        - sudo mkdir -p /opt/AtlasRceSDK
-        - cd /opt/AtkasRceSDK/ ; curl -s  http://rceprojectportal.web.cern.ch/RceProjectPortal/software/SDK/V0.11.1.tar.gz | sudo tar xvfz - 
+    - cmake version 3 or higher
+    - for ARM target cross compilers are provided by the RCE_SDK
+        - installtion instructions: https://twiki.cern.ch/twiki/bin/viewauth/Atlas/RCEGen3SDK
     - using CMake:
-        - source /opt/AtkasRceSDK/V0.11.0/setup.sh # for RCEs
-        - cd YARR/src
-        - mkdir <builddir>
-        - cd <buildir>
+        - source /opt/rce/setup.sh (for RCE cross compilation setup)
+        - export CENTOS7_ARM32_ROOT=/opt/rce/rootfs/centos7 #(points to cross installed CentOS7)
+        - export CENTOS7_ARM64_ROOT=/opt/rce/rootfs/centos7_64 #for ZCU102 
+        - cd build
         - select one of the supported toolchains
-            - make ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang # requires clang installed on Linux
-            - make ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc # gcc 4.8 or higher
-            - make ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-gcc # ARM/Archlinux on RCE
-            - make ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/macos-clang # MacOS build
+            - cmake ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang # requires clang installed on Linux
+            - cmake ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc # gcc 4.8 or higher
+            - cmake ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm32 # ARM32/Centos7 on RCE
+            - cmake ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm64 # ARM64/Centos7 on zcu102
+            - cmake ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/macos-clang # MacOS build
         - make
