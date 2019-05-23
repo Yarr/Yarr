@@ -26,12 +26,12 @@ job_build_cmake:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     stage: build
     script:
-      - yum -y install centos-release-scl-rh devtoolset-7 make cmake gnuplot
+      - yum -y install centos-release-scl-rh devtoolset-7 make cmake3 gnuplot
       - scl enable devtoolset-7 bash
       - source /opt/rh/devtoolset-7/enable
       - mkdir -p src/cmake_build
       - cd src/cmake_build
-      - cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
+      - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
       - make -j4
       - bin/scanConsole -k
 
