@@ -16,7 +16,7 @@
  * Utility class, used by super-classes.
  */
 class StarCmd {
- protected:
+ public:
   StarCmd();
   ~StarCmd();
 

@@ -9,8 +9,8 @@ std::array<LCB::Frame, 9> StarCmd::command_sequence(int hccid, int abcid, int ad
   std::array<LCB::Frame, 9> result;
 
   // Start is a K2 + ABC/HCC + HCC ID
-  result[0] = LCB::build_pair(LCB::K3, SixEight::encode(hccid&0xf));
-  result[1] = LCB::command_bits(((abcid&0xf) << 2) | ((address>>6)&3));
+  result[0] = LCB::build_pair(LCB::K2, SixEight::encode(0x10 + (hccid&0xf)));
+  result[1] = LCB::command_bits((write << 6) | ((abcid&0xf) << 2) | ((address>>6)&3));
   result[2] = LCB::command_bits((address&0x3f)<<1);
 
   for(int i=0; i<5; i++) {
