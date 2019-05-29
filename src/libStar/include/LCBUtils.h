@@ -100,10 +100,10 @@ namespace LCB {
 
   typedef uint16_t Frame;
 
-  static const uint8_t K0 = SixEight::kcode(0);
-  static const uint8_t K1 = SixEight::kcode(1);
-  static const uint8_t K2 = SixEight::kcode(2);
-  static const uint8_t K3 = SixEight::kcode(3);
+  const uint8_t K0 = SixEight::kcode(0);
+  const uint8_t K1 = SixEight::kcode(1);
+  const uint8_t K2 = SixEight::kcode(2);
+  const uint8_t K3 = SixEight::kcode(3);
 
   constexpr Frame build_pair(uint8_t f, uint8_t s) {
     return (f << 8) | s;
