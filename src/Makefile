@@ -41,6 +41,7 @@ INC_DIRS := $(wildcard */include)
 
 ifneq (${NETIO_DIR},)
   INC_DIRS+= $(NETIO_DIR)/include
+  LDFLAGS += -L$(NETIO_DIR)/lib -lnetio
 endif
 
 INCFLAGS += $(addprefix -I,$(INC_DIRS))
@@ -66,11 +67,17 @@ GCC_MAJOR = $(shell $(CPP) -dumpversion | cut -d'.' -f1)
 GCC_MINOR = $(shell $(CPP) -dumpversion | cut -d'.' -f2)
 
 ifneq ($(UNAME_S), Darwin)
-ifeq ($(findstring $(GCC_MAJOR),0123456),$(GCC_MAJOR))
-#ifeq ($(findstring $(GCC_MINOR),0),$(GCC_MINOR))
-$(error $(CPP) version is too old, need atleast 7.0! Found $(GCC_MAJOR).$(GCC_MINOR))
-#endif
-endif
+ ifeq ($(findstring $(GCC_MAJOR),4),$(GCC_MAJOR))
+  ifeq ($(findstring $(GCC_MINOR),01234567),$(GCC_MINOR))
+   $(warning $(CPP) version is deprecated, support for 4.8 is limited! Found $(GCC_MAJOR).$(GCC_MINOR))
+  else
+   $(error $(CPP) version 4 is too old, try something more recent! Found $(GCC_MAJOR).$(GCC_MINOR))
+  endif
+ else ifeq ($(findstring $(GCC_MAJOR),0123456),$(GCC_MAJOR))
+  # ifeq ($(findstring $(GCC_MINOR),0),$(GCC_MINOR))
+   $(error $(CPP) version is too old, need atleast 7.0! Found $(GCC_MAJOR).$(GCC_MINOR))
+  # endif
+ endif
 endif
 
 # Set build mode specific variables
@@ -108,6 +115,9 @@ $(shell echo $(1) | tr 'a-z' 'A-Z')
 endef
 
 PKGS := tools libSpec libYarr libFei4 libFe65p2 libUtil libEmu libRce libBoc libKU040 libRd53a
+ifneq (${NETIO_DIR},)
+  PKGS+= libNetioHW
+endif
 $(foreach P,$(PKGS),$(eval $(call addPkg,$(patsubst LIB%,%,$(call uc,$(P))),$(P))))
 
 ifeq (${NETIO_DIR},)
@@ -118,10 +128,6 @@ endif
 TARGETS=$(patsubst %.cpp,$(BIN)/%,$(notdir $(TOOLS_FILES)))
 LIB_FILES := $(filter-out $(TOOLS_FILES),$(ALL_FILES))
 LIB_OBJS := $(patsubst %.cpp,$(BUILD)/%.o,$(notdir $(LIB_FILES)))
-
-ifneq (${NETIO_DIR},)
-  PKGS+= libNetioHW
-endif
 
 ######
 ##  Targets

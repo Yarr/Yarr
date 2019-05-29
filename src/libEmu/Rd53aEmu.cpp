@@ -401,8 +401,8 @@ void Rd53aEmu::doTrigger( Rd53aEmu* emu,  const uint8_t pattern, const uint8_t t
 
     enum { Async, Pool };
 
-    auto mode { Async };
-    auto level { 0 };
+    int mode { Async };
+    int level { 0 };
     
     // Finish all async processes before triggering
     while( emu->m_pool->taskSize() ) { std::this_thread::sleep_for( SLEEP_TIME ); }

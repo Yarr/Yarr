@@ -1,3 +1,6 @@
+#ifndef YARR_CLASS_REGISTRY_H
+#define YARR_CLASS_REGISTRY_H
+
 #include <functional>
 #include <map>
 #include <string>
@@ -34,3 +37,5 @@ class ClassRegistry {
         return known;
     }
 };
+
+#endif

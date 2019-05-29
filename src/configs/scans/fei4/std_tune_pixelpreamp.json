@@ -1,0 +1,90 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "TotAnalysis"
+      },
+      "1":{
+	"algorithm": "OccupancyAnalysis",
+        "config": {
+          "createMask": false
+        }
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "1": {
+        "algorithm": "TotMap",
+        "config": {}
+      },
+      "2": {
+        "algorithm": "Tot2Map",
+        "config": {}
+      },
+      "3": {
+        "algorithm": "L1Dist",
+        "config": {}
+      },
+      "4": {
+        "algorithm": "HitPerEvent",
+        "config": {}
+      },
+      "n_count": 5
+    },
+    "loops": [
+      {
+	"config":{
+	  "step": 4,
+	  "max": 15,
+	  "min": 8,
+	  "parameter": "FDAC_FB"
+	},
+	"loopAction": "Fei4PixelFeedback"
+      },
+      {
+        "config": {
+          "enable_lcap": true,
+          "enable_scap": true,
+          "mask": 65537,
+          "max": 16,
+          "min": 0,
+          "step": 1
+        },
+        "loopAction": "Fei4MaskLoop"
+      },
+      {
+        "config": {
+          "max": 4,
+          "min": 0,
+          "mode": 1,
+          "step": 1
+        },
+        "loopAction": "Fei4DcLoop"
+      },
+      {
+        "config": {
+          "count": 100,
+          "delay": 50,
+          "extTrigger": false,
+          "frequency": 10000,
+          "noInject": false,
+          "time": 0
+        },
+        "loopAction": "Fei4TriggerLoop"
+      },
+      {
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "PixelPreampTune",
+    "prescan": {
+        "Trig_Count": 12,
+        "Trig_Lat": 201,
+        "CalPulseWidth": 20
+    }
+  }
+}

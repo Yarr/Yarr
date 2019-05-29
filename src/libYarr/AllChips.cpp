@@ -1,6 +1,8 @@
 #include "AllChips.h"
 #include "ClassRegistry.h"
 
+#include <iostream>
+
 typedef ClassRegistry<FrontEnd> OurRegistry;
 
 static OurRegistry &registry() {

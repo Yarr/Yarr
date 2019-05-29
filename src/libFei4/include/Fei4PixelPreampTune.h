@@ -11,6 +11,7 @@
 
 #include "ScanBase.h"
 
+#include "Fei4.h"
 #include "AllStdActions.h"
 #include "AllFei4Actions.h"
 

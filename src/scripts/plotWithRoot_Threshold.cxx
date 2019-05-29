@@ -94,11 +94,18 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 			yaxistitle = "Number of Pixels";
 			gausrangetitle = "Deviation from the Mean [#sigma] ";
 			rmsrangetitle = "Deviation from the Mean [RMS] ";
-			if (argc <= 4) xbins = 500;
-			else if (argc > 4 ) xbins = 10000/setElectrons; 
+			if (argc <= 4) {
+				xbins = 500;
+				xlow = -10;
+				xhigh = 9990;
+
+			}
+			else if (argc > 4 ) {
+				xbins = 10000/setElectrons;
+				xlow = overwriteXmin;
+				xhigh = overwriteXmax;
+			}
 			range_bins = 6;
-			xlow = -10;
-			xhigh = 9990;
 			range_low = 0;
 			range_high = 6;
 

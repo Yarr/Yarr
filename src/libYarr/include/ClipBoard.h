@@ -9,13 +9,13 @@
 // # Comment: Saves data between processes
 // ################################
 
+#include <memory>
 #include <mutex>
 #include <deque>
 #include <condition_variable>
 
 #include "RawData.h"
 
-#include <iostream>
 #include <typeinfo>
 
 template <class T>
