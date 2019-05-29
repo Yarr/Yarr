@@ -14,7 +14,7 @@ job_build_and_test:
       - /bin/pwd
       - mkdir /tmp/test
       - ls /tmp/
-      - bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p
+      - bin/scanConsole -r ../src/configs/controller/emuCfg.json -c ../src/configs/connectivity/example_fei4b_setup.json -s ../src/configs/scans/fei4/std_digitalscan.json -p
       - ls
       - ls ./data/
       - ls ./data/000001_std_digitalscan/
@@ -42,7 +42,7 @@ job_test_json:
     script:
       - yum -y install npm
       - npm install jsonlint -g
-      - for file in $(find src/configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
+      - for file in $(find ../src/configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
 
 job_build_with_felix:
     # Image of pre-built felix software
