@@ -67,8 +67,9 @@ void NetioRxCore::disableChannel(uint64_t elink){
 }
 
 void NetioRxCore::setRxEnable(uint32_t val) {
-  for(int chan=0; chan<32; chan++) {
-    if((1<<chan) & val) {
+  for(int chan=0; chan<200; chan++) {
+    //if((1<<chan) & val) {
+    if (chan == 128) {
       enableChannel(chan);
     } else {
       disableChannel(chan);
@@ -150,6 +151,8 @@ void NetioRxCore::toFileJson(json &j) {
 void NetioRxCore::fromFileJson(json &j) {
   m_felixhost = j["NetIO"]["host"];
   m_felixport = j["NetIO"]["rxport"];
+  m_fetype = j["NetIO"]["fetype"];
+  m_nioh.setFeType(m_fetype);
   m_nioh.setFelixHost(m_felixhost);
   m_nioh.setFelixRXPort(m_felixport);
 }

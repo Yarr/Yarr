@@ -88,9 +88,10 @@ void NetioTxCore::writeFifo(uint32_t value){
   if(m_debug) cout << "NetioTxCore::writeFifo val=" << hex << setw(8) << setfill('0') << value << dec << endl;
   map<uint64_t,bool>::iterator it;
 
-  for(it=m_elinks.begin();it!=m_elinks.end();it++){
-    writeFifo(it->first,value);
-  }
+  for(it=m_elinks.begin();it!=m_elinks.end();it++)
+    if(it->second) {
+      writeFifo(it->first,value);
+    }
 }
 
 void NetioTxCore::writeFifo(uint32_t chn, uint32_t value){
@@ -409,9 +410,11 @@ void NetioTxCore::fromFileJson(json &j){
    m_manchester = j["NetIO"]["manchester"];
    m_flip       = j["NetIO"]["flip"];
    m_extend     = (j["NetIO"]["extend"]?4:1);
+   m_feType     = j["NetIO"]["fetype"];
 
    cout << "NetioTxCore: " << endl
         << " manchester=" << m_manchester << endl
         << " flip=" << m_flip << endl
-        << " extend=" << m_extend << endl;
+        << " extend=" << m_extend << endl
+        << " feType=" << m_feType << endl;
 }

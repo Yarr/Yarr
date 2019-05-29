@@ -81,6 +81,9 @@ public:
   void fromFileJson(json &j);
 
 private:
+  // used as flag for merge
+  std::string m_fetype;
+
 
   void enableChannel(uint64_t chn);
   void disableChannel(uint64_t chn);

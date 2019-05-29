@@ -8,7 +8,8 @@
         "rxport": 12350,
         "manchester": false,
         "flip": false,
-        "extend": false
+        "extend": false,
+        "fetype": "rd53a"
       }
     }
   }

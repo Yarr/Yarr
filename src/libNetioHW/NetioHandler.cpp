@@ -181,26 +181,22 @@ void NetioHandler::addChannel(uint64_t chn){
 
           // RS: Remove header parse
           uint32_t my_chn=header.elinkid;
-          if(header.gbtid<=1){ //TODO: Revise this!!!
-		my_chn+=header.gbtid*32;
-	  } else{
-		//std::cout << "NetIO msg elinkid:" << header.elinkid << ", gbtid:" << header.gbtid << std::endl;
-		return;
-	  }
+	  my_chn += header.gbtid*64; 
 
-          uint32_t numRd53AWords = (uint32_t)((msg_size-offset)/4); //each RD53A word is 4 bytes (32 bits)
+          uint32_t numWords = (uint32_t)((msg_size-offset)/4); //each RD53A word is 4 bytes (32 bits)
 
-	  if((offset+4*numRd53AWords) != msg_size)
+	  
+	  if((offset+4*numWords) != msg_size && m_feType == "rd53a") // this is rd53a specific; there may need to be a similar thing for strips
 		std::cout<<"\nWARNING: the message size is not compatible with RD53A data format.\n";
 
-	  if(numRd53AWords==0)
+	  if(numWords==0)
 		return;
 
-	  uint32_t *buffer = new uint32_t[numRd53AWords]; 
-	  memcpy(buffer, (uint32_t *)&data[offset], numRd53AWords*4);
+	  uint32_t *buffer = new uint32_t[numWords]; 
+	  memcpy(buffer, (uint32_t *)&data[offset], numWords*4);
 
 	  //Sasha: print out the data
-	  //printf("msg size: %d \n", numRd53AWords);
+	  printf("msg size: %d \n", numWords);
           //for(uint32_t i=0; i<numRd53AWords; i++ ) { //&&  i < 13; ++i) {
 	  //      printf("event number: %i ", event_number);
           //	printf("%08x ", buffer[i]); 
@@ -209,7 +205,7 @@ void NetioHandler::addChannel(uint64_t chn){
 	  //printf(" .... \n");
 	  //event_number++;
           
-	  RawData* rd = new RawData(my_chn, buffer, numRd53AWords);
+	  RawData* rd = new RawData(my_chn, buffer, numWords);
 	  std::unique_ptr<RawData> rdp =  std::unique_ptr<RawData>(rd);
 	  rawData.pushData(std::move(rdp));
 
