@@ -71,9 +71,9 @@ job_build_with_felix:
      - source ${FELIX_DIR}/${CONFIG}/setup.sh
      - source ${GCC_SCRIPT}
      - gcc --version
-     - mkdir -p src/cmake_build
-     - cd src/cmake_build
-     - cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DENABLE_NETIO:BOOL=ON -DNETIO_DIR:PATH=${FELIX_DIR}/${CONFIG}
+     - mkdir -p cmake_build
+     - cd cmake_build
+     - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../src/cmake/linux-gcc -DENABLE_NETIO:BOOL=ON -DNETIO_DIR:PATH=${FELIX_DIR}/${CONFIG}
      - make -j4
      - bin/scanConsole -k
 
