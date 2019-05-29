@@ -30,6 +30,8 @@ Software:
     - for example from devtoolset-7, instruction can be found here https://www.softwarecollections.org/en/scls/rhscl/devtoolset-7
 
 Quick Install Guide:
+- download from git 
+	- git clone -b devel_rogue https://:@gitlab.cern.ch:8443/YARR/YARR.git
 - Using cmake:
     - cmake version 3 or higher
     - for ARM target cross compilers are provided by the RCE_SDK

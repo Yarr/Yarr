@@ -40,7 +40,7 @@ void RogueReceiver::acceptFrame ( std::shared_ptr<rogue::interfaces::stream::Fra
     // Get the data pointer from current position
     auto *src = iter.ptr ();
     uint8_t *data=(uint8_t*)src;
-    if((_port==5) && ((nbytes%8)==0)) {
+    if((_port>=4 or _port<=7) && ((nbytes%8)==0)) {
 //	  uint32_t tlutrigword= (0x1ffff<<15) + (_com->readTLUtrigword()&0x7fff);//15bits TLU trigword
 //	  //std::cout<<"tlutrigword="<<tlutrigword<<std::endl;
 //      _com->queue_data(&tlutrigword,1);      
@@ -134,9 +134,16 @@ uint32_t  RogueCom::getCurSize(){
   return size;
 }
 bool  RogueCom::isEmpty() {
-  tx_lock.lock();
+  //tx_lock.lock();
   bool result=txfifo.empty();
-  tx_lock.unlock();
+  //tx_lock.unlock();
+
+  if(result==false){
+	  forceRelaseTxfifo=1;
+	  releaseFifo();
+	  result=txfifo.empty();
+  }
+
   return result;
 }
 uint32_t  RogueCom::read32(){
@@ -158,15 +165,19 @@ uint32_t  RogueCom::readBlock32(uint32_t *buf, uint32_t length){
   return l;
 }
 void  RogueCom::write32(uint32_t value){
-  tx_lock.lock();
+  //tx_lock.lock();
   txfifo.push_back(value);
-  tx_lock.unlock();
+  //tx_lock.unlock();
 }
 void  RogueCom::releaseFifo(){
-  tx_lock.lock();
-  configStream->send((uint8_t*)txfifo.data(),sizeof(uint32_t)*txfifo.size());
-  txfifo.clear();
-  tx_lock.unlock();
+  if(forceRelaseTxfifo || txfifo.size()>2048){ 
+  //tx_lock.lock();
+	  configStream->send((uint8_t*)txfifo.data(),4*txfifo.size());
+	  txfifo.clear();
+	  forceRelaseTxfifo=false;
+  //tx_lock.unlock();
+  }
+
 }
 void RogueCom::enableLane(uint32_t mask){
   uint32_t temp=mask&0xf;

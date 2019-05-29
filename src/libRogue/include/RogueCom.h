@@ -151,6 +151,9 @@ class RogueCom  {
   void setFirmwareTrigger(bool enable) {
     firmwareTrigger=enable;
   }
+  void setForceRelaseTxfifo(bool enable=true) {
+	  forceRelaseTxfifo=enable;
+  }
   bool getFirmwareTrigger() {return firmwareTrigger;}
  protected:
  private:	
@@ -161,6 +164,7 @@ class RogueCom  {
   uint32_t trigEmu;
   uint32_t sysReg;
   std::vector<uint32_t> txfifo;
+  bool forceRelaseTxfifo;
   std::queue<uint32_t> rxfifo;
   std::mutex rx_lock;
   std::mutex tx_lock;
