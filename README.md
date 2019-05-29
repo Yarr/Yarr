@@ -40,9 +40,9 @@ Quick Install Guide:
         - export CENTOS7_ARM64_ROOT=/opt/rce/rootfs/centos7_64 #for ZCU102 
         - cd build
         - select one of the supported toolchains
-            - cmake ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang # requires clang installed on Linux
-            - cmake ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc # gcc 4.8 or higher
-            - cmake ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm32 # ARM32/Centos7 on RCE
-            - cmake ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm64 # ARM64/Centos7 on zcu102
-            - cmake ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/macos-clang # MacOS build
+            - cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../src/cmake/linux-clang # requires clang installed on Linux
+            - cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../src/cmake/linux-gcc # gcc 4.8 or higher
+            - cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../src/cmake/rce-arm32 # ARM32/Centos7 on RCE
+            - cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../src/cmake/rce-arm64 # ARM64/Centos7 on zcu102
+            - cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../src/cmake/macos-clang # MacOS build
         - make
