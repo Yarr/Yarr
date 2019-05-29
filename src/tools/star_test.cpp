@@ -2,22 +2,45 @@
 #include <iostream>
 
 #include "SpecController.h"
+#include "AllHwControllers.h"
 #include "StarChips.h"
 #include "LCBUtils.h"
 
 int main(int argc, char *argv[]) {
-    int specNum = 0;
-    if (argc > 1)
-            specNum = std::stoi(argv[1]);
+    std::string controller;
+    std::string controllerType;
 
-    SpecController spec;
-    spec.init(specNum);
+    if (argc > 1)
+      controller = argv[1];
+
+    std::unique_ptr<HwController> hwCtrl = nullptr;
+    if(controller.empty()) {
+	controllerType = "spec";
+        hwCtrl = StdDict::getHwController(controllerType);
+        // hwCtrl->init(0);
+    } else {
+        json ctrlCfg;
+        try {
+            ctrlCfg = json::parse(controller);
+        } catch (json::parse_error &e) {
+            std::cerr << "#ERROR# Could not parse config: " << e.what() << std::endl;
+            return 1;
+        }
+	controllerType = ctrlCfg["ctrlCfg"]["type"];
+        hwCtrl = StdDict::getHwController(controllerType);
+        hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
+    }
+
+    HwController &spec = *hwCtrl;
     spec.toggleTrigAbort();
     spec.setTrigEnable(0);
     
-    //Send IO config to active FMC
-    spec.writeSingle(0x6<<14 | 0x0, 0x9ce730);
-    spec.writeSingle(0x6<<14 | 0x1, 0xF);
+    if(controllerType == "spec") {
+      //Send IO config to active FMC
+      SpecController &s = *dynamic_cast<SpecController*>(&*hwCtrl);
+      s.writeSingle(0x6<<14 | 0x0, 0x9ce730);
+      s.writeSingle(0x6<<14 | 0x1, 0xF);
+    }
     spec.setCmdEnable(0xFFFF); // LCB Port D
     spec.setRxEnable(0x0);
 
