@@ -91,15 +91,16 @@ done
 #installing CERN ROOT if it's not setup.
 echo ""
 echo "Start checking if the ROOT software is available..."
-rootloc+=`pwd`/"root/bin/thisroot.sh"
+rootver="root_v6.16.00"
+rootloc+=`pwd`"/root/bin/thisroot.sh"
 if which root 2>&1| grep "no root in" > /dev/null; then
-    if [ -e ./root/bin ]; then
+    if [ -e ./${rootver}/bin ]; then
         echo "ROOT directory was found. Skip downloading it..."
     else
-        echo "ROOT not found. Downloading the pre-compiled version of 6.14.06..."
-        wget https://root.cern.ch/download/root_v6.14.06.source.tar.gz
-        tar zxf root_v6.14.06.source.tar.gz
-        rm -f root_v6.14.06.source.tar.gz
+        echo "ROOT not found. Downloading the pre-compiled version of ${rootver}..."
+        wget https://root.cern.ch/download/${rootver}.Linux-centos7-x86_64-gcc4.8.tar.gz
+        tar zxf ${rootver}.Linux-centos7-x86_64-gcc4.8.tar.gz
+        rm -f ${rootver}.Linux-centos7-x86_64-gcc4.8.tar.gz
     fi
     if grep "thisroot.sh" ~/.bashrc > /dev/null; then
         echo "thisroot.sh is already sourced in your .bashrc."
@@ -183,9 +184,9 @@ else
     sudo mkdir -p /var/lib/mongo
 fi
 #wget https://cernbox.cern.ch/index.php/s/kNz1xyhZ5bov7Iu
-wget https://osksn2.hep.sci.osaka-u.ac.jp/~hirose/mongo_expmple.tar.gz
+wget --no-check-certificate http://osksn2.hep.sci.osaka-u.ac.jp/~hirose/mongo_example.tar.gz
 echo "Unarchiving..."
-tar zxf mongo_expmple.tar.gz
+tar zxf mongo_example.tar.gz
 sudo mv ./var/lib/mongo /var/lib
 sudo rm -rf ./var
 sudo chcon -R -u system_u -t mongod_var_lib_t /var/lib/mongo/
