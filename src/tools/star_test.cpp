@@ -46,8 +46,18 @@ int main(int argc, char *argv[]) {
     spec.setRxEnable(0x0);
 
     StarChips star(&spec);
-    std::array<uint16_t, 9> part1 = star.command_sequence(15, 15, 1, 41, 0x1); //Turn-off 8b10b
-    std::array<uint16_t, 9> part2 = star.command_sequence(15, 15, 1, 41, 0x1); //Turn-off 8b10b
+
+    uint32_t regNum = 41;
+    // Default (power-on) value
+    uint32_t regVal = 0x00020001;
+    //Turn-off 8b10b
+    // Bit 16 = 1, Bit 17 = 0
+    regVal |= (1<<16);
+    regVal &= ~(1<<17);
+
+    std::array<uint16_t, 9> part1 = star.command_sequence(15, 15, 1, regNum, regVal);
+    // Need to write two registers
+    std::array<uint16_t, 9> part2 = star.command_sequence(15, 15, 1, regNum+1, regVal);
 
     spec.writeFifo((LCB::IDLE << 16) + LCB::IDLE);
     spec.writeFifo((part1[0] << 16) + part1[1]);
