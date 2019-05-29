@@ -35,6 +35,7 @@
 #include "Fei4Histogrammer.h"
 #include "Fei4Analysis.h"
 
+#include "DBHandler.h"
 #if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
 
 //  #include <errno.h>
@@ -83,6 +84,9 @@ int main(int argc, char *argv[]) {
     int target_charge = -1;
     int target_tot = -1;
     int mask_opt = -1;
+
+    bool dbUse = false;
+    std::string dbTestInfo = "";
     
     unsigned runCounter = 0;
 
@@ -109,7 +113,7 @@ int main(int argc, char *argv[]) {
     oF.close();
 
     int c;
-    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:")) != -1) {
+    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:WI:E:")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
@@ -162,6 +166,12 @@ int main(int argc, char *argv[]) {
                     count++;
 
                 }
+                break;
+            case 'W': // Write to DB
+                dbUse = true;
+                break;
+            case 'I':
+                dbTestInfo = std::string(optarg);
                 break;
             case '?':
                 if(optopt == 's' || optopt == 'n'){
@@ -234,6 +244,26 @@ int main(int argc, char *argv[]) {
         std::cerr << "Error creating symlink to output directory!" << std::endl;
     }
 
+    // Initial setting local DBHandler
+    DBHandler *database = new DBHandler(dbUse);
+    if (dbUse) {
+        std::cout << std::endl;
+        std::cout << "\033[1;31m################\033[0m" << std::endl;
+        std::cout << "\033[1;31m# Set Database #\033[0m" << std::endl;
+        std::cout << "\033[1;31m################\033[0m" << std::endl;
+        std::cout << "-> Setting user's information" << std::endl;
+        database->setUser();
+        database->setTestRunInfo(dbTestInfo);
+        std::cout << "-> Setting Connectivity Configs" << std::endl;
+        database->setConnCfg(cConfigPaths);
+        std::cout << "-> Setting TestRun Info" << std::endl;
+        std::cout << "-> Setting Target ToT: " << target_tot << std::endl;
+        std::cout << "-> Setting Target Charge: " << target_charge << std::endl;
+        database->writeTestRunStart(strippedScan, cConfigPaths, runCounter, target_charge, target_tot);
+        database->writeConfig("", ctrlCfgPath, "controller", "ctrlCfg", "testRun"); //controller config
+        database->writeConfig("", scanType, strippedScan, "scanCfg", "testRun"); //scan config
+    }
+
     // Timestamp
     std::time_t now = std::time(NULL);
     struct tm *lt = std::localtime(&now);
@@ -253,6 +283,7 @@ int main(int argc, char *argv[]) {
     scanLog["runNumber"] = runCounter;
     scanLog["targetCharge"] = target_charge;
     scanLog["targetTot"] = target_tot;
+    scanLog["scanType"] = strippedScan;
 
     std::cout << std::endl;
     std::cout << "\033[1;31m#################\033[0m" << std::endl;
@@ -376,6 +407,12 @@ int main(int argc, char *argv[]) {
                         dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
                         backupCfgFile << std::setw(4) << backupCfg;
                         backupCfgFile.close();
+                        if (dbUse) {
+                            std::string serialNumber = config["module"]["serialNumber"];
+                            int chipId = chip["chipId"];
+                            feCfg->setDbId(database->getComponentTestRun(serialNumber, chipId));
+                            database->writeConfig(feCfg->getDbId(), outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getConfigFile() + ".before", "beforeCfg", "chipCfg", "componentTestRun");
+                        }
                     }
                 } catch (json::parse_error &e) {
                     std::cerr << __PRETTY_FUNCTION__ << " : " << e.what() << std::endl;
@@ -583,6 +620,30 @@ int main(int argc, char *argv[]) {
     hwCtrl.reset();
 
     // Save scan log
+    if (dbUse) {
+        json database;
+        database["start"] = timestamp;
+        now = std::time(NULL);
+        lt = std::localtime(&now);
+        strftime(timestamp, 20, "%F_%H:%M:%S", lt);
+        database["finish"] = timestamp;
+        std::string dbuser = getenv("DBUSER");
+        std::string user_path = home + "/.yarr/" + dbuser + "_user.json";
+        std::ifstream user_ifs(user_path);
+        json user_json = json::parse(user_ifs);
+        database["userCfg"] = user_json;
+        if (dbTestInfo != "") {
+            std::ifstream info_ifs(dbTestInfo);
+            json tr_info_j = json::parse(info_ifs);
+            database["testInfo"] = tr_info_j;
+        }
+        std::string address_path = home + "/.yarr/address";
+        std::ifstream address_ifs(address_path);
+        std::string address;
+        address_ifs >> address;
+        database["address"] = address;
+        scanLog["database"] = database;
+    }
     std::ofstream scanLogFile(outputDir + "scanLog.json");
     scanLogFile << std::setw(4) << scanLog;
     scanLogFile.close();
@@ -616,9 +677,12 @@ int main(int argc, char *argv[]) {
             dynamic_cast<FrontEndCfg*>(fe)->toFileJson(backupCfg);
             backupCfgFile << std::setw(4) << backupCfg;
             backupCfgFile.close(); 
+            if (dbUse) {
+                database->writeConfig(dynamic_cast<FrontEndCfg*>(fe)->getDbId(), outputDir + dynamic_cast<FrontEndCfg*>(fe)->getConfigFile() + ".after", "afterCfg", "chipCfg", "componentTestRun");
+            }
 
             // Plot
-            if (doPlots) {
+            if (doPlots||dbUse) {
                 std::cout << "-> Plotting histograms of FE " << dynamic_cast<FrontEndCfg*>(fe)->getRxChannel() << std::endl;
                 std::string outputDirTmp = outputDir;
 
@@ -629,6 +693,10 @@ int main(int argc, char *argv[]) {
                     std::unique_ptr<HistogramBase> histo = output.popData();
                     histo->plot(name, outputDirTmp);
                     histo->toFile(name, outputDir);
+                    if (dbUse) {
+                        std::string file_path = outputDir + name + "_" + histo->getName();
+                        database->writeAttachment(dynamic_cast<FrontEndCfg*>(fe)->getDbId(), file_path, histo->getName());
+                    }
                 }
             }
         }
@@ -638,6 +706,27 @@ int main(int argc, char *argv[]) {
     if(doPlots && (system(lsCmd.c_str()) < 0)) {
         std::cout << "Find plots in: " << dataDir + "last_scan" << std::endl;
     }
+
+    // Register test info into database
+    if (dbUse) {
+        std::cout << std::endl;
+        std::cout << "\033[1;31m##################\033[0m" << std::endl;
+        std::cout << "\033[1;31m# Write Database #\033[0m" << std::endl;
+        std::cout << "\033[1;31m##################\033[0m" << std::endl;
+
+        std::cout << "Run Number: " << runCounter << std::endl;
+        std::cout << "Test Type: " << strippedScan << std::endl;
+        std::cout << "Target Charge: " << target_charge << std::endl;
+        std::cout << "Target ToT: " << target_tot << std::endl;
+        std::cout << "Path to Test Configuration: " << scanType << std::endl;
+        std::cout << "Path to Controller Configuration: " << scanType << std::endl;
+        std::cout << "Path to Test Run Information: " << dbTestInfo << std::endl;
+
+        database->writeTestRunFinish(strippedScan, cConfigPaths, runCounter, target_charge, target_tot);
+        std::cout << "Done."<< std::endl;
+    }
+    delete database;
+
     return 0;
 }
 

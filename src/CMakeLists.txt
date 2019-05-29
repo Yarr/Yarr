@@ -27,6 +27,13 @@ add_compile_options(-Wfatal-errors)
 add_compile_options(-Wno-deprecated)
 add_compile_options(-std=c++11)
 
+# Check if mongocxx exist
+string(FIND "$ENV{CPATH}" "rh-mongodb36" MONGOCXX_RESULT)
+if(NOT ${MONGOCXX_RESULT} EQUAL -1)
+    set(ENABLE_MONGODB ON)
+    option(MONGOCXX_INCLUDE "Use Mongocxx driver" ON)
+endif()
+
 # Add -fPIC for (e.g. linking to shared libraries)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -50,6 +57,9 @@ set(NETIO_DIR "/path/to/felix/software" CACHE
 
 if(ENABLE_NETIO)
   include_directories("${NETIO_DIR}/include")
+endif()
+if(ENABLE_MONGODB)
+    include_directories(/opt/rh/rh-mongodb36/root/usr/include/mongocxx/v_noabi /opt/rh/rh-mongodb36/root/usr/include/bsoncxx/v_noabi)
 endif()
 
 #add executables
@@ -79,6 +89,9 @@ elseif(UNIX)
 
     if(ENABLE_NETIO)
         target_link_libraries(${execname} "${NETIO_DIR}/lib/libnetio.so")
+    endif()
+    if(ENABLE_MONGODB)
+        target_link_libraries(${execname} /opt/rh/rh-mongodb36/root/usr/lib64 mongocxx bsoncxx)
     endif()
 endif()
 # Not sure why rt is not linked by default here

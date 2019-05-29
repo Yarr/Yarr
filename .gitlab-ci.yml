@@ -6,6 +6,8 @@ job_build_and_test:
     script:
       - scl enable devtoolset-7 bash
       - source /opt/rh/devtoolset-7/enable
+      - yum -y install rh-mongodb36-mongo-cxx-driver-devel rh-mongodb36-boost-devel openssl-devel
+      - source /opt/rh/rh-mongodb36/enable
       - cd src
       - which g++
       - make
@@ -28,6 +30,8 @@ job_build_cmake:
     script:
       - scl enable devtoolset-7 bash
       - source /opt/rh/devtoolset-7/enable
+      - yum -y install rh-mongodb36-mongo-cxx-driver-devel rh-mongodb36-boost-devel openssl-devel
+      - source /opt/rh/rh-mongodb36/enable
       - mkdir -p src/cmake_build
       - cd src/cmake_build
       - cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
