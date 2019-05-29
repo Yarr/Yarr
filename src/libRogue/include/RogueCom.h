@@ -95,6 +95,13 @@ class RogueCom  {
     return temp;
 
   }
+  uint32_t readNTC() {
+    uint32_t temp;
+     readRegister(NTCReg+ _port*4,temp);
+	 std::cout<<"NTC port "<<_port<<" = "<<temp<<std::endl;
+    return temp;
+
+  }
   void setTrigEmu(uint32_t *trigWords,uint32_t length,uint32_t freq,uint32_t iter) {
     // fill LUT
 
@@ -152,7 +159,7 @@ class RogueCom  {
     firmwareTrigger=enable;
   }
   void setForceRelaseTxfifo(bool enable=true) {
-	  forceRelaseTxfifo=enable;
+    forceRelaseTxfifo=enable;
   }
   bool getFirmwareTrigger() {return firmwareTrigger;}
  protected:
@@ -163,6 +170,7 @@ class RogueCom  {
   uint32_t trigTLU;
   uint32_t trigEmu;
   uint32_t sysReg;
+  uint32_t NTCReg;
   std::vector<uint32_t> txfifo;
   bool forceRelaseTxfifo;
   std::queue<uint32_t> rxfifo;

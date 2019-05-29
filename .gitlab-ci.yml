@@ -2,11 +2,12 @@ job_build_and_test:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     stage: build
     script:
-      - yum -y install centos-release-scl-rh devtoolset-7 make gnuplot
+      - yum -y install centos-release-scl-rh devtoolset-7 make gnuplot cmake3
       - scl enable devtoolset-7 bash
       - source /opt/rh/devtoolset-7/enable
-      - cd src
-      - which g++
+      - mkdir  cmake_build
+      - cd cmake_build
+      - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../src/cmake/linux-gcc
       - make
       - export USER=test
       - echo $USER
@@ -64,7 +65,7 @@ job_build_with_felix:
      # Temporary fix for unexpected change in container (Apr '19)
      - "[[ -d ${FELIX_DIR}/${CONFIG}/include/netio ]] || mkdir ${FELIX_DIR}/${CONFIG}/include/netio"
      - "[[ -f ${FELIX_DIR}/${CONFIG}/include/netio/netio.hpp ]] || mv ${FELIX_DIR}/${CONFIG}/include/{,netio/}netio.hpp"
-     - yum -y install make cmake gnuplot glibc-devel which
+     - yum -y install make cmake3 gnuplot glibc-devel which
      # TBB lib is in FELIX image, but we need the includes to build
      - yum -y install tbb tbb-devel
      # Run setup for YARR

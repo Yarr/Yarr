@@ -121,6 +121,7 @@ void RogueCom::connect(const std::string &conn,uint32_t port) {
     throw;
   }
   sysReg=0x00030000;
+  NTCReg=0x00040000;
   rxPhyMon= 0x01000000*(port+1) + 0x00100000;    
   trigEmu=0x05000000+0x20000;
   trigLUT=0x05000000+0x10000;

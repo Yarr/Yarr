@@ -15,8 +15,9 @@ void RogueController::loadConfig(json &j) {
   std::shared_ptr<RogueCom> com=RogueCom::getInstance();
   std::string conn=j["connection"];
   unsigned  enableMask=j["enableMask"];
+  uint32_t port=j["port"];  
 
-  com->connect(conn,0);
+  com->connect(conn,port);
   com->enableLane(enableMask);
   com->enableDebugStream(false);
 

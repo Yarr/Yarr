@@ -54,18 +54,26 @@ void RogueTxCore::doTriggerCnt() {
   if(!m_com->getFirmwareTrigger()) {
     for(unsigned i=0;i<m_trigCnt;i++) {
       for(unsigned j=0;j<m_trigWordLength;j++)
-	m_com->write32(m_trigWord[m_trigWordLength-1-j]);
-      m_com->releaseFifo();
+		m_com->write32(m_trigWord[m_trigWordLength-1-j]);
+      m_com->setForceRelaseTxfifo();//zixu
+	  m_com->releaseFifo();
       std::this_thread::sleep_for(std::chrono::microseconds((int)(1e6/m_trigFreq)));    
     } 
   } else {
     m_com->setTrigEmu(m_trigWord,m_trigWordLength,m_trigFreq,m_trigCnt);
     m_com->enableTrig();  
-    double delay=1000/m_trigFreq*m_trigCnt*1.1;
-    uint32_t count=0;
-    while(m_com->trigBusy())  {count++; std::this_thread::sleep_for(std::chrono::milliseconds((unsigned)delay));}
+    double delay=1e6/m_trigFreq*m_trigCnt*1.1;
+    //uint32_t count=0;
+    //while(m_com->trigBusy())
+	//{
+	//	//count++;
+	//	std::this_thread::sleep_for(std::chrono::microseconds((unsigned)delay));
+	//}
+	std::this_thread::sleep_for(std::chrono::microseconds((unsigned)delay));
   }
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  //std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  //std::cout<<"zixu sleep 3"<<std::endl;
+  //std::this_thread::sleep_for(std::chrono::milliseconds(10));
   trigProcRunning = false;
 }
 

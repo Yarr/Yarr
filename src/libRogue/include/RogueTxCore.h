@@ -22,6 +22,7 @@ class RogueTxCore : virtual public TxCore {
 
         void writeFifo(uint32_t value);
         void releaseFifo() {m_com->releaseFifo();} // Add some padding
+		void setForceRelaseTxfifo(bool enable=true) { m_com->setForceRelaseTxfifo(enable);}
         
         void setCmdEnable(uint32_t value) { }
         uint32_t getCmdEnable() {return 0x0;}
