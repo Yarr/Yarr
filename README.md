@@ -31,7 +31,7 @@ Software:
 
 Quick Install Guide:
 - download from git 
-	- git clone -b devel_rogue https://:@gitlab.cern.ch:8443/YARR/YARR.git
+	- git clone -b devel_rogue ssh://git@gitlab.cern.ch:7999/YARR/YARR.git
 - Using cmake:
     - cmake version 3 or higher
     - for ARM target cross compilers are provided by the RCE_SDK

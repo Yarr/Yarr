@@ -67,6 +67,7 @@ class Histo2d : public HistogramBase {
 
     private:
         double *data;
+        bool *isFilled;
 
         double underflow;
         double overflow;
@@ -85,7 +86,7 @@ class Histo2d : public HistogramBase {
         double min;
         unsigned entries;
 
-        std::map<unsigned, bool> isFilled;
+        //std::map<unsigned, bool> isFilled;
 };
 
 #endif
