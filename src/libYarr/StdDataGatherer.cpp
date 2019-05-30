@@ -70,12 +70,12 @@ void StdDataGatherer::execPart2() {
             if (newData != NULL) {
                 rdc->add(newData);
                 count += newData->words;
-		newData = NULL;
+                newData = NULL;
             }
             std::this_thread::sleep_for(std::chrono::microseconds(100));
-        } while (newData != NULL && signaled == 0 && !killswitch);
+        } while (newData != NULL && signaled == 0 && !killswitch && g_rx->getCurCount() != 0);
         if (newData != NULL)
-		delete newData;
+            delete newData;
         rdc->stat = *g_stat;
         storage->pushData(std::move(rdc));
         if (signaled == 1 || killswitch) {
@@ -83,9 +83,9 @@ void StdDataGatherer::execPart2() {
             std::cout << "Abort will leave buffers full of data!" << std::endl;
             g_tx->toggleTrigAbort();
         }
-        std::this_thread::sleep_for(std::chrono::microseconds(500));
+        std::this_thread::sleep_for(g_rx->getWaitTime());
     }
-        
+
     m_done = true;
     counter++;
 }

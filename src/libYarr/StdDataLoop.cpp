@@ -67,8 +67,8 @@ void StdDataLoop::execPart2() {
         } while (newData != NULL);
         //delete newData;
     }
-    // Gather rest of data after timeout (~0.1ms)
-    std::this_thread::sleep_for(std::chrono::microseconds(500));
+    // Gather rest of data after timeout (defined by controller)
+    std::this_thread::sleep_for(g_rx->getWaitTime());
     do {
         //curCnt = g_rx->getCurCount();
         newData =  g_rx->readData();
@@ -77,7 +77,7 @@ void StdDataLoop::execPart2() {
             count += newData->words;
             rdc->add(newData);
         }
-    } while (newData != NULL);
+    } while (newData != NULL && g_rx->getCurCount() != 0);
     delete newData;
     
     rdc->stat = *g_stat;
