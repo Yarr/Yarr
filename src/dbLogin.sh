@@ -145,6 +145,9 @@ do
     echo "Are you sure that's correct? [y/n]"
     read -p "> " answer
 done
+
+dbcfg=${HOME}/.yarr/database.json
+
 if [ ${answer} == "y" ]; then
     echo "{" > ${cfg}
     echo "    \"userName\": \"${name}\"," >> ${cfg}
@@ -172,7 +175,6 @@ else
     return 0
 fi
 
-dbcfg=${HOME}/.yarr/database.json
 if [ ! -f ${dbcfg} ]; then
     echo "{" > ${dbcfg}
     echo "    \"stage\": [" >> ${dbcfg}
