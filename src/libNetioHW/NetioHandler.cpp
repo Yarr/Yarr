@@ -155,7 +155,7 @@ void NetioHandler::addChannel(uint64_t chn){
     //AddChannel gets a callback function ptr, and bind it to the socket.
     m_sub_sockets[chn] =  new netio::low_latency_subscribe_socket( m_context, [&](netio::endpoint& ep, netio::message& msg) 
       {
-	static int event_number = 0;
+	//static int event_number = 0;
         //uint32_t cid = chn;
 	const uint32_t my_headersize = sizeof(felix::base::FromFELIXHeader);
 	size_t msg_size = msg.size();
