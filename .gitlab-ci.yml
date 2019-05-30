@@ -54,10 +54,12 @@ job_build_with_felix:
      FELIX_DIR: /opt/felix/felix-nightly
      # LCG style config identifier
      CONFIG: x86_64-centos7-gcc62-opt
-     GCC_SCRIPT: /cvmfs/sft.cern.ch/lcg/releases/gcc/6.2.0/x86_64-centos7/setup.sh
     tags:
      - cvmfs
     script:
+     - yum -y install centos-release-scl-rh devtoolset-7 make cmake3 gnuplot
+     - scl enable devtoolset-7 bash
+     - source /opt/rh/devtoolset-7/enable
      # Which versions are present
      - ls ${FELIX_DIR}/..
      # Which configurations are present
@@ -70,7 +72,6 @@ job_build_with_felix:
      - yum -y install cmake3 gnuplot glibc-devel which
      # Run setup for YARR
      - source ${FELIX_DIR}/${CONFIG}/setup.sh
-     - source ${GCC_SCRIPT}
      - gcc --version
      - mkdir -p cmake_build
      - cd cmake_build
