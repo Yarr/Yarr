@@ -8,7 +8,7 @@ job_build_and_test:
       - mkdir  cmake_build
       - cd cmake_build
       - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
-      - make
+      - make install -j4
       - export USER=test
       - echo $USER
       - /bin/pwd
@@ -34,7 +34,7 @@ job_build_cmake:
       - mkdir -p cmake_build
       - cd cmake_build
       - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
-      - make -j4
+      - make install -j4
       - cd ../installed
       - x86_64/bin/scanConsole -k
 
@@ -75,7 +75,7 @@ job_build_with_felix:
      - mkdir -p cmake_build
      - cd cmake_build
      - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DENABLE_NETIO:BOOL=ON -DNETIO_DIR:PATH=${FELIX_DIR}/${CONFIG}
-     - make -j4
+     - make install -j4
      - cd ../installed
      - x86_64/bin/scanConsole -k
 

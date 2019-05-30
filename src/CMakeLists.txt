@@ -39,7 +39,7 @@ if(ENABLE_NETIO)
 endif()
 
 link_directories(${PROJECT_BINARY_DIR}/../external/src/rogue/lib)
-link_directories(${PROJECT_BINARY_DIR}/lib)
+link_directories(${PROJECT_BINARY_DIR}/../lib)
 
 foreach(lib ${libs})
 add_definitions( -DNO_PYTHON )
@@ -76,6 +76,8 @@ get_filename_component(srcfile ${target} NAME)
 add_executable(${execname} tools/${srcfile})
 add_dependencies(${execname} Yarr rogue tbb_2019)
 set_target_properties(${execname} PROPERTIES LINKER_LANGUAGE CXX)
+link_directories(${PROJECT_BINARY_DIR}/../external/src/rogue/lib)
+link_directories(${PROJECT_BINARY_DIR}/../lib)
 # Whole-archive means not to drop symbols from Yarr.
 # Mainly this is about making sure the auto-registration works.
 if(APPLE)
