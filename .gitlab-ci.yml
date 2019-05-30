@@ -7,21 +7,22 @@ job_build_and_test:
       - source /opt/rh/devtoolset-7/enable
       - mkdir  cmake_build
       - cd cmake_build
-      - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../src/cmake/linux-gcc
+      - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
       - make
       - export USER=test
       - echo $USER
       - /bin/pwd
       - mkdir /tmp/test
       - ls /tmp/
-      - bin/scanConsole -r ../src/configs/controller/emuCfg.json -c ../src/configs/connectivity/example_fei4b_setup.json -s ../src/configs/scans/fei4/std_digitalscan.json -p
+      - cd ../installed
+      - x86_64/bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p
       - ls
       - ls ./data/
       - ls ./data/000001_std_digitalscan/
       - cat ./data/000001_std_digitalscan/*_OccupancyMap.dat
       - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.dat | grep -o 100 | wc -l`
       - if [ "$NUM100" != "26880" ]; then exit 2; fi
-      - bin/scanConsole -k
+      - x86_64/bin/scanConsole -k
 
 job_build_cmake:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
@@ -32,9 +33,10 @@ job_build_cmake:
       - source /opt/rh/devtoolset-7/enable
       - mkdir -p cmake_build
       - cd cmake_build
-      - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../src/cmake/linux-gcc
+      - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
       - make -j4
-      - bin/scanConsole -k
+      - cd ../installed
+      - x86_64/bin/scanConsole -k
 
 job_test_json:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
@@ -65,41 +67,16 @@ job_build_with_felix:
      # Temporary fix for unexpected change in container (Apr '19)
      - "[[ -d ${FELIX_DIR}/${CONFIG}/include/netio ]] || mkdir ${FELIX_DIR}/${CONFIG}/include/netio"
      - "[[ -f ${FELIX_DIR}/${CONFIG}/include/netio/netio.hpp ]] || mv ${FELIX_DIR}/${CONFIG}/include/{,netio/}netio.hpp"
-     - yum -y install make cmake3 gnuplot glibc-devel which
-     # TBB lib is in FELIX image, but we need the includes to build
-     - yum -y install tbb tbb-devel
+     - yum -y install cmake3 gnuplot glibc-devel which
      # Run setup for YARR
      - source ${FELIX_DIR}/${CONFIG}/setup.sh
      - source ${GCC_SCRIPT}
      - gcc --version
      - mkdir -p cmake_build
      - cd cmake_build
-     - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../src/cmake/linux-gcc -DENABLE_NETIO:BOOL=ON -DNETIO_DIR:PATH=${FELIX_DIR}/${CONFIG}
+     - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DENABLE_NETIO:BOOL=ON -DNETIO_DIR:PATH=${FELIX_DIR}/${CONFIG}
      - make -j4
-     - bin/scanConsole -k
+     - cd ../installed
+     - x86_64/bin/scanConsole -k
 
-job_build_make_with_felix:
-    # Image of pre-built felix software
-    image: gitlab-registry.cern.ch/atlas-tdaq-felix/felix-image:cc7
-    variables:
-     # This is what is in the docker image!
-     FELIX_DIR: /opt/felix/felix-nightly
-     # LCG style config identifier
-     CONFIG: x86_64-centos7-gcc8-opt
-     GCC_SCRIPT: /cvmfs/sft.cern.ch/lcg/releases/gcc/8.2.0/x86_64-centos7/setup.sh
-    tags:
-     - cvmfs
-    script:
-     # Temporary fix for unexpected change in container (Apr '19)
-     - "[[ -d ${FELIX_DIR}/${CONFIG}/include/netio ]] || mkdir ${FELIX_DIR}/${CONFIG}/include/netio"
-     - "[[ -f ${FELIX_DIR}/${CONFIG}/include/netio/netio.hpp ]] || mv ${FELIX_DIR}/${CONFIG}/include/{,netio/}netio.hpp"
-     - yum -y install make gnuplot glibc-devel which
-     # TBB lib is in FELIX image, but we need the includes to build
-     - yum -y install tbb tbb-devel
-     # Run setup for YARR
-     - source ${FELIX_DIR}/${CONFIG}/setup.sh
-     - source ${GCC_SCRIPT}
-     - gcc --version
-     - cd src
-     - make NETIO_DIR=${FELIX_DIR}/${CONFIG}
-     - bin/scanConsole -k
+

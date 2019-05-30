@@ -2,8 +2,8 @@
 #define __ROGUE_COM_H__
 
 #include <cstdint>
-#include <vector>
-#include <queue>
+#include <tbb/concurrent_vector.h>
+#include <tbb/concurrent_queue.h>
 #include <mutex>
 #include <memory>
 #include <rogue/Logging.h>
@@ -144,15 +144,11 @@ class RogueCom  {
     writeRegister(sysReg+0x80C,temp);
   }
   void queue_data(uint32_t *data,uint32_t nwords) {
-    rx_lock.lock();
     for(unsigned i=0;i<nwords;i++) 
       rxfifo.push(data[i]);
-    rx_lock.unlock();
   }
   uint32_t tx_size() {
-    tx_lock.lock();
     uint32_t result= txfifo.size();
-    tx_lock.unlock();
     return result;
   }
   void setFirmwareTrigger(bool enable) {
@@ -171,11 +167,9 @@ class RogueCom  {
   uint32_t trigEmu;
   uint32_t sysReg;
   uint32_t NTCReg;
-  std::vector<uint32_t> txfifo;
+  tbb::concurrent_vector<uint32_t> txfifo;
   bool forceRelaseTxfifo;
-  std::queue<uint32_t> rxfifo;
-  std::mutex rx_lock;
-  std::mutex tx_lock;
+  tbb::concurrent_queue<uint32_t> rxfifo;
   rogue::interfaces::memory::MasterPtr mast;
   std::shared_ptr<RogueSender> configStream;
   std::shared_ptr<RogueReceiver> debugStream;

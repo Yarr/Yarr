@@ -128,16 +128,13 @@ void RogueCom::connect(const std::string &conn,uint32_t port) {
   trigTLU=0x05000000+0x00000;
 }
 
-uint32_t  RogueCom::getCurSize(){
-  rx_lock.lock();
-  uint32_t size= rxfifo.size();
-  rx_lock.unlock();
+uint32_t  RogueCom::getCurSize(){  
+  uint32_t size=rxfifo.unsafe_size(); 
+
   return size;
 }
 bool  RogueCom::isEmpty() {
-  //tx_lock.lock();
   bool result=txfifo.empty();
-  //tx_lock.unlock();
 
   if(result==false){
 	  forceRelaseTxfifo=1;
@@ -148,35 +145,27 @@ bool  RogueCom::isEmpty() {
   return result;
 }
 uint32_t  RogueCom::read32(){
-  rx_lock.lock();
-  uint32_t val=rxfifo.front();
-  rxfifo.pop();
-  rx_lock.unlock();
+  uint32_t val=0;
+  bool res=rxfifo.try_pop(val);
+  if(!res) throw("program error: tried to read empty rogue RX queue");
   return val;
 }
 uint32_t  RogueCom::readBlock32(uint32_t *buf, uint32_t length){
-  rx_lock.lock();
-  unsigned l=rxfifo.size();
+  unsigned l=rxfifo.unsafe_size();
   if(l>length) l=length;
   for(unsigned i=0;i<l;i++) {
-    buf[i]=rxfifo.front();
-    rxfifo.pop();    
+    rxfifo.try_pop(buf[i]);
   } 
-  rx_lock.unlock();
   return l;
 }
 void  RogueCom::write32(uint32_t value){
-  //tx_lock.lock();
   txfifo.push_back(value);
-  //tx_lock.unlock();
 }
 void  RogueCom::releaseFifo(){
   if(forceRelaseTxfifo || txfifo.size()>2048){ 
-  //tx_lock.lock();
-	  configStream->send((uint8_t*)txfifo.data(),4*txfifo.size());
+	  configStream->send((uint8_t*)&txfifo.front(),4*txfifo.size());
 	  txfifo.clear();
 	  forceRelaseTxfifo=false;
-  //tx_lock.unlock();
   }
 
 }
