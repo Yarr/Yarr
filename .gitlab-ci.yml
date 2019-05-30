@@ -57,9 +57,9 @@ job_build_with_felix:
     tags:
      - cvmfs
     script:
-     - yum -y install centos-release-scl-rh devtoolset-7 make cmake3 gnuplot git
-     - scl enable devtoolset-7 bash
-     - source /opt/rh/devtoolset-7/enable
+     - yum -y install centos-release-scl-rh devtoolset-6 make cmake3 gnuplot git
+     - scl enable devtoolset-6 bash
+     - source /opt/rh/devtoolset-6/enable
      # Which versions are present
      - ls ${FELIX_DIR}/..
      # Which configurations are present
