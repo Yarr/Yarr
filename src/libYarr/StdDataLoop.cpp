@@ -67,10 +67,9 @@ void StdDataLoop::execPart2() {
         } while (newData != NULL);
         //delete newData;
     }
-
-    // Gather rest of data after a timeout 
-    for(int i = 0 ; i < 500; i++) { // Wait after the trigger injection is done.
-    	std::this_thread::sleep_for(std::chrono::microseconds(100)); //the trigger rate is 40 kHz for the scan
+    // Gather rest of data after timeout (~0.1ms)
+    std::this_thread::sleep_for(std::chrono::microseconds(500));
+    do {
         //curCnt = g_rx->getCurCount();
         newData =  g_rx->readData();
         iterations++;
@@ -78,16 +77,14 @@ void StdDataLoop::execPart2() {
             count += newData->words;
             rdc->add(newData);
         }
-    } 
-    //delete newData;
-
+    } while (newData != NULL);
+    delete newData;
     
     rdc->stat = *g_stat;
     storage->pushData(std::move(rdc));
         
     if (verbose)
         std::cout << " --> Received " << count << " words! " << iterations << std::endl;
-
     m_done = true;
     counter++;
 }

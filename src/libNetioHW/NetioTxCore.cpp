@@ -335,7 +335,8 @@ void NetioTxCore::prepareTrigger(){
     m_trigFifo[it->first].clear();
 
     // send a sync to make sure the following commands are not interrrupted for a while
-    writeFifo(&m_trigFifo[it->first],0x817e817e);
+    if (m_feType == "rd53a")
+        writeFifo(&m_trigFifo[it->first],0x817e817e);
 
     for(int32_t j=15; j>=0;j--){
       writeFifo(&m_trigFifo[it->first],m_trigWords[j]);
