@@ -215,7 +215,7 @@ for svc in ${services[@]}; do
 done
 
 #Needed to avoid tons of warnings by mongod in /var/log/messages
-sudo sh -c "ausearch -c 'ftdc' --raw | sudo audit2allow -M my-ftdc"
+sudo sh -c "ausearch -c 'ftdc' --raw | audit2allow -M my-ftdc"
 sudo sh -c "semodule -i my-ftdc.pp"
 
 ip=`ip -f inet -o addr show| grep -e en -e eth|cut -d\  -f 7 | cut -d/ -f 1`
