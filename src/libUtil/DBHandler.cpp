@@ -50,7 +50,7 @@ m_histo_names(), m_db_version(1.0), DB_DEBUG(false)
 
     mongocxx::instance inst{};
     client = mongocxx::client{mongocxx::uri{i_host_ip}};
-    db = client["localdb"]; // DBHandler name is 'yarrdb'
+    db = client["localdb"]; // Database name is 'localdb'
 
     // set index in fs.files
     db["fs.files"].create_index( document{} << "hash" << 1 << "_id" << 1 << finalize );

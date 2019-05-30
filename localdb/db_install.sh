@@ -130,17 +130,17 @@ fi
 echo ""
 echo "Setting up the web-base DB viewer..."
 cd /var/www
-if [ -e ./web-app-db-yarr ]; then
+if [ -e ./localDB-tools ]; then
     echo "Viewer is already installed. Nothing to do."
 else
     echo "Cloning the viewer source..."
-    sudo git clone https://gitlab.cern.ch/akubota/web-app-db-yarr.git
-    sudo chown -R $USER web-app-db-yarr
-    sudo chgrp -R $USER web-app-db-yarr
-    sudo cp web-app-db-yarr/scripts/apache/config.conf /etc/httpd/conf.d/web-app-db-yarr.conf
+    sudo git clone https://github.com/jlab-hep/localDB-tools.git
+    sudo chown -R $USER localDB-tools
+    sudo chgrp -R $USER localDB-tools
+    sudo cp localDB-tools/scripts/apache/config.conf /etc/httpd/conf.d/localDB-tools.conf
     echo ""
     echo "Preparing a config file based on the skeleton file..."
-    cp web-app-db-yarr/scripts/yaml/web-conf.yml web-app-db-yarr/conf.yml
+    cp localDB-tools/scripts/yaml/web-conf.yml localDB-tools/viewer/conf.yml
 fi
 cd - > /dev/null
 
@@ -171,7 +171,7 @@ fi
 
 #Preparing database directory
 echo ""
-echo "Preparing initial data in yarrdb..."
+echo "Preparing initial data in localdb..."
 sudo systemctl stop mongod
 if [ -e /var/lib/mongo ]; then
     today=`date +%y%m%d`
@@ -229,12 +229,12 @@ echo "----------------------------------------------------------------"
 echo "Please log-off and log-in again to activate environmental variables."
 echo "Then,,,"
 echo "Start the web application by..." | tee README
-echo "cd /var/www/web-app-db-yarr/" | tee -a README
+echo "cd /var/www/localDB-tools/viewer" | tee -a README
 echo "python app.py --config conf.yml" | tee -a README
 echo "" | tee -a README
 echo "Try accessing the DB viewer in your web browser..." | tee -a README
-echo "From the DAQ machine: http://localhost:5000/yarrdb/" | tee -a README
-echo "From other machines : http://${ip}/yarrdb/" | tee -a README
+echo "From the DAQ machine: http://localhost:5000/localdb/" | tee -a README
+echo "From other machines : http://${ip}/localdb/" | tee -a README
 echo "" | tee -a README
 echo "To register QA/QC data, check usage at..." | tee -a README
 echo "" | tee -a README
