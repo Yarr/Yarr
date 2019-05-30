@@ -125,6 +125,23 @@ RawData* NetioRxCore::readData(){
 	auto words = rdp.get()->words;
 
 	RawData* new_rdp = new RawData(address, buffer, words);
+
+        if(m_fetype == "rd53a"){
+            //TODO:fix this in firmware; the header needs to be in buffer[0]
+            uint32_t temp;
+            temp = buffer[0];
+            buffer[0] = buffer[1];
+            buffer[1] = temp;
+
+            //TODO: Fix this  in firmware too
+            if( (buffer[words-2]>>16) == 0x0 ) //To deal with the E-frames fr$
+                buffer[words-2] = 0xFFFF;
+
+            //TODO: Fix this  in firmware too
+            if( (buffer[words-1]>>16) == 0x0 ) //To deal with the E-frames fr$
+                buffer[words-1] = 0xFFFF;
+        }
+
 	return new_rdp;
 
   }
