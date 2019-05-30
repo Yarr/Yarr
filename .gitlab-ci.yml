@@ -2,7 +2,7 @@ job_build_and_test:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     stage: build
     script:
-      - yum -y install centos-release-scl-rh devtoolset-7 make gnuplot cmake3
+      - yum -y install centos-release-scl-rh devtoolset-7 make gnuplot cmake3 git
       - scl enable devtoolset-7 bash
       - source /opt/rh/devtoolset-7/enable
       - mkdir  cmake_build
@@ -28,7 +28,7 @@ job_build_cmake:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     stage: build
     script:
-      - yum -y install centos-release-scl-rh devtoolset-7 make cmake3 gnuplot
+      - yum -y install centos-release-scl-rh devtoolset-7 make cmake3 gnuplot git
       - scl enable devtoolset-7 bash
       - source /opt/rh/devtoolset-7/enable
       - mkdir -p cmake_build
@@ -57,7 +57,7 @@ job_build_with_felix:
     tags:
      - cvmfs
     script:
-     - yum -y install centos-release-scl-rh devtoolset-7 make cmake3 gnuplot
+     - yum -y install centos-release-scl-rh devtoolset-7 make cmake3 gnuplot git
      - scl enable devtoolset-7 bash
      - source /opt/rh/devtoolset-7/enable
      # Which versions are present
