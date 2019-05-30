@@ -45,6 +45,7 @@ public:
   void setRxEnable(uint32_t val) override;
   void maskRxEnable(uint32_t val, uint32_t mask) override;
 
+  void flushBuffer() override;
   RawData* readData() override;
 
   /**
@@ -80,6 +81,9 @@ public:
   void fromFileJson(json &j);
 
 private:
+  // used as flag for merge
+  std::string m_fetype;
+
 
   void enableChannel(uint64_t chn);
   void disableChannel(uint64_t chn);

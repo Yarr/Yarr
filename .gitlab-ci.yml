@@ -1,9 +1,8 @@
-# Use default image with everything already installed
-image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_build
-
 job_build_and_test:
+    image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     stage: build
     script:
+      - yum -y install centos-release-scl-rh devtoolset-7 make gnuplot
       - scl enable devtoolset-7 bash
       - source /opt/rh/devtoolset-7/enable
       - cd src
@@ -24,8 +23,10 @@ job_build_and_test:
       - bin/scanConsole -k
 
 job_build_cmake:
+    image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     stage: build
     script:
+      - yum -y install centos-release-scl-rh devtoolset-7 make cmake gnuplot
       - scl enable devtoolset-7 bash
       - source /opt/rh/devtoolset-7/enable
       - mkdir -p src/cmake_build
@@ -36,8 +37,10 @@ job_build_cmake:
 
 job_build_cmake_minimum_gcc:
     # Default is gcc 4.8.5
+    image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     stage: build
     script:
+      - yum -y install make cmake gnuplot gcc-c++
       - mkdir -p src/cmake_build
       - cd src/cmake_build
       - cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
@@ -45,13 +48,16 @@ job_build_cmake_minimum_gcc:
       - bin/scanConsole -k
 
 job_test_json:
+    image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     stage: build
     script:
+      - yum -y install npm
       - npm install jsonlint -g
       - for file in $(find src/configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
 
 job_build_with_felix:
     # Image of pre-built felix software
+    image: gitlab-registry.cern.ch/atlas-tdaq-felix/felix-image:cc7
     variables:
      # This is what is in the docker image!
      FELIX_DIR: /opt/felix/felix-nightly
@@ -70,6 +76,9 @@ job_build_with_felix:
      # Temporary fix for unexpected change in container (Apr '19)
      - "[[ -d ${FELIX_DIR}/${CONFIG}/include/netio ]] || mkdir ${FELIX_DIR}/${CONFIG}/include/netio"
      - "[[ -f ${FELIX_DIR}/${CONFIG}/include/netio/netio.hpp ]] || mv ${FELIX_DIR}/${CONFIG}/include/{,netio/}netio.hpp"
+     - yum -y install make cmake gnuplot glibc-devel which
+     # TBB lib is in FELIX image, but we need the includes to build
+     - yum -y install tbb tbb-devel
      # Run setup for YARR
      - source ${FELIX_DIR}/${CONFIG}/setup.sh
      - source ${GCC_SCRIPT}
@@ -82,6 +91,7 @@ job_build_with_felix:
 
 job_build_make_with_felix:
     # Image of pre-built felix software
+    image: gitlab-registry.cern.ch/atlas-tdaq-felix/felix-image:cc7
     variables:
      # This is what is in the docker image!
      FELIX_DIR: /opt/felix/felix-nightly
@@ -94,6 +104,9 @@ job_build_make_with_felix:
      # Temporary fix for unexpected change in container (Apr '19)
      - "[[ -d ${FELIX_DIR}/${CONFIG}/include/netio ]] || mkdir ${FELIX_DIR}/${CONFIG}/include/netio"
      - "[[ -f ${FELIX_DIR}/${CONFIG}/include/netio/netio.hpp ]] || mv ${FELIX_DIR}/${CONFIG}/include/{,netio/}netio.hpp"
+     - yum -y install make gnuplot glibc-devel which
+     # TBB lib is in FELIX image, but we need the includes to build
+     - yum -y install tbb tbb-devel
      # Run setup for YARR
      - source ${FELIX_DIR}/${CONFIG}/setup.sh
      - source ${GCC_SCRIPT}
