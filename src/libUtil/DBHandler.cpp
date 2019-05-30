@@ -526,11 +526,11 @@ void DBHandler::registerSite() {
 
     char line[100];
     std::cout << "DBHandler: Register this MAC address " << address << " ... " <<  std::endl;
-    std::cout << "\tInput institution's name > ";
+    std::cout << "\tInput the name of institution where this machin is > ";
     std::cin.getline(line, sizeof(line));
     std::string institution = line;
     std::replace(institution.begin(), institution.end(), ' ', '_');
-    std::cout << "\tInput machine's name > ";
+    std::cout << "\tInput the name of machine > ";
     std::cin.getline(line, sizeof(line));
     std::string name = line;
     std::replace(name.begin(), name.end(), ' ', '_');

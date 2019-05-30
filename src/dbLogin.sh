@@ -54,54 +54,74 @@ cfg=${HOME}/.yarr/${account}_user.json
 if [ ! -f ${cfg} ]; then
     echo "User Config file is not exist: ${cfg}"
     echo " "
-    echo "Enter your name (<first name>_<last name>) or 'exit' ... "
-    read answer
-    while [ -z ${answer} ]; 
+    echo "Enter your name (<first name> <last name>) or 'exit' ... "
+    read -p "> " -a answer
+    while [ ${#answer[@]} == 0 ]; 
     do
-        echo "Enter your name (<first name>_<last name>) or 'exit' ... "
-        read answer
+        echo "Enter your name (<first name> <last name>) or 'exit' ... "
+        read -p "> " -a answer
     done
-    if [ ${answer} == "exit" ]; then
+    if [ ${answer[0]} == "exit" ]; then
         echo "Exit ..."
         unset_variable
         return 0
     else
-        name=${answer}
+        for a in ${answer[@]}; do
+            name="${name#_}_${a}"
+        done
     fi
 
     echo " "
-    echo "Enter your institution (ABC_Laboratory) or 'exit' ... "
-    read answer
-    while [ -z ${answer} ]; 
+    echo "Enter your institution (ABC Laboratory) or 'exit' ... "
+    read -p "> " -a answer
+    while [ ${#answer[@]} == 0 ]; 
     do
-        echo "Enter your institution (ABC_Laboratory) or 'exit' ... "
-        read answer
+        echo "Enter your institution (ABC Laboratory) or 'exit' ... "
+        read -p "> " -a answer
     done
-    if [ ${answer} == "exit" ]; then
+    if [ ${answer[0]} == "exit" ]; then
         echo "Exit ..."
         unset_variable
         return 0
     else
-        institution=${answer}
+        for a in ${answer[@]}; do
+            institution="${institution#_}_${a}"
+        done
     fi
 
     echo " "
-    echo "Do you want to set identification key? [y/n]"
-    read answer
-    if [ "${answer}" == "n" ]; then
+    echo "You can set the identification key (e.x. nickname, SW version you use ...)"
+    echo "Do you want to set the identification key? [y/n]"
+    echo "    y => continue to set the identification key"
+    echo "    n => set the identification key 'default'"
+    read -p "> " -a answer
+    while [ ${#answer[@]} == 0 ]; 
+    do
+        echo "Enter 'y' to set the identification key, 'n' not to set, or 'exit' to abort ... "
+        read -p "> " -a answer
+    done
+    if [ ${answer[0]} == "exit" ]; then
+        echo "Exit ..."
+        unset_variable
+        return 0
+    fi
+    if [ ${answer[0]} != "y" ]; then
         identity="default"
-    elif [ "${answer}" != "y" ]; then
+    else
+        echo " "
         echo "Enter your identification key or 'cancel' ... "
-        read answer
-        while [ -z ${answer} ]; 
+        read -p "> " -a answer
+        while [ ${#answer[@]} == 0 ]; 
         do
             echo "Enter your identification key or 'cancel' ... "
-            read answer
+            read -p "> " -a answer
         done
-        if [ ${answer} == "cancel" ]; then
+        if [ ${answer[0]} == "cancel" ]; then
             identity="default"
         else
-            identity=${answer}
+            for a in ${answer[@]}; do
+                identity="${identity#_}_${a}"
+            done
         fi
     fi
 else
@@ -119,47 +139,12 @@ echo "  Institution: ${institution}"
 echo "  Identity: ${identity}"
 echo " "
 echo "Are you sure that's correct? [y/n]"
-read answer
+read -p "> " answer
 while [ -z ${answer} ]; 
 do
     echo "Are you sure that's correct? [y/n]"
-    read answer
+    read -p "> " answer
 done
-
-dbcfg=${HOME}/.yarr/database.json
-if [ ! -f ${dbcfg} ]; then
-    echo "{" > ${dbcfg}
-    echo "    \"stage\": [" >> ${dbcfg}
-    echo "        \"Bare Module\"," >> ${dbcfg}
-    echo "        \"Wire Bonded\"," >> ${dbcfg}
-    echo "        \"Potted\"," >> ${dbcfg}
-    echo "        \"Final Electrical\"," >> ${dbcfg}
-    echo "        \"Complete\"," >> ${dbcfg}
-    echo "        \"Loaded\"," >> ${dbcfg}
-    echo "        \"Parylene\"," >> ${dbcfg}
-    echo "        \"Initial Electrical\"," >> ${dbcfg}
-    echo "        \"Thermal Cycling\"," >> ${dbcfg}
-    echo "        \"Flex + Bare Module Attachment\"" >> ${dbcfg}
-    echo "    ]," >> ${dbcfg}
-    echo "    \"environment\": [" >> ${dbcfg}
-    echo "        \"lv\"," >> ${dbcfg}
-    echo "        \"hv\"," >> ${dbcfg}
-    echo "        \"lv_current\"," >> ${dbcfg}
-    echo "        \"hv_current\"," >> ${dbcfg}
-    echo "        \"temperature\"" >> ${dbcfg}
-    echo "    ]," >> ${dbcfg}
-    echo "    \"component\": [" >> ${dbcfg}
-    echo "        \"Front-end Chip\"," >> ${dbcfg}
-    echo "        \"Front-end Chips Wafer\"," >> ${dbcfg}
-    echo "        \"Hybrid\"," >> ${dbcfg}
-    echo "        \"Module\"," >> ${dbcfg}
-    echo "        \"Sensor Tile\"," >> ${dbcfg}
-    echo "        \"Sensor Wafer\"" >> ${dbcfg}
-    echo "    ]" >> ${dbcfg}
-    echo "}" >> ${dbcfg}
-    echo "Create DB Config file: ${dbcfg}"
-    echo " "
-fi
 if [ ${answer} == "y" ]; then
     echo "{" > ${cfg}
     echo "    \"userName\": \"${name}\"," >> ${cfg}
@@ -187,6 +172,42 @@ else
     return 0
 fi
 
+dbcfg=${HOME}/.yarr/database.json
+if [ ! -f ${dbcfg} ]; then
+    echo "{" > ${dbcfg}
+    echo "    \"stage\": [" >> ${dbcfg}
+    echo "        \"Bare Module\"," >> ${dbcfg}
+    echo "        \"Wire Bonded\"," >> ${dbcfg}
+    echo "        \"Potted\"," >> ${dbcfg}
+    echo "        \"Final Electrical\"," >> ${dbcfg}
+    echo "        \"Complete\"," >> ${dbcfg}
+    echo "        \"Loaded\"," >> ${dbcfg}
+    echo "        \"Parylene\"," >> ${dbcfg}
+    echo "        \"Initial Electrical\"," >> ${dbcfg}
+    echo "        \"Thermal Cycling\"," >> ${dbcfg}
+    echo "        \"Flex + Bare Module Attachment\"," >> ${dbcfg}
+    echo "        \"Testing\"" >> ${dbcfg}
+    echo "    ]," >> ${dbcfg}
+    echo "    \"environment\": [" >> ${dbcfg}
+    echo "        \"lv\"," >> ${dbcfg}
+    echo "        \"hv\"," >> ${dbcfg}
+    echo "        \"lv_current\"," >> ${dbcfg}
+    echo "        \"hv_current\"," >> ${dbcfg}
+    echo "        \"temperature\"" >> ${dbcfg}
+    echo "    ]," >> ${dbcfg}
+    echo "    \"component\": [" >> ${dbcfg}
+    echo "        \"Front-end Chip\"," >> ${dbcfg}
+    echo "        \"Front-end Chips Wafer\"," >> ${dbcfg}
+    echo "        \"Hybrid\"," >> ${dbcfg}
+    echo "        \"Module\"," >> ${dbcfg}
+    echo "        \"Sensor Tile\"," >> ${dbcfg}
+    echo "        \"Sensor Wafer\"" >> ${dbcfg}
+    echo "    ]" >> ${dbcfg}
+    echo "}" >> ${dbcfg}
+    echo "Create DB Config file: ${dbcfg}"
+    echo " "
+fi
+
 declare -a nic=()  
 num=0
 for DEV in `find /sys/devices -name net | grep -v virtual`; 
@@ -202,12 +223,12 @@ if [ ${num} != 1 ]; then
         echo ${nic[0]}
         cnt=$(( cnt + 1 ))
     done
-    read answer
+    read -p "> " answer
     while [ -z ${answer} ]; 
     do
         echo "Select the number before NIC name for the information of this machine."
         echo " "
-        read answer
+        read -p "> " answer
     done
     echo ${answer} | grep [^0-9] > /dev/null 2>&1
     if [ $? -eq 0 ]; then
