@@ -22,7 +22,7 @@ class StarCmd {
 
   // Access Control and Status Registers (ACSR) Commands
   std::array<LCB::Frame, 9> command_sequence(int hccID = 0xf, int chipID = 0x1f,
-                                             int address = 0, bool write = false, uint32_t value = 0);
+                                             int address = 0, bool write = false, uint32_t value = 0, bool hccNotAbc = false);
 };
 
 #endif
