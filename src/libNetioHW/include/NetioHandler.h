@@ -51,10 +51,10 @@ public:
   void setFelixTXPort(uint16_t felixTXPort){m_felixTXPort=felixTXPort;}
 
 public:
-  NetioHandler(std::string contextStr, std::string felixHost,
-               uint16_t felixTXPort, uint16_t felixRXPort,
-               size_t queueSize, bool verbose);
-
+  NetioHandler(std::string contextStr="posix", std::string felixHost="localhost",
+               uint16_t felixTXPort=12340, uint16_t felixRXPort=12345,
+               size_t queueSize=10000000, bool verbose=false);
+  //MW: FIX CLANG COMPILATION
   ~NetioHandler();
 
 private:

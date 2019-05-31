@@ -37,7 +37,19 @@ job_build_cmake:
       - make install -j4
       - cd ../installed
       - x86_64/bin/scanConsole -k
-
+job_build_clang:
+    image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
+    stage: build
+    script:
+      - yum -y install centos-release-scl-rh devtoolset-7  llvm-toolset-7-clang make cmake3 gnuplot git
+      - scl enable  llvconfigsm-toolset-7  bash
+      - source /opt/rh/llvm-toolset-7/enable
+      - mkdir -p cmake_build
+      - cd cmake_build 
+      - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang
+      - make install -j4
+      - cd ../installed
+      - x86_64/bin/scanConsole -k
 job_test_json:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     stage: build

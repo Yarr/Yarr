@@ -8,14 +8,29 @@ endif()
 
 set(TARGET_INSTALL_AREA ${PROJECT_SOURCE_DIR}/installed/${TARGET_ARCH})
 set(SHARED_INSTALL_AREA ${PROJECT_SOURCE_DIR}/installed/)
+add_compile_options(-std=c++17)
 
+if ("${TARGET_ARCH}" STREQUAL "arm")
+  set(TBB_ARCH "arch=arm")
+  else()
+    if ("${TARGET_ARCH}" STREQUAL "arm64")
+      set(TBB_ARCH "arch=arm64")
+  else()
+     set(TBB_ARCH "")
+endif()
+endif()
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+set(TBB_COMP compiler=clang)
+else()
+set(TBB_COMP CXX=${CMAKE_CXX_COMPILER})
+endif()
 ExternalProject_Add (
 tbb_2019
 GIT_REPOSITORY https://github.com/intel/tbb.git
 GIT_TAG tbb_2019
 UPDATE_COMMAND ""
 INSTALL_COMMAND ${PROJECT_SOURCE_DIR}/scripts/install_tbb.sh ${CMAKE_CURRENT_BINARY_DIR}  ${CMAKE_CURRENT_BINARY_DIR}  
-BUILD_COMMAND cd ${CMAKE_CURRENT_BINARY_DIR}/external/src/tbb_2019 &&  make -j4 CXX=${CMAKE_CXX_COMPILER} arch=arm extra_inc=big_iron.inc
+BUILD_COMMAND cd ${CMAKE_CURRENT_BINARY_DIR}/external/src/tbb_2019 &&  make -j4 ${TBB_COMP} ${TBB_ARCH} extra_inc=big_iron.inc
 CONFIGURE_COMMAND ""
 PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
 )
