@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
     spec.writeFifo((LCB::IDLE << 16) + LCB::IDLE);
     spec.releaseFifo();
 
-    spec.setRxEnable(0x40); // Channe 6
+    spec.setRxEnable(0x40); // Input from Channel 6 on Spec board
 
     RawData *data = spec.readData();
 
@@ -98,8 +98,8 @@ int main(int argc, char *argv[]) {
 
       if((word&0xff) == 0x5f) continue;
 
-      if(word == 0x1a0d) continue; // Ilde on chan 6
-      if(word == 0x19f2) continue; // Ilde on chan 6
+      if(word == 0x1a0d) continue; // Idle on chan 6
+      if(word == 0x19f2) continue; // Idle on chan 6
 
       word &= 0xffffc3ff; // Strip of channel number
 
