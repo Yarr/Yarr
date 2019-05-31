@@ -37,7 +37,7 @@ PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
 
 ExternalProject_Add (
       netio4
-      GIT_REPOSITORY https://:@gitlab.cern.ch:8443/atlas-tdaq-felix/netio.git
+      GIT_REPOSITORY https://:@gitlab.cern.ch:8443/wittgen/netio.git
       GIT_TAG felix-4.0.x
       UPDATE_COMMAND ""
       PATCH_COMMAND cp ${PROJECT_SOURCE_DIR}/cmake/CMakeLists.txt.netio ${CMAKE_CURRENT_BINARY_DIR}/external/src/netio4/CMakeLists.txt
@@ -48,7 +48,7 @@ ExternalProject_Add (
       )
 ExternalProject_Add (
       felixbase4
-      GIT_REPOSITORY https://:@gitlab.cern.ch:8443/atlas-tdaq-felix/felixbase.git
+      GIT_REPOSITORY https://:@gitlab.cern.ch:8443/wittgen/felixbase.git
       GIT_TAG felix-4.0.x
       UPDATE_COMMAND ""
       PATCH_COMMAND ""
