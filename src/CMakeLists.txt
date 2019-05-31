@@ -65,7 +65,7 @@ link_directories(${PROJECT_BINARY_DIR}/../external/src/rogue/lib)
 link_directories(BEFORE SYSTEM ${PROJECT_BINARY_DIR}/../lib)
 # Whole-archive means not to drop symbols from Yarr.
 # Mainly this is about making sure the auto-registration works.
-target_link_libraries(${execname} Yarr tbb rogue-core netio pthread rt)
+target_link_libraries(${execname}  -Wl,--whole-archive Yarr tbb -Wl,--no-whole-archive rogue-core netio pthread rt)
 # Not sure why rt is not linked by default here
 endforeach()
 
