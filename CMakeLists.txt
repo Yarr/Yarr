@@ -21,6 +21,18 @@ PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
 )
 
 ExternalProject_Add (
+      netio4
+      GIT_REPOSITORY https://:@gitlab.cern.ch:8443/atlas-tdaq-felix/netio.git
+      GIT_TAG felix-4.0.x
+      UPDATE_COMMAND ""
+      PATCH_COMMAND cp ${PROJECT_SOURCE_DIR}/cmake/CMakeLists.txt.netio ${CMAKE_CURRENT_BINARY_DIR}/external/src/netio4/CMakeLists.txt
+      INSTALL_COMMAND ""
+      PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
+      CMAKE_ARGS "${TOOLCHAIN}"
+      DEPENDS tbb_2019
+      )
+
+ExternalProject_Add (
       rogue
       GIT_REPOSITORY https://github.com/slaclab/rogue.git
       GIT_TAG atlas-fixes
