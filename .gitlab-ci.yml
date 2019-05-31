@@ -42,7 +42,7 @@ job_build_clang:
     stage: build
     script:
       - yum -y install centos-release-scl-rh devtoolset-7  llvm-toolset-7-clang make cmake3 gnuplot git
-      - scl enable  llvconfigsm-toolset-7  bash
+      - scl enable   llvm-toolset-7  bash
       - source /opt/rh/llvm-toolset-7/enable
       - mkdir -p cmake_build
       - cd cmake_build 
