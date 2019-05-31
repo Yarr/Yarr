@@ -46,38 +46,5 @@ job_test_json:
       - npm install jsonlint -g
       - for file in $(find ../src/configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
 
-job_build_with_felix:
-    # Image of pre-built felix software
-    image: gitlab-registry.cern.ch/atlas-tdaq-felix/felix-image:cc7
-    variables:
-     # This is what is in the docker image!
-     FELIX_DIR: /opt/felix/felix-nightly
-     # LCG style config identifier
-     CONFIG: x86_64-centos7-gcc62-opt
-    tags:
-     - cvmfs
-    script:
-     - yum -y install centos-release-scl-rh devtoolset-6 make cmake3 gnuplot git
-     - scl enable devtoolset-6 bash
-     - source /opt/rh/devtoolset-6/enable
-     # Which versions are present
-     - ls ${FELIX_DIR}/..
-     # Which configurations are present
-     - ls ${FELIX_DIR}
-     # Which include files exist
-     - find ${FELIX_DIR}/${CONFIG}/include -type f
-     # Temporary fix for unexpected change in container (Apr '19)
-     - "[[ -d ${FELIX_DIR}/${CONFIG}/include/netio ]] || mkdir ${FELIX_DIR}/${CONFIG}/include/netio"
-     - "[[ -f ${FELIX_DIR}/${CONFIG}/include/netio/netio.hpp ]] || mv ${FELIX_DIR}/${CONFIG}/include/{,netio/}netio.hpp"
-     - yum -y install cmake3 gnuplot glibc-devel which
-     # Run setup for YARR
-     - source ${FELIX_DIR}/${CONFIG}/setup.sh
-     - gcc --version
-     - mkdir -p cmake_build
-     - cd cmake_build
-     - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DENABLE_NETIO:BOOL=ON -DNETIO_DIR:PATH=${FELIX_DIR}/${CONFIG}
-     - make install -j4
-     - cd ../installed
-     - x86_64/bin/scanConsole -k
 
 

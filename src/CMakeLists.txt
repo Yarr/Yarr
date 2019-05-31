@@ -30,13 +30,10 @@ add_compile_options(-std=c++17)
 # Add -fPIC for (e.g. linking to shared libraries)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-option(ENABLE_NETIO "Enable NetIO, needs NETIO_DIR setting separately" OFF)
 
 #add libraries
 list(APPEND libs Yarr Spec Util Emu Fe65p2 Fei4 Rce Boc Rd53a KU040 Rogue)
-if(ENABLE_NETIO)
-    list(APPEND libs NetioHW)
-endif()
+list(APPEND libs NetioHW)
 
 link_directories(${PROJECT_BINARY_DIR}/../external/src/rogue/lib)
 link_directories(${PROJECT_BINARY_DIR}/../lib)
@@ -45,52 +42,30 @@ foreach(lib ${libs})
 add_definitions( -DNO_PYTHON )
 include_directories(lib${lib}/include)
 include_directories(${PROJECT_BINARY_DIR}/../external/src/rogue/include)
-include_directories(${PROJECT_BINARY_DIR}/../include)
+include_directories(BEFORE SYSTEM ${PROJECT_BINARY_DIR}/../include)
 file(GLOB SrcFiles lib${lib}/*.cpp)
 list(APPEND LibSrcFiles ${SrcFiles})
 endforeach()
 
 add_library(Yarr STATIC ${LibSrcFiles})
-add_dependencies(Yarr tbb_2019)
+add_dependencies(Yarr tbb_2019 felixbase4 netio4 rogue)
 
-set(NETIO_DIR "/path/to/felix/software" CACHE
-    PATH "Path to FELIX software distribution for NetIO library")
-
-if(ENABLE_NETIO)
-  include_directories("${NETIO_DIR}/include")
-endif()
 
 #add executables
 file(GLOB tools tools/*.cpp)
-if(NOT ENABLE_NETIO)
-  file(GLOB tools_netio tools/testNetioHw.cpp tools/testScan.cpp tools/testBitStream.cpp)
-  list(REMOVE_ITEM tools ${tools_netio})
-  # CMake 3. something has filter command
-  ## list(FILTER tools EXCLUDE REGEX tools/testNetioHw.cpp tools/testBitStream.cpp tools/testScan.cpp)
-  # message(${tools})
-endif()
+
 
 foreach(target ${tools})
 get_filename_component(execname ${target} NAME_WE)
 get_filename_component(srcfile ${target} NAME)
 add_executable(${execname} tools/${srcfile})
-add_dependencies(${execname} Yarr rogue tbb_2019)
+add_dependencies(${execname} Yarr rogue tbb_2019 felixbase4 netio4)
 set_target_properties(${execname} PROPERTIES LINKER_LANGUAGE CXX)
 link_directories(${PROJECT_BINARY_DIR}/../external/src/rogue/lib)
-link_directories(${PROJECT_BINARY_DIR}/../lib)
+link_directories(BEFORE SYSTEM ${PROJECT_BINARY_DIR}/../lib)
 # Whole-archive means not to drop symbols from Yarr.
 # Mainly this is about making sure the auto-registration works.
-if(APPLE)
-    set(WRAPPED_YARR -Wl,-all_load Yarr)
-    target_link_libraries(${execname} ${WRAPPED_YARR} pthread)
-elseif(UNIX)
-    set(WRAPPED_YARR -Wl,--whole-archive Yarr -Wl,--no-whole-archive)
-    target_link_libraries(${execname} ${WRAPPED_YARR} tbb rogue-core pthread rt)
-
-    if(ENABLE_NETIO)
-        target_link_libraries(${execname} "${NETIO_DIR}/lib/libnetio.so")
-    endif()
-endif()
+target_link_libraries(${execname} Yarr tbb rogue-core netio pthread rt)
 # Not sure why rt is not linked by default here
 endforeach()
 

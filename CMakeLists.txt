@@ -31,7 +31,18 @@ ExternalProject_Add (
       CMAKE_ARGS "${TOOLCHAIN}"
       DEPENDS tbb_2019
       )
-
+ExternalProject_Add (
+      felixbase4
+      GIT_REPOSITORY https://:@gitlab.cern.ch:8443/atlas-tdaq-felix/felixbase.git
+      GIT_TAG felix-4.0.x
+      UPDATE_COMMAND ""
+      PATCH_COMMAND ""
+      INSTALL_COMMAND ""
+      CONFIGURE_COMMAND ""
+      BUILD_COMMAND ""
+      PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
+      DEPENDS netio4
+      )
 ExternalProject_Add (
       rogue
       GIT_REPOSITORY https://github.com/slaclab/rogue.git
@@ -41,5 +52,9 @@ ExternalProject_Add (
       PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
       CMAKE_ARGS "-DNO_PYTHON=1" "-DNO_ZMQ=1" "-DNO_BZIP=1" "-DSTATIC_LIB=1" "${TOOLCHAIN}"
       )
+
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/felixbase4)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/netio4)
+link_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/netio4-build)
 add_subdirectory(src)
 
