@@ -5,7 +5,7 @@ StarCmd::StarCmd() {
 
 StarCmd::~StarCmd() {}
 
-std::array<LCB::Frame, 9> StarCmd::command_sequence(int hccid, int abcid, int address, bool write, uint32_t value, bool hccNotAbc) {
+std::array<LCB::Frame, 9> StarCmd::command_sequence(int hccid, int abcid, int address, bool readNotWrite, uint32_t value, bool hccNotAbc) {
   std::array<LCB::Frame, 9> result;
 
   // Start is a K2 + ABC/HCC + HCC ID
@@ -14,7 +14,7 @@ std::array<LCB::Frame, 9> StarCmd::command_sequence(int hccid, int abcid, int ad
   if(!hccNotAbc) start |= 0x20;
 
   result[0] = LCB::build_pair(LCB::K2, SixEight::encode(start));
-  result[1] = LCB::command_bits((write << 6) | ((abcid&0xf) << 2) | ((address>>6)&3));
+  result[1] = LCB::command_bits((readNotWrite << 6) | ((abcid&0xf) << 2) | ((address>>6)&3));
   result[2] = LCB::command_bits((address&0x3f)<<1);
 
   for(int i=0; i<5; i++) {
