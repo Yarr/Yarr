@@ -34,6 +34,7 @@ class SpecRxCore : virtual public RxCore, virtual public SpecCom{
         SpecRxCore();
 
         void setRxEnable(uint32_t val);
+        void setRxEnable(std::vector<uint32_t> channels);
         void maskRxEnable(uint32_t val, uint32_t mask);
 
         RawData* readData();

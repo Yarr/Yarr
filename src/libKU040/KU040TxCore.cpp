@@ -61,6 +61,14 @@ void KU040TxCore::setCmdEnable(uint32_t value)
 	}
 }
 
+void KU040TxCore::setCmdEnable(std::vector<uint32_t> channels) {
+    uint32_t mask = 0;
+    for (uint32_t channel : channels) {
+        mask += (1 << channel);
+    }
+    this->setCmdEnable(mask);
+}
+
 uint32_t KU040TxCore::getCmdEnable()
 {
 	return m_enableMask;

@@ -31,6 +31,7 @@ class EmuTxCore : virtual public TxCore {
         void releaseFifo() {this->writeFifo(0x0);} // Add some padding
         
         void setCmdEnable(uint32_t value) {}
+        void setCmdEnable(std::vector<uint32_t> channels) {}
         uint32_t getCmdEnable() {return 0x0;}
         void maskCmdEnable(uint32_t value, uint32_t mask) {}
 
@@ -42,8 +43,9 @@ class EmuTxCore : virtual public TxCore {
         void setTrigFreq(double freq) {}
         void setTrigCnt(uint32_t count);
         void setTrigTime(double time) {}
-    void setTrigWordLength(uint32_t length) { trigLength = length; }
-    void setTrigWord(uint32_t *word, uint32_t length) { trigWord = word; trigLength = length; }
+        
+        void setTrigWordLength(uint32_t length) { trigLength = length; }
+        void setTrigWord(uint32_t *word, uint32_t length) { trigWord = word; trigLength = length; }
 
         void toggleTrigAbort() {}
 

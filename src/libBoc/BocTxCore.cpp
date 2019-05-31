@@ -36,6 +36,15 @@ void BocTxCore::setCmdEnable(uint32_t value)
 
 }
 
+void BocTxCore::setCmdEnable(std::vector<uint32_t> channels) {
+    uint32_t mask = 0;
+    for (uint32_t channel : channels) {
+        mask += (1 << channel);
+
+    }
+    this->setCmdEnable(mask);
+}
+
 uint32_t BocTxCore::getCmdEnable()
 {
 	return m_enableMask;

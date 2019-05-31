@@ -11,6 +11,18 @@ void SpecRxCore::setRxEnable(uint32_t value) {
     SpecCom::writeSingle(RX_ADDR | RX_ENABLE, value);
 }
 
+void SpecRxCore::setRxEnable(std::vector<uint32_t> channels) {
+    uint32_t mask = 0;
+    for (uint32_t channel : channels) {
+        mask += (1 << channel);
+
+    }
+    if (verbose)
+        std::cout << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << mask << std::dec << std::endl;
+    SpecCom::writeSingle(RX_ADDR | RX_ENABLE, mask);
+
+}
+
 void SpecRxCore::maskRxEnable(uint32_t value, uint32_t mask) {
     uint32_t tmp = SpecCom::readSingle(RX_ADDR | RX_ENABLE);
     tmp &= ~mask;

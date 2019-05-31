@@ -126,6 +126,14 @@ void KU040RxCore::setRxEnable(uint32_t val)
 	}
 }
 
+void KU040RxCore::setRxEnable(std::vector<uint32_t> channels) {
+    uint32_t mask = 0;
+    for (uint32_t channel : channels) {
+        mask += (1 << channel);
+    }
+    this->setRxEnable(mask);
+}
+
 void KU040RxCore::maskRxEnable(uint32_t val, uint32_t mask)
 {
 	uint32_t tmp = m_enableMask;

@@ -248,12 +248,16 @@ int main(int argc, char *argv[]) {
     // TODO Check RX sync
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
     // Enable all active channels
-    //spec.setCmdEnable(bookie.getTxMask());
-    spec.setCmdEnable(0x1);
-    std::cout << "-> Setting Tx Mask to: 0x" << std::hex << bookie.getTxMask() << std::dec << std::endl;
-    //spec.setRxEnable(bookie.getRxMask());
-    spec.setRxEnable(0x1);
-    std::cout << "-> Setting Rx Mask to: 0x" << std::hex << bookie.getRxMask() << std::dec << std::endl;
+    std::cout << "-> Enablign Tx channels: " << std::endl;
+    spec.setCmdEnable(bookie.getTxMask());
+    for (uint32_t channel : bookie.getTxMask()) {
+        std::cout << "  ... " << channel  << std::endl;
+    }
+    std::cout << "-> Enablign Rx channels: " << std::endl;
+    spec.setRxEnable(bookie.getRxMask());
+    for (uint32_t channel : bookie.getRxMask()) {
+        std::cout << "  ... " << channel  << std::endl;
+    }
     
     std::cout << std::endl;
     std::cout << "##############" << std::endl;
