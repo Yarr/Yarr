@@ -20,8 +20,9 @@ int main(int argc, char *argv[]) {
         // hwCtrl->init(0);
     } else {
         json ctrlCfg;
+        std::ifstream controllerFile(controller);
         try {
-            ctrlCfg = json::parse(controller);
+            ctrlCfg = json::parse(controllerFile);
         } catch (json::parse_error &e) {
             std::cerr << "#ERROR# Could not parse config: " << e.what() << std::endl;
             return 1;
