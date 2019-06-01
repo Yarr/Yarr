@@ -154,6 +154,7 @@ uint32_t NetioRxCore::getDataRate(){
 }
 
 uint32_t NetioRxCore::getCurCount(){
+  std::this_thread::sleep_for(std::chrono::milliseconds(1)); 
   return m_nioh.getDataCount() - rxDataCount;
 }
 
