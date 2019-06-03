@@ -55,11 +55,9 @@ int main(int argc, char *argv[]) {
     regVal |= (1<<16);
     regVal &= ~(1<<17);
 
-    bool readNotWrite = false;
-
-    std::array<uint16_t, 9> part1 = star.command_sequence(15, 15, 1, readNotWrite, regNum, regVal, true);
+    std::array<uint16_t, 9> part1 = star.write_hcc_register(regNum, regVal);
     // Need to write two registers
-    std::array<uint16_t, 9> part2 = star.command_sequence(15, 15, 1, readNotWrite, regNum+1, regVal, true);
+    std::array<uint16_t, 9> part2 = star.write_hcc_register(regNum+1, regVal);
 
     spec.writeFifo((LCB::IDLE << 16) + LCB::IDLE);
     spec.writeFifo((part1[0] << 16) + part1[1]);
