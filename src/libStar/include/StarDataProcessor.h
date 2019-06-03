@@ -12,6 +12,7 @@
 #include <vector>
 #include <array>
 #include <map>
+#include <thread>
 
 #include "DataProcessor.h"
 #include "ClipBoard.h"
