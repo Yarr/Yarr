@@ -409,8 +409,8 @@ int main(int argc, char *argv[]) {
                         backupCfgFile.close();
                         if (dbUse) {
                             std::string serialNumber = config["module"]["serialNumber"];
-                            int chipId = chip["chipId"];
-                            feCfg->setDbId(database->getComponentTestRun(serialNumber, chipId));
+                            std::string chip_serialNumber = chip["serialNumber"];
+                            feCfg->setDbId(database->getComponentTestRun(chip_serialNumber));
                             database->writeConfig(feCfg->getDbId(), outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getConfigFile() + ".before", "beforeCfg", "chipCfg", "componentTestRun");
                         }
                     }

@@ -104,8 +104,7 @@ class DBHandler {
         void getDatCode(std::string /*i_oid_str*/, 
                         std::string /*i_filename*/);
         /// Get componentTestRun Id
-        std::string getComponentTestRun(std::string /*i_serial_number*/,
-                                        int /*i_chip_id*/);
+        std::string getComponentTestRun(std::string /*i_serial_number*/);
 
     #ifdef MONGOCXX_INCLUDE // When use macro "-DMONGOCXX_INCLUDE" in makefile
 

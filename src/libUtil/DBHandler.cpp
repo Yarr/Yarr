@@ -998,17 +998,14 @@ void DBHandler::getDatCode(std::string i_data_id, std::string i_filename) {
     datFile << os.str();
 }
 
-std::string DBHandler::getComponentTestRun(std::string i_serial_number, int i_chip_id) {
+std::string DBHandler::getComponentTestRun(std::string i_serial_number) {
     // write component-testrun documents
     int run_number = stoi(this->getValue("testRun", "_id", m_tr_oid_str, "oid", "runNumber", "int"));
     std::string test_type = this->getValue("testRun", "_id", m_tr_oid_str, "oid", "testType");
     if (DB_DEBUG) std::cout << "DBHandler: Write Component Test Run: " << run_number << std::endl;
 
-    auto pre_result = db["childParentRelation"].find_one(document{} << "parent" << getValue("component", "serialNumber", i_serial_number, "","_id", "oid") <<
-                                                                       "chipId" << i_chip_id <<
-                                                                       "status" << "active" << 
-    finalize);
-    std::string oid_str = pre_result->view()["child"].get_utf8().value.to_string();
+    auto pre_result = db["component"].find_one(document{} << "serialNumber" << i_serial_number << finalize);
+    std::string oid_str = pre_result->view()["_id"].get_oid().value.to_string();
     auto result = db["componentTestRun"].find_one(document{} << "component" << oid_str <<
                                                                 "testRun" << m_tr_oid_str << 
     finalize);
@@ -1451,6 +1448,6 @@ void DBHandler::writeAttachment(std::string i_ctr_oid_str, std::string i_file_pa
 std::string DBHandler::writeJsonCode(std::string i_file_path, std::string i_filename, std::string i_title, std::string i_type) {return "ERROR";}
 void DBHandler::getJsonCode(std::string i_oid_str, std::string i_filename, std::string i_name, std::string i_type, int i_chip_id) {}
 void DBHandler::getDatCode(std::string i_data_id, std::string i_filename) {}
-std::string DBHandler::getComponentTestRun(std::string i_serial_number, int i_chip_id) {return "ERROR";}
+std::string DBHandler::getComponentTestRun(std::string i_serial_number) {return "ERROR";}
 
 #endif // End of ifdef MONGOCXX_INCLUDE
