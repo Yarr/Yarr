@@ -161,6 +161,8 @@ public:
   void toFileJson(json& j);
 
 private:
+  // flag used to keep rd53a and strips specific stuff seperate
+  std::string m_feType;
 
   enum TRIG_CONF_VALUE m_trigCfg;            //! trigger config
   bool m_verbose;                            //! verbose mode

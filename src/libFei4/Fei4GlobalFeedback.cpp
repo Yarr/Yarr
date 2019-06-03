@@ -1,17 +1,18 @@
 /*
- * Authors: T. Heim <timon.heim@cern.ch>,
- * Date: 2014-Oct-16
+ * Original work:  T. Heim <timon.heim@cern.ch>,
+ * Authors: Shohei Yamagaya <yamagaya@champ.hep.sci.osaka-u.ac.jp>
+ * Date: 2019-Mar-12
  */
 
-#include "Fei4ParameterLoop.h"
+#include "Fei4GlobalFeedback.h"
 
-void Fei4ParameterLoop::writeConfig(json &config){
-    config["min"] = min;  
+void Fei4GlobalFeedback::writeConfig(json &config){
+    config["min"] = min;
     config["max"] = max;
     config["step"] = step;
     config["parameter"] = parName;
 }
-void Fei4ParameterLoop::loadConfig(json &config){
+void Fei4GlobalFeedback::loadConfig(json &config){
     if (!config["min"].empty())
       min = config["min"];
     if (!config["max"].empty())

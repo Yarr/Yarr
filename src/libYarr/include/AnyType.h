@@ -12,7 +12,6 @@
  */
 
 #include <memory>
-#include <iostream>
 #include <vector>
 #include <map>
 #include <type_traits>

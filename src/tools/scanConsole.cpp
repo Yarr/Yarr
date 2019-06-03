@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
     std::cout << "\033[1;31m# Welcome to the YARR Scan Console! #\033[0m" << std::endl;
     std::cout << "\033[1;31m#####################################\033[0m" << std::endl;
 
-    std::cout << "\033[1;-> Parsing command line parameters ..." << std::endl;
+    std::cout << "-> Parsing command line parameters ..." << std::endl;
     
     // Init parameters
     std::string scanType = "";
@@ -635,7 +635,7 @@ int main(int argc, char *argv[]) {
     }
     std::string lsCmd = "ls -1 " + dataDir + "last_scan/*.p*";
     std::cout << "Finishing run: " << runCounter << std::endl;
-    if (system(lsCmd.c_str()) < 0) {
+    if(doPlots && (system(lsCmd.c_str()) < 0)) {
         std::cout << "Find plots in: " << dataDir + "last_scan" << std::endl;
     }
     return 0;
@@ -893,6 +893,7 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                     std::string algo_name = anaCfg[std::to_string(j)]["algorithm"];
                     add_analysis(algo_name);
                   }
+                  ana.loadConfig(anaCfg);
                 } catch(json::type_error &te) {
                   int nAnas = anaCfg.size();
                   std::cout << "Found " << nAnas << " Analysis!" << std::endl;

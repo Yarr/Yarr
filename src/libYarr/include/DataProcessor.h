@@ -10,7 +10,7 @@
 // ################################
 
 #include <mutex>
-#include <thread>
+/* #include <thread> */
 #include <condition_variable>
 
 #include "ClipBoard.h"

@@ -14,6 +14,9 @@
 #include "QueueMonitor.h"
 #include "netio/netio.hpp"
 
+#include "RawData.h"
+#include "ClipBoard.h"
+
 #include <map>
 #include <memory>
 #include <thread>
@@ -33,6 +36,9 @@ public:
   typedef folly::ProducerConsumerQueue<uint32_t> FollyQueue;
   typedef std::shared_ptr<FollyQueue> SharedQueue;
 
+  ClipBoard<RawData> rawData;
+  void setFlushBuffer(bool);
+
   // Functionalities
   void addChannel(uint64_t chn); // Enable an elink (prepare a queue, socket-pairs and sub to elink.
   void delChannel(uint64_t chn); // Enable an elink (prepare a queue, socket-pairs and sub to elink.
@@ -50,6 +56,9 @@ public:
   void setFelixRXPort(uint16_t felixRXPort){m_felixRXPort=felixRXPort;}
   void setFelixTXPort(uint16_t felixTXPort){m_felixTXPort=felixTXPort;}
 
+  // set flag to keep rd53a and strips specific things seperate
+  void setFeType(std::string fetype){m_feType=fetype;}
+
 public:
   NetioHandler(std::string contextStr, std::string felixHost,
                uint16_t felixTXPort, uint16_t felixRXPort,
@@ -58,6 +67,9 @@ public:
   ~NetioHandler();
 
 private:
+  // used as a flag to keep rd53a and strips specific things seperate
+  std::string m_feType;
+
   bool m_isConfigured = false;
   std::vector<uint64_t> m_channels;
   enum E_MONITOR_MODE { single=1, dual=2, quad=4 };
@@ -90,6 +102,10 @@ private:
   std::map<uint64_t, netio::low_latency_send_socket*> m_send_sockets;     // send sockets.
 
   size_t m_activeChannels;
+
+  // used to keep strips and rd53a specific things seperate
+  std::string fetype; // rd53a or fei4
+
 
   // Statistic thread options
   size_t m_sensitivity;

@@ -1,6 +1,8 @@
 #include "AllHwControllers.h"
 #include "ClassRegistry.h"
 
+#include <iostream>
+
 typedef ClassRegistry<HwController> OurRegistry;
 
 static OurRegistry &registry() {

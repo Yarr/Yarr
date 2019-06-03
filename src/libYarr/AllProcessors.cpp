@@ -1,6 +1,8 @@
 #include "AllProcessors.h"
 #include "ClassRegistry.h"
 
+#include <iostream>
+
 typedef ClassRegistry<DataProcessor> OurRegistry;
 
 static OurRegistry &registry() {
