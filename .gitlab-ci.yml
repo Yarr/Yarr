@@ -46,11 +46,12 @@ job_build_clang:
       - make install -j4
       - cd ..
       - bin/scanConsole -k
-      # Start with FrontEnd configs
-      - for file in $(find ../src/configs/defaults -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t FRONT_END || break; done
-      - for file in $(find ../src/configs/connectivity -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t CONNECTIVITY || break; done
-      - for file in $(find ../src/configs/controller -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t CONTROLLER || break; done
-      - for file in $(find ../src/configs/scans/* -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t SCAN_CONFIG || break; done
+
+      # Check schema by loading configs in turn
+      - for file in $(find configs/defaults -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t FRONT_END || break; done
+      - for file in $(find configs/connectivity -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t CONNECTIVITY || break; done
+      - for file in $(find configs/controller -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t CONTROLLER || break; done
+      - for file in $(find configs/scans/* -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t SCAN_CONFIG || break; done
 
 job_test_json:
     stage: build
