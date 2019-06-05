@@ -31,7 +31,7 @@ Software:
 
 Quick Install Guide:
 - download from git 
-	- git clone -b devel_rogue ssh://git@gitlab.cern.ch:7999/YARR/YARR.git
+	- git clone -b devel_rogue_test https://:@gitlab.cern.ch:8443/YARR/YARR.git
 - Using cmake:
     - cmake version 3 or higher
     - for ARM target cross compilers are provided by the RCE_SDK
@@ -46,5 +46,4 @@ Quick Install Guide:
             - cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc # gcc 4.8 or higher
             - cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm32 # ARM32/Centos7 on RCE
             - cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm64 # ARM64/Centos7 on zcu102
-            - cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/macos-clang # MacOS build
         - make -j4 install
