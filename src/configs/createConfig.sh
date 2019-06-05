@@ -181,41 +181,31 @@ else    # first creation
     chipNames=()
     while [ ${cnt} -lt ${chips} ]; do
         cnt=$(( cnt + 1 ))
-        echo "Create ${asic}/${sn}/${sn}_chip${cnt}.json"
+        chipName="${sn}_chip${cnt}"
+        echo "Create ${asic}/${sn}/${chipName}.json"
         echo "---------------------"
-        echo "name: ${sn}_chip${cnt}"
-        echo "chipId: ${cnt}"
+        echo "chip serial number: ${chipName}"
         echo "---------------------"
-        echo "Change name ... [<chipName>/n] "
-        read answer
-        while [ -z ${answer} ]; 
-        do
-            echo "Change name ... [<chipName>/n] "
-            read answer
-        done
-        if [ "${answer}" != "n" ]; then
-            chipName=${answer}
-        else
-            chipName="${sn}_chip${cnt}"
-        fi
         chipNames+=( ${chipName} )
-        echo "Change chipId ... [#(chipId)/n] "
+        echo "Set chipId for chip${cnt}... [#(chipId)] "
         read answer
-        while [ -z ${answer} ]; 
+        unset id
+        while [ -z ${id} ]; 
         do
-            echo "Change chipId ... [#(chipId)/n] "
-        done
-        if [ "${answer}" != "n" ]; then
-            echo ${answer} | grep [^0-9] > /dev/null 2>&1
-            if [ $? -eq 0 ]; then
-                echo "Please give an integral as chipId. "
-                exit
+            if [ -z ${answer} ]; then 
+                echo "Set chipId ... [#(chipId)] "
+                read answer
             else
-                id=${answer}
+                echo ${answer} | grep [^0-9] > /dev/null 2>&1
+                if [ $? -eq 0 ]; then
+                    echo "Please give an integral as chipId. "
+                    unset answer
+                    read answer
+                else
+                    id=${answer}
+                fi
             fi
-        else
-            id=${cnt}
-        fi
+        done
         chipIds+=( ${id} )
     done
 
@@ -229,7 +219,7 @@ else    # first creation
     while [ ${cnt} -lt ${chips} ]; do
         cnt=$(( cnt + 1 ))
         echo "** ${sn}_chip${cnt}"
-        echo "    name: ${chipNames[$((cnt-1))]}"
+        echo "    chip serial number: ${chipNames[$((cnt-1))]}"
         echo "    chipId: ${chipIds[$((cnt-1))]}"
     done
     echo " "
