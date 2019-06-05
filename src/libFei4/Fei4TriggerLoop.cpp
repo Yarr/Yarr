@@ -45,8 +45,8 @@ void Fei4TriggerLoop::init() {
     // TODO ISSUE: This makes problems
     /*for (unsigned i=0; i<keeper->feList.size(); i++) {
         if (keeper->feList[i]->isActive()) {
-            std::cout << "Tx = " << (0x1 << keeper->feList[i]->getTxChannel()) << std::endl;
-            g_tx->setCmdEnable(0x1 << keeper->feList[i]->getTxChannel());
+            std::cout << "Tx = " << (keeper->feList[i]->getTxChannel()) << std::endl;
+            g_tx->setCmdEnable(keeper->feList[i]->getTxChannel());
             keeper->feList[i]->setRunMode(true);
             usleep(100);
             while(!g_tx->isCmdEmpty());

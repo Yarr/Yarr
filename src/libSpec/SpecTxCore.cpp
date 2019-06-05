@@ -25,8 +25,8 @@ void SpecTxCore::writeFifo(uint32_t value) {
 void SpecTxCore::setCmdEnable(uint32_t value) {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << value << std::dec << std::endl;
-    SpecCom::writeSingle(TX_ADDR | TX_ENABLE, value);
-    enMask = value;
+    SpecCom::writeSingle(TX_ADDR | TX_ENABLE, (1 << value));
+    enMask = (1 << value);
 }
 
 void SpecTxCore::setCmdEnable(std::vector<uint32_t> channels) {

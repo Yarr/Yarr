@@ -420,7 +420,7 @@ int main(int argc, char *argv[]) {
     for ( FrontEnd* fe : bookie.feList ) {
         std::cout << "-> Configuring " << dynamic_cast<FrontEndCfg*>(fe)->getName() << std::endl;
         // Select correct channel
-        hwCtrl->setCmdEnable(0x1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+        hwCtrl->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         // Configure
         fe->configure();
         // Wait for fifo to be empty

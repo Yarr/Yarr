@@ -126,7 +126,7 @@ void Rd53aGlobalFeedback::writePar() {
     for (auto *fe : keeper->feList) {
         if(fe->getActive()) {
             // Enable single channel
-            g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+            g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
             // Write parameter
             dynamic_cast<Rd53a*>(fe)->writeRegister(parPtr, m_values[dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()]);
             while(!g_tx->isCmdEmpty()){}
@@ -158,7 +158,7 @@ void Rd53aGlobalFeedback::init() {
     for (auto *fe : keeper->feList) {
         if (fe->getActive()) {
             Rd53a *rd53a = dynamic_cast<Rd53a*>(fe);
-            g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+            g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
             switch (m_pixelReg[0]) { // Lin regs
                 case 0: // Leave TDACs as config setting
                     break;

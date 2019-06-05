@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
         Fei4 *fe = bookie.feList[i];
         std::cout << "-> Configuring " << fe->getName() << std::endl;
         // Select correct channel
-        spec.setCmdEnable(0x1 << fe->getTxChannel());
+        spec.setCmdEnable(fe->getTxChannel());
         // Configure
         fe->configure();
         fe->configurePixels(); // TODO should call abstract configure only

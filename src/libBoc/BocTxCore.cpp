@@ -22,7 +22,7 @@ BocTxCore::~BocTxCore()
 void BocTxCore::setCmdEnable(uint32_t value)
 {
 	// save mask internally
-	m_enableMask = value;
+	m_enableMask = 1 << value;
 
 	// update BOC configuration
 	m_com->writeSingle(BMFN_OFFSET + BMF_TXBROADCAST0, (m_enableMask >>  0) & 0xFF);

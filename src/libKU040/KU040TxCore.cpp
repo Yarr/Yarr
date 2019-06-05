@@ -39,7 +39,7 @@ void KU040TxCore::DumpTxCounters()
 void KU040TxCore::setCmdEnable(uint32_t value)
 {
 	// save mask internally
-	m_enableMask = value;
+	m_enableMask = 1 << value;
 
 	// update TX configuration
 	for(int i = 0; i < 20; i++)
