@@ -66,14 +66,24 @@ void NetioTxCore::disableChannel(uint64_t elink){
   //if(m_verbose) cout << "Disable TX elink: 0x" << hex << elink << dec << endl;
 }
 
-void NetioTxCore::setCmdEnable(uint32_t mask) {
-  for(int chan=0; chan<32; chan++) {
-    if((1<<chan) & mask) {
-      enableChannel(chan);
-    } else {
-      disableChannel(chan);
+void NetioTxCore::disableAllChannels() {
+    for (std::pair<uint32_t, bool> elink : m_elinks) {
+        elink.second = false;
     }
-  }
+}
+
+// Activate single channel
+void NetioTxCore::setCmdEnable(uint32_t mask) {
+    this->disableAllChannels();
+    this->enableChannel(mask);
+}
+
+// Broadcast to multiple channels
+void NetioTxCore::setCmdEnable(std::vector<uint32_t> channels) {
+    this->disableAllChannels();
+    for (uint32_t channel : channels) {
+        this->enableChannel(channel);
+    }
 }
 
 uint32_t NetioTxCore::getCmdEnable() {

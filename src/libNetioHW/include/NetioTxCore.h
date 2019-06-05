@@ -55,6 +55,7 @@ public:
   void releaseFifo() override;
 
   void setCmdEnable(uint32_t) override;
+  void setCmdEnable(std::vector<uint32_t> channels) override;
   uint32_t getCmdEnable() override;
 
   /**
@@ -200,6 +201,7 @@ private:
 
   void enableChannel(uint64_t channel);
   void disableChannel(uint64_t channel);
+  void disableAllChannels();
   void writeFifo(uint32_t channel, uint32_t value);
 
   void prepareTrigger();

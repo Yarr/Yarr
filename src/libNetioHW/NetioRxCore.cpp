@@ -62,19 +62,25 @@ void NetioRxCore::enableChannel(uint64_t elink){
 void NetioRxCore::disableChannel(uint64_t elink){
   if(m_verbose) cout << "Disable RX elink: 0x" << hex << elink << dec << endl;
   //m_nioh.stopChecking();
-  //m_elinks[elink]=false;
-  // We don't disable channels...
+  m_elinks[elink]=false;
+}
+
+void NetioRxCore::disableAllChannels() {
+    for (std::pair<uint32_t, bool> elink : m_elinks) {
+        elink.second = false;
+    }
 }
 
 void NetioRxCore::setRxEnable(uint32_t val) {
-  for(int chan=0; chan<200; chan++) {
-    //if((1<<chan) & val) {
-    if (chan == 128) {
-      enableChannel(chan);
-    } else {
-      disableChannel(chan);
+    this->disableAllChannels();
+    this->enableChannel(val);
+}
+
+void NetioRxCore::setRxEnable(std::vector<uint32_t> channels) {
+    this->disableAllChannels();
+    for (uint32_t channel : channels) {
+        this->enableChannel(channel);
     }
-  }
 }
 
 void NetioRxCore::maskRxEnable(uint32_t val, uint32_t mask) {
