@@ -67,7 +67,7 @@ void NetioTxCore::disableChannel(uint64_t elink){
 }
 
 void NetioTxCore::disableAllChannels() {
-    for (std::pair<uint32_t, bool> elink : m_elinks) {
+    for (auto &elink : m_elinks) {
         elink.second = false;
     }
 }
