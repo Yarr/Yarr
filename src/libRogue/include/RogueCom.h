@@ -58,7 +58,7 @@ class RogueReceiver :  public rogue::interfaces::stream::Slave {
 
 class RogueCom  {
  public:
- 
+ RogueCom() : txfifo_cnt(0) {}
   static std::shared_ptr<RogueCom> getInstance() {
     if(!instance) {
       instance=std::make_shared<RogueCom>();
@@ -148,7 +148,7 @@ class RogueCom  {
       rxfifo.push(data[i]);
   }
   uint32_t tx_size() {
-    uint32_t result= txfifo.size();
+    uint32_t result= txfifo_cnt;
     return result;
   }
   void setFirmwareTrigger(bool enable) {
@@ -159,7 +159,8 @@ class RogueCom  {
   }
   bool getFirmwareTrigger() {return firmwareTrigger;}
  protected:
- private:	
+ private:
+#define  N_TXFIFO 4096
   uint32_t m_counter;
   uint32_t rxPhyMon;
   uint32_t trigLUT;
@@ -167,7 +168,8 @@ class RogueCom  {
   uint32_t trigEmu;
   uint32_t sysReg;
   uint32_t NTCReg;
-  tbb::concurrent_vector<uint32_t> txfifo;
+  uint32_t txfifo[N_TXFIFO];
+  uint32_t txfifo_cnt;
   bool forceRelaseTxfifo;
   tbb::concurrent_queue<uint32_t> rxfifo;
   rogue::interfaces::memory::MasterPtr mast;

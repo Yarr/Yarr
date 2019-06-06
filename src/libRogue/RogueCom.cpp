@@ -134,12 +134,12 @@ uint32_t  RogueCom::getCurSize(){
   return size;
 }
 bool  RogueCom::isEmpty() {
-  bool result=txfifo.empty();
+  bool result=(txfifo_cnt==0);
 
   if(result==false){
 	  forceRelaseTxfifo=1;
 	  releaseFifo();
-	  result=txfifo.empty();
+	  result=(txfifo_cnt==0);
   }
 
   return result;
@@ -159,13 +159,14 @@ uint32_t  RogueCom::readBlock32(uint32_t *buf, uint32_t length){
   return l;
 }
 void  RogueCom::write32(uint32_t value){
-  txfifo.push_back(value);
+  txfifo[txfifo_cnt]=value;
+  txfifo_cnt++;
 }
 void  RogueCom::releaseFifo(){
-  if(forceRelaseTxfifo || txfifo.size()>2048){ 
-	  configStream->send((uint8_t*)&txfifo.front(),4*txfifo.size());
-	  txfifo.clear();
-	  forceRelaseTxfifo=false;
+  if(forceRelaseTxfifo || txfifo_cnt>2048){ 
+    configStream->send((uint8_t*)txfifo,sizeof(uint32_t)*txfifo_cnt);
+    txfifo_cnt=0;
+    forceRelaseTxfifo=false;
   }
 
 }
