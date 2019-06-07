@@ -71,7 +71,7 @@ void StdDataLoop::execPart2() {
     std::this_thread::sleep_for(g_rx->getWaitTime());
     do {
         //curCnt = g_rx->getCurCount();
-        newData =  g_rx->readData();
+        newData = g_rx->readData();
         iterations++;
         if (newData != NULL) {
             count += newData->words;
