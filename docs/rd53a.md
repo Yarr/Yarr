@@ -243,7 +243,7 @@ Loops over pixels. All pixels in one core column are serialized on the following
 unsigned serial = (core_row*64)+((col+(core_row%8))%8)*8+row%8;
 ```
 
-The maximum of the loops defines how many pixels should be activated at one time. E.g. if the max is 64 that means every 64th pixel (1 pixel per core) and requires 64 steps to loop over all pixels.
+The maximum of the loops defines how many pixels should be activated at one time. E.g. if the max is 64 that means every 64th pixel (1 pixel per core) and requires 64 steps to loop over all pixels. A pattern of enabled pixels in each mask step for ```max = 16``` can be found [here](https://docs.google.com/spreadsheets/d/1VXZn-fp16U6Rsu_GvGmq_fWgU0qwa0niilJ82ZQOYY8/edit?usp=sharing)
 
 Config parameters:
 
