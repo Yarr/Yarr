@@ -6,9 +6,10 @@ SpecRxCore::SpecRxCore() {
 }
 
 void SpecRxCore::setRxEnable(uint32_t value) {
+    uint32_t mask = (1 << value);
     if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << value << std::dec << std::endl;
-    SpecCom::writeSingle(RX_ADDR | RX_ENABLE, value);
+        std::cout << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << mask << std::dec << std::endl;
+    SpecCom::writeSingle(RX_ADDR | RX_ENABLE, mask);
 }
 
 void SpecRxCore::setRxEnable(std::vector<uint32_t> channels) {
