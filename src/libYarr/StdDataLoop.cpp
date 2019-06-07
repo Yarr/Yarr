@@ -77,7 +77,7 @@ void StdDataLoop::execPart2() {
             count += newData->words;
             rdc->add(newData);
         }
-    } while (newData != NULL && g_rx->getCurCount() != 0);
+    } while (newData != NULL || g_rx->getCurCount() != 0);
     delete newData;
     
     rdc->stat = *g_stat;
