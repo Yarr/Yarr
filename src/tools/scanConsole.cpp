@@ -722,7 +722,16 @@ int main(int argc, char *argv[]) {
         std::cout << "Path to Controller Configuration: " << scanType << std::endl;
         std::cout << "Path to Test Run Information: " << dbTestInfo << std::endl;
 
-        database->writeTestRunFinish(strippedScan, cConfigPaths, runCounter, target_charge, target_tot);
+        std::string test_run_oid_str = database->writeTestRunFinish(strippedScan, cConfigPaths, runCounter, target_charge, target_tot);
+
+        std::ifstream info_ifs(dbTestInfo);
+        json tr_info_j = json::parse(info_ifs);
+        tr_info_j["testRun"] = test_run_oid_str;
+        tr_info_j["status"]="waiting";
+        std::ofstream finish_ofs(outputDir + "dcs_cache.json");
+        finish_ofs << std::setw(4) << tr_info_j;
+        finish_ofs.close();
+ 
         std::cout << "Done."<< std::endl;
     }
     delete database;

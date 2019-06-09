@@ -53,11 +53,11 @@ class DBHandler {
                                int /*i_run_number*/, 
                                int /*i_target_charge*/, 
                                int /*i_target_tot*/);
-        void writeTestRunFinish(std::string /*i_test_type*/, 
-                                std::vector<std::string> /*i_conn_paths*/,
-                                int /*i_run_number*/, 
-                                int /*i_target_charge*/, 
-                                int /*i_target_tot*/);
+        std::string writeTestRunFinish(std::string /*i_test_type*/, 
+                                       std::vector<std::string> /*i_conn_paths*/,
+                                       int /*i_run_number*/, 
+                                       int /*i_target_charge*/, 
+                                       int /*i_target_tot*/);
         /// Write config file for each chip
         void writeConfig(std::string /*i_ctr_oid_str*/, 
                          std::string /*i_file_path*/, 
@@ -202,9 +202,14 @@ class DBHandler {
                                          std::string /*i_filename*/, 
                                          std::string /*i_title*/);
 
+        /// To be deleted
         std::string writeJsonCode_Test(std::string /*i_file_path*/, 
                                        std::string /*i_filename*/, 
                                        std::string /*i_title*/);
+
+        /// split function
+        std::vector<std::string> split(std::string /*str*/, 
+                                       char /*del*/);
 
     private:
         // Mongo c++
@@ -216,6 +221,7 @@ class DBHandler {
         static std::vector<std::string> m_comp_list;
 
         std::string m_home_dir;
+        std::string m_db_cfg_path;
         std::string m_info_path;
         std::string m_tr_oid_str;
         std::string m_user_oid_str;

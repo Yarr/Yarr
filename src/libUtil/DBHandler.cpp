@@ -117,89 +117,220 @@ void DBHandler::setConnCfg(std::vector<std::string> i_conn_paths) {
 }
 
 void DBHandler::setTestRunInfo(std::string i_info_path) {//TODO make it enable to change file for each module (now combined)
+
     if (DB_DEBUG) std::cout << "DBHandler: Test Run Info path: " << i_info_path << std::endl;
+
+    // check info config file
     if (i_info_path == "") return;
     std::ifstream info_ifs(i_info_path);
     if (!info_ifs) {
-        std::cerr <<"#DB ERROR# Cannot open testRun info config file: " << i_info_path << std::endl;
+        std::cerr <<"#DB ERROR# Cannot open environment info config file: " << i_info_path << std::endl;
         abort(); return;
     }
-    json tr_info_j;
+    json info_json;
     try {
-        tr_info_j = json::parse(info_ifs);
+        info_json = json::parse(info_ifs);
     } catch (json::parse_error &e) {
-        std::cerr << __PRETTY_FUNCTION__ << "#DB ERROR# Could not parse config: " << e.what() << std::endl;
+        std::cerr << "#DB ERROR# Could not parse " << i_info_path << std::endl;
+        std::cerr << "           " << e.what() << std::endl;
         abort(); return;
     }
 
     // assembly stage
-    if (!tr_info_j["assembly"].empty()&&!tr_info_j["assembly"]["stage"].empty()) {
-        std::string stage = tr_info_j["assembly"]["stage"];
+    if (!info_json["assembly"].empty()&&!info_json["assembly"]["stage"].empty()) {
+        std::string stage = info_json["assembly"]["stage"];
         if (std::find(m_stage_list.begin(), m_stage_list.end(), stage)==m_stage_list.end()) {
-            std::cerr << "#DB ERROR# Stage key '" << stage << "' was not registered: " << i_info_path << std::endl;
+            std::cerr << "#DB ERROR# Stage '" << stage << "' was not registered in " << m_db_cfg_path << std::endl;
+            std::cerr << "           Check environment info config: " << i_info_path << std::endl;
+            std::cerr << "           Stage list : ";
+            for (unsigned i=0;i<m_stage_list.size();i++) std::cerr << m_stage_list[i] << " ";
+            std::cerr << std::endl;
             abort(); return;
         }
     }
     
     // environment
-    if (!tr_info_j["environments"].empty()) {
-        json env_json = tr_info_j["environments"];
+    if (!info_json["environments"].empty()) {
+        json env_json = info_json["environments"];
         for (auto j: env_json) {
+            if (j["key"].empty()) {
+                std::cerr << "#DB ERROR# Set the environmental key: " << i_info_path << std::endl;
+                std::cerr << "           Environmental key list : ";
+                for (unsigned i=0;i<m_env_list.size();i++) std::cerr << m_env_list[i] << " ";
+                std::cerr << std::endl;
+                abort(); return;
+            }            
             std::string j_key = j["key"];
+            if (j["status"].empty()) {
+                std::cerr << "#DB ERROR# Set the environmental status (enabled/disabled) of key '" << j_key << "': " << i_info_path << std::endl;
+                abort(); return;
+            }            
+            if (j["status"]!="enabled") continue;
             if (std::find(m_env_list.begin(), m_env_list.end(), j_key)==m_env_list.end()) {
-                std::cerr << "#DB ERROR# Environmental key '" << j_key << "' was not registered: " << i_info_path << std::endl;
+                std::cerr << "#DB ERROR# Environmental key '" << j_key << "' was not registered in " << m_db_cfg_path << std::endl;
+                std::cerr << "           Check environment info config: " << i_info_path << std::endl;
+                std::cerr << "           Environmental key list : ";
+                for (unsigned i=0;i<m_env_list.size();i++) std::cerr << m_env_list[i] << " ";
+                std::cerr << std::endl;
                 abort(); return;
             }
+            if (j["num"].empty()) {
+                std::cerr << "#DB ERROR# Set the key number of key '" << j_key << "': " << i_info_path << std::endl;
+                abort(); return;
+            } else if (!j["num"].is_number()) {
+                std::cerr << "#DB ERROR# Set the key number by integral of key '" << j_key << "': " << i_info_path << std::endl;
+                abort(); return;
+            }
+            int j_num = j["num"];
+            if (!j["margin"].empty()&&!j["margin"].is_number()) {
+                std::cerr << "#DB ERROR# Set the time margin[s] by number of key '" << j_key << "': " << i_info_path << std::endl;
+                abort(); return;
+            }            
             if (j["path"].empty()&&j["value"].empty()) {
-                std::cerr << "#DB ERROR# Environmental path/value of key '" << j_key << "' was empty: " << i_info_path << std::endl;
+                std::cerr << "#DB ERROR# Set the path to environmental data file or value of key '" << j_key << "': " << i_info_path << std::endl;
                 abort(); return;
             }
             if (j["description"].empty()) {
-                std::cerr << "#DB ERROR# Environmental description of key '" << j_key << "' was empty: " << i_info_path << std::endl;
+                std::cerr << "#DB ERROR# Set the description of key '" << j_key << "': " << i_info_path << std::endl;
                 abort(); return;
             }
             if (!j["path"].empty()) {
                 std::string env_path = j["path"];
                 std::ifstream env_ifs(env_path);
                 if (!env_ifs) {
-                    std::cerr <<"#DB ERROR# Cannot open environmental data file: " << env_path << std::endl;
+                    std::cerr << "#DB ERROR# Cannot open environmental data file: " << env_path << std::endl;
+                    std::cerr << "           Check the path to environmental data file of key '" << j_key << "': " << i_info_path << std::endl;
                     abort(); return;
                 }
-                int items;
-                env_ifs >> items;
-                if (items==0) {
-                    std::cerr <<"#DB ERROR# Something wrong in environmental data file: " << env_path << std::endl;
+                std::size_t suffixPos = env_path.find_last_of('.');
+                std::string fileextension = env_path.substr(suffixPos + 1);
+                std::string del;
+                if (fileextension=="dat") del = " ";
+                else if (fileextension=="csv") del = ",";
+                else {
+                    std::cerr <<"#DB ERROR# Environmental data file must be 'dat' or 'csv' format: " << env_path << std::endl;
                     abort(); return;
                 }
-                std::string key = "";
-                for (int i=0;i<items;i++) {
-                    std::string tmp;
-                    env_ifs >> tmp;
-                    if (j_key==tmp) key = tmp;
-                }
-                if (key=="") {
-                    std::cerr << "#DB ERROR# Environmental key '" << j_key << "' was not matched: " << env_path << std::endl;
-                    abort(); return;
-                }
-                std::string tmp, datetime;
-                env_ifs >> tmp;
-                env_ifs >> datetime;
-                try {
-                    stoi(datetime);
-                } catch (const std::invalid_argument& e) {
-                    std::cerr << __PRETTY_FUNCTION__ << "#DB ERROR# Could not convert to int: " << e.what() << std::endl;
-                    abort(); return;
-                }
-                std::string value;
-                for (int i=0;i<items;i++) {
-                    env_ifs >> value;
-                    try {
-                        std::stof(value);
-                    } catch (const std::invalid_argument& e) {
-                        std::cerr << __PRETTY_FUNCTION__ << "#DB ERROR# Could not convert to float: " << e.what() << std::endl;
+                char separator = del[0];
+                char tmp[1000];
+
+                // key
+                std::vector<std::string> env_keys;
+                env_ifs.getline(tmp, 1000);
+                int items = 0;
+                for (const auto s_tmp : split(tmp, separator)) {
+                    if (items==0&&s_tmp!="key") {
+                        std::cerr << "#DB ERROR# Set the environmental key in the 1st line: " << env_path << std::endl;
                         abort(); return;
                     }
+                    env_keys.push_back(s_tmp);
+                    items++;
                 }
+                if (std::find(env_keys.begin(), env_keys.end(), j_key)==env_keys.end()) {
+                    std::cerr << "#DB ERROR# Environmental key '" << j_key << "' was not written in environmental data file: " << env_path << std::endl;
+                    abort(); return;
+                }
+                // num
+                env_ifs.getline(tmp, 1000);
+                int cnt=0;
+                int key_cnt=0;
+                for (const auto s_tmp : split(tmp, separator)) {
+                    if (items==0&&s_tmp!="num") {
+                        std::cerr << "#DB ERROR# Set the key number in the 2nd line: " << env_path << std::endl;
+                        abort(); return;
+                    }
+                    if (env_keys[cnt]==j_key) {
+                        try {
+                            if (stoi(s_tmp)==j_num) key_cnt=cnt;
+                        } catch (const std::invalid_argument& e) {
+                            std::cerr << "#DB ERROR# Could not convert the key number text to int: " << env_path << std::endl;
+                            std::cerr << "           key: " << j_key << std::endl;
+                            std::cerr << "           text: " << s_tmp << std::endl;
+                            abort(); return;
+                        }
+                    }
+                    cnt++;
+                }
+                if (cnt!=items) {
+                    std::cerr << "#DB ERROR# Not match the number of the key numbers " << cnt << " to keys " << items << std::endl;
+                    abort(); return;
+                }
+                if (key_cnt==0) {
+                    std::cerr << "#DB ERROR# Environmental key '" << j_key << "' (num: " << j_num << ") was not written in environmental data file: " << env_path << std::endl;
+                    abort(); return;
+                }
+                // mode
+                env_ifs.getline(tmp, 1000);
+                cnt=0;
+                for (const auto s_tmp : split(tmp, separator)) {
+                    if (items==0&&s_tmp!="mode") {
+                        std::cerr << "#DB ERROR# Set DCS mode in the 3rd line: " << env_path << std::endl;
+                        abort(); return;
+                    }
+                    cnt++;
+                }
+                if (cnt!=items) {
+                    std::cerr << "#DB ERROR# Not match the number of DCS modes " << cnt << " to keys " << items << std::endl;
+                    abort(); return;
+                }
+                // setting value
+                env_ifs.getline(tmp, 1000);
+                cnt=0;
+                for (const auto s_tmp : split(tmp, separator)) {
+                    if (items==0&&s_tmp!="setting") {
+                        std::cerr << "#DB ERROR# Set DCS setting value in the 4th line: " << env_path << std::endl;
+                        abort(); return;
+                    }
+                    if (cnt==key_cnt) {
+                        try {
+                            stof(s_tmp);
+                        } catch (const std::invalid_argument& e) {
+                            std::cerr << "#DB ERROR# Could not convert the setting value text to float: " << env_path << std::endl;
+                            std::cerr << "           key: " << j_key << std::endl;
+                            std::cerr << "           text: " << s_tmp << std::endl;
+                            abort(); return;
+                        }
+                    }
+                    cnt++;
+                }
+                if (cnt!=items) {
+                    std::cerr << "#DB ERROR# Not match the number of the setting values " << cnt << " to keys " << items << std::endl;
+                    abort(); return;
+                }
+                // value
+                env_ifs.getline(tmp, 1000);
+                cnt = 0;
+                for (const auto s_tmp : split(tmp, separator)) {
+                    if (cnt==1) {
+                        try {
+                            stoi(s_tmp);
+                        } catch (const std::invalid_argument& e) {
+                            std::cerr << "#DB ERROR# Could not convert the unixtime text to int: " << env_path << std::endl;
+                            std::cerr << "           text: " << s_tmp << std::endl;
+                            abort(); return;
+                        }
+                    }
+                    if (cnt==key_cnt) {
+                        try {
+                            stof(s_tmp);
+                        } catch (const std::invalid_argument& e) {
+                            std::cerr << "#DB ERROR# Could not convert the value text to float: " << env_path << std::endl;
+                            std::cerr << "           key: " << j_key << std::endl;
+                            std::cerr << "           text: " << s_tmp << std::endl;
+                            abort(); return;
+                        }
+                    }
+                    cnt++;
+                }
+                if (cnt!=items) {
+                    std::cerr << "#DB ERROR# Not match the number of values " << cnt << " to keys " << items << std::endl;
+                    abort(); return;
+                }
+            } else {
+                if (!j["value"].is_number()) {
+                    std::cerr << "#DB ERROR# Set the value by number of key '" << j_key << "': " << i_info_path << std::endl;
+                    abort(); return;
+                }            
             }
         }
     }
@@ -270,6 +401,7 @@ void DBHandler::setUser() {
             std::cerr << "#DB ERROR# Failed to load the DB config: " << db_cfg_path << std::endl;
             std::abort();
         }
+        m_db_cfg_path = db_cfg_path;
         json db_json;
         try {
             db_json = json::parse(db_ifs);
@@ -334,7 +466,7 @@ void DBHandler::writeTestRunStart(std::string i_test_type, std::vector<std::stri
     }
 }
 
-void DBHandler::writeTestRunFinish(std::string i_test_type, std::vector<std::string> i_conn_paths, int i_run_number, int i_target_charge=-1, int i_target_tot=-1) {
+std::string DBHandler::writeTestRunFinish(std::string i_test_type, std::vector<std::string> i_conn_paths, int i_run_number, int i_target_charge=-1, int i_target_tot=-1) {
     if (DB_DEBUG) std::cout << "DBHandler: Write Test Run (finish): " << i_run_number << std::endl;
 
     mongocxx::collection collection = db["testRun"];
@@ -366,13 +498,7 @@ void DBHandler::writeTestRunFinish(std::string i_test_type, std::vector<std::str
         document{} << "$set" << doc_value.view() << finalize
     );
 
-    std::ifstream info_ifs(m_info_path);
-    json tr_info_j = json::parse(info_ifs);
-    tr_info_j["testRun"] = test_run_oid_str;
-    tr_info_j["status"]="waiting";
-    std::ofstream finish_ofs("test_dcs.json");
-    finish_ofs << std::setw(4) << tr_info_j;
-    finish_ofs.close();
+    return test_run_oid_str;
 }
 
 void DBHandler::writeConfig(std::string i_ctr_oid_str, std::string i_file_path, std::string i_filename, std::string i_title, std::string i_collection) {
@@ -525,8 +651,8 @@ void DBHandler::registerSite() {
     if (maybe_result) return;
 
     char line[100];
-    std::cout << "DBHandler: Register this MAC address " << address << " ... " <<  std::endl;
-    std::cout << "\tInput the name of institution where this machin is > ";
+    std::cout << "DBHandler: Register this machine (MAC address: " << address << ") ... " <<  std::endl;
+    std::cout << "\tInput the name of institution where this machine is > ";
     std::cin.getline(line, sizeof(line));
     std::string institution = line;
     std::replace(institution.begin(), institution.end(), ' ', '_');
@@ -688,12 +814,12 @@ void DBHandler::registerEnvironment(std::string i_env_path) {
     if (DB_DEBUG) std::cout << "DBHandler: Register Environment: " << i_env_path << std::endl;
 
     if (i_env_path == "") {
-        std::cout << "#DB ERROR# Not found environmental file!" << std::endl;
+        std::cerr << "#DB ERROR# Environmental file was not given!" << std::endl;
         abort(); return;
     }
     std::ifstream env_ifs(i_env_path);
     if (!env_ifs) {
-        std::cerr <<"#DB ERROR# Cannot open environmental file: " << i_env_path << std::endl;
+        std::cerr << "#DB ERROR# Cannot open environmental file: " << i_env_path << std::endl;
         abort(); return;
     }
 
@@ -717,35 +843,30 @@ void DBHandler::registerEnvironment(std::string i_env_path) {
         std::ofstream finish_ofs(i_env_path);
         finish_ofs << std::setw(4) << test_json;
         finish_ofs.close();
-        return;
+        std::cerr << "#DB ERROR# Not found test run data id " << tr_oid_str << " in DB" << std::endl;
+        abort(); return;
     }
 
     if (test_json["environments"].empty()) return;
     json env_json = test_json["environments"];
-    std::vector<std::string> env_keys;
-    std::vector<std::string> descriptions;
-    std::vector<std::string> env_paths;
-    std::vector<std::string> env_vals;
+    std::vector<std::string> env_keys, descriptions, env_modes, env_paths;
+    std::vector<float> env_settings, env_vals, env_margins;
+    std::vector<int> env_nums;
     for (auto j: env_json) {
-        std::string j_key = j["key"];
-        if (!j["path"].empty()) {
-            std::string j_path = j["path"];
-            env_paths.push_back(j_path);
-        } else {
-            env_paths.push_back("null");
-        }
-        if (!j["value"].empty()) {
-            std::string val = j["value"].dump();
-            env_vals.push_back(val);
-        } else {
-            env_vals.push_back("null");
-        }
-        env_keys.push_back(j_key);
+        if (j["status"]!="enabled") continue;
+
+        env_keys.push_back(j["key"]);
+        env_nums.push_back(j["num"]);
         descriptions.push_back(j["description"]);
+        if (!j["path"].empty()) env_paths.push_back(j["path"]);
+        else env_paths.push_back("null");
+        if (!j["value"].empty()) env_vals.push_back(j["value"]);
+        else env_vals.push_back(-1); 
+        if (!j["margin"].empty()) env_margins.push_back(j["margin"]);
+        else env_margins.push_back(300);
     }
 
     // get start time from scan data
-
     std::chrono::seconds s = std::chrono::duration_cast<std::chrono::seconds>(run_result->view()["startTime"].get_date().value);
     std::time_t starttime = s.count();
     if (DB_DEBUG) {
@@ -765,54 +886,86 @@ void DBHandler::registerEnvironment(std::string i_env_path) {
     }
 
     // insert environment doc
-    auto result = collection.insert_one( 
-        document{} << "dbVersion" << -1 << 
-                      "sys"       << open_document << close_document <<
-        finalize 
-    );
+    document builder{};
+    auto docs = builder << 
+        "dbVersion" << -1 <<
+        "sys"       << open_document << close_document;
+    for (unsigned i=0;i<env_keys.size();i++) {
+        docs = docs << env_keys[i] << open_array << close_array;
+    }
+    bsoncxx::document::value doc_value = docs << finalize;
+    auto result = collection.insert_one( doc_value.view() );
     bsoncxx::oid env_oid = result->inserted_id().get_oid().value;
 
     for (int i=0; i<(int)env_keys.size(); i++) {
         if (DB_DEBUG) std::cout << "\tDBHandler: Register Environment: " << env_keys[i] << std::endl;
         if (env_paths[i]!="null") {
-            std::string env_path = env_paths[i];
-            std::ifstream env_ifs(env_path);
+            std::ifstream env_ifs(env_paths[i]);
+            std::size_t suffixPos = env_paths[i].find_last_of('.');
+            std::string fileextension = env_paths[i].substr(suffixPos + 1);
+            std::string del;
+            if (fileextension=="dat") del = " ";
+            else if (fileextension=="csv") del = ",";
+            char separator = del[0];
+
+            char tmp_key[1000], tmp_num[1000], tmp[1000];
             int data_num = 0;
-            std::vector<std::string> key_values;
-            std::vector<std::string> dates;
-            int items;
-            env_ifs >> items;
+            std::vector<float> key_values;
+            std::vector<int> dates;
+            // key and num
+            env_ifs.getline(tmp_key, 1000);
+            env_ifs.getline(tmp_num, 1000);
+            int items = 0;
             int key=-1;
-            for (int j=0;j<items;j++) {
-                std::string tmp;
-                env_ifs >> tmp;
-                if (env_keys[i]==tmp) key=j;
+            for (const auto s_tmp_key : split(tmp_key, separator)) {
+                if (env_keys[i]==s_tmp_key) {
+                    int cnt=0;
+                    for (const auto s_tmp_num : split(tmp_num, separator)) {
+                        if (cnt==items&&env_nums[i]==stoi(s_tmp_num)) key = items;
+                        cnt++;
+                    }
+                }
+                items++;
             }
-            while (!env_ifs.eof()) {
+            // mode
+            env_ifs.getline(tmp, 1000);
+            int cnt = 0;
+            for (const auto s_tmp : split(tmp, separator)) {
+                if (cnt==key) env_modes.push_back(s_tmp);
+                cnt++;
+            }
+            // setting
+            env_ifs.getline(tmp, 1000);
+            cnt = 0;
+            for (const auto s_tmp : split(tmp, separator)) {
+                if (cnt==key) env_settings.push_back(stof(s_tmp));
+                cnt++;
+            }
+            // value
+            while (env_ifs.getline(tmp, 1000)) {
                 std::string datetime = "";
                 std::string value = "";
-                std::string tmp;
-                env_ifs >> tmp;
-                env_ifs >> datetime;
-                for (int j=0;j<items;j++) {
-                    env_ifs >> tmp;
-                    if (j==key) value = tmp;
+                cnt = 0;
+                for (const auto s_tmp : split(tmp, separator)) {
+                    if (cnt==1) datetime = s_tmp;    
+                    if (cnt==key) value = s_tmp;
+                    cnt++;
                 }
-                if (value == ""||datetime == "") break;
+                if (value==""||datetime == "") break;
                 std::time_t timestamp = stoi(datetime);
-                if (difftime(starttime,timestamp)<500&&difftime(timestamp,finishtime)<500) { // store data from 1 minute before the starting time of the scan
-                    key_values.push_back(value);
-                    dates.push_back(datetime);
+                if (difftime(starttime,timestamp)<env_margins[i]&&difftime(timestamp,finishtime)<env_margins[i]) { // store data from 1 minute before the starting time of the scan
+                    key_values.push_back(stof(value));
+                    dates.push_back(stoi(datetime));
                     data_num++;
                 }
             }
             auto array_builder = bsoncxx::builder::basic::array{};
             for (int j=0;j<data_num;j++) {
-                std::time_t timestamp = stoi(dates[j]);
+                std::time_t timestamp = dates[j];
                 array_builder.append(
                     document{} << 
                         "date"        << bsoncxx::types::b_date{std::chrono::system_clock::from_time_t(timestamp)} <<
-                        "value"       << std::stof(key_values[j]) <<
+                        "value"       << key_values[j] <<
                     finalize
                 ); 
             }
@@ -822,6 +975,8 @@ void DBHandler::registerEnvironment(std::string i_env_path) {
                     env_keys[i] << open_document <<
                         "data"        << array_builder <<
                         "description" << descriptions[i] <<
+                        "mode" << env_modes[i] <<
+                        "setting" << env_settings[i] <<
                     close_document <<
                 close_document << finalize
             );
@@ -830,7 +985,7 @@ void DBHandler::registerEnvironment(std::string i_env_path) {
             array_builder.append(
                 document{} << 
                     "date"        << bsoncxx::types::b_date{std::chrono::system_clock::from_time_t(starttime)} <<
-                    "value"       << std::stof(env_vals[i]) <<
+                    "value"       << env_vals[i] <<
                 finalize
             ); 
             collection.update_one(
@@ -846,9 +1001,8 @@ void DBHandler::registerEnvironment(std::string i_env_path) {
     }
     this->addSys(env_oid.to_string(), "environment");
     this->addVersion("environment", "_id", env_oid.to_string(), "oid");
-    if (tr_oid_str!="") {
-        this->addValue(tr_oid_str, "testRun", "environment", env_oid.to_string());
-    }
+    this->addValue(tr_oid_str, "testRun", "environment", env_oid.to_string());
+
     test_json["status"]="done";
     std::ofstream finish_ofs(i_env_path);
     finish_ofs << std::setw(4) << test_json;
@@ -1152,9 +1306,9 @@ std::string DBHandler::registerTestRun(std::string i_test_type, int i_run_number
     std::string stage = "null";
     if (m_info_path != "") {
         std::ifstream info_ifs(m_info_path);
-        json tr_info_j = json::parse(info_ifs);
-        if (!tr_info_j["assembly"].empty()&&!tr_info_j["assembly"]["stage"].empty()) {
-            stage = tr_info_j["assembly"]["stage"].get<std::string>();
+        json info_json = json::parse(info_ifs);
+        if (!info_json["assembly"].empty()&&!info_json["assembly"]["stage"].empty()) {
+            stage = info_json["assembly"]["stage"].get<std::string>();
         }
     } 
 
@@ -1428,6 +1582,28 @@ std::string DBHandler::writeJsonCode_Test(std::string i_file_path, std::string i
     return oid_str;
 }
 
+std::vector<std::string> DBHandler::split(std::string str, char del) {
+    std::size_t first = 0;
+    std::size_t last = str.find_first_of(del);
+ 
+    std::vector<std::string> result;
+ 
+    while (first < str.size()) {
+        std::string subStr(str, first, last - first);
+ 
+        result.push_back(subStr);
+ 
+        first = last + 1;
+        last = str.find_first_of(del, first);
+ 
+        if (last == std::string::npos) {
+            last = str.size();
+        }
+    }
+ 
+    return result;
+}
+
 #else // Else if there is no MONGOCXX_INCLUDE
 
 DBHandler::DBHandler(bool i_db_use, std::string i_host_ip) {std::cout << "[LDB] Warning! DBHandler function is disabled!" << std::endl;}
@@ -1436,7 +1612,7 @@ void DBHandler::setConnCfg(std::vector<std::string> i_conn_paths) {}
 void DBHandler::setTestRunInfo(std::string i_info_path) {}
 void DBHandler::setUser() {}
 void DBHandler::writeTestRunStart(std::string i_test_type, std::vector<std::string> i_conn_paths, int i_run_number, int i_target_charge, int i_target_tot) {}
-void DBHandler::writeTestRunFinish(std::string i_test_type, std::vector<std::string> i_conn_paths, int i_run_number, int i_target_charge=-1, int i_target_tot=-1) {}
+std::string DBHandler::writeTestRunFinish(std::string i_test_type, std::vector<std::string> i_conn_paths, int i_run_number, int i_target_charge=-1, int i_target_tot=-1) {return "ERROR";}
 void DBHandler::writeConfig(std::string i_ctr_oid_str, std::string i_file_path, std::string i_filename, std::string i_title, std::string i_collection) {}
 void DBHandler::writeFiles(std::string i_serial_number, int i_run_number_s, int i_run_number_e) {}
 std::string DBHandler::uploadFromJson(std::string i_collection_name, std::string i_json_path) {return "ERROR";}
