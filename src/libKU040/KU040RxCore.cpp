@@ -53,7 +53,7 @@ KU040RxCore::~KU040RxCore()
 
 void KU040RxCore::setRxEnable(uint32_t channel)
 {
-    uint32_t val = (1 << channel)
+    uint32_t val = (1 << channel);
 	// check mask (if we are in 320 mode only even channels can be enabled)
 	if((m_linkSpeed == 320) && ((val & 0xAAAAA) != 0))
 	{
