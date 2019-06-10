@@ -250,8 +250,6 @@ Config parameters:
  - max ``<int>``: number of mask stages
  - min ``<int>``: mask stage to start with
  - step ``<int>``: step size of mask stage
-<<<<<<< HEAD
-=======
 
 ## Rd53aParameterLoop
 Loops over a specifed range of an RD53A global register
@@ -285,5 +283,3 @@ Config parameters:
 - tuneDiff ``<bool>``: enable adjustment of diff FE pixel regs
 - tuneLin ``<bool>``: enable adjustment of lin FE pixel regs
 - resetTdac ``<bool>``: reset TDACs to defaults
-
->>>>>>> upstream/devel
