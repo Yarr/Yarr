@@ -33,7 +33,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 option(ENABLE_NETIO "Enable NetIO, needs NETIO_DIR setting separately" OFF)
 
 #add libraries
-list(APPEND libs Yarr Spec Util Emu Fe65p2 Fei4 Rce Boc Rd53a KU040)
+list(APPEND libs Yarr Spec Util Emu Fe65p2 Fei4 Star Rce Boc Rd53a KU040)
 if(ENABLE_NETIO)
     list(APPEND libs NetioHW)
 endif()
