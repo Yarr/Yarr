@@ -872,6 +872,7 @@ void DBHandler::registerEnvironment(std::string i_env_path) {
                         "description" << descriptions[i] <<
                         "mode" << env_modes[i] <<
                         "setting" << env_settings[i] <<
+                        "num" << env_nums[i] <<
                     close_document <<
                 close_document << finalize
             );
