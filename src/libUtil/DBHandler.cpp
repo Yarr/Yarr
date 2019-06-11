@@ -38,22 +38,16 @@ std::vector<std::string> DBHandler::m_comp_list{};
 
 DBHandler::DBHandler(bool i_db_use, std::string i_host_ip):
 client(), db(), 
-m_home_dir(), m_info_path(""), m_tr_oid_str(""), m_user_oid_str(), m_address(), m_chip_type(""),
+m_info_path(""), m_tr_oid_str(""), m_user_oid_str(), m_address(), m_chip_type(""),
 m_histo_names(), m_db_version(1.0), DB_DEBUG(false)
 {
     if (DB_DEBUG) std::cout << "DBHandler: Initialize" << std::endl;
-
-    std::string home = getenv("HOME"); 
-    m_home_dir = home  + "/.yarr/";
-
     if (!i_db_use) return;
 
     mongocxx::instance inst{};
     client = mongocxx::client{mongocxx::uri{i_host_ip}};
     db = client["localdb"]; // Database name is 'localdb'
-
-    // set index in fs.files
-    db["fs.files"].create_index( document{} << "hash" << 1 << "_id" << 1 << finalize );
+    db["fs.files"].create_index( document{} << "hash" << 1 << "_id" << 1 << finalize ); // set index in fs.files
 }
 
 DBHandler::~DBHandler() {
@@ -65,50 +59,46 @@ DBHandler::~DBHandler() {
 //
 
 void DBHandler::setConnCfg(std::vector<std::string> i_conn_paths) {
-    if (DB_DEBUG) std::cout << "DBHandler: Connectivity Cfg: " << std::endl;
-    for (auto conn_path : i_conn_paths) {
-        if (DB_DEBUG) std::cout << "\t" << conn_path << std::endl;
-        std::ifstream conn_ifs(conn_path);
-        json conn_json;
-        try {
-            conn_json = json::parse(conn_ifs);
-        } catch (json::parse_error &e) {
-            std::cerr << __PRETTY_FUNCTION__ << "#DB ERROR# Could not parse config: " << e.what() << std::endl;
-            abort(); return;
-        }
+    if (DB_DEBUG) std::cout << "DBHandler: Set connectivity config" << std::endl;
 
-        // Get chip type
-        std::string chip_type = conn_json["chipType"];
-        if (chip_type == "FEI4B") chip_type = "FE-I4B";
-        m_chip_type = chip_type;
+    for (auto conn_path : i_conn_paths) {
+        json conn_json = path2Json(conn_path);
+        m_chip_type = conn_json["chipType"];
+        if (m_chip_type == "FEI4B") m_chip_type = "FE-I4B";
+
         // Module Component
-        std::string mo_oid_str = getComponent(conn_json["module"], m_chip_type);
+        std::string mo_oid_str = getComponent(conn_json["module"], m_chip_type, conn_path);
         std::string mo_serial_number = conn_json["module"]["serialNumber"];
         if (mo_oid_str=="") {
             std::cerr <<"#DB ERROR# This Module was not registered: " << mo_serial_number << std::endl;
             abort(); return;
         }
         int num = stoi(this->getValue("component", "_id", mo_oid_str, "oid", "children", "int"));
+
         // Chip Component
         for (unsigned i=0; i<conn_json["chips"].size(); i++) {
             int chip_id = conn_json["chips"][i]["chipId"];
-            bsoncxx::document::value doc_value = document{} <<  
+            auto doc_value = document{} <<  
                 "parent" << mo_oid_str <<
-                "chipId" << chip_id <<
-                "status" << "active" <<
+                "chipId" << chip_id    <<
+                "status" << "active"   <<
             finalize;
             auto maybe_result = db["childParentRelation"].find_one(doc_value.view());
             if (!maybe_result) {
-                std::cerr <<"#DB ERROR# This Relationship between Module '" << mo_serial_number << "' and Chip 'chipId" << std::to_string(chip_id) << "' was not registered." << std::endl;
+                std::cerr << "#DB ERROR# This Relationship was not registered." << std::endl;
+                std::cerr << "           Module: " << mo_serial_number << std::endl;
+                std::cerr << "           ChipId: " << chip_id << std::endl;
                 abort(); return;
             }
             if (!conn_json["chips"][i]["dbconfig"].empty()) {
                 this->getJsonCode(conn_json["chips"][i]["dbconfig"], conn_json["chips"][i]["config"], conn_json["chips"][i]["serialNumber"], "chipCfg", conn_json["chips"][i]["chipId"]);
             }
         }
-        mongocxx::cursor cursor = db["childParentRelation"].find(document{} << "parent" << mo_oid_str <<
-                                                                               "status" << "active" << 
-        finalize);
+        mongocxx::cursor cursor = db["childParentRelation"].find(
+            document{} << "parent" << mo_oid_str <<
+                          "status" << "active"   << 
+            finalize
+        );
         if (num!=(int)std::distance(cursor.begin(), cursor.end())) {
             std::cerr <<"#DB ERROR# The number of chips was not mathced." << std::endl;
             abort(); return;
@@ -117,24 +107,13 @@ void DBHandler::setConnCfg(std::vector<std::string> i_conn_paths) {
 }
 
 void DBHandler::setTestRunInfo(std::string i_info_path) {//TODO make it enable to change file for each module (now combined)
-
-    if (DB_DEBUG) std::cout << "DBHandler: Test Run Info path: " << i_info_path << std::endl;
+    if (DB_DEBUG) std::cout << "DBHandler: Set test info config: " << i_info_path << std::endl;
 
     // check info config file
     if (i_info_path == "") return;
     std::ifstream info_ifs(i_info_path);
-    if (!info_ifs) {
-        std::cerr <<"#DB ERROR# Cannot open environment info config file: " << i_info_path << std::endl;
-        abort(); return;
-    }
-    json info_json;
-    try {
-        info_json = json::parse(info_ifs);
-    } catch (json::parse_error &e) {
-        std::cerr << "#DB ERROR# Could not parse " << i_info_path << std::endl;
-        std::cerr << "           " << e.what() << std::endl;
-        abort(); return;
-    }
+    checkFile(info_ifs.is_open(), i_info_path, "environmental info config file");
+    json info_json = path2Json(i_info_path);
 
     // assembly stage
     if (!info_json["assembly"].empty()&&!info_json["assembly"]["stage"].empty()) {
@@ -152,56 +131,31 @@ void DBHandler::setTestRunInfo(std::string i_info_path) {//TODO make it enable t
     // environment
     if (!info_json["environments"].empty()) {
         json env_json = info_json["environments"];
-        for (auto j: env_json) {
-            if (j["key"].empty()) {
-                std::cerr << "#DB ERROR# Set the environmental key: " << i_info_path << std::endl;
-                std::cerr << "           Environmental key list : ";
-                for (unsigned i=0;i<m_env_list.size();i++) std::cerr << m_env_list[i] << " ";
-                std::cerr << std::endl;
-                abort(); return;
-            }            
-            std::string j_key = j["key"];
-            if (j["status"].empty()) {
-                std::cerr << "#DB ERROR# Set the environmental status (enabled/disabled) of key '" << j_key << "': " << i_info_path << std::endl;
-                abort(); return;
-            }            
-            if (j["status"]!="enabled") continue;
+        for (int i=0; i<(int)env_json.size(); i++) {
+            checkEmpty(env_json[i]["key"].empty(),    "environments."+std::to_string(i)+".key",    i_info_path, "Set the environmental key from the key list.");
+            checkEmpty(env_json[i]["status"].empty(), "environments."+std::to_string(i)+".status", i_info_path, "Set enabled/disabled to register.");
+            if (env_json[i]["status"]!="enabled") continue;
+
+            std::string j_key = env_json[i]["key"];
             if (std::find(m_env_list.begin(), m_env_list.end(), j_key)==m_env_list.end()) {
                 std::cerr << "#DB ERROR# Environmental key '" << j_key << "' was not registered in " << m_db_cfg_path << std::endl;
                 std::cerr << "           Check environment info config: " << i_info_path << std::endl;
                 std::cerr << "           Environmental key list : ";
-                for (unsigned i=0;i<m_env_list.size();i++) std::cerr << m_env_list[i] << " ";
+                for (unsigned j=0;j<m_env_list.size();j++) std::cerr << m_env_list[j] << " ";
                 std::cerr << std::endl;
                 abort(); return;
             }
-            if (j["num"].empty()) {
-                std::cerr << "#DB ERROR# Set the key number of key '" << j_key << "': " << i_info_path << std::endl;
-                abort(); return;
-            } else if (!j["num"].is_number()) {
-                std::cerr << "#DB ERROR# Set the key number by integral of key '" << j_key << "': " << i_info_path << std::endl;
-                abort(); return;
-            }
-            int j_num = j["num"];
-            if (!j["margin"].empty()&&!j["margin"].is_number()) {
-                std::cerr << "#DB ERROR# Set the time margin[s] by number of key '" << j_key << "': " << i_info_path << std::endl;
-                abort(); return;
-            }            
-            if (j["path"].empty()&&j["value"].empty()) {
-                std::cerr << "#DB ERROR# Set the path to environmental data file or value of key '" << j_key << "': " << i_info_path << std::endl;
-                abort(); return;
-            }
-            if (j["description"].empty()) {
-                std::cerr << "#DB ERROR# Set the description of key '" << j_key << "': " << i_info_path << std::endl;
-                abort(); return;
-            }
-            if (!j["path"].empty()) {
-                std::string env_path = j["path"];
+            checkEmpty(env_json[i]["path"].empty()&&env_json[i]["value"].empty(), "environments."+std::to_string(i)+".path/value", i_info_path, "Set the path to environmental data file or value.");
+            checkEmpty(env_json[i]["description"].empty(), "environments."+std::to_string(i)+".description", i_info_path, "Set the description.");
+            checkEmpty(env_json[i]["num"].empty(),         "environments."+std::to_string(i)+".num",         i_info_path, "Set the key number.");
+            checkNumber(env_json[i]["num"].is_number(),    "environments."+std::to_string(i)+".num",         i_info_path);
+            if (!env_json[i]["margin"].empty()) checkNumber(env_json[i]["margin"].is_number(), "environments."+std::to_string(i)+".margin", i_info_path);
+
+            if (!env_json[i]["path"].empty()) {
+                int j_num = env_json[i]["num"];
+                std::string env_path = env_json[i]["path"];
                 std::ifstream env_ifs(env_path);
-                if (!env_ifs) {
-                    std::cerr << "#DB ERROR# Cannot open environmental data file: " << env_path << std::endl;
-                    std::cerr << "           Check the path to environmental data file of key '" << j_key << "': " << i_info_path << std::endl;
-                    abort(); return;
-                }
+                checkFile(env_ifs.is_open(), env_path, "Check environmental data file of key '"+j_key+"' in file "+i_info_path+".");
                 std::size_t suffixPos = env_path.find_last_of('.');
                 std::string fileextension = env_path.substr(suffixPos + 1);
                 std::string del;
@@ -327,10 +281,7 @@ void DBHandler::setTestRunInfo(std::string i_info_path) {//TODO make it enable t
                     abort(); return;
                 }
             } else {
-                if (!j["value"].is_number()) {
-                    std::cerr << "#DB ERROR# Set the value by number of key '" << j_key << "': " << i_info_path << std::endl;
-                    abort(); return;
-                }            
+                checkNumber(env_json[i]["value"].is_number(), "environments."+std::to_string(i)+".value", i_info_path);
             }
         }
     }
@@ -345,20 +296,13 @@ void DBHandler::setUser() {
     std::string dbuser = getenv("DBUSER");
 
     // Set UserID from DB
-    std::string user_path = m_home_dir + dbuser + "_user.json";
+    std::string home = getenv("HOME");
+    std::string user_path = home + "/.yarr/" + dbuser + "_user.json";
     if (DB_DEBUG) std::cout << "DBHandler: Set user: " << user_path << std::endl;
     std::ifstream user_ifs(user_path);
-    if (!user_ifs) {
-        std::cerr << "#DB ERROR# Failed to load the user config: " << user_path << std::endl;
-        std::abort();
-    }
-    json user_json;
-    try {
-        user_json = json::parse(user_ifs);
-    } catch (json::parse_error &e) {
-        std::cerr << __PRETTY_FUNCTION__ << "#DB ERROR# Could not parse config: " << e.what() << std::endl;
-        abort(); return;
-    }
+    checkFile(user_ifs.is_open(), user_path, "Check the user config file or Login again.");
+
+    json user_json = path2Json(user_path);
     std::string userName     = user_json["userName"];
     std::string institution  = user_json["institution"];
     std::string userIdentity = user_json["userIdentity"];
@@ -371,18 +315,16 @@ void DBHandler::setUser() {
     );
     if (!maybe_result) {
         std::cerr << "#DB ERROR# User '" << userName << "' was not registerd: " << user_path << std::endl;
-        std::abort();
+        abort(); return;
     }
     m_user_oid_str = maybe_result->view()["_id"].get_oid().value.to_string();
 
     // Set MAC address
-    std::string address_path = m_home_dir + "address";
+    std::string address_path = home + "/.yarr/address";
     if (DB_DEBUG) std::cout << "DBHandler: Set address: " << address_path << std::endl;
     std::ifstream address_ifs(address_path);
-    if (!address_ifs) {
-        std::cerr << "#DB ERROR# Failed to load the address config: " << address_path << std::endl;
-        std::abort();
-    }
+    checkFile(address_ifs.is_open(), address_path, "Check the address config file or Login again.");
+
     address_ifs >> m_address;
     maybe_result = db["institution"].find_one(document{} << "address" << m_address << finalize);
     if (!maybe_result) {
@@ -397,18 +339,9 @@ void DBHandler::setUser() {
     if (m_stage_list.size()==0&&m_env_list.size()==0&&m_comp_list.size()==0&&!user_json["dbCfg"].empty()) {
         std::string db_cfg_path = user_json["dbCfg"];
         std::ifstream db_ifs(db_cfg_path);
-        if (!db_ifs) {
-            std::cerr << "#DB ERROR# Failed to load the DB config: " << db_cfg_path << std::endl;
-            std::abort();
-        }
+        checkFile(db_ifs.is_open(), db_cfg_path, "Check the DB config file or dbCfg field in the user config file "+user_path+".");
         m_db_cfg_path = db_cfg_path;
-        json db_json;
-        try {
-            db_json = json::parse(db_ifs);
-        } catch (json::parse_error &e) {
-            std::cerr << __PRETTY_FUNCTION__ << "#DB ERROR# Could not parse config: " << e.what() << std::endl;
-            abort(); return;
-        }
+        json db_json = path2Json(db_cfg_path);
         for(auto sTmp: db_json["stage"]) {
             m_stage_list.push_back( sTmp );
         }
@@ -445,7 +378,7 @@ void DBHandler::writeTestRunStart(std::string i_test_type, std::vector<std::stri
     for (auto conn_path : i_conn_paths) {
         std::ifstream conn_ifs(conn_path);
         json conn_json = json::parse(conn_ifs);
-        std::string mo_oid_str = getComponent(conn_json["module"], m_chip_type);
+        std::string mo_oid_str = getComponent(conn_json["module"], m_chip_type, conn_path);
         std::string ctr_oid_str = this->registerComponentTestRun(mo_oid_str, m_tr_oid_str, i_test_type, i_run_number, -1, -1);
         mongocxx::cursor cursor = db["childParentRelation"].find(document{} << "parent" << mo_oid_str <<
                                                                                "status" << "active" << 
@@ -506,13 +439,7 @@ void DBHandler::writeConfig(std::string i_ctr_oid_str, std::string i_file_path, 
 
     std::ifstream file_ifs(i_file_path);
     if (!file_ifs) return;
-    json file_json;
-    try {
-        file_json = json::parse(file_ifs);
-    } catch (json::parse_error &e) {
-        std::cerr << __PRETTY_FUNCTION__ << "#DB ERROR# Could not parse config: " << e.what() << std::endl;
-        abort(); return;
-    }
+    json file_json = path2Json(i_file_path);
     file_ifs.close();
 
     std::string cfg_oid_str;
@@ -588,17 +515,8 @@ void DBHandler::writeFiles(std::string i_serial_number, int i_run_number_s, int 
 std::string DBHandler::uploadFromJson(std::string i_collection_name, std::string i_json_path) {
     if (DB_DEBUG) std::cout << "DBHandler: Upload from json: " << i_json_path << std::endl;
     std::ifstream json_ifs(i_json_path);
-    if (!json_ifs) {
-        std::cerr <<"#DB ERROR# Cannot open register json file: " << i_json_path << std::endl;
-        abort(); return "ERROR";
-    }
-    json json;
-    try {
-        json = json::parse(json_ifs);
-    } catch (json::parse_error &e) {
-        std::cerr << __PRETTY_FUNCTION__ << "#DB ERROR# Could not parse config: " << e.what() << std::endl;
-        abort(); return "ERROR";
-    }
+    checkFile(json_ifs.is_open(), i_json_path, "Check json file.");
+    json json = path2Json(i_json_path);
     bsoncxx::document::value doc_value = bsoncxx::from_json(json.dump()); 
     mongocxx::collection collection = db[i_collection_name];
     auto result = collection.insert_one(doc_value.view());
@@ -640,12 +558,10 @@ void DBHandler::registerUser(std::string i_user_name, std::string i_institution,
 void DBHandler::registerSite() {
     // Set MAC address
     std::string address;
-    std::string address_path = m_home_dir + "address";
+    std::string home = getenv("HOME");
+    std::string address_path = home + "/.yarr/address";
     std::ifstream address_ifs(address_path);
-    if (!address_ifs) {
-        std::cerr << "#DB ERROR# Failed to load the address config: " << address_path << std::endl;
-        abort(); return;
-    }
+    checkFile(address_ifs.is_open(), address_path, "Check the address config file or Login again.");
     address_ifs >> address;
     auto maybe_result = db["institution"].find_one(document{} << "address" << address << finalize);
     if (maybe_result) return;
@@ -693,17 +609,8 @@ void DBHandler::registerComponent(std::string i_conn_path) {
     if (DB_DEBUG) std::cout << "DBHandler: Register from connectivity: " << i_conn_path << std::endl;
 
     std::ifstream conn_ifs(i_conn_path);
-    if (!conn_ifs) {
-        std::cerr << "#DB ERROR# Cannot open register json file: " << i_conn_path << std::endl;
-        abort(); return;
-    }
-    json conn_json;
-    try {
-        conn_json = json::parse(conn_ifs);
-    } catch (json::parse_error &e) {
-        std::cerr << __PRETTY_FUNCTION__ << "#DB ERROR# Could not parse config: " << e.what() << std::endl;
-        abort(); return;
-    }
+    checkFile(conn_ifs.is_open(), i_conn_path, "Check the connectivity config file.");
+    json conn_json = path2Json(i_conn_path);
 
     /// Confirmation
     // chip type
@@ -711,7 +618,7 @@ void DBHandler::registerComponent(std::string i_conn_path) {
     if (chip_type == "FEI4B") chip_type = "FE-I4B";
     m_chip_type = chip_type;
     // Module
-    std::string mo_oid_str = getComponent(conn_json["module"], m_chip_type);
+    std::string mo_oid_str = getComponent(conn_json["module"], m_chip_type, i_conn_path);
     std::string mo_serial_number = conn_json["module"]["serialNumber"];
     if (mo_oid_str!="") {
         std::cout << "#DB ERROR# This component was already registered: " << mo_serial_number << std::endl;
@@ -721,18 +628,9 @@ void DBHandler::registerComponent(std::string i_conn_path) {
     int chips = 0;
     for (unsigned i=0; i<conn_json["chips"].size(); i++) {
         std::ifstream chip_cfg_ifs(conn_json["chips"][i]["config"].get<std::string>());
-        if (!chip_cfg_ifs) {
-            std::cerr << "#DB ERROR# Cannot open chip config file" << std::endl;
-            abort(); return;
-        }
-        json chip_cfg_json;
-        try {
-            chip_cfg_json = json::parse(chip_cfg_ifs);
-        } catch (json::parse_error &e) {
-            std::cerr << __PRETTY_FUNCTION__ << "#DB ERROR# Could not parse config: " << e.what() << std::endl;
-            abort(); return;
-        }
-        std::string chip_oid_str = getComponent(conn_json["chips"][i], m_chip_type);
+        checkFile(chip_cfg_ifs.is_open(), conn_json["chips"][i]["config"].get<std::string>(), "Check the chip config file or chip config field in the connecivity config file "+i_conn_path+".");
+        json chip_cfg_json = path2Json(conn_json["chips"][i]["config"].get<std::string>());
+        std::string chip_oid_str = getComponent(conn_json["chips"][i], m_chip_type, i_conn_path);
         std::string serial_number  = conn_json["chips"][i]["serialNumber"];
         if (chip_oid_str!="") {
             std::cout << "#DB ERROR# This component was already registered: " << serial_number << std::endl;
@@ -818,10 +716,7 @@ void DBHandler::registerEnvironment(std::string i_env_path) {
         abort(); return;
     }
     std::ifstream env_ifs(i_env_path);
-    if (!env_ifs) {
-        std::cerr << "#DB ERROR# Cannot open environmental file: " << i_env_path << std::endl;
-        abort(); return;
-    }
+    checkFile(env_ifs.is_open(), i_env_path, "Check the environmental config file.");
 
     mongocxx::collection collection = db["environment"];
 
@@ -1034,11 +929,10 @@ std::string DBHandler::writeJsonCode(std::string i_file_path, std::string i_file
     } else if (i_type == "gj") {
         data_id = writeJsonCode_Gridfs(i_file_path, i_filename, i_title);
         type_doc = "fs.files";
-    } else if (i_type == "t") {
-        data_id = writeJsonCode_Test(i_file_path, i_filename, i_title);
-        type_doc = "fs.files";
-    }
-
+    } else {
+        std::cerr << "#DB ERROR# Unknown type '" << i_type << "' to upload json file." << std::endl;
+        abort(); return "ERROR";
+    } 
     mongocxx::collection collection = db["config"];
     bsoncxx::document::value doc_value = document{} << 
       "sys"       << open_document << close_document <<
@@ -1120,7 +1014,8 @@ void DBHandler::getJsonCode(std::string i_oid_str, std::string i_filename, std::
                 try {
                     data = json::parse(str);
                 } catch (json::parse_error &e) {
-                    std::cerr << __PRETTY_FUNCTION__ << "#DB ERROR# Could not parse config: " << e.what() << std::endl;
+                    std::cerr << "#DB ERROR# Could not parse " << str << std::endl;
+                    std::cerr << "           " << e.what() << std::endl;
                     abort(); return;
                 }
             }
@@ -1222,17 +1117,12 @@ std::string DBHandler::getValue(std::string i_collection_name, std::string i_mem
     }
 }
 
-std::string DBHandler::getComponent(json &i_json, std::string i_chip_type) {
-    if (i_json["serialNumber"].empty()) {
-        std::cerr <<"#DB ERROR# No serialNumber in Connectivity!" << std::endl;
-        abort(); return "ERROR";
-    }
-    if (i_json["componentType"].empty()) {
-        std::cerr << "#DB ERROR# No componentType in Connectivity!" << std::endl;
-        abort(); return "ERROR";
-    }
-    std::string serial_number  = i_json["serialNumber"];
+std::string DBHandler::getComponent(json &i_json, std::string i_chip_type, std::string i_file_path) {
+    checkEmpty(i_json["serialNumber"].empty(), "serialNumber", i_file_path, ""); 
+    checkEmpty(i_json["componentType"].empty(), "componentType", i_file_path, ""); 
+    std::string serial_number = i_json["serialNumber"]; 
     std::string component_type = i_json["componentType"];
+
     if (std::find(m_comp_list.begin(), m_comp_list.end(), component_type)==m_comp_list.end()) {
         std::cerr << "#DB ERROR# This component type was not registered: " << component_type << std::endl;
         abort(); return "ERROR";
@@ -1568,20 +1458,6 @@ std::string DBHandler::writeJsonCode_Gridfs(std::string i_file_path, std::string
     return oid_str;
 }
 
-std::string DBHandler::writeJsonCode_Test(std::string i_file_path, std::string i_filename, std::string i_title) {
-    std::string hash = this->getHash(i_file_path);
-    std::string oid_str = this->writeGridFsFile(i_file_path, i_filename); 
-    db["fs.files"].update_one(
-        document{} << "_id" << bsoncxx::oid(oid_str) << finalize,
-        document{} << "$set" << open_document <<
-            "hash" << hash << 
-        close_document << finalize
-    );
-    this->addVersion("fs.files", "_id", oid_str, "oid");
-    this->addVersion("fs.chunks", "files_id", oid_str, "oid");
-    return oid_str;
-}
-
 std::vector<std::string> DBHandler::split(std::string str, char del) {
     std::size_t first = 0;
     std::size_t last = str.find_first_of(del);
@@ -1602,6 +1478,47 @@ std::vector<std::string> DBHandler::split(std::string str, char del) {
     }
  
     return result;
+}
+
+void DBHandler::checkFile(bool i_file_exist, std::string i_file_path, std::string i_description="") {
+    if (!i_file_exist) {
+        std::cerr << "#DB ERROR# Not found the file." << std::endl;
+        std::cerr << "           file: " << i_file_path << std::endl;
+        if (i_description!="") std::cerr << "           description: " << i_description << std::endl;
+        abort();
+    }
+}
+
+void DBHandler::checkEmpty(bool i_empty, std::string i_key, std::string i_file_path, std::string i_description="") {
+    if (i_empty) {
+        std::cerr << "#DB ERROR# Found an empty field in json file." << std::endl;
+        std::cerr << "           file: " << i_file_path << std::endl;
+        std::cerr << "           key: '" << i_key << "'" << std::endl;
+        if (i_description!="") std::cerr << "           description: " << i_description << std::endl;
+        abort();
+    }
+}
+
+void DBHandler::checkNumber(bool i_number, std::string i_key, std::string i_file_path) {
+    if (!i_number) {
+        std::cerr << "#DB ERROR# This field value must be the number." << std::endl;
+        std::cerr << "           file: " << i_file_path << std::endl;
+        std::cerr << "           key: '" << i_key << "'" << std::endl;
+        abort();
+    }
+}
+
+json DBHandler::path2Json(std::string i_file_path) {
+    std::ifstream file_ifs(i_file_path);
+    json file_json;
+    try {
+        file_json = json::parse(file_ifs);
+    } catch (json::parse_error &e) {
+        std::cerr << "#DB ERROR# Could not parse " << i_file_path << std::endl;
+        std::cerr << "           " << e.what() << std::endl;
+        abort();
+    }
+    return file_json;
 }
 
 #else // Else if there is no MONGOCXX_INCLUDE

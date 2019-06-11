@@ -120,7 +120,8 @@ class DBHandler {
         
         /// Get component data
         std::string getComponent(json& /*i_json*/, 
-                                 std::string /*i_chip_type*/);
+                                 std::string /*i_chip_type*/,
+                                 std::string /*i_file_path*/);
         /// Get SHA-1 hash
         std::string getHash(std::string /*i_file_path*/);
 
@@ -179,20 +180,9 @@ class DBHandler {
                                 std::string /*i_oid_str*/, 
                                 std::string /*i_output_dir*/, 
                                 std::string i_filter="");
-        /// Will be deleted //TODO
-        std::string writeDatFile(std::string /*i_file_path*/, 
-                                 std::string /*i_filename*/);
         /// Write file data using GridFS 
         std::string writeGridFsFile(std::string /*i_file_path*/, 
                                     std::string /*i_filename*/);
-        /// Will be deleted //TODO
-        std::string writeJsonCode_Bson(json& /*i_json*/, 
-                                       std::string /*i_filename*/, 
-                                       std::string /*i_title*/);
-        /// Will be deleted //TODO
-        std::string writeJsonCode_Json(std::string /*i_file_path*/, 
-                                       std::string /*i_filename*/, 
-                                       std::string /*i_title*/);
         /// Write json file using MessagePack 
         std::string writeJsonCode_Msgpack(std::string /*i_file_path*/, 
                                           std::string /*i_filename*/, 
@@ -202,15 +192,25 @@ class DBHandler {
                                          std::string /*i_filename*/, 
                                          std::string /*i_title*/);
 
-        /// To be deleted
-        std::string writeJsonCode_Test(std::string /*i_file_path*/, 
-                                       std::string /*i_filename*/, 
-                                       std::string /*i_title*/);
-
         /// split function
         std::vector<std::string> split(std::string /*str*/, 
                                        char /*del*/);
-
+        /// check file
+        void checkFile(bool /*i_file_exist*/,
+                       std::string /*i_file_path*/,
+                       std::string /*i_description*/);
+        /// check empty
+        void checkEmpty(bool /*i_empty*/,
+                        std::string /*i_key*/,
+                        std::string /*i_file_path*/,
+                        std::string /*i_description*/);
+        /// check number
+        void checkNumber(bool /*i_number*/,
+                         std::string /*i_key*/,
+                         std::string /*i_file_path*/);
+        /// check json
+        json path2Json(std::string /*i_file_path*/);
+                       
     private:
         // Mongo c++
         mongocxx::client client;
@@ -220,7 +220,6 @@ class DBHandler {
         static std::vector<std::string> m_env_list;
         static std::vector<std::string> m_comp_list;
 
-        std::string m_home_dir;
         std::string m_db_cfg_path;
         std::string m_info_path;
         std::string m_tr_oid_str;
