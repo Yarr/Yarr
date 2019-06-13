@@ -18,6 +18,7 @@ NetioRxCore::NetioRxCore()
   m_context = new context(cntx);
   m_cont = true;
   m_verbose = false;
+  rxDataCount = 0; // initialize to zero data received 
 
   m_statistics = thread([&](){
     while (m_cont) {
@@ -141,7 +142,7 @@ RawData* NetioRxCore::readData(){
             if( (buffer[words-1]>>16) == 0x0 ) //To deal with the E-frames fr$
                 buffer[words-1] = 0xFFFF;
         }
-
+        ++rxDataCount;
 	return new_rdp;
 
   }
@@ -153,7 +154,8 @@ uint32_t NetioRxCore::getDataRate(){
 }
 
 uint32_t NetioRxCore::getCurCount(){
-  return 0;
+  std::this_thread::sleep_for(std::chrono::milliseconds(1)); 
+  return m_nioh.getDataCount() - rxDataCount;
 }
 
 bool NetioRxCore::isBridgeEmpty(){ // True, if queues are stable.
