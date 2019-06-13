@@ -89,9 +89,10 @@ void NetioTxCore::writeFifo(uint32_t value){
   if(m_debug) cout << "NetioTxCore::writeFifo val=" << hex << setw(8) << setfill('0') << value << dec << endl;
   map<uint64_t,bool>::iterator it;
 
-  for(it=m_elinks.begin();it!=m_elinks.end();it++){
-    writeFifo(it->first,value);
-  }
+  for(it=m_elinks.begin();it!=m_elinks.end();it++)
+    if(it->second) {
+      writeFifo(it->first,value);
+    }
 }
 
 void NetioTxCore::writeFifo(uint32_t chn, uint32_t value){
@@ -332,7 +333,12 @@ uint32_t NetioTxCore::getTrigInCount(){
 void NetioTxCore::prepareTrigger(){
   for(auto it=m_elinks.begin();it!=m_elinks.end();it++){
     m_trigFifo[it->first].clear();
-    for(int32_t j=3; j>=0;j--){
+
+    // send a sync to make sure the following commands are not interrrupted for a while
+    if (m_feType == "rd53a")
+        writeFifo(&m_trigFifo[it->first],0x817e817e);
+
+    for(int32_t j=15; j>=0;j--){
       writeFifo(&m_trigFifo[it->first],m_trigWords[j]);
     }
     writeFifo(&m_trigFifo[it->first],0x0);
@@ -406,9 +412,11 @@ void NetioTxCore::fromFileJson(json &j){
    m_manchester = j["NetIO"]["manchester"];
    m_flip       = j["NetIO"]["flip"];
    m_extend     = (j["NetIO"]["extend"]?4:1);
+   m_feType     = j["NetIO"]["fetype"];
 
    cout << "NetioTxCore: " << endl
         << " manchester=" << m_manchester << endl
         << " flip=" << m_flip << endl
-        << " extend=" << m_extend << endl;
+        << " extend=" << m_extend << endl
+        << " feType=" << m_feType << endl;
 }

@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 
 			}
 			else if (argc > 4 ) {
-				xbins = 10000/setElectrons;
+				xbins = overwriteBins;
 				xlow = overwriteXmin;
 				xhigh = overwriteXmax;
 			}
@@ -419,7 +419,7 @@ int main(int argc, char *argv[]) { //./plotWithRoot_Threshold path/to/directory 
 					n++;
 					double tmp = *tmp_p;		
 					if (tmp != -1) {
-						int bin_rms = whichSigma(tmp, mean_h[whichFE(j)+1], rms_h[whichFE(j+1)], 1, range_bins);
+						int bin_rms = whichSigma(tmp, mean_h[whichFE(j)+1], rms_h[whichFE(j)+1], 1, range_bins);
 						range_rms[whichFE(j)]->AddBinContent(bin_rms);
 
 						int bin_gaus = whichSigma(tmp, fe_fit[whichFE(j)+1]->GetParameter(1), fe_fit[whichFE(j)+1]->GetParameter(2), 1, range_bins);

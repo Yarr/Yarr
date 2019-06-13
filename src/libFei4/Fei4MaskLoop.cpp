@@ -62,8 +62,8 @@ void Fei4MaskLoop::execPart2() {
     for(unsigned i=0; i<step; i++) {
         keeper->globalFe<Fei4>()->writeRegister(&Fei4::Colpr_Mode, 0x3);
         keeper->globalFe<Fei4>()->writeRegister(&Fei4::Colpr_Addr, 0x0);
-        keeper->globalFe<Fei4>()->shiftMask();
-        keeper->globalFe<Fei4>()->loadIntoPixel(1 << 0);
+	keeper->globalFe<Fei4>()->shiftMask();
+	keeper->globalFe<Fei4>()->loadIntoPixel(1 << 0);
         //if (enable_lCap) keeper->globalFe<Fei4>()->loadIntoPixel(1 << 6);
         //if (enable_sCap) keeper->globalFe<Fei4>()->loadIntoPixel(1 << 7);
         while(g_tx->isCmdEmpty() == 0);
@@ -129,10 +129,16 @@ void Fei4MaskLoop::writeConfig(json &config) {
 }
 
 void Fei4MaskLoop::loadConfig(json &config) {
+  if (!config["min"].empty())
     min = config["min"];
+  if (!config["max"].empty())
     max = config["max"];
+  if (!config["step"].empty())
     step = config["step"];
+  if (!config["mask"].empty())
     m_mask = (uint32_t) config["mask"];
+  if (!config["enable_lcap"].empty())
     enable_lCap = config["enable_lcap"];
+  if (!config["enable_scap"].empty())
     enable_sCap = config["enable_scap"];
 }

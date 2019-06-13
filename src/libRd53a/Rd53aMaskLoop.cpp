@@ -17,7 +17,9 @@ enum MaskType {StandardMask =0 , CrossTalkMask=1,CrossTalkMaskv2 =2};
 enum MaskSize {CrossTalkMask8=0, CrossTalkMask4=1, 
     CrossTalkMask2ud=2, CrossTalkMask2rl=3, 
     CrossTalkMask1u=4, CrossTalkMask1d=5,
-    CrossTalkMask1r=6, CrossTalkMask1l=7};
+    CrossTalkMask1r=6, CrossTalkMask1l=7,
+    CrossTalkMask1ur=8, CrossTalkMask1ul=9,
+    CrossTalkMask1dr=10, CrossTalkMask1dl=11};
 
 //Switch for including/excluding edges pixels
 enum IncludedPixels {includeEdges=0 ,removeEdgesFullSensor=1, removeEdgesSynFE=2, removeEdgesLinFE=3, removeEdgesDifFE=4,only00CornerForBumpBonding=5 };
@@ -76,6 +78,10 @@ Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase() {
             {1,0,0,0,0,0,0,0},         //1down
             {0,0,1,0,0,0,0,0},	   //1right
             {0,0,0,0,0,0,1,0},         //1left    
+            {0,0,0,1,0,0,0,0},         //1up-right    
+            {0,0,0,0,0,1,0,0},         //1up-left    
+            {0,1,0,0,0,0,0,0},         //1down-right    
+            {0,0,0,0,0,0,0,1},         //1down-left    
     }}; 
 
 }

@@ -10,6 +10,7 @@
 // # Data: May 2017
 // ################################
 
+#include <iostream>
 #include <queue>
 #include <vector>
 #include <cstdint>

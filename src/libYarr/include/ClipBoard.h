@@ -16,7 +16,6 @@
 
 #include "RawData.h"
 
-#include <iostream>
 #include <typeinfo>
 
 template <class T>

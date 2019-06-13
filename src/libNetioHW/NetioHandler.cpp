@@ -1,7 +1,12 @@
 #include "NetioHandler.h"
+#include <memory>
 
 #include "NetioFei4Records.h"
-  //MW: FIX CLANG COMPILATION
+// used for flush buffer
+bool doFlushBuffer = false;
+
+//MW: FIX CLANG COMPILATION
+// TODO default constructor?
 NetioHandler::NetioHandler(std::string contextStr, std::string felixHost,
                uint16_t felixTXPort, uint16_t felixRXPort,
                size_t queueSize, bool verbose) :
@@ -134,67 +139,102 @@ std::vector<uint32_t> NetioHandler::pushOut(uint64_t chn) {
   return dataVec;
 }
 
+void NetioHandler::setFlushBuffer(bool status){
+	doFlushBuffer = status;
+}
+
+//-----------------------------------------------------------------------------------------
 void NetioHandler::addChannel(uint64_t chn){
+
   m_channels.push_back(chn);
   std::cout << "### NetioHandler -> Adding channel: " << chn << '\n';
   m_pcqs[chn] = std::make_shared<FollyQueue>(m_queueSize);
-  m_msgErrors[chn] = 0;
-  try {
-    //m_send_sockets[chn] = new netio::low_latency_send_socket(m_context);
-    //m_send_sockets[chn]->connect(netio::endpoint(m_felixHost, m_felixTXPort));
-    m_sub_sockets[chn] =  new netio::low_latency_subscribe_socket(
-      // FIXME: This is really ugly... AddChannel should also get a callback function ptr, and bind it to the socket.
-      //netio::low_latency_subscribe_socket(
-      m_context, [&](netio::endpoint& ep, netio::message& msg) {
-        //std::cout << "NETIO: NEW MSG!!!\n";
-        uint32_t cid = chn;
-        std::vector<uint8_t> data = msg.data_copy();
-        uint32_t offset=0;
-        while(offset<data.size()){ //Extract all the channels from message
-          if(data.size()-offset<sizeof(felix::base::FromFELIXHeader)){
-            //std::cout << "NetIO msg too small:" << (data.size()-offset) << std::endl;
-            m_msgErrors[cid]++;
-            break;
-          }
-          // RS: Remove header parse
-          felix::base::FromFELIXHeader header; // Parse header
-          memcpy(&header, (const void*)&data[offset], sizeof(header));
-          offset+=sizeof(header); // useful words start from end of header.
 
-     //     //if(m_verbose) std::cout << "NetIO msg elinkid:" << header.elinkid << ", gbtid:" << header.gbtid << std::endl;
+  m_msgErrors[chn] = 0;
+
+  try {
+    //AddChannel gets a callback function ptr, and bind it to the socket.
+    m_sub_sockets[chn] =  new netio::low_latency_subscribe_socket( m_context, [&](netio::endpoint& ep, netio::message& msg) 
+      {
+	//static int event_number = 0;
+        //uint32_t cid = chn;
+	const uint32_t my_headersize = sizeof(felix::base::FromFELIXHeader);
+	size_t msg_size = msg.size();
+        std::vector<uint8_t> data = msg.data_copy();
+
+	if (doFlushBuffer)
+		return;
+
+        uint32_t offset = my_headersize; // useful words start from end of header.
+
+        if(msg_size > my_headersize){ //Extract all the channels from message
+
+          // The first 8 bytes is felix header.
+          felix::base::FromFELIXHeader header; // Parse header
+          memcpy(&header, (const void*)&data[0], my_headersize);// would memmove be better here?
+
+	  //For testing
+	  //if(msg_size !=  header.length)
+	  //	printf("\n WARNING: header length: %d instead of %d. \n", header.length, msg_size);
+	  
+     	  //if(m_verbose) std::cout << "NetIO msg elinkid:" << header.elinkid << ", gbtid:" << header.gbtid << std::endl;
           //uint32_t chn=(header.elinkid>>1);
 
           // RS: Remove header parse
-          uint32_t chn=header.elinkid;
-          if(header.gbtid<=1){chn+=header.gbtid*32;}
-          else{/*std::cout << "NetIO msg elinkid:" << header.elinkid << ", gbtid:" << header.gbtid << std::endl;*/ break;}
+          uint32_t my_chn=header.elinkid;
+	  my_chn += header.gbtid*64; 
 
-          uint32_t numFei4Words=(header.length-m_headersize)/m_datasize; // numWords is FEI4_WORD! Not header.length
+          uint32_t numWords = (uint32_t)((msg_size-offset)/4); //each RD53A word is 4 bytes (32 bits)
 
-          for(uint32_t i=0; i<numFei4Words; ++i){
-            YARR_RECORD rec(0);
-            rec.inner.payload1 = static_cast<uint8_t>(data[offset+2]); // field1[8:0]
-            rec.inner.payload2 = static_cast<uint8_t>(data[offset+1]); // field2[8:0]
-            rec.inner.payload3 = static_cast<uint8_t>(data[offset]);   // rest[16:0]
-            rec.inner.type = false; // Do we need to change this hardcode?
-            rec.inner.channel = static_cast<uint8_t>(chn);
-            m_pcqs[chn]->write( std::move(rec.allfields) ); // write to channel's queue
-            offset+=m_datasize; // datasize is 3, the FEI4 word size.
-          }
+	  
+	  if((offset+4*numWords) != msg_size && m_feType == "rd53a") // this is rd53a specific; there may need to be a similar thing for strips
+		std::cout<<"\nWARNING: the message size is not compatible with RD53A data format.\n";
+
+	  if(numWords==0)
+		return;
+
+	  uint32_t *buffer = new uint32_t[numWords]; 
+	  memcpy(buffer, (uint32_t *)&data[offset], numWords*4);
+
+	  //Sasha: print out the data
+	  printf("msg size: %d \n", numWords);
+          //for(uint32_t i=0; i<numRd53AWords; i++ ) { //&&  i < 13; ++i) {
+	  //      printf("event number: %i ", event_number);
+          //	printf("%08x ", buffer[i]); 
+	  //	printf("l1id[%i] tag[%i] bcid[%i]",  (0x1F & (buffer[1] >> 20)), (0x1F & (buffer[1] >> 15)), (0x7FFF & buffer[1]));
+          //}
+	  //printf(" .... \n");
+	  //event_number++;
+          
+	  RawData* rd = new RawData(my_chn, buffer, numWords);
+	  std::unique_ptr<RawData> rdp =  std::unique_ptr<RawData>(rd);
+	  rawData.pushData(std::move(rdp));
+
+        } else  { 
+        	std::cerr << "WARNING: NetIO message is shorter than "<<my_headersize<<" bytes. It is  " << data.size() << " bytes."<< std::endl;
+          	//m_msgErrors[cid]++;
+		return;
         }
-                                           });//);
+
+	return;
+    });
+
     m_sub_sockets[chn]->subscribe(chn, netio::endpoint(m_felixHost, m_felixRXPort));
-    std::this_thread::sleep_for(std::chrono::microseconds(10000)); // This is needed... :/
     //std::cout << "Should be subscribed to " << m_felixHost << ":" << m_felixRXPort << std::endl;
   } catch(...) {
-    std::cout << "### NetioHandler::addChannel(" << chn << ") -> ERROR. Failed to activate channel.\n";
+    std::cerr << "### NetioHandler::addChannel(" << chn << ") -> ERROR. Failed to activate channel.\n";
     return;
   }
   if (m_verbose) { std::cout << "### NetioHandler::addChannel(" << chn
                              << ") -> Success. Queue and socket-pair created, subscribed. \n"; }
   m_activeChannels++;
+
+  //std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
 }
 
+
+//---------------------------------------------------------------------------
 void NetioHandler::delChannel(uint64_t chn){
     if (m_verbose) { std::cout << "### NetioHandler::delChannel(" << chn << ")" << std::endl; }
   std::vector<uint64_t>::iterator it;

@@ -1,0 +1,48 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "OccupancyAnalysis",
+        "config": {
+          "createMask": true
+        }
+      },
+      "n_count": 1
+    },
+    "histogrammer": [
+        {
+            "algorithm": "OccupancyMap",
+            "config": {}
+        },
+        {
+            "algorithm": "L1Dist",
+            "config": {}
+        },
+        {
+            "algorithm": "HitPerEvent",
+            "config": {}
+        }
+    ],
+    "loops": [
+      {
+        "config": {
+          "min": 0,
+          "max": 4,
+          "step": 1,
+          "name": "None"
+        },
+        "loopAction": "StdParameterLoop"
+      },
+      {
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "StarDigitalScan",
+    "prescan": {
+        "DigHitIn_Sel": 1,
+        "Trig_Count": 10,
+        "Trig_Lat": 220,
+        "Vthin_Coarse": 200
+    }
+  }
+}

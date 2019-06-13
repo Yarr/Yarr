@@ -1,5 +1,9 @@
 #include "Utils.h"
 
+#include <iomanip>
+#include <string>
+#include <sstream>
+
 namespace Utils {
     std::string hexify(int number) {    
         std::stringbuf buf;
