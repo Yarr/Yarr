@@ -4,8 +4,8 @@
 
 MAKEFLAGS=--warn-undefined-variables
 
-INCLUDE = -I./. $(shell root-config --cflags) -I../libFei4/include -I../libUtil/include -I../libYarr/include -I../libSpec/include -I../libFe65p2/include
-LIBS = $(shell root-config --libs) -L./../lib -lyarr
+INCLUDE = -I./. $(shell root-config --cflags) -I../src/libFei4/include -I../src/libUtil/include -I../src/libYarr/include -I../src/libSpec/include -I../src/libFe65p2/include
+LIBS = $(shell root-config --libs) -L./../build/lib -lYarr
 
 # Define compiler and flags
 CXX = g++
