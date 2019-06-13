@@ -2,7 +2,7 @@
 #include <fstream>
 #include <vector>
 
-#include "../libFei4/include/Fei4EventData.h"
+#include "Fei4EventData.h"
 #include "TTree.h"
 #include "TFile.h"
 
