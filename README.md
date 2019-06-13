@@ -37,7 +37,7 @@ Software:
     - texlive-epstopdf
     - zeromq, zeromq-devel
 
-##Quick Install Guide:
+## Quick Install Guide:
 - Clone from git 
 	- git clone https://gitlab.cern.ch/YARR/YARR.git
 - Compilation:
