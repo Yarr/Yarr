@@ -82,6 +82,9 @@ public:
   void fromFileJson(json &j);
 
 private:
+  // to keep track of amount of data received at rxcore
+  int rxDataCount;
+
   // used as flag for merge
   std::string m_fetype;
 

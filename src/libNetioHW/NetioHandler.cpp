@@ -16,6 +16,7 @@ NetioHandler::NetioHandler(std::string contextStr="posix", std::string felixHost
   m_activeChannels=0;
   m_context = new netio::context(contextStr);
   m_netio_bg_thread = std::thread( [&](){m_context->event_loop()->run_forever();} );
+  handlerDataCount = 0;
 }
 
 NetioHandler::~NetioHandler() {
@@ -142,6 +143,10 @@ void NetioHandler::setFlushBuffer(bool status){
 	doFlushBuffer = status;
 }
 
+int NetioHandler::getDataCount() {
+        return handlerDataCount;
+}
+
 //-----------------------------------------------------------------------------------------
 void NetioHandler::addChannel(uint64_t chn){
 
@@ -209,6 +214,7 @@ void NetioHandler::addChannel(uint64_t chn){
 	  std::unique_ptr<RawData> rdp =  std::unique_ptr<RawData>(rd);
 	  rawData.pushData(std::move(rdp));
 
+          ++handlerDataCount;
         } else  { 
         	std::cerr << "WARNING: NetIO message is shorter than "<<my_headersize<<" bytes. It is  " << data.size() << " bytes."<< std::endl;
           	//m_msgErrors[cid]++;

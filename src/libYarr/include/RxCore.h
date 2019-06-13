@@ -12,6 +12,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <chrono>
 
 #include "RawData.h"
 
@@ -25,12 +26,18 @@ class RxCore {
         virtual void flushBuffer() {}
         
         virtual uint32_t getDataRate() = 0;
-        virtual uint32_t getCurCount() = 0;
+        virtual uint32_t getCurCount() {return 0;};
         virtual bool isBridgeEmpty() = 0;
+
+        std::chrono::microseconds getWaitTime() {
+            return m_waitTime;
+        }
 
     protected:
         RxCore();
         ~RxCore();
+
+        std::chrono::microseconds m_waitTime; 
 };
 
 #endif
