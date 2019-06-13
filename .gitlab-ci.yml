@@ -15,14 +15,14 @@ job_build_and_test:
       - mkdir /tmp/test
       - ls /tmp/
       - cd ../
-      - x86_64/bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p
+      - bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p
       - ls
       - ls ./data/
       - ls ./data/000001_std_digitalscan/
       - cat ./data/000001_std_digitalscan/*_OccupancyMap.dat
       - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.dat | grep -o 100 | wc -l`
       - if [ "$NUM100" != "26880" ]; then exit 2; fi
-      - x86_64/bin/scanConsole -k
+      - bin/scanConsole -k
 
 job_build_clang:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
@@ -36,7 +36,7 @@ job_build_clang:
       - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang
       - make install -j4
       - cd ..
-      - x86_64/bin/scanConsole -k
+      - bin/scanConsole -k
 
 job_test_json:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
