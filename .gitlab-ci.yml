@@ -5,8 +5,8 @@ job_build_and_test:
       - yum -y install centos-release-scl-rh devtoolset-7 make gnuplot cmake3 git zeromq-devel
       - scl enable devtoolset-7 bash
       - source /opt/rh/devtoolset-7/enable
-      - mkdir  cmake_build
-      - cd cmake_build
+      - mkdir  build
+      - cd build
       - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
       - make install -j4
       - export USER=test
@@ -14,7 +14,7 @@ job_build_and_test:
       - /bin/pwd
       - mkdir /tmp/test
       - ls /tmp/
-      - cd ../installed
+      - cd ../
       - x86_64/bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p
       - ls
       - ls ./data/
@@ -24,39 +24,27 @@ job_build_and_test:
       - if [ "$NUM100" != "26880" ]; then exit 2; fi
       - x86_64/bin/scanConsole -k
 
-job_build_cmake:
-    image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
-    stage: build
-    script:
-      - yum -y install centos-release-scl-rh devtoolset-7 make cmake3 gnuplot git zeromq-devel
-      - scl enable devtoolset-7 bash
-      - source /opt/rh/devtoolset-7/enable
-      - mkdir -p cmake_build
-      - cd cmake_build
-      - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
-      - make install -j4
-      - cd ../installed
-      - x86_64/bin/scanConsole -k
 job_build_clang:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     stage: build
     script:
-      - yum -y install centos-release-scl-rh devtoolset-7  llvm-toolset-7-clang make cmake3 gnuplot git zeromq-devel
+      - yum -y install centos-release-scl-rh llvm-toolset-7-clang make cmake3 gnuplot git zeromq-devel
       - scl enable   llvm-toolset-7  bash
       - source /opt/rh/llvm-toolset-7/enable
-      - mkdir -p cmake_build
-      - cd cmake_build 
+      - mkdir -p build
+      - cd build 
       - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang
       - make install -j4
-      - cd ../installed
+      - cd ..
       - x86_64/bin/scanConsole -k
+
 job_test_json:
     image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
     stage: build
     script:
       - yum -y install npm
       - npm install jsonlint -g
-      - for file in $(find ../src/configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
+      - for file in $(find ../configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
 
 
 
