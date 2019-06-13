@@ -45,8 +45,8 @@ class Bookkeeper {
 		bool isChannelUsed(unsigned arg_channel);
         
         // Construct mask of active channels
-        uint32_t getTxMask();
-        uint32_t getRxMask();
+        std::vector<uint32_t> getTxMask();
+        std::vector<uint32_t> getRxMask();
 
         void setTargetTot(int v) {target_tot = v;}
         int getTargetTot() {return target_tot;}

@@ -202,7 +202,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
                     break;
             }
             // Write config into FE
-            g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+            g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
             fe->configurePixels(lsb, msb+1);
             g_tx->setCmdEnable(keeper->getTxMask());
             while(!g_tx->isCmdEmpty());

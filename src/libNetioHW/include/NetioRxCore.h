@@ -43,6 +43,7 @@ public:
   ~NetioRxCore();
 
   void setRxEnable(uint32_t val) override;
+  void setRxEnable(std::vector<uint32_t> channels);
   void maskRxEnable(uint32_t val, uint32_t mask) override;
 
   void flushBuffer() override;
@@ -90,6 +91,8 @@ private:
 
   void enableChannel(uint64_t chn);
   void disableChannel(uint64_t chn);
+
+  void disableAllChannels();
 
   std::string m_felixhost;          //! felix hostname
   uint16_t m_felixport;             //! felix port for reading

@@ -94,7 +94,7 @@ void Rd53aMaskLoop::init() {
     for(FrontEnd *fe : keeper->feList) {
         // Make copy of pixRegs
         m_pixRegs[fe] = dynamic_cast<Rd53a*>(fe)->pixRegs;
-        g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+        g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         for(unsigned col=0; col<Rd53a::n_Col; col++) {
             for(unsigned row=0; row<Rd53a::n_Row; row++) {
                 dynamic_cast<Rd53a*>(fe)->setEn(col, row, 0);
@@ -115,7 +115,7 @@ void Rd53aMaskLoop::execPart1() {
 
     // Loop over FrontEnds
     for(FrontEnd *fe : keeper->feList) {
-        g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+        g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         std::vector<std::pair<unsigned, unsigned>> modPixels;
         //Loop over all pixels - n_Col=400, n_Row=192 - from Rd53aPixelCfg.h
         for(unsigned col=0; col<Rd53a::n_Col; col++) {
@@ -198,7 +198,7 @@ void Rd53aMaskLoop::execPart2() {
     // Loop over FrontEnds to clean it up
     if (m_maskType == CrossTalkMask or m_maskType == CrossTalkMaskv2 ){
         for(FrontEnd *fe : keeper->feList) {
-            g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+            g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
             std::vector<std::pair<unsigned, unsigned>> modPixels;
             for(unsigned col=0; col<Rd53a::n_Col; col++) {
                 for(unsigned row=0; row<Rd53a::n_Row; row++) {

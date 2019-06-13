@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <thread>
 #include <chrono>
+#include <vector>
 
 #include "SpecCom.h"
 #include "TxCore.h"
@@ -60,6 +61,7 @@ class SpecTxCore : virtual public TxCore, virtual public SpecCom{
         void releaseFifo() {};
         
         void setCmdEnable(uint32_t value);
+        void setCmdEnable(std::vector<uint32_t> channels);
         uint32_t getCmdEnable();
         void maskCmdEnable(uint32_t value, uint32_t mask);
 
