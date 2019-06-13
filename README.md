@@ -26,14 +26,27 @@ Hardware:
 Software:
 
 - CentOS 7
+- cmake 3.6
 - GCC version 7 or higher
     - for example from devtoolset-7, instruction can be found here https://www.softwarecollections.org/en/scls/rhscl/devtoolset-7
+- Some misc packages:
+    - gnuplot
+    - texlive-epstopdf
+    - zeromq, zeromq-devel
 
-Quick Install Guide:
-- download from git 
-	- git clone -b devel_rogue_test https://:@gitlab.cern.ch:8443/YARR/YARR.git
-- Using cmake:
-    - cmake version 3 or higher
+##Quick Install Guide:
+- Clone from git 
+	- git clone https://gitlab.cern.ch/YARR/YARR.git
+- Compilation:
+    - ``$ mkdir build``
+    - ``$ cd build``
+    - ``$ cmake3 ..``
+    - ``$ make install -j4``
+    - ``$ cd ..``
+- Running
+    - execute programs from the repository top folder
+
+## RCE Guide
     - for ARM target cross compilers are provided by the RCE_SDK
         - installtion instructions: https://twiki.cern.ch/twiki/bin/viewauth/Atlas/RCEGen3SDK
     - using CMake:
