@@ -25,6 +25,7 @@ class RogueTxCore : virtual public TxCore {
 		void setForceRelaseTxfifo(bool enable=true) { m_com->setForceRelaseTxfifo(enable);}
         
         void setCmdEnable(uint32_t value) { }
+        void setCmdEnable(std::vector<uint32_t>) {}
         uint32_t getCmdEnable() {return 0x0;}
         void maskCmdEnable(uint32_t value, uint32_t mask) {}
 
