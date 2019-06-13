@@ -23,6 +23,7 @@ class RceTxCore : virtual public TxCore {
         void releaseFifo() {this->writeFifo(0x0);m_com->releaseFifo();} // Add some padding
         
         void setCmdEnable(uint32_t value) { }
+        void setCmdEnable(std::vector<uint32_t> channels) { }
         uint32_t getCmdEnable() {return 0x0;}
         void maskCmdEnable(uint32_t value, uint32_t mask) {}
 

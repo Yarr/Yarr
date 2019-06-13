@@ -51,8 +51,9 @@ KU040RxCore::~KU040RxCore()
 	}
 }
 
-void KU040RxCore::setRxEnable(uint32_t val)
+void KU040RxCore::setRxEnable(uint32_t channel)
 {
+    uint32_t val = (1 << channel);
 	// check mask (if we are in 320 mode only even channels can be enabled)
 	if((m_linkSpeed == 320) && ((val & 0xAAAAA) != 0))
 	{
@@ -124,6 +125,14 @@ void KU040RxCore::setRxEnable(uint32_t val)
 		m_UDPReceiveThreadRunning = true;
 		m_UDPReceiveThread = new std::thread(&KU040RxCore::UDPReceiveThreadProc, this);
 	}
+}
+
+void KU040RxCore::setRxEnable(std::vector<uint32_t> channels) {
+    uint32_t mask = 0;
+    for (uint32_t channel : channels) {
+        mask += (1 << channel);
+    }
+    this->setRxEnable(mask);
 }
 
 void KU040RxCore::maskRxEnable(uint32_t val, uint32_t mask)

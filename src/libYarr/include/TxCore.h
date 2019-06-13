@@ -10,6 +10,7 @@
 // ################################
 
 #include <cstdint>
+#include <vector>
 
 enum TRIG_CONF_VALUE {
     EXT_TRIGGER = 0x0,
@@ -29,6 +30,7 @@ class TxCore {
         virtual void writeFifo(uint32_t) = 0;
         virtual void releaseFifo() = 0;
         virtual void setCmdEnable(uint32_t) = 0;
+        virtual void setCmdEnable(std::vector<uint32_t>) = 0;
         virtual uint32_t getCmdEnable() = 0;
         virtual bool isCmdEmpty() = 0;
 

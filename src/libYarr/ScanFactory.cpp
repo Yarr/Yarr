@@ -40,7 +40,7 @@ void ScanFactory::preScan() {
         for (auto *fe : g_bk->feList) {
             if(fe->getActive()) {
                 // Enable single channel
-                g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+                g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
                 // Write parameter
                 fe->setInjCharge(g_bk->getTargetCharge(), true, true); // TODO need sCap/lCap for FEI4
                 while(!g_tx->isCmdEmpty()){}

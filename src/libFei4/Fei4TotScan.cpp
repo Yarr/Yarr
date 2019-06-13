@@ -81,7 +81,7 @@ void Fei4TotScan::preScan() {
       Fei4 *fe = dynamic_cast<Fei4*>(g_bk->feList[k]);
       if (fe->isActive()) {
         // Set to single channel tx
-        g_tx->setCmdEnable(0x1 << fe->getTxChannel());
+        g_tx->setCmdEnable(fe->getTxChannel());
         // Set specific pulser DAC
         fe->writeRegister(&Fei4::PlsrDAC, fe->toVcal(target, useScap, useLcap));
         while(!g_tx->isCmdEmpty());

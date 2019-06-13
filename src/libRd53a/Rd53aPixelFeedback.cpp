@@ -79,7 +79,7 @@ void Rd53aPixelFeedback::feedback(unsigned channel, Histo2d *h) {
 }
 
 void Rd53aPixelFeedback::writePixelCfg(Rd53a *fe) {
-    g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+    g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
     fe->configurePixels();
     while(!g_tx->isCmdEmpty());
     g_tx->setCmdEnable(keeper->getTxMask());
