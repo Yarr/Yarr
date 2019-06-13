@@ -39,6 +39,9 @@ public:
   ClipBoard<RawData> rawData;
   void setFlushBuffer(bool);
 
+  // return data received
+  int getDataCount();
+
   // Functionalities
   void addChannel(uint64_t chn); // Enable an elink (prepare a queue, socket-pairs and sub to elink.
   void delChannel(uint64_t chn); // Enable an elink (prepare a queue, socket-pairs and sub to elink.
@@ -67,6 +70,8 @@ public:
   ~NetioHandler();
 
 private:
+  int handlerDataCount;
+
   // used as a flag to keep rd53a and strips specific things seperate
   std::string m_feType;
 
