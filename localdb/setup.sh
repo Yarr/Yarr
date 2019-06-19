@@ -20,7 +20,7 @@ Usage:
 Options:
     - ip address  Local DB server ip address, default: 127.0.0.1
     - port        Local DB server port, default: 27017
-    - dir path    path to Local DB cache directory, default: Yarr/src/cacheDB
+    - dir path    path to Local DB cache directory, default: Yarr/localdb/cacheDB
 
 EOF
 }
@@ -41,12 +41,12 @@ if [ -z ${port} ]; then
 fi
 if [ -z ${dir} ]; then
     cd ../
-    current=`pwd`
-    dir=${current}/src/cacheDB
+    yarrDir=`pwd`
+    dir=${yarrDir}/localdb/cacheDB
 fi
 
 # create database config
-dbcfg=${HOME}/.yarr/database.json
+dbcfg=${HOME}/.yarr/${HOSTNAME}_database.json
 echo "{" > ${dbcfg}
 echo "    \"hostIp\": \"${ip}\"," >> ${dbcfg}
 echo "    \"hostPort\": \"${port}\"," >> ${dbcfg}
@@ -86,7 +86,7 @@ echo "Create DB Config file: ${dbcfg}"
 echo " "
 
 # create site address config 
-address=${HOME}/.yarr/address.json
+address=${HOME}/.yarr/${HOSTNAME}_address.json
 unset institution
 declare -a nic=()  
 num=0
@@ -106,11 +106,11 @@ if [ -f ${address} ] && [ ${macaddress} = ${tmpmacaddress} ] && [ ${HOSTNAME} = 
     echo "Site Config file is exist: ${address}"
     institution=${tmpinstitution}
 else
-    echo "Enter the institution (ABC Laboratory) where this machine (MAC address: ${macaddress}) is or 'exit' ... "
+    echo "Enter the institution name where this machine (MAC address: ${macaddress}) is or 'exit' ... "
     read -p "> " -a answer
     while [ ${#answer[@]} == 0 ]; 
     do
-        echo "Enter the institution (ABC Laboratory) where this machine (MAC address: ${macaddress}) is or 'exit' ... "
+        echo "Enter the institution name where this machine (MAC address: ${macaddress}) is or 'exit' ... "
         read -p "> " -a answer
     done
     if [ ${answer[0]} == "exit" ]; then
@@ -158,4 +158,8 @@ if [ ! -e ${dir} ]; then
 fi
 
 echo "Create Cache Directory: ${dir}"
+echo " "
+
+cp ${yarrDir}/src/bin/dbAccessor ${yarrDir}/localdb/dbAccessor
+echo "Copy dbAccessor"
 echo " "

@@ -19,10 +19,11 @@ void printHelp();
 int main(int argc, char *argv[]){
 
     std::string home = getenv("HOME");
+    std::string hostname = getenv("HOSTNAME");
     std::string registerType = "";
 
     // Init parameters
-    std::string db_cfg_path=home+"/.yarr/database.json";
+    std::string db_cfg_path=home+"/.yarr/"+hostname+"_database.json";
     std::string db_cache_path = "";
 	  std::string conn_path = "";
     std::string db_user = "";
@@ -118,7 +119,7 @@ int main(int argc, char *argv[]){
         addressCfgPath = db_cache_path+"/address.json";
     } else {
         userCfgPath = home+"/.yarr/"+dbuser+"_user.json";
-        addressCfgPath = home+"/.yarr/address.json";
+        addressCfgPath = home+"/.yarr/"+hostname+"_address.json";
     }
     std::fstream userCfgFile((userCfgPath).c_str(), std::ios::in);
     json userCfg;

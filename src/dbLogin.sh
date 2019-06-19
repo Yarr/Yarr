@@ -19,7 +19,7 @@ Usage:
 
 Options:
     - user account* required.
-    - path to db config file    default: ${HOME}/.yarr/database.json
+    - path to db config file    default: ${HOME}/.yarr/${HOSTNAME}_database.json
 
 EOF
 }
@@ -152,16 +152,14 @@ if [ ${answer} != "y" ]; then
     return 0
 fi
 
-dbcfg=${HOME}/.yarr/database.json
+dbcfg=${HOME}/.yarr/${HOSTNAME}_database.json
 
-if [ ! -f ${cfg} ]; then
-    echo "{" > ${cfg}
-    echo "    \"userName\": \"${name}\"," >> ${cfg}
-    echo "    \"institution\": \"${institution}\"," >> ${cfg}
-    echo "    \"userIdentity\": \"${identity}\"," >> ${cfg}
-    echo "    \"dbCfg\": \"${dbcfg}\"" >> ${cfg}
-    echo "}" >> ${cfg}
-fi
+echo "{" > ${cfg}
+echo "    \"userName\": \"${name}\"," >> ${cfg}
+echo "    \"institution\": \"${institution}\"," >> ${cfg}
+echo "    \"userIdentity\": \"${identity}\"," >> ${cfg}
+echo "    \"dbCfg\": \"${dbcfg}\"" >> ${cfg}
+echo "}" >> ${cfg}
 echo "Create User Config file: ${cfg}"
 echo " "
 
