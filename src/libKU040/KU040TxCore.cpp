@@ -39,7 +39,7 @@ void KU040TxCore::DumpTxCounters()
 void KU040TxCore::setCmdEnable(uint32_t value)
 {
 	// save mask internally
-	m_enableMask = value;
+	m_enableMask = 1 << value;
 
 	// update TX configuration
 	for(int i = 0; i < 20; i++)
@@ -59,6 +59,14 @@ void KU040TxCore::setCmdEnable(uint32_t value)
 			m_com->Write(KU040_PIXEL_TX_CONTROL(i), 0x0);
 		}
 	}
+}
+
+void KU040TxCore::setCmdEnable(std::vector<uint32_t> channels) {
+    uint32_t mask = 0;
+    for (uint32_t channel : channels) {
+        mask += (1 << channel);
+    }
+    this->setCmdEnable(mask);
 }
 
 uint32_t KU040TxCore::getCmdEnable()

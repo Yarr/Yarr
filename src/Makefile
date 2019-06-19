@@ -123,7 +123,7 @@ define uc
 $(shell echo $(1) | tr 'a-z' 'A-Z')
 endef
 
-PKGS := tools libSpec libYarr libFei4 libFe65p2 libUtil libEmu libRce libBoc libKU040 libRd53a
+PKGS := tools libSpec libYarr libFei4 libFe65p2 libUtil libEmu libRce libBoc libKU040 libRd53a libStar
 ifneq (${NETIO_DIR},)
   PKGS+= libNetioHW
 endif

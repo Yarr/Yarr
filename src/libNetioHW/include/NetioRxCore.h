@@ -43,8 +43,10 @@ public:
   ~NetioRxCore();
 
   void setRxEnable(uint32_t val) override;
+  void setRxEnable(std::vector<uint32_t> channels);
   void maskRxEnable(uint32_t val, uint32_t mask) override;
 
+  void flushBuffer() override;
   RawData* readData() override;
 
   /**
@@ -80,9 +82,17 @@ public:
   void fromFileJson(json &j);
 
 private:
+  // to keep track of amount of data received at rxcore
+  int rxDataCount;
+
+  // used as flag for merge
+  std::string m_fetype;
+
 
   void enableChannel(uint64_t chn);
   void disableChannel(uint64_t chn);
+
+  void disableAllChannels();
 
   std::string m_felixhost;          //! felix hostname
   uint16_t m_felixport;             //! felix port for reading

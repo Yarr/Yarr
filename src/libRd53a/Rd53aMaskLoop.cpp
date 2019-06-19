@@ -17,7 +17,9 @@ enum MaskType {StandardMask =0 , CrossTalkMask=1,CrossTalkMaskv2 =2};
 enum MaskSize {CrossTalkMask8=0, CrossTalkMask4=1, 
     CrossTalkMask2ud=2, CrossTalkMask2rl=3, 
     CrossTalkMask1u=4, CrossTalkMask1d=5,
-    CrossTalkMask1r=6, CrossTalkMask1l=7};
+    CrossTalkMask1r=6, CrossTalkMask1l=7,
+    CrossTalkMask1ur=8, CrossTalkMask1ul=9,
+    CrossTalkMask1dr=10, CrossTalkMask1dl=11};
 
 //Switch for including/excluding edges pixels
 enum IncludedPixels {includeEdges=0 ,removeEdgesFullSensor=1, removeEdgesSynFE=2, removeEdgesLinFE=3, removeEdgesDifFE=4,only00CornerForBumpBonding=5 };
@@ -76,6 +78,10 @@ Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase() {
             {1,0,0,0,0,0,0,0},         //1down
             {0,0,1,0,0,0,0,0},	   //1right
             {0,0,0,0,0,0,1,0},         //1left    
+            {0,0,0,1,0,0,0,0},         //1up-right    
+            {0,0,0,0,0,1,0,0},         //1up-left    
+            {0,1,0,0,0,0,0,0},         //1down-right    
+            {0,0,0,0,0,0,0,1},         //1down-left    
     }}; 
 
 }
@@ -88,7 +94,7 @@ void Rd53aMaskLoop::init() {
     for(FrontEnd *fe : keeper->feList) {
         // Make copy of pixRegs
         m_pixRegs[fe] = dynamic_cast<Rd53a*>(fe)->pixRegs;
-        g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+        g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         for(unsigned col=0; col<Rd53a::n_Col; col++) {
             for(unsigned row=0; row<Rd53a::n_Row; row++) {
                 dynamic_cast<Rd53a*>(fe)->setEn(col, row, 0);
@@ -109,7 +115,7 @@ void Rd53aMaskLoop::execPart1() {
 
     // Loop over FrontEnds
     for(FrontEnd *fe : keeper->feList) {
-        g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+        g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         std::vector<std::pair<unsigned, unsigned>> modPixels;
         //Loop over all pixels - n_Col=400, n_Row=192 - from Rd53aPixelCfg.h
         for(unsigned col=0; col<Rd53a::n_Col; col++) {
@@ -192,7 +198,7 @@ void Rd53aMaskLoop::execPart2() {
     // Loop over FrontEnds to clean it up
     if (m_maskType == CrossTalkMask or m_maskType == CrossTalkMaskv2 ){
         for(FrontEnd *fe : keeper->feList) {
-            g_tx->setCmdEnable(1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+            g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
             std::vector<std::pair<unsigned, unsigned>> modPixels;
             for(unsigned col=0; col<Rd53a::n_Col; col++) {
                 for(unsigned row=0; row<Rd53a::n_Row; row++) {

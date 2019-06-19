@@ -104,22 +104,22 @@ bool Bookkeeper::isChannelUsed(unsigned arg_channel) {
     return false;
 }
 
-uint32_t Bookkeeper::getTxMask() {
-    uint32_t mask = 0;
+std::vector<uint32_t> Bookkeeper::getTxMask() {
+    std::vector<uint32_t> activeChannels;
     for (unsigned i=0; i<feList.size(); i++) {
         if (feList[i]->isActive()) {
-            mask |= (0x1 << dynamic_cast<FrontEndCfg*>(feList[i])->getTxChannel());
+            activeChannels.push_back(dynamic_cast<FrontEndCfg*>(feList[i])->getTxChannel());
         }
     }
-    return mask;
+    return activeChannels;
 }
 
-uint32_t Bookkeeper::getRxMask() {
-    uint32_t mask = 0;
+std::vector<uint32_t> Bookkeeper::getRxMask() {
+    std::vector<uint32_t> activeChannels;
     for (unsigned i=0; i<feList.size(); i++) {
         if (feList[i]->isActive()) {
-            mask |= (0x1 << dynamic_cast<FrontEndCfg*>(feList[i])->getRxChannel());
+            activeChannels.push_back(dynamic_cast<FrontEndCfg*>(feList[i])->getRxChannel());
         }
     }
-    return mask;
+    return activeChannels;
 }

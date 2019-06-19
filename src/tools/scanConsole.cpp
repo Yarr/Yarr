@@ -470,7 +470,7 @@ int main(int argc, char *argv[]) {
     for ( FrontEnd* fe : bookie.feList ) {
         std::cout << "-> Configuring " << dynamic_cast<FrontEndCfg*>(fe)->getName() << std::endl;
         // Select correct channel
-        hwCtrl->setCmdEnable(0x1 << dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+        hwCtrl->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         // Configure
         fe->configure();
         // Wait for fifo to be empty
@@ -484,11 +484,18 @@ int main(int argc, char *argv[]) {
     // Wait for rx to sync with FE stream
     // TODO Check RX sync
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
+ 
     // Enable all active channels
+    std::cout << "-> Enablign Tx channels: " << std::endl;
     hwCtrl->setCmdEnable(bookie.getTxMask());
-    std::cout << "-> Setting Tx Mask to: 0x" << std::hex << bookie.getTxMask() << std::dec << std::endl;
+    for (uint32_t channel : bookie.getTxMask()) {
+        std::cout << "  ... " << channel  << std::endl;
+    }
+    std::cout << "-> Enablign Rx channels: " << std::endl;
     hwCtrl->setRxEnable(bookie.getRxMask());
-    std::cout << "-> Setting Rx Mask to: 0x" << std::hex << bookie.getRxMask() << std::dec << std::endl;
+    for (uint32_t channel : bookie.getRxMask()) {
+        std::cout << "  ... " << channel  << std::endl;
+    }
     
     hwCtrl->runMode();
 

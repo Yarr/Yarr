@@ -27,19 +27,19 @@
     "loops": [
       {
         "config": {
-          "max": 1536,
+          "max": 64,
           "min": 0,
-          "step": 32,
+          "step": 1,
 	  "maskType" : 1,
-	  "maskSize" : 4,
-	  "includedPixels" :5,
+	  "maskSize" : 8,
+	  "includedPixels" :0,
 	  "sensorType" : 0
         },
         "loopAction": "Rd53aMaskLoop"
       },
 	{
           "config": {
-          "max": 1500,
+          "max": 4000,
           "min": 100,
           "step": 50,
           "parameter":"InjVcalDiff"

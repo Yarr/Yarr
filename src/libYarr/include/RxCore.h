@@ -11,24 +11,33 @@
 // ################################
 
 #include <cstdint>
+#include <vector>
+#include <chrono>
 
 #include "RawData.h"
 
 class RxCore {
     public:
         virtual void setRxEnable(uint32_t val) = 0;
+        virtual void setRxEnable(std::vector<uint32_t>) = 0;
         virtual void maskRxEnable(uint32_t val, uint32_t mask) = 0;
 
         virtual RawData* readData() = 0;
         virtual void flushBuffer() {}
         
         virtual uint32_t getDataRate() = 0;
-        virtual uint32_t getCurCount() = 0;
+        virtual uint32_t getCurCount() {return 0;};
         virtual bool isBridgeEmpty() = 0;
+
+        std::chrono::microseconds getWaitTime() {
+            return m_waitTime;
+        }
 
     protected:
         RxCore();
         ~RxCore();
+
+        std::chrono::microseconds m_waitTime; 
 };
 
 #endif

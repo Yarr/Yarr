@@ -31,8 +31,8 @@ BocRxCore::~BocRxCore()
 
 void BocRxCore::setRxEnable(uint32_t val)
 {
-	// save mask locally
-	m_enableMask = val;
+    // save mask locally
+	m_enableMask = (1 << val);
 
 	// loop through channels and enable them
 	for(int ch = 0; ch < 32; ch++)
@@ -73,6 +73,15 @@ void BocRxCore::setRxEnable(uint32_t val)
 			}
 		}
 	}
+}
+
+void BocRxCore::setRxEnable(std::vector<uint32_t> channels) {
+    uint32_t mask = 0;
+    for (uint32_t channel : channels) {
+        mask += (1 << channel);
+
+    }
+    this->setRxEnable(mask);
 }
 
 void BocRxCore::maskRxEnable(uint32_t val, uint32_t mask)
