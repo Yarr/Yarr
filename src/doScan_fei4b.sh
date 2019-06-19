@@ -15,21 +15,20 @@ target_tot=9
 target_preamp=14941
 target_charge=2668
 mask=-1
-database=false
+dbUse=false
 getlog=false
 
 function usage {
     cat <<EOF
 
 Usage:
-    ./$(basename ${0}) [-m SN*] [-s Scan*] [-r Controller] [-n Connectivity] [-i Environment] [-c Charge] [-t Tot] [-p Preamp] [-M mask] [-d] [-l]
+    ./$(basename ${0}) [-m SN*] [-s Scan*] [-r Controller] [-n Connectivity] [-c Charge] [-t Tot] [-p Preamp] [-M mask] [-d] [-l]
 
 Options:
     -m <str>      serial number (*req.)
     -s <str/path> scan type (*req.)
     -r <path>     controller config file            default: ./configs/${asic_type}/\${mod_id}/controller.json
     -n <path>     connectivity config file          default: ./configs/${asic_type}/\${mod_id}/connectivity.json
-    -i <path>     environmental config file         default: ./configs/${asic_type}/\${mod_id}/info.json
     -c <int>      target charge for tune_threshold  default: 2668
     -t <int>      target tot for tune_preamp        default: 9
     -p <int>      target preamp for tune_preamp     default: 14941
@@ -40,20 +39,20 @@ Options:
 EOF
 }
 
-while getopts m:s:r:n:i:c:t:p:M:dl OPT
+while getopts m:s:r:n:c:t:p:M:dlI: OPT
 do
     case ${OPT} in
         m ) mod_id=${OPTARG} ;;
         s ) scan_type=${OPTARG} ;;
         r ) controller=${OPTARG} ;;
         n ) connectivity=${OPTARG} ;;
-        i ) run_info=${OPTARG} ;;
         c ) target_charge=${OPTARG} ;;
         t ) target_tot=${OPTARG} ;;
         p ) target_preamp=${OPTARG} ;;
         M ) mask=${OPTARG} ;;
-        d ) database=true ;;
+        d ) dbUse=true ;;
         l ) getlog=false ;;
+        I ) database=${OPTARG} ;;
         * ) usage
             exit ;;
     esac
@@ -79,6 +78,13 @@ if [ -z ${scan_type} ]; then
     usage
     exit
 fi
+if [ `echo ${scan_type} | grep "json"` ]; then
+    if [ ! -f ${scan_type} ]; then
+        echo "Not exist scan \"${scan_type}\"."
+        usage
+        exit
+    fi
+fi
 
 # controller config
 if [ -z ${controller} ]; then
@@ -103,12 +109,12 @@ if [ ! -f ${connectivity} ]; then
 fi
 
 # environmental config
-if "${database}"; then
-    if [ -z ${run_info} ]; then
-        run_info=configs/${asic_type}/${mod_id}/info.json
+if "${dbUse}"; then
+    if [ -z ${database} ]; then
+        database=${HOME}/.yarr/database.json
     fi
-    if [ ! -f ${run_info} ]; then
-        echo "Not exist environmental config file \"${run_info}\"."
+    if [ ! -f ${database} ]; then
+        echo "Not exist database config file \"${database}\"."
         usage
         exit
     fi
@@ -140,9 +146,9 @@ else
 fi
 
 # scanConsole
-if ${database}; then
-    echo "./bin/scanConsole -r ${controller} -c ${connectivity} -p -t ${target_amp_or_charge} ${target_tot} -s ${scan_type} -m ${mask} -W -I ${run_info}" 
-    ./bin/scanConsole -r ${controller} -c ${connectivity} -p -t ${target_amp_or_charge} ${target_tot} -s ${scan_type} -m ${mask} -W -I ${run_info} 
+if ${dbUse}; then
+    echo "./bin/scanConsole -r ${controller} -c ${connectivity} -p -t ${target_amp_or_charge} ${target_tot} -s ${scan_type} -m ${mask} -W" 
+    ./bin/scanConsole -r ${controller} -c ${connectivity} -p -t ${target_amp_or_charge} ${target_tot} -s ${scan_type} -m ${mask} -W 
 else
     echo "./bin/scanConsole -r ${controller} -c ${connectivity} -p -t ${target_amp_or_charge} ${target_tot} -s ${scan_type} -m ${mask}"
     ./bin/scanConsole -r ${controller} -c ${connectivity} -p -t ${target_amp_or_charge} ${target_tot} -s ${scan_type} -m ${mask}

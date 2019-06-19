@@ -13,7 +13,7 @@ tx_fix=0
 rx_start=0
 
 # default parameters
-database=false
+dbUse=false
 reset=false
 now=`date +"%y%m%d%H%M"`
 
@@ -36,7 +36,7 @@ Options:
 EOF
 }
 
-while getopts a:m:c:i:r:dR OPT
+while getopts a:m:c:i:r:dRI: OPT
 do
     case ${OPT} in
         a ) asic=${OPTARG} ;;
@@ -44,7 +44,7 @@ do
         c ) chips=${OPTARG} ;;
         i ) user=${OPTARG} ;;
         r ) controller=${OPTARG} ;;
-        d ) database=true ;;
+        d ) dbUse=true ;;
         R ) reset=true ;;
         * ) usage
             exit ;;
@@ -294,7 +294,7 @@ fi
 cd ../
 
 # Register module and chips component to DB
-if "${database}"; then
-    echo "./bin/dbAccessor -C configs/${asic}/${sn}/connectivity.json "
+if [ ! -z ${dbUse} ]; then
+    echo "./bin/dbAccessor -C configs/${asic}/${sn}/connectivity.json"
     ./bin/dbAccessor -C configs/${asic}/${sn}/connectivity.json
 fi

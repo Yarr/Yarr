@@ -12,115 +12,84 @@
 #include <unistd.h>
 #include "DBHandler.h"
 
-#ifdef MONGOCXX_INCLUDE // When use macro "-DMONGOCXX_INCLUDE" in makefile
-
 #include "json.hpp"
 
 void printHelp();
 
 int main(int argc, char *argv[]){
 
-    //std::string hostIp = "mongodb://localhost:27017";
-    DBHandler *database = new DBHandler(true);
-
+    std::string home = getenv("HOME");
     std::string registerType = "";
 
-    // register component
-	  std::string dbConnPath = "";
-    
-    // register user
-    std::string dbUserAccount = "";
-    std::string dbUserName = "";
-    std::string dbUserIdentity = "";
-	  std::string dbInstitution = "";
-	  std::string dbUserCfgPath = "";
-
-    // register environment
-    std::string dbEnvPath = "";
-    
-    // register json
-    std::string dbJsonPath = "";
-    std::string dbJsonType = "";
-    std::string dbJsonTitle = "";
-
-    // get json
-    std::string dbJsonId = "";
-    std::string dbChipId = "0";
-    std::string dbName = "test";
-    std::string dbType = "";
-
-    // get data
-    std::string dbDataPath = "";
-    std::string dbDataId = "";
-
-    // register from directory
-    std::string dbDir = "";
+    // Init parameters
+    std::string db_cfg_path=home+"/.yarr/database.json";
+    std::string db_cache_path = "";
+	  std::string conn_path = "";
+    std::string db_user = "";
+    std::string json_path = "";
+    std::string json_type = "";
+    std::string json_title = "";
+    std::string json_id = "";
+    std::string chip_id = "0";
+    std::string name = "test";
+    std::string type = "";
+    std::string data_path = "";
+    std::string data_id = "";
 
     int c;
-    while ((c = getopt(argc, argv, "hD:U:C:J:E:G:T:Sn:u:i:p:c:d:j:t:")) != -1 ){
+    while ((c = getopt(argc, argv, "hR:U:C:J:E:G:T:n:i:c:j:t:")) != -1 ){
         switch (c) {
             case 'h':
                 printHelp();
                 return 0;
                 break;
-            case 'D':
-                registerType = "Directory";
-                dbDir = std::string(optarg);
+            case 'R':
+                registerType = "Cache";
+                db_cache_path = std::string(optarg);
                 break;
             case 'U':
                 registerType = "User";
-                dbUserAccount = std::string(optarg);
+                db_user = std::string(optarg);
                 break;
             case 'C':
                 registerType = "Component";
-                dbConnPath = std::string(optarg);
+                conn_path = std::string(optarg);
                 break;
             case 'E':
                 registerType = "Environment";
-                dbEnvPath = std::string(optarg);
+                db_cache_path = std::string(optarg);
                 break;
             case 'J':
                 registerType = "Json";
-                dbJsonPath = std::string(optarg);
+                json_path = std::string(optarg);
                 break;
             case 'G':
                 registerType = "getJson";
-                dbJsonPath = std::string(optarg);
+                json_path = std::string(optarg);
                 break;
             case 'T':
                 registerType = "getDat";
-                dbDataPath = std::string(optarg);
-                break;
-            case 'S':
-                registerType = "Site";
+                data_path = std::string(optarg);
                 break;
             case 'n':
-                dbUserName = std::string(optarg);
-                dbName = std::string(optarg);
+                name = std::string(optarg);
                 break;
             case 'i':
-                dbInstitution = std::string(optarg);
-                dbJsonId = std::string(optarg);
-                dbDataId = std::string(optarg);
-                break;
-            case 'u':
-                dbUserIdentity = std::string(optarg);
+                json_id = std::string(optarg);
+                data_id = std::string(optarg);
                 break;
             case 'j':
-                dbJsonType = std::string(optarg);
-                break;
-            case 'p':
-                dbUserCfgPath = std::string(optarg);
+                json_type = std::string(optarg);
                 break;
             case 'c':
-                dbChipId = std::string(optarg);
+                chip_id = std::string(optarg);
                 break;
             case 't':
-                dbType = std::string(optarg);
-                dbJsonTitle = std::string(optarg);
+                type = std::string(optarg);
+                json_title = std::string(optarg);
                 break;
             case '?':
-                if(optopt == 'D'||optopt == 'U'||optopt == 'C'||optopt == 'E'||optopt == 'J'||optopt == 'G'){
+                if(optopt=='R'||optopt=='U'||optopt=='C'||optopt=='E'||optopt=='J'||optopt=='G'||optopt=='T'){
                     std::cerr << "-> Option " << (char)optopt
                               << " requires a parameter! Aborting... " << std::endl;
                     return -1;
@@ -129,73 +98,102 @@ int main(int argc, char *argv[]){
                 }
                 break;
             default:
-                std::cerr << "-> Error while parsing command line parameters!" << std::endl;
+                std::cerr << "-> #ERROR# while parsing command line parameters!" << std::endl;
                 return -1;
         }
     }
 
     if (registerType == "") printHelp();
 
-//    // register from directory
-//    if (registerType == "Directory") {
-//        std::cout << "DBHandler: Register directory: " << dbDir << std::endl;
-//
-//        DBHandler *database = new DBHandler();
-//    	  database->writeFromDirectory("","",dbDir,"");
-//        delete database;
-//    }
-//
-    // register user
-    if (registerType == "User") {
-        std::cout << "DBHandler: Login user: \n\taccount: " << dbUserAccount << std::endl;
-        std::string home = getenv("HOME");
-        if (dbUserCfgPath == "") {
-            dbUserCfgPath = home + "/.yarr/" + dbUserAccount + "_user.json";
-        }
-        std::ifstream dbUserCfgFile(dbUserCfgPath);
-        if (dbUserName == ""||dbInstitution == ""||dbUserIdentity == "") {
-            if (dbUserCfgFile) {
-                json dbUserCfg = json::parse(dbUserCfgFile);
-                if (dbUserName == ""&&!dbUserCfg["userName"].empty()) dbUserName = dbUserCfg["userName"];
-                if (dbInstitution == ""&&!dbUserCfg["institution"].empty()) dbInstitution = dbUserCfg["institution"];
-                if (dbUserIdentity == ""&&!dbUserCfg["userIdentity"].empty()) dbUserIdentity = dbUserCfg["userIdentity"];
-            }
-            if (dbUserIdentity == "") dbUserIdentity = "default";
-        }
+    if (getenv("DBUSER")==NULL) {
+        std::cerr << "#ERROR# Not logged in DBHandler, login by source dbLogin.sh <USER ACCOUNT>" << std::endl;
+        std::abort();
+    }
+    std::string dbuser;
+    if (db_user=="") dbuser = getenv("DBUSER");
+    else dbuser = db_user;
+    std::string userCfgPath, addressCfgPath;
+    if (registerType=="Cache"||registerType=="Environment") {
+        userCfgPath = db_cache_path+"/user.json";
+        addressCfgPath = db_cache_path+"/address.json";
+    } else {
+        userCfgPath = home+"/.yarr/"+dbuser+"_user.json";
+        addressCfgPath = home+"/.yarr/address.json";
+    }
+    std::fstream userCfgFile((userCfgPath).c_str(), std::ios::in);
+    json userCfg;
+    try {
+        userCfg = json::parse(userCfgFile);
+    } catch (json::parse_error &e) {
+        std::cerr << "#ERROR# Could not parse config: " << e.what() << std::endl;
+        return 0;
+    }
+    if (!userCfg["dbCfg"].empty()) db_cfg_path=userCfg["dbCfg"];
     
-        if (dbUserName == ""||dbInstitution == "") {
-            std::cerr << "Error: no username/institution given, please specify username/institution under -n/i option!" << std::endl;
-            return -1;
-        }
-    
-        std::replace(dbUserName.begin(), dbUserName.end(), ' ', '_');
-        std::replace(dbInstitution.begin(), dbInstitution.end(), ' ', '_');
-        std::replace(dbUserIdentity.begin(), dbUserIdentity.end(), ' ', '_');
+    DBHandler *database = new DBHandler(db_cfg_path, true);
 
-        std::cout << std::endl;
-        std::cout << "DBHandler: Register user's information: " << std::endl;
-    	  std::cout << "\tuser name : " << dbUserName << std::endl;
-    	  std::cout << "\tinstitution : " << dbInstitution << std::endl;
-    	  std::cout << "\tuser identity : " << dbUserIdentity << std::endl;
-        std::cout << std::endl;
+    // register cache
+    if (registerType == "Cache") {
+        std::cout << "DBHandler: Register Cache '"<< db_cache_path << "'" << std::endl;
 
-    	  database->registerUser(dbUserName, dbInstitution, dbUserIdentity);
+        database->initialize("cache");
+    	  database->writeCache(db_cache_path);
         delete database;
     }
 
-    // register site
-    if (registerType == "Site") {
-    	  database->registerSite();
+    // register user
+    if (registerType == "User") {
+        std::cout << "DBHandler: Login user: \n\taccount: " << db_user << std::endl;
+        std::string home = getenv("HOME");
+        std::string dbUserCfgPath = home + "/.yarr/" + db_user + "_user.json";
+
+        std::string userName, institution, userIdentity;
+        std::ifstream userCfgFile(dbUserCfgPath);
+
+        json userCfg = json::parse(userCfgFile);
+        if (!userCfg["userName"].empty()) userName = userCfg["userName"];
+        else {
+            std::cerr << "#ERROR# 'userName' is empty in user config file: " << dbUserCfgPath << std::endl;
+            return -1;
+        }
+        if (!userCfg["institution"].empty()) institution = userCfg["institution"];
+        else {
+            std::cerr << "#ERROR# 'institution' is empty in user config file: " << dbUserCfgPath << std::endl;
+            return -1;
+        }
+        if (!userCfg["userIdentity"].empty()) userIdentity = userCfg["userIdentity"];
+        else userIdentity = "default";
+        if (userName == ""||institution == "") {
+            std::cerr << "#ERROR# Something wrong in user config file: " << dbUserCfgPath << std::endl;
+            return -1;
+        }
+    
+        std::replace(userName.begin(), userName.end(), ' ', '_');
+        std::replace(institution.begin(), institution.end(), ' ', '_');
+        std::replace(userIdentity.begin(), userIdentity.end(), ' ', '_');
+
+        std::cout << std::endl;
+        std::cout << "DBHandler: Register user's information: " << std::endl;
+    	  std::cout << "\tuser name : " << userName << std::endl;
+    	  std::cout << "\tinstitution : " << institution << std::endl;
+    	  std::cout << "\tuser identity : " << userIdentity << std::endl;
+        std::cout << std::endl;
+
+        database->initialize();
+    	  database->setUser(userCfgPath, addressCfgPath);
         delete database;
     }
 
     // register component
     if (registerType == "Component") {
         std::cout << "DBHandler: Register Component:" << std::endl;
-	      std::cout << "\tconnecitivity config file : " << dbConnPath << std::endl;
+	      std::cout << "\tconnecitivity config file : " << conn_path << std::endl;
 
-        database->setUser();
-	      database->registerComponent(dbConnPath);
+        database->initialize();
+    	  database->setUser(userCfgPath, addressCfgPath);
+        std::vector<std::string> conn_paths;
+        conn_paths.push_back(conn_path);
+	      database->setConnCfg(conn_paths);
 
         delete database;
     }
@@ -203,76 +201,79 @@ int main(int argc, char *argv[]){
     // register environment
     if (registerType == "Environment") {
         std::cout << "DBHandler: Register Environment:" << std::endl;
-	      std::cout << "\tenvironmental config file : " << dbEnvPath << std::endl;
+	      std::cout << "\tenvironmental config file : " << db_cache_path << std::endl;
 
-        database->setUser();
-        database->setTestRunInfo(dbEnvPath);
-	      database->registerEnvironment(dbEnvPath);
+        database->initialize("dcs");
+    	  database->setUser(userCfgPath, addressCfgPath);
+        database->writeDCS(db_cache_path);
 
         delete database;
     }
 
-    // register Json
-    if (registerType == "Json") {
-        if (dbJsonType == "") {
-            std::cerr << "Error: no upload format given, please specify upload format under -j option!" << std::endl;
-            return -1;
-        }
-        if (dbJsonTitle == "") {
-            std::cerr << "Error: no config title given, please specify config title under -t option!" << std::endl;
-            return -1;
-        }
-        std::cout << "DBHandler: Register Json:" << std::endl;
-	      std::cout << "\tjson file : " << dbJsonPath << std::endl;
-        
-        std::ifstream jsonFile(dbJsonPath);
-        if (!jsonFile) {
-            std::cerr <<"#ERROR# Cannot open json file: " << dbJsonPath << std::endl;
-            return -1;
-        }
-        json j;
-        try {
-            j = json::parse(jsonFile);
-            database->writeJsonCode(dbJsonPath, dbJsonTitle + ".json", dbJsonTitle, dbJsonType); 
-            delete database;
-        } catch (json::parse_error &e) {
-            std::cerr << "#ERROR# Could not parse config: " << e.what() << std::endl;
-            std::abort();
-        }
-    }
-
-    // get Json
-    if (registerType == "getJson") {
-        if (dbJsonId == "") {
-            std::cerr << "Error: no config id given, please specify config id under -i option!" << std::endl;
-            return -1;
-        }
-        if (dbType == "") {
-            std::cerr << "Error: no config type given, please specify config type under -t option!" << std::endl;
-            std::cerr << "\t-t chipCfg" << std::endl;
-            std::cerr << "\t-t ctrlCfg" << std::endl;
-            std::cerr << "\t-t scanCfg" << std::endl;
-            return -1;
-        }
-        std::cout << "DBHandler: Get Json:" << std::endl;
-	      std::cout << "\tsave json file : " << dbJsonPath << std::endl;
-        
-	      database->getJsonCode(dbJsonId, dbJsonPath, dbName, dbType, std::atoi(dbChipId.c_str()));
-        delete database;
-    }
-
-    // get Dat
-    if (registerType == "getDat") {
-        if (dbDataId == "") {
-            std::cerr << "Error: no data id given, please specify data id under -i option!" << std::endl;
-            return -1;
-        }
-        std::cout << "DBHandler: Get Data:" << std::endl;
-	      std::cout << "\tsave data file : " << dbDataPath << std::endl;
-        
-	      database->getDatCode(dbDataId, dbDataPath);
-        delete database;
-    }
+//    // register Json
+//    if (registerType == "Json") {
+//        if (json_type == "") {
+//            std::cerr << "#ERROR# no upload format given, please specify upload format under -j option!" << std::endl;
+//            return -1;
+//        }
+//        if (json_title == "") {
+//            std::cerr << "#ERROR# no config title given, please specify config title under -t option!" << std::endl;
+//            return -1;
+//        }
+//        std::cout << "DBHandler: Register Json:" << std::endl;
+//	      std::cout << "\tjson file : " << json_path << std::endl;
+//        
+//        std::ifstream jsonFile(json_path);
+//        if (!jsonFile) {
+//            std::cerr <<"#ERROR# Cannot open json file: " << json_path << std::endl;
+//            return -1;
+//        }
+//        json j;
+//        try {
+//            j = json::parse(jsonFile);
+//            database->initialize();
+//            database->writeJsonCode(json_path, json_title + ".json", json_title, json_type); 
+//            delete database;
+//        } catch (json::parse_error &e) {
+//            std::cerr << "#ERROR# Could not parse config: " << e.what() << std::endl;
+//            std::abort();
+//        }
+//    }
+//
+//    // get Json
+//    if (registerType == "getJson") {
+//        if (json_id == "") {
+//            std::cerr << "#ERROR# no config id given, please specify config id under -i option!" << std::endl;
+//            return -1;
+//        }
+//        if (type == "") {
+//            std::cerr << "#ERROR# no config type given, please specify config type under -t option!" << std::endl;
+//            std::cerr << "\t-t chipCfg" << std::endl;
+//            std::cerr << "\t-t ctrlCfg" << std::endl;
+//            std::cerr << "\t-t scanCfg" << std::endl;
+//            return -1;
+//        }
+//        std::cout << "DBHandler: Get Json:" << std::endl;
+//	      std::cout << "\tsave json file : " << json_path << std::endl;
+//        
+//        database->initialize();
+//	      database->getJsonCode(json_id, json_path, name, type, std::atoi(chip_id.c_str()));
+//        delete database;
+//    }
+//
+//    // get Dat
+//    if (registerType == "getDat") {
+//        if (data_id == "") {
+//            std::cerr << "#ERROR# no data id given, please specify data id under -i option!" << std::endl;
+//            return -1;
+//        }
+//        std::cout << "DBHandler: Get Data:" << std::endl;
+//	      std::cout << "\tsave data file : " << data_path << std::endl;
+//        
+//        database->initialize();
+//	      database->getDatCode(data_id, data_path);
+//        delete database;
+//    }
 
 	  return 0;
 }
@@ -286,7 +287,7 @@ void printHelp() {
     std::cout << "\t -i <institution>" << std::endl;
     std::cout << "\t -u <user identity>" << std::endl;
     std::cout << "\t -p <user config path>" << std::endl;
-    std::cout << "\t -c <test place> (Default: ~/.yarr/address)" << std::endl;
+    std::cout << "\t -c <test place> (Default: ~/.yarr/address.json)" << std::endl;
     std::cout << " -S <site name> : Register site data into database. Provide site's name and institution with option -i." << std::endl;
     std::cout << "\t -i <institution>" << std::endl;
     std::cout << " -J <path/to/config.json> : Register config data into database. Provide the path to config.json." << std::endl;
@@ -297,12 +298,3 @@ void printHelp() {
     std::cout << "\t -t <config type in database>" << std::endl;
     std::cout << " -E <path/to/env.json> : Register environmental information into database. Provide the path to env.json." << std::endl;
 }
-
-#else // Else if there is no MONGOCXX_INCLUDE
-
-int main(int argc, char *argv[]){
-    std::cout << "#ERROR# No MongoDB C++ Driver found, Database function is disabled" << std::endl;
-    return 1;
-}
-
-#endif // End of ifdef MONGOCXX_INCLUDE

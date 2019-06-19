@@ -15,7 +15,11 @@ function usage {
     cat <<EOF
 
 Usage:
-    source /db_login.sh <user account>
+    source /db_login.sh [user account*] [path to db config]
+
+Options:
+    - user account* required.
+    - path to db config file    default: ${HOME}/.yarr/database.json
 
 EOF
 }
@@ -27,13 +31,7 @@ function unset_variable {
     unset institution
     unset identity
     unset answer
-    unset dbnic
-    unset cnt
-    unset num
-    unset DEV
-    unset nic
-    unset address
-    unset dbcfg 
+    unset dbcfg
 }
 
 account=$1
@@ -145,114 +143,40 @@ do
     echo "Are you sure that's correct? [y/n]"
     read -p "> " answer
 done
+echo " "
 
-dbcfg=${HOME}/.yarr/database.json
-
-if [ ${answer} == "y" ]; then
-    if [ ! -f ${cfg} ]; then
-        echo "{" > ${cfg}
-        echo "    \"userName\": \"${name}\"," >> ${cfg}
-        echo "    \"institution\": \"${institution}\"," >> ${cfg}
-        echo "    \"userIdentity\": \"${identity}\"," >> ${cfg}
-        echo "    \"dbCfg\": \"${dbcfg}\"" >> ${cfg}
-        echo "}" >> ${cfg}
-        echo " "
-        echo "Create User Config file: ${cfg}"
-    fi
-    echo " "
-    if "${DEBUG}"; then
-        echo "export DBUSER=\"${account}\""
-        echo " "
-    fi
-    export DBUSER=${account}
-    if "${DEBUG}"; then
-        echo "./bin/dbAccessor -U ${account}"
-        echo " "
-    fi
-    ./bin/dbAccessor -U ${account}
-else
+if [ ${answer} != "y" ]; then
     echo "Exit ..."
     echo " "
     unset_variable
     return 0
 fi
 
-echo "{" > ${dbcfg}
-echo "    \"stage\": [" >> ${dbcfg}
-echo "        \"Bare Module\"," >> ${dbcfg}
-echo "        \"Wire Bonded\"," >> ${dbcfg}
-echo "        \"Potted\"," >> ${dbcfg}
-echo "        \"Final Electrical\"," >> ${dbcfg}
-echo "        \"Complete\"," >> ${dbcfg}
-echo "        \"Loaded\"," >> ${dbcfg}
-echo "        \"Parylene\"," >> ${dbcfg}
-echo "        \"Initial Electrical\"," >> ${dbcfg}
-echo "        \"Thermal Cycling\"," >> ${dbcfg}
-echo "        \"Flex + Bare Module Attachment\"," >> ${dbcfg}
-echo "        \"Testing\"" >> ${dbcfg}
-echo "    ]," >> ${dbcfg}
-echo "    \"environment\": [" >> ${dbcfg}
-echo "        \"vddd_voltage\"," >> ${dbcfg}
-echo "        \"vddd_current\"," >> ${dbcfg}
-echo "        \"vdda_voltage\"," >> ${dbcfg}
-echo "        \"vdda_current\"," >> ${dbcfg}
-echo "        \"hv_voltage\"," >> ${dbcfg}
-echo "        \"hv_current\"," >> ${dbcfg}
-echo "        \"temperature\"" >> ${dbcfg}
-echo "    ]," >> ${dbcfg}
-echo "    \"component\": [" >> ${dbcfg}
-echo "        \"Front-end Chip\"," >> ${dbcfg}
-echo "        \"Front-end Chips Wafer\"," >> ${dbcfg}
-echo "        \"Hybrid\"," >> ${dbcfg}
-echo "        \"Module\"," >> ${dbcfg}
-echo "        \"Sensor Tile\"," >> ${dbcfg}
-echo "        \"Sensor Wafer\"" >> ${dbcfg}
-echo "    ]" >> ${dbcfg}
-echo "}" >> ${dbcfg}
-echo "Create DB Config file: ${dbcfg}"
+dbcfg=${HOME}/.yarr/database.json
+
+if [ ! -f ${cfg} ]; then
+    echo "{" > ${cfg}
+    echo "    \"userName\": \"${name}\"," >> ${cfg}
+    echo "    \"institution\": \"${institution}\"," >> ${cfg}
+    echo "    \"userIdentity\": \"${identity}\"," >> ${cfg}
+    echo "    \"dbCfg\": \"${dbcfg}\"" >> ${cfg}
+    echo "}" >> ${cfg}
+fi
+echo "Create User Config file: ${cfg}"
 echo " "
 
-declare -a nic=()  
-num=0
-for DEV in `find /sys/devices -name net | grep -v virtual`; 
-do 
-    nic[${num}]=`ls --color=none ${DEV}`
-    num=$(( num + 1 ))
-done
-if [ ${num} != 1 ]; then
-    echo "Select the number before NIC name for the information of this machine."
-    echo " "
-    cnt=0
-    while [ ${cnt} -lt ${num} ]; do
-        echo ${nic[0]}
-        cnt=$(( cnt + 1 ))
-    done
-    read -p "> " answer
-    while [ -z ${answer} ]; 
-    do
-        echo "Select the number before NIC name for the information of this machine."
-        echo " "
-        read -p "> " answer
-    done
-    echo ${answer} | grep [^0-9] > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
-        echo "Please give an integral as the number before NIC name."
-        echo " "
-        unset_variable
-        return 0
-    fi
-    dbnic="${nic[${answer}]}"
-else
-    dbnic="${nic[0]}"
-fi
-address=${HOME}/.yarr/address
-echo `ifconfig ${dbnic} | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}'` > ${address}
-
 if "${DEBUG}"; then
-    echo "./bin/dbAccessor -S"
+    echo "export DBUSER=\"${account}\""
     echo " "
 fi
-./bin/dbAccessor -S
+export DBUSER=${account}
+
+echo "Register user and site data"
+if "${DEBUG}"; then
+    echo "./bin/dbAccessor -U ${account}"
+    echo " "
+fi
+./bin/dbAccessor -U ${account}
 
 unset_variable
 

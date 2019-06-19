@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
     int mask_opt = -1;
 
     bool dbUse = false;
-    std::string dbTestInfo = "";
+    std::string dbCfgPath = "";
     
     unsigned runCounter = 0;
 
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
     oF.close();
 
     int c;
-    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:WI:E:")) != -1) {
+    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:WE:")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
@@ -169,9 +169,6 @@ int main(int argc, char *argv[]) {
                 break;
             case 'W': // Write to DB
                 dbUse = true;
-                break;
-            case 'I':
-                dbTestInfo = std::string(optarg);
                 break;
             case '?':
                 if(optopt == 's' || optopt == 'n'){
@@ -245,23 +242,38 @@ int main(int argc, char *argv[]) {
     }
 
     // Initial setting local DBHandler
-    DBHandler *database = new DBHandler(dbUse);
+    dbCfgPath=home+"/.yarr/database.json";
+    if (dbUse) {
+        if (getenv("DBUSER")==NULL) {
+            std::cerr << "#DB ERROR# Not logged in DBHandler, login by source dblogin.sh <USER ACCOUNT>" << std::endl;
+            std::abort();
+        }
+        std::string dbuser = getenv("DBUSER");
+        std::fstream userCfgFile((home+"/.yarr/"+dbuser+"_user.json").c_str(), std::ios::in);
+        json userCfg;
+        try {
+            userCfg = json::parse(userCfgFile);
+        } catch (json::parse_error &e) {
+            std::cerr << "#ERROR# Could not parse config: " << home+"/.yarr/"+dbuser+"_user.json" << e.what() << std::endl;
+            return 0;
+        }
+        if (!userCfg["dbCfg"].empty()) dbCfgPath=userCfg["dbCfg"];
+    }
+    DBHandler *database = new DBHandler(dbCfgPath, dbUse);
     if (dbUse) {
         std::cout << std::endl;
         std::cout << "\033[1;31m################\033[0m" << std::endl;
         std::cout << "\033[1;31m# Set Database #\033[0m" << std::endl;
         std::cout << "\033[1;31m################\033[0m" << std::endl;
         std::cout << "-> Setting user's information" << std::endl;
-        database->setUser();
-        database->setTestRunInfo(dbTestInfo);
+        std::string dbuser = getenv("DBUSER");
+        database->initialize("log"); // 'log' can not upload data but create cache files, 'register' can upload data immediately after scan with creating cache files
+        database->setUser(home+"/.yarr/"+dbuser+"_user.json", home+"/.yarr/address.json");
         std::cout << "-> Setting Connectivity Configs" << std::endl;
         database->setConnCfg(cConfigPaths);
-        std::cout << "-> Setting TestRun Info" << std::endl;
-        std::cout << "-> Setting Target ToT: " << target_tot << std::endl;
-        std::cout << "-> Setting Target Charge: " << target_charge << std::endl;
         database->writeTestRunStart(strippedScan, cConfigPaths, runCounter, target_charge, target_tot);
-        database->writeConfig("", ctrlCfgPath, "controller", "ctrlCfg", "testRun"); //controller config
-        database->writeConfig("", scanType, strippedScan, "scanCfg", "testRun"); //scan config
+        database->writeConfig("", ctrlCfgPath, "controller", "ctrlCfg", "testRun");
+        database->writeConfig("", scanType, strippedScan, "scanCfg", "testRun");
     }
 
     // Timestamp
@@ -410,7 +422,7 @@ int main(int argc, char *argv[]) {
                         if (dbUse) {
                             std::string serialNumber = config["module"]["serialNumber"];
                             std::string chip_serialNumber = chip["serialNumber"];
-                            feCfg->setDbId(database->getComponentTestRun(chip_serialNumber));
+                            feCfg->setDbId(chip_serialNumber);
                             database->writeConfig(feCfg->getDbId(), outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getConfigFile() + ".before", "beforeCfg", "chipCfg", "componentTestRun");
                         }
                     }
@@ -620,30 +632,6 @@ int main(int argc, char *argv[]) {
     hwCtrl.reset();
 
     // Save scan log
-    if (dbUse) {
-        json database;
-        database["start"] = timestamp;
-        now = std::time(NULL);
-        lt = std::localtime(&now);
-        strftime(timestamp, 20, "%F_%H:%M:%S", lt);
-        database["finish"] = timestamp;
-        std::string dbuser = getenv("DBUSER");
-        std::string user_path = home + "/.yarr/" + dbuser + "_user.json";
-        std::ifstream user_ifs(user_path);
-        json user_json = json::parse(user_ifs);
-        database["userCfg"] = user_json;
-        if (dbTestInfo != "") {
-            std::ifstream info_ifs(dbTestInfo);
-            json tr_info_j = json::parse(info_ifs);
-            database["testInfo"] = tr_info_j;
-        }
-        std::string address_path = home + "/.yarr/address";
-        std::ifstream address_ifs(address_path);
-        std::string address;
-        address_ifs >> address;
-        database["address"] = address;
-        scanLog["database"] = database;
-    }
     std::ofstream scanLogFile(outputDir + "scanLog.json");
     scanLogFile << std::setw(4) << scanLog;
     scanLogFile.close();
@@ -679,6 +667,7 @@ int main(int argc, char *argv[]) {
             backupCfgFile.close(); 
             if (dbUse) {
                 database->writeConfig(dynamic_cast<FrontEndCfg*>(fe)->getDbId(), outputDir + dynamic_cast<FrontEndCfg*>(fe)->getConfigFile() + ".after", "afterCfg", "chipCfg", "componentTestRun");
+                std::cout << dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getConfigFile() << std::endl;
             }
 
             // Plot
@@ -694,7 +683,7 @@ int main(int argc, char *argv[]) {
                     histo->plot(name, outputDirTmp);
                     histo->toFile(name, outputDir);
                     if (dbUse) {
-                        std::string file_path = outputDir + name + "_" + histo->getName();
+                        std::string file_path = outputDir + name + "_" + histo->getName() + ".dat";
                         database->writeAttachment(dynamic_cast<FrontEndCfg*>(fe)->getDbId(), file_path, histo->getName());
                     }
                 }
@@ -720,18 +709,9 @@ int main(int argc, char *argv[]) {
         std::cout << "Target ToT: " << target_tot << std::endl;
         std::cout << "Path to Test Configuration: " << scanType << std::endl;
         std::cout << "Path to Controller Configuration: " << scanType << std::endl;
-        std::cout << "Path to Test Run Information: " << dbTestInfo << std::endl;
 
-        std::string test_run_oid_str = database->writeTestRunFinish(strippedScan, cConfigPaths, runCounter, target_charge, target_tot);
+        database->writeTestRunFinish(strippedScan, cConfigPaths, runCounter, target_charge, target_tot);
 
-        std::ifstream info_ifs(dbTestInfo);
-        json tr_info_j = json::parse(info_ifs);
-        tr_info_j["testRun"] = test_run_oid_str;
-        tr_info_j["status"]="waiting";
-        std::ofstream finish_ofs(outputDir + "dcs_cache.json");
-        finish_ofs << std::setw(4) << tr_info_j;
-        finish_ofs.close();
- 
         std::cout << "Done."<< std::endl;
     }
     delete database;
