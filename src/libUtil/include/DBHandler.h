@@ -46,6 +46,9 @@ class DBHandler {
         void initialize(std::string i_option="register");
         void abort(std::string i_function,
                    std::string i_message="Something wrong.");
+        int checkLibrary();
+        int checkConnection();
+        int checkCacheStatus();
 
         /// Setting and Writing for using Database including:
         /// - confirmation of the files

@@ -269,6 +269,7 @@ int main(int argc, char *argv[]) {
         std::cout << "-> Setting user's information" << std::endl;
         std::string dbuser = getenv("DBUSER");
         database->initialize("log"); // 'log' can not upload data but create cache files, 'register' can upload data immediately after scan with creating cache files
+        //database->initialize("cache"); // 'log' can not upload data but create cache files, 'register' can upload data immediately after scan with creating cache files
         database->setUser(home+"/.yarr/"+dbuser+"_user.json", home+"/.yarr/"+hostname+"_address.json");
         std::cout << "-> Setting Connectivity Configs" << std::endl;
         database->setConnCfg(cConfigPaths);

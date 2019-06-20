@@ -15,12 +15,13 @@ function usage {
     cat <<EOF
 
 Usage:
-    ./setup.sh [ip address] [port] [dir path]
+    ./setup.sh [-i ip address] [-p port] [-c dir path] [-d]
 
 Options:
-    - ip address  Local DB server ip address, default: 127.0.0.1
-    - port        Local DB server port, default: 27017
-    - dir path    path to Local DB cache directory, default: Yarr/localdb/cacheDB
+    - i <ip address>  Local DB server ip address, default: 127.0.0.1
+    - p <port>        Local DB server port, default: 27017
+    - c <dir path>    path to Local DB cache directory, default: Yarr/localdb/cacheDB
+    - d               start the daemon (required sudo)
 
 EOF
 }
@@ -29,9 +30,24 @@ if [ ! -e ${HOME}/.yarr ]; then
     mkdir ${HOME}/.yarr
 fi
 
-ip=$1
-port=$2
-dir=$3
+daemon=false
+
+while getopts i:p:c:d OPT
+do
+    case ${OPT} in
+        i ) ip=${OPTARG} ;;
+        p ) port=${OPTARG} ;;
+        c ) dir=${OPTARG} ;;
+        d ) daemon=true ;;
+        * ) usage
+            exit ;;
+    esac
+done
+
+if ${daemon}; then
+    read -sp "[sudo] password: " password
+    echo " "
+fi
 
 if [ -z ${ip} ]; then
     ip=127.0.0.1
@@ -115,6 +131,8 @@ else
     done
     if [ ${answer[0]} == "exit" ]; then
         echo "Exit ..."
+        echo " "
+        exit
     else
         for a in ${answer[@]}; do
             institution="${institution#_}_${a}"
@@ -140,6 +158,7 @@ echo " "
 if [ ${answer} != "y" ]; then
     echo "Exit ..."
     echo " "
+    exit
 fi
 
 echo "{" > ${address}
@@ -160,6 +179,18 @@ fi
 echo "Create Cache Directory: ${dir}"
 echo " "
 
-cp ${yarrDir}/src/bin/dbAccessor ${yarrDir}/localdb/dbAccessor
-echo "Copy dbAccessor"
-echo " "
+unset DBUSER
+
+if ${daemon}; then
+    cd ${yarrDir}/src
+    #make clean
+    make
+    
+    cp ${yarrDir}/src/bin/dbAccessor ${yarrDir}/localdb/dbAccessor
+    echo "Copy dbAccessor"
+    echo " "
+
+    cd ${yarrDir}/localdb
+    ./dbAccessor -S
+    echo $?
+fi

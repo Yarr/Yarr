@@ -36,9 +36,10 @@ int main(int argc, char *argv[]){
     std::string type = "";
     std::string data_path = "";
     std::string data_id = "";
+    //std::string db_status = "";
 
     int c;
-    while ((c = getopt(argc, argv, "hR:U:C:J:E:G:T:n:i:c:j:t:")) != -1 ){
+    while ((c = getopt(argc, argv, "hR:U:C:J:E:G:T:Sn:i:c:j:t:")) != -1 ){
         switch (c) {
             case 'h':
                 printHelp();
@@ -72,6 +73,9 @@ int main(int argc, char *argv[]){
                 registerType = "getDat";
                 data_path = std::string(optarg);
                 break;
+            case 'S':
+                registerType = "Check";
+                break;
             case 'n':
                 name = std::string(optarg);
                 break;
@@ -90,7 +94,7 @@ int main(int argc, char *argv[]){
                 json_title = std::string(optarg);
                 break;
             case '?':
-                if(optopt=='R'||optopt=='U'||optopt=='C'||optopt=='E'||optopt=='J'||optopt=='G'||optopt=='T'){
+                if(optopt=='R'||optopt=='U'||optopt=='C'||optopt=='E'||optopt=='J'||optopt=='G'||optopt=='T'||optopt=='S'){
                     std::cerr << "-> Option " << (char)optopt
                               << " requires a parameter! Aborting... " << std::endl;
                     return -1;
@@ -275,6 +279,15 @@ int main(int argc, char *argv[]){
 //	      database->getDatCode(data_id, data_path);
 //        delete database;
 //    }
+
+    // register cache
+    if (registerType == "Check") {
+        std::cout << "DBHandler: Check Local DB server status" << std::endl;
+
+        if (database->checkLibrary()==1) return 1;
+    	  if (database->checkConnection()==1) return 1; 
+        delete database;
+    }
 
 	  return 0;
 }

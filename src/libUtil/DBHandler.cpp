@@ -45,6 +45,15 @@ m_db_version(1.0), DB_DEBUG(false), m_log_json(), m_cache_json(), counter(0)
     m_db_cfg_path = i_db_cfg_path;
     m_host_ip = "mongodb://"+std::string(db_json["hostIp"])+":"+std::string(db_json["hostPort"]);
     m_cache_dir = db_json["cache"];
+
+    std::string file_path = m_cache_dir+"/lib/modules.json";
+    std::ifstream file_ifs(file_path);
+    if (!file_ifs) {
+        file_ifs.close();
+        std::ofstream file_ofs(file_path);
+        file_ofs << "null";
+        file_ofs.close();
+    }
 }
 
 DBHandler::~DBHandler() {
@@ -58,15 +67,6 @@ void DBHandler::initialize(std::string i_option) {
 
     m_option = i_option;
     int now = std::time(NULL);
-
-    std::string file_path = m_cache_dir+"/lib/modules.json";
-    std::ifstream file_ifs(file_path);
-    if (!file_ifs) {
-        file_ifs.close();
-        std::ofstream file_ofs(file_path);
-        file_ofs << "null";
-        file_ofs.close();
-    }
 
     // initialize for registeration
     if (m_option=="cache"||m_option=="dcs"||m_option=="register") {
@@ -134,6 +134,77 @@ void DBHandler::abort(std::string i_function, std::string i_message) {
     file_ofs << "Log: " << m_log_path << "\nCache: " << m_cache_path << "\n--------------------" << std::endl;
 
     std::abort();
+}
+
+int DBHandler::checkLibrary() {
+    if (DB_DEBUG) std::cout << "DBHandler: Check Mongocxx library" << std::endl;
+#ifdef MONGOCXX_INCLUDE
+    std::string message = "Found MongoDB C++ Driver!";
+    return 0;
+#else
+    std::string message = "Not found MongoDB C++ Driver!";
+    return 1;
+#endif
+}
+
+int DBHandler::checkConnection() {
+    if (DB_DEBUG) std::cout << "DBHandler: Check LocalDB server connection" << std::endl;
+#ifdef MONGOCXX_INCLUDE
+    mongocxx::instance inst{};
+    try {
+        client = mongocxx::client{mongocxx::uri{m_host_ip}};
+        db = client["localdb"]; // Database name is 'localdb'
+        auto doc_value = document{} <<
+            "hash" << 1 <<
+            "_id"  << 1 <<
+        finalize;
+        db["fs.files"].create_index(doc_value.view()); // set index in fs.files
+    } catch (const mongocxx::exception & e){
+        std::string message = "Could not access to MongoDB server: "+m_host_ip+"\n\twhat(): "+e.what();
+        return 1;
+    }
+    std::string mod_list_path = m_cache_dir+"/lib/modules.json";
+    json mod_list_json = this->toJson(mod_list_path);
+
+    auto doc_value = document{} << 
+        "componentType" << "Module" <<
+    finalize;
+    mongocxx::cursor cursor = db["component"].find(doc_value.view());
+    for (auto doc : cursor) {
+        std::string oid_str = doc["_id"].get_oid().value.to_string();
+        std::string mo_serial_number = doc["serialNumber"].get_utf8().value.to_string();
+        std::string chip_type = getValue("component", "_id", oid_str, "oid", "chipType");
+        mod_list_json[mo_serial_number] = {};
+        mod_list_json[mo_serial_number]["chipType"] = chip_type;
+        mod_list_json[mo_serial_number]["module"]["serialNumber"] = mo_serial_number;
+        mod_list_json[mo_serial_number]["module"]["componentType"] = "Module";
+
+        doc_value = document{} <<
+            "parent" << oid_str <<
+        finalize;
+        mongocxx::cursor cursor_cpr = db["childParentRelation"].find(doc_value.view());
+        for (auto child : cursor_cpr) {
+            std::string ch_oid_str = child["child"].get_utf8().value.to_string();
+            std::string ch_serial_number = getValue("component", "_id", ch_oid_str, "oid", "serialNumber");
+            std::string ch_component_type = getValue("component", "_id", ch_oid_str, "oid", "componentType");
+            std::string chip_id = getValue("component", "_id", ch_oid_str, "oid", "chipId", "int");
+
+            json chip_json;
+            chip_json["serialNumber"] = ch_serial_number;
+            chip_json["componentType"] = ch_component_type;
+            chip_json["chipId"] = stoi(chip_id);
+            mod_list_json[mo_serial_number]["chips"].push_back(chip_json);
+        }
+    }
+    std::ofstream mod_list_file(mod_list_path);
+    mod_list_file << std::setw(4) << mod_list_json;
+    mod_list_file.close();
+
+    return 0;
+#else
+    std::string message = "Not found MongoDB C++ Driver!";
+    return 1;
+#endif
 }
 
 // public
@@ -340,7 +411,6 @@ void DBHandler::writeDCS(std::string i_dcs_cache_dir) {
 
     return;
 }
-
 
 void DBHandler::writeCache(std::string i_cache_dir) {
     if (DB_DEBUG) std::cout << "DBHandler: Write cache data: " << i_cache_dir << std::endl;
@@ -681,6 +751,7 @@ void DBHandler::registerConnCfg(std::string i_conn_path) {
     std::string mo_component_type = conn_json["module"]["componentType"];
     mo_oid_str = this->registerComponent(mo_serial_number, mo_component_type, -1, chips);
 
+    mod_list_json[mo_serial_number] = {};
     mod_list_json[mo_serial_number]["chipType"] = m_chip_type;
     mod_list_json[mo_serial_number]["module"]["serialNumber"] = mo_serial_number;
     mod_list_json[mo_serial_number]["module"]["componentType"] = mo_component_type;
@@ -700,11 +771,9 @@ void DBHandler::registerConnCfg(std::string i_conn_path) {
         mod_list_json[mo_serial_number]["chips"].push_back(chip_json);
     }
 
-    if (mod_list_json[mo_serial_number].empty()) {
-        std::ofstream mod_list_file(mod_list_path);
-        mod_list_file << std::setw(4) << mod_list_json;
-        mod_list_file.close();
-    }
+    std::ofstream mod_list_file(mod_list_path);
+    mod_list_file << std::setw(4) << mod_list_json;
+    mod_list_file.close();
 }
 
 std::string DBHandler::registerComponent(std::string i_serial_number, std::string i_component_type, int i_chip_id, int i_chips) {
@@ -1464,6 +1533,32 @@ void DBHandler::cacheConnCfg(std::string i_conn_path) {
     if (DB_DEBUG) std::cout << "\tDBHandler: Cache connectivity config: " << i_conn_path << std::endl;
     json conn_json = toJson(i_conn_path);
     std::string mo_serial_number = conn_json["module"]["serialNumber"];
+    std::string mod_list_path = m_cache_dir+"/lib/modules.json";
+    json mod_list_json = this->toJson(mod_list_path);
+    if (mod_list_json[mo_serial_number].empty()) {
+        std::cout << "#DB WARNING# Unregistered component:" << std::endl;
+        std::cout << "\tModule serial number: " << mo_serial_number << std::endl;
+        std::cout << "\tChips: " << std::endl;
+        for (auto chip_json: conn_json["chips"]) {
+            std::cout << "\t\tChip serial number: " << chip_json["serialNumber"] << std::endl;
+            std::cout << "\t\tChip ID: " << chip_json["serialNumber"] << std::endl;
+            std::cout << std::endl;
+        }
+        std::cout << "Make sure to register this Module? > [y/n]" << std::endl;
+        char line[100];
+        std::cin.getline(line, sizeof(line));
+        std::string answer = line;
+        if (answer!="y") {
+            std::string message = "Not registered Module: "+mo_serial_number;
+            std::string function = __PRETTY_FUNCTION__;
+            this->abort(function, message); return;
+        }
+        mod_list_json[mo_serial_number] = conn_json;
+        std::ofstream mod_list_file(mod_list_path);
+        mod_list_file << std::setw(4) << mod_list_json;
+        mod_list_file.close();
+    }
+
     //// Chip Component
     //for (auto chip_json: conn_json["chips"]) {
     //    if (!chip_json["dbconfig"].empty()) {//TODO
