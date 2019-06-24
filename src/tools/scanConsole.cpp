@@ -87,6 +87,7 @@ int main(int argc, char *argv[]) {
 
     bool dbUse = false;
     std::string dbCfgPath = "";
+    std::string dbuser = "";
     
     unsigned runCounter = 0;
 
@@ -113,7 +114,7 @@ int main(int argc, char *argv[]) {
     oF.close();
 
     int c;
-    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:WE:")) != -1) {
+    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:W:I:")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
@@ -169,6 +170,10 @@ int main(int argc, char *argv[]) {
                 break;
             case 'W': // Write to DB
                 dbUse = true;
+                dbuser = std::string(optarg);
+                break;
+            case 'I': // Database config file
+                dbCfgPath = std::string(optarg);
                 break;
             case '?':
                 if(optopt == 's' || optopt == 'n'){
@@ -242,34 +247,19 @@ int main(int argc, char *argv[]) {
     }
 
     // Initial setting local DBHandler
-    std::string hostname = getenv("HOSTNAME");
-    dbCfgPath=home+"/.yarr/"+hostname+"_database.json";
-    if (dbUse) {
-        if (getenv("DBUSER")==NULL) {
-            std::cerr << "#DB ERROR# Not logged in DBHandler, login by source dblogin.sh <USER ACCOUNT>" << std::endl;
-            std::abort();
-        }
-        std::string dbuser = getenv("DBUSER");
-        std::fstream userCfgFile((home+"/.yarr/"+dbuser+"_user.json").c_str(), std::ios::in);
-        json userCfg;
-        try {
-            userCfg = json::parse(userCfgFile);
-        } catch (json::parse_error &e) {
-            std::cerr << "#ERROR# Could not parse config: " << home+"/.yarr/"+dbuser+"_user.json" << e.what() << std::endl;
-            return 0;
-        }
-        if (!userCfg["dbCfg"].empty()) dbCfgPath=userCfg["dbCfg"];
-    }
-    DBHandler *database = new DBHandler(dbCfgPath, dbUse);
+
+    DBHandler *database = new DBHandler();
     if (dbUse) {
         std::cout << std::endl;
         std::cout << "\033[1;31m################\033[0m" << std::endl;
         std::cout << "\033[1;31m# Set Database #\033[0m" << std::endl;
         std::cout << "\033[1;31m################\033[0m" << std::endl;
         std::cout << "-> Setting user's information" << std::endl;
-        std::string dbuser = getenv("DBUSER");
-        database->initialize("log"); // 'log' can not upload data but create cache files, 'register' can upload data immediately after scan with creating cache files
-        //database->initialize("cache"); // 'log' can not upload data but create cache files, 'register' can upload data immediately after scan with creating cache files
+        std::string hostname = getenv("HOSTNAME");
+
+        if (dbCfgPath=="") dbCfgPath=home+"/.yarr/"+hostname+"_database.json";
+        database->initialize(dbCfgPath, "scan"); // 'log' can not upload data but create cache files, 'register' can upload data immediately after scan with creating cache files
+        //database->initialize("db"); // 'log' can not upload data but create cache files, 'register' can upload data immediately after scan with creating cache files
         database->setUser(home+"/.yarr/"+dbuser+"_user.json", home+"/.yarr/"+hostname+"_address.json");
         std::cout << "-> Setting Connectivity Configs" << std::endl;
         database->setConnCfg(cConfigPaths);

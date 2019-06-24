@@ -1,7 +1,4 @@
 {
-   "assembly": {
-        "stage": "Testing"
-    },
     "environments": [{
         "description": "VDDD Voltage [V]",
         "key": "vddd_voltage",

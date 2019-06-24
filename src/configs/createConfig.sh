@@ -5,7 +5,7 @@
 # Date: April 2019
 # Project: Local Database for Yarr
 # Description: Create config file 
-# Usage: ./createConfig.sh [-a <rd53a/fei4b>*] [-m <SerialNumber>*] [-c <ChipNum>] [-i <UserCfg>] [-r <ControllerCfg>] [-d] [-R]
+# Usage: ./createConfig.sh [-a <rd53a/fei4b>*] [-m <SerialNumber>*] [-c <ChipNum>] [-r <ControllerCfg>] [-d] [-R]
 ################################
 
 # Change fixed tx channel and rx start channel
@@ -13,7 +13,6 @@ tx_fix=0
 rx_start=0
 
 # default parameters
-dbUse=false
 reset=false
 now=`date +"%y%m%d%H%M"`
 
@@ -22,29 +21,27 @@ function usage {
     cat <<EOF
 
 Usage:
-    ./$(basename ${0}) [-a <rd53a/fei4b>*] [-m SN*] [-c Chips] [-i User] [-r Controller] [-d] [-R]
+    ./$(basename ${0}) [-a <rd53a/fei4b>*] [-m SN*] [-c Chips] [-r Controller] [-d] [-R]
 
 Options:
-    -a <rd53a/fei4b> asic type (*req.)
-    -m <str>         serial number (*req.)
-    -c <int>         number of chips (req. in first creation)
-    -i <path>        user config file (req. in first creation) 
-    -r <path>        controller config file   default: ./controller/specCfg.json
-    -d               upload into databse
-    -R               reset all config files
+    -a <rd53a/fei4b>  asic type (*req.)
+    -m <str>          serial number (*req.)
+    -c <int>          number of chips (req. in first creation)
+    -r <path>         controller config file   default: ./controller/specCfg.json
+    -d <user account> upload into databse
+    -R                reset all config files
 
 EOF
 }
 
-while getopts a:m:c:i:r:dRI: OPT
+while getopts a:m:c:r:d:RI: OPT
 do
     case ${OPT} in
         a ) asic=${OPTARG} ;;
         m ) sn=${OPTARG} ;;
         c ) chips=${OPTARG} ;;
-        i ) user=${OPTARG} ;;
         r ) controller=${OPTARG} ;;
-        d ) dbUse=true ;;
+        d ) account=${OPTARG} ;;
         R ) reset=true ;;
         * ) usage
             exit ;;
@@ -116,14 +113,6 @@ if [ -f ${asic}/${sn}/connectivity.json ]; then
     mkdir -p ${asic}/${sn}/backup/${now}
     rsync -a ${asic}/${sn}/ ${asic}/${sn}/backup/${now} --exclude '/backup/'
 
-    # Make user config 
-    if [ ! -z ${user} ]; then
-        if [ ${user} != ${asic}/${sn}/info.json ]; then
-            echo "Created ${asic}/${sn}/info.json"
-            cp ${user} ${asic}/${sn}/info.json
-        fi
-    fi
-
     # Make controller for this module
     if [ ! -z ${controller} ]; then
         if [ ${controller} != ${asic}/${sn}/controller.json ]; then
@@ -151,17 +140,6 @@ else    # first creation
     echo ${chips} | grep [^0-9] > /dev/null 2>&1
     if [ $? -eq 0 ]; then
         echo "Please give an integral as number of chips with '-c'. "
-        usage
-        exit
-    fi
-
-    # user config
-    if [ -z ${user} ]; then
-        echo "Please give user config file with '-i'."
-        usage
-        exit
-    elif [ ! -f ${user} ]; then
-        echo "Not exist user config file \"${user}\"."
         usage
         exit
     fi
@@ -214,7 +192,6 @@ else    # first creation
     echo " "
     echo "serial number: ${sn}"
     echo "controller config: ${controller}"
-    echo "dcs config: ${user}"
     echo "num of chips: ${chips}"
     while [ ${cnt} -lt ${chips} ]; do
         cnt=$(( cnt + 1 ))
@@ -249,15 +226,10 @@ else    # first creation
         cp ${controller} ${asic}/${sn}/controller.json
     fi
     
-    # Make user config 
-    if [ ${user} != ${asic}/${sn}/info.json ]; then
-        echo "Created ${asic}/${sn}/info.json"
-        cp ${user} ${asic}/${sn}/info.json
-    fi
-
     # Make connectivity.json
     echo "Created ${asic}/${sn}/connectivity.json"
     echo "{" > ${asic}/${sn}/connectivity.json
+    echo "    \"stage\": \"Testing\"," >> ${asic}/${sn}/connectivity.json
     echo "    \"module\": {" >> ${asic}/${sn}/connectivity.json
     echo "        \"serialNumber\": \"${sn}\"," >> ${asic}/${sn}/connectivity.json
     echo "        \"componentType\": \"Module\"" >> ${asic}/${sn}/connectivity.json
@@ -294,7 +266,7 @@ fi
 cd ../
 
 # Register module and chips component to DB
-if [ ! -z ${dbUse} ]; then
-    echo "./bin/dbAccessor -C configs/${asic}/${sn}/connectivity.json"
-    ./bin/dbAccessor -C configs/${asic}/${sn}/connectivity.json
+if [ ! -z ${account} ]; then
+    echo "./bin/dbAccessor -C configs/${asic}/${sn}/connectivity.json -u ${account}"
+    ./bin/dbAccessor -C configs/${asic}/${sn}/connectivity.json -u ${account}
 fi

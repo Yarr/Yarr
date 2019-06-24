@@ -15,31 +15,30 @@
 #include "json.hpp"
 
 void printHelp();
+void checkEmpty(bool /*i_empty*/, std::string /*i_key*/, std::string /*i_file_path*/);
 
 int main(int argc, char *argv[]){
 
-    std::string home = getenv("HOME");
+    std::string home     = getenv("HOME");
     std::string hostname = getenv("HOSTNAME");
+    std::string dbuser   = "";
     std::string registerType = "";
 
     // Init parameters
     std::string db_cfg_path=home+"/.yarr/"+hostname+"_database.json";
     std::string db_cache_path = "";
 	  std::string conn_path = "";
-    std::string db_user = "";
-    std::string json_path = "";
-    std::string json_type = "";
-    std::string json_title = "";
-    std::string json_id = "";
-    std::string chip_id = "0";
-    std::string name = "test";
-    std::string type = "";
-    std::string data_path = "";
-    std::string data_id = "";
-    //std::string db_status = "";
+    std::string file_path = "";
+    std::string db_test_path = "";
+    std::string config_id = "";
+    std::string serial_number = "";
+    std::string config_type = "";
+    std::string config_path = "";
+    std::string merge_config_path = "";
+    std::string get_type = "";
 
     int c;
-    while ((c = getopt(argc, argv, "hR:U:C:J:E:G:T:Sn:i:c:j:t:")) != -1 ){
+    while ((c = getopt(argc, argv, "hR:UC:E:SD:Gt:s:i:d:p:m:f:u:")) != -1 ){
         switch (c) {
             case 'h':
                 printHelp();
@@ -51,7 +50,6 @@ int main(int argc, char *argv[]){
                 break;
             case 'U':
                 registerType = "User";
-                db_user = std::string(optarg);
                 break;
             case 'C':
                 registerType = "Component";
@@ -61,40 +59,43 @@ int main(int argc, char *argv[]){
                 registerType = "Environment";
                 db_cache_path = std::string(optarg);
                 break;
-            case 'J':
-                registerType = "Json";
-                json_path = std::string(optarg);
-                break;
-            case 'G':
-                registerType = "getJson";
-                json_path = std::string(optarg);
-                break;
-            case 'T':
-                registerType = "getDat";
-                data_path = std::string(optarg);
-                break;
             case 'S':
                 registerType = "Check";
                 break;
-            case 'n':
-                name = std::string(optarg);
+            case 'D':
+                registerType = "getData";
+                get_type = std::string(optarg);
                 break;
-            case 'i':
-                json_id = std::string(optarg);
-                data_id = std::string(optarg);
-                break;
-            case 'j':
-                json_type = std::string(optarg);
-                break;
-            case 'c':
-                chip_id = std::string(optarg);
+            case 'G':
+                registerType = "getConfig";
                 break;
             case 't':
-                type = std::string(optarg);
-                json_title = std::string(optarg);
+                db_test_path = std::string(optarg);
+                config_type = std::string(optarg);
+                break;
+            case 's':
+                serial_number = std::string(optarg);
+                break;
+            case 'i':
+                config_id = std::string(optarg);
+                break;
+            case 'd':
+                db_cfg_path = std::string(optarg);
+                break;
+            case 'p':
+                config_path = std::string(optarg);
+                break;
+            case 'm':
+                merge_config_path = std::string(optarg);
+                break;
+            case 'f':
+                file_path = std::string(optarg);
+                break;
+            case 'u':
+                dbuser = std::string(optarg);
                 break;
             case '?':
-                if(optopt=='R'||optopt=='U'||optopt=='C'||optopt=='E'||optopt=='J'||optopt=='G'||optopt=='T'||optopt=='S'){
+                if(optopt=='R'||optopt=='U'||optopt=='C'||optopt=='E'||optopt=='S'||optopt=='D'||optopt=='G'){
                     std::cerr << "-> Option " << (char)optopt
                               << " requires a parameter! Aborting... " << std::endl;
                     return -1;
@@ -110,92 +111,76 @@ int main(int argc, char *argv[]){
 
     if (registerType == "") printHelp();
 
-    if (getenv("DBUSER")==NULL) {
-        std::cerr << "#ERROR# Not logged in DBHandler, login by source dbLogin.sh <USER ACCOUNT>" << std::endl;
-        std::abort();
-    }
-    std::string dbuser;
-    if (db_user=="") dbuser = getenv("DBUSER");
-    else dbuser = db_user;
-    std::string userCfgPath, addressCfgPath;
-    if (registerType=="Cache"||registerType=="Environment") {
-        userCfgPath = db_cache_path+"/user.json";
-        addressCfgPath = db_cache_path+"/address.json";
-    } else {
-        userCfgPath = home+"/.yarr/"+dbuser+"_user.json";
-        addressCfgPath = home+"/.yarr/"+hostname+"_address.json";
-    }
-    std::fstream userCfgFile((userCfgPath).c_str(), std::ios::in);
-    json userCfg;
-    try {
-        userCfg = json::parse(userCfgFile);
-    } catch (json::parse_error &e) {
-        std::cerr << "#ERROR# Could not parse config: " << e.what() << std::endl;
-        return 0;
-    }
-    if (!userCfg["dbCfg"].empty()) db_cfg_path=userCfg["dbCfg"];
-    
-    DBHandler *database = new DBHandler(db_cfg_path, true);
+    DBHandler *database = new DBHandler();
 
     // register cache
     if (registerType == "Cache") {
         std::cout << "DBHandler: Register Cache '"<< db_cache_path << "'" << std::endl;
 
-        database->initialize("cache");
+        db_cfg_path = db_cache_path+"/database.json";
+
+        database->initialize(db_cfg_path, "db");
     	  database->writeCache(db_cache_path);
         delete database;
     }
 
     // register user
-    if (registerType == "User") {
-        std::cout << "DBHandler: Login user: \n\taccount: " << db_user << std::endl;
-        std::string home = getenv("HOME");
-        std::string dbUserCfgPath = home + "/.yarr/" + db_user + "_user.json";
-
-        std::string userName, institution, userIdentity;
-        std::ifstream userCfgFile(dbUserCfgPath);
-
-        json userCfg = json::parse(userCfgFile);
-        if (!userCfg["userName"].empty()) userName = userCfg["userName"];
-        else {
-            std::cerr << "#ERROR# 'userName' is empty in user config file: " << dbUserCfgPath << std::endl;
+    if (registerType=="User") {
+        if (dbuser == "") {
+            std::cerr << "#ERROR# No user account name given, please specify user account under -u option!" << std::endl;
             return -1;
         }
-        if (!userCfg["institution"].empty()) institution = userCfg["institution"];
-        else {
-            std::cerr << "#ERROR# 'institution' is empty in user config file: " << dbUserCfgPath << std::endl;
-            return -1;
-        }
-        if (!userCfg["userIdentity"].empty()) userIdentity = userCfg["userIdentity"];
-        else userIdentity = "default";
-        if (userName == ""||institution == "") {
-            std::cerr << "#ERROR# Something wrong in user config file: " << dbUserCfgPath << std::endl;
+        std::cout << "DBHandler: Login user: \n\taccount: " << dbuser << std::endl;
+        std::string user_cfg_path = home+"/.yarr/"+dbuser+"_user.json";
+        std::string address_cfg_path = home+"/.yarr/"+hostname+"_address.json";
+
+        std::string user_name, institution, user_identity;
+
+        std::ifstream user_cfg_ifs(user_cfg_path);
+        json user_cfg_json = json::parse(user_cfg_ifs);
+        checkEmpty(user_cfg_json["userName"].empty(),"userName",user_cfg_path);
+        checkEmpty(user_cfg_json["institution"].empty(),"institution",user_cfg_path);
+
+        user_name = user_cfg_json["userName"];
+        institution = user_cfg_json["institution"];
+        if (!user_cfg_json["userIdentity"].empty()) user_identity = user_cfg_json["userIdentity"];
+        else user_identity = "default";
+        if (user_name == ""||institution == "") {
+            std::cerr << "#ERROR# Something wrong in user config file: " << user_cfg_path << std::endl;
             return -1;
         }
     
-        std::replace(userName.begin(), userName.end(), ' ', '_');
+        std::replace(user_name.begin(), user_name.end(), ' ', '_');
         std::replace(institution.begin(), institution.end(), ' ', '_');
-        std::replace(userIdentity.begin(), userIdentity.end(), ' ', '_');
+        std::replace(user_identity.begin(), user_identity.end(), ' ', '_');
 
         std::cout << std::endl;
         std::cout << "DBHandler: Register user's information: " << std::endl;
-    	  std::cout << "\tuser name : " << userName << std::endl;
+    	  std::cout << "\tuser name : " << user_name << std::endl;
     	  std::cout << "\tinstitution : " << institution << std::endl;
-    	  std::cout << "\tuser identity : " << userIdentity << std::endl;
+    	  std::cout << "\tuser identity : " << user_identity << std::endl;
         std::cout << std::endl;
 
-        database->initialize();
-    	  database->setUser(userCfgPath, addressCfgPath);
+        database->initialize(db_cfg_path);
+    	  database->setUser(user_cfg_path, address_cfg_path);
         delete database;
     }
 
     // register component
-    if (registerType == "Component") {
+    if (registerType=="Component") {
+        if (dbuser == "") {
+            std::cerr << "#ERROR# No user account name given, please specify user account under -u option!" << std::endl;
+            return -1;
+        }
         std::cout << "DBHandler: Register Component:" << std::endl;
 	      std::cout << "\tconnecitivity config file : " << conn_path << std::endl;
 
-        database->initialize();
-    	  database->setUser(userCfgPath, addressCfgPath);
+        std::string user_cfg_path = home+"/.yarr/"+dbuser+"_user.json";
+        std::string address_cfg_path = home+"/.yarr/"+hostname+"_address.json";
+
+        database->initialize(db_cfg_path);
+
+    	  database->setUser(user_cfg_path, address_cfg_path);
         std::vector<std::string> conn_paths;
         conn_paths.push_back(conn_path);
 	      database->setConnCfg(conn_paths);
@@ -205,87 +190,101 @@ int main(int argc, char *argv[]){
 
     // register environment
     if (registerType == "Environment") {
+        if (db_test_path == "") {
+            std::cerr << "#ERROR# No test run file path given, please specify file path under -t option!" << std::endl;
+            return -1;
+        }
         std::cout << "DBHandler: Register Environment:" << std::endl;
 	      std::cout << "\tenvironmental config file : " << db_cache_path << std::endl;
 
-        database->initialize("dcs");
-    	  database->setUser(userCfgPath, addressCfgPath);
-        database->writeDCS(db_cache_path);
+        if (serial_number!="") {
+            json tr_json;
+            std::ifstream tr_cfg_ifs(db_test_path);
+            try {
+                tr_json = json::parse(tr_cfg_ifs);
+            } catch (json::parse_error &e) {
+                std::cerr << "#ERROR# Could not parse " << db_test_path << "\n\twhat(): " << e.what() << std::endl;
+                return 0;
+            }
+            tr_json["serialNumber"] = serial_number;
+
+            std::ofstream file_ofs(db_test_path);
+            file_ofs << std::setw(4) << tr_json;
+            file_ofs.close();
+        }
+
+        database->initialize(db_cfg_path, "dcs");
+        database->writeDCS(db_cache_path, db_test_path);
 
         delete database;
     }
-
-//    // register Json
-//    if (registerType == "Json") {
-//        if (json_type == "") {
-//            std::cerr << "#ERROR# no upload format given, please specify upload format under -j option!" << std::endl;
-//            return -1;
-//        }
-//        if (json_title == "") {
-//            std::cerr << "#ERROR# no config title given, please specify config title under -t option!" << std::endl;
-//            return -1;
-//        }
-//        std::cout << "DBHandler: Register Json:" << std::endl;
-//	      std::cout << "\tjson file : " << json_path << std::endl;
-//        
-//        std::ifstream jsonFile(json_path);
-//        if (!jsonFile) {
-//            std::cerr <<"#ERROR# Cannot open json file: " << json_path << std::endl;
-//            return -1;
-//        }
-//        json j;
-//        try {
-//            j = json::parse(jsonFile);
-//            database->initialize();
-//            database->writeJsonCode(json_path, json_title + ".json", json_title, json_type); 
-//            delete database;
-//        } catch (json::parse_error &e) {
-//            std::cerr << "#ERROR# Could not parse config: " << e.what() << std::endl;
-//            std::abort();
-//        }
-//    }
-//
-//    // get Json
-//    if (registerType == "getJson") {
-//        if (json_id == "") {
-//            std::cerr << "#ERROR# no config id given, please specify config id under -i option!" << std::endl;
-//            return -1;
-//        }
-//        if (type == "") {
-//            std::cerr << "#ERROR# no config type given, please specify config type under -t option!" << std::endl;
-//            std::cerr << "\t-t chipCfg" << std::endl;
-//            std::cerr << "\t-t ctrlCfg" << std::endl;
-//            std::cerr << "\t-t scanCfg" << std::endl;
-//            return -1;
-//        }
-//        std::cout << "DBHandler: Get Json:" << std::endl;
-//	      std::cout << "\tsave json file : " << json_path << std::endl;
-//        
-//        database->initialize();
-//	      database->getJsonCode(json_id, json_path, name, type, std::atoi(chip_id.c_str()));
-//        delete database;
-//    }
-//
-//    // get Dat
-//    if (registerType == "getDat") {
-//        if (data_id == "") {
-//            std::cerr << "#ERROR# no data id given, please specify data id under -i option!" << std::endl;
-//            return -1;
-//        }
-//        std::cout << "DBHandler: Get Data:" << std::endl;
-//	      std::cout << "\tsave data file : " << data_path << std::endl;
-//        
-//        database->initialize();
-//	      database->getDatCode(data_id, data_path);
-//        delete database;
-//    }
 
     // register cache
     if (registerType == "Check") {
         std::cout << "DBHandler: Check Local DB server status" << std::endl;
 
+        //database->initialize(db_cfg_path);
+
         if (database->checkLibrary()==1) return 1;
-    	  if (database->checkConnection()==1) return 1; 
+    	  if (database->checkConnection(db_cfg_path)==1) return 1; 
+        delete database;
+    }
+
+    // get Dat
+    if (registerType == "getData") {
+        //if (file_path == "") {
+        //    std::cerr << "#ERROR# No information file given, please specify it under -f option!" << std::endl;
+        //    return -1;
+        //}
+
+        if (serial_number!="") {
+            json tr_json;
+            std::ifstream tr_cfg_ifs(file_path);
+            try {
+                tr_json = json::parse(tr_cfg_ifs);
+            } catch (json::parse_error &e) {
+                std::cerr << "#ERROR# Could not parse " << file_path << "\n\twhat(): " << e.what() << std::endl;
+                return 0;
+            }
+            tr_json["serialNumber"] = serial_number;
+
+            std::ofstream file_ofs(file_path);
+            file_ofs << std::setw(4) << tr_json;
+            file_ofs.close();
+        }
+
+        database->initialize(db_cfg_path);
+	      database->getData(file_path, get_type);
+        delete database;
+    }
+
+    // get Dat
+    if (registerType == "getConfig") {
+        json cfg_json;
+        cfg_json["function"] = "getConfigData";
+        cfg_json["id"] = config_id;
+        cfg_json["serialNumber"] = serial_number;
+        cfg_json["type"] = config_type;
+        cfg_json["filePath"] = config_path;
+        cfg_json["mergePath"] = merge_config_path;
+
+        json db_json;
+        std::ifstream db_cfg_ifs(db_cfg_path);
+        try {
+            db_json = json::parse(db_cfg_ifs);
+        } catch (json::parse_error &e) {
+            std::cerr << "#ERROR# Could not parse " << db_cfg_path << "\n\twhat(): " << e.what() << std::endl;
+            return 0;
+        }
+        std::string cache_dir = db_json["cachePath"];
+
+        std::string tmp_file_path = cache_dir + "/tmp/getConfig.json";
+        std::ofstream file_ofs(tmp_file_path);
+        file_ofs << std::setw(4) << cfg_json;
+        file_ofs.close();
+
+        database->initialize(db_cfg_path);
+	      database->getData(tmp_file_path, "config");
         delete database;
     }
 
@@ -295,20 +294,30 @@ int main(int argc, char *argv[]){
 void printHelp() {
     std::cout << "Help:" << std::endl;
     std::cout << " -h: Shows this." << std::endl;
-    std::cout << " -C <path/to/conn.json> : Register component data into database. Provide connectivity config." << std::endl;
-    std::cout << " -U <user account> : Register user data into database. Provide user's information with options. (Default: -p ~/.yarr/<user account>_user.json)" << std::endl;
-    std::cout << "\t -n <user name>" << std::endl;
-    std::cout << "\t -i <institution>" << std::endl;
-    std::cout << "\t -u <user identity>" << std::endl;
-    std::cout << "\t -p <user config path>" << std::endl;
-    std::cout << "\t -c <test place> (Default: ~/.yarr/address.json)" << std::endl;
-    std::cout << " -S <site name> : Register site data into database. Provide site's name and institution with option -i." << std::endl;
-    std::cout << "\t -i <institution>" << std::endl;
-    std::cout << " -J <path/to/config.json> : Register config data into database. Provide the path to config.json." << std::endl;
-    std::cout << "\t -j <format type>" << std::endl;
-    std::cout << "\t -t <config title>" << std::endl;
-    std::cout << " -G <path/to/save.json> : Download config data from database. Provide the path to save.json." << std::endl;
-    std::cout << "\t -i <config id in database>" << std::endl;
-    std::cout << "\t -t <config type in database>" << std::endl;
-    std::cout << " -E <path/to/env.json> : Register environmental information into database. Provide the path to env.json." << std::endl;
+    std::cout << " -R <path/to/cache/dir> : Register test data into database from cache. Provide path to cache directory." << std::endl;
+    std::cout << " -U : Register user data into database. Provide user's account name with option -u." << std::endl;
+    std::cout << "    -u <user account> " << std::endl;
+    std::cout << " -C <path/to/conn/cfg> : Register component data into database. Provide path to connectivity config file and user'account name with option -u." << std::endl;
+    std::cout << "    -u <user account> " << std::endl; 
+    std::cout << " -E <path/to/dcs/cfg> : Register DCS data into database. Provide path to test run config with option -t." << std::endl;
+    std::cout << "    - t <path/to/testrun/cfg> : Path to the file where test run information is written." << std::endl;
+    std::cout << " -S : Check connection to MongoDB server." << std::endl;
+    std::cout << " -G <get_type> : Download data from database. Provide the path to the query file with option -f." << std::endl;
+    std::cout << "    get_type ... - testRunLog: display the log of testRun for the component" << std::endl;
+    std::cout << "                 - testRunId:  display the id of latest testRun for the component" << std::endl;
+    std::cout << "                 - config:     display the config data" << std::endl;
+    std::cout << "                 - userId:     display the id of user data" << std::endl;
+    std::cout << "                 - dat:        display the dat data" << std::endl;
+    std::cout << "    -f <path/to/key/file> : Path to the file where the query key is written." << std::endl;
+    std::cout << std::endl;
+    std::cout << " -d <path/to/db/cfg> : Path to the Database config file where MongoDB server information is written." << std::endl;
 }
+
+void checkEmpty(bool i_empty, std::string i_key, std::string i_file_path) {
+    if (i_empty) {
+        std::cerr << "#ERROR# '" << i_key << "' is empty in user config file: " << i_file_path << std::endl;
+        std::abort();
+    }
+    return;
+}
+

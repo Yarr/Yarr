@@ -39,27 +39,31 @@ using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::i
 
 class DBHandler {
     public:
-        DBHandler(std::string /*i_db_cfg_path*/,
-                  bool i_db_use = false);
+        DBHandler();
         ~DBHandler();
 
-        void initialize(std::string i_option="register");
-        void abort(std::string i_function,
-                   std::string i_message="Something wrong.");
+        void initialize(std::string /*i_db_cfg_path*/,
+                        std::string i_option="register");
+        void alert(std::string i_function,
+                   std::string i_message="Something wrong.",
+                   std::string i_type="error");
         int checkLibrary();
-        int checkConnection();
+        int checkConnection(std::string /*i_db_cfg_path*/);
         int checkCacheStatus();
+        int checkModuleList();
 
         /// Setting and Writing for using Database including:
         /// - confirmation of the files
         /// - caching : when the option is "cache"
         /// - registeration: then the option is "register"
 
-        void setConnCfg(std::vector<std::string> /*i_conn_paths*/); 
-        void setDCSCfg(std::string /*i_dcs_path*/,
-                       std::string /*i_conn_path*/); 
         void setUser(std::string /*i_user_path*/,
                      std::string /*i_address_path*/);
+        void setConnCfg(std::vector<std::string> /*i_conn_paths*/); 
+        void setDCSCfg(std::string /*i_dcs_path*/,
+                       std::string /*i_tr_path*/);
+        //void setDCSCfg(std::string /*i_dcs_path*/,
+        //               std::string /*i_conn_path*/); 
         void writeTestRunStart(std::string /*i_test_type*/, 
                                std::vector<std::string> /*i_conn_paths*/,
                                int /*i_run_number*/, 
@@ -78,7 +82,8 @@ class DBHandler {
         void writeAttachment(std::string /*i_ctr_oid_str*/, 
                              std::string /*i_file_path*/, 
                              std::string /*i_histo_name*/);
-        void writeDCS(std::string /*i_dcs_cache_dir*/);
+        void writeDCS(std::string /*i_dcs_file_path*/,
+                      std::string /*i_tr_file_path*/);
         void writeCache(std::string /*i_cache_dir*/);
 
         /// including mongo function
@@ -86,21 +91,15 @@ class DBHandler {
         /// - registration
         /// - retrieve
 
-        void getJsonCode(std::string /*i_oid_str*/, 
-                         std::string /*i_filename*/,
-                         std::string /*i_name*/,
-                         std::string /*i_type*/,
-                         int /*i_chip_id*/);
-        void getDatCode(std::string /*i_oid_str*/, 
-                        std::string /*i_filename*/);
-
+        void getData(std::string /*i_info_file_path*/,
+                     std::string /*i_get_type*/);
     protected:
         std::string registerUser(std::string /*i_user_name*/, 
                                  std::string /*i_institution*/, 
                                  std::string /*i_user_identity*/);
-        void registerSite(std::string /*i_adress*/,
-                          std::string /*i_name*/,
-                          std::string /*i_site*/);
+        std::string  registerSite(std::string /*i_adress*/,
+                                  std::string /*i_name*/,
+                                  std::string /*i_site*/);
         void registerConnCfg(std::string /*i_conn_path*/);
         std::string registerComponent(std::string /*i_serial_number*/,
                                       std::string /*i_component_type*/,
@@ -133,8 +132,8 @@ class DBHandler {
                                     std::string /*i_serial_number*/,
                                     std::string /*i_type*/,
                                     std::string i_tr_oid_str="");
-        void registerEnvironment(std::string /*i_env_path*/,
-                                 std::string /*i_serial_number*/);
+        void registerDCS(std::string /*i_dcs_path*/,
+                         std::string /*i_tr_path*/);
 
         void writeFromDirectory(std::string /*i_collection_name*/, 
                                 std::string /*i_oid_str*/, 
@@ -156,7 +155,7 @@ class DBHandler {
                              std::string /*i_member_bson_type*/, 
                              std::string /*i_key*/, 
                              std::string i_bson_type="string");
-        std::string getComponent(json& /*i_json*/, 
+        std::string getComponent(std::string /*i_serial_number*/, 
                                  std::string /*i_file_path*/);
 
         void addComment(std::string /*i_collection_name*/, 
@@ -209,7 +208,8 @@ class DBHandler {
                              std::string /*i_file_path*/, 
                              std::string /*i_histo_name*/);
         void cacheDCSCfg(std::string /*i_dcs_path*/,
-                         std::string /*i_serial_number*/); 
+                         std::string /*i_tr_path*/);
+        void cacheDBCfg();
 
         /// check file exist
         void checkFile(std::string /*i_file_path*/,
@@ -228,6 +228,7 @@ class DBHandler {
         json checkDBCfg(std::string /*i_db_path*/); 
         json checkConnCfg(std::string /*i_conn_path*/); 
         json checkUserCfg(std::string /*i_user_path*/);
+        json checkAddressCfg(std::string /*i_address_path*/);
         void checkDCSCfg(std::string /*i_dcs_path*/,
                          std::string /*i_num*/,
                          json /*i_json*/); 
@@ -236,8 +237,21 @@ class DBHandler {
                          std::string /*i_key*/,
                          int /*i_num*/); 
 
+        /// get
+        void getTestRunLog(json /*i_info_json*/);
+        void getTestRunId(json /*i_info_json*/);
+        void getConfigId(json /*i_info_json*/);
+        void getUserId(json /*i_info_json*/);
+        void getDatData(json /*i_info_json*/);
+        void getConfigData(json /*i_info_json*/); 
+
+        void getTestRunData(std::string /*i_tr_oid_str*/,
+                            std::string /*i_serial_number*/,
+                            int /*i_time*/);
+
         /// check json
-        json toJson(std::string /*i_file_path*/);
+        json toJson(std::string /*i_file_path*/,
+                    std::string i_file_type="json");
         void writeJson(std::string /*i_key*/,
                        std::string /*i_value*/,
                        std::string /*i_file_path*/,
@@ -246,6 +260,7 @@ class DBHandler {
         /// split function
         std::vector<std::string> split(std::string /*str*/, 
                                        char /*del*/);
+        void mkdir(std::string /*i_dir_path*/);
       
     private:
 #ifdef MONGOCXX_INCLUDE // When use macro "-DMONGOCXX_INCLUDE" in makefile
@@ -258,13 +273,14 @@ class DBHandler {
         std::string m_option;
         std::string m_db_cfg_path;
         std::string m_user_oid_str;
-        std::string m_address;
+        std::string m_site_oid_str;
         std::string m_chip_type;
         std::string m_log_dir;
         std::string m_log_path;
         std::string m_cache_path;
         std::string m_cache_dir;
         std::string m_host_ip;
+        std::string m_tr_oid_str;
 
         std::vector<std::string> m_stage_list;
         std::vector<std::string> m_env_list;
@@ -272,6 +288,7 @@ class DBHandler {
 
         std::vector<std::string> m_histo_names;
         std::vector<std::string> m_tr_oid_strs;
+        std::vector<std::string> m_serial_numbers;
 
         double m_db_version;
         bool DB_DEBUG;

@@ -1,5 +1,3 @@
-#include "DBHandler.h"
-
 // #################################
 // # Author: Eunchong Kim, Arisa Kubota
 // # Email: eunchong.kim at cern.ch, arisa.kubota at cern.ch
@@ -7,6 +5,8 @@
 // # Project: Local DBHandler for Yarr
 // # Description: DBHandler functions
 // ################################
+
+#include "DBHandler.h"
 
 #ifdef MONGOCXX_INCLUDE // When use macro "-DMONGOCXX_INCLUDE" in makefile
 
@@ -27,33 +27,22 @@ using bsoncxx::builder::stream::open_document;  // = '{', begining of subdocumen
 using bsoncxx::builder::stream::close_document; // = '}'
 using bsoncxx::builder::stream::open_array;     // = '['
 using bsoncxx::builder::stream::close_array;    // = ']'
+using bsoncxx::builder::basic::kvp;
+using bsoncxx::builder::basic::make_array;
+using bsoncxx::builder::basic::make_document;
 #endif // End of ifdef MONGOCXX_INCLUDE
 
-DBHandler::DBHandler(std::string i_db_cfg_path, bool i_db_use):
+DBHandler::DBHandler():
 #ifdef MONGOCXX_INCLUDE
 client(), db(), 
 #endif
-m_option(""), m_db_cfg_path(""), m_user_oid_str(""), m_address(""),
-m_chip_type(""), m_log_dir(""), m_log_path(""), m_cache_path(""), m_cache_dir(""), m_host_ip(""),
+m_option(""), m_db_cfg_path(""), m_user_oid_str(""), m_site_oid_str(""),
+m_chip_type(""), m_log_dir(""), m_log_path(""), m_cache_path(""), m_cache_dir(""), m_tr_oid_str(""),
 m_stage_list(), m_env_list(), m_comp_list(),
-m_histo_names(), m_tr_oid_strs(),
+m_histo_names(), m_tr_oid_strs(), m_serial_numbers(),
 m_db_version(1.0), DB_DEBUG(false), m_log_json(), m_cache_json(), counter(0)
 {
-    if (!i_db_use) return;
-
-    json db_json = this->checkDBCfg(i_db_cfg_path);
-    m_db_cfg_path = i_db_cfg_path;
-    m_host_ip = "mongodb://"+std::string(db_json["hostIp"])+":"+std::string(db_json["hostPort"]);
-    m_cache_dir = db_json["cache"];
-
-    std::string file_path = m_cache_dir+"/lib/modules.json";
-    std::ifstream file_ifs(file_path);
-    if (!file_ifs) {
-        file_ifs.close();
-        std::ofstream file_ofs(file_path);
-        file_ofs << "null";
-        file_ofs.close();
-    }
+    if (DB_DEBUG) std::cout << "DBHandler: DBHandler" << std::endl;
 }
 
 DBHandler::~DBHandler() {
@@ -62,64 +51,77 @@ DBHandler::~DBHandler() {
 //*****************************************************************************************************
 // Public functions
 //
-void DBHandler::initialize(std::string i_option) {
+void DBHandler::initialize(std::string i_db_cfg_path, std::string i_option) {
     if (DB_DEBUG) std::cout << "DBHandler: Initializing " << m_option << std::endl;
 
     m_option = i_option;
+    m_db_cfg_path = i_db_cfg_path;
+
     int now = std::time(NULL);
 
+    json db_json = this->checkDBCfg(m_db_cfg_path);
+    std::string host_ip = "mongodb://"+std::string(db_json["hostIp"])+":"+std::string(db_json["hostPort"]);
+    std::string db_name = db_json["dbName"];
+    m_cache_dir = db_json["cachePath"];
+
+    if (m_stage_list.size()==0&&m_env_list.size()==0&&m_comp_list.size()==0) {
+        for(auto s_tmp: db_json["stage"]) m_stage_list.push_back(s_tmp);
+        for(auto s_tmp: db_json["environment"]) m_env_list.push_back(s_tmp);
+        for(auto s_tmp: db_json["component"]) m_comp_list.push_back(s_tmp);
+    }
+
+    //this->checkModuleList();
+
     // initialize for registeration
-    if (m_option=="cache"||m_option=="dcs"||m_option=="register") {
+    if (m_option=="db"||m_option=="dcs"||m_option=="register") {
 #ifdef MONGOCXX_INCLUDE
         mongocxx::instance inst{};
         try {
-            client = mongocxx::client{mongocxx::uri{m_host_ip}};
-            db = client["localdb"]; // Database name is 'localdb'
-            auto doc_value = document{} <<
-                "hash" << 1 <<
-                "_id"  << 1 <<
-            finalize;
-            db["fs.files"].create_index(doc_value.view()); // set index in fs.files
+            client = mongocxx::client{mongocxx::uri{host_ip}};
+            db = client[db_name]; 
+            auto doc_value = make_document(kvp("hash", 1), kvp("_id", 1));
+            db["fs.files"].create_index(doc_value.view()); 
         } catch (const mongocxx::exception & e){
-            std::string message = "Could not access to MongoDB server: "+m_host_ip+"\n\twhat(): "+e.what();
+            std::string message = "Could not access to MongoDB server: "+host_ip+"\n\twhat(): "+e.what();
             std::string function = __PRETTY_FUNCTION__;
-            this->abort(function, message); return;
+            this->alert(function, message); return;
         }
 #else
         std::string message = "Not found MongoDB C++ Driver!";
         std::string function = __PRETTY_FUNCTION__;
-        this->abort(function, message); return;
+        this->alert(function, message); return;
 #endif
     }
-    if (m_option=="cache") m_log_dir = m_cache_dir+"/db/" + std::to_string(now);
-    else if (m_option=="dcs") m_log_dir = m_cache_dir+"/dcs/" + std::to_string(now);
-    else if (m_option=="log") m_log_dir = m_cache_dir+"/log/" + std::to_string(now);
-    else m_log_dir = m_cache_dir+"/tmp";
+    if (m_option=="db")        m_log_dir = m_cache_dir+"/var/cache/db/"   + std::to_string(now);
+    else if (m_option=="scan") m_log_dir = m_cache_dir+"/var/cache/scan/" + std::to_string(now);
+    else if (m_option=="dcs")  m_log_dir = m_cache_dir+"/var/cache/dcs/"  + std::to_string(now);
+    else m_log_dir = m_cache_dir+"/tmp/scan";//TODO
 
     m_log_path = m_log_dir + "/cacheLog.json";
-    std::string cmd = "mkdir -p "+m_log_dir;
-    if (system(cmd.c_str()) < 0) {
-        std::string message = "Problem creating "+m_log_dir;
-        std::string function = __PRETTY_FUNCTION__;
-        this->abort(function, message); return;
-    }
+    this->mkdir(m_log_dir);
     m_log_json["version"] = m_db_version;
-    m_log_json["current"] = m_log_dir;
+    m_log_json["logPath"] = m_log_dir;
     this->writeJson("status", "running", m_log_path, m_log_json);
 }
 
-void DBHandler::abort(std::string i_function, std::string i_message) {
-    if (DB_DEBUG) std::cout << "DBHandler: Aborting..." << std::endl;
+void DBHandler::alert(std::string i_function, std::string i_message, std::string i_type) {
+    if (DB_DEBUG) std::cout << "DBHandler: Alert '" << i_type << "'" << std::endl;
 
-    std::cerr << "#DB ERROR# " << i_message << std::endl;
-    if(!m_log_json["status"].empty()) {
-        m_log_json["errormessage"] = i_message;
-        this->writeJson("status", "failure", m_log_path, m_log_json);
+    std::string alert_message;
+    if (i_type=="error") {
+        alert_message = "#DB ERROR#";
+        if (m_option=="scan"||m_option=="db"||m_option=="dcs") {
+            m_log_json["errormessage"] = i_message;
+            this->writeJson("status", "failure", m_log_path, m_log_json);
+        }
+        if (m_option=="db") {
+            m_cache_json["errormessage"] = i_message;
+            this->writeJson("status", "failure", m_cache_path, m_cache_json);
+        }
+    } else if (i_type=="warning") {
+        alert_message = "#DB WARNING#";
     }
-    if(!m_cache_json["status"].empty()) {
-        m_cache_json["errormessage"] = i_message;
-        this->writeJson("status", "failure", m_cache_path, m_cache_json);
-    }
+    std::cerr << alert_message << " " << i_message << std::endl;
     std::time_t now = std::time(NULL);
     struct tm *lt = std::localtime(&now);
     char tmp[20];
@@ -129,11 +131,11 @@ void DBHandler::abort(std::string i_function, std::string i_message) {
     std::ofstream file_ofs(log_path, std::ios::app);
     strftime(tmp, 20, "%F_%H:%M:%S", lt);
     timestamp=tmp;
-    file_ofs << timestamp << " #DB ERROR# [" << m_option << "] " << i_function << std::endl;
+    file_ofs << timestamp << " " << alert_message << " [" << m_option << "] " << i_function << std::endl;
     file_ofs << "**********\n" << i_message << "\n**********" << std::endl;
     file_ofs << "Log: " << m_log_path << "\nCache: " << m_cache_path << "\n--------------------" << std::endl;
 
-    std::abort();
+    if (i_type=="error") std::abort();
 }
 
 int DBHandler::checkLibrary() {
@@ -147,12 +149,15 @@ int DBHandler::checkLibrary() {
 #endif
 }
 
-int DBHandler::checkConnection() {
+int DBHandler::checkConnection(std::string i_db_cfg_path) {
     if (DB_DEBUG) std::cout << "DBHandler: Check LocalDB server connection" << std::endl;
 #ifdef MONGOCXX_INCLUDE
+    json db_json = this->checkDBCfg(i_db_cfg_path);
+    std::string db_cfg_path = i_db_cfg_path;
+    std::string host_ip = "mongodb://"+std::string(db_json["hostIp"])+":"+std::string(db_json["hostPort"]);
     mongocxx::instance inst{};
     try {
-        client = mongocxx::client{mongocxx::uri{m_host_ip}};
+        client = mongocxx::client{mongocxx::uri{host_ip}};
         db = client["localdb"]; // Database name is 'localdb'
         auto doc_value = document{} <<
             "hash" << 1 <<
@@ -160,46 +165,9 @@ int DBHandler::checkConnection() {
         finalize;
         db["fs.files"].create_index(doc_value.view()); // set index in fs.files
     } catch (const mongocxx::exception & e){
-        std::string message = "Could not access to MongoDB server: "+m_host_ip+"\n\twhat(): "+e.what();
+        std::string message = "Could not access to MongoDB server: "+host_ip+"\n\twhat(): "+e.what();
         return 1;
     }
-    std::string mod_list_path = m_cache_dir+"/lib/modules.json";
-    json mod_list_json = this->toJson(mod_list_path);
-
-    auto doc_value = document{} << 
-        "componentType" << "Module" <<
-    finalize;
-    mongocxx::cursor cursor = db["component"].find(doc_value.view());
-    for (auto doc : cursor) {
-        std::string oid_str = doc["_id"].get_oid().value.to_string();
-        std::string mo_serial_number = doc["serialNumber"].get_utf8().value.to_string();
-        std::string chip_type = getValue("component", "_id", oid_str, "oid", "chipType");
-        mod_list_json[mo_serial_number] = {};
-        mod_list_json[mo_serial_number]["chipType"] = chip_type;
-        mod_list_json[mo_serial_number]["module"]["serialNumber"] = mo_serial_number;
-        mod_list_json[mo_serial_number]["module"]["componentType"] = "Module";
-
-        doc_value = document{} <<
-            "parent" << oid_str <<
-        finalize;
-        mongocxx::cursor cursor_cpr = db["childParentRelation"].find(doc_value.view());
-        for (auto child : cursor_cpr) {
-            std::string ch_oid_str = child["child"].get_utf8().value.to_string();
-            std::string ch_serial_number = getValue("component", "_id", ch_oid_str, "oid", "serialNumber");
-            std::string ch_component_type = getValue("component", "_id", ch_oid_str, "oid", "componentType");
-            std::string chip_id = getValue("component", "_id", ch_oid_str, "oid", "chipId", "int");
-
-            json chip_json;
-            chip_json["serialNumber"] = ch_serial_number;
-            chip_json["componentType"] = ch_component_type;
-            chip_json["chipId"] = stoi(chip_id);
-            mod_list_json[mo_serial_number]["chips"].push_back(chip_json);
-        }
-    }
-    std::ofstream mod_list_file(mod_list_path);
-    mod_list_file << std::setw(4) << mod_list_json;
-    mod_list_file.close();
-
     return 0;
 #else
     std::string message = "Not found MongoDB C++ Driver!";
@@ -207,12 +175,79 @@ int DBHandler::checkConnection() {
 #endif
 }
 
+int DBHandler::checkModuleList() {
+    if (DB_DEBUG) std::cout << "DBHandler: Check Module List" << std::endl;
+
+    std::string mod_list_path = m_cache_dir+"/lib/modules.bson";
+#ifdef MONGOCXX_INCLUDE
+    json mod_list_json = this->toJson(mod_list_path, "bson");
+
+    auto doc_value = make_document(kvp("componentType", "Module"));
+    mongocxx::cursor cursor = db["component"].find(doc_value.view());
+    for (auto doc : cursor) {
+        std::string mo_serial_number = doc["serialNumber"].get_utf8().value.to_string();
+        if (!mod_list_json[mo_serial_number].empty()) continue;
+
+        std::string oid_str = doc["_id"].get_oid().value.to_string();
+        mod_list_json[mo_serial_number] = {};
+        mod_list_json[mo_serial_number]["chipType"] = this->getValue("component", "_id", oid_str, "oid", "chipType");
+        mod_list_json[mo_serial_number]["module"]["serialNumber"] = mo_serial_number;
+        mod_list_json[mo_serial_number]["module"]["componentType"] = "Module";
+
+        doc_value = make_document(kvp("parent", oid_str));
+        mongocxx::cursor cursor_cpr = db["childParentRelation"].find(doc_value.view());
+        for (auto child : cursor_cpr) {
+            std::string ch_oid_str = child["child"].get_utf8().value.to_string();
+
+            json chip_json;
+            chip_json["serialNumber"] = this->getValue("component", "_id", ch_oid_str, "oid", "serialNumber");
+            chip_json["componentType"] = this->getValue("component", "_id", ch_oid_str, "oid", "componentType");
+            chip_json["chipId"] = stoi(this->getValue("component", "_id", ch_oid_str, "oid", "chipId", "int"));
+            mod_list_json[mo_serial_number]["chips"].push_back(chip_json);
+        }
+    }
+    std::ofstream mod_list_file(mod_list_path, std::ios::binary);
+    std::vector<std::uint8_t> v_bson = json::to_bson(mod_list_json);
+    for (auto tmp : v_bson) {
+        mod_list_file.write(reinterpret_cast<const char*>(std::addressof(tmp)), sizeof(std::uint8_t));
+    }
+    mod_list_file.close();
+#endif
+    return 0;
+}
+
 // public
+void DBHandler::setUser(std::string i_user_path, std::string i_address_path) {
+    // Set UserID from DB
+    if (DB_DEBUG) std::cout << "DBHandler: Set user: " << i_user_path << std::endl;
+
+    json user_json = this->checkUserCfg(i_user_path);
+    std::string user_name = user_json["userName"];
+    std::string institution = user_json["institution"];
+    std::string user_identity = user_json["userIdentity"];
+    std::cout << "DBHandler: User Information \n\tUser name: " << user_name << "\n\tInstitution: " << institution << "\n\tUser identity: " << user_identity << std::endl;
+
+    // Set MAC address
+    if (DB_DEBUG) std::cout << "DBHandler: Set address" << std::endl;
+    json address_json = this->checkAddressCfg(i_address_path);
+    std::string address = address_json["macAddress"];
+    std::string hostname = address_json["hostname"];
+    std::string site = address_json["institution"];
+    std::cout << "DBHandler: MAC Address: " << address << std::endl;
+
+#ifdef MONGOCXX_INCLUDE
+    if (m_option=="db"||m_option=="dcs") {
+        m_user_oid_str = this->registerUser(user_name, institution, user_identity);
+        m_site_oid_str = this->registerSite(address, hostname, site);
+    }
+#endif
+    this->cacheUser(i_user_path, i_address_path);
+
+    return;
+}
+
 void DBHandler::setConnCfg(std::vector<std::string> i_conn_paths) {
     if (DB_DEBUG) std::cout << "DBHandler: Set connectivity config" << std::endl;
-
-    std::string mod_list_path = m_cache_dir+"/lib/modules.json";
-    json mod_list_json = this->toJson(mod_list_path);
 
     for (auto conn_path : i_conn_paths) {
         if (DB_DEBUG) std::cout << "\tDBHandler: setting connectivity config file: " << conn_path << std::endl;
@@ -221,23 +256,21 @@ void DBHandler::setConnCfg(std::vector<std::string> i_conn_paths) {
         if (m_chip_type == "FEI4B") m_chip_type = "FE-I4B";
 
 #ifdef MONGOCXX_INCLUDE
-        if (m_option=="cache"||m_option=="register") this->registerConnCfg(conn_path);
+        if (m_option=="db"||m_option=="register") this->registerConnCfg(conn_path);
 #endif
         this->cacheConnCfg(conn_path);
-        //// Chip Component //TODO
-        //for (unsigned i=0; i<conn_json["chips"].size(); i++) {
-        //    std::string ch_serial_number = conn_json["chips"][i]["serialNumber"];
-        //    if (!conn_json["chips"][i]["dbconfig"].empty()) {
-        //        this->getJsonCode(conn_json["chips"][i]["dbconfig"], conn_json["chips"][i]["config"], conn_json["chips"][i]["serialNumber"], "chipCfg", conn_json["chips"][i]["chipId"]);
-        //    }
-        //}
     }
 }
 
-void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_serial_number) {
+void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_tr_path) {
     if (DB_DEBUG) std::cout << "DBHandler: Set DCS config: " << i_dcs_path << std::endl;
 
-    if (i_dcs_path == "") return;
+    if (m_option!="dcs") {
+        std::string message = "This function is disabled";
+        std::string function = __PRETTY_FUNCTION__;
+        this->alert(function, message);
+    }
+ 
     json dcs_json = this->toJson(i_dcs_path);
     if (dcs_json["environments"].empty()) return;
     json env_json = dcs_json["environments"];
@@ -248,7 +281,6 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_serial_number) {
         if (env_json[i]["status"]!="enabled") continue;
 
         this->checkDCSCfg(i_dcs_path, num_str, env_json[i]);
-        if (env_json[i]["margin"].empty()) env_json[i]["margin"] = 60; //60s
         if (!env_json[i]["path"].empty()) {
             int j_num = env_json[i]["num"];
             std::string log_path = env_json[i]["path"];
@@ -257,45 +289,10 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_serial_number) {
             this->checkNumber(env_json[i]["value"].is_number(), "environments."+num_str+".value", i_dcs_path);
         }
     }
-    this->cacheDCSCfg(i_dcs_path, i_serial_number);
+    this->cacheDCSCfg(i_dcs_path, i_tr_path);
 #ifdef MONGOCXX_INCLUDE
-    if (m_option=="dcs") this->registerEnvironment(i_dcs_path, i_serial_number);
+    this->registerDCS(i_dcs_path, i_tr_path);
 #endif
-
-    return;
-}
-
-void DBHandler::setUser(std::string i_user_path, std::string i_address_path) {
-    // Set UserID from DB
-    if (DB_DEBUG) std::cout << "DBHandler: Set user: " << i_user_path << std::endl;
-    json user_json = this->checkUserCfg(i_user_path);
-    std::string user_name = user_json["userName"];
-    std::string institution = user_json["institution"];
-    std::string user_identity = user_json["userIdentity"];
-    std::cout << "DBHandler: User Information \n\tUser name: " << user_name << "\n\tInstitution: " << institution << "\n\tUser identity: " << user_identity << std::endl;
-    // Set MAC address
-    if (DB_DEBUG) std::cout << "DBHandler: Set address" << std::endl;
-    this->checkFile(i_address_path, "Check the address config file or Login again.");
-    json address_json = toJson(i_address_path);
-    m_address = address_json["macAddress"];
-    std::string name = address_json["name"];
-    std::string site = address_json["institution"];
-    std::cout << "DBHandler: MAC Address: " << m_address << std::endl;
-    // Set DB config
-    this->checkEmpty(user_json["dbCfg"].empty(), "dbCfg", i_user_path); 
-    if (m_stage_list.size()==0&&m_env_list.size()==0&&m_comp_list.size()==0) {
-        json db_json = this->toJson(m_db_cfg_path);
-        for(auto s_tmp: db_json["stage"]) m_stage_list.push_back(s_tmp);
-        for(auto s_tmp: db_json["environment"]) m_env_list.push_back(s_tmp);
-        for(auto s_tmp: db_json["component"]) m_comp_list.push_back(s_tmp);
-    }
-#ifdef MONGOCXX_INCLUDE
-    if (m_option=="cache"||m_option=="dcs") {
-        m_user_oid_str = this->registerUser(user_name, institution, user_identity);
-        this->registerSite(m_address, name, site);
-    }
-#endif
-    this->cacheUser(i_user_path, i_address_path);
 
     return;
 }
@@ -303,14 +300,20 @@ void DBHandler::setUser(std::string i_user_path, std::string i_address_path) {
 void DBHandler::writeTestRunStart(std::string i_test_type, std::vector<std::string> i_conn_paths, int i_run_number, int i_target_charge, int i_target_tot) {
     if (DB_DEBUG) std::cout << "DBHandler: Write Test Run (start)" << std::endl;
 
+    if (m_option!="scan"&&m_option!="db") {
+        std::string message = "This function is disabled";
+        std::string function = __PRETTY_FUNCTION__;
+        this->alert(function, message);
+    }
+
     int timestamp;
     if (m_cache_json["startTime"].empty()) timestamp = std::time(NULL);
     else timestamp = m_cache_json["startTime"];
+    for (auto conn_path : i_conn_paths) {
+        json conn_json = this->toJson(conn_path);
+        std::string mo_serial_number = conn_json["module"]["serialNumber"];
 #ifdef MONGOCXX_INCLUDE
-    if (m_option=="cache") {
-        for (auto conn_path : i_conn_paths) {
-            json conn_json = this->toJson(conn_path);
-            std::string mo_serial_number = conn_json["module"]["serialNumber"];
+        if (m_option=="db") {
             std::string tr_oid_str = this->registerTestRun(i_test_type, i_run_number, i_target_charge, i_target_tot, timestamp, mo_serial_number, "start");
             // stage
             if (!conn_json["stage"].empty()) {
@@ -319,9 +322,34 @@ void DBHandler::writeTestRunStart(std::string i_test_type, std::vector<std::stri
             }
             m_tr_oid_strs.push_back(tr_oid_str);
             this->registerComponentTestRun(conn_path, tr_oid_str, i_test_type, i_run_number);
+            m_serial_numbers.push_back(mo_serial_number);
+        }
+#endif
+        if (m_option=="scan") {
+            std::time_t now = std::time(NULL);
+            struct tm *lt = std::localtime(&now);
+            char tmp[20];
+            strftime(tmp, 20, "%Y%m%d", lt);
+            std::string ts=tmp;
+            std::string log_path = m_cache_dir+"/var/log/"+ts+"_scan.log";
+            std::ofstream log_file_ofs(log_path, std::ios::app);
+            strftime(tmp, 20, "%F_%H:%M:%S", lt);
+            ts=tmp;
+            log_file_ofs << ts << "," << mo_serial_number << "," << timestamp << "," << i_run_number << "," << i_test_type << std::endl;
+            log_file_ofs.close();
+
+            json tr_json;
+            tr_json["startTime"] = timestamp;
+            tr_json["serialNumber"] = mo_serial_number;
+            tr_json["runNumber"] = i_run_number;
+            tr_json["testType"] = i_test_type;
+
+            std::string tmp_path = m_cache_dir+"/tmp/scan.json";
+            std::ofstream tmp_file_ofs(tmp_path);
+            tmp_file_ofs << std::setw(4) << tr_json;
+            tmp_file_ofs.close();
         }
     }
-#endif
     this->cacheTestRun(i_test_type, i_run_number, i_target_charge, i_target_tot, timestamp, -1, "");
 
     return;
@@ -330,13 +358,19 @@ void DBHandler::writeTestRunStart(std::string i_test_type, std::vector<std::stri
 void DBHandler::writeTestRunFinish(std::string i_test_type, std::vector<std::string> i_conn_paths, int i_run_number, int i_target_charge=-1, int i_target_tot=-1) {
     if (DB_DEBUG) std::cout << "DBHandler: Write Test Run (finish)" << std::endl;
 
+    if (m_option!="scan"&&m_option!="db") {
+        std::string message = "This function is disabled";
+        std::string function = __PRETTY_FUNCTION__;
+        this->alert(function, message);
+    }
+
     int timestamp;
     if (m_cache_json["finishTime"].empty()) timestamp = std::time(NULL);
     else timestamp = m_cache_json["finishTime"];
     std::sort(m_histo_names.begin(), m_histo_names.end());
     m_histo_names.erase(std::unique(m_histo_names.begin(), m_histo_names.end()), m_histo_names.end());
 #ifdef MONGOCXX_INCLUDE
-    if (m_option=="cache") {
+    if (m_option=="db") {
         for (auto tr_oid_str : m_tr_oid_strs) {
             this->registerTestRun(i_test_type, i_run_number, i_target_charge, i_target_tot, timestamp, "", "finish", tr_oid_str);
         }
@@ -356,7 +390,7 @@ void DBHandler::writeConfig(std::string i_serial_number, std::string i_file_path
     file_ifs.close();
 
 #ifdef MONGOCXX_INCLUDE
-    if (m_option=="cache") this->registerConfig(i_serial_number, i_file_path, i_filename, i_title, i_collection);
+    if (m_option=="db") this->registerConfig(i_serial_number, i_file_path, i_filename, i_title, i_collection);
 #endif
     this->cacheConfig(i_serial_number, i_file_path, i_filename, i_title, i_collection);
 
@@ -371,7 +405,7 @@ void DBHandler::writeAttachment(std::string i_serial_number, std::string i_file_
     file_ifs.close();
 
 #ifdef MONGOCXX_INCLUDE
-    if (m_option=="cache") this->registerAttachment(i_serial_number, i_file_path, i_histo_name);
+    if (m_option=="db") this->registerAttachment(i_serial_number, i_file_path, i_histo_name);
 #endif
     this->cacheAttachment(i_serial_number, i_file_path, i_histo_name);
 
@@ -380,33 +414,30 @@ void DBHandler::writeAttachment(std::string i_serial_number, std::string i_file_
     return;
 }
 
-void DBHandler::writeDCS(std::string i_dcs_cache_dir) {
-    if (DB_DEBUG) std::cout << "DBHandler: Write DCS config: " << i_dcs_cache_dir << std::endl;
+void DBHandler::writeDCS(std::string i_dcs_file_path, std::string i_tr_file_path) {
+    if (DB_DEBUG) std::cout << "DBHandler: Write DCS config: " << i_dcs_file_path << std::endl;
+
+    // check test run data registered
+    json tr_json = this->toJson(i_tr_file_path);
+    if (tr_json["id"].empty()) {
+        this->checkEmpty(tr_json["startTime"].empty()||tr_json["serialNumber"].empty(), "testRun.startTime&&testRun.serialNumber", i_tr_file_path);
+    }
+    std::string tr_oid_str = "";
+    std::string serial_number = "";
+    int timestamp = -1;
+    if (!tr_json["id"].empty()) tr_oid_str = tr_json["id"];
+    if (!tr_json["serialNumber"].empty()) serial_number = tr_json["serialNumber"];
+    if (!tr_json["startTime"].empty()) timestamp = tr_json["startTime"];
+    this->getTestRunData(tr_oid_str, serial_number, timestamp);
 
 #ifdef MONGOCXX_INCLUDE
-    m_cache_path = i_dcs_cache_dir+"/cacheLog.json";
-    m_cache_json = this->toJson(m_cache_path);
-    //m_log_json["cache"] = i_dcs_cache_dir;
-    m_log_json["cache"] = m_cache_json["current"];
-    // check cache directory
-    if (m_cache_json["status"]!="waiting") return;
-    // write status
-    this->writeJson("status", "writing", m_cache_path, m_cache_json);
 
-    // set user
-    this->setUser(i_dcs_cache_dir+"/user.json", i_dcs_cache_dir+"/address.json");
-
-    // set connectivity config
-    for (int i=0; i<(int) m_cache_json["configs"]["connCfg"].size(); i++) {
-        std::string conn_path = m_cache_json["configs"]["connCfg"][i]["path"];
-        json conn_json = this->toJson(conn_path);
-        if (!conn_json["dcsCfg"].empty()) this->setDCSCfg(conn_json["dcsCfg"], conn_json["module"]["serialNumber"]);
-    }
-    this->writeJson("status", "done", m_cache_path, m_cache_json);
+    this->setDCSCfg(i_dcs_file_path, i_tr_file_path);
+    //this->writeJson("status", "done", m_cache_path, m_cache_json);
 #else
     std::string message = "Not found MongoDB C++ Driver!";
     std::string function = __PRETTY_FUNCTION__;
-    this->abort(function, message);
+    this->alert(function, message, "warning");
 #endif
 
     return;
@@ -418,7 +449,7 @@ void DBHandler::writeCache(std::string i_cache_dir) {
 #ifdef MONGOCXX_INCLUDE
     m_cache_path = i_cache_dir+"/cacheLog.json";
     m_cache_json = this->toJson(m_cache_path);
-    m_log_json["cache"] = m_cache_json["current"];
+    m_log_json["cachePath"] = m_cache_json["logPath"];
     // check cache directory
     if (m_cache_json["status"]!="waiting") return;
     // write status
@@ -437,9 +468,9 @@ void DBHandler::writeCache(std::string i_cache_dir) {
 
     // write test run
     std::string scan_type = m_cache_json["testType"];
-    int run_number = m_cache_json["runNumber"];
-    int target_charge = m_cache_json["targetCharge"];
-    int target_tot = m_cache_json["targetTot"];
+    int run_number        = m_cache_json["runNumber"];
+    int target_charge     = m_cache_json["targetCharge"];
+    int target_tot        = m_cache_json["targetTot"];
     this->writeTestRunStart(scan_type, conn_paths, run_number, target_charge, target_tot);
 
     // write config
@@ -455,16 +486,16 @@ void DBHandler::writeCache(std::string i_cache_dir) {
 
     // chip config
     for (auto chip_json: m_cache_json["configs"]["chipCfg"]) {
-        std::string chip_id = chip_json["_id"];
+        std::string chip_id   = chip_json["_id"];
         std::string chip_path = chip_json["path"];
-        std::string filename = chip_json["filename"];
-        std::string title = chip_json["title"];
+        std::string filename  = chip_json["filename"];
+        std::string title     = chip_json["title"];
         this->writeConfig(chip_id, chip_path, filename, title, "componentTestRun");
     }
 
     // attachments
     for (auto attachment: m_cache_json["attachments"]) {
-        std::string chip_id = attachment["_id"];
+        std::string chip_id   = attachment["_id"];
         std::string file_path = attachment["path"];
         std::string histoname = attachment["histoname"];
         this->writeAttachment(chip_id, file_path, histoname);
@@ -472,105 +503,44 @@ void DBHandler::writeCache(std::string i_cache_dir) {
 
     // finish
     this->writeTestRunFinish(scan_type, conn_paths, run_number, target_charge, target_tot);
-
     this->writeJson("status", "done", m_cache_path, m_cache_json);
+    this->writeJson("status", "done", m_log_path, m_log_json);
+
+    for (auto serial_number : m_serial_numbers) {
+        int start_time = m_cache_json["startTime"];
+        this->getTestRunData("", serial_number, start_time);
+        if (m_tr_oid_str=="") {
+            this->writeJson("status", "failure", m_cache_path, m_cache_json);
+            this->writeJson("status", "failure", m_log_path, m_log_json);
+        }
+    }
 #else
     std::string message = "Not found MongoDB C++ Driver!";
     std::string function = __PRETTY_FUNCTION__;
-    this->abort(function, message);
+    this->alert(function, message);
 #endif
 
     return;
 }
-void DBHandler::getJsonCode(std::string i_oid_str, std::string i_filename, std::string i_name, std::string i_type, int i_chip_id) {
-    if (DB_DEBUG) std::cout << "DBHandler: Get json file" << std::endl;
 
+void DBHandler::getData(std::string i_info_file_path, std::string i_get_type) {
+    if (DB_DEBUG) std::cout << "DBHandler: Get Data" << std::endl;
+    
 #ifdef MONGOCXX_INCLUDE
-    mongocxx::collection collection = db["config"];
-
-    bsoncxx::oid i_oid(i_oid_str);
-    auto doc_value = document{} << "_id" << i_oid << finalize;
-    auto maybe_result = collection.find_one(doc_value.view());
-    if (!maybe_result) {
-        std::string message = "Not found config data!";
-        std::string function = __PRETTY_FUNCTION__;
-        this->abort(function, message); return;
-    } 
-
-    std::string format  = getValue("config", "_id", i_oid_str, "oid", "format");
-    std::string data_id = getValue("config", "_id", i_oid_str, "oid", "data_id");
-    if (m_chip_type!="") {
-        if (getValue("config", "_id", i_oid_str, "oid", "chipType")!=m_chip_type) {
-            std::string message = "Not found config data of this chip type: "+m_chip_type;
-            std::string function = __PRETTY_FUNCTION__;
-            this->abort(function, message); return;
-        }
-    } else {
-        m_chip_type = getValue("config", "_id", i_oid_str, "oid", "chipType");
-    }
-    if (getValue("config", "_id", i_oid_str, "oid", "title")!=i_type) {
-        std::string message = "Not match config type: "+i_type;
-        std::string function = __PRETTY_FUNCTION__;
-        this->abort(function, message); return;
-    }
-    bsoncxx::oid data_oid(data_id);
-    mongocxx::collection data_collection = db[format];
-    doc_value = document{} << "_id" << data_oid << finalize;
-    maybe_result = data_collection.find_one(doc_value.view());
-    if (maybe_result) {
-        std::ofstream file_ofs(i_filename.c_str());
-        json data;
-
-        mongocxx::gridfs::bucket gb = db.gridfs_bucket();
-        std::ostringstream os;
-        bsoncxx::types::value d_id{bsoncxx::types::b_oid{data_oid}};
-        gb.download_to_stream(d_id, &os);
-        std::string str = os.str();
-        try {
-            data = json::parse(str);
-        } catch (json::parse_error &e) {
-            std::string message = "Could not parse "+str+"\n\twhat(): "+e.what();
-            std::string function = __PRETTY_FUNCTION__;
-            this->abort(function, message); return;
-        }
-        
-        if (i_type == "chipCfg") {
-            if (m_chip_type == "FE-I4B") {
-                data[m_chip_type]["Parameter"]["chipId"] = i_chip_id;
-                data[m_chip_type]["name"] = i_name;
-            } else if (m_chip_type == "RD53A") { 
-                data[m_chip_type]["Parameter"]["ChipId"] = i_chip_id;
-                data[m_chip_type]["Parameter"]["Name"] = i_name;
-            }
-        }
-        file_ofs << std::setw(4) << data;
-        file_ofs.close();
-    }
+    json info_json;
+    if (i_info_file_path!="") info_json = toJson(i_info_file_path);
+    if (i_get_type == "testRunLog") this->getTestRunLog(info_json);
+    if (i_get_type == "testRunId") this->getTestRunId(info_json);
+    if (i_get_type == "config") this->getConfigData(info_json);
+    if (i_get_type == "userId") this->getUserId(info_json);
+    if (i_get_type == "dat") this->getDatData(info_json);
 #else
     std::string message = "Not found MongoDB C++ Driver!";
     std::string function = __PRETTY_FUNCTION__;
-    this->abort(function, message); return;
-#endif
-}
-
-void DBHandler::getDatCode(std::string i_data_id, std::string i_filename) {
-    if (DB_DEBUG) std::cout << "DBHandler: Get dat file" << std::endl;
-
-#ifdef MONGOCXX_INCLUDE
-    std::ofstream file_ofs(i_filename.c_str());
-
-    bsoncxx::oid data_oid(i_data_id);
-    mongocxx::gridfs::bucket gb = db.gridfs_bucket();
-    std::ostringstream os;
-    bsoncxx::types::value d_id{bsoncxx::types::b_oid{data_oid}};
-    gb.download_to_stream(d_id, &os);
-    file_ofs << os.str();
-#else
-    std::string message = "Not found MongoDB C++ Driver!";
-    std::string function = __PRETTY_FUNCTION__;
-    this->abort(function, message); return;
+    this->alert(function, message);
 #endif
 
+    return;
 }
 
 //*****************************************************************************************************
@@ -626,20 +596,15 @@ std::string DBHandler::getValue(std::string i_collection_name, std::string i_mem
     else {
         std::string message = "Cannot find '" + i_key + "' from member '" + i_member_key + ": " + i_member_value + "' in collection name: '" + i_collection_name + "'";
         std::string function = __PRETTY_FUNCTION__;
-        this->abort(function, message); return "ERROR";
+        this->alert(function, message); return "ERROR";
     }
 }
 
-std::string DBHandler::getComponent(json &i_json, std::string i_file_path) {
-    std::string serial_number = i_json["serialNumber"]; 
-    std::string component_type = i_json["componentType"];
-
-    if (DB_DEBUG) std::cout << "\tDBHandler: Get component data: 'serialnumber':" << serial_number << ", 'componentType':" << component_type << ", 'chipType':" << m_chip_type << std::endl;
+std::string DBHandler::getComponent(std::string i_serial_number, std::string i_file_path) {
+    if (DB_DEBUG) std::cout << "\tDBHandler: Get component data: 'serialnumber':" << i_serial_number << std::endl;
     std::string oid_str = "";
     bsoncxx::document::value query_doc = document{} <<  
-        "serialNumber"  << serial_number <<
-        "componentType" << component_type <<
-        "chipType"      << m_chip_type <<
+        "serialNumber"  << i_serial_number <<
     finalize;
     auto maybe_result = db["component"].find_one(query_doc.view());
     if (maybe_result) {
@@ -676,17 +641,20 @@ std::string DBHandler::registerUser(std::string i_user_name, std::string i_insti
     return oid.to_string();
 }
 
-void DBHandler::registerSite(std::string i_address, std::string i_name, std::string i_site) {
-    if (DB_DEBUG) std::cout << "\tDBHandler: Register site \n\tAddress: " << i_address << "\n\tName: " << i_name << "\n\tInstitution: " << i_site << std::endl;
+std::string DBHandler::registerSite(std::string i_address, std::string i_hostname, std::string i_site) {
+    if (DB_DEBUG) std::cout << "\tDBHandler: Register site \n\tAddress: " << i_address << "\n\tName: " << i_hostname << "\n\tInstitution: " << i_site << std::endl;
     mongocxx::collection collection = db["institution"];
     // Set MAC address
-    auto doc_value = document{} << "address" << i_address << finalize;
+    auto doc_value = document{} << 
+        "address"     << i_address << 
+        "institution" << i_site << 
+    finalize;
     auto maybe_result = collection.find_one(doc_value.view());
-    if (maybe_result) return;
+    if (maybe_result) return maybe_result->view()["_id"].get_oid().value.to_string();
 
     doc_value = document{} <<
         "sys"         << open_document << close_document <<
-        "name"        << i_name <<
+        "name"        << i_hostname <<
         "institution" << i_site <<
         "address"     << i_address <<
         "dbVersion"     << -1 <<
@@ -695,15 +663,15 @@ void DBHandler::registerSite(std::string i_address, std::string i_name, std::str
     this->addSys(oid.to_string(), "institution");
     this->addVersion("institution", "_id", oid.to_string(), "oid");
 
-    return;
+    return oid.to_string();
 }
 
 // Will be deleted // TODO enable to register component in viewer application
 void DBHandler::registerConnCfg(std::string i_conn_path) {
     if (DB_DEBUG) std::cout << "\tDBHandler: Register from connectivity: " << i_conn_path << std::endl;
 
-    std::string mod_list_path = m_cache_dir+"/lib/modules.json";
-    json mod_list_json = this->toJson(mod_list_path);
+    std::string mod_list_path = m_cache_dir+"/lib/modules.bson";
+    json mod_list_json = this->toJson(mod_list_path, "bson");
     json conn_json = this->toJson(i_conn_path);
     std::string mo_serial_number = conn_json["module"]["serialNumber"];
     if (!mod_list_json[mo_serial_number].empty()) conn_json = mod_list_json[mo_serial_number];
@@ -713,12 +681,13 @@ void DBHandler::registerConnCfg(std::string i_conn_path) {
     bool chip_is_exist = false;
     bool cpr_is_fine = true;
     // Module
-    std::string mo_oid_str = this->getComponent(conn_json["module"], i_conn_path);
+    std::string mo_oid_str = this->getComponent(mo_serial_number, i_conn_path);
     if (mo_oid_str!="") module_is_exist = true;
     // Chip
     int chips = 0;
     for (unsigned i=0; i<conn_json["chips"].size(); i++) {
-        std::string chip_oid_str = this->getComponent(conn_json["chips"][i], i_conn_path);
+        std::string ch_serial_number = conn_json["chips"][i]["serialNumber"];
+        std::string chip_oid_str = this->getComponent(ch_serial_number, i_conn_path);
         if (chip_oid_str!="") {
             chip_is_exist = true;
             auto doc_value = document{} <<
@@ -734,15 +703,15 @@ void DBHandler::registerConnCfg(std::string i_conn_path) {
     if (module_is_exist&&!chip_is_exist) {
         std::string message = "There are registered module in connectivity : "+i_conn_path;
         std::string function = __PRETTY_FUNCTION__;
-        this->abort(function, message); return;
+        this->alert(function, message); return;
     } else if (!module_is_exist&&chip_is_exist) {
         std::string message = "There are registered chips in connectivity : "+i_conn_path;
         std::string function = __PRETTY_FUNCTION__;
-        this->abort(function, message); return;
+        this->alert(function, message); return;
     } else if (!cpr_is_fine) {
         std::string message = "There are wrong relationship between module and chips in connectivity : "+i_conn_path;
         std::string function = __PRETTY_FUNCTION__;
-        this->abort(function, message); return;
+        this->alert(function, message); return;
     } else if (module_is_exist&&chip_is_exist&&cpr_is_fine) {
         return;
     }
@@ -771,8 +740,11 @@ void DBHandler::registerConnCfg(std::string i_conn_path) {
         mod_list_json[mo_serial_number]["chips"].push_back(chip_json);
     }
 
-    std::ofstream mod_list_file(mod_list_path);
-    mod_list_file << std::setw(4) << mod_list_json;
+    std::ofstream mod_list_file(mod_list_path, std::ios::binary);
+    std::vector<std::uint8_t> v_bson = json::to_bson(mod_list_json);
+    for (auto tmp : v_bson) {
+        mod_list_file.write(reinterpret_cast<const char*>(std::addressof(tmp)), sizeof(std::uint8_t));
+    }
     mod_list_file.close();
 }
 
@@ -782,8 +754,6 @@ std::string DBHandler::registerComponent(std::string i_serial_number, std::strin
 
     auto doc_value = document{} <<  
         "serialNumber"  << i_serial_number <<
-        "componentType" << i_component_type <<
-        "chipType"      << m_chip_type <<
     finalize;
     auto maybe_result = collection.find_one(doc_value.view());
     if (maybe_result) return maybe_result->view()["_id"].get_oid().value.to_string();
@@ -904,39 +874,27 @@ void DBHandler::registerAttachment(std::string i_serial_number, std::string i_fi
     }
 }
 
-void DBHandler::registerEnvironment(std::string i_dcs_path, std::string i_serial_number) {//TODO move to protect function
+void DBHandler::registerDCS(std::string i_dcs_path, std::string i_tr_path) {
     if (DB_DEBUG) std::cout << "DBHandler: Register Environment: " << i_dcs_path << std::endl;
 
-    if (i_dcs_path == "") {
-        std::string message = "Environmental file was not given!";
-        std::string function = __PRETTY_FUNCTION__;
-        this->abort(function, message); return;
-    }
+    json dcs_json = toJson(i_dcs_path);
+    json tr_json = toJson(i_tr_path);
 
     mongocxx::collection collection = db["environment"];
 
     // register the environmental key and description
-    std::time_t timestamp = m_cache_json["startTime"];
-    std::string test_type = m_cache_json["testType"];
-    int run_number = m_cache_json["runNumber"];
-    auto startTime = std::chrono::system_clock::from_time_t(timestamp);
-    auto doc_value = document{} <<
-        "testType"     << test_type <<
-        "runNumber"    << run_number <<
-        "startTime"    << bsoncxx::types::b_date{startTime} <<
-        "serialNumber" << i_serial_number <<
-        "address"      << m_address <<
-        "user_id"      << m_user_oid_str <<
-    finalize;
-    auto result = db["testRun"].find_one(doc_value.view());
-    if (!result) {
+    if (m_tr_oid_str=="") {
         std::string message = "Not found relational test run data in DB";
         std::string function = __PRETTY_FUNCTION__;
-        this->abort(function, message); return;
+        this->alert(function, message); return;
     }
-    std::string tr_oid_str = result->view()["_id"].get_oid().value.to_string();
-
-    json dcs_json = toJson(i_dcs_path);
+    auto doc_value = make_document(kvp("_id", bsoncxx::oid(m_tr_oid_str)));
+    auto result = db["testRun"].find_one(doc_value.view());
+    if (result->view()["environment"].get_utf8().value.to_string()!="...") {
+        std::string message = "Already registered dcs data to this test run data";
+        std::string function = __PRETTY_FUNCTION__;
+        this->alert(function, message); return;
+    }
     if (dcs_json["environments"].empty()) return;
     json env_json = dcs_json["environments"];
     std::vector<std::string> env_keys, descriptions, env_modes, env_paths;
@@ -953,7 +911,7 @@ void DBHandler::registerEnvironment(std::string i_dcs_path, std::string i_serial
         if (!j["value"].empty()) env_vals.push_back(j["value"]);
         else env_vals.push_back(-1); 
         if (!j["margin"].empty()) env_margins.push_back(j["margin"]);
-        else env_margins.push_back(60);
+        else env_margins.push_back(-1);
     }
 
     // get start time from scan data
@@ -1042,7 +1000,13 @@ void DBHandler::registerEnvironment(std::string i_dcs_path, std::string i_serial
                 }
                 if (value==""||datetime == "") break;
                 std::time_t timestamp = stoi(datetime);
-                if (difftime(starttime,timestamp)<env_margins[i]&&difftime(timestamp,finishtime)<env_margins[i]) { // store data from 1 minute before the starting time of the scan
+                if (env_margins[i]!=-1) {
+                    if (difftime(starttime,timestamp)<env_margins[i]&&difftime(timestamp,finishtime)<env_margins[i]) { // store data from 1 minute before the starting time of the scan
+                        key_values.push_back(stof(value));
+                        dates.push_back(stoi(datetime));
+                        data_num++;
+                    }
+                } else {
                     key_values.push_back(stof(value));
                     dates.push_back(stoi(datetime));
                     data_num++;
@@ -1091,9 +1055,16 @@ void DBHandler::registerEnvironment(std::string i_dcs_path, std::string i_serial
     }
     this->addSys(env_oid.to_string(), "environment");
     this->addVersion("environment", "_id", env_oid.to_string(), "oid");
-    this->addValue(tr_oid_str, "testRun", "environment", env_oid.to_string());
+    this->addValue(m_tr_oid_str, "testRun", "environment", env_oid.to_string());
 
-    this->writeJson("status", "done", m_log_path, m_log_json);
+    if (m_option=="dcs") {
+        this->writeJson("status", "done", m_log_path, m_log_json);
+        doc_value = make_document(kvp("_id", bsoncxx::oid(m_tr_oid_str)));
+        result = db["testRun"].find_one(doc_value.view());
+        if (result->view()["environment"].get_utf8().value.to_string()=="...") {
+            this->writeJson("status", "failure", m_log_path, m_log_json);
+        }
+    }
 
     return;
 }
@@ -1112,7 +1083,7 @@ std::string DBHandler::registerJsonCode(std::string i_file_path, std::string i_f
     } else {
         std::string message = "Unknown type '" + i_type + "' to upload json file.";
         std::string function = __PRETTY_FUNCTION__;
-        this->abort(function, message); return "ERROR";
+        this->alert(function, message); return "ERROR";
     } 
     mongocxx::collection collection = db["config"];
     bsoncxx::document::value doc_value = document{} << 
@@ -1135,7 +1106,8 @@ void DBHandler::registerComponentTestRun(std::string i_conn_path, std::string i_
 
     json conn_json = this->toJson(i_conn_path);
     std::vector<std::string> cmp_oid_strs;
-    std::string mo_oid_str = this->getComponent(conn_json["module"], i_conn_path);
+    std::string mo_serial_number = conn_json["module"]["serialNumber"];
+    std::string mo_oid_str = this->getComponent(mo_serial_number, i_conn_path);
     cmp_oid_strs.push_back(mo_oid_str);
     auto doc_value = document{} <<
         "parent" << mo_oid_str <<
@@ -1191,12 +1163,8 @@ std::string DBHandler::registerTestRun(std::string i_test_type, int i_run_number
         std::time_t timestamp = i_time;
         auto startTime = std::chrono::system_clock::from_time_t(timestamp);
         auto doc_value = document{} <<
-            "testType"     << i_test_type <<
-            "runNumber"    << i_run_number <<
             "startTime"    << bsoncxx::types::b_date{startTime} <<
             "serialNumber" << i_serial_number <<
-            "address" << m_address <<
-            "user_id" << m_user_oid_str <<
         finalize;
         auto maybe_result = collection.find_one(doc_value.view());
         if (maybe_result) return maybe_result->view()["_id"].get_oid().value.to_string();
@@ -1321,7 +1289,7 @@ void DBHandler::addUser(std::string i_collection_name, std::string i_oid_str) {
     db[i_collection_name].update_one(
         document{} << "_id" << i_oid << finalize,
         document{} << "$set" << open_document <<
-            "address" << m_address <<
+            "address" << m_site_oid_str <<
             "user_id" << m_user_oid_str <<
         close_document << finalize
     );
@@ -1498,34 +1466,299 @@ std::string DBHandler::getHash(std::string i_file_path) {
     return shastr.str();
 }
 
+void DBHandler::getTestRunLog(json i_info_json) {
+    if (DB_DEBUG) std::cout << "DBHandler: Get TestRun Log" << std::endl;
+
+    this->checkEmpty(i_info_json["serialNumber"].empty(), "serialNumber", "");
+    std::string serial_number = i_info_json["serialNumber"];
+    document builder{};
+    auto docs = builder << "serialNumber" << serial_number;
+//TODO
+    for (int i=0;i<(int)i_info_json["options"].size();i++) {
+        this->checkEmpty(i_info_json["options"][i]["status"].empty(), "options."+std::to_string(i)+".status", "Set enabled/disabled.");
+        if (i_info_json["options"][i]["status"]!="enabled") continue;
+        std::string key = i_info_json["options"][i]["key"];
+        auto value = i_info_json["options"][i]["value"].dump();
+        docs << key << value;
+    }
+    auto doc_value = docs << finalize;
+    mongocxx::options::find opts;
+    opts.sort(make_document(kvp("$natural", -1)));
+    //opts.limit(10);
+    mongocxx::cursor cursor = db["testRun"].find(doc_value.view(), opts);
+    for (auto doc : cursor) {
+        std::string oid_str = doc["_id"].get_oid().value.to_string();
+        std::chrono::seconds s = std::chrono::duration_cast<std::chrono::seconds>(doc["startTime"].get_date().value);
+        std::time_t starttime = s.count();
+        char ts[80];
+        struct tm *lt = std::localtime(&starttime);
+        strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S", lt);
+        std::string startTime = ts;
+
+        std::string user_name = this->getValue("user", "_id", doc["user_id"].get_utf8().value.to_string(), "oid", "userName");
+        std::string site_name = this->getValue("institution", "_id", doc["address"].get_utf8().value.to_string(), "oid", "institution");
+
+        std::cout << "\033[1;33mtestRun data ID: " << oid_str << "\033[0m" << std::endl;
+        std::cout << "User: " << user_name << " at " << site_name << std::endl;
+        std::cout << "Date: " << startTime << std::endl;
+        std::cout << "\tRun Number: " << std::to_string(doc["runNumber"].get_int32().value) << std::endl;
+        std::cout << "\tTest Type:  " << doc["testType"].get_utf8().value.to_string() << std::endl;
+        std::cout << "\t\033[1;33mctrlCfg:    " << doc["ctrlCfg"].get_utf8().value.to_string() << "\033[0m" << std::endl;
+        std::cout << "\t\033[1;33mscanCfg:    " << doc["scanCfg"].get_utf8().value.to_string() << "\033[0m" << std::endl;
+
+        doc_value = document{} <<
+            "testRun" << oid_str <<
+        finalize;
+        mongocxx::cursor ctr_cursor = db["componentTestRun"].find(doc_value.view());
+        for (auto ctr_doc : ctr_cursor) {
+            std::string ch_oid_str = ctr_doc["component"].get_utf8().value.to_string();
+            std::string ch_serial_number = this->getValue("component", "_id", ch_oid_str, "oid", "serialNumber");
+            if (serial_number==ch_serial_number) continue;
+            std::cout << "\tChip Serial Number: " << ch_serial_number << std::endl;
+            std::cout << "\t\t\033[1;33mbeforeCfg: " << ctr_doc["beforeCfg"].get_utf8().value.to_string() << "\033[0m" << std::endl;
+            std::cout << "\t\t\033[1;33mafterCfg:  " << ctr_doc["afterCfg"].get_utf8().value.to_string() << "\033[0m" << std::endl;
+        }
+        std::cout << std::endl;
+    }
+    return;
+}
+
+void DBHandler::getTestRunId(json i_info_json) {
+    if (DB_DEBUG) std::cout << "DBHandler: Get TestRun Id" << std::endl;
+
+    this->checkEmpty(i_info_json["serialNumber"].empty(), "serialNumber", "");
+    std::string serial_number = i_info_json["serialNumber"];
+    document builder{};
+    auto docs = builder << "serialNumber" << serial_number;
+    for (int i=0;i<(int)i_info_json["options"].size();i++) {
+        this->checkEmpty(i_info_json["options"][i]["status"].empty(), "options."+std::to_string(i)+".status", "Set enabled/disabled.");
+        if (i_info_json["options"][i]["status"]!="enabled") continue;
+        std::string key = i_info_json["options"][i]["key"];
+        auto value = i_info_json["options"][i]["value"].dump();
+        std::cout << key << " " << value << std::endl;
+        docs << key << value;
+    }
+    auto doc_value = docs << finalize;
+    mongocxx::options::find opts;
+    opts.sort(make_document(kvp("$natural", -1)));
+    opts.limit(1);
+    mongocxx::cursor cursor = db["testRun"].find(doc_value.view(), opts);
+    for (auto doc : cursor) {
+        std::string oid_str = doc["_id"].get_oid().value.to_string();
+        std::cout << oid_str << std::endl;
+        break;
+    }
+    return;
+}
+
+void DBHandler::getConfigData(json i_info_json) {
+    if (DB_DEBUG) std::cout << "DBHandler: Get Config Data" << std::endl;
+
+    std::string config_data_id;
+    json data;
+    std::vector<std::string> key_list = { "id", "serialNumber", "type", "filePath", "mergePath" };
+    for (auto key : key_list) this->checkEmpty(i_info_json[key].empty(), key, "");
+    if (i_info_json["id"]!="") {
+        config_data_id = i_info_json["id"];
+    } else {
+        std::string serial_number = i_info_json["serialNumber"];
+        std::string cmp_oid_str = this->getComponent(serial_number, "");
+        if (cmp_oid_str=="") {
+            std::string message = "Not found the component: "+serial_number;
+            std::string function = __PRETTY_FUNCTION__;
+            this->alert(function, message); return;
+        }
+        auto doc_value = make_document(kvp("component", cmp_oid_str));
+        mongocxx::options::find opts;
+        opts.sort(make_document(kvp("$natural", -1)));
+        opts.limit(5);
+        mongocxx::cursor cursor = db["componentTestRun"].find(doc_value.view(), opts);
+        for (auto doc : cursor) {
+            std::string config_type = "afterCfg";
+            if (i_info_json["type"]!="") config_type = i_info_json["type"];
+            if (config_type=="scanCfg"||config_type=="ctrlCfg") {
+                std::string tr_oid_str = doc["testRun"].get_utf8().value.to_string();
+                config_data_id = this->getValue("testRun", "_id", tr_oid_str, "oid", config_type);
+            } else {
+                config_data_id = doc[config_type].get_utf8().value.to_string();
+            }
+            if (config_data_id=="...") continue;
+            else break;
+        }
+    }
+    if (config_data_id=="...") return;
+    std::string data_id = this->getValue("config", "_id", config_data_id, "oid", "data_id");
+    bsoncxx::oid data_oid(data_id);
+    mongocxx::gridfs::bucket gb = db.gridfs_bucket();
+    std::ostringstream os;
+    bsoncxx::types::value d_id{bsoncxx::types::b_oid{data_oid}};
+    gb.download_to_stream(d_id, &os);
+    std::string str = os.str();
+    try {
+        data = json::parse(str);
+    } catch (json::parse_error &e) {
+        std::string message = "Could not parse "+str+"\n\twhat(): "+e.what();
+        std::string function = __PRETTY_FUNCTION__;
+        this->alert(function, message); return;
+    }
+    if (i_info_json["mergePath"]!="") {
+        std::string merge_file_path = i_info_json["mergePath"];
+        json overwrite_json = toJson(merge_file_path);
+        data.merge_patch(overwrite_json);
+    }
+    if (i_info_json["filePath"]!="") {
+        std::string file_path = i_info_json["filePath"];
+        std::ofstream file_ofs(file_path.c_str());
+        file_ofs << std::setw(4) << data;
+        file_ofs.close();
+    }
+    std::cout << std::setw(4) << data;
+    
+    return;
+}
+
+void DBHandler::getUserId(json i_info_json) {
+    if (DB_DEBUG) std::cout << "DBHandler: Get User Id" << std::endl;
+
+    document builder{};
+    auto docs = builder << "userType" << "readWrite";
+    std::vector<std::string> key_list = { "userName", "institution", "userIdentity" };
+    for (auto key : key_list) {
+        if (!i_info_json[key].empty()) {
+            std::string value = i_info_json[key];
+            docs << key << value;
+        }
+    }
+    auto doc_value = docs << finalize;
+    mongocxx::options::find opts;
+    opts.limit(10);
+    mongocxx::cursor cursor = db["user"].find(doc_value.view(), opts);
+    for (auto doc : cursor) {
+        std::string oid_str = doc["_id"].get_oid().value.to_string();
+
+        std::cout << "\033[1;33muser data ID: " << oid_str << "\033[0m" << std::endl;
+        std::cout << "\tUser Name:     " << doc["userName"].get_utf8().value.to_string() << std::endl; 
+        std::cout << "\tInstitution:   " << doc["institution"].get_utf8().value.to_string() << std::endl; 
+        std::cout << "\tUser Identity: " << doc["userIdentity"].get_utf8().value.to_string() << std::endl; 
+        std::cout << std::endl;
+    }
+    return;
+}
+
+void DBHandler::getDatData(json i_info_json) {
+    if (DB_DEBUG) std::cout << "DBHandler: Get Dat Data" << std::endl;
+
+    // directory to save
+    this->checkEmpty(i_info_json["dirPath"].empty(), "dirPath", "");
+    std::string dir_path = i_info_json["dirPath"];
+    this->mkdir(dir_path);
+    std::string cmd = "rm "+dir_path+"/*";
+    if (system(cmd.c_str()) < 0) {
+        std::string message = "Problem creating "+dir_path;
+        std::string function = __PRETTY_FUNCTION__;
+        this->alert(function, message); return;
+    }
+    this->checkEmpty(i_info_json["testRun"].empty()&&i_info_json["serialNumber"].empty(), "testRun||serialNumber", "");
+    std::string tr_oid_str;
+    if (!i_info_json["serialNumber"].empty()) {
+        std::string serial_number = i_info_json["serialNumber"];
+        document builder{};
+        auto docs = builder << "serialNumber" << serial_number;
+        std::vector<std::string> key_list = { "testType", "runNumber", "address", "user_id" };
+        for (auto key : key_list) {
+            if (!i_info_json[key].empty()) {
+                std::string value = i_info_json[key];
+                docs = docs << key << value;
+            }
+        }
+        auto doc_value = docs << finalize;
+        mongocxx::options::find opts;
+        opts.sort(make_document(kvp("$natural", -1)));
+        opts.limit(1);
+        mongocxx::cursor cursor = db["testRun"].find(doc_value.view(), opts);
+        for (auto doc : cursor) {
+            tr_oid_str = doc["_id"].get_oid().value.to_string();
+            break;
+        }
+    } else if (!i_info_json["testRun"].empty()) {
+        tr_oid_str = i_info_json["testRun"];
+    }
+    auto doc_value = document{} <<
+        "testRun" << tr_oid_str <<
+    finalize;
+    mongocxx::options::find opts;
+    opts.limit(10);
+    mongocxx::cursor cursor = db["componentTestRun"].find(doc_value.view(), opts);
+    for (auto doc : cursor) {
+        std::string cmp_oid_str = doc["component"].get_utf8().value.to_string();
+        std::string serial_number = this->getValue("component", "_id", cmp_oid_str, "oid", "serialNumber");
+        for (auto attachment : doc["attachments"].get_array().value) {
+            std::string file_path = dir_path + "/" + serial_number + "_" + attachment["filename"].get_utf8().value.to_string();
+            std::ofstream file_ofs(file_path.c_str());
+            bsoncxx::oid data_oid(attachment["code"].get_utf8().value.to_string());
+            mongocxx::gridfs::bucket gb = db.gridfs_bucket();
+            std::ostringstream os;
+            bsoncxx::types::value d_id{bsoncxx::types::b_oid{data_oid}};
+            gb.download_to_stream(d_id, &os);
+            file_ofs << os.str();
+        }
+    }
+    return;
+}
+
 #endif
+
+void DBHandler::getTestRunData(std::string i_tr_oid_str, std::string i_serial_number, int i_time) {
+    if (DB_DEBUG) std::cout << "DBHandler: Get TestRun Data" << std::endl;
+
+#ifdef MONGOCXX_INCLUDE
+    if (i_tr_oid_str==""&&(i_serial_number==""||i_time==-1)) {
+        std::string message = "testRun Id or (serialNumber and startTime) is required to get testRun Data.";
+        std::string function = __PRETTY_FUNCTION__;
+        this->alert(function, message); return;
+    }
+    if (i_tr_oid_str=="") {
+        std::time_t timestamp = i_time;
+        auto startTime = std::chrono::system_clock::from_time_t(timestamp);
+        auto doc_value = document{} <<
+            "startTime"    << bsoncxx::types::b_date{startTime} <<
+            "serialNumber" << i_serial_number <<
+        finalize;
+        auto result = db["testRun"].find_one(doc_value.view());
+        if (result) m_tr_oid_str = result->view()["_id"].get_oid().value.to_string();
+    } else {
+        auto doc_value = make_document(kvp("_id", bsoncxx::oid(i_tr_oid_str)));
+        auto result = db["testRun"].find_one(doc_value.view());
+        if (result) m_tr_oid_str = result->view()["_id"].get_oid().value.to_string();
+    }
+#else
+    std::cout << "Not found MongoDB C++ Driver!" << std::endl; //TODO check if data is exist in cache file
+    m_tr_oid_str = "";
+#endif
+}
 
 /////////////////
 // Cache Function
 void DBHandler::cacheUser(std::string i_user_path, std::string i_address_path) {
     // user config
     if (DB_DEBUG) std::cout << "\tDBHandler: Cache user: " << i_user_path << std::endl;
+
     json user_json = this->toJson(i_user_path);
-    this->checkEmpty(user_json["dbCfg"].empty(), "dbCfg", i_user_path); 
-    user_json["dbCfg"] = m_log_dir+"/database.json";
     std::ofstream cache_user_file(m_log_dir+"/user.json");
     cache_user_file << std::setw(4) << user_json;
     cache_user_file.close();
+
     // MAC address
     if (DB_DEBUG) std::cout << "\tDBHandler: Cache address: " << i_address_path << std::endl;
     std::string cmd = "cp " + i_address_path + " " + m_log_dir + "/address.json";
     if (system(cmd.c_str()) < 0) {
         std::string message = "Problem copying " + i_address_path + " to cache folder.";
         std::string function = __PRETTY_FUNCTION__;
-        this->abort(function, message); return;
+        this->alert(function, message); return;
     }
-    // DB config
-    cmd = "cp " + m_db_cfg_path + " " + m_log_dir + "/database.json";
-    if (system(cmd.c_str()) < 0) {
-        std::string message = "Problem copying " + m_db_cfg_path + " to cache folder.";
-        std::string function = __PRETTY_FUNCTION__;
-        this->abort(function, message); return;
-    }
+    // DBCfg
+    this->cacheDBCfg();
+
     return;
 }
 
@@ -1533,8 +1766,8 @@ void DBHandler::cacheConnCfg(std::string i_conn_path) {
     if (DB_DEBUG) std::cout << "\tDBHandler: Cache connectivity config: " << i_conn_path << std::endl;
     json conn_json = toJson(i_conn_path);
     std::string mo_serial_number = conn_json["module"]["serialNumber"];
-    std::string mod_list_path = m_cache_dir+"/lib/modules.json";
-    json mod_list_json = this->toJson(mod_list_path);
+    std::string mod_list_path = m_cache_dir+"/lib/modules.bson";
+    json mod_list_json = this->toJson(mod_list_path, "bson");
     if (mod_list_json[mo_serial_number].empty()) {
         std::cout << "#DB WARNING# Unregistered component:" << std::endl;
         std::cout << "\tModule serial number: " << mo_serial_number << std::endl;
@@ -1551,28 +1784,18 @@ void DBHandler::cacheConnCfg(std::string i_conn_path) {
         if (answer!="y") {
             std::string message = "Not registered Module: "+mo_serial_number;
             std::string function = __PRETTY_FUNCTION__;
-            this->abort(function, message); return;
+            this->alert(function, message); return;
         }
         mod_list_json[mo_serial_number] = conn_json;
-        std::ofstream mod_list_file(mod_list_path);
-        mod_list_file << std::setw(4) << mod_list_json;
+
+        std::ofstream mod_list_file(mod_list_path, std::ios::binary);
+        std::vector<std::uint8_t> v_bson = json::to_bson(mod_list_json);
+        for (auto tmp : v_bson) {
+            mod_list_file.write(reinterpret_cast<const char*>(std::addressof(tmp)), sizeof(std::uint8_t));
+        }
         mod_list_file.close();
     }
 
-    //// Chip Component
-    //for (auto chip_json: conn_json["chips"]) {
-    //    if (!chip_json["dbconfig"].empty()) {//TODO
-    //        this->getJsonCode(chip_json["dbconfig"], chip_json["config"], chip_json["serialNumber"], "chipCfg", chip_json["chipId"]);
-    //    }
-    //}
-
-    for (auto dcs_json: m_log_json["configs"]["dcsCfg"]) {
-        if (dcs_json["_id"]==mo_serial_number) {
-            conn_json["dcsCfg"] = dcs_json["path"];
-        } else {
-            conn_json["dcsCfg"] = NULL;
-        }
-    }
     std::ofstream conn_file(m_log_dir+"/conn.json");
     conn_file << std::setw(4) << conn_json;
     conn_file.close();
@@ -1605,13 +1828,13 @@ void DBHandler::cacheConfig(std::string i_oid_str, std::string i_file_path, std:
     if (system(cmd.c_str()) < 0) {
         std::string message = "Problem copying "+i_file_path+" to cache folder.";
         std::string function = __PRETTY_FUNCTION__;
-        this->abort(function, message); return;
+        this->alert(function, message); return;
     }
     json data_json;
-    data_json["_id"] = i_oid_str;
-    data_json["path"] = m_log_dir+"/"+std::to_string(counter)+".json"; 
-    data_json["filename"] = i_filename;
-    data_json["title"] = i_title;
+    data_json["_id"]        = i_oid_str;
+    data_json["path"]       = m_log_dir+"/"+std::to_string(counter)+".json"; 
+    data_json["filename"]   = i_filename;
+    data_json["title"]      = i_title;
     data_json["collection"] = i_collection;
     m_log_json["configs"][i_title].push_back(data_json);
 
@@ -1626,7 +1849,7 @@ void DBHandler::cacheAttachment(std::string i_oid_str, std::string i_file_path, 
     if (system(cmd.c_str()) < 0) {
         std::string message = "Problem copying "+i_file_path+" to cache folder.";
         std::string function = __PRETTY_FUNCTION__;
-        this->abort(function, message); return;
+        this->alert(function, message); return;
     }
     json data_json;
     data_json["_id"] = i_oid_str;
@@ -1638,42 +1861,57 @@ void DBHandler::cacheAttachment(std::string i_oid_str, std::string i_file_path, 
     return;
 }
 
-void DBHandler::cacheDCSCfg(std::string i_dcs_path, std::string i_serial_number) {
+void DBHandler::cacheDCSCfg(std::string i_dcs_path, std::string i_tr_path) {
     if (DB_DEBUG) std::cout << "\tDBHandler: Cache DCS config: " << i_dcs_path << std::endl;
 
     json dcs_json = this->toJson(i_dcs_path);
     json env_json = dcs_json["environments"];
-
     for (int i=0; i<(int)env_json.size(); i++) {
         std::string num_str = std::to_string(i);
         if (env_json[i]["status"]!="enabled") continue;
 
         std::string j_key = env_json[i]["key"];
-        if (env_json[i]["margin"].empty()) env_json[i]["margin"] = 60; //60s
-
         if (!env_json[i]["path"].empty()) {
             std::string log_path = env_json[i]["path"];
-            std::string cmd = "readlink -f "+log_path+" > "+m_cache_dir+"/tmp/cache.txt";
+            std::size_t suffix = log_path.find_last_of('.');
+            std::string extension = log_path.substr(suffix + 1);
+
+            std::string cmd = "cp "+log_path+" "+m_log_dir+"/"+std::to_string(i)+"."+extension;
             if (system(cmd.c_str()) < 0) {
-                std::string message = "Problem readlink -f dcs log file.";
+                std::string message = "Problem copying "+log_path+" to cache folder.";
                 std::string function = __PRETTY_FUNCTION__;
-                this->abort(function, message); return;
+                this->alert(function, message); return;
             }
-            this->checkFile(m_cache_dir+"/tmp/cache.txt");
-            std::ifstream cache_ifs(m_cache_dir+"/tmp/cache.txt");
-            std::string new_log_path;
-            cache_ifs >> new_log_path;
-            env_json[i]["path"] = new_log_path;
+            env_json[i]["path"] = m_log_dir+"/"+std::to_string(i)+"."+extension;
         }
     }
     dcs_json["environments"] = env_json;
-    std::ofstream cache_dcs_file(m_cache_dir+"/tmp/dcs.json");
+    std::ofstream cache_dcs_file(m_log_dir+"/dcs.json");
     cache_dcs_file << std::setw(4) << dcs_json;
     cache_dcs_file.close();
 
-    this->cacheConfig(i_serial_number, m_cache_dir+"/tmp/dcs.json", "dcs", "dcsCfg", "");
+    std::string cmd = "cp "+i_tr_path+" "+m_log_dir+"/tr.json";
+    if (system(cmd.c_str()) < 0) {
+        std::string message = "Problem copying "+i_tr_path+" to cache folder.";
+        std::string function = __PRETTY_FUNCTION__;
+        this->alert(function, message); return;
+    }
+
+    // DBCfg
+    this->cacheDBCfg();
 
     return;
+}
+
+void DBHandler::cacheDBCfg() {
+    if (DB_DEBUG) std::cout << "\tDBHandler: Cache Database Config: " << m_db_cfg_path << std::endl;
+    // DB config
+    std::string cmd = "cp " + m_db_cfg_path + " " + m_log_dir + "/database.json";
+    if (system(cmd.c_str()) < 0) {
+        std::string message = "Problem copying " + m_db_cfg_path + " to cache folder.";
+        std::string function = __PRETTY_FUNCTION__;
+        this->alert(function, message); return;
+    }
 }
 
 void DBHandler::writeJson(std::string i_key, std::string i_value, std::string i_file_path, json i_json) {
@@ -1696,7 +1934,7 @@ void DBHandler::checkFile(std::string i_file_path, std::string i_description) {
         std::string message = "Not found the file.\n\tfile: " + i_file_path;
         if (i_description!="") message += "    description: " + i_description;
         std::string function = __PRETTY_FUNCTION__;
-        this->abort(function, message);
+        this->alert(function, message);
     }
     file_ifs.close();
     return;
@@ -1708,7 +1946,7 @@ void DBHandler::checkEmpty(bool i_empty, std::string i_key, std::string i_file_p
         std::string message = "Found an empty field in json file.\n\tfile: " + i_file_path + "    key: " + i_key;
         if (i_description!="") message += "    description: " + i_description;
         std::string function = __PRETTY_FUNCTION__;
-        this->abort(function, message);
+        this->alert(function, message);
     }
     return;
 }
@@ -1718,7 +1956,7 @@ void DBHandler::checkNumber(bool i_number, std::string i_key, std::string i_file
     if (!i_number) {
         std::string message = "This field value must be the number.\n\tfile: " + i_file_path + "    key: '" + i_key + "'";
         std::string function = __PRETTY_FUNCTION__;
-        this->abort(function, message);
+        this->alert(function, message);
     }
     return;
 }
@@ -1729,7 +1967,7 @@ void DBHandler::checkList(std::vector<std::string> i_list, std::string i_value, 
         std::string message = "Not registered '" + i_value + "' in " + i_list_path + "\n\tCheck the file: " + i_file_path + "\n\tList : ";
         for (unsigned i=0;i<i_list.size();i++) message += i_list[i] + " ";
         std::string function = __PRETTY_FUNCTION__;
-        this->abort(function, message);
+        this->alert(function, message);
     }
     return;
 }
@@ -1738,15 +1976,15 @@ json DBHandler::checkDBCfg(std::string i_db_path) {
     if (DB_DEBUG) std::cout << "\t\tDBHandler: Check database config: " << i_db_path << std::endl;
 
     json db_json = toJson(i_db_path);
-    this->checkEmpty(db_json["hostIp"].empty(), "hostIp", "Set database config by ../localdb/setup.sh");
-    this->checkEmpty(db_json["hostPort"].empty(), "hostPort", "Set database config by ../localdb/setup.sh");
-    this->checkEmpty(db_json["cache"].empty(), "cache", "Set database config by ../localdb/setup.sh");
-    std::string cache_dir = db_json["cache"];
+    std::vector<std::string> key_list = { "hostIp", "hostPort", "cachePath", "dbName" };
+    for (auto key : key_list) this->checkEmpty(db_json[key].empty(), key, "Set database config by ../localdb/setup.sh");
+
+    std::string cache_dir = db_json["cachePath"];
     struct stat statbuf;
     if (stat(cache_dir.c_str(), &statbuf)!=0) {
         std::string message = "Not exist cache directory: "+cache_dir;
         std::string function = __PRETTY_FUNCTION__;
-        this->abort(function, message);
+        this->alert(function, message);
     }
 
     return db_json;
@@ -1774,8 +2012,6 @@ json DBHandler::checkConnCfg(std::string i_conn_path) {
         std::string stage = conn_json["stage"];
         this->checkList(m_stage_list, stage, m_db_cfg_path, i_conn_path);
     }
-    // DCS 
-    if (!conn_json["dcsCfg"].empty()) this->setDCSCfg(conn_json["dcsCfg"], conn_json["module"]["serialNumber"]);
 
     return conn_json;
 }
@@ -1808,7 +2044,7 @@ void DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_path, std:
     else {
         std::string message = "Environmental data file must be 'dat' or 'csv' format: "+i_log_path;
         std::string function = __PRETTY_FUNCTION__;
-        this->abort(function, message); return;
+        this->alert(function, message); return;
     }
     char separator = del[0];
     char tmp[1000];
@@ -1826,7 +2062,7 @@ void DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_path, std:
             if (i!=4&&columns==0&&s_tmp!=log_lines[i]) {
                 std::string message = "Set "+log_lines[i]+" in the "+std::to_string(i+1)+ "th line: "+i_log_path;
                 std::string function = __PRETTY_FUNCTION__;
-                this->abort(function, message); return;
+                this->alert(function, message); return;
             }
 
             // check the values for each line
@@ -1839,7 +2075,7 @@ void DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_path, std:
                 } catch (const std::invalid_argument& e) {
                     std::string message = "Could not convert the key number text to int: "+i_log_path+"\n\tkey: "+i_key+"\n\ttext: "+s_tmp;
                     std::string function = __PRETTY_FUNCTION__;
-                    this->abort(function, message); return;
+                    this->alert(function, message); return;
                 }
             } else if (i==4&&cnt==1) {
                 try {
@@ -1847,7 +2083,7 @@ void DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_path, std:
                 } catch (const std::invalid_argument& e) {
                     std::string message = "Could not convert the unixtime text to int: "+i_log_path+"\n\ttext: "+s_tmp;
                     std::string function = __PRETTY_FUNCTION__;
-                    this->abort(function, message); return;
+                    this->alert(function, message); return;
                 }
             } else if ((i==3||i==4)&&(cnt==key_cnt)) {
                 try {
@@ -1855,7 +2091,7 @@ void DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_path, std:
                 } catch (const std::invalid_argument& e) {
                     std::string message = "Could not convert the setting value text to float: "+i_log_path+"\n\tkey: "+i_key+"\n\ttext: "+s_tmp;
                     std::string function = __PRETTY_FUNCTION__;
-                    this->abort(function, message); return;
+                    this->alert(function, message); return;
                 }
             }
             cnt++;
@@ -1866,12 +2102,12 @@ void DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_path, std:
             if (cnt!=columns) {
                 std::string message = "Not match the number of the "+log_lines[i]+" "+std::to_string(cnt)+" to keys "+std::to_string(columns);
                 std::string function = __PRETTY_FUNCTION__;
-                this->abort(function, message); return;
+                this->alert(function, message); return;
             }
             if (i==1&&key_cnt==0) {
                 std::string message = "Environmental key '"+i_key+"' (num: "+std::to_string(i_num)+") was not written in environmental data file: "+i_log_path;
                 std::string function = __PRETTY_FUNCTION__;
-                this->abort(function, message); return;
+                this->alert(function, message); return;
             }
         }
     }
@@ -1888,20 +2124,45 @@ json DBHandler::checkUserCfg(std::string i_user_path) {
     return user_json;
 }
 
+json DBHandler::checkAddressCfg(std::string i_address_path) {
+    if (DB_DEBUG) std::cout << "\t\tDBHandler: Check address config file: " << i_address_path << std::endl;
+
+    json address_json = this->toJson(i_address_path);
+    this->checkEmpty(address_json["macAddress"].empty(), "macAddress", i_address_path);
+    this->checkEmpty(address_json["hostname"].empty(), "hostname", i_address_path);
+    this->checkEmpty(address_json["institution"].empty(), "institution", i_address_path);
+    return address_json;
+}
+
+
 //////////
 // Others
-json DBHandler::toJson(std::string i_file_path) {
+json DBHandler::toJson(std::string i_file_path, std::string i_file_type) {
     if (DB_DEBUG) std::cout << "\t\tDBHandler: Convert to json code from: " << i_file_path << std::endl;
 
-    this->checkFile(i_file_path);
     std::ifstream file_ifs(i_file_path);
     json file_json;
-    try {
-        file_json = json::parse(file_ifs);
-    } catch (json::parse_error &e) {
-        std::string message = "Could not parse " + i_file_path + "\n\twhat(): " + e.what();
-        std::string function = __PRETTY_FUNCTION__;
-        this->abort(function, message);
+    if (file_ifs) {
+        if (i_file_type=="json") {
+            try {
+                file_json = json::parse(file_ifs);
+            } catch (json::parse_error &e) {
+                std::string message = "Could not parse " + i_file_path + "\n\twhat(): " + e.what();
+                std::string function = __PRETTY_FUNCTION__;
+                this->alert(function, message);
+            }
+        } else if (i_file_type=="bson") {
+            std::uint8_t tmp;
+            std::vector<std::uint8_t> v_bson;
+            while (file_ifs.read(reinterpret_cast<char*>(std::addressof(tmp)), sizeof(std::uint8_t))) v_bson.push_back(tmp);
+            try {
+                file_json = json::from_bson(v_bson);
+            } catch (json::parse_error &e) {
+                std::string message = "Could not parse " + i_file_path + "\n\twhat(): " + e.what();
+                std::string function = __PRETTY_FUNCTION__;
+                this->alert(function, message);
+            }
+        }
     }
     return file_json;
 }
@@ -1928,3 +2189,11 @@ std::vector<std::string> DBHandler::split(std::string str, char del) {
     return result;
 }
 
+void DBHandler::mkdir(std::string i_dir_path) {
+    std::string cmd = "mkdir -p "+i_dir_path;
+    if (system(cmd.c_str()) < 0) {
+        std::string message = "Problem creating "+i_dir_path;
+        std::string function = __PRETTY_FUNCTION__;
+        this->alert(function, message); return;
+    }
+}

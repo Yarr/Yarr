@@ -20,8 +20,8 @@ Usage:
 Options:
     - i <ip address>  Local DB server ip address, default: 127.0.0.1
     - p <port>        Local DB server port, default: 27017
+    - n <db name>     Local DB Name, default: localdb
     - c <dir path>    path to Local DB cache directory, default: Yarr/localdb/cacheDB
-    - d               start the daemon (required sudo)
 
 EOF
 }
@@ -30,30 +30,34 @@ if [ ! -e ${HOME}/.yarr ]; then
     mkdir ${HOME}/.yarr
 fi
 
-daemon=false
+#daemon=false
 
-while getopts i:p:c:d OPT
+while getopts i:p:c:n:d OPT
 do
     case ${OPT} in
         i ) ip=${OPTARG} ;;
         p ) port=${OPTARG} ;;
         c ) dir=${OPTARG} ;;
-        d ) daemon=true ;;
+        n ) dbname=${OPTARG} ;;
+#        d ) daemon=true ;;
         * ) usage
             exit ;;
     esac
 done
 
-if ${daemon}; then
-    read -sp "[sudo] password: " password
-    echo " "
-fi
+#if ${daemon}; then
+#    read -sp "[sudo] password: " password
+#    echo " "
+#fi
 
 if [ -z ${ip} ]; then
     ip=127.0.0.1
 fi
 if [ -z ${port} ]; then
     port=27017
+fi
+if [ -z ${dbname} ]; then
+    dbname="localdb"
 fi
 if [ -z ${dir} ]; then
     cd ../
@@ -66,7 +70,8 @@ dbcfg=${HOME}/.yarr/${HOSTNAME}_database.json
 echo "{" > ${dbcfg}
 echo "    \"hostIp\": \"${ip}\"," >> ${dbcfg}
 echo "    \"hostPort\": \"${port}\"," >> ${dbcfg}
-echo "    \"cache\": \"${dir}\"," >> ${dbcfg}
+echo "    \"dbName\": \"${dbname}\"," >> ${dbcfg}
+echo "    \"cachePath\": \"${dir}\"," >> ${dbcfg}
 echo "    \"stage\": [" >> ${dbcfg}
 echo "        \"Bare Module\"," >> ${dbcfg}
 echo "        \"Wire Bonded\"," >> ${dbcfg}
@@ -156,14 +161,19 @@ done
 echo " "
 
 if [ ${answer} != "y" ]; then
-    echo "Exit ..."
+    if [ -f ${address} ]; then 
+        echo "Remove Site Config file: ${address}"
+        echo " "
+        rm ${address}
+    fi
+    echo "Try again setup.sh, Exit ..."
     echo " "
     exit
 fi
 
 echo "{" > ${address}
 echo "    \"macAddress\": \"${macaddress}\"," >> ${address}
-echo "    \"name\": \"${HOSTNAME}\"," >> ${address}
+echo "    \"hostname\": \"${HOSTNAME}\"," >> ${address}
 echo "    \"institution\": \"${institution}\"" >> ${address}
 echo "}" >> ${address}
 echo "Create Site Config file: ${address}"
@@ -172,25 +182,41 @@ echo " "
 # create cache directory
 
 if [ ! -e ${dir} ]; then
-    mkdir -p ${dir}/lib ${dir}/var/log ${dir}/tmp
-    mkdir -p ${dir}/
+    mkdir -p ${dir}
+fi
+if [ ! -e ${dir}/lib/tmp ]; then
+    mkdir -p ${dir}/lib/tmp
+fi
+if [ ! -e ${dir}/var/log ]; then
+    mkdir -p ${dir}/var/log
+fi
+if [ ! -e ${dir}/var/cache ]; then
+    mkdir -p ${dir}/var/cache/scan
+    mkdir -p ${dir}/var/cache/db
+    mkdir -p ${dir}/var/cache/dcs
+fi
+if [ ! -e ${dir}/tmp/scan ]; then
+    mkdir -p ${dir}/tmp/scan
 fi
 
 echo "Create Cache Directory: ${dir}"
 echo " "
 
-unset DBUSER
+echo "MongoDB Server IP address: ${ip}, port: ${port}"
+echo " "
 
-if ${daemon}; then
-    cd ${yarrDir}/src
-    #make clean
-    make
-    
-    cp ${yarrDir}/src/bin/dbAccessor ${yarrDir}/localdb/dbAccessor
-    echo "Copy dbAccessor"
-    echo " "
-
-    cd ${yarrDir}/localdb
-    ./dbAccessor -S
-    echo $?
-fi
+#if ${daemon}; then
+#    cd ${yarrDir}/src
+#    #make clean
+#    make
+#    
+#    cp ${yarrDir}/src/bin/dbAccessor ${yarrDir}/localdb/dbAccessor
+#    echo "Copy dbAccessor"
+#    echo " "
+#
+#    cd ${yarrDir}/localdb
+#    ./dbAccessor -S
+#    if [ $? == 1 ]; then
+#        echo "MongoDB connection is failed!"
+#    fi
+#fi

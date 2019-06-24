@@ -15,23 +15,12 @@ function usage {
     cat <<EOF
 
 Usage:
-    source /db_login.sh [user account*] [path to db config]
+    ./db_login.sh [user account*] 
 
 Options:
     - user account* required.
-    - path to db config file    default: ${HOME}/.yarr/${HOSTNAME}_database.json
 
 EOF
-}
-
-function unset_variable {
-    unset name
-    unset cfg
-    unset account
-    unset institution
-    unset identity
-    unset answer
-    unset dbcfg
 }
 
 account=$1
@@ -40,8 +29,7 @@ if [ -z ${account} ]; then
     echo "Please give user account with '-U'."
     usage
     echo "Exit ..."
-    unset_variable
-    return 0
+    exit 
 fi
 
 if [ ! -e ${HOME}/.yarr ]; then
@@ -61,8 +49,7 @@ if [ ! -f ${cfg} ]; then
     done
     if [ ${answer[0]} == "exit" ]; then
         echo "Exit ..."
-        unset_variable
-        return 0
+        exit
     else
         for a in ${answer[@]}; do
             name="${name#_}_${a}"
@@ -79,8 +66,7 @@ if [ ! -f ${cfg} ]; then
     done
     if [ ${answer[0]} == "exit" ]; then
         echo "Exit ..."
-        unset_variable
-        return 0
+        exit
     else
         for a in ${answer[@]}; do
             institution="${institution#_}_${a}"
@@ -100,8 +86,7 @@ if [ ! -f ${cfg} ]; then
     done
     if [ ${answer[0]} == "exit" ]; then
         echo "Exit ..."
-        unset_variable
-        return 0
+        exit
     fi
     if [ ${answer[0]} != "y" ]; then
         identity="default"
@@ -148,34 +133,22 @@ echo " "
 if [ ${answer} != "y" ]; then
     echo "Exit ..."
     echo " "
-    unset_variable
-    return 0
+    exit
 fi
-
-dbcfg=${HOME}/.yarr/${HOSTNAME}_database.json
 
 echo "{" > ${cfg}
 echo "    \"userName\": \"${name}\"," >> ${cfg}
 echo "    \"institution\": \"${institution}\"," >> ${cfg}
-echo "    \"userIdentity\": \"${identity}\"," >> ${cfg}
-echo "    \"dbCfg\": \"${dbcfg}\"" >> ${cfg}
+echo "    \"userIdentity\": \"${identity}\"" >> ${cfg}
 echo "}" >> ${cfg}
 echo "Create User Config file: ${cfg}"
 echo " "
 
-if "${DEBUG}"; then
-    echo "export DBUSER=\"${account}\""
-    echo " "
-fi
-export DBUSER=${account}
+#echo "Register user and site data"
+#if "${DEBUG}"; then
+#    echo "./bin/dbAccessor -U ${account}"
+#    echo " "
+#fi
+#./bin/dbAccessor -U ${account}
 
-echo "Register user and site data"
-if "${DEBUG}"; then
-    echo "./bin/dbAccessor -U ${account}"
-    echo " "
-fi
-./bin/dbAccessor -U ${account}
-
-unset_variable
-
-return 0
+exit
