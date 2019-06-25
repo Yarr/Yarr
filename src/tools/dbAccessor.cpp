@@ -27,6 +27,7 @@ int main(int argc, char *argv[]){
     // Init parameters
     std::string db_cfg_path=home+"/.yarr/"+hostname+"_database.json";
     std::string db_cache_path = "";
+    std::string db_dcs_path = "";
 	  std::string conn_path = "";
     std::string file_path = "";
     std::string db_test_path = "";
@@ -57,7 +58,7 @@ int main(int argc, char *argv[]){
                 break;
             case 'E':
                 registerType = "Environment";
-                db_cache_path = std::string(optarg);
+                db_dcs_path = std::string(optarg);
                 break;
             case 'S':
                 registerType = "Check";
@@ -120,7 +121,7 @@ int main(int argc, char *argv[]){
         db_cfg_path = db_cache_path+"/database.json";
 
         database->initialize(db_cfg_path, "db");
-    	  database->writeCache(db_cache_path);
+    	  database->setCache(db_cache_path);
         delete database;
     }
 
@@ -161,7 +162,7 @@ int main(int argc, char *argv[]){
     	  std::cout << "\tuser identity : " << user_identity << std::endl;
         std::cout << std::endl;
 
-        database->initialize(db_cfg_path);
+        database->initialize(db_cfg_path, "db");
     	  database->setUser(user_cfg_path, address_cfg_path);
         delete database;
     }
@@ -178,7 +179,7 @@ int main(int argc, char *argv[]){
         std::string user_cfg_path = home+"/.yarr/"+dbuser+"_user.json";
         std::string address_cfg_path = home+"/.yarr/"+hostname+"_address.json";
 
-        database->initialize(db_cfg_path);
+        database->initialize(db_cfg_path, "db");
 
     	  database->setUser(user_cfg_path, address_cfg_path);
         std::vector<std::string> conn_paths;
@@ -188,14 +189,14 @@ int main(int argc, char *argv[]){
         delete database;
     }
 
-    // register environment
+    // cache DCS
     if (registerType == "Environment") {
         if (db_test_path == "") {
             std::cerr << "#ERROR# No test run file path given, please specify file path under -t option!" << std::endl;
             return -1;
         }
         std::cout << "DBHandler: Register Environment:" << std::endl;
-	      std::cout << "\tenvironmental config file : " << db_cache_path << std::endl;
+	      std::cout << "\tenvironmental config file : " << db_dcs_path << std::endl;
 
         if (serial_number!="") {
             json tr_json;
@@ -214,7 +215,7 @@ int main(int argc, char *argv[]){
         }
 
         database->initialize(db_cfg_path, "dcs");
-        database->writeDCS(db_cache_path, db_test_path);
+        database->setDCSCfg(db_dcs_path, db_test_path);
 
         delete database;
     }

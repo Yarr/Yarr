@@ -192,11 +192,11 @@ if [ ! -e ${dir}/var/log ]; then
 fi
 if [ ! -e ${dir}/var/cache ]; then
     mkdir -p ${dir}/var/cache/scan
-    mkdir -p ${dir}/var/cache/db
+    mkdir -p ${dir}/var/log/db
     mkdir -p ${dir}/var/cache/dcs
 fi
-if [ ! -e ${dir}/tmp/scan ]; then
-    mkdir -p ${dir}/tmp/scan
+if [ ! -e ${dir}/tmp/db ]; then
+    mkdir -p ${dir}/tmp/db
 fi
 
 echo "Create Cache Directory: ${dir}"

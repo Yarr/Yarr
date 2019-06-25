@@ -62,8 +62,6 @@ class DBHandler {
         void setConnCfg(std::vector<std::string> /*i_conn_paths*/); 
         void setDCSCfg(std::string /*i_dcs_path*/,
                        std::string /*i_tr_path*/);
-        //void setDCSCfg(std::string /*i_dcs_path*/,
-        //               std::string /*i_conn_path*/); 
         void writeTestRunStart(std::string /*i_test_type*/, 
                                std::vector<std::string> /*i_conn_paths*/,
                                int /*i_run_number*/, 
@@ -82,9 +80,7 @@ class DBHandler {
         void writeAttachment(std::string /*i_ctr_oid_str*/, 
                              std::string /*i_file_path*/, 
                              std::string /*i_histo_name*/);
-        void writeDCS(std::string /*i_dcs_file_path*/,
-                      std::string /*i_tr_file_path*/);
-        void writeCache(std::string /*i_cache_dir*/);
+        void setCache(std::string /*i_cache_dir*/);
 
         /// including mongo function
         /// - confirmation
@@ -94,6 +90,10 @@ class DBHandler {
         void getData(std::string /*i_info_file_path*/,
                      std::string /*i_get_type*/);
     protected:
+
+        void writeScan(std::string /*i_cache_dir*/);
+        void writeDCS(std::string /*i_cache_dir*/);
+
         std::string registerUser(std::string /*i_user_name*/, 
                                  std::string /*i_institution*/, 
                                  std::string /*i_user_identity*/);

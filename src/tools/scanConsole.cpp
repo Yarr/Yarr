@@ -258,8 +258,7 @@ int main(int argc, char *argv[]) {
         std::string hostname = getenv("HOSTNAME");
 
         if (dbCfgPath=="") dbCfgPath=home+"/.yarr/"+hostname+"_database.json";
-        database->initialize(dbCfgPath, "scan"); // 'log' can not upload data but create cache files, 'register' can upload data immediately after scan with creating cache files
-        //database->initialize("db"); // 'log' can not upload data but create cache files, 'register' can upload data immediately after scan with creating cache files
+        database->initialize(dbCfgPath, "scan"); 
         database->setUser(home+"/.yarr/"+dbuser+"_user.json", home+"/.yarr/"+hostname+"_address.json");
         std::cout << "-> Setting Connectivity Configs" << std::endl;
         database->setConnCfg(cConfigPaths);
