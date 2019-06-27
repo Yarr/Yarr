@@ -42,58 +42,115 @@ class DBHandler {
         DBHandler();
         ~DBHandler();
 
+        /*** 
+        Initialize for Local Database
+        * i_db_cfg_path: path to database config
+          - hostIp: ip address of Local DB server
+          - port: opened port number of Local DB server 
+          - dbName: database name of Local DB (default: localdb)
+        * i_option: DB fucntion option
+          - db: access to MongoDB
+          - scan/dcs: store cache data
+        ***/
         void initialize(std::string /*i_db_cfg_path*/,
                         std::string i_option="register");
+
+        /***
+        Alert and write message in error log file
+        * i_function: previous function name
+        * i_message: alert message
+        * i_type: error->abort, warning->continue
+        ***/
         void alert(std::string i_function,
                    std::string i_message="Something wrong.",
                    std::string i_type="error");
+
+        /***
+        Check mongocxx library
+        ***/
         int checkLibrary();
+
+        /***
+        Check the connection to Local DB
+        * i_db_cfg_path: path to database config
+        ***/
         int checkConnection(std::string /*i_db_cfg_path*/);
+
+        /***
+        Check cache directory/function 
+        TODO to be implemented
+        ***/
         int checkCacheStatus();
+
+        /***
+        Check module list in the Local DB or local cache directory 
+        TODO do be implemented
+        ***/
         int checkModuleList();
 
-        /// Setting and Writing for using Database including:
-        /// - confirmation of the files
-        /// - caching : when the option is "cache"
-        /// - registeration: then the option is "register"
-
+        /***
+        Setting function for using Database
+        mongocxx library is not required.
+        - User: requires user config file and site config file to set user/site data
+        - ConnCfg: requires connectivity config file to set component data
+        - DCSCfg: requires dcs config file and test run information to set DCS data
+        - TestRun(start): requires test run information (in begining of scan) to set test data
+        - TestRun(finish): requires test run information (in ending of scan) to set test data
+        - Config: requires config file and information to set config data
+        - Attachment: requires dat file and information to set dat data
+        ***/
         void setUser(std::string /*i_user_path*/,
                      std::string /*i_address_path*/);
         void setConnCfg(std::vector<std::string> /*i_conn_paths*/); 
         void setDCSCfg(std::string /*i_dcs_path*/,
                        std::string /*i_tr_path*/);
-        void writeTestRunStart(std::string /*i_test_type*/, 
-                               std::vector<std::string> /*i_conn_paths*/,
-                               int /*i_run_number*/, 
-                               int /*i_target_charge*/, 
-                               int /*i_target_tot*/);
-        void writeTestRunFinish(std::string /*i_test_type*/, 
-                                std::vector<std::string> /*i_conn_paths*/,
-                                int /*i_run_number*/, 
-                                int /*i_target_charge*/, 
-                                int /*i_target_tot*/);
-        void writeConfig(std::string /*i_ctr_oid_str*/, 
-                         std::string /*i_file_path*/, 
-                         std::string /*i_filename*/,
-                         std::string /*i_title*/,
-                         std::string /*i_collection*/); 
-        void writeAttachment(std::string /*i_ctr_oid_str*/, 
+        void setTestRunStart(std::string /*i_test_type*/, 
+                             std::vector<std::string> /*i_conn_paths*/,
+                             int /*i_run_number*/, 
+                             int /*i_target_charge*/, 
+                             int /*i_target_tot*/);
+        void setTestRunFinish(std::string /*i_test_type*/, 
+                              std::vector<std::string> /*i_conn_paths*/,
+                              int /*i_run_number*/, 
+                              int /*i_target_charge*/, 
+                              int /*i_target_tot*/);
+        void setConfig(std::string /*i_ctr_oid_str*/, 
+                       std::string /*i_file_path*/, 
+                       std::string /*i_filename*/,
+                       std::string /*i_title*/,
+                       std::string /*i_collection*/); 
+        void setAttachment(std::string /*i_ctr_oid_str*/, 
                              std::string /*i_file_path*/, 
                              std::string /*i_histo_name*/);
+
+        /***
+        Register data into Local DB from cache files storing in scanConsole 
+        mongocxx library is required.
+        * i_cache_dir: path to cache directory TODO to be automized by daemon
+        ***/
         void setCache(std::string /*i_cache_dir*/);
 
-        /// including mongo function
-        /// - confirmation
-        /// - registration
-        /// - retrieve
-
+        /***
+        Retrieve data from Local DB and Master Server
+        mongocxx library is required.
+        * i_info_file_path: path to retrieve information file
+        * i_get_type: retrieve type (testRunLog: test log, 
+           - testRunLog: test data log
+           - testRunId: test data id labeled by MongoDB
+           - scan: latest scan data TODO to be enabled to retrieve latest config file set for module
+           - config: config file for chip
+           - userId: user data id labeled by MongoDB
+           - dat: dat data for scan
+        ***/
         void getData(std::string /*i_info_file_path*/,
                      std::string /*i_get_type*/);
     protected:
 
+        /// register data from cache
         void writeScan(std::string /*i_cache_dir*/);
         void writeDCS(std::string /*i_cache_dir*/);
 
+        /// register data into DB
         std::string registerUser(std::string /*i_user_name*/, 
                                  std::string /*i_institution*/, 
                                  std::string /*i_user_identity*/);
@@ -135,10 +192,6 @@ class DBHandler {
         void registerDCS(std::string /*i_dcs_path*/,
                          std::string /*i_tr_path*/);
 
-        void writeFromDirectory(std::string /*i_collection_name*/, 
-                                std::string /*i_oid_str*/, 
-                                std::string /*i_output_dir*/, 
-                                std::string i_filter="");
         std::string writeGridFsFile(std::string /*i_file_path*/, 
                                     std::string /*i_filename*/);
         std::string writeJsonCode_Msgpack(std::string /*i_file_path*/, 
@@ -149,6 +202,7 @@ class DBHandler {
                                          std::string /*i_title*/);
 
 
+        /// get data from DB
         std::string getValue(std::string /*i_collection_name*/, 
                              std::string /*i_member_key*/, 
                              std::string /*i_member_value*/, 
@@ -158,6 +212,7 @@ class DBHandler {
         std::string getComponent(std::string /*i_serial_number*/, 
                                  std::string /*i_file_path*/);
 
+        /// add value into document in DB
         void addComment(std::string /*i_collection_name*/, 
                         std::string /*i_oid_str*/, 
                         std::string /*i_comment*/);
@@ -185,10 +240,10 @@ class DBHandler {
                         std::string /*i_member_value*/, 
                         std::string /*i_member_bson_type*/);
 
-         /// Get SHA-1 hash
+        /// Get SHA-1 hash
         std::string getHash(std::string /*i_file_path*/);
  
-        /// For chaching scheme
+        /// chaching scheme
         void cacheUser(std::string /*i_user_path*/,
                        std::string /*i_address_path*/);
         void cacheConnCfg(std::string /*i_conn_path*/); 
@@ -211,7 +266,7 @@ class DBHandler {
                          std::string /*i_tr_path*/);
         void cacheDBCfg();
 
-        /// check file exist
+        /// check data function
         void checkFile(std::string /*i_file_path*/,
                        std::string i_description="");
         void checkEmpty(bool /*i_empty*/,
@@ -237,13 +292,14 @@ class DBHandler {
                          std::string /*i_key*/,
                          int /*i_num*/); 
 
-        /// get
+        /// retrieve function
         void getTestRunLog(json /*i_info_json*/);
         void getTestRunId(json /*i_info_json*/);
         void getConfigId(json /*i_info_json*/);
         void getUserId(json /*i_info_json*/);
         void getDatData(json /*i_info_json*/);
         void getConfigData(json /*i_info_json*/); 
+        void getScan(json /*i_info_json*/);
 
         void getTestRunData(std::string /*i_tr_oid_str*/,
                             std::string /*i_serial_number*/,

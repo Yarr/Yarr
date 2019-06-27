@@ -233,19 +233,21 @@ int main(int argc, char *argv[]){
 
     // get Dat
     if (registerType == "getData") {
-        //if (file_path == "") {
-        //    std::cerr << "#ERROR# No information file given, please specify it under -f option!" << std::endl;
-        //    return -1;
-        //}
+        if (file_path == "") {
+            std::cerr << "#ERROR# No file path given, please specify file path under -f option!" << std::endl;
+            return -1;
+        }
 
         if (serial_number!="") {
             json tr_json;
             std::ifstream tr_cfg_ifs(file_path);
-            try {
-                tr_json = json::parse(tr_cfg_ifs);
-            } catch (json::parse_error &e) {
-                std::cerr << "#ERROR# Could not parse " << file_path << "\n\twhat(): " << e.what() << std::endl;
-                return 0;
+            if (tr_cfg_ifs) {
+                try {
+                    tr_json = json::parse(tr_cfg_ifs);
+                } catch (json::parse_error &e) {
+                    std::cerr << "#ERROR# Could not parse " << file_path << "\n\twhat(): " << e.what() << std::endl;
+                    return 0;
+                }
             }
             tr_json["serialNumber"] = serial_number;
 
@@ -254,7 +256,7 @@ int main(int argc, char *argv[]){
             file_ofs.close();
         }
 
-        database->initialize(db_cfg_path);
+        database->initialize(db_cfg_path, "db");
 	      database->getData(file_path, get_type);
         delete database;
     }
@@ -284,7 +286,7 @@ int main(int argc, char *argv[]){
         file_ofs << std::setw(4) << cfg_json;
         file_ofs.close();
 
-        database->initialize(db_cfg_path);
+        database->initialize(db_cfg_path, "db");
 	      database->getData(tmp_file_path, "config");
         delete database;
     }

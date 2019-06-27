@@ -262,9 +262,9 @@ int main(int argc, char *argv[]) {
         database->setUser(home+"/.yarr/"+dbuser+"_user.json", home+"/.yarr/"+hostname+"_address.json");
         std::cout << "-> Setting Connectivity Configs" << std::endl;
         database->setConnCfg(cConfigPaths);
-        database->writeTestRunStart(strippedScan, cConfigPaths, runCounter, target_charge, target_tot);
-        database->writeConfig("", ctrlCfgPath, "controller", "ctrlCfg", "testRun");
-        database->writeConfig("", scanType, strippedScan, "scanCfg", "testRun");
+        database->setTestRunStart(strippedScan, cConfigPaths, runCounter, target_charge, target_tot);
+        database->setConfig("", ctrlCfgPath, "controller", "ctrlCfg", "testRun");
+        database->setConfig("", scanType, strippedScan, "scanCfg", "testRun");
     }
 
     // Timestamp
@@ -414,7 +414,7 @@ int main(int argc, char *argv[]) {
                             std::string serialNumber = config["module"]["serialNumber"];
                             std::string chip_serialNumber = chip["serialNumber"];
                             feCfg->setDbId(chip_serialNumber);
-                            database->writeConfig(feCfg->getDbId(), outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getConfigFile() + ".before", "beforeCfg", "chipCfg", "componentTestRun");
+                            database->setConfig(feCfg->getDbId(), outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getConfigFile() + ".before", "beforeCfg", "chipCfg", "componentTestRun");
                         }
                     }
                 } catch (json::parse_error &e) {
@@ -664,7 +664,7 @@ int main(int argc, char *argv[]) {
             backupCfgFile << std::setw(4) << backupCfg;
             backupCfgFile.close(); 
             if (dbUse) {
-                database->writeConfig(dynamic_cast<FrontEndCfg*>(fe)->getDbId(), outputDir + dynamic_cast<FrontEndCfg*>(fe)->getConfigFile() + ".after", "afterCfg", "chipCfg", "componentTestRun");
+                database->setConfig(dynamic_cast<FrontEndCfg*>(fe)->getDbId(), outputDir + dynamic_cast<FrontEndCfg*>(fe)->getConfigFile() + ".after", "afterCfg", "chipCfg", "componentTestRun");
                 std::cout << dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getConfigFile() << std::endl;
             }
 
@@ -682,7 +682,7 @@ int main(int argc, char *argv[]) {
                     histo->toFile(name, outputDir);
                     if (dbUse) {
                         std::string file_path = outputDir + name + "_" + histo->getName() + ".dat";
-                        database->writeAttachment(dynamic_cast<FrontEndCfg*>(fe)->getDbId(), file_path, histo->getName());
+                        database->setAttachment(dynamic_cast<FrontEndCfg*>(fe)->getDbId(), file_path, histo->getName());
                     }
                 }
             }
@@ -708,7 +708,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Path to Test Configuration: " << scanType << std::endl;
         std::cout << "Path to Controller Configuration: " << scanType << std::endl;
 
-        database->writeTestRunFinish(strippedScan, cConfigPaths, runCounter, target_charge, target_tot);
+        database->setTestRunFinish(strippedScan, cConfigPaths, runCounter, target_charge, target_tot);
 
         std::cout << "Done."<< std::endl;
     }
