@@ -119,3 +119,27 @@ endforeach()
 
 install(DIRECTORY ${PROJECT_BINARY_DIR}/bin DESTINATION ${TARGET_INSTALL_AREA}  FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
     WORLD_EXECUTE WORLD_READ GROUP_EXECUTE GROUP_READ  )
+
+# Tests
+file(GLOB test_src tests/*.cpp)
+foreach(target ${test_src})
+  get_filename_component(execname ${target} NAME_WE)
+  get_filename_component(srcfile ${target} NAME)
+  add_executable(${execname} tests/${srcfile})
+  add_dependencies(${execname} Yarr)
+  set_target_properties(${execname} PROPERTIES LINKER_LANGUAGE CXX)
+  # Whole-archive means not to drop symbols from Yarr.
+  # Mainly this is about making sure the auto-registration works.
+  if(APPLE)
+    set(WRAPPED_YARR -Wl,-all_load Yarr)
+    target_link_libraries(${execname} ${WRAPPED_YARR} pthread)
+  elseif(UNIX)
+    set(WRAPPED_YARR -Wl,--whole-archive Yarr -Wl,--no-whole-archive)
+    target_link_libraries(${execname} ${WRAPPED_YARR} pthread rt)
+
+    if(ENABLE_NETIO)
+        target_link_libraries(${execname} "${NETIO_DIR}/lib/libnetio.so")
+    endif()
+  endif()
+# Not sure why rt is not linked by default here
+endforeach()
