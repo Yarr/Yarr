@@ -805,51 +805,5 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                 ana.setMapSize(fe->geo.nCol, fe->geo.nRow);
             }
         }
-    } else {
-        // Init histogrammer and analysis
-      for (FrontEnd *fe : bookie.feList ) {
-            if (fe->isActive()) {
-                // Init analysis per FE and depending on scan type
-                analyses[fe].reset( new Fei4Analysis(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) );
-                auto& ana = static_cast<Fei4Analysis&>( *(analyses[fe]) );
-                ana.connect(s, fe->clipHisto, fe->clipResult);
-                ana.addAlgorithm(new L1Analysis());
-                if (scanType == "digitalscan") {
-                    ana.addAlgorithm(new OccupancyAnalysis());
-                } else if (scanType == "analogscan") {
-                    ana.addAlgorithm(new OccupancyAnalysis());
-                } else if (scanType == "thresholdscan") {
-                    ana.addAlgorithm(new ScurveFitter());
-                } else if (scanType == "totscan") {
-                    ana.addAlgorithm(new TotAnalysis());
-                } else if (scanType == "tune_globalthreshold") {
-                    ana.addAlgorithm(new OccGlobalThresholdTune());
-                } else if (scanType == "tune_pixelthreshold") {
-                    ana.addAlgorithm(new OccPixelThresholdTune());
-                } else if (scanType == "tune_globalpreamp") {
-                    ana.addAlgorithm(new TotAnalysis());
-                } else if (scanType == "tune_pixelpreamp") {
-                    ana.addAlgorithm(new TotAnalysis());
-                } else if (scanType == "noisescan") {
-                    ana.addAlgorithm(new NoiseAnalysis());
-                } else if (scanType == "selftrigger") {
-                    ana.addAlgorithm(new OccupancyAnalysis());
-                    ana.getLastAna()->disMasking();
-                } else if (scanType == "selftrigger_noise") {
-                    ana.addAlgorithm(new NoiseAnalysis());
-                } else {
-                    std::cout << "-> Analyses not defined for scan type" << std::endl;
-                    listScans();
-                    std::cerr << "-> Aborting!" << std::endl;
-                    throw("buildAnalyses failure!");
-                }
-                // Disable masking of pixels
-                if(mask_opt == 0) {
-                    std::cout << " -> Disabling masking for this scan!" << std::endl;
-                    ana.setMasking(false);
-                }
-                ana.setMapSize(fe->geo.nCol, fe->geo.nRow);
-            }
-        }
-    }
+    } 
 }
