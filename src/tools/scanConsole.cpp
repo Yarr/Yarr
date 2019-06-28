@@ -261,40 +261,19 @@ int main(int argc, char *argv[]) {
     std::cout << "\033[1;31m# Init Hardware #\033[0m" << std::endl;
     std::cout << "\033[1;31m#################\033[0m" << std::endl;
 
+    std::cout << "-> Opening controller config: " << ctrlCfgPath << std::endl;
     std::unique_ptr<HwController> hwCtrl = nullptr;
-    if (ctrlCfgPath == "") {
-        std::cout << "#ERRROR# No controller config given, aborting." << std::endl;
+    json ctrlCfg;
+    try {
+        ctrlCfg = ScanHelper::openJsonFile(ctrlCfgPath);
+        hwCtrl = ScanHelper::loadController(ctrlCfg);
+    } catch (std::runtime_error &e) {
+        std::cerr << "#ERROR# opening or loading controller config: " << e.what() << std::endl;
         return -1;
-    } else {
-        // Open controller config file
-        std::cout << "-> Opening controller config: " << ctrlCfgPath << std::endl;
-        json ctrlCfg;
-        try {
-            ctrlCfg = ScanHelper::openJsonFile(ctrlCfgPath);
-        } catch (std::runtime_error &e) {
-            std::cerr << "#ERROR# opening controller config: " << e.what() << std::endl;
-            return -1;
-        }
-        std::string controller = ctrlCfg["ctrlCfg"]["type"];
-        // Add to scan log
-        scanLog["ctrlCfg"] = ctrlCfg;
-
-        hwCtrl = StdDict::getHwController(controller);
-
-        if(hwCtrl) {
-          std::cout << "-> Found config for controller " << controller << std::endl;
-
-          hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
-        } else {
-            std::cerr << "#ERROR# Unknown config type: " << ctrlCfg["ctrlCfg"]["type"] << std::endl;
-            std::cout << " Known HW controllers:\n";
-            for(auto &h: StdDict::listHwControllers()) {
-              std::cout << "  " << h << std::endl;
-            }
-            std::cerr << "Aborting!" << std::endl;
-            return -1;
-        }
     }
+    // Add to scan log
+    scanLog["ctrlCfg"] = ctrlCfg;
+    
     hwCtrl->setupMode();
 
     // Disable trigger in-case
@@ -320,67 +299,13 @@ int main(int argc, char *argv[]) {
         json config;
         try {
             config = ScanHelper::openJsonFile(sTmp);
+            chipType = ScanHelper::loadChips(config, bookie, &*hwCtrl, feCfgMap, outputDir);
         } catch (std::runtime_error &e) {
-            std::cerr << "#ERROR# opening connectivity: " << e.what() << std::endl;
+            std::cerr << "#ERROR# opening connectivity or chip configs: " << e.what() << std::endl;
             return -1;
         }
         scanLog["connectivity"] = config;
-
-        if (config["chipType"].empty() || config["chips"].empty()) {
-            std::cerr << __PRETTY_FUNCTION__ << " : invalid config, chip type or chips not specified!" << std::endl;
-            return 0;
-        } else {
-            chipType = config["chipType"];
-            std::cout << "Chip Type: " << chipType << std::endl;
-            std::cout << "Found " << config["chips"].size() << " chips defined!" << std::endl;
-            // Loop over chips
-            for (unsigned i=0; i<config["chips"].size(); i++) {
-                std::cout << "Loading chip #" << i << std::endl;
-                json chip = config["chips"][i];
-                std::string chipConfigPath = chip["config"];
-                if (chip["enable"] == 0) {
-                    std::cout << " ... chip not enabled, skipping!" << std::endl;
-                } else {
-                    // TODO should be a shared pointer
-                    bookie.addFe(StdDict::getFrontEnd(chipType).release(), chip["tx"], chip["rx"]);
-                    bookie.getLastFe()->init(&*hwCtrl, chip["tx"], chip["rx"]);
-                    FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie.getLastFe());
-                    std::ifstream cfgFile(chipConfigPath);
-                    if (cfgFile) {
-                        // Load config
-                        std::cout << "Loading config file: " << chipConfigPath << std::endl;
-                        json cfg;
-                        try {
-                            cfg = ScanHelper::openJsonFile(chipConfigPath);
-                        } catch (std::runtime_error &e) {
-                            std::cerr << "#ERROR# opening chip config: " << e.what() << std::endl;
-                            return -1;
-                        }
-                        feCfg->fromFileJson(cfg);
-                        if (!chip["locked"].empty())
-                            feCfg->setLocked((int)chip["locked"]);
-                        cfgFile.close();
-                    } else {
-                        std::cout << "Config file not found, using default!" << std::endl;
-                        // Rename in case of multiple default configs
-                        feCfg->setName(feCfg->getName() + "_" + std::to_string((int)chip["rx"]));
-                    }
-                    success++;
-                    // Save path to config
-                    std::size_t botDirPos = chipConfigPath.find_last_of("/");
-                    feCfgMap[bookie.getLastFe()] = chipConfigPath;
-                    dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->setConfigFile(chipConfigPath.substr(botDirPos, chipConfigPath.length()));
-
-                    // Create backup of current config
-                    // TODO fix folder
-                    std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getConfigFile() + ".before");
-                    json backupCfg;
-                    dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
-                    backupCfgFile << std::setw(4) << backupCfg;
-                    backupCfgFile.close();
-                }
-            }
-        }
+        
     }
     
     // Reset masks

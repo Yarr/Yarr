@@ -13,11 +13,18 @@
 
 #include "json.hpp"
 
+#include "Bookkeeper.h"
+#include "HwController.h"
+#include "FrontEnd.h"
+
+#include "AllHwControllers.h"
+#include "AllChips.h"
+
 using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
 
 namespace ScanHelper {
         json openJsonFile(std::string filepath);
-        void loadController(json &j);
-        void loadConnectivity(json &j);
+        std::unique_ptr<HwController> loadController(json &ctrlCfg);
+        std::string loadChips(json &j, Bookkeeper &bookie, HwController *hwCtrl, std::map<FrontEnd*, std::string> &feCfgMap, std::string &outputDir);
 }
 #endif
