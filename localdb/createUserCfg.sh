@@ -5,7 +5,7 @@
 # Date: April 2019
 # Project: Local Database for Yarr
 # Description: Login Database 
-# Usage: ./login_db.sh [-U <user account>*]
+# Usage: ./createUserCfg.sh [-U <user account>*]
 ################################
 
 DEBUG=false
@@ -15,7 +15,7 @@ function usage {
     cat <<EOF
 
 Usage:
-    ./db_login.sh [user account*] 
+    ./createUserCfg.sh [user account*] 
 
 Options:
     - user account* required.
@@ -143,12 +143,5 @@ echo "    \"userIdentity\": \"${identity}\"" >> ${cfg}
 echo "}" >> ${cfg}
 echo "Create User Config file: ${cfg}"
 echo " "
-
-#echo "Register user and site data"
-#if "${DEBUG}"; then
-#    echo "./bin/dbAccessor -U ${account}"
-#    echo " "
-#fi
-#./bin/dbAccessor -U ${account}
 
 exit

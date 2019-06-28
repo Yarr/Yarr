@@ -53,7 +53,7 @@ class DBHandler {
           - scan/dcs: store cache data
         ***/
         void initialize(std::string /*i_db_cfg_path*/,
-                        std::string i_option="register");
+                        std::string i_option="null");
 
         /***
         Alert and write message in error log file

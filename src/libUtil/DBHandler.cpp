@@ -54,6 +54,12 @@ DBHandler::~DBHandler() {
 void DBHandler::initialize(std::string i_db_cfg_path, std::string i_option) {
     if (DB_DEBUG) std::cout << "DBHandler: Initializing " << m_option << std::endl;
 
+    if (i_option=="null") {
+        std::string message = "Set option in initialize";
+        std::string function = __PRETTY_FUNCTION__;
+        this->alert(function, message); return;
+    }
+
     m_option = i_option;
     m_db_cfg_path = i_db_cfg_path;
 
@@ -73,7 +79,7 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_option) {
     //this->checkModuleList();
 
     // initialize for registeration
-    if (m_option=="db") {
+    if (m_option=="db"||m_option=="register") {
 #ifdef MONGOCXX_INCLUDE
         mongocxx::instance inst{};
         try {
@@ -246,7 +252,7 @@ void DBHandler::setUser(std::string i_user_path, std::string i_address_path) {
     std::cout << "DBHandler: MAC Address: " << address << std::endl;
 
 #ifdef MONGOCXX_INCLUDE
-    if (m_option=="db") {
+    if (m_option=="db"||m_option=="register") {
         m_user_oid_str = this->registerUser(user_name, institution, user_identity);
         m_site_oid_str = this->registerSite(address, hostname, site);
     }
@@ -266,7 +272,7 @@ void DBHandler::setConnCfg(std::vector<std::string> i_conn_paths) {
         if (m_chip_type == "FEI4B") m_chip_type = "FE-I4B";
 
 #ifdef MONGOCXX_INCLUDE
-        if (m_option=="db") this->registerConnCfg(conn_path);
+        if (m_option=="db"||m_option=="register") this->registerConnCfg(conn_path);
 #endif
         this->cacheConnCfg(conn_path);
     }
@@ -321,7 +327,7 @@ void DBHandler::setTestRunStart(std::string i_test_type, std::vector<std::string
         json conn_json = this->toJson(conn_path);
         std::string mo_serial_number = conn_json["module"]["serialNumber"];
 #ifdef MONGOCXX_INCLUDE
-        if (m_option=="db") {
+        if (m_option=="db"||m_option=="register") {
             std::string tr_oid_str = this->registerTestRun(i_test_type, i_run_number, i_target_charge, i_target_tot, timestamp, mo_serial_number, "start");
             // stage
             if (!conn_json["stage"].empty()) {
@@ -372,7 +378,7 @@ void DBHandler::setTestRunFinish(std::string i_test_type, std::vector<std::strin
     std::sort(m_histo_names.begin(), m_histo_names.end());
     m_histo_names.erase(std::unique(m_histo_names.begin(), m_histo_names.end()), m_histo_names.end());
 #ifdef MONGOCXX_INCLUDE
-    if (m_option=="db") {
+    if (m_option=="db"||m_option=="register") {
         for (auto tr_oid_str : m_tr_oid_strs) {
             this->registerTestRun(i_test_type, i_run_number, i_target_charge, i_target_tot, timestamp, "", "finish", tr_oid_str);
         }
@@ -391,7 +397,7 @@ void DBHandler::setConfig(std::string i_serial_number, std::string i_file_path, 
     file_ifs.close();
 
 #ifdef MONGOCXX_INCLUDE
-    if (m_option=="db") this->registerConfig(i_serial_number, i_file_path, i_filename, i_title, i_collection);
+    if (m_option=="db"||m_option=="register") this->registerConfig(i_serial_number, i_file_path, i_filename, i_title, i_collection);
 #endif
     this->cacheConfig(i_serial_number, i_file_path, i_filename, i_title, i_collection);
 
@@ -406,7 +412,7 @@ void DBHandler::setAttachment(std::string i_serial_number, std::string i_file_pa
     file_ifs.close();
 
 #ifdef MONGOCXX_INCLUDE
-    if (m_option=="db") this->registerAttachment(i_serial_number, i_file_path, i_histo_name);
+    if (m_option=="db"||m_option=="register") this->registerAttachment(i_serial_number, i_file_path, i_histo_name);
 #endif
     this->cacheAttachment(i_serial_number, i_file_path, i_histo_name);
 
@@ -626,6 +632,10 @@ void DBHandler::registerConnCfg(std::string i_conn_path) {
         this->alert(function, message); return;
     } else if (module_is_exist&&chip_is_exist&&cpr_is_fine) {
         return;
+    } else if (m_option=="db") {
+        std::string message = "There are not registered component data written in connectivity "+i_conn_path;
+        std::string function = __PRETTY_FUNCTION__;
+        this->alert(function, message); return;
     }
  
     // Register module component
@@ -1838,7 +1848,7 @@ void DBHandler::getTestRunData(std::string i_tr_oid_str, std::string i_serial_nu
         this->alert(function, message); return;
     }
 
-    if (m_option!="db") return;
+    if (m_option!="db"&&m_option!="register") return;
 #ifdef MONGOCXX_INCLUDE
     if (i_tr_oid_str=="") {
         std::time_t timestamp = i_time;

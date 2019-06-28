@@ -162,7 +162,7 @@ int main(int argc, char *argv[]){
     	  std::cout << "\tuser identity : " << user_identity << std::endl;
         std::cout << std::endl;
 
-        database->initialize(db_cfg_path, "db");
+        database->initialize(db_cfg_path, "register");
     	  database->setUser(user_cfg_path, address_cfg_path);
         delete database;
     }
@@ -179,7 +179,7 @@ int main(int argc, char *argv[]){
         std::string user_cfg_path = home+"/.yarr/"+dbuser+"_user.json";
         std::string address_cfg_path = home+"/.yarr/"+hostname+"_address.json";
 
-        database->initialize(db_cfg_path, "db");
+        database->initialize(db_cfg_path, "register");
 
     	  database->setUser(user_cfg_path, address_cfg_path);
         std::vector<std::string> conn_paths;

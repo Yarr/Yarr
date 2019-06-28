@@ -1,0 +1,42 @@
+{
+    "stage": "Testing",
+    "module": {
+        "serialNumber": "RD53A-001",
+        "componentType": "Module"
+    },
+    "chipType" : "RD53A",
+    "chips" : [
+        {
+            "serialNumber": "RD53A-001_chip1",
+            "componentType": "Front-end Chip",
+            "chipId": 1,
+            "config" : "configs/rd53a/RD53A-001/RD53A-001_chip1.json",
+            "tx" : 0,
+            "rx" : 0
+        },
+        {
+            "serialNumber": "RD53A-001_chip2",
+            "componentType": "Front-end Chip",
+            "chipId": 2,
+            "config" : "configs/rd53a/RD53A-001/RD53A-001_chip2.json",
+            "tx" : 0,
+            "rx" : 1
+        },
+        {
+            "serialNumber": "RD53A-001_chip3",
+            "componentType": "Front-end Chip",
+            "chipId": 3,
+            "config" : "configs/rd53a/RD53A-001/RD53A-001_chip3.json",
+            "tx" : 0,
+            "rx" : 2
+        },
+        {
+            "serialNumber": "RD53A-001_chip4",
+            "componentType": "Front-end Chip",
+            "chipId": 4,
+            "config" : "configs/rd53a/RD53A-001/RD53A-001_chip4.json",
+            "tx" : 0,
+            "rx" : 3
+        }
+    ]
+}
