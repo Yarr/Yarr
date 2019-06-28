@@ -36,6 +36,7 @@ class Histo1d : public HistogramBase {
         double* getData() { return data;};
         
         void toFile(std::string filename, std::string dir = "", bool header=true);
+        bool fromFile(std::string filename);
         void plot(std::string filename, std::string dir = "");
 
     private:
