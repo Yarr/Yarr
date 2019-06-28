@@ -30,8 +30,6 @@ if [ ! -e ${HOME}/.yarr ]; then
     mkdir ${HOME}/.yarr
 fi
 
-#daemon=false
-
 while getopts i:p:c:n:d OPT
 do
     case ${OPT} in
@@ -39,16 +37,10 @@ do
         p ) port=${OPTARG} ;;
         c ) dir=${OPTARG} ;;
         n ) dbname=${OPTARG} ;;
-#        d ) daemon=true ;;
         * ) usage
             exit ;;
     esac
 done
-
-#if ${daemon}; then
-#    read -sp "[sudo] password: " password
-#    echo " "
-#fi
 
 if [ -z ${ip} ]; then
     ip=127.0.0.1
@@ -62,7 +54,7 @@ fi
 if [ -z ${dir} ]; then
     cd ../
     yarrDir=`pwd`
-    dir=${yarrDir}/localdb/cacheDB
+    dir=${yarrDir}/localdb
 fi
 
 # create database config
@@ -204,19 +196,3 @@ echo " "
 
 echo "MongoDB Server IP address: ${ip}, port: ${port}"
 echo " "
-
-#if ${daemon}; then
-#    cd ${yarrDir}/src
-#    #make clean
-#    make
-#    
-#    cp ${yarrDir}/src/bin/dbAccessor ${yarrDir}/localdb/dbAccessor
-#    echo "Copy dbAccessor"
-#    echo " "
-#
-#    cd ${yarrDir}/localdb
-#    ./dbAccessor -S
-#    if [ $? == 1 ]; then
-#        echo "MongoDB connection is failed!"
-#    fi
-#fi
