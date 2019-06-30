@@ -40,7 +40,7 @@ m_option(""), m_db_cfg_path(""), m_user_oid_str(""), m_site_oid_str(""),
 m_chip_type(""), m_log_dir(""), m_log_path(""), m_cache_path(""), m_cache_dir(""), m_tr_oid_str(""),
 m_stage_list(), m_env_list(), m_comp_list(),
 m_histo_names(), m_tr_oid_strs(), m_serial_numbers(),
-m_db_version(1.0), DB_DEBUG(false), m_log_json(), m_cache_json(), counter(0)
+m_db_version(1.0), DB_DEBUG(false), m_log_json(), m_cache_json(), m_conn_json(), counter(0)
 {
     if (DB_DEBUG) std::cout << "DBHandler: DBHandler" << std::endl;
 }
@@ -237,10 +237,17 @@ void DBHandler::setUser(std::string i_user_path, std::string i_address_path) {
     // Set UserID from DB
     if (DB_DEBUG) std::cout << "DBHandler: Set user: " << i_user_path << std::endl;
 
-    json user_json = this->checkUserCfg(i_user_path);
-    std::string user_name = user_json["userName"];
-    std::string institution = user_json["institution"];
-    std::string user_identity = user_json["userIdentity"];
+    std::string user_name, institution, user_identity;
+    if (i_user_path=="") {
+        user_name = getenv("USER");
+        institution = getenv("HOSTNAME");
+        user_identity = "default";
+    } else {
+        json user_json = this->checkUserCfg(i_user_path);
+        user_name = user_json["userName"];
+        institution = user_json["institution"];
+        user_identity = user_json["userIdentity"];
+    }
     std::cout << "DBHandler: User Information \n\tUser name: " << user_name << "\n\tInstitution: " << institution << "\n\tUser identity: " << user_identity << std::endl;
 
     // Set MAC address
@@ -271,11 +278,11 @@ void DBHandler::setConnCfg(std::vector<std::string> i_conn_paths) {
         m_chip_type = conn_json["chipType"];
         if (m_chip_type == "FEI4B") m_chip_type = "FE-I4B";
 
-#ifdef MONGOCXX_INCLUDE
-        if (m_option=="db"||m_option=="register") this->registerConnCfg(conn_path);
-#endif
-        this->cacheConnCfg(conn_path);
     }
+#ifdef MONGOCXX_INCLUDE
+    if (m_option=="db"||m_option=="register") this->registerConnCfg(i_conn_paths);
+#endif
+    this->cacheConnCfg(i_conn_paths);
 }
 
 void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_tr_path) {
@@ -323,9 +330,13 @@ void DBHandler::setTestRunStart(std::string i_test_type, std::vector<std::string
     int timestamp;
     if (m_cache_json["startTime"].empty()) timestamp = std::time(NULL);
     else timestamp = m_cache_json["startTime"];
-    for (auto conn_path : i_conn_paths) {
+    for (int i=0; i<(int)i_conn_paths.size(); i++) {
+        std::string conn_path = i_conn_paths[i];
         json conn_json = this->toJson(conn_path);
-        std::string mo_serial_number = conn_json["module"]["serialNumber"];
+        std::string mo_serial_number;
+        std::string chip_type = conn_json["chipType"];
+        if (!conn_json["module"]["serialNumber"].empty()) mo_serial_number = conn_json["module"]["serialNumber"];
+        else mo_serial_number = chip_type + "_module_" + std::to_string(i);
 #ifdef MONGOCXX_INCLUDE
         if (m_option=="db"||m_option=="register") {
             std::string tr_oid_str = this->registerTestRun(i_test_type, i_run_number, i_target_charge, i_target_tot, timestamp, mo_serial_number, "start");
@@ -389,32 +400,54 @@ void DBHandler::setTestRunFinish(std::string i_test_type, std::vector<std::strin
     return;
 }
 
-void DBHandler::setConfig(std::string i_serial_number, std::string i_file_path, std::string i_filename, std::string i_title, std::string i_collection) {
+//void DBHandler::setConfig(std::string i_serial_number, std::string i_file_path, std::string i_filename, std::string i_title, std::string i_collection) {
+void DBHandler::setConfig(int i_tx_channel, int i_rx_channel, std::string i_file_path, std::string i_filename, std::string i_title, std::string i_collection, std::string i_serial_number) {
     if (DB_DEBUG) std::cout << "DBHandler: Write Config Json: " << i_file_path << std::endl;
 
     std::ifstream file_ifs(i_file_path);
     if (!file_ifs) return;
     file_ifs.close();
 
+    std::string serial_number;
+    if (i_serial_number!="") {
+        serial_number = i_serial_number;
+    } else {
+        for (auto conn_json : m_conn_json["connectivity"]) {
+            for (auto chip_json : conn_json["chips"]) {
+                if (chip_json["tx"]==i_tx_channel&&chip_json["rx"]==i_rx_channel) serial_number = chip_json["serialNumber"];
+            }
+        }
+    }
 #ifdef MONGOCXX_INCLUDE
-    if (m_option=="db"||m_option=="register") this->registerConfig(i_serial_number, i_file_path, i_filename, i_title, i_collection);
+    if (m_option=="db"||m_option=="register") this->registerConfig(serial_number, i_file_path, i_filename, i_title, i_collection);
 #endif
-    this->cacheConfig(i_serial_number, i_file_path, i_filename, i_title, i_collection);
+    this->cacheConfig(serial_number, i_file_path, i_filename, i_title, i_collection);
 
     return;
 }
 
-void DBHandler::setAttachment(std::string i_serial_number, std::string i_file_path, std::string i_histo_name) {
+//void DBHandler::setAttachment(std::string i_serial_number, std::string i_file_path, std::string i_histo_name) {
+void DBHandler::setAttachment(int i_tx_channel, int i_rx_channel, std::string i_file_path, std::string i_histo_name, std::string i_serial_number) {
     if (DB_DEBUG) std::cout << "DBHandler: Write Attachment: " << i_file_path << std::endl;
 
     std::ifstream file_ifs(i_file_path);
     if (!file_ifs) return;
     file_ifs.close();
 
+    std::string serial_number;
+    if (i_serial_number!="") {
+        serial_number = i_serial_number;
+    } else {
+        for (auto conn_json : m_conn_json["connectivity"]) {
+            for (auto chip_json : conn_json["chips"]) {
+                if (chip_json["tx"]==i_tx_channel&&chip_json["rx"]==i_rx_channel) serial_number = chip_json["serialNumber"];
+            }
+        }
+    }
 #ifdef MONGOCXX_INCLUDE
-    if (m_option=="db"||m_option=="register") this->registerAttachment(i_serial_number, i_file_path, i_histo_name);
+    if (m_option=="db"||m_option=="register") this->registerAttachment(serial_number, i_file_path, i_histo_name);
 #endif
-    this->cacheAttachment(i_serial_number, i_file_path, i_histo_name);
+    this->cacheAttachment(serial_number, i_file_path, i_histo_name);
 
     m_histo_names.push_back(i_histo_name);
 
@@ -585,89 +618,93 @@ std::string DBHandler::registerSite(std::string i_address, std::string i_hostnam
 }
 
 // Will be deleted // TODO enable to register component in viewer application
-void DBHandler::registerConnCfg(std::string i_conn_path) {
-    if (DB_DEBUG) std::cout << "\tDBHandler: Register from connectivity: " << i_conn_path << std::endl;
+void DBHandler::registerConnCfg(std::vector<std::string> i_conn_paths) {
+    if (DB_DEBUG) std::cout << "DBHandler: Register Component" << std::endl;
+    for (auto conn_path : i_conn_paths) {
+        if (DB_DEBUG) std::cout << "\tDBHandler: Register from connectivity: " << conn_path << std::endl;
 
-    std::string mod_list_path = m_cache_dir+"/lib/modules.bson";
-    json mod_list_json = this->toJson(mod_list_path, "bson");
-    json conn_json = this->toJson(i_conn_path);
-    std::string mo_serial_number = conn_json["module"]["serialNumber"];
-    if (!mod_list_json[mo_serial_number].empty()) conn_json = mod_list_json[mo_serial_number];
-
-    /// Confirmation
-    bool module_is_exist = false;
-    bool chip_is_exist = false;
-    bool cpr_is_fine = true;
-    // Module
-    std::string mo_oid_str = this->getComponent(mo_serial_number, i_conn_path);
-    if (mo_oid_str!="") module_is_exist = true;
-    // Chip
-    int chips = 0;
-    for (unsigned i=0; i<conn_json["chips"].size(); i++) {
-        std::string ch_serial_number = conn_json["chips"][i]["serialNumber"];
-        std::string chip_oid_str = this->getComponent(ch_serial_number, i_conn_path);
-        if (chip_oid_str!="") {
-            chip_is_exist = true;
-            auto doc_value = document{} <<
-                "parent" << mo_oid_str <<
-                "child" << chip_oid_str <<
-                "status" << "active" <<
-            finalize;
-            auto maybe_result = db["childParentRelation"].find_one(doc_value.view());
-            if (!maybe_result) cpr_is_fine = false;
+        std::string mod_list_path = m_cache_dir+"/lib/modules.bson";
+        json mod_list_json = this->toJson(mod_list_path, "bson");
+        json conn_json = this->toJson(conn_path);
+        std::string mo_serial_number = conn_json["module"]["serialNumber"];
+        if (!mod_list_json[mo_serial_number].empty()) conn_json = mod_list_json[mo_serial_number];
+    
+        /// Confirmation
+        bool module_is_exist = false;
+        bool chip_is_exist = false;
+        bool cpr_is_fine = true;
+        // Module
+        std::string mo_oid_str = this->getComponent(mo_serial_number, conn_path);
+        if (mo_oid_str!="") module_is_exist = true;
+        // Chip
+        int chips = 0;
+        for (unsigned i=0; i<conn_json["chips"].size(); i++) {
+            std::string ch_serial_number = conn_json["chips"][i]["serialNumber"];
+            std::string chip_oid_str = this->getComponent(ch_serial_number, conn_path);
+            if (chip_oid_str!="") {
+                chip_is_exist = true;
+                auto doc_value = document{} <<
+                    "parent" << mo_oid_str <<
+                    "child" << chip_oid_str <<
+                    "status" << "active" <<
+                finalize;
+                auto maybe_result = db["childParentRelation"].find_one(doc_value.view());
+                if (!maybe_result) cpr_is_fine = false;
+            }
+            chips++;
         }
-        chips++;
+        if (module_is_exist&&!chip_is_exist) {
+            std::string message = "There are registered module in connectivity : "+conn_path;
+            std::string function = __PRETTY_FUNCTION__;
+            this->alert(function, message); return;
+        } else if (!module_is_exist&&chip_is_exist) {
+            std::string message = "There are registered chips in connectivity : "+conn_path;
+            std::string function = __PRETTY_FUNCTION__;
+            this->alert(function, message); return;
+        } else if (!cpr_is_fine) {
+            std::string message = "There are wrong relationship between module and chips in connectivity : "+conn_path;
+            std::string function = __PRETTY_FUNCTION__;
+            this->alert(function, message); return;
+        } else if (module_is_exist&&chip_is_exist&&cpr_is_fine) {
+            return;
+        } else if (m_option=="db") {
+            std::string message = "There are not registered component data written in connectivity "+conn_path;
+            return;
+            //std::string function = __PRETTY_FUNCTION__;
+            //this->alert(function, message); return;
+        }
+     
+        // Register module component
+        std::string mo_component_type = conn_json["module"]["componentType"];
+        mo_oid_str = this->registerComponent(mo_serial_number, mo_component_type, -1, chips);
+    
+        mod_list_json[mo_serial_number] = {};
+        mod_list_json[mo_serial_number]["chipType"] = m_chip_type;
+        mod_list_json[mo_serial_number]["module"]["serialNumber"] = mo_serial_number;
+        mod_list_json[mo_serial_number]["module"]["componentType"] = mo_component_type;
+    
+        for (unsigned i=0; i<conn_json["chips"].size(); i++) {
+            std::string ch_serial_number  = conn_json["chips"][i]["serialNumber"];
+            std::string ch_component_type = conn_json["chips"][i]["componentType"];
+            int chip_id = conn_json["chips"][i]["chipId"];
+            // Register chip component
+            std::string ch_oid_str = this->registerComponent(ch_serial_number, ch_component_type, chip_id, -1);
+            this->registerChildParentRelation(mo_oid_str, ch_oid_str, chip_id);
+    
+            json chip_json;
+            chip_json["serialNumber"] = ch_serial_number;
+            chip_json["componentType"] = ch_component_type;
+            chip_json["chipId"] = chip_id;
+            mod_list_json[mo_serial_number]["chips"].push_back(chip_json);
+        }
+    
+        std::ofstream mod_list_file(mod_list_path, std::ios::binary);
+        std::vector<std::uint8_t> v_bson = json::to_bson(mod_list_json);
+        for (auto tmp : v_bson) {
+            mod_list_file.write(reinterpret_cast<const char*>(std::addressof(tmp)), sizeof(std::uint8_t));
+        }
+        mod_list_file.close();
     }
-    if (module_is_exist&&!chip_is_exist) {
-        std::string message = "There are registered module in connectivity : "+i_conn_path;
-        std::string function = __PRETTY_FUNCTION__;
-        this->alert(function, message); return;
-    } else if (!module_is_exist&&chip_is_exist) {
-        std::string message = "There are registered chips in connectivity : "+i_conn_path;
-        std::string function = __PRETTY_FUNCTION__;
-        this->alert(function, message); return;
-    } else if (!cpr_is_fine) {
-        std::string message = "There are wrong relationship between module and chips in connectivity : "+i_conn_path;
-        std::string function = __PRETTY_FUNCTION__;
-        this->alert(function, message); return;
-    } else if (module_is_exist&&chip_is_exist&&cpr_is_fine) {
-        return;
-    } else if (m_option=="db") {
-        std::string message = "There are not registered component data written in connectivity "+i_conn_path;
-        std::string function = __PRETTY_FUNCTION__;
-        this->alert(function, message); return;
-    }
- 
-    // Register module component
-    std::string mo_component_type = conn_json["module"]["componentType"];
-    mo_oid_str = this->registerComponent(mo_serial_number, mo_component_type, -1, chips);
-
-    mod_list_json[mo_serial_number] = {};
-    mod_list_json[mo_serial_number]["chipType"] = m_chip_type;
-    mod_list_json[mo_serial_number]["module"]["serialNumber"] = mo_serial_number;
-    mod_list_json[mo_serial_number]["module"]["componentType"] = mo_component_type;
-
-    for (unsigned i=0; i<conn_json["chips"].size(); i++) {
-        std::string ch_serial_number  = conn_json["chips"][i]["serialNumber"];
-        std::string ch_component_type = conn_json["chips"][i]["componentType"];
-        int chip_id = conn_json["chips"][i]["chipId"];
-        // Register chip component
-        std::string ch_oid_str = this->registerComponent(ch_serial_number, ch_component_type, chip_id, -1);
-        this->registerChildParentRelation(mo_oid_str, ch_oid_str, chip_id);
-
-        json chip_json;
-        chip_json["serialNumber"] = ch_serial_number;
-        chip_json["componentType"] = ch_component_type;
-        chip_json["chipId"] = chip_id;
-        mod_list_json[mo_serial_number]["chips"].push_back(chip_json);
-    }
-
-    std::ofstream mod_list_file(mod_list_path, std::ios::binary);
-    std::vector<std::uint8_t> v_bson = json::to_bson(mod_list_json);
-    for (auto tmp : v_bson) {
-        mod_list_file.write(reinterpret_cast<const char*>(std::addressof(tmp)), sizeof(std::uint8_t));
-    }
-    mod_list_file.close();
 }
 
 std::string DBHandler::registerComponent(std::string i_serial_number, std::string i_component_type, int i_chip_id, int i_chips) {
@@ -736,7 +773,13 @@ void DBHandler::registerConfig(std::string i_serial_number, std::string i_file_p
         auto doc_value = document{} << 
             "serialNumber" << i_serial_number << 
         finalize;
-        std::string cmp_oid_str = db["component"].find_one(doc_value.view())->view()["_id"].get_oid().value.to_string();
+        auto maybe_result = db["component"].find_one(doc_value.view());
+        std::string cmp_oid_str;
+        if (maybe_result) {
+            cmp_oid_str = maybe_result->view()["_id"].get_oid().value.to_string();
+        } else {
+            cmp_oid_str = i_serial_number;
+        }
         std::string oid_str;
         for (auto tr_oid_str : m_tr_oid_strs) {
             doc_value = document{} <<
@@ -775,7 +818,13 @@ void DBHandler::registerAttachment(std::string i_serial_number, std::string i_fi
         auto doc_value = document{} << 
             "serialNumber" << i_serial_number <<
         finalize; 
-        std::string cmp_oid_str = db["component"].find_one(doc_value.view())->view()["_id"].get_oid().value.to_string();
+        auto maybe_result = db["component"].find_one(doc_value.view());
+        std::string cmp_oid_str;
+        if (maybe_result) {
+            cmp_oid_str = maybe_result->view()["_id"].get_oid().value.to_string();
+        } else {
+            cmp_oid_str = i_serial_number;
+        }
         std::string oid_str;
         for (auto tr_oid_str : m_tr_oid_strs) {
             doc_value = document{} <<
@@ -1024,19 +1073,32 @@ void DBHandler::registerComponentTestRun(std::string i_conn_path, std::string i_
     std::vector<std::string> cmp_oid_strs;
     std::string mo_serial_number = conn_json["module"]["serialNumber"];
     std::string mo_oid_str = this->getComponent(mo_serial_number, i_conn_path);
-    cmp_oid_strs.push_back(mo_oid_str);
-    auto doc_value = document{} <<
-        "parent" << mo_oid_str <<
-        "status" << "active" <<
-    finalize;
-    mongocxx::cursor cursor = db["childParentRelation"].find(doc_value.view());
-    for (auto doc : cursor) {
-        std::string chip_oid_str = doc["child"].get_utf8().value.to_string();
-        cmp_oid_strs.push_back(chip_oid_str);
+    if (mo_oid_str!="") {
+        cmp_oid_strs.push_back(mo_oid_str);
+        auto doc_value = document{} <<
+            "parent" << mo_oid_str <<
+            "status" << "active" <<
+        finalize;
+        mongocxx::cursor cursor = db["childParentRelation"].find(doc_value.view());
+        for (auto doc : cursor) {
+            std::string chip_oid_str = doc["child"].get_utf8().value.to_string();
+            cmp_oid_strs.push_back(chip_oid_str);
+        }
+    } else {
+        cmp_oid_strs.push_back(mo_serial_number);
+        for (auto chip_json : conn_json["chips"]) {
+            std::string ch_serial_number = chip_json["serialNumber"];
+            cmp_oid_strs.push_back(ch_serial_number);
+        }
     }
 
     for (auto cmp_oid_str: cmp_oid_strs) {
-        std::string serial_number = this->getValue("component", "_id", cmp_oid_str, "oid", "serialNumber");
+        std::string serial_number;
+        if (mo_oid_str!="") {
+            serial_number = this->getValue("component", "_id", cmp_oid_str, "oid", "serialNumber");
+        } else {
+            serial_number = cmp_oid_str;
+        }
         int chip_tx = -1;
         int chip_rx = -1;
         for (unsigned i=0; i<conn_json["chips"].size(); i++) {
@@ -1285,13 +1347,14 @@ void DBHandler::writeScan(std::string i_cache_dir) {
     // write config
     // controller config
     std::string ctrl_cfg_path = m_cache_json["configs"]["ctrlCfg"][0]["path"];
-    this->setConfig("", ctrl_cfg_path, "controller", "ctrlCfg", "testRun"); //controller config
+    //this->setConfig("", ctrl_cfg_path, "controller", "ctrlCfg", "testRun"); //controller config
+    this->setConfig(-1, -1, ctrl_cfg_path, "controller", "ctrlCfg", "testRun", "null"); //controller config
 
     // scan config
     std::string scan_cfg_path;
     if (!m_cache_json["configs"]["scanCfg"].empty()) scan_cfg_path = m_cache_json["configs"]["scanCfg"][0]["path"];
     else scan_cfg_path = "";
-    this->setConfig("", scan_cfg_path, scan_type, "scanCfg", "testRun"); 
+    this->setConfig(-1, -1, scan_cfg_path, scan_type, "scanCfg", "testRun", "null"); 
 
     // chip config
     for (auto chip_json: m_cache_json["configs"]["chipCfg"]) {
@@ -1299,7 +1362,7 @@ void DBHandler::writeScan(std::string i_cache_dir) {
         std::string chip_path = chip_json["path"];
         std::string filename  = chip_json["filename"];
         std::string title     = chip_json["title"];
-        this->setConfig(chip_id, chip_path, filename, title, "componentTestRun");
+        this->setConfig(-1, -1, chip_path, filename, title, "componentTestRun", chip_id);
     }
 
     // attachments
@@ -1307,7 +1370,7 @@ void DBHandler::writeScan(std::string i_cache_dir) {
         std::string chip_id   = attachment["_id"];
         std::string file_path = attachment["path"];
         std::string histoname = attachment["histoname"];
-        this->setAttachment(chip_id, file_path, histoname);
+        this->setAttachment(-1, -1, file_path, histoname, chip_id);
     }
 
     // finish
@@ -1876,7 +1939,17 @@ void DBHandler::cacheUser(std::string i_user_path, std::string i_address_path) {
     // user config
     if (DB_DEBUG) std::cout << "\tDBHandler: Cache user: " << i_user_path << std::endl;
 
-    json user_json = this->toJson(i_user_path);
+    std::string user_name, institution, user_identity;
+    json user_json;
+    if (i_user_path=="") {
+        user_name = getenv("USER");
+        institution = getenv("HOSTNAME");
+        user_json["userName"] = user_name;
+        user_json["institution"] = institution;
+        user_json["userIdentity"] = "default";
+    } else {
+        user_json = this->toJson(i_user_path);
+    }
     std::ofstream cache_user_file(m_log_dir+"/user.json");
     cache_user_file << std::setw(4) << user_json;
     cache_user_file.close();
@@ -1895,46 +1968,64 @@ void DBHandler::cacheUser(std::string i_user_path, std::string i_address_path) {
     return;
 }
 
-void DBHandler::cacheConnCfg(std::string i_conn_path) {
-    if (DB_DEBUG) std::cout << "\tDBHandler: Cache connectivity config: " << i_conn_path << std::endl;
-    json conn_json = toJson(i_conn_path);
-    std::string mo_serial_number = conn_json["module"]["serialNumber"];
-    std::string mod_list_path = m_cache_dir+"/lib/modules.bson";
-    json mod_list_json = this->toJson(mod_list_path, "bson");
-    if (mod_list_json[mo_serial_number].empty()) {
-        std::cout << "#DB WARNING# Unregistered component:" << std::endl;
-        std::cout << "\tModule serial number: " << mo_serial_number << std::endl;
-        std::cout << "\tChips: " << std::endl;
-        for (auto chip_json: conn_json["chips"]) {
-            std::cout << "\t\tChip serial number: " << chip_json["serialNumber"] << std::endl;
-            std::cout << "\t\tChip ID: " << chip_json["serialNumber"] << std::endl;
-            std::cout << std::endl;
-        }
-        std::cout << "Make sure to register this Module? > [y/n]" << std::endl;
-        char line[100];
-        std::cin.getline(line, sizeof(line));
-        std::string answer = line;
-        if (answer!="y") {
-            std::string message = "Not registered Module: "+mo_serial_number;
-            std::string function = __PRETTY_FUNCTION__;
-            this->alert(function, message); return;
-        }
-        mod_list_json[mo_serial_number] = conn_json;
+void DBHandler::cacheConnCfg(std::vector<std::string> i_conn_paths) {
+    if (DB_DEBUG) std::cout << "\tDBHandler: Cache connectivity config" << std::endl;
+    std::string mo_serial_number;
+    for (int i=0; i<(int)i_conn_paths.size(); i++) {
+        std::string conn_path = i_conn_paths[i];
+        if (DB_DEBUG) std::cout << "\tDBHandler: Cache connectivity config file: " << conn_path << std::endl;
 
-        std::ofstream mod_list_file(mod_list_path, std::ios::binary);
-        std::vector<std::uint8_t> v_bson = json::to_bson(mod_list_json);
-        for (auto tmp : v_bson) {
-            mod_list_file.write(reinterpret_cast<const char*>(std::addressof(tmp)), sizeof(std::uint8_t));
+        json conn_json = toJson(conn_path);
+        std::string chip_type = conn_json["chipType"];
+        if (!conn_json["module"]["serialNumber"].empty()) {
+            mo_serial_number = conn_json["module"]["serialNumber"];
+            std::string mod_list_path = m_cache_dir+"/lib/modules.bson";
+            json mod_list_json = this->toJson(mod_list_path, "bson");
+            if (mod_list_json[mo_serial_number].empty()) {
+                std::cout << "#DB WARNING# Unregistered component:" << std::endl;
+                std::cout << "\tModule serial number: " << mo_serial_number << std::endl;
+                std::cout << "\tChips: " << std::endl;
+                for (auto chip_json: conn_json["chips"]) {
+                    std::cout << "\t\tChip serial number: " << chip_json["serialNumber"] << std::endl;
+                    std::cout << "\t\tChip ID: " << chip_json["serialNumber"] << std::endl;
+                    std::cout << std::endl;
+                }
+                std::cout << "Make sure to register this Module? > [y/n]" << std::endl;
+                char line[100];
+                std::cin.getline(line, sizeof(line));
+                std::string answer = line;
+                if (answer!="y") {
+                    std::string message = "Not registered Module: "+mo_serial_number;
+                    std::string function = __PRETTY_FUNCTION__;
+                    this->alert(function, message); return;
+                }
+                mod_list_json[mo_serial_number] = conn_json;
+    
+                std::ofstream mod_list_file(mod_list_path, std::ios::binary);
+                std::vector<std::uint8_t> v_bson = json::to_bson(mod_list_json);
+                for (auto tmp : v_bson) {
+                    mod_list_file.write(reinterpret_cast<const char*>(std::addressof(tmp)), sizeof(std::uint8_t));
+                }
+                mod_list_file.close();
+            }
+        } else {
+            mo_serial_number = chip_type + "_module_" + std::to_string(i);
+            conn_json["module"]["serialNumber"] = mo_serial_number;
+            if (conn_json["module"]["componentType"].empty()) conn_json["module"]["componentType"] = "Module"; //TODO for module only currently
+            for (unsigned j=0; j<conn_json["chips"].size(); j++) {
+                if (conn_json["chips"][j]["serialNumber"].empty()) conn_json["chips"][j]["serialNumber"] = chip_type + "_chip_" + std::to_string(j);
+                if (conn_json["chips"][j]["componentType"].empty()) conn_json["chips"][j]["componentType"] = "Front-end Chip";
+                if (conn_json["chips"][j]["chipId"].empty()) conn_json["chips"][j]["chipId"] = j;
+            }
         }
-        mod_list_file.close();
+    
+        std::ofstream conn_file(m_log_dir+"/conn.json");
+        conn_file << std::setw(4) << conn_json;
+        conn_file.close();
+    
+        cacheConfig(mo_serial_number, m_log_dir+"/conn.json", "connectivity", "connCfg", "");
+        m_conn_json["connectivity"].push_back(conn_json);
     }
-
-    std::ofstream conn_file(m_log_dir+"/conn.json");
-    conn_file << std::setw(4) << conn_json;
-    conn_file.close();
-
-    cacheConfig(mo_serial_number, m_log_dir+"/conn.json", "connectivity", "connCfg", "");
-
     return;
 }
 
@@ -2134,16 +2225,18 @@ json DBHandler::checkConnCfg(std::string i_conn_path) {
     // chip type
     this->checkEmpty(conn_json["chipType"].empty(), "chipType", i_conn_path);
     // module
-    this->checkEmpty(conn_json["module"].empty(), "module", i_conn_path);
-    this->checkEmpty(conn_json["module"]["serialNumber"].empty(), "module.serialNumber", i_conn_path);
-    this->checkEmpty(conn_json["module"]["componentType"].empty(), "module.componentType", i_conn_path);
-    this->checkList(m_comp_list, std::string(conn_json["module"]["componentType"]), m_db_cfg_path, i_conn_path);
-    // chips
-    for (unsigned i=0; i<conn_json["chips"].size(); i++) {
-        this->checkEmpty(conn_json["chips"][i]["serialNumber"].empty(), "chips."+std::to_string(i)+".serialNumber", i_conn_path);
-        this->checkEmpty(conn_json["chips"][i]["componentType"].empty(), "chips."+std::to_string(i)+".componentType", i_conn_path);
-        this->checkList(m_comp_list, std::string(conn_json["chips"][i]["componentType"]), m_db_cfg_path, i_conn_path);
-        this->checkEmpty(conn_json["chips"][i]["chipId"].empty(), "chips."+std::to_string(i)+".chipId", i_conn_path);
+    if (!conn_json["module"].empty()) {//TODO discuss about the module information in connectivity
+    //this->checkEmpty(conn_json["module"].empty(), "module", i_conn_path);
+        this->checkEmpty(conn_json["module"]["serialNumber"].empty(), "module.serialNumber", i_conn_path); 
+        this->checkEmpty(conn_json["module"]["componentType"].empty(), "module.componentType", i_conn_path);
+        this->checkList(m_comp_list, std::string(conn_json["module"]["componentType"]), m_db_cfg_path, i_conn_path);
+        // chips
+        for (unsigned i=0; i<conn_json["chips"].size(); i++) {
+            this->checkEmpty(conn_json["chips"][i]["serialNumber"].empty(), "chips."+std::to_string(i)+".serialNumber", i_conn_path);
+            this->checkEmpty(conn_json["chips"][i]["componentType"].empty(), "chips."+std::to_string(i)+".componentType", i_conn_path);
+            this->checkList(m_comp_list, std::string(conn_json["chips"][i]["componentType"]), m_db_cfg_path, i_conn_path);
+            //this->checkEmpty(conn_json["chips"][i]["chipId"].empty(), "chips."+std::to_string(i)+".chipId", i_conn_path); //TODO discuss about chipId
+        }
     }
     // stage
     if (!conn_json["stage"].empty()) {

@@ -87,6 +87,7 @@ int main(int argc, char *argv[]) {
 
     bool dbUse = false;
     std::string dbCfgPath = "";
+    std::string dbSiteCfgPath = "";
     std::string dbuser = "";
     
     unsigned runCounter = 0;
@@ -114,7 +115,7 @@ int main(int argc, char *argv[]) {
     oF.close();
 
     int c;
-    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:W:I:")) != -1) {
+    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:Wd:u:i:")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
@@ -170,10 +171,15 @@ int main(int argc, char *argv[]) {
                 break;
             case 'W': // Write to DB
                 dbUse = true;
-                dbuser = std::string(optarg);
                 break;
-            case 'I': // Database config file
+            case 'd': // Database config file
                 dbCfgPath = std::string(optarg);
+                break;
+            case 'i': // Database config file
+                dbSiteCfgPath = std::string(optarg);
+                break;
+            case 'u': // Database config file
+                dbuser = std::string(optarg);
                 break;
             case '?':
                 if(optopt == 's' || optopt == 'n'){
@@ -255,16 +261,20 @@ int main(int argc, char *argv[]) {
         std::cout << "\033[1;31m# Set Database #\033[0m" << std::endl;
         std::cout << "\033[1;31m################\033[0m" << std::endl;
         std::cout << "-> Setting user's information" << std::endl;
+        std::string user = getenv("USER");
         std::string hostname = getenv("HOSTNAME");
+        std::string dbUserCfgPath = "";
 
-        if (dbCfgPath=="") dbCfgPath=home+"/.yarr/"+hostname+"_database.json";
+        if (dbCfgPath=="") dbCfgPath=home+"/.yarr/localdb/etc/"+hostname+"_database.json";
         database->initialize(dbCfgPath, "scan"); 
-        database->setUser(home+"/.yarr/"+dbuser+"_user.json", home+"/.yarr/"+hostname+"_address.json");
+        if (dbuser!="") dbUserCfgPath = home+"/.yarr/localdb/etc/"+dbuser+"_user.json";
+        if (dbSiteCfgPath=="") dbSiteCfgPath = home+"/.yarr/localdb/etc/"+hostname+"_address.json";
+        database->setUser(dbUserCfgPath, dbSiteCfgPath);
         std::cout << "-> Setting Connectivity Configs" << std::endl;
         database->setConnCfg(cConfigPaths);
         database->setTestRunStart(strippedScan, cConfigPaths, runCounter, target_charge, target_tot);
-        database->setConfig("", ctrlCfgPath, "controller", "ctrlCfg", "testRun");
-        database->setConfig("", scanType, strippedScan, "scanCfg", "testRun");
+        database->setConfig(-1, -1, ctrlCfgPath, "controller", "ctrlCfg", "testRun", "null");
+        database->setConfig(-1, -1, scanType, strippedScan, "scanCfg", "testRun", "null");
     }
 
     // Timestamp
@@ -411,10 +421,7 @@ int main(int argc, char *argv[]) {
                         backupCfgFile << std::setw(4) << backupCfg;
                         backupCfgFile.close();
                         if (dbUse) {
-                            std::string serialNumber = config["module"]["serialNumber"];
-                            std::string chip_serialNumber = chip["serialNumber"];
-                            feCfg->setDbId(chip_serialNumber);
-                            database->setConfig(feCfg->getDbId(), outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getConfigFile() + ".before", "beforeCfg", "chipCfg", "componentTestRun");
+                            database->setConfig(feCfg->getTxChannel(), feCfg->getRxChannel(), outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getConfigFile() + ".before", "beforeCfg", "chipCfg", "componentTestRun");
                         }
                     }
                 } catch (json::parse_error &e) {
@@ -664,8 +671,7 @@ int main(int argc, char *argv[]) {
             backupCfgFile << std::setw(4) << backupCfg;
             backupCfgFile.close(); 
             if (dbUse) {
-                database->setConfig(dynamic_cast<FrontEndCfg*>(fe)->getDbId(), outputDir + dynamic_cast<FrontEndCfg*>(fe)->getConfigFile() + ".after", "afterCfg", "chipCfg", "componentTestRun");
-                std::cout << dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getConfigFile() << std::endl;
+                database->setConfig(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel(), dynamic_cast<FrontEndCfg*>(fe)->getRxChannel(), outputDir + dynamic_cast<FrontEndCfg*>(fe)->getConfigFile() + ".after", "afterCfg", "chipCfg", "componentTestRun");
             }
 
             // Plot
@@ -682,7 +688,7 @@ int main(int argc, char *argv[]) {
                     histo->toFile(name, outputDir);
                     if (dbUse) {
                         std::string file_path = outputDir + name + "_" + histo->getName() + ".dat";
-                        database->setAttachment(dynamic_cast<FrontEndCfg*>(fe)->getDbId(), file_path, histo->getName());
+                        database->setAttachment(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel(), dynamic_cast<FrontEndCfg*>(fe)->getRxChannel(), file_path, histo->getName());
                     }
                 }
             }

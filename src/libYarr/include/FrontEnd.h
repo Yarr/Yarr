@@ -79,7 +79,7 @@ class FrontEndCfg {
 		unsigned getTxChannel() {return txChannel;}
 		unsigned getRxChannel() {return rxChannel;}
         std::string getName() {return name;}
-        std::string getDbId() {return dbId;} //added for connecting DB ID with FE in scanConsole
+        //std::string getDbId() {return dbId;} //added for connecting DB ID with FE in scanConsole
         
         void setChannel(unsigned channel) {txChannel = channel; rxChannel = channel;}
 		void setChannel(unsigned arg_txChannel, unsigned arg_rxChannel) {txChannel = arg_txChannel; rxChannel = arg_rxChannel;}

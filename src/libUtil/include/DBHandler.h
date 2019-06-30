@@ -114,14 +114,20 @@ class DBHandler {
                               int /*i_run_number*/, 
                               int /*i_target_charge*/, 
                               int /*i_target_tot*/);
-        void setConfig(std::string /*i_ctr_oid_str*/, 
+        //void setConfig(std::string /*i_ctr_oid_str*/, 
+        void setConfig(int /*i_tx_channel*/,
+                       int /*i_rx_channel*/, 
                        std::string /*i_file_path*/, 
                        std::string /*i_filename*/,
                        std::string /*i_title*/,
-                       std::string /*i_collection*/); 
-        void setAttachment(std::string /*i_ctr_oid_str*/, 
-                             std::string /*i_file_path*/, 
-                             std::string /*i_histo_name*/);
+                       std::string /*i_collection*/,
+                       std::string i_seiral_number=""); 
+        //void setAttachment(std::string /*i_ctr_oid_str*/, 
+        void setAttachment(int /*i_tx_channel*/,
+                           int /*i_rx_channel*/, 
+                           std::string /*i_file_path*/, 
+                           std::string /*i_histo_name*/,
+                           std::string i_serial_number="");
 
         /***
         Register data into Local DB from cache files storing in scanConsole 
@@ -157,7 +163,7 @@ class DBHandler {
         std::string  registerSite(std::string /*i_adress*/,
                                   std::string /*i_name*/,
                                   std::string /*i_site*/);
-        void registerConnCfg(std::string /*i_conn_path*/);
+        void registerConnCfg(std::vector<std::string> /*i_conn_paths*/);
         std::string registerComponent(std::string /*i_serial_number*/,
                                       std::string /*i_component_type*/,
                                       int /*i_chip_id*/,
@@ -246,7 +252,7 @@ class DBHandler {
         /// chaching scheme
         void cacheUser(std::string /*i_user_path*/,
                        std::string /*i_address_path*/);
-        void cacheConnCfg(std::string /*i_conn_path*/); 
+        void cacheConnCfg(std::vector<std::string> /*i_conn_paths*/); 
         void cacheTestRun(std::string /*i_test_type*/, 
                           int /*i_run_number*/, 
                           int /*i_target_charge*/, 
@@ -351,6 +357,7 @@ class DBHandler {
 
         json m_log_json;
         json m_cache_json;
+        json m_conn_json;
         int counter;
 };
 

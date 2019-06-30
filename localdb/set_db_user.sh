@@ -42,6 +42,10 @@ do
     esac
 done
 
+cd ../
+yarrDir=`pwd`
+cd - > /dev/null
+
 if [ -z ${ip} ]; then
     ip=127.0.0.1
 fi
@@ -52,13 +56,28 @@ if [ -z ${dbname} ]; then
     dbname="localdb"
 fi
 if [ -z ${dir} ]; then
-    cd ../
-    yarrDir=`pwd`
-    dir=${yarrDir}/localdb
+    dir=${HOME}/.yarr/localdb
 fi
 
+# create cache directory
+
+if [ ! -e ${dir} ]; then
+    mkdir -p ${dir}
+fi
+if [ ! -e ${dir}/var ]; then
+    mkdir -p ${dir}/var/cache/scan
+    mkdir -p ${dir}/var/log/db
+    mkdir -p ${dir}/var/cache/dcs
+    mkdir -p ${dir}/lib/tmp
+    mkdir -p ${dir}/tmp/db
+    mkdir -p ${dir}/etc
+fi
+
+echo "Created Cache Directory: ${dir}"
+echo " "
+
 # create database config
-dbcfg=${HOME}/.yarr/${HOSTNAME}_database.json
+dbcfg=${dir}/etc/${USER}_database.json
 echo "{" > ${dbcfg}
 echo "    \"hostIp\": \"${ip}\"," >> ${dbcfg}
 echo "    \"hostPort\": \"${port}\"," >> ${dbcfg}
@@ -99,7 +118,7 @@ echo "Create DB Config file: ${dbcfg}"
 echo " "
 
 # create site address config 
-address=${HOME}/.yarr/${HOSTNAME}_address.json
+address=${dir}/etc/${USER}_address.json
 unset institution
 declare -a nic=()  
 num=0
@@ -171,28 +190,42 @@ echo "}" >> ${address}
 echo "Create Site Config file: ${address}"
 echo " "
 
-# create cache directory
-
-if [ ! -e ${dir} ]; then
-    mkdir -p ${dir}
-fi
-if [ ! -e ${dir}/lib/tmp ]; then
-    mkdir -p ${dir}/lib/tmp
-fi
-if [ ! -e ${dir}/var/log ]; then
-    mkdir -p ${dir}/var/log
-fi
-if [ ! -e ${dir}/var/cache ]; then
-    mkdir -p ${dir}/var/cache/scan
-    mkdir -p ${dir}/var/log/db
-    mkdir -p ${dir}/var/cache/dcs
-fi
-if [ ! -e ${dir}/tmp/db ]; then
-    mkdir -p ${dir}/tmp/db
-fi
-
-echo "Create Cache Directory: ${dir}"
+echo "Created Cache Directory: ${dir}"
 echo " "
 
 echo "MongoDB Server IP address: ${ip}, port: ${port}"
 echo " "
+
+
+cfg=${dir}/etc/${USER}_user.json
+
+echo "{" > ${cfg}
+echo "    \"userName\": \"${USER}\"," >> ${cfg}
+echo "    \"institution\": \"${HOSTNAME}\"," >> ${cfg}
+echo "    \"userIdentity\": \"default\"" >> ${cfg}
+echo "}" >> ${cfg}
+echo "Create User Config file: ${cfg}"
+echo " "
+
+echo ""
+echo "Finished installation!!"
+echo "Install log can be found in: $LOGFILE"
+echo ""
+echo "----------------------------------------------------------------"
+echo "-- First thing to do..."
+echo "----------------------------------------------------------------"
+echo "Scan with uploading Local DB by..." | tee README
+echo "cd ../src" | tee -a README
+echo "./bin/scanConsole -c configs/connectivity/example_rd53a_setup.json -r configs/controller/specCfg.json -s configs/scans/rd53a/std_digitalscan.json -W -u ${USER} -d ${dbcfg} -i ${address}" | tee -a README
+echo "./bin/dbAccessor -R ~/.yarr/localdb/var/cache/timestamp_directory" | tee -a README
+echo "" | tee -a README
+echo "Check results in the DB viewer in your web browser..." | tee -a README
+echo "From the DAQ machine: http://localhost:5000/localdb/" | tee -a README
+echo "From other machines : http://${ip}/localdb/" | tee -a README
+echo "" | tee -a README
+echo "Check more detail at..." | tee -a README
+echo "" | tee -a README
+echo "https://github.com/jlab-hep/Yarr/wiki/Quick-tutorial" | tee -a README
+echo ""
+echo "Prepared a README file for the reminder. Enjoy!!"
+
