@@ -2,10 +2,9 @@
 #################################
 # Contacts: Arisa Kubota
 # Email: arisa.kubota at cern.ch
-# Date: April 2019
+# Date: July 2019
 # Project: Local Database for Yarr
-# Description: Login Database 
-# Usage: ./setup.sh [Local DB server ip (default: 127.0.0.1)] [Local DB server port (default: 27017)]
+# Usage: ./setup_db.sh [-i Local DB server ip (default: 127.0.0.1)] [-p Local DB server port (default: 27017)] [-c path to cache directory (default: $HOME/.yarr/localdb) [-n Local DB name (default: localdb)]
 ################################
 
 DEBUG=false
@@ -15,13 +14,13 @@ function usage {
     cat <<EOF
 
 Usage:
-    ./setup.sh [-i ip address] [-p port] [-c dir path] [-d]
+    ./setup_db.sh [-i ip address] [-p port] [-c dir path] [-d]
 
 Options:
     - i <ip address>  Local DB server ip address, default: 127.0.0.1
     - p <port>        Local DB server port, default: 27017
-    - n <db name>     Local DB Name, default: localdb
     - c <dir path>    path to Local DB cache directory, default: Yarr/localdb/cacheDB
+    - n <db name>     Local DB Name, default: localdb
 
 EOF
 }
@@ -42,10 +41,6 @@ do
     esac
 done
 
-cd ../
-yarrDir=`pwd`
-cd - > /dev/null
-
 if [ -z ${ip} ]; then
     ip=127.0.0.1
 fi
@@ -59,67 +54,8 @@ if [ -z ${dir} ]; then
     dir=${HOME}/.yarr/localdb
 fi
 
-# create cache directory
-
-if [ ! -e ${dir} ]; then
-    mkdir -p ${dir}
-fi
-if [ ! -e ${dir}/var ]; then
-    mkdir -p ${dir}/var/cache/scan
-    mkdir -p ${dir}/var/log/db
-    mkdir -p ${dir}/var/cache/dcs
-    mkdir -p ${dir}/lib/tmp
-    mkdir -p ${dir}/tmp/db
-    mkdir -p ${dir}/etc
-fi
-
-echo "Created Cache Directory: ${dir}"
-echo " "
-
-# create database config
-dbcfg=${dir}/etc/${USER}_database.json
-echo "{" > ${dbcfg}
-echo "    \"hostIp\": \"${ip}\"," >> ${dbcfg}
-echo "    \"hostPort\": \"${port}\"," >> ${dbcfg}
-echo "    \"dbName\": \"${dbname}\"," >> ${dbcfg}
-echo "    \"cachePath\": \"${dir}\"," >> ${dbcfg}
-echo "    \"stage\": [" >> ${dbcfg}
-echo "        \"Bare Module\"," >> ${dbcfg}
-echo "        \"Wire Bonded\"," >> ${dbcfg}
-echo "        \"Potted\"," >> ${dbcfg}
-echo "        \"Final Electrical\"," >> ${dbcfg}
-echo "        \"Complete\"," >> ${dbcfg}
-echo "        \"Loaded\"," >> ${dbcfg}
-echo "        \"Parylene\"," >> ${dbcfg}
-echo "        \"Initial Electrical\"," >> ${dbcfg}
-echo "        \"Thermal Cycling\"," >> ${dbcfg}
-echo "        \"Flex + Bare Module Attachment\"," >> ${dbcfg}
-echo "        \"Testing\"" >> ${dbcfg}
-echo "    ]," >> ${dbcfg}
-echo "    \"environment\": [" >> ${dbcfg}
-echo "        \"vddd_voltage\"," >> ${dbcfg}
-echo "        \"vddd_current\"," >> ${dbcfg}
-echo "        \"vdda_voltage\"," >> ${dbcfg}
-echo "        \"vdda_current\"," >> ${dbcfg}
-echo "        \"hv_voltage\"," >> ${dbcfg}
-echo "        \"hv_current\"," >> ${dbcfg}
-echo "        \"temperature\"" >> ${dbcfg}
-echo "    ]," >> ${dbcfg}
-echo "    \"component\": [" >> ${dbcfg}
-echo "        \"Front-end Chip\"," >> ${dbcfg}
-echo "        \"Front-end Chips Wafer\"," >> ${dbcfg}
-echo "        \"Hybrid\"," >> ${dbcfg}
-echo "        \"Module\"," >> ${dbcfg}
-echo "        \"Sensor Tile\"," >> ${dbcfg}
-echo "        \"Sensor Wafer\"" >> ${dbcfg}
-echo "    ]" >> ${dbcfg}
-echo "}" >> ${dbcfg}
-echo "Create DB Config file: ${dbcfg}"
-echo " "
-
-# create site address config 
-address=${dir}/etc/${USER}_address.json
-unset institution
+# Check the name of site
+address=${dir}/etc/address.json
 declare -a nic=()  
 num=0
 for DEV in `find /sys/devices -name net | grep -v virtual`; 
@@ -156,6 +92,11 @@ else
     fi
 fi
 
+# Confirmation
+echo " "
+echo "MongoDB Server Information"
+echo "  IP address: ${ip}"
+echo "   port: ${port}"
 echo " "
 echo "Test Site Information"
 echo "  MAC address: ${macaddress}"
@@ -170,49 +111,59 @@ do
     read -p "> " answer
 done
 echo " "
-
 if [ ${answer} != "y" ]; then
     if [ -f ${address} ]; then 
         echo "Remove Site Config file: ${address}"
         echo " "
         rm ${address}
     fi
-    echo "Try again setup.sh, Exit ..."
+    echo "Try again setup_db.sh, Exit ..."
     echo " "
     exit
 fi
 
-echo "{" > ${address}
-echo "    \"macAddress\": \"${macaddress}\"," >> ${address}
-echo "    \"hostname\": \"${HOSTNAME}\"," >> ${address}
-echo "    \"institution\": \"${institution}\"" >> ${address}
-echo "}" >> ${address}
-echo "Create Site Config file: ${address}"
-echo " "
+# create cache directory
+if [ ! -e ${dir} ]; then
+    mkdir -p ${dir}
+fi
+if [ ! -e ${dir}/var ]; then
+    mkdir -p ${dir}/var/cache/scan
+    mkdir -p ${dir}/var/log/db
+    mkdir -p ${dir}/var/cache/dcs
+    mkdir -p ${dir}/lib/tmp
+    mkdir -p ${dir}/tmp/db
+    mkdir -p ${dir}/etc
+fi
 
 echo "Created Cache Directory: ${dir}"
-echo " "
 
-echo "MongoDB Server IP address: ${ip}, port: ${port}"
-echo " "
+# create database config
+dbcfg=${dir}/etc/database.json
+cp default/database.json ${dbcfg}
+sed -i -e "s!DBIP!${ip}!g" ${dbcfg}
+sed -i -e "s!DBPORT!${port}!g" ${dbcfg}
+sed -i -e "s!DBNAME!${dbname}!g" ${dbcfg}
+sed -i -e "s!CACHE!${dir}!g" ${dbcfg}
+echo "Create DB Config file: ${dbcfg}"
 
+# create site address config 
+cp default/address.json ${address}
+sed -i -e "s!MACADDR!${macaddress}!g" ${address}
+sed -i -e "s!HOSTNAME!${HOSTNAME}!g" ${address}
+sed -i -e "s!SITE!${institution}!g" ${address}
+echo "Create Site Config file: ${address}"
 
+# create default user config
 cfg=${dir}/etc/${USER}_user.json
-
-echo "{" > ${cfg}
-echo "    \"userName\": \"${USER}\"," >> ${cfg}
-echo "    \"institution\": \"${HOSTNAME}\"," >> ${cfg}
-echo "    \"userIdentity\": \"default\"" >> ${cfg}
-echo "}" >> ${cfg}
+cp default/user.json ${cfg}
+sed -i -e "s!NAME!${USER}!g" ${cfg}
+sed -i -e "s!INSTITUTION!${HOSTNAME}!g" ${cfg}
 echo "Create User Config file: ${cfg}"
 echo " "
 
 echo ""
-echo "Finished installation!!"
-echo "Install log can be found in: $LOGFILE"
-echo ""
 echo "----------------------------------------------------------------"
-echo "-- First thing to do..."
+echo "-- scanConsole with Local DB..."
 echo "----------------------------------------------------------------"
 echo "Scan with uploading Local DB by..." | tee README
 echo "cd ../src" | tee -a README
@@ -227,5 +178,3 @@ echo "Check more detail at..." | tee -a README
 echo "" | tee -a README
 echo "https://github.com/jlab-hep/Yarr/wiki/Quick-tutorial" | tee -a README
 echo ""
-echo "Prepared a README file for the reminder. Enjoy!!"
-

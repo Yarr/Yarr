@@ -20,12 +20,11 @@ void checkEmpty(bool /*i_empty*/, std::string /*i_key*/, std::string /*i_file_pa
 int main(int argc, char *argv[]){
 
     std::string home     = getenv("HOME");
-    std::string hostname = getenv("HOSTNAME");
     std::string dbuser   = "";
     std::string registerType = "";
 
     // Init parameters
-    std::string db_cfg_path=home+"/.yarr/"+hostname+"_database.json";
+    std::string db_cfg_path=home+"/.yarr/localdb/etc/database.json";
     std::string db_cache_path = "";
     std::string db_dcs_path = "";
 	  std::string conn_path = "";
@@ -39,7 +38,7 @@ int main(int argc, char *argv[]){
     std::string get_type = "";
 
     int c;
-    while ((c = getopt(argc, argv, "hR:UC:E:SD:Gt:s:i:d:p:m:f:u:")) != -1 ){
+    while ((c = getopt(argc, argv, "hR:UC:E:SD:GMt:s:i:d:p:m:f:u:")) != -1 ){
         switch (c) {
             case 'h':
                 printHelp();
@@ -69,6 +68,9 @@ int main(int argc, char *argv[]){
                 break;
             case 'G':
                 registerType = "getConfig";
+                break;
+            case 'M':
+                registerType = "CheckModule";
                 break;
             case 't':
                 db_test_path = std::string(optarg);
@@ -132,8 +134,8 @@ int main(int argc, char *argv[]){
             return -1;
         }
         std::cout << "DBHandler: Login user: \n\taccount: " << dbuser << std::endl;
-        std::string user_cfg_path = home+"/.yarr/"+dbuser+"_user.json";
-        std::string address_cfg_path = home+"/.yarr/"+hostname+"_address.json";
+        std::string user_cfg_path = home+"/.yarr/localdb/etc/"+dbuser+"_user.json";
+        std::string address_cfg_path = home+"/.yarr/localdb/etc/address.json";
 
         std::string user_name, institution, user_identity;
 
@@ -163,7 +165,8 @@ int main(int argc, char *argv[]){
         std::cout << std::endl;
 
         database->initialize(db_cfg_path, "register");
-    	  database->setUser(user_cfg_path, address_cfg_path);
+    	  database->setUser(user_cfg_path);
+    	  database->setSite(address_cfg_path);
         delete database;
     }
 
@@ -176,12 +179,13 @@ int main(int argc, char *argv[]){
         std::cout << "DBHandler: Register Component:" << std::endl;
 	      std::cout << "\tconnecitivity config file : " << conn_path << std::endl;
 
-        std::string user_cfg_path = home+"/.yarr/"+dbuser+"_user.json";
-        std::string address_cfg_path = home+"/.yarr/"+hostname+"_address.json";
+        std::string user_cfg_path = home+"/.yarr/localdb/etc/"+dbuser+"_user.json";
+        std::string address_cfg_path = home+"/.yarr/localdb/etc/address.json";
 
         database->initialize(db_cfg_path, "register");
 
-    	  database->setUser(user_cfg_path, address_cfg_path);
+    	  database->setUser(user_cfg_path);
+    	  database->setSite(address_cfg_path);
         std::vector<std::string> conn_paths;
         conn_paths.push_back(conn_path);
 	      database->setConnCfg(conn_paths);
@@ -288,6 +292,13 @@ int main(int argc, char *argv[]){
 
         database->initialize(db_cfg_path, "db");
 	      database->getData(tmp_file_path, "config");
+        delete database;
+    }
+
+    // check registered module
+    if (registerType == "CheckModule") {
+        database->initialize(db_cfg_path, "register");
+	      database->checkModuleList();
         delete database;
     }
 

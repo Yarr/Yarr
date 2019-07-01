@@ -99,8 +99,8 @@ class DBHandler {
         - Config: requires config file and information to set config data
         - Attachment: requires dat file and information to set dat data
         ***/
-        void setUser(std::string /*i_user_path*/,
-                     std::string /*i_address_path*/);
+        void setUser(std::string /*i_user_path*/);
+        void setSite(std::string /*i_address_path*/);
         void setConnCfg(std::vector<std::string> /*i_conn_paths*/); 
         void setDCSCfg(std::string /*i_dcs_path*/,
                        std::string /*i_tr_path*/);
@@ -215,8 +215,7 @@ class DBHandler {
                              std::string /*i_member_bson_type*/, 
                              std::string /*i_key*/, 
                              std::string i_bson_type="string");
-        std::string getComponent(std::string /*i_serial_number*/, 
-                                 std::string /*i_file_path*/);
+        std::string getComponent(std::string /*i_serial_number*/);
 
         /// add value into document in DB
         void addComment(std::string /*i_collection_name*/, 
@@ -225,7 +224,8 @@ class DBHandler {
         void addValue(std::string /*i_oid_str*/, 
                       std::string /*i_collection_name*/, 
                       std::string /*i_key*/, 
-                      std::string /*i_value*/);
+                      std::string /*i_value*/,
+                      std::string i_type="string");
         void addAttachment(std::string /*i_oid_str*/, 
                            std::string /*i_collection_name*/, 
                            std::string /*i_file_oid_str*/, 
@@ -250,8 +250,8 @@ class DBHandler {
         std::string getHash(std::string /*i_file_path*/);
  
         /// chaching scheme
-        void cacheUser(std::string /*i_user_path*/,
-                       std::string /*i_address_path*/);
+        void cacheUser(std::string /*i_user_path*/);
+        void cacheSite(std::string /*i_address_path*/);
         void cacheConnCfg(std::vector<std::string> /*i_conn_paths*/); 
         void cacheTestRun(std::string /*i_test_type*/, 
                           int /*i_run_number*/, 

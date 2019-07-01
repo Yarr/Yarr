@@ -262,14 +262,14 @@ int main(int argc, char *argv[]) {
         std::cout << "\033[1;31m################\033[0m" << std::endl;
         std::cout << "-> Setting user's information" << std::endl;
         std::string user = getenv("USER");
-        std::string hostname = getenv("HOSTNAME");
         std::string dbUserCfgPath = "";
 
-        if (dbCfgPath=="") dbCfgPath=home+"/.yarr/localdb/etc/"+hostname+"_database.json";
+        if (dbCfgPath=="") dbCfgPath=home+"/.yarr/localdb/etc/database.json";
         database->initialize(dbCfgPath, "scan"); 
         if (dbuser!="") dbUserCfgPath = home+"/.yarr/localdb/etc/"+dbuser+"_user.json";
-        if (dbSiteCfgPath=="") dbSiteCfgPath = home+"/.yarr/localdb/etc/"+hostname+"_address.json";
-        database->setUser(dbUserCfgPath, dbSiteCfgPath);
+        if (dbSiteCfgPath=="") dbSiteCfgPath = home+"/.yarr/localdb/etc/address.json";
+        database->setUser(dbUserCfgPath);
+        database->setSite(dbSiteCfgPath);
         std::cout << "-> Setting Connectivity Configs" << std::endl;
         database->setConnCfg(cConfigPaths);
         database->setTestRunStart(strippedScan, cConfigPaths, runCounter, target_charge, target_tot);
