@@ -157,8 +157,6 @@ Install necessary libraries and setup Local DB system for the machine in this st
 
 ## 3. Setup Local DB system
 
-![Local DB structure]()
-
 - Setting script: `localDB-tools/viewer/setup_viewer.sh`
 
   You can setup for [Local DB system](https://github.com/jlab-hep/Yarr/wiki/Quick-tutorial-for-latest) by this scripts in DAQ Server. <br>

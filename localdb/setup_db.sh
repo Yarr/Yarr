@@ -7,6 +7,8 @@
 # Usage: ./setup_db.sh [-i Local DB server ip (default: 127.0.0.1)] [-p Local DB server port (default: 27017)] [-c path to cache directory (default: $HOME/.yarr/localdb) [-n Local DB name (default: localdb)]
 ################################
 
+localdb_dir=$(cd $(dirname $0); pwd)
+
 DEBUG=false
 
 # Usage
@@ -140,7 +142,7 @@ echo "Created Cache Directory: ${dir}"
 
 # create database config
 dbcfg=${dir}/etc/database.json
-cp default/database.json ${dbcfg}
+cp ${localdb_dir}/default/database.json ${dbcfg}
 sed -i -e "s!DBIP!${ip}!g" ${dbcfg}
 sed -i -e "s!DBPORT!${port}!g" ${dbcfg}
 sed -i -e "s!DBNAME!${dbname}!g" ${dbcfg}
@@ -148,7 +150,7 @@ sed -i -e "s!CACHE!${dir}!g" ${dbcfg}
 echo "Create DB Config file: ${dbcfg}"
 
 # create site address config 
-cp default/address.json ${address}
+cp ${localdb_dir}/default/address.json ${address}
 sed -i -e "s!MACADDR!${macaddress}!g" ${address}
 sed -i -e "s!HOSTNAME!${HOSTNAME}!g" ${address}
 sed -i -e "s!SITE!${institution}!g" ${address}
@@ -156,7 +158,7 @@ echo "Create Site Config file: ${address}"
 
 # create default user config
 cfg=${dir}/etc/${USER}_user.json
-cp default/user.json ${cfg}
+cp ${localdb_dir}/default/user.json ${cfg}
 sed -i -e "s!NAME!${USER}!g" ${cfg}
 sed -i -e "s!INSTITUTION!${HOSTNAME}!g" ${cfg}
 echo "Create User Config file: ${cfg}"
