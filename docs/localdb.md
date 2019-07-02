@@ -238,76 +238,151 @@ User can use scanConsole with Local DB system after setting machine: [step1](#1.
 ### Requirements
 - YARR software with Local DB system
 
-
-
-
-
-----
-in editing
-
-### Create user config file
-Scan data is uploaded into Local DB along with user information obtained from the user config file.
-```bash
-$ cd ${yarr_dir}/localdb
-$ dbaccount="account name" # you can set account name freely
-$ ./createUserCfg.sh ${dbaccount}
-# Enter user information following the instructions
-# - your name : <first name> <last name>  (e.g. John Doe)
-# - your institution : (e.g. ABC Laboratory)
-# - identification keyword : not a password but just an identifier (not need to set)
-#
-# Create User Config file: `${HOME}/.yarr/${dbaccount}_user.json`
-```
-
-### Create connectivity config file
-<span style="color:red">PLAN: Currently the file has to be prepared manually by user but plans to be generated automatically based on Module data retrieved from ITk PD</span>
-- `${yarrdir}/localdb/db_connectivity.json`
-```json
-{
-    "stage": "Testing",
-    "module": {
-        "serialNumber": "RD53A-001",
-        "componentType": "Module"
-    },
-    "chipType" : "RD53A",
-    "chips" : [
-        {
-            "serialNumber": "RD53A-001_chip1",
-            "componentType": "Front-end Chip",
-            "chipId": 1,
-            "config" : "configs/rd53a/RD53A-001/RD53A-001_chip1.json",
-            "tx" : 0,
-            "rx" : 0
-        }
-    ]
-}
-```
-- stage : test stage
-- serialNumber : Module/Chip serial number
-- componentType : "Module" for module or "Front-ent Chip" for chip
-- chipType : one of three: "RD53A", "FEI4B", or "FE65P2"
-- chipId : chipId written in chip config file
-
-### Register component data from connectivity file
-<span style="color:red">PLAN: Cuurently the Module data is uploaded into Local DB from connectivity file so the file needs to be prepared properly but plans to be uploaded by another way into ITk PD and Local DB retrieves Module data from ITk PD.</span>
-Module and Chip data have to be uploaded into Local DB before test them.
-```bash
-$ cd ${yarrdir}/src
-$ ./bin/dbAccessor -C ../localdb/default/db_connectivity.json -u ${dbaccount}
-```
-
-### scanConsole
-`scanConsole -W ${dbaccount}` can upload test data into Local DB after scan.
-<span style="color:blue">(Acturally, this command just create cache files in local directory, so it works both on stable connection and unstable connection to Local DB Server. Then upload test data from cahce files by `dbAccessor -R "cache directory"`)</span>
-```bash
-$ cd ${yarrdir}/src
-$ ./bin/scanConsole -c ../localdb/default/db_connectivity.json -r configs/controller/specCfg.json -s configs/scans/rd53a/std_digitalscan.json -W ${dbaccount}
-```
-
-### Upload data from cache files
-<span style="color:red">PLAN: Currently cache directory is set in `Yarr/localDB/var` but plans to be shared with users on the same machine. </span>
+### Quick Start
+If you just want to see something running, execute the following: 
 
 ```bash
-$ cd ${yarrdir}/src
-$ ./bin/dbAccessor -R ../localDB/var/cache/scan/${timestamp}
+$ ./bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p -W
 ```
+This runs a digitalscan with the FE-I4B emulator and store cache files of the test.
+Cache files are stored in ${HOME}/.yarr/localdb/var/cache/scan/ in default.
+
+```bash
+$ ./bin/dbAccessor -R
+```
+This can upload data from cache file on the stable network to Local DB Server.
+
+After that, you can check the result (non-registered component) in Test Page of Viewer Application.
+
+### Module Registration
+You can store results associated with the registered module after the registration. <br>
+Prepare the component information file and user information file. <br>
+<span style="color:red">PLAN: to be prepared registeration page in Viewer Application</span> <br>
+
+  - user.json
+    ```json
+    {
+      "userName": "FIRSTNAME LASTNAME",
+      "institution": "INSTITUTION",
+      "userIdentity": "default"
+    } 
+   
+    # e.g.
+    {
+      "userName": "John Doe",
+      "institution": "ABC Laboratory",
+      "userIdentity": "default"
+    } 
+    ```
+    - userName: your name
+    - institution: institution you belong
+    - userIdentity: just identifiable code not password
+  
+  - component.json (RD53A)
+
+    <span style="color:red">One file for one module!</span> 
+
+    ```json
+    {
+        "module": {
+            "serialNumber": "RD53A-001",
+            "componentType": "Module"
+        },
+        "chipType" : "RD53A",
+        "chips" : [
+            {
+                "serialNumber": "RD53A-001_chip1",
+                "componentType": "Front-end Chip",
+                "chipId": 0
+            }
+        ]
+    }
+    ```
+    - serialNumber: serial number of component
+    - componentType: "Module" or "Front-end Chip"
+    - chips: chips on the module
+
+  - component.json (FEI4B)
+
+    ```json
+    {
+        "module": {
+            "serialNumber": "FEI4B-001",
+            "componentType": "Module"
+        },
+        "chipType" : "FEI4B",
+        "chips" : [
+            {
+                "serialNumber": "FEI4B-001-chip1",
+                "componentType": "Front-end Chip",
+                "chipId": 1,
+            },
+            {
+                "serialNumber": "FEI4B-001-chip2",
+                "componentType": "Front-end Chip",
+                "chipId": 2,
+            },
+            {
+                "serialNumber": "FEI4B-001-chip3",
+                "componentType": "Front-end Chip",
+                "chipId": 3,
+            },
+            {
+                "serialNumber": "FEI4B-001-chip4",
+                "componentType": "Front-end Chip",
+                "chipId": 4,
+            }
+        ]
+    }
+    ```
+  
+And run the command `dbAccessor`:
+```bash
+$ dbAccessor -C component.json -u user.json
+$ dbAccessor -M
+```
+
+First command can register the components written in component.json.
+Second command can pull the component information registered in Local DB to local cache file: `${HOME}/.yarr/localdb/lib/modules.csv`.
+
+### Scan for Registered Module
+
+Connecivity config file should be prepared properly.
+
+- connectivity.json
+  ```json
+  {
+      "stage": "Testing",
+      "module": {
+          "serialNumber": "RD53A-001"
+      },
+      "chipType" : "RD53A",
+      "chips" : [
+          {
+              "chipId": 0,
+              "geomId": 1,
+              "config" : "configs/defaults/default_rd53a.json",
+              "tx" : 0,
+              "rx" : 0
+          }
+      ]
+  }
+  ```
+  - stage: test stage for the module
+  - geomId: geometrical Id ... should be 1 for SSC, and from 1 to 4 for quad module
+
+And run the `scanConsole`:
+
+```bash
+$ ./bin/scanConsole \
+-r configs/controller/emuCfg.json \
+-c configs/connectivity.json \
+-s configs/scans/fei4/std_digitalscan.json \
+-p \
+-W \
+-u user.json
+<Lots of text>
+$ ./bin/dbAccessor -R
+```
+
+After that, you can check the result (non-registered component) in Module Page/Test Page of Viewer Application.

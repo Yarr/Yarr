@@ -287,7 +287,7 @@ void printHelp() {
     std::cout << "    - t <path/to/testrun/cfg>: Path to the file where test run information is written." << std::endl;
     std::cout << " -S: Check connection to MongoDB server." << std::endl;
     std::cout << " -D: Download data from database. Provide the path to the query file with option -f." << std::endl;
-    std::cout << "    -t <get_type> "
+    std::cout << "    -t <get_type> " << std::endl;
     std::cout << "    -f <path/to/key/file>: Path to the file where the query key is written." << std::endl;
     std::cout << std::endl;
     std::cout << " -G: Download config data from database." << std::endl;

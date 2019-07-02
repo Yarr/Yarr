@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     bool dbUse = false;
     std::string dbCfgPath = "";
     std::string dbSiteCfgPath = "";
-    std::string dbuser = "";
+    std::string dbUserCfgPath = "";
     
     unsigned runCounter = 0;
 
@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
                 dbSiteCfgPath = std::string(optarg);
                 break;
             case 'u': // Database config file
-                dbuser = std::string(optarg);
+                dbUserCfgPath = std::string(optarg);
                 break;
             case '?':
                 if(optopt == 's' || optopt == 'n'){
@@ -264,8 +264,7 @@ int main(int argc, char *argv[]) {
 
         if (dbCfgPath=="") dbCfgPath=home+"/.yarr/localdb/etc/database.json";
         database->initialize(dbCfgPath, "scan"); 
-        if (dbuser=="") dbuser = getenv("USER");
-        std::string dbUserCfgPath = home+"/.yarr/localdb/etc/"+dbuser+"_user.json";
+        if (dbUserCfgPath=="") dbUserCfgPath = home+"/.yarr/localdb/etc/"+getenv("USER")+"_user.json";
         if (dbSiteCfgPath=="") dbSiteCfgPath = home+"/.yarr/localdb/etc/address.json";
         database->setUser(dbUserCfgPath);
         database->setSite(dbSiteCfgPath);
