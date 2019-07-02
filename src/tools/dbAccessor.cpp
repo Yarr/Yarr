@@ -105,8 +105,8 @@ int main(int argc, char *argv[]){
                 }
                 break;
             default:
-                std::cerr << "-> #ERROR# while parsing command line parameters!" << std::endl;
-                return -1;
+                std::cerr << "-> #DB ERROR# while parsing command line parameters!" << std::endl;
+                return 1;
         }
     }
 
@@ -142,8 +142,8 @@ int main(int argc, char *argv[]){
     // register component
     if (registerType=="Component") {
         if (dbuser == "") {
-            std::cerr << "#ERROR# No user account name given, please specify user account under -u option!" << std::endl;
-            return -1;
+            std::cerr << "#DB ERROR# No user account name given, please specify user account under -u option!" << std::endl;
+            return 1;
         }
         std::cout << "DBHandler: Register Component:" << std::endl;
 	      std::cout << "\tconnecitivity config file : " << conn_path << std::endl;
@@ -165,8 +165,8 @@ int main(int argc, char *argv[]){
     // cache DCS
     if (registerType == "Environment") {
         if (db_test_path == "") {
-            std::cerr << "#ERROR# No test run file path given, please specify file path under -t option!" << std::endl;
-            return -1;
+            std::cerr << "#DB ERROR# No test run file path given, please specify file path under -t option!" << std::endl;
+            return 1;
         }
         std::cout << "DBHandler: Register Environment:" << std::endl;
 	      std::cout << "\tenvironmental config file : " << db_dcs_path << std::endl;
@@ -174,11 +174,15 @@ int main(int argc, char *argv[]){
         if (serial_number!="") {
             json tr_json;
             std::ifstream tr_cfg_ifs(db_test_path);
+            if (!tr_cfg_ifs) {
+                std::cerr << "#DB ERROR# Not found the file.\n\tfile: " + db_test_path << std::end;;
+                return 1;
+            }
             try {
                 tr_json = json::parse(tr_cfg_ifs);
             } catch (json::parse_error &e) {
-                std::cerr << "#ERROR# Could not parse " << db_test_path << "\n\twhat(): " << e.what() << std::endl;
-                return 0;
+                std::cerr << "#DB ERROR# Could not parse " << db_test_path << "\n\twhat(): " << e.what() << std::endl;
+                return 1;
             }
             tr_json["serialNumber"] = serial_number;
 
@@ -207,8 +211,8 @@ int main(int argc, char *argv[]){
     // get Dat
     if (registerType == "getData") {
         if (file_path == "") {
-            std::cerr << "#ERROR# No file path given, please specify file path under -f option!" << std::endl;
-            return -1;
+            std::cerr << "#DB ERROR# No file path given, please specify file path under -f option!" << std::endl;
+            return 1;
         }
 
         if (serial_number!="") {
@@ -218,8 +222,8 @@ int main(int argc, char *argv[]){
                 try {
                     tr_json = json::parse(tr_cfg_ifs);
                 } catch (json::parse_error &e) {
-                    std::cerr << "#ERROR# Could not parse " << file_path << "\n\twhat(): " << e.what() << std::endl;
-                    return 0;
+                    std::cerr << "#DB ERROR# Could not parse " << file_path << "\n\twhat(): " << e.what() << std::endl;
+                    return 1;
                 }
             }
             tr_json["serialNumber"] = serial_number;
@@ -249,8 +253,8 @@ int main(int argc, char *argv[]){
         try {
             db_json = json::parse(db_cfg_ifs);
         } catch (json::parse_error &e) {
-            std::cerr << "#ERROR# Could not parse " << db_cfg_path << "\n\twhat(): " << e.what() << std::endl;
-            return 0;
+            std::cerr << "#DB ERROR# Could not parse " << db_cfg_path << "\n\twhat(): " << e.what() << std::endl;
+            return 1;
         }
         std::string cache_dir = db_json["cachePath"];
 
@@ -295,7 +299,7 @@ void printHelp() {
 
 void checkEmpty(bool i_empty, std::string i_key, std::string i_file_path) {
     if (i_empty) {
-        std::cerr << "#ERROR# '" << i_key << "' is empty in user config file: " << i_file_path << std::endl;
+        std::cerr << "#DB ERROR# '" << i_key << "' is empty in user config file: " << i_file_path << std::endl;
         std::abort();
     }
     return;

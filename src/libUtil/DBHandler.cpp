@@ -2270,7 +2270,7 @@ json DBHandler::checkDBCfg(std::string i_db_path) {
 
     json db_json = toJson(i_db_path);
     std::vector<std::string> key_list = { "hostIp", "hostPort", "cachePath", "dbName" };
-    for (auto key : key_list) this->checkEmpty(db_json[key].empty(), key, "Set database config by ../localdb/setup.sh");
+    for (auto key : key_list) this->checkEmpty(db_json[key].empty(), key, "Set database config by ../localdb/setup_db.sh");
 
     std::string cache_dir = db_json["cachePath"];
     struct stat statbuf;

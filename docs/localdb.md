@@ -242,7 +242,14 @@ User can use scanConsole with Local DB system after setting machine: [step1](#1.
 If you just want to see something running, execute the following: 
 
 ```bash
-$ ./bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p -W
+$ ./bin/scanConsole \
+-r configs/controller/emuCfg.json \
+-c configs/connectivity/example_fei4b_setup.json \
+-s configs/scans/fei4/std_digitalscan.json \
+-p \
+-W
+# scanConsolw with option 'W' can store cache files and 
+# dbAccessor can upload data from the cache in the next step
 ```
 This runs a digitalscan with the FE-I4B emulator and store cache files of the test.
 Cache files are stored in ${HOME}/.yarr/localdb/var/cache/scan/ in default.
