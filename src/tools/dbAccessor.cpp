@@ -40,7 +40,7 @@ int main(int argc, char *argv[]){
     std::string get_type = "";
 
     int c;
-    while ((c = getopt(argc, argv, "hRUC:E:SD:GMt:s:i:d:p:m:f:u:")) != -1 ){
+    while ((c = getopt(argc, argv, "hRUC:E:SDGMt:s:i:d:p:m:f:u:")) != -1 ){
         switch (c) {
             case 'h':
                 printHelp();
@@ -48,9 +48,6 @@ int main(int argc, char *argv[]){
                 break;
             case 'R':
                 registerType = "Cache";
-                break;
-            case 'U':
-                registerType = "User";
                 break;
             case 'C':
                 registerType = "Component";
@@ -65,7 +62,6 @@ int main(int argc, char *argv[]){
                 break;
             case 'D':
                 registerType = "getData";
-                get_type = std::string(optarg);
                 break;
             case 'G':
                 registerType = "getConfig";
@@ -76,6 +72,7 @@ int main(int argc, char *argv[]){
             case 't':
                 db_test_path = std::string(optarg);
                 config_type = std::string(optarg);
+                get_type = std::string(optarg);
                 break;
             case 's':
                 serial_number = std::string(optarg);
@@ -133,54 +130,12 @@ int main(int argc, char *argv[]){
 	      }
 	      while ((dirp = readdir(dp))) {
 		        std::string file_name = dirp->d_name;
+            if (file_name=="."||file_name=="..") continue;
             std::string cache_path = db_cache_path+"/"+file_name;
             db_cfg_path = cache_path+"/database.json";
             database->initialize(db_cfg_path, "db");
     	      database->setCache(cache_path);
         }
-        delete database;
-    }
-
-    // register user
-    if (registerType=="User") {
-        if (dbuser == "") {
-            std::cerr << "#ERROR# No user account name given, please specify user account under -u option!" << std::endl;
-            return -1;
-        }
-        std::cout << "DBHandler: Login user: \n\taccount: " << dbuser << std::endl;
-        std::string user_cfg_path = home+"/.yarr/localdb/etc/"+dbuser+"_user.json";
-        std::string address_cfg_path = home+"/.yarr/localdb/etc/address.json";
-
-        std::string user_name, institution, user_identity;
-
-        std::ifstream user_cfg_ifs(user_cfg_path);
-        json user_cfg_json = json::parse(user_cfg_ifs);
-        checkEmpty(user_cfg_json["userName"].empty(),"userName",user_cfg_path);
-        checkEmpty(user_cfg_json["institution"].empty(),"institution",user_cfg_path);
-
-        user_name = user_cfg_json["userName"];
-        institution = user_cfg_json["institution"];
-        if (!user_cfg_json["userIdentity"].empty()) user_identity = user_cfg_json["userIdentity"];
-        else user_identity = "default";
-        if (user_name == ""||institution == "") {
-            std::cerr << "#ERROR# Something wrong in user config file: " << user_cfg_path << std::endl;
-            return -1;
-        }
-    
-        std::replace(user_name.begin(), user_name.end(), ' ', '_');
-        std::replace(institution.begin(), institution.end(), ' ', '_');
-        std::replace(user_identity.begin(), user_identity.end(), ' ', '_');
-
-        std::cout << std::endl;
-        std::cout << "DBHandler: Register user's information: " << std::endl;
-    	  std::cout << "\tuser name : " << user_name << std::endl;
-    	  std::cout << "\tinstitution : " << institution << std::endl;
-    	  std::cout << "\tuser identity : " << user_identity << std::endl;
-        std::cout << std::endl;
-
-        database->initialize(db_cfg_path, "register");
-    	  database->setUser(user_cfg_path);
-    	  database->setSite(address_cfg_path);
         delete database;
     }
 
@@ -322,23 +277,20 @@ int main(int argc, char *argv[]){
 void printHelp() {
     std::cout << "Help:" << std::endl;
     std::cout << " -h: Shows this." << std::endl;
-    std::cout << " -R <path/to/cache/dir> : Register test data into database from cache. Provide path to cache directory." << std::endl;
-    std::cout << " -U : Register user data into database. Provide user's account name with option -u." << std::endl;
-    std::cout << "    -u <user account> " << std::endl;
-    std::cout << " -C <path/to/conn/cfg> : Register component data into database. Provide path to connectivity config file and user'account name with option -u." << std::endl;
-    std::cout << "    -u <user account> " << std::endl; 
-    std::cout << " -E <path/to/dcs/cfg> : Register DCS data into database. Provide path to test run config with option -t." << std::endl;
-    std::cout << "    - t <path/to/testrun/cfg> : Path to the file where test run information is written." << std::endl;
-    std::cout << " -S : Check connection to MongoDB server." << std::endl;
-    std::cout << " -G <get_type> : Download data from database. Provide the path to the query file with option -f." << std::endl;
-    std::cout << "    get_type ... - testRunLog: display the log of testRun for the component" << std::endl;
-    std::cout << "                 - testRunId:  display the id of latest testRun for the component" << std::endl;
-    std::cout << "                 - config:     display the config data" << std::endl;
-    std::cout << "                 - userId:     display the id of user data" << std::endl;
-    std::cout << "                 - dat:        display the dat data" << std::endl;
-    std::cout << "    -f <path/to/key/file> : Path to the file where the query key is written." << std::endl;
     std::cout << std::endl;
-    std::cout << " -d <path/to/db/cfg> : Path to the Database config file where MongoDB server information is written." << std::endl;
+    std::cout << " -d <path/to/db/cfg>: Path to the Database config file where MongoDB server information is written." << std::endl;
+    std::cout << std::endl;
+    std::cout << " -R: Register data into database from cache." << std::endl;
+    std::cout << " -C <path/to/component/cfg>: Register component data into database. Provide path to connectivity config file and user'account name with option -u." << std::endl;
+    std::cout << "    -u <user account> " << std::endl; 
+    std::cout << " -E <path/to/dcs/cfg>: Store DCS cache data for uploading. Provide path to test run config with option -t." << std::endl;
+    std::cout << "    - t <path/to/testrun/cfg>: Path to the file where test run information is written." << std::endl;
+    std::cout << " -S: Check connection to MongoDB server." << std::endl;
+    std::cout << " -D: Download data from database. Provide the path to the query file with option -f." << std::endl;
+    std::cout << "    -t <get_type> "
+    std::cout << "    -f <path/to/key/file>: Path to the file where the query key is written." << std::endl;
+    std::cout << std::endl;
+    std::cout << " -G: Download config data from database." << std::endl;
 }
 
 void checkEmpty(bool i_empty, std::string i_key, std::string i_file_path) {
@@ -348,4 +300,3 @@ void checkEmpty(bool i_empty, std::string i_key, std::string i_file_path) {
     }
     return;
 }
-

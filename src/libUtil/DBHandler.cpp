@@ -43,6 +43,9 @@ m_histo_names(), m_tr_oid_strs(), m_serial_numbers(),
 m_db_version(1.0), DB_DEBUG(false), m_log_json(), m_cache_json(), m_conn_json(), counter(0)
 {
     if (DB_DEBUG) std::cout << "DBHandler: DBHandler" << std::endl;
+#ifdef MONGOCXX_INCLUDE
+        mongocxx::instance inst{};
+#endif
 }
 
 DBHandler::~DBHandler() {
@@ -79,7 +82,7 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_option) {
     // initialize for registeration
     if (m_option=="db"||m_option=="register") {
 #ifdef MONGOCXX_INCLUDE
-        mongocxx::instance inst{};
+        //mongocxx::instance inst{};
         try {
             client = mongocxx::client{mongocxx::uri{host_ip}};
             db = client[db_name]; 
@@ -97,16 +100,16 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_option) {
 #endif
     }
     if (m_option=="scan") {
-        std::string cmd = "rm "+m_cache_dir+"/tmp/*";
+        std::string cmd = "rm "+m_cache_dir+"/tmp/*.json";
         if (system(cmd.c_str()) < 0) {
-            std::string message = "Problem removing files in "+m_cache_dir+"/tmp";
+            std::string message = "Problem removing json files in "+m_cache_dir+"/tmp";
             std::string function = __PRETTY_FUNCTION__;
             this->alert(function, message); return;
         }
     }
     if (m_option=="db")        m_log_dir = m_cache_dir+"/var/log/db/"   + std::to_string(now);
-    else if (m_option=="scan") m_log_dir = m_cache_dir+"/var/cache/scan/" + std::to_string(now);
-    else if (m_option=="dcs")  m_log_dir = m_cache_dir+"/var/cache/dcs/"  + std::to_string(now);
+    else if (m_option=="scan"||m_option=="dcs") m_log_dir = m_cache_dir+"/var/cache/scan/" + std::to_string(now);
+    //else if (m_option=="dcs")  m_log_dir = m_cache_dir+"/var/cache/dcs/"  + std::to_string(now);
     else m_log_dir = m_cache_dir+"/tmp/log";//TODO
 
     m_log_path = m_log_dir + "/cacheLog.json";
@@ -177,7 +180,7 @@ int DBHandler::checkConnection(std::string i_db_cfg_path) {
     json db_json = this->checkDBCfg(i_db_cfg_path);
     std::string db_cfg_path = i_db_cfg_path;
     std::string host_ip = "mongodb://"+std::string(db_json["hostIp"])+":"+std::string(db_json["hostPort"]);
-    mongocxx::instance inst{};
+    //mongocxx::instance inst{};
     try {
         client = mongocxx::client{mongocxx::uri{host_ip}};
         db = client["localdb"]; // Database name is 'localdb'
@@ -1337,9 +1340,18 @@ void DBHandler::writeScan(std::string i_cache_dir) {
 
     // check cache directory
     if (m_cache_json["status"]=="done") {
+        std::cout << "Already uploaded, then move cache files to temporary..." << std::endl;
         std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/tmp/db/";
         if (system(cmd.c_str()) < 0) {
             std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/tmp/db/";
+            std::string function = __PRETTY_FUNCTION__;
+            this->alert(function, message); return;
+        }
+        return;
+    } else if (m_cache_json["status"]=="failure") {
+        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/var/cache/failed/";
+        if (system(cmd.c_str()) < 0) {
+            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/var/cache/failed/";
             std::string function = __PRETTY_FUNCTION__;
             this->alert(function, message); return;
         }
@@ -1415,6 +1427,8 @@ void DBHandler::writeScan(std::string i_cache_dir) {
         int start_time = m_cache_json["startTime"];
         this->getTestRunData("", serial_number, start_time);
         if (m_tr_oid_str=="") {
+            m_log_json["errormessage"] = "Failed to upload, try again";
+            m_cache_json["errormessage"] = "Failed to upload, try again";
             this->writeJson("status", "failure", m_cache_path, m_cache_json);
             this->writeJson("status", "failure", m_log_path, m_log_json);
         }
@@ -1426,6 +1440,24 @@ void DBHandler::writeDCS(std::string i_cache_dir) {
     if (DB_DEBUG) std::cout << "DBHandler: Write DCS data from cache: " << i_cache_dir << std::endl;
 
     // check cache directory
+    if (m_cache_json["status"]=="done") {
+        std::cout << "Already uploaded, then move cache files to temporary..." << std::endl;
+        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/tmp/db/";
+        if (system(cmd.c_str()) < 0) {
+            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/tmp/db/";
+            std::string function = __PRETTY_FUNCTION__;
+            this->alert(function, message); return;
+        }
+        return;
+    } else if (m_cache_json["status"]=="failure") {
+        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/var/cache/failed/";
+        if (system(cmd.c_str()) < 0) {
+            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/var/cache/failed/";
+            std::string function = __PRETTY_FUNCTION__;
+            this->alert(function, message); return;
+        }
+        return;
+    }
     if (m_cache_json["status"]!="waiting") return;
 
     std::string tr_file_path = i_cache_dir+"/tr.json";
@@ -1459,6 +1491,8 @@ void DBHandler::writeDCS(std::string i_cache_dir) {
     auto doc_value = make_document(kvp("_id", bsoncxx::oid(m_tr_oid_str)));
     auto result = db["testRun"].find_one(doc_value.view());
     if (result->view()["environment"].get_utf8().value.to_string()=="...") {
+        m_log_json["errormessage"] = "Failed to upload, try again";
+        m_cache_json["errormessage"] = "Failed to upload, try again";
         this->writeJson("status", "failure", m_log_path, m_log_json);
         this->writeJson("status", "failure", m_cache_path, m_cache_json);
     }
@@ -2046,6 +2080,9 @@ void DBHandler::cacheConnCfg(std::vector<std::string> i_conn_paths) {
                     if (s_tmp==std::to_string(chip_id)) is_chip=true;
                 }
                 if (conn_json["chips"][j]["serialNumber"].empty()) conn_json["chips"][j]["serialNumber"] = ch_serial_number;
+                if (conn_json["chips"][j]["geomId"].empty()) {
+                    conn_json["chips"][j]["geomId"] = conn_json["chips"][j]["chipId"];
+                }
             }
         }
         std::ofstream conn_file(m_cache_dir+"/tmp/conn.json");
@@ -2308,7 +2345,7 @@ json DBHandler::checkConnCfg(std::string i_conn_path) {
                     std::string function = __PRETTY_FUNCTION__;
                     this->alert(function, message);
                 }
-                this->checkEmpty(conn_json["chips"][i]["geomId"].empty(), "chips."+std::to_string(i)+".geomId", i_conn_path);
+                //this->checkEmpty(conn_json["chips"][i]["geomId"].empty(), "chips."+std::to_string(i)+".geomId", i_conn_path);
             }
         }
     }

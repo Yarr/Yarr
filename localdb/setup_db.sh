@@ -128,8 +128,9 @@ if [ ! -e ${dir} ]; then
 fi
 if [ ! -e ${dir}/var ]; then
     mkdir -p ${dir}/var/cache/scan
-    mkdir -p ${dir}/var/log/db
     mkdir -p ${dir}/var/cache/dcs
+    mkdir -p ${dir}/var/cache/failed
+    mkdir -p ${dir}/var/log/db
     mkdir -p ${dir}/lib/tmp
     mkdir -p ${dir}/tmp/db
     mkdir -p ${dir}/etc
