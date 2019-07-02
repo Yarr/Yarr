@@ -23,7 +23,7 @@ void checkEmpty(bool /*i_empty*/, std::string /*i_key*/, std::string /*i_file_pa
 int main(int argc, char *argv[]){
 
     std::string home     = getenv("HOME");
-    std::string dbuser   = "";
+    std::string dbuser_cfg_path = "";
     std::string registerType = "";
 
     // Init parameters
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]){
                 file_path = std::string(optarg);
                 break;
             case 'u':
-                dbuser = std::string(optarg);
+                dbuser_cfg_path = std::string(optarg);
                 break;
             case '?':
                 if(optopt=='R'||optopt=='U'||optopt=='C'||optopt=='E'||optopt=='S'||optopt=='D'||optopt=='G'){
@@ -141,19 +141,18 @@ int main(int argc, char *argv[]){
 
     // register component
     if (registerType=="Component") {
-        if (dbuser == "") {
+        if (dbuser_cfg_path == "") {
             std::cerr << "#DB ERROR# No user account name given, please specify user account under -u option!" << std::endl;
             return 1;
         }
         std::cout << "DBHandler: Register Component:" << std::endl;
 	      std::cout << "\tconnecitivity config file : " << conn_path << std::endl;
 
-        std::string user_cfg_path = home+"/.yarr/localdb/etc/"+dbuser+"_user.json";
         std::string address_cfg_path = home+"/.yarr/localdb/etc/address.json";
 
         database->initialize(db_cfg_path, "register");
 
-    	  database->setUser(user_cfg_path);
+    	  database->setUser(dbuser_cfg_path);
     	  database->setSite(address_cfg_path);
         std::vector<std::string> conn_paths;
         conn_paths.push_back(conn_path);
@@ -175,7 +174,7 @@ int main(int argc, char *argv[]){
             json tr_json;
             std::ifstream tr_cfg_ifs(db_test_path);
             if (!tr_cfg_ifs) {
-                std::cerr << "#DB ERROR# Not found the file.\n\tfile: " + db_test_path << std::end;;
+                std::cerr << "#DB ERROR# Not found the file.\n\tfile: " + db_test_path << std::endl;
                 return 1;
             }
             try {

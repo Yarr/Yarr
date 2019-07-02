@@ -107,9 +107,9 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_option) {
             this->alert(function, message); return;
         }
     }
-    if (m_option=="db")        m_log_dir = m_cache_dir+"/var/log/db/"   + std::to_string(now);
-    else if (m_option=="scan"||m_option=="dcs") m_log_dir = m_cache_dir+"/var/cache/scan/" + std::to_string(now);
-    //else if (m_option=="dcs")  m_log_dir = m_cache_dir+"/var/cache/dcs/"  + std::to_string(now);
+    //if (m_option=="db") m_log_dir = m_cache_dir+"/var/log/db/"+std::to_string(now);
+    if (m_option=="scan"||m_option=="dcs") m_log_dir = m_cache_dir+"/var/cache/scan/"+std::to_string(now);
+    //else if (m_option=="dcs")  m_log_dir = m_cache_dir+"/var/cache/dcs/"+std::to_string(now);
     else m_log_dir = m_cache_dir+"/tmp/log";//TODO
 
     m_log_path = m_log_dir + "/cacheLog.json";
@@ -2080,8 +2080,9 @@ void DBHandler::cacheConnCfg(std::vector<std::string> i_conn_paths) {
                     if (s_tmp==std::to_string(chip_id)) is_chip=true;
                 }
                 if (conn_json["chips"][j]["serialNumber"].empty()) conn_json["chips"][j]["serialNumber"] = ch_serial_number;
-                if (conn_json["chips"][j]["geomId"].empty()) {
-                    conn_json["chips"][j]["geomId"] = conn_json["chips"][j]["chipId"];
+                if (conn_json["chips"][j]["geomId"].empty()) {//TODO
+                    //conn_json["chips"][j]["geomId"] = conn_json["chips"][j]["chipId"];
+                    conn_json["chips"][j]["geomId"] = j+1;
                 }
             }
         }
@@ -2316,7 +2317,7 @@ json DBHandler::checkConnCfg(std::string i_conn_path) {
                 }
             }
             if (!is_listed) {
-                std::string message = "This module "+mo_serial_number+" is not registered: "+i_conn_path;
+                std::string message = "This module "+mo_serial_number+" is not registered: "+i_conn_path+"\nTry ./bin/dbAccessor -M for pulling component data in local from Local DB";
                 std::string function = __PRETTY_FUNCTION__;
                 this->alert(function, message);
             }
