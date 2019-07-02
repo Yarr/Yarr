@@ -14,12 +14,12 @@ function usage {
     cat <<EOF
 
 Usage:
-    ./setup_db.sh [-i ip address] [-p port] [-c dir path] [-d]
+    ./setup_db.sh [-i ip address] [-p port] [-c dir path] [-n db name]
 
 Options:
     - i <ip address>  Local DB server ip address, default: 127.0.0.1
     - p <port>        Local DB server port, default: 27017
-    - c <dir path>    path to Local DB cache directory, default: Yarr/localdb/cacheDB
+    - c <dir path>    path to Local DB cache directory, default: $HOME/.yarr/localdb
     - n <db name>     Local DB Name, default: localdb
 
 EOF
@@ -96,7 +96,7 @@ fi
 echo " "
 echo "MongoDB Server Information"
 echo "  IP address: ${ip}"
-echo "   port: ${port}"
+echo "  port: ${port}"
 echo " "
 echo "Test Site Information"
 echo "  MAC address: ${macaddress}"

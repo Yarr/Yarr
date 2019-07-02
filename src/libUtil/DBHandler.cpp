@@ -96,6 +96,14 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_option) {
         this->alert(function, message); return;
 #endif
     }
+    if (m_option=="scan") {
+        std::string cmd = "rm "+m_cache_dir+"/tmp/*";
+        if (system(cmd.c_str()) < 0) {
+            std::string message = "Problem removing files in "+m_cache_dir+"/tmp";
+            std::string function = __PRETTY_FUNCTION__;
+            this->alert(function, message); return;
+        }
+    }
     if (m_option=="db")        m_log_dir = m_cache_dir+"/var/log/db/"   + std::to_string(now);
     else if (m_option=="scan") m_log_dir = m_cache_dir+"/var/cache/scan/" + std::to_string(now);
     else if (m_option=="dcs")  m_log_dir = m_cache_dir+"/var/cache/dcs/"  + std::to_string(now);
@@ -210,7 +218,8 @@ int DBHandler::checkModuleList() {
             std::string ch_oid_str = child["child"].get_utf8().value.to_string();
 
             std::string chip_id = this->getValue("component", "_id", ch_oid_str, "oid", "chipId", "int");
-            list_ofs << chip_id << ",";
+            std::string ch_serial_number = this->getValue("component", "_id", ch_oid_str, "oid", "serialNumber");
+            list_ofs << chip_id << "," << ch_serial_number << ",";
         }
     }
     list_ofs << std::endl;
@@ -1327,6 +1336,15 @@ void DBHandler::writeScan(std::string i_cache_dir) {
     if (DB_DEBUG) std::cout << "DBHandler: Write scan data from cache: " << i_cache_dir << std::endl;
 
     // check cache directory
+    if (m_cache_json["status"]=="done") {
+        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/tmp/db/";
+        if (system(cmd.c_str()) < 0) {
+            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/tmp/db/";
+            std::string function = __PRETTY_FUNCTION__;
+            this->alert(function, message); return;
+        }
+        return;
+    }
     if (m_cache_json["status"]!="waiting") return;
     // write status
     this->writeJson("status", "writing", m_cache_path, m_cache_json);
@@ -1861,7 +1879,7 @@ void DBHandler::getDatData(json i_info_json) {
     this->mkdir(dir_path);
     std::string cmd = "rm "+dir_path+"/*";
     if (system(cmd.c_str()) < 0) {
-        std::string message = "Problem creating "+dir_path;
+        std::string message = "Problem removing files in "+dir_path;
         std::string function = __PRETTY_FUNCTION__;
         this->alert(function, message); return;
     }
@@ -2007,8 +2025,29 @@ void DBHandler::cacheConnCfg(std::vector<std::string> i_conn_paths) {
         } else {
             mo_serial_number = conn_json["module"]["serialNumber"];
             conn_json["dummy"] = false;
+            char tmp[1000];
+            std::string del = ",";
+            char separator = del[0];
+            std::string mod_list_path = m_cache_dir+"/lib/modules.csv";
+            std::ifstream list_ifs(mod_list_path);
+            while (list_ifs.getline(tmp, 1000)) {
+                if (split(tmp, separator).size()==0) continue;
+                if (split(tmp, separator)[0] == mo_serial_number) break; 
+            }
+            for (unsigned j=0; j<conn_json["chips"].size(); j++) {
+                int chip_id = conn_json["chips"][j]["chipId"];
+                bool is_chip = false;
+                std::string ch_serial_number = "";
+                for (const auto s_tmp : split(tmp, separator)) {
+                    if (is_chip) {
+                        ch_serial_number = s_tmp;
+                        break;
+                    }
+                    if (s_tmp==std::to_string(chip_id)) is_chip=true;
+                }
+                if (conn_json["chips"][j]["serialNumber"].empty()) conn_json["chips"][j]["serialNumber"] = ch_serial_number;
+            }
         }
-    
         std::ofstream conn_file(m_cache_dir+"/tmp/conn.json");
         conn_file << std::setw(4) << conn_json;
         conn_file.close();
@@ -2269,6 +2308,7 @@ json DBHandler::checkConnCfg(std::string i_conn_path) {
                     std::string function = __PRETTY_FUNCTION__;
                     this->alert(function, message);
                 }
+                this->checkEmpty(conn_json["chips"][i]["geomId"].empty(), "chips."+std::to_string(i)+".geomId", i_conn_path);
             }
         }
     }

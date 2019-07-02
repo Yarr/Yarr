@@ -233,11 +233,17 @@ $ make -j4
 ## 5. Scan with uploading data into Local DB
 Scan Module with uploading data into Local DB in this step.
 
-User can use scanConsole with Local DB system after setting machine: step0 and step4
-Check step 4 for more detail about Local DB structure.
+User can use scanConsole with Local DB system after setting machine: [step1](#1._Install_Libraries), [step3](#3._Setup_Local_DB_system) and [step4](#4._Compile_YARR_software_including_Local_DB_software)
 
 ### Requirements
-- YARR software with Local DB system (step5)
+- YARR software with Local DB system
+
+
+
+
+
+----
+in editing
 
 ### Create user config file
 Scan data is uploaded into Local DB along with user information obtained from the user config file.

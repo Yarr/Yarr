@@ -261,12 +261,11 @@ int main(int argc, char *argv[]) {
         std::cout << "\033[1;31m# Set Database #\033[0m" << std::endl;
         std::cout << "\033[1;31m################\033[0m" << std::endl;
         std::cout << "-> Setting user's information" << std::endl;
-        std::string user = getenv("USER");
-        std::string dbUserCfgPath = "";
 
         if (dbCfgPath=="") dbCfgPath=home+"/.yarr/localdb/etc/database.json";
         database->initialize(dbCfgPath, "scan"); 
-        if (dbuser!="") dbUserCfgPath = home+"/.yarr/localdb/etc/"+dbuser+"_user.json";
+        if (dbuser=="") dbuser = getenv("USER");
+        std::string dbUserCfgPath = home+"/.yarr/localdb/etc/"+dbuser+"_user.json";
         if (dbSiteCfgPath=="") dbSiteCfgPath = home+"/.yarr/localdb/etc/address.json";
         database->setUser(dbUserCfgPath);
         database->setSite(dbSiteCfgPath);
@@ -736,6 +735,10 @@ void printHelp() {
     std::cout << " -o <dir> : Output directory. (Default ./data/)" << std::endl;
     std::cout << " -m <int> : 0 = pixel masking disabled, 1 = start with fresh pixel mask, default = pixel masking enabled" << std::endl;
     std::cout << " -k: Report known items (Scans, Hardware etc.)\n";
+    std::cout << " -W: Enable using Local DB." << std::endl;
+    std::cout << " -d: <database.json> Provide database configuration. (Default ~/.yarr/localdb/etc/database.json" << std::endl;
+    std::cout << " -i: <site.json> Provide site configuration. (Default ~/.yarr/localdb/etc/address.json" << std::endl;
+    std::cout << " -u: <user.json> Provide user configuration. (Default ~/.yarr/localdb/etc/${USER}_user.json" << std::endl;
 }
 
 void listChips() {

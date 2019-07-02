@@ -10,6 +10,9 @@
 #include <cstdlib>
 #include <iostream>
 #include <unistd.h>
+#include <dirent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "DBHandler.h"
 
 #include "json.hpp"
@@ -25,7 +28,6 @@ int main(int argc, char *argv[]){
 
     // Init parameters
     std::string db_cfg_path=home+"/.yarr/localdb/etc/database.json";
-    std::string db_cache_path = "";
     std::string db_dcs_path = "";
 	  std::string conn_path = "";
     std::string file_path = "";
@@ -38,7 +40,7 @@ int main(int argc, char *argv[]){
     std::string get_type = "";
 
     int c;
-    while ((c = getopt(argc, argv, "hR:UC:E:SD:GMt:s:i:d:p:m:f:u:")) != -1 ){
+    while ((c = getopt(argc, argv, "hRUC:E:SD:GMt:s:i:d:p:m:f:u:")) != -1 ){
         switch (c) {
             case 'h':
                 printHelp();
@@ -46,7 +48,6 @@ int main(int argc, char *argv[]){
                 break;
             case 'R':
                 registerType = "Cache";
-                db_cache_path = std::string(optarg);
                 break;
             case 'U':
                 registerType = "User";
@@ -118,12 +119,25 @@ int main(int argc, char *argv[]){
 
     // register cache
     if (registerType == "Cache") {
-        std::cout << "DBHandler: Register Cache '"<< db_cache_path << "'" << std::endl;
 
-        db_cfg_path = db_cache_path+"/database.json";
+        std::ifstream db_cfg_ifs(db_cfg_path);
+        json db_cfg_json = json::parse(db_cfg_ifs);
+        std::string db_cache_path = std::string(db_cfg_json["cachePath"])+"/var/cache/scan";
+        std::cout << "DBHandler: Register Cache in '"<< db_cache_path << "'" << std::endl;
+        DIR *dp;
+        struct dirent *dirp;
 
-        database->initialize(db_cfg_path, "db");
-    	  database->setCache(db_cache_path);
+	      dp = opendir(db_cache_path.c_str());
+	      if (dp==NULL) {
+		        return 0; 
+	      }
+	      while ((dirp = readdir(dp))) {
+		        std::string file_name = dirp->d_name;
+            std::string cache_path = db_cache_path+"/"+file_name;
+            db_cfg_path = cache_path+"/database.json";
+            database->initialize(db_cfg_path, "db");
+    	      database->setCache(cache_path);
+        }
         delete database;
     }
 
