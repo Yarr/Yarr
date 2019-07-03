@@ -9,6 +9,8 @@
 
 localdb_dir=$(cd $(dirname $0); pwd)
 
+set -e
+
 DEBUG=false
 
 # Usage
@@ -83,7 +85,7 @@ else
         echo "Enter the institution name where this machine (MAC address: ${macaddress}) is or 'exit' ... "
         read -p "> " -a answer
     done
-    if [ ${answer[0]} == "exit" ]; then
+    if [[ ${answer[0]} == "exit" ]]; then
         echo "Exit ..."
         echo " "
         exit
@@ -91,6 +93,7 @@ else
         for a in ${answer[@]}; do
             institution="${institution#_}_${a}"
         done
+        institution="${institution#_}"
     fi
 fi
 
@@ -113,7 +116,7 @@ do
     read -p "> " answer
 done
 echo " "
-if [ ${answer} != "y" ]; then
+if [[ ${answer} != "y" ]]; then
     if [ -f ${address} ]; then 
         echo "Remove Site Config file: ${address}"
         echo " "
@@ -130,11 +133,9 @@ if [ ! -e ${dir} ]; then
 fi
 if [ ! -e ${dir}/var ]; then
     mkdir -p ${dir}/var/cache/scan
-    mkdir -p ${dir}/var/cache/dcs
-    mkdir -p ${dir}/var/cache/failed
-    mkdir -p ${dir}/var/log/db
     mkdir -p ${dir}/lib/tmp
     mkdir -p ${dir}/tmp/db
+    mkdir -p ${dir}/tmp/failed
     mkdir -p ${dir}/etc
 fi
 

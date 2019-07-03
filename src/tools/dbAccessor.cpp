@@ -112,8 +112,6 @@ int main(int argc, char *argv[]){
 
     if (registerType == "") printHelp();
 
-    DBHandler *database = new DBHandler();
-
     // register cache
     if (registerType == "Cache") {
 
@@ -133,11 +131,14 @@ int main(int argc, char *argv[]){
             if (file_name=="."||file_name=="..") continue;
             std::string cache_path = db_cache_path+"/"+file_name;
             db_cfg_path = cache_path+"/database.json";
+            DBHandler *database = new DBHandler();
             database->initialize(db_cfg_path, "db");
     	      database->setCache(cache_path);
+            delete database;
         }
-        delete database;
     }
+
+    DBHandler *database = new DBHandler();
 
     // register component
     if (registerType=="Component") {
@@ -157,6 +158,8 @@ int main(int argc, char *argv[]){
         std::vector<std::string> conn_paths;
         conn_paths.push_back(conn_path);
 	      database->setConnCfg(conn_paths);
+
+        database->checkModuleList();
 
         delete database;
     }

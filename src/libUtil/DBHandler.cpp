@@ -43,9 +43,6 @@ m_histo_names(), m_tr_oid_strs(), m_serial_numbers(),
 m_db_version(1.0), DB_DEBUG(false), m_log_json(), m_cache_json(), m_conn_json(), counter(0)
 {
     if (DB_DEBUG) std::cout << "DBHandler: DBHandler" << std::endl;
-#ifdef MONGOCXX_INCLUDE
-        mongocxx::instance inst{};
-#endif
 }
 
 DBHandler::~DBHandler() {
@@ -82,7 +79,11 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_option) {
     // initialize for registeration
     if (m_option=="db"||m_option=="register") {
 #ifdef MONGOCXX_INCLUDE
-        //mongocxx::instance inst{};
+        try {
+            mongocxx::instance inst{}; // This should be done only once.
+        } catch (const mongocxx::exception & e){
+            if (DB_DEBUG) std::cout << "Already initialized MongoDB server" << "\n\twhat(): " << e.what() << std::endl;
+        }
         try {
             client = mongocxx::client{mongocxx::uri{host_ip}};
             db = client[db_name]; 
@@ -107,9 +108,7 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_option) {
             this->alert(function, message); return;
         }
     }
-    //if (m_option=="db") m_log_dir = m_cache_dir+"/var/log/db/"+std::to_string(now);
     if (m_option=="scan"||m_option=="dcs") m_log_dir = m_cache_dir+"/var/cache/scan/"+std::to_string(now);
-    //else if (m_option=="dcs")  m_log_dir = m_cache_dir+"/var/cache/dcs/"+std::to_string(now);
     else m_log_dir = m_cache_dir+"/tmp/log";//TODO
 
     m_log_path = m_log_dir + "/cacheLog.json";
@@ -1349,9 +1348,9 @@ void DBHandler::writeScan(std::string i_cache_dir) {
         }
         return;
     } else if (m_cache_json["status"]=="failure") {
-        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/var/cache/failed/";
+        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/tmp/failed/";
         if (system(cmd.c_str()) < 0) {
-            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/var/cache/failed/";
+            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/tmp/failed/";
             std::string function = __PRETTY_FUNCTION__;
             this->alert(function, message); return;
         }
@@ -1420,8 +1419,6 @@ void DBHandler::writeScan(std::string i_cache_dir) {
 
     // finish
     this->setTestRunFinish(scan_type, conn_paths, run_number, target_charge, target_tot);
-    this->writeJson("status", "done", m_cache_path, m_cache_json);
-    this->writeJson("status", "done", m_log_path, m_log_json);
 
     for (auto serial_number : m_serial_numbers) {
         int start_time = m_cache_json["startTime"];
@@ -1433,6 +1430,8 @@ void DBHandler::writeScan(std::string i_cache_dir) {
             this->writeJson("status", "failure", m_log_path, m_log_json);
         }
     }
+    if (m_cache_json["status"]!="failure") this->writeJson("status", "done", m_cache_path, m_cache_json);
+    if (m_log_json["status"]!="failure") this->writeJson("status", "done", m_log_path, m_log_json);
     return;
 }
 
@@ -1450,9 +1449,9 @@ void DBHandler::writeDCS(std::string i_cache_dir) {
         }
         return;
     } else if (m_cache_json["status"]=="failure") {
-        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/var/cache/failed/";
+        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/tmp/failed/";
         if (system(cmd.c_str()) < 0) {
-            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/var/cache/failed/";
+            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/tmp/failed/";
             std::string function = __PRETTY_FUNCTION__;
             this->alert(function, message); return;
         }
@@ -1486,8 +1485,6 @@ void DBHandler::writeDCS(std::string i_cache_dir) {
     this->setDCSCfg(dcs_file_path, tr_file_path);
     this->registerDCS(dcs_file_path, tr_file_path);
 
-    this->writeJson("status", "done", m_log_path, m_log_json);
-    this->writeJson("status", "done", m_cache_path, m_cache_json);
     auto doc_value = make_document(kvp("_id", bsoncxx::oid(m_tr_oid_str)));
     auto result = db["testRun"].find_one(doc_value.view());
     if (result->view()["environment"].get_utf8().value.to_string()=="...") {
@@ -1496,6 +1493,8 @@ void DBHandler::writeDCS(std::string i_cache_dir) {
         this->writeJson("status", "failure", m_log_path, m_log_json);
         this->writeJson("status", "failure", m_cache_path, m_cache_json);
     }
+    if (m_cache_json["status"]!="failure") this->writeJson("status", "done", m_cache_path, m_cache_json);
+    if (m_log_json["status"]!="failure") this->writeJson("status", "done", m_log_path, m_log_json);
 
     return;
 }

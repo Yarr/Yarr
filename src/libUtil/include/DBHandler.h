@@ -341,7 +341,6 @@ class DBHandler {
         std::string m_log_path;
         std::string m_cache_path;
         std::string m_cache_dir;
-        std::string m_host_ip;
         std::string m_tr_oid_str;
 
         std::vector<std::string> m_stage_list;
