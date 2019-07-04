@@ -109,7 +109,7 @@ Install necessary libraries and setup Local DB system for the machine in this st
   This step is required for DB machine but not for DAQ machine.
 
 ### Requirements
-- Pre Install for Viewer Application: [Installation](#Libraries_for_DB_Server)
+- Pre Install for Viewer Application: [Installation](#Libraries-for-DB-Server)
 - Python3 and PyROOT for displaying plots in browser: [Installation](https://github.com/jlab-hep/Yarr/wiki/Install-libraries)
 
 ### Setup
@@ -231,7 +231,7 @@ $ make -j4
 ## 5. Scan with uploading data into Local DB
 Scan Module with uploading data into Local DB in this step.
 
-User can use scanConsole with Local DB system after setting machine: [step1](#1._Install_Libraries), [step3](#3._Setup_Local_DB_system) and [step4](#4._Compile_YARR_software_including_Local_DB_software)
+User can use scanConsole with Local DB system after setting machine: [step1](#1.Install-Libraries), [step3](#3.Setup-Local-DB-system) and [step4](#4.Compile-YARR-software-including_Local_DB_software)
 
 ### Requirements
 - YARR software with Local DB system
@@ -344,7 +344,6 @@ Prepare the component information file and user information file. <br>
 And run the command `dbAccessor`:
 ```bash
 $ dbAccessor -C component.json -u user.json
-$ dbAccessor -M
 ```
 
 First command can register the components written in component.json.

@@ -373,7 +373,7 @@ void DBHandler::setTestRunStart(std::string i_test_type, std::vector<std::string
             char tmp[20];
             strftime(tmp, 20, "%Y%m%d", lt);
             std::string ts=tmp;
-            std::string log_path = m_cache_dir+"/var/log/"+ts+"_scan.log";
+            std::string log_path = m_cache_dir+"/lib/"+ts+"_scan.csv";
             std::ofstream log_file_ofs(log_path, std::ios::app);
             strftime(tmp, 20, "%F_%H:%M:%S", lt);
             ts=tmp;
