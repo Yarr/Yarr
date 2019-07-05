@@ -27,6 +27,7 @@ Support for YARR can be found in the [YARR Matter Most channel.](https://matterm
 * PCIe Installation
     * [PCIe Kernel Driver Installation](kernel_driver.md)
     * [PCIe Firmware Setup](pcie.md)
+    * [External PCIe](pcie_ext.md)
 * [ScanConsole](scanconsole.md)
     * [FE-I4](fei4.md)
     * [FE65-P2](fe65p2.md)

@@ -11,22 +11,17 @@ Documentation covering installation and usage can be found here http://yarr.rtfd
 
 ## Mailing list
 
-Subscribe to the CERN mailing list: [yarr-user](https://e-groups.cern.ch/e-groups/EgroupsSubscription.do?egroupName=yarr-users)
+Users should subscribe to the CERN mailing list to receive announcements for important updates: [yarr-user](https://e-groups.cern.ch/e-groups/EgroupsSubscription.do?egroupName=yarr-users)
 
-## Supported Hardware:
-The YARR SW supports multiple hardware platforms which have been integrated:
-
-- YARR PCIe cards (SPEC and XpressK7): link
-- IBL BOC: link
-- Wup KU40: link
-- Rogue HSIO2/ZCU102: link
+Developers and potential developers please refer to [Contribution](CONTRIBUTING.md) guide.
 
 ## Requirements
-Hardware:
 
-- Update me
+### Hardware:
 
-Software:
+- Please refer to the [documentation](http://readthedocs.org/projects/yarr/badge/?version=latest) for details
+
+### Software:
 
 - CentOS 7
 - cmake 3.6
@@ -49,7 +44,7 @@ Software:
 - Running
     - execute programs from the repository top folder
 
-## RCE Guide
+### RCE Guide
     - for ARM target cross compilers are provided by the RCE_SDK
         - installtion instructions: https://twiki.cern.ch/twiki/bin/viewauth/Atlas/RCEGen3SDK
     - using CMake:

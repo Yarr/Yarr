@@ -178,6 +178,8 @@ Once the full tuning routine (as outlined in the beginning of this page) has bee
 
 ## Cross-talk
 
+For more information please have a look at [this presentation](https://cernbox.cern.ch/index.php/s/DubCyTMyoWfZ52g).
+
 The cross-talk is evaluated injecting in the neighboring pixels and checking the occupancy in the central pixel. 
 
 To check if there is cross-talk for your chip+sensor, use the following command:
@@ -207,6 +209,90 @@ Config parameters:
 Example of the s-curve, threshold distribution, threshold map and noise distribution for the tuned linear front-end are given below:
 ![S-curve threshold scan](images/JohnDoe_crosstalkscan_sCurve.png)
 ![Threshold distribution](images/JohnDoe_crosstalkscan_ThrehsoldDist.png)
+
+## Cross-talk - check bump bonding scheme
+
+To run do
+```bash
+bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_crosstalk_scan_checkBumpBonding.json  -p
+```
+There are 2 ways to bump bond $25 \times 100 \mu m^2$ sensor pixels onto the $50 \times 50 \mu m^2$ chip pixels. This scan shows crosstalk for sensor type 1 and no crosstalk for sensor type 0 ($50 \times 50 \mu m^2$) or 2 ($25 \times 100 \mu m^2$ but different bump bonding scheme than type 1) as can be distinguished below:
+
+![Check Bump Bonding Scheme type 1](images/0x0A59_ThresholdMap-0_STACK_BumpBond.png)
+![Check Bump Bonding Scheme type 0](images/0x0A57_ThresholdMap-0_STACK_BumpBond.png)
+
+
+## Disconnected Bump Scan
+
+Uses crosstalk scan to identify pixels without any crosstalk - which are likely be due to disconnected bumps. Based on analog scan with crosstalk mask. This scan uses the same config parameters as the crosstalk scan.
+Run the following command:
+```bash
+bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_discbumpscan.json  -p
+```
+
+![disconnected bumps scan](images/JohnDoe_OccupancyMap_DiscBump.png)
+
+## Source Scan
+
+There are 3 different possibilities for a source scan:
+ 1. noise scan (random trigger)
+ 2. external trigger scan with Hit-Or ("self-trigger")
+ 3. external trigger scan with a real trigger, e.g. scintilltor (external trigger)
+ 
+### Random Trigger
+
+Run `std_digitalscan`, `std_analogscan` and at least 3 `std_noisescan` (with the default duration of 5 minutes) before a source scan with random trigger to mask digital/analog bad pixels and noisy pixels.
+Modify in `std_noisescan.json`: ```"createMask": false``` and to prevent changing the enable mask and ```"time": 300``` in seconds to set the scan duration.
+
+#### Known Problem (to be verified)
+The trigger loop in this scan does not sent an ECR signal during the scan. The sync FE does not delete 0-ToT hits in the buffer and/or the EOC logic gets stuck (with too many hits?) if no ECR is sent. Therefore a stripy pattern can occur in the sync FE.
+
+![stripy pattern source scan](images/0x0967_Occupancy_NoiseScanSource.png)
+
+### Hit-Or ("self-trigger")
+
+For the "self-triggering" source scan using Hit-Or as a trigger, a second DP-miniDP cable is needed to connect to the second DP port in the SCC and port B on the Ohio card. The multi-chip firmware cannot be used.
+Instead of the `specCfg.json` `specCfgExtTrigger.json` is to be used. The Hit-Or lines have to be enabled in the chip config:
+```
+"HitOr0MaskDiff0": 65536,
+"HitOr0MaskDiff1": 1,
+"HitOr0MaskLin0": 65536,
+"HitOr0MaskLin1": 1,
+"HitOr0MaskSync": 65536,
+"HitOr1MaskDiff0": 65536,
+"HitOr1MaskDiff1": 1,
+"HitOr1MaskLin0": 65536,
+"HitOr1MaskLin1": 1,
+"HitOr1MaskSync": 65536,
+"HitOr2MaskDiff0": 65536,
+"HitOr2MaskDiff1": 1,
+"HitOr2MaskLin0": 65536,
+"HitOr2MaskLin1": 1,
+"HitOr2MaskSync": 65536,
+"HitOr3MaskDiff0": 65536,
+"HitOr3MaskDiff1": 1,
+"HitOr3MaskLin0": 65536,
+"HitOr3MaskLin1": 1,
+"HitOr3MaskSync": 65536,
+```
+
+### External trigger
+
+One easy way to use the external trigger scan is to connect a scintillator to a TLU and use the DUT interface with the RD45 outputs through a RJ45-DP adapter.
+
+#### Hardware
+ * a scintillator with a PMT
+ * a TLU
+ * a RJ45 cable
+ * a RJ45-DP converter
+ * a second DP-miniDP cable
+ 
+#### Installation
+
+For running the TLU in standalone mode you need to install ```libusb``` and ```libusb-devel``` version 0.1 (!) on your (CentOS) computer.
+Get eudaq from [here](https://github.com/eudaq/eudaq/tree/master/user/tlu) and compile it with ```USER_TLU_BUILD=ON``` option.
+The TLU only produces trigger when the software is running with e.g. ```./EudetTluControl -a 1 -hm 0 -d 1 -i RJ45 -q```. Please refer to the TLU manual for the options.
+The second DP-miniDP cable connects the RJ45-DP connector to port D which should accept TLU input with the non-multichip FW on the FPGA.
 
 
 # Loop Actions
@@ -244,6 +330,8 @@ unsigned serial = (core_row*64)+((col+(core_row%8))%8)*8+row%8;
 ```
 
 The maximum of the loops defines how many pixels should be activated at one time. E.g. if the max is 64 that means every 64th pixel (1 pixel per core) and requires 64 steps to loop over all pixels. A pattern of enabled pixels in each mask step for ```max = 16``` can be found [here](https://docs.google.com/spreadsheets/d/1VXZn-fp16U6Rsu_GvGmq_fWgU0qwa0niilJ82ZQOYY8/edit?usp=sharing)
+
+![Mask Loop Pattern for max = 16](images/maskloop.png)
 
 Config parameters:
 
