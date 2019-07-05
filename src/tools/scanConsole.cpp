@@ -358,6 +358,19 @@ int main(int argc, char *argv[]) {
     // Wait for rx to sync with FE stream
     // TODO Check RX sync
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
+    hwCtrl->flushBuffer();
+    for ( FrontEnd* fe : bookie.feList ) {
+        std::cout << "-> Checking com " << dynamic_cast<FrontEndCfg*>(fe)->getName() << std::endl;
+        // Select correct channel
+        hwCtrl->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+        hwCtrl->setRxEnable(dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
+        // Configure
+        if (fe->checkCom() != 1) {
+            std::cout << "#ERROR# Can't establish communication, aborting!" << std::endl;
+            return -1;
+        }
+        std::cout <<   "... success!" << std::endl;
+    }
  
     // Enable all active channels
     std::cout << "-> Enabling Tx channels: " << std::endl;

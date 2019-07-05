@@ -40,6 +40,8 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
         void configurePixels();
         void configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels);
 
+        int checkCom() override;
+
         void maskPixel(unsigned col, unsigned row) override {
             this->setEn(col, row, 0);
             this->setHitbus(col, row, 0);
@@ -59,6 +61,7 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
 
     protected:
     private:
+        std::pair<uint32_t, uint32_t> decodeSingleRegRead(uint32_t higher, uint32_t lower);
 };
 
 #endif
