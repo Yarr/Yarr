@@ -14,7 +14,7 @@
 #include "ClipBoard.h"
 #include "HistogramBase.h"
 #include "EventDataBase.h"
-#include "TxCore.h"
+#include "HwController.h"
 #include "FrontEndGeometry.h"
 
 using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
@@ -24,7 +24,7 @@ class FrontEnd {
         FrontEnd() {}
         virtual ~FrontEnd() {}
         
-        virtual void init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel)=0;
+        virtual void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel)=0;
 
         // col/row starting at 0,0
         virtual void maskPixel(unsigned col, unsigned row) = 0;
@@ -53,6 +53,7 @@ class FrontEnd {
 
     protected:
         bool active;
+        RxCore *m_rxcore;
 };
 
 class FrontEndCfg {

@@ -21,13 +21,13 @@ class RxCore;
 class StarChips : public HccStarCfg, public StarCmd, public FrontEnd {
  public:
     StarChips();
-    StarChips(TxCore *arg_core);
-    StarChips(TxCore *arg_core, unsigned arg_channel);
-    StarChips(TxCore *arg_core, unsigned arg_txchannel, unsigned arg_rxchannel);
+    StarChips(HwController *arg_core);
+    StarChips(HwController *arg_core, unsigned arg_channel);
+    StarChips(HwController *arg_core, unsigned arg_txchannel, unsigned arg_rxchannel);
 
     ~StarChips() {}
 
-    void init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel);
+    void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel);
 
     void writeNamedRegister(std::string name, uint16_t value) override;
 
@@ -54,7 +54,6 @@ class StarChips : public HccStarCfg, public StarCmd, public FrontEnd {
 
   private:
     TxCore * m_txcore;
-    RxCore * m_rxcore;
     bool m_debug;
 };
 

@@ -21,7 +21,8 @@ Rd53a::Rd53a() : FrontEnd(), Rd53aCfg(), Rd53aCmd() {
     geo.nCol = 400;
 }
 
-Rd53a::Rd53a(TxCore *core) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
+Rd53a::Rd53a(HwController *core) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
+    m_rxcore = core;
     txChannel = 99;
     rxChannel = 99;
 	active = true;
@@ -30,7 +31,8 @@ Rd53a::Rd53a(TxCore *core) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
     core->setClkPeriod(6.25e-9);
 }
 
-Rd53a::Rd53a(TxCore *core, unsigned arg_channel) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
+Rd53a::Rd53a(HwController *core, unsigned arg_channel) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
+    m_rxcore = core;
 	txChannel = arg_channel;
 	rxChannel = arg_channel;
 	active = true;
@@ -39,7 +41,8 @@ Rd53a::Rd53a(TxCore *core, unsigned arg_channel) : FrontEnd(), Rd53aCfg(), Rd53a
     core->setClkPeriod(6.25e-9);
 }
 
-Rd53a::Rd53a(TxCore *core, unsigned arg_txChannel, unsigned arg_rxChannel) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
+Rd53a::Rd53a(HwController *core, unsigned arg_txChannel, unsigned arg_rxChannel) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
+    m_rxcore = core;
 	txChannel = arg_txChannel;
 	rxChannel = arg_rxChannel;
 	active = true;
@@ -48,8 +51,9 @@ Rd53a::Rd53a(TxCore *core, unsigned arg_txChannel, unsigned arg_rxChannel) : Fro
     core->setClkPeriod(6.25e-9);
 }
 
-void Rd53a::init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
+void Rd53a::init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
     this->setCore(arg_core);
+    m_rxcore = arg_core;
     txChannel = arg_txChannel;
     rxChannel = arg_rxChannel;
     geo.nRow = 192;
