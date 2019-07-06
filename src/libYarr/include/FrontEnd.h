@@ -35,7 +35,7 @@ class FrontEnd {
         virtual void makeGlobal(){};
        
         virtual void configure()=0;
-        virtual int checkCom() {return 0;}
+        virtual int checkCom() {return 1;}
 
         /// Write to a register using a string name (most likely from json)
         virtual void writeNamedRegister(std::string name, uint16_t value) = 0;
