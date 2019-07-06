@@ -19,98 +19,26 @@ Local DB system is based on following systems (to be installed by the installer)
 - Python3 v3.6
 
 Viewer Application is based on following systems additionaly (<span style="color:red">not to be installed by the installer</span>):
-- PyROOT (executable by Python3)
+- Python3
+- PyROOT (executable by Python3) (<span style="color:red">PLAN: will be replaced by python module</span>)
 
 ## 1. Install Libraries
-Install necessary libraries and setup Local DB system for the machine in this step.
 
 ### Requirements
 - sudo user account
-- Make sure you have git and net-tools:
-  ```bash
-  $ sudo yum install -y git net-tools
-  ```
-- Clone `localDB-tools`
-  ```bash
-  $ git clone https://github.com/jlab-hep/localDB-tools.git
-  ```
-- Clone `YARR`
-  ```bash
-  $ git clone https://gitlab.cern.ch/YARR/YARR.git
-  $ git checkout devel-localdb
-  ```
 
-### Libraries for DB Server
-- Installer: `localDB-tools/setting/db_server_install.sh`
-
-  You can install [required libraries](https://github.com/jlab-hep/Yarr/wiki/Install-libraries) by this installer for setting up Local DB Server in the first time.<br>
-  This installer can ...
-  - Install libraries by yum with avoiding conflict
-  - Install Modules by pip3 with avoiding conflict
-  - Start services 
-  - Open firewall port for accessing to Viewer Application from other machine 
-  - Initialize MongoDB data set 
-
-  Usage:
-  ```bash
-  $ cd path/to/localDB-tools
-  $ cd setting
-  $ sudo ./db_server_install.sh
-  Local DB Server IP address: XXX.XXX.XXX.XXX
+Install necessary libraries and setup Local DB system for the machine.<br>
+Check the detail here:
+- [Installation](https://github.com/jlab-hep/Yarr/wiki/Installation)
+  - [Automatic Installation](https://github.com/jlab-hep/Yarr/wiki/Automatic-Installetion)
+  - [Manual Installation](https://github.com/jlab-hep/Yarr/wiki/Manual-Installation)
   
-  Are you sure it is correct? [y/n]
-  # answer 'y' and move on to the installation
-  y
-  ```
-
-- Confirmation
-
-  Check the MongoDB service enabled by the command below:
-  ```bash
-  $ mongo
-  MongoDB shell version v3.6.8
-  connecting to: mongodb://localhost:27017
-  MongoDB server version: 3.6.8
-  Server has startup warnings:  
-  ```
-  
-### Libraries for DAQ Server
-- Installer: `YARR/localdb/db_yarr_install.sh`
-
-  You can install [required libraries](https://github.com/jlab-hep/Yarr/wiki/Install-libraries) by this installer for setting up scanConsole with Local DB Function in the first time. <br>
-  This installer can ...
-  - Install libraries by yum with avoiding conflict
-  - Install Modules by pip3 with avoiding conflict
-
-  Usage:
-  ```bash
-  $ cd path/to/YARR
-  $ cd localdb
-  $ sudo ./db_yarr_install.sh
-  # move on to the installation
-  ```
-
-- Confirmation
-
-  Check the MongoDB Libraries by the command below:
-  ```bash
-  # 1. Load path
-  $ source /opt/rh/rh-mongodb36/enable
-  
-  # 2. confirmation
-  $ echo $(pkg-config --cflags --libs libmongocxx)
-  -I/opt/rh/rh-mongodb36/root/usr/include/mongocxx/v_noabi -I/opt/rh/rh-mongodb36/root/usr/include/bsoncxx/v_noabi -L/opt/rh/rh-mongodb36/root/usr/lib64 -lmongocxx -lbsoncxx
-  # The header files will be at /opt/rh/rh-mongodb36/root/usr/include
-  # The libraries will be at /opt/rh/rh-mongodb36/root/usr/lib64
-  ```
-
 ## 2. Start Viewer Application
   Start Viewer Application to check data in Local DB Server in this step. <br>
   This step is required for DB machine but not for DAQ machine.
 
 ### Requirements
-- Pre Install for Viewer Application: [Installation](#Libraries-for-DB-Server)
-- Python3 and PyROOT for displaying plots in browser: [Installation](https://github.com/jlab-hep/Yarr/wiki/Install-libraries)
+- Pre Install for Viewer Application: [Installation](https://github.com/jlab-hep/Yarr/wiki/Installation)
 
 ### Setup
 - Setting script: `localDB-tools/viewer/setup_viewer.sh`
@@ -118,15 +46,14 @@ Install necessary libraries and setup Local DB system for the machine in this st
   You can setup for [Viewer Application](https://github.com/jlab-hep/Yarr/wiki/Viewer) by this scripts in Local DB Server. <br>
   This script can ...
   - Set the config file
-  ```bash
-  $ cd path/to/localDB-tools
-  $ cd viewer
-  $ ./setup_viewer.sh
-  # Additional arguments required if you run MongoDB on another machine
-  # -i "IP address"    Set Local DB Server IP address (default: 127.0.0.1)
-  # -p "port"          Set Local DB Server port (default: 27017)
-  # e.g.) ./setup_viewer.sh -i 111.111.1.0 -p 27017
-  ```
+    ```bash
+    $ cd path/to/localDB-tools
+    $ cd viewer
+    $ ./setup_viewer.sh
+    # Additional arguments required if you run MongoDB on another machine
+    # -i "IP address"   Local DB Server IP address (default: 127.0.0.1)
+    # -p "port number"  Local DB Server port number (default: 27017)
+    ```
 
 - Start Viewer Application 
 
@@ -138,7 +65,7 @@ Install necessary libraries and setup Local DB system for the machine in this st
   
   $ cd path/to/localDB-tools
   $ cd viewer
-  $ python36 app.py --config conf.yml
+  $ python3 app.py --config conf.yml
   
   Applying ATLAS style settings...
   
@@ -153,7 +80,7 @@ Install necessary libraries and setup Local DB system for the machine in this st
 
 - Confirmation
 
-  Access "http://127.0.0.1:5000/localdb/" or "http://<IPaddress>:5000/localdb" and Local DB Viewer page should be displayed on browser.
+  Access "http://127.0.0.1:5000/localdb/" or "http://<IPaddress>/localdb" and Local DB Viewer page should be displayed on browser.
 
 ## 3. Setup Local DB system
 
@@ -168,14 +95,13 @@ Install necessary libraries and setup Local DB system for the machine in this st
   $ cd localdb
   $ ./setup_db.sh
   # Additional arguments required if you run MongoDB on another machine
-  # -i "IP address"    Set Local DB Server IP address (default: 127.0.0.1)
-  # -p "port"          Set Local DB Server port (default: 27017)
-  # -c "path/to/cache" Set path to Local DB cache directory (default: ${HOME}/.yarr/localdb)
-  # -n "database name" Set Local DB Name (default: localdb)
-  # e.g.) ./setup_db.sh -i 111.111.1.0 -p 27017 -c `pwd`
+  # -i "IP address"     Local DB Server IP address (default: 127.0.0.1)
+  # -p "port"           Local DB Server port (default: 27017)
+  # -c "path/to/cache"  path to Local DB cache directory (default: ${HOME}/.yarr/localdb)
+  # -n "database name"  Local DB Name (default: localdb)
 
-  Enter the institution name where this machine (MAC address: 30:9c:23:ab:70:cf) is or 'exit' ... 
-  > Tokyo Institute of Technology
+  Enter the institution name where this machine (MAC address: XX:XX:XX:Xx:XX:XX) is or 'exit' ... 
+  > INSTITUTION NAME
  
   MongoDB Server Information
     IP address: 127.0.0.1
@@ -246,46 +172,53 @@ $ ./bin/scanConsole \
 -s configs/scans/fei4/std_digitalscan.json \
 -p \
 -W
-# scanConsolw with option 'W' can store cache files and 
-# dbAccessor can upload data from the cache in the next step
+# scanConsolw with option 'W' can store cache files
 ```
-This runs a digitalscan with the FE-I4B emulator and store cache files of the test.
+This runs a digitalscan with the FE-I4B emulator and store cache files of the test.<br>
 Cache files are stored in ${HOME}/.yarr/localdb/var/cache/scan/ in default.
 
 ```bash
 $ ./bin/dbAccessor -R
+# dbAccessor with option 'R' can upload data from the cache. 
 ```
 This can upload data from cache file on the stable network to Local DB Server.
 
-After that, you can check the result (non-registered component) in Test Page of Viewer Application.
+After that, you can check the result (NON-REGISTERED component) in Test Page of Viewer Application.
 
 ### Module Registration
 You can store results associated with the registered module after the registration. <br>
-Prepare the component information file and user information file. <br>
+Prepare the component information file and user information file.<br>
 <span style="color:red">PLAN: to be prepared registeration page in Viewer Application</span> <br>
 
-  - user.json
-    ```json
-    {
-      "userName": "FIRSTNAME LASTNAME",
-      "institution": "INSTITUTION",
-      "userIdentity": "default"
-    } 
-   
-    # e.g.
-    {
-      "userName": "John Doe",
-      "institution": "ABC Laboratory",
-      "userIdentity": "default"
-    } 
-    ```
-    - userName: your name
-    - institution: institution you belong
-    - userIdentity: just identifiable code not password
-  
-  - component.json (RD53A)
+- user.json
 
-    <span style="color:red">One file for one module!</span> 
+  **Required information**
+  - userName: your name (e.g. "John Doe")
+  - institution: institution you belong (e.g. "ABC Laboratory")
+  - userIdentity: just identifiable code not password (e.g. "account for testbeam")
+
+  ```json
+  {
+    "userName": "FIRSTNAME LASTNAME",
+    "institution": "INSTITUTION",
+    "userIdentity": "default"
+  } 
+  ```
+
+- component.json (RD53A)
+
+  <span style="color:red">One file for one module!</span> 
+
+  **Required information**
+  - module.serialNumber: serial number of the module
+  - module.componentType: "Module"
+  - chipType: "FEI4B" or "RD53A"
+  - chips: chips on the module
+    - chips.i.serialNumber: serial number of the chip
+    - chips.i.componentType: "Front-end Chip"
+    - chips.i.chipId: chipID must be "int"
+
+  <details><summary>for RD53A</summary><div>
 
     ```json
     {
@@ -303,11 +236,10 @@ Prepare the component information file and user information file. <br>
         ]
     }
     ```
-    - serialNumber: serial number of component
-    - componentType: "Module" or "Front-end Chip"
-    - chips: chips on the module
 
-  - component.json (FEI4B)
+  </div></details>
+
+  <details><summary>for FEI4B</summary><div>
 
     ```json
     {
@@ -320,40 +252,55 @@ Prepare the component information file and user information file. <br>
             {
                 "serialNumber": "FEI4B-001-chip1",
                 "componentType": "Front-end Chip",
-                "chipId": 1,
+                "chipId": 1
             },
             {
                 "serialNumber": "FEI4B-001-chip2",
                 "componentType": "Front-end Chip",
-                "chipId": 2,
+                "chipId": 2
             },
             {
                 "serialNumber": "FEI4B-001-chip3",
                 "componentType": "Front-end Chip",
-                "chipId": 3,
+                "chipId": 3
             },
             {
                 "serialNumber": "FEI4B-001-chip4",
                 "componentType": "Front-end Chip",
-                "chipId": 4,
+                "chipId": 4
             }
         ]
     }
     ```
-  
-And run the command `dbAccessor`:
+
+  </div></details>
+
+And run the command `dbAccessor` with the option '-C <component.json>' and '-u <user.json>':
 ```bash
 $ dbAccessor -C component.json -u user.json
 ```
 
-First command can register the components written in component.json.
-Second command can pull the component information registered in Local DB to local cache file: `${HOME}/.yarr/localdb/lib/modules.csv`.
+This can register the components data written in component.json.
 
-### Scan for Registered Module
+### Scan for REGISTERED Module
 
 Connecivity config file should be prepared properly.
 
 - connectivity.json
+
+  **Required information**
+  - stage: the test stage for the module, should be selected from the stage list written in [database.json](https://github.com/jlab-hep/Yarr/wiki/database-config-file)
+  - module.serialNumber: serial number of the module
+  - chipType: "FEI4B" or "RD53A"
+  - chips: chips on the module
+    - chips.i.chipId: chip ID, must be "int"
+    - chips.i.geomId: geometrical ID, should be 1 for SCC, and from 1 to 4 for quad module (and usually same to chip ID)
+    - chips.i.config: path to chip config file
+    - chips.i.tx: must be "int"
+    - chips.i.rx: must be "int"
+
+  <details><summary>for RD53A</summary><div>
+
   ```json
   {
       "stage": "Testing",
@@ -372,8 +319,52 @@ Connecivity config file should be prepared properly.
       ]
   }
   ```
-  - stage: test stage for the module
-  - geomId: geometrical Id ... should be 1 for SSC, and from 1 to 4 for quad module
+
+  </div></details>
+
+  <details><summary>for FEI4B</summary><div>
+
+  ```json
+  {
+      "stage": "Testing",
+      "module": {
+          "serialNumber": "FEI4B-001"
+      },
+      "chipType" : "FEI4B",
+      "chips" : [
+          {
+              "chipId": 1,
+              "geomId": 1,
+              "config" : "configs/defaults/default_fei4b.json",
+              "tx" : 0,
+              "rx" : 0
+          },
+          {
+              "chipId": 2,
+              "geomId": 2,
+              "config" : "configs/defaults/default_fei4b.json",
+              "tx" : 0,
+              "rx" : 1
+          },
+          {
+              "chipId": 3,
+              "geomId": 3,
+              "config" : "configs/defaults/default_fei4b.json",
+              "tx" : 0,
+              "rx" : 2
+          },
+          {
+              "chipId": 4,
+              "geomId": 4,
+              "config" : "configs/defaults/default_fei4b.json",
+              "tx" : 0,
+              "rx" : 3
+          }
+      ]
+  }
+  ```
+
+  </div></details>
 
 And run the `scanConsole`:
 
@@ -389,4 +380,5 @@ $ ./bin/scanConsole \
 $ ./bin/dbAccessor -R
 ```
 
-After that, you can check the result (non-registered component) in Module Page/Test Page of Viewer Application.
+After that, you can check the result (non-registered component) in Module/Test Page of Viewer Application.
+
