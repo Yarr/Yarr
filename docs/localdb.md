@@ -175,7 +175,7 @@ $ ./bin/scanConsole \
 # scanConsolw with option 'W' can store cache files
 ```
 This runs a digitalscan with the FE-I4B emulator and store cache files of the test.<br>
-Cache files are stored in ${HOME}/.yarr/localdb/var/cache/scan/ in default.
+Cache files are stored in ${HOME}/.yarr/localdb/var/cache/scan/${timestamp} in default.
 
 ```bash
 $ ./bin/dbAccessor -R
@@ -190,12 +190,14 @@ You can store results associated with the registered module after the registrati
 Prepare the component information file and user information file.<br>
 <span style="color:red">PLAN: to be prepared registeration page in Viewer Application</span> <br>
 
-- user.json
+- user config file
 
   **Required information**
   - userName: your name (e.g. "John Doe")
   - institution: institution you belong (e.g. "ABC Laboratory")
   - userIdentity: just identifiable code not password (e.g. "account for testbeam")
+
+  <details><summary>user.json</summary><div>
 
   ```json
   {
@@ -205,7 +207,9 @@ Prepare the component information file and user information file.<br>
   } 
   ```
 
-- component.json (RD53A)
+  </div></details>
+
+- component config file (RD53A)
 
   <span style="color:red">One file for one module!</span> 
 
@@ -218,7 +222,7 @@ Prepare the component information file and user information file.<br>
     - chips.i.componentType: "Front-end Chip"
     - chips.i.chipId: chipID must be "int"
 
-  <details><summary>for RD53A</summary><div>
+  <details><summary>component.json for RD53A</summary><div>
 
     ```json
     {
@@ -239,7 +243,7 @@ Prepare the component information file and user information file.<br>
 
   </div></details>
 
-  <details><summary>for FEI4B</summary><div>
+  <details><summary>component.json for FEI4B</summary><div>
 
     ```json
     {
@@ -275,9 +279,10 @@ Prepare the component information file and user information file.<br>
 
   </div></details>
 
-And run the command `dbAccessor` with the option '-C <component.json>' and '-u <user.json>':
+And execute the following: 
 ```bash
-$ dbAccessor -C component.json -u user.json
+$ ./bin/dbAccessor -C component.json -u user.json
+# dbAccessor with option 'C' can register component data. 
 ```
 
 This can register the components data written in component.json.
@@ -286,7 +291,7 @@ This can register the components data written in component.json.
 
 Connecivity config file should be prepared properly.
 
-- connectivity.json
+- connectivity config
 
   **Required information**
   - stage: the test stage for the module, should be selected from the stage list written in [database.json](https://github.com/jlab-hep/Yarr/wiki/database-config-file)
@@ -294,12 +299,11 @@ Connecivity config file should be prepared properly.
   - chipType: "FEI4B" or "RD53A"
   - chips: chips on the module
     - chips.i.chipId: chip ID, must be "int"
-    - chips.i.geomId: geometrical ID, should be 1 for SCC, and from 1 to 4 for quad module (and usually same to chip ID)
     - chips.i.config: path to chip config file
     - chips.i.tx: must be "int"
     - chips.i.rx: must be "int"
 
-  <details><summary>for RD53A</summary><div>
+  <details><summary>connectivity.json for RD53A</summary><div>
 
   ```json
   {
@@ -311,7 +315,6 @@ Connecivity config file should be prepared properly.
       "chips" : [
           {
               "chipId": 0,
-              "geomId": 1,
               "config" : "configs/defaults/default_rd53a.json",
               "tx" : 0,
               "rx" : 0
@@ -322,7 +325,7 @@ Connecivity config file should be prepared properly.
 
   </div></details>
 
-  <details><summary>for FEI4B</summary><div>
+  <details><summary>connectivity.json for FEI4B</summary><div>
 
   ```json
   {
@@ -334,28 +337,24 @@ Connecivity config file should be prepared properly.
       "chips" : [
           {
               "chipId": 1,
-              "geomId": 1,
               "config" : "configs/defaults/default_fei4b.json",
               "tx" : 0,
               "rx" : 0
           },
           {
               "chipId": 2,
-              "geomId": 2,
               "config" : "configs/defaults/default_fei4b.json",
               "tx" : 0,
               "rx" : 1
           },
           {
               "chipId": 3,
-              "geomId": 3,
               "config" : "configs/defaults/default_fei4b.json",
               "tx" : 0,
               "rx" : 2
           },
           {
               "chipId": 4,
-              "geomId": 4,
               "config" : "configs/defaults/default_fei4b.json",
               "tx" : 0,
               "rx" : 3
@@ -381,4 +380,173 @@ $ ./bin/dbAccessor -R
 ```
 
 After that, you can check the result (non-registered component) in Module/Test Page of Viewer Application.
+
+### Scan with DCS data
+
+You can store DCS data associated with the scan data.<br>
+Prepare the scan data file, DCS config file and DCS data file.<br>
+
+- scan data file
+
+  **Required information**
+  - scan data id in Local DB
+
+  <details><summary>ABC-001_scan.json</summary><div>
+
+  ```json
+  {
+      "id": "XXXXXXXXXXXXX"
+  } 
+  ```
+
+  </div></details>
+
+  or
+
+  - serial number of the module
+  - the beggining timestamp of the scan
+
+  <details><summary>ABC-001_scan.json</summary><div>
+
+  ```json
+  {
+      "serialNumber": "ABC-001",
+      "startTime": 1562416634
+  } 
+  ```
+
+  </div></details>
+
+  scanConsole generates "serial number"_scan.json for the scan in `${HOME}/.yarr/tmp` after the scan.
+
+- DCS config file
+
+  **Required information**
+  - environmetns: dcs list
+    - environments.i.description : the description of the DCS data
+    - environments.i.key : DCS keyword selected from the list written in [database.json](https://github.com/jlab-hep/Yarr/wiki/database-config-file)
+    - environments.i.path : path to DCS data file to store associated with the scan data
+    - environments.i.num : the number of DCS data
+    - environments.i.status : "enabled" to register DCS data
+
+  **Additional information**
+  - environments:
+    - environments.i.value : single DCS value instead of DCS data file
+    - environments.i.margin : the margin time before the start time / after thefinish time of the scan to store DCS data from DCS data file
+
+  <details><summary>dcs.json</summary><div>
+
+  ```json
+  {
+      "environments": [{
+          "description": "VDDD Voltage [V]",
+          "key": "vddd_voltage",
+          "path": "dcs.dat",
+          "num": 0,
+          "status": "enabled"
+      },{
+          "description": "VDDD Current [A]",
+          "key": "vddd_current",
+          "path": "dcs.dat",
+          "num": 0,
+          "status": "enabled"
+      },{
+          "description": "VDDA Voltage [V]",
+          "key": "vdda_voltage",
+          "path": "dcs.dat",
+          "num": 0,
+          "status": "disabled"
+      },{
+          "description": "VDDA Current [A]",
+          "key": "vdda_current",
+          "path": "dcs.dat",
+          "num": 0,
+          "status": "disabled"
+      },{
+          "description": "High Voltage [V]",
+          "key": "hv_voltage",
+          "path": "dcs.dat",
+          "num": 0,
+          "status": "disabled"
+      },{
+          "description": "High Voltage Current [A]",
+          "key": "hv_current",
+          "path": "dcs.dat",
+          "num": 0,
+          "status": "disabled"
+      },{
+          "description": "Temperature [C]",
+          "key": "temperature",
+          "path": "dcs.dat",
+          "num": 0,
+          "status": "disabled"
+      },{
+          "description": "Module Temperature [C]",
+          "key": "temperature",
+          "path": "dcs.dat",
+          "num": 1,
+          "status": "disabled"
+      }]
+  }
+  ```
+
+  </div></details>
+
+- DCS data file
+
+  **Supported format**
+  - dat : words are separated by space ' '
+  - csv : words are separated by comma ','
+
+  **Required information**
+  - 1st line: "key" + keywords written in DCS config
+  - 2nd line: "num" + num written in DCS config
+  - 3rd line: "mode" + DCS operation mode (e.g. ConstantVoltage, CV)
+  - 4th line: "setting" + setting value
+  - follows 5th line: "str" + "unix time" + DCS data
+
+  <details><summary>dcs.dat</summary><div>
+
+  ```dat
+  key unixtime vddd_voltage vddd_current vdda_voltage vdda_current
+  num null 0 0 0 0
+  mode null null null null null
+  setting null 10 10 10 10
+  2019-06-24_20:49:13 1561376953 10 20 0 0
+  2019-06-24_20:49:23 1561376963 11 21 0 0
+  2019-06-24_20:49:33 1561376973 12 22 0 0
+  2019-06-24_20:49:43 1561376983 13 23 0 0
+  2019-06-24_20:49:53 1561376993 14 24 0 0
+  2019-06-24_20:50:03 1561377003 15 25 0 0
+  2019-06-24_20:50:13 1561377013 16 26 0 0
+  2019-06-24_20:50:23 1561377023 17 27 0 0
+  2019-06-24_20:50:33 1561377033 18 28 0 0
+  2019-06-24_20:50:43 1561377043 19 29 0 0
+  2019-06-24_20:50:53 1561377053 20 30 0 0
+  2019-06-24_20:51:03 1561377063 21 31 0 0
+  2019-06-24_20:51:13 1561377073 22 32 0 0
+  2019-06-24_20:51:23 1561377083 23 33 0 0
+  2019-06-24_20:51:33 1561377093 24 34 0 0
+  2019-06-24_20:51:43 1561377103 25 35 0 0
+  2019-06-24_20:51:53 1561377113 26 36 0 0
+  2019-06-24_20:52:03 1561377123 27 37 0 0
+  2019-06-24_20:52:13 1561377133 28 38 0 0 
+  ```
+
+  </div></details>
+
+And run the `dbAccessor`:
+
+```bash
+$ ./bin/dbAccessor -E dcs.json -t ABC-001_scan.json
+```
+This can store cache files of DCS data associated with the test data.<br>
+Cache files are stored in ${HOME}/.yarr/localdb/var/cache/scan/${timestamp} in default.
+
+```bash
+$ ./bin/dbAccessor -R
+```
+This can upload data from cache file on the stable network to Local DB Server.
+
+After that, you can check the test and DCS data in result page of Viewer Application.
 
