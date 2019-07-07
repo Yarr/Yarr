@@ -162,7 +162,7 @@ User can use scanConsole with Local DB system after setting machine: [step1](#1.
 ### Requirements
 - YARR software with Local DB system
 
-### Quick Start
+### a) Quick Start
 If you just want to see something running, execute the following: 
 
 ```bash
@@ -185,7 +185,7 @@ This can upload data from cache file on the stable network to Local DB Server.
 
 After that, you can check the result (NON-REGISTERED component) in Test Page of Viewer Application.
 
-### Module Registration
+### b) Module Registration
 You can store results associated with the registered module after the registration. <br>
 Prepare the component information file and user information file.<br>
 <span style="color:red">PLAN: to be prepared registeration page in Viewer Application</span> <br>
@@ -287,7 +287,7 @@ $ ./bin/dbAccessor -C component.json -u user.json
 
 This can register the components data written in component.json.
 
-### Scan for REGISTERED Module
+### c) Scan for REGISTERED Module
 
 Connecivity config file should be prepared properly.
 
@@ -298,7 +298,7 @@ Connecivity config file should be prepared properly.
   - module.serialNumber: serial number of the module
   - chipType: "FEI4B" or "RD53A"
   - chips: chips on the module
-    - chips.i.chipId: chip ID, must be "int"
+    - chips.i.chipId: chip ID written in chip config, must be "int"
     - chips.i.config: path to chip config file
     - chips.i.tx: must be "int"
     - chips.i.rx: must be "int"
@@ -337,25 +337,25 @@ Connecivity config file should be prepared properly.
       "chips" : [
           {
               "chipId": 1,
-              "config" : "configs/defaults/default_fei4b.json",
+              "config" : "configs/chip1.json",
               "tx" : 0,
               "rx" : 0
           },
           {
               "chipId": 2,
-              "config" : "configs/defaults/default_fei4b.json",
+              "config" : "configs/chip2.json",
               "tx" : 0,
               "rx" : 1
           },
           {
               "chipId": 3,
-              "config" : "configs/defaults/default_fei4b.json",
+              "config" : "configs/chip3.json",
               "tx" : 0,
               "rx" : 2
           },
           {
               "chipId": 4,
-              "config" : "configs/defaults/default_fei4b.json",
+              "config" : "configs/chip4.json",
               "tx" : 0,
               "rx" : 3
           }
@@ -381,7 +381,7 @@ $ ./bin/dbAccessor -R
 
 After that, you can check the result (non-registered component) in Module/Test Page of Viewer Application.
 
-### Scan with DCS data
+### d) Scan with DCS data
 
 You can store DCS data associated with the scan data.<br>
 Prepare the scan data file, DCS config file and DCS data file.<br>
