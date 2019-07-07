@@ -252,29 +252,6 @@ int main(int argc, char *argv[]) {
         std::cerr << "Error creating symlink to output directory!" << std::endl;
     }
 
-    // Initial setting local DBHandler
-
-    DBHandler *database = new DBHandler();
-    if (dbUse) {
-        std::cout << std::endl;
-        std::cout << "\033[1;31m################\033[0m" << std::endl;
-        std::cout << "\033[1;31m# Set Database #\033[0m" << std::endl;
-        std::cout << "\033[1;31m################\033[0m" << std::endl;
-        std::cout << "-> Setting user's information" << std::endl;
-
-        if (dbCfgPath=="") dbCfgPath=home+"/.yarr/localdb/etc/database.json";
-        database->initialize(dbCfgPath, "scan"); 
-        if (dbUserCfgPath=="") dbUserCfgPath = home+"/.yarr/localdb/etc/"+getenv("USER")+"_user.json";
-        if (dbSiteCfgPath=="") dbSiteCfgPath = home+"/.yarr/localdb/etc/address.json";
-        database->setUser(dbUserCfgPath);
-        database->setSite(dbSiteCfgPath);
-        std::cout << "-> Setting Connectivity Configs" << std::endl;
-        database->setConnCfg(cConfigPaths);
-        database->setTestRunStart(strippedScan, cConfigPaths, runCounter, target_charge, target_tot);
-        database->setConfig(-1, -1, ctrlCfgPath, "controller", "ctrlCfg", "testRun", "null");
-        database->setConfig(-1, -1, scanType, strippedScan, "scanCfg", "testRun", "null");
-    }
-
     // Timestamp
     std::time_t now = std::time(NULL);
     struct tm *lt = std::localtime(&now);
@@ -295,6 +272,30 @@ int main(int argc, char *argv[]) {
     scanLog["targetCharge"] = target_charge;
     scanLog["targetTot"] = target_tot;
     scanLog["scanType"] = strippedScan;
+
+    // Initial setting local DBHandler
+    DBHandler *database = new DBHandler();
+    if (dbUse) {
+        std::cout << std::endl;
+        std::cout << "\033[1;31m################\033[0m" << std::endl;
+        std::cout << "\033[1;31m# Set Database #\033[0m" << std::endl;
+        std::cout << "\033[1;31m################\033[0m" << std::endl;
+        std::cout << "-> Setting user's information" << std::endl;
+
+        if (dbCfgPath=="") dbCfgPath=home+"/.yarr/localdb/etc/database.json";
+        database->initialize(dbCfgPath, "scan"); 
+        if (dbUserCfgPath=="") dbUserCfgPath = home+"/.yarr/localdb/etc/"+getenv("USER")+"_user.json";
+        if (dbSiteCfgPath=="") dbSiteCfgPath = home+"/.yarr/localdb/etc/address.json";
+        database->setUser(dbUserCfgPath);
+        database->setSite(dbSiteCfgPath);
+        std::cout << "-> Setting Connectivity Configs" << std::endl;
+        database->setConnCfg(cConfigPaths);
+        std::cout << commandLineStr << std::endl;
+        database->setTestRunStart(strippedScan, cConfigPaths, runCounter, target_charge, target_tot, (int)now, commandLineStr);
+        database->setConfig(-1, -1, ctrlCfgPath, "controller", "ctrlCfg", "testRun", "null");
+        database->setConfig(-1, -1, scanType, strippedScan, "scanCfg", "testRun", "null");
+    }
+
 
     std::cout << std::endl;
     std::cout << "\033[1;31m#################\033[0m" << std::endl;
@@ -712,7 +713,9 @@ int main(int argc, char *argv[]) {
         std::cout << "Path to Test Configuration: " << scanType << std::endl;
         std::cout << "Path to Controller Configuration: " << scanType << std::endl;
 
-        database->setTestRunFinish(strippedScan, cConfigPaths, runCounter, target_charge, target_tot);
+        now = std::time(NULL);
+
+        database->setTestRunFinish(strippedScan, cConfigPaths, runCounter, target_charge, target_tot, (int)now, commandLineStr);
 
         std::cout << "Done."<< std::endl;
     }

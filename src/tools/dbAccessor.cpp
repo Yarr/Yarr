@@ -119,15 +119,15 @@ int main(int argc, char *argv[]){
         json db_cfg_json = json::parse(db_cfg_ifs);
         std::string db_cache_path = std::string(db_cfg_json["cachePath"])+"/var/cache/scan";
         std::cout << "DBHandler: Register Cache in '"<< db_cache_path << "'" << std::endl;
-        DIR *dp;
-        struct dirent *dirp;
+        DIR *c_dp;
+        struct dirent *c_dirp;
 
-	      dp = opendir(db_cache_path.c_str());
-	      if (dp==NULL) {
+	      c_dp = opendir(db_cache_path.c_str());
+	      if (c_dp==NULL) {
 		        return 0; 
 	      }
-	      while ((dirp = readdir(dp))) {
-		        std::string file_name = dirp->d_name;
+	      while ((c_dirp = readdir(c_dp))) {
+		        std::string file_name = c_dirp->d_name;
             if (file_name=="."||file_name=="..") continue;
             std::string cache_path = db_cache_path+"/"+file_name;
             db_cfg_path = cache_path+"/database.json";
@@ -135,6 +135,30 @@ int main(int argc, char *argv[]){
             database->initialize(db_cfg_path, "db");
     	      database->setCache(cache_path);
             delete database;
+        }
+
+        std::string db_tmp_path = std::string(db_cfg_json["cachePath"])+"/tmp/db";
+
+        int now = std::time(NULL);
+
+        DIR *t_dp;
+        struct dirent *t_dirp;
+
+	      t_dp = opendir(db_tmp_path.c_str());
+	      if (t_dp==NULL) {
+		        return 0; 
+	      }
+	      while ((t_dirp = readdir(t_dp))) {
+		        std::string file_name = t_dirp->d_name;
+            if (file_name=="."||file_name=="..") continue;
+            //if (now-stoi(file_name)>604800) { // temporary cache files older than one week are deleted 
+            if (now-stoi(file_name)>304800) { // temporary cache files older than one week are deleted 
+                std::cout << "rm -r " << file_name << std::endl;
+                std::string cmd = "rm -r "+db_tmp_path+"/"+file_name;
+                if (system(cmd.c_str()) < 0) {
+                    std::cerr << "Problem removing files in " << db_tmp_path << "/" << file_name << std::endl;
+                }
+            }
         }
     }
 

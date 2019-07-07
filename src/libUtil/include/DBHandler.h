@@ -108,12 +108,16 @@ class DBHandler {
                              std::vector<std::string> /*i_conn_paths*/,
                              int /*i_run_number*/, 
                              int /*i_target_charge*/, 
-                             int /*i_target_tot*/);
+                             int /*i_target_tot*/,
+                             int /*i_timestamp*/,
+                             std::string /*i_command*/);
         void setTestRunFinish(std::string /*i_test_type*/, 
                               std::vector<std::string> /*i_conn_paths*/,
                               int /*i_run_number*/, 
                               int /*i_target_charge*/, 
-                              int /*i_target_tot*/);
+                              int /*i_target_tot*/,
+                              int /*i_timestamp*/,
+                              std::string /*i_command*/);
         //void setConfig(std::string /*i_ctr_oid_str*/, 
         void setConfig(int /*i_tx_channel*/,
                        int /*i_rx_channel*/, 

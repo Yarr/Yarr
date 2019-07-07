@@ -337,12 +337,9 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_tr_path) {
     return;
 }
 
-void DBHandler::setTestRunStart(std::string i_test_type, std::vector<std::string> i_conn_paths, int i_run_number, int i_target_charge, int i_target_tot) {
+void DBHandler::setTestRunStart(std::string i_test_type, std::vector<std::string> i_conn_paths, int i_run_number, int i_target_charge, int i_target_tot, int i_timestamp, std::string i_command) {
     if (DB_DEBUG) std::cout << "DBHandler: Write Test Run (start)" << std::endl;
 
-    int timestamp;
-    if (m_cache_json["startTime"].empty()) timestamp = std::time(NULL);
-    else timestamp = m_cache_json["startTime"];
     for (int i=0; i<(int)i_conn_paths.size(); i++) {
         std::string conn_path = i_conn_paths[i];
         json conn_json = this->toJson(conn_path);
@@ -352,7 +349,9 @@ void DBHandler::setTestRunStart(std::string i_test_type, std::vector<std::string
         else mo_serial_number = conn_json["module"]["serialNumber"];
 #ifdef MONGOCXX_INCLUDE
         if (m_option=="db"||m_option=="register") {
-            std::string tr_oid_str = this->registerTestRun(i_test_type, i_run_number, i_target_charge, i_target_tot, timestamp, mo_serial_number, "start");
+            std::string tr_oid_str = this->registerTestRun(i_test_type, i_run_number, i_target_charge, i_target_tot, i_timestamp, mo_serial_number, "start");
+            // command
+            this->addValue(tr_oid_str, "testRun", "command", i_command);
             // stage
             if (!conn_json["stage"].empty()) {
                 std::string stage = conn_json["stage"];
@@ -377,11 +376,11 @@ void DBHandler::setTestRunStart(std::string i_test_type, std::vector<std::string
             std::ofstream log_file_ofs(log_path, std::ios::app);
             strftime(tmp, 20, "%F_%H:%M:%S", lt);
             ts=tmp;
-            log_file_ofs << ts << "," << mo_serial_number << "," << timestamp << "," << i_run_number << "," << i_test_type << std::endl;
+            log_file_ofs << ts << "," << mo_serial_number << "," << i_timestamp << "," << i_run_number << "," << i_test_type << std::endl;
             log_file_ofs.close();
 
             json tr_json;
-            tr_json["startTime"] = timestamp;
+            tr_json["startTime"] = i_timestamp;
             tr_json["serialNumber"] = mo_serial_number;
             tr_json["runNumber"] = i_run_number;
             tr_json["testType"] = i_test_type;
@@ -392,27 +391,24 @@ void DBHandler::setTestRunStart(std::string i_test_type, std::vector<std::string
             tmp_file_ofs.close();
         }
     }
-    this->cacheTestRun(i_test_type, i_run_number, i_target_charge, i_target_tot, timestamp, -1, "");
+    this->cacheTestRun(i_test_type, i_run_number, i_target_charge, i_target_tot, i_timestamp, -1, i_command);
 
     return;
 }
 
-void DBHandler::setTestRunFinish(std::string i_test_type, std::vector<std::string> i_conn_paths, int i_run_number, int i_target_charge=-1, int i_target_tot=-1) {
+void DBHandler::setTestRunFinish(std::string i_test_type, std::vector<std::string> i_conn_paths, int i_run_number, int i_target_charge, int i_target_tot, int i_timestamp, std::string i_command) {
     if (DB_DEBUG) std::cout << "DBHandler: Write Test Run (finish)" << std::endl;
 
-    int timestamp;
-    if (m_cache_json["finishTime"].empty()) timestamp = std::time(NULL);
-    else timestamp = m_cache_json["finishTime"];
     std::sort(m_histo_names.begin(), m_histo_names.end());
     m_histo_names.erase(std::unique(m_histo_names.begin(), m_histo_names.end()), m_histo_names.end());
 #ifdef MONGOCXX_INCLUDE
     if (m_option=="db"||m_option=="register") {
         for (auto tr_oid_str : m_tr_oid_strs) {
-            this->registerTestRun(i_test_type, i_run_number, i_target_charge, i_target_tot, timestamp, "", "finish", tr_oid_str);
+            this->registerTestRun(i_test_type, i_run_number, i_target_charge, i_target_tot, i_timestamp, "", "finish", tr_oid_str);
         }
     }
 #endif
-    this->cacheTestRun(i_test_type, i_run_number, i_target_charge, i_target_tot, -1, timestamp, "");
+    this->cacheTestRun(i_test_type, i_run_number, i_target_charge, i_target_tot, -1, i_timestamp, i_command);
     
     return;
 }
@@ -1163,6 +1159,7 @@ std::string DBHandler::registerTestRun(std::string i_test_type, int i_run_number
             "state"        << "ready" << // state of component ["ready", "requestedToTrash", "trashed"]
             "targetCharge" << i_target_charge <<
             "targetTot"    << i_target_tot <<
+            "command"      << "..." <<
             "comments"     << open_array << close_array <<
             "defects"      << open_array << close_array <<
             "finishTime"   << bsoncxx::types::b_date{startTime} <<
@@ -1340,17 +1337,19 @@ void DBHandler::writeScan(std::string i_cache_dir) {
     // check cache directory
     if (m_cache_json["status"]=="done") {
         std::cout << "Already uploaded, then move cache files to temporary..." << std::endl;
-        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/tmp/db/";
+        int now = std::time(NULL);
+        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/tmp/db/"+std::to_string(now);
         if (system(cmd.c_str()) < 0) {
-            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/tmp/db/";
+            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/tmp/db/"+std::to_string(now);
             std::string function = __PRETTY_FUNCTION__;
             this->alert(function, message); return;
         }
         return;
     } else if (m_cache_json["status"]=="failure") {
-        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/tmp/failed/";
+        int now = std::time(NULL);
+        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/tmp/failed/"+std::to_string(now);
         if (system(cmd.c_str()) < 0) {
-            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/tmp/failed/";
+            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/tmp/failed/"+std::to_string(now);
             std::string function = __PRETTY_FUNCTION__;
             this->alert(function, message); return;
         }
@@ -1387,7 +1386,9 @@ void DBHandler::writeScan(std::string i_cache_dir) {
     int run_number        = m_cache_json["runNumber"];
     int target_charge     = m_cache_json["targetCharge"];
     int target_tot        = m_cache_json["targetTot"];
-    this->setTestRunStart(scan_type, conn_paths, run_number, target_charge, target_tot);
+    int start_timestamp   = m_cache_json["startTime"];
+    std::string command   = m_cache_json["command"];
+    this->setTestRunStart(scan_type, conn_paths, run_number, target_charge, target_tot, start_timestamp, command);
 
     // write config
     // controller config
@@ -1418,7 +1419,8 @@ void DBHandler::writeScan(std::string i_cache_dir) {
     }
 
     // finish
-    this->setTestRunFinish(scan_type, conn_paths, run_number, target_charge, target_tot);
+    int finish_timestamp = m_cache_json["finishTime"];
+    this->setTestRunFinish(scan_type, conn_paths, run_number, target_charge, target_tot, finish_timestamp, command);
 
     for (auto serial_number : m_serial_numbers) {
         int start_time = m_cache_json["startTime"];
@@ -2103,6 +2105,7 @@ void DBHandler::cacheTestRun(std::string i_test_type, int i_run_number, int i_ta
     m_log_json["runNumber"] = i_run_number;
     m_log_json["targetCharge"] = i_target_charge;
     m_log_json["targetTot"] = i_target_tot;
+    m_log_json["command"] = i_command;
     if (i_start_time!=-1) m_log_json["startTime"] = i_start_time;
     if (i_finish_time!=-1) {
         m_log_json["finishTime"] = i_finish_time;
