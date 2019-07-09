@@ -88,6 +88,12 @@ namespace ScanHelper {
                         std::cout << "Config file not found, using default!" << std::endl;
                         // Rename in case of multiple default configs
                         feCfg->setName(feCfg->getName() + "_" + std::to_string((int)chip["rx"]));
+                        std::cout << "-> Creating new config of FE " << feCfg->getName() << " to " << chipConfigPath << std::endl;
+                        json jTmp;
+                        feCfg->toFileJson(jTmp);
+                        std::ofstream oFTmp(chipConfigPath);
+                        oFTmp << std::setw(4) << jTmp;
+                        oFTmp.close();
                     }
                     // Save path to config
                     std::size_t botDirPos = chipConfigPath.find_last_of("/");
