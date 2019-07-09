@@ -1,5 +1,6 @@
 ![docs](http://readthedocs.org/projects/yarr/badge/?version=latest)
-![https://gitlab.cern.ch/YARR/YARR/pipelines] (https://gitlab.cern.ch/YARR/YARR/badges/master/pipeline.svg)
+
+![https://gitlab.cern.ch/YARR/YARR/pipelines](https://gitlab.cern.ch/YARR/YARR/badges/master/pipeline.svg)
 
 ![logo](docs/images/logo_blue_inv.png)
 
