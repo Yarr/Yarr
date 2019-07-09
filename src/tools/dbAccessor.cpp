@@ -131,6 +131,7 @@ int main(int argc, char *argv[]){
             if (file_name=="."||file_name=="..") continue;
             std::string cache_path = db_cache_path+"/"+file_name;
             db_cfg_path = cache_path+"/database.json";
+            sleep(1);
             DBHandler *database = new DBHandler();
             database->initialize(db_cfg_path, "db");
     	      database->setCache(cache_path);

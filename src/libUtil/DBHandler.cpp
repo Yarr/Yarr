@@ -223,8 +223,8 @@ int DBHandler::checkModuleList() {
             std::string ch_serial_number = this->getValue("component", "_id", ch_oid_str, "oid", "serialNumber");
             list_ofs << chip_id << "," << ch_serial_number << ",";
         }
+        list_ofs << std::endl;
     }
-    list_ofs << std::endl;
     list_ofs.close();
 #endif
     return 0;
@@ -1443,17 +1443,19 @@ void DBHandler::writeDCS(std::string i_cache_dir) {
     // check cache directory
     if (m_cache_json["status"]=="done") {
         std::cout << "Already uploaded, then move cache files to temporary..." << std::endl;
-        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/tmp/db/";
+        int now = std::time(NULL);
+        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/tmp/db/"+std::to_string(now);
         if (system(cmd.c_str()) < 0) {
-            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/tmp/db/";
+            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/tmp/db/"+std::to_string(now);
             std::string function = __PRETTY_FUNCTION__;
             this->alert(function, message); return;
         }
         return;
     } else if (m_cache_json["status"]=="failure") {
-        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/tmp/failed/";
+        int now = std::time(NULL);
+        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/tmp/failed/"+std::to_string(now);
         if (system(cmd.c_str()) < 0) {
-            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/tmp/failed/";
+            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/tmp/failed/"+std::to_string(now);
             std::string function = __PRETTY_FUNCTION__;
             this->alert(function, message); return;
         }

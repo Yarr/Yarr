@@ -172,7 +172,7 @@ $ ./bin/scanConsole \
 -s configs/scans/fei4/std_digitalscan.json \
 -p \
 -W
-# scanConsolw with option 'W' can store cache files
+# scanConsole with option 'W' can store cache files
 ```
 This runs a digitalscan with the FE-I4B emulator and store cache files of the test.<br>
 Cache files are stored in ${HOME}/.yarr/localdb/var/cache/scan/${timestamp} in default.
