@@ -1,5 +1,5 @@
 ![docs](http://readthedocs.org/projects/yarr/badge/?version=latest)
-![https://gitlab.cern.ch/YARR/YARR/pipelines](https://gitlab.cern.ch/YARR/YARR/badges/master/pipeline.svg)
+![https://gitlab.cern.ch/YARR/YARR/pipelines] (https://gitlab.cern.ch/YARR/YARR/badges/master/pipeline.svg)
 
 ![logo](docs/images/logo_blue_inv.png)
 
@@ -27,14 +27,14 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
 - cmake 3.6
 - GCC version 7 or higher
     - for example from devtoolset-7, instruction can be found here https://www.softwarecollections.org/en/scls/rhscl/devtoolset-7
-- Some misc packages:
+- Some misc packages (can be installed via yum):
     - gnuplot
     - texlive-epstopdf
     - zeromq, zeromq-devel
 
 ## Quick Install Guide:
 - Clone from git 
-	- git clone https://gitlab.cern.ch/YARR/YARR.git Yarr
+	- ``$ git clone https://gitlab.cern.ch/YARR/YARR.git Yarr``
 - Compilation:
     - ``$ cd Yarr``
     - ``$ mkdir build``
@@ -49,13 +49,13 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
 - for ARM target cross compilers are provided by the RCE_SDK
     - installtion instructions: https://twiki.cern.ch/twiki/bin/viewauth/Atlas/RCEGen3SDK
 - using CMake:
-    - source /opt/rce/setup.sh (for RCE cross compilation setup)
-    - export CENTOS7_ARM32_ROOT=/opt/rce/rootfs/centos7 #(points to cross installed CentOS7)
-    - export CENTOS7_ARM64_ROOT=/opt/rce/rootfs/centos7_64 #for ZCU102 
-    - cd build
+    - ``$ source /opt/rce/setup.sh (for RCE cross compilation setup)``
+    - ``$ export CENTOS7_ARM32_ROOT=/opt/rce/rootfs/centos7 #(points to cross installed CentOS7)``
+    - ``$ export CENTOS7_ARM64_ROOT=/opt/rce/rootfs/centos7_64 #for ZCU102 ``
+    - ``$ cd build``
     - select one of the supported toolchains
-        - cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang # requires clang installed on Linux
-        - cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc # gcc 4.8 or higher
-        - cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm32 # ARM32/Centos7 on RCE
-        - cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm64 # ARM64/Centos7 on zcu102
-    - make -j4 install
+        - ``$ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang # requires clang installed on Linux ``
+        - ``$ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc # gcc 4.8 or higher ``
+        - ``$ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm32 # ARM32/Centos7 on RCE ``
+        - ``$ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm64 # ARM64/Centos7 on zcu102 ``
+    - ``$ make -j4 install ``
