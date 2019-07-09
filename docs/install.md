@@ -79,6 +79,7 @@ $ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/macos-clang # MacOS build
 $ make -j4
 <Lots of text>
 $ make install
+$ cd ..
 ```
 
 ## Next step
