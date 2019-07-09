@@ -248,6 +248,7 @@ int Rd53a::checkCom() {
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     
     //std::cout << __PRETTY_FUNCTION__ << " : Trying to read data .." << std::endl;
+    // TODO not happy about this, rx knowledge should not be here
     RawData *data = m_rxcore->readData();
 
     if (data != NULL) {
