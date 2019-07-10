@@ -11,7 +11,7 @@ For the Spartan 6 case it is required to have installed the software first. Then
 - Program the FPGA on the SPEC board
 ```bash
     $ cd Yarr/src
-    $ bin/programFpga <path to Yarr-fw repo>/syn/spec/quad_fei4_revB/quad_fei4_revB.bit 
+    $ bin/specS6ProgramFpga <path to Yarr-fw repo>/syn/spec/quad_fei4_revB/quad_fei4_revB.bit 
     Opening file: ../hdl/syn/yarr_quad_fei4_revB.bit
     Size: 1.41732 MB
     =========================================
