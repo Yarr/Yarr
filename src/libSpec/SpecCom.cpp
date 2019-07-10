@@ -178,9 +178,7 @@ int SpecCom::readDma(uint32_t off, uint32_t *data, size_t words) {
 }
 
 void SpecCom::init() {
-#ifdef DEBUG
     std::cout << __PRETTY_FUNCTION__ << " -> Opening SPEC with id #" << specId << std::endl;
-#endif
     // Init SPEC
     try {
         spec = new SpecDevice(specId);
@@ -191,16 +189,12 @@ void SpecCom::init() {
     }
     // Open SPEC
     spec->open();
-#ifdef DEBUG
     std::cout << __PRETTY_FUNCTION__ << " -> Mapping BARs" << std::endl;
-#endif
     // Map BARs
     try {
         bar0 = spec->mapBAR(0);
-#ifdef DEBUG
         std::cout << __PRETTY_FUNCTION__ << " -> Mapped BAR0 at 0x" << std::hex << bar0 
             << " with size 0x" << spec->getBARsize(0) << std::dec << std::endl;
-#endif
     } catch (Exception &e) {
         std::cerr << __PRETTY_FUNCTION__ << " -> " << e.toString() << std::endl;
         throw Exception(Exception::INIT_FAILED);
@@ -208,17 +202,16 @@ void SpecCom::init() {
     }
     try {
         bar4 = spec->mapBAR(4);
-#ifdef DEBUG
         std::cout << __PRETTY_FUNCTION__ << " -> Mapped BAR4 at 0x" << std::hex << bar4 
             << " with size 0x" << spec->getBARsize(4) << std::dec << std::endl;
-#endif
     } catch (Exception &e) {
-        std::cerr << __PRETTY_FUNCTION__ << " -> " << e.toString() << std::endl;
         // TODO check if it's the right firmware
-        std::cerr << __PRETTY_FUNCTION__ << " -> Could not map BAR4, this might be OK!" << std::endl;
+        std::cerr << __PRETTY_FUNCTION__ << " -> BAR4 not map, ignore in case of Kintex7 board (" << e.what() << ")" << std::endl;
         bar4 = NULL;
     }
+    std::cout << __PRETTY_FUNCTION__ << " -> Flusing buffers ..." << std::endl;
     this->flushDma();
+    std::cout << __PRETTY_FUNCTION__ << " -> Init success!" << std::endl;
     return;
 }
 
