@@ -119,7 +119,7 @@ $ lspci
   2. Check if the test programs runs successfully (Note that the ``Could not map BAR4, ...`` is normal for the Series 7 FPGAs)
 ```bash
 $ cd Yarr/src
-$ bin/test 
+$ bin/specComTest 
 void SpecCom::init() -> Opening SPEC with id #0
 void SpecCom::init() -> Mapping BARs
 void SpecCom::init() -> Mapped BAR0 at 0x0x7f075e4b2000 with size 0x100000
