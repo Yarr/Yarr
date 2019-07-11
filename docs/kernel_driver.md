@@ -1,10 +1,10 @@
 # Kernel Driver Installation
 
-For both cards the custom PCIe kernel driver is required.  <span style="color:red">The installation of the kernel driver is only required once and sometimes after a kernel update.</span>
+For any of the PCIe FPGA cards the custom PCIe kernel driver is required.  <span style="color:red">The installation of the kernel driver is only required once and sometimes after a kernel update.</span>
 
 You can test if the driver is installed and loaded properly by looking at the `dmesg` output:
 ```bash
-$ dmesg
+$ dmesg | grep spec
 <Lots of text>
 [246519.712618] specDriver: Major 247 allocated to nodename 'spec'
 [246519.712637] specDriver: Found SPEC card at 0000:01:00.0

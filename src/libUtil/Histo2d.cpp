@@ -29,6 +29,7 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     underflow = 0;
     overflow = 0;
     data = new double[xbins*ybins];
+    isFilled = new bool[xbins*ybins];
     this->setAll(0);
     entries = 0;
 
@@ -51,6 +52,7 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     underflow = 0;
     overflow = 0;
     data = new double[xbins*ybins];
+    isFilled = new bool[xbins*ybins];
     this->setAll(0);
     entries = 0;
 }
@@ -72,6 +74,7 @@ Histo2d::Histo2d(Histo2d *h) : HistogramBase(h->getName(), h->getType()) {
     overflow = h->getOverflow();
 
     data = new double[xbins*ybins];
+    isFilled = new bool[xbins*ybins];
     for(unsigned i=0; i<xbins*ybins; i++)
         data[i] = h->getBin(i);
     entries = h->getNumOfEntries();
@@ -80,6 +83,7 @@ Histo2d::Histo2d(Histo2d *h) : HistogramBase(h->getName(), h->getType()) {
 
 Histo2d::~Histo2d() {
     delete[] data;
+	delete[] isFilled;
 }
 
 unsigned Histo2d::size() const {

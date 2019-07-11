@@ -21,7 +21,8 @@ Fei4::Fei4() : Fei4Cfg(), Fei4Cmd(), FrontEnd() {
     geo.nCol = 80;
 }
 
-Fei4::Fei4(TxCore *core) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
+Fei4::Fei4(HwController *core) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
+    m_rxcore = core;
     txChannel = 99;
     rxChannel = 99;
     //histogrammer = NULL;
@@ -31,7 +32,8 @@ Fei4::Fei4(TxCore *core) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
     geo.nCol = 80;
 }
 
-Fei4::Fei4(TxCore *core, unsigned arg_channel) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
+Fei4::Fei4(HwController *core, unsigned arg_channel) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
+    m_rxcore = core;
     txChannel = arg_channel;
     rxChannel = arg_channel;
     //histogrammer = NULL;
@@ -41,7 +43,8 @@ Fei4::Fei4(TxCore *core, unsigned arg_channel) : Fei4Cfg(), Fei4Cmd(core), Front
     geo.nCol = 80;
 }
 
-Fei4::Fei4(TxCore *core, unsigned arg_txChannel, unsigned arg_rxChannel) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
+Fei4::Fei4(HwController *core, unsigned arg_txChannel, unsigned arg_rxChannel) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
+    m_rxcore = core;
     txChannel = arg_txChannel;
     rxChannel = arg_rxChannel;
     //histogrammer = NULL;
@@ -55,8 +58,9 @@ Fei4::~Fei4() {
 
 }
 
-void Fei4::init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
+void Fei4::init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
     this->setCore(arg_core);
+    m_rxcore = arg_core;
     txChannel = arg_txChannel;
     rxChannel = arg_rxChannel;
     active = true;

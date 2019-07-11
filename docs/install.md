@@ -39,7 +39,7 @@ $ echo "source /opt/rh/devtoolset-7/enable" >> ~/.bash_profile
 ```
 - If not installed before, you need some standard packages:
 ```bash
-$ sudo yum install gnuplot texlive-epstopdf cmake
+$ sudo yum install gnuplot texlive-epstopdf cmake3 zeromq3 zeromq3-devel 
 ```
 
 ### Initialise repository
@@ -56,36 +56,30 @@ $ git clone https://gitlab.cern.ch/Yarr/Yarr.git Yarr
 
 ### Compile the software
 
-There are two ways to compile the software, either via a simple Makefile or via cmake. Pick your poison.
-If in doubt, use the simple Makefile method.
+This repository uses the cmake build system in its usual manner.
 
-#### Compile software with Makefile
-- Compile the software:
-```bash
-$ cd Yarr/src
-$ make -j4
-<Lots of text>
-```
 #### Compile software with cmake
 - Generate makefile
 ```bash
-$ cd Yarr/src
+$ cd Yarr/
 $ mkdir build
 $ cd build
-$ cmake ../
+$ cmake3 ../
 <Some text>
 ```
 - Expert note: you can choose a specific toolchain via:
 ```bash
-$ cmake ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang # requires clang installed on Linux
-$ cmake ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc # gcc 4.8 or higher
-$ cmake ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-gcc # ARM/Archlinux on RCE
-$ cmake ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/macos-clang # MacOS build
+$ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang # requires clang installed on Linux
+$ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc # gcc 4.8 or higher
+$ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-gcc # ARM/Archlinux on RCE
+$ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/macos-clang # MacOS build
 ```
 - Compile the software
 ```bash
 $ make -j4
 <Lots of text>
+$ make install
+$ cd ..
 ```
 
 ## Next step

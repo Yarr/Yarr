@@ -1,0 +1,9 @@
+-D__STDC_CONSTANT_MACROS
+-D__STDC_LIMIT_MACROS
+-std=c++17
+-Isrc/libUtil/include
+-Isrc/libYarr/include
+-Isrc/libFei4/include
+-Isrc/libFe65p2/include
+-Isrc/libRd53a/include
+-Isrc/libSpec/include

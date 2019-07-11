@@ -21,6 +21,8 @@
 #include <map>
 #include <sstream>
 
+#include "ScanHelper.h"
+
 #include "HwController.h"
 
 #include "AllHwControllers.h"
@@ -259,45 +261,19 @@ int main(int argc, char *argv[]) {
     std::cout << "\033[1;31m# Init Hardware #\033[0m" << std::endl;
     std::cout << "\033[1;31m#################\033[0m" << std::endl;
 
+    std::cout << "-> Opening controller config: " << ctrlCfgPath << std::endl;
     std::unique_ptr<HwController> hwCtrl = nullptr;
-    if (ctrlCfgPath == "") {
-        std::cout << "#ERRROR# No controller config given, aborting." << std::endl;
+    json ctrlCfg;
+    try {
+        ctrlCfg = ScanHelper::openJsonFile(ctrlCfgPath);
+        hwCtrl = ScanHelper::loadController(ctrlCfg);
+    } catch (std::runtime_error &e) {
+        std::cerr << "#ERROR# opening or loading controller config: " << e.what() << std::endl;
         return -1;
-    } else {
-        // Open controller config file
-        std::cout << "-> Opening controller config: " << ctrlCfgPath << std::endl;
-        std::ifstream ctrlCfgFile(ctrlCfgPath);
-        if (!ctrlCfgFile) {
-            std::cerr <<"#ERROR# Cannot open controller config file: " << ctrlCfgPath << std::endl;
-            return -1;
-        }
-        json ctrlCfg;
-        try {
-            ctrlCfg = json::parse(ctrlCfgFile);
-        } catch (json::parse_error &e) {
-            std::cerr << "#ERROR# Could not parse config: " << e.what() << std::endl;
-            return 0;
-        }
-        std::string controller = ctrlCfg["ctrlCfg"]["type"];
-        // Add to scan log
-        scanLog["ctrlCfg"] = ctrlCfg;
-
-        hwCtrl = StdDict::getHwController(controller);
-
-        if(hwCtrl) {
-          std::cout << "-> Found config for controller " << controller << std::endl;
-
-          hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
-        } else {
-            std::cerr << "#ERROR# Unknown config type: " << ctrlCfg["ctrlCfg"]["type"] << std::endl;
-            std::cout << " Known HW controllers:\n";
-            for(auto &h: StdDict::listHwControllers()) {
-              std::cout << "  " << h << std::endl;
-            }
-            std::cerr << "Aborting!" << std::endl;
-            return -1;
-        }
     }
+    // Add to scan log
+    scanLog["ctrlCfg"] = ctrlCfg;
+    
     hwCtrl->setupMode();
 
     // Disable trigger in-case
@@ -320,68 +296,16 @@ int main(int argc, char *argv[]) {
     // Loop over setup files
     for(std::string const& sTmp : cConfigPaths){
         std::cout << "Opening global config: " << sTmp << std::endl;
-        std::ifstream gConfig(sTmp);
         json config;
         try {
-            config = json::parse(gConfig);
-        } catch(json::parse_error &e) {
-            std::cerr << __PRETTY_FUNCTION__ << " : " << e.what() << std::endl;
+            config = ScanHelper::openJsonFile(sTmp);
+            chipType = ScanHelper::loadChips(config, bookie, &*hwCtrl, feCfgMap, outputDir);
+        } catch (std::runtime_error &e) {
+            std::cerr << "#ERROR# opening connectivity or chip configs: " << e.what() << std::endl;
+            return -1;
         }
         scanLog["connectivity"] = config;
-
-        if (config["chipType"].empty() || config["chips"].empty()) {
-            std::cerr << __PRETTY_FUNCTION__ << " : invalid config, chip type or chips not specified!" << std::endl;
-            return 0;
-        } else {
-            chipType = config["chipType"];
-            std::cout << "Chip Type: " << chipType << std::endl;
-            std::cout << "Found " << config["chips"].size() << " chips defined!" << std::endl;
-            // Loop over chips
-            for (unsigned i=0; i<config["chips"].size(); i++) {
-                std::cout << "Loading chip #" << i << std::endl;
-                try { 
-                    json chip = config["chips"][i];
-                    std::string chipConfigPath = chip["config"];
-                    if (chip["enable"] == 0) {
-                        std::cout << " ... chip not enabled, skipping!" << std::endl;
-                    } else {
-                        // TODO should be a shared pointer
-                        bookie.addFe(StdDict::getFrontEnd(chipType).release(), chip["tx"], chip["rx"]);
-                        bookie.getLastFe()->init(&*hwCtrl, chip["tx"], chip["rx"]);
-                        FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie.getLastFe());
-                        std::ifstream cfgFile(chipConfigPath);
-                        if (cfgFile) {
-                            // Load config
-                            std::cout << "Loading config file: " << chipConfigPath << std::endl;
-                            json cfg = json::parse(cfgFile);
-                            feCfg->fromFileJson(cfg);
-                            if (!chip["locked"].empty())
-                                feCfg->setLocked((int)chip["locked"]);
-                            cfgFile.close();
-                        } else {
-                            std::cout << "Config file not found, using default!" << std::endl;
-                            // Rename in case of multiple default configs
-                            feCfg->setName(feCfg->getName() + "_" + std::to_string((int)chip["rx"]));
-                        }
-                        success++;
-                        // Save path to config
-                        std::size_t botDirPos = chipConfigPath.find_last_of("/");
-                        feCfgMap[bookie.getLastFe()] = chipConfigPath;
-                        dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->setConfigFile(chipConfigPath.substr(botDirPos, chipConfigPath.length()));
-                        
-                        // Create backup of current config
-                        // TODO fix folder
-                        std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getConfigFile() + ".before");
-                        json backupCfg;
-                        dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
-                        backupCfgFile << std::setw(4) << backupCfg;
-                        backupCfgFile.close();
-                    }
-                } catch (json::parse_error &e) {
-                    std::cerr << __PRETTY_FUNCTION__ << " : " << e.what() << std::endl;
-                }
-            }
-        }
+        
     }
     
     // Reset masks
@@ -434,14 +358,27 @@ int main(int argc, char *argv[]) {
     // Wait for rx to sync with FE stream
     // TODO Check RX sync
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
+    hwCtrl->flushBuffer();
+    for ( FrontEnd* fe : bookie.feList ) {
+        std::cout << "-> Checking com " << dynamic_cast<FrontEndCfg*>(fe)->getName() << std::endl;
+        // Select correct channel
+        hwCtrl->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+        hwCtrl->setRxEnable(dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
+        // Configure
+        if (fe->checkCom() != 1) {
+            std::cout << "#ERROR# Can't establish communication, aborting!" << std::endl;
+            return -1;
+        }
+        std::cout <<   "... success!" << std::endl;
+    }
  
     // Enable all active channels
-    std::cout << "-> Enablign Tx channels: " << std::endl;
+    std::cout << "-> Enabling Tx channels: " << std::endl;
     hwCtrl->setCmdEnable(bookie.getTxMask());
     for (uint32_t channel : bookie.getTxMask()) {
         std::cout << "  ... " << channel  << std::endl;
     }
-    std::cout << "-> Enablign Rx channels: " << std::endl;
+    std::cout << "-> Enabling Rx channels: " << std::endl;
     hwCtrl->setRxEnable(bookie.getRxMask());
     for (uint32_t channel : bookie.getRxMask()) {
         std::cout << "  ... " << channel  << std::endl;
@@ -632,10 +569,15 @@ int main(int argc, char *argv[]) {
                 auto &output = *fe->clipResult;
                 std::string name = dynamic_cast<FrontEndCfg*>(fe)->getName();
 
-                while(!output.empty()) {
-                    std::unique_ptr<HistogramBase> histo = output.popData();
-                    histo->plot(name, outputDirTmp);
-                    histo->toFile(name, outputDir);
+                if (output.empty()) {
+                    std::cout << " #WARNING# There were no results for chip " << name << ", this usually means that the chip did not send any data at all."
+                        << std::endl;
+                } else {
+                    while(!output.empty()) {
+                        std::unique_ptr<HistogramBase> histo = output.popData();
+                        histo->plot(name, outputDirTmp);
+                        histo->toFile(name, outputDir);
+                    }
                 }
             }
         }
@@ -654,7 +596,7 @@ void printHelp() {
     std::cout << " -s <scan_type> : Scan config" << std::endl;
     //std::cout << " -n: Provide SPECboard number." << std::endl;
     //std::cout << " -g <cfg_list.txt>: Provide list of chip configurations." << std::endl;
-    std::cout << " -c <cfg1.json> [<cfg2.json> ...]: Provide connectivity configuration, can take multiple arguments." << std::endl;
+    std::cout << " -c <connectivity.json> [<cfg2.json> ...]: Provide connectivity configuration, can take multiple arguments." << std::endl;
     std::cout << " -r <ctrl.json> Provide controller configuration." << std::endl;
     std::cout << " -t <target_charge> [<tot_target>] : Set target values for threshold/charge (and tot)." << std::endl;
     std::cout << " -p: Enable plotting of results." << std::endl;
@@ -711,131 +653,89 @@ void listKnown() {
 }
 
 std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie ) {
-  std::unique_ptr<ScanBase> s ( nullptr );
-  
-    if (scanType.find("json") != std::string::npos) {
-        std::cout << "-> Found Scan config, constructing scan ..." << std::endl;
-        s.reset( new ScanFactory(&bookie) );
-        std::ifstream scanCfgFile(scanType);
-        if (!scanCfgFile) {
-            std::cerr << "#ERROR# Could not open scan config: " << scanType << std::endl;
-            throw("buildScan failure!");
-        }
-        json scanCfg;
-        try {
-            scanCfg = json::parse(scanCfgFile);
-        } catch (json::parse_error &e) {
-            std::cerr << "#ERROR# Could not parse config: " << e.what() << std::endl;
-        }
-        dynamic_cast<ScanFactory&>(*s).loadConfig(scanCfg);
-    } else {
-        std::cout << "-> Selecting Scan: " << scanType << std::endl;
-        auto scan = StdDict::getScan(scanType, &bookie);
-        if (scan != nullptr) {
-            std::cout << "-> Found Scan for " << scanType << std::endl;
-            s = std::move(scan);
-        } else {
-            std::cout << "-> No matching Scan found, possible:" << std::endl;
-            listScans();
-            std::cerr << "-> Aborting!" << std::endl;
-            throw("buildScan failure!");
-        }
+    std::unique_ptr<ScanBase> s ( nullptr );
+
+    std::cout << "-> Found Scan config, constructing scan ..." << std::endl;
+    s.reset( new ScanFactory(&bookie) );
+    json scanCfg;
+    try {
+        scanCfg = ScanHelper::openJsonFile(scanType);
+    } catch (std::runtime_error &e) {
+        std::cerr << "#ERROR# opening scan config: " << e.what() << std::endl;
+        throw("buildScan failure");
     }
+    dynamic_cast<ScanFactory&>(*s).loadConfig(scanCfg);
 
     return s;
 }
 
 
 void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& histogrammers, const std::string& scanType, std::vector<FrontEnd*>& feList, ScanBase* s, std::string outputDir) {
-    if (scanType.find("json") != std::string::npos) {
-        std::cout << "-> Found Scan config, loading histogrammer ..." << std::endl;
-        std::ifstream scanCfgFile(scanType);
-        if (!scanCfgFile) {
-            std::cerr << "#ERROR# Could not open scan config: " << scanType << std::endl;
-            throw("buildHistogrammers failure!");
-        }
-        json scanCfg;
-        scanCfg= json::parse(scanCfgFile);
-        json histoCfg = scanCfg["scan"]["histogrammer"];
-        json anaCfg = scanCfg["scan"]["analysis"];
+    std::cout << "-> Found Scan config, loading histogrammer ..." << std::endl;
+    json scanCfg;
+    try {
+        scanCfg = ScanHelper::openJsonFile(scanType);
+    } catch (std::runtime_error &e) {
+        std::cerr << "#ERROR# opening scan config: " << e.what() << std::endl;
+        throw("buildHistogrammer failure");
+    }
+    json histoCfg = scanCfg["scan"]["histogrammer"];
+    json anaCfg = scanCfg["scan"]["analysis"];
 
-        for (FrontEnd *fe : feList ) {
-            if (fe->isActive()) {
-                // TODO this loads only FE-i4 specific stuff, bad
-                // Load histogrammer
-                histogrammers[fe].reset( new Fei4Histogrammer );
-                auto& histogrammer = static_cast<Fei4Histogrammer&>( *(histogrammers[fe]) );
-                
-                histogrammer.connect(fe->clipData, fe->clipHisto);
+    for (FrontEnd *fe : feList ) {
+        if (fe->isActive()) {
+            // TODO this loads only FE-i4 specific stuff, bad
+            // Load histogrammer
+            histogrammers[fe].reset( new Fei4Histogrammer );
+            auto& histogrammer = static_cast<Fei4Histogrammer&>( *(histogrammers[fe]) );
 
-                auto add_histo = [&](std::string algo_name) {
-                    if (algo_name == "OccupancyMap") {
-                        std::cout << "  ... adding " << algo_name << std::endl;
-                        histogrammer.addHistogrammer(new OccupancyMap());
-                    } else if (algo_name == "TotMap") {
-                        std::cout << "  ... adding " << algo_name << std::endl;
-                        histogrammer.addHistogrammer(new TotMap());
-                    } else if (algo_name == "Tot2Map") {
-                        std::cout << "  ... adding " << algo_name << std::endl;
-                        histogrammer.addHistogrammer(new Tot2Map());
-                    } else if (algo_name == "L1Dist") {
-                        histogrammer.addHistogrammer(new L1Dist());
-                        std::cout << "  ... adding " << algo_name << std::endl;
-                    } else if (algo_name == "HitsPerEvent") {
-                        histogrammer.addHistogrammer(new HitsPerEvent());
-                        std::cout << "  ... adding " << algo_name << std::endl;
-                    } else if (algo_name == "DataArchiver") {
-                        histogrammer.addHistogrammer(new DataArchiver((outputDir + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_data.raw")));
-                        std::cout << "  ... adding " << algo_name << std::endl;
-                    } else if (algo_name == "Tot3d") {
-                        std::cout << "  ... adding " << algo_name << std::endl;
-                        histogrammer.addHistogrammer(new Tot3d());
-                    } else if (algo_name == "L13d") {
-                        std::cout << "  ... adding " << algo_name << std::endl;
-                        histogrammer.addHistogrammer(new L13d());
-                    } else {
-                        std::cerr << "#ERROR# Histogrammer \"" << algo_name << "\" unknown, skipping!" << std::endl;
-                    }
-                };
+            histogrammer.connect(fe->clipData, fe->clipHisto);
 
-                try {
-                  int nHistos = histoCfg["n_count"];
+            auto add_histo = [&](std::string algo_name) {
+                if (algo_name == "OccupancyMap") {
+                    std::cout << "  ... adding " << algo_name << std::endl;
+                    histogrammer.addHistogrammer(new OccupancyMap());
+                } else if (algo_name == "TotMap") {
+                    std::cout << "  ... adding " << algo_name << std::endl;
+                    histogrammer.addHistogrammer(new TotMap());
+                } else if (algo_name == "Tot2Map") {
+                    std::cout << "  ... adding " << algo_name << std::endl;
+                    histogrammer.addHistogrammer(new Tot2Map());
+                } else if (algo_name == "L1Dist") {
+                    histogrammer.addHistogrammer(new L1Dist());
+                    std::cout << "  ... adding " << algo_name << std::endl;
+                } else if (algo_name == "HitsPerEvent") {
+                    histogrammer.addHistogrammer(new HitsPerEvent());
+                    std::cout << "  ... adding " << algo_name << std::endl;
+                } else if (algo_name == "DataArchiver") {
+                    histogrammer.addHistogrammer(new DataArchiver((outputDir + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_data.raw")));
+                    std::cout << "  ... adding " << algo_name << std::endl;
+                } else if (algo_name == "Tot3d") {
+                    std::cout << "  ... adding " << algo_name << std::endl;
+                    histogrammer.addHistogrammer(new Tot3d());
+                } else if (algo_name == "L13d") {
+                    std::cout << "  ... adding " << algo_name << std::endl;
+                    histogrammer.addHistogrammer(new L13d());
+                } else {
+                    std::cerr << "#ERROR# Histogrammer \"" << algo_name << "\" unknown, skipping!" << std::endl;
+                }
+            };
 
-                  for (int j=0; j<nHistos; j++) {
+            try {
+                int nHistos = histoCfg["n_count"];
+
+                for (int j=0; j<nHistos; j++) {
                     std::string algo_name = histoCfg[std::to_string(j)]["algorithm"];
                     add_histo(algo_name);
-                  }
-                } catch(json::type_error &te) {
-                  int nHistos = histoCfg.size();
-                  for (int j=0; j<nHistos; j++) {
+                }
+            } catch(json::type_error &te) {
+                int nHistos = histoCfg.size();
+                for (int j=0; j<nHistos; j++) {
                     std::string algo_name = histoCfg[j]["algorithm"];
                     add_histo(algo_name);
-                  }
                 }
-                histogrammer.setMapSize(fe->geo.nCol, fe->geo.nRow);
             }
-        }
-    } else {
-        // Init histogrammer and analysis
-      for (FrontEnd *fe : feList ) {
-            if (fe->isActive()) {
-                // Init histogrammer per FE
-                histogrammers[fe].reset( new Fei4Histogrammer );
-                auto& histogrammer = static_cast<Fei4Histogrammer&>( *(histogrammers[fe]) );
-                
-                histogrammer.connect(fe->clipData, fe->clipHisto);
-                // Add generic histograms
-                histogrammer.addHistogrammer(new OccupancyMap());
-                histogrammer.addHistogrammer(new TotMap());
-                histogrammer.addHistogrammer(new Tot2Map());
-                histogrammer.addHistogrammer(new L1Dist());
-                histogrammer.addHistogrammer(new HitsPerEvent());
-                if (scanType == "selftrigger") {
-                    // TODO set proper file name
-                    histogrammer.addHistogrammer(new DataArchiver((outputDir + "data.raw")));
-                }
-                histogrammer.setMapSize(fe->geo.nCol, fe->geo.nRow);
-            }
+            histogrammer.setMapSize(fe->geo.nCol, fe->geo.nRow);
         }
     }
 }
@@ -844,13 +744,13 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
 void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, int mask_opt) {
     if (scanType.find("json") != std::string::npos) {
         std::cout << "-> Found Scan config, loading analysis ..." << std::endl;
-        std::ifstream scanCfgFile(scanType);
-        if (!scanCfgFile) {
-            std::cerr << "#ERROR# Could not open scan config: " << scanType << std::endl;
-            throw( "buildAnalyses failed" );
-        }
         json scanCfg;
-        scanCfg = json::parse(scanCfgFile);
+        try {
+            scanCfg = ScanHelper::openJsonFile(scanType);
+        } catch (std::runtime_error &e) {
+            std::cerr << "#ERROR# opening scan config: " << e.what() << std::endl;
+            throw("buildAnalyses failure");
+        }
         json histoCfg = scanCfg["scan"]["histogrammer"];
         json anaCfg = scanCfg["scan"]["analysis"];
 
@@ -918,51 +818,5 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                 ana.setMapSize(fe->geo.nCol, fe->geo.nRow);
             }
         }
-    } else {
-        // Init histogrammer and analysis
-      for (FrontEnd *fe : bookie.feList ) {
-            if (fe->isActive()) {
-                // Init analysis per FE and depending on scan type
-                analyses[fe].reset( new Fei4Analysis(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) );
-                auto& ana = static_cast<Fei4Analysis&>( *(analyses[fe]) );
-                ana.connect(s, fe->clipHisto, fe->clipResult);
-                ana.addAlgorithm(new L1Analysis());
-                if (scanType == "digitalscan") {
-                    ana.addAlgorithm(new OccupancyAnalysis());
-                } else if (scanType == "analogscan") {
-                    ana.addAlgorithm(new OccupancyAnalysis());
-                } else if (scanType == "thresholdscan") {
-                    ana.addAlgorithm(new ScurveFitter());
-                } else if (scanType == "totscan") {
-                    ana.addAlgorithm(new TotAnalysis());
-                } else if (scanType == "tune_globalthreshold") {
-                    ana.addAlgorithm(new OccGlobalThresholdTune());
-                } else if (scanType == "tune_pixelthreshold") {
-                    ana.addAlgorithm(new OccPixelThresholdTune());
-                } else if (scanType == "tune_globalpreamp") {
-                    ana.addAlgorithm(new TotAnalysis());
-                } else if (scanType == "tune_pixelpreamp") {
-                    ana.addAlgorithm(new TotAnalysis());
-                } else if (scanType == "noisescan") {
-                    ana.addAlgorithm(new NoiseAnalysis());
-                } else if (scanType == "selftrigger") {
-                    ana.addAlgorithm(new OccupancyAnalysis());
-                    ana.getLastAna()->disMasking();
-                } else if (scanType == "selftrigger_noise") {
-                    ana.addAlgorithm(new NoiseAnalysis());
-                } else {
-                    std::cout << "-> Analyses not defined for scan type" << std::endl;
-                    listScans();
-                    std::cerr << "-> Aborting!" << std::endl;
-                    throw("buildAnalyses failure!");
-                }
-                // Disable masking of pixels
-                if(mask_opt == 0) {
-                    std::cout << " -> Disabling masking for this scan!" << std::endl;
-                    ana.setMasking(false);
-                }
-                ana.setMapSize(fe->geo.nCol, fe->geo.nRow);
-            }
-        }
-    }
+    } 
 }

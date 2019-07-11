@@ -39,21 +39,10 @@ Support for YARR can be found in the [YARR Matter Most channel.](https://matterm
 ## Folder Structure
 ```bash
 .
+|-- configs : Config templates
 |-- doc : Documentation
-|-- eudet : Eudet telescope producer
-|   |-- bin
-|   |-- build
-|   `-- eudaq
-|-- gui : QT5 GUI (experimental)
-|   |-- YarrGui
-|   `-- util
-`-- src : Main software dir
-    |-- bin
-    |-- build
-    |-- cmake
-    |-- configs : Config templates
+|-- src : Main software dir
     |-- kernel : Custom PCIe kernel driver
-    |-- lib
     |-- libBoc : ATLAS IBL BOC hw driver
     |-- libEmu : FE Emulator hw driver
     |-- libFe65p2 : FE65p2 implementation
@@ -62,12 +51,14 @@ Support for YARR can be found in the [YARR Matter Most channel.](https://matterm
     |-- libNetioHW : FELIX driver
     |-- libRce : HSIO2 hw driver
     |-- libRd53a: RD53a implementation
+    |-- libRogue: Rogue HW controller
     |-- libSpec : PCIe hw driver
     |-- libUtil : Suppert library
     |-- libYarr : YARR core libraries 
-    |-- scripts : Scripts to interface with extenral libraries (e.g. ROOT), primarily to produce plots
     |-- tools : Main executeables
     `-- util : Utility scrips and files
+|-- plotting : Scripts to interface with extenral libraries (e.g. ROOT), primarily to produce plots
+`-- scripts : bash scripts for setup or automation
 ```
 
 

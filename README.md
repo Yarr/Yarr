@@ -1,5 +1,9 @@
 ![docs](http://readthedocs.org/projects/yarr/badge/?version=latest)
 
+![https://gitlab.cern.ch/YARR/YARR/pipelines](https://gitlab.cern.ch/YARR/YARR/badges/master/pipeline.svg)
+
+![logo](docs/images/logo_blue_inv.png)
+
 # YARR: Yet Another Rapid Readout
 
 ## Documentation
@@ -12,7 +16,7 @@ Users should subscribe to the CERN mailing list to receive announcements for imp
 
 Developers and potential developers please refer to [Contribution](CONTRIBUTING.md) guide.
 
-## Quick Install Guide
+## Requirements
 
 ### Hardware:
 
@@ -20,36 +24,39 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
 
 ### Software:
 
-Requirements:
+- CentOS 7
+- cmake 3.6
+- GCC version 7 or higher
+    - for example from devtoolset-7, instruction can be found here https://www.softwarecollections.org/en/scls/rhscl/devtoolset-7
+- Some misc packages (can be installed via yum):
+    - gnuplot
+    - texlive-epstopdf
+    - zeromq, zeromq-devel
 
-- CC7 (CERN CentOs 7) 
-- GCC version 7.0 or higher
-    - for example from devtoolset-7, instruction can be found [here](https://yarr.readthedocs.io/en/latest/install/#hardware-setup-and-software-installation)
+## Quick Install Guide:
+- Clone from git 
+	- ``$ git clone https://gitlab.cern.ch/YARR/YARR.git Yarr``
+- Compilation:
+    - ``$ cd Yarr``
+    - ``$ mkdir build``
+    - ``$ cd build``
+    - ``$ cmake3 ..``
+    - ``$ make install -j4``
+    - ``$ cd ..``
+- Running
+    - execute programs from the repository top folder
 
-Quick Default Install Guide:
-
-- Using make:
-    - ``cd YARR/src``
-    - ``make``
-- Using cmake:
-    - ``cd YARR``
-    - ``mkdir build``
-    - ``cd build``
-    - or select one of the supported toolchains
-        - make ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang # requires clang installed on Linux
-        - make ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc # gcc 4.8 or higher
-        - make ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-gcc # ARM/Archlinux on RCE
-        - make ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/macos-clang # MacOS build
-    - ``make``
-
-
-Quick RCE Install Guide:
-
-- source /opt/AtkasRceSDK/V0.11.0/setup.sh # for RCEs
-- Atlas RCE SDK for cross compilation and running on RCEs (HSIO2 or COB)
-- to install in /opt/AtlasRceSDK
-    - sudo mkdir -p /opt/AtlasRceSDK
-    - cd /opt/AtkasRceSDK/ ; curl -s  http://rceprojectportal.web.cern.ch/RceProjectPortal/software/SDK/V0.11.1.tar.gz | sudo tar xvfz - 
-        
-
-Quick NetIO Install Guide:
+### RCE Guide
+- for ARM target cross compilers are provided by the RCE_SDK
+    - installtion instructions: https://twiki.cern.ch/twiki/bin/viewauth/Atlas/RCEGen3SDK
+- using CMake:
+    - ``$ source /opt/rce/setup.sh (for RCE cross compilation setup)``
+    - ``$ export CENTOS7_ARM32_ROOT=/opt/rce/rootfs/centos7 #(points to cross installed CentOS7)``
+    - ``$ export CENTOS7_ARM64_ROOT=/opt/rce/rootfs/centos7_64 #for ZCU102 ``
+    - ``$ cd build``
+    - select one of the supported toolchains
+        - ``$ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang # requires clang installed on Linux ``
+        - ``$ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc # gcc 4.8 or higher ``
+        - ``$ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm32 # ARM32/Centos7 on RCE ``
+        - ``$ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm64 # ARM64/Centos7 on zcu102 ``
+    - ``$ make -j4 install ``

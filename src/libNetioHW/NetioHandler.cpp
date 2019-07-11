@@ -2,13 +2,14 @@
 #include <memory>
 
 #include "NetioFei4Records.h"
-
 // used for flush buffer
 bool doFlushBuffer = false;
 
-NetioHandler::NetioHandler(std::string contextStr="posix", std::string felixHost="localhost",
-               uint16_t felixTXPort=12340, uint16_t felixRXPort=12345,
-               size_t queueSize=10000000, bool verbose=false) :
+//MW: FIX CLANG COMPILATION
+// TODO default constructor?
+NetioHandler::NetioHandler(std::string contextStr, std::string felixHost,
+               uint16_t felixTXPort, uint16_t felixRXPort,
+               size_t queueSize, bool verbose) :
     m_felixHost(felixHost), m_felixTXPort(felixTXPort), m_felixRXPort(felixRXPort),
     m_queueSize(queueSize), m_verbose(verbose)
 {

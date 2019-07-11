@@ -57,13 +57,23 @@ Example of a connectivity config:
         {
             "config" : "configs/rd53a_test.json",
             "tx" : 0,
-            "rx" : 0
+            "rx" : 0,
+            "enable" : 1,
+            "locked" : 0
+        },
+        {
+            "config" : "configs/rd53a_test_1.json",
+            "tx" : 1,
+            "rx" : 1,
+            "enable" : 0,
+            "locked" : 0
         }
     ]
 }
+
 ```
 The "chipType" can be one of three: `RD53A`, `FEI4B`, or `FE65P2`.
-"chips" contains an array of chips, each element needs to contain the path to the config, and the tx and rx channel/link.
+"chips" contains an array of chips, each element needs to contain the path to the config, and the tx and rx channel/link. Each chip can be read out individually by toggling "enable". The chip config can be prevented from overwriting if it is locked.
 
 ### Scan Config
 

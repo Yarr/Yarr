@@ -53,7 +53,7 @@ public:
   std::vector<uint32_t> pushOut(uint64_t chn); // Push out every records from channel queue.
   SharedQueue& getQueue(uint64_t chn){ return m_pcqs[chn]; } // Access for elink's queue.
   size_t getNumOfChannels() { return m_activeChannels; } // Get the number of active channels.
-  bool isStable(uint64_t monitorID); // Returns the stability of elink's queue.
+  bool isStable(size_t monitorID); // Returns the stability of elink's queue.
   bool isAllStable(); // Returns the aggregated stability of the queues.
   void setFelixHost(std::string felixHost){m_felixHost=felixHost;}
   void setFelixRXPort(uint16_t felixRXPort){m_felixRXPort=felixRXPort;}
@@ -63,10 +63,10 @@ public:
   void setFeType(std::string fetype){m_feType=fetype;}
 
 public:
-  NetioHandler(std::string contextStr, std::string felixHost,
-               uint16_t felixTXPort, uint16_t felixRXPort,
-               size_t queueSize, bool verbose);
-
+  NetioHandler(std::string contextStr="posix", std::string felixHost="localhost",
+               uint16_t felixTXPort=12340, uint16_t felixRXPort=12345,
+               size_t queueSize=10000000, bool verbose=false);
+  //MW: FIX CLANG COMPILATION
   ~NetioHandler();
 
 private:

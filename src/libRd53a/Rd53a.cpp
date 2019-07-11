@@ -9,6 +9,7 @@
 
 #include "AllChips.h"
 #include "Rd53a.h"
+#include "RawData.h"
 
 bool rd53a_registred =
     StdDict::registerFrontEnd("RD53A", [](){return std::unique_ptr<FrontEnd>(new Rd53a());});
@@ -21,7 +22,8 @@ Rd53a::Rd53a() : FrontEnd(), Rd53aCfg(), Rd53aCmd() {
     geo.nCol = 400;
 }
 
-Rd53a::Rd53a(TxCore *core) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
+Rd53a::Rd53a(HwController *core) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
+    m_rxcore = core;
     txChannel = 99;
     rxChannel = 99;
 	active = true;
@@ -30,7 +32,8 @@ Rd53a::Rd53a(TxCore *core) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
     core->setClkPeriod(6.25e-9);
 }
 
-Rd53a::Rd53a(TxCore *core, unsigned arg_channel) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
+Rd53a::Rd53a(HwController *core, unsigned arg_channel) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
+    m_rxcore = core;
 	txChannel = arg_channel;
 	rxChannel = arg_channel;
 	active = true;
@@ -39,7 +42,8 @@ Rd53a::Rd53a(TxCore *core, unsigned arg_channel) : FrontEnd(), Rd53aCfg(), Rd53a
     core->setClkPeriod(6.25e-9);
 }
 
-Rd53a::Rd53a(TxCore *core, unsigned arg_txChannel, unsigned arg_rxChannel) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
+Rd53a::Rd53a(HwController *core, unsigned arg_txChannel, unsigned arg_rxChannel) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
+    m_rxcore = core;
 	txChannel = arg_txChannel;
 	rxChannel = arg_rxChannel;
 	active = true;
@@ -48,8 +52,9 @@ Rd53a::Rd53a(TxCore *core, unsigned arg_txChannel, unsigned arg_rxChannel) : Fro
     core->setClkPeriod(6.25e-9);
 }
 
-void Rd53a::init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
+void Rd53a::init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
     this->setCore(arg_core);
+    m_rxcore = arg_core;
     txChannel = arg_txChannel;
     rxChannel = arg_rxChannel;
     geo.nRow = 192;
@@ -235,4 +240,48 @@ void Rd53a::disableCalCol(unsigned col) {
     }
 }
 
+int Rd53a::checkCom() {
+    //std::cout << __PRETTY_FUNCTION__ << " : Checking communication for " << this->name << " by reading a register .." << std::endl;
+    uint32_t regAddr = 21;
+    uint32_t regValue = m_cfg[regAddr];
+    rdRegister(m_chipId, regAddr);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    
+    //std::cout << __PRETTY_FUNCTION__ << " : Trying to read data .." << std::endl;
+    // TODO not happy about this, rx knowledge should not be here
+    RawData *data = m_rxcore->readData();
 
+    if (data != NULL) {
+        if (!(data->words == 2 || data->words == 4)) {
+            std::cout << "#ERROR# Received wrong number of words (" << data->words << ") for " << this->name << std::endl;
+            return 0;
+        }
+        std::pair<uint32_t, uint32_t> answer = decodeSingleRegRead(data->buf[0], data->buf[1]);
+        //std::cout << "Addr (" << answer.first << ") Value(" << answer.second << ")" << std::endl;
+        
+        if (answer.first != regAddr || answer.second != regValue) {
+            std::cout << "#ERROR# Received data was not as expected:" << std::endl;
+            std::cout << "    Received Addr: " << answer.first << " (expected " << regAddr <<")" << std::endl;
+            std::cout << "    Received Value: " << answer.second << " (expected "<< regValue << ")" << std::endl;
+            return 0;
+        }
+
+        //std::cout << "    ... success!" << std::endl;
+        return 1;
+    } else {
+        std::cout << "#ERROR# Did not receive any data for " << this->name << std::endl;
+        return 0;
+    }
+}
+
+std::pair<uint32_t, uint32_t> Rd53a::decodeSingleRegRead(uint32_t higher, uint32_t lower) {
+    if ((higher & 0x55000000) == 0x55000000) {
+        return std::make_pair((lower>>16)&0x3FF, lower&0xFFFF);
+    } else if ((higher & 0x99000000) == 0x99000000) {
+        return std::make_pair((higher>>10)&0x3FF, ((lower>>26)&0x3F)+((higher&0x3FF)<<6));
+    } else {
+        std::cout << "#ERROR# Could not decode reg read!" << std::endl;
+        return std::make_pair(999, 666);
+    }
+    return std::make_pair(999, 666);
+}

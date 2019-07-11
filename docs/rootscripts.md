@@ -7,10 +7,10 @@ Requires root6.
 ##Compile with Makefile
 
 In order to use the scripts, you must first compile using make.
-Note: You must do make in Yarr/src/scripts. These do not compile when using make in Yarr/src. 
+Note: You must do ```make``` in Yarr/plotting. These do not compile when using make or cmake in Yarr/build. 
 
 ```bash
-$ cd Yarr/src/scripts
+$ cd Yarr/plotting
 $ make
 [Compiling] plotWithRoot_Scurve.o
 [Linking] plotWithRoot_Scurve
