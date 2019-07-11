@@ -110,6 +110,12 @@ To run a threshold scan for RD53A with the default configuration execute the fol
 ```bash
 bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_thresholdscan.json -p
 ```
+Config parameters for `InjVcalDiff`:  
+- max <int>: maximum value of InjVcalDiff
+- min <int>: minimum value of InjVcalDiff
+- step <int>: step size of InjVcalDiff (do not use a step size larger than 10)  
+The injected charge in units of electrons is roughly 10*InjVcalDiff. Make sure that this is adequate for the expected threshold.
+For an untuned chip with the default configuration, a ```max``` of larger than 400 should cover the threshold range.  
 The threshold and noise mean and dispersion value (for everything scanned) will be given in the output of the code, for example:
 ```text
 [0] Threashold Mean = 3245.7 +- 801.668
@@ -145,7 +151,7 @@ The tuning usually starts by tuning the global threshold DAC of the FrontEnd you
 - `SyncVth` for the synchronous FE
 - `LinVth` for the linear FE
 
-Below is an example of tuning the global threshold of the linear FE to 2500e. The goal is too reach 50% occupancy, this usually looks like a symmetric bathtub when the per pixel threshold is untuned.
+Below is an example of tuning the global threshold of the linear FE to 2500e. The goal is to reach 50% occupancy, this usually looks like a symmetric bathtub when the per pixel threshold is untuned.
 In a similar manner the differential and synchronous global threshold DAC can be tuned.
 
 ```bash
@@ -178,7 +184,7 @@ Once the full tuning routine (as outlined in the beginning of this page) has bee
 
 ## Cross-talk
 
-For more information please have a look at [this presentation](https://cernbox.cern.ch/index.php/s/DubCyTMyoWfZ52g).
+For more information please have a look at [this presentation](https://cernbox.cern.ch/index.php/s/1awEj4E3hc0VoDi).
 
 The cross-talk is evaluated injecting in the neighboring pixels and checking the occupancy in the central pixel. 
 
@@ -291,7 +297,7 @@ One easy way to use the external trigger scan is to connect a scintillator to a 
 
 For running the TLU in standalone mode you need to install ```libusb``` and ```libusb-devel``` version 0.1 (!) on your (CentOS) computer.
 Get eudaq from [here](https://github.com/eudaq/eudaq/tree/master/user/tlu) and compile it with ```USER_TLU_BUILD=ON``` option.
-The TLU only produces trigger when the software is running with e.g. ```./EudetTluControl -a 1 -hm 0 -d 1 -i RJ45 -q```. Please refer to the TLU manual for the options.
+The TLU only produces trigger when the software is running with e.g. ```./EudetTluControl -a 1 -hm 0 -d 1 -i RJ45 -q```. Please refer to the [TLU manual](https://twiki.cern.ch/twiki/bin/view/MimosaTelescope/TLU) for the options.
 The second DP-miniDP cable connects the RJ45-DP connector to port D which should accept TLU input with the non-multichip FW on the FPGA.
 
 
