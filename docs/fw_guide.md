@@ -1,5 +1,6 @@
 # Firmware Guide
 
+Instructions on how to flash the FPGA can be found [here](https://github.com/Yarr/Yarr-fw/blob/master/syn/xpressk7/README.md).
 How to pick your firmware organized by Front-End type, then adapter card.
 For the XpressK7 there will always be two version (black), one -**160** and one -**325** version for the different FPGA types. New version of the card (green) is -**trenz**.
 
@@ -16,19 +17,19 @@ For the XpressK7 there will always be two version (black), one -**160** and one 
 
 When the board is powered correctly, a red LED should light up. More information about the adapter card can be found [Multi Chip Adapter Card](https://twiki.cern.ch/twiki/bin/viewauth/RD53/RD53ATesting#Multi_Chip_FMC).
 
-On a SCC [Single Chip Card](https://twiki.cern.ch/twiki/bin/viewauth/RD53/RD53ATesting#RD53A_Single_Chip_Card_SCC) the CMD line is already AC coupled. On the Ohio card there is additional AC coupleing as shown on the picture.
+On a SCC [Single Chip Card](https://twiki.cern.ch/twiki/bin/viewauth/RD53/RD53ATesting#RD53A_Single_Chip_Card_SCC) the CMD line is AC coupled. On the older Ohio card (before 2019 and serial number < 200) there is additional AC coupling as shown on the picture. This is corrected for the newer Ohio cards from 2019 on with serial number starting from 200.
 
 ![Ohio Unmodified CMD ](images/OhioUnmodified_Cmd.png)
 
-To avoid double AC coupleing on the CMD line, one should replace the capasitors with jumpers and remove the termination, as shown on the picture.
+To avoid double AC coupling on the CMD line, one should replace the capacitors with jumpers and remove the termination, as shown on the picture.
 
 ![Ohio Modified CMD ](images/OhioModified_Cmd.png)
 
-In order to read the HitOrs from Port B and Port D, one has to modify the AC copleing of the Data lines on the Ohio card:
+In order to read the HitOrs from Port B and Port D, one has to modify the AC coupling of the data lines on the Ohio card:
 
 ![Ohio Unmodified Data ](images/OhioUnmodified_Data.png)
 
-The capasitors should be replaced with jummpers as shown on the picture:
+The capacitors should be replaced with jummpers as shown on the picture:
 
 ![Ohio Modified Data ](images/OhioModified_Data.png)
 

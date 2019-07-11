@@ -55,14 +55,14 @@ Success! No errors.
 
 ### Chip fails communication test
 
-**Sympton**: Chip fails com test (register readback) in scan console. Either because chip does not configure or there are readout errors.
+**Symptom**: Chip fails com test (register readback) in scan console. Either because chip does not configure or there are readout errors.
 
 **Resolve by:**
 
 - Try power-cycling the chip.
 - Make sure the DP cable is plugged into the right ports and you have selected the correct Tx/Rx links in the connectivity.
 - Meausure the analog regulator output voltage, if below 1.1V consider installing a Vref hack (ask experts).
-- Increase or decrease the ``SldoTrimAna`` and ``SldoTrimDig`` register (try going in steps by 5) or tune them to output 1.2V
+- Increase or decrease the ``SldoAnalogTrim`` and ``SldoDigitalTrim`` register (try going in steps by 5) or tune them to output 1.2V
 - Increase or decrease the ``CmlTapBias0`` register (try testing in steps of 100)
 - Try a different kind of DisplayPort cable (typically short is better)
 - Try a better/different kind of power cable (try jiggeling the power cable)
@@ -86,7 +86,7 @@ Jumper configuration for **direct powering**
 
 ### Problem with the digital scan
 
-**Sympton:** The digital scan looks blocky (see picture)
+**Symptom:** The digital scan looks blocky (see picture)
 
 ![Digital scan example](images/rd53a_proto_digital_Occupancy.png)
 
@@ -94,7 +94,7 @@ Jumper configuration for **direct powering**
 
 ### Noise/Source Scan is empty
 
-**Sympton:**
+**Symptom:**
 
 - Noise/Source scan (or similar) has 0 hits
 
