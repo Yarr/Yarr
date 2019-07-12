@@ -3,16 +3,18 @@
 ## What is YARR?
 YARR is a readout system based around the concept of moving intelligence from the FPGA firmware into the host computer software. The role of the FPGA is the one of a reconfigurable I/O interface and not anymore the one of a hardware accelerator. YARR supports multiple types of FPGA platforms:
 
-* COTS PCIe FPGA cards: CERN SPEC, RelfexCES XpressK7, Trenz TEF1001, and Xilinx KC70
+* COTS PCIe FPGA cards: CERN SPEC, XpressK7, Trenz TEF1001, and Xilinx KC705
 * SLAC's HSIO2/RCE
+* FELIX + NETIO
 * ATLAS IBL BOC
 * Wuppertal's KU040
-* FELIX + NETIO
 
 The currently supported readout chips are:
+
 * FE-I4B
 * FE65-P2
 * RD53A
+* ABC/HCC STAR
 
 There is very preliminary support for Star chips (strips).
 

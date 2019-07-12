@@ -110,12 +110,13 @@ To run a threshold scan for RD53A with the default configuration execute the fol
 ```bash
 bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_thresholdscan.json -p
 ```
-Config parameters for `InjVcalDiff`:  
+
+Config parameters for ``InjVcalDiff``:  
 - max <int>: maximum value of InjVcalDiff
 - min <int>: minimum value of InjVcalDiff
 - step <int>: step size of InjVcalDiff (do not use a step size larger than 10)  
 The injected charge in units of electrons is roughly 10*InjVcalDiff. Make sure that this is adequate for the expected threshold.
-For an untuned chip with the default configuration, a ```max``` of larger than 400 should cover the threshold range.  
+For an untuned chip with the default configuration, a ``max`` of larger than 400 should cover the threshold range.  
 The threshold and noise mean and dispersion value (for everything scanned) will be given in the output of the code, for example:
 ```text
 [0] Threashold Mean = 3245.7 +- 801.668
@@ -143,7 +144,6 @@ ToT scan shown here is after tuning to 8ToT at 10000
 
 
 ## Tuning
-*To be updated with latest sw changes!*
 
 The tuning usually starts by tuning the global threshold DAC of the FrontEnd you want to tune:
 
@@ -241,6 +241,7 @@ bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/examp
 ## Source Scan
 
 There are 3 different possibilities for a source scan:
+ 
  1. noise scan (random trigger)
  2. external trigger scan with Hit-Or ("self-trigger")
  3. external trigger scan with a real trigger, e.g. scintilltor (external trigger)
@@ -248,9 +249,10 @@ There are 3 different possibilities for a source scan:
 ### Random Trigger
 
 Run `std_digitalscan`, `std_analogscan` and at least 3 `std_noisescan` (with the default duration of 5 minutes) before a source scan with random trigger to mask digital/analog bad pixels and noisy pixels.
-Modify in `std_noisescan.json`: ```"createMask": false``` and to prevent changing the enable mask and ```"time": 300``` in seconds to set the scan duration.
+Modify in `std_noisescan.json`: ``"createMask": false`` and to prevent changing the enable mask and ``"time": 300`` in seconds to set the scan duration.
 
 #### Known Problem (to be verified)
+
 The trigger loop in this scan does not sent an ECR signal during the scan. The sync FE does not delete 0-ToT hits in the buffer and/or the EOC logic gets stuck (with too many hits?) if no ECR is sent. Therefore a stripy pattern can occur in the sync FE.
 
 ![stripy pattern source scan](images/0x0967_Occupancy_NoiseScanSource.png)
@@ -295,9 +297,10 @@ One easy way to use the external trigger scan is to connect a scintillator to a 
  
 #### Installation
 
-For running the TLU in standalone mode you need to install ```libusb``` and ```libusb-devel``` version 0.1 (!) on your (CentOS) computer.
-Get eudaq from [here](https://github.com/eudaq/eudaq/tree/master/user/tlu) and compile it with ```USER_TLU_BUILD=ON``` option.
-The TLU only produces trigger when the software is running with e.g. ```./EudetTluControl -a 1 -hm 0 -d 1 -i RJ45 -q```. Please refer to the [TLU manual](https://twiki.cern.ch/twiki/bin/view/MimosaTelescope/TLU) for the options.
+For running the TLU in standalone mode you need to install ``libusb`` and ``libusb-devel`` version 0.1 (!) on your (CentOS) computer.
+Get eudaq from [here](https://github.com/eudaq/eudaq/tree/master/user/tlu) and compile it with ``USER_TLU_BUILD=ON`` option.
+The TLU only produces trigger when the software is running with e.g. ``./EudetTluControl -a 1 -hm 0 -d 1 -i RJ45 -q``. Please refer to the [TLU manual](https://twiki.cern.ch/twiki/bin/view/MimosaTelescope/TLU) for the options.
+
 The second DP-miniDP cable connects the RJ45-DP connector to port D which should accept TLU input with the non-multichip FW on the FPGA.
 
 
@@ -335,7 +338,7 @@ Loops over pixels. All pixels in one core column are serialized on the following
 unsigned serial = (core_row*64)+((col+(core_row%8))%8)*8+row%8;
 ```
 
-The maximum of the loops defines how many pixels should be activated at one time. E.g. if the max is 64 that means every 64th pixel (1 pixel per core) and requires 64 steps to loop over all pixels. A pattern of enabled pixels in each mask step for ```max = 16``` can be found [here](https://docs.google.com/spreadsheets/d/1VXZn-fp16U6Rsu_GvGmq_fWgU0qwa0niilJ82ZQOYY8/edit?usp=sharing)
+The maximum of the loops defines how many pixels should be activated at one time. E.g. if the max is 64 that means every 64th pixel (1 pixel per core) and requires 64 steps to loop over all pixels. A pattern of enabled pixels in each mask step for ``max = 16`` can be found [here](https://docs.google.com/spreadsheets/d/1VXZn-fp16U6Rsu_GvGmq_fWgU0qwa0niilJ82ZQOYY8/edit?usp=sharing)
 
 ![Mask Loop Pattern for max = 16](images/maskloop.png)
 
