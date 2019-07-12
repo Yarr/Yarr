@@ -43,7 +43,7 @@
         "config": {
           "max": 64,
           "min": 0,
-          "step": 8
+          "step": 4
         },
         "loopAction": "Rd53aMaskLoop"
       },
@@ -52,7 +52,7 @@
           "max": 50,
           "min": 33,
           "step": 1,
-          "nSteps": 17,
+          "nSteps": 2,
           "delayArray": [0]
         },
         "loopAction": "Rd53aCoreColLoop"
@@ -62,7 +62,7 @@
           "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 20000,
+          "frequency": 30000,
           "noInject": false,
           "time": 0
         },
