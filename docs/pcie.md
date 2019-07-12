@@ -1,6 +1,6 @@
 # PCIe FPGA card Installation and Setup
 
-Two kinds of setups have to be distinguished, those that use Series 7 FPGAs (XpressK7, KC705, TEF1001) and those that use the Spartan 6 (CENR SPEC). If in doubt see picture below for identification:
+Two kinds of setups have to be distinguished, those that use Series 7 FPGAs (XpressK7, KC705, TEF1001) and those that use the Spartan 6 (CERN SPEC). If in doubt see picture below for identification:
 
 ![Supported PCIe cards](images/pcie_cards.png)
 

@@ -12,8 +12,8 @@ It is possible to run YARR without a dedicated computer through a PCIe to Thunde
  * All Thunderbolt 3 support settings in BIOS should be enabled as described [here](https://it.nmu.edu/docs/thinkpad-thunderbolt-3-dock-set).
  * You might have to switch on the direct access and authorise the Thunderbolt 3 device as shown below.
  * The case only powers up if connected to the computer. Otherwise it is in a low-power mode and the connected chip loses its configuration.
- * Currently, the ```specNum``` registered by the computer increases by one on each reconnection of the external PCIe card.
-     * The number has either to be changed in the ```specCfg.json``` accordingly (up to maximum 9), or
-     * the kernel driver has to be reloaded ```sudo modprobe -r specDriver && sudo modprobe -v specDriver```
+ * Currently, the ``specNum`` registered by the computer increases by one on each reconnection of the external PCIe card.
+     * The number has either to be changed in the ``specCfg.json`` accordingly (up to maximum 9), or
+     * the kernel driver has to be reloaded ``sudo modprobe -r specDriver && sudo modprobe -v specDriver``
 ![Bios setting for Thunderbolt 3](images/biosTB3.png)
 ![Thunderbolt 3 device authorisation](images/tb3cc7.png)
