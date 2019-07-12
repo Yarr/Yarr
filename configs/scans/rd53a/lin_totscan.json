@@ -52,7 +52,7 @@
           "max": 33,
           "min": 16,
           "step": 1,
-          "nSteps": 8
+          "nSteps": 2
         },
         "loopAction": "Rd53aCoreColLoop"
       },
@@ -61,7 +61,7 @@
           "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 18000,
+          "frequency": 30000,
           "noInject": false,
           "time": 0
         },
