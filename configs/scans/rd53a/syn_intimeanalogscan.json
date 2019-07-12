@@ -59,10 +59,11 @@
           "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 20000,
+          "frequency": 10000,
           "noInject": false,
           "time": 0,
-          "trigMultiplier": 1
+          "trigMultiplier": 1,
+          "sendEcr": true
         },
         "loopAction": "Rd53aTriggerLoop"
       },

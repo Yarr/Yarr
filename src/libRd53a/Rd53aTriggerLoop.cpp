@@ -19,6 +19,7 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
     m_noInject = false;
     m_extTrig = false;
     m_trigMultiplier = 16;
+    m_sendEcr = false;
 
     m_edgeMode = false;
     m_edgeDuration = 10;
@@ -36,7 +37,12 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
 void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
     m_trigWord.fill(0x69696969);
     // Inject
-    //m_trigWord[31] = 0x5a5a6969;
+
+    // ECR for sync FE
+    if (m_sendEcr) {
+        m_trigWord[16] = 0x5a5a6969;
+    }
+    
     //m_trigWord[30] = 0x59596969;
     m_trigWord[15] = 0x69696363; // Header
     m_trigWord[14] = Rd53aCmd::genCal(8, 0, 0, 1, 0, 0); // Inject
@@ -155,6 +161,7 @@ void Rd53aTriggerLoop::writeConfig(json &config) {
     config["noInject"] = m_noInject;
     config["extTrig"] = m_extTrig;
     config["trigMultiplier"] = m_trigMultiplier;
+    config["sendEcr"] = m_sendEcr;
 }
 
 void Rd53aTriggerLoop::loadConfig(json &config) {
@@ -174,5 +181,7 @@ void Rd53aTriggerLoop::loadConfig(json &config) {
         m_extTrig = config["extTrig"];
     if (!config["trigMultiplier"].empty())
         m_trigMultiplier = config["trigMultiplier"];
+    if (!config["sendEcr"].empty())
+        m_sendEcr = config["sendEcr"];
     this->setTrigDelay(m_trigDelay);
 }

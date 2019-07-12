@@ -40,7 +40,8 @@
           "extTrigger": false,
           "frequency": 5000,
           "noInject": true,
-          "time": 30
+          "time": 30,
+          "sendEcr": true
         },
         "loopAction": "Rd53aTriggerLoop"
       },
