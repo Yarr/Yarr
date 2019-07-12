@@ -238,14 +238,14 @@ def __checkout(args, serialnumber=None, runid=None):
     chip_data = []
     if this_run['serialNumber'] == serialnumber:
         component_type = 'Module'
-        chip_type = this_run['chipType']
+        chip_type = this_run.get('chipType','NULL')
         query = { 'testRun': run_oid, 'component': {'$ne': cmp_oid} }
         ctr_entries = localdb.componentTestRun.find(query)
         for ctr in ctr_entries:
             chip_data.append({ 'component': ctr['component'] })
     else:
         component_type = 'Front-end Chip'
-        chip_type = this_run['chipType']
+        chip_type = this_run.get('chipType','NULL')
         chip_data.append({ 'component': cmp_oid })
 
     if chip_type == 'FE-I4B': chip_type = 'FEI4B'
@@ -266,12 +266,16 @@ def __checkout(args, serialnumber=None, runid=None):
         'serialNumber': this_run['serialNumber'],
         'user'        : this_user['userName'],
         'site'        : this_site['institution'],
+        'chipId'      : {},
         'geomId'      : {},
         'tx'          : {},
         'rx'          : {}
     }
+    cnt = 1
     for run in run_entries:
-        test_data['geomId'][run['component']] = run['geomId']
+        test_data['chipId'][run['component']] = run.get('chipId',-1)
+        test_data['geomId'][run['component']] = run.get('geomId',cnt)
+        if not 'geomId' in run: cnt=cnt+1
         test_data['tx'][run['component']] = run['tx']
         test_data['rx'][run['component']] = run['rx']
  
@@ -324,6 +328,7 @@ def __checkout(args, serialnumber=None, runid=None):
             })
         for chip in chip_data:
             chip_json = {
+                'chipId': test_data['chipId'][chip['component']],
                 'geomId': test_data['geomId'][chip['component']],
                 'config': test_data['path'][chip['component']],
                 'tx': test_data['tx'][chip['component']],

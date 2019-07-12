@@ -343,9 +343,13 @@ def retrieve():
     if __network_db(config_data['remote'][remote]['db']): 
         import direct as function
         function.url = config_data['remote'][remote]['db']
+        global authentication
+        global user
+        global pwd
         if authentication:
+            function.authentication = authentication
             function.user = user
-            function.pwd = user
+            function.pwd = pwd
     elif __network_viewer(config_data['remote'][remote]['viewer']): 
         import indirect as function
         function.url = config_data['remote'][remote]['viewer']

@@ -163,6 +163,7 @@ def __checkout(args, serialnumber=None, runid=None):
             })
         for chip in chip_data:
             chip_json = {
+                'chipId': test_data['chipId'][chip['component']],
                 'geomId': test_data['geomId'][chip['component']],
                 'config': test_data['path'][chip['component']],
                 'tx': test_data['tx'][chip['component']],

@@ -1098,11 +1098,14 @@ void DBHandler::registerComponentTestRun(std::string i_conn_path, std::string i_
         int chip_tx = -1;
         int chip_rx = -1;
         int geom_id = -1;
+        int chip_id = -1;
         for (unsigned i=0; i<conn_json["chips"].size(); i++) {
             if (conn_json["chips"][i]["serialNumber"]==serial_number) {
                 chip_tx = conn_json["chips"][i]["tx"];
                 chip_rx = conn_json["chips"][i]["rx"];
                 geom_id = conn_json["chips"][i]["geomId"];
+                chip_id = conn_json["chips"][i]["chipId"];
+                break;
             }
         }
         auto doc_value = document{} <<  
@@ -1118,6 +1121,7 @@ void DBHandler::registerComponentTestRun(std::string i_conn_path, std::string i_
             "attachments" << open_array << close_array <<
             "tx"          << chip_tx <<
             "rx"          << chip_rx <<
+            "chipId"      << chip_id <<
             "beforeCfg"   << "..." <<
             "afterCfg"    << "..." <<
             "geomId"      << geom_id <<
@@ -1164,7 +1168,7 @@ std::string DBHandler::registerTestRun(std::string i_test_type, int i_run_number
             "finishTime"   << bsoncxx::types::b_date{startTime} <<
             "plots"        << open_array << close_array <<
             "serialNumber" << i_serial_number << // module serial number
-            "chipType"    << m_chip_type <<
+            "chipType"     << m_chip_type <<
             "stage"        << "..." <<
             "ctrlCfg"      << "..." << 
             "scanCfg"      << "..." <<
@@ -2083,10 +2087,7 @@ void DBHandler::cacheConnCfg(std::vector<std::string> i_conn_paths) {
                     if (s_tmp==std::to_string(chip_id)) is_chip=true;
                 }
                 if (conn_json["chips"][j]["serialNumber"].empty()) conn_json["chips"][j]["serialNumber"] = ch_serial_number;
-                if (conn_json["chips"][j]["geomId"].empty()) {//TODO
-                    //conn_json["chips"][j]["geomId"] = conn_json["chips"][j]["chipId"];
-                    conn_json["chips"][j]["geomId"] = j+1;
-                }
+                if (conn_json["chips"][j]["geomId"].empty()) conn_json["chips"][j]["geomId"] = j+1;
             }
         }
         std::ofstream conn_file(m_cache_dir+"/tmp/conn.json");
@@ -2350,7 +2351,6 @@ json DBHandler::checkConnCfg(std::string i_conn_path) {
                     std::string function = __PRETTY_FUNCTION__;
                     this->alert(function, message);
                 }
-                //this->checkEmpty(conn_json["chips"][i]["geomId"].empty(), "chips."+std::to_string(i)+".geomId", i_conn_path);
             }
         }
     }
