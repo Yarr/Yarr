@@ -1,6 +1,7 @@
 arguments
 Flask
 Flask-PyMongo
+Flask-HTTPAuth
 pdf2image
 Pillow
 prettytable
@@ -12,3 +13,4 @@ plotly
 matplotlib
 numpy
 requests
+tzlocal

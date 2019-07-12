@@ -1120,7 +1120,6 @@ void DBHandler::registerComponentTestRun(std::string i_conn_path, std::string i_
             "rx"          << chip_rx <<
             "beforeCfg"   << "..." <<
             "afterCfg"    << "..." <<
-            "chipType"    << m_chip_type <<
             "geomId"      << geom_id <<
             "dbVersion"   << -1 <<
         finalize;
@@ -1165,6 +1164,7 @@ std::string DBHandler::registerTestRun(std::string i_test_type, int i_run_number
             "finishTime"   << bsoncxx::types::b_date{startTime} <<
             "plots"        << open_array << close_array <<
             "serialNumber" << i_serial_number << // module serial number
+            "chipType"    << m_chip_type <<
             "stage"        << "..." <<
             "ctrlCfg"      << "..." << 
             "scanCfg"      << "..." <<
