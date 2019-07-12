@@ -962,9 +962,7 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
             done = true;
         }
 
-        std::cout << "Calling feedback " << sign << std::endl;
         fb->feedback(this->channel, sign, done);
-        std::cout << "After feedback" << std::endl;
         output->pushData(std::move(occMaps[ident]));
         output->pushData(std::move(occDists[ident]));
         innerCnt[ident] = 0;
