@@ -8,7 +8,11 @@
 
 ## Documentation
 
-Documentation covering installation and usage can be found here http://yarr.rtfd.org (for devel branch http://yarr.readthedocs.org/en/devel/ )
+For details please refer to the documentation covering installation and usage, which can be found here http://yarr.rtfd.org 
+
+This README only includes quick install guide.
+
+(If you are working with the devel branch refer to http://yarr.readthedocs.org/en/devel/ )
 
 ## Mailing list
 
@@ -17,10 +21,6 @@ Users should subscribe to the CERN mailing list to receive announcements for imp
 Developers and potential developers please refer to [Contribution](CONTRIBUTING.md) guide.
 
 ## Requirements
-
-### Hardware:
-
-- Please refer to the [documentation](http://readthedocs.org/projects/yarr/badge/?version=latest) for details
 
 ### Software:
 
