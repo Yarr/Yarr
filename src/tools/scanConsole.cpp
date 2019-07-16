@@ -350,17 +350,18 @@ int main(int argc, char *argv[]) {
         scanLog["connectivity"] = config;
     }
     
-    for (unsigned i=0; i<bookie.feList.size(); i++) {
-        FrontEnd *fe = bookie.feList[i];
-        if (fe->isActive()) {
-            std::ofstream backupCfgFile(home+"/.yarr/localdb/tmp/chip.json");
-            json backupCfg;
-            dynamic_cast<FrontEndCfg*>(fe)->toFileJson(backupCfg);
-            backupCfgFile << std::setw(4) << backupCfg;
-            backupCfgFile.close(); 
-            if (dbUse) {
+    if (dbUse) { //TODO remove duplicate process
+        for (unsigned i=0; i<bookie.feList.size(); i++) {
+            FrontEnd *fe = bookie.feList[i];
+            if (fe->isActive()) {
+                std::ofstream backupCfgFile(home+"/.yarr/localdb/tmp/chip.json");
+                json backupCfg;
+                dynamic_cast<FrontEndCfg*>(fe)->toFileJson(backupCfg);
+                backupCfgFile << std::setw(4) << backupCfg;
+                backupCfgFile.close(); 
                 database->setConfig(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel(), dynamic_cast<FrontEndCfg*>(fe)->getRxChannel(), home+"/.yarr/localdb/tmp/chip.json", "beforeCfg", "chipCfg", "componentTestRun");
             }
+        }
     }
  
     // Reset masks
