@@ -1,0 +1,87 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "OccGlobalThresholdTune"
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "1": {
+        "algorithm": "TotMap",
+        "config": {}
+      },
+      "2": {
+        "algorithm": "Tot2Map",
+        "config": {}
+      },
+      "3": {
+        "algorithm": "L1Dist",
+        "config": {}
+      },
+      "4": {
+        "algorithm": "HitsPerEvent",
+        "config": {}
+      },
+      "n_count": 5
+    },
+    "loops": [
+      { "config": {
+          "max": 385,
+          "min": 0,
+          "step": 4,
+          "parameter": "LinVth",
+          "pixelRegs": [0, 0]
+        },
+        "loopAction": "Rd53aGlobalFeedback"
+      },
+      {
+        "config": {
+          "max": 64,
+          "min": 0,
+          "step": 4
+        },
+        "loopAction": "Rd53aMaskLoop"
+      },
+      {
+        "config": {
+          "max": 33,
+          "min": 16,
+          "step": 1,
+          "nSteps": 2,
+	      "delayArray": [0]
+        },
+        "loopAction": "Rd53aCoreColLoop"
+      },
+      {
+        "config": {
+          "count": 100,
+          "delay": 48,
+          "extTrigger": false,
+          "frequency": 30000,
+          "noInject": false,
+          "time": 0
+        },
+        "loopAction": "Rd53aTriggerLoop"
+      },
+      {
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "LinGlobalThresholdTune",
+    "prescan": {
+        "InjEnDig": 0,
+        "LatencyConfig": 48,
+        "GlobalPulseRt": 0,
+        "DiffVth1": 500,
+        "SyncVth": 500,
+        "EnCoreColDiff1": 0,
+        "EnCoreColDiff2": 0,
+        "EnCoreColSync": 0
+    }
+  }
+}

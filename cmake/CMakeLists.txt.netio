@@ -1,0 +1,70 @@
+cmake_minimum_required(VERSION 3.4.3)
+
+set(PACKAGE netio)
+set(PACKAGE_VERSION 0.8.0)
+
+
+
+set(VERSION "0.8.0")
+
+## BINARY DISTRIBUTION USING CPACK ##
+add_compile_options(-std=c++17)
+set(CPACK_RPM_PACKAGE_AUTOREQPROV " no")
+set(CPACK_PACKAGE_VERSION ${VERSION})
+set(CPACK_GENERATOR "RPM" "TGZ")
+set(CPACK_PACKAGE_NAME "netio")
+set(CPACK_PACKAGE_RELEASE 1)
+set(CPACK_PACKAGE_CONTACT "Jörn Schumacher")
+set(CPACK_PACKAGE_VENDOR "CERN")
+#set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+
+## Options ##
+
+set(VERSION_STRING ${VERSION})
+configure_file(src/config.h.in config.h NEWLINE_STYLE UNIX)
+
+
+## SOURCES AND TARGETS ##
+include_directories(${PROJECT_BINARY_DIR}/../netio4)
+include_directories(${PROJECT_BINARY_DIR}/../../../include)
+link_directories(${PROJECT_BINARY_DIR}/../../../lib)
+include_directories(${CMAKE_BINARY_DIR})
+
+set(NETIO_SOURCES src/netio.cpp src/serialization.cpp src/posix.cpp  src/sockcfg.cpp src/endpoint.cpp
+	src/message.cpp src/eventloop.cpp src/backend.cpp src/sockets.cpp src/context.cpp src/buffer.cpp)
+
+add_library(netio STATIC ${NETIO_SOURCES})
+target_link_libraries(netio rt tbb)
+
+set(NETIO_TEST_SOURCES test/test_main.cpp test/test_backend.cpp  test/test_buffer.cpp
+    test/test_event_loop.cpp test/test_message.cpp  test/test_serialization.cpp test/test_sockets.cpp )
+add_executable(netio_test ${NETIO_TEST_SOURCES})
+target_link_libraries(netio_test  	netio rt pthread)
+
+add_executable(netio_cat src/main_cat.cpp)
+target_link_libraries(netio_cat netio rt pthread)
+
+add_executable(netio_throughput src/main_throughput.cpp)
+target_link_libraries(netio_throughput netio rt pthread)
+
+add_executable(netio_bw src/main_bw.cpp)
+target_link_libraries(netio_bw netio rt pthread)
+
+add_executable(netio_pingpong src/main_pingpong.cpp)
+target_link_libraries(netio_pingpong netio rt pthread)
+
+add_executable(netio_data_pub src/main_data_pub.cpp)
+target_link_libraries(netio_data_pub netio rt pthread)
+
+add_executable(netio_recv src/main_recv.cpp)
+target_link_libraries(netio_recv netio rt pthread)
+
+  add_executable(netio_zeromq src/main_zeromq.cpp)
+  target_link_libraries(netio_zeromq rt pthread zmq)
+
+  add_executable(netio_zeromq_pingpong src/main_zeromq_pingpong.cpp)
+  target_link_libraries(netio_zeromq_pingpong rt pthread zmq)
+
+  add_executable(netio_zeromq_recv src/main_zeromq_recv.cpp)
+  target_link_libraries(netio_zeromq_recv rt pthread zmq)
+

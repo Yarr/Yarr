@@ -25,10 +25,11 @@ StarChips::StarChips()
     geo.nCol = 0;
 }
 
-StarChips::StarChips(TxCore *arg_core)
+StarChips::StarChips(HwController *arg_core)
   : StarCmd(), FrontEnd()
 {
     m_txcore  = arg_core;
+    m_rxcore = arg_core;
     txChannel = 99;
     rxChannel = 99;
     active = true;
@@ -36,10 +37,11 @@ StarChips::StarChips(TxCore *arg_core)
     geo.nCol = 0;
 }
 
-StarChips::StarChips(TxCore *arg_core, unsigned arg_channel)
+StarChips::StarChips(HwController *arg_core, unsigned arg_channel)
   : StarCmd(), FrontEnd()
 {
     m_txcore  = arg_core;
+    m_rxcore = arg_core;
     txChannel = arg_channel;
     rxChannel = arg_channel;
 
@@ -48,10 +50,11 @@ StarChips::StarChips(TxCore *arg_core, unsigned arg_channel)
     geo.nCol = 0;
 }
 
-StarChips::StarChips(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel)
+StarChips::StarChips(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel)
   : StarCmd(), FrontEnd()
 {
     m_txcore  = arg_core;
+    m_rxcore = arg_core;
     txChannel = arg_txChannel;
     rxChannel = arg_rxChannel;
 
@@ -60,8 +63,9 @@ StarChips::StarChips(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxCh
     geo.nCol = 0;
 }
 
-void StarChips::init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
+void StarChips::init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
     m_txcore  = arg_core;
+    m_rxcore = arg_core;
     txChannel = arg_txChannel;
     rxChannel = arg_rxChannel;
     active = true;

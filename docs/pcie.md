@@ -1,6 +1,6 @@
 # PCIe FPGA card Installation and Setup
 
-Two kinds of setups have to be distinguished, those that use Series 7 FPGAs (XpressK7, KC705, TEF1001) and those that use the Spartan 6 (CENR SPEC). If in doubt see picture below for identification:
+Two kinds of setups have to be distinguished, those that use Series 7 FPGAs (XpressK7, KC705, TEF1001) and those that use the Spartan 6 (CERN SPEC). If in doubt see picture below for identification:
 
 ![Supported PCIe cards](images/pcie_cards.png)
 
@@ -11,7 +11,7 @@ For the Spartan 6 case it is required to have installed the software first. Then
 - Program the FPGA on the SPEC board
 ```bash
     $ cd Yarr/src
-    $ bin/programFpga <path to Yarr-fw repo>/syn/spec/quad_fei4_revB/quad_fei4_revB.bit 
+    $ bin/specS6ProgramFpga <path to Yarr-fw repo>/syn/spec/quad_fei4_revB/quad_fei4_revB.bit 
     Opening file: ../hdl/syn/yarr_quad_fei4_revB.bit
     Size: 1.41732 MB
     =========================================
@@ -86,7 +86,7 @@ source /opt/Xilinx/Vivado_Lab/2016.4/settings64.sh
 
 Details can be found in the [Yarr-FW](https://github.com/Yarr/Yarr-fw/blob/master/syn/xpressk7/README.md). The following will describe the simplest way:
 
-- Execute the ``flash.py`` python script:
+- Execute the ``flash.py`` python script if you use the XpressK7 and the ``flash-trenz.py`` id you are using the Trenz card:
 ```bash
 $ cd Yarr-fw/script
 $ python flash.py
@@ -119,7 +119,7 @@ $ lspci
   2. Check if the test programs runs successfully (Note that the ``Could not map BAR4, ...`` is normal for the Series 7 FPGAs)
 ```bash
 $ cd Yarr/src
-$ bin/test 
+$ bin/specComTest 
 void SpecCom::init() -> Opening SPEC with id #0
 void SpecCom::init() -> Mapping BARs
 void SpecCom::init() -> Mapped BAR0 at 0x0x7f075e4b2000 with size 0x100000
@@ -133,3 +133,28 @@ Success! No errors.
 
 - Your system is now ready to use
 
+## Adapter Cards
+
+### Ohio RD53A Multi Module Adapter
+
+- In order to power correctly the adapter card, a jumper needs to be added to **3V PCI** pin, as shown on picture below.
+
+![Jumper on FMC Multi-Module Adapter Card ](images/Ohio_jumper.png)
+
+When the board is powered correctly, a red LED should light up. More information about the adapter card can be found [Multi Chip Adapter Card](https://twiki.cern.ch/twiki/bin/viewauth/RD53/RD53ATesting#Multi_Chip_FMC).
+
+On a SCC [Single Chip Card](https://twiki.cern.ch/twiki/bin/viewauth/RD53/RD53ATesting#RD53A_Single_Chip_Card_SCC) the CMD line is AC coupled. On the older Ohio card (before 2019 and serial number < 200) there is additional AC coupling as shown on the picture. This is corrected for the newer Ohio cards from 2019 on with serial number starting from 200.
+
+![Ohio Unmodified CMD ](images/OhioUnmodified_Cmd.png)
+
+To avoid double AC coupling on the CMD line, one should replace the capacitors with jumpers and remove the termination, as shown on the picture.
+
+![Ohio Modified CMD ](images/OhioModified_Cmd.png)
+
+In order to read the HitOrs from Port B and Port D, one has to modify the AC coupling of the data lines on the Ohio card:
+
+![Ohio Unmodified Data ](images/OhioUnmodified_Data.png)
+
+The capacitors should be replaced with jummpers as shown on the picture:
+
+![Ohio Modified Data ](images/OhioModified_Data.png)

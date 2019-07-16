@@ -4,6 +4,7 @@ pages:
     - SW Installation: install.md
     - Kernel Driver: kernel_driver.md
     - PCIe Firmware: pcie.md
+    - External PCIe: pcie_ext.md
     - ScanConsole: scanconsole.md
     - FE-I4: fei4.md
     - FE65-P2: fe65p2.md

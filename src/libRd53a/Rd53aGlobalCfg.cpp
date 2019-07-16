@@ -99,8 +99,8 @@ void Rd53aGlobalCfg::init() {
 
     //Power
     //31
-    SldoAnalogTrim.init(31, &m_cfg[31], 5, 5, 26); regMap["SldoAnalogTrim"] = &Rd53aGlobalCfg::SldoAnalogTrim;
-    SldoDigitalTrim.init(31, &m_cfg[31], 0, 5, 26); regMap["SldoDigitalTrim"] = &Rd53aGlobalCfg::SldoDigitalTrim;
+    SldoAnalogTrim.init(31, &m_cfg[31], 5, 5, 22); regMap["SldoAnalogTrim"] = &Rd53aGlobalCfg::SldoAnalogTrim;
+    SldoDigitalTrim.init(31, &m_cfg[31], 0, 5, 22); regMap["SldoDigitalTrim"] = &Rd53aGlobalCfg::SldoDigitalTrim;
 
     // Digital Matrix
     //32
@@ -260,8 +260,8 @@ void Rd53aGlobalCfg::init() {
     HitOr3MaskDiff0.init(96, &m_cfg[96], 0, 16, 0); regMap["HitOr3MaskDiff0"] = &Rd53aGlobalCfg::HitOr3MaskDiff0;
     HitOr3MaskDiff1.init(97, &m_cfg[97], 0, 1, 0); regMap["HitOr3MaskDiff1"] = &Rd53aGlobalCfg::HitOr3MaskDiff1;
     //98
-    AdcRefTrim.init(98, &m_cfg[98], 6, 4, 0); regMap["AdcRefTrim"] = &Rd53aGlobalCfg::AdcRefTrim;
-    AdcTrim.init(98, &m_cfg[98], 0, 6, 0); regMap["AdcTrim"] = &Rd53aGlobalCfg::AdcTrim;
+    AdcRefTrim.init(98, &m_cfg[98], 6, 4, 12); regMap["AdcRefTrim"] = &Rd53aGlobalCfg::AdcRefTrim;
+    AdcTrim.init(98, &m_cfg[98], 0, 6, 5); regMap["AdcTrim"] = &Rd53aGlobalCfg::AdcTrim;
     //99
     SensorCfg0.init(99, &m_cfg[99], 0, 11, 0); regMap["SensorCfg0"] = &Rd53aGlobalCfg::SensorCfg0;
     SensorCfg1.init(100, &m_cfg[100], 0, 11, 0); regMap["SensorCfg1"] = &Rd53aGlobalCfg::SensorCfg1;

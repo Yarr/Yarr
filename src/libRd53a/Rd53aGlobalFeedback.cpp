@@ -64,9 +64,8 @@ void Rd53aGlobalFeedback::loadConfig(json &j) {
 
 void Rd53aGlobalFeedback::feedback(unsigned channel, double sign, bool last) {
     // Calculate new step and val
-    std::cout << __PRETTY_FUNCTION__ << " : " << channel << " " << sign << " " << m_oldSign[channel] << std::endl;    
+    std::cout << __PRETTY_FUNCTION__ << " : [" << channel << "] " << sign << " " << m_oldSign[channel] << std::endl;    
     if (sign != m_oldSign[channel]) {
-        std::cout << "bla" << std::endl;
         m_oldSign[channel] = 0;
         m_localStep[channel] = m_localStep[channel]/2;
     }
@@ -146,7 +145,6 @@ void Rd53aGlobalFeedback::init() {
     for (auto *fe : keeper->feList) {
         if (fe->getActive()) {
             unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-            std::cout << __PRETTY_FUNCTION__ << " : " << ch << std::endl;
             m_localStep[ch] = step;
             m_values[ch] = max;
             m_oldSign[ch] = -1;

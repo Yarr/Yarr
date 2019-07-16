@@ -25,11 +25,11 @@
 class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
     public:
         Rd53a();
-        Rd53a(TxCore *arg_core);
-        Rd53a(TxCore *arg_core, unsigned arg_channel);
-        Rd53a(TxCore *arg_core, unsigned arg_txchannel, unsigned arg_rxchannel);
+        Rd53a(HwController *arg_core);
+        Rd53a(HwController *arg_core, unsigned arg_channel);
+        Rd53a(HwController *arg_core, unsigned arg_txchannel, unsigned arg_rxchannel);
     
-        void init(TxCore *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override;
+        void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override;
         void makeGlobal() override {
             m_chipId = 8;
         }
@@ -39,6 +39,8 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
         void configureGlobal();
         void configurePixels();
         void configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels);
+
+        int checkCom() override;
 
         void maskPixel(unsigned col, unsigned row) override {
             this->setEn(col, row, 0);
@@ -59,6 +61,7 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
 
     protected:
     private:
+        std::pair<uint32_t, uint32_t> decodeSingleRegRead(uint32_t higher, uint32_t lower);
 };
 
 #endif

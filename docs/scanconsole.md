@@ -6,6 +6,7 @@ It currently supports three types of FrontEnds:
 - FE-I4B
 - FE65-P2
 - RD53A
+- ABC/HCC STAR
 
 ## Quick Start
 
@@ -21,17 +22,17 @@ This runs a digitalscan with the FE-I4B emulator. This does not use or require a
 
 ScanConsole requires at min. three types of configuration files (more details below):
     
-- Controller config (**-r**): this config contains the information to select the right hardware controller (e.g. SPEC, RCE, or emulator) and the configuration of the hardware controller.
-- Connectivity/Setup config (**-c**): this config contains the chipType (e.g. FE-I4B or RD53A) and a list chips which should be used in the scan
-- Scan config (**-s**): this config contains the order and type of loop actions to be executed (and their configuration), the histogrammers to be used, and the analysis
+- **-r ``<path>``** => Controller config : this config contains the information to select the right hardware controller (e.g. SPEC, RCE, or emulator) and the configuration of the hardware controller.
+- **-c ``<path>``** => Connectivity/Setup config : this config contains the chipType (e.g. FE-I4B or RD53A) and a list chips which should be used in the scan
+- **-s ``<path>``** => Scan config : this config contains the order and type of loop actions to be executed (and their configuration), the histogrammers to be used, and the analysis
 
 Additional command line arguements for the scanConsole are:
     
 - **-h** : this, prints all available command line arguments
-- **-t  <target_charge> [<target_tot>]** : Set target values for threshold (charge only) and tot (charge and tot).
+- **-t  ``<target_charge>`` [``<target_tot>``]** : Set target values for threshold (charge only) and tot (charge and tot).
 - **-p** : Enable plotting of results.
-- **-o <dir>** : Output directory. (Default ./data/)
-- **-m <int>** : 0 = disable pixel masking, 1 = reset pixel masking, default = enable pixel masking
+- **-o ``<dir>``** : Output directory. (Default ./data/)
+- **-m ``<int>``** : 0 = disable pixel masking, 1 = reset pixel masking, default = enable pixel masking
 - **-k**: Report known items (Scans, Hardware etc.)
 
 ### Controller Config
@@ -57,13 +58,23 @@ Example of a connectivity config:
         {
             "config" : "configs/rd53a_test.json",
             "tx" : 0,
-            "rx" : 0
+            "rx" : 0,
+            "enable" : 1,
+            "locked" : 0
+        },
+        {
+            "config" : "configs/rd53a_test_1.json",
+            "tx" : 1,
+            "rx" : 1,
+            "enable" : 0,
+            "locked" : 0
         }
     ]
 }
+
 ```
 The "chipType" can be one of three: `RD53A`, `FEI4B`, or `FE65P2`.
-"chips" contains an array of chips, each element needs to contain the path to the config, and the tx and rx channel/link.
+"chips" contains an array of chips, each element needs to contain the path to the config, and the tx and rx channel/link. Each chip can be read out individually by toggling "enable". The chip config can be prevented from overwriting if it is locked.
 
 ### Scan Config
 
