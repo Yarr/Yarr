@@ -36,33 +36,24 @@ def getArgs():
     parser.add_argument('-b', '--before', help='Set chip config type "before".', action='store_true')
     parser.add_argument('-a', '--after', help='Set chip config type "after".', action='store_true')
     parser.add_argument('-D', '--dummy', help='Set dummy data "True".', action='store_true')
-    parser.add_argument('--serialnumber', help='Provide serial number of Module\nand retrieve config files of the latest scan for the Module.', type=str)
-    parser.add_argument('--runid', help='Provide run ID.', type=str)
-
     parser.add_argument('-d', '--directory', help='Provide directory name.', type=str)
 
     args = parser.parse_args()
 
     if args.config is not None:
         conf = readConfig(args.config)    # Read from config file
-        if 'config' in conf:
-            if 'serialnumber' in conf['config']:  args.serialnumber = conf['config']['serialnumber']
-            if 'runid'        in conf['config']:  args.runid        = conf['config']['runid']
-            if 'directory'    in conf['config']:  args.directory    = conf['config']['directory']
-        if 'testdata' in conf:
-            if 'serialnumber' in conf['testdata']:  args.serialnumber = conf['testdata']['serialnumber']
+        if 'user'      in conf and not args.user:      args.user = conf['user']
+        if 'site'      in conf and not args.site:      args.site = conf['site']
+        if 'before'    in conf and not args.before:    args.before = conf['before']
+        if 'after'     in conf and not args.after:     args.after = conf['after']
+        if 'dummy'     in conf and not args.dummy:     args.dummy = conf['dummy']
+        if 'directory' in conf and not args.directory: args.directory = conf['directory']
     return args
 
 def __init():
     db_path = os.environ['HOME']+'/.yarr/localdb/.retrieve'
     if not os.path.isdir( db_path ): 
         os.mkdir( db_path )
-#    head_path = db_path+'/HEAD'
-#    head_file = open(head_path, 'w')
-#    head_file.close()
-#    config_path = db_path+'/config'
-#    config_file = open(config_path, 'w')
-#    config_file.close()
     sys.exit()
 
 def __check():
