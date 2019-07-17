@@ -22,12 +22,13 @@ void checkEmpty(bool /*i_empty*/, std::string /*i_key*/, std::string /*i_file_pa
 
 int main(int argc, char *argv[]){
 
-    std::string home     = getenv("HOME");
+    std::string home = getenv("HOME");
     std::string dbuser_cfg_path = "";
     std::string registerType = "";
 
     // Init parameters
-    std::string db_cfg_path=home+"/.yarr/localdb/etc/database.json";
+    std::string dbDirPath = home+"/.yarr/localdb";
+    std::string db_cfg_path = dbDirPath+"/etc/localdb/database.json";
     std::string db_dcs_path = "";
 	  std::string conn_path = "";
     std::string file_path = "";
@@ -117,7 +118,7 @@ int main(int argc, char *argv[]){
 
         std::ifstream db_cfg_ifs(db_cfg_path);
         json db_cfg_json = json::parse(db_cfg_ifs);
-        std::string db_cache_path = std::string(db_cfg_json["cachePath"])+"/var/cache/scan";
+        std::string db_cache_path = std::string(db_cfg_json["cachePath"])+"/var/cache/localdb";
         std::cout << "DBHandler: Register Cache in '"<< db_cache_path << "'" << std::endl;
         DIR *c_dp;
         struct dirent *c_dirp;
@@ -135,10 +136,11 @@ int main(int argc, char *argv[]){
             DBHandler *database = new DBHandler();
             database->initialize(db_cfg_path, "db");
     	      database->setCache(cache_path);
+            database->cleanUp(cache_path);
             delete database;
         }
 
-        std::string db_tmp_path = std::string(db_cfg_json["cachePath"])+"/tmp/db";
+        std::string db_tmp_path = std::string(db_cfg_json["cachePath"])+"/tmp/localdb/done";
 
         int now = std::time(NULL);
 
@@ -220,6 +222,7 @@ int main(int argc, char *argv[]){
 
         database->initialize(db_cfg_path, "dcs");
         database->setDCSCfg(db_dcs_path, db_test_path);
+        database->cleanUp();
 
         delete database;
     }
@@ -285,7 +288,7 @@ int main(int argc, char *argv[]){
         }
         std::string cache_dir = db_json["cachePath"];
 
-        std::string tmp_file_path = cache_dir + "/tmp/getConfig.json";
+        std::string tmp_file_path = cache_dir + "/tmp/localdb/getConfig.json";
         std::ofstream file_ofs(tmp_file_path);
         file_ofs << std::setw(4) << cfg_json;
         file_ofs.close();

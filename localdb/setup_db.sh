@@ -59,7 +59,7 @@ if [ -z ${dir} ]; then
 fi
 
 # Check the name of site
-address=${dir}/etc/address.json
+address=${dir}/etc/localdb/address.json
 declare -a nic=()  
 num=0
 for DEV in `find /sys/devices -name net | grep -v virtual`; 
@@ -131,18 +131,29 @@ fi
 if [ ! -e ${dir} ]; then
     mkdir -p ${dir}
 fi
-if [ ! -e ${dir}/var ]; then
-    mkdir -p ${dir}/var/cache/scan
-    mkdir -p ${dir}/lib/tmp
-    mkdir -p ${dir}/tmp/db
-    mkdir -p ${dir}/tmp/failed
-    mkdir -p ${dir}/etc
+if [ ! -e ${dir}/var/cache/localdb ]; then
+    mkdir -p ${dir}/var/cache/localdb
+fi
+if [ ! -e ${dir}/var/log/localdb ]; then
+    mkdir -p ${dir}/var/log/localdb
+fi
+if [ ! -e ${dir}/var/lib/localdb ]; then
+    mkdir -p ${dir}/var/lib/localdb
+fi
+if [ ! -e ${dir}/tmp/localdb ]; then
+    mkdir -p ${dir}/tmp/localdb/cache
+    mkdir -p ${dir}/tmp/localdb/log
+    mkdir -p ${dir}/tmp/localdb/done
+    mkdir -p ${dir}/tmp/localdb/failed
+fi
+if [ ! -e ${dir}/etc/localdb ]; then
+    mkdir -p ${dir}/etc/localdb
 fi
 
 echo "Created Cache Directory: ${dir}"
 
 # create database config
-dbcfg=${dir}/etc/database.json
+dbcfg=${dir}/etc/localdb/database.json
 cp ${localdb_dir}/default/database.json ${dbcfg}
 sed -i -e "s!DBIP!${ip}!g" ${dbcfg}
 sed -i -e "s!DBPORT!${port}!g" ${dbcfg}
@@ -158,7 +169,7 @@ sed -i -e "s!SITE!${institution}!g" ${address}
 echo "Create Site Config file: ${address}"
 
 # create default user config
-cfg=${dir}/etc/${USER}_user.json
+cfg=${dir}/etc/localdb/${USER}_user.json
 cp ${localdb_dir}/default/user.json ${cfg}
 sed -i -e "s!NAME!${USER}!g" ${cfg}
 sed -i -e "s!INSTITUTION!${HOSTNAME}!g" ${cfg}

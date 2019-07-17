@@ -141,6 +141,11 @@ class DBHandler {
         void setCache(std::string /*i_cache_dir*/);
 
         /***
+        Clean up veriables after scanConsole
+        ***/
+        void cleanUp(std::string i_dir="");
+
+        /***
         Retrieve data from Local DB and Master Server
         mongocxx library is required.
         * i_info_file_path: path to retrieve information file

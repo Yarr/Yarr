@@ -101,15 +101,15 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_option) {
 #endif
     }
     if (m_option=="scan") {
-        std::string cmd = "rm "+m_cache_dir+"/tmp/*.json";
+        std::string cmd = "rm "+m_cache_dir+"/tmp/localdb/*.json";
         if (system(cmd.c_str()) < 0) {
-            std::string message = "Problem removing json files in "+m_cache_dir+"/tmp";
+            std::string message = "Problem removing json files in "+m_cache_dir+"/tmp/localdb";
             std::string function = __PRETTY_FUNCTION__;
             this->alert(function, message); return;
         }
     }
-    if (m_option=="scan"||m_option=="dcs") m_log_dir = m_cache_dir+"/var/cache/scan/"+std::to_string(now);
-    else m_log_dir = m_cache_dir+"/tmp/log";//TODO
+    if (m_option=="scan"||m_option=="dcs") m_log_dir = m_cache_dir+"/tmp/localdb/cache/"+std::to_string(now);
+    else m_log_dir = m_cache_dir+"/tmp/localdb/log";//TODO
 
     m_log_path = m_log_dir + "/cacheLog.json";
     this->mkdir(m_log_dir);
@@ -143,7 +143,7 @@ void DBHandler::alert(std::string i_function, std::string i_message, std::string
     char tmp[20];
     strftime(tmp, 20, "%Y%m%d", lt);
     std::string timestamp=tmp;
-    std::string log_path = m_cache_dir+"/var/log/"+timestamp+"_error.log";
+    std::string log_path = m_cache_dir+"/var/log/localdb/"+timestamp+"_error.log";
     std::ofstream file_ofs(log_path, std::ios::app);
     strftime(tmp, 20, "%F_%H:%M:%S", lt);
     timestamp=tmp;
@@ -204,7 +204,7 @@ int DBHandler::checkModuleList() {
     if (DB_DEBUG) std::cout << "DBHandler: Check Module List" << std::endl;
 
 #ifdef MONGOCXX_INCLUDE
-    std::string mod_list_path = m_cache_dir+"/lib/modules.csv";
+    std::string mod_list_path = m_cache_dir+"/var/lib/localdb/modules.csv";
     std::ofstream list_ofs(mod_list_path, std::ios::out);
 
     auto doc_value = make_document(kvp("componentType", "Module"));
@@ -326,7 +326,9 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_tr_path) {
         this->checkDCSCfg(i_dcs_path, num_str, env_json[i]);
         if (!env_json[i]["path"].empty()) {
             int j_num = env_json[i]["num"];
-            std::string log_path = env_json[i]["path"];
+            std::string log_path = "";
+            if (m_option=="dcs") log_path = env_json[i]["path"];
+            else if (m_option=="db") log_path = std::string(m_cache_json["logPath"])+"/"+std::string(env_json[i]["path"]);
             this->checkDCSLog(log_path, i_dcs_path, env_json[i]["key"], j_num); 
         } else {
             this->checkNumber(env_json[i]["value"].is_number(), "environments."+num_str+".value", i_dcs_path);
@@ -370,9 +372,9 @@ void DBHandler::setTestRunStart(std::string i_test_type, std::vector<std::string
             std::time_t now = std::time(NULL);
             struct tm *lt = std::localtime(&now);
             char tmp[20];
-            strftime(tmp, 20, "%Y%m%d", lt);
+            strftime(tmp, 20, "%Y%m", lt);
             std::string ts=tmp;
-            std::string log_path = m_cache_dir+"/lib/"+ts+"_scan.csv";
+            std::string log_path = m_cache_dir+"/var/lib/localdb/"+ts+"_scan.csv";
             std::ofstream log_file_ofs(log_path, std::ios::app);
             strftime(tmp, 20, "%F_%H:%M:%S", lt);
             ts=tmp;
@@ -385,7 +387,7 @@ void DBHandler::setTestRunStart(std::string i_test_type, std::vector<std::string
             tr_json["runNumber"] = i_run_number;
             tr_json["testType"] = i_test_type;
 
-            std::string tmp_path = m_cache_dir+"/tmp/"+mo_serial_number+"_scan.json";
+            std::string tmp_path = m_cache_dir+"/tmp/localdb/"+mo_serial_number+"_scan.json";
             std::ofstream tmp_file_ofs(tmp_path);
             tmp_file_ofs << std::setw(4) << tr_json;
             tmp_file_ofs.close();
@@ -483,6 +485,91 @@ void DBHandler::setCache(std::string i_cache_dir) {
     this->alert(function, message);
 #endif
     return;
+}
+
+void DBHandler::cleanUp(std::string i_dir) {
+    if (m_option=="scan") {
+        int now = std::time(NULL);
+        std::string cmd = "mv "+m_log_dir+" "+m_cache_dir+"/var/cache/localdb/"+std::to_string(now);
+        if (system(cmd.c_str()) < 0) {
+            std::string message = "Problem moving directory "+m_log_dir+" to "+m_cache_dir+"/var/cache/localdb/"+std::to_string(now);
+            std::string function = __PRETTY_FUNCTION__;
+            this->alert(function, message); return;
+        }
+        m_log_dir = m_cache_dir+"/var/cache/localdb/"+std::to_string(now);
+        m_log_json["logPath"] = m_log_dir;
+        m_log_path = m_log_dir + "/cacheLog.json";
+        this->writeJson("status", "waiting", m_log_path, m_log_json);
+    } else if (m_option=="dcs") {
+        int now = std::time(NULL);
+        std::string cmd = "mv "+m_log_dir+" "+m_cache_dir+"/var/cache/localdb/"+std::to_string(now);
+        if (system(cmd.c_str()) < 0) {
+            std::string message = "Problem moving directory "+m_log_dir+" to "+m_cache_dir+"/var/cache/localdb/"+std::to_string(now);
+            std::string function = __PRETTY_FUNCTION__;
+            this->alert(function, message); return;
+        }
+        m_log_dir = m_cache_dir+"/var/cache/localdb/"+std::to_string(now);
+        m_log_json["logPath"] = m_log_dir;
+        m_log_path = m_log_dir + "/cacheLog.json";
+        this->writeJson("status", "waiting", m_log_path, m_log_json);
+    }
+#ifdef MONGOCXX_INCLUDE
+    else if (m_option=="db") {
+        if (m_cache_json["dbOption"]=="scan") {
+            for (auto serial_number : m_serial_numbers) {
+                int start_time = m_cache_json["startTime"];
+                this->getTestRunData("", serial_number, start_time);
+                if (m_tr_oid_str=="") {
+                    m_log_json["errormessage"] = "Failed to upload, try again";
+                    m_cache_json["errormessage"] = "Failed to upload, try again";
+                    this->writeJson("status", "failure", m_log_path, m_log_json);
+                    this->writeJson("status", "failure", m_cache_path, m_cache_json);
+                }
+            }
+        } else if (m_cache_json["dbOption"]=="dcs") {
+            auto doc_value = make_document(kvp("_id", bsoncxx::oid(m_tr_oid_str)));
+            auto result = db["testRun"].find_one(doc_value.view());
+            if (result->view()["environment"].get_utf8().value.to_string()=="...") {
+                m_log_json["errormessage"] = "Failed to upload, try again";
+                m_cache_json["errormessage"] = "Failed to upload, try again";
+                this->writeJson("status", "failure", m_log_path, m_log_json);
+                this->writeJson("status", "failure", m_cache_path, m_cache_json);
+            }
+        }
+        if (m_log_json["status"]!="failure") this->writeJson("status", "done", m_log_path, m_log_json);
+        if (m_cache_json["status"]!="failure") {
+            this->writeJson("status", "done", m_cache_path, m_cache_json);
+            int now = std::time(NULL);
+            std::string cmd = "mv "+i_dir+" "+m_cache_dir+"/tmp/localdb/done/"+std::to_string(now);
+            if (system(cmd.c_str()) < 0) {
+                std::string message = "Problem moving directory "+i_dir+" into "+m_cache_dir+"/tmp/localdb/done/"+std::to_string(now);
+                std::string function = __PRETTY_FUNCTION__;
+                this->alert(function, message); return;
+            }
+        }
+    }
+#endif
+    // initialize
+    m_option = "";
+    m_db_cfg_path = "";
+    m_user_oid_str = "";
+    m_site_oid_str = "";
+    m_chip_type = "";
+    m_log_dir = "";
+    m_log_path = "";
+    m_cache_path = "";
+    m_cache_dir = "";
+    m_tr_oid_str = "";
+    m_stage_list.clear();
+    m_env_list.clear();
+    m_comp_list.clear();
+    m_histo_names.clear();
+    m_tr_oid_strs.clear();
+    m_serial_numbers.clear();
+    m_log_json = NULL;
+    m_cache_json = NULL;
+    m_conn_json = NULL;
+    counter = 0;
 }
 
 void DBHandler::getData(std::string i_info_file_path, std::string i_get_type) {
@@ -871,8 +958,12 @@ void DBHandler::registerDCS(std::string i_dcs_path, std::string i_tr_path) {
         env_keys.push_back(j["key"]);
         env_nums.push_back(j["num"]);
         descriptions.push_back(j["description"]);
-        if (!j["path"].empty()) env_paths.push_back(j["path"]);
-        else env_paths.push_back("null");
+        std::string env_path = "null";
+        if (!j["path"].empty()) {
+            if (m_option=="dcs") env_path = j["path"];
+            else if (m_option=="db") env_path = std::string(m_cache_json["logPath"])+"/"+std::string(j["path"]);
+        }
+        env_paths.push_back(env_path);
         if (!j["value"].empty()) env_vals.push_back(j["value"]);
         else env_vals.push_back(-1); 
         if (!j["margin"].empty()) env_margins.push_back(j["margin"]);
@@ -1342,18 +1433,18 @@ void DBHandler::writeScan(std::string i_cache_dir) {
     if (m_cache_json["status"]=="done") {
         std::cout << "Already uploaded, then move cache files to temporary..." << std::endl;
         int now = std::time(NULL);
-        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/tmp/db/"+std::to_string(now);
+        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/tmp/localdb/done/"+std::to_string(now);
         if (system(cmd.c_str()) < 0) {
-            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/tmp/db/"+std::to_string(now);
+            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/tmp/localdb/done/"+std::to_string(now);
             std::string function = __PRETTY_FUNCTION__;
             this->alert(function, message); return;
         }
         return;
     } else if (m_cache_json["status"]=="failure") {
         int now = std::time(NULL);
-        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/tmp/failed/"+std::to_string(now);
+        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/tmp/localdb/failed/"+std::to_string(now);
         if (system(cmd.c_str()) < 0) {
-            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/tmp/failed/"+std::to_string(now);
+            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/tmp/localdb/failed/"+std::to_string(now);
             std::string function = __PRETTY_FUNCTION__;
             this->alert(function, message); return;
         }
@@ -1371,7 +1462,7 @@ void DBHandler::writeScan(std::string i_cache_dir) {
     std::vector<std::string> conn_paths;
     int timestamp = m_cache_json["startTime"];
     for (int i=0; i<(int) m_cache_json["configs"]["connCfg"].size(); i++) {
-        std::string conn_path = m_cache_json["configs"]["connCfg"][i]["path"];
+        std::string conn_path = i_cache_dir+"/"+std::string(m_cache_json["configs"]["connCfg"][i]["path"]);
         json conn_json = this->toJson(conn_path);
         std::string mo_serial_number = conn_json["module"]["serialNumber"];
         this->getTestRunData("", mo_serial_number, timestamp);
@@ -1396,19 +1487,19 @@ void DBHandler::writeScan(std::string i_cache_dir) {
 
     // write config
     // controller config
-    std::string ctrl_cfg_path = m_cache_json["configs"]["ctrlCfg"][0]["path"];
+    std::string ctrl_cfg_path = i_cache_dir+"/"+std::string(m_cache_json["configs"]["ctrlCfg"][0]["path"]);
     this->setConfig(-1, -1, ctrl_cfg_path, "controller", "ctrlCfg", "testRun", "null"); //controller config
 
     // scan config
     std::string scan_cfg_path;
-    if (!m_cache_json["configs"]["scanCfg"].empty()) scan_cfg_path = m_cache_json["configs"]["scanCfg"][0]["path"];
+    if (!m_cache_json["configs"]["scanCfg"].empty()) scan_cfg_path = i_cache_dir+"/"+std::string(m_cache_json["configs"]["scanCfg"][0]["path"]);
     else scan_cfg_path = "";
     this->setConfig(-1, -1, scan_cfg_path, scan_type, "scanCfg", "testRun", "null"); 
 
     // chip config
     for (auto chip_json: m_cache_json["configs"]["chipCfg"]) {
         std::string chip_id   = chip_json["_id"];
-        std::string chip_path = chip_json["path"];
+        std::string chip_path = i_cache_dir+"/"+std::string(chip_json["path"]);
         std::string filename  = chip_json["filename"];
         std::string title     = chip_json["title"];
         this->setConfig(-1, -1, chip_path, filename, title, "componentTestRun", chip_id);
@@ -1417,7 +1508,7 @@ void DBHandler::writeScan(std::string i_cache_dir) {
     // attachments
     for (auto attachment: m_cache_json["attachments"]) {
         std::string chip_id   = attachment["_id"];
-        std::string file_path = attachment["path"];
+        std::string file_path = i_cache_dir+"/"+std::string(attachment["path"]);
         std::string histoname = attachment["histoname"];
         this->setAttachment(-1, -1, file_path, histoname, chip_id);
     }
@@ -1426,18 +1517,18 @@ void DBHandler::writeScan(std::string i_cache_dir) {
     int finish_timestamp = m_cache_json["finishTime"];
     this->setTestRunFinish(scan_type, conn_paths, run_number, target_charge, target_tot, finish_timestamp, command);
 
-    for (auto serial_number : m_serial_numbers) {
-        int start_time = m_cache_json["startTime"];
-        this->getTestRunData("", serial_number, start_time);
-        if (m_tr_oid_str=="") {
-            m_log_json["errormessage"] = "Failed to upload, try again";
-            m_cache_json["errormessage"] = "Failed to upload, try again";
-            this->writeJson("status", "failure", m_cache_path, m_cache_json);
-            this->writeJson("status", "failure", m_log_path, m_log_json);
-        }
-    }
-    if (m_cache_json["status"]!="failure") this->writeJson("status", "done", m_cache_path, m_cache_json);
-    if (m_log_json["status"]!="failure") this->writeJson("status", "done", m_log_path, m_log_json);
+    //for (auto serial_number : m_serial_numbers) {
+    //    int start_time = m_cache_json["startTime"];
+    //    this->getTestRunData("", serial_number, start_time);
+    //    if (m_tr_oid_str=="") {
+    //        m_log_json["errormessage"] = "Failed to upload, try again";
+    //        m_cache_json["errormessage"] = "Failed to upload, try again";
+    //        this->writeJson("status", "failure", m_cache_path, m_cache_json);
+    //        this->writeJson("status", "failure", m_log_path, m_log_json);
+    //    }
+    //}
+    //if (m_cache_json["status"]!="failure") this->writeJson("status", "done", m_cache_path, m_cache_json);
+    //if (m_log_json["status"]!="failure") this->writeJson("status", "done", m_log_path, m_log_json);
     return;
 }
 
@@ -1448,18 +1539,18 @@ void DBHandler::writeDCS(std::string i_cache_dir) {
     if (m_cache_json["status"]=="done") {
         std::cout << "Already uploaded, then move cache files to temporary..." << std::endl;
         int now = std::time(NULL);
-        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/tmp/db/"+std::to_string(now);
+        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/tmp/localdb/done/"+std::to_string(now);
         if (system(cmd.c_str()) < 0) {
-            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/tmp/db/"+std::to_string(now);
+            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/tmp/localdb/done/"+std::to_string(now);
             std::string function = __PRETTY_FUNCTION__;
             this->alert(function, message); return;
         }
         return;
     } else if (m_cache_json["status"]=="failure") {
         int now = std::time(NULL);
-        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/tmp/failed/"+std::to_string(now);
+        std::string cmd = "mv "+i_cache_dir+" "+m_cache_dir+"/tmp/localdb/failed/"+std::to_string(now);
         if (system(cmd.c_str()) < 0) {
-            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/tmp/failed/"+std::to_string(now);
+            std::string message = "Problem moving directory "+i_cache_dir+" into "+m_cache_dir+"/tmp/localdb/failed/"+std::to_string(now);
             std::string function = __PRETTY_FUNCTION__;
             this->alert(function, message); return;
         }
@@ -1493,16 +1584,16 @@ void DBHandler::writeDCS(std::string i_cache_dir) {
     this->setDCSCfg(dcs_file_path, tr_file_path);
     this->registerDCS(dcs_file_path, tr_file_path);
 
-    auto doc_value = make_document(kvp("_id", bsoncxx::oid(m_tr_oid_str)));
-    auto result = db["testRun"].find_one(doc_value.view());
-    if (result->view()["environment"].get_utf8().value.to_string()=="...") {
-        m_log_json["errormessage"] = "Failed to upload, try again";
-        m_cache_json["errormessage"] = "Failed to upload, try again";
-        this->writeJson("status", "failure", m_log_path, m_log_json);
-        this->writeJson("status", "failure", m_cache_path, m_cache_json);
-    }
-    if (m_cache_json["status"]!="failure") this->writeJson("status", "done", m_cache_path, m_cache_json);
-    if (m_log_json["status"]!="failure") this->writeJson("status", "done", m_log_path, m_log_json);
+//    auto doc_value = make_document(kvp("_id", bsoncxx::oid(m_tr_oid_str)));
+//    auto result = db["testRun"].find_one(doc_value.view());
+//    if (result->view()["environment"].get_utf8().value.to_string()=="...") {
+//        m_log_json["errormessage"] = "Failed to upload, try again";
+//        m_cache_json["errormessage"] = "Failed to upload, try again";
+//        this->writeJson("status", "failure", m_log_path, m_log_json);
+//        this->writeJson("status", "failure", m_cache_path, m_cache_json);
+//    }
+//    if (m_cache_json["status"]!="failure") this->writeJson("status", "done", m_cache_path, m_cache_json);
+//    if (m_log_json["status"]!="failure") this->writeJson("status", "done", m_log_path, m_log_json);
 
     return;
 }
@@ -2069,7 +2160,7 @@ void DBHandler::cacheConnCfg(std::vector<std::string> i_conn_paths) {
             char tmp[1000];
             std::string del = ",";
             char separator = del[0];
-            std::string mod_list_path = m_cache_dir+"/lib/modules.csv";
+            std::string mod_list_path = m_cache_dir+"/var/lib/localdb/modules.csv";
             std::ifstream list_ifs(mod_list_path);
             while (list_ifs.getline(tmp, 1000)) {
                 if (split(tmp, separator).size()==0) continue;
@@ -2090,11 +2181,11 @@ void DBHandler::cacheConnCfg(std::vector<std::string> i_conn_paths) {
                 if (conn_json["chips"][j]["geomId"].empty()) conn_json["chips"][j]["geomId"] = j+1;
             }
         }
-        std::ofstream conn_file(m_cache_dir+"/tmp/conn.json");
+        std::ofstream conn_file(m_cache_dir+"/tmp/localdb/conn.json");
         conn_file << std::setw(4) << conn_json;
         conn_file.close();
     
-        cacheConfig(mo_serial_number, m_cache_dir+"/tmp/conn.json", "connectivity", "connCfg", "");
+        cacheConfig(mo_serial_number, m_cache_dir+"/tmp/localdb/conn.json", "connectivity", "connCfg", "");
         m_conn_json["connectivity"].push_back(conn_json);
     }
 
@@ -2110,10 +2201,7 @@ void DBHandler::cacheTestRun(std::string i_test_type, int i_run_number, int i_ta
     m_log_json["targetTot"] = i_target_tot;
     m_log_json["command"] = i_command;
     if (i_start_time!=-1) m_log_json["startTime"] = i_start_time;
-    if (i_finish_time!=-1) {
-        m_log_json["finishTime"] = i_finish_time;
-        this->writeJson("status", "waiting", m_log_path, m_log_json);
-    }
+    if (i_finish_time!=-1) m_log_json["finishTime"] = i_finish_time;
 
     return;
 }
@@ -2132,7 +2220,8 @@ void DBHandler::cacheConfig(std::string i_oid_str, std::string i_file_path, std:
     }
     json data_json;
     data_json["_id"]        = i_oid_str;
-    data_json["path"]       = m_log_dir+"/"+std::to_string(counter)+".json"; 
+    //data_json["path"]       = m_log_dir+"/"+std::to_string(counter)+".json"; 
+    data_json["path"]       = std::to_string(counter)+".json"; 
     data_json["filename"]   = i_filename;
     data_json["title"]      = i_title;
     data_json["collection"] = i_collection;
@@ -2153,7 +2242,8 @@ void DBHandler::cacheAttachment(std::string i_oid_str, std::string i_file_path, 
     }
     json data_json;
     data_json["_id"] = i_oid_str;
-    data_json["path"] = m_log_dir+"/"+std::to_string(counter)+".dat"; 
+    //data_json["path"] = m_log_dir+"/"+std::to_string(counter)+".dat"; 
+    data_json["path"] = std::to_string(counter)+".dat"; 
     data_json["histoname"] = i_histo_name;
     m_log_json["attachments"].push_back(data_json);
     counter++;
@@ -2172,7 +2262,9 @@ void DBHandler::cacheDCSCfg(std::string i_dcs_path, std::string i_tr_path) {
 
         std::string j_key = env_json[i]["key"];
         if (!env_json[i]["path"].empty()) {
-            std::string log_path = env_json[i]["path"];
+            std::string log_path = "";
+            if (m_option=="dcs") log_path = env_json[i]["path"];
+            else if (m_option=="db") log_path = std::string(m_cache_json["logPath"])+"/"+std::string(env_json[i]["path"]);
             std::size_t suffix = log_path.find_last_of('.');
             std::string extension = log_path.substr(suffix + 1);
 
@@ -2182,7 +2274,8 @@ void DBHandler::cacheDCSCfg(std::string i_dcs_path, std::string i_tr_path) {
                 std::string function = __PRETTY_FUNCTION__;
                 this->alert(function, message); return;
             }
-            env_json[i]["path"] = m_log_dir+"/"+std::to_string(i)+"."+extension;
+            //env_json[i]["path"] = m_log_dir+"/"+std::to_string(i)+"."+extension;
+            env_json[i]["path"] = std::to_string(i)+"."+extension;
         }
     }
     dcs_json["environments"] = env_json;
@@ -2196,8 +2289,6 @@ void DBHandler::cacheDCSCfg(std::string i_dcs_path, std::string i_tr_path) {
         std::string function = __PRETTY_FUNCTION__;
         this->alert(function, message); return;
     }
-
-    this->writeJson("status", "waiting", m_log_path, m_log_json);
 
     return;
 }
@@ -2307,7 +2398,7 @@ json DBHandler::checkConnCfg(std::string i_conn_path) {
         } else if (m_option=="db") {
         } else {
             std::string mo_serial_number = conn_json["module"]["serialNumber"];
-            std::string mod_list_path = m_cache_dir+"/lib/modules.csv";
+            std::string mod_list_path = m_cache_dir+"/var/lib/localdb/modules.csv";
             std::ifstream list_ifs(mod_list_path);
             if (!list_ifs) {
                 std::string message = "Not found modules list: "+mod_list_path;

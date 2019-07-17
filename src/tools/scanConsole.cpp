@@ -77,6 +77,8 @@ int main(int argc, char *argv[]) {
 
     std::cout << "-> Parsing command line parameters ..." << std::endl;
     
+    std::string home = getenv("HOME");
+
     // Init parameters
     std::string scanType = "";
     std::vector<std::string> cConfigPaths;
@@ -88,6 +90,7 @@ int main(int argc, char *argv[]) {
     int mask_opt = -1;
 
     bool dbUse = false;
+    std::string dbDirPath = home+"/.yarr/localdb";
     std::string dbCfgPath = "";
     std::string dbSiteCfgPath = "";
     std::string dbUserCfgPath = "";
@@ -99,7 +102,6 @@ int main(int argc, char *argv[]) {
         std::cerr << "#ERROR# Loading run counter ~/.yarr!" << std::endl;
     }
     
-    std::string home = getenv("HOME");
     std::fstream iF((home + "/.yarr/runCounter").c_str(), std::ios::in);
     if (iF) {
         iF >> runCounter;
@@ -284,10 +286,9 @@ int main(int argc, char *argv[]) {
         std::cout << "\033[1;31m################\033[0m" << std::endl;
         std::cout << "-> Setting user's information" << std::endl;
 
-        if (dbCfgPath=="") dbCfgPath=home+"/.yarr/localdb/etc/database.json";
+        if (dbCfgPath=="") dbCfgPath=dbDirPath+"/etc/localdb/database.json";
         database->initialize(dbCfgPath, "scan"); 
-        if (dbUserCfgPath=="") dbUserCfgPath = home+"/.yarr/localdb/etc/"+getenv("USER")+"_user.json";
-        if (dbSiteCfgPath=="") dbSiteCfgPath = home+"/.yarr/localdb/etc/address.json";
+        if (dbSiteCfgPath=="") dbSiteCfgPath = dbDirPath+"/etc/localdb/address.json";
         database->setUser(dbUserCfgPath);
         database->setSite(dbSiteCfgPath);
         std::cout << "-> Setting Connectivity Configs" << std::endl;
@@ -354,12 +355,12 @@ int main(int argc, char *argv[]) {
         for (unsigned i=0; i<bookie.feList.size(); i++) {
             FrontEnd *fe = bookie.feList[i];
             if (fe->isActive()) {
-                std::ofstream backupCfgFile(home+"/.yarr/localdb/tmp/chip.json");
+                std::ofstream backupCfgFile(dbDirPath+"/tmp/localdb/chip.json");
                 json backupCfg;
                 dynamic_cast<FrontEndCfg*>(fe)->toFileJson(backupCfg);
                 backupCfgFile << std::setw(4) << backupCfg;
                 backupCfgFile.close(); 
-                database->setConfig(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel(), dynamic_cast<FrontEndCfg*>(fe)->getRxChannel(), home+"/.yarr/localdb/tmp/chip.json", "beforeCfg", "chipCfg", "componentTestRun");
+                database->setConfig(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel(), dynamic_cast<FrontEndCfg*>(fe)->getRxChannel(), dbDirPath+"/tmp/localdb/chip.json", "beforeCfg", "chipCfg", "componentTestRun");
             }
         }
     }
@@ -668,6 +669,7 @@ int main(int argc, char *argv[]) {
         now = std::time(NULL);
 
         database->setTestRunFinish(strippedScan, cConfigPaths, runCounter, target_charge, target_tot, (int)now, commandLineStr);
+        database->cleanUp();
 
         std::cout << "Done."<< std::endl;
     }
@@ -677,6 +679,9 @@ int main(int argc, char *argv[]) {
 }
 
 void printHelp() {
+    std::string home = getenv("HOME");
+    std::string dbDirPath = home+"/.yarr/localdb";
+
     std::cout << "Help:" << std::endl;
     std::cout << " -h: Shows this." << std::endl;
     std::cout << " -s <scan_type> : Scan config" << std::endl;
@@ -690,9 +695,9 @@ void printHelp() {
     std::cout << " -m <int> : 0 = pixel masking disabled, 1 = start with fresh pixel mask, default = pixel masking enabled" << std::endl;
     std::cout << " -k: Report known items (Scans, Hardware etc.)\n";
     std::cout << " -W: Enable using Local DB." << std::endl;
-    std::cout << " -d: <database.json> Provide database configuration. (Default ~/.yarr/localdb/etc/database.json" << std::endl;
-    std::cout << " -i: <site.json> Provide site configuration. (Default ~/.yarr/localdb/etc/address.json" << std::endl;
-    std::cout << " -u: <user.json> Provide user configuration. (Default ~/.yarr/localdb/etc/${USER}_user.json" << std::endl;
+    std::cout << " -d: <database.json> Provide database configuration. (Default " << dbDirPath << "/etc/localdb/database.json" << std::endl;
+    std::cout << " -i: <site.json> Provide site configuration. (Default " << dbDirPath << "/etc/localdb/address.json" << std::endl;
+    std::cout << " -u: <user.json> Provide user configuration. (Default " << dbDirPath << "/etc/localdb/${USER}_user.json" << std::endl;
 }
 
 void listChips() {
