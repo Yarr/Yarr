@@ -187,7 +187,7 @@ def __checkout(args, serialnumber=None, runid=None):
 def __fetch(args, remote):
     global url
 
-    db_path = os.environ['HOME']+'/.yarr/localdb/.retrieve'
+    db_path = os.environ['HOME']+'/.localdb_retrieve'
     ref_path = db_path+'/refs/remotes'
     if not os.path.isdir(ref_path): 
         os.makedirs(ref_path)

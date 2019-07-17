@@ -22,6 +22,10 @@ from pymongo    import MongoClient, errors
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../lib/localdb-tools/modules'))
 
+global user
+global pwd
+global authentication
+
 def readConfig(conf_path):
     f = open(conf_path, 'r')
     conf = yaml.load(f)
@@ -51,13 +55,13 @@ def getArgs():
     return args
 
 def __init():
-    db_path = os.environ['HOME']+'/.yarr/localdb/.retrieve'
+    db_path = os.environ['HOME']+'/.localdb_retrieve'
     if not os.path.isdir( db_path ): 
         os.mkdir( db_path )
     sys.exit()
 
 def __check():
-    db_path = os.environ['HOME']+'/.yarr/localdb/.retrieve'
+    db_path = os.environ['HOME']+'/.localdb_retrieve'
     if not os.path.isdir( db_path ): 
         print('ERROR: Not exist a retrieve repository, do "localdbtool-retrieve init" to initialize')
         sys.exit()
@@ -111,7 +115,7 @@ def __network_viewer(url):
         return False
 
 def __remote(remote_name='None'):
-    db_path = os.environ['HOME']+'/.yarr/localdb/.retrieve'
+    db_path = os.environ['HOME']+'/.localdb_retrieve'
     head_path = db_path+'/HEAD'
     if not os.path.isfile(head_path):
         print('ERROR: Not registered remote repository yet.') 
@@ -158,7 +162,7 @@ def __remote_add(remote_name=None):
     if not remote_name:
         print('Usage: remote add <name>')
         sys.exit()
-    db_path = os.environ['HOME']+'/.yarr/localdb/.retrieve'
+    db_path = os.environ['HOME']+'/.localdb_retrieve'
     config_path = db_path+'/config'
     config_data = { 'remote': {} }
     if os.path.isfile(config_path):
@@ -213,7 +217,7 @@ def __remote_add(remote_name=None):
         sys.exit()
 
 def __status():
-    db_path = os.environ['HOME']+'/.yarr/localdb/.retrieve'
+    db_path = os.environ['HOME']+'/.localdb_retrieve'
     head_path = db_path+'/HEAD'
     remote = None
     branch = None
@@ -290,7 +294,7 @@ def retrieve():
             sys.exit()
     elif command == 'status': __status()
    
-    db_path = os.environ['HOME']+'/.yarr/localdb/.retrieve'
+    db_path = os.environ['HOME']+'/.localdb_retrieve'
 
     head_path = db_path+'/HEAD'
     if not os.path.isfile(head_path):
@@ -333,14 +337,12 @@ def retrieve():
 
     if __network_db(config_data['remote'][remote]['db']): 
         import direct as function
-        function.url = config_data['remote'][remote]['db']
-        global authentication
-        global user
-        global pwd
+        max_server_delay = 1
+        url = config_data['remote'][remote]['db']
+        localdb = MongoClient(url, serverSelectionTimeoutMS=max_server_delay)['localdb']
         if authentication:
-            function.authentication = authentication
-            function.user = user
-            function.pwd = pwd
+            localdb.authenticate(user, pwd)
+        function.__set_localdb(localdb)
     elif __network_viewer(config_data['remote'][remote]['viewer']): 
         import indirect as function
         function.url = config_data['remote'][remote]['viewer']

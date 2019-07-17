@@ -20,11 +20,11 @@ from dateutil.tz      import tzlocal
 from tzlocal          import get_localzone
 import pytz
 
-authentication = False
-global user
-global pwd
-global url
 global localdb
+
+def __set_localdb(i_localdb):
+    global localdb
+    localdb = i_localdb
 
 def setTime(date):
     local_tz = get_localzone() 
@@ -46,7 +46,6 @@ def printLog(message):
             sys.exit()
 
 def getConfigJson(cmp_oid, config, run_oid):
-    global localdb
     fs = gridfs.GridFS(localdb)
 
     r_json = {}
@@ -83,14 +82,6 @@ def getConfigJson(cmp_oid, config, run_oid):
     return r_json
 
 def __log(args, serialnumber=None):
-    global localdb
-    global url
-
-    max_server_delay = 1
-    localdb = MongoClient(url, serverSelectionTimeoutMS=max_server_delay)['localdb']
-    if authentication:
-        localdb.authenticate(user, pwd)
-    
     global lines
     global size
     lines = 0
@@ -161,15 +152,6 @@ def __log(args, serialnumber=None):
         printLog('')
 
 def __checkout(args, serialnumber=None, runid=None):
-    global localdb
-    global url
-
-    max_server_delay = 1
-    localdb = MongoClient(url, serverSelectionTimeoutMS=max_server_delay)['localdb']
-    fs = gridfs.GridFS(localdb)
-    if authentication:
-        localdb.authenticate(user, pwd)
-
     configs = [{ 
         'type': 'ctrl',
         'name': 'controller',
@@ -350,15 +332,7 @@ def __checkout(args, serialnumber=None, runid=None):
         with open('{0}'.format(config['path']), 'w') as f: json.dump( config['data'], f, indent=4 )
 
 def __fetch(args, remote):
-    global localdb
-    global url
-
-    max_server_delay = 1
-    localdb = MongoClient(url, serverSelectionTimeoutMS=max_server_delay)['localdb']
-    if authentication:
-        localdb.authenticate(user, pwd)
-
-    db_path = os.environ['HOME']+'/.yarr/localdb/.retrieve'
+    db_path = os.environ['HOME']+'/.localdb_retrieve'
     ref_path = db_path+'/refs/remotes'
     if not os.path.isdir(ref_path): 
         os.makedirs(ref_path)
