@@ -13,18 +13,18 @@ _localdbtool_retrieve() {
     local cur prev cword
     _get_comp_words_by_ref -n : cur prev cword
 
-    if [ -f ${HOME}/.yarr/localdb/.retrieve/HEAD ]; then
-        local remote=`cat ${HOME}/.yarr/localdb/.retrieve/HEAD|grep remote|awk -F ': ' '{print $2}'`
+    if [ -f ${HOME}/.localdb_retrieve/HEAD ]; then
+        local remote=`cat ${HOME}/.localdb_retrieve/HEAD|grep remote|awk -F ': ' '{print $2}'`
     else
         local remote=""
     fi
-    if [ -d ${HOME}/.yarr/localdb/.retrieve/refs/remotes ]; then
-        local remotes=`ls -1 ${HOME}/.yarr/localdb/.retrieve/refs/remotes`
+    if [ -d ${HOME}/.localdb_retrieve/refs/remotes ]; then
+        local remotes=`ls -1 ${HOME}/.localdb_retrieve/refs/remotes`
     else
         local remotes=""
     fi
-    if [ -f ${HOME}/.yarr/localdb/.retrieve/refs/remotes/${remote} ]; then
-        local branchs=`cat ${HOME}/.yarr/localdb/.retrieve/refs/remotes/${remote}|xargs`
+    if [ -f ${HOME}/.localdb_retrieve/refs/remotes/${remote} ]; then
+        local branchs=`cat ${HOME}/.localdb_retrieve/refs/remotes/${remote}|xargs`
     else
         local branchs=""
     fi
@@ -45,7 +45,7 @@ _localdbtool_retrieve() {
         fi
     elif [ "${cword}" -eq 3 ]; then
         if [ "`echo ${remotes} | grep ${prev}`" ]; then 
-            local branchs=`cat ${HOME}/.yarr/localdb/.retrieve/refs/remotes/${prev}|xargs`
+            local branchs=`cat ${HOME}/.localdb_retrieve/refs/remotes/${prev}|xargs`
             COMPREPLY+=( $(compgen -W "${branchs}" -- "${cur}") )
         fi
     fi
