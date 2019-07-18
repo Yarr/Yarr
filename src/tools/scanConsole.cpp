@@ -288,7 +288,6 @@ int main(int argc, char *argv[]) {
 
         if (dbCfgPath=="") dbCfgPath=dbDirPath+"/etc/localdb/database.json";
         database->initialize(dbCfgPath, "scan"); 
-        if (dbSiteCfgPath=="") dbSiteCfgPath = dbDirPath+"/etc/localdb/address.json";
         database->setUser(dbUserCfgPath);
         database->setSite(dbSiteCfgPath);
         std::cout << "-> Setting Connectivity Configs" << std::endl;

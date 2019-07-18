@@ -109,18 +109,16 @@ void DBHandler::setUser(std::string i_user_path) {
     // Set UserID from DB
     if (DB_DEBUG) std::cout << "DBHandler: Set user: " << i_user_path << std::endl;
 
-    std::string user_name, institution, user_identity;
+    std::string user_name, institution;
     if (i_user_path=="") {
         user_name = getenv("USER");
         institution = getenv("HOSTNAME");
-        user_identity = "default";
     } else {
         json user_json = this->checkUserCfg(i_user_path);
         user_name = user_json["userName"];
         institution = user_json["institution"];
-        user_identity = user_json["userIdentity"];
     }
-    std::cout << "DBHandler: User Information \n\tUser name: " << user_name << "\n\tInstitution: " << institution << "\n\tUser identity: " << user_identity << std::endl;
+    std::cout << "DBHandler: User Information \n\tUser name: " << user_name << "\n\tInstitution: " << institution << std::endl;
 
     this->cacheUser(i_user_path);
 
@@ -133,17 +131,21 @@ void DBHandler::setSite(std::string i_address_path) {
 
     // Set MAC address
     if (DB_DEBUG) std::cout << "DBHandler: Set address" << std::endl;
-    json address_json = this->checkAddressCfg(i_address_path);
-    std::string address = address_json["macAddress"];
-    std::string hostname = address_json["hostname"];
-    std::string site = address_json["institution"];
+    std::string address;
+    if (i_address_path=="") {
+        std::string hostname = getenv("HOSTNAME");
+        std::string user = getenv("USER");
+        address = hostname+"_"+user;
+    } else {
+        json address_json = this->checkAddressCfg(i_address_path);
+        address = address_json["macAddress"];
+    }
     std::cout << "DBHandler: MAC Address: " << address << std::endl;
 
     this->cacheSite(i_address_path);
 
     return;
 }
-
 
 void DBHandler::setConnCfg(std::vector<std::string> i_conn_paths) {
     if (DB_DEBUG) std::cout << "DBHandler: Set connectivity config" << std::endl;
@@ -385,12 +387,20 @@ void DBHandler::cacheUser(std::string i_user_path) {
 void DBHandler::cacheSite(std::string i_address_path) {
     // MAC address
     if (DB_DEBUG) std::cout << "\tDBHandler: Cache address: " << i_address_path << std::endl;
-    std::string cmd = "cp " + i_address_path + " " + m_log_dir + "/address.json";
-    if (system(cmd.c_str()) < 0) {
-        std::string message = "Problem copying " + i_address_path + " to cache folder.";
-        std::string function = __PRETTY_FUNCTION__;
-        this->alert(function, message); return;
+    std::string address, hostname, site;
+    json site_json;
+    if (i_address_path=="") {
+        hostname = getenv("HOSTNAME");
+        site_json["macAddress"] = hostname;
+        site_json["hostname"] = hostname;
+        site_json["institution"] = "null";
+    } else {
+        site_json = this->toJson(i_address_path);
     }
+
+    std::ofstream cache_site_file(m_log_dir+"/address.json");
+    cache_site_file << std::setw(4) << site_json;
+    cache_site_file.close();
 
     return;
 }
