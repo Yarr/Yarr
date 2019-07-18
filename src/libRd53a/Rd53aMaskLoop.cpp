@@ -218,8 +218,6 @@ void Rd53aMaskLoop::execPart2() {
                     }
                 }
             }	
-            // TODO make configrue for subset
-            // TODO set cmeEnable correctly
             dynamic_cast<Rd53a*>(fe)->configurePixels(modPixels);
             while(!g_tx->isCmdEmpty()) {}	
         }

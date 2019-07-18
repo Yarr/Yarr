@@ -124,21 +124,22 @@ void Rd53a::configureGlobal() {
 void Rd53a::configurePixels() {
     // Setup pixel programming
     this->writeRegister(&Rd53a::PixAutoCol, 0);
-    this->writeRegister(&Rd53a::PixAutoRow, 0);
+    this->writeRegister(&Rd53a::PixAutoRow, 1);
 
     // Writing two columns and six rows at the same time
     for (unsigned col=0; col<n_Col; col+=2) {
         this->writeRegister(&Rd53a::PixRegionCol, col/2);
-        //this->writeRegister(&Rd53a::PixRegionRow, 0); 
+        this->writeRegister(&Rd53a::PixRegionRow, 0); 
         for (unsigned row=0; row<n_Row; row+=1) {
-            this->writeRegister(&Rd53a::PixRegionRow, row); 
+            //this->writeRegister(&Rd53a::PixRegionRow, row); 
             //this->wrRegisterBlock(m_chipId, 0, &pixRegs[Rd53aPixelCfg::toIndex(col, row)]);
             this->writeRegister(&Rd53a::PixPortal, pixRegs[Rd53aPixelCfg::toIndex(col, row)]);
             //if (pixRegs[Rd53aPixelCfg::toIndex(col, row)] != 0x0)
             //    std::cout << "[" << col << "][" << row << "] = 0x" << std::hex << pixRegs[Rd53aPixelCfg::toIndex(col, row)] << std::dec << std::endl;
-            if (row % 20 == 0)
-                while(!core->isCmdEmpty()){;}
+            //if (row % 24 == 0)
+            //    while(!core->isCmdEmpty()){;}
         }
+        while(!core->isCmdEmpty()){;}
     }
 }
 
@@ -157,11 +158,12 @@ void Rd53a::configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels) 
         this->writeRegister(&Rd53a::PixRegionRow, pixel.second); 
         this->writeRegister(&Rd53a::PixPortal, pixRegs[Rd53aPixelCfg::toIndex(pixel.first, pixel.second)]);
         counter++;
-        if (counter == 20 ) {
+        if (counter == 100 ) {
             while(!core->isCmdEmpty()){;}
             counter = 0;
         }
     }
+    while(!core->isCmdEmpty()){;}
 }
 
 void Rd53a::writeNamedRegister(std::string name, uint16_t value) {
