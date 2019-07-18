@@ -162,7 +162,6 @@ int main(int argc, char *argv[]) {
                             break;
                     }
                     count++;
-
                 }
                 break;
             case '?':
@@ -517,6 +516,11 @@ int main(int argc, char *argv[]) {
     std::cout << "-> Scan:          " << std::chrono::duration_cast<std::chrono::milliseconds>(scan_done-scan_start).count() << " ms" << std::endl;
     std::cout << "-> Processing:    " << std::chrono::duration_cast<std::chrono::milliseconds>(processor_done-scan_done).count() << " ms" << std::endl;
     std::cout << "-> Analysis:      " << std::chrono::duration_cast<std::chrono::milliseconds>(all_done-processor_done).count() << " ms" << std::endl;
+    
+    scanLog["stopwatch"]["config"] = std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count();
+    scanLog["stopwatch"]["scan"] = std::chrono::duration_cast<std::chrono::milliseconds>(scan_done-scan_start).count();
+    scanLog["stopwatch"]["processing"] = std::chrono::duration_cast<std::chrono::milliseconds>(processor_done-scan_done).count();
+    scanLog["stopwatch"]["analysis"] = std::chrono::duration_cast<std::chrono::milliseconds>(all_done-processor_done).count();
 
     std::cout << std::endl;
     std::cout << "\033[1;31m###########\033[0m" << std::endl;
