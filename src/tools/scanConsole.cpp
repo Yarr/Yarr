@@ -272,6 +272,7 @@ int main(int argc, char *argv[]) {
     // Add to scan log
     scanLog["exec"] = commandLineStr;
     scanLog["timestamp"] = timestamp;
+    scanLog["startTime"] = (int)now;
     scanLog["runNumber"] = runCounter;
     scanLog["targetCharge"] = target_charge;
     scanLog["targetTot"] = target_tot;
@@ -287,6 +288,14 @@ int main(int argc, char *argv[]) {
         std::cout << "-> Setting user's information" << std::endl;
 
         if (dbCfgPath=="") dbCfgPath=dbDirPath+"/etc/localdb/database.json";
+        json dbCfg;
+        try {
+            dbCfg = ScanHelper::openJsonFile(dbCfgPath);
+        } catch (std::runtime_error &e) {
+            std::cerr << "#ERROR# opening or loading database config: " << e.what() << std::endl;
+            return -1;
+        }
+ 
         database->initialize(dbCfgPath, "scan"); 
         database->setUser(dbUserCfgPath);
         database->setSite(dbSiteCfgPath);
@@ -296,6 +305,8 @@ int main(int argc, char *argv[]) {
         database->setTestRunStart(strippedScan, cConfigPaths, runCounter, target_charge, target_tot, (int)now, commandLineStr);
         database->setConfig(-1, -1, ctrlCfgPath, "controller", "ctrlCfg", "testRun", "null");
         database->setConfig(-1, -1, scanType, strippedScan, "scanCfg", "testRun", "null");
+
+        scanLog["dbCfg"] = dbCfg;
     }
 
 
@@ -347,7 +358,7 @@ int main(int argc, char *argv[]) {
             std::cerr << "#ERROR# opening connectivity or chip configs: " << e.what() << std::endl;
             return -1;
         }
-        scanLog["connectivity"] = config;
+        scanLog["connectivity"].push_back(config);
     }
     
     if (dbUse) { //TODO remove duplicate process
@@ -583,6 +594,8 @@ int main(int argc, char *argv[]) {
     hwCtrl.reset();
 
     // Save scan log
+    now = std::time(NULL);
+    scanLog["finishTime"] = (int)now;
     std::ofstream scanLogFile(outputDir + "scanLog.json");
     scanLogFile << std::setw(4) << scanLog;
     scanLogFile.close();
@@ -669,6 +682,18 @@ int main(int argc, char *argv[]) {
 
         database->setTestRunFinish(strippedScan, cConfigPaths, runCounter, target_charge, target_tot, (int)now, commandLineStr);
         database->cleanUp();
+
+        char path[1000];
+        std::string currentDir = getcwd(path, sizeof(path));
+        std::string resultDir;
+        if (outputDir.substr(0,1)==".") {
+            resultDir = currentDir + outputDir.substr(1);
+        } else {
+            resultDir = outputDir;
+        }
+        std::fstream dbF((home + "/.yarr/run.dat").c_str(), std::ios::out|std::ios::app);
+        dbF << resultDir << std::endl;
+        dbF.close();
 
         std::cout << "Done."<< std::endl;
     }

@@ -1501,7 +1501,6 @@ void DBHandler::writeScan(std::string i_cache_dir) {
     for (auto chip_json: m_cache_json["configs"]["chipCfg"]) {
         std::string chip_id   = chip_json["_id"];
         std::string chip_path = i_cache_dir+"/"+std::string(chip_json["path"]);
-        std::cout << chip_path << std::endl;
         std::string filename  = chip_json["filename"];
         std::string title     = chip_json["title"];
         this->setConfig(-1, -1, chip_path, filename, title, "componentTestRun", chip_id);
