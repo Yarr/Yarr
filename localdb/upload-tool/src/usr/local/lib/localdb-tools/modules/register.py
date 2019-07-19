@@ -25,10 +25,6 @@ global localdb
 global localfs
 max_server_delay = 1
 localdb = MongoClient("mongodb://127.0.0.1:27017", serverSelectionTimeoutMS=max_server_delay)['localdb']
-global m_stage_list
-global m_env_list
-global m_cmp_list
-
 # local function
 def addSys(i_oid, i_col):
     now = datetime.utcnow()
@@ -224,7 +220,7 @@ def __component(i_serial_number, i_component_type, i_chip_id, i_chips):
         })
         cmp_oid = localdb.component.insert(doc_value)
         addSys(str(cmp_oid), 'component')
-        #addUser(str(cmp_oid), 'component');
+        addUser(str(cmp_oid), 'component');
 
     return str(cmp_oid);
 
@@ -267,17 +263,17 @@ def __conn_cfg(i_conn_paths):
         chip_is_exist = False
         cpr_is_fine = True
 
-        mo_oid_str = getComponent(mo_serial_number) 
-        if mo_oid_str!='': module_is_exist = True
+        mo_oid = getComponent(mo_serial_number) 
+        if mo_oid!='': module_is_exist = True
         chips = 0
         for i, chip_conn_json in enumerate(conn_json['chips']):
             ch_serial_number = chip_conn_json['serialNumber']
-            chip_oid_str = getComponent(ch_serial_number)
-            if chip_oid_str!='':
+            chip_oid = getComponent(ch_serial_number)
+            if chip_oid!='':
                 chip_is_exist = True
                 doc_value = {
-                    'parent': mo_oid_str,
-                    'child' : chip_oid_str,
+                    'parent': mo_oid,
+                    'child' : chip_oid,
                     'status': 'active'
                 }
                 this_cpr = localdb.childParentRelation.find_one(doc_value)
@@ -295,14 +291,14 @@ def __conn_cfg(i_conn_paths):
         elif module_is_exist and chip_is_exist and cpr_is_fine:
             return False
         mo_component_type = conn_json['module']['componentType']
-        mo_oid_str = __component(mo_serial_number, mo_component_type, -1, chips)
+        mo_oid = __component(mo_serial_number, mo_component_type, -1, chips)
         
         for i, chip_conn_json in enumerate(conn_json['chips']):
             ch_serial_number = chip_conn_json['serialNumber']
             ch_component_type = chip_conn_json['componentType']
             chip_id = chip_conn_json['chipId']
-            ch_oid_str = __component(ch_serial_number, ch_component_type, chip_id, -1)
-            __child_parent_relation(mo_oid_str, ch_oid_str, chip_id)
+            ch_oid = __component(ch_serial_number, ch_component_type, chip_id, -1)
+            __child_parent_relation(mo_oid, ch_oid, chip_id)
 
     return True
 
@@ -414,7 +410,7 @@ def __attachment(i_serial_number, i_file_path, i_histo_name):
 
     if not ctr_oid=='':
         if os.path.isfile(i_file_path):
-            code = __grid_fs_file(i_file_path, '{}.dat'.format(i_histo_name)) 
+            code = __grid_fs_file({}, i_file_path, '{}.dat'.format(i_histo_name)) 
             localdb.componentTestRun.update(
                 { '_id': ObjectId(ctr_oid) },
                 { '$push': {
@@ -522,7 +518,7 @@ def __component_test_run(i_conn_json, i_tr_oid, i_test_type, i_run_number):
     mo_serial_number = i_conn_json["module"]["serialNumber"];
     
     cmp_oids = []
-    if i_conn_json["dummy"]:
+    if i_conn_json["dummy"]==True:
         cmp_oids.append(mo_serial_number)
         for chip_json in i_conn_json['chips']:
             ch_serial_number = chip_json['serialNumber']
@@ -543,7 +539,7 @@ def __component_test_run(i_conn_json, i_tr_oid, i_test_type, i_run_number):
             message = 'This Module "{0}" is not registered : {1}'.format(mo_serial_number, i_conn_path)
             alert(message)
     for cmp_oid in cmp_oids:
-        if i_conn_json["dummy"]:
+        if i_conn_json["dummy"]==True:
             serial_number = cmp_oid
         else:
             serial_number = getValue('component', '_id', cmp_oid, 'oid', 'serialNumber')
@@ -721,23 +717,11 @@ def __set_localdb(i_localdb):
     localdb = i_localdb
     localfs = gridfs.GridFS(localdb)
 
-def __set_stage_list(i_stage_list):
-    global m_stage_list
-    m_stage_list = i_stage_list
-
-def __set_env_list(i_env_list):
-    global m_env_list
-    m_env_list = i_env_list
-
-def __set_cmp_list(i_cmp_list):
-    global m_cmp_list
-    m_cmp_list = i_cmp_list
-
 def __set_user(i_user_path):
     if DB_DEBUG: print('DBHandler: Set user: {}'.format(i_user_path)) 
 
     user_json = toJson(i_user_path)
-    if i_user_path == {}:
+    if user_json=={}:
         user_name = os.environ['USER']
         institution = os.environ['HOSTNAME']
         user_identity = 'default'
@@ -748,15 +732,15 @@ def __set_user(i_user_path):
 
     __global.m_user_oid = __user(user_name, institution, user_identity)
 
-def __set_site(site_path):
-    if DB_DEBUG: print('DBHandler: Set site: {}'.format(site_path)) 
+def __set_site(i_site_path):
+    if DB_DEBUG: print('DBHandler: Set site: {}'.format(i_site_path)) 
 
-    if site_path == '':
-        adderss = os.environ['HOSTNAME']
+    site_json = toJson(i_site_path)
+    if site_json=={}:
+        address = os.environ['HOSTNAME']
         hostname = os.environ['HOSTNAME']
         site = 'null'
     else:
-        site_json = toJson(site_path)
         address = site_json['macAddress']
         hostname = site_json['hostname']
         site = site_json['institution']
@@ -774,7 +758,7 @@ def __set_test_run_start(i_test_type, i_conn_jsons, i_run_number, i_target_charg
             addValue(tr_oid, 'testRun', 'stage', stage)
         if conn_json['dummy']==True:
             addValue(tr_oid, 'testRun', 'dummy', 'true', 'bool')
-        __global.m_tr_oids.append(tr_oid)
+        __global.m_tr_oids.append(str(tr_oid))
         __component_test_run(conn_json, tr_oid, i_test_type, i_run_number)
         __global.m_serial_numbers.append(mo_serial_number)
 
@@ -840,3 +824,19 @@ class __global:
     m_serial_numbers = []
     m_db_version = 1
     m_conn_jsons = []
+    m_stage_list = []
+    m_env_list = []
+    m_cmp_list = []
+    def init():
+        m_chip_type = ''
+        m_user_oid = ''
+        m_site_oid = ''
+        m_tr_oids = []
+        m_tr_oid = ''
+        m_histo_names = []
+        m_serial_numbers = []
+        m_db_version = 1
+        m_conn_jsons = []
+        m_stage_list = []
+        m_env_list = []
+        m_cmp_list = []
