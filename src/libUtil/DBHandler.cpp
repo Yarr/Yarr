@@ -108,7 +108,6 @@ void DBHandler::alert(std::string i_function, std::string i_message, std::string
 void DBHandler::setUser(std::string i_user_path) {
     // Set UserID from DB
     if (DB_DEBUG) std::cout << "DBHandler: Set user: " << i_user_path << std::endl;
-
     std::string user_name, institution;
     if (i_user_path=="") {
         user_name = getenv("USER");
@@ -119,18 +118,14 @@ void DBHandler::setUser(std::string i_user_path) {
         institution = user_json["institution"];
     }
     std::cout << "DBHandler: User Information \n\tUser name: " << user_name << "\n\tInstitution: " << institution << std::endl;
-
-    this->cacheUser(i_user_path);
+    //this->cacheUser(i_user_path);
 
     return;
 }
 
 void DBHandler::setSite(std::string i_address_path) {
-    // Set UserID from DB
-    if (DB_DEBUG) std::cout << "DBHandler: Set site: " << i_address_path << std::endl;
-
     // Set MAC address
-    if (DB_DEBUG) std::cout << "DBHandler: Set address" << std::endl;
+    if (DB_DEBUG) std::cout << "DBHandler: Set site: " << i_address_path << std::endl;
     std::string address;
     if (i_address_path=="") {
         std::string hostname = getenv("HOSTNAME");
@@ -141,8 +136,7 @@ void DBHandler::setSite(std::string i_address_path) {
         address = address_json["macAddress"];
     }
     std::cout << "DBHandler: MAC Address: " << address << std::endl;
-
-    this->cacheSite(i_address_path);
+    //this->cacheSite(i_address_path);
 
     return;
 }
