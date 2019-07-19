@@ -17,9 +17,6 @@ import gridfs
 from pymongo          import MongoClient
 from bson.objectid    import ObjectId 
 from datetime         import datetime, timezone, timedelta
-from dateutil.tz      import tzlocal
-from tzlocal          import get_localzone
-import pytz
 import time
 
 DB_DEBUG = False
@@ -33,12 +30,6 @@ global m_env_list
 global m_cmp_list
 
 # local function
-def setTime(i_date):
-    local_tz = get_localzone() 
-    converted_time = i_date.replace(tzinfo=timezone.utc).astimezone(local_tz)
-    time = converted_time.strftime('%Y/%m/%d %H:%M:%S')
-    return time
-
 def addSys(i_oid, i_col):
     now = datetime.utcnow()
     localdb[i_col].update(
@@ -136,6 +127,9 @@ def getComponent(i_serial_number):
     oid = ''
     if this_cmp:
         oid = str(this_cmp['_id'])
+    else:
+        message = 'Not registered the component "{}"'.format(i_conn_json['module']['serialNumber'])
+        alert(message)
     return oid
 
 def getValue(i_col, i_mem_key, i_mem_val, i_mem_type, i_key, i_type):
@@ -157,12 +151,10 @@ def getValue(i_col, i_mem_key, i_mem_val, i_mem_type, i_key, i_type):
         message = 'Cannot find "{0}" from member "{1}": "{2}" in collection name: "{3}"'.format(i_key, i_mem_key, i_mem_val, i_col)
         alert(message)
 
-def getHash(i_file_path):
+def getHash(i_file_json):
     if DB_DEBUG: print('\tLocal DB: Get Hash Code from File: {}'.format(i_file_path))
 
-    with open(i_file_path, 'rb') as f:
-        binary = f.read()
-        shaHashed = hashlib.sha256(binary).hexdigest()
+    shaHashed = hashlib.sha256(json.dumps(i_file_json, indent=4).encode('utf-8')).hexdigest()
 
     return shaHashed
 
@@ -314,8 +306,8 @@ def __conn_cfg(i_conn_paths):
 
     return True
 
-def __config(i_serial_number, i_file_path, i_filename, i_title, i_col):
-    if DB_DEBUG: pring('\tLocal DB: Register Config Json: {}'.format(i_file_path))
+def __config(i_serial_number, i_file_json, i_filename, i_title, i_col):
+    if DB_DEBUG: pring('\tLocal DB: Register Config Json: {}'.format(i_filename))
 
     ctr_oid = ''
     if i_serial_number!='':
@@ -336,22 +328,22 @@ def __config(i_serial_number, i_file_path, i_filename, i_title, i_col):
                 ctr_oid = str(this_ctr['_id'])
 
     if i_col=='testRun':
-        cfg_oid = __json_code(i_file_path, i_filename+'.json', i_title, 'gj')
+        cfg_oid = __json_code(i_file_json, i_filename+'.json', i_title, 'gj')
         for tr_oid in __global.m_tr_oids:
             if tr_oid=='': continue
             addValue(tr_oid, i_col, i_title, cfg_oid)
     if i_col=='componentTestRun':
         if not ctr_oid=='': 
-            cfg_oid = __json_code(i_file_path, i_title+'.json', i_title, 'gj')
+            cfg_oid = __json_code(i_file_json, i_title+'.json', i_title, 'gj')
             addValue(ctr_oid, i_col, i_filename, cfg_oid)
 
     return
 
-def __json_code(i_file_path, i_filename, i_title, i_type):
+def __json_code(i_file_json, i_filename, i_title, i_type):
     if DB_DEBUG: print('\tLocal DB: Upload Json File')
 
     if i_type=='gj':
-        data_id = __json_code_gridfs(i_file_path, i_filename, i_title)
+        data_id = __json_code_gridfs(i_file_json, i_filename, i_title)
         type_doc = 'fs.files'
     #elif i_type=='m': #TODO to be added
     else:
@@ -373,25 +365,27 @@ def __json_code(i_file_path, i_filename, i_title, i_type):
 
     return str(oid)
 
-def __json_code_gridfs(i_file_path, i_filename, i_title):
-    if DB_DEBUG: print('\tLocal DB: Write Json File: {}'.format(i_file_path))
+def __json_code_gridfs(i_file_json, i_filename, i_title):
+    if DB_DEBUG: print('\tLocal DB: Write Json File: {}'.format(i_filename))
 
-    hash_code = getHash(i_file_path)
+    hash_code = getHash(i_file_json)
     doc_value = { 'hash': hash_code }
     this_cfg = localdb.fs.files.find_one( doc_value, { '_id': 1 } )
     if this_cfg:
         code = str(this_cfg['_id'])
     else:
-        code = __grid_fs_file(i_file_path, i_filename, hash_code) 
+        code = __grid_fs_file(i_file_json, '', i_filename, hash_code) 
 
     return code
 
-def __grid_fs_file(i_file_path, i_filename, i_hash=''):
-    if DB_DEBUG: pring('Local DB: Write Attachment: {}'.format(i_file_path))
-    
-    with open(i_file_path, 'rb') as f:
-        binary = f.read()
-        shaHashed = hashlib.sha256(binary).hexdigest()
+def __grid_fs_file(i_file_json, i_file_path, i_filename, i_hash=''):
+    if DB_DEBUG: pring('Local DB: Write Attachment: {}'.format(i_filename))
+   
+    if not i_file_path=='': 
+        with open(i_file_path, 'rb') as f:
+            binary = f.read()
+    else:
+        binary = json.dumps(i_file_json, indent=4).encode('utf-8')
 
     if i_hash=='': code = localfs.put( binary, filename=i_filename, dbVersion=__global.m_db_version ) 
     else: code = localfs.put( binary, filename=i_filename, hash=i_hash, dbVersion=__global.m_db_version )
@@ -522,16 +516,15 @@ def __dcs(i_dcs_path, i_tr_path):
     addSys(str(oid), "environment");
     addValue(__global.m_tr_oid, 'testRun', 'environment', str(oid))
 
-def __component_test_run(i_conn_path, i_tr_oid, i_test_type, i_run_number):
+def __component_test_run(i_conn_json, i_tr_oid, i_test_type, i_run_number):
     if DB_DEBUG: print('\tLocal DB: Register Com-Test Run')
 
-    conn_json = toJson(i_conn_path)
-    mo_serial_number = conn_json["module"]["serialNumber"];
+    mo_serial_number = i_conn_json["module"]["serialNumber"];
     
     cmp_oids = []
-    if conn_json["dummy"]:
+    if i_conn_json["dummy"]:
         cmp_oids.append(mo_serial_number)
-        for chip_json in conn_json['chips']:
+        for chip_json in i_conn_json['chips']:
             ch_serial_number = chip_json['serialNumber']
             cmp_oids.append(ch_serial_number)
     else:
@@ -550,7 +543,7 @@ def __component_test_run(i_conn_path, i_tr_oid, i_test_type, i_run_number):
             message = 'This Module "{0}" is not registered : {1}'.format(mo_serial_number, i_conn_path)
             alert(message)
     for cmp_oid in cmp_oids:
-        if conn_json["dummy"]:
+        if i_conn_json["dummy"]:
             serial_number = cmp_oid
         else:
             serial_number = getValue('component', '_id', cmp_oid, 'oid', 'serialNumber')
@@ -558,7 +551,7 @@ def __component_test_run(i_conn_path, i_tr_oid, i_test_type, i_run_number):
         chip_rx = -1
         chip_id = -1
         geom_id = -1
-        for chip_json in conn_json['chips']:
+        for chip_json in i_conn_json['chips']:
             if chip_json['serialNumber']==serial_number:
                 chip_tx = chip_json['tx']
                 chip_rx = chip_json['rx']
@@ -647,32 +640,80 @@ def __test_run(i_test_type, i_run_number, i_target_charge, i_target_tot, i_time,
 
     return oid
 
-def __set_conn_cfg(i_conn_paths):
-    if DB_DEBUG: pring('Local DB: Set Connectivity Config')
+def __set_conn_cfg(i_conn_jsons, i_cache_dir):
+    if DB_DEBUG: pring('\t\tLocal DB: Check Connectivity Config')
 
-    for conn_path in i_conn_paths:
-        conn_json = __check_conn_cfg(conn_path)
+    for i, conn_json in enumerate(i_conn_jsons):
+        # chip type
+        __check_empty(conn_json, 'chipType', 'connectivity config')
         __global.m_chip_type = conn_json['chipType']
         if __global.m_chip_type=='FEI4B': __global.m_chip_type = 'FE-I4B'
+           
+        # module
+        mo_oid = None
+        if 'module' in conn_json:
+            __check_empty(conn_json['module'], 'serialNumber', 'connectivity config')
+            mo_oid = getComponent(conn_json['module']['serialNumber'])
+            i_conn_jsons[i]['dummy'] = False
+        else:
+            i_conn_jsons[i]['module'] = { 'serialNumber': 'DUMMY_{}'.format(i) }
+            i_conn_jsons[i]['dummy'] = True
 
-def __check_conn_cfg(i_conn_path):
-    if DB_DEBUG: pring('\t\tLocal DB: Check Connectivity Config: {}'.format(i_conn_path))
-    conn_json = toJson(i_conn_path);
-    #this->checkEmpty(conn_json["chipType"].empty(), "chipType", i_conn_path);
-    if 'module' in conn_json:
-        #this->checkEmpty(conn_json["module"]["serialNumber"].empty(), "module.serialNumber", i_conn_path); 
-        is_listed = False
-        for chip_json in conn_json['chips']:
-            print('A')
-            #this->checkEmpty(conn_json["chips"][i]["chipId"].empty(), "chips."+std::to_string(i)+".chipId", i_conn_path);
-            #this->checkEmpty(conn_json["chips"][i]["serialNumber"].empty(), "chips."+std::to_string(i)+".serialNumber", i_conn_path);
-            #this->checkEmpty(conn_json["chips"][i]["geomId"].empty(), "chips."+std::to_string(i)+".geomId", i_conn_path);
-    if 'stage' in conn_json:
-        stage = conn_json['stage']
-        #checkList(m_stage_list, stage, m_db_cfg_path, i_conn_path)
+        # chip
+        for j, chip_json in enumerate(conn_json['chips']):
+            chip_cfg_path = chip_json['config'].split('/')[len(chip_json['config'].split('/'))-1]
+            chip_cfg_json = toJson('{0}{1}.before'.format(i_cache_dir, chip_cfg_path))
+            if 'chipId' in chip_json:
+                continue
+            elif 'chipId' in chip_cfg_json[__global.m_chip_type]['Parameter']: 
+                i_conn_jsons[i]['chips'][j]['chipId'] = chip_cfg_json[__global.m_chip_type]['Parameter']['chipId']
+            elif 'ChipId' in chip_cfg_json[__global.m_chip_type]['Parameter']: 
+                i_conn_jsons[i]['chips'][j]['chipId'] = chip_cfg_json[__global.m_chip_type]['Parameter']['ChipId']
+            else:
+                message = 'There are no chip Id in config file'
+                alert(message) 
 
-    __global.m_conn_jsons.append(conn_json)
-    return conn_json;
+            if mo_oid:
+                if 'serialNumber' in chip_json:
+                    query = { 'serialNumber': chip_json['serialNumber'] }
+                    this_chip = localdb.component.find_one(query)
+                    query = {'parent': mo_oid, 'child': str(this_chip['_id']) }
+                    this_cpr = localdb.childParentRelation.find_one(query)
+                    if this_cpr: is_listed = True
+                else:
+                    query = { 'parent': mo_oid }
+                    child_entries = localdb.childParentRelation.find(query)
+                    is_listed = False
+                    for child in child_entries:
+                        if child['chipId']==i_conn_jsons[i]['chips'][j]['chipId'] and child['active']:
+                            query = { '_id': ObjectId(child['child']) }
+                            this_chip = localdb.component.find_one(query)
+                            is_listed = True
+                            break
+                if is_listed==False:
+                    message = 'Not registered Chip with chipID {0} on the Module {1}'.format(i_conn_jsons[i]['chips'][j]['chipId'], conn_json['module']['serialNumber'])
+                    alert(message)
+                i_conn_jsons[i]['chips'][j]['serialNumber'] = this_chip['serialNumber']
+            else:
+                i_conn_jsons[i]['chips'][j]['serialNumber'] = 'DUMMY_{0}_CHIP_{1}'.format(i, j)
+
+            if 'geomId' in chip_json:
+                continue
+            else:
+                i_conn_jsons[i]['chips'][j]['geomId'] = j
+
+            if 'name' in chip_cfg_json[__global.m_chip_type]: 
+                i_conn_jsons[i]['chips'][j]['name'] = chip_cfg_json[__global.m_chip_type]['name']
+            elif 'Name' in chip_cfg_json[__global.m_chip_type]['Parameter']:
+                i_conn_jsons[i]['chips'][j]['name'] = chip_cfg_json[__global.m_chip_type]['Parameter']['Name']
+            else:
+                i_conn_jsons[i]['chips'][j]['name'] = 'NONE'
+            
+        __global.m_conn_jsons.append(conn_json)
+        if 'stage' in conn_json:
+            stage = i_conn_json['stage']
+
+    return __global.m_conn_jsons
 
 def __set_localdb(i_localdb):
     global localdb
@@ -692,15 +733,15 @@ def __set_cmp_list(i_cmp_list):
     global m_cmp_list
     m_cmp_list = i_cmp_list
 
-def __set_user(user_path):
-    if DB_DEBUG: print('DBHandler: Set user: {}'.format(user_path)) 
+def __set_user(i_user_path):
+    if DB_DEBUG: print('DBHandler: Set user: {}'.format(i_user_path)) 
 
-    if user_path == '':
+    user_json = toJson(i_user_path)
+    if i_user_path == {}:
         user_name = os.environ['USER']
         institution = os.environ['HOSTNAME']
         user_identity = 'default'
     else:
-        user_json = toJson(user_path) 
         user_name = user_json.get('userName', os.environ['USER'])
         institution = user_json.get('institution', os.environ['HOSTNAME'])
         user_identity = user_json.get('userIdentity', 'default')
@@ -722,21 +763,10 @@ def __set_site(site_path):
 
     __global.m_site_oid = __site(address, hostname, site);
 
-def __set_conn(conn_paths):
-    if DB_DEBUG: print('DBHandler: Set connectivity config') 
-
-    for conn_path in conn_paths:
-        if DB_DEBUG: print('\tDBHandler: setting connectivity config file: {}'.format(conn_path))
-        with open(conn_path, 'r') as f: conn_json = json.load(f)
-        __global.m_chip_type = conn_json['chipType']
-        if __global.m_chip_type=='FEI4B': __global.m_chip_type = 'FE-I4B'
-
-def __set_test_run_start(i_test_type, i_conn_paths, i_run_number, i_target_charge, i_target_tot, i_timestamp, i_command):
+def __set_test_run_start(i_test_type, i_conn_jsons, i_run_number, i_target_charge, i_target_tot, i_timestamp, i_command):
     if DB_DEBUG: print('Local DB: Write Test Run (start)')
 
-    for conn_path in i_conn_paths:
-        conn_json = toJson(conn_path)
-        chip_type = conn_json['chipType']
+    for conn_json in i_conn_jsons:
         mo_serial_number = conn_json["module"]["serialNumber"]
         tr_oid = __test_run(i_test_type, i_run_number, i_target_charge, i_target_tot, i_timestamp, mo_serial_number, 'start')
         addValue(tr_oid, 'testRun', 'command', i_command)
@@ -745,12 +775,12 @@ def __set_test_run_start(i_test_type, i_conn_paths, i_run_number, i_target_charg
         if conn_json['dummy']==True:
             addValue(tr_oid, 'testRun', 'dummy', 'true', 'bool')
         __global.m_tr_oids.append(tr_oid)
-        __component_test_run(conn_path, tr_oid, i_test_type, i_run_number)
+        __component_test_run(conn_json, tr_oid, i_test_type, i_run_number)
         __global.m_serial_numbers.append(mo_serial_number)
 
     return
 
-def __set_test_run_finish(i_test_type, i_conn_paths, i_run_number, i_target_charge, i_target_tot, i_timestamp, i_command):
+def __set_test_run_finish(i_test_type, i_conn_jsons, i_run_number, i_target_charge, i_target_tot, i_timestamp, i_command):
     if DB_DEBUG: print('Local DB: Write Test Run (finish)')
 
     __global.m_histo_names = list(set(__global.m_histo_names))
@@ -759,17 +789,17 @@ def __set_test_run_finish(i_test_type, i_conn_paths, i_run_number, i_target_char
     
     return
 
-def __set_config(i_tx, i_rx, i_file_path, i_filename, i_title, i_col, i_serial_number):
-    if DB_DEBUG: print('Local DB: Write Config Json: {}'.format(i_file_path))
+def __set_config(i_tx, i_rx, i_file_json, i_filename, i_title, i_col, i_serial_number):
+    if DB_DEBUG: print('Local DB: Write Config Json: {}'.format(i_filename))
 
-    if not os.path.isfile(i_file_path): return
+    if i_file_json=={}: return
 
     if i_serial_number!='': serial_number = i_serial_number
     else:
         for conn_json in m_conn_jsons:
             for chip_json in conn_json['chips']:
                 if chip_json['tx']==i_tx and chip_json['rx']==i_rx: serial_number = chip_json['serialNumber']
-    __config(serial_number, i_file_path, i_filename, i_title, i_col)
+    __config(serial_number, i_file_json, i_filename, i_title, i_col)
 
     return
 
@@ -787,6 +817,14 @@ def __set_attachment(i_tx, i_rx, i_file_path, i_histo_name, i_serial_number):
 
     __global.m_histo_names.append(i_histo_name);
 
+    return
+
+def __check_empty(i_json, i_key, i_filename):
+    if DB_DEBUG: print('\t\tLocal DB: Check Empty: {0} in {1}'.format(i_key, i_filename))
+
+    if not i_key in i_json:
+        message = 'Found an empty field in json file.\n\tfile: {0}  key: {1}'.format(i_filename, i_key)
+        alert(message)
     return
 
 def test():

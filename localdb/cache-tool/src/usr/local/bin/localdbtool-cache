@@ -10,11 +10,11 @@
 import os
 import sys
 import shutil
-import requests
 import json
 import signal
 
 import argparse 
+import yaml
 
 from getpass    import getpass
 from pymongo    import MongoClient, errors, DESCENDING
@@ -28,24 +28,29 @@ DB_DEBUG=False
 
 def readConfig(conf_path):
     f = open(conf_path, 'r')
-    conf = json.load(f)
+    conf = yaml.load(f)
     return conf
 
 def getArgs():
+    home = os.environ['HOME']
+
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--config', help='Set config file path.', type=str)
-    parser.add_argument('--host', help='Set the Local DB Server Host.', type=str)
-    parser.add_argument('--port', help='Set the Local DB Server Port.', type=str)
     parser.add_argument('--username', help='Set the User Name of Local DB Server.', type=str)
     parser.add_argument('--password', help='Set the Password of Local DB Server.', type=str)
-    parser.add_argument('--database', help='Set the Local DB Name.', type=str, default='localdb')
+    parser.add_argument('--scan', help='Upload Cache Data after scanConsole in YARR', action='store_true')
+    parser.add_argument('--comp', help='Register Component Data', action='store_true') #TO BE DELETED
+    parser.add_argument('--dcs', help='Upload DCS Data', action='store_true')
     args = parser.parse_args()
 
     if args.config is not None:
         conf = readConfig(args.config)    # Read from config file
-        if 'hostIp'   in conf and not args.host:     args.host     = conf['hostIp']
-        if 'hostPort' in conf and not args.port:     args.port     = conf['hostPort']
-        if 'dbName'   in conf and not args.database: args.database = conf['dbName']
+        if 'username' in conf and not args.username: args.username = conf['username']
+        if 'password' in conf and not args.password: args.password = conf['password']
+    if os.path.isfile('{}/.yarr/.localdb-cache'.format(home)):
+        conf = readConfig('{}/.yarr/.localdb-cache'.format(home))    # Read from config file
+        if 'username' in conf and not args.username: args.username = conf['username']
+        if 'password' in conf and not args.password: args.password = conf['password']
     return args
 
 def getTestRunData(tr_oid, serial_number, timestamp):
@@ -80,21 +85,47 @@ def __init(url, name):
 
     max_server_delay = 1
     client = MongoClient(url, serverSelectionTimeoutMS=max_server_delay)
+    localdb = client[name]
     try:
         client.server_info()
     except errors.ServerSelectionTimeoutError as err:
-        #print('WARNING: The connection of Local DB {} is BAD.'.format(url))
-        #print('         {}\n'.format(err))
+        print('WARNING: The connection of Local DB {} is BAD.'.format(url))
+        print('         {}\n'.format(err))
         return False
     except errors.OperationFailure as err:
-        db = client[name]
-        try:
-            db.authenticate(db_cfg['username'], db_cfg['password'])
-        except errors.OperationFailure as err: 
-            #print('ERROR: Authentication failed.')
-            return False
+        print('WARNING: Need users authenticated.')
+        through = False
+        username = None
+        password = None
+        if args.username:
+            username = args.username
+        if args.password:
+            password = args.password
+        while through==False:
+            if not username:
+                username = input('User name > ')
+            if not password:
+                password = getpass('Password > ')
+            try:
+                localdb.authenticate(username, password)
+                through = True
+            except errors.OperationFailure as err: 
+                print('ERROR: Authentication failed.')
+                answer = input('Do you want to enter username and password again? [y/n]\n')
+                if answer.lower()=='y':
+                    username = None
+                    password = None
+                else:
+                    return False
+        answer = input('Do you want to remember the username and the password on the machine? [y/n]\n')
+        if answer.lower() == 'y':
+            account_path = '{}/.yarr/.localdb-cache'.format(home)
+            account_file = open(account_path, 'w')
+            account_data = { 'username': username, 'password': password }
+            account_file.write(yaml.dump(account_data, default_flow_style=False))
+            account_file.close()
+            os.chmod(account_path,0o600)
 
-    localdb = client[name]
     register.__set_localdb(localdb)
     localdb['fs.files'].create_index([('hash', DESCENDING), ('_id', DESCENDING)])
 
@@ -102,31 +133,22 @@ def __init(url, name):
     register.__set_env_list(db_cfg['environment'])
     register.__set_cmp_list(db_cfg['component'])
 
-    #global m_cache_dir
-    #m_cache_dir = conf["cachePath"];
-
-    #else m_log_dir = m_cache_dir+"/tmp/log";//TODO
-    #m_log_path = m_log_dir + "/cacheLog.json";
-    #this->mkdir(m_log_dir);
-    #m_log_json["version"] = m_db_version;
-    #m_log_json["logPath"] = m_log_dir;
-    #m_log_json["dbOption"] = m_option;
-    #this->writeJson("status", "running", m_log_path, m_log_json);
-    #this->cacheDBCfg(); 
-
     return True
 
 def __set_cache(cache_dir):
     if DB_DEBUG: print('Local DB: Write cache data: {}'.format(cache_dir))
 
+    global scan_log_json
     global db_cfg
+    global option
 
-    scan_log = '{}/scanLog.json'.format(cache_dir)
+    scan_log = '{}scanLog.json'.format(cache_dir)
     scan_log_json = register.toJson(scan_log)
     db_cfg = scan_log_json['dbCfg']
     db_url = 'mongodb://{0}:{1}'.format(db_cfg['hostIp'], db_cfg['hostPort'])
     db_name = db_cfg['dbName']
     if not __init(db_url, db_name)==True:
+        print('exit...')
         sys.exit()
 
     register.__global.m_db_version = ['version']
@@ -139,6 +161,7 @@ def __write_scan(cache_dir):
 
     global m_cache_json
     global m_cache_dir
+    global scan_log_json
     global db_cfg
 
     # user
@@ -151,6 +174,11 @@ def __write_scan(cache_dir):
     conn_paths = []
     for conn_json in db_cfg['connectivity']:
         register.__check_conn_cfg
+    # connectivity
+    timestamp = scan_log_json['startTime']
+    conns = []
+    conn_jsons = register.__set_conn_cfg(scan_log_json['connectivity'], cache_dir)
+    for conn_json in conn_jsons:
         mo_serial_number = conn_json["module"]["serialNumber"]
         getTestRunData('', mo_serial_number, timestamp)
         global m_tr_oid
@@ -158,41 +186,50 @@ def __write_scan(cache_dir):
             message = 'Already registered test run data in DB, then skip to save...'
             register.alert(message, 'warning')
             continue
-        conn_paths.append(conn_path)
-    register.__set_conn_cfg(conn_paths)
-#TODO
+        conns.append(conn_json)
 
-    scan_type = m_cache_json['testType']
-    run_number = int(m_cache_json['runNumber'])
-    target_charge = int(m_cache_json['targetCharge'])
-    target_tot = int(m_cache_json['targetTot'])
-    start_timestamp = int(m_cache_json['startTime'])
-    command = m_cache_json['command']
-    register.__set_test_run_start(scan_type, conn_paths, run_number, target_charge, target_tot, start_timestamp, command)
+    scan_type = scan_log_json['scanType']
+    run_number = scan_log_json['runNumber']
+    target_charge = scan_log_json['targetCharge']
+    target_tot = scan_log_json['targetTot']
+    start_timestamp = scan_log_json['startTime']
+    command = scan_log_json['exec'] 
+    register.__set_test_run_start(scan_type, conns, run_number, target_charge, target_tot, start_timestamp, command)
 
-    register.__set_config(-1, -1, '{0}/{1}'.format(cache_dir, m_cache_json['configs']['ctrlCfg'][0]['path']), 'controller', 'ctrlCfg', 'testRun', 'null')
+    # controller config
+    cfg_json = scan_log_json['ctrlCfg']
+    register.__set_config(-1, -1, cfg_json, 'controller', 'ctrlCfg', 'testRun', 'null')
 
-    if 'scanCfg' in m_cache_json['configs']: scan_cfg_path = '{0}/{1}'.format(cache_dir, m_cache_json['configs']['scanCfg'][0]['path'])
-    else: scan_cfg_path = ''
-    register.__set_config(-1, -1, scan_cfg_path, scan_type, 'scanCfg', 'testRun', 'null')
+    scan_cfg_path = '{0}{1}.json'.format(cache_dir, scan_type)
+    cfg_json = register.toJson(scan_cfg_path)
+    register.__set_config(-1, -1, cfg_json, scan_type, 'scanCfg', 'testRun', 'null')
 
-    for chip_json in m_cache_json['configs']['chipCfg']:
-        chip_id = chip_json['_id']
-        chip_path = '{0}/{1}'.format(cache_dir, chip_json['path'])
-        filename  = chip_json['filename']
-        title     = chip_json['title']
-        register.__set_config(-1, -1, chip_path, filename, title, 'componentTestRun', chip_id)
+    for conn_json in conns:
+        for chip_json in conn_json['chips']:
+            chip_serial_number = chip_json['serialNumber']
+            chip_name = chip_json['name']
+            title = 'chipCfg'
+            # before
+            chip_cfg_path = chip_json['config'].split('/')[len(chip_json['config'].split('/'))-1]
+            cfg_json = register.toJson('{0}{1}.before'.format(cache_dir, chip_cfg_path))
+            filename = 'beforeCfg'
+            register.__set_config(-1, -1, cfg_json, filename, title, 'componentTestRun', chip_serial_number)
 
-    for attachment in m_cache_json['attachments']:
-        chip_id = attachment['_id']
-        file_path = '{0}/{1}'.format(cache_dir, attachment['path'])
-        histoname = attachment['histoname']
-        register.__set_attachment(-1, -1, file_path, histoname, chip_id)
+            # before
+            chip_cfg_path = chip_json['config'].split('/')[len(chip_json['config'].split('/'))-1]
+            cfg_json = register.toJson('{0}{1}.after'.format(cache_dir, chip_cfg_path))
+            filename = 'afterCfg'
+            register.__set_config(-1, -1, cfg_json, filename, title, 'componentTestRun', chip_serial_number)
 
-    finish_timestamp = m_cache_json['finishTime']
-    register.__set_test_run_finish(scan_type, conn_paths, run_number, target_charge, target_tot, finish_timestamp, command)
+            # attachment
+            for file_name in os.listdir(cache_dir):
+                if chip_name in file_name and 'dat' in file_name:
+                    file_path = '{0}{1}'.format(cache_dir, file_name)
+                    histoname = file_name.split('{}_'.format(chip_name))[1].split('.')[0]
+                    register.__set_attachment(-1, -1, file_path, histoname, chip_serial_number)
 
-    return
+    finish_timestamp = scan_log_json['finishTime']
+    register.__set_test_run_finish(scan_type, conns, run_number, target_charge, target_tot, finish_timestamp, command)
 
 def __write_dcs(cache_dir):
     if DB_DEBUG: print('Local DB: Write cache DCS data: {}'.format(cache_dir))
@@ -200,26 +237,16 @@ def __write_dcs(cache_dir):
 def cache():
     global args
     global db_cfg
+    global option
     args = getArgs()
 
+    option = 'scan'
     home = os.environ['HOME']
     with open('{}/.yarr/run.dat'.format(home),'r') as f:
         cache_list = f.readlines()
     for cache_dir in reversed(cache_list):
+        cache_dir = cache_dir.split('\n')[0]
         __set_cache(cache_dir)
-
-    #db_url = 'mongodb://{0}:{1}'.format(args.host, args.port)
-    #db_name = args.database
-    #if not __init(db_url, db_name)==True:
-    #    sys.exit()
-
-    #global m_cache_dir
-    #db_cache_path = m_cache_dir+'/var/cache/localdb'
-    #for file_name in os.listdir(db_cache_path):
-    #    if not file_name.isdecimal(): continue
-    #    cache_path = db_cache_path+'/'+file_name
-    #    db_cfg_path = cache_path+'/database.json'
-    #    __set_cache(cache_path)
 #        __clear()
 
 if __name__ == '__main__': cache()
