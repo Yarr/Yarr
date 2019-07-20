@@ -1,0 +1,30 @@
+{
+    "stage": "Testing",
+    "module": {
+        "serialNumber": "FEI4B-002",
+        "componentType": "Module"
+    },
+    "chipType" : "FEI4B",
+    "chips" : [
+        {
+            "serialNumber": "FEI4B-002_chip1",
+            "componentType": "Front-end Chip",
+            "chipId": 1
+        },
+        {
+            "serialNumber": "FEI4B-002_chip2",
+            "componentType": "Front-end Chip",
+            "chipId": 2
+        },
+        {
+            "serialNumber": "FEI4B-002_chip3",
+            "componentType": "Front-end Chip",
+            "chipId": 3
+        },
+        {
+            "serialNumber": "FEI4B-002_chip4",
+            "componentType": "Front-end Chip",
+            "chipId": 4
+        }
+    ]
+}

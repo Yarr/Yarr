@@ -1,0 +1,30 @@
+{
+    "stage": "Testing",
+    "module": {
+        "serialNumber": "RD53A-001",
+        "componentType": "Module"
+    },
+    "chipType" : "RD53A",
+    "chips" : [
+        {
+            "serialNumber": "RD53A-001_chip1",
+            "componentType": "Front-end Chip",
+            "chipId": 1
+        },
+        {
+            "serialNumber": "RD53A-001_chip2",
+            "componentType": "Front-end Chip",
+            "chipId": 2
+        },
+        {
+            "serialNumber": "RD53A-001_chip3",
+            "componentType": "Front-end Chip",
+            "chipId": 3
+        },
+        {
+            "serialNumber": "RD53A-001_chip4",
+            "componentType": "Front-end Chip",
+            "chipId": 4
+        }
+    ]
+}

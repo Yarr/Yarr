@@ -7,8 +7,6 @@
 # Usage: ./setup_db.sh [-i Local DB server ip (default: 127.0.0.1)] [-p Local DB server port (default: 27017)] [-c path to cache directory (default: $HOME/.yarr/localdb) [-n Local DB name (default: localdb)]
 ################################
 
-localdb_dir=$(cd $(dirname $0); pwd)
-
 set -e
 
 DEBUG=false
@@ -17,33 +15,110 @@ DEBUG=false
 function usage {
     cat <<EOF
 
-Usage:
-    ./setup_db.sh [-i ip address] [-p port] [-c dir path] [-n db name]
+Make some config files and Set some tools for Local DB in ${HOME}/.yarr/localdb by:
 
-Options:
-    - i <ip address>  Local DB server ip address, default: 127.0.0.1
-    - p <port>        Local DB server port, default: 27017
-    - c <dir path>    path to Local DB cache directory, default: $HOME/.yarr/localdb
-    - n <db name>     Local DB Name, default: localdb
+    ./setup_db.sh
+
+You can specify the IP address, port number, and DB name of Local DB as following:
+
+    ./setup_db.sh [-i ip address] [-p port] [-n db name]
+
+    - h               Show this usage
+    - i <ip address>  Local DB server ip address (default: 127.0.0.1)
+    - p <port>        Local DB server port (default: 27017)
+    - n <db name>     Local DB Name (default: localdb)
+    - r               Clean the settings (reset)
 
 EOF
 }
 
-if [ ! -e ${HOME}/.yarr ]; then
-    mkdir ${HOME}/.yarr
-fi
-
-while getopts i:p:c:n:d OPT
+# Start
+shell_dir=$(cd $(dirname ${BASH_SOURCE}); pwd)
+setting_dir=${shell_dir}/setting
+while getopts i:p:n:hr OPT
 do
     case ${OPT} in
         i ) ip=${OPTARG} ;;
         p ) port=${OPTARG} ;;
-        c ) dir=${OPTARG} ;;
         n ) dbname=${OPTARG} ;;
+        h ) usage ;;
+        r ) reset=true ;;
         * ) usage
             exit ;;
     esac
 done
+
+dir=${HOME}/.yarr/localdb
+BIN=${HOME}/.local/bin
+BASHLIB=${HOME}/.local/lib/localdb-tools/bash-completion/completions
+MODLIB=${HOME}/.local/lib/localdb-tools/modules
+ENABLE=${HOME}/.local/lib/localdb-tools/enable
+
+if [ ${reset} ]; then
+    echo -e "[LDB] Clean Local DB settings? [y/n]"
+    read -p "> " answer
+    while [ -z ${answer} ]; 
+    do
+        read -p "> " answer
+    done
+    echo -e ""
+    if [[ ${answer} != "y" ]]; then
+        if [ -f ${site} ]; then 
+            rm ${site}
+        fi
+        echo "[LDB] Exit ..."
+        echo " "
+        exit
+    fi
+    # binary
+    for i in `ls -1 ${shell_dir}/bin/`; do
+        if [ -f ${BIN}/${i} ]; then
+            rm ${BIN}/${i}
+        fi
+    done
+    bin_empty=true
+    for i in `ls -1 ${BIN}`; do
+        if [ `echo ${i} | grep localdbtool` ]; then
+            bin_empty=false
+        fi
+    done
+    if [ ${bin_empty} ]; then
+        if [ -d ${HOME}/.local/lib/localdb-tools ]; then
+            rm -r ${HOME}/.local/lib/localdb-tools
+        fi
+    fi
+    # library
+    if [ ! ${bin_empty} ]; then
+        for i in `ls -1 ${shell_dir}/lib/localdb-tools/bash-completion/completions/`; do
+            if [ -f ${BASHLIB}/${i} ]; then
+                rm ${BASHLIB}/${i}
+            fi
+        done
+        for i in `ls -1 ${shell_dir}/lib/localdb-tools/modules/`; do
+            if [ -f ${MODLIB}/${i} ]; then
+                rm ${MODLIB}/${i}
+            fi
+        done
+        lib_empty=true
+        for i in `ls -1 ${MODLIB}`; do
+            if [ `echo ${i} | grep py` ]; then
+                lib_empty=false
+            fi
+        done
+        for i in `ls -1 ${BASHLIB}`; do
+            if [ `echo ${i} | grep localdbtool` ]; then
+                lib_empty=false
+            fi
+        done
+        if [ ${lib_empty} ]; then
+            if [ -d ${HOME}/.local/lib/localdb-tools ]; then
+                rm -r ${HOME}/.local/lib/localdb-tools
+            fi
+        fi
+    fi
+    echo -e "[LDB] Finish Clean Up!"
+    exit
+fi
 
 if [ -z ${ip} ]; then
     ip=127.0.0.1
@@ -54,12 +129,9 @@ fi
 if [ -z ${dbname} ]; then
     dbname="localdb"
 fi
-if [ -z ${dir} ]; then
-    dir=${HOME}/.yarr/localdb
-fi
 
 # Check the name of site
-address=${dir}/etc/localdb/address.json
+site=${dir}/site.json
 declare -a nic=()  
 num=0
 for DEV in `find /sys/devices -name net | grep -v virtual`; 
@@ -68,26 +140,29 @@ do
     num=$(( num + 1 ))
 done
 dbnic="${nic[0]}"
-if [ -f ${address} ]; then
-    tmpmacaddress=`cat ${address}|grep 'macAddress'|awk -F'["]' '{print $4}'`
-    tmpname=`cat ${address}|grep 'name'|awk -F'["]' '{print $4}'`
-    tmpinstitution=`cat ${address}|grep 'institution'|awk -F'["]' '{print $4}'`
+if [ -f ${site} ]; then
+    tmpmacaddress=`cat ${site}|grep 'macAddress'|awk -F'["]' '{print $4}'`
+    tmpname=`cat ${site}|grep 'name'|awk -F'["]' '{print $4}'`
+    tmpinstitution=`cat ${site}|grep 'institution'|awk -F'["]' '{print $4}'`
 fi
 macaddress=`ifconfig ${dbnic} | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}'`
-if [ -f ${address} ] && [ ${macaddress} = ${tmpmacaddress} ] && [ ${HOSTNAME} = ${tmpname} ] && [ -n ${tmpinstitution} ]; then
-    echo "Site Config file is exist: ${address}"
+if [ -f ${site} ] && [ ${macaddress} = ${tmpmacaddress} ] && [ ${HOSTNAME} = ${tmpname} ] && [ -n ${tmpinstitution} ]; then
+    echo -e "[LDB] Check the exist site config...OK! ${site}"
+    echo -e ""
     institution=${tmpinstitution}
 else
-    echo "Enter the institution name where this machine (MAC address: ${macaddress}) is or 'exit' ... "
+    echo -e "[LDB] Check the exist site config...NG!"
+    echo -e ""
+    echo -e "[LDB] Enter the institution name where this machine is, or 'exit' ... "
     read -p "> " -a answer
     while [ ${#answer[@]} == 0 ]; 
     do
-        echo "Enter the institution name where this machine (MAC address: ${macaddress}) is or 'exit' ... "
         read -p "> " -a answer
     done
+    echo -e ""
     if [[ ${answer[0]} == "exit" ]]; then
-        echo "Exit ..."
-        echo " "
+        echo -e "[LDB] Exit ..."
+        echo -e ""
         exit
     else
         for a in ${answer[@]}; do
@@ -98,98 +173,142 @@ else
 fi
 
 # Confirmation
-echo " "
-echo "MongoDB Server Information"
-echo "  IP address: ${ip}"
-echo "  port: ${port}"
-echo " "
-echo "Test Site Information"
-echo "  MAC address: ${macaddress}"
-echo "  Machine Name: ${HOSTNAME}"   
-echo "  Institution: ${institution}"
-echo " "
-echo "Are you sure that's correct? [y/n]"
+echo -e "[LDB] Confirmation"
+echo -e "\t-----------------------"
+echo -e "\t--  Mongo DB Server  --"
+echo -e "\t-----------------------"
+echo -e "\tIP address: ${ip}"
+echo -e "\tport: ${port}"
+echo -e "\t-----------------"
+echo -e "\t--  Test Site  --"
+echo -e "\t-----------------"
+echo -e "\tMAC address: ${macaddress}"
+echo -e "\tMachine Name: ${HOSTNAME}"   
+echo -e "\tInstitution: ${institution}"
+echo -e ""
+echo -e "[LDB] Are you sure that's correct? [y/n]"
 read -p "> " answer
 while [ -z ${answer} ]; 
 do
-    echo "Are you sure that's correct? [y/n]"
     read -p "> " answer
 done
-echo " "
+echo -e ""
 if [[ ${answer} != "y" ]]; then
-    if [ -f ${address} ]; then 
-        echo "Remove Site Config file: ${address}"
-        echo " "
-        rm ${address}
+    if [ -f ${site} ]; then 
+        rm ${site}
     fi
-    echo "Try again setup_db.sh, Exit ..."
+    echo "[LDB] Exit ..."
     echo " "
     exit
 fi
 
-# create cache directory
+# Create localdb directory
 if [ ! -e ${dir} ]; then
     mkdir -p ${dir}
 fi
-if [ ! -e ${dir}/var/cache/localdb ]; then
-    mkdir -p ${dir}/var/cache/localdb
-fi
-if [ ! -e ${dir}/var/log/localdb ]; then
-    mkdir -p ${dir}/var/log/localdb
-fi
-if [ ! -e ${dir}/var/lib/localdb ]; then
-    mkdir -p ${dir}/var/lib/localdb
-fi
-if [ ! -e ${dir}/tmp/localdb ]; then
-    mkdir -p ${dir}/tmp/localdb/cache
-    mkdir -p ${dir}/tmp/localdb/log
-    mkdir -p ${dir}/tmp/localdb/done
-    mkdir -p ${dir}/tmp/localdb/failed
-fi
-if [ ! -e ${dir}/etc/localdb ]; then
-    mkdir -p ${dir}/etc/localdb
-fi
-
-echo "Created Cache Directory: ${dir}"
-
-# create database config
-dbcfg=${dir}/etc/localdb/database.json
-cp ${localdb_dir}/default/database.json ${dbcfg}
+# Create database config
+echo -e "[LDB] Create Config files..."
+dbcfg=${dir}/database.json
+cp ${setting_dir}/default/database.json ${dbcfg}
 sed -i -e "s!DBIP!${ip}!g" ${dbcfg}
 sed -i -e "s!DBPORT!${port}!g" ${dbcfg}
 sed -i -e "s!DBNAME!${dbname}!g" ${dbcfg}
 sed -i -e "s!CACHE!${dir}!g" ${dbcfg}
-echo "Create DB Config file: ${dbcfg}"
+echo -e "\tDB Config: ${dbcfg}"
 
-# create site address config 
-cp ${localdb_dir}/default/address.json ${address}
-sed -i -e "s!MACADDR!${macaddress}!g" ${address}
-sed -i -e "s!HOSTNAME!${HOSTNAME}!g" ${address}
-sed -i -e "s!SITE!${institution}!g" ${address}
-echo "Create Site Config file: ${address}"
+# Create site site config 
+cp ${setting_dir}/default/site.json ${site}
+sed -i -e "s!MACADDR!${macaddress}!g" ${site}
+sed -i -e "s!HOSTNAME!${HOSTNAME}!g" ${site}
+sed -i -e "s!SITE!${institution}!g" ${site}
+echo -e "\tSite Config: ${site}"
 
-# create default user config
-cfg=${dir}/etc/localdb/${USER}_user.json
-cp ${localdb_dir}/default/user.json ${cfg}
+# Create default user config
+cfg=${dir}/user.json
+cp ${setting_dir}/default/user.json ${cfg}
 sed -i -e "s!NAME!${USER}!g" ${cfg}
 sed -i -e "s!INSTITUTION!${HOSTNAME}!g" ${cfg}
-echo "Create User Config file: ${cfg}"
-echo " "
+echo -e "\tUser Config: ${cfg}"
+echo -e ""
 
-echo ""
-echo "----------------------------------------------------------------"
-echo "-- scanConsole with Local DB..."
-echo "----------------------------------------------------------------"
-echo "Scan with uploading Local DB by..." | tee README
-echo "cd ../src" | tee -a README
-echo "./bin/scanConsole -c configs/connectivity/example_rd53a_setup.json -r configs/controller/specCfg.json -s configs/scans/rd53a/std_digitalscan.json -W -u ${USER} -d ${dbcfg} -i ${address}" | tee -a README
-echo "./bin/dbAccessor -R ~/.yarr/localdb/var/cache/timestamp_directory" | tee -a README
-echo "" | tee -a README
-echo "Check results in the DB viewer in your web browser..." | tee -a README
-echo "From the DAQ machine: http://localhost:5000/localdb/" | tee -a README
-echo "From other machines : http://${ip}/localdb/" | tee -a README
-echo "" | tee -a README
-echo "Check more detail at..." | tee -a README
-echo "" | tee -a README
-echo "https://github.com/jlab-hep/Yarr/wiki/Quick-tutorial" | tee -a README
-echo ""
+# Check python module
+echo -e "[LDB] Check python modules..."
+pip3 install --user -r ${setting_dir}/requirements-pip.txt 2&> /dev/null && :
+/usr/bin/env python3 ${setting_dir}/check_python_modules.py
+if [ $? = 1 ]; then
+    echo -e "[LDB] Failed, exit..."
+    exit
+fi
+echo -e "[LDB] Done."
+echo -e ""
+
+readme=${shell_dir}/README
+
+if [ -f ${readme} ]; then
+    rm ${readme}
+fi
+
+echo -e "# scanConsole with Local DB" | tee -a ${readme}
+echo -e "" | tee -a ${readme}
+
+# Setting function
+mkdir -p ${BIN}
+mkdir -p ${BASHLIB}
+mkdir -p ${MODLIB}
+
+cp ${shell_dir}/bin/* ${BIN}/
+chmod +x ${BIN}/*
+
+cp -r ${shell_dir}/lib/localdb-tools/bash-completion/* ${BASHLIB}/
+cp -r ${shell_dir}/lib/localdb-tools/modules/* ${MODLIB}/
+cp ${shell_dir}/lib/localdb-tools/enable ${ENABLE}
+
+# settings
+echo -e "## Settings" | tee -a ${readme}
+echo -e "- 'Makefile'" | tee -a ${readme}
+echo -e "  - description: install required softwares and setup Local DB functions for the machine." | tee -a ${readme}
+echo -e "  - requirements: sudo user, git, net-tools" | tee -a ${readme}
+echo -e "- './setup_db.sh'" | tee -a ${readme}
+echo -e "  - description: setup Local DB functions for the user local." | tee -a ${readme}
+echo -e "  - requirements: required softwares" | tee -a ${readme}
+echo -e "" | tee -a ${readme}
+
+# all function
+ITSNAME="LocalDB Tools"
+echo -e "## $ITSNAME" | tee -a ${readme}
+echo -e "'source ${HOME}/.local/lib/localdb-tools/enable' can enable tab-completion" | tee -a ${readme}
+echo -e "" | tee -a ${readme}
+
+# upload.py
+ITSNAME="LocalDB Tool Setup Upload Tool"
+echo -e "### $ITSNAME" | tee -a ${readme}
+echo -e "- 'localdbtool-upload --scan <path to result directory>' can upload scan data" | tee -a ${readme}
+echo -e "- 'localdbtool-upload --dcs <path to result directory>' can upload dcs data based on scan data" | tee -a ${readme}
+echo -e "- 'localdbtool-upload --cache' can upload every cache data" | tee -a ${readme}
+echo -e "- 'localdbtool-upload --help' can show more usage." | tee -a ${readme}
+echo -e "" | tee -a ${readme}
+
+# retrieve.py
+ITSNAME="LocalDB Tool Setup Retrieve Tool"
+echo -e "### $ITSNAME" | tee -a ${readme}
+echo -e "- 'localdbtool-retrieve init' can initialize retrieve repository" | tee -a ${readme}
+echo -e "- 'localdbtool-retrieve remote add <remote name>' can add remote repository for Local DB/Master Server" | tee -a ${readme}
+echo -e "- 'localdbtool-retrieve --help' can show more usage." | tee -a ${readme}
+echo -e "" | tee -a ${readme}
+
+# finish
+ITSNAME="Usage"
+echo -e "## $ITSNAME" | tee -a ${readme}
+echo -e "1. scanConsole with Local DB" | tee -a ${readme}
+echo -e "   - './bin/scanConsole -c <conn> -r <ctr> -s <scan> -W' can use Local DB schemes" | tee -a ${readme}
+echo -e "2. Upload function" | tee -a ${readme}
+echo -e "   - 'localdbtool-upload --cache' can upload every cache data" | tee -a ${readme}
+echo -e "3. Retrieve function" | tee -a ${readme}
+echo -e "   - 'localdbtool-retrieve log' can show test data log in Local DB" | tee -a ${readme}
+echo -e "   - 'localdbtool-retrieve checkout <module name>' can restore the latest config files from Local DB" | tee -a ${readme}
+echo -e "4. Viewer Application" | tee -a ${readme}
+echo -e "   - Access 'http://${ip}/localdb/' can display results in web browser if Viewer is running" | tee -a ${readme}
+echo -e "5. More Detail" | tee -a ${readme}
+echo -e "   - Check 'https://github.com/jlab-hep/Yarr/wiki'" | tee -a ${readme}
+echo -e "" | tee -a ${readme}
+echo -e "This description is saved as ${readme}"

@@ -10,10 +10,10 @@
 
 DBHandler::DBHandler():
 m_option(""), m_db_cfg_path(""), m_user_oid_str(""), m_site_oid_str(""),
-m_chip_type(""), m_log_dir(""), m_log_path(""), m_cache_path(""), m_cache_dir(""), m_tr_oid_str(""),
+m_chip_type(""), m_log_dir(""), m_log_path(""), m_cache_path(""), m_cache_dir(""), m_localdb_dir(""), m_tr_oid_str(""),
 m_stage_list(), m_env_list(), m_comp_list(),
 m_histo_names(), m_tr_oid_strs(), m_serial_numbers(),
-m_db_version(1.0), DB_DEBUG(false), m_log_json(), m_cache_json(), m_conn_json(), counter(0)
+m_db_version(1.0), DB_DEBUG(true), m_log_json(), m_cache_json(), m_conn_json(), counter(0)
 {
     if (DB_DEBUG) std::cout << "DBHandler: DBHandler" << std::endl;
 }
@@ -34,40 +34,17 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_option) {
     }
 
     m_option = i_option;
+    std::string home = getenv("HOSTNAME");
+    m_localdb_dir = home+"/.yarr/localdb";
     m_db_cfg_path = i_db_cfg_path;
 
-    int now = std::time(NULL);
-
     json db_json = this->checkDBCfg(m_db_cfg_path);
-    std::string host_ip = "mongodb://"+std::string(db_json["hostIp"])+":"+std::string(db_json["hostPort"]);
-    std::string db_name = db_json["dbName"];
-    m_cache_dir = db_json["cachePath"];
 
     if (m_stage_list.size()==0&&m_env_list.size()==0&&m_comp_list.size()==0) {
         for(auto s_tmp: db_json["stage"]) m_stage_list.push_back(s_tmp);
         for(auto s_tmp: db_json["environment"]) m_env_list.push_back(s_tmp);
         for(auto s_tmp: db_json["component"]) m_comp_list.push_back(s_tmp);
     }
-
-    // initialize for registeration
-    if (m_option=="scan") {
-        std::string cmd = "rm "+m_cache_dir+"/tmp/localdb/*.json";
-        if (system(cmd.c_str()) < 0) {
-            std::string message = "Problem removing json files in "+m_cache_dir+"/tmp/localdb";
-            std::string function = __PRETTY_FUNCTION__;
-            this->alert(function, message); return;
-        }
-    }
-    if (m_option=="scan"||m_option=="dcs") m_log_dir = m_cache_dir+"/tmp/localdb/cache/"+std::to_string(now);
-    else m_log_dir = m_cache_dir+"/tmp/localdb/log";//TODO
-
-    m_log_path = m_log_dir + "/cacheLog.json";
-    this->mkdir(m_log_dir);
-    m_log_json["version"] = m_db_version;
-    m_log_json["logPath"] = m_log_dir;
-    m_log_json["dbOption"] = m_option;
-    this->writeJson("status", "running", m_log_path, m_log_json);
-    this->cacheDBCfg(); 
 }
 
 void DBHandler::alert(std::string i_function, std::string i_message, std::string i_type) {
@@ -76,8 +53,6 @@ void DBHandler::alert(std::string i_function, std::string i_message, std::string
     std::string alert_message;
     if (i_type=="error") {
         alert_message = "#DB ERROR#";
-        m_log_json["errormessage"] = i_message;
-        this->writeJson("status", "failure", m_log_path, m_log_json);
     } else if (i_type=="warning") {
         alert_message = "#DB WARNING#";
     } else if (i_type=="status") {
@@ -95,8 +70,6 @@ void DBHandler::alert(std::string i_function, std::string i_message, std::string
     timestamp=tmp;
     file_ofs << timestamp << " " << alert_message << " [" << m_option << "] " << i_function << std::endl;
     file_ofs << "Message: " << i_message << std::endl;
-    file_ofs << "Log: " << m_log_path << std::endl;
-    file_ofs << "Cache: " << m_cache_path << std::endl;
     file_ofs << "--------------------" << std::endl;
 
     if (i_type=="error") std::abort();
@@ -118,7 +91,6 @@ void DBHandler::setUser(std::string i_user_path) {
         institution = user_json["institution"];
     }
     std::cout << "DBHandler: User Information \n\tUser name: " << user_name << "\n\tInstitution: " << institution << std::endl;
-    //this->cacheUser(i_user_path);
 
     return;
 }
@@ -132,11 +104,10 @@ void DBHandler::setSite(std::string i_address_path) {
         std::string user = getenv("USER");
         address = hostname+"_"+user;
     } else {
-        json address_json = this->checkAddressCfg(i_address_path);
+        json address_json = this->checkSiteCfg(i_address_path);
         address = address_json["macAddress"];
     }
     std::cout << "DBHandler: MAC Address: " << address << std::endl;
-    //this->cacheSite(i_address_path);
 
     return;
 }
@@ -147,10 +118,22 @@ void DBHandler::setConnCfg(std::vector<std::string> i_conn_paths) {
     for (auto conn_path : i_conn_paths) {
         if (DB_DEBUG) std::cout << "\tDBHandler: setting connectivity config file: " << conn_path << std::endl;
         json conn_json = this->checkConnCfg(conn_path);
+
         m_chip_type = conn_json["chipType"];
         if (m_chip_type == "FEI4B") m_chip_type = "FE-I4B";
     }
-    this->cacheConnCfg(i_conn_paths);
+    std::sort(begin(m_chip_cfg_paths), end(m_chip_cfg_paths));
+    if (std::unique(begin(m_chip_cfg_paths), end(m_chip_cfg_paths))!=end(m_chip_cfg_paths)) {
+        std::string message = "There are chip config file paths duplicated.";
+        std::string function = __PRETTY_FUNCTION__;
+        this->alert(function, message);
+    }
+    std::sort(begin(m_chip_names), end(m_chip_names));
+    if (std::unique(begin(m_chip_names), end(m_chip_names))!=end(m_chip_names)) {
+        std::string message = "There are chip names duplicated.";
+        std::string function = __PRETTY_FUNCTION__;
+        this->alert(function, message);
+    }
 }
 
 void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_tr_path) {
@@ -209,7 +192,7 @@ void DBHandler::setTestRunStart(std::string i_test_type, std::vector<std::string
             char tmp[20];
             strftime(tmp, 20, "%Y%m", lt);
             std::string ts=tmp;
-            std::string log_path = m_cache_dir+"/var/lib/localdb/"+ts+"_scan.csv";
+            std::string log_path = m_localdb_dir+"/"+ts+"_scan.csv";
             std::ofstream log_file_ofs(log_path, std::ios::app);
             strftime(tmp, 20, "%F_%H:%M:%S", lt);
             ts=tmp;
@@ -222,14 +205,12 @@ void DBHandler::setTestRunStart(std::string i_test_type, std::vector<std::string
             tr_json["runNumber"] = i_run_number;
             tr_json["testType"] = i_test_type;
 
-            std::string tmp_path = m_cache_dir+"/tmp/localdb/"+mo_serial_number+"_scan.json";
+            std::string tmp_path = m_localdb_dir+"/"+mo_serial_number+"_scan.json";
             std::ofstream tmp_file_ofs(tmp_path);
             tmp_file_ofs << std::setw(4) << tr_json;
             tmp_file_ofs.close();
         }
     }
-    this->cacheTestRun(i_test_type, i_run_number, i_target_charge, i_target_tot, i_timestamp, -1, i_command);
-
     return;
 }
 
@@ -238,7 +219,6 @@ void DBHandler::setTestRunFinish(std::string i_test_type, std::vector<std::strin
 
     std::sort(m_histo_names.begin(), m_histo_names.end());
     m_histo_names.erase(std::unique(m_histo_names.begin(), m_histo_names.end()), m_histo_names.end());
-    this->cacheTestRun(i_test_type, i_run_number, i_target_charge, i_target_tot, -1, i_timestamp, i_command);
     
     return;
 }
@@ -260,12 +240,10 @@ void DBHandler::setConfig(int i_tx_channel, int i_rx_channel, std::string i_file
             }
         }
     }
-    this->cacheConfig(serial_number, i_file_path, i_filename, i_title, i_collection);
 
     return;
 }
 
-//void DBHandler::setAttachment(std::string i_serial_number, std::string i_file_path, std::string i_histo_name) {
 void DBHandler::setAttachment(int i_tx_channel, int i_rx_channel, std::string i_file_path, std::string i_histo_name, std::string i_serial_number) {
     if (DB_DEBUG) std::cout << "DBHandler: Write Attachment: " << i_file_path << std::endl;
 
@@ -283,7 +261,6 @@ void DBHandler::setAttachment(int i_tx_channel, int i_rx_channel, std::string i_
             }
         }
     }
-    this->cacheAttachment(serial_number, i_file_path, i_histo_name);
 
     m_histo_names.push_back(i_histo_name);
 
@@ -291,31 +268,19 @@ void DBHandler::setAttachment(int i_tx_channel, int i_rx_channel, std::string i_
 }
 
 void DBHandler::cleanUp(std::string i_dir) {
-    if (m_option=="scan") {
-        int now = std::time(NULL);
-        std::string cmd = "mv "+m_log_dir+" "+m_cache_dir+"/var/cache/localdb/"+std::to_string(now);
-        if (system(cmd.c_str()) < 0) {
-            std::string message = "Problem moving directory "+m_log_dir+" to "+m_cache_dir+"/var/cache/localdb/"+std::to_string(now);
-            std::string function = __PRETTY_FUNCTION__;
-            this->alert(function, message); return;
-        }
-        m_log_dir = m_cache_dir+"/var/cache/localdb/"+std::to_string(now);
-        m_log_json["logPath"] = m_log_dir;
-        m_log_path = m_log_dir + "/cacheLog.json";
-        this->writeJson("status", "waiting", m_log_path, m_log_json);
-    } else if (m_option=="dcs") {
-        int now = std::time(NULL);
-        std::string cmd = "mv "+m_log_dir+" "+m_cache_dir+"/var/cache/localdb/"+std::to_string(now);
-        if (system(cmd.c_str()) < 0) {
-            std::string message = "Problem moving directory "+m_log_dir+" to "+m_cache_dir+"/var/cache/localdb/"+std::to_string(now);
-            std::string function = __PRETTY_FUNCTION__;
-            this->alert(function, message); return;
-        }
-        m_log_dir = m_cache_dir+"/var/cache/localdb/"+std::to_string(now);
-        m_log_json["logPath"] = m_log_dir;
-        m_log_path = m_log_dir + "/cacheLog.json";
-        this->writeJson("status", "waiting", m_log_path, m_log_json);
-    }
+    //} else if (m_option=="dcs") {
+    //    int now = std::time(NULL);
+    //    std::string cmd = "mv "+m_log_dir+" "+m_cache_dir+"/var/cache/localdb/"+std::to_string(now);
+    //    if (system(cmd.c_str()) < 0) {
+    //        std::string message = "Problem moving directory "+m_log_dir+" to "+m_cache_dir+"/var/cache/localdb/"+std::to_string(now);
+    //        std::string function = __PRETTY_FUNCTION__;
+    //        this->alert(function, message); return;
+    //    }
+    //    m_log_dir = m_cache_dir+"/var/cache/localdb/"+std::to_string(now);
+    //    m_log_json["logPath"] = m_log_dir;
+    //    m_log_path = m_log_dir + "/cacheLog.json";
+    //    this->writeJson("status", "waiting", m_log_path, m_log_json);
+    //}
     // initialize
     m_option = "";
     m_db_cfg_path = "";
@@ -626,17 +591,9 @@ json DBHandler::checkDBCfg(std::string i_db_path) {
     if (DB_DEBUG) std::cout << "\t\tDBHandler: Check database config: " << i_db_path << std::endl;
 
     json db_json = toJson(i_db_path);
-    std::vector<std::string> key_list = { "hostIp", "hostPort", "cachePath", "dbName" };
-    for (auto key : key_list) this->checkEmpty(db_json[key].empty(), key, "Set database config by ../localdb/setup_db.sh");
-
-    std::string cache_dir = db_json["cachePath"];
-    struct stat statbuf;
-    if (stat(cache_dir.c_str(), &statbuf)!=0) {
-        std::string message = "Not exist cache directory: "+cache_dir;
-        std::string function = __PRETTY_FUNCTION__;
-        this->alert(function, message);
-    }
-
+    this->checkEmpty(db_json["hostIp"].empty(), "hostIp", i_db_path, "Set database config by YARR/localdb/setting/setup_db.sh");
+    this->checkEmpty(db_json["hostPort"].empty(), "hostPort", i_db_path, "Set database config by YARR/localdb/setting/setup_db.sh");
+    this->checkEmpty(db_json["dbName"].empty(), "dbName", i_db_path, "Set database config by YARR/localdb/setting/setup_db.sh");
     return db_json;
 }
 
@@ -645,15 +602,16 @@ json DBHandler::checkConnCfg(std::string i_conn_path) {
     json conn_json = this->toJson(i_conn_path);
     // chip type
     this->checkEmpty(conn_json["chipType"].empty(), "chipType", i_conn_path);
+    m_chip_type = conn_json["chipType"];
     // module
+    char tmp[1000];
+    bool is_listed = false;
+    std::string del = ",";
+    char separator = del[0];
     if (!conn_json["module"].empty()) {
         this->checkEmpty(conn_json["module"]["serialNumber"].empty(), "module.serialNumber", i_conn_path); 
-        bool is_listed = false;
-        char tmp[1000];
-        std::string del = ",";
-        char separator = del[0];
         std::string mo_serial_number = conn_json["module"]["serialNumber"];
-        std::string mod_list_path = m_cache_dir+"/var/lib/localdb/modules.csv";
+        std::string mod_list_path = m_localdb_dir+"/modules.csv";
         std::ifstream list_ifs(mod_list_path);
         if (!list_ifs) {
             std::string message = "Not found modules list: "+mod_list_path;
@@ -672,11 +630,37 @@ json DBHandler::checkConnCfg(std::string i_conn_path) {
             std::string function = __PRETTY_FUNCTION__;
             this->alert(function, message);
         }
+    }
         
-        // chips
-        for (unsigned i=0; i<conn_json["chips"].size(); i++) {
-            this->checkEmpty(conn_json["chips"][i]["chipId"].empty(), "chips."+std::to_string(i)+".chipId", i_conn_path);
-            int chip_id = conn_json["chips"][i]["chipId"];
+    // chips
+    std::vector<int> chip_ids;
+    for (unsigned i=0; i<conn_json["chips"].size(); i++) {
+        if (conn_json["chips"][i]["enable"] == 0) continue;
+        int chip_id = 0;
+        std::string name = "default";
+        json chip_cfg = toJson(conn_json["chips"][i]["config"]);
+        m_chip_cfg_paths.push_back(conn_json["chips"][i]["config"]);
+        if (!chip_cfg[m_chip_type].empty()) {
+            if (!chip_cfg[m_chip_type]["Parameter"]["chipId"].empty()) {
+                chip_id = chip_cfg[m_chip_type]["Parameter"]["chipId"];
+                name = chip_cfg[m_chip_type]["name"];
+            } else if (!chip_cfg[m_chip_type]["Parameter"]["ChipId"].empty()) {
+                chip_id = chip_cfg[m_chip_type]["Parameter"]["ChipId"];
+                name = chip_cfg[m_chip_type]["Parameter"]["Name"];
+            } else {
+                std::string message = "No chipId in the chip config: "+std::string(conn_json["chips"][i]["config"]);
+                std::string function = __PRETTY_FUNCTION__;
+                this->alert(function, message);
+            }
+        }
+        if (!conn_json["chips"][i]["chipId"].empty()) {
+            if (chip_id!=conn_json["chips"][i]["chipId"]) {
+                std::string message = "Not match chipId in the chip config: "+std::string(conn_json["chips"][i]["config"])+" and connectivity: "+i_conn_path;
+                std::string function = __PRETTY_FUNCTION__;
+                this->alert(function, message);
+            }
+        }
+        if (!conn_json["module"].empty()) {
             is_listed = false;
             for (const auto s_tmp : split(tmp, separator)) {
                 if (s_tmp==std::to_string(chip_id)) {
@@ -689,6 +673,16 @@ json DBHandler::checkConnCfg(std::string i_conn_path) {
                 std::string function = __PRETTY_FUNCTION__;
                 this->alert(function, message);
             }
+        }
+        chip_ids.push_back(chip_id);
+        m_chip_names.push_back(name);
+    }
+    if (!conn_json["module"].empty()) {
+        std::sort(begin(chip_ids), end(chip_ids));
+        if (std::unique(begin(chip_ids), end(chip_ids))!=end(chip_ids)) {
+            std::string message = "There are same chipId in the one connectivity config: "+i_conn_path;
+            std::string function = __PRETTY_FUNCTION__;
+            this->alert(function, message);
         }
     }
     // stage
@@ -804,16 +798,14 @@ json DBHandler::checkUserCfg(std::string i_user_path) {
     json user_json = this->toJson(i_user_path);
     this->checkEmpty(user_json["userName"].empty(), "userName", i_user_path);
     this->checkEmpty(user_json["institution"].empty(), "institution", i_user_path);
-    this->checkEmpty(user_json["userIdentity"].empty(), "userIdentity", i_user_path);
     return user_json;
 }
 
-json DBHandler::checkAddressCfg(std::string i_address_path) {
+json DBHandler::checkSiteCfg(std::string i_address_path) {
     if (DB_DEBUG) std::cout << "\t\tDBHandler: Check address config file: " << i_address_path << std::endl;
 
     json address_json = this->toJson(i_address_path);
     this->checkEmpty(address_json["macAddress"].empty(), "macAddress", i_address_path);
-    this->checkEmpty(address_json["hostname"].empty(), "hostname", i_address_path);
     this->checkEmpty(address_json["institution"].empty(), "institution", i_address_path);
     return address_json;
 }
