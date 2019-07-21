@@ -21,7 +21,7 @@ Default settings for operation in **LDO mode**
 
 After all jumpers are placed on the SCC, connect the DisplayPort cable to DP1 and power cable to PWR_IN.
 
-Set the power supply to <span style="color:red">**1.85**</span> V, the current should be around 0.5 A and power on the chip. For the LDO operation, e.g. the jumper configuration shown in previous figure, make sure <span style="color:red"> not to apply higher voltage than **1.85 V**</span>.
+Set the power supply to <span style="color:red">**1.8**</span> V, the current should be around 0.5 A and power on the chip. For the LDO operation, e.g. the jumper configuration shown in previous figure, make sure <span style="color:red"> not to apply higher voltage than **1.8 V**</span>.
 
 # Scan Console for RD53A
 
@@ -37,11 +37,13 @@ Basics tuning routine:
 - `std_digitalscan.json` (with `-m 1` to reset masks)
 - `std_analogscan.json`
 - `diff_tune_globalthreshold.json` (good starting threshold target is 1000e, resets prev. TDACs)
-- `diff_tune_pixelthreshold.json` (1000e target again)
+- `diff_retune_pixelthreshold.json` (1000e target again)
+- `diff_tune_finepixelthreshold.json` (1000e target again)
 - `lin_tune_globalthreshold.json` (good starting threshold target is 2000e, resets prev. TDACs)
 - `lin_tune_pixelthreshold.json` (2000e again)
 - `lin_retune_globalthreshold.json` (now retuning from 2000e to 1000e target)
 - `lin_retune_pixelthreshold.json` (1000e again)
+- `lin_tune_finepixelthreshold.json` (1000e again)
 - `syn_tune_globalthreshold.json` (can be as low as 1000e, but keep noise occupancy in check)
 - `std_thresholdscan.json` (verify thresholds, use root plot script for nice plots, see [here](rootscripts))
 - `std_totscan.json` (with target charge equal to MIP, e.g. 12ke)
@@ -55,12 +57,14 @@ If you also want to tune the ToT conversion we need to insert those tunings and 
 - `diff_tune_pixelthreshold.json` (1000e target again)
 - `diff_tune_globalpreamp.json` (use mid of the range ToT values, e.g. 10000e at 8ToT)
 - `diff_tune_pixelthreshold.json` (1000e target again)
+- `diff_tune_finepixelthreshold.json` (1000e target again)
 - `lin_tune_globalthreshold.json` (good starting threshold target is 2000e, resets prev. TDACs)
 - `lin_tune_pixelthreshold.json` (2000e again)
 - `lin_retune_globalthreshold.json` (now retuning from 2000e to 1000e target)
 - `lin_retune_pixelthreshold.json` (1000e again)
 - `lin_tune_globalpreamp.json` (use mid of the range ToT values, e.g. 10000e at 8ToT)
 - `lin_retune_pixelthreshold.json` (1000e again)
+- `lin_tune_finepixelthreshold.json` (1000e again)
 - `syn_tune_globalthreshold.json` (can be as low as 1000e, but keep noise occupancy in check)
 - `syn_tune_globalpreamp.json` (use mid of the range ToT values, e.g. 10000e at 8ToT)
 - `syn_tune_globalthreshold.json` (can be as low as 1000e, but keep noise occupancy in check)
