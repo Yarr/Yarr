@@ -56,6 +56,13 @@ ENABLE=${HOME}/.local/lib/localdb-tools/enable
 
 if [ ${reset} ]; then
     echo -e "[LDB] Clean Local DB settings? [y/n]"
+    echo -e "      -> remove Local DB Tools in ${BIN}"
+    for i in `ls -1 ${shell_dir}/bin/`; do
+        if [ -f ${BIN}/${i} ]; then
+            echo -e "         ${i}"
+        fi
+    done
+    echo -e "      -> remove Local DB files in ${dir}"
     read -p "> " answer
     while [ -z ${answer} ]; 
     do
@@ -63,9 +70,6 @@ if [ ${reset} ]; then
     done
     echo -e ""
     if [[ ${answer} != "y" ]]; then
-        if [ -f ${site} ]; then 
-            rm ${site}
-        fi
         echo "[LDB] Exit ..."
         echo " "
         exit
@@ -115,6 +119,9 @@ if [ ${reset} ]; then
                 rm -r ${HOME}/.local/lib/localdb-tools
             fi
         fi
+    fi
+    if [ -d ${dir} ]; then
+        rm -r ${dir}
     fi
     echo -e "[LDB] Finish Clean Up!"
     exit
@@ -203,9 +210,8 @@ if [[ ${answer} != "y" ]]; then
 fi
 
 # Create localdb directory
-if [ ! -e ${dir} ]; then
-    mkdir -p ${dir}
-fi
+mkdir -p ${dir}
+mkdir -p ${dir}/log
 # Create database config
 echo -e "[LDB] Create Config files..."
 dbcfg=${dir}/database.json
@@ -213,7 +219,6 @@ cp ${setting_dir}/default/database.json ${dbcfg}
 sed -i -e "s!DBIP!${ip}!g" ${dbcfg}
 sed -i -e "s!DBPORT!${port}!g" ${dbcfg}
 sed -i -e "s!DBNAME!${dbname}!g" ${dbcfg}
-sed -i -e "s!CACHE!${dir}!g" ${dbcfg}
 echo -e "\tDB Config: ${dbcfg}"
 
 # Create site site config 
@@ -259,7 +264,7 @@ mkdir -p ${MODLIB}
 cp ${shell_dir}/bin/* ${BIN}/
 chmod +x ${BIN}/*
 
-cp -r ${shell_dir}/lib/localdb-tools/bash-completion/* ${BASHLIB}/
+cp -r ${shell_dir}/lib/localdb-tools/bash-completion/completions/* ${BASHLIB}/
 cp -r ${shell_dir}/lib/localdb-tools/modules/* ${MODLIB}/
 cp ${shell_dir}/lib/localdb-tools/enable ${ENABLE}
 

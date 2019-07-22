@@ -170,6 +170,7 @@ int main(int argc, char *argv[]) {
                             break;
                     }
                     count++;
+
                 }
                 break;
             case 'W': // Write to DB
@@ -276,7 +277,6 @@ int main(int argc, char *argv[]) {
     scanLog["targetCharge"] = target_charge;
     scanLog["targetTot"] = target_tot;
     scanLog["scanType"] = strippedScan;
-    //scanLog["version"] = YARR version/or/commit hash
 
     // Initial setting local DBHandler
     DBHandler *database = new DBHandler();
@@ -285,26 +285,23 @@ int main(int argc, char *argv[]) {
         std::cout << "\033[1;31m################\033[0m" << std::endl;
         std::cout << "\033[1;31m# Set Database #\033[0m" << std::endl;
         std::cout << "\033[1;31m################\033[0m" << std::endl;
-        json dbCfg, userCfg, siteCfg;
+        std::cout << "-> Setting user's information" << std::endl;
+
+        json dbCfg;
         try {
             dbCfg = ScanHelper::openJsonFile(dbCfgPath);
-            userCfg = ScanHelper::openJsonFile(dbUserCfgPath);
-            siteCfg = ScanHelper::openJsonFile(dbSiteCfgPath);
         } catch (std::runtime_error &e) {
-            std::cerr << "#ERROR# opening or loading database config: " << e.what() << std::endl;
+            std::cerr << "#DB ERROR# opening or loading database config: " << e.what() << std::endl;
             return -1;
         }
+        scanLog["dbCfg"] = dbCfg;
+
         database->initialize(dbCfgPath, "scan"); 
         database->setUser(dbUserCfgPath);
         database->setSite(dbSiteCfgPath);
         std::cout << "-> Setting Connectivity Configs" << std::endl;
         database->setConnCfg(cConfigPaths);
         database->setTestRunStart(strippedScan, cConfigPaths, runCounter, target_charge, target_tot, (int)now, commandLineStr);
-        //database->setConfig(-1, -1, ctrlCfgPath, "controller", "ctrlCfg", "testRun", "null");
-        //database->setConfig(-1, -1, scanType, strippedScan, "scanCfg", "testRun", "null");
-        scanLog["dbCfg"] = dbCfg;
-        scanLog["userCfg"] = userCfg;
-        scanLog["siteCfg"] = siteCfg;
     }
 
 
@@ -359,20 +356,6 @@ int main(int argc, char *argv[]) {
         scanLog["connectivity"].push_back(config);
     }
     
-    //if (dbUse) { //TODO remove duplicate process
-    //    for (unsigned i=0; i<bookie.feList.size(); i++) {
-    //        FrontEnd *fe = bookie.feList[i];
-    //        if (fe->isActive()) {
-    //            std::ofstream backupCfgFile(dbDirPath+"/tmp/localdb/chip.json");
-    //            json backupCfg;
-    //            dynamic_cast<FrontEndCfg*>(fe)->toFileJson(backupCfg);
-    //            backupCfgFile << std::setw(4) << backupCfg;
-    //            backupCfgFile.close(); 
-    //            database->setConfig(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel(), dynamic_cast<FrontEndCfg*>(fe)->getRxChannel(), dbDirPath+"/tmp/localdb/chip.json", "beforeCfg", "chipCfg", "componentTestRun");
-    //        }
-    //    }
-    //}
- 
     // Reset masks
     if (mask_opt == 1) {
         for (FrontEnd* fe : bookie.feList) {
@@ -582,11 +565,6 @@ int main(int argc, char *argv[]) {
     std::cout << "-> Scan:          " << std::chrono::duration_cast<std::chrono::milliseconds>(scan_done-scan_start).count() << " ms" << std::endl;
     std::cout << "-> Processing:    " << std::chrono::duration_cast<std::chrono::milliseconds>(processor_done-scan_done).count() << " ms" << std::endl;
     std::cout << "-> Analysis:      " << std::chrono::duration_cast<std::chrono::milliseconds>(all_done-processor_done).count() << " ms" << std::endl;
-    
-    scanLog["stopwatch"]["config"] = std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count();
-    scanLog["stopwatch"]["scan"] = std::chrono::duration_cast<std::chrono::milliseconds>(scan_done-scan_start).count();
-    scanLog["stopwatch"]["processing"] = std::chrono::duration_cast<std::chrono::milliseconds>(processor_done-scan_done).count();
-    scanLog["stopwatch"]["analysis"] = std::chrono::duration_cast<std::chrono::milliseconds>(all_done-processor_done).count();
 
     std::cout << std::endl;
     std::cout << "\033[1;31m###########\033[0m" << std::endl;
@@ -632,9 +610,6 @@ int main(int argc, char *argv[]) {
             dynamic_cast<FrontEndCfg*>(fe)->toFileJson(backupCfg);
             backupCfgFile << std::setw(4) << backupCfg;
             backupCfgFile.close(); 
-            //if (dbUse) {
-            //    database->setConfig(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel(), dynamic_cast<FrontEndCfg*>(fe)->getRxChannel(), outputDir + dynamic_cast<FrontEndCfg*>(fe)->getConfigFile() + ".after", "afterCfg", "chipCfg", "componentTestRun");
-            //}
 
             // Plot
             if (doPlots||dbUse) {
@@ -652,10 +627,6 @@ int main(int argc, char *argv[]) {
                         std::unique_ptr<HistogramBase> histo = output.popData();
                         histo->plot(name, outputDirTmp);
                         histo->toFile(name, outputDir);
-                        //if (dbUse) {
-                        //    std::string file_path = outputDir + name + "_" + histo->getName() + ".dat";
-                        //    database->setAttachment(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel(), dynamic_cast<FrontEndCfg*>(fe)->getRxChannel(), file_path, histo->getName());
-                        //}
                     }
                 }
             }
@@ -669,19 +640,6 @@ int main(int argc, char *argv[]) {
 
     // Register test info into database
     if (dbUse) {
-        std::cout << std::endl;
-        std::cout << "\033[1;31m##################\033[0m" << std::endl;
-        std::cout << "\033[1;31m# Write Database #\033[0m" << std::endl;
-        std::cout << "\033[1;31m##################\033[0m" << std::endl;
-
-        std::cout << "Run Number: " << runCounter << std::endl;
-        std::cout << "Test Type: " << strippedScan << std::endl;
-        std::cout << "Target Charge: " << target_charge << std::endl;
-        std::cout << "Target ToT: " << target_tot << std::endl;
-        std::cout << "Path to Test Configuration: " << scanType << std::endl;
-        std::cout << "Path to Controller Configuration: " << scanType << std::endl;
-
-        //database->setTestRunFinish(strippedScan, cConfigPaths, runCounter, target_charge, target_tot, (int)now, commandLineStr);
         database->cleanUp();
 
         char path[1000];
@@ -693,10 +651,25 @@ int main(int argc, char *argv[]) {
             resultDir = outputDir;
         }
         std::fstream dbF((home + "/.yarr/run.dat").c_str(), std::ios::out|std::ios::app);
-        dbF << resultDir << std::endl;
-        dbF.close();
 
-        std::cout << "Done."<< std::endl;
+        std::string cmd = "localdbtool-upload test 2> /dev/null";
+        if (system(cmd.c_str())!=0) {
+            std::cerr << "#DB ERROR# Cannot upload result data into Local DB" << std::endl;
+            std::cerr << "           Not found Local DB command: 'localdbtool-upload'" << std::endl;
+            std::cerr << "           Try 'YARR/localdb/setup_db.sh' to set Local DB command and 'localdbtool-upload cache' to upload result data." << std::endl;
+            dbF << resultDir << std::endl;
+        } else {
+            cmd = "localdbtool-upload init --database "+dbCfgPath;
+            if (system(cmd.c_str())==0) {
+                cmd = "localdbtool-upload scan "+resultDir+" --log &";
+                system(cmd.c_str());
+                std::cout << "#DB INFO# Uploading in the back ground." << std::endl;
+            } else {
+                std::cerr << "           Try 'localdbtool-upload cache' to upload result data in the good connection to Local DB Server." << std::endl;
+                dbF << resultDir << std::endl;
+            }
+        }
+        dbF.close();
     }
     delete database;
 
@@ -706,6 +679,7 @@ int main(int argc, char *argv[]) {
 void printHelp() {
     std::string home = getenv("HOME");
     std::string dbDirPath = home+"/.yarr/localdb";
+
     std::cout << "Help:" << std::endl;
     std::cout << " -h: Shows this." << std::endl;
     std::cout << " -s <scan_type> : Scan config" << std::endl;
@@ -719,9 +693,9 @@ void printHelp() {
     std::cout << " -m <int> : 0 = pixel masking disabled, 1 = start with fresh pixel mask, default = pixel masking enabled" << std::endl;
     std::cout << " -k: Report known items (Scans, Hardware etc.)\n";
     std::cout << " -W: Enable using Local DB." << std::endl;
-    std::cout << " -d: <database.json> Provide database configuration. (Default " << dbDirPath << "/database.json after setting by YARR/localdb/setting/setup_db.sh)" << std::endl;
-    std::cout << " -u: <user.json> Provide user configuration. (Default " << dbDirPath << "/user.json after setting by YARR/localdb/setting/setup_db.sh)" << std::endl;
-    std::cout << " -i: <site.json> Provide site configuration. (Default " << dbDirPath << "/site.json after setting by YARR/localdb/setting/setup_db.sh)" << std::endl;
+    std::cout << " -d: <database.json> Provide database configuration. (Default " << dbDirPath << "/etc/localdb/database.json" << std::endl;
+    std::cout << " -i: <site.json> Provide site configuration. (Default " << dbDirPath << "/etc/localdb/site.json" << std::endl;
+    std::cout << " -u: <user.json> Provide user configuration. (Default " << dbDirPath << "/etc/localdb/${USER}_user.json" << std::endl;
 }
 
 void listChips() {

@@ -110,29 +110,6 @@ class DBHandler {
         void getTestRunData(std::string /*i_tr_oid_str*/,
                             std::string /*i_serial_number*/, 
                             int /*i_time*/);
-        /// chaching scheme
-        void cacheUser(std::string /*i_user_path*/);
-        void cacheSite(std::string /*i_address_path*/);
-        void cacheConnCfg(std::vector<std::string> /*i_conn_paths*/); 
-        void cacheTestRun(std::string /*i_test_type*/, 
-                          int /*i_run_number*/, 
-                          int /*i_target_charge*/, 
-                          int /*i_target_tot*/,
-                          int /*i_start_time*/,
-                          int /*i_finish_time*/,
-                          std::string /*i_command*/);
-        void cacheConfig(std::string /*i_ctr_oid_str*/, 
-                         std::string /*i_file_path*/, 
-                         std::string /*i_filename*/,
-                         std::string /*i_title*/,
-                         std::string /*i_collection*/); 
-        void cacheAttachment(std::string /*i_ctr_oid_str*/, 
-                             std::string /*i_file_path*/, 
-                             std::string /*i_histo_name*/);
-        void cacheDCSCfg(std::string /*i_dcs_path*/,
-                         std::string /*i_tr_path*/);
-        void cacheDBCfg();
-
         /// check data function
         void checkFile(std::string /*i_file_path*/,
                        std::string i_description="");
@@ -150,7 +127,7 @@ class DBHandler {
         json checkDBCfg(std::string /*i_db_path*/); 
         json checkConnCfg(std::string /*i_conn_path*/); 
         json checkUserCfg(std::string /*i_user_path*/);
-        json checkSiteCfg(std::string /*i_address_path*/);
+        json checkAddressCfg(std::string /*i_address_path*/);
         void checkDCSCfg(std::string /*i_dcs_path*/,
                          std::string /*i_num*/,
                          json /*i_json*/); 
@@ -178,11 +155,6 @@ class DBHandler {
         std::string m_user_oid_str;
         std::string m_site_oid_str;
         std::string m_chip_type;
-        std::string m_log_dir;
-        std::string m_log_path;
-        std::string m_cache_path;
-        std::string m_cache_dir;
-        std::string m_localdb_dir;
         std::string m_tr_oid_str;
 
         std::vector<std::string> m_stage_list;
@@ -192,14 +164,10 @@ class DBHandler {
         std::vector<std::string> m_histo_names;
         std::vector<std::string> m_tr_oid_strs;
         std::vector<std::string> m_serial_numbers;
-        std::vector<std::string> m_chip_names;
-        std::vector<std::string> m_chip_cfg_paths;
 
         double m_db_version;
         bool DB_DEBUG;
 
-        json m_log_json;
-        json m_cache_json;
         json m_conn_json;
         int counter;
 };

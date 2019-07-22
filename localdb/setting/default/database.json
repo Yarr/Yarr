@@ -2,7 +2,6 @@
     "hostIp": "DBIP",
     "hostPort": "DBPORT",
     "dbName": "DBNAME",
-    "cachePath": "CACHE",
     "stage": [
         "Bare Module",
         "Wire Bonded",
