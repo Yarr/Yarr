@@ -13,7 +13,7 @@
       "2": {
         "algorithm": "L1Analysis"
       },
-      "n_count": 2
+      "n_count": 1
     },
     "histogrammer": {
       "0": {
@@ -86,7 +86,12 @@
         "LatencyConfig": 48,
         "GlobalPulseRt": 16384,
         "DiffVth1":500,
-        "LinVth": 500
+        "LinVth": 500,
+        "EnCoreColLin1": 0,
+        "EnCoreColLin2": 0,
+        "EnCoreColDiff1": 0,
+        "EnCoreColDiff2": 0
+
     }
   }
 }

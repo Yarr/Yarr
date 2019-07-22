@@ -7,13 +7,6 @@ add_compile_options(-Wfatal-errors)
 add_compile_options(-Wno-deprecated)
 add_compile_options(-std=c++17)
 
-# Check if mongocxx exist
-string(FIND "$ENV{CPATH}" "rh-mongodb36" MONGOCXX_RESULT)
-if(NOT ${MONGOCXX_RESULT} EQUAL -1)
-    set(ENABLE_MONGODB ON)
-    option(MONGOCXX_INCLUDE "Use Mongocxx driver" ON)
-endif()
-
 # Add -fPIC for (e.g. linking to shared libraries)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -40,8 +33,10 @@ endforeach()
 add_library(Yarr STATIC ${LibSrcFiles})
 add_dependencies(Yarr tbb_2019 felixbase4 netio4 rogue)
 
+
 #add executables
 file(GLOB tools tools/*.cpp)
+
 
 foreach(target ${tools})
     get_filename_component(execname ${target} NAME_WE)

@@ -100,7 +100,7 @@ void Rd53aCmd::wrRegister(uint32_t chipId, uint32_t address, uint16_t value) {
     core->releaseFifo();
 }
 
-// TODO optimise this
+// TODO this does not seem to work?
 void Rd53aCmd::wrRegisterBlock(uint32_t chipId, uint32_t address, uint16_t value[6]) {
     // Header
     core->writeFifo(0x69696666);
