@@ -128,29 +128,29 @@ There are three ways to confirm the data uploaded.
    ```bash
    $ localdbtool-retrieve init
    $ localdbtool-retrieve remote add origin
-   Create remote repostiory "origin"
+   #DB INFO# Create remote repostiory "origin"
 
    Enter the URL of DB Server (e.g. mongodb://127.0.0.1:27017/), or "None" if not to be set.
-   mongodb://127.0.0.1:27017/    # Input the setting of Local DB Server
+   mongodb://127.0.0.1:27017/
 
    Enter the URL of the Viewer Application (e.g. http://127.0.0.1:5000/localdb/), or "None" if not to be set.
    http://127.0.0.1:5000/localdb/
 
-     remote: origin
-     DB Server: mongodb://127.0.0.1:27017/      (connection: True)
-     Viewer: http://127.0.0.1:5000/localdb/     (connection: False) 
+   #DB INFO#   remote: origin
+   #DB INFO#   DB Server: mongodb://127.0.0.1:27017/      (connection: True)
+   #DB INFO#   Viewer: http://127.0.0.1:5000/localdb/     (connection: True) 
 
    Are you sure that is correct? [y/n]
    y
 
    $ localdbtool-retrieve log
-   SUCCESS: The connection of Local DB mongodb://127.0.0.1:27017/ is GOOD.
-
+   #DB INFO# The connection of Local DB mongodb://127.0.0.1:27017/ is GOOD.
+   
    test data ID: XXXXXXXXXXXXXXXXXXXXXXXX 
-   User          : akubata at LBNL
-   Date          : 2019/07/24 03:48:35
+   User          : kubota at Tokyo_Institute_of_Technology
+   Date          : 2019/07/21 03:49:37
    Serial Number : DUMMY_0
-   Run Number    : 95
+   Run Number    : 5576
    Test Type     : std_digitalscan
    ```
 
@@ -361,6 +361,10 @@ $ ./bin/dbAccessor -R
 
 After that, you can check the result (registered component) in Module/Test Page of Viewer Application.
 
+### DCS Registration
+
+in edit
+
 ### Retrieve Tool
 
 You can restore data from Local DB by `localdbtool-retrieve`.
@@ -376,18 +380,18 @@ You can restore data from Local DB by `localdbtool-retrieve`.
 
    ```bash
    $ localdbtool-retrieve remote add origin
-   Create remote repostiory "origin"
- 
+   #DB INFO# Create remote repostiory "origin"
+
    Enter the URL of DB Server (e.g. mongodb://127.0.0.1:27017/), or "None" if not to be set.
-   mongodb://127.0.0.1:27017/    # Input the setting of Local DB Server
- 
+   mongodb://127.0.0.1:27017/
+
    Enter the URL of the Viewer Application (e.g. http://127.0.0.1:5000/localdb/), or "None" if not to be set.
    http://127.0.0.1:5000/localdb/
- 
-     remote: origin
-     DB Server: mongodb://127.0.0.1:27017/      (connection: True)
-     Viewer: http://127.0.0.1:5000/localdb/     (connection: True) 
- 
+
+   #DB INFO#   remote: origin
+   #DB INFO#   DB Server: mongodb://127.0.0.1:27017/      (connection: True)
+   #DB INFO#   Viewer: http://127.0.0.1:5000/localdb/     (connection: True) 
+
    Are you sure that is correct? [y/n]
    y
    ```
@@ -422,52 +426,79 @@ You can restore data from Local DB by `localdbtool-retrieve`.
 
    ```bash
    $ localdbtool-retrieve log
-   SUCCESS: The connection of Local DB mongodb://127.0.0.1:27017/ is GOOD.
-
+   #DB INFO# The connection of Local DB mongodb://127.0.0.1:27017/ is GOOD.
+   
    test data ID: XXXXXXXXXXXXXXXXXXXXXXXX 
-   User          : akubata at LBNL
-   Date          : 2019/07/24 03:48:35
+   User          : kubota at Tokyo_Institute_of_Technology
+   Date          : 2019/07/21 03:49:37
    Serial Number : DUMMY_0
-   Run Number    : 95
+   Run Number    : 5576
    Test Type     : std_digitalscan
+
    <ctrl+C>
    ```
    Additional options:
-   - `localdbtool-retrieve log <remote name>` : show the test data log of the <remote name>
+   - `localdbtool-retrieve log <remote name>` : show the test data log of the 'remote name'
    - `localdbtool-retrieve log <serial number>` : show the test data of the module ('serial number')
 
 - Fetch
 
    ```bash
    $ localdbtool-retrieve fetch
+   #DB INFO# The connection of Local DB mongodb://atlaspc5.kek.jp:27017/ is GOOD.
+   
+   #DB INFO# Download Component Data of Local DB locally...
+   --------------------------------------
+   Component (1)
+       Chip Type: FE-I4B
+       Module:
+           serial number: QU-09
+           component type: Module
+           chips: 4
+       Chip (1):
+           serial number: QU-09_chipId1
+           component type: Front-end Chip
+           chip ID: 1
+       Chip (2):
+           serial number: QU-09_chipId2
+           component type: Front-end Chip
+           chip ID: 2
+       Chip (3):
+           serial number: QU-09_chipId3
+           component type: Front-end Chip
+           chip ID: 3
+       Chip (4):
+           serial number: QU-09_chipId4
+           component type: Front-end Chip
+           chip ID: 4
+   --------------------------------------
+   <ctrl+C>
    ```
 
 - Check Out
 
    ```bash
-   $ localdbtool-retrieve checkout KEK-149
-   SUCCESS: The connection of Local DB mongodb://127.0.0.1:27017/ is GOOD.
+   $ localdbtool-retrieve checkout 
+   #DB INFO# The connection of Local DB mongodb://127.0.0.1:27017/ is GOOD.
 
-   test data information
-   - Date          : 2018/11/09 02:09:04
-   - Serial Number : KEK-149
-   - Run Number    : 1856
-   - Test Type     : thresholdscan
-   
-   controller      : Not found 
-   scan            : Not found 
-   chip(after)     : Found      --->   path: ./localdb-configs/chip1-chipCfg.json
-   chip(after)     : Found      --->   path: ./localdb-configs/chip2-chipCfg.json
-   chip(after)     : Found      --->   path: ./localdb-configs/chip3-chipCfg.json
-   chip(after)     : Found      --->   path: ./localdb-configs/chip4-chipCfg.json
-   connectivity    : Found      --->   path: ./localdb-configs/connectivity.json
+   #DB INFO# test data information
+   #DB INFO# - Date          : 2019/07/21 03:49:37
+   #DB INFO# - Serial Number : DUMMY_0
+   #DB INFO# - Run Number    : 5576
+   #DB INFO# - Test Type     : std_digitalscan
+   #DB INFO# 
+   #DB INFO# controller      : Found      --->   path: ./localdb-configs/controller.json
+   #DB INFO# scan            : Found      --->   path: ./localdb-configs/std_digitalscan.json
+   #DB INFO# chip(after)     : Found      --->   path: ./localdb-configs/chip0-chipCfg.json
+   #DB INFO# connectivity    : Found      --->   path: ./localdb-configs/connectivity.json
 
    $ls localdb-configs/
-   chip1-chipCfg.json  chip2-chipCfg.json  chip3-chipCfg.json  chip4-chipCfg.json  connectivity.json
+   chip0-chipCfg.json  connectivity.json  controller.json  std_digitalscan.json
    ```
    Additional options:
-   - `localdbtool-retrieve log <remote name>` : show the test data log of the <remote name>
-   - `localdbtool-retrieve log <serial number>` : show the test data of the module ('serial number')
+   - `localdbtool-retrieve checkout <remote name>` : restore the latest test config files from the 'remote name'
+   - `localdbtool-retrieve checkout <serial number>` : restore the latest test config files for 'serial number' from the 'remote name'
+   - `localdbtool-retrieve checkout <test data id>` : restore the test 'test data id' config files from the 'remote name'
 
 ## FAQ 
 
@@ -586,39 +617,19 @@ Connection check by `localdbtool-upload init` is failed by some reasons.
 
 ## Installation
 
-### Setup Local DB Server
+### Automatic Installation
 
-#### Pre Requirements
+Check [this page](https://github.com/jlab-hep/Yarr/wiki/Automatic-Installetion).
 
-- sudo user account (for installation)
-- git
-  ```
-  $ sudo yum install git
-  ```
-- net-tools
-  ```
-  $ sudo yum install net-tools
-  ```
+### Manual Installation
 
-#### Automatic Installation
+Check [this page](https://github.com/jlab-hep/Yarr/wiki/Manual-Installation).
 
-Check [the stap 'For DB Server' in this page](https://github.com/jlab-hep/Yarr/wiki/Automatic-Installetion).
+### Setup Viewer Application
 
-#### Manual Installation
+Check [this page](https://github.com/jlab-hep/Yarr/wiki/Setup-Viewer-Application).
 
-Check [the stap 'For DB Server' in this page](https://github.com/jlab-hep/Yarr/wiki/Manual-Installation).
-
-### Setup DAQ Server with Local DB
-
-#### Automatic Installation
-
-Check [the stap 'For DAQ Server' in this page](https://github.com/jlab-hep/Yarr/wiki/Automatic-Installetion).
-
-#### Manual Installation
-
-Check [the stap 'For DAQ Server' in this page](https://github.com/jlab-hep/Yarr/wiki/Manual-Installation).
-
-
+### Others
 
 in edit
 
