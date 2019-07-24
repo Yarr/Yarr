@@ -105,8 +105,7 @@ scl_sw=(
 )
 
 #install python packages by pip for the DB viewer
-cd ${setting_dir}/setting
-sudo pip3 install -r requirements.txt
+sudo pip3 install -r ${setting_dir}/requirements-pip.txt 
 /usr/bin/env python3 ${setting_dir}/check_python_modules.py
 if [ $? = 1 ]; then
     echo -e "[LDB] Failed, exit..."
@@ -114,7 +113,6 @@ if [ $? = 1 ]; then
 fi
 echo -e "[LDB] Done."
 echo -e ""
-cd -
 
 readme=${setting_dir}/setting/README.md
 
