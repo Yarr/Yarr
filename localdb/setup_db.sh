@@ -33,6 +33,12 @@ EOF
 }
 
 # Start
+if [ `echo ${0} | grep bash` ]; then
+    echo "DO NOT 'source'"
+    usage
+    return
+fi
+
 shell_dir=$(cd $(dirname ${BASH_SOURCE}); pwd)
 setting_dir=${shell_dir}/setting
 while getopts i:p:n:hr OPT
