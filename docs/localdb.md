@@ -6,7 +6,6 @@
 **Local Database (Local DB) is mainly data managing system for YARR based on MongoDB.**
 
 ### Base system
-Local DB system is based on following systems (to be installed by the installer):
 - [MongoDB](https://docs.mongodb.com/v3.6/) v3.6.3 
 - Python3 
 - PyROOT (executable by Python3) (<span style="color:red">PLAN: will be replaced by python module</span>)
@@ -15,7 +14,6 @@ This instruction supports the following OS:
 - centOS7
 
 ### Local DB Tools
-What we can do with Local DB system:
 |Function      |Tool Name           |
 |:------------:|:------------------:|
 |Storage System|Local DB            |
@@ -82,8 +80,6 @@ Also you can check ${HOME}/YARR/localdb/README for more information.
 
 #### Confirmation
 
-Check the connection to Local DB by `localdbtool-upload init`.
-
 ```bash
 $ source ~/.local/lib/localdb/enable    # to enable tab-completion
 $ localdbtool-upload init --database ~/.yarr/localdb/database.json 
@@ -111,6 +107,8 @@ $ bin/scanConsole \
 
 #### Confirmation
 
+There are three ways to confirm the data uploaded.
+
 1. Log File
    
    You can check if the upload is success in log file `${HOME}/.yarr/localdb/log/day.log`.
@@ -134,16 +132,9 @@ $ bin/scanConsole \
 
    Enter the URL of DB Server (e.g. mongodb://127.0.0.1:27017/), or "None" if not to be set.
    mongodb://127.0.0.1:27017/    # Input the setting of Local DB Server
-   [Connection Test]
-   # Check the connection to Local DB Server
-   SUCCESS: The connection of Local DB mongodb://127.0.0.1:27017/ is GOOD.
 
    Enter the URL of the Viewer Application (e.g. http://127.0.0.1:5000/localdb/), or "None" if not to be set.
    http://127.0.0.1:5000/localdb/
-   [Connection Test]
-   # Check the connection to the Viewer Application via web interface
-   WARNING: The connection of Viewer Application http://127.0.0.1:5000/localdb/ is BAD.
-            HTTPConnectionPool(host='127.0.0.1', port=5000): Max retries exceeded with url: /localdb/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7fe207c8b320>: Failed to establish a new connection: [Errno 111] Connection refused',))
 
      remote: origin
      DB Server: mongodb://127.0.0.1:27017/      (connection: True)
@@ -161,20 +152,6 @@ $ bin/scanConsole \
    Serial Number : DUMMY_0
    Run Number    : 95
    Test Type     : std_digitalscan
-   
-   test data ID: XXXXXXXXXXXXXXXXXXXXXXXX 
-   User          : akubata at LBNL
-   Date          : 2019/07/24 03:47:20
-   Serial Number : DUMMY_0
-   Run Number    : 94
-   Test Type     : std_digitalscan
-   
-   test data ID: XXXXXXXXXXXXXXXXXXXXXXXX 
-   User          : akubata at LBNL
-   Date          : 2019/07/24 03:45:03
-   Serial Number : DUMMY_0
-   Run Number    : 93
-   Test Type     : std_digitalscan
    ```
 
 3. Viewer Application
@@ -188,7 +165,7 @@ $ bin/scanConsole \
 
 You can store results associated with the registered module after the registration. <br>
 Prepare the component information file and user information file.<br>
-<span style="color:red">PLAN: to be prepared registeration page in Viewer Application</span> <br>
+(<span style="color:red">PLAN: to be deleted and will prepare the script to download the component data from ITk PD.</span>) <br>
 
 - user config file
 
@@ -283,32 +260,7 @@ And execute the following:
 ```bash
 $ ./bin/dbAccessor -C component.json -u user.json
 # dbAccessor with option 'C' can register component data. 
-
-#DB INFO# Local DB Server: mongodb://127.0.0.1:27017
-#DB INFO# ---> connection is good.
-#DB INFO# Component Data:
-#DB INFO#     Chip Type: FE-I4B
-#DB INFO#     Module:
-#DB INFO#         serial number: FEI4B-001
-#DB INFO#         component type: Module
-#DB INFO#         chips: 4
-#DB INFO#     Chip (1):
-#DB INFO#         serial number: FEI4B-001_chip1
-#DB INFO#         component type: Front-end Chip
-#DB INFO#         chip ID: 1
-#DB INFO#     Chip (2):
-#DB INFO#         serial number: FEI4B-001_chip2
-#DB INFO#         component type: Front-end Chip
-#DB INFO#         chip ID: 2
-#DB INFO#     Chip (3):
-#DB INFO#         serial number: FEI4B-001_chip3
-#DB INFO#         component type: Front-end Chip
-#DB INFO#         chip ID: 3
-#DB INFO#     Chip (4):
-#DB INFO#         serial number: FEI4B-001_chip4
-#DB INFO#         component type: Front-end Chip
-#DB INFO#         chip ID: 4
-#DB INFO# 
+<some texts>
 Do you continue to upload data into Local DB? [y/n]
 y
 #DB INFO# Completed the registration successfuly.
@@ -440,21 +392,7 @@ $ python3 check_python_modules.py
 [LDB] Welcome to Local Database Tools!
 [LDB] Check Python version ... 3.6 ... OK!
 [LDB] Check python modules: 
-	arguments...not found!
-	coloredlogs...not found!
-	Flask...not found!
-	Flask-PyMongo...OK!
-	Flask-HTTPAuth...OK!
-	pdf2image...not found!
-	Pillow...OK!
-	prettytable...not found!
-	pymongo...not found!
-	python-dateutil...OK!
-	PyYAML...not found!
-	pytz...OK!
-	plotly...not found!
-	matplotlib...not found!
-	numpy...not found!
+<some texts>
 	requests...not found
 	tzlocal...OK!
 ```
@@ -541,6 +479,38 @@ Connection check by `localdbtool-upload init` is failed by some reasons.
 ## Installation
 
 ### Setup Local DB Server
+
+#### Pre Requirements
+
+- sudo user account (for installation)
+- git
+  ```
+  $ sudo yum install git
+  ```
+- net-tools
+  ```
+  $ sudo yum install net-tools
+  ```
+
+#### Automatic Installation
+
+Check [the stap 'For DB Server' in this page](https://github.com/jlab-hep/Yarr/wiki/Automatic-Installetion).
+
+#### Manual Installation
+
+Check [the stap 'For DB Server' in this page](https://github.com/jlab-hep/Yarr/wiki/Manual-Installation).
+
+### Setup DAQ Server with Local DB
+
+#### Automatic Installation
+
+Check [the stap 'For DAQ Server' in this page](https://github.com/jlab-hep/Yarr/wiki/Automatic-Installetion).
+
+#### Manual Installation
+
+Check [the stap 'For DAQ Server' in this page](https://github.com/jlab-hep/Yarr/wiki/Manual-Installation).
+
+
 
 in edit
 
