@@ -17,6 +17,10 @@ import signal
 import argparse 
 import yaml     # Read YAML config file
 
+# log
+from logging import getLogger
+logger = getLogger("Log").getChild("sub")
+
 global url
 
 def getJson(viewer_url, params={}):
@@ -24,11 +28,11 @@ def getJson(viewer_url, params={}):
     try:
         r_json = response.json()
     except:
-        print('ERROR: Something wrong in url and could not get json data')
+        logger.error('Something wrong in url and could not get json data')
         sys.exit()     
 
     if r_json.get('error'):
-        print('ERROR: {}'.format(r_json['message']))
+        logger.error(r_json['message'])
         sys.exit()
 
     return r_json
@@ -113,12 +117,12 @@ def __checkout(args, serialnumber=None, runid=None):
     viewer_url = '{0}/retrieve/testrun?testRun={1}'.format(url, r_json['testRun'])
     r_json = getJson(viewer_url)
     test_data = r_json 
-    print('test data information')
-    print('- Date          : {}'.format(test_data['datetime']))
-    print('- Serial Number : {}'.format(test_data['serialNumber']))
-    print('- Run Number    : {}'.format(test_data['runNumber']))
-    print('- Test Type     : {}'.format(test_data['testType']))
-    print('')
+    logger.info('test data information')
+    logger.info('- Date          : {}'.format(test_data['datetime']))
+    logger.info('- Serial Number : {}'.format(test_data['serialNumber']))
+    logger.info('- Run Number    : {}'.format(test_data['runNumber']))
+    logger.info('- Test Type     : {}'.format(test_data['testType']))
+    logger.info('')
 
     # make directory
     if not args.directory: dir_path = './localdb-configs'
@@ -142,13 +146,13 @@ def __checkout(args, serialnumber=None, runid=None):
                 } 
                 test_data['path'][chip['component']] = 'chip{0}-{1}'.format(test_data['geomId'][chip['component']], r_json['filename'])
                 config_json.append(config_data)
-                print('{0:<15} : {1:<10} --->   path: {2}'.format(config['name'], r_json['data'], file_path))
+                logger.info('{0:<15} : {1:<10} --->   path: {2}'.format(config['name'], r_json['data'], file_path))
             else: 
-                print('{0:<15} : {1:<10}'.format(config['name'], r_json['data']))
+                logger.info('{0:<15} : {1:<10}'.format(config['name'], r_json['data']))
             if config['col'] == 'testRun': break
  
     if component_type == 'Module':
-        print('{0:<15} : {1:<10} --->   path: {2}/{3}'.format('connectivity', 'Found', dir_path, 'connectivity.json'))
+        logger.info('{0:<15} : {1:<10} --->   path: {2}/{3}'.format('connectivity', 'Found', dir_path, 'connectivity.json'))
         conn_json = {
             'stage': 'Testing',
             'chipType': chip_type,
@@ -163,11 +167,12 @@ def __checkout(args, serialnumber=None, runid=None):
             })
         for chip in chip_data:
             chip_json = {
-                'chipId': test_data['chipId'][chip['component']],
-                'geomId': test_data['geomId'][chip['component']],
-                'config': test_data['path'][chip['component']],
-                'tx': test_data['tx'][chip['component']],
-                'rx': test_data['rx'][chip['component']]
+                'serialNumber': test_data['chips']['serialNumber'][chip['component']],
+                'chipId': test_data['chips']['chipId'][chip['component']],
+                'geomId': test_data['chips']['geomId'][chip['component']],
+                'config': test_data['chips']['path'][chip['component']],
+                'tx': test_data['chips']['tx'][chip['component']],
+                'rx': test_data['chips']['rx'][chip['component']]
             }
             conn_json['chips'].append(chip_json)
         config_data = {
@@ -200,7 +205,23 @@ def __fetch(args, remote):
 
     for module in r_json['modules']:
         if not module == '':
-            remote_file.write('{}\n'.format(module))
+            remote_file.write('{}\n'.format(module['serialNumber']))
     remote_file.close()
+    logger.info('Download Component Data of Local DB locally...')
+    for j, module in enumerate(r_json['modules']):
+        printLog('--------------------------------------')
+        printLog('Component ({})'.format(j+1))
+        printLog('    Chip Type: {}'.format(module['chipType']))
+        printLog('    Module:')
+        printLog('        serial number: {}'.format(module['serialNumber']))
+        printLog('        component type: {}'.format(module['componentType']))
+        printLog('        chips: {}'.format(len(module['chips'])))
+        for i, chip in enumerate(module['chips']):
+            printLog('    Chip ({}):'.format(i+1))
+            printLog('        serial number: {}'.format(chip['serialNumber']))
+            printLog('        component type: {}'.format(chip['componentType']))
+            printLog('        chip ID: {}'.format(chip['chipId']))
+    printLog('--------------------------------------')
+    printLog('Done.')
 
     sys.exit()

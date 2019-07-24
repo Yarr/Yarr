@@ -167,94 +167,94 @@ You can store results associated with the registered module after the registrati
 Prepare the component information file and user information file.<br>
 (<span style="color:red">PLAN: to be deleted and will prepare the script to download the component data from ITk PD.</span>) <br>
 
-- user config file
+- user config file (json)
 
-  **Required information**
-  - userName: your name (e.g. "John Doe")
-  - institution: institution you belong (e.g. "ABC Laboratory")
-  - description: description for user account (e.g. "account for testbeam")
+   **Required information**
+   - userName: your name (e.g. "John Doe")
+   - institution: institution you belong (e.g. "ABC Laboratory")
+   - description: description for user account (e.g. "account for testbeam")
+ 
+   <details><summary>user.json</summary><div>
+ 
+   ```json
+   {
+     "userName": "FIRSTNAME LASTNAME",
+     "institution": "INSTITUTION",
+     "description": "default"
+   } 
+   ```
+ 
+   </div></details>
 
-  <details><summary>user.json</summary><div>
+- component config file (json)
 
-  ```json
-  {
-    "userName": "FIRSTNAME LASTNAME",
-    "institution": "INSTITUTION",
-    "description": "default"
-  } 
-  ```
-
-  </div></details>
-
-- component config file (RD53A)
-
-  <span style="color:red">One file for one module!</span> 
-
-  **Required information**
-  - module.serialNumber: serial number of the module
-  - module.componentType: "Module"
-  - chipType: "FEI4B" or "RD53A"
-  - chips: chips on the module
-    - chips.i.serialNumber: serial number of the chip
-    - chips.i.componentType: "Front-end Chip"
-    - chips.i.chipId: chipID must be "int"
-
-  <details><summary>component.json for RD53A</summary><div>
-
-    ```json
-    {
-        "module": {
-            "serialNumber": "RD53A-001",
-            "componentType": "Module"
-        },
-        "chipType" : "RD53A",
-        "chips" : [
-            {
-                "serialNumber": "RD53A-001_chip1",
-                "componentType": "Front-end Chip",
-                "chipId": 0
-            }
-        ]
-    }
-    ```
-
-  </div></details>
-
-  <details><summary>component.json for FEI4B</summary><div>
-
-    ```json
-    {
-        "module": {
-            "serialNumber": "FEI4B-001",
-            "componentType": "Module"
-        },
-        "chipType" : "FEI4B",
-        "chips" : [
-            {
-                "serialNumber": "FEI4B-001-chip1",
-                "componentType": "Front-end Chip",
-                "chipId": 1
-            },
-            {
-                "serialNumber": "FEI4B-001-chip2",
-                "componentType": "Front-end Chip",
-                "chipId": 2
-            },
-            {
-                "serialNumber": "FEI4B-001-chip3",
-                "componentType": "Front-end Chip",
-                "chipId": 3
-            },
-            {
-                "serialNumber": "FEI4B-001-chip4",
-                "componentType": "Front-end Chip",
-                "chipId": 4
-            }
-        ]
-    }
-    ```
-
-  </div></details>
+   <span style="color:red">One file for one module!</span> 
+ 
+   **Required information**
+   - module.serialNumber: serial number of the module
+   - module.componentType: "Module"
+   - chipType: "FEI4B" or "RD53A"
+   - chips: chips on the module
+     - chips.i.serialNumber: serial number of the chip
+     - chips.i.componentType: "Front-end Chip"
+     - chips.i.chipId: chipID must be "int"
+ 
+   <details><summary>component.json for RD53A</summary><div>
+ 
+     ```json
+     {
+         "module": {
+             "serialNumber": "RD53A-001",
+             "componentType": "Module"
+         },
+         "chipType" : "RD53A",
+         "chips" : [
+             {
+                 "serialNumber": "RD53A-001_chip1",
+                 "componentType": "Front-end Chip",
+                 "chipId": 0
+             }
+         ]
+     }
+     ```
+ 
+   </div></details>
+ 
+   <details><summary>component.json for FEI4B</summary><div>
+ 
+     ```json
+     {
+         "module": {
+             "serialNumber": "FEI4B-001",
+             "componentType": "Module"
+         },
+         "chipType" : "FEI4B",
+         "chips" : [
+             {
+                 "serialNumber": "FEI4B-001-chip1",
+                 "componentType": "Front-end Chip",
+                 "chipId": 1
+             },
+             {
+                 "serialNumber": "FEI4B-001-chip2",
+                 "componentType": "Front-end Chip",
+                 "chipId": 2
+             },
+             {
+                 "serialNumber": "FEI4B-001-chip3",
+                 "componentType": "Front-end Chip",
+                 "chipId": 3
+             },
+             {
+                 "serialNumber": "FEI4B-001-chip4",
+                 "componentType": "Front-end Chip",
+                 "chipId": 4
+             }
+         ]
+     }
+     ```
+ 
+   </div></details>
 
 And execute the following: 
 ```bash
@@ -272,79 +272,79 @@ This can register the components data written in component.json.
 
 Connecivity config file should be prepared properly.
 
-- connectivity config
+- connectivity config (json)
 
-  **Required information**
-  - stage: the test stage for the module, should be selected from the stage list written in [database.json](https://github.com/jlab-hep/Yarr/wiki/database-config-file)
-  - module.serialNumber: serial number of the module
-  - chipType: "FEI4B" or "RD53A"
-  - chips: chips on the module
-    - chips.i.serialNumber: serial number of the chip
-    - chips.i.config: path to chip config file
-    - chips.i.tx: must be "int"
-    - chips.i.rx: must be "int"
-
-  <details><summary>connectivity.json for RD53A</summary><div>
-
-  ```json
-  {
-      "stage": "Testing",
-      "module": {
-          "serialNumber": "RD53A-001"
-      },
-      "chipType" : "RD53A",
-      "chips" : [
-          {
-              "serialNumber": "RD53A-001_chip1",
-              "config" : "configs/defaults/default_rd53a.json",
-              "tx" : 0,
-              "rx" : 0
-          }
-      ]
-  }
-  ```
-
-  </div></details>
-
-  <details><summary>connectivity.json for FEI4B</summary><div>
-
-  ```json
-  {
-      "stage": "Testing",
-      "module": {
-          "serialNumber": "FEI4B-001"
-      },
-      "chipType" : "FEI4B",
-      "chips" : [
-          {
-              "serialNumber": "FEI4B-001-chip1",
-              "config" : "configs/chip1.json",
-              "tx" : 0,
-              "rx" : 0
-          },
-          {
-              "serialNumber": "FEI4B-001-chip2",
-              "config" : "configs/chip2.json",
-              "tx" : 0,
-              "rx" : 1
-          },
-          {
-              "serialNumber": "FEI4B-001-chip3",
-              "config" : "configs/chip3.json",
-              "tx" : 0,
-              "rx" : 2
-          },
-          {
-              "serialNumber": "FEI4B-001-chip4",
-              "config" : "configs/chip4.json",
-              "tx" : 0,
-              "rx" : 3
-          }
-      ]
-  }
-  ```
-
-  </div></details>
+   **Required information**
+   - stage: the test stage for the module, should be selected from the stage list written in [database.json](https://github.com/jlab-hep/Yarr/wiki/database-config-file)
+   - module.serialNumber: serial number of the module
+   - chipType: "FEI4B" or "RD53A"
+   - chips: chips on the module
+     - chips.i.serialNumber: serial number of the chip
+     - chips.i.config: path to chip config file
+     - chips.i.tx: must be "int"
+     - chips.i.rx: must be "int"
+ 
+   <details><summary>connectivity.json for RD53A</summary><div>
+ 
+   ```json
+   {
+       "stage": "Testing",
+       "module": {
+           "serialNumber": "RD53A-001"
+       },
+       "chipType" : "RD53A",
+       "chips" : [
+           {
+               "serialNumber": "RD53A-001_chip1",
+               "config" : "configs/defaults/default_rd53a.json",
+               "tx" : 0,
+               "rx" : 0
+           }
+       ]
+   }
+   ```
+ 
+   </div></details>
+ 
+   <details><summary>connectivity.json for FEI4B</summary><div>
+ 
+   ```json
+   {
+       "stage": "Testing",
+       "module": {
+           "serialNumber": "FEI4B-001"
+       },
+       "chipType" : "FEI4B",
+       "chips" : [
+           {
+               "serialNumber": "FEI4B-001-chip1",
+               "config" : "configs/chip1.json",
+               "tx" : 0,
+               "rx" : 0
+           },
+           {
+               "serialNumber": "FEI4B-001-chip2",
+               "config" : "configs/chip2.json",
+               "tx" : 0,
+               "rx" : 1
+           },
+           {
+               "serialNumber": "FEI4B-001-chip3",
+               "config" : "configs/chip3.json",
+               "tx" : 0,
+               "rx" : 2
+           },
+           {
+               "serialNumber": "FEI4B-001-chip4",
+               "config" : "configs/chip4.json",
+               "tx" : 0,
+               "rx" : 3
+           }
+       ]
+   }
+   ```
+ 
+   </div></details>
 
 And run the `scanConsole`:
 
@@ -360,6 +360,114 @@ $ ./bin/dbAccessor -R
 ```
 
 After that, you can check the result (registered component) in Module/Test Page of Viewer Application.
+
+### Retrieve Tool
+
+You can restore data from Local DB by `localdbtool-retrieve`.
+
+- Initialize
+
+   ```bash
+   $ source ~/.local/lib/localdb/enable
+   $ localdbtool-retrieve init
+   ```
+
+- Add Local DB Configuration for retrieve tool
+
+   ```bash
+   $ localdbtool-retrieve remote add origin
+   Create remote repostiory "origin"
+ 
+   Enter the URL of DB Server (e.g. mongodb://127.0.0.1:27017/), or "None" if not to be set.
+   mongodb://127.0.0.1:27017/    # Input the setting of Local DB Server
+ 
+   Enter the URL of the Viewer Application (e.g. http://127.0.0.1:5000/localdb/), or "None" if not to be set.
+   http://127.0.0.1:5000/localdb/
+ 
+     remote: origin
+     DB Server: mongodb://127.0.0.1:27017/      (connection: True)
+     Viewer: http://127.0.0.1:5000/localdb/     (connection: True) 
+ 
+   Are you sure that is correct? [y/n]
+   y
+   ```
+
+   URL of DB Server: `mongodb://<IP address>:<port number>/`
+
+   - IP address : IP address (or host name) of the Local DB Server
+ 
+     It is '127.0.0.1' in the case that the Local DB Server working locally.<br>
+     If you want to access the another machine remotely, set IP address or host name of the machine of the Local DB Server.
+
+   - port number : Port number opened for the Local DB Server
+
+     It should be '27017' in default.<br>
+
+   URL of the Viewer Application: `http://<IP address>:<port number>/localdb/` or `http://<IP address>/localdb/`
+
+   - IP address : IP address (or host name) of the Server where Viewer Application running
+ 
+     It is '127.0.0.1' in the case that the Viewer Application working locally.<br>
+     If you want to access the another machine remotely, set IP address or host name of the machine of the Server where Viewer Application running.
+
+   - port number : Port number opened for the Viewer Application
+
+     It should be '5000' in default.<br>
+     It should not be needed if you access the another machine remotely.
+
+   'connection: True/False' shows if the connection to the Local DB Server/Viewer Application is stable or unstable. <br>
+   If the connection is False, you should check if Local DB Server/Viewer Application is working or if the url is correct.
+
+- Log
+
+   ```bash
+   $ localdbtool-retrieve log
+   SUCCESS: The connection of Local DB mongodb://127.0.0.1:27017/ is GOOD.
+
+   test data ID: XXXXXXXXXXXXXXXXXXXXXXXX 
+   User          : akubata at LBNL
+   Date          : 2019/07/24 03:48:35
+   Serial Number : DUMMY_0
+   Run Number    : 95
+   Test Type     : std_digitalscan
+   <ctrl+C>
+   ```
+   Additional options:
+   - `localdbtool-retrieve log <remote name>` : show the test data log of the <remote name>
+   - `localdbtool-retrieve log <serial number>` : show the test data of the module ('serial number')
+
+- Fetch
+
+   ```bash
+   $ localdbtool-retrieve fetch
+   ```
+
+- Check Out
+
+   ```bash
+   $ localdbtool-retrieve checkout KEK-149
+   SUCCESS: The connection of Local DB mongodb://127.0.0.1:27017/ is GOOD.
+
+   test data information
+   - Date          : 2018/11/09 02:09:04
+   - Serial Number : KEK-149
+   - Run Number    : 1856
+   - Test Type     : thresholdscan
+   
+   controller      : Not found 
+   scan            : Not found 
+   chip(after)     : Found      --->   path: ./localdb-configs/chip1-chipCfg.json
+   chip(after)     : Found      --->   path: ./localdb-configs/chip2-chipCfg.json
+   chip(after)     : Found      --->   path: ./localdb-configs/chip3-chipCfg.json
+   chip(after)     : Found      --->   path: ./localdb-configs/chip4-chipCfg.json
+   connectivity    : Found      --->   path: ./localdb-configs/connectivity.json
+
+   $ls localdb-configs/
+   chip1-chipCfg.json  chip2-chipCfg.json  chip3-chipCfg.json  chip4-chipCfg.json  connectivity.json
+   ```
+   Additional options:
+   - `localdbtool-retrieve log <remote name>` : show the test data log of the <remote name>
+   - `localdbtool-retrieve log <serial number>` : show the test data of the module ('serial number')
 
 ## FAQ 
 
