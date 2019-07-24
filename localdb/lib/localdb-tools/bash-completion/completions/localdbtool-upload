@@ -23,28 +23,62 @@ _localdbtool_upload() {
     else
         local dcs=""
     fi
-
-    if [ "${cword}" -eq 1 ]; then
-        COMPREPLY=( $(compgen -W "--scan --dcs --cache --comp" -- "${cur}") )
-    elif [ "${cword}" -eq 2 ]; then
-        if [ "${prev}" = "--scan" ]; then
+    case ${prev} in
+        "localdbtool-upload")
+            COMPREPLY=( $(compgen -W "init comp scan dcs cache check" -- "${cur}") )
+            return 0
+            ;;
+        "init") 
+            COMPREPLY=( $(compgen -W "--database --username --password --config" -- "${cur}") )
+            return 0
+            ;;
+        "scan"|"dcs") 
             compopt -o filenames
             COMPREPLY=( $(compgen -d -- $cur) )
-        elif [ "${prev}" = "--dcs" ]; then
-            COMPREPLY=( $(compgen -W "${dcs}" -- "${cur}") )
-        elif [ "${prev}" = "--cache" ]; then
-            COMPREPLY=( $(compgen -W "--username --password --config" -- "${cur}") )
-        elif [ "${prev}" = "--comp" ]; then
-            COMPREPLY=( $(compgen -W "$(ls --color=never .)" -- "${cur}") )
-        fi
-    elif [ "${cword}" -eq 3 ]; then
-        if [ "`echo ${runs} | grep ${prev}`" ]; then 
-            COMPREPLY=( $(compgen -W "--username --password --config" -- "${cur}") )
-        elif [ "`echo ${dcs} | grep ${prev}`" ]; then 
-            COMPREPLY=( $(compgen -W "--username --password --config" -- "${cur}") )
-        elif [ "`ls --color=never . | grep ${prev}`" ]; then
-            COMPREPLY=( $(compgen -W "$(ls --color=never ./${prev})" -- "${cur}") )
-        fi
-    fi
+            return 0
+            ;;
+        "cache")
+            COMPREPLY=( $(compgen -W "--log --user --site" -- "${cur}") )
+            return 0
+            ;;
+        "comp"|"--database"|"--config"|"--user"|"--site")
+            compopt -o filenames
+            COMPREPLY=( $(compgen -f -- $cur) )
+            return 0
+            ;;
+        "--username"|"--password"|"-h"|"--help"|"--log")
+            return 0
+            ;;
+        *)
+            COMPREPLY=( $(compgen -W "--database --username --password --config --user --site --log" -- "${cur}") )
+            return 0
+            ;;
+    esac
+    #if [ "${cword}" -eq 1 ]; then
+    #    COMPREPLY=( $(compgen -W "init comp scan dcs cache check" -- "${cur}") )
+    #elif [ "${cword}" -eq 2 ]; then
+    #    if [ "${prev}" = "init" ]; then
+    #        COMPREPLY=( $(compgen -W "--database --username --password --config" -- "${cur}") )
+    #    elif [ "${prev}" = "scan" ]; then
+    #        compopt -o filenames
+    #        COMPREPLY=( $(compgen -d -- $cur) )
+    #    elif [ "${prev}" = "dcs" ]; then
+    #        compopt -o filenames
+    #        COMPREPLY=( $(compgen -d -- $cur) )
+    #    elif [ "${prev}" = "cache" ]; then
+    #        COMPREPLY=( $(compgen -W "--log" -- "${cur}") )
+    #    elif [ "${prev}" = "comp" ]; then
+    #        compopt -o filenames
+    #        COMPREPLY=( $(compgen -f -- $cur) )
+    #    else
+    #        COMPREPLY=( $(compgen -W "--database --username --password --config --user --site --log" -- "${cur}") )
+    #    fi
+    #elif [ "${cword}" -eq 3 ]; then
+    #    COMPREPLY=( $(compgen -W "--database --username --password --config --user --site --log" -- "${cur}") )
+    #elif [ "${cword}" -eq 4 ]; then
+    #    if [ "${prev}" = "log" ]; then
+    #        COMPREPLY=( $(compgen -W "--database --username --password --config --user --site" -- "${cur}") )
+    #    fi
+    #fi
 }
 complete -F _localdbtool_upload localdbtool-upload

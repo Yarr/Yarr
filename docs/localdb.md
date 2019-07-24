@@ -16,10 +16,13 @@ This instruction supports the following OS:
 
 ### Local DB Tools
 What we can do with Local DB system:
-- Store result data: Local DB, Upload Tool
-- Restore data from Local DB: Retrieve Tool
-- Share data with another Local DB: Synchronization Tool
-- Chek data in browser: Viewer Application
+|Function      |Tool Name           |
+|:------------:|:------------------:|
+|Storage System|Local DB            |
+|Store Data    |Upload Tool         |
+|Restore Data  |Retrieve Tool       |
+|Share Data    |Synchronization Tool|
+|Check Data    |Viewer Application  |
 
 ## Quick Tutorial
 
@@ -27,9 +30,10 @@ You can store result data by YARR immediately following the tutorial.
 
 ### Setup Local DB with YARR
 
-Currently there are [another official repository for Local DB](https://gitlab.cern.ch/YARR/YARR/tree/devel-localdb) in [YARR](https://gitlab.cern.ch/YARR/YARR).
+Currently there are [another official repository for Local DB](https://gitlab.cern.ch/YARR/YARR/tree/devel-localdb) in [YARR](https://gitlab.cern.ch/YARR/YARR).<br>
+(<span style="color:red">PLAN: will be merged into the official repository</span>)
 
-```
+```bash
 $ cd YARR
 $ git checkout devel-localdb
 $ mkdir build-localdb
@@ -41,7 +45,7 @@ $ make install
 
 ### Setup Local DB Tools
 
-Set Local DB commands `localdbtool-upload` and `localdbtool-retrieve` in `${HOME}/.local/bin` by `setup_db.sh`.
+Set Local DB default config files and commands `localdbtool-upload` and `localdbtool-retrieve` in `${HOME}/.local/bin` by `setup_db.sh`.
 
 ```bash
 $ cd YARR
@@ -71,24 +75,23 @@ $ localdb/setup_db.sh
 
 <lots of text>
 This description is saved as ${HOME}/YARR/localdb/README
-
-$ source ~/.local/lib/localdb/enable
 ```
 
-If there are something wrong in this step, [FAQ]() should be helpful for solving it.<br>
+If there are something wrong in this step, [FAQ](#FAQ) should be helpful for solving it.<br>
 Also you can check ${HOME}/YARR/localdb/README for more information.
 
-### Confirmation
+#### Confirmation
 
 Check the connection to Local DB by `localdbtool-upload init`.
 
 ```bash
-$localdbtool-upload init --database ~/.yarr/localdb/database.json 
+$ source ~/.local/lib/localdb/enable    # to enable tab-completion
+$ localdbtool-upload init --database ~/.yarr/localdb/database.json 
 #INFO# Local DB Server: mongodb://127.0.0.1:27017
 #INFO# ---> connection is good.
 ```
 
-If there are some problems in the step, [FAQ]() should be helpful for solving it.
+If there are some problems in the step, [FAQ](#FAQ) should be helpful for solving it.
 
 ### scanConsole with Local DB
 
@@ -103,21 +106,81 @@ $ bin/scanConsole \
 <lots of text>
 #DB INFO# Local DB Server: mongodb://127.0.0.1:27017
 #DB INFO# ---> connection is good.
-#DB INFO# Uploading in the back ground.
+#DB INFO# Uploading in the back ground. (log: ~/.yarr/localdb/log/)
 ```
 
-You can check if the upload is success in log file `${HOME}/.yarr/localdb/log/day.log`.
+#### Confirmation
 
-```log
-2019-07-22 18:42:23,818 - Log - INFO: -----------------------
-2019-07-22 18:42:23,820 - Log - INFO: Local DB Server: mongodb://127.0.0.1:27017
-2019-07-22 18:42:23,822 - Log - INFO: ---> connection is good.
-2019-07-22 18:42:23,822 - Log - INFO: Cache Directory: ${HOME}/YARR/data/000047_std_digitalscan/
-2019-07-22 18:42:24,050 - Log - INFO: Success
-```
+1. Log File
+   
+   You can check if the upload is success in log file `${HOME}/.yarr/localdb/log/day.log`.
+   
+   ```log
+   2019-07-22 18:42:23,818 - Log - INFO: -----------------------
+   2019-07-22 18:42:23,820 - Log - INFO: Local DB Server: mongodb://127.0.0.1:27017
+   2019-07-22 18:42:23,822 - Log - INFO: ---> connection is good.
+   2019-07-22 18:42:23,822 - Log - INFO: Cache Directory: ${HOME}/YARR/data/000047_std_digitalscan/
+   2019-07-22 18:42:24,050 - Log - INFO: Success
+   ```
 
-Also you can check the test data in browser when Viewer Application is running.<br>
-Access "http://127.0.0.1:5000/localdb/" or "http://<IPaddress>/localdb".
+2. Retrieve Tool
+
+   You can check uploaded test data by `localdbtool-retrieve log` in CUI
+
+   ```bash
+   $ localdbtool-retrieve init
+   $ localdbtool-retrieve remote add origin
+   Create remote repostiory "origin"
+
+   Enter the URL of DB Server (e.g. mongodb://127.0.0.1:27017/), or "None" if not to be set.
+   mongodb://127.0.0.1:27017/    # Input the setting of Local DB Server
+   [Connection Test]
+   # Check the connection to Local DB Server
+   SUCCESS: The connection of Local DB mongodb://127.0.0.1:27017/ is GOOD.
+
+   Enter the URL of the Viewer Application (e.g. http://127.0.0.1:5000/localdb/), or "None" if not to be set.
+   http://127.0.0.1:5000/localdb/
+   [Connection Test]
+   # Check the connection to the Viewer Application via web interface
+   WARNING: The connection of Viewer Application http://127.0.0.1:5000/localdb/ is BAD.
+            HTTPConnectionPool(host='127.0.0.1', port=5000): Max retries exceeded with url: /localdb/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7fe207c8b320>: Failed to establish a new connection: [Errno 111] Connection refused',))
+
+     remote: origin
+     DB Server: mongodb://127.0.0.1:27017/      (connection: True)
+     Viewer: http://127.0.0.1:5000/localdb/     (connection: False) 
+
+   Are you sure that is correct? [y/n]
+   y
+
+   $ localdbtool-retrieve log
+   SUCCESS: The connection of Local DB mongodb://127.0.0.1:27017/ is GOOD.
+
+   test data ID: XXXXXXXXXXXXXXXXXXXXXXXX 
+   User          : akubata at LBNL
+   Date          : 2019/07/24 03:48:35
+   Serial Number : DUMMY_0
+   Run Number    : 95
+   Test Type     : std_digitalscan
+   
+   test data ID: XXXXXXXXXXXXXXXXXXXXXXXX 
+   User          : akubata at LBNL
+   Date          : 2019/07/24 03:47:20
+   Serial Number : DUMMY_0
+   Run Number    : 94
+   Test Type     : std_digitalscan
+   
+   test data ID: XXXXXXXXXXXXXXXXXXXXXXXX 
+   User          : akubata at LBNL
+   Date          : 2019/07/24 03:45:03
+   Serial Number : DUMMY_0
+   Run Number    : 93
+   Test Type     : std_digitalscan
+   ```
+
+3. Viewer Application
+
+   You can check uploaded test data in GUI when Viewer Application is running. <br>
+   Access "http://127.0.0.1:5000/localdb/" or "http://IPaddress/localdb" in browser.
 
 ## Advanced Tutorial
 
@@ -346,11 +409,138 @@ $ ./bin/dbAccessor -R
 
 After that, you can check the result (registered component) in Module/Test Page of Viewer Application.
 
-### FAQ 
+## FAQ 
 
-in edit
+### the detail of 'setup_db.sh'
 
-### Installation
+`setup_db.sh` can set Local DB commands and the default configuration files for Local DB.
+
+```bash
+$ cd YARR
+$ localdb/setup_db.sh
+[LDB] Check the exist site config...NG!
+
+[LDB] Enter the institution name where this machine is, or 'exit' ... 
+> INSTITUTION NAME
+```
+Additional command line arguements:
+    
+- **-h** : this, prints all available command line arguments
+- **-i  ``<IP address>``** : Set IP address of the Local DB Server (default: 127.0.0.1).
+- **-p  ``<port number>``** : Set port number of the Local DB Server (default: 27017).
+- **-n  ``<database name>``** : Set the Local DB Server Name (default: 'localdb').
+- **-r** : Rseet the all settings for Local DB.
+
+### '[LDB] Error checking python modules! Exit!'
+
+You are missing some python modules incuded in the requirements.<br>
+Check which python module missing by `python3 check_python_modules.py`
+```bash
+$ python3 check_python_modules.py 
+[LDB] Welcome to Local Database Tools!
+[LDB] Check Python version ... 3.6 ... OK!
+[LDB] Check python modules: 
+	arguments...not found!
+	coloredlogs...not found!
+	Flask...not found!
+	Flask-PyMongo...OK!
+	Flask-HTTPAuth...OK!
+	pdf2image...not found!
+	Pillow...OK!
+	prettytable...not found!
+	pymongo...not found!
+	python-dateutil...OK!
+	PyYAML...not found!
+	pytz...OK!
+	plotly...not found!
+	matplotlib...not found!
+	numpy...not found!
+	requests...not found
+	tzlocal...OK!
+```
+'\<module name\>...not found!' suggests that \<module name\> is missing,
+so install the module by `$ sudo pip3 install <module name>` or `$ pip3 install --user <module name>`.
+
+### '#DB ERROR# The connection of Local DB mongodb://127.0.0.1:27017 is BAD.'
+
+Connection check by `localdbtool-upload init` is failed by some reasons.
+
+1. Uncompleted the setup of Local DB Server
+
+   You can check is as following:
+   ```bash
+   $ mongo
+   # i. MongoDB not installed
+   bash: mongo: command not found
+   
+   # ii. MongoDB not started
+   <some texts>
+   exception: connect failed
+   ```
+
+   1. MongoDB not installed
+
+      You can setup Local DB Server automatically by the script:
+      ```bash
+      $ git clone https://github.com/jlab-hep/localDB-tools.git
+      $ cd localDB-tools/setting
+      $ sudo ./db_server_install.sh
+      ```
+      Check [Setup Local DB Server](#Setup-Local-DB-Server) for more detail.
+
+   2. MongoDB not started
+
+      You can start/restart/enable Mongo DB by systemctl (centOS7):
+      ```bash
+      $ systemctl restart mongod.service
+      $ systemctl enable mongod.service
+      ```
+
+2. Mistake Local DB Server Information
+
+   Confirm the database config file and set it properly.
+   ```json
+   {
+       "hostIp": "127.0.0.1",
+       "hostPort": "27000",
+       "dbName": "localdb",
+       "stage": [
+           "Bare Module",
+           "Wire Bonded",
+           "Potted",
+           "Final Electrical",
+           "Complete",
+           "Loaded",
+           "Parylene",
+           "Initial Electrical",
+           "Thermal Cycling",
+           "Flex + Bare Module Attachment",
+           "Testing"
+       ],
+       "environment": [
+           "vddd_voltage",
+           "vddd_current",
+           "vdda_voltage",
+           "vdda_current",
+           "hv_voltage",
+           "hv_current",
+           "temperature"
+       ],
+       "component": [
+           "Front-end Chip",
+           "Front-end Chips Wafer",
+           "Hybrid",
+           "Module",
+           "Sensor Tile",
+           "Sensor Wafer"
+       ]
+   }
+   ```
+   You might have to change 'hostIp' and 'hostPort' following your Local DB settings.
+
+## Installation
+
+### Setup Local DB Server
 
 in edit
 

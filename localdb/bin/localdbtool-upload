@@ -298,6 +298,8 @@ def __write_scan(cache_dir):
         finish_timestamp = start_timestamp
     register.__set_test_run_finish(scan_type, conns, run_number, target_charge, target_tot, finish_timestamp, command)
 
+    return True
+
 def __write_dcs(cache_dir):
     logger.debug('Local DB: Write cache DCS data: {}.'.format(cache_dir))
 
@@ -333,6 +335,8 @@ def __write_dcs(cache_dir):
         return True
 
     register.__dcs(tr_oid, dcslog_json['environments'])
+
+    return True
 
 def __clean(cache_dir, result):
     logger.debug('Local DB: Clean Up.')
