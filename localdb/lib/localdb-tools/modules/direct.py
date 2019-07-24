@@ -326,7 +326,7 @@ def __checkout(args, serialnumber=None, runid=None):
                 'serialNumber': test_data['chips']['serialNumber'][chip['component']],
                 'chipId': test_data['chips']['chipId'][chip['component']],
                 'geomId': test_data['chips']['geomId'][chip['component']],
-                'config': test_data['chips']['path'][chip['component']],
+                'config': test_data['path'][chip['component']],
                 'tx': test_data['chips']['tx'][chip['component']],
                 'rx': test_data['chips']['rx'][chip['component']]
             }
