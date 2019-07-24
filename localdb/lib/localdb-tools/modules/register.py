@@ -27,6 +27,7 @@ DB_DEBUG = False
 
 global localdb
 global localfs
+home = os.environ['HOME']
 max_server_delay = 1
 localdb = MongoClient("mongodb://127.0.0.1:27017", serverSelectionTimeoutMS=max_server_delay)['localdb']
 # local function
@@ -68,8 +69,8 @@ def addUser(i_oid, i_col):
             '_id': ObjectId(i_oid) 
         },{
             '$set': { 
-                'address': __global.m_site_oid,
-                'user_id': __global.m_user_oid
+                'address': __global.site_oid,
+                'user_id': __global.user_oid
             }
         }
     )
@@ -82,7 +83,22 @@ def alert(i_message, i_type='error'):
     elif i_type=='warning':
         logger.warning(i_message)
 
-    if i_type=='error': sys.exit()
+    if i_type=='error': 
+        file_path = ''
+        if __global.option=='scan': file_path = '{}/.yarr/run.dat'.format(home)
+        elif __global.option=='dcs': file_path = '{}/.yarr/dcs.dat'.format(home)
+        if not file_path=='':
+            if os.path.isfile(file_path):
+                with open(file_path,'r') as f:
+                    cache_list = f.read().splitlines()
+            else:
+                cache_list = []
+            cache_list.append(__global.dir_path)
+            cache_list = list(set(cache_list))
+            with open(file_path,'w') as f:
+                for line in cache_list:
+                    if not line or not line=='': f.write('{}\n'.format(line))
+        sys.exit()
 
 def toJson(i_file_path):
     logger.debug('\t\tLocal DB: Convert to json code from: {}'.format(i_file_path))
@@ -160,7 +176,7 @@ def __user(i_user_name, i_institution, i_user_identity):
         doc_value.update({
             'sys'      : {},
             'userType' : 'readWrite',
-            'dbVersion': __global.m_db_version
+            'dbVersion': __global.db_version
         })
         user_oid = localdb.user.insert(doc_value)
         addSys(str(user_oid), 'user')
@@ -181,7 +197,7 @@ def __site(i_address, i_hostname, i_site):
         doc_value.update({
             'sys'      : {},
             'name'     : i_hostname,
-            'dbVersion': __global.m_db_version
+            'dbVersion': __global.db_version
         })
         site_oid = localdb.institution.insert(doc_value)
         addSys(str(site_oid), 'institution')
@@ -200,11 +216,11 @@ def __component(i_serial_number, i_component_type, i_chip_id, i_chips):
     else:
         doc_value.update({
             'sys': {},
-            'chipType': __global.m_chip_type,
+            'chipType': __global.chip_type,
             'componentType': i_component_type,
             'children': i_chips,
             'chipId': i_chip_id,
-            'dbVersion': __global.m_db_version,
+            'dbVersion': __global.db_version,
             'address': '...',
             'user_id': '...'
         })
@@ -230,7 +246,7 @@ def __child_parent_relation(i_parent_oid, i_child_oid, i_chip_id):
             'child': i_child_oid,
             'chipId': i_chip_id,
             'status': 'active',
-            'dbVersion': __global.m_db_version
+            'dbVersion': __global.db_version
         })
         cpr_oid = localdb.childParentRelation.insert(doc_value)
         addSys(str(cpr_oid), 'childParentRelation')
@@ -242,8 +258,8 @@ def __conn_cfg(i_conn_path):
 
     conn_json = toJson(i_conn_path)
 
-    __global.m_chip_type = conn_json['chipType']
-    if __global.m_chip_type=='FEI4B': __global.m_chip_type = 'FE-I4B'
+    __global.chip_type = conn_json['chipType']
+    if __global.chip_type=='FEI4B': __global.chip_type = 'FE-I4B'
 
     module_is_exist = False
     chip_is_exist = False
@@ -303,7 +319,7 @@ def __config(i_serial_number, i_file_json, i_filename, i_title, i_col):
         else:
             cmp_oid = i_serial_number
 
-        for tr_oid in __global.m_tr_oids:
+        for tr_oid in __global.tr_oids:
             doc_value = { 
                 'component': cmp_oid,
                 'testRun': tr_oid
@@ -314,7 +330,7 @@ def __config(i_serial_number, i_file_json, i_filename, i_title, i_col):
 
     if i_col=='testRun':
         cfg_oid = __json_code(i_file_json, i_filename+'.json', i_title, 'gj')
-        for tr_oid in __global.m_tr_oids:
+        for tr_oid in __global.tr_oids:
             if tr_oid=='': continue
             addValue(tr_oid, i_col, i_title, cfg_oid)
     if i_col=='componentTestRun':
@@ -338,11 +354,11 @@ def __json_code(i_file_json, i_filename, i_title, i_type):
     doc_value = {
         'sys': {},
         'filename': i_filename,
-        'chipType': __global.m_chip_type,
+        'chipType': __global.chip_type,
         'title': i_title,
         'format': type_doc,
         'data_id': data_id,
-        'dbVersion': __global.m_db_version
+        'dbVersion': __global.db_version
     }
 
     oid = localdb.config.insert(doc_value)
@@ -372,8 +388,8 @@ def __grid_fs_file(i_file_json, i_file_path, i_filename, i_hash=''):
     else:
         binary = json.dumps(i_file_json, indent=4).encode('utf-8')
 
-    if i_hash=='': code = localfs.put( binary, filename=i_filename, dbVersion=__global.m_db_version ) 
-    else: code = localfs.put( binary, filename=i_filename, hash=i_hash, dbVersion=__global.m_db_version )
+    if i_hash=='': code = localfs.put( binary, filename=i_filename, dbVersion=__global.db_version ) 
+    else: code = localfs.put( binary, filename=i_filename, hash=i_hash, dbVersion=__global.db_version )
 
     return str(code)
 
@@ -388,7 +404,7 @@ def __attachment(i_serial_number, i_file_path, i_histo_name):
         else:
             cmp_oid = i_serial_number
 
-        for tr_oid in __global.m_tr_oids:
+        for tr_oid in __global.tr_oids:
             doc_value = { 
                 'component': cmp_oid,
                 'testRun': tr_oid
@@ -415,32 +431,20 @@ def __attachment(i_serial_number, i_file_path, i_histo_name):
                 }}
             )
 
-def __dcs(i_dcs_path, i_tr_path):
-    logger.debug('Local DB: Register Environment: {}'.format(i_dcs_path))
-
+def __dcs(i_tr_oid, i_env_json):
+    logger.debug('Local DB: Register Environment')
     
-    dcs_json = toJson(i_dcs_path)
-    tr_json = toJson(i_tr_path)
-
-    if __global.m_tr_oid=='':
-        message = 'Not found relational test run data in DB'
-        alert(message)
-    doc_value = { '_id': ObjectId(__global.m_tr_oid) }
+    doc_value = { '_id': ObjectId(i_tr_oid) }
     this_run = localdb.testRun.find_one(doc_value)
-    if this_run.get('environment','...')!='...':
-        message = 'Already registered dcs data to this test run data in DB'
-        alert(message)
-    if not 'environments' in dcs_json: return
 
     starttime = this_run['startTime'].timestamp()
     finishtime = this_run['finishTime'].timestamp()
 
-    env_json = dcs_json['environments']
     doc_value = {
-        'dbVersion': __global.m_db_version,
+        'dbVersion': __global.db_version,
         'sys': {}
     }
-    for env_j in env_json:
+    for env_j in i_env_json:
         if env_j['status']!='enabled': continue
         if not env_j['key'] in doc_value:
             doc_value.update({ env_j['key']: [] })
@@ -451,15 +455,15 @@ def __dcs(i_dcs_path, i_tr_path):
             extension = env_j['path'].split('.')[len(env_j['path'].split('.'))-1]
             if extension=='dat': separator = ' '
             elif extenstion=='csv': saparator = ','
-            env_file = open('{0}/{1}'.format(m_cache_json['logPath'],env_j['path']),'r')
+            env_file = open(env_j['path'],'r')
             key_values = []
             dates = []
             data_num = 0
             # key and num
-            env_key_line = env_file.readline()
-            env_num_line = env_file.readline()
+            env_key_line = env_file.readline().splitlines()[0]
+            env_num_line = env_file.readline().splitlines()[0]
             for j, tmp_key in enumerate(env_key_line.split(separator)):
-                if env_key==tmp_key and env_j['num']==env_num_line.split(separator)[j]:
+                if str(env_j['key'])==str(tmp_key) and int(env_j['num'])==int(env_num_line.split(separator)[j]):
                     key = j
                     break
             # mode
@@ -470,27 +474,28 @@ def __dcs(i_dcs_path, i_tr_path):
             env_setting = env_line.split(separator)[key]
             # value
             env_line = env_file.readline()
+
             while env_line:
-                if env_line.split(separator) < key: break
-                datetime = int(env_line.split(separator)[1])
+                if len(env_line.split(separator)) < key: break
+                date = int(env_line.split(separator)[1])
                 value = float(env_line.split(separator)[key])
                 if 'margin' in env_j:
-                    if starttime-datetime<env_j['margin'] and finishtime-datetime>env_j['margin']:
+                    if starttime-date<env_j['margin'] and finishtime-date>env_j['margin']:
                         array.append({
-                            'date': datetime.utcfromtimestamp(datetime),
+                            'date': datetime.utcfromtimestamp(date),
                             'value': value
                         })
                 else:
                     array.append({
-                        'date': datetime.utcfromtimestamp(datetime),
+                        'date': datetime.utcfromtimestamp(date),
                         'value': value
                     })
                 env_line = env_file.readline()
-            else:
-                array.append({
-                    'date': this_run['startTime'],
-                    'value': env_j['value']
-                })
+        else:
+            array.append({
+                'date': this_run['startTime'],
+                'value': env_j['value']
+            })
         doc_value[env_j['key']].append({
             'data': array,
             'description': env_j['description'],
@@ -500,7 +505,7 @@ def __dcs(i_dcs_path, i_tr_path):
         })
     oid = localdb.environment.insert(doc_value)
     addSys(str(oid), "environment");
-    addValue(__global.m_tr_oid, 'testRun', 'environment', str(oid))
+    addValue(i_tr_oid, 'testRun', 'environment', str(oid))
 
 def __component_test_run(i_conn_json, i_tr_oid, i_test_type, i_run_number):
     logger.debug('\tLocal DB: Register Com-Test Run')
@@ -561,7 +566,7 @@ def __component_test_run(i_conn_json, i_tr_oid, i_test_type, i_run_number):
             'beforeCfg': '...',
             'afterCfg': '...',
             'geomId': geom_id,
-            'dbVersion': __global.m_db_version
+            'dbVersion': __global.db_version
         }
         oid = localdb.componentTestRun.insert(doc_value)
         addSys(str(oid), 'componentTestRun')
@@ -594,14 +599,14 @@ def __test_run(i_test_type, i_run_number, i_target_charge, i_target_tot, i_time,
             'defects': [],
             'finishTime': start_time,
             'plots': [],
-            'chipType': __global.m_chip_type,
+            'chipType': __global.chip_type,
             'stage': '...',
             'ctrlCfg': '...',    
             'scanCfg': '...',    
             'environment': '...',
             'address': '...',
             'user_id': '...',
-            'dbVersion': __global.m_db_version
+            'dbVersion': __global.db_version
         })
         oid = localdb.testRun.insert(doc_value)
         addSys(str(oid), 'testRun')
@@ -610,7 +615,8 @@ def __test_run(i_test_type, i_run_number, i_target_charge, i_target_tot, i_time,
         timestamp = i_time;
         finish_time = datetime.utcfromtimestamp(timestamp)
         array = []
-        for histo_name in __global.m_histo_names: 
+        __global.histo_names = list(set(__global.histo_names))
+        for histo_name in __global.histo_names: 
             array.append(histo_name)
         doc_value = {
             'passed': True,
@@ -626,19 +632,20 @@ def __test_run(i_test_type, i_run_number, i_target_charge, i_target_tot, i_time,
 
     return str(oid)
 
-def __set_conn_cfg(i_conn_jsons, i_cache_dir):
+def __set_conn_cfg(i_conn_jsons, i_cache_dir, db_support):
     if DB_DEBUG: pring('\t\tLocal DB: Check Connectivity Config')
 
     if not type(i_conn_jsons)==type([]): i_conn_jsons=[i_conn_jsons]
+    conn_jsons = []
     for i, conn_json in enumerate(i_conn_jsons):
         # chip type
         __check_empty(conn_json, 'chipType', 'connectivity config')
-        __global.m_chip_type = conn_json['chipType']
-        if __global.m_chip_type=='FEI4B': __global.m_chip_type = 'FE-I4B'
+        __global.chip_type = conn_json['chipType']
+        if __global.chip_type=='FEI4B': __global.chip_type = 'FE-I4B'
            
         # module
         mo_oid = None
-        if 'module' in conn_json and __global.m_db_support==True:
+        if 'module' in conn_json and db_support==True:
             __check_empty(conn_json['module'], 'serialNumber', 'connectivity config')
             mo_oid = getComponent(conn_json['module']['serialNumber'])
             conn_json['dummy'] = False
@@ -652,10 +659,10 @@ def __set_conn_cfg(i_conn_jsons, i_cache_dir):
             chip_cfg_path = chip_json['config'].split('/')[len(chip_json['config'].split('/'))-1]
             chip_cfg_json = toJson('{0}/{1}.before'.format(i_cache_dir, chip_cfg_path))
             if not 'chipId' in chip_json:
-                if 'chipId' in chip_cfg_json[__global.m_chip_type]['Parameter']: 
-                    conn_json['chips'][j]['chipId'] = chip_cfg_json[__global.m_chip_type]['Parameter']['chipId']
-                elif 'ChipId' in chip_cfg_json[__global.m_chip_type]['Parameter']: 
-                    conn_json['chips'][j]['chipId'] = chip_cfg_json[__global.m_chip_type]['Parameter']['ChipId']
+                if 'chipId' in chip_cfg_json[__global.chip_type]['Parameter']: 
+                    conn_json['chips'][j]['chipId'] = chip_cfg_json[__global.chip_type]['Parameter']['chipId']
+                elif 'ChipId' in chip_cfg_json[__global.chip_type]['Parameter']: 
+                    conn_json['chips'][j]['chipId'] = chip_cfg_json[__global.chip_type]['Parameter']['ChipId']
                 else:
                     message = 'There are no chip Id in config file'
                     alert(message) 
@@ -674,18 +681,18 @@ def __set_conn_cfg(i_conn_jsons, i_cache_dir):
 
             conn_json['chips'][j]['geomId'] = chip_json.get('geomId', j)
 
-            if 'name' in chip_cfg_json[__global.m_chip_type]: 
-                conn_json['chips'][j]['name'] = chip_cfg_json[__global.m_chip_type]['name']
-            elif 'Name' in chip_cfg_json[__global.m_chip_type]['Parameter']:
-                conn_json['chips'][j]['name'] = chip_cfg_json[__global.m_chip_type]['Parameter']['Name']
+            if 'name' in chip_cfg_json[__global.chip_type]: 
+                conn_json['chips'][j]['name'] = chip_cfg_json[__global.chip_type]['name']
+            elif 'Name' in chip_cfg_json[__global.chip_type]['Parameter']:
+                conn_json['chips'][j]['name'] = chip_cfg_json[__global.chip_type]['Parameter']['Name']
             else:
                 conn_json['chips'][j]['name'] = 'NONE'
             
-        __global.m_conn_jsons.append(conn_json)
+        conn_jsons.append(conn_json)
         if 'stage' in conn_json:
             stage = conn_json['stage']
 
-    return __global.m_conn_jsons
+    return conn_jsons
 
 def __set_localdb(i_localdb):
     global localdb
@@ -711,7 +718,7 @@ def __set_user(i_json):
         institution = os.environ['HOSTNAME']
         user_identity = 'default'
 
-    __global.m_user_oid = __user(user_name, institution, user_identity)
+    __global.user_oid = __user(user_name, institution, user_identity)
 
 def __set_site(i_json):
     logger.debug('Local DB: Set site') 
@@ -731,7 +738,7 @@ def __set_site(i_json):
         hostname = os.environ['HOSTNAME']
         site = 'null'
 
-    __global.m_site_oid = __site(address, hostname, site);
+    __global.site_oid = __site(address, hostname, site);
 
 def __set_test_run_start(i_test_type, i_conn_jsons, i_run_number, i_target_charge, i_target_tot, i_timestamp, i_command):
     logger.debug('Local DB: Write Test Run (start)')
@@ -744,48 +751,46 @@ def __set_test_run_start(i_test_type, i_conn_jsons, i_run_number, i_target_charg
             addValue(tr_oid, 'testRun', 'stage', conn_json['stage'])
         if conn_json['dummy']==True:
             addValue(tr_oid, 'testRun', 'dummy', 'true', 'bool')
-        __global.m_tr_oids.append(tr_oid)
+        __global.tr_oids.append(tr_oid)
         __component_test_run(conn_json, tr_oid, i_test_type, i_run_number)
-        __global.m_serial_numbers.append(mo_serial_number)
 
     return
 
 def __set_test_run_finish(i_test_type, i_conn_jsons, i_run_number, i_target_charge, i_target_tot, i_timestamp, i_command):
     logger.debug('Local DB: Write Test Run (finish)')
 
-    __global.m_histo_names = list(set(__global.m_histo_names))
-    for tr_oid in __global.m_tr_oids:
+    for tr_oid in __global.tr_oids:
         __test_run(i_test_type, i_run_number, i_target_charge, i_target_tot, i_timestamp, '', 'finish', tr_oid)
     
     return
 
-def __set_config(i_tx, i_rx, i_file_json, i_filename, i_title, i_col, i_serial_number):
+def __set_config(i_tx, i_rx, i_file_json, i_filename, i_title, i_col, i_serial_number, i_conn_jsons):
     logger.debug('Local DB: Write Config Json: {}'.format(i_filename))
 
     if i_file_json=={}: return
 
     if i_serial_number!='': serial_number = i_serial_number
     else:
-        for conn_json in m_conn_jsons:
+        for conn_json in i_conn_jsons:
             for chip_json in conn_json['chips']:
                 if chip_json['tx']==i_tx and chip_json['rx']==i_rx: serial_number = chip_json['serialNumber']
     __config(serial_number, i_file_json, i_filename, i_title, i_col)
 
     return
 
-def __set_attachment(i_tx, i_rx, i_file_path, i_histo_name, i_serial_number):
+def __set_attachment(i_tx, i_rx, i_file_path, i_histo_name, i_serial_number, i_conn_jsons):
     logger.debug('Local DB: Write Attachment: {}'.format(i_file_path))
 
     if not os.path.isfile(i_file_path): return
 
     if i_serial_number!='': serial_number = i_serial_number
     else:
-        for conn_json in m_conn_jsons:
+        for conn_json in i_conn_jsons:
             for chip_json in conn_json['chips']:
                 if chip_json['tx']==i_tx and chip_json['rx']==i_rx: serial_number = chip_json['serialNumber']
     __attachment(serial_number, i_file_path, i_histo_name)
 
-    __global.m_histo_names.append(i_histo_name);
+    __global.histo_names.append(i_histo_name);
 
     return
 
@@ -809,7 +814,7 @@ def __check_conn_cfg(i_conn_path):
         alert(message)
     mo_serial_number = conn_json["module"]["serialNumber"]
     mo_component_type = conn_json["module"]["componentType"]
-    __check_list(mo_component_type, __global.m_cmp_list, 'component')
+    __check_list(mo_component_type, __global.cmp_list, 'component')
     # chip
     chips = []
     chipids = []
@@ -826,7 +831,7 @@ def __check_conn_cfg(i_conn_path):
         ch_serial_number = chip_conn_json['serialNumber']
         ch_component_type = chip_conn_json['componentType']
         ch_id = chip_conn_json['chipId']
-        __check_list(ch_component_type, __global.m_cmp_list, 'component')
+        __check_list(ch_component_type, __global.cmp_list, 'component')
         if ch_id in chipids:
             message = 'Conflict chip ID {0} in the same module {1}'.format(ch_id)
             alert(message)
@@ -861,32 +866,28 @@ def __check_empty(i_json, i_key, i_filename):
     return
 
 class __global:
-    m_chip_type = ''
-    m_user_oid = ''
-    m_site_oid = ''
-    m_tr_oids = []
-    m_tr_oid = ''
-    m_histo_names = []
-    m_serial_numbers = []
-    m_db_version = 1
-    m_conn_jsons = []
-    m_stage_list = []
-    m_env_list = []
-    m_cmp_list = []
-    m_db_support = True
-    m_logger = None
-    def init():
-        m_chip_type = ''
-        m_user_oid = ''
-        m_site_oid = ''
-        m_tr_oids = []
-        m_tr_oid = ''
-        m_histo_names = []
-        m_serial_numbers = []
-        m_db_version = 1
-        m_conn_jsons = []
-        m_stage_list = []
-        m_env_list = []
-        m_cmp_list = []
-        m_db_support = True
-        m_logger = None
+    chip_type = ''
+    user_oid = ''
+    site_oid = ''
+    tr_oids = []
+    tr_oid = ''
+    histo_names = []
+    db_version = 1
+    stage_list = []
+    env_list = []
+    cmp_list = []
+    dir_path = ''
+    option = ''
+    def clean():
+        chip_type = ''
+        user_oid = ''
+        site_oid = ''
+        tr_oids = []
+        tr_oid = ''
+        histo_names = []
+        db_version = 1
+        stage_list = []
+        env_list = []
+        cmp_list = []
+        dir_path = ''
+        option = ''

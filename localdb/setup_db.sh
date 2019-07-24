@@ -55,7 +55,7 @@ MODLIB=${HOME}/.local/lib/localdb-tools/modules
 ENABLE=${HOME}/.local/lib/localdb-tools/enable
 
 if [ ${reset} ]; then
-    echo -e "[LDB] Clean Local DB settings? [y/n]"
+    echo -e "[LDB] Clean Local DB settings:"
     echo -e "      -> remove Local DB Tools in ${BIN}"
     for i in `ls -1 ${shell_dir}/bin/`; do
         if [ -f ${BIN}/${i} ]; then
@@ -63,6 +63,7 @@ if [ ${reset} ]; then
         fi
     done
     echo -e "      -> remove Local DB files in ${dir}"
+    echo -e "Continue? [y/n]"
     read -p "> " answer
     while [ -z ${answer} ]; 
     do

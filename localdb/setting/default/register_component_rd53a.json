@@ -1,0 +1,14 @@
+{
+    "module": {
+        "serialNumber": "RD53A-001",
+        "componentType": "Module"
+    },
+    "chipType" : "RD53A",
+    "chips" : [
+        {
+            "serialNumber": "RD53A-001_chip1",
+            "componentType": "Front-end Chip",
+            "chipId": 0
+        }
+    ]
+}

@@ -170,7 +170,6 @@ int main(int argc, char *argv[]) {
                             break;
                     }
                     count++;
-
                 }
                 break;
             case 'W': // Write to DB
@@ -296,7 +295,7 @@ int main(int argc, char *argv[]) {
         }
         scanLog["dbCfg"] = dbCfg;
 
-        database->initialize(dbCfgPath, "scan"); 
+        database->initialize(dbCfgPath); 
         database->setUser(dbUserCfgPath);
         database->setSite(dbSiteCfgPath);
         std::cout << "-> Setting Connectivity Configs" << std::endl;
@@ -640,36 +639,7 @@ int main(int argc, char *argv[]) {
 
     // Register test info into database
     if (dbUse) {
-        database->cleanUp();
-
-        char path[1000];
-        std::string currentDir = getcwd(path, sizeof(path));
-        std::string resultDir;
-        if (outputDir.substr(0,1)==".") {
-            resultDir = currentDir + outputDir.substr(1);
-        } else {
-            resultDir = outputDir;
-        }
-        std::fstream dbF((home + "/.yarr/run.dat").c_str(), std::ios::out|std::ios::app);
-
-        std::string cmd = "localdbtool-upload test 2> /dev/null";
-        if (system(cmd.c_str())!=0) {
-            std::cerr << "#DB ERROR# Cannot upload result data into Local DB" << std::endl;
-            std::cerr << "           Not found Local DB command: 'localdbtool-upload'" << std::endl;
-            std::cerr << "           Try 'YARR/localdb/setup_db.sh' to set Local DB command and 'localdbtool-upload cache' to upload result data." << std::endl;
-            dbF << resultDir << std::endl;
-        } else {
-            cmd = "localdbtool-upload init --database "+dbCfgPath;
-            if (system(cmd.c_str())==0) {
-                cmd = "localdbtool-upload scan "+resultDir+" --log &";
-                system(cmd.c_str());
-                std::cout << "#DB INFO# Uploading in the back ground." << std::endl;
-            } else {
-                std::cerr << "           Try 'localdbtool-upload cache' to upload result data in the good connection to Local DB Server." << std::endl;
-                dbF << resultDir << std::endl;
-            }
-        }
-        dbF.close();
+        database->cleanUp("scan", outputDir);
     }
     delete database;
 

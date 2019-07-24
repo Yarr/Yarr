@@ -71,8 +71,9 @@ def __network_db(url):
     authentication = False
     max_server_delay = 1
     client = MongoClient(url, serverSelectionTimeoutMS=max_server_delay)
+    db = client['localdb']
     try:
-        client.server_info()
+        db.collection_names()
         print('SUCCESS: The connection of Local DB {} is GOOD.\n'.format(url))
         return True
     except errors.ServerSelectionTimeoutError as err:
@@ -81,24 +82,22 @@ def __network_db(url):
         return False
     except errors.OperationFailure as err:
         print('Need users authenticated.')
-
-    try:
-        global user
-        user = input('User name > ')
-        global pwd
-        pwd = getpass('Password > ')
-        db = client['localdb']
         try:
-            db.authenticate(user, pwd)
-            print('SUCCESS: The connection of Local DB {} is GOOD.\n'.format(url))
-            authentication = True
-            return True
-        except errors.OperationFailure as err: 
-            print('ERROR: Authentication failed.')
+            global user
+            user = input('User name > ')
+            global pwd
+            pwd = getpass('Password > ')
+            try:
+                db.authenticate(user, pwd)
+                print('SUCCESS: The connection of Local DB {} is GOOD.\n'.format(url))
+                authentication = True
+                return True
+            except errors.OperationFailure as err: 
+                print('ERROR: Authentication failed.')
+                sys.exit()
+        except KeyboardInterrupt:
+            print('')
             sys.exit()
-    except KeyboardInterrupt:
-        print('')
-        sys.exit()
 
 def __network_viewer(url):
     try:

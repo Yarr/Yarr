@@ -31,17 +31,11 @@ int main(int argc, char *argv[]){
     // Init parameters
     std::string dcs_path = "";
     std::string conn_path = "";
-    std::string file_path = "";
-    std::string test_path = "";
-    std::string config_id = "";
+    std::string scanlog_path = "";
     std::string serial_number = "";
-    std::string config_type = "";
-    std::string config_path = "";
-    std::string merge_config_path = "";
-    std::string get_type = "";
 
     int c;
-    while ((c = getopt(argc, argv, "hRUC:E:SDGMt:s:i:d:p:m:f:u:")) != -1 ){
+    while ((c = getopt(argc, argv, "hRC:E:Ms:m:i:d:u:")) != -1 ){
         switch (c) {
             case 'h':
                 printHelp();
@@ -58,32 +52,20 @@ int main(int argc, char *argv[]){
                 registerType = "Environment";
                 dcs_path = std::string(optarg);
                 break;
-            case 'S':
-                registerType = "Check";
-                break;
-            case 't':
-                test_path = std::string(optarg);
-                config_type = std::string(optarg);
-                get_type = std::string(optarg);
+            case 'M':
+                registerType = "Module";
                 break;
             case 's':
+                scanlog_path = std::string(optarg);
+                break;
+            case 'm':
                 serial_number = std::string(optarg);
                 break;
             case 'i':
-                config_id = std::string(optarg);
                 site_cfg_path = std::string(optarg);
                 break;
             case 'd':
                 cfg_path = std::string(optarg);
-                break;
-            case 'p':
-                config_path = std::string(optarg);
-                break;
-            case 'm':
-                merge_config_path = std::string(optarg);
-                break;
-            case 'f':
-                file_path = std::string(optarg);
                 break;
             case 'u':
                 user_cfg_path = std::string(optarg);
@@ -104,8 +86,6 @@ int main(int argc, char *argv[]){
     }
 
     if (registerType == "") printHelp();
-
-    DBHandler *database = new DBHandler();
 
     // register cache
     if (registerType == "Cache") {
@@ -130,45 +110,44 @@ int main(int argc, char *argv[]){
         }
         cmd = "localdbtool-upload comp "+conn_path+" --database "+cfg_path+" --user "+user_cfg_path+" --site "+site_cfg_path;
         system(cmd.c_str());
+        cmd = "localdbtool-upload check "+conn_path+" --database "+cfg_path+" --log &";
+        system(cmd.c_str());
         return 0;
     }
 
-    delete database;
     // cache DCS
     if (registerType == "Environment") {
-        if (test_path == "") {
-            std::cerr << "#DB ERROR# No test run file path given, please specify file path under -t option!" << std::endl;
+        DBHandler *database = new DBHandler();
+        if (scanlog_path == "") {
+            std::cerr << "#DB ERROR# No scan log file path given, please specify file path under -s option!" << std::endl;
+            return 1;
+        }
+        if (serial_number == "") {
+            std::cerr << "#DB ERROR# No module serial number given, please specify serial number under -m option!" << std::endl;
             return 1;
         }
         std::cout << "DBHandler: Register Environment:" << std::endl;
-	      std::cout << "\tenvironmental config file : " << dcs_path << std::endl;
+        std::cout << "\tenvironmental config file : " << dcs_path << std::endl;
 
-        if (serial_number!="") {
-            json tr_json;
-            std::ifstream tr_cfg_ifs(test_path);
-            if (!tr_cfg_ifs) {
-                std::cerr << "#DB ERROR# Not found the file.\n\tfile: " + test_path << std::endl;
-                return 1;
-            }
-            try {
-                tr_json = json::parse(tr_cfg_ifs);
-            } catch (json::parse_error &e) {
-                std::cerr << "#DB ERROR# Could not parse " << test_path << "\n\twhat(): " << e.what() << std::endl;
-                return 1;
-            }
-            tr_json["serialNumber"] = serial_number;
-
-            std::ofstream file_ofs(test_path);
-            file_ofs << std::setw(4) << tr_json;
-            file_ofs.close();
-        }
-
-        database->initialize(cfg_path, "dcs");
-        database->setDCSCfg(dcs_path, test_path);
-        database->cleanUp();
+        database->initialize(cfg_path);
+        database->setDCSCfg(dcs_path, scanlog_path, serial_number);
+        database->cleanUp("dcs");
 
         delete database;
     }
+
+    if (registerType == "Module") {
+        std::string cmd = "localdbtool-upload test 2> /dev/null";
+        if (system(cmd.c_str())!=0) {
+            std::cerr << "#ERROR# Not found Local DB command: 'localdbtool-upload'" << std::endl;
+            std::cerr << "        Set Local DB function by YARR/localdb/setup_db.sh'" << std::endl;
+            return 1;
+        }
+        cmd = "localdbtool-upload check "+conn_path+" --database "+cfg_path;
+        system(cmd.c_str());
+        return 0;
+    }
+
     return 0;
 }
 
@@ -177,8 +156,13 @@ void printHelp() {
     std::string dbDirPath = home+"/.yarr/localdb";
     std::cout << "Help:" << std::endl;
     std::cout << " -h: Shows this." << std::endl;
-    std::cout << " -d: <database.json> Provide database configuration. (Default " << dbDirPath << "/etc/localdb/database.json" << std::endl;
-    std::cout << " -i: <site.json> Provide site configuration. (Default " << dbDirPath << "/etc/localdb/site.json" << std::endl;
-    std::cout << " -u: <user.json> Provide user configuration. (Default " << dbDirPath << "/etc/localdb/${USER}_user.json" << std::endl;
+    std::cout << " -C <component.json> : Provide component connectivity configuration to register component data into Local DB." << std::endl;
+    std::cout << " -R: Upload data into Local DB from cache." << std::endl;
+    std::cout << " -E <dcs.json> : Provide DCS configuration to upload DCS data into Local DB." << std::endl;
+    std::cout << "     -m <module> : Provide module serial number." << std::endl;
+    std::cout << "     -s <scanLog.json> : Provide scan log file." << std::endl;
+    std::cout << " -d <database.json> : Provide database configuration. (Default: " << dbDirPath << "/database.json" << std::endl;
+    std::cout << " -i <site.json> : Provide site configuration. (Default: " << dbDirPath << "/site.json" << std::endl;
+    std::cout << " -u <user.json> : Provide user configuration. (Default: " << dbDirPath << "/user.json" << std::endl;
     std::cout << std::endl;
 }

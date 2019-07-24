@@ -28,8 +28,8 @@ _localdbtool_upload() {
         COMPREPLY=( $(compgen -W "--scan --dcs --cache --comp" -- "${cur}") )
     elif [ "${cword}" -eq 2 ]; then
         if [ "${prev}" = "--scan" ]; then
-            COMPREPLY=( $(compgen -W "${runs}" -- "${cur}") )
-            COMPREPLY+=( $(compgen -W "$(find . -type d|grep ./data/)" -- "${cur}") )
+            compopt -o filenames
+            COMPREPLY=( $(compgen -d -- $cur) )
         elif [ "${prev}" = "--dcs" ]; then
             COMPREPLY=( $(compgen -W "${dcs}" -- "${cur}") )
         elif [ "${prev}" = "--cache" ]; then

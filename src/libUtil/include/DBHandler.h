@@ -18,6 +18,7 @@
 #include <iomanip>
 #include <cctype> 
 #include <sys/stat.h>
+#include <unistd.h>
 #include "json.hpp"
 
 using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
@@ -33,12 +34,8 @@ class DBHandler {
           - hostIp: ip address of Local DB server
           - port: opened port number of Local DB server 
           - dbName: database name of Local DB (default: localdb)
-        * i_option: DB fucntion option
-          - db: access to MongoDB
-          - scan/dcs: store cache data
         ***/
-        void initialize(std::string /*i_db_cfg_path*/,
-                        std::string i_option="null");
+        void initialize(std::string /*i_db_cfg_path*/);
 
         /***
         Alert and write message in error log file
@@ -71,7 +68,8 @@ class DBHandler {
         void setSite(std::string /*i_address_path*/);
         void setConnCfg(std::vector<std::string> /*i_conn_paths*/); 
         void setDCSCfg(std::string /*i_dcs_path*/,
-                       std::string /*i_tr_path*/);
+                       std::string /*i_scanlog_path*/,
+                       std::string /*i_serial_number*/);
         void setTestRunStart(std::string /*i_test_type*/, 
                              std::vector<std::string> /*i_conn_paths*/,
                              int /*i_run_number*/, 
@@ -104,12 +102,10 @@ class DBHandler {
         /***
         Clean up veriables after scanConsole
         ***/
-        void cleanUp(std::string i_dir="");
+        void cleanUp(std::string /*i_option*/,
+                     std::string i_dir="");
 
     protected:
-        void getTestRunData(std::string /*i_tr_oid_str*/,
-                            std::string /*i_serial_number*/, 
-                            int /*i_time*/);
         /// check data function
         void checkFile(std::string /*i_file_path*/,
                        std::string i_description="");
@@ -131,10 +127,10 @@ class DBHandler {
         void checkDCSCfg(std::string /*i_dcs_path*/,
                          std::string /*i_num*/,
                          json /*i_json*/); 
-        void checkDCSLog(std::string /*i_log_path*/,
-                         std::string /*i_dcs_path*/,
-                         std::string /*i_key*/,
-                         int /*i_num*/); 
+        std::string checkDCSLog(std::string /*i_log_path*/,
+                                std::string /*i_dcs_path*/,
+                                std::string /*i_key*/,
+                                int /*i_num*/); 
 
         /// check json
         json toJson(std::string /*i_file_path*/,
@@ -150,12 +146,12 @@ class DBHandler {
         void mkdir(std::string /*i_dir_path*/);
       
     private:
-        std::string m_option;
         std::string m_db_cfg_path;
         std::string m_user_oid_str;
         std::string m_site_oid_str;
         std::string m_chip_type;
         std::string m_tr_oid_str;
+        std::string m_output_dir;
 
         std::vector<std::string> m_stage_list;
         std::vector<std::string> m_env_list;

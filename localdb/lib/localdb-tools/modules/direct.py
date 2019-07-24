@@ -13,7 +13,7 @@ import shutil
 import json
 
 import gridfs             
-from pymongo          import MongoClient
+from pymongo          import MongoClient, ASCENDING, DESCENDING
 from bson.objectid    import ObjectId 
 from datetime         import datetime, timezone, timedelta
 from dateutil.tz      import tzlocal
@@ -122,7 +122,8 @@ def __log(args, serialnumber=None):
             sys.exit()
         log_query.update({ 'address': str(this_site['_id']) })
 
-    run_entries = localdb.testRun.find(log_query).sort([( '$natural', -1 )])
+    #run_entries = localdb.testRun.find(log_query).sort([( '$natural', -1 )])
+    run_entries = localdb.testRun.find(log_query).sort([('startTime', DESCENDING)])
 
     r_json = { 'log': [] }
     if run_entries:
