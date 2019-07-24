@@ -16,6 +16,7 @@ bool rd53a_proc_registered =
 Rd53aDataProcessor::Rd53aDataProcessor() {
     verbose = true;
     m_input = NULL;
+    m_numThreads = std::thread::hardware_concurrency();
 }
 
 Rd53aDataProcessor::~Rd53aDataProcessor() {
@@ -35,7 +36,7 @@ void Rd53aDataProcessor::init() {
 void Rd53aDataProcessor::run() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
-    unsigned int numThreads = std::thread::hardware_concurrency();
+    unsigned int numThreads = m_numThreads;
     if (numThreads > 4) numThreads = 4;
     for (unsigned i=0; i<numThreads; i++) {
         thread_ptrs.emplace_back(new std::thread(&Rd53aDataProcessor::process, this));
