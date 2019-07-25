@@ -327,19 +327,19 @@ def __write_dcs(cache_dir):
     if tr_oid=='':
         logger.warning('Not found relational test run data in DB')
         return True
+    register.__global.tr_oids.append(tr_oid)
     doc_value = { '_id': ObjectId(tr_oid) }
     this_run = localdb.testRun.find_one(doc_value)
-    if this_run.get('environment','...')!='...':
-        register.__global.tr_oids.append(tr_oid)
+    if not this_run.get('environment','...')=='...':
         logger.warning('Already registered dcs data to this test run data in DB')
-        return True
+        return False
 
     register.__dcs(tr_oid, dcslog_json['environments'])
 
     return True
 
 def __clean(cache_dir, result):
-    logger.debug('Local DB: Clean Up.')
+    logger.debug('Local DB: Clean Up: {}.'.format(option))
 
     # cache list
     if option=='scan': file_path = '{}/.yarr/run.dat'.format(home)
@@ -356,15 +356,25 @@ def __clean(cache_dir, result):
     if not result==True:
         if cache_dir in cache_list: cache_list.remove(cache_dir)
     else:
-        for tr_oid in register.__global.tr_oids:
-            return_tr_oid = getTestRunData(tr_oid, '', '')
-            if not return_tr_oid=='':
-                logger.info('Success')
-                if cache_dir in cache_list: cache_list.remove(cache_dir)
-            else:
-                logger.error('Something wrong, check log file: {}'.format(logfile))
+        if option=='scan':
+            for tr_oid in register.__global.tr_oids:
+                return_tr_oid = getTestRunData(tr_oid, '', '')
+                if not return_tr_oid=='':
+                    logger.info('Success')
+                    if cache_dir in cache_list: cache_list.remove(cache_dir)
+                else:
+                    logger.error('Something wrong, check log file: {}'.format(logfile))
+        elif option=='dcs':
+            for tr_oid in register.__global.tr_oids:
+                doc_value = { '_id': ObjectId(tr_oid) }
+                this_run = localdb.testRun.find_one(doc_value)
+                if not this_run.get('environment','...')=='...':
+                    logger.info('Success')
+                    if cache_dir in cache_list: cache_list.remove(cache_dir)
+                else:
+                    logger.error('Something wrong, check log file: {}'.format(logfile))
 
-    os.remove(file_path)
+    if os.path.isfile(file_path): os.remove(file_path)
 
     with open(file_path,'w') as f:
         for line in cache_list:
@@ -507,6 +517,9 @@ def main():
         formatter = Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s')
         day = datetime.today().day
         logfile = '{0}/.yarr/localdb/log/{1}.log'.format(home, day)
+        for i in range(3):
+            past_logfile = '{0}/.yarr/localdb/log/{1}.log'.format(home, day+i+1)
+            if os.path.isfile(past_logfile): os.remove(past_logfile)
         handler = FileHandler(filename=logfile)
         handler.setFormatter(formatter)
         logger.addHandler(handler)
@@ -520,10 +533,10 @@ def main():
         logger.debug('Not set log file')
 
     if command[0]=='init':
-        if not args.database:
-            logger.error('Usage: localdbtool-upload init --database <path/to/database/config>')
-            sys.exit(1)
-        db_cfg = register.toJson(args.database)
+        if args.database:
+            db_cfg = register.toJson(args.database)
+        else:
+            db_cfg = register.toJson('{}/.yarr/localdb/database.json'.format(os.environ['HOME']))
         if not __init(db_cfg)==True: sys.exit(1)
         else: sys.exit(0)
     elif command[0]=='comp': 

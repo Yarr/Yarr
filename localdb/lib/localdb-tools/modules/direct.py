@@ -134,6 +134,13 @@ def __log(args, serialnumber=None):
             this_user = localdb.user.find_one( query )
             query = { '_id': ObjectId(run_entry['address']) }
             this_site = localdb.institution.find_one( query )
+            this_dcs = []
+            if not run_entry.get('environment','...')=='...': 
+                query = { '_id': ObjectId(run_entry['environment']) }
+                this_env = localdb.environment.find_one( query)
+                for key in this_env:
+                    if not key=='_id' and not key=='dbVersion' and not key=='sys':
+                        this_dcs.append(key)
             test_data = {
                 'user': this_user['userName'],
                 'site': this_site['institution'],
@@ -141,7 +148,8 @@ def __log(args, serialnumber=None):
                 'runNumber': run_entry['runNumber'],
                 'testType': run_entry['testType'],
                 'runId': str(run_entry['_id']),
-                'serialNumber': run_entry['serialNumber']
+                'serialNumber': run_entry['serialNumber'],
+                'environment': this_dcs
             }
             r_json['log'].append(test_data)
 
@@ -152,6 +160,11 @@ def __log(args, serialnumber=None):
         printLog('Serial Number : {0}'.format(test_data['serialNumber']))
         printLog('Run Number    : {0}'.format(test_data['runNumber']))
         printLog('Test Type     : {0}'.format(test_data['testType']))
+        if test_data.get('environment',[])==[]:
+            printLog('DCS Data      : NULL')
+        else:
+            for key in test_data.get('environment',[]):
+                printLog('DCS Data      : {}'.format(key))
         printLog('')
 
 def __checkout(args, serialnumber=None, runid=None):

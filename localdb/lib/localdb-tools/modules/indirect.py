@@ -74,6 +74,12 @@ def __log(args, serialnumber=None):
         printLog('Serial Number : {0}'.format(test_data['serialNumber']))
         printLog('Run Number    : {0}'.format(test_data['runNumber']))
         printLog('Test Type     : {0}'.format(test_data['testType']))
+        printLog('DCS Data      :')
+        if test_data.get('environment',[])==[]:
+            printLog('DCS Data      : NULL')
+        else:
+            for key in test_data.get('environment',[]):
+                printLog('DCS Data      : {}'.format(key))
         printLog('')
 
 def __checkout(args, serialnumber=None, runid=None):
