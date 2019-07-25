@@ -41,11 +41,12 @@ fi
 
 shell_dir=$(cd $(dirname ${BASH_SOURCE}); pwd)
 setting_dir=${shell_dir}/setting
+reset=false
 while getopts i:p:n:hr OPT
 do
     case ${OPT} in
-        i ) ip=${OPTARG} ;;
-        p ) port=${OPTARG} ;;
+        i ) dbip=${OPTARG} ;;
+        p ) dbport=${OPTARG} ;;
         n ) dbname=${OPTARG} ;;
         h ) usage ;;
         r ) reset=true ;;
@@ -60,7 +61,7 @@ BASHLIB=${HOME}/.local/lib/localdb-tools/bash-completion/completions
 MODLIB=${HOME}/.local/lib/localdb-tools/modules
 ENABLE=${HOME}/.local/lib/localdb-tools/enable
 
-if [ ${reset} ]; then
+if "${reset}"; then
     echo -e "[LDB] Clean Local DB settings:"
     echo -e "      -> remove Local DB Tools in ${BIN}"
     for i in `ls -1 ${shell_dir}/bin/`; do
@@ -93,13 +94,13 @@ if [ ${reset} ]; then
             bin_empty=false
         fi
     done
-    if [ ${bin_empty} ]; then
+    if "${bin_empty}"; then
         if [ -d ${HOME}/.local/lib/localdb-tools ]; then
             rm -r ${HOME}/.local/lib/localdb-tools
         fi
     fi
     # library
-    if [ ! ${bin_empty} ]; then
+    if ! "${bin_empty}"; then
         for i in `ls -1 ${shell_dir}/lib/localdb-tools/bash-completion/completions/`; do
             if [ -f ${BASHLIB}/${i} ]; then
                 rm ${BASHLIB}/${i}
@@ -134,11 +135,11 @@ if [ ${reset} ]; then
     exit
 fi
 
-if [ -z ${ip} ]; then
-    ip=127.0.0.1
+if [ -z ${dbip} ]; then
+    dbip=127.0.0.1
 fi
-if [ -z ${port} ]; then
-    port=27017
+if [ -z ${dbport} ]; then
+    dbport=27017
 fi
 if [ -z ${dbname} ]; then
     dbname="localdb"
@@ -191,8 +192,8 @@ echo -e "[LDB] Confirmation"
 echo -e "\t-----------------------"
 echo -e "\t--  Mongo DB Server  --"
 echo -e "\t-----------------------"
-echo -e "\tIP address: ${ip}"
-echo -e "\tport: ${port}"
+echo -e "\tIP address: ${dbip}"
+echo -e "\tport: ${dbport}"
 echo -e "\t-----------------"
 echo -e "\t--  Test Site  --"
 echo -e "\t-----------------"
@@ -223,8 +224,8 @@ mkdir -p ${dir}/log
 echo -e "[LDB] Create Config files..."
 dbcfg=${dir}/database.json
 cp ${setting_dir}/default/database.json ${dbcfg}
-sed -i -e "s!DBIP!${ip}!g" ${dbcfg}
-sed -i -e "s!DBPORT!${port}!g" ${dbcfg}
+sed -i -e "s!DBIP!${dbip}!g" ${dbcfg}
+sed -i -e "s!DBPORT!${dbport}!g" ${dbcfg}
 sed -i -e "s!DBNAME!${dbname}!g" ${dbcfg}
 echo -e "\tDB Config: ${dbcfg}"
 
@@ -319,7 +320,8 @@ echo -e "3. Retrieve function" | tee -a ${readme}
 echo -e "   - 'localdbtool-retrieve log' can show test data log in Local DB" | tee -a ${readme}
 echo -e "   - 'localdbtool-retrieve checkout <module name>' can restore the latest config files from Local DB" | tee -a ${readme}
 echo -e "4. Viewer Application" | tee -a ${readme}
-echo -e "   - Access 'http://${ip}/localdb/' can display results in web browser if Viewer is running" | tee -a ${readme}
+echo -e "   - Access 'http://HOSTNAME/localdb/' can display results in web browser if Viewer is running" | tee -a ${readme}
+echo -e "   - (HOSTNAME: Local DB Server where web browser if Viewer is running" | tee -a ${readme}
 echo -e "5. More Detail" | tee -a ${readme}
 echo -e "   - Check 'https://github.com/jlab-hep/Yarr/wiki'" | tee -a ${readme}
 echo -e "" | tee -a ${readme}

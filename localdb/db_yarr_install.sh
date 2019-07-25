@@ -2,15 +2,13 @@
 #################################
 # Contacts: Arisa Kubota
 # Email: arisa.kubota at cern.ch
-# Date: April 2019
+# Date: July 2019
 # Project: Local Database for Yarr
 # Description: Login Database 
 # Usage: ./db_yarr_install.sh
 ################################
 
 set -e
-
-DEBUG=false
 
 # Usage
 function usage {
@@ -22,47 +20,64 @@ Usage:
 EOF
 }
 
-### start installation
-sudo echo "[LDB] OK!"
-setting_dir=$(cd $(dirname ${BASH_SOURCE}); pwd)
-LOGDIR="${setting_dir}/setting/instlog"
+# Start
+if [ `echo ${0} | grep bash` ]; then
+    echo -e "[LDB] DO NOT 'source'"
+    usage
+    return
+fi
+shell_dir=$(cd $(dirname ${BASH_SOURCE}); pwd)
+ip=`hostname -i`
+yumpackages=$(cat ${shell_dir}/setting/requirements-yum.txt)
+pippackages=$(cat ${shell_dir}/setting/requirements-pip.txt)
+LOGDIR="${shell_dir}/setting/instlog"
 if [ ! -d ${LOGDIR} ]; then
     mkdir ${LOGDIR}
 fi
-LOGFILE="${LOGDIR}/`date "+%Y%m%d_%H%M%S"`"
-exec 2> >(awk '{print strftime("[%Y-%m-%d %H:%M:%S] "),$0 } { fflush() } ' | tee $LOGFILE) 1>&2
-
-trap 'echo -e ""; echo -e "[LDB] Installation stopped by SIGINT!!"; echo -e "[LDB] You may be in unknown state."; echo -e "[LDB] Check ${LOGFILE} for debugging in case of a problem of re-executing this script."; exit 1' 2
-
-#packages list to be required
-yumpackages=(
-    "epel-release.noarch"
-    "centos-release-scl.noarch"
-    "bc.x86_64"
-    "mongodb-org.x86_64"
-    "devtoolset-7.x86_64"
-    "gnuplot.x86_64"
-    "openssl-devel"
-    "httpd.x86_64"
-    "python.x86_64"
-    "python36" 
-    "python36-devel" 
-    "python36-pip" 
-    "python36-tkinter"
-)
 services=(
     "mongod"
 )
+# Confirmation
+echo -e "[LDB] This script performs ..."
+echo -e ""
+echo -e "[LDB]  - Install yum packages: '${shell_dir}/setting/requirements-yum.txt'"
+echo -e "[LDB]         $ sudo yum install \$(cat ${shell_dir}/setting/requirements-yum.txt)"
+echo -e "[LDB]  - Install pip modules: '${shell_dir}/setting/requirements-pip.txt'"
+echo -e "[LDB]         $ sudo pip3 install \$(cat ${shell_dir}/setting/requirements-pip.txt)"
+echo -e "[LDB] Continue? [y/n]"
+while [ -z ${answer} ]; 
+do
+    read -p "> " answer
+done
+echo -e ""
+if [ ${answer} != "y" ]; then
+    echo -e "[LDB] Exit..."
+    echo -e ""
+    echo -e "[LDB] If you want to setup them manually, the page 'https://github.com/jlab-hep/Yarr/wiki/Installation' should be helpful!"
+    echo -e ""
+    exit
+fi
+sudo echo -e "[LDB] OK!"
 
-#checking what is missing for localDB and viewer
-echo -e "[LDB] Looking for missing things for Yarr-localDB and its viewer..."
+# Set log file
+LOGFILE="${LOGDIR}/`date "+%Y%m%d_%H%M%S"`"
+exec 2> >(awk '{print strftime("[%Y-%m-%d %H:%M:%S] "),$0 } { fflush() } ' | tee ${LOGFILE}) 1>&2
+trap 'echo -e ""; echo -e "[LDB] Installation stopped by SIGINT!!"; echo -e "[LDB] You may be in unknown state."; echo -e "[LDB] Check ${LOGFILE} for debugging in case of a problem of re-executing this script."; exit 1' 2
+
+# Check what is missing for Local DB
+echo -e "[LDB] Looking for missing things for Local DB and its Tools..."
 echo -e "[LDB] -------------------------------------------------------------"
 if [ ! -e "/etc/yum.repos.d/mongodb-org-3.6.repo" ]; then
     echo -e "[LDB] Add: mongodb-org-3.6 repository in /etc/yum.repos.d/mongodb-org-3.6.repo."
 fi
 for pac in ${yumpackages[@]}; do
-    if ! yum info ${pac} 2>&1 | grep "Installed Packages" > /dev/null; then
+    if ! yum list installed 2>&1 | grep ${pac} > /dev/null; then
 	echo -e "[LDB] yum install: ${pac}"
+    fi
+done
+for pac in ${pippackages[@]}; do
+    if ! pip3 list 2>&1 | grep ${pac} 2>&1 > /dev/null; then
+       echo -e "[LDB] pip3 install: ${pac}"
     fi
 done
 for svc in ${services[@]}; do
@@ -75,9 +90,9 @@ for svc in ${services[@]}; do
 done
 echo -e "[LDB] ----------------------------------------------------"
 
-#installing necessary packages if not yet installed
+# Install necessary packages if not yet installed
 echo -e "[LDB] Start installing necessary packages..."
-#adding mongoDB repository and installing mongoDB
+# Add mongoDB repository and installing mongoDB
 if [ -e "/etc/yum.repos.d/mongodb-org-3.6.repo" ]; then
     echo -e "[LDB] mongodb-org-3.6 repository already installed. Nothing to do."
 else
@@ -89,9 +104,9 @@ gpgcheck=1
 enabled=1
 gpgkey=https://www.mongodb.org/static/pgp/server-3.6.asc\" > /etc/yum.repos.d/mongodb-org-3.6.repo"
 fi
-#installing yum packages
+# Install yum packages
 for pac in ${yumpackages[@]}; do
-    if yum info ${pac} | grep "Installed Packages" > /dev/null; then
+    if yum list installed 2>&1 | grep ${pac} > /dev/null; then
         echo -e "[LDB] ${pac} already installed. Nothing to do."
     else
         echo -e "[LDB] ${pac} not found. Starting to install..."
@@ -99,14 +114,19 @@ for pac in ${yumpackages[@]}; do
     fi
 done
 
-#enabling RedHad SCL packages
-scl_sw=(
-    "devtoolset-7"
-)
+# Enable RedHad SCL packages
+source /opt/rh/devtoolset-7/enable
 
-#install python packages by pip for the DB viewer
-sudo pip3 install -r ${setting_dir}/requirements-pip.txt 
-/usr/bin/env python3 ${setting_dir}/check_python_modules.py
+# Install python packages by pip for the DB viewer
+for pac in ${pippackages[@]}; do
+    if pip3 list 2>&1 | grep ${pac} 2>&1 > /dev/null; then
+        echo "${pac} already installed. Nothing to do."
+    else
+        echo "${pac} not found. Starting to install..."
+        sudo pip3 install ${pac}
+    fi
+done
+/usr/bin/env python3 ${shell_dir}/check_python_modules.py
 if [ $? = 1 ]; then
     echo -e "[LDB] Failed, exit..."
     exit
@@ -114,17 +134,13 @@ fi
 echo -e "[LDB] Done."
 echo -e ""
 
-readme=${setting_dir}/setting/README.md
-
-if [ -f ${readme} ]; then
-    rm ${readme}
-fi
+readme=${shell_dir}/setting/README.md
 
 echo -e ""
 echo -e "Finished installation!!"
 echo -e "Install log can be found in: ${LOGFILE}"
 echo -e ""
-echo -e "# Local DB Installation for DAQ Server" | tee -a ${readme}
+echo -e "# Local DB Installation for DAQ Server" | tee ${readme}
 echo -e "" | tee -a ${readme}
 echo -e "## 1. Setup database config and function" | tee -a ${readme}
 echo -e "\`\`\`" | tee -a ${readme}
@@ -148,10 +164,9 @@ echo -e "./bin/scanConsole -c configs/connectivity/example_rd53a_setup.json -r c
 echo -e "\`\`\`" | tee -a ${readme}
 echo -e "" | tee -a ${readme}
 echo -e "## 4. Check results in the DB viewer in your web browser" | tee -a ${readme}
-echo -e "- From the DAQ machine: http://localhost:5000/localdb/" | tee -a ${readme}
+echo -e "- From the DB machine: http://localhost:5000/localdb/" | tee -a ${readme}
 echo -e "- From other machines : http://${ip}/localdb/" | tee -a ${readme}
 echo -e "" | tee -a ${readme}
 echo -e "## 5.Check more detail" | tee -a ${readme}
-echo -e "- https://github.com/jlab-hep/Yarr/wiki/Quick-tutorial" | tee -a ${readme}
+echo -e "- https://github.com/jlab-hep/Yarr/wiki" | tee -a ${readme}
 echo -e "This description is saved as ${readme}. Enjoy!!"
-
