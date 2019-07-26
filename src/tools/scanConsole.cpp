@@ -275,7 +275,7 @@ int main(int argc, char *argv[]) {
     scanLog["runNumber"] = runCounter;
     scanLog["targetCharge"] = target_charge;
     scanLog["targetTot"] = target_tot;
-    scanLog["scanType"] = strippedScan;
+    scanLog["testType"] = strippedScan;
 
     // Initial setting local DBHandler
     DBHandler *database = new DBHandler();

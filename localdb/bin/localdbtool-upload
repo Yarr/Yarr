@@ -236,16 +236,16 @@ def __write_scan(cache_dir):
 
     if conns==[]: return True
 
-    # user
-    if not 'userCfg' in scanlog_json and args.user:
-        user_json = register.toJson(args.user)
-        scanlog_json['userCfg'] = user_json
-    register.__set_user(scanlog_json)
     # site
     if not 'siteCfg' in scanlog_json and args.site:
         user_json = register.toJson(args.site)
         scanlog_json['userCfg'] = user_json
     register.__set_site(scanlog_json)
+    # user
+    if not 'userCfg' in scanlog_json and args.user:
+        user_json = register.toJson(args.user)
+        scanlog_json['userCfg'] = user_json
+    register.__set_user(scanlog_json)
         
     run_number = scanlog_json['runNumber']
     target_charge = scanlog_json['targetCharge']
@@ -255,23 +255,23 @@ def __write_scan(cache_dir):
     else:
         start_timestamp = timestamp
     command = scanlog_json['exec'] 
-    if 'scanType' in scanlog_json:
-        scan_type = scanlog_json['scanType']
+    if 'testType' in scanlog_json:
+        test_type = scanlog_json['testType']
     else:
         for i, com in enumerate(command.split(' ')):
             if com=='-s': 
                 scan_command = command.split(' ')[i+1]
                 break
-        scan_type = scan_command.split('/')[-1].split('.')[0]
-    register.__set_test_run_start(scan_type, conns, run_number, target_charge, target_tot, start_timestamp, command)
+        test_type = scan_command.split('/')[-1].split('.')[0]
+    register.__set_test_run_start(test_type, conns, run_number, target_charge, target_tot, start_timestamp, command)
 
     # controller config
     cfg_json = scanlog_json['ctrlCfg']
     register.__set_config(-1, -1, cfg_json, 'controller', 'ctrlCfg', 'testRun', 'null', conn_jsons)
 
-    scan_cfg_path = '{0}/{1}.json'.format(cache_dir, scan_type)
+    scan_cfg_path = '{0}/{1}.json'.format(cache_dir, test_type)
     cfg_json = register.toJson(scan_cfg_path)
-    register.__set_config(-1, -1, cfg_json, scan_type, 'scanCfg', 'testRun', 'null', conn_jsons)
+    register.__set_config(-1, -1, cfg_json, test_type, 'scanCfg', 'testRun', 'null', conn_jsons)
 
     for conn_json in conns:
         for chip_json in conn_json['chips']:
@@ -301,7 +301,7 @@ def __write_scan(cache_dir):
         finish_timestamp = scanlog_json['finishTime']
     else:
         finish_timestamp = start_timestamp
-    register.__set_test_run_finish(scan_type, conns, run_number, target_charge, target_tot, finish_timestamp, command)
+    register.__set_test_run_finish(test_type, conns, run_number, target_charge, target_tot, finish_timestamp, command, scanlog_json)
 
     return True
 
@@ -425,12 +425,12 @@ def __upload_comp(comp_path):
         logger.error('Cannot upload data {}, retry again in the good connection to Local DB Server'.format(comp_path))
         sys.exit(1)
 
-    # user
-    user_json = register.toJson(args.user)
-    register.__set_user(user_json)
     # site
     site_json = register.toJson(args.site)
     register.__set_site(site_json)
+    # user
+    user_json = register.toJson(args.user)
+    register.__set_user(user_json)
 
     status = register.__check_conn_cfg(comp_path)
     answer = input('Do you continue to upload data into Local DB? [y/n]\n')

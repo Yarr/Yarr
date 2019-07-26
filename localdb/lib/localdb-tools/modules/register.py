@@ -166,6 +166,8 @@ def __user(i_user_name, i_institution, i_user_identity):
  
     doc_value = {
         'userName'    : i_user_name,
+        'machine'     : __global.site_oid,
+        'machineUser' : os.environ['USER'],
         'institution' : i_institution,
         'userIdentity': i_user_identity
     }
@@ -594,7 +596,7 @@ def __test_run(i_test_type, i_run_number, i_target_charge, i_target_tot, i_time,
             'state': 'ready',
             'targetCharge': i_target_charge,
             'targetTot': i_target_tot,
-            'command': '...',
+            'exec': '...',
             'comments': [],
             'defects': [],
             'finishTime': start_time,
@@ -718,6 +720,9 @@ def __set_user(i_json):
         institution = os.environ['HOSTNAME']
         user_identity = 'default'
 
+    user_name = user_name.lower().replace(' ','').replace('_','')
+    institution = institution.lower().replace(' ','').replace('_','')
+
     __global.user_oid = __user(user_name, institution, user_identity)
 
 def __set_site(i_json):
@@ -738,6 +743,8 @@ def __set_site(i_json):
         hostname = os.environ['HOSTNAME']
         site = 'null'
 
+    site = site.lower().replace(' ','').replace('_','')
+
     __global.site_oid = __site(address, hostname, site);
 
 def __set_test_run_start(i_test_type, i_conn_jsons, i_run_number, i_target_charge, i_target_tot, i_timestamp, i_command):
@@ -746,7 +753,7 @@ def __set_test_run_start(i_test_type, i_conn_jsons, i_run_number, i_target_charg
     for conn_json in i_conn_jsons:
         mo_serial_number = conn_json["module"]["serialNumber"]
         tr_oid = __test_run(i_test_type, i_run_number, i_target_charge, i_target_tot, i_timestamp, mo_serial_number, 'start')
-        addValue(tr_oid, 'testRun', 'command', i_command)
+        addValue(tr_oid, 'testRun', 'exec', i_command)
         if 'stage' in conn_json:
             addValue(tr_oid, 'testRun', 'stage', conn_json['stage'])
         if conn_json['dummy']==True:
@@ -756,12 +763,23 @@ def __set_test_run_start(i_test_type, i_conn_jsons, i_run_number, i_target_charg
 
     return
 
-def __set_test_run_finish(i_test_type, i_conn_jsons, i_run_number, i_target_charge, i_target_tot, i_timestamp, i_command):
+def __set_test_run_finish(i_test_type, i_conn_jsons, i_run_number, i_target_charge, i_target_tot, i_timestamp, i_command, i_scan_log):
     logger.debug('Local DB: Write Test Run (finish)')
 
     for tr_oid in __global.tr_oids:
         __test_run(i_test_type, i_run_number, i_target_charge, i_target_tot, i_timestamp, '', 'finish', tr_oid)
-    
+
+        for key in i_scan_log:
+            if not key=='connectivity' and not key=='ctrlCfg' and not key=='dbCfg':
+                query = { '_id': ObjectId(tr_oid) }
+                this_run = localdb.testRun.find_one(query)
+                if not key in this_run:
+                    localdb['testRun'].update_one(
+                        { '_id': ObjectId(tr_oid) },
+                        { '$set': {
+                            key: i_scan_log[key]
+                        }}
+                    )
     return
 
 def __set_config(i_tx, i_rx, i_file_json, i_filename, i_title, i_col, i_serial_number, i_conn_jsons):

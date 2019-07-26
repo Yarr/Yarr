@@ -313,7 +313,8 @@ def __status():
     if remote_data==['']: logger.info('  None')
     else:
         for branch_name in remote_data:
-            logger.info('  {}'.format(branch_name))
+            if branch_name or not branch_name=='':
+                logger.info('  {}'.format(branch_name))
     sys.exit()
  
 def retrieve():
@@ -349,13 +350,6 @@ def retrieve():
     if command == 'init': __init()
 
     __check()
-
-#    else:
-#        if (not head_data or not 'remote' in head_data) and remote in config_data['remote']:
-#            head_file = open(head_path, 'w')
-#            head_data = { 'remote': remote }
-#            head_file.write(yaml.dump(head_data, default_flow_style=False))
-#            head_file.close()
 
     if command=='remote':
         if not first_arg: __remote()
