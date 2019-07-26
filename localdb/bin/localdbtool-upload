@@ -181,20 +181,20 @@ def __set_cache(cache_dir):
     else: return
 
     scanlog_json = register.toJson(scanlog_path)
+    db_support = False
+    db_cfg = None
     if 'dbCfg' in scanlog_json:
         db_cfg = scanlog_json['dbCfg']
         db_support = True
-    elif args.database:
+    if args.database:
         db_cfg = register.toJson(args.database)
-        db_support = False
-    else:
+    if not db_cfg:
         logger.warning('The result data {} is not supported by the Local DB scheme and may not upload properly.\n'.format(cache_dir))
         db_cfg = register.toJson('{}/.yarr/localdb/database.json'.format(os.environ['HOME']))
         if db_cfg=={}:
             logger.error('There is no default database config in {}/.yarr/localdb')
             logger.error('Set it by YARR/localdb/setting/setup_db.sh')
             sys.exit(1)
-        db_support = False
     if __init(db_cfg)==True:
         if option=='scan': result=__write_scan(cache_dir)
         if option=='dcs': result=__write_dcs(cache_dir)
