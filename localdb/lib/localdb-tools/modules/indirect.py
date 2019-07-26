@@ -128,7 +128,6 @@ def __checkout(args, serialnumber=None, runid=None):
     logger.info('- Serial Number : {}'.format(test_data['serialNumber']))
     logger.info('- Run Number    : {}'.format(test_data['runNumber']))
     logger.info('- Test Type     : {}'.format(test_data['testType']))
-    logger.info('')
 
     # make directory
     if not args.directory: dir_path = './localdb-configs'
@@ -214,8 +213,8 @@ def __fetch(args, remote):
             remote_file.write('{}\n'.format(module['serialNumber']))
     remote_file.close()
     logger.info('Download Component Data of Local DB locally...')
+    printLog('--------------------------------------')
     for j, module in enumerate(r_json['modules']):
-        printLog('--------------------------------------')
         printLog('Component ({})'.format(j+1))
         printLog('    Chip Type: {}'.format(module['chipType']))
         printLog('    Module:')
@@ -227,7 +226,7 @@ def __fetch(args, remote):
             printLog('        serial number: {}'.format(chip['serialNumber']))
             printLog('        component type: {}'.format(chip['componentType']))
             printLog('        chip ID: {}'.format(chip['chipId']))
-    printLog('--------------------------------------')
+        printLog('--------------------------------------\n')
     printLog('Done.')
 
     sys.exit()

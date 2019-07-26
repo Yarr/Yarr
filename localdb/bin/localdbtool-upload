@@ -121,13 +121,16 @@ def __init(db_cfg):
                 if not username or not password: 
                     logger.warning('Need users authenticated.')
                     answer = input('Continue? [y/n(skip)]\n> ')
+                    print('')
                     if answer.lower()=='y':
                         username = None
                         password = None
                     else:
                         return False
                     username = input('User name > ')
+                    print('')
                     password = getpass('Password > ')
+                    print('')
                 try:
                     localdb.authenticate(username, password)
                     through = True
@@ -137,6 +140,7 @@ def __init(db_cfg):
                     args.password = None
                     logger.error('Authentication failed.')
                     answer = input('Try again? [y/n(skip)]\n> ')
+                    print('')
                     if answer.lower()=='y':
                         username = None
                         password = None
@@ -144,6 +148,7 @@ def __init(db_cfg):
                         return False
             if not args.username or not args.password:
                 answer = input('Do you want to remember the username and the password on the machine? [y/n]\n')
+                print('')
                 if answer.lower() == 'y':
                     account_path = '{}/.yarr/.localdb-upload'.format(home)
                     account_file = open(account_path, 'w')
@@ -159,7 +164,7 @@ def __init(db_cfg):
     register.__global.env_list = db_cfg['environment']
     register.__global.cmp_list = db_cfg['component']
 
-    logger.info('---> connection is good.')
+    logger.info('---> connection is good.\n')
 
     return True
 
@@ -183,7 +188,7 @@ def __set_cache(cache_dir):
         db_cfg = register.toJson(args.database)
         db_support = False
     else:
-        logger.warning('The result data {} is not supported by the Local DB scheme and may not upload properly.'.format(cache_dir))
+        logger.warning('The result data {} is not supported by the Local DB scheme and may not upload properly.\n'.format(cache_dir))
         db_cfg = register.toJson('{}/.yarr/localdb/database.json'.format(os.environ['HOME']))
         if db_cfg=={}:
             logger.error('There is no default database config in {}/.yarr/localdb')
@@ -204,13 +209,13 @@ def __write_scan(cache_dir):
 
     args = getArgs()
 
-    logger.info('Cache Directory: {}'.format(cache_dir))
+    logger.info('Cache Directory: {}\n'.format(cache_dir))
 
     scanlog_path = '{}/scanLog.json'.format(cache_dir)
     scanlog_json = register.toJson(scanlog_path)
 
     if scanlog_json=={}:
-        logger.warning('No Scan Data')
+        logger.warning('No Scan Data\n')
         return False
 
     # connectivity
@@ -225,7 +230,7 @@ def __write_scan(cache_dir):
         tr_oid = getTestRunData('', mo_serial_number, timestamp)
         if tr_oid!='':
             register.__global.tr_oids.append(tr_oid)
-            logger.warning('Already registered test run data in DB, then skip to save...')
+            logger.warning('Already registered test run data in DB, then skip to save...\n')
             continue
         conns.append(conn_json)
 
@@ -303,17 +308,17 @@ def __write_scan(cache_dir):
 def __write_dcs(cache_dir):
     logger.debug('Local DB: Write cache DCS data: {}.'.format(cache_dir))
 
-    logger.info('Cache Directory: {}'.format(cache_dir))
+    logger.info('Cache Directory: {}\n'.format(cache_dir))
 
     dcslog_path = '{}/dbDcsLog.json'.format(cache_dir)
     dcslog_json = register.toJson(dcslog_path)
 
     if dcslog_json=={}:
-        logger.warning('No DCS Data')
+        logger.warning('No DCS Data\n')
         return False
 
     if not 'environments' in dcslog_json:
-        logger.warning('No DCS data in the log file: {}/dbDcsLog.json'.format(cache_dir))
+        logger.warning('No DCS data in the log file: {}/dbDcsLog.json\n'.format(cache_dir))
         return False
 
     if 'startTime' in dcslog_json:
@@ -325,13 +330,13 @@ def __write_dcs(cache_dir):
 
     tr_oid = getTestRunData(dcslog_json.get('id',''), dcslog_json.get('serialNumber',''), timestamp)
     if tr_oid=='':
-        logger.warning('Not found relational test run data in DB')
+        logger.warning('Not found relational test run data in DB\n')
         return True
     register.__global.tr_oids.append(tr_oid)
     doc_value = { '_id': ObjectId(tr_oid) }
     this_run = localdb.testRun.find_one(doc_value)
     if not this_run.get('environment','...')=='...':
-        logger.warning('Already registered dcs data to this test run data in DB')
+        logger.warning('Already registered dcs data to this test run data in DB\n')
         return False
 
     register.__dcs(tr_oid, dcslog_json['environments'])
@@ -360,10 +365,10 @@ def __clean(cache_dir, result):
             for tr_oid in register.__global.tr_oids:
                 return_tr_oid = getTestRunData(tr_oid, '', '')
                 if not return_tr_oid=='':
-                    logger.info('Success')
+                    logger.info('Success\n')
                     if cache_dir in cache_list: cache_list.remove(cache_dir)
                 else:
-                    logger.error('Something wrong, check log file: {}'.format(logfile))
+                    logger.error('Something wrong, check log file: {}\n'.format(logfile))
         elif option=='dcs':
             for tr_oid in register.__global.tr_oids:
                 doc_value = { '_id': ObjectId(tr_oid) }
@@ -372,7 +377,7 @@ def __clean(cache_dir, result):
                     logger.info('Success')
                     if cache_dir in cache_list: cache_list.remove(cache_dir)
                 else:
-                    logger.error('Something wrong, check log file: {}'.format(logfile))
+                    logger.error('Something wrong, check log file: {}i\n'.format(logfile))
 
     if os.path.isfile(file_path): os.remove(file_path)
 
@@ -429,6 +434,7 @@ def __upload_comp(comp_path):
 
     status = register.__check_conn_cfg(comp_path)
     answer = input('Do you continue to upload data into Local DB? [y/n]\n')
+    print('')
     if answer.lower()!='y': 
         sys.exit(0)
     status = register.__conn_cfg(comp_path)
@@ -436,6 +442,7 @@ def __upload_comp(comp_path):
         logger.info('Completed the registration successfuly.')
     else:
         logger.info('Already registered.')
+    sys.exit()
 
 def __check_component():
     logger.debug('Local DB: Check Component Data.')
@@ -452,7 +459,7 @@ def __check_component():
             sys.exit(1)
 
     if not __init(db_cfg)==True:
-        logger.error('Cannot upload data {}, retry again in the good connection to Local DB Server'.format(comp_path))
+        logger.error('Cannot check component data, retry again in the good connection to Local DB Server')
         sys.exit(1)
 
     # fetch
@@ -485,8 +492,8 @@ def __check_component():
 
     if not args.log:
         logger.info('Download Component Data of Local DB locally...')
+        logger.info('--------------------------------------')
         for j, module in enumerate(modules):
-            logger.info('--------------------------------------')
             logger.info('Component ({})'.format(j+1))
             logger.info('    Chip Type: {}'.format(module['chipType']))
             logger.info('    Module:')
@@ -498,7 +505,7 @@ def __check_component():
                 logger.info('        serial number: {}'.format(chip['serialNumber']))
                 logger.info('        component type: {}'.format(chip['componentType']))
                 logger.info('        chip ID: {}'.format(chip['chipId']))
-        logger.info('--------------------------------------')
+            logger.info('--------------------------------------\n')
         logger.info('Done.')
 
 def main():

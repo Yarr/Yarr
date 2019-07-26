@@ -33,7 +33,7 @@ _localdbtool_retrieve() {
         COMPREPLY=( $(compgen -W "init status remote fetch log checkout" -- "${cur}") )
     elif [ "${cword}" -eq 2 ]; then
         if [ "${prev}" = "remote" ]; then
-            COMPREPLY=( $(compgen -W "status add" -- "${cur}") )
+            COMPREPLY=( $(compgen -W "status add rm" -- "${cur}") )
         elif [ "${prev}" = "fetch" ]; then
             COMPREPLY=( $(compgen -W "${remotes}" -- "${cur}") )
         elif [ "${prev}" = "log" ]; then
@@ -47,6 +47,10 @@ _localdbtool_retrieve() {
         if [ "`echo ${remotes} | grep ${prev}`" ]; then 
             local branchs=`cat ${HOME}/.localdb_retrieve/refs/remotes/${prev}|xargs`
             COMPREPLY+=( $(compgen -W "${branchs}" -- "${cur}") )
+        elif [ "${prev}" = "status" ]; then
+            COMPREPLY=( $(compgen -W "${remotes}" -- "${cur}") )
+        elif [ "${prev}" = "rm" ]; then
+            COMPREPLY=( $(compgen -W "${remotes}" -- "${cur}") )
         fi
     fi
 }

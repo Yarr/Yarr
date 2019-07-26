@@ -48,7 +48,8 @@ do
         i ) dbip=${OPTARG} ;;
         p ) dbport=${OPTARG} ;;
         n ) dbname=${OPTARG} ;;
-        h ) usage ;;
+        h ) usage 
+            exit ;;
         r ) reset=true ;;
         * ) usage
             exit ;;
@@ -130,6 +131,9 @@ if "${reset}"; then
     fi
     if [ -d ${dir} ]; then
         rm -r ${dir}
+    fi
+    if [ -d ${HOME}/.localdb_retrieve ]; then
+        rm -r ${HOME}/.localdb_retrieve
     fi
     echo -e "[LDB] Finish Clean Up!"
     exit

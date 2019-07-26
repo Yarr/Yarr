@@ -849,7 +849,6 @@ def __check_conn_cfg(i_conn_path):
         logger.info('        serial number: {}'.format(chip['serialNumber']))
         logger.info('        component type: {}'.format(chip['componentType']))
         logger.info('        chip ID: {}'.format(chip['chipId']))
-    logger.info('')
 
 def __check_list(i_value, i_list, i_name):
     if not i_value in i_list:

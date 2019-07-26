@@ -28,10 +28,13 @@ logger = getLogger('Log')
 logger.setLevel(INFO)
 #logger.setLevel(DEBUG) # remove comment out for debug mode
 formatter = Formatter('#DB %(levelname)s# %(message)s')
+#formatter = Formatter('%(message)s')
 handler = StreamHandler()
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.debug('Not set log file')
+
+db_path = os.environ['HOME']+'/.localdb_retrieve'
 
 global user
 global pwd
@@ -45,13 +48,13 @@ def readConfig(conf_path):
 def getArgs():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("command", help="Command option", type=str, nargs='+')
-    parser.add_argument('-f', '--config', help='Provide path to connectivity config file\nand retrieve config files following the config.', type=str)
-    parser.add_argument('-u', '--user', help='Set the name of the user.', type=str)
-    parser.add_argument('-s', '--site', help='Set the name of the site.', type=str)
-    parser.add_argument('-b', '--before', help='Set chip config type "before".', action='store_true')
-    parser.add_argument('-a', '--after', help='Set chip config type "after".', action='store_true')
-    parser.add_argument('-D', '--dummy', help='Set dummy data "True".', action='store_true')
-    parser.add_argument('-d', '--directory', help='Provide directory name.', type=str)
+    parser.add_argument('--config', help='Provide path to connectivity config file\nand retrieve config files following the config.', type=str)
+    parser.add_argument('--user', help='Set the name of the user.', type=str)
+    parser.add_argument('--site', help='Set the name of the site.', type=str)
+    parser.add_argument('--before', help='Set chip config type "before".', action='store_true')
+    parser.add_argument('--after', help='Set chip config type "after".', action='store_true')
+    parser.add_argument('--dummy', help='Set dummy data "True".', action='store_true')
+    parser.add_argument('--directory', help='Provide directory name.', type=str)
 
     args = parser.parse_args()
 
@@ -66,18 +69,17 @@ def getArgs():
     return args
 
 def __init():
-    db_path = os.environ['HOME']+'/.localdb_retrieve'
     if not os.path.isdir( db_path ): 
         os.mkdir( db_path )
     sys.exit()
 
 def __check():
-    db_path = os.environ['HOME']+'/.localdb_retrieve'
     if not os.path.isdir( db_path ): 
         logger.error('Not exist a retrieve repository, do "localdbtool-retrieve init" to initialize')
         sys.exit()
 
 def __network_db(url):
+    logger.info('[Connection Test] DB Server: {}'.format(url))
     global authentication
     authentication = False
     max_server_delay = 1
@@ -85,60 +87,66 @@ def __network_db(url):
     db = client['localdb']
     try:
         db.collection_names()
-        logger.info('The connection of Local DB {} is GOOD.\n'.format(url))
+        logger.info('   The connection is GOOD.\n')
         return True
     except errors.ServerSelectionTimeoutError as err:
-        logger.warning('The connection of Local DB {} is BAD.'.format(url))
-        logger.warning(err)
+        logger.warning('   The connection is BAD.')
+        logger.warning('   {}\n'.format(err))
         return False
     except errors.OperationFailure as err:
-        logger.info('Need users authenticated.')
+        logger.info('   Need users authenticated.\n')
         try:
             global user
-            user = input('User name > ')
+            user = input('   User name > ')
+            print('')
             global pwd
-            pwd = getpass('Password > ')
+            pwd = getpass('   Password > ')
+            print('')
             try:
                 db.authenticate(user, pwd)
-                logger.info('The connection of Local DB {} is GOOD.\n'.format(url))
+                logger.info('   The connection is GOOD.\n')
                 authentication = True
                 return True
             except errors.OperationFailure as err: 
-                logger.error('Authentication failed.')
+                logger.error('   Authentication failed.')
                 sys.exit()
         except KeyboardInterrupt:
-            logger.error('')
             sys.exit()
 
 def __network_viewer(url):
+    logger.info('[Connection Test] Viewer: {}'.format(url))
     try:
         response = requests.get(url)
         if response.status_code == 200:
-            logger.info('The connection of Viewer Application {} is GOOD.\n'.format(url))
+            logger.info('   The connection is GOOD.\n')
             return True
         else:
-            logger.warning('Something wrong in the page {}.\n'.format(url))
+            logger.warning('   Something wrong in the page.\n')
             return False
     except Exception as err:
-        logger.warning('The connection of Viewer Application {} is BAD.'.format(url))
-        logger.warning(err)
+        logger.warning('   The connection is BAD.')
+        logger.warning('   {}\n'.format(err))
         return False
 
 def __remote(remote_name='None'):
-    db_path = os.environ['HOME']+'/.localdb_retrieve'
-    head_path = db_path+'/HEAD'
-    if not os.path.isfile(head_path):
+    config_path = db_path+'/config'
+    if not os.path.isfile(config_path):
         logger.error('Not registered remote repository yet.') 
         logger.error('(use "remote add <name>" to make the remote repository.)')
         sys.exit()
+    config_file = open(config_path, 'r')
+    config_data = yaml.load(config_file, Loader=yaml.SafeLoader)
+    if not config_data or not 'remote' in config_data or config_data['remote']=={}:
+        logger.error('Not registered remote repository yet.') 
+        logger.error('(use "remote add <name>" to make the remote repository.)')
+        os.remove(config_path)
+        sys.exit()
+    head_path = db_path+'/HEAD'
     head_file = open(head_path, 'r')
     head_data = yaml.load(head_file, Loader=yaml.SafeLoader)
-    config_path = db_path+'/config'
-    config_file = open(config_path, 'r+')
-    config_data = yaml.load(config_file, Loader=yaml.SafeLoader)
-
+    head_file.close()
     if remote_name=='None':
-        remote = head_data['remote'] 
+        remote = head_data['remote']
         logger.info('--- remotes ---')
         for remote_data in config_data['remote']:
             if remote_data == remote: logger.info('* {}'.format(remote_data))
@@ -153,51 +161,42 @@ def __remote(remote_name='None'):
 
     db_url = config_data['remote'][remote]['db']
     viewer_url = config_data['remote'][remote]['viewer']
-    logger.info('Check remote status ...')
-    logger.info('')
-    logger.info('remote: {}'.format(remote))
-    logger.info('')
-    logger.info('- DB URL: {}'.format(db_url))
-    logger.info('[Connection Test]')
+    logger.info('Check remote status ...\n')
+    logger.info('remote: {}\n'.format(remote))
     __network_db(db_url)
-    logger.info('- Viewer URL: {}'.format(viewer_url))
-    logger.info('[Connection Test]')
     __network_viewer(viewer_url)
 
     sys.exit()
 
 def __remote_add(remote_name=None):
     if not remote_name:
-        logger.info('Usage: remote add <name>')
+        logger.info('Usage: remote add <name>\n')
         sys.exit()
-    db_path = os.environ['HOME']+'/.localdb_retrieve'
     config_path = db_path+'/config'
-    config_data = { 'remote': {} }
+    config_data = None
     if os.path.isfile(config_path):
-        config_file = open(config_path, 'r+')
+        config_file = open(config_path, 'r')
         config_data = yaml.load(config_file, Loader=yaml.SafeLoader)
-        if remote_name in config_data['remote']:
-            logger.error('Remote "{}" already exists.\n'.format(remote_name))
+        config_file.close()
+        if config_data and remote_name in config_data.get('remote',{}):
+            logger.error('Remote "{}" already exists.'.format(remote_name))
             sys.exit()
-    else:
-        config_file = open(config_path, 'w')
-
+    if not config_data:
+        config_data = { 'remote': {} }
     try:
-        logger.info('Create remote repostiory "{}"'.format(remote_name))
-        logger.info('')
+        logger.info('Create remote repostiory "{}"\n'.format(remote_name))
         db_url = input('Enter the URL of DB Server (e.g. mongodb://127.0.0.1:27017/), or "None" if not to be set.\n')
-        logger.info('[Connection Test]')
-        db_connection = __network_db(db_url)
+        print('')
         viewer_url = input('Enter the URL of the Viewer Application (e.g. http://127.0.0.1:5000/localdb/), or "None" if not to be set.\n')
-        logger.info('[Connection Test]')
+        print('')
+        db_connection = __network_db(db_url)
         viewer_connection = __network_viewer(viewer_url)
 
-        logger.info('  remote: {}'.format(remote_name))
+        logger.info('remote: {}'.format(remote_name))
         logger.info('  DB Server: {0:<30}  (connection: {1})'.format(db_url, db_connection))
-        logger.info('  Viewer: {0:<30}     (connection: {1}) '.format(viewer_url, viewer_connection))
-        logger.info('')
+        logger.info('  Viewer: {0:<30}     (connection: {1})\n'.format(viewer_url, viewer_connection))
         answer = input('Are you sure that is correct? [y/n]\n')
-        logger.info('')
+        print('')
         if answer.lower() == 'y':
             head_path = db_path+'/HEAD'
             if not os.path.isfile(head_path):
@@ -205,12 +204,22 @@ def __remote_add(remote_name=None):
                 head_data = { 'remote': remote_name }
                 head_file.write(yaml.dump(head_data, default_flow_style=False))
                 head_file.close()
+            else:
+                head_file = open(head_path, 'r')
+                head_data = yaml.load(head_file, Loader=yaml.SafeLoader)
+                head_file.close()
+                if not head_data or not 'remote' in head_data:
+                    head_file = open(head_path, 'w')
+                    head_data = { 'remote': remote_name }
+                    head_file.write(yaml.dump(head_data, default_flow_style=False))
+                    head_file.close()
             config_data['remote'].update({
                 remote_name:{
                     'db': db_url,
                     'viewer': viewer_url
                 }
             })
+            config_file = open(config_path, 'w')
             config_file.write(yaml.dump(config_data, default_flow_style=False))
             config_file.close()
             ref_path = db_path+'/refs/remotes'
@@ -221,21 +230,70 @@ def __remote_add(remote_name=None):
             remote_file.close()
         sys.exit()
     except KeyboardInterrupt:
-        logger.warning('***interrupted***')
+        logger.warning('***interrupted***\n')
+        sys.exit()
+def __remote_rm(remote_name=None):
+    if not remote_name:
+        logger.info('Usage: remote rm <name>\n')
+        sys.exit()
+    config_path = db_path+'/config'
+    if not os.path.isfile(config_path):
+        logger.error('Not found remote "{}".'.format(remote_name))
+        sys.exit()
+    config_file = open(config_path, 'r')
+    config_data = yaml.load(config_file, Loader=yaml.SafeLoader)
+    config_file.close()
+    if not config_data or not 'remote' in config_data:
+        logger.error('Not found remote "{}".'.format(remote_name))
+        os.remove(config_path)
+        os.remove(head_path)
+        sys.exit()
+    elif not remote_name in config_data['remote']:
+        logger.error('Not found remote "{}".'.format(remote_name))
         sys.exit()
 
+    try:
+        logger.info('Remove remote repostiory:\n')
+        logger.info('remote: {}'.format(remote_name))
+        logger.info('  DB Server: {0:<30}'.format(config_data['remote'][remote_name]['db']))
+        logger.info('  Viewer: {0:<30}\n'.format(config_data['remote'][remote_name]['viewer']))
+        answer = input('Continue? [y/n]\n')
+        print('')
+        if answer.lower() == 'y':
+            config_data['remote'].pop(remote_name)
+            config_file = open(config_path, 'w')
+            config_file.write(yaml.dump(config_data, default_flow_style=False))
+            config_file.close()
+            head_path = db_path+'/HEAD'
+            head_file = open(head_path, 'r')
+            head_data = yaml.load(head_file, Loader=yaml.SafeLoader)
+            head_file.close()
+            if head_data.get('remote',None)==remote_name: 
+                head_data.pop('remote',None)
+                if not len(config_data['remote'])==0:
+                    head_data['remote'] = list(config_data['remote'].keys())[0]
+                    head_file = open(head_path, 'w')
+                    head_file.write(yaml.dump(head_data, default_flow_style=False))
+                    head_file.close()
+                else:
+                    os.remove(head_path)
+                    os.remove(config_path)
+            remote_path = db_path+'/refs/remotes/'+remote_name
+            if os.path.isfile(remote_path): 
+                os.remove(remote_path)
+    except KeyboardInterrupt:
+        logger.warning('***interrupted***\n')
+    sys.exit()
+
 def __status():
-    db_path = os.environ['HOME']+'/.localdb_retrieve'
     head_path = db_path+'/HEAD'
     remote = None
-    branch = None
     config_data = {'remote':{}}
     remote_data = ['']
     if os.path.isfile(head_path):
         head_file = open(head_path, 'r')
         head_data = yaml.load(head_file, Loader=yaml.SafeLoader)
         if 'remote' in head_data: remote=head_data['remote']
-        if 'branch' in head_data: branch=head_data['branch']
         config_path = db_path+'/config'
         config_file = open(config_path, 'r')
         config_data = yaml.load(config_file, Loader=yaml.SafeLoader)
@@ -255,8 +313,7 @@ def __status():
     if remote_data==['']: logger.info('  None')
     else:
         for branch_name in remote_data:
-            if branch_name==branch: logger.info('* {}'.format(branch_name))
-            else: logger.info('  {}'.format(branch_name))
+            logger.info('  {}'.format(branch_name))
     sys.exit()
  
 def retrieve():
@@ -271,13 +328,15 @@ def retrieve():
         first_arg = args.command[1]
         second_arg = args.command[2]
         if command == 'fetch':
-            logger.error('Unknown subcommand: {}'.format(second_arg))
+            logger.error('Unknown subcommand: {}\n'.format(second_arg))
+            logger.error('Usage: {} <remote>'.format(command))
+            sys.exit()
     elif not nargs == 0:
         logger.error('Unknown subcommand: {}'.format(args.command[3]))
         logger.error('Usage: {} <remote>'.format(command))
         if not command == 'fetch':
             logger.error('   or: {} <serial number>'.format(command))
-            logger.error('    or {} <remote> <serial number>'.format(command))
+            logger.error('   or: {} <remote> <serial number>'.format(command))
         if command == 'checkout':
             logger.error('   or: {} <test data id>'.format(command))
         sys.exit()
@@ -291,23 +350,28 @@ def retrieve():
 
     __check()
 
+#    else:
+#        if (not head_data or not 'remote' in head_data) and remote in config_data['remote']:
+#            head_file = open(head_path, 'w')
+#            head_data = { 'remote': remote }
+#            head_file.write(yaml.dump(head_data, default_flow_style=False))
+#            head_file.close()
+
     if command=='remote':
         if not first_arg: __remote()
         elif first_arg=='add': __remote_add(second_arg)
+        elif first_arg=='rm': __remote_rm(second_arg)
         elif first_arg=='status': __remote(second_arg)
         else:
             logger.error('Unknown subcommand: {}'.format(first_arg))
             logger.error('Usage: remote status <name>')
             logger.error('   or: remote add <name>')
             sys.exit()
-    elif command == 'status': __status()
+    elif command=='status': __status()
    
-    db_path = os.environ['HOME']+'/.localdb_retrieve'
-
     head_path = db_path+'/HEAD'
     if not os.path.isfile(head_path):
         logger.error('Not registered remote repository yet.') 
-        logger.error('')
         logger.error('(use "remote add <name>" to make the remote repository.)')
         sys.exit()
     head_file = open(head_path, 'r')
@@ -325,10 +389,14 @@ def retrieve():
         elif not second_arg:
             if first_arg in config_data['remote']:
                 remote = first_arg
+            elif command=='fetch':
+                logger.error('Unknown remote: {}'.format(first_arg)) 
+                logger.error('Usage: {} <remote>'.format(command))
+                sys.exit()
         else:
             logger.error('Unknown subcommand: {}'.format(first_arg))
             logger.error('Usage: {} <remote>'.format(command))
-            if not command == 'fetch':
+            if not command=='fetch':
                 logger.error('   or: {} <serial number>'.format(command))
                 logger.error('   or: {} <remote> <serial number>'.format(command))
             if command == 'checkout':
@@ -339,10 +407,8 @@ def retrieve():
             remote = head_data['remote']
         else:
             logger.error('Not registered remote repository yet.') 
-            logger.error('')
             logger.error('(use "remote add <remote name>" to make the remote repository.)')
             sys.exit()
-
     if __network_db(config_data['remote'][remote]['db']): 
         import direct as function
         max_server_delay = 1
@@ -372,7 +438,6 @@ def retrieve():
                 branch = second_arg
             else:
                 logger.error('Not found component data "{0}" in remote "{1}".'.format(branch, remote))
-                logger.error('')
                 logger.error('(use "fetch <remote> to update component data.)')
                 sys.exit()
         else:
@@ -383,16 +448,7 @@ def retrieve():
                     option = first_arg
 
     if command == 'checkout': 
-        if not branch and 'branch' in head_data:
-            branch = head_data['branch']
         function.__checkout(args, branch, option)
-        head_file = open(head_path, 'w')
-        head_data = { 
-            'remote': remote,
-            'branch': branch
-        }
-        head_file.write(yaml.dump(head_data, default_flow_style=False))
-        head_file.close()
     elif command == 'log': function.__log(args, branch)
 
 if __name__ == '__main__': retrieve()
