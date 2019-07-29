@@ -248,6 +248,11 @@ sed -i -e "s!INSTITUTION!${HOSTNAME}!g" ${cfg}
 echo -e "\tUser Config: ${cfg}"
 echo -e ""
 
+# Add PATH on ~/.local/bin in bashrc
+echo -e "\tAdd PATH on ~/.local/bin"
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> $HOME/.bashrc
+echo -e ""
+
 # Check python module
 echo -e "[LDB] Check python modules..."
 pip3 install --user -r ${setting_dir}/requirements-pip.txt 2&> /dev/null && :
