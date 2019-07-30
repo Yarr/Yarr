@@ -72,6 +72,10 @@ endif()
 #add executables
 file(GLOB tools tools/*.cpp)
 
+if (NOT "NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
+  list(FILTER tools EXCLUDE REGEX tools/testNetioHw.cpp|tools/testBitStream.cpp|tools/testScan.cpp)
+  message("TOOLS: ${tools}")
+endif()
 
 foreach(target ${tools})
     get_filename_component(execname ${target} NAME_WE)
