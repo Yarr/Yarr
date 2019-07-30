@@ -54,6 +54,9 @@ add_library(Yarr STATIC ${LibSrcFiles})
 if ("rogue" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   YARR_ADD_TBB()
   add_dependencies(Yarr tbb_2019 rogue)
+
+  set(YARR_EXEC_DEPS ${YARR_EXEC_DEPS} rogue tbb_2019)
+  set(YARR_LIB_DEPS ${YARR_LIB_DEPS} tbb rogue-core)
 endif()
 
 if ("NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
@@ -61,6 +64,9 @@ if ("NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   YARR_ADD_NETIO()
   YARR_ADD_FELIX()
   add_dependencies(Yarr tbb_2019 felixbase4 netio4)
+
+  set(YARR_EXEC_DEPS ${YARR_EXEC_DEPS} tbb_2019 felixbase4 netio4)
+  set(YARR_LIB_DEPS ${YARR_LIB_DEPS} tbb netio)
 endif()
 
 #add executables
@@ -71,13 +77,14 @@ foreach(target ${tools})
     get_filename_component(execname ${target} NAME_WE)
     get_filename_component(srcfile ${target} NAME)
     add_executable(${execname} tools/${srcfile})
-    add_dependencies(${execname} Yarr rogue tbb_2019 felixbase4 netio4)
+    add_dependencies(${execname} Yarr ${YARR_EXEC_DEPS})
     set_target_properties(${execname} PROPERTIES LINKER_LANGUAGE CXX)
     link_directories(${PROJECT_BINARY_DIR}/external/src/rogue/lib)
     link_directories(BEFORE SYSTEM ${PROJECT_BINARY_DIR}/lib)
     # Whole-archive means not to drop symbols from Yarr.
     # Mainly this is about making sure the auto-registration works.
-    target_link_libraries(${execname}  -Wl,--whole-archive Yarr tbb -Wl,--no-whole-archive rogue-core netio pthread rt)
+    # Not sure why tbb needs same treatment...
+    target_link_libraries(${execname}  -Wl,--whole-archive Yarr tbb -Wl,--no-whole-archive ${YARR_LIB_DEPS} pthread rt)
     # Not sure why rt is not linked by default here
 endforeach()
 
