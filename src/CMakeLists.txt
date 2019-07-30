@@ -10,15 +10,35 @@ add_compile_options(-std=c++17)
 # Add -fPIC for (e.g. linking to shared libraries)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+set(YARR_FRONT_ENDS_TO_BUILD "all"
+    CACHE STRING "Semicolon-separated list of front-ends to build, or \"all\".")
+
+set(YARR_CONTROLLERS_TO_BUILD "all"
+    CACHE STRING "Semicolon-separated list of controllers to build, or \"all\".")
+
+set(YARR_ALL_FRONT_ENDS
+    Fe65p2 Fei4 Rd53a Star)
+
+set(YARR_ALL_CONTROLLERS
+    Spec Emu Rce Boc KU040 Rogue NetioHW)
+
+if( YARR_FRONT_ENDS_TO_BUILD STREQUAL "all" )
+  set( YARR_FRONT_ENDS_TO_BUILD ${YARR_ALL_FRONT_ENDS} )
+endif()
+
+if( YARR_CONTROLLERS_TO_BUILD STREQUAL "all" )
+  set( YARR_CONTROLLERS_TO_BUILD ${YARR_ALL_CONTROLLERS} )
+endif()
 
 #add libraries
-list(APPEND libs Yarr Spec Util Emu Fe65p2 Fei4 Rce Boc Rd53a KU040 Star)
-# TODO add gate
-list(APPEND libs Rogue )
-# TODO add gate
-list(APPEND libs NetioHW )
+list(APPEND libs Yarr Util)
+list(APPEND libs ${YARR_CONTROLLERS_TO_BUILD} )
+list(APPEND libs ${YARR_FRONT_ENDS_TO_BUILD} )
 
-link_directories(${PROJECT_BINARY_DIR}/external/src/rogue/lib)
+if ("rogue" IN_LIST YARR_CONTROLLERS_TO_BUILD )
+  link_directories(${PROJECT_BINARY_DIR}/external/src/rogue/lib)
+endif()
+
 link_directories(${PROJECT_BINARY_DIR}/lib)
 
 foreach(lib ${libs})
@@ -31,8 +51,14 @@ foreach(lib ${libs})
 endforeach()
 
 add_library(Yarr STATIC ${LibSrcFiles})
-add_dependencies(Yarr tbb_2019 felixbase4 netio4 rogue)
 
+if ("rogue" IN_LIST YARR_CONTROLLERS_TO_BUILD )
+  add_dependencies(Yarr tbb_2019 rogue)
+endif()
+
+if ("NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
+  add_dependencies(Yarr tbb_2019 felixbase4 netio4)
+endif()
 
 #add executables
 file(GLOB tools tools/*.cpp)
