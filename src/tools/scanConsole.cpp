@@ -92,8 +92,8 @@ int main(int argc, char *argv[]) {
     bool dbUse = false;
     std::string dbDirPath = home+"/.yarr/localdb";
     std::string dbCfgPath = dbDirPath+"/database.json";
-    std::string dbSiteCfgPath = dbDirPath+"/site.json";
-    std::string dbUserCfgPath = dbDirPath+"/user.json";
+    std::string dbSiteCfgPath = "";
+    std::string dbUserCfgPath = "";
     
     unsigned runCounter = 0;
 
@@ -296,11 +296,16 @@ int main(int argc, char *argv[]) {
         scanLog["dbCfg"] = dbCfg;
 
         database->initialize(dbCfgPath); 
-        database->setUser(dbUserCfgPath);
-        database->setSite(dbSiteCfgPath);
+
+        // set user config if specified
+        json userCfg = database->setUser(dbUserCfgPath);
+        scanLog["userCfg"] = userCfg;
+        // set site config if specified
+        json siteCfg = database->setSite(dbSiteCfgPath);
+        scanLog["siteCfg"] = siteCfg;
+
         std::cout << "-> Setting Connectivity Configs" << std::endl;
-        database->setConnCfg(cConfigPaths);
-        database->setTestRunStart(strippedScan, cConfigPaths, runCounter, target_charge, target_tot, (int)now, commandLineStr);
+        //database->setTestRunStart(strippedScan, cConfigPaths, runCounter, target_charge, target_tot, (int)now, commandLineStr);
     }
 
 
@@ -644,7 +649,7 @@ int main(int argc, char *argv[]) {
 
     // Register test info into database
     if (dbUse) {
-        database->cleanUp("scan", outputDir);
+        database->cleanUp("scan", outputDir, argv[0]);
     }
     delete database;
 

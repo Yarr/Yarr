@@ -26,7 +26,7 @@ DBHandler::~DBHandler() {
 //*****************************************************************************************************
 // Public functions
 //
-void DBHandler::initialize(std::string i_db_cfg_path) {
+void DBHandler::initialize(std::string i_db_cfg_path) { // will be deleted ?
     if (DB_DEBUG) std::cout << "DBHandler: Initializing." << std::endl;
 
     m_db_cfg_path = i_db_cfg_path;
@@ -66,36 +66,34 @@ void DBHandler::alert(std::string i_function, std::string i_message, std::string
     return;
 }
 
-void DBHandler::setUser(std::string i_user_path) {
+json DBHandler::setUser(std::string i_user_path) {
     if (DB_DEBUG) std::cout << "DBHandler: Set user: " << i_user_path << std::endl;
-    std::string user_name, institution;
-    if (i_user_path=="") {
-        user_name = getenv("USER");
-        institution = getenv("HOSTNAME");
-    } else {
-        json user_json = this->checkUserCfg(i_user_path);
-        user_name = user_json["userName"];
-        institution = user_json["institution"];
-    }
-    std::cout << "\tUser name: " << user_name << "\n\tInstitution: " << institution << std::endl;
 
-    return;
+    json user_json;
+    if (i_user_path=="") {
+        user_json["userName"] = getenv("USER");
+        user_json["institution"] = getenv("HOSTNAME");
+    } else { 
+        json user_json = this->checkUserCfg(i_user_path);
+    }
+    user_json["machineUser"] = getenv("USER");
+    user_json["hostname"] = getenv("HOSTNAME");
+
+    return user_json;
 }
 
-void DBHandler::setSite(std::string i_address_path) {
+json DBHandler::setSite(std::string i_address_path) {
     if (DB_DEBUG) std::cout << "DBHandler: Set site: " << i_address_path << std::endl;
+    json site_json;
     std::string address;
     if (i_address_path=="") {
-        std::string hostname = getenv("HOSTNAME");
-        std::string user = getenv("USER");
-        address = hostname+"_"+user;
+        site_json["institution"] = getenv("HOSTNAME");
     } else {
-        json address_json = this->checkAddressCfg(i_address_path);
-        address = address_json["macAddress"];
+        site_json = this->checkAddressCfg(i_address_path);
     }
-    std::cout << "\tMAC Address: " << address << std::endl;
+    site_json["hostname"] = getenv("HOSTNAME");
 
-    return;
+    return site_json;
 }
 
 void DBHandler::setConnCfg(std::vector<std::string> i_conn_paths) {
@@ -107,12 +105,14 @@ void DBHandler::setConnCfg(std::vector<std::string> i_conn_paths) {
     }
 }
 
-void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, std::string i_serial_number) {
+void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, std::string i_conn_path) {
     if (DB_DEBUG) std::cout << "DBHandler: Set DCS config: " << i_dcs_path << std::endl;
 
     json log_json = this->toJson(i_scanlog_path);
+    json conn_json = this->toJson(i_conn_path);
     if (log_json["id"].empty()) {
-        this->checkEmpty(log_json["startTime"].empty()&&log_json["timestamp"].empty(), "testRun.startTime||testRun.timestamp", i_scanlog_path);
+        this->checkEmpty(log_json["startTime"].empty()&&log_json["timestamp"].empty(), "startTime||timestamp", i_scanlog_path);
+        this->checkEmpty(conn_json["chips"].empty(), "chips", i_conn_path);
     }
 
     char path[1000];
@@ -143,10 +143,9 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, st
 
     json dcs_log_json;
 
-    std::string serial_number = "";
     int timestamp_int = -1;
     std::string timestamp_str = "";
-    dcs_log_json["serialNumber"] = i_serial_number;
+    dcs_log_json["connectivity"] = conn_json;
     if (!log_json["id"].empty()) dcs_log_json["id"] = log_json["id"];
     if (!log_json["startTime"].empty()) dcs_log_json["startTime"] = log_json["startTime"];
     if (!log_json["timestamp"].empty()) dcs_log_json["timestamp"] = log_json["timestamp"];
@@ -218,14 +217,15 @@ void DBHandler::setTestRunStart(std::string i_test_type, std::vector<std::string
     return;
 }
 
-void DBHandler::cleanUp(std::string i_option, std::string i_dir) {
+void DBHandler::cleanUp(std::string i_option, std::string i_dir, std::string i_command) {
+
+    char path[1000];
+    std::string current_dir = getcwd(path, sizeof(path));
 
     std::string result_dir;
     if (i_dir=="") {
         result_dir = m_output_dir;
     } else {
-        char path[1000];
-        std::string current_dir = getcwd(path, sizeof(path));
         if (i_dir.substr(0,1)==".") {
             result_dir = current_dir + i_dir.substr(1);
         } else {
@@ -243,9 +243,14 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir) {
 
     std::string home = getenv("HOME");
     std::string log_path;
-    if (i_option=="scan") log_path = home+"/.yarr/run.dat";
-    else if (i_option=="dcs") log_path = home+"/.yarr/dcs.dat";
-    else {
+    std::size_t pathPos = i_command.find_last_of('/');
+    std::string command = i_command.substr(0, pathPos) + "/../localdb/bin/localdbtool-upload";
+    if (i_option=="scan") {
+        log_path = home+"/.yarr/run.dat";
+        
+    } else if (i_option=="dcs") {
+        log_path = home+"/.yarr/dcs.dat";
+    } else {
         std::string message = "Unsupported option.";
         std::string function = __PRETTY_FUNCTION__;
         this->alert(function, message);
@@ -253,17 +258,17 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir) {
 
     std::fstream db_file(log_path, std::ios::out|std::ios::app);
 
-    std::string cmd = "localdbtool-upload test 2> /dev/null";
+    std::string cmd = command+" test 2> /dev/null";
     if (system(cmd.c_str())!=0) {
         std::cerr << "#DB ERROR# Cannot upload result data into Local DB" << std::endl;
         std::cerr << "           Not found Local DB command: 'localdbtool-upload'" << std::endl;
         std::cerr << "           Try 'YARR/localdb/setup_db.sh' to set Local DB command and 'localdbtool-upload cache' to upload data." << std::endl;
         db_file << result_dir << std::endl;
     } else {
-        cmd = "localdbtool-upload init --database "+m_db_cfg_path;
+        cmd = command+" init --database "+m_db_cfg_path;
         if (system(cmd.c_str())==0) {
-            if (i_option=="scan") cmd = "localdbtool-upload scan "+result_dir+" --log &";
-            else if (i_option=="dcs") cmd = "localdbtool-upload dcs "+result_dir+" --log &";
+            if (i_option=="scan") cmd = command+" scan "+result_dir+" --log &";
+            else if (i_option=="dcs") cmd = command+" dcs "+result_dir+" --log &";
             system(cmd.c_str());
             std::cout << "#DB INFO# Uploading in the back ground. (log: ~/.yarr/localdb/log/)" << std::endl;
         } else {
@@ -531,8 +536,6 @@ json DBHandler::checkAddressCfg(std::string i_address_path) {
     if (DB_DEBUG) std::cout << "\t\tDBHandler: Check address config file: " << i_address_path << std::endl;
 
     json address_json = this->toJson(i_address_path);
-    this->checkEmpty(address_json["macAddress"].empty(), "macAddress", i_address_path);
-    this->checkEmpty(address_json["hostname"].empty(), "hostname", i_address_path);
     this->checkEmpty(address_json["institution"].empty(), "institution", i_address_path);
     return address_json;
 }

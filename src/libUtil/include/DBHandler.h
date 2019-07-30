@@ -64,12 +64,12 @@ class DBHandler {
         - Config: requires config file and information to set config data
         - Attachment: requires dat file and information to set dat data
         ***/
-        void setUser(std::string /*i_user_path*/);
-        void setSite(std::string /*i_address_path*/);
+        json setUser(std::string /*i_user_path*/);
+        json setSite(std::string /*i_address_path*/);
         void setConnCfg(std::vector<std::string> /*i_conn_paths*/); 
         void setDCSCfg(std::string /*i_dcs_path*/,
                        std::string /*i_scanlog_path*/,
-                       std::string /*i_serial_number*/);
+                       std::string i_conn_path="");
         void setTestRunStart(std::string /*i_test_type*/, 
                              std::vector<std::string> /*i_conn_paths*/,
                              int /*i_run_number*/, 
@@ -103,7 +103,8 @@ class DBHandler {
         Clean up veriables after scanConsole
         ***/
         void cleanUp(std::string /*i_option*/,
-                     std::string i_dir="");
+                     std::string /*i_dir*/,
+                     std::string /*i_command*/);
 
     protected:
         /// check data function

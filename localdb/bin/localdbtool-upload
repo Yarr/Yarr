@@ -27,7 +27,6 @@ home = os.environ['HOME']
 global localdb
 global option
 global logfile
-global db_support
 
 ### local functions
 def readConfig(conf_path):
@@ -60,24 +59,45 @@ def getArgs():
 
     return args
 
-def getTestRunData(tr_oid, serial_number, timestamp):
+def getTestRunData(i_type, i_tr_oid, i_conn_json=None, i_timestamp=None, i_site_oid=None, i_user_oid=None):
     logger.debug('Local DB: Get TestRun Data.')
 
-    if tr_oid=='':
-        start_time = datetime.utcfromtimestamp(timestamp)
-        doc_value = {
-            'startTime'   : start_time,
-            'serialNumber': serial_number
-        }
+    tr_oid = None
+
+    if i_tr_oid=='':
+        if not i_conn_json or not i_timestamp:
+            return tr_oid
+        start_time = datetime.utcfromtimestamp(i_timestamp)
+        doc_value = { 'startTime' : start_time }
+        if i_site_oid: doc_value.update({ 'address': i_site_oid })
+        if i_user_oid: doc_value.update({ 'user_id': i_user_oid })
+        run_entries = localdb.testRun.find(doc_value)
+        for run_entry in run_entries:
+            chip_names = []
+            for chip_json in i_conn_json['chips']:
+                if chip_json.get('enable', 1)==0: continue
+                chip_names.append({ 'name': chip_json['name'] })
+            query = {
+                'testRun' : str(run_entry['_id']),
+                '$or': chip_names 
+            }
+            ctr_entries = localdb.componentTestRun.find(query)
+            if not ctr_entries.count()==0:
+                tr_oid = str(run_entry['_id'])
+                break
     else:
-        doc_value = {
-            '_id': ObjectId(tr_oid)
-        }
-    this_run = localdb.testRun.find_one(doc_value)
-    if this_run: 
-        return str(this_run['_id'])
-    else: 
-        return ''
+        doc_value = { '_id': ObjectId(i_tr_oid) }
+        this_run = localdb.testRun.find_one(doc_value)
+        if this_run:
+            tr_oid = str(this_run['_id'])
+
+    if tr_oid and i_type=='dcs':
+        query = { '_id': ObjectId(tr_oid) }
+        this_run = localdb.testRun.find_one(query)
+        if this_run.get('environment','...')=='...':
+            tr_oid = None
+
+    return tr_oid
 
 ### main functions
 def __init(db_cfg):
@@ -173,88 +193,113 @@ def __set_cache(cache_dir):
 
     args = getArgs()
 
-    global db_support
-
     register.__global.dir_path = cache_dir
-    if option=='scan': scanlog_path = '{}/scanLog.json'.format(cache_dir)
-    elif option=='dcs': scanlog_path = '{}/dbDcsLog.json'.format(cache_dir)
-    else: return
+    if option=='scan': 
+        scanlog_path = '{}/scanLog.json'.format(cache_dir)
+    elif option=='dcs': 
+        scanlog_path = '{}/dbDcsLog.json'.format(cache_dir)
+    else: 
+        return
 
     scanlog_json = register.toJson(scanlog_path)
-    db_support = False
+
     db_cfg = None
-    if 'dbCfg' in scanlog_json:
-        db_cfg = scanlog_json['dbCfg']
-        db_support = True
     if args.database:
         db_cfg = register.toJson(args.database)
+    elif 'dbCfg' in scanlog_json:
+        db_cfg = scanlog_json['dbCfg']
+
     if not db_cfg:
-        logger.warning('The result data {} is not supported by the Local DB scheme and may not upload properly.\n'.format(cache_dir))
         db_cfg = register.toJson('{}/.yarr/localdb/database.json'.format(os.environ['HOME']))
         if db_cfg=={}:
             logger.error('There is no default database config in {}/.yarr/localdb')
             logger.error('Set it by YARR/localdb/setting/setup_db.sh')
             sys.exit(1)
+
+    result = False
     if __init(db_cfg)==True:
-        if option=='scan': result=__write_scan(cache_dir)
-        if option=='dcs': result=__write_dcs(cache_dir)
+        if option=='scan': 
+            result=__write_scan(cache_dir, scanlog_json)
+        if option=='dcs': 
+            result=__write_dcs(cache_dir, scanlog_json)
     else:
         logger.error('Cannot upload data {}, retry again in the good connection to Local DB Server'.format(cache_dir))
         result = True
 
     __clean(cache_dir, result)
 
-def __write_scan(cache_dir):
+##################
+# Scan Data Upload
+# Upload scan data from result data files following scanLog.json
+def __write_scan(cache_dir, scanlog_json):
     logger.debug('Local DB: Write cache scan data: {}.'.format(cache_dir))
-
-    args = getArgs()
-
     logger.info('Cache Directory: {}\n'.format(cache_dir))
 
-    scanlog_path = '{}/scanLog.json'.format(cache_dir)
-    scanlog_json = register.toJson(scanlog_path)
+    args = getArgs()
 
     if scanlog_json=={}:
         logger.warning('No Scan Data\n')
         return False
 
-    # connectivity
-    if 'startTime' in scanlog_json:
-        timestamp = scanlog_json['startTime']
-    else:
-        timestamp = time.mktime(time.strptime(scanlog_json['timestamp'], '%Y-%m-%d_%H:%M:%S'))
-    conns = []
-    conn_jsons = register.__set_conn_cfg(scanlog_json['connectivity'], cache_dir, db_support)
-    for conn_json in conn_jsons:
-        mo_serial_number = conn_json["module"]["serialNumber"]
-        tr_oid = getTestRunData('', mo_serial_number, timestamp)
-        if tr_oid!='':
-            register.__global.tr_oids.append(tr_oid)
-            logger.warning('Already registered test run data in DB, then skip to save...\n')
-            continue
-        conns.append(conn_json)
-
-    if conns==[]: return True
-
-    # site
-    if not 'siteCfg' in scanlog_json and args.site:
-        user_json = register.toJson(args.site)
-        scanlog_json['userCfg'] = user_json
-    register.__set_site(scanlog_json)
-    # user
-    if not 'userCfg' in scanlog_json and args.user:
-        user_json = register.toJson(args.user)
-        scanlog_json['userCfg'] = user_json
-    register.__set_user(scanlog_json)
-        
-    run_number = scanlog_json['runNumber']
-    target_charge = scanlog_json['targetCharge']
-    target_tot = scanlog_json['targetTot']
+    ###########
+    # timestamp
+    # If 'start/finishTime' is written in scanLog.json, extract 'start/finishTime' from scanLog.json.
+    # If not, extract 'timestamp' and convert it to 'start/finishTime'.
     if 'startTime' in scanlog_json:
         start_timestamp = scanlog_json['startTime']
     else:
-        start_timestamp = timestamp
-    command = scanlog_json['exec'] 
+        start_timestamp = time.mktime(time.strptime(scanlog_json['timestamp'], '%Y-%m-%d_%H:%M:%S'))
+    if 'finishTime' in scanlog_json:
+        finish_timestamp = scanlog_json['finishTime']
+    else:
+        finish_timestamp = start_timestamp
+    scanlog_json['startTime']  = start_timestamp
+    scanlog_json['finishTime'] = finish_timestamp
+
+    ######
+    # site
+    # If site config file is speficied, register site information from the config file.
+    # If not, register site information by extracting mac address and hostname of the machine.
+    # If the site information has already registered, this step will be skipped.
+    if args.site:
+        site_json = register.toJson(args.site)
+        scanlog_json['siteCfg'] = site_json
+    site_oid = register.__set_site(scanlog_json)
+
+    ######
+    # user
+    # If user config file is specified, register user information from the user file.
+    # If not, register user information by extracting user name and hostname of the machine.
+    # If the user information has already registered, this step will be skipped.
+    if args.user:
+        user_json = register.toJson(args.user)
+        scanlog_json['userCfg'] = user_json
+    user_oid = register.__set_user(scanlog_json)
+
+    #############
+    # connctivity
+    # Check chip status ('enable':True/False) and upload for disabled chip will be skipped.
+    # If the test data associated with the component has already registered, the test data upload will be skipped.
+    conn_jsons = []
+    if not type(scanlog_json['connectivity'])==type([]): 
+        conn_json = register.__set_conn_cfg(scanlog_json['connectivity'], cache_dir)
+        conn_jsons.append(conn_json)
+    else:
+        for connectivity in scanlog_json['connectivity']:
+            conn_json = register.__set_conn_cfg(connectivity, cache_dir)
+            conn_jsons.append(conn_json)
+    for i, conn_json in enumerate(conn_jsons):
+        conn_json['testRun'] = getTestRunData('scan', '', conn_json, start_timestamp, site_oid, user_oid)
+        if conn_json.get('testRun', None):
+            register.__global.tr_oids.append(conn_json['testRun'])
+            logger.warning('Already registered test data in DB.\n')
+            continue
+        conn_jsons[i] = conn_json
+        
+    ##########
+    # testType
+    # If 'testType' is written in scanLog.json, extract 'testType' from scanLog.json.
+    # If not, extract '-s <scanCfg.json' from command line and convert it to 'testType'.
     if 'testType' in scanlog_json:
         test_type = scanlog_json['testType']
     else:
@@ -263,55 +308,53 @@ def __write_scan(cache_dir):
                 scan_command = command.split(' ')[i+1]
                 break
         test_type = scan_command.split('/')[-1].split('.')[0]
-    register.__set_test_run_start(test_type, conns, run_number, target_charge, target_tot, start_timestamp, command)
+    scanlog_json['testType'] = test_type
+    
+    ########################
+    # test data upload
+    # Almost all information of scanLog.json will be stored as test data with keeping the format.
+    # (Config data and timestamps are stored in the specific format.)
 
-    # controller config
-    cfg_json = scanlog_json['ctrlCfg']
-    register.__set_config(-1, -1, cfg_json, 'controller', 'ctrlCfg', 'testRun', 'null', conn_jsons)
+    # start
+    conn_jsons = register.__set_test_run_start(scanlog_json, conn_jsons)
 
-    scan_cfg_path = '{0}/{1}.json'.format(cache_dir, test_type)
-    cfg_json = register.toJson(scan_cfg_path)
-    register.__set_config(-1, -1, cfg_json, test_type, 'scanCfg', 'testRun', 'null', conn_jsons)
+    # config and attachment
+    for conn_json in conn_jsons:
+        # config for testRun
+        for key in scanlog_json:
+            if not 'Cfg' in scanlog_json: continue
+            cfg_json = scanlog_json[key]
+            register.__set_config(cfg_json, key, key, 'testRun', {}, conn_json)
+        scan_cfg_path = '{0}/{1}.json'.format(cache_dir, test_type)
+        cfg_json = register.toJson(scan_cfg_path)
+        register.__set_config(cfg_json, test_type, 'scanCfg', 'testRun', {}, conn_json)
 
-    for conn_json in conns:
         for chip_json in conn_json['chips']:
-            chip_serial_number = chip_json['serialNumber']
             chip_name = chip_json['name']
             title = 'chipCfg'
-            # before
-            chip_cfg_path = chip_json['config'].split('/')[len(chip_json['config'].split('/'))-1]
-            cfg_json = register.toJson('{0}/{1}.before'.format(cache_dir, chip_cfg_path))
-            filename = 'beforeCfg'
-            register.__set_config(-1, -1, cfg_json, filename, title, 'componentTestRun', chip_serial_number, conn_jsons)
+            chip_cfg_name = chip_json['config'].split('/')[len(chip_json['config'].split('/'))-1]
 
-            # before
-            chip_cfg_path = chip_json['config'].split('/')[len(chip_json['config'].split('/'))-1]
-            cfg_json = register.toJson('{0}/{1}.after'.format(cache_dir, chip_cfg_path))
-            filename = 'afterCfg'
-            register.__set_config(-1, -1, cfg_json, filename, title, 'componentTestRun', chip_serial_number, conn_jsons)
-
-            # attachment
             for file_name in os.listdir(cache_dir):
+                # config for componentTestRun
+                if chip_cfg_name in file_name:
+                    cfg_json = register.toJson('{0}/{1}'.format(cache_dir, file_name))
+                    filename = '{}Cfg'.format(file_name.strip(chip_cfg_name))
+                    register.__set_config(cfg_json, filename, title, 'componentTestRun', chip_json, conn_json)
+                    continue
+                # attachment for componentTestRun
                 if chip_name in file_name and 'dat' in file_name:
                     file_path = '{0}/{1}'.format(cache_dir, file_name)
                     histoname = file_name.split('{}_'.format(chip_name))[1].split('.')[0]
-                    register.__set_attachment(-1, -1, file_path, histoname, chip_serial_number, conn_jsons)
-
-    if 'finishTime' in scanlog_json:
-        finish_timestamp = scanlog_json['finishTime']
-    else:
-        finish_timestamp = start_timestamp
-    register.__set_test_run_finish(test_type, conns, run_number, target_charge, target_tot, finish_timestamp, command, scanlog_json)
+                    register.__set_attachment(file_path, histoname, chip_json, conn_json)
+                    continue
+    # finish
+    register.__set_test_run_finish(scanlog_json, conn_jsons)
 
     return True
 
-def __write_dcs(cache_dir):
+def __write_dcs(cache_dir, dcslog_json):
     logger.debug('Local DB: Write cache DCS data: {}.'.format(cache_dir))
-
     logger.info('Cache Directory: {}\n'.format(cache_dir))
-
-    dcslog_path = '{}/dbDcsLog.json'.format(cache_dir)
-    dcslog_json = register.toJson(dcslog_path)
 
     if dcslog_json=={}:
         logger.warning('No DCS Data\n')
@@ -321,6 +364,10 @@ def __write_dcs(cache_dir):
         logger.warning('No DCS data in the log file: {}/dbDcsLog.json\n'.format(cache_dir))
         return False
 
+    ###########
+    # timestamp
+    # If 'start/finishTime' is written in scanLog.json, extract 'start/finishTime' from scanLog.json.
+    # If not, extract 'timestamp' and convert it to 'start/finishTime'.
     if 'startTime' in dcslog_json:
         timestamp = dcslog_json['startTime']
     elif 'timestamp' in dcslog_json:
@@ -328,11 +375,12 @@ def __write_dcs(cache_dir):
     else:
         timestamp = -1
 
-    tr_oid = getTestRunData(dcslog_json.get('id',''), dcslog_json.get('serialNumber',''), timestamp)
-    if tr_oid=='':
+    conn_json = register.__set_conn_cfg(dcslog_json.get('connectivity',{}), cache_dir)
+    tr_oid = getTestRunData('scan', dcslog_json.get('id',''), conn_json, timestamp)
+    if not tr_oid:
         logger.warning('Not found relational test run data in DB\n')
         return True
-    register.__global.tr_oids.append(tr_oid)
+
     doc_value = { '_id': ObjectId(tr_oid) }
     this_run = localdb.testRun.find_one(doc_value)
     if not this_run.get('environment','...')=='...':
@@ -340,48 +388,44 @@ def __write_dcs(cache_dir):
         return False
 
     register.__dcs(tr_oid, dcslog_json['environments'])
+    register.__global.tr_oids.append(tr_oid)
 
     return True
 
 def __clean(cache_dir, result):
     logger.debug('Local DB: Clean Up: {}.'.format(option))
 
+    ############
     # cache list
-    if option=='scan': file_path = '{}/.yarr/run.dat'.format(home)
-    elif option=='dcs': file_path = '{}/.yarr/dcs.dat'.format(home)
+    # scan upload -> cache file : ~/.yarr/run.dat
+    # dcs upload  -> cache file : ~/.yarr/dcs.dat
+    if option=='scan': 
+        cache_path = '{}/.yarr/run.dat'.format(home)
+    elif option=='dcs': 
+        cache_path = '{}/.yarr/dcs.dat'.format(home)
     else: return
 
-    if os.path.isfile(file_path):
-        with open(file_path,'r') as f:
+    if os.path.isfile(cache_path):
+        with open(cache_path,'r') as f:
             cache_list = f.read().splitlines()
     else:
         cache_list = []
     cache_list.append(cache_dir)
     cache_list = list(set(cache_list))
+
     if not result==True:
+    # Unuploadable test data outputs 'result:False', then remove directory path from cache list.
         if cache_dir in cache_list: cache_list.remove(cache_dir)
     else:
-        if option=='scan':
+        if option=='scan' or option=='dcs':
             for tr_oid in register.__global.tr_oids:
-                return_tr_oid = getTestRunData(tr_oid, '', '')
-                if not return_tr_oid=='':
+                if getTestRunData(option, tr_oid):
                     logger.info('Success\n')
                     if cache_dir in cache_list: cache_list.remove(cache_dir)
                 else:
                     logger.error('Something wrong, check log file: {}\n'.format(logfile))
-        elif option=='dcs':
-            for tr_oid in register.__global.tr_oids:
-                doc_value = { '_id': ObjectId(tr_oid) }
-                this_run = localdb.testRun.find_one(doc_value)
-                if not this_run.get('environment','...')=='...':
-                    logger.info('Success')
-                    if cache_dir in cache_list: cache_list.remove(cache_dir)
-                else:
-                    logger.error('Something wrong, check log file: {}i\n'.format(logfile))
 
-    if os.path.isfile(file_path): os.remove(file_path)
-
-    with open(file_path,'w') as f:
+    with open(cache_path,'w') as f:
         for line in cache_list:
             if not line or not line=='': f.write('{}\n'.format(line))
 
@@ -439,7 +483,7 @@ def __upload_comp(comp_path):
         sys.exit(0)
     status = register.__conn_cfg(comp_path)
     if status==True:
-        logger.info('Completed the registration successfuly.')
+        logger.info('Completed the upload successfuly.')
     else:
         logger.info('Already registered.')
     sys.exit()

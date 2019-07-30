@@ -28,14 +28,15 @@ int main(int argc, char *argv[]){
     std::string site_cfg_path = dbDirPath+"/site.json";
     std::string registerType = "";
 
+    std::string commandLine= argv[0];
+
     // Init parameters
     std::string dcs_path = "";
     std::string conn_path = "";
     std::string scanlog_path = "";
-    std::string serial_number = "";
 
     int c;
-    while ((c = getopt(argc, argv, "hRC:E:Ms:m:i:d:u:")) != -1 ){
+    while ((c = getopt(argc, argv, "hRCE:Mc:s:i:d:u:")) != -1 ){
         switch (c) {
             case 'h':
                 printHelp();
@@ -46,7 +47,6 @@ int main(int argc, char *argv[]){
                 break;
             case 'C':
                 registerType = "Component";
-                conn_path = std::string(optarg);
                 break;
             case 'E':
                 registerType = "Environment";
@@ -55,11 +55,11 @@ int main(int argc, char *argv[]){
             case 'M':
                 registerType = "Module";
                 break;
+            case 'c':
+                conn_path = std::string(optarg);
+                break;
             case 's':
                 scanlog_path = std::string(optarg);
-                break;
-            case 'm':
-                serial_number = std::string(optarg);
                 break;
             case 'i':
                 site_cfg_path = std::string(optarg);
@@ -122,16 +122,12 @@ int main(int argc, char *argv[]){
             std::cerr << "#DB ERROR# No scan log file path given, please specify file path under -s option!" << std::endl;
             return 1;
         }
-        if (serial_number == "") {
-            std::cerr << "#DB ERROR# No module serial number given, please specify serial number under -m option!" << std::endl;
-            return 1;
-        }
         std::cout << "DBHandler: Register Environment:" << std::endl;
         std::cout << "\tenvironmental config file : " << dcs_path << std::endl;
 
         database->initialize(cfg_path);
-        database->setDCSCfg(dcs_path, scanlog_path, serial_number);
-        database->cleanUp("dcs");
+        database->setDCSCfg(dcs_path, scanlog_path, conn_path);
+        database->cleanUp("dcs", "", commandLine);
 
         delete database;
     }
@@ -156,10 +152,11 @@ void printHelp() {
     std::string dbDirPath = home+"/.yarr/localdb";
     std::cout << "Help:" << std::endl;
     std::cout << " -h: Shows this." << std::endl;
-    std::cout << " -C <component.json> : Provide component connectivity configuration to register component data into Local DB." << std::endl;
+    std::cout << " -C: Upload component data into Local DB." << std::endl;
+    std::cout << "     -c <component.json> : Provide component connectivity configuration." << std::endl;
     std::cout << " -R: Upload data into Local DB from cache." << std::endl;
     std::cout << " -E <dcs.json> : Provide DCS configuration to upload DCS data into Local DB." << std::endl;
-    std::cout << "     -m <module> : Provide module serial number." << std::endl;
+    std::cout << "     -c <conn.json> : Provide connectivity config file." << std::endl;
     std::cout << "     -s <scanLog.json> : Provide scan log file." << std::endl;
     std::cout << " -d <database.json> : Provide database configuration. (Default: " << dbDirPath << "/database.json" << std::endl;
     std::cout << " -i <site.json> : Provide site configuration. (Default: " << dbDirPath << "/site.json" << std::endl;
