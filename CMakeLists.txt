@@ -94,7 +94,7 @@ ExternalProject_Add (
 ExternalProject_Add (
     rogue
     GIT_REPOSITORY https://github.com/slaclab/rogue.git
-    GIT_TAG atlas-fixes
+    GIT_TAG v3.6.0
     UPDATE_COMMAND ""
     INSTALL_COMMAND make install
     PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
