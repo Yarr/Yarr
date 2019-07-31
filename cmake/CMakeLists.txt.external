@@ -1,5 +1,9 @@
 # TBB
 function(YARR_ADD_TBB)
+    if (TARGET tbb_2019)
+        return()
+    endif()
+
     # Architecture
     if ("${TARGET_ARCH}" STREQUAL "arm")
         set(TBB_ARCH "arch=arm")
@@ -31,6 +35,10 @@ function(YARR_ADD_TBB)
 endfunction()
 
 function(YARR_ADD_NETIO)
+    if (TARGET netio4)
+        return()
+    endif()
+
     # NetIO
     ExternalProject_Add (
         netio4
@@ -49,6 +57,10 @@ function(YARR_ADD_NETIO)
 endfunction()
 
 function(YARR_ADD_FELIX)
+    if (TARGET felixbase4)
+        return()
+    endif()
+
     # FELIX
     ExternalProject_Add (
         felixbase4
@@ -67,6 +79,10 @@ function(YARR_ADD_FELIX)
 endfunction()
 
 function(YARR_ADD_ROGUE)
+    if (TARGET rogue)
+        return()
+    endif()
+
     # Rogue
     ExternalProject_Add (
         rogue
