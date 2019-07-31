@@ -30,6 +30,15 @@ if( YARR_CONTROLLERS_TO_BUILD STREQUAL "all" )
   set( YARR_CONTROLLERS_TO_BUILD ${YARR_ALL_CONTROLLERS} )
 endif()
 
+message("Controllers to build:")
+foreach (_controller ${YARR_CONTROLLERS_TO_BUILD})
+    message("- ${_controller}")
+endforeach()
+message("FrontEnds to build:")
+foreach (_frontends ${YARR_FRONT_ENDS_TO_BUILD})
+    message("- ${_frontends}")
+endforeach()
+
 #add libraries
 list(APPEND libs Yarr Util)
 list(APPEND libs ${YARR_CONTROLLERS_TO_BUILD} )
@@ -75,8 +84,13 @@ file(GLOB tools tools/*.cpp)
 
 if (NOT "NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   list(FILTER tools EXCLUDE REGEX tools/testNetioHw.cpp|tools/testBitStream.cpp|tools/testScan.cpp)
-  message("TOOLS: ${tools}")
 endif()
+
+message("Executeables to build:")
+foreach (_tool ${tools})
+    message("- ${_tool}")
+endforeach()
+
 
 foreach(target ${tools})
     get_filename_component(execname ${target} NAME_WE)
