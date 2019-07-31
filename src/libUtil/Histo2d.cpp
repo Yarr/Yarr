@@ -30,6 +30,8 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     overflow = 0;
     data = new double[xbins*ybins];
     isFilled = new bool[xbins*ybins];
+    for (unsigned index=0; index < xbins*ybins; index++)
+      isFilled[index]=false;
     this->setAll(0);
     entries = 0;
 
@@ -53,6 +55,10 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     overflow = 0;
     data = new double[xbins*ybins];
     isFilled = new bool[xbins*ybins];
+    for (unsigned index=0; index < xbins*ybins; index++)
+      isFilled[index]=false;
+
+
     this->setAll(0);
     entries = 0;
 }
