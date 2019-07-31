@@ -10,10 +10,10 @@ add_compile_options(-std=c++17)
 # Add -fPIC for (e.g. linking to shared libraries)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-set(YARR_FRONT_ENDS_TO_BUILD "all"
+set(YARR_FRONT_ENDS_TO_BUILD "Fei4;Rd53a;Star;Fe65p2"
     CACHE STRING "Semicolon-separated list of front-ends to build, or \"all\".")
 
-set(YARR_CONTROLLERS_TO_BUILD "all"
+set(YARR_CONTROLLERS_TO_BUILD "Spec;Emu"
     CACHE STRING "Semicolon-separated list of controllers to build, or \"all\".")
 
 set(YARR_ALL_FRONT_ENDS
@@ -35,10 +35,6 @@ list(APPEND libs Yarr Util)
 list(APPEND libs ${YARR_CONTROLLERS_TO_BUILD} )
 list(APPEND libs ${YARR_FRONT_ENDS_TO_BUILD} )
 
-if ("rogue" IN_LIST YARR_CONTROLLERS_TO_BUILD )
-  YARR_ADD_ROGUE()
-endif()
-
 link_directories(${PROJECT_BINARY_DIR}/lib)
 
 foreach(lib ${libs})
@@ -51,12 +47,14 @@ endforeach()
 
 add_library(Yarr STATIC ${LibSrcFiles})
 
-if ("rogue" IN_LIST YARR_CONTROLLERS_TO_BUILD )
+if ("Rogue" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   YARR_ADD_TBB()
+  YARR_ADD_ROGUE()
   add_dependencies(Yarr tbb_2019 rogue)
 
   set(YARR_EXEC_DEPS ${YARR_EXEC_DEPS} rogue tbb_2019)
   set(YARR_LIB_DEPS ${YARR_LIB_DEPS} tbb rogue-core)
+
 endif()
 
 if ("NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
@@ -67,6 +65,9 @@ if ("NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
 
   set(YARR_EXEC_DEPS ${YARR_EXEC_DEPS} tbb_2019 felixbase4 netio4)
   set(YARR_LIB_DEPS ${YARR_LIB_DEPS} tbb netio)
+
+  include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/felixbase4)
+  include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/netio4)
 endif()
 
 #add executables
@@ -83,7 +84,6 @@ foreach(target ${tools})
     add_executable(${execname} tools/${srcfile})
     add_dependencies(${execname} Yarr ${YARR_EXEC_DEPS})
     set_target_properties(${execname} PROPERTIES LINKER_LANGUAGE CXX)
-    link_directories(${PROJECT_BINARY_DIR}/external/src/rogue/lib)
     link_directories(BEFORE SYSTEM ${PROJECT_BINARY_DIR}/lib)
     # Whole-archive means not to drop symbols from Yarr.
     # Mainly this is about making sure the auto-registration works.

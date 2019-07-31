@@ -26,6 +26,8 @@ function(YARR_ADD_TBB)
         CONFIGURE_COMMAND ""
         PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
         )
+    link_directories(${CMAKE_CURRENT_BINARY_DIR}/lib)
+    include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/tbb_2019/include)
 endfunction()
 
 function(YARR_ADD_NETIO)
@@ -69,14 +71,14 @@ function(YARR_ADD_ROGUE)
     ExternalProject_Add (
         rogue
         GIT_REPOSITORY https://github.com/slaclab/rogue.git
-        GIT_TAG atlas-fixes
+        GIT_TAG v3.6.0
         UPDATE_COMMAND ""
         INSTALL_COMMAND make install
         PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
         CMAKE_ARGS "-DNO_PYTHON=1" "-DNO_ZMQ=1" "-DNO_BZIP=1" "-DSTATIC_LIB=1" "${TOOLCHAIN}"
+        DEPENDS tbb_2019
         )
 
-    link_directories(${PROJECT_BINARY_DIR}/external/src/rogue/lib)
-    include_directories(${PROJECT_BINARY_DIR}/external/src/rogue/include)
-
+    link_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/rogue/lib)
+    include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/rogue/include)
 endfunction()
