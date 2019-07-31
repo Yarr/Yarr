@@ -31,9 +31,11 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
 - Some misc packages (can be installed via yum):
     - gnuplot
     - texlive-epstopdf
-    - zeromq, zeromq-devel
+    - zeromq, zeromq-devel (for rogue and netio controller)
 
-## Quick Install Guide:
+## Quick minimal Install Guide:
+
+- Builds spec and emu controller for mininmal dependencies
 - Clone from git 
 	- ``$ git clone https://gitlab.cern.ch/YARR/YARR.git Yarr``
 - Compilation:
@@ -46,6 +48,16 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
 - Running
     - execute programs from the repository top folder
 
+### Building additional controllers
+
+- In order to build with more controllers execute cmake with extra options
+    - For all controllers: 
+        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=all ..``
+    - For NetIO:
+        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;NetioHW``
+    - For Rogue:
+        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;Rogue``
+
 ### RCE Guide
 - for ARM target cross compilers are provided by the RCE_SDK
     - installtion instructions: https://twiki.cern.ch/twiki/bin/viewauth/Atlas/RCEGen3SDK
@@ -55,8 +67,8 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
     - ``$ export CENTOS7_ARM64_ROOT=/opt/rce/rootfs/centos7_64 #for ZCU102 ``
     - ``$ cd build``
     - select one of the supported toolchains
-        - ``$ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang # requires clang installed on Linux ``
-        - ``$ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc # gcc 4.8 or higher ``
-        - ``$ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm32 # ARM32/Centos7 on RCE ``
-        - ``$ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm64 # ARM64/Centos7 on zcu102 ``
+        - ``$ cmake3 .. -DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;Rogue -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang # requires clang installed on Linux ``
+        - ``$ cmake3 .. -DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;Rogue -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc # gcc 4.8 or higher ``
+        - ``$ cmake3 .. -DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;Rogue -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm32 # ARM32/Centos7 on RCE ``
+        - ``$ cmake3 .. -DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;Rogue -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm64 # ARM64/Centos7 on zcu102 ``
     - ``$ make -j4 install ``

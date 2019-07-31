@@ -39,7 +39,7 @@ $ echo "source /opt/rh/devtoolset-7/enable" >> ~/.bash_profile
 ```
 - If not installed before, you need some standard packages:
 ```bash
-$ sudo yum install gnuplot texlive-epstopdf cmake3 zeromq3 zeromq3-devel 
+$ sudo yum install gnuplot texlive-epstopdf cmake3 zeromq zeromq-devel 
 ```
 
 ### Initialise repository
@@ -60,6 +60,7 @@ This repository uses the cmake build system in its usual manner.
 
 #### Compile software with cmake
 - Generate makefile
+    - By default the minimal build is enabled, which builds only the Emulator and SPEC controller, if you want to run with additional controllers (e.g. NetIO, or Rogue) you have to enable them via a cmake flag (see below)
 ```bash
 $ cd Yarr/
 $ mkdir build
@@ -67,6 +68,13 @@ $ cd build
 $ cmake3 ../
 <Some text>
 ```
+- In order to build with more controllers execute cmake with extra options
+    - For all controllers: 
+        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=all ..``
+    - For NetIO:
+        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;NetioHW``
+    - For Rogue:
+        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;Rogue``
 - Expert note: you can choose a specific toolchain via:
 ```bash
 $ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang # requires clang installed on Linux
