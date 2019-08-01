@@ -9,8 +9,6 @@
 
 set -e
 
-DEBUG=false
-
 # Usage
 function usage {
     cat <<EOF
@@ -27,6 +25,7 @@ You can specify the IP address, port number, and DB name of Local DB as followin
     - i <ip address>  Local DB server ip address (default: 127.0.0.1)
     - p <port>        Local DB server port (default: 27017)
     - n <db name>     Local DB Name (default: localdb)
+    - t               Set LocalDB tools into ${HOME}/.local/bin
     - r               Clean the settings (reset)
 
 EOF
@@ -211,7 +210,10 @@ fi
 echo -e "[LDB] Check python modules..."
 /usr/bin/env python3 ${shell_dir}/setting/check_python_modules.py
 if [ $? = 1 ]; then
-    echo -e "[LDB] Failed, exit..."
+    echo -e "[LDB] Failed!!!"
+    echo -e "[LDB] Install the missing modules by:"
+    echo -e "[LDB] pip3 install --user -r ${shell_dir}/requirements-pip.txt"
+    echo -e "[LDB] exit..."
     exit
 fi
 
@@ -227,11 +229,6 @@ sed -i -e "s!DBIP!${dbip}!g" ${dbcfg}
 sed -i -e "s!DBPORT!${dbport}!g" ${dbcfg}
 sed -i -e "s!DBNAME!${dbname}!g" ${dbcfg}
 echo -e "[LDB] DB Config: ${dbcfg}"
-
-# Add PATH on ~/.local/bin in bashrc
-echo -e "[LDB] Add PATH on ~/.local/bin"
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> $HOME/.bashrc
-echo -e "[LDB]"
 
 echo -e "[LDB] Done."
 echo -e ""
@@ -257,6 +254,13 @@ if "${tools}"; then
     cp -r ${shell_dir}/lib/localdb-tools/bash-completion/completions/* ${BASHLIB}/
     cp -r ${shell_dir}/lib/localdb-tools/modules/* ${MODLIB}/
     cp ${shell_dir}/lib/localdb-tools/enable ${ENABLE}
+
+    if ! cat $HOME/.bashrc | grep 'export PATH="$HOME/.local/bin:$PATH"' 2>&1 > /dev/null; then
+        # Add PATH on ~/.local/bin in bashrc
+        echo -e "[LDB] Add PATH on ~/.local/bin"
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> $HOME/.bashrc
+        echo -e "[LDB]"
+    fi
 fi
 
 # settings

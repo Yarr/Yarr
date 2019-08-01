@@ -127,6 +127,13 @@ def __init(db_cfg):
     args = getArgs()
     global localdb
 
+    if db_cfg=={}:
+        logger.error('There is no default database config in {}/.yarr/localdb')
+        logger.error('Set it by YARR/localdb/setting/setup_db.sh')
+        logger.info('-----------------------')
+        logger.debug('=======================')
+        sys.exit(1)
+
     url = 'mongodb://{0}:{1}'.format(db_cfg['hostIp'], db_cfg['hostPort'])
     logger.info('Local DB Server: {}'.format(url))
 
@@ -211,9 +218,9 @@ def __init(db_cfg):
     localdb['componentTestRun'].create_index([('name', DESCENDING), ('testRun', DESCENDING)])
 
     register.__set_localdb(localdb)
-    register.__global.stage_list = db_cfg['stage']
-    register.__global.env_list = db_cfg['environment']
-    register.__global.cmp_list = db_cfg['component']
+    register.__set_list(db_cfg['stage'], 'stage')
+    register.__set_list(db_cfg['environment'], 'environment')
+    register.__set_list(db_cfg['component'], 'component')
     #register.__global.force = args.force
 
     logger.info('---> connection is good.')
