@@ -78,6 +78,7 @@ int main(int argc, char *argv[]) {
     std::cout << "-> Parsing command line parameters ..." << std::endl;
     
     std::string home = getenv("HOME");
+    std::string hostname = getenv("HOSTNAME");
 
     // Init parameters
     std::string scanType = "";
@@ -91,7 +92,7 @@ int main(int argc, char *argv[]) {
 
     bool dbUse = false;
     std::string dbDirPath = home+"/.yarr/localdb";
-    std::string dbCfgPath = dbDirPath+"/database.json";
+    std::string dbCfgPath = dbDirPath+"/"+hostname+"_database.json";
     std::string dbSiteCfgPath = "";
     std::string dbUserCfgPath = "";
     
@@ -295,17 +296,18 @@ int main(int argc, char *argv[]) {
         }
         scanLog["dbCfg"] = dbCfg;
 
-        database->initialize(dbCfgPath); 
+        database->initialize(dbCfgPath, argv[0]); 
 
-        // set user config if specified
+        // set/check user config if specified
         json userCfg = database->setUser(dbUserCfgPath);
         scanLog["userCfg"] = userCfg;
-        // set site config if specified
+        // set/check site config if specified
         json siteCfg = database->setSite(dbSiteCfgPath);
         scanLog["siteCfg"] = siteCfg;
 
         std::cout << "-> Setting Connectivity Configs" << std::endl;
-        //database->setTestRunStart(strippedScan, cConfigPaths, runCounter, target_charge, target_tot, (int)now, commandLineStr);
+        // set/check connectivity config files
+        database->setConnCfg(cConfigPaths);
     }
 
 
@@ -649,7 +651,7 @@ int main(int argc, char *argv[]) {
 
     // Register test info into database
     if (dbUse) {
-        database->cleanUp("scan", outputDir, argv[0]);
+        database->cleanUp("scan", outputDir);
     }
     delete database;
 
@@ -658,6 +660,7 @@ int main(int argc, char *argv[]) {
 
 void printHelp() {
     std::string home = getenv("HOME");
+    std::string hostname = getenv("HOSTNAME");
     std::string dbDirPath = home+"/.yarr/localdb";
 
     std::cout << "Help:" << std::endl;
@@ -673,7 +676,7 @@ void printHelp() {
     std::cout << " -m <int> : 0 = pixel masking disabled, 1 = start with fresh pixel mask, default = pixel masking enabled" << std::endl;
     std::cout << " -k: Report known items (Scans, Hardware etc.)\n";
     std::cout << " -W: Enable using Local DB." << std::endl;
-    std::cout << " -d: <database.json> Provide database configuration. (Default " << dbDirPath << "/etc/localdb/database.json" << std::endl;
+    std::cout << " -d: <database.json> Provide database configuration. (Default " << dbDirPath << "/etc/localdb/" << hostname << "_database.json" << std::endl;
     std::cout << " -i: <site.json> Provide site configuration. (Default " << dbDirPath << "/etc/localdb/site.json" << std::endl;
     std::cout << " -u: <user.json> Provide user configuration. (Default " << dbDirPath << "/etc/localdb/${USER}_user.json" << std::endl;
 }

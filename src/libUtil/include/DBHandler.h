@@ -35,7 +35,9 @@ class DBHandler {
           - port: opened port number of Local DB server 
           - dbName: database name of Local DB (default: localdb)
         ***/
-        void initialize(std::string /*i_db_cfg_path*/);
+        void initialize(std::string /*i_db_cfg_path*/,
+                        std::string /*i_command*/,
+                        std::string i_option="scan");
 
         /***
         Alert and write message in error log file
@@ -46,12 +48,6 @@ class DBHandler {
         void alert(std::string i_function,
                    std::string i_message="Something wrong.",
                    std::string i_type="error");
-
-        /***
-        Check cache directory/function 
-        TODO to be implemented
-        ***/
-        int checkCacheStatus();
 
         /***
         Setting function for using Database
@@ -65,46 +61,36 @@ class DBHandler {
         - Attachment: requires dat file and information to set dat data
         ***/
         json setUser(std::string /*i_user_path*/);
-        json setSite(std::string /*i_address_path*/);
+        json setSite(std::string /*i_site_path*/);
         void setConnCfg(std::vector<std::string> /*i_conn_paths*/); 
         void setDCSCfg(std::string /*i_dcs_path*/,
                        std::string /*i_scanlog_path*/,
-                       std::string i_conn_path="");
-        void setTestRunStart(std::string /*i_test_type*/, 
-                             std::vector<std::string> /*i_conn_paths*/,
-                             int /*i_run_number*/, 
-                             int /*i_target_charge*/, 
-                             int /*i_target_tot*/,
-                             int /*i_timestamp*/,
-                             std::string /*i_command*/);
-        void setTestRunFinish(std::string /*i_test_type*/, 
-                              std::vector<std::string> /*i_conn_paths*/,
-                              int /*i_run_number*/, 
-                              int /*i_target_charge*/, 
-                              int /*i_target_tot*/,
-                              int /*i_timestamp*/,
-                              std::string /*i_command*/);
-        //void setConfig(std::string /*i_ctr_oid_str*/, 
-        void setConfig(int /*i_tx_channel*/,
-                       int /*i_rx_channel*/, 
-                       std::string /*i_file_path*/, 
-                       std::string /*i_filename*/,
-                       std::string /*i_title*/,
-                       std::string /*i_collection*/,
-                       std::string i_seiral_number=""); 
-        //void setAttachment(std::string /*i_ctr_oid_str*/, 
-        void setAttachment(int /*i_tx_channel*/,
-                           int /*i_rx_channel*/, 
-                           std::string /*i_file_path*/, 
-                           std::string /*i_histo_name*/,
-                           std::string i_serial_number="");
-
+                       std::string /*i_conn_path*/,
+                       std::string /*i_user_path*/,
+                       std::string /*i_site_path*/);
         /***
         Clean up veriables after scanConsole
         ***/
         void cleanUp(std::string /*i_option*/,
-                     std::string /*i_dir*/,
-                     std::string /*i_command*/);
+                     std::string /*i_dir*/);
+
+        /***
+        Upload unuploaded test cache data into Local DB
+        ***/
+        int setCache(std::string /*i_user_cfg_path*/,
+                     std::string /*i_site_cfg_path*/);
+
+        /***
+        Registere modules into Local DB
+        ***/
+        int setComponent(std::string /*i_conn_path*/,
+                         std::string /*i_user_cfg_path*/,
+                         std::string /*i_site_cfg_path*/);
+
+        /***
+        Check registered modules in Local DB and create module list in ~/.yarr/localdb/${HOSTNAME}_modules.csv
+        ***/
+        int checkModule();
 
     protected:
         /// check data function
@@ -122,9 +108,9 @@ class DBHandler {
                        std::string /*i_list_path*/,
                        std::string /*i_file_path*/);
         json checkDBCfg(std::string /*i_db_path*/); 
-        json checkConnCfg(std::string /*i_conn_path*/); 
+        void checkConnCfg(std::string /*i_conn_path*/); 
         json checkUserCfg(std::string /*i_user_path*/);
-        json checkAddressCfg(std::string /*i_address_path*/);
+        json checkSiteCfg(std::string /*i_site_path*/);
         void checkDCSCfg(std::string /*i_dcs_path*/,
                          std::string /*i_num*/,
                          json /*i_json*/); 
@@ -148,22 +134,19 @@ class DBHandler {
       
     private:
         std::string m_db_cfg_path;
-        std::string m_user_oid_str;
-        std::string m_site_oid_str;
         std::string m_chip_type;
-        std::string m_tr_oid_str;
         std::string m_output_dir;
+        std::string m_command;
 
         std::vector<std::string> m_stage_list;
         std::vector<std::string> m_env_list;
         std::vector<std::string> m_comp_list;
 
         std::vector<std::string> m_histo_names;
-        std::vector<std::string> m_tr_oid_strs;
-        std::vector<std::string> m_serial_numbers;
 
         double m_db_version;
         bool DB_DEBUG;
+        bool m_verify;
 
         json m_conn_json;
         int counter;

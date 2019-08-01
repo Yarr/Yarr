@@ -37,16 +37,20 @@ _localdbtool_upload() {
             COMPREPLY=( $(compgen -d -- $cur) )
             return 0
             ;;
+        "check") 
+            COMPREPLY=( $(compgen -W "comp chip" -- "${cur}") )
+            return 0
+            ;;
         "comp"|"--database"|"--config"|"--user"|"--site")
             compopt -o filenames
             COMPREPLY=( $(compgen -f -- $cur) )
             return 0
             ;;
-        "--username"|"--password"|"-h"|"--help"|"--log")
+        "--username"|"--password"|"-h"|"--help"|"--log"|"--force")
             return 0
             ;;
         *)
-            COMPREPLY=( $(compgen -W "--database --user --site --username --password --config --log" -- "${cur}") )
+            COMPREPLY=( $(compgen -W "--database --user --site --username --password --config --log --force" -- "${cur}") )
             return 0
             ;;
     esac

@@ -2,6 +2,7 @@
     "hostIp": "DBIP",
     "hostPort": "DBPORT",
     "dbName": "DBNAME",
+    "verify": true,
     "stage": [
         "Bare Module",
         "Wire Bonded",

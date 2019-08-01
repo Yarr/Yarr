@@ -22,10 +22,11 @@ void printHelp();
 int main(int argc, char *argv[]){
 
     std::string home = getenv("HOME");
+    std::string hostname = getenv("HOSTNAME");
     std::string dbDirPath = home+"/.yarr/localdb";
-    std::string cfg_path = dbDirPath+"/database.json";
-    std::string user_cfg_path = dbDirPath+"/user.json";
-    std::string site_cfg_path = dbDirPath+"/site.json";
+    std::string cfg_path = dbDirPath+"/"+hostname+"_database.json";
+    std::string user_cfg_path = "";
+    std::string site_cfg_path = "";
     std::string registerType = "";
 
     std::string commandLine= argv[0];
@@ -89,30 +90,24 @@ int main(int argc, char *argv[]){
 
     // register cache
     if (registerType == "Cache") {
-        std::string cmd = "localdbtool-upload test 2> /dev/null";
-        if (system(cmd.c_str())!=0) {
-            std::cerr << "#ERROR# Not found Local DB command: 'localdbtool-upload'" << std::endl;
-            std::cerr << "        Set Local DB function by YARR/localdb/setup_db.sh'" << std::endl;
-            return 1;
-        }
-        cmd = "localdbtool-upload cache --database "+cfg_path+" --user "+user_cfg_path+" --site "+site_cfg_path;
-        system(cmd.c_str());
-        return 0;
+        DBHandler *database = new DBHandler();
+        database->initialize(cfg_path, commandLine);
+        int status = database->setCache(user_cfg_path, site_cfg_path);
+        delete database;
+        return status;
     }
 
     // register component
     if (registerType=="Component") {
-        std::string cmd = "localdbtool-upload test 2> /dev/null";
-        if (system(cmd.c_str())!=0) {
-            std::cerr << "#ERROR# Not found Local DB command: 'localdbtool-upload'" << std::endl;
-            std::cerr << "        Set Local DB function by YARR/localdb/setup_db.sh'" << std::endl;
+        if (conn_path == "") {
+            std::cerr << "#DB ERROR# No component connecivity config file path given, please specify file path under -c option!" << std::endl;
             return 1;
         }
-        cmd = "localdbtool-upload comp "+conn_path+" --database "+cfg_path+" --user "+user_cfg_path+" --site "+site_cfg_path;
-        system(cmd.c_str());
-        cmd = "localdbtool-upload check "+conn_path+" --database "+cfg_path+" --log &";
-        system(cmd.c_str());
-        return 0;
+        DBHandler *database = new DBHandler();
+        database->initialize(cfg_path, commandLine, "register");
+        int status = database->setComponent(conn_path, user_cfg_path, site_cfg_path);
+        delete database;
+        return status;
     }
 
     // cache DCS
@@ -122,26 +117,26 @@ int main(int argc, char *argv[]){
             std::cerr << "#DB ERROR# No scan log file path given, please specify file path under -s option!" << std::endl;
             return 1;
         }
+        if (conn_path == "") {
+            std::cerr << "#DB ERROR# No connecivity config file path given, please specify file path under -c option!" << std::endl;
+            return 1;
+        }
         std::cout << "DBHandler: Register Environment:" << std::endl;
         std::cout << "\tenvironmental config file : " << dcs_path << std::endl;
 
-        database->initialize(cfg_path);
-        database->setDCSCfg(dcs_path, scanlog_path, conn_path);
-        database->cleanUp("dcs", "", commandLine);
+        database->initialize(cfg_path, commandLine, "register");
+        database->setDCSCfg(dcs_path, scanlog_path, conn_path, user_cfg_path, site_cfg_path);
+        database->cleanUp("dcs", "");
 
         delete database;
     }
 
     if (registerType == "Module") {
-        std::string cmd = "localdbtool-upload test 2> /dev/null";
-        if (system(cmd.c_str())!=0) {
-            std::cerr << "#ERROR# Not found Local DB command: 'localdbtool-upload'" << std::endl;
-            std::cerr << "        Set Local DB function by YARR/localdb/setup_db.sh'" << std::endl;
-            return 1;
-        }
-        cmd = "localdbtool-upload check "+conn_path+" --database "+cfg_path;
-        system(cmd.c_str());
-        return 0;
+        DBHandler *database = new DBHandler();
+        database->initialize(cfg_path, commandLine);
+        int status = database->checkModule();
+        delete database;
+        return status;
     }
 
     return 0;
@@ -156,8 +151,9 @@ void printHelp() {
     std::cout << "     -c <component.json> : Provide component connectivity configuration." << std::endl;
     std::cout << " -R: Upload data into Local DB from cache." << std::endl;
     std::cout << " -E <dcs.json> : Provide DCS configuration to upload DCS data into Local DB." << std::endl;
-    std::cout << "     -c <conn.json> : Provide connectivity config file." << std::endl;
     std::cout << "     -s <scanLog.json> : Provide scan log file." << std::endl;
+    std::cout << "     -c <conn.json> : Provide connectivity config file." << std::endl;
+    std::cout << " -M : Retrieve Module list from Local DB." << std::endl;
     std::cout << " -d <database.json> : Provide database configuration. (Default: " << dbDirPath << "/database.json" << std::endl;
     std::cout << " -i <site.json> : Provide site configuration. (Default: " << dbDirPath << "/site.json" << std::endl;
     std::cout << " -u <user.json> : Provide user configuration. (Default: " << dbDirPath << "/user.json" << std::endl;
