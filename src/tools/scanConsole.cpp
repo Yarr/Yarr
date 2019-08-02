@@ -304,13 +304,7 @@ int main(int argc, char *argv[]) {
         // set/check site config if specified
         json siteCfg = database->setSite(dbSiteCfgPath);
         scanLog["siteCfg"] = siteCfg;
-
-        std::cout << "-> Setting Connectivity Configs" << std::endl;
-        // set/check connectivity config files
-        database->setConnCfg(cConfigPaths);
     }
-
-
     std::cout << std::endl;
     std::cout << "\033[1;31m#################\033[0m" << std::endl;
     std::cout << "\033[1;31m# Init Hardware #\033[0m" << std::endl;
@@ -360,6 +354,12 @@ int main(int argc, char *argv[]) {
             return -1;
         }
         scanLog["connectivity"].push_back(config);
+    }
+
+    if (dbUse) {
+        std::cout << "-> Setting Connectivity Configs" << std::endl;
+        // set/check connectivity config files
+        database->setConnCfg(cConfigPaths);
     }
     
     // Reset masks

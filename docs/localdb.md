@@ -241,12 +241,20 @@ In edit.
    $ localdb/bin/localdbtool-upload cache
    ```
    
-- Check Uploaded Component Data
+- Check Registered Component Data
 
-   You can check all component data stored in Local DB Server by `localdbtool-upload check`
+   You can check all component data registered in Local DB Server by `localdbtool-upload check`
 
    ```bash
-   $ localdb/bin/localdbtool-upload check
+   $ localdb/bin/localdbtool-upload check comp
+   ```
+
+- Check Chip Data
+
+   You can check all chip data tested by `localdbtool-upload check`
+
+   ```bash
+   $ localdb/bin/localdbtool-upload check chip
    ```
 
 ## FAQ 

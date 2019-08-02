@@ -290,7 +290,7 @@ int DBHandler::setComponent(std::string i_conn_path, std::string i_user_cfg_path
     if (i_site_cfg_path!="") i_site_cfg_path=" --site "+i_site_cfg_path;
     cmd = m_command+" comp "+i_conn_path+" --database "+m_db_cfg_path+i_user_cfg_path+i_site_cfg_path;
     system(cmd.c_str());
-    cmd = m_command+" check --database "+m_db_cfg_path+" --log &";
+    cmd = m_command+" check comp --database "+m_db_cfg_path+" --log &";
     system(cmd.c_str());
     return 0;
 }
@@ -320,7 +320,7 @@ int DBHandler::checkModule() {
         std::cerr << "        Set Local DB function by YARR/localdb/setup_db.sh -t'" << std::endl;
         return 1;
     }
-    cmd = m_command+" check --database "+m_db_cfg_path;
+    cmd = m_command+" check comp --database "+m_db_cfg_path;
     system(cmd.c_str());
     return 0;
 }
@@ -405,6 +405,7 @@ void DBHandler::checkConnCfg(std::string i_conn_path) {
     json conn_json = this->toJson(i_conn_path);
     // chip type
     this->checkEmpty(conn_json["chipType"].empty(), "chipType", i_conn_path);
+    std::string ch_type = conn_json["chipType"];
     // module
     if (!conn_json["module"].empty()) {
         this->checkEmpty(conn_json["module"]["serialNumber"].empty(), "module.serialNumber", i_conn_path); 
@@ -451,10 +452,21 @@ void DBHandler::checkConnCfg(std::string i_conn_path) {
                 std::string function = __PRETTY_FUNCTION__;
                 this->alert(function, message);
             }
+            std::string ch_cfg_path = conn_json["chips"][i]["config"];
+            json ch_cfg_json = this->toJson(ch_cfg_path);
+            std::string ch_name;
+            if (ch_type=="FEI4B"||ch_type=="FE-I4B") ch_name = ch_cfg_json["FE-I4B"]["name"];
+            else if (ch_type=="FE65P2"||ch_type=="FE65-P2") ch_name = ch_cfg_json["FE65-P2"]["name"];
+            else if (ch_type=="RD53A") ch_name = ch_cfg_json["RD53A"]["Parameter"]["Name"];
+            else ch_name = "NONAME";
+            if (ch_name!=ch_serial_number) {
+                std::string message = "This chip ("+ch_serial_number+") has wrong name ("+ch_name+") in chip config: "+ch_cfg_path;
+                std::string function = __PRETTY_FUNCTION__;
+                this->alert(function, message);
+            }
         }
-    }
-    // stage
-    if (!conn_json["stage"].empty()) {
+        // stage
+        this->checkEmpty(conn_json["stage"].empty(), "stage", i_conn_path);
         std::string stage = conn_json["stage"];
         this->checkList(m_stage_list, stage, m_db_cfg_path, i_conn_path);
     }

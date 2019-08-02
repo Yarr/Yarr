@@ -569,7 +569,8 @@ def __upload_comp(comp_path):
     # If not, register site information by extracting mac address and hostname of the machine.
     # If the site information has already registered, this step will be skipped.
     site_json = register.toJson(args.site)
-    register.__set_site(site_json)
+    site_oid = register.__set_site(site_json)
+    register.__check_site_data(site_oid)
 
     ######
     # user
@@ -577,7 +578,8 @@ def __upload_comp(comp_path):
     # If not, register user information by extracting user name and hostname of the machine.
     # If the user information has already registered, this step will be skipped.
     user_json = register.toJson(args.user)
-    register.__set_user(user_json)
+    user_oid = register.__set_user(user_json)
+    register.__check_user_data(user_oid)
 
     ######################
     # Check component file
@@ -628,7 +630,7 @@ def __check_component(i_type):
     if i_type=='comp':
         file_path = home+'/.yarr/localdb/'+hostname+'_modules.csv'
         file_open = open(file_path, 'w')
-        query = {'dbVersion': 1, 'componentType': 'Module'}
+        query = {'dbVersion': 1, 'componentType': 'module'}
         component_entries = localdb.component.find(query)
         modules = []
         for component in component_entries:
