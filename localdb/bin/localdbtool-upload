@@ -351,6 +351,7 @@ def __write_scan(cache_dir, scanlog_json):
     if 'testType' in scanlog_json:
         test_type = scanlog_json['testType']
     else:
+        command = scanlog_json['exec']
         for i, com in enumerate(command.split(' ')):
             if com=='-s': 
                 scan_command = command.split(' ')[i+1]

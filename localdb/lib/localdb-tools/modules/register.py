@@ -365,7 +365,7 @@ def __config(i_file_json, i_filename, i_title, i_col, i_oid):
     data_id = __check_gridfs(hash_code)
     if not data_id: data_id = __grid_fs_file(i_file_json, '', i_filename+'.json', hash_code) 
     doc_value = {
-        'filename' : i_filename,
+        'filename' : i_filename+'.json',
         'chipType' : __global.chip_type,
         'title'    : i_title,
         'format'   : 'fs.files',
