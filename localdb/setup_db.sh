@@ -25,6 +25,8 @@ You can specify the IP address, port number, and DB name of Local DB as followin
     - i <ip address>  Local DB server ip address (default: 127.0.0.1)
     - p <port>        Local DB server port (default: 27017)
     - n <db name>     Local DB Name (default: localdb)
+    - a <CA file>     Path to CA certificate
+    - e <Certificate> Path to Client certificate
     - t               Set LocalDB tools into ${HOME}/.local/bin
     - r               Clean the settings (reset)
 
@@ -41,7 +43,9 @@ fi
 shell_dir=$(cd $(dirname ${BASH_SOURCE}); pwd)
 tools=false
 reset=false
-while getopts hi:p:n:tr OPT
+dbca=null
+dbcert=null
+while getopts hi:p:n:a:e:tr OPT
 do
     case ${OPT} in
         h ) usage 
@@ -49,6 +53,8 @@ do
         i ) dbip=${OPTARG} ;;
         p ) dbport=${OPTARG} ;;
         n ) dbname=${OPTARG} ;;
+        a ) dbca=${OPTARG} ;;
+        e ) dbcert=${OPTARG} ;;
         t ) tools=true ;;
         r ) reset=true ;;
         * ) usage
@@ -157,6 +163,8 @@ echo -e "[LDB] --  Mongo DB Server  --"
 echo -e "[LDB] -----------------------"
 echo -e "[LDB] IP address: ${dbip}"
 echo -e "[LDB] port: ${dbport}"
+echo -e "[LDB] CA file: ${dbca}"
+echo -e "[LDB] Certificate file: ${dbcert}"
 echo -e "[LDB]"
 echo -e "[LDB] Are you sure that is correct? [y/n]"
 read -p "[LDB] > " answer
@@ -228,6 +236,16 @@ cp ${shell_dir}/setting/default/database.json ${dbcfg}
 sed -i -e "s!DBIP!${dbip}!g" ${dbcfg}
 sed -i -e "s!DBPORT!${dbport}!g" ${dbcfg}
 sed -i -e "s!DBNAME!${dbname}!g" ${dbcfg}
+sed -i -e "s!CAFILE!\"${dbca}\"!g" ${dbcfg}
+sed -i -e "s!PEMKEYFILE!\"${dbcert}\"!g" ${dbcfg}
+if [ ${dbca} != "null" ] || [ ${dbcert} != "null" ]; then
+    sed -i -e "s!ENABLED!true!g" ${dbcfg}
+    sed -i -e "s!MECHANISM!MONGODB-X509!g" ${dbcfg}
+else
+    sed -i -e "s!ENABLED!false!g" ${dbcfg}
+    sed -i -e "s!MECHANISM!SCRAM-SHA-256!g" ${dbcfg}
+fi
+    
 echo -e "[LDB] DB Config: ${dbcfg}"
 
 echo -e "[LDB] Done."

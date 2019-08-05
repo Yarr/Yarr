@@ -2,6 +2,12 @@
     "hostIp": "DBIP",
     "hostPort": "DBPORT",
     "dbName": "DBNAME",
+    "ssl": {
+        "enabled": ENABLED,
+        "PEMKeyFile": PEMKEYFILE,
+        "CAFile": CAFILE
+    },
+    "authMechanism": "MECHANISM",
     "verify": true,
     "stage": [
         "Bare Module",
