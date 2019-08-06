@@ -26,130 +26,138 @@ if [ `echo ${0} | grep bash` ]; then
     usage
     return
 fi
+
+
+while getopts h OPT
+do
+    case ${OPT} in
+        h ) usage 
+            exit ;;
+        * ) usage
+            exit ;;
+    esac
+done
+
+
 shell_dir=$(cd $(dirname ${BASH_SOURCE}); pwd)
 ip=`hostname -i`
 echo -e "[LDB] Looking for missing things for Local DB and its Tools..."
-yumpackages=$(cat ${shell_dir}/setting/requirements-yum.txt)
-for pac in ${yumpackages[@]}; do
-    if ! yum list installed 2>&1 | grep ${pac} > /dev/null; then
-        yumarray+=(${pac})
-    fi
-done
-yumpackages=${yumarray[@]}
-pippackages=$(cat ${shell_dir}/setting/requirements-pip.txt)
-for pac in ${pippackages[@]}; do
-    if ! pip3 list 2>&1 | grep ${pac} 2>&1 > /dev/null; then
-        piparray+=(${pac})
-    fi
-done
-LOGDIR="${shell_dir}/setting/instlog"
-if [ ! -d ${LOGDIR} ]; then
-    mkdir ${LOGDIR}
-fi
-services=(
-    "mongod"
-)
-# Confirmation
-echo -e "[LDB] This script performs ..."
-echo -e ""
-echo -e "[LDB]  - Install yum packages: '${shell_dir}/setting/requirements-yum.txt'"
-for pac in ${yumpackages[@]}; do
-    echo -e "[LDB]         $ sudo yum install ${pac}"
-done
-echo -e "[LDB]  - Install pip modules: '${shell_dir}/setting/requirements-pip.txt'"
-for pac in ${pippackages[@]}; do
-    echo -e "[LDB]         $ sudo pip3 install ${pac}"
-done
-echo -e "[LDB] Continue? [y/n]"
-while [ -z ${answer} ]; 
-do
-    read -p "> " answer
-done
-echo -e ""
-if [ ${answer} != "y" ]; then
-    echo -e "[LDB] Exit..."
-    echo -e ""
-    echo -e "[LDB] If you want to setup them manually, the page 'https://github.com/jlab-hep/Yarr/wiki/Installation' should be helpful!"
-    echo -e ""
-    exit
-fi
-sudo echo -e "[LDB] OK!"
 
-# Set log file
-LOGFILE="${LOGDIR}/`date "+%Y%m%d_%H%M%S"`"
-exec 2> >(awk '{print strftime("[%Y-%m-%d %H:%M:%S] "),$0 } { fflush() } ' | tee ${LOGFILE}) 1>&2
-trap 'echo -e ""; echo -e "[LDB] Installation stopped by SIGINT!!"; echo -e "[LDB] You may be in unknown state."; echo -e "[LDB] Check ${LOGFILE} for debugging in case of a problem of re-executing this script."; exit 1' 2
-
-# Check what is missing for Local DB
-echo -e "[LDB] -------------------------------------------------------------"
-if [ ! -e "/etc/yum.repos.d/mongodb-org-3.6.repo" ]; then
-    echo -e "[LDB] Add: mongodb-org-3.6 repository in /etc/yum.repos.d/mongodb-org-3.6.repo."
-fi
-for pac in ${yumpackages[@]}; do
-    echo -e "[LDB] yum install: ${pac}"
-done
-for pac in ${pippackages[@]}; do
-   echo -e "[LDB] pip3 install: ${pac}"
-done
-for svc in ${services[@]}; do
-    if ! systemctl status ${svc} 2>&1 | grep running > /dev/null; then
-        echo -e "[LDB] Start: ${svc}"
+### check python
+if which python3 > /dev/null 2>&1; then
+    python_exist=true
+    /usr/bin/env python3 ${shell_dir}/setting/check_python_version.py
+    if [ $? = 1 ]; then
+        echo -e "[LDB WARNING] Python version 3.4 or later is required."
+        python_version=false
+    else
+        python_version=true
+        ### check python packages
+        pippackages=$(cat ${shell_dir}/setting/requirements-pip.txt)
+        for pac in ${pippackages[@]}; do
+            if ! pip3 list 2>&1 | grep ${pac} 2>&1 > /dev/null; then
+                piparray+=(${pac})
+            fi
+        done
+        pippackages=${piparray[@]}
     fi
-    if ! systemctl list-unit-files -t service|grep enabled 2>&1 | grep ${svc} > /dev/null; then
-        echo -e "[LDB] Enable: ${svc}"
-    fi
-done
-echo -e "[LDB] ----------------------------------------------------"
-
-# Install necessary packages if not yet installed
-echo -e "[LDB] Start installing necessary packages..."
-# Add mongoDB repository and installing mongoDB
-if [ -e "/etc/yum.repos.d/mongodb-org-3.6.repo" ]; then
-    echo -e "[LDB] mongodb-org-3.6 repository already installed. Nothing to do."
 else
-    echo -e "[LDB] Adding mongodb-org-3.6 repository."
-    sudo sh -c "echo \"[mongodb-org-3.6]
-name=MongoDB Repository
-baseurl=https://repo.mongodb.org/yum/redhat/7Server/mongodb-org/3.6/x86_64/
-gpgcheck=1
-enabled=1
-gpgkey=https://www.mongodb.org/static/pgp/server-3.6.asc\" > /etc/yum.repos.d/mongodb-org-3.6.repo"
+    echo -e "[LDB WARNING] Not found the command: python3"
+    python_exist=false
 fi
-# Install yum packages
-for pac in ${yumpackages[@]}; do
-    echo -e "[LDB] ${pac} not found. Starting to install..."
-    sudo yum install -y ${pac}
-done
 
-# Enable RedHad SCL packages
-source /opt/rh/devtoolset-7/enable
-
-# Install python packages by pip for the DB viewer
-for pac in ${pippackages[@]}; do
-    echo "${pac} not found. Starting to install..."
-    sudo pip3 install ${pac}
-done
-/usr/bin/env python3 ${shell_dir}/check_python_modules.py
-if [ $? = 1 ]; then
-    echo -e "[LDB] Failed, exit..."
-    exit
+### If not python3.4 or later
+if ! "${python_version}" || ! "${python_exist}"; then
+    ### check yum packages
+    yumpackages=$(cat ${shell_dir}/setting/requirements-yum.txt)
+    for pac in ${yumpackages[@]}; do
+        if ! yum list installed 2>&1 | grep ${pac} > /dev/null; then
+            yumarray+=(${pac})
+        fi
+    done
+    yumpackages=${yumarray[@]}
 fi
+
 echo -e "[LDB] Done."
-echo -e ""
+
+### Confirmation
+if [ ${#yumpackages} != 0 ] || [ ${#pippackages} != 0 ]; then
+    ### Installation
+    if [ ${#yumpackages} != 0 ]; then
+        echo -e "[LDB WARNING] --------------------"
+        echo -e "[LDB WARNING] Missing yum packages"
+        echo -e "[LDB WARNING] --------------------"
+        for pac in ${yumpackages[@]}; do
+            echo -e "[LDB WARNING] ${pac}"
+        done
+    fi
+    if [ ${#pippackages} != 0 ]; then
+        echo -e "[LDB WARNING] --------------------"
+        echo -e "[LDB WARNING] Missing pip packages"
+        echo -e "[LDB WARNING] --------------------"
+        for pac in ${pippackages[@]}; do
+            echo -e "[LDB WARNING] ${pac}"
+        done
+    fi
+    echo -e "[LDB WARNING] --------------------"
+    echo -e "[LDB] Install these package? [y/n]"
+    while [ -z ${answer} ]; 
+    do
+        read -p "> " answer
+    done
+    echo -e ""
+    if [ ${answer} != "y" ]; then
+        echo -e "[LDB] Exit..."
+        echo -e ""
+        echo -e "[LDB] If you want to setup them manually, the page 'https://github.com/jlab-hep/Yarr/wiki/Installation' should be helpful!"
+        echo -e ""
+        exit
+    fi
+    sudo echo -e "[LDB] OK!"
+    ## Set log file
+    LOGDIR="${shell_dir}/setting/instlog"
+    if [ ! -d ${LOGDIR} ]; then
+        mkdir ${LOGDIR}
+    fi
+    LOGFILE="${LOGDIR}/`date "+%Y%m%d_%H%M%S"`"
+    exec 2> >(awk '{print strftime("[%Y-%m-%d %H:%M:%S] "),$0 } { fflush() } ' | tee ${LOGFILE}) 1>&2
+    trap 'echo -e ""; echo -e "[LDB] Installation stopped by SIGINT!!"; echo -e "[LDB] You may be in unknown state."; echo -e "[LDB] Check ${LOGFILE} for debugging in case of a problem of re-executing this script."; exit 1' 2
+    
+    ### Install necessary packages if not yet installed
+    echo -e "[LDB] Start installing necessary packages..."
+    
+    ### Install yum packages
+    for pac in ${yumpackages[@]}; do
+        echo -e "[LDB] ${pac} not found. Starting to install..."
+        sudo yum install -y ${pac}
+    done
+    
+    ### Install python packages by pip for the DB viewer
+    for pac in ${pippackages[@]}; do
+        echo "${pac} not found. Starting to install..."
+        sudo pip3 install ${pac}
+    done
+    
+    ### Confirmation
+    /usr/bin/env python3 ${shell_dir}/check_python_modules.py
+    if [ $? = 1 ]; then
+        echo -e "[LDB] Failed, exit..."
+        exit
+    fi
+    echo -e "[LDB] Done."
+    echo -e "[LDB]"
+    echo -e "[LDB]Finished installation!!"
+    echo -e "[LDB]Install log can be found in: ${LOGFILE}"
+fi
 
 readme=${shell_dir}/setting/README.md
 
-echo -e ""
-echo -e "Finished installation!!"
-echo -e "Install log can be found in: ${LOGFILE}"
-echo -e ""
-echo -e "# Local DB Installation for DAQ Server" | tee ${readme}
+echo -e "----------------------------------------"
+echo -e "# Local DB Quick Tutorial for DAQ Server" | tee ${readme}
 echo -e "" | tee -a ${readme}
 echo -e "## 1. Setup database config and function" | tee -a ${readme}
 echo -e "\`\`\`" | tee -a ${readme}
 echo -e "./setup_db.sh" | tee -a ${readme}
-echo -e "source /opt/rh/devtoolset-7/enable" | tee ${readme}
-echo -e "source ${HOME}/.local/lib/localdb-tools/enable" | tee ${readme}
 echo -e "\`\`\`" | tee -a ${readme}
 echo -e "" | tee -a ${readme}
 echo -e "## 2. Setup scanConsole" | tee ${readme}
@@ -163,7 +171,7 @@ echo -e "\`\`\`" | tee -a ${readme}
 echo -e "" | tee -a ${readme}
 echo -e "## 3. Scan with Local DB" | tee ${readme}
 echo -e "\`\`\`" | tee -a ${readme}
-echo -e "./bin/scanConsole -c configs/connectivity/example_rd53a_setup.json -r configs/controller/specCfg.json -s configs/scans/rd53a/std_digitalscan.json -W" | tee -a ${readme}
+echo -e "./bin/scanConsole -c configs/connectivity/example_fei4b_setup.json -r configs/controller/emuCfg.json -s configs/scans/fei4b/std_digitalscan.json -W" | tee -a ${readme}
 echo -e "\`\`\`" | tee -a ${readme}
 echo -e "" | tee -a ${readme}
 echo -e "## 4. Check results in the DB viewer in your web browser" | tee -a ${readme}
@@ -172,4 +180,5 @@ echo -e "- From other machines : http://${ip}/localdb/" | tee -a ${readme}
 echo -e "" | tee -a ${readme}
 echo -e "## 5.Check more detail" | tee -a ${readme}
 echo -e "- https://github.com/jlab-hep/Yarr/wiki" | tee -a ${readme}
+echo -e "----------------------------------------"
 echo -e "This description is saved as ${readme}. Enjoy!!"

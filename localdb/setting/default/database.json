@@ -5,9 +5,9 @@
     "ssl": {
         "enabled": ENABLED,
         "PEMKeyFile": PEMKEYFILE,
-        "CAFile": CAFILE
+        "CAFile": CAFILE,
+        "authMechanism": "MECHANISM"
     },
-    "authMechanism": "MECHANISM",
     "verify": true,
     "stage": [
         "Bare Module",

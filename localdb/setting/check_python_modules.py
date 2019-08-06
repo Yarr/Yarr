@@ -23,14 +23,6 @@ else:
 
 print("[LDB] Welcome to Local Database Tools!")
 
-def checkPythonVersion():
-    print("[LDB] Check Python version ... " + str(sys.version_info[0]) + "." + str(sys.version_info[1]) + " ... ", end = "")
-    if sys.version_info[0] < 3:
-        print("Must use Python 3!")
-        exit(1)
-    else:
-        print("OK!")
-
 # Check python modules
 def checkPythonModule():
     print("[LDB] Check python modules: ")
@@ -62,5 +54,4 @@ def checkPythonModule():
 
 
 if __name__ == '__main__':
-    checkPythonVersion()
     checkPythonModule()

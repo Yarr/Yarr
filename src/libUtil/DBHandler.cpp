@@ -38,7 +38,7 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_command, std
     m_command = "localdbtool-upload";
     std::string cmd = m_command+" test 2> /dev/null";
     if (system(cmd.c_str())!=0) {
-        std::string message = "Not found Local DB command: 'localdbtool-upload'\nYou can set Local DB tools into ~/.local/bin by YARR/localdb/setup_db.sh -t'";
+        std::string message = "Not found Local DB command: 'localdbtool-upload' in ~/.local/bin\nYou can set Local DB tools into ~/.local/bin by YARR/localdb/setup_db.sh -t'";
         std::string function = __PRETTY_FUNCTION__;
         this->alert(function, message, "warning");
 

@@ -161,10 +161,10 @@ echo -e "[LDB] Confirmation"
 echo -e "[LDB] -----------------------"
 echo -e "[LDB] --  Mongo DB Server  --"
 echo -e "[LDB] -----------------------"
-echo -e "[LDB] IP address: ${dbip}"
-echo -e "[LDB] port: ${dbport}"
-echo -e "[LDB] CA file: ${dbca}"
-echo -e "[LDB] Certificate file: ${dbcert}"
+echo -e "[LDB] IP address: ${dbip}    (specified with option '-i')"
+echo -e "[LDB] port: ${dbport}    (specified with option '-p')"
+echo -e "[LDB] CA file: ${dbca}    (specified with option '-a')"
+echo -e "[LDB] Certificate file: ${dbcert}    (specified with option '-e')"
 echo -e "[LDB]"
 echo -e "[LDB] Are you sure that is correct? [y/n]"
 read -p "[LDB] > " answer
@@ -216,12 +216,20 @@ fi
 
 # Check python module
 echo -e "[LDB] Check python modules..."
+if ! which python3 > /dev/null 2>&1; then
+    echo -e "[LDB ERROR] Not found the command: python3"
+    exit
+fi
+/usr/bin/env python3 ${shell_dir}/setting/check_python_version.py
+if [ $? = 1 ]; then
+    echo -e "[LDB ERROR] Python version 3.4 or later is required."
+    exit
+fi
 /usr/bin/env python3 ${shell_dir}/setting/check_python_modules.py
 if [ $? = 1 ]; then
-    echo -e "[LDB] Failed!!!"
-    echo -e "[LDB] Install the missing modules by:"
-    echo -e "[LDB] pip3 install --user -r ${shell_dir}/requirements-pip.txt"
-    echo -e "[LDB] exit..."
+    echo -e "[LDB ERROR] There are missing pip modules."
+    echo -e "[LDB ERROR] Install them by:"
+    echo -e "[LDB ERROR] pip3 install --user -r ${shell_dir}/requirements-pip.txt"
     exit
 fi
 
@@ -257,6 +265,7 @@ if [ -f ${readme} ]; then
     rm ${readme}
 fi
 
+echo -e "-----------------------------"
 echo -e "# scanConsole with Local DB" | tee -a ${readme}
 echo -e "" | tee -a ${readme}
 
@@ -283,35 +292,26 @@ fi
 
 # settings
 echo -e "## Settings" | tee -a ${readme}
-echo -e "- 'Makefile'" | tee -a ${readme}
-echo -e "  - description: install required softwares and setup Local DB functions for the machine." | tee -a ${readme}
-echo -e "  - requirements: sudo user, git, net-tools" | tee -a ${readme}
 echo -e "- './setup_db.sh'" | tee -a ${readme}
 echo -e "  - description: setup Local DB functions for the user local." | tee -a ${readme}
 echo -e "  - requirements: required softwares" | tee -a ${readme}
 echo -e "" | tee -a ${readme}
 
-# all function
-ITSNAME="LocalDB Tools"
-echo -e "## $ITSNAME" | tee -a ${readme}
-echo -e "'source ${HOME}/.local/lib/localdb-tools/enable' can enable tab-completion" | tee -a ${readme}
-echo -e "" | tee -a ${readme}
-
 # upload.py
 ITSNAME="LocalDB Tool Setup Upload Tool"
 echo -e "### $ITSNAME" | tee -a ${readme}
-echo -e "- 'localdbtool-upload --scan <path to result directory>' can upload scan data" | tee -a ${readme}
-echo -e "- 'localdbtool-upload --dcs <path to result directory>' can upload dcs data based on scan data" | tee -a ${readme}
-echo -e "- 'localdbtool-upload --cache' can upload every cache data" | tee -a ${readme}
-echo -e "- 'localdbtool-upload --help' can show more usage." | tee -a ${readme}
+echo -e "- '${shell_dir}/bin/localdbtool-upload scan <path to result directory>' can upload scan data" | tee -a ${readme}
+echo -e "- '${shell_dir}/bin/localdbtool-upload dcs <path to result directory>' can upload dcs data based on scan data" | tee -a ${readme}
+echo -e "- '${shell_dir}/bin/localdbtool-upload cache' can upload every cache data" | tee -a ${readme}
+echo -e "- '${shell_dir}/bin/localdbtool-upload --help' can show more usage." | tee -a ${readme}
 echo -e "" | tee -a ${readme}
 
 # retrieve.py
 ITSNAME="LocalDB Tool Setup Retrieve Tool"
 echo -e "### $ITSNAME" | tee -a ${readme}
-echo -e "- 'localdbtool-retrieve init' can initialize retrieve repository" | tee -a ${readme}
-echo -e "- 'localdbtool-retrieve remote add <remote name>' can add remote repository for Local DB/Master Server" | tee -a ${readme}
-echo -e "- 'localdbtool-retrieve --help' can show more usage." | tee -a ${readme}
+echo -e "- '${shell_dir}/bin/localdbtool-retrieve init' can initialize retrieve repository" | tee -a ${readme}
+echo -e "- '${shell_dir}/bin/localdbtool-retrieve remote add <remote name>' can add remote repository for Local DB/Master Server" | tee -a ${readme}
+echo -e "- '${shell_dir}/bin/localdbtool-retrieve --help' can show more usage." | tee -a ${readme}
 echo -e "" | tee -a ${readme}
 
 # finish
@@ -320,14 +320,14 @@ echo -e "## $ITSNAME" | tee -a ${readme}
 echo -e "1. scanConsole with Local DB" | tee -a ${readme}
 echo -e "   - './bin/scanConsole -c <conn> -r <ctr> -s <scan> -W' can use Local DB schemes" | tee -a ${readme}
 echo -e "2. Upload function" | tee -a ${readme}
-echo -e "   - 'localdbtool-upload --cache' can upload every cache data" | tee -a ${readme}
+echo -e "   - '${shell_dir}/bin/localdbtool-upload cache' can upload every cache data" | tee -a ${readme}
 echo -e "3. Retrieve function" | tee -a ${readme}
-echo -e "   - 'localdbtool-retrieve log' can show test data log in Local DB" | tee -a ${readme}
-echo -e "   - 'localdbtool-retrieve checkout <module name>' can restore the latest config files from Local DB" | tee -a ${readme}
+echo -e "   - '${shell_dir}/bin/localdbtool-retrieve log' can show test data log in Local DB" | tee -a ${readme}
+echo -e "   - '${shell_dir}/bin/localdbtool-retrieve checkout <module name>' can restore the latest config files from Local DB" | tee -a ${readme}
 echo -e "4. Viewer Application" | tee -a ${readme}
 echo -e "   - Access 'http://HOSTNAME/localdb/' can display results in web browser if Viewer is running" | tee -a ${readme}
 echo -e "   - (HOSTNAME: Local DB Server where web browser if Viewer is running" | tee -a ${readme}
 echo -e "5. More Detail" | tee -a ${readme}
 echo -e "   - Check 'https://github.com/jlab-hep/Yarr/wiki'" | tee -a ${readme}
-echo -e "" | tee -a ${readme}
+echo -e "-----------------------------"
 echo -e "[LDB] This description is saved as ${readme}"

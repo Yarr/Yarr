@@ -145,12 +145,12 @@ def __init(db_cfg):
     if db_ssl==True:
         db_certfile = db_cfg.get('ssl', {}).get('PEMKeyFile',None)
         db_ca_certs = db_cfg.get('ssl', {}).get('CAFile',None)
+        ### authenticate mechanism
+        if db_cfg.get('ssl', {}).get('authMechanism',None)=='MONGODB-X509':
+            url+='/?authMechanism=MONGODB-X509'
     else:
         db_certfile = None 
         db_ca_certs = None 
-    ### authenticate mechanism
-    if db_cfg.get('authMechanism',None)=='MONGODB-X509':
-        url+='/?authMechanism=MONGODB-X509'
     client = MongoClient( url,
                           serverSelectionTimeoutMS=max_server_delay,
                           ssl_match_hostname=False,
