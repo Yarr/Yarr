@@ -230,8 +230,6 @@ def __test_run(i_json, i_stage, i_tr_oid):
     if not i_tr_oid:
         doc_value.update({
             'sys'        : {},
-            'ctrlCfg'    : '...',    
-            'scanCfg'    : '...',    
             'environment': '...',
             'plots'      : [],
             'passed'     : False,
@@ -267,8 +265,6 @@ def __component_test_run(i_json, i_tr_oid):
         'chip'       : i_json.get('chip','module'),
         'testRun'    : i_tr_oid,
         'attachments': [],
-        'beforeCfg'  : '...',
-        'afterCfg'   : '...',
         'tx'         : i_json.get('tx', -1),
         'rx'         : i_json.get('rx', -1),
         'dbVersion'  : __global.db_version
@@ -627,14 +623,14 @@ def __check_user(i_json):
 def __check_site(i_json):
     logger.debug('\tCheck Site')
     logger.debug('\t- Address: {}'.format(i_json['address']))
-    logger.debug('\t- HOSTNAME: {}'.format(i_json['hostname']))
+    logger.debug('\t- HOSTNAME: {}'.format(i_json['HOSTNAME']))
     logger.debug('\t- Institution: {}'.format(i_json['institution'])) 
 
     oid = None
 
     query = {
         'address'    : i_json['address'],
-        'hostname'   : i_json['hostname'],
+        'HOSTNAME'   : i_json['HOSTNAME'],
         'institution': i_json['institution']
     }
 
@@ -1082,7 +1078,7 @@ def __set_site(i_json):
 
     site_json = {
         'address'    : ':'.join(['{:02x}'.format((uuid.getnode() >> ele) & 0xff)for ele in range(0,8*6,8)][::-1]),
-        'hostname'   : os.environ['HOSTNAME'],
+        'HOSTNAME'   : os.environ['HOSTNAME'],
         'institution': os.environ['HOSTNAME']
     }
     if not i_json=={}:

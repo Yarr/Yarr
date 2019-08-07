@@ -4,7 +4,7 @@
 # Email: arisa.kubota at cern.ch
 # Date: July 2019
 # Project: Local Database for Yarr
-# Usage: ./setup_db.sh [-i Local DB server ip (default: 127.0.0.1)] [-p Local DB server port (default: 27017)] [-n Local DB name (default: localdb)] [-r Reset]
+# Usage: ./setup_db.sh [-i Local DB server ip (default: 127.0.0.1)] [-p Local DB server port (default: 27017)] [-n Local DB name (default: localdb)] [-t set tools in ~/.local/bin ] [-r Reset]
 ################################
 
 set -e

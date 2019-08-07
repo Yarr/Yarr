@@ -319,8 +319,10 @@ def __write_scan(cache_dir, scanlog_json):
     # If not, extract 'timestamp' and convert it to 'start/finishTime'.
     if 'startTime' in scanlog_json:
         start_timestamp = scanlog_json['startTime']
-    else:
+    elif 'timestamp' in scanlog_json:
         start_timestamp = time.mktime(time.strptime(scanlog_json['timestamp'], '%Y-%m-%d_%H:%M:%S'))
+    else:
+        start_timestamp = datetime.now().timestamp()
     if 'finishTime' in scanlog_json:
         finish_timestamp = scanlog_json['finishTime']
     else:
@@ -367,13 +369,15 @@ def __write_scan(cache_dir, scanlog_json):
     # If not, extract '-s <scanCfg.json' from command line and convert it to 'testType'.
     if 'testType' in scanlog_json:
         test_type = scanlog_json['testType']
-    else:
+    elif 'exec' in scanlog_json:
         command = scanlog_json['exec']
         for i, com in enumerate(command.split(' ')):
             if com=='-s': 
                 scan_command = command.split(' ')[i+1]
                 break
         test_type = scan_command.split('/')[-1].split('.')[0]
+    else:
+        test_type = 'unknown_type'
     scanlog_json['testType'] = test_type
     
     ########################

@@ -89,8 +89,8 @@ json DBHandler::setUser(std::string i_user_path) {
     } else { 
         user_json = this->checkUserCfg(i_user_path);
     }
-    user_json["machineUser"] = getenv("USER");
-    user_json["hostname"] = getenv("HOSTNAME");
+    user_json["USER"] = getenv("USER");
+    user_json["HOSTNAME"] = getenv("HOSTNAME");
 
     return user_json;
 }
@@ -103,7 +103,7 @@ json DBHandler::setSite(std::string i_site_path) {
     } else {
         site_json = this->checkSiteCfg(i_site_path);
     }
-    site_json["hostname"] = getenv("HOSTNAME");
+    site_json["HOSTNAME"] = getenv("HOSTNAME");
 
     return site_json;
 }
