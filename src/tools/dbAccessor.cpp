@@ -144,6 +144,7 @@ int main(int argc, char *argv[]){
 
 void printHelp() {
     std::string home = getenv("HOME");
+    std::string hostname = getenv("HOSTNAME");
     std::string dbDirPath = home+"/.yarr/localdb";
     std::cout << "Help:" << std::endl;
     std::cout << " -h: Shows this." << std::endl;
@@ -154,8 +155,8 @@ void printHelp() {
     std::cout << "     -s <scanLog.json> : Provide scan log file." << std::endl;
     std::cout << "     -c <conn.json> : Provide connectivity config file." << std::endl;
     std::cout << " -M : Retrieve Module list from Local DB." << std::endl;
-    std::cout << " -d <database.json> : Provide database configuration. (Default: " << dbDirPath << "/database.json" << std::endl;
-    std::cout << " -i <site.json> : Provide site configuration. (Default: " << dbDirPath << "/site.json" << std::endl;
-    std::cout << " -u <user.json> : Provide user configuration. (Default: " << dbDirPath << "/user.json" << std::endl;
+    std::cout << " -d <database.json> : Provide database configuration. (Default " << dbDirPath << "/" << hostname << "_database.json" << std::endl;
+    std::cout << " -i <site.json> : Provide site configuration. " << std::endl;
+    std::cout << " -u <user.json> : Provide user configuration. " << std::endl;
     std::cout << std::endl;
 }

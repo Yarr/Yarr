@@ -38,10 +38,6 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_command, std
     m_command = "localdbtool-upload";
     std::string cmd = m_command+" test 2> /dev/null";
     if (system(cmd.c_str())!=0) {
-        std::string message = "Not found Local DB command: 'localdbtool-upload' in ~/.local/bin\nYou can set Local DB tools into ~/.local/bin by YARR/localdb/setup_db.sh -t'";
-        std::string function = __PRETTY_FUNCTION__;
-        this->alert(function, message, "warning");
-
         std::size_t pathPos = i_command.find_last_of('/');                             
         m_command = i_command.substr(0, pathPos) + "/../localdb/bin/localdbtool-upload";
     }
@@ -127,8 +123,8 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, st
     if (log_json["id"].empty()) {
         this->checkEmpty(log_json["startTime"].empty()&&log_json["timestamp"].empty(), "startTime||timestamp", i_scanlog_path);
         this->checkEmpty(conn_json["chips"].empty(), "chips", i_conn_path);
-        if (!log_json["userCfg"].empty()) log_json["userCfg"] = user_json;
-        if (!log_json["siteCfg"].empty()) log_json["siteCfg"] = site_json;
+        if (log_json["userCfg"].empty()) log_json["userCfg"] = user_json;
+        if (log_json["siteCfg"].empty()) log_json["siteCfg"] = site_json;
     }
 
     char path[1000];

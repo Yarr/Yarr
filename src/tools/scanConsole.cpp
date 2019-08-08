@@ -676,9 +676,9 @@ void printHelp() {
     std::cout << " -m <int> : 0 = pixel masking disabled, 1 = start with fresh pixel mask, default = pixel masking enabled" << std::endl;
     std::cout << " -k: Report known items (Scans, Hardware etc.)\n";
     std::cout << " -W: Enable using Local DB." << std::endl;
-    std::cout << " -d: <database.json> Provide database configuration. (Default " << dbDirPath << "/etc/localdb/" << hostname << "_database.json" << std::endl;
-    std::cout << " -i: <site.json> Provide site configuration. (Default " << dbDirPath << "/etc/localdb/site.json" << std::endl;
-    std::cout << " -u: <user.json> Provide user configuration. (Default " << dbDirPath << "/etc/localdb/${USER}_user.json" << std::endl;
+    std::cout << " -d <database.json> : Provide database configuration. (Default " << dbDirPath << "/" << hostname << "_database.json" << std::endl;
+    std::cout << " -i <site.json> : Provide site configuration." << std::endl;
+    std::cout << " -u <user.json> : Provide user configuration." << std::endl;
 }
 
 void listChips() {

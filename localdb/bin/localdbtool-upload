@@ -135,7 +135,7 @@ def __init(db_cfg):
         sys.exit(1)
 
     url = 'mongodb://{0}:{1}'.format(db_cfg['hostIp'], db_cfg['hostPort'])
-    logger.info('Local DB Server: {}'.format(url))
+    logger.info('Local DB Server: {0}/{1}'.format(url, db_cfg.get('dbName', 'localdb')))
 
     ##################
     # Connection check

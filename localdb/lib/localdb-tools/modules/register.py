@@ -870,7 +870,7 @@ def __check_site_data(i_oid):
     logger.info('Site Data:')
     logger.info('    MAC address: {}'.format(this_site['address']))
     logger.info('    Institution: {}'.format(this_site['institution']))
-    logger.info('    HOSTNAME: {}'.format(this_site['hostname']))
+    logger.info('    HOSTNAME: {}'.format(this_site['HOSTNAME']))
 
 ############################################################
 # Check User Config

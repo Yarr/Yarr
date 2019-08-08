@@ -161,10 +161,11 @@ echo -e "[LDB] Confirmation"
 echo -e "[LDB] -----------------------"
 echo -e "[LDB] --  Mongo DB Server  --"
 echo -e "[LDB] -----------------------"
-echo -e "[LDB] IP address: ${dbip}    (specified with option '-i')"
-echo -e "[LDB] port: ${dbport}    (specified with option '-p')"
-echo -e "[LDB] CA file: ${dbca}    (specified with option '-a')"
-echo -e "[LDB] Certificate file: ${dbcert}    (specified with option '-e')"
+echo -e "[LDB] IP address      : ${dbip}"
+echo -e "[LDB] port            : ${dbport}"
+echo -e "[LDB] database name   : ${dbname}"
+echo -e "[LDB] CA file         : ${dbca}"
+echo -e "[LDB] Certificate file: ${dbcert}"
 echo -e "[LDB]"
 echo -e "[LDB] Are you sure that is correct? [y/n]"
 read -p "[LDB] > " answer
@@ -182,21 +183,24 @@ fi
 echo -e "[LDB] This script performs ..."
 echo -e "[LDB]"
 echo -e "[LDB]  - Check pip packages: '${shell_dir}/setting/requirements-pip.txt'"
-echo -e "[LDB]  - Create Local DB files:"
-echo -e "[LDB]         ---> ${dir}"
-echo -e "[LDB]         ---> ${dir}/log"
-echo -e "[LDB]         ---> ${dir}/${HOSTNAME}_database.json"
+if [ ! -d ${dir} ]; then
+    echo -e "[LDB]  - Create Local DB Directory: ${dir}"
+fi
+if [ ! -d ${dir}/log ]; then
+    echo -e "[LDB]  - Create Local DB Log Directory: ${dir}/log"
+fi
+echo -e "[LDB]  - Create Local DB files: ${dir}/${HOSTNAME}_database.json"
+if [ -f ${dir}/${HOSTNAME}_database.json ]; then
+    echo -e "[WARNING] !!! OVERRIDE THE EXISTING FILE: ${dir}/${HOSTNAME}_database.json !!!"
+fi
 if "${tools}"; then
     echo -e "[LDB]  - Set Local DB Tools:"
     for i in `ls -1 ${shell_dir}/bin/`; do
-        if [ -f ${BIN}/${i} ]; then
-            echo -e "[LDB]         ---> ${BIN}/${i}"
-        fi
+        echo -e "[LDB]     - ${BIN}/${i}"
     done
-    echo -e "[LDB]         ---> ${HOME}/.local/lib/localdb-tools/"
+    echo -e "[LDB]     - ${HOME}/.local/lib/localdb-tools/"
 fi
-echo -e "[LDB]  - Create README:"
-echo -e "[LDB]         ---> ${shell_dir}/README"
+echo -e "[LDB]  - Create README: ${shell_dir}/README"
 echo -e "[LDB]"
 echo -e "[LDB] Continue? [y/n]"
 unset answer
@@ -207,10 +211,7 @@ done
 echo -e "[LDB]"
 if [[ ${answer} != "y" ]]; then
     echo -e "[LDB] Exit ..."
-    echo -e "[LDB] You can set the Local DB tools by:"
-    echo -e "[LDB]     $ ./setup_db.sh -t"
-    echo -e "[LDB] If you want to setup them manually, the page 'https://github.com/jlab-hep/Yarr/wiki/Installation' should be helpful!"
-    echo -e ""
+    echo -e "[LDB]"
     exit
 fi
 
@@ -238,7 +239,7 @@ mkdir -p ${dir}
 mkdir -p ${dir}/log
 
 # Create database config
-echo -e "[LDB] Create Config files..."
+echo -e "[LDB] Create Config file..."
 dbcfg=${dir}/${HOSTNAME}_database.json
 cp ${shell_dir}/setting/default/database.json ${dbcfg}
 sed -i -e "s!DBIP!${dbip}!g" ${dbcfg}
@@ -257,7 +258,7 @@ fi
 echo -e "[LDB] DB Config: ${dbcfg}"
 
 echo -e "[LDB] Done."
-echo -e ""
+echo -e "[LDB]"
 
 readme=${shell_dir}/README
 
@@ -265,9 +266,8 @@ if [ -f ${readme} ]; then
     rm ${readme}
 fi
 
-echo -e "-----------------------------"
-echo -e "# scanConsole with Local DB" | tee -a ${readme}
-echo -e "" | tee -a ${readme}
+echo -e "# scanConsole with Local DB" > ${readme}
+echo -e "" > ${readme}
 
 if "${tools}"; then
     # Setting function
@@ -291,43 +291,42 @@ if "${tools}"; then
 fi
 
 # settings
-echo -e "## Settings" | tee -a ${readme}
-echo -e "- './setup_db.sh'" | tee -a ${readme}
-echo -e "  - description: setup Local DB functions for the user local." | tee -a ${readme}
-echo -e "  - requirements: required softwares" | tee -a ${readme}
-echo -e "" | tee -a ${readme}
+echo -e "## Settings" > ${readme}
+echo -e "- './setup_db.sh'" > ${readme}
+echo -e "  - description: setup Local DB functions for the user local." > ${readme}
+echo -e "  - requirements: required softwares" > ${readme}
+echo -e "" > ${readme}
 
 # upload.py
 ITSNAME="LocalDB Tool Setup Upload Tool"
-echo -e "### $ITSNAME" | tee -a ${readme}
-echo -e "- '${shell_dir}/bin/localdbtool-upload scan <path to result directory>' can upload scan data" | tee -a ${readme}
-echo -e "- '${shell_dir}/bin/localdbtool-upload dcs <path to result directory>' can upload dcs data based on scan data" | tee -a ${readme}
-echo -e "- '${shell_dir}/bin/localdbtool-upload cache' can upload every cache data" | tee -a ${readme}
-echo -e "- '${shell_dir}/bin/localdbtool-upload --help' can show more usage." | tee -a ${readme}
-echo -e "" | tee -a ${readme}
+echo -e "### $ITSNAME" > ${readme}
+echo -e "- '${shell_dir}/bin/localdbtool-upload scan <path to result directory>' can upload scan data" > ${readme}
+echo -e "- '${shell_dir}/bin/localdbtool-upload dcs <path to result directory>' can upload dcs data based on scan data" > ${readme}
+echo -e "- '${shell_dir}/bin/localdbtool-upload cache' can upload every cache data" > ${readme}
+echo -e "- '${shell_dir}/bin/localdbtool-upload --help' can show more usage." > ${readme}
+echo -e "" > ${readme}
 
 # retrieve.py
 ITSNAME="LocalDB Tool Setup Retrieve Tool"
-echo -e "### $ITSNAME" | tee -a ${readme}
-echo -e "- '${shell_dir}/bin/localdbtool-retrieve init' can initialize retrieve repository" | tee -a ${readme}
-echo -e "- '${shell_dir}/bin/localdbtool-retrieve remote add <remote name>' can add remote repository for Local DB/Master Server" | tee -a ${readme}
-echo -e "- '${shell_dir}/bin/localdbtool-retrieve --help' can show more usage." | tee -a ${readme}
-echo -e "" | tee -a ${readme}
+echo -e "### $ITSNAME" > ${readme}
+echo -e "- '${shell_dir}/bin/localdbtool-retrieve init' can initialize retrieve repository" > ${readme}
+echo -e "- '${shell_dir}/bin/localdbtool-retrieve remote add <remote name>' can add remote repository for Local DB/Master Server" > ${readme}
+echo -e "- '${shell_dir}/bin/localdbtool-retrieve --help' can show more usage." > ${readme}
+echo -e "" > ${readme}
 
 # finish
 ITSNAME="Usage"
-echo -e "## $ITSNAME" | tee -a ${readme}
-echo -e "1. scanConsole with Local DB" | tee -a ${readme}
-echo -e "   - './bin/scanConsole -c <conn> -r <ctr> -s <scan> -W' can use Local DB schemes" | tee -a ${readme}
-echo -e "2. Upload function" | tee -a ${readme}
-echo -e "   - '${shell_dir}/bin/localdbtool-upload cache' can upload every cache data" | tee -a ${readme}
-echo -e "3. Retrieve function" | tee -a ${readme}
-echo -e "   - '${shell_dir}/bin/localdbtool-retrieve log' can show test data log in Local DB" | tee -a ${readme}
-echo -e "   - '${shell_dir}/bin/localdbtool-retrieve checkout <module name>' can restore the latest config files from Local DB" | tee -a ${readme}
-echo -e "4. Viewer Application" | tee -a ${readme}
-echo -e "   - Access 'http://HOSTNAME/localdb/' can display results in web browser if Viewer is running" | tee -a ${readme}
-echo -e "   - (HOSTNAME: Local DB Server where web browser if Viewer is running" | tee -a ${readme}
-echo -e "5. More Detail" | tee -a ${readme}
-echo -e "   - Check 'https://github.com/jlab-hep/Yarr/wiki'" | tee -a ${readme}
-echo -e "-----------------------------"
-echo -e "[LDB] This description is saved as ${readme}"
+echo -e "## $ITSNAME" > ${readme}
+echo -e "1. scanConsole with Local DB" > ${readme}
+echo -e "   - './bin/scanConsole -c <conn> -r <ctr> -s <scan> -W' can use Local DB schemes" > ${readme}
+echo -e "2. Upload function" > ${readme}
+echo -e "   - '${shell_dir}/bin/localdbtool-upload cache' can upload every cache data" > ${readme}
+echo -e "3. Retrieve function" > ${readme}
+echo -e "   - '${shell_dir}/bin/localdbtool-retrieve log' can show test data log in Local DB" > ${readme}
+echo -e "   - '${shell_dir}/bin/localdbtool-retrieve checkout <module name>' can restore the latest config files from Local DB" > ${readme}
+echo -e "4. Viewer Application" > ${readme}
+echo -e "   - Access 'http://HOSTNAME/localdb/' can display results in web browser if Viewer is running" > ${readme}
+echo -e "   - (HOSTNAME: Local DB Server where web browser if Viewer is running" > ${readme}
+echo -e "5. More Detail" > ${readme}
+echo -e "   - Check 'https://github.com/jlab-hep/Yarr/wiki'" > ${readme}
+echo -e "[LDB] The detail is written in ${readme}"
