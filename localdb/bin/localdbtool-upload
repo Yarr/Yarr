@@ -652,7 +652,7 @@ def __check_component(i_type):
     if i_type=='comp':
         file_path = home+'/.yarr/localdb/'+hostname+'_modules.csv'
         file_open = open(file_path, 'w')
-        query = {'dbVersion': 1, 'componentType': 'module'}
+        query = {'dbVersion': register.__global.db_version, 'componentType': 'module'}
         component_entries = localdb.component.find(query)
         modules = []
         for component in component_entries:
@@ -696,7 +696,7 @@ def __check_component(i_type):
             logger.info('The number of modules: {}'.format(len(modules)))
             logger.info('Done.')
     elif i_type=='chip':
-        query = {'dbVersion': 1}
+        query = {'dbVersion': register.__global.db_version}
         component_entries = localdb.chip.find(query)
         chips = []
         for component in component_entries:

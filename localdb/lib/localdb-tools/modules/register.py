@@ -1191,7 +1191,7 @@ class __global:
     site_oid = ''
     tr_oids = []
     histo_names = []
-    db_version = 1
+    db_version = 1.01
     db_list = {}
     dir_path = ''
     option = ''
@@ -1203,7 +1203,7 @@ class __global:
         site_oid = ''
         tr_oids = []
         histo_names = []
-        db_version = 1
+        db_version = 1.01
         db_list = {}
         dir_path = ''
         option = ''
