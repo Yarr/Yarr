@@ -26,6 +26,11 @@ The setting scripts and instructions supports the following OS:
 
 You can store result data by YARR immediately following the tutorial.
 
+### 0. Installation
+
+This step should be done by the administrator of the machine.<br>
+The detail can be checked [here](#quick-installation).
+
 ### 1. Setup YARR command with Local DB
 
 Currently there are [another official repository for Local DB](https://gitlab.cern.ch/YARR/YARR/tree/devel-localdb) in [YARR](https://gitlab.cern.ch/YARR/YARR).<br>
@@ -377,27 +382,131 @@ Connection check by `localdbtool-upload init` is failed by some reasons.
 It is required to install `YARR/localdb/setting/requirements-pip.txt` to use Local DB Tools.<br>
 Check the detail in the page 'administrator page'.
 
-## Installation
+## Quick Installation 
 
-### Automatic Installation
+Detail can be checked [here](https://github.com/jlab-hep/Yarr/wiki/Installation).
 
-Check [this page](https://github.com/jlab-hep/Yarr/wiki/Automatic-Installetion).
+### Installation for Local DB Server
 
-### Manual Installation
+Reference: [Install MongoDB](https://docs.mongodb.com/manual/installation/)<br>
+Local DB Supports mongo DB server Ver. 3.6.X or more.
 
-Check [this page](https://github.com/jlab-hep/Yarr/wiki/Manual-Installation).
+- For centOS7
 
-### Setup Viewer Application
+   1. Add yum repository `/etc/yum.repos.d/mongodb-org-3.6.repo`
 
-Check [this page](https://github.com/jlab-hep/Yarr/wiki/Setup-Viewer-Application).
+      ```
+      [mongodb-org-3.6]
+      name=MongoDB Repository
+      baseurl=https://repo.mongodb.org/yum/redhat/7Server/mongodb-org/3.6/x86_64/
+      gpgcheck=1
+      enabled=1
+      gpgkey=https://www.mongodb.org/static/pgp/server-3.6.asc
+      ```
 
-### Others
+    2. Install by yum
+
+       ```
+       $ sudo yum install -y mongodb-org.x86_64
+       ```
+
+   3. Directoried (default)
+
+      - shell command: `/bin/mongo`
+      - process command: `/bin/mongod`
+      - config file: `/etc/mongod.conf`
+      - data directory: `/var/lib/mongo`
+      - log directory: `/var/log/mongodb`
+
+   4. Start MongoDB
+
+      ```
+      $ sudo service mongod start
+      ```
+ 
+   5. Verify that MongoDB has started successfully
+
+      ```
+      $ mongo
+      MongoDB shell version v3.6.13
+      <some texts>
+      > 
+      ```
+
+- For MacOS
+
+   1. Install Homebrew
+
+   2. Tap the MongoDB Homebrew Tap
+
+      ```
+      $ brew tap mongodb/brew
+      ```
+
+   3. Install MongoDB
+
+      ```
+      $ brew install mongodb-community@4.0
+      ```
+
+   4. Directoried (default)
+
+      - shell command: `/usr/local/opt/mongodb-community\@4.0/bin/mongo`
+      - process command: `/usr/local/opt/mongodb-community\@4.0/bin/mongod`
+      - config file: `/usr/local/etc/mongod.conf`
+      - data directory: `/usr/local/var/lib/mongo`
+      - log directory: `/usr/local/var/log/mongodb`
+
+   5. Start MongoDB
+
+      ```
+      $ brew services start mongodb-community@4.0
+      ```
+ 
+   6. Verify that MongoDB has started successfully
+
+      ```
+      $ export PATH=$PATH:/usr/local/opt/mongodb-community\@4.0/bin
+      $ mongo
+      MongoDB shell version v4.0.11
+      <some texts>
+      > 
+      ```
+
+### Installation of Local DB Tools
+
+[Local DB Tools repository](https://github.com/jlab-hep/localDB-tools)
+
+```
+$ git clone https://github.com/jlab-hep/localDB-tools.git
+$ cd localDB-tools/setting
+$ sudo pip3 install -r requirements-pip.txt
+```
+
+- Viewer Application
+
+   Web Application which can check data stored in Local DB.
+
+   ```
+   $ cd localDB-tools/viewer
+   $ ./setup_viewer.sh
+   $ python3 app.py --config conf.yml &
+   ```
+
+   Check `http://localhost:5000/localdb/` in local browser.<br>
+   If you want to check data remotely, check [here](#remote-connection)
+
+- Synchronization Tool
+
+   Command which can synchroniza data between other Local DB Server.
+
+## Remote Connection
 
 in edit
 
-### Config Files Sample
+## Config Files Sample
 
-#### User Config File
+### User Config File
 
 **Contents**
 - userName: your name (e.g. "John Doe")
@@ -423,7 +532,7 @@ in edit
 }
 ```
 
-#### Component Config File
+### Component Config File
 
 <span style="color:red">One file for one module!</span> 
 
@@ -489,7 +598,7 @@ in edit
    }
    ```
 
-#### Connectivity Config File
+### Connectivity Config File
 
 **Required information**
 - stage: the test stage for the module, should be selected from the stage list written in [database.json](https://github.com/jlab-hep/Yarr/wiki/database-config-file)
@@ -558,7 +667,7 @@ in edit
    }
    ```
 
-#### DCS Config File
+### DCS Config File
 **Required information**
 - 'description': the description of the DCS data
 - 'key': DCS keyword (key list is written in the database config file `${HOME}/.yarr/localdb/database.json`)
@@ -620,7 +729,7 @@ in edit
 }
 ``` 
 
-#### DCS Data File
+### DCS Data File
 
 **Required information**
 - the 1st line: DCS keyword `key unixtime <key1> <key2> <key3> ...` 
@@ -642,7 +751,7 @@ setting null 10 10 10 10
 2019-06-24_20:50:03 1561377003 15 25 0 0
 ```
 
-#### Scan Log File
+### Scan Log File
 
 **Required information**
 - 'startTime' or 'timestamp'
