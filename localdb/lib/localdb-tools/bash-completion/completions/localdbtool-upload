@@ -1,0 +1,58 @@
+#!/bin/bash
+#################################
+# Author: Arisa Kubota
+# Email: arisa.kubota at cern.ch
+# Date: July 2019
+# Project: Local Database for YARR
+# Description: Bash completion for upload tool
+#################################
+# This makes heavy use of ksh style extended globs and contains Linux specific
+# code for completing the parameter to the -fstype option.
+
+_localdbtool_upload() {
+    local cur prev cword
+    _get_comp_words_by_ref -n : cur prev cword
+
+    if [ -f ${HOME}/.yarr/run.dat ]; then
+        local runs=`cat ${HOME}/.yarr/run.dat|xargs`
+    else
+        local runs=""
+    fi
+    if [ -f ${HOME}/.yarr/dcs.dat ]; then
+        local dcs=`cat ${HOME}/.yarr/dcs.dat|xargs`
+    else
+        local dcs=""
+    fi
+    case ${prev} in
+        "localdbtool-upload")
+            COMPREPLY=( $(compgen -W "init comp scan dcs cache check" -- "${cur}") )
+            return 0
+            ;;
+        "init") 
+            COMPREPLY=( $(compgen -W "--database --username --password --config" -- "${cur}") )
+            return 0
+            ;;
+        "scan"|"dcs") 
+            compopt -o filenames
+            COMPREPLY=( $(compgen -d -- $cur) )
+            return 0
+            ;;
+        "check") 
+            COMPREPLY=( $(compgen -W "comp chip" -- "${cur}") )
+            return 0
+            ;;
+        "comp"|"--database"|"--config"|"--user"|"--site")
+            compopt -o filenames
+            COMPREPLY=( $(compgen -f -- $cur) )
+            return 0
+            ;;
+        "--username"|"--password"|"-h"|"--help"|"--log"|"--force")
+            return 0
+            ;;
+        *)
+            COMPREPLY=( $(compgen -W "--database --user --site --username --password --config --log --force" -- "${cur}") )
+            return 0
+            ;;
+    esac
+}
+complete -F _localdbtool_upload localdbtool-upload

@@ -1,0 +1,57 @@
+#!/bin/bash
+#################################
+# Author: Arisa Kubota
+# Email: arisa.kubota at cern.ch
+# Date: July 2019
+# Project: Local Database for YARR
+# Description: Bash completion for retrieve tool
+#################################
+# This makes heavy use of ksh style extended globs and contains Linux specific
+# code for completing the parameter to the -fstype option.
+
+_localdbtool_retrieve() {
+    local cur prev cword
+    _get_comp_words_by_ref -n : cur prev cword
+
+    if [ -f ${HOME}/.localdb_retrieve/HEAD ]; then
+        local remote=`cat ${HOME}/.localdb_retrieve/HEAD|grep remote|awk -F ': ' '{print $2}'`
+    else
+        local remote=""
+    fi
+    if [ -d ${HOME}/.localdb_retrieve/refs/remotes ]; then
+        local remotes=`ls -1 ${HOME}/.localdb_retrieve/refs/remotes`
+    else
+        local remotes=""
+    fi
+    if [ -f ${HOME}/.localdb_retrieve/refs/remotes/${remote} ]; then
+        local branchs=`cat ${HOME}/.localdb_retrieve/refs/remotes/${remote}|xargs`
+    else
+        local branchs=""
+    fi
+
+    if [ "${cword}" -eq 1 ]; then
+        COMPREPLY=( $(compgen -W "init status remote fetch log checkout" -- "${cur}") )
+    elif [ "${cword}" -eq 2 ]; then
+        if [ "${prev}" = "remote" ]; then
+            COMPREPLY=( $(compgen -W "status add rm" -- "${cur}") )
+        elif [ "${prev}" = "fetch" ]; then
+            COMPREPLY=( $(compgen -W "${remotes}" -- "${cur}") )
+        elif [ "${prev}" = "log" ]; then
+            COMPREPLY=( $(compgen -W "${remotes}" -- "${cur}") )
+            COMPREPLY+=( $(compgen -W "${branchs}" -- "${cur}") )
+        elif [ "${prev}" = "checkout" ]; then
+            COMPREPLY=( $(compgen -W "${remotes}" -- "${cur}") )
+            COMPREPLY+=( $(compgen -W "${branchs}" -- "${cur}") )
+        fi
+    elif [ "${cword}" -eq 3 ]; then
+        if [ "`echo ${remotes} | grep ${prev}`" ]; then 
+            local branchs=`cat ${HOME}/.localdb_retrieve/refs/remotes/${prev}|xargs`
+            COMPREPLY+=( $(compgen -W "${branchs}" -- "${cur}") )
+        elif [ "${prev}" = "status" ]; then
+            COMPREPLY=( $(compgen -W "${remotes}" -- "${cur}") )
+        elif [ "${prev}" = "rm" ]; then
+            COMPREPLY=( $(compgen -W "${remotes}" -- "${cur}") )
+        fi
+    fi
+}
+complete -F _localdbtool_retrieve localdbtool-retrieve

@@ -1,0 +1,5 @@
+BASEDIR=$(dirname ${BASH_SOURCE})
+for i in `ls -1 ${BASEDIR}/bash-completion/completions`
+do
+    source ${BASEDIR}/bash-completion/completions/${i}
+done

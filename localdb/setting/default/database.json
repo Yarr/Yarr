@@ -1,0 +1,42 @@
+{
+    "hostIp": "DBIP",
+    "hostPort": "DBPORT",
+    "dbName": "DBNAME",
+    "ssl": {
+        "enabled": ENABLED,
+        "PEMKeyFile": PEMKEYFILE,
+        "CAFile": CAFILE,
+        "authMechanism": "MECHANISM"
+    },
+    "verify": false,
+    "stage": [
+        "Bare Module",
+        "Wire Bonded",
+        "Potted",
+        "Final Electrical",
+        "Complete",
+        "Loaded",
+        "Parylene",
+        "Initial Electrical",
+        "Thermal Cycling",
+        "Flex + Bare Module Attachment",
+        "Testing"
+    ],
+    "environment": [
+        "vddd_voltage",
+        "vddd_current",
+        "vdda_voltage",
+        "vdda_current",
+        "hv_voltage",
+        "hv_current",
+        "temperature"
+    ],
+    "component": [
+        "Front-end Chip",
+        "Front-end Chips Wafer",
+        "Hybrid",
+        "Module",
+        "Sensor Tile",
+        "Sensor Wafer"
+    ]
+}

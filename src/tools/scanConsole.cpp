@@ -37,6 +37,7 @@
 #include "Fei4Histogrammer.h"
 #include "Fei4Analysis.h"
 
+#include "DBHandler.h"
 #if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
 
 //  #include <errno.h>
@@ -76,6 +77,9 @@ int main(int argc, char *argv[]) {
 
     std::cout << "-> Parsing command line parameters ..." << std::endl;
     
+    std::string home = getenv("HOME");
+    std::string hostname = getenv("HOSTNAME");
+
     // Init parameters
     std::string scanType = "";
     std::vector<std::string> cConfigPaths;
@@ -85,6 +89,12 @@ int main(int argc, char *argv[]) {
     int target_charge = -1;
     int target_tot = -1;
     int mask_opt = -1;
+
+    bool dbUse = false;
+    std::string dbDirPath = home+"/.yarr/localdb";
+    std::string dbCfgPath = dbDirPath+"/"+hostname+"_database.json";
+    std::string dbSiteCfgPath = "";
+    std::string dbUserCfgPath = "";
     
     unsigned runCounter = 0;
 
@@ -93,7 +103,6 @@ int main(int argc, char *argv[]) {
         std::cerr << "#ERROR# Loading run counter ~/.yarr!" << std::endl;
     }
     
-    std::string home = getenv("HOME");
     std::fstream iF((home + "/.yarr/runCounter").c_str(), std::ios::in);
     if (iF) {
         iF >> runCounter;
@@ -111,7 +120,7 @@ int main(int argc, char *argv[]) {
     oF.close();
 
     int c;
-    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:")) != -1) {
+    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:Wd:u:i:")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
@@ -163,6 +172,18 @@ int main(int argc, char *argv[]) {
                     }
                     count++;
                 }
+                break;
+            case 'W': // Write to DB
+                dbUse = true;
+                break;
+            case 'd': // Database config file
+                dbCfgPath = std::string(optarg);
+                break;
+            case 'i': // Database config file
+                dbSiteCfgPath = std::string(optarg);
+                break;
+            case 'u': // Database config file
+                dbUserCfgPath = std::string(optarg);
                 break;
             case '?':
                 if(optopt == 's' || optopt == 'n'){
@@ -251,10 +272,39 @@ int main(int argc, char *argv[]) {
     // Add to scan log
     scanLog["exec"] = commandLineStr;
     scanLog["timestamp"] = timestamp;
+    scanLog["startTime"] = (int)now;
     scanLog["runNumber"] = runCounter;
     scanLog["targetCharge"] = target_charge;
     scanLog["targetTot"] = target_tot;
+    scanLog["testType"] = strippedScan;
 
+    // Initial setting local DBHandler
+    DBHandler *database = new DBHandler();
+    if (dbUse) {
+        std::cout << std::endl;
+        std::cout << "\033[1;31m################\033[0m" << std::endl;
+        std::cout << "\033[1;31m# Set Database #\033[0m" << std::endl;
+        std::cout << "\033[1;31m################\033[0m" << std::endl;
+        std::cout << "-> Setting user's information" << std::endl;
+
+        json dbCfg;
+        try {
+            dbCfg = ScanHelper::openJsonFile(dbCfgPath);
+        } catch (std::runtime_error &e) {
+            std::cerr << "#DB ERROR# opening or loading database config: " << e.what() << std::endl;
+            return -1;
+        }
+        scanLog["dbCfg"] = dbCfg;
+
+        database->initialize(dbCfgPath, argv[0]); 
+
+        // set/check user config if specified
+        json userCfg = database->setUser(dbUserCfgPath);
+        scanLog["userCfg"] = userCfg;
+        // set/check site config if specified
+        json siteCfg = database->setSite(dbSiteCfgPath);
+        scanLog["siteCfg"] = siteCfg;
+    }
     std::cout << std::endl;
     std::cout << "\033[1;31m#################\033[0m" << std::endl;
     std::cout << "\033[1;31m# Init Hardware #\033[0m" << std::endl;
@@ -303,8 +353,13 @@ int main(int argc, char *argv[]) {
             std::cerr << "#ERROR# opening connectivity or chip configs: " << e.what() << std::endl;
             return -1;
         }
-        scanLog["connectivity"] = config;
-        
+        scanLog["connectivity"].push_back(config);
+    }
+
+    if (dbUse) {
+        std::cout << "-> Setting Connectivity Configs" << std::endl;
+        // set/check connectivity config files
+        database->setConnCfg(cConfigPaths);
     }
     
     // Reset masks
@@ -531,6 +586,8 @@ int main(int argc, char *argv[]) {
     hwCtrl.reset();
 
     // Save scan log
+    now = std::time(NULL);
+    scanLog["finishTime"] = (int)now;
     std::ofstream scanLogFile(outputDir + "scanLog.json");
     scanLogFile << std::setw(4) << scanLog;
     scanLogFile.close();
@@ -566,7 +623,7 @@ int main(int argc, char *argv[]) {
             backupCfgFile.close(); 
 
             // Plot
-            if (doPlots) {
+            if (doPlots||dbUse) {
                 std::cout << "-> Plotting histograms of FE " << dynamic_cast<FrontEndCfg*>(fe)->getRxChannel() << std::endl;
                 std::string outputDirTmp = outputDir;
 
@@ -591,10 +648,21 @@ int main(int argc, char *argv[]) {
     if(doPlots && (system(lsCmd.c_str()) < 0)) {
         std::cout << "Find plots in: " << dataDir + "last_scan" << std::endl;
     }
+
+    // Register test info into database
+    if (dbUse) {
+        database->cleanUp("scan", outputDir);
+    }
+    delete database;
+
     return 0;
 }
 
 void printHelp() {
+    std::string home = getenv("HOME");
+    std::string hostname = getenv("HOSTNAME");
+    std::string dbDirPath = home+"/.yarr/localdb";
+
     std::cout << "Help:" << std::endl;
     std::cout << " -h: Shows this." << std::endl;
     std::cout << " -s <scan_type> : Scan config" << std::endl;
@@ -607,6 +675,10 @@ void printHelp() {
     std::cout << " -o <dir> : Output directory. (Default ./data/)" << std::endl;
     std::cout << " -m <int> : 0 = pixel masking disabled, 1 = start with fresh pixel mask, default = pixel masking enabled" << std::endl;
     std::cout << " -k: Report known items (Scans, Hardware etc.)\n";
+    std::cout << " -W: Enable using Local DB." << std::endl;
+    std::cout << " -d <database.json> : Provide database configuration. (Default " << dbDirPath << "/" << hostname << "_database.json" << std::endl;
+    std::cout << " -i <site.json> : Provide site configuration." << std::endl;
+    std::cout << " -u <user.json> : Provide user configuration." << std::endl;
 }
 
 void listChips() {

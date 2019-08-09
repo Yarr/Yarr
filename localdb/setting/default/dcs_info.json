@@ -1,0 +1,51 @@
+{
+    "environments": [{
+        "description": "VDDD Voltage [V]",
+        "key": "vddd_voltage",
+        "path": "dcs.dat",
+        "num": 0,
+        "status": "disabled"
+    },{
+        "description": "VDDD Current [A]",
+        "key": "vddd_current",
+        "path": "dcs.dat",
+        "num": 0,
+        "status": "disabled"
+    },{
+        "description": "VDDA Voltage [V]",
+        "key": "vdda_voltage",
+        "path": "dcs.dat",
+        "num": 0,
+        "status": "disabled"
+    },{
+        "description": "VDDA Current [A]",
+        "key": "vdda_current",
+        "path": "dcs.dat",
+        "num": 0,
+        "status": "disabled"
+    },{
+        "description": "High Voltage [V]",
+        "key": "hv_voltage",
+        "path": "dcs.dat",
+        "num": 0,
+        "status": "disabled"
+    },{
+        "description": "High Voltage Current [A]",
+        "key": "hv_current",
+        "path": "dcs.dat",
+        "num": 0,
+        "status": "disabled"
+    },{
+        "description": "Temperature [C]",
+        "key": "temperature",
+        "path": "dcs.dat",
+        "num": 0,
+        "status": "disabled"
+    },{
+        "description": "Module Temperature [C]",
+        "key": "temperature",
+        "path": "dcs.dat",
+        "num": 1,
+        "status": "disabled"
+    }]
+}

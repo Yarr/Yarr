@@ -351,29 +351,29 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
     if (occInnerCnt[ident] == n_count &&
             totInnerCnt[ident] == n_count &&
             tot2InnerCnt[ident] == n_count) {
-        std::unique_ptr<Histo2d> meanTotMap(new Histo2d("MeanTotMap"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this)));
+        std::unique_ptr<Histo2d> meanTotMap(new Histo2d("MeanTotMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this)));
         meanTotMap->setXaxisTitle("Column");
         meanTotMap->setYaxisTitle("Row");
         meanTotMap->setZaxisTitle("Mean ToT [bc]");
-        std::unique_ptr<Histo2d> sumTotMap(new Histo2d("SumTotMap"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this)));
+        std::unique_ptr<Histo2d> sumTotMap(new Histo2d("SumTotMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this)));
         sumTotMap->setXaxisTitle("Column");
         sumTotMap->setYaxisTitle("Row");
         sumTotMap->setZaxisTitle("Mean ToT [bc]");
-        std::unique_ptr<Histo2d> sumTot2Map(new Histo2d("MeanTot2Map"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this)));
+        std::unique_ptr<Histo2d> sumTot2Map(new Histo2d("MeanTot2Map-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this)));
         sumTot2Map->setXaxisTitle("Column");
         sumTot2Map->setYaxisTitle("Row");
         sumTot2Map->setZaxisTitle("Mean ToT^2 [bc^2]");
-        std::unique_ptr<Histo2d> sigmaTotMap(new Histo2d("SigmaTotMap"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this)));
+        std::unique_ptr<Histo2d> sigmaTotMap(new Histo2d("SigmaTotMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this)));
         sigmaTotMap->setXaxisTitle("Column");
         sigmaTotMap->setYaxisTitle("Row");
         sigmaTotMap->setZaxisTitle("Sigma ToT [bc]");
-        std::unique_ptr<Histo1d> meanTotDist(new Histo1d("MeanTotDist_"+std::to_string(ident), 16, 0.5, 16.5, typeid(this)));
+        std::unique_ptr<Histo1d> meanTotDist(new Histo1d("MeanTotDist-"+std::to_string(ident), 16, 0.5, 16.5, typeid(this)));
         meanTotDist->setXaxisTitle("Mean ToT [bc]");
         meanTotDist->setYaxisTitle("Number of Pixels");
-        std::unique_ptr<Histo1d> sigmaTotDist(new Histo1d("SigmaTotDist"+std::to_string(ident), 101, -0.05, 1.05, typeid(this)));
+        std::unique_ptr<Histo1d> sigmaTotDist(new Histo1d("SigmaTotDist-"+std::to_string(ident), 101, -0.05, 1.05, typeid(this)));
         sigmaTotDist->setXaxisTitle("Sigma ToT [bc]");
         sigmaTotDist->setYaxisTitle("Number of Pixels");
-        Histo1d *tempMeanTotDist = new Histo1d("MeanTotDistFine_"+std::to_string(ident), 160, 0.05, 16.05, typeid(this));
+        Histo1d *tempMeanTotDist = new Histo1d("MeanTotDistFine-"+std::to_string(ident), 160, 0.05, 16.05, typeid(this));
 
         meanTotMap->add(*totMaps[ident]);
         meanTotMap->divide(*occMaps[ident]);
@@ -717,7 +717,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
         }
 
         if (step[outerIdent] == nullptr) {
-            Histo2d *hh2 = new Histo2d("StepMap" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+            Histo2d *hh2 = new Histo2d("StepMap-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
             hh2->setXaxisTitle("Column");
             hh2->setYaxisTitle("Row");
             hh2->setZaxisTitle("TDAC change");
@@ -810,7 +810,7 @@ void ScurveFitter::end() {
                 xhigh += ((xhigh-xlow)%bin_width);
             bins = (xhigh-xlow)/bin_width;
 
-            hh1 = new Histo1d("NoiseDist" + std::to_string(i), bins, xlow, xhigh, typeid(this));
+            hh1 = new Histo1d("NoiseDist-" + std::to_string(i), bins, xlow, xhigh, typeid(this));
             hh1->setXaxisTitle("Noise [e]");
             hh1->setYaxisTitle("Number of Pixels");
             sigDist[i].reset(hh1);

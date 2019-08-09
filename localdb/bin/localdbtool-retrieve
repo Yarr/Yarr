@@ -1,0 +1,448 @@
+#!/usr/bin/env python3
+#################################
+# Author: Arisa Kubota
+# Email: arisa.kubota at cern.ch
+# Date: July 2019
+# Project: Local Database for YARR
+#################################
+
+# Common
+import os
+import sys
+import shutil
+import requests
+import json
+import signal
+
+import argparse 
+import yaml     # Read YAML config file
+
+from getpass    import getpass
+from pymongo    import MongoClient, errors
+
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../lib/localdb-tools/modules'))
+
+### log
+from logging import getLogger, StreamHandler, DEBUG, Formatter, FileHandler, getLoggerClass, INFO
+logger = getLogger('Log')
+logger.setLevel(INFO)
+#logger.setLevel(DEBUG) # remove comment out for debug mode
+formatter = Formatter('#DB %(levelname)s# %(message)s')
+#formatter = Formatter('%(message)s')
+handler = StreamHandler()
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.debug('Not set log file')
+
+db_path = os.environ['HOME']+'/.localdb_retrieve'
+
+global user
+global pwd
+global authentication
+
+def readConfig(conf_path):
+    f = open(conf_path, 'r')
+    conf = yaml.load(f, Loader=yaml.SafeLoader)
+    return conf
+
+def getArgs():
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("command", help="Command option", type=str, nargs='+')
+    parser.add_argument('--config', help='Provide path to connectivity config file\nand retrieve config files following the config.', type=str)
+    parser.add_argument('--user', help='Set the name of the user.', type=str)
+    parser.add_argument('--site', help='Set the name of the site.', type=str)
+    parser.add_argument('--before', help='Set chip config type "before".', action='store_true')
+    parser.add_argument('--after', help='Set chip config type "after".', action='store_true')
+    parser.add_argument('--dummy', help='Set dummy data "True".', action='store_true')
+    parser.add_argument('--directory', help='Provide directory name.', type=str)
+
+    args = parser.parse_args()
+
+    if args.config is not None:
+        conf = readConfig(args.config)    # Read from config file
+        if 'user'      in conf and not args.user:      args.user = conf['user']
+        if 'site'      in conf and not args.site:      args.site = conf['site']
+        if 'before'    in conf and not args.before:    args.before = conf['before']
+        if 'after'     in conf and not args.after:     args.after = conf['after']
+        if 'dummy'     in conf and not args.dummy:     args.dummy = conf['dummy']
+        if 'directory' in conf and not args.directory: args.directory = conf['directory']
+    return args
+
+def __init():
+    if not os.path.isdir( db_path ): 
+        os.mkdir( db_path )
+    sys.exit()
+
+def __check():
+    if not os.path.isdir( db_path ): 
+        logger.error('Not exist a retrieve repository, do "localdbtool-retrieve init" to initialize')
+        sys.exit()
+
+def __network_db(url):
+    logger.info('[Connection Test] DB Server: {}'.format(url))
+    global authentication
+    authentication = False
+    max_server_delay = 1
+    client = MongoClient(url, serverSelectionTimeoutMS=max_server_delay)
+    db = client['localdb']
+    try:
+        db.collection_names()
+        logger.info('   The connection is GOOD.\n')
+        return True
+    except errors.ServerSelectionTimeoutError as err:
+        logger.warning('   The connection is BAD.')
+        logger.warning('   {}\n'.format(err))
+        return False
+    except errors.OperationFailure as err:
+        logger.info('   Need users authenticated.\n')
+        try:
+            global user
+            user = input('   User name > ')
+            print('')
+            global pwd
+            pwd = getpass('   Password > ')
+            print('')
+            try:
+                db.authenticate(user, pwd)
+                logger.info('   The connection is GOOD.\n')
+                authentication = True
+                return True
+            except errors.OperationFailure as err: 
+                logger.error('   Authentication failed.')
+                sys.exit()
+        except KeyboardInterrupt:
+            sys.exit()
+
+def __network_viewer(url):
+    logger.info('[Connection Test] Viewer: {}'.format(url))
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            logger.info('   The connection is GOOD.\n')
+            return True
+        else:
+            logger.warning('   Something wrong in the page.\n')
+            return False
+    except Exception as err:
+        logger.warning('   The connection is BAD.')
+        logger.warning('   {}\n'.format(err))
+        return False
+
+def __remote(remote_name='None'):
+    config_path = db_path+'/config'
+    if not os.path.isfile(config_path):
+        logger.error('Not registered remote repository yet.') 
+        logger.error('(use "remote add <name>" to make the remote repository.)')
+        sys.exit()
+    config_file = open(config_path, 'r')
+    config_data = yaml.load(config_file, Loader=yaml.SafeLoader)
+    if not config_data or not 'remote' in config_data or config_data['remote']=={}:
+        logger.error('Not registered remote repository yet.') 
+        logger.error('(use "remote add <name>" to make the remote repository.)')
+        os.remove(config_path)
+        sys.exit()
+    head_path = db_path+'/HEAD'
+    head_file = open(head_path, 'r')
+    head_data = yaml.load(head_file, Loader=yaml.SafeLoader)
+    head_file.close()
+    if remote_name=='None':
+        remote = head_data['remote']
+        logger.info('--- remotes ---')
+        for remote_data in config_data['remote']:
+            if remote_data == remote: logger.info('* {}'.format(remote_data))
+            else: logger.info('  {}'.format(remote_data))
+        logger.info('---------------')
+    else:
+        remote = remote_name
+    if not remote in config_data['remote']:
+        logger.error('Could not read "{}" from remote repository.'.format(remote))
+        logger.error('(use "remote add <name>" to make the remote repository.)')
+        sys.exit()
+
+    db_url = config_data['remote'][remote]['db']
+    viewer_url = config_data['remote'][remote]['viewer']
+    logger.info('Check remote status ...\n')
+    logger.info('remote: {}\n'.format(remote))
+    __network_db(db_url)
+    __network_viewer(viewer_url)
+
+    sys.exit()
+
+def __remote_add(remote_name=None):
+    if not remote_name:
+        logger.info('Usage: remote add <name>\n')
+        sys.exit()
+    config_path = db_path+'/config'
+    config_data = None
+    if os.path.isfile(config_path):
+        config_file = open(config_path, 'r')
+        config_data = yaml.load(config_file, Loader=yaml.SafeLoader)
+        config_file.close()
+        if config_data and remote_name in config_data.get('remote',{}):
+            logger.error('Remote "{}" already exists.'.format(remote_name))
+            sys.exit()
+    if not config_data:
+        config_data = { 'remote': {} }
+    try:
+        logger.info('Create remote repostiory "{}"\n'.format(remote_name))
+        db_url = input('Enter the URL of DB Server (e.g. mongodb://127.0.0.1:27017/), or "None" if not to be set.\n')
+        print('')
+        viewer_url = input('Enter the URL of the Viewer Application (e.g. http://127.0.0.1:5000/localdb/), or "None" if not to be set.\n')
+        print('')
+        db_connection = __network_db(db_url)
+        viewer_connection = __network_viewer(viewer_url)
+
+        logger.info('remote: {}'.format(remote_name))
+        logger.info('  DB Server: {0:<30}  (connection: {1})'.format(db_url, db_connection))
+        logger.info('  Viewer: {0:<30}     (connection: {1})\n'.format(viewer_url, viewer_connection))
+        answer = input('Are you sure that is correct? [y/n]\n')
+        print('')
+        if answer.lower() == 'y':
+            head_path = db_path+'/HEAD'
+            if not os.path.isfile(head_path):
+                head_file = open(head_path, 'w')
+                head_data = { 'remote': remote_name }
+                head_file.write(yaml.dump(head_data, default_flow_style=False))
+                head_file.close()
+            else:
+                head_file = open(head_path, 'r')
+                head_data = yaml.load(head_file, Loader=yaml.SafeLoader)
+                head_file.close()
+                if not head_data or not 'remote' in head_data:
+                    head_file = open(head_path, 'w')
+                    head_data = { 'remote': remote_name }
+                    head_file.write(yaml.dump(head_data, default_flow_style=False))
+                    head_file.close()
+            config_data['remote'].update({
+                remote_name:{
+                    'db': db_url,
+                    'viewer': viewer_url
+                }
+            })
+            config_file = open(config_path, 'w')
+            config_file.write(yaml.dump(config_data, default_flow_style=False))
+            config_file.close()
+            ref_path = db_path+'/refs/remotes'
+            if not os.path.isdir(ref_path): 
+                os.makedirs(ref_path)
+            remote_path = db_path+'/refs/remotes/'+remote_name
+            remote_file = open(remote_path, 'w')
+            remote_file.close()
+        sys.exit()
+    except KeyboardInterrupt:
+        logger.warning('***interrupted***\n')
+        sys.exit()
+def __remote_rm(remote_name=None):
+    if not remote_name:
+        logger.info('Usage: remote rm <name>\n')
+        sys.exit()
+    config_path = db_path+'/config'
+    if not os.path.isfile(config_path):
+        logger.error('Not found remote "{}".'.format(remote_name))
+        sys.exit()
+    config_file = open(config_path, 'r')
+    config_data = yaml.load(config_file, Loader=yaml.SafeLoader)
+    config_file.close()
+    if not config_data or not 'remote' in config_data:
+        logger.error('Not found remote "{}".'.format(remote_name))
+        os.remove(config_path)
+        os.remove(head_path)
+        sys.exit()
+    elif not remote_name in config_data['remote']:
+        logger.error('Not found remote "{}".'.format(remote_name))
+        sys.exit()
+
+    try:
+        logger.info('Remove remote repostiory:\n')
+        logger.info('remote: {}'.format(remote_name))
+        logger.info('  DB Server: {0:<30}'.format(config_data['remote'][remote_name]['db']))
+        logger.info('  Viewer: {0:<30}\n'.format(config_data['remote'][remote_name]['viewer']))
+        answer = input('Continue? [y/n]\n')
+        print('')
+        if answer.lower() == 'y':
+            config_data['remote'].pop(remote_name)
+            config_file = open(config_path, 'w')
+            config_file.write(yaml.dump(config_data, default_flow_style=False))
+            config_file.close()
+            head_path = db_path+'/HEAD'
+            head_file = open(head_path, 'r')
+            head_data = yaml.load(head_file, Loader=yaml.SafeLoader)
+            head_file.close()
+            if head_data.get('remote',None)==remote_name: 
+                head_data.pop('remote',None)
+                if not len(config_data['remote'])==0:
+                    head_data['remote'] = list(config_data['remote'].keys())[0]
+                    head_file = open(head_path, 'w')
+                    head_file.write(yaml.dump(head_data, default_flow_style=False))
+                    head_file.close()
+                else:
+                    os.remove(head_path)
+                    os.remove(config_path)
+            remote_path = db_path+'/refs/remotes/'+remote_name
+            if os.path.isfile(remote_path): 
+                os.remove(remote_path)
+    except KeyboardInterrupt:
+        logger.warning('***interrupted***\n')
+    sys.exit()
+
+def __status():
+    head_path = db_path+'/HEAD'
+    remote = None
+    config_data = {'remote':{}}
+    remote_data = ['']
+    if os.path.isfile(head_path):
+        head_file = open(head_path, 'r')
+        head_data = yaml.load(head_file, Loader=yaml.SafeLoader)
+        if 'remote' in head_data: remote=head_data['remote']
+        config_path = db_path+'/config'
+        config_file = open(config_path, 'r')
+        config_data = yaml.load(config_file, Loader=yaml.SafeLoader)
+    if remote:
+        remote_path = db_path+'/refs/remotes/'+remote
+        remote_file = open(remote_path, 'r')
+        remote_data = remote_file.read().split('\n')
+        remote_file.close()
+
+    logger.info('--- remote ---')
+    if config_data['remote']=={}: logger.info('  None')
+    else:
+        for remote_name in config_data['remote']:
+            if remote_name==remote: logger.info('* {}'.format(remote_name))
+            else: logger.info('  {}'.format(remote_name))
+    logger.info('--- branch ---')
+    if remote_data==['']: logger.info('  None')
+    else:
+        for branch_name in remote_data:
+            if branch_name or not branch_name=='':
+                logger.info('  {}'.format(branch_name))
+    sys.exit()
+ 
+def retrieve():
+    args = getArgs()
+    command = args.command[0]
+    nargs = len(args.command)-1
+    first_arg = None
+    second_arg = None
+    if nargs == 1: 
+        first_arg = args.command[1]
+    elif nargs == 2: 
+        first_arg = args.command[1]
+        second_arg = args.command[2]
+        if command == 'fetch':
+            logger.error('Unknown subcommand: {}\n'.format(second_arg))
+            logger.error('Usage: {} <remote>'.format(command))
+            sys.exit()
+    elif not nargs == 0:
+        logger.error('Unknown subcommand: {}'.format(args.command[3]))
+        logger.error('Usage: {} <remote>'.format(command))
+        if not command == 'fetch':
+            logger.error('   or: {} <serial number>'.format(command))
+            logger.error('   or: {} <remote> <serial number>'.format(command))
+        if command == 'checkout':
+            logger.error('   or: {} <test data id>'.format(command))
+        sys.exit()
+
+    commands = [ 'init', 'status', 'remote', 'fetch', 'log', 'checkout' ]
+    if not command in commands:
+        logger.error('Unknown command: "{}". See "--help".'.format(command))
+        sys.exit()
+
+    if command == 'init': __init()
+
+    __check()
+
+    if command=='remote':
+        if not first_arg: __remote()
+        elif first_arg=='add': __remote_add(second_arg)
+        elif first_arg=='rm': __remote_rm(second_arg)
+        elif first_arg=='status': __remote(second_arg)
+        else:
+            logger.error('Unknown subcommand: {}'.format(first_arg))
+            logger.error('Usage: remote status <name>')
+            logger.error('   or: remote add <name>')
+            sys.exit()
+    elif command=='status': __status()
+   
+    head_path = db_path+'/HEAD'
+    if not os.path.isfile(head_path):
+        logger.error('Not registered remote repository yet.') 
+        logger.error('(use "remote add <name>" to make the remote repository.)')
+        sys.exit()
+    head_file = open(head_path, 'r')
+    head_data = yaml.load(head_file, Loader=yaml.SafeLoader)
+    head_file.close()
+
+    config_path = db_path+'/config'
+    config_file = open(config_path, 'r')
+    config_data = yaml.load(config_file, Loader=yaml.SafeLoader)
+    remote = None
+
+    if first_arg:
+        if second_arg and first_arg in config_data['remote']:
+            remote = first_arg
+        elif not second_arg:
+            if first_arg in config_data['remote']:
+                remote = first_arg
+            elif command=='fetch':
+                logger.error('Unknown remote: {}'.format(first_arg)) 
+                logger.error('Usage: {} <remote>'.format(command))
+                sys.exit()
+        else:
+            logger.error('Unknown subcommand: {}'.format(first_arg))
+            logger.error('Usage: {} <remote>'.format(command))
+            if not command=='fetch':
+                logger.error('   or: {} <serial number>'.format(command))
+                logger.error('   or: {} <remote> <serial number>'.format(command))
+            if command == 'checkout':
+                logger.error('   or: {} <test data id>'.format(command))
+            sys.exit()
+    if not remote:
+        if head_data and 'remote' in head_data:
+            remote = head_data['remote']
+        else:
+            logger.error('Not registered remote repository yet.') 
+            logger.error('(use "remote add <remote name>" to make the remote repository.)')
+            sys.exit()
+    if __network_db(config_data['remote'][remote]['db']): 
+        import direct as function
+        max_server_delay = 1
+        url = config_data['remote'][remote]['db']
+        localdb = MongoClient(url, serverSelectionTimeoutMS=max_server_delay)['localdb']
+        if authentication:
+            localdb.authenticate(user, pwd)
+        function.__set_localdb(localdb)
+    elif __network_viewer(config_data['remote'][remote]['viewer']): 
+        import indirect as function
+        function.url = config_data['remote'][remote]['viewer']
+    else:
+        logger.error('Cannot access Local DB by remote {}'.format(remote))
+        logger.error('Try later or by another remote')
+        sys.exit()
+
+    if command == 'fetch': function.__fetch(args, remote) 
+
+    remote_path = db_path+'/refs/remotes/'+remote
+    remote_file = open(remote_path, 'r')
+    remote_data = remote_file.read().split('\n')
+    branch = None
+    option = None
+    if first_arg:
+        if second_arg:
+            if second_arg in remote_data:
+                branch = second_arg
+            else:
+                logger.error('Not found component data "{0}" in remote "{1}".'.format(branch, remote))
+                logger.error('(use "fetch <remote> to update component data.)')
+                sys.exit()
+        else:
+            if not remote==first_arg:
+                if first_arg in remote_data:
+                    branch = first_arg
+                else:
+                    option = first_arg
+
+    if command == 'checkout': 
+        function.__checkout(args, branch, option)
+    elif command == 'log': function.__log(args, branch)
+
+if __name__ == '__main__': retrieve()

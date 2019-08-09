@@ -1,0 +1,8 @@
+epel-release.noarch
+centos-release-scl.noarch
+openssl-devel
+python.x86_64
+python36
+python36-devel
+python36-pip
+python36-tkinter

@@ -1,0 +1,13 @@
+arguments
+Flask
+Flask-PyMongo
+Flask-HTTPAuth
+pdf2image
+Pillow
+prettytable
+pymongo
+python-dateutil
+PyYAML
+pytz
+requests
+tzlocal
