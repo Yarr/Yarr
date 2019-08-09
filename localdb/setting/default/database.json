@@ -8,7 +8,7 @@
         "CAFile": CAFILE,
         "authMechanism": "MECHANISM"
     },
-    "verify": true,
+    "verify": false,
     "stage": [
         "Bare Module",
         "Wire Bonded",
