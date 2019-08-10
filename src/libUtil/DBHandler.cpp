@@ -176,7 +176,9 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, st
             std::string env_log_path = "";
             env_log_path = env_json[i]["path"];
             std::string extension = this->checkDCSLog(env_log_path, i_dcs_path, env_json[i]["key"], j_num); 
-            std::string file_path = m_output_dir+"/"+std::string(env_json[i]["key"])+"_"+std::to_string(j_num)+"."+extension;
+            std::string chip_name = "";
+            if (!env_json[i]["chip"].empty()) chip_name = std::string(env_json[i]["chip"])+"_";
+            std::string file_path = m_output_dir+"/"+chip_name+std::string(env_json[i]["key"])+"_"+std::to_string(j_num)+"."+extension;
             std::string cmd = "cp "+env_log_path+" "+file_path;
             env_json[i]["path"] = file_path;
             if (system(cmd.c_str()) < 0) {
