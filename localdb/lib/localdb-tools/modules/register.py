@@ -230,7 +230,7 @@ def __test_run(i_json, i_stage, i_tr_oid):
     if not i_tr_oid:
         doc_value.update({
             'sys'        : {},
-            'environment': '...',
+            'environment': False,
             'plots'      : [],
             'passed'     : False,
             'qcTest'     : False,
@@ -267,6 +267,7 @@ def __component_test_run(i_json, i_tr_oid):
         'attachments': [],
         'tx'         : i_json.get('tx', -1),
         'rx'         : i_json.get('rx', -1),
+        'environment': '...',
         'dbVersion'  : __global.db_version
     })
     oid = str(localdb.componentTestRun.insert_one(doc_value).inserted_id)
@@ -385,6 +386,113 @@ def __config(i_file_json, i_filename, i_title, i_col, i_oid):
 
 #########################################################
 # Register dat data
+# This function must be put after __check_dcs
+# ctr_oid = __check_dcs(ctr_id, env_key, env_description, env_num)
+# if not ctr_oid: __dcs(tr_oid, ctr_oid, env_key, env_j)
+def __dcs(i_tr_oid, i_ctr_oid, i_env_key, i_env_j):
+    logger.debug('\t\tRegister DCS')
+
+    array = []
+    env_mode = 'null'
+    env_setting = 'null'
+    if i_env_j['path']!='null':
+        extension = i_env_j['path'].split('.')[len(i_env_j['path'].split('.'))-1]
+        if extension=='dat': 
+            separator = ' '
+        elif extenstion=='csv': 
+            saparator = ','
+        else:
+            message = 'This file ({}) format is not supported by Local DB, set to "dcs" or "csv"'.format(i_env_j['path'])
+            alert(message, 'warning')
+            return
+        env_file = open(i_env_j['path'],'r')
+        # key and num
+        env_key_line = env_file.readline().splitlines()[0]
+        env_num_line = env_file.readline().splitlines()[0]
+        key = -1
+        for j, tmp_key in enumerate(env_key_line.split(separator)):
+            tmp_key = tmp_key.lower().replace(' ','_')
+            tmp_num = env_num_line.split(separator)[j]
+            if str(i_env_key)==str(tmp_key) and str(i_env_j['num'])==str(tmp_num):
+                key = j
+                break
+        if key==-1:
+            message = 'Not found DCS data { key: {0}, num: {1} } in data file: {2}'.format(i_env_key, i_env_j['num'], i_env_j['path'])
+            alert(message, 'warning')
+            return
+        # mode
+        env_line = env_file.readline()
+        env_mode = env_line.split(separator)[key]
+        # setting
+        env_line = env_file.readline()
+        env_setting = env_line.split(separator)[key]
+        # value
+        env_line = env_file.readline()
+
+        while env_line:
+            if len(env_line.split(separator)) < key: break
+            date = int(env_line.split(separator)[1])
+            value = float(env_line.split(separator)[key])
+            if 'margin' in i_env_j:
+                if starttime-date<i_env_j['margin'] and finishtime-date>i_env_j['margin']:
+                    array.append({
+                        'date': datetime.utcfromtimestamp(date),
+                        'value': value
+                    })
+            else:
+                array.append({
+                    'date': datetime.utcfromtimestamp(date),
+                    'value': value
+                })
+            env_line = env_file.readline()
+    else:
+        array.append({
+            'date': this_run['startTime'],
+            'value': i_env_j['value']
+        })
+
+    query = { '_id': ObjectId(i_ctr_oid) }
+    this_ctr = localdb.componentTestRun.find_one(query)
+    if this_ctr.get('environment', '...')=='...':
+        doc_value = {
+            'sys': {},
+            i_env_key: [{
+                'data': array,
+                'description': i_env_j['description'],
+                'mode': env_mode,
+                'setting': env_setting,
+                'num': i_env_j['num']
+            }],
+            'dbVersion': __global.db_version
+        }
+        oid = str(localdb.environment.insert_one(doc_value).inserted_id)
+        addValue(i_ctr_oid, 'componentTestRun', 'environment', oid)
+        updateSys(i_ctr_oid, "componentTestRun");
+    else:
+        oid = this_ctr['environment']
+        doc_value = {
+            '$push': {
+                i_env_key: {
+                    'data': array,
+                    'description': i_env_j['description'],
+                    'mode': env_mode,
+                    'setting': env_setting,
+                    'num': i_env_j['num']
+                }
+            }
+        }
+        query = { '_id': ObjectId(oid) }
+        localdb.environment.update_one( query, doc_value )
+
+    updateSys(oid, "environment");
+    addValue(i_tr_oid, 'testRun', 'environment', True)
+    updateSys(i_tr_oid, 'testRun')
+
+    logger.debug('\t\tctr doc : {}'.format(i_ctr_oid))
+    logger.debug('\t\tdcs data: {}'.format(oid))
+
+#########################################################
+# Register DCS data
 # This function must be put after __check_attachment
 #    oid = __check_attachment(histo_name, tr_oid, chip_oid)
 #    if oid: __attachment(file_path, histo_name, oid)
@@ -410,6 +518,7 @@ def __attachment(i_file_path, i_histo_name, i_oid):
     logger.debug('\t\tdoc   : {}'.format(i_oid))
     logger.debug('\t\tdata  : {}'.format(oid))
     return oid
+
 
 ######################################################
 # Register component information from cnnectivity file
@@ -475,89 +584,6 @@ def __conn_cfg(i_conn_path):
             __child_parent_relation(mo_oid, ch_oid, chip_id)
 
     return True
-
-######################
-# Register environment
-def __dcs(i_tr_oid, i_env_json):
-    logger.debug('\t\tRegister Environment')
-    
-    doc_value = { '_id': ObjectId(i_tr_oid) }
-    this_run = localdb.testRun.find_one(doc_value)
-
-    starttime = this_run['startTime'].timestamp()
-    finishtime = this_run['finishTime'].timestamp()
-
-    doc_value = {
-        'sys': {},
-        'dbVersion': __global.db_version
-    }
-    for env_j in i_env_json:
-        if env_j['status']!='enabled': continue
-        env_key = env_j['key'].lower().replace(' ','_')
-        if not env_key in doc_value:
-            doc_value.update({ env_key: [] })
-        array = []
-        env_mode = 'null'
-        env_setting = 'null'
-        if env_j['path']!='null':
-            extension = env_j['path'].split('.')[len(env_j['path'].split('.'))-1]
-            if extension=='dat': separator = ' '
-            elif extenstion=='csv': saparator = ','
-            env_file = open(env_j['path'],'r')
-            key_values = []
-            dates = []
-            data_num = 0
-            # key and num
-            env_key_line = env_file.readline().splitlines()[0]
-            env_num_line = env_file.readline().splitlines()[0]
-            for j, tmp_key in enumerate(env_key_line.split(separator)):
-                if str(env_key)==str(tmp_key).lower().replace(' ','_') and int(env_j['num'])==int(env_num_line.split(separator)[j]):
-                    key = j
-                    break
-            # mode
-            env_line = env_file.readline()
-            env_mode = env_line.split(separator)[key]
-            # setting
-            env_line = env_file.readline()
-            env_setting = env_line.split(separator)[key]
-            # value
-            env_line = env_file.readline()
-
-            while env_line:
-                if len(env_line.split(separator)) < key: break
-                date = int(env_line.split(separator)[1])
-                value = float(env_line.split(separator)[key])
-                if 'margin' in env_j:
-                    if starttime-date<env_j['margin'] and finishtime-date>env_j['margin']:
-                        array.append({
-                            'date': datetime.utcfromtimestamp(date),
-                            'value': value
-                        })
-                else:
-                    array.append({
-                        'date': datetime.utcfromtimestamp(date),
-                        'value': value
-                    })
-                env_line = env_file.readline()
-        else:
-            array.append({
-                'date': this_run['startTime'],
-                'value': env_j['value']
-            })
-        doc_value[env_key].append({
-            'data': array,
-            'description': env_j['description'],
-            'mode': env_mode,
-            'setting': env_setting,
-            'num': env_j['num']
-        })
-    oid = str(localdb.environment.insert_one(doc_value).inserted_id)
-    updateSys(oid, "environment");
-    addValue(i_tr_oid, 'testRun', 'environment', oid)
-
-    logger.debug('\t\ttestRun    : {}'.format(i_tr_oid))
-    logger.debug('\t\tenvironment: {}'.format(oid))
-    return oid
 
 ###########################
 # Write Dat File in GridFS
@@ -949,6 +975,35 @@ def __check_conn_cfg(i_conn_path):
         logger.info('        component type: {}'.format(chip['componentType']))
         logger.info('        chip ID: {}'.format(chip['chipId']))
 
+########################################
+# Check DCS data
+# * test document ID
+# * chip name
+# * DCS data key
+# * DCS data number
+# * DCS data description
+# If the specified DCS data has not registered,
+# return document ID(s) of componentTestRun
+def __check_dcs(i_ctr_oid, i_key, i_num, i_description):
+    logger.debug('\tCheck DCS')
+    logger.debug('\t- componentTestRun: {}'.format(i_ctr_oid))
+    logger.debug('\t- DCS key: {}'.format(i_key))
+    logger.debug('\t- DCS num: {}'.format(i_num))
+    logger.debug('\t- DCS description: {}'.format(i_description))
+
+    ctr_oid = i_ctr_oid
+    query = { '_id': ObjectId(i_ctr_oid) }
+    this_ctr = localdb.componentTestRun.find_one(query)
+    if not this_ctr.get('environment', '...')=='...':
+        query = { '_id': ObjectId(this_ctr['environment']) }
+        this_dcs = localdb.environment.find_one(query)
+        for this_data in this_dcs.get(i_key,[]):
+            if str(this_data['num'])==str(i_num) and this_data['description']==i_description:
+                ctr_oid = None
+                break
+
+    return ctr_oid
+
 ##############################
 # Check if the value is listed
 def __check_list(i_value, i_name):
@@ -996,6 +1051,11 @@ def __set_localdb(i_localdb):
 # Component Data cannot be registered in this function
 def __set_conn_cfg(i_conn_json, i_cache_dir):
     logger.debug('Set Connectivity Config')
+
+    if i_conn_json=={}: 
+        message = 'No connectivity config provided.'
+        alert(message, 'warning')
+        return i_conn_json
 
     # chip type
     __check_empty(i_conn_json, 'chipType', 'connectivity config')
@@ -1176,6 +1236,32 @@ def __set_attachment(i_file_path, i_histo_name, i_chip_json, i_conn_json):
 
     return
 
+##############
+# Set DCS Data
+def __set_dcs(i_tr_oid, i_env_json):
+    logger.debug('\t\tRegister Environment')
+    
+    doc_value = { '_id': ObjectId(i_tr_oid) }
+    this_run = localdb.testRun.find_one(doc_value)
+
+    starttime = this_run['startTime'].timestamp()
+    finishtime = this_run['finishTime'].timestamp()
+
+    for env_j in i_env_json:
+        if env_j['status']!='enabled': continue
+        env_key = env_j['key'].lower().replace(' ','_')
+        query = { 'testRun': i_tr_oid }
+        if env_j.get('chip', None):
+            query.update({ 'name': env_j['chip'] })
+        ctr_entries = localdb.componentTestRun.find(query)
+        for this_ctr in ctr_entries:
+            ctr_oid = __check_dcs(str(this_ctr['_id']), env_key, env_j['num'], env_j['description'])
+            if ctr_oid: __dcs(i_tr_oid, ctr_oid, env_key, env_j)
+
+    return
+
+########################
+# Set specific name list
 def __set_list(i_list, i_name):
     if not i_name in __global.db_list:
         __global.db_list.update({ i_name: [] })

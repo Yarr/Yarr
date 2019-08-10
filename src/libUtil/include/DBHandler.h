@@ -65,7 +65,6 @@ class DBHandler {
         void setConnCfg(std::vector<std::string> /*i_conn_paths*/); 
         void setDCSCfg(std::string /*i_dcs_path*/,
                        std::string /*i_scanlog_path*/,
-                       std::string /*i_conn_path*/,
                        std::string /*i_user_path*/,
                        std::string /*i_site_path*/);
         /***
