@@ -632,7 +632,8 @@ def __check_user(i_json):
         'institution': i_json['institution'],
         'description': i_json['description'],
         'USER'       : i_json['USER'],
-        'HOSTNAME'   : i_json['HOSTNAME']
+        'HOSTNAME'   : i_json['HOSTNAME'],
+        'dbVersion'  : __global.db_version
     }
     this_user = localdb.user.find_one(query)
     if this_user: oid = str(this_user['_id'])
@@ -657,7 +658,8 @@ def __check_site(i_json):
     query = {
         'address'    : i_json['address'],
         'HOSTNAME'   : i_json['HOSTNAME'],
-        'institution': i_json['institution']
+        'institution': i_json['institution'],
+        'dbVersion'  : __global.db_version
     }
 
     this_site = localdb.institution.find_one(query)
@@ -684,11 +686,12 @@ def __check_component_test_run(i_json, i_tr_oid):
     oid = None
 
     query = {
-        'chip'     : i_json.get('chip','module'),
-        'component': i_json['component'],
-        'testRun'  : i_tr_oid,
-        'tx'       : i_json.get('tx',-1),
-        'rx'       : i_json.get('rx',-1)
+        'chip'       : i_json.get('chip','module'),
+        'component'  : i_json['component'],
+        'testRun'    : i_tr_oid,
+        'tx'         : i_json.get('tx',-1),
+        'rx'         : i_json.get('rx',-1),
+        'dbVersion'  : __global.db_version
     }
     this_ctr = localdb.componentTestRun.find_one(query)
     if this_ctr: oid = str(this_ctr['_id'])
@@ -714,9 +717,10 @@ def __check_test_run(i_scanlog_json, i_conn_json):
     }
     start_time = datetime.utcfromtimestamp(i_scanlog_json['startTime'])
     query = {
-        'startTime': start_time,
-        'address'  : __global.site_oid,
-        'user_id'  : __global.user_oid
+        'startTime'  : start_time,
+        'address'    : __global.site_oid,
+        'user_id'    : __global.user_oid,
+        'dbVersion'  : __global.db_version
     }
     run_entries = localdb.testRun.find(query).sort([('$natural', -1)])
     for this_run in run_entries:
@@ -758,6 +762,7 @@ def __check_chip(i_json):
             'name'     : i_json['name'],
             'chipId'   : i_json['chipId'],
             'chipType' : __global.chip_type,
+            'dbVersion': __global.db_version
         }
         this_chip = localdb.chip.find_one(query)
         if this_chip: oid = str(this_chip['_id'])
@@ -777,7 +782,8 @@ def __check_component(i_serial_number, register=False):
 
     doc_value = { 
         'serialNumber': i_serial_number, 
-        'chipType' : __global.chip_type,
+        'chipType'    : __global.chip_type,
+        'dbVersion'   : __global.db_version
     }
     this_cmp = localdb.component.find_one(doc_value)
     oid = '...'
@@ -803,9 +809,10 @@ def __check_child_parent_relation(i_parent_oid, i_child_oid):
     oid = None
 
     query = {
-        'parent': i_parent_oid,
-        'child': i_child_oid,
-        'status': 'active'
+        'parent'   : i_parent_oid,
+        'child'    : i_child_oid,
+        'status'   : 'active',
+        'dbVersion': __global.db_version
     }
     this_cpr = localdb.childParentRelation.find_one(query)
     if this_cpr: oid = str(this_cpr['_id'])
@@ -829,11 +836,15 @@ def __check_config(i_title, i_col, i_tr_oid, i_chip_oid):
     oid = None
 
     if i_col=='testRun': 
-        query = { '_id': ObjectId(i_tr_oid) }
+        query = { 
+            '_id'      : ObjectId(i_tr_oid),
+            'dbVersion': __global.db_version
+        }
     elif i_col=='componentTestRun': 
         query = {
-            'testRun': i_tr_oid,
-            'chip'   : i_chip_oid
+            'testRun'  : i_tr_oid,
+            'chip'     : i_chip_oid,
+            'dbVersion': __global.db_version
         }
     this = localdb[i_col].find_one(query)
     if this.get(i_title, '...')=='...': oid = str(this['_id'])
@@ -856,8 +867,9 @@ def __check_attachment(i_histo_name, i_tr_oid, i_chip_oid):
     oid = None
 
     query = {
-        'testRun': i_tr_oid,
-        'chip'   : i_chip_oid
+        'testRun'  : i_tr_oid,
+        'chip'     : i_chip_oid,
+        'dbVersion': __global.db_version
     }
     this_ctr = localdb.componentTestRun.find_one(query)
     titles = []
@@ -877,7 +889,10 @@ def __check_gridfs(i_hash_code):
 
     oid = None
 
-    query = { 'hash': i_hash_code }
+    query = { 
+       'hash'     : i_hash_code, 
+       'dbVersion': __global.db_version
+    }
     this_cfg = localdb.fs.files.find_one( query, { '_id': 1 } )
     if this_cfg:
         oid = str(this_cfg['_id'])
@@ -890,7 +905,10 @@ def __check_gridfs(i_hash_code):
 def __check_site_data(i_oid):
     logger.debug('\tCheck Site Data for registration:') 
 
-    query = { '_id': ObjectId(i_oid) }
+    query = { 
+        '_id'      : ObjectId(i_oid),
+        'dbVersion': __global.db_version
+    }
     this_site = localdb.institution.find_one(query)
    
     logger.info('Site Data:')
@@ -904,7 +922,10 @@ def __check_site_data(i_oid):
 def __check_user_data(i_oid):
     logger.debug('\tCheck User Data for registration:') 
 
-    query = { '_id': ObjectId(i_oid) }
+    query = { 
+        '_id'      : ObjectId(i_oid),
+        'dbVersion': __global.db_version
+    }
     this_user = localdb.user.find_one(query)
     
     logger.info('User Data:')
@@ -992,7 +1013,10 @@ def __check_dcs(i_ctr_oid, i_key, i_num, i_description):
     logger.debug('\t- DCS description: {}'.format(i_description))
 
     ctr_oid = i_ctr_oid
-    query = { '_id': ObjectId(i_ctr_oid) }
+    query = { 
+        '_id'      : ObjectId(i_ctr_oid),
+        'dbVersion': __global.db_version
+    }
     this_ctr = localdb.componentTestRun.find_one(query)
     if not this_ctr.get('environment', '...')=='...':
         query = { '_id': ObjectId(this_ctr['environment']) }
