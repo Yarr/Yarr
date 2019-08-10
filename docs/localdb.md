@@ -113,7 +113,7 @@ There are three ways to confirm the data uploaded.
 
 3. Viewer Application
 
-   You can check uploaded test data in GUI when Viewer Application is running. <br>
+   You can check uploaded test data in GUI when Viewer Application is running. ([How to run the Viewer Application](#viewer-application))<br>
    Access `http://127.0.0.1:5000/localdb/` or `http://IPaddress/localdb` in browser.
 
 ## Advanced Tutorial
@@ -367,7 +367,7 @@ $ cd localDB-tools/setting
 $ sudo pip3 install -r requirements-pip.txt
 ```
 
-- Viewer Application
+#### Viewer Application
 
 Web Application which can check data stored in Local DB.
 
@@ -380,7 +380,7 @@ $ python3 app.py --config conf.yml &
 Check `http://localhost:5000/localdb/` in local browser.<br>
 If you want to check data remotely, check [here](#remote-connection)
 
-- Synchronization Tool
+#### Synchronization Tool
 
 Command which can synchroniza data between other Local DB Server.
 
