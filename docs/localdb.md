@@ -692,11 +692,12 @@ Check the detail in the page 'administrator page'.
 
 **Required information**
 
-- 'description': the description of the DCS data
+- 'status': enabled/disabled to upload data
 - 'key': DCS keyword (key list is written in the database config file `${HOME}/.yarr/localdb/database.json`)
 - 'num': DCS data number (the combination of DCS keyword and this number specify the DCS data in data file)
+- 'description': the description of the DCS data
 - 'path': path to DCS data file
-- 'status': enabled/disabled to upload data
+- 'chip': chip name related with DCS data (option: if not specified this field, DCS data is stored associated with all chips tested in the specific scan)
  
 ```json
 {
@@ -737,10 +738,11 @@ Check the detail in the page 'administrator page'.
         "path": "dcs.dat",
         "status": "disabled"
     },{
-        "description": "Temperature [C]",
+        "description": "Chip Temperature [C]",
         "key": "temperature",
         "num": 0,
         "path": "dcs.dat",
+        "chip": "JohnDoe_0",
         "status": "disabled"
     },{
         "description": "Module Temperature [C]",
