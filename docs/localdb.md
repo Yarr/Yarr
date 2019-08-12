@@ -85,7 +85,7 @@ $ ./bin/scanConsole \
 
 Additional options:
 
-- **-d ``<database config>``** : Set database config file (default: `${HOME}/.yarr/localdb/database.json`)
+- **-d ``<database config>``** : Set database config file (default: `${HOME}/.yarr/localdb/${HOSTNAME}_database.json`)
 - **-u ``<user config>``** : Set user config file ([sample](#user-config-file))
 - **-i ``<site config>``** : Set site config file ([sample](#site-config-file))
 
@@ -95,26 +95,47 @@ There are three ways to confirm the data uploaded.
 
 1. Log File
    
-   You can check if the upload is success in log file `${HOME}/.yarr/localdb/log/day.log`.
-   
-   ```log
-   2019-08-01 10:55:46,821 - INFO: -----------------------
-   2019-08-01 10:55:46,821 - INFO: Function: Upload Scan Data
-   2019-08-01 10:55:46,823 - INFO: Local DB Server: mongodb://127.0.0.1:27017
-   2019-08-01 10:55:46,826 - INFO: ---> connection is good.
-   2019-08-01 10:55:46,826 - INFO: Cache Directory: /home/akubata/work/YARR/data/000186_std_digitalscan/
-   2019-08-01 10:55:47,058 - INFO: Success
-   2019-08-01 10:55:47,060 - INFO: -----------------------
-   ```
+You can check if the upload is success in log file `${HOME}/.yarr/localdb/log/day.log`.
+
+```log
+2019-08-01 10:55:46,821 - INFO: -----------------------
+2019-08-01 10:55:46,821 - INFO: Function: Upload Scan Data
+2019-08-01 10:55:46,823 - INFO: Local DB Server: mongodb://127.0.0.1:27017
+2019-08-01 10:55:46,826 - INFO: ---> connection is good.
+2019-08-01 10:55:46,826 - INFO: Cache Directory: /home/akubata/work/YARR/data/000186_std_digitalscan/
+2019-08-01 10:55:47,058 - INFO: Success
+2019-08-01 10:55:47,060 - INFO: -----------------------
+```
 
 2. Retrieve Tool
 
-   In edit.
+You can check uploaded test log in CUI command `localdb/bin/localdb-retrieve`.
+
+```bash
+$ ./localdb/bin/localdbtool-retrieve log 
+#DB INFO# -----------------------
+#DB INFO# [Connection Test] DB Server: mongodb://127.0.0.1:27017
+#DB INFO#    The connection is GOOD.
+test data ID: 5d4c94c1fd212a639247b044 
+User      : arisa_kubota at tokyo_institute_of_technology
+Date      : 2019/08/08 14:31:39
+Chip      : RD53A-001, RD53A-001_chip1
+Run Number: 255
+Test Type : std_analogscan
+DCS Data  : NULL
+
+test data ID: 5d4c89a4e34d9efb40565e65 
+User      : arisa_kubota at tokyo_institute_of_technology
+Date      : 2019/08/08 13:44:14
+Chip      : RD53A-001, RD53A-001_chip1
+Run Number: 251
+# Ctrl+C can terminate the output test log
+```
 
 3. Viewer Application
 
-   You can check uploaded test data in GUI when Viewer Application is running. ([How to run the Viewer Application](#viewer-application))<br>
-   Access `http://127.0.0.1:5000/localdb/` or `http://IPaddress/localdb` in browser.
+You can check uploaded test data in GUI when Viewer Application is running. ([How to run the Viewer Application](#viewer-application))<br>
+Access `http://127.0.0.1:5000/localdb/` or `http://IPaddress/localdb` in browser.
 
 ## Advanced Tutorial
 
@@ -139,6 +160,12 @@ y
 #DB INFO# Completed the upload successfuly.
 #DB INFO# -----------------------
 ```
+
+Additional options:
+
+- **-d ``<database config>``** : Set database config file (default: `${HOME}/.yarr/localdb/${HOSTNAME}_database.json`)
+- **-u ``<user config>``** : Set user config file ([sample](#user-config-file))
+- **-i ``<site config>``** : Set site config file ([sample](#site-config-file))
 
 This can register the components data written in component.json.
 
@@ -190,6 +217,11 @@ DBHandler: Register Environment:
 #DB INFO# Uploading in the back ground. (log: ~/.yarr/localdb/log/)
 ```
 
+Additional options:
+
+- **-d ``<database config>``** : Set database config file (default: `${HOME}/.yarr/localdb/${HOSTNAME}_database.json`)
+- **-u ``<user config>``** : Set user config file ([sample](#user-config-file))
+- **-i ``<site config>``** : Set site config file ([sample](#site-config-file))
 
 ## Local DB Tools
 |Function      |Tool Name           |Command             |
@@ -202,11 +234,36 @@ DBHandler: Register Environment:
 
 ### Retrieve Tool
 
-In edit.
+#### Check Connection
+
+```bash
+$ ./localdb/bin/localdb-retrieve init
+```
+
+Additional options:
+
+- **--database ``<database config>``** : Set database config file (default: `${HOME}/.yarr/localdb/${HOSTNAME}_database.json`)
+
+#### Check Test Log
+
+```bash
+$ ./localdb/bin/localdb-retrieve log
+```
+
+Additional options:
+
+- **--database ``<database config>``** : Set database config file (default: `${HOME}/.yarr/localdb/${HOSTNAME}_database.json`)
+- **--user ``<user config>``** : Set user config file
+- **--site ``<site config>``** : Set site config file
+- **--chip ``<chip name>``** : Set chip name
+
+#### Retrieve Config File
+
+in edit
 
 ### Upload Tool
 
-- Check Connection
+#### Check Connection
 
 ```bash
 $ ./localdb/bin/localdbtool-upload init
@@ -214,9 +271,9 @@ $ ./localdb/bin/localdbtool-upload init
 
 Additional options:
 
-- **--database ``<database config>``** : Set database config file (default: `${HOME}/.yarr/localdb/database.json`)
+- **--database ``<database config>``** : Set database config file (default: `${HOME}/.yarr/localdb/${HOSTNAME}_database.json`)
  
-- Upload Scan 
+#### Upload Scan 
 
 You can upload data from the result directory of YARR by `localdbtool-upload`.
 
@@ -230,15 +287,15 @@ e.g.) $ ./localdb/bin/localdbtool-upload scan ./data/last_scan
 
 Additional options:
 
-- **--database ``<database config>``** : Set database config file (default: `${HOME}/.yarr/localdb/database.json`)
-- **--user ``<user config>``** : Set user config file (default: `${HOME}/.yarr/localdb/user.json`)
-- **--site ``<site config>``** : Set site config file (default: `${HOME}/.yarr/localdb/site.json`)
+- **--database ``<database config>``** : Set database config file (default: `${HOME}/.yarr/localdb/${HOSTNAME}_database.json`)
+- **--user ``<user config>``** : Set user config file
+- **--site ``<site config>``** : Set site config file
 - **--log** : Set logging mode (default 'False'). If set 'True', the output log is written in `${HOME}/.yarr/localdb/log/day.log`
 - **--username ``<username>``** : Set username of the Local DB Server if the users authenticated is needed
 - **--password ``<password>``** : Set password of the Local DB Server if the users authenticated is needed
 - **--config ``<config file>``** : Set config file which username and password are written in if the users authenticated is needed
 
-- Upload Cache
+#### Upload Cache
 
 When you could not upload Scan/DCS data by `scanConsole -W`/`dbAccessor -E` because of the bad connection to Local DB Server,<br>
 the cache data and log file ('scanLog.json'/'dbDcsLog.json') would be stored in the result directory,<br> 
@@ -250,7 +307,7 @@ In the good connection to Local DB Server, you can upload all cache data by `loc
 $ ./localdb/bin/localdbtool-upload cache
 ```
    
-- Check Registered Component Data
+#### Check Registered Component Data
 
 You can check all component data registered in Local DB Server by `localdbtool-upload check`
 
@@ -258,7 +315,7 @@ You can check all component data registered in Local DB Server by `localdbtool-u
 $ ./localdb/bin/localdbtool-upload check comp
 ```
 
-- Check Chip Data
+#### Check Chip Data
 
 You can check all chip data tested by `localdbtool-upload check`
 
@@ -292,7 +349,7 @@ gpgkey=https://www.mongodb.org/static/pgp/server-3.6.asc
 $ sudo yum install -y mongodb-org.x86_64
 ```
 
-3. Directoried (default)
+3. Directories (default)
 
 - shell command: `/bin/mongo`
 - process command: `/bin/mongod`
@@ -333,7 +390,7 @@ $ brew tap mongodb/brew
 $ brew install mongodb-community@4.0
 ```
 
-4. Directoried (default)
+4. Directories (default)
 
 - shell command: `/usr/local/opt/mongodb-community\@4.0/bin/mongo`
 - process command: `/usr/local/opt/mongodb-community\@4.0/bin/mongod`

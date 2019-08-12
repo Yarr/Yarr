@@ -135,7 +135,7 @@ def __init(db_cfg):
     global localdb
 
     if db_cfg=={}:
-        logger.error('There is no default database config in {}/.yarr/localdb')
+        logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
         logger.error('Set it by YARR/localdb/setting/setup_db.sh')
         logger.info('-----------------------')
         logger.debug('=======================')
@@ -283,9 +283,9 @@ def __set_cache(cache_dir):
     elif 'dbCfg' in scanlog_json:
         db_cfg = scanlog_json['dbCfg']
     if not db_cfg:
-        db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(os.environ['HOME'], os.environ['HOSTNAME']))
+        db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
         if db_cfg=={}:
-            logger.error('There is no default database config in {}/.yarr/localdb')
+            logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
             logger.error('Set it by YARR/localdb/setting/setup_db.sh')
             logger.info('-----------------------')
             logger.debug('=======================')
@@ -587,9 +587,9 @@ def __upload_comp(comp_path):
     if args.database:
         db_cfg = register.toJson(args.database)
     else:
-        db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(os.environ['HOME'], os.environ['HOSTNAME']))
+        db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
         if db_cfg=={}:
-            logger.error('There is no default database config in {}/.yarr/localdb')
+            logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
             logger.error('Set it by YARR/localdb/setting/setup_db.sh')
             logger.info('-----------------------')
             logger.debug('=======================')
@@ -654,9 +654,9 @@ def __check_component(i_type):
     if args.database:
         db_cfg = register.toJson(args.database)
     else:
-        db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(os.environ['HOME'], os.environ['HOSTNAME']))
+        db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
         if db_cfg=={}:
-            logger.error('There is no default database config in {}/.yarr/localdb')
+            logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
             logger.error('Set it by YARR/localdb/setting/setup_db.sh')
             logger.info('-----------------------')
             logger.debug('=======================')
@@ -786,7 +786,7 @@ def main():
         if args.database:
             db_cfg = register.toJson(args.database)
         else:
-            db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(os.environ['HOME'], os.environ['HOSTNAME']))
+            db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
         if not __init(db_cfg)==True: 
             logger.info('-----------------------')
             logger.debug('=======================')

@@ -23,36 +23,36 @@ _localdbtool_upload() {
     else
         local dcs=""
     fi
-    case ${prev} in
-        "localdbtool-upload")
-            COMPREPLY=( $(compgen -W "init comp scan dcs cache check" -- "${cur}") )
-            return 0
-            ;;
-        "init") 
-            COMPREPLY=( $(compgen -W "--database --username --password --config" -- "${cur}") )
-            return 0
-            ;;
-        "scan"|"dcs") 
-            compopt -o filenames
-            COMPREPLY=( $(compgen -d -- $cur) )
-            return 0
-            ;;
-        "check") 
-            COMPREPLY=( $(compgen -W "comp chip" -- "${cur}") )
-            return 0
-            ;;
-        "comp"|"--database"|"--config"|"--user"|"--site")
-            compopt -o filenames
-            COMPREPLY=( $(compgen -f -- $cur) )
-            return 0
-            ;;
-        "--username"|"--password"|"-h"|"--help"|"--log"|"--force")
-            return 0
-            ;;
-        *)
-            COMPREPLY=( $(compgen -W "--database --user --site --username --password --config --log --force" -- "${cur}") )
-            return 0
-            ;;
-    esac
+    if [ "${cword}" -eq 1 ]; then
+        COMPREPLY=( $(compgen -W "init status remote fetch log checkout" -- "${cur}") )
+    else
+        case ${prev} in
+            "init") 
+                COMPREPLY=( $(compgen -W "--database --username --password --config" -- "${cur}") )
+                return 0
+                ;;
+            "scan"|"dcs") 
+                compopt -o filenames
+                COMPREPLY=( $(compgen -d -- $cur) )
+                return 0
+                ;;
+            "check") 
+                COMPREPLY=( $(compgen -W "comp chip" -- "${cur}") )
+                return 0
+                ;;
+            "comp"|"--database"|"--config"|"--user"|"--site")
+                compopt -o filenames
+                COMPREPLY=( $(compgen -f -- $cur) )
+                return 0
+                ;;
+            "--username"|"--password"|"-h"|"--help"|"--log"|"--force")
+                return 0
+                ;;
+            *)
+                COMPREPLY=( $(compgen -W "--database --user --site --username --password --config --log --force" -- "${cur}") )
+                return 0
+                ;;
+        esac
+    fi
 }
 complete -F _localdbtool_upload localdbtool-upload
