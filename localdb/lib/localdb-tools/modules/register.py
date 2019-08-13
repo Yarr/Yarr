@@ -301,7 +301,7 @@ def __chip(i_chip_json):
 #########################################################################
 # Register Component
 # This function must be put after __check_component
-#    oid = __check_component(serial_number, True)
+#    oid = __check_component(serial_number, component_type, True)
 #    if oid=='...': oid = __component(serial_number, component_type, chip_id, chips)
 # Almost all the information in i_json is registered.
 def __component(i_serial_number, i_component_type, i_chip_id, i_chips, i_proDB=False, i_id=''):
@@ -535,13 +535,13 @@ def __conn_cfg(i_conn_path):
 
     # module
     mo_serial_number = conn_json["module"]["serialNumber"]
-    mo_oid = __check_component(mo_serial_number, True) 
+    mo_oid = __check_component(mo_serial_number, 'module', True) 
     if mo_oid!='...': module_is_exist = True
     # chips
     chips = 0
     for i, chip_conn_json in enumerate(conn_json['chips']):
         ch_serial_number = chip_conn_json['serialNumber']
-        chip_oid = __check_component(ch_serial_number, True)
+        chip_oid = __check_component(ch_serial_number, 'front-end_chip', True)
         if chip_oid!='...':
             chip_is_exist = True
             doc_value = {
@@ -564,7 +564,7 @@ def __conn_cfg(i_conn_path):
     elif module_is_exist and chip_is_exist and cpr_is_fine:
         return False
     mo_component_type = conn_json['module']['componentType']
-    mo_oid = __check_component(mo_serial_number, True)
+    mo_oid = __check_component(mo_serial_number, mo_component_type, True)
     if mo_oid=='...':
         mo_oid = __component(mo_serial_number, mo_component_type, -1, chips)
     
@@ -572,7 +572,7 @@ def __conn_cfg(i_conn_path):
         ch_serial_number = chip_conn_json['serialNumber']
         ch_component_type = chip_conn_json['componentType']
         chip_id = chip_conn_json['chipId']
-        ch_oid = __check_component(ch_serial_number, True)
+        ch_oid = __check_component(ch_serial_number, ch_component_type, True)
         if ch_oid=='...':
             ch_oid = __component(ch_serial_number, ch_component_type, chip_id, -1)
         cpr_oid = __check_child_parent_relation(mo_oid, ch_oid)
@@ -774,15 +774,16 @@ def __check_chip(i_json):
 # If there are matching data,
 # return document ID
 # TODO If there are no matching data in QC scan, alert(error)
-def __check_component(i_serial_number, register=False):
+def __check_component(i_serial_number, i_component_type, register=False):
     logger.debug('\tCheck Component data:') 
     logger.debug('\t- Serial Number: {}'.format(i_serial_number))
     logger.debug('\t- chipType: {}'.format(__global.chip_type))
 
     doc_value = { 
-        'serialNumber': i_serial_number, 
-        'chipType'    : __global.chip_type,
-        'dbVersion'   : __global.db_version
+        'serialNumber' : i_serial_number, 
+        'chipType'     : __global.chip_type,
+        'componentType': i_component_type.lower().replace(' ','_'),
+        'dbVersion'    : __global.db_version
     }
     this_cmp = localdb.component.find_one(doc_value)
     oid = '...'
@@ -1087,7 +1088,7 @@ def __set_conn_cfg(i_conn_json, i_cache_dir):
 
     # module
     conn_json = { 'module': {}, 'chips':[], 'stage': i_conn_json.get('stage','...') }
-    conn_json['module']['component'] = __check_component(i_conn_json.get('module', {}).get('serialNumber','NONAME'), True)
+    conn_json['module']['component'] = __check_component(i_conn_json.get('module', {}).get('serialNumber','NONAME'), 'module', True)
     conn_json['module']['name'] = i_conn_json.get('module', {}).get('serialNumber','UnnamedModule')
     # chip
     for i, chip_json in enumerate(i_conn_json['chips']):
@@ -1111,7 +1112,7 @@ def __set_conn_cfg(i_conn_json, i_cache_dir):
                 chip_json['chipId'] = 0 #TODO not sure the best
         if not chip_json.get('serialNumber', '')==chip_json['name']: chip_json['serialNumber']=chip_json['name']
 
-        chip_json['component'] = __check_component(chip_json['serialNumber'], True) #TODO for registered component
+        chip_json['component'] = __check_component(chip_json['serialNumber'], 'front-end_chip', True) #TODO for registered component
         query = { 'parent': conn_json['module']['component'], 'child': chip_json['component'] }
         this_cpr = localdb.childParentRelation.find_one(query)
         if not this_cpr: conn_json['module']['component'] = '...'
