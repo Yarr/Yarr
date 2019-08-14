@@ -17,7 +17,7 @@
 #include "Constants.h"
 #include "Units.h"
 
-#include "json.hpp"
+
 
 class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg {
     public:

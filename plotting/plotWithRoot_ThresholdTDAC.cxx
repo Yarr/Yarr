@@ -11,7 +11,7 @@
 #include <RD53Style.h>
 #include <json.hpp>
 
-using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+#include "storage.hpp"
 
 
 int main(int argc, char *argv[]) { //./plotWithRoot_ThresholdTDAC path/to/directory file_ext
