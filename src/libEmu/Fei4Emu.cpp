@@ -7,7 +7,7 @@
 
 #include "Fei4Emu.h"
 
-//using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+//#include "storage.hpp"
 using namespace Gauss;
 
 Fei4Emu::Fei4Emu(std::string output_model_cfg, std::string input_model_cfg,

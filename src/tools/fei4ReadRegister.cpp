@@ -4,11 +4,11 @@
 #include <iomanip>
 
 #include "SpecController.h"
-#include "json.hpp"
+
 
 #include "Fei4.h"
 
-using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+#include "storage.hpp"
 
 void printHelp();
 

@@ -17,11 +17,11 @@
 #include "Fei4GlobalCfg.h"
 #include "Fei4PixelCfg.h"
 #include "tinyxml2.h"
-#include "json.hpp"
+
 #include "Constants.h"
 #include "Units.h"
 
-using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+#include "storage.hpp"
 
 class Fei4Cfg : public FrontEndCfg, public Fei4GlobalCfg, public Fei4PixelCfg {
     public:

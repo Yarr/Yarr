@@ -11,7 +11,7 @@
 
 #include <string>
 
-#include "json.hpp"
+
 
 #include "Bookkeeper.h"
 #include "HwController.h"
@@ -20,7 +20,7 @@
 #include "AllHwControllers.h"
 #include "AllChips.h"
 
-using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+#include "storage.hpp"
 
 namespace ScanHelper {
         json openJsonFile(std::string filepath);
