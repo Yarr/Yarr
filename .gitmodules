@@ -1,0 +1,3 @@
+[submodule "src/variant"]
+	path = src/variant
+	url = https://gitlab.cern.ch/wittgen/variant.git

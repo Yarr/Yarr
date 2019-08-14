@@ -53,7 +53,7 @@ foreach(lib ${libs})
     file(GLOB SrcFiles lib${lib}/*.cpp)
     list(APPEND LibSrcFiles ${SrcFiles})
 endforeach()
-
+include_directories(variant/include)
 add_library(Yarr STATIC ${LibSrcFiles})
 
 if ("Rogue" IN_LIST YARR_CONTROLLERS_TO_BUILD )

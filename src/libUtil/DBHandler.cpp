@@ -7,7 +7,7 @@
 // ################################
 
 #include "DBHandler.h"
-
+#include <functional>
 DBHandler::DBHandler():
 m_db_cfg_path(""), m_output_dir(""), m_command(""),
 m_stage_list(), m_env_list(), m_comp_list(),

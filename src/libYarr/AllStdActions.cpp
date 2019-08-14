@@ -2,7 +2,7 @@
 #include "ClassRegistry.h"
 
 #include <iostream>
-
+#include <functional>
 typedef ClassRegistry<LoopActionBase> OurRegistry;
 
 static OurRegistry &registry() {
