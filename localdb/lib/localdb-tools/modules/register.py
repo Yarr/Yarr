@@ -58,6 +58,7 @@ def updateSys(i_oid, i_col):
         doc_value = {
             '$set': {
                 'sys': {
+                    'cts': this['sys'].get('sys', now),
                     'mts': now,
                     'rev': this['sys']['rev']+1
                 }
