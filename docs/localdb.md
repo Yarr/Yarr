@@ -5,7 +5,7 @@
 **Local Database (Local DB) is mainly data managing system for YARR based on MongoDB.**
 
 ### Base system
-- [MongoDB](https://docs.mongodb.com/v3.6/) v3.6.3 
+- [MongoDB](https://docs.mongodb.com/v4.0/) v4.0.11
 - Python3 
 - PyROOT (executable by Python3)
 
@@ -328,19 +328,19 @@ $ ./localdb/bin/localdbtool-upload check chip
 ### Installation for Local DB Server
 
 Reference: [Install MongoDB](https://docs.mongodb.com/manual/installation/)<br>
-Local DB Supports mongo DB server Ver. 3.6.X or more.
+Local DB Supports mongo DB server Ver. 4.X or more.
 
 - For centOS7
 
-1. Add yum repository `/etc/yum.repos.d/mongodb-org-3.6.repo`
+1. Add yum repository `/etc/yum.repos.d/mongodb-org-4.2.repo`
 
 ```bash
-[mongodb-org-3.6]
+[mongodb-org-4.2]
 name=MongoDB Repository
-baseurl=https://repo.mongodb.org/yum/redhat/7Server/mongodb-org/3.6/x86_64/
+baseurl=https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/4.2/x86_64/
 gpgcheck=1
 enabled=1
-gpgkey=https://www.mongodb.org/static/pgp/server-3.6.asc
+gpgkey=https://www.mongodb.org/static/pgp/server-4.2.asc
 ```
 
 2. Install by yum
@@ -367,7 +367,7 @@ $ sudo service mongod start
 
 ```bash
 $ mongo
-MongoDB shell version v3.6.13
+MongoDB shell version v4.0.11
 <some texts>
 > 
 ```
