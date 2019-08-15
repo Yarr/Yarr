@@ -22,7 +22,7 @@ logger.setLevel(INFO)
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../lib/localdb-tools/modules'))
 import register
 
-### global veriable
+### global variables
 home = os.environ['HOME']
 hostname = os.environ['HOSTNAME']
 global localdb
