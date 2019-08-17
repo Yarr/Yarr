@@ -535,9 +535,10 @@ def __conn_cfg(i_conn_path):
     cpr_is_fine = True
 
     # module
-    mo_serial_number = conn_json["module"]["serialNumber"]
-    mo_oid = __check_component(mo_serial_number, 'module', True) 
-    if mo_oid!='...': module_is_exist = True
+    if 'module' in conn_json:
+        mo_serial_number = conn_json["module"]["serialNumber"]
+        mo_oid = __check_component(mo_serial_number, 'module', True) 
+        if mo_oid!='...': module_is_exist = True
     # chips
     chips = 0
     for i, chip_conn_json in enumerate(conn_json['chips']):
@@ -564,10 +565,11 @@ def __conn_cfg(i_conn_path):
         alert(message)
     elif module_is_exist and chip_is_exist and cpr_is_fine:
         return False
-    mo_component_type = conn_json['module']['componentType']
-    mo_oid = __check_component(mo_serial_number, mo_component_type, True)
-    if mo_oid=='...':
-        mo_oid = __component(mo_serial_number, mo_component_type, -1, chips)
+    if 'module' in conn_json:
+        mo_component_type = conn_json['module']['componentType']
+        mo_oid = __check_component(mo_serial_number, mo_component_type, True)
+        if mo_oid=='...':
+            mo_oid = __component(mo_serial_number, mo_component_type, -1, chips)
     
     for i, chip_conn_json in enumerate(conn_json['chips']):
         ch_serial_number = chip_conn_json['serialNumber']
@@ -576,9 +578,10 @@ def __conn_cfg(i_conn_path):
         ch_oid = __check_component(ch_serial_number, ch_component_type, True)
         if ch_oid=='...':
             ch_oid = __component(ch_serial_number, ch_component_type, chip_id, -1)
-        cpr_oid = __check_child_parent_relation(mo_oid, ch_oid)
-        if not cpr_oid:
-            __child_parent_relation(mo_oid, ch_oid, chip_id)
+        if 'module' in conn_json:
+            cpr_oid = __check_child_parent_relation(mo_oid, ch_oid)
+            if not cpr_oid:
+                __child_parent_relation(mo_oid, ch_oid, chip_id)
 
     return True
 
@@ -950,18 +953,18 @@ def __check_conn_cfg(i_conn_path):
     if chip_type=='FEI4B': chip_type = 'FE-I4B'
 
     # module
-    if not 'module' in conn_json:
-        message = 'No module data in {}, Set module.serialNumber and module.componentType'.format(i_conn_path)
-        alert(message)
-    if not 'serialNumber' in conn_json['module']:
-        message = 'No module data in {}, Set module.serialNumber'.format(i_conn_path)
-        alert(message)
-    if not 'componentType' in conn_json['module']:
-        message = 'No module data in {}, Set module.componentType'.format(i_conn_path)
-        alert(message)
-    mo_serial_number = conn_json["module"]["serialNumber"]
-    mo_component_type = conn_json["module"]["componentType"]
-    __check_list(mo_component_type, 'component')
+    if 'module' in conn_json:
+        #message = 'No module data in {}, Set module.serialNumber and module.componentType'.format(i_conn_path)
+        #alert(message)
+        if not 'serialNumber' in conn_json['module']:
+            message = 'No module data in {}, Set module.serialNumber'.format(i_conn_path)
+            alert(message)
+        if not 'componentType' in conn_json['module']:
+            message = 'No module data in {}, Set module.componentType'.format(i_conn_path)
+            alert(message)
+        mo_serial_number = conn_json["module"]["serialNumber"]
+        mo_component_type = conn_json["module"]["componentType"]
+        __check_list(mo_component_type, 'component')
     # chip
     chips = []
     chipids = []
@@ -980,17 +983,18 @@ def __check_conn_cfg(i_conn_path):
         ch_id = chip_conn_json['chipId']
         __check_list(ch_component_type, 'component')
         if ch_id in chipids:
-            message = 'Conflict chip ID {0} in the same module {1}'.format(ch_id)
+            message = 'Conflict chip ID {}'.format(ch_id)
             alert(message)
         chips.append({'serialNumber': ch_serial_number, 'componentType': ch_component_type, 'chipId': ch_id})
         chipids.append(ch_id)
     
     logger.info('Component Data:')
     logger.info('    Chip Type: {}'.format(chip_type))
-    logger.info('    Module:')
-    logger.info('        serial number: {}'.format(mo_serial_number))
-    logger.info('        component type: {}'.format(mo_component_type))
-    logger.info('        chips: {}'.format(len(chips)))
+    if 'module' in conn_json:
+        logger.info('    Module:')
+        logger.info('        serial number: {}'.format(mo_serial_number))
+        logger.info('        component type: {}'.format(mo_component_type))
+        logger.info('        chips: {}'.format(len(chips)))
     for i, chip in enumerate(chips):
         logger.info('    Chip ({}):'.format(i+1))
         logger.info('        serial number: {}'.format(chip['serialNumber']))
