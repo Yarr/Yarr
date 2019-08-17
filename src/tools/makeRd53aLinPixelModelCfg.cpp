@@ -23,7 +23,7 @@ int main(int argc, char * argv[])
 	}
 
 	std::ofstream file(output_file);
-	nlohmann::json j;
+	json j;
 
         std::vector<float> VthresholdLin_mean_vector; VthresholdLin_mean_vector.reserve(136 * 192);
         std::vector<float> VthresholdLin_sigma_vector; VthresholdLin_sigma_vector.reserve(136 * 192);

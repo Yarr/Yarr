@@ -6,8 +6,8 @@
  */
 
 #include "Fei4Emu.h"
+#include <algorithm>
 
-//#include "storage.hpp"
 using namespace Gauss;
 
 Fei4Emu::Fei4Emu(std::string output_model_cfg, std::string input_model_cfg,

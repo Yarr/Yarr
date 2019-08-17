@@ -155,7 +155,7 @@ bool Fei4TriggerLoop::getIsInner() {
 
 void Fei4TriggerLoop::writeConfig(json &config) {
     config["count"] = m_trigCnt;
-    config["frequency"] = m_trigFreq;
+    config["frequency"] = (float) m_trigFreq; //variant fix
     config["time"] = m_trigTime;
     config["delay"] = m_trigDelay;
     config["noInject"] = m_noInject;

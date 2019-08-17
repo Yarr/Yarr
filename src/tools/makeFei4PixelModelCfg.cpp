@@ -23,7 +23,7 @@ int main(int argc, char * argv[])
 	}
 
 	std::ofstream file(output_file);
-	nlohmann::json j;
+	json j;
 
 	std::vector<float> Vthin_mean_vector; Vthin_mean_vector.reserve(80 * 336);
 	std::vector<float> Vthin_sigma_vector; Vthin_sigma_vector.reserve(80 * 336);

@@ -57,12 +57,12 @@ int main(int argc, char *argv[]) {
   Fei4 dummy(&mySpec, 8, 8);
 
   // Read config file
-  std::fstream cfgFile;
+  std::ifstream cfgFile;
   json input;
   cfgFile.open(cConfigPath, std::ios::in);
   // json input;
   //std::cout << input["FE-I4B"]["GlobalConfig"].dump(4) << std::endl;
-  cfgFile >> input;
+  input=json::parse(cfgFile);
   fe.fromFileJson(input);
 
   std::cout << "------------------------------------------" << std::endl;
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
   dummy.toFileJson(replica);
 
   if(verbose)
-    std::cout << replica["FE-I4B"]["GlobalConfig"].dump(4) << std::endl;
+    replica["FE-I4B"]["GlobalConfig"].dump(4) ;
 
 
   //----------------------------------------------------------------

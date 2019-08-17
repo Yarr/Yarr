@@ -74,10 +74,10 @@ class Fei4Cfg : public FrontEndCfg, public Fei4GlobalCfg, public Fei4PixelCfg {
         std::string cfgName;
 
     private:
-        double sCap; // fF
-        double lCap; // fF
-        double vcalOffset; // mV
-        double vcalSlope; // mV
+        float sCap; // fF
+        float lCap; // fF
+        float vcalOffset; // mV
+        float vcalSlope; // mV
 };
 
 #endif
