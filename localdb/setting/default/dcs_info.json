@@ -36,10 +36,11 @@
         "num": 0,
         "status": "disabled"
     },{
-        "description": "Temperature [C]",
+        "description": "Chip Temperature [C]",
         "key": "temperature",
         "path": "dcs.dat",
         "num": 0,
+        "chip": "JohnDoe_0",
         "status": "disabled"
     },{
         "description": "Module Temperature [C]",

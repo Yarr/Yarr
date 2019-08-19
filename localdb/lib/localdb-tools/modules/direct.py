@@ -84,7 +84,30 @@ def getConfigJson(cmp_oid, config, run_oid):
 
     return r_json
 
-def __log(args, serialnumber=None):
+########################################################
+# File to Json
+# If file path is not provided /or/ file dose not exist,
+# return {}
+# If file exist, return {json}
+# But if file cannot be paresed, alert(error)
+def toJson(i_file_path):
+    logger.debug('\t\t\tConvert to json code from: {}'.format(i_file_path))
+
+    file_json = {}
+    if i_file_path:
+        if os.path.isfile(i_file_path):
+            try:
+                with open(i_file_path, 'r') as f: file_json = json.load(f)
+            except ValueError as e:
+                logger.error('Could not parse {}'.format(i_file_path))
+                logger.error('\twhat(): {}',format(e))
+                logger.info('-----------------------')
+                logger.debug('=======================')
+                sys.exit(1)
+
+    return file_json
+
+def __log(args):
     global lines
     global size
     lines = 0
@@ -93,17 +116,21 @@ def __log(args, serialnumber=None):
     arg_vars = vars(args)
     run_query = {}
     log_query = {}
-    if args.dummy:
-        log_query.update({'dummy': True})
-    elif serialnumber:
-        query = { 'serialNumber': serialnumber }
-        this_cmp = localdb.component.find_one(query)
-        if not this_cmp:
-            logger.error('Not found component data: {}'.format(serialnumber))
-            sys.exit()
-        run_query.update({ 'component': str(this_cmp['_id']) })
+    
+    chip_name = arg_vars.get('chip',None)
+    if chip_name:
+        query = { 'name': chip_name }
+        chip_entries = localdb.chip.find(query)
+        chip_query = []
+        for this_chip in chip_entries:
+            chip_query.append({ 'chip': str(this_chip['_id']) })
+        if chip_query==[]:
+            logger.error('Not found chip data: {}'.format(chip_name))
+            sys.exit(1)
+        else:
+            run_query.update({ '$or': chip_query })
 
-    if not run_query == {}:
+    if not run_query=={}:
         run_entries = localdb.componentTestRun.find(run_query)
         run_oids = []
         for run_entry in run_entries:
@@ -111,15 +138,21 @@ def __log(args, serialnumber=None):
         log_query.update({ '$or': run_oids })
 
     if arg_vars.get('user',None):
-        query = { 'userName': arg_vars['user'] }
-        this_user = localdb.user.find_one( query )
+        user_json = toJson(arg_vars['user'])
+        query = {}
+        for key in user_json:
+            query.update({ key: user_json[key].lower().replace(' ', '_') })
+        this_user = localdb.user.find_one(query)
         if not this_user:
             logger.error('Not found user data: {}'.format(arg_vars['user']))
             sys.exit()
         log_query.update({ 'user_id': str(this_user['_id']) })
     if arg_vars.get('site',None):
-        query = { 'institution': arg_vars['site'] }
-        this_site = localdb.user.find_one( query )
+        site_json = toJson(arg_vars['site'])
+        query = {}
+        for key in site_json:
+            query.update({ key: site_json[key].lower().replace(' ', '_') })
+        this_site = localdb.user.find_one(query)
         if not this_site:
             logger.error('Not found site data: {}'.format(arg_vars['site']))
             sys.exit()
@@ -129,42 +162,57 @@ def __log(args, serialnumber=None):
 
     r_json = { 'log': [] }
     if run_entries:
-        for run_entry in run_entries:
-            query = { '_id': ObjectId(run_entry['user_id']) }
+        for this_run in run_entries:
+            query = { '_id': ObjectId(this_run['user_id']) }
             this_user = localdb.user.find_one( query )
-            query = { '_id': ObjectId(run_entry['address']) }
+            query = { '_id': ObjectId(this_run['address']) }
             this_site = localdb.institution.find_one( query )
             this_dcs = []
-            if not run_entry.get('environment','...')=='...': 
-                query = { '_id': ObjectId(run_entry['environment']) }
-                this_env = localdb.environment.find_one( query)
-                for key in this_env:
-                    if not key=='_id' and not key=='dbVersion' and not key=='sys':
-                        this_dcs.append(key)
+            query = { 'testRun': str(this_run['_id']) }
+            ctr_entries  = localdb.componentTestRun.find(query)
+            chips = []
+            this_dcs = {}
+            for this_ctr in ctr_entries:
+                if chip_name and this_ctr['name']==chip_name:
+                    chips.append('\033[1;31m{}\033[0m'.format(this_ctr['name']))
+                else:
+                    chips.append(this_ctr['name'])
+                if not this_ctr.get('environment','...')=='...': 
+                    this_dcs.update({ this_ctr['name']: [] })
+                    query = { '_id': ObjectId(this_ctr['environment']) }
+                    this_env = localdb.environment.find_one( query)
+                    for key in this_env:
+                        if not key=='_id' and not key=='dbVersion' and not key=='sys':
+                            this_dcs[this_ctr['name']].append(key)
             test_data = {
                 'user': this_user['userName'],
                 'site': this_site['institution'],
-                'datetime': setTime(run_entry['startTime']),
-                'runNumber': run_entry['runNumber'],
-                'testType': run_entry['testType'],
-                'runId': str(run_entry['_id']),
-                'serialNumber': run_entry['serialNumber'],
+                'datetime': setTime(this_run['startTime']),
+                'runNumber': this_run['runNumber'],
+                'testType': this_run['testType'],
+                'runId': str(this_run['_id']),
+                'chips': chips,
+                'dbVersion': this_run['dbVersion'],
                 'environment': this_dcs
             }
             r_json['log'].append(test_data)
 
     for test_data in r_json['log']:
         printLog('\033[1;33mtest data ID: {0} \033[0m'.format(test_data['runId'])) 
-        printLog('User          : {0} at {1}'.format(test_data['user'], test_data['site']))
-        printLog('Date          : {0}'.format(test_data['datetime']))
-        printLog('Serial Number : {0}'.format(test_data['serialNumber']))
-        printLog('Run Number    : {0}'.format(test_data['runNumber']))
-        printLog('Test Type     : {0}'.format(test_data['testType']))
-        if test_data.get('environment',[])==[]:
-            printLog('DCS Data      : NULL')
+        printLog('User      : {0} at {1}'.format(test_data['user'], test_data['site']))
+        printLog('Date      : {0}'.format(test_data['datetime']))
+        printLog('Chip      : {0}'.format(', '.join(test_data['chips'])))
+        printLog('Run Number: {0}'.format(test_data['runNumber']))
+        printLog('Test Type : {0}'.format(test_data['testType']))
+        if test_data.get('environment',{})=={}:
+            printLog('DCS Data  : NULL')
         else:
-            for key in test_data.get('environment',[]):
-                printLog('DCS Data      : {}'.format(key))
+            printLog('DCS Data  :')
+            for chip in test_data.get('environment',{}):
+                if chip_name==chip:
+                    printLog('   \033[1;31m{0} ({1})\033[0m'.format(', '.join(test_data['environment'][chip]), chip))
+                else:
+                    printLog('   {0} ({1})'.format(', '.join(test_data['environment'][chip]), chip))
         printLog('')
 
 def __checkout(args, serialnumber=None, runid=None):

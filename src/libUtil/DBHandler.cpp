@@ -113,16 +113,14 @@ void DBHandler::setConnCfg(std::vector<std::string> i_conn_paths) {
     }
 }
 
-void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, std::string i_conn_path, std::string i_user_path, std::string i_site_path) {
+void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, std::string i_user_path, std::string i_site_path) {
     if (DB_DEBUG) std::cout << "DBHandler: Set DCS config: " << i_dcs_path << std::endl;
 
     json log_json = this->toJson(i_scanlog_path);
-    json conn_json = this->toJson(i_conn_path);
     json user_json = this->setUser(i_user_path);
     json site_json = this->setSite(i_site_path);
     if (log_json["id"].empty()) {
         this->checkEmpty(log_json["startTime"].empty()&&log_json["timestamp"].empty(), "startTime||timestamp", i_scanlog_path);
-        this->checkEmpty(conn_json["chips"].empty(), "chips", i_conn_path);
         if (log_json["userCfg"].empty()) log_json["userCfg"] = user_json;
         if (log_json["siteCfg"].empty()) log_json["siteCfg"] = site_json;
     }
@@ -157,7 +155,6 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, st
 
     int timestamp_int = -1;
     std::string timestamp_str = "";
-    dcs_log_json["connectivity"] = conn_json;
     if (!log_json["id"].empty()) dcs_log_json["id"] = log_json["id"];
     if (!log_json["startTime"].empty()) dcs_log_json["startTime"] = log_json["startTime"];
     if (!log_json["timestamp"].empty()) dcs_log_json["timestamp"] = log_json["timestamp"];
@@ -179,7 +176,9 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, st
             std::string env_log_path = "";
             env_log_path = env_json[i]["path"];
             std::string extension = this->checkDCSLog(env_log_path, i_dcs_path, env_json[i]["key"], j_num); 
-            std::string file_path = m_output_dir+"/"+std::string(env_json[i]["key"])+"_"+std::to_string(j_num)+"."+extension;
+            std::string chip_name = "";
+            if (!env_json[i]["chip"].empty()) chip_name = std::string(env_json[i]["chip"])+"_";
+            std::string file_path = m_output_dir+"/"+chip_name+std::string(env_json[i]["key"])+"_"+std::to_string(j_num)+"."+extension;
             std::string cmd = "cp "+env_log_path+" "+file_path;
             env_json[i]["path"] = file_path;
             if (system(cmd.c_str()) < 0) {
