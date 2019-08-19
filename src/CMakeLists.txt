@@ -102,7 +102,11 @@ foreach(target ${tools})
     # Whole-archive means not to drop symbols from Yarr.
     # Mainly this is about making sure the auto-registration works.
     # Not sure why tbb needs same treatment...
-    target_link_libraries(${execname}  -Wl,--whole-archive Yarr tbb -Wl,--no-whole-archive ${YARR_LIB_DEPS} pthread rt)
+    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        target_link_libraries(${execname}  -Wl,-all_load Yarr -Wl, ${YARR_LIB_DEPS} pthread)
+    else()
+        target_link_libraries(${execname}  -Wl,--whole-archive Yarr tbb -Wl,--no-whole-archive ${YARR_LIB_DEPS} pthread rt)
+    endif()
     # Not sure why rt is not linked by default here
 endforeach()
 
