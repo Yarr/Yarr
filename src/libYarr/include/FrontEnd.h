@@ -10,14 +10,14 @@
 // ################################
 
 #include <string>
-#include "json.hpp"
+
 #include "ClipBoard.h"
 #include "HistogramBase.h"
 #include "EventDataBase.h"
 #include "HwController.h"
 #include "FrontEndGeometry.h"
 
-using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+#include "storage.hpp"
 
 class FrontEnd {
     public:

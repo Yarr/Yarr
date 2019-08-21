@@ -15,12 +15,12 @@
 #include "FrontEnd.h"
 #include "Fe65p2GlobalCfg.h"
 #include "Fe65p2PixelCfg.h"
-#include "json.hpp"
+
 
 #include "Constants.h"
 #include "Units.h"
 
-using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+#include "storage.hpp"
 
 class Fe65p2Cfg : public FrontEndCfg, public Fe65p2GlobalCfg, public Fe65p2PixelCfg{
     public:

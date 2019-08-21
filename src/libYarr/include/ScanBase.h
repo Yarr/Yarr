@@ -20,11 +20,11 @@
 #include "LoopActionBase.h"
 #include "ClipBoard.h"
 #include "RawData.h"
-#include "json.hpp"
+
 
 #include "Bookkeeper.h"
 
-using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+#include "storage.hpp"
 
 class ScanBase {
     public:

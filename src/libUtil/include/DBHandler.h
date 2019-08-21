@@ -19,9 +19,9 @@
 #include <cctype> 
 #include <sys/stat.h>
 #include <unistd.h>
-#include "json.hpp"
 
-using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+
+#include "storage.hpp"
 
 class DBHandler {
     public:
