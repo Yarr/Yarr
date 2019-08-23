@@ -500,7 +500,7 @@ std::string DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_pat
     char separator = del[0];
     char tmp[1000];
 
-    std::vector<std::string> log_lines = { "key", "num", "mode", "setting", "value" };
+    std::vector<std::string> log_lines = { "key", "num", "value" };
     std::vector<std::string> env_keys;
     int cnt=0;
     int key_cnt=0;
@@ -528,7 +528,7 @@ std::string DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_pat
                     std::string function = __PRETTY_FUNCTION__;
                     this->alert(function, message); return "ERROR";
                 }
-            } else if (i==4&&cnt==1) {
+            } else if (i==2&&cnt==1) {
                 try {
                     stoi(s_tmp);
                 } catch (const std::invalid_argument& e) {
@@ -536,13 +536,15 @@ std::string DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_pat
                     std::string function = __PRETTY_FUNCTION__;
                     this->alert(function, message); return "ERROR";
                 }
-            } else if ((i==3||i==4)&&(cnt==key_cnt)) {
+            } else if ((i==2)&&(cnt==key_cnt)) {
                 try {
                     stof(s_tmp);
                 } catch (const std::invalid_argument& e) {
-                    std::string message = "Could not convert the setting value text to float: "+i_log_path+"\n\tkey: "+i_key+"\n\ttext: "+s_tmp;
-                    std::string function = __PRETTY_FUNCTION__;
-                    this->alert(function, message); return "ERROR";
+                    if (s_tmp!="null") {
+                        std::string message = "Invalid value text. It must be a 'float' or 'null': "+i_log_path+"\n\tkey: "+i_key+"\n\ttext: "+s_tmp;
+                        std::string function = __PRETTY_FUNCTION__;
+                        this->alert(function, message); return "ERROR";
+                    }
                 }
             }
             cnt++;

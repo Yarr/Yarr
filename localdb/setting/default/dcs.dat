@@ -1,7 +1,5 @@
 key unixtime vddd_voltage vddd_current vdda_voltage vdda_current
 num null 0 0 0 0
-mode null null null null null
-setting null 10 10 10 10
 2019-06-24_20:49:13 1561376953 10 20 0 0
 2019-06-24_20:49:23 1561376963 11 21 0 0
 2019-06-24_20:49:33 1561376973 12 22 0 0
