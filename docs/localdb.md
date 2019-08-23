@@ -139,6 +139,36 @@ Access `http://127.0.0.1:5000/localdb/` or `http://IPaddress/localdb` in browser
 
 ## Advanced Tutorial
 
+### Chip Registration
+
+You can store results associated with the registered chip after the registration. <br>
+Prepare the component information file and user information file.<br>
+(<span style="color:red">PLAN: to be deleted and will prepare the script to download the component data from ITk PD.</span>) <br>
+
+- user config file (json) ([sample](#user-config-file))
+- site config file (json) ([sample](#site-config-file))
+- component config file (json) ([sample](#component-config-file))
+
+And run the `dbAccessor -C`:
+
+```bash
+$ ./bin/dbAccessor -C -c component.json -u user.json -i site.json
+<some texts>
+Do you continue to upload data into Local DB? [y/n]
+y
+
+#DB INFO# Completed the upload successfuly.
+#DB INFO# -----------------------
+```
+
+Additional options:
+
+- **-d ``<database config>``** : Set database config file (default: `${HOME}/.yarr/localdb/${HOSTNAME}_database.json`)
+- **-u ``<user config>``** : Set user config file ([sample](#user-config-file))
+- **-i ``<site config>``** : Set site config file ([sample](#site-config-file))
+
+This can register the components data written in component.json.
+
 ### Module Registration
 
 You can store results associated with the registered module after the registration. <br>
@@ -171,9 +201,10 @@ This can register the components data written in component.json.
 
 ### scanConsole with registered Module
 
-Connecivity config file should be prepared properly.
+Connecivity config and chip config file should be prepared properly.
 
 - connectivity config (json) ([sample](#connectivity-config-file))
+- chip config (json) ([sample](#chip-config-file))
 
 And run the `scanConsole`:
 
@@ -756,26 +787,22 @@ Check the detail in the page 'administrator page'.
 
 **Required information**
 
-- module.serialNumber: serial number of the module
-- module.componentType: "Module"
+- module.serialNumber: serial number of the module (option)
+- module.componentType: "Module" (option)
 - chipType: "FEI4B" or "RD53A"
 - chips: chips on the module
   - chips.i.serialNumber: serial number of the chip
   - chips.i.componentType: "Front-end Chip"
   - chips.i.chipId: chipID must be "int"
 
-- component.json for RD53A
+- component.json for RD53A SCC
 
 ```json
 {
-    "module": {
-        "serialNumber": "RD53A-001",
-        "componentType": "Module"
-    },
     "chipType" : "RD53A",
     "chips" : [
         {
-            "serialNumber": "RD53A-001_chip1",
+            "serialNumber": "RD53A-001",
             "componentType": "Front-end Chip",
             "chipId": 0
         }
@@ -783,7 +810,7 @@ Check the detail in the page 'administrator page'.
 }
 ```
 
-- component.json for FEI4B
+- component.json for FEI4B Quad Module
 
 ```json
 {
@@ -794,22 +821,22 @@ Check the detail in the page 'administrator page'.
     "chipType" : "FEI4B",
     "chips" : [
         {
-            "serialNumber": "FEI4B-001-chip1",
+            "serialNumber": "FEI4B-001-001",
             "componentType": "Front-end Chip",
             "chipId": 1
         },
         {
-            "serialNumber": "FEI4B-001-chip2",
+            "serialNumber": "FEI4B-001-002",
             "componentType": "Front-end Chip",
             "chipId": 2
         },
         {
-            "serialNumber": "FEI4B-001-chip3",
+            "serialNumber": "FEI4B-001-003",
             "componentType": "Front-end Chip",
             "chipId": 3
         },
         {
-            "serialNumber": "FEI4B-001-chip4",
+            "serialNumber": "FEI4B-001-004",
             "componentType": "Front-end Chip",
             "chipId": 4
         }
@@ -887,6 +914,41 @@ Check the detail in the page 'administrator page'.
 }
 ```
 
+### Chip Config File
+
+You can replicated it from `YARR/configs/defaults/<FE>.json`.
+
+**Required confirmation**
+
+- name/Name: must be the serial number of the chip 
+- chipId/ChipId: must be the geometrical ID of the chip
+
+- chipCfg.json for RD53A
+
+```json
+{
+    "RD53A": {
+        "Parameter": {
+            "ChipId": 0,
+             "Name": "RD53A-001"
+        }
+    }
+}
+```
+
+- chipCfg.json for FEI4B 
+
+```json
+{
+    "FE-I4B": {
+        "Parameter": {
+            "chipId": 0
+        },
+        "name": "FEI4B-001-001"
+    }
+}
+```
+
 ### DCS Config File
 
 **Required information**
@@ -894,8 +956,10 @@ Check the detail in the page 'administrator page'.
 - 'status': enabled/disabled to upload data
 - 'key': DCS keyword (key list is written in the database config file `${HOME}/.yarr/localdb/database.json`)
 - 'num': DCS data number (the combination of DCS keyword and this number specify the DCS data in data file)
-- 'description': the description of the DCS data
+- 'description': the description of the DCS data 
 - 'path': path to DCS data file
+- 'mode': the mode of DCS setting (e.g. CV) (option)
+- 'setting': DCS setting parameter (option)
 - 'chip': chip name related with DCS data (option: if not specified this field, DCS data is stored associated with all chips tested in the specific scan)
  
 ```json
@@ -959,15 +1023,11 @@ Check the detail in the page 'administrator page'.
 
 - the 1st line: DCS keyword `key unixtime <key1> <key2> <key3> ...` 
 - the 2nd line: DCS number `num null <num1> <num2> <num3> ...`
-- the 3rd line: DCS mode `mode null <mode1> <mode2> <mode3> ...` (e.g. CV)
-- the 4th line: DCS setting value `setting null <setting1> <setting2> <setting3> ...`
-- After the 5th line: datetime and DCS data `datetime unixtime <data1> <data2> <data3> ...`
+- After the 3rd line: datetime and DCS data `datetime unixtime <data1> <data2> <data3> ...` (data value must be the number or "null")
 
 ```dat
 key unixtime vddd_voltage vddd_current vdda_voltage vdda_current
 num null 0 0 0 0
-mode null null null null null
-setting null 10 10 10 10
 2019-06-24_20:49:13 1561376953 10 20 0 0
 2019-06-24_20:49:23 1561376963 11 21 0 0
 2019-06-24_20:49:33 1561376973 12 22 0 0
