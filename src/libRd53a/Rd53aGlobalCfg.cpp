@@ -263,8 +263,8 @@ void Rd53aGlobalCfg::init() {
     AdcRefTrim.init(98, &m_cfg[98], 6, 4, 12); regMap["AdcRefTrim"] = &Rd53aGlobalCfg::AdcRefTrim;
     AdcTrim.init(98, &m_cfg[98], 0, 6, 5); regMap["AdcTrim"] = &Rd53aGlobalCfg::AdcTrim;
     //99
-    SensorCfg0.init(99, &m_cfg[99], 0, 11, 0); regMap["SensorCfg0"] = &Rd53aGlobalCfg::SensorCfg0;
-    SensorCfg1.init(100, &m_cfg[100], 0, 11, 0); regMap["SensorCfg1"] = &Rd53aGlobalCfg::SensorCfg1;
+    SensorCfg0.init(99, &m_cfg[99], 0, 12, 0); regMap["SensorCfg0"] = &Rd53aGlobalCfg::SensorCfg0;
+    SensorCfg1.init(100, &m_cfg[100], 0, 12, 0); regMap["SensorCfg1"] = &Rd53aGlobalCfg::SensorCfg1;
     //109
     RingOscEn.init(109, &m_cfg[109], 0, 8, 0); regMap["RingOscEn"] = &Rd53aGlobalCfg::RingOscEn;
     //110-117
