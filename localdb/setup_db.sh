@@ -45,6 +45,7 @@ tools=false
 reset=false
 dbca=null
 dbcert=null
+dbkey=null
 while getopts hi:p:n:a:e:tr OPT
 do
     case ${OPT} in
@@ -55,6 +56,7 @@ do
         n ) dbname=${OPTARG} ;;
         a ) dbca=${OPTARG} ;;
         e ) dbcert=${OPTARG} ;;
+        k ) dbkey=${OPTARG} ;;
         t ) tools=true ;;
         r ) reset=true ;;
         * ) usage
@@ -164,8 +166,9 @@ echo -e "[LDB] -----------------------"
 echo -e "[LDB] IP address      : ${dbip}"
 echo -e "[LDB] port            : ${dbport}"
 echo -e "[LDB] database name   : ${dbname}"
-echo -e "[LDB] CA file         : ${dbca}"
-echo -e "[LDB] Certificate file: ${dbcert}"
+#echo -e "[LDB] CA file         : ${dbca}"
+#echo -e "[LDB] Certificate file: ${dbcert}"
+#echo -e "[LDB] Key file        : ${dbkey}"
 echo -e "[LDB]"
 echo -e "[LDB] Are you sure that is correct? [y/n]"
 read -p "[LDB] > " answer
@@ -247,6 +250,7 @@ sed -i -e "s!DBPORT!${dbport}!g" ${dbcfg}
 sed -i -e "s!DBNAME!${dbname}!g" ${dbcfg}
 sed -i -e "s!CAFILE!\"${dbca}\"!g" ${dbcfg}
 sed -i -e "s!PEMKEYFILE!\"${dbcert}\"!g" ${dbcfg}
+sed -i -e "s!KEYFILE!\"${dbkey}\"!g" ${dbcfg}
 if [ ${dbca} != "null" ] || [ ${dbcert} != "null" ]; then
     sed -i -e "s!ENABLED!true!g" ${dbcfg}
     sed -i -e "s!MECHANISM!MONGODB-X509!g" ${dbcfg}

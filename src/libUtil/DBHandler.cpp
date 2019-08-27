@@ -38,7 +38,9 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_command, std
     m_command = "localdbtool-upload";
     std::string cmd = m_command+" test 2> /dev/null";
     if (system(cmd.c_str())!=0) {
-        std::size_t pathPos = i_command.find_last_of('/');                             
+        std::size_t pathPos;
+        if ( i_command.find('/')!=std::string::npos) pathPos = i_command.find_last_of('/');                             
+        else pathPos = i_command.size();
         m_command = i_command.substr(0, pathPos) + "/../localdb/bin/localdbtool-upload";
     }
 
@@ -488,6 +490,11 @@ std::string DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_pat
     this->checkFile(i_log_path, "Check environmental data file of key '"+i_key+"' in file "+i_dcs_path+".");
     std::ifstream log_ifs(i_log_path);
     std::size_t suffix = i_log_path.find_last_of('.');
+    if (suffix!=std::string::npos) {
+        std::string message = "Environmental data file must be 'dat' or 'csv' format: "+i_log_path;
+        std::string function = __PRETTY_FUNCTION__;
+        this->alert(function, message); return "ERROR";
+    }
     std::string extension = i_log_path.substr(suffix + 1);
     std::string del;
     if (extension=="dat") del = " ";
