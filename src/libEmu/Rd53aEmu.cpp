@@ -383,10 +383,7 @@ void Rd53aEmu::doCal( Rd53aEmu* emu ) {
     // For the moment, only pops 2x16-bit words
     // Informations stored there need to be used properly
     // See RD53a Manual section 9.2, p.47
-    
-    while( emu->commandStream.size() == 0 ) emu->retrieve();
-    emu->commandStream.pop_front();
-    emu->commandStream.pop_front();
+    std::array<uint32_t, 3> input = readIDAddrData( emu, Rd53aEmu::Commands::Cal );
     
     emu->calTiming     = 0;
     emu->injectTiming  = 46; // ToDo: properly set the calibration timing
@@ -875,61 +872,9 @@ void Rd53aEmu::triggerAsync2( const uint32_t tag, const unsigned coreCol, const 
 
 //____________________________________________________________________________________________________
 void Rd53aEmu::doWrReg( Rd53aEmu* emu ) {
-    
-    while( emu->commandStream.size() < 3 ) {
-        emu->retrieve();
-    }
-        
-    //m_id_address_some_data = m_txRingBuffer->read32();
-    //              printf("Rd53aEmu got id_address_some_data word: 0x%x\n", m_id_address_some_data);
-    
-#define byte1 ( (emu->commandStream.at(0) & 0xFF00 ) >> 8 )
-#define byte2 ( (emu->commandStream.at(0) & 0x00FF ) )
-#define byte3 ( (emu->commandStream.at(1) & 0xFF00 ) >> 8 )
-#define byte4 ( (emu->commandStream.at(1) & 0x00FF ) )
-    
-#define isBig   (to5bit(byte1) & 0x1)
-#define ID      ( to5bit(byte1) >> 1 )
-#define ADDRESS ( ( to5bit(byte2) << 4 ) + ( to5bit(byte3) >> 1 ) )
-    
-    if ( isBig ) { // check the bit which determines whether big data or small data should be read
-        //printf("big data expected\n");
-        
-        emu->commandStream.pop_front();
-        emu->commandStream.pop_front();
-        emu->commandStream.pop_front();
-    }
-    
-    else {
-        //printf("small data expected\n");
-        
-#define byte5 ( (emu->commandStream.at(2) & 0xFF00 ) >> 8 )
-#define byte6 ( (emu->commandStream.at(2) & 0x00FF ) )
-#define DATA  ( ( (to5bit(byte3) & 0x1) << 15 ) + (to5bit(byte4) << 10) + ( to5bit(byte5) << 5 ) + to5bit(byte6) )
-        
-        //if( emu->verbose ) printf(" >> WrReg: id: 0x%x, address: 0x%x, data = 0x%x\n", ID, ADDRESS, DATA);
-        //if( emu->verbose ) std::cout << __PRETTY_FUNCTION__ << ": " << __LINE__ << ": commandStream front = " << HEXF(4, emu->commandStream.front() ) << std::endl;
+  std::array<uint32_t, 3> input=readIDAddrData( emu, Rd53aEmu::Commands::WrReg );
 
-        emu->m_pool->enqueue( &Rd53aEmu::writeRegAsync, emu, DATA, ADDRESS );
-        //emu->m_async.emplace_back( std::async(std::launch::deferred, &Rd53aEmu::writeRegAsync, emu, DATA, ADDRESS ) );
-        
-        emu->commandStream.pop_front();
-        emu->commandStream.pop_front();
-        emu->commandStream.pop_front();
-        
-#undef byte5
-#undef byte6
-#undef DATA
-        
-    }
-    
-#undef byte1
-#undef byte2
-#undef byte3
-#undef byte4
-#undef isBig
-#undef ID
-#undef ADDRESS
+  emu->m_pool->enqueue( &Rd53aEmu::writeRegAsync, emu, input[2], input[1] );
 }
 
 
@@ -1013,10 +958,14 @@ void Rd53aEmu::writeRegAsync( Rd53aEmu* emu, const uint16_t data, const uint32_t
 #undef AUTOCOL
 }
 
-
-
 //____________________________________________________________________________________________________
-void Rd53aEmu::doRdReg( Rd53aEmu* emu ) {}
+void Rd53aEmu::doRdReg( Rd53aEmu* emu ) {
+  std::array<uint32_t, 3> input=readIDAddrData( emu, Rd53aEmu::Commands::RdReg );
+  
+  std::pair<uint32_t, uint32_t> regFrame=assembleRegFrame( emu, input[1], 0x99, 0x0 );
+  emu->pushOutput(regFrame.first);
+  emu->pushOutput(regFrame.second);
+}
 
 
 
