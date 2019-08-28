@@ -1148,4 +1148,80 @@ uint8_t Rd53aEmu::calculateToT( Rd53aDiffPixelModel& analogFE ) {
     return ToT;
 }
 
+//____________________________________________________________________________________________________
+std::pair<uint32_t, uint32_t> Rd53aEmu::assembleRegFrame( Rd53aEmu* emu, const uint16_t address, const uint8_t zz, const uint8_t status ){
+  uint16_t regVal = emu->m_feCfg->m_cfg.at( address );
+  uint32_t higher = ( ( zz << 4 | status ) << 20 ) | ( address << 10 ) | ( ( regVal & 0xFFC0 ) >> 6 );
+  uint32_t lower = ( ( regVal & 0x003F ) << 26 );
+  return std::make_pair(higher, lower);
+}
 
+//____________________________________________________________________________________________________
+std::array<uint32_t, 3> Rd53aEmu::readIDAddrData( Rd53aEmu* emu, Rd53aEmu::Commands command ){
+  enum { ID, Address, Data };
+  unsigned fieldSize = 0;
+  std::array<uint32_t, 3> output = {0, 0, 0}; // 0: ID, 1: address 2: data. Currently do not consider big data.
+  if ( command == Rd53aEmu::Commands::GlobalPulse ) fieldSize = 1;
+  else if ( command == Rd53aEmu::Commands::Cal || command == Rd53aEmu::Commands::RdReg ) fieldSize = 2;
+  else if ( command == Rd53aEmu::Commands::WrReg ) fieldSize = 3;
+  else{
+    std::cout << "Require reading ID/address/data for empty filed following command " << HEXF(4, command) << std::endl;
+    return output;
+  }
+
+  while( emu->commandStream.size() < fieldSize ) emu->retrieve();
+
+  std::pair<uint8_t, uint8_t> bp1 = cmdTo5bitPair( emu->commandStream.at(0) );
+
+  // ------------------ Get ID -------------------
+  output[ID] = ( bp1.first >> 1 ); // Get ID, which is the same for all commands
+
+  if ( command == Rd53aEmu::Commands::GlobalPulse ){ // GlobalPulse: only read first command and then return
+    output[Data] = ( bp1.second >> 1 );
+    popCmd( emu, fieldSize );
+    return output;
+  }
+
+  if ( command == Rd53aEmu::Commands::WrReg && ( bp1.first & 0x1 ) ){ // In case of Big data, do not read anything
+    popCmd( emu, fieldSize );
+    return output;
+  }
+  
+  // ------------------ Get Address and data -------------------
+  std::pair<uint8_t, uint8_t> bp2 = cmdTo5bitPair( emu->commandStream.at(1) );
+  
+  if ( command == Rd53aEmu::Commands::WrReg || command == Rd53aEmu::Commands::RdReg ){ // Only relevant for WrReg and RdReg
+    output[Address] = ( bp1.second << 4 ) + ( bp2.first >> 1 );
+    if ( command == Rd53aEmu::Commands::RdReg ){ // For RdReg command, no data to read
+      popCmd( emu, fieldSize );
+      return output;
+    }
+    else{			// Data from WrReg
+      std::pair<uint8_t, uint8_t> bp3 = cmdTo5bitPair( emu->commandStream.at(2) );
+      output[Data] = ( ( bp2.first & 0x1) << 15 ) + ( bp2.second << 10 ) + ( bp3.first << 5 ) + bp3.second;
+    }
+  }
+  else if ( command == Rd53aEmu::Commands::Cal ){
+    output[Data] = ( ( bp1.first & 0x1) << 15 ) + ( bp1.second << 10 ) + ( bp2.first << 5 ) + bp2.second;
+  }
+
+  popCmd( emu, fieldSize );
+  return output;
+}
+
+std::pair<uint8_t, uint8_t> Rd53aEmu::cmdTo5bitPair( uint16_t command ){
+  uint8_t byte1 = ( command & 0xFF00 ) >> 8;
+  uint8_t byte2 = ( command & 0x00FF );
+  return std::make_pair( to5bit(byte1), to5bit(byte2) );
+}
+
+void Rd53aEmu::popCmd( Rd53aEmu* emu, const unsigned size ){
+  if( emu->commandStream.size() < size ){
+    std::cout << "Command stream size " << emu->commandStream.size()
+	      << " smaller than requested pop size " << size
+	      << " Exiting. " << std::endl;
+    exit(1);
+  }
+  
+  for( unsigned i = 0; i < size; i++ ) emu->commandStream.pop_front();
+}
