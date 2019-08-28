@@ -1081,7 +1081,7 @@ def __set_conn_cfg(i_conn_json, i_cache_dir):
 
     # module
     conn_json = { 'module': {}, 'chips':[], 'stage': i_conn_json.get('stage','...') }
-    conn_json['module']['component'] = __check_component(i_conn_json.get('module', {}).get('serialNumber','NONAME'), 'module', True)
+    conn_json['module']['component'] = __check_component(i_conn_json.get('module', {}).get('serialNumber','NONAME'), i_conn_json.get('module', {}).get('componentType','module'), True)
     conn_json['module']['name'] = i_conn_json.get('module', {}).get('serialNumber','UnnamedModule')
     # chip
     for i, chip_json in enumerate(i_conn_json['chips']):
@@ -1105,7 +1105,7 @@ def __set_conn_cfg(i_conn_json, i_cache_dir):
                 chip_json['chipId'] = 0 #TODO not sure the best
         if not chip_json.get('serialNumber', '')==chip_json['name']: chip_json['serialNumber']=chip_json['name']
 
-        chip_json['component'] = __check_component(chip_json['serialNumber'], 'front-end_chip', True) #TODO for registered component
+        chip_json['component'] = __check_component(chip_json['serialNumber'], chip_json.get('componentType','front-end_chip'), True) #TODO for registered component
         query = { 'parent': conn_json['module']['component'], 'child': chip_json['component'] }
         this_cpr = localdb.childParentRelation.find_one(query)
         if not this_cpr: conn_json['module']['component'] = '...'
