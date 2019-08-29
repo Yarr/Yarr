@@ -389,7 +389,7 @@ void Rd53aEmu::doCal( Rd53aEmu* emu ) {
     emu->commandStream.pop_front();
     
     emu->calTiming     = 0;
-    emu->injectTiming  = 46; // ToDo: properly set the calibration timing
+    emu->injectTiming  = emu->m_feCfg->LatencyConfig.read();
     emu->bcid         += 12; // Consuming 4BC * 3
     
 }
