@@ -1,7 +1,5 @@
 ## About
 
-<span style="color:red">"PLAN" is the item which is not implemented completely yet, but will be implemented soon.</span>
-
 **Local Database (Local DB) is mainly data managing system for YARR based on MongoDB.**
 
 ### Base system
@@ -27,8 +25,8 @@ The detail can be checked [Quick Installtion](#quick-installation).
 ```bash
 $ cd YARR
 $ git checkout devel
-$ mkdir build-localdb
-$ cd build-localdb
+$ mkdir build
+$ cd build
 $ cmake3 ../
 $ make -j4
 $ make install
@@ -109,7 +107,7 @@ You can check if the upload is success in log file `${HOME}/.yarr/localdb/log/da
 
 2. Retrieve Tool
 
-You can check uploaded test log in CUI command `localdb/bin/localdb-retrieve`.
+You can check uploaded test log in CUI command `localdb/bin/localdbtool-retrieve`.
 
 ```bash
 $ ./localdb/bin/localdbtool-retrieve log 
@@ -143,7 +141,6 @@ Access `http://127.0.0.1:5000/localdb/` or `http://IPaddress/localdb` in browser
 
 You can store results associated with the registered chip after the registration. <br>
 Prepare the component information file and user information file.<br>
-(<span style="color:red">PLAN: to be deleted and will prepare the script to download the component data from ITk PD.</span>) <br>
 
 - user config file (json) ([sample](#user-config-file))
 - site config file (json) ([sample](#site-config-file))
@@ -173,7 +170,6 @@ This can register the components data written in component.json.
 
 You can store results associated with the registered module after the registration. <br>
 Prepare the component information file and user information file.<br>
-(<span style="color:red">PLAN: to be deleted and will prepare the script to download the component data from ITk PD.</span>) <br>
 
 - user config file (json) ([sample](#user-config-file))
 - site config file (json) ([sample](#site-config-file))
@@ -268,7 +264,7 @@ Additional options:
 #### Check Connection
 
 ```bash
-$ ./localdb/bin/localdb-retrieve init
+$ ./localdb/bin/localdbtool-retrieve init
 ```
 
 Additional options:
@@ -278,7 +274,7 @@ Additional options:
 #### Check Test Log
 
 ```bash
-$ ./localdb/bin/localdb-retrieve log
+$ ./localdb/bin/localdbtool-retrieve log
 ```
 
 Additional options:

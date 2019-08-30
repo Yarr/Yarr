@@ -1089,6 +1089,7 @@ def __set_conn_cfg(i_conn_json, i_cache_dir):
         if chip_json.get('enable', 1)==0:  # disabled chip
             chip_json['name'] = 'DisabledChip_{}'.format(i)
             chip_json['chipId'] = -1
+            chip_json['component'] = '...'
         else:  # enabled chip
             chip_cfg_json = toJson('{0}/{1}.before'.format(i_cache_dir, chip_json['config']))
             if not __global.chip_type in chip_cfg_json:
@@ -1103,12 +1104,11 @@ def __set_conn_cfg(i_conn_json, i_cache_dir):
             else:
                 chip_json['name'] = 'UnnamedChip_{}'.format(i)
                 chip_json['chipId'] = 0 #TODO not sure the best
+            chip_json['component'] = __check_component(chip_json['name'], chip_json.get('componentType','front-end_chip'), True) #TODO for registered component
+            query = { 'parent': conn_json['module']['component'], 'child': chip_json['component'] }
+            this_cpr = localdb.childParentRelation.find_one(query)
+            if not this_cpr: conn_json['module']['component'] = '...'
         if not chip_json.get('serialNumber', '')==chip_json['name']: chip_json['serialNumber']=chip_json['name']
-
-        chip_json['component'] = __check_component(chip_json['serialNumber'], chip_json.get('componentType','front-end_chip'), True) #TODO for registered component
-        query = { 'parent': conn_json['module']['component'], 'child': chip_json['component'] }
-        this_cpr = localdb.childParentRelation.find_one(query)
-        if not this_cpr: conn_json['module']['component'] = '...'
 
         chip_oid = __check_chip(chip_json)
         if not chip_oid: chip_oid = __chip(chip_json)
