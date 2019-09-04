@@ -10,16 +10,19 @@
 using namespace std;
 using namespace netio;
 
+
 NetioTxCore::NetioTxCore()
 {
-  m_enableMask = 0;
+  //m_enableMask = 0;
   m_trigEnabled = false;
   m_trigWordLength = 4;
   m_trigCnt = 0;
   m_trigFreq = 1;
+
+  //FEI4-related settings
   m_extend = 4;
-  m_padding = true;
-  m_flip = true;
+  m_padding = false;
+  m_flip = false;
   m_verbose = false;
   m_debug = false;
   m_manchester = false;
@@ -49,33 +52,34 @@ void NetioTxCore::connect(){
   }
 }
 
-void NetioTxCore::enableChannel(uint64_t elink){
-  if(m_verbose) cout << "Enable TX elink: 0x" << hex << elink << dec << endl;
+void NetioTxCore::enableChannel(uint32_t elink){
+  if(m_verbose) 
+  	cout << "Enable TX elink: 0x" << hex << elink << dec << endl;
   m_elinks[elink]=true;
 }
 
-void NetioTxCore::disableChannel(uint64_t elink){
+void NetioTxCore::disableChannel(uint32_t elink){
+
+  if(m_verbose) 
+  	std::cout << "Disable TX elink: 0x" << hex << elink << dec << endl;
 
   m_elinks[elink]=false;
-  if(m_elinks.find(elink)==m_elinks.end()){return;}
 
-  // We don't disable channels...
-  if(m_verbose) cout << "Disable TX elink: 0x" << hex << elink << dec << endl;
-
-  //m_elinks[elink]=false;
-  //if(m_verbose) cout << "Disable TX elink: 0x" << hex << elink << dec << endl;
+  return;
 }
 
 void NetioTxCore::disableAllChannels() {
-    for (auto &elink : m_elinks) {
-        elink.second = false;
+    for (auto it=m_elinks.begin();it!=m_elinks.end();it++) {
+        m_elinks[it->first] = false;
+        if (m_verbose) std::cout << "\ndisabling channel: " << it->first << "\n";
     }
 }
 
 // Activate single channel
-void NetioTxCore::setCmdEnable(uint32_t mask) {
+void NetioTxCore::setCmdEnable(uint32_t elink) {
     this->disableAllChannels();
-    this->enableChannel(mask);
+    this->enableChannel(elink);
+    //m_elinks[elink]=true;
 }
 
 // Broadcast to multiple channels
@@ -84,31 +88,36 @@ void NetioTxCore::setCmdEnable(std::vector<uint32_t> channels) {
     for (uint32_t channel : channels) {
         this->enableChannel(channel);
     }
+    return;
 }
 
 uint32_t NetioTxCore::getCmdEnable() {
-  uint32_t mask = 0;
-  for(auto it=m_elinks.begin();it!=m_elinks.end();it++) {
-    auto link = it->second;
-    mask |= 1<<link;
-  }
-  return mask;
+  return 0;
 }
 
 void NetioTxCore::writeFifo(uint32_t value){
-  if(m_debug) cout << "NetioTxCore::writeFifo val=" << hex << setw(8) << setfill('0') << value << dec << endl;
-  map<uint64_t,bool>::iterator it;
+  if(m_debug) std::cout << "NetioTxCore::writeFifo val=" << hex << setw(8) << setfill('0') << value << dec << endl;
+  map<uint32_t,bool>::iterator it;
 
   for(it=m_elinks.begin();it!=m_elinks.end();it++)
     if(it->second) {
+      if(m_debug) {
+	std::cout << "it->first is " << it->first << std::endl;
+      	std::cout << "it->second is " << it->second << std::endl;
+      }
       writeFifo(it->first,value);
     }
 }
 
-void NetioTxCore::writeFifo(uint32_t chn, uint32_t value){
-  if(m_debug) cout << "NetioTxCore::writeFifo chn=" << chn
+void NetioTxCore::writeFifo(uint32_t elink, uint32_t value){
+  if(m_debug) std::cout << "NetioTxCore::writeFifo elink=" << elink
                    << " val=0x" << hex << setw(8) << setfill('0') << value << dec << endl;
-  uint64_t elink=chn;
+
+  if(m_elinks[elink] == false) {
+	if(m_verbose) std::cout<<"\nWARNING: The e-link is disabled! Can not write fifo\n";
+	return;
+  }
+
   writeFifo(&m_fifo[elink],value);
 }
 
@@ -179,19 +188,19 @@ void NetioTxCore::releaseFifo(){
 
   if(m_debug) cout << "NetioTxCore::releaseFifo " << endl;
   //create the message for NetIO
-  map<uint64_t,bool>::iterator it;
+  map<uint32_t,bool>::iterator it;
 
-  for(it=m_elinks.begin();it!=m_elinks.end();it++){
-    if(it->second==false) continue;
-    prepareFifo(&m_fifo[it->first]);
-    if(m_debug) printFifo(it->first);
-    m_headers[it->first].elinkid=it->first;
-    m_headers[it->first].length=m_fifo[it->first].size();
-    m_data.push_back((uint8_t*)&(m_headers[it->first]));
-    m_size.push_back(sizeof(felix::base::ToFELIXHeader));
-    m_data.push_back((uint8_t*)&m_fifo[it->first][0]);
-    m_size.push_back(m_fifo[it->first].size());	
-  }
+  for(it=m_elinks.begin();it!=m_elinks.end();it++)
+    if(it->second){
+    	prepareFifo(&m_fifo[it->first]);
+    	if(m_debug) printFifo(it->first);
+    	m_headers[it->first].elinkid=it->first;
+    	m_headers[it->first].length=m_fifo[it->first].size();
+    	m_data.push_back((uint8_t*)&(m_headers[it->first]));
+    	m_size.push_back(sizeof(felix::base::ToFELIXHeader));
+    	m_data.push_back((uint8_t*)&(m_fifo[it->first][0]));
+    	m_size.push_back(m_fifo[it->first].size());	
+    }
 
   message msg(m_data,m_size);
 
@@ -202,9 +211,11 @@ void NetioTxCore::releaseFifo(){
     if(it->second==false) continue;
     m_fifo[it->first].clear();
   }
+
   m_size.clear();
   m_data.clear();
 
+  return;
 }
 
 void NetioTxCore::trigger(){
@@ -218,39 +229,43 @@ void NetioTxCore::trigger(){
 
   if(m_debug) cout << "NetioTxCore::trigger " << endl;
   //create the message for NetIO
-  map<uint64_t,bool>::iterator it;
+  map<uint32_t,bool>::iterator it;
 
-  for(it=m_elinks.begin();it!=m_elinks.end();it++){
-    if(it->second==false) continue;
-    //prepareFifo(&m_trigFifo[it->first]);
-    headers[it->first].elinkid=it->first;
-    headers[it->first].length=m_trigFifo[it->first].size();
-    data.push_back((uint8_t*)&(headers[it->first]));
-    size.push_back(sizeof(felix::base::ToFELIXHeader));
-    data.push_back((uint8_t*)&m_trigFifo[it->first][0]);
-    size.push_back(m_trigFifo[it->first].size());	
-  }
+  for(it=m_elinks.begin();it!=m_elinks.end();it++)
+    if(it->second){
+    	//prepareFifo(&m_trigFifo[it->first]);
+    	headers[it->first].elinkid=it->first;
+    	headers[it->first].length=m_trigFifo[it->first].size();
+    	data.push_back((uint8_t*)&(headers[it->first]));
+    	size.push_back(sizeof(felix::base::ToFELIXHeader));
+    	data.push_back((uint8_t*)&m_trigFifo[it->first][0]);
+    	size.push_back(m_trigFifo[it->first].size());	
+    }
 
   message msg(data,size);
 
   //Send through the socket
   m_socket->send(msg);
 
-  for(it=m_elinks.begin();it!=m_elinks.end();it++){
-    if(it->second==false) continue;
-    //m_trigFifo[it->first].clear();
-  }
+  //the trigger fifo is emptied somewhere else
+  //for(it=m_elinks.begin();it!=m_elinks.end();it++){
+    //if(it->second)
+    	//m_trigFifo[it->first].clear();
+  //}
+
   size.clear();
   data.clear();
 
 }
 
-bool NetioTxCore::isCmdEmpty(){
-  map<uint64_t,bool>::iterator it;
-  for(it=m_elinks.begin();it!=m_elinks.end();it++){
-    if(it->second==false) continue;
-    if(!m_fifo[it->first].empty()) return false;
-  }
+bool NetioTxCore::isCmdEmpty(){ //TODO: Does not really work for NetIO.
+  map<uint32_t,bool>::iterator it;
+
+  for(it=m_elinks.begin();it!=m_elinks.end();it++)
+    if(it->second)
+    	if(!m_fifo[it->first].empty()) 
+		return false;
+  
   return true;
 }
 
@@ -278,15 +293,8 @@ uint32_t NetioTxCore::getTrigEnable(){
   return m_trigEnabled;
 }
 
-void NetioTxCore::maskTrigEnable(uint32_t value, uint32_t mask) {
-  for(int chn=0; chn<32; chn++) {
-    if(!((1<<chn) & mask)) continue;
-
-    bool enable = (1<<chn) & value;
-    tag elink = chn*2;
-    if(enable) m_trigElinks[elink]=chn;
-    else m_trigElinks.erase(elink);
-  }
+void NetioTxCore::maskTrigEnable(uint32_t value, uint32_t mask) { //never used
+  return;
 }
 
 void NetioTxCore::toggleTrigAbort(){
@@ -351,7 +359,7 @@ void NetioTxCore::prepareTrigger(){
     for(int32_t j=15; j>=0;j--){
       writeFifo(&m_trigFifo[it->first],m_trigWords[j]);
     }
-    writeFifo(&m_trigFifo[it->first],0x0);
+    //writeFifo(&m_trigFifo[it->first],0x0); //Waste!
     prepareFifo(&m_trigFifo[it->first]);
   }
 }
@@ -400,12 +408,12 @@ void NetioTxCore::doTriggerTime() {
   }
 }
 
-void NetioTxCore::printFifo(uint64_t elink){
+void NetioTxCore::printFifo(uint32_t elink){
   cout << "FIFO[" << elink << "][" << m_fifo[elink].size()-1 << "]: " << hex;
   for(uint32_t i=1; i<m_fifo[elink].size(); i++){
-    cout << setfill('0') << setw(2) << (uint32_t)(m_fifo[elink][i]&0xFF);
+    std::cout << setfill('0') << setw(2) << (m_fifo[elink][i]&0xFF);
   }
-  cout << dec << endl;
+  std:cout << dec << endl;
 }
 
 void NetioTxCore::toFileJson(json &j)  {
