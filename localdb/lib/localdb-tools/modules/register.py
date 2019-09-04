@@ -390,8 +390,6 @@ def __dcs(i_tr_oid, i_ctr_oid, i_env_key, i_env_j):
     logger.debug('\t\tRegister DCS')
 
     array = []
-    env_mode = 'null'
-    env_setting = 'null'
     if i_env_j['path']!='null':
         extension = i_env_j['path'].split('.')[len(i_env_j['path'].split('.'))-1]
         if extension=='dat': 
@@ -417,30 +415,30 @@ def __dcs(i_tr_oid, i_ctr_oid, i_env_key, i_env_j):
             message = 'Not found DCS data { key: {0}, num: {1} } in data file: {2}'.format(i_env_key, i_env_j['num'], i_env_j['path'])
             alert(message, 'warning')
             return
-        # mode
-        env_line = env_file.readline()
-        env_mode = env_line.split(separator)[key]
-        # setting
-        env_line = env_file.readline()
-        env_setting = env_line.split(separator)[key]
         # value
         env_line = env_file.readline()
 
         while env_line:
             if len(env_line.split(separator)) < key: break
             date = int(env_line.split(separator)[1])
-            value = float(env_line.split(separator)[key])
-            if 'margin' in i_env_j:
-                if starttime-date<i_env_j['margin'] and finishtime-date>i_env_j['margin']:
+            value = env_line.split(separator)[key]
+            if not value=='null':
+                try:
+                    value = float(value)
+                except:
+                    message = 'Invalid value : {0} in data file: {1}'.format(value, i_env_j['path'])
+                    alert(message) 
+                if 'margin' in i_env_j:
+                    if starttime-date<i_env_j['margin'] and finishtime-date>i_env_j['margin']:
+                        array.append({
+                            'date': datetime.utcfromtimestamp(date),
+                            'value': value
+                        })
+                else:
                     array.append({
                         'date': datetime.utcfromtimestamp(date),
                         'value': value
                     })
-            else:
-                array.append({
-                    'date': datetime.utcfromtimestamp(date),
-                    'value': value
-                })
             env_line = env_file.readline()
     else:
         array.append({
@@ -453,15 +451,10 @@ def __dcs(i_tr_oid, i_ctr_oid, i_env_key, i_env_j):
     if this_ctr.get('environment', '...')=='...':
         doc_value = {
             'sys': {},
-            i_env_key: [{
-                'data': array,
-                'description': i_env_j['description'],
-                'mode': env_mode,
-                'setting': env_setting,
-                'num': i_env_j['num']
-            }],
+            i_env_key: [ i_env_j ],
             'dbVersion': __global.db_version
         }
+        doc_value[i_env_key][0].update({ 'data': array })
         oid = str(localdb.environment.insert_one(doc_value).inserted_id)
         addValue(i_ctr_oid, 'componentTestRun', 'environment', oid)
         updateSys(i_ctr_oid, "componentTestRun");
@@ -469,15 +462,10 @@ def __dcs(i_tr_oid, i_ctr_oid, i_env_key, i_env_j):
         oid = this_ctr['environment']
         doc_value = {
             '$push': {
-                i_env_key: {
-                    'data': array,
-                    'description': i_env_j['description'],
-                    'mode': env_mode,
-                    'setting': env_setting,
-                    'num': i_env_j['num']
-                }
+                i_env_key: i_env_j
             }
         }
+        doc_value['$push'][i_env_key].update({ 'data': array })
         query = { '_id': ObjectId(oid) }
         localdb.environment.update_one( query, doc_value )
 
@@ -1093,7 +1081,7 @@ def __set_conn_cfg(i_conn_json, i_cache_dir):
 
     # module
     conn_json = { 'module': {}, 'chips':[], 'stage': i_conn_json.get('stage','...') }
-    conn_json['module']['component'] = __check_component(i_conn_json.get('module', {}).get('serialNumber','NONAME'), 'module', True)
+    conn_json['module']['component'] = __check_component(i_conn_json.get('module', {}).get('serialNumber','NONAME'), i_conn_json.get('module', {}).get('componentType','module'), True)
     conn_json['module']['name'] = i_conn_json.get('module', {}).get('serialNumber','UnnamedModule')
     # chip
     for i, chip_json in enumerate(i_conn_json['chips']):
@@ -1101,6 +1089,7 @@ def __set_conn_cfg(i_conn_json, i_cache_dir):
         if chip_json.get('enable', 1)==0:  # disabled chip
             chip_json['name'] = 'DisabledChip_{}'.format(i)
             chip_json['chipId'] = -1
+            chip_json['component'] = '...'
         else:  # enabled chip
             chip_cfg_json = toJson('{0}/{1}.before'.format(i_cache_dir, chip_json['config']))
             if not __global.chip_type in chip_cfg_json:
@@ -1115,12 +1104,11 @@ def __set_conn_cfg(i_conn_json, i_cache_dir):
             else:
                 chip_json['name'] = 'UnnamedChip_{}'.format(i)
                 chip_json['chipId'] = 0 #TODO not sure the best
+            chip_json['component'] = __check_component(chip_json['name'], chip_json.get('componentType','front-end_chip'), True) #TODO for registered component
+            query = { 'parent': conn_json['module']['component'], 'child': chip_json['component'] }
+            this_cpr = localdb.childParentRelation.find_one(query)
+            if not this_cpr: conn_json['module']['component'] = '...'
         if not chip_json.get('serialNumber', '')==chip_json['name']: chip_json['serialNumber']=chip_json['name']
-
-        chip_json['component'] = __check_component(chip_json['serialNumber'], 'front-end_chip', True) #TODO for registered component
-        query = { 'parent': conn_json['module']['component'], 'child': chip_json['component'] }
-        this_cpr = localdb.childParentRelation.find_one(query)
-        if not this_cpr: conn_json['module']['component'] = '...'
 
         chip_oid = __check_chip(chip_json)
         if not chip_oid: chip_oid = __chip(chip_json)

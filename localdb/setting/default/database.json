@@ -3,11 +3,17 @@
     "hostPort": "DBPORT",
     "dbName": "DBNAME",
     "ssl": {
-        "enabled": ENABLED,
+        "enabled": false,
         "PEMKeyFile": PEMKEYFILE,
-        "CAFile": CAFILE,
-        "authMechanism": "MECHANISM"
+        "CAFile": CAFILE
     },
+    "tls": {
+        "enabled": false,
+        "CertificateKeyFile": PEMKEYFILE,
+        "CAFile": CAFILE
+    },
+    "auth": "default",
+    "KeyFile": KEYFILE,
     "verify": false,
     "stage": [
         "Bare Module",

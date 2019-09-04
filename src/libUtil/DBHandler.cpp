@@ -38,7 +38,9 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_command, std
     m_command = "localdbtool-upload";
     std::string cmd = m_command+" test 2> /dev/null";
     if (system(cmd.c_str())!=0) {
-        std::size_t pathPos = i_command.find_last_of('/');                             
+        std::size_t pathPos;
+        if ( i_command.find('/')!=std::string::npos) pathPos = i_command.find_last_of('/');                             
+        else pathPos = i_command.size();
         m_command = i_command.substr(0, pathPos) + "/../localdb/bin/localdbtool-upload";
     }
 
@@ -488,6 +490,11 @@ std::string DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_pat
     this->checkFile(i_log_path, "Check environmental data file of key '"+i_key+"' in file "+i_dcs_path+".");
     std::ifstream log_ifs(i_log_path);
     std::size_t suffix = i_log_path.find_last_of('.');
+    if (suffix!=std::string::npos) {
+        std::string message = "Environmental data file must be 'dat' or 'csv' format: "+i_log_path;
+        std::string function = __PRETTY_FUNCTION__;
+        this->alert(function, message); return "ERROR";
+    }
     std::string extension = i_log_path.substr(suffix + 1);
     std::string del;
     if (extension=="dat") del = " ";
@@ -500,7 +507,7 @@ std::string DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_pat
     char separator = del[0];
     char tmp[1000];
 
-    std::vector<std::string> log_lines = { "key", "num", "mode", "setting", "value" };
+    std::vector<std::string> log_lines = { "key", "num", "value" };
     std::vector<std::string> env_keys;
     int cnt=0;
     int key_cnt=0;
@@ -528,7 +535,7 @@ std::string DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_pat
                     std::string function = __PRETTY_FUNCTION__;
                     this->alert(function, message); return "ERROR";
                 }
-            } else if (i==4&&cnt==1) {
+            } else if (i==2&&cnt==1) {
                 try {
                     stoi(s_tmp);
                 } catch (const std::invalid_argument& e) {
@@ -536,13 +543,15 @@ std::string DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_pat
                     std::string function = __PRETTY_FUNCTION__;
                     this->alert(function, message); return "ERROR";
                 }
-            } else if ((i==3||i==4)&&(cnt==key_cnt)) {
+            } else if ((i==2)&&(cnt==key_cnt)) {
                 try {
                     stof(s_tmp);
                 } catch (const std::invalid_argument& e) {
-                    std::string message = "Could not convert the setting value text to float: "+i_log_path+"\n\tkey: "+i_key+"\n\ttext: "+s_tmp;
-                    std::string function = __PRETTY_FUNCTION__;
-                    this->alert(function, message); return "ERROR";
+                    if (s_tmp!="null") {
+                        std::string message = "Invalid value text. It must be a 'float' or 'null': "+i_log_path+"\n\tkey: "+i_key+"\n\ttext: "+s_tmp;
+                        std::string function = __PRETTY_FUNCTION__;
+                        this->alert(function, message); return "ERROR";
+                    }
                 }
             }
             cnt++;
