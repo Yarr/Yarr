@@ -372,7 +372,7 @@ private:
         if( !( reg & 0x1 >>0 ) ) return;
         if( !( reg & 0x2 >>1 ) ) return;
 
-        formatWords( coreCol, coreRow, subCol, subRow, calculateToT( analogFE ), tag );
+        formatWords( coreCol, coreRow, subCol, subRow, (m_feCfg->InjEnDig.read() ? 8 : calculateToT( analogFE )), tag );
     }
 
 

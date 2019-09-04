@@ -386,7 +386,7 @@ void Rd53aEmu::doCal( Rd53aEmu* emu ) {
     std::array<uint32_t, 3> input = readIDAddrData( emu, Rd53aEmu::Commands::Cal );
     
     emu->calTiming     = 0;
-    emu->injectTiming  = 46; // ToDo: properly set the calibration timing
+    emu->injectTiming  = emu->m_feCfg->LatencyConfig.read();
     emu->bcid         += 12; // Consuming 4BC * 3
     
 }
