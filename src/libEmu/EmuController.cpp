@@ -53,7 +53,7 @@ void EmuController<Rd53a, Rd53aEmu>::loadConfig(json &j) {
   std::cout << "-> Starting Emulator" << std::endl;
   std::string emuCfgFile = j["feCfg"];
   std::cout << emuCfgFile << std::endl;
-  emu = new Rd53aEmu( dynamic_cast<RingBuffer*>(rx), dynamic_cast<RingBuffer*>(tx) );
+  emu = new Rd53aEmu( dynamic_cast<RingBuffer*>(rx), dynamic_cast<RingBuffer*>(tx), emuCfgFile );
   emuThreads.push_back(std::thread(&Rd53aEmu::executeLoop, emu));
 }
 

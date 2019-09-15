@@ -8,6 +8,7 @@
 
 #include <chrono>
 #include <iomanip>
+#include <fstream>
 
 #define HEXF(x,y) std::hex << "0x" << std::hex << std::setw(x) << std::setfill('0') << static_cast<int>(y) << std::dec
 
@@ -102,7 +103,7 @@ public:
 
 
 //____________________________________________________________________________________________________
-Rd53aEmu::Rd53aEmu(RingBuffer * rx, RingBuffer * tx)
+Rd53aEmu::Rd53aEmu(RingBuffer * rx, RingBuffer * tx, std::string json_file_path)
     : m_txRingBuffer ( tx )
     , m_rxRingBuffer ( rx )
     , m_feCfg        ( new Rd53aCfg )
@@ -114,40 +115,40 @@ Rd53aEmu::Rd53aEmu(RingBuffer * rx, RingBuffer * tx)
     srand(time(NULL));
     
     run = true;
+
+    std::ifstream file(json_file_path);
+    json j = json::parse(file);
     
     // Initialization of the pixel geometry
     for( size_t icoreCol = 0; icoreCol < m_coreArray.size(); ++icoreCol ) {
-        auto& coreRow = m_coreArray.at( icoreCol );
-        
-        for( auto& core  : coreRow ) {
-        for( auto& row   : core    ) {
-        for( auto& pixel : row     ) {
+      auto& coreRow = m_coreArray.at( icoreCol );
+      for( size_t icore = 0; icore < coreRow.size(); ++icore ){
+	auto& core = coreRow.at( icore );
+	for( size_t irow = 0; irow < core.size(); ++irow ){
+	  auto& row = core.at( irow );
+	  for( size_t ipixel = 0; ipixel < row.size(); ++ipixel ){
+	    auto& pixel = row.at( ipixel );
 
+	    // Rd53a has 3 different analogFE flavors
+	    // Core column [ 0:15]: Sync
+	    // Core column [16:32]: Linear
+	    // Core column [33:49]: Differential
+	    size_t index = ipixel + irow * row.size() + icore * ( core.size() * row.size() ) + icoreCol * ( coreRow.size() * core.size() * row.size() );
 
-            // Rd53a has 3 different analogFE flavors
-            // Core column [ 0:15]: Sync
-            // Core column [16:32]: Linear
-            // Core column [33:49]: Differential
-            
-            if( icoreCol < 16 ) {
+	    if( icoreCol < 16 ) {
+	      pixel = PixelModel<Rd53aSyncPixelModel> { 0, Rd53aLinPixelModel{ j["VthresholdLin_mean_vector"][index], j["VthresholdLin_sigma_vector"][index], j["VthresholdLin_gauss_vector"][index], j["noise_sigma_mean_vector"][index], j["noise_sigma_sigma_vector"][index], j["noise_sigma_gauss_vector"][index] } };
                 
-                // ToDo: need to replaced to SyncPixelModel. Currently substituted by LinPixelModel
-                pixel = PixelModel<Rd53aSyncPixelModel> { 0, Rd53aLinPixelModel{ 10, 2, 400, 100 } };
+	    } else if( icoreCol < 33 ) {
+	      pixel = PixelModel<Rd53aLinPixelModel> { 0, Rd53aLinPixelModel{ j["VthresholdLin_mean_vector"][index], j["VthresholdLin_sigma_vector"][index], j["VthresholdLin_gauss_vector"][index], j["noise_sigma_mean_vector"][index], j["noise_sigma_sigma_vector"][index], j["noise_sigma_gauss_vector"][index] } };
                 
-            } else if( icoreCol < 33 ) {
-                
-                pixel = PixelModel<Rd53aLinPixelModel> { 0, Rd53aLinPixelModel{ 10, 2, 400, 100 } };
-                
-            } else {
-                
-                pixel = PixelModel<Rd53aDiffPixelModel> { 0, Rd53aDiffPixelModel{ 10, 0, 10, 10 } };
-                
-            }
-            
-        }}}
+	    } else {
+	      pixel = PixelModel<Rd53aDiffPixelModel> { 0, Rd53aDiffPixelModel{ j["VthresholdLin_mean_vector"][index], j["VthresholdLin_sigma_vector"][index], j["VthresholdLin_gauss_vector"][index], j["noise_sigma_mean_vector"][index], j["noise_sigma_sigma_vector"][index], j["noise_sigma_gauss_vector"][index] } };
+	    }
+	  }
+	}
+      }
     }
-
-    
+    file.close();
     // Initializing trigger counters
     {
         triggerCounters[Triggers::Trg01] = 0;

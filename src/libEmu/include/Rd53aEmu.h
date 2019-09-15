@@ -69,7 +69,7 @@ public:
 
 
     /** The ownsership of these ring buffers need to be designed properly */
-    Rd53aEmu(RingBuffer * rx, RingBuffer * tx);
+  Rd53aEmu(RingBuffer * rx, RingBuffer * tx, std::string json_file_path);
     ~Rd53aEmu();
     
     // the main loop which recieves commands from yarr
