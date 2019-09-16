@@ -79,10 +79,10 @@ void StarChips::writeNamedRegister(std::string n, uint16_t val) {
 }
 
 void StarChips::toFileJson(json &j){
-    HccStarCfg::toFileJson(j);
+    StarCfg::toFileJson(j);
 }
 
 void StarChips::fromFileJson(json &j){
-    HccStarCfg::fromFileJson(j);
+    StarCfg::fromFileJson(j);
 }
 

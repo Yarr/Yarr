@@ -16,9 +16,9 @@ class TxCore;
 class RxCore;
 
 #include "StarCmd.h"
-#include "HccStarCfg.h"
+#include "StarCfg.h"
 
-class StarChips : public HccStarCfg, public StarCmd, public FrontEnd {
+class StarChips : public StarCfg, public StarCmd, public FrontEnd {
  public:
     StarChips();
     StarChips(HwController *arg_core);
