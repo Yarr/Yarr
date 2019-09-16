@@ -17,6 +17,7 @@
 #include "DataProcessor.h"
 #include "ClipBoard.h"
 #include "RawData.h"
+#include "StarChipPacket.h"
 
 class StarDataProcessor : public DataProcessor {
     public:
@@ -40,6 +41,11 @@ class StarDataProcessor : public DataProcessor {
         std::map<unsigned, ClipBoard<EventDataBase> > *outMap;
         std::vector<unsigned> activeChannels;
         std::vector<std::unique_ptr<std::thread>> thread_ptrs;
+        std::map<unsigned, unsigned> tag;
+        std::map<unsigned, unsigned> l1id;
+        std::map<unsigned, unsigned> bcid;
+        std::map<unsigned, unsigned> wordCount;
+        std::map<unsigned, int> hits;
 };
 
 #endif

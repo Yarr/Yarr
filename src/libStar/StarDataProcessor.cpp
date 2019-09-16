@@ -6,12 +6,8 @@
 #include "AllProcessors.h"
 #include "LoopStatus.h"
 
-#include "StarChipPacket.h"
-
 // Used to transfer data to histogrammers
 #include "Fei4EventData.h"
-
-void process_data(RawData &curIn);
 
 bool star_proc_registered =
   StdDict::registerDataProcessor("Star", []() { return std::unique_ptr<DataProcessor>(new StarDataProcessor());});
@@ -62,6 +58,17 @@ void StarDataProcessor::process() {
 }
 
 void StarDataProcessor::process_core() {
+	// TODO put data from channels back into input, so other processors can use it
+//	unsigned badCnt = 0;
+	for (unsigned i=0; i<activeChannels.size(); i++) {
+		tag[activeChannels[i]] = 0;
+		l1id[activeChannels[i]] = 0;
+		bcid[activeChannels[i]] = 0;
+		wordCount[activeChannels[i]] = 0;
+		hits[activeChannels[i]] = 0;
+	}
+
+//	unsigned dataCnt = 0;
     while(!input->empty()) {
         // Get data containers
         std::unique_ptr<RawDataContainer> curInV = input->popData();
@@ -80,28 +87,52 @@ void StarDataProcessor::process_core() {
         unsigned size = curInV->size();
 
         for(unsigned c=0; c<size; c++) {
-            RawData r(curInV->adr[c], curInV->buf[c], curInV->words[c]);
-            process_data(r);
+        	RawData curIn(curInV->adr[c], curInV->buf[c], curInV->words[c]);
+        	StarChipPacket packet(true);
+
+        	unsigned channel =  curIn.adr;
+        	for(unsigned iw=0; iw<curIn.words; iw++) {
+        		packet.add_word(curIn.buf[iw]);
+        	}
+
+        	packet.parse();
+//        	std::cout << __PRETTY_FUNCTION__ << ": Data for Channel " << channel << "\n";
+//        	packet.print();
+
+        	PacketType packetType = packet.getType();
+        	if(packetType == TYP_LP || packetType == TYP_PR){
+
+        		std::cout << "new physics event packet !!!!!!!!!! "<< std::endl;
+        		wordCount[channel]++;  //what does this do?
+//        		tag[channel] = chipID;
+        		l1id[channel] = packet.l0id;
+        		bcid[channel] = packet.bcid;
+        		curOut[channel]->newEvent( tag[channel], l1id[channel], bcid[channel]);
+        		events[channel]++;
+
+//        		for(unsigned int iW=0; iW < clusters.size(); ++iW){
+//        		      Cluster cluster = clusters.at(iW);
+//        		      std::string next_binary = std::bitset<3>(cluster.next).to_string();
+//        		      printf("  %i) InputChannel: %i, Address: 0x%02x, Next Strip Pattern: %s.\n", iW, cluster.input_channel, cluster.address, next_binary.c_str() );
+//        		    }
+//        		curOut[channel]->curEvent->addHit(abc_cluster_addr[i], 0, 0);
+//        		hits[channel]++; //do we need this? Since Fei4EventData.h already has a hit counter.
+
+        	}
+        	else if(packetType == TYP_ABC_RR || packetType == TYP_HCC_RR || packetType == TYP_ABC_HPR || packetType == TYP_HCC_HPR)
+        		packet.print_RR_HPR();
+
+
+
+
+
         }
 
         for (unsigned i=0; i<activeChannels.size(); i++) {
             outMap->at(activeChannels[i]).pushData(std::move(curOut[activeChannels[i]]));
         }
-        //Cleanup
         // dataCnt++;
     }
 }
 
-void process_data(RawData &curIn) {
-    unsigned channel = curIn.adr;
 
-    StarChipPacket s(true);
-    for(unsigned iw=0; iw<curIn.words; iw++) {
-        s.add_word(curIn.buf[iw]);
-    }
-
-    s.parse();
-    std::cout << __PRETTY_FUNCTION__
-              << ": Data for Channel " << channel << "\n";
-    s.print();
-}
