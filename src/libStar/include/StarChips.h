@@ -36,7 +36,7 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
 
     //! configure
     //! brief configure the chip (virtual)
-    void configure() override;
+    void configure() override final;
 
     //! toFileJson
     //! brief write configuration to json (virtual)
@@ -47,6 +47,65 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
     //! brief read configuration from json (virtual)
     //! param reference to json
     void fromFileJson(json&) override;
+
+    void makeGlobal() override final {
+    	m_hccID = 31;
+    }
+
+    void reset();
+    void sendCmd(std::array<uint16_t, 9> cmd);
+
+    bool writeRegisters();
+    void readRegisters();
+
+
+    uint32_t getRegister(uint32_t addr, int32_t chipID = 0 );
+    void setRegister(uint32_t addr, uint32_t val, int32_t chipID = 0);
+
+
+    void setAndWriteRegister(int addr, int64_t  value=-1, int32_t chipID = 0){
+  	  if(value>0){
+  		  registerMap[chipID][addr]->setValue((uint32_t) value);
+  	  }
+  	  if( chipID == 0 ){
+  		  if(m_debug)  std::cout << "Doing HCC setAndWriteRegister with value " << registerMap[chipID][addr]->getValue() << std::endl;
+  		  sendCmd(write_hcc_register(addr, registerMap[chipID][addr]->getValue(), m_hccID));
+  	  }else{
+  		  if(m_debug)  std::cout << "Doing ABC " << chipID << " setAndWriteRegister with value " << registerMap[chipID][addr]->getValue() << std::endl;
+  		  sendCmd(write_abc_register(addr, registerMap[chipID][addr]->getValue(), m_hccID, chipID));
+
+  	  }
+    }
+
+
+    void readRegister(int addr, int32_t chipID = 0){
+    	if( chipID == 0 )sendCmd(read_hcc_register(addr, m_hccID));
+    	else sendCmd(read_abc_register(addr, 0xf, chipID));
+    }
+
+
+    void setAndWriteSubRegister(std::string subRegName, uint32_t value, int32_t chipID = 0){
+  	  setSubRegisterValue(chipID, subRegName,value);
+
+  	  if( chipID == 0 ) sendCmd( write_hcc_register(getSubRegisterParentAddr(chipID, subRegName), getSubRegisterParentValue(chipID, subRegName), m_hccID) );
+  	  else  sendCmd( write_abc_register(getSubRegisterParentAddr(chipID, subRegName), getSubRegisterParentValue(chipID, subRegName), m_hccID, chipID) );
+
+    }
+
+
+    void readSubRegister(std::string subRegName, int32_t chipID = 0){
+    	if( chipID == 0 )sendCmd(read_hcc_register(getSubRegisterParentAddr(chipID, subRegName), m_hccID));
+    	else sendCmd(read_abc_register(getSubRegisterParentAddr(chipID, subRegName), 0xf, chipID));
+  	    }
+
+
+    const int getNumberOfAssociatedABC(){return m_nABC;}
+
+    int m_nABC = 0;
+    std::vector<int> m_chipIDs;
+
+
+
 
   private:
     TxCore * m_txcore;
