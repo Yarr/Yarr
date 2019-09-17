@@ -383,13 +383,10 @@ void Rd53aEmu::doCal( Rd53aEmu* emu ) {
     // For the moment, only pops 2x16-bit words
     // Informations stored there need to be used properly
     // See RD53a Manual section 9.2, p.47
-    
-    while( emu->commandStream.size() == 0 ) emu->retrieve();
-    emu->commandStream.pop_front();
-    emu->commandStream.pop_front();
+    std::array<uint32_t, 3> input = readIDAddrData( emu, Rd53aEmu::Commands::Cal );
     
     emu->calTiming     = 0;
-    emu->injectTiming  = 46; // ToDo: properly set the calibration timing
+    emu->injectTiming  = emu->m_feCfg->LatencyConfig.read();
     emu->bcid         += 12; // Consuming 4BC * 3
     
 }
@@ -875,61 +872,9 @@ void Rd53aEmu::triggerAsync2( const uint32_t tag, const unsigned coreCol, const 
 
 //____________________________________________________________________________________________________
 void Rd53aEmu::doWrReg( Rd53aEmu* emu ) {
-    
-    while( emu->commandStream.size() < 3 ) {
-        emu->retrieve();
-    }
-        
-    //m_id_address_some_data = m_txRingBuffer->read32();
-    //              printf("Rd53aEmu got id_address_some_data word: 0x%x\n", m_id_address_some_data);
-    
-#define byte1 ( (emu->commandStream.at(0) & 0xFF00 ) >> 8 )
-#define byte2 ( (emu->commandStream.at(0) & 0x00FF ) )
-#define byte3 ( (emu->commandStream.at(1) & 0xFF00 ) >> 8 )
-#define byte4 ( (emu->commandStream.at(1) & 0x00FF ) )
-    
-#define isBig   (to5bit(byte1) & 0x1)
-#define ID      ( to5bit(byte1) >> 1 )
-#define ADDRESS ( ( to5bit(byte2) << 4 ) + ( to5bit(byte3) >> 1 ) )
-    
-    if ( isBig ) { // check the bit which determines whether big data or small data should be read
-        //printf("big data expected\n");
-        
-        emu->commandStream.pop_front();
-        emu->commandStream.pop_front();
-        emu->commandStream.pop_front();
-    }
-    
-    else {
-        //printf("small data expected\n");
-        
-#define byte5 ( (emu->commandStream.at(2) & 0xFF00 ) >> 8 )
-#define byte6 ( (emu->commandStream.at(2) & 0x00FF ) )
-#define DATA  ( ( (to5bit(byte3) & 0x1) << 15 ) + (to5bit(byte4) << 10) + ( to5bit(byte5) << 5 ) + to5bit(byte6) )
-        
-        //if( emu->verbose ) printf(" >> WrReg: id: 0x%x, address: 0x%x, data = 0x%x\n", ID, ADDRESS, DATA);
-        //if( emu->verbose ) std::cout << __PRETTY_FUNCTION__ << ": " << __LINE__ << ": commandStream front = " << HEXF(4, emu->commandStream.front() ) << std::endl;
+  std::array<uint32_t, 3> input=readIDAddrData( emu, Rd53aEmu::Commands::WrReg );
 
-        emu->m_pool->enqueue( &Rd53aEmu::writeRegAsync, emu, DATA, ADDRESS );
-        //emu->m_async.emplace_back( std::async(std::launch::deferred, &Rd53aEmu::writeRegAsync, emu, DATA, ADDRESS ) );
-        
-        emu->commandStream.pop_front();
-        emu->commandStream.pop_front();
-        emu->commandStream.pop_front();
-        
-#undef byte5
-#undef byte6
-#undef DATA
-        
-    }
-    
-#undef byte1
-#undef byte2
-#undef byte3
-#undef byte4
-#undef isBig
-#undef ID
-#undef ADDRESS
+  emu->m_pool->enqueue( &Rd53aEmu::writeRegAsync, emu, input[2], input[1] );
 }
 
 
@@ -1013,10 +958,14 @@ void Rd53aEmu::writeRegAsync( Rd53aEmu* emu, const uint16_t data, const uint32_t
 #undef AUTOCOL
 }
 
-
-
 //____________________________________________________________________________________________________
-void Rd53aEmu::doRdReg( Rd53aEmu* emu ) {}
+void Rd53aEmu::doRdReg( Rd53aEmu* emu ) {
+  std::array<uint32_t, 3> input=readIDAddrData( emu, Rd53aEmu::Commands::RdReg );
+  
+  std::pair<uint32_t, uint32_t> regFrame=assembleRegFrame( emu, input[1], 0x99, 0x0 );
+  emu->pushOutput(regFrame.first);
+  emu->pushOutput(regFrame.second);
+}
 
 
 
@@ -1148,4 +1097,80 @@ uint8_t Rd53aEmu::calculateToT( Rd53aDiffPixelModel& analogFE ) {
     return ToT;
 }
 
+//____________________________________________________________________________________________________
+std::pair<uint32_t, uint32_t> Rd53aEmu::assembleRegFrame( Rd53aEmu* emu, const uint16_t address, const uint8_t zz, const uint8_t status ){
+  uint16_t regVal = emu->m_feCfg->m_cfg.at( address );
+  uint32_t higher = ( ( zz << 4 | status ) << 20 ) | ( address << 10 ) | ( ( regVal & 0xFFC0 ) >> 6 );
+  uint32_t lower = ( ( regVal & 0x003F ) << 26 );
+  return std::make_pair(higher, lower);
+}
 
+//____________________________________________________________________________________________________
+std::array<uint32_t, 3> Rd53aEmu::readIDAddrData( Rd53aEmu* emu, Rd53aEmu::Commands command ){
+  enum { ID, Address, Data };
+  unsigned fieldSize = 0;
+  std::array<uint32_t, 3> output = {0, 0, 0}; // 0: ID, 1: address 2: data. Currently do not consider big data.
+  if ( command == Rd53aEmu::Commands::GlobalPulse ) fieldSize = 1;
+  else if ( command == Rd53aEmu::Commands::Cal || command == Rd53aEmu::Commands::RdReg ) fieldSize = 2;
+  else if ( command == Rd53aEmu::Commands::WrReg ) fieldSize = 3;
+  else{
+    std::cout << "Require reading ID/address/data for empty filed following command " << HEXF(4, command) << std::endl;
+    return output;
+  }
+
+  while( emu->commandStream.size() < fieldSize ) emu->retrieve();
+
+  std::pair<uint8_t, uint8_t> bp1 = cmdTo5bitPair( emu->commandStream.at(0) );
+
+  // ------------------ Get ID -------------------
+  output[ID] = ( bp1.first >> 1 ); // Get ID, which is the same for all commands
+
+  if ( command == Rd53aEmu::Commands::GlobalPulse ){ // GlobalPulse: only read first command and then return
+    output[Data] = ( bp1.second >> 1 );
+    popCmd( emu, fieldSize );
+    return output;
+  }
+
+  if ( command == Rd53aEmu::Commands::WrReg && ( bp1.first & 0x1 ) ){ // In case of Big data, do not read anything
+    popCmd( emu, fieldSize );
+    return output;
+  }
+  
+  // ------------------ Get Address and data -------------------
+  std::pair<uint8_t, uint8_t> bp2 = cmdTo5bitPair( emu->commandStream.at(1) );
+  
+  if ( command == Rd53aEmu::Commands::WrReg || command == Rd53aEmu::Commands::RdReg ){ // Only relevant for WrReg and RdReg
+    output[Address] = ( bp1.second << 4 ) + ( bp2.first >> 1 );
+    if ( command == Rd53aEmu::Commands::RdReg ){ // For RdReg command, no data to read
+      popCmd( emu, fieldSize );
+      return output;
+    }
+    else{			// Data from WrReg
+      std::pair<uint8_t, uint8_t> bp3 = cmdTo5bitPair( emu->commandStream.at(2) );
+      output[Data] = ( ( bp2.first & 0x1) << 15 ) + ( bp2.second << 10 ) + ( bp3.first << 5 ) + bp3.second;
+    }
+  }
+  else if ( command == Rd53aEmu::Commands::Cal ){
+    output[Data] = ( ( bp1.first & 0x1) << 15 ) + ( bp1.second << 10 ) + ( bp2.first << 5 ) + bp2.second;
+  }
+
+  popCmd( emu, fieldSize );
+  return output;
+}
+
+std::pair<uint8_t, uint8_t> Rd53aEmu::cmdTo5bitPair( uint16_t command ){
+  uint8_t byte1 = ( command & 0xFF00 ) >> 8;
+  uint8_t byte2 = ( command & 0x00FF );
+  return std::make_pair( to5bit(byte1), to5bit(byte2) );
+}
+
+void Rd53aEmu::popCmd( Rd53aEmu* emu, const unsigned size ){
+  if( emu->commandStream.size() < size ){
+    std::cout << "Command stream size " << emu->commandStream.size()
+	      << " smaller than requested pop size " << size
+	      << " Exiting. " << std::endl;
+    exit(1);
+  }
+  
+  for( unsigned i = 0; i < size; i++ ) emu->commandStream.pop_front();
+}

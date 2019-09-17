@@ -3,12 +3,16 @@
         "description": "VDDD Voltage [V]",
         "key": "vddd_voltage",
         "path": "dcs.dat",
+        "mode": "CV",
+        "setting": 0,
         "num": 0,
         "status": "disabled"
     },{
         "description": "VDDD Current [A]",
         "key": "vddd_current",
         "path": "dcs.dat",
+        "mode": "CV",
+        "setting": 0,
         "num": 0,
         "status": "disabled"
     },{
@@ -36,10 +40,11 @@
         "num": 0,
         "status": "disabled"
     },{
-        "description": "Temperature [C]",
+        "description": "Chip Temperature [C]",
         "key": "temperature",
         "path": "dcs.dat",
         "num": 0,
+        "chip": "JohnDoe_0",
         "status": "disabled"
     },{
         "description": "Module Temperature [C]",

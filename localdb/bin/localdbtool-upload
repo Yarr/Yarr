@@ -22,7 +22,7 @@ logger.setLevel(INFO)
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../lib/localdb-tools/modules'))
 import register
 
-### global veriable
+### global variables
 home = os.environ['HOME']
 hostname = os.environ['HOSTNAME']
 global localdb
@@ -43,6 +43,16 @@ def readConfig(conf_path):
         conf = yaml.load(f, Loader=yaml.SafeLoader)
     return conf
 
+def readKey(i_path):
+    file_text = open(i_path, 'r')
+    file_keys = file_text.read().split()
+    keys = {
+        'username': file_keys[0],
+        'password': file_keys[1]
+    }
+    file_text.close()
+    return keys
+
 ###############
 # get arguments
 def getArgs():
@@ -61,10 +71,8 @@ def getArgs():
 
     if args.config:
         conf = readConfig(args.config)
-    else:
-        conf = readConfig('{}/.yarr/.localdb-upload'.format(home)) 
-    if 'username' in conf and not args.username: args.username = conf['username']
-    if 'password' in conf and not args.password: args.password = conf['password']
+        if 'username' in conf and not args.username: args.username = conf['username']
+        if 'password' in conf and not args.password: args.password = conf['password']
 
     return args
 
@@ -78,41 +86,48 @@ def getArgs():
 def getTestRunData(i_type, i_tr_oid, i_conn_json=None, i_timestamp=None, i_site_oid=None, i_user_oid=None):
     logger.debug('Get TestRun Data.')
 
-    tr_oid = None
+    tr_oids = []
 
     if i_tr_oid=='':
-        if not i_conn_json or not i_timestamp:
-            return tr_oid
+        if not i_timestamp:
+            return tr_oids
         doc_value = { 'startTime' : datetime.utcfromtimestamp(i_timestamp) }
         if i_site_oid: doc_value.update({ 'address': i_site_oid })
         if i_user_oid: doc_value.update({ 'user_id': i_user_oid })
         run_entries = localdb.testRun.find(doc_value).sort([('$natural', -1)])
-        for run_entry in run_entries:
-            chip_names = []
-            for chip_json in i_conn_json['chips']:
-                if chip_json.get('enable', 1)==0: continue
-                chip_names.append({ 'name': chip_json['name'] })
-            query = {
-                'testRun' : str(run_entry['_id']),
-                '$or'     : chip_names 
-            }
-            ctr_entries = localdb.componentTestRun.find(query)
-            if not ctr_entries.count()==0:
-                tr_oid = str(run_entry['_id'])
-                break
+        if not i_conn_json=={}:
+            for run_entry in run_entries:
+                chip_names = []
+                for chip_json in i_conn_json['chips']:
+                    if chip_json.get('enable', 1)==0: continue
+                    chip_names.append({ 'name': chip_json['name'] })
+                query = {
+                    'testRun' : str(run_entry['_id']),
+                    '$or'     : chip_names 
+                }
+                ctr_entries = localdb.componentTestRun.find(query)
+                if not ctr_entries.count()==0:
+                    tr_oids.append(str(run_entry['_id']))
+                    break
+        else:
+            for run_entry in run_entries:
+                tr_oids.append(str(run_entry['_id']))
     else:
         doc_value = { '_id': ObjectId(i_tr_oid) }
         this_run = localdb.testRun.find_one(doc_value)
         if this_run:
-            tr_oid = str(this_run['_id'])
+            tr_oids.append(str(this_run['_id']))
 
-    if tr_oid and i_type=='dcs':
-        query = { '_id': ObjectId(tr_oid) }
-        this_run = localdb.testRun.find_one(query)
-        if this_run.get('environment','...')=='...':
-            tr_oid = None
+    if i_type=='dcs':
+        dcs_tr_oids = []
+        for tr_oid in tr_oids:
+            query = { '_id': ObjectId(tr_oid) }
+            this_run = localdb.testRun.find_one(query)
+            if not this_run.get('environment',False)==False:
+                dcs_tr_oids.append(tr_oid)
+        tr_oids = dcs_tr_oids
 
-    return tr_oid
+    return tr_oids
 
 ######################
 ### main functions ###
@@ -128,7 +143,7 @@ def __init(db_cfg):
     global localdb
 
     if db_cfg=={}:
-        logger.error('There is no default database config in {}/.yarr/localdb')
+        logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
         logger.error('Set it by YARR/localdb/setting/setup_db.sh')
         logger.info('-----------------------')
         logger.debug('=======================')
@@ -140,23 +155,26 @@ def __init(db_cfg):
     ##################
     # Connection check
     max_server_delay = 1
-    ### check ssl
+    username = None
+    password = None
+    authSource = db_cfg.get('dbName', 'localdb')
+    ### check tls/ssl
+    db_tls = db_cfg.get('tls', {}).get('enabled',False)
     db_ssl = db_cfg.get('ssl', {}).get('enabled',False)
-    if db_ssl==True:
+    if db_tls:
+        db_certfile = db_cfg.get('tls', {}).get('CertificateKeyFile',None)
+        db_ca_certs = db_cfg.get('tls', {}).get('CAFile',None)
+    elif db_ssl:
         db_certfile = db_cfg.get('ssl', {}).get('PEMKeyFile',None)
         db_ca_certs = db_cfg.get('ssl', {}).get('CAFile',None)
+    if db_tls or db_ssl:
+        url+='/?ssl=true&ssl_ca_certs={0}&ssl_certfile={1}&ssl_match_hostname=false'.format(db_ca_certs,db_certfile)
         ### authenticate mechanism
-        if db_cfg.get('ssl', {}).get('authMechanism',None)=='MONGODB-X509':
-            url+='/?authMechanism=MONGODB-X509'
-    else:
-        db_certfile = None 
-        db_ca_certs = None 
-    client = MongoClient( url,
-                          serverSelectionTimeoutMS=max_server_delay,
-                          ssl_match_hostname=False,
-                          ssl=db_ssl,
-                          ssl_ca_certs=db_ca_certs,
-                          ssl_certfile=db_certfile
+        if db_cfg.get('auth',None)=='x509':
+            url+='&authMechanism=MONGODB-X509'
+    client = MongoClient( 
+        url,
+        serverSelectionTimeoutMS=max_server_delay
     )
     localdb = client[db_cfg.get('dbName', 'localdb')]
     try:
@@ -171,11 +189,18 @@ def __init(db_cfg):
         return False
     except errors.OperationFailure as err:
         ### Need user authentication
-        username = None
-        password = None
-        if args.username: username = args.username
-        if args.password: password = args.password
-
+        if db_cfg.get('KeyFile',None):
+            keys = readKey(db_cfg['KeyFile'])
+            username = keys['username']
+            password = keys['password']
+        if args.username:
+            username = args.username
+        elif db_cfg.get('username',None):
+            username = db_cfg['username']
+        if args.password:
+            password = args.password
+        elif db_cfg.get('password',None):
+            password = db_cfg['password']
         if args.log==True:
             if username and password:
                 try:
@@ -217,17 +242,6 @@ def __init(db_cfg):
                         password = None
                     else:
                         return False
-            if not args.username or not args.password:
-                ###TODO
-                answer = input('Do you want to remember the username and the password on the machine? [y/n]\n')
-                print('')
-                if answer.lower() == 'y':
-                    account_path = '{}/.yarr/.localdb-upload'.format(home)
-                    account_file = open(account_path, 'w')
-                    account_data = { 'username': username, 'password': password }
-                    account_file.write(yaml.dump(account_data, default_flow_style=False))
-                    account_file.close()
-                    os.chmod(account_path,0o600)
 
     localdb['fs.files'].create_index([('hash', DESCENDING), ('_id', DESCENDING)])
     localdb['component'].create_index([('serialNumber', DESCENDING)])
@@ -276,9 +290,9 @@ def __set_cache(cache_dir):
     elif 'dbCfg' in scanlog_json:
         db_cfg = scanlog_json['dbCfg']
     if not db_cfg:
-        db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(os.environ['HOME'], os.environ['HOSTNAME']))
+        db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
         if db_cfg=={}:
-            logger.error('There is no default database config in {}/.yarr/localdb')
+            logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
             logger.error('Set it by YARR/localdb/setting/setup_db.sh')
             logger.info('-----------------------')
             logger.debug('=======================')
@@ -472,17 +486,30 @@ def __write_dcs(cache_dir, dcslog_json):
     user_oid = register.__set_user(user_json)
 
     conn_json = register.__set_conn_cfg(dcslog_json.get('connectivity',{}), cache_dir)
-    tr_oid = getTestRunData('scan', dcslog_json.get('id',''), conn_json, timestamp, site_oid, user_oid)
-    if not tr_oid:
+    tr_oids = getTestRunData('scan', dcslog_json.get('id',''), conn_json, timestamp, site_oid, user_oid)
+    if tr_oids==[]:
         logger.warning('Not found relational test run data in DB')
         return True
 
-    if getTestRunData('dcs', tr_oid):
-        logger.warning('Already registered dcs data to this test run data in DB')
-        return False
+    for tr_oid in tr_oids:
+        dcs_tr_oids = []
+        if not getTestRunData('dcs', tr_oid)==[]: 
+            logger.warning('Already registered dcs data to this test data in DB')
+            if not args.log:
+                print('')
+                answer = input('Do you continue to upload data into Local DB? [y/n]\n')
+                print('')
+                if answer.lower()!='y': 
+                    return False
+                else:
+                    dcs_tr_oids.append(tr_oid)
+        else:
+            dcs_tr_oids.append(tr_oid)
 
-    register.__dcs(tr_oid, dcslog_json['environments'])
-    register.__global.tr_oids.append(tr_oid)
+    tr_oids = dcs_tr_oids
+    for tr_oid in tr_oids:
+        register.__set_dcs(tr_oid, dcslog_json['environments'])
+        register.__global.tr_oids.append(tr_oid)
 
     return True
 
@@ -513,11 +540,11 @@ def __clean(cache_dir, result):
     else:
         if option=='scan' or option=='dcs':
             for tr_oid in register.__global.tr_oids:
-                if getTestRunData(option, tr_oid):
+                if not getTestRunData(option, tr_oid)==[]:
                     logger.info('Success')
                     if cache_dir in cache_list: cache_list.remove(cache_dir)
                 else:
-                    logger.error('Something wrong, check log file: {}'.format(logfile))
+                    logger.error('Something wrong')
 
     ##################
     # Write Cache File
@@ -567,9 +594,9 @@ def __upload_comp(comp_path):
     if args.database:
         db_cfg = register.toJson(args.database)
     else:
-        db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(os.environ['HOME'], os.environ['HOSTNAME']))
+        db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
         if db_cfg=={}:
-            logger.error('There is no default database config in {}/.yarr/localdb')
+            logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
             logger.error('Set it by YARR/localdb/setting/setup_db.sh')
             logger.info('-----------------------')
             logger.debug('=======================')
@@ -634,9 +661,9 @@ def __check_component(i_type):
     if args.database:
         db_cfg = register.toJson(args.database)
     else:
-        db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(os.environ['HOME'], os.environ['HOSTNAME']))
+        db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
         if db_cfg=={}:
-            logger.error('There is no default database config in {}/.yarr/localdb')
+            logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
             logger.error('Set it by YARR/localdb/setting/setup_db.sh')
             logger.info('-----------------------')
             logger.debug('=======================')
@@ -766,7 +793,7 @@ def main():
         if args.database:
             db_cfg = register.toJson(args.database)
         else:
-            db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(os.environ['HOME'], os.environ['HOSTNAME']))
+            db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
         if not __init(db_cfg)==True: 
             logger.info('-----------------------')
             logger.debug('=======================')

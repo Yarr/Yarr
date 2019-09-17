@@ -173,7 +173,7 @@ private:
 
     /** Conversion function 8bit->5bit, with a simple input validation */
     static uint8_t to5bit( uint8_t );
-
+    static std::pair<uint8_t, uint8_t> cmdTo5bitPair( uint16_t /* command */ );
     
     /** Concrete implementations */
     using CommandFunc = void(*)( Rd53aEmu* );
@@ -206,8 +206,13 @@ private:
         Concurrent running helps speed-up a little.
      */
     static void writeRegAsync( Rd53aEmu*, const uint16_t /*data*/, const uint32_t /*address*/);
-    
-    
+    /** Function for assembling the register frame to be pushed to Rx
+     */
+    static std::pair<uint32_t, uint32_t> assembleRegFrame( Rd53aEmu*, const uint16_t /*address*/, const uint8_t /*zz*/, const uint8_t /*status*/ );
+    /** Function for reading ID, address, and/or data from command protocol
+     */
+    static std::array<uint32_t, 3> readIDAddrData( Rd53aEmu*, Rd53aEmu::Commands /*command*/ );
+    static void popCmd( Rd53aEmu* , const unsigned /*size*/ );
     /** This part of trigger process will run asynchronously with threads
         Concurrent running helps speed-up a little.
      */
@@ -367,7 +372,7 @@ private:
         if( !( reg & 0x1 >>0 ) ) return;
         if( !( reg & 0x2 >>1 ) ) return;
 
-        formatWords( coreCol, coreRow, subCol, subRow, calculateToT( analogFE ), tag );
+        formatWords( coreCol, coreRow, subCol, subRow, (m_feCfg->InjEnDig.read() ? 8 : calculateToT( analogFE )), tag );
     }
 
 

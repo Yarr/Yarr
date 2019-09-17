@@ -117,15 +117,11 @@ int main(int argc, char *argv[]){
             std::cerr << "#DB ERROR# No scan log file path given, please specify file path under -s option!" << std::endl;
             return 1;
         }
-        if (conn_path == "") {
-            std::cerr << "#DB ERROR# No connecivity config file path given, please specify file path under -c option!" << std::endl;
-            return 1;
-        }
         std::cout << "DBHandler: Register Environment:" << std::endl;
         std::cout << "\tenvironmental config file : " << dcs_path << std::endl;
 
         database->initialize(cfg_path, commandLine, "register");
-        database->setDCSCfg(dcs_path, scanlog_path, conn_path, user_cfg_path, site_cfg_path);
+        database->setDCSCfg(dcs_path, scanlog_path, user_cfg_path, site_cfg_path);
         database->cleanUp("dcs", "");
 
         delete database;
@@ -153,7 +149,6 @@ void printHelp() {
     std::cout << " -R: Upload data into Local DB from cache." << std::endl;
     std::cout << " -E <dcs.json> : Provide DCS configuration to upload DCS data into Local DB." << std::endl;
     std::cout << "     -s <scanLog.json> : Provide scan log file." << std::endl;
-    std::cout << "     -c <conn.json> : Provide connectivity config file." << std::endl;
     std::cout << " -M : Retrieve Module list from Local DB." << std::endl;
     std::cout << " -d <database.json> : Provide database configuration. (Default " << dbDirPath << "/" << hostname << "_database.json" << std::endl;
     std::cout << " -i <site.json> : Provide site configuration. " << std::endl;

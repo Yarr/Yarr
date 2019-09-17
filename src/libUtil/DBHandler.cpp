@@ -38,7 +38,9 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_command, std
     m_command = "localdbtool-upload";
     std::string cmd = m_command+" test 2> /dev/null";
     if (system(cmd.c_str())!=0) {
-        std::size_t pathPos = i_command.find_last_of('/');                             
+        std::size_t pathPos;
+        if ( i_command.find('/')!=std::string::npos) pathPos = i_command.find_last_of('/');                             
+        else pathPos = i_command.size();
         m_command = i_command.substr(0, pathPos) + "/../localdb/bin/localdbtool-upload";
     }
 
@@ -113,16 +115,14 @@ void DBHandler::setConnCfg(std::vector<std::string> i_conn_paths) {
     }
 }
 
-void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, std::string i_conn_path, std::string i_user_path, std::string i_site_path) {
+void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, std::string i_user_path, std::string i_site_path) {
     if (DB_DEBUG) std::cout << "DBHandler: Set DCS config: " << i_dcs_path << std::endl;
 
     json log_json = this->toJson(i_scanlog_path);
-    json conn_json = this->toJson(i_conn_path);
     json user_json = this->setUser(i_user_path);
     json site_json = this->setSite(i_site_path);
     if (log_json["id"].empty()) {
         this->checkEmpty(log_json["startTime"].empty()&&log_json["timestamp"].empty(), "startTime||timestamp", i_scanlog_path);
-        this->checkEmpty(conn_json["chips"].empty(), "chips", i_conn_path);
         if (log_json["userCfg"].empty()) log_json["userCfg"] = user_json;
         if (log_json["siteCfg"].empty()) log_json["siteCfg"] = site_json;
     }
@@ -157,7 +157,6 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, st
 
     int timestamp_int = -1;
     std::string timestamp_str = "";
-    dcs_log_json["connectivity"] = conn_json;
     if (!log_json["id"].empty()) dcs_log_json["id"] = log_json["id"];
     if (!log_json["startTime"].empty()) dcs_log_json["startTime"] = log_json["startTime"];
     if (!log_json["timestamp"].empty()) dcs_log_json["timestamp"] = log_json["timestamp"];
@@ -179,7 +178,9 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, st
             std::string env_log_path = "";
             env_log_path = env_json[i]["path"];
             std::string extension = this->checkDCSLog(env_log_path, i_dcs_path, env_json[i]["key"], j_num); 
-            std::string file_path = m_output_dir+"/"+std::string(env_json[i]["key"])+"_"+std::to_string(j_num)+"."+extension;
+            std::string chip_name = "";
+            if (!env_json[i]["chip"].empty()) chip_name = std::string(env_json[i]["chip"])+"_";
+            std::string file_path = m_output_dir+"/"+chip_name+std::string(env_json[i]["key"])+"_"+std::to_string(j_num)+"."+extension;
             std::string cmd = "cp "+env_log_path+" "+file_path;
             env_json[i]["path"] = file_path;
             if (system(cmd.c_str()) < 0) {
@@ -489,6 +490,11 @@ std::string DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_pat
     this->checkFile(i_log_path, "Check environmental data file of key '"+i_key+"' in file "+i_dcs_path+".");
     std::ifstream log_ifs(i_log_path);
     std::size_t suffix = i_log_path.find_last_of('.');
+    if (suffix!=std::string::npos) {
+        std::string message = "Environmental data file must be 'dat' or 'csv' format: "+i_log_path;
+        std::string function = __PRETTY_FUNCTION__;
+        this->alert(function, message); return "ERROR";
+    }
     std::string extension = i_log_path.substr(suffix + 1);
     std::string del;
     if (extension=="dat") del = " ";
@@ -501,7 +507,7 @@ std::string DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_pat
     char separator = del[0];
     char tmp[1000];
 
-    std::vector<std::string> log_lines = { "key", "num", "mode", "setting", "value" };
+    std::vector<std::string> log_lines = { "key", "num", "value" };
     std::vector<std::string> env_keys;
     int cnt=0;
     int key_cnt=0;
@@ -529,7 +535,7 @@ std::string DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_pat
                     std::string function = __PRETTY_FUNCTION__;
                     this->alert(function, message); return "ERROR";
                 }
-            } else if (i==4&&cnt==1) {
+            } else if (i==2&&cnt==1) {
                 try {
                     stoi(s_tmp);
                 } catch (const std::invalid_argument& e) {
@@ -537,13 +543,15 @@ std::string DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_pat
                     std::string function = __PRETTY_FUNCTION__;
                     this->alert(function, message); return "ERROR";
                 }
-            } else if ((i==3||i==4)&&(cnt==key_cnt)) {
+            } else if ((i==2)&&(cnt==key_cnt)) {
                 try {
                     stof(s_tmp);
                 } catch (const std::invalid_argument& e) {
-                    std::string message = "Could not convert the setting value text to float: "+i_log_path+"\n\tkey: "+i_key+"\n\ttext: "+s_tmp;
-                    std::string function = __PRETTY_FUNCTION__;
-                    this->alert(function, message); return "ERROR";
+                    if (s_tmp!="null") {
+                        std::string message = "Invalid value text. It must be a 'float' or 'null': "+i_log_path+"\n\tkey: "+i_key+"\n\ttext: "+s_tmp;
+                        std::string function = __PRETTY_FUNCTION__;
+                        this->alert(function, message); return "ERROR";
+                    }
                 }
             }
             cnt++;
