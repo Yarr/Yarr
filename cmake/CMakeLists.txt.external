@@ -23,7 +23,7 @@ function(YARR_ADD_TBB)
     ExternalProject_Add (
         tbb_2019
         GIT_REPOSITORY https://github.com/intel/tbb.git
-        GIT_TAG tbb_2019
+        GIT_TAG 2019_U8
         UPDATE_COMMAND ""
         INSTALL_COMMAND ${PROJECT_SOURCE_DIR}/scripts/install_tbb.sh ${CMAKE_CURRENT_BINARY_DIR}  ${CMAKE_CURRENT_BINARY_DIR}
         BUILD_COMMAND cd ${CMAKE_CURRENT_BINARY_DIR}/external/src/tbb_2019 &&  make -j4 ${TBB_COMP} ${TBB_ARCH} extra_inc=big_iron.inc
