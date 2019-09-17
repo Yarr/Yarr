@@ -38,7 +38,7 @@ job_build_all:
 job_build_clang:
     stage: build
     script:
-      - scl enable   llvm-toolset-7  bash
+      - scl enable   llvm-toolset-6.0  bash
       - source /opt/rh/llvm-toolset-7/enable
       - mkdir -p build
       - cd build 
