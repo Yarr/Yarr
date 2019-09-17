@@ -98,3 +98,23 @@ function(YARR_ADD_ROGUE)
     link_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/rogue/lib)
     include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/rogue/include)
 endfunction()
+
+function(YARR_ADD_VARIANT)
+    if (TARGET variant)
+        return()
+    endif()
+
+    # Variant
+    ExternalProject_Add (
+        variant
+        GIT_REPOSITORY  https://gitlab.cern.ch/wittgen/variant.git
+        GIT_TAG v1.2.0
+        UPDATE_COMMAND ""
+        INSTALL_COMMAND ""
+        BUILD_COMMAND ""
+        CONFIGURE_COMMAND ""	
+        PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
+        )
+    link_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/variant)
+    include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/variant/include)
+endfunction()

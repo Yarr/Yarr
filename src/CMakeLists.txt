@@ -53,24 +53,25 @@ foreach(lib ${libs})
     file(GLOB SrcFiles lib${lib}/*.cpp)
     list(APPEND LibSrcFiles ${SrcFiles})
 endforeach()
-include_directories(variant/include)
+
 add_library(Yarr STATIC ${LibSrcFiles})
 
-if ("Rogue" IN_LIST YARR_CONTROLLERS_TO_BUILD )
-  YARR_ADD_TBB()
-  YARR_ADD_ROGUE()
-  add_dependencies(Yarr tbb_2019 rogue)
+YARR_ADD_VARIANT()
+add_dependencies(Yarr variant)
+YARR_ADD_TBB()
+add_dependencies(Yarr tbb_2019)
 
+if ("Rogue" IN_LIST YARR_CONTROLLERS_TO_BUILD )
+  YARR_ADD_ROGUE()
+  add_dependencies(Yarr tbb_2019)
   set(YARR_EXEC_DEPS ${YARR_EXEC_DEPS} rogue tbb_2019)
   set(YARR_LIB_DEPS ${YARR_LIB_DEPS} tbb rogue-core)
-
 endif()
 
 if ("NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
-  YARR_ADD_TBB()
   YARR_ADD_NETIO()
   YARR_ADD_FELIX()
-  add_dependencies(Yarr tbb_2019 felixbase4 netio4)
+  add_dependencies(Yarr felixbase4 netio4)
 
   set(YARR_EXEC_DEPS ${YARR_EXEC_DEPS} tbb_2019 felixbase4 netio4)
   set(YARR_LIB_DEPS ${YARR_LIB_DEPS} tbb netio)
