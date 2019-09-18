@@ -38,13 +38,9 @@ Rd53aLinPixelModel::~Rd53aLinPixelModel()
 // functions for modeling pixel responses
 float Rd53aLinPixelModel::calculateThreshold(uint32_t VthresholdLin)
 {
-	float modelVthresholdLin = (VthresholdLin_gauss / 10.0) * VthresholdLin;
-	float threshold = modelVthresholdLin;
+	float threshold = VthresholdLin_gauss + VthresholdLin;
 
-	if (threshold < 0)
-	{
-		threshold = 0;
-	}
+	if (threshold < 0) threshold = 0;
 
 	return threshold;
 }

@@ -38,13 +38,9 @@ Rd53aDiffPixelModel::~Rd53aDiffPixelModel()
 // functions for modeling pixel responses
 float Rd53aDiffPixelModel::calculateThreshold(uint32_t Vth1Diff, uint32_t Vth2Diff)
 {
-	float modelVthDiff = (VthDiff_gauss / 10.0) * (Vth1Diff - Vth2Diff);
-	float threshold = modelVthDiff;
+	float threshold = VthDiff_gauss + (Vth1Diff - Vth2Diff);
 
-	if (threshold < 0)
-	{
-		threshold = 0;
-	}
+	if (threshold < 0) threshold = 0;
 
 	return threshold;
 }

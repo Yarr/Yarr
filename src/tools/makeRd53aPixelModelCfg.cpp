@@ -5,7 +5,7 @@
 #include "storage.hpp"
 using namespace Gauss;
 
-void makeFE(float VthresholdLin_mean, float VthresholdLin_sigma, float noise_sigma_mean, float noise_sigma_sigma, std::vector<float> &VthresholdLin_mean_vector, std::vector<float> &VthresholdLin_sigma_vector, std::vector<float> &VthresholdLin_gauss_vector, std::vector<float> &noise_sigma_mean_vector, std::vector<float> &noise_sigma_sigma_vector, std::vector<float> &noise_sigma_gauss_vector, bool isSync=false);
+void makeFE(float Vthreshold_mean, float Vthreshold_sigma, float noise_sigma_mean, float noise_sigma_sigma, std::vector<float> &Vthreshold_mean_vector, std::vector<float> &Vthreshold_sigma_vector, std::vector<float> &Vthreshold_gauss_vector, std::vector<float> &noise_sigma_mean_vector, std::vector<float> &noise_sigma_sigma_vector, std::vector<float> &noise_sigma_gauss_vector, bool isSync=false);
 
 int main(int argc, char * argv[])
 {
@@ -27,20 +27,20 @@ int main(int argc, char * argv[])
 	std::ofstream file(output_file);
 	nlohmann::json j;
 
-        std::vector<float> VthresholdLin_mean_vector; VthresholdLin_mean_vector.reserve(400 * 192);
-        std::vector<float> VthresholdLin_sigma_vector; VthresholdLin_sigma_vector.reserve(400 * 192);
-        std::vector<float> VthresholdLin_gauss_vector; VthresholdLin_gauss_vector.reserve(400 * 192);
+        std::vector<float> Vthreshold_mean_vector; Vthreshold_mean_vector.reserve(400 * 192);
+        std::vector<float> Vthreshold_sigma_vector; Vthreshold_sigma_vector.reserve(400 * 192);
+        std::vector<float> Vthreshold_gauss_vector; Vthreshold_gauss_vector.reserve(400 * 192);
         std::vector<float> noise_sigma_mean_vector; noise_sigma_mean_vector.reserve(400 * 192);
         std::vector<float> noise_sigma_sigma_vector; noise_sigma_sigma_vector.reserve(400 * 192);
         std::vector<float> noise_sigma_gauss_vector; noise_sigma_gauss_vector.reserve(400 * 192);
 
-	makeFE(10, 0, 400, 100, VthresholdLin_mean_vector, VthresholdLin_sigma_vector, VthresholdLin_gauss_vector, noise_sigma_mean_vector, noise_sigma_sigma_vector, noise_sigma_gauss_vector, true);		// Sync, implement it as Lin with 0 threshold dispersion
-	makeFE(10, 2, 400, 100, VthresholdLin_mean_vector, VthresholdLin_sigma_vector, VthresholdLin_gauss_vector, noise_sigma_mean_vector, noise_sigma_sigma_vector, noise_sigma_gauss_vector);		// Lin
-	makeFE(10, 2, 10, 10, VthresholdLin_mean_vector, VthresholdLin_sigma_vector, VthresholdLin_gauss_vector, noise_sigma_mean_vector, noise_sigma_sigma_vector, noise_sigma_gauss_vector);		// Diff
+	makeFE(0, 10, 80, 10, Vthreshold_mean_vector, Vthreshold_sigma_vector, Vthreshold_gauss_vector, noise_sigma_mean_vector, noise_sigma_sigma_vector, noise_sigma_gauss_vector, true);		// Sync
+	makeFE(0, 10, 80, 10, Vthreshold_mean_vector, Vthreshold_sigma_vector, Vthreshold_gauss_vector, noise_sigma_mean_vector, noise_sigma_sigma_vector, noise_sigma_gauss_vector);		// Lin
+	makeFE(0, 60, 40, 10, Vthreshold_mean_vector, Vthreshold_sigma_vector, Vthreshold_gauss_vector, noise_sigma_mean_vector, noise_sigma_sigma_vector, noise_sigma_gauss_vector);		// Diff
 	
-	j["VthresholdLin_mean_vector"] = VthresholdLin_mean_vector;
-	j["VthresholdLin_sigma_vector"] = VthresholdLin_sigma_vector;
-	j["VthresholdLin_gauss_vector"] = VthresholdLin_gauss_vector;
+	j["Vthreshold_mean_vector"] = Vthreshold_mean_vector;
+	j["Vthreshold_sigma_vector"] = Vthreshold_sigma_vector;
+	j["Vthreshold_gauss_vector"] = Vthreshold_gauss_vector;
 	j["noise_sigma_mean_vector"] = noise_sigma_mean_vector;
 	j["noise_sigma_sigma_vector"] = noise_sigma_sigma_vector;
 	j["noise_sigma_gauss_vector"] = noise_sigma_gauss_vector;
@@ -48,16 +48,16 @@ int main(int argc, char * argv[])
 	file.close();
 }
 
-void makeFE(float VthresholdLin_mean, float VthresholdLin_sigma, float noise_sigma_mean, float noise_sigma_sigma, std::vector<float> &VthresholdLin_mean_vector, std::vector<float> &VthresholdLin_sigma_vector, std::vector<float> &VthresholdLin_gauss_vector, std::vector<float> &noise_sigma_mean_vector, std::vector<float> &noise_sigma_sigma_vector, std::vector<float> &noise_sigma_gauss_vector, bool isSync){
+void makeFE(float Vthreshold_mean, float Vthreshold_sigma, float noise_sigma_mean, float noise_sigma_sigma, std::vector<float> &Vthreshold_mean_vector, std::vector<float> &Vthreshold_sigma_vector, std::vector<float> &Vthreshold_gauss_vector, std::vector<float> &noise_sigma_mean_vector, std::vector<float> &noise_sigma_sigma_vector, std::vector<float> &noise_sigma_gauss_vector, bool isSync){
   unsigned nCol = isSync ? 128 : 136;
   unsigned nRow = 192;
   for (unsigned col = 1; col <= nCol; col++){
     for (unsigned row = 1; row <= nRow; row++){
-      float VthresholdLin_gauss = rand_normal(VthresholdLin_mean, VthresholdLin_sigma, 0);
+      float Vthreshold_gauss = rand_normal(Vthreshold_mean, Vthreshold_sigma, 1);
       float noise_sigma_gauss = rand_normal(noise_sigma_mean, noise_sigma_sigma, 0);
-      VthresholdLin_mean_vector.push_back(VthresholdLin_mean);
-      VthresholdLin_sigma_vector.push_back(VthresholdLin_sigma);
-      VthresholdLin_gauss_vector.push_back(VthresholdLin_gauss);
+      Vthreshold_mean_vector.push_back(Vthreshold_mean);
+      Vthreshold_sigma_vector.push_back(Vthreshold_sigma);
+      Vthreshold_gauss_vector.push_back(Vthreshold_gauss);
       noise_sigma_mean_vector.push_back(noise_sigma_mean);
       noise_sigma_sigma_vector.push_back(noise_sigma_sigma);
       noise_sigma_gauss_vector.push_back(noise_sigma_gauss);
