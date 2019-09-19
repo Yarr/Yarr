@@ -72,44 +72,58 @@ void StarChips::init(HwController *arg_core, unsigned arg_txChannel, unsigned ar
     txChannel = arg_txChannel;
     rxChannel = arg_rxChannel;
     active = true;
+
 }
 
 void StarChips::reset(){
-	std::cout << "Global reseting all HCC and ABC on the same control segment " << std::endl;
+	std::cout << "Global reseting all HCC and ABC on the same LCB control segment " << std::endl;
 
-	// global resets registers
+	uint8_t delay = 0; //2 bits BC delay
 
-//	write(ABC_SOFT_RESET);
-//	write(ABC_FASTCLUSTERFINDER_RESET);
-//    write(ABC_BC_RESET);
-//    write(ABC_L0ID_RESET);
-//    write(ABC_SEU_RESET);
-//
-//    write(HCC_SOFT_RESET);
-//	write(HCC_LOGIC_RESET);
-//
-//	write(SYS_RESET);
-
+//	sendCmd(LCB::fast_command(LCB::LOGIC_RESET, delay) );
+	sendCmd(LCB::fast_command(LCB::ABC_REG_RESET, delay) );
+	sendCmd(LCB::fast_command(LCB::ABC_HIT_COUNT_RESET, delay) );
+	sendCmd(LCB::fast_command(LCB::ABC_SLOW_COMMAND_RESET, delay) );
+	sendCmd(LCB::fast_command(LCB::ABC_SEU_RESET, delay) );
 }
 
 void StarChips::configure() {
-	m_txcore->writeFifo(0x0100);
-	m_txcore->writeFifo(0xFFFF);
-	m_txcore->writeFifo(0x0100);
-	m_txcore->writeFifo(0xFFFF);
-//	this->writeRegisters();
+	this->writeRegisters();
+
+}
+
+void StarChips::sendCmd(uint16_t cmd){
+//	std::cout << std::hex <<cmd << std::dec<< "_"<<std::endl;
+
+	m_txcore->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
+	m_txcore->writeFifo((cmd << 16) + 0);
+	m_txcore->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
 	m_txcore->releaseFifo();
 
 }
 
 void StarChips::sendCmd(std::array<uint16_t, 9> cmd){
 //    std::cout << __PRETTY_FUNCTION__ << "  txChannel: " << getTxChannel() << " cmd:  " <<  cmd << std::endl;
+//	for( auto a : cmd ) {
+//		std::cout << std::hex <<a << std::dec<< "_";
+//	}
+//	std::cout <<  std::endl;
 
+//	std::cout << std::hex <<((cmd[0] << 16) + cmd[1])<< std::dec<< "_";
+//	std::cout << std::hex <<((cmd[2] << 16) + cmd[3]) << std::dec<< "_";
+//	std::cout << std::hex <<((cmd[4] << 16) + cmd[5])<< std::dec<< "_";
+//	std::cout << std::hex <<((cmd[6] << 16) + cmd[7])<< std::dec<< "_";
+//	std::cout << std::hex <<((cmd[8] << 16) + 0)<< std::dec<< "_";
+//	std::cout <<  std::endl;
+	m_txcore->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
+	m_txcore->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
 	m_txcore->writeFifo((cmd[0] << 16) + cmd[1]);
 	m_txcore->writeFifo((cmd[2] << 16) + cmd[3]);
 	m_txcore->writeFifo((cmd[4] << 16) + cmd[5]);
 	m_txcore->writeFifo((cmd[6] << 16) + cmd[7]);
 	m_txcore->writeFifo((cmd[8] << 16) + 0);
+	m_txcore->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
+	m_txcore->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
 	m_txcore->releaseFifo();
 
 }
@@ -117,16 +131,20 @@ void StarChips::sendCmd(std::array<uint16_t, 9> cmd){
 
 bool StarChips::writeRegisters(){
 	//Write all register to their setting, both for HCC & all ABCs
-	//std::cout << "!!!! m_nABC is " << m_nABC << std::endl;
+	std::cout << "!!!! m_nABC is " << m_nABC << std::endl;
 	for( int iChip = 0; iChip < m_nABC+1; ++iChip){
 		int this_chipID = m_chipIDs[iChip];
-		//std::cout << "Starting on chip " << this_chipID << " with length " << registerMap[this_chipID].size() << std::endl;
+		if (iChip==1) this->reset();
+		std::cout << "Starting on chip " << this_chipID << " with length " << registerMap[this_chipID].size() << std::endl;
 		std::map<unsigned, Register*>::iterator map_iter;
 		for(map_iter=registerMap[this_chipID].begin(); map_iter!= registerMap[this_chipID].end(); ++map_iter){
+			if( m_debug ) {
+				std::cout << "Writing Register "<< map_iter->first << " for chipID " << this_chipID << std::endl;
+			}
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			setAndWriteRegister(map_iter->first, -1, this_chipID);
 		}
-		//std::cout << "Done with " << iChip << std::endl;
+		std::cout << "Done with " << iChip << std::endl;
 	}
 
 	return true;
@@ -148,6 +166,7 @@ void StarChips::readRegisters(){
 		int this_chipID = m_chipIDs[iChip];
 		std::map<unsigned, Register*>::iterator map_iter;
 		for(map_iter=registerMap[this_chipID].begin(); map_iter!= registerMap[this_chipID].end(); ++map_iter){
+			if(this_chipID==0 && map_iter->first==16) continue;
 			if( m_debug ) {
 				std::cout <<"Hcc id: " << m_hccID << std::endl;
 				std::cout << "Calling readRegister for chipID " << this_chipID << " register " << map_iter->first << std::endl;

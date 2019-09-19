@@ -49,11 +49,12 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
     void fromFileJson(json&) override;
 
     void makeGlobal() override final {
-    	m_hccID = 31;
+    	m_hccID = 15;
     }
 
     void reset();
     void sendCmd(std::array<uint16_t, 9> cmd);
+    void sendCmd(uint16_t cmd);
 
     bool writeRegisters();
     void readRegisters();
@@ -65,13 +66,14 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
 
     void setAndWriteRegister(int addr, int64_t  value=-1, int32_t chipID = 0){
   	  if(value>0){
+  		std::cout << value << std::endl;
   		  registerMap[chipID][addr]->setValue((uint32_t) value);
   	  }
   	  if( chipID == 0 ){
-  		  if(m_debug)  std::cout << "Doing HCC setAndWriteRegister with value " << registerMap[chipID][addr]->getValue() << std::endl;
+  		  if(m_debug)  std::cout << "Doing HCC setAndWriteRegister with value 0x" << std::hex << std::setfill('0') << std::setw(8) << registerMap[chipID][addr]->getValue() <<std::dec  << std::endl;
   		  sendCmd(write_hcc_register(addr, registerMap[chipID][addr]->getValue(), m_hccID));
   	  }else{
-  		  if(m_debug)  std::cout << "Doing ABC " << chipID << " setAndWriteRegister with value " << registerMap[chipID][addr]->getValue() << std::endl;
+  		  if(m_debug)  std::cout << "Doing ABC " << chipID << " setAndWriteRegister with value 0x" << std::hex << std::setfill('0') << std::setw(8) << registerMap[chipID][addr]->getValue() <<std::dec  << std::endl;
   		  sendCmd(write_abc_register(addr, registerMap[chipID][addr]->getValue(), m_hccID, chipID));
 
   	  }
