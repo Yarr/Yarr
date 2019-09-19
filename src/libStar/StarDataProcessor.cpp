@@ -95,9 +95,13 @@ void process_data(RawData &curIn,
                   Fei4Data &curOut) {
     StarChipPacket packet(true);
 
+    packet.add_word(0x13C); //add SOP, only to make decoder happy
     for(unsigned iw=0; iw<curIn.words; iw++) {
-        packet.add_word(curIn.buf[iw]);
+        for(int i=0; i<4;i++){
+            packet.add_word((curIn.buf[iw]>>i*8)&0xFF);
+        }
     }
+    packet.add_word(0x1DC); //add EOP, only to make decoder happy
 
     packet.parse();
     // std::cout << __PRETTY_FUNCTION__ << ": Data for Channel " << channel << "\n";
