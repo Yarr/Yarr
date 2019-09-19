@@ -49,7 +49,7 @@ void StarCfg::configure_HCC_Registers() {
 
 
 ////  Register* this_Reg = registerMap[0][addr];
-//    registerMap[0][16]->setValue(0x00000000);
+    registerMap[0][16]->setValue(0x00000000);
     registerMap[0][32]->setValue(0x00000000);
     registerMap[0][33]->setValue(0x00000000);
     registerMap[0][34]->setValue(0x00000000);
@@ -109,7 +109,7 @@ void StarCfg::configure_ABC_Registers(int chipID) {
 
     //// Initialize 32-bit register with default values
     ////#special reg
-    registerMap[chipID][0]->setValue(0x00000000);
+    registerMap[chipID][0]->setValue(0x00000004);
 
     ////#Analog and DCS regs
     registerMap[chipID][1]->setValue(0x00000000);
