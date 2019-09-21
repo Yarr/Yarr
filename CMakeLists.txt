@@ -33,7 +33,7 @@ endif()
 
 set(TARGET_INSTALL_AREA ${PROJECT_SOURCE_DIR})
 set(SHARED_INSTALL_AREA ${PROJECT_SOURCE_DIR}/installed/)
-add_compile_options(-std=c++17 -g)
+add_compile_options(-std=c++17)
 
 include(cmake/CMakeLists.txt.external)
 
