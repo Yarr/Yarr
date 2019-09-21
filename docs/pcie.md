@@ -133,6 +133,25 @@ Success! No errors.
 
 - Your system is now ready to use
 
+
+## Troubleshooting
+
+If you encounter errors concerning permissions, e.g. 
+```
+# open_hw_target
+ERROR: [Labtoolstcl 44-469] There is no current hw_target.
+```
+you might have to add a ``udev`` rule. Run ``lsusb`` and identify your JTAG cable, e.g. ``Bus 001 Device 007: ID 0403:6014``.
+Open ``/etc/udev/rules.d/99-usb.rules`` and add the line
+```
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6014", MODE:="0666"
+```
+with the correct vendor and product ID from ``lsusb``. Reload ``udev`` rules with
+```
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+
+
 ## Adapter Cards
 
 ### Ohio RD53A Multi Module Adapter
