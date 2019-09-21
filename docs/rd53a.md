@@ -37,7 +37,7 @@ Basics tuning routine:
 - `std_digitalscan.json` (with `-m 1` to reset masks)
 - `std_analogscan.json`
 - `diff_tune_globalthreshold.json` (good starting threshold target is 1000e, resets prev. TDACs)
-- `diff_retune_pixelthreshold.json` (1000e target again)
+- `diff_tune_pixelthreshold.json` (1000e target again)
 - `diff_tune_finepixelthreshold.json` (1000e target again)
 - `lin_tune_globalthreshold.json` (good starting threshold target is 2000e, resets prev. TDACs)
 - `lin_tune_pixelthreshold.json` (2000e again)
@@ -290,14 +290,16 @@ Instead of the `specCfg.json` `specCfgExtTrigger.json` is to be used. The Hit-Or
 
 ### External trigger
 
-One easy way to use the external trigger scan is to connect a scintillator to a TLU and use the DUT interface with the RD45 outputs through a RJ45-DP adapter.
+One easy way to use the external trigger scan is to connect a scintillator to a TLU and use the DUT interface with the RJ45 outputs through a RJ45-DP adapter (for EUDET TLU) or with the HDMI outputs using a HDMI-miniDP cable (AIDA TLU).
 
 #### Hardware
- * a scintillator with a PMT
- * a TLU
- * a RJ45 cable
- * a RJ45-DP converter
- * a second DP-miniDP cable
+ - a scintillator with a PMT
+ - an EUDET TLU
+   - a RJ45 cable
+   - a RJ45-DP converter
+   - a second DP-miniDP cable
+ - OR an AIDA TLU
+   - HDMI-miniDP cable
  
 #### Installation
 
