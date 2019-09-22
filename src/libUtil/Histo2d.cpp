@@ -249,6 +249,36 @@ void Histo2d::toFile(std::string prefix, std::string dir, bool header) {
     file.close();
 }
 
+bool Histo2d::fromFile(std::string filename) {
+    std::fstream file(filename, std::fstream::in);
+    // Check for header
+    std::string line;
+    std::getline(file, line);
+    if (line.find("Histo2d") == std::string::npos) {
+        std::cerr << "ERROR: Tried loading 2d Histogram from file " << filename << ", but file has non or incorrect header" << std::endl;
+        file.close();
+        return false;
+    } else {
+        file >> name;
+        file >> xAxisTitle;
+        file >> yAxisTitle;
+        file >> zAxisTitle;
+        file >> xbins >> xlow >> xhigh;
+        file >> ybins >> ylow >> yhigh;
+        file >> underflow >> overflow;
+    }
+    // Data
+    delete[] data;
+    data = new double[xbins*ybins];
+    for (unsigned int i=0; i<ybins; i++) {
+        for (unsigned int j=0; j<xbins; j++) {
+            file >> data[i+(j*ybins)];
+        }
+    }
+    file.close();
+    return true;
+}
+
 void Histo2d::plot(std::string prefix, std::string dir) {
     std::cout << "Plotting " << HistogramBase::name << std::endl;
     // Put raw histo data in tmp file

@@ -8,6 +8,7 @@
 
 #include "Histo3d.h"
 
+#include <iostream>
 #include <cmath>
 #include <fstream>
 
@@ -262,6 +263,39 @@ void Histo3d::toFile(std::string prefix, std::string dir, bool header) {
         file << std::endl;
     }
     file.close();
+}
+
+bool Histo3d::fromFile(std::string filename) {
+    std::fstream file(filename, std::fstream::in);
+    // Check for header
+    std::string line;
+    std::getline(file, line);
+    if (line.find("Histo3d") == std::string::npos) {
+        std::cerr << "ERROR: Tried loading 3d Histogram from file " << filename << ", but file has non or incorrect header" << std::endl;
+        file.close();
+        return false;
+    } else {
+        file >> name;
+        file >> xAxisTitle;
+        file >> yAxisTitle;
+        file >> zAxisTitle;
+        file >> xbins >> xlow >> xhigh;
+        file >> ybins >> ylow >> yhigh;
+        file >> zbins >> zlow >> zhigh;
+        file >> underflow >> overflow;
+    }
+    // Data
+    delete[] data;
+    data = new uint16_t[xbins*ybins*zbins];
+    for (unsigned int i=0; i<ybins; i++) {
+        for (unsigned int j=0; j<xbins; j++) {
+            for (unsigned int k=0; k<zbins; k++) {
+                file >> data[(i+(j*ybins))*zbins+k];
+            }
+        }
+    }
+    file.close();
+    return true;
 }
 
 void Histo3d::plot(std::string prefix, std::string dir) {
