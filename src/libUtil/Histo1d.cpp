@@ -179,7 +179,7 @@ bool Histo1d::fromFile(std::string filename) {
     }
     // Data
     delete[] data;
-    data = new double(bins);
+    data = new double[bins];
     for (unsigned int i=0; i<bins; i++) {
         file >> data[i];
     }
