@@ -490,7 +490,7 @@ std::string DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_pat
     this->checkFile(i_log_path, "Check environmental data file of key '"+i_key+"' in file "+i_dcs_path+".");
     std::ifstream log_ifs(i_log_path);
     std::size_t suffix = i_log_path.find_last_of('.');
-    if (suffix!=std::string::npos) {
+    if (suffix==std::string::npos) {
         std::string message = "Environmental data file must be 'dat' or 'csv' format: "+i_log_path;
         std::string function = __PRETTY_FUNCTION__;
         this->alert(function, message); return "ERROR";

@@ -397,7 +397,7 @@ def __dcs(i_tr_oid, i_ctr_oid, i_env_key, i_env_j):
         elif extenstion=='csv': 
             saparator = ','
         else:
-            message = 'This file ({}) format is not supported by Local DB, set to "dcs" or "csv"'.format(i_env_j['path'])
+            message = 'This file ({}) format is not supported by Local DB, set to "dat" or "csv"'.format(i_env_j['path'])
             alert(message, 'warning')
             return
         env_file = open(i_env_j['path'],'r')
