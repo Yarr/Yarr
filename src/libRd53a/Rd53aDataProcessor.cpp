@@ -30,7 +30,6 @@ void Rd53aDataProcessor::init() {
     for (auto &it : *m_outMap) {
         activeChannels.push_back(it.first);
     }
-    scanDone = false;
 }
 
 void Rd53aDataProcessor::run() {
@@ -53,20 +52,14 @@ void Rd53aDataProcessor::join() {
 void Rd53aDataProcessor::process() {
     while(true) {
         std::unique_lock<std::mutex> lk(mtx);
-        m_input->cv.wait( lk, [&] { return scanDone || !m_input->empty(); } );
+        m_input->wait_not_empty_or_done();
 
         process_core();
-        for (unsigned i=0; i<activeChannels.size(); i++) {
-            m_outMap->at(activeChannels[i]).cv.notify_all(); // notification to the downstream
-        }
         // TODO the timing on these seems sensitive
         std::this_thread::sleep_for(std::chrono::microseconds(200));
-        if( scanDone ) {
+        if( m_input->is_done() ) {
             std::this_thread::sleep_for(std::chrono::microseconds(200));
-            process_core(); // this line is needed if the data comes in before scanDone is changed.
-            for (unsigned i=0; i<activeChannels.size(); i++) {
-                m_outMap->at(activeChannels[i]).cv.notify_all(); // notification to the downstream
-            }
+            process_core(); // this line is needed if the data comes in before done_flag is changed.
             break;
         }
     }

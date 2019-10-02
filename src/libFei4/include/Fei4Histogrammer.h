@@ -80,8 +80,6 @@ class Fei4Histogrammer : public DataProcessor {
 
         ClipBoard<EventDataBase>& getInput() { return *input; }
 
-        static bool processorDone;
-        
     private:
         ClipBoard<EventDataBase> *input;
         ClipBoard<HistogramBase> *output;

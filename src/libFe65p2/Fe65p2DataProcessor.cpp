@@ -27,7 +27,6 @@ void Fe65p2DataProcessor::init() {
     for(std::map<unsigned, ClipBoard<EventDataBase> >::iterator it = outMap->begin(); it != outMap->end(); ++it) {
         activeChannels.push_back(it->first);
     }
-    scanDone = false;
 }
 
 void Fe65p2DataProcessor::run() {
@@ -49,12 +48,11 @@ void Fe65p2DataProcessor::join() {
 void Fe65p2DataProcessor::process() {
   while(true) {
     std::unique_lock<std::mutex> lk(mtx);
-    input->cv.wait( lk, [&] { return scanDone or !input->empty(); } );
+    input->wait_not_empty_or_done();
     
     process_core();
     
-    if( scanDone ) {
-      input->cv.notify_all();
+    if( input->is_done() ) {
       break;
     }
   }
