@@ -13,8 +13,6 @@
 #include "HwController.h"
 #include "EmuTxCore.h"
 #include "EmuRxCore.h"
-#include "EmuShm.h"
-
 
 #include "RingBuffer.h"
 
@@ -47,6 +45,14 @@ EmuController<FE, ChipEmu>::~EmuController() {
     emu->run = false;
   }
   emuThreads[0].join();
+  if(emu) {
+    delete emu;
+  }
+
+  auto tx = EmuTxCore<FE>::getCom();
+  auto rx = EmuRxCore<FE>::getCom();
+  delete rx;
+  delete tx;
 }
 
 
