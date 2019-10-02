@@ -1,4 +1,7 @@
-if(CMAKE_BUILD_TYPE MATCHES Debug)
+if(CMAKE_BUILD_TYPE MATCHES Asan)
+    add_compile_options(-g -fsanitize=address -fsanitize=undefined)
+    add_link_options(-fsanitize=address -fsanitize=undefined)
+elseif(CMAKE_BUILD_TYPE MATCHES Debug)
     add_compile_options(-g)
 else()
     add_compile_options(-O2)
