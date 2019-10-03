@@ -1,8 +1,6 @@
 /*
  */
 
-//#include "NetioTxCore.h"
-#include "BitStream.h"
 #include <unistd.h>
 #include <bitset>
 #include "include/StarTriggerLoop.h"
@@ -119,14 +117,12 @@ void StarTriggerLoop::setTrigDelay(unsigned int delay) {
 }
 
 void StarTriggerLoop::setNoInject() {
-	m_trigWord[0] = 0;
-	m_trigWord[1] = 0;
-	m_trigWord[2] = 0;
-	m_trigWord[3] = 0;
+	m_trigWord[0] = (LCB::IDLE << 16) + LCB::IDLE;
+	m_trigWord[1] = (LCB::IDLE << 16) + LCB::IDLE;
+	m_trigWord[2] = (LCB::IDLE << 16) + LCB::IDLE;
+	m_trigWord[3] = LCB::l0a_mask(4, 10, false) | LCB::IDLE;
 	m_trigWordLength = 4;
 }
-
-
 
 
 void StarTriggerLoop::writeConfig(json &config) {
