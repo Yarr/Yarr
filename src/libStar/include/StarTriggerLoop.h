@@ -12,8 +12,6 @@
 #include "LoopActionBase.h"
 #include "StarChips.h"
 
-
-
 class StarTriggerLoop: public LoopActionBase {
     public:
         StarTriggerLoop();
@@ -36,18 +34,6 @@ class StarTriggerLoop: public LoopActionBase {
         void writeConfig(json &config);
         void loadConfig(json &config);
 
-        int bitlen(uint64_t cmd) { //@@@
-       	 int length = 0;
-       	 while (cmd) {
-       		 cmd >>= 1;
-       		 length += 1;
-       	 }
-       	 return length;
-        }
-
-
-
-
     private:
         uint32_t m_trigCnt;
         uint32_t m_trigDelay;
@@ -57,14 +43,11 @@ class StarTriggerLoop: public LoopActionBase {
         uint32_t m_trigWordLength;
         std::array<uint32_t, 32> m_trigWord;
         bool m_noInject;
-        bool m_extTrigger;
-        bool isInner;
 
         void init();
         void end();
         void execPart1();
         void execPart2();
-
 };
 
 #endif

@@ -14,8 +14,6 @@ StarTriggerLoop::StarTriggerLoop() : LoopActionBase() {
 	m_trigFreq = 1e3; // 1kHz
 	m_trigTime = 10; // 10s
 	m_noInject = false;
-	m_extTrigger = false;
-	isInner = false;
 	min = 0;
 	max = 0;
 	step = 1;
@@ -131,7 +129,6 @@ void StarTriggerLoop::writeConfig(json &config) {
 	config["trig_time"] = m_trigTime;
 	config["l0_latency"] = m_trigDelay;
 	config["noInject"] = m_noInject;
-	config["extTrigger"] = m_extTrigger;
 }
 
 void StarTriggerLoop::loadConfig(json &config) {
@@ -150,9 +147,6 @@ void StarTriggerLoop::loadConfig(json &config) {
 
 	if (!config["noInject"].empty())
 		m_noInject = config["noInject"];
-
-	if (!config["extTrigger"].empty())
-		m_extTrigger = config["extTrigger"];
 
 	if (!config["verbose"].empty())
 		verbose = config["verbose"];
