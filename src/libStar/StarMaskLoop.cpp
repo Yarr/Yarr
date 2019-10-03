@@ -37,20 +37,19 @@ void StarMaskLoop::init() {
 
     	for(int iChip = 1; iChip < static_cast<StarChips*> (fe)->m_nABC+1; ++iChip){ //exclude iChip=0 which is the Hcc
 
-    		int this_chipID = static_cast<StarChips*> (fe)->m_chipIDs[iChip];
 //    		std::cout << "static_cast<Hcc*> (fe)->m_nABC: " << static_cast<Hcc*> (fe)->m_nABC << "  " << iChip << " ichip with id: " << this_chipID << std::endl;
 //    		    	std::cout << "Star_masks[" << m_cur << "]: " << std::hex <<  Star_masks[m_cur] <<std::dec << std::endl;
 //    		    	std::cout << "Star_calEn[" << m_cur << "]: " << std::hex <<  Star_calEn[m_cur] << std::dec<< std::endl;
     		int index =0;
     		for (int i=16; i<24; i++){
 //    			std::cout << "write mask: "<< i << "  0x" << std::hex << std::setfill('0') << std::setw(8)<< Star_masks[min][index] <<std::dec<< std::endl;
-    			static_cast<StarChips*> (fe)->setAndWriteRegister(i, star_masks[min][index], this_chipID );  // strip 0's mask starts from reg 16,
+    			static_cast<StarChips*> (fe)->setAndWriteABCRegister(i, star_masks[min][index], iChip );  // strip 0's mask starts from reg 16,
     			index++;
     		}
     		index =0;
     		for (int i=104; i<112; i++){
 //    			std::cout << "write cal: "<< i  << " 0x" << std::hex << std::setfill('0') << std::setw(8)<< Star_calEn[min][index] << std::dec<< std::endl;
-    			static_cast<StarChips*> (fe)->setAndWriteRegister(i, star_calEn[min][index], this_chipID);  // strip 0's mask starts from reg 16,
+    			static_cast<StarChips*> (fe)->setAndWriteABCRegister(i, star_calEn[min][index], iChip);  // strip 0's mask starts from reg 16,
     			index++;
     		}
     	}
@@ -105,19 +104,18 @@ void StarMaskLoop::execPart2() {
     		 for( int iChip = 1; iChip < static_cast<StarChips*> (fe)->m_nABC+1; ++iChip){ //exclude iChip=0 which is the Hcc
 //    			     	 std::cout << "Star_masks[" << m_cur << "]: " << std::hex <<  Star_masks[m_cur] <<std::dec << std::endl;
 //    			     	 std::cout << "Star_calEn[" << m_cur << "]: " << std::hex <<  Star_calEn[m_cur] << std::dec<< std::endl;
-    			 int this_chipID = static_cast<StarChips*> (fe)->m_chipIDs[iChip];
 //    	    	 std::cout << "static_cast<Hcc*> (fe)->m_nABC: " << static_cast<Hcc*> (fe)->m_nABC << "  " << iChip << " ichip with id: " << this_chipID << std::endl;
 
     			 int index=0;
     			 for (int j=16; j<24; j++){
 //    				 std::cout << "write mask: "<< i << "  0x" << std::hex << std::setfill('0') << std::setw(8)<< Star_masks[m_cur][index] <<std::dec<< std::endl;
-    				 static_cast<StarChips*> (fe)->setAndWriteRegister(j, star_masks[m_cur][index], this_chipID);  // strip 0's mask starts from reg 16,
+    				 static_cast<StarChips*> (fe)->setAndWriteABCRegister(j, star_masks[m_cur][index], iChip);  // strip 0's mask starts from reg 16,
     				 index++;
     			 }
     			 index=0;
     			 for (int j=104; j<112; j++){
 //    				 std::cout << "write cal: "<< i  << " 0x" << std::hex << std::setfill('0') << std::setw(8)<< Star_calEn[m_cur][index] <<std::dec<< std::endl;
-    				 static_cast<StarChips*> (fe)->setAndWriteRegister(j, star_calEn[m_cur][index], this_chipID);  // strip 0's mask starts from reg 104,.
+    				 static_cast<StarChips*> (fe)->setAndWriteABCRegister(j, star_calEn[m_cur][index], iChip);  // strip 0's mask starts from reg 104,.
     				 index++;
     			 }
 
