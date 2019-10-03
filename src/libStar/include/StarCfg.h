@@ -82,7 +82,6 @@ class StarCfg : public FrontEndCfg {
     return 0;
   }
 
-
   int getSubRegisterParentAddr(int chipIndex, std::string subRegName) {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
       return m_hcc.getSubRegisterParentAddr(subRegName);
@@ -137,7 +136,6 @@ class StarCfg : public FrontEndCfg {
                         [this, chipID](auto it) { return it.getABCchipID() == chipID; });
   }
 
- private:
 
   HccCfg m_hcc;
 
