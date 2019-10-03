@@ -40,8 +40,11 @@ class StarTriggerLoop: public LoopActionBase {
         double m_trigFreq;
         double m_trigTime;
 
+        // How many words of pattern buffer to use
         uint32_t m_trigWordLength;
+        // This matches the pattern buffer in TxCore
         std::array<uint32_t, 32> m_trigWord;
+
         bool m_noInject;
 
         void init();

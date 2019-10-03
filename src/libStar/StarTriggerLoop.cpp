@@ -76,22 +76,32 @@ void StarTriggerLoop::end() {
 void StarTriggerLoop::setTrigWord() {
 // latency (unit::1 BC),   1 LCB::frame (16 bits) covers 4 BCs, 1 trigWord (32 bits) covers 8 BCs
 
-//	m_trigWord[0] = (LCB::IDLE << 16) + LCB::fast_command(LCB::ABC_DIGITAL_PULSE, 0);
+	// Last word goes first in buffer
+	m_trigWord[0] = (LCB::l0a_mask(1, 0, false) << 16) + LCB::IDLE;
 
-	m_trigWord[0] = (LCB::IDLE << 16) + LCB::fast_command(LCB::ABC_CAL_PULSE, 0);
-
-	//TODO set proper trigger delay
-	unsigned i = 1;
-	for ( ; i<m_trigDelay; i++) { //m_trigDelay has unit of 8 BCs which is not ideal
-		m_trigWord[i] = (LCB::IDLE << 16) + LCB::IDLE;
+	unsigned int full_words = m_trigDelay / 8;
+	if(full_words > m_trigWord.size() - 2) {
+		std::cerr << __PRETTY_FUNCTION__ << " : Trigger delay is either too large for pattern buffer!\n";
 	}
 
-	m_trigWord[i+1] = (LCB::l0a_mask(1, 0, false) << 16) + LCB::IDLE;
-	m_trigWord[i+2] = (LCB::IDLE << 16) + LCB::IDLE;
+	//TODO verify setting of trigger delay
+	for (unsigned i = 0; i<full_words; i++) {
+		m_trigWord[i+1] = (LCB::IDLE << 16) + LCB::IDLE;
+	}
 
-	m_trigWordLength = i+2;
+	unsigned int remainder = m_trigDelay - (full_words * 8);
 
-std::cout <<"----m_trigWordLength: "<< m_trigWordLength << std::endl;
+	// Final word in buffer goes first
+	auto cmd_word = LCB::fast_command(LCB::ABC_CAL_PULSE, remainder%4);
+	//   Or LCB::ABC_DIGITAL_PULSE
+	if(remainder < 4) {
+		m_trigWord[full_words] = (LCB::IDLE << 16) + cmd_word;
+	} else {
+		m_trigWord[full_words] = (cmd_word << 16) | LCB::IDLE;
+	}
+
+	// Words of delay + trigger and pulse
+	m_trigWordLength = full_words+2;
 
 
 //	78557855785578554766713c715959595959595959595959474b00007855785578557855 --- read ABC reg32
