@@ -5,6 +5,14 @@
 #include <exception>
 #include <iomanip>
 
+#include "logging.h"
+
+namespace {
+
+auto hlog = logging::make_log("scan_helper");
+
+}
+
 namespace ScanHelper {
     
     // Open file and parse into json object
@@ -27,6 +35,8 @@ namespace ScanHelper {
     std::unique_ptr<HwController> loadController(json &ctrlCfg) {
         std::unique_ptr<HwController> hwCtrl = nullptr;
 
+        hlog->info("Loading controller");
+
         // Open controller config file
         std::string controller = ctrlCfg["ctrlCfg"]["type"];
 
@@ -34,6 +44,7 @@ namespace ScanHelper {
 
         if(hwCtrl) {
             std::cout << "-> Found config for controller " << controller << std::endl;
+            hlog->info("Config for controller: {}", controller);
             hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
         } else {
             std::cerr << "#ERROR# Unknown config type: " << ctrlCfg["ctrlCfg"]["type"] << std::endl;
@@ -55,8 +66,10 @@ namespace ScanHelper {
             throw(std::runtime_error("loadChips failure"));
         } else {
             chipType = config["chipType"];
-            std::cout << "Chip Type: " << chipType << std::endl;
-            std::cout << "Found " << config["chips"].size() << " chips defined!" << std::endl;
+            hlog->info("Chip type: {}", chipType);
+            // std::cout << "Chip Type: " << chipType << std::endl;
+            hlog->info("Chip count {}", config["chips"].size());
+            // std::cout << "Found " << config["chips"].size() << " chips defined!" << std::endl;
             // Loop over chips
             for (unsigned i=0; i<config["chips"].size(); i++) {
                 std::cout << "Loading chip #" << i << std::endl;
