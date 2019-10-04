@@ -43,7 +43,6 @@ namespace ScanHelper {
         hwCtrl = StdDict::getHwController(controller);
 
         if(hwCtrl) {
-            std::cout << "-> Found config for controller " << controller << std::endl;
             hlog->info("Config for controller: {}", controller);
             hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
         } else {
@@ -72,7 +71,7 @@ namespace ScanHelper {
             // std::cout << "Found " << config["chips"].size() << " chips defined!" << std::endl;
             // Loop over chips
             for (unsigned i=0; i<config["chips"].size(); i++) {
-                std::cout << "Loading chip #" << i << std::endl;
+                hlog->info("Loading chip #{}", i);
                 json chip = config["chips"][i];
                 std::string chipConfigPath = chip["config"];
                 if (chip["enable"] == 0) {
@@ -85,7 +84,7 @@ namespace ScanHelper {
                     std::ifstream cfgFile(chipConfigPath);
                     if (cfgFile) {
                         // Load config
-                        std::cout << "Loading config file: " << chipConfigPath << std::endl;
+                        hlog->info("Loading config file: {}", chipConfigPath);
                         json cfg;
                         try {
                             cfg = ScanHelper::openJsonFile(chipConfigPath);
