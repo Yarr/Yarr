@@ -10,6 +10,12 @@
 
 #include <iostream>
 
+#include "logging.h"
+
+namespace {
+auto blog = logging::make_log("book_keeper");
+}
+
 Bookkeeper::Bookkeeper(TxCore *arg_tx, RxCore *arg_rx) {
     tx = arg_tx;
     rx = arg_rx;
@@ -44,7 +50,9 @@ void Bookkeeper::addFe(FrontEnd *fe, unsigned txChannel, unsigned rxChannel) {
         feList.back()->clipResult = &resultMap[rxChannel];
         mutexMap[rxChannel];
     }
-    std::cout << __PRETTY_FUNCTION__ << " -> Added FE: Tx(" << txChannel << "), Rx(" << rxChannel << ")" << std::endl;
+
+    // Using macro includes file/line info
+    SPDLOG_LOGGER_INFO(blog, "Added FE: Tx({}), Rx({})", txChannel, rxChannel);
 }
 
 void Bookkeeper::addFe(FrontEnd *fe, unsigned channel) {
