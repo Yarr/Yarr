@@ -8,6 +8,12 @@
 
 #include "Fei4Analysis.h"
 
+#include "logging.h"
+
+namespace {
+auto alog = logging::make_log("fei4_analysis");
+}
+
 bool Fei4Analysis::histogrammerDone = false;
 
 Fei4Analysis::Fei4Analysis() {
@@ -34,7 +40,7 @@ void Fei4Analysis::init() {
 }
 
 void Fei4Analysis::run() {
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
+  alog->info(__PRETTY_FUNCTION__);
     thread_ptr.reset( new std::thread( &Fei4Analysis::process, this ) );
 }
 
@@ -65,7 +71,7 @@ void Fei4Analysis::process() {
         if( histogrammerDone ) {
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
             process_core();  // this line is needed if the data comes in before scanDone is changed.
-            std::cout << __PRETTY_FUNCTION__ << ": histogrammerDone!" << std::endl;
+            alog->info("{}: histogrammerDone!", __PRETTY_FUNCTION__);
             output->cv.notify_all();  // notification to the downstream
             break;
         }
@@ -89,7 +95,7 @@ void Fei4Analysis::process_core() {
 }
 
 void Fei4Analysis::end() {
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
+    alog->info(__PRETTY_FUNCTION__);
     for (unsigned i=0; i<algorithms.size(); i++) {
         algorithms[i]->end();
     }

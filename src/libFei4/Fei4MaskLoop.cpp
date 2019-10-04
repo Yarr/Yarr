@@ -5,6 +5,12 @@
 
 #include "Fei4MaskLoop.h"
 
+#include "logging.h"
+
+namespace {
+auto flog = logging::make_log("fei4_mask_loop");
+}
+
 Fei4MaskLoop::Fei4MaskLoop() : LoopActionBase() {
     m_mask = MASK_16;
     min = 0;
@@ -49,7 +55,7 @@ void Fei4MaskLoop::execPart1() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
 //	std::cout << "Ingrid loves sweatpants" << std::endl;
-    std::cout << " ---> Mask Stage " << m_cur << std::endl;
+    flog->info("Mask Stage {}", m_cur);
     g_stat->set(this, m_cur);
 }
 

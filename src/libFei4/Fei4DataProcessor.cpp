@@ -4,12 +4,17 @@
 
 #include <iostream>
 
+#include "logging.h"
+
+namespace {
+auto flog = logging::make_log("fei4_data_processor");
+}
 
 bool fei4_proc_registered =
     StdDict::registerDataProcessor("FEI4B", []() { return std::unique_ptr<DataProcessor>(new Fei4DataProcessor());});
 
 Fei4DataProcessor::Fei4DataProcessor(unsigned arg_hitDiscCfg) : DataProcessor(){
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
+    flog->info(__PRETTY_FUNCTION__);
     input = NULL;
     hitDiscCfg = arg_hitDiscCfg;
     totCode = {{{{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 14, 0}},
@@ -24,7 +29,7 @@ Fei4DataProcessor::~Fei4DataProcessor() {
 }
 
 void Fei4DataProcessor::init() {
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
+    flog->info(__PRETTY_FUNCTION__);
     for(std::map<unsigned, ClipBoard<EventDataBase> >::iterator it = outMap->begin(); it != outMap->end(); ++it) {
         activeChannels.push_back(it->first);
     }
@@ -32,11 +37,11 @@ void Fei4DataProcessor::init() {
 }
 
 void Fei4DataProcessor::run() {
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
+    flog->info(__PRETTY_FUNCTION__);
     const unsigned int numThreads = std::thread::hardware_concurrency();
     for (unsigned i=0; i<numThreads; i++) {
         thread_ptrs.emplace_back( new std::thread(&Fei4DataProcessor::process, this) );
-        std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
+        flog->info("  -> Processor thread #{} started!", i);
     }
 }
 
