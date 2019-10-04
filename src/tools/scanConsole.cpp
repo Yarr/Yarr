@@ -21,6 +21,7 @@
 #include <map>
 #include <sstream>
 
+#include "logging.h"
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 
@@ -50,6 +51,8 @@
 #endif
 
 #include "storage.hpp"
+
+auto logger = logging::make_log("scan_console");
 
 std::string toString(int value,int digitsCount)
 {
@@ -323,7 +326,8 @@ int main(int argc, char *argv[]) {
     std::cout << "\033[1;31m# Init Hardware #\033[0m" << std::endl;
     std::cout << "\033[1;31m#################\033[0m" << std::endl;
 
-    std::cout << "-> Opening controller config: " << ctrlCfgPath << std::endl;
+    logger->info("-> Opening controller config: {}", ctrlCfgPath);
+
     std::unique_ptr<HwController> hwCtrl = nullptr;
     json ctrlCfg;
     try {
@@ -357,7 +361,7 @@ int main(int argc, char *argv[]) {
 
     // Loop over setup files
     for(std::string const& sTmp : cConfigPaths){
-        std::cout << "Opening global config: " << sTmp << std::endl;
+        logger->info("Opening global config: {}", sTmp);
         json config;
         try {
             config = ScanHelper::openJsonFile(sTmp);
@@ -370,7 +374,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (dbUse) {
-        std::cout << "-> Setting Connectivity Configs" << std::endl;
+        logger->info("Setting Connectivity Configs");
         // set/check connectivity config files
         database->setConnCfg(cConfigPaths);
     }
@@ -409,7 +413,7 @@ int main(int argc, char *argv[]) {
     
     std::chrono::steady_clock::time_point cfg_start = std::chrono::steady_clock::now();
     for ( FrontEnd* fe : bookie.feList ) {
-        std::cout << "-> Configuring " << dynamic_cast<FrontEndCfg*>(fe)->getName() << std::endl;
+        logger->info("Configuring {}", dynamic_cast<FrontEndCfg*>(fe)->getName());
         // Select correct channel
         hwCtrl->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         // Configure
@@ -419,15 +423,15 @@ int main(int argc, char *argv[]) {
         while(!hwCtrl->isCmdEmpty());
     }
     std::chrono::steady_clock::time_point cfg_end = std::chrono::steady_clock::now();
-    std::cout << "-> All FEs configured in " 
-        << std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count() << " ms !" << std::endl;
+    logger->info("All FEs configured in {} ms!",
+                 std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count());
     
     // Wait for rx to sync with FE stream
     // TODO Check RX sync
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
     hwCtrl->flushBuffer();
     for ( FrontEnd* fe : bookie.feList ) {
-        std::cout << "-> Checking com " << dynamic_cast<FrontEndCfg*>(fe)->getName() << std::endl;
+        logger->info("Checking com {}", dynamic_cast<FrontEndCfg*>(fe)->getName());
         // Select correct channel
         hwCtrl->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         hwCtrl->setRxEnable(dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
@@ -436,19 +440,19 @@ int main(int argc, char *argv[]) {
             std::cout << "#ERROR# Can't establish communication, aborting!" << std::endl;
             return -1;
         }
-        std::cout <<   "... success!" << std::endl;
+        logger->info("... success!");
     }
  
     // Enable all active channels
-    std::cout << "-> Enabling Tx channels: " << std::endl;
+    logger->info("Enabling Tx channels");
     hwCtrl->setCmdEnable(bookie.getTxMask());
     for (uint32_t channel : bookie.getTxMask()) {
-        std::cout << "  ... " << channel  << std::endl;
+        logger->info("Enabling Tx channel {}", channel);
     }
-    std::cout << "-> Enabling Rx channels: " << std::endl;
+    logger->info("Enabling Rx channels");
     hwCtrl->setRxEnable(bookie.getRxMask());
     for (uint32_t channel : bookie.getRxMask()) {
-        std::cout << "  ... " << channel  << std::endl;
+        logger->info("Enabling Rx channel {}", channel);
     }
     
     hwCtrl->runMode();
@@ -487,12 +491,12 @@ int main(int argc, char *argv[]) {
     buildHistogrammers( histogrammers, scanType, bookie.feList, s.get(), outputDir);
     buildAnalyses( analyses, scanType, bookie, s.get(), mask_opt);
 
-    std::cout << "-> Running pre scan!" << std::endl;
+    logger->info("Running pre scan!");
     s->init();
     s->preScan();
 
     // Run from downstream to upstream
-    std::cout << "-> Starting histogrammer and analysis threads:" << std::endl;
+    logger->info("Starting histogrammer and analysis threads:");
     for ( FrontEnd* fe : bookie.feList ) {
         if (fe->isActive()) {
           analyses[fe]->init();
@@ -501,7 +505,7 @@ int main(int argc, char *argv[]) {
           histogrammers[fe]->init();
           histogrammers[fe]->run();
           
-          std::cout << "  -> Analysis thread of Fe " << dynamic_cast<FrontEndCfg*>(fe)->getRxChannel() << std::endl;
+          logger->info("Analysis thread of Fe {}", dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
         }
     }
 
@@ -518,11 +522,11 @@ int main(int argc, char *argv[]) {
     std::cout << "\033[1;31m# Scan #\033[0m" << std::endl;
     std::cout << "\033[1;31m########\033[0m" << std::endl;
 
-    std::cout << "-> Starting scan!" << std::endl;
+    logger->info("Starting scan!");
     std::chrono::steady_clock::time_point scan_start = std::chrono::steady_clock::now();
     s->run();
     s->postScan();
-    std::cout << "-> Scan done!" << std::endl;
+    logger->info("Scan done!");
 
     // Join from upstream to downstream.
     
@@ -530,12 +534,12 @@ int main(int argc, char *argv[]) {
     bookie.rawData.cv.notify_all();
 
     std::chrono::steady_clock::time_point scan_done = std::chrono::steady_clock::now();
-    std::cout << "-> Waiting for processors to finish ..." << std::endl;
+    logger->info("Waiting for processors to finish ...");
     // Join Fei4DataProcessor
     proc->join();
     std::chrono::steady_clock::time_point processor_done = std::chrono::steady_clock::now();
     
-    std::cout << "-> Processor done, waiting for histogrammer ..." << std::endl;
+    logger->info("Processor done, waiting for histogrammer ...");
     
     Fei4Histogrammer::processorDone = true;
     
@@ -551,7 +555,7 @@ int main(int argc, char *argv[]) {
       histogrammer.second->join();
     }
     
-    std::cout << "-> Processor done, waiting for analysis ..." << std::endl;
+    logger->info("Processor done, waiting for analysis ...");
     
     Fei4Analysis::histogrammerDone = true;
     
@@ -568,7 +572,7 @@ int main(int argc, char *argv[]) {
     }
       
     std::chrono::steady_clock::time_point all_done = std::chrono::steady_clock::now();
-    std::cout << "-> All done!" << std::endl;
+    logger->info("All done!");
 
     // Joining is done.
 
@@ -618,7 +622,8 @@ int main(int argc, char *argv[]) {
             
             // Save config
             if (!dynamic_cast<FrontEndCfg*>(fe)->isLocked()) {
-                std::cout << "-> Saving config of FE " << dynamic_cast<FrontEndCfg*>(fe)->getName() << " to " << feCfgMap.at(fe) << std::endl;
+                logger->info("Saving config of FE {} to {}",
+                             dynamic_cast<FrontEndCfg*>(fe)->getName(), feCfgMap.at(fe));
                 json jTmp;
                 dynamic_cast<FrontEndCfg*>(fe)->toFileJson(jTmp);
                 std::ofstream oFTmp(feCfgMap.at(fe));
@@ -637,7 +642,8 @@ int main(int argc, char *argv[]) {
 
             // Plot
             if (doPlots||dbUse) {
-                std::cout << "-> Plotting histograms of FE " << dynamic_cast<FrontEndCfg*>(fe)->getRxChannel() << std::endl;
+                logger->info("-> Plotting histograms of FE {}",
+                             dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
                 std::string outputDirTmp = outputDir;
 
                 auto &output = *fe->clipResult;
@@ -657,9 +663,9 @@ int main(int argc, char *argv[]) {
         }
     }
     std::string lsCmd = "ls -1 " + dataDir + "last_scan/*.p*";
-    std::cout << "Finishing run: " << runCounter << std::endl;
+    logger->info("Finishing run: {}", runCounter);
     if(doPlots && (system(lsCmd.c_str()) < 0)) {
-        std::cout << "Find plots in: " << dataDir + "last_scan" << std::endl;
+        logger->info("Find plots in: {}last_scan", dataDir);
     }
 
     // Register test info into database
@@ -757,7 +763,7 @@ void listKnown() {
 std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie ) {
     std::unique_ptr<ScanBase> s ( nullptr );
 
-    std::cout << "-> Found Scan config, constructing scan ..." << std::endl;
+    logger->info("Found Scan config, constructing scan ...");
     s.reset( new ScanFactory(&bookie) );
     json scanCfg;
     try {
@@ -773,7 +779,7 @@ std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bo
 
 
 void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& histogrammers, const std::string& scanType, std::vector<FrontEnd*>& feList, ScanBase* s, std::string outputDir) {
-    std::cout << "-> Found Scan config, loading histogrammer ..." << std::endl;
+    logger->info("Found Scan config, loading histogrammer ...");
     json scanCfg;
     try {
         scanCfg = ScanHelper::openJsonFile(scanType);
@@ -795,28 +801,28 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
 
             auto add_histo = [&](std::string algo_name) {
                 if (algo_name == "OccupancyMap") {
-                    std::cout << "  ... adding " << algo_name << std::endl;
+                    logger->info("  ... adding {}", algo_name);
                     histogrammer.addHistogrammer(new OccupancyMap());
                 } else if (algo_name == "TotMap") {
-                    std::cout << "  ... adding " << algo_name << std::endl;
+                    logger->info("  ... adding {}", algo_name);
                     histogrammer.addHistogrammer(new TotMap());
                 } else if (algo_name == "Tot2Map") {
-                    std::cout << "  ... adding " << algo_name << std::endl;
+                    logger->info("  ... adding {}", algo_name);
                     histogrammer.addHistogrammer(new Tot2Map());
                 } else if (algo_name == "L1Dist") {
                     histogrammer.addHistogrammer(new L1Dist());
-                    std::cout << "  ... adding " << algo_name << std::endl;
+                    logger->info("  ... adding {}", algo_name);
                 } else if (algo_name == "HitsPerEvent") {
                     histogrammer.addHistogrammer(new HitsPerEvent());
-                    std::cout << "  ... adding " << algo_name << std::endl;
+                    logger->info("  ... adding {}", algo_name);
                 } else if (algo_name == "DataArchiver") {
                     histogrammer.addHistogrammer(new DataArchiver((outputDir + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_data.raw")));
-                    std::cout << "  ... adding " << algo_name << std::endl;
+                    logger->info("  ... adding {}", algo_name);
                 } else if (algo_name == "Tot3d") {
-                    std::cout << "  ... adding " << algo_name << std::endl;
+                    logger->info("  ... adding {}", algo_name);
                     histogrammer.addHistogrammer(new Tot3d());
                 } else if (algo_name == "L13d") {
-                    std::cout << "  ... adding " << algo_name << std::endl;
+                    logger->info("  ... adding {}", algo_name);
                     histogrammer.addHistogrammer(new L13d());
                 } else {
                     std::cerr << "#ERROR# Histogrammer \"" << algo_name << "\" unknown, skipping!" << std::endl;
@@ -845,7 +851,7 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
 
 void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, int mask_opt) {
     if (scanType.find("json") != std::string::npos) {
-        std::cout << "-> Found Scan config, loading analysis ..." << std::endl;
+        logger->info("Found Scan config, loading analysis ...");
         json scanCfg;
         try {
             scanCfg = ScanHelper::openJsonFile(scanType);
@@ -866,38 +872,38 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
 
                 auto add_analysis = [&](std::string algo_name) {
                     if (algo_name == "OccupancyAnalysis") {
-                        std::cout << "  ... adding " << algo_name << std::endl;
+                        logger->info("  ... adding {}", algo_name);
                         ana.addAlgorithm(new OccupancyAnalysis());
                      } else if (algo_name == "L1Analysis") {
-                        std::cout << "  ... adding " << algo_name << std::endl;
+                        logger->info("  ... adding {}", algo_name);
                         ana.addAlgorithm(new L1Analysis());
                      } else if (algo_name == "TotAnalysis") {
-                        std::cout << "  ... adding " << algo_name << std::endl;
+                        logger->info("  ... adding {}", algo_name);
                         ana.addAlgorithm(new TotAnalysis());
                      } else if (algo_name == "NoiseAnalysis") {
-                        std::cout << "  ... adding " << algo_name << std::endl;
+                        logger->info("  ... adding {}", algo_name);
                         ana.addAlgorithm(new NoiseAnalysis());
                      } else if (algo_name == "NoiseTuning") {
-                        std::cout << "  ... adding " << algo_name << std::endl;
+                        logger->info("  ... adding {}", algo_name);
                         ana.addAlgorithm(new NoiseTuning());
                      } else if (algo_name == "ScurveFitter") {
-                        std::cout << "  ... adding " << algo_name << std::endl;
+                        logger->info("  ... adding {}", algo_name);
                         ana.addAlgorithm(new ScurveFitter());
                      } else if (algo_name == "OccGlobalThresholdTune") {
-                        std::cout << "  ... adding " << algo_name << std::endl;
+                        logger->info("  ... adding {}", algo_name);
                         ana.addAlgorithm(new OccGlobalThresholdTune());
                      } else if (algo_name == "OccPixelThresholdTune") {
-                        std::cout << "  ... adding " << algo_name << std::endl;
+                        logger->info("  ... adding {}", algo_name);
                         ana.addAlgorithm(new OccPixelThresholdTune());
                      } else if (algo_name == "DelayAnalysis") {
-                        std::cout << "  ... adding " << algo_name << std::endl;
+                        logger->info("  ... adding {}", algo_name);
                         ana.addAlgorithm(new DelayAnalysis());
                      }
                 };
 
                 try {
                   int nAnas = anaCfg["n_count"];
-                  std::cout << "Found " << nAnas << " Analysis!" << std::endl;
+                  logger->info("Found {} Analysis!", nAnas);
                   for (int j=0; j<nAnas; j++) {
                     std::string algo_name = anaCfg[std::to_string(j)]["algorithm"];
                     add_analysis(algo_name);
@@ -905,7 +911,7 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                   ana.loadConfig(anaCfg);
                 } catch(json::type_error &te) {
                   int nAnas = anaCfg.size();
-                  std::cout << "Found " << nAnas << " Analysis!" << std::endl;
+                  logger->info("Found {} Analysis!", nAnas);
                   for (int j=0; j<nAnas; j++) {
                     std::string algo_name = anaCfg[j]["algorithm"];
                     add_analysis(algo_name);
@@ -914,7 +920,7 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
 
                 // Disable masking of pixels
                 if(mask_opt == 0) {
-                    std::cout << " -> Disabling masking for this scan!" << std::endl;
+                    logger->info("Disabling masking for this scan!");
                     ana.setMasking(false);
                 }
                 ana.setMapSize(fe->geo.nCol, fe->geo.nRow);
