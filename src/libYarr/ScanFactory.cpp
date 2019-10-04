@@ -14,6 +14,12 @@
 #include "AllStdActions.h"
 #include "ClassRegistry.h"
 
+#include "logging.h"
+
+namespace {
+auto flog = logging::make_log("scan_factory");
+}
+
 ScanFactory::ScanFactory(Bookkeeper *k) : ScanBase(k) {
 }
 
@@ -25,7 +31,7 @@ void ScanFactory::init() {
 }
 
 void ScanFactory::preScan() {
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
+    flog->info(__PRETTY_FUNCTION__);
 
     g_tx->setCmdEnable(g_bk->getTxMask());
     // Load scan specific registers from config
