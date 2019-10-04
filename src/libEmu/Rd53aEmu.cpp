@@ -2,6 +2,7 @@
 
 #include "Histo2d.h"
 
+#include "logging.h"
 
 #define HEXF(x,y) std::hex << "0x" << std::hex << std::setw(x) << std::setfill('0') << static_cast<int>(y) << std::dec
 
@@ -16,6 +17,9 @@
 // Instantiation is needed for constexpr
 constexpr std::array<uint8_t, Rd53aEmu::sizeOf8bit> Rd53aEmu::eightToFive;
 
+namespace {
+auto rlog = logging::make_log("emu_rd53a");
+}
 
 namespace std
 {
@@ -171,7 +175,7 @@ Rd53aEmu::~Rd53aEmu() {}
 //____________________________________________________________________________________________________
 void Rd53aEmu::executeLoop() {
     
-    std::cout << "Starting emulator loop" << std::endl;
+    rlog->info("Starting emulator loop");
     
     while (run) {
         
