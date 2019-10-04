@@ -21,6 +21,9 @@
 #include <map>
 #include <sstream>
 
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+
 #include "ScanHelper.h"
 
 #include "HwController.h"
@@ -69,6 +72,7 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
 // Do not want to use the raw pointer ScanBase*
 void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, int mask_opt);
 
+void setupLoggers(json &j);
 
 int main(int argc, char *argv[]) {
     std::cout << "\033[1;31m#####################################\033[0m" << std::endl;
@@ -95,6 +99,7 @@ int main(int argc, char *argv[]) {
     std::string dbCfgPath = dbDirPath+"/"+hostname+"_database.json";
     std::string dbSiteCfgPath = "";
     std::string dbUserCfgPath = "";
+    std::string logCfgPath = "";
     
     unsigned runCounter = 0;
 
@@ -120,7 +125,7 @@ int main(int argc, char *argv[]) {
     oF.close();
 
     int c;
-    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:Wd:u:i:")) != -1) {
+    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:Wd:u:i:l:")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
@@ -178,6 +183,9 @@ int main(int argc, char *argv[]) {
                 break;
             case 'd': // Database config file
                 dbCfgPath = std::string(optarg);
+                break;
+            case 'l': // Logger config file
+                logCfgPath = std::string(optarg);
                 break;
             case 'i': // Database config file
                 dbSiteCfgPath = std::string(optarg);
@@ -254,6 +262,11 @@ int main(int argc, char *argv[]) {
     sysExSt = system(cmdStr.c_str());
     if(sysExSt != 0){
         std::cerr << "Error creating symlink to output directory!" << std::endl;
+    }
+
+    if(!logCfgPath.empty()) {
+      auto j = ScanHelper::openJsonFile(logCfgPath);
+      setupLoggers(j);
     }
 
     // Timestamp
@@ -711,6 +724,16 @@ void listScanLoopActions() {
     }
 }
 
+void listLoggers() {
+    spdlog::apply_all([&](std::shared_ptr<spdlog::logger> l) {
+        if(l->name().empty()) {
+          std::cout << "  (default)\n";
+        } else {
+          std::cout << "  " << l->name() << "\n";
+        }
+    });
+}
+
 void listKnown() {
     std::cout << " Known HW controllers:\n";
     listControllers();
@@ -726,6 +749,9 @@ void listKnown() {
 
     std::cout << " Known ScanLoop actions:\n";
     listScanLoopActions();
+
+    std::cout << " Known loggers:\n";
+    listLoggers();
 }
 
 std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie ) {
@@ -895,4 +921,37 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
             }
         }
     } 
+}
+
+void setupLoggers(json &j) {
+    spdlog::sink_ptr default_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+
+    // spdlog::level::level_enum, but then construction doesn't work?
+    const std::map<std::string, int> level_map = {
+      {"off", SPDLOG_LEVEL_OFF},
+      {"critical", SPDLOG_LEVEL_CRITICAL},
+      {"err", SPDLOG_LEVEL_ERROR},
+      {"error", SPDLOG_LEVEL_ERROR},
+      {"warn", SPDLOG_LEVEL_WARN},
+      {"warning", SPDLOG_LEVEL_WARN},
+      {"info", SPDLOG_LEVEL_INFO},
+      {"debug", SPDLOG_LEVEL_DEBUG},
+      {"trace", SPDLOG_LEVEL_TRACE},
+    };
+
+    if(!j["simple"].empty() && j["simple"]) {
+        // Don't print log level and timestamp
+        default_sink->set_pattern("%v");
+    }
+
+    for(auto &jl: j["log_config"]) {
+        std::string name = jl["name"];
+        spdlog::get(name)->sinks().push_back(default_sink);
+        if(!jl["level"].empty()) {
+            std::string level = jl["level"];
+
+            spdlog::level::level_enum spd_level = (spdlog::level::level_enum)level_map.at(level);
+            spdlog::get(name)->set_level(spd_level);
+        }
+    }
 }
