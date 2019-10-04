@@ -72,7 +72,7 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
 // Do not want to use the raw pointer ScanBase*
 void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, int mask_opt);
 
-void setupLoggers(json &j);
+void setupLoggers(const json &j);
 
 int main(int argc, char *argv[]) {
     std::cout << "\033[1;31m#####################################\033[0m" << std::endl;
@@ -923,7 +923,7 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
     } 
 }
 
-void setupLoggers(json &j) {
+void setupLoggers(const json &j) {
     spdlog::sink_ptr default_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
 
     // spdlog::level::level_enum, but then construction doesn't work?
@@ -939,19 +939,43 @@ void setupLoggers(json &j) {
       {"trace", SPDLOG_LEVEL_TRACE},
     };
 
-    if(!j["simple"].empty() && j["simple"]) {
+    if(j.contains("simple") && j["simple"]) {
         // Don't print log level and timestamp
         default_sink->set_pattern("%v");
     }
 
-    for(auto &jl: j["log_config"]) {
-        std::string name = jl["name"];
-        spdlog::get(name)->sinks().push_back(default_sink);
-        if(!jl["level"].empty()) {
-            std::string level = jl["level"];
+    if(j.contains("log_config")) {
+        for(auto &jl: j["log_config"]) {
+            if(!jl.contains("name")) {
+                std::cerr << "Log json file: 'log_config' list item must have 'name'\n";
+                continue;
+            }
 
-            spdlog::level::level_enum spd_level = (spdlog::level::level_enum)level_map.at(level);
-            spdlog::get(name)->set_level(spd_level);
+            std::string name = jl["name"];
+
+            auto logger_apply = [&](std::shared_ptr<spdlog::logger> l) {
+              l->sinks().push_back(default_sink);
+              if(jl.contains("level")) {
+                  std::string level = jl["level"];
+
+                  spdlog::level::level_enum spd_level = (spdlog::level::level_enum)level_map.at(level);
+                  l->set_level(spd_level);
+              }
+            };
+
+            if(name == "all") {
+                spdlog::apply_all(logger_apply);
+            } else {
+                logger_apply(spdlog::get(name));
+            }
         }
+    }
+
+    // NB this sets things at the sink level, so not specifying a particular logger...
+    // Also doing it last means it applies to all registered sinks
+    if(j.contains("pattern")) {
+        std::string pattern = j["pattern"];
+      
+        spdlog::set_pattern(pattern);
     }
 }
