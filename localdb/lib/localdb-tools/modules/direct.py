@@ -326,7 +326,6 @@ def __pull(dir_path, args):
     logger.info('- Chips     : {}'.format(', '.join(chips)))
     logger.info('- Run Number: {}'.format(this_tr['runNumber']))
     logger.info('- Test Type : {}'.format(this_tr['testType']))
-    logger.info('')
 
     for data in data_entries:
         logger.info('Retrieve ... {}'.format(data['path']))

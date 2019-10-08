@@ -264,15 +264,6 @@ echo -e "[LDB] DB Config: ${dbcfg}"
 echo -e "[LDB] Done."
 echo -e "[LDB]"
 
-readme=${shell_dir}/README
-
-if [ -f ${readme} ]; then
-    rm ${readme}
-fi
-
-echo -e "# scanConsole with Local DB" > ${readme}
-echo -e "" > ${readme}
-
 if "${tools}"; then
     # Setting function
     mkdir -p ${BIN}
@@ -294,43 +285,17 @@ if "${tools}"; then
     fi
 fi
 
-# settings
-echo -e "## Settings" > ${readme}
-echo -e "- './setup_db.sh'" > ${readme}
-echo -e "  - description: setup Local DB functions for the user local." > ${readme}
-echo -e "  - requirements: required softwares" > ${readme}
-echo -e "" > ${readme}
-
-# upload.py
-ITSNAME="LocalDB Tool Setup Upload Tool"
-echo -e "### $ITSNAME" > ${readme}
-echo -e "- '${shell_dir}/bin/localdbtool-upload scan <path to result directory>' can upload scan data" > ${readme}
-echo -e "- '${shell_dir}/bin/localdbtool-upload dcs <path to result directory>' can upload dcs data based on scan data" > ${readme}
-echo -e "- '${shell_dir}/bin/localdbtool-upload cache' can upload every cache data" > ${readme}
-echo -e "- '${shell_dir}/bin/localdbtool-upload --help' can show more usage." > ${readme}
-echo -e "" > ${readme}
-
-# retrieve.py
-ITSNAME="LocalDB Tool Setup Retrieve Tool"
-echo -e "### $ITSNAME" > ${readme}
-echo -e "- '${shell_dir}/bin/localdbtool-retrieve init' can initialize retrieve repository" > ${readme}
-echo -e "- '${shell_dir}/bin/localdbtool-retrieve remote add <remote name>' can add remote repository for Local DB/Master Server" > ${readme}
-echo -e "- '${shell_dir}/bin/localdbtool-retrieve --help' can show more usage." > ${readme}
-echo -e "" > ${readme}
-
 # finish
-ITSNAME="Usage"
-echo -e "## $ITSNAME" > ${readme}
-echo -e "1. scanConsole with Local DB" > ${readme}
-echo -e "   - './bin/scanConsole -c <conn> -r <ctr> -s <scan> -W' can use Local DB schemes" > ${readme}
-echo -e "2. Upload function" > ${readme}
-echo -e "   - '${shell_dir}/bin/localdbtool-upload cache' can upload every cache data" > ${readme}
-echo -e "3. Retrieve function" > ${readme}
-echo -e "   - '${shell_dir}/bin/localdbtool-retrieve log' can show test data log in Local DB" > ${readme}
-echo -e "   - '${shell_dir}/bin/localdbtool-retrieve checkout <module name>' can restore the latest config files from Local DB" > ${readme}
-echo -e "4. Viewer Application" > ${readme}
-echo -e "   - Access 'http://HOSTNAME/localdb/' can display results in web browser if Viewer is running" > ${readme}
-echo -e "   - (HOSTNAME: Local DB Server where web browser if Viewer is running" > ${readme}
-echo -e "5. More Detail" > ${readme}
-echo -e "   - Check 'https://github.com/jlab-hep/Yarr/wiki'" > ${readme}
-echo -e "[LDB] The detail is written in ${readme}"
+echo -e "[LDB] -------------"
+echo -e "[LDB] --  Usage  --"
+echo -e "[LDB] -------------"
+echo -e "[LDB] To upoad the test data into Local DB after scanConsole:" 
+echo -e "[LDB]   \$ ./bin/scanConsole -c <conn> -r <ctr> -s <scan> -W"
+echo -e "[LDB] To upload every cache data:"
+echo -e "[LDB]   \$ ${shell_dir}/bin/localdbtool-upload cache"
+echo -e "[LDB] To display the test data log from Local DB:"
+echo -e "[LDB]   \$ ${shell_dir}/bin/localdbtool-retrieve log"
+echo -e "[LDB] To retrieve the latest data files from Local DB:"
+echo -e "[LDB]   \$ ${shell_dir}/bin/localdbtool-retrieve pull"
+echo -e "[LDB] More detail:"
+echo -e "[LDB]   Access 'https://localdb-docs.readthedocs.io/en/master/'"

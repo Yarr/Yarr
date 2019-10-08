@@ -308,6 +308,14 @@ int DBHandler::setCache(std::string i_user_cfg_path, std::string i_site_cfg_path
     return 0;
 }
 
+int DBHandler::checkConnection() {
+    if (DB_DEBUG) std::cout << "DBHandler: Check the connection to Local DB." << std::endl;
+
+    std::string cmd = m_command+" init";
+
+    return system(cmd.c_str());
+}
+
 int DBHandler::checkModule() {
     if (DB_DEBUG) std::cout << "DBHandler: Check Module List from Local DB." << std::endl;
 

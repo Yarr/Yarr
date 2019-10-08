@@ -122,7 +122,6 @@ def __pull(dir_path, args):
     logger.info('- Chips     : {}'.format(', '.join(r_json['info']['chips'])))
     logger.info('- Run Number: {}'.format(r_json['info']['runNumber']))
     logger.info('- Test Type : {}'.format(r_json['info']['testType']))
-    logger.info('')
 
     # get config data
     data_entries = []

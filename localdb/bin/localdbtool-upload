@@ -729,13 +729,14 @@ def __check_component(i_type):
         for component in component_entries:
             chip = {}
             chip['name'] = component['name'] 
-            chip['component'] = component['component']
             chip['chipType'] = component['chipType']
             chip['chipId'] = component['chipId']
+            chip['component'] = '...'
             chip['proDB'] = False
-            if not chip['component']=='...':
-                query = { '_id': ObjectId(chip['component']) }
-                this_cmp = localdb.component.find_one(query)
+            query = { 'serialNumber': chip['name'] }
+            this_cmp = localdb.component.find_one(query)
+            if this_cmp:
+                chip['component'] = str(this_cmp['_id'])
                 chip['proDB'] = this_cmp['proDB']
             chips.append(chip)
 

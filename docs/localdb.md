@@ -280,13 +280,12 @@ $ ./localdb/bin/localdbtool-retrieve log
 Additional options:
 
 - **--database ``<database config>``** : Set database config file (default: `${HOME}/.yarr/localdb/${HOSTNAME}_database.json`)
-- **--user ``<user config>``** : Set user config file
-- **--site ``<site config>``** : Set site config file
+- **--user ``<user config>``** : Set user name 
+- **--site ``<site config>``** : Set site name 
 - **--chip ``<chip name>``** : Set chip name
 
 #### Retrieve Config File
 
-in edit
 
 ### Upload Tool
 
@@ -965,36 +964,42 @@ You can replicated it from `YARR/configs/defaults/<FE>.json`.
         "key": "vddd_voltage",
         "num": 0,
         "path": "dcs.dat",
+        "chip": "JohnDoe_0",
         "status": "disabled"
     },{
         "description": "VDDD Current [A]",
         "key": "vddd_current",
         "num": 0,
         "path": "dcs.dat",
+        "chip": "JohnDoe_0",
         "status": "disabled"
     },{
         "description": "VDDA Voltage [V]",
         "key": "vdda_voltage",
         "num": 0,
         "path": "dcs.dat",
+        "chip": "JohnDoe_0",
         "status": "disabled"
     },{
         "description": "VDDA Current [A]",
         "key": "vdda_current",
         "num": 0,
         "path": "dcs.dat",
+        "chip": "JohnDoe_0",
         "status": "disabled"
     },{
         "description": "High Voltage [V]",
         "key": "hv_voltage",
         "num": 0,
         "path": "dcs.dat",
+        "chip": "JohnDoe_0",
         "status": "disabled"
     },{
         "description": "High Voltage Current [A]",
         "key": "hv_current",
         "num": 0,
         "path": "dcs.dat",
+        "chip": "JohnDoe_0",
         "status": "disabled"
     },{
         "description": "Chip Temperature [C]",
