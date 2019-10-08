@@ -140,7 +140,7 @@ def __init():
     return response
 
 def __network_db(url, db_name):
-    logger.info('[Connection Test] DB Server: {}'.format(url))
+    logger.info('[Connection Test] DB Server: {0}/{1}'.format(url, db_name))
 
     global authentication
     authentication = False
@@ -151,11 +151,11 @@ def __network_db(url, db_name):
     localdb = client[db_name]
     try:
         localdb.collection_names()
-        logger.info('   The connection is GOOD.')
+        logger.info('---> Connection is GOOD.')
         return True
     except errors.ServerSelectionTimeoutError as err:
-        logger.error('   The connection is BAD.')
-        logger.error('   {}'.format(err))
+        logger.error('---> Connection is BAD.')
+        logger.error('     {}'.format(err))
         return False
     except errors.OperationFailure as err:
         ### Need user authentication
@@ -176,7 +176,7 @@ def __network_db(url, db_name):
             global user
             global pwd
             if not username or not password:
-                logger.warning('   Need users authenticated.')
+                logger.warning('Need users authenticated.')
                 user = input('User name > ')
                 pwd = getpass('Password > ')
             else:
@@ -184,13 +184,13 @@ def __network_db(url, db_name):
                 pwd = password
             try:
                 localdb.authenticate(user, pwd)
-                logger.info('   The connection is GOOD.')
+                logger.info('---> Connection is GOOD.')
                 through = True
                 authentication = True
                 return True
             except errors.OperationFailure as err: 
-                logger.error('   Authentication failed.')
-                answer = input('   Try again? [y/n]\n> ')
+                logger.error('Authentication failed.')
+                answer = input('Try again? [y/n]\n> ')
                 print('')
                 if answer.lower()=='y':
                     username = None
@@ -203,14 +203,15 @@ def __network_viewer(url):
     try:
         response = requests.get(url)
         if response.status_code == 200:
-            logger.info('   The connection is GOOD.')
+            logger.info('---> Connection is GOOD.')
             return True
         else:
-            logger.warning('   Something wrong in the page.')
+            logger.warning('---> Connection is BAD.')
+            logger.warning('     Something wrong in the page.')
             return False
     except Exception as err:
-        logger.warning('   The connection is BAD.')
-        logger.warning('   {}'.format(err))
+        logger.warning('---> Connection is BAD.')
+        logger.warning('     {}'.format(err))
         return False
 
 def main():

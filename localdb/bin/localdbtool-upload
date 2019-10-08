@@ -150,7 +150,7 @@ def __init(db_cfg):
         sys.exit(1)
 
     url = 'mongodb://{0}:{1}'.format(db_cfg['hostIp'], db_cfg['hostPort'])
-    logger.info('Local DB Server: {0}/{1}'.format(url, db_cfg.get('dbName', 'localdb')))
+    logger.info('[Connection Test] DB Server: {0}/{1}'.format(url, db_cfg.get('dbName', 'localdb')))
 
     ##################
     # Connection check
@@ -184,8 +184,8 @@ def __init(db_cfg):
         localdb['componentTestRun'].create_index([('name', DESCENDING), ('testRun', DESCENDING)])
     except errors.ServerSelectionTimeoutError as err:
         ### Connection failed
-        logger.error('The connection of Local DB {} is BAD.'.format(url))
-        logger.error(err)
+        logger.error('---> Connection is BAD.')
+        logger.error('     {}'.format(err))
         return False
     except errors.OperationFailure as err:
         ### Need user authentication
@@ -214,29 +214,21 @@ def __init(db_cfg):
         else:
             through = False
             while through==False:
+                logger.warning('Need user authentication.')
                 if not username or not password: 
-                    logger.warning('Need user authentication.')
-                    answer = input('Continue? [y/n(skip)]\n> ')
-                    print('')
-                    if answer.lower()=='y':
-                        username = None
-                        password = None
-                    else:
-                        return False
+                    username = None
+                    password = None
                     username = input('User name > ')
-                    print('')
                     password = getpass('Password > ')
-                    print('')
                 try:
+                    logger.info('Authentication succeeded.')
                     localdb.authenticate(username, password)
                     through = True
                 except errors.OperationFailure as err: 
-                    logger.warning('Need user authentication.')
+                    logger.error('Authentication failed.')
                     args.username = None
                     args.password = None
-                    logger.error('Authentication failed.')
                     answer = input('Try again? [y/n(skip)]\n> ')
-                    print('')
                     if answer.lower()=='y':
                         username = None
                         password = None
@@ -254,7 +246,7 @@ def __init(db_cfg):
     register.__set_list(db_cfg['component'], 'component')
     #register.__global.force = args.force
 
-    logger.info('---> connection is good.')
+    logger.info('---> Connection is GOOD.')
 
     return True
 

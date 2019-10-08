@@ -25,9 +25,6 @@ You can specify the IP address, port number, and DB name of Local DB as followin
     - i <ip address>  Local DB server ip address (default: 127.0.0.1)
     - p <port>        Local DB server port (default: 27017)
     - n <db name>     Local DB Name (default: localdb)
-    - a <CA file>     Path to CA certificate
-    - e <Certificate> Path to Client certificate
-    - t               Set LocalDB tools into ${HOME}/.local/bin
     - r               Clean the settings (reset)
 
 EOF
@@ -41,11 +38,7 @@ if [ `echo ${0} | grep bash` ]; then
 fi
 
 shell_dir=$(cd $(dirname ${BASH_SOURCE}); pwd)
-tools=false
 reset=false
-dbca=null
-dbcert=null
-dbkey=null
 while getopts hi:p:n:a:e:tr OPT
 do
     case ${OPT} in
@@ -54,10 +47,6 @@ do
         i ) dbip=${OPTARG} ;;
         p ) dbport=${OPTARG} ;;
         n ) dbname=${OPTARG} ;;
-        a ) dbca=${OPTARG} ;;
-        e ) dbcert=${OPTARG} ;;
-        k ) dbkey=${OPTARG} ;;
-        t ) tools=true ;;
         r ) reset=true ;;
         * ) usage
             exit ;;
@@ -72,14 +61,15 @@ ENABLE=${HOME}/.local/lib/localdb-tools/enable
 
 if "${reset}"; then
     echo -e "[LDB] Clean Local DB settings:"
-    echo -e "[LDB]      -> remove Local DB Tools in ${BIN}"
     for i in `ls -1 ${shell_dir}/bin/`; do
         if [ -f ${BIN}/${i} ]; then
-            echo -e "[LDB]         - ${i}"
+            echo -e "[LDB]      -> remove ${BIN}/${i}"
         fi
     done
     echo -e "[LDB]      -> remove Local DB files in ${dir}"
-    echo -e "[LDB]      -> remove retrieve repository in ${HOME}/.localdb_retrieve"
+    if [ -d ${HOME}/.localdb_retrieve ]; then
+        echo -e "[LDB]      -> remove retrieve repository in ${HOME}/.localdb_retrieve"
+    fi
     echo -e "[LDB] Continue? [y/n]"
     read -p "[LDB] > " answer
     while [ -z ${answer} ]; 
@@ -166,9 +156,6 @@ echo -e "[LDB] -----------------------"
 echo -e "[LDB] IP address      : ${dbip}"
 echo -e "[LDB] port            : ${dbport}"
 echo -e "[LDB] database name   : ${dbname}"
-#echo -e "[LDB] CA file         : ${dbca}"
-#echo -e "[LDB] Certificate file: ${dbcert}"
-#echo -e "[LDB] Key file        : ${dbkey}"
 echo -e "[LDB]"
 echo -e "[LDB] Are you sure that is correct? [y/n]"
 read -p "[LDB] > " answer
@@ -196,14 +183,6 @@ echo -e "[LDB]  - Create Local DB files: ${dir}/${HOSTNAME}_database.json"
 if [ -f ${dir}/${HOSTNAME}_database.json ]; then
     echo -e "[WARNING] !!! OVERRIDE THE EXISTING FILE: ${dir}/${HOSTNAME}_database.json !!!"
 fi
-if "${tools}"; then
-    echo -e "[LDB]  - Set Local DB Tools:"
-    for i in `ls -1 ${shell_dir}/bin/`; do
-        echo -e "[LDB]     - ${BIN}/${i}"
-    done
-    echo -e "[LDB]     - ${HOME}/.local/lib/localdb-tools/"
-fi
-echo -e "[LDB]  - Create README: ${shell_dir}/README"
 echo -e "[LDB]"
 echo -e "[LDB] Continue? [y/n]"
 unset answer
@@ -248,41 +227,12 @@ cp ${shell_dir}/setting/default/database.json ${dbcfg}
 sed -i -e "s!DBIP!${dbip}!g" ${dbcfg}
 sed -i -e "s!DBPORT!${dbport}!g" ${dbcfg}
 sed -i -e "s!DBNAME!${dbname}!g" ${dbcfg}
-sed -i -e "s!CAFILE!\"${dbca}\"!g" ${dbcfg}
-sed -i -e "s!PEMKEYFILE!\"${dbcert}\"!g" ${dbcfg}
-sed -i -e "s!KEYFILE!\"${dbkey}\"!g" ${dbcfg}
-if [ ${dbca} != "null" ] || [ ${dbcert} != "null" ]; then
-    sed -i -e "s!ENABLED!true!g" ${dbcfg}
-    sed -i -e "s!MECHANISM!MONGODB-X509!g" ${dbcfg}
-else
-    sed -i -e "s!ENABLED!false!g" ${dbcfg}
-    sed -i -e "s!MECHANISM!SCRAM-SHA-256!g" ${dbcfg}
-fi
     
 echo -e "[LDB] DB Config: ${dbcfg}"
 
 echo -e "[LDB] Done."
 echo -e "[LDB]"
 
-if "${tools}"; then
-    # Setting function
-    mkdir -p ${BIN}
-    mkdir -p ${BASHLIB}
-    mkdir -p ${MODLIB}
-    
-    cp ${shell_dir}/bin/* ${BIN}/
-    chmod +x ${BIN}/*
-    
-    cp -r ${shell_dir}/lib/localdb-tools/bash-completion/completions/* ${BASHLIB}/
-    cp -r ${shell_dir}/lib/localdb-tools/modules/* ${MODLIB}/
-    cp ${shell_dir}/lib/localdb-tools/enable ${ENABLE}
-
-    if ! cat $HOME/.bashrc | grep 'export PATH="$HOME/.local/bin:$PATH"' 2>&1 > /dev/null; then
-        # Add PATH on ~/.local/bin in bashrc
-        echo -e "[LDB] Add PATH on ~/.local/bin"
-        echo 'export PATH="$HOME/.local/bin:$PATH"' >> $HOME/.bashrc
-        echo -e "[LDB]"
-    fi
 fi
 
 # finish
