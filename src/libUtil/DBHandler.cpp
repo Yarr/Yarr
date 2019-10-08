@@ -234,10 +234,10 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir) {
     std::string home = getenv("HOME");
     std::string log_path;
     if (i_option=="scan") {
-        log_path = home+"/.yarr/run.dat";
+        log_path = home+"/.yarr/localdb/run.dat";
         
     } else if (i_option=="dcs") {
-        log_path = home+"/.yarr/dcs.dat";
+        log_path = home+"/.yarr/localdb/dcs.dat";
     } else {
         std::string message = "Unsupported option.";
         std::string function = __PRETTY_FUNCTION__;

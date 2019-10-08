@@ -103,8 +103,8 @@ def alert(i_messages, i_type='error'):
 
     if i_type=='error': 
         file_path = ''
-        if __global.option=='scan': file_path = '{}/.yarr/run.dat'.format(home)
-        elif __global.option=='dcs': file_path = '{}/.yarr/dcs.dat'.format(home)
+        if __global.option=='scan': file_path = '{}/.yarr/localdb/run.dat'.format(home)
+        elif __global.option=='dcs': file_path = '{}/.yarr/localdb/dcs.dat'.format(home)
         if not file_path=='':
             if os.path.isfile(file_path):
                 with open(file_path,'r') as f:

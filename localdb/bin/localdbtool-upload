@@ -510,12 +510,12 @@ def __clean(cache_dir, result):
 
     ############
     # cache list
-    # scan upload -> cache file : ~/.yarr/run.dat
-    # dcs upload  -> cache file : ~/.yarr/dcs.dat
+    # scan upload -> cache file : ~/.yarr/localdb/run.dat
+    # dcs upload  -> cache file : ~/.yarr/localdb/dcs.dat
     if option=='scan': 
-        cache_path = '{}/.yarr/run.dat'.format(home)
+        cache_path = '{}/.yarr/localdb/run.dat'.format(home)
     elif option=='dcs': 
-        cache_path = '{}/.yarr/dcs.dat'.format(home)
+        cache_path = '{}/.yarr/localdb/dcs.dat'.format(home)
     else: return
 
     if os.path.isfile(cache_path):
@@ -555,7 +555,7 @@ def __upload_from_cache():
 
     #################
     # Scan Cache List
-    file_paths = {'scan': '{}/.yarr/run.dat'.format(home), 'dcs': '{}/.yarr/dcs.dat'.format(home)}
+    file_paths = {'scan': '{}/.yarr/localdb/run.dat'.format(home), 'dcs': '{}/.yarr/localdb/dcs.dat'.format(home)}
 
     for opt in file_paths:
         option = opt
@@ -671,7 +671,8 @@ def __check_component(i_type):
     if i_type=='comp':
         file_path = home+'/.yarr/localdb/'+hostname+'_modules.csv'
         file_open = open(file_path, 'w')
-        query = {'dbVersion': register.__global.db_version, 'componentType': 'module'}
+        #query = {'dbVersion': register.__global.db_version, 'componentType': 'module'}
+        query = {'dbVersion': register.__global.db_version}
         component_entries = localdb.component.find(query)
         modules = []
         for component in component_entries:
@@ -697,22 +698,22 @@ def __check_component(i_type):
         file_open.close()
 
         if not args.log:
-            logger.info('Download Component Data of Local DB locally...')
+            logger.info('Download Component Data of Local DB locally ({})...'.format(file_path))
             logger.info('**************************************')
             for j, module in enumerate(modules):
                 logger.info('Component ({})'.format(j+1))
                 logger.info('    Chip Type: {}'.format(module['chipType']))
-                logger.info('    Module:')
+                logger.info('    Parent:')
                 logger.info('        serial number: {}'.format(module['serialNumber']))
                 logger.info('        component type: {}'.format(module['componentType']))
-                logger.info('        chips: {}'.format(len(module['chips'])))
+                logger.info('        children: {}'.format(len(module['chips'])))
                 for i, chip in enumerate(module['chips']):
-                    logger.info('    Chip ({}):'.format(i+1))
+                    logger.info('    Child ({}):'.format(i+1))
                     logger.info('        serial number: {}'.format(chip['serialNumber']))
                     logger.info('        component type: {}'.format(chip['componentType']))
                     logger.info('        chip ID: {}'.format(chip['chipId']))
                 logger.info('**************************************')
-            logger.info('The number of modules: {}'.format(len(modules)))
+            logger.info('The number of components: {}'.format(len(modules)))
             logger.info('Done.')
     elif i_type=='chip':
         query = {'dbVersion': register.__global.db_version}
