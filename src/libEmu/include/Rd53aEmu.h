@@ -71,9 +71,8 @@ public:
         WrReg = 0x6666, RdReg = 0x6565, Noop = 0x6969, Sync = 0x817e, Zero = 0x0000
     };
 
-
-    /** The ownsership of these ring buffers need to be designed properly */
-  Rd53aEmu(EmuCom * rx, EmuCom * tx, std::string json_file_path);
+    /** These are ring buffers are owned by EmuController */
+    Rd53aEmu(EmuCom * rx, EmuCom * tx, std::string json_file_path);
     ~Rd53aEmu();
     
     // the main loop which recieves commands from yarr
@@ -82,6 +81,7 @@ public:
     /** another thread for writing out data */
     void outputLoop();
 
+    /** When set (by EmuController) shutdown executeLoop (i.e. the thread) */
     volatile bool run;
     
 private:

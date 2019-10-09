@@ -8,10 +8,10 @@
 template<class FE, class ChipEmu>
 std::unique_ptr<HwController> makeEmu() {
   // nikola's hack to use RingBuffer
-  RingBuffer * rx = new RingBuffer(128);
-  RingBuffer * tx = new RingBuffer(128);
+  std::unique_ptr<RingBuffer> rx(new RingBuffer(128));
+  std::unique_ptr<RingBuffer> tx(new RingBuffer(128));
 
-  std::unique_ptr<HwController> ctrl(new EmuController<FE, ChipEmu>(rx, tx));
+  std::unique_ptr<HwController> ctrl(new EmuController<FE, ChipEmu>(std::move(rx), std::move(tx)));
 
   return ctrl;
 }
@@ -36,8 +36,8 @@ void EmuController<Fei4, Fei4Emu>::loadConfig(json &j) {
   std::cout << "-> Starting Emulator" << std::endl;
   std::string emuCfgFile = j["feCfg"];
   std::cout << emuCfgFile << std::endl;
-  emu = new Fei4Emu(emuCfgFile, emuCfgFile, rx, tx);
-  emuThreads.push_back(std::thread(&Fei4Emu::executeLoop, emu));
+  emu.reset(new Fei4Emu(emuCfgFile, emuCfgFile, rx, tx));
+  emuThreads.push_back(std::thread(&Fei4Emu::executeLoop, emu.get()));
 }
 
 
@@ -53,7 +53,7 @@ void EmuController<Rd53a, Rd53aEmu>::loadConfig(json &j) {
   std::cout << "-> Starting Emulator" << std::endl;
   std::string emuCfgFile = j["feCfg"];
   std::cout << emuCfgFile << std::endl;
-  emu = new Rd53aEmu( rx, tx, emuCfgFile );
-  emuThreads.push_back(std::thread(&Rd53aEmu::executeLoop, emu));
+  emu.reset(new Rd53aEmu( rx_com.get(), tx_com.get(), emuCfgFile ));
+  emuThreads.push_back(std::thread(&Rd53aEmu::executeLoop, emu.get()));
 }
 
