@@ -233,8 +233,6 @@ echo -e "[LDB] DB Config: ${dbcfg}"
 echo -e "[LDB] Done."
 echo -e "[LDB]"
 
-fi
-
 # finish
 echo -e "[LDB] -------------"
 echo -e "[LDB] --  Usage  --"
