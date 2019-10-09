@@ -34,9 +34,9 @@ int main(int argc, char * argv[])
         std::vector<float> noise_sigma_sigma_vector; noise_sigma_sigma_vector.reserve(400 * 192);
         std::vector<float> noise_sigma_gauss_vector; noise_sigma_gauss_vector.reserve(400 * 192);
 
-	makeFE(0, 10, 80, 10, Vthreshold_mean_vector, Vthreshold_sigma_vector, Vthreshold_gauss_vector, noise_sigma_mean_vector, noise_sigma_sigma_vector, noise_sigma_gauss_vector, true);		// Sync
-	makeFE(0, 10, 80, 10, Vthreshold_mean_vector, Vthreshold_sigma_vector, Vthreshold_gauss_vector, noise_sigma_mean_vector, noise_sigma_sigma_vector, noise_sigma_gauss_vector);		// Lin
-	makeFE(0, 60, 40, 10, Vthreshold_mean_vector, Vthreshold_sigma_vector, Vthreshold_gauss_vector, noise_sigma_mean_vector, noise_sigma_sigma_vector, noise_sigma_gauss_vector);		// Diff
+	makeFE(100, 5, 80, 10, Vthreshold_mean_vector, Vthreshold_sigma_vector, Vthreshold_gauss_vector, noise_sigma_mean_vector, noise_sigma_sigma_vector, noise_sigma_gauss_vector, true);		// Sync
+	makeFE(100, 3, 80, 10, Vthreshold_mean_vector, Vthreshold_sigma_vector, Vthreshold_gauss_vector, noise_sigma_mean_vector, noise_sigma_sigma_vector, noise_sigma_gauss_vector);		// Lin
+	makeFE(100, 40, 40, 8, Vthreshold_mean_vector, Vthreshold_sigma_vector, Vthreshold_gauss_vector, noise_sigma_mean_vector, noise_sigma_sigma_vector, noise_sigma_gauss_vector);		// Diff
 	
 	j["Vthreshold_mean_vector"] = Vthreshold_mean_vector;
 	j["Vthreshold_sigma_vector"] = Vthreshold_sigma_vector;
@@ -53,7 +53,7 @@ void makeFE(float Vthreshold_mean, float Vthreshold_sigma, float noise_sigma_mea
   unsigned nRow = 192;
   for (unsigned col = 1; col <= nCol; col++){
     for (unsigned row = 1; row <= nRow; row++){
-      float Vthreshold_gauss = rand_normal(Vthreshold_mean, Vthreshold_sigma, 1);
+      float Vthreshold_gauss = rand_normal(Vthreshold_mean, Vthreshold_sigma, 0);
       float noise_sigma_gauss = rand_normal(noise_sigma_mean, noise_sigma_sigma, 0);
       Vthreshold_mean_vector.push_back(Vthreshold_mean);
       Vthreshold_sigma_vector.push_back(Vthreshold_sigma);

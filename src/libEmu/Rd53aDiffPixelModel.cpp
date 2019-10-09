@@ -36,13 +36,15 @@ Rd53aDiffPixelModel::~Rd53aDiffPixelModel()
 }
 
 // functions for modeling pixel responses
-float Rd53aDiffPixelModel::calculateThreshold(uint32_t Vth1Diff, uint32_t Vth2Diff)
+float Rd53aDiffPixelModel::calculateThreshold(uint32_t Vth1Diff, uint32_t Vth2Diff, int TDAC)
 {
-	float threshold = VthDiff_gauss + (Vth1Diff - Vth2Diff);
+  float modelVth = VthDiff_gauss/100. * (Vth1Diff - Vth2Diff);
+  float modelTDAC = TDAC * 15;
+  float threshold = modelVth + modelTDAC;
+  
+  if (threshold < 0) threshold = 0;
 
-	if (threshold < 0) threshold = 0;
-
-	return threshold;
+  return threshold;
 }
 
 float Rd53aDiffPixelModel::calculateNoise()
@@ -52,5 +54,5 @@ float Rd53aDiffPixelModel::calculateNoise()
 
 uint32_t Rd53aDiffPixelModel::calculateToT(float charge)
 {
-	return 1;
+  return uint32_t(4.56053+4.04173*charge/10000.);
 }
