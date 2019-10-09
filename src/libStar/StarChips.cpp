@@ -81,14 +81,39 @@ void StarChips::reset(){
   uint8_t delay = 0; //2 bits BC delay
 
   //sendCmd(LCB::fast_command(LCB::LOGIC_RESET, delay) );
+  std::cout << "Sending fast command #" << LCB::ABC_REG_RESET << " ABC_REG_RESET" << std::endl;
   sendCmd(LCB::fast_command(LCB::ABC_REG_RESET, delay) );
-  sendCmd(LCB::fast_command(LCB::ABC_HIT_COUNT_RESET, delay) );
+  std::cout << "Sending fast command #" << LCB::ABC_SLOW_COMMAND_RESET << " ABC_SLOW_COMMAND_RESET" << std::endl;
   sendCmd(LCB::fast_command(LCB::ABC_SLOW_COMMAND_RESET, delay) );
+  std::cout << "Sending fast command #" << LCB::ABC_SEU_RESET << " ABC_SEU_RESET" << std::endl;
   sendCmd(LCB::fast_command(LCB::ABC_SEU_RESET, delay) );
+  std::cout << "Sending fast command #" << LCB::ABC_HIT_COUNT_RESET << " ABC_HIT_COUNT_RESET" << std::endl;
+  sendCmd(LCB::fast_command(LCB::ABC_HIT_COUNT_RESET, delay) );
+  std::cout << "Sending fast command #" << LCB::ABC_HITCOUNT_START << " ABC_HITCOUNT_START" << std::endl;
+  sendCmd(LCB::fast_command(LCB::ABC_HITCOUNT_START, delay) );
+  std::cout << "Sending fast command #" << LCB::ABC_START_PRLP << " ABC_START_PRLP" << std::endl;
+  sendCmd(LCB::fast_command(LCB::ABC_START_PRLP, delay) );
+  std::cout << "Sending lonely_BCR" << std::endl;
+  sendCmd(LCB::lonely_bcr());
 }
 
 void StarChips::configure() {
+  std::cout << "Sending fast command #" << LCB::HCC_REG_RESET << " HCC_REG_RESET" << std::endl;
+  this->sendCmd(LCB::fast_command(LCB::HCC_REG_RESET, 0) );
+  std::cout << "Sending registers configuration..." << std::endl;
   this->writeRegisters();
+  std::cout << "Sending fast command #" << LCB::ABC_START_PRLP << " ABC_START_PRLP" << std::endl;
+  sendCmd(LCB::fast_command(LCB::ABC_START_PRLP, 0) );
+  std::cout << "Sending fast command #" << LCB::ABC_HIT_COUNT_RESET << " ABC_HIT_COUNT_RESET" << std::endl;
+  sendCmd(LCB::fast_command(LCB::ABC_HIT_COUNT_RESET, 0) );
+  std::cout << "Sending fast command #" << LCB::ABC_HITCOUNT_START << " ABC_HITCOUNT_START" << std::endl;
+  sendCmd(LCB::fast_command(LCB::ABC_HITCOUNT_START, 0) );
+
+  std::cout << "Sending lonely_bcr" << std::endl;
+  m_txcore->writeFifo((LCB::IDLE << 16) + LCB::IDLE);     
+  m_txcore->writeFifo((LCB::lonely_bcr() << 16) + LCB::IDLE);     
+  m_txcore->releaseFifo();  
+
 }
 
 void StarChips::sendCmd(uint16_t cmd){
