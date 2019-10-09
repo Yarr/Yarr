@@ -234,10 +234,10 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir) {
     std::string home = getenv("HOME");
     std::string log_path;
     if (i_option=="scan") {
-        log_path = home+"/.yarr/run.dat";
+        log_path = home+"/.yarr/localdb/run.dat";
         
     } else if (i_option=="dcs") {
-        log_path = home+"/.yarr/dcs.dat";
+        log_path = home+"/.yarr/localdb/dcs.dat";
     } else {
         std::string message = "Unsupported option.";
         std::string function = __PRETTY_FUNCTION__;
@@ -306,6 +306,14 @@ int DBHandler::setCache(std::string i_user_cfg_path, std::string i_site_cfg_path
     cmd = m_command+" cache --database "+m_db_cfg_path+i_user_cfg_path+i_site_cfg_path;
     system(cmd.c_str());
     return 0;
+}
+
+int DBHandler::checkConnection() {
+    if (DB_DEBUG) std::cout << "DBHandler: Check the connection to Local DB." << std::endl;
+
+    std::string cmd = m_command+" init";
+
+    return system(cmd.c_str());
 }
 
 int DBHandler::checkModule() {
@@ -490,7 +498,7 @@ std::string DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_pat
     this->checkFile(i_log_path, "Check environmental data file of key '"+i_key+"' in file "+i_dcs_path+".");
     std::ifstream log_ifs(i_log_path);
     std::size_t suffix = i_log_path.find_last_of('.');
-    if (suffix!=std::string::npos) {
+    if (suffix==std::string::npos) {
         std::string message = "Environmental data file must be 'dat' or 'csv' format: "+i_log_path;
         std::string function = __PRETTY_FUNCTION__;
         this->alert(function, message); return "ERROR";

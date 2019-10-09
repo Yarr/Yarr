@@ -24,16 +24,23 @@ import pytz
 from logging import getLogger
 logger = getLogger("Log").getChild("sub")
 global localdb
+
+#########################################################
+### Set localdb setting from localdb/bin/localdb-retrieve
 def __set_localdb(i_localdb):
     global localdb
     localdb = i_localdb
 
+###########################
+### Set timestamp to string
 def setTime(date):
     local_tz = get_localzone() 
     converted_time = date.replace(tzinfo=timezone.utc).astimezone(local_tz)
     time = converted_time.strftime('%Y/%m/%d %H:%M:%S')
     return time
 
+##########################
+### Display log on console
 def printLog(message):
     global lines
     global size
@@ -47,49 +54,28 @@ def printLog(message):
         except KeyboardInterrupt:
             print('')
             sys.exit()
-
-def getConfigJson(cmp_oid, config, run_oid):
+##################################
+### Get data document from data_id
+def getData(i_type, i_dir, i_filename, i_data, i_bool=False):
     fs = gridfs.GridFS(localdb)
-
-    r_json = {}
-    
-    query = { 
-        'component': cmp_oid,
-        'testRun': run_oid
+    if i_bool:
+        data = i_data
+    elif i_type=='json':
+        data = json.loads(fs.get(ObjectId(i_data)).read().decode('ascii'))
+    else:
+        data = fs.get(ObjectId(i_data)).read().decode('ascii') 
+    docs = {
+        'type': i_type,
+        'path': '{0}/{1}'.format(i_dir, i_filename),
+        'data': data
     }
-    this_ctr = localdb.componentTestRun.find_one(query)
-    if not this_ctr:
-        logger.error('Not found test data: component: {0}, run: {1}'.format( cmp_oid, run_oid ))
-        sys.exit()
-    if config == 'ctrl' or config == 'scan':
-        query = { '_id': ObjectId(run_oid) }
-        this_run = localdb.testRun.find_one(query)
-    elif config == 'after' or config== 'before':
-        this_run = this_ctr
-    else:
-        logger.error('Not exist config type: {}'.format( config ))
-        sys.exit()
-    
-    if this_run['{}Cfg'.format(config)] == '...':
-        r_json.update({ 'data': 'Not found', 'write': False })
-    else:
-        query = { '_id': ObjectId(this_run['{}Cfg'.format(config)]) }
-        this_cfg = localdb.config.find_one(query)
-        r_json.update({ 
-            'data': 'Found',
-            'write': True,
-            'config': json.loads(fs.get(ObjectId(this_cfg['data_id'])).read().decode('ascii')),
-            'filename': this_cfg['filename'],
-        }) 
+    return docs
 
-    return r_json
-
-########################################################
-# File to Json
-# If file path is not provided /or/ file dose not exist,
-# return {}
-# If file exist, return {json}
-# But if file cannot be paresed, alert(error)
+################
+### File to Json
+### exist: return {json}
+### not exist: return {}
+### not json file: error
 def toJson(i_file_path):
     logger.debug('\t\t\tConvert to json code from: {}'.format(i_file_path))
 
@@ -107,6 +93,12 @@ def toJson(i_file_path):
 
     return file_json
 
+#########################
+### Display test data log
+### Searchable by
+### - chip name (perfect match)
+### - user name (partial match)
+### - site name (partial match)
 def __log(args):
     global lines
     global size
@@ -115,7 +107,7 @@ def __log(args):
 
     arg_vars = vars(args)
     run_query = {}
-    log_query = {}
+    log_query = { '$and': [] }
     
     chip_name = arg_vars.get('chip',None)
     if chip_name:
@@ -135,67 +127,67 @@ def __log(args):
         run_oids = []
         for run_entry in run_entries:
             run_oids.append({ '_id': ObjectId(run_entry['testRun']) })
-        log_query.update({ '$or': run_oids })
+        log_query['$and'].append({ '$or': run_oids })
 
     if arg_vars.get('user',None):
-        user_json = toJson(arg_vars['user'])
-        query = {}
-        for key in user_json:
-            query.update({ key: user_json[key].lower().replace(' ', '_') })
-        this_user = localdb.user.find_one(query)
-        if not this_user:
+        query = { 'userName': {'$regex': arg_vars['user'].lower().replace(' ','_')} }
+        entries = localdb.user.find(query)
+        if entries.count()==0:
             logger.error('Not found user data: {}'.format(arg_vars['user']))
             sys.exit()
-        log_query.update({ 'user_id': str(this_user['_id']) })
+        user_oids = []
+        for entry in entries:
+            user_oids.append({ 'user_id': str(entry['_id']) })
+        log_query['$and'].append({ '$or': user_oids })
     if arg_vars.get('site',None):
-        site_json = toJson(arg_vars['site'])
-        query = {}
-        for key in site_json:
-            query.update({ key: site_json[key].lower().replace(' ', '_') })
-        this_site = localdb.user.find_one(query)
-        if not this_site:
+        query = { 'institution': {'$regex': arg_vars['site'].lower().replace(' ','_')} }
+        entries = localdb.institution.find( query )
+        if entries.count()==0:
             logger.error('Not found site data: {}'.format(arg_vars['site']))
             sys.exit()
-        log_query.update({ 'address': str(this_site['_id']) })
+        site_oids = []
+        for entry in entries:
+            site_oids.append({ 'address': str(entry['_id']) })
+        log_query['$and'].append({ '$or': site_oids })
+
+    if log_query['$and']==[]: log_query = {}
 
     run_entries = localdb.testRun.find(log_query).sort([('startTime', DESCENDING)])
 
     r_json = { 'log': [] }
-    if run_entries:
-        for this_run in run_entries:
-            query = { '_id': ObjectId(this_run['user_id']) }
-            this_user = localdb.user.find_one( query )
-            query = { '_id': ObjectId(this_run['address']) }
-            this_site = localdb.institution.find_one( query )
-            this_dcs = []
-            query = { 'testRun': str(this_run['_id']) }
-            ctr_entries  = localdb.componentTestRun.find(query)
-            chips = []
-            this_dcs = {}
-            for this_ctr in ctr_entries:
-                if chip_name and this_ctr['name']==chip_name:
-                    chips.append('\033[1;31m{}\033[0m'.format(this_ctr['name']))
-                else:
-                    chips.append(this_ctr['name'])
-                if not this_ctr.get('environment','...')=='...': 
-                    this_dcs.update({ this_ctr['name']: [] })
-                    query = { '_id': ObjectId(this_ctr['environment']) }
-                    this_env = localdb.environment.find_one( query)
-                    for key in this_env:
-                        if not key=='_id' and not key=='dbVersion' and not key=='sys':
-                            this_dcs[this_ctr['name']].append(key)
-            test_data = {
-                'user': this_user['userName'],
-                'site': this_site['institution'],
-                'datetime': setTime(this_run['startTime']),
-                'runNumber': this_run['runNumber'],
-                'testType': this_run['testType'],
-                'runId': str(this_run['_id']),
-                'chips': chips,
-                'dbVersion': this_run['dbVersion'],
-                'environment': this_dcs
-            }
-            r_json['log'].append(test_data)
+    for this_run in run_entries:
+        query = { '_id': ObjectId(this_run['user_id']) }
+        this_user = localdb.user.find_one( query )
+        query = { '_id': ObjectId(this_run['address']) }
+        this_site = localdb.institution.find_one( query )
+        query = { 'testRun': str(this_run['_id']) }
+        ctr_entries  = localdb.componentTestRun.find(query)
+        chips = []
+        this_dcs = {}
+        for this_ctr in ctr_entries:
+            if chip_name and this_ctr['name']==chip_name:
+                chips.append('\033[1;31m{}\033[0m'.format(this_ctr['name']))
+            else:
+                chips.append(this_ctr['name'])
+            if not this_ctr.get('environment','...')=='...': 
+                this_dcs.update({ this_ctr['name']: [] })
+                query = { '_id': ObjectId(this_ctr['environment']) }
+                this_env = localdb.environment.find_one( query)
+                for key in this_env:
+                    if not key=='_id' and not key=='dbVersion' and not key=='sys':
+                        this_dcs[this_ctr['name']].append(key)
+        test_data = {
+            'user'       : this_user['userName'],
+            'site'       : this_site['institution'],
+            'datetime'   : setTime(this_run['startTime']),
+            'runNumber'  : this_run['runNumber'],
+            'testType'   : this_run['testType'],
+            'runId'      : str(this_run['_id']),
+            'chips'      : chips,
+            'dbVersion'  : this_run['dbVersion'],
+            'environment': this_dcs
+        }
+        r_json['log'].append(test_data)
 
     for test_data in r_json['log']:
         printLog('\033[1;33mtest data ID: {0} \033[0m'.format(test_data['runId'])) 
@@ -215,248 +207,260 @@ def __log(args):
                     printLog('   {0} ({1})'.format(', '.join(test_data['environment'][chip]), chip))
         printLog('')
 
-def __checkout(args, serialnumber=None, runid=None):
-    configs = [{ 
-        'type': 'ctrl',
-        'name': 'controller',
-        'col': 'testRun'
-    },{
-        'type': 'scan',
-        'name': 'scan',
-        'col': 'testRun'
-    }]
-    if not args.before or args.after:
-        configs.append({
-            'type': 'after',
-            'name': 'chip(after)',
-            'col': 'componentTestRun'
-        })
-    else:
-        configs.append({
-            'type': 'before',
-            'name': 'chip(before)',
-            'col': 'componentTestRun'
-        })
+######################
+### Retrieve test data
+### no input -> latest scan
+### input chip name -> latest scan for the chip
+### input test data ID -> scan specified by ID
+### outputs:
+### - test information
+### - configs
+### - data
+def __pull(dir_path, args):
+    arg_vars = vars(args)
 
-    run_oid = None
-    if args.dummy:
-        query = { 'dummy': True }
-        run_entry = localdb.testRun.find(query).sort([('startTime', DESCENDING)]).limit(1)
-        if not run_entry.count()==0:
-            run_oid = str(run_entry[0]['_id'])
-            serialnumber = run_entry[0]['serialNumber']
-    elif runid:
-        query = { 'testRun': runid }
-        this_run = localdb.componentTestRun.find_one(query)
-        if this_run:
-            run_oid = runid 
-            query = { '_id': ObjectId(run_oid) }
-            this_run = localdb.testRun.find_one(query)
-            serialnumber = this_run['serialNumber']
-    elif serialnumber:
-        query = { 'serialNumber': serialnumber }
-        this_cmp = localdb.component.find_one(query)
-        if this_cmp:
-            query = { 'component': str(this_cmp['_id']) }
-            run_entry = localdb.componentTestRun.find(query).sort([('$natural', -1)]).limit(1)
-            if not run_entry.count()==0:
-                run_oid = run_entry[0]['testRun']
+    tr_oid = None
+    if arg_vars.get('test',None):
+        tr_oid = arg_vars['test']
     else:
-        run_entry = localdb.testRun.find({}).sort([('startTime', DESCENDING)]).limit(1)
-        if not run_entry.count()==0:
-            run_oid = str(run_entry[0]['_id'])
-            serialnumber = run_entry[0]['serialNumber']
-
-    if not run_oid:
-        if serialnumber:
-            logger.error('Not exist test data of the component: {}'.format(serialnumber))
+        if arg_vars.get('chip',None):
+            query = { 'name': arg_vars['chip'] }
+            entries = localdb.componentTestRun.find(query)
+            query = { '$or': [] }
+            for entry in entries:
+                query['$or'].append({ '_id': ObjectId(entry['testRun']) })
         else:
-            logger.error('Not exist test data')
+            query = {}
+        entry = localdb.testRun.find(query).sort([('startTime', DESCENDING)]).limit(1)
+        if not entry.count()==0:
+            tr_oid = str(entry[0]['_id'])
+    if not tr_oid:
+        if arg_vars.get('chip',None):
+            logger.error('Not found test data of the component: {}'.format(arg_vars['chip']))
+        else:
+            logger.error('Not found test data')
         sys.exit()
-
-    query = { 'serialNumber': serialnumber }
-    this_cmp = localdb.component.find_one(query)
-    if this_cmp: cmp_oid = str(this_cmp['_id'])
-    else:        cmp_oid = serialnumber
-
-    query = { '_id': ObjectId(run_oid) }
-    this_run = localdb.testRun.find_one(query)
-    chip_data = []
-    if this_run['serialNumber'] == serialnumber:
-        component_type = 'Module'
-        chip_type = this_run.get('chipType','NULL')
-        query = { 'testRun': run_oid, 'component': {'$ne': cmp_oid} }
-        ctr_entries = localdb.componentTestRun.find(query)
-        for ctr in ctr_entries:
-            chip_data.append({ 'component': ctr['component'] })
     else:
-        component_type = 'Front-end Chip'
-        chip_type = this_run.get('chipType','NULL')
-        chip_data.append({ 'component': cmp_oid })
+        query = { 'testRun': tr_oid }
+        entries = localdb.componentTestRun.find(query)
+        if entries.count()==0:
+            logger.error('Not test data ID: {}'.format(tr_oid))
+            sys.exit()
 
+    data_entries = []
+
+    query = { '_id': ObjectId(tr_oid) }
+    this_tr = localdb.testRun.find_one(query)
+    chip_type = this_tr.get('chipType','NULL')
     if chip_type == 'FE-I4B': chip_type = 'FEI4B'
-
-    query = { '_id': ObjectId(this_run['user_id']) }
-    this_user = localdb.user.find_one(query)
-
-    query = { '_id': ObjectId(this_run['address']) }
-    this_site = localdb.institution.find_one(query)
-
-    query = { 'testRun': run_oid }
-    run_entries = localdb.componentTestRun.find(query)
-    test_data = {
-        'testRun'     : run_oid,
-        'runNumber'   : this_run['runNumber'],
-        'testType'    : this_run['testType'],
-        'datetime'    : setTime(this_run['startTime']),
-        'serialNumber': this_run['serialNumber'],
-        'user'        : this_user['userName'],
-        'site'        : this_site['institution'],
-        'chips'       : { 
-            'serialNumber': {},
-            'chipId'      : {},
-            'geomId'      : {},
-            'tx'          : {},
-            'rx'          : {}
-        }
-    }
-    for i, run in enumerate(run_entries):
-        try:
-            query = { '_id': ObjectId(run['component']) }
-            this_cmp = localdb.component.find_one(query)
-            ch_serial_number = this_cmp['serialNumber']
-            ch_id = this_cmp['chipId']
-        except:
-            ch_serial_number = run['component']
-            ch_id = run.get('chipId',-1)
-        test_data['chips']['serialNumber'][run['component']] = ch_serial_number
-        test_data['chips']['chipId'][run['component']] = ch_id
-        test_data['chips']['geomId'][run['component']] = run.get('geomId',i+1)
-        test_data['chips']['tx'][run['component']] = run['tx']
-        test_data['chips']['rx'][run['component']] = run['rx']
- 
-    logger.info('test data information')
-    logger.info('- Date          : {}'.format(test_data['datetime']))
-    logger.info('- Serial Number : {}'.format(test_data['serialNumber']))
-    logger.info('- Run Number    : {}'.format(test_data['runNumber']))
-    logger.info('- Test Type     : {}'.format(test_data['testType']))
-
-    # make directory
-    if not args.directory: dir_path = './localdb-configs'
-    else: dir_path = args.directory
-
-    # get config data
-    config_json = []
-    test_data.update({ 'path': {} })
-    for config in configs:
-        for chip in chip_data:
-            r_json = getConfigJson(chip['component'], config['type'], test_data['testRun'])
-            if r_json['write']: 
-                if config['col'] == 'testRun': 
-                    file_path = '{0}/{1}'.format(dir_path, r_json['filename'])
-                elif config['col'] == 'componentTestRun': 
-                    file_path = '{0}/chip{1}-{2}'.format(dir_path, test_data['chips']['geomId'][chip['component']], r_json['filename'])
-                config_data = {
-                    'data': r_json['config'],
-                    'path': file_path 
-                } 
-                test_data['path'][chip['component']] = 'chip{0}-{1}'.format(test_data['chips']['geomId'][chip['component']], r_json['filename'])
-                config_json.append(config_data)
-                logger.info('{0:<15} : {1:<10} --->   path: {2}'.format(config['name'], r_json['data'], file_path))
-            else: 
-                logger.info('{0:<15} : {1:<10}'.format(config['name'], r_json['data']))
-            if config['col'] == 'testRun': break
+    log_json = {}
+    for key in this_tr:
+        if 'Cfg' in key and not this_tr[key]=='...':
+            query = { '_id': ObjectId(this_tr[key]) }
+            this_cfg = localdb.config.find_one(query)
+            docs = getData('json', dir_path, this_cfg['filename'], this_cfg['data_id'])
+            data_entries.append( docs )
+        elif key=='_id':
+            log_json.update({ key: str(this_tr[key]) })
+        elif key=='startTime' or key=='finishTime':
+            log_json.update({ key: setTime(this_tr[key]) })
+        elif not key=='address' and not key=='user_id' and not key=='sys':
+            log_json.update({ key: this_tr[key] })
+    docs = getData('json', dir_path, 'scanLog.json', log_json, True)
+    data_entries.append( docs )
     
-    if component_type == 'Module':
-        logger.info('{0:<15} : {1:<10} --->   path: {2}/{3}'.format('connectivity', 'Found', dir_path, 'connectivity.json'))
-        conn_json = {
-            'stage': 'Testing',
-            'chipType': chip_type,
-            'chips': []
-        }
-        if not args.dummy:
+    query = { 'testRun': tr_oid }
+    entries = localdb.componentTestRun.find(query)
+    conn_json = {
+        'stage'   : this_tr.get('stage','...'),
+        'chipType': chip_type,
+        'chips'   : []
+    }
+    chips = []
+    for this_ctr in entries:
+        if this_ctr['chip']=='module':
+            query = { '_id': ObjectId(this_ctr['component']) }
+            this_cmp = localdb.component.find_one(query)
             conn_json.update({
                 'module': {
-                    'serialNumber': test_data['serialNumber'],
-                    'componentType': 'Module'
+                    'serialNumber' : this_cmp['name'],
+                    'componentType': this_cmp['componentType']
                 }
             })
-        for chip in chip_data:
-            chip_json = {
-                'serialNumber': test_data['chips']['serialNumber'][chip['component']],
-                'chipId': test_data['chips']['chipId'][chip['component']],
-                'geomId': test_data['chips']['geomId'][chip['component']],
-                'config': test_data['path'][chip['component']],
-                'tx': test_data['chips']['tx'][chip['component']],
-                'rx': test_data['chips']['rx'][chip['component']]
-            }
-            conn_json['chips'].append(chip_json)
-        config_data = {
-            'data': conn_json,
-            'path': '{0}/connectivity.json'.format(dir_path) 
-        }
-        config_json.append(config_data)
+            continue
+        chip_conn = {}
+        for key in this_ctr:
+            if key=='config':
+                chip_conn.update({ key: '{0}/{1}'.format(dir_path, this_ctr[key]) })
+            elif 'Cfg' in key and not this_ctr[key]=='...':
+                query = { '_id': ObjectId(this_ctr[key]) }
+                this_cfg = localdb.config.find_one(query)
+                docs = getData('json', dir_path, '{0}_{1}.json'.format(this_ctr['name'], key), this_cfg['data_id'])
+                data_entries.append( docs )
+                if key=='beforeCfg':
+                    docs = getData('json', dir_path, this_ctr['config'], this_cfg['data_id'])
+                    data_entries.append( docs )
+            elif key=='attachments':
+                for attachment in this_ctr[key]:
+                    docs = getData(attachment['contentType'], dir_path, '{0}_{1}'.format(this_ctr['name'], attachment['filename']), attachment['code'])
+                    data_entries.append( docs )
+            elif not key=='_id' and not key=='component' and not key=='sys' and not key=='chip' and not key=='testRun' and not key=='environment' and not key=='dbVersion':
+                chip_conn.update({ key: this_ctr[key] })
+        conn_json['chips'].append(chip_conn)
+        if arg_vars.get('chip',None) and this_ctr['name']==arg_vars['chip']:
+            chips.append('\033[1;31m{}\033[0m'.format(this_ctr['name']))
+        else:
+            chips.append(this_ctr['name'])
+    docs = getData('json', dir_path, 'connectivity.json', conn_json, True)
+    data_entries.append( docs )
 
-    # make config files
-    if os.path.isdir(dir_path): 
-        shutil.rmtree(dir_path)
-    os.makedirs(dir_path)
+    query = { '_id': ObjectId(this_tr['user_id']) }
+    this_user = localdb.user.find_one(query)
 
-    for config in config_json:
-        with open('{0}'.format(config['path']), 'w') as f: json.dump( config['data'], f, indent=4 )
+    query = { '_id': ObjectId(this_tr['address']) }
+    this_site = localdb.institution.find_one(query)
 
-def __fetch(args, remote):
+    logger.info('\033[1;33mtest data ID: {0} \033[0m'.format(str(this_tr['_id']))) 
+    logger.info('- User      : {0} at {1}'.format(this_user['userName'], this_site['institution']))
+    logger.info('- Date      : {}'.format(setTime(this_tr['startTime'])))
+    logger.info('- Chips     : {}'.format(', '.join(chips)))
+    logger.info('- Run Number: {}'.format(this_tr['runNumber']))
+    logger.info('- Test Type : {}'.format(this_tr['testType']))
+
+    for data in data_entries:
+        logger.info('Retrieve ... {}'.format(data['path']))
+        if data['type']=='json':
+            with open(data['path'], 'w') as f:
+                json.dump(data['data'], f, indent=4)
+        else:
+            with open(data['path'], 'w') as f:
+                f.write(data['data'])
+
+#####################
+### Display data list
+### - component
+### - user
+### - site
+def __list(opt):
+    if opt=='component': __list_component()
+    elif opt=='user': __list_user()
+    elif opt=='site': __list_site()
+    
+def __list_component():
     global lines
     global size
     lines = 0
     size = shutil.get_terminal_size().lines-4
 
-    db_path = os.environ['HOME']+'/.localdb_retrieve'
-    ref_path = db_path+'/refs/remotes'
-    if not os.path.isdir(ref_path): 
-        os.makedirs(ref_path)
- 
-    remote_path = ref_path+'/'+remote
-    remote_file = open(remote_path, 'w')
-    modules = [] 
-    query = { 'componentType': 'Module' }
-    component_entries = localdb.component.find(query)
-    for component in component_entries:
-        if component['serialNumber'] == '': continue
-        module = {}
-        module['serialNumber'] = component['serialNumber'] 
-        module['componentType'] = component['componentType']
-        module['chipType'] = component['chipType']
-        query = { 'parent': str(component['_id']) }
-        child_entries = localdb.childParentRelation.find(query)
-        module['chips'] = []
-        for child in child_entries:
-            query = { '_id': ObjectId(child['child']) }
-            this_chip = localdb.component.find_one(query)
-            chip = {}
-            chip['serialNumber'] = this_chip['serialNumber']
-            chip['componentType'] = this_chip['componentType']
-            chip['chipId'] = this_chip['chipId']
-            module['chips'].append(chip)
-        modules.append(module)
-        remote_file.write('{}\n'.format(component['serialNumber']))
-    remote_file.close()
+    docs_list = { 'parent': [], 'child': {} }
+    entries = localdb.childParentRelation.find()
+    oids = []
+    for entry in entries:
+        oids.append(entry['parent'])
+    oids = list(set(oids))
+    for oid in oids:
+        query = { '_id': ObjectId(oid) }
+        this = localdb.component.find_one(query)
+        query = { '_id': ObjectId(this['user_id']) }
+        this_user = localdb.user.find_one( query )
+        query = { '_id': ObjectId(this['address']) }
+        this_site = localdb.institution.find_one( query )
+        docs = {
+            'oid' : oid,
+            'name': this['name'],
+            'type': this['componentType'],
+            'asic': this['chipType'],
+            'chips': [],
+            'user': this_user['userName'],
+            'site': this_site['institution']
+        }
+        query = { 'parent': oid }
+        entries = localdb.childParentRelation.find(query)
+        for entry in entries:
+            docs['chips'].append(entry['child'])
+        docs_list['parent'].append(docs)
+    query = { 'componentType': 'front-end_chip' }
+    entries = localdb.component.find(query)
+    oids = []
+    for entry in entries:
+        oids.append(str(entry['_id']))
+    for oid in oids:
+        query = { '_id': ObjectId(oid) }
+        this = localdb.component.find_one(query)
+        query = { '_id': ObjectId(this['user_id']) }
+        this_user = localdb.user.find_one( query )
+        query = { '_id': ObjectId(this['address']) }
+        this_site = localdb.institution.find_one( query )
+        docs_list['child'].update({
+            oid: {
+                'name': this['name'],
+                'type': this['componentType'],
+                'asic': this['chipType'],
+                'chipId': this['chipId'],
+                'user': this_user['userName'],
+                'site': this_site['institution']
+            }
+        })
+    docs_list['parent'] = sorted(docs_list['parent'], key=lambda x:(x['type']))
+    printLog('')
+    for docs in docs_list['parent']:
+        printLog('\033[1;33m{0}: {1} \033[0m'.format(docs['type'], docs['name'])) 
+        printLog('User      : {0} at {1}'.format(docs['user'], docs['site']))
+        printLog('Chip Type : {0}'.format(docs['asic']))
+        printLog('Chips({0})  :'.format(len(docs['chips'])))
+        for oid in docs['chips']:
+            chip_docs = docs_list['child'][oid]
+            printLog('\033[1;33m    {0}: {1} \033[0m'.format(chip_docs['type'], chip_docs['name'])) 
+            printLog('    User  : {0} at {1}'.format(chip_docs['user'], chip_docs['site']))
+            printLog('    ChipId: {0}'.format(chip_docs['chipId']))
+            del docs_list['child'][oid]
+        printLog('')
+    for oid in docs_list['child']:
+        docs = docs_list['child'][oid]
+        printLog('\033[1;33m{0}: {1} \033[0m'.format(docs['type'], docs['name'])) 
+        printLog('User      : {0} at {1}'.format(docs['user'], docs['site']))
+        printLog('Chip Type : {0}'.format(docs['asic']))
+        printLog('ChipId    : {0}'.format(docs['chipId']))
+        printLog('')
 
-    logger.info('Download Component Data of Local DB locally...')
-    printLog('--------------------------------------')
-    for j, module in enumerate(modules):
-        printLog('Component ({})'.format(j+1))
-        printLog('    Chip Type: {}'.format(module['chipType']))
-        printLog('    Module:')
-        printLog('        serial number: {}'.format(module['serialNumber']))
-        printLog('        component type: {}'.format(module['componentType']))
-        printLog('        chips: {}'.format(len(module['chips'])))
-        for i, chip in enumerate(module['chips']):
-            printLog('    Chip ({}):'.format(i+1))
-            printLog('        serial number: {}'.format(chip['serialNumber']))
-            printLog('        component type: {}'.format(chip['componentType']))
-            printLog('        chip ID: {}'.format(chip['chipId']))
-        printLog('--------------------------------------\n')
-    printLog('Done.')
+def __list_user():
+    global lines
+    global size
+    lines = 0
+    size = shutil.get_terminal_size().lines-4
 
-    sys.exit()
+    docs_list = {}
+    entries = localdb.user.find()
+    users = []
+    for entry in entries:
+        users.append(entry['userName'])
+    for user in users:
+        query = { 'userName': user }
+        entries = localdb.user.find(query)
+        docs = []
+        for entry in entries:
+            docs.append(entry['institution'])
+        docs = list(set(docs))
+        docs_list.update({ user: docs })
+    printLog('')
+    for user in docs_list:
+        printLog('\033[1;33mUser Name: {0}\033[0m'.format(user)) 
+        for docs in docs_list[user]:
+            printLog('- {0}'.format(docs))
+        printLog('')
+
+def __list_site():
+    global lines
+    global size
+    lines = 0
+    size = shutil.get_terminal_size().lines-4
+
+    docs_list = []
+    entries = localdb.institution.find()
+    for entry in entries:
+        docs_list.append(entry['institution'])
+    docs_list = list(set(docs_list))
+    printLog('')
+    for site in docs_list:
+        printLog('- {0}'.format(site)) 
+    printLog('')
