@@ -350,31 +350,13 @@ private:
 
     /** Analog FE calculations */
     
-    uint8_t calculateToT( Rd53aLinPixelModel&  /*analogFE*/ );
-    uint8_t calculateToT( Rd53aDiffPixelModel& /*analogFE*/ );
-    uint8_t calculateToT( Rd53aSyncPixelModel& /*analogFE*/ );
+    uint32_t calculateToT( Rd53aLinPixelModel&  /*analogFE*/, int /*TDAC*/  );
+    uint32_t calculateToT( Rd53aDiffPixelModel& /*analogFE*/, int /*TDAC*/  );
+    uint32_t calculateToT( Rd53aSyncPixelModel& /*analogFE*/, int /*TDAC*/  );
     
 
     template<class PIXEL>
-    void calculateSignal( anytype& pixel, const uint32_t coreCol, const uint32_t coreRow, const uint32_t subCol, const uint32_t subRow, uint32_t tag ) {
-        
-        auto& model    = pixel.getVar<PIXEL>();
-        auto& reg      = model.m_register;
-        auto& analogFE = model.m_analogFEModel;
-
-        // See Manual Table 30 (p.72) for the behavior of the pixel register
-        // Bit [0]   : pixel power or enable
-        // Bit [1]   : injection enable
-        // Bit [2]   : Hitbus enable
-        // Bit [3]   : TDAC sign   (only for Diff)
-        // Bit [4-7] : TDAC b[0-3] (only for Diff)
-                
-        if( !( reg & 0x1 >>0 ) ) return;
-        if( !( reg & 0x2 >>1 ) ) return;
-
-        formatWords( coreCol, coreRow, subCol, subRow, (m_feCfg->InjEnDig.read() ? 8 : calculateToT( analogFE )), tag );
-    }
-
+    void calculateSignal( anytype& pixel, const uint32_t coreCol, const uint32_t coreRow, const uint32_t subCol, const uint32_t subRow, uint32_t tag );
 
     /**
      * This function creates the encoded hit words
