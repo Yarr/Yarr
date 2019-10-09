@@ -78,7 +78,13 @@ int main(int argc, char *argv[]) {
     std::cout << "-> Parsing command line parameters ..." << std::endl;
     
     std::string home = getenv("HOME");
-    std::string hostname = getenv("HOSTNAME");
+    std::string hostname = "default_host";
+    // HOSTNAME does not exist like this on mac, need to work around it
+    if (getenv("HOSTNAME")) {
+        hostname = getenv("HOSTNAME");
+    } else {
+        std::cout << "HOSTNAME environmental variable not found ..." << std::endl;
+    }
 
     // Init parameters
     std::string scanType = "";
