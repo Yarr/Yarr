@@ -52,12 +52,12 @@ void Rd53aDataProcessor::join() {
 void Rd53aDataProcessor::process() {
     while(true) {
         std::unique_lock<std::mutex> lk(mtx);
-        m_input->wait_not_empty_or_done();
+        m_input->waitNotEmptyOrDone();
 
         process_core();
         // TODO the timing on these seems sensitive
         std::this_thread::sleep_for(std::chrono::microseconds(200));
-        if( m_input->is_done() ) {
+        if( m_input->isDone() ) {
             std::this_thread::sleep_for(std::chrono::microseconds(200));
             process_core(); // this line is needed if the data comes in before done_flag is changed.
             break;

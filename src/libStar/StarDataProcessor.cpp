@@ -48,11 +48,11 @@ void StarDataProcessor::join() {
 void StarDataProcessor::process() {
     while(true) {
         std::unique_lock<std::mutex> lk(mtx);
-        input->wait_not_empty_or_done();
+        input->waitNotEmptyOrDone();
 
         process_core();
 
-        if( input->is_done() ) {
+        if( input->isDone() ) {
             process_core(); // this line is needed if the data comes in before scanDone is changed.
             break;
         }

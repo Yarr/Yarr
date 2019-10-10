@@ -23,7 +23,7 @@ template <class T>
 class ClipBoard {
     public:
 
-        ClipBoard() : done_flag(false) {}
+        ClipBoard() : doneFlag(false) {}
         ~ClipBoard() {
             while(!dataQueue.empty()) {
                 std::unique_ptr<T> tmp = this->popData();
@@ -36,7 +36,7 @@ class ClipBoard {
             queueMutex.unlock();
             //static unsigned cnt = 0;
             //std::cout << "Pushed " << cnt++ << " " << typeid(T).name() << " objects so far" << std::endl;
-            cv_not_empty.notify_all();
+            cvNotEmpty.notify_all();
         }
 
         // User has to take of deletin popped data
@@ -55,28 +55,28 @@ class ClipBoard {
             return dataQueue.empty();
         }
 
-        bool is_done() {
-            return done_flag;
+        bool isDone() {
+            return doneFlag;
         }
 
         void finish() {
-            done_flag = true;
-            cv_not_empty.notify_all();
+            doneFlag = true;
+            cvNotEmpty.notify_all();
         }
 
-        void wait_not_empty_or_done() {
+        void waitNotEmptyOrDone() {
           std::unique_lock<std::mutex> lk(queueMutex);
-          cv_not_empty.wait(lk,
-                            [&] { return done_flag || !empty(); } );
+          cvNotEmpty.wait(lk,
+                            [&] { return doneFlag || !empty(); } );
         }
 
     private:
-        std::condition_variable cv_not_empty;
+        std::condition_variable cvNotEmpty;
 
         std::mutex queueMutex;
         std::deque<std::unique_ptr<T>> dataQueue;
 
-        std::atomic<bool> done_flag;
+        std::atomic<bool> doneFlag;
 };
 
 template class ClipBoard<RawData>;

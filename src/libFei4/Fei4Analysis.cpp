@@ -53,12 +53,12 @@ void Fei4Analysis::process() {
         //std::cout << __PRETTY_FUNCTION__ << std::endl;
 
         std::unique_lock<std::mutex> lk(mtx);
-        input->wait_not_empty_or_done();
+        input->waitNotEmptyOrDone();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
         process_core();
 
-        if( input->is_done() ) {
+        if( input->isDone() ) {
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
             process_core();  // this line is needed if the data comes in before scanDone is changed.
             std::cout << __PRETTY_FUNCTION__ << ": histogrammerDone!" << std::endl;
