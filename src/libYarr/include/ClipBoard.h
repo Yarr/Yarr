@@ -9,6 +9,7 @@
 // # Comment: Saves data between processes
 // ################################
 
+#include <atomic>
 #include <memory>
 #include <mutex>
 #include <deque>
@@ -22,7 +23,7 @@ template <class T>
 class ClipBoard {
     public:
 
-        ClipBoard(){}
+        ClipBoard() : doneFlag(false) {}
         ~ClipBoard() {
             while(!dataQueue.empty()) {
                 std::unique_ptr<T> tmp = this->popData();
@@ -35,7 +36,7 @@ class ClipBoard {
             queueMutex.unlock();
             //static unsigned cnt = 0;
             //std::cout << "Pushed " << cnt++ << " " << typeid(T).name() << " objects so far" << std::endl;
-            cv.notify_all();
+            cvNotEmpty.notify_all();
         }
 
         // User has to take of deletin popped data
@@ -54,12 +55,28 @@ class ClipBoard {
             return dataQueue.empty();
         }
 
-        std::condition_variable cv;
-        
+        bool isDone() {
+            return doneFlag;
+        }
+
+        void finish() {
+            doneFlag = true;
+            cvNotEmpty.notify_all();
+        }
+
+        void waitNotEmptyOrDone() {
+          std::unique_lock<std::mutex> lk(queueMutex);
+          cvNotEmpty.wait(lk,
+                            [&] { return doneFlag || !empty(); } );
+        }
+
     private:
+        std::condition_variable cvNotEmpty;
+
         std::mutex queueMutex;
         std::deque<std::unique_ptr<T>> dataQueue;
 
+        std::atomic<bool> doneFlag;
 };
 
 template class ClipBoard<RawData>;

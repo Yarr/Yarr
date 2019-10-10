@@ -10,6 +10,7 @@
 // # Date: Jan 2017
 // ################################
 
+#include <atomic>
 #include <iostream>
 #include <thread>
 #include <mutex>
@@ -70,7 +71,7 @@ class EmuTxCore : virtual public TxCore {
         unsigned m_trigCnt;
         std::mutex accMutex;
         std::thread triggerProc;
-        bool trigProcRunning;
+        std::atomic<bool> trigProcRunning;
     uint32_t* trigWord;
     uint32_t trigLength;
         void doTrigger();

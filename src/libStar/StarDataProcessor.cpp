@@ -28,8 +28,6 @@ void StarDataProcessor::init() {
     for(std::map<unsigned, ClipBoard<EventDataBase> >::iterator it = outMap->begin(); it != outMap->end(); ++it) {
         activeChannels.push_back(it->first);
     }
-
-    scanDone = false;
 }
 
 void StarDataProcessor::run() {
@@ -50,15 +48,12 @@ void StarDataProcessor::join() {
 void StarDataProcessor::process() {
     while(true) {
         std::unique_lock<std::mutex> lk(mtx);
-        input->cv.wait( lk, [&] { return scanDone || !input->empty(); } );
+        input->waitNotEmptyOrDone();
 
         process_core();
 
-        if( scanDone ) {
+        if( input->isDone() ) {
             process_core(); // this line is needed if the data comes in before scanDone is changed.
-            for (unsigned i=0; i<activeChannels.size(); i++) {
-                outMap->at(activeChannels[i]).cv.notify_all(); // notification to the downstream
-            }
             break;
         }
     }

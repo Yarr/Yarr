@@ -519,8 +519,7 @@ int main(int argc, char *argv[]) {
 
     // Join from upstream to downstream.
     
-    proc->scanDone = true;
-    bookie.rawData.cv.notify_all();
+    bookie.rawData.finish();
 
     std::chrono::steady_clock::time_point scan_done = std::chrono::steady_clock::now();
     std::cout << "-> Waiting for processors to finish ..." << std::endl;
@@ -530,12 +529,10 @@ int main(int argc, char *argv[]) {
     
     std::cout << "-> Processor done, waiting for histogrammer ..." << std::endl;
     
-    Fei4Histogrammer::processorDone = true;
-    
     for (unsigned i=0; i<bookie.feList.size(); i++) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
-          fe->clipData->cv.notify_all();
+          fe->clipData->finish();
         }
     }
     
@@ -546,12 +543,10 @@ int main(int argc, char *argv[]) {
     
     std::cout << "-> Processor done, waiting for analysis ..." << std::endl;
     
-    Fei4Analysis::histogrammerDone = true;
-    
     for (unsigned i=0; i<bookie.feList.size(); i++) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
-          fe->clipHisto->cv.notify_all();
+          fe->clipHisto->finish();
         }
     }
 

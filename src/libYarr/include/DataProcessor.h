@@ -34,8 +34,6 @@ class DataProcessor {
         virtual void run() = 0;
         virtual void join() = 0;
 
-        bool scanDone;
-
         // TODO make getter/setter
         unsigned m_numThreads;
     protected:
