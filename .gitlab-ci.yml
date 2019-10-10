@@ -26,6 +26,9 @@ job_build_and_test:
 
 job_build_all:
     stage: build
+    artifacts:
+        paths:
+          - bin
     script:
       - scl enable devtoolset-7 bash
       - source /opt/rh/devtoolset-7/enable
@@ -47,6 +50,10 @@ job_build_clang:
       - cd ..
       - bin/scanConsole -k
 
+job_test_json_parsing:
+    stage: test
+    dependencies: ["job_build_all"]
+    script:
       # Check schema by loading configs in turn
       - for file in $(find configs/defaults -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t FRONT_END || break; done
       - for file in $(find configs/connectivity -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t CONNECTIVITY || break; done
