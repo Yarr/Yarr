@@ -122,14 +122,21 @@ void process_data(RawData &curIn,
         for(unsigned  ithCluster=0; ithCluster < packet.clusters.size(); ++ithCluster){
             Cluster cluster = packet.clusters.at(ithCluster);
 
-            curOut.curEvent->addHit(cluster.address, 0, 0);
+            // Split hits into two rows of strips
+            curOut.curEvent->addHit(cluster.address&0x7f,
+                                    (cluster.address>>7)&1, 0);
 
             std::bitset<3> nextPattern (cluster.next);
             for(unsigned i=0; i<3; i++){
                 if(!nextPattern.test(i)) continue;
-                curOut.curEvent->addHit(cluster.address+i+1, 0, 0);
+                auto nextAddress = cluster.address+i+1;
+                curOut.curEvent->addHit(nextAddress & 0x7f,
+                                        (nextAddress>>7)&1, 0);
 
-                if(cluster.address+i+1 > 255) std::cout << " address > 255 "  << std::endl;
+                // It's an error for cluster to escape either "side"
+                if((cluster.address+i+1) > 127) {
+                    std::cout << " address > 127 " << std::endl;
+                }
             }
         }
     } else if(packetType == TYP_ABC_RR || packetType == TYP_HCC_RR || packetType == TYP_ABC_HPR || packetType == TYP_HCC_HPR) {
