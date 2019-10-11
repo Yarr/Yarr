@@ -70,6 +70,8 @@ void StarCfg::configure_HCC_Registers() {
   registerMap[0][48]->setValue(0x00406600);
 
 
+//TODO ###declare subregisters for HCC
+
   //    subRegisterMap_all[0]["CFD_BC_FINEDELAY"] = registerMap[0][]->addSubRegister("CFD_BC_FINEDELAY",   ,  );
   //    subRegisterMap_all[0]["CFD_BC_COARSEDELAY"] = registerMap[0][]->addSubRegister("CFD_BC_COARSEDELAY",   ,  );
   //    subRegisterMap_all[0][""] = registerMap[0][]->addSubRegister("",   ,  );
