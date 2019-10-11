@@ -81,7 +81,8 @@ bool testConnectivity(json config) {
       chip["tx"]; // int
       chip["rx"]; // int
 
-    /* Comment out the checking for the configure fiels, as they are only generated after running
+#if 0
+      /* Skip checking of configure fields, as not always there? */
       std::ifstream cfgFile(chipConfigPath);
       if (!cfgFile) {
         std::cout << "Failed to read " << chipConfigPath << "\n";
@@ -97,7 +98,7 @@ bool testConnectivity(json config) {
         feCfg->setLocked(chip["locked"]);
 
       cfgFile.close();
-    */
+#endif
     }
   } catch(json::type_error &te) {
     std::cout << "Connectivity read failed: " << te.what() << "\n";
