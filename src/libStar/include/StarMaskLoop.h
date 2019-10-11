@@ -6,31 +6,16 @@
 #include "StarChips.h"
 #include "LoopActionBase.h"
 
-enum MASK_STAGE {
-    MASK_1  = 0xFFFFFFFF,
-    MASK_2  = 0x55555555,
-    MASK_4  = 0x11111111,
-    MASK_8  = 0x01010101,
-    MASK_16 = 0x00010001,
-    MASK_32 = 0x00000001,
-    MASK_NONE    = 0x00000000
+enum MASK_STAGE_STRIP { //TODO-change this or delete it
+    MASK_STRIP_1  = 0xFFFFFFFF
 };
 
-enum CAL_EN_STAGE {
-	CAL_EN_1  = 0x00000000,
-	CAL_EN_2  = 0xCCCCCCCC,
-	CAL_EN_4  = 0x11111111,
-	CAL_EN_8  = 0x01010101,
-	CAL_EN_16 = 0x00010001,
-	CAL_EN_32 = 0x00000001,
-	CAL_EN_NONE  = 0x00000000
-};
 
 class StarMaskLoop : public LoopActionBase {
     public:
         StarMaskLoop();
 
-        void setMaskStage(enum MASK_STAGE mask);
+        void setMaskStage(enum MASK_STAGE_STRIP mask);
         void setMaskStage(uint32_t mask);
         //uint32_t getMaskStage();
         //void setIterations(unsigned it);

@@ -2,7 +2,7 @@
 #include "StarMask_CalEn.h"
 
 StarMaskLoop::StarMaskLoop() : LoopActionBase() {
-    m_mask = MASK_16;
+    m_mask = MASK_STRIP_1;
     min = 0;
     max = 16;
     step = 1;
@@ -129,36 +129,13 @@ void StarMaskLoop::execPart2() {
     }
 }
 
-void StarMaskLoop::setMaskStage(enum MASK_STAGE mask) {
+void StarMaskLoop::setMaskStage(enum MASK_STAGE_STRIP mask) {
     switch (mask) {
-        case MASK_1: //all are masked
-            m_mask = MASK_1;
+        case MASK_STRIP_1: //all are masked
+            m_mask = MASK_STRIP_1;
             max = 1;
             break;
-        case MASK_2: //every second strip are masked
-            m_mask = MASK_2;
-            max = 2;
-            break;
-        case MASK_4: //every forth strip are masked
-            m_mask = MASK_4;
-            max = 4;
-            break;
-        case MASK_8:
-            m_mask = MASK_8;
-            max = 8;
-            break;
-        case MASK_16:
-            m_mask = MASK_16;
-            max = 16;
-            break;
-        case MASK_32:
-            m_mask = MASK_32;
-            max = 32;
-            break;
-        case MASK_NONE:
-            m_mask = MASK_NONE;
-            max = 0;
-            break;
+
     }
 }
 
