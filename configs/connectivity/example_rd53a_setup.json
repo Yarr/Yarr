@@ -3,8 +3,8 @@
     "chips" : [
         {
             "config" : "configs/rd53a_test.json",
-            "tx" : 4,
-            "rx" : 4,
+            "tx" : 0,
+            "rx" : 0,
             "enable" : 1,
             "locked" : 0
         },
