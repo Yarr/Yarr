@@ -697,7 +697,7 @@ void DBHandler::init_influx(std::string i_command){
   std::size_t pathPos;
   if ( i_command.find('/')!=std::string::npos) pathPos = i_command.find_last_of('/');
   else pathPos = i_command.size();
-  yarr_bin_path=i_command.substr(0,pathPos);
+  std::string yarr_bin_path=i_command.substr(0,pathPos);
 
   influx_command = "influxdbtool-retrieve";
   std::string cmd = influx_command+" --test --chip gaya --dcs_config gaya 2> /dev/null";

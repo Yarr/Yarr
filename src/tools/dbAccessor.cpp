@@ -36,6 +36,11 @@ int main(int argc, char *argv[]){
     std::string conn_path = "";
     std::string scanlog_path = "";
 
+    //for influxDB
+    std::string influx_conn_path="";
+    std::string influx_chip_name="";
+
+
     int c;
     while ((c = getopt(argc, argv, "hIRCE:Mc:s:i:d:u:")) != -1 ){
         switch (c) {
