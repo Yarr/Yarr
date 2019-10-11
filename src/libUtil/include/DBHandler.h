@@ -96,6 +96,16 @@ class DBHandler {
         ***/
         int checkModule();
 
+	/***
+	retrieve DCS data from InfluxDB
+	***/
+	void init_influx(std::string /*i_command*/);
+        int retrieveFromInflux(std::string, /*influx_conn_path*/
+                               std::string, /*chipname*/
+                               std::string  /*i_scanlog_path*/);
+        void cleanDataDir();
+
+
     protected:
         /// check data function
         void checkFile(std::string /*i_file_path*/,
