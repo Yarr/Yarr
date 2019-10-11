@@ -80,6 +80,20 @@ void StarChips::init(HwController *arg_core, unsigned arg_txChannel, unsigned ar
 	geo.nCol = 1;
 }
 
+
+void StarChips::setHccId(unsigned hccID) {
+  //First step will consist in setting the HCC ID (serial number might be different depending on fuse !)
+  //Load the eFuse serial number (and stop HPR)
+  sendCmd(write_hcc_register(16, 0x5, 0xf));
+  //Let's reset the HCC ID with a broadcast write of the HCCID+SN on reg 17
+  uint32_t newReg17val = (hccID<<28) | m_sn;
+  sendCmd(write_hcc_register(17, newReg17val, 0xf));
+  std::cout << "Set HCC ID to " << hccID << " (sent on reg17 0x" << std::hex << std::setfill('0') << std::setw(8) << newReg17val << ")" << std::endl;
+
+}
+
+
+
 void StarChips::reset(){
 	std::cout << "Global reseting all HCC and ABC on the same LCB control segment " << std::endl;
 
@@ -109,7 +123,15 @@ void StarChips::reset(){
 }
 
 void StarChips::configure() {
+
+	//Set the HCC ID
+	if (m_sn) this->setHccId(m_hccID);
+
+	std::cout << "Sending fast command #" << LCB::HCC_REG_RESET << " HCC_REG_RESET" << std::endl;
 	this->sendCmd(LCB::fast_command(LCB::HCC_REG_RESET, 0) );
+
+	std::cout << "Sending registers configuration..." << std::endl;
+
 	this->writeRegisters();
 
 }

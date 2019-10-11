@@ -136,6 +136,7 @@ class StarCfg : public FrontEndCfg {
                         [this, chipID](auto it) { return it.getABCchipID() == chipID; });
   }
 
+  uint32_t m_sn=0;//serial number set by eFuse bits
 
   HccCfg m_hcc;
 
