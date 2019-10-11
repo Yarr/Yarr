@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <bitset>
 #include "include/StarTriggerLoop.h"
+#include <iostream>
+#include <iomanip>
 
 StarTriggerLoop::StarTriggerLoop() : LoopActionBase() {
 
@@ -13,10 +15,6 @@ StarTriggerLoop::StarTriggerLoop() : LoopActionBase() {
 	m_trigDelay = 45; // L0_delay 34
 	m_trigFreq = 1e3; // 1kHz
 	m_trigTime = 10; // 10s
-	//    m_trigWord[0] = 0x00;
-	//    m_trigWord[1] = TRIG_CMD;
-	//    m_trigWord[2] = 0x00;
-	//    m_trigWord[3] = CAL_CMD;
 	m_noInject = false;
 	m_extTrigger = false;
 	isInner = false;
@@ -80,28 +78,44 @@ void StarTriggerLoop::end() {
 }
 
 void StarTriggerLoop::setTrigWord() {
-	m_trigWord[0] = (LCB::IDLE << 16) +LCB::fast_command(LCB::ABC_CAL_PULSE, 1);
-	m_trigWord[1] = (LCB::IDLE << 16) + LCB::IDLE;
-	m_trigWord[2] = (LCB::IDLE << 16) + LCB::IDLE;
-	m_trigWord[3] = LCB::l0a_mask(4, 10, false);
-	m_trigWordLength = 4;
+// latency (unit::1 BC),   1 LCB::frame (16 bits) covers 4 BCs, 1 trigWord (32 bits) covers 8 BCs
+
+//	m_trigWord[0] = (LCB::IDLE << 16) + LCB::fast_command(LCB::ABC_DIGITAL_PULSE, 0);
+
+	m_trigWord[0] = (LCB::IDLE << 16) + LCB::fast_command(LCB::ABC_CAL_PULSE, 0);
+
+	//TODO set proper trigger delay
+	unsigned i = 1;
+	for ( ; i<m_trigDelay; i++) { //m_trigDelay has unit of 8 BCs which is not ideal
+		m_trigWord[i] = (LCB::IDLE << 16) + LCB::IDLE;
+	}
+
+	m_trigWord[i+1] = (LCB::l0a_mask(1, 0, false) << 16) + LCB::IDLE;
+	m_trigWord[i+2] = (LCB::IDLE << 16) + LCB::IDLE;
+
+	m_trigWordLength = i+2;
+
+std::cout <<"----m_trigWordLength: "<< m_trigWordLength << std::endl;
+
+
+//	78557855785578554766713c715959595959595959595959474b00007855785578557855 --- read ABC reg32
+//	m_trigWord[0] = 0x78557855;
+//	m_trigWord[1] = 0x78557855;
+//	m_trigWord[2] = 0x4766713c;
+//	m_trigWord[3] = 0x71595959;
+//	m_trigWord[4] = 0x59595959;
+//	m_trigWord[5] = 0x59595959;
+//	m_trigWord[6] = 0x474b0000;
+//	m_trigWord[7] = 0x78557855;
+//	m_trigWord[8] = 0x78557855;
+//	m_trigWordLength = 9;
+
 
 }
 
 
 void StarTriggerLoop::setTrigDelay(unsigned int delay) {
 
-
-//	unsigned pos = (delay-1)%32; // subtract 8 bit long trig cmd
-//	    unsigned word = (delay-1)/32; // Select word in array
-//
-//	    if ((word < 3 && pos <= 27) || word < 2) {
-//	        m_trigWord[2-word] = (TRIG_CMD>>pos);
-//	        if (pos > 27) // In case we shifted over word border
-//	            m_trigWord[2-1-word] = (TRIG_CMD<<(5-(32-pos)));
-//	        m_trigDelay = delay;
-//	    }
-//	m_trigWordLength = 32 + delay;
 }
 
 void StarTriggerLoop::setNoInject() {
@@ -119,7 +133,7 @@ void StarTriggerLoop::writeConfig(json &config) {
 	config["trig_count"] = m_trigCnt;
 	config["trig_frequency"] = m_trigFreq;
 	config["trig_time"] = m_trigTime;
-	config["l0_delay"] = m_trigDelay;
+	config["l0_latency"] = m_trigDelay;
 	config["noInject"] = m_noInject;
 	config["extTrigger"] = m_extTrigger;
 }
@@ -135,8 +149,8 @@ void StarTriggerLoop::loadConfig(json &config) {
 	if (!config["trig_time"].empty())
 		m_trigTime = config["trig_time"];
 
-	if (!config["l0_delay"].empty())
-		m_trigDelay = config["l0_delay"];
+	if (!config["l0_latency"].empty())
+		m_trigDelay = config["l0_latency"];
 
 	if (!config["noInject"].empty())
 		m_noInject = config["noInject"];
