@@ -151,6 +151,7 @@ class DBHandler {
         std::string m_chip_type;
         std::string m_output_dir;
         std::string m_command;
+	std::string influx_command;
 
         std::vector<std::string> m_stage_list;
         std::vector<std::string> m_env_list;
