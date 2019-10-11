@@ -80,7 +80,7 @@ void StarDataProcessor::process_core() {
 
         for(unsigned c=0; c<size; c++) {
             RawData r(curInV->adr[c], curInV->buf[c], curInV->words[c]);
-            unsigned channel = curInV->adr[c];
+            unsigned channel = curInV->adr[c]; //elink number
             process_data(r, *curOut[channel]);
         }
 
@@ -105,10 +105,12 @@ void process_data(RawData &curIn,
 
     packet.parse();
     // std::cout << __PRETTY_FUNCTION__ << ": Data for Channel " << channel << "\n";
-    // packet.print();
+    // packet.print_more();
 
     PacketType packetType = packet.getType();
     if(packetType == TYP_LP || packetType == TYP_PR){
+        if (packet.n_clusters()==0) return; //empty packet
+
         int tag = packet.l0id;
         auto l1id = packet.l0id;
         auto bcid = packet.bcid;
@@ -116,14 +118,20 @@ void process_data(RawData &curIn,
         std::cout << "new physics event packet !!!!!!!!!! "<< std::endl;
         curOut.newEvent(tag, l1id, bcid);
 
-//      for(unsigned int iW=0; iW < clusters.size(); ++iW){
-//             Cluster cluster = clusters.at(iW);
-//             std::string next_binary = std::bitset<3>(cluster.next).to_string();
-//             printf("  %i) InputChannel: %i, Address: 0x%02x, Next Strip Pattern: %s.\n", iW, cluster.input_channel, cluster.address, next_binary.c_str() );
-//           }
-//        curOut[channel]->curEvent->addHit(abc_cluster_addr[i], 0, 0);
-//        hits[channel]++; //do we need this? Since Fei4EventData.h already has a hit counter.
+        packet.print_clusters();
+        for(unsigned  ithCluster=0; ithCluster < packet.clusters.size(); ++ithCluster){
+            Cluster cluster = packet.clusters.at(ithCluster);
 
+            curOut.curEvent->addHit(cluster.address, 0, 0);
+
+            std::bitset<3> nextPattern (cluster.next);
+            for(unsigned i=0; i<3; i++){
+                if(!nextPattern.test(i)) continue;
+                curOut.curEvent->addHit(cluster.address+i+1, 0, 0);
+
+                if(cluster.address+i+1 > 255) std::cout << " address > 255 "  << std::endl;
+            }
+        }
     } else if(packetType == TYP_ABC_RR || packetType == TYP_HCC_RR || packetType == TYP_ABC_HPR || packetType == TYP_HCC_HPR) {
         packet.print_more();
     }
