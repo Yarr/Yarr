@@ -199,6 +199,9 @@ int checkJson(json &jsonConfig, ConfigType jsonFileType) {
 
 void printHelp() {
     std::cout << "testJson help:" << std::endl;
+    std::cout << "  Read in json configuration files to check parsing\n";
+    std::cout << "\n";
+    std::cout << "Parameters\n";
     std::cout << " -h: Shows this help\n";
     std::cout << " -f <config_name> : Json file to examine\n";
     std::cout << "                   CONNECTIVITY,CONTROLLER,SCAN_CONFIG,FRONT_END\n";
@@ -264,7 +267,13 @@ int main(int argc, char *argv[]) {
 
   json jsonConfig;
   try {
-    jsonConfig = json::parse(std::ifstream(jsonFileName));
+    std::ifstream ifs(jsonFileName);
+    if(!ifs) {
+      std::cerr << "Failed to open file: " << jsonFileName << '\n';
+      return 1;
+    }
+    jsonConfig = json::parse(ifs);
+    ifs.close();
   } catch (json::parse_error &e) {
     std::cerr << "Failed to parse file as json: " << e.what() << '\n';
     // file_name
