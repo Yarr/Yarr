@@ -675,3 +675,65 @@ void DBHandler::mkdir(std::string i_dir_path) {
         this->alert(function, message); return;
     }
 }
+
+// function to retreive DCS data from InfluxDB
+void DBHandler::init_influx(std::string i_command){
+  std::size_t pathPos;
+  if ( i_command.find('/')!=std::string::npos) pathPos = i_command.find_last_of('/');
+  else pathPos = i_command.size();
+  yarr_bin_path=i_command.substr(0,pathPos);
+
+  influx_command = "influxdbtool-retrieve";
+  std::string cmd = influx_command+" --test --chip gaya --dcs_config gaya 2> /dev/null";
+  if (system(cmd.c_str())!=0) {
+    influx_command = yarr_bin_path + "/../localdb/bin/influxdbtool-retrieve";
+  }
+}
+int DBHandler::retrieveFromInflux(std::string influx_conn_path, std::string chip_name, std::string i_scanlog_path){
+  char path[1000];
+  std::string current_dir = getcwd(path, sizeof(path));
+  std::size_t prefixPos = i_scanlog_path.find_first_of('/');
+  std::string log_path;
+  std::string cmd="";
+  if (prefixPos!=0) {
+    if (i_scanlog_path.substr(0,1)=="~") {
+      std::string home = getenv("HOME");
+      log_path = home+i_scanlog_path.substr(1);
+    } else if (i_scanlog_path.substr(0,1)==".") {
+      log_path = current_dir+"/"+i_scanlog_path;
+    } else {
+      log_path = current_dir+"/"+i_scanlog_path;
+    }
+  } else {
+    log_path = i_scanlog_path;
+  }
+  prefixPos = influx_conn_path.find_first_of('/');
+  if (prefixPos!=0) {
+    if (influx_conn_path.substr(0,1)=="~") {
+      std::string home = getenv("HOME");
+      influx_conn_path = home+influx_conn_path.substr(1);
+    } else if (i_scanlog_path.substr(0,1)==".") {
+      influx_conn_path = current_dir+"/"+influx_conn_path;
+    } else {
+      influx_conn_path = current_dir+"/"+influx_conn_path;
+    }
+  } else {
+    log_path = i_scanlog_path;
+  }
+
+  json log_json = this->toJson(log_path);
+  if (log_json["id"].empty()) {
+    this->checkEmpty(log_json["startTime"].empty()&&log_json["timestamp"].empty(), "startTime||timestamp", log_path);
+  }
+  cmd = influx_command + " retrieve --chip " + chip_name +" -s "+log_path+" --dcs_config "+influx_conn_path;
+  if(system(cmd.c_str())==0){
+    return 0;
+  }
+  else return 1;
+}
+
+void DBHandler::cleanDataDir(){
+  std::string cmd="";
+  cmd = influx_command + " remove -s /tmp/";
+  system(cmd.c_str());
+}

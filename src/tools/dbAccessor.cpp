@@ -147,7 +147,42 @@ int main(int argc, char *argv[]){
         delete database;
         return status;
     }
+    if (registerType == "Influxdb") {
+      if (scanlog_path == "") {
+	std::cerr << "#DB ERROR# No scan log file path given, please specify file path under -s option!" << std::endl;
+	return 1;
+      }
+      if (influx_chip_name == "") {
+	std::cerr << "#DB ERROR# No chip name given, please specify chipname under -n option!" << std::endl;
+	return 1;
+      }
+      int success=0;
+      DBHandler *database = new DBHandler();
+      database->initialize(cfg_path, commandLine, "register");
+      database->init_influx(commandLine);
+      success=database->retrieveFromInflux(influx_conn_path,influx_chip_name,scanlog_path);
+      if(success==0){
+	std::cout << "gaya" << std::endl;
+	size_t last_slash=scanlog_path.find_last_of('/');
+	std::string scandir="";
+	if (std::string::npos != last_slash){
+	  scandir=scanlog_path.substr(0,last_slash);
+	  std::cout << scandir << std::endl;
+	  //std::string dcs_path=scandir+"/dcsDataInfo.json";                                                                                                            
+	  std::string dcs_path="/tmp/dcsDataInfo.json";
 
+	  std::cout << "DBHandler: Register Environment:" << std::endl;
+	  std::cout << "\tenvironmental config file : " << dcs_path << std::endl;
+
+	  database->setDCSCfg(dcs_path, scanlog_path, user_cfg_path, site_cfg_path);
+	  database->cleanUp("dcs", "");
+	  //database->cleanDataDir(scanlog_path);                                                                                                                        
+	  database->cleanDataDir();
+	}
+      }
+      delete database;
+      return 0;
+    }
     return 0;
 }
 
