@@ -91,7 +91,10 @@ def getTestRunData(i_type, i_tr_oid, i_conn_json=None, i_timestamp=None, i_site_
     if i_tr_oid=='':
         if not i_timestamp:
             return tr_oids
-        doc_value = { 'startTime' : datetime.utcfromtimestamp(i_timestamp) }
+        doc_value = { 
+            'startTime' : datetime.utcfromtimestamp(i_timestamp), 
+            'dbVersion' : register.__global.db_version
+        }
         if i_site_oid: doc_value.update({ 'address': i_site_oid })
         if i_user_oid: doc_value.update({ 'user_id': i_user_oid })
         run_entries = localdb.testRun.find(doc_value).sort([('$natural', -1)])
@@ -102,8 +105,9 @@ def getTestRunData(i_type, i_tr_oid, i_conn_json=None, i_timestamp=None, i_site_
                     if chip_json.get('enable', 1)==0: continue
                     chip_names.append({ 'name': chip_json['name'] })
                 query = {
-                    'testRun' : str(run_entry['_id']),
-                    '$or'     : chip_names 
+                    'dbVersion' : register.__global.db_version,
+                    'testRun'   : str(run_entry['_id']),
+                    '$or'       : chip_names 
                 }
                 ctr_entries = localdb.componentTestRun.find(query)
                 if not ctr_entries.count()==0:
@@ -113,7 +117,10 @@ def getTestRunData(i_type, i_tr_oid, i_conn_json=None, i_timestamp=None, i_site_
             for run_entry in run_entries:
                 tr_oids.append(str(run_entry['_id']))
     else:
-        doc_value = { '_id': ObjectId(i_tr_oid) }
+        doc_value = { 
+            '_id'       : ObjectId(i_tr_oid), 
+            'dbVersion' : register.__global.db_version
+        }
         this_run = localdb.testRun.find_one(doc_value)
         if this_run:
             tr_oids.append(str(this_run['_id']))
@@ -121,7 +128,10 @@ def getTestRunData(i_type, i_tr_oid, i_conn_json=None, i_timestamp=None, i_site_
     if i_type=='dcs':
         dcs_tr_oids = []
         for tr_oid in tr_oids:
-            query = { '_id': ObjectId(tr_oid) }
+            query = { 
+                '_id'       : ObjectId(tr_oid),
+                'dbVersion' : register.__global.db_version
+            }
             this_run = localdb.testRun.find_one(query)
             if not this_run.get('environment',False)==False:
                 dcs_tr_oids.append(tr_oid)
@@ -671,8 +681,7 @@ def __check_component(i_type):
     if i_type=='comp':
         file_path = home+'/.yarr/localdb/'+hostname+'_modules.csv'
         file_open = open(file_path, 'w')
-        #query = {'dbVersion': register.__global.db_version, 'componentType': 'module'}
-        query = {'dbVersion': register.__global.db_version}
+        query = { 'dbVersion': register.__global.db_version }
         component_entries = localdb.component.find(query)
         modules = []
         for component in component_entries:
@@ -681,11 +690,17 @@ def __check_component(i_type):
             module['componentType'] = component['componentType']
             module['chipType'] = component['chipType']
             file_open.write('{},'.format(component['serialNumber']))
-            query = { 'parent': str(component['_id']) }
+            query = { 
+                'dbVersion' : register.__global.db_version, 
+                'parent'    : str(component['_id']) 
+            }
             child_entries = localdb.childParentRelation.find(query)
             module['chips'] = []
             for child in child_entries:
-                query = { '_id': ObjectId(child['child']) }
+                query = { 
+                    '_id'       : ObjectId(child['child']), 
+                    'dbVersion' : register.__global.db_version
+                }
                 this_chip = localdb.component.find_one(query)
                 chip = {}
                 chip['serialNumber'] = this_chip['serialNumber']
@@ -716,7 +731,7 @@ def __check_component(i_type):
             logger.info('The number of components: {}'.format(len(modules)))
             logger.info('Done.')
     elif i_type=='chip':
-        query = {'dbVersion': register.__global.db_version}
+        query = { 'dbVersion': register.__global.db_version }
         component_entries = localdb.chip.find(query)
         chips = []
         for component in component_entries:
@@ -726,7 +741,10 @@ def __check_component(i_type):
             chip['chipId'] = component['chipId']
             chip['component'] = '...'
             chip['proDB'] = False
-            query = { 'serialNumber': chip['name'] }
+            query = { 
+                'serialNumber': chip['name'],
+                'dbVersion'   : register.__global.db_version
+            }
             this_cmp = localdb.component.find_one(query)
             if this_cmp:
                 chip['component'] = str(this_cmp['_id'])

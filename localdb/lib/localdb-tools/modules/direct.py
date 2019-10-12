@@ -24,6 +24,8 @@ import pytz
 from logging import getLogger
 logger = getLogger("Log").getChild("sub")
 global localdb
+# version of Local DB
+db_version = 1.01
 
 #########################################################
 ### Set localdb setting from localdb/bin/localdb-retrieve
@@ -106,12 +108,18 @@ def __log(args):
     size = shutil.get_terminal_size().lines-4
 
     arg_vars = vars(args)
-    run_query = {}
-    log_query = { '$and': [] }
+    run_query = { 'dbVersion' : db_version }
+    log_query = { 
+        '$and': [], 
+        'dbVersion' : db_version 
+    }
     
     chip_name = arg_vars.get('chip',None)
     if chip_name:
-        query = { 'name': chip_name }
+        query = { 
+            'name'      : chip_name,
+            'dbVersion' : db_version
+        }
         chip_entries = localdb.chip.find(query)
         chip_query = []
         for this_chip in chip_entries:
@@ -127,10 +135,13 @@ def __log(args):
         run_oids = []
         for run_entry in run_entries:
             run_oids.append({ '_id': ObjectId(run_entry['testRun']) })
-        log_query['$and'].append({ '$or': run_oids })
+        if not run_oids==[]: log_query['$and'].append({ '$or': run_oids })
 
     if arg_vars.get('user',None):
-        query = { 'userName': {'$regex': arg_vars['user'].lower().replace(' ','_')} }
+        query = { 
+            'userName'  : {'$regex': arg_vars['user'].lower().replace(' ','_')}, 
+            'dbVersion' : db_version
+        }
         entries = localdb.user.find(query)
         if entries.count()==0:
             logger.error('Not found user data: {}'.format(arg_vars['user']))
@@ -138,9 +149,12 @@ def __log(args):
         user_oids = []
         for entry in entries:
             user_oids.append({ 'user_id': str(entry['_id']) })
-        log_query['$and'].append({ '$or': user_oids })
+        if not user_oids==[]: log_query['$and'].append({ '$or': user_oids })
     if arg_vars.get('site',None):
-        query = { 'institution': {'$regex': arg_vars['site'].lower().replace(' ','_')} }
+        query = { 
+            'institution': {'$regex': arg_vars['site'].lower().replace(' ','_')}, 
+            'dbVersion'  : db_version
+        }
         entries = localdb.institution.find( query )
         if entries.count()==0:
             logger.error('Not found site data: {}'.format(arg_vars['site']))
@@ -148,19 +162,28 @@ def __log(args):
         site_oids = []
         for entry in entries:
             site_oids.append({ 'address': str(entry['_id']) })
-        log_query['$and'].append({ '$or': site_oids })
+        if not site_oids==[]: log_query['$and'].append({ '$or': site_oids })
 
-    if log_query['$and']==[]: log_query = {}
+    if log_query['$and']==[]: log_query = { 'dbVersion' : db_version }
 
     run_entries = localdb.testRun.find(log_query).sort([('startTime', DESCENDING)])
 
     r_json = { 'log': [] }
     for this_run in run_entries:
-        query = { '_id': ObjectId(this_run['user_id']) }
+        query = { 
+            '_id'       : ObjectId(this_run['user_id']),
+            'dbVersion' : db_version   
+        }
         this_user = localdb.user.find_one( query )
-        query = { '_id': ObjectId(this_run['address']) }
+        query = { 
+            '_id'       : ObjectId(this_run['address']), 
+            'dbVersion' : db_version   
+        }
         this_site = localdb.institution.find_one( query )
-        query = { 'testRun': str(this_run['_id']) }
+        query = { 
+            'testRun': str(this_run['_id']),
+            'dbVersion' : db_version   
+        }
         ctr_entries  = localdb.componentTestRun.find(query)
         chips = []
         this_dcs = {}
@@ -171,7 +194,10 @@ def __log(args):
                 chips.append(this_ctr['name'])
             if not this_ctr.get('environment','...')=='...': 
                 this_dcs.update({ this_ctr['name']: [] })
-                query = { '_id': ObjectId(this_ctr['environment']) }
+                query = { 
+                    '_id'       : ObjectId(this_ctr['environment']), 
+                    'dbVersion' : db_version   
+                }
                 this_env = localdb.environment.find_one( query)
                 for key in this_env:
                     if not key=='_id' and not key=='dbVersion' and not key=='sys':
@@ -224,13 +250,19 @@ def __pull(dir_path, args):
         tr_oid = arg_vars['test']
     else:
         if arg_vars.get('chip',None):
-            query = { 'name': arg_vars['chip'] }
+            query = { 
+                'name'      : arg_vars['chip'], 
+                'dbVersion' : db_version   
+            }
             entries = localdb.componentTestRun.find(query)
-            query = { '$or': [] }
+            query = { 
+                '$or'       : [],
+                'dbVersion' : db_version   
+            }
             for entry in entries:
                 query['$or'].append({ '_id': ObjectId(entry['testRun']) })
         else:
-            query = {}
+            query = { 'dbVersion' : db_version }
         entry = localdb.testRun.find(query).sort([('startTime', DESCENDING)]).limit(1)
         if not entry.count()==0:
             tr_oid = str(entry[0]['_id'])
@@ -241,7 +273,10 @@ def __pull(dir_path, args):
             logger.error('Not found test data')
         sys.exit()
     else:
-        query = { 'testRun': tr_oid }
+        query = { 
+            'testRun'   : tr_oid,
+            'dbVersion' : db_version
+        }
         entries = localdb.componentTestRun.find(query)
         if entries.count()==0:
             logger.error('Not test data ID: {}'.format(tr_oid))
@@ -249,14 +284,20 @@ def __pull(dir_path, args):
 
     data_entries = []
 
-    query = { '_id': ObjectId(tr_oid) }
+    query = { 
+        '_id'       : ObjectId(tr_oid),
+        'dbVersion' : db_version   
+    }
     this_tr = localdb.testRun.find_one(query)
     chip_type = this_tr.get('chipType','NULL')
     if chip_type == 'FE-I4B': chip_type = 'FEI4B'
     log_json = {}
     for key in this_tr:
         if 'Cfg' in key and not this_tr[key]=='...':
-            query = { '_id': ObjectId(this_tr[key]) }
+            query = { 
+                '_id'       : ObjectId(this_tr[key]),
+                'dbVersion' : db_version   
+            }
             this_cfg = localdb.config.find_one(query)
             docs = getData('json', dir_path, this_cfg['filename'], this_cfg['data_id'])
             data_entries.append( docs )
@@ -269,7 +310,10 @@ def __pull(dir_path, args):
     docs = getData('json', dir_path, 'scanLog.json', log_json, True)
     data_entries.append( docs )
     
-    query = { 'testRun': tr_oid }
+    query = { 
+        'testRun'   : tr_oid, 
+        'dbVersion' : db_version   
+    }
     entries = localdb.componentTestRun.find(query)
     conn_json = {
         'stage'   : this_tr.get('stage','...'),
@@ -279,7 +323,10 @@ def __pull(dir_path, args):
     chips = []
     for this_ctr in entries:
         if this_ctr['chip']=='module':
-            query = { '_id': ObjectId(this_ctr['component']) }
+            query = { 
+                '_id'       : ObjectId(this_ctr['component']), 
+                'dbVersion' : db_version   
+            }
             this_cmp = localdb.component.find_one(query)
             conn_json.update({
                 'module': {
@@ -293,12 +340,15 @@ def __pull(dir_path, args):
             if key=='config':
                 chip_conn.update({ key: '{0}/{1}'.format(dir_path, this_ctr[key]) })
             elif 'Cfg' in key and not this_ctr[key]=='...':
-                query = { '_id': ObjectId(this_ctr[key]) }
+                query = { 
+                    '_id'       : ObjectId(this_ctr[key]), 
+                    'dbVersion' : db_version   
+                }
                 this_cfg = localdb.config.find_one(query)
                 docs = getData('json', dir_path, '{0}_{1}.json'.format(this_ctr['name'], key), this_cfg['data_id'])
                 data_entries.append( docs )
                 if key=='beforeCfg':
-                    docs = getData('json', dir_path, this_ctr['config'], this_cfg['data_id'])
+                    docs = getData('json', dir_path, this_ctr.get('config','{}.json'.format(this_ctr['name'])), this_cfg['data_id'])
                     data_entries.append( docs )
             elif key=='attachments':
                 for attachment in this_ctr[key]:
@@ -314,10 +364,16 @@ def __pull(dir_path, args):
     docs = getData('json', dir_path, 'connectivity.json', conn_json, True)
     data_entries.append( docs )
 
-    query = { '_id': ObjectId(this_tr['user_id']) }
+    query = { 
+        '_id'       : ObjectId(this_tr['user_id']), 
+        'dbVersion' : db_version   
+    }
     this_user = localdb.user.find_one(query)
 
-    query = { '_id': ObjectId(this_tr['address']) }
+    query = { 
+        '_id'       : ObjectId(this_tr['address']), 
+        'dbVersion' : db_version   
+    }
     this_site = localdb.institution.find_one(query)
 
     logger.info('\033[1;33mtest data ID: {0} \033[0m'.format(str(this_tr['_id']))) 
@@ -353,7 +409,7 @@ def __list_component():
     size = shutil.get_terminal_size().lines-4
 
     docs_list = { 'parent': [], 'child': {} }
-    entries = localdb.childParentRelation.find()
+    entries = localdb.childParentRelation.find({ 'dbVersion' : db_version })
     oids = []
     for entry in entries:
         oids.append(entry['parent'])
@@ -374,12 +430,18 @@ def __list_component():
             'user': this_user['userName'],
             'site': this_site['institution']
         }
-        query = { 'parent': oid }
+        query = { 
+            'parent'    : oid,
+            'dbVersion' : db_version   
+        }
         entries = localdb.childParentRelation.find(query)
         for entry in entries:
             docs['chips'].append(entry['child'])
         docs_list['parent'].append(docs)
-    query = { 'componentType': 'front-end_chip' }
+    query = { 
+        'componentType': 'front-end_chip',
+        'dbVersion'    : db_version   
+    }
     entries = localdb.component.find(query)
     oids = []
     for entry in entries:
@@ -430,12 +492,15 @@ def __list_user():
     size = shutil.get_terminal_size().lines-4
 
     docs_list = {}
-    entries = localdb.user.find()
+    entries = localdb.user.find({ 'dbVersion' : db_version })
     users = []
     for entry in entries:
         users.append(entry['userName'])
     for user in users:
-        query = { 'userName': user }
+        query = { 
+            'userName'  : user,
+            'dbVersion' : db_version   
+        }
         entries = localdb.user.find(query)
         docs = []
         for entry in entries:
@@ -456,7 +521,7 @@ def __list_site():
     size = shutil.get_terminal_size().lines-4
 
     docs_list = []
-    entries = localdb.institution.find()
+    entries = localdb.institution.find({ 'dbVersion' : db_version })
     for entry in entries:
         docs_list.append(entry['institution'])
     docs_list = list(set(docs_list))

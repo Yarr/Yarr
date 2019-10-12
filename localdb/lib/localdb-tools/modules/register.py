@@ -40,7 +40,10 @@ def updateSys(i_oid, i_col):
 
     logger.debug('\t\t\tUpdate system information: {0} in {1}'.format(i_oid, i_col))
 
-    query = { '_id': ObjectId(i_oid) }
+    query = { 
+        '_id'       : ObjectId(i_oid), 
+        'dbVersion' : __global.db_version
+    }
     this = localdb[i_col].find_one(query)
     now = datetime.utcnow()
     if not this: return
@@ -446,7 +449,10 @@ def __dcs(i_tr_oid, i_ctr_oid, i_env_key, i_env_j):
             'value': i_env_j['value']
         })
 
-    query = { '_id': ObjectId(i_ctr_oid) }
+    query = { 
+        '_id'       : ObjectId(i_ctr_oid),
+        'dbVersion' : __global.db_version
+    }
     this_ctr = localdb.componentTestRun.find_one(query)
     if this_ctr.get('environment', '...')=='...':
         doc_value = {
@@ -535,9 +541,10 @@ def __conn_cfg(i_conn_path):
         if chip_oid!='...':
             chip_is_exist = True
             doc_value = {
-                'parent': mo_oid,
-                'child' : chip_oid,
-                'status': 'active'
+                'parent'    : mo_oid,
+                'child'     : chip_oid,
+                'status'    : 'active',
+                'dbVersion' : __global.db_version
             }
             this_cpr = localdb.childParentRelation.find_one(doc_value)
             if not this_cpr: cpr_is_fine = False
@@ -720,8 +727,9 @@ def __check_test_run(i_scanlog_json, i_conn_json):
             if chip_json.get('enable', 1)==0: continue
             chip_ids.append({ 'chip': chip_json['chip'] })
         query = {
-            'testRun': str(this_run['_id']),
-            '$or'    : chip_ids
+            'testRun'   : str(this_run['_id']),
+            'dbVersion' : __global.db_version,
+            '$or'       : chip_ids
         }
         ctr_entries = localdb.componentTestRun.find(query)
         if not ctr_entries.count()==0:
@@ -1012,7 +1020,10 @@ def __check_dcs(i_ctr_oid, i_key, i_num, i_description):
     }
     this_ctr = localdb.componentTestRun.find_one(query)
     if not this_ctr.get('environment', '...')=='...':
-        query = { '_id': ObjectId(this_ctr['environment']) }
+        query = { 
+            '_id'       : ObjectId(this_ctr['environment']), 
+            'dbVersion' : __global.db_version
+        }
         this_dcs = localdb.environment.find_one(query)
         for this_data in this_dcs.get(i_key,[]):
             if str(this_data['num'])==str(i_num) and this_data['description']==i_description:
@@ -1105,7 +1116,11 @@ def __set_conn_cfg(i_conn_json, i_cache_dir):
                 chip_json['name'] = 'UnnamedChip_{}'.format(i)
                 chip_json['chipId'] = 0 #TODO not sure the best
             chip_json['component'] = __check_component(chip_json['name'], chip_json.get('componentType','front-end_chip'), True) #TODO for registered component
-            query = { 'parent': conn_json['module']['component'], 'child': chip_json['component'] }
+            query = { 
+                'parent'    : conn_json['module']['component'], 
+                'child'     : chip_json['component'], 
+                'dbVersion' : __global.db_version
+            }
             this_cpr = localdb.childParentRelation.find_one(query)
             if not this_cpr: conn_json['module']['component'] = '...'
         if not chip_json.get('serialNumber', '')==chip_json['name']: chip_json['serialNumber']=chip_json['name']
@@ -1205,7 +1220,10 @@ def __set_test_run_finish(i_scanlog_json, i_conn_jsons):
 
     for conn_json in i_conn_jsons:
         tr_oid = conn_json['testRun']
-        query = { '_id': ObjectId(tr_oid) }
+        query = { 
+            '_id'       : ObjectId(tr_oid),
+            'dbVersion' : __global.db_version
+        }
         this_run = localdb.testRun.find_one(query)
 
         doc_value = {}
@@ -1258,7 +1276,10 @@ def __set_attachment(i_file_path, i_histo_name, i_chip_json, i_conn_json):
 def __set_dcs(i_tr_oid, i_env_json):
     logger.debug('\t\tRegister Environment')
     
-    doc_value = { '_id': ObjectId(i_tr_oid) }
+    doc_value = { 
+        '_id'       : ObjectId(i_tr_oid),
+        'dbVersion' : __global.db_version
+    }
     this_run = localdb.testRun.find_one(doc_value)
 
     starttime = this_run['startTime'].timestamp()
@@ -1267,7 +1288,10 @@ def __set_dcs(i_tr_oid, i_env_json):
     for env_j in i_env_json:
         if env_j['status']!='enabled': continue
         env_key = env_j['key'].lower().replace(' ','_')
-        query = { 'testRun': i_tr_oid }
+        query = { 
+            'testRun'   : i_tr_oid,
+            'dbVersion' : __global.db_version
+        }
         if env_j.get('chip', None):
             query.update({ 'name': env_j['chip'] })
         ctr_entries = localdb.componentTestRun.find(query)

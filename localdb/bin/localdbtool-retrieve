@@ -150,7 +150,7 @@ def __network_db(url, db_name):
     client = MongoClient(url, serverSelectionTimeoutMS=max_server_delay)
     localdb = client[db_name]
     try:
-        localdb.collection_names()
+        localdb.list_collection_names()
         logger.info('---> Connection is GOOD.')
         return True
     except errors.ServerSelectionTimeoutError as err:
@@ -256,7 +256,7 @@ def main():
             import direct as function
             max_server_delay = 1
             url = response['url']
-            localdb = MongoClient(url, serverSelectionTimeoutMS=max_server_delay)['localdb']
+            localdb = MongoClient(url, serverSelectionTimeoutMS=max_server_delay)[db_cfg.get('dbName', 'localdb')]
             if authentication:
                 localdb.authenticate(user, pwd)
             function.__set_localdb(localdb)
