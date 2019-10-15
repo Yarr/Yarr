@@ -28,8 +28,8 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     max = 0;
     underflow = 0;
     overflow = 0;
-    data = new double[xbins*ybins];
-    isFilled = new bool[xbins*ybins];
+    data = std::vector<double>(ybins*ybins);
+    isFilled = std::vector<bool>(xbins*ybins);
     for (unsigned index=0; index < xbins*ybins; index++)
       isFilled[index]=false;
     this->setAll(0);
@@ -53,8 +53,8 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     max = 0;
     underflow = 0;
     overflow = 0;
-    data = new double[xbins*ybins];
-    isFilled = new bool[xbins*ybins];
+    data = std::vector<double>(xbins*ybins);
+    isFilled =  std::vector<bool>(xbins*ybins);
     for (unsigned index=0; index < xbins*ybins; index++)
       isFilled[index]=false;
 
@@ -79,8 +79,8 @@ Histo2d::Histo2d(Histo2d *h) : HistogramBase(h->getName(), h->getType()) {
     underflow = h->getUnderflow();
     overflow = h->getOverflow();
 
-    data = new double[xbins*ybins];
-    isFilled = new bool[xbins*ybins];
+    data = std::vector<double>(xbins*ybins);
+    isFilled = std::vector<bool>(xbins*ybins);
     for(unsigned i=0; i<xbins*ybins; i++)
         data[i] = h->getBin(i);
     entries = h->getNumOfEntries();
@@ -88,8 +88,6 @@ Histo2d::Histo2d(Histo2d *h) : HistogramBase(h->getName(), h->getType()) {
 }
 
 Histo2d::~Histo2d() {
-    delete[] data;
-	delete[] isFilled;
 }
 
 unsigned Histo2d::size() const {
@@ -268,8 +266,8 @@ bool Histo2d::fromFile(std::string filename) {
         file >> underflow >> overflow;
     }
     // Data
-    delete[] data;
-    data = new double[xbins*ybins];
+
+    data = std::vector<double>(xbins*ybins);
     for (unsigned int i=0; i<ybins; i++) {
         for (unsigned int j=0; j<xbins; j++) {
             file >> data[i+(j*ybins)];

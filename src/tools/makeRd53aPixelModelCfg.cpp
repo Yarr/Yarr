@@ -25,7 +25,7 @@ int main(int argc, char * argv[])
 	}
 
 	std::ofstream file(output_file);
-	nlohmann::json j;
+	json j;
 
         std::vector<float> Vthreshold_mean_vector; Vthreshold_mean_vector.reserve(400 * 192);
         std::vector<float> Vthreshold_sigma_vector; Vthreshold_sigma_vector.reserve(400 * 192);

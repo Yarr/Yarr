@@ -67,8 +67,6 @@ if ("Rogue" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   set(YARR_EXEC_DEPS ${YARR_EXEC_DEPS} rogue tbb_2019)
   set(YARR_LIB_DEPS ${YARR_LIB_DEPS} rogue-core)
   set(TBB_DEPS tbb)
-
->>>>>>> devel
 endif()
 
 if ("NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
