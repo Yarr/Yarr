@@ -4,11 +4,21 @@
 #include "Rd53aCfg.h"
 #include "AnyType.h"
 #include "ThreadPool.h"
+#include "EmuShm.h"
+#include "EmuCom.h"
+#include "Gauss.h"
+
+#include "Rd53aSyncPixelModel.h"
+#include "Rd53aLinPixelModel.h"
+#include "Rd53aDiffPixelModel.h"
 
 #include <unordered_map>
 #include <memory>
 #include <future>
 #include <atomic>
+#include <chrono>
+#include <iomanip>
+#include <fstream>
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -16,16 +26,10 @@
 //
 
 class RingBuffer;
+class Rd53aSyncPixelModel;
 class Rd53aLinPixelModel;
 class Rd53aDiffPixelModel;
 class Histo2d;
-
-// Temporarily substituting with Lin model
-// To be replaced in the future
-using Rd53aSyncPixelModel = Rd53aLinPixelModel;
-
-
-
 
 class Rd53aEmu {
 
@@ -69,7 +73,7 @@ public:
 
 
     /** The ownsership of these ring buffers need to be designed properly */
-    Rd53aEmu(RingBuffer * rx, RingBuffer * tx);
+  Rd53aEmu(EmuCom * rx, EmuCom * tx, std::string json_file_path);
     ~Rd53aEmu();
     
     // the main loop which recieves commands from yarr
@@ -256,12 +260,8 @@ private:
     //
 
     
-    /** ToDo
-        ownership of these ring buffers need to be designed and revisited
-    */
-    
-    RingBuffer * m_txRingBuffer;
-    RingBuffer * m_rxRingBuffer;
+    EmuCom * m_txRingBuffer;
+    EmuCom * m_rxRingBuffer;
 
     
     /** This variable stream holds input commands
@@ -352,7 +352,7 @@ private:
     
     uint8_t calculateToT( Rd53aLinPixelModel&  /*analogFE*/ );
     uint8_t calculateToT( Rd53aDiffPixelModel& /*analogFE*/ );
-    //uint8_t calculateToT( Rd53aSyncPixelModel& /*analogFE*/ ); // To be implemented later
+    uint8_t calculateToT( Rd53aSyncPixelModel& /*analogFE*/ );
     
 
     template<class PIXEL>

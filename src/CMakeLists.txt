@@ -65,7 +65,10 @@ if ("Rogue" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   YARR_ADD_ROGUE()
   add_dependencies(Yarr tbb_2019)
   set(YARR_EXEC_DEPS ${YARR_EXEC_DEPS} rogue tbb_2019)
-  set(YARR_LIB_DEPS ${YARR_LIB_DEPS} tbb rogue-core)
+  set(YARR_LIB_DEPS ${YARR_LIB_DEPS} rogue-core)
+  set(TBB_DEPS tbb)
+
+>>>>>>> devel
 endif()
 
 if ("NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
@@ -74,7 +77,8 @@ if ("NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   add_dependencies(Yarr felixbase4 netio4)
 
   set(YARR_EXEC_DEPS ${YARR_EXEC_DEPS} tbb_2019 felixbase4 netio4)
-  set(YARR_LIB_DEPS ${YARR_LIB_DEPS} tbb netio)
+  set(YARR_LIB_DEPS ${YARR_LIB_DEPS} netio)
+  set(TBB_DEPS tbb)
 
   include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/felixbase4)
   include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/netio4)
@@ -103,10 +107,11 @@ foreach(target ${tools})
     # Whole-archive means not to drop symbols from Yarr.
     # Mainly this is about making sure the auto-registration works.
     # Not sure why tbb needs same treatment...
+    #if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     if(APPLE)
         target_link_libraries(${execname}  -Wl,-all_load Yarr -Wl, ${YARR_LIB_DEPS} pthread)
     else()
-        target_link_libraries(${execname}  -Wl,--whole-archive Yarr tbb -Wl,--no-whole-archive ${YARR_LIB_DEPS} pthread rt)
+        target_link_libraries(${execname}  -Wl,--whole-archive Yarr ${TBB_DEPS} -Wl,--no-whole-archive ${YARR_LIB_DEPS} ${TBB_DEPS} pthread rt)
     endif()
     # Not sure why rt is not linked by default here
 endforeach()

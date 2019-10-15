@@ -160,6 +160,33 @@ void Histo1d::toFile(std::string prefix, std::string dir, bool header) {
     file.close();
 }
 
+bool Histo1d::fromFile(std::string filename) {
+    std::fstream file(filename, std::fstream::in);
+    // Check for header
+    std::string line;
+    std::getline(file, line);
+    if (line.find("Histo1d") == std::string::npos) {
+        std::cerr << "ERROR: Tried loading 1d Histogram from file " << filename << ", but file has non or incorrect header" << std::endl;
+        file.close();
+        return false;
+    } else {
+        file >> name;
+        file >> xAxisTitle;
+        file >> yAxisTitle;
+        file >> zAxisTitle;
+        file >> bins >> xlow >> xhigh;
+        file >> underflow >> overflow;
+    }
+    // Data
+    delete[] data;
+    data = new double[bins];
+    for (unsigned int i=0; i<bins; i++) {
+        file >> data[i];
+    }
+    file.close();
+    return true;
+}
+
 void Histo1d::plot(std::string prefix, std::string dir) {
     std::cout << "Plotting: " << HistogramBase::name << std::endl;
     // Put raw histo data in tmp file

@@ -68,6 +68,7 @@ class Histo3d : public HistogramBase {
 
         
         void toFile(std::string filename, std::string dir = "", bool header=true);
+        bool fromFile(std::string filename);
         void plot(std::string filename, std::string dir = "");
 
     private:

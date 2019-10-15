@@ -1,13 +1,7 @@
 #include "Rd53aEmu.h"
-#include "Rd53aLinPixelModel.h"
-#include "Rd53aDiffPixelModel.h"
-#include "RingBuffer.h"
+
 #include "Histo2d.h"
 
-#include "Gauss.h"
-
-#include <chrono>
-#include <iomanip>
 
 #define HEXF(x,y) std::hex << "0x" << std::hex << std::setw(x) << std::setfill('0') << static_cast<int>(y) << std::dec
 
@@ -102,7 +96,7 @@ public:
 
 
 //____________________________________________________________________________________________________
-Rd53aEmu::Rd53aEmu(RingBuffer * rx, RingBuffer * tx)
+Rd53aEmu::Rd53aEmu(EmuCom * rx, EmuCom * tx, std::string json_file_path)
     : m_txRingBuffer ( tx )
     , m_rxRingBuffer ( rx )
     , m_feCfg        ( new Rd53aCfg )
@@ -114,40 +108,40 @@ Rd53aEmu::Rd53aEmu(RingBuffer * rx, RingBuffer * tx)
     srand(time(NULL));
     
     run = true;
+
+    std::ifstream file(json_file_path);
+    json j = json::parse(file);
     
     // Initialization of the pixel geometry
     for( size_t icoreCol = 0; icoreCol < m_coreArray.size(); ++icoreCol ) {
-        auto& coreRow = m_coreArray.at( icoreCol );
-        
-        for( auto& core  : coreRow ) {
-        for( auto& row   : core    ) {
-        for( auto& pixel : row     ) {
+      auto& coreRow = m_coreArray.at( icoreCol );
+      for( size_t icore = 0; icore < coreRow.size(); ++icore ){
+	auto& core = coreRow.at( icore );
+	for( size_t irow = 0; irow < core.size(); ++irow ){
+	  auto& row = core.at( irow );
+	  for( size_t ipixel = 0; ipixel < row.size(); ++ipixel ){
+	    auto& pixel = row.at( ipixel );
 
+	    // Rd53a has 3 different analogFE flavors
+	    // Core column [ 0:15]: Sync
+	    // Core column [16:32]: Linear
+	    // Core column [33:49]: Differential
+	    size_t index = ipixel + irow * row.size() + icore * ( core.size() * row.size() ) + icoreCol * ( coreRow.size() * core.size() * row.size() );
 
-            // Rd53a has 3 different analogFE flavors
-            // Core column [ 0:15]: Sync
-            // Core column [16:32]: Linear
-            // Core column [33:49]: Differential
-            
-            if( icoreCol < 16 ) {
+	    if( icoreCol < 16 ) {
+	      pixel = PixelModel<Rd53aSyncPixelModel> { 0, Rd53aSyncPixelModel{ j["Vthreshold_mean_vector"][index], j["Vthreshold_sigma_vector"][index], j["Vthreshold_gauss_vector"][index], j["noise_sigma_mean_vector"][index], j["noise_sigma_sigma_vector"][index], j["noise_sigma_gauss_vector"][index] } };
                 
-                // ToDo: need to replaced to SyncPixelModel. Currently substituted by LinPixelModel
-                pixel = PixelModel<Rd53aSyncPixelModel> { 0, Rd53aLinPixelModel{ 10, 2, 400, 100 } };
+	    } else if( icoreCol < 33 ) {
+	      pixel = PixelModel<Rd53aLinPixelModel> { 0, Rd53aLinPixelModel{ j["Vthreshold_mean_vector"][index], j["Vthreshold_sigma_vector"][index], j["Vthreshold_gauss_vector"][index], j["noise_sigma_mean_vector"][index], j["noise_sigma_sigma_vector"][index], j["noise_sigma_gauss_vector"][index] } };
                 
-            } else if( icoreCol < 33 ) {
-                
-                pixel = PixelModel<Rd53aLinPixelModel> { 0, Rd53aLinPixelModel{ 10, 2, 400, 100 } };
-                
-            } else {
-                
-                pixel = PixelModel<Rd53aDiffPixelModel> { 0, Rd53aDiffPixelModel{ 10, 0, 10, 10 } };
-                
-            }
-            
-        }}}
+	    } else {
+	      pixel = PixelModel<Rd53aDiffPixelModel> { 0, Rd53aDiffPixelModel{ j["Vthreshold_mean_vector"][index], j["Vthreshold_sigma_vector"][index], j["Vthreshold_gauss_vector"][index], j["noise_sigma_mean_vector"][index], j["noise_sigma_sigma_vector"][index], j["noise_sigma_gauss_vector"][index] } };
+	    }
+	  }
+	}
+      }
     }
-
-    
+    file.close();
     // Initializing trigger counters
     {
         triggerCounters[Triggers::Trg01] = 0;
@@ -1020,33 +1014,49 @@ void Rd53aEmu::formatWords( const uint32_t coreCol, const uint32_t coreRow, cons
 };
 
 
+//____________________________________________________________________________________________________
+uint8_t Rd53aEmu::calculateToT( Rd53aSyncPixelModel& analogFE ) {
+
+  uint8_t ToT { 0xf };
+  
+  const float injection_charge = m_feCfg->toCharge( m_feCfg->InjVcalDiff.read() ) ;
+
+  auto noise_charge = analogFE.calculateNoise(); // overwrite the previous generic initialization
+    
+  float sync_global_threshold_with_smearing = analogFE.calculateThreshold(m_feCfg->SyncVth.read());
+  float sync_global_threshold_charge        = -175.807 + 9.13438 * sync_global_threshold_with_smearing;
+    
+  if( verbose ) {
+    std::cout << "injection_charge = " << injection_charge << std::endl;
+    std::cout << "noise_charge = " <<  noise_charge << std::endl;
+    std::cout << "sync_global_threshold_charge = " << sync_global_threshold_charge << std::endl;
+  }
+  
+  if (injection_charge + noise_charge > sync_global_threshold_charge ) {
+    
+    // calculate ToT. Hard-coded for the moment
+    ToT = 8;
+  }
+
+  return ToT;
+}
 
 //____________________________________________________________________________________________________
 uint8_t Rd53aEmu::calculateToT( Rd53aLinPixelModel& analogFE ) {
 
-    /** 
-     * Importing Nikola's implementation here
-     * The validity of the result needs to be checked
-     * (Hide: 2018-JUN-03)
-     */
-
     uint8_t ToT { 0xf };
     
-    const float injection_voltage = (m_feCfg->InjVcalHigh.read() - m_feCfg->InjVcalMed.read()) * maximum_injection_voltage / 4096.0;
-    const float injection_charge = injection_voltage * capacitance_times_coulomb;
+    const float injection_charge = m_feCfg->toCharge( m_feCfg->InjVcalDiff.read() ) ;
     
     auto noise_charge = analogFE.calculateNoise(); // overwrite the previous generic initialization
     
-    //printf("m_feCfg->VthresholdLin.read() = %d\n", m_feCfg->VthresholdLin.read());
     float lin_global_threshold_with_smearing = analogFE.calculateThreshold(m_feCfg->LinVth.read());
-    float lin_global_threshold_voltage       = (lin_global_threshold_with_smearing) * lin_maximum_global_threshold_voltage / 1024.0;
-    float lin_global_threshold_charge        = lin_global_threshold_voltage * capacitance_times_coulomb; // I imagine this might need a different capacitance
+    float lin_global_threshold_charge        = -12827.1 + 39.298 * lin_global_threshold_with_smearing;
     
     // Temporary hard-set at 1000[e] for the moment.
     //lin_global_threshold_charge = 1000.;
     
     if( verbose ) {
-        std::cout << "lin_global_threshold_voltage = " << lin_global_threshold_voltage << std::endl;
         std::cout << "injection_charge = " << injection_charge << std::endl;
         std::cout << "noise_charge = " <<  noise_charge << std::endl;
         std::cout << "lin_global_threshold_charge = " << lin_global_threshold_charge << std::endl;
@@ -1065,30 +1075,21 @@ uint8_t Rd53aEmu::calculateToT( Rd53aLinPixelModel& analogFE ) {
 //____________________________________________________________________________________________________
 uint8_t Rd53aEmu::calculateToT( Rd53aDiffPixelModel& analogFE ) {
 
-    /** 
-     * Importing Nikola's implementation here
-     * The validity of the result needs to be checked
-     * (Hide: 2018-JUN-03)
-     */
-
     uint8_t ToT { 0xf };
     
-    const float injection_voltage = (m_feCfg->InjVcalHigh.read() - m_feCfg->InjVcalMed.read()) * maximum_injection_voltage / 4096.0;
-    const float injection_charge = injection_voltage * capacitance_times_coulomb;
+    const float injection_charge = m_feCfg->toCharge( m_feCfg->InjVcalDiff.read() ) ;
     
     auto noise_charge = analogFE.calculateNoise(); // overwrite the previous generic initialization
     
-    //                              printf("m_feCfg->Vth1Diff.read() = %d\n", m_feCfg->Vth1Diff.read());
-    //                              printf("m_feCfg->Vth2Diff.read() = %d\n", m_feCfg->Vth2Diff.read());
     float diff_global_threshold_with_smearing = analogFE.calculateThreshold(m_feCfg->DiffVth1.read(), m_feCfg->DiffVth2.read());
-    float diff_global_threshold_voltage = (diff_global_threshold_with_smearing) * diff_maximum_global_threshold_voltage / 1024.0;
-    float diff_global_threshold_charge = diff_global_threshold_voltage * capacitance_times_coulomb; // I imagine this might need a different capacitance
-                
-    //                              printf("diff_global_threshold_voltage = %f\n", diff_global_threshold_voltage);
-    //                              printf("injection_charge = %f\n", injection_charge);
-    //                              printf("noise_charge = %f\n", noise_charge);
-    //                              printf("diff_global_threshold_charge = %f\n", diff_global_threshold_charge);
-                
+    float diff_global_threshold_charge = 335.111 + 4.73165 * diff_global_threshold_with_smearing;
+
+    if( verbose ) {
+      std::cout << "injection_charge = " << injection_charge << std::endl;
+      std::cout << "noise_charge = " <<  noise_charge << std::endl;
+      std::cout << "diff_global_threshold_charge = " << diff_global_threshold_charge << std::endl;
+    }
+    
     if (injection_charge + noise_charge - diff_global_threshold_charge > 0) {
         // calculate ToT. Hard-coded for the moment
         ToT = 8;

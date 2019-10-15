@@ -20,11 +20,14 @@ This runs a digitalscan with the FE-I4B emulator. This does not use or require a
 
 ## Command Line Arguments
 
-ScanConsole requires at min. three types of configuration files (more details below):
+ScanConsole normally requires at min. three types of configuration files (more details below):
     
 - **-r ``<path>``** => Controller config : this config contains the information to select the right hardware controller (e.g. SPEC, RCE, or emulator) and the configuration of the hardware controller.
 - **-c ``<path>``** => Connectivity/Setup config : this config contains the chipType (e.g. FE-I4B or RD53A) and a list chips which should be used in the scan
 - **-s ``<path>``** => Scan config : this config contains the order and type of loop actions to be executed (and their configuration), the histogrammers to be used, and the analysis
+
+Note: If you omit the scan config, your chip will only be configurated.
+
 
 Additional command line arguements for the scanConsole are:
     
