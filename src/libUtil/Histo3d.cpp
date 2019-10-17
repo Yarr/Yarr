@@ -35,8 +35,8 @@ Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     max = 0;
     underflow = 0;
     overflow = 0;
-    data = new uint16_t[xbins*ybins*zbins];
-    this->setAll(0);
+    data = std::vector<uint16_t>(xbins*ybins*zbins);
+
     entries = 0;
 
 }
@@ -64,7 +64,7 @@ Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     max = 0;
     underflow = 0;
     overflow = 0;
-    data = new uint16_t[xbins*ybins*zbins];
+    data = std::vector< uint16_t>(xbins*ybins*zbins);
     this->setAll(0);
     entries = 0;
 }
@@ -91,7 +91,7 @@ Histo3d::Histo3d(Histo3d *h) : HistogramBase(h->getName(), h->getType()) {
     underflow = h->getUnderflow();
     overflow = h->getOverflow();
 
-    data = new uint16_t[xbins*ybins*zbins];
+    data = std::vector<uint16_t>( xbins*ybins*zbins);
     for(unsigned i=0; i<xbins*ybins*zbins; i++)
         data[i] = h->getBin(i);
     entries = h->getNumOfEntries();
@@ -99,7 +99,7 @@ Histo3d::Histo3d(Histo3d *h) : HistogramBase(h->getName(), h->getType()) {
 }
 
 Histo3d::~Histo3d() {
-    delete[] data;
+
 }
 
 unsigned Histo3d::size() const {
@@ -285,8 +285,8 @@ bool Histo3d::fromFile(std::string filename) {
         file >> underflow >> overflow;
     }
     // Data
-    delete[] data;
-    data = new uint16_t[xbins*ybins*zbins];
+
+    data =  std::vector<uint16_t>(xbins*ybins*zbins);
     for (unsigned int i=0; i<ybins; i++) {
         for (unsigned int j=0; j<xbins; j++) {
             for (unsigned int k=0; k<zbins; k++) {

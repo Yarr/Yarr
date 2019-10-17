@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
     }
 
     std::fstream mask(argv[1], std::ios::in);
-    std::fstream cfg(argv[2], std::ios::in);
+    std::ifstream cfg(argv[2]);
 
     if (!mask || !cfg) {
         std::cout << "Could not open files!" << std::endl;
@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
 
     // Parse cfg file
     json c;
-    cfg >> c;
+    c=json::parse(cfg);
 
     // Skip first 5 lines of mask
     std::string trash;

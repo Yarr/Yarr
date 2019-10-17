@@ -7,7 +7,7 @@
 // ################################
 
 #include "DBHandler.h"
-
+#include <functional>
 DBHandler::DBHandler():
 m_db_cfg_path(""), m_output_dir(""), m_command(""),
 m_stage_list(), m_env_list(), m_comp_list(),
@@ -270,7 +270,7 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir) {
     m_stage_list.clear();
     m_env_list.clear();
     m_comp_list.clear();
-    m_conn_json = NULL;
+    m_conn_json;
     counter = 0;
 }
 
@@ -634,7 +634,7 @@ json DBHandler::toJson(std::string i_file_path, std::string i_file_type) {
             std::vector<std::uint8_t> v_bson;
             while (file_ifs.read(reinterpret_cast<char*>(std::addressof(tmp)), sizeof(std::uint8_t))) v_bson.push_back(tmp);
             try {
-                file_json = json::from_bson(v_bson);
+	      //file_json = json::from_bson(v_bson); //FIXME
             } catch (json::parse_error &e) {
                 std::string message = "Could not parse " + i_file_path + "\n\twhat(): " + e.what();
                 std::string function = __PRETTY_FUNCTION__;

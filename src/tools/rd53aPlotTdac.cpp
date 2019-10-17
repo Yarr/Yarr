@@ -14,9 +14,9 @@ int main(int argc, char *argv[]) {
         return 0;
     }
     std::string filename = argv[1];
-    std::fstream cfgfile(filename.c_str(), std::ios::in);
+    std::ifstream cfgfile(filename.c_str());
     json cfg;
-    cfgfile >> cfg;
+    cfg=json::parse(cfgfile);
     
     Histo1d h1("TDacDistLin", 16, -0.5, 15.5, typeid(void));
     Histo1d h2("TDacDistDiff", 31, -15.5, 15.5, typeid(void));

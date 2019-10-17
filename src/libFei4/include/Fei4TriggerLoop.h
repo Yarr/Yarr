@@ -36,8 +36,8 @@ class Fei4TriggerLoop: public LoopActionBase {
     private:
         unsigned m_trigCnt;
         unsigned m_trigDelay;
-        double m_trigFreq;
-        double m_trigTime;
+        float m_trigFreq;
+        float m_trigTime;
         uint32_t m_trigWord[4];
         uint32_t m_trigWordLength;
 

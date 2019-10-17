@@ -573,10 +573,10 @@ int main(int argc, char *argv[]) {
     std::cout << "-> Processing:    " << std::chrono::duration_cast<std::chrono::milliseconds>(processor_done-scan_done).count() << " ms" << std::endl;
     std::cout << "-> Analysis:      " << std::chrono::duration_cast<std::chrono::milliseconds>(all_done-processor_done).count() << " ms" << std::endl;
     
-    scanLog["stopwatch"]["config"] = std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count();
-    scanLog["stopwatch"]["scan"] = std::chrono::duration_cast<std::chrono::milliseconds>(scan_done-scan_start).count();
-    scanLog["stopwatch"]["processing"] = std::chrono::duration_cast<std::chrono::milliseconds>(processor_done-scan_done).count();
-    scanLog["stopwatch"]["analysis"] = std::chrono::duration_cast<std::chrono::milliseconds>(all_done-processor_done).count();
+    scanLog["stopwatch"]["config"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count();
+    scanLog["stopwatch"]["scan"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(scan_done-scan_start).count();
+    scanLog["stopwatch"]["processing"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(processor_done-scan_done).count();
+    scanLog["stopwatch"]["analysis"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(all_done-processor_done).count();
 
     std::cout << std::endl;
     std::cout << "\033[1;31m###########\033[0m" << std::endl;
@@ -805,7 +805,7 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
                     std::string algo_name = histoCfg[std::to_string(j)]["algorithm"];
                     add_histo(algo_name);
                 }
-            } catch(json::type_error &te) {
+            } catch(/* json::type_error &te*/ ... ) { //FIXME
                 int nHistos = histoCfg.size();
                 for (int j=0; j<nHistos; j++) {
                     std::string algo_name = histoCfg[j]["algorithm"];
@@ -878,7 +878,7 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                     add_analysis(algo_name);
                   }
                   ana.loadConfig(anaCfg);
-                } catch(json::type_error &te) {
+                } catch(/* json::type_error &te */ ...) { //FIXME
                   int nAnas = anaCfg.size();
                   std::cout << "Found " << nAnas << " Analysis!" << std::endl;
                   for (int j=0; j<nAnas; j++) {
