@@ -14,8 +14,6 @@
 bool config_controllers = false;
 bool verbose = false;
 
-using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, int32_t, uint32_t, float>;
-
 enum class ConfigType {
   CONNECTIVITY,
   CONTROLLER,
