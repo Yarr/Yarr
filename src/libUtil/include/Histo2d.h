@@ -64,8 +64,8 @@ class Histo2d : public HistogramBase {
         void plot(std::string filename, std::string dir = "");
 
     private:
-        std::vector<double> data;
-        std::vector<bool> isFilled;
+        double *data;
+        bool *isFilled;
 
         double underflow;
         double overflow;

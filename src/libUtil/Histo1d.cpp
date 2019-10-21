@@ -17,7 +17,7 @@ Histo1d::Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, doubl
     xlow = arg_xlow;
     xhigh = arg_xhigh;
     binWidth = (xhigh - xlow)/bins;
-    data =  std::vector<double>(bins);
+    data = new double[bins];
     for(unsigned i=0; i<bins; i++)
         data[i] = 0;
     min = 0;
@@ -34,8 +34,9 @@ Histo1d::Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, doubl
     xlow = arg_xlow;
     xhigh = arg_xhigh;
     binWidth = (xhigh - xlow)/bins;
-    data = std::vector<double>(bins);
-
+    data = new double[bins];
+    for(unsigned i=0; i<bins; i++)
+        data[i] = 0;
     min = 0;
     max = 0;
 
@@ -46,7 +47,7 @@ Histo1d::Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, doubl
 }
 
 Histo1d::~Histo1d() {
-
+    delete[] data;
 }
 
 unsigned Histo1d::size() const {
@@ -177,8 +178,8 @@ bool Histo1d::fromFile(std::string filename) {
         file >> underflow >> overflow;
     }
     // Data
-
-    data = std::vector<double>(bins);
+    delete[] data;
+    data = new double[bins];
     for (unsigned int i=0; i<bins; i++) {
         file >> data[i];
     }
