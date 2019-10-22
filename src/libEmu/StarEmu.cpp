@@ -6,6 +6,7 @@
 #include <thread>
 
 #include "EmuCom.h"
+#include "LCBUtils.h"
 
 namespace {
 
@@ -64,6 +65,36 @@ void StarEmu::sendPacket(uint8_t *byte_s, uint8_t *byte_e) {
     }
 }
 
+unsigned int countTriggers(LCB::Frame frame) {
+    uint8_t code0 = (frame >> 8) & 0xff;
+    uint8_t code1 = frame & 0xff;
+
+    // If either half is a kcode no triggers
+    if(code0 == LCB::K0 || code0 == LCB::K1 ||
+       code0 == LCB::K2 || code0 == LCB::K3) {
+        return 0;
+    }
+
+    if(code1 == LCB::K0 || code1 == LCB::K1 ||
+       code1 == LCB::K2 || code1 == LCB::K3) {
+        return 0;
+    }
+
+    // Find 12-bit decoded version
+    uint16_t value = (SixEight::decode(code0) << 6) | SixEight::decode(code1);
+    if(((value>>7) & 0x1f) == 0) {
+        // No BCR, or triggers, so part of a command
+        return 0;
+    }
+
+    // How many triggers in mask (may be 0 if BCR)
+    unsigned int count = 0;
+    for(unsigned int i=0; i<4; i++) {
+        count += (value>>(7+i)) & 0x1;
+    }
+    return count;
+}
+
 void StarEmu::executeLoop() {
     std::cout << "Starting emulator loop" << std::endl;
 
@@ -78,6 +109,13 @@ void StarEmu::executeLoop() {
         if( verbose ) std::cout << __PRETTY_FUNCTION__ << ": -----------------------------------------------------------" << std::endl;
 
         uint32_t d = m_txRingBuffer->read32();
+
+        uint16_t d0 = (d >> 16) & 0xffff;
+        uint16_t d1 = (d >> 0) & 0xffff;
+
+        int trig_count = 0;
+        trig_count += countTriggers(d0);
+        trig_count += countTriggers(d1);
 
         // This is an LP packet
         alignas(32) uint8_t fixed_packet[] = 
@@ -116,6 +154,8 @@ void StarEmu::executeLoop() {
            0x4f, 0xcf, 0x4b, 0xcf, 0x4f, 0xee, 0x4b, 0xee,
            0x6f, 0xed};
 
-        sendPacket(fixed_packet);
+        for(int i=0; i<trig_count; i++) {
+            sendPacket(fixed_packet);
+        }
     }
 }
