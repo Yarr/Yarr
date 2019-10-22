@@ -2,12 +2,15 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "ScurveFitter"
+        "algorithm": "OccupancyAnalysis",
+        "config": {
+          "createMask": true
+        }
       },
-     "1": {
-        "algorithm": "OccupancyAnalysis"
+      "1": {
+        "algorithm": "L1Analysis"
       },
-      "n_count": 1
+      "n_count": 2
     },
     "histogrammer": {
       "0": {
@@ -43,16 +46,8 @@
       },
       {
         "config": {
-          "max": 300,
-          "min": 50,
-          "step": 10,
-          "parameter":"InjVcalDiff"
-        },
-        "loopAction": "Rd53aParameterLoop"
-      },
-      {
-        "config": {
-	    "Register": "InjVcalMed"
+	    "VOLTMUX": [1,2,3,4,5,6,7,8],
+	    "CURMUX": [0,1,2,3]
         },
         "loopAction": "Rd53aReadRegLoop"
       },
@@ -67,7 +62,7 @@
       },
       {
         "config": {
-          "count": 50,
+          "count": 100,
           "delay": 48,
           "extTrigger": false,
           "frequency": 30000,
@@ -80,11 +75,14 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "ThresholdScan",
+    "name": "AnalogScan",
     "prescan": {
         "InjEnDig": 0,
         "LatencyConfig": 48,
-        "GlobalPulseRt": 16384
+        "GlobalPulseRt": 16384,
+        "InjVcalDiff": 0,
+        "InjVcalHigh": 2500,
+        "InjVcalMed": 1000
     }
   }
 }

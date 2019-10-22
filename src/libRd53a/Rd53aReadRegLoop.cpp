@@ -32,9 +32,9 @@ std::pair<uint32_t, uint32_t> RegRead(uint32_t higher, uint32_t lower) {
 
 
 
-void Rd53aReadRegLoop::ReadADC(unsigned short Reg) {
+uint16_t Rd53aReadRegLoop::ReadADC(unsigned short Reg, bool doCur=false) {
       
-  keeper->globalFe<Rd53a>()->confADC(Reg);
+  keeper->globalFe<Rd53a>()->confADC(Reg,doCur);
   keeper->globalFe<Rd53a>()->readRegister(m_AdcRead);
 
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -44,20 +44,24 @@ void Rd53aReadRegLoop::ReadADC(unsigned short Reg) {
         
   for(unsigned c=0; c<size/2; c++)
     {
-      if (c*2+1<size)
-	{
-	  std::pair<uint32_t, uint32_t> readReg = RegRead(data->buf[c*2],data->buf[c*2+1]);	    std::cout<<"MUX: "<<Reg<<" Value: "<<readReg.second<<std::endl;
-	}
-      else
+      if (c*2+1<size) {
+	std::pair<uint32_t, uint32_t> readReg = RegRead(data->buf[c*2],data->buf[c*2+1]);	    
+	//std::cout<<"MUX: "<<Reg<<" Value: "<<readReg.second<<std::endl;
+	return readReg.second;
+	
+      }
+      else {
 	std::cout<<"Hallfword recieved"<<data->buf[c*2]<<std::endl;
+	return 65535;
+      }
     }
     
 }
 
-void Rd53aReadRegLoop::ReadTemp(unsigned short Reg) {
+uint16_t Rd53aReadRegLoop::ReadTemp(unsigned short Reg) {
 
   //Sensor Config
-  uint32_t ADCVal[2] = {0,0};
+  uint16_t ADCVal[2] = {0,0};
   for(unsigned curConf=0; curConf<2; curConf++)
     {
 
@@ -75,37 +79,13 @@ void Rd53aReadRegLoop::ReadTemp(unsigned short Reg) {
       //std::this_thread::sleep_for(std::chrono::milliseconds(10));
       keeper->globalFe<Rd53a>()->idle();
 
-
-      keeper->globalFe<Rd53a>()->confADC(Reg);
-      keeper->globalFe<Rd53a>()->readRegister(m_AdcRead);
-
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-      RawData *data = g_rx->readData();
-      unsigned size =  data->words;
-      //std::cout<<"Reading time"<<std::endl;
-
-      
-      //std::cout<<"The Birds is saying "<<size<<std::endl;
-
-
-      for(unsigned c=0; c<size/2; c++)
-	{
-
-	  if (c*2+1<size)
-	    {
-	      std::pair<uint32_t, uint32_t> readReg = RegRead(data->buf[c*2],data->buf[c*2+1]);
-	      ADCVal[curConf] = readReg.second;
-	    }
-	  else
-	    std::cout<<"Hallfword recieved"<<data->buf[c*2]<<std::endl;
-	}
+      ADCVal[curConf]=this->ReadADC(Reg);
 
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     }
   std::cout<<"MUX: "<<Reg<<" Bias 0 "<<ADCVal[0]<<" Bias 1 "<<ADCVal[1]<<" Diff "<<ADCVal[1]-ADCVal[0]<<std::endl;
-  
+  return ADCVal[1]-ADCVal[0];
 }
 
 
@@ -119,32 +99,32 @@ void Rd53aReadRegLoop::init() {
     m_AdcRead = keeper->globalFe<Rd53a>()->regMap["AdcRead"];
     m_sensorConf99 = keeper->globalFe<Rd53a>()->regMap["SensorCfg0"];
     m_sensorConf100 = keeper->globalFe<Rd53a>()->regMap["SensorCfg1"];
-    Rd53aReg Rd53aGlobalCfg::*GlobRT = keeper->globalFe<Rd53a>()->regMap["GlobalPulseRt"];
-
-    keeper->globalFe<Rd53a>()->writeRegister(GlobRT ,256); //Start Monitor
-    keeper->globalFe<Rd53a>()->globalPulse(0, 4);  
-  
 
 
 }
 
-
-
-
-
-
-
-
 void Rd53aReadRegLoop::execPart1() {
 
 
-  for( auto Reg : NormalMux)
-    ReadADC(Reg);
-
+  for( auto Reg : VoltMux)
+    {
+      uint16_t ADCVal = ReadADC(Reg);
+      std::cout<<"MUX: "<<Reg<<" Value: "<<ADCVal<<std::endl;
+    }
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-  for( auto Reg : TempMux)
+  for( auto Reg : TempMux){
     ReadTemp(Reg);
+  }
+
+  for( auto Reg : CurMux)
+    {
+      uint16_t ADCVal = ReadADC(Reg, true);
+      std::cout<<"CURMUX: "<<Reg<<" Value: "<<ADCVal<<std::endl;
+    }
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+
 
   
 }
@@ -162,23 +142,24 @@ void Rd53aReadRegLoop::end() {
 
 
 void Rd53aReadRegLoop::writeConfig(json &config) {
-  //config["MUXREG"] = TempMux+NormalMux;
+  //config["MUXREG"] = TempMux+VoltMux;
     
 }
 
 void Rd53aReadRegLoop::loadConfig(json &config) {
 
 
-    if (!config["MUXREG"].empty())
-      for(auto Reg : config["MUXREG"])
+    if (!config["VOLTMUX"].empty())
+      for(auto Reg : config["VOLTMUX"])
 	{
 	  if( ( int(Reg) >=3 && int(Reg)<=8) || (int(Reg)>=14 && int(Reg)<=15) )
 	    TempMux.push_back(Reg);
 	  else
-	    NormalMux.push_back(Reg);
+	    VoltMux.push_back(Reg);
 	}
-
-
+    if (!config["CURMUX"].empty())
+      for(auto Reg : config["CURMUX"])
+	CurMux.push_back(Reg);
 }
 
 

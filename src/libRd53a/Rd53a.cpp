@@ -75,15 +75,21 @@ void Rd53a::readRegister(Rd53aReg Rd53aGlobalCfg::*ref) {
 
 
 //This only works for voltage MUX values. 
-void Rd53a::confADC(uint16_t MONMUX) {
+void Rd53a::confADC(uint16_t MONMUX,bool doCur=false) {
 
 
- 
+  if(doCur)
+    this->writeRegister(&Rd53a::MonitorImonMux,  MONMUX); //Select what to monitor
+  else
+    this->writeRegister(&Rd53a::MonitorVmonMux,  MONMUX); //Select what to monitor    
 
-  this->writeRegister(&Rd53a::MonitorVmonMux,  MONMUX); //Select what to monitor
+
   this->writeRegister(&Rd53a::MonitorEnable, 1); //Enabling monitoring 
   std::this_thread::sleep_for(std::chrono::milliseconds(10)); //This is neccessary to clean. This might be controller dependent.  
   //this->idle();
+
+  this->writeRegister(&Rd53a::GlobalPulseRt ,256); //Start Monitor
+  this->globalPulse(m_chipId, 4);  
 
 
   this->writeRegister(&Rd53a::GlobalPulseRt ,8); //Clear Monitor Data
@@ -91,17 +97,6 @@ void Rd53a::confADC(uint16_t MONMUX) {
 
   //this->idle();
   std::this_thread::sleep_for(std::chrono::milliseconds(10)); //This is neccessary to clean. This might be controller dependent.  
-
-
-  // this->writeRegister(&Rd53a::GlobalPulseRt ,64); //Reset ADC
-  // this->globalPulse(m_chipId, 4);  
-
-  // std::this_thread::sleep_for(std::chrono::milliseconds(10)); 
-
-  // this->writeRegister(&Rd53a::GlobalPulseRt ,256); //Start Monitor
-  // this->globalPulse(m_chipId, 4);  
-
-
 
   this->writeRegister(&Rd53a::GlobalPulseRt ,4096); //Trigger ADC Conversion
   this->globalPulse(m_chipId, 4);  

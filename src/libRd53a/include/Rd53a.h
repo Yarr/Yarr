@@ -52,7 +52,7 @@ public:
 
         void writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value);
         void readRegister(Rd53aReg Rd53aGlobalCfg::*ref);
-        void confADC(uint16_t MONUX);
+        void confADC(uint16_t MONUX, bool doCur);
         void writeNamedRegister(std::string name, uint16_t value) override;
         
         void setInjCharge(double charge, bool sCap=true, bool lCap=true) override {

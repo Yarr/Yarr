@@ -32,20 +32,17 @@ class Rd53aReadRegLoop : public LoopActionBase {
   Rd53aReg Rd53aGlobalCfg::*m_AdcRead;
   Rd53aReg Rd53aGlobalCfg::*m_sensorConf99;
   Rd53aReg Rd53aGlobalCfg::*m_sensorConf100;
-  uint32_t m_MVS;
-  uint32_t m_MIS;
 
-  std::vector<unsigned short> NormalMux;
+  std::vector<unsigned short> VoltMux;
+  std::vector<unsigned short> CurMux;
   std::vector<unsigned short> TempMux;
 
 
 
 
-  void (Rd53aReadRegLoop::*ADCFunc)();
+  uint16_t ReadADC(unsigned short Reg, bool doCur);
+  uint16_t ReadTemp(unsigned short Reg);
 
-
-  void ReadTemp(unsigned short Reg);
-  void ReadADC(unsigned short Reg);
 
   void init();
   void execPart1();
