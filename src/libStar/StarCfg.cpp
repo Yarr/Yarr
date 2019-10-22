@@ -14,7 +14,7 @@ StarCfg::~StarCfg() {}
 void StarCfg::initRegisterMaps() {
 
   int n_HCC_registers = 50;
-  int n_ABC_registers = 50;
+  int n_ABC_registers = 128;
   AllReg_List.reserve( n_HCC_registers + m_nABC*n_ABC_registers );
 
   //Make all registers and subregisters for the HCC
