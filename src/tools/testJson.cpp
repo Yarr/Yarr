@@ -14,8 +14,6 @@
 bool config_controllers = false;
 bool verbose = false;
 
-using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, int32_t, uint32_t, float>;
-
 enum class ConfigType {
   CONNECTIVITY,
   CONTROLLER,
@@ -57,7 +55,7 @@ bool testController(json controller_file) {
     hwCtrl->loadConfig(ctrl["cfg"]);
 
     return true;
-  } catch(json::type_error &e) {
+  } catch(std::runtime_error &e) {
     std::cout << "Controller read failed: " << e.what() << "\n";
     return false;
   }
@@ -100,7 +98,7 @@ bool testConnectivity(json config) {
       cfgFile.close();
 #endif
     }
-  } catch(json::type_error &te) {
+  } catch(std::runtime_error &te) {
     std::cout << "Connectivity read failed: " << te.what() << "\n";
     return false;
   }
@@ -133,7 +131,7 @@ bool testScanConfig(json config) {
     }
 
     return true;
-  } catch(json::type_error &te) {
+  } catch(std::runtime_error &te) {
     std::cout << "Scan config read failed: " << te.what() << "\n";
     return false;
   }
@@ -145,8 +143,8 @@ int checkJson(json &jsonConfig, ConfigType jsonFileType) {
     {
       int count = 0;
       std::string name;
-      for(auto &el: jsonConfig.items()) {
-        name = el.key();
+      for(auto &el: jsonConfig) {
+        name = el;
         count ++;
       }
       if(count != 1) {
@@ -189,8 +187,8 @@ int checkJson(json &jsonConfig, ConfigType jsonFileType) {
   default:
     std::cout << "Unspecified file type, top-level names are:\n";
 
-    for (auto& el : jsonConfig.items()) {
-        std::cout << "  " << el.key() << '\n';
+    for (auto& el : jsonConfig) {
+        std::cout << "  " << el << '\n';
     }
     break;
   }
@@ -286,7 +284,7 @@ int main(int argc, char *argv[]) {
       std::cerr << "Failed to interpret config file\n";
       return ret;
     }
-  } catch (json::type_error &e) {
+  } catch (std::runtime_error &e) {
     std::cerr << "Failed to interpret config file: " << e.what() << '\n';
     return 2;
   }

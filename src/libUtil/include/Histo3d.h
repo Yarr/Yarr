@@ -72,7 +72,7 @@ class Histo3d : public HistogramBase {
         void plot(std::string filename, std::string dir = "");
 
     private:
-        std::vector<uint16_t > data;
+        uint16_t *data;
 
         double underflow;
         double overflow;
