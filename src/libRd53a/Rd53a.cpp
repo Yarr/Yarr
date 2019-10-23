@@ -247,7 +247,6 @@ void Rd53a::disableCalCol(unsigned col) {
 }
 
 int Rd53a::checkCom() {
-	return 1;
     //std::cout << __PRETTY_FUNCTION__ << " : Checking communication for " << this->name << " by reading a register .." << std::endl;
     uint32_t regAddr = 21;
     uint32_t regValue = m_cfg[regAddr];
