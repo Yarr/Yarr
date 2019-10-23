@@ -101,10 +101,14 @@ void Rd53a::configure() {
 
 void Rd53a::configureInit() {
     this->writeRegister(&Rd53a::GlobalPulseRt, 0x007F); // Reset a whole bunch of things
+    while(!core->isCmdEmpty()){;}
     this->globalPulse(m_chipId, 8);
+    while(!core->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     this->writeRegister(&Rd53a::GlobalPulseRt, 0x4100); //activate monitor and prime sync FE AZ
+    while(!core->isCmdEmpty()){;}
     this->globalPulse(m_chipId, 8);
+    while(!core->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     this->ecr();
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -243,6 +247,7 @@ void Rd53a::disableCalCol(unsigned col) {
 }
 
 int Rd53a::checkCom() {
+	return 1;
     //std::cout << __PRETTY_FUNCTION__ << " : Checking communication for " << this->name << " by reading a register .." << std::endl;
     uint32_t regAddr = 21;
     uint32_t regValue = m_cfg[regAddr];
