@@ -95,9 +95,9 @@ void StarTriggerLoop::setTrigWord() {
 	auto cmd_word = LCB::fast_command(LCB::FastCmd::ABC_CAL_PULSE, remainder%4);
 	//   Or LCB::FastCmd::ABC_DIGITAL_PULSE
 	if(remainder < 4) {
-		m_trigWord[full_words] = (LCB::IDLE << 16) + cmd_word;
+		m_trigWord[full_words + 1] = (LCB::IDLE << 16) + cmd_word;
 	} else {
-		m_trigWord[full_words] = (cmd_word << 16) | LCB::IDLE;
+		m_trigWord[full_words + 1] = (cmd_word << 16) | LCB::IDLE;
 	}
 
 	// Words of delay + trigger and pulse
