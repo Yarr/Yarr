@@ -9,7 +9,7 @@
 
 #define HEXF(x,y) std::hex << "0x" << std::hex << std::setw(x) << std::setfill('0') << static_cast<int>(y) << std::dec
 
-RogueRxCore::RogueRxCore():m_com(0) {
+RogueRxCore::RogueRxCore():m_com(0), m_rxChannel(0) {
   m_com=RogueCom::getInstance();
 }
 
@@ -19,7 +19,8 @@ RogueRxCore::~RogueRxCore() {  }
 
 
 RawData* RogueRxCore::readData() {
-    std::this_thread::sleep_for(std::chrono::microseconds(100));
+	m_com->setRxChannel(m_rxChannel);
+    std::this_thread::sleep_for(std::chrono::microseconds(10));
     uint32_t words = this->getCurCount();
 
 
