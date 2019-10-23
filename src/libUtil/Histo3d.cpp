@@ -35,7 +35,7 @@ Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     max = 0;
     underflow = 0;
     overflow = 0;
-    data = std::vector<uint16_t>(xbins*ybins*zbins);
+    data = std::vector<uint16_t>(xbins*ybins*zbins,0);
 
     entries = 0;
 
@@ -64,8 +64,7 @@ Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     max = 0;
     underflow = 0;
     overflow = 0;
-    data = std::vector< uint16_t>(xbins*ybins*zbins);
-    this->setAll(0);
+    data = std::vector< uint16_t>(xbins*ybins*zbins,0);
     entries = 0;
 }
 

@@ -17,9 +17,7 @@ Histo1d::Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, doubl
     xlow = arg_xlow;
     xhigh = arg_xhigh;
     binWidth = (xhigh - xlow)/bins;
-    data =  std::vector<double>(bins);
-    for(unsigned i=0; i<bins; i++)
-        data[i] = 0;
+    data =  std::vector<double>(bins,0);
     min = 0;
     max = 0;
 
@@ -34,7 +32,7 @@ Histo1d::Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, doubl
     xlow = arg_xlow;
     xhigh = arg_xhigh;
     binWidth = (xhigh - xlow)/bins;
-    data = std::vector<double>(bins);
+    data = std::vector<double>(bins,0);
 
     min = 0;
     max = 0;

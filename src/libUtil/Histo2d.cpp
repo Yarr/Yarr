@@ -28,11 +28,8 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     max = 0;
     underflow = 0;
     overflow = 0;
-    data = std::vector<double>(ybins*ybins);
-    isFilled = std::vector<bool>(xbins*ybins);
-    for (unsigned index=0; index < xbins*ybins; index++)
-      isFilled[index]=false;
-    this->setAll(0);
+    data = std::vector<double>(xbins*ybins,0);
+    isFilled = std::vector<bool>(xbins*ybins,false);
     entries = 0;
 
 }
@@ -53,13 +50,8 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     max = 0;
     underflow = 0;
     overflow = 0;
-    data = std::vector<double>(xbins*ybins);
-    isFilled =  std::vector<bool>(xbins*ybins);
-    for (unsigned index=0; index < xbins*ybins; index++)
-      isFilled[index]=false;
-
-
-    this->setAll(0);
+    data = std::vector<double>(xbins*ybins,0);
+    isFilled =  std::vector<bool>(xbins*ybins,false);
     entries = 0;
 }
 
@@ -79,8 +71,8 @@ Histo2d::Histo2d(Histo2d *h) : HistogramBase(h->getName(), h->getType()) {
     underflow = h->getUnderflow();
     overflow = h->getOverflow();
 
-    data = std::vector<double>(xbins*ybins);
-    isFilled = std::vector<bool>(xbins*ybins);
+    data = std::vector<double>(xbins*ybins,0);
+    isFilled = std::vector<bool>(xbins*ybins,false);
     for(unsigned i=0; i<xbins*ybins; i++)
         data[i] = h->getBin(i);
     entries = h->getNumOfEntries();
