@@ -28,6 +28,7 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
 
     void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override;
 
+  //Will write value for setting name for the HCC if name starts with "HCC_" otherwise will write the setting for all ABCs if name starts with "ABCs_"
   void writeNamedRegister(std::string name, uint16_t value) override;
 
   // Pixel specific?
@@ -97,15 +98,24 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
     sendCmd(read_hcc_register(getSubRegisterParentAddr(0, subRegName), getHCCchipID()));
   }
 
+  //Uses chip index to set value on subregister called subRegName
+  void setAndWriteABCSubRegisterForChipIndex(std::string subRegName, uint32_t value, unsigned int chipIndex){
+    setSubRegisterValue(chipIndex, subRegName, value);
+    sendCmd( write_abc_register(getSubRegisterParentAddr(chipIndex, subRegName), getSubRegisterParentValue(chipIndex, subRegName), getHCCchipID(), getABCchipID(chipIndex)) );
+  }
+  //Uses chip ID to set value on subregister called subRegName
   void setAndWriteABCSubRegister(std::string subRegName, uint32_t value, int32_t chipID){
     unsigned int chipIndex = indexForABCchipID(chipID);
-    setSubRegisterValue(chipIndex, subRegName,value);
-    sendCmd( write_abc_register(getSubRegisterParentAddr(chipIndex, subRegName), getSubRegisterParentValue(chipIndex, subRegName), getHCCchipID(), chipID) );
-
+    setAndWriteABCSubRegisterForChipIndex(subRegName, value, chipIndex);
   }
+  //Reads value of subregister subRegName for chip with index chipIndex
+  const void readABCSubRegisterForChipIndex(std::string subRegName, unsigned int chipIndex){
+    sendCmd(read_abc_register(getSubRegisterParentAddr(chipIndex, subRegName), 0xf, getABCchipID(chipIndex)));
+  }
+  //Reads value of subregister subRegName for chip with ID chipID
   const void readABCSubRegister(std::string subRegName, int32_t chipID){
     unsigned int chipIndex = indexForABCchipID(chipID);
-    sendCmd(read_abc_register(getSubRegisterParentAddr(chipIndex, subRegName), 0xf, chipID));
+    readABCSubRegisterForChipIndex(subRegName, chipIndex);
   }
 
 
