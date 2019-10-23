@@ -33,14 +33,14 @@ class Histo1d : public HistogramBase {
         
         void setBin(unsigned n, double v);
         double getBin(unsigned n) const;
-        double* getData() { return data;};
+        double const * getData() const { return data.data();};
         
         void toFile(std::string filename, std::string dir = "", bool header=true);
         bool fromFile(std::string filename);
         void plot(std::string filename, std::string dir = "");
 
     private:
-        double *data;
+        std::vector<double>data;
         double underflow;
         double overflow;
 
