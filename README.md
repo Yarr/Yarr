@@ -41,7 +41,6 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
 - Compilation:
     - ``$ cd Yarr``
     - ``$ mkdir build``
-    - ``$ mkdir build``
     - ``$ cd build``
     - ``$ cmake3 ..``
     - ``$ make install -j4``
