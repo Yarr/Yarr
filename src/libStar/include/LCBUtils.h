@@ -105,6 +105,26 @@ namespace LCB {
   const uint8_t K2 = SixEight::kcode(2);
   const uint8_t K3 = SixEight::kcode(3);
 
+  enum FastCmdType {
+	  NONE,
+	  RESVD,
+	  LOGIC_RESET,
+	  ABC_REG_RESET,
+	  ABC_SEU_RESET,
+	  ABC_CAL_PULSE,
+	  ABC_DIGITAL_PULSE,
+	  ABC_HIT_COUNT_RESET,
+	  ABC_HITCOUNT_START,
+	  ABC_HITCOUNT_STOP,
+	  ABC_SLOW_COMMAND_RESET,
+	  ABC_STOP_PRLP,
+	  HCC_REG_RESET,
+	  HCC_SEU_RESET,
+	  HCC_PLL_RESET,
+	  ABC_START_PRLP
+  };
+
+
   constexpr Frame build_pair(uint8_t f, uint8_t s) {
     return (f << 8) | s;
   }
@@ -132,7 +152,7 @@ namespace LCB {
   }
 
   /// Resets etc. (2 bits of BC select and 4 bits of command)
-  inline Frame fast_command(uint8_t type, uint8_t delay) {
+  inline Frame fast_command(FastCmdType type, uint8_t delay) {
     return (LCB::K3 << 8) | SixEight::encode(((delay&3) << 4) | (type & 0xf));
   }
 
