@@ -670,7 +670,7 @@ void printHelp() {
 
     std::cout << "Help:" << std::endl;
     std::cout << " -h: Shows this." << std::endl;
-    std::cout << " -n: Set number of processing threads." << std::endl;
+    std::cout << " -n <threads> : Set number of processing threads." << std::endl;
     std::cout << " -s <scan_type> : Scan config" << std::endl;
     //std::cout << " -n: Provide SPECboard number." << std::endl;
     //std::cout << " -g <cfg_list.txt>: Provide list of chip configurations." << std::endl;
