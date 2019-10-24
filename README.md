@@ -67,8 +67,8 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
     - ``$ export CENTOS7_ARM64_ROOT=/opt/rce/rootfs/centos7_64 #for ZCU102 ``
     - ``$ cd build``
     - select one of the supported toolchains
-        - ``$ cmake3 .. -DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;Rogue -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang # requires clang installed on Linux ``
-        - ``$ cmake3 .. -DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;Rogue -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc # gcc 4.8 or higher ``
-        - ``$ cmake3 .. -DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;Rogue -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm32 # ARM32/Centos7 on RCE ``
-        - ``$ cmake3 .. -DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;Rogue -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm64 # ARM64/Centos7 on zcu102 ``
-    - ``$ make -j4 install ``
+        - ``$ cmake3 .. -DYARR_CONTROLLERS_TO_BUILD=all -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang # requires clang installed on Linux ``
+        - ``$ cmake3 .. -DYARR_CONTROLLERS_TO_BUILD=all -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc # gcc 4.8 or higher ``
+        - ``$ cmake3 .. -DYARR_CONTROLLERS_TO_BUILD=all -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm32 # ARM32/Centos7 on RCE ``
+        - ``$ cmake3 .. -DYARR_CONTROLLERS_TO_BUILD=all -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm64 # ARM64/Centos7 on zcu102 ``
+    - ``$ make -j8 install ``
