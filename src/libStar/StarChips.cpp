@@ -177,7 +177,7 @@ bool StarChips::writeRegisters(){
 	//Write all register to their setting, both for HCC & all ABCs
 	std::cout << "!!!! m_nABC is " << m_nABC << std::endl;
 	for( int iChip = 0; iChip < m_nABC+1; ++iChip){
-		int this_chipID = (iChip) ? m_ABCchipIDs[iChip-1] : getHCCchipID();
+	        int this_chipID = (iChip) ? getABCchipID(iChip) : getHCCchipID();
 		if (iChip==1) this->reset();
 		std::cout << "Starting on chip " << this_chipID << " with length " << registerMap[iChip].size() << " @ " << &registerMap << std::endl;
 		std::map<unsigned, Register*>::iterator map_iter;
@@ -215,10 +215,10 @@ void StarChips::writeNamedRegister(std::string name, uint16_t reg_value) {
 const void StarChips::readRegisters(){
 
 	//Read all known registers, both for HCC & all ABCs
-	if(m_debug)  std::cout << "Looping over all chips in readRegisters, where m_nABC is " << m_nABC << " and m_chipIDs size is " <<  m_ABCchipIDs.size() << std::endl;
+	if(m_debug)  std::cout << "Looping over all chips in readRegisters, where m_nABC is " << m_nABC << std::endl;
 	for( int iChip = 0; iChip < m_nABC+1; ++iChip){
 
-		int this_chipID = (iChip) ? m_ABCchipIDs[iChip-1] : getHCCchipID();
+	        int this_chipID = (iChip) ? getABCchipID(iChip) : getHCCchipID();
 		std::map<unsigned, Register*>::iterator map_iter;
 		for(map_iter=registerMap[iChip].begin(); map_iter!= registerMap[iChip].end(); ++map_iter){
 			if(iChip==0 && map_iter->first==16) continue;

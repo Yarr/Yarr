@@ -77,7 +77,7 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
       registerMap[chipIndex][addr]->setValue((uint32_t) value);
     }
     if(m_debug)  std::cout << "Doing ABC " << chipIndex << " setAndWriteRegister with value 0x" << std::hex << std::setfill('0') << std::setw(8) << registerMap[chipIndex][addr]->getValue() <<std::dec  << std::endl;
-    sendCmd(write_abc_register(addr, registerMap[chipIndex][addr]->getValue(), getHCCchipID(), m_ABCchipIDs[chipIndex-1]));
+    sendCmd(write_abc_register(addr, registerMap[chipIndex][addr]->getValue(), getHCCchipID(), getABCchipID(chipIndex)));
 
   }
 
