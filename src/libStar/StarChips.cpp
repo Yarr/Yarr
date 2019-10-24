@@ -27,6 +27,13 @@ StarChips::StarChips()
 	geo.nRow = 256;
 	geo.nCol = 1;
 
+
+	//Create dummy configuration as placeholder for globalFe in preScan routines
+	m_hccID = 0xf;
+	m_nABC = 1;
+	addABCchipID(0xf);
+	this->initRegisterMaps(); //Initialize default register maps for 1 dummy ABC
+
 }
 
 StarChips::StarChips(HwController *arg_core)
