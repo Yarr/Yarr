@@ -13,7 +13,7 @@ bool rd53a_proc_registered =
     StdDict::registerDataProcessor("RD53A", []() { return std::unique_ptr<DataProcessor>(new Rd53aDataProcessor());});
 
 
-Rd53aDataProcessor::Rd53aDataProcessor() {
+Rd53aDataProcessor::Rd53aDataProcessor()  {
     verbose = true;
     m_input = NULL;
     m_numThreads = std::thread::hardware_concurrency();
@@ -36,7 +36,6 @@ void Rd53aDataProcessor::run() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     unsigned int numThreads = m_numThreads;
-    if (numThreads > 4) numThreads = 4;
     for (unsigned i=0; i<numThreads; i++) {
         thread_ptrs.emplace_back(new std::thread(&Rd53aDataProcessor::process, this));
         std::cout << "  -> Processor thread #" << i << " started!" << std::endl;

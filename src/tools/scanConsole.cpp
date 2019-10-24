@@ -124,15 +124,18 @@ int main(int argc, char *argv[]) {
     std::fstream oF((home + "/.yarr/runCounter").c_str(), std::ios::out);
     oF << runCounter << std::endl;
     oF.close();
-
+    int nThreads=-1;
     int c;
-    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:Wd:u:i:")) != -1) {
+    while ((c = getopt(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
                 printHelp();
                 return 0;
                 break;
+	    case 'n':
+	      nThreads=atoi(optarg);
+	      break;
             case 'k':
                 listKnown();
                 return 0;
@@ -501,6 +504,7 @@ int main(int argc, char *argv[]) {
     std::shared_ptr<DataProcessor> proc = StdDict::getDataProcessor(chipType);
     //Fei4DataProcessor proc(bookie.globalFe<Fei4>()->getValue(&Fei4::HitDiscCnfg));
     proc->connect( &bookie.rawData, &bookie.eventMap );
+    if(nThreads>0) proc->setThreads(nThreads); // override number of used threads
     proc->init();
     proc->run();
 
@@ -666,6 +670,7 @@ void printHelp() {
 
     std::cout << "Help:" << std::endl;
     std::cout << " -h: Shows this." << std::endl;
+    std::cout << " -n: Set number of processing threads." << std::endl;
     std::cout << " -s <scan_type> : Scan config" << std::endl;
     //std::cout << " -n: Provide SPECboard number." << std::endl;
     //std::cout << " -g <cfg_list.txt>: Provide list of chip configurations." << std::endl;
