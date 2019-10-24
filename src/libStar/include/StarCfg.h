@@ -230,9 +230,10 @@ class StarCfg : public FrontEndCfg, public Register{
 
  protected:
   const unsigned int indexForABCchipID(unsigned int chipID) {return std::distance(m_ABCchipIDs.begin(), std::find(m_ABCchipIDs.begin(), m_ABCchipIDs.end(), chipID)) + 1;};
+  void addABCchipID(unsigned int chipID) { m_ABCchipIDs.push_back(chipID);};
+  void clearABCchipIDs() { m_ABCchipIDs.clear(); };
     
   unsigned m_hccID;
-  std::vector<unsigned int> m_ABCchipIDs;
 
   //This saves all Register objects to memory, purely for storage.  We will never access registers from this
   std::vector< Register > AllReg_List;
@@ -240,6 +241,9 @@ class StarCfg : public FrontEndCfg, public Register{
   std::map<unsigned, std::map<unsigned, Register*> >registerMap; //Maps register address
   //This is a 2D map of each subregister to the chip index and subregister name.  For example subRegisterMap_all[chip index][NAME]
   std::map<unsigned, std::map<std::string, SubRegister*> > subRegisterMap_all;   //register record
+
+ private:
+  std::vector<unsigned int> m_ABCchipIDs;
 
 };
 

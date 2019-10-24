@@ -25,7 +25,7 @@ void StarCfg::initRegisterMaps() {
   std::cout << "Now have m_nABC as " << m_nABC << std::endl;
   for( int iABC = 0; iABC < m_nABC; ++iABC){ //Start at 1 b/c zero is HCC!
     //Make all registers and subregisters for the HCC
-    int this_chipID = m_ABCchipIDs.at(iABC+1);
+    int this_chipID = getABCchipID(iABC+1);
     configure_ABC_Registers(this_chipID);
   }
 
