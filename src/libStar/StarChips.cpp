@@ -24,8 +24,8 @@ StarChips::StarChips()
 	txChannel = 99;
 	rxChannel = 99;
 	active = false;
-	geo.nRow = 256;
-	geo.nCol = 1;
+	geo.nRow = 2;
+	geo.nCol = 128;
 
 
 	//Create dummy configuration as placeholder for globalFe in preScan routines
@@ -44,8 +44,8 @@ StarChips::StarChips(HwController *arg_core)
 	txChannel = 99;
 	rxChannel = 99;
 	active = true;
-	geo.nRow = 256;
-	geo.nCol = 1;
+	geo.nRow = 2;
+	geo.nCol = 128;
 
 }
 
@@ -58,8 +58,8 @@ StarChips::StarChips(HwController *arg_core, unsigned arg_channel)
 	rxChannel = arg_channel;
 
 	active = true;
-	geo.nRow = 256;
-	geo.nCol = 1;
+	geo.nRow = 2;
+	geo.nCol = 128;
 }
 
 StarChips::StarChips(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel)
@@ -71,8 +71,8 @@ StarChips::StarChips(HwController *arg_core, unsigned arg_txChannel, unsigned ar
 	rxChannel = arg_rxChannel;
 
 	active = true;
-	geo.nRow = 0;
-	geo.nCol = 0;
+	geo.nRow = 2;
+	geo.nCol = 128;
 }
 
 void StarChips::init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
@@ -83,8 +83,8 @@ void StarChips::init(HwController *arg_core, unsigned arg_txChannel, unsigned ar
 	active = true;
 
 	active = true;
-	geo.nRow = 256;
-	geo.nCol = 1;
+	geo.nRow = 2;
+	geo.nCol = 128;
 }
 
 
