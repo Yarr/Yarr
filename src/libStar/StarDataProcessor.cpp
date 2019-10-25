@@ -123,19 +123,22 @@ void process_data(RawData &curIn,
             Cluster cluster = packet.clusters.at(ithCluster);
 
             // Split hits into two rows of strips
-            curOut.curEvent->addHit(cluster.address&0x7f,
-                                    (cluster.address>>7)&1, 0);
+            curOut.curEvent->addHit( ((cluster.address>>7)&1)+1,
+                                     (cluster.address&0x7f)+1, 1);
+            //NOTE::tot(1) is just dummy value, because of """if(curHit.tot > 0)""" in Fei4Histogrammer::XXX::processEvent(Fei4Data *data)
+            //row and col both + 1 because pixel row & col numbering start from 1, see Fei4Histogrammer & Fei4Analysis
 
             std::bitset<3> nextPattern (cluster.next);
             for(unsigned i=0; i<3; i++){
                 if(!nextPattern.test(i)) continue;
                 auto nextAddress = cluster.address+i+1;
-                curOut.curEvent->addHit(nextAddress & 0x7f,
-                                        (nextAddress>>7)&1, 0);
+
+                curOut.curEvent->addHit( ((nextAddress>>7)&1)+1,
+                                         (nextAddress&0x7f)+1,1);
 
                 // It's an error for cluster to escape either "side"
-                if((cluster.address+i+1) > 127) {
-                    std::cout << " address > 127 " << std::endl;
+                if(((nextAddress&0x7f)+1) > 128) {
+                    std::cout << " address > 128 " << std::endl;
                 }
             }
         }
