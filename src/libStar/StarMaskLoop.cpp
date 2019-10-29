@@ -92,7 +92,7 @@ void StarMaskLoop::applyMask(StarChips* fe, const uint32_t masks[8], const uint3
     int index=0;
     for (int j=16; j<24; j++){
       //    				 std::cout << "write mask: "<< i << "  0x" << std::hex << std::setfill('0') << std::setw(8)<< Star_masks[m_cur][index] <<std::dec<< std::endl;
-      fe->setAndWriteABCRegister(j, masks[index], iChip);  // strip 0's mask starts from reg 16,
+      fe->setAndWriteABCRegister(j, ~masks[index], iChip);  // strip 0's mask starts from reg 16,
       index++;
     }
     //Looping over CAL ENABLE registers
