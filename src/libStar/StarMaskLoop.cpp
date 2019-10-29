@@ -39,7 +39,7 @@ void StarMaskLoop::init() {
 
     m_done = false;
     m_cur = min;
-    if (m_nMaskedStripsPerGroup) initMasks();
+    if (m_nEnabledStripsPerGroup) initMasks();
     
     for ( FrontEnd* fe : keeper->feList ) {
     	if (!fe->isActive()) {continue;}
