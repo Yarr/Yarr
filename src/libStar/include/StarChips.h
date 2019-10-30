@@ -63,7 +63,7 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
   const void readRegisters();
 
   void setAndWriteHCCRegister(int addr, int64_t  value=-1){
-    if(value>0){
+    if(value>=0){
       std::cout << value << std::endl;
       registerMap[0][addr]->setValue((uint32_t) value);
     }
@@ -72,7 +72,7 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
   }
   void setAndWriteABCRegister(int addr, int64_t  value=-1, int32_t chipIndex = 1){
     //unsigned int chipIndex = indexForABCchipID(chipID);
-    if(value>0){
+    if(value>=0){
       std::cout << value << std::endl;
       registerMap[chipIndex][addr]->setValue((uint32_t) value);
     }
