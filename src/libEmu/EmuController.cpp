@@ -25,6 +25,10 @@ bool emu_registered_Rd53a =
   StdDict::registerHwController("emu_Rd53a",
                                 makeEmu<Rd53a, Rd53aEmu>);
 
+bool emu_registered_Emu =
+  StdDict::registerHwController("emu_Star",
+                                makeEmu<StarChips, StarEmu>);
+
 template<>
 void EmuController<Fei4, Fei4Emu>::loadConfig(json &j) {
 //    EmuTxCore::setCom(new EmuShm(j["tx"]["id"], j["tx"]["size"], true));
