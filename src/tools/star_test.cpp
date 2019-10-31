@@ -72,6 +72,8 @@ int main(int argc, char *argv[]) {
     spec.writeFifo((part2[6] << 16) + part2[7]);
     spec.writeFifo((part2[8] << 16) + LCB::IDLE);
     spec.writeFifo((LCB::IDLE << 16) + LCB::IDLE);
+
+    spec.writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(1, 0, false));
     spec.releaseFifo();
 
     spec.setRxEnable(0x40); // Input from Channel 6 on Spec board
@@ -79,6 +81,10 @@ int main(int argc, char *argv[]) {
     RawData *data = spec.readData();
 
     for(int i=0; i<1000; i++) {
+      static const auto SLEEP_TIME = std::chrono::milliseconds(1);
+
+      std::this_thread::sleep_for( SLEEP_TIME );
+
       if(data != nullptr) break;
 
       data = spec.readData();
