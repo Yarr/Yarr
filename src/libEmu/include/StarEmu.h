@@ -6,6 +6,9 @@
 #include <atomic>
 #include <memory>
 
+#include <cstdint>
+#include <iterator>
+
 class EmuCom;
 
 /**
@@ -24,6 +27,14 @@ public:
     std::atomic<bool> run;
     
 private:
+
+    /// Send response packet (excluding SOP/EOP)
+    template<typename T> void sendPacket(T &iterable) {
+      sendPacket(std::begin(iterable), std::end(iterable));
+    }
+
+    /// Send response packet (excluding SOP/EOP)
+    void sendPacket(uint8_t *byte_s, uint8_t *byte_e);
 
     EmuCom * m_txRingBuffer;
     EmuCom * m_rxRingBuffer;

@@ -45,6 +45,25 @@ StarEmu::StarEmu(EmuCom * rx, EmuCom * tx, std::string json_file_path)
 
 StarEmu::~StarEmu() {}
 
+void StarEmu::sendPacket(uint8_t *byte_s, uint8_t *byte_e) {
+    int byte_length = byte_e - byte_s;
+
+    int word_length = (byte_length + 3) / 4;
+
+    for(unsigned i=0; i<word_length-1; i++) {
+        m_rxRingBuffer->write32(*(uint32_t*)&byte_s[i*4]);
+    }
+
+    if(byte_length%4) {
+        uint32_t final = 0;
+        for(unsigned i=0; i<byte_length%4; i++) {
+            int offset = 8 * (i);
+            final |= byte_s[(word_length-1)*4 + i] << offset;
+        }
+        m_rxRingBuffer->write32(final);
+    }
+}
+
 void StarEmu::executeLoop() {
     std::cout << "Starting emulator loop" << std::endl;
 
