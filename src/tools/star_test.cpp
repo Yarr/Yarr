@@ -78,16 +78,16 @@ int main(int argc, char *argv[]) {
 
     spec.setRxEnable(0x40); // Input from Channel 6 on Spec board
 
-    RawData *data = spec.readData();
+    std::unique_ptr<RawData> data(spec.readData());
 
     for(int i=0; i<1000; i++) {
+      if(data) break;
+
       static const auto SLEEP_TIME = std::chrono::milliseconds(1);
 
       std::this_thread::sleep_for( SLEEP_TIME );
 
-      if(data != nullptr) break;
-
-      data = spec.readData();
+      data.reset(spec.readData());
     }
 
     if(data == nullptr) {
@@ -110,6 +110,10 @@ int main(int argc, char *argv[]) {
       word &= 0xffffc3ff; // Strip of channel number
 
       std::cout << "[" << j << "] = 0x" << std::hex << word << std::dec << " " << std::bitset<32>(word) << std::endl;
+    }
+
+    if(data) {
+      delete [] data->buf;
     }
 
     spec.setRxEnable(0x0);
