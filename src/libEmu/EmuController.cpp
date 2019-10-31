@@ -72,8 +72,11 @@ void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
 
   //TODO make nice
   std::cout << "-> Starting Emulator" << std::endl;
-  std::string emuCfgFile = j["feCfg"];
-  std::cout << emuCfgFile << std::endl;
+  std::string emuCfgFile;
+  if (!j["feCfg"].empty()) {
+    emuCfgFile = j["feCfg"];
+    std::cout << " Using config: " << emuCfgFile << "\n";
+  }
   emu.reset(new StarEmu( rx_com.get(), tx_com.get(), emuCfgFile ));
   emuThreads.push_back(std::thread(&StarEmu::executeLoop, emu.get()));
 }

@@ -36,10 +36,11 @@ StarEmu::StarEmu(EmuCom * rx, EmuCom * tx, std::string json_file_path)
 {
     run = true;
 
-    std::ifstream file(json_file_path);
-    json j = json::parse(file);
-
-    file.close();
+    if (!json_file_path.empty()) {
+      std::ifstream file(json_file_path);
+      json j = json::parse(file);
+      file.close();
+    }
 }
 
 StarEmu::~StarEmu() {}
