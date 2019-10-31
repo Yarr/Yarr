@@ -4,6 +4,7 @@
 
 #include "Fei4Emu.h"
 #include "Rd53aEmu.h"
+#include "StarEmu.h"
 
 template<class FE, class ChipEmu>
 std::unique_ptr<HwController> makeEmu() {
@@ -57,3 +58,18 @@ void EmuController<Rd53a, Rd53aEmu>::loadConfig(json &j) {
   emuThreads.push_back(std::thread(&Rd53aEmu::executeLoop, emu.get()));
 }
 
+template<>
+void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
+//    EmuTxCore::setCom(new EmuShm(j["tx"]["id"], j["tx"]["size"], true));
+//    EmuRxCore::setCom(new EmuShm(j["rx"]["id"], j["rx"]["size"], true));
+
+  auto tx = EmuTxCore<StarChips>::getCom();
+  auto rx = EmuRxCore<StarChips>::getCom();
+
+  //TODO make nice
+  std::cout << "-> Starting Emulator" << std::endl;
+  std::string emuCfgFile = j["feCfg"];
+  std::cout << emuCfgFile << std::endl;
+  emu.reset(new StarEmu( rx_com.get(), tx_com.get(), emuCfgFile ));
+  emuThreads.push_back(std::thread(&StarEmu::executeLoop, emu.get()));
+}
