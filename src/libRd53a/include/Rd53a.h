@@ -22,8 +22,10 @@
 #include "Rd53aCfg.h"
 #include "Rd53aCmd.h"
 
-class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
+std::pair<uint32_t, uint32_t> decodeSingleRegRead(uint32_t higher, uint32_t lower);
 
+class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
+  
 
 
 public:
@@ -52,8 +54,8 @@ public:
 
         void writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value);
         void readRegister(Rd53aReg Rd53aGlobalCfg::*ref);
-        void confADC(uint16_t MONUX, bool doCur);
-        void writeNamedRegister(std::string name, uint16_t value) override;
+	void confADC(uint16_t MONUX, bool doCur);
+	void writeNamedRegister(std::string name, uint16_t value) override;
         
         void setInjCharge(double charge, bool sCap=true, bool lCap=true) override {
             std::cout << __PRETTY_FUNCTION__ << " " << charge << std::endl;
@@ -65,7 +67,7 @@ public:
 
     protected:
     private:
-  std::pair<uint32_t, uint32_t> decodeSingleRegRead(uint32_t higher, uint32_t lower);
+
 };
 
 #endif

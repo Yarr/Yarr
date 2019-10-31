@@ -14,50 +14,39 @@ Rd53aReadRegLoop::Rd53aReadRegLoop() {
 
 }
 
-
-std::pair<uint32_t, uint32_t> RegRead(uint32_t higher, uint32_t lower) {
-    if ((higher & 0x55000000) == 0x55000000) {
-        return std::make_pair((lower>>16)&0x3FF, lower&0xFFFF);
-    } else if ((higher & 0x99000000) == 0x99000000) {
-        return std::make_pair((higher>>10)&0x3FF, ((lower>>26)&0x3F)+((higher&0x3FF)<<6));
-    } else {
-        std::cout << "#ERROR# Could not decode reg read!" << std::endl;
-        return std::make_pair(999, 666);
-    }
-    return std::make_pair(999, 666);
-}
-
-
-
-
-
-
+//Configures the ADC, reads the register returns the first recieved register.
 uint16_t Rd53aReadRegLoop::ReadADC(unsigned short Reg, bool doCur=false) {
-      
+     
+  g_rx->flushBuffer();
+ 
   keeper->globalFe<Rd53a>()->confADC(Reg,doCur);
-  keeper->globalFe<Rd53a>()->readRegister(m_AdcRead);
+  keeper->globalFe<Rd53a>()->readRegister(&Rd53a::AdcRead);
 
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  std::this_thread::sleep_for(std::chrono::microseconds(500));
 
   RawData *data = g_rx->readData();
+  if(!data)
+    return 0;
+
   unsigned size =  data->words;
         
   for(unsigned c=0; c<size/2; c++)
     {
       if (c*2+1<size) {
-	std::pair<uint32_t, uint32_t> readReg = RegRead(data->buf[c*2],data->buf[c*2+1]);	    
-	//std::cout<<"MUX: "<<Reg<<" Value: "<<readReg.second<<std::endl;
-	return readReg.second;
-	
+	return decodeSingleRegRead(data->buf[c*2],data->buf[c*2+1]).second;	    
+	// std::pair<uint32_t, uint32_t> readReg = decodeSingleRegRead(data->buf[c*2],data->buf[c*2+1]);	    
+	// return readReg.second;
       }
       else {
-	std::cout<<"Hallfword recieved"<<data->buf[c*2]<<std::endl;
+	std::cout<<"Warning!!! Hallfword recieved in ADC Register Read"<<data->buf[c*2]<<std::endl;
 	return 65535;
       }
     }
     
 }
 
+
+//Runs readADC twice, for two difference bias configurations in the temp/rad sensors. Returns the difference to the user. 
 uint16_t Rd53aReadRegLoop::ReadTemp(unsigned short Reg) {
 
   //Sensor Config
@@ -72,11 +61,10 @@ uint16_t Rd53aReadRegLoop::ReadTemp(unsigned short Reg) {
 	                     + (0x800 + curConf*0x40) * (Reg==7 || Reg==8);  //Tmp/Rad Sensor 4
       
       if(Reg==3 || Reg==4 || Reg==5 || Reg==6)
-	keeper->globalFe<Rd53a>()->writeRegister(m_sensorConf99, SensorConf99);
+	keeper->globalFe<Rd53a>()->writeRegister(&Rd53a::SensorCfg0, SensorConf99);
       else if(Reg==7 || Reg==8 || Reg==14 || Reg==15)
-	keeper->globalFe<Rd53a>()->writeRegister(m_sensorConf100, SensorConf100);
+	keeper->globalFe<Rd53a>()->writeRegister(&Rd53a::SensorCfg1, SensorConf100);
 
-      //std::this_thread::sleep_for(std::chrono::milliseconds(10));
       keeper->globalFe<Rd53a>()->idle();
 
       ADCVal[curConf]=this->ReadADC(Reg);
@@ -96,14 +84,14 @@ void Rd53aReadRegLoop::init() {
     m_done = false;
 
 
-    m_AdcRead = keeper->globalFe<Rd53a>()->regMap["AdcRead"];
-    m_sensorConf99 = keeper->globalFe<Rd53a>()->regMap["SensorCfg0"];
-    m_sensorConf100 = keeper->globalFe<Rd53a>()->regMap["SensorCfg1"];
-
 
 }
 
 void Rd53aReadRegLoop::execPart1() {
+
+
+  dynamic_cast<HwController*>(g_rx)->setupMode(); //This is need to make sure the global rests doesn't refresh the ADCRegister
+
 
 
   for( auto Reg : VoltMux)
@@ -125,7 +113,7 @@ void Rd53aReadRegLoop::execPart1() {
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
 
-
+  dynamic_cast<HwController*>(g_rx)->runMode(); //This is needed to revert back the setupMode
   
 }
 
@@ -137,12 +125,16 @@ void Rd53aReadRegLoop::end() {
     // Reset to min
 }
 
-
-
-
-
 void Rd53aReadRegLoop::writeConfig(json &config) {
-  //config["MUXREG"] = TempMux+VoltMux;
+  config["CURMUX"] = CurMux;
+
+
+  //Just joining back the two STD vectors.
+  std::vector<uint16_t> SendBack;
+  SendBack.reserve(VoltMux.size()+TempMux.size());
+  SendBack.insert(SendBack.end(),VoltMux.begin(),VoltMux.end());
+  SendBack.insert(SendBack.end(),TempMux.begin(),TempMux.end());
+  config["VOLTMUX"] = SendBack;
     
 }
 
