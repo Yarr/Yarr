@@ -1,6 +1,9 @@
 #include "StarMaskLoop.h"
 #include "StarMask_CalEn.h"
 
+#include <chrono>
+#include <thread>
+
 StarMaskLoop::StarMaskLoop() : LoopActionBase() {
     min = 0;
     max = 16;
@@ -15,21 +18,23 @@ StarMaskLoop::StarMaskLoop() : LoopActionBase() {
 
 
 void StarMaskLoop::initMasks() {
-  uint32_t groupmask = (1 << m_nMaskedStripsPerGroup) -1;
-  uint32_t groupenabled = (1 << m_nEnabledStripsPerGroup) -1;
-  short pos=0;
+  int pos=0;
   while (pos<256) {
-    m_maskedChannelsRing.fill(groupmask, m_nMaskedStripsPerGroup);
+    for (unsigned int i=0; i<m_nMaskedStripsPerGroup; i++) m_maskedChannelsRing.fill(0x1, 1);
     pos += m_nMaskedStripsPerGroup;
-    m_maskedChannelsRing.fill(0x0, max-m_nMaskedStripsPerGroup);
-    pos += max-m_nMaskedStripsPerGroup;
+    if (pos<256){
+      for (unsigned int i=0; i<(max-m_nMaskedStripsPerGroup); i++) m_maskedChannelsRing.fill(0x0, 1);
+      pos += max-m_nMaskedStripsPerGroup;
+    }
   }
   for (pos=0; pos<m_EnabledMaskedShift; pos++) m_enabledChannelsRing.fill(0x0,1);
   while (pos<256) {
-    m_enabledChannelsRing.fill(groupmask, m_nEnabledStripsPerGroup);
+    for (unsigned int i=0; i<m_nEnabledStripsPerGroup; i++) m_enabledChannelsRing.fill(0x1, 1);
     pos += m_nEnabledStripsPerGroup;
-    m_enabledChannelsRing.fill(0x0, max-m_nEnabledStripsPerGroup);
-    pos += max-m_nEnabledStripsPerGroup;
+    if (pos<256) {
+      for (unsigned int i=0; i<(max-m_nEnabledStripsPerGroup); i++) m_enabledChannelsRing.fill(0x0, 1);
+      pos += max-m_nEnabledStripsPerGroup;
+    }
   }
 }
 
@@ -48,8 +53,8 @@ void StarMaskLoop::init() {
 	else {
 	  m_maskedChannelsRing.pos=m_cur;
 	  m_enabledChannelsRing.pos=m_cur;
-	  const uint32_t * masks = m_maskedChannelsRing.read();
-	  const uint32_t * enables = m_enabledChannelsRing.read();
+	  const uint32_t * masks = m_maskedChannelsRing.readMask();
+	  const uint32_t * enables = m_enabledChannelsRing.readCalEnable();
 	  applyMask(static_cast<StarChips*>(fe), masks, enables);
 	}
     }
@@ -83,6 +88,18 @@ void StarMaskLoop::applyMask(StarChips* fe, const uint32_t masks[8], const uint3
   if (verbose) {
     std::cout << "Apply masks:" << std::endl;
     printMask(masks);
+
+    std::string row1, row2;
+    for (unsigned int ireg=0; ireg<8; ireg++)
+      for (unsigned int i=0;i<32;i++)
+	if ((i%4)<2)
+	  row1 += (((masks[ireg]>>i) & 0x1) ? "1" : "0");
+	else
+	  row2 += (((masks[ireg]>>i) & 0x1) ? "1" : "0");
+    std::cout << "2nd row: " << row2.c_str() << std::endl;
+    std::cout << "1sr row: " << row1.c_str() << std::endl;
+
+    
     std::cout << "Enable channels:" << std::endl;
     printMask(enables);
   }
@@ -126,8 +143,8 @@ void StarMaskLoop::execPart2() {
 	else {
 	  m_maskedChannelsRing.pos=m_cur;
 	  m_enabledChannelsRing.pos=m_cur;
-	  const uint32_t * masks = m_maskedChannelsRing.read();
-	  const uint32_t * enables = m_enabledChannelsRing.read();
+	  const uint32_t * masks = m_maskedChannelsRing.readMask();
+	  const uint32_t * enables = m_enabledChannelsRing.readCalEnable();
 	  applyMask(static_cast<StarChips*>(fe), masks, enables);
 	}
       }
@@ -154,6 +171,5 @@ void StarMaskLoop::loadConfig(json &config) {
     m_nMaskedStripsPerGroup = config["nMaskedStripsPerGroup"];
     m_nEnabledStripsPerGroup = config["nEnabledStripsPerGroup"];
     m_EnabledMaskedShift = config["EnabledMaskedShift"];
-    if (m_nEnabledStripsPerGroup) step=1;
     if (verbose) std::cout << "Loaded StarMaskLoop configuration with nMaskedStripsPerGroup=" << m_nMaskedStripsPerGroup << ", nEnabledStripsPerGroup=" << m_nEnabledStripsPerGroup << ", shifted by " << m_EnabledMaskedShift << " strips, min=" << min << ", max=" << max << ", step=" << step << std::endl;
 }
