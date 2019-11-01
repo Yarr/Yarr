@@ -1,9 +1,6 @@
 #include "StarMaskLoop.h"
 #include "StarMask_CalEn.h"
 
-#include <chrono>
-#include <thread>
-
 StarMaskLoop::StarMaskLoop() : LoopActionBase() {
     min = 0;
     max = 16;
