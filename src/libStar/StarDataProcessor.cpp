@@ -131,7 +131,7 @@ void process_data(RawData &curIn,
             std::bitset<3> nextPattern (cluster.next);
             for(unsigned i=0; i<3; i++){
                 if(!nextPattern.test(i)) continue;
-                auto nextAddress = cluster.address+i+1;
+                auto nextAddress = cluster.address+(3-i);
 
                 curOut.curEvent->addHit( ((nextAddress>>7)&1)+1,
                                          (nextAddress&0x7f)+1,1);
