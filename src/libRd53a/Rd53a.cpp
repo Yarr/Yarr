@@ -90,13 +90,13 @@ void Rd53a::confADC(uint16_t MONMUX,bool doCur=false) {
   this->writeRegister(&Rd53a::GlobalPulseRt ,64); //ResetADC
   this->idle();
   this->globalPulse(m_chipId, 4);  
-  std::this_thread::sleep_for(std::chrono::microseconds(1)); 
+  std::this_thread::sleep_for(std::chrono::microseconds(100)); 
 
   this->writeRegister(&Rd53a::GlobalPulseRt ,4096); //Trigger ADC Conversion
   this->idle();
   this->globalPulse(m_chipId, 4);  
 
-  std::this_thread::sleep_for(std::chrono::microseconds(500)); //This is neccessary to clean. This might be controller dependent.  
+  std::this_thread::sleep_for(std::chrono::microseconds(1000)); //This is neccessary to clean. This might be controller dependent.  
 
   this->writeRegister(&Rd53a::GlobalPulseRt ,OriginalGlobalRT); //Trigger ADC Conversion
 
@@ -280,7 +280,7 @@ void Rd53a::disableCalCol(unsigned col) {
 }
 
 int Rd53a::checkCom() {
-    //std::cout << __PRETTY_FUNCTION__ << " : Checking communication for " << this->name << " by reading a register .." << std::endl;
+     //std::cout << __PRETTY_FUNCTION__ << " : Checking communication for " << this->name << " by reading a register .." << std::endl;
     uint32_t regAddr = 21;
     uint32_t regValue = m_cfg[regAddr];
     rdRegister(m_chipId, regAddr);

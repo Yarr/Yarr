@@ -31,9 +31,9 @@ class Rd53aReadRegLoop : public LoopActionBase {
   std::vector<unsigned short> VoltMux;
   std::vector<unsigned short> CurMux;
   std::vector<unsigned short> TempMux;
-
-  uint16_t ReadADC(unsigned short Reg, bool doCur);
-  uint16_t ReadTemp(unsigned short Reg);
+ 
+  uint16_t ReadADC(unsigned short Reg, bool doCur,  Rd53a *tmpFE );
+  uint16_t ReadTemp(unsigned short Reg, Rd53a *tmpFE);
 
 
   void init();
