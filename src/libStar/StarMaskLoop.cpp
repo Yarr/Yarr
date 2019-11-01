@@ -89,7 +89,7 @@ void StarMaskLoop::applyMask(StarChips* fe, const uint32_t masks[8], const uint3
     std::string row1, row2;
     for (unsigned int ireg=0; ireg<8; ireg++)
       for (unsigned int i=0;i<32;i++)
-	if (i%2)
+	if (i%2==0)
 	  row1 += (((masks[ireg]>>i) & 0x1) ? "1" : "0");
 	else
 	  row2 += (((masks[ireg]>>i) & 0x1) ? "1" : "0");
