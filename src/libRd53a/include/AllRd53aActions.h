@@ -5,3 +5,4 @@
 #include "Rd53aGlobalFeedback.h"
 #include "Rd53aPixelFeedback.h"
 #include "Rd53aReadRegLoop.h"
+#include "Rd53aRingBufLoop.h"

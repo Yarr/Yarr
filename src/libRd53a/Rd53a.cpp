@@ -99,14 +99,23 @@ void Rd53a::confADC(uint16_t MONMUX,bool doCur=false) {
   std::this_thread::sleep_for(std::chrono::microseconds(1000)); //This is neccessary to clean. This might be controller dependent.  
 
   this->writeRegister(&Rd53a::GlobalPulseRt ,OriginalGlobalRT); //Trigger ADC Conversion
-
-
 }
 
 
+void Rd53a::RunRingOsc(uint16_t Durration) {
+  uint16_t OriginalGlobalRT = this->GlobalPulseRt.read();
+
+  this->writeRegister(&Rd53a::GlobalPulseRt ,0x2000); //ResetADC
+  this->idle();
+  this->globalPulse(m_chipId, Durration);  
+
+  std::this_thread::sleep_for(std::chrono::microseconds(1000)); //This is neccessary to clean. This might be controller dependent.  
+
+  this->writeRegister(&Rd53a::GlobalPulseRt ,OriginalGlobalRT); //Trigger ADC Conversion
 
 
 
+}
 
 void Rd53a::configure() {
     this->configureInit();

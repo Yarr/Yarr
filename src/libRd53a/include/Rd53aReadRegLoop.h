@@ -28,12 +28,14 @@ class Rd53aReadRegLoop : public LoopActionBase {
   
  private:
 
-  std::vector<unsigned short> VoltMux;
-  std::vector<unsigned short> CurMux;
-  std::vector<unsigned short> TempMux;
+  std::vector<unsigned short> m_VoltMux;
+  std::vector<std::string> m_STDReg;
+  std::vector<unsigned short> m_CurMux;
+  std::vector<unsigned short> m_TempMux;
  
+  uint16_t ReadRegister(Rd53aReg Rd53aGlobalCfg::*ref,  Rd53a *tmpFE);
   uint16_t ReadADC(unsigned short Reg, bool doCur,  Rd53a *tmpFE );
-  uint16_t ReadTemp(unsigned short Reg, Rd53a *tmpFE);
+  std::pair<uint16_t,uint16_t> ReadTemp(unsigned short Reg, Rd53a *tmpFE);
 
 
   void init();
