@@ -7,7 +7,7 @@
 
 #include "AllHwControllers.h"
 #include "EmuCom.h"
-#include "EmuController.h"
+#include "EmuRxCore.h"
 #include "LCBUtils.h"
 #include "RingBuffer.h"
 
@@ -34,9 +34,9 @@ std::ostream &operator <<(std::ostream &os, print_hex_type<T> v) {
 
 }
 
-StarEmu::StarEmu(EmuCom * rx, EmuCom * tx, std::string json_file_path)
+StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path)
     : m_txRingBuffer ( tx )
-    , m_rxRingBuffer ( rx )
+    , m_rxQueue ( rx )
 {
     run = true;
 
@@ -54,8 +54,10 @@ void StarEmu::sendPacket(uint8_t *byte_s, uint8_t *byte_e) {
 
     int word_length = (byte_length + 3) / 4;
 
-    for(unsigned i=0; i<word_length-1; i++) {
-        m_rxRingBuffer->write32(*(uint32_t*)&byte_s[i*4]);
+    uint32_t *buf = new uint32_t[word_length];
+
+    for(unsigned i=0; i<byte_length/4; i++) {
+        buf[i] = *(uint32_t*)&byte_s[i*4];
     }
 
     if(byte_length%4) {
@@ -64,8 +66,12 @@ void StarEmu::sendPacket(uint8_t *byte_s, uint8_t *byte_e) {
             int offset = 8 * (i);
             final |= byte_s[(word_length-1)*4 + i] << offset;
         }
-        m_rxRingBuffer->write32(final);
+        buf[word_length-1] = final;
     }
+
+    std::unique_ptr<RawData> data(new RawData(0, buf, word_length));
+
+    m_rxQueue.pushData(std::move(data));
 }
 
 unsigned int countTriggers(LCB::Frame frame) {
@@ -163,15 +169,51 @@ void StarEmu::executeLoop() {
     }
 }
 
+// Have to do this specialisation before instantiation in EmuController.h!
+
+template<>
+class EmuRxCore<StarChips> : virtual public RxCore {
+        ClipBoard<RawData> m_queue;
+    public:
+        EmuRxCore();
+        ~EmuRxCore();
+        
+        void setCom(EmuCom *com) {} // Used by EmuController.h
+        ClipBoard<RawData> &getCom() {return m_queue;}
+
+        void setRxEnable(uint32_t val) override {}
+        void setRxEnable(std::vector<uint32_t> channels) override {}
+        void maskRxEnable(uint32_t val, uint32_t mask) override {}
+
+        RawData* readData() override;
+        
+        uint32_t getDataRate() override {return 0;}
+        uint32_t getCurCount() override {return m_queue.empty()?0:1;}
+        bool isBridgeEmpty() override {return m_queue.empty();}
+};
+
+
+#include "EmuController.h"
+
 template<class FE, class ChipEmu>
 std::unique_ptr<HwController> makeEmu() {
-  // nikola's hack to use RingBuffer
-  std::unique_ptr<RingBuffer> rx(new RingBuffer(128));
+  // This is just to match EmuController API, not used
+  std::unique_ptr<RingBuffer> rx;
   std::unique_ptr<RingBuffer> tx(new RingBuffer(128));
 
   std::unique_ptr<HwController> ctrl(new EmuController<FE, ChipEmu>(std::move(rx), std::move(tx)));
 
   return ctrl;
+}
+
+EmuRxCore<StarChips>::EmuRxCore() {}
+EmuRxCore<StarChips>::~EmuRxCore() {}
+
+RawData* EmuRxCore<StarChips>::readData() {
+    // //std::this_thread::sleep_for(std::chrono::microseconds(1));
+    if(m_queue.empty()) return nullptr;
+
+    return m_queue.popData().release();
 }
 
 bool emu_registered_Emu =
@@ -181,7 +223,7 @@ bool emu_registered_Emu =
 template<>
 void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
   auto tx = EmuTxCore<StarChips>::getCom();
-  auto rx = EmuRxCore<StarChips>::getCom();
+  auto &rx = EmuRxCore<StarChips>::getCom();
 
   //TODO make nice
   std::cout << "-> Starting Emulator" << std::endl;
@@ -190,6 +232,6 @@ void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
     emuCfgFile = j["feCfg"];
     std::cout << " Using config: " << emuCfgFile << "\n";
   }
-  emu.reset(new StarEmu( rx_com.get(), tx_com.get(), emuCfgFile ));
+  emu.reset(new StarEmu( rx, tx_com.get(), emuCfgFile ));
   emuThreads.push_back(std::thread(&StarEmu::executeLoop, emu.get()));
 }

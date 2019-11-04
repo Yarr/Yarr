@@ -17,9 +17,9 @@ class EmuCom;
 class StarEmu {
 public:
     /** These are ring buffers are owned by EmuController */
-    StarEmu(EmuCom * rx, EmuCom * tx, std::string json_file_path);
+    StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path);
     ~StarEmu();
-    
+
     // the main loop which recieves commands from yarr
     void executeLoop();
     
@@ -37,7 +37,7 @@ private:
     void sendPacket(uint8_t *byte_s, uint8_t *byte_e);
 
     EmuCom * m_txRingBuffer;
-    EmuCom * m_rxRingBuffer;
+    ClipBoard<RawData> &m_rxQueue;
 
     /** log level control */
     bool verbose  { false };
