@@ -159,3 +159,26 @@ void StarEmu::executeLoop() {
         }
     }
 }
+
+bool emu_registered_Emu =
+  StdDict::registerHwController("emu_Star",
+                                makeEmu<StarChips, StarEmu>);
+
+template<>
+void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
+//    EmuTxCore::setCom(new EmuShm(j["tx"]["id"], j["tx"]["size"], true));
+//    EmuRxCore::setCom(new EmuShm(j["rx"]["id"], j["rx"]["size"], true));
+
+  auto tx = EmuTxCore<StarChips>::getCom();
+  auto rx = EmuRxCore<StarChips>::getCom();
+
+  //TODO make nice
+  std::cout << "-> Starting Emulator" << std::endl;
+  std::string emuCfgFile;
+  if (!j["feCfg"].empty()) {
+    emuCfgFile = j["feCfg"];
+    std::cout << " Using config: " << emuCfgFile << "\n";
+  }
+  emu.reset(new StarEmu( rx_com.get(), tx_com.get(), emuCfgFile ));
+  emuThreads.push_back(std::thread(&StarEmu::executeLoop, emu.get()));
+}
