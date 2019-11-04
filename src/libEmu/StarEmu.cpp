@@ -5,8 +5,11 @@
 #include <fstream>
 #include <thread>
 
+#include "AllHwControllers.h"
 #include "EmuCom.h"
+#include "EmuController.h"
 #include "LCBUtils.h"
+#include "RingBuffer.h"
 
 namespace {
 
@@ -160,15 +163,23 @@ void StarEmu::executeLoop() {
     }
 }
 
+template<class FE, class ChipEmu>
+std::unique_ptr<HwController> makeEmu() {
+  // nikola's hack to use RingBuffer
+  std::unique_ptr<RingBuffer> rx(new RingBuffer(128));
+  std::unique_ptr<RingBuffer> tx(new RingBuffer(128));
+
+  std::unique_ptr<HwController> ctrl(new EmuController<FE, ChipEmu>(std::move(rx), std::move(tx)));
+
+  return ctrl;
+}
+
 bool emu_registered_Emu =
   StdDict::registerHwController("emu_Star",
                                 makeEmu<StarChips, StarEmu>);
 
 template<>
 void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
-//    EmuTxCore::setCom(new EmuShm(j["tx"]["id"], j["tx"]["size"], true));
-//    EmuRxCore::setCom(new EmuShm(j["rx"]["id"], j["rx"]["size"], true));
-
   auto tx = EmuTxCore<StarChips>::getCom();
   auto rx = EmuRxCore<StarChips>::getCom();
 
