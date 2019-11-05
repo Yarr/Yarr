@@ -35,8 +35,11 @@ int main(int argc, char *argv[]) {
     HwController &spec = *hwCtrl;
     spec.toggleTrigAbort();
     spec.setTrigEnable(0);
-    
-    if(controllerType == "spec") {
+
+    // In fact, mostly needed only for a specific test version of Spec FW
+    bool do_spec_specific = controllerType == "spec";
+
+    if(do_spec_specific) {
       //Send IO config to active FMC
       SpecController &s = *dynamic_cast<SpecController*>(&*hwCtrl);
       s.writeSingle(0x6<<14 | 0x0, 0x9ce730);
@@ -76,7 +79,9 @@ int main(int argc, char *argv[]) {
     spec.writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(1, 0, false));
     spec.releaseFifo();
 
-    spec.setRxEnable(0x40); // Input from Channel 6 on Spec board
+    if(do_spec_specific) {
+      spec.setRxEnable(0x40); // Input from Channel 6 on Spec board
+    }
 
     std::unique_ptr<RawData> data(spec.readData());
 
@@ -99,15 +104,18 @@ int main(int argc, char *argv[]) {
 
     for (unsigned j=0; j<data->words;j++) {
       auto word = data->buf[j];
-      if((j%2) && (word == 0xd3400000)) continue;
-      if(!(j%2) && ((word&0xff) == 0xff)) continue;
 
-      if((word&0xff) == 0x5f) continue;
+      if(do_spec_specific) {
+        if((j%2) && (word == 0xd3400000)) continue;
+        if(!(j%2) && ((word&0xff) == 0xff)) continue;
 
-      if(word == 0x1a0d) continue; // Idle on chan 6
-      if(word == 0x19f2) continue; // Idle on chan 6
+        if((word&0xff) == 0x5f) continue;
 
-      word &= 0xffffc3ff; // Strip of channel number
+        if(word == 0x1a0d) continue; // Idle on chan 6
+        if(word == 0x19f2) continue; // Idle on chan 6
+
+        word &= 0xffffc3ff; // Strip of channel number
+      }
 
       std::cout << "[" << j << "] = 0x" << std::hex << word << std::dec << " " << std::bitset<32>(word) << std::endl;
     }
