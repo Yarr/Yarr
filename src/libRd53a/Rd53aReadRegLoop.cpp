@@ -202,7 +202,7 @@ void Rd53aReadRegLoop::execPart1() {
   for(uint16_t tmpCount = 0; tmpCount<8; tmpCount++) {    
     if ( ((m_EnblRingOsc >> tmpCount) % 2) == 1) {
       std::cout<<"Ring Buffer: "<<tmpCount<<" Values: "<<RingValues[tmpCount][1]<<" - "<<RingValues[tmpCount][0]<<" = "<<RingValues[tmpCount][1]-RingValues[tmpCount][0];  
-      std::cout<<" Frequency: "<<float(RingValues[tmpCount][1]-RingValues[tmpCount][0])<<"/2^"<<m_RingOscDur<<" = "<<float(RingValues[tmpCount][1]-RingValues[tmpCount][0])/ (1<<m_RingOscDur) <<std::endl;
+      std::cout<<" Frequency: "<<float(RingValues[tmpCount][1]-RingValues[tmpCount][0])<<"/2^"<<m_RingOscDur<<" = "<<float(RingValues[tmpCount][1]-RingValues[tmpCount][0])/ (1<<m_RingOscDur) <<" -> "<< float(RingValues[tmpCount][1]-RingValues[tmpCount][0])/ (1<<m_RingOscDur) /6.5e-3<<" MHz "<<std::endl;
     }
   }
 
@@ -224,15 +224,15 @@ void Rd53aReadRegLoop::writeConfig(json &config) {
   config["EnblRingOsc"] = m_EnblRingOsc;
   config["RstRingOsc"] = m_RstRingOsc;
   config["RingOscDur"] = m_RingOscDur;
-  config["CURMUX"] = m_CurMux;
-  config["REGISTERS"] = m_STDReg;
+  config["CurMux"] = m_CurMux;
+  config["Registers"] = m_STDReg;
 
   //Just joining back the two STD vectors.
   std::vector<uint16_t> SendBack;
   SendBack.reserve(m_VoltMux.size()+m_TempMux.size());
   SendBack.insert(SendBack.end(),m_VoltMux.begin(),m_VoltMux.end());
   SendBack.insert(SendBack.end(),m_TempMux.begin(),m_TempMux.end());
-  config["VOLTMUX"] = SendBack;
+  config["VoltMux"] = SendBack;
     
 }
 
@@ -253,21 +253,21 @@ void Rd53aReadRegLoop::loadConfig(json &config) {
 
 
 
-    if (!config["VOLTMUX"].empty())
-      for(auto Reg : config["VOLTMUX"])
+    if (!config["VoltMux"].empty())
+      for(auto Reg : config["VoltMux"])
 	{
 	  if( ( int(Reg) >=3 && int(Reg)<=8) || (int(Reg)>=14 && int(Reg)<=15) )
 	    m_TempMux.push_back(Reg);
 	  else
 	    m_VoltMux.push_back(Reg);
 	}
-    if (!config["CURMUX"].empty())
-      for(auto Reg : config["CURMUX"])
+    if (!config["CurMux"].empty())
+      for(auto Reg : config["CurMux"])
 	m_CurMux.push_back(Reg);
 
 
-    if (!config["REGISTERS"].empty())
-      for (auto Reg: config["REGISTERS"])
+    if (!config["Registers"].empty())
+      for (auto Reg: config["Registers"])
 	m_STDReg.push_back(Reg);
 
 }
