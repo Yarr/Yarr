@@ -23,6 +23,7 @@ job_build_and_test:
       - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.dat | grep -o 100 | wc -l`
       - if [ "$NUM100" != "26880" ]; then exit 2; fi
       - bin/scanConsole -k
+      - bin/star_test configs/controller/emuCfg_star.json
 
 job_build_all:
     stage: build
