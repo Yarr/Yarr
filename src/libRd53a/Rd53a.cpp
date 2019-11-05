@@ -105,7 +105,7 @@ void Rd53a::confADC(uint16_t MONMUX,bool doCur=false) {
 void Rd53a::RunRingOsc(uint16_t Durration) {
   uint16_t OriginalGlobalRT = this->GlobalPulseRt.read();
 
-  this->writeRegister(&Rd53a::GlobalPulseRt ,0x2000); //ResetADC
+  this->writeRegister(&Rd53a::GlobalPulseRt ,0x2000); //Ring Osc Enable Rout
   this->idle();
   this->globalPulse(m_chipId, Durration);  
 

@@ -11,6 +11,10 @@
 
 Rd53aReadRegLoop::Rd53aReadRegLoop() {
     loopType = typeid(this);
+    m_EnblRingOsc=0;
+    m_RstRingOsc=0;
+    m_RingOscDur=0;
+
 
 }
 
@@ -99,6 +103,8 @@ void Rd53aReadRegLoop::init() {
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     m_done = false;
 
+    //Enables Ring Oscillators to be triggered later
+    keeper->globalFe<Rd53a>()->writeRegister(&Rd53a::RingOscEn, m_EnblRingOsc);
 
 
 }
@@ -116,6 +122,8 @@ void Rd53aReadRegLoop::execPart1() {
 
       std::cout<<"Measuring for FE: "<<dynamic_cast<FrontEndCfg*>(fe)->getTxChannel()<<std::endl;
 
+
+      ///--------------------------------///
       //Reading Standard Registers
       for (auto Reg : m_STDReg)	{
 	if (keeper->globalFe<Rd53a>()->regMap.find(Reg) != keeper->globalFe<Rd53a>()->regMap.end()) {
@@ -127,16 +135,19 @@ void Rd53aReadRegLoop::execPart1() {
 
       }
 
+
+      ///--------------------------------///
       //Reading Voltage  ADC 
       for( auto Reg : m_VoltMux) {
 	  uint16_t ADCVal = ReadADC(Reg, false, dynamic_cast<Rd53a*>(fe));
-	  std::cout<<"MON MUX_V: "<<Reg<<" Value: "<<ADCVal<<std::endl;
+	  std::cout<<"MON MUX_V: "<<Reg<<" Value: "<<ADCVal<<" -> "<<dynamic_cast<Rd53a*>(fe)->ADCtoV(ADCVal)<<" V "<<std::endl;
       }
-      
+
+      ///--------------------------------///
       //Reading Temp or Rad sensors from the ADC
       for( auto Reg : m_TempMux){
 	std::pair<uint16_t, uint16_t> TempVal = ReadTemp(Reg, dynamic_cast<Rd53a*>(fe));
-	std::cout<<"MON MUX_V: "<<Reg<<" Bias 0 "<<TempVal.first<<" Bias 1 "<<TempVal.second<<" Diff "<<TempVal.second-TempVal.first<<std::endl;      
+	std::cout<<"MON MUX_V: "<<Reg<<" Bias 0 "<<TempVal.first<<" -> "<<dynamic_cast<Rd53a*>(fe)->ADCtoV(TempVal.first)<<" V Bias 1 "<<TempVal.second<<" -> "<<dynamic_cast<Rd53a*>(fe)->ADCtoV(TempVal.second)<<" V Diff "<<dynamic_cast<Rd53a*>(fe)->ADCtoV(TempVal.second)-dynamic_cast<Rd53a*>(fe)->ADCtoV(TempVal.first)<<" V"<<std::endl;      
       }
       
       //Reading Current ADC
@@ -147,6 +158,54 @@ void Rd53aReadRegLoop::execPart1() {
       
     }
   }
+
+  ///--------------------------------///
+  ///Running the Ring Oscillators ////
+
+
+
+  uint16_t RingValues[8][2]; 
+
+  for(uint16_t tmpCount = 0; tmpCount<8; tmpCount++) {
+    if ( ((m_RstRingOsc >> tmpCount) % 2) == 1 && ((m_EnblRingOsc >> tmpCount) % 2) == 1){
+      keeper->globalFe<Rd53a>()->writeRegister(OscRegisters[tmpCount],0);
+    }
+  }
+
+  std::cout<<"Starting Ring Osc"<<std::endl;
+  
+  for (auto *fe : keeper->feList) {
+    if(fe->getActive()) {
+      for(uint16_t tmpCount = 0; tmpCount<8 ; tmpCount++) { 
+	if ( ((m_EnblRingOsc >> tmpCount) % 2) == 1) {
+	  RingValues[tmpCount][0]=ReadRegister(OscRegisters[tmpCount],dynamic_cast<Rd53a*>(fe)) & 0xFFF;
+	  //std::cout<<"RigBuffer "<<tmpCount<<" For FE "<<dynamic_cast<FrontEndCfg*>(fe)->getTxChannel()<<" At Start: "<<RingValues[tmpCount][0]<<std::endl;
+	} 
+      }
+    }
+  }
+
+  keeper->globalFe<Rd53a>()->RunRingOsc(m_RingOscDur);
+
+  for (auto *fe : keeper->feList) {
+    if(fe->getActive()) {
+      for(uint16_t tmpCount = 0; tmpCount<8; tmpCount++) {    
+	if ( ((m_EnblRingOsc >> tmpCount) % 2) == 1) {
+	  RingValues[tmpCount][1]=ReadRegister(OscRegisters[tmpCount],dynamic_cast<Rd53a*>(fe)) & 0xFFF ;
+	  //std::cout<<"RigBuffer For FE: "<<dynamic_cast<FrontEndCfg*>(fe)->getTxChannel()<<" At End: "<<RingValues[tmpCount][1]<<std::endl;
+	} 
+      }
+    }
+  }
+
+
+  for(uint16_t tmpCount = 0; tmpCount<8; tmpCount++) {    
+    if ( ((m_EnblRingOsc >> tmpCount) % 2) == 1) {
+      std::cout<<"Ring Buffer: "<<tmpCount<<" Values: "<<RingValues[tmpCount][1]<<" - "<<RingValues[tmpCount][0]<<" = "<<RingValues[tmpCount][1]-RingValues[tmpCount][0];  
+      std::cout<<" Frequency: "<<float(RingValues[tmpCount][1]-RingValues[tmpCount][0])<<"/2^"<<m_RingOscDur<<" = "<<float(RingValues[tmpCount][1]-RingValues[tmpCount][0])/ (1<<m_RingOscDur) <<std::endl;
+    }
+  }
+
     
   dynamic_cast<HwController*>(g_rx)->runMode(); //This is needed to revert back the setupMode
   
@@ -161,9 +220,12 @@ void Rd53aReadRegLoop::end() {
 }
 
 void Rd53aReadRegLoop::writeConfig(json &config) {
+
+  config["EnblRingOsc"] = m_EnblRingOsc;
+  config["RstRingOsc"] = m_RstRingOsc;
+  config["RingOscDur"] = m_RingOscDur;
   config["CURMUX"] = m_CurMux;
   config["REGISTERS"] = m_STDReg;
-
 
   //Just joining back the two STD vectors.
   std::vector<uint16_t> SendBack;
@@ -175,6 +237,20 @@ void Rd53aReadRegLoop::writeConfig(json &config) {
 }
 
 void Rd53aReadRegLoop::loadConfig(json &config) {
+
+  if (!config["EnblRingOsc"].empty())
+    m_EnblRingOsc = config["EnblRingOsc"];
+  if (!config["RstRingOsc"].empty())
+    m_RstRingOsc = config["RstRingOsc"];
+  if (!config["RingOscDur"].empty()) {
+    m_RingOscDur = config["RingOscDur"];
+    if (m_RingOscDur > 9){
+	std::cout<<"Global Max duration is 2^9 = 512 cycles, setting the RingOscDur to Max (9)"<<std::endl;
+	m_RingOscDur=9;
+      }
+
+  }
+
 
 
     if (!config["VOLTMUX"].empty())
