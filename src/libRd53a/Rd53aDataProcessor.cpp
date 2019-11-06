@@ -94,14 +94,14 @@ void Rd53aDataProcessor::process_core() {
 
         unsigned size = curInV->size();
         for(unsigned c=0; c<size; c++) {
-            RawData *curIn = new RawData(curInV->adr[c], curInV->buf[c], curInV->words[c]);
+            RawData curIn(curInV->adr[c], curInV->buf[c], curInV->words[c]);
             // Process
-            unsigned words = curIn->words;
+            unsigned words = curIn.words;
             dataCnt += words;
             for (unsigned i=0; i<words; i++) {
                 // Decode content
                 // TODO this needs review, can't deal with user-k data
-                uint32_t data = curIn->buf[i];
+                uint32_t data = curIn.buf[i];
 
                 unsigned channel = activeChannels[(i/2)%activeChannels.size()];
                 //std::cout << "[" << i << "]\t\t[" << channel << "] = 0x" << std::hex << data << std::dec << std::endl;
@@ -157,13 +157,12 @@ void Rd53aDataProcessor::process_core() {
                                 hits[channel]++;
                             }
                         } else {
-                            std::cout << dataCnt << " [" << channel << "] Received data not valid: [" << i << "," << curIn->words << "] = 0x" << std::hex << data << " " << std::dec << std::endl;
+                            std::cout << dataCnt << " [" << channel << "] Received data not valid: [" << i << "," << curIn.words << "] = 0x" << std::hex << data << " " << std::dec << std::endl;
                         }
 
                     }
                 }
-            }
-            delete curIn;
+            }            
         }
 
         // Push data out

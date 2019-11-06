@@ -108,7 +108,7 @@ function(YARR_ADD_VARIANT)
     ExternalProject_Add (
         variant
         GIT_REPOSITORY  https://gitlab.cern.ch/wittgen/variant.git
-        GIT_TAG v1.2.0
+        GIT_TAG v1.4.0
         UPDATE_COMMAND ""
         INSTALL_COMMAND ""
         BUILD_COMMAND ""
