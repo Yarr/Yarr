@@ -135,10 +135,12 @@ void Rd53aReadRegLoop::execPart1() {
       //Reading Standard Registers
       for (auto Reg : m_STDReg)	{
 	if (keeper->globalFe<Rd53a>()->regMap.find(Reg) != keeper->globalFe<Rd53a>()->regMap.end()) {
-	  uint16_t RegisterVal = ReadRegister( keeper->globalFe<Rd53a>()->regMap[Reg] , dynamic_cast<Rd53a*>(fe));
+	  uint16_t RegisterVal =  (dynamic_cast<Rd53a*>(fe)->*(dynamic_cast<Rd53a*>(fe)->regMap[Reg])).ApplyMask( ReadRegister( keeper->globalFe<Rd53a>()->regMap[Reg] , dynamic_cast<Rd53a*>(fe)) );
 	  std::cout<<"REG: "<<Reg<<" Value: "<<RegisterVal<<std::endl;
 
-	  uint16_t StoredVal =(dynamic_cast<Rd53a*>(fe)->*(dynamic_cast<Rd53a*>(fe)->regMap[Reg])).read();
+	  uint16_t StoredVal = (dynamic_cast<Rd53a*>(fe)->*(dynamic_cast<Rd53a*>(fe)->regMap[Reg])).read()  ;
+	  
+
 
 	  if ( StoredVal!=RegisterVal  ){
 	    std::cout<<"Warning!!! For Reg: "<<Reg<<", the stored register value ("<<StoredVal<<") doesn't match the one on the chip ("<<RegisterVal<<")."<<std::endl;
