@@ -365,18 +365,14 @@ def __pull(dir_path, args):
             sys.exit(1)
         if this_cmp: this_chip = this_cmp
         else: this_chip = this_ch
-        chip_type = this_chip.get('chipType','NULL')
-        if chip_type=='FE-I4B': chip_type = 'FEI4B'
         conn_json = {
             'stage': 'Testing',
-            'chipType': chip_type,
             'chips': []
         }
  
         chips = []
         query = {
             'parent': str(this_chip['_id']),
-            'status': 'active',
             'dbVersion': db_version
         }
         entries = localdb.childParentRelation.find(query)
@@ -392,18 +388,22 @@ def __pull(dir_path, args):
             for entry in entries:
                 chips.append(entry['child'])
             
-        cfg_path = 'configs/defaults/default_{}.json'.format(chip_type.lower())
-        if not os.path.isfile(cfg_path):
-            logger.error('Not found default chip config: {}'.format(cfg_path))
-            sys.exit(1)
+        logger.info('\033[1;33mcomponent data ID: {0} \033[0m'.format(str(this_chip['_id']))) 
         for i, chip in enumerate(chips):
-            cfg_json = toJson(cfg_path)
             query = {
                 '_id': ObjectId(chip),
                 'dbVersion': db_version
             }
             this = localdb.component.find_one(query)
             if not this: continue
+
+            chip_type = this.get('chipType','NULL')
+            if chip_type=='FE-I4B': chip_type = 'FEI4B'
+            cfg_path = 'configs/defaults/default_{}.json'.format(chip_type.lower())
+            if not os.path.isfile(cfg_path):
+                logger.error('Not found default chip config: {}'.format(cfg_path))
+                sys.exit(1)
+            cfg_json = toJson(cfg_path)
             if chip_type=='FEI4B': 
                 cfg_json['FE-I4B']['name'] = this['name']
                 cfg_json[chip_type]['Parameter']['chipId'] = this.get('chipId', 0) 
@@ -417,12 +417,11 @@ def __pull(dir_path, args):
                 'tx': i,
                 'rx': i
             })
+            conn_json.update({ 'chipType': chip_type })
+            logger.info('- Name: {0}   Type: {1}'.format(this['name'], chip_type))
         docs = getData('json', dir_path, 'connectivity.json', conn_json, True)
         data_entries.append( docs )
 
-        logger.info('\033[1;33mcomponent data ID: {0} \033[0m'.format(str(this_chip['_id']))) 
-        logger.info('- Name: {}'.format(i_chip))
-        logger.info('- Type: {}'.format(chip_type))
     
         for data in data_entries:
             logger.info('Retrieve ... {}'.format(data['path']))
@@ -632,8 +631,11 @@ def __list_component():
     for oid in oids:
         query = { '_id': ObjectId(oid) }
         this = localdb.component.find_one(query)
-        query = { '_id': ObjectId(this['user_id']) }
-        this_user = localdb.user.find_one( query )
+        if not this['user_id']==-1:
+            query = { '_id': ObjectId(this['user_id']) }
+            this_user = localdb.user.find_one( query )
+        else:
+            this_user['userName'] = 'NULL'
         query = { '_id': ObjectId(this['address']) }
         this_site = localdb.institution.find_one( query )
         docs = {
@@ -664,8 +666,11 @@ def __list_component():
     for oid in oids:
         query = { '_id': ObjectId(oid) }
         this = localdb.component.find_one(query)
-        query = { '_id': ObjectId(this['user_id']) }
-        this_user = localdb.user.find_one( query )
+        if not this['user_id']==-1:
+            query = { '_id': ObjectId(this['user_id']) }
+            this_user = localdb.user.find_one( query )
+        else:
+            this_user['userName'] = 'NULL'
         query = { '_id': ObjectId(this['address']) }
         this_site = localdb.institution.find_one( query )
         docs_list['child'].update({
