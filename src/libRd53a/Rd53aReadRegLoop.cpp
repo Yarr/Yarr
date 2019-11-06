@@ -107,6 +107,14 @@ void Rd53aReadRegLoop::init() {
     keeper->globalFe<Rd53a>()->writeRegister(&Rd53a::RingOscEn, m_EnblRingOsc);
 
 
+    if(m_STDReg.size()==1 && m_STDReg[0]=="All"){
+      m_STDReg.clear();
+      for (std::pair<std::string, Rd53aReg Rd53aGlobalCfg::*> tmpMap : keeper->globalFe<Rd53a>()->regMap) {
+	m_STDReg.push_back(tmpMap.first);
+
+      }
+    }
+
 }
 
 void Rd53aReadRegLoop::execPart1() {
@@ -129,6 +137,21 @@ void Rd53aReadRegLoop::execPart1() {
 	if (keeper->globalFe<Rd53a>()->regMap.find(Reg) != keeper->globalFe<Rd53a>()->regMap.end()) {
 	  uint16_t RegisterVal = ReadRegister( keeper->globalFe<Rd53a>()->regMap[Reg] , dynamic_cast<Rd53a*>(fe));
 	  std::cout<<"REG: "<<Reg<<" Value: "<<RegisterVal<<std::endl;
+
+	  uint16_t StoredVal =(dynamic_cast<Rd53a*>(fe)->*(dynamic_cast<Rd53a*>(fe)->regMap[Reg])).read();
+
+	  if ( StoredVal!=RegisterVal  ){
+	    std::cout<<"Warning!!! For Reg: "<<Reg<<", the stored register value ("<<StoredVal<<") doesn't match the one on the chip ("<<RegisterVal<<")."<<std::endl;
+	  }
+
+
+	  //Compare the Register with the stored value, it's a safety mechanism. 
+
+
+
+
+
+
 	}
 	else
 	  std::cout<<"Warning!!! Requested Register "<<Reg<<" not found, please check your runcard"<<std::endl;
@@ -267,9 +290,20 @@ void Rd53aReadRegLoop::loadConfig(json &config) {
 
 
     if (!config["Registers"].empty())
-      for (auto Reg: config["Registers"])
+      for (auto Reg: config["Registers"]) {
 	m_STDReg.push_back(Reg);
 
+	// If Reg is ALL, instead loop over all registers
+	if (Reg=="All"){
+	  m_STDReg.clear();
+	  m_STDReg.push_back(Reg);
+	  
+	  break;
+	}
+
+
+
+      }
 }
 
 
