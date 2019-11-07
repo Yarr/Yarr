@@ -11,6 +11,23 @@ StarCfg::StarCfg() {}
 StarCfg::~StarCfg() {}
 
 
+double StarCfg::toCharge(double vcal) {
+    // Q = C*V
+    // Linear is good enough
+//    double V = (m_vcalPar[0]*Unit::Milli + m_vcalPar[1]*vcal*Unit::Milli)/Physics::ElectronCharge;
+//    return V*m_injCap*Unit::Femto;
+    return vcal;
+
+}
+
+double StarCfg::toCharge(double vcal, bool sCap, bool lCap) { return toCharge(vcal); }
+
+unsigned StarCfg::toVcal(double charge) {
+//    double V= (charge*Physics::ElectronCharge)/(m_injCap*Unit::Femto);
+//    unsigned vcal = (unsigned) round((V)/(m_vcalPar[1]*Unit::Milli)); // Note: no offset applied
+//    return vcal;
+}
+
 void StarCfg::initRegisterMaps() {
 
   int n_HCC_registers = 50;

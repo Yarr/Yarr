@@ -15,6 +15,7 @@
 #include "BitOps.h"
 
 #include "FrontEnd.h"
+#include "storage.hpp"
 
 
 
@@ -213,11 +214,22 @@ class StarCfg : public FrontEndCfg, public Register{
     return 0;
   }
 
+  /**
+   * Obtain the corresponding charge [e] from the input VCal
+   */
+  double toCharge(double vcal);
 
+  /**
+   * Obtain the corresponding charge [e] from the input VCal, small&large capacitances(?)
+   * Not fully implmented yet.
+   */
+  double toCharge(double vcal, bool sCap, bool lCap);
 
-  // Don't use for now
-  double toCharge(double) override { return 0.0; };
-  double toCharge(double, bool, bool) override { return 0.0; };
+  /**
+   * Obtain the corresponding VCal from the input charge [e]
+   */
+  unsigned toVcal(double charge);
+
 
   void toFileJson(json &j) override;
   void fromFileJson(json &j) override;
@@ -244,6 +256,8 @@ class StarCfg : public FrontEndCfg, public Register{
 
  private:
   std::vector<unsigned int> m_ABCchipIDs;
+  float m_injCap; //fF
+  std::array<float, 4> m_vcalPar; //mV, [0] + [1]*x + [2]*x^2 + [3]*x^3
 
 };
 
