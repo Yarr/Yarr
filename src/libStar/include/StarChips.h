@@ -64,7 +64,7 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
 
   void setAndWriteHCCRegister(int addr, int64_t  value=-1){
     if(value>=0){
-      std::cout << value << std::endl;
+//      std::cout << value << std::endl;
       registerMap[0][addr]->setValue((uint32_t) value);
     }
     if(m_debug)  std::cout << "Doing HCC setAndWriteRegister with value 0x" << std::hex << std::setfill('0') << std::setw(8) << registerMap[0][addr]->getValue() <<std::dec  << " from registerMap[chipIndex=" << 0 << "][addr=" << addr << "]@" << registerMap[0][addr] << std::endl;
@@ -73,7 +73,7 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
   void setAndWriteABCRegister(int addr, int64_t  value=-1, int32_t chipIndex = 1){
     //unsigned int chipIndex = indexForABCchipID(chipID);
     if(value>=0){
-      std::cout << value << std::endl;
+//      std::cout << value << std::endl;
       registerMap[chipIndex][addr]->setValue((uint32_t) value);
     }
     if(m_debug)  std::cout << "Doing ABC " << chipIndex << " setAndWriteRegister with value 0x" << std::hex << std::setfill('0') << std::setw(8) << registerMap[chipIndex][addr]->getValue() <<std::dec  << std::endl;
