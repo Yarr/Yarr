@@ -231,6 +231,11 @@ class StarCfg : public FrontEndCfg, public Register{
   unsigned toVcal(double charge);
 
 
+  void setTrimDAC(unsigned col, unsigned row, int value);
+
+  int getTrimDAC(unsigned col, unsigned row);
+
+
   void toFileJson(json &j) override;
   void fromFileJson(json &j) override;
 
@@ -253,6 +258,14 @@ class StarCfg : public FrontEndCfg, public Register{
   std::map<unsigned, std::map<unsigned, Register*> >registerMap; //Maps register address
   //This is a 2D map of each subregister to the chip index and subregister name.  For example subRegisterMap_all[chip index][NAME]
   std::map<unsigned, std::map<std::string, SubRegister*> > subRegisterMap_all;   //register record
+
+
+  //This is a 2D map of each trimDac_32b register to the chip index and trimDAC_4LSB register name.  For example trimDAC4LSB_RegisterMap_all[chip index][NAME]
+  std::map<unsigned, std::map<std::string, SubRegister*> > trimDAC_4LSB_RegisterMap_all;   //register record
+
+  //This is a 2D map of each trimDac_32b register to the chip index and trimDAC_1MSB register name.  For example trimDAC1LSB_RegisterMap_all[chip index][NAME]
+  std::map<unsigned, std::map<std::string, SubRegister*> > trimDAC_1MSB_RegisterMap_all;   //register record
+
 
  private:
   std::vector<unsigned int> m_ABCchipIDs;
