@@ -104,6 +104,60 @@ unsigned int countTriggers(LCB::Frame frame) {
     return count;
 }
 
+void StarEmu::DecodeLCB(LCB::Frame frame) {
+    // {code0, code1}
+    uint8_t code0 = (frame >> 8) & 0xff;
+    uint8_t code1 = frame & 0xff;
+
+    bool iskcode0 = SixEight::iskcode(code0);
+    bool iskcode1 = SixEight::iskcode(code1);
+
+    if (not (SixEight::iskcode(code0) or SixEight::iskcode(code1)) ) {
+        // Neither of the 8-bit symbol is a kcode
+        // Decode the 16-bit frame to the 12-bit data
+        uint16_t data12 = (SixEight::decode(code0) << 6) | SixEight::decode(code1);
+        
+        if ( (data12 >> 7) & 0x1f ) {
+            // Top 5 bits are not zeros: has a BCR and/or triggers
+            doL0A(data12);
+        }
+        else {
+            // Top 5 bits are all zeros: part of a command sequence
+            doRegReadWrite();
+        }
+    }
+    else {
+        // Kcode detected
+        if (code0 == LCB::K3) { // Fast command
+            // decode the second symbol
+            uint8_t k3cmd = SixEight::decode(code1);
+            doFastCommand(k3cmd);
+        }
+        else if (code0 == LCB::K2) { // Start or end of a command sequence
+
+            doRegReadWrite();
+        }
+        else if (frame == LCB::IDLE) { // Idle
+            if (verbose) std::cout << __PRETTY_FUNCTION__ << " : received an IDLE frame" << std::endl;
+            // do nothing
+        }
+    } // if (not (SixEight::iskcode(code0) or SixEight::iskcode(code1)) )
+    
+}
+
+void StarEmu::doL0A(uint16_t data12) {
+    bool bcr = (data12 >> 11) & 1;  // BC reset
+    uint8_t l0a_mask = (data12 >> 7) & 0xf; // 4-bit L0A mask
+    uint8_t l0a_tag = data12 & 0x7f; // 7-bit L0A tag
+}
+
+void StarEmu::doFastCommand(uint8_t data6) {
+    uint8_t bcsel = (data6 >> 4) & 3; // top 2 bits for BC select
+    uint8_t fastcmd = data6 & 0xf; // bottom 4 bits for command
+}
+
+void StarEmu::doRegReadWrite() {}
+    
 void StarEmu::executeLoop() {
     std::cout << "Starting emulator loop" << std::endl;
 

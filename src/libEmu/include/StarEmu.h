@@ -5,6 +5,7 @@
 
 #include <atomic>
 #include <memory>
+#include <queue>
 
 #include <cstdint>
 #include <iterator>
@@ -35,12 +36,27 @@ private:
 
     /// Send response packet (excluding SOP/EOP)
     void sendPacket(uint8_t *byte_s, uint8_t *byte_e);
-
+    
+    void DecodeLCB(LCB::Frame);
+    
+    void doL0A(uint16_t);
+    void doFastCommand(uint8_t);
+    void doRegReadWrite();
+    
     EmuCom * m_txRingBuffer;
     ClipBoard<RawData> &m_rxQueue;
 
     /** log level control */
     bool verbose  { false };
+
+    // buffer for register read/write command sequence
+    std::queue<uint32_t> reg_cmd_buffer;
+    
+    ////////////////////////////////////////
+    // HCCStar and ABCStar registers for now
+    // They will be replaced by StarCfg eventually
+    
+    
 };
 
 #endif //__STAR_EMU_H__

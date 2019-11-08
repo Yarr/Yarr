@@ -94,6 +94,12 @@ namespace SixEight {
     return 0xff;
   }
 
+  inline bool iskcode(uint8_t data8)
+  {
+      return (data8 == kcode(0) or data8 == kcode(1) or
+              data8 == kcode(2) or data8 == kcode(3));
+  }
+  
 } // Close namespace SixEight
 
 namespace LCB {
