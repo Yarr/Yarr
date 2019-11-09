@@ -41,7 +41,11 @@ private:
     
     void doL0A(uint16_t);
     void doFastCommand(uint8_t);
-    void doRegReadWrite();
+    void doRegReadWrite(LCB::Frame);
+
+    void writeRegister(const uint32_t, const uint8_t, bool isABC=false,
+                       const unsigned ABCID=0);
+    void readRegister(const uint8_t, bool isABC=false, const unsigned ABCID=0);
     
     EmuCom * m_txRingBuffer;
     ClipBoard<RawData> &m_rxQueue;
@@ -49,13 +53,22 @@ private:
     /** log level control */
     bool verbose  { false };
 
-    // buffer for register read/write command sequence
-    std::queue<uint32_t> reg_cmd_buffer;
+    ////////////////////////////////////////
+    // HCCStar and ABCStar registers (for now)
+    // These should be replaced by StarCfg eventually
+    unsigned int m_HCCID;
+    std::vector<unsigned int> m_ABCIDs;
+    unsigned int m_nABCs;
     
     ////////////////////////////////////////
-    // HCCStar and ABCStar registers for now
-    // They will be replaced by StarCfg eventually
-    
+    // Internal states
+
+    // For register command sequence
+    bool ignoreCmd;
+    bool isForABC;
+
+    // buffer for register read/write command sequence
+    std::queue<uint8_t> reg_cmd_buffer;
     
 };
 

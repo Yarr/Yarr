@@ -45,6 +45,15 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path
       json j = json::parse(file);
       file.close();
     }
+
+    /////
+    ignoreCmd = true;
+    isForABC = false;
+
+    /////
+    m_HCCID = 0;
+    m_ABCIDs = {0};
+    m_nABCs = m_ABCIDs.size();
 }
 
 StarEmu::~StarEmu() {}
@@ -123,7 +132,7 @@ void StarEmu::DecodeLCB(LCB::Frame frame) {
         }
         else {
             // Top 5 bits are all zeros: part of a command sequence
-            doRegReadWrite();
+            doRegReadWrite(frame);
         }
     }
     else {
@@ -135,7 +144,7 @@ void StarEmu::DecodeLCB(LCB::Frame frame) {
         }
         else if (code0 == LCB::K2) { // Start or end of a command sequence
 
-            doRegReadWrite();
+            doRegReadWrite(frame);
         }
         else if (frame == LCB::IDLE) { // Idle
             if (verbose) std::cout << __PRETTY_FUNCTION__ << " : received an IDLE frame" << std::endl;
@@ -156,8 +165,110 @@ void StarEmu::doFastCommand(uint8_t data6) {
     uint8_t fastcmd = data6 & 0xf; // bottom 4 bits for command
 }
 
-void StarEmu::doRegReadWrite() {}
-    
+void StarEmu::doRegReadWrite(LCB::Frame frame) {
+    uint8_t code0 = (frame >> 8) & 0xff;
+    uint8_t code1 = frame & 0xff;
+
+    if (code0 == LCB::K2) { // This frame is a K2 Start or K2 End 
+        // Decode the second symbol
+        uint8_t data6 = SixEight::decode(code1);
+
+        isForABC = (data6 >> 5) & 1; // Otherwise it is a HCC command        
+        bool isK2Start = (data6 >> 4) & 1; // Otherwise it is a K2 End
+        unsigned cmd_hccID = data6 & 0xf; // Bottom 4 bits for HCC ID
+        // Ignore the command sequence unless the HCC ID matches the ID on chip
+        // or it is a broadcast command (0b1111)
+        ignoreCmd = not ( cmd_hccID == (m_HCCID & 0xf) or cmd_hccID == 0xf);
+
+        if (ignoreCmd) return;
+        
+        if (isK2Start) {
+            // Clear the command buffer if it is not empty
+            // (in case a second K2 Start is received before a K2 End)
+            if (not reg_cmd_buffer.empty()) {
+                std::queue<uint8_t> empty_buffer;
+                std::swap(reg_cmd_buffer, empty_buffer);
+            }
+        }
+        else { // K2 End
+            size_t bufsize = reg_cmd_buffer.size();
+            if ( not (bufsize==2 or bufsize==7) ) {
+                // If K2 End occurs at the wrong stage, no action is taken.
+                if (verbose) {
+                    std::cout << __PRETTY_FUNCTION__
+                              << " : K2 End occurs at the wrong stage! "
+                              << "Current command sequence size (excluding K2 frames): "
+                              << reg_cmd_buffer.size() << std::endl;
+                }
+                return;
+            }
+
+            // Get the header
+            uint8_t header1 = reg_cmd_buffer.front();
+            reg_cmd_buffer.pop();
+            uint8_t header2 = reg_cmd_buffer.front();
+            reg_cmd_buffer.pop();
+
+            bool isRegRead = (header1 >> 6) & 1; // Otherwise write register
+            unsigned cmd_abcID = (header1 >> 2) & 0xf;
+            uint8_t reg_addr = ((header1 & 3) << 6) | ((header2 >> 1) & 0x3f); 
+
+            // Access register
+            if (isRegRead) { // read register
+                // Check if K2 End occurs at the correct stage for reg read
+                if (not reg_cmd_buffer.empty()) {
+                    if (verbose) {
+                        std::cout << __PRETTY_FUNCTION__ << " : K2 End occurs at the wrong stage for reading register!" << std::endl;
+                    }
+                    return;
+                }
+
+                // read
+                readRegister(reg_addr, isForABC, cmd_abcID);
+                
+            }
+            else { // write register
+                // Check if K2 End occurs at the correct stage for reg write
+                if (reg_cmd_buffer.size() != 5) {
+                    if (verbose) {
+                        std::cout << __PRETTY_FUNCTION__ << " :  K2 End occurs at the wrong stage for writing register!" << std::endl;
+                    }
+                    return;
+                }
+
+                uint32_t data = 0;
+                for (int i = 4; i >= 0; --i) {
+                    data |= ((reg_cmd_buffer.front() & 0x7f) << (7*i));
+                    reg_cmd_buffer.pop();
+                }
+
+                // write
+                writeRegister(data, reg_addr, isForABC, cmd_abcID);
+            }
+            
+            assert(reg_cmd_buffer.empty());
+        }  
+    }
+    else {
+        if (ignoreCmd) return;
+        
+        // Decode the frame
+        uint16_t data12 = (SixEight::decode(code0) << 6) | (SixEight::decode(code1));
+        // Top 5 bits should be zeros
+        assert(not (data12>>7));
+        // Store it into the buffer. Only the lowest 7 bits is meaningful.
+        reg_cmd_buffer.push(data12 & 0x7f);
+    }
+}
+
+void StarEmu::writeRegister(const uint32_t data, const uint8_t address,
+                            bool isABC, const unsigned ABCID)
+{}
+
+void StarEmu::readRegister(const uint8_t address, bool isABC,
+                           const unsigned ABCID)
+{}
+
 void StarEmu::executeLoop() {
     std::cout << "Starting emulator loop" << std::endl;
 
