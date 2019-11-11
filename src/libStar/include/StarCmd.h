@@ -39,6 +39,14 @@ class StarCmd {
   std::array<LCB::Frame, 9> read_abc_register(int address, int hccID = 0xf, int abcID = 0xf) {
     return command_sequence(hccID, abcID, address, true, 0, false);
   }
+
+  enum class FastCommands {
+      LogicReset = 0x2, ABCRegReset = 0x3, ABCSEUReset = 0x4, ABCCaliPulse = 0x5,
+      ABCDigiPulse = 0x6, ABCHitCntReset = 0x7, ABCHitCntStart = 0x8,
+      ABCHitCntStop = 0x9, ABCSlowCmdReset = 0xa, StopPRLP = 0xb,
+      HCCRegReset = 0xc, HCCSEUReset = 0xd, HCCPLLReset = 0xe, StartPRLP = 0xf
+  };
+  
 };
 
 #endif

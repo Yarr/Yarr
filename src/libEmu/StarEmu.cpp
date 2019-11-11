@@ -163,6 +163,51 @@ void StarEmu::doL0A(uint16_t data12) {
 void StarEmu::doFastCommand(uint8_t data6) {
     uint8_t bcsel = (data6 >> 4) & 3; // top 2 bits for BC select
     uint8_t fastcmd = data6 & 0xf; // bottom 4 bits for command
+
+    switch((StarCmd::FastCommands)fastcmd) {
+    case StarCmd::FastCommands::LogicReset :
+        std::cout << "LogicReset" << std::endl;
+        break;
+    case StarCmd::FastCommands::ABCRegReset :
+        std::cout << "ABCRegReset" << std::endl;
+        break;
+    case StarCmd::FastCommands::ABCSEUReset :
+        std::cout << "ABCSEUReset" << std::endl;
+        break;
+    case StarCmd::FastCommands::ABCCaliPulse :
+        std::cout << "ABCCaliPulse" << std::endl;
+        break;
+    case StarCmd::FastCommands::ABCDigiPulse :
+        std::cout << "ABCDigiPulse" << std::endl;
+        break;
+    case StarCmd::FastCommands::ABCHitCntReset :
+        std::cout << "ABCHitCntReset" << std::endl;
+        break;
+    case StarCmd::FastCommands::ABCHitCntStart :
+        std::cout << "ABCHitCntStart" << std::endl;
+        break;
+    case StarCmd::FastCommands::ABCHitCntStop :
+        std::cout << "ABCHitCntStop" << std::endl;
+        break;
+    case StarCmd::FastCommands::ABCSlowCmdReset :
+        std::cout << "ABCSlowCmdReset" << std::endl;
+        break;
+    case StarCmd::FastCommands::StopPRLP :
+        std::cout << "StopPRLP" << std::endl;
+        break;
+    case StarCmd::FastCommands::HCCRegReset :
+        std::cout << "HCCRegReset" << std::endl;
+        break;
+    case StarCmd::FastCommands::HCCSEUReset :
+        std::cout << "HCCSEUReset" << std::endl;
+        break;
+    case StarCmd::FastCommands::HCCPLLReset :
+        std::cout << "HCCPLLReset" << std::endl;
+        break;
+    case StarCmd::FastCommands::StartPRLP :
+        std::cout << "StartPRLP" << std::endl;
+        break;
+    }
 }
 
 void StarEmu::doRegReadWrite(LCB::Frame frame) {
