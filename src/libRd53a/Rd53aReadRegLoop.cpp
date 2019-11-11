@@ -32,8 +32,10 @@ uint16_t Rd53aReadRegLoop::ReadRegister(Rd53aReg Rd53aGlobalCfg::*ref,  Rd53a *t
   if(!data)
     {
       std::cout<<"Warning!!!, No Word Recieved in ReadRegister"<<std::endl;
+      delete data;
       return 65535;
     }
+
   unsigned size =  data->words;
   //std::cout<<"Word cout is: "<<size<<std::endl;
   for(unsigned c=0; c<size/2; c++)
@@ -41,15 +43,18 @@ uint16_t Rd53aReadRegLoop::ReadRegister(Rd53aReg Rd53aGlobalCfg::*ref,  Rd53a *t
       if (c*2+1<size) {
 	std::pair<uint32_t, uint32_t> readReg = decodeSingleRegRead(data->buf[c*2],data->buf[c*2+1]);	    
 	if ( readReg.first==(tmpFE->*ref).addr())
+	  delete data;
 	  return readReg.second;
       }
       else {
 	std::cout<<"Warning!!! Hallfword recieved in ADC Register Read "<<data->buf[c*2]<<std::endl;
+	delete data;
 	return 65535;
       }
     }
 
   std::cout<<"Warning!!! Requested Register "<<(tmpFE->*ref).addr()<<" not found in recieved words"<<std::endl; 
+  delete data;
   return 65535;
 }
 
