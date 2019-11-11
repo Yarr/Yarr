@@ -386,3 +386,17 @@ Config parameters:
 - tuneDiff ``<bool>``: enable adjustment of diff FE pixel regs
 - tuneLin ``<bool>``: enable adjustment of lin FE pixel regs
 - resetTdac ``<bool>``: reset TDACs to defaults
+
+
+## Rd53aReadRegLoop:
+
+The ReadRegister Loop talks with the rd53a chip inorder to read out the Registers, ADC and the Ring Osiccilators. Prints out the measured values.
+
+Config parameters:
+
+- Registers ``<array<string>>``: Name of the registers that should be readout. The names should be matching Rd53AGlobalCfg. If "All" is given a input,  all registers are readout.
+- VoltMux ``<array<int>>`` : List of ADC monitor analog voltage multiplexer values that should be readout. The detailed list can be found in the RD53A Manual Section: "MONITOR_MUX"
+- CurMux ``<array<int>>`` : List of ADC monitor analog current multiplexer values that should be readout. The detailed list can be found in the RD53A Manual Section: "MONITOR_MUX"
+- EnblRingosc ``<int>`` : 8bit value of which Ring ossicilators should be enabled. As an example: if the 1st and last Ring ossicilator should be enabledm the value should be  set to 1b10000001 -> 129.
+- RstRingOsc ``<bool>`` : Enables/Disables  an auto reset to ring ossicilators on every loop cycle.
+- RingOscDur ``<int>`` : Lenght of the global pulse duration. Calculted as 2^RingOscDur clock cycles.  

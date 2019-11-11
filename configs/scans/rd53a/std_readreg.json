@@ -50,7 +50,7 @@
 	    "CurMux": [],
 	    "Registers": ["All"],
 	    "EnblRingOsc": 255,
-	    "RstRingOsc": 255,
+	    "RstRingOsc": 1,
 	    "RingOscDur": 9
 
         },

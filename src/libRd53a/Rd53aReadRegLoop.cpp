@@ -190,9 +190,9 @@ void Rd53aReadRegLoop::execPart1() {
 
 
   uint16_t RingValues[8][2]; 
-
-  for(uint16_t tmpCount = 0; tmpCount<8; tmpCount++) {
-    if ( ((m_RstRingOsc >> tmpCount) % 2) == 1 && ((m_EnblRingOsc >> tmpCount) % 2) == 1){
+  //Reset Ring Osicilator 
+  for(uint16_t tmpCount = 0; m_RstRingOsc && tmpCount<8; tmpCount++) {
+    if ( ((m_EnblRingOsc >> tmpCount) % 2) == 1) {    
       keeper->globalFe<Rd53a>()->writeRegister(OscRegisters[tmpCount],0);
     }
   }

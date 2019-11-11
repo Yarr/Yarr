@@ -37,8 +37,8 @@ class Rd53aReadRegLoop : public LoopActionBase {
   uint16_t ReadADC(unsigned short Reg, bool doCur,  Rd53a *tmpFE );
   std::pair<uint16_t,uint16_t> ReadTemp(unsigned short Reg, Rd53a *tmpFE);
 
-  uint16_t m_EnblRingOsc,m_RstRingOsc,m_RingOscDur;
-
+  uint16_t m_EnblRingOsc,m_RingOscDur;
+  bool m_RstRingOsc;
 
   void init();
   void execPart1();
