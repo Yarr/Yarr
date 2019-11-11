@@ -181,7 +181,7 @@ if [ ! -d ${dir}/log ]; then
 fi
 echo -e "[LDB]  - Create Local DB files: ${dir}/${HOSTNAME}_database.json"
 if [ -f ${dir}/${HOSTNAME}_database.json ]; then
-    echo -e "[WARNING] !!! OVERRIDE THE EXISTING FILE: ${dir}/${HOSTNAME}_database.json !!!"
+    printf '\033[33m%s\033[m\n' "[LDB WARNING] !!! OVERRIDE THE EXISTING FILE: ${dir}/${HOSTNAME}_database.json !!!"
 fi
 echo -e "[LDB]"
 echo -e "[LDB] Continue? [y/n]"
@@ -197,23 +197,41 @@ if [[ ${answer} != "y" ]]; then
     exit
 fi
 
-# Check python module
-echo -e "[LDB] Check python modules..."
-if ! which python3 > /dev/null 2>&1; then
-    echo -e "[LDB ERROR] Not found the command: python3"
-    exit
+pytver=false
+if which python3 > /dev/null 2>&1; then
+    python3 <<EOF
+import sys
+if not sys.version_info[0]==3: sys.exit(1)
+if not sys.version_info[1]>=4: sys.exit(1)
+sys.exit(0)
+EOF
+    if [ $? = 0 ]; then
+        pytver=true
+    fi
 fi
-/usr/bin/env python3 ${shell_dir}/setting/check_python_version.py
-if [ $? = 1 ]; then
-    echo -e "[LDB ERROR] Python version 3.4 or later is required."
-    exit
+if ! "${pytver}"; then
+    printf '\033[31m%s\033[m\n' "[LDB ERROR] Python version 3.4 or later is required."
+    exit 1
 fi
-/usr/bin/env python3 ${shell_dir}/setting/check_python_modules.py
-if [ $? = 1 ]; then
-    echo -e "[LDB ERROR] There are missing pip modules."
-    echo -e "[LDB ERROR] Install them by:"
-    echo -e "[LDB ERROR] pip3 install --user -r ${shell_dir}/requirements-pip.txt"
-    exit
+
+pippackages=$(cat ${shell_dir}/setting/requirements-pip.txt)
+if "${pytver}"; then
+    for pac in ${pippackages[@]}; do
+        if ! python3 -m pip list 2>&1 | grep ${pac} 2>&1 > /dev/null; then
+            piparray+=(${pac})
+        fi
+    done
+    pippackages=${piparray[@]}
+fi
+if [ ${#pippackages} != 0 ]; then
+    printf '\033[31m%s\033[m\n' "[LDB ERROR] There are missing pip modules:"
+    for pac in ${pippackages[@]}; do
+        printf '\033[31m%s\033[m\n' "[LDB ERROR] ${pac}"
+    done
+    printf '\033[31m%s\033[m\n' "[LDB ERROR]"
+    printf '\033[31m%s\033[m\n' "[LDB ERROR] Install them by:"
+    printf '\033[31m%s\033[m\n' "[LDB ERROR] python3 -m pip install --user -r ${shell_dir}/requirements-pip.txt"
+    exit 1
 fi
 
 # Create localdb directory

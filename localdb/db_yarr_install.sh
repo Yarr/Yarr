@@ -8,8 +8,6 @@
 # Usage: ./db_yarr_install.sh
 ################################
 
-set -e
-
 # Usage
 function usage {
     cat <<EOF
@@ -27,7 +25,6 @@ if [ `echo ${0} | grep bash` ]; then
     return
 fi
 
-
 while getopts h OPT
 do
     case ${OPT} in
@@ -38,147 +35,206 @@ do
     esac
 done
 
-
 shell_dir=$(cd $(dirname ${BASH_SOURCE}); pwd)
-ip=`hostname -i`
-echo -e "[LDB] Looking for missing things for Local DB and its Tools..."
 
-### check python
+## Set log file
+LOGDIR="${shell_dir}/setting/instlog"
+if [ ! -d ${LOGDIR} ]; then
+    mkdir ${LOGDIR}
+fi
+LOGFILE="${LOGDIR}/`date "+%Y%m%d_%H%M%S"`"
+exec 2> >(awk '{print strftime("[%Y-%m-%d %H:%M:%S] "),$0 } { fflush() } ' | tee ${LOGFILE}) 1>&2
+trap 'echo -e ""; echo -e "[LDB] Installation stopped by SIGINT!!"; echo -e "[LDB] You may be in unknown state."; echo -e "[LDB] Check ${LOGFILE} for debugging in case of a problem of re-executing this script."; exit 1' 2
+    
+#############################################
+# Confirmation before starting installation #
+#############################################
+
+echo -e "[LDB] Looking for missing pachages for Local DB and Tools ..."
+
+# Check python version
+echo -e "[LDB]     Checking Python version ..."
+pytver=false
 if which python3 > /dev/null 2>&1; then
-    python_exist=true
-    /usr/bin/env python3 ${shell_dir}/setting/check_python_version.py
-    if [ $? = 1 ]; then
-        echo -e "[LDB WARNING] Python version 3.4 or later is required."
-        python_version=false
-    else
-        python_version=true
-        ### check python packages
-        pippackages=$(cat ${shell_dir}/setting/requirements-pip.txt)
-        for pac in ${pippackages[@]}; do
-            if ! pip3 list 2>&1 | grep ${pac} 2>&1 > /dev/null; then
-                piparray+=(${pac})
-            fi
-        done
-        pippackages=${piparray[@]}
+    python3 <<EOF
+import sys
+if not sys.version_info[0]==3: sys.exit(1)
+if not sys.version_info[1]>=4: sys.exit(1)
+sys.exit(0)
+EOF
+    if [ $? = 0 ]; then
+        pytver=true
     fi
-else
-    echo -e "[LDB WARNING] Not found the command: python3"
-    python_exist=false
 fi
 
-### If not python3.4 or later
-if ! "${python_version}" || ! "${python_exist}"; then
-    ### check yum packages
-    yumpackages=$(cat ${shell_dir}/setting/requirements-yum.txt)
-    for pac in ${yumpackages[@]}; do
-        if ! yum list installed 2>&1 | grep ${pac} > /dev/null; then
-            yumarray+=(${pac})
+# Check python package
+echo -e "[LDB]     Checking Python packages ..."
+pippackages=$(cat ${shell_dir}/setting/requirements-pip.txt)
+if "${pytver}"; then
+    for pac in ${pippackages[@]}; do
+        if ! python3 -m pip list 2>&1 | grep ${pac} 2>&1 > /dev/null; then
+            piparray+=(${pac})
         fi
     done
-    yumpackages=${yumarray[@]}
+    pippackages=${piparray[@]}
 fi
 
-echo -e "[LDB] Done."
+# Check yum package
+echo -e "[LDB]     Checking yum packages ..."
+yumpackages=$(cat ${shell_dir}/setting/requirements-yum.txt)
+for pac in ${yumpackages[@]}; do
+    if "${pytver}" && [ `echo ${pac} | grep 'python'` ]; then
+        continue
+    fi
+    if ! yum list installed 2>&1 | grep ${pac} > /dev/null; then
+        yumarray+=(${pac})
+    fi
+done
+yumpackages=${yumarray[@]}
+
+echo "[LDB] Done."
 
 ### Confirmation
 if [ ${#yumpackages} != 0 ] || [ ${#pippackages} != 0 ]; then
-    ### Installation
+    printf '\033[33m%s\033[m\n' "------------------------------------"
+    printf '\033[33m%s\033[m\n' "          Missing packages          "
+    printf '\033[33m%s\033[m\n' "------------------------------------"
     if [ ${#yumpackages} != 0 ]; then
-        echo -e "[LDB WARNING] --------------------"
-        echo -e "[LDB WARNING] Missing yum packages"
-        echo -e "[LDB WARNING] --------------------"
         for pac in ${yumpackages[@]}; do
-            echo -e "[LDB WARNING] ${pac}"
+            printf '\033[33m%s\033[m\n' " yum    : ${pac}"
         done
     fi
     if [ ${#pippackages} != 0 ]; then
-        echo -e "[LDB WARNING] --------------------"
-        echo -e "[LDB WARNING] Missing pip packages"
-        echo -e "[LDB WARNING] --------------------"
         for pac in ${pippackages[@]}; do
-            echo -e "[LDB WARNING] ${pac}"
+            printf '\033[33m%s\033[m\n' " python : ${pac}"
         done
     fi
-    echo -e "[LDB WARNING] --------------------"
+    printf '\033[33m%s\033[m\n' "------------------------------------"
+    echo -e ""
     echo -e "[LDB] Install these package? [y/n]"
-    while [ -z ${answer} ]; 
-    do
-        read -p "> " answer
+    unset answer
+    while [ -z ${answer} ]; do
+        read -p "" answer
     done
     echo -e ""
     if [ ${answer} != "y" ]; then
         echo -e "[LDB] Exit..."
         echo -e ""
-        echo -e "[LDB] If you want to setup them manually, the page 'https://github.com/jlab-hep/Yarr/wiki/Installation' should be helpful!"
+        echo -e "[LDB] If you want to setup them manually, the page 'https://localdb-docs.readthedocs.io/en/master/' should be helpful!"
         echo -e ""
         exit
     fi
+
+    echo -e "[LDB] You need to be root to perform this command."
     sudo echo -e "[LDB] OK!"
-    ## Set log file
-    LOGDIR="${shell_dir}/setting/instlog"
-    if [ ! -d ${LOGDIR} ]; then
-        mkdir ${LOGDIR}
+    if [ $? = 1 ]; then
+        printf '\033[31m%s\033[m\n' '[LDB ERROR] Failed, exit ...'
+        exit
     fi
-    LOGFILE="${LOGDIR}/`date "+%Y%m%d_%H%M%S"`"
-    exec 2> >(awk '{print strftime("[%Y-%m-%d %H:%M:%S] "),$0 } { fflush() } ' | tee ${LOGFILE}) 1>&2
-    trap 'echo -e ""; echo -e "[LDB] Installation stopped by SIGINT!!"; echo -e "[LDB] You may be in unknown state."; echo -e "[LDB] Check ${LOGFILE} for debugging in case of a problem of re-executing this script."; exit 1' 2
-    
+
     ### Install necessary packages if not yet installed
     echo -e "[LDB] Start installing necessary packages..."
     
     ### Install yum packages
     for pac in ${yumpackages[@]}; do
-        echo -e "[LDB] ${pac} not found. Starting to install..."
+        echo -e "[LDB]     Installing ${pac} ..."
         sudo yum install -y ${pac}
     done
     
     ### Install python packages by pip for the DB viewer
     for pac in ${pippackages[@]}; do
-        echo "${pac} not found. Starting to install..."
+        echo -e "[LDB]     Installing ${pac} ..."
         sudo pip3 install ${pac}
     done
     
-    ### Confirmation
-    /usr/bin/env python3 ${shell_dir}/check_python_modules.py
-    if [ $? = 1 ]; then
-        echo -e "[LDB] Failed, exit..."
-        exit
-    fi
     echo -e "[LDB] Done."
     echo -e "[LDB]"
-    echo -e "[LDB]Finished installation!!"
-    echo -e "[LDB]Install log can be found in: ${LOGFILE}"
+    echo -e "[LDB] Finished installation!!"
+    echo -e "[LDB] Install log can be found in: ${LOGFILE}"
+    echo -e "[LDB]"
+else
+    echo -e "[LDB]"
+    echo -e "[LDB] Requirement already satisfied."
+    echo -e "[LDB]"
 fi
 
-readme=${shell_dir}/setting/README.md
+# Final Confirmation
+echo -e "[LDB] Final confirming ..."
+pytver=false
+if which python3 > /dev/null 2>&1; then
+    python3 <<EOF
+import sys
+if not sys.version_info[0]==3: sys.exit(1)
+if not sys.version_info[1]>=4: sys.exit(1)
+sys.exit(0)
+EOF
+    if [ $? = 0 ]; then
+        pytver=true
+    fi
+fi
 
-echo -e "----------------------------------------"
-echo -e "# Local DB Quick Tutorial for DAQ Server" | tee ${readme}
-echo -e "" | tee -a ${readme}
-echo -e "## 1. Setup database config and function" | tee -a ${readme}
-echo -e "\`\`\`" | tee -a ${readme}
-echo -e "./setup_db.sh" | tee -a ${readme}
-echo -e "\`\`\`" | tee -a ${readme}
-echo -e "" | tee -a ${readme}
-echo -e "## 2. Setup scanConsole" | tee ${readme}
-echo -e "\`\`\`" | tee -a ${readme}
-echo -e "cd YARR" | tee -a ${readme}
-echo -e "mkdir build" | tee -a ${readme}
-echo -e "cmake3 ../" | tee -a ${readme}
-echo -e "make -j4" | tee -a ${readme}
-echo -e "make install" | tee -a ${readme}
-echo -e "\`\`\`" | tee -a ${readme}
-echo -e "" | tee -a ${readme}
-echo -e "## 3. Scan with Local DB" | tee ${readme}
-echo -e "\`\`\`" | tee -a ${readme}
-echo -e "./bin/scanConsole -c configs/connectivity/example_fei4b_setup.json -r configs/controller/emuCfg.json -s configs/scans/fei4b/std_digitalscan.json -W" | tee -a ${readme}
-echo -e "\`\`\`" | tee -a ${readme}
-echo -e "" | tee -a ${readme}
-echo -e "## 4. Check results in the DB viewer in your web browser" | tee -a ${readme}
-echo -e "- From the DB machine: http://localhost:5000/localdb/" | tee -a ${readme}
-echo -e "- From other machines : http://${ip}/localdb/" | tee -a ${readme}
-echo -e "" | tee -a ${readme}
-echo -e "## 5.Check more detail" | tee -a ${readme}
-echo -e "- https://github.com/jlab-hep/Yarr/wiki" | tee -a ${readme}
-echo -e "----------------------------------------"
-echo -e "This description is saved as ${readme}. Enjoy!!"
+pippackages=$(cat ${shell_dir}/setting/requirements-pip.txt)
+if "${pytver}"; then
+    unset piparray
+    for pac in ${pippackages[@]}; do
+        if ! python3 -m pip list 2>&1 | grep ${pac} 2>&1 > /dev/null; then
+            piparray+=(${pac})
+        fi
+    done
+    pippackages=${piparray[@]}
+fi
+
+yumpackages=$(cat ${shell_dir}/setting/requirements-yum.txt)
+for pac in ${yumpackages[@]}; do
+    unset yumarray
+    if "${pytver}" && [ `echo ${pac} | grep 'python'` ]; then
+        continue
+    fi
+    if ! yum list installed 2>&1 | grep ${pac} > /dev/null; then
+        yumarray+=(${pac})
+    fi
+done
+yumpackages=${yumarray[@]}
+
+if ! "${pytver}" || [ ${#yumpackages} != 0 ] || [ ${#pippackages} != 0 ]; then
+    if ! "${pytver}"; then
+        printf '\033[31m%s\033[m\n' '[LDB ERROR] Python version 3.4 or greater is required.'
+    fi
+    if [ ${#yumpackages} != 0 ]; then
+        printf '\033[31m%s\033[m\n' '[LDB ERROR] yum packages not be installed: '
+        for pac in ${yumpackages[@]}; do
+            printf '\033[31m%s\033[m\n' "    - ${pac}"
+        done
+    fi
+    if [ ${#pippackages} != 0 ]; then
+        printf '\033[31m%s\033[m\n' '[LDB ERROR] python packages not be installed: '
+        for pac in ${pippackages[@]}; do
+            printf '\033[31m%s\033[m\n' "    - ${pac}"
+        done
+    fi
+else
+    echo -e "[LDB] Success!!"
+    echo -e ""
+    echo -e "----------------------------------------"
+    echo -e "# Quick Tutorial for DAQ with Local DB"
+    echo -e ""
+    echo -e "## 1. Setup database config and function"
+    echo -e "$ ./setup_db.sh" 
+    echo -e ""
+    echo -e "## 2. Setup scanConsole"
+    echo -e "$ cd YARR"
+    echo -e "$ mkdir build"
+    echo -e "$ cmake3 ../" 
+    echo -e "$ make -j4" 
+    echo -e "$ make install" 
+    echo -e ""
+    echo -e "## 3. Scan with Local DB"
+    echo -e "$ ./bin/scanConsole -c configs/connectivity/example_fei4b_setup.json -r configs/controller/emuCfg.json -s configs/scans/fei4b/std_digitalscan.json -W" 
+    echo -e ""
+    echo -e "## 4. Check if the upload is success in log file: ${HOME}/.yarr/localdb/log/###.log"
+    echo -e ""
+    echo -e "## 5.Check more detail"
+    echo -e "- https://localdb-docs.readthedocs.io/en/master/"
+    echo -e "----------------------------------------"
+    echo -e "Enjoy!!"
+fi
