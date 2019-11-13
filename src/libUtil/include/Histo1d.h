@@ -34,6 +34,8 @@ class Histo1d : public HistogramBase {
         void setBin(unsigned n, double v);
         double getBin(unsigned n) const;
         double const * getData() const { return data.data();};
+        double getUnderflow() const {return underflow;};
+        double getOverflow() const {return overflow;};
         
         void toFile(std::string filename, std::string dir = "", bool header=true);
         bool fromFile(std::string filename);
