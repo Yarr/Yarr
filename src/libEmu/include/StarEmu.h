@@ -37,17 +37,18 @@ private:
 
     /// Send response packet (excluding SOP/EOP)
     template<typename T> void sendPacket(T &iterable) {
-      sendPacket(std::begin(iterable), std::end(iterable));
+        sendPacket(&(*std::begin(iterable)), &(*std::end(iterable)));
     }
 
     /// Send response packet (excluding SOP/EOP)
     void sendPacket(uint8_t *byte_s, uint8_t *byte_e);
 
     /// Build data packet
-    void buildPhysicsPacket(PacketTypes, uint8_t, uint8_t,
-                            uint16_t endOfPacket=0x6fed);
-    void buildABCRegisterPacket(PacketTypes, uint8_t, uint8_t, unsigned, uint16_t);
-    void buildHCCRegisterPacket(PacketTypes, uint8_t, unsigned);
+    std::vector<uint8_t> buildPhysicsPacket(PacketTypes, uint8_t, uint8_t,
+                                           uint16_t endOfPacket=0x6fed);
+    std::vector<uint8_t> buildABCRegisterPacket(PacketTypes, uint8_t, uint8_t,
+                                               unsigned, uint16_t);
+    std::vector<uint8_t> buildHCCRegisterPacket(PacketTypes, uint8_t, unsigned);
 
     ///
     void DecodeLCB(LCB::Frame);
@@ -60,7 +61,7 @@ private:
                        const unsigned ABCID=0);
     void readRegister(const uint8_t, bool isABC=false, const unsigned ABCID=0);
 
-    void getClusters();
+    void getClusters(int);
 
     // Utilities
     bool getParity_8bits(uint8_t);
@@ -74,8 +75,6 @@ private:
     
     ////////////////////////////////////////
     // Internal states
-
-    PacketTypes m_packetType; // set in DecodeLCB()
     
     // For register command sequence
     bool m_ignoreCmd;
@@ -85,11 +84,7 @@ private:
     std::queue<uint8_t> m_reg_cmd_buffer;
     
     // cluster container for input channels
-    static const uint8_t m_nchannels=11; // Todo: should be a class template parameter
-    std::array<std::vector<uint16_t>, m_nchannels> m_clusters; // filled in getClusters()
-
-    // output data packets
-    std::deque<uint8_t> m_data_packets;
+    std::vector<std::vector<uint16_t>> m_clusters; // filled in getClusters()
     
     // BC counter
     uint8_t m_bccnt;

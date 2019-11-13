@@ -47,14 +47,22 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path
       file.close();
     }
 
-    /////
     m_ignoreCmd = true;
     m_isForABC = false;
 
-    /////
+    /////////////////////////////////
+    // Should be set from chip config
+    // for now
     m_HCCID = 0;
-    m_ABCIDs = {0};
-    m_nABCs = m_ABCIDs.size();
+    m_nABCs = 11;
+
+    m_ABCIDs.reserve(m_nABCs);
+    m_clusters.reserve(m_nABCs);
+
+    // ABCStar chip IDs
+    for (int i=0; i<m_nABCs; ++i) {
+        m_ABCIDs.push_back(i+1);
+    }
 }
 
 StarEmu::~StarEmu() {}
@@ -92,9 +100,11 @@ bool StarEmu::getParity_8bits(uint8_t val)
     return val&1;
 }
 
-void StarEmu::buildPhysicsPacket(PacketTypes typ, uint8_t l0tag,
-                                 uint8_t bc_count, uint16_t endOfPacket)
+std::vector<uint8_t> StarEmu::buildPhysicsPacket(
+    PacketTypes typ, uint8_t l0tag, uint8_t bc_count, uint16_t endOfPacket)
 {
+    std::vector<uint8_t> data_packets;
+    
     ///////////////////
     // Header: 16 bits
     bool errorflag = 0; // for now
@@ -103,8 +113,8 @@ void StarEmu::buildPhysicsPacket(PacketTypes typ, uint8_t l0tag,
     // packet type (4b) + flag error (1b) + L0tag (7b) + BCID (4b)
     uint16_t header = ((uint8_t)typ << 12) | errorflag << 11 | (l0tag & 0x7f) << 4 | (bc_count&7) << 1 | bc_parity;
 
-    m_data_packets.push_back(header & 0xff00);
-    m_data_packets.push_back(header & 0x00ff);
+    data_packets.push_back((header>>8) & 0xff);
+    data_packets.push_back(header & 0xff);
     
     ///////////////////
     // ABCStar clusters
@@ -113,46 +123,56 @@ void StarEmu::buildPhysicsPacket(PacketTypes typ, uint8_t l0tag,
             // cluster bits:
             // "0" + 4-bit channel number + 11-bit cluster dropping the last cluster bit
             uint16_t clusterbits = (ichannel & 0xf)<<11 | (cluster & 0xfff)>>1;
-            m_data_packets.push_back(clusterbits & 0xff00);
-            m_data_packets.push_back(clusterbits & 0x00ff);
+            data_packets.push_back((clusterbits>>8) & 0xff);
+            data_packets.push_back(clusterbits & 0xff);
         }
     }
 
     // Todo: error block
 
     // Fixed 16-bit end of packet cluster pattern
-    m_data_packets.push_back(endOfPacket & 0xff00);
-    m_data_packets.push_back(endOfPacket & 0x00ff);
+    data_packets.push_back((endOfPacket>>8) & 0xff);
+    data_packets.push_back(endOfPacket & 0xff);
+
+    return data_packets;
 }
 
-void StarEmu::buildABCRegisterPacket(
+std::vector<uint8_t> StarEmu::buildABCRegisterPacket(
     PacketTypes typ, uint8_t input_channel, uint8_t reg_addr, unsigned reg_data,
     uint16_t reg_status)
-{   
+{
+    std::vector<uint8_t> data_packets;
+    
     // first byte: 4-bit type + 4-bit HCC input channel
     uint8_t byte1 = ((uint8_t)typ & 0xf ) << 4 | (input_channel & 0xf);
-    m_data_packets.push_back(byte1);
+    data_packets.push_back(byte1);
     
     // then 8-bit register address
-    m_data_packets.push_back(reg_addr);
+    data_packets.push_back(reg_addr);
 
     // 4-bit TBD + 32-bit data + 16-bit statis + '0000'
-    m_data_packets.push_back(reg_data >> 28);
-    m_data_packets.push_back((reg_data >> 20) & 0xff);
-    m_data_packets.push_back((reg_data >> 12) & 0xff);
-    m_data_packets.push_back((reg_data >> 4) & 0xff);
-    m_data_packets.push_back((reg_data & 0xf) << 4);
+    data_packets.push_back(reg_data >> 28);
+    data_packets.push_back((reg_data >> 20) & 0xff);
+    data_packets.push_back((reg_data >> 12) & 0xff);
+    data_packets.push_back((reg_data >> 4) & 0xff);
+    data_packets.push_back((reg_data & 0xf) << 4);
+
+    return data_packets;
 }
 
-void StarEmu::buildHCCRegisterPacket(PacketTypes typ, uint8_t reg_addr, unsigned reg_data)
+std::vector<uint8_t> StarEmu::buildHCCRegisterPacket(PacketTypes typ, uint8_t reg_addr, unsigned reg_data)
 {
+    std::vector<uint8_t> data_packets;
+    
     // 4-bit type + 8-bit register address + 32-bit data + '0000'
-    m_data_packets.push_back( ((uint8_t)typ & 0xf) << 4 | (reg_addr >> 4) );
-    m_data_packets.push_back( ((reg_addr & 0xf) << 4) | (reg_data >> 28) );
-    m_data_packets.push_back((reg_data >> 20) & 0xff);
-    m_data_packets.push_back((reg_data >> 12) & 0xff);
-    m_data_packets.push_back((reg_data >> 4) & 0xff);
-    m_data_packets.push_back((reg_data & 0xf) << 4);
+    data_packets.push_back( ((uint8_t)typ & 0xf) << 4 | (reg_addr >> 4) );
+    data_packets.push_back( ((reg_addr & 0xf) << 4) | (reg_data >> 28) );
+    data_packets.push_back((reg_data >> 20) & 0xff);
+    data_packets.push_back((reg_data >> 12) & 0xff);
+    data_packets.push_back((reg_data >> 4) & 0xff);
+    data_packets.push_back((reg_data & 0xf) << 4);
+
+    return data_packets;
 }
 
 unsigned int countTriggers(LCB::Frame frame) {
@@ -230,6 +250,27 @@ void StarEmu::doL0A(uint16_t data12) {
     bool bcr = (data12 >> 11) & 1;  // BC reset
     uint8_t l0a_mask = (data12 >> 7) & 0xf; // 4-bit L0A mask
     uint8_t l0a_tag = data12 & 0x7f; // 7-bit L0A tag
+
+    // A LCB frame covers 4 BCs
+    for (int ibc = 0; ibc < 4; ++ibc) {
+
+        // check if there is a L0A
+        // msb of L0A mask corresponds to the earliest BC
+        if ( (l0a_mask >> (3-ibc)) & 1 ) {
+            
+            // get clusters for this BC
+            getClusters(0);
+
+            // build and send data packet
+            PacketTypes ptype = PacketTypes::LP; // for now
+            std::vector<uint8_t> packet = buildPhysicsPacket(ptype, l0a_tag, m_bccnt);
+            sendPacket(packet);
+        }
+        
+        m_bccnt += 1;
+    }
+    
+    if (bcr) m_bccnt = 0;
 }
 
 void StarEmu::doFastCommand(uint8_t data6) {
@@ -376,6 +417,58 @@ void StarEmu::doRegReadWrite(LCB::Frame frame) {
         // Store it into the buffer. Only the lowest 7 bits is meaningful.
         m_reg_cmd_buffer.push(data12 & 0x7f);
     }
+
+    // Increment BC counter
+    m_bccnt += 4;
+}
+
+void StarEmu::getClusters(int test_mode)
+{
+    // Fixed cluster pattern for now
+    // base on this packet:
+    /*
+    // This is an LP packet
+    alignas(32) uint8_t fixed_packet[] =
+        {0x20, 0x06,
+         // Channel 0...
+         0x07, 0x8f, 0x03, 0x8f, 0x07, 0xaf, 0x03, 0xaf,
+         // Channel 1...
+         0x0f, 0x8f, 0x0b, 0x8f, 0x0f, 0xaf, 0x0b, 0xaf,
+         // Channel 2
+         0x17, 0x8f, 0x13, 0x8f, 0x17, 0xaf, 0x13, 0xaf,
+         0x17, 0xcf, 0x13, 0xcf, 0x17, 0xee, 0x13, 0xee,
+         // Channel 0 continued
+         0x07, 0xcf, 0x03, 0xcf, 0x07, 0xee, 0x03, 0xee,
+         // Channel 1 continued
+         0x0f, 0xcf, 0x0b, 0xcf, 0x0f, 0xee, 0x0b, 0xee,
+         // Channel 3
+         0x1f, 0x8f, 0x1b, 0x8f, 0x1f, 0xaf, 0x1b, 0xaf,
+         0x1f, 0xcf, 0x1b, 0xcf, 0x1f, 0xee, 0x1b, 0xee,
+         // Channel 4
+         0x27, 0x8f, 0x23, 0x8f, 0x27, 0xaf, 0x23, 0xaf,
+         0x27, 0xcf, 0x23, 0xcf, 0x27, 0xee, 0x23, 0xee,
+         // Channel 5
+         0x2f, 0x8f, 0x2b, 0x8f, 0x2f, 0xaf, 0x2b, 0xaf,
+         0x2f, 0xcf, 0x2b, 0xcf, 0x2f, 0xee, 0x2b, 0xee,
+         // Channel 6
+         0x37, 0x8f, 0x33, 0x8f, 0x37, 0xaf, 0x33, 0xaf,
+         0x37, 0xcf, 0x33, 0xcf, 0x37, 0xee, 0x33, 0xee,
+         // Channel 7
+         0x3f, 0x8f, 0x3b, 0x8f, 0x3f, 0xaf, 0x3b, 0xaf,
+         0x3f, 0xcf, 0x3b, 0xcf, 0x3f, 0xee, 0x3b, 0xee,
+         // Channel 8
+         0x47, 0x8f, 0x43, 0x8f, 0x47, 0xaf, 0x43, 0xaf,
+         0x47, 0xcf, 0x43, 0xcf, 0x47, 0xee, 0x43, 0xee,
+         // Channel 9
+         0x4f, 0x8f, 0x4b, 0x8f, 0x4f, 0xaf, 0x4b, 0xaf,
+         0x4f, 0xcf, 0x4b, 0xcf, 0x4f, 0xee, 0x4b, 0xee,
+         0x6f, 0xed};
+    */
+    std::vector<uint16_t> a_fixed_cluster_pattern =
+        {0xf1e, 0x71e, 0xf5e, 0x75e, 0xf9e, 0x79e, 0xfdc, 0x7dd};
+
+    for (auto& channel : m_clusters)
+        channel = a_fixed_cluster_pattern;
 }
 
 void StarEmu::writeRegister(const uint32_t data, const uint8_t address,
@@ -384,14 +477,17 @@ void StarEmu::writeRegister(const uint32_t data, const uint8_t address,
 
 void StarEmu::readRegister(const uint8_t address, bool isABC,
                            const unsigned ABCID)
-{
+{   
     if (isABC) { // Read ABCStar registers
         PacketTypes ptype = PacketTypes::ABCRegRd;
         
-        // get the input channel number in case reading ABC
-        unsigned int ich = 0;
-        for (; ich < m_ABCIDs.size(); ++ich) {
-            if (ABCID == m_ABCIDs[ich]) break;
+        // get the input channel number given ABCStar chip ID
+        unsigned int ich = std::distance(
+            m_ABCIDs.begin(), std::find(m_ABCIDs.begin(),m_ABCIDs.end(), ABCID));
+        if (ich >= m_nABCs) {
+            // no ABC chip with the required chip ID found
+            std::cout << __PRETTY_FUNCTION__ << ": Cannot find an ABCStar chip with ID = " << ABCID << std::endl;
+            return;
         }
 
         // read register
@@ -402,8 +498,9 @@ void StarEmu::readRegister(const uint8_t address, bool isABC,
         // for now
         uint16_t status = (ABCID & 0xf) << 12;
 
-        // build data packet
-        buildABCRegisterPacket(ptype, ich, address, data, status);
+        // build and data packet
+        auto packet = buildABCRegisterPacket(ptype, ich, address, data, status);
+        sendPacket(packet);
     }
     else { // Read HCCStar registers
         PacketTypes ptype = PacketTypes::HCCRegRd;
@@ -412,8 +509,9 @@ void StarEmu::readRegister(const uint8_t address, bool isABC,
         // for now
         unsigned data = 0xdeadbeef;
 
-        // build data packet
-        buildHCCRegisterPacket(ptype, address, data);
+        // build and send data packet
+        auto packet = buildHCCRegisterPacket(ptype, address, data);
+        sendPacket(packet);
     }
 }
 
@@ -432,53 +530,60 @@ void StarEmu::executeLoop() {
 
         uint32_t d = m_txRingBuffer->read32();
 
+        
         uint16_t d0 = (d >> 16) & 0xffff;
         uint16_t d1 = (d >> 0) & 0xffff;
 
+        DecodeLCB(d0);
+        DecodeLCB(d1);
+
+        /*
         int trig_count = 0;
         trig_count += countTriggers(d0);
         trig_count += countTriggers(d1);
 
         // This is an LP packet
-        alignas(32) uint8_t fixed_packet[] = 
-          {0x20, 0x06,
-           // Channel 0...
-           0x07, 0x8f, 0x03, 0x8f, 0x07, 0xaf, 0x03, 0xaf,
-           // Channel 1...
-           0x0f, 0x8f, 0x0b, 0x8f, 0x0f, 0xaf, 0x0b, 0xaf,
-           // Channel 2
-           0x17, 0x8f, 0x13, 0x8f, 0x17, 0xaf, 0x13, 0xaf,
-           0x17, 0xcf, 0x13, 0xcf, 0x17, 0xee, 0x13, 0xee,
-           // Channel 0 continued
-           0x07, 0xcf, 0x03, 0xcf, 0x07, 0xee, 0x03, 0xee,
-           // Channel 1 continued
-           0x0f, 0xcf, 0x0b, 0xcf, 0x0f, 0xee, 0x0b, 0xee,
-           // Channel 3
-           0x1f, 0x8f, 0x1b, 0x8f, 0x1f, 0xaf, 0x1b, 0xaf,
-           0x1f, 0xcf, 0x1b, 0xcf, 0x1f, 0xee, 0x1b, 0xee,
-           // Channel 4
-           0x27, 0x8f, 0x23, 0x8f, 0x27, 0xaf, 0x23, 0xaf,
-           0x27, 0xcf, 0x23, 0xcf, 0x27, 0xee, 0x23, 0xee,
-           // Channel 5
-           0x2f, 0x8f, 0x2b, 0x8f, 0x2f, 0xaf, 0x2b, 0xaf,
-           0x2f, 0xcf, 0x2b, 0xcf, 0x2f, 0xee, 0x2b, 0xee,
-           // Channel 6
-           0x37, 0x8f, 0x33, 0x8f, 0x37, 0xaf, 0x33, 0xaf,
-           0x37, 0xcf, 0x33, 0xcf, 0x37, 0xee, 0x33, 0xee,
-           // Channel 7
-           0x3f, 0x8f, 0x3b, 0x8f, 0x3f, 0xaf, 0x3b, 0xaf,
-           0x3f, 0xcf, 0x3b, 0xcf, 0x3f, 0xee, 0x3b, 0xee,
-           // Channel 8
-           0x47, 0x8f, 0x43, 0x8f, 0x47, 0xaf, 0x43, 0xaf,
-           0x47, 0xcf, 0x43, 0xcf, 0x47, 0xee, 0x43, 0xee,
-           // Channel 9
-           0x4f, 0x8f, 0x4b, 0x8f, 0x4f, 0xaf, 0x4b, 0xaf,
-           0x4f, 0xcf, 0x4b, 0xcf, 0x4f, 0xee, 0x4b, 0xee,
-           0x6f, 0xed};
+        alignas(32) uint8_t fixed_packet[] =
+            {0x20, 0x06,
+             // Channel 0...
+             0x07, 0x8f, 0x03, 0x8f, 0x07, 0xaf, 0x03, 0xaf,
+             // Channel 1...
+             0x0f, 0x8f, 0x0b, 0x8f, 0x0f, 0xaf, 0x0b, 0xaf,
+             // Channel 2
+             0x17, 0x8f, 0x13, 0x8f, 0x17, 0xaf, 0x13, 0xaf,
+             0x17, 0xcf, 0x13, 0xcf, 0x17, 0xee, 0x13, 0xee,
+             // Channel 0 continued
+             0x07, 0xcf, 0x03, 0xcf, 0x07, 0xee, 0x03, 0xee,
+             // Channel 1 continued
+             0x0f, 0xcf, 0x0b, 0xcf, 0x0f, 0xee, 0x0b, 0xee,
+             // Channel 3
+             0x1f, 0x8f, 0x1b, 0x8f, 0x1f, 0xaf, 0x1b, 0xaf,
+             0x1f, 0xcf, 0x1b, 0xcf, 0x1f, 0xee, 0x1b, 0xee,
+             // Channel 4
+             0x27, 0x8f, 0x23, 0x8f, 0x27, 0xaf, 0x23, 0xaf,
+             0x27, 0xcf, 0x23, 0xcf, 0x27, 0xee, 0x23, 0xee,
+             // Channel 5
+             0x2f, 0x8f, 0x2b, 0x8f, 0x2f, 0xaf, 0x2b, 0xaf,
+             0x2f, 0xcf, 0x2b, 0xcf, 0x2f, 0xee, 0x2b, 0xee,
+             // Channel 6
+             0x37, 0x8f, 0x33, 0x8f, 0x37, 0xaf, 0x33, 0xaf,
+             0x37, 0xcf, 0x33, 0xcf, 0x37, 0xee, 0x33, 0xee,
+             // Channel 7
+             0x3f, 0x8f, 0x3b, 0x8f, 0x3f, 0xaf, 0x3b, 0xaf,
+             0x3f, 0xcf, 0x3b, 0xcf, 0x3f, 0xee, 0x3b, 0xee,
+             // Channel 8
+             0x47, 0x8f, 0x43, 0x8f, 0x47, 0xaf, 0x43, 0xaf,
+             0x47, 0xcf, 0x43, 0xcf, 0x47, 0xee, 0x43, 0xee,
+             // Channel 9
+             0x4f, 0x8f, 0x4b, 0x8f, 0x4f, 0xaf, 0x4b, 0xaf,
+             0x4f, 0xcf, 0x4b, 0xcf, 0x4f, 0xee, 0x4b, 0xee,
+             0x6f, 0xed};
 
         for(int i=0; i<trig_count; i++) {
             sendPacket(fixed_packet);
         }
+        */
+
     }
 }
 
