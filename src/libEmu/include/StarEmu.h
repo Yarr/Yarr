@@ -47,7 +47,7 @@ private:
     void buildPhysicsPacket(PacketTypes, uint8_t, uint8_t,
                             uint16_t endOfPacket=0x6fed);
     void buildABCRegisterPacket(PacketTypes, uint8_t, uint8_t, unsigned, uint16_t);
-    void buildHCCRegisterPacket(PacketTypes, uint8_t, unsigned, uint16_t);
+    void buildHCCRegisterPacket(PacketTypes, uint8_t, unsigned);
 
     ///
     void DecodeLCB(LCB::Frame);

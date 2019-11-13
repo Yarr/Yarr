@@ -144,8 +144,7 @@ void StarEmu::buildABCRegisterPacket(
     m_data_packets.push_back((reg_data & 0xf) << 4);
 }
 
-void StarEmu::buildHCCRegisterPacket(
-    PacketTypes typ, uint8_t reg_addr, unsigned reg_data, uint16_t reg_status)
+void StarEmu::buildHCCRegisterPacket(PacketTypes typ, uint8_t reg_addr, unsigned reg_data)
 {
     // 4-bit type + 8-bit register address + 32-bit data + '0000'
     m_data_packets.push_back( ((uint8_t)typ & 0xf) << 4 | (reg_addr >> 4) );
@@ -385,7 +384,38 @@ void StarEmu::writeRegister(const uint32_t data, const uint8_t address,
 
 void StarEmu::readRegister(const uint8_t address, bool isABC,
                            const unsigned ABCID)
-{}
+{
+    if (isABC) { // Read ABCStar registers
+        PacketTypes ptype = PacketTypes::ABCRegRd;
+        
+        // get the input channel number in case reading ABC
+        unsigned int ich = 0;
+        for (; ich < m_ABCIDs.size(); ++ich) {
+            if (ABCID == m_ABCIDs[ich]) break;
+        }
+
+        // read register
+        // for now
+        unsigned data = 0xabadcafe;
+
+        // ABC status bits
+        // for now
+        uint16_t status = (ABCID & 0xf) << 12;
+
+        // build data packet
+        buildABCRegisterPacket(ptype, ich, address, data, status);
+    }
+    else { // Read HCCStar registers
+        PacketTypes ptype = PacketTypes::HCCRegRd;
+
+        // read register
+        // for now
+        unsigned data = 0xdeadbeef;
+
+        // build data packet
+        buildHCCRegisterPacket(ptype, address, data);
+    }
+}
 
 void StarEmu::executeLoop() {
     std::cout << "Starting emulator loop" << std::endl;
