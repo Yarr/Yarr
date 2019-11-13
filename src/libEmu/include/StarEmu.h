@@ -17,6 +17,12 @@ class EmuCom;
  */
 class StarEmu {
 public:
+
+    enum class PacketTypes {
+        PR = 1, LP = 2, ABCRegRd = 4, ABCPacketTransRegRd = 7, HCCRegRd = 8,
+        ABCFullTransRegRd = 11, ABCHPR = 13, HCCHPR = 14
+    };
+    
     /** These are ring buffers are owned by EmuController */
     StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path);
     ~StarEmu();
@@ -36,7 +42,14 @@ private:
 
     /// Send response packet (excluding SOP/EOP)
     void sendPacket(uint8_t *byte_s, uint8_t *byte_e);
-    
+
+    /// Build data packet
+    void buildPhysicsPacket(PacketTypes, uint8_t, uint8_t,
+                            uint16_t endOfPacket=0x6fed);
+    void buildABCRegisterPacket(PacketTypes, uint8_t, uint8_t, unsigned, uint16_t);
+    void buildHCCRegisterPacket(PacketTypes, uint8_t, unsigned, uint16_t);
+
+    ///
     void DecodeLCB(LCB::Frame);
     
     void doL0A(uint16_t);
@@ -46,12 +59,40 @@ private:
     void writeRegister(const uint32_t, const uint8_t, bool isABC=false,
                        const unsigned ABCID=0);
     void readRegister(const uint8_t, bool isABC=false, const unsigned ABCID=0);
+
+    void getClusters();
+
+    // Utilities
+    bool getParity_8bits(uint8_t);
     
+    ////////////////////////////////////////
     EmuCom * m_txRingBuffer;
     ClipBoard<RawData> &m_rxQueue;
 
     /** log level control */
     bool verbose  { false };
+    
+    ////////////////////////////////////////
+    // Internal states
+
+    PacketTypes m_packetType; // set in DecodeLCB()
+    
+    // For register command sequence
+    bool m_ignoreCmd;
+    bool m_isForABC;
+    
+    // buffer for register read/write command sequence
+    std::queue<uint8_t> m_reg_cmd_buffer;
+    
+    // cluster container for input channels
+    static const uint8_t m_nchannels=11; // Todo: should be a class template parameter
+    std::array<std::vector<uint16_t>, m_nchannels> m_clusters; // filled in getClusters()
+
+    // output data packets
+    std::deque<uint8_t> m_data_packets;
+    
+    // BC counter
+    uint8_t m_bccnt;
 
     ////////////////////////////////////////
     // HCCStar and ABCStar registers (for now)
@@ -59,17 +100,6 @@ private:
     unsigned int m_HCCID;
     std::vector<unsigned int> m_ABCIDs;
     unsigned int m_nABCs;
-    
-    ////////////////////////////////////////
-    // Internal states
-
-    // For register command sequence
-    bool ignoreCmd;
-    bool isForABC;
-
-    // buffer for register read/write command sequence
-    std::queue<uint8_t> reg_cmd_buffer;
-    
 };
 
 #endif //__STAR_EMU_H__

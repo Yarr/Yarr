@@ -37,6 +37,7 @@ std::ostream &operator <<(std::ostream &os, print_hex_type<T> v) {
 StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path)
     : m_txRingBuffer ( tx )
     , m_rxQueue ( rx )
+    , m_bccnt( 0 )
 {
     run = true;
 
@@ -47,8 +48,8 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path
     }
 
     /////
-    ignoreCmd = true;
-    isForABC = false;
+    m_ignoreCmd = true;
+    m_isForABC = false;
 
     /////
     m_HCCID = 0;
@@ -81,6 +82,78 @@ void StarEmu::sendPacket(uint8_t *byte_s, uint8_t *byte_e) {
     std::unique_ptr<RawData> data(new RawData(0, buf, word_length));
 
     m_rxQueue.pushData(std::move(data));
+}
+
+bool StarEmu::getParity_8bits(uint8_t val)
+{
+    val ^= val >> 4;
+    val ^= val >> 2;
+    val ^= val >> 1;
+    return val&1;
+}
+
+void StarEmu::buildPhysicsPacket(PacketTypes typ, uint8_t l0tag,
+                                 uint8_t bc_count, uint16_t endOfPacket)
+{
+    ///////////////////
+    // Header: 16 bits
+    bool errorflag = 0; // for now
+    // BCID: lowest 3 bits of 8-bit  + 1 parity bit 
+    bool bc_parity = getParity_8bits(bc_count);
+    // packet type (4b) + flag error (1b) + L0tag (7b) + BCID (4b)
+    uint16_t header = ((uint8_t)typ << 12) | errorflag << 11 | (l0tag & 0x7f) << 4 | (bc_count&7) << 1 | bc_parity;
+
+    m_data_packets.push_back(header & 0xff00);
+    m_data_packets.push_back(header & 0x00ff);
+    
+    ///////////////////
+    // ABCStar clusters
+    for (int ichannel=0; ichannel<m_clusters.size(); ++ichannel) {
+        for ( uint16_t cluster : m_clusters[ichannel]) {
+            // cluster bits:
+            // "0" + 4-bit channel number + 11-bit cluster dropping the last cluster bit
+            uint16_t clusterbits = (ichannel & 0xf)<<11 | (cluster & 0xfff)>>1;
+            m_data_packets.push_back(clusterbits & 0xff00);
+            m_data_packets.push_back(clusterbits & 0x00ff);
+        }
+    }
+
+    // Todo: error block
+
+    // Fixed 16-bit end of packet cluster pattern
+    m_data_packets.push_back(endOfPacket & 0xff00);
+    m_data_packets.push_back(endOfPacket & 0x00ff);
+}
+
+void StarEmu::buildABCRegisterPacket(
+    PacketTypes typ, uint8_t input_channel, uint8_t reg_addr, unsigned reg_data,
+    uint16_t reg_status)
+{   
+    // first byte: 4-bit type + 4-bit HCC input channel
+    uint8_t byte1 = ((uint8_t)typ & 0xf ) << 4 | (input_channel & 0xf);
+    m_data_packets.push_back(byte1);
+    
+    // then 8-bit register address
+    m_data_packets.push_back(reg_addr);
+
+    // 4-bit TBD + 32-bit data + 16-bit statis + '0000'
+    m_data_packets.push_back(reg_data >> 28);
+    m_data_packets.push_back((reg_data >> 20) & 0xff);
+    m_data_packets.push_back((reg_data >> 12) & 0xff);
+    m_data_packets.push_back((reg_data >> 4) & 0xff);
+    m_data_packets.push_back((reg_data & 0xf) << 4);
+}
+
+void StarEmu::buildHCCRegisterPacket(
+    PacketTypes typ, uint8_t reg_addr, unsigned reg_data, uint16_t reg_status)
+{
+    // 4-bit type + 8-bit register address + 32-bit data + '0000'
+    m_data_packets.push_back( ((uint8_t)typ & 0xf) << 4 | (reg_addr >> 4) );
+    m_data_packets.push_back( ((reg_addr & 0xf) << 4) | (reg_data >> 28) );
+    m_data_packets.push_back((reg_data >> 20) & 0xff);
+    m_data_packets.push_back((reg_data >> 12) & 0xff);
+    m_data_packets.push_back((reg_data >> 4) & 0xff);
+    m_data_packets.push_back((reg_data & 0xf) << 4);
 }
 
 unsigned int countTriggers(LCB::Frame frame) {
@@ -166,46 +239,46 @@ void StarEmu::doFastCommand(uint8_t data6) {
 
     switch((StarCmd::FastCommands)fastcmd) {
     case StarCmd::FastCommands::LogicReset :
-        std::cout << "LogicReset" << std::endl;
+        std::cout << "Fast command: LogicReset" << std::endl;
         break;
     case StarCmd::FastCommands::ABCRegReset :
-        std::cout << "ABCRegReset" << std::endl;
+        std::cout << "Fast command: ABCRegReset" << std::endl;
         break;
     case StarCmd::FastCommands::ABCSEUReset :
-        std::cout << "ABCSEUReset" << std::endl;
+        std::cout << "Fast command: ABCSEUReset" << std::endl;
         break;
     case StarCmd::FastCommands::ABCCaliPulse :
-        std::cout << "ABCCaliPulse" << std::endl;
+        std::cout << "Fast command: ABCCaliPulse" << std::endl;
         break;
     case StarCmd::FastCommands::ABCDigiPulse :
-        std::cout << "ABCDigiPulse" << std::endl;
+        std::cout << "Fast command: ABCDigiPulse" << std::endl;
         break;
     case StarCmd::FastCommands::ABCHitCntReset :
-        std::cout << "ABCHitCntReset" << std::endl;
+        std::cout << "Fast command: ABCHitCntReset" << std::endl;
         break;
     case StarCmd::FastCommands::ABCHitCntStart :
-        std::cout << "ABCHitCntStart" << std::endl;
+        std::cout << "Fast command: ABCHitCntStart" << std::endl;
         break;
     case StarCmd::FastCommands::ABCHitCntStop :
-        std::cout << "ABCHitCntStop" << std::endl;
+        std::cout << "Fast command: ABCHitCntStop" << std::endl;
         break;
     case StarCmd::FastCommands::ABCSlowCmdReset :
-        std::cout << "ABCSlowCmdReset" << std::endl;
+        std::cout << "Fast command: ABCSlowCmdReset" << std::endl;
         break;
     case StarCmd::FastCommands::StopPRLP :
-        std::cout << "StopPRLP" << std::endl;
+        std::cout << "Fast command: StopPRLP" << std::endl;
         break;
     case StarCmd::FastCommands::HCCRegReset :
-        std::cout << "HCCRegReset" << std::endl;
+        std::cout << "Fast command: HCCRegReset" << std::endl;
         break;
     case StarCmd::FastCommands::HCCSEUReset :
-        std::cout << "HCCSEUReset" << std::endl;
+        std::cout << "Fast command: HCCSEUReset" << std::endl;
         break;
     case StarCmd::FastCommands::HCCPLLReset :
-        std::cout << "HCCPLLReset" << std::endl;
+        std::cout << "Fast command: HCCPLLReset" << std::endl;
         break;
     case StarCmd::FastCommands::StartPRLP :
-        std::cout << "StartPRLP" << std::endl;
+        std::cout << "Fast command: StartPRLP" << std::endl;
         break;
     }
 }
@@ -218,41 +291,41 @@ void StarEmu::doRegReadWrite(LCB::Frame frame) {
         // Decode the second symbol
         uint8_t data6 = SixEight::decode(code1);
 
-        isForABC = (data6 >> 5) & 1; // Otherwise it is a HCC command        
+        m_isForABC = (data6 >> 5) & 1; // Otherwise it is a HCC command        
         bool isK2Start = (data6 >> 4) & 1; // Otherwise it is a K2 End
         unsigned cmd_hccID = data6 & 0xf; // Bottom 4 bits for HCC ID
         // Ignore the command sequence unless the HCC ID matches the ID on chip
         // or it is a broadcast command (0b1111)
-        ignoreCmd = not ( cmd_hccID == (m_HCCID & 0xf) or cmd_hccID == 0xf);
+        m_ignoreCmd = not ( cmd_hccID == (m_HCCID & 0xf) or cmd_hccID == 0xf);
 
-        if (ignoreCmd) return;
+        if (m_ignoreCmd) return;
         
         if (isK2Start) {
             // Clear the command buffer if it is not empty
             // (in case a second K2 Start is received before a K2 End)
-            if (not reg_cmd_buffer.empty()) {
+            if (not m_reg_cmd_buffer.empty()) {
                 std::queue<uint8_t> empty_buffer;
-                std::swap(reg_cmd_buffer, empty_buffer);
+                std::swap(m_reg_cmd_buffer, empty_buffer);
             }
         }
         else { // K2 End
-            size_t bufsize = reg_cmd_buffer.size();
+            size_t bufsize = m_reg_cmd_buffer.size();
             if ( not (bufsize==2 or bufsize==7) ) {
                 // If K2 End occurs at the wrong stage, no action is taken.
                 if (verbose) {
                     std::cout << __PRETTY_FUNCTION__
                               << " : K2 End occurs at the wrong stage! "
                               << "Current command sequence size (excluding K2 frames): "
-                              << reg_cmd_buffer.size() << std::endl;
+                              << m_reg_cmd_buffer.size() << std::endl;
                 }
                 return;
             }
 
             // Get the header
-            uint8_t header1 = reg_cmd_buffer.front();
-            reg_cmd_buffer.pop();
-            uint8_t header2 = reg_cmd_buffer.front();
-            reg_cmd_buffer.pop();
+            uint8_t header1 = m_reg_cmd_buffer.front();
+            m_reg_cmd_buffer.pop();
+            uint8_t header2 = m_reg_cmd_buffer.front();
+            m_reg_cmd_buffer.pop();
 
             bool isRegRead = (header1 >> 6) & 1; // Otherwise write register
             unsigned cmd_abcID = (header1 >> 2) & 0xf;
@@ -261,7 +334,7 @@ void StarEmu::doRegReadWrite(LCB::Frame frame) {
             // Access register
             if (isRegRead) { // read register
                 // Check if K2 End occurs at the correct stage for reg read
-                if (not reg_cmd_buffer.empty()) {
+                if (not m_reg_cmd_buffer.empty()) {
                     if (verbose) {
                         std::cout << __PRETTY_FUNCTION__ << " : K2 End occurs at the wrong stage for reading register!" << std::endl;
                     }
@@ -269,12 +342,12 @@ void StarEmu::doRegReadWrite(LCB::Frame frame) {
                 }
 
                 // read
-                readRegister(reg_addr, isForABC, cmd_abcID);
+                readRegister(reg_addr, m_isForABC, cmd_abcID);
                 
             }
             else { // write register
                 // Check if K2 End occurs at the correct stage for reg write
-                if (reg_cmd_buffer.size() != 5) {
+                if (m_reg_cmd_buffer.size() != 5) {
                     if (verbose) {
                         std::cout << __PRETTY_FUNCTION__ << " :  K2 End occurs at the wrong stage for writing register!" << std::endl;
                     }
@@ -283,26 +356,26 @@ void StarEmu::doRegReadWrite(LCB::Frame frame) {
 
                 uint32_t data = 0;
                 for (int i = 4; i >= 0; --i) {
-                    data |= ((reg_cmd_buffer.front() & 0x7f) << (7*i));
-                    reg_cmd_buffer.pop();
+                    data |= ((m_reg_cmd_buffer.front() & 0x7f) << (7*i));
+                    m_reg_cmd_buffer.pop();
                 }
 
                 // write
-                writeRegister(data, reg_addr, isForABC, cmd_abcID);
+                writeRegister(data, reg_addr, m_isForABC, cmd_abcID);
             }
             
-            assert(reg_cmd_buffer.empty());
+            assert(m_reg_cmd_buffer.empty());
         }  
     }
     else {
-        if (ignoreCmd) return;
+        if (m_ignoreCmd) return;
         
         // Decode the frame
         uint16_t data12 = (SixEight::decode(code0) << 6) | (SixEight::decode(code1));
         // Top 5 bits should be zeros
         assert(not (data12>>7));
         // Store it into the buffer. Only the lowest 7 bits is meaningful.
-        reg_cmd_buffer.push(data12 & 0x7f);
+        m_reg_cmd_buffer.push(data12 & 0x7f);
     }
 }
 
