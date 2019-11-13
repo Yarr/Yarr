@@ -82,6 +82,10 @@ void NetioTxCore::setCmdEnable(uint32_t elink) {
     //m_elinks[elink]=true;
 }
 
+void NetioTxCore::disableCmd() {
+    this->disableAllChannels();
+}
+
 // Broadcast to multiple channels
 void NetioTxCore::setCmdEnable(std::vector<uint32_t> channels) {
     this->disableAllChannels();

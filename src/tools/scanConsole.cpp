@@ -565,8 +565,8 @@ int main(int argc, char *argv[]) {
 
     // Joining is done.
 
-    //hwCtrl->setCmdEnable(0x0);
-    hwCtrl->setRxEnable(0x0);
+    hwCtrl->disableCmd();
+    hwCtrl->disableRx();
 
     std::cout << std::endl;
     std::cout << "\033[1;31m##########\033[0m" << std::endl;

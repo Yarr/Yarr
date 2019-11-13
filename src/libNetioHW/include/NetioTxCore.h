@@ -36,6 +36,7 @@ public:
 
   void setCmdEnable(uint32_t) override;
   void setCmdEnable(std::vector<uint32_t> channels) override;
+  void disableCmd();
   uint32_t getCmdEnable() override;
   bool isCmdEmpty() override; 		// check if the fifo of commands is empty
   void setTrigEnable(uint32_t value) override; 	// enable the trigger
