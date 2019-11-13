@@ -24,9 +24,11 @@ uint16_t Rd53aReadRegLoop::ReadRegister(Rd53aReg Rd53aGlobalCfg::*ref,  Rd53a *t
     tmpFE= keeper->globalFe<Rd53a>();
 
   g_rx->flushBuffer();
+
+  g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(tmpFE)->getTxChannel());
   tmpFE->readRegister(ref);
- 
   std::this_thread::sleep_for(std::chrono::microseconds(500));
+  g_tx->setCmdEnable(keeper->getTxMask());
 
   RawData *data = g_rx->readData();
   if(!data)
@@ -42,9 +44,10 @@ uint16_t Rd53aReadRegLoop::ReadRegister(Rd53aReg Rd53aGlobalCfg::*ref,  Rd53a *t
     {
       if (c*2+1<size) {
 	std::pair<uint32_t, uint32_t> readReg = decodeSingleRegRead(data->buf[c*2],data->buf[c*2+1]);	    
-	if ( readReg.first==(tmpFE->*ref).addr())
-	  delete data;
-	  return readReg.second;
+	if ( readReg.first==(tmpFE->*ref).addr()) {
+	    delete data;
+	    return readReg.second;
+	}
       }
       else {
 	std::cout<<"Warning!!! Hallfword recieved in ADC Register Read "<<data->buf[c*2]<<std::endl;
@@ -64,8 +67,15 @@ uint16_t Rd53aReadRegLoop::ReadADC(unsigned short Reg,  bool doCur=false,  Rd53a
   if(tmpFE==NULL)
     tmpFE= keeper->globalFe<Rd53a>();
 
+  g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(tmpFE)->getTxChannel());
   tmpFE->confADC(Reg,doCur);
-  return ReadRegister(&Rd53a::AdcRead, dynamic_cast<Rd53a*>(tmpFE));
+  g_tx->setCmdEnable(keeper->getTxMask());
+
+  uint16_t RegVal =  ReadRegister(&Rd53a::AdcRead, dynamic_cast<Rd53a*>(tmpFE));
+
+
+  return RegVal;
+
 }
 
 //Runs readADC twice, for two difference bias configurations in the temp/rad sensors. Returns the difference to the user. 
@@ -86,13 +96,16 @@ std::pair<uint16_t,uint16_t> Rd53aReadRegLoop::ReadTemp(unsigned short Reg, Rd53
                             + (0x800 + curConf*0x40) * (Reg==5 || Reg==6); //Tmp/Rad Sensor 2
       uint16_t SensorConf100 = (0x20 + 1*curConf) * ( Reg==14 || Reg==15) //Tmp/Rad Sensor 3
 	                     + (0x800 + curConf*0x40) * (Reg==7 || Reg==8);  //Tmp/Rad Sensor 4
-      
+
+      g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(tmpFE)->getTxChannel());    
       if(Reg==3 || Reg==4 || Reg==5 || Reg==6)
 	tmpFE->writeRegister(&Rd53a::SensorCfg0, SensorConf99);
       else if(Reg==7 || Reg==8 || Reg==14 || Reg==15)
 	tmpFE->writeRegister(&Rd53a::SensorCfg1, SensorConf100);
-
+      g_tx->setCmdEnable(keeper->getTxMask());
       tmpFE->idle();
+      g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(tmpFE)->getTxChannel());    
+
 
       ADCVal[curConf]=this->ReadADC(Reg,false,dynamic_cast<Rd53a*>(tmpFE));
 
@@ -147,9 +160,9 @@ void Rd53aReadRegLoop::execPart1() {
 	  
 
 
-	  if ( StoredVal!=RegisterVal  ){
-	    std::cout<<"Warning!!! For Reg: "<<Reg<<", the stored register value ("<<StoredVal<<") doesn't match the one on the chip ("<<RegisterVal<<")."<<std::endl;
-	  }
+	  // if ( StoredVal!=RegisterVal  ){
+	  //   std::cout<<"Warning!!! For Reg: "<<Reg<<", the stored register value ("<<StoredVal<<") doesn't match the one on the chip ("<<RegisterVal<<")."<<std::endl;
+	  // }
 
 
 	  //Compare the Register with the stored value, it's a safety mechanism. 
@@ -177,7 +190,54 @@ void Rd53aReadRegLoop::execPart1() {
       //Reading Temp or Rad sensors from the ADC
       for( auto Reg : m_TempMux){
 	std::pair<uint16_t, uint16_t> TempVal = ReadTemp(Reg, dynamic_cast<Rd53a*>(fe));
-	std::cout<<"MON MUX_V: "<<Reg<<" Bias 0 "<<TempVal.first<<" -> "<<dynamic_cast<Rd53a*>(fe)->ADCtoV(TempVal.first)<<" V Bias 1 "<<TempVal.second<<" -> "<<dynamic_cast<Rd53a*>(fe)->ADCtoV(TempVal.second)<<" V Diff "<<dynamic_cast<Rd53a*>(fe)->ADCtoV(TempVal.second)-dynamic_cast<Rd53a*>(fe)->ADCtoV(TempVal.first)<<" V"<<std::endl;      
+	
+	
+	uint16_t Sensor=0;
+	bool isRadSensor=false;
+	switch(Reg) {
+	case 3:
+	  Sensor=0;
+	  isRadSensor=false;
+	  break;
+	case 4:
+	  Sensor=0;
+	  isRadSensor=true;
+	  break;
+	case 5:
+	  Sensor=1;
+	  isRadSensor=false;
+	  break;
+	case 6:
+	  Sensor=1;
+	  isRadSensor=true;
+	  break;
+	case 7:
+	  Sensor=2;
+	  isRadSensor=false;
+	  break;
+	case 8:
+	  Sensor=2;
+	  isRadSensor=true;
+	  break;
+	case 14:
+	  Sensor=3;
+	  isRadSensor=true;
+	  break;
+	case 15:
+	  Sensor=3;
+	  isRadSensor=false;
+	  break;
+	default :
+	  Sensor=0;
+	  isRadSensor=false;
+	  break;
+	}
+
+	float Volt1 = dynamic_cast<Rd53a*>(fe)->ADCtoV(TempVal.first);
+	float Volt2 = dynamic_cast<Rd53a*>(fe)->ADCtoV(TempVal.second);
+
+
+	std::cout<<"MON MUX_V: "<<Reg<<" Bias 0 "<<TempVal.first<<" -> "<<Volt1<<" V Bias 1 "<<TempVal.second<<" -> "<<Volt2<<" V Diff "<<Volt2-Volt1<<" V, Temperature: "<< (dynamic_cast<Rd53a*>(fe)->VtoTemp(Volt2-Volt1, Sensor, isRadSensor))  <<" C" <<std::endl;      
       }
       
       //Reading Current ADC

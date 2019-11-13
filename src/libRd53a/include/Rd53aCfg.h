@@ -51,6 +51,7 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
         void toFileBinary() {};
         void fromFileBinary() {};
 	float ADCtoV (uint16_t ADC);
+	float VtoTemp (float V, uint16_t Sensor, bool isRadSensor);
         /**
          * set the chip ID
          */
@@ -63,6 +64,9 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
          float m_injCap; //fF
         std::array<float, 4> m_vcalPar; //mV, [0] + [1]*x + [2]*x^2 + [3]*x^3
         std::array<float, 2> m_ADCcalPar; //mV, [0] + [1]*x
+        std::array< std::array<float, 2>, 4 > m_TempSenPar;
+	std::array< std::array<float, 2>, 4 > m_RadSenPar;
+
 };
 
 #endif
