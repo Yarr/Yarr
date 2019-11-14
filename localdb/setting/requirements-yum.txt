@@ -1,8 +1,10 @@
-epel-release.noarch
 centos-release-scl.noarch
-openssl-devel
-python.x86_64
-python36
-python36-devel
-python36-pip
-python36-tkinter
+devtoolset-7.x86_64
+epel-release.noarch
+cmake3.x86_64
+gnuplot.x86_64
+texlive-epstopdf.noarch
+ghostscript.x86_64
+python3.x86_64
+bc.x86_64
+mongodb-org.x86_64
