@@ -361,53 +361,9 @@ void StarEmu::doRegReadWrite(LCB::Frame frame) {
                 return;
             }
 
-            // Get the header
-            uint8_t header1 = m_reg_cmd_buffer.front();
-            m_reg_cmd_buffer.pop();
-            uint8_t header2 = m_reg_cmd_buffer.front();
-            m_reg_cmd_buffer.pop();
-
-            bool isRegRead = (header1 >> 6) & 1; // Otherwise write register
-            unsigned cmd_abcID = (header1 >> 2) & 0xf;
-            uint8_t reg_addr = ((header1 & 3) << 6) | ((header2 >> 1) & 0x3f); 
-
-            // Access register
-            if (isRegRead) { // read register
-                // Check if K2 End occurs at the correct stage for reg read
-                if (not m_reg_cmd_buffer.empty()) {
-                    if (verbose) {
-                        std::cout << __PRETTY_FUNCTION__ << " : K2 End occurs at the wrong stage for reading register!" << std::endl;
-                    }
-                    return;
-                }
-
-                // read
-                readRegister(reg_addr, m_isForABC, cmd_abcID);
-                
-            }
-            else { // write register
-                // Check if K2 End occurs at the correct stage for reg write
-                if (m_reg_cmd_buffer.size() != 5) {
-                    if (verbose) {
-                        std::cout << __PRETTY_FUNCTION__ << " :  K2 End occurs at the wrong stage for writing register!" << std::endl;
-                    }
-                    return;
-                }
-
-                uint32_t data = 0;
-                for (int i = 4; i >= 0; --i) {
-                    data |= ((m_reg_cmd_buffer.front() & 0x7f) << (7*i));
-                    m_reg_cmd_buffer.pop();
-                }
-
-                // write
-                writeRegister(data, reg_addr, m_isForABC, cmd_abcID);
-            }
-            
-            assert(m_reg_cmd_buffer.empty());
-        }  
-    }
-    else {
+            execute_command_sequence();
+        } // if (isK2Start)
+    } else { // not K2 Start or End
         if (m_ignoreCmd) return;
         
         // Decode the frame
@@ -420,6 +376,62 @@ void StarEmu::doRegReadWrite(LCB::Frame frame) {
 
     // Increment BC counter
     m_bccnt += 4;
+}
+
+void StarEmu::execute_command_sequence()
+{
+    // Obtain and parse the header
+    uint8_t header1 = m_reg_cmd_buffer.front();
+    m_reg_cmd_buffer.pop();
+    uint8_t header2 = m_reg_cmd_buffer.front();
+    m_reg_cmd_buffer.pop();
+
+    bool isRegRead = (header1 >> 6) & 1; // Otherwise write register
+    unsigned cmd_abcID = (header1 >> 2) & 0xf;
+    uint8_t reg_addr = ((header1 & 3) << 6) | ((header2 >> 1) & 0x3f);
+
+    // Access register
+    if (isRegRead) { // register read command
+        /*
+        // Check if K2 End occurs at the correct stage for reg read
+        if (not m_reg_cmd_buffer.empty()) {
+            if (verbose) {
+                std::cout << __PRETTY_FUNCTION__ << " : K2 End occurs at the wrong stage for reading register!" << std::endl;
+            }
+            return;
+        }
+        */
+        // If cmd_abcID is '1111' i.e. broadcast address, read all ABCs
+        if ((cmd_abcID & 0xf) == 0xf and m_isForABC) {
+            for (const auto abcID : m_ABCIDs)
+                readRegister(reg_addr, true, abcID);
+        } else {
+            readRegister(reg_addr, m_isForABC, cmd_abcID);
+        }
+    } else { // register write command
+        // Check if K2 End occurs at the correct stage for reg write
+        if (m_reg_cmd_buffer.size() != 5) {
+            if (verbose)
+                std::cout << __PRETTY_FUNCTION__ << " :  K2 End occurs at the wrong stage for writing register!" << std::endl;
+            return;
+        }
+
+        uint32_t data = 0;
+        for (int i = 4; i >= 0; --i) {
+            data |= ((m_reg_cmd_buffer.front() & 0x7f) << (7*i));
+            m_reg_cmd_buffer.pop();
+        }
+
+        // write register
+        // If cmd_abcID is '1111' i.e. broadcast address, write all ABCs
+        if ((cmd_abcID & 0xf) == 0xf and m_isForABC) {
+            for (const auto abcID : m_ABCIDs)
+                writeRegister(data, reg_addr, true, cmd_abcID);
+        } else {
+            writeRegister(data, reg_addr, m_isForABC, cmd_abcID);
+        }
+        assert(m_reg_cmd_buffer.empty());
+    } // if (isRegRead)
 }
 
 void StarEmu::getClusters(int test_mode)

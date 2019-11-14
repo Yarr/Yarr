@@ -56,13 +56,13 @@ private:
     void doL0A(uint16_t);
     void doFastCommand(uint8_t);
     void doRegReadWrite(LCB::Frame);
-
+    void execute_command_sequence();
     void writeRegister(const uint32_t, const uint8_t, bool isABC=false,
                        const unsigned ABCID=0);
     void readRegister(const uint8_t, bool isABC=false, const unsigned ABCID=0);
 
     void getClusters(int);
-
+    
     // Utilities
     bool getParity_8bits(uint8_t);
     
