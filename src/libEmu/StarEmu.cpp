@@ -480,8 +480,8 @@ void StarEmu::getClusters(int test_mode)
     std::vector<uint16_t> a_fixed_cluster_pattern =
         {0xf1e, 0x71e, 0xf5e, 0x75e, 0xf9e, 0x79e, 0xfdc, 0x7dd};
 
-    for (auto& channel : m_clusters)
-        channel = a_fixed_cluster_pattern;
+    for (int ich=0; ich < m_nABCs; ++ich)
+        m_clusters.push_back(a_fixed_cluster_pattern);
 }
 
 void StarEmu::writeRegister(const uint32_t data, const uint8_t address,
