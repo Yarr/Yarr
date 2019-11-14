@@ -76,7 +76,37 @@ int main(int argc, char *argv[]) {
     spec.writeFifo((part2[8] << 16) + LCB::IDLE);
     spec.writeFifo((LCB::IDLE << 16) + LCB::IDLE);
 
-    spec.writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(1, 0, false));
+    // Test emulator
+    if (controllerType == "emu_Star") {
+      // send an L0A
+      spec.writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(1, 0, false));
+
+      // read HCCStar register
+      std::array<LCB::Frame, 9> readHCCCmd = star.read_hcc_register(42);
+      spec.writeFifo((readHCCCmd[0] << 16) + readHCCCmd[1]);
+      spec.writeFifo((readHCCCmd[2] << 16) + readHCCCmd[8]);
+
+      // read HCCStar register again
+      std::array<LCB::Frame, 9> readHCCCmd2 = star.read_hcc_register(14);
+      spec.writeFifo((readHCCCmd2[0] << 16) + readHCCCmd2[1]);
+      // the read command is interupted by an L0A
+      spec.writeFifo((LCB::l0a_mask(1, 0, false) << 16) + readHCCCmd2[2]);
+      spec.writeFifo((readHCCCmd2[8] << 16) + LCB::IDLE);
+
+      // read ABCStar registers with broadcast addresses
+      std::array<LCB::Frame, 9> readABCCmd = star.read_abc_register(42);
+      spec.writeFifo((readABCCmd[0] << 16) + readABCCmd[1]);
+      //////
+      // readABCCmd[3:7] not really needed
+      // read_abc_register() returns a command sequence of 9 frames instead of 4 for a read sequence
+      // They are ignored in the emulator
+      spec.writeFifo((readABCCmd[2] << 16) + readABCCmd[3]);
+      spec.writeFifo((readABCCmd[4] << 16) + readABCCmd[5]);
+      spec.writeFifo((readABCCmd[6] << 16) + readABCCmd[7]);
+      //////
+      spec.writeFifo((readABCCmd[8] << 16) + LCB::IDLE);
+    }
+
     spec.releaseFifo();
 
     if(do_spec_specific) {
