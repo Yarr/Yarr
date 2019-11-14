@@ -327,11 +327,10 @@ void StarEmu::doRegReadWrite(LCB::Frame frame) {
     uint8_t code0 = (frame >> 8) & 0xff;
     uint8_t code1 = frame & 0xff;
 
-    if (code0 == LCB::K2) { // This frame is a K2 Start or K2 End 
+    if (code0 == LCB::K2) { // This frame is a K2 Start or K2 End
+
         // Decode the second symbol
         uint8_t data6 = SixEight::decode(code1);
-
-        m_isForABC = (data6 >> 5) & 1; // Otherwise it is a HCC command        
         bool isK2Start = (data6 >> 4) & 1; // Otherwise it is a K2 End
         unsigned cmd_hccID = data6 & 0xf; // Bottom 4 bits for HCC ID
         // Ignore the command sequence unless the HCC ID matches the ID on chip
@@ -341,6 +340,8 @@ void StarEmu::doRegReadWrite(LCB::Frame frame) {
         if (m_ignoreCmd) return;
         
         if (isK2Start) {
+            m_isForABC = (data6 >> 5) & 1; // Otherwise it is a HCC command
+
             // Clear the command buffer if it is not empty
             // (in case a second K2 Start is received before a K2 End)
             if (not m_reg_cmd_buffer.empty()) {
