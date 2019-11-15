@@ -66,7 +66,7 @@ trap 'echo -e ""; echo -e "[LDB] Installation stopped by SIGINT!!"; echo -e "[LD
 ### Confirmation before starting installation ###
 #################################################
 
-echo -e "[LDB] Looking for missing pachages for Local DB and Tools ..."
+echo -e "[LDB] Looking for missing packages for Local DB and Tools ..."
 
 ############################
 ### Check python version ###
@@ -195,13 +195,13 @@ if "${package_install}" || "${initialize_db}"; then
     ### Add mongoDB repository and installing mongoDB
     if ! [ -e "/etc/yum.repos.d/mongodb-org-4.2.repo" ]; then
         echo -e \
-        "[mongodb-org-4.2]
-        name=MongoDB Repository
-        baseurl=https://repo.mongodb.org/yum/redhat/\$releasever/mongodb-org/4.2/x86_64/
-        gpgcheck=1
-        enabled=1
-        gpgkey=https://www.mongodb.org/static/pgp/server-4.2.asc" \
-            | sudo tee /etc/yum.repos.d/mongodb-org-4.2.repo
+"[mongodb-org-4.2]
+name=MongoDB Repository
+baseurl=https://repo.mongodb.org/yum/redhat/\$releasever/mongodb-org/4.2/x86_64/
+gpgcheck=1
+enabled=1
+gpgkey=https://www.mongodb.org/static/pgp/server-4.2.asc" \
+    | sudo tee /etc/yum.repos.d/mongodb-org-4.2.repo
     fi
 
     ### Install packages
@@ -363,7 +363,7 @@ if ! "${pytver}" || [ ${#yumpackages} != 0 ] || [ ${#pippackages} != 0 ] || ! "$
         printf '\033[31m%s\033[m\n' "[LDB ERROR] You can install/upgrade using 'localdb-tools/scripts/shell/upgrade_mongoDB_centos.sh'"
     fi
     echo -e ""
-    echo -e "[LDB] If you want to setup them manually, the page 'https://localdb-docs.readthedocs.io/en/master/' should be helpful!"
+    printf '\033[31m%s\033[m\n' "[LDB] If you want to setup them manually, the page 'https://localdb-docs.readthedocs.io/en/master/' should be helpful!"
 else
     echo -e "[LDB] Success!!"
     echo -e ""

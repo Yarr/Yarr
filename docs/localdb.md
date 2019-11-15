@@ -60,6 +60,8 @@ $./bin/dbAccessor -I
 #DB INFO# -----------------------
 ```
 
+
+
 ## Quick Tutorial
 
 ### Upload
@@ -100,11 +102,11 @@ You can check if the upload is success in log file `${HOME}/.yarr/localdb/log/${
 You can check the uploaded test data log by `localdbtool-retrieve log`:
 
 ```bash
-$ ./localdb/bin/localdbtool-retrieve log 
+$ ./localdb/bin/localdbtool-retrieve log
 #DB INFO# -----------------------
 #DB INFO# [Connection Test] DB Server: mongodb://127.0.0.1:27017
 #DB INFO#    The connection is GOOD.
-test data ID: 5d8da5eda45ae057dbd1fbd6 
+test data ID: 5d8da5eda45ae057dbd1fbd6
 User      : user at site
 Date      : 2019/09/27 15:02:17
 Chip      : JohnDoe_0
@@ -115,13 +117,13 @@ DCS Data  : NULL
 ```
 
 You can retrieve the uploaded data into the local directory by `localdbtool-retrieve pull`:
- 
+
 ```bash
 $ ./localdb/bin/localdbtool-retrieve pull
 #DB INFO# -----------------------
 #DB INFO# [Connection Test] DB Server: mongodb://127.0.0.1:27017
 #DB INFO#    The connection is GOOD.
-#DB INFO# test data ID: 5d8da5eda45ae057dbd1fbd6 
+#DB INFO# test data ID: 5d8da5eda45ae057dbd1fbd6
 #DB INFO# - User      : user at site
 #DB INFO# - Date      : 2019/09/27 15:02:17
 #DB INFO# - Chips     : JohnDoe_0
@@ -144,7 +146,7 @@ $ ./localdb/bin/localdbtool-retrieve pull
 > [More detail about retrieving funtion](https://localdb-docs.readthedocs.io/en/master/retrieve/)
 
 * List of restored data (default dir: `YARR/db_data`)
-    * Test Information (Data ID, User, Date, Chips, Run #, Test type) 
+    * Test Information (Data ID, User, Date, Chips, Run #, Test type)
     * connectivity config file
     * controller config file
     * scan config file
@@ -171,11 +173,11 @@ $ git clone https://gitlab.cern.ch/YARR/localdb-tools.git
 ```bash
 # 1. Set Application
 $ cd localdb-tools/viewer
-$ ./setup_viewer.sh 
+$ ./setup_viewer.sh
 
 # 2. Run Application
 $ ./app.py --config conf.yml &
-# ---> Access 'http://127.0.0.1:5000/localdb/' or 
+# ---> Access 'http://127.0.0.1:5000/localdb/' or
 #      'http://IPaddress/localdb/' on browser to check data in Local DB
 ```
 > [More detail about Viewer Application](https://localdb-docs.readthedocs.io/en/master/viewer/)
@@ -183,7 +185,7 @@ $ ./app.py --config conf.yml &
 #### Synchronization Tool
 
 ```bash
-# 1. Set Tool 
+# 1. Set Tool
 $ cd localdb-tools/sync-tool
 $ ./setup_sync_tool.sh
 

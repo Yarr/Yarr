@@ -46,8 +46,13 @@ def readKey(i_path):
     return keys
 
 def getArgs():
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("command", help="Command option", type=str, nargs='+')
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument(
+        "command",
+        help="option*\tfuntion\ninit\tFunction initialization & Connection check\nlog\tDisplay data log\npull\tData retrieve\nlist\tDisplay data list\ntest\tTesting command",
+        type=str,
+        nargs='+'
+    )
     parser.add_argument('--config', help='Set User Config Path of Local DB Server.', type=str)
     parser.add_argument('--username', help='Set the User Name of Local DB Server.', type=str)
     parser.add_argument('--password', help='Set the Password of Local DB Server.', type=str)
@@ -156,6 +161,7 @@ def __network_db(url, db_name):
     except errors.ServerSelectionTimeoutError as err:
         logger.error('---> Connection is BAD.')
         logger.error('     {}'.format(err))
+        logger.error('     Access https://localdb-docs.readthedocs.io/en/master/faq/ to check more detail')
         return False
     except errors.OperationFailure as err:
         ### Need user authentication
@@ -188,7 +194,7 @@ def __network_db(url, db_name):
                 through = True
                 authentication = True
                 return True
-            except errors.OperationFailure as err: 
+            except errors.OperationFailure as err:
                 logger.error('Authentication failed.')
                 answer = input('Try again? [y/n]\n> ')
                 print('')
@@ -223,7 +229,7 @@ def main():
     command = args.command
     nargs = len(args.command)-1
 
-    if command[0]=='test': 
+    if command[0]=='test':
         logger.debug('=======================')
         sys.exit(0)
 
@@ -261,7 +267,7 @@ def main():
                 localdb.authenticate(user, pwd)
             function.__set_localdb(localdb)
     else:
-        logger.error('Cannot access Local DB')
+        logger.error('Could not access Local DB')
         logger.error('Try later or by another remote')
         logger.info('-----------------------')
         logger.debug('=======================')
@@ -301,7 +307,7 @@ def main():
         if dir_path=='localdb':
             logger.error('Not set directory name to "localdb"')
             sys.exit()
-        if os.path.isdir(dir_path): 
+        if os.path.isdir(dir_path):
             logger.warning('Already exist directory: {}.'.format(dir_path))
             answer = input('\nDelete it? [y/n]\n> ')
             print('')

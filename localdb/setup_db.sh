@@ -7,8 +7,6 @@
 # Usage: ./setup_db.sh [-i Local DB server ip (default: 127.0.0.1)] [-p Local DB server port (default: 27017)] [-n Local DB name (default: localdb)] [-t set tools in ~/.local/bin ] [-r Reset]
 ################################
 
-set -e
-
 # Usage
 function usage {
     cat <<EOF
@@ -42,7 +40,7 @@ reset=false
 while getopts hi:p:n:a:e:tr OPT
 do
     case ${OPT} in
-        h ) usage 
+        h ) usage
             exit ;;
         i ) dbip=${OPTARG} ;;
         p ) dbport=${OPTARG} ;;
@@ -61,18 +59,21 @@ ENABLE=${HOME}/.local/lib/localdb-tools/enable
 
 if "${reset}"; then
     echo -e "[LDB] Clean Local DB settings:"
-    for i in `ls -1 ${shell_dir}/bin/`; do
-        if [ -f ${BIN}/${i} ]; then
-            echo -e "[LDB]      -> remove ${BIN}/${i}"
-        fi
-    done
+    if [ -d ${BIN} ]; then
+        for i in `ls -1 ${shell_dir}/bin/`; do
+            if [ -f ${BIN}/${i} ]; then
+                echo -e "[LDB]      -> remove ${BIN}/${i}"
+            fi
+        done
+    fi
     echo -e "[LDB]      -> remove Local DB files in ${dir}"
     if [ -d ${HOME}/.localdb_retrieve ]; then
         echo -e "[LDB]      -> remove retrieve repository in ${HOME}/.localdb_retrieve"
     fi
     echo -e "[LDB] Continue? [y/n]"
+    unset answer
     read -p "[LDB] > " answer
-    while [ -z ${answer} ]; 
+    while [ -z ${answer} ];
     do
         read -p "[LDB] > " answer
     done
@@ -83,17 +84,19 @@ if "${reset}"; then
         exit
     fi
     # binary
-    for i in `ls -1 ${shell_dir}/bin/`; do
-        if [ -f ${BIN}/${i} ]; then
-            rm ${BIN}/${i}
-        fi
-    done
     bin_empty=true
-    for i in `ls -1 ${BIN}`; do
-        if [ `echo ${i} | grep localdbtool` ]; then
-            bin_empty=false
-        fi
-    done
+    if [ -d ${BIN} ]; then
+        for i in `ls -1 ${shell_dir}/bin/`; do
+            if [ -f ${BIN}/${i} ]; then
+                rm ${BIN}/${i}
+            fi
+        done
+        for i in `ls -1 ${BIN}`; do
+            if [ `echo ${i} | grep localdbtool` ]; then
+                bin_empty=false
+            fi
+        done
+    fi
     if "${bin_empty}"; then
         if [ -d ${HOME}/.local/lib/localdb-tools ]; then
             rm -r ${HOME}/.local/lib/localdb-tools
@@ -159,7 +162,7 @@ echo -e "[LDB] database name   : ${dbname}"
 echo -e "[LDB]"
 echo -e "[LDB] Are you sure that is correct? [y/n]"
 read -p "[LDB] > " answer
-while [ -z ${answer} ]; 
+while [ -z ${answer} ];
 do
     read -p "[LDB] > " answer
 done
@@ -186,7 +189,7 @@ fi
 echo -e "[LDB]"
 echo -e "[LDB] Continue? [y/n]"
 unset answer
-while [ -z ${answer} ]; 
+while [ -z ${answer} ];
 do
     read -p "[LDB] > " answer
 done
@@ -226,11 +229,11 @@ fi
 if [ ${#pippackages} != 0 ]; then
     printf '\033[31m%s\033[m\n' "[LDB ERROR] There are missing pip modules:"
     for pac in ${pippackages[@]}; do
-        printf '\033[31m%s\033[m\n' "[LDB ERROR] ${pac}"
+        printf '\033[31m%s\033[m\n' "[LDB ERROR] - ${pac}"
     done
     printf '\033[31m%s\033[m\n' "[LDB ERROR]"
     printf '\033[31m%s\033[m\n' "[LDB ERROR] Install them by:"
-    printf '\033[31m%s\033[m\n' "[LDB ERROR] python3 -m pip install --user -r ${shell_dir}/requirements-pip.txt"
+    printf '\033[31m%s\033[m\n' "[LDB ERROR] python3 -m pip install --user -r ${shell_dir}/setting/requirements-pip.txt"
     exit 1
 fi
 
@@ -245,17 +248,26 @@ cp ${shell_dir}/setting/default/database.json ${dbcfg}
 sed -i -e "s!DBIP!${dbip}!g" ${dbcfg}
 sed -i -e "s!DBPORT!${dbport}!g" ${dbcfg}
 sed -i -e "s!DBNAME!${dbname}!g" ${dbcfg}
-    
+
 echo -e "[LDB] DB Config: ${dbcfg}"
+
+# Confirmation
+echo -e ""
+echo -e "[LDB] Checking the connection..."
+${shell_dir}/bin/localdbtool-upload init --config ${dbcfg}
+if [ $? = 1 ]; then
+    printf '\033[33m%s\033[m\n' "[LDB WARNING] Connection failed. Check Local DB Setting in ${dbcfg}."
+fi
 
 echo -e "[LDB] Done."
 echo -e "[LDB]"
+
 
 # finish
 echo -e "[LDB] -------------"
 echo -e "[LDB] --  Usage  --"
 echo -e "[LDB] -------------"
-echo -e "[LDB] To upoad the test data into Local DB after scanConsole:" 
+echo -e "[LDB] To upoad the test data into Local DB after scanConsole:"
 echo -e "[LDB]   \$ ./bin/scanConsole -c <conn> -r <ctr> -s <scan> -W"
 echo -e "[LDB] To upload every cache data:"
 echo -e "[LDB]   \$ ${shell_dir}/bin/localdbtool-upload cache"
