@@ -437,6 +437,7 @@ void StarEmu::execute_command_sequence()
 
 void StarEmu::getClusters(int test_mode)
 {
+    m_clusters.clear();
     // Fixed cluster pattern for now
     // base on this packet:
     /*

@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
     // Test emulator
     if (controllerType == "emu_Star") {
       // send an L0A
-      spec.writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(1, 0, false));
+      spec.writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(10, 0, false));
 
       // read HCCStar register
       std::array<LCB::Frame, 9> readHCCCmd = star.read_hcc_register(42);
