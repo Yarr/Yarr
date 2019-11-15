@@ -169,63 +169,38 @@ void StarCfg::configure_HCC_Registers() {
 
 void StarCfg::configure_ABC_Registers(int chipID) {
 
-  //List of all ABC Register addresses we will create
-  std::vector<int> ABC_Register_Addresses = {0,1,2,3,4,6,7,32, 33, 34, 35,36,37,38, 16, 17, 18, 19, 20, 21, 22, 23, 104,105,106,107,108,109,110,111,
-		  64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104};
-
   //DD    //Loop over each ABC register in the default list, and create the Register object
-  //DD    //Add the location in memory of this Register to the register map
-  //DD	std::map<unsigned, Register*> registerMap_ABC;
-  //DD	std::map<std::string, SubRegister*> subRegisterMap_ABC;
-
+  //DD    //Add the location in memory of this Register to the register maps
   unsigned int chipIndex = indexForABCchipID(chipID);
-  for (unsigned int iReg = 0; iReg < ABC_Register_Addresses.size(); ++iReg){
-
-    int addr = ABC_Register_Addresses.at(iReg);
+  for (ABCStarRegister reg : ABCStarRegister::_values()) {
+    int addr = reg;
     Register tmp_Reg = Register( addr, 0 );
     AllReg_List.push_back( tmp_Reg ); //Save it to the list
     int lastReg = AllReg_List.size()-1;
     registerMap[chipIndex][addr]=&AllReg_List.at(lastReg); //Save it's position in memory to the registerMap
-
-    //        Register* this_Reg = registerMap[chipID][addr];
   }
 
 
   //// Initialize 32-bit register with default values
   ////#special reg
-  registerMap[chipIndex][0]->setValue(0x00000004);
+  registerMap[chipIndex][ABCStarRegister::SCReg]->setValue(0x00000004);
 
   ////#Analog and DCS regs
-  registerMap[chipIndex][1]->setValue(0x00000000);
-  registerMap[chipIndex][2]->setValue(0x00000000);
-  registerMap[chipIndex][3]->setValue(0x00000000);
-  registerMap[chipIndex][4]->setValue(0x00000000);
-  registerMap[chipIndex][6]->setValue(0x00000000);
-  registerMap[chipIndex][7]->setValue(0x00000000);
+  for (unsigned int iReg=ABCStarRegister::ADCS1; iReg<=ABCStarRegister::ADCS7; iReg++)
+    registerMap[chipIndex][iReg]->setValue(0x00000000);
 
   ////#Congfiguration regs
-  registerMap[chipIndex][32]->setValue(0x00000000);
-  registerMap[chipIndex][33]->setValue(0x00000000);
-  registerMap[chipIndex][34]->setValue(0x00000000);
-  registerMap[chipIndex][35]->setValue(0x00000000);
-  registerMap[chipIndex][36]->setValue(0x00000000);
-  registerMap[chipIndex][37]->setValue(0x00000000);
-  registerMap[chipIndex][38]->setValue(0x00000000);
+  for (unsigned int iReg=ABCStarRegister::CREG0; iReg<=ABCStarRegister::CREG6; iReg++)
+    registerMap[chipIndex][iReg]->setValue(0x00000000);
 
   ////# Input (Mask) regs
-  registerMap[chipIndex][16]->setValue(0x00000000);
-  registerMap[chipIndex][17]->setValue(0x00000000);
-  registerMap[chipIndex][18]->setValue(0x00000000);
-  registerMap[chipIndex][19]->setValue(0x00000000);
-  registerMap[chipIndex][20]->setValue(0x00000000);
-  registerMap[chipIndex][21]->setValue(0x00000000);
-  registerMap[chipIndex][22]->setValue(0x00000000);
-  registerMap[chipIndex][23]->setValue(0x00000000);
+  for (unsigned int iReg=ABCStarRegister::MaskInput0; iReg<=ABCStarRegister::MaskInput7; iReg++)
+    registerMap[chipIndex][iReg]->setValue(0x00000000);
 
 
   ////# Calibration Enable regs
-  for(int i=104; i<112;i++)
-    registerMap[chipIndex][i]->setValue(0xFFFFFFFF);
+  for (unsigned int iReg=ABCStarRegister::CalREG0; iReg<=ABCStarRegister::CalREG7; iReg++)
+    registerMap[chipIndex][iReg]->setValue(0xFFFFFFFF);
 
 
 
@@ -241,7 +216,7 @@ void StarCfg::configure_ABC_Registers(int chipID) {
   ////# 256 TrimDac regs 4-bit lsb
   int channel=0;
 
-  for(int i=64; i<96;i++){
+  for(int i=ABCStarRegister::TrimDAC0; i<=ABCStarRegister::TrimDAC31;i++){
   	registerMap[chipIndex][i]->setValue(0xFFFFFFFF);
 
   	int nthStartBit = 0;
@@ -258,7 +233,7 @@ void StarCfg::configure_ABC_Registers(int chipID) {
 
   ////# 256 TrimDac regs 1-bit msb
   channel = 0;
-  for(int i=96; i<104;i++){
+  for(int i=ABCStarRegister::TrimDAC32; i<=ABCStarRegister::TrimDAC39;i++){
    	registerMap[chipIndex][i]->setValue(0x00000000);
    	for(int j=0; j<32;j++){
    		std::string trimDAC_name = "trimdac_1msb_"+std::to_string(channel);

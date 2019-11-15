@@ -22,6 +22,7 @@
 
 //Different HCC and ABC registers that can be used
 BETTER_ENUM(HCCStarRegister, int, Pulse=16, Delay1=32, Delay2=33, Delay3=34, PLL1=35, PLL2=36, PLL3=37, DRV1=38, DRV2=39, ICenable=40, OPmode=41, OPmodeC=42, Cfg1=43, Cfg2=44, ExtRst=45, ExtRstC=46, ErrCfg=47, ADCcfg=48)
+BETTER_ENUM(ABCStarRegister, int, SCReg=0, ADCS1=1, ADCS2=2, ADCS3=3, ADCS4=4, ADCS5=5, ADCS6=6, ADCS7=7, MaskInput0=16, MaskInput1=17, MaskInput2=18, MaskInput3=19, MaskInput4=20, MaskInput5=21, MaskInput6=22, MaskInput7=23, CREG0=32, CREG1=33, CREG2=34, CREG3=35, CREG4=36, CREG5=37, CREG6=38, TrimDAC0=64, TrimDAC1=65, TrimDAC2=66, TrimDAC3=67, TrimDAC4=68, TrimDAC5=69, TrimDAC6=70, TrimDAC7=71, TrimDAC8=72, TrimDAC9=73, TrimDAC10=74, TrimDAC11=75, TrimDAC12=76, TrimDAC13=77, TrimDAC14=78, TrimDAC15=79, TrimDAC16=80, TrimDAC17=81, TrimDAC18=82, TrimDAC19=83, TrimDAC20=84, TrimDAC21=85, TrimDAC22=86, TrimDAC23=87, TrimDAC24=88, TrimDAC25=89, TrimDAC26=90, TrimDAC27=91, TrimDAC28=92, TrimDAC29=93, TrimDAC30=94, TrimDAC31=95, TrimDAC32=96, TrimDAC33=97, TrimDAC34=98, TrimDAC35=99, TrimDAC36=100, TrimDAC37=101, TrimDAC38=102, TrimDAC39=103, CalREG0=104, CalREG1=105, CalREG2=106, CalREG3=107, CalREG4=108, CalREG5=109, CalREG6=110, CalREG7=111)
 //Different HCC and ABC subregisters that can be used for configuration, scans, etc.
 ////NOTE: If the name is changed here, make sure the corresponding subregister name is also changed in the config json file.
 BETTER_ENUM(HCCStarSubRegister, int, NOTHING)
