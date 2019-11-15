@@ -12,12 +12,18 @@
 #include <iomanip>
 #include <fstream>
 #include <cmath>
+#include <tuple>
 #include "BitOps.h"
 
 #include "FrontEnd.h"
 #include "storage.hpp"
+#include "enum.h"
 
 
+//Different HCC and ABC subregisters that can be used for configuration, scans, etc.
+////NOTE: If the name is changed here, make sure the corresponding subregister name is also changed in the config json file.
+BETTER_ENUM(HCCStarSubRegister, int, NOTHING)
+BETTER_ENUM(ABCStarSubRegister, int, BVREF=1, BIREF, B8BREF, BTRANGE, BVT, COMBIAS, BIFEED, BIPRE, STR_DEL_R, STR_DEL, BCAL, BCAL_RANGE, ADC_BIAS, ADC_CH, ADC_ENABLE, D_S, D_LOW, D_EN_CTRL, BTMUX, BTMUXD, A_S, A_EN_CTRL, TEST_PULSE_ENABLE, ENCOUNT, MASKHPR, PR_ENABLE, LP_ENABLE, RRMODE, TM, TESTPATT_ENABLE, TESTPATT1, TESTPATT2, CURRDRIV, CALPULSE_ENABLE, CALPULSE_POLARITY, LATENCY, BCFLAG_ENABLE, BCOFFSET, DETMODE, MAX_CLUSTER, MAX_CLUSTER_ENABLE, EN_CLUSTER_EMPTY, EN_CLUSTER_FULL, EN_CLUSTER_OVFL, EN_REGFIFO_EMPTY, EN_REGFIFO_FULL, EN_REGFIFO_OVFL, EN_LPFIFO_EMPTY, EN_LPFIFO_FULL, EN_PRFIFO_EMPTY, EN_PRFIFO_FULL, EN_LCB_LOCKED, EN_LCB_DECODE_ERR, EN_LCB_ERRCNT_OVFL, EN_LCB_SCMD_ERR, DOFUSE, LCB_ERRCOUNT_THR)
 
 
 class SubRegister{
@@ -176,19 +182,22 @@ class StarCfg : public FrontEndCfg, public Register{
 
 
   void setSubRegisterValue(int chipIndex, std::string subRegName, uint32_t value) {
-    if (subRegisterMap_all[chipIndex].find(subRegName) != subRegisterMap_all[chipIndex].end()) {
-      subRegisterMap_all[chipIndex][subRegName]->updateValue(value);
-    } else {
+    if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
+      hccSubRegisterMap_all[HCCStarSubRegister::_from_string(subRegName.c_str())]->updateValue(value);
+    } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
+      abcSubRegisterMap_all[chipIndex][ABCStarSubRegister::_from_string(subRegName.c_str())]->updateValue(value);
+    }else {
       std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
     }
   }
 
 
   uint32_t getSubRegisterValue(int chipIndex, std::string subRegName) {
-    if (subRegisterMap_all[chipIndex].find(subRegName) != subRegisterMap_all[chipIndex].end()) {
-
-      return subRegisterMap_all[chipIndex][subRegName]->getValue();
-    } else {
+    if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
+      return hccSubRegisterMap_all[HCCStarSubRegister::_from_string(subRegName.c_str())]->getValue();
+    } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
+      return abcSubRegisterMap_all[chipIndex][ABCStarSubRegister::_from_string(subRegName.c_str())]->getValue();
+    }else {
       std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
     }
     return 0;
@@ -196,9 +205,11 @@ class StarCfg : public FrontEndCfg, public Register{
 
 
   int getSubRegisterParentAddr(int chipIndex, std::string subRegName) {
-    if (subRegisterMap_all[chipIndex].find(subRegName) != subRegisterMap_all[chipIndex].end()) {
-      return subRegisterMap_all[chipIndex][subRegName]->getParentRegAddress();
-    } else {
+    if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
+      return hccSubRegisterMap_all[HCCStarSubRegister::_from_string(subRegName.c_str())]->getParentRegAddress();
+    } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
+      return abcSubRegisterMap_all[chipIndex][ABCStarSubRegister::_from_string(subRegName.c_str())]->getParentRegAddress();
+    }else {
       std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
     }
     return 0;
@@ -206,9 +217,11 @@ class StarCfg : public FrontEndCfg, public Register{
 
 
   uint32_t getSubRegisterParentValue(int chipIndex, std::string subRegName) {
-    if (subRegisterMap_all[chipIndex].find(subRegName) != subRegisterMap_all[chipIndex].end()) {
-      return subRegisterMap_all[chipIndex][subRegName]->getParentRegValue();
-    } else {
+    if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
+      return hccSubRegisterMap_all[HCCStarSubRegister::_from_string(subRegName.c_str())]->getParentRegValue();
+    } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
+      return abcSubRegisterMap_all[chipIndex][ABCStarSubRegister::_from_string(subRegName.c_str())]->getParentRegValue();
+    }else {
       std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
     }
     return 0;
@@ -245,6 +258,7 @@ class StarCfg : public FrontEndCfg, public Register{
   int m_nABC = 0;
 
 
+
  protected:
   const unsigned int indexForABCchipID(unsigned int chipID) {return std::distance(m_ABCchipIDs.begin(), std::find(m_ABCchipIDs.begin(), m_ABCchipIDs.end(), chipID)) + 1;};
   void addABCchipID(unsigned int chipID) { m_ABCchipIDs.push_back(chipID);};
@@ -256,8 +270,10 @@ class StarCfg : public FrontEndCfg, public Register{
   std::vector< Register > AllReg_List;
   //This is a 2D map of each register to the chip index (0 for HCC, iABC+1 for ABCs) and address.  For example registerMap[chip index][addr]
   std::map<unsigned, std::map<unsigned, Register*> >registerMap; //Maps register address
-  //This is a 2D map of each subregister to the chip index and subregister name.  For example subRegisterMap_all[chip index][NAME]
-  std::map<unsigned, std::map<std::string, SubRegister*> > subRegisterMap_all;   //register record
+  //This is a 2D map of each subregister to the chip index and HCC subregister name.  For example hccSubRegisterMap_all[NAME]
+  std::map<HCCStarSubRegister, SubRegister*> hccSubRegisterMap_all;   //register record
+  //This is a 2D map of each subregister to the chip index and ABC subregister name.  For example abcSubRegisterMap_all[chip index][NAME]
+  std::map<unsigned, std::map<ABCStarSubRegister, SubRegister*> > abcSubRegisterMap_all;   //register record
 
 
   //This is a 2D map of each trimDac_32b register to the chip index and trimDAC_4LSB register name.  For example trimDAC4LSB_RegisterMap_all[chip index][NAME]
@@ -271,6 +287,13 @@ class StarCfg : public FrontEndCfg, public Register{
   std::vector<unsigned int> m_ABCchipIDs;
   float m_injCap; //fF
   std::array<float, 4> m_vcalPar; //mV, [0] + [1]*x + [2]*x^2 + [3]*x^3
+
+  //Definitions of subregisters (enum/name, register number, first bit index, size in number of bits)
+  typedef std::tuple<ABCStarSubRegister, unsigned int, unsigned int, unsigned int> abcsubrefdef;
+  static std::vector<abcsubrefdef> s_abcsubregdefs;
+  typedef std::tuple<HCCStarSubRegister, unsigned int, unsigned int, unsigned int> hccsubrefdef;
+  static std::vector<hccsubrefdef> s_hccsubregdefs;
+  static void defineSubRegisters();
 
 };
 

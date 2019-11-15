@@ -6,10 +6,12 @@
 
 #include "StarCfg.h"
 
-StarCfg::StarCfg() {}
+StarCfg::StarCfg() { defineSubRegisters(); }
 
 StarCfg::~StarCfg() {}
 
+typedef std::tuple<ABCStarSubRegister, unsigned int, unsigned int, unsigned int> abcsubrefdef;
+std::vector<abcsubrefdef> StarCfg::s_abcsubregdefs = std::vector<abcsubrefdef>();
 
 double StarCfg::toCharge(double vcal) {
     // Q = C*V
@@ -27,6 +29,70 @@ unsigned StarCfg::toVcal(double charge) {
 //    unsigned vcal = (unsigned) round((V)/(m_vcalPar[1]*Unit::Milli)); // Note: no offset applied
 //    return vcal;
 }
+
+
+
+void StarCfg::defineSubRegisters() {
+   if (s_abcsubregdefs.size()) return;
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BVREF			,1	,0	,5));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BIREF			,1	,8	,5));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::B8BREF			,1	,16	,5));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BTRANGE		,1	,24	,5));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BVT			,2	,0	,8));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::COMBIAS		,2	,8	,5));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BIFEED			,2	,16	,5));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BIPRE			,2	,24	,5));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::STR_DEL_R		,3	,0	,2));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::STR_DEL		,3	,8	,6));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BCAL			,3	,16	,9));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BCAL_RANGE		,3	,25	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::ADC_BIAS		,4	,0	,4));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::ADC_CH			,4	,4	,4));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::ADC_ENABLE		,4	,8	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::D_S			,6	,0	,15));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::D_LOW			,6	,15	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::D_EN_CTRL		,6	,16	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BTMUX			,7	,0	,14));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BTMUXD			,7	,14	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::A_S			,7	,15	,15));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::A_EN_CTRL		,7	,31	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::TEST_PULSE_ENABLE	,32	,4	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::ENCOUNT		,32	,5	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::MASKHPR		,32	,6	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::PR_ENABLE		,32	,8	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::LP_ENABLE		,32	,9	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::RRMODE			,32	,10	,2));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::TM			,32	,16	,2));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::TESTPATT_ENABLE	,32	,18	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::TESTPATT1		,32	,20	,4));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::TESTPATT2		,32	,24	,4));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::CURRDRIV		,33	,0	,3));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::CALPULSE_ENABLE	,33	,4	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::CALPULSE_POLARITY	,33	,5	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::LATENCY		,34	,0	,9));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BCFLAG_ENABLE		,34	,23	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BCOFFSET		,34	,24	,8));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::DETMODE		,35	,0	,2));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::MAX_CLUSTER		,35	,12	,6));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::MAX_CLUSTER_ENABLE	,35	,18	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_CLUSTER_EMPTY	,36	,0	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_CLUSTER_FULL	,36	,1	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_CLUSTER_OVFL	,36	,2	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_REGFIFO_EMPTY	,36	,3	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_REGFIFO_FULL	,36	,4	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_REGFIFO_OVFL	,36	,5	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_LPFIFO_EMPTY	,36	,6	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_LPFIFO_FULL		,36	,7	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_PRFIFO_EMPTY	,36	,8	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_PRFIFO_FULL		,36	,9	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_LCB_LOCKED		,36	,10	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_LCB_DECODE_ERR	,36	,11	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_LCB_ERRCNT_OVFL	,36	,12	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_LCB_SCMD_ERR	,36	,13	,1));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::DOFUSE			,37	,0	,24));
+   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::LCB_ERRCOUNT_THR	,38	,0	,16) );
+}
+
 
 void StarCfg::initRegisterMaps() {
 
@@ -66,7 +132,6 @@ void StarCfg::configure_HCC_Registers() {
 
 
   ////  Register* this_Reg = registerMap[0][addr];
-  std::cout << "OLIVIERandJAC are in configure_HCC_Registers()" << std::endl;
   registerMap[0][16]->setValue(0x00000000);
   registerMap[0][32]->setValue(0x00000000);
   registerMap[0][33]->setValue(0x00000000);
@@ -89,14 +154,14 @@ void StarCfg::configure_HCC_Registers() {
 
 //TODO ###declare subregisters for HCC
 
-  //    subRegisterMap_all[0]["CFD_BC_FINEDELAY"] = registerMap[0][]->addSubRegister("CFD_BC_FINEDELAY",   ,  );
-  //    subRegisterMap_all[0]["CFD_BC_COARSEDELAY"] = registerMap[0][]->addSubRegister("CFD_BC_COARSEDELAY",   ,  );
-  //    subRegisterMap_all[0][""] = registerMap[0][]->addSubRegister("",   ,  );
-  //    subRegisterMap_all[0][""] = registerMap[0][]->addSubRegister("",   ,  );
-  //    subRegisterMap_all[0][""] = registerMap[0][]->addSubRegister("",   ,  );
+  //    hccSubRegisterMap_all[0]["CFD_BC_FINEDELAY"] = registerMap[0][]->addSubRegister("CFD_BC_FINEDELAY",   ,  );
+  //    hccSubRegisterMap_all[0]["CFD_BC_COARSEDELAY"] = registerMap[0][]->addSubRegister("CFD_BC_COARSEDELAY",   ,  );
+  //    hccSubRegisterMap_all[0][""] = registerMap[0][]->addSubRegister("",   ,  );
+  //    hccSubRegisterMap_all[0][""] = registerMap[0][]->addSubRegister("",   ,  );
+  //    hccSubRegisterMap_all[0][""] = registerMap[0][]->addSubRegister("",   ,  );
 
 
-  //    subRegisterMap_all[0][""] = registerMap[0][]->addSubRegister("",   ,  );
+  //    hccSubRegisterMap_all[0][""] = registerMap[0][]->addSubRegister("",   ,  );
 
 
 
@@ -167,104 +232,12 @@ void StarCfg::configure_ABC_Registers(int chipID) {
 
 
 
+  for (auto def : s_abcsubregdefs) {
+    std::string subregname = std::string((std::get<0>(def))._to_string());
+    abcSubRegisterMap_all[chipIndex][std::get<0>(def)] = registerMap[chipIndex][std::get<1>(def)]->addSubRegister(subregname, std::get<2>(def), std::get<3>(def));
+  }
 
-  ////#declare subregisters
-  ////NOTE: If the name is changed here, make sure the corresponding subregister name is also changed in the config json file.
-
-  //subRegister* addSubRegister(std::string subRegName="", unsigned bOffset=0, unsigned mask=0, bool msbRight=false){
-  //<subRegName, nthStartBit, nBit,isReversed?>
-
-  //	subRegisterMap_all[chipIndex]["RR_FORCE"] 	   	= registerMap[chipIndex][0]->addSubRegister("RR_FORCE",    		0, 1);
-  //	subRegisterMap_all[chipIndex]["WRITE_DISABLE"] 	= registerMap[chipIndex][0]->addSubRegister("WRITE_DISABLE",   	1, 1);
-  //	subRegisterMap_all[chipIndex]["STOP_HPR"] 		= registerMap[chipIndex][0]->addSubRegister("STOPHPR",   		2, 1);
-  //	subRegisterMap_all[chipIndex]["TEST_HPR"] 		= registerMap[chipIndex][0]->addSubRegister("TESTHPR",  		3, 1);
-  //	subRegisterMap_all[chipIndex]["EFUSEL"] 		= registerMap[chipIndex][0]->addSubRegister("EFUSEL",  		4, 1);
-  //	subRegisterMap_all[chipIndex]["LCB_ERRCNTCLR"] 	= registerMap[chipIndex][0]->addSubRegister("LCB_ERRCNTCLR",  	5, 1);
-
-
-
-  subRegisterMap_all[chipIndex]["BVREF"] 	= registerMap[chipIndex][1]->addSubRegister("BVREF",     0,  5);
-  subRegisterMap_all[chipIndex]["BIREF"] 	= registerMap[chipIndex][1]->addSubRegister("BIREF",     8,  5);
-  subRegisterMap_all[chipIndex]["B8BREF"] 	= registerMap[chipIndex][1]->addSubRegister("B8BREF",   16,  5);
-  subRegisterMap_all[chipIndex]["BTRANGE"] 	= registerMap[chipIndex][1]->addSubRegister("BTRANGE",  24,  5);
-
-
-  subRegisterMap_all[chipIndex]["BVT"] 		= registerMap[chipIndex][2]->addSubRegister("BVT",    	  0,  8);
-  subRegisterMap_all[chipIndex]["COMBIAS"] 	= registerMap[chipIndex][2]->addSubRegister("COMBIAS",   8,  5);
-  subRegisterMap_all[chipIndex]["BIFEED"] 	= registerMap[chipIndex][2]->addSubRegister("BIFEED",   16,  5);
-  subRegisterMap_all[chipIndex]["BIPRE"] 	= registerMap[chipIndex][2]->addSubRegister("BIPRE",  	 24,  5);
-
-
-  subRegisterMap_all[chipIndex]["STR_DEL_R"] = registerMap[chipIndex][3]->addSubRegister("STR_DEL_R",    0,  2);
-  subRegisterMap_all[chipIndex]["STR_DEL"] 	= registerMap[chipIndex][3]->addSubRegister("STR_DEL",    	 8,  6);
-  subRegisterMap_all[chipIndex]["BCAL"] 		= registerMap[chipIndex][3]->addSubRegister("BCAL",   		16,  9);
-  subRegisterMap_all[chipIndex]["BCAL_RANGE"] = registerMap[chipIndex][3]->addSubRegister("BCAL_RANGE",   25,  1);
-
-  subRegisterMap_all[chipIndex]["ADC_BIAS"] 	 = registerMap[chipIndex][4]->addSubRegister("ADC_BIAS",   0,  4);
-  subRegisterMap_all[chipIndex]["ADC_CH"] 	 = registerMap[chipIndex][4]->addSubRegister("ADC_CH",   	4,  4);
-  subRegisterMap_all[chipIndex]["ADC_ENABLE"] = registerMap[chipIndex][4]->addSubRegister("ADC_ENABLE", 8,  1);
-
-
-  subRegisterMap_all[chipIndex]["D_S"] 		= registerMap[chipIndex][6]->addSubRegister("D_S",    		0,  15);
-  subRegisterMap_all[chipIndex]["D_LOW"] 	= registerMap[chipIndex][6]->addSubRegister("D_LOW",   	15,  1);
-  subRegisterMap_all[chipIndex]["D_EN_CTRL"] = registerMap[chipIndex][6]->addSubRegister("D_EN_CTRL",   16,  1);
-
-
-  subRegisterMap_all[chipIndex]["BTMUX"] 	= registerMap[chipIndex][7]->addSubRegister("BTMUX",    	0,   14);
-  subRegisterMap_all[chipIndex]["BTMUXD"] 	= registerMap[chipIndex][7]->addSubRegister("BTMUXD",    	14,   1);
-  subRegisterMap_all[chipIndex]["A_S"] 		= registerMap[chipIndex][7]->addSubRegister("A_S",    		15,  15);
-  subRegisterMap_all[chipIndex]["A_EN_CTRL"] = registerMap[chipIndex][7]->addSubRegister("A_EN_CTRL",   31,   1);
-
-
-  subRegisterMap_all[chipIndex]["TEST_PULSE_ENABLE"]	= registerMap[chipIndex][32]->addSubRegister("TEST_PULSE_ENABLE", 4,  1);
-  subRegisterMap_all[chipIndex]["ENCOUNT"] 			= registerMap[chipIndex][32]->addSubRegister("ENCOUNT",         5,  1);
-  subRegisterMap_all[chipIndex]["MASKHPR"] 			= registerMap[chipIndex][32]->addSubRegister("MASKHPR",      	 6,  1);
-  subRegisterMap_all[chipIndex]["PR_ENABLE"] 		= registerMap[chipIndex][32]->addSubRegister("PR_ENABLE",  	 8,  1);
-  subRegisterMap_all[chipIndex]["LP_ENABLE"] 		= registerMap[chipIndex][32]->addSubRegister("LP_ENABLE",   	 9,  1);
-  subRegisterMap_all[chipIndex]["RRMODE"] 			= registerMap[chipIndex][32]->addSubRegister("RRMODE",   		10,  2);
-  subRegisterMap_all[chipIndex]["TM"] 				= registerMap[chipIndex][32]->addSubRegister("TM",  			16,  2);
-  subRegisterMap_all[chipIndex]["TESTPATT_ENABLE"] 	= registerMap[chipIndex][32]->addSubRegister("TESTPATT_ENABLE", 18,  1);
-  subRegisterMap_all[chipIndex]["TESTPATT1"] 		= registerMap[chipIndex][32]->addSubRegister("TESTPATT1",      20,  4);
-  subRegisterMap_all[chipIndex]["TESTPATT2"] 		= registerMap[chipIndex][32]->addSubRegister("TESTPATT2",   	24,  4);
-
-
-  subRegisterMap_all[chipIndex]["CURRDRIV"] 			= registerMap[chipIndex][33]->addSubRegister("CURRDRIV",         0,  3);
-  subRegisterMap_all[chipIndex]["CALPULSE_ENABLE"] 	= registerMap[chipIndex][33]->addSubRegister("CALPULSE_ENABLE",   4,  1);
-  subRegisterMap_all[chipIndex]["CALPULSE_POLARITY"] 	= registerMap[chipIndex][33]->addSubRegister("CALPULSE_POLARITY", 5,  1);
-
-
-  subRegisterMap_all[chipIndex]["LATENCY"] 		= registerMap[chipIndex][34]->addSubRegister("LATENCY",     	0,  9);
-  subRegisterMap_all[chipIndex]["BCFLAG_ENABLE"] 	= registerMap[chipIndex][34]->addSubRegister("BCFLAG_ENABLE",   23, 1);
-  subRegisterMap_all[chipIndex]["BCOFFSET"] 		= registerMap[chipIndex][34]->addSubRegister("BCOFFSET", 		24, 8);
-
-
-  subRegisterMap_all[chipIndex]["DETMODE"] 			 = registerMap[chipIndex][35]->addSubRegister("DETMODE",  	 0,  2);
-  subRegisterMap_all[chipIndex]["MAX_CLUSTER"] 		 = registerMap[chipIndex][35]->addSubRegister("MAX_CLUSTER", 12,  6);
-  subRegisterMap_all[chipIndex]["MAX_CLUSTER_ENABLE"] = registerMap[chipIndex][35]->addSubRegister("MAX_CLUSTER_ENABLE", 	18,  1);
-
-
-  subRegisterMap_all[chipIndex]["EN_CLUSTER_EMPTY"] 	= registerMap[chipIndex][36]->addSubRegister("EN_CLUSTER_EMPTY", 	0, 1);
-  subRegisterMap_all[chipIndex]["EN_CLUSTER_FULL"] 	= registerMap[chipIndex][36]->addSubRegister("EN_CLUSTER_FULL",	1, 1);
-  subRegisterMap_all[chipIndex]["EN_CLUSTER_OVFL"] 	= registerMap[chipIndex][36]->addSubRegister("EN_CLUSTER_OVFL",	2, 1);
-  subRegisterMap_all[chipIndex]["EN_REGFIFO_EMPTY"] 	= registerMap[chipIndex][36]->addSubRegister("EN_REGFIFO_EMPTY",	3, 1);
-  subRegisterMap_all[chipIndex]["EN_REGFIFO_FULL"] 	= registerMap[chipIndex][36]->addSubRegister("EN_REGFIFO_FULL",	4, 1);
-  subRegisterMap_all[chipIndex]["EN_REGFIFO_OVFL"] 	= registerMap[chipIndex][36]->addSubRegister("EN_REGFIFO_OVFL",	5, 1);
-  subRegisterMap_all[chipIndex]["EN_LPFIFO_EMPTY"] 	= registerMap[chipIndex][36]->addSubRegister("EN_LPFIFO_EMPTY",	6, 1);
-  subRegisterMap_all[chipIndex]["EN_LPFIFO_FULL"] 	= registerMap[chipIndex][36]->addSubRegister("EN_LPFIFO_FULL",		7, 1);
-  subRegisterMap_all[chipIndex]["EN_PRFIFO_EMPTY"] 	= registerMap[chipIndex][36]->addSubRegister("EN_PRFIFO_EMPTY",	8, 1);
-  subRegisterMap_all[chipIndex]["EN_PRFIFO_FULL"] 	= registerMap[chipIndex][36]->addSubRegister("EN_PRFIFO_FULL",		9, 1);
-  subRegisterMap_all[chipIndex]["EN_LCB_LOCKED"] 	= registerMap[chipIndex][36]->addSubRegister("EN_LCB_LOCKED",		10, 1);
-  subRegisterMap_all[chipIndex]["EN_LCB_DECODE_ERR"] = registerMap[chipIndex][36]->addSubRegister("EN_LCB_DECODE_ERR",	11, 1);
-  subRegisterMap_all[chipIndex]["EN_LCB_ERRCNT_OVFL"]= registerMap[chipIndex][36]->addSubRegister("EN_LCB_ERRCNT_OVFL",	12, 1);
-  subRegisterMap_all[chipIndex]["EN_LCB_SCMD_ERR"] 	= registerMap[chipIndex][36]->addSubRegister("EN_LCB_SCMD_ERR",	13, 1);
-
-  subRegisterMap_all[chipIndex]["DOFUSE"] = registerMap[chipIndex][37]->addSubRegister("DOFUSE", 0, 24 );
-
-  subRegisterMap_all[chipIndex]["LCB_ERRCOUNT_THR"] = registerMap[chipIndex][38]->addSubRegister("LCB_ERRCOUNT_THR", 0, 16);
-
-  //	subRegisterMap_all[chipIndex][""] = registerMap[chipIndex][36]->addSubRegister("",, );
-
-/// TODO not sure if this is a good implementation; to-be-optimized.
+  /// TODO not sure if this is a good implementation; to-be-optimized.
   /// registerMap is quite large if it includes trimdac, that's 10chips x (256+256) = 5120
 
 
