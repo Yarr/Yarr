@@ -36,13 +36,15 @@ Rd53aLinPixelModel::~Rd53aLinPixelModel()
 }
 
 // functions for modeling pixel responses
-float Rd53aLinPixelModel::calculateThreshold(uint32_t VthresholdLin)
+float Rd53aLinPixelModel::calculateThreshold(uint32_t VthresholdLin, int TDAC)
 {
-	float threshold = VthresholdLin_gauss + VthresholdLin;
+  float modelVth = VthresholdLin_gauss/100. * VthresholdLin;
+  float modelTDAC = (TDAC - 8) * 3;
+  float threshold = modelVth - modelTDAC;
 
-	if (threshold < 0) threshold = 0;
+  if (threshold < 0) threshold = 0;
 
-	return threshold;
+  return threshold;
 }
 
 float Rd53aLinPixelModel::calculateNoise()
@@ -52,5 +54,5 @@ float Rd53aLinPixelModel::calculateNoise()
 
 uint32_t Rd53aLinPixelModel::calculateToT(float charge)
 {
-	return 1;
+  return uint32_t(1.51625+7.29853*charge/10000.);
 }

@@ -21,8 +21,8 @@ class RogueTxCore : virtual public TxCore {
 	std::shared_ptr<RogueCom> getCom() {return m_com;}
 
         void writeFifo(uint32_t value);
-        void releaseFifo() {m_com->releaseFifo();} // Add some padding
-		void setForceRelaseTxfifo(bool enable=true) { m_com->setForceRelaseTxfifo(enable);}
+        void releaseFifo() {m_com->setTxChannel(m_txChannel);m_com->releaseFifo();} // Add some padding
+		void setForceRelaseTxfifo(bool enable=true) { m_com->setTxChannel(m_txChannel);m_com->setForceRelaseTxfifo(enable);}
         
         void setCmdEnable(uint32_t value) { }
         void setCmdEnable(std::vector<uint32_t>) {}
@@ -30,7 +30,7 @@ class RogueTxCore : virtual public TxCore {
         void maskCmdEnable(uint32_t value, uint32_t mask) {}
 
         void setTrigEnable(uint32_t value);
-        uint32_t getTrigEnable() {return  trigProcRunning || !m_com->isEmpty();}
+        uint32_t getTrigEnable() {m_com->setTxChannel(m_txChannel);return  trigProcRunning || !m_com->isEmpty();}
         void maskTrigEnable(uint32_t value, uint32_t mask) {}
 
         void setTrigConfig(enum TRIG_CONF_VALUE cfg) {m_trigCfg = cfg;} 
@@ -52,10 +52,12 @@ class RogueTxCore : virtual public TxCore {
 		}
 
         bool isCmdEmpty() {
+			m_com->setTxChannel(m_txChannel);
             bool rtn = m_com->isEmpty();
             return rtn;
         }
         bool isTrigDone() {
+			m_com->setTxChannel(m_txChannel);
 	  //	  bool rtn = triggerProc.joinable() && m_com->isEmpty();
 	  bool rtn = !trigProcRunning &&  m_com->isEmpty();
 	  return rtn;
@@ -66,8 +68,10 @@ class RogueTxCore : virtual public TxCore {
         void setTriggerLogicMask(uint32_t mask) {}
         void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) {}
         void resetTriggerLogic() {}
+		void setTxChannel(uint32_t txChannel){m_txChannel=txChannel;} 
 
     private:
+		uint32_t m_txChannel;
 	std::shared_ptr<RogueCom> m_com;
 
         std::mutex accMutex;

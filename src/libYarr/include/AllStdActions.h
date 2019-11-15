@@ -9,7 +9,7 @@
 
 #include "LoopActionBase.h"
 #include <string>
-
+#include <functional>
 namespace StdDict {
     bool registerLoopAction(std::string name,
                             std::function<std::unique_ptr<LoopActionBase>()> f);

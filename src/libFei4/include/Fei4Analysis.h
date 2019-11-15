@@ -109,8 +109,6 @@ class Fei4Analysis : public DataProcessor {
 
         AnalysisAlgorithm* getLastAna() {return algorithms.back();}
             
-        static bool histogrammerDone;
-
     private:
         Bookkeeper *bookie;
         unsigned channel;
