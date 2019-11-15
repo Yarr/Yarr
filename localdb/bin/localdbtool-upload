@@ -656,6 +656,9 @@ def __upload_comp(comp_path):
     status = register.__conn_cfg(comp_path)
     if status==True:
         logger.info('Completed the upload successfuly.')
+        logger.info('')
+        logger.info('You can retrieve config files from Local DB by ')
+        logger.info('       localdbtool-retrieve pull --chip <SERIAL NUMBER>')
     else:
         logger.info('Already registered.')
 
