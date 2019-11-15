@@ -62,9 +62,9 @@ class StarCfg : public FrontEndCfg {
 
   void setSubRegisterValue(int chipIndex, std::string subRegName, uint32_t value) {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
-      return m_hcc.setSubRegisterValue(subRegName, value);
+      hccSubRegisterMap_all[HCCStarSubRegister::_from_string(subRegName.c_str())]->updateValue(value);
     } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
-      return abcFromIndex(chipIndex).setSubRegisterValue(subRegName, value);
+      abcSubRegisterMap_all[chipIndex][ABCStarSubRegister::_from_string(subRegName.c_str())]->updateValue(value);
     }else {
       std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
     }
@@ -73,9 +73,9 @@ class StarCfg : public FrontEndCfg {
 
   uint32_t getSubRegisterValue(int chipIndex, std::string subRegName) {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
-      return m_hcc.getSubRegisterValue(subRegName);
+      return hccSubRegisterMap_all[HCCStarSubRegister::_from_string(subRegName.c_str())]->getValue();
     } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
-      return abcFromIndex(chipIndex).getSubRegisterValue(subRegName);
+      return abcSubRegisterMap_all[chipIndex][ABCStarSubRegister::_from_string(subRegName.c_str())]->getValue();
     }else {
       std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
     }
@@ -84,9 +84,9 @@ class StarCfg : public FrontEndCfg {
 
   int getSubRegisterParentAddr(int chipIndex, std::string subRegName) {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
-      return m_hcc.getSubRegisterParentAddr(subRegName);
+      return hccSubRegisterMap_all[HCCStarSubRegister::_from_string(subRegName.c_str())]->getParentRegAddress();
     } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
-      return AbcStarRegInfo::instance()->getSubRegisterParentAddr(subRegName);
+      return abcSubRegisterMap_all[chipIndex][ABCStarSubRegister::_from_string(subRegName.c_str())]->getParentRegAddress();
     }else {
       std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
     }
@@ -96,9 +96,9 @@ class StarCfg : public FrontEndCfg {
 
   uint32_t getSubRegisterParentValue(int chipIndex, std::string subRegName) {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
-      return m_hcc.getSubRegisterParentValue(subRegName);
+      return hccSubRegisterMap_all[HCCStarSubRegister::_from_string(subRegName.c_str())]->getParentRegValue();
     } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
-      return abcFromIndex(chipIndex).getSubRegisterParentValue(subRegName);
+      return abcSubRegisterMap_all[chipIndex][ABCStarSubRegister::_from_string(subRegName.c_str())]->getParentRegValue();
     }else {
       std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
     }
