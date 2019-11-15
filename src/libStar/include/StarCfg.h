@@ -20,6 +20,8 @@
 #include "enum.h"
 
 
+//Different HCC and ABC registers that can be used
+BETTER_ENUM(HCCStarRegister, int, Pulse=16, Delay1=32, Delay2=33, Delay3=34, PLL1=35, PLL2=36, PLL3=37, DRV1=38, DRV2=39, ICenable=40, OPmode=41, OPmodeC=42, Cfg1=43, Cfg2=44, ExtRst=45, ExtRstC=46, ErrCfg=47, ADCcfg=48)
 //Different HCC and ABC subregisters that can be used for configuration, scans, etc.
 ////NOTE: If the name is changed here, make sure the corresponding subregister name is also changed in the config json file.
 BETTER_ENUM(HCCStarSubRegister, int, NOTHING)

@@ -117,12 +117,9 @@ void StarCfg::initRegisterMaps() {
 
 void StarCfg::configure_HCC_Registers() {
 
-  //List of all HCC Register addresses we will create
-  std::vector<int> HCC_Register_Addresses = {16, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48};
-
-  for (unsigned int iReg = 0; iReg < HCC_Register_Addresses.size(); ++iReg){
-
-    int addr = HCC_Register_Addresses.at(iReg);
+  //all HCC Register addresses we will create
+  for (HCCStarRegister reg : HCCStarRegister::_values()) {
+    int addr = reg;
     Register tmp_Reg = Register(addr, 0 );
 
     AllReg_List.push_back( tmp_Reg ); //Save it to the list
@@ -132,24 +129,24 @@ void StarCfg::configure_HCC_Registers() {
 
 
   ////  Register* this_Reg = registerMap[0][addr];
-  registerMap[0][16]->setValue(0x00000000);
-  registerMap[0][32]->setValue(0x00000000);
-  registerMap[0][33]->setValue(0x00000000);
-  registerMap[0][34]->setValue(0x00000000);
-  registerMap[0][35]->setValue(0x00ff3b05);
-  registerMap[0][36]->setValue(0x00000000);
-  registerMap[0][37]->setValue(0x00000004);
-  registerMap[0][38]->setValue(0x00000000);
-  registerMap[0][39]->setValue(0x00000014);
-  registerMap[0][40]->setValue(0x00000000);
-  registerMap[0][41]->setValue(0x00020001);
-  registerMap[0][42]->setValue(0x00020001);
-  registerMap[0][43]->setValue(0x00000000);
-  registerMap[0][44]->setValue(0x0000018e);
-  registerMap[0][45]->setValue(0x00710003);
-  registerMap[0][46]->setValue(0x00710003);
-  registerMap[0][47]->setValue(0x00000000);
-  registerMap[0][48]->setValue(0x00406600);
+  registerMap[0][HCCStarRegister::Pulse]->setValue(0x00000000);
+  registerMap[0][HCCStarRegister::Delay1]->setValue(0x00000000);
+  registerMap[0][HCCStarRegister::Delay2]->setValue(0x00000000);
+  registerMap[0][HCCStarRegister::Delay3]->setValue(0x00000000);
+  registerMap[0][HCCStarRegister::PLL1]->setValue(0x00ff3b05);
+  registerMap[0][HCCStarRegister::PLL2]->setValue(0x00000000);
+  registerMap[0][HCCStarRegister::PLL3]->setValue(0x00000004);
+  registerMap[0][HCCStarRegister::DRV1]->setValue(0x00000000);
+  registerMap[0][HCCStarRegister::DRV2]->setValue(0x00000014);
+  registerMap[0][HCCStarRegister::ICenable]->setValue(0x00000000);
+  registerMap[0][HCCStarRegister::OPmode]->setValue(0x00020001);
+  registerMap[0][HCCStarRegister::OPmodeC]->setValue(0x00020001);
+  registerMap[0][HCCStarRegister::Cfg1]->setValue(0x00000000);
+  registerMap[0][HCCStarRegister::Cfg2]->setValue(0x0000018e);
+  registerMap[0][HCCStarRegister::ExtRst]->setValue(0x00710003);
+  registerMap[0][HCCStarRegister::ExtRstC]->setValue(0x00710003);
+  registerMap[0][HCCStarRegister::ErrCfg]->setValue(0x00000000);
+  registerMap[0][HCCStarRegister::ADCcfg]->setValue(0x00406600);
 
 
 //TODO ###declare subregisters for HCC
