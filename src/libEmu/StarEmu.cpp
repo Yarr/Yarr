@@ -122,7 +122,7 @@ std::vector<uint8_t> StarEmu::buildPhysicsPacket(
         for ( uint16_t cluster : m_clusters[ichannel]) {
             // cluster bits:
             // "0" + 4-bit channel number + 11-bit cluster dropping the last cluster bit
-            uint16_t clusterbits = (ichannel & 0xf)<<11 | (cluster & 0xfff)>>1;
+            uint16_t clusterbits = (ichannel & 0xf)<<11 | cluster & 0x7ff;
             data_packets.push_back((clusterbits>>8) & 0xff);
             data_packets.push_back(clusterbits & 0xff);
         }
@@ -479,7 +479,7 @@ void StarEmu::getClusters(int test_mode)
          0x6f, 0xed};
     */
     std::vector<uint16_t> a_fixed_cluster_pattern =
-        {0xf1e, 0x71e, 0xf5e, 0x75e, 0xf9e, 0x79e, 0xfdc, 0x7dd};
+        {0x78f, 0x38f, 0x7af, 0x3af, 0x7cf, 0x3cf, 0x7ee, 0xbee};
 
     for (int ich=0; ich < m_nABCs; ++ich)
         m_clusters.push_back(a_fixed_cluster_pattern);
