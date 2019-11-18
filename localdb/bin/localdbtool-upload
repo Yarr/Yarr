@@ -159,7 +159,7 @@ def __init(db_cfg):
 
     if db_cfg=={}:
         logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
-        logger.error('Set it by YARR/localdb/setting/setup_db.sh')
+        logger.error('Set it by YARR/localdb/setup_db.sh')
         logger.info('-----------------------')
         logger.debug('=======================')
         sys.exit(1)
@@ -257,9 +257,9 @@ def __init(db_cfg):
     localdb['componentTestRun'].create_index([('name', DESCENDING), ('testRun', DESCENDING)])
 
     register.__set_localdb(localdb)
-    register.__set_list(db_cfg['stage'], 'stage')
-    register.__set_list(db_cfg['environment'], 'environment')
-    register.__set_list(db_cfg['component'], 'component')
+    register.__set_list(db_cfg.get('stage',[]), 'stage')
+    register.__set_list(db_cfg.get('environment',[]), 'environment')
+    register.__set_list(db_cfg.get('component',[]), 'component')
     #register.__global.force = args.force
 
     logger.info('---> Connection is GOOD.')
@@ -301,7 +301,7 @@ def __set_cache(cache_dir):
         db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
         if db_cfg=={}:
             logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
-            logger.error('Set it by YARR/localdb/setting/setup_db.sh')
+            logger.error('Set it by YARR/localdb/setup_db.sh')
             logger.info('-----------------------')
             logger.debug('=======================')
             sys.exit(1)
@@ -360,6 +360,14 @@ def __write_scan(cache_dir, scanlog_json):
     site_json = scanlog_json.get('siteCfg',{})
     if args.site:
         site_json.update(register.toJson(args.site))
+    if site_json=={}:
+        site_json = register.toJson('{0}/.yarr/localdb/{1}_site.json'.format(home, hostname))
+        if site_json=={}:
+            logger.error('There is no default site config in {}/.yarr/localdb'.format(home))
+            logger.error('Set it by YARR/localdb/setup_db.sh')
+            logger.info('-----------------------')
+            logger.debug('=======================')
+            sys.exit(1)
     site_oid = register.__set_site(site_json)
 
     ######
@@ -370,6 +378,14 @@ def __write_scan(cache_dir, scanlog_json):
     user_json = scanlog_json.get('userCfg',{})
     if args.user:
         user_json.update(register.toJson(args.user))
+    if user_json=={}:
+        user_json = register.toJson('{0}/.yarr/localdb/user.json'.format(home))
+        if user_json=={}:
+            logger.error('There is no default user config in {}/.yarr/localdb'.format(home))
+            logger.error('Set it by YARR/localdb/setup_db.sh')
+            logger.info('-----------------------')
+            logger.debug('=======================')
+            sys.exit(1)
     user_oid = register.__set_user(user_json)
 
     #############
@@ -481,6 +497,14 @@ def __write_dcs(cache_dir, dcslog_json):
     site_json = dcslog_json.get('siteCfg',{})
     if args.site:
         site_json.update(register.toJson(args.site))
+    if site_json=={}:
+        site_json = register.toJson('{0}/.yarr/localdb/{1}_site.json'.format(home, hostname))
+        if site_json=={}:
+            logger.error('There is no default site config in {}/.yarr/localdb'.format(home))
+            logger.error('Set it by YARR/localdb/setup_db.sh')
+            logger.info('-----------------------')
+            logger.debug('=======================')
+            sys.exit(1)
     site_oid = register.__set_site(site_json)
 
     ######
@@ -491,6 +515,14 @@ def __write_dcs(cache_dir, dcslog_json):
     user_json = dcslog_json.get('userCfg',{})
     if args.user:
         user_json.update(register.toJson(args.user))
+    if user_json=={}:
+        user_json = register.toJson('{0}/.yarr/localdb/user.json'.format(home))
+        if user_json=={}:
+            logger.error('There is no default user config in {}/.yarr/localdb'.format(home))
+            logger.error('Set it by YARR/localdb/setup_db.sh')
+            logger.info('-----------------------')
+            logger.debug('=======================')
+            sys.exit(1)
     user_oid = register.__set_user(user_json)
 
     conn_json = register.__set_conn_cfg(dcslog_json.get('connectivity',{}), cache_dir)
@@ -605,7 +637,7 @@ def __upload_comp(comp_path):
         db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
         if db_cfg=={}:
             logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
-            logger.error('Set it by YARR/localdb/setting/setup_db.sh')
+            logger.error('Set it by YARR/localdb/setup_db.sh')
             logger.info('-----------------------')
             logger.debug('=======================')
             sys.exit(1)
@@ -626,6 +658,14 @@ def __upload_comp(comp_path):
     # If not, register site information by extracting mac address and hostname of the machine.
     # If the site information has already registered, this step will be skipped.
     site_json = register.toJson(args.site)
+    if site_json=={}:
+        site_json = register.toJson('{0}/.yarr/localdb/{1}_site.json'.format(home, hostname))
+        if site_json=={}:
+            logger.error('There is no default site config in {}/.yarr/localdb'.format(home))
+            logger.error('Set it by YARR/localdb/setup_db.sh')
+            logger.info('-----------------------')
+            logger.debug('=======================')
+            sys.exit(1)
     site_oid = register.__set_site(site_json)
     register.__check_site_data(site_oid)
 
@@ -635,6 +675,14 @@ def __upload_comp(comp_path):
     # If not, register user information by extracting user name and hostname of the machine.
     # If the user information has already registered, this step will be skipped.
     user_json = register.toJson(args.user)
+    if user_json=={}:
+        user_json = register.toJson('{0}/.yarr/localdb/user.json'.format(home))
+        if user_json=={}:
+            logger.error('There is no default user config in {}/.yarr/localdb'.format(home))
+            logger.error('Set it by YARR/localdb/setup_db.sh')
+            logger.info('-----------------------')
+            logger.debug('=======================')
+            sys.exit(1)
     user_oid = register.__set_user(user_json)
     register.__check_user_data(user_oid)
 
@@ -675,7 +723,7 @@ def __check_component(i_type):
         db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
         if db_cfg=={}:
             logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
-            logger.error('Set it by YARR/localdb/setting/setup_db.sh')
+            logger.error('Set it by YARR/localdb/setup_db.sh')
             logger.info('-----------------------')
             logger.debug('=======================')
             sys.exit(1)

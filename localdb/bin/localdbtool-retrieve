@@ -110,7 +110,7 @@ def __init():
 
     if db_cfg=={}:
         logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
-        logger.error('Set it by YARR/localdb/setting/setup_db.sh')
+        logger.error('Set it by YARR/localdb/setup_db.sh')
         logger.info('-----------------------')
         logger.debug('=======================')
         sys.exit(1)

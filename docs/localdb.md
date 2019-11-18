@@ -21,15 +21,17 @@ $ cd ../
 
 ```bash
 $ ./localdb/setup_db.sh
-[LDB] Confirmation
+[LDB] Set editor command ... ## Enter editor command you use (e.g. vim, emacs)
+[LDB] > vim
 <some texts>
-[LDB] Continue? [y/n]
-[LDB] > y
-<some texts>
-[LDB] Create Config file...
-[LDB] DB Config: ${HOME}/.yarr/localdb/${HOSTNAME}_database.json
-[LDB] Done.
-<some texts>
+####################################################
+## 1. Confirmation of python package requirements ##
+## 2. Setting of config files                     ##
+##    - Local DB config file                      ##
+##    - User config file                          ##
+##    - Site config file                          ##
+## 3. Confirmation of the connection to Local DB  ##
+####################################################
 [LDB] More detail:
 [LDB]   Access 'https://localdb-docs.readthedocs.io/en/master/'
 ```
@@ -66,17 +68,25 @@ $./bin/dbAccessor -I
 ### Upload
 
 You can scan and upload the test data into Local DB by `scanConsole -W`. <br>
-First please prepare config files following [this sample format](https://localdb-docs.readthedocs.io/en/master/config/#user-cfg) and provide them with option '-u <user config file>' and '-i <site config file>', <br>
-or ${USERNAME} and ${HOSTNAME} will be stored as default infromation.
+First please confirm if the default config files are prepared, the commands are enabled, and the connection is established using `setup_db.sh`, <br>
+and `scanConsole` use `${HOME}/.yarr/localdb/${HOSTNAME}_database.json`, `${HOME}/.yarr/localdb/user.json`, and `${HOME}/.yarr/localdb/${HOSTNAME}_site.json` as default config files.
 
 ```bash
+$ ./localdb/setup_db.sh
+<some texts>
+[LDB] Checking the connection...
+#DB INFO# -----------------------
+#DB INFO# Function: Initialize
+#DB INFO# [Connection Test] DB Server: mongodb://127.0.0.1:27017/localdb
+#DB INFO# ---> Connection is GOOD.
+#DB INFO# -----------------------
+<some texts>
+$
 $ ./bin/scanConsole \
 -r configs/controller/emuCfg.json \
 -c configs/connectivity/example_fei4b_setup.json \
 -s configs/scans/fei4/std_digitalscan.json \
--W \
--u user.json \
--i site.json
+-W
 <lots of text>
 #DB INFO# -----------------------
 #DB INFO# Function: Initialize
