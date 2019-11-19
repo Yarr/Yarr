@@ -297,10 +297,10 @@ class StarCfg : public FrontEndCfg, public Register{
   std::array<float, 4> m_vcalPar; //mV, [0] + [1]*x + [2]*x^2 + [3]*x^3
 
   //Definitions of subregisters (enum/name, register number, first bit index, size in number of bits)
-  typedef std::tuple<ABCStarSubRegister, unsigned int, unsigned int, unsigned int> abcsubrefdef;
-  const static std::vector<abcsubrefdef> s_abcsubregdefs;
-  typedef std::tuple<HCCStarSubRegister, unsigned int, unsigned int, unsigned int> hccsubrefdef;
-  const static std::vector<hccsubrefdef> s_hccsubregdefs;
+  typedef std::tuple<ABCStarSubRegister, unsigned int, unsigned int, unsigned int> abcsubregdef;
+  const static std::vector<abcsubregdef> s_abcsubregdefs;
+  typedef std::tuple<HCCStarSubRegister, unsigned int, unsigned int, unsigned int> hccsubregdef;
+  const static std::vector<hccsubregdef> s_hccsubregdefs;
 };
 
 #endif
