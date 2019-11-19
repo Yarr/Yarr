@@ -298,11 +298,9 @@ class StarCfg : public FrontEndCfg, public Register{
 
   //Definitions of subregisters (enum/name, register number, first bit index, size in number of bits)
   typedef std::tuple<ABCStarSubRegister, unsigned int, unsigned int, unsigned int> abcsubrefdef;
-  static std::vector<abcsubrefdef> s_abcsubregdefs;
+  const static std::vector<abcsubrefdef> s_abcsubregdefs;
   typedef std::tuple<HCCStarSubRegister, unsigned int, unsigned int, unsigned int> hccsubrefdef;
-  static std::vector<hccsubrefdef> s_hccsubregdefs;
-  static void defineSubRegisters();
-
+  const static std::vector<hccsubrefdef> s_hccsubregdefs;
 };
 
 #endif

@@ -6,12 +6,72 @@
 
 #include "StarCfg.h"
 
-StarCfg::StarCfg() { defineSubRegisters(); }
+StarCfg::StarCfg()  {}
 
 StarCfg::~StarCfg() {}
 
+
+//Register enums definitions
 typedef std::tuple<ABCStarSubRegister, unsigned int, unsigned int, unsigned int> abcsubrefdef;
-std::vector<abcsubrefdef> StarCfg::s_abcsubregdefs = std::vector<abcsubrefdef>();
+const std::vector<abcsubrefdef> StarCfg::s_abcsubregdefs = {
+  {ABCStarSubRegister::BVREF			,1	,0	,5}	,
+  {ABCStarSubRegister::BIREF			,1	,8	,5}	,
+  {ABCStarSubRegister::B8BREF			,1	,16	,5}	,
+  {ABCStarSubRegister::BTRANGE			,1	,24	,5}	,
+  {ABCStarSubRegister::BVT			,2	,0	,8}	,
+  {ABCStarSubRegister::COMBIAS			,2	,8	,5}	,
+  {ABCStarSubRegister::BIFEED			,2	,16	,5}	,
+  {ABCStarSubRegister::BIPRE			,2	,24	,5}	,
+  {ABCStarSubRegister::STR_DEL_R		,3	,0	,2}	,
+  {ABCStarSubRegister::STR_DEL			,3	,8	,6}	,
+  {ABCStarSubRegister::BCAL			,3	,16	,9}	,
+  {ABCStarSubRegister::BCAL_RANGE		,3	,25	,1}	,
+  {ABCStarSubRegister::ADC_BIAS			,4	,0	,4}	,
+  {ABCStarSubRegister::ADC_CH			,4	,4	,4}	,
+  {ABCStarSubRegister::ADC_ENABLE		,4	,8	,1}	,
+  {ABCStarSubRegister::D_S			,6	,0	,1}	,
+  {ABCStarSubRegister::D_LOW			,6	,15	,1}	,
+  {ABCStarSubRegister::D_EN_CTRL		,6	,16	,1}	,
+  {ABCStarSubRegister::BTMUX			,7	,0	,1}	,
+  {ABCStarSubRegister::BTMUXD			,7	,14	,1}	,
+  {ABCStarSubRegister::A_S			,7	,15	,1}	,
+  {ABCStarSubRegister::A_EN_CTRL		,7	,31	,1}	,
+  {ABCStarSubRegister::TEST_PULSE_ENABLE	,32	,4	,1}	,
+  {ABCStarSubRegister::ENCOUNT			,32	,5	,1}	,
+  {ABCStarSubRegister::MASKHPR			,32	,6	,1}	,
+  {ABCStarSubRegister::PR_ENABLE		,32	,8	,1}	,
+  {ABCStarSubRegister::LP_ENABLE		,32	,9	,1}	,
+  {ABCStarSubRegister::RRMODE			,32	,10	,2}	,
+  {ABCStarSubRegister::TM			,32	,16	,2}	,
+  {ABCStarSubRegister::TESTPATT_ENABLE		,32	,18	,1}	,
+  {ABCStarSubRegister::TESTPATT1		,32	,20	,4}	,
+  {ABCStarSubRegister::TESTPATT2		,32	,24	,4}	,
+  {ABCStarSubRegister::CURRDRIV			,33	,0	,3}	,
+  {ABCStarSubRegister::CALPULSE_ENABLE		,33	,4	,1}	,
+  {ABCStarSubRegister::CALPULSE_POLARITY	,33	,5	,1}	,
+  {ABCStarSubRegister::LATENCY			,34	,0	,9}	,
+  {ABCStarSubRegister::BCFLAG_ENABLE		,34	,23	,1}	,
+  {ABCStarSubRegister::BCOFFSET			,34	,24	,8}	,
+  {ABCStarSubRegister::DETMODE			,35	,0	,2}	,
+  {ABCStarSubRegister::MAX_CLUSTER		,35	,12	,6}	,
+  {ABCStarSubRegister::MAX_CLUSTER_ENABLE	,35	,18	,1}	,
+  {ABCStarSubRegister::EN_CLUSTER_EMPTY		,36	,0	,1}	,
+  {ABCStarSubRegister::EN_CLUSTER_FULL		,36	,1	,1}	,
+  {ABCStarSubRegister::EN_CLUSTER_OVFL		,36	,2	,1}	,
+  {ABCStarSubRegister::EN_REGFIFO_EMPTY		,36	,3	,1}	,
+  {ABCStarSubRegister::EN_REGFIFO_FULL		,36	,4	,1}	,
+  {ABCStarSubRegister::EN_REGFIFO_OVFL		,36	,5	,1}	,
+  {ABCStarSubRegister::EN_LPFIFO_EMPTY		,36	,6	,1}	,
+  {ABCStarSubRegister::EN_LPFIFO_FULL		,36	,7	,1}	,
+  {ABCStarSubRegister::EN_PRFIFO_EMPTY		,36	,8	,1}	,
+  {ABCStarSubRegister::EN_PRFIFO_FULL		,36	,9	,1}	,
+  {ABCStarSubRegister::EN_LCB_LOCKED		,36	,10	,1}	,
+  {ABCStarSubRegister::EN_LCB_DECODE_ERR	,36	,11	,1}	,
+  {ABCStarSubRegister::EN_LCB_ERRCNT_OVFL	,36	,12	,1}	,
+  {ABCStarSubRegister::EN_LCB_SCMD_ERR		,36	,13	,1}	,
+  {ABCStarSubRegister::DOFUSE			,37	,0	,2}	,
+  {ABCStarSubRegister::LCB_ERRCOUNT_THR	        ,38	,0	,1}
+};
 
 double StarCfg::toCharge(double vcal) {
     // Q = C*V
@@ -30,68 +90,6 @@ unsigned StarCfg::toVcal(double charge) {
 //    return vcal;
 }
 
-
-
-void StarCfg::defineSubRegisters() {
-   if (s_abcsubregdefs.size()) return;
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BVREF			,1	,0	,5));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BIREF			,1	,8	,5));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::B8BREF			,1	,16	,5));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BTRANGE		,1	,24	,5));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BVT			,2	,0	,8));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::COMBIAS		,2	,8	,5));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BIFEED			,2	,16	,5));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BIPRE			,2	,24	,5));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::STR_DEL_R		,3	,0	,2));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::STR_DEL		,3	,8	,6));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BCAL			,3	,16	,9));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BCAL_RANGE		,3	,25	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::ADC_BIAS		,4	,0	,4));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::ADC_CH			,4	,4	,4));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::ADC_ENABLE		,4	,8	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::D_S			,6	,0	,15));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::D_LOW			,6	,15	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::D_EN_CTRL		,6	,16	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BTMUX			,7	,0	,14));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BTMUXD			,7	,14	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::A_S			,7	,15	,15));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::A_EN_CTRL		,7	,31	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::TEST_PULSE_ENABLE	,32	,4	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::ENCOUNT		,32	,5	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::MASKHPR		,32	,6	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::PR_ENABLE		,32	,8	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::LP_ENABLE		,32	,9	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::RRMODE			,32	,10	,2));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::TM			,32	,16	,2));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::TESTPATT_ENABLE	,32	,18	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::TESTPATT1		,32	,20	,4));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::TESTPATT2		,32	,24	,4));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::CURRDRIV		,33	,0	,3));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::CALPULSE_ENABLE	,33	,4	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::CALPULSE_POLARITY	,33	,5	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::LATENCY		,34	,0	,9));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BCFLAG_ENABLE		,34	,23	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::BCOFFSET		,34	,24	,8));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::DETMODE		,35	,0	,2));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::MAX_CLUSTER		,35	,12	,6));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::MAX_CLUSTER_ENABLE	,35	,18	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_CLUSTER_EMPTY	,36	,0	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_CLUSTER_FULL	,36	,1	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_CLUSTER_OVFL	,36	,2	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_REGFIFO_EMPTY	,36	,3	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_REGFIFO_FULL	,36	,4	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_REGFIFO_OVFL	,36	,5	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_LPFIFO_EMPTY	,36	,6	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_LPFIFO_FULL		,36	,7	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_PRFIFO_EMPTY	,36	,8	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_PRFIFO_FULL		,36	,9	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_LCB_LOCKED		,36	,10	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_LCB_DECODE_ERR	,36	,11	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_LCB_ERRCNT_OVFL	,36	,12	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::EN_LCB_SCMD_ERR	,36	,13	,1));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::DOFUSE			,37	,0	,24));
-   s_abcsubregdefs.push_back(std::make_tuple(ABCStarSubRegister::LCB_ERRCOUNT_THR	,38	,0	,16) );
-}
 
 
 void StarCfg::initRegisterMaps() {
