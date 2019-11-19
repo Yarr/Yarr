@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
 
     int nThreads = 4;
     int c;
-    while ((c = getopt(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:")) != -1) {
+    while ((c = getopt(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:l:")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
@@ -952,14 +952,15 @@ void setupLoggers(const json &j) {
       {"trace", SPDLOG_LEVEL_TRACE},
     };
 
-    if(j.contains("simple") && j["simple"]) {
+    if(!j["simple"].empty()) {
         // Don't print log level and timestamp
-        default_sink->set_pattern("%v");
+        if (j["simple"])
+            default_sink->set_pattern("%v");
     }
 
-    if(j.contains("log_config")) {
+    if(!j["log_config"].empty()) {
         for(auto &jl: j["log_config"]) {
-            if(!jl.contains("name")) {
+            if(jl["name"].empty()) {
                 std::cerr << "Log json file: 'log_config' list item must have 'name'\n";
                 continue;
             }
@@ -968,7 +969,7 @@ void setupLoggers(const json &j) {
 
             auto logger_apply = [&](std::shared_ptr<spdlog::logger> l) {
               l->sinks().push_back(default_sink);
-              if(jl.contains("level")) {
+              if(jl["level"].empty()) {
                   std::string level = jl["level"];
 
                   spdlog::level::level_enum spd_level = (spdlog::level::level_enum)level_map.at(level);
@@ -986,7 +987,7 @@ void setupLoggers(const json &j) {
 
     // NB this sets things at the sink level, so not specifying a particular logger...
     // Also doing it last means it applies to all registered sinks
-    if(j.contains("pattern")) {
+    if(j["pattern"].empty()) {
         std::string pattern = j["pattern"];
       
         spdlog::set_pattern(pattern);
