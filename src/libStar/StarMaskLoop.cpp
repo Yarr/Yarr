@@ -112,14 +112,14 @@ void StarMaskLoop::applyMask(StarChips* fe, const uint32_t masks[8], const uint3
   for( int iChip = 1; iChip < fe->m_nABC+1; ++iChip){ //exclude iChip=0 which is the Hcc
     //Looping over MaskInput registers
     int index=0;
-    for (int j=16; j<24; j++){
+    for (int j=ABCStarRegister::MaskInput0; j<=ABCStarRegister::MaskInput7; j++){
       //    				 std::cout << "write mask: "<< i << "  0x" << std::hex << std::setfill('0') << std::setw(8)<< Star_masks[m_cur][index] <<std::dec<< std::endl;
       fe->setAndWriteABCRegister(j, ~masks[index], iChip);  // strip 0's mask starts from reg 16,
       index++;
     }
     //Looping over CAL ENABLE registers
     index=0;
-    for (int j=104; j<112; j++){
+    for (int j=ABCStarRegister::CalREG0; j<=ABCStarRegister::CalREG7; j++){
       //    				 std::cout << "write cal: "<< i  << " 0x" << std::hex << std::setfill('0') << std::setw(8)<< Star_calEn[m_cur][index] <<std::dec<< std::endl;
       fe->setAndWriteABCRegister(j, enables[index], iChip);  // strip 0's mask starts from reg 104,.
       index++;
