@@ -112,7 +112,7 @@ void StarMaskLoop::applyMask(StarChips* fe, const uint32_t masks[8], const uint3
   for( int iChip = 1; iChip < fe->m_nABC+1; ++iChip){ //exclude iChip=0 which is the Hcc
     //Looping over MaskInput registers
     int index=0;
-    for (int j=ABCStarRegister::MaskInput0; j<=ABCStarRegister::MaskInput7; j++){
+    for (int j=ABCStarRegister::MaskInput(0); j<=ABCStarRegister::MaskInput(7); j++){
       //    				 std::cout << "write mask: "<< i << "  0x" << std::hex << std::setfill('0') << std::setw(8)<< Star_masks[m_cur][index] <<std::dec<< std::endl;
       fe->setAndWriteABCRegister(j, ~masks[index], iChip);  // strip 0's mask starts from reg 16,
       index++;
