@@ -24,6 +24,13 @@ void SpecRxCore::setRxEnable(std::vector<uint32_t> channels) {
 
 }
 
+void SpecRxCore::disableRx() {
+    if (verbose)
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SpecCom::writeSingle(RX_ADDR | RX_ENABLE, 0x0);
+}
+
+
 void SpecRxCore::maskRxEnable(uint32_t value, uint32_t mask) {
     uint32_t tmp = SpecCom::readSingle(RX_ADDR | RX_ENABLE);
     tmp &= ~mask;
