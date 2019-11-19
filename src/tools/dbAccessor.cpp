@@ -37,11 +37,14 @@ int main(int argc, char *argv[]){
     std::string scanlog_path = "";
 
     int c;
-    while ((c = getopt(argc, argv, "hRCE:Mc:s:i:d:u:")) != -1 ){
+    while ((c = getopt(argc, argv, "hIRCE:Mc:s:i:d:u:")) != -1 ){
         switch (c) {
             case 'h':
                 printHelp();
                 return 0;
+                break;
+            case 'I':
+                registerType = "Initialize";
                 break;
             case 'R':
                 registerType = "Cache";
@@ -88,6 +91,15 @@ int main(int argc, char *argv[]){
 
     if (registerType == "") printHelp();
 
+    // Initialize
+    if (registerType == "Initialize") {
+        DBHandler *database = new DBHandler();
+        database->initialize(cfg_path, commandLine);
+        int status = database->checkConnection();
+        delete database;
+        return status;
+    }
+
     // register cache
     if (registerType == "Cache") {
         DBHandler *database = new DBHandler();
@@ -125,6 +137,7 @@ int main(int argc, char *argv[]){
         database->cleanUp("dcs", "");
 
         delete database;
+        return 0;
     }
 
     if (registerType == "Module") {
@@ -144,12 +157,14 @@ void printHelp() {
     std::string dbDirPath = home+"/.yarr/localdb";
     std::cout << "Help:" << std::endl;
     std::cout << " -h: Shows this." << std::endl;
+    std::cout << " -I: Check the connection to Local DB." << std::endl;
     std::cout << " -C: Upload component data into Local DB." << std::endl;
     std::cout << "     -c <component.json> : Provide component connectivity configuration." << std::endl;
     std::cout << " -R: Upload data into Local DB from cache." << std::endl;
     std::cout << " -E <dcs.json> : Provide DCS configuration to upload DCS data into Local DB." << std::endl;
     std::cout << "     -s <scanLog.json> : Provide scan log file." << std::endl;
     std::cout << " -M : Retrieve Module list from Local DB." << std::endl;
+    std::cout << " " << std::endl;
     std::cout << " -d <database.json> : Provide database configuration. (Default " << dbDirPath << "/" << hostname << "_database.json" << std::endl;
     std::cout << " -i <site.json> : Provide site configuration. " << std::endl;
     std::cout << " -u <user.json> : Provide user configuration. " << std::endl;

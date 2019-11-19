@@ -13,8 +13,6 @@
 #include "HwController.h"
 #include "EmuTxCore.h"
 #include "EmuRxCore.h"
-#include "EmuShm.h"
-
 
 #include "RingBuffer.h"
 
@@ -25,20 +23,27 @@ class Rd53a;
 
 template<class FE, class ChipEmu>
 class EmuController : public HwController, public EmuTxCore<FE>, public EmuRxCore<FE> {
-    ChipEmu *emu;
+    std::unique_ptr<ChipEmu> emu;
     std::vector<std::thread> emuThreads;
 
+    std::unique_ptr<RingBuffer> rx_com;
+    std::unique_ptr<RingBuffer> tx_com;
+    
+
     public:
-        EmuController(RingBuffer * rx, RingBuffer * tx);
+        EmuController(std::unique_ptr<RingBuffer> rx,
+                      std::unique_ptr<RingBuffer> tx);
         ~EmuController();
         void loadConfig(json &j);
 };
 
 template<class FE, class ChipEmu>
-EmuController<FE, ChipEmu>::EmuController(RingBuffer * rx, RingBuffer * tx)
-  : emu(nullptr) {
-    EmuTxCore<FE>::setCom(tx);
-    EmuRxCore<FE>::setCom(rx);
+  EmuController<FE, ChipEmu>::EmuController(std::unique_ptr<RingBuffer> rx,
+                                            std::unique_ptr<RingBuffer> tx)
+  : emu(nullptr), rx_com(std::move(rx)), tx_com(std::move(tx)) {
+    // Don't transfer ownership!
+    EmuTxCore<FE>::setCom(tx_com.get());
+    EmuRxCore<FE>::setCom(rx_com.get());
 }
 
 template<class FE, class ChipEmu>

@@ -62,6 +62,7 @@ class SpecTxCore : virtual public TxCore, virtual public SpecCom{
         
         void setCmdEnable(uint32_t value);
         void setCmdEnable(std::vector<uint32_t> channels);
+        void disableCmd();
         uint32_t getCmdEnable();
         void maskCmdEnable(uint32_t value, uint32_t mask);
 

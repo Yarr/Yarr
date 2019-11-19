@@ -85,7 +85,13 @@ int main(int argc, char *argv[]) {
     std::cout << "-> Parsing command line parameters ..." << std::endl;
     
     std::string home = getenv("HOME");
-    std::string hostname = getenv("HOSTNAME");
+    std::string hostname = "default_host";
+    // HOSTNAME does not exist like this on mac, need to work around it
+    if (getenv("HOSTNAME")) {
+        hostname = getenv("HOSTNAME");
+    } else {
+        std::cout << "HOSTNAME environmental variable not found ..." << std::endl;
+    }
 
     // Init parameters
     std::string scanType = "";
@@ -127,13 +133,17 @@ int main(int argc, char *argv[]) {
     oF << runCounter << std::endl;
     oF.close();
 
+    int nThreads = 4;
     int c;
-    while ((c = getopt(argc, argv, "hks:n:m:g:r:c:t:po:Wd:u:i:l:")) != -1) {
+    while ((c = getopt(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
                 printHelp();
                 return 0;
+                break;
+            case 'n':
+                nThreads=atoi(optarg);
                 break;
             case 'k':
                 listKnown();
@@ -512,6 +522,7 @@ int main(int argc, char *argv[]) {
     std::shared_ptr<DataProcessor> proc = StdDict::getDataProcessor(chipType);
     //Fei4DataProcessor proc(bookie.globalFe<Fei4>()->getValue(&Fei4::HitDiscCnfg));
     proc->connect( &bookie.rawData, &bookie.eventMap );
+    if(nThreads>0) proc->setThreads(nThreads); // override number of used threads
     proc->init();
     proc->run();
 
@@ -530,8 +541,7 @@ int main(int argc, char *argv[]) {
 
     // Join from upstream to downstream.
     
-    proc->scanDone = true;
-    bookie.rawData.cv.notify_all();
+    bookie.rawData.finish();
 
     std::chrono::steady_clock::time_point scan_done = std::chrono::steady_clock::now();
     logger->info("Waiting for processors to finish ...");
@@ -541,12 +551,10 @@ int main(int argc, char *argv[]) {
     
     logger->info("Processor done, waiting for histogrammer ...");
     
-    Fei4Histogrammer::processorDone = true;
-    
     for (unsigned i=0; i<bookie.feList.size(); i++) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
-          fe->clipData->cv.notify_all();
+          fe->clipData->finish();
         }
     }
     
@@ -557,12 +565,10 @@ int main(int argc, char *argv[]) {
     
     logger->info("Processor done, waiting for analysis ...");
     
-    Fei4Analysis::histogrammerDone = true;
-    
     for (unsigned i=0; i<bookie.feList.size(); i++) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
-          fe->clipHisto->cv.notify_all();
+          fe->clipHisto->finish();
         }
     }
 
@@ -576,8 +582,8 @@ int main(int argc, char *argv[]) {
 
     // Joining is done.
 
-    //hwCtrl->setCmdEnable(0x0);
-    hwCtrl->setRxEnable(0x0);
+    hwCtrl->disableCmd();
+    hwCtrl->disableRx();
 
     std::cout << std::endl;
     std::cout << "\033[1;31m##########\033[0m" << std::endl;
@@ -589,10 +595,10 @@ int main(int argc, char *argv[]) {
     std::cout << "-> Processing:    " << std::chrono::duration_cast<std::chrono::milliseconds>(processor_done-scan_done).count() << " ms" << std::endl;
     std::cout << "-> Analysis:      " << std::chrono::duration_cast<std::chrono::milliseconds>(all_done-processor_done).count() << " ms" << std::endl;
     
-    scanLog["stopwatch"]["config"] = std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count();
-    scanLog["stopwatch"]["scan"] = std::chrono::duration_cast<std::chrono::milliseconds>(scan_done-scan_start).count();
-    scanLog["stopwatch"]["processing"] = std::chrono::duration_cast<std::chrono::milliseconds>(processor_done-scan_done).count();
-    scanLog["stopwatch"]["analysis"] = std::chrono::duration_cast<std::chrono::milliseconds>(all_done-processor_done).count();
+    scanLog["stopwatch"]["config"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count();
+    scanLog["stopwatch"]["scan"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(scan_done-scan_start).count();
+    scanLog["stopwatch"]["processing"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(processor_done-scan_done).count();
+    scanLog["stopwatch"]["analysis"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(all_done-processor_done).count();
 
     std::cout << std::endl;
     std::cout << "\033[1;31m###########\033[0m" << std::endl;
@@ -684,6 +690,7 @@ void printHelp() {
 
     std::cout << "Help:" << std::endl;
     std::cout << " -h: Shows this." << std::endl;
+    std::cout << " -n <threads> : Set number of processing threads." << std::endl;
     std::cout << " -s <scan_type> : Scan config" << std::endl;
     //std::cout << " -n: Provide SPECboard number." << std::endl;
     //std::cout << " -g <cfg_list.txt>: Provide list of chip configurations." << std::endl;
@@ -836,7 +843,7 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
                     std::string algo_name = histoCfg[std::to_string(j)]["algorithm"];
                     add_histo(algo_name);
                 }
-            } catch(json::type_error &te) {
+            } catch(/* json::type_error &te*/ ... ) { //FIXME
                 int nHistos = histoCfg.size();
                 for (int j=0; j<nHistos; j++) {
                     std::string algo_name = histoCfg[j]["algorithm"];
@@ -909,7 +916,7 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                     add_analysis(algo_name);
                   }
                   ana.loadConfig(anaCfg);
-                } catch(json::type_error &te) {
+                } catch(/* json::type_error &te */ ...) { //FIXME
                   int nAnas = anaCfg.size();
                   logger->info("Found {} Analysis!", nAnas);
                   for (int j=0; j<nAnas; j++) {

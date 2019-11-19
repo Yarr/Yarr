@@ -33,7 +33,6 @@ void Fei4DataProcessor::init() {
     for(std::map<unsigned, ClipBoard<EventDataBase> >::iterator it = outMap->begin(); it != outMap->end(); ++it) {
         activeChannels.push_back(it->first);
     }
-    scanDone = false;
 }
 
 void Fei4DataProcessor::run() {
@@ -55,15 +54,12 @@ void Fei4DataProcessor::join() {
 void Fei4DataProcessor::process() {
     while(true) {
         std::unique_lock<std::mutex> lk(mtx);
-        input->cv.wait( lk, [&] { return scanDone || !input->empty(); } );
+        input->waitNotEmptyOrDone();
 
         process_core();
 
-        if( scanDone ) {
-            process_core(); // this line is needed if the data comes in before scanDone is changed.
-            for (unsigned i=0; i<activeChannels.size(); i++) {
-                outMap->at(activeChannels[i]).cv.notify_all(); // notification to the downstream
-            }
+        if( input->isDone() ) {
+            process_core(); // this line is needed if the data comes in before done flag is changed.
             break;
         }
     }

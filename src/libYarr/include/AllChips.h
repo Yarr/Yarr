@@ -6,7 +6,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-
+#include <functional>
 namespace StdDict {
     bool registerFrontEnd(std::string name,
                               std::function<std::unique_ptr<FrontEnd>()> f);

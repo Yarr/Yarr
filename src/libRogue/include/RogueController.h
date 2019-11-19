@@ -16,6 +16,9 @@ class RogueController : public HwController, public RogueTxCore, public RogueRxC
 	void setupMode() {
 	}
 	~RogueController();
+	void GlobalMonitor(bool reset, int looptime){
+		std::shared_ptr<RogueCom> com=RogueCom::getInstance();
+		com->GlobalMonitor(reset, looptime);}
 };
 
 #endif

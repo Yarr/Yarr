@@ -13,7 +13,7 @@ bool rd53a_proc_registered =
     StdDict::registerDataProcessor("RD53A", []() { return std::unique_ptr<DataProcessor>(new Rd53aDataProcessor());});
 
 
-Rd53aDataProcessor::Rd53aDataProcessor() {
+Rd53aDataProcessor::Rd53aDataProcessor()  {
     verbose = true;
     m_input = NULL;
     m_numThreads = std::thread::hardware_concurrency();
@@ -30,14 +30,12 @@ void Rd53aDataProcessor::init() {
     for (auto &it : *m_outMap) {
         activeChannels.push_back(it.first);
     }
-    scanDone = false;
 }
 
 void Rd53aDataProcessor::run() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     unsigned int numThreads = m_numThreads;
-    if (numThreads > 4) numThreads = 4;
     for (unsigned i=0; i<numThreads; i++) {
         thread_ptrs.emplace_back(new std::thread(&Rd53aDataProcessor::process, this));
         std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
@@ -53,20 +51,14 @@ void Rd53aDataProcessor::join() {
 void Rd53aDataProcessor::process() {
     while(true) {
         std::unique_lock<std::mutex> lk(mtx);
-        m_input->cv.wait( lk, [&] { return scanDone || !m_input->empty(); } );
+        m_input->waitNotEmptyOrDone();
 
         process_core();
-        for (unsigned i=0; i<activeChannels.size(); i++) {
-            m_outMap->at(activeChannels[i]).cv.notify_all(); // notification to the downstream
-        }
         // TODO the timing on these seems sensitive
         std::this_thread::sleep_for(std::chrono::microseconds(200));
-        if( scanDone ) {
+        if( m_input->isDone() ) {
             std::this_thread::sleep_for(std::chrono::microseconds(200));
-            process_core(); // this line is needed if the data comes in before scanDone is changed.
-            for (unsigned i=0; i<activeChannels.size(); i++) {
-                m_outMap->at(activeChannels[i]).cv.notify_all(); // notification to the downstream
-            }
+            process_core(); // this line is needed if the data comes in before done_flag is changed.
             break;
         }
     }
@@ -102,14 +94,14 @@ void Rd53aDataProcessor::process_core() {
 
         unsigned size = curInV->size();
         for(unsigned c=0; c<size; c++) {
-            RawData *curIn = new RawData(curInV->adr[c], curInV->buf[c], curInV->words[c]);
+            RawData curIn(curInV->adr[c], curInV->buf[c], curInV->words[c]);
             // Process
-            unsigned words = curIn->words;
+            unsigned words = curIn.words;
             dataCnt += words;
             for (unsigned i=0; i<words; i++) {
                 // Decode content
                 // TODO this needs review, can't deal with user-k data
-                uint32_t data = curIn->buf[i];
+                uint32_t data = curIn.buf[i];
 
                 unsigned channel = activeChannels[(i/2)%activeChannels.size()];
                 //std::cout << "[" << i << "]\t\t[" << channel << "] = 0x" << std::hex << data << std::dec << std::endl;
@@ -165,13 +157,12 @@ void Rd53aDataProcessor::process_core() {
                                 hits[channel]++;
                             }
                         } else {
-                            std::cout << dataCnt << " [" << channel << "] Received data not valid: [" << i << "," << curIn->words << "] = 0x" << std::hex << data << " " << std::dec << std::endl;
+                            std::cout << dataCnt << " [" << channel << "] Received data not valid: [" << i << "," << curIn.words << "] = 0x" << std::hex << data << " " << std::dec << std::endl;
                         }
 
                     }
                 }
-            }
-            delete curIn;
+            }            
         }
 
         // Push data out

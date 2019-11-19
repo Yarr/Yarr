@@ -13,13 +13,13 @@ _localdbtool_upload() {
     local cur prev cword
     _get_comp_words_by_ref -n : cur prev cword
 
-    if [ -f ${HOME}/.yarr/run.dat ]; then
-        local runs=`cat ${HOME}/.yarr/run.dat|xargs`
+    if [ -f ${HOME}/.yarr/localdb/run.dat ]; then
+        local runs=`cat ${HOME}/.yarr/localdb/run.dat|xargs`
     else
         local runs=""
     fi
-    if [ -f ${HOME}/.yarr/dcs.dat ]; then
-        local dcs=`cat ${HOME}/.yarr/dcs.dat|xargs`
+    if [ -f ${HOME}/.yarr/localdb/dcs.dat ]; then
+        local dcs=`cat ${HOME}/.yarr/localdb/dcs.dat|xargs`
     else
         local dcs=""
     fi

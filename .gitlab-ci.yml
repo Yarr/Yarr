@@ -26,6 +26,9 @@ job_build_and_test:
 
 job_build_all:
     stage: build
+    artifacts:
+        paths:
+          - bin
     script:
       - scl enable devtoolset-7 bash
       - source /opt/rh/devtoolset-7/enable
@@ -38,14 +41,26 @@ job_build_all:
 job_build_clang:
     stage: build
     script:
-      - scl enable   llvm-toolset-7  bash
-      - source /opt/rh/llvm-toolset-7/enable
+      - scl enable devtoolset-7 bash
+      - source /opt/rh/devtoolset-7/enable
+      - scl enable   llvm-toolset-6.0  bash
+      - source /opt/rh/llvm-toolset-6.0/enable
       - mkdir -p build
       - cd build 
       - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang
       - make install -j4
       - cd ..
       - bin/scanConsole -k
+
+job_test_json_parsing:
+    stage: test
+    dependencies: ["job_build_all"]
+    script:
+      # Check schema by loading configs in turn
+      - for file in $(find configs/defaults -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t FRONT_END || break; done
+      - for file in $(find configs/connectivity -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t CONNECTIVITY || break; done
+      - for file in $(find configs/controller -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t CONTROLLER || break; done
+      - for file in $(find configs/scans/* -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t SCAN_CONFIG || break; done
 
 job_test_json:
     stage: build

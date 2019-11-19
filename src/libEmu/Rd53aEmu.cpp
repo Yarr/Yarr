@@ -130,7 +130,7 @@ Rd53aEmu::Rd53aEmu(EmuCom * rx, EmuCom * tx, std::string json_file_path)
 	    // Core column [ 0:15]: Sync
 	    // Core column [16:32]: Linear
 	    // Core column [33:49]: Differential
-	    size_t index = ipixel + irow * row.size() + icore * ( core.size() * row.size() ) + icoreCol * ( coreRow.size() * core.size() * row.size() );
+	    size_t index = ipixel + irow * n_corePixelRows + icore * ( n_corePixelRows * n_corePixelCols ) + icoreCol * ( n_coreRows * n_corePixelRows * n_corePixelCols );
 
 	    if( icoreCol < 16 ) {
 	      pixel = PixelModel<Rd53aSyncPixelModel> { 0, Rd53aSyncPixelModel{ j["Vthreshold_mean_vector"][index], j["Vthreshold_sigma_vector"][index], j["Vthreshold_gauss_vector"][index], j["noise_sigma_mean_vector"][index], j["noise_sigma_sigma_vector"][index], j["noise_sigma_gauss_vector"][index] } };
@@ -610,7 +610,6 @@ void Rd53aEmu::triggerAsync0( const uint32_t tag) {
                 
                 } else if( pixel.type() == typeid( PixelModel<Rd53aSyncPixelModel> ) ) {
 
-                    // So far this is fake -- needs to create Rd53aSyncPixelModel!!
                     calculateSignal< PixelModel<Rd53aSyncPixelModel> >( pixel, coreCol, coreRow, icol, irow, tag );
                 
                 } else {
@@ -733,7 +732,6 @@ void Rd53aEmu::triggerAsync1( const uint32_t tag, const unsigned coreCol) {
                 
                 } else if( pixel.type() == typeid( PixelModel<Rd53aSyncPixelModel> ) ) {
 
-                    // So far this is fake -- needs to create Rd53aSyncPixelModel!!
                     calculateSignal< PixelModel<Rd53aSyncPixelModel> >( pixel, coreCol, coreRow, icol, irow, tag );
                 
                 } else {
@@ -853,7 +851,6 @@ void Rd53aEmu::triggerAsync2( const uint32_t tag, const unsigned coreCol, const 
                 
             } else if( pixel.type() == typeid( PixelModel<Rd53aSyncPixelModel> ) ) {
 
-                // So far this is fake -- needs to create Rd53aSyncPixelModel!!
                 calculateSignal< PixelModel<Rd53aSyncPixelModel> >( pixel, coreCol, coreRow, icol, irow, tag );
                 
             } else {
@@ -915,36 +912,7 @@ void Rd53aEmu::writeRegAsync( Rd53aEmu* emu, const uint16_t data, const uint32_t
         }
         
         else {
-            /*
-            if ( ROW==0 ) std::cout << "pixel cfg: core = (" << CORECOL << ", " << COREROW << "), region(col, row) = (" << DCOL << ", " << ROW
-                                    << "), data = " << HEXF(2, data&0xff) << ", " << HEXF(2, data>>8)
-                                    << std::endl;
-            */
-            
-#define pixel1 ( emu->m_coreArray[CORECOL][COREROW][2*(DCOL%4)+0][ROW%8] )
-#define pixel2 ( emu->m_coreArray[CORECOL][COREROW][2*(DCOL%4)+1][ROW%8] )
-            
-            // Sync Pixel Model
-            if( pixel1.type() == typeid( PixelModel<Rd53aSyncPixelModel> ) ) {
-                pixel1.getVar< PixelModel<Rd53aSyncPixelModel> >().m_register = static_cast<uint8_t>( data & 0x00FF);
-                pixel2.getVar< PixelModel<Rd53aSyncPixelModel> >().m_register = static_cast<uint8_t>( data >> 8 );
-            }
-            
-            // Linear Pixel Model
-            if( pixel1.type() == typeid( PixelModel<Rd53aLinPixelModel> ) ) {
-                pixel1.getVar< PixelModel<Rd53aLinPixelModel> >().m_register = static_cast<uint8_t>( data & 0x00FF);
-                pixel2.getVar< PixelModel<Rd53aLinPixelModel> >().m_register = static_cast<uint8_t>( data >> 8 );
-            }
-            
-            // Diff Pixel Model
-            if( pixel1.type() == typeid( PixelModel<Rd53aDiffPixelModel> ) ) {
-                pixel1.getVar< PixelModel<Rd53aDiffPixelModel> >().m_register = static_cast<uint8_t>( data & 0x00FF);
-                pixel2.getVar< PixelModel<Rd53aDiffPixelModel> >().m_register = static_cast<uint8_t>( data >> 8 );
-            }
-
-#undef pixel1
-#undef pixel2
-            
+	  emu->m_feCfg->pixRegs[DCOL*n_coreRows*n_corePixelRows+ROW] = data;            
         }
     }
     else { // configure the global register
@@ -1002,7 +970,7 @@ void Rd53aEmu::formatWords( const uint32_t coreCol, const uint32_t coreRow, cons
     // This function creates the output data format
     // and store it to the temporary buffer
     
-    uint32_t word = ( (coreCol<<26) + (coreRow<<20) + (subRow<<17) + ( (subCol/4)<<16 ) + (ToT <<(4*(3-subCol%4))) );
+  uint32_t word = ( (coreCol<<26) + (coreRow<<20) + (subRow<<17) + ( (subCol/4)<<16 ) + (ToT <<(4*(subCol%4))) );
     
     size_t coord = (coreCol*2+subCol/4)*192 + (coreRow*8+subRow);
 
@@ -1019,9 +987,9 @@ void Rd53aEmu::formatWords( const uint32_t coreCol, const uint32_t coreRow, cons
 
 
 //____________________________________________________________________________________________________
-uint8_t Rd53aEmu::calculateToT( Rd53aSyncPixelModel& analogFE ) {
+uint32_t Rd53aEmu::calculateToT( Rd53aSyncPixelModel& analogFE, int TDAC ) {
 
-  uint8_t ToT { 0xf };
+  uint32_t ToT = 0xf;
   
   const float injection_charge = m_feCfg->toCharge( m_feCfg->InjVcalDiff.read() ) ;
 
@@ -1030,46 +998,44 @@ uint8_t Rd53aEmu::calculateToT( Rd53aSyncPixelModel& analogFE ) {
   float sync_global_threshold_with_smearing = analogFE.calculateThreshold(m_feCfg->SyncVth.read());
   float sync_global_threshold_charge        = -175.807 + 9.13438 * sync_global_threshold_with_smearing;
     
+  if ( injection_charge + noise_charge > sync_global_threshold_charge ){
+    ToT = analogFE.calculateToT( injection_charge + noise_charge - sync_global_threshold_charge );
+    if(ToT >= 14) ToT=0xe;
+  }
+  
   if( verbose ) {
     std::cout << "injection_charge = " << injection_charge << std::endl;
     std::cout << "noise_charge = " <<  noise_charge << std::endl;
     std::cout << "sync_global_threshold_charge = " << sync_global_threshold_charge << std::endl;
+    std::cout << "ToT = " << ToT << std::endl;
   }
   
-  if (injection_charge + noise_charge > sync_global_threshold_charge ) {
-    
-    // calculate ToT. Hard-coded for the moment
-    ToT = 8;
-  }
-
   return ToT;
 }
 
 //____________________________________________________________________________________________________
-uint8_t Rd53aEmu::calculateToT( Rd53aLinPixelModel& analogFE ) {
+uint32_t Rd53aEmu::calculateToT( Rd53aLinPixelModel& analogFE, int TDAC ) {
 
-    uint8_t ToT { 0xf };
+    uint32_t ToT = 0xf;
     
     const float injection_charge = m_feCfg->toCharge( m_feCfg->InjVcalDiff.read() ) ;
     
     auto noise_charge = analogFE.calculateNoise(); // overwrite the previous generic initialization
     
-    float lin_global_threshold_with_smearing = analogFE.calculateThreshold(m_feCfg->LinVth.read());
+    float lin_global_threshold_with_smearing = analogFE.calculateThreshold( m_feCfg->LinVth.read(), TDAC );
     float lin_global_threshold_charge        = -12827.1 + 39.298 * lin_global_threshold_with_smearing;
     
-    // Temporary hard-set at 1000[e] for the moment.
-    //lin_global_threshold_charge = 1000.;
-    
-    if( verbose ) {
-        std::cout << "injection_charge = " << injection_charge << std::endl;
-        std::cout << "noise_charge = " <<  noise_charge << std::endl;
-        std::cout << "lin_global_threshold_charge = " << lin_global_threshold_charge << std::endl;
+    if ( injection_charge + noise_charge > lin_global_threshold_charge ){
+        ToT = analogFE.calculateToT( injection_charge + noise_charge - lin_global_threshold_charge );
+	if(ToT >= 14) ToT=0xe;
     }
-    
-    if (injection_charge + noise_charge > lin_global_threshold_charge ) {
-        
-        // calculate ToT. Hard-coded for the moment
-        ToT = 8;
+
+    if( verbose && ToT != 0xf ) {
+      std::cout<<m_feCfg->InjVcalDiff.read()<<std::endl;
+      std::cout << "injection_charge = " << injection_charge << std::endl;
+      std::cout << "noise_charge = " <<  noise_charge << std::endl;
+      std::cout << "lin_global_threshold_charge = " << lin_global_threshold_charge << std::endl;
+      std::cout << "ToT = " << ToT << std::endl;
     }
 
     return ToT;
@@ -1077,28 +1043,29 @@ uint8_t Rd53aEmu::calculateToT( Rd53aLinPixelModel& analogFE ) {
 
 
 //____________________________________________________________________________________________________
-uint8_t Rd53aEmu::calculateToT( Rd53aDiffPixelModel& analogFE ) {
+uint32_t Rd53aEmu::calculateToT( Rd53aDiffPixelModel& analogFE, int TDAC ) {
 
-    uint8_t ToT { 0xf };
+    uint32_t ToT = 0xf;
     
     const float injection_charge = m_feCfg->toCharge( m_feCfg->InjVcalDiff.read() ) ;
     
     auto noise_charge = analogFE.calculateNoise(); // overwrite the previous generic initialization
     
-    float diff_global_threshold_with_smearing = analogFE.calculateThreshold(m_feCfg->DiffVth1.read(), m_feCfg->DiffVth2.read());
+    float diff_global_threshold_with_smearing = analogFE.calculateThreshold( m_feCfg->DiffVth1.read(), m_feCfg->DiffVth2.read(), TDAC );
     float diff_global_threshold_charge = 335.111 + 4.73165 * diff_global_threshold_with_smearing;
 
+    if ( injection_charge + noise_charge > diff_global_threshold_charge ){
+        ToT = analogFE.calculateToT( injection_charge + noise_charge - diff_global_threshold_charge );
+	if(ToT >= 14) ToT=0xe;
+    }
+                
     if( verbose ) {
       std::cout << "injection_charge = " << injection_charge << std::endl;
       std::cout << "noise_charge = " <<  noise_charge << std::endl;
       std::cout << "diff_global_threshold_charge = " << diff_global_threshold_charge << std::endl;
+      std::cout << "ToT = " << ToT << std::endl;
     }
     
-    if (injection_charge + noise_charge - diff_global_threshold_charge > 0) {
-        // calculate ToT. Hard-coded for the moment
-        ToT = 8;
-    }
-                
     return ToT;
 }
 
@@ -1178,4 +1145,27 @@ void Rd53aEmu::popCmd( Rd53aEmu* emu, const unsigned size ){
   }
   
   for( unsigned i = 0; i < size; i++ ) emu->commandStream.pop_front();
+}
+
+template<class PIXEL>
+void Rd53aEmu::calculateSignal( anytype& pixel, const uint32_t coreCol, const uint32_t coreRow, const uint32_t subCol, const uint32_t subRow, uint32_t tag ) {
+        
+  auto& model    = pixel.getVar<PIXEL>();
+  auto& reg      = model.m_register;
+  auto& analogFE = model.m_analogFEModel;
+
+  // See Manual Table 30 (p.72) for the behavior of the pixel register
+  // Bit [0]   : pixel power or enable
+  // Bit [1]   : injection enable
+  // Bit [2]   : Hitbus enable
+  // Bit [3]   : TDAC sign   (only for Diff)
+  // Bit [4-7] : TDAC b[0-3] (only for Diff)
+
+  uint32_t col = coreCol * n_corePixelCols + subCol;
+  uint32_t row = coreRow * n_corePixelRows + subRow;
+
+  if( !( m_feCfg->getEn( col, row ) ) ) return;
+  if( !( m_feCfg->getInjEn( col, row ) ) ) return;
+  
+  formatWords( coreCol, coreRow, subCol, subRow, (m_feCfg->InjEnDig.read() ? 8 : calculateToT( analogFE, m_feCfg->getTDAC( col, row ) )), tag );
 }

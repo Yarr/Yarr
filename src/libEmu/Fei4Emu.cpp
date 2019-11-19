@@ -6,14 +6,16 @@
  */
 
 #include "Fei4Emu.h"
+#include <algorithm>
 
 #include "logging.h"
 
 //#include "storage.hpp"
+
 using namespace Gauss;
 
 namespace {
-auto flog = logging::make_log("emu_fei4");
+    auto flog = logging::make_log("emu_fei4");
 }
 
 Fei4Emu::Fei4Emu(std::string output_model_cfg, std::string input_model_cfg,

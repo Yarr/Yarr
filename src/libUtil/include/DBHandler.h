@@ -87,6 +87,11 @@ class DBHandler {
                          std::string /*i_site_cfg_path*/);
 
         /***
+        Check the connection to Local DB
+        ***/
+        int checkConnection();
+
+        /***
         Check registered modules in Local DB and create module list in ~/.yarr/localdb/${HOSTNAME}_modules.csv
         ***/
         int checkModule();
