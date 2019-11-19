@@ -16,8 +16,6 @@ namespace {
     auto alog = logging::make_log("fei4_histogrammer");
 }
 
-bool Fei4Histogrammer::processorDone = false;
-
 Fei4Histogrammer::Fei4Histogrammer() {
 }
 
