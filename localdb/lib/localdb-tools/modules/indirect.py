@@ -14,7 +14,7 @@ import requests
 import json
 import signal
 
-import argparse 
+import argparse
 import yaml     # Read YAML config file
 
 # log
@@ -34,7 +34,7 @@ def getJson(viewer_url, params={}):
         r_json = response.json()
     except:
         logger.error('Something wrong in url and could not get json data')
-        sys.exit()     
+        sys.exit()
     if r_json.get('error'):
         logger.error(r_json['message'])
         sys.exit()
@@ -78,7 +78,7 @@ def __log(args, serialnumber=None):
     r_json = getJson(viewer_url, params)
 
     for test_data in r_json['log']:
-        printLog('\033[1;33mtest data ID: {0} \033[0m'.format(test_data['runId'])) 
+        printLog('\033[1;33mtest data ID: {0} \033[0m'.format(test_data['runId']))
         printLog('User      : {0} at {1}'.format(test_data['user'], test_data['site']))
         printLog('Date      : {0}'.format(test_data['datetime']))
         printLog('Chip      : {0}'.format(', '.join(test_data['chips'])))
@@ -116,22 +116,21 @@ def __pull(dir_path, args):
     viewer_url = '{0}/retrieve/data'.format(url)
     r_json = getJson(viewer_url, params)
 
-    logger.info('\033[1;33mtest data ID: {0} \033[0m'.format(r_json['info']['_id'])) 
-    logger.info('- User      : {0} at {1}'.format(r_json['info']['user'], r_json['info']['site']))
-    logger.info('- Date      : {}'.format(r_json['info']['date']))
-    logger.info('- Chips     : {}'.format(', '.join(r_json['info']['chips'])))
-    logger.info('- Run Number: {}'.format(r_json['info']['runNumber']))
-    logger.info('- Test Type : {}'.format(r_json['info']['testType']))
+    if r_json.get('warning',None):
+        logger.warning(r_json['warning'])
 
-    # get config data
+    console_data = r_json['console_data']
+    logger.info('\033[1;33m{0} data ID: {1} \033[0m'.format(console_data['col'], console_data['_id']))
+    for key in console_data['log']:
+        if console_data['log'][key]:
+            logger.info('- {0:<10}: {1}'.format(key,console_data['log'][key]))
     data_entries = []
-    for entry in r_json['data']:
+    for entry in console_data['data']:
         if not entry['bool']:
             viewer_url = '{0}/retrieve/config?oid={1}&type={2}'.format(url, entry['data'], entry['type'])
             r_json = getJson(viewer_url)
             entry.update({ 'data': r_json['data'] })
         data_entries.append(entry)
-
     for data in data_entries:
         logger.info('Retrieve ... {}'.format(data['path']))
         if data['type']=='json':
@@ -140,6 +139,31 @@ def __pull(dir_path, args):
         else:
             with open(data['path'], 'w') as f:
                 f.write(data['data'])
+
+#    logger.info('\033[1;33mtest data ID: {0} \033[0m'.format(r_json['info']['_id']))
+#    logger.info('- User      : {0} at {1}'.format(r_json['info']['user'], r_json['info']['site']))
+#    logger.info('- Date      : {}'.format(r_json['info']['date']))
+#    logger.info('- Chips     : {}'.format(', '.join(r_json['info']['chips'])))
+#    logger.info('- Run Number: {}'.format(r_json['info']['runNumber']))
+#    logger.info('- Test Type : {}'.format(r_json['info']['testType']))
+#
+#    # get config data
+#    data_entries = []
+#    for entry in r_json['data']:
+#        if not entry['bool']:
+#            viewer_url = '{0}/retrieve/config?oid={1}&type={2}'.format(url, entry['data'], entry['type'])
+#            r_json = getJson(viewer_url)
+#            entry.update({ 'data': r_json['data'] })
+#        data_entries.append(entry)
+#
+#    for data in data_entries:
+#        logger.info('Retrieve ... {}'.format(data['path']))
+#        if data['type']=='json':
+#            with open(data['path'], 'w') as f:
+#                json.dump(data['data'], f, indent=4)
+#        else:
+#            with open(data['path'], 'w') as f:
+#                f.write(data['data'])
 
 #####################
 ### Display data list
@@ -159,31 +183,31 @@ def __list(opt):
     printLog('')
     if opt=='component':
         for docs in r_json['parent']:
-            printLog('\033[1;33m{0}: {1} \033[0m'.format(docs['type'], docs['name'])) 
+            printLog('\033[1;33m{0}: {1} \033[0m'.format(docs['type'], docs['name']))
             printLog('User      : {0} at {1}'.format(docs['user'], docs['site']))
             printLog('Chip Type : {0}'.format(docs['asic']))
             printLog('Chips({0})  :'.format(len(docs['chips'])))
             for oid in docs['chips']:
                 chip_docs = r_json['child'][oid]
-                printLog('\033[1;33m    {0}: {1} \033[0m'.format(chip_docs['type'], chip_docs['name'])) 
+                printLog('\033[1;33m    {0}: {1} \033[0m'.format(chip_docs['type'], chip_docs['name']))
                 printLog('    User  : {0} at {1}'.format(chip_docs['user'], chip_docs['site']))
                 printLog('    ChipId: {0}'.format(chip_docs['chipId']))
                 del r_json['child'][oid]
             printLog('')
         for oid in r_json['child']:
             docs = r_json['child'][oid]
-            printLog('\033[1;33m{0}: {1} \033[0m'.format(docs['type'], docs['name'])) 
+            printLog('\033[1;33m{0}: {1} \033[0m'.format(docs['type'], docs['name']))
             printLog('User      : {0} at {1}'.format(docs['user'], docs['site']))
             printLog('Chip Type : {0}'.format(docs['asic']))
             printLog('ChipId    : {0}'.format(docs['chipId']))
             printLog('')
     elif opt=='user':
         for user in r_json:
-            printLog('\033[1;33mUser Name: {0}\033[0m'.format(user)) 
+            printLog('\033[1;33mUser Name: {0}\033[0m'.format(user))
             for docs in r_json[user]:
                 printLog('- {0}'.format(docs))
             printLog('')
     elif opt=='site':
         for site in r_json['site']:
-            printLog('- {0}'.format(site)) 
+            printLog('- {0}'.format(site))
         printLog('')
