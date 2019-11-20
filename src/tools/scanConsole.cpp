@@ -124,7 +124,8 @@ int main(int argc, char *argv[]) {
     std::fstream oF((home + "/.yarr/runCounter").c_str(), std::ios::out);
     oF << runCounter << std::endl;
     oF.close();
-    int nThreads=-1;
+
+    int nThreads = 4;
     int c;
     while ((c = getopt(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:")) != -1) {
         int count = 0;
@@ -133,9 +134,9 @@ int main(int argc, char *argv[]) {
                 printHelp();
                 return 0;
                 break;
-	    case 'n':
-	      nThreads=atoi(optarg);
-	      break;
+            case 'n':
+                nThreads=atoi(optarg);
+                break;
             case 'k':
                 listKnown();
                 return 0;
@@ -558,8 +559,8 @@ int main(int argc, char *argv[]) {
 
     // Joining is done.
 
-    //hwCtrl->setCmdEnable(0x0);
-    hwCtrl->setRxEnable(0x0);
+    hwCtrl->disableCmd();
+    hwCtrl->disableRx();
 
     std::cout << std::endl;
     std::cout << "\033[1;31m##########\033[0m" << std::endl;

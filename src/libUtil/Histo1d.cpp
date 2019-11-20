@@ -120,6 +120,8 @@ void Histo1d::scale(const double s) {
     for (unsigned int i=0; i<bins; i++) {
         data[i] = data[i] * s;
     }
+    overflow = overflow*s;
+    underflow = underflow*s;
     sum = sum*s;
 }
 
@@ -132,6 +134,8 @@ void Histo1d::add(const Histo1d &h) {
             sum += h.getBin(i);
         }
         entries += h.getEntries();
+        overflow += h.getOverflow();
+        underflow += h.getUnderflow();
     }
 }
 
