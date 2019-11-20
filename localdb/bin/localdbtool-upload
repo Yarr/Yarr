@@ -451,7 +451,7 @@ def __write_scan(cache_dir, scanlog_json):
                     register.__set_config(cfg_json, filename, title, 'componentTestRun', chip_json, conn_json)
                     continue
                 ### attachment for componentTestRun
-                if chip_name in file_name and 'dat' in file_name:
+                if chip_name in file_name:
                     file_path = '{0}/{1}'.format(cache_dir, file_name)
                     histoname = file_name.split('{}_'.format(chip_name))[1].split('.')[0]
                     register.__set_attachment(file_path, histoname, chip_json, conn_json)
