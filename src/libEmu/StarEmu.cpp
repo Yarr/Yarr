@@ -435,51 +435,121 @@ void StarEmu::execute_command_sequence()
     } // if (isRegRead)
 }
 
+std::array<unsigned, 8> StarEmu::getFrontEndData(int mode)
+{
+    // Eight 32-bit integers for 256 strips
+    // inputs[7:4]: channel 255 - 128; inputs[3:0]: channel 127 - 0
+    std::array<unsigned, 8> inputs;
+
+    // A fixed pattern for now
+    inputs = {0, 0, 0, 0xfffe0000, 0, 0, 0, 0xfffe0000};
+    return inputs;
+}
+
+std::vector<uint16_t> StarEmu::clusterFinder(
+    const std::array<unsigned, 8>& inputData, const uint8_t maxCluster)
+{
+    // inputData consists of eight 32-bit data registers for 256 strips
+    // The bit order of these data registers are assumed to be consist with
+    // the channel mask registers (Table Table 9-30 of ABCStar Spec v7.80)
+    // The 256 strips are divided into two rows to form clusters
+    // {inputData[3],inputData[2],inputData[1],inputData[0]}: channel 127 - 0
+    // {inputData[7],inputData[6],inputData[5],inputData[4]}: channel 255 - 128
+
+    std::vector<uint16_t> clusters;
+
+    // combine input data into uint64_t
+    uint64_t d0l = (uint64_t)inputData[1] << 32 | inputData[0];
+    uint64_t d0h = (uint64_t)inputData[3] << 32 | inputData[2];
+    uint64_t d1l = (uint64_t)inputData[5] << 32 | inputData[4];
+    uint64_t d1h = (uint64_t)inputData[7] << 32 | inputData[6];
+
+    while (d0l or d0h or d1l or d1h) {
+        if (clusters.size() >= maxCluster) break;
+
+        uint16_t cluster1 = clusterFinder_sub(d1h, d1l, true);
+        if (cluster1 != 0x3fe) // if a non-empty cluster is found
+            clusters.push_back(cluster1);
+
+        if (clusters.size() >= maxCluster)  break;
+
+        uint16_t cluster0 = clusterFinder_sub(d0h, d0l, false);
+        if (cluster0 != 0x3fe) // if a non-empty cluster is found
+            clusters.push_back(cluster0);
+    }
+
+    // last cluster
+    clusters.back() |= 1 << 11;
+
+    return clusters;
+}
+
+uint16_t StarEmu::clusterFinder_sub(uint64_t& hits_high64, uint64_t& hits_low64,
+                                    bool isSecondRow)
+{
+    uint8_t hit_addr = 128;
+    uint8_t hitpat_next3 = 0;
+
+    // Count trailing zeros to get address of the hit
+    if (hits_low64) {   
+        hit_addr = __builtin_ctzll(hits_low64);
+    }
+    else if (hits_high64) {
+        hit_addr = __builtin_ctzll(hits_high64) + 64;
+    }
+    
+    // Get the value of the next three strips: [hit_addr+3: hit_addr+1]
+    hitpat_next3 = getBit_128b(hit_addr+1, hits_high64, hits_low64) << 2
+        | getBit_128b(hit_addr+2, hits_high64, hits_low64) << 1
+        | getBit_128b(hit_addr+3, hits_high64, hits_low64);
+
+    // Mask the bits that have already been considered
+    // i.e. set bits [hit_addr+3 : hit_addr] to zero
+    for (int i=0; i<4; ++i)
+        setBit_128b(hit_addr+i, 0, hits_high64, hits_low64);
+
+    if (hit_addr == 128) { // no cluster found
+        return 0x3fe;
+    }
+    else {
+        hit_addr += isSecondRow<<7;
+        // set the lowest bit of any valid cluster to 0
+        return hit_addr << 3 | hitpat_next3;
+    }
+}
+
+inline bool StarEmu::getBit_128b(uint8_t bit_addr, uint64_t data_high64,
+                                 uint64_t data_low64)
+{
+    if (bit_addr > 127) return false;
+
+    return bit_addr<64 ? data_low64>>bit_addr & 1 : data_high64>>(bit_addr-64) & 1;
+}
+
+inline void StarEmu::setBit_128b(uint8_t bit_addr, bool value,
+                                 uint64_t& data_high64, uint64_t& data_low64)
+{
+    if (bit_addr < 64) {
+        data_low64 = (data_low64 & ~(1ULL << bit_addr)) | (value << bit_addr);
+    }
+    else if (bit_addr < 128) {
+        data_high64 =
+            (data_high64 & ~(1ULL << (bit_addr-64))) | (value << (bit_addr-64));
+    }
+}
+
 void StarEmu::getClusters(int test_mode)
 {
+    // Get frontend data
+
     m_clusters.clear();
-    // Fixed cluster pattern for now
-    // base on this packet:
     /*
-    // This is an LP packet
-    alignas(32) uint8_t fixed_packet[] =
-        {0x20, 0x06,
-         // Channel 0...
-         0x07, 0x8f, 0x03, 0x8f, 0x07, 0xaf, 0x03, 0xaf,
-         // Channel 1...
-         0x0f, 0x8f, 0x0b, 0x8f, 0x0f, 0xaf, 0x0b, 0xaf,
-         // Channel 2
-         0x17, 0x8f, 0x13, 0x8f, 0x17, 0xaf, 0x13, 0xaf,
-         0x17, 0xcf, 0x13, 0xcf, 0x17, 0xee, 0x13, 0xee,
-         // Channel 0 continued
-         0x07, 0xcf, 0x03, 0xcf, 0x07, 0xee, 0x03, 0xee,
-         // Channel 1 continued
-         0x0f, 0xcf, 0x0b, 0xcf, 0x0f, 0xee, 0x0b, 0xee,
-         // Channel 3
-         0x1f, 0x8f, 0x1b, 0x8f, 0x1f, 0xaf, 0x1b, 0xaf,
-         0x1f, 0xcf, 0x1b, 0xcf, 0x1f, 0xee, 0x1b, 0xee,
-         // Channel 4
-         0x27, 0x8f, 0x23, 0x8f, 0x27, 0xaf, 0x23, 0xaf,
-         0x27, 0xcf, 0x23, 0xcf, 0x27, 0xee, 0x23, 0xee,
-         // Channel 5
-         0x2f, 0x8f, 0x2b, 0x8f, 0x2f, 0xaf, 0x2b, 0xaf,
-         0x2f, 0xcf, 0x2b, 0xcf, 0x2f, 0xee, 0x2b, 0xee,
-         // Channel 6
-         0x37, 0x8f, 0x33, 0x8f, 0x37, 0xaf, 0x33, 0xaf,
-         0x37, 0xcf, 0x33, 0xcf, 0x37, 0xee, 0x33, 0xee,
-         // Channel 7
-         0x3f, 0x8f, 0x3b, 0x8f, 0x3f, 0xaf, 0x3b, 0xaf,
-         0x3f, 0xcf, 0x3b, 0xcf, 0x3f, 0xee, 0x3b, 0xee,
-         // Channel 8
-         0x47, 0x8f, 0x43, 0x8f, 0x47, 0xaf, 0x43, 0xaf,
-         0x47, 0xcf, 0x43, 0xcf, 0x47, 0xee, 0x43, 0xee,
-         // Channel 9
-         0x4f, 0x8f, 0x4b, 0x8f, 0x4f, 0xaf, 0x4b, 0xaf,
-         0x4f, 0xcf, 0x4b, 0xcf, 0x4f, 0xee, 0x4b, 0xee,
-         0x6f, 0xed};
-    */
+    // Fixed cluster pattern for now
     std::vector<uint16_t> a_fixed_cluster_pattern =
         {0x78f, 0x38f, 0x7af, 0x3af, 0x7cf, 0x3cf, 0x7ee, 0xbee};
+    */
+    std::vector<uint16_t> a_fixed_cluster_pattern =
+        clusterFinder(getFrontEndData(0));
 
     for (int ich=0; ich < m_nABCs; ++ich)
         m_clusters.push_back(a_fixed_cluster_pattern);

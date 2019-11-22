@@ -62,9 +62,16 @@ private:
     void readRegister(const uint8_t, bool isABC=false, const unsigned ABCID=0);
 
     void getClusters(int);
+
+    uint16_t clusterFinder_sub(uint64_t&, uint64_t&, bool);
+    std::vector<uint16_t> clusterFinder(const std::array<unsigned,8>&,
+                                        const uint8_t maxCluster = 64);
+    std::array<unsigned, 8> getFrontEndData(int);
     
     // Utilities
     bool getParity_8bits(uint8_t);
+    bool getBit_128b(uint8_t, uint64_t, uint64_t);
+    void setBit_128b(uint8_t, bool, uint64_t&, uint64_t&);
     
     ////////////////////////////////////////
     EmuCom * m_txRingBuffer;
