@@ -110,7 +110,7 @@ void KU040RxCore::setRxEnable(uint32_t channel)
 	}
 
 	// do we need to en-/disable the UDP thread
-	if((val == 0) || (m_useUDP == false))
+	if((m_enableMask == 0) || (m_useUDP == false))
 	{
 		if(m_UDPReceiveThread != nullptr)
 		{
@@ -132,7 +132,90 @@ void KU040RxCore::setRxEnable(std::vector<uint32_t> channels) {
     for (uint32_t channel : channels) {
         mask += (1 << channel);
     }
-    this->setRxEnable(mask);
+	// save mask locally
+	m_enableMask = mask;
+
+	// loop through channels and enable them
+	for(int ch = 0; ch < 20; ch++)
+	{
+		// clear the FIFO and reset the counters
+		m_com->Write(KU040_PIXEL_RX_CONTROL(ch), 0x18);
+		m_com->Write(KU040_PIXEL_RX_CONTROL(ch), 0x0);
+
+		if(m_enableMask & (1 << ch))
+		{
+			unsigned int ctrlreg;
+
+			// enable
+			ctrlreg = 0x4;
+
+			// set channel speed
+			switch(m_linkSpeed)
+			{
+				case 80:	ctrlreg |= 0x1; break;
+				case 160:	ctrlreg |= 0x2; break;
+				case 320:	ctrlreg |= 0x3; break;
+				default:	ctrlreg |= 0x2; break;
+			}
+
+			// set output path
+			if(m_useUDP)
+			{
+				// enable UDP FIFO
+				ctrlreg |= 0x100;
+			}
+			else
+			{
+				// enable regbank FIFO
+				ctrlreg |= 0x80;
+			}
+
+			// finally write control register
+			m_com->Write(KU040_PIXEL_RX_CONTROL(ch), ctrlreg);
+		}
+		else
+		{
+			// channel is disabled
+			m_com->Write(KU040_PIXEL_RX_CONTROL(ch), 0x0);
+		}
+	}
+
+	// do we need to en-/disable the UDP thread
+	if((m_enableMask == 0) || (m_useUDP == false))
+	{
+		if(m_UDPReceiveThread != nullptr)
+		{
+			m_UDPReceiveThreadRunning = false;		// kill thread
+			m_UDPReceiveThread->join();
+			delete m_UDPReceiveThread;
+			m_UDPReceiveThread = nullptr;
+		}
+	}
+	else
+	{
+		m_UDPReceiveThreadRunning = true;
+		m_UDPReceiveThread = new std::thread(&KU040RxCore::UDPReceiveThreadProc, this);
+	}
+}
+
+void KU040RxCore::disableRx() {
+	for(int ch = 0; ch < 20; ch++)
+	{
+		// clear the FIFO and reset the counters
+		m_com->Write(KU040_PIXEL_RX_CONTROL(ch), 0x18);
+		m_com->Write(KU040_PIXEL_RX_CONTROL(ch), 0x0);
+	}
+
+	if((m_useUDP == false))
+	{
+		if(m_UDPReceiveThread != nullptr)
+		{
+			m_UDPReceiveThreadRunning = false;		// kill thread
+			m_UDPReceiveThread->join();
+			delete m_UDPReceiveThread;
+			m_UDPReceiveThread = nullptr;
+		}
+	}
 }
 
 void KU040RxCore::maskRxEnable(uint32_t val, uint32_t mask)

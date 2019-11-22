@@ -13,6 +13,7 @@ class RogueRxCore : virtual public RxCore {
 
 		void setRxEnable(uint32_t val) {}
 		void setRxEnable(std::vector<uint32_t>)  {}
+        void disableRx() {}
 		void maskRxEnable(uint32_t val, uint32_t mask) {}
 
 		RawData* readData();

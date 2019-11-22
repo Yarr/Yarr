@@ -24,6 +24,7 @@ class RceTxCore : virtual public TxCore {
         
         void setCmdEnable(uint32_t value) { }
         void setCmdEnable(std::vector<uint32_t> channels) { }
+        void disableCmd() {}
         uint32_t getCmdEnable() {return 0x0;}
         void maskCmdEnable(uint32_t value, uint32_t mask) {}
 
