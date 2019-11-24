@@ -41,22 +41,6 @@ def setTime(date):
     time = converted_time.strftime('%Y/%m/%d %H:%M:%S')
     return time
 
-##########################
-### Display log on console
-def printLog(message):
-    global lines
-    global size
-
-    if lines<size:
-        print(message)
-        lines+=1
-    else:
-        try:
-            input(message)
-        except KeyboardInterrupt:
-            print('')
-            sys.exit()
-
 ##################################
 ### Get data document from data_id
 def getData(i_type, i_dir, i_filename, i_data, i_bool=False):
@@ -216,23 +200,7 @@ def __log(args):
         }
         r_json['log'].append(test_data)
 
-    for test_data in r_json['log']:
-        printLog('\033[1;33mtest data ID: {0} \033[0m'.format(test_data['runId']))
-        printLog('User      : {0} at {1}'.format(test_data['user'], test_data['site']))
-        printLog('Date      : {0}'.format(test_data['datetime']))
-        printLog('Chip      : {0}'.format(', '.join(test_data['chips'])))
-        printLog('Run Number: {0}'.format(test_data['runNumber']))
-        printLog('Test Type : {0}'.format(test_data['testType']))
-        if test_data.get('environment',{})=={}:
-            printLog('DCS Data  : NULL')
-        else:
-            printLog('DCS Data  :')
-            for chip in test_data.get('environment',{}):
-                if chip_name==chip:
-                    printLog('   \033[1;31m{0} ({1})\033[0m'.format(', '.join(test_data['environment'][chip]), chip))
-                else:
-                    printLog('   {0} ({1})'.format(', '.join(test_data['environment'][chip]), chip))
-        printLog('')
+    return r_json
 
 ######################
 ### Retrieve test data
@@ -498,35 +466,14 @@ def __pull(dir_path, args):
         logger.error('Not found test data')
         sys.exit(1)
 
-    logger.info('\033[1;33m{0} data ID: {1} \033[0m'.format(console_data['col'], console_data['_id']))
-    for key in console_data['log']:
-        if console_data['log'][key]:
-            logger.info('- {0:<10}: {1}'.format(key,console_data['log'][key]))
-    for data in console_data['data']:
-        logger.info('Retrieve ... {}'.format(data['path']))
-        if data['type']=='json':
-            with open(data['path'], 'w') as f:
-                json.dump(data['data'], f, indent=4)
-        else:
-            with open(data['path'], 'w') as f:
-                f.write(data['data'])
+    return console_data
 
 #####################
 ### Display data list
 ### - component
 ### - user
 ### - site
-def __list(opt):
-    if opt=='component': __list_component()
-    elif opt=='user': __list_user()
-    elif opt=='site': __list_site()
-
 def __list_component():
-    global lines
-    global size
-    lines = 0
-    size = shutil.get_terminal_size().lines-4
-
     docs_list = { 'parent': [], 'child': {} }
     entries = localdb.childParentRelation.find({ 'dbVersion' : db_version })
     oids = []
@@ -589,33 +536,10 @@ def __list_component():
             }
         })
     docs_list['parent'] = sorted(docs_list['parent'], key=lambda x:(x['type']))
-    printLog('')
-    for docs in docs_list['parent']:
-        printLog('\033[1;33m{0}: {1} \033[0m'.format(docs['type'], docs['name']))
-        printLog('User      : {0} at {1}'.format(docs['user'], docs['site']))
-        printLog('Chip Type : {0}'.format(docs['asic']))
-        printLog('Chips({0})  :'.format(len(docs['chips'])))
-        for oid in docs['chips']:
-            chip_docs = docs_list['child'][oid]
-            printLog('\033[1;33m    {0}: {1} \033[0m'.format(chip_docs['type'], chip_docs['name']))
-            printLog('    User  : {0} at {1}'.format(chip_docs['user'], chip_docs['site']))
-            printLog('    ChipId: {0}'.format(chip_docs['chipId']))
-            del docs_list['child'][oid]
-        printLog('')
-    for oid in docs_list['child']:
-        docs = docs_list['child'][oid]
-        printLog('\033[1;33m{0}: {1} \033[0m'.format(docs['type'], docs['name']))
-        printLog('User      : {0} at {1}'.format(docs['user'], docs['site']))
-        printLog('Chip Type : {0}'.format(docs['asic']))
-        printLog('ChipId    : {0}'.format(docs['chipId']))
-        printLog('')
+
+    return docs_list
 
 def __list_user():
-    global lines
-    global size
-    lines = 0
-    size = shutil.get_terminal_size().lines-4
-
     docs_list = {}
     entries = localdb.user.find({ 'dbVersion' : db_version })
     users = []
@@ -632,25 +556,14 @@ def __list_user():
             docs.append(entry['institution'])
         docs = list(set(docs))
         docs_list.update({ user: docs })
-    printLog('')
-    for user in docs_list:
-        printLog('\033[1;33mUser Name: {0}\033[0m'.format(user))
-        for docs in docs_list[user]:
-            printLog('- {0}'.format(docs))
-        printLog('')
+
+    return docs_list
 
 def __list_site():
-    global lines
-    global size
-    lines = 0
-    size = shutil.get_terminal_size().lines-4
-
     docs_list = []
     entries = localdb.institution.find({ 'dbVersion' : db_version })
     for entry in entries:
         docs_list.append(entry['institution'])
     docs_list = list(set(docs_list))
-    printLog('')
-    for site in docs_list:
-        printLog('- {0}'.format(site))
-    printLog('')
+
+    return docs_list

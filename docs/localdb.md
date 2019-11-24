@@ -95,7 +95,7 @@ $ ./bin/scanConsole \
 #DB INFO# -----------------------
 #DB INFO# Uploading in the back ground. (log: ~/.yarr/localdb/log/)
 ```
-> [More detail about uploading test data](https://localdb-docs.readthedocs.io/en/master/upload/#upload-test-data)
+> [Advanced tutorial for uploading test data](https://localdb-docs.readthedocs.io/en/master/upload/#upload-test-data)
 
 You can check if the upload is success in log file `${HOME}/.yarr/localdb/log/${day}.log`:
 
@@ -108,7 +108,7 @@ You can check if the upload is success in log file `${HOME}/.yarr/localdb/log/${
 2019-08-01 10:55:47,058 - INFO: Success
 2019-08-01 10:55:47,060 - INFO: -----------------------
 ```
-> [More detail about another upload functions](https://localdb-docs.readthedocs.io/en/master/upload/)
+> [Advanced tutorial for another upload functions](https://localdb-docs.readthedocs.io/en/master/upload/)
 
 ### Retrieve
 
@@ -157,7 +157,7 @@ $ ./localdb/bin/localdbtool-retrieve pull
 #DB INFO# Retrieve ... ./db-data/connectivity.json
 #DB INFO# -----------------------
 ```
-> [More detail about retrieving funtion](https://localdb-docs.readthedocs.io/en/master/retrieve/)
+> [Advanced tutorial for retrieving funtion](https://localdb-docs.readthedocs.io/en/master/retrieve/)
 
 * List of restored data (default dir: `YARR/db_data`)
     * Test Information (Data ID, User, Date, Chips, Run #, Test type)
@@ -185,7 +185,7 @@ y
 #DB INFO# Completed the upload successfuly.
 #DB INFO# -----------------------
 ```
-> [More detail about Component Registration](https://localdb-docs.readthedocs.io/en/master/upload/#register-chipmodule-data)
+> [Advanced tutorial for Component Registration](https://localdb-docs.readthedocs.io/en/master/upload/#register-chipmodule-data)
 
 After registration, you can retrieve/generate the connectivity config file and the chip config files by `localdb-retrieve pull --chip <SERIAL NUMBER>`.<br>
 
@@ -201,7 +201,7 @@ $ ./localdb/bin/localdb-retrieve pull --chip <SERIAL NUMBER>
 #DB INFO# Retrieve ... ./db-data/connectivity.json
 #DB INFO# -----------------------
 ```
-> [More detail about retrieving funtion](https://localdb-docs.readthedocs.io/en/master/retrieve/)
+> [Advanced tutorial for retrieving funtion](https://localdb-docs.readthedocs.io/en/master/retrieve/)
 
 And you can upload test data associated with component data using these config files by `scanConsole`.
 
@@ -221,7 +221,7 @@ $ ./bin/scanConsole \
 #DB INFO# -----------------------
 #DB INFO# Uploading in the back ground. (log: ~/.yarr/localdb/log/)
 ```
-> [More detail about Component Registration](https://localdb-docs.readthedocs.io/en/master/upload/#register-chipmodule-data)
+> [Advanced tutorial for Component Registration](https://localdb-docs.readthedocs.io/en/master/upload/#register-chipmodule-data)
 
 ### Local DB Tools
 
@@ -247,7 +247,7 @@ $ ./app.py --config conf.yml &
 # ---> Access 'http://127.0.0.1:5000/localdb/' or
 #      'http://IPaddress/localdb/' on browser to check data in Local DB
 ```
-> [More detail about Viewer Application](https://localdb-docs.readthedocs.io/en/master/viewer/)
+> [Advanced tutorial for Viewer Application](https://localdb-docs.readthedocs.io/en/master/viewer/)
 
 #### Synchronization Tool
 
@@ -259,7 +259,7 @@ $ ./setup_sync_tool.sh
 # 2. Run Tool
 $ ./bin/localdbtool-sync.py --sync-opt <option> --config my_configure.yml
 ```
-> [More detail about Synchronization Tool](https://localdb-docs.readthedocs.io/en/master/sync/)
+> [Advanced tutorial for Synchronization Tool](https://localdb-docs.readthedocs.io/en/master/sync/)
 
 #### Archive Tool
 
@@ -271,5 +271,5 @@ $ ./setup_archive_tool.sh
 # 2. Run Tool
 $ ./bin/localdbtool-archive.sh --config my_archive_configure.yml
 ```
-> [More detail about Archive Tools](https://localdb-docs.readthedocs.io/en/master/archive/)
+> [Advanced tutorial for Archive Tools](https://localdb-docs.readthedocs.io/en/master/archive/)
 
