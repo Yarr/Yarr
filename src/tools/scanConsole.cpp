@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
     std::cout << "\033[1;31m#####################################\033[0m" << std::endl;
 
     std::cout << "-> Parsing command line parameters ..." << std::endl;
-    
+
     std::string home = getenv("HOME");
     std::string hostname = "default_host";
     // HOSTNAME does not exist like this on mac, need to work around it
@@ -99,16 +99,16 @@ int main(int argc, char *argv[]) {
     bool dbUse = false;
     std::string dbDirPath = home+"/.yarr/localdb";
     std::string dbCfgPath = dbDirPath+"/"+hostname+"_database.json";
-    std::string dbSiteCfgPath = "";
-    std::string dbUserCfgPath = "";
-    
+    std::string dbSiteCfgPath = dbDirPath+"/"+hostname+"_site.json""";
+    std::string dbUserCfgPath = dbDirPath+"/user.json""";
+
     unsigned runCounter = 0;
 
     // Load run counter
     if (system("mkdir -p ~/.yarr") < 0) {
         std::cerr << "#ERROR# Loading run counter ~/.yarr!" << std::endl;
     }
-    
+
     std::fstream iF((home + "/.yarr/runCounter").c_str(), std::ios::in);
     if (iF) {
         iF >> runCounter;
@@ -230,9 +230,9 @@ int main(int argc, char *argv[]) {
 
     std::string dataDir = outputDir;
     outputDir += (toString(runCounter, 6) + "_" + strippedScan + "/");
-    
+
     std::cout << " Scan Type/Config: " << scanType << std::endl;
-    
+
     std::cout << " Connectivity: " << std::endl;
     for(std::string const& sTmp : cConfigPaths){
         std::cout << "    " << sTmp << std::endl;
@@ -258,7 +258,7 @@ int main(int argc, char *argv[]) {
     //read errno variable and catch some errors, if necessary
     //errno=1 is permission denied, errno = 17 is dir already exists, ...
     //see /usr/include/asm-generic/errno-base.h and [...]/errno.h for all codes
-    
+
     // Make symlink
     cmdStr = "rm -f " + dataDir + "last_scan && ln -s " + toString(runCounter, 6) + "_" + strippedScan + " " + dataDir + "last_scan";
     sysExSt = system(cmdStr.c_str());
@@ -277,11 +277,11 @@ int main(int argc, char *argv[]) {
 
     std::string commandLineStr= "";
     for (int i=1;i<argc;i++) commandLineStr.append(std::string(argv[i]).append(" "));
-    
+
     json scanLog;
     // Add to scan log
     scanLog["exec"] = commandLineStr;
-    scanLog["timestamp"] = timestamp;
+    scanLog["timestamp"] = std::string(timestamp);
     scanLog["startTime"] = (int)now;
     scanLog["runNumber"] = runCounter;
     scanLog["targetCharge"] = target_charge;
@@ -297,16 +297,10 @@ int main(int argc, char *argv[]) {
         std::cout << "\033[1;31m################\033[0m" << std::endl;
         std::cout << "-> Setting user's information" << std::endl;
 
-        json dbCfg;
-        try {
-            dbCfg = ScanHelper::openJsonFile(dbCfgPath);
-        } catch (std::runtime_error &e) {
-            std::cerr << "#DB ERROR# opening or loading database config: " << e.what() << std::endl;
-            return -1;
-        }
-        scanLog["dbCfg"] = dbCfg;
+        database->initialize(dbCfgPath, argv[0]);
 
-        database->initialize(dbCfgPath, argv[0]); 
+        json dbCfg = ScanHelper::openJsonFile(dbCfgPath);
+        scanLog["dbCfg"] = dbCfg;
 
         // set/check user config if specified
         json userCfg = database->setUser(dbUserCfgPath);
@@ -332,12 +326,12 @@ int main(int argc, char *argv[]) {
     }
     // Add to scan log
     scanLog["ctrlCfg"] = ctrlCfg;
-    
+
     hwCtrl->setupMode();
 
     // Disable trigger in-case
     hwCtrl->setTrigEnable(0);
- 
+
     Bookkeeper bookie(&*hwCtrl, &*hwCtrl);
 
     std::map<FrontEnd*, std::string> feCfgMap;
@@ -371,7 +365,7 @@ int main(int argc, char *argv[]) {
         // set/check connectivity config files
         database->setConnCfg(cConfigPaths);
     }
-    
+
     // Reset masks
     if (mask_opt == 1) {
         for (FrontEnd* fe : bookie.feList) {
@@ -394,16 +388,16 @@ int main(int argc, char *argv[]) {
         }
         // TODO add FE65p2
     }
-    
+
     bookie.initGlobalFe(StdDict::getFrontEnd(chipType).release());
     bookie.getGlobalFe()->makeGlobal();
     bookie.getGlobalFe()->init(&*hwCtrl, 0, 0);
-    
+
     std::cout << std::endl;
     std::cout << "\033[1;31m#################\033[0m" << std::endl;
     std::cout << "\033[1;31m# Configure FEs #\033[0m" << std::endl;
     std::cout << "\033[1;31m#################\033[0m" << std::endl;
-    
+
     std::chrono::steady_clock::time_point cfg_start = std::chrono::steady_clock::now();
     for ( FrontEnd* fe : bookie.feList ) {
         std::cout << "-> Configuring " << dynamic_cast<FrontEndCfg*>(fe)->getName() << std::endl;
@@ -416,9 +410,9 @@ int main(int argc, char *argv[]) {
         while(!hwCtrl->isCmdEmpty());
     }
     std::chrono::steady_clock::time_point cfg_end = std::chrono::steady_clock::now();
-    std::cout << "-> All FEs configured in " 
+    std::cout << "-> All FEs configured in "
         << std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count() << " ms !" << std::endl;
-    
+
     // Wait for rx to sync with FE stream
     // TODO Check RX sync
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
@@ -435,7 +429,7 @@ int main(int argc, char *argv[]) {
         }
         std::cout <<   "... success!" << std::endl;
     }
- 
+
     // Enable all active channels
     std::cout << "-> Enabling Tx channels: " << std::endl;
     hwCtrl->setCmdEnable(bookie.getTxMask());
@@ -447,7 +441,7 @@ int main(int argc, char *argv[]) {
     for (uint32_t channel : bookie.getRxMask()) {
         std::cout << "  ... " << channel  << std::endl;
     }
-    
+
     hwCtrl->runMode();
 
     std::cout << std::endl;
@@ -456,7 +450,7 @@ int main(int argc, char *argv[]) {
     std::cout << "\033[1;31m##############\033[0m" << std::endl;
 
     // Make backup of scan config
-    
+
     // Create backup of current config
     if (scanType.find("json") != std::string::npos) {
         // TODO fix folder
@@ -467,7 +461,7 @@ int main(int argc, char *argv[]) {
         cfgFile.close();
     }
 
-    // TODO Make this nice 
+    // TODO Make this nice
     std::unique_ptr<ScanBase> s;
     try {
         s = buildScan(scanType, bookie );
@@ -494,10 +488,10 @@ int main(int argc, char *argv[]) {
         if (fe->isActive()) {
           analyses[fe]->init();
           analyses[fe]->run();
-          
+
           histogrammers[fe]->init();
           histogrammers[fe]->run();
-          
+
           std::cout << "  -> Analysis thread of Fe " << dynamic_cast<FrontEndCfg*>(fe)->getRxChannel() << std::endl;
         }
     }
@@ -523,7 +517,7 @@ int main(int argc, char *argv[]) {
     std::cout << "-> Scan done!" << std::endl;
 
     // Join from upstream to downstream.
-    
+
     bookie.rawData.finish();
 
     std::chrono::steady_clock::time_point scan_done = std::chrono::steady_clock::now();
@@ -531,23 +525,23 @@ int main(int argc, char *argv[]) {
     // Join Fei4DataProcessor
     proc->join();
     std::chrono::steady_clock::time_point processor_done = std::chrono::steady_clock::now();
-    
+
     std::cout << "-> Processor done, waiting for histogrammer ..." << std::endl;
-    
+
     for (unsigned i=0; i<bookie.feList.size(); i++) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
           fe->clipData->finish();
         }
     }
-    
+
     // Join histogrammers
     for( auto& histogrammer : histogrammers ) {
       histogrammer.second->join();
     }
-    
+
     std::cout << "-> Processor done, waiting for analysis ..." << std::endl;
-    
+
     for (unsigned i=0; i<bookie.feList.size(); i++) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
@@ -559,7 +553,7 @@ int main(int argc, char *argv[]) {
     for( auto& ana : analyses ) {
       ana.second->join();
     }
-      
+
     std::chrono::steady_clock::time_point all_done = std::chrono::steady_clock::now();
     std::cout << "-> All done!" << std::endl;
 
@@ -577,7 +571,7 @@ int main(int argc, char *argv[]) {
     std::cout << "-> Scan:          " << std::chrono::duration_cast<std::chrono::milliseconds>(scan_done-scan_start).count() << " ms" << std::endl;
     std::cout << "-> Processing:    " << std::chrono::duration_cast<std::chrono::milliseconds>(processor_done-scan_done).count() << " ms" << std::endl;
     std::cout << "-> Analysis:      " << std::chrono::duration_cast<std::chrono::milliseconds>(all_done-processor_done).count() << " ms" << std::endl;
-    
+
     scanLog["stopwatch"]["config"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count();
     scanLog["stopwatch"]["scan"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(scan_done-scan_start).count();
     scanLog["stopwatch"]["processing"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(processor_done-scan_done).count();
@@ -608,7 +602,7 @@ int main(int argc, char *argv[]) {
     for (unsigned i=0; i<bookie.feList.size(); i++) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
-            
+
             // Save config
             if (!dynamic_cast<FrontEndCfg*>(fe)->isLocked()) {
                 std::cout << "-> Saving config of FE " << dynamic_cast<FrontEndCfg*>(fe)->getName() << " to " << feCfgMap.at(fe) << std::endl;
@@ -626,7 +620,7 @@ int main(int argc, char *argv[]) {
             json backupCfg;
             dynamic_cast<FrontEndCfg*>(fe)->toFileJson(backupCfg);
             backupCfgFile << std::setw(4) << backupCfg;
-            backupCfgFile.close(); 
+            backupCfgFile.close();
 
             // Plot
             if (doPlots||dbUse) {
@@ -689,9 +683,9 @@ void printHelp() {
     std::cout << " -m <int> : 0 = pixel masking disabled, 1 = start with fresh pixel mask, default = pixel masking enabled" << std::endl;
     std::cout << " -k: Report known items (Scans, Hardware etc.)\n";
     std::cout << " -W: Enable using Local DB." << std::endl;
-    std::cout << " -d <database.json> : Provide database configuration. (Default " << dbDirPath << "/" << hostname << "_database.json" << std::endl;
-    std::cout << " -i <site.json> : Provide site configuration." << std::endl;
-    std::cout << " -u <user.json> : Provide user configuration." << std::endl;
+    std::cout << " -d <database.json> : Provide database configuration. (Default " << dbDirPath << "/" << hostname << "_database.json)" << std::endl;
+    std::cout << " -i <site.json> : Provide site configuration. (Default " << dbDirPath << "/" << hostname << "_site.json)" << std::endl;
+    std::cout << " -u <user.json> : Provide user configuration. (Default " << dbDirPath << "/user.json)" << std::endl;
 }
 
 void listChips() {
@@ -727,7 +721,7 @@ void listScanLoopActions() {
 void listKnown() {
     std::cout << " Known HW controllers:\n";
     listControllers();
-    
+
     std::cout << " Known Chips:\n";
     listChips();
 
@@ -907,5 +901,5 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                 ana.setMapSize(fe->geo.nCol, fe->geo.nRow);
             }
         }
-    } 
+    }
 }

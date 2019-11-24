@@ -46,8 +46,13 @@ def readKey(i_path):
     return keys
 
 def getArgs():
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("command", help="Command option", type=str, nargs='+')
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument(
+        "command",
+        help="option*\tfuntion\ninit\tFunction initialization & Connection check\nlog\tDisplay data log\npull\tData retrieve\nlist\tDisplay data list\ntest\tTesting command",
+        type=str,
+        nargs='+'
+    )
     parser.add_argument('--config', help='Set User Config Path of Local DB Server.', type=str)
     parser.add_argument('--username', help='Set the User Name of Local DB Server.', type=str)
     parser.add_argument('--password', help='Set the Password of Local DB Server.', type=str)
@@ -91,6 +96,22 @@ def toJson(i_file_path):
 
     return file_json
 
+##########################
+### Display log on console
+def printLog(message):
+    global lines
+    global size
+
+    if lines<size:
+        print(message)
+        lines+=1
+    else:
+        try:
+            input(message)
+        except KeyboardInterrupt:
+            print('')
+            sys.exit()
+
 ######################
 ### main functions ###
 ######################
@@ -105,7 +126,7 @@ def __init():
 
     if db_cfg=={}:
         logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
-        logger.error('Set it by YARR/localdb/setting/setup_db.sh')
+        logger.error('Set it by YARR/localdb/setup_db.sh')
         logger.info('-----------------------')
         logger.debug('=======================')
         sys.exit(1)
@@ -150,12 +171,13 @@ def __network_db(url, db_name):
     client = MongoClient(url, serverSelectionTimeoutMS=max_server_delay)
     localdb = client[db_name]
     try:
-        localdb.collection_names()
+        localdb.list_collection_names()
         logger.info('---> Connection is GOOD.')
         return True
     except errors.ServerSelectionTimeoutError as err:
         logger.error('---> Connection is BAD.')
         logger.error('     {}'.format(err))
+        logger.error('     Access https://localdb-docs.readthedocs.io/en/master/faq/ to check more detail')
         return False
     except errors.OperationFailure as err:
         ### Need user authentication
@@ -188,7 +210,7 @@ def __network_db(url, db_name):
                 through = True
                 authentication = True
                 return True
-            except errors.OperationFailure as err: 
+            except errors.OperationFailure as err:
                 logger.error('Authentication failed.')
                 answer = input('Try again? [y/n]\n> ')
                 print('')
@@ -218,12 +240,17 @@ def main():
     logger.debug('=======================')
     logger.debug('Main Function.')
 
+    global lines
+    global size
+    lines = 0
+    size = shutil.get_terminal_size().lines-6
+
     global args
     args = getArgs()
     command = args.command
     nargs = len(args.command)-1
 
-    if command[0]=='test': 
+    if command[0]=='test':
         logger.debug('=======================')
         sys.exit(0)
 
@@ -256,12 +283,12 @@ def main():
             import direct as function
             max_server_delay = 1
             url = response['url']
-            localdb = MongoClient(url, serverSelectionTimeoutMS=max_server_delay)['localdb']
+            localdb = MongoClient(url, serverSelectionTimeoutMS=max_server_delay)[db_cfg.get('dbName', 'localdb')]
             if authentication:
                 localdb.authenticate(user, pwd)
             function.__set_localdb(localdb)
     else:
-        logger.error('Cannot access Local DB')
+        logger.error('Could not access Local DB')
         logger.error('Try later or by another remote')
         logger.info('-----------------------')
         logger.debug('=======================')
@@ -273,7 +300,25 @@ def main():
             logger.info('-----------------------')
             logger.debug('=======================')
             sys.exit(1)
-        function.__log(args)
+        r_json = function.__log(args)
+        for test_data in r_json['log']:
+            printLog('\033[1;33mtest data ID: {0} \033[0m'.format(test_data['runId']))
+            printLog('User      : {0} at {1}'.format(test_data['user'], test_data['site']))
+            printLog('Date      : {0}'.format(test_data['datetime']))
+            printLog('Chip      : {0}'.format(', '.join(test_data['chips'])))
+            printLog('Run Number: {0}'.format(test_data['runNumber']))
+            printLog('Test Type : {0}'.format(test_data['testType']))
+            if test_data.get('environment',{})=={}:
+                printLog('DCS Data  : NULL')
+            else:
+                printLog('DCS Data  :')
+                for chip in test_data.get('environment',{}):
+##
+                    if args.chip==chip:
+                        printLog('   \033[1;31m{0} ({1})\033[0m'.format(', '.join(test_data['environment'][chip]), chip))
+                    else:
+                        printLog('   {0} ({1})'.format(', '.join(test_data['environment'][chip]), chip))
+            printLog('')
         logger.info('-----------------------')
         logger.debug('=======================')
         sys.exit(0)
@@ -301,7 +346,7 @@ def main():
         if dir_path=='localdb':
             logger.error('Not set directory name to "localdb"')
             sys.exit()
-        if os.path.isdir(dir_path): 
+        if os.path.isdir(dir_path):
             logger.warning('Already exist directory: {}.'.format(dir_path))
             answer = input('\nDelete it? [y/n]\n> ')
             print('')
@@ -310,7 +355,21 @@ def main():
             else:
                 sys.exit()
         os.makedirs(dir_path)
-        function.__pull(dir_path, args)
+        console_data = function.__pull(dir_path, args)
+        logger.info('\033[1;33m{0} data ID: {1} \033[0m'.format(console_data['col'], console_data['_id']))
+        for key in console_data['log']:
+            if console_data['log'][key]:
+                logger.info('- {0:<10}: {1}'.format(key,console_data['log'][key]))
+        for data in console_data['data']:
+            logger.info('Retrieve ... {}'.format(data['path']))
+            if data['type']=='json':
+                with open(data['path'], 'w') as f:
+                    json.dump(data['data'], f, indent=4)
+            else:
+                with open(data['path'], 'w') as f:
+                    f.write(data['data'])
+
+
         logger.info('-----------------------')
         logger.debug('=======================')
         sys.exit(0)
@@ -327,7 +386,46 @@ def main():
             logger.info('-----------------------')
             logger.debug('=======================')
             sys.exit(1)
-        function.__list(opt)
+        if opt=='component':
+            r_json = function.__list_component()
+            printLog('')
+            for docs in r_json['parent']:
+                printLog('\033[1;33m{0}: {1} \033[0m'.format(docs['type'], docs['name']))
+                printLog('User      : {0} at {1}'.format(docs['user'], docs['site']))
+                printLog('Chip Type : {0}'.format(docs['asic']))
+                printLog('Chips({0})  :'.format(len(docs['chips'])))
+                for oid in docs['chips']:
+                    chip_docs = r_json['child'][oid]
+                    printLog('\033[1;33m    {0}: {1} \033[0m'.format(chip_docs['type'], chip_docs['name']))
+                    printLog('    User  : {0} at {1}'.format(chip_docs['user'], chip_docs['site']))
+                    printLog('    ChipId: {0}'.format(chip_docs['chipId']))
+                    del r_json['child'][oid]
+                printLog('')
+            for oid in r_json['child']:
+                docs = r_json['child'][oid]
+                printLog('\033[1;33m{0}: {1} \033[0m'.format(docs['type'], docs['name']))
+                printLog('User      : {0} at {1}'.format(docs['user'], docs['site']))
+                printLog('Chip Type : {0}'.format(docs['asic']))
+                printLog('ChipId    : {0}'.format(docs['chipId']))
+                printLog('')
+
+        elif opt=='user':
+            r_json = function.__list_user()
+
+            printLog('')
+            for user in r_json:
+                printLog('\033[1;33mUser Name: {0}\033[0m'.format(user))
+                for docs in r_json[user]:
+                    printLog('- {0}'.format(docs))
+                printLog('')
+
+        elif opt=='site':
+            r_json = function.__list_site()
+            printLog('')
+            for site in r_json['site']:
+                printLog('- {0}'.format(site))
+            printLog('')
+
         logger.info('-----------------------')
         logger.debug('=======================')
         sys.exit(0)
