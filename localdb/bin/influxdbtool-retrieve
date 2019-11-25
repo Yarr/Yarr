@@ -3,6 +3,7 @@
 from influxdb import InfluxDBClient
 import sys, os
 import datetime
+import time as time_module
 import json
 import dateutil, pytz
 import pandas as pd
@@ -15,27 +16,6 @@ output_DIR=''
 remote_host='127.0.0.1'
 remote_port=8086
 dbname='dcsDB'
-
-_dcsList={ 'measurement' : 'dummy_thermal',
-           'dcsList' : [{'key'        : 'temperature',
-                         'data_name'  : 'temperature_1',
-                         'data_unit'  : 'temperature_1_unit',
-                         'description': 'Room Temperature [C]',
-                         'setting'    : 28
-                     },{
-                         'key'        : 'temperature',
-                         'data_name'  : 'temperature_2',
-                         'data_unit'  : 'temperature_2_unit',
-                         'description': 'Room Temperature [C]',
-                         'setting'    : 28
-                     },{
-                         'key'        : 'temperature',
-                         'data_name'  : 'temperature_3',
-                         'data_unit'  : 'temperature_3_unit',
-                         'description': 'Room Temperature [C]',
-                         'setting'    : 28
-                     }]
-       }
 
 class dcsDataClient:
     def __init__(self):        
@@ -91,9 +71,12 @@ def getData(client, dcs_config_fname):
         print('dcs Configuration file : {}'.format(dcs_config))
         print('ERROR!')
         return 1
+    dcsInfo={}
+    dcsInfo['environments']=[]
     for dcsList in dcs_config['environments']:
         measurement=dcsList.get('measurement')
-        datFileName='{}/{}.dat'.format(output_DIR,measurement)
+        now_ts=time_module.time()
+        datFileName='{}/{}{}.dat'.format(output_DIR,measurement,now_ts)
         data_list=client.getEvent(measurement)
         #chip='OU078B_chip1'
         if data_list is None :
@@ -105,8 +88,6 @@ def getData(client, dcs_config_fname):
                 mode_text='mode null '
                 setting_text='setting null '
                 keyList=[]
-                dcsInfo={}
-                dcsInfo['environments']=[]
                 for dcs in dcsList['dcsList']:
                     key=dcs.get('key')
                     num=0
@@ -163,7 +144,7 @@ def calculate_runTime(scanLog):
     end_timestamp=start_timestamp+pd.offsets.Milli(total_ms)
 
     #offset
-    offset_time=10000 #ms
+    offset_time=15000 #ms
     start_timestamp=start_timestamp-pd.offsets.Milli(offset_time)
     end_timestamp=end_timestamp+pd.offsets.Milli(offset_time)
 
@@ -178,6 +159,7 @@ def appendDcsInfo(dcsInfoList,description,key,num,path):
     singleInfo['path']=path
     singleInfo['chip']=chip
     singleInfo['status']='enabled'
+    print(path)
     
     dcsInfoList.append(singleInfo)
     return dcsInfoList
