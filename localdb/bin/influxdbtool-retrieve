@@ -58,7 +58,7 @@ class dcsDataClient:
     def getEvent(self,measName):
         if self.db_exist :
             if {'name':measName} in self.meas_list :
-                return self.client.query('SELECT * FROM {0} WHERE time >= {1} AND time <= {2}'.format(measName,self.runStart,self.runEnd))
+                return self.client.query('SELECT * FROM \"{0}\" WHERE time >= {1} AND time <= {2}'.format(measName,self.runStart,self.runEnd))
             else :
                 #error_massage('measurement',measName)
                 return None
@@ -163,7 +163,7 @@ def calculate_runTime(scanLog):
     end_timestamp=start_timestamp+pd.offsets.Milli(total_ms)
 
     #offset
-    offset_time=7000 #ms
+    offset_time=10000 #ms
     start_timestamp=start_timestamp-pd.offsets.Milli(offset_time)
     end_timestamp=end_timestamp+pd.offsets.Milli(offset_time)
 
