@@ -62,6 +62,21 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path
     // ABCStar chip IDs
     for (int i=0; i<m_nABCs; ++i) {
         m_ABCIDs.push_back(i+1);
+        
+        _MaskInput0.push_back(0);
+        _MaskInput1.push_back(0);
+        _MaskInput2.push_back(0);
+        _MaskInput3.push_back(0);
+        _MaskInput4.push_back(0);
+        _MaskInput5.push_back(0);
+        _MaskInput6.push_back(0);
+        _MaskInput7.push_back(0);
+
+        _TM.push_back(0);
+        _TestPattEnable.push_back(0);
+        _TestPulseEnable.push_back(0);
+        _TestPatt1.push_back(0xf);
+        _TestPatt2.push_back(0xf);
     }
 }
 
@@ -240,6 +255,7 @@ void StarEmu::DecodeLCB(LCB::Frame frame) {
         }
         else if (frame == LCB::IDLE) { // Idle
             if (verbose) std::cout << __PRETTY_FUNCTION__ << " : received an IDLE frame" << std::endl;
+            m_bccnt += 4;
             // do nothing
         }
     } // if (not (SixEight::iskcode(code0) or SixEight::iskcode(code1)) )
@@ -321,6 +337,8 @@ void StarEmu::doFastCommand(uint8_t data6) {
         std::cout << "Fast command: StartPRLP" << std::endl;
         break;
     }
+
+    m_bccnt += 4;
 }
 
 void StarEmu::doRegReadWrite(LCB::Frame frame) {
@@ -435,14 +453,56 @@ void StarEmu::execute_command_sequence()
     } // if (isRegRead)
 }
 
-std::array<unsigned, 8> StarEmu::getFrontEndData(int mode)
+std::array<unsigned, 8> StarEmu::getFrontEndData(unsigned fe_index,
+                                                 uint8_t bc_index)
 {
-    // Eight 32-bit integers for 256 strips
-    // inputs[7:4]: channel 255 - 128; inputs[3:0]: channel 127 - 0
     std::array<unsigned, 8> inputs;
+    
+    if (_TM[fe_index] == 0) { // Normal Data Taking
+        // Eight 32-bit integers for 256 strips
+        // A fixed pattern for now
+        inputs[0] = (~_MaskInput7[fe_index]) & 0xfffe0000; // ch255 - 224
+        inputs[1] = (~_MaskInput6[fe_index]) & 0x0;        // ch223 - 192
+        inputs[2] = (~_MaskInput5[fe_index]) & 0x0;        // ch191 - 160
+        inputs[3] = (~_MaskInput4[fe_index]) & 0x0;        // ch159 - 128
+        inputs[4] = (~_MaskInput3[fe_index]) & 0xfffe0000; // ch127 - 96
+        inputs[5] = (~_MaskInput2[fe_index]) & 0x0;        // ch95 - 64
+        inputs[6] = (~_MaskInput1[fe_index]) & 0x0;        // ch63 - 32
+        inputs[7] = (~_MaskInput0[fe_index]) & 0x0;        // ch31 - 0
+    }
+    else if (_TM[fe_index] == 1) { // Static Test Mode
+        inputs = {_MaskInput7[fe_index], _MaskInput6[fe_index],
+                  _MaskInput5[fe_index], _MaskInput4[fe_index],
+                  _MaskInput3[fe_index], _MaskInput2[fe_index],
+                  _MaskInput1[fe_index], _MaskInput0[fe_index]};
+    }
+    else if (_TM[fe_index] == 2 and _TestPulseEnable[fe_index]) { // Test Pulse Mode
+        if (_TestPattEnable[fe_index]) {
+            // Test Pattern
+            // If mask bit is 1, use bc_index'th bit of _TestPatt1[fe_index]
+            // Otherwise, use bc_index'th bit of _TestPatt2[fe_index]
+            bool patt1_i = ((_TestPatt1[fe_index]>>bc_index) & 1) ? 0xffffffff : 0;
+            bool patt2_i = ((_TestPatt2[fe_index]>>bc_index) & 1) ? 0xffffffff : 0;
 
-    // A fixed pattern for now
-    inputs = {0, 0, 0, 0xfffe0000, 0, 0, 0, 0xfffe0000};
+            inputs[0] = _MaskInput7[fe_index] & patt1_i | ~_MaskInput7[fe_index] & patt2_i;
+            inputs[1] = _MaskInput6[fe_index] & patt1_i | ~_MaskInput6[fe_index] & patt2_i;
+            inputs[2] = _MaskInput5[fe_index] & patt1_i | ~_MaskInput5[fe_index] & patt2_i;
+            inputs[3] = _MaskInput4[fe_index] & patt1_i | ~_MaskInput4[fe_index] & patt2_i;
+            inputs[4] = _MaskInput3[fe_index] & patt1_i | ~_MaskInput3[fe_index] & patt2_i;
+            inputs[5] = _MaskInput2[fe_index] & patt1_i | ~_MaskInput2[fe_index] & patt2_i;
+            inputs[6] = _MaskInput1[fe_index] & patt1_i | ~_MaskInput1[fe_index] & patt2_i;
+            inputs[7] = _MaskInput0[fe_index] & patt1_i | ~_MaskInput0[fe_index] & patt2_i;
+        }
+        else {
+            // Get the Mask bit value for one clock
+            // Triggered by the "Digital Test Pulse" fast command
+            inputs = {_MaskInput7[fe_index], _MaskInput6[fe_index],
+                      _MaskInput5[fe_index], _MaskInput4[fe_index],
+                      _MaskInput3[fe_index], _MaskInput2[fe_index],
+                      _MaskInput1[fe_index], _MaskInput0[fe_index]};
+        }
+    }
+
     return inputs;
 }
 
@@ -453,16 +513,16 @@ std::vector<uint16_t> StarEmu::clusterFinder(
     // The bit order of these data registers are assumed to be consist with
     // the channel mask registers (Table Table 9-30 of ABCStar Spec v7.80)
     // The 256 strips are divided into two rows to form clusters
-    // {inputData[3],inputData[2],inputData[1],inputData[0]}: channel 127 - 0
-    // {inputData[7],inputData[6],inputData[5],inputData[4]}: channel 255 - 128
+    // {inputData[4],inputData[5],inputData[6],inputData[7]}: channel 127 - 0
+    // {inputData[0],inputData[1],inputData[2],inputData[3]}: channel 255 - 128
 
     std::vector<uint16_t> clusters;
 
     // combine input data into uint64_t
-    uint64_t d0l = (uint64_t)inputData[1] << 32 | inputData[0];
-    uint64_t d0h = (uint64_t)inputData[3] << 32 | inputData[2];
-    uint64_t d1l = (uint64_t)inputData[5] << 32 | inputData[4];
-    uint64_t d1h = (uint64_t)inputData[7] << 32 | inputData[6];
+    uint64_t d0l = (uint64_t)inputData[6] << 32 | inputData[7];
+    uint64_t d0h = (uint64_t)inputData[4] << 32 | inputData[5];
+    uint64_t d1l = (uint64_t)inputData[2] << 32 | inputData[3];
+    uint64_t d1h = (uint64_t)inputData[0] << 32 | inputData[1];
 
     while (d0l or d0h or d1l or d1h) {
         if (clusters.size() >= maxCluster) break;
@@ -540,19 +600,19 @@ inline void StarEmu::setBit_128b(uint8_t bit_addr, bool value,
 
 void StarEmu::getClusters(int test_mode)
 {
-    // Get frontend data
-
     m_clusters.clear();
     /*
     // Fixed cluster pattern for now
     std::vector<uint16_t> a_fixed_cluster_pattern =
         {0x78f, 0x38f, 0x7af, 0x3af, 0x7cf, 0x3cf, 0x7ee, 0xbee};
     */
-    std::vector<uint16_t> a_fixed_cluster_pattern =
-        clusterFinder(getFrontEndData(0));
 
-    for (int ich=0; ich < m_nABCs; ++ich)
+    // Get frontend data and find clusters
+    for (int ich=0; ich < m_nABCs; ++ich) {
+        std::vector<uint16_t> a_fixed_cluster_pattern =
+            clusterFinder(getFrontEndData(0));
         m_clusters.push_back(a_fixed_cluster_pattern);
+    }
 }
 
 void StarEmu::writeRegister(const uint32_t data, const uint8_t address,
@@ -582,7 +642,7 @@ void StarEmu::readRegister(const uint8_t address, bool isABC,
         // for now
         uint16_t status = (ABCID & 0xf) << 12;
 
-        // build and data packet
+        // build and send data packet
         auto packet = buildABCRegisterPacket(ptype, ich, address, data, status);
         sendPacket(packet);
     }

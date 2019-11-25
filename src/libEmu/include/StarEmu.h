@@ -66,7 +66,7 @@ private:
     uint16_t clusterFinder_sub(uint64_t&, uint64_t&, bool);
     std::vector<uint16_t> clusterFinder(const std::array<unsigned,8>&,
                                         const uint8_t maxCluster = 64);
-    std::array<unsigned, 8> getFrontEndData(int);
+    std::array<unsigned, 8> getFrontEndData(unsigned int, uint8_t bc_index=0);
     
     // Utilities
     bool getParity_8bits(uint8_t);
@@ -102,6 +102,24 @@ private:
     unsigned int m_HCCID;
     std::vector<unsigned int> m_ABCIDs;
     unsigned int m_nABCs;
+
+    // Mask/Input registers
+    std::vector<unsigned int> _MaskInput0; // 0x10: ch31 - ch0
+    std::vector<unsigned int> _MaskInput1; // 0x11: ch63 - ch32
+    std::vector<unsigned int> _MaskInput2; // 0x12: ch95 - ch64
+    std::vector<unsigned int> _MaskInput3; // 0x13: ch127 - ch96
+    std::vector<unsigned int> _MaskInput4; // 0x14: ch159 - ch128
+    std::vector<unsigned int> _MaskInput5; // 0x15: ch191 - ch160
+    std::vector<unsigned int> _MaskInput6; // 0x16: ch223 - ch192
+    std::vector<unsigned int> _MaskInput7; // 0x17: ch255 - ch224
+
+    // Test mode and Test pattern
+    // configuration register 0x20
+    std::vector<uint8_t> _TM; // [17:16] of register 0x20
+    std::vector<uint8_t> _TestPatt1; // [23:20] of register 0x20
+    std::vector<uint8_t> _TestPatt2; // [27:24] of register 0x20
+    std::vector<bool> _TestPattEnable; // [18] of register 0x20
+    std::vector<bool> _TestPulseEnable; // [4] of register 0x20
 };
 
 #endif //__STAR_EMU_H__
