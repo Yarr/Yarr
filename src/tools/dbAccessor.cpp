@@ -186,7 +186,6 @@ int main(int argc, char *argv[]){
 
 	  database->setDCSCfg(dcs_path, scanlog_path, user_cfg_path, site_cfg_path);
 	  database->cleanUp("dcs", "");
-	  //database->cleanDataDir(scanlog_path);                                                                                                                        
 	  database->cleanDataDir();
 	}
       }
