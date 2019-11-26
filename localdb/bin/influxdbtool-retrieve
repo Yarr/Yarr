@@ -159,7 +159,6 @@ def appendDcsInfo(dcsInfoList,description,key,num,path):
     singleInfo['path']=path
     singleInfo['chip']=chip
     singleInfo['status']='enabled'
-    print(path)
     
     dcsInfoList.append(singleInfo)
     return dcsInfoList
