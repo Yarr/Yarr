@@ -72,6 +72,99 @@ const std::vector<abcsubregdef> StarCfg::s_abcsubregdefs = {
   {ABCStarSubRegister::DOFUSE			,37	,0	,2}	,
   {ABCStarSubRegister::LCB_ERRCOUNT_THR	        ,38	,0	,1}
 };
+typedef std::tuple<HCCStarSubRegister, unsigned int, unsigned int, unsigned int> hccsubregdef;
+const std::vector<hccsubregdef> StarCfg::s_hccsubregdefs = {
+  {HCCStarSubRegister::STOPHPR			,16	,0	,1}	,
+  {HCCStarSubRegister::CFD_BC_FINEDELAY		,32	,0	,4}	,
+  {HCCStarSubRegister::CFD_BC_COARSEDELAY	,32	,4	,2}	,
+  {HCCStarSubRegister::CFD_PRLP_FINEDELAY	,32	,8	,4}	,
+  {HCCStarSubRegister::CFD_PRLP_COARSEDELAY	,32	,12	,2}	,
+  {HCCStarSubRegister::HFD_LCBA_FINEDELAY	,32	,16	,4}	,
+  {HCCStarSubRegister::FD_RCLK_FINEDELAY	,32	,20	,4}	,
+  {HCCStarSubRegister::LCBA_DELAY160            ,32	,24	,2}	,
+  {HCCStarSubRegister::FD_DATAIN0_FINEDELAY     ,33	,0	,4}	,
+  {HCCStarSubRegister::FD_DATAIN1_FINEDELAY     ,33	,4	,4}	,
+  {HCCStarSubRegister::FD_DATAIN2_FINEDELAY     ,33	,8	,4}	,
+  {HCCStarSubRegister::FD_DATAIN3_FINEDELAY     ,33	,12	,4}	,
+  {HCCStarSubRegister::FD_DATAIN4_FINEDELAY     ,33	,16	,4}	,
+  {HCCStarSubRegister::FD_DATAIN5_FINEDELAY     ,33	,20	,4}	,
+  {HCCStarSubRegister::FD_DATAIN6_FINEDELAY     ,33	,24	,4}	,
+  {HCCStarSubRegister::FD_DATAIN7_FINEDELAY     ,33	,28	,4}	,
+  {HCCStarSubRegister::FD_DATAIN8_FINEDELAY     ,34	,0	,4}	,
+  {HCCStarSubRegister::FD_DATAIN9_FINEDELAY     ,34	,4	,4}	,
+  {HCCStarSubRegister::FD_DATAIN10_FINEDELAY    ,34	,8	,4}	,
+  {HCCStarSubRegister::EPLLICP                  ,35	,0	,4}	,
+  {HCCStarSubRegister::EPLLCAP                  ,35	,4	,2}	,
+  {HCCStarSubRegister::EPLLRES                  ,35	,8	,4}	,
+  {HCCStarSubRegister::EPLLREFFREQ              ,35	,12	,2}	,
+  {HCCStarSubRegister::EPLLENABLEPHASE          ,35	,16	,8}	,
+  {HCCStarSubRegister::EPLLPHASE320A            ,36	,0	,4}	,
+  {HCCStarSubRegister::EPLLPHASE320B            ,36	,4	,4}	,
+  {HCCStarSubRegister::EPLLPHASE320C            ,36	,8	,4}	,
+  {HCCStarSubRegister::EPLLPHASE160A            ,37	,0	,4}	,
+  {HCCStarSubRegister::EPLLPHASE160B            ,37	,8	,4}	,
+  {HCCStarSubRegister::EPLLPHASE160C            ,37	,16	,4}	,
+  {HCCStarSubRegister::STVCLKOUTCUR             ,38	,0	,3}	,
+  {HCCStarSubRegister::STVCLKOUTEN              ,38	,3	,1}	,
+  {HCCStarSubRegister::LCBOUTCUR                ,38	,4	,3}	,
+  {HCCStarSubRegister::LCBOUTEN                 ,38	,7	,1}	,
+  {HCCStarSubRegister::R3L1OUTCUR               ,38	,8	,3}	,
+  {HCCStarSubRegister::R3L1OUTEN                ,38	,11	,1}	,
+  {HCCStarSubRegister::BCHYBCUR                 ,38	,12	,3}	,
+  {HCCStarSubRegister::BCHYBEN                  ,38	,15	,1}	,
+  {HCCStarSubRegister::LCBAHYBCUR               ,38	,16	,3}	,
+  {HCCStarSubRegister::LCBAHYBEN                ,38	,19	,1}	,
+  {HCCStarSubRegister::PRLPHYBCUR               ,38	,20	,3}	,
+  {HCCStarSubRegister::PRLPHYBEN                ,38	,23	,1}	,
+  {HCCStarSubRegister::RCLKHYBCUR               ,38	,24	,3}	,
+  {HCCStarSubRegister::RCLKHYBEN                ,38	,27	,1}	,
+  {HCCStarSubRegister::DATA1CUR                 ,39	,0	,3}	,
+  {HCCStarSubRegister::DATA1ENPRE               ,39	,3	,1}	,
+  {HCCStarSubRegister::DATA1ENABLE              ,39	,4	,1}	,
+  {HCCStarSubRegister::DATA1TERM                ,39	,5	,1}	,
+  {HCCStarSubRegister::DATACLKCUR               ,39	,16	,3}	,
+  {HCCStarSubRegister::DATACLKENPRE             ,39	,19	,1}	,
+  {HCCStarSubRegister::DATACLKENABLE            ,39	,20	,1}	,
+  {HCCStarSubRegister::ICENABLE                 ,40	,0	,11}	,
+  {HCCStarSubRegister::ICTRANSSEL               ,40	,16	,3}	,
+  {HCCStarSubRegister::TRIGMODE                 ,41	,0	,1}	,
+  {HCCStarSubRegister::ROSPEED                  ,41	,4	,1}	,
+  {HCCStarSubRegister::OPMODE                   ,41	,8	,2}	,
+  {HCCStarSubRegister::MAXNPACKETS              ,41	,12	,3}	,
+  {HCCStarSubRegister::ENCODECNTL               ,41	,16	,1}	,
+  {HCCStarSubRegister::ENCODE8B10B              ,41	,17	,1}	,
+  {HCCStarSubRegister::PRBSMODE                 ,41	,18	,1}	,
+  {HCCStarSubRegister::TRIGMODEC                ,42	,0	,1}	,
+  {HCCStarSubRegister::ROSPEEDC                 ,42	,4	,1}	,
+  {HCCStarSubRegister::OPMODEC                  ,42	,8	,2}	,
+  {HCCStarSubRegister::MAXNPACKETSC             ,42	,12	,3}	,
+  {HCCStarSubRegister::ENCODECNTLC              ,42	,16	,1}	,
+  {HCCStarSubRegister::ENCODE8B10BC             ,42	,17	,1}	,
+  {HCCStarSubRegister::PRBSMODEC                ,42	,18	,1}	,
+  {HCCStarSubRegister::BGSETTING                ,43	,0	,5}	,
+  {HCCStarSubRegister::MASKHPR                  ,43	,8	,1}	,
+  {HCCStarSubRegister::GPO0                     ,43	,12	,1}	,
+  {HCCStarSubRegister::GPO1                     ,43	,13	,1}	,
+  {HCCStarSubRegister::EFUSEPROGBIT             ,43	,16	,5}	,
+  {HCCStarSubRegister::BCIDRSTDELAY             ,44	,0	,9}	,
+  {HCCStarSubRegister::BCMMSQUELCH              ,44	,16	,11}	,
+  {HCCStarSubRegister::ABCRESETB                ,45	,0	,1}	,
+  {HCCStarSubRegister::AMACSSSH                 ,45	,4	,1}	,
+  {HCCStarSubRegister::ABCRESETBC               ,46	,0	,1}	,
+  {HCCStarSubRegister::AMACSSSHC                ,46	,4	,1}	,
+  {HCCStarSubRegister::LCBERRCOUNTTHR           ,47	,0	,16}	,
+  {HCCStarSubRegister::R3L1ERRCOUNTTHR          ,47	,16	,16}	,
+  {HCCStarSubRegister::AMENABLE                 ,48	,0	,1}	,
+  {HCCStarSubRegister::AMCALIB                  ,48	,4	,1}	,
+  {HCCStarSubRegister::AMSW0                    ,48	,8	,1}	,
+  {HCCStarSubRegister::AMSW1                    ,48	,9	,1}	,
+  {HCCStarSubRegister::AMSW2                    ,48	,10	,1}	,
+  {HCCStarSubRegister::AMSW60                   ,48	,12	,1}	,
+  {HCCStarSubRegister::AMSW80                   ,48	,13	,1}	,
+  {HCCStarSubRegister::AMSW100                  ,48	,14	,1}	,
+  {HCCStarSubRegister::ANASET                   ,48	,16	,3}	,
+  {HCCStarSubRegister::THERMOFFSET              ,48	,20	,4}	
+};
 
 double StarCfg::toCharge(double vcal) {
     // Q = C*V
@@ -147,17 +240,10 @@ void StarCfg::configure_HCC_Registers() {
   registerMap[0][HCCStarRegister::ADCcfg]->setValue(0x00406600);
 
 
-//TODO ###declare subregisters for HCC
-
-  //    hccSubRegisterMap_all[0]["CFD_BC_FINEDELAY"] = registerMap[0][]->addSubRegister("CFD_BC_FINEDELAY",   ,  );
-  //    hccSubRegisterMap_all[0]["CFD_BC_COARSEDELAY"] = registerMap[0][]->addSubRegister("CFD_BC_COARSEDELAY",   ,  );
-  //    hccSubRegisterMap_all[0][""] = registerMap[0][]->addSubRegister("",   ,  );
-  //    hccSubRegisterMap_all[0][""] = registerMap[0][]->addSubRegister("",   ,  );
-  //    hccSubRegisterMap_all[0][""] = registerMap[0][]->addSubRegister("",   ,  );
-
-
-  //    hccSubRegisterMap_all[0][""] = registerMap[0][]->addSubRegister("",   ,  );
-
+  for (auto def : s_hccsubregdefs) {
+    std::string subregname = std::string((std::get<0>(def))._to_string());
+    hccSubRegisterMap_all[std::get<0>(def)] = registerMap[0][std::get<1>(def)]->addSubRegister(subregname, std::get<2>(def), std::get<3>(def));
+  }
 
 
 
