@@ -455,4 +455,3 @@ void StarCfg::toFileJson(json &j) {
 
 void StarCfg::fromFileJson(json &j) {
 }
-
