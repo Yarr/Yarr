@@ -14,6 +14,12 @@ StarCfg::~StarCfg() {}
 //Register enums definitions
 typedef std::tuple<ABCStarSubRegister, unsigned int, unsigned int, unsigned int> abcsubregdef;
 const std::vector<abcsubregdef> StarCfg::s_abcsubregdefs = {
+  {ABCStarSubRegister::RRFORCE			,0	,0	,1}	,
+  {ABCStarSubRegister::WRITEDISABLE		,0	,1	,1}	,
+  {ABCStarSubRegister::STOPHPR			,0	,2	,1}	,
+  {ABCStarSubRegister::TESTHPR			,0	,3	,1}	,
+  {ABCStarSubRegister::EFUSEL			,0	,4	,1}	,
+  {ABCStarSubRegister::LCBERRCNTCLR		,0	,5	,1}	,
   {ABCStarSubRegister::BVREF			,1	,0	,5}	,
   {ABCStarSubRegister::BIREF			,1	,8	,5}	,
   {ABCStarSubRegister::B8BREF			,1	,16	,5}	,
