@@ -38,6 +38,7 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path
     : m_txRingBuffer ( tx )
     , m_rxQueue ( rx )
     , m_bccnt( 0 )
+    , m_starCfg( new StarCfg )
 {
     run = true;
 
@@ -50,34 +51,17 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path
     m_ignoreCmd = true;
     m_isForABC = false;
 
-    /////////////////////////////////
-    // Should be set from chip config
+    // HCCStar and ABCStar configurations
+    // TODO: should get these from chip config json file
+    // m_starCfg->fromFileJson(j_starCfg);
     // for now
-    m_HCCID = 0;
-    m_nABCs = 11;
+    m_starCfg->setHCCchipID(0);
+    m_starCfg->m_nABC = 11;
+    m_starCfg->setABCchipIDs();
 
-    m_ABCIDs.reserve(m_nABCs);
-    m_clusters.reserve(m_nABCs);
+    m_starCfg->initRegisterMaps();
 
-    // ABCStar chip IDs
-    for (int i=0; i<m_nABCs; ++i) {
-        m_ABCIDs.push_back(i+1);
-        
-        _MaskInput0.push_back(0);
-        _MaskInput1.push_back(0);
-        _MaskInput2.push_back(0);
-        _MaskInput3.push_back(0);
-        _MaskInput4.push_back(0);
-        _MaskInput5.push_back(0);
-        _MaskInput6.push_back(0);
-        _MaskInput7.push_back(0);
-
-        _TM.push_back(0);
-        _TestPattEnable.push_back(0);
-        _TestPulseEnable.push_back(0);
-        _TestPatt1.push_back(0xf);
-        _TestPatt2.push_back(0xf);
-    }
+    m_clusters.reserve(m_starCfg->m_nABC);
 }
 
 StarEmu::~StarEmu() {}
@@ -275,7 +259,7 @@ void StarEmu::doL0A(uint16_t data12) {
         if ( (l0a_mask >> (3-ibc)) & 1 ) {
             
             // get clusters for this BC
-            getClusters(0);
+            getClusters();
 
             // build and send data packet
             PacketTypes ptype = PacketTypes::LP; // for now
@@ -353,7 +337,7 @@ void StarEmu::doRegReadWrite(LCB::Frame frame) {
         unsigned cmd_hccID = data6 & 0xf; // Bottom 4 bits for HCC ID
         // Ignore the command sequence unless the HCC ID matches the ID on chip
         // or it is a broadcast command (0b1111)
-        m_ignoreCmd = not ( cmd_hccID == (m_HCCID & 0xf) or cmd_hccID == 0xf);
+        m_ignoreCmd = not ( cmd_hccID == (m_starCfg->getHCCchipID() & 0xf) or cmd_hccID == 0xf);
 
         if (m_ignoreCmd) return;
         
@@ -422,8 +406,8 @@ void StarEmu::execute_command_sequence()
         */
         // If cmd_abcID is '1111' i.e. broadcast address, read all ABCs
         if ((cmd_abcID & 0xf) == 0xf and m_isForABC) {
-            for (const auto abcID : m_ABCIDs)
-                readRegister(reg_addr, true, abcID);
+            for (int index=1; index <= m_starCfg->m_nABC; ++index)
+                readRegister(reg_addr, true, m_starCfg->getABCchipID(index));
         } else {
             readRegister(reg_addr, m_isForABC, cmd_abcID);
         }
@@ -444,8 +428,8 @@ void StarEmu::execute_command_sequence()
         // write register
         // If cmd_abcID is '1111' i.e. broadcast address, write all ABCs
         if ((cmd_abcID & 0xf) == 0xf and m_isForABC) {
-            for (const auto abcID : m_ABCIDs)
-                writeRegister(data, reg_addr, true, cmd_abcID);
+            for (int index=1; index <= m_starCfg->m_nABC; ++index)
+                writeRegister(data, reg_addr, true, m_starCfg->getABCchipID(index));
         } else {
             writeRegister(data, reg_addr, m_isForABC, cmd_abcID);
         }
@@ -453,53 +437,70 @@ void StarEmu::execute_command_sequence()
     } // if (isRegRead)
 }
 
-std::array<unsigned, 8> StarEmu::getFrontEndData(unsigned fe_index,
+std::array<unsigned, 8> StarEmu::getFrontEndData(unsigned chipID,
                                                  uint8_t bc_index)
 {
     std::array<unsigned, 8> inputs;
+
+    // test mode
+    uint8_t TM = m_starCfg->getABCSubRegValue(ABCStarRegs::CREG0, chipID, 17, 16);
+    bool testPulseEnable = m_starCfg->getABCSubRegValue(ABCStarRegs::CREG0, chipID, 4, 4);
     
-    if (_TM[fe_index] == 0) { // Normal Data Taking
+    // mask registers
+    auto maskinput0 = m_starCfg->getABCRegister(ABCStarRegs::MaskInput0, chipID);
+    auto maskinput1 = m_starCfg->getABCRegister(ABCStarRegs::MaskInput1, chipID);
+    auto maskinput2 = m_starCfg->getABCRegister(ABCStarRegs::MaskInput2, chipID);
+    auto maskinput3 = m_starCfg->getABCRegister(ABCStarRegs::MaskInput3, chipID);
+    auto maskinput4 = m_starCfg->getABCRegister(ABCStarRegs::MaskInput4, chipID);
+    auto maskinput5 = m_starCfg->getABCRegister(ABCStarRegs::MaskInput5, chipID);
+    auto maskinput6 = m_starCfg->getABCRegister(ABCStarRegs::MaskInput6, chipID);
+    auto maskinput7 = m_starCfg->getABCRegister(ABCStarRegs::MaskInput7, chipID);
+    
+    if (TM == 0) { // Normal Data Taking
         // Eight 32-bit integers for 256 strips
         // A fixed pattern for now
-        inputs[0] = (~_MaskInput7[fe_index]) & 0xfffe0000; // ch255 - 224
-        inputs[1] = (~_MaskInput6[fe_index]) & 0x0;        // ch223 - 192
-        inputs[2] = (~_MaskInput5[fe_index]) & 0x0;        // ch191 - 160
-        inputs[3] = (~_MaskInput4[fe_index]) & 0x0;        // ch159 - 128
-        inputs[4] = (~_MaskInput3[fe_index]) & 0xfffe0000; // ch127 - 96
-        inputs[5] = (~_MaskInput2[fe_index]) & 0x0;        // ch95 - 64
-        inputs[6] = (~_MaskInput1[fe_index]) & 0x0;        // ch63 - 32
-        inputs[7] = (~_MaskInput0[fe_index]) & 0x0;        // ch31 - 0
+        inputs[0] = (~maskinput7) & 0xfffe0000; // ch255 - 224
+        inputs[1] = (~maskinput6) & 0x0;        // ch223 - 192
+        inputs[2] = (~maskinput5) & 0x0;        // ch191 - 160
+        inputs[3] = (~maskinput4) & 0x0;        // ch159 - 128
+        inputs[4] = (~maskinput3) & 0xfffe0000; // ch127 - 96
+        inputs[5] = (~maskinput2) & 0x0;        // ch95 - 64
+        inputs[6] = (~maskinput1) & 0x0;        // ch63 - 32
+        inputs[7] = (~maskinput0) & 0x0;        // ch31 - 0
+        
+        // Expected clusterFinder output:
+        // {0x78f, 0x38f, 0x7af, 0x3af, 0x7cf, 0x3cf, 0x7ee, 0xbee};
     }
-    else if (_TM[fe_index] == 1) { // Static Test Mode
-        inputs = {_MaskInput7[fe_index], _MaskInput6[fe_index],
-                  _MaskInput5[fe_index], _MaskInput4[fe_index],
-                  _MaskInput3[fe_index], _MaskInput2[fe_index],
-                  _MaskInput1[fe_index], _MaskInput0[fe_index]};
+    else if (TM == 1) { // Static Test Mode
+        inputs = {maskinput7, maskinput6, maskinput5, maskinput4,
+                  maskinput3, maskinput2, maskinput1, maskinput0};
     }
-    else if (_TM[fe_index] == 2 and _TestPulseEnable[fe_index]) { // Test Pulse Mode
-        if (_TestPattEnable[fe_index]) {
+    else if (TM == 2 and testPulseEnable) { // Test Pulse Mode
+        uint8_t testPatt1 = m_starCfg->getABCSubRegValue(ABCStarRegs::CREG0, chipID, 23, 20);
+        uint8_t testPatt2 = m_starCfg->getABCSubRegValue(ABCStarRegs::CREG0, chipID, 27, 24);
+        bool testPattEnable = m_starCfg->getABCSubRegValue(ABCStarRegs::CREG0, chipID, 18, 18);
+        
+        if (testPattEnable) {
             // Test Pattern
-            // If mask bit is 1, use bc_index'th bit of _TestPatt1[fe_index]
-            // Otherwise, use bc_index'th bit of _TestPatt2[fe_index]
-            bool patt1_i = ((_TestPatt1[fe_index]>>bc_index) & 1) ? 0xffffffff : 0;
-            bool patt2_i = ((_TestPatt2[fe_index]>>bc_index) & 1) ? 0xffffffff : 0;
+            // If mask bit is 1, use bc_index'th bit of testPatt1
+            // Otherwise, use bc_index'th bit of testPatt2
+            bool patt1_i = ((testPatt1 >> bc_index) & 1) ? 0xffffffff : 0;
+            bool patt2_i = ((testPatt2 >> bc_index) & 1) ? 0xffffffff : 0;
 
-            inputs[0] = _MaskInput7[fe_index] & patt1_i | ~_MaskInput7[fe_index] & patt2_i;
-            inputs[1] = _MaskInput6[fe_index] & patt1_i | ~_MaskInput6[fe_index] & patt2_i;
-            inputs[2] = _MaskInput5[fe_index] & patt1_i | ~_MaskInput5[fe_index] & patt2_i;
-            inputs[3] = _MaskInput4[fe_index] & patt1_i | ~_MaskInput4[fe_index] & patt2_i;
-            inputs[4] = _MaskInput3[fe_index] & patt1_i | ~_MaskInput3[fe_index] & patt2_i;
-            inputs[5] = _MaskInput2[fe_index] & patt1_i | ~_MaskInput2[fe_index] & patt2_i;
-            inputs[6] = _MaskInput1[fe_index] & patt1_i | ~_MaskInput1[fe_index] & patt2_i;
-            inputs[7] = _MaskInput0[fe_index] & patt1_i | ~_MaskInput0[fe_index] & patt2_i;
+            inputs[0] = maskinput7 & patt1_i | ~maskinput7 & patt2_i;
+            inputs[1] = maskinput6 & patt1_i | ~maskinput6 & patt2_i;
+            inputs[2] = maskinput5 & patt1_i | ~maskinput5 & patt2_i;
+            inputs[3] = maskinput4 & patt1_i | ~maskinput4 & patt2_i;
+            inputs[4] = maskinput3 & patt1_i | ~maskinput3 & patt2_i;
+            inputs[5] = maskinput2 & patt1_i | ~maskinput2 & patt2_i;
+            inputs[6] = maskinput1 & patt1_i | ~maskinput1 & patt2_i;
+            inputs[7] = maskinput0 & patt1_i | ~maskinput0 & patt2_i;
         }
         else {
             // Get the Mask bit value for one clock
-            // Triggered by the "Digital Test Pulse" fast command
-            inputs = {_MaskInput7[fe_index], _MaskInput6[fe_index],
-                      _MaskInput5[fe_index], _MaskInput4[fe_index],
-                      _MaskInput3[fe_index], _MaskInput2[fe_index],
-                      _MaskInput1[fe_index], _MaskInput0[fe_index]};
+            // Should be triggered by the "Digital Test Pulse" fast command
+            inputs = {maskinput7, maskinput6, maskinput5, maskinput4,
+                      maskinput3, maskinput2, maskinput1, maskinput0};
         }
     }
 
@@ -598,7 +599,7 @@ inline void StarEmu::setBit_128b(uint8_t bit_addr, bool value,
     }
 }
 
-void StarEmu::getClusters(int test_mode)
+void StarEmu::getClusters()
 {
     m_clusters.clear();
     /*
@@ -608,39 +609,49 @@ void StarEmu::getClusters(int test_mode)
     */
 
     // Get frontend data and find clusters
-    for (int ich=0; ich < m_nABCs; ++ich) {
-        std::vector<uint16_t> a_fixed_cluster_pattern =
-            clusterFinder(getFrontEndData(0));
-        m_clusters.push_back(a_fixed_cluster_pattern);
+    for (int index=1; index <= m_starCfg->m_nABC; ++index) {
+        unsigned abcID = m_starCfg->getABCchipID(index);
+        std::vector<uint16_t> a_cluster = clusterFinder(getFrontEndData(abcID));
+        m_clusters.push_back(a_cluster);
     }
 }
 
 void StarEmu::writeRegister(const uint32_t data, const uint8_t address,
                             bool isABC, const unsigned ABCID)
-{}
+{
+    if (isABC) {
+        m_starCfg->setABCRegister(address, data, ABCID);
+    }
+    else {
+        m_starCfg->setHCCRegister(address, data);
+    }
+}
 
 void StarEmu::readRegister(const uint8_t address, bool isABC,
                            const unsigned ABCID)
-{   
+{
     if (isABC) { // Read ABCStar registers
         PacketTypes ptype = PacketTypes::ABCRegRd;
-        
-        // get the input channel number given ABCStar chip ID
-        unsigned int ich = std::distance(
-            m_ABCIDs.begin(), std::find(m_ABCIDs.begin(),m_ABCIDs.end(), ABCID));
-        if (ich >= m_nABCs) {
-            // no ABC chip with the required chip ID found
+
+        // HCCStar channel number
+        unsigned ich = m_starCfg->indexForABCchipID(ABCID) - 1;
+        if (ich >= m_starCfg->m_nABC) {
             std::cout << __PRETTY_FUNCTION__ << ": Cannot find an ABCStar chip with ID = " << ABCID << std::endl;
             return;
         }
 
         // read register
-        // for now
-        unsigned data = 0xabadcafe;
+        unsigned data = m_starCfg->getABCRegister(address, ABCID);
 
         // ABC status bits
         // for now
         uint16_t status = (ABCID & 0xf) << 12;
+        /*
+        status[15:0] = {ABCID[3:0], 0, BCIDFlag,
+                        PRFIFOFull, PRFIFOEmpty, LPFIFOFull, LPFIFOEmpty,
+                        RegFIFOOVFL, RegFIFOFull, RegFIFOEmpty,
+                        ClusterOVFL, ClusterFull, ClusterEmpty};
+        */
 
         // build and send data packet
         auto packet = buildABCRegisterPacket(ptype, ich, address, data, status);
@@ -650,8 +661,7 @@ void StarEmu::readRegister(const uint8_t address, bool isABC,
         PacketTypes ptype = PacketTypes::HCCRegRd;
 
         // read register
-        // for now
-        unsigned data = 0xdeadbeef;
+        unsigned data = m_starCfg->getHCCRegister(address);
 
         // build and send data packet
         auto packet = buildHCCRegisterPacket(ptype, address, data);
