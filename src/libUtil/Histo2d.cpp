@@ -250,7 +250,7 @@ void Histo2d::toFile(std::string prefix, std::string dir, bool jsonType) {
         
         for (unsigned int y=0; y<ybins; y++) {
             for (unsigned int x=0; x<xbins; x++) {
-                j["Data"][x][y] = data[x+(y*ybins)] ;
+                j["Data"][x][y] = data[y+(x*ybins)] ;
             }
         }
         
