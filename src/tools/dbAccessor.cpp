@@ -25,8 +25,8 @@ int main(int argc, char *argv[]){
     std::string hostname = getenv("HOSTNAME");
     std::string dbDirPath = home+"/.yarr/localdb";
     std::string cfg_path = dbDirPath+"/"+hostname+"_database.json";
-    std::string user_cfg_path = "";
-    std::string site_cfg_path = "";
+    std::string user_cfg_path = dbDirPath+"/user.json";
+    std::string site_cfg_path = dbDirPath+"/"+hostname+"_site.json";
     std::string registerType = "";
 
     std::string commandLine= argv[0];
@@ -209,8 +209,8 @@ void printHelp() {
     std::cout << "     -s <scanLog.json> : Provide scan log file." << std::endl;
     std::cout << " -M : Retrieve Module list from Local DB." << std::endl;
     std::cout << " " << std::endl;
-    std::cout << " -d <database.json> : Provide database configuration. (Default " << dbDirPath << "/" << hostname << "_database.json" << std::endl;
-    std::cout << " -i <site.json> : Provide site configuration. " << std::endl;
-    std::cout << " -u <user.json> : Provide user configuration. " << std::endl;
+    std::cout << " -d <database.json> : Provide database configuration. (Default " << dbDirPath << "/" << hostname << "_database.json)" << std::endl;
+    std::cout << " -i <site.json> : Provide site configuration. (Default " << dbDirPath << "/" << hostname << "_site.json)" << std::endl;
+    std::cout << " -u <user.json> : Provide user configuration. (Default " << dbDirPath << "/user.json)" << std::endl;
     std::cout << std::endl;
 }

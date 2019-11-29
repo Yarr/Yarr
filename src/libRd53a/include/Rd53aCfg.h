@@ -59,8 +59,8 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
         unsigned m_chipId;
 
     private:
-        double m_injCap; //fF
-        std::array<double, 4> m_vcalPar; //mV, [0] + [1]*x + [2]*x^2 + [3]*x^3
+         float m_injCap; //fF
+        std::array<float, 4> m_vcalPar; //mV, [0] + [1]*x + [2]*x^2 + [3]*x^3
 };
 
 #endif

@@ -38,7 +38,7 @@ Rd53aSyncPixelModel::~Rd53aSyncPixelModel()
 // functions for modeling pixel responses
 float Rd53aSyncPixelModel::calculateThreshold(uint32_t VthresholdSync)
 {
-	float threshold = VthresholdSync + VthresholdSync_gauss;
+	float threshold = VthresholdSync_gauss/100. * VthresholdSync;
 
 	if (threshold < 0) threshold = 0;
 
@@ -52,5 +52,5 @@ float Rd53aSyncPixelModel::calculateNoise()
 
 uint32_t Rd53aSyncPixelModel::calculateToT(float charge)
 {
-	return 1;
+  return uint32_t(1.21539+7.61735*charge/10000.);
 }

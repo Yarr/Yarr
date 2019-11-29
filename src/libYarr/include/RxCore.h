@@ -21,6 +21,7 @@ class RxCore {
         virtual void setRxEnable(uint32_t val) = 0;
         virtual void setRxEnable(std::vector<uint32_t>) = 0;
         virtual void maskRxEnable(uint32_t val, uint32_t mask) = 0;
+        virtual void disableRx() = 0;
 
         virtual RawData* readData() = 0;
         virtual void flushBuffer() {}

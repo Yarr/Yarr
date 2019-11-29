@@ -70,7 +70,7 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
 
             // Configure Tx speed
             if (!j["cmdPeriod"].empty()) {
-                SpecTxCore::m_clk_period = j["cmdPeriod"];
+	      SpecTxCore::m_clk_period = (float)j["cmdPeriod"]; //fix for variant 
             }
         }
 

@@ -19,9 +19,8 @@
 #include <vector>
 #include <mutex>
 
-#include "json.hpp"
 
-using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+#include "storage.hpp"
 
 /**
  * @brief Implementation of the RxCore for NetIO communication.
@@ -37,6 +36,7 @@ public:
 
   void setCmdEnable(uint32_t) override;
   void setCmdEnable(std::vector<uint32_t> channels) override;
+  void disableCmd();
   uint32_t getCmdEnable() override;
   bool isCmdEmpty() override; 		// check if the fifo of commands is empty
   void setTrigEnable(uint32_t value) override; 	// enable the trigger

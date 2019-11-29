@@ -20,6 +20,7 @@ class BocTxCore : virtual public TxCore {
         void writeFifo(uint32_t);
         void setCmdEnable(uint32_t);
         void setCmdEnable(std::vector<uint32_t> channels);
+        void disableCmd();
         uint32_t getCmdEnable();
         bool isCmdEmpty();
         void releaseFifo();

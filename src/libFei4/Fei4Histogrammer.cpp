@@ -10,8 +10,6 @@
 
 #include <iostream>
 
-bool Fei4Histogrammer::processorDone = false;
-
 Fei4Histogrammer::Fei4Histogrammer() {
 }
 
@@ -21,7 +19,6 @@ Fei4Histogrammer::~Fei4Histogrammer() {
 }
 
 void Fei4Histogrammer::init() {
-    processorDone = false;
 }
 
 void Fei4Histogrammer::clearHistogrammers() {
@@ -46,24 +43,20 @@ void Fei4Histogrammer::process() {
         //std::cout << __PRETTY_FUNCTION__ << std::endl;
 
         std::unique_lock<std::mutex> lk(mtx);
-        input->cv.wait( lk, [&] { return processorDone || !input->empty(); } );
+        input->waitNotEmptyOrDone();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
         process_core();
-        output->cv.notify_all();  // notification to the downstream
 
-        if( processorDone ) {
+        if( input->isDone() ) {
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
-            process_core();  // this line is needed if the data comes in before scanDone is changed.
+            process_core();  // this line is needed if the data comes in before done flag is changed.
             std::cout << __PRETTY_FUNCTION__ << ": processorDone!" << std::endl;
-            output->cv.notify_all();  // notification to the downstream
             break;
         }
     }
 
     process_core();
-    output->cv.notify_all();  // notification to the downstream
-
 }
 
 void Fei4Histogrammer::process_core() {
