@@ -154,11 +154,17 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, st
     }
     std::size_t pathPos = log_path.find_last_of('/');
     log_path = log_path.substr(0, pathPos);
-    char buf[100];
-    if (readlink(log_path.c_str(), buf, sizeof(buf))>=0) {
-        pathPos = log_path.find_last_of('/');
-        log_path = log_path.substr(0, pathPos)+"/"+buf;
+    char buf[4096];
+    if (realpath(log_path.c_str(), buf)!=NULL) {
+        log_path = buf;
+    } else {
+        std::string message = "No such directory : " + log_path;
+        std::string function = __PRETTY_FUNCTION__;
+        this->alert(function, message);
     }
+    // confirmation
+    std::string scanlog_path = log_path + "/scanLog.json";
+    this->checkFile(scanlog_path, "Failed to get real path to "+i_scanlog_path);
     m_output_dir = log_path;
     log_path = log_path+"/dbDcsLog.json";
 
