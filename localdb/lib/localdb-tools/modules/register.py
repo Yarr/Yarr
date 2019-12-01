@@ -7,7 +7,7 @@
 #################################
 
 # Common
-import os, sys, shutil, hashlib, json, uuid
+import os, sys, shutil, hashlib, json, uuid, socket
 
 import gridfs
 from pymongo          import MongoClient
@@ -1151,10 +1151,10 @@ def __set_user(i_json):
 
     user_json = {
         'userName'    : os.environ['USER'],
-        'institution' : os.environ['HOSTNAME'],
+        'institution' : socket.gethostname(),
         'description' : 'default',
         'USER'        : os.environ['USER'],
-        'HOSTNAME'    : os.environ['HOSTNAME']
+        'HOSTNAME'    : socket.gethostname()
     }
 
     if not i_json=={}:
@@ -1178,8 +1178,8 @@ def __set_site(i_json):
 
     site_json = {
         'address'    : ':'.join(['{:02x}'.format((uuid.getnode() >> ele) & 0xff)for ele in range(0,8*6,8)][::-1]),
-        'HOSTNAME'   : os.environ['HOSTNAME'],
-        'institution': os.environ['HOSTNAME']
+        'HOSTNAME'   : socket.gethostname(),
+        'institution': socket.gethostname()
     }
     if not i_json=={}:
         site_json.update(i_json)
