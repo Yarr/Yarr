@@ -13,7 +13,7 @@
 
 class EmuCom;
 
-class StarCfg;
+namespace emu { class StarCfg; }
 
 /**
  * Emulation of data returned by HCCStar.
@@ -101,7 +101,7 @@ private:
 
     ////////////////////////////////////////
     // HCCStar and ABCStar configurations
-    std::unique_ptr<StarCfg> m_starCfg;
+    std::unique_ptr<emu::StarCfg> m_starCfg;
 };
 
 /////////////////////////////////////////////////////
@@ -109,6 +109,7 @@ private:
 /////////////////////////////////////////////////////
 // A mockup of the StarCfg API as defined in https://gitlab.cern.ch/YARR/YARR/blob/devel_FelixNetIO_StarChip/src/libStar/include/StarCfg.h
 // A temporary solution before the two branches are merged
+namespace emu {
 enum ABCStarRegs
 {
     // Special register: 0x00
@@ -227,5 +228,6 @@ class StarCfg {
     // registerMap[chip_index][addr]
     std::map<uint32_t, std::map<uint32_t, uint32_t> >registerMap;
 };
+} // namespace emu
 
 #endif //__STAR_EMU_H__

@@ -38,7 +38,7 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path
     : m_txRingBuffer ( tx )
     , m_rxQueue ( rx )
     , m_bccnt( 0 )
-    , m_starCfg( new StarCfg )
+    , m_starCfg( new emu::StarCfg )
 {
     run = true;
 
@@ -443,18 +443,18 @@ std::array<unsigned, 8> StarEmu::getFrontEndData(unsigned chipID,
     std::array<unsigned, 8> inputs;
 
     // test mode
-    uint8_t TM = m_starCfg->getABCSubRegValue(ABCStarRegs::CREG0, chipID, 17, 16);
-    bool testPulseEnable = m_starCfg->getABCSubRegValue(ABCStarRegs::CREG0, chipID, 4, 4);
+    uint8_t TM = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, chipID, 17, 16);
+    bool testPulseEnable = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, chipID, 4, 4);
     
     // mask registers
-    auto maskinput0 = m_starCfg->getABCRegister(ABCStarRegs::MaskInput0, chipID);
-    auto maskinput1 = m_starCfg->getABCRegister(ABCStarRegs::MaskInput1, chipID);
-    auto maskinput2 = m_starCfg->getABCRegister(ABCStarRegs::MaskInput2, chipID);
-    auto maskinput3 = m_starCfg->getABCRegister(ABCStarRegs::MaskInput3, chipID);
-    auto maskinput4 = m_starCfg->getABCRegister(ABCStarRegs::MaskInput4, chipID);
-    auto maskinput5 = m_starCfg->getABCRegister(ABCStarRegs::MaskInput5, chipID);
-    auto maskinput6 = m_starCfg->getABCRegister(ABCStarRegs::MaskInput6, chipID);
-    auto maskinput7 = m_starCfg->getABCRegister(ABCStarRegs::MaskInput7, chipID);
+    auto maskinput0 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput0, chipID);
+    auto maskinput1 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput1, chipID);
+    auto maskinput2 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput2, chipID);
+    auto maskinput3 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput3, chipID);
+    auto maskinput4 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput4, chipID);
+    auto maskinput5 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput5, chipID);
+    auto maskinput6 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput6, chipID);
+    auto maskinput7 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput7, chipID);
     
     if (TM == 0) { // Normal Data Taking
         // Eight 32-bit integers for 256 strips
@@ -476,9 +476,9 @@ std::array<unsigned, 8> StarEmu::getFrontEndData(unsigned chipID,
                   maskinput3, maskinput2, maskinput1, maskinput0};
     }
     else if (TM == 2 and testPulseEnable) { // Test Pulse Mode
-        uint8_t testPatt1 = m_starCfg->getABCSubRegValue(ABCStarRegs::CREG0, chipID, 23, 20);
-        uint8_t testPatt2 = m_starCfg->getABCSubRegValue(ABCStarRegs::CREG0, chipID, 27, 24);
-        bool testPattEnable = m_starCfg->getABCSubRegValue(ABCStarRegs::CREG0, chipID, 18, 18);
+        uint8_t testPatt1 = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, chipID, 23, 20);
+        uint8_t testPatt2 = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, chipID, 27, 24);
+        bool testPattEnable = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, chipID, 18, 18);
         
         if (testPattEnable) {
             // Test Pattern
