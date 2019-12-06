@@ -1,0 +1,21 @@
+{ 
+    "environments" : [
+	{ "measurement" : "measurment_name",
+	  "dcsList" : [
+	      {
+		  "key"        : "temperature",
+		  "data_name"  : "1_temperature",
+		  "data_unit"  : "1_temperature_unit",
+		  "description": "Room Temperature [C]",
+		  "setting"    : 28
+	      },{
+		  "key"        : "temperature",
+		  "data_name"  : "2_temperature",
+		  "data_unit"  : "2_temperature_unit",
+		  "description": "Board Temperature [C]",
+		  "setting"    : 28
+	      }
+	  ]
+	}
+    ]
+}
