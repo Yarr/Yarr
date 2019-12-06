@@ -287,11 +287,9 @@ void StarCfg::configure_ABC_Registers(int chipID) {
   for (unsigned int iReg=ABCStarRegister::MaskInput0; iReg<=ABCStarRegister::MaskInput7; iReg++)
     registerMap[chipIndex][iReg]->setValue(0x00000000);
 
-
   ////# Calibration Enable regs
   for (unsigned int iReg=ABCStarRegister::CalREG0; iReg<=ABCStarRegister::CalREG7; iReg++)
     registerMap[chipIndex][iReg]->setValue(0xFFFFFFFF);
-
 
 
   for (auto def : s_abcsubregdefs) {
