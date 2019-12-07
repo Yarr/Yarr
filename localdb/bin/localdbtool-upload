@@ -7,7 +7,7 @@
 #################################
 
 ### Common
-import os, sys, time, argparse, yaml
+import os, sys, time, argparse, yaml, socket
 from getpass          import getpass
 from pymongo          import MongoClient, errors, DESCENDING
 from bson.objectid    import ObjectId
@@ -24,7 +24,7 @@ import register
 
 ### global variables
 home = os.environ['HOME']
-hostname = os.environ['HOSTNAME']
+hostname = socket.gethostname()
 global localdb
 global option
 global logfile

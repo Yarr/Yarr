@@ -35,7 +35,7 @@ $ ./localdb/setup_db.sh
 [LDB] More detail:
 [LDB]   Access 'https://localdb-docs.readthedocs.io/en/master/'
 ```
-> [Advanced tutorial for setup_db.sh](https://localdb-docs.readthedocs.io/en/master/install/)
+> [More detail about setup_db.sh](https://localdb-docs.readthedocs.io/en/master/setup-db/)
 
 ### 3. Confirmation
 
@@ -95,7 +95,7 @@ $ ./bin/scanConsole \
 #DB INFO# -----------------------
 #DB INFO# Uploading in the back ground. (log: ~/.yarr/localdb/log/)
 ```
-> [Advanced tutorial for uploading test data](https://localdb-docs.readthedocs.io/en/master/upload/#upload-test-data)
+> [More detail about Upload Tool](https://localdb-docs.readthedocs.io/en/master/upload/)
 
 You can check if the upload is success in log file `${HOME}/.yarr/localdb/log/${day}.log`:
 
@@ -108,7 +108,6 @@ You can check if the upload is success in log file `${HOME}/.yarr/localdb/log/${
 2019-08-01 10:55:47,058 - INFO: Success
 2019-08-01 10:55:47,060 - INFO: -----------------------
 ```
-> [Advanced tutorial for another upload functions](https://localdb-docs.readthedocs.io/en/master/upload/)
 
 ### Retrieve
 
@@ -128,7 +127,7 @@ Test Type : std_digitalscan
 DCS Data  : NULL
 # Ctrl+C can terminate the output test log
 ```
-> [Advanced tutorial for Retrieve Tool](https://localdb-docs.readthedocs.io/en/master/retrieve/)
+> [More detail about Retrieve Tool](https://localdb-docs.readthedocs.io/en/master/retrieve/)
 
 You can retrieve the uploaded data into the local directory by `localdbtool-retrieve pull`:
 
@@ -157,7 +156,6 @@ $ ./localdb/bin/localdbtool-retrieve pull
 #DB INFO# Retrieve ... ./db-data/connectivity.json
 #DB INFO# -----------------------
 ```
-> [Advanced tutorial for retrieving funtion](https://localdb-docs.readthedocs.io/en/master/retrieve/)
 
 * List of restored data (default dir: `YARR/db_data`)
     * Test Information (Data ID, User, Date, Chips, Run #, Test type)
@@ -173,7 +171,7 @@ $ ./localdb/bin/localdbtool-retrieve pull
 ### Register Component
 
 You can register the component data and upload test data associated with the registered component data.<br>
-First please prepare connectivity file following [this sample format](https://localdb-docs.readthedocs.io/en/master/config/#component-cfg) and register by `dbAccessor -C -c <component connectivity file> -u <user config file> -i <site config file>`:<br>
+First please prepare connectivity file following [this sample format](https://localdb-docs.readthedocs.io/en/master/config/) and register by `dbAccessor -C -c <component connectivity file> -u <user config file> -i <site config file>`:<br>
 
 ```bash
 $ cd YARR
@@ -185,7 +183,7 @@ y
 #DB INFO# Completed the upload successfuly.
 #DB INFO# -----------------------
 ```
-> [Advanced tutorial for Component Registration](https://localdb-docs.readthedocs.io/en/master/upload/#register-chipmodule-data)
+> [More detail about Upload Tool](https://localdb-docs.readthedocs.io/en/master/upload/)
 
 After registration, you can retrieve/generate the connectivity config file and the chip config files by `localdb-retrieve pull --chip <SERIAL NUMBER>`.<br>
 
@@ -201,7 +199,7 @@ $ ./localdb/bin/localdb-retrieve pull --chip <SERIAL NUMBER>
 #DB INFO# Retrieve ... ./db-data/connectivity.json
 #DB INFO# -----------------------
 ```
-> [Advanced tutorial for retrieving funtion](https://localdb-docs.readthedocs.io/en/master/retrieve/)
+> [More detail about Retrieve Tool](https://localdb-docs.readthedocs.io/en/master/retrieve/)
 
 And you can upload test data associated with component data using these config files by `scanConsole`.
 
@@ -221,7 +219,7 @@ $ ./bin/scanConsole \
 #DB INFO# -----------------------
 #DB INFO# Uploading in the back ground. (log: ~/.yarr/localdb/log/)
 ```
-> [Advanced tutorial for Component Registration](https://localdb-docs.readthedocs.io/en/master/upload/#register-chipmodule-data)
+> [More detail about Upload Tool](https://localdb-docs.readthedocs.io/en/master/upload/)
 
 ### Local DB Tools
 
@@ -243,11 +241,11 @@ $ cd localdb-tools/viewer
 $ ./setup_viewer.sh
 
 # 2. Run Application
-$ ./app.py --config conf.yml &
+$ ./app.py --config conf.yml
 # ---> Access 'http://127.0.0.1:5000/localdb/' or
 #      'http://IPaddress/localdb/' on browser to check data in Local DB
 ```
-> [Advanced tutorial for Viewer Application](https://localdb-docs.readthedocs.io/en/master/viewer/)
+> [More detail about Viewer Application](https://localdb-docs.readthedocs.io/en/master/viewer/)
 
 #### Synchronization Tool
 
@@ -259,7 +257,7 @@ $ ./setup_sync_tool.sh
 # 2. Run Tool
 $ ./bin/localdbtool-sync.py --sync-opt <option> --config my_configure.yml
 ```
-> [Advanced tutorial for Synchronization Tool](https://localdb-docs.readthedocs.io/en/master/sync/)
+> [More detail about Synchronization Tool](https://localdb-docs.readthedocs.io/en/master/sync/)
 
 #### Archive Tool
 
@@ -271,5 +269,4 @@ $ ./setup_archive_tool.sh
 # 2. Run Tool
 $ ./bin/localdbtool-archive.sh --config my_archive_configure.yml
 ```
-> [Advanced tutorial for Archive Tools](https://localdb-docs.readthedocs.io/en/master/archive/)
-
+> [More detail about Archive Tools](https://localdb-docs.readthedocs.io/en/master/archive/)
