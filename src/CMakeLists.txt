@@ -133,18 +133,3 @@ file(GLOB_RECURSE test_src tests/test_*.cpp)
 add_executable(test_main ${test_src} tests/main.cpp)
 target_link_libraries(test_main ${YARR_LINK_LIB_COMMAND})
 add_dependencies(test_main Yarr)
-
-# Or each one is individual executable
-foreach(target ${test_src})
-  get_filename_component(execname ${target} NAME_WE)
-  # get_filename_component(srcfile ${target} NAME)
-  message(target ${target})
-  message(exec ${execname})
-  # message(srcfile ${srcfile})
-  add_executable(${execname} ${target}) # tests/${srcfile})
-  # Each source needs this defining
-  target_compile_definitions(${execname} PRIVATE CATCH_CONFIG_MAIN)
-  add_dependencies(${execname} Yarr)
-  set_target_properties(${execname} PROPERTIES LINKER_LANGUAGE CXX)
-  target_link_libraries(${execname} ${YARR_LINK_LIB_COMMAND})
-endforeach()
