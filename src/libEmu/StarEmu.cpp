@@ -746,6 +746,7 @@ void StarEmu::executeLoop() {
 template<>
 class EmuRxCore<StarChips> : virtual public RxCore {
         ClipBoard<RawData> m_queue;
+        std::vector<uint32_t> m_channels;
     public:
         EmuRxCore();
         ~EmuRxCore();
@@ -753,8 +754,8 @@ class EmuRxCore<StarChips> : virtual public RxCore {
         void setCom(EmuCom *com) {} // Used by EmuController.h
         ClipBoard<RawData> &getCom() {return m_queue;}
 
-        void setRxEnable(uint32_t val) override {}
-        void setRxEnable(std::vector<uint32_t> channels) override {}
+        void setRxEnable(uint32_t val) override { m_channels.push_back(val); }
+        void setRxEnable(std::vector<uint32_t> channels) override { m_channels = channels;}
         void maskRxEnable(uint32_t val, uint32_t mask) override {}
 
         RawData* readData() override;
@@ -785,7 +786,11 @@ RawData* EmuRxCore<StarChips>::readData() {
     // //std::this_thread::sleep_for(std::chrono::microseconds(1));
     if(m_queue.empty()) return nullptr;
 
-    return m_queue.popData().release();
+    std::unique_ptr<RawData> rd = m_queue.popData();
+    // set rx channel number
+    if (not m_channels.empty()) rd->adr = m_channels[0];
+
+    return rd.release();
 }
 
 bool emu_registered_Emu =
