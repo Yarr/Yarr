@@ -55,6 +55,7 @@ private:
 
     ///
     void DecodeLCB(LCB::Frame);
+    unsigned int countTriggers(LCB::Frame);
     
     void doL0A(uint16_t);
     void doFastCommand(uint8_t);

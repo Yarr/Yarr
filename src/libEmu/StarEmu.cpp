@@ -174,7 +174,7 @@ std::vector<uint8_t> StarEmu::buildHCCRegisterPacket(PacketTypes typ, uint8_t re
     return data_packets;
 }
 
-unsigned int countTriggers(LCB::Frame frame) {
+unsigned int StarEmu::countTriggers(LCB::Frame frame) {
     uint8_t code0 = (frame >> 8) & 0xff;
     uint8_t code1 = frame & 0xff;
 
