@@ -277,47 +277,47 @@ void StarEmu::doFastCommand(uint8_t data6) {
     uint8_t bcsel = (data6 >> 4) & 3; // top 2 bits for BC select
     uint8_t fastcmd = data6 & 0xf; // bottom 4 bits for command
 
-    switch((StarCmd::FastCommands)fastcmd) {
-    case StarCmd::FastCommands::LogicReset :
+    switch(fastcmd) {
+    case LCB::LOGIC_RESET :
         std::cout << "Fast command: LogicReset" << std::endl;
         break;
-    case StarCmd::FastCommands::ABCRegReset :
+    case LCB::ABC_REG_RESET :
         std::cout << "Fast command: ABCRegReset" << std::endl;
         break;
-    case StarCmd::FastCommands::ABCSEUReset :
+    case LCB::ABC_SEU_RESET :
         std::cout << "Fast command: ABCSEUReset" << std::endl;
         break;
-    case StarCmd::FastCommands::ABCCaliPulse :
+    case LCB::ABC_CAL_PULSE :
         std::cout << "Fast command: ABCCaliPulse" << std::endl;
         break;
-    case StarCmd::FastCommands::ABCDigiPulse :
+    case LCB::ABC_DIGITAL_PULSE :
         std::cout << "Fast command: ABCDigiPulse" << std::endl;
         break;
-    case StarCmd::FastCommands::ABCHitCntReset :
+    case LCB::ABC_HIT_COUNT_RESET :
         std::cout << "Fast command: ABCHitCntReset" << std::endl;
         break;
-    case StarCmd::FastCommands::ABCHitCntStart :
+    case LCB::ABC_HITCOUNT_START :
         std::cout << "Fast command: ABCHitCntStart" << std::endl;
         break;
-    case StarCmd::FastCommands::ABCHitCntStop :
+    case LCB::ABC_HITCOUNT_STOP :
         std::cout << "Fast command: ABCHitCntStop" << std::endl;
         break;
-    case StarCmd::FastCommands::ABCSlowCmdReset :
+    case LCB::ABC_SLOW_COMMAND_RESET :
         std::cout << "Fast command: ABCSlowCmdReset" << std::endl;
         break;
-    case StarCmd::FastCommands::StopPRLP :
+    case LCB::ABC_STOP_PRLP :
         std::cout << "Fast command: StopPRLP" << std::endl;
         break;
-    case StarCmd::FastCommands::HCCRegReset :
+    case LCB::HCC_REG_RESET :
         std::cout << "Fast command: HCCRegReset" << std::endl;
         break;
-    case StarCmd::FastCommands::HCCSEUReset :
+    case LCB::HCC_SEU_RESET :
         std::cout << "Fast command: HCCSEUReset" << std::endl;
         break;
-    case StarCmd::FastCommands::HCCPLLReset :
+    case LCB::HCC_PLL_RESET :
         std::cout << "Fast command: HCCPLLReset" << std::endl;
         break;
-    case StarCmd::FastCommands::StartPRLP :
+    case LCB::ABC_START_PRLP :
         std::cout << "Fast command: StartPRLP" << std::endl;
         break;
     }
