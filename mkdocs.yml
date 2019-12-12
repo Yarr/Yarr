@@ -15,6 +15,7 @@ pages:
     - Logging configuration: logging.md
     - Firmware Guide: fw_guide.md
     - NetIO: netio.md
+    - ITSDAQ FW: itsdaq.md
     - Troubleshooting: troubleshooting.md
     - Emulator: emulator.md
     - Version Log: version.md
