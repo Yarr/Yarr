@@ -63,6 +63,10 @@ public:
    **/
   void fromFileJson(json &j);
 
+ protected:
+  /// Do some initialisation after ItsdaqHandler is constructed
+  void init();
+
 private:
   /// Common communication handler
   ItsdaqHandler &m_h;
