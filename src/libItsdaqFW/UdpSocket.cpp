@@ -175,7 +175,8 @@ bool UdpSocket::receive(std::array<char, 1500> &buffer, size_t &output_bytes, in
     }
 
     if(timeoutCounter > timeout) {
-      // std::cerr << "UdpSocket timeout waiting for packet\n";
+      // Not an error because there might be idle times
+      logger->debug("UdpSocket timeout waiting for packet");
       return false;
     }
   }
