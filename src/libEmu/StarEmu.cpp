@@ -119,6 +119,9 @@ std::vector<uint8_t> StarEmu::buildPhysicsPacket(
     // ABCStar clusters
     for (int ichannel=0; ichannel<m_clusters.size(); ++ichannel) {
         for ( uint16_t cluster : m_clusters[ichannel]) {
+            if (cluster == 0x3fe) // "no cluster byte"
+                break;
+
             // cluster bits:
             // "0" + 4-bit channel number + 11-bit cluster dropping the last cluster bit
             uint16_t clusterbits = (ichannel & 0xf)<<11 | cluster & 0x7ff;
@@ -529,18 +532,23 @@ std::vector<uint16_t> StarEmu::clusterFinder(
         if (clusters.size() >= maxCluster) break;
 
         uint16_t cluster1 = clusterFinder_sub(d1h, d1l, true);
-        if (cluster1 != 0x3fe) // if a non-empty cluster is found
+        if (cluster1 != 0x3ff) // if not an empty cluster
             clusters.push_back(cluster1);
 
         if (clusters.size() >= maxCluster)  break;
 
         uint16_t cluster0 = clusterFinder_sub(d0h, d0l, false);
-        if (cluster0 != 0x3fe) // if a non-empty cluster is found
+        if (cluster0 != 0x3ff) // if not an empty cluster
             clusters.push_back(cluster0);
     }
 
-    // last cluster
-    clusters.back() |= 1 << 11;
+    if (clusters.empty()) {
+        clusters.push_back(0x3fe); // "no cluster byte"
+    }
+    else {
+        // set last cluster bit
+        clusters.back() |= 1 << 11;
+    }
 
     return clusters;
 }
@@ -570,7 +578,7 @@ uint16_t StarEmu::clusterFinder_sub(uint64_t& hits_high64, uint64_t& hits_low64,
         setBit_128b(hit_addr+i, 0, hits_high64, hits_low64);
 
     if (hit_addr == 128) { // no cluster found
-        return 0x3fe;
+        return 0x3ff;
     }
     else {
         hit_addr += isSecondRow<<7;
@@ -611,8 +619,8 @@ void StarEmu::getClusters()
     // Get frontend data and find clusters
     for (int index=1; index <= m_starCfg->m_nABC; ++index) {
         unsigned abcID = m_starCfg->getABCchipID(index);
-        std::vector<uint16_t> a_cluster = clusterFinder(getFrontEndData(abcID));
-        m_clusters.push_back(a_cluster);
+        std::vector<uint16_t> abc_clusters = clusterFinder(getFrontEndData(abcID));
+        m_clusters.push_back(abc_clusters);
     }
 }
 
