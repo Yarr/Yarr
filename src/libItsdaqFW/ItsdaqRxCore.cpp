@@ -22,6 +22,10 @@ ItsdaqRxCore::~ItsdaqRxCore(){
 
 void ItsdaqRxCore::init() {
   bridge_watcher = std::chrono::steady_clock::now();
+
+  // Make TS pass more quickly to encourage packets to appear
+  std::array<uint16_t, 2> wrReg{32, 0xc};
+  m_h.SendOpcode(0x10, wrReg.data(), 2);
 }
 
 void ItsdaqRxCore::setRxEnable(uint32_t stream) {
