@@ -72,9 +72,13 @@ void ItsdaqHandler::SendOpcode(uint16_t opcode, uint16_t *data, uint16_t length)
   buffer[checksum_pos] = checksum;
 
   priv->sock.send((char*)buffer.data(), (char*)buffer.data() + (buffer.size() * 2));
+
+  logger->debug("SendOpcode {:04x}", opcode);
 }
 
 void ItsdaqPrivate::ReceiverMain() {
+  logger->debug("Start ReceiverMain");
+
   int packet_count = 0;
   int bytes_count = 0;
 
@@ -110,6 +114,8 @@ void ItsdaqPrivate::ReceiverMain() {
         }
         std::cout << "\n";
       }
+
+      logger->debug("Recieved opcode {:x} {}", buf16[4], opcode);
     }
   }
 
