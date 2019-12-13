@@ -46,7 +46,8 @@ int main(int argc, char *argv[]) {
       s.writeSingle(0x6<<14 | 0x1, 0xF);
     }
     spec.setCmdEnable(0xFFFF); // LCB Port D
-    spec.setRxEnable(0x0);
+    // First disable all input
+    spec.disableRx();
 
     StarChips star(&spec);
 
@@ -179,7 +180,7 @@ int main(int argc, char *argv[]) {
       return 1;
     }
 
-    spec.setRxEnable(0x0);
+    spec.disableRx();
 
     return 0;
 }
