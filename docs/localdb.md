@@ -35,7 +35,6 @@ $ ./localdb/setup_db.sh
 [LDB] More detail:
 [LDB]   Access 'https://localdb-docs.readthedocs.io/en/master/'
 ```
-> [More detail about setup_db.sh](https://localdb-docs.readthedocs.io/en/master/setup-db/)
 
 ### 3. Confirmation
 
@@ -61,7 +60,6 @@ $./bin/dbAccessor -I
 #DB INFO# ---> connection is good.
 #DB INFO# -----------------------
 ```
-> [FAQ](https://localdb-docs.readthedocs.io/en/master/faq/)
 
 ## Quick Tutorial
 
