@@ -80,12 +80,15 @@ void ItsdaqPrivate::ReceiverMain() {
   logger->debug("Start ReceiverMain");
 
   int packet_count = 0;
+  int loop_count = 0;
   int bytes_count = 0;
 
   while(running) {
+    loop_count ++;
     std::array<char, 1500> buffer;
     size_t output_bytes = 0;
     int timeout = 10;
+
     bool success = sock.receive(buffer, output_bytes, timeout);
     if(success) {
       packet_count ++;
@@ -119,6 +122,6 @@ void ItsdaqPrivate::ReceiverMain() {
     }
   }
 
-  logger->debug("End ReceiverMain after receiving {} packets with {} bytes",
-                packet_count, bytes_count);
+  logger->debug("End ReceiverMain after receiving {} packets with {} bytes in {} loops",
+                  packet_count, bytes_count, loop_count);
 }
