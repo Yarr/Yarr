@@ -8,6 +8,7 @@
 
 #include "Checksum.h"
 #include "UdpSocket.h"
+#include "Utils.h"
 
 /// Private implementation (keep details out of header file)
 class ItsdaqPrivate {
@@ -80,6 +81,30 @@ void ItsdaqPrivate::ReceiverMain() {
     if(success) {
       packet_count ++;
       bytes_count += output_bytes;
+
+      uint16_t *buf16 = (uint16_t*)buffer.data();
+
+      uint16_t opcode = htons(buf16[4]);
+
+      if((opcode == 0x50) || (opcode == 0x10) || (opcode == 0x78)) {
+        // Ignore acks
+        continue;
+      }
+
+      std::cout << "Received opcode " << Utils::hexify(opcode) << "\n";
+
+      for(size_t b_o = 0; b_o < output_bytes/2; b_o ++ ) {
+        buf16[b_o] = htons(buf16[b_o]);
+      }
+
+      for(int i=0; i<output_bytes/2; i++) {
+        std::cout << " " << Utils::hexify(buf16[i]);
+        if((opcode & 0xf000) == 0xd000) {
+          if(i<10) continue;
+          if(((i-10) % 4) < 3) continue;
+        }
+        std::cout << "\n";
+      }
     }
   }
 
