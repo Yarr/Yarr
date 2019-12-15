@@ -23,7 +23,7 @@ int main(int argc, char *argv[]){
 
     std::string home = getenv("HOME");
     char hostname_c[64];
-    gethostname(hostname, 64);
+    gethostname(hostname_c, 64);
     std::string hostname = hostname_c;
     std::string dbDirPath = home+"/.yarr/localdb";
     std::string cfg_path = dbDirPath+"/"+hostname+"_database.json";
@@ -200,7 +200,7 @@ int main(int argc, char *argv[]){
 void printHelp() {
     std::string home = getenv("HOME");
     char hostname_c[64];
-    gethostname(hostname, 64);
+    gethostname(hostname_c, 64);
     std::string hostname = hostname_c;
     std::string dbDirPath = home+"/.yarr/localdb";
     std::cout << "Help:" << std::endl;
