@@ -22,7 +22,9 @@ void printHelp();
 int main(int argc, char *argv[]){
 
     std::string home = getenv("HOME");
-    std::string hostname = getenv("HOSTNAME");
+    char hostname_c[64];
+    gethostname(hostname, 64);
+    std::string hostname = hostname_c;
     std::string dbDirPath = home+"/.yarr/localdb";
     std::string cfg_path = dbDirPath+"/"+hostname+"_database.json";
     std::string user_cfg_path = dbDirPath+"/user.json";
@@ -178,7 +180,7 @@ int main(int argc, char *argv[]){
 	std::string scandir="";
 	if (std::string::npos != last_slash){
 	  scandir=scanlog_path.substr(0,last_slash);
-	  //std::string dcs_path=scandir+"/dcsDataInfo.json";                                                                                                            
+	  //std::string dcs_path=scandir+"/dcsDataInfo.json";
 	  std::string dcs_path="/tmp/dcsDataInfo.json";
 
 	  std::cout << "DBHandler: Register Environment:" << std::endl;
@@ -197,7 +199,9 @@ int main(int argc, char *argv[]){
 
 void printHelp() {
     std::string home = getenv("HOME");
-    std::string hostname = getenv("HOSTNAME");
+    char hostname_c[64];
+    gethostname(hostname, 64);
+    std::string hostname = hostname_c;
     std::string dbDirPath = home+"/.yarr/localdb";
     std::cout << "Help:" << std::endl;
     std::cout << " -h: Shows this." << std::endl;

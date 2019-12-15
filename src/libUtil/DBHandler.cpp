@@ -96,7 +96,10 @@ json DBHandler::setUser(std::string i_user_path) {
     }
     json user_json = this->checkUserCfg(i_user_path);
     user_json["USER"]     = std::string(getenv("USER"));
-    user_json["HOSTNAME"] = std::string(getenv("HOSTNAME"));
+    char hostname_c[64];
+    gethostname(hostname, 64);
+    std::string hostname_s = hostname_c;
+    user_json["HOSTNAME"] = hostname_s;
 
     return user_json;
 }
@@ -110,7 +113,10 @@ json DBHandler::setSite(std::string i_site_path) {
         this->alert(function, message);
     }
     json site_json = this->checkSiteCfg(i_site_path);
-    site_json["HOSTNAME"] = std::string(getenv("HOSTNAME"));
+    char hostname_c[64];
+    gethostname(hostname, 64);
+    std::string hostname_s = hostname_c;
+    site_json["HOSTNAME"] = hostname_s;
 
     return site_json;
 }
@@ -435,7 +441,9 @@ void DBHandler::checkConnCfg(std::string i_conn_path) {
         std::string del = ",";
         char separator = del[0];
         std::string home = getenv("HOME");
-        std::string hostname = getenv("HOSTNAME");
+        char hostname_c[64];
+        gethostname(hostname, 64);
+        std::string hostname = hostname_c;
         std::string mo_serial_number = conn_json["module"]["serialNumber"];
         std::string mod_list_path = home+"/.yarr/localdb/"+hostname+"_modules.csv";
         std::ifstream list_ifs(mod_list_path);
