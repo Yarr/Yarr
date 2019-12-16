@@ -55,13 +55,9 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path
     // TODO: should get these from chip config json file
     // m_starCfg->fromFileJson(j_starCfg);
     // for now
-    m_starCfg->setHCCchipID(0);
-    m_starCfg->m_nABC = 11;
-    m_starCfg->setABCchipIDs();
+    m_starCfg->init();
 
-    m_starCfg->initRegisterMaps();
-
-    m_clusters.reserve(m_starCfg->m_nABC);
+    m_clusters.reserve(m_starCfg->nABCs());
 }
 
 StarEmu::~StarEmu() {}
@@ -409,7 +405,7 @@ void StarEmu::execute_command_sequence()
         */
         // If cmd_abcID is '1111' i.e. broadcast address, read all ABCs
         if ((cmd_abcID & 0xf) == 0xf and m_isForABC) {
-            for (int index=1; index <= m_starCfg->m_nABC; ++index)
+            for (int index=1; index <= m_starCfg->nABCs(); ++index)
                 readRegister(reg_addr, true, m_starCfg->getABCchipID(index));
         } else {
             readRegister(reg_addr, m_isForABC, cmd_abcID);
@@ -431,7 +427,7 @@ void StarEmu::execute_command_sequence()
         // write register
         // If cmd_abcID is '1111' i.e. broadcast address, write all ABCs
         if ((cmd_abcID & 0xf) == 0xf and m_isForABC) {
-            for (int index=1; index <= m_starCfg->m_nABC; ++index)
+            for (int index=1; index <= m_starCfg->nABCs(); ++index)
                 writeRegister(data, reg_addr, true, m_starCfg->getABCchipID(index));
         } else {
             writeRegister(data, reg_addr, m_isForABC, cmd_abcID);
@@ -617,7 +613,7 @@ void StarEmu::getClusters()
     */
 
     // Get frontend data and find clusters
-    for (int index=1; index <= m_starCfg->m_nABC; ++index) {
+    for (int index=1; index <= m_starCfg->nABCs(); ++index) {
         unsigned abcID = m_starCfg->getABCchipID(index);
         std::vector<uint16_t> abc_clusters = clusterFinder(getFrontEndData(abcID));
         m_clusters.push_back(abc_clusters);
@@ -643,7 +639,7 @@ void StarEmu::readRegister(const uint8_t address, bool isABC,
 
         // HCCStar channel number
         unsigned ich = m_starCfg->indexForABCchipID(ABCID) - 1;
-        if (ich >= m_starCfg->m_nABC) {
+        if (ich >= m_starCfg->nABCs()) {
             std::cout << __PRETTY_FUNCTION__ << ": Cannot find an ABCStar chip with ID = " << ABCID << std::endl;
             return;
         }
