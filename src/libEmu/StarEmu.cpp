@@ -50,7 +50,7 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path
 
     m_ignoreCmd = true;
     m_isForABC = false;
-
+    
     // HCCStar and ABCStar configurations
     // TODO: should get these from chip config json file
     // m_starCfg->fromFileJson(j_starCfg);
@@ -394,6 +394,11 @@ void StarEmu::execute_command_sequence()
 
     // Access register
     if (isRegRead) { // register read command
+        if (debug) {
+            std::cout << "StarEmu : received a register read command -> ";
+            std::cout << "addr = " << (int)reg_addr << " isABC = " << m_isForABC;
+            std::cout << " abcID = " << cmd_abcID << std::endl;
+        }
         /*
         // Check if K2 End occurs at the correct stage for reg read
         if (not m_reg_cmd_buffer.empty()) {
@@ -424,6 +429,12 @@ void StarEmu::execute_command_sequence()
             m_reg_cmd_buffer.pop();
         }
 
+        if (debug) {
+            std::cout << "StarEmu : received a register write command -> ";
+            std::cout << "addr = " << (int)reg_addr << " data = " << data;
+            std::cout << " isABC = " << m_isForABC << " abcID = " << cmd_abcID << std::endl;
+        }
+        
         // write register
         // If cmd_abcID is '1111' i.e. broadcast address, write all ABCs
         if ((cmd_abcID & 0xf) == 0xf and m_isForABC) {

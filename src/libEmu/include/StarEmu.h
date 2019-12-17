@@ -104,6 +104,8 @@ private:
     ////////////////////////////////////////
     // HCCStar and ABCStar configurations
     std::unique_ptr<emu::StarCfg> m_starCfg;
+
+    bool debug = false;
 };
 
 #endif //__STAR_EMU_H__
