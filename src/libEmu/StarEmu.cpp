@@ -303,10 +303,18 @@ void StarEmu::doFastCommand(uint8_t data6) {
         std::cout << "Fast command: ABCSEUReset" << std::endl;
         break;
     case LCB::ABC_CAL_PULSE :
-        std::cout << "Fast command: ABCCaliPulse" << std::endl;
+        //std::cout << "Fast command: ABCCaliPulse" << std::endl;
+        for (int ichip=1; ichip <= m_starCfg->nABCs(); ++ichip) {
+            int abcID = m_starCfg->getABCchipID(ichip);
+            this->generateFEData_CaliPulse(abcID, bcsel);
+        }
         break;
     case LCB::ABC_DIGITAL_PULSE :
-        std::cout << "Fast command: ABCDigiPulse" << std::endl;
+        // std::cout << "Fast command: ABCDigiPulse" << std::endl;
+        for (int ichip=1; ichip <= m_starCfg->nABCs(); ++ichip) {
+            int abcID = m_starCfg->getABCchipID(ichip);
+            this->generateFEData_TestPulse(abcID, bcsel);
+        }
         break;
     case LCB::ABC_HIT_COUNT_RESET :
         std::cout << "Fast command: ABCHitCntReset" << std::endl;
