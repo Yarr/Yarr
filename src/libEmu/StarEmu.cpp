@@ -57,7 +57,21 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path
     // for now
     m_starCfg->init();
 
-    m_clusters.reserve(m_starCfg->nABCs());
+    m_fe_data.clear();
+    m_fe_data.resize(m_starCfg->nABCs());
+
+    ////////////////////////////////////////////////////////////////////////
+    /*
+      For testing purpose, preload m_fe_data with fixed hit patterns for now 
+     */
+    for (auto& fe_hits : m_fe_data) {
+        for (int ibc = 0; ibc < 4; ++ibc) {
+            fe_hits[ibc] = {0xfffe0000, 0, 0, 0, 0xfffe0000, 0, 0, 0};
+        }
+    }
+    // expected clusterFinder output per ABCStar:
+    // {0x78f, 0x38f, 0x7af, 0x3af, 0x7cf, 0x3cf, 0x7ee, 0xbee}
+    ////////////////////////////////////////////////////////////////////////
 }
 
 StarEmu::~StarEmu() {}
@@ -96,6 +110,7 @@ bool StarEmu::getParity_8bits(uint8_t val)
 }
 
 std::vector<uint8_t> StarEmu::buildPhysicsPacket(
+    const std::vector<std::vector<uint16_t>>& allClusters,
     PacketTypes typ, uint8_t l0tag, uint8_t bc_count, uint16_t endOfPacket)
 {
     std::vector<uint8_t> data_packets;
@@ -113,8 +128,8 @@ std::vector<uint8_t> StarEmu::buildPhysicsPacket(
     
     ///////////////////
     // ABCStar clusters
-    for (int ichannel=0; ichannel<m_clusters.size(); ++ichannel) {
-        for ( uint16_t cluster : m_clusters[ichannel]) {
+    for (int ichannel=0; ichannel<allClusters.size(); ++ichannel) {
+        for ( uint16_t cluster : allClusters[ichannel]) {
             if (cluster == 0x3fe) // "no cluster byte"
                 break;
 
@@ -258,11 +273,12 @@ void StarEmu::doL0A(uint16_t data12) {
         if ( (l0a_mask >> (3-ibc)) & 1 ) {
             
             // get clusters for this BC
-            getClusters();
+            std::vector<std::vector<uint16_t>> clusters = getClusters(ibc);
 
             // build and send data packet
             PacketTypes ptype = PacketTypes::LP; // for now
-            std::vector<uint8_t> packet = buildPhysicsPacket(ptype, l0a_tag, m_bccnt);
+            std::vector<uint8_t> packet =
+                buildPhysicsPacket(clusters, ptype, l0a_tag, m_bccnt);
             sendPacket(packet);
         }
         
@@ -447,74 +463,144 @@ void StarEmu::execute_command_sequence()
     } // if (isRegRead)
 }
 
-std::array<unsigned, 8> StarEmu::getFrontEndData(unsigned chipID,
-                                                 uint8_t bc_index)
+void StarEmu::clearFEData(int abcID)
 {
-    std::array<unsigned, 8> inputs;
+    // ABC index starts from 1. Zero is reserved for HCC.
+    unsigned iABC = m_starCfg->indexForABCchipID(abcID) - 1;
+    
+    for (int ibc = 0; ibc < 4; ++ibc) {
+        m_fe_data[iABC][ibc] = {0, 0, 0, 0, 0, 0, 0, 0};
+    }
+}
 
-    // test mode
-    uint8_t TM = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, chipID, 17, 16);
-    bool testPulseEnable = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, chipID, 4, 4);
+void StarEmu::applyMasks(int abcID) {
+    uint8_t TM = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 17, 16);
+    if (TM != 0) // do nothing if not normal data taking mode
+        return;
+    
+    unsigned iABC = m_starCfg->indexForABCchipID(abcID) - 1;
     
     // mask registers
-    auto maskinput0 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput0, chipID);
-    auto maskinput1 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput1, chipID);
-    auto maskinput2 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput2, chipID);
-    auto maskinput3 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput3, chipID);
-    auto maskinput4 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput4, chipID);
-    auto maskinput5 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput5, chipID);
-    auto maskinput6 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput6, chipID);
-    auto maskinput7 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput7, chipID);
+    unsigned maskinput0 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput0, abcID);
+    unsigned maskinput1 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput1, abcID);
+    unsigned maskinput2 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput2, abcID);
+    unsigned maskinput3 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput3, abcID);
+    unsigned maskinput4 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput4, abcID);
+    unsigned maskinput5 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput5, abcID);
+    unsigned maskinput6 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput6, abcID);
+    unsigned maskinput7 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput7, abcID);
+
+    for (int ibc = 0; ibc <  4; ++ibc) {
+        m_fe_data[iABC][ibc][0] &= ~maskinput7; // ch255 - 224
+        m_fe_data[iABC][ibc][1] &= ~maskinput6; // ch223 - 192
+        m_fe_data[iABC][ibc][2] &= ~maskinput5; // ch191 - 160
+        m_fe_data[iABC][ibc][3] &= ~maskinput4; // ch159 - 128
+        m_fe_data[iABC][ibc][4] &= ~maskinput3; // ch127 - 96
+        m_fe_data[iABC][ibc][5] &= ~maskinput2; // ch95 - 64
+        m_fe_data[iABC][ibc][6] &= ~maskinput1; // ch63 - 32
+        m_fe_data[iABC][ibc][7] &= ~maskinput0; // ch31 - 0
+    }
+}
+
+void StarEmu::generateFEData_StaticTest(int abcID)
+{
+    uint8_t TM = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 17, 16);
+    if (TM != 1) // do nothing if not static test mode
+        return;
     
-    if (TM == 0) { // Normal Data Taking
-        // Eight 32-bit integers for 256 strips
-        // A fixed pattern for now
-        inputs[0] = (~maskinput7) & 0xfffe0000; // ch255 - 224
-        inputs[1] = (~maskinput6) & 0x0;        // ch223 - 192
-        inputs[2] = (~maskinput5) & 0x0;        // ch191 - 160
-        inputs[3] = (~maskinput4) & 0x0;        // ch159 - 128
-        inputs[4] = (~maskinput3) & 0xfffe0000; // ch127 - 96
-        inputs[5] = (~maskinput2) & 0x0;        // ch95 - 64
-        inputs[6] = (~maskinput1) & 0x0;        // ch63 - 32
-        inputs[7] = (~maskinput0) & 0x0;        // ch31 - 0
-        
-        // Expected clusterFinder output:
-        // {0x78f, 0x38f, 0x7af, 0x3af, 0x7cf, 0x3cf, 0x7ee, 0xbee};
+    // ABC index starts from 1. Zero is reserved for HCC.
+    unsigned iABC = m_starCfg->indexForABCchipID(abcID) - 1;
+    
+    for (int ibc = 0; ibc < 4; ++ibc) {
+        m_fe_data[iABC][ibc] = {
+            m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput7, abcID),
+            m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput6, abcID),
+            m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput5, abcID),
+            m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput4, abcID),
+            m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput3, abcID),
+            m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput2, abcID),
+            m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput1, abcID),
+            m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput0, abcID)
+        };
     }
-    else if (TM == 1) { // Static Test Mode
-        inputs = {maskinput7, maskinput6, maskinput5, maskinput4,
-                  maskinput3, maskinput2, maskinput1, maskinput0};
-    }
-    else if (TM == 2 and testPulseEnable) { // Test Pulse Mode
-        uint8_t testPatt1 = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, chipID, 23, 20);
-        uint8_t testPatt2 = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, chipID, 27, 24);
-        bool testPattEnable = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, chipID, 18, 18);
-        
-        if (testPattEnable) {
-            // Test Pattern
-            // If mask bit is 1, use bc_index'th bit of testPatt1
-            // Otherwise, use bc_index'th bit of testPatt2
-            bool patt1_i = ((testPatt1 >> bc_index) & 1) ? 0xffffffff : 0;
-            bool patt2_i = ((testPatt2 >> bc_index) & 1) ? 0xffffffff : 0;
+}
 
-            inputs[0] = maskinput7 & patt1_i | ~maskinput7 & patt2_i;
-            inputs[1] = maskinput6 & patt1_i | ~maskinput6 & patt2_i;
-            inputs[2] = maskinput5 & patt1_i | ~maskinput5 & patt2_i;
-            inputs[3] = maskinput4 & patt1_i | ~maskinput4 & patt2_i;
-            inputs[4] = maskinput3 & patt1_i | ~maskinput3 & patt2_i;
-            inputs[5] = maskinput2 & patt1_i | ~maskinput2 & patt2_i;
-            inputs[6] = maskinput1 & patt1_i | ~maskinput1 & patt2_i;
-            inputs[7] = maskinput0 & patt1_i | ~maskinput0 & patt2_i;
-        }
-        else {
-            // Get the Mask bit value for one clock
-            // Should be triggered by the "Digital Test Pulse" fast command
-            inputs = {maskinput7, maskinput6, maskinput5, maskinput4,
-                      maskinput3, maskinput2, maskinput1, maskinput0};
+void StarEmu::generateFEData_TestPulse(int abcID, uint8_t BC)
+{ // Triggered by the "Digital Test Pulse" fast command
+
+    uint8_t TM = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 17, 16);
+    if (TM != 2) // do nothing if not test pulse mode
+        return;
+    
+    // enable
+    bool TestPulseEnable = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 4, 4);
+    if (not TestPulseEnable)
+        return;
+    
+    // ABC index starts from 1. Zero is reserved for HCC.
+    unsigned iABC = m_starCfg->indexForABCchipID(abcID) - 1;
+
+    // mask registers
+    unsigned maskinput0 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput0, abcID);
+    unsigned maskinput1 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput1, abcID);
+    unsigned maskinput2 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput2, abcID);
+    unsigned maskinput3 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput3, abcID);
+    unsigned maskinput4 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput4, abcID);
+    unsigned maskinput5 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput5, abcID);
+    unsigned maskinput6 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput6, abcID);
+    unsigned maskinput7 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput7, abcID);
+
+    // Two test pulse options: determined by bit 18 of ABC register CREG0
+    bool testPattEnable = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 18, 18);
+
+    if (testPattEnable) { // Use test pattern for four consecutive BC
+        // Test patterns
+        // testPatt1 if mask bit is 0, otherwise testPatt2 (Need to check this)
+        uint8_t testPatt1 = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 23, 20);
+        uint8_t testPatt2 = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 27, 24);
+
+        for (int ibc = 0; ibc < 4; ++ibc) {
+            uint32_t patt1_ibc = ((testPatt1 >> ibc) & 1) ? 0xffffffff : 0;
+            uint32_t patt2_ibc = ((testPatt2 >> ibc) & 1) ? 0xffffffff : 0;
+            
+            m_fe_data[iABC][ibc] = {
+                maskinput7 & patt2_ibc | ~maskinput7 & patt1_ibc,
+                maskinput6 & patt2_ibc | ~maskinput6 & patt1_ibc,
+                maskinput5 & patt2_ibc | ~maskinput5 & patt1_ibc,
+                maskinput4 & patt2_ibc | ~maskinput4 & patt1_ibc,
+                maskinput3 & patt2_ibc | ~maskinput3 & patt1_ibc,
+                maskinput2 & patt2_ibc | ~maskinput2 & patt1_ibc,
+                maskinput1 & patt2_ibc | ~maskinput1 & patt1_ibc,
+                maskinput0 & patt2_ibc | ~maskinput0 & patt1_ibc
+            };
         }
     }
+    else { // One clock pulse using mask bits
+        for (int ibc = 0; ibc < 4; ++ibc) {
+            if (ibc == BC) {
+                m_fe_data[iABC][ibc] =
+                    {maskinput7, maskinput6, maskinput5, maskinput4,
+                     maskinput3, maskinput2, maskinput1, maskinput0};
+            }
+            else {
+                m_fe_data[iABC][ibc] = {0, 0, 0, 0, 0, 0, 0, 0};
+            }
+        }
+    } // if (testPattEnable)
+}
 
-    return inputs;
+void StarEmu::generateFEData_CaliPulse(int abcID, uint8_t bc)
+{ // Triggered by the "Calibration Pulse" fast command
+
+    uint8_t TM = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 17, 16);
+    if (TM != 0) // do nothing if not normal data taking mode
+        return;
+    
+    bool CalPulseEnable = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG1, abcID, 4, 4);
+    if (not CalPulseEnable)
+        return;
+
+    //clearFEData(abcID);
 }
 
 std::vector<uint16_t> StarEmu::clusterFinder(
@@ -536,13 +622,13 @@ std::vector<uint16_t> StarEmu::clusterFinder(
     uint64_t d1h = (uint64_t)inputData[0] << 32 | inputData[1];
 
     while (d0l or d0h or d1l or d1h) {
-        if (clusters.size() >= maxCluster) break;
+        if (clusters.size() > maxCluster) break;
 
         uint16_t cluster1 = clusterFinder_sub(d1h, d1l, true);
         if (cluster1 != 0x3ff) // if not an empty cluster
             clusters.push_back(cluster1);
 
-        if (clusters.size() >= maxCluster)  break;
+        if (clusters.size() > maxCluster)  break;
 
         uint16_t cluster0 = clusterFinder_sub(d0h, d0l, false);
         if (cluster0 != 0x3ff) // if not an empty cluster
@@ -614,21 +700,22 @@ inline void StarEmu::setBit_128b(uint8_t bit_addr, bool value,
     }
 }
 
-void StarEmu::getClusters()
+std::vector<std::vector<uint16_t>> StarEmu::getClusters(uint8_t ibc)
 {
-    m_clusters.clear();
-    /*
-    // Fixed cluster pattern for now
-    std::vector<uint16_t> a_fixed_cluster_pattern =
-        {0x78f, 0x38f, 0x7af, 0x3af, 0x7cf, 0x3cf, 0x7ee, 0xbee};
-    */
+    std::vector<std::vector<uint16_t>> clusters;
 
     // Get frontend data and find clusters
     for (int index=1; index <= m_starCfg->nABCs(); ++index) {
         unsigned abcID = m_starCfg->getABCchipID(index);
-        std::vector<uint16_t> abc_clusters = clusterFinder(getFrontEndData(abcID));
-        m_clusters.push_back(abc_clusters);
+
+        applyMasks(abcID);
+
+        //uint8_t maxclusters = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG3, abcID, 17, 12);
+        std::vector<uint16_t> abc_clusters = clusterFinder(m_fe_data[index-1][ibc]); //, maxclusters);
+        clusters.push_back(abc_clusters);
     }
+
+    return clusters;
 }
 
 void StarEmu::writeRegister(const uint32_t data, const uint8_t address,

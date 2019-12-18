@@ -48,8 +48,9 @@ private:
     void sendPacket(uint8_t *byte_s, uint8_t *byte_e);
 
     /// Build data packet
-    std::vector<uint8_t> buildPhysicsPacket(PacketTypes, uint8_t, uint8_t,
-                                           uint16_t endOfPacket=0x6fed);
+    std::vector<uint8_t> buildPhysicsPacket(
+        const std::vector<std::vector<uint16_t>>&, PacketTypes, uint8_t, uint8_t,
+        uint16_t endOfPacket=0x6fed);
     std::vector<uint8_t> buildABCRegisterPacket(PacketTypes, uint8_t, uint8_t,
                                                unsigned, uint16_t);
     std::vector<uint8_t> buildHCCRegisterPacket(PacketTypes, uint8_t, unsigned);
@@ -66,12 +67,16 @@ private:
                        const unsigned ABCID=0);
     void readRegister(const uint8_t, bool isABC=false, const unsigned ABCID=0);
 
-    void getClusters();
+    std::vector<std::vector<uint16_t>> getClusters(uint8_t bc);
 
     uint16_t clusterFinder_sub(uint64_t&, uint64_t&, bool);
     std::vector<uint16_t> clusterFinder(const std::array<unsigned,8>&,
-                                        const uint8_t maxCluster = 64);
-    std::array<unsigned, 8> getFrontEndData(unsigned int, uint8_t bc_index=0);
+                                        const uint8_t maxCluster=63);
+    void generateFEData_StaticTest(int);
+    void generateFEData_TestPulse(int, uint8_t);
+    void generateFEData_CaliPulse(int, uint8_t);
+    void applyMasks(int);
+    void clearFEData(int);
     
     // Utilities
     bool getParity_8bits(uint8_t);
@@ -94,10 +99,13 @@ private:
     
     // buffer for register read/write command sequence
     std::queue<uint8_t> m_reg_cmd_buffer;
-    
-    // cluster container for input channels
-    std::vector<std::vector<uint16_t>> m_clusters; // filled in getClusters()
-    
+
+    // front-end data container
+    // For nABCs and 4 bunch crossings
+    // m_fe_data[iABC][iBC] = {ch255_224, ch223_192, ch191_160, ch159_128,
+    //                         ch127_96, ch95_64, ch63_32, ch31_0}
+    std::vector< std::array< std::array<unsigned,8>, 4> > m_fe_data;
+     
     // BC counter
     uint8_t m_bccnt;
 
