@@ -608,7 +608,75 @@ void StarEmu::generateFEData_CaliPulse(int abcID, uint8_t bc)
     if (not CalPulseEnable)
         return;
 
-    //clearFEData(abcID);
+    // ABC index starts from 1. Zero is reserved for HCC.
+    unsigned iABC = m_starCfg->indexForABCchipID(abcID) - 1;
+    
+    ///////////////////
+    // Injected charge
+    // 9 bits: 0 - 170 mV
+    uint16_t BCAL = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::ADCS3, abcID, 24, 16);
+    float vcal = BCAL/512. * 0.170; // V
+    float injection_capacitor = 60.; // fF
+    float injected_charge = vcal * injection_capacitor; // fC
+    // this is pre-amp
+
+    // threshold
+    // 8 bits: 0 - -550 mV
+    uint8_t BVT = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::ADCS2, abcID, 7, 0);
+    float vth = BVT/255. * 550.; // -mV
+
+    // TrimDAC Range
+    // 5 bits: 50 mV - 230 mV (linear?)
+    uint8_t BTRANGE = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::ADCS1, abcID, 28, 24); 
+    float trimRange = 50. + (230.-50.) * BTRANGE / 32.; // mV
+
+    // For each strip: 
+    for (int ich = 0; ich < 256; ++ich) {
+        // TrimDAC: 5 bits
+        uint8_t TrimDAC = m_starCfg->getTrimDAC(ich, abcID);
+        float vtrim = trimRange * TrimDAC / 32.; // mV
+
+        // Threshould after trimming:
+        float vth_trimmed = vth - vtrim;
+        // smear?
+        // convert to charge before pre-amp based on the gain funtion
+        // for now: 80 mv/fC 
+        float threshold_charge = vth_trimmed / 80.; // fC
+        
+        // noise charge before pre-amp
+        float noise_charge = 0.; // for now
+
+        // Comparator stage
+        if (injected_charge + noise_charge > threshold_charge) {
+            // has a hit: set bit ich%32 of the (7-ich/32)'th register to 1
+            m_fe_data[iABC][bc][7 - ich/32] |= (1 << ich%32);
+        }
+        else {
+            // no hit: set bit ich%32 of the (7-ich/32)'th register to 0
+            m_fe_data[iABC][bc][7 - ich/32] &= ~(1 << ich%32);
+        }
+    }
+    
+    // Calibration enable registers
+    unsigned calenable0 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG0, abcID);
+    unsigned calenable1 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG1, abcID);
+    unsigned calenable2 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG2, abcID);
+    unsigned calenable3 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG3, abcID);
+    unsigned calenable4 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG4, abcID);
+    unsigned calenable5 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG5, abcID);
+    unsigned calenable6 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG6, abcID);
+    unsigned calenable7 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG7, abcID);
+    
+    m_fe_data[iABC][bc][0] &= calenable7;
+    m_fe_data[iABC][bc][1] &= calenable6;
+    m_fe_data[iABC][bc][2] &= calenable5;
+    m_fe_data[iABC][bc][3] &= calenable4;
+    m_fe_data[iABC][bc][4] &= calenable3;
+    m_fe_data[iABC][bc][5] &= calenable2;
+    m_fe_data[iABC][bc][6] &= calenable1;
+    m_fe_data[iABC][bc][7] &= calenable0;
+    
+    // FIXME: the analog pulse is supposed to be 16 BC wide (400 ns)
 }
 
 std::vector<uint16_t> StarEmu::clusterFinder(

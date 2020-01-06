@@ -175,7 +175,23 @@ class StarCfg {
         this->setABCchipIDs({13,12,11,10,9,8,7,6,5,4,3});
         this->initRegisterMaps();
     }
-    
+
+    uint8_t getTrimDAC(uint8_t channel, int chipID)
+    {
+        // Register address for lowest 4 bits
+        uint8_t reg_addr_l = channel/8 + 64;
+        uint8_t lsb_l = (channel%8) * 4;
+        uint8_t trimdac = getABCSubRegValue(reg_addr_l, chipID, lsb_l+3, lsb_l);
+
+        // Register address for the highest bits
+        uint8_t reg_addr_h = channel/32 + 96;
+        // Get the top bit
+        bool trimdac_top = getABCSubRegValue(reg_addr_h, chipID, channel%32, channel%32);
+        trimdac += (trimdac_top << 4);
+        
+        return trimdac;
+    }
+
   private:
 
     int m_hccID;
