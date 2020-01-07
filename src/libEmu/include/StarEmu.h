@@ -72,11 +72,11 @@ private:
     uint16_t clusterFinder_sub(uint64_t&, uint64_t&, bool);
     std::vector<uint16_t> clusterFinder(const std::array<unsigned,8>&,
                                         const uint8_t maxCluster=63);
-    void generateFEData_StaticTest(int);
-    void generateFEData_TestPulse(int, uint8_t);
-    void generateFEData_CaliPulse(int, uint8_t);
-    void applyMasks(int);
-    void clearFEData(int);
+    void generateFEData_StaticTest(unsigned ichip);
+    void generateFEData_TestPulse(unsigned ichip, uint8_t BC);
+    void generateFEData_CaliPulse(unsigned ichip, uint8_t BC);
+    void applyMasks(unsigned ichip);
+    void clearFEData(unsigned ichip);
     
     // Utilities
     bool getParity_8bits(uint8_t);

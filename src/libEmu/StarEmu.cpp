@@ -305,15 +305,13 @@ void StarEmu::doFastCommand(uint8_t data6) {
     case LCB::ABC_CAL_PULSE :
         //std::cout << "Fast command: ABCCaliPulse" << std::endl;
         for (int ichip=1; ichip <= m_starCfg->nABCs(); ++ichip) {
-            int abcID = m_starCfg->getABCchipID(ichip);
-            this->generateFEData_CaliPulse(abcID, bcsel);
+            this->generateFEData_CaliPulse(ichip, bcsel);
         }
         break;
     case LCB::ABC_DIGITAL_PULSE :
         // std::cout << "Fast command: ABCDigiPulse" << std::endl;
         for (int ichip=1; ichip <= m_starCfg->nABCs(); ++ichip) {
-            int abcID = m_starCfg->getABCchipID(ichip);
-            this->generateFEData_TestPulse(abcID, bcsel);
+            this->generateFEData_TestPulse(ichip, bcsel);
         }
         break;
     case LCB::ABC_HIT_COUNT_RESET :
@@ -471,22 +469,23 @@ void StarEmu::execute_command_sequence()
     } // if (isRegRead)
 }
 
-void StarEmu::clearFEData(int abcID)
+void StarEmu::clearFEData(unsigned ichip)
 {
     // ABC index starts from 1. Zero is reserved for HCC.
-    unsigned iABC = m_starCfg->indexForABCchipID(abcID) - 1;
+    unsigned iABC = ichip - 1;
     
     for (int ibc = 0; ibc < 4; ++ibc) {
         m_fe_data[iABC][ibc] = {0, 0, 0, 0, 0, 0, 0, 0};
     }
 }
 
-void StarEmu::applyMasks(int abcID) {
+void StarEmu::applyMasks(unsigned ichip) {
+
+    int abcID = m_starCfg->getABCchipID(ichip);
+
     uint8_t TM = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 17, 16);
     if (TM != 0) // do nothing if not normal data taking mode
         return;
-    
-    unsigned iABC = m_starCfg->indexForABCchipID(abcID) - 1;
     
     // mask registers
     unsigned maskinput0 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput0, abcID);
@@ -497,6 +496,8 @@ void StarEmu::applyMasks(int abcID) {
     unsigned maskinput5 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput5, abcID);
     unsigned maskinput6 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput6, abcID);
     unsigned maskinput7 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput7, abcID);
+
+    unsigned iABC = ichip - 1;
 
     for (int ibc = 0; ibc <  4; ++ibc) {
         m_fe_data[iABC][ibc][0] &= ~maskinput7; // ch255 - 224
@@ -510,14 +511,16 @@ void StarEmu::applyMasks(int abcID) {
     }
 }
 
-void StarEmu::generateFEData_StaticTest(int abcID)
+void StarEmu::generateFEData_StaticTest(unsigned ichip)
 {
+    int abcID = m_starCfg->getABCchipID(ichip);
+
+    // ABC index starts from 1. Zero is reserved for HCC.
+    unsigned iABC = ichip - 1;
+
     uint8_t TM = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 17, 16);
     if (TM != 1) // do nothing if not static test mode
         return;
-    
-    // ABC index starts from 1. Zero is reserved for HCC.
-    unsigned iABC = m_starCfg->indexForABCchipID(abcID) - 1;
     
     for (int ibc = 0; ibc < 4; ++ibc) {
         m_fe_data[iABC][ibc] = {
@@ -533,8 +536,13 @@ void StarEmu::generateFEData_StaticTest(int abcID)
     }
 }
 
-void StarEmu::generateFEData_TestPulse(int abcID, uint8_t BC)
+void StarEmu::generateFEData_TestPulse(unsigned ichip, uint8_t BC)
 { // Triggered by the "Digital Test Pulse" fast command
+
+    int abcID = m_starCfg->getABCchipID(ichip);
+
+    // ABC index starts from 1. Zero is reserved for HCC.
+    unsigned iABC = ichip - 1;
 
     uint8_t TM = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 17, 16);
     if (TM != 2) // do nothing if not test pulse mode
@@ -544,9 +552,6 @@ void StarEmu::generateFEData_TestPulse(int abcID, uint8_t BC)
     bool TestPulseEnable = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 4, 4);
     if (not TestPulseEnable)
         return;
-    
-    // ABC index starts from 1. Zero is reserved for HCC.
-    unsigned iABC = m_starCfg->indexForABCchipID(abcID) - 1;
 
     // mask registers
     unsigned maskinput0 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput0, abcID);
@@ -597,8 +602,13 @@ void StarEmu::generateFEData_TestPulse(int abcID, uint8_t BC)
     } // if (testPattEnable)
 }
 
-void StarEmu::generateFEData_CaliPulse(int abcID, uint8_t bc)
+void StarEmu::generateFEData_CaliPulse(unsigned ichip, uint8_t bc)
 { // Triggered by the "Calibration Pulse" fast command
+
+    int abcID = m_starCfg->getABCchipID(ichip);
+
+    // ABC index starts from 1. Zero is reserved for HCC.
+    unsigned iABC = ichip - 1;
 
     uint8_t TM = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 17, 16);
     if (TM != 0) // do nothing if not normal data taking mode
@@ -607,9 +617,6 @@ void StarEmu::generateFEData_CaliPulse(int abcID, uint8_t bc)
     bool CalPulseEnable = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG1, abcID, 4, 4);
     if (not CalPulseEnable)
         return;
-
-    // ABC index starts from 1. Zero is reserved for HCC.
-    unsigned iABC = m_starCfg->indexForABCchipID(abcID) - 1;
     
     ///////////////////
     // Injected charge
@@ -781,13 +788,11 @@ std::vector<std::vector<uint16_t>> StarEmu::getClusters(uint8_t ibc)
     std::vector<std::vector<uint16_t>> clusters;
 
     // Get frontend data and find clusters
-    for (int index=1; index <= m_starCfg->nABCs(); ++index) {
-        unsigned abcID = m_starCfg->getABCchipID(index);
-
-        applyMasks(abcID);
+    for (int ichip=1; ichip <= m_starCfg->nABCs(); ++ichip) {
+        applyMasks(ichip);
 
         //uint8_t maxclusters = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG3, abcID, 17, 12);
-        std::vector<uint16_t> abc_clusters = clusterFinder(m_fe_data[index-1][ibc]); //, maxclusters);
+        std::vector<uint16_t> abc_clusters = clusterFinder(m_fe_data[ichip-1][ibc]); //, maxclusters);
         clusters.push_back(abc_clusters);
     }
 
