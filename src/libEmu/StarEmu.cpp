@@ -101,6 +101,9 @@ void StarEmu::sendPacket(uint8_t *byte_s, uint8_t *byte_e) {
     m_rxQueue.pushData(std::move(data));
 }
 
+//
+// Build data packets
+//
 bool StarEmu::getParity_8bits(uint8_t val)
 {
     val ^= val >> 4;
@@ -188,36 +191,9 @@ std::vector<uint8_t> StarEmu::buildHCCRegisterPacket(PacketTypes typ, uint8_t re
     return data_packets;
 }
 
-unsigned int StarEmu::countTriggers(LCB::Frame frame) {
-    uint8_t code0 = (frame >> 8) & 0xff;
-    uint8_t code1 = frame & 0xff;
-
-    // If either half is a kcode no triggers
-    if(code0 == LCB::K0 || code0 == LCB::K1 ||
-       code0 == LCB::K2 || code0 == LCB::K3) {
-        return 0;
-    }
-
-    if(code1 == LCB::K0 || code1 == LCB::K1 ||
-       code1 == LCB::K2 || code1 == LCB::K3) {
-        return 0;
-    }
-
-    // Find 12-bit decoded version
-    uint16_t value = (SixEight::decode(code0) << 6) | SixEight::decode(code1);
-    if(((value>>7) & 0x1f) == 0) {
-        // No BCR, or triggers, so part of a command
-        return 0;
-    }
-
-    // How many triggers in mask (may be 0 if BCR)
-    unsigned int count = 0;
-    for(unsigned int i=0; i<4; i++) {
-        count += (value>>(7+i)) & 0x1;
-    }
-    return count;
-}
-
+//
+// Decode LCB
+//
 void StarEmu::DecodeLCB(LCB::Frame frame) {
     // {code0, code1}
     uint8_t code0 = (frame >> 8) & 0xff;
@@ -260,92 +236,9 @@ void StarEmu::DecodeLCB(LCB::Frame frame) {
     
 }
 
-void StarEmu::doL0A(uint16_t data12) {
-    bool bcr = (data12 >> 11) & 1;  // BC reset
-    uint8_t l0a_mask = (data12 >> 7) & 0xf; // 4-bit L0A mask
-    uint8_t l0a_tag = data12 & 0x7f; // 7-bit L0A tag
-
-    // A LCB frame covers 4 BCs
-    for (int ibc = 0; ibc < 4; ++ibc) {
-
-        // check if there is a L0A
-        // msb of L0A mask corresponds to the earliest BC
-        if ( (l0a_mask >> (3-ibc)) & 1 ) {
-            
-            // get clusters for this BC
-            std::vector<std::vector<uint16_t>> clusters = getClusters(ibc);
-
-            // build and send data packet
-            PacketTypes ptype = PacketTypes::LP; // for now
-            std::vector<uint8_t> packet =
-                buildPhysicsPacket(clusters, ptype, l0a_tag, m_bccnt);
-            sendPacket(packet);
-        }
-        
-        m_bccnt += 1;
-    }
-    
-    if (bcr) m_bccnt = 0;
-}
-
-void StarEmu::doFastCommand(uint8_t data6) {
-    uint8_t bcsel = (data6 >> 4) & 3; // top 2 bits for BC select
-    uint8_t fastcmd = data6 & 0xf; // bottom 4 bits for command
-
-    switch(fastcmd) {
-    case LCB::LOGIC_RESET :
-        std::cout << "Fast command: LogicReset" << std::endl;
-        break;
-    case LCB::ABC_REG_RESET :
-        std::cout << "Fast command: ABCRegReset" << std::endl;
-        break;
-    case LCB::ABC_SEU_RESET :
-        std::cout << "Fast command: ABCSEUReset" << std::endl;
-        break;
-    case LCB::ABC_CAL_PULSE :
-        //std::cout << "Fast command: ABCCaliPulse" << std::endl;
-        for (int ichip=1; ichip <= m_starCfg->nABCs(); ++ichip) {
-            this->generateFEData_CaliPulse(ichip, bcsel);
-        }
-        break;
-    case LCB::ABC_DIGITAL_PULSE :
-        // std::cout << "Fast command: ABCDigiPulse" << std::endl;
-        for (int ichip=1; ichip <= m_starCfg->nABCs(); ++ichip) {
-            this->generateFEData_TestPulse(ichip, bcsel);
-        }
-        break;
-    case LCB::ABC_HIT_COUNT_RESET :
-        std::cout << "Fast command: ABCHitCntReset" << std::endl;
-        break;
-    case LCB::ABC_HITCOUNT_START :
-        std::cout << "Fast command: ABCHitCntStart" << std::endl;
-        break;
-    case LCB::ABC_HITCOUNT_STOP :
-        std::cout << "Fast command: ABCHitCntStop" << std::endl;
-        break;
-    case LCB::ABC_SLOW_COMMAND_RESET :
-        std::cout << "Fast command: ABCSlowCmdReset" << std::endl;
-        break;
-    case LCB::ABC_STOP_PRLP :
-        std::cout << "Fast command: StopPRLP" << std::endl;
-        break;
-    case LCB::HCC_REG_RESET :
-        std::cout << "Fast command: HCCRegReset" << std::endl;
-        break;
-    case LCB::HCC_SEU_RESET :
-        std::cout << "Fast command: HCCSEUReset" << std::endl;
-        break;
-    case LCB::HCC_PLL_RESET :
-        std::cout << "Fast command: HCCPLLReset" << std::endl;
-        break;
-    case LCB::ABC_START_PRLP :
-        std::cout << "Fast command: StartPRLP" << std::endl;
-        break;
-    }
-
-    m_bccnt += 4;
-}
-
+//
+// Register commands
+//
 void StarEmu::doRegReadWrite(LCB::Frame frame) {
     uint8_t code0 = (frame >> 8) & 0xff;
     uint8_t code1 = frame & 0xff;
@@ -400,6 +293,59 @@ void StarEmu::doRegReadWrite(LCB::Frame frame) {
 
     // Increment BC counter
     m_bccnt += 4;
+}
+
+void StarEmu::writeRegister(const uint32_t data, const uint8_t address,
+                            bool isABC, const unsigned ABCID)
+{
+    if (isABC) {
+        m_starCfg->setABCRegister(address, data, ABCID);
+    }
+    else {
+        m_starCfg->setHCCRegister(address, data);
+    }
+}
+
+void StarEmu::readRegister(const uint8_t address, bool isABC,
+                           const unsigned ABCID)
+{
+    if (isABC) { // Read ABCStar registers
+        PacketTypes ptype = PacketTypes::ABCRegRd;
+
+        // HCCStar channel number
+        unsigned ich = m_starCfg->indexForABCchipID(ABCID) - 1;
+        if (ich >= m_starCfg->nABCs()) {
+            std::cout << __PRETTY_FUNCTION__ << ": Cannot find an ABCStar chip with ID = " << ABCID << std::endl;
+            return;
+        }
+
+        // read register
+        unsigned data = m_starCfg->getABCRegister(address, ABCID);
+
+        // ABC status bits
+        // for now
+        uint16_t status = (ABCID & 0xf) << 12;
+        /*
+        status[15:0] = {ABCID[3:0], 0, BCIDFlag,
+                        PRFIFOFull, PRFIFOEmpty, LPFIFOFull, LPFIFOEmpty,
+                        RegFIFOOVFL, RegFIFOFull, RegFIFOEmpty,
+                        ClusterOVFL, ClusterFull, ClusterEmpty};
+        */
+
+        // build and send data packet
+        auto packet = buildABCRegisterPacket(ptype, ich, address, data, status);
+        sendPacket(packet);
+    }
+    else { // Read HCCStar registers
+        PacketTypes ptype = PacketTypes::HCCRegRd;
+
+        // read register
+        unsigned data = m_starCfg->getHCCRegister(address);
+
+        // build and send data packet
+        auto packet = buildHCCRegisterPacket(ptype, address, data);
+        sendPacket(packet);
+    }
 }
 
 void StarEmu::execute_command_sequence()
@@ -467,6 +413,132 @@ void StarEmu::execute_command_sequence()
         }
         assert(m_reg_cmd_buffer.empty());
     } // if (isRegRead)
+}
+
+//
+// Fast commands
+//
+void StarEmu::doFastCommand(uint8_t data6) {
+    uint8_t bcsel = (data6 >> 4) & 3; // top 2 bits for BC select
+    uint8_t fastcmd = data6 & 0xf; // bottom 4 bits for command
+
+    switch(fastcmd) {
+    case LCB::LOGIC_RESET :
+        std::cout << "Fast command: LogicReset" << std::endl;
+        break;
+    case LCB::ABC_REG_RESET :
+        std::cout << "Fast command: ABCRegReset" << std::endl;
+        break;
+    case LCB::ABC_SEU_RESET :
+        std::cout << "Fast command: ABCSEUReset" << std::endl;
+        break;
+    case LCB::ABC_CAL_PULSE :
+        //std::cout << "Fast command: ABCCaliPulse" << std::endl;
+        for (int ichip=1; ichip <= m_starCfg->nABCs(); ++ichip) {
+            this->generateFEData_CaliPulse(ichip, bcsel);
+        }
+        break;
+    case LCB::ABC_DIGITAL_PULSE :
+        // std::cout << "Fast command: ABCDigiPulse" << std::endl;
+        for (int ichip=1; ichip <= m_starCfg->nABCs(); ++ichip) {
+            this->generateFEData_TestPulse(ichip, bcsel);
+        }
+        break;
+    case LCB::ABC_HIT_COUNT_RESET :
+        std::cout << "Fast command: ABCHitCntReset" << std::endl;
+        break;
+    case LCB::ABC_HITCOUNT_START :
+        std::cout << "Fast command: ABCHitCntStart" << std::endl;
+        break;
+    case LCB::ABC_HITCOUNT_STOP :
+        std::cout << "Fast command: ABCHitCntStop" << std::endl;
+        break;
+    case LCB::ABC_SLOW_COMMAND_RESET :
+        std::cout << "Fast command: ABCSlowCmdReset" << std::endl;
+        break;
+    case LCB::ABC_STOP_PRLP :
+        std::cout << "Fast command: StopPRLP" << std::endl;
+        break;
+    case LCB::HCC_REG_RESET :
+        std::cout << "Fast command: HCCRegReset" << std::endl;
+        break;
+    case LCB::HCC_SEU_RESET :
+        std::cout << "Fast command: HCCSEUReset" << std::endl;
+        break;
+    case LCB::HCC_PLL_RESET :
+        std::cout << "Fast command: HCCPLLReset" << std::endl;
+        break;
+    case LCB::ABC_START_PRLP :
+        std::cout << "Fast command: StartPRLP" << std::endl;
+        break;
+    }
+
+    m_bccnt += 4;
+}
+
+//
+// Trigger and front-end data
+//
+void StarEmu::doL0A(uint16_t data12) {
+    bool bcr = (data12 >> 11) & 1;  // BC reset
+    uint8_t l0a_mask = (data12 >> 7) & 0xf; // 4-bit L0A mask
+    uint8_t l0a_tag = data12 & 0x7f; // 7-bit L0A tag
+
+    // Prepare front-end data
+    // Loop over all ABCStar chips
+    for (int ichip = 1; ichip <= m_starCfg->nABCs(); ++ichip) 
+        prepareFEData(ichip);
+    
+    // A LCB frame covers 4 BCs
+    for (int ibc = 0; ibc < 4; ++ibc) {
+        // check if there is a L0A
+        // msb of L0A mask corresponds to the earliest BC
+        if ( (l0a_mask >> (3-ibc)) & 1 ) {
+            
+            // get clusters for this BC
+            std::vector<std::vector<uint16_t>> clusters = getClusters(ibc);
+
+            // build and send data packet
+            PacketTypes ptype = PacketTypes::LP; // for now
+            std::vector<uint8_t> packet =
+                buildPhysicsPacket(clusters, ptype, l0a_tag, m_bccnt);
+            sendPacket(packet);
+        }
+        
+        m_bccnt += 1;
+    }
+    
+    if (bcr) m_bccnt = 0;
+}
+
+unsigned int StarEmu::countTriggers(LCB::Frame frame) {
+    uint8_t code0 = (frame >> 8) & 0xff;
+    uint8_t code1 = frame & 0xff;
+
+    // If either half is a kcode no triggers
+    if(code0 == LCB::K0 || code0 == LCB::K1 ||
+       code0 == LCB::K2 || code0 == LCB::K3) {
+        return 0;
+    }
+
+    if(code1 == LCB::K0 || code1 == LCB::K1 ||
+       code1 == LCB::K2 || code1 == LCB::K3) {
+        return 0;
+    }
+
+    // Find 12-bit decoded version
+    uint16_t value = (SixEight::decode(code0) << 6) | SixEight::decode(code1);
+    if(((value>>7) & 0x1f) == 0) {
+        // No BCR, or triggers, so part of a command
+        return 0;
+    }
+
+    // How many triggers in mask (may be 0 if BCR)
+    unsigned int count = 0;
+    for(unsigned int i=0; i<4; i++) {
+        count += (value>>(7+i)) & 0x1;
+    }
+    return count;
 }
 
 void StarEmu::clearFEData(unsigned ichip)
@@ -686,6 +758,26 @@ void StarEmu::generateFEData_CaliPulse(unsigned ichip, uint8_t bc)
     // FIXME: the analog pulse is supposed to be 16 BC wide (400 ns)
 }
 
+void StarEmu::prepareFEData(unsigned ichip)
+{
+    // ABC chip index starts from 1. Zero is reserved for HCC.
+    assert(ichip);
+    
+    int abcID = m_starCfg->getABCchipID(ichip);
+
+    // Check mode of operation
+    uint8_t TM = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 17, 16);
+    
+    if (TM == 0) { // Normal data taking
+        this->applyMasks(ichip);
+    }
+    else if (TM == 1) { // Static test mode
+        this->generateFEData_StaticTest(ichip);
+    }
+    // TM == 2: Test pulse mode
+    // Digital or analog test pulses are generated by fast commands
+}
+
 std::vector<uint16_t> StarEmu::clusterFinder(
     const std::array<unsigned, 8>& inputData, const uint8_t maxCluster)
 {
@@ -787,69 +879,14 @@ std::vector<std::vector<uint16_t>> StarEmu::getClusters(uint8_t ibc)
 {
     std::vector<std::vector<uint16_t>> clusters;
 
-    // Get frontend data and find clusters
+    // Get front-end data and find clusters
     for (int ichip=1; ichip <= m_starCfg->nABCs(); ++ichip) {
-        applyMasks(ichip);
-
         //uint8_t maxclusters = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG3, abcID, 17, 12);
         std::vector<uint16_t> abc_clusters = clusterFinder(m_fe_data[ichip-1][ibc]); //, maxclusters);
         clusters.push_back(abc_clusters);
     }
 
     return clusters;
-}
-
-void StarEmu::writeRegister(const uint32_t data, const uint8_t address,
-                            bool isABC, const unsigned ABCID)
-{
-    if (isABC) {
-        m_starCfg->setABCRegister(address, data, ABCID);
-    }
-    else {
-        m_starCfg->setHCCRegister(address, data);
-    }
-}
-
-void StarEmu::readRegister(const uint8_t address, bool isABC,
-                           const unsigned ABCID)
-{
-    if (isABC) { // Read ABCStar registers
-        PacketTypes ptype = PacketTypes::ABCRegRd;
-
-        // HCCStar channel number
-        unsigned ich = m_starCfg->indexForABCchipID(ABCID) - 1;
-        if (ich >= m_starCfg->nABCs()) {
-            std::cout << __PRETTY_FUNCTION__ << ": Cannot find an ABCStar chip with ID = " << ABCID << std::endl;
-            return;
-        }
-
-        // read register
-        unsigned data = m_starCfg->getABCRegister(address, ABCID);
-
-        // ABC status bits
-        // for now
-        uint16_t status = (ABCID & 0xf) << 12;
-        /*
-        status[15:0] = {ABCID[3:0], 0, BCIDFlag,
-                        PRFIFOFull, PRFIFOEmpty, LPFIFOFull, LPFIFOEmpty,
-                        RegFIFOOVFL, RegFIFOFull, RegFIFOEmpty,
-                        ClusterOVFL, ClusterFull, ClusterEmpty};
-        */
-
-        // build and send data packet
-        auto packet = buildABCRegisterPacket(ptype, ich, address, data, status);
-        sendPacket(packet);
-    }
-    else { // Read HCCStar registers
-        PacketTypes ptype = PacketTypes::HCCRegRd;
-
-        // read register
-        unsigned data = m_starCfg->getHCCRegister(address);
-
-        // build and send data packet
-        auto packet = buildHCCRegisterPacket(ptype, address, data);
-        sendPacket(packet);
-    }
 }
 
 void StarEmu::executeLoop() {

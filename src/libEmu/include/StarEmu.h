@@ -77,6 +77,7 @@ private:
     void generateFEData_CaliPulse(unsigned ichip, uint8_t BC);
     void applyMasks(unsigned ichip);
     void clearFEData(unsigned ichip);
+    void prepareFEData(unsigned ichip);
     
     // Utilities
     bool getParity_8bits(uint8_t);
