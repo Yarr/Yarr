@@ -1256,6 +1256,7 @@ def __set_test_run_finish(i_scanlog_json, i_conn_jsons):
             updateSys(tr_oid, 'testRun')
 
         __global.tr_oids.append(tr_oid)
+        
 
     return
 
@@ -1363,15 +1364,16 @@ class __global:
     option = ''
     updated = {}
     #force = False
-    def clean():
-        chip_type = ''
-        user_oid = ''
-        site_oid = ''
-        tr_oids = []
-        histo_names = []
-        db_version = 1.01
-        db_list = {}
-        dir_path = ''
-        option = ''
-        updated = {}
-        #force = False
+
+def clean():
+    __global.chip_type = ''
+    __global.user_oid = ''
+    __global.site_oid = ''
+    __global.tr_oids = []
+    __global.histo_names = []
+    __global.db_version = 1.01
+    __global.db_list = {}
+    __global.dir_path = ''
+    __global.option = ''
+    __global.updated = {}
+    #force = False

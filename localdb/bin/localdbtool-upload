@@ -595,7 +595,8 @@ def __clean(cache_dir, result):
         for line in cache_list:
             if not line or not line=='': f.write('{}\n'.format(line))
 
-    register.__global.clean()
+    #register.__global.clean()
+    register.clean()
 
 ###################
 # Cache Data Upload
