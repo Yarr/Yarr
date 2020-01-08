@@ -70,9 +70,117 @@ class StarCfg {
     StarCfg(){}
     ~StarCfg(){}
 
+    void init()
+    {
+        // for now
+        setHCCchipID(15);
+        setABCchipIDs({15});
+        //setABCchipIDs({13,12,11,10,9,8,7,6,5,4,3});
+
+        initRegisterMaps();
+    }
+
     void initRegisterMaps()
     {
         // load default register configurations
+        // HCCStar
+        initHCCRegisters();
+
+        // ABCStar
+        initABCRegisters();
+    }
+
+    void initHCCRegisters()
+    {
+        resetHCCPLL();
+        resetHCCSEU();
+        resetHCCRegisters();
+    }
+
+    void resetHCCPLL()
+    {
+        setHCCRegister(HCCStarRegister::PLL1, 0x00ff3b05);
+        setHCCRegister(HCCStarRegister::PLL2, 0x00000000);
+        setHCCRegister(HCCStarRegister::PLL3, 0x00000000);
+    }
+
+    void resetHCCSEU()
+    {
+        setHCCRegister(HCCStarRegister::SEU1, 0x00000000);
+        //setHCCRegister(HCCStarRegister::SEU2, 0x00000000);
+        //setHCCRegister(HCCStarRegister::SEU3, 0x00000000);
+    }
+
+    void resetHCCRegisters()
+    {
+        // cf. HCCStar specs v1.0e section 9.15.1
+        setHCCRegister(HCCStarRegister::FrameRaw,  0x00000000);
+        setHCCRegister(HCCStarRegister::LCBerr,    0x00000000);
+        setHCCRegister(HCCStarRegister::ADCStatus, 0x00000000);
+        setHCCRegister(HCCStarRegister::Status,    0x00000000);
+        setHCCRegister(HCCStarRegister::HPR,       0x00000000);
+        setHCCRegister(HCCStarRegister::Pulse,     0x00000000);
+        setHCCRegister(HCCStarRegister::Delay1,    0x00000000);
+        setHCCRegister(HCCStarRegister::Delay2,    0x00000000);
+        setHCCRegister(HCCStarRegister::Delay3,    0x00000000);
+        setHCCRegister(HCCStarRegister::DRV1,      0x00000000);
+        setHCCRegister(HCCStarRegister::DRV2,      0x00000014);
+        setHCCRegister(HCCStarRegister::ICenable,  0x00000000);
+        setHCCRegister(HCCStarRegister::OPmode,    0x00020001);
+        setHCCRegister(HCCStarRegister::OPmodeC,   0x00020001);
+        setHCCRegister(HCCStarRegister::Cfg1,      0x00000000);
+        setHCCRegister(HCCStarRegister::Cfg2,      0x0000018e);
+        setHCCRegister(HCCStarRegister::ExtRst,    0x00000000);
+        setHCCRegister(HCCStarRegister::ExtRstC,   0x00000000);
+        setHCCRegister(HCCStarRegister::ErrCfg,    0x00000000);
+        setHCCRegister(HCCStarRegister::ADCcfg,    0x00406600);
+    }
+
+    void initABCRegisters() {
+        resetABCRegisters();
+    }
+
+    void resetABCRegisters()
+    {
+        // cf. ABCStar specs v7.8 section 9.14
+        setABCRegister(ABCStarRegs::SCReg, 0x00000000);
+
+        setABCRegister(ABCStarRegs::ADCS1, 0x00000000);
+        setABCRegister(ABCStarRegs::ADCS2, 0x000000ff);
+        setABCRegister(ABCStarRegs::ADCS3, 0x00000000);
+        setABCRegister(ABCStarRegs::ADCS4, 0x0000010c);
+        //setABCRegister(ABCStarRegs::ADCS5] = ;
+        setABCRegister(ABCStarRegs::ADCS6, 0x00000000);
+        setABCRegister(ABCStarRegs::ADCS7, 0x00000000);
+
+        setABCRegister(ABCStarRegs::MaskInput0, 0x00000000);
+        setABCRegister(ABCStarRegs::MaskInput1, 0x00000000);
+        setABCRegister(ABCStarRegs::MaskInput2, 0x00000000);
+        setABCRegister(ABCStarRegs::MaskInput3, 0x00000000);
+        setABCRegister(ABCStarRegs::MaskInput4, 0x00000000);
+        setABCRegister(ABCStarRegs::MaskInput5, 0x00000000);
+        setABCRegister(ABCStarRegs::MaskInput6, 0x00000000);
+        setABCRegister(ABCStarRegs::MaskInput7, 0x00000000);
+
+        setABCRegister(ABCStarRegs::CREG0, 0x00000000);
+        setABCRegister(ABCStarRegs::CREG1, 0x00000004);
+        setABCRegister(ABCStarRegs::CREG2, 0x00000190);
+        setABCRegister(ABCStarRegs::CREG3, 0x00000000);
+        setABCRegister(ABCStarRegs::CREG4, 0x00000000);
+        setABCRegister(ABCStarRegs::CREG5, 0x00000000);
+        setABCRegister(ABCStarRegs::CREG6, 0x0000ffff);
+
+        setABCRegister(ABCStarRegs::STAT0, 0x00000000);
+        setABCRegister(ABCStarRegs::STAT1, 0x00000000);
+        setABCRegister(ABCStarRegs::STAT2, 0x00000000);
+        setABCRegister(ABCStarRegs::STAT3, 0x00000000);
+        setABCRegister(ABCStarRegs::STAT4, 0x00000000);
+
+        setABCRegister(ABCStarRegs::HPR, 0x00000000);
+
+        // TrimDAC,  Calibration Enable, Hit counters
+        for (unsigned addr = 64; addr <= 175; ++addr)
+            setABCRegister(addr, 0x00000000);
     }
 
     const uint32_t getHCCRegister(uint32_t addr)
@@ -134,6 +242,19 @@ class StarCfg {
     {
         setABCRegister((uint32_t)reg, val, chipID);
     }
+
+    // overload: broadcast if no chip ID provided
+    void setABCRegister(uint32_t addr, uint32_t val)
+    {
+        for (unsigned ichip = 1; ichip <= this->nABCs(); ++ichip) {
+            registerMap[ichip][addr] = val;
+        }
+    }
+
+    void setABCRegister(ABCStarRegs reg, uint32_t val)
+    {
+        setABCRegister((uint32_t)reg, val);
+    }
     
     const uint32_t getABCSubRegValue(uint32_t addr, int chipID,
                                      uint8_t msb, uint8_t lsb)
@@ -166,15 +287,6 @@ class StarCfg {
     }
 
     unsigned nABCs() {return m_ABCchipIDs.size();}
-
-    void init()
-    {
-        // Should get these e.g. from chip config json
-        // for now
-        this->setHCCchipID(10);
-        this->setABCchipIDs({13,12,11,10,9,8,7,6,5,4,3});
-        this->initRegisterMaps();
-    }
 
     uint8_t getTrimDAC(uint8_t channel, int chipID)
     {
