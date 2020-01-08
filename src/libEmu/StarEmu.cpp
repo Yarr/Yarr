@@ -50,6 +50,9 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path
 
     m_ignoreCmd = true;
     m_isForABC = false;
+
+    m_startHitCount = false;
+    m_bc_sel = 0;
     
     // HCCStar and ABCStar configurations
     // TODO: should get these from chip config json file
@@ -420,60 +423,81 @@ void StarEmu::execute_command_sequence()
 //
 void StarEmu::doFastCommand(uint8_t data6) {
     uint8_t bcsel = (data6 >> 4) & 3; // top 2 bits for BC select
+    m_bc_sel = bcsel;
+    
     uint8_t fastcmd = data6 & 0xf; // bottom 4 bits for command
-
+    
+    // Reset commands reset everything at once, ignoring the selected BC for now
     switch(fastcmd) {
     case LCB::LOGIC_RESET :
-        std::cout << "Fast command: LogicReset" << std::endl;
+        this->logicReset();
         break;
     case LCB::ABC_REG_RESET :
-        std::cout << "Fast command: ABCRegReset" << std::endl;
+        m_starCfg->resetABCRegisters();
+        this->logicReset();
         break;
     case LCB::ABC_SEU_RESET :
-        std::cout << "Fast command: ABCSEUReset" << std::endl;
+        m_starCfg->resetABCSEU();
         break;
     case LCB::ABC_CAL_PULSE :
-        //std::cout << "Fast command: ABCCaliPulse" << std::endl;
         for (int ichip=1; ichip <= m_starCfg->nABCs(); ++ichip) {
             this->generateFEData_CaliPulse(ichip, bcsel);
         }
         break;
     case LCB::ABC_DIGITAL_PULSE :
-        // std::cout << "Fast command: ABCDigiPulse" << std::endl;
         for (int ichip=1; ichip <= m_starCfg->nABCs(); ++ichip) {
             this->generateFEData_TestPulse(ichip, bcsel);
         }
         break;
     case LCB::ABC_HIT_COUNT_RESET :
-        std::cout << "Fast command: ABCHitCntReset" << std::endl;
+        m_starCfg->resetABCHitCounts();
         break;
     case LCB::ABC_HITCOUNT_START :
-        std::cout << "Fast command: ABCHitCntStart" << std::endl;
+        m_startHitCount = true;
         break;
     case LCB::ABC_HITCOUNT_STOP :
-        std::cout << "Fast command: ABCHitCntStop" << std::endl;
+        m_startHitCount = false;
         break;
     case LCB::ABC_SLOW_COMMAND_RESET :
-        std::cout << "Fast command: ABCSlowCmdReset" << std::endl;
+        this->slowCommandReset();
         break;
     case LCB::ABC_STOP_PRLP :
         std::cout << "Fast command: StopPRLP" << std::endl;
         break;
     case LCB::HCC_REG_RESET :
-        std::cout << "Fast command: HCCRegReset" << std::endl;
+        m_starCfg->resetHCCRegisters();
         break;
     case LCB::HCC_SEU_RESET :
-        std::cout << "Fast command: HCCSEUReset" << std::endl;
+        m_starCfg->resetHCCSEU();
         break;
     case LCB::HCC_PLL_RESET :
-        std::cout << "Fast command: HCCPLLReset" << std::endl;
+        m_starCfg->resetHCCPLL();
         break;
     case LCB::ABC_START_PRLP :
         std::cout << "Fast command: StartPRLP" << std::endl;
         break;
     }
-
+    
     m_bccnt += 4;
+}
+
+void StarEmu::logicReset()
+{
+    m_bccnt = 0;
+    
+    for (unsigned ichip = 1; ichip <= m_starCfg->nABCs(); ++ichip) {
+        clearFEData(ichip);
+    }
+}
+
+void StarEmu::slowCommandReset()
+{
+    m_ignoreCmd = true;
+    m_isForABC = false;
+
+    // clear command buffer
+    std::queue<uint8_t> empty_buffer;
+    std::swap(m_reg_cmd_buffer, empty_buffer);
 }
 
 //

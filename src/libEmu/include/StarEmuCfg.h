@@ -178,11 +178,37 @@ class StarCfg {
 
         setABCRegister(ABCStarRegs::HPR, 0x00000000);
 
-        // TrimDAC,  Calibration Enable, Hit counters
-        for (unsigned addr = 64; addr <= 175; ++addr)
-            setABCRegister(addr, 0x00000000);
+        setABCRegister(ABCStarRegs::CalREG0, 0x00000000);
+        setABCRegister(ABCStarRegs::CalREG1, 0x00000000);
+        setABCRegister(ABCStarRegs::CalREG2, 0x00000000);
+        setABCRegister(ABCStarRegs::CalREG3, 0x00000000);
+        setABCRegister(ABCStarRegs::CalREG4, 0x00000000);
+        setABCRegister(ABCStarRegs::CalREG5, 0x00000000);
+        setABCRegister(ABCStarRegs::CalREG6, 0x00000000);
+        setABCRegister(ABCStarRegs::CalREG7, 0x00000000);
+
+        resetABCTrimDAC();
+        resetABCHitCounts();
     }
 
+    void resetABCSEU()
+    {
+        setABCRegister(ABCStarRegs::STAT0, 0x00000000);
+        setABCRegister(ABCStarRegs::STAT1, 0x00000000);
+    }
+
+    void resetABCTrimDAC()
+    {
+        for (unsigned addr = 64; addr <= 103; ++addr)
+            setABCRegister(addr, 0x00000000);
+    }
+    
+    void resetABCHitCounts()
+    {
+        for (unsigned addr = 112; addr <= 175; ++addr)
+            setABCRegister(addr, 0x00000000);
+    }
+    
     const uint32_t getHCCRegister(uint32_t addr)
     {
         if (registerMap[0].find(addr) == registerMap[0].end())

@@ -55,20 +55,26 @@ private:
                                                unsigned, uint16_t);
     std::vector<uint8_t> buildHCCRegisterPacket(PacketTypes, uint8_t, unsigned);
 
-    ///
+    /// Decode LCB command
     void DecodeLCB(LCB::Frame);
-    unsigned int countTriggers(LCB::Frame);
-    
-    void doL0A(uint16_t);
-    void doFastCommand(uint8_t);
+
+    /// Register R/W commands
     void doRegReadWrite(LCB::Frame);
     void execute_command_sequence();
     void writeRegister(const uint32_t, const uint8_t, bool isABC=false,
                        const unsigned ABCID=0);
     void readRegister(const uint8_t, bool isABC=false, const unsigned ABCID=0);
 
-    std::vector<std::vector<uint16_t>> getClusters(uint8_t bc);
+    /// Fast commands
+    void doFastCommand(uint8_t);
+    void logicReset();
+    void slowCommandReset();
 
+    /// Trigger and front end
+    unsigned int countTriggers(LCB::Frame);
+    void doL0A(uint16_t);
+    
+    std::vector<std::vector<uint16_t>> getClusters(uint8_t bc);
     uint16_t clusterFinder_sub(uint64_t&, uint64_t&, bool);
     std::vector<uint16_t> clusterFinder(const std::array<unsigned,8>&,
                                         const uint8_t maxCluster=63);
@@ -78,8 +84,8 @@ private:
     void applyMasks(unsigned ichip);
     void clearFEData(unsigned ichip);
     void prepareFEData(unsigned ichip);
-    
-    // Utilities
+
+    /// Utilities
     bool getParity_8bits(uint8_t);
     bool getBit_128b(uint8_t, uint64_t, uint64_t);
     void setBit_128b(uint8_t, bool, uint64_t&, uint64_t&);
@@ -110,6 +116,10 @@ private:
     // BC counter
     uint8_t m_bccnt;
 
+    // Count hits
+    bool m_startHitCount;
+    uint8_t m_bc_sel;
+    
     ////////////////////////////////////////
     // HCCStar and ABCStar configurations
     std::unique_ptr<emu::StarCfg> m_starCfg;
