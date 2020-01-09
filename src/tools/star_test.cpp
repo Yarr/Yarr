@@ -78,23 +78,39 @@ int main(int argc, char *argv[]) {
 
     // Test emulator
     if (controllerType == "emu_Star") {
+      // Send fast commands:
+      spec.writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::ABC_HIT_COUNT_RESET, 0));
+      spec.writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::ABC_HITCOUNT_START, 0));
+      spec.writeFifo((LCB::IDLE << 16) + LCB::IDLE);
+
+      // Write to ABCStar register CREG0 to enable hit counters
+      std::array<LCB::Frame, 9> writeABCCmd = star.write_abc_register(32, 0x00000020); 
+      spec.writeFifo((writeABCCmd[0] << 16) + writeABCCmd[1]);
+      spec.writeFifo((writeABCCmd[2] << 16) + writeABCCmd[3]);
+      spec.writeFifo((writeABCCmd[4] << 16) + writeABCCmd[5]);
+      spec.writeFifo((writeABCCmd[6] << 16) + writeABCCmd[7]);
+      spec.writeFifo((writeABCCmd[8] << 16) + LCB::IDLE);
+
       // send an L0A
       spec.writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(10, 0, false));
 
-      // read HCCStar register
-      std::array<LCB::Frame, 9> readHCCCmd = star.read_hcc_register(42);
+      // read an HCCStar register
+      //
+      std::array<LCB::Frame, 9> readHCCCmd = star.read_hcc_register(44);
       spec.writeFifo((readHCCCmd[0] << 16) + readHCCCmd[1]);
       spec.writeFifo((readHCCCmd[2] << 16) + readHCCCmd[8]);
 
-      // read HCCStar register again
-      std::array<LCB::Frame, 9> readHCCCmd2 = star.read_hcc_register(14);
+      // read another HCCStar register
+      // HCCStar address 20 is not defined. Emulator should return 0xdeadbeef.
+      std::array<LCB::Frame, 9> readHCCCmd2 = star.read_hcc_register(20);
       spec.writeFifo((readHCCCmd2[0] << 16) + readHCCCmd2[1]);
       // the read command is interupted by an L0A
       spec.writeFifo((LCB::l0a_mask(1, 0, false) << 16) + readHCCCmd2[2]);
       spec.writeFifo((readHCCCmd2[8] << 16) + LCB::IDLE);
 
-      // read ABCStar registers with broadcast addresses
-      std::array<LCB::Frame, 9> readABCCmd = star.read_abc_register(42);
+      // read an ABCStar register with broadcast addresses
+      // HitCountReg60: hit counts for front-end channel 243, 242, 241, and 240
+      std::array<LCB::Frame, 9> readABCCmd = star.read_abc_register(172);
       spec.writeFifo((readABCCmd[0] << 16) + readABCCmd[1]);
       //////
       // readABCCmd[3:7] not really needed

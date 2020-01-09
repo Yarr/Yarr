@@ -518,6 +518,9 @@ void StarEmu::doL0A(uint16_t data12) {
         // check if there is a L0A
         // msb of L0A mask corresponds to the earliest BC
         if ( (l0a_mask >> (3-ibc)) & 1 ) {
+
+            // count hits
+            countHits(ibc);
             
             // get clusters for this BC
             std::vector<std::vector<uint16_t>> clusters = getClusters(ibc);
@@ -563,6 +566,50 @@ unsigned int StarEmu::countTriggers(LCB::Frame frame) {
         count += (value>>(7+i)) & 0x1;
     }
     return count;
+}
+
+void StarEmu::countHits(uint8_t bc)
+{
+    if (not m_startHitCount) return;
+    
+    for (unsigned ichip = 1; ichip <= m_starCfg->nABCs(); ++ichip) {
+        int abcID = m_starCfg->getABCchipID(ichip);
+        bool EnCount = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 5, 5);
+        if (not EnCount) continue;
+
+        for (int i = 0; i < 8; ++i) {
+            unsigned data32 = m_fe_data[ichip-1][bc][7-i];
+            for (int j = 0; j < 8; ++j) {
+                // Deal with four front-end channels at a time
+                // Channels: [32*i+4*j+3 : 32*i+4*j]
+                // 4-bit hits of these channels:
+                uint8_t hits = (data32 >> (j*4)) & 0xf;
+                
+                // The ABCStar HitCount register for the four channels:
+                // HitCountREG# (32*i+4*j) / 4
+                // Address = (32*i+4*j) / 4 + offset
+                unsigned addr = (32*i+4*j)/4 + (int)emu::ABCStarRegs::HitCountREG0;
+                uint32_t counts = m_starCfg->getABCRegister(addr, abcID);
+                
+                // Compute increments that should be added to the current counts
+                uint32_t incr = 0;
+                
+                for (int ihit = 0; ihit < 4; ++ihit) {
+                    // check if the corresponding counter has already reached maximum
+                    if ( (counts & (0xff<<(ihit*8))) == (0xff<<(ihit*8)) ) {
+                        // The 8-bit hit counter for this channel is already 0xff
+                        continue;
+                    }
+
+                    incr += ((hits>>ihit)&1) << (8*ihit);
+                }
+                
+                // Update HitCountReg
+                m_starCfg->setABCRegister(addr, counts+incr, abcID);
+            } // j
+        } // i
+        
+    } // end of ABCStar loop
 }
 
 void StarEmu::clearFEData(unsigned ichip)

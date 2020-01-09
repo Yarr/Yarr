@@ -71,8 +71,9 @@ private:
     void slowCommandReset();
 
     /// Trigger and front end
-    unsigned int countTriggers(LCB::Frame);
     void doL0A(uint16_t);
+    unsigned int countTriggers(LCB::Frame);
+    void countHits(uint8_t bc);
     
     std::vector<std::vector<uint16_t>> getClusters(uint8_t bc);
     uint16_t clusterFinder_sub(uint64_t&, uint64_t&, bool);
