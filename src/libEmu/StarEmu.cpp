@@ -963,8 +963,14 @@ void StarEmu::addClusters(std::vector<std::vector<uint16_t>>& allclusters,
     // access the corresponding entries from m_fe_data[iABC] ring buffer
     auto feBC = getL0BufferAddr(iABC, cmdBC);
 
+    // max clusters
+    int abcID = m_starCfg->getABCchipID(iABC+1);
+    bool maxcluster_en = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG3, abcID, 18, 18);
+    uint8_t maxcluster = maxcluster_en ? m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG3, abcID, 17, 12) : 64;
+    
     // Get front-end data and find clusters
-    std::vector<uint16_t> abc_clusters = clusterFinder(m_fe_data[iABC][feBC]);
+    std::vector<uint16_t> abc_clusters = clusterFinder(m_fe_data[iABC][feBC],
+                                                       maxcluster);
     
     allclusters.push_back(abc_clusters);
 }
