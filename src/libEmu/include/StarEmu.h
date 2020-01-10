@@ -73,9 +73,10 @@ private:
     /// Trigger and front end
     void doL0A(uint16_t);
     unsigned int countTriggers(LCB::Frame);
-    void countHits(uint8_t bc);
+    void countHits(unsigned iABC, uint8_t cmdBC);
+    unsigned getL0BufferAddr(unsigned iABC, uint8_t cmdBC);
     
-    std::vector<std::vector<uint16_t>> getClusters(uint8_t bc);
+    void addClusters(std::vector<std::vector<uint16_t>>&, unsigned, uint8_t);
     uint16_t clusterFinder_sub(uint64_t&, uint64_t&, bool);
     std::vector<uint16_t> clusterFinder(const std::array<unsigned,8>&,
                                         const uint8_t maxCluster=63);

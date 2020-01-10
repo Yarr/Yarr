@@ -514,21 +514,26 @@ void StarEmu::doL0A(uint16_t data12) {
         prepareFEData(ichip);
     
     // A LCB frame covers 4 BCs
-    for (int ibc = 0; ibc < 4; ++ibc) {
+    for (unsigned ibc = 0; ibc < 4; ++ibc) {
         // check if there is a L0A
         // msb of L0A mask corresponds to the earliest BC
         if ( (l0a_mask >> (3-ibc)) & 1 ) {
-
-            // count hits
-            countHits(ibc);
+            // clusters to be sent
+            std::vector<std::vector<uint16_t>> clusters;
             
-            // get clusters for this BC
-            std::vector<std::vector<uint16_t>> clusters = getClusters(ibc);
+            // Read all ABCStar chips
+            for (unsigned iabc = 0; iabc < m_starCfg->nABCs(); ++iabc) {
+                // count hits
+                countHits(iabc, ibc);
 
+                // find and add clusters
+                addClusters(clusters, iabc, ibc);
+            }
+                
             // build and send data packet
             PacketTypes ptype = PacketTypes::LP; // for now
             std::vector<uint8_t> packet =
-                buildPhysicsPacket(clusters, ptype, l0a_tag, m_bccnt);
+                buildPhysicsPacket(clusters, ptype, l0a_tag+ibc, m_bccnt);
             sendPacket(packet);
         }
         
@@ -568,48 +573,48 @@ unsigned int StarEmu::countTriggers(LCB::Frame frame) {
     return count;
 }
 
-void StarEmu::countHits(uint8_t bc)
+void StarEmu::countHits(unsigned iABC, uint8_t cmdBC)
 {
     if (not m_startHitCount) return;
     
-    for (unsigned ichip = 1; ichip <= m_starCfg->nABCs(); ++ichip) {
-        int abcID = m_starCfg->getABCchipID(ichip);
-        bool EnCount = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 5, 5);
-        if (not EnCount) continue;
+    int abcID = m_starCfg->getABCchipID(iABC+1);
+    bool EnCount = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 5, 5);
+    if (not EnCount) return;
 
-        for (int i = 0; i < 8; ++i) {
-            unsigned data32 = m_fe_data[ichip-1][bc][7-i];
-            for (int j = 0; j < 8; ++j) {
-                // Deal with four front-end channels at a time
-                // Channels: [32*i+4*j+3 : 32*i+4*j]
-                // 4-bit hits of these channels:
-                uint8_t hits = (data32 >> (j*4)) & 0xf;
+    auto feBC = getL0BufferAddr(iABC, cmdBC);
+    
+    for (int i = 0; i < 8; ++i) {
+        unsigned data32 = m_fe_data[iABC][feBC][7-i];
+        for (int j = 0; j < 8; ++j) {
+            // Deal with four front-end channels at a time
+            // Channels: [32*i+4*j+3 : 32*i+4*j]
+            // 4-bit hits of these channels:
+            uint8_t hits = (data32 >> (j*4)) & 0xf;
+            
+            // The ABCStar HitCount register for the four channels:
+            // HitCountREG# (32*i+4*j) / 4
+            // Address = (32*i+4*j) / 4 + offset
+            unsigned addr = (32*i+4*j)/4 + (int)emu::ABCStarRegs::HitCountREG0;
+            uint32_t counts = m_starCfg->getABCRegister(addr, abcID);
                 
-                // The ABCStar HitCount register for the four channels:
-                // HitCountREG# (32*i+4*j) / 4
-                // Address = (32*i+4*j) / 4 + offset
-                unsigned addr = (32*i+4*j)/4 + (int)emu::ABCStarRegs::HitCountREG0;
-                uint32_t counts = m_starCfg->getABCRegister(addr, abcID);
-                
-                // Compute increments that should be added to the current counts
-                uint32_t incr = 0;
-                
-                for (int ihit = 0; ihit < 4; ++ihit) {
-                    // check if the corresponding counter has already reached maximum
-                    if ( (counts & (0xff<<(ihit*8))) == (0xff<<(ihit*8)) ) {
-                        // The 8-bit hit counter for this channel is already 0xff
-                        continue;
-                    }
-
-                    incr += ((hits>>ihit)&1) << (8*ihit);
+            // Compute increments that should be added to the current counts
+            uint32_t incr = 0;
+            
+            for (int ihit = 0; ihit < 4; ++ihit) {
+                // check if the corresponding counter has already reached maximum
+                if ( (counts & (0xff<<(ihit*8))) == (0xff<<(ihit*8)) ) {
+                    // The 8-bit hit counter for this channel is already 0xff
+                    continue;
                 }
                 
-                // Update HitCountReg
-                m_starCfg->setABCRegister(addr, counts+incr, abcID);
-            } // j
-        } // i
-        
-    } // end of ABCStar loop
+                incr += ((hits>>ihit)&1) << (8*ihit);
+            }
+                
+            // Update HitCountReg
+            m_starCfg->setABCRegister(addr, counts+incr, abcID);
+        } // j
+    } // i
+    
 }
 
 void StarEmu::clearFEData(unsigned ichip)
@@ -679,7 +684,7 @@ void StarEmu::generateFEData_StaticTest(unsigned ichip)
     }
 }
 
-void StarEmu::generateFEData_TestPulse(unsigned ichip, uint8_t BC)
+void StarEmu::generateFEData_TestPulse(unsigned ichip, uint8_t cmdBC)
 { // Triggered by the "Digital Test Pulse" fast command
 
     int abcID = m_starCfg->getABCchipID(ichip);
@@ -715,25 +720,30 @@ void StarEmu::generateFEData_TestPulse(unsigned ichip, uint8_t BC)
         uint8_t testPatt1 = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 23, 20);
         uint8_t testPatt2 = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 27, 24);
 
-        for (int ibc = 0; ibc < 4; ++ibc) {
-            uint32_t patt1_ibc = ((testPatt1 >> ibc) & 1) ? 0xffffffff : 0;
-            uint32_t patt2_ibc = ((testPatt2 >> ibc) & 1) ? 0xffffffff : 0;
+        for (int ibit = 0; ibit < 4; ++ibit) {
+            uint32_t patt1_ibit = ((testPatt1 >> ibit) & 1) ? 0xffffffff : 0;
+            uint32_t patt2_ibit = ((testPatt2 >> ibit) & 1) ? 0xffffffff : 0;
+
+            // The test pattern pulse is generated on the cmdBC'th BC
+            // and the three following BCs
+            unsigned ibc = (ibit + cmdBC);
             
-            m_fe_data[iABC][ibc] = {
-                maskinput7 & patt2_ibc | ~maskinput7 & patt1_ibc,
-                maskinput6 & patt2_ibc | ~maskinput6 & patt1_ibc,
-                maskinput5 & patt2_ibc | ~maskinput5 & patt1_ibc,
-                maskinput4 & patt2_ibc | ~maskinput4 & patt1_ibc,
-                maskinput3 & patt2_ibc | ~maskinput3 & patt1_ibc,
-                maskinput2 & patt2_ibc | ~maskinput2 & patt1_ibc,
-                maskinput1 & patt2_ibc | ~maskinput1 & patt1_ibc,
-                maskinput0 & patt2_ibc | ~maskinput0 & patt1_ibc
+            // Mod 4: m_fe_data[iABC] is of size 4 and is used as a ring buffer
+            m_fe_data[iABC][ibc%4] = {
+                maskinput7 & patt2_ibit | ~maskinput7 & patt1_ibit,
+                maskinput6 & patt2_ibit | ~maskinput6 & patt1_ibit,
+                maskinput5 & patt2_ibit | ~maskinput5 & patt1_ibit,
+                maskinput4 & patt2_ibit | ~maskinput4 & patt1_ibit,
+                maskinput3 & patt2_ibit | ~maskinput3 & patt1_ibit,
+                maskinput2 & patt2_ibit | ~maskinput2 & patt1_ibit,
+                maskinput1 & patt2_ibit | ~maskinput1 & patt1_ibit,
+                maskinput0 & patt2_ibit | ~maskinput0 & patt1_ibit
             };
         }
     }
     else { // One clock pulse using mask bits
         for (int ibc = 0; ibc < 4; ++ibc) {
-            if (ibc == BC) {
+            if (ibc == cmdBC) {
                 m_fe_data[iABC][ibc] =
                     {maskinput7, maskinput6, maskinput5, maskinput4,
                      maskinput3, maskinput2, maskinput1, maskinput0};
@@ -946,18 +956,31 @@ inline void StarEmu::setBit_128b(uint8_t bit_addr, bool value,
     }
 }
 
-std::vector<std::vector<uint16_t>> StarEmu::getClusters(uint8_t ibc)
+void StarEmu::addClusters(std::vector<std::vector<uint16_t>>& allclusters,
+                          unsigned iABC, uint8_t cmdBC)
 {
-    std::vector<std::vector<uint16_t>> clusters;
+    // Need to correct the BC from the L0A command by the L0A latency in order to
+    // access the corresponding entries from m_fe_data[iABC] ring buffer
+    auto feBC = getL0BufferAddr(iABC, cmdBC);
 
     // Get front-end data and find clusters
-    for (int ichip=1; ichip <= m_starCfg->nABCs(); ++ichip) {
-        //uint8_t maxclusters = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG3, abcID, 17, 12);
-        std::vector<uint16_t> abc_clusters = clusterFinder(m_fe_data[ichip-1][ibc]); //, maxclusters);
-        clusters.push_back(abc_clusters);
-    }
+    std::vector<uint16_t> abc_clusters = clusterFinder(m_fe_data[iABC][feBC]);
+    
+    allclusters.push_back(abc_clusters);
+}
 
-    return clusters;
+unsigned StarEmu::getL0BufferAddr(unsigned iABC, uint8_t cmdBC)
+{
+    // cmdBC = 0, 1, 2, or 3 from L0A command
+    
+    // get L0A latency from the ABCStar config register CREG2
+    int abcID = m_starCfg->getABCchipID(iABC+1);
+    unsigned l0a_latency = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG2, abcID, 8, 0); // 9 bits, in unit of BC (25 ns)
+
+    // return address of the FE data in m_fe_data[iABC] that corresponds to cmdBC
+    // m_fe_data[iABC] is of size 4 and is used as a ring buffer
+    // 512 ensures value in the bracket is positive 
+    return (512 + cmdBC - l0a_latency) % 4;
 }
 
 void StarEmu::executeLoop() {
