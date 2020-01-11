@@ -42,6 +42,7 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
     - ``$ cd Yarr``
     - ``$ mkdir build``
     - ``$ cd build``
+    - ``$ source /opt/rh/devtoolset-7/enable``
     - ``$ cmake3 ..``
     - ``$ make install -j4``
     - ``$ cd ..``
