@@ -7,7 +7,7 @@
 #################################
 
 # Common
-import os, sys, requests, json, argparse, yaml, shutil, socket
+import os, sys, requests, json, argparse, yaml, shutil
 from getpass    import getpass
 from pymongo    import MongoClient, errors
 
@@ -25,7 +25,10 @@ logger.addHandler(handler)
 logger.debug('Not set log file')
 
 home = os.environ['HOME']
-hostname = socket.gethostname()
+if not "HOSTNAME" in os.environ:
+    hostname = "default_host"
+else:
+    hostname = os.environ["HOSTNAME"]
 global user
 global pwd
 global authentication

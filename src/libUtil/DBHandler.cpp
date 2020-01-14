@@ -96,10 +96,13 @@ json DBHandler::setUser(std::string i_user_path) {
     }
     json user_json = this->checkUserCfg(i_user_path);
     user_json["USER"]     = std::string(getenv("USER"));
-    char hostname_c[64];
-    gethostname(hostname_c, 64);
-    std::string hostname_s = hostname_c;
-    user_json["HOSTNAME"] = hostname_s;
+    std::string hostname = "default_host";
+    if (getenv("HOSTNAME")) {
+        hostname = getenv("HOSTNAME");
+    } else {
+        std::cout << "HOSTNAME environmental variable not found. (Proceeding with 'default_host')" << std::endl;
+    }
+    user_json["HOSTNAME"] = hostname;
 
     return user_json;
 }
@@ -113,10 +116,13 @@ json DBHandler::setSite(std::string i_site_path) {
         this->alert(function, message);
     }
     json site_json = this->checkSiteCfg(i_site_path);
-    char hostname_c[64];
-    gethostname(hostname_c, 64);
-    std::string hostname_s = hostname_c;
-    site_json["HOSTNAME"] = hostname_s;
+    std::string hostname = "default_host";
+    if (getenv("HOSTNAME")) {
+        hostname = getenv("HOSTNAME");
+    } else {
+        std::cout << "HOSTNAME environmental variable not found. (Proceeding with 'default_host')" << std::endl;
+    }
+    site_json["HOSTNAME"] = hostname;
 
     return site_json;
 }
@@ -441,9 +447,12 @@ void DBHandler::checkConnCfg(std::string i_conn_path) {
         std::string del = ",";
         char separator = del[0];
         std::string home = getenv("HOME");
-        char hostname_c[64];
-        gethostname(hostname_c, 64);
-        std::string hostname = hostname_c;
+        std::string hostname = "default_host";
+        if (getenv("HOSTNAME")) {
+            hostname = getenv("HOSTNAME");
+        } else {
+            std::cout << "HOSTNAME environmental variable not found. (Proceeding with 'default_host')" << std::endl;
+        }
         std::string mo_serial_number = conn_json["module"]["serialNumber"];
         std::string mod_list_path = home+"/.yarr/localdb/"+hostname+"_modules.csv";
         std::ifstream list_ifs(mod_list_path);
