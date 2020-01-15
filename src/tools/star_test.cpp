@@ -175,12 +175,12 @@ int main(int argc, char *argv[]) {
       if (data == nullptr) break;
     }
 
+    spec.disableRx();
+
     if(nodata) {
       std::cout << "No data\n";
       return 1;
     }
-
-    spec.disableRx();
 
     return 0;
 }
