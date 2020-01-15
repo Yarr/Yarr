@@ -28,6 +28,10 @@ public:
   std::thread receiver;
   std::atomic<bool> running;
 
+  ClipBoard<RawData> rawData;
+
+  std::unique_ptr<RawData> GetData();
+  void QueueData(uint16_t *start, size_t len);
   void ReceiverMain();
 };
 
@@ -76,6 +80,70 @@ void ItsdaqHandler::SendOpcode(uint16_t opcode, uint16_t *data, uint16_t length)
   logger->debug("SendOpcode {:04x}", opcode);
 }
 
+std::unique_ptr<RawData> ItsdaqHandler::GetData() {
+  return priv->GetData();
+}
+
+void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
+  // Where to put stream number?
+  // int stream = start[0];
+  // int source = start[1];
+  // int config = start[2];
+
+  auto get64 = [&](size_t i) {
+    uint64_t word = (uint64_t(start[i*4+3]) << 48ULL)
+                  | (uint64_t(start[i*4+4]) << 32ULL)
+                  | (uint64_t(start[i*4+5]) << 16ULL)
+                  | (uint64_t(start[i*4+6]) << 0ULL);
+    return word;
+  };
+
+  uint64_t first = get64(0);
+  uint16_t stream = ntohs(start[0]);
+
+  logger->debug("First word: {:x}", first);
+
+  // Three word header and two word trailer
+  size_t wordCount = (len - (3+2)) / 4;
+
+  size_t startOffset = -1;
+  for(int i=0; i<wordCount; i++) {
+    uint64_t thisWord = get64(i);
+
+    if(((thisWord>>60) & 0xf) == 0xf) {
+      // Timestamp
+
+      if(startOffset == i-1) {
+        startOffset = i;
+        continue;
+      }
+    } else {
+      // Good data, wait for end
+      continue;
+    }
+
+    // This word should be first TS after data
+    // Copy data to queue (startOffset is last TS before data)
+    startOffset ++;
+    size_t len64 = i-startOffset;
+    size_t len32 = len64 * 2;
+    uint32_t *buf = new uint32_t[len32];
+    for(int o=0; o<len64; o++) {
+      auto word = get64(o+startOffset);
+      buf[o*2] = (word >> 32) & 0xffffffff;
+      buf[o*2+1] = word & 0xffffffff;
+    }
+    rawData.pushData(std::make_unique<RawData>(stream, buf, len32));
+    logger->debug("QueueData: {} words ({} to {})", len64, startOffset, i);
+
+    startOffset = i;
+  }
+}
+
+std::unique_ptr<RawData> ItsdaqPrivate::GetData() {
+  return rawData.popData();
+}
+
 void ItsdaqPrivate::ReceiverMain() {
   logger->debug("Start ReceiverMain");
 
@@ -118,10 +186,16 @@ void ItsdaqPrivate::ReceiverMain() {
         std::cout << "\n";
       }
 
-      logger->debug("Recieved opcode {:x} {}", buf16[4], opcode);
+      // Strip off header (including opcode number)
+      int offset = 7;
+
+      // Don't pass CRC word
+      QueueData(buf16 + offset, (output_bytes/2) - (offset+1));
+
+      logger->debug("Queued opcode data {:x} {}", buf16[4], opcode);
     }
   }
 
   logger->debug("End ReceiverMain after receiving {} packets with {} bytes in {} loops",
-                  packet_count, bytes_count, loop_count);
+                packet_count, bytes_count, loop_count);
 }

@@ -86,7 +86,7 @@ void ItsdaqRxCore::flushBuffer(){
 }
 
 RawData* ItsdaqRxCore::readData(){
-  return NULL;
+  return m_h.GetData().release();
 }
 
 uint32_t ItsdaqRxCore::getDataRate(){

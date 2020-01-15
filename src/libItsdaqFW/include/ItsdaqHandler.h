@@ -21,9 +21,8 @@ public:
   ItsdaqHandler& operator=(ItsdaqHandler const&) = delete;  // Copy assign
   ItsdaqHandler& operator=(ItsdaqHandler &&) = delete;      // Move assign
 
-  ClipBoard<RawData> rawData;
-
   void SendOpcode(uint16_t opcode, uint16_t *data, uint16_t length);
+  std::unique_ptr<RawData> GetData();
 
 public:
   ItsdaqHandler(uint32_t remote = 0x16dea8c0, // 192.168.222.22
