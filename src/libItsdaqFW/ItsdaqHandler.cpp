@@ -24,6 +24,8 @@ public:
   {
   }
 
+  ~ItsdaqPrivate();
+
   UdpSocket sock;
   std::thread receiver;
   std::atomic<bool> running;
@@ -43,10 +45,7 @@ ItsdaqHandler::ItsdaqHandler(uint32_t remote_IP,
 }
 
 ItsdaqHandler::~ItsdaqHandler() {
-  std::cout << "   Join receiver thread...\n";
-  priv->running = false;
-  priv->receiver.join();
-  std::cout << "   ... done\n";
+  priv.reset();
 }
 
 void ItsdaqHandler::SendOpcode(uint16_t opcode, uint16_t *data, uint16_t length)
@@ -82,6 +81,22 @@ void ItsdaqHandler::SendOpcode(uint16_t opcode, uint16_t *data, uint16_t length)
 
 std::unique_ptr<RawData> ItsdaqHandler::GetData() {
   return priv->GetData();
+}
+
+ItsdaqPrivate::~ItsdaqPrivate() {
+  // Finish thread
+  logger->debug("Join receiver thread...");
+  running = false;
+  receiver.join();
+  logger->debug(" ...done");
+
+  logger->debug("Flush receiver queue...");
+  // Delete anything not read
+  while(!rawData.empty()) {
+    auto data = rawData.popData();
+    delete [] data->buf;
+  }
+  logger->debug(" ...done");
 }
 
 void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
