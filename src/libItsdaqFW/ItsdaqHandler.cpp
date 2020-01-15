@@ -192,6 +192,7 @@ void ItsdaqPrivate::ReceiverMain() {
         buf16[b_o] = htons(buf16[b_o]);
       }
 
+#if 0
       for(int i=0; i<output_bytes/2; i++) {
         std::cout << " " << Utils::hexify(buf16[i]);
         if((opcode & 0xf000) == 0xd000) {
@@ -200,6 +201,7 @@ void ItsdaqPrivate::ReceiverMain() {
         }
         std::cout << "\n";
       }
+#endif
 
       // Strip off header (including opcode number)
       int offset = 7;
