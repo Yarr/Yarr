@@ -243,5 +243,5 @@ void ItsdaqTxCore::toFileJson(json &j)  {
 }
 
 void ItsdaqTxCore::fromFileJson(json &j){
-  logger->debug("ItsdaqTxCore: No config load");
+  logger->debug("ItsdaqTxCore: No json config to load");
 }

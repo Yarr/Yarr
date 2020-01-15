@@ -106,6 +106,10 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
   // int config = start[2];
 
   auto get64 = [&](size_t i) {
+    if(i>=len) {
+      logger->info("Oops {} {}", i, len);
+      return 0UL;
+    }
     uint64_t word = (uint64_t(start[i*4+3]) << 48ULL)
                   | (uint64_t(start[i*4+4]) << 32ULL)
                   | (uint64_t(start[i*4+5]) << 16ULL)
@@ -183,6 +187,7 @@ void ItsdaqPrivate::ReceiverMain() {
 
       if((opcode == 0x50) || (opcode == 0x10) || (opcode == 0x78)) {
         // Ignore acks
+        logger->debug("Ignore ack {:x}", opcode);
         continue;
       }
 
@@ -205,6 +210,11 @@ void ItsdaqPrivate::ReceiverMain() {
 
       // Strip off header (including opcode number)
       int offset = 7;
+
+      if(output_bytes < offset * 2) {
+        logger->debug("Data too small to be queued ({})", output_bytes);
+        continue;
+      }
 
       // Don't pass CRC word
       QueueData(buf16 + offset, (output_bytes/2) - (offset+1));
