@@ -2,6 +2,7 @@
     "ctrlCfg" : {
         "type": "Itsdaq",
         "cfg" : {
+            "streamConfig": 64
         }
     }
 }

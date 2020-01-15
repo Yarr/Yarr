@@ -13,7 +13,7 @@ auto logger = logging::make_log("ItsdaqFW::RxCore");
 }
 
 ItsdaqRxCore::ItsdaqRxCore(ItsdaqHandler&h)
-  : m_h(h)
+  : m_h(h), m_streamConfig(0)
 {
 }
 
@@ -35,7 +35,7 @@ void ItsdaqRxCore::setRxEnable(uint32_t stream) {
   disableRx();
 
   const uint16_t conf_mask = 0xffff;
-  const uint16_t conf_value = 0x0001;
+  const uint16_t conf_value = m_streamConfig | 1;
 
   // Mask, stream, value
   std::array<uint16_t, 3> buffer = {conf_mask, (uint16_t)stream, conf_value};
@@ -103,7 +103,13 @@ bool ItsdaqRxCore::isBridgeEmpty() {
 }
 
 void ItsdaqRxCore::toFileJson(json &j) {
+  if(m_streamConfig != 0) {
+    j["streamConfig"] = m_streamConfig;
+  }
 }
 
 void ItsdaqRxCore::fromFileJson(json &j) {
+  if(j["streamConfig"]) {
+    m_streamConfig =  j["streamConfig"];
+  }
 }

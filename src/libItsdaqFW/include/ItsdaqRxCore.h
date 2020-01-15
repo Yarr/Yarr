@@ -70,6 +70,9 @@ public:
 private:
   /// Common communication handler
   ItsdaqHandler &m_h;
+
+  /// Firmware stream configuration to use
+  uint16_t m_streamConfig;
 };
 
 #endif
