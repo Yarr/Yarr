@@ -45,10 +45,10 @@ TEST_CASE("StarTriggerLoopDelay", "[star][trigger_loop]") {
   // the different SECTIONs
 
   // Index of frame generating the calibration pulse
-  int pulse_index = 1;
+  int pulse_index = 0;
   // Index of frame generating the trigger
-  int trigger_index = 13;
-  int expected_bc_slot = 1;
+  int trigger_index = 12;
+  int expected_bc_slot = 2;
 
   int expected_l0_mask = 1; // ie 3rd BC of that block
 
@@ -58,43 +58,48 @@ TEST_CASE("StarTriggerLoopDelay", "[star][trigger_loop]") {
   SECTION("Zero latency") {
     j["l0_latency"] = 0;
 
-    pulse_index = 0;
-    trigger_index = 3;
-    expected_bc_slot = 0;
+    pulse_index = 1;
+    trigger_index = 2;
+    expected_bc_slot = 3;
   }
   SECTION("Latency = 1") {
     j["l0_latency"] = 1;
 
-    pulse_index = 0;
-    trigger_index = 3;
-    expected_bc_slot = 1;
+    pulse_index = 1;
+    trigger_index = 2;
+    expected_bc_slot = 2;
   }
   SECTION("Latency = 4") {
     j["l0_latency"] = 4;
 
-    pulse_index = 1;
-    trigger_index = 3;
-    expected_bc_slot = 0;
+    pulse_index = 0;
+    trigger_index = 2;
+    expected_bc_slot = 3;
   }
   SECTION("Latency = 7") {
     j["l0_latency"] = 7;
 
-    pulse_index = 1;
-    trigger_index = 3;
-    expected_bc_slot = 3;
+    pulse_index = 0;
+    trigger_index = 2;
+    expected_bc_slot = 0;
   }
   SECTION("Latency = 10") {
     j["l0_latency"] = 10;
 
-    pulse_index = 0;
-    trigger_index = 5;
-    expected_bc_slot = 2;
+    pulse_index = 1;
+    trigger_index = 4;
+    expected_bc_slot = 1;
   }
 
   // Calculate delay based on used slots
   int delay = 3-expected_bc_slot;
   delay += (trigger_index - pulse_index) * 4;
   INFO ( "Calculate delay: " << delay );
+
+  if(!j["l0_latency"].empty()) {
+    int l0_latency = j["l0_latency"];
+    REQUIRE ( delay == (l0_latency + 4) );
+  }
 
   action->loadConfig(j);
 

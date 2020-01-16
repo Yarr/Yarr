@@ -76,7 +76,8 @@ void StarTriggerLoop::end() {
 void StarTriggerLoop::setTrigWord() {
 // latency (unit::1 BC),   1 LCB::frame (16 bits) covers 4 BCs, 1 trigWord (32 bits) covers 8 BCs
 
-	// Last word goes first in buffer
+	// Last 32-bit word goes first in buffer.
+	// High 16 bits are sent before the low 16 bits.
 	m_trigWord[0] = (LCB::l0a_mask(1, 0, false) << 16) + LCB::IDLE;
 
 	unsigned int full_words = m_trigDelay / 8;
@@ -92,11 +93,13 @@ void StarTriggerLoop::setTrigWord() {
 	unsigned int remainder = m_trigDelay - (full_words * 8);
 
 	// Final word in buffer goes first
-	auto cmd_word = LCB::fast_command(LCB::ABC_CAL_PULSE, remainder%4);
+	auto cmd_word = LCB::fast_command(LCB::ABC_CAL_PULSE, 3-(remainder%4));
 	//   Or LCB::ABC_DIGITAL_PULSE
 	if(remainder < 4) {
+		// Send idle then cmd_word (then everything else)
 		m_trigWord[full_words + 1] = (LCB::IDLE << 16) + cmd_word;
 	} else {
+		// Send cmd_word then idle (then everything else)
 		m_trigWord[full_words + 1] = (cmd_word << 16) | LCB::IDLE;
 	}
 
