@@ -19,7 +19,7 @@ class StarTriggerLoop: public LoopActionBase {
         void setTrigCnt(uint32_t cnt) {m_trigCnt = cnt;}
         uint32_t getTrigCnt(){return m_trigCnt;};
 
-        void setTrigDelay(uint32_t delay);
+        void setTrigDelay(uint32_t delay) {m_trigDelay = delay;}
         uint32_t getTrigDelay() {return m_trigDelay;}
 
         void setTrigFreq(double freq) {m_trigFreq = freq;}

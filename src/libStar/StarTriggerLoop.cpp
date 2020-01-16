@@ -1,9 +1,8 @@
 /*
  */
 
-#include <unistd.h>
-#include <bitset>
 #include "include/StarTriggerLoop.h"
+
 #include <iostream>
 #include <iomanip>
 
@@ -25,7 +24,7 @@ void StarTriggerLoop::init() {
 	if (verbose) std::cout << __PRETTY_FUNCTION__ << std::endl;
 	// Setup Trigger
 	this->setTrigWord();
-	this->setTrigDelay(m_trigDelay);
+
 	if (m_trigCnt > 0) {
 		g_tx->setTrigConfig(INT_COUNT); //use internal charge injection
 	} else {
@@ -105,25 +104,6 @@ void StarTriggerLoop::setTrigWord() {
 
 	// Words of delay + trigger and pulse
 	m_trigWordLength = full_words+2;
-
-
-//	78557855785578554766713c715959595959595959595959474b00007855785578557855 --- read ABC reg32
-//	m_trigWord[0] = 0x78557855;
-//	m_trigWord[1] = 0x78557855;
-//	m_trigWord[2] = 0x4766713c;
-//	m_trigWord[3] = 0x71595959;
-//	m_trigWord[4] = 0x59595959;
-//	m_trigWord[5] = 0x59595959;
-//	m_trigWord[6] = 0x474b0000;
-//	m_trigWord[7] = 0x78557855;
-//	m_trigWord[8] = 0x78557855;
-//	m_trigWordLength = 9;
-
-
-}
-
-
-void StarTriggerLoop::setTrigDelay(unsigned int delay) {
 
 }
 
