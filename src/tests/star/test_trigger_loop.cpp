@@ -103,11 +103,13 @@ TEST_CASE("StarTriggerLoopDelay", "[star][trigger_loop]") {
   // Calculate delay based on used slots
   int delay = 3-expected_bc_slot;
   delay += (trigger_index - pulse_index) * 4;
+  // Don't count the 4 BCs to send the trigger
+  delay -= 4;
   INFO ( "Calculate delay: " << delay );
 
   if(!j["l0_latency"].empty()) {
     int l0_latency = j["l0_latency"];
-    REQUIRE ( delay == (l0_latency + 4) );
+    REQUIRE ( delay == l0_latency );
   }
 
   action->loadConfig(j);
