@@ -186,7 +186,8 @@ begin
 	           loop_word_s(127 downto 96) when (loop_cnt = to_unsigned(4, 8)) else
 	           loop_word_s(95 downto 64) when (loop_cnt = to_unsigned(3, 8)) else
 	           loop_word_s(63 downto 32) when (loop_cnt = to_unsigned(2, 8)) else
-	           loop_word_s(31 downto 0) when (loop_cnt = to_unsigned(1, 8));
+               loop_word_s(31 downto 0) when (loop_cnt = to_unsigned(1, 8)) else
+               x"69696969";
 	
 	cmp_sport: serial_port PORT MAP(
 		clk_i => tx_clk_i,

@@ -82,6 +82,39 @@ package app_pkg is
       locked            : out    std_logic
      );
     end component;
+    
+    
+    ------------------------------------------------------------------------------
+    --  Output     Output      Phase    Duty Cycle   Pk-to-Pk     Phase
+    --   Clock     Freq (MHz)  (degrees)    (%)     Jitter (ps)  Error (ps)
+    ------------------------------------------------------------------------------
+    -- __clk_40____39.062______0.000______50.0______124.978_____80.662
+    -- __clk_80____78.125______0.000______50.0______108.960_____80.662
+    -- _clk_160___156.250______0.000______50.0_______95.359_____80.662
+    -- _clk_640___625.000______0.000______50.0_______73.124_____80.662
+    -- _clk_300___312.500______0.000______50.0_______83.486_____80.662
+    -- _clk_250___250.000______0.000______50.0_______87.134_____80.662
+    --
+    ------------------------------------------------------------------------------
+    -- Input Clock   Freq (MHz)    Input Jitter (UI)
+    ------------------------------------------------------------------------------
+    -- __primary_________200.000____________0.010
+    component clk_200_gen
+    port
+     (-- Clock in ports
+      clk_200_in           : in     std_logic;
+      -- Clock out ports    
+      clk_40          : out    std_logic;
+      clk_80           : out std_logic;
+      clk_160          : out    std_logic;
+      clk_640          : out    std_logic;
+      clk_300          : out    std_logic;
+      clk_250          : out    std_logic;
+      -- Status and control signals
+      resetn            : in     std_logic;
+      locked            : out    std_logic
+     );
+    end component;
 
     COMPONENT axis_data_fifo_0
       PORT (

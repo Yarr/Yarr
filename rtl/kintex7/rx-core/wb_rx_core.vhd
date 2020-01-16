@@ -176,6 +176,7 @@ architecture behavioral of wb_rx_core is
 
 	signal rx_enable : std_logic_vector(31 downto 0);
 	signal rx_enable_d : std_logic_vector(31 downto 0);
+	signal rx_enable_dd : std_logic_vector(31 downto 0);
     signal rx_status : std_logic_vector(31 downto 0);
     signal rx_status_s : std_logic_vector(31 downto 0);
 	
@@ -190,22 +191,22 @@ begin
 	debug(15 downto 8) <= rx_data_raw(0);
 	debug(16) <= rx_valid(0);
 
-    wb_core_debug : ila_rx_dma_wb
-    PORT MAP (
-      clk => wb_clk_i,
-      probe0 => (others => '0'), 
-      probe1 => (others => '0'), 
-      probe2 => (others => '0'), 
-      probe3(0) => rx_fifo_empty(0),
-      probe4(0) => rx_fifo_empty(1),
-      probe5(0) => rx_enable_d(0), 
-      probe6(0) => rx_enable_d(1),
-      probe7(0) => '0',
-      probe8 => (others => '0'),
-      probe9(0) => '0',
-      probe10(0) => rx_fifo_rden_t(0),
-      probe11(0) => rx_fifo_rden_t(1)
-    );
+--    wb_core_debug : ila_rx_dma_wb
+--    PORT MAP (
+--      clk => wb_clk_i,
+--      probe0 => (others => '0'), 
+--      probe1 => (others => '0'), 
+--      probe2 => (others => '0'), 
+--      probe3(0) => rx_fifo_empty(0),
+--      probe4(0) => rx_fifo_empty(1),
+--      probe5(0) => rx_enable_d(0), 
+--      probe6(0) => rx_enable_d(1),
+--      probe7(0) => '0',
+--      probe8 => (others => '0'),
+--      probe9(0) => '0',
+--      probe10(0) => rx_fifo_rden_t(0),
+--      probe11(0) => rx_fifo_rden_t(1)
+--    );
 
 
     wb_proc: process (wb_clk_i, rst_n_i)
@@ -215,8 +216,10 @@ begin
 			wb_ack_o <= '0';
 			rx_enable <= (others => '0');
 			wb_stall_o <= '0';
+			rx_enable_d <= (others => '0');
 		elsif rising_edge(wb_clk_i) then
 			wb_ack_o <= '0';
+			rx_enable_d <= rx_enable;
 			if (wb_cyc_i = '1' and wb_stb_i = '1') then
 				if (wb_we_i = '1') then
 					if (wb_adr_i(3 downto 0) = x"0") then -- Set enable mask
@@ -246,7 +249,7 @@ begin
 		clk_i => wb_clk_i,
 		rst_i => not rst_n_i,
 		req_i => not rx_fifo_empty_t,
-        en_i => rx_enable_d(g_NUM_RX-1 downto 0), 
+        en_i => rx_enable_dd(g_NUM_RX-1 downto 0), 
 		gnt_o => rx_fifo_rden_t
 	);
 	
@@ -299,10 +302,10 @@ begin
     enable_sync: process (rx_clk_i, rst_n_i)
     begin
         if (rst_n_i = '0') then
-            rx_enable_d <= (others => '0');
+            rx_enable_dd <= (others => '0');
             rx_status <= (others => '0');
         elsif rising_edge(rx_clk_i) then
-            rx_enable_d <= rx_enable;
+            rx_enable_dd <= rx_enable_d;
             rx_status <= rx_status_s;
         end if;
    end process enable_sync;
@@ -316,7 +319,7 @@ begin
                 rst_n_i => rst_n_i,
                 clk_160_i => rx_clk_i,
                 clk_640_i => rx_serdes_clk_i,
-                enable_i => rx_enable_d(I),
+                enable_i => rx_enable_dd(I),
                 rx_data_i => rx_data_i(I),
                 trig_tag_i => trig_tag_i,
                 rx_data_o => rx_data(I)(25 downto 0),
@@ -332,7 +335,7 @@ begin
                 rst_n_i => rst_n_i,
                 clk_rx_i => rx_clk_i,
                 clk_serdes_i => rx_serdes_clk_i,
-                enable_i => rx_enable(I),
+                enable_i => rx_enable_dd(I),
                 rx_data_i_p => rx_data_i_p((I+1)*g_NUM_LANES-1 downto (I*g_NUM_LANES)),
                 rx_data_i_n => rx_data_i_n((I+1)*g_NUM_LANES-1 downto (I*g_NUM_LANES)),
                 trig_tag_i => x"00000000" & trig_tag_i,
@@ -341,12 +344,12 @@ begin
                 rx_stat_o => rx_stat(I)
             );
             rx_status_s(I) <= '1' when rx_stat(I)(1) = '1' else
-                              '1' when rx_enable(I) = '0' else
+                              '1' when rx_enable_dd(I) = '0' else
                               '0';
 		    rx_fifo_din(I) <= rx_data(I);
         end generate rd53_type;
 		
-		rx_fifo_wren(I) <= rx_valid(I) and rx_enable_d(I);
+		rx_fifo_wren(I) <= rx_valid(I) and rx_enable_dd(I);
 		cmp_rx_channel_fifo : rx_channel_fifo PORT MAP (
 			rst => not rst_n_i,
 			wr_clk => rx_clk_i,

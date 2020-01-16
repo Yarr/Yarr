@@ -104,7 +104,8 @@ entity yarr is
         -- FMC
 		---------------------------------------------------------
 		-- Trigger input
-		--ext_trig		: out std_logic;
+        ext_trig_p       : in std_logic_vector(3 downto 0);
+        ext_trig_n       : in std_logic_vector(3 downto 0);
 		-- LVDS buffer
 		--pwdn_l			: out std_logic_vector(2 downto 0);
         -- GPIO
@@ -801,6 +802,8 @@ architecture rtl of yarr is
 	signal rx_valid : std_logic;
 	
 	signal rx_busy : std_logic;
+            
+    signal ext_trig_i : std_logic_vector(3 downto 0);
 begin
 	-- Activate LVDS buffer
 	--pwdn_l <= (others => '1');
@@ -1101,7 +1104,7 @@ begin
 		rx_clk_i => CLK_160,
 		rx_serdes_clk_i => CLK_640_buf,
 		rx_clk_locked_i => locked,
-		rx_data_i => fe_data_i,
+		rx_data_i => not fe_data_i,
 		rx_valid_o => rx_valid,
 		rx_data_o => rx_data,
         trig_tag_i => trig_tag_t,
@@ -1143,6 +1146,7 @@ begin
 	);
 	
 	wb_dat_i(159 downto 136) <= (others => '0');
+	wb_dat_i(135 downto 128) <= (others => '0');
 	
 --	cmp_i2c_master : i2c_master_wb_top
 --	port map (
@@ -1161,7 +1165,13 @@ begin
 --		sda => open
 --	);
 	
-	cmp_wb_trigger_logic: wb_trigger_logic PORT MAP(
+    -- HitOr
+    ext_trig_buf_0 : IBUFDS generic map (DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => ext_trig_i(0), I => ext_trig_p(0), IB => ext_trig_n(0));
+    ext_trig_buf_1 : IBUFDS generic map (DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => ext_trig_i(1), I => ext_trig_p(1), IB => ext_trig_n(1));
+    ext_trig_buf_2 : IBUFDS generic map (DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => ext_trig_i(2), I => ext_trig_p(2), IB => ext_trig_n(2));
+    ext_trig_buf_3 : IBUFDS generic map (DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => ext_trig_i(3), I => ext_trig_p(3), IB => ext_trig_n(3));
+
+    cmp_wb_trigger_logic: wb_trigger_logic PORT MAP(
 		wb_clk_i => sys_clk,
 		rst_n_i => rst_n,
 		wb_adr_i => wb_adr(31 downto 0),
@@ -1171,7 +1181,7 @@ begin
 		wb_stb_i => wb_stb,
 		wb_we_i => wb_we,
 		wb_ack_o => wb_ack(5),
-		ext_trig_i => "0000",
+		ext_trig_i => ext_trig_i,
 		ext_trig_o => int_trig_t,
 		ext_busy_i => '0',
 		ext_busy_o => open,
@@ -1189,21 +1199,21 @@ begin
     sdi_s <= sdi_i;
     latch_o <= latch_s;
     
-	cmp_wb_spi: wb_spi port map (
-        wb_clk_i => sys_clk,
-        rst_n_i => rst_n,
-        wb_adr_i => wb_adr(31 downto 0),
-        wb_dat_i => wb_dat_o(31 downto 0),
-        wb_dat_o => wb_dat_i(223 downto 192),
-        wb_cyc_i => wb_cyc(6),
-        wb_stb_i => wb_stb,
-        wb_we_i => wb_we,
-        wb_ack_o => wb_ack(6),
-        scl_o => scl_s,
-        sda_o => sda_s,
-        sdi_i => sdi_s,
-        latch_o => latch_s
-        );	
+--	cmp_wb_spi: wb_spi port map (
+--        wb_clk_i => sys_clk,
+--        rst_n_i => rst_n,
+--        wb_adr_i => wb_adr(31 downto 0),
+--        wb_dat_i => wb_dat_o(31 downto 0),
+--        wb_dat_o => wb_dat_i(223 downto 192),
+--        wb_cyc_i => wb_cyc(6),
+--        wb_stb_i => wb_stb,
+--        wb_we_i => wb_we,
+--        wb_ack_o => wb_ack(6),
+--        scl_o => scl_s,
+--        sda_o => sda_s,
+--        sdi_i => sdi_s,
+--        latch_o => latch_s
+--        );	
 
   --wb_stall(1) <= '0' when wb_cyc(1) = '0' else not(wb_ack(1));
 --  wb_stall(2) <= '0' when wb_cyc(2) = '0' else not(wb_ack(2));
@@ -1217,8 +1227,8 @@ begin
   led_green_o <= dummy_ctrl_reg_led(1);
 
 --   TRIG0(31 downto 0) <= (others => '0');
---	TRIG1(31 downto 0) <= (others => '0');
---	TRIG2(31 downto 0) <= (others => '0');
+	TRIG1(31 downto 0) <= (others => '0');
+	TRIG2(31 downto 0) <= (others => '0');
 --   TRIG0(12 downto 0) <= (others => '0');
    --TRIG1(31 downto 0) <= rx_dma_dat_o;
    --TRIG1(31 downto 0) <= dma_dat_i;
@@ -1237,13 +1247,11 @@ begin
 --   TRIG0(23) <= irq_out;
 --   TRIG0(24) <= rx_busy;
 --   TRIG0(31 downto 25) <= (others => '0');
-	TRIG0(0) <= rx_valid;
-	TRIG0(1) <= fe_cmd_o(0);
-	TRIG0(2) <= trig_pulse;
-	TRIG0(3) <= fe_cmd_o(0);
-	TRIG0(31 downto 4) <= (others => '0');
-	TRIG1 <= rx_data;
-	TRIG2 <= debug;
+	TRIG0(0) <= int_trig_t;
+	TRIG0(4 downto 1) <= ext_trig_i;
+	TRIG0(31 downto 5) <= (others => '0');
+--	TRIG1 <= rx_data;
+--	TRIG2 <= debug;
 --		TRIG0(0) <= scl;
 --		TRIG0(1) <= sda;
 --		TRIG0(2) <= wb_stb;
@@ -1252,18 +1260,18 @@ begin
 --		TRIG1 <= wb_adr;
 --		TRIG2 <= wb_dat_o;
    
---	ila_i : ila
---	  port map (
---		 CONTROL => CONTROL,
---		 CLK => CLK_40,
-----		 CLK => sys_clk,
---		 TRIG0 => TRIG0,
---		 TRIG1 => TRIG1,
---		 TRIG2 => TRIG2);
+	ila_i : ila
+	  port map (
+		 CONTROL => CONTROL,
+		 CLK => CLK_40,
+--		 CLK => sys_clk,
+		 TRIG0 => TRIG0,
+		 TRIG1 => TRIG1,
+		 TRIG2 => TRIG2);
 --		 
---	ila_icon_i : ila_icon
---		port map (
---    CONTROL0 => CONTROL);
+	ila_icon_i : ila_icon
+		port map (
+    CONTROL0 => CONTROL);
 	 
   ------------------------------------------------------------------------------
   -- Interrupt stuff

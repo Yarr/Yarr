@@ -226,21 +226,24 @@ begin
         );        
     end generate lane_loop;
     
-    aurora_channel_debug : ila_rx_dma_wb
-    PORT MAP (
-      clk => clk_rx_i,
-      probe0 => x"00000000", 
-      probe1 => rx_data_s, 
-      probe2 => rx_fifo_din(0), 
-      probe3(0) => rx_fifo_wren(0),
-      probe4(0) => rx_fifo_wren(1),
-      probe5(0) => rx_fifo_wren(2), 
-      probe6(0) => rx_fifo_wren(3),
-      probe7(0) => rx_valid_s,
-      probe8 => x"00000000",
-      probe9(0) => rx_fifo_rden(0),
-      probe10(0) => rx_fifo_empty(0),
-      probe11(0) => '0'
-    );
+--    aurora_channel_debug : ila_rx_dma_wb
+--    PORT MAP (
+--      clk => clk_rx_i,
+--      probe0 => x"00000000", 
+--      probe1 => rx_data_s, 
+--      probe2 => rx_fifo_din(0), 
+--      probe3(0) => rx_fifo_wren(0),
+--      --probe4(0) => rx_fifo_wren(1),
+--      probe4(0) => '0',
+--      --probe5(0) => rx_fifo_wren(2), 
+--      probe5(0) => '0', 
+--      --probe6(0) => rx_fifo_wren(3),
+--      probe6(0) => '0',
+--      probe7(0) => rx_valid_s,
+--      probe8 => x"00000000",
+--      probe9(0) => rx_fifo_rden(0),
+--      probe10(0) => rx_fifo_empty(0),
+--      probe11(0) => '0'
+--    );
     
 end behavioral;

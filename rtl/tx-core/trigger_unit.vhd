@@ -18,7 +18,7 @@ entity trigger_unit is
 		--trig_o : out std_logic;
 		trig_pulse_o : out std_logic;
 		
-		-- Trigger In (async)
+		-- Trigger In
 		ext_trig_i	: in std_logic;
 		
 		-- Config

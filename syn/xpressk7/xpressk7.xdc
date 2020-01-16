@@ -9,10 +9,10 @@ set_property PACKAGE_PIN D5 [get_ports pcie_clk_n]
 
 #On-board switch reset
 set_property PACKAGE_PIN Y20 [get_ports rst_n_i]
-set_property IOSTANDARD LVCMOS25 [get_ports rst_n_i]
+set_property IOSTANDARD LVCMOS18 [get_ports rst_n_i]
 
 #PCIe reset
-set_property IOSTANDARD LVCMOS25 [get_ports sys_rst_n_i]
+set_property IOSTANDARD LVCMOS18 [get_ports sys_rst_n_i]
 set_property PACKAGE_PIN U16 [get_ports sys_rst_n_i]
 
 #PCIe signals

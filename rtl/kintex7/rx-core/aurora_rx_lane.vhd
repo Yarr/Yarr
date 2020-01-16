@@ -39,7 +39,7 @@ architecture behavioral of aurora_rx_lane is
         generic (
             S 			: integer := 8 ;				-- Set the serdes factor to 4, 6 or 8
             D 			: integer := 1 ;				-- Set the number of inputs
-            CLKIN_PERIOD		: real := 1.5625 ;				-- clock period (ns) of input clock on clkin_p
+            CLKIN_PERIOD		: real := 1.56 ;				-- clock period (ns) of input clock on clkin_p
             REF_FREQ 		: real := 300.0 ;   				-- Parameter to set reference frequency used by idelay controller
             HIGH_PERFORMANCE_MODE 	: string := "TRUE" ;				-- Parameter to set HIGH_PERFORMANCE_MODE of input delays to reduce jitter
             DATA_FORMAT 		: string := "PER_CLOCK"			-- Used to determine method for mapping input parallel word to output serial words
@@ -50,7 +50,7 @@ architecture behavioral of aurora_rx_lane is
             enable_phase_detector	:  in std_logic ;				-- Enables the phase detector logic when high
             enable_monitor		:  in std_logic ;				-- Enables the monitor logic when high, note time-shared with phase detector function
             reset			:  in std_logic ;				-- Reset line
-            bitslip			:  in std_logic ;				-- bitslip 
+            bitslip			:  in std_logic ;			 	-- bitslip 
             idelay_rdy		:  in std_logic ;				-- input delays are ready
             rxclk			:  in std_logic ;				-- Global/BUFIO rx clock network
             system_clk		:  in std_logic ;				-- Global/Regional clock output
@@ -105,11 +105,11 @@ architecture behavioral of aurora_rx_lane is
         );
     end component descrambler;
 
-    constant g_SERDES_TYPE : string := "CUSTOM";
-    constant c_SLIP_SERDES_MAX : unsigned(7 downto 0) := to_unsigned(1, 8); 
+--    constant g_SERDES_TYPE : string := "CUSTOM";
+--    constant c_SLIP_SERDES_MAX : unsigned(7 downto 0) := to_unsigned(1, 8); 
     
---    constant g_SERDES_TYPE : string := "XAPP1017";
---    constant c_SLIP_SERDES_MAX : unsigned(7 downto 0) := to_unsigned(8, 8); 
+    constant g_SERDES_TYPE : string := "XAPP1017";
+    constant c_SLIP_SERDES_MAX : unsigned(7 downto 0) := to_unsigned(8, 8); 
 
     constant c_DATA_HEADER : std_logic_vector(1 downto 0) := "01";
     constant c_CMD_HEADER : std_logic_vector(1 downto 0) := "10";

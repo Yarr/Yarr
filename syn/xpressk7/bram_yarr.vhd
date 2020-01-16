@@ -72,19 +72,22 @@ entity top_level is
             --sda_io                : inout std_logic;
             --scl_io                    : inout std_logic;
             -- EUDET TLU
-            --eudet_trig_p : in std_logic;
-            --eudet_trig_n : in std_logic;
-            --eudet_busy_p : out std_logic;
-            --eudet_busy_n : out std_logic;
-            --eudet_rst_p : in std_logic;
-           -- eudet_rst_n : in std_logic;
-            --eudet_clk_p : out std_logic;
-            --eudet_clk_n : out std_logic;
+            eudet_trig_p : in std_logic;
+            eudet_trig_n : in std_logic;
+            eudet_busy_p : out std_logic;
+            eudet_busy_n : out std_logic;
+            eudet_rst_p : in std_logic;
+            eudet_rst_n : in std_logic;
+            eudet_clk_p : out std_logic;
+            eudet_clk_n : out std_logic;
             -- SPI
             scl_o   : out std_logic;
             sda_o   : out std_logic;
             sdi_i   : in std_logic;
             latch_o : out std_logic
+            scl2_o   : out std_logic;
+            sda2_o   : out std_logic;
+            latch2_o : out std_logic
             
             -- . DDR3
 --            ddr3_dq       : inout std_logic_vector(63 downto 0);
@@ -375,6 +378,9 @@ architecture Behavioral of top_level is
 
     signal ext_trig_i : std_logic_vector(3 downto 0);
     signal ext_busy_o : std_logic;
+
+    signal scl : std_logic;
+    signal latch : std_logic;
     
 begin
 
@@ -396,11 +402,17 @@ begin
 --      IBUF_OUT(0) => sys_clk
 --    );    
 
+    sda2_o <= sdi_i;
+    scl2_o <= scl;
+    scl_o <= scl;
+    latch_o <= latch;
+    latch2_o <= latch;
+
     -- EUDET buffer
-    --eudet_clk_buf : OBUFDS port map (O => eudet_clk_p, OB => eudet_clk_n, I => eudet_clk_s);
-    --eudet_busy_buf : OBUFDS port map (O => eudet_busy_p, OB => eudet_busy_n, I => eudet_busy_s);
-    --eudet_rst_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => eudet_rst_s, I => eudet_rst_p, IB => eudet_rst_n);
-    --eudet_trig_buf : IBUFDS generic map(DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => eudet_trig_s, I => eudet_trig_p, IB => eudet_trig_n);
+    eudet_clk_buf : OBUFDS port map (O => eudet_clk_p, OB => eudet_clk_n, I => eudet_clk_s);
+    eudet_busy_buf : OBUFDS port map (O => eudet_busy_p, OB => eudet_busy_n, I => eudet_busy_s);
+    eudet_rst_buf : IBUFDS generic map(DIFF_TERM => FALSE, IBUF_LOW_PWR => FALSE) port map (O => eudet_rst_s, I => eudet_rst_p, IB => eudet_rst_n);
+    eudet_trig_buf : IBUFDS generic map(DIFF_TERM =>FALSE, IBUF_LOW_PWR => FALSE) port map (O => eudet_trig_s, I => eudet_trig_p, IB => eudet_trig_n);
     -- HitOr
     --ext_trig_buf_0 : IBUFDS generic map (DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => ext_trig_i(0), I => ext_trig_i_p(0), IB => ext_trig_i_n(0));
     --ext_trig_buf_1 : IBUFDS generic map (DIFF_TERM => TRUE, IBUF_LOW_PWR => FALSE) port map (O => ext_trig_i(1), I => ext_trig_i_p(1), IB => ext_trig_i_n(1));
@@ -567,10 +579,10 @@ begin
         eudet_rst_i => not eudet_rst_s,
         eudet_busy_o => eudet_busy_s,
         --SPI
-        scl_o => scl_o,
+        scl_o => scl,
         sda_o => sda_o,
         sdi_i => sdi_i,
-        latch_o => latch_o,
+        latch_o => latch,
         
         --I/O
         usr_sw_i => usr_sw_i,

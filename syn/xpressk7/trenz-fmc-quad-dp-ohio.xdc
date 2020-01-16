@@ -185,21 +185,24 @@ set_property PACKAGE_PIN A14 [get_ports {fe_clk_n[1]}]
 #set_property PACKAGE_PIN J14 [get_ports {scl_io}]
 
 set_property IOSTANDARD LVDS_25 [get_ports fe_data_*]
-set_property DIFF_TERM TRUE [get_ports fe_data_*]
+#set_property DIFF_TERM TRUE [get_ports fe_data_*]
 set_property IBUF_LOW_PWR FALSE [get_ports fe_data_*]
 
-set_property IOSTANDARD LVDS_25 [get_ports fe_clk_*]
+set_property IOSTANDARD DIFF_SSTL18_II [get_ports fe_clk_*]
 set_property SLEW FAST [get_ports fe_clk*]
 
-set_property IOSTANDARD LVDS_25 [get_ports eudet_*]
-set_property IOSTANDARD LVDS_25 [get_ports ext_trig_*]
-set_property DIFF_TERM TRUE [get_ports ext_trig_*]
+set_property IOSTANDARD DIFF_SSTL18_II [get_ports fe_cmd_*]
+set_property SLEW FAST [get_ports fe_cmd*]
+
+set_property IOSTANDARD DIFF_SSTL18_II [get_ports eudet_*]
+set_property IOSTANDARD DIFF_SSTL18_II [get_ports ext_trig_*]
+#set_property DIFF_TERM TRUE [get_ports ext_trig_*]
 set_property IOSTANDARD LVDS_25 [get_ports ext_busy_*]
 
-set_property IOSTANDARD LVCMOS25 [get_ports {scl_o}]
-set_property IOSTANDARD LVCMOS25 [get_ports {sda_o}]
-set_property IOSTANDARD LVCMOS25 [get_ports {latch_o}]
-set_property IOSTANDARD LVCMOS25 [get_ports {sdi_i}]
+set_property IOSTANDARD LVCMOS18 [get_ports {scl_o}]
+set_property IOSTANDARD LVCMOS18 [get_ports {sda_o}]
+set_property IOSTANDARD LVCMOS18 [get_ports {latch_o}]
+set_property IOSTANDARD LVCMOS18 [get_ports {sdi_i}]
 
 #  Rising Edge Source Synchronous Outputs 
 #

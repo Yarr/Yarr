@@ -105,7 +105,7 @@ architecture behavioral of wb_tx_core is
 			--trig_o : out std_logic;
 			trig_pulse_o : out std_logic;
 			
-			-- Trigger In (async)
+			-- Trigger In
 			ext_trig_i	: in std_logic;
 			
 			-- Config
@@ -365,7 +365,7 @@ begin
 		-- Serial Trigger Out
 		--trig_o => tx_data_trig,
 		trig_pulse_o=> tx_trig_pulse,
-		-- Trigger In (async)
+		-- Trigger In
 		ext_trig_i => ext_trig_i,
 		-- Config
 		--trig_word_i => trig_word,

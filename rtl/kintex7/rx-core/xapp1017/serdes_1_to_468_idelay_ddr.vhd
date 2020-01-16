@@ -177,7 +177,7 @@ not_rxclk <= not rxclk;
 clock_sweep <= clock_sweep_int ;
 rxclk_int <= rxclk ; -- theim: use external;
 bt_val_d2 <= '0' & bt_val(4 downto 1) ;
---cdataout <= m_serdes(3 downto 0); -- theim: hardcoded
+cdataout <= m_serdes(3 downto 0); -- theim: hardcoded
 
 loop11a : if REF_FREQ <= 210.0 generate				-- Generate tap number to be used for input bit rate (200 MHz ref clock)
 bt_val <= "00111" when bit_rate_value > X"1984" else
@@ -373,7 +373,7 @@ idelay_m : IDELAYE2 generic map(
  	HIGH_PERFORMANCE_MODE 	=> HIGH_PERFORMANCE_MODE,
       	IDELAY_VALUE		=> 16,
       	DELAY_SRC		=> "IDATAIN",
-      	IDELAY_TYPE		=> "FIXED")
+      	IDELAY_TYPE		=> "VAR_LOAD")
 port map(                
 	DATAOUT			=> rx_data_in_md(i),
 	C			=> system_clk_int,
@@ -430,7 +430,7 @@ idelay_s : IDELAYE2 generic map(
  	HIGH_PERFORMANCE_MODE 	=> HIGH_PERFORMANCE_MODE,
       	IDELAY_VALUE		=> 16,
       	DELAY_SRC		=> "IDATAIN",
-      	IDELAY_TYPE		=> "FIXED")
+      	IDELAY_TYPE		=> "VAR_LOAD")
 port map(                
 	DATAOUT			=> rx_data_in_sd(i),
 	C			=> system_clk_int,

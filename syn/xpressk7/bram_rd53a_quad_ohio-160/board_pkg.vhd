@@ -4,8 +4,8 @@ use IEEE.NUMERIC_STD.all;
 
 package board_pkg is
     constant c_TX_ENCODING : string := "OSERDES";
-    constant c_TX_CHANNELS : integer := 4;
-    constant c_RX_CHANNELS : integer := 4;
+    constant c_TX_CHANNELS : integer := 3;
+    constant c_RX_CHANNELS : integer := 3;
     constant c_FE_TYPE : string := "RD53";
     constant c_RX_NUM_LANES : integer := 4;
     constant c_TX_IDLE_WORD : std_logic_vector(31 downto 0) := x"69696969";

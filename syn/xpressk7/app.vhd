@@ -181,6 +181,9 @@ architecture Behavioral of app is
     signal gray_iteration_count_s : STD_LOGIC_VECTOR (28 downto 0); 
     signal ddr_iteration_count_s : STD_LOGIC_VECTOR (28 downto 0);
     
+    signal clk_200_s : std_logic;
+    signal pll_200_locked_s : std_logic;
+    
     signal rst_640_s : std_logic;
     
     signal clk_300_s : std_logic;
@@ -446,7 +449,7 @@ architecture Behavioral of app is
 
 begin
     
-    rst_n_s <= (not rst_i) or pll_locked_s or idelay_rdy;
+    rst_n_s <= (not rst_i) or pll_locked_s or idelay_rdy or pll_200_locked_s;
 
 		
     -- Activate LVDS buffer		
@@ -525,23 +528,42 @@ begin
        -- Clock in ports
        clk_250_in => clk_i,
       -- Clock out ports
-       clk_300 => clk_300_s,  
-       clk_640 => clk_640_s,
-       clk_160 => clk_160_s,
-       clk_80 => clk_80_s,
-       clk_40 => clk_40_s,
+       clk_300 => open, --clk_300_s,  
+       clk_640 => open, --clk_640_s,
+       clk_160 => open,--clk_160_s,
+       clk_80 => open, --clk_80_s,
+       clk_40 => open, --clk_40_s,
        clk_40_90 => clk_40_90_s,
-       clk_250 => wb_clk_s,
+       clk_250 => open,
       -- Status and control signals                
        reset => rst_i,
        locked => pll_locked_s            
      );
      
+     
+    clk_200_gen_cmp : clk_200_gen
+        port map ( 
+        -- Clock in ports
+        clk_200_in => clk_200_s,
+       -- Clock out ports
+        clk_40 => clk_40_s,  
+        clk_80 => clk_80_s,
+        clk_160 => clk_160_s,
+        clk_640 => clk_640_s,
+        clk_300 => clk_300_s,
+        clk_250 => open,
+       -- Status and control signals                
+        resetn => not rst_i,
+        locked => pll_200_locked_s            
+      );
+    
+    wb_clk_s <= clk_160_s; 
+    
     IDELAYCTRL_inst : IDELAYCTRL
      port map (
         RDY => idelay_rdy,       -- 1-bit output: Ready output
         REFCLK => clk_300_s, -- 1-bit input: Reference clock input
-        RST => rst_i and not pll_locked_s      -- 1-bit input: Active high reset input
+        RST => rst_i and not pll_200_locked_s      -- 1-bit input: Active high reset input
      );
 
     led_cnt:simple_counter
@@ -1088,7 +1110,7 @@ end generate;
          -- Wishbone Slave in
          wbb_adr_i            => rx_dma_adr_s,
          wbb_dat_i            => rx_dma_dat_m2s_s,
-         wbb_we_i             => rx_dma_we_s,
+         wbb_we_i             => '1',
          wbb_stb_i            => rx_dma_stb_s,
          wbb_cyc_i            => rx_dma_cyc_s, 
          
@@ -1105,12 +1127,13 @@ end generate;
    --LVDS input to internal single
     CLK_IBUFDS : IBUFDS
     generic map(
-      IOSTANDARD => "DEFAULT"
+      IOSTANDARD => "DEFAULT",
+      DIFF_TERM => FALSE
     )
     port map(
       I  => sys_clk_p_i,
       IB => sys_clk_n_i,
-      O  => open
+      O  => clk_200_s
     );
   
   end generate clk200_gen;
