@@ -4,7 +4,7 @@
 #include "HwController.h"
 
 #include <string>
-
+#include <functional>
 namespace StdDict {
     bool registerHwController(std::string name,
                               std::function<std::unique_ptr<HwController>()> f);

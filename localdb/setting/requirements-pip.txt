@@ -1,7 +1,9 @@
 arguments
+coloredlogs
 Flask
 Flask-PyMongo
 Flask-HTTPAuth
+Flask-Mail
 pdf2image
 Pillow
 prettytable
@@ -9,5 +11,9 @@ pymongo
 python-dateutil
 PyYAML
 pytz
+plotly
+matplotlib
+numpy
 requests
 tzlocal
+itkdb

@@ -59,9 +59,9 @@ class Fe65p2Cfg : public FrontEndCfg, public Fe65p2GlobalCfg, public Fe65p2Pixel
     protected:
         std::string name;
     private:
-        double cap; //fF
-        double vcal_slope; //mV
-        double vcal_offset; //mV
+        float cap; //fF
+        float vcal_slope; //mV
+        float vcal_offset; //mV
 
 };
 

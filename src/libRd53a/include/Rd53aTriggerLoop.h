@@ -34,8 +34,8 @@ class Rd53aTriggerLoop: public LoopActionBase {
     private:
         uint32_t m_trigCnt;
         uint32_t m_trigDelay;
-        double m_trigTime;
-        double m_trigFreq;
+        float m_trigTime;
+        float m_trigFreq;
         std::array<uint32_t, 32> m_trigWord;
         uint32_t m_trigWordLength;
         bool m_noInject;

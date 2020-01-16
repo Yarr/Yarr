@@ -5,7 +5,7 @@
 
 #include <string>
 #include <vector>
-
+#include <functional>
 namespace StdDict {
     bool registerDataProcessor(std::string name,
                               std::function<std::unique_ptr<DataProcessor>()> f);

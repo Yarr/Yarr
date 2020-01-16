@@ -59,22 +59,23 @@ endforeach()
 
 add_library(Yarr STATIC ${LibSrcFiles})
 
-if ("Rogue" IN_LIST YARR_CONTROLLERS_TO_BUILD )
-  YARR_ADD_TBB()
-  YARR_ADD_ROGUE()
-  add_dependencies(Yarr tbb_2019 rogue)
+YARR_ADD_VARIANT()
+add_dependencies(Yarr variant)
+YARR_ADD_TBB()
+add_dependencies(Yarr tbb_2019)
 
+if ("Rogue" IN_LIST YARR_CONTROLLERS_TO_BUILD )
+  YARR_ADD_ROGUE()
+  add_dependencies(Yarr tbb_2019)
   set(YARR_EXEC_DEPS ${YARR_EXEC_DEPS} rogue tbb_2019)
   set(YARR_LIB_DEPS ${YARR_LIB_DEPS} rogue-core)
   set(TBB_DEPS tbb)
-
 endif()
 
 if ("NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
-  YARR_ADD_TBB()
   YARR_ADD_NETIO()
   YARR_ADD_FELIX()
-  add_dependencies(Yarr tbb_2019 felixbase4 netio4)
+  add_dependencies(Yarr felixbase4 netio4)
 
   set(YARR_EXEC_DEPS ${YARR_EXEC_DEPS} tbb_2019 felixbase4 netio4)
   set(YARR_LIB_DEPS ${YARR_LIB_DEPS} netio)
@@ -96,6 +97,21 @@ foreach (_tool ${tools})
     message("- ${_tool}")
 endforeach()
 
+# Command to link Yarr
+# Because of the auto-registration, we need to keep symbols that
+# might otherwise be dropped (there's probably a better way to do this!)
+# Mainly this is about making sure the auto-registration works.
+#if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+if(APPLE)
+  set(YARR_LINK_LIB_COMMAND 
+      -Wl,-all_load Yarr -Wl, ${YARR_LIB_DEPS} pthread)
+else()
+  # Whole-archive means not to drop symbols from Yarr.
+  # We're not sure why tbb needs same treatment...
+  set(YARR_LINK_LIB_COMMAND
+      -Wl,--whole-archive Yarr ${TBB_DEPS} -Wl,--no-whole-archive ${YARR_LIB_DEPS} ${TBB_DEPS} pthread rt)
+endif()
+# (Not sure why rt is not linked by default here)
 
 foreach(target ${tools})
     get_filename_component(execname ${target} NAME_WE)
@@ -104,17 +120,16 @@ foreach(target ${tools})
     add_dependencies(${execname} Yarr ${YARR_EXEC_DEPS})
     set_target_properties(${execname} PROPERTIES LINKER_LANGUAGE CXX)
     link_directories(BEFORE SYSTEM ${PROJECT_BINARY_DIR}/lib)
-    # Whole-archive means not to drop symbols from Yarr.
-    # Mainly this is about making sure the auto-registration works.
-    # Not sure why tbb needs same treatment...
-    #if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    if(APPLE)
-        target_link_libraries(${execname}  -Wl,-all_load Yarr -Wl, ${YARR_LIB_DEPS} pthread)
-    else()
-        target_link_libraries(${execname}  -Wl,--whole-archive Yarr ${TBB_DEPS} -Wl,--no-whole-archive ${YARR_LIB_DEPS} ${TBB_DEPS} pthread rt)
-    endif()
-    # Not sure why rt is not linked by default here
+    target_link_libraries(${execname} ${YARR_LINK_LIB_COMMAND})
 endforeach()
 
 install(DIRECTORY ${PROJECT_BINARY_DIR}/bin DESTINATION ${TARGET_INSTALL_AREA}  FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
     WORLD_EXECUTE WORLD_READ GROUP_EXECUTE GROUP_READ  )
+
+# Tests
+file(GLOB_RECURSE test_src tests/test_*.cpp)
+
+# Make one executable
+add_executable(test_main ${test_src} tests/main.cpp)
+target_link_libraries(test_main ${YARR_LINK_LIB_COMMAND})
+add_dependencies(test_main Yarr)

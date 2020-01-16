@@ -209,7 +209,7 @@ void SpecCom::init() {
         std::cerr << __PRETTY_FUNCTION__ << " -> BAR4 not map, ignore in case of Kintex7 board (" << e.what() << ")" << std::endl;
         bar4 = NULL;
     }
-    std::cout << __PRETTY_FUNCTION__ << " -> Flusing buffers ..." << std::endl;
+    std::cout << __PRETTY_FUNCTION__ << " -> Flushing buffers ..." << std::endl;
     this->flushDma();
     std::cout << __PRETTY_FUNCTION__ << " -> Init success!" << std::endl;
     return;

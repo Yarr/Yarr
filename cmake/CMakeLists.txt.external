@@ -23,7 +23,7 @@ function(YARR_ADD_TBB)
     ExternalProject_Add (
         tbb_2019
         GIT_REPOSITORY https://github.com/intel/tbb.git
-        GIT_TAG tbb_2019
+        GIT_TAG 2019_U8
         UPDATE_COMMAND ""
         INSTALL_COMMAND ${PROJECT_SOURCE_DIR}/scripts/install_tbb.sh ${CMAKE_CURRENT_BINARY_DIR}  ${CMAKE_CURRENT_BINARY_DIR}
         BUILD_COMMAND cd ${CMAKE_CURRENT_BINARY_DIR}/external/src/tbb_2019 &&  make -j4 ${TBB_COMP} ${TBB_ARCH} extra_inc=big_iron.inc
@@ -97,4 +97,24 @@ function(YARR_ADD_ROGUE)
 
     link_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/rogue/lib)
     include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/rogue/include)
+endfunction()
+
+function(YARR_ADD_VARIANT)
+    if (TARGET variant)
+        return()
+    endif()
+
+    # Variant
+    ExternalProject_Add (
+        variant
+        GIT_REPOSITORY  https://gitlab.cern.ch/wittgen/variant.git
+        GIT_TAG v1.4.0
+        UPDATE_COMMAND ""
+        INSTALL_COMMAND ""
+        BUILD_COMMAND ""
+        CONFIGURE_COMMAND ""	
+        PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
+        )
+    link_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/variant)
+    include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/variant/include)
 endfunction()
