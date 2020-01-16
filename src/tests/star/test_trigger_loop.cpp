@@ -90,6 +90,15 @@ TEST_CASE("StarTriggerLoopDelay", "[star][trigger_loop]") {
     trigger_index = 4;
     expected_bc_slot = 1;
   }
+  SECTION("No charge injection") {
+    j["noInject"] = true;
+
+    pulse_index = -1;
+    trigger_index = 0;
+    expected_bc_slot = 3;
+
+    expected_l0_mask = 4;
+  }
 
   // Calculate delay based on used slots
   int delay = 3-expected_bc_slot;
@@ -132,30 +141,32 @@ TEST_CASE("StarTriggerLoopDelay", "[star][trigger_loop]") {
     REQUIRE ( f == LCB::IDLE );
   }
 
-  auto pulse_frame = tx.getFrame(pulse_index);
+  if(pulse_index != -1) {
+    auto pulse_frame = tx.getFrame(pulse_index);
+
+    CAPTURE ( pulse_frame );
+
+    uint8_t f, s;
+    std::tie(f, s) = LCB::split_pair(pulse_frame);
+    CAPTURE ( pulse_frame );
+    CAPTURE ( pulse_frame >> 8, pulse_frame & 0xff);
+
+    REQUIRE ( LCB::is_valid(pulse_frame) );
+
+    // REQUIRE ( LCB::is_fast_command(LCB::fast_command(LCB::ABC_CAL_PULSE, 0)));
+    REQUIRE ( pulse_frame != LCB::IDLE );
+
+    REQUIRE ( !LCB::is_l0a_bcr(pulse_frame) );
+
+    REQUIRE ( LCB::is_fast_command(pulse_frame) );
+
+    int bc_slot = LCB::get_fast_command_bc(pulse_frame);
+    REQUIRE ( pulse_frame == LCB::fast_command(LCB::ABC_CAL_PULSE, bc_slot) );
+    REQUIRE ( bc_slot == expected_bc_slot );
+  }
+
   auto trigger_frame = tx.getFrame(trigger_index);
-
-  CAPTURE ( pulse_frame );
   CAPTURE ( trigger_frame );
-
-  uint8_t f, s;
-  std::tie(f, s) = LCB::split_pair(pulse_frame);
-  CAPTURE ( pulse_frame );
-  CAPTURE ( pulse_frame >> 8, pulse_frame & 0xff);
-
-  REQUIRE ( LCB::is_valid(pulse_frame) );
-
-  // REQUIRE ( LCB::is_fast_command(LCB::fast_command(LCB::ABC_CAL_PULSE, 0)));
-  REQUIRE ( pulse_frame != LCB::IDLE );
-
-  REQUIRE ( !LCB::is_l0a_bcr(pulse_frame) );
-
-  REQUIRE ( LCB::is_fast_command(pulse_frame) );
-
-  int bc_slot = LCB::get_fast_command_bc(pulse_frame);
-  REQUIRE ( pulse_frame == LCB::fast_command(LCB::ABC_CAL_PULSE, bc_slot) );
-  REQUIRE ( bc_slot == expected_bc_slot );
-
   REQUIRE ( LCB::is_valid(trigger_frame) );
   REQUIRE ( LCB::is_l0a_bcr(trigger_frame) );
 
@@ -164,5 +175,5 @@ TEST_CASE("StarTriggerLoopDelay", "[star][trigger_loop]") {
            LCB::get_l0_tag(trigger_frame) );
   REQUIRE ( !LCB::is_bcr(trigger_frame) );
 
-  REQUIRE ( trigger_frame == LCB::l0a_mask(expected_l0_mask, 0, false) );
+  REQUIRE ( LCB::get_l0_mask(trigger_frame) == expected_l0_mask );
 }

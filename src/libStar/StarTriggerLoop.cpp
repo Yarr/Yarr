@@ -131,7 +131,7 @@ void StarTriggerLoop::setNoInject() {
 	m_trigWord[0] = (LCB::IDLE << 16) + LCB::IDLE;
 	m_trigWord[1] = (LCB::IDLE << 16) + LCB::IDLE;
 	m_trigWord[2] = (LCB::IDLE << 16) + LCB::IDLE;
-	m_trigWord[3] = LCB::l0a_mask(4, 10, false) | LCB::IDLE;
+	m_trigWord[3] = (LCB::l0a_mask(4, 10, false) << 16) | LCB::IDLE;
 	m_trigWordLength = 4;
 }
 
