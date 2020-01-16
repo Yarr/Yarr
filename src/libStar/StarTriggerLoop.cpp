@@ -92,8 +92,8 @@ void StarTriggerLoop::setTrigWord() {
 	unsigned int remainder = m_trigDelay - (full_words * 8);
 
 	// Final word in buffer goes first
-	auto cmd_word = LCB::fast_command(LCB::FastCmd::ABC_CAL_PULSE, remainder%4);
-	//   Or LCB::FastCmd::ABC_DIGITAL_PULSE
+	auto cmd_word = LCB::fast_command(LCB::ABC_CAL_PULSE, remainder%4);
+	//   Or LCB::ABC_DIGITAL_PULSE
 	if(remainder < 4) {
 		m_trigWord[full_words + 1] = (LCB::IDLE << 16) + cmd_word;
 	} else {

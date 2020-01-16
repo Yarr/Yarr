@@ -105,7 +105,7 @@ namespace LCB {
   const uint8_t K2 = SixEight::kcode(2);
   const uint8_t K3 = SixEight::kcode(3);
 
-  enum class FastCmd {
+  enum FastCmdType {
     NONE = 0,
     RESVD = 1,
     LOGIC_RESET = 2,
@@ -152,7 +152,7 @@ namespace LCB {
   }
 
   /// Resets etc. (2 bits of BC select and 4 bits of command)
-  inline Frame fast_command(FastCmd type, uint8_t delay) {
+  inline Frame fast_command(FastCmdType type, uint8_t delay) {
     return (LCB::K3 << 8) | SixEight::encode(((delay&3) << 4) | ((int)type & 0xf));
   }
 
