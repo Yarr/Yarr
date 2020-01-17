@@ -66,7 +66,7 @@ add_dependencies(Yarr tbb_2019)
 
 if ("Rogue" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   YARR_ADD_ROGUE()
-  add_dependencies(Yarr tbb_2019)
+  add_dependencies(Yarr tbb_2019 rogue)
   set(YARR_EXEC_DEPS ${YARR_EXEC_DEPS} rogue tbb_2019)
   set(YARR_LIB_DEPS ${YARR_LIB_DEPS} rogue-core)
   set(TBB_DEPS tbb)
