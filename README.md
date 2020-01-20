@@ -73,3 +73,13 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
         - ``$ cmake3 .. -DYARR_CONTROLLERS_TO_BUILD=all -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm32 # ARM32/Centos7 on RCE ``
         - ``$ cmake3 .. -DYARR_CONTROLLERS_TO_BUILD=all -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm64 # ARM64/Centos7 on zcu102 ``
     - ``$ make -j8 install ``
+
+### Running tests
+
+While developing, it might be useful to run some unit tests. These are run
+by default in the CI on gitlab, but can also be run locally:
+
+- cd build
+- make test
+
+This runs the test_main binary, which gathers the tests found in src/tests.
