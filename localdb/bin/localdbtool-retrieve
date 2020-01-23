@@ -29,8 +29,9 @@ if not "HOSTNAME" in os.environ:
     hostname = "default_host"
 else:
     hostname = os.environ["HOSTNAME"]
-global user
-global pwd
+hostname = socket.gethostname()
+global my_user
+global my_pwd
 global authentication
 
 def readConfig(conf_path):
@@ -185,9 +186,10 @@ def __network_db(url, db_name):
     except errors.OperationFailure as err:
         ### Need user authentication
         if db_cfg.get('KeyFile',None):
-            keys = readKey(db_cfg['KeyFile'])
-            username = keys['username']
-            password = keys['password']
+            if not db_cfg['KeyFile'] == 'null':
+                keys = readKey(db_cfg['KeyFile'])
+                username = keys['username']
+                password = keys['password']
         if args.username:
             username = args.username
         elif db_cfg.get('username',None):
@@ -198,17 +200,17 @@ def __network_db(url, db_name):
             password = db_cfg['password']
         through = False
         while through==False:
-            global user
-            global pwd
+            global my_user
+            global my_pwd
             if not username or not password:
                 logger.warning('Need users authenticated.')
-                user = input('User name > ')
-                pwd = getpass('Password > ')
+                my_user = input('User name > ')
+                my_pwd = getpass('Password > ')
             else:
-                user = username
-                pwd = password
+                my_user = username
+                my_pwd = password
             try:
-                localdb.authenticate(user, pwd)
+                localdb.authenticate(my_user, my_pwd)
                 logger.info('---> Connection is GOOD.')
                 through = True
                 authentication = True
@@ -288,7 +290,7 @@ def main():
             url = response['url']
             localdb = MongoClient(url, serverSelectionTimeoutMS=max_server_delay)[db_cfg.get('dbName', 'localdb')]
             if authentication:
-                localdb.authenticate(user, pwd)
+                localdb.authenticate(my_user, my_pwd)
             function.__set_localdb(localdb)
     else:
         logger.error('Could not access Local DB')

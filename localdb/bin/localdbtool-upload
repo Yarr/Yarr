@@ -209,9 +209,10 @@ def __init(db_cfg):
     except errors.OperationFailure as err:
         ### Need user authentication
         if db_cfg.get('KeyFile',None):
-            keys = readKey(db_cfg['KeyFile'])
-            username = keys['username']
-            password = keys['password']
+            if not db_cfg['KeyFile'] == 'null':
+                keys = readKey(db_cfg['KeyFile'])
+                username = keys['username']
+                password = keys['password']
         if args.username:
             username = args.username
         elif db_cfg.get('username',None):
