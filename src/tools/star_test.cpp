@@ -131,48 +131,53 @@ int main(int argc, char *argv[]) {
 
     std::unique_ptr<RawData> data(spec.readData());
 
-    for(int i=0; i<1000; i++) {
-      if(data) break;
+    bool nodata = true;
 
-      static const auto SLEEP_TIME = std::chrono::milliseconds(1);
+    while (true) {
 
-      std::this_thread::sleep_for( SLEEP_TIME );
+      while (data) {
+        nodata = false;
 
-      data.reset(spec.readData());
-    }
+        std::cout << data->adr << " " << data->buf << " " << data->words << "\n";
 
-    if(data == nullptr) {
-      std::cout << "No data\n";
-      return 1;
-    }
+        for (unsigned j=0; j<data->words;j++) {
+          auto word = data->buf[j];
 
-    while (data) {
+          if(do_spec_specific) {
+            if((j%2) && (word == 0xd3400000)) continue;
+            if(!(j%2) && ((word&0xff) == 0xff)) continue;
 
-      std::cout << data->adr << " " << data->buf << " " << data->words << "\n";
+            if((word&0xff) == 0x5f) continue;
 
-      for (unsigned j=0; j<data->words;j++) {
-        auto word = data->buf[j];
+            if(word == 0x1a0d) continue; // Idle on chan 6
+            if(word == 0x19f2) continue; // Idle on chan 6
 
-        if(do_spec_specific) {
-          if((j%2) && (word == 0xd3400000)) continue;
-          if(!(j%2) && ((word&0xff) == 0xff)) continue;
+            word &= 0xffffc3ff; // Strip of channel number
+          }
 
-          if((word&0xff) == 0x5f) continue;
-
-          if(word == 0x1a0d) continue; // Idle on chan 6
-          if(word == 0x19f2) continue; // Idle on chan 6
-
-          word &= 0xffffc3ff; // Strip of channel number
+          std::cout << "[" << j << "] = 0x" << std::hex << word << std::dec << " " << std::bitset<32>(word) << std::endl;
         }
 
-        std::cout << "[" << j << "] = 0x" << std::hex << word << std::dec << " " << std::bitset<32>(word) << std::endl;
+        data.reset(spec.readData());
       }
 
-      data.reset(spec.readData());
+      // wait a while if no data
+      for(int i=0; i<1000; i++) {
+        if(data) break;
+
+        static const auto SLEEP_TIME = std::chrono::milliseconds(1);
+
+        std::this_thread::sleep_for( SLEEP_TIME );
+
+        data.reset(spec.readData());
+      }
+
+      if (data == nullptr) break;
     }
 
-    if(data) {
-      delete [] data->buf;
+    if(nodata) {
+      std::cout << "No data\n";
+      return 1;
     }
 
     spec.setRxEnable(0x0);
