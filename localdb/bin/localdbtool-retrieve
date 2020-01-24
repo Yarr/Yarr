@@ -29,7 +29,7 @@ if not "HOSTNAME" in os.environ:
     hostname = "default_host"
 else:
     hostname = os.environ["HOSTNAME"]
-hostname = socket.gethostname()
+
 global my_user
 global my_pwd
 global authentication
