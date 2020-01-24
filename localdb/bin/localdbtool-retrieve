@@ -7,7 +7,7 @@
 #################################
 
 # Common
-import os, sys, requests, json, argparse, yaml, shutil
+import os, sys, requests, json, argparse, yaml, shutil, subprocess
 from getpass    import getpass
 from pymongo    import MongoClient, errors
 
@@ -194,10 +194,14 @@ def __network_db(url, db_name):
             username = args.username
         elif db_cfg.get('username',None):
             username = db_cfg['username']
+        elif os.environ.get('username',None):
+            username = os.environ['username']
         if args.password:
             password = args.password
         elif db_cfg.get('password',None):
             password = db_cfg['password']
+        elif os.environ.get('password',None):
+            password = os.environ['password']
         through = False
         while through==False:
             global my_user
@@ -212,6 +216,8 @@ def __network_db(url, db_name):
             try:
                 localdb.authenticate(my_user, my_pwd)
                 logger.info('---> Connection is GOOD.')
+                os.environ['username'] = my_user
+                os.environ['password'] = my_pwd
                 through = True
                 authentication = True
                 return True

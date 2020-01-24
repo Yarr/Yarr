@@ -7,7 +7,7 @@
 #################################
 
 ### Common
-import os, sys, time, argparse, yaml
+import os, sys, time, argparse, yaml, subprocess
 from getpass          import getpass
 from pymongo          import MongoClient, errors, DESCENDING
 from bson.objectid    import ObjectId
@@ -217,10 +217,14 @@ def __init(db_cfg):
             username = args.username
         elif db_cfg.get('username',None):
             username = db_cfg['username']
+        elif os.environ.get('username',None):
+            username = os.environ['username']
         if args.password:
             password = args.password
         elif db_cfg.get('password',None):
             password = db_cfg['password']
+        elif os.environ.get('password',None):
+            password = os.environ['password']
         if args.log==True:
             if username and password:
                 try:
@@ -243,6 +247,8 @@ def __init(db_cfg):
                 try:
                     logger.info('Authentication succeeded.')
                     localdb.authenticate(username, password)
+                    os.environ['username'] = username
+                    os.environ['password'] = password
                     through = True
                 except errors.OperationFailure as err:
                     logger.error('Authentication failed.')
