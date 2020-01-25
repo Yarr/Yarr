@@ -53,6 +53,10 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path
 
     m_startHitCount = false;
     m_bc_sel = 0;
+
+    hpr_clkcnt = HPRPERIOD/2; // 20000 BCs or 500 us
+    hpr_sent.resize(m_starCfg->nABCs() + 1); // 1 HCCStar + nABCs ABCStar chips
+    std::fill(hpr_sent.begin(), hpr_sent.end(), false);
     
     // HCCStar and ABCStar configurations
     // TODO: should get these from chip config json file
@@ -198,6 +202,10 @@ std::vector<uint8_t> StarEmu::buildHCCRegisterPacket(PacketTypes typ, uint8_t re
 // Decode LCB
 //
 void StarEmu::DecodeLCB(LCB::Frame frame) {
+
+    // HPR
+    doHPR(frame);
+
     // {code0, code1}
     uint8_t code0 = (frame >> 8) & 0xff;
     uint8_t code1 = frame & 0xff;
@@ -205,7 +213,7 @@ void StarEmu::DecodeLCB(LCB::Frame frame) {
     bool iskcode0 = SixEight::iskcode(code0);
     bool iskcode1 = SixEight::iskcode(code1);
 
-    if (not (SixEight::iskcode(code0) or SixEight::iskcode(code1)) ) {
+    if (not (iskcode0 or iskcode1) ) {
         // Neither of the 8-bit symbol is a kcode
         // Decode the 16-bit frame to the 12-bit data
         uint16_t data12 = (SixEight::decode(code0) << 6) | SixEight::decode(code1);
@@ -235,7 +243,7 @@ void StarEmu::DecodeLCB(LCB::Frame frame) {
             m_bccnt += 4;
             // do nothing
         }
-    } // if (not (SixEight::iskcode(code0) or SixEight::iskcode(code1)) )
+    } // if (not (iskcode0 or iskcode1) )
     
 }
 
@@ -290,7 +298,7 @@ void StarEmu::doRegReadWrite(LCB::Frame frame) {
         uint16_t data12 = (SixEight::decode(code0) << 6) | (SixEight::decode(code1));
         // Top 5 bits should be zeros
         assert(not (data12>>7));
-        // Store it into the buffer. Only the lowest 7 bits is meaningful.
+        // Store the lowest 7 bits into the buffer.
         m_reg_cmd_buffer.push(data12 & 0x7f);
     }
 
@@ -466,6 +474,8 @@ void StarEmu::doFastCommand(uint8_t data6) {
         break;
     case LCB::HCC_REG_RESET :
         m_starCfg->resetHCCRegisters();
+        //hpr_clkcnt = HPRPERIOD/2;
+        //std::fill(hpr_sent.begin(), hpr_sent.end(), false);
         break;
     case LCB::HCC_SEU_RESET :
         m_starCfg->resetHCCSEU();
@@ -484,6 +494,8 @@ void StarEmu::doFastCommand(uint8_t data6) {
 void StarEmu::logicReset()
 {
     m_bccnt = 0;
+    hpr_clkcnt = HPRPERIOD/2;
+    std::fill(hpr_sent.begin(), hpr_sent.end(), false);
     
     for (unsigned ichip = 1; ichip <= m_starCfg->nABCs(); ++ichip) {
         clearFEData(ichip);
@@ -498,6 +510,115 @@ void StarEmu::slowCommandReset()
     // clear command buffer
     std::queue<uint8_t> empty_buffer;
     std::swap(m_reg_cmd_buffer, empty_buffer);
+}
+
+//
+// HPR
+//
+void StarEmu::doHPR(LCB::Frame frame)
+{
+    doHPR_HCC(frame);
+
+    for (unsigned ichip = 1; ichip <= m_starCfg->nABCs(); ++ichip) {
+        doHPR_ABC(frame, ichip);
+    }
+
+    // Each LCB command frame covers 4 BCs
+    hpr_clkcnt += 4;
+}
+
+void StarEmu::doHPR_HCC(LCB::Frame frame)
+{
+    //// Update the HPR register
+    setHCCStarHPR(frame);
+
+    //// HPR control logic
+    bool testHPR = m_starCfg->getHCCSubRegValue(emu::HCCStarRegister::Pulse, 1, 1);
+    bool stopHPR = m_starCfg->getHCCSubRegValue(emu::HCCStarRegister::Pulse, 0, 0);
+    bool maskHPR = m_starCfg->getHCCSubRegValue(emu::HCCStarRegister::Cfg1, 8, 8);
+
+    // Assume for now in the software emulation LCB is always locked and only
+    // testHPR bit can trigger the one-time pulse to send an HPR packet
+    // The one-time pulse is ignored if maskHPR is one.
+    bool lcb_lock_changed = testHPR & (~maskHPR);
+
+    // An HPR packet is also sent periodically:
+    // 500 us (20000 BCs) after reset and then every 1 ms (40000 BCs)
+    // (hpr_clkcnt is initialized to 20000 BCs)
+    bool hpr_periodic = not (hpr_clkcnt%HPRPERIOD) and not stopHPR;
+
+    // Special cases for the initial HPR packet after a reset
+    // If stopHPR is set to 1 before any HPR packet is sent, send one immediately
+    bool hpr_initial = not hpr_sent[0] and stopHPR;
+
+    //// Build and send the HPR packet
+    if (lcb_lock_changed or hpr_periodic or hpr_initial) {
+        auto packet_hcchpr = buildHCCRegisterPacket(
+            PacketTypes::HCCHPR,
+            (uint8_t)emu::HCCStarRegister::HPR,
+            m_starCfg->getHCCRegister(emu::HCCStarRegister::HPR));
+
+        sendPacket(packet_hcchpr);
+
+        hpr_sent[0] = true;
+    }
+
+    //// Update HPR control bits
+    // Reset stopHPR to zero (i.e. resume the periodic HPR packet transmission)
+    // if lcb_lock_changed
+    if (stopHPR and lcb_lock_changed)
+        m_starCfg->setHCCSubRegister(emu::HCCStarRegister::Pulse, 0, 0, 0);
+
+    // Reset testHPR bit to zero if it is one
+    if (testHPR)
+        m_starCfg->setHCCSubRegister(emu::HCCStarRegister::Pulse, 0, 1, 1);
+}
+
+void StarEmu::doHPR_ABC(LCB::Frame frame, unsigned ichip)
+{
+    int abcID = m_starCfg->getABCchipID(ichip);
+
+    //// Update the HPR register
+    setABCStarHPR(frame, abcID);
+
+    //// HPR control logic
+    bool testHPR = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::SCReg, abcID, 3, 3);
+    bool stopHPR = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::SCReg, abcID, 2, 2);
+    bool maskHPR = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 6, 6);
+
+    bool lcb_lock_changed = testHPR & (~maskHPR);
+    bool hpr_periodic = not (hpr_clkcnt%HPRPERIOD) and not stopHPR;
+    bool hpr_initial = not hpr_sent[ichip] and stopHPR;
+
+    //// Build and send HPR packets
+    if (lcb_lock_changed or hpr_periodic or hpr_initial) {
+        auto packet_abchpr = buildABCRegisterPacket(
+            PacketTypes::ABCHPR, ichip-1, (uint8_t)emu::ABCStarRegs::HPR,
+            m_starCfg->getABCRegister(emu::ABCStarRegs::HPR, abcID),
+            (abcID&0xf) << 12);
+
+        sendPacket(packet_abchpr);
+
+        hpr_sent[ichip] = true;
+    }
+
+    //// Update HPR control bits
+    if (stopHPR and lcb_lock_changed)
+        m_starCfg->setABCSubRegister(emu::ABCStarRegs::SCReg, 0, abcID, 2, 2);
+    if (testHPR)
+        m_starCfg->setABCSubRegister(emu::ABCStarRegs::SCReg, 0, abcID, 3, 3);
+}
+
+void StarEmu::setHCCStarHPR(LCB::Frame frame)
+{
+    uint32_t hprWord = frame << 16; // TODO: set other bits
+    m_starCfg->setHCCRegister(emu::HCCStarRegister::HPR, hprWord);
+}
+
+void StarEmu::setABCStarHPR(LCB::Frame frame, int abcID)
+{
+    uint32_t hprWord = frame << 16; // TODO: set other bits
+    m_starCfg->setABCRegister(emu::ABCStarRegs::HPR, hprWord, abcID);
 }
 
 //

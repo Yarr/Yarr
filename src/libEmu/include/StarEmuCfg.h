@@ -208,6 +208,27 @@ class StarCfg {
         for (unsigned addr = 112; addr <= 175; ++addr)
             setABCRegister(addr, 0x00000000);
     }
+
+    uint32_t updateSubRegValue(unsigned reg_value, unsigned subreg_val,
+                               uint8_t msb, uint8_t lsb)
+    {
+        assert(msb>=lsb);
+
+        unsigned nbits = msb - lsb + 1;
+        assert(nbits < 32);
+
+        // place the sub register value to the correct position
+        subreg_val &= (1<<nbits) - 1;
+        subreg_val <<= lsb;
+
+        // set the to-be-updated bits of the old register value to zeros
+        unsigned mask = ~( ( (1<<nbits)-1 ) << lsb );
+        reg_value &= mask;
+
+        // update register value
+        unsigned reg_value_new = reg_value | subreg_val;
+        return reg_value_new;
+    }
     
     const uint32_t getHCCRegister(uint32_t addr)
     {
@@ -222,6 +243,18 @@ class StarCfg {
         return getHCCRegister((uint32_t)reg);
     }
 
+    const uint32_t getHCCSubRegValue(uint32_t addr, uint8_t msb, uint8_t lsb)
+    {
+        assert(msb>=lsb);
+        uint32_t regVal = getHCCRegister(addr);
+        return (regVal >> lsb) & ((1<<(msb-lsb+1))-1);
+    }
+
+     const uint32_t getHCCSubRegValue(HCCStarRegister reg, uint8_t msb, uint8_t lsb)
+    {
+        return getHCCSubRegValue((uint32_t)reg, msb, lsb);
+    }
+
     void setHCCRegister(uint32_t addr, uint32_t val)
     {
         //if (registerMap[0].find(addr) != registerMap[0].end())
@@ -231,6 +264,19 @@ class StarCfg {
     void setHCCRegister(HCCStarRegister reg, uint32_t val)
     {
         setHCCRegister((uint32_t)reg, val);
+    }
+
+    void setHCCSubRegister(uint32_t addr, uint32_t val, uint8_t msb, uint8_t lsb)
+    {
+        unsigned reg_value = getHCCRegister(addr);
+        unsigned reg_value_new = updateSubRegValue(reg_value, val, msb, lsb);
+        setHCCRegister(addr, reg_value_new);
+    }
+
+    void setHCCSubRegister(HCCStarRegister reg, uint32_t val,
+                           uint8_t msb, uint8_t lsb)
+    {
+        setHCCSubRegister((uint32_t)reg, val, msb, lsb);
     }
 
     const uint32_t getABCRegister(uint32_t addr, int chipID)
@@ -267,6 +313,20 @@ class StarCfg {
     void setABCRegister(ABCStarRegs reg, uint32_t val, int chipID)
     {
         setABCRegister((uint32_t)reg, val, chipID);
+    }
+
+    void setABCSubRegister(uint32_t addr, uint32_t val, int chipID,
+                           uint8_t msb, uint8_t lsb)
+    {
+        unsigned reg_value = getABCRegister(addr, chipID);
+        unsigned reg_value_new = updateSubRegValue(reg_value, val, msb, lsb);
+        setABCRegister(addr, reg_value_new, chipID);
+    }
+
+    void setABCSubRegister(ABCStarRegs reg, uint32_t val, int chipID,
+                           uint8_t msb, uint8_t lsb)
+    {
+        setABCSubRegister((uint32_t)reg, val, chipID, msb, lsb);
     }
 
     // overload: broadcast if no chip ID provided

@@ -70,6 +70,13 @@ private:
     void logicReset();
     void slowCommandReset();
 
+    /// HPR
+    void setHCCStarHPR(LCB::Frame);
+    void setABCStarHPR(LCB::Frame, int);
+    void doHPR_HCC(LCB::Frame);
+    void doHPR_ABC(LCB::Frame, unsigned);
+    void doHPR(LCB::Frame);
+
     /// Trigger and front end
     void doL0A(uint16_t);
     unsigned int countTriggers(LCB::Frame);
@@ -114,13 +121,20 @@ private:
     // m_fe_data[iABC][iBC] = {ch255_224, ch223_192, ch191_160, ch159_128,
     //                         ch127_96, ch95_64, ch63_32, ch31_0}
     std::vector< std::array< std::array<unsigned,8>, 4> > m_fe_data;
-     
+
     // BC counter
     uint8_t m_bccnt;
 
     // Count hits
     bool m_startHitCount;
     uint8_t m_bc_sel;
+
+    // Clock counter for HPR packets
+    unsigned hpr_clkcnt; // unit: BC (25 ns)
+    // Flag indicating if at least one HPR packet has been sent
+    std::vector<bool> hpr_sent;
+    static constexpr unsigned HPRPERIOD = 40000; // 40000 BCs, i.e. 1 ms
+    // For testing or debugging, set HPRPERIOD to a smaller value e.g. 80
     
     ////////////////////////////////////////
     // HCCStar and ABCStar configurations
