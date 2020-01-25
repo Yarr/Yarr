@@ -7,7 +7,7 @@
 #################################
 
 ### Common
-import os, sys, time, argparse, yaml, subprocess
+import os, sys, time, argparse, yaml
 from getpass          import getpass
 from pymongo          import MongoClient, errors, DESCENDING
 from bson.objectid    import ObjectId
