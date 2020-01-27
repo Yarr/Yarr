@@ -15,7 +15,7 @@
 #include "logging.h"
 
 namespace {
-auto hlog = logging::make_log("histo_2d");
+    auto hlog = logging::make_log("Histo2d");
 }
 
 Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
