@@ -13,7 +13,7 @@
 #include "logging.h"
 
 namespace {
-    auto alog = logging::make_log("fei4_histogrammer");
+    auto alog = logging::make_log("Fei4Histogrammer");
 }
 
 Fei4Histogrammer::Fei4Histogrammer() {
@@ -45,9 +45,6 @@ void Fei4Histogrammer::join() {
 
 void Fei4Histogrammer::process() {
     while( true ) {
-
-        //std::cout << __PRETTY_FUNCTION__ << std::endl;
-
         std::unique_lock<std::mutex> lk(mtx);
         input->waitNotEmptyOrDone();
 
@@ -57,7 +54,7 @@ void Fei4Histogrammer::process() {
         if( input->isDone() ) {
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
             process_core();  // this line is needed if the data comes in before scanDone is changed.
-            alog->info("{}: histogrammerDone!", __PRETTY_FUNCTION__);
+            alog->info("Histogrammer done!");
             break;
         }
     }

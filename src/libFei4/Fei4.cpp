@@ -12,7 +12,7 @@
 #include "logging.h"
 
 namespace {
-auto flog = logging::make_log("fei4");
+    auto flog = logging::make_log("Fei4");
 }
 
 bool fei4_registered =
@@ -244,6 +244,6 @@ void Fei4::wrGR16(unsigned int mOffset, unsigned int bOffset, unsigned int mask,
 }
 
 void Fei4::writeNamedRegister(std::string name, uint16_t reg_value) {
-    flog->info("{} : {} -> {}", __PRETTY_FUNCTION__, name, reg_value);
+    flog->info("Writing named register: {} -> {}", name, reg_value);
     writeRegister(regMap[name], reg_value);
 }

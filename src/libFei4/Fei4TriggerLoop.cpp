@@ -9,7 +9,7 @@
 #include "logging.h"
 
 namespace {
-auto logger = logging::make_log("Fei4TriggerLoop");
+    auto logger = logging::make_log("Fei4TriggerLoop");
 }
 
 Fei4TriggerLoop::Fei4TriggerLoop() : LoopActionBase() {
@@ -32,8 +32,8 @@ Fei4TriggerLoop::Fei4TriggerLoop() : LoopActionBase() {
 }
 
 void Fei4TriggerLoop::init() {
+    SPDLOG_LOGGER_TRACE(logger);
     m_done = false;
-    logger->debug(__PRETTY_FUNCTION__);
     // Setup Trigger
     this->setTrigDelay(m_trigDelay);
     if (m_trigCnt > 0) {
@@ -66,20 +66,20 @@ void Fei4TriggerLoop::init() {
 }
 
 void Fei4TriggerLoop::end() {
-    logger->debug(__PRETTY_FUNCTION__);
+    SPDLOG_LOGGER_TRACE(logger);
     // Go back to conf mode, general state of FE should be conf mode
     keeper->globalFe<Fei4>()->setRunMode(false);
     while(!g_tx->isCmdEmpty());
 }
 
 void Fei4TriggerLoop::execPart1() {
-    logger->debug(__PRETTY_FUNCTION__);
+    SPDLOG_LOGGER_TRACE(logger);
     // Enable Trigger
     g_tx->setTrigEnable(0x1);
 }
 
 void Fei4TriggerLoop::execPart2() {
-    logger->debug(__PRETTY_FUNCTION__);
+    SPDLOG_LOGGER_TRACE(logger);
     while(!g_tx->isTrigDone());
     // Disable Trigger
     g_tx->setTrigEnable(0x0);
