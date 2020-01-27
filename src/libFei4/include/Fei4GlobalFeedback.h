@@ -12,7 +12,14 @@
 #include "LoopActionBase.h"
 #include "FeedbackBase.h"
 
+#include "logging.h"
+
 class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
+        static logging::Logger &logger() {
+          static logging::LoggerStore instance = logging::make_log("Fei4GlobalFeedback");
+          return *instance;
+        }
+
     public:
         Fei4GlobalFeedback() {
             loopType = typeid(this);
@@ -108,10 +115,9 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
 			for(unsigned int k=0; k<keeper->feList.size(); k++) {
 				if(keeper->feList[k]->getActive()) {
 					keeper->mutexMap[dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel()].lock();
-                    if (verbose)
-                        std::cout << " --> Received Feedback on Channel " 
-                            << dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel() << " with value: " 
-                            << values[dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel()] << std::endl;
+                                        logger().debug(" --> Received Feedback on Channel {} with value: {}",
+                                                       dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel(),
+                                                       values[dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel()]);
 			    }
 			}
             cur++;

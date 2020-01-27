@@ -33,7 +33,6 @@ class Fei4PixelThresholdTune : public ScanBase {
         bool useLcap;
 
         double target;
-        bool verbose;
 };
 
 #endif

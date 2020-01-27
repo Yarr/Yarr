@@ -24,8 +24,7 @@ Fei4MaskLoop::Fei4MaskLoop() : LoopActionBase() {
 
 void Fei4MaskLoop::init() {
     m_done = false;
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    flog->debug(__PRETTY_FUNCTION__);
     // Shift Mask into all pixels
     keeper->globalFe<Fei4>()->writeRegister(&Fei4::Colpr_Mode, 0x3);
     keeper->globalFe<Fei4>()->writeRegister(&Fei4::Colpr_Addr, 0x0);
@@ -39,8 +38,7 @@ void Fei4MaskLoop::init() {
 }
 
 void Fei4MaskLoop::end() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    flog->debug(__PRETTY_FUNCTION__);
     // Disable all pixels
     keeper->globalFe<Fei4>()->writeRegister(&Fei4::Colpr_Mode, 0x3);
     keeper->globalFe<Fei4>()->writeRegister(&Fei4::Colpr_Addr, 0x0);
@@ -52,16 +50,14 @@ void Fei4MaskLoop::end() {
 }
 
 void Fei4MaskLoop::execPart1() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    flog->debug(__PRETTY_FUNCTION__);
 //	std::cout << "Ingrid loves sweatpants" << std::endl;
     flog->info("Mask Stage {}", m_cur);
     g_stat->set(this, m_cur);
 }
 
 void Fei4MaskLoop::execPart2() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    flog->debug(__PRETTY_FUNCTION__);
     m_cur += step;
     if (!((int)m_cur < max)) m_done = true;
     // Shift Enable mask by step size

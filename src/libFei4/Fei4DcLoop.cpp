@@ -5,6 +5,12 @@
 
 #include "Fei4DcLoop.h"
 
+#include "logging.h"
+
+namespace {
+    auto logger = logging::make_log("Fei4DcLoop");
+}
+
 Fei4DcLoop::Fei4DcLoop() : LoopActionBase() {
     m_mode = SINGLE_DC;
     min = 0;
@@ -17,8 +23,7 @@ Fei4DcLoop::Fei4DcLoop() : LoopActionBase() {
 
 void Fei4DcLoop::init() {
     m_done = false;
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    logger->debug(__PRETTY_FUNCTION__);
     // Figure out how often to loop
     // depending on COLPR_MODE
     switch (m_mode) {
@@ -43,13 +48,11 @@ void Fei4DcLoop::init() {
 }
 
 void Fei4DcLoop::end() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+  logger->info(__PRETTY_FUNCTION__);
 }
 
 void Fei4DcLoop::execPart1() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " --> " << m_col << std::endl;
+    logger->debug("{} --> {}", __PRETTY_FUNCTION__, m_col);
     g_stat->set(this, m_col);
     // Address col
     keeper->globalFe<Fei4>()->writeRegister(&Fei4::Colpr_Addr, m_col);
@@ -57,8 +60,7 @@ void Fei4DcLoop::execPart1() {
 }
 
 void Fei4DcLoop::execPart2() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    logger->debug(__PRETTY_FUNCTION__);
     // Check Loop condition
     m_col+=step;
     if (!((int)m_col < max)) m_done = true;

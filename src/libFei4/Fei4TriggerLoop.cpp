@@ -6,6 +6,12 @@
 #include "Fei4TriggerLoop.h"
 #include <unistd.h>
 
+#include "logging.h"
+
+namespace {
+auto logger = logging::make_log("Fei4TriggerLoop");
+}
+
 Fei4TriggerLoop::Fei4TriggerLoop() : LoopActionBase() {
     m_trigCnt = 50; // Maximum numberof triggers to send
     m_trigDelay = 33; // Delay between injection and trigger
@@ -27,8 +33,7 @@ Fei4TriggerLoop::Fei4TriggerLoop() : LoopActionBase() {
 
 void Fei4TriggerLoop::init() {
     m_done = false;
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    logger->debug(__PRETTY_FUNCTION__);
     // Setup Trigger
     this->setTrigDelay(m_trigDelay);
     if (m_trigCnt > 0) {
@@ -61,23 +66,20 @@ void Fei4TriggerLoop::init() {
 }
 
 void Fei4TriggerLoop::end() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    logger->debug(__PRETTY_FUNCTION__);
     // Go back to conf mode, general state of FE should be conf mode
     keeper->globalFe<Fei4>()->setRunMode(false);
     while(!g_tx->isCmdEmpty());
 }
 
 void Fei4TriggerLoop::execPart1() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    logger->debug(__PRETTY_FUNCTION__);
     // Enable Trigger
     g_tx->setTrigEnable(0x1);
 }
 
 void Fei4TriggerLoop::execPart2() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    logger->debug(__PRETTY_FUNCTION__);
     while(!g_tx->isTrigDone());
     // Disable Trigger
     g_tx->setTrigEnable(0x0);
