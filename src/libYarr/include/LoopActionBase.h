@@ -42,8 +42,6 @@ class LoopActionBase {
         void setMax(unsigned v);
         void setStep(unsigned v);
 
-        void setVerbose(bool verbose=true){verbose = true;}
-
         virtual void loadConfig(json &config) {}
         virtual void writeConfig(json &config) {}
 		
@@ -64,8 +62,6 @@ class LoopActionBase {
         unsigned step;
 
         double progress;
-
-        bool verbose;
 
         LoopStatus *g_stat;
         FrontEnd *g_fe;

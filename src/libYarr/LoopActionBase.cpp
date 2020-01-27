@@ -17,7 +17,6 @@ LoopActionBase::LoopActionBase() : loopType(typeid(void)){
     g_tx = NULL;
     g_rx = NULL;
     g_stat = NULL;
-    verbose = false;
     m_done = false;
 }
 
