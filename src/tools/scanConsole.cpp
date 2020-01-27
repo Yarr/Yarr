@@ -78,11 +78,13 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
 void setupLoggers(const json &j);
 
 int main(int argc, char *argv[]) {
-    logger->info("\033[1;31m#####################################\033[0m");
-    logger->info("\033[1;31m# Welcome to the YARR Scan Console! #\033[0m");
-    logger->info("\033[1;31m#####################################\033[0m");
+    std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
+    spdlog::set_pattern(defaultLogPattern);
+    spdlog::info("\033[1;31m#####################################\033[0m");
+    spdlog::info("\033[1;31m# Welcome to the YARR Scan Console! #\033[0m");
+    spdlog::info("\033[1;31m#####################################\033[0m");
 
-    logger->info("-> Parsing command line parameters ...");
+    spdlog::info("-> Parsing command line parameters ...");
 
     std::string home = getenv("HOME");
     std::string hostname = "default_host";
@@ -90,7 +92,7 @@ int main(int argc, char *argv[]) {
     if (getenv("HOSTNAME")) {
         hostname = getenv("HOSTNAME");
     } else {
-        logger->info("HOSTNAME environmental variable not found ...");
+        spdlog::error("HOSTNAME environmental variable not found ...");
     }
 
     // Init parameters
@@ -112,27 +114,6 @@ int main(int argc, char *argv[]) {
     std::string logCfgPath = "";
     
     unsigned runCounter = 0;
-
-    // Load run counter
-    if (system("mkdir -p ~/.yarr") < 0) {
-        logger->error("Loading run counter ~/.yarr!");
-    }
-
-    std::fstream iF((home + "/.yarr/runCounter").c_str(), std::ios::in);
-    if (iF) {
-        iF >> runCounter;
-        runCounter += 1;
-    } else {
-        if (system("echo \"1\n\" > ~/.yarr/runCounter") < 0) {
-            logger->error("Could not increment run counter in file");
-        }
-        runCounter = 1;
-    }
-    iF.close();
-
-    std::fstream oF((home + "/.yarr/runCounter").c_str(), std::ios::out);
-    oF << runCounter << std::endl;
-    oF.close();
 
     int nThreads = 4;
     int c;
@@ -186,7 +167,7 @@ int main(int argc, char *argv[]) {
                             target_tot = atoi(argv[optind]);
                             break;
                         default:
-                            logger->error("Can only receive max. 2 parameters with -t!!");
+                            spdlog::error("Can only receive max. 2 parameters with -t!!");
                             break;
                     }
                     count++;
@@ -209,32 +190,54 @@ int main(int argc, char *argv[]) {
                 break;
             case '?':
                 if(optopt == 's' || optopt == 'n'){
-                    logger->error("Option {} requires a parameter! (Proceeding with default)", (char)optopt);
+                    spdlog::error("Option {} requires a parameter! (Proceeding with default)", (char)optopt);
                 }else if(optopt == 'g' || optopt == 'c'){
-                    logger->critical("Option {} requires a parameter! Aborting... ", (char)optopt);
+                    spdlog::error("Option {} requires a parameter! Aborting... ", (char)optopt);
                     return -1;
                 } else {
-                    logger->error("Unknown parameter: {}", (char)optopt);
+                    spdlog::error("Unknown parameter: {}", (char)optopt);
                 }
                 break;
             default:
-                logger->critical("Error while parsing command line parameters!");
+                spdlog::critical("Error while parsing command line parameters!");
                 return -1;
         }
     }
     
+    spdlog::info("Configuring logger ...");
     if(!logCfgPath.empty()) {
         auto j = ScanHelper::openJsonFile(logCfgPath);
         setupLoggers(j);
     } else {
         // default log setting
         json j; // empty
-        j["pattern"] = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
+        j["pattern"] = defaultLogPattern;
         j["log_config"][0]["name"] = "all";
         j["log_config"][0]["level"] = "info";
         setupLoggers(j);
     }
+    // Can use actual logger now
 
+    // Load run counter
+    if (system("mkdir -p ~/.yarr") < 0) {
+        logger->error("Loading run counter ~/.yarr!");
+    }
+
+    std::fstream iF((home + "/.yarr/runCounter").c_str(), std::ios::in);
+    if (iF) {
+        iF >> runCounter;
+        runCounter += 1;
+    } else {
+        if (system("echo \"1\n\" > ~/.yarr/runCounter") < 0) {
+            logger->error("Could not increment run counter in file");
+        }
+        runCounter = 1;
+    }
+    iF.close();
+
+    std::fstream oF((home + "/.yarr/runCounter").c_str(), std::ios::out);
+    oF << runCounter << std::endl;
+    oF.close();
 
     if (cConfigPaths.size() == 0) {
         logger->error("Error: no config files given, please specify config file name under -c option, even if file does not exist!");
