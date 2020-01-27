@@ -53,7 +53,7 @@ void Rd53aGlobalFeedback::loadConfig(json &j) {
     if (!j["step"].empty())
         step = j["step"];
     if (!j["parameter"].empty()) {
-        std::cout << "  Linking parameter: " << j["parameter"] <<std::endl;
+        logger->info("Linking parameter: {}", std::string(j["parameter"]));
         parName = j["parameter"];
     }
     if (!j["pixelRegs"].empty()) {
@@ -61,14 +61,14 @@ void Rd53aGlobalFeedback::loadConfig(json &j) {
         for(auto i: j["pixelRegs"])
             m_pixelReg.push_back(i);
         if (m_pixelReg.size() != 2) {
-            std::cerr << __PRETTY_FUNCTION__ << " --> Expected 2 values, got " << m_pixelReg.size() << std::endl;
+            logger->error("Expected 2 values, got {}", m_pixelReg.size());
         }
     }
 }
 
 void Rd53aGlobalFeedback::feedback(unsigned channel, double sign, bool last) {
     // Calculate new step and val
-    std::cout << __PRETTY_FUNCTION__ << " : [" << channel << "] " << sign << " " << m_oldSign[channel] << std::endl;    
+    logger->debug("[{}] Received feedback {} (old: {})", channel, sign, m_oldSign[channel]);    
     if (sign != m_oldSign[channel]) {
         m_oldSign[channel] = 0;
         m_localStep[channel] = m_localStep[channel]/2;
@@ -236,7 +236,7 @@ void Rd53aGlobalFeedback::execPart2() {
         if (fe->getActive()) {
             unsigned rx = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
             keeper->mutexMap[rx].lock();
-            std::cout << " --> Received Feedback on Channel " << rx << " with value: " << m_values[rx] << std::endl;
+            logger->info(" --> Received Feedback on Channel {} with value:", rx, m_values[rx]);
         }
     }
     m_cur++;
@@ -248,7 +248,7 @@ void Rd53aGlobalFeedback::end() {
     for (auto fe: keeper->feList) {
         if (fe->getActive()) {
             unsigned rx = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-            std::cout << " --> Final parameter for Channel " << rx << " is " << m_values[rx] << std::endl;
+            logger->info(" --> Final parameter for Channel {} is {}", rx, m_values[rx]);
         }
     }
     this->writePar();

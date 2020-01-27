@@ -87,8 +87,7 @@ void Rd53aCmd::cal(uint32_t chipId, uint32_t mode, uint32_t delay, uint32_t dura
 }
 
 void Rd53aCmd::wrRegister(uint32_t chipId, uint32_t address, uint16_t value) {
-    logger->debug("ID({}) ADR({}) VAL(0x{:x})",
-                  chipId, address, value);
+    SPDLOG_LOGGER_TRACE(logger, "ID({}) ADR({}) VAL(0x{:x})", chipId, address, value);
     // Header
     core->writeFifo(0x69696666);
     uint32_t tmp = 0x0;
@@ -150,8 +149,7 @@ void Rd53aCmd::wrRegisterBlock(uint32_t chipId, uint32_t address, uint16_t value
 }
 
 void Rd53aCmd::rdRegister(uint32_t chipId, uint32_t address) {
-    logger->debug("ID({}) ADR({})",
-                  chipId, address);
+    SPDLOG_LOGGER_TRACE(logger, "ID({}) ADR({})", chipId, address);
     // Header
     core->writeFifo(0x69696565);
     uint32_t tmp = 0x0;

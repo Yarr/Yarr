@@ -9,6 +9,12 @@
 
 #include "Rd53aPixelFeedback.h"
 
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("Rd53aPixelFeedback");
+}
+
 Rd53aPixelFeedback::Rd53aPixelFeedback() {
     min = -15;
     max = 15;
@@ -45,15 +51,14 @@ void Rd53aPixelFeedback::loadConfig(json &j) {
         m_steps.clear();
         for(auto i: j["steps"])
             m_steps.push_back(i);
-        std::cout << "Got " << m_steps.size() << " steps!!" << std::endl;
+        logger->debug("Got {} steps!", m_steps.size());
     }
 }
 
 void Rd53aPixelFeedback::feedback(unsigned channel, Histo2d *h) {
     // TODO Check on NULL pointer
     if (h->size() != Rd53a::n_Row*Rd53a::n_Col) {
-        std::cout << __PRETTY_FUNCTION__ 
-            << " --> ERROR : Wrong type of feedback histogram on channel " << channel << std::endl;
+        logger->error("Wrong type of feedback histogram on channel {}", channel);
         doneMap[channel] = true;
     } else {
         m_fb[channel] = h;
@@ -85,8 +90,7 @@ void Rd53aPixelFeedback::writePixelCfg(Rd53a *fe) {
 }
 
 void Rd53aPixelFeedback::init() {
-    if (1)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(logger);
     m_done = false;
     m_cur = 0;
     // Init maps
@@ -123,7 +127,7 @@ void Rd53aPixelFeedback::execPart1() {
             this->writePixelCfg(dynamic_cast<Rd53a*>(fe));
         }
     }
-    std::cout << " -> Feedback step " << m_cur << " with size " << m_steps[m_cur] << std::endl;
+    logger->info(" -> Feedback step {} of {}", m_cur, m_steps[m_cur]);
 }
 
 void Rd53aPixelFeedback::execPart2() {

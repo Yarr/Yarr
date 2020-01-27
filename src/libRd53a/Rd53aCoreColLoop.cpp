@@ -36,7 +36,7 @@ Rd53aCoreColLoop::Rd53aCoreColLoop() : LoopActionBase(), m_impl( new Rd53aCoreCo
 }
 
 void Rd53aCoreColLoop::init() {
-    logger->debug(__PRETTY_FUNCTION__);
+    SPDLOG_LOGGER_TRACE(logger);
     m_done = false;
     m_impl->m_cur = 0;
     // Disable all to begin with
@@ -52,7 +52,7 @@ void Rd53aCoreColLoop::init() {
 }
 
 void Rd53aCoreColLoop::execPart1() {
-    logger->debug(__PRETTY_FUNCTION__);
+    SPDLOG_LOGGER_TRACE(logger, "{}", m_cur);
     
     g_tx->setCmdEnable(keeper->getTxMask());
     // Loop over cores, i.e. activate in pairs of 4 DC
@@ -90,7 +90,7 @@ void Rd53aCoreColLoop::execPart1() {
 }
 
 void Rd53aCoreColLoop::execPart2() {
-    logger->debug("execPart2");
+    SPDLOG_LOGGER_TRACE(logger);
     m_impl->m_cur += step;
     if (!(m_impl->m_cur < m_impl->nSteps)) m_done = true;
     // Nothing else to do here?
@@ -98,7 +98,7 @@ void Rd53aCoreColLoop::execPart2() {
 }
 
 void Rd53aCoreColLoop::end() {
-    logger->debug(__PRETTY_FUNCTION__);
+    SPDLOG_LOGGER_TRACE(logger);
     
     // TODO should restore original config here
     /*
@@ -139,11 +139,11 @@ void Rd53aCoreColLoop::loadConfig(json &j) {
         m_delayArray.clear();
         for(auto i: j["delayArray"])
             m_delayArray.push_back(i);
-        std::cout << "Number of injection delay array elements is " << m_delayArray.size() << std::endl;
+        logger->debug("Number of injection delay array elements is {}", m_delayArray.size());
     }
     // Fine delay scan check
     if (m_impl->nSteps != (m_impl->maxCore-m_impl->minCore) )
-	std::cout << "The number of steps " << m_impl->nSteps << " is diffenrent from " << m_impl->maxCore-m_impl->minCore << std::endl;
+	    logger->warn("The number of steps {} is different from {}", m_impl->nSteps, m_impl->maxCore-m_impl->minCore);
     else if ( m_delayArray.size() != m_impl->nSteps )
-	std::cout << "Fine delay array size is not matching the number of injected columns, only the first fine delay number will be used!!! " << std::endl;
+	    logger->warn("Fine delay array size is not matching the number of injected columns, only the first fine delay number will be used!!!");
 }

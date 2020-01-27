@@ -92,7 +92,7 @@ Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase() {
 }
 
 void Rd53aMaskLoop::init() {
-    logger->debug(__PRETTY_FUNCTION__);
+    SPDLOG_LOGGER_TRACE(logger);
     m_done = false;
     m_cur = min;
     for(FrontEnd *fe : keeper->feList) {
@@ -114,7 +114,7 @@ void Rd53aMaskLoop::init() {
 }
 
 void Rd53aMaskLoop::execPart1() {
-    logger->debug(__PRETTY_FUNCTION__);
+    SPDLOG_LOGGER_TRACE(logger);
 
     // Loop over FrontEnds
     for(FrontEnd *fe : keeper->feList) {
@@ -190,12 +190,12 @@ void Rd53aMaskLoop::execPart1() {
     // Reset CMD mask
     g_tx->setCmdEnable(keeper->getTxMask());
     g_stat->set(this, m_cur);
-    std::cout << " ---> Mask Stage " << m_cur << std::endl;
+    logger->info(" ---> Mask Stage {}", m_cur);
     //std::this_thread::sleep_for(std::chrono::milliseconds(20));
 }
 
 void Rd53aMaskLoop::execPart2() {
-    logger->debug(__PRETTY_FUNCTION__);
+    SPDLOG_LOGGER_TRACE(logger);
 
     // Loop over FrontEnds to clean it up
     if (m_maskType == CrossTalkMask or m_maskType == CrossTalkMaskv2 ){
@@ -234,7 +234,7 @@ void Rd53aMaskLoop::execPart2() {
 }
 
 void Rd53aMaskLoop::end() {
-    logger->debug(__PRETTY_FUNCTION__);
+    SPDLOG_LOGGER_TRACE(logger);
 
     for(FrontEnd *fe : keeper->feList) {
         // Copy original registers back
@@ -291,7 +291,7 @@ bool Rd53aMaskLoop::getNeighboursMap(int col, int row,int sensorType, int maskSi
     else if (sensorType==RecSensorUpDown)
         sensor="25x100_updown";
     else
-        std::cout<<"ERROR: sensor Type does not exist"<<std::endl;
+        logger->error("Sensor Type does not exist");
 
     //if (row==8)
     // std::cout<<"-- Central pixel:"<< col<<" "<< row<<std::endl;
