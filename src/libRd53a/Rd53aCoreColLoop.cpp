@@ -10,6 +10,12 @@
 #include "FrontEnd.h"
 #include "Rd53a.h"
 
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("Rd53aCoreColLoop");
+}
+
 class Rd53aCoreColLoop::Impl {
     public:
     unsigned m_cur;
@@ -27,12 +33,10 @@ Rd53aCoreColLoop::Rd53aCoreColLoop() : LoopActionBase(), m_impl( new Rd53aCoreCo
     m_impl->m_cur = 0;
     loopType = typeid(this);
     m_done = false;
-    verbose = false;
 }
 
 void Rd53aCoreColLoop::init() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    logger->debug(__PRETTY_FUNCTION__);
     m_done = false;
     m_impl->m_cur = 0;
     // Disable all to begin with
@@ -48,8 +52,7 @@ void Rd53aCoreColLoop::init() {
 }
 
 void Rd53aCoreColLoop::execPart1() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    logger->debug(__PRETTY_FUNCTION__);
     
     g_tx->setCmdEnable(keeper->getTxMask());
     // Loop over cores, i.e. activate in pairs of 4 DC
@@ -63,8 +66,7 @@ void Rd53aCoreColLoop::execPart1() {
         }
         // Enable next columns
         if (i%m_impl->nSteps == m_impl->m_cur) {
-            if (verbose)
-                std::cout << __PRETTY_FUNCTION__ << " : Enabling QC -> " << dc << std::endl;
+            logger->debug("Enabling QC -> {}", dc);
             dynamic_cast<Rd53a*>(g_fe)->enableCalCol(dc);
             dynamic_cast<Rd53a*>(g_fe)->enableCalCol(dc+1);
             dynamic_cast<Rd53a*>(g_fe)->enableCalCol(dc+2);
@@ -88,8 +90,7 @@ void Rd53aCoreColLoop::execPart1() {
 }
 
 void Rd53aCoreColLoop::execPart2() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    logger->debug("execPart2");
     m_impl->m_cur += step;
     if (!(m_impl->m_cur < m_impl->nSteps)) m_done = true;
     // Nothing else to do here?
@@ -97,8 +98,7 @@ void Rd53aCoreColLoop::execPart2() {
 }
 
 void Rd53aCoreColLoop::end() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    logger->debug(__PRETTY_FUNCTION__);
     
     // TODO should restore original config here
     /*

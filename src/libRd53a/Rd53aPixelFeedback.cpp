@@ -16,7 +16,6 @@ Rd53aPixelFeedback::Rd53aPixelFeedback() {
     m_cur = 0;
     loopType = typeid(this);
     m_done = false;
-    verbose = false;
     tuneLin = true;
     tuneDiff = true;
     m_resetTdac = true;

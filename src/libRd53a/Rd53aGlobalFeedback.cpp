@@ -9,6 +9,12 @@
 
 #include "Rd53aGlobalFeedback.h"
 
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("Rd53aGlobalFeedback");
+}
+
 Rd53aGlobalFeedback::Rd53aGlobalFeedback() {
     min = 0;
     max = 255;
@@ -16,7 +22,6 @@ Rd53aGlobalFeedback::Rd53aGlobalFeedback() {
     m_cur = 0;
     loopType = typeid(this);
     m_done = false;
-    verbose = false;
     m_pixelReg.resize(2);
     m_pixelReg = {0, 0};
 }
@@ -28,7 +33,6 @@ Rd53aGlobalFeedback::Rd53aGlobalFeedback(Rd53aReg Rd53aGlobalCfg::*ref) : parPtr
     m_cur = 0;
     loopType = typeid(this);
     m_done = false;
-    verbose = false;
     m_pixelReg.resize(2);
     m_pixelReg = {0, 0};
 }
@@ -136,8 +140,7 @@ void Rd53aGlobalFeedback::writePar() {
 }
 
 void Rd53aGlobalFeedback::init() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    logger->debug("init");
     m_done = false;
     m_cur = 0;
     parPtr = keeper->globalFe<Rd53a>()->regMap[parName];

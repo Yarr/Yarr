@@ -8,6 +8,12 @@
 
 #include "Rd53aParameterLoop.h"
 
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("Rd53aParameterLoop");
+}
+
 Rd53aParameterLoop::Rd53aParameterLoop() {
     loopType = typeid(this);
     min = 0;
@@ -26,8 +32,8 @@ Rd53aParameterLoop::Rd53aParameterLoop(Rd53aReg Rd53aGlobalCfg::*ref): parPtr(re
 }
 
 void Rd53aParameterLoop::init() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    logger->debug(__PRETTY_FUNCTION__);
+
     m_done = false;
     m_cur = min;
     parPtr = keeper->globalFe<Rd53a>()->regMap[parName];
@@ -36,8 +42,7 @@ void Rd53aParameterLoop::init() {
 }
 
 void Rd53aParameterLoop::execPart1() {
-    if (verbose)
-        std::cout << " : ParameterLoop at -> " << m_cur << std::endl;
+    logger->debug("ParameterLoop at -> {}", m_cur);
     g_stat->set(this, m_cur);
     //std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }

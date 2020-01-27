@@ -9,12 +9,16 @@
 #include "Rd53aDataProcessor.h"
 #include "AllProcessors.h"
 
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("Rd53aDataProcessor");
+}
+
 bool rd53a_proc_registered =
     StdDict::registerDataProcessor("RD53A", []() { return std::unique_ptr<DataProcessor>(new Rd53aDataProcessor());});
 
-
 Rd53aDataProcessor::Rd53aDataProcessor()  {
-    verbose = true;
     m_input = NULL;
     m_numThreads = std::thread::hardware_concurrency();
 }
@@ -24,8 +28,7 @@ Rd53aDataProcessor::~Rd53aDataProcessor() {
 }
 
 void Rd53aDataProcessor::init() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    logger->debug("init");
 
     for (auto &it : *m_outMap) {
         activeChannels.push_back(it.first);
@@ -33,8 +36,8 @@ void Rd53aDataProcessor::init() {
 }
 
 void Rd53aDataProcessor::run() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    logger->debug("init");
+
     unsigned int numThreads = m_numThreads;
     for (unsigned i=0; i<numThreads; i++) {
         thread_ptrs.emplace_back(new std::thread(&Rd53aDataProcessor::process, this));

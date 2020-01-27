@@ -9,9 +9,15 @@
 #include "Rd53aCmd.h"
 #include <fstream>
 
-Rd53aCmd::Rd53aCmd() : core( nullptr ), verbose( false ) {}
+#include "logging.h"
 
-Rd53aCmd::Rd53aCmd(TxCore *arg_core) : core( arg_core ), verbose( false ) {}
+namespace {
+  auto logger = logging::make_log("Rd53aCmd");
+}
+
+Rd53aCmd::Rd53aCmd() : core( nullptr ) {}
+
+Rd53aCmd::Rd53aCmd(TxCore *arg_core) : core( arg_core ) {}
 
 Rd53aCmd::~Rd53aCmd() {}
 
@@ -81,7 +87,8 @@ void Rd53aCmd::cal(uint32_t chipId, uint32_t mode, uint32_t delay, uint32_t dura
 }
 
 void Rd53aCmd::wrRegister(uint32_t chipId, uint32_t address, uint16_t value) {
-    if (verbose) std::cout << __PRETTY_FUNCTION__ << " : ID(" << chipId << ") ADR(" << address << ") VAL(0x" << std::hex << value << std::dec << ")" << std::endl;
+    logger->debug("ID({}) ADR({}) VAL(0x{:x})",
+                  chipId, address, value);
     // Header
     core->writeFifo(0x69696666);
     uint32_t tmp = 0x0;
@@ -143,7 +150,8 @@ void Rd53aCmd::wrRegisterBlock(uint32_t chipId, uint32_t address, uint16_t value
 }
 
 void Rd53aCmd::rdRegister(uint32_t chipId, uint32_t address) {
-    if (verbose) std::cout << __PRETTY_FUNCTION__ << " : ID(" << chipId << ") ADR(" << address << ")" << std::endl;
+    logger->debug("ID({}) ADR({})",
+                  chipId, address);
     // Header
     core->writeFifo(0x69696565);
     uint32_t tmp = 0x0;

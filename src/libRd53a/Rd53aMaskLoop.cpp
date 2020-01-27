@@ -8,6 +8,12 @@
 
 #include "Rd53aMaskLoop.h"
 
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("Rd53aMaskLoop");
+}
+
 //enum PixelCategories  {LeftEdge, BottomEdge, RightEdge, UpperEdge, Corner, Middle};
 //enum CornerCategories {UpperLeft, BottomLeft, BottomRight, UpperRight, NotCorner};
 
@@ -41,7 +47,6 @@ Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase() {
     m_cur = 0;
     loopType = typeid(this);
     m_done = false;
-    verbose = false;
     m_maskType = StandardMask ; //the alternative is crosstalk or crosstalkv2  
 
     //-----Parameter related to cross-talk-------------------
@@ -87,8 +92,7 @@ Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase() {
 }
 
 void Rd53aMaskLoop::init() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    logger->debug(__PRETTY_FUNCTION__);
     m_done = false;
     m_cur = min;
     for(FrontEnd *fe : keeper->feList) {
@@ -110,8 +114,7 @@ void Rd53aMaskLoop::init() {
 }
 
 void Rd53aMaskLoop::execPart1() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    logger->debug(__PRETTY_FUNCTION__);
 
     // Loop over FrontEnds
     for(FrontEnd *fe : keeper->feList) {
@@ -192,8 +195,7 @@ void Rd53aMaskLoop::execPart1() {
 }
 
 void Rd53aMaskLoop::execPart2() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    logger->debug(__PRETTY_FUNCTION__);
 
     // Loop over FrontEnds to clean it up
     if (m_maskType == CrossTalkMask or m_maskType == CrossTalkMaskv2 ){
@@ -232,8 +234,7 @@ void Rd53aMaskLoop::execPart2() {
 }
 
 void Rd53aMaskLoop::end() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    logger->debug(__PRETTY_FUNCTION__);
 
     for(FrontEnd *fe : keeper->feList) {
         // Copy original registers back
