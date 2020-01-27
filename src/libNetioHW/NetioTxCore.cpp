@@ -115,7 +115,7 @@ void NetioTxCore::writeFifo(uint32_t elink, uint32_t value){
   nlog->trace("NetioTxCore::writeFifo elink={} val=0x{:08x}", elink, value);
 
   if(m_elinks[elink] == false) {
-        nlog->warning("WARNING: The e-link is disabled! Can not write fifo");
+        nlog->warn("WARNING: The e-link is disabled! Can not write fifo");
 	return;
   }
 
@@ -194,9 +194,9 @@ void NetioTxCore::releaseFifo(){
   for(it=m_elinks.begin();it!=m_elinks.end();it++)
     if(it->second){
         auto elink = it->first;
-        auto this_fifo = &m_fifo[elink];
+        auto &this_fifo = m_fifo[elink];
     	prepareFifo(&this_fifo);
-        nlog->trace("FIFO[{}][{}]: " << elink << "][" << this_fifo.size()-1 << "]:");
+        nlog->trace("FIFO[{}][{}]: ", elink, this_fifo.size()-1);
         for(uint32_t i=1; i<this_fifo.size(); i++){
           nlog->trace("{:02x}", this_fifo[i]&0xFF);
         }
@@ -406,7 +406,7 @@ void NetioTxCore::doTriggerTime() {
   }
   m_trigEnabled = false;
   nlog->debug("finished trigger time");
-  nlog->verbose("============> Finish trigger with n counts: {}", trigs);
+  nlog->trace("============> Finish trigger with n counts: {}", trigs);
 }
 
 void NetioTxCore::printFifo(uint32_t elink){
