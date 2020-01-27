@@ -972,7 +972,7 @@ void setupLoggers(const json &j) {
 
             auto logger_apply = [&](std::shared_ptr<spdlog::logger> l) {
               l->sinks().push_back(default_sink);
-              if(jl["level"].empty()) {
+              if(!jl["level"].empty()) {
                   std::string level = jl["level"];
 
                   spdlog::level::level_enum spd_level = (spdlog::level::level_enum)level_map.at(level);
