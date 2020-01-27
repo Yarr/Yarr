@@ -225,41 +225,15 @@ def __init(db_cfg):
             password = db_cfg['password']
         elif os.environ.get('password',None):
             password = os.environ['password']
-        if args.log==True:
-            if username and password:
-                try:
-                    localdb.authenticate(username, password)
-                except errors.OperationFailure as err:
-                    logger.error('Authentication failed.')
-                    return False
-            else:
-                logger.warning('Need user authentication.')
+        if username and password:
+            try:
+                localdb.authenticate(username, password)
+            except errors.OperationFailure as err:
+                logger.error('Authentication failed.')
                 return False
         else:
-            through = False
-            while through==False:
-                logger.warning('Need user authentication.')
-                if not username or not password:
-                    username = None
-                    password = None
-                    username = input('User name > ')
-                    password = getpass('Password > ')
-                try:
-                    logger.info('Authentication succeeded.')
-                    localdb.authenticate(username, password)
-                    os.environ['username'] = username
-                    os.environ['password'] = password
-                    through = True
-                except errors.OperationFailure as err:
-                    logger.error('Authentication failed.')
-                    args.username = None
-                    args.password = None
-                    answer = input('Try again? [y/n(skip)]\n> ')
-                    if answer.lower()=='y':
-                        username = None
-                        password = None
-                    else:
-                        return False
+            logger.error('This scan did not store in LocalDB because of the authentication. Please login by "source localdb/login_mongodb.sh"')
+            return False
 
     localdb['fs.files'].create_index([('hash', DESCENDING), ('_id', DESCENDING)])
     localdb['component'].create_index([('serialNumber', DESCENDING)])
