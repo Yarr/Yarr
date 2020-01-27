@@ -45,8 +45,6 @@ class LoopActionBase {
         virtual void loadConfig(json &config) {}
         virtual void writeConfig(json &config) {}
 		
-        bool checkGlobalDone();
-
     protected:
         virtual void init() {}
         virtual void end() {}
@@ -55,7 +53,6 @@ class LoopActionBase {
         virtual bool done();
 
         bool m_done;
-		bool g_done;
 
         int min;
         int max;
