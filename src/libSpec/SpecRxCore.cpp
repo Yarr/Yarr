@@ -8,7 +8,6 @@ namespace {
 }
 
 SpecRxCore::SpecRxCore() {
-    verbose = false;
 }
 
 void SpecRxCore::setRxEnable(uint32_t value) {
@@ -23,7 +22,6 @@ void SpecRxCore::setRxEnable(std::vector<uint32_t> channels) {
         mask += (1 << channel);
 
     }
-    if (verbose)
     SPDLOG_LOGGER_TRACE(srxlog, "Value {0:x}", mask);
     SpecCom::writeSingle(RX_ADDR | RX_ENABLE, mask);
 

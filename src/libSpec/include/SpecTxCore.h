@@ -55,8 +55,6 @@ class SpecTxCore : virtual public TxCore, virtual public SpecCom{
     public:
         SpecTxCore();
 
-        void setVerbose(bool v=true);
-
         void writeFifo(uint32_t value);
         void releaseFifo() {};
         
@@ -120,7 +118,6 @@ class SpecTxCore : virtual public TxCore, virtual public SpecCom{
         double m_clk_period;
 
     private:
-        bool verbose;
         //uint32_t enMask;
 };
 
