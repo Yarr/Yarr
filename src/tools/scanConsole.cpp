@@ -734,13 +734,20 @@ void listScanLoopActions() {
 }
 
 void listLoggers() {
+    std::vector<std::string> log_list;
     spdlog::apply_all([&](std::shared_ptr<spdlog::logger> l) {
         if(l->name().empty()) {
-          std::cout << "  (default)\n";
+            log_list.push_back("(default)");
         } else {
-          std::cout << "  " << l->name() << "\n";
+            log_list.push_back(l->name());
         }
     });
+
+    std::sort(log_list.begin(), log_list.end());
+
+    for(auto &l: log_list) {
+        std::cout << "  " << l << "\n";
+    }
 }
 
 void listKnown() {
