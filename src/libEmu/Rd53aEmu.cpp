@@ -185,7 +185,7 @@ void Rd53aEmu::executeLoop() {
         }
         
         
-        if( verbose ) std::cout << __PRETTY_FUNCTION__ << ": -----------------------------------------------------------" << std::endl;
+        rlog->debug("-----------------------------------------------------------");
         
         
         // read the command header
@@ -193,12 +193,10 @@ void Rd53aEmu::executeLoop() {
             retrieve();
         }
         
-        
-        if( verbose && commandStream.size() ) {
-            std::cout << __PRETTY_FUNCTION__ << ": L" << __LINE__ << ": front = " << HEXF(4, commandStream.front() ) << ", size = " << commandStream.size() << std::endl;
+        if( !commandStream.empty() ) {
+          rlog->debug("front = {:04x}, size = {}",
+                      commandStream.front(), commandStream.size());
         }
-
-
         
         ///////////////////////////////////////////////////////////////////
         // 
@@ -211,7 +209,7 @@ void Rd53aEmu::executeLoop() {
         
         if( commandFunc_itr != commandFuncs.end() ) {
             
-            if( verbose ) std::cout << __PRETTY_FUNCTION__ << ": L" << __LINE__ << ": GlobalPulse = " << HEXF(4, commandStream.front() ) << std::endl;
+            rlog->debug("GlobalPulse = {:04x}", commandStream.front());
             commandStream.pop_front();
             
             for( auto& async : m_async ) { async.get(); }
@@ -886,12 +884,8 @@ void Rd53aEmu::writeRegAsync( Rd53aEmu* emu, const uint16_t data, const uint32_t
     
     if (address == 0x0) { // configure pixels based on what's in the GR
 
-        /*
-        if( emu->verbose ) {
-            printf("being asked to configure pixels; Broadcast = %d, AutoCol = %d, AutoRow = %d, RegionRow = %d\n", BROADCAST_EN, AUTOCOL, AUTOROW, ROW );
-        }
-        */
-        
+        rlog->trace("being asked to configure pixels; Broadcast = {}, AutoCol = {}, AutoRow = {}, RegionRow = {}", BROADCAST_EN, AUTOCOL, AUTOROW, ROW );
+
         if (BROADCAST_EN == 0x1) { // auto col = 1, auto row = 0, broadcast = 0
 #if 0
             
@@ -899,7 +893,7 @@ void Rd53aEmu::writeRegAsync( Rd53aEmu* emu, const uint16_t data, const uint32_t
             for (unsigned dc = 0; dc < Rd53aPixelCfg::n_DC; dc++) {
                 emu->m_pixelRegisters[dc * 2    ][ROW] = (uint8_t) (data & 0x00FF);
                 emu->m_pixelRegisters[dc * 2 + 1][ROW] = (uint8_t) (data >> 8);
-                if( emu->verbose ) printf("pixel %d %d 0x%x\n", dc * 2, ROW, data & 0x00FF);
+                rlog->debug("pixel {} {} 0x{:x}", dc * 2, ROW, data & 0x00FF);
             }
             // increment m_feCfg->RegionRow
             if ( static_cast<unsigned>( ROW + 1 ) < Rd53aPixelCfg::n_Col) {
@@ -1003,12 +997,10 @@ uint32_t Rd53aEmu::calculateToT( Rd53aSyncPixelModel& analogFE, int TDAC ) {
     if(ToT >= 14) ToT=0xe;
   }
   
-  if( verbose ) {
-    std::cout << "injection_charge = " << injection_charge << std::endl;
-    std::cout << "noise_charge = " <<  noise_charge << std::endl;
-    std::cout << "sync_global_threshold_charge = " << sync_global_threshold_charge << std::endl;
-    std::cout << "ToT = " << ToT << std::endl;
-  }
+  rlog->debug("injection_charge = {}");
+  rlog->debug("noise_charge = {}");
+  rlog->debug("sync_global_threshold_charge = {}");
+  rlog->debug("ToT = {}");
   
   return ToT;
 }
@@ -1030,12 +1022,13 @@ uint32_t Rd53aEmu::calculateToT( Rd53aLinPixelModel& analogFE, int TDAC ) {
 	if(ToT >= 14) ToT=0xe;
     }
 
-    if( verbose && ToT != 0xf ) {
-      std::cout<<m_feCfg->InjVcalDiff.read()<<std::endl;
-      std::cout << "injection_charge = " << injection_charge << std::endl;
-      std::cout << "noise_charge = " <<  noise_charge << std::endl;
-      std::cout << "lin_global_threshold_charge = " << lin_global_threshold_charge << std::endl;
-      std::cout << "ToT = " << ToT << std::endl;
+    if( ToT != 0xf ) {
+      rlog->debug(m_feCfg->InjVcalDiff.read());
+      rlog->debug("injection_charge = {}", injection_charge);
+      rlog->debug("noise_charge = {}", noise_charge);
+      rlog->debug("lin_global_threshold_charge = {}",
+                  lin_global_threshold_charge);
+      rlog->debug("ToT = {}", ToT);
     }
 
     return ToT;
@@ -1059,12 +1052,11 @@ uint32_t Rd53aEmu::calculateToT( Rd53aDiffPixelModel& analogFE, int TDAC ) {
 	if(ToT >= 14) ToT=0xe;
     }
                 
-    if( verbose ) {
-      std::cout << "injection_charge = " << injection_charge << std::endl;
-      std::cout << "noise_charge = " <<  noise_charge << std::endl;
-      std::cout << "diff_global_threshold_charge = " << diff_global_threshold_charge << std::endl;
-      std::cout << "ToT = " << ToT << std::endl;
-    }
+    rlog->debug("injection_charge = {}", injection_charge);
+    rlog->debug("noise_charge = {}", noise_charge);
+    rlog->debug("diff_global_threshold_charge = {}",
+                diff_global_threshold_charge);
+    rlog->debug("ToT = {}", ToT);
     
     return ToT;
 }
