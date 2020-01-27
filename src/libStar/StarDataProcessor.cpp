@@ -118,7 +118,7 @@ void process_data(RawData &curIn,
         std::cout << "new physics event packet !!!!!!!!!! "<< std::endl;
         curOut.newEvent(tag, l1id, bcid);
 
-        packet.print_clusters();
+        packet.print_clusters(std::cout);
         for(unsigned  ithCluster=0; ithCluster < packet.clusters.size(); ++ithCluster){
             Cluster cluster = packet.clusters.at(ithCluster);
 
@@ -140,6 +140,6 @@ void process_data(RawData &curIn,
             }
         }
     } else if(packetType == TYP_ABC_RR || packetType == TYP_HCC_RR || packetType == TYP_ABC_HPR || packetType == TYP_HCC_HPR) {
-        packet.print_more();
+        packet.print_more(std::cout);
     }
 }

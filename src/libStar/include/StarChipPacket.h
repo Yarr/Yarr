@@ -8,6 +8,8 @@
 //ErrorBlock holds HCCStar error information and can parse it
 
 #include <algorithm>
+#include <iomanip>
+#include <iostream>
 #include <map>
 #include <memory>
 #include <stdlib.h>
@@ -96,25 +98,25 @@ class ErrorBlock{
   }
 
   //Print the list of input channels for which each error was received
-  void print(){
-    printf("Received packet errors for the following channels: \n");
-    printf("  ABC Error: ");
+  void print(std::ostream &os){
+    os << "Received packet errors for the following channels:\n";
+    os << "  ABC Error: ";
     for(unsigned int iE=0; iE < error_abc.size(); ++iE){
-      printf("%i ", error_abc.at(iE) );
+      os << error_abc.at(iE) << " ";
     }
-    printf("\n  BCID Error: ");
+    os << "\n  BCID Error: ";
     for(unsigned int iE=0; iE < error_bcid.size(); ++iE){
-      printf("%i ", error_bcid.at(iE) );
+      os << error_bcid.at(iE) << " ";
     }
-    printf("\n  L0tag Error: ");
+    os << "\n  L0tag Error: ";
     for(unsigned int iE=0; iE < error_l0tag.size(); ++iE){
-      printf("%i ", error_l0tag.at(iE) );
+      os << error_l0tag.at(iE) << " ";
     }
-    printf("\n  Timeout Error: ");
+    os << "\n  Timeout Error: ";
     for(unsigned int iE=0; iE < error_timeout.size(); ++iE){
-      printf("%i ", error_timeout.at(iE) );
+      os << error_timeout.at(iE) << " ";
     }
-    printf("\n");
+    os << "\n";
   }
 
   void parse(uint64_t error_word){
@@ -228,57 +230,75 @@ class StarChipPacket{
   }
 
   //Print basic info
-  void print(){
+  void print(std::ostream &os) {
     if(this->type == TYP_LP || this->type == TYP_PR){
-      printf("Packet info: BCID %i (%i), L0ID %i, nClusters %i\n", this->bcid, this->bcid_parity, this->l0id, int(this->clusters.size()) );
+      os << "Packet info: BCID " << bcid << " (" << bcid_parity << "), "
+         << "L0ID " << l0id << ", nClusters " << this->clusters.size() << "\n";
       if(this->error_block)
-        this->error_block->print();
+        this->error_block->print(os);
     }else if(this->type == TYP_ABC_RR || this->type == TYP_HCC_RR || this->type == TYP_ABC_HPR || this->type == TYP_HCC_HPR ){
-      printf("Packet info: Address %02x, Value %08x\n", this->address, this->value);
+      os << std::hex << std::setfill('0');
+      os << "Packet info: Address " << std::setw(2) << address
+         << ", Value " << std::setw(8) << value << "\n";
+      os << std::dec << std::setfill(' ');
     }
   }
 
-  void print_more(){
+  void print_more(std::ostream &os) {
     std::string type_name = packet_type_names[this->type];
-    printf("Packet type %s, ", type_name.c_str());
+    os << "Packet type " << type_name << ", ";
     if(this->type == TYP_LP || this->type == TYP_PR){
-      printf("BCID %i (%i), L0ID %i, nClusters %i", this->bcid, this->bcid_parity, this->l0id, int(this->clusters.size()) );
+      os << "BCID " << bcid << " (" << bcid_parity << "), L0ID " << l0id
+         << ", nClusters " << this->clusters.size();
     }else if(this->type == TYP_ABC_RR || this->type == TYP_HCC_RR || this->type == TYP_ABC_HPR || this->type == TYP_HCC_HPR ){
-      printf("ABC %i, Address %02x, Value %08x", this->channel_abc, this->address, this->value);
+      os << "ABC " << channel_abc << ", Address ";
+      os << std::hex << std::setfill('0');
+      os << std::setw(2) << address << ", Value " << std::setw(8) << value;
+      os << std::dec << std::setfill(' ');
     }
-    printf("\n");
+    os << "\n";
     if(this->error_block)
-      this->error_block->print();
+      this->error_block->print(os);
   }
 
   //Print clusters (for LP / PR packets)
-  void print_clusters(){
-    this->print();
-    printf("Packet's abc clusters are:\n");
+  void print_clusters(std::ostream &os) {
+    this->print(os);
+    os << "Packet's abc clusters are:\n";
     for(unsigned int iW=0; iW < clusters.size(); ++iW){
       Cluster cluster = clusters.at(iW);
       std::string next_binary = std::bitset<3>(cluster.next).to_string();
-      printf("  %i) InputChannel: %i, Address: 0x%02x, Next Strip Pattern: %s.\n", iW, cluster.input_channel, cluster.address, next_binary.c_str() );
+      os << "  " << iW << ") InputChannel: " << cluster.input_channel
+         << ", Address: 0x";
+      os << std::hex << std::setfill('0');
+      os << std::setw(2) << cluster.address;
+      os << std::dec << std::setfill(' ');
+      os << ", Next Strip Pattern: " << next_binary << ".\n";
     }
-    printf("\n");
+    os << "\n";
   }
 
-  void print_raw_clusters(){
-    printf("Packet's abc clusters are:\n");
+  void print_raw_clusters(std::ostream &os){
+    os << "Packet's abc clusters are:\n";
     for(unsigned int iW=0; iW < clusters.size(); ++iW){
       Cluster cluster = clusters.at(iW);
-      printf("  %i) InputChannel: %i, Raw Cluster 0x%03x.\n", iW, cluster.input_channel, cluster.raw_cluster );
+      os << "  " << iW << ") InputChannel: " << cluster.input_channel
+         << ", Raw Cluster 0x";
+      os << std::hex << std::setfill('0');
+      os << std::setw(3) << cluster.raw_cluster << ".\n";
     }
-    printf("\n");
+    os << "\n";
   }
 
   //Print all raw words in packet
-  void print_words(){
-    printf("Packet's %i raw 10b words are: ", int(raw_words.size()) );
+  void print_words(std::ostream &os) {
+    os << "Packet's " << raw_words.size() << " raw 10b words are: ";
+    os << std::hex << std::setfill('0');
     for(unsigned int iW=0; iW < raw_words.size(); ++iW){
-      printf("%03x ", raw_words.at(iW) );
+      os << std::setw(3) << raw_words.at(iW) << " ";
     }
-    printf("\n");
+    os << std::dec << std::setfill(' ');
+    os << "\n";
   }
 
   //Return a string of the raw words in a single line
@@ -451,7 +471,7 @@ class StarChipPacket{
 
     if(verbose_parse_flag) {
       printf("Parsing HCC packet, " );
-      this->print_words();
+      this->print_words(std::cout);
     }
 
     if( raw_words.size() < 4 ){
@@ -473,7 +493,7 @@ class StarChipPacket{
     int raw_type = (raw_words[1]>>4) & 0xF;
     if( packet_type_headers.find(raw_type) == packet_type_headers.end() ){
       printf("Error, packet type was parsed as %i, which is an invalid type.\n", raw_type);
-      this->print_words();
+      this->print_words(std::cout);
       this->type = TYP_UNKNOWN;
       return 1;
     }
