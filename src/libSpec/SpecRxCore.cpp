@@ -28,7 +28,7 @@ void SpecRxCore::setRxEnable(std::vector<uint32_t> channels) {
 }
 
 void SpecRxCore::disableRx() {
-    SPDLOG_LOGGER_TRACE(srxlog);
+    SPDLOG_LOGGER_TRACE(srxlog, "");
     SpecCom::writeSingle(RX_ADDR | RX_ENABLE, 0x0);
 }
 
@@ -64,7 +64,7 @@ RawData* SpecRxCore::readData() {
 }
 
 void SpecRxCore::flushBuffer() {
-    SPDLOG_LOGGER_TRACE(srxlog);
+    SPDLOG_LOGGER_TRACE(srxlog, "");
     SpecCom::flushDma();
 }
 

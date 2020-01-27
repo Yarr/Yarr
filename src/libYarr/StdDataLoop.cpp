@@ -27,22 +27,22 @@ StdDataLoop::StdDataLoop() : LoopActionBase() {
 
 void StdDataLoop::init() {
     m_done = false;
-    SPDLOG_LOGGER_TRACE(sdllog);
+    SPDLOG_LOGGER_TRACE(sdllog, "");
 }
 
 void StdDataLoop::end() {
-    SPDLOG_LOGGER_TRACE(sdllog);
+    SPDLOG_LOGGER_TRACE(sdllog, "");
 }
 
 void StdDataLoop::execPart1() {
-    SPDLOG_LOGGER_TRACE(sdllog);
+    SPDLOG_LOGGER_TRACE(sdllog, "");
     if (g_tx->getTrigEnable() == 0)
         SPDLOG_LOGGER_ERROR(sdllog, "Trigger is not enabled, will get stuck here!");
 
 }
 
 void StdDataLoop::execPart2() {
-    SPDLOG_LOGGER_TRACE(sdllog);
+    SPDLOG_LOGGER_TRACE(sdllog, "");
     unsigned count = 0;
     uint32_t done = 0;
     //uint32_t rate = 0;

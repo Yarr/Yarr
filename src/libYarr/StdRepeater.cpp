@@ -24,21 +24,21 @@ StdRepeater::StdRepeater() : LoopActionBase() {
 
 void StdRepeater::init() {
     m_done = false;
-    SPDLOG_LOGGER_TRACE(srlog);
+    SPDLOG_LOGGER_TRACE(srlog, "");
     m_cur = min;
 }
 
 void StdRepeater::end() {
-    SPDLOG_LOGGER_TRACE(srlog);
+    SPDLOG_LOGGER_TRACE(srlog, "");
 }
 
 void StdRepeater::execPart1() {
-    SPDLOG_LOGGER_TRACE(srlog);
+    SPDLOG_LOGGER_TRACE(srlog, "");
     m_cur++;
 }
 
 void StdRepeater::execPart2() {
-    SPDLOG_LOGGER_TRACE(srlog);
+    SPDLOG_LOGGER_TRACE(srlog, "");
     if (m_cur == max)
         m_done = true;
 }

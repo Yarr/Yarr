@@ -30,15 +30,15 @@ StdDataGatherer::StdDataGatherer() : LoopActionBase() {
 void StdDataGatherer::init() {
     m_done = false;
     killswitch = false;
-    SPDLOG_LOGGER_TRACE(sdglog);
+    SPDLOG_LOGGER_TRACE(sdglog, "");
 }
 
 void StdDataGatherer::end() {
-    SPDLOG_LOGGER_TRACE(sdglog);
+    SPDLOG_LOGGER_TRACE(sdglog, "");
 }
 
 void StdDataGatherer::execPart1() {
-    SPDLOG_LOGGER_TRACE(sdglog);
+    SPDLOG_LOGGER_TRACE(sdglog, "");
     if (g_tx->getTrigEnable() == 0)
         SPDLOG_LOGGER_ERROR(sdglog, "Trigger is not enabled, will get stuck here!");
 
@@ -47,7 +47,7 @@ void StdDataGatherer::execPart1() {
 sig_atomic_t signaled = 0;
 
 void StdDataGatherer::execPart2() {
-    SPDLOG_LOGGER_TRACE(sdglog);
+    SPDLOG_LOGGER_TRACE(sdglog, "");
     unsigned count = 0;
     uint32_t done = 0;
     uint32_t rate = 0;

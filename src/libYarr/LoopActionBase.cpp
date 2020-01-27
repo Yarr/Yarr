@@ -9,7 +9,7 @@
 #include "logging.h"
 
 namespace {
-    auto log = logging::make_log("LoopActionBase");
+    auto llog = logging::make_log("LoopActionBase");
 }
 
 LoopActionBase::LoopActionBase() : loopType(typeid(void)){
@@ -21,7 +21,7 @@ LoopActionBase::LoopActionBase() : loopType(typeid(void)){
 }
 
 void LoopActionBase::setup(LoopStatus *stat, Bookkeeper *k) {
-    SPDLOG_LOGGER_DEBUG(log);
+    SPDLOG_LOGGER_DEBUG(llog, "");
     g_stat = stat;
     g_fe = k->g_fe;
     g_tx = k->tx;

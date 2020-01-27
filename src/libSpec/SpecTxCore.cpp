@@ -37,13 +37,13 @@ void SpecTxCore::setCmdEnable(std::vector<uint32_t> channels) {
     for (uint32_t channel : channels) {
         mask += (1 << channel);
     }
-    SPDLOG_LOGGER_TRACE(stxlog, "Value {0:x}", value);
+    SPDLOG_LOGGER_TRACE(stxlog, "Value {0:x}", mask);
     SpecCom::writeSingle(TX_ADDR | TX_ENABLE, mask);
     enMask = mask;
 }
 
 void SpecTxCore::disableCmd() {
-    SPDLOG_LOGGER_TRACE(stxlog);
+    SPDLOG_LOGGER_TRACE(stxlog, "");
     SpecCom::writeSingle(TX_ADDR | TX_ENABLE, 0x0);
 }
 
@@ -77,7 +77,7 @@ void SpecTxCore::maskTrigEnable(uint32_t value, uint32_t mask) {
 }
 
 void SpecTxCore::setTrigConfig(enum TRIG_CONF_VALUE cfg) {
-    SPDLOG_LOGGER_TRACE(stxlog, "Config {0:x}", config);
+    SPDLOG_LOGGER_TRACE(stxlog, "Config {0:x}", cfg);
     SpecCom::writeSingle(TX_ADDR | TRIG_CONF, (uint32_t) cfg);
 }
 
