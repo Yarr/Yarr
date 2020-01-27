@@ -17,7 +17,7 @@
 #include "logging.h"
 
 namespace {
-auto flog = logging::make_log("scan_factory");
+    auto sflog = logging::make_log("ScanFactory");
 }
 
 ScanFactory::ScanFactory(Bookkeeper *k) : ScanBase(k) {
@@ -31,7 +31,7 @@ void ScanFactory::init() {
 }
 
 void ScanFactory::preScan() {
-    flog->info(__PRETTY_FUNCTION__);
+    sflog->info("Entering pre scan phase ...");
 
     g_tx->setCmdEnable(g_bk->getTxMask());
     // Load scan specific registers from config
@@ -63,47 +63,45 @@ void ScanFactory::postScan() {
 
 void ScanFactory::loadConfig(json &scanCfg) {
     m_config = scanCfg;
-    std::cout << "Loading Scan:" << std::endl;
+    sflog->info("Loading Scan:");
     
     std::string name = scanCfg["scan"]["name"];
-    std::cout << "  Name: " << name << std::endl;
+    sflog->info("  Name: {}", name);
 
-    std::cout << "  Number of Loops: " << scanCfg["scan"]["loops"].size() << std::endl;
+    sflog->info("  Number of Loops: {}", scanCfg["scan"]["loops"].size());
 
     for (unsigned int i=0; i<scanCfg["scan"]["loops"].size(); i++) {
-        std::cout << "  Loading Loop #" << i << std::endl;
+        sflog->info("  Loading Loop #{}", i);
         std::string loopAction = scanCfg["scan"]["loops"][i]["loopAction"];
-        std::cout << "  Type: " << loopAction << std::endl;
-        std::shared_ptr<LoopActionBase> action
-          = StdDict::getLoopAction(loopAction);
+        sflog->info("   Type: {}", loopAction);
+
+        std::shared_ptr<LoopActionBase> action = StdDict::getLoopAction(loopAction);
 
         if (action == nullptr) {
-            std::cout << "### ERROR ### => Unknown Loop Action: " << loopAction << " ... skipping!" << std::endl;
-            std::cout << " Known ScanLoop actions:\n";
+            sflog->error("Unknown Loop Action: {}  ... skipping!", loopAction);
+            sflog->warn("Known ScanLoop actions:");
             for(auto &la: StdDict::listLoopActions()) {
-              std::cout << "   " << la << std::endl;
+              sflog->warn("   {}", la);
             }
 
             continue;
         }
 
         if (!scanCfg["scan"]["loops"][i]["config"].empty()) {
-            std::cout << "  Loading loop config ... " << std::endl;
+            sflog->info("   Loading loop config ... ");
             action->loadConfig(scanCfg["scan"]["loops"][i]["config"]);
         }
         this->addLoop(action);
 
-        std::cout << " Check config: " << std::endl;
         json tCfg;
         action->writeConfig(tCfg);
         if (!tCfg.empty()) {
-            std::cout << "~~~~~~~~~~" << std::endl;
-            std::cout << std::setw(4) << tCfg << std::endl;
-            std::cout << "~~~~~~~~~~" << std::endl;
+            std::stringstream ss;
+            ss << tCfg;
+            std::string line;
+            while (std::getline(ss, line)) sflog->info("~~~ {}", line); //yes overkill, i know ..
         } else {
-            std::cout << "~~~~~~~~~~" << std::endl;
-            std::cout << "  Config empty." << std::endl;
-            std::cout << "~~~~~~~~~~" << std::endl;
+            sflog->warn("~~~ Config empty.");
         }
     }
                     
@@ -128,7 +126,7 @@ namespace StdDict {
     std::unique_ptr<ScanBase> getScan(std::string name, Bookkeeper *b) {
         auto result = registry().makeClass(name, b);
         if(result == nullptr) {
-            std::cout << "No Scan class matching '" << name << "' found\n";
+            sflog->error("No Scan class matching '{}' found", name);
         }
         return result;
     }

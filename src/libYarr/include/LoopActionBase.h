@@ -27,7 +27,6 @@ class LoopActionBase {
         LoopActionBase();
         virtual ~LoopActionBase() {}
 
-        void setVerbose(bool v=true);
         void setup(LoopStatus *stat, Bookkeeper *k);
         void setNext(shared_ptr<LoopActionBase>& ptr);
         void execute();
@@ -43,6 +42,8 @@ class LoopActionBase {
         void setMax(unsigned v);
         void setStep(unsigned v);
 
+        void setVerbose(bool verbose=true){verbose = true;}
+
         virtual void loadConfig(json &config) {}
         virtual void writeConfig(json &config) {}
 		
@@ -57,13 +58,14 @@ class LoopActionBase {
 
         bool m_done;
 		bool g_done;
-        bool verbose;
 
         int min;
         int max;
         unsigned step;
 
         double progress;
+
+        bool verbose;
 
         LoopStatus *g_stat;
         FrontEnd *g_fe;

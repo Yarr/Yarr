@@ -8,12 +8,10 @@
 
 #include "Bookkeeper.h"
 
-#include <iostream>
-
 #include "logging.h"
 
 namespace {
-auto blog = logging::make_log("book_keeper");
+    auto blog = logging::make_log("Bookkeeper");
 }
 
 Bookkeeper::Bookkeeper(TxCore *arg_tx, RxCore *arg_rx) {
@@ -37,7 +35,7 @@ Bookkeeper::~Bookkeeper() {
 // RxChannel is unique ident
 void Bookkeeper::addFe(FrontEnd *fe, unsigned txChannel, unsigned rxChannel) {
     if(isChannelUsed(rxChannel)) {
-        std::cerr << __PRETTY_FUNCTION__ << " -> Error rx channel already in use, not adding FE" << std::endl;
+        SPDLOG_LOGGER_ERROR(blog, "Rx channel already in use, not adding FE");
     } else {
         feList.push_back(fe);
         FrontEndCfg *cfg = dynamic_cast<FrontEndCfg*>(feList.back());
@@ -62,7 +60,7 @@ void Bookkeeper::addFe(FrontEnd *fe, unsigned channel) {
 // RxChannel is unique ident
 void Bookkeeper::delFe(unsigned rxChannel) {
     if (!isChannelUsed(rxChannel)) {
-        std::cerr << __PRETTY_FUNCTION__ << " -> Error rx channel not in use, can not delete FE" << std::endl;
+        SPDLOG_LOGGER_ERROR(blog, "Rx channel not in use, can not delete FE!");
     } else {
         for(unsigned int k=0; k<feList.size(); k++) {
             if(dynamic_cast<FrontEndCfg*>(feList[k])->getChannel() == rxChannel) {

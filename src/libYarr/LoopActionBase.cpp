@@ -5,7 +5,12 @@
  */
 
 #include "LoopActionBase.h"
-#include <iostream>
+
+#include "logging.h"
+
+namespace {
+    auto log = logging::make_log("LoopActionBase");
+}
 
 LoopActionBase::LoopActionBase() : loopType(typeid(void)){
     g_fe = NULL;
@@ -16,15 +21,8 @@ LoopActionBase::LoopActionBase() : loopType(typeid(void)){
     m_done = false;
 }
 
-void LoopActionBase::setVerbose(bool v) {
-    if (v)
-        std::cout << __PRETTY_FUNCTION__ << " : Enabling debug output" << std::endl;
-    verbose = v;
-}
-
 void LoopActionBase::setup(LoopStatus *stat, Bookkeeper *k) {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_DEBUG(log);
     g_stat = stat;
     g_fe = k->g_fe;
     g_tx = k->tx;
