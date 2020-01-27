@@ -93,7 +93,7 @@ void StarDataProcessor::process_core() {
 
 void process_data(RawData &curIn,
                   Fei4Data &curOut) {
-    StarChipPacket packet(true);
+    StarChipPacket packet;
 
     packet.add_word(0x13C); //add SOP, only to make decoder happy
     for(unsigned iw=0; iw<curIn.words; iw++) {

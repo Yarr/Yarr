@@ -54,7 +54,6 @@ class StarChips : public HccStarCfg, public StarCmd, public FrontEnd {
 
   private:
     TxCore * m_txcore;
-    bool m_debug;
 };
 
 #endif
