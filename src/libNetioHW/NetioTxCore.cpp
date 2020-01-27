@@ -7,9 +7,14 @@
 
 #include "felixbase/client.hpp"
 
+#include "logging.h"
+
 using namespace std;
 using namespace netio;
 
+namespace {
+auto nlog = logging::make_log("NetioHW::TxCore");
+}
 
 NetioTxCore::NetioTxCore()
 {
@@ -23,8 +28,6 @@ NetioTxCore::NetioTxCore()
   m_extend = 4;
   m_padding = false;
   m_flip = false;
-  m_verbose = false;
-  m_debug = false;
   m_manchester = false;
 
   m_felixhost = "localhost";
@@ -53,15 +56,12 @@ void NetioTxCore::connect(){
 }
 
 void NetioTxCore::enableChannel(uint32_t elink){
-  if(m_verbose) 
-  	cout << "Enable TX elink: 0x" << hex << elink << dec << endl;
+  nlog->debug("Enable TX elink: 0x{:x}", elink);
   m_elinks[elink]=true;
 }
 
 void NetioTxCore::disableChannel(uint32_t elink){
-
-  if(m_verbose) 
-  	std::cout << "Disable TX elink: 0x" << hex << elink << dec << endl;
+  nlog->debug("Disable TX elink: 0x{:x}", elink);
 
   m_elinks[elink]=false;
 
@@ -71,7 +71,7 @@ void NetioTxCore::disableChannel(uint32_t elink){
 void NetioTxCore::disableAllChannels() {
     for (auto it=m_elinks.begin();it!=m_elinks.end();it++) {
         m_elinks[it->first] = false;
-        if (m_verbose) std::cout << "\ndisabling channel: " << it->first << "\n";
+        nlog->debug("disabling channel: {}", it->first);
     }
 }
 
@@ -100,25 +100,22 @@ uint32_t NetioTxCore::getCmdEnable() {
 }
 
 void NetioTxCore::writeFifo(uint32_t value){
-  if(m_debug) std::cout << "NetioTxCore::writeFifo val=" << hex << setw(8) << setfill('0') << value << dec << endl;
+  nlog->trace("NetioTxCore::writeFifo val={:08x}", value);
   map<uint32_t,bool>::iterator it;
 
   for(it=m_elinks.begin();it!=m_elinks.end();it++)
     if(it->second) {
-      if(m_debug) {
-	std::cout << "it->first is " << it->first << std::endl;
-      	std::cout << "it->second is " << it->second << std::endl;
-      }
+      nlog->trace("it->first: {}, it->second: {}",
+                  it->first, it->second);
       writeFifo(it->first,value);
     }
 }
 
 void NetioTxCore::writeFifo(uint32_t elink, uint32_t value){
-  if(m_debug) std::cout << "NetioTxCore::writeFifo elink=" << elink
-                   << " val=0x" << hex << setw(8) << setfill('0') << value << dec << endl;
+  nlog->trace("NetioTxCore::writeFifo elink={} val=0x{:08x}", elink, value);
 
   if(m_elinks[elink] == false) {
-	if(m_verbose) std::cout<<"\nWARNING: The e-link is disabled! Can not write fifo\n";
+        nlog->warning("WARNING: The e-link is disabled! Can not write fifo");
 	return;
   }
 
@@ -146,25 +143,25 @@ void NetioTxCore::writeFifo(vector<uint8_t> *fifo, uint32_t value){
 void NetioTxCore::prepareFifo(vector<uint8_t> *fifo){
 
   if(m_padding==true){
-    if(m_debug) cout << "Padding" << endl;
+    nlog->trace("Padding");
     uint32_t i0=0;
-    if(m_debug){cout << "Find the first byte" << endl;}
+    nlog->trace("Find the first byte");
     for(uint32_t i=1; i<fifo->size(); i++){
       if(fifo->at(i)!=0){i0=i-1;break;}
     }
-    if(m_debug){cout << "Copy the array forward" << endl;}
+    nlog->trace("Copy the array forward");
     for(uint32_t i=0; i<fifo->size()-i0; i++){
       fifo->at(i)=fifo->at(i+i0);
     }
-    if(m_debug){cout << "Remove first " << i0 << " characters" << endl;}
+    nlog->trace("Remove first {} characters", i0);
     for(uint32_t i=0; i<i0; i++){
       fifo->pop_back();
     }
-    if(m_debug){cout << "Pop back" << endl;}
+    nlog->trace("Pop back");
   }
 
   if(m_flip==true){
-    if(m_debug) cout << "Flipping" << endl;
+    nlog->trace("Flipping");
     if(fifo->size()%2==1){
       fifo->push_back(0);
     }
@@ -175,7 +172,7 @@ void NetioTxCore::prepareFifo(vector<uint8_t> *fifo){
   }
 
   if(m_manchester==true){
-    if(m_debug) cout << "Manchester" << endl;
+    nlog->trace("Manchester");
     bool clk=true;
     fifo->insert(fifo->begin(),2,0x0); //16 extra leading zeroes
     for(uint32_t i=0; i<fifo->size(); i++){
@@ -190,20 +187,26 @@ void NetioTxCore::releaseFifo(){
   //try to connect
   connect();
 
-  if(m_debug) cout << "NetioTxCore::releaseFifo " << endl;
+  nlog->trace("NetioTxCore::releaseFifo");
   //create the message for NetIO
   map<uint32_t,bool>::iterator it;
 
   for(it=m_elinks.begin();it!=m_elinks.end();it++)
     if(it->second){
-    	prepareFifo(&m_fifo[it->first]);
-    	if(m_debug) printFifo(it->first);
-    	m_headers[it->first].elinkid=it->first;
-    	m_headers[it->first].length=m_fifo[it->first].size();
-    	m_data.push_back((uint8_t*)&(m_headers[it->first]));
+        auto elink = it->first;
+        auto this_fifo = &m_fifo[elink];
+    	prepareFifo(&this_fifo);
+        nlog->trace("FIFO[{}][{}]: " << elink << "][" << this_fifo.size()-1 << "]:");
+        for(uint32_t i=1; i<this_fifo.size(); i++){
+          nlog->trace("{:02x}", this_fifo[i]&0xFF);
+        }
+
+    	m_headers[elink].elinkid=elink;
+    	m_headers[elink].length=this_fifo.size();
+    	m_data.push_back((uint8_t*)&(m_headers[elink]));
     	m_size.push_back(sizeof(felix::base::ToFELIXHeader));
-    	m_data.push_back((uint8_t*)&(m_fifo[it->first][0]));
-    	m_size.push_back(m_fifo[it->first].size());	
+    	m_data.push_back((uint8_t*)&(this_fifo[0]));
+    	m_size.push_back(this_fifo.size());	
     }
 
   message msg(m_data,m_size);
@@ -231,7 +234,8 @@ void NetioTxCore::trigger(){
   vector<const uint8_t*> data;
   vector<size_t> size;
 
-  if(m_debug) cout << "NetioTxCore::trigger " << endl;
+  nlog->trace("NetioTxCore::trigger");
+
   //create the message for NetIO
   map<uint32_t,bool>::iterator it;
 
@@ -380,12 +384,9 @@ void NetioTxCore::doTriggerCnt() {
     std::this_thread::sleep_for(std::chrono::microseconds((int)(1e6/m_trigFreq))); // Frequency in Hz
   }
   m_trigEnabled = false;
-  if(m_verbose) cout << "finished trigger count" << endl;
-  if(m_debug){
-    cout << endl
-         << "============> Finish trigger with n counts: " << trigs << endl
-         << endl;
-  }
+
+  nlog->debug("finished trigger count");
+  nlog->trace("============> Finish trigger with n counts: {}");
 }
 
 void NetioTxCore::doTriggerTime() {
@@ -404,12 +405,8 @@ void NetioTxCore::doTriggerTime() {
     cur = chrono::steady_clock::now();
   }
   m_trigEnabled = false;
-  if(m_verbose) cout << "finished trigger time" << endl;
-  if(m_debug){
-    cout << endl
-         << "============> Finish trigger with n counts: " << trigs << endl
-         << endl;
-  }
+  nlog->debug("finished trigger time");
+  nlog->verbose("============> Finish trigger with n counts: {}", trigs);
 }
 
 void NetioTxCore::printFifo(uint32_t elink){
