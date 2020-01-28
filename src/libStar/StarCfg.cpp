@@ -187,18 +187,19 @@ double StarCfg::toCharge(double vcal) {
 double StarCfg::toCharge(double vcal, bool sCap, bool lCap) { return toCharge(vcal); }
 
 void StarCfg::initRegisterMaps() {
+  auto abc_count = m_ABCchipIDs.size();
 
   int n_HCC_registers = 50;
   int n_ABC_registers = 128;
-  AllReg_List.reserve( n_HCC_registers + m_nABC*n_ABC_registers );
+  AllReg_List.reserve( n_HCC_registers + abc_count *n_ABC_registers );
 
   //Make all registers and subregisters for the HCC
   configure_HCC_Registers();
 
 
   //Now make registers for each ABC
-  std::cout << "Now have m_nABC as " << m_nABC << std::endl;
-  for( int iABC = 0; iABC < m_nABC; ++iABC){ //Start at 1 b/c zero is HCC!
+  std::cout << "Now have m_nABC as " << abc_count << std::endl;
+  for( int iABC = 0; iABC < abc_count; ++iABC){ //Start at 1 b/c zero is HCC!
     //Make all registers and subregisters for the HCC
     int this_chipID = getABCchipID(iABC+1);
     configure_ABC_Registers(this_chipID);

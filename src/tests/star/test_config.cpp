@@ -8,7 +8,6 @@ TEST_CASE("StarCfg", "[star][config]") {
   test_config.setHCCChipId(4);
   const int abc_id = 14;
   test_config.addABCchipID(abc_id);
-  test_config.m_nABC ++;
 
   // This sets up initial values
   test_config.initRegisterMaps();
@@ -42,7 +41,6 @@ TEST_CASE("StarCfgTrims", "[star][config]") {
   test_config.setHCCChipId(2);
   const int abc_id = 3;
   test_config.addABCchipID(abc_id);
-  test_config.m_nABC ++;
 
   test_config.initRegisterMaps();
 

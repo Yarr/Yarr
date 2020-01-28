@@ -280,10 +280,6 @@ class StarCfg : public FrontEndCfg {
   void toFileJson(json &j) override;
   void fromFileJson(json &j) override;
 
-  int m_nABC = 0;
-
-
-
  protected:
   const unsigned int indexForABCchipID(unsigned int chipID) {return std::distance(m_ABCchipIDs.begin(), std::find(m_ABCchipIDs.begin(), m_ABCchipIDs.end(), chipID)) + 1;};
     
@@ -306,6 +302,7 @@ class StarCfg : public FrontEndCfg {
   //This is a 2D map of each trimDac_32b register to the chip index and trimDAC_1MSB register name.  For example trimDAC1LSB_RegisterMap_all[chip index][NAME]
   std::map<unsigned, std::map<std::string, SubRegister*> > trimDAC_1MSB_RegisterMap_all;   //register record
 
+  size_t numABCs() { return m_ABCchipIDs.size(); }
 
  private:
   std::vector<unsigned int> m_ABCchipIDs;
