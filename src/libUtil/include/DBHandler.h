@@ -67,6 +67,10 @@ class DBHandler {
                        std::string /*i_scanlog_path*/,
                        std::string /*i_user_path*/,
                        std::string /*i_site_path*/);
+        void setQCCfg( std::string /*i_qc_path*/,
+                       std::string /*i_scanlog_path*/,
+                       std::string /*i_user_path*/,
+                       std::string /*i_site_path*/);
         /***
         Clean up veriables after scanConsole
         ***/
