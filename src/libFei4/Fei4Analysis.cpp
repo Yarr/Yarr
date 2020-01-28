@@ -37,7 +37,7 @@ void Fei4Analysis::init() {
 }
 
 void Fei4Analysis::run() {
-    SPDLOG_LOGGER_TRACE(alog);
+    SPDLOG_LOGGER_TRACE(alog, "");
     thread_ptr.reset( new std::thread( &Fei4Analysis::process, this ) );
 }
 
@@ -88,7 +88,7 @@ void Fei4Analysis::process_core() {
 }
 
 void Fei4Analysis::end() {
-    SPDLOG_LOGGER_TRACE(alog);
+    SPDLOG_LOGGER_TRACE(alog, "");
     for (unsigned i=0; i<algorithms.size(); i++) {
         algorithms[i]->end();
     }
@@ -1363,9 +1363,9 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
     innerCnt[ident]++;
 
     if (innerCnt[ident] == n_count) {
-        SPDLOG_LOGGER_TRACE(alog);
+        SPDLOG_LOGGER_TRACE(alog, "");
         if (globalFb != NULL) { // Global Threshold Tuning
-            SPDLOG_LOGGER_TRACE(alog);
+            SPDLOG_LOGGER_TRACE(alog, "");
             unsigned numOfHits = 0;
             for (unsigned i=0; i<occMaps[ident]->size(); i++) {
                 if (occMaps[ident]->getBin(i) > 1) {
@@ -1382,7 +1382,7 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
 
         if (pixelFb != NULL) { // Pixel Threshold Tuning
             Histo2d *fbHisto = new Histo2d("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
-            SPDLOG_LOGGER_TRACE(alog);
+            SPDLOG_LOGGER_TRACE(alog, "");
             unsigned pixelWoHits = 0;
             for (unsigned i=0; i<occMaps[ident]->size(); i++) {
                 if (occMaps[ident]->getBin(i) < 2) { //TODO un-hardcode this

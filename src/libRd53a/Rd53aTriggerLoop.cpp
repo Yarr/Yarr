@@ -94,7 +94,7 @@ void Rd53aTriggerLoop::setNoInject() {
 }
 
 void Rd53aTriggerLoop::init() {
-    SPDLOG_LOGGER_TRACE(logger);
+    SPDLOG_LOGGER_TRACE(logger, "");
     m_done = false;
 
     this->setTrigDelay(m_trigDelay);
@@ -122,7 +122,7 @@ void Rd53aTriggerLoop::init() {
 }
 
 void Rd53aTriggerLoop::execPart1() {
-    SPDLOG_LOGGER_TRACE(logger);
+    SPDLOG_LOGGER_TRACE(logger, "");
     g_tx->setCmdEnable(keeper->getTxMask());
     dynamic_cast<Rd53a*>(g_fe)->ecr();
     dynamic_cast<Rd53a*>(g_fe)->idle();
@@ -138,7 +138,7 @@ void Rd53aTriggerLoop::execPart1() {
 }
 
 void Rd53aTriggerLoop::execPart2() {
-    SPDLOG_LOGGER_TRACE(logger);
+    SPDLOG_LOGGER_TRACE(logger, "");
     // Should be finished, lets wait anyway
     while(!g_tx->isTrigDone());
     // Disable Trigger
@@ -148,7 +148,7 @@ void Rd53aTriggerLoop::execPart2() {
 }
 
 void Rd53aTriggerLoop::end() {
-    SPDLOG_LOGGER_TRACE(logger);
+    SPDLOG_LOGGER_TRACE(logger, "");
     //Nothing to do
 }
 

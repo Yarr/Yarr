@@ -28,7 +28,7 @@ Rd53aDataProcessor::~Rd53aDataProcessor() {
 }
 
 void Rd53aDataProcessor::init() {
-    SPDLOG_LOGGER_TRACE(logger);
+    SPDLOG_LOGGER_TRACE(logger, "");
 
     for (auto &it : *m_outMap) {
         activeChannels.push_back(it.first);
@@ -36,7 +36,7 @@ void Rd53aDataProcessor::init() {
 }
 
 void Rd53aDataProcessor::run() {
-    SPDLOG_LOGGER_TRACE(logger);
+    SPDLOG_LOGGER_TRACE(logger, "");
 
     unsigned int numThreads = m_numThreads;
     for (unsigned i=0; i<numThreads; i++) {

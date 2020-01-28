@@ -23,7 +23,7 @@ Fei4DcLoop::Fei4DcLoop() : LoopActionBase() {
 
 void Fei4DcLoop::init() {
     m_done = false;
-    SPDLOG_LOGGER_TRACE(logger);
+    SPDLOG_LOGGER_TRACE(logger, "");
     // Figure out how often to loop
     // depending on COLPR_MODE
     switch (m_mode) {
@@ -48,7 +48,7 @@ void Fei4DcLoop::init() {
 }
 
 void Fei4DcLoop::end() {
-    SPDLOG_LOGGER_TRACE(logger);
+    SPDLOG_LOGGER_TRACE(logger, "");
 }
 
 void Fei4DcLoop::execPart1() {
@@ -60,7 +60,7 @@ void Fei4DcLoop::execPart1() {
 }
 
 void Fei4DcLoop::execPart2() {
-    SPDLOG_LOGGER_TRACE(logger);
+    SPDLOG_LOGGER_TRACE(logger, "");
     // Check Loop condition
     m_col+=step;
     if (!((int)m_col < max)) m_done = true;

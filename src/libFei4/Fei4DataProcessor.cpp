@@ -14,7 +14,7 @@ bool fei4_proc_registered =
     StdDict::registerDataProcessor("FEI4B", []() { return std::unique_ptr<DataProcessor>(new Fei4DataProcessor());});
 
 Fei4DataProcessor::Fei4DataProcessor(unsigned arg_hitDiscCfg) : DataProcessor(){
-    SPDLOG_LOGGER_TRACE(flog);
+    SPDLOG_LOGGER_TRACE(flog, "");
     input = NULL;
     hitDiscCfg = arg_hitDiscCfg;
     totCode = {{{{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 14, 0}},
@@ -29,14 +29,14 @@ Fei4DataProcessor::~Fei4DataProcessor() {
 }
 
 void Fei4DataProcessor::init() {
-    SPDLOG_LOGGER_TRACE(flog);
+    SPDLOG_LOGGER_TRACE(flog, "");
     for(std::map<unsigned, ClipBoard<EventDataBase> >::iterator it = outMap->begin(); it != outMap->end(); ++it) {
         activeChannels.push_back(it->first);
     }
 }
 
 void Fei4DataProcessor::run() {
-    SPDLOG_LOGGER_TRACE(flog);
+    SPDLOG_LOGGER_TRACE(flog, "");
     const unsigned int numThreads = std::thread::hardware_concurrency();
     for (unsigned i=0; i<numThreads; i++) {
         thread_ptrs.emplace_back( new std::thread(&Fei4DataProcessor::process, this) );

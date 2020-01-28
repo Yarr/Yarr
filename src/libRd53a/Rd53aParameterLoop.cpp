@@ -32,7 +32,7 @@ Rd53aParameterLoop::Rd53aParameterLoop(Rd53aReg Rd53aGlobalCfg::*ref): parPtr(re
 }
 
 void Rd53aParameterLoop::init() {
-    SPDLOG_LOGGER_TRACE(logger);
+    SPDLOG_LOGGER_TRACE(logger, "");
 
     m_done = false;
     m_cur = min;
@@ -42,7 +42,7 @@ void Rd53aParameterLoop::init() {
 }
 
 void Rd53aParameterLoop::execPart1() {
-    SPDLOG_LOGGER_TRACE(logger);
+    SPDLOG_LOGGER_TRACE(logger, "");
     logger->debug("ParameterLoop at -> {}", m_cur);
     g_stat->set(this, m_cur);
     //std::this_thread::sleep_for(std::chrono::milliseconds(10));

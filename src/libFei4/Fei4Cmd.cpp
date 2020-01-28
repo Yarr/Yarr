@@ -31,25 +31,25 @@ Fei4Cmd::~Fei4Cmd() {
 }
 
 void Fei4Cmd::trigger() {
-    SPDLOG_LOGGER_TRACE(flog);
+    SPDLOG_LOGGER_TRACE(flog, "");
     core->writeFifo(0x1D00);
     core->releaseFifo();
 }
 
 void Fei4Cmd::bcr() {
-    SPDLOG_LOGGER_TRACE(flog);
+    SPDLOG_LOGGER_TRACE(flog, "");
     core->writeFifo(0x1610);
     core->releaseFifo();
 }
 
 void Fei4Cmd::ecr() {
-    SPDLOG_LOGGER_TRACE(flog);
+    SPDLOG_LOGGER_TRACE(flog, "");
     core->writeFifo(0x1620);
     core->releaseFifo();
 }
 
 void Fei4Cmd::cal() {
-    SPDLOG_LOGGER_TRACE(flog);
+    SPDLOG_LOGGER_TRACE(flog, "");
     core->writeFifo(0x1640);
     core->releaseFifo();
 }
@@ -62,13 +62,13 @@ void Fei4Cmd::wrRegister(int chipId, int address, int value) {
 }
 
 void Fei4Cmd::rdRegister(int chipId, int address) {
-    SPDLOG_LOGGER_TRACE(flog);
+    SPDLOG_LOGGER_TRACE(flog, "");
     core->writeFifo(0x005A0400+((chipId<<6)&0x3C0)+(address&0x3F));
     core->releaseFifo();
 }
 
 void Fei4Cmd::wrFrontEnd(int chipId, uint32_t *bitstream) {
-    SPDLOG_LOGGER_TRACE(flog);
+    SPDLOG_LOGGER_TRACE(flog, "");
     core->writeFifo(0x005A1000+((chipId<<6)&0x3C0));
     //Flipping the order in order to send bit 671-0, and not bit 31-0, 63-21, etc.
     for(int i = 20 ; i>=0 ; i--) {
@@ -85,19 +85,19 @@ void Fei4Cmd::runMode(int chipId, bool mode) {
 }
 
 void Fei4Cmd::globalReset(int chipId) {
-    SPDLOG_LOGGER_TRACE(flog);
+    SPDLOG_LOGGER_TRACE(flog, "");
     core->writeFifo(0x005A2000+((chipId<<6)&0x3C0));
     core->releaseFifo();
 }
 
 void Fei4Cmd::globalPulse(int chipId, unsigned width) {
-    SPDLOG_LOGGER_TRACE(flog);
+    SPDLOG_LOGGER_TRACE(flog, "");
     core->writeFifo(0x005A2400+((chipId<<6)&0x3C0)+(width&0x3F));
     core->releaseFifo();
 }
 
 void Fei4Cmd::calTrigger(int delay) {
-    SPDLOG_LOGGER_TRACE(flog);
+    SPDLOG_LOGGER_TRACE(flog, "");
     core->writeFifo(0x00001640);
     for (int i = 0; i<delay/32; i++){
         core->writeFifo(0x00000000);
