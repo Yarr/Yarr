@@ -293,8 +293,6 @@ class StarCfg : public FrontEndCfg, public Register{
 
  private:
   std::vector<unsigned int> m_ABCchipIDs;
-  float m_injCap; //fF
-  std::array<float, 4> m_vcalPar; //mV, [0] + [1]*x + [2]*x^2 + [3]*x^3
 
   //Definitions of subregisters (enum/name, register number, first bit index, size in number of bits)
   typedef std::tuple<ABCStarSubRegister, unsigned int, unsigned int, unsigned int> abcsubregdef;
