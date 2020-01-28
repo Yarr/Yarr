@@ -6,6 +6,9 @@
 
 #include "StarCfg.h"
 
+#include <iomanip>
+#include <iostream>
+
 StarCfg::StarCfg()  {}
 
 StarCfg::~StarCfg() {}

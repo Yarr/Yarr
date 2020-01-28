@@ -7,6 +7,8 @@
 #include "StarChips.h"
 
 #include <bitset>
+#include <iostream>
+#include <iomanip>
 #include <chrono>
 
 #include "AllChips.h"
