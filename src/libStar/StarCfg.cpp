@@ -209,9 +209,9 @@ void StarCfg::configure_HCC_Registers() {
   //all HCC Register addresses we will create
   for (HCCStarRegister reg : HCCStarRegister::_values()) {
     int addr = reg;
-    Register tmp_Reg = Register(addr, 0 );
+    Register tmp_Reg(addr, 0 );
 
-    AllReg_List.push_back( tmp_Reg ); //Save it to the list
+    AllReg_List.push_back( std::move(tmp_Reg) ); //Save it to the list
     int lastReg = AllReg_List.size()-1;
     registerMap[0][addr]=&AllReg_List.at(lastReg); //Save it's position in memory to the registerMap
   }
@@ -256,8 +256,8 @@ void StarCfg::configure_ABC_Registers(int chipID) {
   unsigned int chipIndex = indexForABCchipID(chipID);
   for (ABCStarRegister reg : ABCStarRegister::_values()) {
     int addr = reg;
-    Register tmp_Reg = Register( addr, 0 );
-    AllReg_List.push_back( tmp_Reg ); //Save it to the list
+    Register tmp_Reg( addr, 0 );
+    AllReg_List.push_back( std::move(tmp_Reg) ); //Save it to the list
     int lastReg = AllReg_List.size()-1;
     registerMap[chipIndex][addr]=&AllReg_List.at(lastReg); //Save it's position in memory to the registerMap
   }

@@ -114,23 +114,19 @@ class Register{
 
  public:
 
-  std::map<std::string, SubRegister*> subRegisterMap;
+  Register(int addr=-1, uint32_t value=0)
+    : m_regAddress(addr),
+      m_regValue(value)
+  {}
 
-  Register(int addr=-1, uint32_t value=0){
-    m_regAddress		= addr;
-    m_regValue			= value;
-  };
-
+  // need to explicitly default due to unique_ptr
+  Register(const Register& other) = default;
+  Register(Register && other) = default;
+  Register &operator=(const Register& other) = default;
+  Register &operator=(Register&& other) = default;
 
   ~Register(){
-    std::map<std::string, SubRegister*>::iterator map_iter;
-    for(map_iter=subRegisterMap.begin(); map_iter!= subRegisterMap.end(); ++map_iter){
-      delete map_iter->second;
-    }
-    subRegisterMap.clear();
   };
-
-
 
 
   int addr() const{ return m_regAddress;}
@@ -145,13 +141,15 @@ class Register{
   }
 
 
-  SubRegister* addSubRegister(std::string subRegName="", unsigned bOffset=0, unsigned mask=0, bool msbRight=false){
-    subRegisterMap[subRegName] = new SubRegister(&m_regValue, m_regAddress, subRegName,bOffset, mask, msbRight);
-    return subRegisterMap[subRegName];
+  SubRegister *addSubRegister(std::string subRegName="", unsigned bOffset=0, unsigned mask=0, bool msbRight=false){
+    subRegisterMap[subRegName].reset(new SubRegister(&m_regValue, m_regAddress, subRegName,bOffset, mask, msbRight));
+    return subRegisterMap[subRegName].get();
   }
 
 
  private:
+  std::map<std::string, std::unique_ptr<SubRegister>> subRegisterMap;
+
   int m_regAddress;
   uint32_t m_regValue;
 
@@ -271,6 +269,7 @@ class StarCfg : public FrontEndCfg, public Register{
   //This is a 2D map of each register to the chip index (0 for HCC, iABC+1 for ABCs) and address.  For example registerMap[chip index][addr]
   std::map<unsigned, std::map<unsigned, Register*> >registerMap; //Maps register address
   //This is a 2D map of each subregister to the chip index and HCC subregister name.  For example hccSubRegisterMap_all[NAME]
+  // SubRegister is owned by the Registers
   std::map<HCCStarSubRegister, SubRegister*> hccSubRegisterMap_all;   //register record
   //This is a 2D map of each subregister to the chip index and ABC subregister name.  For example abcSubRegisterMap_all[chip index][NAME]
   std::map<unsigned, std::map<ABCStarSubRegister, SubRegister*> > abcSubRegisterMap_all;   //register record
