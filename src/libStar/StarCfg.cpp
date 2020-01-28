@@ -183,14 +183,6 @@ double StarCfg::toCharge(double vcal) {
 
 double StarCfg::toCharge(double vcal, bool sCap, bool lCap) { return toCharge(vcal); }
 
-unsigned StarCfg::toVcal(double charge) {
-//    double V= (charge*Physics::ElectronCharge)/(m_injCap*Unit::Femto);
-//    unsigned vcal = (unsigned) round((V)/(m_vcalPar[1]*Unit::Milli)); // Note: no offset applied
-//    return vcal;
-}
-
-
-
 void StarCfg::initRegisterMaps() {
 
   int n_HCC_registers = 50;

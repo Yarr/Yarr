@@ -246,12 +246,6 @@ class StarCfg : public FrontEndCfg, public Register{
    */
   double toCharge(double vcal, bool sCap, bool lCap);
 
-  /**
-   * Obtain the corresponding VCal from the input charge [e]
-   */
-  unsigned toVcal(double charge);
-
-
   void setTrimDAC(unsigned col, unsigned row, int value);
 
   int getTrimDAC(unsigned col, unsigned row);
