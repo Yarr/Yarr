@@ -12,6 +12,8 @@
 #include <fstream>
 #include <cmath>
 
+#include "logging.h"
+
 namespace {
     auto hlog = logging::make_log("Histo1d");
 }
