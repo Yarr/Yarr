@@ -79,7 +79,6 @@ class SubRegister{
     m_subRegName			= "";
     m_bOffset 			= 0;
     m_mask				= 0;
-    m_value 				= 0;
   };
 
 
@@ -89,9 +88,6 @@ class SubRegister{
     m_subRegName			= subRegName;
     m_bOffset 			= bOffset;
     m_mask				= mask;
-
-    unsigned maskBits = (1<<m_mask)-1;
-    m_value = ((*m_parentReg&(maskBits<<m_bOffset))>>m_bOffset);
   }
 
 
@@ -100,10 +96,6 @@ class SubRegister{
     unsigned maskBits = (1<<m_mask)-1;
     unsigned tmp = ((*m_parentReg&(maskBits<<m_bOffset))>>m_bOffset);
 
-    if(tmp != m_value){
-      std::cerr << " --> Error: Stored value and retrieve value does not match: \""<< m_subRegName << "\"" << std::endl;
-    }
-
     return tmp;
   }
 
@@ -111,8 +103,6 @@ class SubRegister{
 
   // Write value to field and config
   void updateValue(const uint32_t cfgBits) {
-    m_value = cfgBits;
-
     unsigned maskBits = (1<<m_mask)-1;
     *m_parentReg=(*m_parentReg&(~(maskBits<<m_bOffset))) |
       ((cfgBits&maskBits)<<m_bOffset);
@@ -134,7 +124,6 @@ class SubRegister{
   std::string m_subRegName;
   unsigned m_bOffset;
   unsigned m_mask;
-  unsigned m_value;
 };
 
 
