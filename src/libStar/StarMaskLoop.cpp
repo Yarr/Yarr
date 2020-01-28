@@ -1,4 +1,8 @@
 #include "StarMaskLoop.h"
+
+#include <iomanip>
+#include <iostream>
+
 #include "StarMask_CalEn.h"
 
 StarMaskLoop::StarMaskLoop() : LoopActionBase() {
