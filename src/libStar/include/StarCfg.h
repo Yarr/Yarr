@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <cmath>
 #include <tuple>
-#include "BitOps.h"
 
 #include "FrontEnd.h"
 #include "storage.hpp"
@@ -80,18 +79,16 @@ class SubRegister{
     m_subRegName			= "";
     m_bOffset 			= 0;
     m_mask				= 0;
-    m_msbRight 			= false;
     m_value 				= 0;
   };
 
 
-  SubRegister(uint32_t *reg=NULL, int parentRegAddress=-1, std::string subRegName="", unsigned bOffset=0, unsigned mask=0, bool msbRight=false){
+  SubRegister(uint32_t *reg, int parentRegAddress, std::string subRegName, unsigned bOffset, unsigned mask) {
     m_parentReg			= reg;
     m_parentRegAddress	= parentRegAddress;
     m_subRegName			= subRegName;
     m_bOffset 			= bOffset;
     m_mask				= mask;
-    m_msbRight			= msbRight;
 
     unsigned maskBits = (1<<m_mask)-1;
     m_value = ((*m_parentReg&(maskBits<<m_bOffset))>>m_bOffset);
@@ -103,11 +100,11 @@ class SubRegister{
     unsigned maskBits = (1<<m_mask)-1;
     unsigned tmp = ((*m_parentReg&(maskBits<<m_bOffset))>>m_bOffset);
 
-    if(m_msbRight?BitOps::reverse_bits(tmp, m_mask):tmp != m_value){
+    if(tmp != m_value){
       std::cerr << " --> Error: Stored value and retrieve value does not match: \""<< m_subRegName << "\"" << std::endl;
     }
 
-    return (m_msbRight?BitOps::reverse_bits(tmp, m_mask):tmp);
+    return tmp;
   }
 
 
@@ -118,7 +115,7 @@ class SubRegister{
 
     unsigned maskBits = (1<<m_mask)-1;
     *m_parentReg=(*m_parentReg&(~(maskBits<<m_bOffset))) |
-      (((m_msbRight?BitOps::reverse_bits(cfgBits, m_mask):cfgBits)&maskBits)<<m_bOffset);
+      ((cfgBits&maskBits)<<m_bOffset);
   }
 
 
@@ -137,11 +134,7 @@ class SubRegister{
   std::string m_subRegName;
   unsigned m_bOffset;
   unsigned m_mask;
-  bool m_msbRight;
   unsigned m_value;
-
-
-
 };
 
 
@@ -177,8 +170,8 @@ class Register{
   }
 
 
-  SubRegister *addSubRegister(std::string subRegName="", unsigned bOffset=0, unsigned mask=0, bool msbRight=false){
-    subRegisterMap[subRegName].reset(new SubRegister(&m_regValue, m_regAddress, subRegName,bOffset, mask, msbRight));
+  SubRegister *addSubRegister(std::string subRegName, unsigned bOffset, unsigned mask) {
+    subRegisterMap[subRegName].reset(new SubRegister(&m_regValue, m_regAddress, subRegName,bOffset, mask));
     return subRegisterMap[subRegName].get();
   }
 

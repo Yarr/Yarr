@@ -243,7 +243,9 @@ void StarCfg::configure_HCC_Registers() {
 
   for (auto def : s_hccsubregdefs) {
     std::string subregname = std::string((std::get<0>(def))._to_string());
-    hccSubRegisterMap_all[std::get<0>(def)] = registerMap[0][std::get<1>(def)]->addSubRegister(subregname, std::get<2>(def), std::get<3>(def));
+    auto offset = std::get<2>(def);
+    auto mask = std::get<3>(def);
+    hccSubRegisterMap_all[std::get<0>(def)] = registerMap[0][std::get<1>(def)]->addSubRegister(subregname, offset, mask);
   }
 
 
