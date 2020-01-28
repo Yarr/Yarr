@@ -19,6 +19,10 @@ set(YARR_FRONT_ENDS_TO_BUILD "Fei4;Rd53a;Star;Fe65p2"
 set(YARR_CONTROLLERS_TO_BUILD "Spec;Emu"
     CACHE STRING "Semicolon-separated list of controllers to build, or \"all\".")
 
+# Default to allowing debug macros (spdlog default is info)
+set(YARR_ACTIVE_LOGGER_LEVEL DEBUG
+    CACHE BOOL "This sets SPDLOG_ACTIVE_LEVEL, below which logger macros are disabled at build time. One of TRACE, DEBUG, INFO, WARN, ERROR, CRITICAL, OFF")
+
 set(YARR_ALL_FRONT_ENDS
     Fe65p2 Fei4 Rd53a Star)
 
@@ -56,6 +60,9 @@ foreach(lib ${libs})
     file(GLOB SrcFiles lib${lib}/*.cpp)
     list(APPEND LibSrcFiles ${SrcFiles})
 endforeach()
+
+# Level below which logger macros are not enabled
+add_definitions(-DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_${YARR_ACTIVE_LOGGER_LEVEL})
 
 add_library(Yarr STATIC ${LibSrcFiles})
 
