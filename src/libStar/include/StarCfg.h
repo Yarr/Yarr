@@ -154,9 +154,7 @@ class Register{
   Register &operator=(const Register& other) = default;
   Register &operator=(Register&& other) = default;
 
-  ~Register(){
-  };
-
+  ~Register() = default;
 
   int addr() const{ return m_regAddress;}
   const uint32_t getValue() const{ return m_regValue;}
