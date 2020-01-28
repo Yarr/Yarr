@@ -194,9 +194,7 @@ class Register{
 };
 
 
-
-
-class StarCfg : public FrontEndCfg, public Register{
+class StarCfg : public FrontEndCfg {
  public:
   StarCfg();
   ~StarCfg();
