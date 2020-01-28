@@ -187,7 +187,8 @@ class StarCfg : public FrontEndCfg, public Register{
 
   const unsigned int getABCchipID(unsigned int chipIndex) { return m_ABCchipIDs[chipIndex-1];};
 
-
+  void addABCchipID(unsigned int chipID) { m_ABCchipIDs.push_back(chipID); };
+  void clearABCchipIDs() { m_ABCchipIDs.clear(); };
 
   void setSubRegisterValue(int chipIndex, std::string subRegName, uint32_t value) {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
@@ -260,8 +261,6 @@ class StarCfg : public FrontEndCfg, public Register{
 
  protected:
   const unsigned int indexForABCchipID(unsigned int chipID) {return std::distance(m_ABCchipIDs.begin(), std::find(m_ABCchipIDs.begin(), m_ABCchipIDs.end(), chipID)) + 1;};
-  void addABCchipID(unsigned int chipID) { m_ABCchipIDs.push_back(chipID);};
-  void clearABCchipIDs() { m_ABCchipIDs.clear(); };
     
   unsigned m_hccID;
 
