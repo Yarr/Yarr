@@ -57,7 +57,9 @@ class SubRegister{
     m_mask				= mask;
     m_msbRight			= msbRight;
 
-  };
+    unsigned maskBits = (1<<m_mask)-1;
+    m_value = ((*m_parentReg&(maskBits<<m_bOffset))>>m_bOffset);
+  }
 
 
   // Get value of field
