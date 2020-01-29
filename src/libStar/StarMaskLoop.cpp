@@ -5,6 +5,12 @@
 
 #include "StarMask_CalEn.h"
 
+#include "logging.h"
+
+namespace {
+    auto logger = logging::make_log("StarMaskLoop");
+}
+
 StarMaskLoop::StarMaskLoop() : LoopActionBase() {
     min = 0;
     max = 16;
@@ -14,7 +20,6 @@ StarMaskLoop::StarMaskLoop() : LoopActionBase() {
     m_nEnabledStripsPerGroup=0;
     m_EnabledMaskedShift=0;
     loopType = typeid(this);
-    verbose=false;
 }
 
 
@@ -40,8 +45,7 @@ void StarMaskLoop::initMasks() {
 }
 
 void StarMaskLoop::init() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_DEBUG(logger, "Init");
 
     m_done = false;
     m_cur = min;
@@ -64,16 +68,12 @@ void StarMaskLoop::init() {
 }
 
 void StarMaskLoop::end() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_DEBUG(logger, "End");
     while(g_tx->isCmdEmpty() == 0);
 }
 
 void StarMaskLoop::execPart1() {
-  if (verbose) {
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
-    std::cout << " ---> Mask Stage " << m_cur << std::endl;
-  }
+  SPDLOG_LOGGER_DEBUG(logger, "-> Mask stage {}", m_cur);
 
   g_stat->set(this, m_cur);
 }
@@ -86,7 +86,8 @@ void StarMaskLoop::printMask(const uint32_t chans[8]) {
 }
 
 void StarMaskLoop::applyMask(StarChips* fe, const uint32_t masks[8], const uint32_t enables[8]) {
-  if (verbose) {
+    SPDLOG_LOGGER_DEBUG(logger, "Apply masks");
+    if (logger->should_log(spdlog::level::debug)) {
     std::cout << "Apply masks:" << std::endl;
     printMask(masks);
 
@@ -111,7 +112,8 @@ void StarMaskLoop::applyMask(StarChips* fe, const uint32_t masks[8], const uint3
 	else
 	  row2 += (((enables[ireg]>>i) & 0x1) ? "1" : "0");
     std::cout << "2nd row: " << row2.c_str() << std::endl;
-    std::cout << "1sr row: " << row1.c_str() << std::endl;  }
+    std::cout << "1sr row: " << row1.c_str() << std::endl;
+    } // End debug
   
     auto num_abc = fe->getNumberOfAssociatedABC();
 
@@ -138,8 +140,7 @@ void StarMaskLoop::applyEncodedMask(StarChips* fe, unsigned int curStep) {
 }
 
 void StarMaskLoop::execPart2() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_DEBUG(logger, " End {} -> {}", m_cur, m_cur + step);
     m_cur += step;
     if (!((int)m_cur < max))
       m_done = true;
@@ -178,9 +179,10 @@ void StarMaskLoop::loadConfig(json &config) {
     min = config["min"];
     max = config["max"];
     step = config["step"];
-    verbose = config["verbose"];
     m_nMaskedStripsPerGroup = config["nMaskedStripsPerGroup"];
     m_nEnabledStripsPerGroup = config["nEnabledStripsPerGroup"];
     m_EnabledMaskedShift = config["EnabledMaskedShift"];
-    if (verbose) std::cout << "Loaded StarMaskLoop configuration with nMaskedStripsPerGroup=" << m_nMaskedStripsPerGroup << ", nEnabledStripsPerGroup=" << m_nEnabledStripsPerGroup << ", shifted by " << m_EnabledMaskedShift << " strips, min=" << min << ", max=" << max << ", step=" << step << std::endl;
+    logger->debug("Loaded StarMaskLoop configuration with nMaskedStripsPerGroup={}, nEnabledStripsPerGroup={}, shifted by  strips, min={}, max={}, step={}",
+                  m_nMaskedStripsPerGroup, m_nEnabledStripsPerGroup,
+                  m_EnabledMaskedShift, min, max, step);
 }
