@@ -46,6 +46,14 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path
       std::ifstream file(json_file_path);
       json j = json::parse(file);
       file.close();
+
+      // Initialize FE strip array from config json
+      for (size_t istrip = 0; istrip < 256; ++istrip) {
+          m_stripArray[istrip].setValue(j["vthreshold_mean"][istrip],
+                                        j["vthreshold_sigma"][istrip],
+                                        j["noise_occupancy_mean"][istrip],
+                                        j["noise_occupancy_sigma"][istrip]);
+      }
     }
 
     m_ignoreCmd = true;
@@ -892,49 +900,40 @@ void StarEmu::generateFEData_CaliPulse(unsigned ichip, uint8_t bc)
     if (not CalPulseEnable)
         return;
     
-    ///////////////////
-    // Injected charge
-    // 9 bits: 0 - 170 mV
+    // Injected charge DAC
+    // 9 bits, 0 - 170 mV
     uint16_t BCAL = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::ADCS3, abcID, 24, 16);
-    float vcal = BCAL/512. * 0.170; // V
-    float injection_capacitor = 60.; // fF
-    float injected_charge = vcal * injection_capacitor; // fC
-    // this is pre-amp
+    float injected_charge = StripModel::calculateInjection(BCAL);
 
-    // threshold
-    // 8 bits: 0 - -550 mV
+    // Threshold DAC
+    // BVT: 8 bits, 0 - -550 mV
     uint8_t BVT = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::ADCS2, abcID, 7, 0);
-    float vth = BVT/255. * 550.; // -mV
+    // Trim Range
+    // BTRANGE: 5 bits, 50 mV - 230 mV
+    uint8_t BTRANGE = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::ADCS1, abcID, 28, 24);
 
-    // TrimDAC Range
-    // 5 bits: 50 mV - 230 mV (linear?)
-    uint8_t BTRANGE = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::ADCS1, abcID, 28, 24); 
-    float trimRange = 50. + (230.-50.) * BTRANGE / 32.; // mV
-
-    // For each strip: 
-    for (int ich = 0; ich < 256; ++ich) {
-        // TrimDAC: 5 bits
-        uint8_t TrimDAC = m_starCfg->getTrimDAC(ich, abcID);
-        float vtrim = trimRange * TrimDAC / 32.; // mV
-
-        // Threshould after trimming:
-        float vth_trimmed = vth - vtrim;
-        // smear?
-        // convert to charge before pre-amp based on the gain funtion
-        // for now: 80 mv/fC 
-        float threshold_charge = vth_trimmed / 80.; // fC
+    // Loop over 256 strips
+    for (int istrip = 0; istrip < 256; ++istrip) {
+        float noise_charge = m_stripArray[istrip].calculateNoise();
+        // After amplifier
+        float voltage_inj =
+            StripModel::gain_function(injected_charge + noise_charge);
         
-        // noise charge before pre-amp
-        float noise_charge = 0.; // for now
+        // TrimDAC
+        uint8_t TrimDAC = m_starCfg->getTrimDAC(istrip, abcID);
 
-        // Comparator stage
-        if (injected_charge + noise_charge > threshold_charge) {
-            // has a hit: set bit ich%32 of the (7-ich/32)'th register to 1
-            m_fe_data[iABC][bc][7 - ich/32] |= (1 << ich%32);
+        // Threshold
+        float vthreshold =
+            m_stripArray[istrip].calculateThreshold(BVT, TrimDAC, BTRANGE);
+
+        // Compare
+        if (voltage_inj > vthreshold) {
+            // has a hit: set bit istrip%32 of the (7-istrip/32)'th register to 1
+            m_fe_data[iABC][bc][7 - istrip/32] |= (1 << istrip%32);
         }
         else {
-            // no hit: set bit ich%32 of the (7-ich/32)'th register to 0
-            m_fe_data[iABC][bc][7 - ich/32] &= ~(1 << ich%32);
+            // no hit: set bit istrip%32 of the (7-istrip/32)'th register to 0
+            m_fe_data[iABC][bc][7 - istrip/32] &= ~(1 << istrip%32);
         }
     }
     

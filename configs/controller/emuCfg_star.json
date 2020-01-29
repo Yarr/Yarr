@@ -7,7 +7,8 @@
             },
             "rx" : {
                 "id" : 1338
-            }
+            },
+            "feCfg" : "configs/emulator/emu_fe0_star.json"
         }
     }
 }

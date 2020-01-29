@@ -3,6 +3,7 @@
 
 #include "StarChips.h"
 #include "StarEmuCfg.h"
+#include "StripModel.h"
 
 #include <atomic>
 #include <memory>
@@ -139,6 +140,10 @@ private:
     ////////////////////////////////////////
     // HCCStar and ABCStar configurations
     std::unique_ptr<emu::StarCfg> m_starCfg;
+
+    ////////////////////////////////////////
+    // Analog FE
+    std::array<StripModel, 256> m_stripArray;
 
     bool debug = false;
 };
