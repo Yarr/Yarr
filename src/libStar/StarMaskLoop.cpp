@@ -18,6 +18,7 @@ StarMaskLoop::StarMaskLoop() : LoopActionBase(LOOP_STYLE_MASK) {
     m_nMaskedStripsPerGroup=0;
     m_nEnabledStripsPerGroup=0;
     m_EnabledMaskedShift=0;
+    m_onlyMask = false;
     loopType = typeid(this);
 }
 
@@ -144,12 +145,15 @@ void StarMaskLoop::applyMask(StarChips* fe, const uint32_t masks[8], const uint3
     logger->trace("write mask: {} 0x{:08x}", index, masks[index]);
     writeReg(fe->write_abc_register(j, masks[index], 0xf));
   }
-  //Looping over CAL ENABLE registers
-  for (int j=ABCStarRegister::CalReg(0), index = 0;
-       j<=ABCStarRegister::CalReg(7);
-       j++, index++) {
-    logger->trace("write cal: {} 0x{:08x}", j, enables[index]);
-    writeReg(fe->write_abc_register(j, enables[index], 0xf));
+
+  if(!m_onlyMask) {
+    //Looping over CAL ENABLE registers
+    for (int j=ABCStarRegister::CalReg(0), index = 0;
+         j<=ABCStarRegister::CalReg(7);
+         j++, index++) {
+      logger->trace("write cal: {} 0x{:08x}", j, enables[index]);
+      writeReg(fe->write_abc_register(j, enables[index], 0xf));
+    }
   }
 }
 
@@ -196,6 +200,8 @@ void StarMaskLoop::writeConfig(json &config) {
     config["nMaskedStripsPerGroup"] = m_nMaskedStripsPerGroup;
     config["nEnabledStripsPerGroup"] = m_nEnabledStripsPerGroup;
     config["EnabledMaskedShift"] = m_EnabledMaskedShift;
+
+    config["maskOnly"] = m_onlyMask;
 }
 
 void StarMaskLoop::loadConfig(json &config) {
@@ -205,6 +211,11 @@ void StarMaskLoop::loadConfig(json &config) {
     m_nMaskedStripsPerGroup = config["nMaskedStripsPerGroup"];
     m_nEnabledStripsPerGroup = config["nEnabledStripsPerGroup"];
     m_EnabledMaskedShift = config["EnabledMaskedShift"];
+
+    if(!config["maskOnly"].empty()) {
+      m_onlyMask = config["maskOnly"];
+    }
+
     logger->debug("Loaded StarMaskLoop configuration with nMaskedStripsPerGroup={}, nEnabledStripsPerGroup={}, shifted by  strips, min={}, max={}, step={}",
                   m_nMaskedStripsPerGroup, m_nEnabledStripsPerGroup,
                   m_EnabledMaskedShift, min, max, step);

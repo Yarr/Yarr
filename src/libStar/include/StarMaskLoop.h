@@ -86,6 +86,9 @@ class StarMaskLoop : public LoopActionBase {
   short m_nMaskedStripsPerGroup,m_nEnabledStripsPerGroup, m_EnabledMaskedShift;
   unsigned m_cur;
 
+  // ie. don't send calibration masks
+  bool m_onlyMask;
+
   ChannelRing m_maskedChannelsRing, m_enabledChannelsRing;
   
   void init() override;

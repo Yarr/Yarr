@@ -179,15 +179,19 @@ void checkMaskRegisters(MyTxCore &tx, json &j, uint32_t full_mask) {
   int max = j["max"];
   int step = j["step"];
 
-  REQUIRE (buf_count == (max * 16));
-
-  CAPTURE (max, step);
+  bool mask_only = j["maskOnly"].empty()
+    ?false
+    :(bool)j["maskOnly"];
 
   // 2 sets (cal and mask) of 8 registers
-  int loops = buf_count / 16;
+  unsigned regs_per_loop = mask_only ? 8 : 16;
+
+  CAPTURE (mask_only, max, step, regs_per_loop);
 
   int expected_loops = max;
   expected_loops /= step;
+
+  int loops = buf_count / regs_per_loop;
 
   REQUIRE (loops == expected_loops);
 
@@ -201,6 +205,7 @@ void checkMaskRegisters(MyTxCore &tx, json &j, uint32_t full_mask) {
     CAPTURE(i, reg, value);
 
     if(reg > 0x18) {
+      REQUIRE (!mask_only);
       REQUIRE ( ((reg >= 0x68) && (reg < 0x70)) );
     } else {
       REQUIRE ( ((reg >= 0x10) && (reg < 0x18)) );
@@ -247,6 +252,16 @@ TEST_CASE("StarMaskLoop", "[star][mask_loop]") {
     j["max"] = 8;
     j["min"] = 0;
     j["step"] = 1;
+  }
+  SECTION ("AnalogueScan_NoCal") {
+    // Don't change calibration mask register
+    j["nMaskedStripsPerGroup"] = 1;
+    j["nEnabledStripsPerGroup"] = 1;
+    j["EnabledMaskedShift"] = 0;
+    j["max"] = 8;
+    j["min"] = 0;
+    j["step"] = 1;
+    j["maskOnly"] = true;
   }
 
   std::unique_ptr<MyTxCore> tx_ptr(std::move(runWithConfig(j)));
