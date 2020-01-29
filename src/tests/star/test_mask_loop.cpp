@@ -253,6 +253,14 @@ TEST_CASE("StarMaskLoop", "[star][mask_loop]") {
     j["min"] = 0;
     j["step"] = 1;
   }
+  SECTION ("AnalogueScan_32") {
+    j["nMaskedStripsPerGroup"] = 1;
+    j["nEnabledStripsPerGroup"] = 1;
+    j["EnabledMaskedShift"] = 0;
+    j["max"] = 32;
+    j["min"] = 0;
+    j["step"] = 1;
+  }
   SECTION ("AnalogueScan_NoCal") {
     // Don't change calibration mask register
     j["nMaskedStripsPerGroup"] = 1;
@@ -262,6 +270,18 @@ TEST_CASE("StarMaskLoop", "[star][mask_loop]") {
     j["min"] = 0;
     j["step"] = 1;
     j["maskOnly"] = true;
+  }
+  SECTION ("AnalogueScan_32_step2") {
+    // Mask one in 32, but step by 2 each iteration, misses half the channels
+    j["nMaskedStripsPerGroup"] = 1;
+    j["nEnabledStripsPerGroup"] = 1;
+    j["EnabledMaskedShift"] = 0;
+    j["max"] = 32;
+    j["min"] = 0;
+    j["step"] = 2;
+
+    // Step of 2
+    full_mask = 0x33333333;
   }
 
   std::unique_ptr<MyTxCore> tx_ptr(std::move(runWithConfig(j)));
