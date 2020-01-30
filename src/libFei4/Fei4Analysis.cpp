@@ -818,6 +818,11 @@ void ScurveFitter::end() {
                     sigDist[i]->fill(sigMap[i]->getBin(bin));
             }
 
+            // Before moving data to clipboard
+            alog->info("\033[1;33m[{}][{}] Threshold Mean = {} +- {}\033[0m", channel, i, thrMap[i]->getMean(), thrMap[i]->getStdDev());
+            alog->info("\033[1;33m[{}][{}] Noise Mean = {} +- {}\033[0m", channel, i, sigMap[i]->getMean(), sigMap[i]->getStdDev());
+            alog->info("\033[1;33m[{}][{}] Number of failed fits = {}\033[0m", channel, i, n_failedfit);
+
             output->pushData(std::move(sCurve[i]));
             output->pushData(std::move(thrDist[i]));
             output->pushData(std::move(thrMap[i]));
@@ -827,9 +832,6 @@ void ScurveFitter::end() {
             output->pushData(std::move(statusDist[i]));
             output->pushData(std::move(step[i]));
             output->pushData(std::move(deltaThr[i]));
-            alog->info("\033[1;33m[{}][{}] Threshold Mean = {} +- {}\033[0m", channel, thrMap[i]->getMean(), thrMap[i]->getStdDev());
-            alog->info("\033[1;33m[{}][{}] Noise Mean = {} +- {}\033[0m", channel, sigMap[i]->getMean(), sigMap[i]->getStdDev());
-            alog->info("\033[1;33m[{}][{}] Number of failed fits = {}\033[0m", channel, n_failedfit);
         }
 
         output->pushData(std::move(sigMap[i]));
