@@ -7,7 +7,7 @@
 #################################
 
 ### Common
-import os, sys, time, argparse, yaml, socket
+import os, sys, time, argparse, yaml
 from getpass          import getpass
 from pymongo          import MongoClient, errors, DESCENDING
 from bson.objectid    import ObjectId
@@ -24,7 +24,10 @@ import register
 
 ### global variables
 home = os.environ['HOME']
-hostname = socket.gethostname()
+if not "HOSTNAME" in os.environ:
+    hostname = "default_host"
+else:
+    hostname = os.environ["HOSTNAME"]
 global localdb
 global option
 global logfile
@@ -206,50 +209,31 @@ def __init(db_cfg):
     except errors.OperationFailure as err:
         ### Need user authentication
         if db_cfg.get('KeyFile',None):
-            keys = readKey(db_cfg['KeyFile'])
-            username = keys['username']
-            password = keys['password']
+            if not db_cfg['KeyFile'] == 'null':
+                keys = readKey(db_cfg['KeyFile'])
+                username = keys['username']
+                password = keys['password']
         if args.username:
             username = args.username
         elif db_cfg.get('username',None):
             username = db_cfg['username']
+        elif os.environ.get('username',None):
+            username = os.environ['username']
         if args.password:
             password = args.password
         elif db_cfg.get('password',None):
             password = db_cfg['password']
-        if args.log==True:
-            if username and password:
-                try:
-                    localdb.authenticate(username, password)
-                except errors.OperationFailure as err:
-                    logger.error('Authentication failed.')
-                    return False
-            else:
-                logger.warning('Need user authentication.')
+        elif os.environ.get('password',None):
+            password = os.environ['password']
+        if username and password:
+            try:
+                localdb.authenticate(username, password)
+            except errors.OperationFailure as err:
+                logger.error('Authentication failed.')
                 return False
         else:
-            through = False
-            while through==False:
-                logger.warning('Need user authentication.')
-                if not username or not password:
-                    username = None
-                    password = None
-                    username = input('User name > ')
-                    password = getpass('Password > ')
-                try:
-                    logger.info('Authentication succeeded.')
-                    localdb.authenticate(username, password)
-                    through = True
-                except errors.OperationFailure as err:
-                    logger.error('Authentication failed.')
-                    args.username = None
-                    args.password = None
-                    answer = input('Try again? [y/n(skip)]\n> ')
-                    if answer.lower()=='y':
-                        username = None
-                        password = None
-                    else:
-                        return False
+            logger.error('This scan did not store in LocalDB because of the authentication. Please login by "source localdb/login_mongodb.sh"')
+            return False
 
     localdb['fs.files'].create_index([('hash', DESCENDING), ('_id', DESCENDING)])
     localdb['component'].create_index([('serialNumber', DESCENDING)])
@@ -592,7 +576,8 @@ def __clean(cache_dir, result):
         for line in cache_list:
             if not line or not line=='': f.write('{}\n'.format(line))
 
-    register.__global.clean()
+    #register.__global.clean()
+    register.clean()
 
 ###################
 # Cache Data Upload
