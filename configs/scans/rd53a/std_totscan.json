@@ -5,15 +5,15 @@
         "algorithm": "TotAnalysis"
       },
       "1": {
+        "algorithm": "L1Analysis"
+      },
+      "2": {
         "algorithm": "OccupancyAnalysis",
         "config": {
           "createMask": false
         }
       },
-      "2": {
-        "algorithm": "L1Analysis"
-      },
-      "n_count": 3
+      "n_count": 2
     },
     "histogrammer": {
       "0": {
