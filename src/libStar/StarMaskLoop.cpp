@@ -188,7 +188,10 @@ void StarMaskLoop::execPart2() {
 	}
       }
 
-      while(g_tx->isCmdEmpty() == 0){std::cout << __PRETTY_FUNCTION__ << "\033[1;32m " << "cmd not empty: " << "\033[0m"<<  std::endl;};
+      while(g_tx->isCmdEmpty() == 0) {
+        // This might no longer be useful
+        logger->trace("Waiting for cmd to empty");
+      }
     }
 }
 
