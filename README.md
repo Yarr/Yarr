@@ -55,9 +55,9 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
     - For all controllers: 
         - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=all ..``
     - For NetIO:
-        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;NetioHW``
+        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;NetioHW"``
     - For Rogue:
-        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;Rogue``
+        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;Rogue"``
 
 ### RCE Guide
 - for ARM target cross compilers are provided by the RCE_SDK
