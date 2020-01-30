@@ -179,16 +179,16 @@ fi
 ### Set editor command ###
 ##########################
 
-if [ -z "${EDITOR}" ]; then
-    echo -e "[LDB] Set editor command ..."
-    unset answer
+#if [ -z "${EDITOR}" ]; then
+echo -e "[LDB] Set editor command ..."
+unset answer
+read -p "[LDB] > " answer
+while [ -z "${answer}" ];
+do
     read -p "[LDB] > " answer
-    while [ -z "${answer}" ];
-    do
-        read -p "[LDB] > " answer
-    done
-    EDITOR=${answer}
-fi
+done
+EDITOR=${answer}
+#fi
 echo -e "[LDB]"
 
 #############################
