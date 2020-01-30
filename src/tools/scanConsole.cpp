@@ -446,7 +446,7 @@ int main(int argc, char *argv[]) {
         hwCtrl->setRxEnable(dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
         // Configure
         if (fe->checkCom() != 1) {
-            logger->info("#ERROR# Can't establish communication, aborting!");
+            logger->critical("Can't establish communication, aborting!");
             return -1;
         }
         logger->info("... success!");
@@ -513,7 +513,7 @@ int main(int argc, char *argv[]) {
           histogrammers[fe]->init();
           histogrammers[fe]->run();
           
-          logger->info("Analysis thread of Fe {}", dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
+          logger->info(" .. started threads of Fe {}", dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
         }
     }
 
@@ -792,7 +792,7 @@ std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bo
 
 
 void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& histogrammers, const std::string& scanType, std::vector<FrontEnd*>& feList, ScanBase* s, std::string outputDir) {
-    logger->info("Found Scan config, loading histogrammer ...");
+    logger->info("Loading histogrammer ...");
     json scanCfg;
     try {
         scanCfg = ScanHelper::openJsonFile(scanType);
@@ -814,28 +814,28 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
 
             auto add_histo = [&](std::string algo_name) {
                 if (algo_name == "OccupancyMap") {
-                    logger->info("  ... adding {}", algo_name);
+                    logger->debug("  ... adding {}", algo_name);
                     histogrammer.addHistogrammer(new OccupancyMap());
                 } else if (algo_name == "TotMap") {
-                    logger->info("  ... adding {}", algo_name);
+                    logger->debug("  ... adding {}", algo_name);
                     histogrammer.addHistogrammer(new TotMap());
                 } else if (algo_name == "Tot2Map") {
-                    logger->info("  ... adding {}", algo_name);
+                    logger->debug("  ... adding {}", algo_name);
                     histogrammer.addHistogrammer(new Tot2Map());
                 } else if (algo_name == "L1Dist") {
                     histogrammer.addHistogrammer(new L1Dist());
-                    logger->info("  ... adding {}", algo_name);
+                    logger->debug("  ... adding {}", algo_name);
                 } else if (algo_name == "HitsPerEvent") {
                     histogrammer.addHistogrammer(new HitsPerEvent());
-                    logger->info("  ... adding {}", algo_name);
+                    logger->debug("  ... adding {}", algo_name);
                 } else if (algo_name == "DataArchiver") {
                     histogrammer.addHistogrammer(new DataArchiver((outputDir + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_data.raw")));
-                    logger->info("  ... adding {}", algo_name);
+                    logger->debug("  ... adding {}", algo_name);
                 } else if (algo_name == "Tot3d") {
-                    logger->info("  ... adding {}", algo_name);
+                    logger->debug("  ... adding {}", algo_name);
                     histogrammer.addHistogrammer(new Tot3d());
                 } else if (algo_name == "L13d") {
-                    logger->info("  ... adding {}", algo_name);
+                    logger->debug("  ... adding {}", algo_name);
                     histogrammer.addHistogrammer(new L13d());
                 } else {
                     logger->error("Error, Histogrammer \"{} unknown, skipping!", algo_name);
@@ -859,12 +859,13 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
             histogrammer.setMapSize(fe->geo.nCol, fe->geo.nRow);
         }
     }
+    logger->info("... done!");
 }
 
 
 void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, int mask_opt) {
     if (scanType.find("json") != std::string::npos) {
-        logger->info("Found Scan config, loading analysis ...");
+        logger->info("Loading analyses ...");
         json scanCfg;
         try {
             scanCfg = ScanHelper::openJsonFile(scanType);
@@ -885,38 +886,38 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
 
                 auto add_analysis = [&](std::string algo_name) {
                     if (algo_name == "OccupancyAnalysis") {
-                        logger->info("  ... adding {}", algo_name);
+                        logger->debug("  ... adding {}", algo_name);
                         ana.addAlgorithm(new OccupancyAnalysis());
                      } else if (algo_name == "L1Analysis") {
-                        logger->info("  ... adding {}", algo_name);
+                        logger->debug("  ... adding {}", algo_name);
                         ana.addAlgorithm(new L1Analysis());
                      } else if (algo_name == "TotAnalysis") {
-                        logger->info("  ... adding {}", algo_name);
+                        logger->debug("  ... adding {}", algo_name);
                         ana.addAlgorithm(new TotAnalysis());
                      } else if (algo_name == "NoiseAnalysis") {
-                        logger->info("  ... adding {}", algo_name);
+                        logger->debug("  ... adding {}", algo_name);
                         ana.addAlgorithm(new NoiseAnalysis());
                      } else if (algo_name == "NoiseTuning") {
-                        logger->info("  ... adding {}", algo_name);
+                        logger->debug("  ... adding {}", algo_name);
                         ana.addAlgorithm(new NoiseTuning());
                      } else if (algo_name == "ScurveFitter") {
-                        logger->info("  ... adding {}", algo_name);
+                        logger->debug("  ... adding {}", algo_name);
                         ana.addAlgorithm(new ScurveFitter());
                      } else if (algo_name == "OccGlobalThresholdTune") {
-                        logger->info("  ... adding {}", algo_name);
+                        logger->debug("  ... adding {}", algo_name);
                         ana.addAlgorithm(new OccGlobalThresholdTune());
                      } else if (algo_name == "OccPixelThresholdTune") {
-                        logger->info("  ... adding {}", algo_name);
+                        logger->debug("  ... adding {}", algo_name);
                         ana.addAlgorithm(new OccPixelThresholdTune());
                      } else if (algo_name == "DelayAnalysis") {
-                        logger->info("  ... adding {}", algo_name);
+                        logger->debug("  ... adding {}", algo_name);
                         ana.addAlgorithm(new DelayAnalysis());
                      }
                 };
 
                 try {
                   int nAnas = anaCfg["n_count"];
-                  logger->info("Found {} Analysis!", nAnas);
+                  logger->debug("Found {} Analysis!", nAnas);
                   for (int j=0; j<nAnas; j++) {
                     std::string algo_name = anaCfg[std::to_string(j)]["algorithm"];
                     add_analysis(algo_name);
@@ -924,7 +925,7 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                   ana.loadConfig(anaCfg);
                 } catch(/* json::type_error &te */ ...) { //FIXME
                   int nAnas = anaCfg.size();
-                  logger->info("Found {} Analysis!", nAnas);
+                  logger->debug("Found {} Analysis!", nAnas);
                   for (int j=0; j<nAnas; j++) {
                     std::string algo_name = anaCfg[j]["algorithm"];
                     add_analysis(algo_name);
@@ -939,6 +940,7 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                 ana.setMapSize(fe->geo.nCol, fe->geo.nRow);
             }
         }
+        logger->info("... done!");
     }
 }
 
