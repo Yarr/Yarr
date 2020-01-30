@@ -1256,6 +1256,13 @@ void NoiseAnalysis::processHistogram(HistogramBase *h) {
     }
 }
 
+void NoiseAnalysis::loadConfig(json &j){
+    if (!j["createMask"].empty()){
+        createMask=j["createMask"];
+		//std::cout << "createMask = " << createMask << std::endl;
+    }
+}
+
 void NoiseAnalysis::end() {
     std::unique_ptr<Histo2d> noiseOcc(new Histo2d("NoiseOccupancy", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this)));
     noiseOcc->setXaxisTitle("Col");
@@ -1274,7 +1281,7 @@ void NoiseAnalysis::end() {
     for (unsigned i=0; i<noiseOcc->size(); i++) {
         if (noiseOcc->getBin(i) > noiseThr) {
             mask->setBin(i, 0);
-            if (make_mask) {
+            if (make_mask&&createMask) {
                 bookie->getFe(channel)->maskPixel((i/nRow), (i%nRow));
             }
         } else {
