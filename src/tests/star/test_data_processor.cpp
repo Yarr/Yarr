@@ -41,11 +41,38 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
 
   proc->join();
 
+  // No other channels added
+  REQUIRE (em_cp.size() == 1);
   REQUIRE (!em_cp[chan].empty());
 
   auto data = em_cp[chan].popData();
-  std::cout << "Data: " << &data << "\n";
-  ((Fei4Data*)data.get())->toFile("/dev/stdout");
+  Fei4Data &rawData = *(Fei4Data*)data.get();
+
+  REQUIRE (rawData.events.size() == 1);
+
+  auto &first = rawData.events.front();
+  REQUIRE (first.l1id == 0);
+  REQUIRE (first.bcid == 3);
+  REQUIRE (first.nHits == 8);
+
+  std::vector<int> col_hits;
+
+  for(auto &hit: first.hits) {
+    col_hits.push_back(hit.col);
+
+    REQUIRE (hit.row == 1);
+    REQUIRE (hit.tot == 1); // Pixel only
+  }
+
+  REQUIRE (col_hits.size() == 8);
+  std::sort(col_hits.begin(), col_hits.end());
+
+  for(int i=0; i<8; i++) {
+    int column = i + 113;
+    CAPTURE (i, column);
+    // NB Offset to base 1
+    REQUIRE (col_hits[i] == column+1);
+  }
 
   // Only one thing
   REQUIRE (em_cp[chan].empty());
