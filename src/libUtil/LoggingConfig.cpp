@@ -63,4 +63,38 @@ void setupLoggers(const json &j) {
     }
 }
 
+void listLoggers(bool print_details) {
+    std::string_view def_name = "(default)";
+    std::vector<std::string> log_list;
+    spdlog::apply_all([&](std::shared_ptr<spdlog::logger> l) {
+        if(l->name().empty()) {
+            log_list.push_back("(default)");
+        } else {
+            log_list.push_back(l->name());
+        }
+    });
+
+    std::sort(log_list.begin(), log_list.end());
+
+    for(auto &l: log_list) {
+        std::cout << "  " << l << "\n";
+
+        if(!print_details)
+          continue;
+
+        std::string ll = l;
+        if(l == def_name) {
+          ll = "";
+        }
+        
+        auto curr = spdlog::get(ll);
+        std::cout << "    At level " << curr->level() << "\n";
+        std::cout << "    Has " << curr->sinks().size() << " sinks\n";
+
+        for(auto &s: curr->sinks()) {
+          std::cout << "     at level " << s->level() << "\n";
+        }
+    }
+}
+
 } // End namespace logging

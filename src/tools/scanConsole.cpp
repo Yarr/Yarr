@@ -732,23 +732,6 @@ void listScanLoopActions() {
     }
 }
 
-void listLoggers() {
-    std::vector<std::string> log_list;
-    spdlog::apply_all([&](std::shared_ptr<spdlog::logger> l) {
-        if(l->name().empty()) {
-            log_list.push_back("(default)");
-        } else {
-            log_list.push_back(l->name());
-        }
-    });
-
-    std::sort(log_list.begin(), log_list.end());
-
-    for(auto &l: log_list) {
-        std::cout << "  " << l << "\n";
-    }
-}
-
 void listKnown() {
     std::cout << " Known HW controllers:\n";
     listControllers();
@@ -766,7 +749,7 @@ void listKnown() {
     listScanLoopActions();
 
     std::cout << " Known loggers:\n";
-    listLoggers();
+    logging::listLoggers();
 }
 
 std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie ) {
