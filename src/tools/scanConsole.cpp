@@ -967,7 +967,7 @@ void setupLoggers(const json &j) {
     if(!j["log_config"].empty()) {
         for(auto &jl: j["log_config"]) {
             if(jl["name"].empty()) {
-                logger->error("Log json file: 'log_config' list item must have 'name");
+                spdlog::error("Log json file: 'log_config' list item must have 'name");
                 continue;
             }
 
