@@ -1,7 +1,6 @@
 #include "StarMaskLoop.h"
 
 #include <iomanip>
-#include <iostream>
 
 #include "StarMask_CalEn.h"
 
@@ -78,41 +77,42 @@ void StarMaskLoop::execPart1() {
   g_stat->set(this, m_cur);
 }
 
-void StarMaskLoop::printMask(const uint32_t chans[8]) {
-  std::cout << "write mask: [";
+void StarMaskLoop::printMask(const uint32_t chans[8], std::ostream &os) {
+  os << "write mask: [";
   for (int j=0; j<8; j++)
-    std::cout << "  0x" << std::hex << std::setfill('0') << std::setw(8)<< chans[j] <<std::dec;
-  std::cout << "]" << std::endl;
+    os << "  0x" << std::hex << std::setfill('0') << std::setw(8)<< chans[j] <<std::dec;
+  os << "]\n";
 }
 
 void StarMaskLoop::applyMask(StarChips* fe, const uint32_t masks[8], const uint32_t enables[8]) {
     SPDLOG_LOGGER_DEBUG(logger, "Apply masks");
     if (logger->should_log(spdlog::level::debug)) {
-    std::cout << "Apply masks:" << std::endl;
-    printMask(masks);
+      std::stringstream oss;
+      oss << "Apply masks:" << std::endl;
+      printMask(masks, oss);
 
-    std::string row1, row2;
-    for (unsigned int ireg=0; ireg<8; ireg++)
-      for (unsigned int i=0;i<32;i++)
-	if (i%2==0)
-	  row1 += (((masks[ireg]>>i) & 0x1) ? "1" : "0");
-	else
-	  row2 += (((masks[ireg]>>i) & 0x1) ? "1" : "0");
-    std::cout << "2nd row: " << row2.c_str() << std::endl;
-    std::cout << "1sr row: " << row1.c_str() << std::endl;
+      std::string row1, row2;
+      for (unsigned int ireg=0; ireg<8; ireg++)
+        for (unsigned int i=0;i<32;i++)
+          if (i%2==0)
+            row1 += (((masks[ireg]>>i) & 0x1) ? "1" : "0");
+          else
+            row2 += (((masks[ireg]>>i) & 0x1) ? "1" : "0");
+      oss << "2nd row: " << row2.c_str() << "\n";
+      oss << "1sr row: " << row1.c_str() << "\n";
 
-    
-    std::cout << "Enable channels:" << std::endl;
-    printMask(enables);
-    row1=""; row2="";
-    for (unsigned int ireg=0; ireg<8; ireg++)
-      for (unsigned int i=0;i<32;i++)
-	if ((i%4)<2)
-	  row1 += (((enables[ireg]>>i) & 0x1) ? "1" : "0");
-	else
-	  row2 += (((enables[ireg]>>i) & 0x1) ? "1" : "0");
-    std::cout << "2nd row: " << row2.c_str() << std::endl;
-    std::cout << "1sr row: " << row1.c_str() << std::endl;
+      oss << "Enable channels:\n";
+      printMask(enables, oss);
+      row1=""; row2="";
+      for (unsigned int ireg=0; ireg<8; ireg++)
+        for (unsigned int i=0;i<32;i++)
+          if ((i%4)<2)
+            row1 += (((enables[ireg]>>i) & 0x1) ? "1" : "0");
+          else
+            row2 += (((enables[ireg]>>i) & 0x1) ? "1" : "0");
+      oss << "2nd row: " << row2.c_str() << "\n";
+      oss << "1sr row: " << row1.c_str() << "\n";
+      logger->debug("{}", oss.str());
     } // End debug
 
   auto num_abc = fe->numABCs();

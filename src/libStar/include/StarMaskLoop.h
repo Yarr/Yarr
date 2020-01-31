@@ -74,7 +74,7 @@ class StarMaskLoop : public LoopActionBase {
  protected:
   void applyMask(StarChips* fe, const uint32_t masks[8], const uint32_t enables[8]);
   void applyEncodedMask(StarChips* fe, unsigned int curStep);
-  void printMask(const uint32_t chans[8]);
+  void printMask(const uint32_t chans[8], std::ostream &os);
   void initMasks();
   
  private:
