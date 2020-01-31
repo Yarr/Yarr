@@ -11,6 +11,12 @@
 // Used to transfer data to histogrammers
 #include "Fei4EventData.h"
 
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("StarDataProcessor");
+}
+
 void process_data(RawData &curIn,
                   Fei4Data &curOut);
 
@@ -36,7 +42,7 @@ void StarDataProcessor::run() {
     const unsigned int numThreads = std::thread::hardware_concurrency();
     for (unsigned i=0; i<numThreads; i++) {
         thread_ptrs.emplace_back( new std::thread(&StarDataProcessor::process, this) );
-        std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
+        logger->info("  -> Processor thread #{} started!", i);
     }
 }
 
@@ -104,8 +110,13 @@ void process_data(RawData &curIn,
     packet.add_word(0x1DC); //add EOP, only to make decoder happy
 
     packet.parse();
-    // std::cout << __PRETTY_FUNCTION__ << ": Data for Channel " << channel << "\n";
-    // packet.print_more();
+    
+    logger->debug("Process data");
+    if(logger->should_log(spdlog::level::trace)) {
+      std::stringstream os;
+      packet.print_clusters(os);
+      logger->trace("{}", os.str());
+    }
 
     PacketType packetType = packet.getType();
     if(packetType == TYP_LP || packetType == TYP_PR){
@@ -115,10 +126,8 @@ void process_data(RawData &curIn,
         auto l1id = packet.l0id;
         auto bcid = packet.bcid;
 
-        std::cout << "new physics event packet !!!!!!!!!! "<< std::endl;
         curOut.newEvent(tag, l1id, bcid);
 
-        packet.print_clusters(std::cout);
         for(unsigned  ithCluster=0; ithCluster < packet.clusters.size(); ++ithCluster){
             Cluster cluster = packet.clusters.at(ithCluster);
 
@@ -138,7 +147,7 @@ void process_data(RawData &curIn,
 
                 // It's an error for cluster to escape either "side"
                 if(((nextAddress&0x7f)+1) > 128) {
-                    std::cout << " address > 128 " << std::endl;
+                    logger->warn(" strip address > 128");
                 }
             }
         }
