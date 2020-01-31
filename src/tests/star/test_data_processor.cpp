@@ -33,7 +33,7 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
   std::copy((uint32_t*)packet_bytes, ((uint32_t*)packet_bytes)+len, buffer);
 
   RawData *rd = new RawData(chan, buffer, len);
-  std::unique_ptr<RawDataContainer> rdc(new RawDataContainer);
+  std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(LoopStatus::empty()));
   rdc->add(rd);
   rd_cp.pushData(std::move(rdc));
 

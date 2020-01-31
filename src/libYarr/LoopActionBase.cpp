@@ -22,7 +22,7 @@ void LoopActionBase::setVerbose(bool v) {
     verbose = v;
 }
 
-void LoopActionBase::setup(LoopStatus *stat, Bookkeeper *k) {
+void LoopActionBase::setup(LoopStatusMaster *stat, Bookkeeper *k) {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     g_stat = stat;

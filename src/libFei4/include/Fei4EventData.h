@@ -120,7 +120,7 @@ class Fei4Event {
 class Fei4Data : public EventDataBase {
     public:
         static const unsigned numServiceRecords = 32;
-        Fei4Data() {
+        Fei4Data(LoopStatus &l) : lStat(l) {
             //curEvent = NULL;
             for(unsigned i=0; i<numServiceRecords; i++)
                 serviceRecords.push_back(0);

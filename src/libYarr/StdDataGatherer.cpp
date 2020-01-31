@@ -60,7 +60,7 @@ void StdDataGatherer::execPart2() {
     std::vector<RawData*> tmp_storage;
     RawData *newData = NULL;
     while (done == 0) {
-        std::unique_ptr<RawDataContainer> rdc(new RawDataContainer());
+        std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(g_stat->record()));
         rate = g_rx->getDataRate();
         if (verbose)
             std::cout << " --> Data Rate: " << rate/256.0/1024.0 << " MB/s" << std::endl;
@@ -76,7 +76,6 @@ void StdDataGatherer::execPart2() {
         } while (newData != NULL && signaled == 0 && !killswitch );
         if (newData != NULL)
             delete newData;
-        rdc->stat = *g_stat;
         storage->pushData(std::move(rdc));
         if (signaled == 1 || killswitch) {
             std::cout << "Caught interrupt, stopping data taking!" << std::endl;
