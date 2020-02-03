@@ -8,6 +8,12 @@
 
 #include "Rd53aTriggerLoop.h"
 
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("Rd53aTriggerLoop");
+}
+
 Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
     m_trigCnt = 50;
     m_trigDelay = 48;
@@ -31,7 +37,6 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
 
     isInner = false;
     loopType = typeid(this);
-    verbose = false;
 }
 
 void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
@@ -60,7 +65,7 @@ void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
             uint32_t bc2 = (trigStream >> ((2*i*4)+4)) & 0xF;
             m_trigWord[14-(delay/8)-i] = Rd53aCmd::genTrigger(bc1, 2*i, bc2, (2*i)+1);
         } else {
-            std::cerr << __PRETTY_FUNCTION__ << " : Delay is either too small or too large!" << std::endl;
+            SPDLOG_LOGGER_ERROR(logger, "Delay is either too small or too large!");
         }
     }
     // Rearm
@@ -69,11 +74,9 @@ void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
     // Pulse
     //m_trigWord[0] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(m_pulseDuration<<1)); // global pulse for sync FE
     
-    if (verbose) {
-        std::cout << "Trigger buffer set to:" << std::endl;
-        for (unsigned i=0; i<m_trigWordLength; i++) {
-            std::cout << "[" << 31-i << "] : 0x" << std::hex << m_trigWord[31-i] << std::dec << std::endl;
-        }
+    logger->debug("Trigger buffer set to:");
+    for (unsigned i=0; i<m_trigWordLength; i++) {
+      logger->debug("[{}: 0x{:x}", 31-i, m_trigWord[31-i]);
     }
 }
 
@@ -92,9 +95,8 @@ void Rd53aTriggerLoop::setNoInject() {
 }
 
 void Rd53aTriggerLoop::init() {
+    SPDLOG_LOGGER_TRACE(logger, "");
     m_done = false;
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
 
     this->setTrigDelay(m_trigDelay);
     if (m_edgeMode)
@@ -121,8 +123,7 @@ void Rd53aTriggerLoop::init() {
 }
 
 void Rd53aTriggerLoop::execPart1() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(logger, "");
     g_tx->setCmdEnable(keeper->getTxMask());
     dynamic_cast<Rd53a*>(g_fe)->ecr();
     dynamic_cast<Rd53a*>(g_fe)->idle();
@@ -138,8 +139,7 @@ void Rd53aTriggerLoop::execPart1() {
 }
 
 void Rd53aTriggerLoop::execPart2() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(logger, "");
     // Should be finished, lets wait anyway
     while(!g_tx->isTrigDone());
     // Disable Trigger
@@ -149,8 +149,7 @@ void Rd53aTriggerLoop::execPart2() {
 }
 
 void Rd53aTriggerLoop::end() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(logger, "");
     //Nothing to do
 }
 

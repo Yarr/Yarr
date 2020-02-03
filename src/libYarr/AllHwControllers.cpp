@@ -3,6 +3,13 @@
 
 #include <iostream>
 #include <functional>
+
+#include "logging.h"
+
+namespace {
+    auto ahwlog = logging::make_log("HwRegistry");
+}
+
 typedef ClassRegistry<HwController> OurRegistry;
 
 static OurRegistry &registry() {
@@ -20,7 +27,7 @@ namespace StdDict {
     std::unique_ptr<HwController> getHwController(std::string name) {
         auto result = registry().makeClass(name);
         if(result == nullptr) {
-            std::cout << "No HwController matching '" << name << "' found\n";
+            SPDLOG_LOGGER_ERROR(ahwlog, "No HwController matching '{}' found!", name);
         }
         return result;
     }

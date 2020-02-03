@@ -9,7 +9,14 @@
 #include "Fei4.h"
 #include "LoopActionBase.h"
 
+#include "logging.h"
+
 class Fei4ParameterLoop : public LoopActionBase{
+        static logging::Logger &logger() {
+          static logging::LoggerStore instance = logging::make_log("Fei4ParameterLoop");
+          return *instance;
+        }
+
     public:
         Fei4ParameterLoop() {
 	  min=0;
@@ -47,8 +54,7 @@ class Fei4ParameterLoop : public LoopActionBase{
 
         void end() {}
         void execPart1() {
-            if (verbose)
-                std::cout << " : Parameter Loop at -> " << cur << std::endl;
+            logger().info("Parameter Loop at -> {}", cur);
             g_stat->set(this, cur);
         }
 

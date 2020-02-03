@@ -12,6 +12,12 @@
 
 #include <signal.h>
 
+#include "logging.h"
+
+namespace {
+    auto sdglog = logging::make_log("StdDataGatherer");
+}
+
 StdDataGatherer::StdDataGatherer() : LoopActionBase() {
     storage = NULL;
     loopType = typeid(this);
@@ -24,29 +30,24 @@ StdDataGatherer::StdDataGatherer() : LoopActionBase() {
 void StdDataGatherer::init() {
     m_done = false;
     killswitch = false;
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(sdglog, "");
 }
 
 void StdDataGatherer::end() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
-
+    SPDLOG_LOGGER_TRACE(sdglog, "");
 }
 
 void StdDataGatherer::execPart1() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(sdglog, "");
     if (g_tx->getTrigEnable() == 0)
-        std::cerr << "### ERROR ### " << __PRETTY_FUNCTION__ << " : Trigger is not enabled, will get stuck here!" << std::endl;
+        SPDLOG_LOGGER_ERROR(sdglog, "Trigger is not enabled, will get stuck here!");
 
 }
 
 sig_atomic_t signaled = 0;
 
 void StdDataGatherer::execPart2() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(sdglog, "");
     unsigned count = 0;
     uint32_t done = 0;
     uint32_t rate = 0;
@@ -55,15 +56,14 @@ void StdDataGatherer::execPart2() {
     signal(SIGINT, [](int signum){signaled = 1;});
     signal(SIGUSR1, [](int signum){signaled = 1;});
 
-    std::cout << "### IMPORTANT ### Going into endless loop, interrupt with ^c (SIGINT)!" << std::endl;
+    SPDLOG_LOGGER_WARN(sdglog, "IMPORTANT! Going into endless loop unless timelimit is set, interrupt with ^c (SIGINT)!");
 
     std::vector<RawData*> tmp_storage;
     RawData *newData = NULL;
     while (done == 0) {
         std::unique_ptr<RawDataContainer> rdc(new RawDataContainer());
         rate = g_rx->getDataRate();
-        if (verbose)
-            std::cout << " --> Data Rate: " << rate/256.0/1024.0 << " MB/s" << std::endl;
+        SPDLOG_LOGGER_DEBUG(sdglog, " --> Data Rate: {} MB/s", rate/256.0/1024.0);
         done = g_tx->isTrigDone();
         do {
             newData =  g_rx->readData();
@@ -79,8 +79,8 @@ void StdDataGatherer::execPart2() {
         rdc->stat = *g_stat;
         storage->pushData(std::move(rdc));
         if (signaled == 1 || killswitch) {
-            std::cout << "Caught interrupt, stopping data taking!" << std::endl;
-            std::cout << "Abort will leave buffers full of data!" << std::endl;
+            SPDLOG_LOGGER_WARN(sdglog, "Caught interrupt, stopping data taking!");
+            SPDLOG_LOGGER_WARN(sdglog, "Abort might leave data in buffers!");
             g_tx->toggleTrigAbort();
         }
         std::this_thread::sleep_for(g_rx->getWaitTime());

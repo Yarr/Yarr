@@ -22,6 +22,8 @@
 #include <bitset>
 #include <string>
 
+#include "logging.h"
+
 class QueueMonitor {
 public:
   /* Explicitly using the default constructor to
@@ -70,6 +72,11 @@ public:
   const std::map<uint64_t, bool>& getStability(){ return std::ref(m_stability); }
 
 private:
+  static logging::Logger &logger() {
+    static logging::LoggerStore instance = logging::make_log("NetioHW::QueueMonitor");
+    return *instance;
+  }
+
   // Actual thread handler members.
   std::string whatAmI = "plain";
   std::thread m_worker_thread;
@@ -77,7 +84,6 @@ private:
   std::mutex m_mutex;
 
   size_t m_monitorID;
-  bool m_verbose = false;
 
   // Containers to calculate the stability of monitored queues.
   const std::vector<uint64_t>& m_queueIDs; // assigned queues
@@ -119,11 +125,9 @@ private:
           m_stability[qid]=true;
         }
         m_sizeBefore[qid] = m_sizeAfter[qid];        // store currrent size as before for next iteration.
-        if (m_verbose){
-          std::cout << "MONITOR[" << m_monitorID << "] " << "QUEUE[" << qid<< "]"
-                    << " match: " << m_match[qid] << " before: " << m_sizeBefore[qid]
-                    << " after: " << m_sizeAfter[qid] << " stability: " << m_stability[qid] << " ..." << std::endl;
-        }
+        logger().debug("MONITOR[{}] QUEUE[{}] match: {} before: {} after: {} stability: {} ...",
+                       m_monitorID, qid, m_match[qid], m_sizeBefore[qid],
+                       m_sizeAfter[qid], m_stability[qid]);
       }
       m_mutex.unlock();
       std::this_thread::sleep_for(std::chrono::microseconds(m_delay));

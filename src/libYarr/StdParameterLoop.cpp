@@ -8,6 +8,12 @@
 
 #include <iostream>
 
+#include "logging.h"
+
+namespace {
+    auto spllog = logging::make_log("StdParameterLoop");
+}
+
 StdParameterLoop::StdParameterLoop() {
     loopType = typeid(this);
     min = 0;
@@ -22,8 +28,7 @@ void StdParameterLoop::init() {
 }
 
 void StdParameterLoop::execPart1() {
-    if (verbose)
-        std::cout << " : ParameterLoop at -> " << m_cur << std::endl;
+    SPDLOG_LOGGER_DEBUG(spllog, "ParameterLoop at -> {}", m_cur);
     g_stat->set(this, m_cur);
 }
 
@@ -60,7 +65,7 @@ void StdParameterLoop::loadConfig(json &j) {
     if (!j["step"].empty())
         step = j["step"];
     if (!j["parameter"].empty()) {
-        std::cout << "  Linking parameter: " << j["parameter"] <<std::endl;
+        SPDLOG_LOGGER_INFO(spllog, "Linking parameter: {}", std::string(j["parameter"]));
         parName = j["parameter"];
     }
 }

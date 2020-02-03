@@ -25,7 +25,6 @@ class Fe65p2NoiseScan : public ScanBase {
     private:
         double triggerFrequency;
         unsigned triggerTime; 
-        bool verbose;
 };
 
 #endif
