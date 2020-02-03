@@ -23,7 +23,7 @@ Fei4MaskLoop::Fei4MaskLoop() : LoopActionBase() {
 }
 
 void Fei4MaskLoop::init() {
-    SPDLOG_LOGGER_TRACE(flog);
+    SPDLOG_LOGGER_TRACE(flog, "");
     m_done = false;
     // Shift Mask into all pixels
     keeper->globalFe<Fei4>()->writeRegister(&Fei4::Colpr_Mode, 0x3);
@@ -38,7 +38,7 @@ void Fei4MaskLoop::init() {
 }
 
 void Fei4MaskLoop::end() {
-    SPDLOG_LOGGER_TRACE(flog);
+    SPDLOG_LOGGER_TRACE(flog, "");
     // Disable all pixels
     keeper->globalFe<Fei4>()->writeRegister(&Fei4::Colpr_Mode, 0x3);
     keeper->globalFe<Fei4>()->writeRegister(&Fei4::Colpr_Addr, 0x0);
@@ -50,14 +50,14 @@ void Fei4MaskLoop::end() {
 }
 
 void Fei4MaskLoop::execPart1() {
-    SPDLOG_LOGGER_TRACE(flog);
+    SPDLOG_LOGGER_TRACE(flog, "");
 //	std::cout << "Ingrid loves sweatpants" << std::endl;
     flog->info(" --> Mask Stage {}", m_cur);
     g_stat->set(this, m_cur);
 }
 
 void Fei4MaskLoop::execPart2() {
-    SPDLOG_LOGGER_TRACE(flog);
+    SPDLOG_LOGGER_TRACE(flog, "");
     m_cur += step;
     if (!((int)m_cur < max)) m_done = true;
     // Shift Enable mask by step size

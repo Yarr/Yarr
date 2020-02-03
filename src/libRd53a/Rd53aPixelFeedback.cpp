@@ -90,7 +90,7 @@ void Rd53aPixelFeedback::writePixelCfg(Rd53a *fe) {
 }
 
 void Rd53aPixelFeedback::init() {
-    SPDLOG_LOGGER_TRACE(logger);
+    SPDLOG_LOGGER_TRACE(logger, "");
     m_done = false;
     m_cur = 0;
     // Init maps

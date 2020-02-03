@@ -36,7 +36,7 @@ Rd53aCoreColLoop::Rd53aCoreColLoop() : LoopActionBase(), m_impl( new Rd53aCoreCo
 }
 
 void Rd53aCoreColLoop::init() {
-    SPDLOG_LOGGER_TRACE(logger);
+    SPDLOG_LOGGER_TRACE(logger, "");
     m_done = false;
     m_impl->m_cur = 0;
     // Disable all to begin with
@@ -52,7 +52,7 @@ void Rd53aCoreColLoop::init() {
 }
 
 void Rd53aCoreColLoop::execPart1() {
-    SPDLOG_LOGGER_TRACE(logger, "{}", m_cur);
+    SPDLOG_LOGGER_TRACE(logger, "{}", m_impl->m_cur);
     
     g_tx->setCmdEnable(keeper->getTxMask());
     // Loop over cores, i.e. activate in pairs of 4 DC
@@ -90,7 +90,7 @@ void Rd53aCoreColLoop::execPart1() {
 }
 
 void Rd53aCoreColLoop::execPart2() {
-    SPDLOG_LOGGER_TRACE(logger);
+    SPDLOG_LOGGER_TRACE(logger, "");
     m_impl->m_cur += step;
     if (!(m_impl->m_cur < m_impl->nSteps)) m_done = true;
     // Nothing else to do here?
@@ -98,7 +98,7 @@ void Rd53aCoreColLoop::execPart2() {
 }
 
 void Rd53aCoreColLoop::end() {
-    SPDLOG_LOGGER_TRACE(logger);
+    SPDLOG_LOGGER_TRACE(logger, "");
     
     // TODO should restore original config here
     /*

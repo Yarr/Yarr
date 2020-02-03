@@ -92,7 +92,7 @@ Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase() {
 }
 
 void Rd53aMaskLoop::init() {
-    SPDLOG_LOGGER_TRACE(logger);
+    SPDLOG_LOGGER_TRACE(logger, "");
     m_done = false;
     m_cur = min;
     for(FrontEnd *fe : keeper->feList) {
@@ -114,7 +114,7 @@ void Rd53aMaskLoop::init() {
 }
 
 void Rd53aMaskLoop::execPart1() {
-    SPDLOG_LOGGER_TRACE(logger);
+    SPDLOG_LOGGER_TRACE(logger, "");
 
     // Loop over FrontEnds
     for(FrontEnd *fe : keeper->feList) {
@@ -195,7 +195,7 @@ void Rd53aMaskLoop::execPart1() {
 }
 
 void Rd53aMaskLoop::execPart2() {
-    SPDLOG_LOGGER_TRACE(logger);
+    SPDLOG_LOGGER_TRACE(logger, "");
 
     // Loop over FrontEnds to clean it up
     if (m_maskType == CrossTalkMask or m_maskType == CrossTalkMaskv2 ){
@@ -234,7 +234,7 @@ void Rd53aMaskLoop::execPart2() {
 }
 
 void Rd53aMaskLoop::end() {
-    SPDLOG_LOGGER_TRACE(logger);
+    SPDLOG_LOGGER_TRACE(logger, "");
 
     for(FrontEnd *fe : keeper->feList) {
         // Copy original registers back
