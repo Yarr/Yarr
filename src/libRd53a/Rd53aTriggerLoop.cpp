@@ -54,8 +54,9 @@ void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
     uint64_t trigStream = 0;
 
     // Generate stream of ones for each trigger
+    uint64_t one = 1;
     for (unsigned i=0; i<m_trigMultiplier; i++)
-        trigStream |= 1 << i;
+        trigStream |= (one << i);
     trigStream = trigStream << delay%8;
 
     for (unsigned i=0; i<(m_trigMultiplier/8)+1; i++) {

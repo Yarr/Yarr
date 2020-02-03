@@ -88,11 +88,10 @@ int main(int argc, char *argv[]) {
 
     std::string home = getenv("HOME");
     std::string hostname = "default_host";
-    // HOSTNAME does not exist like this on mac, need to work around it
     if (getenv("HOSTNAME")) {
         hostname = getenv("HOSTNAME");
     } else {
-        spdlog::error("HOSTNAME environmental variable not found ...");
+        spdlog::error("HOSTNAME environmental variable not found ... using default: {}", hostname);
     }
 
     // Init parameters
@@ -678,12 +677,12 @@ int main(int argc, char *argv[]) {
 void printHelp() {
     std::string home = getenv("HOME");
     std::string hostname = "default_host";
-    // HOSTNAME does not exist like this on mac, need to work around it
     if (getenv("HOSTNAME")) {
         hostname = getenv("HOSTNAME");
     } else {
-        logger->error("HOSTNAME environmental variable not found ...");
+        logger->error("HOSTNAME environmental variable not found ... using default: {}", hostname);
     }
+
     std::string dbDirPath = home+"/.yarr/localdb";
 
     std::cout << "Help:" << std::endl;

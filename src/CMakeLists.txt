@@ -66,7 +66,7 @@ add_dependencies(Yarr tbb_2019)
 
 if ("Rogue" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   YARR_ADD_ROGUE()
-  add_dependencies(Yarr tbb_2019)
+  add_dependencies(Yarr tbb_2019 rogue)
   set(YARR_EXEC_DEPS ${YARR_EXEC_DEPS} rogue tbb_2019)
   set(YARR_LIB_DEPS ${YARR_LIB_DEPS} rogue-core)
   set(TBB_DEPS tbb)
@@ -133,3 +133,6 @@ file(GLOB_RECURSE test_src tests/test_*.cpp)
 add_executable(test_main ${test_src} tests/main.cpp)
 target_link_libraries(test_main ${YARR_LINK_LIB_COMMAND})
 add_dependencies(test_main Yarr)
+
+# Add custom target so we can run "make test"
+add_custom_target(test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/test_main)

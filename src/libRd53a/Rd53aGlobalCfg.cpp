@@ -267,7 +267,7 @@ void Rd53aGlobalCfg::init() {
     HitOr3MaskDiff0.init(96, &m_cfg[96], 0, 16, 0); regMap["HitOr3MaskDiff0"] = &Rd53aGlobalCfg::HitOr3MaskDiff0;
     HitOr3MaskDiff1.init(97, &m_cfg[97], 0, 1, 0); regMap["HitOr3MaskDiff1"] = &Rd53aGlobalCfg::HitOr3MaskDiff1;
     //98
-    AdcRefTrim.init(98, &m_cfg[98], 6, 4, 12); regMap["AdcRefTrim"] = &Rd53aGlobalCfg::AdcRefTrim;
+    AdcRefTrim.init(98, &m_cfg[98], 6, 5, 12); regMap["AdcRefTrim"] = &Rd53aGlobalCfg::AdcRefTrim;
     AdcTrim.init(98, &m_cfg[98], 0, 6, 5); regMap["AdcTrim"] = &Rd53aGlobalCfg::AdcTrim;
     //99
     SensorCfg0.init(99, &m_cfg[99], 0, 12, 0); regMap["SensorCfg0"] = &Rd53aGlobalCfg::SensorCfg0;

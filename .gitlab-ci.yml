@@ -29,6 +29,7 @@ job_build_all:
     artifacts:
         paths:
           - bin
+          - build
     script:
       - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
@@ -58,6 +59,9 @@ job_test_json_parsing:
       - for file in $(find configs/connectivity -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t CONNECTIVITY || break; done
       - for file in $(find configs/controller -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t CONTROLLER || break; done
       - for file in $(find configs/scans/* -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t SCAN_CONFIG || break; done
+
+      - cd build
+      - make test
 
 job_test_json:
     stage: build

@@ -7,7 +7,7 @@
 #################################
 
 # Common
-import os, sys, shutil, hashlib, json, uuid, socket
+import os, sys, shutil, hashlib, json, uuid
 
 import gridfs
 from pymongo          import MongoClient
@@ -157,10 +157,15 @@ def writeJson(i_key, i_value, i_file_path, i_file_json):
 
 #################################
 # Generate hash value from json{}
-def getHash(i_file_json):
+def getHash(i_file_data, i_type='json'):
     logger.debug('\t\t\tGet Hash Code from File')
 
-    shaHashed = hashlib.sha256(json.dumps(i_file_json, indent=4).encode('utf-8')).hexdigest()
+    if i_type=='json':
+        shaHashed = hashlib.sha256(json.dumps(i_file_data, indent=4).encode('utf-8')).hexdigest()
+    elif i_type=='dat':
+        with open(i_file_data, 'rb') as f:
+            binary = f.read()
+        shaHashed = hashlib.sha256(bnary).hexdigest()
 
     return shaHashed
 
@@ -497,7 +502,9 @@ def __attachment(i_file_path, i_histo_name, i_oid, i_type):
         oid = __check_gridfs(hash_code)
         if not oid: oid = __grid_fs_file(json_data, '', '{0}.{1}'.format(i_histo_name, i_type), hash_code)
     else:
-        oid = __grid_fs_file({}, i_file_path, '{0}.{1}'.format(i_histo_name, i_type))
+        hash_code = getHash(i_file_path)
+        oid = __check_gridfs(hash_code)
+        if not oid: oid = __grid_fs_file({}, i_file_path, '{0}.{1}'.format(i_histo_name, i_type))
     localdb.componentTestRun.update_one(
         { '_id': ObjectId(i_oid) },
         { '$push': {
@@ -1151,10 +1158,10 @@ def __set_user(i_json):
 
     user_json = {
         'userName'    : os.environ['USER'],
-        'institution' : socket.gethostname(),
+        'institution' : os.environ.get('HOSTNAME','default_host'),
         'description' : 'default',
         'USER'        : os.environ['USER'],
-        'HOSTNAME'    : socket.gethostname()
+        'HOSTNAME'    : os.environ.get('HOSTNAME','default_host')
     }
 
     if not i_json=={}:
@@ -1178,8 +1185,8 @@ def __set_site(i_json):
 
     site_json = {
         'address'    : ':'.join(['{:02x}'.format((uuid.getnode() >> ele) & 0xff)for ele in range(0,8*6,8)][::-1]),
-        'HOSTNAME'   : socket.gethostname(),
-        'institution': socket.gethostname()
+        'HOSTNAME'   : os.environ.get('HOSTNAME','default_host'),
+        'institution': os.environ.get('HOSTNAME','default_host')
     }
     if not i_json=={}:
         site_json.update(i_json)
@@ -1249,6 +1256,7 @@ def __set_test_run_finish(i_scanlog_json, i_conn_jsons):
             updateSys(tr_oid, 'testRun')
 
         __global.tr_oids.append(tr_oid)
+        
 
     return
 
@@ -1356,15 +1364,16 @@ class __global:
     option = ''
     updated = {}
     #force = False
-    def clean():
-        chip_type = ''
-        user_oid = ''
-        site_oid = ''
-        tr_oids = []
-        histo_names = []
-        db_version = 1.01
-        db_list = {}
-        dir_path = ''
-        option = ''
-        updated = {}
-        #force = False
+
+def clean():
+    __global.chip_type = ''
+    __global.user_oid = ''
+    __global.site_oid = ''
+    __global.tr_oids = []
+    __global.histo_names = []
+    __global.db_version = 1.01
+    __global.db_list = {}
+    __global.dir_path = ''
+    __global.option = ''
+    __global.updated = {}
+    #force = False
