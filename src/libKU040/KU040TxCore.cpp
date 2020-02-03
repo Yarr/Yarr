@@ -69,6 +69,15 @@ void KU040TxCore::setCmdEnable(std::vector<uint32_t> channels) {
     this->setCmdEnable(mask);
 }
 
+void KU040TxCore::disableCmd() {
+	for(int i = 0; i < 20; i++)
+	{
+		// first reset the counters of the corresponding channel
+        m_com->Write(KU040_PIXEL_TX_CONTROL(i), 0x8);
+		m_com->Write(KU040_PIXEL_TX_CONTROL(i), 0x0);
+	}
+}
+
 uint32_t KU040TxCore::getCmdEnable()
 {
 	return m_enableMask;

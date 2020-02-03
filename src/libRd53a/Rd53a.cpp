@@ -147,10 +147,14 @@ void Rd53a::configure() {
 
 void Rd53a::configureInit() {
     this->writeRegister(&Rd53a::GlobalPulseRt, 0x007F); // Reset a whole bunch of things
+    while(!core->isCmdEmpty()){;}
     this->globalPulse(m_chipId, 8);
+    while(!core->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     this->writeRegister(&Rd53a::GlobalPulseRt, 0x4100); //activate monitor and prime sync FE AZ
+    while(!core->isCmdEmpty()){;}
     this->globalPulse(m_chipId, 8);
+    while(!core->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     this->ecr();
     std::this_thread::sleep_for(std::chrono::milliseconds(1));

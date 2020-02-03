@@ -77,6 +77,10 @@ void NetioRxCore::setRxEnable(uint32_t val) {
     this->enableChannel(val);
 }
 
+void NetioRxCore::disableRx() {
+    this->disableAllChannels();
+}
+
 void NetioRxCore::setRxEnable(std::vector<uint32_t> channels) {
     this->disableAllChannels();
     for (uint32_t channel : channels) {

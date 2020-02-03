@@ -42,6 +42,12 @@ void SpecTxCore::setCmdEnable(std::vector<uint32_t> channels) {
     enMask = mask;
 }
 
+void SpecTxCore::disableCmd() {
+    if (verbose)
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SpecCom::writeSingle(TX_ADDR | TX_ENABLE, 0x0);
+}
+
 uint32_t SpecTxCore::getCmdEnable() {
     return SpecCom::readSingle(TX_ADDR | TX_ENABLE);
 }
