@@ -64,8 +64,8 @@ void StarMaskLoop::init() {
 	else {
 	  m_maskedChannelsRing.pos=m_cur;
 	  m_enabledChannelsRing.pos=m_cur;
-	  const uint32_t * masks = m_maskedChannelsRing.readMask();
-	  const uint32_t * enables = m_enabledChannelsRing.readCalEnable();
+	  auto masks = m_maskedChannelsRing.readMask();
+	  auto enables = m_enabledChannelsRing.readCalEnable();
 	  applyMask(static_cast<StarChips*>(fe), masks, enables);
 	}
     }
@@ -84,14 +84,14 @@ void StarMaskLoop::execPart1() {
   g_stat->set(this, m_cur);
 }
 
-void StarMaskLoop::printMask(const uint32_t chans[8], std::ostream &os) {
+void StarMaskLoop::printMask(MaskType chans, std::ostream &os) const {
   os << "write mask: [";
   for (int j=0; j<8; j++)
     os << "  0x" << std::hex << std::setfill('0') << std::setw(8)<< chans[j] <<std::dec;
   os << "]\n";
 }
 
-void StarMaskLoop::applyMask(StarChips* fe, const uint32_t masks[8], const uint32_t enables[8]) {
+void StarMaskLoop::applyMask(StarChips* fe, MaskType masks, MaskType enables) {
     SPDLOG_LOGGER_DEBUG(logger, "Apply masks");
     if (logger->should_log(spdlog::level::debug)) {
       std::stringstream oss;
@@ -182,8 +182,8 @@ void StarMaskLoop::execPart2() {
 	else {
 	  m_maskedChannelsRing.pos=m_cur;
 	  m_enabledChannelsRing.pos=m_cur;
-	  const uint32_t * masks = m_maskedChannelsRing.readMask();
-	  const uint32_t * enables = m_enabledChannelsRing.readCalEnable();
+	  auto masks = m_maskedChannelsRing.readMask();
+	  auto enables = m_enabledChannelsRing.readCalEnable();
 	  applyMask(static_cast<StarChips*>(fe), masks, enables);
 	}
       }

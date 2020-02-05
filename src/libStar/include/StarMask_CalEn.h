@@ -3,7 +3,7 @@
 
 //maybe a 3_D array to store mask for different mode?
 // Given a histogram strip index to mask on, return the register settings
-static const uint32_t star_masks[128][8]= {
+static const MaskType star_masks[128]= {
 		{0xFFFFFFFc,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF},
 		{0xFFFFFFF3,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF},
 		{0xFFFFFFcF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF},
@@ -142,7 +142,7 @@ static const uint32_t star_masks[128][8]= {
 };
 
 // Given a histogram strip index to enable, return the register settings
-static const uint32_t star_calEn[128][8]= {
+static MaskType star_calEn[128]= {
 
 				{0x00000005,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000},
 				{0x0000000a,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000},

@@ -16,6 +16,8 @@ Two modes are available:
 #include "StarChips.h"
 #include "LoopActionBase.h"
 
+typedef std::array<uint32_t, 8> MaskType;
+
 //"Ring" of channels ordered in the "physical" order
 //Can return 32 bits sets ordered such as for:
 //- the masks (1st column in 1st row, 1st column in 2nd row, 2nd column in 1st row, 2nd column in 2nd row, 3rd column in 1st row, 3rd column in 2nd row, 4th column in 1st row, 4th column in 2nd row,..., 127th column in 1st row, 127th column in 2nd row)
@@ -36,8 +38,10 @@ class ChannelRing {
   void printRing() const { std::cout << "Ring content: "; for (unsigned int i=0;i<256; i++) std::cout << bits[i]; std::cout << "." << std::endl;}
 
   /// Extract register settings for the mask register
-  const uint32_t * readMask() {
-    uint32_t * masks = new uint32_t[8]; for (unsigned short i=0;i<8;i++) masks[i]=0;
+  MaskType readMask() const {
+    MaskType masks;
+    masks.fill(0);
+
     for (unsigned int curpos=0; curpos<256; curpos=curpos+4) { //Loop over the "blocks" of mask bits (1st row Xth col, 1st row X+1th col, 2nd row Xth col, 2nd row X+1th col)
       unsigned int posBlock = curpos%32;
       masks[curpos/32] |= bits[(pos+curpos/2)%256]      << posBlock;
@@ -51,8 +55,11 @@ class ChannelRing {
     }
     return masks;
   }
-  const uint32_t * readCalEnable() {
-    uint32_t * masks = new uint32_t[8]; for (unsigned short i=0;i<8;i++) masks[i]=0;
+  /// Extract register settings for the calmask register
+  MaskType readCalEnable() const {
+    MaskType masks;
+    masks.fill(0);
+
     for (unsigned int curpos=0; curpos<256; curpos=curpos+4) { //Loop over the "blocks" of mask bits (1st row Xth col, 1st row X+1th col, 2nd row Xth col, 2nd row X+1th col)
       unsigned int posBlock = curpos%32;
       masks[curpos/32] |= bits[(pos+curpos/2)%256]      << posBlock;
@@ -77,9 +84,9 @@ class StarMaskLoop : public LoopActionBase {
   void loadConfig(json &config);
 
  protected:
-  void applyMask(StarChips* fe, const uint32_t masks[8], const uint32_t enables[8]);
+  void applyMask(StarChips* fe, MaskType masks, MaskType enables);
   void applyEncodedMask(StarChips* fe, unsigned int curStep);
-  void printMask(const uint32_t chans[8], std::ostream &os);
+  void printMask(MaskType chans, std::ostream &os) const;
   void initMasks();
   
  private:
