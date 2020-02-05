@@ -158,4 +158,4 @@ target_link_libraries(test_main ${YARR_LINK_LIB_COMMAND})
 add_dependencies(test_main Yarr)
 
 # This uses features of CTest, so requires enable_testing somewhere
-add_test(catch2_tests test_main)
+add_test(catch2_tests ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/test_main)
