@@ -70,6 +70,8 @@ YARR_ADD_VARIANT()
 add_dependencies(Yarr variant)
 YARR_ADD_TBB()
 add_dependencies(Yarr tbb_2019)
+YARR_ADD_PLOTTING()
+add_dependencies(Yarr plotting_tools)
 
 if ("Rogue" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   YARR_ADD_ROGUE()
@@ -110,7 +112,7 @@ endforeach()
 # Mainly this is about making sure the auto-registration works.
 #if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 if(APPLE)
-  set(YARR_LINK_LIB_COMMAND 
+  set(YARR_LINK_LIB_COMMAND
       -Wl,-all_load Yarr -Wl, ${YARR_LIB_DEPS} pthread)
 else()
   # Whole-archive means not to drop symbols from Yarr.
@@ -132,6 +134,7 @@ endforeach()
 
 install(DIRECTORY ${PROJECT_BINARY_DIR}/bin DESTINATION ${TARGET_INSTALL_AREA}  FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
     WORLD_EXECUTE WORLD_READ GROUP_EXECUTE GROUP_READ  )
+INSTALL(DIRECTORY ${CMAKE_BINARY_DIR}/src/external/src/plotting_tools/bin DESTINATION ${TARGET_INSTALL_AREA})
 
 # Tests
 file(GLOB_RECURSE test_src tests/test_*.cpp)
