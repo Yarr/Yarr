@@ -14,8 +14,6 @@
 #include <map>
 #include <cmath>
 
-
-
 #include "storage.hpp"
 
 class Rd53aReg {

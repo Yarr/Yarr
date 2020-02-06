@@ -31,8 +31,6 @@ class Fei4TotScan : public ScanBase {
         bool useScap;
         bool useLcap;
         double target;
-        
-        bool verbose;
 };
 
 #endif

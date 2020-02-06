@@ -15,6 +15,12 @@
 
 #include "storage.hpp"
 
+#include "logging.h"
+
+namespace {
+    auto hlog = logging::make_log("Histo1d");
+}
+
 Histo1d::Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh, std::type_index t) : HistogramBase(arg_name, t) {
     bins = arg_bins;
     xlow = arg_xlow;
@@ -184,6 +190,7 @@ void Histo1d::toFile(std::string prefix, std::string dir, bool jsonType) {
 }
 
 bool Histo1d::fromFile(std::string filename) {
+<<<<<<< HEAD
     std::ifstream file(filename, std::fstream::in);
     json j;
     try {
@@ -196,16 +203,16 @@ bool Histo1d::fromFile(std::string filename) {
             throw std::runtime_error(e.what());
         }
     } catch (std::runtime_error &e) {
-        std::cerr << "#ERROR# opening histogram: " << e.what() << std::endl;
+        hlong->error("Error opening histogram: {}", e.what());
         return false;
     }
     // Check for type
     if (j["Type"].empty()) {
-        std::cerr << "#ERROR# this does not seem to be a histogram file, could not parse." << std::endl;
+        hlog->error("Tried loading 1d Histogram from file {}, but file has no header: {}", filename);
         return false;
     } else {
         if (j["Type"] == "Histo1d") {
-            std::cerr << "#ERROR# File contains the wrong type: " << j["Type"] <<  std::endl;
+            hlog->error("Tried loading 1d Histogram from file {}, but file has incorrect header: {}", filename, std::string(j["Type"]));
             return false;
         }
 
@@ -230,7 +237,7 @@ bool Histo1d::fromFile(std::string filename) {
 }
 
 void Histo1d::plot(std::string prefix, std::string dir) {
-    std::cout << "Plotting: " << HistogramBase::name << std::endl;
+    hlog->info("Plotting: {}", HistogramBase::name);
     // Put raw histo data in tmp file
     std::string tmp_name = std::string(getenv("USER")) + "/tmp_yarr_histo1d_" + prefix;
     this->toFile(tmp_name, "/tmp/", false);

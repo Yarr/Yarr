@@ -28,8 +28,6 @@ class Fei4DigitalScan : public ScanBase {
         unsigned numOfTriggers;
         double triggerFrequency;
         unsigned triggerDelay;
-
-        bool verbose;
 };
 
 #endif

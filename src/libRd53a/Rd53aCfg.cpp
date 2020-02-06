@@ -11,7 +11,7 @@
 Rd53aCfg::Rd53aCfg()
     : m_chipId  ( 0 )
     , m_injCap  ( 8.2 )
-    , m_vcalPar ( {{ -1.0, 0.195, 0.0, 0.0 }} )
+    , m_vcalPar ( {{ -1.0, 0.215, 0.0, 0.0 }} )
 {}
 
 double Rd53aCfg::toCharge(double vcal) {

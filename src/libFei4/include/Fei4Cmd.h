@@ -20,10 +20,6 @@ class Fei4Cmd {
 
         void setCore(TxCore *arg_core);
 
-        void setVerbose(bool v=true) {
-            verbose = v;
-        }
-        
         // Fast Commands
         void trigger();
         void bcr();
@@ -41,9 +37,6 @@ class Fei4Cmd {
         void calTrigger(int delay);
 
         TxCore *core;
-    private:
-        bool verbose;
-
 };
 
 #endif

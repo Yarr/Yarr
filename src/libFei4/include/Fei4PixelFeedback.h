@@ -19,6 +19,11 @@ enum FeedbackType {
 };
 
 class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
+    static logging::Logger &logger() {
+        static logging::LoggerStore instance = logging::make_log("Fei4PixelFeedback");
+        return *instance;
+    }
+
     public:
         Fei4PixelFeedback() : LoopActionBase(){
             loopType = typeid(this);
@@ -43,8 +48,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
         void feedback(unsigned channel, Histo2d *h) {
             // TODO Check on NULL pointer
             if (h->size() != 26880) {
-                std::cout << __PRETTY_FUNCTION__ 
-                    << " --> ERROR : Wrong type of feedback histogram on channel " << channel << std::endl;
+                logger().error("Wrong type of feedback histogram on channel {}", channel);
                 doneMap[channel] = true;
             } else {
                 fbHistoMap[channel] = h;

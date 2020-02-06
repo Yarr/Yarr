@@ -8,6 +8,12 @@
 
 #include "Rd53aMaskLoop.h"
 
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("Rd53aMaskLoop");
+}
+
 //enum PixelCategories  {LeftEdge, BottomEdge, RightEdge, UpperEdge, Corner, Middle};
 //enum CornerCategories {UpperLeft, BottomLeft, BottomRight, UpperRight, NotCorner};
 
@@ -41,7 +47,6 @@ Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase() {
     m_cur = 0;
     loopType = typeid(this);
     m_done = false;
-    verbose = false;
     m_maskType = StandardMask ; //the alternative is crosstalk or crosstalkv2  
 
     //-----Parameter related to cross-talk-------------------
@@ -87,8 +92,7 @@ Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase() {
 }
 
 void Rd53aMaskLoop::init() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(logger, "");
     m_done = false;
     m_cur = min;
     for(FrontEnd *fe : keeper->feList) {
@@ -110,8 +114,7 @@ void Rd53aMaskLoop::init() {
 }
 
 void Rd53aMaskLoop::execPart1() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(logger, "");
 
     // Loop over FrontEnds
     for(FrontEnd *fe : keeper->feList) {
@@ -187,13 +190,12 @@ void Rd53aMaskLoop::execPart1() {
     // Reset CMD mask
     g_tx->setCmdEnable(keeper->getTxMask());
     g_stat->set(this, m_cur);
-    std::cout << " ---> Mask Stage " << m_cur << std::endl;
+    logger->info(" ---> Mask Stage {}", m_cur);
     //std::this_thread::sleep_for(std::chrono::milliseconds(20));
 }
 
 void Rd53aMaskLoop::execPart2() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(logger, "");
 
     // Loop over FrontEnds to clean it up
     if (m_maskType == CrossTalkMask or m_maskType == CrossTalkMaskv2 ){
@@ -232,8 +234,7 @@ void Rd53aMaskLoop::execPart2() {
 }
 
 void Rd53aMaskLoop::end() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(logger, "");
 
     for(FrontEnd *fe : keeper->feList) {
         // Copy original registers back
@@ -290,7 +291,7 @@ bool Rd53aMaskLoop::getNeighboursMap(int col, int row,int sensorType, int maskSi
     else if (sensorType==RecSensorUpDown)
         sensor="25x100_updown";
     else
-        std::cout<<"ERROR: sensor Type does not exist"<<std::endl;
+        logger->error("Sensor Type does not exist");
 
     //if (row==8)
     // std::cout<<"-- Central pixel:"<< col<<" "<< row<<std::endl;

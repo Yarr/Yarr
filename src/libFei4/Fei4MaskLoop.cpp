@@ -5,6 +5,12 @@
 
 #include "Fei4MaskLoop.h"
 
+#include "logging.h"
+
+namespace {
+    auto flog = logging::make_log("Fei4MaskLoop");
+}
+
 Fei4MaskLoop::Fei4MaskLoop() : LoopActionBase() {
     m_mask = MASK_16;
     min = 0;
@@ -17,9 +23,8 @@ Fei4MaskLoop::Fei4MaskLoop() : LoopActionBase() {
 }
 
 void Fei4MaskLoop::init() {
+    SPDLOG_LOGGER_TRACE(flog, "");
     m_done = false;
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
     // Shift Mask into all pixels
     keeper->globalFe<Fei4>()->writeRegister(&Fei4::Colpr_Mode, 0x3);
     keeper->globalFe<Fei4>()->writeRegister(&Fei4::Colpr_Addr, 0x0);
@@ -33,8 +38,7 @@ void Fei4MaskLoop::init() {
 }
 
 void Fei4MaskLoop::end() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(flog, "");
     // Disable all pixels
     keeper->globalFe<Fei4>()->writeRegister(&Fei4::Colpr_Mode, 0x3);
     keeper->globalFe<Fei4>()->writeRegister(&Fei4::Colpr_Addr, 0x0);
@@ -46,16 +50,14 @@ void Fei4MaskLoop::end() {
 }
 
 void Fei4MaskLoop::execPart1() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(flog, "");
 //	std::cout << "Ingrid loves sweatpants" << std::endl;
-    std::cout << " ---> Mask Stage " << m_cur << std::endl;
+    flog->info(" --> Mask Stage {}", m_cur);
     g_stat->set(this, m_cur);
 }
 
 void Fei4MaskLoop::execPart2() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(flog, "");
     m_cur += step;
     if (!((int)m_cur < max)) m_done = true;
     // Shift Enable mask by step size

@@ -3,8 +3,7 @@ image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_build
 job_build_and_test:
     stage: build
     script:
-      - scl enable devtoolset-7 bash
-      - source /opt/rh/devtoolset-7/enable
+      - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
       - cd build
       - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
@@ -15,7 +14,7 @@ job_build_and_test:
       - mkdir /tmp/test
       - ls /tmp/
       - cd ../
-      - bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p
+      - bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p -l configs/logging.json
       - ls
       - ls ./data/
       - ls ./data/000001_std_digitalscan/
@@ -23,28 +22,27 @@ job_build_and_test:
       - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.dat | grep -o 100 | wc -l`
       - if [ "$NUM100" != "26880" ]; then exit 2; fi
       - bin/scanConsole -k
+      - bin/test_main
 
 job_build_all:
     stage: build
     artifacts:
         paths:
           - bin
+          - build
     script:
-      - scl enable devtoolset-7 bash
-      - source /opt/rh/devtoolset-7/enable
+      - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
       - cd build
-      - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all
+      - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE
       - make install -j4
       - bin/scanConsole -k
 
 job_build_clang:
     stage: build
     script:
-      - scl enable devtoolset-7 bash
-      - source /opt/rh/devtoolset-7/enable
-      - scl enable   llvm-toolset-6.0  bash
-      - source /opt/rh/llvm-toolset-6.0/enable
+      - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+      - source scl_source enable llvm-toolset-6.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir -p build
       - cd build 
       - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang
@@ -61,6 +59,9 @@ job_test_json_parsing:
       - for file in $(find configs/connectivity -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t CONNECTIVITY || break; done
       - for file in $(find configs/controller -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t CONTROLLER || break; done
       - for file in $(find configs/scans/* -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t SCAN_CONFIG || break; done
+
+      - cd build
+      - make test
 
 job_test_json:
     stage: build
