@@ -190,7 +190,6 @@ void Histo1d::toFile(std::string prefix, std::string dir, bool jsonType) {
 }
 
 bool Histo1d::fromFile(std::string filename) {
-<<<<<<< HEAD
     std::ifstream file(filename, std::fstream::in);
     json j;
     try {
