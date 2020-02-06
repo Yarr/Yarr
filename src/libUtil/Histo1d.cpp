@@ -202,7 +202,7 @@ bool Histo1d::fromFile(std::string filename) {
             throw std::runtime_error(e.what());
         }
     } catch (std::runtime_error &e) {
-        hlong->error("Error opening histogram: {}", e.what());
+        hlog->error("Error opening histogram: {}", e.what());
         return false;
     }
     // Check for type
