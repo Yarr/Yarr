@@ -49,7 +49,12 @@ void setupLoggers(const json &j) {
             if(name == "all") {
                 spdlog::apply_all(logger_apply);
             } else {
-                logger_apply(spdlog::get(name));
+                auto l = spdlog::get(name);
+                if(!l) {
+                  spdlog::warn("Log json file: logger '{}' doesn't match any known loggers");                  
+                } else {
+                  logger_apply(l);
+                }
             }
         }
     }
