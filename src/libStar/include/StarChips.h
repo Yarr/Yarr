@@ -39,9 +39,6 @@ class StarChips : public HccStarCfg, public StarCmd, public FrontEnd {
     //! brief configure the chip (virtual)
     void configure() override;
 
-    void toFileBinary(std::string) override {}
-    void fromFileBinary(std::string) override {}
-
     //! toFileJson
     //! brief write configuration to json (virtual)
     //! param reference to json
