@@ -25,8 +25,7 @@ public:
     void toFileJson(json &j) override;
     void fromFileJson(json &j) override;
 
-    void toFileBinary() override;
-    void fromFileBinary() override;
+
 };
 
 #endif
