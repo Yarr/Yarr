@@ -10,12 +10,6 @@ HccStarCfg::HccStarCfg() {}
 
 HccStarCfg::~HccStarCfg() {}
 
-void HccStarCfg::fromFileBinary() {
-}
-
-void HccStarCfg::toFileBinary() {
-}
-
 void HccStarCfg::toFileJson(json &j) {
 }
 
