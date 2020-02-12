@@ -109,7 +109,7 @@ Rd53aEmu::Rd53aEmu(EmuCom * rx, EmuCom * tx, std::string json_file_path)
     , analogHits     ( new Histo2d("analogHits", Rd53aPixelCfg::n_Col, -0.5, 399.5, Rd53aPixelCfg::n_Row, -0.5, 191.5, typeid(void)) )
 {
     
-    srand(time(NULL));
+    srand(1);
     
     run = true;
 
