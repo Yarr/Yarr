@@ -7,8 +7,7 @@
 #  Warning:  Can clear all .gcda files under <binary_folder> first,
 #            so be sure they don't need to be preserved.
 
-if ( ( [ x$1 == x-h ] ) || ( [ $# -ne 0 ] ) && ( [ $# -ne 2 ] ) && \
-                           ( [ $# -ne 4 ] ) && ( [ $# -ne 6 ] ) ); then
+if [ x$1 == x-h ]; then
   echo
   echo "Usage: $0 [-cc_i <binary_folder>] [-cc_o <output_folder>] [-cc_s <test_script_params>]"
   echo
@@ -39,6 +38,14 @@ for arg in $*; do
   esac
 done
 
+if [ ! -d $binary_folder ]; then
+  echo
+  echo Binary folder $binary_folder does not exist.
+  echo Nothing done!
+  echo
+    exit 2
+fi
+
 #  Default output_folder based on test_script
 if [ x"$output_folder" == x ]; then
   test_script=`echo $test_script_params | cut -d ' ' -f 1`
@@ -49,7 +56,7 @@ if [ x"$output_folder" == x ]; then
     echo Test script $test_script does not exist.
     echo Nothing done!
     echo
-    exit 2
+    exit 3
   fi
 fi
 echo
@@ -58,14 +65,14 @@ echo test_script_params=$test_script_params
 echo output_folder=$output_folder
 echo
 
-if [ `find $binary_folder -name "*.gcda" -print | wc -l` -gt 0 ]; then
+if ( ( [ -d $binary_folder ] ) && ( [ `find $binary_folder -name "*.gcda" -print | wc -l` -gt 0 ] ) ); then
    echo "Are you sure you want to remove all existing .gcda files in $binary_folder [Y|N] (N)?"
    read YN
    if [ `echo x"$YN" | cut -c 1-2` != xY ]; then
      echo
      echo Nothing done!
      echo
-     exit 3
+     exit 4
    fi
 fi
 
@@ -78,7 +85,7 @@ if ( ( [ -d $output_folder ] ) && ( [ `ls -a $output_folder | wc -l` -gt 2 ] ) )
      echo
      echo Nothing done!
      echo
-     exit 4
+     exit 5
    fi
 fi
 
@@ -87,6 +94,14 @@ lcov -z -d $binary_folder #  TODO:  Don't forget to uncomment this line when rea
 $test_script_params
 
 lcov -c -d $binary_folder -b . -o $output_folder.info --no-external
+ec=$?
+if [ $ec -ne 0 ]; then
+  exit $ec
+fi
 lcov -r $output_folder.info "*src/external/src/*" -o ${output_folder}n.info
+ec=$?
+if [ $ec -ne 0 ]; then
+  exit $ec
+fi
 mv ${output_folder}n.info $output_folder.info
 genhtml $output_folder.info -o $output_folder
