@@ -9,14 +9,17 @@
 #include <iomanip>
 #include <iostream>
 
-StarCfg::StarCfg()  {}
+std::shared_ptr<StarRegInfo> StarRegInfo::m_instance;
+
+StarCfg::StarCfg()
+  : m_info(StarRegInfo::instance())
+{}
 
 StarCfg::~StarCfg() {}
 
-
 //Register enums definitions
 typedef std::tuple<ABCStarSubRegister, unsigned int, unsigned int, unsigned int> abcsubregdef;
-const std::vector<abcsubregdef> StarCfg::s_abcsubregdefs = {
+const std::vector<abcsubregdef> s_abcsubregdefs = {
   {ABCStarSubRegister::RRFORCE			,0	,0	,1}	,
   {ABCStarSubRegister::WRITEDISABLE		,0	,1	,1}	,
   {ABCStarSubRegister::STOPHPR			,0	,2	,1}	,
@@ -82,7 +85,7 @@ const std::vector<abcsubregdef> StarCfg::s_abcsubregdefs = {
   {ABCStarSubRegister::LCB_ERRCOUNT_THR	        ,38	,0	,1}
 };
 typedef std::tuple<HCCStarSubRegister, unsigned int, unsigned int, unsigned int> hccsubregdef;
-const std::vector<hccsubregdef> StarCfg::s_hccsubregdefs = {
+const std::vector<hccsubregdef> s_hccsubregdefs = {
   {HCCStarSubRegister::STOPHPR			,16	,0	,1}	,
   {HCCStarSubRegister::CFD_BC_FINEDELAY		,32	,0	,4}	,
   {HCCStarSubRegister::CFD_BC_COARSEDELAY	,32	,4	,2}	,
@@ -175,6 +178,63 @@ const std::vector<hccsubregdef> StarCfg::s_hccsubregdefs = {
   {HCCStarSubRegister::THERMOFFSET              ,48	,20	,4}	
 };
 
+StarRegInfo::StarRegInfo() {
+  for (HCCStarRegister reg : HCCStarRegister::_values()) {
+    int addr = reg;
+    hccregisterMap[addr] = std::make_shared<RegisterInfo>(addr);
+  }
+
+  for (ABCStarRegister reg : ABCStarRegister::_values()) {
+    int addr = reg;
+    abcregisterMap[addr] = std::make_shared<RegisterInfo>(addr);
+  }
+
+  for (auto def : s_hccsubregdefs) {
+    auto reg_id = std::get<0>(def);
+    std::string subregname = std::string(reg_id._to_string());
+    auto addr = std::get<1>(def);
+    auto offset = std::get<2>(def);
+    auto width = std::get<3>(def);
+    hccSubRegisterMap_all[reg_id] = hccregisterMap[addr]->addSubRegister(subregname, offset, width);
+  }
+
+  for (auto def : s_abcsubregdefs) {
+    auto reg_id = std::get<0>(def);
+    std::string subregname = std::string(reg_id._to_string());
+    auto addr = std::get<1>(def);
+    auto offset = std::get<2>(def);
+    auto width = std::get<3>(def);
+    abcSubRegisterMap_all[reg_id] = abcregisterMap[addr]->addSubRegister(subregname, offset, width);
+  }
+
+  ////# 256 TrimDac regs 4-bit lsb
+  int channel=0;
+  for(int i=ABCStarRegister::TrimDAC0; i<=ABCStarRegister::TrimDAC31;i++){
+    int nthStartBit = 0;
+    for(int j=0; j<8;j++){
+
+      std::string trimDAC_name = "trimdac_4lsb_"+std::to_string(channel);
+      ////std::to_string(((channel>>7)&1)+1)+"_"+std::to_string((channel&0x7f)+1); //trimdac_4lsb_<nthRow>_<nthCol>; row(1-2); col(1-256); match to histogram
+      //  		std::cout << " reg[" << i <<"] for channel[" << channel  << "]----->" << trimDAC_name <<  "     @ nthStartBit: "<< nthStartBit<< std::endl;
+      trimDAC_4LSB_RegisterMap_all[trimDAC_name] = abcregisterMap[i]->addSubRegister(trimDAC_name, nthStartBit, 4);
+      channel++;
+      nthStartBit+=4;
+    }
+  }
+
+  ////# 256 TrimDac regs 1-bit msb
+  channel = 0;
+  for(int i=ABCStarRegister::TrimDAC32; i<=ABCStarRegister::TrimDAC39;i++){
+    for(int j=0; j<32;j++){
+      std::string trimDAC_name = "trimdac_1msb_"+std::to_string(channel);
+      ////std::to_string(((channel>>7)&1)+1)+"_"+std::to_string((channel&0x7f)+1); //trimdac_1msb_<nthRow>_<nthCol>; row(1-2); col(1-256); match to histogram
+      //   		std::cout << " reg[" << i <<"] for channel[" << channel  << "]----->" << trimDAC_name << std::endl;;
+      trimDAC_1MSB_RegisterMap_all[trimDAC_name] = abcregisterMap[i]->addSubRegister(trimDAC_name, j, 1);
+      channel++;
+    }
+  }
+}
+
 double StarCfg::toCharge(double vcal) {
     // Q = C*V
     // Linear is good enough
@@ -213,7 +273,7 @@ void StarCfg::configure_HCC_Registers() {
   //all HCC Register addresses we will create
   for (HCCStarRegister reg : HCCStarRegister::_values()) {
     int addr = reg;
-    Register tmp_Reg(addr, 0 );
+    Register tmp_Reg(m_info->hccregisterMap[addr], 0);
 
     AllReg_List.push_back( std::move(tmp_Reg) ); //Save it to the list
     int lastReg = AllReg_List.size()-1;
@@ -241,18 +301,6 @@ void StarCfg::configure_HCC_Registers() {
   registerMap[0][HCCStarRegister::ErrCfg]->setValue(0x00000000);
   registerMap[0][HCCStarRegister::ADCcfg]->setValue(0x00406600);
 
-
-  for (auto def : s_hccsubregdefs) {
-    std::string subregname = std::string((std::get<0>(def))._to_string());
-    auto offset = std::get<2>(def);
-    auto mask = std::get<3>(def);
-    hccSubRegisterMap_all[std::get<0>(def)] = registerMap[0][std::get<1>(def)]->addSubRegister(subregname, offset, mask);
-  }
-
-
-
-
-
 }
 
 void StarCfg::configure_ABC_Registers(int chipID) {
@@ -262,7 +310,7 @@ void StarCfg::configure_ABC_Registers(int chipID) {
   unsigned int chipIndex = indexForABCchipID(chipID);
   for (ABCStarRegister reg : ABCStarRegister::_values()) {
     int addr = reg;
-    Register tmp_Reg( addr, 0 );
+    Register tmp_Reg(m_info->abcregisterMap[addr], 0);
     AllReg_List.push_back( std::move(tmp_Reg) ); //Save it to the list
     int lastReg = AllReg_List.size()-1;
     registerMap[chipIndex][addr]=&AllReg_List.at(lastReg); //Save it's position in memory to the registerMap
@@ -289,48 +337,21 @@ void StarCfg::configure_ABC_Registers(int chipID) {
   for (unsigned int iReg=ABCStarRegister::CalREG0; iReg<=ABCStarRegister::CalREG7; iReg++)
     registerMap[chipIndex][iReg]->setValue(0xFFFFFFFF);
 
-
-  for (auto def : s_abcsubregdefs) {
-    std::string subregname = std::string((std::get<0>(def))._to_string());
-    abcSubRegisterMap_all[chipIndex][std::get<0>(def)] = registerMap[chipIndex][std::get<1>(def)]->addSubRegister(subregname, std::get<2>(def), std::get<3>(def));
-  }
-
   /// TODO not sure if this is a good implementation; to-be-optimized.
   /// registerMap is quite large if it includes trimdac, that's 10chips x (256+256) = 5120
 
 
   ////# 256 TrimDac regs 4-bit lsb
   int channel=0;
-
-  for(int i=ABCStarRegister::TrimDAC0; i<=ABCStarRegister::TrimDAC31;i++){
+    for(int i=ABCStarRegister::TrimDAC0; i<=ABCStarRegister::TrimDAC31;i++){
   	registerMap[chipIndex][i]->setValue(0xFFFFFFFF);
-
-  	int nthStartBit = 0;
-  	for(int j=0; j<8;j++){
-
-  		std::string trimDAC_name = "trimdac_4lsb_"+std::to_string(channel);
-  				////std::to_string(((channel>>7)&1)+1)+"_"+std::to_string((channel&0x7f)+1); //trimdac_4lsb_<nthRow>_<nthCol>; row(1-2); col(1-256); match to histogram
-//  		std::cout << " reg[" << i <<"] for channel[" << channel  << "]----->" << trimDAC_name <<  "     @ nthStartBit: "<< nthStartBit<< std::endl;
-  		trimDAC_4LSB_RegisterMap_all[chipIndex][trimDAC_name] = registerMap[chipIndex][i]->addSubRegister(trimDAC_name, nthStartBit, 4);
-  		channel++;
-  		nthStartBit+=4;
-  	}
   }
 
   ////# 256 TrimDac regs 1-bit msb
   channel = 0;
   for(int i=ABCStarRegister::TrimDAC32; i<=ABCStarRegister::TrimDAC39;i++){
    	registerMap[chipIndex][i]->setValue(0x00000000);
-   	for(int j=0; j<32;j++){
-   		std::string trimDAC_name = "trimdac_1msb_"+std::to_string(channel);
-   				////std::to_string(((channel>>7)&1)+1)+"_"+std::to_string((channel&0x7f)+1); //trimdac_1msb_<nthRow>_<nthCol>; row(1-2); col(1-256); match to histogram
-//   		std::cout << " reg[" << i <<"] for channel[" << channel  << "]----->" << trimDAC_name << std::endl;;
-   		trimDAC_1MSB_RegisterMap_all[chipIndex][trimDAC_name] = registerMap[chipIndex][i]->addSubRegister(trimDAC_name, j, 1);
-   		channel++;
-   	}
    }
-
-
 }
 
 //HCC register accessor functions
@@ -376,15 +397,17 @@ void StarCfg::setTrimDAC(unsigned col, unsigned row, int value)  {
 //std::cout <<  __PRETTY_FUNCTION__ << "    row:" << row-1 << " col:" << (col-1) << " chn_tmp:" <<   chn_tmp << "  channel: " << channel << std::endl;
 
 	unsigned chipIndex = ceil(row/2.0);
-	if (trimDAC_4LSB_RegisterMap_all[chipIndex].find(trimDAC_4lsb_name) != trimDAC_4LSB_RegisterMap_all[chipIndex].end()) {
-		trimDAC_4LSB_RegisterMap_all[chipIndex][trimDAC_4lsb_name]->updateValue(value&0xf);
+	if (m_info->trimDAC_4LSB_RegisterMap_all.find(trimDAC_4lsb_name) != m_info->trimDAC_4LSB_RegisterMap_all.end()) {
+		auto info = m_info->trimDAC_4LSB_RegisterMap_all[trimDAC_4lsb_name];
+		registerMap[chipIndex][info->m_regAddress]->getSubRegister(info).updateValue(value&0xf);
 	} else {
 		std::cerr << " StarCfg::setTrimDAC--> Error: Could not find sub register \""<< trimDAC_4lsb_name << "\" in trimDAC_4LSB_RegisterMap_all for chip[" << chipIndex <<"]" << std::endl;
 	}
 
-	if (trimDAC_1MSB_RegisterMap_all[chipIndex].find(trimDAC_1msb_name) != trimDAC_1MSB_RegisterMap_all[chipIndex].end()) {
+	if (m_info->trimDAC_1MSB_RegisterMap_all.find(trimDAC_1msb_name) != m_info->trimDAC_1MSB_RegisterMap_all.end()) {
 //		std::cout << " value: " << value << "  " << ((value>>4)&0x1) << std::endl;
-		trimDAC_1MSB_RegisterMap_all[chipIndex][trimDAC_1msb_name]->updateValue((value>>4)&0x1);
+		auto info = m_info->trimDAC_1MSB_RegisterMap_all[trimDAC_1msb_name];
+		registerMap[chipIndex][info->m_regAddress]->getSubRegister(info).updateValue((value>>4)&0x1);
 	} else {
 		std::cerr << " StarCfg::setTrimDAC--> Error: Could not find sub register \""<< trimDAC_1msb_name << "\" in trimDAC_1MSB_RegisterMap_all for chip[" << chipIndex <<"]" << std::endl;
 	}
@@ -413,18 +436,22 @@ int StarCfg::getTrimDAC(unsigned col, unsigned row) {
 
 
 
-	if (trimDAC_4LSB_RegisterMap_all[chipIndex].find(trimDAC_4lsb_name) == trimDAC_4LSB_RegisterMap_all[chipIndex].end()) {
+	if (m_info->trimDAC_4LSB_RegisterMap_all.find(trimDAC_4lsb_name) == m_info->trimDAC_4LSB_RegisterMap_all.end()) {
 		std::cerr << " StarCfg::getTrimDAC--> Error: Could not find sub register \""<< trimDAC_4lsb_name << "\" in trimDAC_4LSB_RegisterMap_all for chip[" << chipIndex <<"]" << std::endl;
 		return 0;
 	}
 
-	if (trimDAC_1MSB_RegisterMap_all[chipIndex].find(trimDAC_1msb_name) == trimDAC_1MSB_RegisterMap_all[chipIndex].end()) {
+	auto info4 = m_info->trimDAC_4LSB_RegisterMap_all[trimDAC_4lsb_name];
+
+	if (m_info->trimDAC_1MSB_RegisterMap_all.find(trimDAC_1msb_name) == m_info->trimDAC_1MSB_RegisterMap_all.end()) {
 		std::cerr << " StarCfg::getTrimDAC--> Error: Could not find sub register \""<< trimDAC_1msb_name << "\" in trimDAC_1MSB_RegisterMap_all for chip[" << chipIndex <<"]" << std::endl;
 		return 0;
 	}
 
-	unsigned trimDAC_4LSB = trimDAC_4LSB_RegisterMap_all[chipIndex][trimDAC_4lsb_name]->getValue();
-	unsigned trimDAC_1MSB = trimDAC_1MSB_RegisterMap_all[chipIndex][trimDAC_1msb_name]->getValue();
+	auto info1 = m_info->trimDAC_1MSB_RegisterMap_all[trimDAC_1msb_name];
+
+	unsigned trimDAC_4LSB = registerMap[chipIndex][info4->m_regAddress]->getSubRegister(info4).getValue();
+	unsigned trimDAC_1MSB = registerMap[chipIndex][info1->m_regAddress]->getSubRegister(info1).getValue();
 
 
 	if(trimDAC_4LSB > 15 )

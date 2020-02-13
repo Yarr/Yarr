@@ -5,57 +5,84 @@
 #include <memory>
 #include <string>
 
+/// Description of a sub register
+struct SubRegisterInfo {
+        SubRegisterInfo(int regAddress, std::string subRegName, unsigned bOffset, unsigned width)
+          : m_regAddress(regAddress),
+            m_subRegName(subRegName),
+            m_bOffset(bOffset),
+            m_width(width)
+        {}
+
+        int m_regAddress;
+        unsigned m_bOffset;
+        unsigned m_width;
+
+        std::string name() const { return m_subRegName; }
+
+        int getRegAddress() const { return m_regAddress; }
+
+    private:
+        std::string m_subRegName;
+};
+
+
 class SubRegister{
     public:
-        SubRegister(){
-            m_parentReg = 0;
-            m_parentRegAddress = -1;
-            m_subRegName = "";
-            m_bOffset = 0;
-            m_mask = 0;
+        SubRegister()
+          : m_info(),
+            m_parentReg(nullptr)
+        {
         }
 
-        SubRegister(uint32_t *reg, int parentRegAddress, std::string subRegName, unsigned bOffset, unsigned mask) {
-            m_parentReg = reg;
-            m_parentRegAddress = parentRegAddress;
-            m_subRegName = subRegName;
-            m_bOffset = bOffset;
-            m_mask = mask;
+        SubRegister(uint32_t *reg, std::shared_ptr<SubRegisterInfo> info)
+          : m_info(info),
+            m_parentReg(reg)
+        {
         }
 
         // Get value of field
         const unsigned getValue() {
-            unsigned maskBits = (1<<m_mask)-1;
-            unsigned tmp = ((*m_parentReg&(maskBits<<m_bOffset))>>m_bOffset);
+            unsigned maskBits = (1<<m_info->m_width)-1;
+            unsigned tmp = ((*m_parentReg&(maskBits<<m_info->m_bOffset))>>m_info->m_bOffset);
 
             return tmp;
         }
 
         // Write value to field and config
         void updateValue(const uint32_t cfgBits) {
-            unsigned maskBits = (1<<m_mask)-1;
-            *m_parentReg=(*m_parentReg&(~(maskBits<<m_bOffset))) |
-              ((cfgBits&maskBits)<<m_bOffset);
+            unsigned maskBits = (1<<m_info->m_width)-1;
+            *m_parentReg=(*m_parentReg&(~(maskBits<<m_info->m_bOffset))) |
+              ((cfgBits&maskBits)<<m_info->m_bOffset);
         }
 
-        std::string name() const { return m_subRegName; }
+        uint32_t getParentRegValue() const{ return *m_parentReg; }
 
-        int getParentRegAddress() const { return m_parentRegAddress; }
-
-        uint32_t getParentRegValue() const { return *m_parentReg; }
-
-    private:
+   private:
+        std::shared_ptr<SubRegisterInfo> m_info;
         uint32_t *m_parentReg;
-        int m_parentRegAddress;
-        std::string m_subRegName;
-        unsigned m_bOffset;
-        unsigned m_mask;
+};
+
+struct RegisterInfo {
+        RegisterInfo(int address)
+            : m_regAddress(address)
+        {}
+
+        int m_regAddress;
+        std::map<std::string, std::shared_ptr<SubRegisterInfo>> subRegisterMap;
+
+        int addr() const{ return m_regAddress;}
+
+        std::shared_ptr<SubRegisterInfo> addSubRegister(std::string subRegName, unsigned bOffset, unsigned mask) {
+            subRegisterMap[subRegName].reset(new SubRegisterInfo(m_regAddress, subRegName, bOffset, mask));
+            return subRegisterMap[subRegName];
+        }
 };
 
 class Register {
     public:
-        Register(int addr=-1, uint32_t value=0)
-          : m_regAddress(addr),
+        Register(std::shared_ptr<RegisterInfo> info, uint32_t value)
+          : m_info(info),
             m_regValue(value)
         {}
 
@@ -67,26 +94,25 @@ class Register {
 
         ~Register() = default;
 
-        int addr() const { return m_regAddress;}
+        int addr() const { return m_info->m_regAddress;}
         const uint32_t getValue() const { return m_regValue;}
         void setValue(uint32_t value) {m_regValue = value;}
-        void setMySubRegisterValue(std::string subRegName, uint32_t value) {
-            subRegisterMap[subRegName]->updateValue(value);
+        void setMySubRegisterValue(std::string subRegName, uint32_t value){
+            auto &info = m_info->subRegisterMap[subRegName];
+            SubRegister(&m_regValue, info).updateValue(value);
         }
 
-        const unsigned getMySubRegisterValue(std::string subRegName) {
-            return subRegisterMap[subRegName]->getValue();
+        const unsigned getMySubRegisterValue(std::string subRegName){
+            auto &info = m_info->subRegisterMap[subRegName];
+            return SubRegister(&m_regValue, info).getValue();
         }
 
-        SubRegister *addSubRegister(std::string subRegName, unsigned bOffset, unsigned mask) {
-            subRegisterMap[subRegName].reset(new SubRegister(&m_regValue, m_regAddress, subRegName,bOffset, mask));
-            return subRegisterMap[subRegName].get();
+        SubRegister getSubRegister(std::shared_ptr<SubRegisterInfo> info) {
+          return SubRegister(&m_regValue, info);
         }
 
-    private:
-        std::map<std::string, std::unique_ptr<SubRegister>> subRegisterMap;
-
-        int m_regAddress;
+   private:
+        std::shared_ptr<RegisterInfo> m_info;
         uint32_t m_regValue;
 };
 
