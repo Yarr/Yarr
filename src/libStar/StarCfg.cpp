@@ -216,7 +216,7 @@ StarRegInfo::StarRegInfo() {
       std::string trimDAC_name = "trimdac_4lsb_"+std::to_string(channel);
       ////std::to_string(((channel>>7)&1)+1)+"_"+std::to_string((channel&0x7f)+1); //trimdac_4lsb_<nthRow>_<nthCol>; row(1-2); col(1-256); match to histogram
       //  		std::cout << " reg[" << i <<"] for channel[" << channel  << "]----->" << trimDAC_name <<  "     @ nthStartBit: "<< nthStartBit<< std::endl;
-      trimDAC_4LSB_RegisterMap_all[trimDAC_name] = abcregisterMap[i]->addSubRegister(trimDAC_name, nthStartBit, 4);
+      trimDAC_4LSB_RegisterMap_all[channel] = abcregisterMap[i]->addSubRegister(trimDAC_name, nthStartBit, 4);
       channel++;
       nthStartBit+=4;
     }
@@ -229,7 +229,7 @@ StarRegInfo::StarRegInfo() {
       std::string trimDAC_name = "trimdac_1msb_"+std::to_string(channel);
       ////std::to_string(((channel>>7)&1)+1)+"_"+std::to_string((channel&0x7f)+1); //trimdac_1msb_<nthRow>_<nthCol>; row(1-2); col(1-256); match to histogram
       //   		std::cout << " reg[" << i <<"] for channel[" << channel  << "]----->" << trimDAC_name << std::endl;;
-      trimDAC_1MSB_RegisterMap_all[trimDAC_name] = abcregisterMap[i]->addSubRegister(trimDAC_name, j, 1);
+      trimDAC_1MSB_RegisterMap_all[channel] = abcregisterMap[i]->addSubRegister(trimDAC_name, j, 1);
       channel++;
     }
   }
@@ -397,16 +397,16 @@ void StarCfg::setTrimDAC(unsigned col, unsigned row, int value)  {
 //std::cout <<  __PRETTY_FUNCTION__ << "    row:" << row-1 << " col:" << (col-1) << " chn_tmp:" <<   chn_tmp << "  channel: " << channel << std::endl;
 
 	unsigned chipIndex = ceil(row/2.0);
-	if (m_info->trimDAC_4LSB_RegisterMap_all.find(trimDAC_4lsb_name) != m_info->trimDAC_4LSB_RegisterMap_all.end()) {
-		auto info = m_info->trimDAC_4LSB_RegisterMap_all[trimDAC_4lsb_name];
+	if (m_info->trimDAC_4LSB_RegisterMap_all.find(channel) != m_info->trimDAC_4LSB_RegisterMap_all.end()) {
+		auto info = m_info->trimDAC_4LSB_RegisterMap_all[channel];
 		registerMap[chipIndex][info->m_regAddress]->getSubRegister(info).updateValue(value&0xf);
 	} else {
 		std::cerr << " StarCfg::setTrimDAC--> Error: Could not find sub register \""<< trimDAC_4lsb_name << "\" in trimDAC_4LSB_RegisterMap_all for chip[" << chipIndex <<"]" << std::endl;
 	}
 
-	if (m_info->trimDAC_1MSB_RegisterMap_all.find(trimDAC_1msb_name) != m_info->trimDAC_1MSB_RegisterMap_all.end()) {
+	if (m_info->trimDAC_1MSB_RegisterMap_all.find(channel) != m_info->trimDAC_1MSB_RegisterMap_all.end()) {
 //		std::cout << " value: " << value << "  " << ((value>>4)&0x1) << std::endl;
-		auto info = m_info->trimDAC_1MSB_RegisterMap_all[trimDAC_1msb_name];
+		auto info = m_info->trimDAC_1MSB_RegisterMap_all[channel];
 		registerMap[chipIndex][info->m_regAddress]->getSubRegister(info).updateValue((value>>4)&0x1);
 	} else {
 		std::cerr << " StarCfg::setTrimDAC--> Error: Could not find sub register \""<< trimDAC_1msb_name << "\" in trimDAC_1MSB_RegisterMap_all for chip[" << chipIndex <<"]" << std::endl;
@@ -436,19 +436,19 @@ int StarCfg::getTrimDAC(unsigned col, unsigned row) {
 
 
 
-	if (m_info->trimDAC_4LSB_RegisterMap_all.find(trimDAC_4lsb_name) == m_info->trimDAC_4LSB_RegisterMap_all.end()) {
+	if (m_info->trimDAC_4LSB_RegisterMap_all.find(channel) == m_info->trimDAC_4LSB_RegisterMap_all.end()) {
 		std::cerr << " StarCfg::getTrimDAC--> Error: Could not find sub register \""<< trimDAC_4lsb_name << "\" in trimDAC_4LSB_RegisterMap_all for chip[" << chipIndex <<"]" << std::endl;
 		return 0;
 	}
 
-	auto info4 = m_info->trimDAC_4LSB_RegisterMap_all[trimDAC_4lsb_name];
+	auto info4 = m_info->trimDAC_4LSB_RegisterMap_all[channel];
 
-	if (m_info->trimDAC_1MSB_RegisterMap_all.find(trimDAC_1msb_name) == m_info->trimDAC_1MSB_RegisterMap_all.end()) {
+	if (m_info->trimDAC_1MSB_RegisterMap_all.find(channel) == m_info->trimDAC_1MSB_RegisterMap_all.end()) {
 		std::cerr << " StarCfg::getTrimDAC--> Error: Could not find sub register \""<< trimDAC_1msb_name << "\" in trimDAC_1MSB_RegisterMap_all for chip[" << chipIndex <<"]" << std::endl;
 		return 0;
 	}
 
-	auto info1 = m_info->trimDAC_1MSB_RegisterMap_all[trimDAC_1msb_name];
+	auto info1 = m_info->trimDAC_1MSB_RegisterMap_all[channel];
 
 	unsigned trimDAC_4LSB = registerMap[chipIndex][info4->m_regAddress]->getSubRegister(info4).getValue();
 	unsigned trimDAC_1MSB = registerMap[chipIndex][info1->m_regAddress]->getSubRegister(info1).getValue();

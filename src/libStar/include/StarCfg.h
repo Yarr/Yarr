@@ -88,10 +88,10 @@ class StarRegInfo {
   std::map<ABCStarSubRegister, std::shared_ptr<SubRegisterInfo>> abcSubRegisterMap_all;
 
   //This is a 2D map of each trimDac_32b register to the chip index and trimDAC_4LSB register name.  For example trimDAC4LSB_RegisterMap_all[chip index][NAME]
-  std::map<std::string, std::shared_ptr<SubRegisterInfo>> trimDAC_4LSB_RegisterMap_all;
+  std::map<int, std::shared_ptr<SubRegisterInfo>> trimDAC_4LSB_RegisterMap_all;
 
   //This is a 2D map of each trimDac_32b register to the chip index and trimDAC_1MSB register name.  For example trimDAC1LSB_RegisterMap_all[chip index][NAME]
-  std::map<std::string, std::shared_ptr<SubRegisterInfo>> trimDAC_1MSB_RegisterMap_all;
+  std::map<int, std::shared_ptr<SubRegisterInfo>> trimDAC_1MSB_RegisterMap_all;
 
   static std::shared_ptr<StarRegInfo> instance() {
     if(!m_instance) m_instance.reset(new StarRegInfo);
