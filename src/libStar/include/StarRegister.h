@@ -26,15 +26,8 @@ struct SubRegisterInfo {
         std::string m_subRegName;
 };
 
-
 class SubRegister{
     public:
-        SubRegister()
-          : m_info(),
-            m_parentReg(nullptr)
-        {
-        }
-
         SubRegister(uint32_t *reg, std::shared_ptr<SubRegisterInfo> info)
           : m_info(info),
             m_parentReg(reg)
