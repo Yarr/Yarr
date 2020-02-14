@@ -15,8 +15,9 @@ class StripModel {
     float calculateTrimDAC(uint8_t TrimDAC, uint8_t TrimRange);
     
     float calculateNoise();
-
     static float calculateInjection(uint16_t BCAL);
+
+    bool calculateHit(uint16_t BCAL, uint8_t BVT, uint8_t TrimDAC, uint8_t TrimRange);
 
     static float gain_function(float charge);
     

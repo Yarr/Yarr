@@ -903,7 +903,6 @@ void StarEmu::generateFEData_CaliPulse(unsigned ichip, uint8_t bc)
     // Injected charge DAC
     // 9 bits, 0 - 170 mV
     uint16_t BCAL = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::ADCS3, abcID, 24, 16);
-    float injected_charge = StripModel::calculateInjection(BCAL);
 
     // Threshold DAC
     // BVT: 8 bits, 0 - -550 mV
@@ -914,20 +913,13 @@ void StarEmu::generateFEData_CaliPulse(unsigned ichip, uint8_t bc)
 
     // Loop over 256 strips
     for (int istrip = 0; istrip < 256; ++istrip) {
-        float noise_charge = m_stripArray[istrip].calculateNoise();
-        // After amplifier
-        float voltage_inj =
-            StripModel::gain_function(injected_charge + noise_charge);
-        
         // TrimDAC
         uint8_t TrimDAC = m_starCfg->getTrimDAC(istrip, abcID);
 
-        // Threshold
-        float vthreshold =
-            m_stripArray[istrip].calculateThreshold(BVT, TrimDAC, BTRANGE);
+        bool aHit = m_stripArray[istrip].calculateHit(BCAL, BVT, TrimDAC, BTRANGE);
 
         // Compare
-        if (voltage_inj > vthreshold) {
+        if (aHit) {
             // has a hit: set bit istrip%32 of the (7-istrip/32)'th register to 1
             m_fe_data[iABC][bc][7 - istrip/32] |= (1 << istrip%32);
         }

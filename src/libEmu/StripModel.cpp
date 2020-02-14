@@ -72,3 +72,20 @@ float StripModel::gain_function(float charge)
     // For now: linear gain 80 mV/fC
     return charge * 80; // mV
 }
+
+/// Determine if there is a hit
+bool StripModel::calculateHit(uint16_t BCAL, uint8_t BVT, uint8_t TrimDAC,
+                              uint8_t TrimRange)
+{
+    float injected_charge = calculateInjection(BCAL);
+    float noise_charge = calculateNoise();
+
+    // After amplifier
+    float voltage_inj = gain_function(injected_charge + noise_charge);
+
+    // Threshold
+    float vthreshold = calculateThreshold(BVT, TrimDAC, TrimRange);
+
+    // Compare
+    return voltage_inj > vthreshold;
+}
