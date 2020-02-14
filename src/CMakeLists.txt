@@ -70,8 +70,16 @@ YARR_ADD_VARIANT()
 add_dependencies(Yarr variant)
 YARR_ADD_TBB()
 add_dependencies(Yarr tbb_2019)
-YARR_ADD_PLOTTING()
-add_dependencies(Yarr plotting_tools)
+
+# Plotting Tools
+find_package(ROOT COMPONENTS Hist Graf)
+if (${ROOT_FOUND})
+    YARR_ADD_PLOTTING()
+    add_dependencies(Yarr plotting_tools)
+    INSTALL(DIRECTORY ${CMAKE_BINARY_DIR}/src/external/src/plotting_tools/bin DESTINATION ${TARGET_INSTALL_AREA} FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ WORLD_EXECUTE WORLD_READ GROUP_EXECUTE GROUP_READ)
+else (${ROOT_FOUND})
+    MESSAGE(STATUS "Could not locate ROOT. Will not compile plotting tools!")
+endif (${ROOT_FOUND})
 
 if ("Rogue" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   YARR_ADD_ROGUE()
@@ -134,7 +142,6 @@ endforeach()
 
 install(DIRECTORY ${PROJECT_BINARY_DIR}/bin DESTINATION ${TARGET_INSTALL_AREA}  FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
     WORLD_EXECUTE WORLD_READ GROUP_EXECUTE GROUP_READ  )
-INSTALL(DIRECTORY ${CMAKE_BINARY_DIR}/src/external/src/plotting_tools/bin DESTINATION ${TARGET_INSTALL_AREA})
 
 # Tests
 file(GLOB_RECURSE test_src tests/test_*.cpp)
