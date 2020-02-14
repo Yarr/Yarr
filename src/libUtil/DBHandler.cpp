@@ -42,7 +42,7 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_command, std
     // m_verify:True => verify component, stage, and some files for avoiding mistakes
     if (db_json["verify"].is_bool()) m_verify = db_json["verify"];
     if (i_option=="dcs"||i_option=="register") m_verify = true;
-    if (i_option=="qc"||i_option=="register") m_verify = true;
+    if (i_option=="iv"||i_option=="register") m_verify = true;
 
     m_command = "localdbtool-upload";
     std::string cmd = m_command+" test 2> /dev/null";
@@ -235,8 +235,8 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, st
     return;
 }
 
-void DBHandler::setQCCfg(std::string i_qc_path, std::string i_scanlog_path, std::string i_user_path, std::string i_site_path) {
-    if (DB_DEBUG) std::cout << "DBHandler: Set QC config: " << i_qc_path << std::endl;
+void DBHandler::setIVCfg(std::string i_iv_path, std::string i_scanlog_path, std::string i_user_path, std::string i_site_path) {
+    if (DB_DEBUG) std::cout << "DBHandler: Set IV config: " << i_iv_path << std::endl;
 
     json log_json = this->toJson(i_scanlog_path);
     json user_json = this->setUser(i_user_path);
@@ -277,58 +277,58 @@ void DBHandler::setQCCfg(std::string i_qc_path, std::string i_scanlog_path, std:
     std::string scanlog_path = log_path + "/scanLog.json";
     this->checkFile(scanlog_path, "Failed to get real path to "+i_scanlog_path);
     m_output_dir = log_path;
-    log_path = log_path+"/dbQCLog.json";
+    log_path = log_path+"/dbIVLog.json";
 
-    json qc_log_json;
+    json iv_log_json;
 
     int timestamp_int = -1;
     std::string timestamp_str = "";
-    if (!log_json["id"].empty()) qc_log_json["id"] = log_json["id"];
-    if (!log_json["startTime"].empty()) qc_log_json["startTime"] = log_json["startTime"];
-    if (!log_json["timestamp"].empty()) qc_log_json["timestamp"] = log_json["timestamp"];
-    if (!log_json["userCfg"].empty()) qc_log_json["userCfg"] = log_json["userCfg"];
-    if (!log_json["siteCfg"].empty()) qc_log_json["siteCfg"] = log_json["siteCfg"];
+    if (!log_json["id"].empty()) iv_log_json["id"] = log_json["id"];
+    if (!log_json["startTime"].empty()) iv_log_json["startTime"] = log_json["startTime"];
+    if (!log_json["timestamp"].empty()) iv_log_json["timestamp"] = log_json["timestamp"];
+    if (!log_json["userCfg"].empty()) iv_log_json["userCfg"] = log_json["userCfg"];
+    if (!log_json["siteCfg"].empty()) iv_log_json["siteCfg"] = log_json["siteCfg"];
 
- 
-    json dcs_json = this->toJson(i_qc_path);
+
+    json dcs_json = this->toJson(i_iv_path);
     if (dcs_json["environments"].empty()) return;
     json env_json = dcs_json["environments"];
 
     for (int i=0; i<(int)env_json.size(); i++) {
         std::string num_str = std::to_string(i);
-        this->checkEmpty(env_json[i]["status"].empty(), "environments."+num_str+".status", i_qc_path, "Set enabled/disabled to register.");
+        this->checkEmpty(env_json[i]["status"].empty(), "environments."+num_str+".status", i_iv_path, "Set enabled/disabled to register.");
         if (env_json[i]["status"]!="enabled") continue;
 
-        this->checkDCSCfg(i_qc_path, num_str, env_json[i]);
+        this->checkDCSCfg(i_iv_path, num_str, env_json[i]);
         if (!env_json[i]["path"].empty()) {
             int j_num = env_json[i]["num"];
             std::string env_log_path = "";
             std::string j_key = env_json[i]["key"];
             env_log_path = env_json[i]["path"];
-            std::string extension = this->checkDCSLog(env_log_path, i_qc_path, j_key, j_num);
+            std::string extension = this->checkDCSLog(env_log_path, i_iv_path, j_key, j_num);
             std::string chip_name = "";
             if (!env_json[i]["chip"].empty()) chip_name = std::string(env_json[i]["chip"])+"_";
             std::string file_path = m_output_dir+"/"+chip_name+j_key+"_"+std::to_string(j_num)+"."+extension;
             std::string cmd = "cp "+env_log_path+" "+file_path;
             env_json[i]["path"] = file_path;
             if (system(cmd.c_str()) < 0) {
-                std::string message = "Cannot copy the QC data log file.";
+                std::string message = "Cannot copy the IV data log file.";
                 std::string function = __PRETTY_FUNCTION__;
                 this->alert(function, message);
             }
         } else {
-            this->checkNumber(env_json[i]["value"].is_number(), "environments."+num_str+".value", i_qc_path);
+            this->checkNumber(env_json[i]["value"].is_number(), "environments."+num_str+".value", i_iv_path);
         }
     }
 
-    qc_log_json["environments"] = env_json;
+    iv_log_json["environments"] = env_json;
 
     json db_json = toJson(m_db_cfg_path);
 
-    qc_log_json["dbCfg"] = db_json;
+    iv_log_json["dbCfg"] = db_json;
 
     std::ofstream log_file(log_path);
-    log_file << std::setw(4) << qc_log_json;
+    log_file << std::setw(4) << iv_log_json;
     log_file.close();
 
     return;
@@ -366,8 +366,8 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir) {
         log_path = home+"/.yarr/localdb/run.dat";
     } else if (i_option=="dcs") {
         log_path = home+"/.yarr/localdb/dcs.dat";
-    } else if (i_option=="qc") {
-        log_path = home+"/.yarr/localdb/qc.dat";
+    } else if (i_option=="iv") {
+        log_path = home+"/.yarr/localdb/iv.dat";
     } else {
         std::string message = "Unsupported option.";
         std::string function = __PRETTY_FUNCTION__;
@@ -388,7 +388,7 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir) {
         if (system(cmd.c_str())==0) {
             if (i_option=="scan") cmd = m_command+" scan "+result_dir+" --log &";
             else if (i_option=="dcs") cmd = m_command+" dcs "+result_dir+" --log &";
-            else if (i_option=="qc") cmd = m_command+" qc "+result_dir+" --log &";
+            else if (i_option=="iv") cmd = m_command+" iv "+result_dir+" --log &";
             system(cmd.c_str());
             std::cout << "#DB INFO# Uploading in the back ground. (log: ~/.yarr/localdb/log/)" << std::endl;
         } else {

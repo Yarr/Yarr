@@ -38,7 +38,7 @@ int main(int argc, char *argv[]){
 
     // Init parameters
     std::string dcs_path = "";
-    std::string qc_path = "";
+    std::string iv_path = "";
     std::string conn_path = "";
     std::string scanlog_path = "";
 
@@ -68,8 +68,8 @@ int main(int argc, char *argv[]){
                 dcs_path = std::string(optarg);
                 break;
             case 'Q':
-                registerType = "EnvironmentQC";
-                qc_path = std::string(optarg);
+                registerType = "EnvironmentIV";
+                iv_path = std::string(optarg);
                 break;
             case 'M':
                 registerType = "Module";
@@ -162,19 +162,19 @@ int main(int argc, char *argv[]){
         return 0;
     }
 
-    // cache QC
-    if (registerType == "EnvironmentQC") {
+    // cache IV
+    if (registerType == "EnvironmentIV") {
         DBHandler *database = new DBHandler();
         if (scanlog_path == "") {
             std::cerr << "#DB ERROR# No scan log file path given, please specify file path under -s option!" << std::endl;
             return 1;
         }
-        std::cout << "DBHandler: Register Environment QC:" << std::endl;
-        std::cout << "\tenvironmental config file : " << qc_path << std::endl;
+        std::cout << "DBHandler: Register Environment IV:" << std::endl;
+        std::cout << "\tenvironmental config file : " << iv_path << std::endl;
 
         database->initialize(cfg_path, commandLine, "register");
-        database->setQCCfg(qc_path, scanlog_path, user_cfg_path, site_cfg_path);
-        database->cleanUp("qc", "");
+        database->setIVCfg(iv_path, scanlog_path, user_cfg_path, site_cfg_path);
+        database->cleanUp("iv", "");
 
         delete database;
         return 0;
@@ -240,7 +240,7 @@ void printHelp() {
     std::cout << " -R: Upload data into Local DB from cache." << std::endl;
     std::cout << " -E <dcs.json> : Provide DCS configuration to upload DCS data into Local DB." << std::endl;
     std::cout << "     -s <scanLog.json> : Provide scan log file." << std::endl;
-    std::cout << " -Q <qc.json> : Provide QC configuration to upload QC data into Local DB." << std::endl;
+    std::cout << " -Q <iv.json> : Provide IV configuration to upload IV data into Local DB." << std::endl;
     std::cout << "     -s <scanLog.json> : Provide scan log file." << std::endl;
     std::cout << " -M : Retrieve Module list from Local DB." << std::endl;
     std::cout << " " << std::endl;
