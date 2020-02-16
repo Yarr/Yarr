@@ -92,7 +92,7 @@ if ( ( [ -d $output_folder ] ) && ( [ `ls -a $output_folder | wc -l` -gt 2 ] ) )
    fi
 fi
 
-lcov -z -d
+lcov -z -d $binary_folder
 ec=$?
 if [ $ec -ne 0 ]; then
   exit $ec
