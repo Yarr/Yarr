@@ -7,10 +7,11 @@
 #  Warning:  Can clear all .gcda files under <binary_folder> first,
 #            so be sure they don't need to be preserved.
 
-if ( ( [ x$1 == x-h ] ) || ( [ x$1 == x--help ] ) ); then
+if [ $# -eq 1 ]; then
   echo
-  echo "Usage: $0 [-cc_i <binary_folder>] [-cc_o <output_folder>] [-cc_s <test_script_params>]"
+  echo "Usage:  $0 [-cc_i <binary_folder>] [-cc_o <output_folder>] [-cc_s <test_script_params>]"
   echo
+  exit
 fi
 
 #  First 2 default parameters:
@@ -91,7 +92,11 @@ if ( ( [ -d $output_folder ] ) && ( [ `ls -a $output_folder | wc -l` -gt 2 ] ) )
    fi
 fi
 
-lcov -z -d $binary_folder #  TODO:  Don't forget to uncomment this line when ready for real testing/usage!
+lcov -z -d
+ec=$?
+if [ $ec -ne 0 ]; then
+  exit $ec
+fi
 
 $test_script_params
 ec=$?
@@ -104,10 +109,12 @@ ec=$?
 if [ $ec -ne 0 ]; then
   exit $ec
 fi
+
 lcov -q -r $output_folder.info "*src/external/src/*" -o ${output_folder}n.info
 ec=$?
 if [ $ec -ne 0 ]; then
   exit $ec
 fi
 mv ${output_folder}n.info $output_folder.info
+
 genhtml $output_folder.info -o $output_folder
