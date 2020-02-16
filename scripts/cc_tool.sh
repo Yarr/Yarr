@@ -99,12 +99,12 @@ if [ $ec -ne 0 ]; then
   exit $ec
 fi
 
-lcov -c -d $binary_folder -b . -o $output_folder.info --no-external
+lcov -q -c -d $binary_folder -b . -o $output_folder.info --no-external
 ec=$?
 if [ $ec -ne 0 ]; then
   exit $ec
 fi
-lcov -r $output_folder.info "*src/external/src/*" -o ${output_folder}n.info
+lcov -q -r $output_folder.info "*src/external/src/*" -o ${output_folder}n.info
 ec=$?
 if [ $ec -ne 0 ]; then
   exit $ec

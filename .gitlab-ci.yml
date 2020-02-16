@@ -68,3 +68,19 @@ job_test_json:
     script:
       - npm install jsonlint -g
       - for file in $(find ../configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
+
+job_test_code_coverage:
+    stage: build
+    script:
+      - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+      - mkdir  build
+      - cd build
+      - cmake3 .. -DCMAKE_BUILD_TYPE=Coverage -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
+      - make install -j4
+      - export USER=test
+      - echo $USER
+      - /bin/pwd
+      - mkdir /tmp/test
+      - ls /tmp/
+      - cd ../
+      - scripts/cc_tool.sh
