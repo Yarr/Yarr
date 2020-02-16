@@ -7,11 +7,10 @@
 #  Warning:  Can clear all .gcda files under <binary_folder> first,
 #            so be sure they don't need to be preserved.
 
-if [ x$1 == x-h ]; then
+if ( ( [ x$1 == x-h ] ) || ( [ x$1 == x--help ] ) ); then
   echo
   echo "Usage: $0 [-cc_i <binary_folder>] [-cc_o <output_folder>] [-cc_s <test_script_params>]"
   echo
-  exit 1
 fi
 
 #  First 2 default parameters:
@@ -38,46 +37,49 @@ for arg in $*; do
   esac
 done
 
+test_script=`echo $test_script_params | cut -d ' ' -f 1`
+#  Default output_folder based on test_script
+if [ x"$output_folder" == x ]; then
+  output_folder="`basename -s .sh $test_script`"
+fi
+
+echo
+
+echo binary_folder=$binary_folder
 if [ ! -d $binary_folder ]; then
   echo
   echo Binary folder $binary_folder does not exist.
   echo Nothing done!
   echo
-    exit 2
+  exit 101
 fi
 
-#  Default output_folder based on test_script
-if [ x"$output_folder" == x ]; then
-  test_script=`echo $test_script_params | cut -d ' ' -f 1`
-  if [ -f $test_script ]; then
-    output_folder="`basename -s .sh $test_script`"
-  else
-    echo
-    echo Test script $test_script does not exist.
-    echo Nothing done!
-    echo
-    exit 3
-  fi
-fi
-echo
-echo binary_folder=$binary_folder
 echo test_script_params=$test_script_params
+if [ ! -f $test_script ]; then
+  echo
+  echo Test script $test_script does not exist.
+  echo Nothing done!
+  echo
+  exit 102
+fi
+
 echo output_folder=$output_folder
+
 echo
 
 if ( ( [ -d $binary_folder ] ) && ( [ `find $binary_folder -name "*.gcda" -print | wc -l` -gt 0 ] ) ); then
-   echo "Are you sure you want to remove all existing .gcda files in $binary_folder [Y|N] (N)?"
+   echo "Are you sure you want to remove all already existing .gcda files in $binary_folder [Y|N] (N)?"
    read YN
    if [ `echo x"$YN" | cut -c 1-2` != xY ]; then
      echo
      echo Nothing done!
      echo
-     exit 4
+     exit 103
    fi
 fi
 
 if ( ( [ -d $output_folder ] ) && ( [ `ls -a $output_folder | wc -l` -gt 2 ] ) ); then
-   echo "Are you sure you want to overwrite the contents of $output_folder [Y|N] (N)?"
+   echo "Are you sure you want to put results into the already existing non-empty contents of $output_folder [Y|N] (N)?"
    read YN
    if [ `echo x"$YN" | cut -c 1-2` == xY ]; then
      rm -rf $output_folder/*
@@ -85,13 +87,17 @@ if ( ( [ -d $output_folder ] ) && ( [ `ls -a $output_folder | wc -l` -gt 2 ] ) )
      echo
      echo Nothing done!
      echo
-     exit 5
+     exit 104
    fi
 fi
 
 lcov -z -d $binary_folder #  TODO:  Don't forget to uncomment this line when ready for real testing/usage!
 
 $test_script_params
+ec=$?
+if [ $ec -ne 0 ]; then
+  exit $ec
+fi
 
 lcov -c -d $binary_folder -b . -o $output_folder.info --no-external
 ec=$?
