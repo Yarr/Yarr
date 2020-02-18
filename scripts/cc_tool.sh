@@ -40,7 +40,7 @@ done
 
 test_script=`echo $test_script_params | cut -d ' ' -f 1`
 #  Default output_folder based on test_script
-if [ x"$output_folder" == x ]; then
+if [ "$output_folder" == "" ]; then
   output_folder="`basename -s .sh $test_script`"
 fi
 
@@ -69,9 +69,9 @@ echo output_folder=$output_folder
 echo
 
 if ( ( [ -d $binary_folder ] ) && ( [ `find $binary_folder -name "*.gcda" -print | wc -l` -gt 0 ] ) ); then
-   echo "Are you sure you want to remove all already existing .gcda files in $binary_folder [Y|N] (N)?"
-   read YN
-   if [ `echo x"$YN" | cut -c 1-2` != xY ]; then
+   read -n 1 -p "Are you sure you want to remove all already existing .gcda files in $binary_folder [Y|N] (N)?" YN
+   echo
+   if [ "$YN" != "Y" ]; then
      echo
      echo Nothing done!
      echo
@@ -80,9 +80,9 @@ if ( ( [ -d $binary_folder ] ) && ( [ `find $binary_folder -name "*.gcda" -print
 fi
 
 if ( ( [ -d $output_folder ] ) && ( [ `ls -a $output_folder | wc -l` -gt 2 ] ) ); then
-   echo "Are you sure you want to put results into the already existing non-empty contents of $output_folder [Y|N] (N)?"
-   read YN
-   if [ `echo x"$YN" | cut -c 1-2` == xY ]; then
+   read -n 1 -p "Are you sure you want to put results into the already existing and non-empty folder $output_folder [Y|N] (N)?" YN
+   echo
+   if [ "$YN" == "Y" ]; then
      rm -rf $output_folder/*
    else
      echo
