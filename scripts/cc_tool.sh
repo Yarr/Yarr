@@ -110,7 +110,11 @@ if [ $ec -ne 0 ]; then
   exit $ec
 fi
 
-lcov -q -r $output_folder.info "*src/external/src/*" -o ${output_folder}n.info
+lcov -q -r $output_folder.info "*src/external/src/*"  \
+        -r $output_folder.info "*libUtil/include/spdlog*" \
+        -r $output_folder.info "*libUtil/include/json.hpp" \
+        -r $output_folder.info "*libUtil/include/catch.hpp" \
+     -o ${output_folder}n.info
 ec=$?
 if [ $ec -ne 0 ]; then
   exit $ec
