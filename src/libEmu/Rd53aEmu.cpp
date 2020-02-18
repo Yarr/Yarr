@@ -100,7 +100,7 @@ public:
 
 
 //____________________________________________________________________________________________________
-Rd53aEmu::Rd53aEmu(EmuCom * rx, EmuCom * tx, std::string json_file_path)
+Rd53aEmu::Rd53aEmu(EmuCom * rx, EmuCom * tx, std::string json_file_path, int srand_seed)
     : m_txRingBuffer ( tx )
     , m_rxRingBuffer ( rx )
     , m_feCfg        ( new Rd53aCfg )
@@ -109,7 +109,7 @@ Rd53aEmu::Rd53aEmu(EmuCom * rx, EmuCom * tx, std::string json_file_path)
     , analogHits     ( new Histo2d("analogHits", Rd53aPixelCfg::n_Col, -0.5, 399.5, Rd53aPixelCfg::n_Row, -0.5, 191.5, typeid(void)) )
 {
     
-    srand(1);
+    srand(srand_seed);
     
     run = true;
 

@@ -51,14 +51,21 @@ void EmuController<Rd53a, Rd53aEmu>::loadConfig(json &j) {
 //    EmuTxCore::setCom(new EmuShm(j["tx"]["id"], j["tx"]["size"], true));
 //    EmuRxCore::setCom(new EmuShm(j["rx"]["id"], j["rx"]["size"], true));
 
+  int srand_seed = time(NULL);
+  std::string infotoken = "";
+  if (j["seed"] == "fixed") {
+    srand_seed = 1;
+    infotoken = " Random Seed Fixed";
+  }
+
   auto tx = EmuTxCore<Rd53a>::getCom();
   auto rx = EmuRxCore<Rd53a>::getCom();
 
   //TODO make nice
-  logger->info("Starting RD53a Emulator");
+  logger->info("Starting RD53a Emulator" + infotoken);
   std::string emuCfgFile = j["feCfg"];
   logger->info(" read {}", emuCfgFile);
-  emu.reset(new Rd53aEmu( rx_com.get(), tx_com.get(), emuCfgFile ));
+  emu.reset(new Rd53aEmu( rx_com.get(), tx_com.get(), emuCfgFile , srand_seed));
   emuThreads.push_back(std::thread(&Rd53aEmu::executeLoop, emu.get()));
 }
 
