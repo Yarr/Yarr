@@ -7,7 +7,6 @@
 // # Comment: StarChips FrontEnd class
 // ################################
 
-#include <iostream>
 #include <string>
 
 #include "FrontEnd.h"

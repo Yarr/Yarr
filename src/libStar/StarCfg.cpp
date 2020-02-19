@@ -6,8 +6,11 @@
 
 #include "StarCfg.h"
 
-#include <iomanip>
-#include <iostream>
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("StarCfg");
+}
 
 StarCfg::StarCfg() {}
 
@@ -30,7 +33,7 @@ void StarCfg::initRegisterMaps() {
   m_hcc.configure_HCC_Registers();
 
   //Now make registers for each ABC
-  std::cout << "Now have m_nABC as " << abc_count << std::endl;
+  logger->debug("Now have m_nABC as {}", abc_count);
   for( int iABC = 0; iABC < abc_count; ++iABC){ //Start at 1 b/c zero is HCC!
     //Make all registers and subregisters for the HCC
     abcFromIndex(iABC+1).configure_ABC_Registers();
@@ -70,7 +73,9 @@ void StarCfg::setTrimDAC(unsigned col, unsigned row, int value)  {
     if(nthRow==1) channel = (col-1) + chn_tmp*2;
     else if(nthRow==2) channel = (col-1) + (chn_tmp+1)*2;
 
-//std::cout <<  __PRETTY_FUNCTION__ << "    row:" << row-1 << " col:" << (col-1) << " chn_tmp:" <<   chn_tmp << "  channel: " << channel << std::endl;
+    SPDLOG_LOGGER_TRACE(logger,
+                        "row:{} col:{} chn_tmp:{} channel:{}",
+                        row-1, col-1, chn_tmp, channel);
 
     unsigned chipIndex = ceil(row/2.0);
 
@@ -88,7 +93,9 @@ int StarCfg::getTrimDAC(unsigned col, unsigned row) const {
     if(nthRow==1) channel = (col-1) + chn_tmp*2;
     else if(nthRow==2) channel = (col-1) + (chn_tmp+1)*2;
 
-//std::cout << __PRETTY_FUNCTION__ << "    row:" << row-1 << " col:" << (col-1) << " chn_tmp:" <<   chn_tmp << "  channel: " << channel << std::endl;
+    SPDLOG_LOGGER_TRACE(logger,
+                        " row:{} col:{} chn_tmp:{} channel:{}",
+                        row-1, col-1, chn_tmp, channel);
 
     unsigned chipIndex = ceil(row/2.0);
 
@@ -98,7 +105,9 @@ int StarCfg::getTrimDAC(unsigned col, unsigned row) const {
 }
 
 void StarCfg::toFileJson(json &j) {
+    logger->debug("Send StarCfg to json");
 }
 
 void StarCfg::fromFileJson(json &j) {
+    logger->debug("Read StarCfg from json");
 }

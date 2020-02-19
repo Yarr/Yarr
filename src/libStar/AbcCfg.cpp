@@ -1,6 +1,10 @@
 #include "AbcCfg.h"
 
-#include <iostream>
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("StarCfgABC");
+}
 
 std::shared_ptr<AbcStarRegInfo> AbcStarRegInfo::m_instance;
 
@@ -170,14 +174,14 @@ void AbcCfg::configure_ABC_Registers() {
 }
 
 void AbcCfg::setTrimDACRaw(unsigned channel, int value) {
-    std::string trimDAC_4lsb_name = "trimdac_4lsb_"+std::to_string(channel);
     std::string trimDAC_1msb_name = "trimdac_1msb_"+std::to_string(channel);
 
     if (m_info->trimDAC_4LSB_RegisterMap_all.find(channel) != m_info->trimDAC_4LSB_RegisterMap_all.end()) {
         auto info = m_info->trimDAC_4LSB_RegisterMap_all[channel];
         m_registerMap[info->m_regAddress]->getSubRegister(info).updateValue(value&0xf);
     } else {
-        std::cerr << " StarCfg::setTrimDAC--> Error: Could not find sub register \""<< trimDAC_4lsb_name << "\" in trimDAC_4LSB_RegisterMap_all for chip[ID " << getABCchipID() <<"]" << std::endl;
+        logger->error("Could not find sub register for 4LSB for channel {} for chip[ID {}]",
+                      channel, getABCchipID());
     }
 
     if (m_info->trimDAC_1MSB_RegisterMap_all.find(channel) != m_info->trimDAC_1MSB_RegisterMap_all.end()) {
@@ -185,7 +189,7 @@ void AbcCfg::setTrimDACRaw(unsigned channel, int value) {
         auto info = m_info->trimDAC_1MSB_RegisterMap_all[channel];
         m_registerMap[info->m_regAddress]->getSubRegister(info).updateValue((value>>4)&0x1);
     } else {
-        std::cerr << " StarCfg::setTrimDAC--> Error: Could not find sub register \""<< trimDAC_1msb_name << "\" in trimDAC_1MSB_RegisterMap_all for chip[" << getABCchipID() <<"]" << std::endl;
+        logger->error("Could not find sub register for 1MSB for channel {} for chip[ID {}]", channel, getABCchipID());
   }
 }
 
@@ -194,14 +198,15 @@ int AbcCfg::getTrimDACRaw(unsigned channel) const {
     std::string trimDAC_1msb_name = "trimdac_1msb_"+std::to_string(channel);
 
     if (m_info->trimDAC_4LSB_RegisterMap_all.find(channel) == m_info->trimDAC_4LSB_RegisterMap_all.end()) {
-        std::cerr << " StarCfg::getTrimDAC--> Error: Could not find sub register \""<< trimDAC_4lsb_name << "\" in trimDAC_4LSB_RegisterMap_all for chip[ID " << getABCchipID() <<"]" << std::endl;
+        logger->error("Could not find sub register for 4LSB for channel {} for chip[ID {}]",
+                      channel, getABCchipID());
         return 0;
     }
 
     auto info4 = m_info->trimDAC_4LSB_RegisterMap_all[channel];
 
     if (m_info->trimDAC_1MSB_RegisterMap_all.find(channel) == m_info->trimDAC_1MSB_RegisterMap_all.end()) {
-        std::cerr << " StarCfg::getTrimDAC--> Error: Could not find sub register \""<< trimDAC_1msb_name << "\" in trimDAC_1MSB_RegisterMap_all for chip[ID " << getABCchipID() <<"]" << std::endl;
+        logger->error("Could not find sub register for 1MSB for channel {} for chip[ID {}]", channel, getABCchipID());
         return 0;
     }
 
@@ -211,10 +216,12 @@ int AbcCfg::getTrimDACRaw(unsigned channel) const {
     unsigned trimDAC_1MSB = m_registerMap.at(info1->m_regAddress)->getSubRegister(info1).getValue();
 
     if(trimDAC_4LSB > 15 )
-        std::cerr << " --> Error: Sub register \""<< trimDAC_4lsb_name << "\" in trimDAC_4LSB_RegisterMap_all for chip[ID " << getABCchipID() <<"] is larger than 15 with value" << trimDAC_4LSB << std::endl;
+      logger->error(" Sub register value for 4LSB channel {} for chip[ID {}] is larger than 15 with value {}",
+                    channel, getABCchipID(), trimDAC_4LSB);
 
     if(trimDAC_1MSB > 1 )
-        std::cerr << " --> Error: Sub register \""<< trimDAC_1msb_name << "\" in trimDAC_1MSB_RegisterMap_all for chip[ID " << getABCchipID() <<"] is larger than 1 with value" << trimDAC_1MSB << std::endl;
+      logger->error(" Sub register value for 1MSB channel {} for chip[ID {}] is larger than 1 with value {}",
+                    channel, getABCchipID(), trimDAC_1MSB);
 
     return ( (trimDAC_1MSB<<4) | trimDAC_4LSB);
 }
