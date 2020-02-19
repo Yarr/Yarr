@@ -26,13 +26,16 @@ int main( int argc, char* argv[] )
   if( returnCode != 0 ) // Indicates a command line error
     return returnCode;
 
-  // NB default is no logging, unlike scanConsole
-  if( !logging_config.empty() ) {
-    json lj;
+  json lj;
+  if( logging_config.empty() ) {
+    // default to logging errors and above
+    lj["log_config"][0]["name"] = "all";
+    lj["log_config"][0]["level"] = "error";
+  } else {
     std::ifstream log_file(logging_config);
     lj = json::parse(log_file);
-    logging::setupLoggers(lj);
   }
+  logging::setupLoggers(lj);
 
   return session.run();
 }
