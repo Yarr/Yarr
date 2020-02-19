@@ -14,7 +14,7 @@ job_build_and_test:
       - mkdir /tmp/test
       - ls /tmp/
       - cd ../
-      - bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p -l configs/logging.json
+      - bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p -l configs/logging/trace_all.json
       - ls
       - ls ./data/
       - ls ./data/000001_std_digitalscan/
