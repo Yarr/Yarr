@@ -25,12 +25,7 @@ class StarRegInfo {
 
   //This is a map from each register address to the register info.  Thus abcregisterMap[addr]
   std::map<unsigned, std::shared_ptr<RegisterInfo>> abcregisterMap;
-  //This is a map from each register address to the register info.  Thus hccregisterMap[addr]
-  std::map<unsigned, std::shared_ptr<RegisterInfo>> hccregisterMap;
 
-  //This is a 2D map of each subregister to the HCC subregister name.  For example hccSubRegisterMap_all[NAME]
-  // SubRegister is owned by the Registers
-  std::map<HCCStarSubRegister, std::shared_ptr<SubRegisterInfo>> hccSubRegisterMap_all;   //register record
   //This is a 2D map of each subregister to the ABC subregister name.  For example abcSubRegisterMap_all[NAME]
   std::map<ABCStarSubRegister, std::shared_ptr<SubRegisterInfo>> abcSubRegisterMap_all;
 
@@ -54,14 +49,12 @@ class StarCfg : public FrontEndCfg {
   StarCfg();
   ~StarCfg();
 
-
-  //Function to make all Registers for the HCC and ABC
-  void configure_HCC_Registers();
+  //Function to make all Registers for the ABC
   void configure_ABC_Registers(int chipID);
 
   //Accessor functions
-  const uint32_t getHCCRegister(uint32_t addr);
-  void     setHCCRegister(uint32_t addr, uint32_t val);
+  const uint32_t getHCCRegister(HCCStarRegister addr);
+  void     setHCCRegister(HCCStarRegister addr, uint32_t val);
   const uint32_t getABCRegister(uint32_t addr, int32_t chipID );
   void     setABCRegister(uint32_t addr, uint32_t val, int32_t chipID);
 
@@ -69,10 +62,8 @@ class StarCfg : public FrontEndCfg {
   //Initialized the registers of the HCC and ABC.  Do afer JSON file is loaded.
   void initRegisterMaps();
 
-  const unsigned int getHCCchipID(){return m_hccID;}
-  void setHCCChipId(unsigned hccID){
-    m_hccID = hccID;
-  }
+  const unsigned int getHCCchipID(){ return m_hcc.getHCCchipID(); }
+  void setHCCChipId(unsigned hccID){ m_hcc.setHCCChipId(hccID); }
 
   const unsigned int getABCchipID(unsigned int chipIndex) { return m_ABCchipIDs[chipIndex-1];};
 
@@ -81,8 +72,7 @@ class StarCfg : public FrontEndCfg {
 
   void setSubRegisterValue(int chipIndex, std::string subRegName, uint32_t value) {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
-      auto info = m_info->hccSubRegisterMap_all[HCCStarSubRegister::_from_string(subRegName.c_str())];
-      registerMap[chipIndex][info->m_regAddress]->getSubRegister(info).updateValue(value);
+      return m_hcc.setSubRegisterValue(subRegName, value);
     } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
       auto info = m_info->abcSubRegisterMap_all[ABCStarSubRegister::_from_string(subRegName.c_str())];
       registerMap[chipIndex][info->m_regAddress]->getSubRegister(info).updateValue(value);
@@ -94,8 +84,7 @@ class StarCfg : public FrontEndCfg {
 
   uint32_t getSubRegisterValue(int chipIndex, std::string subRegName) {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
-      auto info = m_info->hccSubRegisterMap_all[HCCStarSubRegister::_from_string(subRegName.c_str())];
-      return registerMap[chipIndex][info->m_regAddress]->getSubRegister(info).getValue();
+      return m_hcc.getSubRegisterValue(subRegName);
     } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
       auto info = m_info->abcSubRegisterMap_all[ABCStarSubRegister::_from_string(subRegName.c_str())];
       return registerMap[chipIndex][info->m_regAddress]->getSubRegister(info).getValue();
@@ -108,8 +97,7 @@ class StarCfg : public FrontEndCfg {
 
   int getSubRegisterParentAddr(int chipIndex, std::string subRegName) {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
-      auto info = m_info->hccSubRegisterMap_all[HCCStarSubRegister::_from_string(subRegName.c_str())];
-      return info->getRegAddress();
+      return m_hcc.getSubRegisterParentAddr(subRegName);
     } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
       auto info = m_info->abcSubRegisterMap_all[ABCStarSubRegister::_from_string(subRegName.c_str())];
       return info->getRegAddress();
@@ -122,8 +110,7 @@ class StarCfg : public FrontEndCfg {
 
   uint32_t getSubRegisterParentValue(int chipIndex, std::string subRegName) {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
-      auto info = m_info->hccSubRegisterMap_all[HCCStarSubRegister::_from_string(subRegName.c_str())];
-      return registerMap[chipIndex][info->m_regAddress]->getValue();
+      return m_hcc.getSubRegisterParentValue(subRegName);
     } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
       auto info = m_info->abcSubRegisterMap_all[ABCStarSubRegister::_from_string(subRegName.c_str())];
       return registerMap[chipIndex][info->m_regAddress]->getValue();
@@ -155,11 +142,9 @@ class StarCfg : public FrontEndCfg {
  protected:
   const unsigned int indexForABCchipID(unsigned int chipID) {return std::distance(m_ABCchipIDs.begin(), std::find(m_ABCchipIDs.begin(), m_ABCchipIDs.end(), chipID)) + 1;};
     
-  unsigned m_hccID;
-
   //This saves all Register objects to memory, purely for storage.  We will never access registers from this
   std::vector< Register > AllReg_List;
-//This is a 2D map of each register to the chip index (0 for HCC, iABC+1 for ABCs) and address.  For example registerMap[chip index][addr]
+//This is a 2D map of each register to the chip index (iABC+1 for ABCs) and address.  For example registerMap[chip index][addr]
   std::map<unsigned, std::map<unsigned, Register*> >registerMap; //Maps register address
 
   size_t numABCs() { return m_ABCchipIDs.size(); }
@@ -167,16 +152,13 @@ class StarCfg : public FrontEndCfg {
  private:
   std::shared_ptr<StarRegInfo> m_info;
 
+  HccCfg m_hcc;
+
   std::vector<unsigned int> m_ABCchipIDs;
 
   SubRegister getAbcSubRegister(int chipIndex, ABCStarSubRegister r) {
     auto info = m_info->abcSubRegisterMap_all[r];
     return registerMap[chipIndex][info->m_regAddress]->getSubRegister(info);
-  }
-
-  SubRegister getHccSubRegister(HCCStarSubRegister r) {
-    auto info = m_info->hccSubRegisterMap_all[r];
-    return registerMap[0][info->m_regAddress]->getSubRegister(info);
   }
 };
 
