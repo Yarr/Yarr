@@ -16,7 +16,6 @@
 #include "FrontEnd.h"
 #include "Fei4GlobalCfg.h"
 #include "Fei4PixelCfg.h"
-#include "tinyxml2.h"
 
 #include "Constants.h"
 #include "Units.h"
@@ -61,11 +60,6 @@ class Fei4Cfg : public FrontEndCfg, public Fei4GlobalCfg, public Fei4PixelCfg {
         unsigned getChipId();
         void setChipId(unsigned chipId);
 
-        void toFileBinary(std::string filename) override;
-        void toFileBinary() override;
-        void fromFileBinary(std::string filename) override;
-        void fromFileBinary() override;
-        void toFileXml(tinyxml2::XMLDocument *doc);
         void toFileJson(json &j) override;
         void fromFileJson(json &j) override;
 

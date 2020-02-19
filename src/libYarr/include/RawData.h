@@ -21,7 +21,6 @@ class RawData {
         uint32_t adr;
         uint32_t *buf;
         unsigned words;
-        LoopStatus stat;
 };
 
 class RawDataContainer {

@@ -84,6 +84,10 @@ void BocRxCore::setRxEnable(std::vector<uint32_t> channels) {
     this->setRxEnable(mask);
 }
 
+void BocRxCore::disableRx() {
+    this->setRxEnable(0x0);
+}
+
 void BocRxCore::maskRxEnable(uint32_t val, uint32_t mask)
 {
 	uint32_t tmp = m_enableMask;

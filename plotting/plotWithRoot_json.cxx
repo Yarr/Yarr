@@ -15,7 +15,8 @@
 #include <RD53Style.h>
 
 
-#include "storage.hpp"
+#include "json.hpp"
+using json = nlohmann::json;
 
 int main(int argc, char *argv[]) { //./plotWithRoot_json path/to/directory file_ext
 	//Example file extensions: png, pdf, C, root	

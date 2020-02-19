@@ -48,9 +48,6 @@ public:
   void fromFileJson(json &j);
 
 private:
-
-  bool m_verbose;
-  bool m_debug;
   uint32_t m_datasize;
 
   std::string m_felixhost;

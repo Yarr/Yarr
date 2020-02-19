@@ -25,7 +25,6 @@ class Fe65p2ExtTrigger : public ScanBase {
     private:
         double triggerFrequency;
         unsigned triggerTime; 
-        bool verbose;
 };
 
 #endif

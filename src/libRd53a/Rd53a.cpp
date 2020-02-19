@@ -11,6 +11,13 @@
 #include "Rd53a.h"
 #include "RawData.h"
 
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("Rd53a");
+
+}
+
 bool rd53a_registred =
     StdDict::registerFrontEnd("RD53A", [](){return std::unique_ptr<FrontEnd>(new Rd53a());});
 
@@ -101,10 +108,14 @@ void Rd53a::configure() {
 
 void Rd53a::configureInit() {
     this->writeRegister(&Rd53a::GlobalPulseRt, 0x007F); // Reset a whole bunch of things
+    while(!core->isCmdEmpty()){;}
     this->globalPulse(m_chipId, 8);
+    while(!core->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     this->writeRegister(&Rd53a::GlobalPulseRt, 0x4100); //activate monitor and prime sync FE AZ
+    while(!core->isCmdEmpty()){;}
     this->globalPulse(m_chipId, 8);
+    while(!core->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     this->ecr();
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -167,7 +178,7 @@ void Rd53a::configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels) 
 }
 
 void Rd53a::writeNamedRegister(std::string name, uint16_t value) {
-    std::cout << __PRETTY_FUNCTION__ << " : " << name << " -> " << value << std::endl;
+    logger->info("Write named register: {} -> {}", name, value);
     if (regMap.find(name) != regMap.end())
         writeRegister(regMap[name], value);
 }
@@ -204,7 +215,7 @@ void Rd53a::enableCalCol(unsigned col) {
     } else if (col < 200) {
         this->writeRegister(&Rd53a::CalColprDiff5, CalColprDiff5.read() | (0x1 << (col-196)));
     } else {
-        std::cout << __PRETTY_FUNCTION__ << " --> col (" << col << ") out of range!" << std::endl;
+        logger->error("Col {} out of range!", col);
     }
 }
 
@@ -238,40 +249,39 @@ void Rd53a::disableCalCol(unsigned col) {
     } else if (col < 200) {
         this->writeRegister(&Rd53a::CalColprDiff5, CalColprDiff5.read() & ~(0x1 << (col-196)));
     } else {
-        std::cout << __PRETTY_FUNCTION__ << " --> col (" << col << ") out of range!" << std::endl;
+        logger->error(" --> col ({}) out of range!", col);
     }
 }
 
 int Rd53a::checkCom() {
-    //std::cout << __PRETTY_FUNCTION__ << " : Checking communication for " << this->name << " by reading a register .." << std::endl;
+    logger->debug("Checking communication for {} by reading a register ...", this->name);
     uint32_t regAddr = 21;
     uint32_t regValue = m_cfg[regAddr];
     rdRegister(m_chipId, regAddr);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     
-    //std::cout << __PRETTY_FUNCTION__ << " : Trying to read data .." << std::endl;
     // TODO not happy about this, rx knowledge should not be here
     RawData *data = m_rxcore->readData();
 
     if (data != NULL) {
         if (!(data->words == 2 || data->words == 4)) {
-            std::cout << "#ERROR# Received wrong number of words (" << data->words << ") for " << this->name << std::endl;
+            logger->error("Received wrong number of words ({}) for {}", data->words, this->name);
             return 0;
         }
         std::pair<uint32_t, uint32_t> answer = decodeSingleRegRead(data->buf[0], data->buf[1]);
-        //std::cout << "Addr (" << answer.first << ") Value(" << answer.second << ")" << std::endl;
+        logger->debug("Addr ({}) Value({})", answer.first, answer.second);
         
         if (answer.first != regAddr || answer.second != regValue) {
-            std::cout << "#ERROR# Received data was not as expected:" << std::endl;
-            std::cout << "    Received Addr: " << answer.first << " (expected " << regAddr <<")" << std::endl;
-            std::cout << "    Received Value: " << answer.second << " (expected "<< regValue << ")" << std::endl;
+            logger->error("Received data was not as expected:");
+            logger->error("    Received Addr: {} (expected {})", answer.first, regAddr);
+            logger->error("    Received Value: {} (expected {})", answer.second, regValue);
             return 0;
         }
 
-        //std::cout << "    ... success!" << std::endl;
+        logger->debug("... success");
         return 1;
     } else {
-        std::cout << "#ERROR# Did not receive any data for " << this->name << std::endl;
+        logger->error("Did not receive any data for {}", this->name);
         return 0;
     }
 }
@@ -282,7 +292,7 @@ std::pair<uint32_t, uint32_t> Rd53a::decodeSingleRegRead(uint32_t higher, uint32
     } else if ((higher & 0x99000000) == 0x99000000) {
         return std::make_pair((higher>>10)&0x3FF, ((lower>>26)&0x3F)+((higher&0x3FF)<<6));
     } else {
-        std::cout << "#ERROR# Could not decode reg read!" << std::endl;
+        logger->error("Could not decode reg read!");
         return std::make_pair(999, 666);
     }
     return std::make_pair(999, 666);

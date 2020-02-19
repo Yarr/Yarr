@@ -254,9 +254,6 @@ class StarCfg : public FrontEndCfg, public Register{
   void toFileJson(json &j) override;
   void fromFileJson(json &j) override;
 
-  void toFileBinary() override;
-  void fromFileBinary() override;
-
   int m_nABC = 0;
 
 

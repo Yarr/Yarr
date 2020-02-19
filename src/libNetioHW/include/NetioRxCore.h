@@ -44,6 +44,7 @@ public:
 
   void setRxEnable(uint32_t val) override;
   void setRxEnable(std::vector<uint32_t> channels);
+  void disableRx();
   void maskRxEnable(uint32_t val, uint32_t mask) override;
 
   void flushBuffer() override;
@@ -100,7 +101,6 @@ private:
   netio::context * m_context;       //! the netio context
 
   std::map<uint64_t,bool> m_elinks; //! elinks map
-  bool m_verbose;                   //! verbose mode
 
   bool m_cont;                      //! bool variable to stop statistics thread
   double m_rate;                    //! rate of bytes per second

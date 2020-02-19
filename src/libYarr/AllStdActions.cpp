@@ -1,7 +1,12 @@
 #include "AllStdActions.h"
 #include "ClassRegistry.h"
 
-#include <iostream>
+#include "logging.h"
+
+namespace {
+    auto asalog = logging::make_log("StdRegistry");
+}
+
 #include <functional>
 typedef ClassRegistry<LoopActionBase> OurRegistry;
 
@@ -41,7 +46,7 @@ namespace StdDict {
     std::unique_ptr<LoopActionBase> getLoopAction(std::string name) {
         auto result = registry().makeClass(name);
         if(result == nullptr) {
-            std::cout << "No LoopAction matching '" << name << "' found\n";
+            SPDLOG_LOGGER_ERROR(asalog, "No LoopAction matching '{}' found!", name);
         }
         return result;
     }

@@ -1,0 +1,241 @@
+#!/usr/bin/env python3
+
+from influxdb import InfluxDBClient
+import sys, os
+import datetime
+import time as time_module
+import json
+import dateutil, pytz
+import pandas as pd
+import argparse
+
+current_DIR=os.getcwd()
+this_DIR=current_DIR+'/'+os.path.dirname(__file__)
+output_DIR=''
+
+remote_host='127.0.0.1'
+remote_port=8086
+dbname='dcsDB'
+
+class dcsDataClient:
+    def __init__(self):        
+        self.client=InfluxDBClient(host=remote_host,
+                                   port=remote_port,
+                                   database=dbname)
+        database_list=self.client.get_list_database()
+        self.runStart=0
+        self.runEnd=1566546707353068032 
+        if not {'name' : dbname} in database_list :
+            self.db_exist=False
+        else :
+            self.db_exist=True
+            self.meas_list=self.client.get_list_measurements()
+
+    def setTimeRange(self,start,end):
+        self.runStart=start
+        self.runEnd=end
+
+    def getEvent(self,measName):
+        if self.db_exist :
+            if {'name':measName} in self.meas_list :
+                return self.client.query('SELECT * FROM \"{0}\" WHERE time >= {1} AND time <= {2}'.format(measName,self.runStart,self.runEnd))
+            else :
+                #error_massage('measurement',measName)
+                return None
+        else :
+            return None
+def getArgs():
+    parser=argparse.ArgumentParser(description='data downloader from InfluxDB')
+
+    parser.add_argument('command', help='select function : test/retrieve/remove')
+    parser.add_argument('-c','--chip', help='provided chipname')
+    parser.add_argument('-d','--dcs_config', help='provided configuration file (.json) for DCS data')
+    parser.add_argument('-s','--scan', help='provided scanLog file of target Scan')
+    parser.add_argument('--port', help='provided port Number (default:'+str(remote_port)+')')
+    parser.add_argument('--host', help='provided host (default:'+remote_host+')')
+    parser.add_argument('--database', help='provided database name (default:'+dbname+')')
+    parser.add_argument('--output', help='provided output directory name (default:same directory of scanLog.json)')
+
+    args=parser.parse_args()
+    return args
+
+def error_message(key_type,name ):
+    print('{} : {} is not Found!'.format(key_type, name))
+
+def getData(client, dcs_config_fname):
+    output_jsonName='{}/dcsDataInfo.json'.format(output_DIR)
+    with open(dcs_config_fname,'r') as dcs_config_f :
+        dcs_config=json.load(dcs_config_f)
+
+    if dcs_config.get('environments') is None :
+        print('dcs Configuration file : {}'.format(dcs_config))
+        print('ERROR!')
+        return 1
+    dcsInfo={}
+    dcsInfo['environments']=[]
+    for dcsList in dcs_config['environments']:
+        measurement=dcsList.get('measurement')
+        now_ts=time_module.time()
+        datFileName='{}/{}{}.dat'.format(output_DIR,measurement,now_ts)
+        data_list=client.getEvent(measurement)
+        #chip='OU078B_chip1'
+        if data_list is None :
+            error_message("measurement",measurement)
+        else :
+            with open(datFileName,'w') as dat_f :
+                key_text='key unixtime '
+                num_text='num 0 '
+                mode_text='mode null '
+                setting_text='setting null '
+                keyList=[]
+                for dcs in dcsList['dcsList']:
+                    key=dcs.get('key')
+                    num=0
+                    for i_key in keyList :
+                        if key==i_key :
+                            num+=1
+                    keyList.append(key)
+                    key_text+=str(key)+' '
+                    num_text+=str(num)+' '
+                    mode_text+='null '
+                    setting_text+=str(dcs.get('setting'))+' '
+                    description=dcs.get('description')
+                    dcsInfo['environments']=appendDcsInfo(dcsInfo['environments'],description,key,num,datFileName)
+            
+                dat_f.write(key_text+'\n')
+                dat_f.write(num_text+'\n')
+                #dat_f.write(mode_text+'\n')
+                #dat_f.write(setting_text+'\n')
+        
+                for data in data_list[measurement] :
+                    time=data.get('time')
+                    unixtime=datetime.datetime.strptime(time[0:19], '%Y-%m-%dT%H:%M:%S').replace(tzinfo=pytz.utc).timestamp()
+
+                    data_text=str(time)+' '+str(int(unixtime))
+                    for dcs in dcsList['dcsList'] :
+                        value=str(data.get(dcs.get('data_name')))
+                        if value == 'None' :
+                            value='null'
+                        data_text+=' '+value
+                    dat_f.write(data_text+'\n')
+    with open(output_jsonName,'w') as of :
+        json.dump(dcsInfo,of, ensure_ascii=False, indent=4, sort_keys=True, separators=(',', ': '))
+
+def getScanLog(scanLog_file):
+    with open(scanLog_file,'r') as f :
+        scanLog=json.load(f)
+    return scanLog
+
+def calculate_runTime(scanLog):
+    start_time_str=scanLog['timestamp']
+    start_time=datetime.datetime.strptime(start_time_str,'%Y-%m-%d_%H:%M:%S').replace(tzinfo=dateutil.tz.tzlocal())
+    #start_UTC=start_time.astimezone(pytz.timezone('utc'))
+    #    print(start_time)
+    #print(start_UTC)
+    #start_timestamp=pd.to_datetime(str(start_UTC)) #UTC time in InfluxDB
+    start_timestamp=pd.to_datetime(str(start_time)) #local time in InfluxDB
+
+    stopwatch=scanLog['stopwatch']
+    analysis=stopwatch['analysis']
+    config=stopwatch['config']
+    processing=stopwatch['processing']
+    scan=stopwatch['scan']
+    total_ms=analysis+config+processing+scan
+    end_timestamp=start_timestamp+pd.offsets.Milli(total_ms)
+
+    #offset
+    offset_time=15000 #ms
+    start_timestamp=start_timestamp-pd.offsets.Milli(offset_time)
+    end_timestamp=end_timestamp+pd.offsets.Milli(offset_time)
+
+
+    return start_timestamp.value, end_timestamp.value
+
+def appendDcsInfo(dcsInfoList,description,key,num,path):
+    singleInfo={}
+    singleInfo['description']=description
+    singleInfo['key']=key
+    singleInfo['num']=num
+    singleInfo['path']=path
+    singleInfo['chip']=chip
+    singleInfo['status']='enabled'
+    
+    dcsInfoList.append(singleInfo)
+    return dcsInfoList
+
+def removeDatFile(dcsInfo_path):
+    with open(dcsInfo_path,'r') as dcsinfo_f:
+        dcsinfo_json=json.load(dcsinfo_f)
+        for env in dcsinfo_json['environments']:
+            path=env['path']
+            if os.path.exists(path):
+                os.remove(path)
+    os.remove(dcsInfo_path)
+    
+def main():
+    args=getArgs()
+    command=args.command
+
+    if command == 'test':
+        sys.exit(0)
+    elif command == 'remove':
+        if args.scan is None :
+            print('scanlog file is required! Please specify scan log file path under --scan or -s')
+            sys.exit(1)
+        scanlog_path=args.scan
+        scan_dir=os.path.dirname(scanlog_path)
+        if os.path.exists(scan_dir) :
+            dcsDataInfo_path=scan_dir+'/dcsDataInfo.json'
+            removeDatFile(dcsDataInfo_path)
+        else :
+            error_massage('target directory',scan_dir)
+        
+    elif command == 'retrieve':
+        global chip
+        global output_DIR
+        
+        # required variable check
+        if args.chip is None :
+            print('chipname is required! Please specify chipname under --chip or -c')
+            sys.exit(1)
+        if args.dcs_config is None :
+            print('dcs configuration file is required! Please specify dcs configuration file path under --dcs_config or -d')
+            sys.exit(1)
+
+        chip=args.chip
+        if not args.scan is None:
+            scanlog_path=args.scan
+        if not args.port is None:
+            global remote_port
+            remote_port=args.port
+        if not args.host is None:
+            global remote_host
+            remote_host=args.host
+        if not args.database is None:
+            global dbname
+            dbname=args.database
+        if not args.output is None:
+            if os.path.exists(args.output) :
+                output_DIR=args.output
+            else :
+                error_message('directory',args.output)
+                sys.exit(1)
+        else :
+            #output_DIR=os.path.dirname(scanlog_path)
+            output_DIR='/tmp/'
+
+        dcs_config_fname=args.dcs_config
+        start_runTime, end_runTime=calculate_runTime(getScanLog(scanlog_path))
+
+        client=dcsDataClient()
+        if client.db_exist :
+            client.setTimeRange(start_runTime,end_runTime)
+            getData(client, dcs_config_fname)
+            sys.exit(0)
+        else :
+            error_message('database',dbname)
+            sys.exit(1)
+    
+       
+if __name__=='__main__' :
+    main()

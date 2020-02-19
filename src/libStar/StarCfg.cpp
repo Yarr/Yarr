@@ -434,12 +434,6 @@ int StarCfg::getTrimDAC(unsigned col, unsigned row) {
 }
 
 
-void StarCfg::fromFileBinary() {
-}
-
-void StarCfg::toFileBinary() {
-}
-
 void StarCfg::toFileJson(json &j) {
 }
 

@@ -27,6 +27,7 @@ class KU040RxCore : virtual public RxCore {
 
         void setRxEnable(uint32_t val);
         void setRxEnable(std::vector<uint32_t> channels);
+        void disableRx();
         void maskRxEnable(uint32_t val, uint32_t mask);
 
         RawData* readData();

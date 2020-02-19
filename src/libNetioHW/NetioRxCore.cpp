@@ -7,8 +7,12 @@
 using namespace std;
 using namespace netio;
 
+namespace {
+auto nlog = logging::make_log("NetioHW::RxCore");
+}
+
 NetioRxCore::NetioRxCore()
-  : m_nioh("posix", "localhost", 12340, 12345, 50000000, true)
+  : m_nioh("posix", "localhost", 12340, 12345, 50000000)
 {
   m_t0 = std::chrono::steady_clock::now();
   string cntx = "posix";
@@ -17,7 +21,6 @@ NetioRxCore::NetioRxCore()
   m_bytesReceived = 0;
   m_context = new context(cntx);
   m_cont = true;
-  m_verbose = false;
   rxDataCount = 0; // initialize to zero data received 
 
   m_statistics = thread([&](){
@@ -33,8 +36,6 @@ NetioRxCore::NetioRxCore()
       std::this_thread::sleep_for(std::chrono::milliseconds(1)); // Note: is this needed; can it be shortened?
     }
   });
-
-  m_verbose = false;
 }
 
 NetioRxCore::~NetioRxCore(){
@@ -53,7 +54,7 @@ NetioRxCore::~NetioRxCore(){
 }
 
 void NetioRxCore::enableChannel(uint64_t elink){
-  if(m_verbose) cout << "Enable RX elink: 0x" << hex << elink << dec << endl;
+  nlog->debug("Enable RX elink: 0x{:x}", elink);
   if(m_elinks.find(elink)==m_elinks.end()){
     m_nioh.addChannel(elink);
   }
@@ -61,7 +62,7 @@ void NetioRxCore::enableChannel(uint64_t elink){
 }
 
 void NetioRxCore::disableChannel(uint64_t elink){
-  if(m_verbose) cout << "Disable RX elink: 0x" << hex << elink << dec << endl;
+  nlog->debug("Disable RX elink: 0x{:x}", elink);
   //m_nioh.stopChecking();
   m_elinks[elink]=false;
 }
@@ -75,6 +76,10 @@ void NetioRxCore::disableAllChannels() {
 void NetioRxCore::setRxEnable(uint32_t val) {
     this->disableAllChannels();
     this->enableChannel(val);
+}
+
+void NetioRxCore::disableRx() {
+    this->disableAllChannels();
 }
 
 void NetioRxCore::setRxEnable(std::vector<uint32_t> channels) {
@@ -123,7 +128,7 @@ RawData* NetioRxCore::readData(){
     //if(!it->second) continue;
     //uint64_t elink=it->first;
 
-    if(m_verbose) cout << "NetioRxCore::readData()"<<endl; //  elink number " << elink << endl;
+    nlog->debug("NetioRxCore::readData()");
 
     std::unique_ptr<RawData> rdp = m_nioh.rawData.popData();
     if(rdp != NULL){

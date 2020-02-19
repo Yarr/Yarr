@@ -12,7 +12,6 @@
 #include <iostream>
 #include <array>
 
-#include "tinyxml2.h"
 
 
 #include "storage.hpp"
@@ -137,7 +136,6 @@ class Fei4PixelCfg {
         static unsigned to_dc(unsigned col);
         static unsigned to_bit(unsigned col, unsigned row);
 
-        void toFileXml(tinyxml2::XMLDocument *doc, tinyxml2::XMLElement *node);
         
         void toFileJson(json &j);
         void fromFileJson(json &j);

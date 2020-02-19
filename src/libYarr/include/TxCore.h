@@ -31,6 +31,7 @@ class TxCore {
         virtual void releaseFifo() = 0;
         virtual void setCmdEnable(uint32_t) = 0;
         virtual void setCmdEnable(std::vector<uint32_t>) = 0;
+        virtual void disableCmd() = 0;
         virtual uint32_t getCmdEnable() = 0;
         virtual bool isCmdEmpty() = 0;
 
