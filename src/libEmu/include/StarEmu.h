@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <iterator>
 #include <algorithm>
+#include <bitset>
 
 class EmuCom;
 
@@ -40,6 +41,13 @@ public:
     
 private:
 
+    // FE data format
+    static constexpr unsigned NStrips = 256;
+    static constexpr unsigned NBitsBC = 8;
+
+    using StripData = std::bitset<NStrips+NBitsBC>;
+    
+    /////////////////////////////////////////////
     /// Send response packet (excluding SOP/EOP)
     template<typename T> void sendPacket(T &iterable) {
         sendPacket(&(*std::begin(iterable)), &(*std::end(iterable)));
@@ -86,12 +94,14 @@ private:
     
     void addClusters(std::vector<std::vector<uint16_t>>&, unsigned, uint8_t);
     uint16_t clusterFinder_sub(uint64_t&, uint64_t&, bool);
-    std::vector<uint16_t> clusterFinder(const std::array<unsigned,8>&,
+    std::vector<uint16_t> clusterFinder(const StripData&,
                                         const uint8_t maxCluster=63);
     void generateFEData_StaticTest(unsigned ichip);
     void generateFEData_TestPulse(unsigned ichip, uint8_t BC);
     void generateFEData_CaliPulse(unsigned ichip, uint8_t BC);
     void applyMasks(unsigned ichip);
+    StripData getMasks(unsigned ichip);
+    StripData getCalEnables(unsigned ichip);
     void clearFEData(unsigned ichip);
     void prepareFEData(unsigned ichip);
 
@@ -116,12 +126,11 @@ private:
     
     // buffer for register read/write command sequence
     std::queue<uint8_t> m_reg_cmd_buffer;
-
+    
     // front-end data container
-    // For nABCs and 4 bunch crossings
-    // m_fe_data[iABC][iBC] = {ch255_224, ch223_192, ch191_160, ch159_128,
-    //                         ch127_96, ch95_64, ch63_32, ch31_0}
-    std::vector< std::array< std::array<unsigned,8>, 4> > m_fe_data;
+    // For nABCs and *Four* bunch crossings
+    // m_l0buffer_lite[iABC][iBC] = 8-bit BC + 256-bit strip hits
+    std::vector< std::array<StripData, 4> > m_l0buffers_lite;
 
     // BC counter
     uint8_t m_bccnt;
@@ -143,8 +152,8 @@ private:
 
     ////////////////////////////////////////
     // Analog FE
-    std::array<StripModel, 256> m_stripArray;
-
+    std::array<StripModel, NStrips> m_stripArray;
+    
     bool debug = false;
 };
 

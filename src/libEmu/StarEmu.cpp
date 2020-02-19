@@ -72,16 +72,14 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path
     // for now
     m_starCfg->init();
 
-    m_fe_data.clear();
-    m_fe_data.resize(m_starCfg->nABCs());
+    m_l0buffers_lite.clear();
+    m_l0buffers_lite.resize(m_starCfg->nABCs());
 
-    ////////////////////////////////////////////////////////////////////////
-    /*
-      For testing purpose, preload m_fe_data with fixed hit patterns for now 
-     */
-    for (auto& fe_hits : m_fe_data) {
-        for (int ibc = 0; ibc < 4; ++ibc) {
-            fe_hits[ibc] = {0xfffe0000, 0, 0, 0, 0xfffe0000, 0, 0, 0};
+    // Preload test pattern
+    for (auto& l0buffer : m_l0buffers_lite) {
+        for (StripData& fe_hits : l0buffer) {
+            fe_hits = (StripData(0xfffe0000) << (32*7)) |
+                (StripData(0xfffe0000) << (32*3));
         }
     }
     // expected clusterFinder output per ABCStar:
@@ -711,39 +709,31 @@ void StarEmu::countHits(unsigned iABC, uint8_t cmdBC)
     if (not EnCount) return;
 
     auto feBC = getL0BufferAddr(iABC, cmdBC);
-    
-    for (int i = 0; i < 8; ++i) {
-        unsigned data32 = m_fe_data[iABC][feBC][7-i];
-        for (int j = 0; j < 8; ++j) {
-            // Deal with four front-end channels at a time
-            // Channels: [32*i+4*j+3 : 32*i+4*j]
-            // 4-bit hits of these channels:
-            uint8_t hits = (data32 >> (j*4)) & 0xf;
-            
-            // The ABCStar HitCount register for the four channels:
-            // HitCountREG# (32*i+4*j) / 4
-            // Address = (32*i+4*j) / 4 + offset
-            unsigned addr = (32*i+4*j)/4 + (int)emu::ABCStarRegs::HitCountREG0;
-            uint32_t counts = m_starCfg->getABCRegister(addr, abcID);
-                
-            // Compute increments that should be added to the current counts
-            uint32_t incr = 0;
-            
-            for (int ihit = 0; ihit < 4; ++ihit) {
-                // check if the corresponding counter has already reached maximum
-                if ( (counts & (0xff<<(ihit*8))) == (0xff<<(ihit*8)) ) {
-                    // The 8-bit hit counter for this channel is already 0xff
-                    continue;
-                }
-                
-                incr += ((hits>>ihit)&1) << (8*ihit);
-            }
-                
-            // Update HitCountReg
-            m_starCfg->setABCRegister(addr, counts+incr, abcID);
-        } // j
-    } // i
-    
+
+    // HitCountReg0-63: four channels per register
+    for (int ireg = 0; ireg < 64; ++ireg) {
+        // Read HitCount Register
+        // address
+        unsigned addr = ireg + (unsigned)emu::ABCStarRegs::HitCountREG0;
+        // value
+        unsigned counts = m_starCfg->getABCRegister(addr, abcID);
+        
+        // Compute increments that should be added to the current counts
+        unsigned incr = 0;
+
+        // Four front-end channels: [ireg*4], [ireg*4+1], [ireg*4+2], [ireg*4+3]
+        for (int ich = 0; ich < 4; ++ich) {
+            // check if the counts for this channel has already reached maximum
+            if ( (counts>>(8*ich)) & 0xff == 0xff ) continue;
+
+            bool ahit = m_l0buffers_lite[iABC][feBC][ireg*4+ich];
+            if (ahit)
+                incr += (1 << (8*ich));
+        }
+
+        // Update HitCountReg
+        m_starCfg->setABCRegister(addr, counts+incr, abcID);
+    }
 }
 
 void StarEmu::clearFEData(unsigned ichip)
@@ -751,18 +741,13 @@ void StarEmu::clearFEData(unsigned ichip)
     // ABC index starts from 1. Zero is reserved for HCC.
     unsigned iABC = ichip - 1;
     
-    for (int ibc = 0; ibc < 4; ++ibc) {
-        m_fe_data[iABC][ibc] = {0, 0, 0, 0, 0, 0, 0, 0};
-    }
+    for (int ibc = 0; ibc < 4; ++ibc)
+        m_l0buffers_lite[iABC][ibc].reset();
 }
 
-void StarEmu::applyMasks(unsigned ichip) {
-
+StarEmu::StripData StarEmu::getMasks(unsigned ichip)
+{
     int abcID = m_starCfg->getABCchipID(ichip);
-
-    uint8_t TM = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 17, 16);
-    if (TM != 0) // do nothing if not normal data taking mode
-        return;
     
     // mask registers
     unsigned maskinput0 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput0, abcID);
@@ -773,19 +758,29 @@ void StarEmu::applyMasks(unsigned ichip) {
     unsigned maskinput5 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput5, abcID);
     unsigned maskinput6 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput6, abcID);
     unsigned maskinput7 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput7, abcID);
+    
+    StripData masks =
+        (StripData(maskinput7) << 32*7) | (StripData(maskinput6) << 32*6) |
+        (StripData(maskinput5) << 32*5) | (StripData(maskinput4) << 32*4) |
+        (StripData(maskinput3) << 32*3) | (StripData(maskinput2) << 32*2) |
+        (StripData(maskinput1) << 32*1) | (StripData(maskinput0));
 
+    return masks;
+}
+
+void StarEmu::applyMasks(unsigned ichip) {
+
+    int abcID = m_starCfg->getABCchipID(ichip);
     unsigned iABC = ichip - 1;
 
-    for (int ibc = 0; ibc <  4; ++ibc) {
-        m_fe_data[iABC][ibc][0] &= ~maskinput7; // ch255 - 224
-        m_fe_data[iABC][ibc][1] &= ~maskinput6; // ch223 - 192
-        m_fe_data[iABC][ibc][2] &= ~maskinput5; // ch191 - 160
-        m_fe_data[iABC][ibc][3] &= ~maskinput4; // ch159 - 128
-        m_fe_data[iABC][ibc][4] &= ~maskinput3; // ch127 - 96
-        m_fe_data[iABC][ibc][5] &= ~maskinput2; // ch95 - 64
-        m_fe_data[iABC][ibc][6] &= ~maskinput1; // ch63 - 32
-        m_fe_data[iABC][ibc][7] &= ~maskinput0; // ch31 - 0
-    }
+    uint8_t TM = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 17, 16);
+    if (TM != 0) // do nothing if not normal data taking mode
+        return;
+
+    StripData masks = getMasks(ichip);
+
+    for (int ibc = 0; ibc < 4; ++ibc)
+        m_l0buffers_lite[iABC][ibc] &= masks.flip();
 }
 
 void StarEmu::generateFEData_StaticTest(unsigned ichip)
@@ -798,18 +793,16 @@ void StarEmu::generateFEData_StaticTest(unsigned ichip)
     uint8_t TM = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 17, 16);
     if (TM != 1) // do nothing if not static test mode
         return;
+
+    // Use mask bits as the hit pattern in Static Test
+    StripData masks = getMasks(ichip);
     
     for (int ibc = 0; ibc < 4; ++ibc) {
-        m_fe_data[iABC][ibc] = {
-            m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput7, abcID),
-            m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput6, abcID),
-            m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput5, abcID),
-            m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput4, abcID),
-            m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput3, abcID),
-            m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput2, abcID),
-            m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput1, abcID),
-            m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput0, abcID)
-        };
+        // Add BCID
+        StripData bcid = StripData(m_bccnt+ibc) << NStrips;
+
+        // Mod 4: m_l0buffers_lite is of size 4 and is used as a ring buffer
+        m_l0buffers_lite[iABC][ibc%4] = bcid | masks;
     }
 }
 
@@ -830,55 +823,54 @@ void StarEmu::generateFEData_TestPulse(unsigned ichip, uint8_t cmdBC)
     if (not TestPulseEnable)
         return;
 
-    // mask registers
-    unsigned maskinput0 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput0, abcID);
-    unsigned maskinput1 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput1, abcID);
-    unsigned maskinput2 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput2, abcID);
-    unsigned maskinput3 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput3, abcID);
-    unsigned maskinput4 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput4, abcID);
-    unsigned maskinput5 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput5, abcID);
-    unsigned maskinput6 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput6, abcID);
-    unsigned maskinput7 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput7, abcID);
+    StripData masks = getMasks(ichip);
 
     // Two test pulse options: determined by bit 18 of ABC register CREG0
     bool testPattEnable = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 18, 18);
-
+    
     if (testPattEnable) { // Use test pattern for four consecutive BC
         // Test patterns
-        // testPatt1 if mask bit is 0, otherwise testPatt2 (Need to check this)
+        // testPatt1 if mask bit is 0, otherwise testPatt2
         uint8_t testPatt1 = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 23, 20);
         uint8_t testPatt2 = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 27, 24);
 
         for (int ibit = 0; ibit < 4; ++ibit) {
-            uint32_t patt1_ibit = ((testPatt1 >> ibit) & 1) ? 0xffffffff : 0;
-            uint32_t patt2_ibit = ((testPatt2 >> ibit) & 1) ? 0xffffffff : 0;
+            StripData patt1_ibit(0); // 0's
+            if ( (testPatt1 >> ibit) & 1 ) {
+                patt1_ibit.set(); // 1's
+                // Make top bits for BCID zeros 
+                (patt1_ibit <<= NBitsBC) >>= NBitsBC;
+            }
 
-            // The test pattern pulse is generated on the cmdBC'th BC
-            // and the three following BCs
-            unsigned ibc = (ibit + cmdBC);
-            
-            // Mod 4: m_fe_data[iABC] is of size 4 and is used as a ring buffer
-            m_fe_data[iABC][ibc%4] = {
-                maskinput7 & patt2_ibit | ~maskinput7 & patt1_ibit,
-                maskinput6 & patt2_ibit | ~maskinput6 & patt1_ibit,
-                maskinput5 & patt2_ibit | ~maskinput5 & patt1_ibit,
-                maskinput4 & patt2_ibit | ~maskinput4 & patt1_ibit,
-                maskinput3 & patt2_ibit | ~maskinput3 & patt1_ibit,
-                maskinput2 & patt2_ibit | ~maskinput2 & patt1_ibit,
-                maskinput1 & patt2_ibit | ~maskinput1 & patt1_ibit,
-                maskinput0 & patt2_ibit | ~maskinput0 & patt1_ibit
-            };
+            StripData patt2_ibit(0); // 0's
+            if ( (testPatt2 >> ibit) & 1 ) {
+                patt2_ibit.set(); // 1's
+                // Make top BCID bits zeros
+                // (not needed here if top bits of masks are zeros)
+                (patt2_ibit <<= NBitsBC) >>= NBitsBC;
+            }
+
+            // The pulse is generated on the cmdBC'th BC and the three next BCs
+            unsigned ibc = cmdBC + ibit;
+
+            // The top bits for BCID 
+            StripData bcid = StripData(m_bccnt+ibc) << NStrips;
+
+            // ibc%4: m_l0buffers_lite is of size 4 and is used as a ring buffer
+            m_l0buffers_lite[iABC][ibc%4] = bcid |
+                (~masks & patt1_ibit | masks & patt2_ibit);
         }
     }
     else { // One clock pulse using mask bits
         for (int ibc = 0; ibc < 4; ++ibc) {
+            // BCID
+            StripData bcid = StripData(m_bccnt+ibc) << NStrips;
+            
             if (ibc == cmdBC) {
-                m_fe_data[iABC][ibc] =
-                    {maskinput7, maskinput6, maskinput5, maskinput4,
-                     maskinput3, maskinput2, maskinput1, maskinput0};
+                m_l0buffers_lite[iABC][ibc] = bcid | masks;
             }
             else {
-                m_fe_data[iABC][ibc] = {0, 0, 0, 0, 0, 0, 0, 0};
+                m_l0buffers_lite[iABC][ibc] = bcid;
             }
         }
     } // if (testPattEnable)
@@ -917,18 +909,28 @@ void StarEmu::generateFEData_CaliPulse(unsigned ichip, uint8_t bc)
         uint8_t TrimDAC = m_starCfg->getTrimDAC(istrip, abcID);
 
         bool aHit = m_stripArray[istrip].calculateHit(BCAL, BVT, TrimDAC, BTRANGE);
-
-        // Compare
-        if (aHit) {
-            // has a hit: set bit istrip%32 of the (7-istrip/32)'th register to 1
-            m_fe_data[iABC][bc][7 - istrip/32] |= (1 << istrip%32);
+        
+        if (aHit) { // has a hit
+            m_l0buffers_lite[iABC][bc].set(istrip);
         }
-        else {
-            // no hit: set bit istrip%32 of the (7-istrip/32)'th register to 0
-            m_fe_data[iABC][bc][7 - istrip/32] &= ~(1 << istrip%32);
+        else { // no hit
+            m_l0buffers_lite[iABC][bc].reset(istrip);
         }
     }
-    
+
+    // Calibration enables
+    StripData enables = getCalEnables(ichip);
+    m_l0buffers_lite[iABC][bc] &= enables;
+
+    // Add BCID
+    m_l0buffers_lite[iABC][bc] |= (StripData(m_bccnt+bc) << NStrips);
+}
+
+StarEmu::StripData StarEmu::getCalEnables(unsigned ichip)
+{
+    int abcID = m_starCfg->getABCchipID(ichip);
+    unsigned iABC = ichip - 1;
+
     // Calibration enable registers
     unsigned calenable0 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG0, abcID);
     unsigned calenable1 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG1, abcID);
@@ -938,17 +940,16 @@ void StarEmu::generateFEData_CaliPulse(unsigned ichip, uint8_t bc)
     unsigned calenable5 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG5, abcID);
     unsigned calenable6 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG6, abcID);
     unsigned calenable7 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG7, abcID);
+
+    //FIXME: Channel numbers in CalREGs currently seem to be different compared to those in Mask registers on the actual chip. But the ABCStar spec v7.8 states they should be consistent. 
     
-    m_fe_data[iABC][bc][0] &= calenable7;
-    m_fe_data[iABC][bc][1] &= calenable6;
-    m_fe_data[iABC][bc][2] &= calenable5;
-    m_fe_data[iABC][bc][3] &= calenable4;
-    m_fe_data[iABC][bc][4] &= calenable3;
-    m_fe_data[iABC][bc][5] &= calenable2;
-    m_fe_data[iABC][bc][6] &= calenable1;
-    m_fe_data[iABC][bc][7] &= calenable0;
-    
-    // FIXME: the analog pulse is supposed to be 16 BC wide (400 ns)
+    StripData enables =
+        (StripData(calenable7) << 32*7) | (StripData(calenable7) << 32*6) |
+        (StripData(calenable7) << 32*5) | (StripData(calenable7) << 32*4) |
+        (StripData(calenable7) << 32*3) | (StripData(calenable7) << 32*2) |
+        (StripData(calenable7) << 32*1) | (StripData(calenable7));
+
+    return enables;
 }
 
 void StarEmu::prepareFEData(unsigned ichip)
@@ -972,22 +973,17 @@ void StarEmu::prepareFEData(unsigned ichip)
 }
 
 std::vector<uint16_t> StarEmu::clusterFinder(
-    const std::array<unsigned, 8>& inputData, const uint8_t maxCluster)
+    const StripData& inputData, const uint8_t maxCluster)
 {
-    // inputData consists of eight 32-bit data registers for 256 strips
-    // The bit order of these data registers are assumed to be consist with
-    // the channel mask registers (Table Table 9-30 of ABCStar Spec v7.80)
     // The 256 strips are divided into two rows to form clusters
-    // {inputData[4],inputData[5],inputData[6],inputData[7]}: channel 127 - 0
-    // {inputData[0],inputData[1],inputData[2],inputData[3]}: channel 255 - 128
 
     std::vector<uint16_t> clusters;
 
     // combine input data into uint64_t
-    uint64_t d0l = (uint64_t)inputData[6] << 32 | inputData[7];
-    uint64_t d0h = (uint64_t)inputData[4] << 32 | inputData[5];
-    uint64_t d1l = (uint64_t)inputData[2] << 32 | inputData[3];
-    uint64_t d1h = (uint64_t)inputData[0] << 32 | inputData[1];
+    uint64_t d0l = inputData.to_ullong();
+    uint64_t d0h = (inputData>>64).to_ullong();
+    uint64_t d1l = (inputData>>128).to_ullong();
+    uint64_t d1h = (inputData>>192).to_ullong();
 
     while (d0l or d0h or d1l or d1h) {
         if (clusters.size() > maxCluster) break;
@@ -1072,7 +1068,7 @@ void StarEmu::addClusters(std::vector<std::vector<uint16_t>>& allclusters,
                           unsigned iABC, uint8_t cmdBC)
 {
     // Need to correct the BC from the L0A command by the L0A latency in order to
-    // access the corresponding entries from m_fe_data[iABC] ring buffer
+    // access the corresponding entries from m_l0buffers_lite[iABC] ring buffer
     auto feBC = getL0BufferAddr(iABC, cmdBC);
 
     // max clusters
@@ -1081,8 +1077,8 @@ void StarEmu::addClusters(std::vector<std::vector<uint16_t>>& allclusters,
     uint8_t maxcluster = maxcluster_en ? m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG3, abcID, 17, 12) : 64;
     
     // Get front-end data and find clusters
-    std::vector<uint16_t> abc_clusters = clusterFinder(m_fe_data[iABC][feBC],
-                                                       maxcluster);
+    std::vector<uint16_t> abc_clusters = clusterFinder(
+        m_l0buffers_lite[iABC][feBC], maxcluster);
     
     allclusters.push_back(abc_clusters);
 }
@@ -1095,8 +1091,8 @@ unsigned StarEmu::getL0BufferAddr(unsigned iABC, uint8_t cmdBC)
     int abcID = m_starCfg->getABCchipID(iABC+1);
     unsigned l0a_latency = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG2, abcID, 8, 0); // 9 bits, in unit of BC (25 ns)
 
-    // return address of the FE data in m_fe_data[iABC] that corresponds to cmdBC
-    // m_fe_data[iABC] is of size 4 and is used as a ring buffer
+    // return address of the FE data in m_l0buffers_lite[iABC] that corresponds to cmdBC
+    // m_l0buffers_lite[iABC] is of size 4 and is used as a ring buffer
     // 512 ensures value in the bracket is positive 
     return (512 + cmdBC - l0a_latency) % 4;
 }
