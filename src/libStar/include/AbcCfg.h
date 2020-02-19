@@ -7,7 +7,12 @@
 // # Comment: ABC Star configuration class
 // ################################
 
+#include <map>
+#include <memory>
+#include <vector>
+
 #include "enum.h"
+#include "StarRegister.h"
 
 // Name different ABC registers that can be used
 BETTER_ENUM(ABCStarRegs, int,
@@ -36,9 +41,111 @@ BETTER_ENUM(ABCStarSubRegister, int,
             LCB_ERRCOUNT_THR)
 
 class ABCStarRegister : public ABCStarRegs {
- public:
- ABCStarRegister(const ABCStarRegs & other) : ABCStarRegs::ABCStarRegs(other) {};
-  static  ABCStarRegister MaskInput(int i) { return ABCStarRegs::_from_integral((int)(ABCStarRegs::MaskInput0) + i);};
+  public:
+    ABCStarRegister(const ABCStarRegs & other) : ABCStarRegs::ABCStarRegs(other) {}
+    ABCStarRegister(const ABCStarRegs::_enumerated & other) : ABCStarRegs::ABCStarRegs(other) {}
+    static  ABCStarRegister MaskInput(int i) { return ABCStarRegs::_from_integral((int)(ABCStarRegs::MaskInput0) + i);}
+    /// 32 registers containing lo 4 bits of trim
+    static  ABCStarRegister TrimLo(int i) { return ABCStarRegs::_from_integral((int)(ABCStarRegs::TrimDAC0) + i);}
+    /// 8 registers containing hi 1 bits of trim
+    static  ABCStarRegister TrimHi(int i) { return ABCStarRegs::_from_integral((int)(ABCStarRegs::TrimDAC32) + i);}
+};
+
+/// Lookup information on ABC Star register map
+class AbcStarRegInfo {
+  public:
+  /// Fills the maps appropriately
+  AbcStarRegInfo();
+
+  //This is a map from each register address to the register info.  Thus abcregisterMap[addr]
+  std::map<unsigned, std::shared_ptr<RegisterInfo>> abcregisterMap;
+
+  //This is a 2D map of each subregister to the ABC subregister name.  For example abcSubRegisterMap_all[NAME]
+  std::map<ABCStarSubRegister, std::shared_ptr<SubRegisterInfo>> abcSubRegisterMap_all;
+
+  //This is a 2D map of each trimDac_32b register to the chip index and trimDAC_4LSB register name.  For example trimDAC4LSB_RegisterMap_all[chip index][NAME]
+  std::map<int, std::shared_ptr<SubRegisterInfo>> trimDAC_4LSB_RegisterMap_all;
+
+  //This is a 2D map of each trimDac_32b register to the chip index and trimDAC_1MSB register name.  For example trimDAC1LSB_RegisterMap_all[chip index][NAME]
+  std::map<int, std::shared_ptr<SubRegisterInfo>> trimDAC_1MSB_RegisterMap_all;
+
+  static std::shared_ptr<AbcStarRegInfo> instance() {
+    if(!m_instance) m_instance.reset(new AbcStarRegInfo);
+    return m_instance;
+  }
+
+  int getSubRegisterParentAddr(std::string subRegName) const {
+    auto info = abcSubRegisterMap_all.at(ABCStarSubRegister::_from_string(subRegName.c_str()));
+    return info->getRegAddress();
+  }
+ private:
+  static std::shared_ptr<AbcStarRegInfo> m_instance;
+};
+
+/// Configuration for an individual ABCStar
+class AbcCfg {
+        unsigned m_abcID;
+
+        //This is a map from address to register (pointers into register set)
+        std::map<unsigned, Register*> m_registerMap;
+
+        // Store of registers in arbitrary order
+        std::vector< Register > m_registerSet;
+
+        std::shared_ptr< AbcStarRegInfo > m_info;
+
+    public:
+        AbcCfg();
+
+        void configure_ABC_Registers();
+
+        unsigned int getABCchipID() const { return m_abcID;}
+        void setABCChipId(unsigned abcID){
+            m_abcID = abcID;
+        }
+
+        void setSubRegisterValue(std::string subRegName, uint32_t value) {
+            auto info = m_info->abcSubRegisterMap_all[ABCStarSubRegister::_from_string(subRegName.c_str())];
+            m_registerMap.at(info->m_regAddress)->getSubRegister(info).updateValue(value);
+        }
+
+        uint32_t getSubRegisterValue(std::string subRegName) {
+            auto info = m_info->abcSubRegisterMap_all[ABCStarSubRegister::_from_string(subRegName.c_str())];
+            return m_registerMap.at(info->m_regAddress)->getSubRegister(info).getValue();
+        }
+
+        int getSubRegisterParentAddr(std::string subRegName) const {
+            return m_info->getSubRegisterParentAddr(subRegName);
+        }
+
+        uint32_t getSubRegisterParentValue(std::string subRegName) const {
+            auto info = m_info->abcSubRegisterMap_all[ABCStarSubRegister::_from_string(subRegName.c_str())];
+            return m_registerMap.at(info->m_regAddress)->getValue();
+        }
+
+        uint32_t getRegisterValue(ABCStarRegister addr) const;
+
+        void setRegisterValue(ABCStarRegister addr, uint32_t val);
+
+        /// Set trim DAC for particular channel (as calculated by StarCfg)
+        void setTrimDACRaw(unsigned channel, int value);
+
+        /// Get trim DAC for particular channel (as calculated by StarCfg)
+        int getTrimDACRaw(unsigned channel) const;
+
+    private:
+        SubRegister getSubRegister(ABCStarSubRegister r) const {
+            auto info = m_info->abcSubRegisterMap_all[r];
+            return m_registerMap.at(info->m_regAddress)->getSubRegister(info);
+        }
+
+        const Register &getRegister(ABCStarRegister addr) const {
+            return *m_registerMap.at((unsigned int)addr);
+        }
+
+        Register &getRegister(ABCStarRegister addr) {
+            return *m_registerMap.at((unsigned int)addr);
+        }
 };
 
 #endif

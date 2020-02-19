@@ -58,17 +58,28 @@ TEST_CASE("StarCfgTrims", "[star][config]") {
   test_config.setTrimDAC(10, 2, 18);
   REQUIRE (test_config.getTrimDAC(10, 2) == 18);
 
-  for(unsigned r = 0; r < 40; r++) {
+  for(unsigned r = 0; r < 32; r++) {
     CAPTURE (r);
 
     // Defaults
-    uint32_t expected = r<32?0xffffffff:0;
+    uint32_t expected = 0xffffffff;
 
     // The ones we've updated
-    if (r == 32) expected = 0x00080000;
     if (r == 2) expected = 0xffff2fff;
 
-    CHECK (test_config.getABCRegister(ABCStarRegister::TrimDAC0 + r, abc_id) == expected);
+    CHECK (test_config.getABCRegister(ABCStarRegister::TrimLo(r), abc_id) == expected);
+  }
+
+  for(unsigned r = 0; r < 8; r++) {
+    CAPTURE (r);
+
+    // Defaults
+    uint32_t expected = 0;
+
+    // The ones we've updated
+    if (r == 0) expected = 0x00080000;
+
+    CHECK (test_config.getABCRegister(ABCStarRegister::TrimHi(r), abc_id) == expected);
   }
 
   // Two rows of 128 strips (odd and even)
@@ -94,11 +105,13 @@ TEST_CASE("StarCfgTrims", "[star][config]") {
       case 2: expected = 0xbaba9898; break;
       case 3: expected = 0xfefedcdc; break;
       }
+
+      CHECK (test_config.getABCRegister(ABCStarRegister::TrimLo(r), abc_id) == expected);
     } else {
       if(r%2) expected = 0xffffffff;
+      CHECK (test_config.getABCRegister(ABCStarRegister::TrimHi(r-32), abc_id) == expected);
     }
 
-    CHECK (test_config.getABCRegister(ABCStarRegister::TrimDAC0 + r, abc_id) == expected);
   }
 
   //  test_config.setTrimDAC();
