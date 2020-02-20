@@ -54,8 +54,8 @@ class Fei4Analysis : public DataProcessor {
         void process_core();
         void end();
 
-        void addAlgorithm(AnalysisAlgorithm *a);
-        void addAlgorithm(AnalysisAlgorithm *a, unsigned ch);
+        void addAlgorithm(std::unique_ptr<AnalysisAlgorithm> a);
+        void addAlgorithm(std::unique_ptr<AnalysisAlgorithm> a, unsigned ch);
 
         void setMapSize(unsigned col, unsigned row) {
             for (unsigned i=0; i<algorithms.size(); i++) {
@@ -77,8 +77,7 @@ class Fei4Analysis : public DataProcessor {
         ScanBase *scan;
         std::unique_ptr<std::thread> thread_ptr;
         
-        std::vector<AnalysisAlgorithm*> algorithms;
-
+        std::vector<std::unique_ptr<AnalysisAlgorithm>> algorithms;
 };
 
 class OccupancyAnalysis : public AnalysisAlgorithm {

@@ -24,9 +24,6 @@ Fei4Analysis::Fei4Analysis(Bookkeeper *b, unsigned ch) {
 }
 
 Fei4Analysis::~Fei4Analysis() {
-    for (unsigned i=0; i<algorithms.size(); i++) {
-        delete algorithms[i];
-    }
 }
 
 void Fei4Analysis::init() {
@@ -94,14 +91,14 @@ void Fei4Analysis::end() {
     }
 }
 
-void Fei4Analysis::addAlgorithm(AnalysisAlgorithm *a) {
-    algorithms.push_back(a);
+void Fei4Analysis::addAlgorithm(std::unique_ptr<AnalysisAlgorithm> a) {
+    algorithms.push_back(std::move(a));
     a->setBookkeeper(bookie);
     a->setChannel(channel);
 }
 
-void Fei4Analysis::addAlgorithm(AnalysisAlgorithm *a, unsigned ch) {
-    algorithms.push_back(a);
+void Fei4Analysis::addAlgorithm(std::unique_ptr<AnalysisAlgorithm> a, unsigned ch) {
+    algorithms.push_back(std::move(a));
 }
 
 void OccupancyAnalysis::init(ScanBase *s) {

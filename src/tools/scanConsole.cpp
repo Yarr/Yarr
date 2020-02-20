@@ -849,7 +849,11 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                 ana.connect(s, fe->clipHisto, fe->clipResult);
 
                 auto add_analysis = [&](std::string algo_name) {
-                    if (algo_name == "OccupancyAnalysis") {
+                    auto analysis = StdDict::getAnalysis(algo_name);
+                    if(analysis) {
+                        logger->debug("  ... adding {}", algo_name);
+                        ana.addAlgorithm(analysis);
+                    } else if (algo_name == "OccupancyAnalysis") {
                         logger->debug("  ... adding {}", algo_name);
                         ana.addAlgorithm(new OccupancyAnalysis());
                      } else if (algo_name == "L1Analysis") {
