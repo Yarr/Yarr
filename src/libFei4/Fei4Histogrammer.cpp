@@ -10,10 +10,51 @@
 
 #include <iostream>
 
+#include "AllHistogrammers.h"
+
 #include "logging.h"
 
 namespace {
     auto alog = logging::make_log("Fei4Histogrammer");
+}
+
+namespace {
+    // Needs filename from somewhere...
+    // bool da_registered =
+    //   StdDict::registerHistogrammer("DataArchiver",
+    //                             []() { return std::unique_ptr<HistogramAlgorithm>(new DataArchiver());});
+
+    bool om_registered =
+      StdDict::registerHistogrammer("OccupancyMap",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new OccupancyMap());});
+
+    bool tot_registered =
+      StdDict::registerHistogrammer("TotMap",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new TotMap());});
+
+    bool tot2_registered =
+      StdDict::registerHistogrammer("Tot2Map",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new Tot2Map());});
+
+    bool tot_dist_registered =
+      StdDict::registerHistogrammer("TotDist",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new TotDist());});
+
+    bool tot3d_registered =
+      StdDict::registerHistogrammer("Tot3d",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new Tot3d());});
+
+    bool l1dist_registered =
+      StdDict::registerHistogrammer("L1Dist",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new L1Dist());});
+
+    bool l13d_registered =
+      StdDict::registerHistogrammer("L13d",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new L13d());});
+
+    bool hpe_registered =
+      StdDict::registerHistogrammer("HitsPerEvent",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new HitsPerEvent());});
 }
 
 Fei4Histogrammer::Fei4Histogrammer() {
