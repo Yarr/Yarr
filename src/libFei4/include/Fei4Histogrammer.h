@@ -17,37 +17,12 @@
 #include "DataProcessor.h"
 #include "ClipBoard.h"
 #include "Fei4EventData.h"
+#include "HistogramAlgorithm.h"
 #include "HistogramBase.h"
 #include "Histo1d.h"
 #include "Histo2d.h"
 #include "Histo3d.h"
 #include "LoopStatus.h"
-
-class HistogramAlgorithm {
-    public:
-        HistogramAlgorithm() {
-            nCol = 80;
-            nRow = 336;
-        
-        }
-        virtual ~HistogramAlgorithm() {}
-
-        virtual void create(LoopStatus &stat) {}
-        
-        std::unique_ptr<HistogramBase> getHisto() {
-            return std::move(r);
-        }
-        
-        virtual void processEvent(Fei4Data *data) {}
-        void setMapSize(unsigned col, unsigned row) {
-            nCol = col;
-            nRow = row;
-        }
-    protected:
-        std::unique_ptr<HistogramBase> r;
-        unsigned nCol;
-        unsigned nRow;
-};
 
 class Fei4Histogrammer : public DataProcessor {
     public:
