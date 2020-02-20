@@ -16,7 +16,7 @@ fi
 
 #  First 2 default parameters:
 binary_folder=build/src/CMakeFiles
-test_script_params="scripts/cc_scan_test.sh"
+test_script_params="scripts/cc_tests.sh"
 
 args=("$@")
 iarg=-1
@@ -80,10 +80,13 @@ if ( ( [ -d $binary_folder ] ) && ( [ `find $binary_folder -name "*.gcda" -print
 fi
 
 if ( ( [ -d $output_folder ] ) && ( [ `ls -a $output_folder | wc -l` -gt 2 ] ) ); then
-   read -n 1 -p "Are you sure you want to put results into the already existing and non-empty folder $output_folder [Y|N] (N)?" YN
+   read -n 1 -p "Are you sure you want non-empty folder $output_folder cleared and replaced with current results [Y|N] (N)?" YN
    echo
    if [ "$YN" == "Y" ]; then
-     rm -rf $output_folder/*
+     echo
+     echo Removing folder $output_folder
+     echo
+     rm -rf $output_folder
    else
      echo
      echo Nothing done!
@@ -114,6 +117,11 @@ lcov -q -r $output_folder.info "*src/external/src/*"  \
         -r $output_folder.info "*libUtil/include/spdlog*" \
         -r $output_folder.info "*libUtil/include/json.hpp" \
         -r $output_folder.info "*libUtil/include/catch.hpp" \
+        -r $output_folder.info "*libUtil/lmcurve.cpp" \
+        -r $output_folder.info "*libUtil/lmmin.cpp" \
+        -r $output_folder.info "*libUtil/include/lmcurve.h" \
+        -r $output_folder.info "*libUtil/include/lmmin.h" \
+        -r $output_folder.info "*libUtil/include/lmstruct.h" \
      -o ${output_folder}n.info
 ec=$?
 if [ $ec -ne 0 ]; then
