@@ -22,8 +22,7 @@
 #include <sstream>
 
 #include "logging.h"
-#include "spdlog/spdlog.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
+#include "LoggingConfig.h"
 
 #include "ScanHelper.h"
 
@@ -74,8 +73,6 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
 // In order to build Analysis, bookie is needed --> deep dependency!
 // Do not want to use the raw pointer ScanBase*
 void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, int mask_opt);
-
-void setupLoggers(const json &j);
 
 int main(int argc, char *argv[]) {
     std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
@@ -206,14 +203,14 @@ int main(int argc, char *argv[]) {
     spdlog::info("Configuring logger ...");
     if(!logCfgPath.empty()) {
         auto j = ScanHelper::openJsonFile(logCfgPath);
-        setupLoggers(j);
+        logging::setupLoggers(j);
     } else {
         // default log setting
         json j; // empty
         j["pattern"] = defaultLogPattern;
         j["log_config"][0]["name"] = "all";
         j["log_config"][0]["level"] = "info";
-        setupLoggers(j);
+        logging::setupLoggers(j);
     }
     // Can use actual logger now
 
@@ -735,23 +732,6 @@ void listScanLoopActions() {
     }
 }
 
-void listLoggers() {
-    std::vector<std::string> log_list;
-    spdlog::apply_all([&](std::shared_ptr<spdlog::logger> l) {
-        if(l->name().empty()) {
-            log_list.push_back("(default)");
-        } else {
-            log_list.push_back(l->name());
-        }
-    });
-
-    std::sort(log_list.begin(), log_list.end());
-
-    for(auto &l: log_list) {
-        std::cout << "  " << l << "\n";
-    }
-}
-
 void listKnown() {
     std::cout << " Known HW controllers:\n";
     listControllers();
@@ -769,7 +749,7 @@ void listKnown() {
     listScanLoopActions();
 
     std::cout << " Known loggers:\n";
-    listLoggers();
+    logging::listLoggers();
 }
 
 std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie ) {
@@ -939,64 +919,5 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                 ana.setMapSize(fe->geo.nCol, fe->geo.nRow);
             }
         }
-        logger->info("... done!");
-    }
-}
-
-void setupLoggers(const json &j) {
-    spdlog::sink_ptr default_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-
-    // spdlog::level::level_enum, but then construction doesn't work?
-    const std::map<std::string, int> level_map = {
-      {"off", SPDLOG_LEVEL_OFF},
-      {"critical", SPDLOG_LEVEL_CRITICAL},
-      {"err", SPDLOG_LEVEL_ERROR},
-      {"error", SPDLOG_LEVEL_ERROR},
-      {"warn", SPDLOG_LEVEL_WARN},
-      {"warning", SPDLOG_LEVEL_WARN},
-      {"info", SPDLOG_LEVEL_INFO},
-      {"debug", SPDLOG_LEVEL_DEBUG},
-      {"trace", SPDLOG_LEVEL_TRACE},
-    };
-
-    if(!j["simple"].empty()) {
-        // Don't print log level and timestamp
-        if (j["simple"])
-            default_sink->set_pattern("%v");
-    }
-
-    if(!j["log_config"].empty()) {
-        for(auto &jl: j["log_config"]) {
-            if(jl["name"].empty()) {
-                spdlog::error("Log json file: 'log_config' list item must have 'name");
-                continue;
-            }
-
-            std::string name = jl["name"];
-
-            auto logger_apply = [&](std::shared_ptr<spdlog::logger> l) {
-              l->sinks().push_back(default_sink);
-              if(!jl["level"].empty()) {
-                  std::string level = jl["level"];
-
-                  spdlog::level::level_enum spd_level = (spdlog::level::level_enum)level_map.at(level);
-                  l->set_level(spd_level);
-              }
-            };
-
-            if(name == "all") {
-                spdlog::apply_all(logger_apply);
-            } else {
-                logger_apply(spdlog::get(name));
-            }
-        }
-    }
-
-    // NB this sets things at the sink level, so not specifying a particular logger...
-    // Also doing it last means it applies to all registered sinks
-    if(!j["pattern"].empty()) {
-        std::string pattern = j["pattern"];
-      
-        spdlog::set_pattern(pattern);
     }
 }
