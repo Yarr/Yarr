@@ -122,7 +122,7 @@ void Fei4Histogrammer::publish() {
 }
 
 void DataArchiver::processEvent(Fei4Data *data) {
-    for (Fei4Event &curEvent: data->events) {
+    for (const Fei4Event &curEvent: data->events) {
         // Save Event to File
         curEvent.toFileBinary(fileHandle);
     }

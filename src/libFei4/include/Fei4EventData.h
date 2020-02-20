@@ -105,7 +105,7 @@ class Fei4Event {
 
         void doClustering();
 
-        void toFileBinary(std::fstream &handle);
+        void toFileBinary(std::fstream &handle) const;
         void fromFileBinary(std::fstream &handle);
 
         uint16_t l1id;
