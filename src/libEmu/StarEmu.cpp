@@ -979,11 +979,12 @@ std::vector<uint16_t> StarEmu::clusterFinder(
 
     std::vector<uint16_t> clusters;
 
-    // combine input data into uint64_t
-    uint64_t d0l = inputData.to_ullong();
-    uint64_t d0h = (inputData>>64).to_ullong();
-    uint64_t d1l = (inputData>>128).to_ullong();
-    uint64_t d1h = (inputData>>192).to_ullong();
+    // Split input data into uint64_t
+    StripData selector(0xffffffffffffffffULL); // 64 ones
+    uint64_t d0l = (inputData & selector).to_ullong(); // 0 ~ 63
+    uint64_t d0h = ((inputData >> 64) & selector).to_ullong(); // 64 ~ 127
+    uint64_t d1l = ((inputData >> 128) & selector).to_ullong(); // 128 ~ 191
+    uint64_t d1h = ((inputData >> 192) & selector).to_ullong(); // 192 ~ 155
 
     while (d0l or d0h or d1l or d1h) {
         if (clusters.size() > maxCluster) break;
