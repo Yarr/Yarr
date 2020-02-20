@@ -132,9 +132,9 @@ void Fei4Analysis::end() {
 }
 
 void Fei4Analysis::addAlgorithm(std::unique_ptr<AnalysisAlgorithm> a) {
-    algorithms.push_back(std::move(a));
     a->setBookkeeper(bookie);
     a->setChannel(channel);
+    algorithms.push_back(std::move(a));
 }
 
 void Fei4Analysis::addAlgorithm(std::unique_ptr<AnalysisAlgorithm> a, unsigned ch) {
