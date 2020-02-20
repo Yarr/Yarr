@@ -83,7 +83,7 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path
         }
     }
     // expected clusterFinder output per ABCStar:
-    // {0x78f, 0x38f, 0x7af, 0x3af, 0x7cf, 0x3cf, 0x7ee, 0xbee}
+    // {0x78f, 0x38f, 0x7af, 0x3af, 0x7cf, 0x3cf, 0x7ee, 0x3ee}
     ////////////////////////////////////////////////////////////////////////
 }
 
@@ -758,12 +758,61 @@ StarEmu::StripData StarEmu::getMasks(unsigned ichip)
     unsigned maskinput5 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput5, abcID);
     unsigned maskinput6 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput6, abcID);
     unsigned maskinput7 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput7, abcID);
-    
+
+    // The following channel number convention is what is described in Table 9-4 of the ABCStar spec v7.8, but is NOT what is seen on the actual chip.
+    /*
     StripData masks =
         (StripData(maskinput7) << 32*7) | (StripData(maskinput6) << 32*6) |
         (StripData(maskinput5) << 32*5) | (StripData(maskinput4) << 32*4) |
         (StripData(maskinput3) << 32*3) | (StripData(maskinput2) << 32*2) |
         (StripData(maskinput1) << 32*1) | (StripData(maskinput0));
+    */
+    /**/
+    // To make the masks consistent with what is observed on actual chips
+    StripData masks;
+    for (size_t j = 0; j < 16; ++j) {
+        // maskinput0
+        // even bit
+        if ( (maskinput0 >> 2*j) & 1 ) masks.set(j);
+        // odd bit
+        if ( (maskinput0 >> (2*j+1)) & 1 ) masks.set(128+j);
+        // maskinput1
+        // even bit
+        if ( (maskinput1 >> 2*j) & 1 ) masks.set(j+16*1);
+        // odd bit
+        if ( (maskinput1 >> (2*j+1)) & 1 ) masks.set(128+j+16*1);
+        // maskinput2
+        // even bit
+        if ( (maskinput2 >> 2*j) & 1 ) masks.set(j+16*2);
+        // odd bit
+        if ( (maskinput2 >> (2*j+1)) & 1 ) masks.set(128+j+16*2);
+        // maskinput3
+        // even bit
+        if ( (maskinput3 >> 2*j) & 1 ) masks.set(j+16*3);
+        // odd bit
+        if ( (maskinput3 >> (2*j+1)) & 1 ) masks.set(128+j+16*3);
+        // maskinput4
+        // even bit
+        if ( (maskinput4 >> 2*j) & 1 ) masks.set(j+16*4);
+        // odd bit
+        if ( (maskinput4 >> (2*j+1)) & 1 ) masks.set(128+j+16*4);
+        // maskinput5
+        // even bit
+        if ( (maskinput5 >> 2*j) & 1 ) masks.set(j+16*5);
+        // odd bit
+        if ( (maskinput5 >> (2*j+1)) & 1 ) masks.set(128+j+16*5);
+        // maskinput6
+        // even bit
+        if ( (maskinput6 >> 2*j) & 1 ) masks.set(j+16*6);
+        // odd bit
+        if ( (maskinput6 >> (2*j+1)) & 1 ) masks.set(128+j+16*6);
+        // maskinput7
+        // even bit
+        if ( (maskinput7 >> 2*j) & 1 ) masks.set(j+16*7);
+        // odd bit
+        if ( (maskinput7 >> (2*j+1)) & 1 ) masks.set(128+j+16*7);
+    }
+    /**/
 
     return masks;
 }
@@ -940,15 +989,62 @@ StarEmu::StripData StarEmu::getCalEnables(unsigned ichip)
     unsigned calenable5 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG5, abcID);
     unsigned calenable6 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG6, abcID);
     unsigned calenable7 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG7, abcID);
-
-    //FIXME: Channel numbers in CalREGs currently seem to be different compared to those in Mask registers on the actual chip. But the ABCStar spec v7.8 states they should be consistent. 
     
+    // The following channel number convention is what is described in Table 9-4 of the ABCStar spec v7.8, but is NOT what is seen on the actual chip.
+    /*
     StripData enables =
-        (StripData(calenable7) << 32*7) | (StripData(calenable7) << 32*6) |
-        (StripData(calenable7) << 32*5) | (StripData(calenable7) << 32*4) |
-        (StripData(calenable7) << 32*3) | (StripData(calenable7) << 32*2) |
-        (StripData(calenable7) << 32*1) | (StripData(calenable7));
-
+        (StripData(calenable7) << 32*7) | (StripData(calenable6) << 32*6) |
+        (StripData(calenable5) << 32*5) | (StripData(calenable4) << 32*4) |
+        (StripData(calenable3) << 32*3) | (StripData(calenable2) << 32*2) |
+        (StripData(calenable1) << 32*1) | (StripData(calenable0));
+    */
+    /**/
+    // To make the masks consistent with what is observed on actual chips
+    // Note: the following channel mapping for CalREGs is not the same as that for mask registers in StarEmu::getMasks either.
+    StripData enables;
+    for (size_t j = 0; j < 8; ++j) { // deal with 4 bits at a time
+        // calenable0
+        if ( (calenable0 >> 4*j) & 1 ) enables.set(2*j);
+        if ( (calenable0 >> (4*j+1)) & 1 ) enables.set(2*j+1);
+        if ( (calenable0 >> (4*j+2)) & 1 ) enables.set(128+2*j);
+        if ( (calenable0 >> (4*j+3)) & 1 ) enables.set(128+2*j+1);
+        // calenable1
+        if ( (calenable1 >> 4*j) & 1 ) enables.set(2*j+16*1);
+        if ( (calenable1 >> (4*j+1)) & 1 ) enables.set(2*j+1+16*1);
+        if ( (calenable1 >> (4*j+2)) & 1 ) enables.set(128+2*j+16*1);
+        if ( (calenable1 >> (4*j+3)) & 1 ) enables.set(128+2*j+1+16*1);
+        // calenable2
+        if ( (calenable2 >> 4*j) & 1 ) enables.set(2*j+16*2);
+        if ( (calenable2 >> (4*j+1)) & 1 ) enables.set(2*j+1+16*2);
+        if ( (calenable2 >> (4*j+2)) & 1 ) enables.set(128+2*j+16*2);
+        if ( (calenable2 >> (4*j+3)) & 1 ) enables.set(128+2*j+1+16*2);
+        // calenable3
+        if ( (calenable3 >> 4*j) & 1 ) enables.set(2*j+16*3);
+        if ( (calenable3 >> (4*j+1)) & 1 ) enables.set(2*j+1+16*3);
+        if ( (calenable3 >> (4*j+2)) & 1 ) enables.set(128+2*j+16*3);
+        if ( (calenable3 >> (4*j+3)) & 1 ) enables.set(128+2*j+1+16*3);
+        // calenable4
+        if ( (calenable4 >> 4*j) & 1 ) enables.set(2*j+16*4);
+        if ( (calenable4 >> (4*j+1)) & 1 ) enables.set(2*j+1+16*4);
+        if ( (calenable4 >> (4*j+2)) & 1 ) enables.set(128+2*j+16*4);
+        if ( (calenable4 >> (4*j+3)) & 1 ) enables.set(128+2*j+1+16*4);
+        // calenable5
+        if ( (calenable5 >> 4*j) & 1 ) enables.set(2*j+16*5);
+        if ( (calenable5 >> (4*j+1)) & 1 ) enables.set(2*j+1+16*5);
+        if ( (calenable5 >> (4*j+2)) & 1 ) enables.set(128+2*j+16*5);
+        if ( (calenable5 >> (4*j+3)) & 1 ) enables.set(128+2*j+1+16*5);
+        // calenable6
+        if ( (calenable6 >> 4*j) & 1 ) enables.set(2*j+16*6);
+        if ( (calenable6 >> (4*j+1)) & 1 ) enables.set(2*j+1+16*6);
+        if ( (calenable6 >> (4*j+2)) & 1 ) enables.set(128+2*j+16*6);
+        if ( (calenable6 >> (4*j+3)) & 1 ) enables.set(128+2*j+1+16*6);
+        // calenable7
+        if ( (calenable7 >> 4*j) & 1 ) enables.set(2*j+16*7);
+        if ( (calenable7 >> (4*j+1)) & 1 ) enables.set(2*j+1+16*7);
+        if ( (calenable7 >> (4*j+2)) & 1 ) enables.set(128+2*j+16*7);
+        if ( (calenable7 >> (4*j+3)) & 1 ) enables.set(128+2*j+1+16*7);
+    }
+    /**/
     return enables;
 }
 
@@ -975,14 +1071,15 @@ void StarEmu::prepareFEData(unsigned ichip)
 std::vector<uint16_t> StarEmu::clusterFinder(
     const StripData& inputData, const uint8_t maxCluster)
 {
-    // The 256 strips are divided into two rows to form clusters
-
     std::vector<uint16_t> clusters;
 
+    // The 256 strips are divided into two rows to form clusters
     // Split input data into uint64_t
     StripData selector(0xffffffffffffffffULL); // 64 ones
+    // Row 1
     uint64_t d0l = (inputData & selector).to_ullong(); // 0 ~ 63
     uint64_t d0h = ((inputData >> 64) & selector).to_ullong(); // 64 ~ 127
+    // Row 2
     uint64_t d1l = ((inputData >> 128) & selector).to_ullong(); // 128 ~ 191
     uint64_t d1h = ((inputData >> 192) & selector).to_ullong(); // 192 ~ 155
 
