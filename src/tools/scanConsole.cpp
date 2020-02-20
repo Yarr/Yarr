@@ -28,6 +28,7 @@
 
 #include "HwController.h"
 
+#include "AllAnalyses.h"
 #include "AllHwControllers.h"
 #include "AllHistogrammers.h"
 #include "AllChips.h"
@@ -852,35 +853,10 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                     auto analysis = StdDict::getAnalysis(algo_name);
                     if(analysis) {
                         logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(analysis);
-                    } else if (algo_name == "OccupancyAnalysis") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new OccupancyAnalysis());
-                     } else if (algo_name == "L1Analysis") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new L1Analysis());
-                     } else if (algo_name == "TotAnalysis") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new TotAnalysis());
-                     } else if (algo_name == "NoiseAnalysis") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new NoiseAnalysis());
-                     } else if (algo_name == "NoiseTuning") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new NoiseTuning());
-                     } else if (algo_name == "ScurveFitter") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new ScurveFitter());
-                     } else if (algo_name == "OccGlobalThresholdTune") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new OccGlobalThresholdTune());
-                     } else if (algo_name == "OccPixelThresholdTune") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new OccPixelThresholdTune());
-                     } else if (algo_name == "DelayAnalysis") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new DelayAnalysis());
-                     }
+                        ana.addAlgorithm(std::move(analysis));
+                    } else {
+                        logger->error("Error, Analysis Algorithm \"{} unknown, skipping!", algo_name);
+                    }
                 };
 
                 try {
