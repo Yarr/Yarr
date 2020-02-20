@@ -34,8 +34,8 @@ class Fei4Histogrammer : public DataProcessor {
             output = arg_output;
         }
 
-        void addHistogrammer(HistogramAlgorithm *a) {
-            algorithms.push_back(a);
+        void addHistogrammer(std::unique_ptr<HistogramAlgorithm> a) {
+            algorithms.push_back(std::move(a));
         }
 
         void setMapSize(unsigned col, unsigned row) {
@@ -60,7 +60,7 @@ class Fei4Histogrammer : public DataProcessor {
         ClipBoard<HistogramBase> *output;
         std::unique_ptr<std::thread> thread_ptr;
 
-        std::vector<HistogramAlgorithm*> algorithms;
+        std::vector<std::unique_ptr<HistogramAlgorithm>> algorithms;
 };
 
 class DataArchiver : public HistogramAlgorithm {

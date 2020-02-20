@@ -106,9 +106,6 @@ class Fei4Analysis : public DataProcessor {
             }
         }
 
-
-        AnalysisAlgorithm* getLastAna() {return algorithms.back();}
-            
     private:
         Bookkeeper *bookie;
         unsigned channel;

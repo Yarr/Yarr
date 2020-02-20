@@ -29,6 +29,7 @@
 #include "HwController.h"
 
 #include "AllHwControllers.h"
+#include "AllHistogrammers.h"
 #include "AllChips.h"
 #include "AllProcessors.h"
 
@@ -792,30 +793,14 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
             histogrammer.connect(fe->clipData, fe->clipHisto);
 
             auto add_histo = [&](std::string algo_name) {
-                if (algo_name == "OccupancyMap") {
+                auto histo = StdDict::getHistogrammer(algo_name);
+                if(histo) {
                     logger->debug("  ... adding {}", algo_name);
-                    histogrammer.addHistogrammer(new OccupancyMap());
-                } else if (algo_name == "TotMap") {
-                    logger->debug("  ... adding {}", algo_name);
-                    histogrammer.addHistogrammer(new TotMap());
-                } else if (algo_name == "Tot2Map") {
-                    logger->debug("  ... adding {}", algo_name);
-                    histogrammer.addHistogrammer(new Tot2Map());
-                } else if (algo_name == "L1Dist") {
-                    histogrammer.addHistogrammer(new L1Dist());
-                    logger->debug("  ... adding {}", algo_name);
-                } else if (algo_name == "HitsPerEvent") {
-                    histogrammer.addHistogrammer(new HitsPerEvent());
-                    logger->debug("  ... adding {}", algo_name);
+                    histogrammer.addHistogrammer(std::move(histo));
                 } else if (algo_name == "DataArchiver") {
-                    histogrammer.addHistogrammer(new DataArchiver((outputDir + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_data.raw")));
+                    histo.reset(new DataArchiver((outputDir + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_data.raw")));
+                    histogrammer.addHistogrammer(std::move(histo));
                     logger->debug("  ... adding {}", algo_name);
-                } else if (algo_name == "Tot3d") {
-                    logger->debug("  ... adding {}", algo_name);
-                    histogrammer.addHistogrammer(new Tot3d());
-                } else if (algo_name == "L13d") {
-                    logger->debug("  ... adding {}", algo_name);
-                    histogrammer.addHistogrammer(new L13d());
                 } else {
                     logger->error("Error, Histogrammer \"{} unknown, skipping!", algo_name);
                 }

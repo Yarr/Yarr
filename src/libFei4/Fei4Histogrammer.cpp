@@ -61,17 +61,12 @@ Fei4Histogrammer::Fei4Histogrammer() {
 }
 
 Fei4Histogrammer::~Fei4Histogrammer() {
-    for (unsigned i=0; i<algorithms.size(); i++)
-        delete algorithms[i];
 }
 
 void Fei4Histogrammer::init() {
 }
 
 void Fei4Histogrammer::clearHistogrammers() {
-    for(unsigned int i = 0; i < algorithms.size(); i++) {
-        delete (algorithms.at(i));
-    }
     algorithms.clear();
 }
 
