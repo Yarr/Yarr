@@ -52,7 +52,6 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
         void writeNamedRegister(std::string name, uint16_t value) override;
         
         void setInjCharge(double charge, bool sCap=true, bool lCap=true) override {
-            std::cout << __PRETTY_FUNCTION__ << " " << charge << std::endl;
             this->writeRegister((Rd53aReg Rd53aGlobalCfg::*)&Rd53aGlobalCfg::InjVcalDiff, this->toVcal(charge));
         }
         
