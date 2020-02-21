@@ -613,13 +613,36 @@ void StarEmu::doHPR_ABC(LCB::Frame frame, unsigned ichip)
 
 void StarEmu::setHCCStarHPR(LCB::Frame frame)
 {
-    uint32_t hprWord = frame << 16; // TODO: set other bits
+    // Dummy status bits
+    bool R3L1_errcount_ovfl = 0;
+    bool ePllInstantLock = 1;
+    bool lcb_scmd_err = 0;
+    bool lcb_errcount_ovfl = 1;
+    bool lcb_decode_err = 0;
+    bool lcb_locked = 1;
+    bool R3L1_locked = 1;
+
+    uint32_t hprWord = frame << 16 |
+        R3L1_errcount_ovfl << 6 | ePllInstantLock << 5 | lcb_scmd_err << 4 |
+        lcb_errcount_ovfl << 3 | lcb_decode_err << 2 | lcb_locked << 1 |
+        R3L1_locked;
+
     m_starCfg->setHCCRegister(emu::HCCStarRegister::HPR, hprWord);
 }
 
 void StarEmu::setABCStarHPR(LCB::Frame frame, int abcID)
 {
-    uint32_t hprWord = frame << 16; // TODO: set other bits
+    // Dummy status bits
+    bool LCB_SCmd_Err = 0;
+    bool LCB_ErrCnt_Ovfl = 1;
+    bool LCB_Decode_Err = 0;
+    bool LCB_Locked = 1;
+    uint16_t ADC_dat = 0xfff;
+
+    uint32_t hprWord = frame << 16 |
+        LCB_SCmd_Err << 15 | LCB_ErrCnt_Ovfl << 14 | LCB_Decode_Err << 13 |
+        LCB_Locked << 12 | ADC_dat;
+
     m_starCfg->setABCRegister(emu::ABCStarRegs::HPR, hprWord, abcID);
 }
 
