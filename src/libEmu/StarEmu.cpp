@@ -179,7 +179,7 @@ std::vector<uint8_t> StarEmu::buildABCRegisterPacket(
     // then 8-bit register address
     data_packets.push_back(reg_addr);
 
-    // 4-bit TBD + 32-bit data + 16-bit statis + '0000'
+    // 4-bit TBD + 32-bit data + 16-bit status + '0000'
     data_packets.push_back(reg_data >> 28);
     data_packets.push_back((reg_data >> 20) & 0xff);
     data_packets.push_back((reg_data >> 12) & 0xff);
@@ -246,11 +246,12 @@ void StarEmu::DecodeLCB(LCB::Frame frame) {
         }
         else if (frame == LCB::IDLE) { // Idle
             if (verbose) std::cout << __PRETTY_FUNCTION__ << " : received an IDLE frame" << std::endl;
-            m_bccnt += 4;
             // do nothing
         }
     } // if (not (iskcode0 or iskcode1) )
-    
+
+    // Increment BC counter
+    m_bccnt += 4;
 }
 
 //
@@ -307,9 +308,6 @@ void StarEmu::doRegReadWrite(LCB::Frame frame) {
         // Store the lowest 7 bits into the buffer.
         m_reg_cmd_buffer.push(data12 & 0x7f);
     }
-
-    // Increment BC counter
-    m_bccnt += 4;
 }
 
 void StarEmu::writeRegister(const uint32_t data, const uint8_t address,
@@ -493,8 +491,6 @@ void StarEmu::doFastCommand(uint8_t data6) {
         std::cout << "Fast command: StartPRLP" << std::endl;
         break;
     }
-    
-    m_bccnt += 4;
 }
 
 void StarEmu::logicReset()
@@ -656,15 +652,16 @@ void StarEmu::doL0A(uint16_t data12) {
                 // find and add clusters
                 addClusters(clusters, iabc, ibc);
             }
-                
+
+            // Get BCID associated with the event
+            uint8_t bcid = getEventBCID(ibc) & 0xff;
+
             // build and send data packet
             PacketTypes ptype = PacketTypes::LP; // for now
             std::vector<uint8_t> packet =
-                buildPhysicsPacket(clusters, ptype, l0a_tag+ibc, m_bccnt);
+                buildPhysicsPacket(clusters, ptype, l0a_tag+ibc, bcid);
             sendPacket(packet);
         }
-        
-        m_bccnt += 1;
     }
     
     if (bcr) m_bccnt = 0;
@@ -734,6 +731,18 @@ void StarEmu::countHits(unsigned iABC, uint8_t cmdBC)
         // Update HitCountReg
         m_starCfg->setABCRegister(addr, counts+incr, abcID);
     }
+}
+
+uint8_t StarEmu::getEventBCID(uint8_t cmdBC)
+{
+    if (m_l0buffers_lite.size() == 0) return 0;
+
+    // Get BCID from the first ABCStar. BCID should be the same in all ABCStars.
+    auto l0addr = getL0BufferAddr(0, cmdBC);
+    // Top 8 bits of StripData are event BCID
+    auto bcid = (m_l0buffers_lite[0][l0addr] >> NStrips).to_ulong();
+
+    return bcid & 0xff;
 }
 
 void StarEmu::clearFEData(unsigned ichip)

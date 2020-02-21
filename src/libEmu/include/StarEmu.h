@@ -91,6 +91,7 @@ private:
     unsigned int countTriggers(LCB::Frame);
     void countHits(unsigned iABC, uint8_t cmdBC);
     unsigned getL0BufferAddr(unsigned iABC, uint8_t cmdBC);
+    uint8_t getEventBCID(uint8_t cmdBC);
     
     void addClusters(std::vector<std::vector<uint16_t>>&, unsigned, uint8_t);
     uint16_t clusterFinder_sub(uint64_t&, uint64_t&, bool);
