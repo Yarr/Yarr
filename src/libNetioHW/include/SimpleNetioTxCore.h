@@ -165,7 +165,6 @@ public:
 private:
 
   enum TRIG_CONF_VALUE m_trigCfg;            //! trigger config
-  bool m_verbose;                            //! verbose mode
   bool m_trigEnabled;                        //! trigger is enabled
   uint32_t m_trigMode;                       //! trigger mode
   uint32_t m_trigMask;                       //! trigger mask
@@ -189,7 +188,6 @@ private:
   void connect();
   void doTriggerCnt();                       //! loop for a fixed number of triggers
   void doTriggerTime();                      //! loop to trigger during a time slot
-  void printFifo();
 
   void releaseFifo(bool trigChns);
 

@@ -9,9 +9,9 @@
 # Common
 import os, sys, shutil, hashlib, json, uuid
 
-import gridfs             
+import gridfs
 from pymongo          import MongoClient
-from bson.objectid    import ObjectId 
+from bson.objectid    import ObjectId
 from datetime         import datetime, timezone, timedelta
 import time
 
@@ -40,12 +40,15 @@ def updateSys(i_oid, i_col):
 
     logger.debug('\t\t\tUpdate system information: {0} in {1}'.format(i_oid, i_col))
 
-    query = { '_id': ObjectId(i_oid) }
+    query = {
+        '_id'       : ObjectId(i_oid),
+        'dbVersion' : __global.db_version
+    }
     this = localdb[i_col].find_one(query)
     now = datetime.utcnow()
     if not this: return
     if this.get('sys',{})=={}:
-        doc_value = { 
+        doc_value = {
             '$set': {
                 'sys': {
                     'cts': now,
@@ -75,7 +78,7 @@ def updateSys(i_oid, i_col):
 def addValue(i_oid, i_col, i_key, i_value, i_type='string'):
     logger.debug('\t\t\tAdd document: {0} to {1}'.format(i_key, i_col))
     if i_type=='string': value = str(i_value)
-    elif i_type=='bool': 
+    elif i_type=='bool':
         if i_value=='true' or i_value=='True': value = True
         else: value = False
     elif i_type=='int': value = int(i_value)
@@ -101,7 +104,7 @@ def alert(i_messages, i_type='error'):
         elif i_type=='warning':
             logger.warning(message)
 
-    if i_type=='error': 
+    if i_type=='error':
         file_path = ''
         if __global.option=='scan': file_path = '{}/.yarr/localdb/run.dat'.format(home)
         elif __global.option=='dcs': file_path = '{}/.yarr/localdb/dcs.dat'.format(home)
@@ -154,10 +157,15 @@ def writeJson(i_key, i_value, i_file_path, i_file_json):
 
 #################################
 # Generate hash value from json{}
-def getHash(i_file_json):
+def getHash(i_file_data, i_type='json'):
     logger.debug('\t\t\tGet Hash Code from File')
 
-    shaHashed = hashlib.sha256(json.dumps(i_file_json, indent=4).encode('utf-8')).hexdigest()
+    if i_type=='json':
+        shaHashed = hashlib.sha256(json.dumps(i_file_data, indent=4).encode('utf-8')).hexdigest()
+    elif i_type=='dat':
+        with open(i_file_data, 'rb') as f:
+            binary = f.read()
+        shaHashed = hashlib.sha256(bnary).hexdigest()
 
     return shaHashed
 
@@ -169,7 +177,7 @@ def getHash(i_file_json):
 # Register User
 # This function must be put after __check_user
 #    user_oid = __check_user(user_json)
-#    if not user_oid: user_oid = __user(user_json) 
+#    if not user_oid: user_oid = __user(user_json)
 # All the information in i_json is registered.
 def __user(i_json):
     logger.debug('\t\tRegister User')
@@ -189,12 +197,12 @@ def __user(i_json):
 # Register Site
 # This function must be put after __check_site
 #    site_oid = __check_site(site_json)
-#    if not site_oid: site_oid = __site(site_json) 
+#    if not site_oid: site_oid = __site(site_json)
 # All the information in i_json is registered.
 def __site(i_json):
-    logger.debug('\t\tRegister Site') 
+    logger.debug('\t\tRegister Site')
 
-    doc_value = i_json 
+    doc_value = i_json
     doc_value.update({
         'sys'      : {},
         'dbVersion': __global.db_version
@@ -217,8 +225,8 @@ def __test_run(i_json, i_stage, i_tr_oid):
 
     doc_value = {}
     for key in i_json:
-        if not key=='connectivity' and not 'Cfg' in key and not key=='startTime' and not key=='finishTime': 
-            doc_value[key] = i_json[key] 
+        if not key=='connectivity' and not 'Cfg' in key and not key=='startTime' and not key=='finishTime':
+            doc_value[key] = i_json[key]
     doc_value.update({
         'testType' : i_json.get('testType', '...'),
         'runNumber': i_json.get('runNumber', -1),
@@ -336,7 +344,7 @@ def __component(i_serial_number, i_component_type, i_chip_id, i_chips, i_proDB=F
 #    if not cpr_oid: __child_parent_relation(mo_oid, ch_oid, chip_id)
 def __child_parent_relation(i_parent_oid, i_child_oid, i_chip_id):
     logger.debug('\t\tRegister Child Parent Relation.')
-    
+
     doc_value = {
         'sys'      : {},
         'parent'   : i_parent_oid,
@@ -361,7 +369,7 @@ def __config(i_file_json, i_filename, i_title, i_col, i_oid):
 
     hash_code = getHash(i_file_json)
     data_id = __check_gridfs(hash_code)
-    if not data_id: data_id = __grid_fs_file(i_file_json, '', i_filename+'.json', hash_code) 
+    if not data_id: data_id = __grid_fs_file(i_file_json, '', i_filename+'.json', hash_code)
     doc_value = {
         'sys'      : {},
         'filename' : i_filename+'.json',
@@ -392,9 +400,9 @@ def __dcs(i_tr_oid, i_ctr_oid, i_env_key, i_env_j):
     array = []
     if i_env_j['path']!='null':
         extension = i_env_j['path'].split('.')[len(i_env_j['path'].split('.'))-1]
-        if extension=='dat': 
+        if extension=='dat':
             separator = ' '
-        elif extenstion=='csv': 
+        elif extenstion=='csv':
             saparator = ','
         else:
             message = 'This file ({}) format is not supported by Local DB, set to "dat" or "csv"'.format(i_env_j['path'])
@@ -427,7 +435,7 @@ def __dcs(i_tr_oid, i_ctr_oid, i_env_key, i_env_j):
                     value = float(value)
                 except:
                     message = 'Invalid value : {0} in data file: {1}'.format(value, i_env_j['path'])
-                    alert(message) 
+                    alert(message)
                 if 'margin' in i_env_j:
                     if starttime-date<i_env_j['margin'] and finishtime-date>i_env_j['margin']:
                         array.append({
@@ -446,7 +454,10 @@ def __dcs(i_tr_oid, i_ctr_oid, i_env_key, i_env_j):
             'value': i_env_j['value']
         })
 
-    query = { '_id': ObjectId(i_ctr_oid) }
+    query = {
+        '_id'       : ObjectId(i_ctr_oid),
+        'dbVersion' : __global.db_version
+    }
     this_ctr = localdb.componentTestRun.find_one(query)
     if this_ctr.get('environment', '...')=='...':
         doc_value = {
@@ -479,12 +490,21 @@ def __dcs(i_tr_oid, i_ctr_oid, i_env_key, i_env_j):
 #########################################################
 # Register DCS data
 # This function must be put after __check_attachment
-#    oid = __check_attachment(histo_name, tr_oid, chip_oid)
-#    if oid: __attachment(file_path, histo_name, oid)
-def __attachment(i_file_path, i_histo_name, i_oid):
+#    oid = __check_attachment(histo_name, tr_oid, chip_oid, data_type)
+#    if oid: __attachment(file_path, histo_name, oid, data_type)
+def __attachment(i_file_path, i_histo_name, i_oid, i_type):
     logger.debug('\t\tRegister Attachment')
-    
-    oid = __grid_fs_file({}, i_file_path, '{}.dat'.format(i_histo_name)) 
+    if i_type=='json':
+        with open(i_file_path, 'rb') as f:
+            binary_data = f.read()
+            json_data = json.loads(binary_data.decode('utf-8'))
+        hash_code = getHash(json_data)
+        oid = __check_gridfs(hash_code)
+        if not oid: oid = __grid_fs_file(json_data, '', '{0}.{1}'.format(i_histo_name, i_type), hash_code)
+    else:
+        hash_code = getHash(i_file_path)
+        oid = __check_gridfs(hash_code)
+        if not oid: oid = __grid_fs_file({}, i_file_path, '{0}.{1}'.format(i_histo_name, i_type))
     localdb.componentTestRun.update_one(
         { '_id': ObjectId(i_oid) },
         { '$push': {
@@ -493,8 +513,8 @@ def __attachment(i_file_path, i_histo_name, i_oid):
                 'dateTime'   : datetime.utcnow(),
                 'title'      : i_histo_name,
                 'description': 'describe',
-                'contentType': 'dat',
-                'filename'   : '{}.dat'.format(i_histo_name)
+                'contentType': i_type,
+                'filename'   : '{0}.{1}'.format(i_histo_name, i_type)
             }
         }}
     )
@@ -525,7 +545,7 @@ def __conn_cfg(i_conn_path):
     # module
     if 'module' in conn_json:
         mo_serial_number = conn_json["module"]["serialNumber"]
-        mo_oid = __check_component(mo_serial_number, 'module', True) 
+        mo_oid = __check_component(mo_serial_number, 'module', True)
         if mo_oid!='...': module_is_exist = True
     # chips
     chips = 0
@@ -535,9 +555,10 @@ def __conn_cfg(i_conn_path):
         if chip_oid!='...':
             chip_is_exist = True
             doc_value = {
-                'parent': mo_oid,
-                'child' : chip_oid,
-                'status': 'active'
+                'parent'    : mo_oid,
+                'child'     : chip_oid,
+                'status'    : 'active',
+                'dbVersion' : __global.db_version
             }
             this_cpr = localdb.childParentRelation.find_one(doc_value)
             if not this_cpr: cpr_is_fine = False
@@ -558,7 +579,7 @@ def __conn_cfg(i_conn_path):
         mo_oid = __check_component(mo_serial_number, mo_component_type, True)
         if mo_oid=='...':
             mo_oid = __component(mo_serial_number, mo_component_type, -1, chips)
-    
+
     for i, chip_conn_json in enumerate(conn_json['chips']):
         ch_serial_number = chip_conn_json['serialNumber']
         ch_component_type = chip_conn_json['componentType']
@@ -577,16 +598,16 @@ def __conn_cfg(i_conn_path):
 # Write Dat File in GridFS
 def __grid_fs_file(i_file_json, i_file_path, i_filename, i_hash=''):
     logger.debug('\t\t\tWrite File by GridFS')
-   
-    if not i_file_path=='': 
+
+    if not i_file_path=='':
         with open(i_file_path, 'rb') as f:
             binary = f.read()
     else:
         binary = json.dumps(i_file_json, indent=4).encode('utf-8')
 
-    if i_hash=='': 
+    if i_hash=='':
         oid = str(localfs.put( binary, filename=i_filename, dbVersion=__global.db_version ))
-    else: 
+    else:
         oid = str(localfs.put( binary, filename=i_filename, hash=i_hash, dbVersion=__global.db_version ))
 
     updateSys(oid, 'fs.files')
@@ -600,10 +621,10 @@ def __grid_fs_file(i_file_json, i_file_path, i_filename, i_hash=''):
 
 #############################
 # Check User
-# * userName 
+# * userName
 # * institution
 # * description
-# * site document ID 
+# * site document ID
 # * USER
 # * HOSTNAME
 # If there are matching data,
@@ -633,7 +654,7 @@ def __check_user(i_json):
 
 #############################
 # Check Site
-# * address 
+# * address
 # * hostname
 # * institution
 # If there are matching data,
@@ -642,7 +663,7 @@ def __check_site(i_json):
     logger.debug('\tCheck Site')
     logger.debug('\t- Address: {}'.format(i_json['address']))
     logger.debug('\t- HOSTNAME: {}'.format(i_json['HOSTNAME']))
-    logger.debug('\t- Institution: {}'.format(i_json['institution'])) 
+    logger.debug('\t- Institution: {}'.format(i_json['institution']))
 
     oid = None
 
@@ -720,8 +741,9 @@ def __check_test_run(i_scanlog_json, i_conn_json):
             if chip_json.get('enable', 1)==0: continue
             chip_ids.append({ 'chip': chip_json['chip'] })
         query = {
-            'testRun': str(this_run['_id']),
-            '$or'    : chip_ids
+            'testRun'   : str(this_run['_id']),
+            'dbVersion' : __global.db_version,
+            '$or'       : chip_ids
         }
         ctr_entries = localdb.componentTestRun.find(query)
         if not ctr_entries.count()==0:
@@ -767,12 +789,12 @@ def __check_chip(i_json):
 # return document ID
 # TODO If there are no matching data in QC scan, alert(error)
 def __check_component(i_serial_number, i_component_type, register=False):
-    logger.debug('\tCheck Component data:') 
+    logger.debug('\tCheck Component data:')
     logger.debug('\t- Serial Number: {}'.format(i_serial_number))
     logger.debug('\t- chipType: {}'.format(__global.chip_type))
 
-    doc_value = { 
-        'serialNumber' : i_serial_number, 
+    doc_value = {
+        'serialNumber' : i_serial_number,
         'chipType'     : __global.chip_type,
         'componentType': i_component_type.lower().replace(' ','_'),
         'dbVersion'    : __global.db_version
@@ -788,14 +810,14 @@ def __check_component(i_serial_number, i_component_type, register=False):
 
 #############################
 # Check Child Parent Relation
-# * parent document ID 
-# * chip document ID 
+# * parent document ID
+# * chip document ID
 # * status: active
 # If there are matching data,
 # return document ID
 def __check_child_parent_relation(i_parent_oid, i_child_oid):
     logger.debug('\tCheck Child Parent Relation:')
-    logger.debug('\t- parent: {}'.format(i_parent_oid)) 
+    logger.debug('\t- parent: {}'.format(i_parent_oid))
     logger.debug('\t- child: {}'.format(i_child_oid))
 
     oid = None
@@ -814,25 +836,25 @@ def __check_child_parent_relation(i_parent_oid, i_child_oid):
 ################################################
 # Check Config
 # * title
-# * test document ID (testRun, componentTestRun) 
+# * test document ID (testRun, componentTestRun)
 # * chip document ID (componentTestRun)
 # If the config file has not registered,
 # return document ID of testRun/componentTestRun
 def __check_config(i_title, i_col, i_tr_oid, i_chip_oid):
-    logger.debug('\tCheck Config Json:') 
-    logger.debug('\t- title: {}'.format(i_title)) 
+    logger.debug('\tCheck Config Json:')
+    logger.debug('\t- title: {}'.format(i_title))
     logger.debug('\t- collection: {}'.format(i_col))
     logger.debug('\t- testRun: {}'.format(i_tr_oid))
     logger.debug('\t- chip: {}'.format(i_chip_oid))
 
     oid = None
 
-    if i_col=='testRun': 
-        query = { 
+    if i_col=='testRun':
+        query = {
             '_id'      : ObjectId(i_tr_oid),
             'dbVersion': __global.db_version
         }
-    elif i_col=='componentTestRun': 
+    elif i_col=='componentTestRun':
         query = {
             'testRun'  : i_tr_oid,
             'chip'     : i_chip_oid,
@@ -850,11 +872,12 @@ def __check_config(i_title, i_col, i_tr_oid, i_chip_oid):
 # * chip document ID
 # If the dat file has not registered,
 # return document ID of componentTestRun
-def __check_attachment(i_histo_name, i_tr_oid, i_chip_oid):
-    logger.debug('\tCheck Attachment:') 
-    logger.debug('\t- histo name: {}'.format(i_histo_name)) 
+def __check_attachment(i_histo_name, i_tr_oid, i_chip_oid, i_type):
+    logger.debug('\tCheck Attachment:')
+    logger.debug('\t- histo name: {}'.format(i_histo_name))
     logger.debug('\t- testRun: {}'.format(i_tr_oid))
     logger.debug('\t- chip: {}'.format(i_chip_oid))
+    logger.debug('\t- data type: {}'.format(i_type))
 
     oid = None
 
@@ -864,10 +887,10 @@ def __check_attachment(i_histo_name, i_tr_oid, i_chip_oid):
         'dbVersion': __global.db_version
     }
     this_ctr = localdb.componentTestRun.find_one(query)
-    titles = []
+    filenames = []
     for attachment in this_ctr.get('attachments', []):
-        titles.append(attachment['title'])
-    if not i_histo_name in titles: oid = str(this_ctr['_id'])
+        filenames.append(attachment['filename'])
+    if not '{0}.{1}'.format(i_histo_name, i_type) in filenames: oid = str(this_ctr['_id'])
 
     return oid
 
@@ -881,28 +904,28 @@ def __check_gridfs(i_hash_code):
 
     oid = None
 
-    query = { 
-       'hash'     : i_hash_code, 
+    query = {
+       'hash'     : i_hash_code,
        'dbVersion': __global.db_version
     }
-    this_cfg = localdb.fs.files.find_one( query, { '_id': 1 } )
-    if this_cfg:
-        oid = str(this_cfg['_id'])
+    this_file = localdb.fs.files.find_one( query, { '_id': 1 } )
+    if this_file:
+        oid = str(this_file['_id'])
 
-    return oid 
+    return oid
 
 ############################################################
 # Check Site Config
 # Display site information in the console
 def __check_site_data(i_oid):
-    logger.debug('\tCheck Site Data for registration:') 
+    logger.debug('\tCheck Site Data for registration:')
 
-    query = { 
+    query = {
         '_id'      : ObjectId(i_oid),
         'dbVersion': __global.db_version
     }
     this_site = localdb.institution.find_one(query)
-   
+
     logger.info('Site Data:')
     logger.info('    MAC address: {}'.format(this_site['address']))
     logger.info('    Institution: {}'.format(this_site['institution']))
@@ -912,14 +935,14 @@ def __check_site_data(i_oid):
 # Check User Config
 # Display user information in the console
 def __check_user_data(i_oid):
-    logger.debug('\tCheck User Data for registration:') 
+    logger.debug('\tCheck User Data for registration:')
 
-    query = { 
+    query = {
         '_id'      : ObjectId(i_oid),
         'dbVersion': __global.db_version
     }
     this_user = localdb.user.find_one(query)
-    
+
     logger.info('User Data:')
     logger.info('    User Name: {}'.format(this_user['userName']))
     logger.info('    Institution: {}'.format(this_user['institution']))
@@ -932,7 +955,7 @@ def __check_user_data(i_oid):
 # If the components written in the file have not registered,
 # Display component information in the console
 def __check_conn_cfg(i_conn_path):
-    logger.debug('\tCheck Connectivity config for registration:') 
+    logger.debug('\tCheck Connectivity config for registration:')
     logger.debug('\t- connectivity: {}'.format(i_conn_path))
 
     conn_json = toJson(i_conn_path)
@@ -975,7 +998,7 @@ def __check_conn_cfg(i_conn_path):
             alert(message)
         chips.append({'serialNumber': ch_serial_number, 'componentType': ch_component_type, 'chipId': ch_id})
         chipids.append(ch_id)
-    
+
     logger.info('Component Data:')
     logger.info('    Chip Type: {}'.format(chip_type))
     if 'module' in conn_json:
@@ -1006,13 +1029,16 @@ def __check_dcs(i_ctr_oid, i_key, i_num, i_description):
     logger.debug('\t- DCS description: {}'.format(i_description))
 
     ctr_oid = i_ctr_oid
-    query = { 
+    query = {
         '_id'      : ObjectId(i_ctr_oid),
         'dbVersion': __global.db_version
     }
     this_ctr = localdb.componentTestRun.find_one(query)
     if not this_ctr.get('environment', '...')=='...':
-        query = { '_id': ObjectId(this_ctr['environment']) }
+        query = {
+            '_id'       : ObjectId(this_ctr['environment']),
+            'dbVersion' : __global.db_version
+        }
         this_dcs = localdb.environment.find_one(query)
         for this_data in this_dcs.get(i_key,[]):
             if str(this_data['num'])==str(i_num) and this_data['description']==i_description:
@@ -1025,18 +1051,18 @@ def __check_dcs(i_ctr_oid, i_key, i_num, i_description):
 # Check if the value is listed
 def __check_list(i_value, i_name):
     logger.debug('\tCheck List:')
-    logger.debug('\t- value: {}'.format(i_value)) 
+    logger.debug('\t- value: {}'.format(i_value))
     logger.debug('\t- list: {}'.format(i_name))
     if not i_value.lower().replace(' ','_') in __global.db_list[i_name]:
         message = 'Not registered {0} in the {1} list in database config file'.format(i_value, i_name)
         alert(massage)
-    return 
+    return
 
 ###################################
 # Check if the key of json is empty
 def __check_empty(i_json, i_key, i_filename):
-    logger.debug('\tCheck Empty:') 
-    logger.debug('\t- key: {}'.format(i_key)) 
+    logger.debug('\tCheck Empty:')
+    logger.debug('\t- key: {}'.format(i_key))
     logger.debug('\t- file: {}'.format(i_filename))
 
     if not i_key in i_json:
@@ -1055,7 +1081,7 @@ def __check_empty(i_json, i_key, i_filename):
 # * localdb
 # * localfs
 def __set_localdb(i_localdb):
-    logger.debug('Set Local DB') 
+    logger.debug('Set Local DB')
 
     global localdb
     global localfs
@@ -1069,7 +1095,7 @@ def __set_localdb(i_localdb):
 def __set_conn_cfg(i_conn_json, i_cache_dir):
     logger.debug('Set Connectivity Config')
 
-    if i_conn_json=={}: 
+    if i_conn_json=={}:
         message = 'No connectivity config provided.'
         alert(message, 'warning')
         return i_conn_json
@@ -1095,7 +1121,7 @@ def __set_conn_cfg(i_conn_json, i_cache_dir):
             if not __global.chip_type in chip_cfg_json:
                 message = 'Not found {0} in chip config file: {1}/{2}.before'.format(__global.chip_type, i_cache_dir, chip_json['config'])
                 alert(message)
-            if 'name' in chip_cfg_json[__global.chip_type]: # for FEI4B 
+            if 'name' in chip_cfg_json[__global.chip_type]: # for FEI4B
                 chip_json['name'] = chip_cfg_json[__global.chip_type]['name']
                 chip_json['chipId'] = chip_cfg_json[__global.chip_type]['Parameter']['chipId']
             elif 'Name' in chip_cfg_json[__global.chip_type]['Parameter']: # for RD53A
@@ -1105,7 +1131,11 @@ def __set_conn_cfg(i_conn_json, i_cache_dir):
                 chip_json['name'] = 'UnnamedChip_{}'.format(i)
                 chip_json['chipId'] = 0 #TODO not sure the best
             chip_json['component'] = __check_component(chip_json['name'], chip_json.get('componentType','front-end_chip'), True) #TODO for registered component
-            query = { 'parent': conn_json['module']['component'], 'child': chip_json['component'] }
+            query = {
+                'parent'    : conn_json['module']['component'],
+                'child'     : chip_json['component'],
+                'dbVersion' : __global.db_version
+            }
             this_cpr = localdb.childParentRelation.find_one(query)
             if not this_cpr: conn_json['module']['component'] = '...'
         if not chip_json.get('serialNumber', '')==chip_json['name']: chip_json['serialNumber']=chip_json['name']
@@ -1117,21 +1147,21 @@ def __set_conn_cfg(i_conn_json, i_cache_dir):
         del chip_json['serialNumber']
         del chip_json['chipId']
         conn_json['chips'].append(chip_json)
-        
+
     return conn_json
 
 ##############################################
 # Set User
 # User Data can be registered in this function
 def __set_user(i_json):
-    logger.debug('Set User') 
+    logger.debug('Set User')
 
     user_json = {
         'userName'    : os.environ['USER'],
-        'institution' : os.environ['HOSTNAME'],
+        'institution' : os.environ.get('HOSTNAME','default_host'),
         'description' : 'default',
         'USER'        : os.environ['USER'],
-        'HOSTNAME'    : os.environ['HOSTNAME']
+        'HOSTNAME'    : os.environ.get('HOSTNAME','default_host')
     }
 
     if not i_json=={}:
@@ -1141,7 +1171,7 @@ def __set_user(i_json):
     user_json['institution'] = user_json['institution'].lower().replace(' ','_')
 
     user_oid = __check_user(user_json)
-    if not user_oid: user_oid = __user(user_json) 
+    if not user_oid: user_oid = __user(user_json)
 
     __global.user_oid = user_oid
 
@@ -1151,12 +1181,12 @@ def __set_user(i_json):
 # Set Site
 # Site Data can be registered in this function
 def __set_site(i_json):
-    logger.debug('Set Site') 
+    logger.debug('Set Site')
 
     site_json = {
         'address'    : ':'.join(['{:02x}'.format((uuid.getnode() >> ele) & 0xff)for ele in range(0,8*6,8)][::-1]),
-        'HOSTNAME'   : os.environ['HOSTNAME'],
-        'institution': os.environ['HOSTNAME']
+        'HOSTNAME'   : os.environ.get('HOSTNAME','default_host'),
+        'institution': os.environ.get('HOSTNAME','default_host')
     }
     if not i_json=={}:
         site_json.update(i_json)
@@ -1184,7 +1214,7 @@ def __set_test_run_start(i_scanlog_json, i_conn_jsons):
             message = 'Already registered test run data in DB'
             alert(message, 'warning')
             tr_oid = status['_id']
-        conn_json['testRun'] = tr_oid 
+        conn_json['testRun'] = tr_oid
 
         if not conn_json['module']['component']=='...':
             ctr_oid = __check_component_test_run(conn_json['module'], tr_oid)
@@ -1205,7 +1235,10 @@ def __set_test_run_finish(i_scanlog_json, i_conn_jsons):
 
     for conn_json in i_conn_jsons:
         tr_oid = conn_json['testRun']
-        query = { '_id': ObjectId(tr_oid) }
+        query = {
+            '_id'       : ObjectId(tr_oid),
+            'dbVersion' : __global.db_version
+        }
         this_run = localdb.testRun.find_one(query)
 
         doc_value = {}
@@ -1223,6 +1256,7 @@ def __set_test_run_finish(i_scanlog_json, i_conn_jsons):
             updateSys(tr_oid, 'testRun')
 
         __global.tr_oids.append(tr_oid)
+        
 
     return
 
@@ -1243,13 +1277,37 @@ def __set_config(i_config_json, i_filename, i_title, i_col, i_chip_json, i_conn_
 # Set Attachment
 # Dat Data can be modified in this function
 def __set_attachment(i_file_path, i_histo_name, i_chip_json, i_conn_json):
+    def is_dat(b):
+        try:
+            this = bool('Histo' in b.decode('utf-8').split('\n')[0][0:7])
+        except:
+            this = False
+        return this
+    def is_json(b):
+        try:
+            json_data = json.loads(b.decode('utf-8'))
+            if 'Histo' in json_data.get('Type',''):
+                return True
+            else:
+                return False
+        except:
+            return False
     logger.debug('Set Attachment')
 
     if not os.path.isfile(i_file_path): return
+    with open(i_file_path, 'rb') as f:
+        binary_data = f.read()
+        if is_dat(binary_data):
+            data_type = 'dat'
+        elif is_json(binary_data):
+            data_type = 'json'
+        else:
+            return
+
     __global.histo_names.append(i_histo_name);
 
-    oid = __check_attachment(i_histo_name, i_conn_json['testRun'], i_chip_json.get('chip','...'))
-    if oid: __attachment(i_file_path, i_histo_name, oid)
+    oid = __check_attachment(i_histo_name, i_conn_json['testRun'], i_chip_json.get('chip','...'), data_type)
+    if oid: __attachment(i_file_path, i_histo_name, oid, data_type)
 
     return
 
@@ -1257,8 +1315,11 @@ def __set_attachment(i_file_path, i_histo_name, i_chip_json, i_conn_json):
 # Set DCS Data
 def __set_dcs(i_tr_oid, i_env_json):
     logger.debug('\t\tRegister Environment')
-    
-    doc_value = { '_id': ObjectId(i_tr_oid) }
+
+    doc_value = {
+        '_id'       : ObjectId(i_tr_oid),
+        'dbVersion' : __global.db_version
+    }
     this_run = localdb.testRun.find_one(doc_value)
 
     starttime = this_run['startTime'].timestamp()
@@ -1267,7 +1328,10 @@ def __set_dcs(i_tr_oid, i_env_json):
     for env_j in i_env_json:
         if env_j['status']!='enabled': continue
         env_key = env_j['key'].lower().replace(' ','_')
-        query = { 'testRun': i_tr_oid }
+        query = {
+            'testRun'   : i_tr_oid,
+            'dbVersion' : __global.db_version
+        }
         if env_j.get('chip', None):
             query.update({ 'name': env_j['chip'] })
         ctr_entries = localdb.componentTestRun.find(query)
@@ -1300,15 +1364,16 @@ class __global:
     option = ''
     updated = {}
     #force = False
-    def clean():
-        chip_type = ''
-        user_oid = ''
-        site_oid = ''
-        tr_oids = []
-        histo_names = []
-        db_version = 1.01
-        db_list = {}
-        dir_path = ''
-        option = ''
-        updated = {}
-        #force = False
+
+def clean():
+    __global.chip_type = ''
+    __global.user_oid = ''
+    __global.site_oid = ''
+    __global.tr_oids = []
+    __global.histo_names = []
+    __global.db_version = 1.01
+    __global.db_list = {}
+    __global.dir_path = ''
+    __global.option = ''
+    __global.updated = {}
+    #force = False

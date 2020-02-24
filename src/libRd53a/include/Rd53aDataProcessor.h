@@ -46,8 +46,6 @@ class Rd53aDataProcessor : public DataProcessor {
         std::map<unsigned, unsigned> wordCount;
         std::map<unsigned, int> hits;
 
-        bool verbose;
-
         void process_core();
     
 };

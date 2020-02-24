@@ -1315,6 +1315,7 @@ class EmuRxCore<StarChips> : virtual public RxCore {
         void setRxEnable(uint32_t val) override { m_channels.push_back(val); }
         void setRxEnable(std::vector<uint32_t> channels) override { m_channels = channels;}
         void maskRxEnable(uint32_t val, uint32_t mask) override {}
+        void disableRx() override {}
 
         RawData* readData() override;
         

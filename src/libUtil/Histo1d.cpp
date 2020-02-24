@@ -12,6 +12,12 @@
 #include <fstream>
 #include <cmath>
 
+#include "logging.h"
+
+namespace {
+    auto hlog = logging::make_log("Histo1d");
+}
+
 Histo1d::Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh, std::type_index t) : HistogramBase(arg_name, t) {
     bins = arg_bins;
     xlow = arg_xlow;
@@ -120,6 +126,8 @@ void Histo1d::scale(const double s) {
     for (unsigned int i=0; i<bins; i++) {
         data[i] = data[i] * s;
     }
+    overflow = overflow*s;
+    underflow = underflow*s;
     sum = sum*s;
 }
 
@@ -132,6 +140,8 @@ void Histo1d::add(const Histo1d &h) {
             sum += h.getBin(i);
         }
         entries += h.getEntries();
+        overflow += h.getOverflow();
+        underflow += h.getUnderflow();
     }
 }
 
@@ -163,7 +173,7 @@ bool Histo1d::fromFile(std::string filename) {
     std::string line;
     std::getline(file, line);
     if (line.find("Histo1d") == std::string::npos) {
-        std::cerr << "ERROR: Tried loading 1d Histogram from file " << filename << ", but file has non or incorrect header" << std::endl;
+        hlog->error("Tried loading 1d Histogram from file {}, but file has non or incorrect header", filename);
         file.close();
         return false;
     } else {
@@ -185,7 +195,7 @@ bool Histo1d::fromFile(std::string filename) {
 }
 
 void Histo1d::plot(std::string prefix, std::string dir) {
-    std::cout << "Plotting: " << HistogramBase::name << std::endl;
+    hlog->info("Plotting: {}", HistogramBase::name);
     // Put raw histo data in tmp file
     std::string tmp_name = std::string(getenv("USER")) + "/tmp_yarr_histo1d_" + prefix;
     this->toFile(tmp_name, "/tmp/", false);

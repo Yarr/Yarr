@@ -25,7 +25,6 @@ void Fe65p2AnalogScan::init() {
 
     // Loop 4: Data gatherer
     std::shared_ptr<StdDataLoop> dataLoop(new StdDataLoop);
-    dataLoop->setVerbose(false);
     dataLoop->connect(g_data);
 
     this->addLoop(maskStaging);

@@ -333,10 +333,11 @@ class NoiseAnalysis : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-	void loadConfig(json &config){}
+	void loadConfig(json &config);
     private:
         unsigned n_trigger;
-        std::unique_ptr<Histo2d> occ;        
+        std::unique_ptr<Histo2d> occ;
+    bool createMask;
 };
 
 class NoiseTuning : public AnalysisAlgorithm {

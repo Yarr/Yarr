@@ -36,6 +36,7 @@ public:
 
   void setCmdEnable(uint32_t) override;
   void setCmdEnable(std::vector<uint32_t> channels) override;
+  void disableCmd();
   uint32_t getCmdEnable() override;
   bool isCmdEmpty() override; 		// check if the fifo of commands is empty
   void setTrigEnable(uint32_t value) override; 	// enable the trigger
@@ -61,7 +62,6 @@ private:
   std::string m_feType; // flag used to keep rd53a and strips specific stuff seperate
 
   enum TRIG_CONF_VALUE m_trigCfg;            //! trigger config
-  bool m_verbose;                            //! verbose mode
   bool m_trigEnabled;                        //! trigger is enabled
   uint32_t m_trigMode;                       //! trigger mode
   uint32_t m_trigCnt;                        //! number of triggers

@@ -5,8 +5,14 @@
 #include <exception>
 #include <iomanip>
 
+#include "logging.h"
+
+namespace {
+    auto shlog = logging::make_log("ScanHelper");
+}
+
 namespace ScanHelper {
-    
+
     // Open file and parse into json object
     json openJsonFile(std::string filepath) {
         std::ifstream file(filepath);
@@ -27,21 +33,29 @@ namespace ScanHelper {
     std::unique_ptr<HwController> loadController(json &ctrlCfg) {
         std::unique_ptr<HwController> hwCtrl = nullptr;
 
+        shlog->info("Loading controller ...");
+
         // Open controller config file
         std::string controller = ctrlCfg["ctrlCfg"]["type"];
 
         hwCtrl = StdDict::getHwController(controller);
 
         if(hwCtrl) {
-            std::cout << "-> Found config for controller " << controller << std::endl;
+            shlog->info("Found controller of type: {}", controller);
+            shlog->info("... loading controler config:");
+            std::stringstream ss;
+            ss << ctrlCfg["ctrlCfg"]["cfg"];
+            std::string line;
+            while (std::getline(ss, line)) shlog->info("~~~ {}", line); //yes overkill, i know ..
+
             hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
         } else {
-            std::cerr << "#ERROR# Unknown config type: " << ctrlCfg["ctrlCfg"]["type"] << std::endl;
-            std::cout << " Known HW controllers:\n";
+            shlog->critical("Unknown config type: {}",  std::string(ctrlCfg["ctrlCfg"]["type"]));
+            shlog->warn("Known HW controllers:");
             for(auto &h: StdDict::listHwControllers()) {
-                std::cout << "  " << h << std::endl;
+                shlog->warn("  {}", h);
             }
-            std::cerr << "Aborting!" << std::endl;
+            shlog->critical("Aborting!");
             throw(std::runtime_error("loadController failure"));
         }
         return hwCtrl;
@@ -51,19 +65,19 @@ namespace ScanHelper {
     std::string loadChips(json &config, Bookkeeper &bookie, HwController *hwCtrl, std::map<FrontEnd*, std::string> &feCfgMap, std::string &outputDir) {
         std::string chipType;
         if (config["chipType"].empty() || config["chips"].empty()) {
-            std::cerr << __PRETTY_FUNCTION__ << " : invalid config, chip type or chips not specified!" << std::endl;
+            shlog->error("Invalid config, chip type or chips not specified!");
             throw(std::runtime_error("loadChips failure"));
         } else {
             chipType = config["chipType"];
-            std::cout << "Chip Type: " << chipType << std::endl;
-            std::cout << "Found " << config["chips"].size() << " chips defined!" << std::endl;
+            shlog->info("Chip type: {}", chipType);
+            shlog->info("Chip count {}", config["chips"].size());
             // Loop over chips
             for (unsigned i=0; i<config["chips"].size(); i++) {
-                std::cout << "Loading chip #" << i << std::endl;
+                shlog->info("Loading chip #{}", i);
                 json chip = config["chips"][i];
                 std::string chipConfigPath = chip["config"];
                 if (chip["enable"] == 0) {
-                    std::cout << " ... chip not enabled, skipping!" << std::endl;
+                    shlog->warn(" ... chip not enabled, skipping!");
                 } else {
                     // TODO should be a shared pointer
                     bookie.addFe(StdDict::getFrontEnd(chipType).release(), chip["tx"], chip["rx"]);
@@ -72,12 +86,12 @@ namespace ScanHelper {
                     std::ifstream cfgFile(chipConfigPath);
                     if (cfgFile) {
                         // Load config
-                        std::cout << "Loading config file: " << chipConfigPath << std::endl;
+                        shlog->info("Loading config file: {}", chipConfigPath);
                         json cfg;
                         try {
                             cfg = ScanHelper::openJsonFile(chipConfigPath);
                         } catch (std::runtime_error &e) {
-                            std::cerr << "#ERROR# opening chip config: " << e.what() << std::endl;
+                            shlog->error("Error opening chip config: {}", e.what());
                             throw(std::runtime_error("loadChips failure"));
                         }
                         feCfg->fromFileJson(cfg);
@@ -85,10 +99,10 @@ namespace ScanHelper {
                             feCfg->setLocked((int)chip["locked"]);
                         cfgFile.close();
                     } else {
-                        std::cout << "Config file not found, using default!" << std::endl;
+                        shlog->warn("Config file not found, using default!");
                         // Rename in case of multiple default configs
                         feCfg->setName(feCfg->getName() + "_" + std::to_string((int)chip["rx"]));
-                        std::cout << "-> Creating new config of FE " << feCfg->getName() << " to " << chipConfigPath << std::endl;
+                        shlog->warn("Creating new config of FE {} at {}", feCfg->getName(),chipConfigPath);
                         json jTmp;
                         feCfg->toFileJson(jTmp);
                         std::ofstream oFTmp(chipConfigPath);

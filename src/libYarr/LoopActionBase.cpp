@@ -5,26 +5,23 @@
  */
 
 #include "LoopActionBase.h"
-#include <iostream>
+
+#include "logging.h"
+
+namespace {
+    auto llog = logging::make_log("LoopActionBase");
+}
 
 LoopActionBase::LoopActionBase() : loopType(typeid(void)){
     g_fe = NULL;
     g_tx = NULL;
     g_rx = NULL;
     g_stat = NULL;
-    verbose = false;
     m_done = false;
 }
 
-void LoopActionBase::setVerbose(bool v) {
-    if (v)
-        std::cout << __PRETTY_FUNCTION__ << " : Enabling debug output" << std::endl;
-    verbose = v;
-}
-
 void LoopActionBase::setup(LoopStatus *stat, Bookkeeper *k) {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_DEBUG(llog, "");
     g_stat = stat;
     g_fe = k->g_fe;
     g_tx = k->tx;
@@ -80,16 +77,4 @@ void LoopActionBase::setMin(unsigned v) {
 
 void LoopActionBase::setStep(unsigned v) {
     step = v;
-}
-
-bool LoopActionBase::checkGlobalDone() {
-	bool done = true;
-	for(unsigned int j=0; j<keeper->feList.size(); j++) {
-		if(keeper->feList[j]->getActive() == true) {
-		done = done & doneMap[dynamic_cast<FrontEndCfg*>(keeper->feList[j])->getChannel()];
-		}
-	}
-	g_done = done;
-	return g_done;
-
 }

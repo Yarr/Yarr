@@ -55,13 +55,12 @@ class SpecTxCore : virtual public TxCore, virtual public SpecCom{
     public:
         SpecTxCore();
 
-        void setVerbose(bool v=true);
-
         void writeFifo(uint32_t value);
         void releaseFifo() {};
         
         void setCmdEnable(uint32_t value);
         void setCmdEnable(std::vector<uint32_t> channels);
+        void disableCmd();
         uint32_t getCmdEnable();
         void maskCmdEnable(uint32_t value, uint32_t mask);
 
@@ -119,7 +118,6 @@ class SpecTxCore : virtual public TxCore, virtual public SpecCom{
         double m_clk_period;
 
     private:
-        bool verbose;
         //uint32_t enMask;
 };
 

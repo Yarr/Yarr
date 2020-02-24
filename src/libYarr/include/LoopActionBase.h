@@ -27,7 +27,6 @@ class LoopActionBase {
         LoopActionBase();
         virtual ~LoopActionBase() {}
 
-        void setVerbose(bool v=true);
         void setup(LoopStatus *stat, Bookkeeper *k);
         void setNext(shared_ptr<LoopActionBase>& ptr);
         void execute();
@@ -46,8 +45,6 @@ class LoopActionBase {
         virtual void loadConfig(json &config) {}
         virtual void writeConfig(json &config) {}
 		
-        bool checkGlobalDone();
-
     protected:
         virtual void init() {}
         virtual void end() {}
@@ -56,8 +53,6 @@ class LoopActionBase {
         virtual bool done();
 
         bool m_done;
-		bool g_done;
-        bool verbose;
 
         int min;
         int max;

@@ -1,9 +1,14 @@
 #include "EmuController.h"
 
 #include "AllHwControllers.h"
+#include "logging.h"
 
 #include "Fei4Emu.h"
 #include "Rd53aEmu.h"
+
+namespace {
+    auto logger = logging::make_log("emu_controller");
+}
 
 template<class FE, class ChipEmu>
 std::unique_ptr<HwController> makeEmu() {
@@ -33,9 +38,9 @@ void EmuController<Fei4, Fei4Emu>::loadConfig(json &j) {
   auto rx = EmuRxCore<Fei4>::getCom();
 
   //TODO make nice
-  std::cout << "-> Starting Emulator" << std::endl;
+  logger->info("Starting FEI4 Emulator");
   std::string emuCfgFile = j["feCfg"];
-  std::cout << emuCfgFile << std::endl;
+  logger->info(" read {}", emuCfgFile);
   emu.reset(new Fei4Emu(emuCfgFile, emuCfgFile, rx, tx));
   emuThreads.push_back(std::thread(&Fei4Emu::executeLoop, emu.get()));
 }
@@ -50,9 +55,9 @@ void EmuController<Rd53a, Rd53aEmu>::loadConfig(json &j) {
   auto rx = EmuRxCore<Rd53a>::getCom();
 
   //TODO make nice
-  std::cout << "-> Starting Emulator" << std::endl;
+  logger->info("Starting RD53a Emulator");
   std::string emuCfgFile = j["feCfg"];
-  std::cout << emuCfgFile << std::endl;
+  logger->info(" read {}", emuCfgFile);
   emu.reset(new Rd53aEmu( rx_com.get(), tx_com.get(), emuCfgFile ));
   emuThreads.push_back(std::thread(&Rd53aEmu::executeLoop, emu.get()));
 }

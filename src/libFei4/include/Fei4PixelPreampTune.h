@@ -36,7 +36,6 @@ class Fei4PixelPreampTune : public ScanBase {
         bool useLcap;
 
         double target;
-        bool verbose;
 };
 
 #endif

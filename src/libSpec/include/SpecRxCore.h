@@ -35,6 +35,7 @@ class SpecRxCore : virtual public RxCore, virtual public SpecCom{
 
         void setRxEnable(uint32_t val);
         void setRxEnable(std::vector<uint32_t> channels);
+        void disableRx();
         void maskRxEnable(uint32_t val, uint32_t mask);
 
         RawData* readData();
@@ -45,8 +46,6 @@ class SpecRxCore : virtual public RxCore, virtual public SpecCom{
         bool isBridgeEmpty();
 
     private:
-        bool verbose;
-
         uint32_t getStartAddr();
         uint32_t getDataCount();
 };

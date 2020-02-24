@@ -31,8 +31,6 @@ class Fei4ThresholdScan : public ScanBase {
         unsigned minVcal;
         unsigned maxVcal;
         unsigned stepVcal;
-
-        bool verbose;
 };
 
 #endif
