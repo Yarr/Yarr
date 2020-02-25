@@ -38,7 +38,7 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path
     : m_txRingBuffer ( tx )
     , m_rxQueue ( rx )
     , m_bccnt( 0 )
-    , m_starCfg( new emu::StarCfg )
+    , m_starCfg( new StarCfg )
 {
     run = true;
 
@@ -63,17 +63,24 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path
     m_bc_sel = 0;
 
     hpr_clkcnt = HPRPERIOD/2; // 20000 BCs or 500 us
-    hpr_sent.resize(m_starCfg->nABCs() + 1); // 1 HCCStar + nABCs ABCStar chips
+    hpr_sent.resize(m_starCfg->numABCs() + 1); // 1 HCCStar + nABCs ABCStar chips
     std::fill(hpr_sent.begin(), hpr_sent.end(), false);
     
     // HCCStar and ABCStar configurations
     // TODO: should get these from chip config json file
     // m_starCfg->fromFileJson(j_starCfg);
     // for now
-    m_starCfg->init();
+    m_starCfg->setHCCChipId(15);
+    m_starCfg->addABCchipID(15);
+    /*
+    for (size_t id_abc = 1; id_abc < 9; id_abc++) {
+        m_starCfg->addABCchipID(id_abc);
+    }
+    */
+    m_starCfg->initRegisterMaps();
 
     m_l0buffers_lite.clear();
-    m_l0buffers_lite.resize(m_starCfg->nABCs());
+    m_l0buffers_lite.resize(m_starCfg->numABCs());
 
     // Preload test pattern
     for (auto& l0buffer : m_l0buffers_lite) {
@@ -328,8 +335,8 @@ void StarEmu::readRegister(const uint8_t address, bool isABC,
         PacketTypes ptype = PacketTypes::ABCRegRd;
 
         // HCCStar channel number
-        unsigned ich = m_starCfg->indexForABCchipID(ABCID) - 1;
-        if (ich >= m_starCfg->nABCs()) {
+        unsigned ich = m_starCfg->abcIndexFromChipID(ABCID) - 1;
+        if (ich >= m_starCfg->numABCs()) {
             std::cout << __PRETTY_FUNCTION__ << ": Cannot find an ABCStar chip with ID = " << ABCID << std::endl;
             return;
         }
@@ -393,7 +400,7 @@ void StarEmu::execute_command_sequence()
         */
         // If cmd_abcID is '1111' i.e. broadcast address, read all ABCs
         if ((cmd_abcID & 0xf) == 0xf and m_isForABC) {
-            for (int index=1; index <= m_starCfg->nABCs(); ++index)
+            for (int index=1; index <= m_starCfg->numABCs(); ++index)
                 readRegister(reg_addr, true, m_starCfg->getABCchipID(index));
         } else {
             readRegister(reg_addr, m_isForABC, cmd_abcID);
@@ -421,7 +428,7 @@ void StarEmu::execute_command_sequence()
         // write register
         // If cmd_abcID is '1111' i.e. broadcast address, write all ABCs
         if ((cmd_abcID & 0xf) == 0xf and m_isForABC) {
-            for (int index=1; index <= m_starCfg->nABCs(); ++index)
+            for (int index=1; index <= m_starCfg->numABCs(); ++index)
                 writeRegister(data, reg_addr, true, m_starCfg->getABCchipID(index));
         } else {
             writeRegister(data, reg_addr, m_isForABC, cmd_abcID);
@@ -445,24 +452,24 @@ void StarEmu::doFastCommand(uint8_t data6) {
         this->logicReset();
         break;
     case LCB::ABC_REG_RESET :
-        m_starCfg->resetABCRegisters();
+        this->resetABCRegisters();
         this->logicReset();
         break;
     case LCB::ABC_SEU_RESET :
-        m_starCfg->resetABCSEU();
+        this->resetABCSEU();
         break;
     case LCB::ABC_CAL_PULSE :
-        for (int ichip=1; ichip <= m_starCfg->nABCs(); ++ichip) {
+        for (int ichip=1; ichip <= m_starCfg->numABCs(); ++ichip) {
             this->generateFEData_CaliPulse(ichip, bcsel);
         }
         break;
     case LCB::ABC_DIGITAL_PULSE :
-        for (int ichip=1; ichip <= m_starCfg->nABCs(); ++ichip) {
+        for (int ichip=1; ichip <= m_starCfg->numABCs(); ++ichip) {
             this->generateFEData_TestPulse(ichip, bcsel);
         }
         break;
     case LCB::ABC_HIT_COUNT_RESET :
-        m_starCfg->resetABCHitCounts();
+        this->resetABCHitCounts();
         break;
     case LCB::ABC_HITCOUNT_START :
         m_startHitCount = true;
@@ -471,24 +478,24 @@ void StarEmu::doFastCommand(uint8_t data6) {
         m_startHitCount = false;
         break;
     case LCB::ABC_SLOW_COMMAND_RESET :
-        this->slowCommandReset();
+        this->resetSlowCommand();
         break;
     case LCB::ABC_STOP_PRLP :
-        std::cout << "Fast command: StopPRLP" << std::endl;
+        //std::cout << "Fast command: StopPRLP" << std::endl;
         break;
     case LCB::HCC_REG_RESET :
-        m_starCfg->resetHCCRegisters();
+        this->resetHCCRegisters();
         //hpr_clkcnt = HPRPERIOD/2;
         //std::fill(hpr_sent.begin(), hpr_sent.end(), false);
         break;
     case LCB::HCC_SEU_RESET :
-        m_starCfg->resetHCCSEU();
+        this->resetHCCSEU();
         break;
     case LCB::HCC_PLL_RESET :
-        m_starCfg->resetHCCPLL();
+        this->resetHCCPLL();
         break;
     case LCB::ABC_START_PRLP :
-        std::cout << "Fast command: StartPRLP" << std::endl;
+        //std::cout << "Fast command: StartPRLP" << std::endl;
         break;
     }
 }
@@ -499,12 +506,101 @@ void StarEmu::logicReset()
     hpr_clkcnt = HPRPERIOD/2;
     std::fill(hpr_sent.begin(), hpr_sent.end(), false);
     
-    for (unsigned ichip = 1; ichip <= m_starCfg->nABCs(); ++ichip) {
+    for (unsigned ichip = 1; ichip <= m_starCfg->numABCs(); ++ichip) {
         clearFEData(ichip);
     }
 }
 
-void StarEmu::slowCommandReset()
+/////////////////////////////////////////////
+// Move the reset functions below to StarCfg?
+void StarEmu::resetABCRegisters()
+{
+    for (unsigned ichip = 1; ichip <= m_starCfg->numABCs(); ++ichip) {
+        unsigned abc = m_starCfg->getABCchipID(ichip);
+        // cf. ABCStar specs v7.8 section 9.14
+        m_starCfg->setABCRegister(ABCStarRegister::SCReg, 0x00000000, abc);
+
+        m_starCfg->setABCRegister(ABCStarRegister::ADCS1, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::ADCS2, 0x000000ff, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::ADCS3, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::ADCS4, 0x0000010c, abc);
+        //m_starCfg->setABCRegister(ABCStarRegister::ADCS5, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::ADCS6, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::ADCS7, 0x00000000, abc);
+
+        m_starCfg->setABCRegister(ABCStarRegister::MaskInput0, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::MaskInput1, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::MaskInput2, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::MaskInput3, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::MaskInput4, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::MaskInput5, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::MaskInput6, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::MaskInput7, 0x00000000, abc);
+
+        m_starCfg->setABCRegister(ABCStarRegister::CREG0, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::CREG1, 0x00000004, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::CREG2, 0x00000190, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::CREG3, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::CREG4, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::CREG5, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::CREG6, 0x0000ffff, abc);
+
+        m_starCfg->setABCRegister(ABCStarRegister::STAT0, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::STAT1, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::STAT2, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::STAT3, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::STAT4, 0x00000000, abc);
+
+        //m_starCfg->setABCRegister(ABCStarRegister::HPR, 0x00000000, abc);
+
+        m_starCfg->setABCRegister(ABCStarRegister::CalREG0, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::CalREG1, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::CalREG2, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::CalREG3, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::CalREG4, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::CalREG5, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::CalREG6, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::CalREG7, 0x00000000, abc);
+    }
+
+    resetABCTrimDAC();
+    resetABCHitCounts();
+}
+
+void StarEmu::resetABCSEU()
+{
+    for (unsigned ichip = 1; ichip <= m_starCfg->numABCs(); ++ichip) {
+        unsigned abc = m_starCfg->getABCchipID(ichip);
+        m_starCfg->setABCRegister(ABCStarRegister::STAT0, 0x00000000, abc);
+        m_starCfg->setABCRegister(ABCStarRegister::STAT1, 0x00000000, abc);
+    }
+}
+
+void StarEmu::resetABCHitCounts()
+{
+    for (unsigned ichip = 1; ichip <= m_starCfg->numABCs(); ++ichip) {
+        unsigned abc = m_starCfg->getABCchipID(ichip);
+        // 64 HitCount registers per ABCStar
+        for (size_t j = 0; j < 64; j++) {
+            unsigned addr = (+ABCStarRegister::HitCountREG0)._to_integral() + j;
+            m_starCfg->setABCRegister(addr, 0x00000000, abc);
+        }
+    }
+}
+
+void StarEmu::resetABCTrimDAC()
+{
+    for (unsigned ichip = 1; ichip <= m_starCfg->numABCs(); ++ichip) {
+        unsigned abc = m_starCfg->getABCchipID(ichip);
+        // 40 TrimDAC registers per ABCStar
+        for (size_t j = 0; j < 40; j++) {
+            unsigned addr = (+ABCStarRegister::TrimDAC0)._to_integral() + j;
+            m_starCfg->setABCRegister(addr, 0x00000000, abc);
+        }
+    }
+}
+
+void StarEmu::resetSlowCommand()
 {
     m_ignoreCmd = true;
     m_isForABC = false;
@@ -514,6 +610,41 @@ void StarEmu::slowCommandReset()
     std::swap(m_reg_cmd_buffer, empty_buffer);
 }
 
+void StarEmu::resetHCCRegisters()
+{
+    // cf. HCCStar specs v1.0e section 9.15.1
+    m_starCfg->setHCCRegister(HCCStarRegister::Pulse,     0x00000000);
+    m_starCfg->setHCCRegister(HCCStarRegister::Delay1,    0x00000000);
+    m_starCfg->setHCCRegister(HCCStarRegister::Delay2,    0x00000000);
+    m_starCfg->setHCCRegister(HCCStarRegister::Delay3,    0x00000000);
+    m_starCfg->setHCCRegister(HCCStarRegister::DRV1,      0x00000000);
+    m_starCfg->setHCCRegister(HCCStarRegister::DRV2,      0x00000014);
+    m_starCfg->setHCCRegister(HCCStarRegister::ICenable,  0x00000000);
+    m_starCfg->setHCCRegister(HCCStarRegister::OPmode,    0x00020001);
+    m_starCfg->setHCCRegister(HCCStarRegister::OPmodeC,   0x00020001);
+    m_starCfg->setHCCRegister(HCCStarRegister::Cfg1,      0x00000000);
+    m_starCfg->setHCCRegister(HCCStarRegister::Cfg2,      0x0000018e);
+    m_starCfg->setHCCRegister(HCCStarRegister::ExtRst,    0x00000000);
+    m_starCfg->setHCCRegister(HCCStarRegister::ExtRstC,   0x00000000);
+    m_starCfg->setHCCRegister(HCCStarRegister::ErrCfg,    0x00000000);
+    m_starCfg->setHCCRegister(HCCStarRegister::ADCcfg,    0x00406600);
+}
+
+void StarEmu::resetHCCSEU()
+{
+    m_starCfg->setHCCRegister(HCCStarRegister::SEU1, 0x00000000);
+    m_starCfg->setHCCRegister(HCCStarRegister::SEU2, 0x00000000);
+    m_starCfg->setHCCRegister(HCCStarRegister::SEU3, 0x00000000);
+}
+
+void StarEmu::resetHCCPLL()
+{
+    m_starCfg->setHCCRegister(HCCStarRegister::PLL1, 0x00000000);
+    m_starCfg->setHCCRegister(HCCStarRegister::PLL2, 0x00000000);
+    m_starCfg->setHCCRegister(HCCStarRegister::PLL3, 0x00000000);
+}
+/////////////////////////////////////////////
+
 //
 // HPR
 //
@@ -521,7 +652,7 @@ void StarEmu::doHPR(LCB::Frame frame)
 {
     doHPR_HCC(frame);
 
-    for (unsigned ichip = 1; ichip <= m_starCfg->nABCs(); ++ichip) {
+    for (unsigned ichip = 1; ichip <= m_starCfg->numABCs(); ++ichip) {
         doHPR_ABC(frame, ichip);
     }
 
@@ -535,9 +666,9 @@ void StarEmu::doHPR_HCC(LCB::Frame frame)
     setHCCStarHPR(frame);
 
     //// HPR control logic
-    bool testHPR = m_starCfg->getHCCSubRegValue(emu::HCCStarRegister::Pulse, 1, 1);
-    bool stopHPR = m_starCfg->getHCCSubRegValue(emu::HCCStarRegister::Pulse, 0, 0);
-    bool maskHPR = m_starCfg->getHCCSubRegValue(emu::HCCStarRegister::Cfg1, 8, 8);
+    bool testHPR = m_starCfg->getSubRegisterValue(0, "TESTHPR");
+    bool stopHPR = m_starCfg->getSubRegisterValue(0, "STOPHPR");
+    bool maskHPR = m_starCfg->getSubRegisterValue(0, "MASKHPR");
 
     // Assume for now in the software emulation LCB is always locked and only
     // testHPR bit can trigger the one-time pulse to send an HPR packet
@@ -557,8 +688,8 @@ void StarEmu::doHPR_HCC(LCB::Frame frame)
     if (lcb_lock_changed or hpr_periodic or hpr_initial) {
         auto packet_hcchpr = buildHCCRegisterPacket(
             PacketTypes::HCCHPR,
-            (uint8_t)emu::HCCStarRegister::HPR,
-            m_starCfg->getHCCRegister(emu::HCCStarRegister::HPR));
+            (+HCCStarRegister::HPR)._to_integral(),
+            m_starCfg->getHCCRegister(HCCStarRegister::HPR));
 
         sendPacket(packet_hcchpr);
 
@@ -569,11 +700,11 @@ void StarEmu::doHPR_HCC(LCB::Frame frame)
     // Reset stopHPR to zero (i.e. resume the periodic HPR packet transmission)
     // if lcb_lock_changed
     if (stopHPR and lcb_lock_changed)
-        m_starCfg->setHCCSubRegister(emu::HCCStarRegister::Pulse, 0, 0, 0);
+        m_starCfg->setSubRegisterValue(0, "STOPHPR", 0);
 
     // Reset testHPR bit to zero if it is one
     if (testHPR)
-        m_starCfg->setHCCSubRegister(emu::HCCStarRegister::Pulse, 0, 1, 1);
+        m_starCfg->setSubRegisterValue(0, "TESTHPR", 0);
 }
 
 void StarEmu::doHPR_ABC(LCB::Frame frame, unsigned ichip)
@@ -584,9 +715,9 @@ void StarEmu::doHPR_ABC(LCB::Frame frame, unsigned ichip)
     setABCStarHPR(frame, abcID);
 
     //// HPR control logic
-    bool testHPR = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::SCReg, abcID, 3, 3);
-    bool stopHPR = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::SCReg, abcID, 2, 2);
-    bool maskHPR = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 6, 6);
+    bool testHPR = m_starCfg->getSubRegisterValue(ichip, "TESTHPR");
+    bool stopHPR = m_starCfg->getSubRegisterValue(ichip, "STOPHPR");
+    bool maskHPR = m_starCfg->getSubRegisterValue(ichip, "MASKHPR");
 
     bool lcb_lock_changed = testHPR & (~maskHPR);
     bool hpr_periodic = not (hpr_clkcnt%HPRPERIOD) and not stopHPR;
@@ -595,8 +726,8 @@ void StarEmu::doHPR_ABC(LCB::Frame frame, unsigned ichip)
     //// Build and send HPR packets
     if (lcb_lock_changed or hpr_periodic or hpr_initial) {
         auto packet_abchpr = buildABCRegisterPacket(
-            PacketTypes::ABCHPR, ichip-1, (uint8_t)emu::ABCStarRegs::HPR,
-            m_starCfg->getABCRegister(emu::ABCStarRegs::HPR, abcID),
+            PacketTypes::ABCHPR, ichip-1, (+ABCStarRegister::HPR)._to_integral(),
+            m_starCfg->getABCRegister(ABCStarRegister::HPR, abcID),
             (abcID&0xf) << 12);
 
         sendPacket(packet_abchpr);
@@ -606,9 +737,9 @@ void StarEmu::doHPR_ABC(LCB::Frame frame, unsigned ichip)
 
     //// Update HPR control bits
     if (stopHPR and lcb_lock_changed)
-        m_starCfg->setABCSubRegister(emu::ABCStarRegs::SCReg, 0, abcID, 2, 2);
+        m_starCfg->setSubRegisterValue(ichip, "STOPHPR", 0);
     if (testHPR)
-        m_starCfg->setABCSubRegister(emu::ABCStarRegs::SCReg, 0, abcID, 3, 3);
+        m_starCfg->setSubRegisterValue(ichip, "TESTHPR", 0);
 }
 
 void StarEmu::setHCCStarHPR(LCB::Frame frame)
@@ -627,7 +758,7 @@ void StarEmu::setHCCStarHPR(LCB::Frame frame)
         lcb_errcount_ovfl << 3 | lcb_decode_err << 2 | lcb_locked << 1 |
         R3L1_locked;
 
-    m_starCfg->setHCCRegister(emu::HCCStarRegister::HPR, hprWord);
+    m_starCfg->setHCCRegister(HCCStarRegister::HPR, hprWord);
 }
 
 void StarEmu::setABCStarHPR(LCB::Frame frame, int abcID)
@@ -643,7 +774,7 @@ void StarEmu::setABCStarHPR(LCB::Frame frame, int abcID)
         LCB_SCmd_Err << 15 | LCB_ErrCnt_Ovfl << 14 | LCB_Decode_Err << 13 |
         LCB_Locked << 12 | ADC_dat;
 
-    m_starCfg->setABCRegister(emu::ABCStarRegs::HPR, hprWord, abcID);
+    m_starCfg->setABCRegister(ABCStarRegister::HPR, hprWord, abcID);
 }
 
 //
@@ -656,7 +787,7 @@ void StarEmu::doL0A(uint16_t data12) {
 
     // Prepare front-end data
     // Loop over all ABCStar chips
-    for (int ichip = 1; ichip <= m_starCfg->nABCs(); ++ichip) 
+    for (int ichip = 1; ichip <= m_starCfg->numABCs(); ++ichip) 
         prepareFEData(ichip);
     
     // A LCB frame covers 4 BCs
@@ -668,7 +799,7 @@ void StarEmu::doL0A(uint16_t data12) {
             std::vector<std::vector<uint16_t>> clusters;
             
             // Read all ABCStar chips
-            for (unsigned iabc = 0; iabc < m_starCfg->nABCs(); ++iabc) {
+            for (unsigned iabc = 0; iabc < m_starCfg->numABCs(); ++iabc) {
                 // count hits
                 countHits(iabc, ibc);
 
@@ -723,9 +854,10 @@ unsigned int StarEmu::countTriggers(LCB::Frame frame) {
 void StarEmu::countHits(unsigned iABC, uint8_t cmdBC)
 {
     if (not m_startHitCount) return;
-    
-    int abcID = m_starCfg->getABCchipID(iABC+1);
-    bool EnCount = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 5, 5);
+
+    unsigned ichip = iABC+1;
+    int abcID = m_starCfg->getABCchipID(ichip);
+    bool EnCount = m_starCfg->getSubRegisterValue(ichip, "ENCOUNT");
     if (not EnCount) return;
 
     auto feBC = getL0BufferAddr(iABC, cmdBC);
@@ -734,7 +866,7 @@ void StarEmu::countHits(unsigned iABC, uint8_t cmdBC)
     for (int ireg = 0; ireg < 64; ++ireg) {
         // Read HitCount Register
         // address
-        unsigned addr = ireg + (unsigned)emu::ABCStarRegs::HitCountREG0;
+        unsigned addr = ireg + (+ABCStarRegister::HitCountREG0)._to_integral();
         // value
         unsigned counts = m_starCfg->getABCRegister(addr, abcID);
         
@@ -782,14 +914,14 @@ StarEmu::StripData StarEmu::getMasks(unsigned ichip)
     int abcID = m_starCfg->getABCchipID(ichip);
     
     // mask registers
-    unsigned maskinput0 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput0, abcID);
-    unsigned maskinput1 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput1, abcID);
-    unsigned maskinput2 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput2, abcID);
-    unsigned maskinput3 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput3, abcID);
-    unsigned maskinput4 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput4, abcID);
-    unsigned maskinput5 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput5, abcID);
-    unsigned maskinput6 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput6, abcID);
-    unsigned maskinput7 = m_starCfg->getABCRegister(emu::ABCStarRegs::MaskInput7, abcID);
+    unsigned maskinput0 = m_starCfg->getABCRegister(ABCStarRegister::MaskInput0, abcID);
+    unsigned maskinput1 = m_starCfg->getABCRegister(ABCStarRegister::MaskInput1, abcID);
+    unsigned maskinput2 = m_starCfg->getABCRegister(ABCStarRegister::MaskInput2, abcID);
+    unsigned maskinput3 = m_starCfg->getABCRegister(ABCStarRegister::MaskInput3, abcID);
+    unsigned maskinput4 = m_starCfg->getABCRegister(ABCStarRegister::MaskInput4, abcID);
+    unsigned maskinput5 = m_starCfg->getABCRegister(ABCStarRegister::MaskInput5, abcID);
+    unsigned maskinput6 = m_starCfg->getABCRegister(ABCStarRegister::MaskInput6, abcID);
+    unsigned maskinput7 = m_starCfg->getABCRegister(ABCStarRegister::MaskInput7, abcID);
 
     // The following channel number convention is what is described in Table 9-4 of the ABCStar spec v7.8, but is NOT what is seen on the actual chip.
     /*
@@ -851,10 +983,9 @@ StarEmu::StripData StarEmu::getMasks(unsigned ichip)
 
 void StarEmu::applyMasks(unsigned ichip) {
 
-    int abcID = m_starCfg->getABCchipID(ichip);
     unsigned iABC = ichip - 1;
 
-    uint8_t TM = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 17, 16);
+    uint8_t TM = m_starCfg->getSubRegisterValue(ichip, "TM");
     if (TM != 0) // do nothing if not normal data taking mode
         return;
 
@@ -866,12 +997,10 @@ void StarEmu::applyMasks(unsigned ichip) {
 
 void StarEmu::generateFEData_StaticTest(unsigned ichip)
 {
-    int abcID = m_starCfg->getABCchipID(ichip);
-
     // ABC index starts from 1. Zero is reserved for HCC.
     unsigned iABC = ichip - 1;
 
-    uint8_t TM = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 17, 16);
+    uint8_t TM = m_starCfg->getSubRegisterValue(ichip, "TM");
     if (TM != 1) // do nothing if not static test mode
         return;
 
@@ -890,30 +1019,28 @@ void StarEmu::generateFEData_StaticTest(unsigned ichip)
 void StarEmu::generateFEData_TestPulse(unsigned ichip, uint8_t cmdBC)
 { // Triggered by the "Digital Test Pulse" fast command
 
-    int abcID = m_starCfg->getABCchipID(ichip);
-
     // ABC index starts from 1. Zero is reserved for HCC.
     unsigned iABC = ichip - 1;
 
-    uint8_t TM = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 17, 16);
+    uint8_t TM = m_starCfg->getSubRegisterValue(ichip, "TM");
     if (TM != 2) // do nothing if not test pulse mode
         return;
     
     // enable
-    bool TestPulseEnable = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 4, 4);
+    bool TestPulseEnable = m_starCfg->getSubRegisterValue(ichip, "TEST_PULSE_ENABLE");
     if (not TestPulseEnable)
         return;
 
     StripData masks = getMasks(ichip);
 
     // Two test pulse options: determined by bit 18 of ABC register CREG0
-    bool testPattEnable = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 18, 18);
+    bool testPattEnable = m_starCfg->getSubRegisterValue(ichip, "TESTPATT_ENABLE");
     
     if (testPattEnable) { // Use test pattern for four consecutive BC
         // Test patterns
         // testPatt1 if mask bit is 0, otherwise testPatt2
-        uint8_t testPatt1 = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 23, 20);
-        uint8_t testPatt2 = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 27, 24);
+        uint8_t testPatt1 = m_starCfg->getSubRegisterValue(ichip, "TESTPATT1");
+        uint8_t testPatt2 = m_starCfg->getSubRegisterValue(ichip, "TESTPATT2");
 
         for (int ibit = 0; ibit < 4; ++ibit) {
             StripData patt1_ibit(0); // 0's
@@ -960,34 +1087,34 @@ void StarEmu::generateFEData_TestPulse(unsigned ichip, uint8_t cmdBC)
 void StarEmu::generateFEData_CaliPulse(unsigned ichip, uint8_t bc)
 { // Triggered by the "Calibration Pulse" fast command
 
-    int abcID = m_starCfg->getABCchipID(ichip);
-
     // ABC index starts from 1. Zero is reserved for HCC.
     unsigned iABC = ichip - 1;
 
-    uint8_t TM = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 17, 16);
+    uint8_t TM = m_starCfg->getSubRegisterValue(ichip, "TM");
     if (TM != 0) // do nothing if not normal data taking mode
         return;
     
-    bool CalPulseEnable = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG1, abcID, 4, 4);
+    bool CalPulseEnable = m_starCfg->getSubRegisterValue(ichip, "CALPULSE_ENABLE");
     if (not CalPulseEnable)
         return;
     
     // Injected charge DAC
     // 9 bits, 0 - 170 mV
-    uint16_t BCAL = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::ADCS3, abcID, 24, 16);
+    uint16_t BCAL = m_starCfg->getSubRegisterValue(ichip, "BCAL");
 
     // Threshold DAC
     // BVT: 8 bits, 0 - -550 mV
-    uint8_t BVT = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::ADCS2, abcID, 7, 0);
+    uint8_t BVT = m_starCfg->getSubRegisterValue(ichip, "BVT");
     // Trim Range
     // BTRANGE: 5 bits, 50 mV - 230 mV
-    uint8_t BTRANGE = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::ADCS1, abcID, 28, 24);
+    uint8_t BTRANGE = m_starCfg->getSubRegisterValue(ichip, "BTRANGE");
 
     // Loop over 256 strips
     for (int istrip = 0; istrip < 256; ++istrip) {
         // TrimDAC
-        uint8_t TrimDAC = m_starCfg->getTrimDAC(istrip, abcID);
+        unsigned col = istrip%128 + 1;
+        unsigned row = istrip/128 + 2*ichip - 1;
+        uint8_t TrimDAC = m_starCfg->getTrimDAC(col, row);
 
         bool aHit = m_stripArray[istrip].calculateHit(BCAL, BVT, TrimDAC, BTRANGE);
         
@@ -1013,14 +1140,14 @@ StarEmu::StripData StarEmu::getCalEnables(unsigned ichip)
     unsigned iABC = ichip - 1;
 
     // Calibration enable registers
-    unsigned calenable0 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG0, abcID);
-    unsigned calenable1 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG1, abcID);
-    unsigned calenable2 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG2, abcID);
-    unsigned calenable3 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG3, abcID);
-    unsigned calenable4 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG4, abcID);
-    unsigned calenable5 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG5, abcID);
-    unsigned calenable6 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG6, abcID);
-    unsigned calenable7 = m_starCfg->getABCRegister(emu::ABCStarRegs::CalREG7, abcID);
+    unsigned calenable0 = m_starCfg->getABCRegister(ABCStarRegister::CalREG0, abcID);
+    unsigned calenable1 = m_starCfg->getABCRegister(ABCStarRegister::CalREG1, abcID);
+    unsigned calenable2 = m_starCfg->getABCRegister(ABCStarRegister::CalREG2, abcID);
+    unsigned calenable3 = m_starCfg->getABCRegister(ABCStarRegister::CalREG3, abcID);
+    unsigned calenable4 = m_starCfg->getABCRegister(ABCStarRegister::CalREG4, abcID);
+    unsigned calenable5 = m_starCfg->getABCRegister(ABCStarRegister::CalREG5, abcID);
+    unsigned calenable6 = m_starCfg->getABCRegister(ABCStarRegister::CalREG6, abcID);
+    unsigned calenable7 = m_starCfg->getABCRegister(ABCStarRegister::CalREG7, abcID);
     
     // The following channel number convention is what is described in Table 9-4 of the ABCStar spec v7.8, but is NOT what is seen on the actual chip.
     /*
@@ -1084,11 +1211,9 @@ void StarEmu::prepareFEData(unsigned ichip)
 {
     // ABC chip index starts from 1. Zero is reserved for HCC.
     assert(ichip);
-    
-    int abcID = m_starCfg->getABCchipID(ichip);
 
     // Check mode of operation
-    uint8_t TM = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG0, abcID, 17, 16);
+    uint8_t TM = m_starCfg->getSubRegisterValue(ichip, "TM");
     
     if (TM == 0) { // Normal data taking
         this->applyMasks(ichip);
@@ -1202,9 +1327,8 @@ void StarEmu::addClusters(std::vector<std::vector<uint16_t>>& allclusters,
     auto feBC = getL0BufferAddr(iABC, cmdBC);
 
     // max clusters
-    int abcID = m_starCfg->getABCchipID(iABC+1);
-    bool maxcluster_en = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG3, abcID, 18, 18);
-    uint8_t maxcluster = maxcluster_en ? m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG3, abcID, 17, 12) : 64;
+    bool maxcluster_en = m_starCfg->getSubRegisterValue(iABC+1, "MAX_CLUSTER_ENABLE");
+    uint8_t maxcluster = maxcluster_en ? m_starCfg->getSubRegisterValue(iABC+1, "MAX_CLUSTER") : 63;
     
     // Get front-end data and find clusters
     std::vector<uint16_t> abc_clusters = clusterFinder(
@@ -1218,8 +1342,8 @@ unsigned StarEmu::getL0BufferAddr(unsigned iABC, uint8_t cmdBC)
     // cmdBC = 0, 1, 2, or 3 from L0A command
     
     // get L0A latency from the ABCStar config register CREG2
-    int abcID = m_starCfg->getABCchipID(iABC+1);
-    unsigned l0a_latency = m_starCfg->getABCSubRegValue(emu::ABCStarRegs::CREG2, abcID, 8, 0); // 9 bits, in unit of BC (25 ns)
+    // 9 bits, in unit of BC (25 ns)
+    unsigned l0a_latency = m_starCfg->getSubRegisterValue(iABC+1, "LATENCY");
 
     // return address of the FE data in m_l0buffers_lite[iABC] that corresponds to cmdBC
     // m_l0buffers_lite[iABC] is of size 4 and is used as a ring buffer

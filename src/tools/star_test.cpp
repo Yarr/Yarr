@@ -101,8 +101,7 @@ int main(int argc, char *argv[]) {
       spec.writeFifo((readHCCCmd[2] << 16) + readHCCCmd[8]);
 
       // read another HCCStar register
-      // HCCStar address 20 is not defined. Emulator should return 0xdeadbeef.
-      std::array<LCB::Frame, 9> readHCCCmd2 = star.read_hcc_register(20);
+      std::array<LCB::Frame, 9> readHCCCmd2 = star.read_hcc_register(17);
       spec.writeFifo((readHCCCmd2[0] << 16) + readHCCCmd2[1]);
       // the read command is interupted by an L0A
       spec.writeFifo((LCB::l0a_mask(1, 0, false) << 16) + readHCCCmd2[2]);

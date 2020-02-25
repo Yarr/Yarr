@@ -2,7 +2,7 @@
 #define __STAR_EMU_H__
 
 #include "StarChips.h"
-#include "StarEmuCfg.h"
+#include "StarCfg.h"
 #include "StripModel.h"
 
 #include <atomic>
@@ -16,7 +16,7 @@
 
 class EmuCom;
 
-namespace emu { class StarCfg; }
+class StarCfg;
 
 /**
  * Emulation of data returned by HCCStar.
@@ -77,7 +77,14 @@ private:
     /// Fast commands
     void doFastCommand(uint8_t);
     void logicReset();
-    void slowCommandReset();
+    void resetABCRegisters();
+    void resetABCSEU();
+    void resetABCHitCounts();
+    void resetABCTrimDAC();
+    void resetSlowCommand();
+    void resetHCCRegisters();
+    void resetHCCSEU();
+    void resetHCCPLL();
 
     /// HPR
     void setHCCStarHPR(LCB::Frame);
@@ -149,7 +156,7 @@ private:
     
     ////////////////////////////////////////
     // HCCStar and ABCStar configurations
-    std::unique_ptr<emu::StarCfg> m_starCfg;
+    std::unique_ptr<StarCfg> m_starCfg;
 
     ////////////////////////////////////////
     // Analog FE
