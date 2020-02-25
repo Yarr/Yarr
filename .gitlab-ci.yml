@@ -52,7 +52,7 @@ job_build_clang:
 
 job_test_json_parsing:
     stage: test
-    dependencies: ["job_build_all"]
+    needs: ["job_build_all"]
     script:
       # Check schema by loading configs in turn
       - for file in $(find configs/defaults -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t FRONT_END || break; done
@@ -71,6 +71,9 @@ job_test_json:
 
 job_test_code_coverage:
     stage: build
+    artifacts:
+        paths:
+          - cc_tests
     script:
       - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
