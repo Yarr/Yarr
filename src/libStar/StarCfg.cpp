@@ -50,8 +50,14 @@ int StarCfg::abcIndexFromChipID(unsigned int chipID) {
 const uint32_t StarCfg::getHCCRegister(HCCStarRegister addr){
   return m_hcc.getRegisterValue(addr);
 }
+const uint32_t StarCfg::getHCCRegister(uint32_t addr){
+    return m_hcc.getRegisterValue(HCCStarRegister::_from_integral(addr));
+}
 void StarCfg::setHCCRegister(HCCStarRegister addr, uint32_t val){
   m_hcc.setRegisterValue(addr, val);
+}
+void StarCfg::setHCCRegister(uint32_t addr, uint32_t val){
+  m_hcc.setRegisterValue(HCCStarRegister::_from_integral(addr), val);
 }
 
 //ABC register accessor functions, converts chipID into chip index
@@ -59,9 +65,17 @@ const uint32_t StarCfg::getABCRegister(ABCStarRegister addr, int32_t chipID){
   auto &abc = abcFromChipID(chipID);
   return abc.getRegisterValue(addr);
 }
+const uint32_t StarCfg::getABCRegister(uint32_t addr, int32_t chipID){
+  auto &abc = abcFromChipID(chipID);
+  return abc.getRegisterValue(ABCStarRegister::_from_integral(addr));
+}
 void StarCfg::setABCRegister(ABCStarRegister addr, uint32_t val, int32_t chipID){
   auto &abc = abcFromChipID(chipID);
   abc.setRegisterValue(addr, val);
+}
+void StarCfg::setABCRegister(uint32_t addr, uint32_t val, int32_t chipID){
+  auto &abc = abcFromChipID(chipID);
+  abc.setRegisterValue(ABCStarRegister::_from_integral(addr), val);
 }
 
 void StarCfg::setTrimDAC(unsigned col, unsigned row, int value)  {

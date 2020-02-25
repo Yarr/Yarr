@@ -30,6 +30,11 @@ class StarCfg : public FrontEndCfg {
   void     setHCCRegister(HCCStarRegister addr, uint32_t val);
   const uint32_t getABCRegister(ABCStarRegister addr, int32_t chipID );
   void     setABCRegister(ABCStarRegister addr, uint32_t val, int32_t chipID);
+  // Overload with integer register address
+  const uint32_t getHCCRegister(uint32_t addr);
+  void     setHCCRegister(uint32_t addr, uint32_t val);
+  const uint32_t getABCRegister(uint32_t addr, int32_t chipID );
+  void     setABCRegister(uint32_t addr, uint32_t val, int32_t chipID);
 
 
   //Initialized the registers of the HCC and ABC.  Do afer JSON file is loaded.
