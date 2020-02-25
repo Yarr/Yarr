@@ -114,13 +114,13 @@ class StarCfg : public FrontEndCfg {
   void toFileJson(json &j) override;
   void fromFileJson(json &j) override;
 
+  size_t numABCs() { return m_ABCchips.size(); }
+
  protected:
   AbcCfg &abcFromChipID(unsigned int chipID) {
     return *std::find_if(m_ABCchips.begin(), m_ABCchips.end(),
                         [this, chipID](auto it) { return it.getABCchipID() == chipID; });
   }
-    
-  size_t numABCs() { return m_ABCchips.size(); }
 
  private:
 
