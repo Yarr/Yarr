@@ -5,6 +5,7 @@ std::shared_ptr<HccStarRegInfo> HccStarRegInfo::m_instance;
 typedef std::tuple<HCCStarSubRegister, unsigned int, unsigned int, unsigned int> hccsubregdef;
 const std::vector<hccsubregdef> s_hccsubregdefs = {
   {HCCStarSubRegister::STOPHPR			,16	,0	,1}	,
+  {HCCStarSubRegister::TESTHPR			,16	,1	,1}	,
   {HCCStarSubRegister::CFD_BC_FINEDELAY		,32	,0	,4}	,
   {HCCStarSubRegister::CFD_BC_COARSEDELAY	,32	,4	,2}	,
   {HCCStarSubRegister::CFD_PRLP_FINEDELAY	,32	,8	,4}	,

@@ -125,7 +125,7 @@ AbcCfg::AbcCfg()
 }
 
 void AbcCfg::configure_ABC_Registers() {
-    int n_ABC_registers = 128;
+    int n_ABC_registers = 180;
     m_registerSet.reserve( n_ABC_registers );
 
     /// TODO Still not sure if this is a good implementation; to-be-optimized.
