@@ -40,7 +40,7 @@ void StarCfg::initRegisterMaps() {
   }
 }
 
-int StarCfg::abcIndexFromChipID(unsigned int chipID) {
+int StarCfg::indexForABCchipID(unsigned int chipID) {
   auto itr = std::find_if(m_ABCchips.begin(), m_ABCchips.end(),
                         [this, chipID](auto it) { return it.getABCchipID() == chipID; });
   return std::distance(m_ABCchips.begin(), itr) + 1;
