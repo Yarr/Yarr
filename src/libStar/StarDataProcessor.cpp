@@ -133,7 +133,7 @@ void process_data(RawData &curIn,
 
             // Split hits into two rows of strips
             curOut.curEvent->addHit( ((cluster.address>>7)&1)+1,
-                                     (cluster.address&0x7f)+1, 1);
+                                     cluster.input_channel*128+((cluster.address&0x7f)+1), 1);
             //NOTE::tot(1) is just dummy value, because of """if(curHit.tot > 0)""" in Fei4Histogrammer::XXX::processEvent(Fei4Data *data)
             //row and col both + 1 because pixel row & col numbering start from 1, see Fei4Histogrammer & Fei4Analysis
 
@@ -141,9 +141,8 @@ void process_data(RawData &curIn,
             for(unsigned i=0; i<3; i++){
                 if(!nextPattern.test(i)) continue;
                 auto nextAddress = cluster.address+(3-i);
-
                 curOut.curEvent->addHit( ((nextAddress>>7)&1)+1,
-                                         (nextAddress&0x7f)+1,1);
+                                         cluster.input_channel*128+((nextAddress&0x7f)+1),1);
 
                 // It's an error for cluster to escape either "side"
                 if((cluster.address & (~0x7f)) != (nextAddress & (~0x7f))) {
