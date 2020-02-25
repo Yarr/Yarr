@@ -40,6 +40,12 @@ void StarCfg::initRegisterMaps() {
   }
 }
 
+int StarCfg::abcIndexFromChipID(unsigned int chipID) {
+  auto itr = std::find_if(m_ABCchips.begin(), m_ABCchips.end(),
+                        [this, chipID](auto it) { return it.getABCchipID() == chipID; });
+  return std::distance(m_ABCchips.begin(), itr) + 1;
+}
+
 //HCC register accessor functions
 const uint32_t StarCfg::getHCCRegister(HCCStarRegister addr){
   return m_hcc.getRegisterValue(addr);
@@ -47,6 +53,7 @@ const uint32_t StarCfg::getHCCRegister(HCCStarRegister addr){
 void StarCfg::setHCCRegister(HCCStarRegister addr, uint32_t val){
   m_hcc.setRegisterValue(addr, val);
 }
+
 //ABC register accessor functions, converts chipID into chip index
 const uint32_t StarCfg::getABCRegister(ABCStarRegister addr, int32_t chipID){
   auto &abc = abcFromChipID(chipID);

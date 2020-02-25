@@ -116,6 +116,8 @@ class StarCfg : public FrontEndCfg {
 
   size_t numABCs() { return m_ABCchips.size(); }
 
+  int abcIndexFromChipID(unsigned int chipID);
+
  protected:
   AbcCfg &abcFromChipID(unsigned int chipID) {
     return *std::find_if(m_ABCchips.begin(), m_ABCchips.end(),
