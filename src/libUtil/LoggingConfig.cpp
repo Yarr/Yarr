@@ -64,7 +64,7 @@ void setupLoggers(const json &j) {
             } else {
                 auto l = spdlog::get(name);
                 if(!l) {
-                  spdlog::warn("Log json file: logger '{}' doesn't match any known loggers");                  
+                  spdlog::warn("Log json file: logger '{}' doesn't match any known loggers", name);
                 } else {
                   logger_apply(l);
                 }
