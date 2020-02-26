@@ -846,6 +846,8 @@ void SpecCom::flushDma() {
     volatile uint32_t dma_count = 1;
     unsigned cnt = 0;
     unsigned timeout = 10000000;
+    if (bar4)
+        timeout = 100;
     do {
         dma_addr = readSingle((0x3<<14) | 0x0);
         dma_count = readSingle((0x3<<14) | 0x1);
@@ -855,7 +857,8 @@ void SpecCom::flushDma() {
     } while (dma_count > 0 && cnt < timeout);
     if (cnt == timeout) {
         slog->critical("Timed out while flushing buffers, something is wrong ... aborting!");
-        exit(-1);
+        if (!bar4)
+            exit(-1);
     }
 }
 
