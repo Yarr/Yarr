@@ -34,6 +34,10 @@ int main( int argc, char* argv[] )
   } else {
     std::ifstream log_file(logging_config);
     lj = json::parse(log_file);
+    if(lj.is_null()) {
+      std::cout << "Failed to load logging config, aborting\n";
+      return 1;
+    }
   }
   logging::setupLoggers(lj);
 
