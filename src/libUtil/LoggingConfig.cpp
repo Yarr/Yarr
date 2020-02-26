@@ -1,25 +1,38 @@
 #include "LoggingConfig.h"
 
+#include <iostream>
+
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
+
+// spdlog::level::level_enum, but then construction doesn't work?
+static const std::map<std::string, int> level_map = {
+  {"off", SPDLOG_LEVEL_OFF},
+  {"critical", SPDLOG_LEVEL_CRITICAL},
+  {"err", SPDLOG_LEVEL_ERROR},
+  {"error", SPDLOG_LEVEL_ERROR},
+  {"warn", SPDLOG_LEVEL_WARN},
+  {"warning", SPDLOG_LEVEL_WARN},
+  {"info", SPDLOG_LEVEL_INFO},
+  {"debug", SPDLOG_LEVEL_DEBUG},
+  {"trace", SPDLOG_LEVEL_TRACE},
+};
+
+static std::string_view level_string(int lvl) {
+  auto i = std::find_if(level_map.begin(), level_map.end(),
+                        [lvl](const auto &it)
+                        { return it.second == lvl;}
+                        );
+  if(i == level_map.end()) {
+    return "";
+  }
+  return i->first;
+}
 
 namespace logging {
 
 void setupLoggers(const json &j) {
     spdlog::sink_ptr default_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-
-    // spdlog::level::level_enum, but then construction doesn't work?
-    const std::map<std::string, int> level_map = {
-      {"off", SPDLOG_LEVEL_OFF},
-      {"critical", SPDLOG_LEVEL_CRITICAL},
-      {"err", SPDLOG_LEVEL_ERROR},
-      {"error", SPDLOG_LEVEL_ERROR},
-      {"warn", SPDLOG_LEVEL_WARN},
-      {"warning", SPDLOG_LEVEL_WARN},
-      {"info", SPDLOG_LEVEL_INFO},
-      {"debug", SPDLOG_LEVEL_DEBUG},
-      {"trace", SPDLOG_LEVEL_TRACE},
-    };
 
     if(!j["simple"].empty()) {
         // Don't print log level and timestamp
@@ -93,11 +106,23 @@ void listLoggers(bool print_details) {
         }
         
         auto curr = spdlog::get(ll);
-        std::cout << "    At level " << curr->level() << "\n";
+        std::cout << "    At level " << curr->level();
+        auto lvl = level_string(curr->level());
+        if(!lvl.empty()) {
+          std::cout << " (" << lvl << ")\n";
+        } else {
+          std::cout << "\n";
+        }
         std::cout << "    Has " << curr->sinks().size() << " sinks\n";
 
         for(auto &s: curr->sinks()) {
-          std::cout << "     at level " << s->level() << "\n";
+          auto lvl = level_string(s->level());
+          std::cout << "     at level " << s->level();
+          if(!lvl.empty()) {
+            std::cout << " (" << lvl << ")\n";
+          } else {
+            std::cout << "\n";
+          }
         }
     }
 }
