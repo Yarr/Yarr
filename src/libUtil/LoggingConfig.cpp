@@ -34,10 +34,22 @@ namespace logging {
 void setupLoggers(const json &j) {
     spdlog::sink_ptr default_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
 
+    std::string default_pattern = "";
+
     if(!j["simple"].empty()) {
         // Don't print log level and timestamp
         if (j["simple"])
-            default_sink->set_pattern("%v");
+            default_pattern = "%v";
+    }
+
+    // NB this sets things at the sink level, so not specifying a particular logger...
+    // Also doing it last means it applies to all registered sinks
+    if(!j["pattern"].empty()) {
+        default_pattern = j["pattern"];
+    }
+
+    if(!default_pattern.empty()) {
+      default_sink->set_pattern(default_pattern);
     }
 
     if(!j["log_config"].empty()) {
@@ -70,14 +82,6 @@ void setupLoggers(const json &j) {
                 }
             }
         }
-    }
-
-    // NB this sets things at the sink level, so not specifying a particular logger...
-    // Also doing it last means it applies to all registered sinks
-    if(!j["pattern"].empty()) {
-        std::string pattern = j["pattern"];
-      
-        spdlog::set_pattern(pattern);
     }
 }
 
