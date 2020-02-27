@@ -110,7 +110,7 @@ void listLoggers(bool print_details) {
         }
         
         auto curr = spdlog::get(ll);
-        std::cout << "    At level " << curr->level();
+        std::cout << "    Sends to sinks at level " << curr->level();
         auto lvl = level_string(curr->level());
         if(!lvl.empty()) {
           std::cout << " (" << lvl << ")\n";
@@ -121,7 +121,7 @@ void listLoggers(bool print_details) {
 
         for(auto &s: curr->sinks()) {
           auto lvl = level_string(s->level());
-          std::cout << "     at level " << s->level();
+          std::cout << "      Reports at level " << s->level();
           if(!lvl.empty()) {
             std::cout << " (" << lvl << ")\n";
           } else {
