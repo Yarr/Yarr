@@ -42,6 +42,11 @@ void setupLoggers(const json &j) {
             default_pattern = "%v";
     }
 
+    if(!j["level"].empty()) {
+        std::string level_name = j["level"];
+        default_sink->set_level((spdlog::level::level_enum)level_map.at(level_name));
+    }
+
     // NB this sets things at the sink level, so not specifying a particular logger...
     // Also doing it last means it applies to all registered sinks
     if(!j["pattern"].empty()) {
