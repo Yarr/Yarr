@@ -83,6 +83,14 @@ void setupLoggers(const json &j) {
             }
         }
     }
+
+    // By this point the default logger should have been configured appropriately,
+    //  so this won't appear unless requested
+    spdlog::trace("Log json file: A quick message using the default logger");
+
+    if(!j["report_loggers"].empty()) {
+      listLoggers(true);
+    }
 }
 
 void listLoggers(bool print_details) {
