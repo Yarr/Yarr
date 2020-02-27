@@ -84,7 +84,16 @@ void setupLoggers(const json &j) {
         }
     }
 
-    // By this point the default logger should have been configured appropriately,
+    // Remove the initial sink from the default logger
+    auto default_logger = spdlog::default_logger();
+    auto &old_sinks = default_logger->sinks();
+    std::remove_reference<decltype(old_sinks)>::type new_sinks;
+    for(int i=1; i<old_sinks.size(); i++) {
+      new_sinks.push_back(old_sinks[i]);
+    }
+    old_sinks = new_sinks;    
+
+    // By this point the default logger should have been configured appropriately
     //  so this won't appear unless requested
     spdlog::trace("Log json file: A quick message using the default logger");
 
