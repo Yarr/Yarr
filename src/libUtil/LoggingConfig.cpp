@@ -61,14 +61,18 @@ void setupLoggers(const json &j) {
 
             std::string name = jl["name"];
 
-            auto logger_apply = [&](std::shared_ptr<spdlog::logger> l) {
-              l->sinks().push_back(default_sink);
-              if(!jl["level"].empty()) {
-                  std::string level = jl["level"];
+            std::optional<spdlog::level::level_enum> opt_level;
+            if(!jl["level"].empty()) {
+                std::string level_name = jl["level"];
 
-                  spdlog::level::level_enum spd_level = (spdlog::level::level_enum)level_map.at(level);
-                  l->set_level(spd_level);
-              }
+                opt_level = (spdlog::level::level_enum)level_map.at(level_name);
+            }
+
+            auto logger_apply = [&](std::shared_ptr<spdlog::logger> l) {
+                l->sinks().push_back(default_sink);
+                if(opt_level) {
+                    l->set_level(*opt_level);
+                }
             };
 
             if(name == "all") {
