@@ -335,7 +335,7 @@ void StarEmu::readRegister(const uint8_t address, bool isABC,
         PacketTypes ptype = PacketTypes::ABCRegRd;
 
         // HCCStar channel number
-        unsigned ich = m_starCfg->indexForABCchipID(ABCID) - 1;
+        unsigned ich = m_starCfg->hccChannelForABCchipID(ABCID);
         if (ich >= m_starCfg->numABCs()) {
             std::cout << __PRETTY_FUNCTION__ << ": Cannot find an ABCStar chip with ID = " << ABCID << std::endl;
             return;
