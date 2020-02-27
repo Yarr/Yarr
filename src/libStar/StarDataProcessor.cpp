@@ -143,3 +143,6 @@ void process_data(RawData &curIn,
         packet.print_more(std::cout);
     }
 }
+
+// Need to instantiate something to register the logger
+bool parser_logger_registered = [](){ StarChipPacket::make_logger(); return true; }();

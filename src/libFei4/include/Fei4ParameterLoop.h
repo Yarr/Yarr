@@ -73,7 +73,8 @@ class Fei4ParameterLoop : public LoopActionBase{
 
         Fei4Register Fei4GlobalCfg::*parPtr;
 
-
+        // Somehow we need to register logger at static init time
+        friend void logger_static_init_fei4();
 };
 
 #endif
