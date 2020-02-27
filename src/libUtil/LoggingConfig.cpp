@@ -4,6 +4,7 @@
 
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/sinks/basic_file_sink.h"
 
 // spdlog::level::level_enum, but then construction doesn't work?
 static const std::map<std::string, int> level_map = {
@@ -34,6 +35,8 @@ namespace logging {
 void setupLoggers(const json &j) {
     spdlog::sink_ptr default_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
 
+    std::map<std::string, spdlog::sink_ptr> other_sinks;
+
     std::string default_pattern = "";
 
     if(!j["simple"].empty()) {
@@ -51,6 +54,39 @@ void setupLoggers(const json &j) {
     // Also doing it last means it applies to all registered sinks
     if(!j["pattern"].empty()) {
         default_pattern = j["pattern"];
+    }
+
+    if(!j["sinks"].empty()) {
+      for(auto &jl: j["sinks"]) {
+        if(jl["name"].empty()) {
+          spdlog::warn("Log json file: missing 'name' field for additional sink configuration");
+          continue;
+        }
+        if(jl["file_name"].empty()) {
+          spdlog::warn("Log json file: missing 'file_name' field for additional sink configuration");
+          continue;
+        }
+
+        std::string key = jl["name"];
+        std::string fname = jl["file_name"];
+
+        auto new_sink = std::shared_ptr<spdlog::sinks::basic_file_sink_mt>
+          (new spdlog::sinks::basic_file_sink_mt(fname));
+
+        if(!jl["level"].empty()) {
+            std::string level_name = jl["level"];
+            new_sink->set_level((spdlog::level::level_enum)level_map.at(level_name));
+        }
+
+        std::string pattern = default_pattern;
+
+        if(!jl["pattern"].empty()) {
+          pattern = jl["pattern"];
+        }
+
+        new_sink->set_pattern(pattern);
+        other_sinks[key] = new_sink;
+      }
     }
 
     if(!default_pattern.empty()) {
@@ -73,8 +109,14 @@ void setupLoggers(const json &j) {
                 opt_level = (spdlog::level::level_enum)level_map.at(level_name);
             }
 
+            auto sink = default_sink;
+            if(!jl["sink"].empty()) {
+                std::string sink_name = jl["sink"];
+                sink = other_sinks[sink_name];
+            }
+
             auto logger_apply = [&](std::shared_ptr<spdlog::logger> l) {
-                l->sinks().push_back(default_sink);
+                l->sinks().push_back(sink);
                 if(opt_level) {
                     l->set_level(*opt_level);
                 }
