@@ -117,19 +117,27 @@ void StarMaskLoop::applyMask(StarChips* fe, const uint32_t masks[8], const uint3
 
   auto num_abc = fe->numABCs();
 
+  auto writeReg = [&](auto words) {
+    g_tx->writeFifo((words[0] << 16) + words[1]);
+    g_tx->writeFifo((words[2] << 16) + words[3]);
+    g_tx->writeFifo((words[4] << 16) + words[5]);
+    g_tx->writeFifo((words[6] << 16) + words[7]);
+    g_tx->writeFifo((words[8] << 16) + LCB::IDLE);
+  };
+
   for( int iChip = 1; iChip < num_abc+1; ++iChip){ //exclude iChip=0 which is the Hcc
     //Looping over MaskInput registers
     int index=0;
     for (int j=ABCStarRegister::MaskInput(0); j<=ABCStarRegister::MaskInput(7); j++){
       //    				 std::cout << "write mask: "<< i << "  0x" << std::hex << std::setfill('0') << std::setw(8)<< Star_masks[m_cur][index] <<std::dec<< std::endl;
-      fe->setAndWriteABCRegister(j, ~masks[index], iChip);  // strip 0's mask starts from reg 16,
+      writeReg(fe->write_abc_register(j, ~masks[index], 0xf));  // strip 0's mask starts from reg 16,
       index++;
     }
     //Looping over CAL ENABLE registers
     index=0;
     for (int j=ABCStarRegister::CalREG0; j<=ABCStarRegister::CalREG7; j++){
       //    				 std::cout << "write cal: "<< i  << " 0x" << std::hex << std::setfill('0') << std::setw(8)<< Star_calEn[m_cur][index] <<std::dec<< std::endl;
-      fe->setAndWriteABCRegister(j, enables[index], iChip);  // strip 0's mask starts from reg 104,.
+      writeReg(fe->write_abc_register(j, enables[index], 0xf));  // strip 0's mask starts from reg 104,.
       index++;
     }
   }//end of loop over ABCs
