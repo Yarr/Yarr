@@ -2,6 +2,7 @@
 #define ABC130MASK_CALEN_H
 
 //maybe a 3_D array to store mask for different mode?
+// Given a histogram strip index to mask on, return the register settings
 static const uint32_t star_masks[128][8]= {
 		{0xFFFFFFFc,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF},
 		{0xFFFFFFF3,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF},
@@ -140,6 +141,7 @@ static const uint32_t star_masks[128][8]= {
 		{0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0x3FFFFFFF}
 };
 
+// Given a histogram strip index to enable, return the register settings
 static const uint32_t star_calEn[128][8]= {
 
 				{0x00000005,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000},
