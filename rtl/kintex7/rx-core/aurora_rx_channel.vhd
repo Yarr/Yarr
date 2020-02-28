@@ -86,7 +86,7 @@ architecture behavioral of aurora_rx_channel is
         );
     end component rr_arbiter;
     
-    COMPONENT rx_channel_fifo
+    COMPONENT rx_lane_fifo
         PORT (
             rst : IN STD_LOGIC;
             wr_clk : IN STD_LOGIC;
@@ -213,7 +213,7 @@ begin
                            rx_data_valid(I) when ((rx_header(I) = "10") and (rx_data(I)(63 downto 56) = x"D2")) else
                            '0';
                            
-        cmp_lane_fifo : rx_channel_fifo PORT MAP (
+        cmp_lane_fifo : rx_lane_fifo PORT MAP (
             rst => not rst_n_i,
             wr_clk => clk_rx_i,
             rd_clk => clk_rx_i,

@@ -39,7 +39,7 @@ architecture behavioral of aurora_rx_lane is
         generic (
             S 			: integer := 8 ;				-- Set the serdes factor to 4, 6 or 8
             D 			: integer := 1 ;				-- Set the number of inputs
-            CLKIN_PERIOD		: real := 1.56 ;				-- clock period (ns) of input clock on clkin_p
+            CLKIN_PERIOD		: real := 3.2 ;				-- clock period (ns) of input clock on clkin_p
             REF_FREQ 		: real := 300.0 ;   				-- Parameter to set reference frequency used by idelay controller
             HIGH_PERFORMANCE_MODE 	: string := "TRUE" ;				-- Parameter to set HIGH_PERFORMANCE_MODE of input delays to reduce jitter
             DATA_FORMAT 		: string := "PER_CLOCK"			-- Used to determine method for mapping input parallel word to output serial words
@@ -105,11 +105,13 @@ architecture behavioral of aurora_rx_lane is
         );
     end component descrambler;
 
---    constant g_SERDES_TYPE : string := "CUSTOM";
---    constant c_SLIP_SERDES_MAX : unsigned(7 downto 0) := to_unsigned(1, 8); 
-    
-    constant g_SERDES_TYPE : string := "XAPP1017";
-    constant c_SLIP_SERDES_MAX : unsigned(7 downto 0) := to_unsigned(8, 8); 
+    constant g_SERDES_TYPE : string := "CUSTOM";
+    constant c_SLIP_SERDES_MAX : unsigned(7 downto 0) := to_unsigned(1, 8); 
+    constant c_SERDES8_CYCLE : unsigned(3 downto 0) := to_unsigned(0, 4);
+
+--    constant g_SERDES_TYPE : string := "XAPP1017";
+--    constant c_SLIP_SERDES_MAX : unsigned(7 downto 0) := to_unsigned(8, 8);
+--    constant c_SERDES8_CYCLE : unsigned(3 downto 0) := to_unsigned(1, 4);
 
     constant c_DATA_HEADER : std_logic_vector(1 downto 0) := "01";
     constant c_CMD_HEADER : std_logic_vector(1 downto 0) := "10";
@@ -136,6 +138,7 @@ architecture behavioral of aurora_rx_lane is
     signal serdes_data32_shift : std_logic_vector(32 downto 0);
     signal serdes_data32 : std_logic_vector(31 downto 0);
     signal serdes_data32_valid : std_logic;
+    signal serdes8_cnt : unsigned(3 downto 0);
     signal serdes_cnt : unsigned(5 downto 0);
 
     -- Gearbox
@@ -209,7 +212,7 @@ begin
         serdes_cmp: serdes_1_to_468_idelay_ddr port map (
             datain_p(0) => rx_data_i_p,
             datain_n(0) => rx_data_i_n,
-            enable_phase_detector => '0',
+            enable_phase_detector => '1',
             enable_monitor => '1',
             reset => rst,
             --bitslip => '0',
@@ -243,17 +246,22 @@ begin
                 serdes_data32_shift <= (others => '0');
                 serdes_data32_valid <= '0';
                 serdes_cnt <= (others => '0');
+                serdes8_cnt <= (others => '0');
                 serdes_data8_d <= (others => '0');
             elsif rising_edge(clk_rx_i) then
-                serdes_cnt <= serdes_cnt + 1;
-                serdes_data8_d <= serdes_data8;
+                serdes8_cnt <= serdes8_cnt + 1;
                 serdes_data32_valid <= '0';
-                serdes_data32_shift(31 downto 8) <= serdes_data32_shift(23 downto 0);
-                serdes_data32_shift(7 downto 0) <= serdes_data8;
-                if (serdes_cnt = to_unsigned(3, 6)) then
-                    serdes_data32 <= serdes_data32_shift(31 downto 0);
-                    serdes_data32_valid <= '1';
-                    serdes_cnt <= (others => '0');
+                if (serdes8_cnt = c_SERDES8_CYCLE) then
+                    serdes_cnt <= serdes_cnt + 1;
+                    --serdes_data8_d <= serdes_data8;
+                    serdes_data32_shift(31 downto 8) <= serdes_data32_shift(23 downto 0);
+                    serdes_data32_shift(7 downto 0) <= serdes_data8;
+                    if (serdes_cnt = to_unsigned(3, 6)) then
+                        serdes_data32 <= serdes_data32_shift(31 downto 0);
+                        serdes_data32_valid <= '1';
+                        serdes_cnt <= (others => '0');
+                    end if;
+                    serdes8_cnt <= (others => '0');
                 end if;
             end if;
         end process serdes_8to32_proc;
