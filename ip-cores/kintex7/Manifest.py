@@ -5,6 +5,7 @@
 files = [
 # IP cores
 "clk_gen/clk_gen.xci",
+"clk_200_gen/clk_200_gen.xci",
 "fifo_256x16/fifo_256x16.xci",
 "fifo_32x512/fifo_32x512.xci",
 "fifo_64x512/fifo_64x512.xci",
@@ -14,11 +15,12 @@ files = [
 "ila_wsh_pipe/ila_wsh_pipe.xci",
 "l2p_fifo64/l2p_fifo64.xci",
 "mig_7series_0/mig_7series_0.xci",
-"mig_7series_0/mig_a.prj",
-"mig_7series_0/mig_b.prj",
+#"mig_7series_0/mig_a.prj",
+#"mig_7series_0/mig_b.prj",
 "pcie_7x_0/pcie_7x_0.xci",
 "tx_fifo/tx_fifo.xci",
 "rx_channel_fifo/rx_channel_fifo.xci",
+"rx_lane_fifo/rx_lane_fifo.xci",
 "rx_bridge_ctrl_fifo/rx_bridge_ctrl_fifo.xci",
 "rx_bridge_fifo/rx_bridge_fifo.xci",
 "axis_data_fifo_0/axis_data_fifo_0.xci",
