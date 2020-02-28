@@ -123,6 +123,9 @@ void StarMaskLoop::applyMask(StarChips* fe, const uint32_t masks[8], const uint3
     g_tx->writeFifo((words[4] << 16) + words[5]);
     g_tx->writeFifo((words[6] << 16) + words[7]);
     g_tx->writeFifo((words[8] << 16) + LCB::IDLE);
+
+    // Could have this once for all regs though...
+    g_tx->releaseFifo();
   };
 
   for( int iChip = 1; iChip < num_abc+1; ++iChip){ //exclude iChip=0 which is the Hcc
