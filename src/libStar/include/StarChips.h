@@ -101,6 +101,8 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
 
   void writeABCRegister(int addr, AbcCfg &cfg);
 
+    using StarCfg::numABCs;
+  private:
     TxCore * m_txcore;
 };
 

@@ -114,8 +114,8 @@ void StarMaskLoop::applyMask(StarChips* fe, const uint32_t masks[8], const uint3
     std::cout << "2nd row: " << row2.c_str() << std::endl;
     std::cout << "1sr row: " << row1.c_str() << std::endl;
     } // End debug
-  
-    auto num_abc = fe->getNumberOfAssociatedABC();
+
+  auto num_abc = fe->numABCs();
 
   for( int iChip = 1; iChip < num_abc+1; ++iChip){ //exclude iChip=0 which is the Hcc
     //Looping over MaskInput registers
