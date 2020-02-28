@@ -146,7 +146,7 @@ void process_data(RawData &curIn,
                                          (nextAddress&0x7f)+1,1);
 
                 // It's an error for cluster to escape either "side"
-                if(((nextAddress&0x7f)+1) > 128) {
+                if((cluster.address & (~0x7f)) != (nextAddress & (~0x7f))) {
                     logger->warn(" strip address > 128");
                 }
             }
