@@ -21,10 +21,10 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
   proc->run();
 
   alignas(32) uint8_t packet_bytes[] = {
-    0x20, 0x06,
-    0x03, 0x8f,
-    0x0b, 0xaf,
-    0x6f, 0xed
+    0x20, 0x06, // Header
+    0x03, 0x8f, // Hit input channel 0, 0x71 and three following
+    0x0b, 0xaf, // Hit input channel 1, 0x75 and three following
+    0x6f, 0xed  // Trailer
   };
 
   size_t len = sizeof(packet_bytes)/sizeof(uint32_t);
@@ -61,7 +61,7 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
     col_hits.push_back(hit.col);
 
     REQUIRE (hit.row == 1);
-    REQUIRE (hit.tot == 1); // Pixel only
+    REQUIRE (hit.tot == 1); // Required for histogramming
   }
 
   REQUIRE (col_hits.size() == 8);
@@ -69,6 +69,10 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
 
   for(int i=0; i<8; i++) {
     int column = i + 113;
+    if(i >= 4) {
+      // Second cluster is input channel 1
+      column += 128;
+    }
     CAPTURE (i, column);
     // NB Offset to base 1
     REQUIRE (col_hits[i] == column+1);
