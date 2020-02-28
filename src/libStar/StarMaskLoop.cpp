@@ -155,6 +155,11 @@ void StarMaskLoop::execPart2() {
     else {
       // Shift Enable mask by step size
 
+      if(keeper->feList.empty()) {
+        logger->warn("No ABCs defined to write masks to!\n");
+      }
+
+      // FIXME: Global writes used, but loop over FE to be sure of tx mask
       for ( FrontEnd* fe : keeper->feList ) {
 	if (!fe->isActive()) {continue;}
 	
