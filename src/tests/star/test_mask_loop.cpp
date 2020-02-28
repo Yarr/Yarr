@@ -6,7 +6,7 @@
 #include "StarCfg.h"
 #include "Utils.h"
 
-#include "LoggingConfig.h"
+#include "logging.h"
 
 #include "../EmptyHw.h"
 
@@ -155,13 +155,15 @@ TEST_CASE("StarMaskLoop", "[star][mask_loop]") {
   CAPTURE (buf_count);
 
 #if 0
+  auto l = spdlog::get("StarMaskLoop");
+
   // Just print everything that's been sent
-  std::cout << "  Report on " << buf_count << " buffers\n";
+  l->debug("  Report on {} buffers", buf_count);
   for(int i=0; i<buf_count; i++) {
-    std::cout << "  Buffer " << i << " has " << tx.buffers[i].size() << " words\n";
+    l->debug("  Buffer {} has {} words", i, tx.buffers[i].size());
     for(int f=0; f<tx.buffers[i].size() * 2; f++) {
       auto fr = tx.getFrame(i, f);
-      std::cout << "  " << i << ":" << f << " " << Utils::hexify(fr) << "\n";
+      l->debug("  frame {}: {} {:x}", i, f, fr);
     }
   }
 
@@ -169,7 +171,7 @@ TEST_CASE("StarMaskLoop", "[star][mask_loop]") {
     uint8_t reg;
     uint32_t value;
     tx.getRegValueForBuffer(i, reg, value);
-    std::cout << "  " << i << ": " << (int)reg << " " << Utils::hexify(value) << "\n";
+    l->debug(" reg  {}: {} {:x}", i, reg, value);
   }
 #endif
 
