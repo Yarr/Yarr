@@ -1260,18 +1260,18 @@ begin
 --		TRIG1 <= wb_adr;
 --		TRIG2 <= wb_dat_o;
    
-	ila_i : ila
-	  port map (
-		 CONTROL => CONTROL,
-		 CLK => CLK_40,
---		 CLK => sys_clk,
-		 TRIG0 => TRIG0,
-		 TRIG1 => TRIG1,
-		 TRIG2 => TRIG2);
---		 
-	ila_icon_i : ila_icon
-		port map (
-    CONTROL0 => CONTROL);
+--	ila_i : ila
+--	  port map (
+--		 CONTROL => CONTROL,
+--		 CLK => CLK_40,
+----		 CLK => sys_clk,
+--		 TRIG0 => TRIG0,
+--		 TRIG1 => TRIG1,
+--		 TRIG2 => TRIG2);
+----		 
+--	ila_icon_i : ila_icon
+--		port map (
+--    CONTROL0 => CONTROL);
 	 
   ------------------------------------------------------------------------------
   -- Interrupt stuff
