@@ -73,7 +73,7 @@ end k_dual_bram;
 architecture Behavioral of k_dual_bram is
     constant BLOCK_ADDR_WIDTH_C : integer := 13;
     constant DATA_WIDTH_C : integer := 64;
-    constant BLOCK_ROW_C : integer := 16;
+    constant BLOCK_ROW_C : integer := 32;
     constant BLOCK_COL_EXP_C : integer := 4;
     constant BLOCK_COL_C : integer := 2**BLOCK_COL_EXP_C;
     constant BLOCK_DATA_WIDTH_C : integer := DATA_WIDTH_C/BLOCK_ROW_C;
@@ -229,7 +229,7 @@ begin
    
    BRAM_TDP_MACRO_inst : BRAM_TDP_MACRO
    generic map (
-      BRAM_SIZE => "36Kb", -- Target BRAM, "18Kb" or "36Kb" 
+      BRAM_SIZE => "18Kb", -- Target BRAM, "18Kb" or "36Kb" 
       DEVICE => "7SERIES", -- Target Device: "VIRTEX5", "VIRTEX6", "7SERIES", "SPARTAN6" 
       DOA_REG => 0, -- Optional port A output register (0 or 1)
       DOB_REG => 0, -- Optional port B output register (0 or 1)
