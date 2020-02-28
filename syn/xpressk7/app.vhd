@@ -45,7 +45,7 @@ entity app is
         axis_rx_tuser_width_c : integer := 22;
         wb_address_width_c : integer := 32;
         wb_data_width_c : integer := 32;
-        DEBUG_C : std_logic_vector(3 downto 0) := "1111";
+        DEBUG_C : std_logic_vector(3 downto 0) := "0000";
         address_mask_c : STD_LOGIC_VECTOR(32-1 downto 0) := X"000FFFFF";
         DMA_MEMORY_SELECTED : string := "DDR3" -- DDR3, BRAM
         );
@@ -166,6 +166,7 @@ architecture Behavioral of app is
     
     --constant c_TX_CHANNELS : integer := g_TX_CHANNELS;
     --constant c_RX_CHANNELS : integer := g_RX_CHANNELS;
+  
   
     ------------------------------------------------------------------------------
     -- Signals declaration
@@ -990,22 +991,22 @@ wb_dev_gen : if wb_dev_c = '1' generate
 		busy_o => rx_busy
 	);
 
-  	cmp_i2c_master : i2c_master_wb_top
-  	port map (
-  		wb_clk_i => wb_clk_s,
-  		wb_rst_i => not rst_n_s,
-  		arst_i => rst_n_s,
-  		wb_adr_i => wb_adr_s(2 downto 0),
-  		wb_dat_i => wb_dat_m2s_s(7 downto 0),
-  		wb_dat_o => wb_dat_s2m_s(135 downto 128),
-  		wb_we_i => wb_we_s,
-  		wb_stb_i => wb_stb_s,
-  		wb_cyc_i => wb_cyc_s(4),
-  		wb_ack_o => wb_ack_s(4),
-  		wb_inta_o => open,
-  		scl => scl_io,
-  		sda => sda_io
-  	);
+--  	cmp_i2c_master : i2c_master_wb_top
+--  	port map (
+--  		wb_clk_i => wb_clk_s,
+--  		wb_rst_i => not rst_n_s,
+--  		arst_i => rst_n_s,
+--  		wb_adr_i => wb_adr_s(2 downto 0),
+--  		wb_dat_i => wb_dat_m2s_s(7 downto 0),
+--  		wb_dat_o => wb_dat_s2m_s(135 downto 128),
+--  		wb_we_i => wb_we_s,
+--  		wb_stb_i => wb_stb_s,
+--  		wb_cyc_i => wb_cyc_s(4),
+--  		wb_ack_o => wb_ack_s(4),
+--  		wb_inta_o => open,
+--  		scl => scl_io,
+--  		sda => sda_io
+--  	);
 
     eudet_clk_o <= eudet_clk_s;
     eudet_busy_o <= eudet_busy_s;

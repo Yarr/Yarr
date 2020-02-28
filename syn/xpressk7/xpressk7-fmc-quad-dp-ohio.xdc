@@ -70,19 +70,19 @@ set_property PACKAGE_PIN R23 [get_ports {fe_data_n[15]}]
 #la02_p
 #set_property PACKAGE_PIN AB26 [get_ports {eudet_clk_p}]
 #set_property PACKAGE_PIN AC26 [get_ports {eudet_clk_n}]
-#set_property PACKAGE_PIN AB26 [get_ports {ext_busy_o_p}]
-#set_property PACKAGE_PIN AC26 [get_ports {ext_busy_o_n}]
-set_property PACKAGE_PIN AB26 [get_ports {fe_data_p[12]}]
-set_property PACKAGE_PIN AC26 [get_ports {fe_data_p[12]}]
+set_property PACKAGE_PIN AB26 [get_ports {ext_busy_o_p}]
+set_property PACKAGE_PIN AC26 [get_ports {ext_busy_o_n}]
+#set_property PACKAGE_PIN AB26 [get_ports {fe_data_p[12]}]
+#set_property PACKAGE_PIN AC26 [get_ports {fe_data_p[12]}]
 
 #la03_n
 #la03_p
 #set_property PACKAGE_PIN N26 [get_ports {eudet_trig_p}]
 #set_property PACKAGE_PIN M26 [get_ports {eudet_trig_n}]
-#set_property PACKAGE_PIN N26 [get_ports {ext_trig_i_p[0]}]
-#set_property PACKAGE_PIN M26 [get_ports {ext_trig_i_n[0]}]
-set_property PACKAGE_PIN N26 [get_ports {fe_data_p[14]}]
-set_property PACKAGE_PIN M26 [get_ports {fe_data_n[14]}]
+set_property PACKAGE_PIN N26 [get_ports {ext_trig_i_p[0]}]
+set_property PACKAGE_PIN M26 [get_ports {ext_trig_i_n[0]}]
+#set_property PACKAGE_PIN N26 [get_ports {fe_data_p[14]}]
+#set_property PACKAGE_PIN M26 [get_ports {fe_data_n[14]}]
 
 #la04_n
 #la04_p
@@ -423,8 +423,8 @@ set_property IOSTANDARD LVCMOS18 [get_ports {sda_o}]
 set_property IOSTANDARD LVCMOS18 [get_ports {latch_o}]
 set_property IOSTANDARD LVCMOS18 [get_ports {sdi_i}]
 
-set_property IOSTANDARD LVCMOS18 [get_ports {sda_io}]
-set_property IOSTANDARD LVCMOS18 [get_ports {scl_io}]
+#set_property IOSTANDARD LVCMOS18 [get_ports {sda_io}]
+#set_property IOSTANDARD LVCMOS18 [get_ports {scl_io}]
 
 #  Rising Edge Source Synchronous Outputs 
 #
