@@ -550,6 +550,9 @@ class StarChipPacket{
     return true;
   }
 
+  static void make_logger() {
+    (void)logger();
+  }
 };
 
 #endif

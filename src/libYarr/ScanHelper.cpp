@@ -26,6 +26,10 @@ namespace ScanHelper {
             throw std::runtime_error(e.what());
         }
         file.close();
+        // variant produces null for some parse errors
+        if(j.is_null()) {
+            throw std::runtime_error("Parsing json file produced null");
+        }
         return j;
     }
 

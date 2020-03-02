@@ -216,6 +216,9 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
         std::map<unsigned, Histo2d*> fbHistoMap;
         unsigned step, oldStep;
         unsigned cur;
+
+        // Somehow we need to register logger at static init time
+        friend void logger_static_init_fei4();
 };
 
 #endif
