@@ -29,7 +29,7 @@ ScanConsole normally requires at min. three types of configuration files (more d
 Note: If you omit the scan config, your chip will only be configurated.
 
 
-Additional command line arguements for the scanConsole are:
+Additional command line arguments for the scanConsole are:
     
 - **-h** : this, prints all available command line arguments
 - **-t  ``<target_charge>`` [``<target_tot>``]** : Set target values for threshold (charge only) and tot (charge and tot).
@@ -37,6 +37,7 @@ Additional command line arguements for the scanConsole are:
 - **-o ``<dir>``** : Output directory. (Default ./data/)
 - **-m ``<int>``** : 0 = disable pixel masking, 1 = reset pixel masking, default = enable pixel masking
 - **-k**: Report known items (Scans, Hardware etc.)
+- **-l ``<path>``** => Logger config : this points to a json file to configure the [logging](logging) system. The default is to print info, warnings and errors to the console with appropriate colorization.
 
 ### Controller Config
 Example of a controller config:
