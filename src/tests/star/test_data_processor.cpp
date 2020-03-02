@@ -1,5 +1,7 @@
 #include "catch.hpp"
 
+#include <iostream>
+
 #include "AllProcessors.h"
 
 #include "Fei4EventData.h"
