@@ -197,7 +197,7 @@ Loop actions are specific to the FrontEnd type and are listed on the respective 
     
 - [RD53A](rd53a)
 - [FE-I4](fei4)
-- [FE65-P2](fe65-p2)
+- [FE65-P2](fe65p2)
 
 **Important Notes:**
     
