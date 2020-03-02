@@ -10,7 +10,6 @@ pages:
     - FE65-P2: fe65p2.md
     - RD53A: rd53a.md
     - Local DB: localdb.md
-    - Root Scripts: rootscripts.md
     - Firmware Guide: fw_guide.md
     - Troubleshooting: troubleshooting.md
     - Version Log: version.md
