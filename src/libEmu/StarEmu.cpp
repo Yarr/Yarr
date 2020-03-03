@@ -11,6 +11,8 @@
 #include "LCBUtils.h"
 #include "RingBuffer.h"
 
+#include "logging.h"
+
 namespace {
 
 template<typename T>
@@ -32,6 +34,7 @@ std::ostream &operator <<(std::ostream &os, print_hex_type<T> v) {
   return os;
 }
 
+auto logger = logging::make_log("StarEmu");
 }
 
 StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path)
@@ -216,6 +219,8 @@ std::vector<uint8_t> StarEmu::buildHCCRegisterPacket(PacketTypes typ, uint8_t re
 //
 void StarEmu::DecodeLCB(LCB::Frame frame) {
 
+    SPDLOG_LOGGER_TRACE("Raw LCB frame = 0x{:x} BC = {}", frame, m_bccnt);
+
     // HPR
     doHPR(frame);
 
@@ -252,7 +257,7 @@ void StarEmu::DecodeLCB(LCB::Frame frame) {
             doRegReadWrite(frame);
         }
         else if (frame == LCB::IDLE) { // Idle
-            if (verbose) std::cout << __PRETTY_FUNCTION__ << " : received an IDLE frame" << std::endl;
+            SPDLOG_LOGGER_TRACE("Receive an IDLE");
             // do nothing
         }
     } // if (not (iskcode0 or iskcode1) )
@@ -267,6 +272,8 @@ void StarEmu::DecodeLCB(LCB::Frame frame) {
 void StarEmu::doRegReadWrite(LCB::Frame frame) {
     uint8_t code0 = (frame >> 8) & 0xff;
     uint8_t code1 = frame & 0xff;
+
+    SPDLOG_LOGGER_TRACE("Receive a register command -> symbol1 = 0x{:x}, symbol2 = 0x{:x}", code0, code1);
 
     if (code0 == LCB::K2) { // This frame is a K2 Start or K2 End
 
@@ -294,12 +301,7 @@ void StarEmu::doRegReadWrite(LCB::Frame frame) {
             size_t bufsize = m_reg_cmd_buffer.size();
             if ( not (bufsize==2 or bufsize==7) ) {
                 // If K2 End occurs at the wrong stage, no action is taken.
-                if (verbose) {
-                    std::cout << __PRETTY_FUNCTION__
-                              << " : K2 End occurs at the wrong stage! "
-                              << "Current command sequence size (excluding K2 frames): "
-                              << m_reg_cmd_buffer.size() << std::endl;
-                }
+                logger->warn("K2 End received at the wrong position! Current command sequence size (excluding K2 frames): {}", m_reg_cmd_buffer.size());
                 return;
             }
 
@@ -337,7 +339,7 @@ void StarEmu::readRegister(const uint8_t address, bool isABC,
         // HCCStar channel number
         unsigned ich = m_starCfg->hccChannelForABCchipID(ABCID);
         if (ich >= m_starCfg->numABCs()) {
-            std::cout << __PRETTY_FUNCTION__ << ": Cannot find an ABCStar chip with ID = " << ABCID << std::endl;
+            logger->warn("Cannot find an ABCStar chip with ID = {}", ABCID);
             return;
         }
 
@@ -384,20 +386,14 @@ void StarEmu::execute_command_sequence()
 
     // Access register
     if (isRegRead) { // register read command
-        if (debug) {
-            std::cout << "StarEmu : received a register read command -> ";
-            std::cout << "addr = " << (int)reg_addr << " isABC = " << m_isForABC;
-            std::cout << " abcID = " << cmd_abcID << std::endl;
-        }
+        logger->debug("Receive a register read command -> addr = 0x{:x} isABC = {} abcID = {}", reg_addr, m_isForABC, cmd_abcID);
         /*
-        // Check if K2 End occurs at the correct stage for reg read
         if (not m_reg_cmd_buffer.empty()) {
-            if (verbose) {
-                std::cout << __PRETTY_FUNCTION__ << " : K2 End occurs at the wrong stage for reading register!" << std::endl;
-            }
+            logger->warn("Command sequence is of wrong size for a register read!");
             return;
         }
         */
+
         // If cmd_abcID is '1111' i.e. broadcast address, read all ABCs
         if ((cmd_abcID & 0xf) == 0xf and m_isForABC) {
             for (int index=1; index <= m_starCfg->numABCs(); ++index)
@@ -406,10 +402,8 @@ void StarEmu::execute_command_sequence()
             readRegister(reg_addr, m_isForABC, cmd_abcID);
         }
     } else { // register write command
-        // Check if K2 End occurs at the correct stage for reg write
         if (m_reg_cmd_buffer.size() != 5) {
-            if (verbose)
-                std::cout << __PRETTY_FUNCTION__ << " :  K2 End occurs at the wrong stage for writing register!" << std::endl;
+            logger->warn("Command sequence is of wrong size for a register write!");
             return;
         }
 
@@ -419,11 +413,7 @@ void StarEmu::execute_command_sequence()
             m_reg_cmd_buffer.pop();
         }
 
-        if (debug) {
-            std::cout << "StarEmu : received a register write command -> ";
-            std::cout << "addr = " << (int)reg_addr << " data = " << data;
-            std::cout << " isABC = " << m_isForABC << " abcID = " << cmd_abcID << std::endl;
-        }
+        logger->debug("Receive a register write command -> addr = 0x{:x} data = 0x{:x} isABC = {} abcID = {}", (int)reg_addr, data, m_isForABC, cmd_abcID);
         
         // write register
         // If cmd_abcID is '1111' i.e. broadcast address, write all ABCs
@@ -445,6 +435,8 @@ void StarEmu::doFastCommand(uint8_t data6) {
     m_bc_sel = bcsel;
     
     uint8_t fastcmd = data6 & 0xf; // bottom 4 bits for command
+
+    logger->debug("Receive a fast command #{} (BC select = {})", fastcmd, bcsel);
     
     // Reset commands reset everything at once, ignoring the selected BC for now
     switch(fastcmd) {
@@ -784,6 +776,8 @@ void StarEmu::doL0A(uint16_t data12) {
     bool bcr = (data12 >> 11) & 1;  // BC reset
     uint8_t l0a_mask = (data12 >> 7) & 0xf; // 4-bit L0A mask
     uint8_t l0a_tag = data12 & 0x7f; // 7-bit L0A tag
+
+    logger->debug("Receive an L0A command: BCR = {}, L0A mask = {:b}, L0A tag = 0x{:x}", bcr, l0a_mask, l0a_tag);
 
     // Prepare front-end data
     // Loop over all ABCStar chips
@@ -1352,7 +1346,7 @@ unsigned StarEmu::getL0BufferAddr(unsigned iABC, uint8_t cmdBC)
 }
 
 void StarEmu::executeLoop() {
-    std::cout << "Starting emulator loop" << std::endl;
+    logger->info("Starting emulator loop");
 
     static const auto SLEEP_TIME = std::chrono::milliseconds(1);
 
@@ -1362,7 +1356,7 @@ void StarEmu::executeLoop() {
             continue;
         }
 
-        if( verbose ) std::cout << __PRETTY_FUNCTION__ << ": -----------------------------------------------------------" << std::endl;
+        logger->debug("{}: -----------------------------------------------------------", __PRETTY_FUNCTION__);
 
         uint32_t d = m_txRingBuffer->read32();
 
@@ -1486,11 +1480,11 @@ void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
   auto &rx = EmuRxCore<StarChips>::getCom();
 
   //TODO make nice
-  std::cout << "-> Starting Emulator" << std::endl;
+  logger->info("-> Starting Emulator");
   std::string emuCfgFile;
   if (!j["feCfg"].empty()) {
     emuCfgFile = j["feCfg"];
-    std::cout << " Using config: " << emuCfgFile << "\n";
+    logger->info("Using config: {}", emuCfgFile);
   }
   emu.reset(new StarEmu( rx, tx_com.get(), emuCfgFile ));
   emuThreads.push_back(std::thread(&StarEmu::executeLoop, emu.get()));

@@ -121,9 +121,6 @@ private:
     ////////////////////////////////////////
     EmuCom * m_txRingBuffer;
     ClipBoard<RawData> &m_rxQueue;
-
-    /** log level control */
-    bool verbose  { false };
     
     ////////////////////////////////////////
     // Internal states
@@ -161,8 +158,6 @@ private:
     ////////////////////////////////////////
     // Analog FE
     std::array<StripModel, NStrips> m_stripArray;
-    
-    bool debug = false;
 };
 
 #endif //__STAR_EMU_H__
