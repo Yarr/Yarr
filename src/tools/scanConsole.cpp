@@ -22,14 +22,15 @@
 #include <sstream>
 
 #include "logging.h"
-#include "spdlog/spdlog.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
+#include "LoggingConfig.h"
 
 #include "ScanHelper.h"
 
 #include "HwController.h"
 
+#include "AllAnalyses.h"
 #include "AllHwControllers.h"
+#include "AllHistogrammers.h"
 #include "AllChips.h"
 #include "AllProcessors.h"
 
@@ -74,8 +75,6 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
 // In order to build Analysis, bookie is needed --> deep dependency!
 // Do not want to use the raw pointer ScanBase*
 void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, int mask_opt);
-
-void setupLoggers(const json &j);
 
 int main(int argc, char *argv[]) {
     std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
@@ -206,14 +205,14 @@ int main(int argc, char *argv[]) {
     spdlog::info("Configuring logger ...");
     if(!logCfgPath.empty()) {
         auto j = ScanHelper::openJsonFile(logCfgPath);
-        setupLoggers(j);
+        logging::setupLoggers(j);
     } else {
         // default log setting
         json j; // empty
         j["pattern"] = defaultLogPattern;
         j["log_config"][0]["name"] = "all";
         j["log_config"][0]["level"] = "info";
-        setupLoggers(j);
+        logging::setupLoggers(j);
     }
     // Can use actual logger now
 
@@ -735,23 +734,6 @@ void listScanLoopActions() {
     }
 }
 
-void listLoggers() {
-    std::vector<std::string> log_list;
-    spdlog::apply_all([&](std::shared_ptr<spdlog::logger> l) {
-        if(l->name().empty()) {
-            log_list.push_back("(default)");
-        } else {
-            log_list.push_back(l->name());
-        }
-    });
-
-    std::sort(log_list.begin(), log_list.end());
-
-    for(auto &l: log_list) {
-        std::cout << "  " << l << "\n";
-    }
-}
-
 void listKnown() {
     std::cout << " Known HW controllers:\n";
     listControllers();
@@ -769,7 +751,7 @@ void listKnown() {
     listScanLoopActions();
 
     std::cout << " Known loggers:\n";
-    listLoggers();
+    logging::listLoggers();
 }
 
 std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie ) {
@@ -812,30 +794,14 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
             histogrammer.connect(fe->clipData, fe->clipHisto);
 
             auto add_histo = [&](std::string algo_name) {
-                if (algo_name == "OccupancyMap") {
+                auto histo = StdDict::getHistogrammer(algo_name);
+                if(histo) {
                     logger->debug("  ... adding {}", algo_name);
-                    histogrammer.addHistogrammer(new OccupancyMap());
-                } else if (algo_name == "TotMap") {
-                    logger->debug("  ... adding {}", algo_name);
-                    histogrammer.addHistogrammer(new TotMap());
-                } else if (algo_name == "Tot2Map") {
-                    logger->debug("  ... adding {}", algo_name);
-                    histogrammer.addHistogrammer(new Tot2Map());
-                } else if (algo_name == "L1Dist") {
-                    histogrammer.addHistogrammer(new L1Dist());
-                    logger->debug("  ... adding {}", algo_name);
-                } else if (algo_name == "HitsPerEvent") {
-                    histogrammer.addHistogrammer(new HitsPerEvent());
-                    logger->debug("  ... adding {}", algo_name);
+                    histogrammer.addHistogrammer(std::move(histo));
                 } else if (algo_name == "DataArchiver") {
-                    histogrammer.addHistogrammer(new DataArchiver((outputDir + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_data.raw")));
+                    histo.reset(new DataArchiver((outputDir + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_data.raw")));
+                    histogrammer.addHistogrammer(std::move(histo));
                     logger->debug("  ... adding {}", algo_name);
-                } else if (algo_name == "Tot3d") {
-                    logger->debug("  ... adding {}", algo_name);
-                    histogrammer.addHistogrammer(new Tot3d());
-                } else if (algo_name == "L13d") {
-                    logger->debug("  ... adding {}", algo_name);
-                    histogrammer.addHistogrammer(new L13d());
                 } else {
                     logger->error("Error, Histogrammer \"{} unknown, skipping!", algo_name);
                 }
@@ -884,34 +850,13 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                 ana.connect(s, fe->clipHisto, fe->clipResult);
 
                 auto add_analysis = [&](std::string algo_name) {
-                    if (algo_name == "OccupancyAnalysis") {
+                    auto analysis = StdDict::getAnalysis(algo_name);
+                    if(analysis) {
                         logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new OccupancyAnalysis());
-                     } else if (algo_name == "L1Analysis") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new L1Analysis());
-                     } else if (algo_name == "TotAnalysis") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new TotAnalysis());
-                     } else if (algo_name == "NoiseAnalysis") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new NoiseAnalysis());
-                     } else if (algo_name == "NoiseTuning") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new NoiseTuning());
-                     } else if (algo_name == "ScurveFitter") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new ScurveFitter());
-                     } else if (algo_name == "OccGlobalThresholdTune") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new OccGlobalThresholdTune());
-                     } else if (algo_name == "OccPixelThresholdTune") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new OccPixelThresholdTune());
-                     } else if (algo_name == "DelayAnalysis") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new DelayAnalysis());
-                     }
+                        ana.addAlgorithm(std::move(analysis));
+                    } else {
+                        logger->error("Error, Analysis Algorithm \"{} unknown, skipping!", algo_name);
+                    }
                 };
 
                 try {
@@ -939,64 +884,5 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                 ana.setMapSize(fe->geo.nCol, fe->geo.nRow);
             }
         }
-        logger->info("... done!");
-    }
-}
-
-void setupLoggers(const json &j) {
-    spdlog::sink_ptr default_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-
-    // spdlog::level::level_enum, but then construction doesn't work?
-    const std::map<std::string, int> level_map = {
-      {"off", SPDLOG_LEVEL_OFF},
-      {"critical", SPDLOG_LEVEL_CRITICAL},
-      {"err", SPDLOG_LEVEL_ERROR},
-      {"error", SPDLOG_LEVEL_ERROR},
-      {"warn", SPDLOG_LEVEL_WARN},
-      {"warning", SPDLOG_LEVEL_WARN},
-      {"info", SPDLOG_LEVEL_INFO},
-      {"debug", SPDLOG_LEVEL_DEBUG},
-      {"trace", SPDLOG_LEVEL_TRACE},
-    };
-
-    if(!j["simple"].empty()) {
-        // Don't print log level and timestamp
-        if (j["simple"])
-            default_sink->set_pattern("%v");
-    }
-
-    if(!j["log_config"].empty()) {
-        for(auto &jl: j["log_config"]) {
-            if(jl["name"].empty()) {
-                spdlog::error("Log json file: 'log_config' list item must have 'name");
-                continue;
-            }
-
-            std::string name = jl["name"];
-
-            auto logger_apply = [&](std::shared_ptr<spdlog::logger> l) {
-              l->sinks().push_back(default_sink);
-              if(!jl["level"].empty()) {
-                  std::string level = jl["level"];
-
-                  spdlog::level::level_enum spd_level = (spdlog::level::level_enum)level_map.at(level);
-                  l->set_level(spd_level);
-              }
-            };
-
-            if(name == "all") {
-                spdlog::apply_all(logger_apply);
-            } else {
-                logger_apply(spdlog::get(name));
-            }
-        }
-    }
-
-    // NB this sets things at the sink level, so not specifying a particular logger...
-    // Also doing it last means it applies to all registered sinks
-    if(!j["pattern"].empty()) {
-        std::string pattern = j["pattern"];
-      
-        spdlog::set_pattern(pattern);
     }
 }

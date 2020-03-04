@@ -57,7 +57,9 @@ foreach(lib ${libs})
     add_definitions( -DNO_PYTHON )
     include_directories(lib${lib}/include)
     include_directories(BEFORE SYSTEM ${PROJECT_BINARY_DIR}/include)
-    file(GLOB SrcFiles lib${lib}/*.cpp)
+    file(GLOB SrcFiles
+         CONFIGURE_DEPENDS
+         lib${lib}/*.cpp)
     list(APPEND LibSrcFiles ${SrcFiles})
 endforeach()
 
@@ -103,7 +105,9 @@ if ("NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
 endif()
 
 #add executables
-file(GLOB tools tools/*.cpp)
+file(GLOB tools
+     CONFIGURE_DEPENDS
+     tools/*.cpp)
 
 if (NOT "NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   list(FILTER tools EXCLUDE REGEX tools/testNetioHw.cpp|tools/testBitStream.cpp|tools/testScan.cpp)
@@ -144,7 +148,9 @@ install(DIRECTORY ${PROJECT_BINARY_DIR}/bin DESTINATION ${TARGET_INSTALL_AREA}  
     WORLD_EXECUTE WORLD_READ GROUP_EXECUTE GROUP_READ  )
 
 # Tests
-file(GLOB_RECURSE test_src tests/test_*.cpp)
+file(GLOB_RECURSE test_src
+     CONFIGURE_DEPENDS
+     tests/test_*.cpp)
 
 # Make one executable
 add_executable(test_main ${test_src} tests/main.cpp)
