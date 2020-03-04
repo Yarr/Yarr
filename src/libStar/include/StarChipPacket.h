@@ -451,7 +451,19 @@ class StarChipPacket{
 
     }//while continue_parsing
 
-  return 0;
+    // iW is first byte of trailer word, and we know about SOP and EOP
+    unsigned int used_count = iW + 3;
+    unsigned int unused_count = raw_words.size() - used_count;
+    if(unused_count > 0) {
+      if(unused_count > 2) {
+        logger().error("Cluster packet has too many words at the end, trailer at {} of {}", (iW+1), raw_words.size());
+        return 1;
+      } else {
+        logger().debug("Cluster packet has some words at the end, trailer at {} of {}, but allowing small mismatch.", (iW+1), raw_words.size());
+      }
+    }
+
+    return 0;
   }
 
   int parse_data_ABC_transparent(){
