@@ -28,7 +28,9 @@
 
 #include "HwController.h"
 
+#include "AllAnalyses.h"
 #include "AllHwControllers.h"
+#include "AllHistogrammers.h"
 #include "AllChips.h"
 #include "AllProcessors.h"
 
@@ -792,30 +794,14 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
             histogrammer.connect(fe->clipData, fe->clipHisto);
 
             auto add_histo = [&](std::string algo_name) {
-                if (algo_name == "OccupancyMap") {
+                auto histo = StdDict::getHistogrammer(algo_name);
+                if(histo) {
                     logger->debug("  ... adding {}", algo_name);
-                    histogrammer.addHistogrammer(new OccupancyMap());
-                } else if (algo_name == "TotMap") {
-                    logger->debug("  ... adding {}", algo_name);
-                    histogrammer.addHistogrammer(new TotMap());
-                } else if (algo_name == "Tot2Map") {
-                    logger->debug("  ... adding {}", algo_name);
-                    histogrammer.addHistogrammer(new Tot2Map());
-                } else if (algo_name == "L1Dist") {
-                    histogrammer.addHistogrammer(new L1Dist());
-                    logger->debug("  ... adding {}", algo_name);
-                } else if (algo_name == "HitsPerEvent") {
-                    histogrammer.addHistogrammer(new HitsPerEvent());
-                    logger->debug("  ... adding {}", algo_name);
+                    histogrammer.addHistogrammer(std::move(histo));
                 } else if (algo_name == "DataArchiver") {
-                    histogrammer.addHistogrammer(new DataArchiver((outputDir + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_data.raw")));
+                    histo.reset(new DataArchiver((outputDir + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_data.raw")));
+                    histogrammer.addHistogrammer(std::move(histo));
                     logger->debug("  ... adding {}", algo_name);
-                } else if (algo_name == "Tot3d") {
-                    logger->debug("  ... adding {}", algo_name);
-                    histogrammer.addHistogrammer(new Tot3d());
-                } else if (algo_name == "L13d") {
-                    logger->debug("  ... adding {}", algo_name);
-                    histogrammer.addHistogrammer(new L13d());
                 } else {
                     logger->error("Error, Histogrammer \"{} unknown, skipping!", algo_name);
                 }
@@ -864,34 +850,13 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                 ana.connect(s, fe->clipHisto, fe->clipResult);
 
                 auto add_analysis = [&](std::string algo_name) {
-                    if (algo_name == "OccupancyAnalysis") {
+                    auto analysis = StdDict::getAnalysis(algo_name);
+                    if(analysis) {
                         logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new OccupancyAnalysis());
-                     } else if (algo_name == "L1Analysis") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new L1Analysis());
-                     } else if (algo_name == "TotAnalysis") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new TotAnalysis());
-                     } else if (algo_name == "NoiseAnalysis") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new NoiseAnalysis());
-                     } else if (algo_name == "NoiseTuning") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new NoiseTuning());
-                     } else if (algo_name == "ScurveFitter") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new ScurveFitter());
-                     } else if (algo_name == "OccGlobalThresholdTune") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new OccGlobalThresholdTune());
-                     } else if (algo_name == "OccPixelThresholdTune") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new OccPixelThresholdTune());
-                     } else if (algo_name == "DelayAnalysis") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new DelayAnalysis());
-                     }
+                        ana.addAlgorithm(std::move(analysis));
+                    } else {
+                        logger->error("Error, Analysis Algorithm \"{} unknown, skipping!", algo_name);
+                    }
                 };
 
                 try {

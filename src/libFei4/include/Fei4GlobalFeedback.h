@@ -157,6 +157,9 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
     std::map<unsigned, unsigned> localStep;
     std::map<unsigned, double> oldSign;
     unsigned cur;
+
+    // Somehow we need to register logger at static init time
+    friend void logger_static_init_fei4();
 };
 
 #endif

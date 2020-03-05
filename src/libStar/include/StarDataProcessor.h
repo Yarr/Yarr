@@ -24,7 +24,7 @@ class StarDataProcessor : public DataProcessor {
         StarDataProcessor();
         ~StarDataProcessor();
         
-        void connect(ClipBoard<RawDataContainer> *arg_input, std::map<unsigned, ClipBoard<EventDataBase> > *arg_outMap) {
+        void connect(ClipBoard<RawDataContainer> *arg_input, std::map<unsigned, ClipBoard<EventDataBase> > *arg_outMap) override {
             input = arg_input;
             outMap = arg_outMap;
         }

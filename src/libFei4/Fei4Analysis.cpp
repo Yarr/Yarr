@@ -8,10 +8,50 @@
 
 #include "Fei4Analysis.h"
 
+#include "AllAnalyses.h"
+
 #include "logging.h"
 
 namespace {
     auto alog = logging::make_log("Fei4Analysis");
+}
+
+namespace {
+    bool oa_registered =
+      StdDict::registerAnalysis("OccupancyAnalysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new OccupancyAnalysis());});
+
+    bool l1_registered =
+      StdDict::registerAnalysis("L1Analysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new L1Analysis());});
+
+    bool tot_registered =
+      StdDict::registerAnalysis("TotAnalysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new TotAnalysis());});
+
+    bool no_registered =
+      StdDict::registerAnalysis("NoiseAnalysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new NoiseAnalysis());});
+
+    bool no_tune_registered =
+      StdDict::registerAnalysis("NoiseTuning",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new NoiseTuning());});
+
+    bool sf_registered =
+      StdDict::registerAnalysis("ScurveFitter",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new ScurveFitter());});
+
+    bool gbl_thr_registered =
+      StdDict::registerAnalysis("OccGlobalThresholdTune",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new OccGlobalThresholdTune());});
+
+    bool pix_thr_registered =
+      StdDict::registerAnalysis("OccPixelThresholdTune",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new OccPixelThresholdTune());});
+
+    bool del_registered =
+      StdDict::registerAnalysis("DelayAnalysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new DelayAnalysis());});
 }
 
 Fei4Analysis::Fei4Analysis() {
@@ -24,9 +64,6 @@ Fei4Analysis::Fei4Analysis(Bookkeeper *b, unsigned ch) {
 }
 
 Fei4Analysis::~Fei4Analysis() {
-    for (unsigned i=0; i<algorithms.size(); i++) {
-        delete algorithms[i];
-    }
 }
 
 void Fei4Analysis::init() {
@@ -94,14 +131,14 @@ void Fei4Analysis::end() {
     }
 }
 
-void Fei4Analysis::addAlgorithm(AnalysisAlgorithm *a) {
-    algorithms.push_back(a);
+void Fei4Analysis::addAlgorithm(std::unique_ptr<AnalysisAlgorithm> a) {
     a->setBookkeeper(bookie);
     a->setChannel(channel);
+    algorithms.push_back(std::move(a));
 }
 
-void Fei4Analysis::addAlgorithm(AnalysisAlgorithm *a, unsigned ch) {
-    algorithms.push_back(a);
+void Fei4Analysis::addAlgorithm(std::unique_ptr<AnalysisAlgorithm> a, unsigned ch) {
+    algorithms.push_back(std::move(a));
 }
 
 void OccupancyAnalysis::init(ScanBase *s) {
