@@ -194,7 +194,9 @@ std::vector<uint8_t> StarEmu::buildABCRegisterPacket(
     data_packets.push_back((reg_data >> 20) & 0xff);
     data_packets.push_back((reg_data >> 12) & 0xff);
     data_packets.push_back((reg_data >> 4) & 0xff);
-    data_packets.push_back((reg_data & 0xf) << 4);
+    data_packets.push_back((reg_data & 0xf) << 4 | (reg_status >> 12) & 0xf);
+    data_packets.push_back((reg_status >> 4) & 0xff);
+    data_packets.push_back((reg_status & 0xf) << 4);
 
     return data_packets;
 }
