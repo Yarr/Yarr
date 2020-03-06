@@ -64,10 +64,6 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path
 
     m_startHitCount = false;
     m_bc_sel = 0;
-
-    hpr_clkcnt = HPRPERIOD/2; // 20000 BCs or 500 us
-    hpr_sent.resize(m_starCfg->numABCs() + 1); // 1 HCCStar + nABCs ABCStar chips
-    std::fill(hpr_sent.begin(), hpr_sent.end(), false);
     
     // HCCStar and ABCStar configurations
     // TODO: should get these from chip config json file
@@ -81,6 +77,10 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path
     }
     */
     m_starCfg->initRegisterMaps();
+
+    hpr_clkcnt = HPRPERIOD/2; // 20000 BCs or 500 us
+    hpr_sent.resize(m_starCfg->numABCs() + 1); // 1 HCCStar + nABCs ABCStar chips
+    std::fill(hpr_sent.begin(), hpr_sent.end(), false);
 
     m_l0buffers_lite.clear();
     m_l0buffers_lite.resize(m_starCfg->numABCs());
@@ -447,7 +447,6 @@ void StarEmu::doFastCommand(uint8_t data6) {
         break;
     case LCB::ABC_REG_RESET :
         this->resetABCRegisters();
-        this->logicReset();
         break;
     case LCB::ABC_SEU_RESET :
         this->resetABCSEU();
@@ -499,9 +498,16 @@ void StarEmu::logicReset()
     m_bccnt = 0;
     hpr_clkcnt = HPRPERIOD/2;
     std::fill(hpr_sent.begin(), hpr_sent.end(), false);
+    m_starCfg->setSubRegisterValue(0, "TESTHPR", 0);
+    m_starCfg->setSubRegisterValue(0, "STOPHPR", 0);
+    m_starCfg->setSubRegisterValue(0, "MASKHPR", 0);
     
     for (unsigned ichip = 1; ichip <= m_starCfg->numABCs(); ++ichip) {
         clearFEData(ichip);
+
+        m_starCfg->setSubRegisterValue(ichip, "TESTHPR", 0);
+        m_starCfg->setSubRegisterValue(ichip, "STOPHPR", 0);
+        m_starCfg->setSubRegisterValue(ichip, "MASKHPR", 0);
     }
 }
 
