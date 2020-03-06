@@ -142,7 +142,7 @@ void AbcCfg::configure_ABC_Registers() {
 
     //// Initialize 32-bit register with default values
     ////#special reg
-    m_registerMap[ABCStarRegister::SCReg]->setValue(0x00000004);
+    m_registerMap[ABCStarRegister::SCReg]->setValue(0x00000000);
 
     ////#Analog and DCS regs
     for (unsigned int iReg=ABCStarRegister::ADCS1; iReg<=ABCStarRegister::ADCS7; iReg++)
