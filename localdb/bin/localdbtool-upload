@@ -7,7 +7,7 @@
 #################################
 
 ### Common
-import os, sys, time, argparse, yaml, socket
+import os, sys, time, argparse, yaml
 from getpass          import getpass
 from pymongo          import MongoClient, errors, DESCENDING
 from bson.objectid    import ObjectId
@@ -24,7 +24,10 @@ import register
 
 ### global variables
 home = os.environ['HOME']
-hostname = socket.gethostname()
+if not "HOSTNAME" in os.environ:
+    hostname = "default_host"
+else:
+    hostname = os.environ["HOSTNAME"]
 global localdb
 global option
 global logfile
@@ -142,6 +145,20 @@ def getTestRunData(i_type, i_tr_oid, i_conn_json=None, i_timestamp=None, i_site_
                 dcs_tr_oids.append(tr_oid)
         tr_oids = dcs_tr_oids
 
+    if i_type=='iv':
+        dcs_tr_oids = []
+        for tr_oid in tr_oids:
+            query = {
+                '_id'       : ObjectId(tr_oid),
+                'dbVersion' : register.__global.db_version,
+            }
+            localdb.testRun.update_one(query, { '$set': {'ivTest' : True}})
+            this_run = localdb.testRun.find_one(query)
+            if not this_run.get('environment',False)==False:
+                dcs_tr_oids.append(tr_oid)
+        tr_oids = dcs_tr_oids
+
+
     return tr_oids
 
 ######################
@@ -206,50 +223,31 @@ def __init(db_cfg):
     except errors.OperationFailure as err:
         ### Need user authentication
         if db_cfg.get('KeyFile',None):
-            keys = readKey(db_cfg['KeyFile'])
-            username = keys['username']
-            password = keys['password']
+            if not db_cfg['KeyFile'] == 'null':
+                keys = readKey(db_cfg['KeyFile'])
+                username = keys['username']
+                password = keys['password']
         if args.username:
             username = args.username
         elif db_cfg.get('username',None):
             username = db_cfg['username']
+        elif os.environ.get('username',None):
+            username = os.environ['username']
         if args.password:
             password = args.password
         elif db_cfg.get('password',None):
             password = db_cfg['password']
-        if args.log==True:
-            if username and password:
-                try:
-                    localdb.authenticate(username, password)
-                except errors.OperationFailure as err:
-                    logger.error('Authentication failed.')
-                    return False
-            else:
-                logger.warning('Need user authentication.')
+        elif os.environ.get('password',None):
+            password = os.environ['password']
+        if username and password:
+            try:
+                localdb.authenticate(username, password)
+            except errors.OperationFailure as err:
+                logger.error('Authentication failed.')
                 return False
         else:
-            through = False
-            while through==False:
-                logger.warning('Need user authentication.')
-                if not username or not password:
-                    username = None
-                    password = None
-                    username = input('User name > ')
-                    password = getpass('Password > ')
-                try:
-                    logger.info('Authentication succeeded.')
-                    localdb.authenticate(username, password)
-                    through = True
-                except errors.OperationFailure as err:
-                    logger.error('Authentication failed.')
-                    args.username = None
-                    args.password = None
-                    answer = input('Try again? [y/n(skip)]\n> ')
-                    if answer.lower()=='y':
-                        username = None
-                        password = None
-                    else:
-                        return False
+            logger.error('This scan did not store in LocalDB because of the authentication. Please login by "source localdb/login_mongodb.sh"')
+            return False
 
     localdb['fs.files'].create_index([('hash', DESCENDING), ('_id', DESCENDING)])
     localdb['component'].create_index([('serialNumber', DESCENDING)])
@@ -282,6 +280,8 @@ def __set_cache(cache_dir):
         scanlog_path = '{}/scanLog.json'.format(cache_dir)
     elif option=='dcs':
         scanlog_path = '{}/dbDcsLog.json'.format(cache_dir)
+    elif option=='iv':
+        scanlog_path = '{}/dbIVLog.json'.format(cache_dir)
     else:
         return
     scanlog_json = register.toJson(scanlog_path)
@@ -313,6 +313,8 @@ def __set_cache(cache_dir):
         if option=='scan':
             result=__write_scan(cache_dir, scanlog_json)
         if option=='dcs':
+            result=__write_dcs(cache_dir, scanlog_json)
+        if option=='iv':
             result=__write_dcs(cache_dir, scanlog_json)
     else:
         logger.error('Cannot upload data {}, retry again in the good connection to Local DB Server'.format(cache_dir))
@@ -564,6 +566,8 @@ def __clean(cache_dir, result):
         cache_path = '{}/.yarr/localdb/run.dat'.format(home)
     elif option=='dcs':
         cache_path = '{}/.yarr/localdb/dcs.dat'.format(home)
+    elif option=='iv':
+        cache_path = '{}/.yarr/localdb/iv.dat'.format(home)
     else: return
 
     if os.path.isfile(cache_path):
@@ -578,7 +582,7 @@ def __clean(cache_dir, result):
     ### Unuploadable test data outputs 'result:False', then remove directory path from cache list.
         if cache_dir in cache_list: cache_list.remove(cache_dir)
     else:
-        if option=='scan' or option=='dcs':
+        if option=='scan' or option=='dcs' or option=='iv':
             for tr_oid in register.__global.tr_oids:
                 if not getTestRunData(option, tr_oid)==[]:
                     logger.info('Success')
@@ -592,7 +596,8 @@ def __clean(cache_dir, result):
         for line in cache_list:
             if not line or not line=='': f.write('{}\n'.format(line))
 
-    register.__global.clean()
+    #register.__global.clean()
+    register.clean()
 
 ###################
 # Cache Data Upload
@@ -603,7 +608,7 @@ def __upload_from_cache():
 
     #################
     # Scan Cache List
-    file_paths = {'scan': '{}/.yarr/localdb/run.dat'.format(home), 'dcs': '{}/.yarr/localdb/dcs.dat'.format(home)}
+    file_paths = {'scan': '{}/.yarr/localdb/run.dat'.format(home), 'dcs': '{}/.yarr/localdb/dcs.dat'.format(home), 'iv': '{}/.yarr/localdb/iv.dat'.format(home)}
 
     for opt in file_paths:
         option = opt
@@ -892,6 +897,16 @@ def main():
         register.__global.option = 'dcs'
         if nargs == 0:
             logger.error('Usage: localdbtool-upload dcs <path/to/result/dir>')
+            logger.info('-----------------------')
+            logger.debug('=======================')
+            sys.exit(1)
+        __set_cache(command[1])
+    elif command[0]=='iv':
+        logger.info('Function: Upload IV Data')
+        option = 'iv'
+        register.__global.option = 'iv'
+        if nargs == 0:
+            logger.error('Usage: localdbtool-upload iv <path/to/result/dir>')
             logger.info('-----------------------')
             logger.debug('=======================')
             sys.exit(1)

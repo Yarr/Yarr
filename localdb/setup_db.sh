@@ -161,20 +161,34 @@ fi
 ### Confirmation ###
 ####################
 
+######################
+### Check HOSTNAME ###
+######################
+
+if ! export -p | grep HOSTNAME > /dev/null 2>&1; then
+    echo -e "[LDB] HOSTNAME environmental variable not found then exit."
+    echo -e "[LDB] Re-try this script after setting it by:"
+    echo -e "[LDB]     \$ export HOSTNAME='xxx' "
+    echo -e "[LDB] "
+    echo -e "[LDB] Exit ..."
+    echo -e "[LDB]"
+    exit 0
+fi
+
 ##########################
 ### Set editor command ###
 ##########################
 
-if [ -z "${EDITOR}" ]; then
-    echo -e "[LDB] Set editor command ..."
-    unset answer
+#if [ -z "${EDITOR}" ]; then
+echo -e "[LDB] Set editor command ..."
+unset answer
+read -p "[LDB] > " answer
+while [ -z "${answer}" ];
+do
     read -p "[LDB] > " answer
-    while [ -z "${answer}" ];
-    do
-        read -p "[LDB] > " answer
-    done
-    EDITOR=${answer}
-fi
+done
+EDITOR=${answer}
+#fi
 echo -e "[LDB]"
 
 #############################

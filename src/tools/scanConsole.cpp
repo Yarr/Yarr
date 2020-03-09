@@ -78,9 +78,12 @@ int main(int argc, char *argv[]) {
     std::cout << "-> Parsing command line parameters ..." << std::endl;
 
     std::string home = getenv("HOME");
-    char hostname_c[64];
-    gethostname(hostname_c, 64);
-    std::string hostname = hostname_c;
+    std::string hostname = "default_host";
+    if (getenv("HOSTNAME")) {
+        hostname = getenv("HOSTNAME");
+    } else {
+        std::cout << "HOSTNAME environmental variable not found. (Proceeding with 'default_host')" << std::endl;
+    }
 
     // Init parameters
     std::string scanType = "";
@@ -656,9 +659,13 @@ int main(int argc, char *argv[]) {
 
 void printHelp() {
     std::string home = getenv("HOME");
-    char hostname_c[64];
-    gethostname(hostname_c, 64);
-    std::string hostname = hostname_c;
+    std::string hostname = "default_host";
+    if (getenv("HOSTNAME")) {
+        hostname = getenv("HOSTNAME");
+    } else {
+        std::cout << "HOSTNAME environmental variable not found. (Proceeding with 'default_host')" << std::endl;
+    }
+
     std::string dbDirPath = home+"/.yarr/localdb";
 
     std::cout << "Help:" << std::endl;

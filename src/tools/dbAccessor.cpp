@@ -22,9 +22,12 @@ void printHelp();
 int main(int argc, char *argv[]){
 
     std::string home = getenv("HOME");
-    char hostname_c[64];
-    gethostname(hostname_c, 64);
-    std::string hostname = hostname_c;
+    std::string hostname = "default_host";
+    if (getenv("HOSTNAME")) {
+        hostname = getenv("HOSTNAME");
+    } else {
+        std::cout << "HOSTNAME environmental variable not found. (Proceeding with 'default_host')" << std::endl;
+    }
     std::string dbDirPath = home+"/.yarr/localdb";
     std::string cfg_path = dbDirPath+"/"+hostname+"_database.json";
     std::string user_cfg_path = dbDirPath+"/user.json";
@@ -35,6 +38,7 @@ int main(int argc, char *argv[]){
 
     // Init parameters
     std::string dcs_path = "";
+    std::string iv_path = "";
     std::string conn_path = "";
     std::string scanlog_path = "";
 
@@ -44,7 +48,7 @@ int main(int argc, char *argv[]){
 
 
     int c;
-    while ((c = getopt(argc, argv, "hIRCE:Mc:s:i:d:u:F:n:")) != -1 ){
+    while ((c = getopt(argc, argv, "hIRCE:Q:Mc:s:i:d:u:F:n:")) != -1 ){
         switch (c) {
 	case 'h':
                 printHelp();
@@ -62,6 +66,10 @@ int main(int argc, char *argv[]){
             case 'E':
                 registerType = "Environment";
                 dcs_path = std::string(optarg);
+                break;
+            case 'Q':
+                registerType = "EnvironmentIV";
+                iv_path = std::string(optarg);
                 break;
             case 'M':
                 registerType = "Module";
@@ -89,7 +97,7 @@ int main(int argc, char *argv[]){
 	        influx_chip_name= std::string(optarg);
 		break;
             case '?':
-                if(optopt=='R'||optopt=='U'||optopt=='C'||optopt=='E'||optopt=='S'||optopt=='D'||optopt=='G'||optopt=='F'){
+                if(optopt=='R'||optopt=='U'||optopt=='C'||optopt=='E'||optopt=='Q'||optopt=='S'||optopt=='D'||optopt=='G'||optopt=='F'){
                     std::cerr << "-> Option " << (char)optopt
                               << " requires a parameter! Aborting... " << std::endl;
                     return -1;
@@ -154,6 +162,24 @@ int main(int argc, char *argv[]){
         return 0;
     }
 
+    // cache IV
+    if (registerType == "EnvironmentIV") {
+        DBHandler *database = new DBHandler();
+        if (scanlog_path == "") {
+            std::cerr << "#DB ERROR# No scan log file path given, please specify file path under -s option!" << std::endl;
+            return 1;
+        }
+        std::cout << "DBHandler: Register Environment IV:" << std::endl;
+        std::cout << "\tenvironmental config file : " << iv_path << std::endl;
+
+        database->initialize(cfg_path, commandLine, "register");
+        database->setIVCfg(iv_path, scanlog_path, user_cfg_path, site_cfg_path);
+        database->cleanUp("iv", "");
+
+        delete database;
+        return 0;
+    }
+
     if (registerType == "Module") {
         DBHandler *database = new DBHandler();
         database->initialize(cfg_path, commandLine);
@@ -199,9 +225,12 @@ int main(int argc, char *argv[]){
 
 void printHelp() {
     std::string home = getenv("HOME");
-    char hostname_c[64];
-    gethostname(hostname_c, 64);
-    std::string hostname = hostname_c;
+    std::string hostname = "default_host";
+    if (getenv("HOSTNAME")) {
+        hostname = getenv("HOSTNAME");
+    } else {
+        std::cout << "HOSTNAME environmental variable not found. (Proceeding with 'default_host')" << std::endl;
+    }
     std::string dbDirPath = home+"/.yarr/localdb";
     std::cout << "Help:" << std::endl;
     std::cout << " -h: Shows this." << std::endl;
@@ -210,6 +239,8 @@ void printHelp() {
     std::cout << "     -c <component.json> : Provide component connectivity configuration." << std::endl;
     std::cout << " -R: Upload data into Local DB from cache." << std::endl;
     std::cout << " -E <dcs.json> : Provide DCS configuration to upload DCS data into Local DB." << std::endl;
+    std::cout << "     -s <scanLog.json> : Provide scan log file." << std::endl;
+    std::cout << " -Q <iv.json> : Provide IV configuration to upload IV data into Local DB." << std::endl;
     std::cout << "     -s <scanLog.json> : Provide scan log file." << std::endl;
     std::cout << " -M : Retrieve Module list from Local DB." << std::endl;
     std::cout << " " << std::endl;
