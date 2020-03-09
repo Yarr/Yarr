@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <bitset>
 #include <cstring>
+#include <sstream>
 
 #include "logging.h"
 
