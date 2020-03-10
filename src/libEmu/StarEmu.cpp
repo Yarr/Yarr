@@ -156,9 +156,6 @@ std::vector<uint8_t> StarEmu::buildPhysicsPacket(
     // ABCStar clusters
     for (int ichannel=0; ichannel<allClusters.size(); ++ichannel) {
         for ( uint16_t cluster : allClusters[ichannel]) {
-            if (cluster == 0x3fe) // "no cluster byte"
-                break;
-
             // cluster bits:
             // "0" + 4-bit channel number + 11-bit cluster dropping the last cluster bit
             uint16_t clusterbits = (ichannel & 0xf)<<11 | cluster & 0x7ff;
