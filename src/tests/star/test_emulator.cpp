@@ -127,53 +127,161 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
   // What data to expect, and how to mask the comparison
   std::deque<PacketCompare> expected;
 
-  // Starts with an HPR
-  expected.push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xf0, 0x00});
+  // Use the pattern below to skip a comparison
+  // 0xf is not a valid packet type
+  const PacketCompare mask_pattern = {0xff, 0xde, 0xad, 0xbe, 0xef, 0x00};
 
-  SECTION("Counters") {
-    // Send fast commands:
-    emu->writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::ABC_HIT_COUNT_RESET, 0));
-    emu->writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::ABC_HITCOUNT_START, 0));
-    emu->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
+  //////////////////////////
+  // Initialize the emulator
+  //////////////////////////
 
-    // Write to ABCStar register CREG0 to enable hit counters
-    std::array<LCB::Frame, 9> writeABCCmd = star.write_abc_register(32, 0x00000020); 
-    sendCommand(*emu, writeABCCmd);
+  // Send reset fast commands
+  emu->writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::LOGIC_RESET, 0));
+  emu->writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::ABC_REG_RESET, 0));
+  emu->writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::HCC_REG_RESET, 0));
 
-    // send an L0A
-    emu->writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(10, 0, false));
+  // Turn off both HCC and ABC HPRs so HPRs will not interfere with other tests
+  // HCC MaskHPR on
+  std::array<LCB::Frame, 9> writeHCCCmd_MaskHPROn = star.write_hcc_register(43, 0x00000100);
+  sendCommand(*emu, writeHCCCmd_MaskHPROn);
+  // HCC StopHPR on
+  std::array<LCB::Frame, 9> writeHCCCmd_StopHPROn = star.write_hcc_register(16, 0x00000001);
+  sendCommand(*emu, writeHCCCmd_StopHPROn);
+  // ABC MaskHPR on
+  std::array<LCB::Frame, 9> writeABCCmd_MaskHPROn = star.write_abc_register(32, 0x00000040);
+  sendCommand(*emu, writeABCCmd_MaskHPROn);
+  // ABC StopHPR on
+  std::array<LCB::Frame, 9> writeABCCmd_StopHPROn = star.write_abc_register(0, 0x00000004);
+  sendCommand(*emu, writeABCCmd_StopHPROn);
 
-    expected.push_back({
-        0x20, 0x00, 0x07, 0x8f, 0x03, 0x8f, 0x07, 0xaf,
-        0x03, 0xaf, 0x07, 0xcf, 0x03, 0xcf, 0x07, 0xee,
-        0x03, 0xee, 0x6f, 0xed, 0xff});
+  // Will still receive one initial HPR packet from HCC and one from each ABC
+  // HCC HPR with Idle frame
+  expected.push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
+  // ABC HPR with Idle frame
+  // (By default the emulator has only one hard-coded ABC with ID = 15 for now)
+  expected.push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
 
-    expected.push_back({
-        0x20, 0x20, 0x07, 0x8f, 0x03, 0x8f, 0x07, 0xaf,
-        0x03, 0xaf, 0x07, 0xcf, 0x03, 0xcf, 0x07, 0xee,
-        0x03, 0xee, 0x6f, 0xed, 0xff});
-  }
+  //////////////////////////
+  // Start tests
+  //////////////////////////
 
   SECTION("Read HCCStar") {
-    // read an HCCStar register
-    //
-    std::array<LCB::Frame, 9> readHCCCmd = star.read_hcc_register(44);
+    // Read an HCCStar register
+    std::array<LCB::Frame, 9> readHCCCmd = star.read_hcc_register(48); // 0x30
     sendCommand(*emu, readHCCCmd);
 
-    expected.push_back({0x82, 0xc0, 0x00, 0x00, 0x18, 0xe0, 0x00, 0x00, 0xff}); 
+    // HCCStar register 48 (ADCcfg) is initialized to 0x00406600 
+    expected.push_back({0x83, 0x00, 0x04, 0x06, 0x60, 0x00});
   }
 
   SECTION("Read HCCStar short") {
-    // read an HCCStar register using only 4 words
-    std::array<LCB::Frame, 9> readHCCCmd = star.read_hcc_register(44);
+    // Read an HCCStar register using only 4 words
+    std::array<LCB::Frame, 9> readHCCCmd = star.read_hcc_register(44); // 0x2c
     emu->writeFifo((readHCCCmd[0] << 16) + readHCCCmd[1]);
     emu->writeFifo((readHCCCmd[2] << 16) + readHCCCmd[8]);
 
-    expected.clear();
-    // As there are no initial idles the initial HPR is different
-    expected.push_back({0xd0, 0x3f, 0x04, 0x75, 0xc5, 0xff, 0xf0, 0x00});
+    // HCCStar register 44 (Cfg2) is initialized to 0x0000018e
+    expected.push_back({0x82, 0xc0, 0x00, 0x00, 0x18, 0xe0});
+  }
 
-    expected.push_back({0x82, 0xc0, 0x00, 0x00, 0x18, 0xe0, 0x00, 0x00, 0xff});
+  SECTION("Read ABCStar interposed") {
+    // Read an ABCStar register
+    std::array<LCB::Frame, 9> readABCCmd =  star.read_abc_register(34); // 0x22
+    emu->writeFifo((readABCCmd[0] << 16) + readABCCmd[1]);
+    // The read command is interupted by an L0A
+    emu->writeFifo((LCB::l0a_mask(1, 0, false) << 16) + readABCCmd[2]);
+    emu->writeFifo((readABCCmd[8] << 16) + LCB::IDLE);
+
+    // Response from L0A: empty cluster; l0tag = 0 + 3; bcid = 0b0000
+    expected.push_back({0x20, 0x30, 0x03, 0xfe, 0x6f, 0xed});
+    // ABCStar register 34 (CREG2): 0x00000190
+    expected.push_back({0x40, 0x22, 0x00, 0x00, 0x00, 0x19, 0x0f, 0x00, 0x00});
+  }
+
+  SECTION("Mask Registers") {
+    // Switch to static test mode: TM = 1
+    std::array<LCB::Frame, 9> writeABCCmd_TM = star.write_abc_register(32, 0x00010040);
+    sendCommand(*emu, writeABCCmd_TM);
+
+    // Set mask registers
+    std::array<LCB::Frame, 9> writeABCCmd_MaskInput3 = star.write_abc_register(19, 0xfffe0000);
+    sendCommand(*emu, writeABCCmd_MaskInput3);
+    std::array<LCB::Frame, 9> writeABCCmd_MaskInput7 = star.write_abc_register(23, 0xfffe0000);
+    sendCommand(*emu, writeABCCmd_MaskInput7);
+
+    // Send an L0A
+    emu->writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(1, 4, false));
+
+    // l0tag = 4 + 3; bcid = 0b0111;
+    expected.push_back({0x20, 0x77, 0x05, 0xc7, 0x01, 0xcf, 0x05, 0xe7, 0x01, 0xee, 0x07, 0xc7, 0x03, 0xcf, 0x07, 0xe7, 0x03, 0xee, 0x6f, 0xed});
+  }
+
+  SECTION("Hit Counters") {
+    // Switch to static test mode (TM = 1) and enable hit counters
+    std::array<LCB::Frame, 9> writeABCCmd_TM = star.write_abc_register(32, 0x00010060);
+    sendCommand(*emu, writeABCCmd_TM);
+
+    // Set a mask register
+    std::array<LCB::Frame, 9> writeABCCmd_MaskInput0 = star.write_abc_register(16, 0xffffffff);
+    sendCommand(*emu, writeABCCmd_MaskInput0);
+
+    // Reset and start hit counters:
+    emu->writeFifo((LCB::fast_command(LCB::ABC_HIT_COUNT_RESET, 0) << 16) + LCB::fast_command(LCB::ABC_HITCOUNT_START, 0));
+
+    // Send four triggers
+    emu->writeFifo((LCB::l0a_mask(10, 8, false) << 16) + LCB::l0a_mask(10, 12, false));
+
+    // Stop hit counters
+    emu->writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::ABC_HITCOUNT_STOP, 0));
+
+    // Send another trigger: it should not increase any hit counters
+    emu->writeFifo((LCB::l0a_mask(1, 16, false) << 16) + LCB::IDLE);
+
+    for (int i = 0; i < 5; i++) {
+      // Skip the comparison of these cluster packets
+      // Test of physics packets is done elsewhere
+      expected.push_back(mask_pattern);
+    }
+
+    // Check the hit counts
+    // HitCountREG0
+    std::array<LCB::Frame, 9> readABCCmd_hitcnt0 = star.read_abc_register(128);
+    emu->writeFifo((readABCCmd_hitcnt0[0] << 16) + readABCCmd_hitcnt0[1]);
+    emu->writeFifo((readABCCmd_hitcnt0[2] << 16) + readABCCmd_hitcnt0[8]);
+    // HitCountREG0 for channel 0 to 3 is expected to be 0x04040404
+    expected.push_back({0x40, 0x80, 0x00, 0x40, 0x40, 0x40, 0x4f, 0x00, 0x00});
+
+    // HitCountREG63
+    std::array<LCB::Frame, 9> readABCCmd_hitcnt63 = star.read_abc_register(191);
+    emu->writeFifo((readABCCmd_hitcnt63[0] << 16) + readABCCmd_hitcnt63[1]);
+    emu->writeFifo((readABCCmd_hitcnt63[2] << 16) + readABCCmd_hitcnt63[8]);
+    // HitCountREG63 for channel 252 - 255 is expected be 0x00000000
+    expected.push_back({0x40, 0xbf, 0x00, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x00});
+  }
+
+  SECTION("L0 Latency") {
+    // Switch to test pulse mode: TM = 2, TestPulseEnable = 1
+    std::array<LCB::Frame, 9> writeABCCmd_cfg = star.write_abc_register(32, 0x00020050);
+    sendCommand(*emu, writeABCCmd_cfg);
+
+    // Set a mask register so we are expecting a non-empty cluster packet
+    std::array<LCB::Frame, 9> writeABCCmd_mask = star.write_abc_register(16, 0x00000001);
+    sendCommand(*emu, writeABCCmd_mask);
+
+    // Configure trigger latency to be 3 BC
+    std::array<LCB::Frame, 9> writeABCCmd_lat = star.write_abc_register(34, 0x00000003);
+    sendCommand(*emu, writeABCCmd_lat);
+
+    // Send a digital pulse command, followed by an L0A three BC later
+    emu->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
+    emu->writeFifo((LCB::fast_command(LCB::ABC_DIGITAL_PULSE, 0) << 16) + LCB::l0a_mask(1, 20, false));
+
+    // Physics packet: l0tag = 20 + 3; bcid = 0b1000
+    expected.push_back({0x21, 0x78, 0x00, 0x00, 0x6f, 0xed}); // FIXME: BCID
+  }
+
+  SECTION("HPR Logic") {
+
   }
 
   emu->releaseFifo();
@@ -197,20 +305,22 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
       CAPTURE (data->words);
 
       auto bytes = expected_packet;
-      CAPTURE (bytes);
-      for(size_t w=0; w<data->words; w++) {
-        for(int i=0; i<4;i++){
-          uint8_t byte = (data->buf[w]>>(i*8))&0xff;
-          int index = w*4+i;
-          CAPTURE (w, i, index, (int)byte);
-          CHECK (bytes.size() > index);
-          if(bytes.size() > index) {
-            auto exp = bytes[index];
-            CAPTURE ((int)exp);
-            CHECK ((int)byte == (int)exp);
-          }
-        }
-      }
+      if (bytes != mask_pattern) {
+        CAPTURE (bytes);
+        for(size_t w=0; w<data->words; w++) {
+          for(int i=0; i<4;i++){
+            uint8_t byte = (data->buf[w]>>(i*8))&0xff;
+            int index = w*4+i;
+            CAPTURE (w, i, index, (int)byte);
+            //CHECK (bytes.size() > index);
+            if(bytes.size() > index) {
+              auto exp = bytes[index];
+              CAPTURE ((int)exp);
+              CHECK ((int)byte == (int)exp);
+            }
+          } // i
+        } // w
+      } // if (bytes != mask_pattern)
     }
 
     data.reset(emu->readData());
