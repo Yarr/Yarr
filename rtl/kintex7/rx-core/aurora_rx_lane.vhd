@@ -15,6 +15,9 @@ use ieee.numeric_std.all;
 library unisim ;
 use unisim.vcomponents.all ;
 
+library work;
+use work.board_pkg.all;
+
 entity aurora_rx_lane is 
     port (
         -- Sys connect
@@ -105,9 +108,12 @@ architecture behavioral of aurora_rx_lane is
         );
     end component descrambler;
 
-    constant g_SERDES_TYPE : string := "CUSTOM";
-    constant c_SLIP_SERDES_MAX : unsigned(7 downto 0) := to_unsigned(1, 8); 
-    constant c_SERDES8_CYCLE : unsigned(3 downto 0) := to_unsigned(0, 4);
+    signal c_SLIP_SERDES_MAX : unsigned(7 downto 0);
+    signal c_SERDES8_CYCLE : unsigned(3 downto 0);
+
+--    constant g_SERDES_TYPE : string := "CUSTOM";
+--    constant c_SLIP_SERDES_MAX : unsigned(7 downto 0) := to_unsigned(1, 8); 
+--    constant c_SERDES8_CYCLE : unsigned(3 downto 0) := to_unsigned(0, 4);
 
 --    constant g_SERDES_TYPE : string := "XAPP1017";
 --    constant c_SLIP_SERDES_MAX : unsigned(7 downto 0) := to_unsigned(8, 8);
@@ -207,7 +213,11 @@ begin
 --    );
 
     -- XAPP1017 style SERDES with auto-phase detection up to 1.6Gbps
-    xapp1017_serdes: if g_SERDES_TYPE = "XAPP1017" generate
+    xapp1017_serdes: if c_RX_SPEED = "0640" generate
+        
+        c_SLIP_SERDES_MAX <= to_unsigned(8, 8);
+        c_SERDES8_CYCLE <= to_unsigned(1, 4);
+    
         serdes_idelay_rdy <= rst_n_i;
         serdes_cmp: serdes_1_to_468_idelay_ddr port map (
             datain_p(0) => rx_data_i_p,
@@ -268,8 +278,11 @@ begin
     end generate xapp1017_serdes;
 
     -- Quad-Oversampling style SERDES with auto-phase detection up to 160Mpbs
-    custom_serdes: if g_SERDES_TYPE = "CUSTOM" generate
-         
+    custom_serdes: if c_RX_SPEED = "0160" generate
+        
+        c_SLIP_SERDES_MAX <= to_unsigned(1, 8);
+        c_SERDES8_CYCLE <= to_unsigned(0, 4);
+        
         data_in : IBUFDS_DIFF_OUT generic map(
             IBUF_LOW_PWR		=> FALSE)
         port map (                      
