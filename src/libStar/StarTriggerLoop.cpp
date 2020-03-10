@@ -6,6 +6,12 @@
 #include <iostream>
 #include <iomanip>
 
+#include "logging.h"
+
+namespace {
+    auto logger = logging::make_log("StarTriggerLoop");
+}
+
 StarTriggerLoop::StarTriggerLoop() : LoopActionBase() {
 
 	m_trigCnt = 50; // Maximum number of triggers to send
@@ -21,7 +27,7 @@ StarTriggerLoop::StarTriggerLoop() : LoopActionBase() {
 
 void StarTriggerLoop::init() {
 	m_done = false;
-	if (verbose) std::cout << __PRETTY_FUNCTION__ << std::endl;
+	SPDLOG_LOGGER_DEBUG(logger, "init");
 	// Setup Trigger
 	this->setTrigWord();
 
@@ -48,15 +54,13 @@ void StarTriggerLoop::init() {
 
 
 void StarTriggerLoop::execPart1() {
-	if (verbose)
-		std::cout << __PRETTY_FUNCTION__ << std::endl;
+	SPDLOG_LOGGER_DEBUG(logger, "");
 	// Enable Trigger
 	g_tx->setTrigEnable(0x1);
 }
 
 void StarTriggerLoop::execPart2() {
-	if (verbose)
-		std::cout << __PRETTY_FUNCTION__ << std::endl;
+	SPDLOG_LOGGER_DEBUG(logger, "");
 	while(!g_tx->isTrigDone());
 	// Disable Trigger
 	g_tx->setTrigEnable(0x0);
@@ -65,8 +69,7 @@ void StarTriggerLoop::execPart2() {
 
 
 void StarTriggerLoop::end() {
-	if (verbose)
-		std::cout << __PRETTY_FUNCTION__ << std::endl;
+	SPDLOG_LOGGER_DEBUG(logger, "");
 
 	// Go back to general state of FE, do something here (if needed)
 	while(!g_tx->isCmdEmpty());
@@ -141,16 +144,8 @@ void StarTriggerLoop::loadConfig(json &config) {
 	if (!config["noInject"].empty())
 		m_noInject = config["noInject"];
 
-	if (!config["verbose"].empty())
-		verbose = config["verbose"];
-
-
-	std::cout << "------trig_count: " <<  m_trigCnt
-			  << "------trig_frequency: " << m_trigFreq
-			  << "------l0_delay: " << m_trigDelay
-			  <<std::endl;
-
-
+	logger->info("Configured trigger loop: trig_count: {} trig_frequency: {} l0_delay: {}",
+                      m_trigCnt, m_trigFreq, m_trigDelay);
 }
 
 
