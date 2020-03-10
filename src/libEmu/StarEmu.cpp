@@ -875,7 +875,7 @@ void StarEmu::countHits(unsigned iABC, uint8_t cmdBC)
         // Four front-end channels: [ireg*4], [ireg*4+1], [ireg*4+2], [ireg*4+3]
         for (int ich = 0; ich < 4; ++ich) {
             // check if the counts for this channel has already reached maximum
-            if ( (counts>>(8*ich)) & 0xff == 0xff ) continue;
+            if ( ((counts>>(8*ich)) & 0xff) == 0xff ) continue;
 
             bool ahit = m_l0buffers_lite[iABC][feBC][ireg*4+ich];
             if (ahit)
