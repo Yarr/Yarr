@@ -2,7 +2,7 @@
     "ctrlCfg" : {
         "type": "spec",
         "cfg" : {
-            "specNum" : 2,
+            "specNum" : 0,
             "spiConfig" : 3435973836,
             "autoZero" : {
                 "word" : 0,

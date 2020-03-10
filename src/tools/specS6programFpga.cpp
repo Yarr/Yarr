@@ -108,7 +108,21 @@ int checkBitFile(std::fstream &file) {
     return 0;
 }
 
+#include "logging.h"
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+
+
 int main(int argc, char* argv[]) {
+    spdlog::sink_ptr default_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+    
+    auto logger_apply = [&](std::shared_ptr<spdlog::logger> l) {
+        l->sinks().push_back(default_sink);
+        l->set_level(spdlog::level::debug);
+    };
+
+    spdlog::apply_all(logger_apply);
+
     if (argc < 2) {
         std::cout << "Please specify bitfile to program!" << std::endl;
         return -1;

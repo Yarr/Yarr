@@ -177,7 +177,7 @@
             "ChipId": 0,
             "InjCap": 8.2,
             "Name": "JohnDoe_0",
-            "VcalPar": [-1.0,0.195,0.0,0.0]
+            "VcalPar": [-1.0,0.215,0.0,0.0]
         },
         "PixelConfig": [{
             "Col": 0,

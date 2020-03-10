@@ -22,7 +22,12 @@ void printHelp();
 int main(int argc, char *argv[]){
 
     std::string home = getenv("HOME");
-    std::string hostname = getenv("HOSTNAME");
+    std::string hostname = "default_host";
+    if (getenv("HOSTNAME")) {
+        hostname = getenv("HOSTNAME");
+    } else {
+        std::cout << "HOSTNAME environmental variable not found. (Proceeding with 'default_host')" << std::endl;
+    }
     std::string dbDirPath = home+"/.yarr/localdb";
     std::string cfg_path = dbDirPath+"/"+hostname+"_database.json";
     std::string user_cfg_path = dbDirPath+"/user.json";
@@ -36,10 +41,15 @@ int main(int argc, char *argv[]){
     std::string conn_path = "";
     std::string scanlog_path = "";
 
+    //for influxDB
+    std::string influx_conn_path="";
+    std::string influx_chip_name="";
+
+
     int c;
-    while ((c = getopt(argc, argv, "hIRCE:Mc:s:i:d:u:")) != -1 ){
+    while ((c = getopt(argc, argv, "hIRCE:Mc:s:i:d:u:F:n:")) != -1 ){
         switch (c) {
-            case 'h':
+	case 'h':
                 printHelp();
                 return 0;
                 break;
@@ -71,11 +81,18 @@ int main(int argc, char *argv[]){
             case 'd':
                 cfg_path = std::string(optarg);
                 break;
-            case 'u':
+	    case 'u':
                 user_cfg_path = std::string(optarg);
                 break;
+	    case 'F' :
+	        registerType= "Influxdb";
+	        influx_conn_path= std::string(optarg);
+		break;
+	    case 'n' :
+	        influx_chip_name= std::string(optarg);
+		break;
             case '?':
-                if(optopt=='R'||optopt=='U'||optopt=='C'||optopt=='E'||optopt=='S'||optopt=='D'||optopt=='G'){
+                if(optopt=='R'||optopt=='U'||optopt=='C'||optopt=='E'||optopt=='S'||optopt=='D'||optopt=='G'||optopt=='F'){
                     std::cerr << "-> Option " << (char)optopt
                               << " requires a parameter! Aborting... " << std::endl;
                     return -1;
@@ -147,13 +164,50 @@ int main(int argc, char *argv[]){
         delete database;
         return status;
     }
+    if (registerType == "Influxdb") {
+      if (scanlog_path == "") {
+	std::cerr << "#DB ERROR# No scan log file path given, please specify file path under -s option!" << std::endl;
+	return 1;
+      }
+      if (influx_chip_name == "") {
+	std::cerr << "#DB ERROR# No chip name given, please specify chipname under -n option!" << std::endl;
+	return 1;
+      }
+      int success=0;
+      DBHandler *database = new DBHandler();
+      database->initialize(cfg_path, commandLine, "register");
+      database->init_influx(commandLine);
+      success=database->retrieveFromInflux(influx_conn_path,influx_chip_name,scanlog_path);
+      if(success==0){
+	size_t last_slash=scanlog_path.find_last_of('/');
+	std::string scandir="";
+	if (std::string::npos != last_slash){
+	  scandir=scanlog_path.substr(0,last_slash);
+	  //std::string dcs_path=scandir+"/dcsDataInfo.json";
+	  std::string dcs_path="/tmp/dcsDataInfo.json";
 
+	  std::cout << "DBHandler: Register Environment:" << std::endl;
+	  std::cout << "\tenvironmental config file : " << dcs_path << std::endl;
+
+	  database->setDCSCfg(dcs_path, scanlog_path, user_cfg_path, site_cfg_path);
+	  database->cleanUp("dcs", "");
+	  database->cleanDataDir();
+	}
+      }
+      delete database;
+      return 0;
+    }
     return 0;
 }
 
 void printHelp() {
     std::string home = getenv("HOME");
-    std::string hostname = getenv("HOSTNAME");
+    std::string hostname = "default_host";
+    if (getenv("HOSTNAME")) {
+        hostname = getenv("HOSTNAME");
+    } else {
+        std::cout << "HOSTNAME environmental variable not found. (Proceeding with 'default_host')" << std::endl;
+    }
     std::string dbDirPath = home+"/.yarr/localdb";
     std::cout << "Help:" << std::endl;
     std::cout << " -h: Shows this." << std::endl;

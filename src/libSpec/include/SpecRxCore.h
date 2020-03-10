@@ -46,8 +46,6 @@ class SpecRxCore : virtual public RxCore, virtual public SpecCom{
         bool isBridgeEmpty();
 
     private:
-        bool verbose;
-
         uint32_t getStartAddr();
         uint32_t getDataCount();
 };

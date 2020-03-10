@@ -32,44 +32,7 @@
 #include "AllFe65p2Actions.h"
 #include "AllRd53aActions.h"
 #include "AllStdActions.h"
-
-class AnalysisAlgorithm {
-    public:
-        AnalysisAlgorithm() {
-            nCol = 80;
-            nRow = 336;
-            make_mask = true;
-        };
-        virtual ~AnalysisAlgorithm() {}
-        
-        void setBookkeeper (Bookkeeper *b) {bookie = b;}
-        void setChannel (unsigned ch) {channel = ch;}
-
-        void connect(ClipBoard<HistogramBase> *out) {
-            output = out;
-        }
-        virtual void init(ScanBase *s) {}
-	virtual void loadConfig(json &config){}
-        virtual void processHistogram(HistogramBase *h) {}
-        virtual void end() {}
-
-        void setMapSize(unsigned col,unsigned row) {
-            nCol = col;
-            nRow = row;
-        }
-
-        void enMasking() {make_mask = true;}
-        void disMasking() {make_mask = false;}
-        void setMasking(bool val) {make_mask = val;}
-
-    protected:
-        Bookkeeper *bookie;
-        unsigned channel;
-        ScanBase *scan;
-        ClipBoard<HistogramBase> *output;
-        bool make_mask;
-        unsigned nCol, nRow;
-};
+#include "AnalysisAlgorithm.h"
 
 class Fei4Analysis : public DataProcessor {
     public:
@@ -91,8 +54,8 @@ class Fei4Analysis : public DataProcessor {
         void process_core();
         void end();
 
-        void addAlgorithm(AnalysisAlgorithm *a);
-        void addAlgorithm(AnalysisAlgorithm *a, unsigned ch);
+        void addAlgorithm(std::unique_ptr<AnalysisAlgorithm> a);
+        void addAlgorithm(std::unique_ptr<AnalysisAlgorithm> a, unsigned ch);
 
         void setMapSize(unsigned col, unsigned row) {
             for (unsigned i=0; i<algorithms.size(); i++) {
@@ -106,9 +69,6 @@ class Fei4Analysis : public DataProcessor {
             }
         }
 
-
-        AnalysisAlgorithm* getLastAna() {return algorithms.back();}
-            
     private:
         Bookkeeper *bookie;
         unsigned channel;
@@ -117,8 +77,7 @@ class Fei4Analysis : public DataProcessor {
         ScanBase *scan;
         std::unique_ptr<std::thread> thread_ptr;
         
-        std::vector<AnalysisAlgorithm*> algorithms;
-
+        std::vector<std::unique_ptr<AnalysisAlgorithm>> algorithms;
 };
 
 class OccupancyAnalysis : public AnalysisAlgorithm {
@@ -333,10 +292,11 @@ class NoiseAnalysis : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-	void loadConfig(json &config){}
+	void loadConfig(json &config);
     private:
         unsigned n_trigger;
-        std::unique_ptr<Histo2d> occ;        
+        std::unique_ptr<Histo2d> occ;
+    bool createMask;
 };
 
 class NoiseTuning : public AnalysisAlgorithm {

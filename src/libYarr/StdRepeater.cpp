@@ -7,6 +7,12 @@
 
 #include <iostream>
 
+#include "logging.h"
+
+namespace {
+    auto srlog = logging::make_log("StdRepeater");
+}
+
 StdRepeater::StdRepeater() : LoopActionBase() {
     loopType = typeid(this);
     min = 0;
@@ -18,25 +24,21 @@ StdRepeater::StdRepeater() : LoopActionBase() {
 
 void StdRepeater::init() {
     m_done = false;
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(srlog, "");
     m_cur = min;
 }
 
 void StdRepeater::end() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(srlog, "");
 }
 
 void StdRepeater::execPart1() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(srlog, "");
     m_cur++;
 }
 
 void StdRepeater::execPart2() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(srlog, "");
     if (m_cur == max)
         m_done = true;
 }

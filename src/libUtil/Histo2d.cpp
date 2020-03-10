@@ -12,6 +12,12 @@
 #include <fstream>
 #include <iostream>
 
+#include "logging.h"
+
+namespace {
+    auto hlog = logging::make_log("Histo2d");
+}
+
 Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
         unsigned arg_ybins, double arg_ylow, double arg_yhigh, std::type_index t) : HistogramBase(arg_name, t) {
     xbins = arg_xbins;
@@ -270,7 +276,7 @@ bool Histo2d::fromFile(std::string filename) {
 }
 
 void Histo2d::plot(std::string prefix, std::string dir) {
-    std::cout << "Plotting " << HistogramBase::name << std::endl;
+    hlog->info("Plotting {}", HistogramBase::name);
     // Put raw histo data in tmp file
     std::string tmp_name = std::string(getenv("USER")) + "/tmp_yarr_histo2d_" + prefix;
     this->toFile(tmp_name, "/tmp/", false);

@@ -11,8 +11,8 @@
 #include <RD53Style.h>
 #include <json.hpp>
 
-#include "storage.hpp"
-
+#include "json.hpp"
+using nlohmann::json;
 
 int main(int argc, char *argv[]) { //./plotWithRoot_ThresholdTDAC path/to/directory file_ext
 	//Example file extensions: png, pdf, C, root	
