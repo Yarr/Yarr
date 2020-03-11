@@ -218,7 +218,7 @@ std::vector<uint8_t> StarEmu::buildHCCRegisterPacket(PacketTypes typ, uint8_t re
 //
 void StarEmu::DecodeLCB(LCB::Frame frame) {
 
-    SPDLOG_LOGGER_TRACE("Raw LCB frame = 0x{:x} BC = {}", frame, m_bccnt);
+    SPDLOG_LOGGER_TRACE(logger, "Raw LCB frame = 0x{:x} BC = {}", frame, m_bccnt);
 
     // HPR
     doHPR(frame);
@@ -256,7 +256,7 @@ void StarEmu::DecodeLCB(LCB::Frame frame) {
             doRegReadWrite(frame);
         }
         else if (frame == LCB::IDLE) { // Idle
-            SPDLOG_LOGGER_TRACE("Receive an IDLE");
+            SPDLOG_LOGGER_TRACE(logger, "Receive an IDLE");
             // do nothing
         }
     } // if (not (iskcode0 or iskcode1) )
@@ -272,7 +272,7 @@ void StarEmu::doRegReadWrite(LCB::Frame frame) {
     uint8_t code0 = (frame >> 8) & 0xff;
     uint8_t code1 = frame & 0xff;
 
-    SPDLOG_LOGGER_TRACE("Receive a register command -> symbol1 = 0x{:x}, symbol2 = 0x{:x}", code0, code1);
+    SPDLOG_LOGGER_TRACE(logger, "Receive a register command -> symbol1 = 0x{:x}, symbol2 = 0x{:x}", code0, code1);
 
     if (code0 == LCB::K2) { // This frame is a K2 Start or K2 End
 
