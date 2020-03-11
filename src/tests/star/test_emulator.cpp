@@ -33,12 +33,6 @@ TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
   // What data to expect, and how to mask the comparison
   std::deque<PacketCompare> expected;
 
-  // Starts with an HPR
-  expected.push_back("Packet type TYP_ABC_HPR, ABC 0, Address 3f, Value 78555fff\n");
-
-  // This is the frame that goes in the initial HPR
-  emu->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
-
   SECTION("Read HCCStar interposed") {
     // read another HCCStar register
     std::array<LCB::Frame, 9> readHCCCmd2 = star.read_hcc_register(17);
