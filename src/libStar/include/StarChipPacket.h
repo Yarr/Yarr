@@ -240,7 +240,7 @@ class StarChipPacket{
         this->error_block->print(os);
     }else if(this->type == TYP_ABC_RR || this->type == TYP_HCC_RR || this->type == TYP_ABC_HPR || this->type == TYP_HCC_HPR ){
       os << std::hex << std::setfill('0');
-      os << "Packet info: Address " << std::setw(2) << address
+      os << "Packet info: Address " << std::setw(2) << (unsigned)address
          << ", Value " << std::setw(8) << value << "\n";
       os << std::dec << std::setfill(' ');
     }
@@ -255,7 +255,7 @@ class StarChipPacket{
     }else if(this->type == TYP_ABC_RR || this->type == TYP_HCC_RR || this->type == TYP_ABC_HPR || this->type == TYP_HCC_HPR ){
       os << "ABC " << channel_abc << ", Address ";
       os << std::hex << std::setfill('0');
-      os << std::setw(2) << address << ", Value " << std::setw(8) << value;
+      os << std::setw(2) << (unsigned)address << ", Value " << std::setw(8) << value;
       os << std::dec << std::setfill(' ');
     }
     os << "\n";
