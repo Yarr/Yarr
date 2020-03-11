@@ -359,7 +359,7 @@ class StarChipPacket{
   //Parse an ABC read packet
   int parse_data_ABC_read(){
     if( raw_words.size() != 11 ){
-      if((raw_words.size()-2)/4 == 2) {
+      if((raw_words.size()-2)/4 == 3) {
         // Transfer of data is 32bit, not including SOP/EOP, so don't have precise length
         logger().debug("ABC readout packet should be 11 ten-bit words, but this is {}. Allowing small mismatch.", raw_words.size());
       } else {
