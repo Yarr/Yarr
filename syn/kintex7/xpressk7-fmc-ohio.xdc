@@ -72,8 +72,8 @@ set_property PACKAGE_PIN R23 [get_ports {fe_data_n[15]}]
 #set_property PACKAGE_PIN AC26 [get_ports {eudet_clk_n}]
 #set_property PACKAGE_PIN AB26 [get_ports {ext_busy_o_p}]
 #set_property PACKAGE_PIN AC26 [get_ports {ext_busy_o_n}]
-#set_property PACKAGE_PIN AB26 [get_ports {fe_data_p[12]}]
-#set_property PACKAGE_PIN AC26 [get_ports {fe_data_p[12]}]
+set_property PACKAGE_PIN AB26 [get_ports {fe_data_p[12]}]
+set_property PACKAGE_PIN AC26 [get_ports {fe_data_p[12]}]
 
 #la03_n
 #la03_p
@@ -81,13 +81,13 @@ set_property PACKAGE_PIN R23 [get_ports {fe_data_n[15]}]
 #set_property PACKAGE_PIN M26 [get_ports {eudet_trig_n}]
 #set_property PACKAGE_PIN N26 [get_ports {ext_trig_i_p[0]}]
 #set_property PACKAGE_PIN M26 [get_ports {ext_trig_i_n[0]}]
-#set_property PACKAGE_PIN N26 [get_ports {fe_data_p[14]}]
-#set_property PACKAGE_PIN M26 [get_ports {fe_data_n[14]}]
+set_property PACKAGE_PIN N26 [get_ports {fe_data_p[14]}]
+set_property PACKAGE_PIN M26 [get_ports {fe_data_n[14]}]
 
 #la04_n
 #la04_p
-#set_property PACKAGE_PIN W25 [get_ports {fe_cmd_p[3]}]
-#set_property PACKAGE_PIN W26 [get_ports {fe_cmd_n[3]}]
+set_property PACKAGE_PIN W25 [get_ports {fe_cmd_p[3]}]
+set_property PACKAGE_PIN W26 [get_ports {fe_cmd_n[3]}]
 
 #la06_n
 #la06_p
@@ -355,15 +355,15 @@ set_property PACKAGE_PIN T25 [get_ports {fe_data_n[10]}]
 
 #la10_n
 #la10_p
-#set_property PACKAGE_PIN U22 [get_ports {fe_clk_p[3]}]
-#set_property PACKAGE_PIN V22 [get_ports {fe_clk_n[3]}]
+set_property PACKAGE_PIN U22 [get_ports {fe_clk_p[3]}]
+set_property PACKAGE_PIN V22 [get_ports {fe_clk_n[3]}]
 
 #la08_n
 #la08_p
 #set_property PACKAGE_PIN K25 [get_ports {eudet_busy_p}]
 #set_property PACKAGE_PIN K26 [get_ports {eudet_busy_n}]
-#set_property PACKAGE_PIN K25 [get_ports {fe_data_p[13]}]
-#set_property PACKAGE_PIN K26 [get_ports {fe_data_n[13]}]
+set_property PACKAGE_PIN K25 [get_ports {fe_data_p[13]}]
+set_property PACKAGE_PIN K26 [get_ports {fe_data_n[13]}]
 
 #la09_n
 #la09_p
@@ -387,8 +387,6 @@ set_property PACKAGE_PIN D23 [get_ports {fe_data_p[8]}]
 set_property PACKAGE_PIN N19 [get_ports {fe_cmd_p[2]}]
 set_property PACKAGE_PIN M20 [get_ports {fe_cmd_n[2]}]
 
-#set_property IOSTANDARD LVDS_25 [get_ports fe_cmd_*]
-#set_property SLEW FAST [get_ports fe_cmd*]
 
 #hb09_p 
 #hb09_n

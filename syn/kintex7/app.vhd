@@ -477,7 +477,6 @@ begin
     axis_rx_fifo : axis_data_fifo_0
       PORT MAP (
         s_axis_aresetn => rst_n_s,
-        m_axis_aresetn => rst_n_s,
         s_axis_aclk => clk_i,
         s_axis_tvalid => s_axis_rx_tvalid_i_s,
         s_axis_tready => s_axis_rx_tready_o_s,
@@ -492,7 +491,6 @@ begin
         m_axis_tkeep => s_axis_rx_tkeep_s,
         m_axis_tlast => s_axis_rx_tlast_s,
         m_axis_tuser => s_axis_rx_tuser_s,
-        axis_data_count => open,
         axis_wr_data_count => open,
         axis_rd_data_count => open
       );
@@ -500,7 +498,6 @@ begin
     axis_tx_fifo : axis_data_fifo_1
         PORT MAP (
           s_axis_aresetn => rst_n_s,
-          m_axis_aresetn => rst_n_s,
           s_axis_aclk => wb_clk_s,
           s_axis_tvalid => m_axis_tx_tvalid_s,
           s_axis_tready => m_axis_tx_tready_s,
@@ -515,7 +512,6 @@ begin
           m_axis_tkeep => m_axis_tx_tkeep_o_s,
           m_axis_tlast => m_axis_tx_tlast_o_s,
           m_axis_tuser => m_axis_tx_tuser_o_s,
-          axis_data_count => open,
           axis_wr_data_count => open,
           axis_rd_data_count => open
         );

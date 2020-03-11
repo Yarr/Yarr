@@ -120,7 +120,6 @@ package app_pkg is
     COMPONENT axis_data_fifo_0
       PORT (
         s_axis_aresetn : IN STD_LOGIC;
-        m_axis_aresetn : IN STD_LOGIC;
         s_axis_aclk : IN STD_LOGIC;
         s_axis_tvalid : IN STD_LOGIC;
         s_axis_tready : OUT STD_LOGIC;
@@ -135,7 +134,6 @@ package app_pkg is
         m_axis_tkeep : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
         m_axis_tlast : OUT STD_LOGIC;
         m_axis_tuser : OUT STD_LOGIC_VECTOR(21 DOWNTO 0);
-        axis_data_count : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
         axis_wr_data_count : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
         axis_rd_data_count : OUT STD_LOGIC_VECTOR(31 DOWNTO 0)
       );
@@ -144,7 +142,6 @@ package app_pkg is
     COMPONENT axis_data_fifo_1
       PORT (
         s_axis_aresetn : IN STD_LOGIC;
-        m_axis_aresetn : IN STD_LOGIC;
         s_axis_aclk : IN STD_LOGIC;
         s_axis_tvalid : IN STD_LOGIC;
         s_axis_tready : OUT STD_LOGIC;
@@ -159,7 +156,6 @@ package app_pkg is
         m_axis_tkeep : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
         m_axis_tlast : OUT STD_LOGIC;
         m_axis_tuser : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
-        axis_data_count : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
         axis_wr_data_count : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
         axis_rd_data_count : OUT STD_LOGIC_VECTOR(31 DOWNTO 0)
       );

@@ -8,8 +8,8 @@ set_property PACKAGE_PIN D5 [get_ports pcie_clk_n]
 
 
 #On-board switch reset
-set_property PACKAGE_PIN Y20 [get_ports rst_n_i]
-set_property IOSTANDARD LVCMOS25 [get_ports rst_n_i]
+#set_property PACKAGE_PIN Y20 [get_ports rst_n_i]
+#set_property IOSTANDARD LVCMOS25 [get_ports rst_n_i]
 
 #PCIe reset
 set_property IOSTANDARD LVCMOS25 [get_ports sys_rst_n_i]
@@ -31,12 +31,12 @@ set_property PACKAGE_PIN G4 [get_ports {pci_exp_rxp[3]}]
 
 # On-board LEDs
 set_property PACKAGE_PIN W10 [get_ports {usr_led_o[0]}]
-set_property PACKAGE_PIN V11 [get_ports {usr_led_o[1]}]
-set_property PACKAGE_PIN Y10 [get_ports {usr_led_o[2]}]
+#set_property PACKAGE_PIN V11 [get_ports {usr_led_o[1]}]
+#set_property PACKAGE_PIN Y10 [get_ports {usr_led_o[2]}]
 #set_property PACKAGE_PIN W13 [get_ports {usr_led_o[3]}]
 set_property IOSTANDARD LVCMOS15 [get_ports {usr_led_o[0]}]
-set_property IOSTANDARD LVCMOS15 [get_ports {usr_led_o[1]}]
-set_property IOSTANDARD LVCMOS15 [get_ports {usr_led_o[2]}]
+#set_property IOSTANDARD LVCMOS15 [get_ports {usr_led_o[1]}]
+#set_property IOSTANDARD LVCMOS15 [get_ports {usr_led_o[2]}]
 #set_property IOSTANDARD LVCMOS15 [get_ports {usr_led_o[3]}]
 
 # On-board Switches

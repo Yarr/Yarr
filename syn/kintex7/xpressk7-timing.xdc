@@ -19,7 +19,7 @@ set_false_path -to [get_pins -hierarchical *pcie_id_s*D*]
 
 
 #set_false_path -from [get_pins app_0/wb_exp_comp/cfg_interrupt_s_reg/C]
-set_false_path -from [get_ports rst_n_i]
+#set_false_path -from [get_ports rst_n_i]
 
 
 
