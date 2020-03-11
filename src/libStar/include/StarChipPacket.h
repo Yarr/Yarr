@@ -340,8 +340,13 @@ class StarChipPacket{
   //Parse a HCC read packet
   int parse_data_HCC_read(){
     if( raw_words.size() != 8 ){
-      logger().error("Error, HCC readout packet should be 8 ten-bit words, but this is {}. Not parsing packet.", raw_words.size());
-      return 1;
+      if((raw_words.size()-2)/4 == 2) {
+        // Transfer of data is 32bit, not including SOP/EOP, so don't have precise length
+        logger().debug("HCC readout packet should be 8 ten-bit words, but this is {}. Allowing small mismatch.", raw_words.size());
+      } else {
+        logger().error("Error, HCC readout packet should be 8 ten-bit words, but this is {}. Not parsing packet.", raw_words.size());
+        return 1;
+      }
     }
 
     this->address = ((raw_words[1] & 0xF) << 4) | ((raw_words[2] >> 4) & 0xF);
@@ -354,8 +359,13 @@ class StarChipPacket{
   //Parse an ABC read packet
   int parse_data_ABC_read(){
     if( raw_words.size() != 11 ){
-      logger().error("Error, ABC readout packet should be 11 ten-bit words, but this is {}. Not parsing packet.", raw_words.size());
-      return 1;
+      if((raw_words.size()-2)/4 == 2) {
+        // Transfer of data is 32bit, not including SOP/EOP, so don't have precise length
+        logger().debug("ABC readout packet should be 11 ten-bit words, but this is {}. Allowing small mismatch.", raw_words.size());
+      } else {
+        logger().error("ABC readout packet should be 11 ten-bit words, but this is {}. Not parsing packet.", raw_words.size());
+        return 1;
+      }
     }
 
     this->channel_abc = raw_words[1] & 0xF;
@@ -441,7 +451,19 @@ class StarChipPacket{
 
     }//while continue_parsing
 
-  return 0;
+    // iW is first byte of trailer word, and we know about SOP and EOP
+    unsigned int used_count = iW + 3;
+    unsigned int unused_count = raw_words.size() - used_count;
+    if(unused_count > 0) {
+      if(unused_count > 2) {
+        logger().error("Cluster packet has too many words at the end, trailer at {} of {}", (iW+1), raw_words.size());
+        return 1;
+      } else {
+        logger().debug("Cluster packet has some words at the end, trailer at {} of {}, but allowing small mismatch.", (iW+1), raw_words.size());
+      }
+    }
+
+    return 0;
   }
 
   int parse_data_ABC_transparent(){

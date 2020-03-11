@@ -109,7 +109,9 @@ void process_data(RawData &curIn,
     }
     packet.add_word(0x1DC); //add EOP, only to make decoder happy
 
-    packet.parse();
+    if(packet.parse()) {
+      logger->error("Star packet parsing failed, continuing with the extracted data\n");
+    }
     
     logger->debug("Process data");
     if(logger->should_log(spdlog::level::trace)) {
