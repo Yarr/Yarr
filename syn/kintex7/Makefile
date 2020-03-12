@@ -1,3 +1,4 @@
+GIT_VERS = $(shell git rev-parse --short HEAD)
 SUBDIRS = $(patsubst %/,%,$(shell ls -d */))
 $(info $(SUBDIRS))
 
@@ -6,7 +7,7 @@ all: vers $(SUBDIRS)
 vers:
 	./make_version.sh
 
-$(SUBDIRS): 
+$(SUBDIRS): vers 
 	-@echo "Building $@/tef1001_R1" && cd $@/tef1001_R1 && $(MAKE) 1> buildlog.txt
 	-@echo "Building $@/tef1001_R2" && cd $@/tef1001_R2 && $(MAKE) 1> buildlog.txt
 	-@echo "Building $@/xpressk7_160" && cd $@/xpressk7_160 && $(MAKE) 1> buildlog.txt
@@ -28,4 +29,10 @@ clean:
 	for d in $(SUBDIRS); do make -C $$d/xpressk7_160 clean; done
 	for d in $(SUBDIRS); do make -C $$d/xpressk7_325 clean; done
 
-.PHONY: all clean hdl $(SUBDIRS)
+deploy:
+	ssh lxplus.cern.ch "mkdir -p ~/www/yarr/firmware/$(GIT_VERS) &&\
+		rm -f ~/www/yarr/firmware/latest &&\
+		ln -s ~/www/yarr/firmware/$(GIT_VERS) /afs/cern.ch/user/t/theim/www/yarr/firmware/latest"
+	rsync -av --include '*/' --include '*_*_*.bit' --exclude '*' --prune-empty-dirs ./ lxplus.cern.ch:~/www/yarr/firmware/$(GIT_VERS)
+
+.PHONY: all clean hdl vers $(SUBDIRS)
