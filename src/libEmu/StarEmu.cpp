@@ -37,11 +37,13 @@ std::ostream &operator <<(std::ostream &os, print_hex_type<T> v) {
 auto logger = logging::make_log("StarEmu");
 }
 
-StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path)
+StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path,
+    unsigned hpr_period)
     : m_txRingBuffer ( tx )
     , m_rxQueue ( rx )
     , m_bccnt( 0 )
     , m_starCfg( new StarCfg )
+    , HPRPERIOD( hpr_period )
 {
     run = true;
 
@@ -1491,6 +1493,16 @@ void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
     emuCfgFile = j["feCfg"];
     logger->info("Using config: {}", emuCfgFile);
   }
-  emu.reset(new StarEmu( rx, tx_com.get(), emuCfgFile ));
+
+  // HPR packet:
+  // 40000 BC (i.e. 1 ms) by default.
+  // Can be set to a smaller value for testing, but need to be a multiple of 4
+  unsigned hprperiod = 40000;
+  if (!j["hprPeriod"].empty()) {
+    hprperiod = j["hprPeriod"];
+    logger->debug("HPR packet transmission period is set to {} BC", hprperiod);
+  }
+
+  emu.reset(new StarEmu( rx, tx_com.get(), emuCfgFile, hprperiod ));
   emuThreads.push_back(std::thread(&StarEmu::executeLoop, emu.get()));
 }

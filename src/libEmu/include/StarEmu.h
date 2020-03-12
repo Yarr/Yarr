@@ -30,7 +30,8 @@ public:
     };
     
     /** These are ring buffers are owned by EmuController */
-    StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path);
+    StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path,
+            unsigned);
     ~StarEmu();
 
     // the main loop which recieves commands from yarr
@@ -148,8 +149,7 @@ private:
     unsigned hpr_clkcnt; // unit: BC (25 ns)
     // Flag indicating if at least one HPR packet has been sent
     std::vector<bool> hpr_sent;
-    static constexpr unsigned HPRPERIOD = 40000; // 40000 BCs, i.e. 1 ms
-    // For testing or debugging, set HPRPERIOD to a smaller value e.g. 80
+    const unsigned HPRPERIOD; // HPR packet period
     
     ////////////////////////////////////////
     // HCCStar and ABCStar configurations
