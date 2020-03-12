@@ -1092,7 +1092,30 @@ wb_dev_gen : if wb_dev_c = '1' generate
         sda_o => sda_s,
         sdi_i => sdi_s,
         latch_o => latch_s
-        );	
+        );
+
+    cmp_wb_ctrl_regs: ctrl_regs port map (
+                 wb_clk_i => wb_clk_s,
+                 rst_n_i => rst_n_s,
+                 wb_adr_i => wb_adr_s(31 downto 0),
+                 wb_dat_i => wb_dat_m2s_s(31 downto 0),
+                 wb_dat_o => wb_dat_s2m_s(255 downto 224),
+                 wb_cyc_i => wb_cyc_s(7),
+                 wb_stb_i => wb_stb_s,
+                 wb_we_i => wb_we_s,
+                 wb_ack_o => wb_ack_s(7),
+                 wb_stall_o => wb_stall_s(7),
+                 ctrl_reg_0_o => open,
+                 ctrl_reg_1_o => open,
+                 ctrl_reg_2_o => open,
+                 ctrl_reg_3_o => open,
+                 ctrl_reg_4_o => open,
+                 ctrl_reg_5_o => open,
+                 static_reg_0_o => open,
+                 static_reg_1_o => open,
+                 static_reg_2_o => open,
+                 static_reg_3_o => open
+    );
 
 end generate;
 

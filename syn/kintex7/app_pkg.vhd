@@ -363,7 +363,37 @@ package app_pkg is
           );
     end component;	
 
+    component ctrl_regs is
+        port (
+            -- Sys connect
+            wb_clk_i	: in  std_logic;
+            rst_n_i		: in  std_logic;
+            
+            -- Wishbone slave interface
+            wb_adr_i	: in  std_logic_vector(31 downto 0);
+            wb_dat_i	: in  std_logic_vector(31 downto 0);
+            wb_dat_o	: out std_logic_vector(31 downto 0);
+            wb_cyc_i	: in  std_logic;
+            wb_stb_i	: in  std_logic;
+            wb_we_i		: in  std_logic;
+            wb_ack_o	: out std_logic;
+            wb_stall_o	: out std_logic;
+            
+            -- Register Outputs R/W
+            ctrl_reg_0_o : out std_logic_vector(31 downto 0);
+            ctrl_reg_1_o : out std_logic_vector(31 downto 0);
+            ctrl_reg_2_o : out std_logic_vector(31 downto 0);
+            ctrl_reg_3_o : out std_logic_vector(31 downto 0);
+            ctrl_reg_4_o : out std_logic_vector(31 downto 0);
+            ctrl_reg_5_o : out std_logic_vector(31 downto 0);
 
+            -- Static registers RO
+            static_reg_0_o : out std_logic_vector(31 downto 0);
+            static_reg_1_o : out std_logic_vector(31 downto 0);
+            static_reg_2_o : out std_logic_vector(31 downto 0);
+            static_reg_3_o : out std_logic_vector(31 downto 0)
+        );
+    end component;
 
     component mig_7series_0
       port (

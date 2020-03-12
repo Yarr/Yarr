@@ -18,7 +18,8 @@ files = [
 "m_clk_sync.vhd",
 "k_dual_bram.vhd",
 "wb_traffic_gen.vhd",
-"wb_spi.vhd"
+"wb_spi.vhd",
+"ctrl_regs.vhd"
 ]
 
 library = "work"

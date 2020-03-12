@@ -3,7 +3,7 @@ use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
 
 package board_pkg is
-    constant c_FW_IDENT : std_logic_vector(31 downto 0) := x"00000000";
+    constant c_FW_IDENT : std_logic_vector(31 downto 0) := x"00030231";
     constant c_TX_ENCODING : string := "OSERDES";
     constant c_TX_CHANNELS : integer := 4;
     constant c_RX_CHANNELS : integer := 4;
