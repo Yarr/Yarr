@@ -1,7 +1,10 @@
 SUBDIRS = $(patsubst %/,%,$(shell ls -d */))
 $(info $(SUBDIRS))
 
-all: $(SUBDIRS)
+all: vers $(SUBDIRS)
+
+vers:
+	./make_version.sh
 
 $(SUBDIRS): 
 	-@echo "Building $@/tef1001_R1" && cd $@/tef1001_R1 && $(MAKE) 1> buildlog.txt

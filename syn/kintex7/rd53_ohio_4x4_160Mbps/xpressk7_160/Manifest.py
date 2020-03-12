@@ -29,5 +29,6 @@ files = [
 "../../xpressk7.xdc",
 "../../xpressk7-fmc-ohio.xdc",
 "../../xpressk7-timing.xdc",
+"../../version.vhd",
 ]
 

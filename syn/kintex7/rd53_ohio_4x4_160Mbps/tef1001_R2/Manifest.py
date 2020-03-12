@@ -29,5 +29,6 @@ files = [
 "../../tef1001_R2.xdc",
 "../../tef1001-fmc-ohio.xdc",
 "../../xpressk7-timing.xdc",
+"../../version.vhd",
 ]
 
