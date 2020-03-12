@@ -14,6 +14,12 @@ void sendCommand(TxCore &hw, std::array<uint16_t, 9> &cmd) {
   hw.writeFifo((cmd[8] << 16) + LCB::IDLE);
 }
 
+template<typename PacketT>
+void compareOutputs(RawData* data, const PacketT& expected_packet);
+
+template<typename PacketT>
+void checkData(HwController*, std::deque<PacketT>&, const PacketT&);
+
 // Test by parsing bytes and comparing string
 TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
   std::shared_ptr<HwController> emu = StdDict::getHwController("emu_Star");
@@ -61,44 +67,7 @@ TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
   while(!emu->isCmdEmpty())
     ;
 
-  std::unique_ptr<RawData> data(emu->readData());
-
-  for(int reads=0; reads<10; reads++) {
-    CAPTURE (reads);
-    if(data) {
-      CHECK (!expected.empty());
-
-      PacketCompare expected_packet;
-      if(!expected.empty()) {
-        expected_packet = expected.front();
-        expected.pop_front();
-      }
-
-      CAPTURE (data->words);
-
-      StarChipPacket packet;
-      packet.add_word(0x13c); //add SOP
-      for(unsigned iw=0; iw<data->words; iw++) {
-        for(int i=0; i<4;i++){
-          packet.add_word((data->buf[iw]>>i*8)&0xff);
-        }
-      }
-      packet.add_word(0x1dc); //add EOP
-
-      bool parse_failed = packet.parse();
-      std::stringstream ss;
-      packet.print_words(ss);
-      CAPTURE (ss.str());
-      CHECK (!parse_failed);
-
-      std::stringstream parsed;
-      packet.print_more(parsed);
-
-      CHECK (parsed.str() == expected_packet);
-    }
-
-    data.reset(emu->readData());
-  }
+  checkData(emu.get(), expected, std::string(""));
 
   emu->setRxEnable(0x0);
 }
@@ -271,11 +240,7 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     emu->writeFifo((LCB::fast_command(LCB::ABC_DIGITAL_PULSE, 0) << 16) + LCB::l0a_mask(1, 20, false));
 
     // Physics packet: l0tag = 20 + 3; bcid = 0b1000
-    expected.push_back({0x21, 0x78, 0x00, 0x00, 0x6f, 0xed}); // FIXME: BCID
-  }
-
-  SECTION("HPR Logic") {
-
+    expected.push_back({0x21, 0x78, 0x00, 0x00, 0x6f, 0xed});
   }
 
   emu->releaseFifo();
@@ -283,6 +248,117 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
   while(!emu->isCmdEmpty())
     ;
 
+  checkData(emu.get(), expected, mask_pattern);
+
+  emu->setRxEnable(0x0);
+}
+
+TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
+  std::shared_ptr<HwController> emu =  StdDict::getHwController("emu_Star");
+
+  REQUIRE (emu);
+
+  json cfg;
+  cfg["hprPeriod"] = 80; // Set HPR period to 80
+  emu->loadConfig(cfg);
+
+  StarCmd star;
+
+  typedef std::vector<uint8_t> PacketCompare;
+  const PacketCompare mask_pattern = {0xff, 0xde, 0xad, 0xbe, 0xef, 0x00};
+
+  std::deque<PacketCompare> expected;
+
+  // Send a logic reset first
+  emu->writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::LOGIC_RESET, 0));
+
+  // Wait for the initial HPRs, which should arrive 80/2 BC after reset
+  // Send Idle frames to keep the "clock" in the emulator running
+  for (int j = 0; j < 6; j++) {
+    emu->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
+  }
+
+  // HCC HPR with Idle frame
+  expected.push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
+  // ABC HPR with Idle frame
+  expected.push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+
+  SECTION("Periodic") {
+    // Wait another 80 BCs for a second set of HPRs
+    for (int j = 0; j < 10; j++) {
+      emu->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
+    }
+
+    expected.push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
+    expected.push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+  }
+
+  SECTION("StopHPR") {
+    // Set HCC StopHPR bit to 1 to stop periodic HPR packets from HCCStar
+    std::array<LCB::Frame, 9> writeHCCCmd_StopHPR = star.write_hcc_register(16, 0x00000001);
+    sendCommand(*emu, writeHCCCmd_StopHPR);
+
+    // Wait a bit, and we should only see a periodic HPR packet from ABCStar
+    for (int j = 0; j < 4; j++) {
+      emu->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
+    }
+
+    expected.push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+  }
+
+  SECTION("TestHPR") {
+    // Set ABC TestHPR bit to 1 to receive an ABC HPR packet immediately
+    std::array<LCB::Frame, 9> writeABCCmd_TestHPR = star.write_abc_register(0, 0x00000008);
+    sendCommand(*emu, writeABCCmd_TestHPR);
+
+    expected.push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+
+    // Wait a bit, and there should be the regular periodic HPR packets
+    for (int j = 0; j < 4; j++) {
+      emu->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
+    }
+
+    expected.push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
+    expected.push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+  }
+
+  SECTION("MaskHPR") {
+    // Set HCC MaskHPR bit to 1
+    std::array<LCB::Frame, 9> writeHCCCmd_MaskHPR = star.write_hcc_register(43, 0x00000100);
+    sendCommand(*emu, writeHCCCmd_MaskHPR);
+
+    // Wait a bit for the periodic HPR packets
+    for (int j = 0; j < 4; j++) {
+      emu->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
+    }
+
+    expected.push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
+    expected.push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+
+    // Now set HCC TestHPR bit to 1.
+    // No extra HCC HPR is expected since the HCC MaskHPR is on
+    std::array<LCB::Frame, 9> writeHCCCmd_TestHPR = star.write_hcc_register(16, 0x00000002);
+    sendCommand(*emu, writeHCCCmd_TestHPR);
+
+    // Wait a bit, and there should still be periodic HPRs from both HCC and ABC
+    for (int j = 0; j < 4; j++) {
+      emu->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
+    }
+
+    expected.push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
+    expected.push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+  }
+
+  emu->releaseFifo();
+
+  while(!emu->isCmdEmpty());
+
+  checkData(emu.get(), expected, mask_pattern);
+}
+
+template<typename PacketT>
+void checkData(HwController* emu, std::deque<PacketT>& expected, const PacketT& mask_pattern)
+{
   std::unique_ptr<RawData> data(emu->readData());
 
   for(int reads=0; reads<10; reads++) {
@@ -290,35 +366,62 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     if(data) {
       CHECK (!expected.empty());
 
-      PacketCompare expected_packet;
-      if(!expected.empty()) {
+      PacketT expected_packet;
+      if (!expected.empty()) {
         expected_packet = expected.front();
         expected.pop_front();
       }
 
       CAPTURE (data->words);
 
-      auto bytes = expected_packet;
-      if (bytes != mask_pattern) {
-        CAPTURE (bytes);
-        for(size_t w=0; w<data->words; w++) {
-          for(int i=0; i<4;i++){
-            uint8_t byte = (data->buf[w]>>(i*8))&0xff;
-            int index = w*4+i;
-            CAPTURE (w, i, index, (int)byte);
-            //CHECK (bytes.size() > index);
-            if(bytes.size() > index) {
-              auto exp = bytes[index];
-              CAPTURE ((int)exp);
-              CHECK ((int)byte == (int)exp);
-            }
-          } // i
-        } // w
-      } // if (bytes != mask_pattern)
+      // Do comparison
+      if (expected_packet != mask_pattern)
+        compareOutputs(data.get(), expected_packet);
     }
 
     data.reset(emu->readData());
   }
+}
 
-  emu->setRxEnable(0x0);
+template<>
+void compareOutputs<std::string>(RawData* data, const std::string& expected_packet)
+{
+  StarChipPacket packet;
+  packet.add_word(0x13c); //add SOP
+  for(unsigned iw=0; iw<data->words; iw++) {
+    for (int i=0; i<4;i++){
+      packet.add_word((data->buf[iw]>>i*8)&0xff);
+    }
+  }
+  packet.add_word(0x1dc); //add EOP
+
+  bool parse_failed = packet.parse();
+  std::stringstream ss;
+  packet.print_words(ss);
+  CAPTURE (ss.str());
+  CHECK (!parse_failed);
+
+  std::stringstream parsed;
+  packet.print_more(parsed);
+
+  CHECK (parsed.str() == expected_packet);
+}
+
+template<>
+void compareOutputs<std::vector<uint8_t>>(RawData* data, const std::vector<uint8_t>& expected_packet)
+{
+  CAPTURE (expected_packet);
+  for(size_t w=0; w<data->words; w++) {
+    for(int i=0; i<4;i++){
+      uint8_t byte = (data->buf[w]>>(i*8))&0xff;
+      int index = w*4+i;
+      CAPTURE (w, i, index, (int)byte);
+      //CHECK (expected_packet.size() > index);
+      if(expected_packet.size() > index) {
+        auto exp = expected_packet[index];
+        CAPTURE ((int)exp);
+        CHECK ((int)byte == (int)exp);
+      }
+    } // i
+  } // w
 }
