@@ -1,4 +1,5 @@
 #*.bit
+*.txt
 *.log
 *.jou
 *.xpr
