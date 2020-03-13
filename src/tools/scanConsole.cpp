@@ -9,15 +9,11 @@
 #include <iostream>
 #include <string>
 #include <sstream>
-#include <unistd.h>
 #include <fstream>
 #include <chrono>
 #include <thread>
-#include <mutex>
 #include <vector>
 #include <iomanip>
-#include <cctype> //w'space detection
-#include <ctime>
 #include <map>
 #include <sstream>
 
@@ -45,13 +41,6 @@
 #include "ScanFactory.h"
 
 #include "DBHandler.h"
-#if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
-
-//  #include <errno.h>
-//  #include <sys/stat.h>
-#include <cstdlib> //I am not proud of this ):
-
-#endif
 
 #include "storage.hpp"
 
