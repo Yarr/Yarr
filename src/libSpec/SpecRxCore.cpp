@@ -87,3 +87,11 @@ bool SpecRxCore::isBridgeEmpty() {
 uint32_t SpecRxCore::getCurCount() {
     return SpecCom::readSingle(RX_BRIDGE | RX_CUR_COUNT);
 }
+
+void SpecRxCore::setRxPolarity(uint32_t value) {
+    SpecCom::writeSingle(RX_ADDR | RX_POLARITY, value);
+}
+
+uint32_t SpecRxCore::getRxPolarity() {
+    return SpecCom::readSingle(RX_ADDR | RX_POLARITY);
+}

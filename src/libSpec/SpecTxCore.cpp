@@ -133,3 +133,10 @@ uint32_t SpecTxCore::getTrigInCount() {
     return (SpecCom::readSingle(TX_ADDR | TRIG_IN_CNT));
 }
 
+void SpecTxCore::setTxPolarity(uint32_t value) {
+    SpecCom::writeSingle(TX_ADDR | TX_POLARITY, value);
+}
+
+uint32_t SpecTxCore::getTxPolarity() {
+    return SpecCom::readSingle(TX_ADDR | TX_POLARITY);
+}
