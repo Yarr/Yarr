@@ -111,8 +111,6 @@ int main(int argc, char *argv[]) {
 
     std::string logCfgPath = "";
     
-    unsigned runCounter = 0;
-
     int nThreads = 4;
     int c;
     while ((c = getopt(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:l:")) != -1) {
@@ -216,26 +214,7 @@ int main(int argc, char *argv[]) {
     }
     // Can use actual logger now
 
-    // Load run counter
-    if (system("mkdir -p ~/.yarr") < 0) {
-        logger->error("Loading run counter ~/.yarr!");
-    }
-
-    std::fstream iF((home + "/.yarr/runCounter").c_str(), std::ios::in);
-    if (iF) {
-        iF >> runCounter;
-        runCounter += 1;
-    } else {
-        if (system("echo \"1\n\" > ~/.yarr/runCounter") < 0) {
-            logger->error("Could not increment run counter in file");
-        }
-        runCounter = 1;
-    }
-    iF.close();
-
-    std::fstream oF((home + "/.yarr/runCounter").c_str(), std::ios::out);
-    oF << runCounter << std::endl;
-    oF.close();
+    unsigned runCounter = ScanHelper::newRunCounter();
 
     if (cConfigPaths.size() == 0) {
         logger->error("Error: no config files given, please specify config file name under -c option, even if file does not exist!");
