@@ -33,14 +33,18 @@
 #include "AllHistogrammers.h"
 #include "AllChips.h"
 #include "AllProcessors.h"
+#include "AllStdActions.h"
 
 #include "Bookkeeper.h"
+
+// For masking
 #include "Fei4.h"
+#include "Rd53a.h"
+
 #include "ScanBase.h"
 #include "ScanFactory.h"
-#include "Fei4DataProcessor.h"
+
 #include "Fei4Histogrammer.h"
-#include "Fei4Analysis.h"
 
 #include "DBHandler.h"
 #if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
@@ -845,8 +849,8 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
             if (fe->isActive()) {
                 // TODO this loads only FE-i4 specific stuff, bad
                 // TODO hardcoded
-                analyses[fe].reset( new Fei4Analysis(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) );
-                auto& ana = static_cast<Fei4Analysis&>( *(analyses[fe]) );
+                analyses[fe].reset( new AnalysisProcessor(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) );
+                auto& ana = static_cast<AnalysisProcessor&>( *(analyses[fe]) );
                 ana.connect(s, fe->clipHisto, fe->clipResult);
 
                 auto add_analysis = [&](std::string algo_name) {
