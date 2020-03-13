@@ -410,8 +410,12 @@ architecture Behavioral of app is
 	signal fe_cmd_enc : std_logic_vector(c_TX_CHANNELS-1 downto 0);
 	signal fe_cmd_del : std_logic_vector(c_TX_CHANNELS-1 downto 0);
 	signal fe_clk_o : std_logic_vector(c_TX_CHANNELS-1 downto 0);
-	signal fe_data_i : std_logic_vector((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0);
-	
+	signal rx_data_p_t : std_logic_vector((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0);
+	signal rx_data_n_t : std_logic_vector((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0);
+	signal rx_data_p : std_logic_vector((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0);
+	signal rx_data_n : std_logic_vector((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0);
+    signal rx_polarity : std_logic_vector(31 downto 0);
+        
     signal tx_data_o : std_logic_vector(0 downto 0);
     signal trig_pulse : std_logic;
     signal int_trig_t : std_logic;
@@ -942,6 +946,20 @@ wb_dev_gen : if wb_dev_c = '1' generate
                 ext_trig_i => int_trig_t
             );
      end generate rd53_type_tx;
+        
+     rx_buf_loop: for I in 0 to (c_RX_CHANNELS*c_RX_NUM_LANES)-1 generate
+     data_in : IBUFDS_DIFF_OUT generic map(
+            IBUF_LOW_PWR		=> FALSE)
+        port map (                      
+            I         		=> fe_data_p(I),
+            IB         		=> fe_data_n(I),
+            O    			=> rx_data_p_t(I),
+            OB               => rx_data_n_t(I)
+        );
+
+     rx_data_p(I) <= rx_data_p_t(I);-- xor rx_polarity(i);
+     rx_data_n(I) <= rx_data_n_t(I);-- xor rx_polarity(i);;
+    end generate rx_buf_loop;
 
 	cmp_wb_rx_core: wb_rx_core PORT MAP(
 		wb_clk_i => wb_clk_s,
@@ -956,8 +974,8 @@ wb_dev_gen : if wb_dev_c = '1' generate
 		wb_stall_o => wb_stall_s(2),
 		rx_clk_i => CLK_160_s,
 		rx_serdes_clk_i => rx_serdes_clk,
-		rx_data_i_p => fe_data_p((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0),
-		rx_data_i_n => fe_data_n((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0),
+		rx_data_i_p => rx_data_p((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0),
+		rx_data_i_n => rx_data_n((c_RX_CHANNELS*c_RX_NUM_LANES)-1 downto 0),
 		rx_valid_o => rx_valid,
 		rx_data_o => rx_data,
         trig_tag_i => trig_tag_T,
@@ -1111,8 +1129,8 @@ wb_dev_gen : if wb_dev_c = '1' generate
                  ctrl_reg_3_o => open,
                  ctrl_reg_4_o => open,
                  ctrl_reg_5_o => open,
-                 static_reg_0_o => open,
-                 static_reg_1_o => open,
+                 static_reg_0_o => open, -- FW_VERS
+                 static_reg_1_o => open, -- FW_IDENT
                  static_reg_2_o => open,
                  static_reg_3_o => open
     );

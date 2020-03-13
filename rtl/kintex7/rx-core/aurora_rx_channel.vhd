@@ -27,6 +27,7 @@ entity aurora_rx_channel is
         enable_i : in std_logic;
         rx_data_i_p : in std_logic_vector(g_NUM_LANES-1 downto 0);
         rx_data_i_n : in std_logic_vector(g_NUM_LANES-1 downto 0);
+        rx_polarity_i : in std_logic_vector(g_NUM_LANES-1 downto 0);
         trig_tag_i : in std_logic_vector(63 downto 0);
 
         -- Output
@@ -62,6 +63,7 @@ architecture behavioral of aurora_rx_channel is
         -- Input
         rx_data_i_p : in std_logic;
         rx_data_i_n : in std_logic;
+        rx_polarity_i : in std_logic;
 
         -- Output
         rx_data_o : out std_logic_vector(63 downto 0);
@@ -112,6 +114,7 @@ architecture behavioral of aurora_rx_channel is
     signal rx_header : rx_header_array;
     type rx_status_array is array (g_NUM_LANES-1 downto 0) of std_logic_vector(7 downto 0);
     signal rx_status : rx_status_array;
+    signal rx_polarity : std_logic_vector(g_NUM_LANES-1 downto 0);
     signal rx_data_valid : std_logic_vector(g_NUM_LANES-1 downto 0);
     
     signal rx_fifo_dout :rx_data_array;
@@ -162,8 +165,10 @@ begin
             rx_data_s <= (others => '0');
             rx_valid_s <= '0';
             channel <= 0;            
+            rx_polarity <= (others => '0');
         elsif rising_edge(clk_rx_i) then
             rx_fifo_rden <= rx_fifo_rden_t;
+            rx_polarity <= rx_polarity_i;
             channel <= log2_ceil(to_integer(unsigned(rx_fifo_rden_t)));
             if (unsigned(rx_fifo_rden) = 0 or ((rx_fifo_rden and rx_fifo_empty) = rx_fifo_rden)) then
                 rx_valid_s <= '0';
@@ -182,6 +187,7 @@ begin
             clk_serdes_i => clk_serdes_i,
             rx_data_i_p => rx_data_i_p(I),
             rx_data_i_n => rx_data_i_n(I),
+            rx_polarity_i => rx_polarity(I),
             rx_data_o => rx_data(I),
             rx_header_o => rx_header(I),
             rx_valid_o => rx_data_valid(I),

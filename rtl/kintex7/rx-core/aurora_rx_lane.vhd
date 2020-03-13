@@ -28,6 +28,7 @@ entity aurora_rx_lane is
         -- Input
         rx_data_i_p : in std_logic;
         rx_data_i_n : in std_logic;
+        rx_polarity_i : in std_logic;
 
         -- Output
         rx_data_o : out std_logic_vector(63 downto 0);
@@ -130,6 +131,7 @@ architecture behavioral of aurora_rx_lane is
     signal serdes_slip : std_logic;
     signal serdes_idelay_rdy : std_logic;
     signal serdes_data8 : std_logic_vector(7 downto 0);
+    signal serdes_data8_s : std_logic_vector(7 downto 0);
     signal serdes_data8_d : std_logic_vector(7 downto 0);
 
     signal datain_p : std_logic;
@@ -249,6 +251,10 @@ begin
             clock_sweep => open
         );
 
+        pol_loop: for I in 0 to 7 generate
+            serdes_data8_s(I) <= serdes_data8(I) xor rx_polarity_i;
+        end generate pol_loop;
+
         serdes_8to32_proc : process(clk_rx_i, rst_n_i)
         begin
             if (rst_n_i = '0') then
@@ -263,9 +269,9 @@ begin
                 serdes_data32_valid <= '0';
                 if (serdes8_cnt = c_SERDES8_CYCLE) then
                     serdes_cnt <= serdes_cnt + 1;
-                    --serdes_data8_d <= serdes_data8;
+                    --serdes_data8_d <= serdes_data8_s;
                     serdes_data32_shift(31 downto 8) <= serdes_data32_shift(23 downto 0);
-                    serdes_data32_shift(7 downto 0) <= serdes_data8;
+                    serdes_data32_shift(7 downto 0) <= serdes_data8_s;
                     if (serdes_cnt = to_unsigned(3, 6)) then
                         serdes_data32 <= serdes_data32_shift(31 downto 0);
                         serdes_data32_valid <= '1';
@@ -283,14 +289,17 @@ begin
         c_SLIP_SERDES_MAX <= to_unsigned(1, 8);
         c_SERDES8_CYCLE <= to_unsigned(0, 4);
         
-        data_in : IBUFDS_DIFF_OUT generic map(
-            IBUF_LOW_PWR		=> FALSE)
-        port map (                      
-            I         		=> rx_data_i_p,
-            IB         		=> rx_data_i_n,
-            O    			=> datain_p,
-            OB               => datain_n
-        );
+--        data_in : IBUFDS_DIFF_OUT generic map(
+--            IBUF_LOW_PWR		=> FALSE)
+--        port map (                      
+--            I         		=> rx_data_i_p,
+--            IB         		=> rx_data_i_n,
+--            O    			=> datain_p,
+--            OB               => datain_n
+--        );
+
+        datain_p <= rx_data_i_p;
+        datain_n <= rx_data_i_n;
         
         cmp_cdr_serdes: cdr_serdes port map (
             clk160 => clk_rx_i,

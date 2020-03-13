@@ -357,13 +357,16 @@ loop1 : for j in 0 to S-1 generate			-- Assign data bits to correct serdes accor
 	end generate ;
 end generate ;
 
-data_in : IBUFDS_DIFF_OUT generic map(
-	IBUF_LOW_PWR		=> FALSE)
-port map (                      
-	I    			=> datain_p(i),
-	IB       		=> datain_n(i),
-	O         		=> rx_data_in_p(i),
-	OB         		=> rx_data_in_n(i));
+--data_in : IBUFDS_DIFF_OUT generic map(
+--	IBUF_LOW_PWR		=> FALSE)
+--port map (                      
+--	I    			=> datain_p(i),
+--	IB       		=> datain_n(i),
+--	O         		=> rx_data_in_p(i),
+--	OB         		=> rx_data_in_n(i));
+
+rx_data_in_p <= datain_p;
+rx_data_in_n <= datain_n;
 
 rx_data_in_m(i) <= rx_data_in_p(i) xor RX_SWAP_MASK(i) ;
 rx_data_in_s(i) <= rx_data_in_n(i) xor RX_SWAP_MASK(i) ;

@@ -28,7 +28,7 @@ for i in vivado_programs:
 		vivado_ver_path = i + latest_subdir
 		found_directory = True
 		break
-	
+
 if not found_directory:
 	print("Cannot find Vivado or Vivado_Lab in /opt/Xilinx. Please install. Exiting program.")
 	raise SystemExit
@@ -37,13 +37,13 @@ try:
 	assert os.path.exists(vivado_ver_path + "/settings64.sh") #Find 'settings64.sh' in latest version of Vivado(_Lab). If not, exit.
 
 except Exception as e:
-	print("Cannot find settings64.sh in " + vivado_ver_path + ". Exiting program.")	
+	print("Cannot find settings64.sh in " + vivado_ver_path + ". Exiting program.")
 	raise SystemExit
 
 
 os.chdir(original_directory)
 script_path = os.getcwd() + "/" + os.path.splitext(__file__)[0] + ".tcl"
-script_file = open(script_path, "w+")	
+script_file = open(script_path, "w+")
 
 os.chdir("..")
 project_path = os.getcwd()
@@ -52,7 +52,7 @@ script_file.write(
 "######################################################\n" +
 "# Generated file to flash the program RAM\n" +
 "######################################################\n" +
-"\n\n" + 
+"\n\n" +
 "#Run " + __file__+ " to generate this file\n\n")
 
 bit_files = []
@@ -74,7 +74,7 @@ cmds_RAM=(
 
 #format bit_file mem_file prm_file { }
 cmds_Flash=(
-"open_hw\n" + 
+"open_hw\n" +
 "connect_hw_server\n" +
 "open_hw_target\n" +
 "current_hw_device [lindex [get_hw_devices] 1]\n" +
@@ -99,7 +99,7 @@ cmds_Flash=(
 "set_property PROGRAM.CHECKSUM  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1 ]]\n" +
 "startgroup\n" +
 "if {3}![string equal [get_property PROGRAM.HW_CFGMEM_TYPE  [lindex [get_hw_devices] 1]] [get_property MEM_TYPE [get_property CFGMEM_PART [get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1 ]]]]] {4}  {3} create_hw_bitstream -hw_device [lindex [get_hw_devices] 1] [get_property PROGRAM.HW_CFGMEM_BITFILE [ lindex [get_hw_devices] 1]]; program_hw_devices [lindex [get_hw_devices] 1]; {4};\n" +
-"program_hw_cfgmem -hw_cfgmem [get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1 ]]\n" + 
+"program_hw_cfgmem -hw_cfgmem [get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 1 ]]\n" +
 "endgroup\n" #+
 #RAM
 #"refresh_hw_device -update_hw_probes false [lindex [get_hw_devices] 1]\n" +
@@ -132,7 +132,7 @@ else:
 	for bit_file in bit_files:
 		print (str(i) + ": " + bit_file)
 		i = i + 1
-	try: 
+	try:
 		nb = input("Choose a file by typing a number: ")
 		int(nb)
 	except:
@@ -141,7 +141,7 @@ else:
 	else:
 		if nb >= len(bit_files) or nb < 0 :
 			print("You didn't enter a valid number")
-			bit_file = None 
+			bit_file = None
 
 
 
@@ -149,9 +149,9 @@ else:
 if (bit_file != None):
 	bit_file = bit_files[nb]
 	resp = raw_input ("Will you flash the RAM or the Flash [R/F] ?")
-	if resp[0].lower() == 'r':	
+	if resp[0].lower() == 'r':
 		cmds = cmds_RAM.format('{',bit_file,'}')
-	elif resp[0].lower() == 'f':	
+	elif resp[0].lower() == 'f':
 		cmds = cmds_Flash.format(bit_file,mem_file,prm_file,'{','}')
 	else:
 		"You didn't enter a valid answer, it shoulde be an R for RAM of F for flash"

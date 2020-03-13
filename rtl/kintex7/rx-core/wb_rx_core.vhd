@@ -115,6 +115,7 @@ architecture behavioral of wb_rx_core is
             enable_i : in std_logic;
             rx_data_i_p : in std_logic_vector(g_NUM_LANES-1 downto 0);
             rx_data_i_n : in std_logic_vector(g_NUM_LANES-1 downto 0);
+            rx_polarity_i : in std_logic_vector(g_NUM_LANES-1 downto 0);
             trig_tag_i : in std_logic_vector(63 downto 0);
             -- Output
             rx_data_o : out std_logic_vector(63 downto 0);
@@ -159,6 +160,8 @@ architecture behavioral of wb_rx_core is
 	type rx_data_fifo_array is array (g_NUM_RX-1 downto 0) of std_logic_vector(63 downto 0);
 	type rx_stat_array is array (g_NUM_RX-1 downto 0) of std_logic_vector(7 downto 0);
     signal rx_data_i : std_logic_vector((g_NUM_RX*g_NUM_LANES)-1 downto 0);
+    signal rx_polarity : std_logic_vector((g_NUM_RX*g_NUM_LANES)-1 downto 0);
+    signal rx_polarity_t : std_logic_vector((g_NUM_RX*g_NUM_LANES)-1 downto 0);
     signal rx_data : rx_data_array;
 	signal rx_valid : std_logic_vector(g_NUM_RX-1 downto 0);
 	signal rx_stat : rx_stat_array;
@@ -217,6 +220,7 @@ begin
 			rx_enable <= (others => '0');
 			wb_stall_o <= '0';
 			rx_enable_d <= (others => '0');
+            rx_polarity <= (others => '0');
 		elsif rising_edge(wb_clk_i) then
 			wb_ack_o <= '0';
 			rx_enable_d <= rx_enable;
@@ -225,6 +229,9 @@ begin
 					if (wb_adr_i(3 downto 0) = x"0") then -- Set enable mask
 						wb_ack_o <= '1';
 						rx_enable <= wb_dat_i;
+					elsif (wb_adr_i(3 downto 0) = x"2") then -- Set RX polarity
+						wb_ack_o <= '1';
+						rx_polarity <= wb_dat_i((g_NUM_RX*g_NUM_LANES)-1 downto 0);
 					else
 						wb_ack_o <= '1';
 					end if;
@@ -234,6 +241,10 @@ begin
 						wb_ack_o <= '1';
                     elsif (wb_adr_i(3 downto 0) = x"1") then -- Link status
                         wb_dat_o <= rx_status;
+                        wb_ack_o <= '1';
+                    elsif (wb_adr_i(3 downto 0) = x"2") then -- RX polarity
+                        wb_dat_o <= (others => '0');
+                        wb_dat_o((g_NUM_RX*g_NUM_LANES)-1 downto 0) <= rx_polarity;
                         wb_ack_o <= '1';
 					else
 						wb_dat_o <= x"DEADBEEF";
@@ -304,9 +315,11 @@ begin
         if (rst_n_i = '0') then
             rx_enable_dd <= (others => '0');
             rx_status <= (others => '0');
+            rx_polarity_t <= (others => '0');
         elsif rising_edge(rx_clk_i) then
             rx_enable_dd <= rx_enable_d;
             rx_status <= rx_status_s;
+            rx_polarity_t <= rx_polarity;
         end if;
    end process enable_sync;
 	
@@ -338,6 +351,7 @@ begin
                 enable_i => rx_enable_dd(I),
                 rx_data_i_p => rx_data_i_p((I+1)*g_NUM_LANES-1 downto (I*g_NUM_LANES)),
                 rx_data_i_n => rx_data_i_n((I+1)*g_NUM_LANES-1 downto (I*g_NUM_LANES)),
+                rx_polarity_i => rx_polarity_t((I+1)*g_NUM_LANES-1 downto (I*g_NUM_LANES)),
                 trig_tag_i => x"00000000" & trig_tag_i,
                 rx_data_o => rx_data(I),
                 rx_valid_o => rx_valid(I),
