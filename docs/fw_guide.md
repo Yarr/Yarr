@@ -2,7 +2,7 @@
 
 ## Download and flash Firmware
 
-In order to flash the firmware, download the following script: ![flash.sh](http://yarr.web.cern.ch/yarr/firmware/flash.sh)
+In order to flash the firmware, download the following script: [flash.sh](http://yarr.web.cern.ch/yarr/firmware/flash.sh)
 
 ```bash
 wget http://yarr.web.cern.ch/yarr/firmware/flash.sh
