@@ -1,14 +1,33 @@
 # Firmware Guide
 
-Instructions on how to flash the FPGA can be found [here](https://github.com/Yarr/Yarr-fw/blob/master/syn/xpressk7/README.md).
-How to pick your firmware organized by Front-End type, then adapter card.
-For the XpressK7 there will always be two version (black), one -**160** and one -**325** version for the different FPGA types. New version of the card (green) is -**trenz**.
+## Download and flash Firmware
 
-## RD53A
+In order to flash the firmware, download the following script: ![flash.sh](http://yarr.web.cern.ch/yarr/firmware/flash.sh)
 
-### Multi-Module Adapter
+```bash
+wget http://yarr.web.cern.ch/yarr/firmware/flash.sh
+```
 
-- ``bram_rd53a_quad_ohio-XXX/rd53a_quad_ohio_160Mbps.bit`` => Single RD53A channel enabled on Port A
-- ``bram_rd53a_quad_ohio-XXX/rd53a_quad_ohio_160Mbps_4chip.bit`` => To enable all four channels.
-- ``bram_rd53a_quad_ohio-XXX/rd53a_quad_ohio_160Mbps_2chip2trig.bit`` => To enable two channels for chip readout and two channels for HitOr (to be added).
+The script can be used in two ways:
+1. Run it by itself (without an argument) and it will ask some questions about what kind of configuration you desire. It will then download the latest firmware and proceed to flash the firmware to the FPGA and PROM.
+2. Run it with an already downloaded bit-file as an argument and it will proceed to flash this firmware to the FPGA card. It will still ask what FPGA card you have as this specifies how to flash the firmware exactly.
 
+Once the firmware is flashed please reboot your computer. Also remember that you should power-down all connected FE chips during FPGA programming and that it might be necessary to configure the FPGA once before one can successfully communicate with FE chips (for example by simply running the scanConsole).
+
+## Further information for Questionaire
+
+### FPGA Board Type
+
+todo
+
+### FE Chip Type
+
+todo
+
+### RX Speed
+
+todo
+
+### Channel Configuration
+
+todo
