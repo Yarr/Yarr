@@ -76,6 +76,33 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
 // Do not want to use the raw pointer ScanBase*
 void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, int mask_opt);
 
+static std::string getHostname() {
+  std::string hostname = "default_host";
+  if (getenv("HOSTNAME")) {
+    hostname = getenv("HOSTNAME");
+  } else {
+    spdlog::error("HOSTNAME environmental variable not found ... using default: {}", hostname);
+  }
+  return hostname;
+}
+
+static std::string defaultDbDirPath() {
+  std::string home = getenv("HOME");
+  return home+"/.yarr/localdb";
+}
+ 
+static std::string defaultDbCfgPath() {
+  return defaultDbDirPath()+"/"+getHostname()+"_database.json";
+}
+
+static std::string defaultDbSiteCfgPath() {
+  return defaultDbDirPath()+"/"+getHostname()+"_site.json";
+}
+
+static std::string defaultDbUserCfgPath() {
+  return defaultDbDirPath()+"/user.json";
+}
+
 int main(int argc, char *argv[]) {
     std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
     spdlog::set_pattern(defaultLogPattern);
@@ -84,14 +111,6 @@ int main(int argc, char *argv[]) {
     spdlog::info("\033[1;31m#####################################\033[0m");
 
     spdlog::info("-> Parsing command line parameters ...");
-
-    std::string home = getenv("HOME");
-    std::string hostname = "default_host";
-    if (getenv("HOSTNAME")) {
-        hostname = getenv("HOSTNAME");
-    } else {
-        spdlog::error("HOSTNAME environmental variable not found ... using default: {}", hostname);
-    }
 
     // Init parameters
     std::string scanType = "";
@@ -104,10 +123,9 @@ int main(int argc, char *argv[]) {
     int mask_opt = -1;
 
     bool dbUse = false;
-    std::string dbDirPath = home+"/.yarr/localdb";
-    std::string dbCfgPath = dbDirPath+"/"+hostname+"_database.json";
-    std::string dbSiteCfgPath = dbDirPath+"/"+hostname+"_site.json""";
-    std::string dbUserCfgPath = dbDirPath+"/user.json""";
+    std::string dbCfgPath = defaultDbCfgPath();
+    std::string dbSiteCfgPath = defaultDbSiteCfgPath();
+    std::string dbUserCfgPath = defaultDbDirPath();
 
     std::string logCfgPath = "";
     
@@ -653,15 +671,9 @@ int main(int argc, char *argv[]) {
 }
 
 void printHelp() {
-    std::string home = getenv("HOME");
-    std::string hostname = "default_host";
-    if (getenv("HOSTNAME")) {
-        hostname = getenv("HOSTNAME");
-    } else {
-        logger->error("HOSTNAME environmental variable not found ... using default: {}", hostname);
-    }
-
-    std::string dbDirPath = home+"/.yarr/localdb";
+    std::string dbCfgPath = defaultDbCfgPath();
+    std::string dbSiteCfgPath = defaultDbSiteCfgPath();
+    std::string dbUserCfgPath = defaultDbDirPath();
 
     std::cout << "Help:" << std::endl;
     std::cout << " -h: Shows this." << std::endl;
@@ -677,9 +689,9 @@ void printHelp() {
     std::cout << " -m <int> : 0 = pixel masking disabled, 1 = start with fresh pixel mask, default = pixel masking enabled" << std::endl;
     std::cout << " -k: Report known items (Scans, Hardware etc.)\n";
     std::cout << " -W: Enable using Local DB." << std::endl;
-    std::cout << " -d <database.json> : Provide database configuration. (Default " << dbDirPath << "/" << hostname << "_database.json)" << std::endl;
-    std::cout << " -i <site.json> : Provide site configuration. (Default " << dbDirPath << "/" << hostname << "_site.json)" << std::endl;
-    std::cout << " -u <user.json> : Provide user configuration. (Default " << dbDirPath << "/user.json)" << std::endl;
+    std::cout << " -d <database.json> : Provide database configuration. (Default " << dbCfgPath << ")" << std::endl;
+    std::cout << " -i <site.json> : Provide site configuration. (Default " << dbSiteCfgPath << ")" << std::endl;
+    std::cout << " -u <user.json> : Provide user configuration. (Default " << dbUserCfgPath << ")" << std::endl;
     std::cout << " -l <log_cfg.json> : Provide logger configuration." << std::endl;
 }
 
