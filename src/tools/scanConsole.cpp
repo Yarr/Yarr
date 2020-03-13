@@ -44,6 +44,7 @@
 #include "ScanBase.h"
 #include "ScanFactory.h"
 
+// Need to pass info to DataArchiver constructor
 #include "Fei4Histogrammer.h"
 
 #include "DBHandler.h"
@@ -792,8 +793,8 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
         if (fe->isActive()) {
             // TODO this loads only FE-i4 specific stuff, bad
             // Load histogrammer
-            histogrammers[fe].reset( new Fei4Histogrammer );
-            auto& histogrammer = static_cast<Fei4Histogrammer&>( *(histogrammers[fe]) );
+            histogrammers[fe].reset( new HistogrammerProcessor );
+            auto& histogrammer = static_cast<HistogrammerProcessor&>( *(histogrammers[fe]) );
 
             histogrammer.connect(fe->clipData, fe->clipHisto);
 
