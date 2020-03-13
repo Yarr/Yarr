@@ -3,5 +3,5 @@ use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
 
 package version_pkg is
-    constant c_FW_VERSION : std_logic_vector(31 downto 0) := x"004b2e0b";
+    constant c_FW_VERSION : std_logic_vector(31 downto 0) := x"085057fe";
 end version_pkg;

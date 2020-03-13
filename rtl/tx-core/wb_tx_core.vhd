@@ -147,7 +147,11 @@ architecture behavioral of wb_tx_core is
 	signal trig_done : std_logic;
 	signal trig_word_length : std_logic_vector(31 downto 0);
 	signal trig_word : std_logic_vector(1023 downto 0);
+    type trig_word_array is array (g_NUM_TX-1 downto 0) of std_logic_vector(1023 downto 0);
+    signal trig_word_t : trig_word_array;
 	signal trig_word_pointer : unsigned(4 downto 0);
+    signal tx_polarity : std_logic_vector((g_NUM_TX-1) downto 0);
+    signal tx_polarity_t : std_logic_vector((g_NUM_TX-1) downto 0);
     
     -- Trig input freq counter
     signal ext_trig_t1 : std_logic;
@@ -208,104 +212,111 @@ begin
 			trig_in_freq_d <= trig_in_freq; -- delay for more flexible routing
 			if (wb_cyc_i = '1' and wb_stb_i = '1') then
 				if (wb_we_i = '1') then
-					case (wb_adr_i(3 downto 0)) is
-						when x"0" => -- Write to fifo
+					case (wb_adr_i(7 downto 0)) is
+						when x"00" => -- Write to fifo
 							wb_wr_en <= tx_enable;
 							wb_ack_o <= '1';
 							wb_dat_t <= wb_dat_i;
-						when x"1" => -- Set enable mask
+						when x"01" => -- Set enable mask
 							tx_enable <= wb_dat_i;
 							wb_ack_o <= '1';
-						when x"3" => -- Set trigger enable
+						when x"03" => -- Set trigger enable
 							trig_en <= wb_dat_i(0);
 							wb_ack_o <= '1';
-						when x"5" => -- Set trigger conf
+						when x"05" => -- Set trigger conf
 							trig_conf <= wb_dat_i(3 downto 0);
 							wb_ack_o <= '1';
-						when x"6" => -- Set trigger frequency
+						when x"06" => -- Set trigger frequency
 							trig_freq <= wb_dat_i;
 							wb_ack_o <= '1';
-						when x"7" => -- Set trigger time low
+						when x"07" => -- Set trigger time low
 							trig_time_l(31 downto 0) <= wb_dat_i;
 							wb_ack_o <= '1';
-						when x"8" => -- Set trigger time high
+						when x"08" => -- Set trigger time high
 							trig_time_h(31 downto 0) <= wb_dat_i;
 							wb_ack_o <= '1';
-						when x"9" => -- Set trigger count
+						when x"09" => -- Set trigger count
 							trig_count <= wb_dat_i;
 							wb_ack_o <= '1';
-						when x"A" => -- Set trigger word length (bits)
+						when x"0A" => -- Set trigger word length (bits)
 							trig_word_length <= wb_dat_i;
 							wb_ack_o <= '1';
-						when x"B" => -- Set trigger word as specified in pointer
+						when x"0B" => -- Set trigger word as specified in pointer
 							trig_word(((to_integer(trig_word_pointer)+1)*32)-1 downto (to_integer(trig_word_pointer))*32) <= wb_dat_i;
 							wb_ack_o <= '1';
-						when x"C" => -- Set trigger word pointer
+						when x"0C" => -- Set trigger word pointer
 							trig_word_pointer <= unsigned(wb_dat_i(4 downto 0));
 							wb_ack_o <= '1';
-						when x"D" => -- Set trigger word pointer
+						when x"0D" => -- Set trigger word pointer
 							az_word <= wb_dat_i(31 downto 0);
 							wb_ack_o <= '1';
-						when x"E" => -- Set trigger word pointer
+						when x"0E" => -- Set trigger word pointer
 							az_interval <= wb_dat_i(15 downto 0);
 							wb_ack_o <= '1';
-						when x"F" => -- Toggle trigger abort
+						when x"0F" => -- Toggle trigger abort
 							trig_abort <= wb_dat_i(0);
+							wb_ack_o <= '1';
+						when x"10" => -- TX polarity
+							tx_polarity <= wb_dat_i((g_NUM_TX-1) downto 0);
 							wb_ack_o <= '1';
 						when others =>
 							wb_ack_o <= '1';
 					end case;
 				else
-					case (wb_adr_i(3 downto 0)) is
-						when x"0" => -- Read enable mask
+					case (wb_adr_i(7 downto 0)) is
+						when x"00" => -- Read enable mask
 							wb_dat_o <= tx_enable;
 							wb_ack_o <= '1';
-						when x"2" => -- Read empty stat
+						when x"02" => -- Read empty stat
 							wb_dat_o <= tx_empty;
 							wb_ack_o <= '1';
-						when x"3" => -- Read trigger enable
+						when x"03" => -- Read trigger enable
 							wb_dat_o(0) <= trig_en;
 							wb_dat_o(31 downto 1) <= (others => '0');
 							wb_ack_o <= '1';
-						when x"4" => -- Read trigger done
+						when x"04" => -- Read trigger done
 							wb_dat_o(0) <= trig_done;
 							wb_dat_o(31 downto 1) <= (others => '0');
 							wb_ack_o <= '1';
-						when x"5" => -- Read trigger conf
+						when x"05" => -- Read trigger conf
 							wb_dat_o(3 downto 0) <= trig_conf;
 							wb_dat_o(31 downto 4) <= (others => '0');
 							wb_ack_o <= '1';
-						when x"6" => -- Read trigger freq
+						when x"06" => -- Read trigger freq
 							wb_dat_o <= trig_freq;
 							wb_ack_o <= '1';
-						when x"7" => -- Read trigger time low
+						when x"07" => -- Read trigger time low
 							wb_dat_o <= trig_time(31 downto 0);
 							wb_ack_o <= '1';
-						when x"8" => -- Read trigger time high
+						when x"08" => -- Read trigger time high
 							wb_dat_o <= trig_time(63 downto 32);
 							wb_ack_o <= '1';
-						when x"9" => -- Read trigger count
+						when x"09" => -- Read trigger count
 							wb_dat_o <= trig_count;
 							wb_ack_o <= '1';
-						when x"A" => -- Set trigger word length (bits)
+						when x"0A" => -- Set trigger word length (bits)
 							wb_dat_o <= trig_word_length;
 							wb_ack_o <= '1';
-						when x"B" =>
+						when x"0B" =>
 							wb_dat_o <= trig_word(((to_integer(trig_word_pointer)+1)*32)-1 downto (to_integer(trig_word_pointer))*32);
 							wb_ack_o <= '1';
-						when x"C" =>
+						when x"0C" =>
                             wb_dat_o <= (others => '0');
 							wb_dat_o(4 downto 0) <= std_logic_vector(trig_word_pointer);
 							wb_ack_o <= '1';
-						when x"D" => -- autozero word
+						when x"0D" => -- autozero word
 							wb_dat_o(31 downto 0) <= az_word;
 							wb_ack_o <= '1';
-						when x"E" => -- autozero interval
+						when x"0E" => -- autozero interval
                             wb_dat_o <= (others => '0');
 							wb_dat_o(15 downto 0) <= az_interval;
 							wb_ack_o <= '1';
-						when x"F" => -- Trigger in frequency
+						when x"0F" => -- Trigger in frequency
 							wb_dat_o <= trig_in_freq_d;
+							wb_ack_o <= '1';
+						when x"10" => -- TX polarity
+							wb_dat_o <= (others => '0');
+							wb_dat_o((g_NUM_TX-1) downto 0) <= tx_polarity;
 							wb_ack_o <= '1';
 						when others =>
 							wb_dat_o <= x"DEADBEEF";
@@ -332,7 +343,7 @@ begin
 			-- Looper
 			loop_pulse_i => tx_trig_pulse,
 			loop_mode_i => trig_en,
-			loop_word_i => trig_word,
+			loop_word_i => trig_word_t(I),
 			loop_word_bytes_i => trig_word_length(7 downto 0),
             -- Autozeroing
             az_word_i => az_word,
@@ -348,11 +359,15 @@ begin
 		begin
 			if (rst_n_i = '0') then
 				tx_data_o(I) <= '0';
+                trig_word_t(I) <= (others => '0');
+                tx_polarity_t(I) <= '0';
 			elsif rising_edge(tx_clk_i) then
 				--if (tx_enable(I) = '1' and trig_en = '1') then
 				--	tx_data_o(I) <= tx_data_trig;
 				--else
-					tx_data_o(I) <= tx_data_cmd(I);
+                    trig_word_t(I) <= trig_word;
+					tx_data_o(I) <= tx_data_cmd(I) xor tx_polarity_t(I);
+                    tx_polarity_t(I) <= tx_polarity(I);
 				--end if;
 			end if;
 		end process;
