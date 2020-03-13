@@ -127,7 +127,7 @@ if [ $hw_index -eq 0 ] || [ $hw_index -eq 1 ]; then
     MEM_TYPE="mt25qu256-spi-x1_x2_x4"
 elif [ $hw_index -eq 2 ] || [ $hw_index -eq 3 ]; then
     DEVICE_INDEX="1"
-    MEM_OPTIONS="-size 256 -interface BPIx16"
+    MEM_OPTIONS="-size 128 -interface BPIx16"
     MEM_TYPE="28f00ap30b-bpi-x16"
 else
     echo "FPGA board not chosen ... aborting!"
@@ -142,10 +142,10 @@ connect_hw_server
 open_hw_target
 current_hw_device [lindex [get_hw_devices] ${DEVICE_INDEX}]
 refresh_hw_device -update_hw_probes false [lindex [get_hw_devices] ${DEVICE_INDEX}]
-write_cfgmem  -format mcs ${MEM_OPTIONS} -loadbit \"up 0x00000000 ${BITFILE} \" -checksum -force -file "mem.mcs"
+write_cfgmem  -format mcs ${MEM_OPTIONS} -loadbit \"up 0x00000000 ${BITFILE} \" -checksum -force -file \"mem.mcs\"
 create_hw_cfgmem -hw_device [lindex [get_hw_devices] ${DEVICE_INDEX}] -mem_dev  [lindex [get_cfgmem_parts {${MEM_TYPE}}] 0]
 set_property PROGRAM.BLANK_CHECK  0 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] ${DEVICE_INDEX} ]]
-set_property PROGRAM.ERASE  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] ${DEBICE_INDEX} ]]
+set_property PROGRAM.ERASE  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] ${DEVICE_INDEX} ]]
 set_property PROGRAM.CFG_PROGRAM  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] ${DEVICE_INDEX} ]]
 set_property PROGRAM.VERIFY  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] ${DEVICE_INDEX} ]]
 set_property PROGRAM.CHECKSUM  0 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] ${DEVICE_INDEX} ]]
