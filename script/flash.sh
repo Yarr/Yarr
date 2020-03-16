@@ -105,17 +105,17 @@ then
 fi
 
 # Find vivado
-command -v vivado
-if [ "${?}" = 127 ]; then
-    command -v vivado_lab
-    if [ "${?}" = 127 ]; then
-        echo "Can't find Vivdao, did you source the script? Aborting!"
-        exit 1
-    else
-        VIV_EXEC=vivado_lab
-    fi
-else
+if type vivado >/dev/null 2>&1
+then
+    echo "Found vivado ..."
     VIV_EXEC=vivado
+elif type vivado_lab >/dev/null 2>&1
+then
+    echo "Found vivado_lab ..."
+    VIV_EXEC=vivado_lab
+else
+    echo "Can't find Vivado, did you source the script? ABORTING!"
+    exit 1
 fi
 
 echo "Flashing: $BITFILE"
