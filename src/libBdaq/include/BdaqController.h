@@ -13,13 +13,13 @@
 #include "Bdaq53.h"
 #include "BdaqTxCore.h"
 #include "BdaqRxCore.h"
-#include "json.hpp"
 
-using json=nlohmann::basic_json<std::map, std::vector, std::string, bool, std::int32_t, std::uint32_t, float>;
+
+#include "storage.hpp"
 
 class BdaqController : public HwController, public BdaqTxCore, public BdaqRxCore {
     public:
-        BdaqController() {} 
+        //BdaqController() {} 
         
         void loadConfig(json &j) override {
             bdaqConfig c;

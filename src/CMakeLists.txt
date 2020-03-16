@@ -16,7 +16,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(YARR_FRONT_ENDS_TO_BUILD "Fei4;Rd53a;Star;Fe65p2"
     CACHE STRING "Semicolon-separated list of front-ends to build, or \"all\".")
 
-set(YARR_CONTROLLERS_TO_BUILD "Spec;Emu"
+set(YARR_CONTROLLERS_TO_BUILD "Spec;Emu;Bdaq"
     CACHE STRING "Semicolon-separated list of controllers to build, or \"all\".")
 
 # Default to allowing debug macros (spdlog default is info)
@@ -27,7 +27,7 @@ set(YARR_ALL_FRONT_ENDS
     Fe65p2 Fei4 Rd53a Star)
 
 set(YARR_ALL_CONTROLLERS
-    Spec Emu Rce Boc KU040 Rogue NetioHW)
+    Spec Emu Rce Boc KU040 Rogue NetioHW Bdaq)
 
 if( YARR_FRONT_ENDS_TO_BUILD STREQUAL "all" )
   set( YARR_FRONT_ENDS_TO_BUILD ${YARR_ALL_FRONT_ENDS} )
@@ -115,12 +115,12 @@ endforeach()
 #if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 if(APPLE)
   set(YARR_LINK_LIB_COMMAND 
-      -Wl,-all_load Yarr -Wl, ${YARR_LIB_DEPS} pthread)
+      -Wl,-all_load Yarr -Wl, ${YARR_LIB_DEPS} pthread boost_system)
 else()
   # Whole-archive means not to drop symbols from Yarr.
   # We're not sure why tbb needs same treatment...
   set(YARR_LINK_LIB_COMMAND
-      -Wl,--whole-archive Yarr ${TBB_DEPS} -Wl,--no-whole-archive ${YARR_LIB_DEPS} ${TBB_DEPS} pthread rt)
+      -Wl,--whole-archive Yarr ${TBB_DEPS} -Wl,--no-whole-archive ${YARR_LIB_DEPS} ${TBB_DEPS} pthread rt boost_system)
 endif()
 # (Not sure why rt is not linked by default here)
 

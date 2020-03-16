@@ -20,10 +20,11 @@ class BdaqTxCore : virtual public TxCore, virtual public Bdaq53 {
         
         // Write to FE interface
         void writeFifo(uint32_t);
-        void releaseFifo() {} //Not used. Commands are released with isCmdEmpty().
-        void setCmdEnable(uint32_t); //Not implemented in RCE
-        void setCmdEnable(std::vector<uint32_t>); //Not implemented in RCE
-        uint32_t getCmdEnable(); //RCE returns 0x0
+        void releaseFifo() {} // Not used. Commands are released with isCmdEmpty().
+        void setCmdEnable(uint32_t); 
+        void setCmdEnable(std::vector<uint32_t>);
+        void disableCmd() {} // Future implementation.
+        uint32_t getCmdEnable(); 
         bool isCmdEmpty();
 
         // Word repeater TODO: move to seperate class?

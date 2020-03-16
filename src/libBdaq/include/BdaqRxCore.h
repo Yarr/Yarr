@@ -24,6 +24,7 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq53 {
 
         void setRxEnable(uint32_t val);
         void setRxEnable(std::vector<uint32_t>);
+        void disableRx() {} // Future implementation.
         void maskRxEnable(uint32_t val, uint32_t mask);
 
         void checkRxSync();
