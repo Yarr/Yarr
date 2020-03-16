@@ -574,6 +574,8 @@ int main(int argc, char *argv[]) {
     std::chrono::steady_clock::time_point all_done = std::chrono::steady_clock::now();
     logger->info("All done!");
 
+    proc->printGlobalStats(); //RD53A received data statistics.
+
     // Joining is done.
 
     hwCtrl->disableCmd();

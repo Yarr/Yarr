@@ -35,7 +35,9 @@ class DataProcessor {
         virtual void join() = 0;
 
         // TODO make getter/setter
-        unsigned m_numThreads;	
+        unsigned m_numThreads;
+
+        virtual void printGlobalStats() {}
     protected:
         std::condition_variable cv;
         std::mutex mtx;
