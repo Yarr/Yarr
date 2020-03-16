@@ -23,6 +23,7 @@ fetchto = "../../../../ip-cores"
 files = [
 #TOP
 "../board_pkg.vhd",
+"../../tef1001_R2_type.vhd",
 "../../bram_yarr_trenz.vhd",
 "../../app_pkg.vhd",
 "../../app.vhd",

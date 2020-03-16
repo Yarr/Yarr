@@ -24,6 +24,7 @@ files = [
 #TOP
 "../board_pkg.vhd",
 "../../bram_yarr_trenz.vhd",
+"../../tef1001_R2_type.vhd",
 "../../app_pkg.vhd",
 "../../app.vhd",
 "../../tef1001_R2.xdc",
