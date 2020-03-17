@@ -392,17 +392,19 @@ int main(int argc, char *argv[]) {
         for (FrontEnd* fe : bookie.feList) {
             // TODO make mask generic?
             if (chipType == "FEI4B") {
+                auto fei4 = dynamic_cast<Fei4*>(fe);
                 logger->info("Resetting enable/hitbus pixel mask to all enabled!");
-                for (unsigned int dc = 0; dc < dynamic_cast<Fei4*>(fe)->n_DC; dc++) {
-                    dynamic_cast<Fei4*>(fe)->En(dc).setAll(1);
-                    dynamic_cast<Fei4*>(fe)->Hitbus(dc).setAll(0);
+                for (unsigned int dc = 0; dc < fei4->n_DC; dc++) {
+                    fei4->En(dc).setAll(1);
+                    fei4->Hitbus(dc).setAll(0);
                 }
             } else if (chipType == "RD53A") {
+                auto rd53a = dynamic_cast<Rd53a*>(fe);
                 logger->info("Resetting enable/hitbus pixel mask to all enabled!");
-                for (unsigned int col = 0; col < dynamic_cast<Rd53a*>(fe)->n_Col; col++) {
-                    for (unsigned row = 0; row < dynamic_cast<Rd53a*>(fe)->n_Row; row ++) {
-                        dynamic_cast<Rd53a*>(fe)->setEn(col, row, 1);
-                        dynamic_cast<Rd53a*>(fe)->setHitbus(col, row, 1);
+                for (unsigned int col = 0; col < rd53a->n_Col; col++) {
+                    for (unsigned row = 0; row < rd53a->n_Row; row ++) {
+                        rd53a->setEn(col, row, 1);
+                        rd53a->setHitbus(col, row, 1);
                     }
                 }
             }
@@ -420,9 +422,10 @@ int main(int argc, char *argv[]) {
 
     std::chrono::steady_clock::time_point cfg_start = std::chrono::steady_clock::now();
     for ( FrontEnd* fe : bookie.feList ) {
-        logger->info("Configuring {}", dynamic_cast<FrontEndCfg*>(fe)->getName());
+        auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
+        logger->info("Configuring {}", feCfg->getName());
         // Select correct channel
-        hwCtrl->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+        hwCtrl->setCmdEnable(feCfg->getTxChannel());
         // Configure
         fe->configure();
         // Wait for fifo to be empty
@@ -438,10 +441,11 @@ int main(int argc, char *argv[]) {
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
     hwCtrl->flushBuffer();
     for ( FrontEnd* fe : bookie.feList ) {
-        logger->info("Checking com {}", dynamic_cast<FrontEndCfg*>(fe)->getName());
+        auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
+        logger->info("Checking com {}", feCfg->getName());
         // Select correct channel
-        hwCtrl->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
-        hwCtrl->setRxEnable(dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
+        hwCtrl->setCmdEnable(feCfg->getTxChannel());
+        hwCtrl->setRxEnable(feCfg->getRxChannel());
         // Configure
         if (fe->checkCom() != 1) {
             logger->critical("Can't establish communication, aborting!");
@@ -617,34 +621,35 @@ int main(int argc, char *argv[]) {
     for (unsigned i=0; i<bookie.feList.size(); i++) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
+            auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
 
             // Save config
-            if (!dynamic_cast<FrontEndCfg*>(fe)->isLocked()) {
+            if (!feCfg->isLocked()) {
                 logger->info("Saving config of FE {} to {}",
-                             dynamic_cast<FrontEndCfg*>(fe)->getName(), feCfgMap.at(fe));
+                             feCfg->getName(), feCfgMap.at(fe));
                 json jTmp;
-                dynamic_cast<FrontEndCfg*>(fe)->toFileJson(jTmp);
+                feCfg->toFileJson(jTmp);
                 std::ofstream oFTmp(feCfgMap.at(fe));
                 oFTmp << std::setw(4) << jTmp;
                 oFTmp.close();
             } else {
-                logger->warn("Not saving config for FE {} as it is protected!", dynamic_cast<FrontEndCfg*>(fe)->getName());
+                logger->warn("Not saving config for FE {} as it is protected!", feCfg->getName());
             }
 
             // Save extra config in data folder
-            std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(fe)->getConfigFile() + ".after");
+            std::ofstream backupCfgFile(outputDir + feCfg->getConfigFile() + ".after");
             json backupCfg;
-            dynamic_cast<FrontEndCfg*>(fe)->toFileJson(backupCfg);
+            feCfg->toFileJson(backupCfg);
             backupCfgFile << std::setw(4) << backupCfg;
             backupCfgFile.close();
 
             // Plot
             if (doPlots||dbUse) {
-                logger->info("-> Plotting histograms of FE {}", dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
+                logger->info("-> Plotting histograms of FE {}", feCfg->getRxChannel());
                 std::string outputDirTmp = outputDir;
 
                 auto &output = *fe->clipResult;
-                std::string name = dynamic_cast<FrontEndCfg*>(fe)->getName();
+                std::string name = feCfg->getName();
 
                 if (output.empty()) {
                     logger->warn("There were no results for chip {}, this usually means that the chip did not send any data at all.", name);
@@ -755,10 +760,9 @@ void listKnown() {
 }
 
 std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie ) {
-    std::unique_ptr<ScanBase> s ( nullptr );
 
     logger->info("Found Scan config, constructing scan ...");
-    s.reset( new ScanFactory(&bookie) );
+    std::unique_ptr<ScanFactory> s ( new ScanFactory(&bookie) );
     json scanCfg;
     try {
         scanCfg = ScanHelper::openJsonFile(scanType);
@@ -766,7 +770,8 @@ std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bo
         logger->error("Opening scan config: {}", e.what());
         throw("buildScan failure");
     }
-    dynamic_cast<ScanFactory&>(*s).loadConfig(scanCfg);
+
+    s->loadConfig(scanCfg);
 
     return s;
 }
@@ -786,6 +791,8 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
 
     for (FrontEnd *fe : feList ) {
         if (fe->isActive()) {
+            auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
+
             // TODO this loads only FE-i4 specific stuff, bad
             // Load histogrammer
             histogrammers[fe].reset( new Fei4Histogrammer );
@@ -799,7 +806,7 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
                     logger->debug("  ... adding {}", algo_name);
                     histogrammer.addHistogrammer(std::move(histo));
                 } else if (algo_name == "DataArchiver") {
-                    histo.reset(new DataArchiver((outputDir + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_data.raw")));
+                    histo.reset(new DataArchiver((outputDir + feCfg->getName() + "_data.raw")));
                     histogrammer.addHistogrammer(std::move(histo));
                     logger->debug("  ... adding {}", algo_name);
                 } else {
@@ -845,7 +852,8 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
             if (fe->isActive()) {
                 // TODO this loads only FE-i4 specific stuff, bad
                 // TODO hardcoded
-                analyses[fe].reset( new Fei4Analysis(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) );
+                auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
+                analyses[fe].reset( new Fei4Analysis(&bookie, feCfg->getRxChannel()) );
                 auto& ana = static_cast<Fei4Analysis&>( *(analyses[fe]) );
                 ana.connect(s, fe->clipHisto, fe->clipResult);
 

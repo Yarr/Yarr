@@ -114,10 +114,10 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
         // Wait for mutexes to be unlocked by feedback
         for(unsigned int k=0; k<keeper->feList.size(); k++) {
             if(keeper->feList[k]->getActive()) {
-                keeper->mutexMap[dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel()].lock();
+                auto channel = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
+                keeper->mutexMap[channel].lock();
                 logger().info(" --> Received Feedback on Channel {} with value: {}",
-                        dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel(),
-                        values[dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel()]);
+                              channel, values[channel]);
             }
         }
         cur++;
@@ -130,8 +130,13 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
         }
         for(unsigned int k=0; k<keeper->feList.size(); k++) {
             if(keeper->feList[k]->getActive()) {
-                g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getTxChannel());
-                dynamic_cast<Fei4*>(keeper->feList[k])->writeRegister(parPtr, values[dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel()]);
+                auto fe = dynamic_cast<Fei4*>(keeper->feList[k]);
+                auto fe_cfg = dynamic_cast<FrontEndCfg*>(fe);
+                auto tx_channel = fe_cfg->getTxChannel();
+                auto rx_channel = fe_cfg->getRxChannel();
+
+                g_tx->setCmdEnable(tx_channel);
+                fe->writeRegister(parPtr, values[rx_channel]);
                 while(!g_tx->isCmdEmpty());
             }
         }
