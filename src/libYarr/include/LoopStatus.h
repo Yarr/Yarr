@@ -9,6 +9,8 @@
 #include <vector>
 #include <map>
 
+class LoopActionBase;
+
 /// Store of position within the scan hierarchy
 class LoopStatus {
         std::vector<unsigned> statVec;
@@ -41,29 +43,29 @@ class LoopStatusMaster {
             statVec.resize(i);
             loopVec.resize(i);
         }
-        void addLoop(unsigned i, void *loop) {
-            statMap[loop] = &statVec[i];
-            loopVec[i] = loop;
+        void addLoop(unsigned i, LoopActionBase *l) {
+            statMap[l] = &statVec[i];
+            loopVec[i] = l;
         }
         
         void set(unsigned i, unsigned v) {statVec[i] = v;}
-        void set(void *l, unsigned v) {*(statMap[l]) = v;}
+        void set(LoopActionBase *l, unsigned v) {*(statMap[l]) = v;}
         unsigned get(unsigned i) const {return statVec[i];}
-        void* getPointer(unsigned i) const {return loopVec[i];}
-        unsigned get(void *l) {return *(statMap[l]);}
+        LoopActionBase* getPointer(unsigned i) const {return loopVec[i];}
+        unsigned get(LoopActionBase *l) {return *(statMap[l]);}
         unsigned size() const {return statVec.size();}
 
-        const std::map<void*, unsigned*> &getMap() const {return statMap;}
+        const std::map<LoopActionBase*, unsigned*> &getMap() const {return statMap;}
         const std::vector<unsigned> &getVector() const {return statVec;}
-        const std::vector<void*> &getPointer() const {return loopVec;}
+        const std::vector<LoopActionBase*> &getPointer() const {return loopVec;}
     private:
         /// Location within scan loop hierarchy
         std::vector<unsigned> statVec;
 
         /// Map from loop action pointers to location in master position
-        std::map<void*, unsigned*> statMap;
+        std::map<LoopActionBase*, unsigned*> statMap;
         /// List of loop action pointers
-        std::vector<void*> loopVec;
+        std::vector<LoopActionBase*> loopVec;
 };
 
 #endif
