@@ -51,6 +51,8 @@ class Rd53aTriggerLoop: public LoopActionBase {
         void execPart1();
         void execPart2();
         void end();
+
+        uint dcount = 0;
 };
 
 #endif

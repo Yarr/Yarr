@@ -39,6 +39,8 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
     loopType = typeid(this);
 }
 
+#define DCOUNT (dcount < 2)
+
 void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
     m_trigWord.fill(0x69696969);
     // Inject
@@ -57,13 +59,26 @@ void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
     uint64_t one = 1;
     for (unsigned i=0; i<m_trigMultiplier; i++)
         trigStream |= (one << i);
+    if DCOUNT
+        std::cout << std::hex << "trigStream 1: 0x" << trigStream << std::dec << std::endl;
     trigStream = trigStream << delay%8;
-
+    if DCOUNT {
+        std::cout << std::hex << "trigStream 2: 0x" << trigStream << std::dec << std::endl;
+        std::cout << "trigMultiplier: " << m_trigMultiplier << std::endl;
+        std::cout << "trigDelay: " << delay << std::endl;
+    }
     for (unsigned i=0; i<(m_trigMultiplier/8)+1; i++) {
         if (((14-(delay/8)-i) > 2) && delay > 16) {
             uint32_t bc1 = (trigStream >> (2*i*4)) & 0xF;
             uint32_t bc2 = (trigStream >> ((2*i*4)+4)) & 0xF;
             m_trigWord[14-(delay/8)-i] = Rd53aCmd::genTrigger(bc1, 2*i, bc2, (2*i)+1);
+            if DCOUNT {
+                std::cout << " --------------------------- i: " << i << std::endl;
+                std::cout << "bc1: " << bc1 << ", tag1: " <<     2*i << std::endl;
+                std::cout << "bc2: " << bc2 << ", tag2: " << (2*i)+1 << std::endl;
+                std::cout << "trigWord[" << 14-(delay/8)-i << "] = 0x" 
+                          << std::hex << m_trigWord[14-(delay/8)-i] << std::dec << std::endl;
+            }
         } else {
             SPDLOG_LOGGER_ERROR(logger, "Delay is either too small or too large!");
         }
@@ -78,6 +93,8 @@ void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
     for (unsigned i=0; i<m_trigWordLength; i++) {
       logger->debug("[{}: 0x{:x}", 31-i, m_trigWord[31-i]);
     }
+
+    if DCOUNT ++dcount;
 }
 
 void Rd53aTriggerLoop::setEdgeMode(uint32_t duration) {

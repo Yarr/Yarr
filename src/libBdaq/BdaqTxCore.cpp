@@ -1,4 +1,4 @@
-#define FIX_TRIGGER 
+//#define FIX_TRIGGER 
 #define FIX_POST_DELAY
 
 #include "BdaqTxCore.h"
@@ -205,7 +205,7 @@ void BdaqTxCore::setTrigWord(uint32_t *word, uint32_t length) {
     // down to 200 for faster scans. It might not work if the TCP 
     // connection is somehow slower. Also, there is still no dedicated
     // thread for the readout. It might help getting things faster.
-    const uint fixPostDelaySize = 200;
+    const uint fixPostDelaySize = 800;
 
     std::vector<uint8_t> fixPostDelay(fixPostDelaySize*2, 0x69); 
     trgData.insert(trgData.end(), fixPostDelay.begin(), fixPostDelay.end());
