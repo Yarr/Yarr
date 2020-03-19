@@ -87,7 +87,13 @@ static std::string getHostname() {
 }
 
 static std::string defaultDbDirPath() {
-  std::string home = getenv("HOME");
+  std::string home;
+  if(getenv("HOME")) {
+    home = getenv("HOME");
+  } else {
+    home = ".";
+    spdlog::error("HOME not set, using local directory for configuration");
+  }
   return home+"/.yarr/localdb";
 }
  

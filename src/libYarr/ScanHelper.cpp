@@ -16,7 +16,13 @@ namespace ScanHelper {
 unsigned newRunCounter() {
     unsigned runCounter = 0;
 
-    std::string home = getenv("HOME");
+    std::string home;
+    if(getenv("HOME")) {
+      home = getenv("HOME");
+    } else {
+      shlog->error("HOME not set, using local directory for configuration");
+      home = ".";
+    }
     std::string config_dir = home + "/.yarr";
 
     // Load run counter
