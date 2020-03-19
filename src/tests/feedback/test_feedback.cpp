@@ -7,6 +7,9 @@
 #include "FeedbackBase.h"
 #include "ScanFactory.h"
 
+#include "logging.h"
+auto logger = logging::make_log("test_feedback");
+
 #include "../EmptyHw.h"
 
 class MyHardware : public EmptyHw {
@@ -29,15 +32,12 @@ TEST_CASE("FeedbackTestEmpty", "[Feedback]") {
     g_fe->init(&empty, 0, 0);
     bookie.initGlobalFe(g_fe.release());
 
-    // Stripped down version of OccGlobalThresholdTune
     json js;
     js["scan"]["name"] = "TestScan";
     js["scan"]["loops"][0]["loopAction"] = "Fei4GlobalFeedback";
     js["scan"]["loops"][0]["config"]["parameter"] = "Vthin_Fine";
-    js["scan"]["loops"][1]["loopAction"] = "Fei4MaskLoop";
-    js["scan"]["loops"][2]["loopAction"] = "Fei4DcLoop";
-    js["scan"]["loops"][3]["loopAction"] = "Fei4TriggerLoop";
-    js["scan"]["loops"][4]["loopAction"] = "StdDataLoop";
+    js["scan"]["loops"][1]["loopAction"] = "Fei4TriggerLoop";
+    js["scan"]["loops"][2]["loopAction"] = "StdDataLoop";
 
     scan.loadConfig(js);
 
@@ -63,18 +63,12 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
     g_fe->init(&empty, 0, 0);
     bookie.initGlobalFe(g_fe.release());
 
-    // Stripped down version of OccGlobalThresholdTune
     json js;
     js["scan"]["name"] = "TestScan";
     js["scan"]["loops"][0]["loopAction"] = "Fei4GlobalFeedback";
     js["scan"]["loops"][0]["config"]["parameter"] = "Vthin_Fine";
-    js["scan"]["loops"][1]["loopAction"] = "Fei4MaskLoop";
-    js["scan"]["loops"][2]["loopAction"] = "Fei4DcLoop";
-    js["scan"]["loops"][3]["loopAction"] = "Fei4TriggerLoop";
-    js["scan"]["loops"][4]["loopAction"] = "StdDataLoop";
-
-    int mask_loops = 40;
-    int dc_loops = 16;
+    js["scan"]["loops"][1]["loopAction"] = "Fei4TriggerLoop";
+    js["scan"]["loops"][2]["loopAction"] = "StdDataLoop";
 
     scan.loadConfig(js);
 
@@ -88,15 +82,16 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
         auto maybe = dynamic_cast<GlobalFeedbackBase *>(l.get());
         if(maybe != nullptr) {
           fb = maybe;
-          break;
         }
     }
 
     REQUIRE (fb != nullptr);
 
-    uint32_t unlock_count = 0;
+    uint32_t feedback_count = 0;
 
-    int max_loops = 10;
+    const int max_loops = 10;
+
+    bool thread_failure = true;
 
     std::thread t([&]() {
         int loop_count = 0;
@@ -105,33 +100,34 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
           auto data = bookie.rawData.popData();
           if(!data) {
             // Return due to finish call
+            thread_failure = false;
             return;
           }
 
-          std::cout << "Received data from Clipboard\n";
+          logger->debug("Received data");
 
-          LoopStatus &stat = data->stat;
-          for(int i=0; i<stat.size(); i++) {
-            std::cout << " " << stat.get(i);
-          }
-          std::cout << "\n";
+          const LoopStatus &stat = data->stat;
 
-          if((stat.get(1) != dc_loops-1) ||
-             (stat.get(2) != mask_loops-1)) {
-            continue;
-          }
+          REQUIRE (stat.size() == 3);
+          logger->trace("Current loop status: {} {} {}",
+                        stat.get(0), stat.get(1), stat.get(2));
 
+          // As there's no inner loop, send feedback as soon as data arrives
           fb->feedbackBinary(0, 1, true);
-         
-          std::cout << "Unlocking feedback at iteration " << loop_count++ << "\n";
+          feedback_count ++;
 
-          // Reset before releasing lock
-          // empty.readDataCount = 0;
-          bookie.mutexMap[0].unlock();
-unlock_count ++;
+          logger->debug("Sent feedback at iteration {}", loop_count);
+          loop_count ++;
+
+          if(loop_count > max_loops) {
+            logger->warn("Finish unlocking thread after {} loop", max_loops);
+            thread_failure = true;
+            return;
+          }
         }
 
-        std::cout << "Finish unlocking thread after " << max_loops << " loop\n";
+        logger->warn("Somehow finished loop in thread {}", loop_count);
+        thread_failure = true;
       });
 
     // Skip pre/post scan
@@ -141,5 +137,7 @@ unlock_count ++;
 
     t.join();
 
-    REQUIRE (unlock_count == 2);
+    REQUIRE (feedback_count == 2);
+
+    REQUIRE (!thread_failure);
 }
