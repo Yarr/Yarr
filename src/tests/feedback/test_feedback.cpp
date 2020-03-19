@@ -161,7 +161,8 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
     json js;
     js["scan"]["name"] = "TestScan";
     js["scan"]["loops"][0]["loopAction"] = "Fei4PixelFeedback";
-    js["scan"]["loops"][0]["config"]["parameter"] = "Vthin_Fine";
+    js["scan"]["loops"][0]["config"]["parameter"] = "FDAC_FB";
+    js["scan"]["loops"][0]["config"]["step"] = 4;
     js["scan"]["loops"][1]["loopAction"] = "Fei4TriggerLoop";
     js["scan"]["loops"][2]["loopAction"] = "StdDataLoop";
 
@@ -233,7 +234,8 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
 
     t.join();
 
-    REQUIRE (feedback_count == 3);
+    // 4,2,1,1
+    REQUIRE (feedback_count == 4);
 
     REQUIRE (!thread_failure);
 }
