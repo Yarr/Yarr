@@ -1,4 +1,7 @@
-class EmptyTxCore : public TxCore {
+#ifndef YARR_TEST_EMPTY_HARDWARE_H
+#define YARR_TEST_EMPTY_HARDWARE_H
+
+class EmptyTxCore : public virtual TxCore {
 public:
   EmptyTxCore() {}
   ~EmptyTxCore() {}
@@ -30,7 +33,7 @@ public:
   uint32_t getTrigInCount() override { return 0; }
 };
 
-class EmptyRxCore : public RxCore {
+class EmptyRxCore : public virtual RxCore {
  public:
   EmptyRxCore() {}
   ~EmptyRxCore() {}
@@ -41,9 +44,11 @@ class EmptyRxCore : public RxCore {
   void disableRx() override {}
 
   RawData* readData() override { return nullptr; }
-  void flushBuffer() {}
-        
+  void flushBuffer() override {}
+
   uint32_t getDataRate() override { return 40; }
-  uint32_t getCurCount() { return 0; }
+  uint32_t getCurCount() override { return 0; }
   bool isBridgeEmpty() override { return true; }
 };
+
+#endif
