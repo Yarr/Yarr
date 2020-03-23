@@ -24,7 +24,7 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
     m_trigWord.fill(0x69696969);
     m_noInject = false;
     m_extTrig = false;
-    m_trigMultiplier = 16;
+    m_trigMultiplier = 32;
     m_sendEcr = false;
 
     m_edgeMode = false;
