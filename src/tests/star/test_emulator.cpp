@@ -189,13 +189,13 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     sendCommand(*emu, writeABCCmd_MaskInput0);
 
     // Reset and start hit counters:
-    emu->writeFifo((LCB::fast_command(LCB::ABC_HIT_COUNT_RESET, 0) << 16) + LCB::fast_command(LCB::ABC_HITCOUNT_START, 0));
+    emu->writeFifo((LCB::fast_command(LCB::ABC_HIT_COUNT_RESET, 0) << 16) + LCB::fast_command(LCB::ABC_HIT_COUNT_START, 0));
 
     // Send four triggers
     emu->writeFifo((LCB::l0a_mask(10, 8, false) << 16) + LCB::l0a_mask(10, 12, false));
 
     // Stop hit counters
-    emu->writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::ABC_HITCOUNT_STOP, 0));
+    emu->writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::ABC_HIT_COUNT_STOP, 0));
 
     // Send another trigger: it should not increase any hit counters
     emu->writeFifo((LCB::l0a_mask(1, 16, false) << 16) + LCB::IDLE);

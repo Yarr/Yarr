@@ -31,6 +31,14 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
                 this->writeSingle(0x6<<14 | 0x1, 0xF);
             }
 
+            if (!j["rxPolarity"].empty()) {
+                this->setRxPolarity(j["rxPolarity"]);
+            }
+
+            if (!j["txPolarity"].empty()) {
+                this->setTxPolarity(j["txPolarity"]);
+            }
+            
             // Configure trigger logic
             if (!j["trigConfig"].empty()) {
                 if(!j["trigConfig"]["mask"].empty())

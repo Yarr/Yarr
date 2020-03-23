@@ -6,7 +6,7 @@ job_build_and_test:
       - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
       - cd build
-      - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
+      - CXXFLAGS=-Werror cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
       - make install -j4
       - export USER=test
       - echo $USER
@@ -46,7 +46,7 @@ job_build_clang:
       - source scl_source enable llvm-toolset-6.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir -p build
       - cd build 
-      - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang
+      - CXXFLAGS=-Werror cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang
       - make install -j4
       - cd ..
       - bin/scanConsole -k

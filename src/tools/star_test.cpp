@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
     if (controllerType == "emu_Star") {
       // Send fast commands:
       spec.writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::ABC_HIT_COUNT_RESET, 0));
-      spec.writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::ABC_HITCOUNT_START, 0));
+      spec.writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::ABC_HIT_COUNT_START, 0));
       spec.writeFifo((LCB::IDLE << 16) + LCB::IDLE);
 
       // Write to ABCStar register CREG0 to enable hit counters

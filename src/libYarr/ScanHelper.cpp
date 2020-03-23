@@ -13,6 +13,44 @@ namespace {
 
 namespace ScanHelper {
 
+unsigned newRunCounter() {
+    unsigned runCounter = 0;
+
+    std::string home;
+    if(getenv("HOME")) {
+      home = getenv("HOME");
+    } else {
+      shlog->error("HOME not set, using local directory for configuration");
+      home = ".";
+    }
+    std::string config_dir = home + "/.yarr";
+
+    // Load run counter
+    std::string mkdir_command = "mkdir -p " + config_dir;
+    if (system(mkdir_command.c_str()) < 0) {
+        shlog->error("Failed to create dir for run counter: ~/.yarr!");
+    }
+
+    std::string run_counter_file_name = config_dir + "/runCounter";
+    std::fstream iF(run_counter_file_name.c_str(), std::ios::in);
+    if (iF) {
+        iF >> runCounter;
+        runCounter += 1;
+    } else {
+        runCounter = 1;
+    }
+    iF.close();
+
+    std::fstream oF((home + "/.yarr/runCounter").c_str(), std::ios::out);
+    if(!oF) {
+        shlog->error("Could not increment run counter in file");
+    }
+    oF << runCounter << std::endl;
+    oF.close();
+
+    return runCounter;
+}
+
     // Open file and parse into json object
     json openJsonFile(std::string filepath) {
         std::ifstream file(filepath);

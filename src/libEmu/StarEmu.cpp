@@ -229,8 +229,8 @@ void StarEmu::DecodeLCB(LCB::Frame frame) {
     uint8_t code0 = (frame >> 8) & 0xff;
     uint8_t code1 = frame & 0xff;
 
-    bool iskcode0 = SixEight::iskcode(code0);
-    bool iskcode1 = SixEight::iskcode(code1);
+    bool iskcode0 = SixEight::is_kcode(code0);
+    bool iskcode1 = SixEight::is_kcode(code1);
 
     if (not (iskcode0 or iskcode1) ) {
         // Neither of the 8-bit symbol is a kcode
@@ -463,16 +463,16 @@ void StarEmu::doFastCommand(uint8_t data6) {
     case LCB::ABC_HIT_COUNT_RESET :
         this->resetABCHitCounts();
         break;
-    case LCB::ABC_HITCOUNT_START :
+    case LCB::ABC_HIT_COUNT_START :
         m_startHitCount = true;
         break;
-    case LCB::ABC_HITCOUNT_STOP :
+    case LCB::ABC_HIT_COUNT_STOP :
         m_startHitCount = false;
         break;
     case LCB::ABC_SLOW_COMMAND_RESET :
         this->resetSlowCommand();
         break;
-    case LCB::ABC_STOP_PRLP :
+    case LCB::HCC_STOP_PRLP :
         //std::cout << "Fast command: StopPRLP" << std::endl;
         break;
     case LCB::HCC_REG_RESET :
@@ -486,7 +486,7 @@ void StarEmu::doFastCommand(uint8_t data6) {
     case LCB::HCC_PLL_RESET :
         this->resetHCCPLL();
         break;
-    case LCB::ABC_START_PRLP :
+    case LCB::HCC_START_PRLP :
         //std::cout << "Fast command: StartPRLP" << std::endl;
         break;
     }
