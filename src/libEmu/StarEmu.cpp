@@ -160,7 +160,7 @@ std::vector<uint8_t> StarEmu::buildPhysicsPacket(
         for ( uint16_t cluster : allClusters[ichannel]) {
             // cluster bits:
             // "0" + 4-bit channel number + 11-bit cluster dropping the last cluster bit
-            uint16_t clusterbits = (ichannel & 0xf)<<11 | cluster & 0x7ff;
+            uint16_t clusterbits = (ichannel & 0xf)<<11 | (cluster & 0x7ff);
             data_packets.push_back((clusterbits>>8) & 0xff);
             data_packets.push_back(clusterbits & 0xff);
         }
@@ -193,7 +193,7 @@ std::vector<uint8_t> StarEmu::buildABCRegisterPacket(
     data_packets.push_back((reg_data >> 20) & 0xff);
     data_packets.push_back((reg_data >> 12) & 0xff);
     data_packets.push_back((reg_data >> 4) & 0xff);
-    data_packets.push_back((reg_data & 0xf) << 4 | (reg_status >> 12) & 0xf);
+    data_packets.push_back((reg_data & 0xf) << 4 | ((reg_status >> 12) & 0xf));
     data_packets.push_back((reg_status >> 4) & 0xff);
     data_packets.push_back((reg_status & 0xf) << 4);
 
