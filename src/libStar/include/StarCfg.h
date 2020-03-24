@@ -30,6 +30,19 @@ class StarCfg : public FrontEndCfg {
   void     setHCCRegister(HCCStarRegister addr, uint32_t val);
   const uint32_t getABCRegister(ABCStarRegister addr, int32_t chipID );
   void     setABCRegister(ABCStarRegister addr, uint32_t val, int32_t chipID);
+  // Overload with integer register address
+  inline const uint32_t getHCCRegister(uint32_t addr) {
+    return getHCCRegister(HCCStarRegister::_from_integral(addr));
+  }
+  inline void setHCCRegister(uint32_t addr, uint32_t val) {
+    setHCCRegister(HCCStarRegister::_from_integral(addr), val);
+  }
+  inline const uint32_t getABCRegister(uint32_t addr, int32_t chipID ) {
+    return getABCRegister(ABCStarRegister(ABCStarRegs::_from_integral(addr)), chipID);
+  }
+  inline void setABCRegister(uint32_t addr, uint32_t val, int32_t chipID) {
+    setABCRegister(ABCStarRegister(ABCStarRegs::_from_integral(addr)), val, chipID);
+  }
 
 
   //Initialized the registers of the HCC and ABC.  Do afer JSON file is loaded.
@@ -114,13 +127,15 @@ class StarCfg : public FrontEndCfg {
   void toFileJson(json &j) override;
   void fromFileJson(json &j) override;
 
+  size_t numABCs() { return m_ABCchips.size(); }
+
+  int hccChannelForABCchipID(unsigned int chipID);
+
  protected:
   AbcCfg &abcFromChipID(unsigned int chipID) {
     return *std::find_if(m_ABCchips.begin(), m_ABCchips.end(),
                         [this, chipID](auto it) { return it.getABCchipID() == chipID; });
   }
-    
-  size_t numABCs() { return m_ABCchips.size(); }
 
  private:
 

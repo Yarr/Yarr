@@ -43,7 +43,7 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
 
   std::sort(expected.begin(), expected.end());
 
-  size_t len = sizeof(packet_bytes)/sizeof(uint32_t);
+  size_t len = (sizeof(packet_bytes)+3)/sizeof(uint32_t);
 
   uint32_t *buffer = new uint32_t[len];
   std::copy((uint32_t*)packet_bytes, ((uint32_t*)packet_bytes)+len, buffer);
