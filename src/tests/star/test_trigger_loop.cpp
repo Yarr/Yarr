@@ -114,7 +114,7 @@ TEST_CASE("StarTriggerLoopDelay", "[star][trigger_loop]") {
 
   action->loadConfig(j);
 
-  LoopStatus ls;
+  LoopStatusMaster ls;
 
   MyTxCore tx;
   EmptyRxCore rx;
