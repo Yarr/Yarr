@@ -1,3 +1,15 @@
+# Plotting tools
+function(YARR_ADD_PLOTTING)
+    ExternalProject_Add (
+        plotting_tools
+        GIT_REPOSITORY https://gitlab.cern.ch/YARR/utilities/plotting-tools.git
+        GIT_TAG master
+        CMAKE_ARGS 
+            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+        PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
+        )
+endfunction()
+
 # TBB
 function(YARR_ADD_TBB)
     if (TARGET tbb_2019)
