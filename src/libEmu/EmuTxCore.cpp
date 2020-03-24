@@ -11,6 +11,7 @@
 #include "Fei4.h"
 #include "Rd53a.h"
 #include "Rd53aEmu.h"
+#include "StarChips.h"
 
 template<>
 void EmuTxCore<Fei4>::doTrigger() {
@@ -36,4 +37,15 @@ void EmuTxCore<Rd53a>::doTrigger() {
     //std::cout << __PRETTY_FUNCTION__ << ": doTrigger() is done." << std::endl;
 }
 
+template<>
+void EmuTxCore<StarChips>::doTrigger() {
+    for(unsigned i=0; i<m_trigCnt; i++) {
+        for( uint32_t j =0; j<trigLength; j++) {
+            m_com->write32( trigWord[trigLength-j-1] );
+        }
+    }
 
+    while(!m_com->isEmpty());
+    trigProcRunning = false;
+    //std::cout << __PRETTY_FUNCTION__ << ": doTrigger() is done." << std::endl;
+}

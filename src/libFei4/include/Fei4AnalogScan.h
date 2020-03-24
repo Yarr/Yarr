@@ -28,8 +28,6 @@ class Fei4AnalogScan : public ScanBase {
         unsigned numOfTriggers;
         double triggerFrequency;
         unsigned triggerDelay;
-
-        bool verbose;
 };
 
 #endif

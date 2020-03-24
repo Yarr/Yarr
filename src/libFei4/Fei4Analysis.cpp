@@ -8,96 +8,50 @@
 
 #include "Fei4Analysis.h"
 
-Fei4Analysis::Fei4Analysis() {
+#include "AllAnalyses.h"
 
+#include "logging.h"
+
+namespace {
+    auto alog = logging::make_log("Fei4Analysis");
 }
 
-Fei4Analysis::Fei4Analysis(Bookkeeper *b, unsigned ch) {
-    bookie = b;
-    channel = ch;
-}
+namespace {
+    bool oa_registered =
+      StdDict::registerAnalysis("OccupancyAnalysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new OccupancyAnalysis());});
 
-Fei4Analysis::~Fei4Analysis() {
-    for (unsigned i=0; i<algorithms.size(); i++) {
-        delete algorithms[i];
-    }
-}
+    bool l1_registered =
+      StdDict::registerAnalysis("L1Analysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new L1Analysis());});
 
-void Fei4Analysis::init() {
-    for (unsigned i=0; i<algorithms.size(); i++) {
-        algorithms[i]->connect(output);
-        algorithms[i]->init(scan);
-    }
-}
+    bool tot_registered =
+      StdDict::registerAnalysis("TotAnalysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new TotAnalysis());});
 
-void Fei4Analysis::run() {
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
-    thread_ptr.reset( new std::thread( &Fei4Analysis::process, this ) );
-}
+    bool no_registered =
+      StdDict::registerAnalysis("NoiseAnalysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new NoiseAnalysis());});
 
-void Fei4Analysis::loadConfig(json &j){
-    for (unsigned i=0; i<algorithms.size(); i++) {
-        if (!j[std::to_string(i)]["config"].empty()){
-	    algorithms[i]->loadConfig(j[std::to_string(i)]["config"]);
-	}
-    }
-}
+    bool no_tune_registered =
+      StdDict::registerAnalysis("NoiseTuning",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new NoiseTuning());});
 
-void Fei4Analysis::join() {
-    if( thread_ptr->joinable() ) thread_ptr->join();
-}
+    bool sf_registered =
+      StdDict::registerAnalysis("ScurveFitter",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new ScurveFitter());});
 
-void Fei4Analysis::process() {
-    while( true ) {
+    bool gbl_thr_registered =
+      StdDict::registerAnalysis("OccGlobalThresholdTune",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new OccGlobalThresholdTune());});
 
-        //std::cout << __PRETTY_FUNCTION__ << std::endl;
+    bool pix_thr_registered =
+      StdDict::registerAnalysis("OccPixelThresholdTune",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new OccPixelThresholdTune());});
 
-        std::unique_lock<std::mutex> lk(mtx);
-        input->waitNotEmptyOrDone();
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        process_core();
-
-        if( input->isDone() ) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(200));
-            process_core();  // this line is needed if the data comes in before scanDone is changed.
-            std::cout << __PRETTY_FUNCTION__ << ": histogrammerDone!" << std::endl;
-            break;
-        }
-    }
-
-    process_core();
-
-    end();
-
-}
-
-void Fei4Analysis::process_core() {
-    while(!input->empty()) {
-        auto h = input->popData();
-        if (h != NULL) {
-            for (unsigned i=0; i<algorithms.size(); i++) {
-                algorithms[i]->processHistogram(&*h);
-            }
-        }
-    }
-}
-
-void Fei4Analysis::end() {
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
-    for (unsigned i=0; i<algorithms.size(); i++) {
-        algorithms[i]->end();
-    }
-}
-
-void Fei4Analysis::addAlgorithm(AnalysisAlgorithm *a) {
-    algorithms.push_back(a);
-    a->setBookkeeper(bookie);
-    a->setChannel(channel);
-}
-
-void Fei4Analysis::addAlgorithm(AnalysisAlgorithm *a, unsigned ch) {
-    algorithms.push_back(a);
+    bool del_registered =
+      StdDict::registerAnalysis("DelayAnalysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new DelayAnalysis());});
 }
 
 void OccupancyAnalysis::init(ScanBase *s) {
@@ -199,7 +153,6 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
 void OccupancyAnalysis::loadConfig(json &j){
     if (!j["createMask"].empty()){
         createMask=j["createMask"];
-	//	std::cout << "createMask =" << createMask << std::endl;
     }
 }
 
@@ -389,7 +342,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
                 chargeVsTotMap->fill(currentCharge, (i+1)*0.1, tempMeanTotDist->getBin(i));
             }
         }
-        std::cout << "[" << channel << "] ToT Mean = " << meanTotDist->getMean() << " +- " << meanTotDist->getStdDev() << std::endl;
+        alog->info("[{}] ToT Mean = {} +- {}", channel, meanTotDist->getMean(), meanTotDist->getStdDev());
 
         if (globalFb != NULL) {
             double mean = 0;
@@ -403,7 +356,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
             if (entries > 0) {
                 mean = mean/entries;
             }
-            std::cout << "Mean is: " << mean << std::endl;
+            alog->info("Mean is: {}", mean);
 
             // TODO Get this from somewhere
             double targetTot = bookie->getTargetTot();
@@ -584,7 +537,6 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                 unsigned ident = bin;
                 unsigned offset = nCol*nRow;
                 unsigned vcal = hh->getStat().get(vcalLoop);
-                //std::cout << "VCAL = " << vcal << std::endl;
                 // Determine identifier
                 std::string name = "Scurve";
                 name += "-" + std::to_string(col) + "-" + std::to_string(row);
@@ -692,8 +644,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
                     } else {
                         n_failedfit++;
-                           // std::cout << "Col(" << col << ") Row(" << row << ") Threshold(" << thrMap[outerIdent]->getBin(bin) << ") Chi2(" << chi2 << ") Status(" << status.outcome << ") Entries(" 
-                           //     << histos[ident]->getEntries() << ") Mean(" << histos[ident]->getMean() << ")" << std::endl;
+                           alog->debug("Failed fit Col({}) Row({}) Threshold({}) Chi2({}) Status({}) Entries({}) Mean({})", col, row, thrMap[outerIdent]->getBin(bin), chi2, status.outcome, histos[ident]->getEntries(), histos[ident]->getMean());
                     }
                     if (row == nRow/2 && col%10 == 0) {
                         output->pushData(std::move(histos[ident]));
@@ -757,15 +708,16 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
             }
         }
         prevOuter = outerIdent;
-        std::cout << "[" << this->channel << "] --> Sending feedback #" << outerIdent << std::endl;
+        alog->info("[{}] --> Sending feedback #{}", this->channel, outerIdent);
         fb->feedback(this->channel, step[outerIdent].get());
     }
 }
 
 void ScurveFitter::end() {
 
+    alog->info("scurve end");
     if (fb != nullptr) {
-        std::cout << " Tuned to ==> " << thrTarget << std::endl;
+        alog->info("[{}] Tuned to ==> {}", thrTarget, this->channel);
     }
 
     // TODO Loop over outerIdent
@@ -817,7 +769,10 @@ void ScurveFitter::end() {
                     sigDist[i]->fill(sigMap[i]->getBin(bin));
             }
 
-            std::cout << "\033[1;33m[" << channel << "][" << i << "] Threashold Mean = " << thrMap[i]->getMean() << " +- " << thrMap[i]->getStdDev() << "\033[0m" << std::endl;
+            // Before moving data to clipboard
+            alog->info("\033[1;33m[{}][{}] Threshold Mean = {} +- {}\033[0m", channel, i, thrMap[i]->getMean(), thrMap[i]->getStdDev());
+            alog->info("\033[1;33m[{}][{}] Noise Mean = {} +- {}\033[0m", channel, i, sigMap[i]->getMean(), sigMap[i]->getStdDev());
+            alog->info("\033[1;33m[{}][{}] Number of failed fits = {}\033[0m", channel, i, n_failedfit);
             output->pushData(std::move(sCurve[i]));
             output->pushData(std::move(thrDist[i]));
             output->pushData(std::move(thrMap[i]));
@@ -827,9 +782,6 @@ void ScurveFitter::end() {
             output->pushData(std::move(statusDist[i]));
             output->pushData(std::move(step[i]));
             output->pushData(std::move(deltaThr[i]));
-            std::cout << "\033[1;33m[" << channel << "][" << i << "] Noise Mean = " << sigMap[i]->getMean() << " +- " << sigMap[i]->getStdDev() << "\033[0m" <<  std::endl;
-            std::cout << "\033[1;33m[" << channel << "][" << i << "] Number of failed fits = " <<     n_failedfit << "\033[0m" <<  std::endl;
-
         }
 
         output->pushData(std::move(sigMap[i]));
@@ -944,7 +896,7 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
 
         double meanOcc = occDists[ident]->getMean()/(double)injections;
         double entries = occDists[ident]->getEntries();
-        std::cout << "[" << channel << "]Mean Occupancy: " << meanOcc << std::endl;
+        alog->info("[{}] Mean Occupancy = {}", channel, meanOcc);
 
         if (entries < (nCol*nRow)*0.005) { // Want at least 1% of all pixels to fire
             sign = -1;
@@ -1071,8 +1023,8 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
             mean += occMaps[ident]->getBin(i);
             occDist->fill(occMaps[ident]->getBin(i));
         }
-        std::cout << "[" << channel << "] Mean Occupancy: " << mean/(nCol*nRow*(double)injections) << std::endl;
-        std::cout << "[" << channel << "] RMS: " << occDist->getStdDev() << std::endl;
+        alog->info("[{}] Mean Occupancy = {}", channel, mean/(nCol*nRow*(double)injections));
+        alog->info("[{}] RMS = {}", channel, occDist->getStdDev());
 
         fb->feedback(this->channel, fbHisto);
         output->pushData(std::move(occMaps[ident]));
@@ -1276,7 +1228,7 @@ void NoiseAnalysis::end() {
 
     noiseOcc->add(&*occ);
     noiseOcc->scale(1.0/(double)n_trigger);
-    std::cout << "[" << channel << "] Received " << n_trigger << " total trigger!" << std::endl;
+    alog->info("[{}] Received {} total trigger!", channel, n_trigger);
     double noiseThr = 1e-6; 
     for (unsigned i=0; i<noiseOcc->size(); i++) {
         if (noiseOcc->getBin(i) > noiseThr) {
@@ -1370,16 +1322,16 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
     innerCnt[ident]++;
 
     if (innerCnt[ident] == n_count) {
-        std::cout << __PRETTY_FUNCTION__ << " full set " <<  std::endl;
+        SPDLOG_LOGGER_TRACE(alog, "");
         if (globalFb != NULL) { // Global Threshold Tuning
-            std::cout << __PRETTY_FUNCTION__ << " has globalfeedback " <<  std::endl;
+            SPDLOG_LOGGER_TRACE(alog, "");
             unsigned numOfHits = 0;
             for (unsigned i=0; i<occMaps[ident]->size(); i++) {
                 if (occMaps[ident]->getBin(i) > 1) {
                     numOfHits++;
                 }
             }
-            std::cout << "[" << channel << "] Number of pixel with hits: " << numOfHits << std::endl;
+            alog->info("[{}] Number of pixels with hits: {}", channel, numOfHits);
             if (numOfHits < 10) { // TODO not hardcode this value
                 globalFb->feedbackStep(channel, -1, false);
             } else {
@@ -1389,7 +1341,7 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
 
         if (pixelFb != NULL) { // Pixel Threshold Tuning
             Histo2d *fbHisto = new Histo2d("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
-            std::cout << __PRETTY_FUNCTION__ << " has pixelfeedback " <<  std::endl;
+            SPDLOG_LOGGER_TRACE(alog, "");
             unsigned pixelWoHits = 0;
             for (unsigned i=0; i<occMaps[ident]->size(); i++) {
                 if (occMaps[ident]->getBin(i) < 2) { //TODO un-hardcode this
@@ -1399,7 +1351,7 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
                     fbHisto->setBin(i, 0);
                 }
             }
-            std::cout << "[" << channel << "] Number of pixel without hits: " << pixelWoHits << std::endl;
+            alog->info("[{}] Number of pixels with hits: {}", channel, pixelWoHits);
 
             pixelFb->feedbackStep(channel, fbHisto);
         }

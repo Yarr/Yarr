@@ -15,7 +15,6 @@
 
 #include "BitOps.h"
 #include "Utils.h"
-#include "tinyxml2.h"
 
 
 #include "storage.hpp"
@@ -82,8 +81,6 @@ class Fei4GlobalCfg {
 
         void toFilePlain(std::string filename);
         void fromFilePlain(std::string filename);
-
-        void toFileXml(tinyxml2::XMLDocument *doc, tinyxml2::XMLElement *node);
 
         void setValue(Fei4Register Fei4GlobalCfg::*ref, const uint16_t& cfgBits) {
                 (this->*ref).write(cfgBits);

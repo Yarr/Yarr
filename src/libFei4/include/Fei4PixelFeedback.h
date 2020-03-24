@@ -19,6 +19,11 @@ enum FeedbackType {
 };
 
 class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
+    static logging::Logger &logger() {
+        static logging::LoggerStore instance = logging::make_log("Fei4PixelFeedback");
+        return *instance;
+    }
+
     public:
         Fei4PixelFeedback() : LoopActionBase(){
             loopType = typeid(this);
@@ -43,14 +48,13 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
         void feedback(unsigned channel, Histo2d *h) {
             // TODO Check on NULL pointer
             if (h->size() != 26880) {
-                std::cout << __PRETTY_FUNCTION__ 
-                    << " --> ERROR : Wrong type of feedback histogram on channel " << channel << std::endl;
+                logger().error("Wrong type of feedback histogram on channel {}", channel);
                 doneMap[channel] = true;
             } else {
                 fbHistoMap[channel] = h;
             }
 
-            keeper->mutexMap[channel].unlock();
+            fbMutexMap[channel].unlock();
         }
         void writeConfig(json &config){
 	    config["min"]=min;
@@ -109,7 +113,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
             for(unsigned int k=0; k<keeper->feList.size(); k++) {
                 if(keeper->feList[k]->getActive()) {
                     // Need to lock mutex on first itereation
-                    keeper->mutexMap[dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel()].try_lock();
+                    fbMutexMap[dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel()].try_lock();
                     // Write config
                     this->writePixelCfg(dynamic_cast<Fei4*>(keeper->feList[k]));
                 }
@@ -122,7 +126,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
                 if(keeper->feList[k]->getActive()) {
                     ch = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
                     // Wait for Mutex to be unlocked by feedback
-                    keeper->mutexMap[ch].lock();
+                    fbMutexMap[ch].lock();
                     this->addFeedback(ch);
                 }
             }
@@ -210,8 +214,12 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
 
         enum FeedbackType fbType;
         std::map<unsigned, Histo2d*> fbHistoMap;
+        std::map<unsigned, std::mutex> fbMutexMap;
         unsigned step, oldStep;
         unsigned cur;
+
+        // Somehow we need to register logger at static init time
+        friend void logger_static_init_fei4();
 };
 
 #endif

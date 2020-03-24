@@ -10,6 +10,12 @@
 #include <thread>
 #include <algorithm>
 
+#include "logging.h"
+
+namespace {
+    auto sdllog = logging::make_log("StdDataLoop");
+}
+
 StdDataLoop::StdDataLoop() : LoopActionBase() {
     storage = NULL;
     loopType = typeid(this);
@@ -21,27 +27,22 @@ StdDataLoop::StdDataLoop() : LoopActionBase() {
 
 void StdDataLoop::init() {
     m_done = false;
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(sdllog, "");
 }
 
 void StdDataLoop::end() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
-
+    SPDLOG_LOGGER_TRACE(sdllog, "");
 }
 
 void StdDataLoop::execPart1() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(sdllog, "");
     if (g_tx->getTrigEnable() == 0)
-        std::cerr << "### ERROR ### " << __PRETTY_FUNCTION__ << " : Trigger is not enabled, will get stuck here!" << std::endl;
+        SPDLOG_LOGGER_ERROR(sdllog, "Trigger is not enabled, will get stuck here!");
 
 }
 
 void StdDataLoop::execPart2() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(sdllog, "");
     unsigned count = 0;
     uint32_t done = 0;
     //uint32_t rate = 0;
@@ -82,8 +83,7 @@ void StdDataLoop::execPart2() {
     
     storage->pushData(std::move(rdc));
         
-    if (verbose)
-        std::cout << " --> Received " << count << " words! " << iterations << std::endl;
+    SPDLOG_LOGGER_DEBUG(sdllog, "--> Received {} words in {} iterations!", count ,iterations);
     m_done = true;
     counter++;
 }

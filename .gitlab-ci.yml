@@ -6,7 +6,7 @@ job_build_and_test:
       - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
       - cd build
-      - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
+      - CXXFLAGS=-Werror cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
       - make install -j4
       - export USER=test
       - echo $USER
@@ -14,15 +14,16 @@ job_build_and_test:
       - mkdir /tmp/test
       - ls /tmp/
       - cd ../
-      - bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p
+      - bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p -l configs/logging/trace_all.json
       - ls
       - ls ./data/
       - ls ./data/000001_std_digitalscan/
-      - cat ./data/000001_std_digitalscan/*_OccupancyMap.dat
-      - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.dat | grep -o 100 | wc -l`
+      - cat ./data/000001_std_digitalscan/*_OccupancyMap.json
+      - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
       - if [ "$NUM100" != "26880" ]; then exit 2; fi
       - bin/scanConsole -k
       - bin/test_main
+      - bin/star_test configs/controller/emuCfg_star.json
 
 job_build_all:
     stage: build
@@ -34,7 +35,7 @@ job_build_all:
       - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
       - cd build
-      - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all
+      - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE
       - make install -j4
       - bin/scanConsole -k
 
@@ -45,7 +46,7 @@ job_build_clang:
       - source scl_source enable llvm-toolset-6.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir -p build
       - cd build 
-      - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang
+      - CXXFLAGS=-Werror cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang
       - make install -j4
       - cd ..
       - bin/scanConsole -k

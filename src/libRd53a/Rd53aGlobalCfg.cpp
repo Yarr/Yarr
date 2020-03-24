@@ -9,6 +9,13 @@
 
 #include "Rd53aGlobalCfg.h"
 
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("Rd53aGlobalCfg");
+
+}
+
 Rd53aGlobalCfg::Rd53aGlobalCfg() {
     this->init();
 }
@@ -326,7 +333,7 @@ void Rd53aGlobalCfg::fromFileJson(json &j) {
         if (!j["RD53A"]["GlobalConfig"][it.first].empty()) {
             (this->*it.second).write(j["RD53A"]["GlobalConfig"][it.first]);
         } else {
-            std::cerr << " --> Error: Could not find register \"" << it.first << "\", using default!" << std::endl;
+            logger->error("Could not find register \"{}\" using default!", it.first);
         }
     }
 }

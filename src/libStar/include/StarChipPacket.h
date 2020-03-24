@@ -8,11 +8,15 @@
 //ErrorBlock holds HCCStar error information and can parse it
 
 #include <algorithm>
+#include <iomanip>
+#include <iostream>
 #include <map>
 #include <memory>
 #include <stdlib.h>
 #include <bitset>
 #include <cstring>
+
+#include "logging.h"
 
 //Allowed response packet types
 enum PacketType {
@@ -96,25 +100,25 @@ class ErrorBlock{
   }
 
   //Print the list of input channels for which each error was received
-  void print(){
-    printf("Received packet errors for the following channels: \n");
-    printf("  ABC Error: ");
+  void print(std::ostream &os){
+    os << "Received packet errors for the following channels:\n";
+    os << "  ABC Error: ";
     for(unsigned int iE=0; iE < error_abc.size(); ++iE){
-      printf("%i ", error_abc.at(iE) );
+      os << error_abc.at(iE) << " ";
     }
-    printf("\n  BCID Error: ");
+    os << "\n  BCID Error: ";
     for(unsigned int iE=0; iE < error_bcid.size(); ++iE){
-      printf("%i ", error_bcid.at(iE) );
+      os << error_bcid.at(iE) << " ";
     }
-    printf("\n  L0tag Error: ");
+    os << "\n  L0tag Error: ";
     for(unsigned int iE=0; iE < error_l0tag.size(); ++iE){
-      printf("%i ", error_l0tag.at(iE) );
+      os << error_l0tag.at(iE) << " ";
     }
-    printf("\n  Timeout Error: ");
+    os << "\n  Timeout Error: ";
     for(unsigned int iE=0; iE < error_timeout.size(); ++iE){
-      printf("%i ", error_timeout.at(iE) );
+      os << error_timeout.at(iE) << " ";
     }
-    printf("\n");
+    os << "\n";
   }
 
   void parse(uint64_t error_word){
@@ -154,6 +158,10 @@ class ErrorBlock{
 //HCCStar Packet class, holding information for and parsing various packet types
 //Corresponds to a single HCCStar Packet
 class StarChipPacket{
+  static logging::Logger &logger() {
+    static logging::LoggerStore instance = logging::make_log("Star::StarChipPacket");
+    return *instance;
+  }
 
   public:
 
@@ -178,19 +186,15 @@ class StarChipPacket{
   std::vector<Cluster> clusters;
   int num_idles = 0;
 
-  bool verbose_parse_flag;
-
   //Empty constructor
-  StarChipPacket(bool verbose = true)
-    : verbose_parse_flag(verbose)
-  {
+  StarChipPacket() {
     raw_words.clear();
     clusters.clear();
-  };
+  }
 
   ~StarChipPacket(){
     this->clear();
-  };
+  }
 
   bool is_parsed(){
     if( this->type == TYP_NONE )
@@ -228,57 +232,75 @@ class StarChipPacket{
   }
 
   //Print basic info
-  void print(){
+  void print(std::ostream &os) {
     if(this->type == TYP_LP || this->type == TYP_PR){
-      printf("Packet info: BCID %i (%i), L0ID %i, nClusters %i\n", this->bcid, this->bcid_parity, this->l0id, int(this->clusters.size()) );
+      os << "Packet info: BCID " << bcid << " (" << bcid_parity << "), "
+         << "L0ID " << l0id << ", nClusters " << this->clusters.size() << "\n";
       if(this->error_block)
-        this->error_block->print();
+        this->error_block->print(os);
     }else if(this->type == TYP_ABC_RR || this->type == TYP_HCC_RR || this->type == TYP_ABC_HPR || this->type == TYP_HCC_HPR ){
-      printf("Packet info: Address %02x, Value %08x\n", this->address, this->value);
+      os << std::hex << std::setfill('0');
+      os << "Packet info: Address " << std::setw(2) << (unsigned)address
+         << ", Value " << std::setw(8) << value << "\n";
+      os << std::dec << std::setfill(' ');
     }
   }
 
-  void print_more(){
+  void print_more(std::ostream &os) {
     std::string type_name = packet_type_names[this->type];
-    printf("Packet type %s, ", type_name.c_str());
+    os << "Packet type " << type_name << ", ";
     if(this->type == TYP_LP || this->type == TYP_PR){
-      printf("BCID %i (%i), L0ID %i, nClusters %i", this->bcid, this->bcid_parity, this->l0id, int(this->clusters.size()) );
+      os << "BCID " << bcid << " (" << bcid_parity << "), L0ID " << l0id
+         << ", nClusters " << this->clusters.size();
     }else if(this->type == TYP_ABC_RR || this->type == TYP_HCC_RR || this->type == TYP_ABC_HPR || this->type == TYP_HCC_HPR ){
-      printf("ABC %i, Address %02x, Value %08x", this->channel_abc, this->address, this->value);
+      os << "ABC " << channel_abc << ", Address ";
+      os << std::hex << std::setfill('0');
+      os << std::setw(2) << (unsigned)address << ", Value " << std::setw(8) << value;
+      os << std::dec << std::setfill(' ');
     }
-    printf("\n");
+    os << "\n";
     if(this->error_block)
-      this->error_block->print();
+      this->error_block->print(os);
   }
 
   //Print clusters (for LP / PR packets)
-  void print_clusters(){
-    this->print();
-    printf("Packet's abc clusters are:\n");
+  void print_clusters(std::ostream &os) {
+    this->print(os);
+    os << "Packet's abc clusters are:\n";
     for(unsigned int iW=0; iW < clusters.size(); ++iW){
       Cluster cluster = clusters.at(iW);
       std::string next_binary = std::bitset<3>(cluster.next).to_string();
-      printf("  %i) InputChannel: %i, Address: 0x%02x, Next Strip Pattern: %s.\n", iW, cluster.input_channel, cluster.address, next_binary.c_str() );
+      os << "  " << iW << ") InputChannel: " << cluster.input_channel
+         << ", Address: 0x";
+      os << std::hex << std::setfill('0');
+      os << std::setw(2) << cluster.address;
+      os << std::dec << std::setfill(' ');
+      os << ", Next Strip Pattern: " << next_binary << ".\n";
     }
-    printf("\n");
+    os << "\n";
   }
 
-  void print_raw_clusters(){
-    printf("Packet's abc clusters are:\n");
+  void print_raw_clusters(std::ostream &os){
+    os << "Packet's abc clusters are:\n";
     for(unsigned int iW=0; iW < clusters.size(); ++iW){
       Cluster cluster = clusters.at(iW);
-      printf("  %i) InputChannel: %i, Raw Cluster 0x%03x.\n", iW, cluster.input_channel, cluster.raw_cluster );
+      os << "  " << iW << ") InputChannel: " << cluster.input_channel
+         << ", Raw Cluster 0x";
+      os << std::hex << std::setfill('0');
+      os << std::setw(3) << cluster.raw_cluster << ".\n";
     }
-    printf("\n");
+    os << "\n";
   }
 
   //Print all raw words in packet
-  void print_words(){
-    printf("Packet's %i raw 10b words are: ", int(raw_words.size()) );
+  void print_words(std::ostream &os) {
+    os << "Packet's " << raw_words.size() << " raw 10b words are: ";
+    os << std::hex << std::setfill('0');
     for(unsigned int iW=0; iW < raw_words.size(); ++iW){
-      printf("%03x ", raw_words.at(iW) );
+      os << std::setw(3) << raw_words.at(iW) << " ";
     }
-    printf("\n");
+    os << std::dec << std::setfill(' ');
+    os << "\n";
   }
 
   //Return a string of the raw words in a single line
@@ -318,8 +340,13 @@ class StarChipPacket{
   //Parse a HCC read packet
   int parse_data_HCC_read(){
     if( raw_words.size() != 8 ){
-      printf( "Error, HCC readout packet should be 8 ten-bit words, but this is %i. Not parsing packet.\n", int(raw_words.size()) );
-      return 1;
+      if((raw_words.size()-2)/4 == 2) {
+        // Transfer of data is 32bit, not including SOP/EOP, so don't have precise length
+        logger().debug("HCC readout packet should be 8 ten-bit words, but this is {}. Allowing small mismatch.", raw_words.size());
+      } else {
+        logger().error("Error, HCC readout packet should be 8 ten-bit words, but this is {}. Not parsing packet.", raw_words.size());
+        return 1;
+      }
     }
 
     this->address = ((raw_words[1] & 0xF) << 4) | ((raw_words[2] >> 4) & 0xF);
@@ -332,8 +359,13 @@ class StarChipPacket{
   //Parse an ABC read packet
   int parse_data_ABC_read(){
     if( raw_words.size() != 11 ){
-      printf( "Error, ABC readout packet should be 11 ten-bit words, but this is %i. Not parsing packet.\n", int(raw_words.size()) );
-      return 1;
+      if((raw_words.size()-2)/4 == 3) {
+        // Transfer of data is 32bit, not including SOP/EOP, so don't have precise length
+        logger().debug("ABC readout packet should be 11 ten-bit words, but this is {}. Allowing small mismatch.", raw_words.size());
+      } else {
+        logger().error("ABC readout packet should be 11 ten-bit words, but this is {}. Not parsing packet.", raw_words.size());
+        return 1;
+      }
     }
 
     this->channel_abc = raw_words[1] & 0xF;
@@ -365,14 +397,14 @@ class StarChipPacket{
     while( continue_parsing ){
 
       if( iW+1 >= raw_words.size() ){
-        printf("Error, we somehow reached end of words without the end pattern!\n");
+        logger().error("Error, we somehow reached end of words without the end pattern!");
         return 1;
       }
 
       //Ignore HCC idles
       while( raw_words[iW] == 0x3FF ){
         if( iW+2 >= raw_words.size() ){
-          printf("Error, data ends in HCC idles (0x3FF) without giving an end of physics packet 0x6FED!\n");
+          logger().error("Error, data ends in HCC idles (0x3FF) without giving an end of physics packet 0x6FED!");
           return 1;
         }else{ //skip the idle
           iW++;
@@ -383,10 +415,10 @@ class StarChipPacket{
       //printf("Looking at word %x\n", word);
 
       if(word == 0x77F4){
-        printf("We received an error block 0x77F4!\n");
+        logger().info("We received an error block 0x77F4!");
 
         if( raw_words.size() < iW+8 ){
-          printf("Error, we expect eight 8-bit error block words, but only found %i words!\n", int(raw_words.size())-iW  );
+          logger().error("Error, we expect eight 8-bit error block words, but only found {} words!", raw_words.size()-iW);
           return 1;
         }
 
@@ -419,24 +451,33 @@ class StarChipPacket{
 
     }//while continue_parsing
 
-  return 0;
+    // iW is first byte of trailer word, and we know about SOP and EOP
+    unsigned int used_count = iW + 3;
+    unsigned int unused_count = raw_words.size() - used_count;
+    if(unused_count > 0) {
+      if(unused_count > 2) {
+        logger().error("Cluster packet has too many words at the end, trailer at {} of {}", (iW+1), raw_words.size());
+        return 1;
+      } else {
+        logger().debug("Cluster packet has some words at the end, trailer at {} of {}, but allowing small mismatch.", (iW+1), raw_words.size());
+      }
+    }
+
+    return 0;
   }
 
   int parse_data_ABC_transparent(){
     // This should be a single wrapped data packet from ABC
     this->channel_abc = raw_words[1] & 0xf;
 
-    if(verbose_parse_flag) {
-      printf("ABC transparent %d: ", this->channel_abc);
-
-      std::bitset<64> bits(raw_words[2]);
-      for(int i=0; i<7; i++) {
-        bits <<= 8;
-        bits |= raw_words[3+i];
-      }
-
-      printf("%s\n", bits.to_string().c_str());
+    std::bitset<64> bits(raw_words[2]);
+    for(int i=0; i<7; i++) {
+      bits <<= 8;
+      bits |= raw_words[3+i];
     }
+
+    logger().debug("ABC transparent {}: {}",
+                   this->channel_abc, bits.to_string());
 
   return 0;
   }
@@ -445,44 +486,41 @@ class StarChipPacket{
   //Ensure SOP and EOP exists, parses packet type, then calls appropriate parsing function
   int parse(){
     if(this->is_parsed()){
-      printf("Packet was previously parsed, clearing and re-parsing!\n");
+      logger().warn("Packet was previously parsed, clearing and re-parsing!");
       this->clear_parsed_info();
     }
 
-    if(verbose_parse_flag) {
-      printf("Parsing HCC packet, " );
-      this->print_words();
-    }
+    std::stringstream oss;
+    this->print_words(oss);
+    logger().debug("Parsing HCC packet, {}", oss.str());
 
     if( raw_words.size() < 4 ){
-      printf("Not enough words to parse the packet!\n");
+      logger().error("Not enough words to parse the packet!");
       return 1;
     }
 
     //Check SOP and EOP
     if( raw_words.front() != 0x13C ){
-      printf("First word is NOT SOP (0x13C), but is 0x%x\n", raw_words.front());
+      logger().error("First word is NOT SOP (0x13C), but is 0x{:x}", raw_words.front());
       return 1;
     }
     if( raw_words.back() != 0x1DC ){
-      printf("Last word is NOT EOP (0x1DC), but is 0x%x\n", raw_words.back());
+      logger().error("Last word is NOT EOP (0x1DC), but is 0x{:x}", raw_words.back());
       return 1;
     }
 
     //Get packet type
     int raw_type = (raw_words[1]>>4) & 0xF;
     if( packet_type_headers.find(raw_type) == packet_type_headers.end() ){
-      printf("Error, packet type was parsed as %i, which is an invalid type.\n", raw_type);
-      this->print_words();
+      logger().error("Error, packet type was parsed as {}, which is an invalid type.", raw_type);
+      this->print_words(std::cout);
       this->type = TYP_UNKNOWN;
       return 1;
     }
     this->type = packet_type_headers[ raw_type ] ;
 
-    if(verbose_parse_flag) {
-      std::string type_name = packet_type_names[this->type];
-      printf("Packet type is %s\n", type_name.c_str());
-    }
+    logger().debug("Packet type is {}",
+                    packet_type_names[this->type]);
 
     //Parse data for various packet types
     if (this->type == TYP_HCC_RR || this->type == TYP_HCC_HPR){
@@ -534,6 +572,9 @@ class StarChipPacket{
     return true;
   }
 
+  static void make_logger() {
+    (void)logger();
+  }
 };
 
 #endif

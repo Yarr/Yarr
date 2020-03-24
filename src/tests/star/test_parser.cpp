@@ -3,7 +3,7 @@
 #include "StarChipPacket.h"
 
 TEST_CASE("StarChipParser", "[star][parser]") {
-  StarChipPacket p(false);
+  StarChipPacket p;
 
   const uint8_t hpr_bytes[] = {
     0xe0, 0xf5, 0x78, 0x50, 0x07, 0x90
