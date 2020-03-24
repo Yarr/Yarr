@@ -45,7 +45,7 @@ class EmptyRxCore : public virtual RxCore {
 
   RawData* readData() override { return nullptr; }
   void flushBuffer() override {}
-        
+
   uint32_t getDataRate() override { return 40; }
   uint32_t getCurCount() override { return 0; }
   bool isBridgeEmpty() override { return true; }

@@ -20,6 +20,7 @@
 
 #define RX_ENABLE 0x0
 #define RX_STATUS 0x1
+#define RX_POLARITY 0x2
 
 #define RX_START_ADDR 0x0
 #define RX_DATA_COUNT 0x1
@@ -44,6 +45,9 @@ class SpecRxCore : virtual public RxCore, virtual public SpecCom{
         uint32_t getDataRate();
         uint32_t getCurCount();
         bool isBridgeEmpty();
+        
+        void setRxPolarity(uint32_t val);
+        uint32_t getRxPolarity();
 
     private:
         uint32_t getStartAddr();
