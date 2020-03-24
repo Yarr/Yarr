@@ -51,4 +51,9 @@ class EmptyRxCore : public virtual RxCore {
   bool isBridgeEmpty() override { return true; }
 };
 
+class EmptyHw : public HwController, public EmptyRxCore, public EmptyTxCore {
+ public:
+  void loadConfig(json &j) override {}
+};
+
 #endif
