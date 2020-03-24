@@ -133,7 +133,7 @@ void Rd53aDataProcessor::process_core() {
                         if (__builtin_expect((pix_col < Rd53a::n_Col && pix_row < Rd53a::n_Row), 1)) {
                             // Check if there is already an event
                             if (events[channel] == 0) {
-                                logger->warn("[{}] No header in data fragment!", channel);
+                                logger->debug("[{}] No header in data fragment!", channel);
                                 curOut[channel]->newEvent(666, l1id[channel], bcid[channel]);
                                 events[channel]++;
                             }

@@ -2,12 +2,8 @@
     "ctrlCfg" : {
         "type": "emu_Star",
         "cfg" : {
-            "tx" : {
-                "id" : 1337
-            },
-            "rx" : {
-                "id" : 1338
-            }
+            "hprPeriod" : 40000,
+            "feCfg" : "configs/emulator/emu_fe0_star.json"
         }
     }
 }

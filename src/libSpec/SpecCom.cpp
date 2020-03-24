@@ -208,6 +208,14 @@ void SpecCom::init() {
         slog->warn("... BAR4 not mapped ({})", e.what());
         bar4 = NULL;
     }
+
+    // Print FW info
+    uint32_t fw_vers = readSingle(0x7<<14 | 0x6);
+    uint32_t fw_ident = readSingle(0x7<<14 | 0x7);
+    slog->info("Firmware Version: 0x{:x}", fw_vers);
+    slog->info("Firmware Identifier: 0x{:x}", fw_ident);
+    // TODO decode firmware identifier
+
     slog->info("Flushing buffers ...");
     this->flushDma();
     slog->info("Init success!");
@@ -846,6 +854,8 @@ void SpecCom::flushDma() {
     volatile uint32_t dma_count = 1;
     unsigned cnt = 0;
     unsigned timeout = 10000000;
+    if (bar4)
+        timeout = 100;
     do {
         dma_addr = readSingle((0x3<<14) | 0x0);
         dma_count = readSingle((0x3<<14) | 0x1);
@@ -855,7 +865,8 @@ void SpecCom::flushDma() {
     } while (dma_count > 0 && cnt < timeout);
     if (cnt == timeout) {
         slog->critical("Timed out while flushing buffers, something is wrong ... aborting!");
-        exit(-1);
+        if (!bar4)
+            exit(-1);
     }
 }
 

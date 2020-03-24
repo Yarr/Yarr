@@ -57,7 +57,9 @@ foreach(lib ${libs})
     add_definitions( -DNO_PYTHON )
     include_directories(lib${lib}/include)
     include_directories(BEFORE SYSTEM ${PROJECT_BINARY_DIR}/include)
-    file(GLOB SrcFiles lib${lib}/*.cpp)
+    file(GLOB SrcFiles
+         CONFIGURE_DEPENDS
+         lib${lib}/*.cpp)
     list(APPEND LibSrcFiles ${SrcFiles})
 endforeach()
 
@@ -70,6 +72,16 @@ YARR_ADD_VARIANT()
 add_dependencies(Yarr variant)
 YARR_ADD_TBB()
 add_dependencies(Yarr tbb_2019)
+
+# Plotting Tools
+find_package(ROOT COMPONENTS Hist Graf)
+if (${ROOT_FOUND})
+    YARR_ADD_PLOTTING()
+    add_dependencies(Yarr plotting_tools)
+    INSTALL(DIRECTORY ${CMAKE_BINARY_DIR}/src/external/src/plotting_tools/bin DESTINATION ${TARGET_INSTALL_AREA} FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ WORLD_EXECUTE WORLD_READ GROUP_EXECUTE GROUP_READ)
+else (${ROOT_FOUND})
+    MESSAGE(STATUS "Could not locate ROOT. Will not compile plotting tools!")
+endif (${ROOT_FOUND})
 
 if ("Rogue" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   YARR_ADD_ROGUE()
@@ -93,7 +105,9 @@ if ("NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
 endif()
 
 #add executables
-file(GLOB tools tools/*.cpp)
+file(GLOB tools
+     CONFIGURE_DEPENDS
+     tools/*.cpp)
 
 if (NOT "NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   list(FILTER tools EXCLUDE REGEX tools/testNetioHw.cpp|tools/testBitStream.cpp|tools/testScan.cpp)
@@ -110,7 +124,7 @@ endforeach()
 # Mainly this is about making sure the auto-registration works.
 #if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 if(APPLE)
-  set(YARR_LINK_LIB_COMMAND 
+  set(YARR_LINK_LIB_COMMAND
       -Wl,-all_load Yarr -Wl, ${YARR_LIB_DEPS} pthread)
 else()
   # Whole-archive means not to drop symbols from Yarr.
@@ -134,7 +148,9 @@ install(DIRECTORY ${PROJECT_BINARY_DIR}/bin DESTINATION ${TARGET_INSTALL_AREA}  
     WORLD_EXECUTE WORLD_READ GROUP_EXECUTE GROUP_READ  )
 
 # Tests
-file(GLOB_RECURSE test_src tests/test_*.cpp)
+file(GLOB_RECURSE test_src
+     CONFIGURE_DEPENDS
+     tests/test_*.cpp)
 
 # Make one executable
 add_executable(test_main ${test_src} tests/main.cpp)

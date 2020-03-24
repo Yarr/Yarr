@@ -1,6 +1,0 @@
-{
-    "pattern": "[%n] %v",
-    "log_config": [
-        {"name": "all", "level": "trace"}
-    ]
-}

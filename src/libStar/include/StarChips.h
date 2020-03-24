@@ -7,7 +7,6 @@
 // # Comment: StarChips FrontEnd class
 // ################################
 
-#include <iostream>
 #include <string>
 
 #include "FrontEnd.h"
@@ -16,9 +15,9 @@ class TxCore;
 class RxCore;
 
 #include "StarCmd.h"
-#include "HccStarCfg.h"
+#include "StarCfg.h"
 
-class StarChips : public HccStarCfg, public StarCmd, public FrontEnd {
+class StarChips : public StarCfg, public StarCmd, public FrontEnd {
  public:
     StarChips();
     StarChips(HwController *arg_core);
@@ -27,7 +26,7 @@ class StarChips : public HccStarCfg, public StarCmd, public FrontEnd {
 
     ~StarChips() {}
 
-    void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel);
+    void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override;
 
     void writeNamedRegister(std::string name, uint16_t value) override;
 
@@ -38,9 +37,6 @@ class StarChips : public HccStarCfg, public StarCmd, public FrontEnd {
     //! configure
     //! brief configure the chip (virtual)
     void configure() override;
-
-    void toFileBinary(std::string) override {}
-    void fromFileBinary(std::string) override {}
 
     //! toFileJson
     //! brief write configuration to json (virtual)

@@ -8,100 +8,50 @@
 
 #include "Fei4Analysis.h"
 
+#include "AllAnalyses.h"
+
 #include "logging.h"
 
 namespace {
     auto alog = logging::make_log("Fei4Analysis");
 }
 
-Fei4Analysis::Fei4Analysis() {
+namespace {
+    bool oa_registered =
+      StdDict::registerAnalysis("OccupancyAnalysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new OccupancyAnalysis());});
 
-}
+    bool l1_registered =
+      StdDict::registerAnalysis("L1Analysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new L1Analysis());});
 
-Fei4Analysis::Fei4Analysis(Bookkeeper *b, unsigned ch) {
-    bookie = b;
-    channel = ch;
-}
+    bool tot_registered =
+      StdDict::registerAnalysis("TotAnalysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new TotAnalysis());});
 
-Fei4Analysis::~Fei4Analysis() {
-    for (unsigned i=0; i<algorithms.size(); i++) {
-        delete algorithms[i];
-    }
-}
+    bool no_registered =
+      StdDict::registerAnalysis("NoiseAnalysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new NoiseAnalysis());});
 
-void Fei4Analysis::init() {
-    for (unsigned i=0; i<algorithms.size(); i++) {
-        algorithms[i]->connect(output);
-        algorithms[i]->init(scan);
-    }
-}
+    bool no_tune_registered =
+      StdDict::registerAnalysis("NoiseTuning",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new NoiseTuning());});
 
-void Fei4Analysis::run() {
-    SPDLOG_LOGGER_TRACE(alog, "");
-    thread_ptr.reset( new std::thread( &Fei4Analysis::process, this ) );
-}
+    bool sf_registered =
+      StdDict::registerAnalysis("ScurveFitter",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new ScurveFitter());});
 
-void Fei4Analysis::loadConfig(json &j){
-    for (unsigned i=0; i<algorithms.size(); i++) {
-        if (!j[std::to_string(i)]["config"].empty()){
-	    algorithms[i]->loadConfig(j[std::to_string(i)]["config"]);
-	}
-    }
-}
+    bool gbl_thr_registered =
+      StdDict::registerAnalysis("OccGlobalThresholdTune",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new OccGlobalThresholdTune());});
 
-void Fei4Analysis::join() {
-    if( thread_ptr->joinable() ) thread_ptr->join();
-}
+    bool pix_thr_registered =
+      StdDict::registerAnalysis("OccPixelThresholdTune",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new OccPixelThresholdTune());});
 
-void Fei4Analysis::process() {
-    while( true ) {
-
-        std::unique_lock<std::mutex> lk(mtx);
-        input->waitNotEmptyOrDone();
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        process_core();
-
-        if( input->isDone() ) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(200));
-            process_core();  // this line is needed if the data comes in before scanDone is changed.
-            alog->info("Analysis done!");
-            break;
-        }
-    }
-
-    process_core();
-
-    end();
-
-}
-
-void Fei4Analysis::process_core() {
-    while(!input->empty()) {
-        auto h = input->popData();
-        if (h != NULL) {
-            for (unsigned i=0; i<algorithms.size(); i++) {
-                algorithms[i]->processHistogram(&*h);
-            }
-        }
-    }
-}
-
-void Fei4Analysis::end() {
-    SPDLOG_LOGGER_TRACE(alog, "");
-    for (unsigned i=0; i<algorithms.size(); i++) {
-        algorithms[i]->end();
-    }
-}
-
-void Fei4Analysis::addAlgorithm(AnalysisAlgorithm *a) {
-    algorithms.push_back(a);
-    a->setBookkeeper(bookie);
-    a->setChannel(channel);
-}
-
-void Fei4Analysis::addAlgorithm(AnalysisAlgorithm *a, unsigned ch) {
-    algorithms.push_back(a);
+    bool del_registered =
+      StdDict::registerAnalysis("DelayAnalysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new DelayAnalysis());});
 }
 
 void OccupancyAnalysis::init(ScanBase *s) {
