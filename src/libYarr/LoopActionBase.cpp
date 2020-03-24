@@ -20,7 +20,7 @@ LoopActionBase::LoopActionBase() : loopType(typeid(void)){
     m_done = false;
 }
 
-void LoopActionBase::setup(LoopStatus *stat, Bookkeeper *k) {
+void LoopActionBase::setup(LoopStatusMaster *stat, Bookkeeper *k) {
     SPDLOG_LOGGER_DEBUG(llog, "");
     g_stat = stat;
     g_fe = k->g_fe;

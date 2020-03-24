@@ -89,8 +89,7 @@ void Fei4DataProcessor::process_core() {
         std::map<unsigned, std::unique_ptr<Fei4Data>> curOut;
         std::map<unsigned, int> events;
         for (unsigned i=0; i<activeChannels.size(); i++) {
-            curOut[activeChannels[i]].reset(new Fei4Data());
-            curOut[activeChannels[i]]->lStat = curInV->stat;
+            curOut[activeChannels[i]].reset(new Fei4Data(curInV->stat));
             events[activeChannels[i]] = 0;
         }
 

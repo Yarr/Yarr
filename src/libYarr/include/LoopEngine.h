@@ -28,7 +28,7 @@ class LoopEngine : public Engine {
 
     private:
         Engine::loop_list_type m_list;
-        LoopStatus stat;
+        LoopStatusMaster stat;
         Bookkeeper *g_bk;
 };
 
