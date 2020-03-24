@@ -26,7 +26,7 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
 
     ~StarChips() {}
 
-    void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel);
+    void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override;
 
     void writeNamedRegister(std::string name, uint16_t value) override;
 

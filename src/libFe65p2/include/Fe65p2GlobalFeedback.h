@@ -23,7 +23,7 @@ class Fe65p2GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
     private:
         Fe65p2GlobalReg Fe65p2GlobalCfg::*m_reg;
         
-        std::mutex fbMutex;
+        std::map<unsigned, std::mutex> fbMutex;
         std::map<unsigned, unsigned> values;
 		std::map<unsigned, unsigned> localStep;
 		std::map<unsigned, double> oldSign;

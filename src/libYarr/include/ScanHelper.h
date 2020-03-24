@@ -19,6 +19,9 @@
 #include "storage.hpp"
 
 namespace ScanHelper {
+        /// Get a new run number, such that it's different next time
+        unsigned newRunCounter();
+
         json openJsonFile(std::string filepath);
         std::unique_ptr<HwController> loadController(json &ctrlCfg);
         std::string loadChips(json &j, Bookkeeper &bookie, HwController *hwCtrl, std::map<FrontEnd*, std::string> &feCfgMap, std::string &outputDir);

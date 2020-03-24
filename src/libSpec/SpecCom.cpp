@@ -208,6 +208,14 @@ void SpecCom::init() {
         slog->warn("... BAR4 not mapped ({})", e.what());
         bar4 = NULL;
     }
+
+    // Print FW info
+    uint32_t fw_vers = readSingle(0x7<<14 | 0x6);
+    uint32_t fw_ident = readSingle(0x7<<14 | 0x7);
+    slog->info("Firmware Version: 0x{:x}", fw_vers);
+    slog->info("Firmware Identifier: 0x{:x}", fw_ident);
+    // TODO decode firmware identifier
+
     slog->info("Flushing buffers ...");
     this->flushDma();
     slog->info("Init success!");
