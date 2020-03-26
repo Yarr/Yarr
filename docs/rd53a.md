@@ -21,7 +21,7 @@ Default settings for operation in **LDO mode**
 
 After all jumpers are placed on the SCC, connect the DisplayPort cable to DP1 and power cable to PWR_IN.
 
-Set the power supply to <span style="color:red">**1.8**</span> V, the current should be around 1 A and power on the chip. For the LDO operation, e.g. the jumper configuration shown in previous figure, make sure <span style="color:red"> not to apply higher voltage than **1.8 V**</span>.
+Set the power supply to <span style="color:red">**1.8**</span> V, the current should be around 0.5 A (combined for analog and digital) and power on the chip. For the LDO operation, e.g. the jumper configuration shown in previous figure, make sure <span style="color:red"> not to apply higher voltage than **1.8 V**</span>.
 
 
 ## Running RD53a in ShuLDO mode
