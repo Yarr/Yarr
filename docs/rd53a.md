@@ -21,17 +21,19 @@ Default settings for operation in **LDO mode**
 
 After all jumpers are placed on the SCC, connect the DisplayPort cable to DP1 and power cable to PWR_IN.
 
-Set the power supply to <span style="color:red">**1.8**</span> V, the current should be around 0.5 A and power on the chip. For the LDO operation, e.g. the jumper configuration shown in previous figure, make sure <span style="color:red"> not to apply higher voltage than **1.8 V**</span>.
+Set the power supply to <span style="color:red">**1.8**</span> V, the current should be around 1 A and power on the chip. For the LDO operation, e.g. the jumper configuration shown in previous figure, make sure <span style="color:red"> not to apply higher voltage than **1.8 V**</span>.
 
 
 ## Running RD53a in ShuLDO mode
 
-To run the SCC in shunt mode, shunt resistors needed to be appropriately loaded, as well as adding additional jumpers.
+To run the SCC in shunt mode, shunt resistors needed to be appropriately loaded, as well as adding additional jumpers. For more information, please refer to [this presentation](https://indico.cern.ch/event/858912/contributions/3616969/attachments/1932760/3201729/sldo_calibration_er.pdf)
 
 ### Loading shunt resistors
 ![Locations of the shunt resistor ](images/shuntresistor.png)
+![Schematic for shunt resistors](images/shuntschematic.png)
 
-4 shunt resistors need to be soldered on the back of the SCC, pictured above:
+4 shunt resistors need to be soldered on the back of the SCC, pictured above, and in the schematic:
+
 - RextA: analog external resistor, resistor that sets the slope for the analog shunt IV. The value of this resistor is `1.15k` ohm.
 - RextD: digital external resistor, resistor that sets the slope for the digital shunt IV. The value of this resistor is `1.07k` ohm.
 - RIoffsA: analog offset resistor, resistor that sets the offset for the analog IV curve. The value of this resistor is `232k` ohm.
@@ -95,7 +97,7 @@ To create the default chip configuration without running a scan:
 bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json
 ```
 
-More general information about hwo to use the scanConsole, can be found on the main page: [ScanConsole](scanconsole). This page details each of the configuration settings. 
+More general information about how to use the scanConsole, can be found on the main page: [ScanConsole](scanconsole). This page details each of the configuration settings. 
 
 In case you run into problems or have abnormal results please consult the troubleshooting page here: [Troubleshooting](troubleshooting)
 
@@ -316,7 +318,7 @@ To run do
 ```bash
 bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_crosstalk_scan_checkBumpBonding.json  -p
 ```
-There are 2 ways to bump bond $25 \times 100 \mu m^2$ sensor pixels onto the $50 \times 50 \mu m^2$ chip pixels. This scan shows crosstalk for sensor type 1 and no crosstalk for sensor type 0 ($50 \times 50 \mu m^2$) or 2 ($25 \times 100 \mu m^2$ but different bump bonding scheme than type 1) as can be distinguished below:
+There are 2 ways to bump bond 25x100 sensor pixels onto the 50x50 chip pixels. This scan shows crosstalk for sensor type 1 and no crosstalk for sensor type 0 (50x50) or 2 (25x100 but different bump bonding scheme than type 1) as can be distinguished below:
 
 ![Check Bump Bonding Scheme type 1](images/0x0A59_ThresholdMap-0_STACK_BumpBond.png)
 ![Check Bump Bonding Scheme type 0](images/0x0A57_ThresholdMap-0_STACK_BumpBond.png)
