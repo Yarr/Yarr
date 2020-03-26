@@ -83,6 +83,6 @@ deploy:
     - yum -y install doxygen
     - sed -i '1 s/^#\(.*\)$/\1 {#mainpage}\n============/' README.md
     - cd build
-    - cmake3 ..
+    - CXXFLAGS=-Werror cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
     - make doxygen
     - CI_OUTPUT_DIR=doc/html deploy-dfs
