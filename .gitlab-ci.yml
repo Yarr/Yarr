@@ -1,5 +1,9 @@
 image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_build
 
+
+before_script:
+- yum -y install cmake3
+
 job_build_and_test:
     stage: build
     script:
@@ -80,10 +84,9 @@ deploy:
     "DFS_WEBSITE_NAME": "yarr.web.cern.ch/yarr"
   image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
   script:
-    - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
     - yum -y install doxygen
     - sed -i '1 s/^#\(.*\)$/\1 {#mainpage}\n============/' README.md
     - cd build
     - CXXFLAGS=-Werror cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
     - make doxygen
-    - CI_OUTPUT_DIR=doc/html deploy-dfs
+    - CI_OUTPUT_DIR=docs/html deploy-dfs
