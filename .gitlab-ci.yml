@@ -80,6 +80,7 @@ deploy:
     "DFS_WEBSITE_NAME": "yarr.web.cern.ch/yarr"
   image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
   script:
+    - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
     - yum -y install doxygen
     - sed -i '1 s/^#\(.*\)$/\1 {#mainpage}\n============/' README.md
     - cd build
