@@ -75,6 +75,7 @@ deploy:
   only:
     - master
     - doc
+    - devel-docwebsite
   variables:
     "DFS_WEBSITE_NAME": "yarr.web.cern.ch/yarr"
   image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
