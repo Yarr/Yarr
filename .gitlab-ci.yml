@@ -82,7 +82,6 @@ deploy:
   script:
     - yum -y install doxygen
     - sed -i '1 s/^#\(.*\)$/\1 {#mainpage}\n============/' README.md
-    - mkdir build
     - cd build
     - cmake3 ..
     - make doxygen
