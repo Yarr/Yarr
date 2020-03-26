@@ -69,3 +69,20 @@ job_test_json:
     script:
       - npm install jsonlint -g
       - for file in $(find ../configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
+
+deploy:
+  stage: deploy
+  only:
+    - master
+    - doc
+  variables:
+    "DFS_WEBSITE_NAME": "yarr.web.cern.ch/yarr"
+  image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
+  script:
+    - yum -y install doxygen
+    - sed -i '1 s/^#\(.*\)$/\1 {#mainpage}\n============/' README.md
+    - mkdir build
+    - cd build
+    - cmake3 ..
+    - make doxygen
+    - CI_OUTPUT_DIR=doc/html deploy-dfs
