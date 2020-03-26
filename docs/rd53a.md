@@ -80,7 +80,7 @@ Additional changes for the quad module's chip configurations:
 
 - `ChipId`: the ChipId for each chip should be set according to wirebonding map (Chip1-1, Chip2-2,Chip3-3,Chip4-4)
 - `OutputActiveLanes`: 7 instead of 15 because only 3 data lanes are connected, not 4
-
+- `CmlEn`: 7 instead of 15
 
 # Scan Console for RD53A
 
