@@ -75,6 +75,8 @@ build_docs:
     before_script:
         - pip install mkdocs
     script:
+        - export LC_ALL=en_US.utf-8
+        - export LANG=en_US.utf-8
         - mkdocs build
     artifacts:
         paths:
