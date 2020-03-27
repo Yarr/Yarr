@@ -69,4 +69,3 @@ job_test_json:
     script:
       - npm install jsonlint -g
       - for file in $(find ../configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
-
