@@ -69,3 +69,40 @@ job_test_json:
     script:
       - npm install jsonlint -g
       - for file in $(find ../configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
+
+build_docs:
+    stage: build
+    before_script:
+        - pip install mkdocs
+    script:
+        - export LC_ALL=en_US.utf-8
+        - export LANG=en_US.utf-8
+        - mkdocs build
+    artifacts:
+        paths:
+            - site
+          
+
+deploy_master:
+    stage: deploy
+    dependencies: ["build_docs"]
+    only:
+        - master
+    variables:
+        "EOS_PATH" : "/eos/user/t/theim/www/yarr"
+        "CI_OUTPUT_DIR" : "site/"
+    image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
+    script:
+        - deploy-eos
+
+deploy_devel:
+    stage: deploy
+    dependencies: ["build_docs"]
+    only:
+        - devel
+    variables:
+        "EOS_PATH" : "/eos/user/t/theim/www/yarr/devel"
+        "CI_OUTPUT_DIR" : "site/"
+    image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
+    script:
+        - deploy-eos
