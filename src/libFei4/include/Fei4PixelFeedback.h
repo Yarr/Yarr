@@ -45,13 +45,13 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
             loopType = typeid(this);
         }
 
-        void feedback(unsigned channel, Histo2d *h) {
+        void feedback(unsigned channel, std::unique_ptr<Histo2d> h) override {
             // TODO Check on NULL pointer
             if (h->size() != 26880) {
                 logger().error("Wrong type of feedback histogram on channel {}", channel);
                 doneMap[channel] = true;
             } else {
-                fbHistoMap[channel] = h;
+                fbHistoMap[channel] = std::move(h);
             }
 
             fbMutexMap[channel].unlock();
@@ -91,7 +91,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
                     unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
                     
                     // Init Maps
-                    fbHistoMap[ch] = NULL;
+                    fbHistoMap[ch].reset();
                     
                     // Initilize Pixel regs with default config
                     auto fei4 = dynamic_cast<Fei4*>(keeper->feList[k]);
@@ -182,7 +182,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
 
         void addFeedback(unsigned ch) {
             auto histo = fbHistoMap[ch];
-            if (histo != NULL) {
+            if (histo != nullptr) {
                 auto fe = dynamic_cast<Fei4*>(keeper->getFe(ch));
                 for (unsigned row=1; row<337; row++) {
                     for (unsigned col=1; col<81; col++) {
@@ -194,7 +194,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
                         this->setPixel(fe, col, row, v);
                     }
                 }
-                delete fbHistoMap[ch];
+                fbHistoMap[ch].reset();
             }
         }
 
@@ -220,7 +220,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
         }
 
         enum FeedbackType fbType;
-        std::map<unsigned, Histo2d*> fbHistoMap;
+        std::map<unsigned, std::unique_ptr<Histo2d>> fbHistoMap;
         std::map<unsigned, std::mutex> fbMutexMap;
         unsigned step, oldStep;
         unsigned cur;

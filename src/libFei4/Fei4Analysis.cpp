@@ -375,7 +375,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
 
         if (pixelFb != NULL) {
             double targetTot = bookie->getTargetTot();
-            Histo2d *fbHisto = new Histo2d("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+            auto fbHisto = std::make_unique<Histo2d>("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
             for (unsigned i=0; i<meanTotMap->size(); i++) {
                 int sign = 0;
                 double mean = meanTotMap->getBin(i);
@@ -389,7 +389,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
                 fbHisto->setBin(i, sign);
             }
 
-            pixelFb->feedback(channel, fbHisto);
+            pixelFb->feedback(channel, std::move(fbHisto));
         }
 
         output->pushData(std::move(meanTotMap));
@@ -663,11 +663,11 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
         }
 
         if (step[outerIdent] == nullptr) {
-            Histo2d *hh2 = new Histo2d("StepMap-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+            auto hh2 = std::make_unique<Histo2d>("StepMap-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
             hh2->setXaxisTitle("Column");
             hh2->setYaxisTitle("Row");
             hh2->setZaxisTitle("TDAC change");
-            step[outerIdent].reset(hh2);
+            step[outerIdent] = std::move(hh2);
         }
         
         if (deltaThr[outerIdent] == nullptr) {
@@ -709,7 +709,8 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
         }
         prevOuter = outerIdent;
         alog->info("[{}] --> Sending feedback #{}", this->channel, outerIdent);
-        fb->feedback(this->channel, step[outerIdent].get());
+        fb->feedback(this->channel, std::move(step[outerIdent]));
+        step[outerIdent].reset();
     }
 }
 
@@ -1007,7 +1008,7 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
     // Got all data, finish up Analysis
     if (innerCnt[ident] == n_count) {
         double mean = 0;
-        Histo2d *fbHisto = new Histo2d("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        auto fbHisto = std::make_unique<Histo2d>("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
         std::unique_ptr<Histo1d> occDist(new Histo1d(name2, injections-1, 0.5, injections-0.5, typeid(this)));
         occDist->setXaxisTitle("Occupancy");
         occDist->setYaxisTitle("Number of Pixels");
@@ -1026,7 +1027,7 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
         alog->info("[{}] Mean Occupancy = {}", channel, mean/(nCol*nRow*(double)injections));
         alog->info("[{}] RMS = {}", channel, occDist->getStdDev());
 
-        fb->feedback(this->channel, fbHisto);
+        fb->feedback(this->channel, std::move(fbHisto));
         output->pushData(std::move(occMaps[ident]));
         output->pushData(std::move(occDist));
         innerCnt[ident] = 0;
@@ -1340,7 +1341,7 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
         }
 
         if (pixelFb != NULL) { // Pixel Threshold Tuning
-            Histo2d *fbHisto = new Histo2d("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+            auto fbHisto = std::make_unique<Histo2d>("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
             SPDLOG_LOGGER_TRACE(alog, "");
             unsigned pixelWoHits = 0;
             for (unsigned i=0; i<occMaps[ident]->size(); i++) {
@@ -1353,7 +1354,7 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
             }
             alog->info("[{}] Number of pixels with hits: {}", channel, pixelWoHits);
 
-            pixelFb->feedbackStep(channel, fbHisto);
+            pixelFb->feedbackStep(channel, std::move(fbHisto));
         }
         output->pushData(std::move(occMaps[ident]));
         occMaps[ident] = NULL;

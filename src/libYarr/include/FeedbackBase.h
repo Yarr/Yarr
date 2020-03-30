@@ -18,8 +18,8 @@ class GlobalFeedbackBase {
 
 class PixelFeedbackBase {
     public:
-        virtual void feedback(unsigned channel, Histo2d *h) {};
-        virtual void feedbackStep(unsigned channel, Histo2d *h) {};
+        virtual void feedback(unsigned channel, std::unique_ptr<Histo2d> h) {};
+        virtual void feedbackStep(unsigned channel, std::unique_ptr<Histo2d> h) {};
 };
 
 #endif
