@@ -6,6 +6,8 @@
 #ifndef FEEDBACKBASE_H
 #define FEEDBACKBASE_H
 
+#include <variant>
+
 #include "Histo2d.h"
 #include "LoopActionBase.h"
 
@@ -21,6 +23,18 @@ class PixelFeedbackBase {
         virtual void feedback(unsigned channel, std::unique_ptr<Histo2d> h) {};
         virtual void feedbackStep(unsigned channel, std::unique_ptr<Histo2d> h) {};
 };
+
+struct GlobalFeedbackParams {
+  double sign;
+  bool last;
+  bool binary;
+};
+
+struct PixelFeedbackParams {
+  std::unique_ptr<Histo2d> histo;
+};
+
+typedef std::variant<GlobalFeedbackParams, PixelFeedbackParams> FeedbackParams;
 
 #endif
 
