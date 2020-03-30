@@ -470,6 +470,9 @@ int main(int argc, char *argv[]) {
         cfgFile.close();
     }
 
+    // For sending feedback data
+    std::map<unsigned, FeedbackParams> fbData;
+
     // TODO Make this nice
     std::unique_ptr<ScanBase> s;
     try {
@@ -485,7 +488,8 @@ int main(int argc, char *argv[]) {
 
     // TODO not to use the raw pointer!
     ScanHelper::buildHistogrammers( histogrammers, scanType, bookie.feList, s.get(), outputDir);
-    ScanHelper::buildAnalyses( analyses, scanType, bookie, s.get(), mask_opt);
+    ScanHelper::buildAnalyses( analyses, scanType, bookie, s.get(),
+                               fbData, mask_opt);
 
     logger->info("Running pre scan!");
     s->init();
