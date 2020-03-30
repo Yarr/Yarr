@@ -58,7 +58,7 @@ void printHelp();
 void listScans();
 void listKnown();
 
-std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie );
+std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie, FeedbackClipboardMap *fbData);
 
 static std::string getHostname() {
   std::string hostname = "default_host";
@@ -477,7 +477,7 @@ int main(int argc, char *argv[]) {
     // TODO Make this nice
     std::unique_ptr<ScanBase> s;
     try {
-        s = buildScan(scanType, bookie );
+        s = buildScan(scanType, bookie, &fbData);
     } catch (const char *msg) {
         logger->warn("No scan to run, exiting with msg: {}", msg);
         return 0;
@@ -744,10 +744,10 @@ void listKnown() {
     logging::listLoggers();
 }
 
-std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie ) {
+std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie,  FeedbackClipboardMap *fbData) {
 
     logger->info("Found Scan config, constructing scan ...");
-    std::unique_ptr<ScanFactory> s ( new ScanFactory(&bookie) );
+    std::unique_ptr<ScanFactory> s ( new ScanFactory(&bookie, fbData) );
     json scanCfg;
     try {
         scanCfg = ScanHelper::openJsonFile(scanType);

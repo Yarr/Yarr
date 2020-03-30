@@ -20,7 +20,8 @@ namespace {
     auto sflog = logging::make_log("ScanFactory");
 }
 
-ScanFactory::ScanFactory(Bookkeeper *k) : ScanBase(k) {
+ScanFactory::ScanFactory(Bookkeeper *k, FeedbackClipboardMap *fb)
+  : ScanBase(k), feedback(fb) {
 }
 
 void ScanFactory::init() {
@@ -90,6 +91,13 @@ void ScanFactory::loadConfig(json &scanCfg) {
         if (!scanCfg["scan"]["loops"][i]["config"].empty()) {
             sflog->info("   Loading loop config ... ");
             action->loadConfig(scanCfg["scan"]["loops"][i]["config"]);
+        }
+
+        if(auto *fbGlobal = dynamic_cast<GlobalFeedbackReceiver*>(&*action)) {
+            fbGlobal->connectClipboard(feedback);
+        }
+        if(auto *fbPixel = dynamic_cast<PixelFeedbackReceiver*>(&*action)) {
+            fbPixel->connectClipboard(feedback);
         }
         this->addLoop(action);
 

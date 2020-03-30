@@ -25,7 +25,7 @@ public:
 TEST_CASE("FeedbackTestEmpty", "[Feedback]") {
     MyHardware empty;
     Bookkeeper bookie(&empty, &empty);
-    ScanFactory scan(&bookie);
+    ScanFactory scan(&bookie, nullptr);
 
     auto g_fe = StdDict::getFrontEnd("FEI4B");
     g_fe->makeGlobal();
@@ -51,7 +51,8 @@ TEST_CASE("FeedbackTestEmpty", "[Feedback]") {
 TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
     MyHardware empty;
     Bookkeeper bookie(&empty, &empty);
-    ScanFactory scan(&bookie);
+    FeedbackClipboardMap fb;
+    ScanFactory scan(&bookie, &fb);
 
     auto fe = StdDict::getFrontEnd("FEI4B").release();
     fe->setActive(true);
@@ -76,21 +77,6 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
     scan.loadConfig(js);
 
     scan.init();
-
-    FeedbackClipboardMap fb;
-
-    bool is_connected = false;
-    for (unsigned n=0; n<scan.size(); n++) {
-        std::shared_ptr<LoopActionBase> l = scan.getLoop(n);
-
-        auto maybe = dynamic_cast<GlobalFeedbackReceiver *>(l.get());
-        if(maybe != nullptr) {
-            maybe->connectClipboard(&fb);
-            is_connected = true;
-        }
-    }
-
-    REQUIRE (is_connected);
 
     GlobalFeedbackSender send;
     send.connectClipboard(&fb[rx_channel]);
@@ -154,7 +140,8 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
 TEST_CASE("FeedbackTestPixel", "[Feedback]") {
     MyHardware empty;
     Bookkeeper bookie(&empty, &empty);
-    ScanFactory scan(&bookie);
+    FeedbackClipboardMap fb;
+    ScanFactory scan(&bookie, &fb);
 
     unsigned rx_channel = 0;
 
@@ -179,21 +166,6 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
     scan.loadConfig(js);
 
     scan.init();
-
-    FeedbackClipboardMap fb;
-
-    bool is_connected = false;
-    for (unsigned n=0; n<scan.size(); n++) {
-        std::shared_ptr<LoopActionBase> l = scan.getLoop(n);
-
-        auto maybe = dynamic_cast<PixelFeedbackReceiver *>(l.get());
-        if(maybe != nullptr) {
-          maybe->connectClipboard(&fb);
-          is_connected = true;
-        }
-    }
-
-    REQUIRE (is_connected);
 
     PixelFeedbackSender send;
     send.connectClipboard(&fb[rx_channel]);
