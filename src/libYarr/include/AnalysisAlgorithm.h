@@ -5,6 +5,7 @@
 
 #include "Bookkeeper.h"
 #include "DataProcessor.h"
+#include "FeedbackBase.h"
 #include "HistogramBase.h"
 #include "ScanBase.h"
 
@@ -29,6 +30,7 @@ class AnalysisAlgorithm {
             output = out;
         }
         virtual void init(ScanBase *s) {}
+        virtual void connectFeedback(ClipBoard<FeedbackParams> *cb) {}
 	virtual void loadConfig(json &config){}
         virtual void processHistogram(HistogramBase *h) {}
         virtual void end() {}

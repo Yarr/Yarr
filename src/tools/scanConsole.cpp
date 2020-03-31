@@ -32,6 +32,7 @@
 #include "AllStdActions.h"
 
 #include "Bookkeeper.h"
+#include "FeedbackBase.h"
 
 // For masking
 #include "Fei4.h"
@@ -471,7 +472,7 @@ int main(int argc, char *argv[]) {
     }
 
     // For sending feedback data
-    std::map<unsigned, FeedbackParams> fbData;
+    std::map<unsigned, FeedbackClipboard*> fbData;
 
     // TODO Make this nice
     std::unique_ptr<ScanBase> s;

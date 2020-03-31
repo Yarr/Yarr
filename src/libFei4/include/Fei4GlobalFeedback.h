@@ -14,7 +14,7 @@
 
 #include "logging.h"
 
-class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
+class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver {
     static logging::Logger &logger() {
         static logging::LoggerStore instance = logging::make_log("Fei4GlobalFeedback");
         return *instance;
@@ -115,16 +115,7 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
         for(unsigned int k=0; k<keeper->feList.size(); k++) {
             if(keeper->feList[k]->getActive()) {
                 unsigned ch = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
-                ChannelInfo &info = chanInfo[ch];
-                auto &clip = fbMap[ch];
-                clip.waitNotEmptyOrDone();
-                auto fbData = clip.popData();
-
-                if(fbData->binary) {
-                  feedbackBinary(fbData.channel, fbData.sign, fbData.last);
-                } else {
-                  feedback(fbData.channel, fbData.sign, fbData.last);
-                }
+                waitForFeedback(ch);
 
                 // info.fbMutex.lock();
                 logger().info(" --> Received Feedback on Channel {} with value: {}",

@@ -206,15 +206,15 @@ void TotAnalysis::init(ScanBase *s) {
 
         std::shared_ptr<LoopActionBase> tmpPrmpFb(new Fei4GlobalFeedback(&Fei4::PrmpVbpf));
         if (l->type() == tmpPrmpFb->type()) {
-            globalFb = dynamic_cast<GlobalFeedbackBase*>(l.get());  
+            globalFb = new GlobalFeedbackSender();
         }
 
         if (l->type() == typeid(Rd53aGlobalFeedback*)) {
-            globalFb = dynamic_cast<GlobalFeedbackBase*>(l.get());  
+            globalFb = new GlobalFeedbackSender();  
         }
 
         if (l->type() == typeid(Fei4PixelFeedback*)) {
-            pixelFb = dynamic_cast<PixelFeedbackBase*>(l.get());  
+            pixelFb = new PixelFeedbackSender();  
         }
 
         // Vcal Loop
@@ -227,6 +227,15 @@ void TotAnalysis::init(ScanBase *s) {
             vcalBins = (vcalMax-vcalMin)/vcalStep;
             hasVcalLoop = true;
         }
+    }
+}
+
+void TotAnalysis::connectFeedback(ClipBoard<FeedbackParams> *cb) {
+    if(pixelFb) {
+        pixelFb->connectClipboard(cb);
+    }
+    if(globalFb) {
+        globalFb->connectClipboard(cb);
     }
 }
 

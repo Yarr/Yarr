@@ -237,7 +237,7 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
     bhlog->info("... done!");
 }
 
-void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, int mask_opt) {
+void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, std::map<unsigned, FeedbackClipboard*> &fbData, int mask_opt) {
     if (scanType.find("json") != std::string::npos) {
         balog->info("Loading analyses ...");
         json scanCfg;
@@ -262,6 +262,8 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                     auto analysis = StdDict::getAnalysis(algo_name);
                     if(analysis) {
                         balog->debug("  ... adding {}", algo_name);
+                        auto channel = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
+                        analysis->connectFeedback(fbData[channel]);
                         ana.addAlgorithm(std::move(analysis));
                     } else {
                         balog->error("Error, Analysis Algorithm \"{} unknown, skipping!", algo_name);

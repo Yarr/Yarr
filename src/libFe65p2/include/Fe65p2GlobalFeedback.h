@@ -13,7 +13,7 @@
 #include "FeedbackBase.h"
 #include "Fe65p2.h"
 
-class Fe65p2GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
+class Fe65p2GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver {
     public:
         Fe65p2GlobalFeedback(Fe65p2GlobalReg Fe65p2GlobalCfg::*reg);
         

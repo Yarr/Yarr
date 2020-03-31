@@ -77,7 +77,7 @@ void Fe65p2GlobalFeedback::execPart1() {
 void Fe65p2GlobalFeedback::execPart2() {
     unsigned ch = 0; // TODO hardcoded on ch0
 
-    waitForFeedback();
+    waitForFeedback(ch);
 
     std::cout << "---> Received Feedback for Fe " << ch << " with value " << values[ch] << std::endl;
     

@@ -18,7 +18,7 @@ enum FeedbackType {
     FDAC_FB// 0 - 15
 };
 
-class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
+class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
     static logging::Logger &logger() {
         static logging::LoggerStore instance = logging::make_log("Fei4PixelFeedback");
         return *instance;
@@ -126,9 +126,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
                 auto fe = keeper->feList[k];
                 if(fe->getActive()) {
                     unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-                    clip.waitNotEmptyOrDone();
-                    auto fbData = clip.popData();
-                    feedback(ch, fbData);
+                    waitForFeedback(ch);
 
                     this->addFeedback(ch);
                 }
