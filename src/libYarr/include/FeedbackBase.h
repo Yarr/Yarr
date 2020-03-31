@@ -20,10 +20,26 @@ struct PixelFeedbackParams {
     std::unique_ptr<Histo2d> histo;
 };
 
-typedef std::variant<GlobalFeedbackParams, PixelFeedbackParams> FeedbackParams;
+struct FeedbackParams {
+    bool step;
+    bool binary;
+
+    PixelFeedbackParams &pixel() {
+        return std::get<PixelFeedbackParams>(data);
+    }
+
+    GlobalFeedbackParams &global() {
+        return std::get<GlobalFeedbackParams>(data);
+    }
+
+    std::variant<GlobalFeedbackParams, PixelFeedbackParams> data;
+
+    FeedbackParams(bool step, bool binary, std::variant<GlobalFeedbackParams, PixelFeedbackParams> &&data)
+      : step(step), binary(binary), data(std::move(data)) {}
+};
 
 // Make it shared so controller can still observe
-typedef std::shared_ptr<Clipboard<FeedbackParams>> FeedbackClipboard;
+typedef ClipBoard<FeedbackParams> FeedbackClipboard;
 
 class GlobalFeedbackBase {
     public:
@@ -34,39 +50,56 @@ class GlobalFeedbackBase {
 
 class GlobalFeedbackReceiver : public GlobalFeedbackBase {
     public:
-        void connectClipboard(FeedbackClipboard fe) { clip = fe; }
+        void connectClipboard(FeedbackClipboard *fe) { clip = fe; }
 
     protected:
         /// Wait for feedback to be received and apply it
-        void waitForFeedback();
+        void waitForFeedback(unsigned ch);
 
     private:
-        FeedbackClipboard clip;
+        FeedbackClipboard *clip;
 };
 
 /// Generator of feedback
 class GlobalFeedbackSender : public GlobalFeedbackBase {
     public:
-        void connectClipboard(FeedbackClipboard fe) { clip = fe; }
+        void connectClipboard(FeedbackClipboard *fe) { clip = fe; }
 
         void feedback(unsigned channel, double sign, bool last);
         void feedbackBinary(unsigned channel, double sign, bool last);
         void feedbackStep(unsigned channel, double sign, bool last);
+
+    private:
+        FeedbackClipboard *clip;
 };
 
 class PixelFeedbackBase {
     public:
         virtual void feedback(unsigned channel, std::unique_ptr<Histo2d> h) {};
         virtual void feedbackStep(unsigned channel, std::unique_ptr<Histo2d> h) {};
+};
 
-        void connectClipboard(FeedbackClipboard fe) { clip = fe; }
+class PixelFeedbackReceiver : public PixelFeedbackBase {
+    public:
+        void connectClipboard(FeedbackClipboard *fe) { clip = fe; }
 
     protected:
         /// Wait for feedback to be received and apply it
-        void waitForFeedback();
+        void waitForFeedback(unsigned ch);
 
     private:
-        FeedbackClipboard clip;
+        FeedbackClipboard *clip;
+};
+
+class PixelFeedbackSender : public PixelFeedbackBase {
+    public:
+        void connectClipboard(FeedbackClipboard *fe) { clip = fe; }
+
+        void feedback(unsigned channel, std::unique_ptr<Histo2d> h);
+        void feedbackStep(unsigned channel, std::unique_ptr<Histo2d> h);
+
+    private:
+        FeedbackClipboard *clip;
 };
 
 #endif
