@@ -50,6 +50,7 @@ class GlobalFeedbackBase {
 
 class GlobalFeedbackReceiver : public GlobalFeedbackBase {
     public:
+        GlobalFeedbackReceiver() : clip(nullptr) {}
         void connectClipboard(FeedbackClipboard *fe) { clip = fe; }
 
     protected:
@@ -63,6 +64,8 @@ class GlobalFeedbackReceiver : public GlobalFeedbackBase {
 /// Generator of feedback
 class GlobalFeedbackSender : public GlobalFeedbackBase {
     public:
+        GlobalFeedbackSender() : clip(nullptr) {}
+
         void connectClipboard(FeedbackClipboard *fe) { clip = fe; }
 
         void feedback(unsigned channel, double sign, bool last);
@@ -81,6 +84,8 @@ class PixelFeedbackBase {
 
 class PixelFeedbackReceiver : public PixelFeedbackBase {
     public:
+        PixelFeedbackReceiver() : clip(nullptr) {}
+
         void connectClipboard(FeedbackClipboard *fe) { clip = fe; }
 
     protected:
@@ -93,6 +98,8 @@ class PixelFeedbackReceiver : public PixelFeedbackBase {
 
 class PixelFeedbackSender : public PixelFeedbackBase {
     public:
+        PixelFeedbackSender() : clip(nullptr) {}
+
         void connectClipboard(FeedbackClipboard *fe) { clip = fe; }
 
         void feedback(unsigned channel, std::unique_ptr<Histo2d> h);

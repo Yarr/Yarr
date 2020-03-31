@@ -30,6 +30,11 @@ class ClipBoard {
             }
         }
 
+        ClipBoard(ClipBoard &&o) = delete;
+        ClipBoard(const ClipBoard &o) = delete;
+        ClipBoard& operator=(const ClipBoard &l) = delete;
+        ClipBoard& operator=(const ClipBoard &&l) = delete;
+
         void pushData(std::unique_ptr<T> data) {
             queueMutex.lock();
             if (data != NULL) dataQueue.push_back(std::move(data));

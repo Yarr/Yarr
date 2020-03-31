@@ -10,6 +10,7 @@ void GlobalFeedbackReceiver::waitForFeedback(unsigned channel) {
     if(!clip) {
         // This is equivalent to no analysis configured
         logger->warn("Request waiting for feedback when no pipe connected ");
+        return;
     }
 
     clip->waitNotEmptyOrDone();
@@ -30,6 +31,7 @@ void PixelFeedbackReceiver::waitForFeedback(unsigned channel) {
     if(!clip) {
         // This is equivalent to no analysis configured
         logger->warn("Request waiting for feedback when no pipe connected ");
+        return;
     }
 
     clip->waitNotEmptyOrDone();
@@ -48,6 +50,7 @@ void GlobalFeedbackSender::feedback(unsigned channel, double sign, bool last)
     if(!clip) {
         // This is equivalent to no analysis configured
         logger->warn("Sending feedback with no pipe connected ");
+        return;
     }
 
     GlobalFeedbackParams params{sign, last};
@@ -64,6 +67,7 @@ void GlobalFeedbackSender::feedbackBinary(unsigned channel, double sign, bool la
     if(!clip) {
         // This is equivalent to no analysis configured
         logger->warn("Sending feedback with no pipe connected ");
+        return;
     }
 
     GlobalFeedbackParams params{sign, last};
@@ -78,6 +82,7 @@ void GlobalFeedbackSender::feedbackStep(unsigned channel, double sign, bool last
     if(!clip) {
         // This is equivalent to no analysis configured
         logger->warn("Sending feedback with no pipe connected ");
+        return;
     }
 
     GlobalFeedbackParams params{sign, last};
@@ -92,6 +97,7 @@ void PixelFeedbackSender::feedback(unsigned channel, std::unique_ptr<Histo2d> h)
     if(!clip) {
         // This is equivalent to no analysis configured
         logger->warn("Sending feedback with no pipe connected ");
+        return;
     }
 
     PixelFeedbackParams params{std::move(h)};
@@ -106,6 +112,7 @@ void PixelFeedbackSender::feedbackStep(unsigned channel, std::unique_ptr<Histo2d
     if(!clip) {
         // This is equivalent to no analysis configured
         logger->warn("Sending feedback with no pipe connected ");
+        return;
     }
 
     PixelFeedbackParams params{std::move(h)};
