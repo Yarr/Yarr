@@ -8,8 +8,22 @@
 
 #include <variant>
 
+#include "ClipBoard.h"
 #include "Histo2d.h"
-#include "LoopActionBase.h"
+
+struct GlobalFeedbackParams {
+    double sign;
+    bool last;
+};
+
+struct PixelFeedbackParams {
+    std::unique_ptr<Histo2d> histo;
+};
+
+typedef std::variant<GlobalFeedbackParams, PixelFeedbackParams> FeedbackParams;
+
+// Make it shared so controller can still observe
+typedef std::shared_ptr<Clipboard<FeedbackParams>> FeedbackClipboard;
 
 class GlobalFeedbackBase {
     public:
@@ -18,23 +32,41 @@ class GlobalFeedbackBase {
         virtual void feedbackStep(unsigned channel, double sign, bool last) {}
 };
 
+class GlobalFeedbackReceiver : public GlobalFeedbackBase {
+    public:
+        void connectClipboard(FeedbackClipboard fe) { clip = fe; }
+
+    protected:
+        /// Wait for feedback to be received and apply it
+        void waitForFeedback();
+
+    private:
+        FeedbackClipboard clip;
+};
+
+/// Generator of feedback
+class GlobalFeedbackSender : public GlobalFeedbackBase {
+    public:
+        void connectClipboard(FeedbackClipboard fe) { clip = fe; }
+
+        void feedback(unsigned channel, double sign, bool last);
+        void feedbackBinary(unsigned channel, double sign, bool last);
+        void feedbackStep(unsigned channel, double sign, bool last);
+};
+
 class PixelFeedbackBase {
     public:
         virtual void feedback(unsigned channel, std::unique_ptr<Histo2d> h) {};
         virtual void feedbackStep(unsigned channel, std::unique_ptr<Histo2d> h) {};
-};
 
-struct GlobalFeedbackParams {
-  double sign;
-  bool last;
-  bool binary;
-};
+        void connectClipboard(FeedbackClipboard fe) { clip = fe; }
 
-struct PixelFeedbackParams {
-  std::unique_ptr<Histo2d> histo;
-};
+    protected:
+        /// Wait for feedback to be received and apply it
+        void waitForFeedback();
 
-typedef std::variant<GlobalFeedbackParams, PixelFeedbackParams> FeedbackParams;
+    private:
+        FeedbackClipboard clip;
+};
 
 #endif
-

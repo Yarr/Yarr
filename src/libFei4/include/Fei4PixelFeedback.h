@@ -53,8 +53,6 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
             } else {
                 fbHistoMap[channel] = std::move(h);
             }
-
-            fbMutexMap[channel].unlock();
         }
         void writeConfig(json &config){
 	    config["min"]=min;
@@ -124,13 +122,14 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
         }
 
         void execPart2() {
-            unsigned ch;
             for(unsigned int k=0; k<keeper->feList.size(); k++) {
                 auto fe = keeper->feList[k];
                 if(fe->getActive()) {
-                    ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-                    // Wait for Mutex to be unlocked by feedback
-                    fbMutexMap[ch].lock();
+                    unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
+                    clip.waitNotEmptyOrDone();
+                    auto fbData = clip.popData();
+                    feedback(ch, fbData);
+
                     this->addFeedback(ch);
                 }
             }

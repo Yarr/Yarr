@@ -51,8 +51,6 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
         if (val < 50) {
             doneMap[channel] = true;
         }
-        // Unlock the mutex to let the scan proceed
-        chan.fbMutex.unlock();
     }
 
     // Binary search feedback algorithm
@@ -68,9 +66,6 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
         if (chan.localStep == 1) {
             doneMap[channel] = true;
         }
-
-        // Unlock the mutex to let the scan proceed
-        chan.fbMutex.unlock();
     }
     void writeConfig(json &config);
     void loadConfig(json &config);
@@ -121,7 +116,17 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
             if(keeper->feList[k]->getActive()) {
                 unsigned ch = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
                 ChannelInfo &info = chanInfo[ch];
-                info.fbMutex.lock();
+                auto &clip = fbMap[ch];
+                clip.waitNotEmptyOrDone();
+                auto fbData = clip.popData();
+
+                if(fbData->binary) {
+                  feedbackBinary(fbData.channel, fbData.sign, fbData.last);
+                } else {
+                  feedback(fbData.channel, fbData.sign, fbData.last);
+                }
+
+                // info.fbMutex.lock();
                 logger().info(" --> Received Feedback on Channel {} with value: {}",
                         dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel(),
                         chanInfo[dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel()].values);

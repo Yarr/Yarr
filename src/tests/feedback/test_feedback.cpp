@@ -74,18 +74,20 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
 
     scan.init();
 
-    GlobalFeedbackBase *fb = nullptr;
+    FeedbackClipboard fb;
 
+    bool is_connected = false;
     for (unsigned n=0; n<scan.size(); n++) {
         std::shared_ptr<LoopActionBase> l = scan.getLoop(n);
 
         auto maybe = dynamic_cast<GlobalFeedbackBase *>(l.get());
         if(maybe != nullptr) {
-          fb = maybe;
+            maybe->connectClipboard(fb);
+            is_connected = true;
         }
     }
 
-    REQUIRE (fb != nullptr);
+    REQUIRE (is_connected);
 
     uint32_t feedback_count = 0;
 
@@ -113,7 +115,7 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
                         stat.get(0), stat.get(1), stat.get(2));
 
           // As there's no inner loop, send feedback as soon as data arrives
-          fb->feedbackBinary(0, 1, true);
+          Feedback::sendBinary(0, 1, true);
           feedback_count ++;
 
           logger->debug("Sent feedback at iteration {}", loop_count);
