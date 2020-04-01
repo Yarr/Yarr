@@ -117,7 +117,6 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
                 unsigned ch = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
                 waitForFeedback(ch);
 
-                // info.fbMutex.lock();
                 logger().info(" --> Received Feedback on Channel {} with value: {}",
                         dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel(),
                         chanInfo[dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel()].values);
