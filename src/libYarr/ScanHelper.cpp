@@ -256,14 +256,15 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
                 // TODO hardcoded
                 analyses[fe].reset( new AnalysisProcessor(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) );
                 auto& ana = static_cast<AnalysisProcessor&>( *(analyses[fe]) );
-                ana.connect(s, fe->clipHisto, fe->clipResult);
+                auto channel = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
+                ana.connect(s, fe->clipHisto, fe->clipResult, &((*fbData)[channel]));
 
                 auto add_analysis = [&](std::string algo_name) {
                     auto analysis = StdDict::getAnalysis(algo_name);
                     if(analysis) {
                         balog->debug("  ... adding {}", algo_name);
-                        auto channel = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-                        analysis->connectFeedback(&(*fbData)[channel]);
+                        balog->debug(" connecting feedback (if required)");
+                        // analysis->connectFeedback(&(*fbData)[channel]);
                         ana.addAlgorithm(std::move(analysis));
                     } else {
                         balog->error("Error, Analysis Algorithm \"{} unknown, skipping!", algo_name);

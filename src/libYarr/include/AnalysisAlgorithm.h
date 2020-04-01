@@ -26,8 +26,9 @@ class AnalysisAlgorithm {
         void setBookkeeper (Bookkeeper *b) {bookie = b;}
         void setChannel (unsigned ch) {channel = ch;}
 
-        void connect(ClipBoard<HistogramBase> *out) {
+        void connect(ClipBoard<HistogramBase> *out, FeedbackClipboard *fb) {
             output = out;
+            feedback = fb;
         }
         virtual void init(ScanBase *s) {}
         virtual void connectFeedback(ClipBoard<FeedbackParams> *cb) {}
@@ -49,6 +50,7 @@ class AnalysisAlgorithm {
         unsigned channel;
         ScanBase *scan;
         ClipBoard<HistogramBase> *output;
+        FeedbackClipboard *feedback;
         bool make_mask;
         unsigned nCol, nRow;
 };
@@ -62,10 +64,11 @@ class AnalysisProcessor : public DataProcessor {
         AnalysisProcessor(Bookkeeper *b, unsigned ch);
         ~AnalysisProcessor();
 
-        void connect(ScanBase *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output) {
+        void connect(ScanBase *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output, FeedbackClipboard *arg_fb) {
             scan = arg_s;
             input = arg_input;
             output = arg_output;
+            feedback = arg_fb;
         }
 
         void init();
@@ -95,6 +98,7 @@ class AnalysisProcessor : public DataProcessor {
         unsigned channel;
         ClipBoard<HistogramBase> *input;
         ClipBoard<HistogramBase> *output;
+        FeedbackClipboard *feedback;
         ScanBase *scan;
         std::unique_ptr<std::thread> thread_ptr;
         
