@@ -207,17 +207,19 @@ void TotAnalysis::init(ScanBase *s) {
         std::shared_ptr<LoopActionBase> tmpPrmpFb(new Fei4GlobalFeedback(&Fei4::PrmpVbpf));
         if (l->type() == tmpPrmpFb->type()) {
             alog->debug("Found global feedback loop (Fei4)");
-            globalFb = new GlobalFeedbackSender();
+            globalFb.reset(new GlobalFeedbackSender);
+            alog->debug("Connect feedback (Fei4)");
+            globalFb->connectClipboard(feedback);
         }
 
         if (l->type() == typeid(Rd53aGlobalFeedback*)) {
             alog->debug("Found global feedback loop (Rd53a)");
-            globalFb = new GlobalFeedbackSender();  
+            globalFb.reset(new GlobalFeedbackSender());
         }
 
         if (l->type() == typeid(Fei4PixelFeedback*)) {
             alog->debug("Found pixel feedback loop (Fei4)");
-            pixelFb = new PixelFeedbackSender();  
+            pixelFb.reset(new PixelFeedbackSender);
         }
 
         // Vcal Loop
@@ -494,13 +496,13 @@ void ScurveFitter::init(ScanBase *s) {
         
         // Find potential pixel feedback
         if (l->type() == typeid(Fei4PixelFeedback*)) {
-            fb = new PixelFeedbackSender();  
+            fb.reset(new PixelFeedbackSender);
         }
         if (l->type() == typeid(Fe65p2PixelFeedback*)) {
-            fb = new PixelFeedbackSender();  
+            fb.reset(new PixelFeedbackSender);
         }
         if (l->type() == typeid(Rd53aPixelFeedback*)) {
-            fb = new PixelFeedbackSender();  
+            fb.reset(new PixelFeedbackSender);
         }
 
     }
@@ -857,7 +859,7 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
         if (l->type() == tmpVthinFb->type() 
                 || l->type() == tmpVthinFb2->type()
                 || l->type() == tmpVthinFb3->type()) {
-            fb = new GlobalFeedbackSender(); 
+            fb.reset(new GlobalFeedbackSender);
             lb = (LoopActionBase*) l.get(); 
         }
     }
@@ -986,13 +988,13 @@ void OccPixelThresholdTune::init(ScanBase *s) {
         }
 
         if (l->type() == typeid(Fei4PixelFeedback*)) {
-            fb = new PixelFeedbackSender();  
+            fb.reset(new PixelFeedbackSender);
         }
         if (l->type() == typeid(Fe65p2PixelFeedback*)) {
-            fb = new PixelFeedbackSender();  
+            fb.reset(new PixelFeedbackSender);
         }
         if (l->type() == typeid(Rd53aPixelFeedback*)) {
-            fb = new PixelFeedbackSender();  
+            fb.reset(new PixelFeedbackSender);
         }
     }
 
@@ -1306,19 +1308,19 @@ void NoiseTuning::init(ScanBase *s) {
 
         std::shared_ptr<LoopActionBase> tmpPrmpFb(new Fei4GlobalFeedback(&Fei4::PrmpVbpf));
         if (l->type() == tmpPrmpFb->type()) {
-            globalFb = new GlobalFeedbackSender();  
+            globalFb.reset(new GlobalFeedbackSender);
         }
 
         if (l->type() == typeid(Rd53aGlobalFeedback*)) {
-            globalFb = new GlobalFeedbackSender();
+            globalFb.reset(new GlobalFeedbackSender);
         }
 
         if (l->type() == typeid(Fei4PixelFeedback*)) {
-            pixelFb = new PixelFeedbackSender();  
+            pixelFb.reset(new PixelFeedbackSender);
         }
 
         if (l->type() == typeid(Rd53aPixelFeedback*)) {
-            pixelFb = new PixelFeedbackSender();  
+            pixelFb.reset(new PixelFeedbackSender);
         }
     }
 }
