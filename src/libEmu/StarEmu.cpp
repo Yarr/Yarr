@@ -1312,11 +1312,11 @@ inline void StarEmu::setBit_128b(uint8_t bit_addr, bool value,
                                  uint64_t& data_high64, uint64_t& data_low64)
 {
     if (bit_addr < 64) {
-        data_low64 = (data_low64 & ~(1ULL << bit_addr)) | (value << bit_addr);
+        data_low64 = (data_low64 & ~(1ULL << bit_addr)) | ((uint64_t)value << bit_addr);
     }
     else if (bit_addr < 128) {
         data_high64 =
-            (data_high64 & ~(1ULL << (bit_addr-64))) | (value << (bit_addr-64));
+            (data_high64 & ~(1ULL << (bit_addr-64))) | ((uint64_t)value << (bit_addr-64));
     }
 }
 

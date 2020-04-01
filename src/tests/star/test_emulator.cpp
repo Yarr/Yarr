@@ -377,6 +377,8 @@ void checkData(HwController* emu, std::deque<PacketT>& expected, const PacketT& 
       // Do comparison
       if (expected_packet != mask_pattern)
         compareOutputs(data.get(), expected_packet);
+
+      delete [] data->buf;
     }
 
     data.reset(emu->readData());
