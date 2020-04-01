@@ -19,7 +19,7 @@
 #include "FeedbackBase.h"
 #include "Rd53a.h"
 
-class Rd53aPixelFeedback : public LoopActionBase, public PixelFeedbackBase {
+class Rd53aPixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
     public:
         Rd53aPixelFeedback();
 

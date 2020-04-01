@@ -125,7 +125,6 @@ void Rd53aPixelFeedback::execPart1() {
     // Lock all mutexes
     for (auto fe : keeper->feList) {
         if (fe->getActive()) {
-            m_fbMutex[dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()].try_lock();
             this->writePixelCfg(dynamic_cast<Rd53a*>(fe));
         }
     }
@@ -137,7 +136,7 @@ void Rd53aPixelFeedback::execPart2() {
     for (auto fe: keeper->feList) {
         if (fe->getActive()) {
             unsigned rx = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-            m_fbMutex[rx].lock();
+            waitForFeedback(rx);
         }
     }
     m_cur++;

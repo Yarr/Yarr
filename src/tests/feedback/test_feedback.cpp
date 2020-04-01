@@ -55,8 +55,11 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
 
     auto fe = StdDict::getFrontEnd("FEI4B").release();
     fe->setActive(true);
+
+    unsigned rx_channel = 0;
+
     fe->init(&empty, 0, 0);
-    bookie.addFe(fe, 0, 0);
+    bookie.addFe(fe, 0, rx_channel);
 
     auto g_fe = StdDict::getFrontEnd("FEI4B");
     g_fe->makeGlobal();
@@ -74,7 +77,7 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
 
     scan.init();
 
-    FeedbackClipboard fb;
+    FeedbackClipboardMap fb;
 
     bool is_connected = false;
     for (unsigned n=0; n<scan.size(); n++) {
@@ -90,7 +93,7 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
     REQUIRE (is_connected);
 
     GlobalFeedbackSender send;
-    send.connectClipboard(&fb);
+    send.connectClipboard(&fb[rx_channel]);
 
     uint32_t feedback_count = 0;
 
@@ -118,7 +121,7 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
                         stat.get(0), stat.get(1), stat.get(2));
 
           // As there's no inner loop, send feedback as soon as data arrives
-          send.feedbackBinary(0, 1, true);
+          send.feedbackBinary(rx_channel, 1, true);
           feedback_count ++;
 
           logger->debug("Sent feedback at iteration {}", loop_count);
@@ -153,10 +156,12 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
     Bookkeeper bookie(&empty, &empty);
     ScanFactory scan(&bookie);
 
+    unsigned rx_channel = 0;
+
     auto fe = StdDict::getFrontEnd("FEI4B").release();
     fe->setActive(true);
     fe->init(&empty, 0, 0);
-    bookie.addFe(fe, 0, 0);
+    bookie.addFe(fe, 0, rx_channel);
 
     auto g_fe = StdDict::getFrontEnd("FEI4B");
     g_fe->makeGlobal();
@@ -175,18 +180,23 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
 
     scan.init();
 
-    PixelFeedbackBase *fb = nullptr;
+    FeedbackClipboardMap fb;
 
+    bool is_connected = false;
     for (unsigned n=0; n<scan.size(); n++) {
         std::shared_ptr<LoopActionBase> l = scan.getLoop(n);
 
-        auto maybe = dynamic_cast<PixelFeedbackBase *>(l.get());
+        auto maybe = dynamic_cast<PixelFeedbackReceiver *>(l.get());
         if(maybe != nullptr) {
-          fb = maybe;
+          maybe->connectClipboard(&fb);
+          is_connected = true;
         }
     }
 
-    REQUIRE (fb != nullptr);
+    REQUIRE (is_connected);
+
+    PixelFeedbackSender send;
+    send.connectClipboard(&fb[rx_channel]);
 
     uint32_t feedback_count = 0;
 
@@ -215,7 +225,7 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
 
           // As there's no inner loop, send feedback as soon as data arrives
           auto h = std::make_unique<Histo2d>("Test", 80, 0, 20, 336, 0, 20, typeid(void*));
-          fb->feedback(0, std::move(h));
+          send.feedback(rx_channel, std::move(h));
           feedback_count ++;
 
           logger->debug("Sent feedback at iteration {}", loop_count);

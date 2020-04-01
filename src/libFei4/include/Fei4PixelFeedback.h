@@ -7,7 +7,6 @@
 #define FEI4PIXELFEEDBACK_H
 
 #include <queue>
-#include <mutex>
 #include "LoopActionBase.h"
 #include "Histo2d.h"
 #include "ClipBoard.h"
@@ -113,8 +112,6 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
             for(unsigned int k=0; k<keeper->feList.size(); k++) {
                 auto fe = keeper->feList[k];
                 if(fe->getActive()) {
-                    // Need to lock mutex on first itereation
-                    fbMutexMap[dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()].try_lock();
                     // Write config
                     this->writePixelCfg(dynamic_cast<Fei4*>(fe));
                 }
@@ -218,7 +215,6 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
 
         enum FeedbackType fbType;
         std::map<unsigned, std::unique_ptr<Histo2d>> fbHistoMap;
-        std::map<unsigned, std::mutex> fbMutexMap;
         unsigned step, oldStep;
         unsigned cur;
 

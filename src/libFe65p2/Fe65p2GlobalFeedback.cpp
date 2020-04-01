@@ -69,9 +69,7 @@ void Fe65p2GlobalFeedback::end() {
 void Fe65p2GlobalFeedback::execPart1() {
     g_stat->set(this, cur);
     unsigned ch = 0;
-    fbMutex[ch].try_lock();
     m_done = doneMap[ch];
-    
 }
 
 void Fe65p2GlobalFeedback::execPart2() {

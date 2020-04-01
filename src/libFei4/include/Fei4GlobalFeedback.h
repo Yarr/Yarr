@@ -7,7 +7,6 @@
 #define FEI4GLOBALFEEDBACK_H
 
 #include <queue>
-#include <mutex>
 #include "Fei4.h"
 #include "LoopActionBase.h"
 #include "FeedbackBase.h"
@@ -99,14 +98,6 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
 
     void execPart1() {
         g_stat->set(this, cur);
-        // Lock all mutexes if open
-        for(unsigned int k=0; k<keeper->feList.size(); k++) {
-            if(keeper->feList[k]->getActive()) {
-                unsigned ch = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
-                ChannelInfo &info = chanInfo[ch];
-                info.fbMutex.try_lock();
-            }
-        }
         m_done = allDone();
     }
 
@@ -161,7 +152,6 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
     protected:
 
     struct ChannelInfo {
-      std::mutex fbMutex;
       unsigned values;
       unsigned localStep;
       unsigned oldSign;

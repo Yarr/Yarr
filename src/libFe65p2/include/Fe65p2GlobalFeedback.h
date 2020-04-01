@@ -7,7 +7,6 @@
 #define FE65P2GLOBALFEEDBACK_H
 
 #include <queue>
-#include <mutex>
 
 #include "LoopActionBase.h"
 #include "FeedbackBase.h"
@@ -23,7 +22,6 @@ class Fe65p2GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceive
     private:
         Fe65p2GlobalReg Fe65p2GlobalCfg::*m_reg;
         
-        std::map<unsigned, std::mutex> fbMutex;
         std::map<unsigned, unsigned> values;
 		std::map<unsigned, unsigned> localStep;
 		std::map<unsigned, double> oldSign;

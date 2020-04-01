@@ -6,15 +6,22 @@ namespace {
   auto logger = logging::make_log("Feedback");
 }
 
+void GlobalFeedbackReceiver::connectClipboard(FeedbackClipboardMap *fe) {
+    logger->trace("Connect clipboard map for GlobalFeedbackReceiver");
+    clip = fe;
+}
+
 void GlobalFeedbackReceiver::waitForFeedback(unsigned channel) {
     if(!clip) {
         // This is equivalent to no analysis configured
-        logger->warn("Request waiting for feedback when no pipe connected ");
-        return;
+        logger->error("Request waiting for global feedback when no pipe connected ");
+        throw std::runtime_error("Missing feedback connection");
     }
 
-    clip->waitNotEmptyOrDone();
-    auto fbData = clip->popData();
+    auto &ch_clip = (*clip)[channel];
+
+    ch_clip.waitNotEmptyOrDone();
+    auto fbData = ch_clip.popData();
 
     auto data = fbData->global();
 
@@ -27,15 +34,22 @@ void GlobalFeedbackReceiver::waitForFeedback(unsigned channel) {
     }
 }
 
+void PixelFeedbackReceiver::connectClipboard(FeedbackClipboardMap *fe) {
+    logger->trace("Connect clipboard map for PixelFeedbackReceiver");
+    clip = fe;
+}
+
 void PixelFeedbackReceiver::waitForFeedback(unsigned channel) {
     if(!clip) {
         // This is equivalent to no analysis configured
-        logger->warn("Request waiting for feedback when no pipe connected ");
-        return;
+        logger->error("Request waiting for pixel feedback when no pipe connected ");
+        throw std::runtime_error("Missing feedback connection");
     }
 
-    clip->waitNotEmptyOrDone();
-    auto fbData = clip->popData();
+    auto &ch_clip = (*clip)[channel];
+
+    ch_clip.waitNotEmptyOrDone();
+    auto fbData = ch_clip.popData();
 
     auto &data = fbData->pixel();
     if(fbData->step) {
@@ -45,13 +59,20 @@ void PixelFeedbackReceiver::waitForFeedback(unsigned channel) {
     }
 }
 
+void GlobalFeedbackSender::connectClipboard(FeedbackClipboard *fe) {
+  logger->trace("Connect clipboard for GlobalFeedbackSender");
+    clip = fe;
+}
+
 void GlobalFeedbackSender::feedback(unsigned channel, double sign, bool last)
 {
     if(!clip) {
         // This is equivalent to no analysis configured
-        logger->warn("Sending feedback with no pipe connected ");
-        return;
+        logger->error("Sending feedback (global) with no pipe connected ");
+        throw std::runtime_error("Missing feedback connection (feedback)");
     }
+
+    logger->trace("Global feedback: {} {}", sign, last);
 
     GlobalFeedbackParams params{sign, last};
     std::variant<GlobalFeedbackParams, PixelFeedbackParams> v(params);
@@ -66,10 +87,11 @@ void GlobalFeedbackSender::feedbackBinary(unsigned channel, double sign, bool la
 {
     if(!clip) {
         // This is equivalent to no analysis configured
-        logger->warn("Sending feedback with no pipe connected ");
-        return;
+        logger->error("Sending feedbackBinary (global) with no pipe connected ");
+        throw std::runtime_error("Missing feedback connection (feedbackBinary)");
     }
 
+    logger->trace("Global feedbackBinary: {} {}", sign, last);
     GlobalFeedbackParams params{sign, last};
 
     auto fbParams = std::make_unique<FeedbackParams>(false, true, params);
@@ -81,10 +103,11 @@ void GlobalFeedbackSender::feedbackStep(unsigned channel, double sign, bool last
 {
     if(!clip) {
         // This is equivalent to no analysis configured
-        logger->warn("Sending feedback with no pipe connected ");
-        return;
+        logger->error("Sending feedbackStep (global) with no pipe connected ");
+        throw std::runtime_error("Missing feedback connection (feedbackStep)");
     }
 
+    logger->trace("Global feedbackStep: {} {}", sign, last);
     GlobalFeedbackParams params{sign, last};
 
     auto fbParams = std::make_unique<FeedbackParams>(true, false, params);
@@ -92,14 +115,20 @@ void GlobalFeedbackSender::feedbackStep(unsigned channel, double sign, bool last
     clip->pushData(std::move(fbParams));
 }
 
+void PixelFeedbackSender::connectClipboard(FeedbackClipboard *fe) {
+    logger->trace("Connect clipboard for PixelFeedbackSender");
+    clip = fe;
+}
+
 void PixelFeedbackSender::feedback(unsigned channel, std::unique_ptr<Histo2d> h)
 {
     if(!clip) {
         // This is equivalent to no analysis configured
-        logger->warn("Sending feedback with no pipe connected ");
-        return;
+        logger->error("Sending feedback (pixel) with no pipe connected ");
+        throw std::runtime_error("Missing feedback connection (feedback)");
     }
 
+    logger->trace("Pixel feedback on channel {}", channel);
     PixelFeedbackParams params{std::move(h)};
 
     auto fbParams = std::make_unique<FeedbackParams>(false, false, std::move(params));
@@ -111,10 +140,11 @@ void PixelFeedbackSender::feedbackStep(unsigned channel, std::unique_ptr<Histo2d
 {
     if(!clip) {
         // This is equivalent to no analysis configured
-        logger->warn("Sending feedback with no pipe connected ");
-        return;
+        logger->error("Sending feedbackStep (pixel) with no pipe connected ");
+        throw std::runtime_error("Missing feedback connection (feedbackStep)");
     }
 
+    logger->trace("Pixel feedbackStep on channel {}", channel);
     PixelFeedbackParams params{std::move(h)};
 
     auto fbParams = std::make_unique<FeedbackParams>(true, false, std::move(params));

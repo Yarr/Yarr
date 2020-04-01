@@ -40,6 +40,7 @@ struct FeedbackParams {
 
 // Make it shared so controller can still observe
 typedef ClipBoard<FeedbackParams> FeedbackClipboard;
+typedef std::map<unsigned, FeedbackClipboard> FeedbackClipboardMap;
 
 class GlobalFeedbackBase {
     public:
@@ -51,14 +52,14 @@ class GlobalFeedbackBase {
 class GlobalFeedbackReceiver : public GlobalFeedbackBase {
     public:
         GlobalFeedbackReceiver() : clip(nullptr) {}
-        void connectClipboard(FeedbackClipboard *fe) { clip = fe; }
+        void connectClipboard(FeedbackClipboardMap *fe);
 
     protected:
         /// Wait for feedback to be received and apply it
         void waitForFeedback(unsigned ch);
 
     private:
-        FeedbackClipboard *clip;
+        FeedbackClipboardMap *clip;
 };
 
 /// Generator of feedback
@@ -66,7 +67,7 @@ class GlobalFeedbackSender : public GlobalFeedbackBase {
     public:
         GlobalFeedbackSender() : clip(nullptr) {}
 
-        void connectClipboard(FeedbackClipboard *fe) { clip = fe; }
+        void connectClipboard(FeedbackClipboard *fe);
 
         void feedback(unsigned channel, double sign, bool last);
         void feedbackBinary(unsigned channel, double sign, bool last);
@@ -86,21 +87,21 @@ class PixelFeedbackReceiver : public PixelFeedbackBase {
     public:
         PixelFeedbackReceiver() : clip(nullptr) {}
 
-        void connectClipboard(FeedbackClipboard *fe) { clip = fe; }
+        void connectClipboard(FeedbackClipboardMap *fe);
 
     protected:
         /// Wait for feedback to be received and apply it
         void waitForFeedback(unsigned ch);
 
     private:
-        FeedbackClipboard *clip;
+        FeedbackClipboardMap *clip;
 };
 
 class PixelFeedbackSender : public PixelFeedbackBase {
     public:
         PixelFeedbackSender() : clip(nullptr) {}
 
-        void connectClipboard(FeedbackClipboard *fe) { clip = fe; }
+        void connectClipboard(FeedbackClipboard *fe);
 
         void feedback(unsigned channel, std::unique_ptr<Histo2d> h);
         void feedbackStep(unsigned channel, std::unique_ptr<Histo2d> h);

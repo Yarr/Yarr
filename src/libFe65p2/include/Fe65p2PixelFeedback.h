@@ -11,14 +11,13 @@
 #include "Histo2d.h"
 #include "Fe65p2.h"
 
-class Fe65p2PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
+class Fe65p2PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
     public:
         Fe65p2PixelFeedback();
 
         void feedback(unsigned channel, Histo2d *h);
     private:
         std::map<unsigned, Histo2d*> fbHistoMap;
-        std::map<unsigned, std::mutex> fbMutexMap;
         unsigned step, oldStep;
         unsigned cur;
 

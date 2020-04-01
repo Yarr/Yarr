@@ -26,8 +26,6 @@ void Fe65p2PixelFeedback::feedback(unsigned channel, Histo2d *h) {
     } else {
         fbHistoMap[channel] = h;
     }
-
-    fbMutexMap[channel].unlock();
 }
 
 void Fe65p2PixelFeedback::setPixel(unsigned channel, unsigned col, unsigned row, unsigned val) {
@@ -117,13 +115,15 @@ void Fe65p2PixelFeedback::end() {
 void Fe65p2PixelFeedback::execPart1() {
     g_stat->set(this, cur);
     unsigned ch = 0; // hardcoded TODO
-    fbMutexMap[ch].try_lock();
+
     this->writePixelCfg(ch);
 }
 
 void Fe65p2PixelFeedback::execPart2() {
     unsigned ch = 0;
-    fbMutexMap[ch].lock();
+
+    waitForFeedback(ch);
+
     this->addFeedback(ch);
 
     // Execute last step twice to get full range

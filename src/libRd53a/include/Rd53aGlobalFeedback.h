@@ -19,7 +19,7 @@
 #include "FeedbackBase.h"
 #include "Rd53a.h"
 
-class Rd53aGlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
+class Rd53aGlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver {
     public:
         Rd53aGlobalFeedback();
         Rd53aGlobalFeedback(Rd53aReg Rd53aGlobalCfg::*ref);
