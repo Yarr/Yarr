@@ -321,7 +321,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         std::unique_ptr<Histo1d> sigmaTotDist(new Histo1d("SigmaTotDist-"+std::to_string(ident), 101, -0.05, 1.05, typeid(this)));
         sigmaTotDist->setXaxisTitle("Sigma ToT [bc]");
         sigmaTotDist->setYaxisTitle("Number of Pixels");
-        Histo1d *tempMeanTotDist = new Histo1d("MeanTotDistFine-"+std::to_string(ident), 160, 0.05, 16.05, typeid(this));
+        std::unique_ptr<Histo1d> tempMeanTotDist(new Histo1d("MeanTotDistFine-"+std::to_string(ident), 160, 0.05, 16.05, typeid(this)));
 
         meanTotMap->add(*totMaps[ident]);
         meanTotMap->divide(*occMaps[ident]);
