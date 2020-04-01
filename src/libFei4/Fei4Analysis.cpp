@@ -206,14 +206,17 @@ void TotAnalysis::init(ScanBase *s) {
 
         std::shared_ptr<LoopActionBase> tmpPrmpFb(new Fei4GlobalFeedback(&Fei4::PrmpVbpf));
         if (l->type() == tmpPrmpFb->type()) {
+            alog->debug("Found global feedback loop (Fei4)");
             globalFb = new GlobalFeedbackSender();
         }
 
         if (l->type() == typeid(Rd53aGlobalFeedback*)) {
+            alog->debug("Found global feedback loop (Rd53a)");
             globalFb = new GlobalFeedbackSender();  
         }
 
         if (l->type() == typeid(Fei4PixelFeedback*)) {
+            alog->debug("Found pixel feedback loop (Fei4)");
             pixelFb = new PixelFeedbackSender();  
         }
 
@@ -232,9 +235,11 @@ void TotAnalysis::init(ScanBase *s) {
 
 void TotAnalysis::connectFeedback(ClipBoard<FeedbackParams> *cb) {
     if(pixelFb) {
+        alog->debug("Connecting pixel feedback");
         pixelFb->connectClipboard(cb);
     }
     if(globalFb) {
+        alog->debug("Connecting global feedback");
         globalFb->connectClipboard(cb);
     }
 }
