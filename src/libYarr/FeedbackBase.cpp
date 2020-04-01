@@ -18,10 +18,16 @@ void GlobalFeedbackReceiver::waitForFeedback(unsigned channel) {
         throw std::runtime_error("Missing feedback connection");
     }
 
-    auto &ch_clip = (*clip)[channel];
+    auto ch_clip = clip->find(channel);
 
-    ch_clip.waitNotEmptyOrDone();
-    auto fbData = ch_clip.popData();
+    if(ch_clip == clip->end()) {
+        // This is equivalent to no analysis configured
+        logger->error("Request waiting for global feedback when no pipe connected for channel {}", channel);
+        throw std::runtime_error("Missing feedback channel connection");
+    }
+
+    ch_clip->waitNotEmptyOrDone();
+    auto fbData = ch_clip->popData();
 
     auto data = fbData->global();
 
@@ -46,10 +52,16 @@ void PixelFeedbackReceiver::waitForFeedback(unsigned channel) {
         throw std::runtime_error("Missing feedback connection");
     }
 
-    auto &ch_clip = (*clip)[channel];
+    auto ch_clip = clip.find(channel);
 
-    ch_clip.waitNotEmptyOrDone();
-    auto fbData = ch_clip.popData();
+    if(ch_clip == clip.end()) {
+        // This is equivalent to no analysis configured
+        logger->error("Request waiting for pixel feedback when no pipe connected for channel {}", channel);
+        throw std::runtime_error("Missing feedback channel connection");
+    }
+
+    ch_clip->waitNotEmptyOrDone();
+    auto fbData = ch_clip->popData();
 
     auto &data = fbData->pixel();
     if(fbData->step) {
