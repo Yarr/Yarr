@@ -8,11 +8,11 @@
 
 ## Documentation
 
-For details please refer to the documentation covering installation and usage, which can be found here http://yarr.rtfd.org 
+For details please refer to the documentation covering installation and usage, which can be found here http://cern.ch/yarr
 
 This README only includes quick install guide.
 
-(If you are working with the devel branch refer to http://yarr.readthedocs.org/en/devel/ )
+(If you are working with the devel branch refer to http://cern.ch/yarr/devel/ )
 
 ## Mailing list
 
@@ -42,7 +42,7 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
     - ``$ cd Yarr``
     - ``$ mkdir build``
     - ``$ cd build``
-    - ``$ source scl_source enable devtoolset-7
+    - ``$ source scl_source enable devtoolset-7``
     - ``$ cmake3 ..``
     - ``$ make install -j4``
     - ``$ cd ..``
