@@ -489,13 +489,13 @@ void ScurveFitter::init(ScanBase *s) {
         
         // Find potential pixel feedback
         if (l->type() == typeid(Fei4PixelFeedback*)) {
-            fb = (PixelFeedbackBase*)((Fei4PixelFeedback*) l.get());  
+            fb = new PixelFeedbackSender();  
         }
         if (l->type() == typeid(Fe65p2PixelFeedback*)) {
-            fb = (PixelFeedbackBase*)((Fe65p2PixelFeedback*) l.get());  
+            fb = new PixelFeedbackSender();  
         }
         if (l->type() == typeid(Rd53aPixelFeedback*)) {
-            fb = (PixelFeedbackBase*)((Rd53aPixelFeedback*) l.get());  
+            fb = new PixelFeedbackSender();  
         }
 
     }
@@ -507,6 +507,12 @@ void ScurveFitter::init(ScanBase *s) {
     n_failedfit =0;
     prevOuter = 0;
     thrTarget = bookie->getTargetCharge();
+}
+
+void ScurveFitter::connectFeedback(ClipBoard<FeedbackParams> *cb) {
+    if(fb) {
+        fb->connectClipboard(cb);
+    }
 }
 
 // Errorfunction
@@ -846,11 +852,16 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
         if (l->type() == tmpVthinFb->type() 
                 || l->type() == tmpVthinFb2->type()
                 || l->type() == tmpVthinFb3->type()) {
-            fb = dynamic_cast<GlobalFeedbackBase*>(l.get()); 
+            fb = new GlobalFeedbackSender(); 
             lb = (LoopActionBase*) l.get(); 
         }
     }
+}
 
+void OccGlobalThresholdTune::connectFeedback(ClipBoard<FeedbackParams> *cb) {
+    if(fb) {
+        fb->connectClipboard(cb);
+    }
 }
 
 void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
@@ -970,16 +981,22 @@ void OccPixelThresholdTune::init(ScanBase *s) {
         }
 
         if (l->type() == typeid(Fei4PixelFeedback*)) {
-            fb = (PixelFeedbackBase*)((Fei4PixelFeedback*) l.get());  
+            fb = new PixelFeedbackSender();  
         }
         if (l->type() == typeid(Fe65p2PixelFeedback*)) {
-            fb = (PixelFeedbackBase*)((Fe65p2PixelFeedback*) l.get());  
+            fb = new PixelFeedbackSender();  
         }
         if (l->type() == typeid(Rd53aPixelFeedback*)) {
-            fb = (PixelFeedbackBase*)((Rd53aPixelFeedback*) l.get());  
+            fb = new PixelFeedbackSender();  
         }
     }
 
+}
+
+void OccPixelThresholdTune::connectFeedback(ClipBoard<FeedbackParams> *cb) {
+    if(fb) {
+        fb->connectClipboard(cb);
+    }
 }
 
 void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
@@ -1284,20 +1301,29 @@ void NoiseTuning::init(ScanBase *s) {
 
         std::shared_ptr<LoopActionBase> tmpPrmpFb(new Fei4GlobalFeedback(&Fei4::PrmpVbpf));
         if (l->type() == tmpPrmpFb->type()) {
-            globalFb = dynamic_cast<GlobalFeedbackBase*>(l.get());  
+            globalFb = new GlobalFeedbackSender();  
         }
 
         if (l->type() == typeid(Rd53aGlobalFeedback*)) {
-            globalFb = dynamic_cast<GlobalFeedbackBase*>(l.get());  
+            globalFb = new GlobalFeedbackSender();
         }
 
         if (l->type() == typeid(Fei4PixelFeedback*)) {
-            pixelFb = dynamic_cast<PixelFeedbackBase*>(l.get());  
+            pixelFb = new PixelFeedbackSender();  
         }
 
         if (l->type() == typeid(Rd53aPixelFeedback*)) {
-            pixelFb = dynamic_cast<PixelFeedbackBase*>(l.get());  
+            pixelFb = new PixelFeedbackSender();  
         }
+    }
+}
+
+void NoiseTuning::connectFeedback(ClipBoard<FeedbackParams> *cb) {
+    if(pixelFb) {
+        pixelFb->connectClipboard(cb);
+    }
+    if(globalFb) {
+        globalFb->connectClipboard(cb);
     }
 }
 

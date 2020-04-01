@@ -92,6 +92,7 @@ class ScurveFitter : public AnalysisAlgorithm {
         ~ScurveFitter() {};
 
         void init(ScanBase *s);
+        void connectFeedback(ClipBoard<FeedbackParams> *cb);
         void processHistogram(HistogramBase *h);
         void end();
 	void loadConfig(json &config){}
@@ -123,7 +124,7 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::map<unsigned, std::unique_ptr<Histo2d>> statusMap; 
         std::map<unsigned, std::unique_ptr<Histo1d>> statusDist;
 
-        PixelFeedbackBase *fb;
+        PixelFeedbackSender *fb;
         std::map<unsigned, std::unique_ptr<Histo2d>> step;
         std::map<unsigned, std::unique_ptr<Histo2d>> deltaThr;
         unsigned prevOuter;
@@ -142,6 +143,7 @@ class OccGlobalThresholdTune : public AnalysisAlgorithm {
         ~OccGlobalThresholdTune() {};
 
         void init(ScanBase *s);
+        void connectFeedback(ClipBoard<FeedbackParams> *cb);
         void processHistogram(HistogramBase *h);
         void end() {};
 	void loadConfig(json &config){}
@@ -153,7 +155,7 @@ class OccGlobalThresholdTune : public AnalysisAlgorithm {
         std::map<unsigned, std::unique_ptr<Histo1d>> occDists;
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;
-        GlobalFeedbackBase *fb;
+        GlobalFeedbackSender *fb;
         LoopActionBase *lb;
 
 };
@@ -164,6 +166,7 @@ class GlobalPreampTune : public AnalysisAlgorithm {
         ~GlobalPreampTune() {};
 
         void init(ScanBase *s);
+        void connectFeedback(ClipBoard<FeedbackParams> *cb);
         void processHistogram(HistogramBase *h);
         void end() {};
 	void loadConfig(json &config){}
@@ -177,7 +180,7 @@ class GlobalPreampTune : public AnalysisAlgorithm {
         std::map<unsigned, std::unique_ptr<Histo1d>> occDists;
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;
-        GlobalFeedbackBase *fb;
+        GlobalFeedbackSender *fb;
 
 };
 
@@ -187,6 +190,7 @@ class OccPixelThresholdTune : public AnalysisAlgorithm {
         ~OccPixelThresholdTune() {};
 
         void init(ScanBase *s);
+        void connectFeedback(ClipBoard<FeedbackParams> *cb);
         void processHistogram(HistogramBase *h);
         void end() {};
 	void loadConfig(json &config){}
@@ -198,7 +202,7 @@ class OccPixelThresholdTune : public AnalysisAlgorithm {
         std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;
-        PixelFeedbackBase *fb;
+        PixelFeedbackSender *fb;
 
 };
 
@@ -260,6 +264,7 @@ class NoiseTuning : public AnalysisAlgorithm {
         ~NoiseTuning() {};
 
         void init(ScanBase *s);
+        void connectFeedback(ClipBoard<FeedbackParams> *cb);
         void processHistogram(HistogramBase *h);
         void end();
 	void loadConfig(json &config){}
@@ -269,8 +274,8 @@ class NoiseTuning : public AnalysisAlgorithm {
         unsigned n_count;
         std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
         std::map<unsigned, unsigned> innerCnt;
-        GlobalFeedbackBase *globalFb;
-        PixelFeedbackBase *pixelFb;
+        GlobalFeedbackSender *globalFb;
+        PixelFeedbackSender *pixelFb;
 };
 
 class DelayAnalysis : public AnalysisAlgorithm {
