@@ -84,6 +84,8 @@ void GlobalFeedbackSender::feedback(unsigned channel, double sign, bool last)
         throw std::runtime_error("Missing feedback connection (feedback)");
     }
 
+    // Where did the channel go! (there's an instance of this for each FE/AnalysisAlgorithm 
+
     logger->trace("Global feedback: {} {}", sign, last);
 
     GlobalFeedbackParams params{sign, last};
