@@ -472,7 +472,7 @@ int main(int argc, char *argv[]) {
     }
 
     // For sending feedback data
-    std::map<unsigned, FeedbackClipboard*> fbData;
+    FeedbackClipboardMap fbData;
 
     // TODO Make this nice
     std::unique_ptr<ScanBase> s;
@@ -490,7 +490,7 @@ int main(int argc, char *argv[]) {
     // TODO not to use the raw pointer!
     ScanHelper::buildHistogrammers( histogrammers, scanType, bookie.feList, s.get(), outputDir);
     ScanHelper::buildAnalyses( analyses, scanType, bookie, s.get(),
-                               fbData, mask_opt);
+                               &fbData, mask_opt);
 
     logger->info("Running pre scan!");
     s->init();
