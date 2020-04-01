@@ -52,7 +52,8 @@ class ClipBoard {
         }
 
         bool empty() {
-            return dataQueue.empty();
+            std::lock_guard<std::mutex> lock(queueMutex);
+            return rawEmpty();
         }
 
         bool isDone() {
@@ -67,10 +68,14 @@ class ClipBoard {
         void waitNotEmptyOrDone() {
           std::unique_lock<std::mutex> lk(queueMutex);
           cvNotEmpty.wait(lk,
-                            [&] { return doneFlag || !empty(); } );
+                            [&] { return doneFlag || !rawEmpty(); } );
         }
 
     private:
+        bool rawEmpty() {
+            return dataQueue.empty();
+        }
+
         std::condition_variable cvNotEmpty;
 
         std::mutex queueMutex;
