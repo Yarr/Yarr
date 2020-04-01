@@ -59,7 +59,7 @@ class TotAnalysis : public AnalysisAlgorithm {
         ~TotAnalysis() {};
 
         void init(ScanBase *s);
-        void connectFeedback(ClipBoard<FeedbackParams> *cb);
+        void connectFeedback(ClipBoard<FeedbackParams> *cb) override;
         void processHistogram(HistogramBase *h);
         void end();
 	void loadConfig(json &config){}
@@ -74,8 +74,8 @@ class TotAnalysis : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> totInnerCnt;
         std::map<unsigned, std::unique_ptr<Histo2d>> tot2Maps;
         std::map<unsigned, unsigned> tot2InnerCnt;
-        GlobalFeedbackSender *globalFb;
-        PixelFeedbackSender *pixelFb;
+        GlobalFeedbackSender *globalFb = 0;
+        PixelFeedbackSender *pixelFb = 0;
         bool useScap;
         bool useLcap;
         bool hasVcalLoop;
@@ -92,7 +92,7 @@ class ScurveFitter : public AnalysisAlgorithm {
         ~ScurveFitter() {};
 
         void init(ScanBase *s);
-        void connectFeedback(ClipBoard<FeedbackParams> *cb);
+        void connectFeedback(ClipBoard<FeedbackParams> *cb) override;
         void processHistogram(HistogramBase *h);
         void end();
 	void loadConfig(json &config){}
@@ -143,7 +143,7 @@ class OccGlobalThresholdTune : public AnalysisAlgorithm {
         ~OccGlobalThresholdTune() {};
 
         void init(ScanBase *s);
-        void connectFeedback(ClipBoard<FeedbackParams> *cb);
+        void connectFeedback(ClipBoard<FeedbackParams> *cb) override;
         void processHistogram(HistogramBase *h);
         void end() {};
 	void loadConfig(json &config){}
@@ -166,7 +166,7 @@ class GlobalPreampTune : public AnalysisAlgorithm {
         ~GlobalPreampTune() {};
 
         void init(ScanBase *s);
-        void connectFeedback(ClipBoard<FeedbackParams> *cb);
+        void connectFeedback(ClipBoard<FeedbackParams> *cb) override;
         void processHistogram(HistogramBase *h);
         void end() {};
 	void loadConfig(json &config){}
@@ -190,7 +190,7 @@ class OccPixelThresholdTune : public AnalysisAlgorithm {
         ~OccPixelThresholdTune() {};
 
         void init(ScanBase *s);
-        void connectFeedback(ClipBoard<FeedbackParams> *cb);
+        void connectFeedback(ClipBoard<FeedbackParams> *cb) override;
         void processHistogram(HistogramBase *h);
         void end() {};
 	void loadConfig(json &config){}
