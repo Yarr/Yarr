@@ -82,7 +82,7 @@ public:
     void outputLoop();
 
     /** When set (by EmuController) shutdown executeLoop (i.e. the thread) */
-    volatile bool run;
+    std::atomic<bool> run;
     
 private:
 
