@@ -59,7 +59,6 @@ class TotAnalysis : public AnalysisAlgorithm {
         ~TotAnalysis() {};
 
         void init(ScanBase *s);
-        void connectFeedback(ClipBoard<FeedbackParams> *cb) override;
         void processHistogram(HistogramBase *h);
         void end();
 	void loadConfig(json &config){}
@@ -92,7 +91,6 @@ class ScurveFitter : public AnalysisAlgorithm {
         ~ScurveFitter() {};
 
         void init(ScanBase *s);
-        void connectFeedback(ClipBoard<FeedbackParams> *cb) override;
         void processHistogram(HistogramBase *h);
         void end();
 	void loadConfig(json &config){}
@@ -143,7 +141,6 @@ class OccGlobalThresholdTune : public AnalysisAlgorithm {
         ~OccGlobalThresholdTune() {};
 
         void init(ScanBase *s);
-        void connectFeedback(ClipBoard<FeedbackParams> *cb) override;
         void processHistogram(HistogramBase *h);
         void end() {};
 	void loadConfig(json &config){}
@@ -166,7 +163,6 @@ class GlobalPreampTune : public AnalysisAlgorithm {
         ~GlobalPreampTune() {};
 
         void init(ScanBase *s);
-        void connectFeedback(ClipBoard<FeedbackParams> *cb) override;
         void processHistogram(HistogramBase *h);
         void end() {};
 	void loadConfig(json &config){}
@@ -190,7 +186,6 @@ class OccPixelThresholdTune : public AnalysisAlgorithm {
         ~OccPixelThresholdTune() {};
 
         void init(ScanBase *s);
-        void connectFeedback(ClipBoard<FeedbackParams> *cb) override;
         void processHistogram(HistogramBase *h);
         void end() {};
 	void loadConfig(json &config){}
@@ -264,7 +259,6 @@ class NoiseTuning : public AnalysisAlgorithm {
         ~NoiseTuning() {};
 
         void init(ScanBase *s);
-        void connectFeedback(ClipBoard<FeedbackParams> *cb);
         void processHistogram(HistogramBase *h);
         void end();
 	void loadConfig(json &config){}

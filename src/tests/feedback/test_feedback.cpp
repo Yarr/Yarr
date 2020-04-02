@@ -78,8 +78,7 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
 
     scan.init();
 
-    GlobalFeedbackSender send;
-    send.connectClipboard(&fb[rx_channel]);
+    GlobalFeedbackSender send(&fb[rx_channel]);
 
     uint32_t feedback_count = 0;
 
@@ -167,8 +166,7 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
 
     scan.init();
 
-    PixelFeedbackSender send;
-    send.connectClipboard(&fb[rx_channel]);
+    PixelFeedbackSender send(&fb[rx_channel]);
 
     uint32_t feedback_count = 0;
 

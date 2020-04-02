@@ -72,9 +72,10 @@ void PixelFeedbackReceiver::waitForFeedback(unsigned channel) {
     }
 }
 
-void GlobalFeedbackSender::connectClipboard(FeedbackClipboard *fe) {
-  logger->trace("Connect clipboard for GlobalFeedbackSender");
-    clip = fe;
+GlobalFeedbackSender::GlobalFeedbackSender(FeedbackClipboard *fb)
+  : clip(fb)
+{
+    logger->trace("Clipboard connected for GlobalFeedbackSender");
 }
 
 void GlobalFeedbackSender::feedback(unsigned channel, double sign, bool last)
@@ -130,9 +131,10 @@ void GlobalFeedbackSender::feedbackStep(unsigned channel, double sign, bool last
     clip->pushData(std::move(fbParams));
 }
 
-void PixelFeedbackSender::connectClipboard(FeedbackClipboard *fe) {
-    logger->trace("Connect clipboard for PixelFeedbackSender");
-    clip = fe;
+PixelFeedbackSender::PixelFeedbackSender(FeedbackClipboard *fb)
+  : clip(fb)
+{
+    logger->trace("Clipboard connected for PixelFeedbackSender");
 }
 
 void PixelFeedbackSender::feedback(unsigned channel, std::unique_ptr<Histo2d> h)

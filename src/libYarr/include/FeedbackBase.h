@@ -65,9 +65,7 @@ class GlobalFeedbackReceiver : public GlobalFeedbackBase {
 /// Generator of feedback
 class GlobalFeedbackSender : public GlobalFeedbackBase {
     public:
-        GlobalFeedbackSender() : clip(nullptr) {}
-
-        void connectClipboard(FeedbackClipboard *fe);
+        GlobalFeedbackSender(FeedbackClipboard *fb);
 
         void feedback(unsigned channel, double sign, bool last);
         void feedbackBinary(unsigned channel, double sign, bool last);
@@ -99,9 +97,7 @@ class PixelFeedbackReceiver : public PixelFeedbackBase {
 
 class PixelFeedbackSender : public PixelFeedbackBase {
     public:
-        PixelFeedbackSender() : clip(nullptr) {}
-
-        void connectClipboard(FeedbackClipboard *fe);
+        PixelFeedbackSender(FeedbackClipboard *fb);
 
         void feedback(unsigned channel, std::unique_ptr<Histo2d> h);
         void feedbackStep(unsigned channel, std::unique_ptr<Histo2d> h);
