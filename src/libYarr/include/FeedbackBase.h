@@ -67,9 +67,9 @@ class GlobalFeedbackSender : public GlobalFeedbackBase {
     public:
         GlobalFeedbackSender(FeedbackClipboard *fb);
 
-        void feedback(unsigned channel, double sign, bool last);
-        void feedbackBinary(unsigned channel, double sign, bool last);
-        void feedbackStep(unsigned channel, double sign, bool last);
+        void feedback(unsigned channel, double sign, bool last) override;
+        void feedbackBinary(unsigned channel, double sign, bool last) override;
+        void feedbackStep(unsigned channel, double sign, bool last) override;
 
     private:
         FeedbackClipboard *clip;
@@ -99,8 +99,8 @@ class PixelFeedbackSender : public PixelFeedbackBase {
     public:
         PixelFeedbackSender(FeedbackClipboard *fb);
 
-        void feedback(unsigned channel, std::unique_ptr<Histo2d> h);
-        void feedbackStep(unsigned channel, std::unique_ptr<Histo2d> h);
+        void feedback(unsigned channel, std::unique_ptr<Histo2d> h) override;
+        void feedbackStep(unsigned channel, std::unique_ptr<Histo2d> h) override;
 
     private:
         FeedbackClipboard *clip;

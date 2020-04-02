@@ -53,13 +53,13 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
                 fbHistoMap[channel] = std::move(h);
             }
         }
-        void writeConfig(json &config){
+        void writeConfig(json &config) override {
 	    config["min"]=min;
 	    config["max"]=max;
             config["step"]=step;
             config["parameter"] = parName;
         }
-        void loadConfig(json &config){
+        void loadConfig(json &config) override {
 	    if (!config["min"].empty())
 	      min = config["min"];
 	    if (!config["max"].empty())
@@ -77,7 +77,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
         }
     private:
 	std::string parName="";
-        void init() {
+        void init() override {
             m_done = false;
             cur = 0;
 
@@ -103,10 +103,10 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
 
         }
 
-        void end() {
+        void end() override {
         }
 
-        void execPart1() {
+        void execPart1() override {
             g_stat->set(this, cur);
          
             for(unsigned int k=0; k<keeper->feList.size(); k++) {
@@ -118,7 +118,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
             }
         }
 
-        void execPart2() {
+        void execPart2() override {
             for(unsigned int k=0; k<keeper->feList.size(); k++) {
                 auto fe = keeper->feList[k];
                 if(fe->getActive()) {
