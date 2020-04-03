@@ -151,7 +151,7 @@ void Rd53aTriggerLoop::execPart1() {
     dynamic_cast<Rd53a*>(g_fe)->idle();
     dynamic_cast<Rd53a*>(g_fe)->idle();
     std::this_thread::sleep_for(std::chrono::microseconds(200));
-    //g_rx->flushBuffer();
+    g_rx->flushBuffer();
     while(!g_tx->isCmdEmpty());
     std::this_thread::sleep_for(std::chrono::microseconds(10));
     g_tx->setTrigEnable(0x1);
