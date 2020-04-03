@@ -24,7 +24,7 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
     m_trigWord.fill(0x69696969);
     m_noInject = false;
     m_extTrig = false;
-    m_trigMultiplier = 32;
+    m_trigMultiplier = 16;
     m_sendEcr = false;
 
     m_edgeMode = false;
@@ -140,6 +140,9 @@ void Rd53aTriggerLoop::init() {
 }
 
 void Rd53aTriggerLoop::execPart1() {
+    /*std::cout << "------------------------------------" << std::endl;
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
+    std::cout << "------------------------------------" << std::endl;*/
     SPDLOG_LOGGER_TRACE(logger, "");
     g_tx->setCmdEnable(keeper->getTxMask());
     dynamic_cast<Rd53a*>(g_fe)->ecr();
@@ -148,16 +151,19 @@ void Rd53aTriggerLoop::execPart1() {
     dynamic_cast<Rd53a*>(g_fe)->idle();
     dynamic_cast<Rd53a*>(g_fe)->idle();
     std::this_thread::sleep_for(std::chrono::microseconds(200));
-    g_rx->flushBuffer();
+    //g_rx->flushBuffer();
     while(!g_tx->isCmdEmpty());
     std::this_thread::sleep_for(std::chrono::microseconds(10));
     g_tx->setTrigEnable(0x1);
-
 }
 
 void Rd53aTriggerLoop::execPart2() {
+    /*std::cout << "------------------------------------" << std::endl;
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
+    std::cout << "------------------------------------" << std::endl;*/
     SPDLOG_LOGGER_TRACE(logger, "");
     // Should be finished, lets wait anyway
+    //std::this_thread::sleep_for(std::chrono::milliseconds(200));
     while(!g_tx->isTrigDone());
     // Disable Trigger
     g_tx->setTrigEnable(0x0);

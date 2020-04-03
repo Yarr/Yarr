@@ -18,9 +18,10 @@ class BdaqSiTcpFifo {
 
 		//Returns the number of available 32-bit words for readout
 		std::size_t getAvailableWords();
+		std::size_t getTcpSize();
 		void flushBuffer();
 		std::size_t readData(uint32_t* buffer);
-		std::size_t readData(std::vector<uint32_t>& buffer);
+		void readData(std::vector<uint32_t>& buffer, std::size_t size);
 		
 	private:
 		BdaqTCP& tcp;

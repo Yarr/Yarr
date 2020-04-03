@@ -35,6 +35,8 @@ class RxCore {
             return m_waitTime;
         }
 
+        virtual void printBufferStatus() {}
+        
     protected:
         RxCore();
         ~RxCore();

@@ -100,19 +100,39 @@ void BdaqRxCore::printStats() {
                 << ", hitWords: " << hitWords << std::endl;
 }
 
+void BdaqRxCore::printBufferStatus() {
+    std::cout << "---------------------------------------------" << std::endl;
+    std::cout << "TCP buffer in bytes: " << fifo.getTcpSize() << std::endl;
+    std::cout << "TCP Available words: " << fifo.getAvailableWords() << std::endl;
+    std::cout << "---------------------------------------------" << std::endl;
+}
+
 RawData* BdaqRxCore::readData() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
-
+    std::size_t wCount = fifo.getAvailableWords();
+    /*if (wCount % 2) {
+        std::cout << "wCount: " << wCount << std::endl;
+        std::cin.get();
+    }*/
+    // We can only decode pair of words
+    //wCount = wCount - (wCount % 2); 
     std::vector<uint32_t> inBuf;
-    std::size_t wCount = fifo.readData(inBuf);
+    fifo.readData(inBuf, wCount);
+
     if (wCount > 0) {
+        std::size_t inSize = wCount;
         //printWords(inBuf, "inBuf", 60);
         // outBuf size is always < wCount. 
         uint32_t* outBuf = new uint32_t[wCount]; 
         // now wCount has the number of decoded (thus, usable) words
         wCount = decode(inBuf, outBuf);
         if (wCount > 0) {
+            std::size_t outSize = wCount;
+            if (outSize > inSize/2+1) {
+                std::cout << "inSize: " << inSize << ", outSize: " << outSize << std::endl;
+                std::cin.get();
+            }
             //printWords(outBuf, wCount, "outBuf");
             //printStats();
             return new RawData(0x0, outBuf, wCount);

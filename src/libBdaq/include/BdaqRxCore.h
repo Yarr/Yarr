@@ -34,6 +34,8 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq53 {
         
         uint32_t getDataRate();
         bool isBridgeEmpty();  
+        
+        void printBufferStatus();
 
     private:
         bool verbose;
