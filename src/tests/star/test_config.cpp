@@ -12,6 +12,9 @@ TEST_CASE("StarCfg", "[star][config]") {
   // This sets up initial values
   test_config.initRegisterMaps();
 
+  // Check calling twice doesn't cause problems
+  test_config.initRegisterMaps();
+
   //  REQUIRE (test_config.numABCs() == 1);
   REQUIRE (test_config.getHCCchipID() == 4);
   REQUIRE (test_config.getABCchipID(1) == abc_id);

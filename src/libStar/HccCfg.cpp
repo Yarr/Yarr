@@ -120,6 +120,8 @@ HccCfg::HccCfg()
 
 void HccCfg::configure_HCC_Registers() {
   int n_HCC_registers = 50;
+  // In case it's not already empty
+  m_registerSet.clear();
   m_registerSet.reserve( n_HCC_registers );
 
   //all HCC Register addresses we will create
