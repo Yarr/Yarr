@@ -69,23 +69,16 @@ static logging::LoggerStore tmplogger() {
   bool writeRegisters();
   void readRegisters();
 
-  void setAndWriteHCCRegister(int addr, int64_t  value=-1){
-    if(value>=0){
-//      std::cout << value << std::endl;
-      m_hcc.setRegisterValue(HCCStarRegister::_from_integral(addr), value);
-    }
-    tmplogger()->debug("Doing HCC setAndWriteRegister with value 0x{:08x} from registerMap[addr={}]", value, addr);
+  void writeHCCRegister(int addr) {
+    uint32_t value = m_hcc.getRegisterValue(HCCStarRegister::_from_integral(addr));
+    tmplogger()->debug("Doing HCC write register with value 0x{:08x} from registerMap[addr={}]", value, addr);
     sendCmd(write_hcc_register(addr, value, getHCCchipID()));
   }
-  void setAndWriteABCRegister(int addr, int64_t  value=-1, int32_t chipIndex = 1){
-    //unsigned int chipIndex = indexForABCchipID(chipID);
-    if(value>=0){
-//      std::cout << value << std::endl;
-      abcFromIndex(chipIndex).setRegisterValue(ABCStarRegs::_from_integral(addr), value);
-    }
-    tmplogger()->debug("Doing ABC {} setAndWriteRegister {} with value 0x{:08x}", chipIndex, addr, value);
-    sendCmd(write_abc_register(addr, value, getHCCchipID(), getABCchipID(chipIndex)));
 
+  void writeABCRegister(int addr, int32_t chipIndex) {
+    uint32_t value = abcFromIndex(chipIndex).getRegisterValue(ABCStarRegister::_from_integral(addr));
+    tmplogger()->debug("Doing ABC {} writeRegister {} with value 0x{:08x}", chipIndex, addr, value);
+    sendCmd(write_abc_register(addr, value, getHCCchipID(), getABCchipID(chipIndex)));
   }
 
 

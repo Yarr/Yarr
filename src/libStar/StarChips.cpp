@@ -199,7 +199,7 @@ bool StarChips::writeRegisters(){
         for(auto &map_iter: hcc_regs) {
               auto addr = map_iter.first;
               logger->trace("Writing HCC Register {} for chipID {}", addr, hccId);
-              setAndWriteHCCRegister(addr, -1);
+              writeHCCRegister(addr);
         }
 
         // Send resets to ABC now HCC is configured
@@ -215,7 +215,7 @@ bool StarChips::writeRegisters(){
                         auto addr = map_iter.first;
                         logger->debug("Writing Register {} for chipID {}", addr, this_chipID);
 
-                        setAndWriteABCRegister(addr, -1, iChip);
+                        writeABCRegister(addr, iChip);
 		}
 		std::cout << "Done with " << iChip << std::endl;
 	}
