@@ -1,6 +1,8 @@
 #ifndef YARR_TEST_EMPTY_HARDWARE_H
 #define YARR_TEST_EMPTY_HARDWARE_H
 
+#include "HwController.h"
+
 class EmptyTxCore : public virtual TxCore {
 public:
   EmptyTxCore() {}
