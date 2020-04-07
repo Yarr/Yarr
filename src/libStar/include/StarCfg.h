@@ -133,7 +133,7 @@ class StarCfg : public FrontEndCfg {
  protected:
   AbcCfg &abcFromChipID(unsigned int chipID) {
     return *std::find_if(m_ABCchips.begin(), m_ABCchips.end(),
-                        [this, chipID](auto it) { return it.getABCchipID() == chipID; });
+                        [this, chipID](auto &it) { return it.getABCchipID() == chipID; });
   }
 
   uint32_t m_sn=0;//serial number set by eFuse bits

@@ -72,6 +72,12 @@ class HccCfg {
     public:
         HccCfg();
 
+        HccCfg(const HccCfg &) = delete;
+        HccCfg &operator =(const HccCfg &) = delete;
+        HccCfg &operator =(HccCfg &&) = delete;
+        // Default doesn't work as won't change pointers!
+        HccCfg(HccCfg &&other) = delete;
+
         void configure_HCC_Registers();
 
         const unsigned int getHCCchipID(){return m_hccID;}
