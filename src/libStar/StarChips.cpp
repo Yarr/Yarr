@@ -207,7 +207,7 @@ bool StarChips::writeRegisters(){
 
         // Then each ABC
         const auto &abc_regs = AbcStarRegInfo::instance()->abcregisterMap;
-	for( int iChip = 0; iChip < num_abc; ++iChip){
+	for( int iChip = 1; iChip < num_abc+1; ++iChip){
                 int this_chipID = getABCchipID(iChip);
 
 		std::cout << "Starting on chip " << this_chipID << " with length " << abc_regs.size() << "";
@@ -258,7 +258,7 @@ void StarChips::readRegisters(){
 
         auto num_abc = numABCs();
 
-        for( int iChip = 0; iChip < num_abc; ++iChip){
+        for( int iChip = 1; iChip < num_abc+1; ++iChip){
                 int this_chipID = getABCchipID(iChip);
                 for(auto &map_iter: abc_regs) {
                         auto addr = map_iter.first;
