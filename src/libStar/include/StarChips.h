@@ -17,7 +17,14 @@ class RxCore;
 #include "StarCmd.h"
 #include "StarCfg.h"
 
+#include "logging.h"
+
 class StarChips : public StarCfg, public StarCmd, public FrontEnd {
+static logging::LoggerStore tmplogger() {
+  static logging::LoggerStore instance = logging::make_log("StarChipsTemp");
+  return instance;
+}
+
  public:
   StarChips();
   StarChips(HwController *arg_core);
@@ -52,7 +59,7 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
   void setHccId(unsigned);//Set the HCC ID to the argument, uses the chip serial number set by eFuse
 
   void makeGlobal() override final {
-    m_hccID = 15;
+      setHccId(15);
   }
 
   void reset();
@@ -60,32 +67,32 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
   void sendCmd(uint16_t cmd);
 
   bool writeRegisters();
-  const void readRegisters();
+  void readRegisters();
 
   void setAndWriteHCCRegister(int addr, int64_t  value=-1){
     if(value>=0){
 //      std::cout << value << std::endl;
-      registerMap[0][addr]->setValue((uint32_t) value);
+      m_hcc.setRegisterValue(HCCStarRegister::_from_integral(addr), value);
     }
-    if(m_debug)  std::cout << "Doing HCC setAndWriteRegister with value 0x" << std::hex << std::setfill('0') << std::setw(8) << registerMap[0][addr]->getValue() <<std::dec  << " from registerMap[chipIndex=" << 0 << "][addr=" << addr << "]@" << registerMap[0][addr] << std::endl;
-    sendCmd(write_hcc_register(addr, registerMap[0][addr]->getValue(), getHCCchipID()));
+    tmplogger()->debug("Doing HCC setAndWriteRegister with value 0x{:08x} from registerMap[addr={}]", value, addr);
+    sendCmd(write_hcc_register(addr, value, getHCCchipID()));
   }
   void setAndWriteABCRegister(int addr, int64_t  value=-1, int32_t chipIndex = 1){
     //unsigned int chipIndex = indexForABCchipID(chipID);
     if(value>=0){
 //      std::cout << value << std::endl;
-      registerMap[chipIndex][addr]->setValue((uint32_t) value);
+      abcFromIndex(chipIndex).setRegisterValue(ABCStarRegs::_from_integral(addr), value);
     }
-    if(m_debug)  std::cout << "Doing ABC " << chipIndex << " setAndWriteRegister with value 0x" << std::hex << std::setfill('0') << std::setw(8) << registerMap[chipIndex][addr]->getValue() <<std::dec  << std::endl;
-    sendCmd(write_abc_register(addr, registerMap[chipIndex][addr]->getValue(), getHCCchipID(), getABCchipID(chipIndex)));
+    tmplogger()->debug("Doing ABC {} setAndWriteRegister {} with value 0x{:08x}", chipIndex, addr, value);
+    sendCmd(write_abc_register(addr, value, getHCCchipID(), getABCchipID(chipIndex)));
 
   }
 
 
-  const void readHCCRegister(int addr){
+  void readHCCRegister(int addr){
     sendCmd(read_hcc_register(addr, getHCCchipID()));
   }
-  const void readABCRegister(int addr, int32_t chipID = 0){
+  void readABCRegister(int addr, int32_t chipID = 0){
     sendCmd(read_abc_register(addr, getHCCchipID(), chipID));
   }
 
@@ -94,33 +101,44 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
     setSubRegisterValue(0, subRegName,value);
     sendCmd( write_hcc_register(getSubRegisterParentAddr(0, subRegName), getSubRegisterParentValue(0, subRegName), getHCCchipID()) );
   }
-  const void readHCCSubRegister(std::string subRegName){
+  void readHCCSubRegister(std::string subRegName){
     sendCmd(read_hcc_register(getSubRegisterParentAddr(0, subRegName), getHCCchipID()));
   }
 
+ private:
+  void setAndWriteABCSubRegister(std::string subRegName, AbcCfg &cfg, uint32_t value) {
+    cfg.setSubRegisterValue(subRegName, value);
+    sendCmd( write_abc_register(cfg.getSubRegisterParentAddr(subRegName),
+                                cfg.getSubRegisterParentValue(subRegName),
+                                getHCCchipID(), cfg.getABCchipID()) );
+  }
+
+  void readABCSubRegister(std::string subRegName, AbcCfg &cfg) {
+    sendCmd(read_abc_register(cfg.getSubRegisterParentAddr(subRegName),
+                              0xf, cfg.getABCchipID()));
+  }
+
+ public:
+
   //Uses chip index to set value on subregister called subRegName
   void setAndWriteABCSubRegisterForChipIndex(std::string subRegName, uint32_t value, unsigned int chipIndex){
-    setSubRegisterValue(chipIndex, subRegName, value);
-    sendCmd( write_abc_register(getSubRegisterParentAddr(chipIndex, subRegName), getSubRegisterParentValue(chipIndex, subRegName), getHCCchipID(), getABCchipID(chipIndex)) );
+    setAndWriteABCSubRegister(subRegName,
+                              abcFromIndex(chipIndex), value);
   }
+
   //Uses chip ID to set value on subregister called subRegName
   void setAndWriteABCSubRegister(std::string subRegName, uint32_t value, int32_t chipID){
-    unsigned int chipIndex = indexForABCchipID(chipID);
-    setAndWriteABCSubRegisterForChipIndex(subRegName, value, chipIndex);
+    setAndWriteABCSubRegister(subRegName,
+                              abcFromChipID(chipID), value);
   }
   //Reads value of subregister subRegName for chip with index chipIndex
-  const void readABCSubRegisterForChipIndex(std::string subRegName, unsigned int chipIndex){
-    sendCmd(read_abc_register(getSubRegisterParentAddr(chipIndex, subRegName), 0xf, getABCchipID(chipIndex)));
+  void readABCSubRegisterForChipIndex(std::string subRegName, unsigned int chipIndex){
+    readABCSubRegister(subRegName, abcFromIndex(chipIndex));
   }
   //Reads value of subregister subRegName for chip with ID chipID
-  const void readABCSubRegister(std::string subRegName, int32_t chipID){
-    unsigned int chipIndex = indexForABCchipID(chipID);
-    readABCSubRegisterForChipIndex(subRegName, chipIndex);
+  void readABCSubRegister(std::string subRegName, int32_t chipID){
+    readABCSubRegister(subRegName, abcFromChipID(chipID));
   }
-
-
-  const int getNumberOfAssociatedABC(){return m_nABC;}
-
 
   private:
     TxCore * m_txcore;

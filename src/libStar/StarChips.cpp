@@ -12,6 +12,12 @@
 #include <chrono>
 #include <thread>
 
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("StarChips");
+}
+
 #include "AllChips.h"
 
 bool star_chips_registered =
@@ -29,8 +35,7 @@ StarChips::StarChips()
 
 
 	//Create dummy configuration as placeholder for globalFe in preScan routines
-	m_hccID = 0xf;
-	m_nABC = 1;
+	setHCCChipId(0xf);
 	addABCchipID(0xf);
 	this->initRegisterMaps(); //Initialize default register maps for 1 dummy ABC
 
@@ -119,11 +124,11 @@ void StarChips::reset(){
 	std::cout << "Sending fast command #" << LCB::ABC_HIT_COUNT_RESET << " ABC_HIT_COUNT_RESET" << std::endl;
 	sendCmd(LCB::fast_command(LCB::ABC_HIT_COUNT_RESET, delay) );
 
-	std::cout << "Sending fast command #" << LCB::ABC_HITCOUNT_START << " ABC_HITCOUNT_START" << std::endl;
-	sendCmd(LCB::fast_command(LCB::ABC_HITCOUNT_START, delay) );
+	std::cout << "Sending fast command #" << LCB::ABC_HIT_COUNT_START << " ABC_HITCOUNT_START" << std::endl;
+	sendCmd(LCB::fast_command(LCB::ABC_HIT_COUNT_START, delay) );
 
-	std::cout << "Sending fast command #" << LCB::ABC_START_PRLP << " ABC_START_PRLP" << std::endl;
-	sendCmd(LCB::fast_command(LCB::ABC_START_PRLP, delay) );
+	std::cout << "Sending fast command #" << LCB::HCC_START_PRLP << " ABC_START_PRLP" << std::endl;
+	sendCmd(LCB::fast_command(LCB::HCC_START_PRLP, delay) );
 
 	std::cout << "Sending lonely_BCR" << std::endl;
 	sendCmd(LCB::lonely_bcr());
@@ -132,7 +137,7 @@ void StarChips::reset(){
 void StarChips::configure() {
 
 	//Set the HCC ID
-	if (m_sn) this->setHccId(m_hccID);
+        if (m_sn) this->setHccId(getHCCchipID());
 
 	std::cout << "Sending fast command #" << LCB::HCC_REG_RESET << " HCC_REG_RESET" << std::endl;
 	this->sendCmd(LCB::fast_command(LCB::HCC_REG_RESET, 0) );
@@ -182,21 +187,35 @@ void StarChips::sendCmd(std::array<uint16_t, 9> cmd){
 
 bool StarChips::writeRegisters(){
 	//Write all register to their setting, both for HCC & all ABCs
-	std::cout << "!!!! m_nABC is " << m_nABC << std::endl;
-	for( int iChip = 0; iChip < m_nABC+1; ++iChip){
-	        int this_chipID = (iChip) ? getABCchipID(iChip) : getHCCchipID();
-		if (iChip==1) this->reset();
-		std::cout << "Starting on chip " << this_chipID << " with length " << registerMap[iChip].size() << " @ " << &registerMap << std::endl;
-		std::map<unsigned, Register*>::iterator map_iter;
-		for(map_iter=registerMap[iChip].begin(); map_iter!= registerMap[iChip].end(); ++map_iter){
-			if( m_debug ) {
-				std::cout << "Writing Register "<< map_iter->first << " for chipID " << this_chipID << std::endl;
-			}
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-			if (iChip==0)
-				setAndWriteHCCRegister(map_iter->first, -1);
-			else
-				setAndWriteABCRegister(map_iter->first, -1, iChip);
+        auto num_abc = numABCs();
+	std::cout << "!!!! m_nABC is " << num_abc << std::endl;
+
+        // First write HCC
+        int hccId = getHCCchipID();
+
+        const auto &hcc_regs = HccStarRegInfo::instance()->hccregisterMap;
+	std::cout << "Starting on chip " << hccId << " with length " << hcc_regs.size() << "\n";
+
+        for(auto &map_iter: hcc_regs) {
+              auto addr = map_iter.first;
+              logger->trace("Writing HCC Register {} for chipID {}", addr, hccId);
+              setAndWriteHCCRegister(addr, -1);
+        }
+
+        // Send resets to ABC now HCC is configured
+        this->reset();
+
+        // Then each ABC
+        const auto &abc_regs = AbcStarRegInfo::instance()->abcregisterMap;
+	for( int iChip = 0; iChip < num_abc; ++iChip){
+                int this_chipID = getABCchipID(iChip);
+
+		std::cout << "Starting on chip " << this_chipID << " with length " << abc_regs.size() << "";
+		for(auto &map_iter: abc_regs) {
+                        auto addr = map_iter.first;
+                        logger->debug("Writing Register {} for chipID {}", addr, this_chipID);
+
+                        setAndWriteABCRegister(addr, -1, iChip);
 		}
 		std::cout << "Done with " << iChip << std::endl;
 	}
@@ -212,38 +231,48 @@ void StarChips::writeNamedRegister(std::string name, uint16_t reg_value) {
     setAndWriteHCCSubRegister(name.substr(4), reg_value);
   else   if (strPrefix=="ABCs") {
     name = name.substr(5);
-    if (m_debug) std::cout << "Writing " << reg_value << " on setting '" << name << "' for all ABCStar chips." << std::endl;
-    for( int iChip = 1; iChip < m_nABC+1; ++iChip)
+    logger->trace("Writing {} on setting '{}' for all ABCStar chips.", reg_value, name);
+    for( int iChip = 1; iChip < numABCs(); ++iChip)
       setAndWriteABCSubRegisterForChipIndex(name, reg_value, iChip);
   }
 }
 
 
-const void StarChips::readRegisters(){
+void StarChips::readRegisters(){
 
 	//Read all known registers, both for HCC & all ABCs
-	if(m_debug)  std::cout << "Looping over all chips in readRegisters, where m_nABC is " << m_nABC << std::endl;
-	for( int iChip = 0; iChip < m_nABC+1; ++iChip){
+        logger->debug("Looping over all chips in readRegisters, where m_nABC is {}", numABCs());
 
-	        int this_chipID = (iChip) ? getABCchipID(iChip) : getHCCchipID();
-		std::map<unsigned, Register*>::iterator map_iter;
-		for(map_iter=registerMap[iChip].begin(); map_iter!= registerMap[iChip].end(); ++map_iter){
-			if(iChip==0 && map_iter->first==16) continue;
-			if( m_debug ) {
-				std::cout <<"Hcc id: " << getHCCchipID() << std::endl;
-				std::cout << "Calling readRegister for chipID " << this_chipID << " register " << map_iter->first << std::endl;
+        auto &hcc_regs = HccStarRegInfo::instance()->hccregisterMap;
 
-			}
-			if (iChip==0)
-				readHCCRegister(map_iter->first);
-			else
-				readABCRegister(map_iter->first, this_chipID);
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-			if(m_debug)
-				std::cout << "Calling read()" << std::endl;
-			//			read(map_iter->first, rxcore);
-		}//for each register address
-	}//for each chipID
+        for(auto &map_iter: hcc_regs) {
+                auto addr = map_iter.first;
+                // Skip HCCCommand reg
+                if(addr == 16) continue;
+                int this_chipID = getHCCchipID();
+                logger->debug("Calling readRegister for HCC {} register {}", this_chipID, addr);
+                readHCCRegister(addr);
+        }
+
+        auto &abc_regs = AbcStarRegInfo::instance()->abcregisterMap;
+
+        auto num_abc = numABCs();
+
+        for( int iChip = 0; iChip < num_abc; ++iChip){
+                int this_chipID = getABCchipID(iChip);
+                for(auto &map_iter: abc_regs) {
+                        auto addr = map_iter.first;
+
+                        logger->debug("Hcc id: {}", getHCCchipID());
+                        logger->debug("Abc id: {}", getABCchipID(iChip));
+                        logger->debug("Calling readRegister for chipID {} register {}", this_chipID, addr);
+
+                        readABCRegister(addr, this_chipID);
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                        logger->debug("Not calling read()");
+                        //                      read(map_iter->first, rxcore);
+                }//for each register address
+        }//for each chipID
 
 }
 
