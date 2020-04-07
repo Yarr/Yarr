@@ -152,7 +152,7 @@ void StarChips::sendCmd(uint16_t cmd){
 	//	std::cout << std::hex <<cmd << std::dec<< "_"<<std::endl;
 
 	m_txcore->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
-	m_txcore->writeFifo((cmd << 16) + 0);
+	m_txcore->writeFifo((cmd << 16) + LCB::IDLE);
 	m_txcore->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
 	m_txcore->releaseFifo();
 
@@ -177,7 +177,7 @@ void StarChips::sendCmd(std::array<uint16_t, 9> cmd){
 	m_txcore->writeFifo((cmd[2] << 16) + cmd[3]);
 	m_txcore->writeFifo((cmd[4] << 16) + cmd[5]);
 	m_txcore->writeFifo((cmd[6] << 16) + cmd[7]);
-	m_txcore->writeFifo((cmd[8] << 16) + 0);
+	m_txcore->writeFifo((cmd[8] << 16) + LCB::IDLE);
 	m_txcore->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
 	m_txcore->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
 	m_txcore->releaseFifo();
