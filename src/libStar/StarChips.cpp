@@ -6,11 +6,7 @@
 
 #include "StarChips.h"
 
-#include <bitset>
-#include <iostream>
-#include <iomanip>
 #include <chrono>
-#include <thread>
 
 #include "logging.h"
 
