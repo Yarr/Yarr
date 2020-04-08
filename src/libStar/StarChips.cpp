@@ -232,7 +232,7 @@ void StarChips::writeNamedRegister(std::string name, uint16_t reg_value) {
   else   if (strPrefix=="ABCs") {
     name = name.substr(5);
     logger->trace("Writing {} on setting '{}' for all ABCStar chips.", reg_value, name);
-    for( int iChip = 1; iChip < numABCs(); ++iChip)
+    for( int iChip = 1; iChip < numABCs() + 1; ++iChip)
       setAndWriteABCSubRegisterForChipIndex(name, reg_value, iChip);
   }
 }
