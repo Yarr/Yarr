@@ -197,8 +197,8 @@ TEST_CASE("StarChipsNamedConfig", "[star][chips]") {
   }
 
   SECTION("Some ABC sub regs") {
-    // This shouldn't be chipIndex!
-    star_fe->writeABCRegister(32, 1);
+    // Send to all ABCs
+    star_fe->writeABCRegister(32);
     star_fe->writeNamedRegister("ABCs_TESTPATT1", 0xa);
     star_fe->writeNamedRegister("ABCs_TESTPATT2", 0x5);
 

@@ -202,18 +202,18 @@ bool StarChips::writeRegisters(){
 
         // Then each ABC
         const auto &abc_regs = AbcStarRegInfo::instance()->abcregisterMap;
-	for( int iChip = 1; iChip < num_abc+1; ++iChip){
-                int this_chipID = getABCchipID(iChip);
+	eachAbc([&](auto &abc) {
+                int this_chipID = abc.getABCchipID();
 
                 logger->info("Starting on chip {} with {} registers", this_chipID, abc_regs.size());
 		for(auto &map_iter: abc_regs) {
                         auto addr = map_iter.first;
                         logger->debug("Writing Register {} for chipID {}", addr, this_chipID);
 
-                        writeABCRegister(addr, iChip);
+                        writeABCRegister(addr, abc);
 		}
-		logger->info("Done with {}", iChip);
-	}
+		logger->info("Done with {}", this_chipID);
+          });
 
 	return true;
 }
@@ -235,8 +235,9 @@ void StarChips::writeNamedRegister(std::string name, uint16_t reg_value) {
       logger->error(" --> Error: Could not find ABC sub-register \"{}\"", subRegName);
     } else {
       logger->trace("Writing {} on setting '{}' for all ABCStar chips.", reg_value, name);
-      for( int iChip = 1; iChip < numABCs() + 1; ++iChip)
-        setAndWriteABCSubRegisterForChipIndex(subRegName, reg_value, iChip);
+      eachAbc([&](auto &cfg) {
+          setAndWriteABCSubRegister(subRegName, cfg, reg_value);
+        });
     }
   }
 }
@@ -260,15 +261,12 @@ void StarChips::readRegisters(){
 
         auto &abc_regs = AbcStarRegInfo::instance()->abcregisterMap;
 
-        auto num_abc = numABCs();
-
-        for( int iChip = 1; iChip < num_abc+1; ++iChip){
-                int this_chipID = getABCchipID(iChip);
+        eachAbc([&](const auto &abc) {
+                int this_chipID = abc.getABCchipID();
                 for(auto &map_iter: abc_regs) {
                         auto addr = map_iter.first;
 
                         logger->debug("Hcc id: {}", getHCCchipID());
-                        logger->debug("Abc id: {}", getABCchipID(iChip));
                         logger->debug("Calling readRegister for chipID {} register {}", this_chipID, addr);
 
                         readABCRegister(addr, this_chipID);
@@ -276,7 +274,7 @@ void StarChips::readRegisters(){
                         logger->debug("Not calling read()");
                         //                      read(map_iter->first, rxcore);
                 }//for each register address
-        }//for each chipID
+          }); //for each chipID
 
 }
 
@@ -286,10 +284,11 @@ void StarChips::writeHCCRegister(int addr) {
     sendCmd(write_hcc_register(addr, value, getHCCchipID()));
 }
 
-void StarChips::writeABCRegister(int addr, int32_t chipIndex) {
-    uint32_t value = abcFromIndex(chipIndex).getRegisterValue(ABCStarRegister::_from_integral(addr));
-    logger->debug("Doing ABC {} writeRegister {} with value 0x{:08x}", chipIndex, addr, value);
-    sendCmd(write_abc_register(addr, value, getHCCchipID(), getABCchipID(chipIndex)));
+void StarChips::writeABCRegister(int addr, AbcCfg &cfg) {
+    uint32_t value = cfg.getRegisterValue(ABCStarRegister::_from_integral(addr));
+    auto id = cfg.getABCchipID();
+    logger->debug("Doing ABC ID {} writeRegister {} with value 0x{:08x}", id, addr, value);
+    sendCmd(write_abc_register(addr, value, getHCCchipID(), id));
 }
 
 void StarChips::readHCCRegister(int addr) {

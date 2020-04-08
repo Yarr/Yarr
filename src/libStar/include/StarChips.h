@@ -64,7 +64,9 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
 
   void writeHCCRegister(int addr);
 
-  void writeABCRegister(int addr, int32_t chipIndex);
+  void writeABCRegister(int addr) {
+    eachAbc([&](auto &abc) { writeABCRegister(addr, abc); });
+  }
 
   void readHCCRegister(int addr);
 
@@ -72,11 +74,23 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
 
 
   void setAndWriteHCCSubRegister(std::string subRegName, uint32_t value){
-    setSubRegisterValue(0, subRegName,value);
+    m_hcc.setSubRegisterValue(subRegName, value);
     sendCmd( write_hcc_register(getSubRegisterParentAddr(0, subRegName), getSubRegisterParentValue(0, subRegName), getHCCchipID()) );
   }
   void readHCCSubRegister(std::string subRegName){
     sendCmd(read_hcc_register(getSubRegisterParentAddr(0, subRegName), getHCCchipID()));
+  }
+
+ public:
+  //Uses chip ID to set value on subregister called subRegName
+  void setAndWriteABCSubRegister(std::string subRegName, uint32_t value, int32_t chipID){
+    setAndWriteABCSubRegister(subRegName,
+                              abcFromChipID(chipID), value);
+  }
+
+  //Reads value of subregister subRegName for chip with ID chipID
+  void readABCSubRegister(std::string subRegName, int32_t chipID){
+    readABCSubRegister(subRegName, abcFromChipID(chipID));
   }
 
  private:
@@ -92,29 +106,8 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
                               0xf, cfg.getABCchipID()));
   }
 
- public:
+  void writeABCRegister(int addr, AbcCfg &cfg);
 
-  //Uses chip index to set value on subregister called subRegName
-  void setAndWriteABCSubRegisterForChipIndex(std::string subRegName, uint32_t value, unsigned int chipIndex){
-    setAndWriteABCSubRegister(subRegName,
-                              abcFromIndex(chipIndex), value);
-  }
-
-  //Uses chip ID to set value on subregister called subRegName
-  void setAndWriteABCSubRegister(std::string subRegName, uint32_t value, int32_t chipID){
-    setAndWriteABCSubRegister(subRegName,
-                              abcFromChipID(chipID), value);
-  }
-  //Reads value of subregister subRegName for chip with index chipIndex
-  void readABCSubRegisterForChipIndex(std::string subRegName, unsigned int chipIndex){
-    readABCSubRegister(subRegName, abcFromIndex(chipIndex));
-  }
-  //Reads value of subregister subRegName for chip with ID chipID
-  void readABCSubRegister(std::string subRegName, int32_t chipID){
-    readABCSubRegister(subRegName, abcFromChipID(chipID));
-  }
-
-  private:
     TxCore * m_txcore;
 };
 
