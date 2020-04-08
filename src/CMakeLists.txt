@@ -157,5 +157,5 @@ add_executable(test_main ${test_src} tests/main.cpp)
 target_link_libraries(test_main ${YARR_LINK_LIB_COMMAND})
 add_dependencies(test_main Yarr)
 
-# Add custom target so we can run "make test"
-add_custom_target(test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/test_main)
+# This uses features of CTest, so requires enable_testing somewhere
+add_test(catch2_tests ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/test_main)
