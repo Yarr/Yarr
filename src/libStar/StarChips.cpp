@@ -100,37 +100,36 @@ void StarChips::setHccId(unsigned hccID) {
   //Let's reset the HCC ID with a broadcast write of the HCCID+SN on reg 17
   uint32_t newReg17val = (hccID<<28) | m_sn;
   sendCmd(write_hcc_register(17, newReg17val, 0xf));
-  std::cout << "Set HCC ID to " << hccID << " (sent on reg17 0x" << std::hex << std::setfill('0') << std::setw(8) << newReg17val << ")" << std::endl;
-
+  logger->info("Set HCC ID to {} (sent on reg17 0x{:08x})", hccID, newReg17val);
 }
 
 
 
 void StarChips::reset(){
-	std::cout << "Global reseting all HCC and ABC on the same LCB control segment " << std::endl;
+	logger->info("Global reseting all HCC and ABC on the same LCB control segment");
 
 	uint8_t delay = 0; //2 bits BC delay
 
 	//sendCmd(LCB::fast_command(LCB::LOGIC_RESET, delay) );
-	std::cout << "Sending fast command #" << LCB::ABC_REG_RESET << " ABC_REG_RESET" << std::endl;
+	logger->debug("Sending fast command #{} ABC_REG_RESET", LCB::ABC_REG_RESET);
 	sendCmd(LCB::fast_command(LCB::ABC_REG_RESET, delay) );
 
-	std::cout << "Sending fast command #" << LCB::ABC_SLOW_COMMAND_RESET << " ABC_SLOW_COMMAND_RESET" << std::endl;
+	logger->debug("Sending fast command #{} ABC_SLOW_COMMAND_RESET", LCB::ABC_SLOW_COMMAND_RESET);
 	sendCmd(LCB::fast_command(LCB::ABC_SLOW_COMMAND_RESET, delay) );
 
-	std::cout << "Sending fast command #" << LCB::ABC_SEU_RESET << " ABC_SEU_RESET" << std::endl;
+	logger->debug("Sending fast command #{} ABC_SEU_RESET", LCB::ABC_SEU_RESET);
 	sendCmd(LCB::fast_command(LCB::ABC_SEU_RESET, delay) );
 
-	std::cout << "Sending fast command #" << LCB::ABC_HIT_COUNT_RESET << " ABC_HIT_COUNT_RESET" << std::endl;
+	logger->debug("Sending fast command #{} ABC_HIT_COUNT_RESET", LCB::ABC_HIT_COUNT_RESET);
 	sendCmd(LCB::fast_command(LCB::ABC_HIT_COUNT_RESET, delay) );
 
-	std::cout << "Sending fast command #" << LCB::ABC_HIT_COUNT_START << " ABC_HITCOUNT_START" << std::endl;
+	logger->debug("Sending fast command #{} ABC_HIT_COUNT_START", LCB::ABC_HIT_COUNT_START);
 	sendCmd(LCB::fast_command(LCB::ABC_HIT_COUNT_START, delay) );
 
-	std::cout << "Sending fast command #" << LCB::HCC_START_PRLP << " ABC_START_PRLP" << std::endl;
+	logger->debug("Sending fast command #{} HCC_START_PRLP", LCB::HCC_START_PRLP);
 	sendCmd(LCB::fast_command(LCB::HCC_START_PRLP, delay) );
 
-	std::cout << "Sending lonely_BCR" << std::endl;
+	logger->debug("Sending lonely_BCR");
 	sendCmd(LCB::lonely_bcr());
 }
 
@@ -139,10 +138,10 @@ void StarChips::configure() {
 	//Set the HCC ID
         if (m_sn) this->setHccId(getHCCchipID());
 
-	std::cout << "Sending fast command #" << LCB::HCC_REG_RESET << " HCC_REG_RESET" << std::endl;
+	logger->debug("Sending fast command #{} HCC_REG_RESET", LCB::HCC_REG_RESET);
 	this->sendCmd(LCB::fast_command(LCB::HCC_REG_RESET, 0) );
 
-	std::cout << "Sending registers configuration..." << std::endl;
+	logger->info("Sending registers configuration...");
 
 	this->writeRegisters();
 
@@ -188,13 +187,13 @@ void StarChips::sendCmd(std::array<uint16_t, 9> cmd){
 bool StarChips::writeRegisters(){
 	//Write all register to their setting, both for HCC & all ABCs
         auto num_abc = numABCs();
-	std::cout << "!!!! m_nABC is " << num_abc << std::endl;
+	logger->info("Write registers for HCC + {} * ABCs", num_abc);
 
         // First write HCC
         int hccId = getHCCchipID();
 
         const auto &hcc_regs = HccStarRegInfo::instance()->hccregisterMap;
-	std::cout << "Starting on chip " << hccId << " with length " << hcc_regs.size() << "\n";
+	logger->info("Starting on chip {} with {} registers", hccId, hcc_regs.size());
 
         for(auto &map_iter: hcc_regs) {
               auto addr = map_iter.first;
@@ -210,14 +209,14 @@ bool StarChips::writeRegisters(){
 	for( int iChip = 1; iChip < num_abc+1; ++iChip){
                 int this_chipID = getABCchipID(iChip);
 
-		std::cout << "Starting on chip " << this_chipID << " with length " << abc_regs.size() << "";
+                logger->info("Starting on chip {} with {} registers", this_chipID, abc_regs.size());
 		for(auto &map_iter: abc_regs) {
                         auto addr = map_iter.first;
                         logger->debug("Writing Register {} for chipID {}", addr, this_chipID);
 
                         writeABCRegister(addr, iChip);
 		}
-		std::cout << "Done with " << iChip << std::endl;
+		logger->info("Done with {}", iChip);
 	}
 
 	return true;
