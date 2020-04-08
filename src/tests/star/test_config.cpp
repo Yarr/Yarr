@@ -29,6 +29,20 @@ TEST_CASE("StarCfg", "[star][config]") {
   test_config.setABCRegister(ABCStarRegister::CREG0, 0x87654321, abc_id);
   REQUIRE (test_config.getABCRegister(ABCStarRegister::CREG0, abc_id) == 0x87654321);
 
+  test_config.eachAbc([&](AbcCfg &abc) {
+      REQUIRE (abc.getABCchipID() == abc_id);
+
+      REQUIRE (abc.getSubRegisterParentAddr("TESTPATT1") == ABCStarRegister::CREG0);
+
+      abc.setSubRegisterValue("TESTPATT1", 0x5);
+      abc.setSubRegisterValue("TESTPATT2", 0xa);
+      REQUIRE (abc.getSubRegisterValue("TESTPATT1") == 0x5);
+
+      // Use abc_id here for some reason
+      REQUIRE (test_config.getABCRegister(ABCStarRegister::CREG0, abc_id) == 0x8a554321);
+      REQUIRE (abc.getSubRegisterParentValue("TESTPATT1") == 0x8a554321);
+    });
+
   // Internal index for referring to the ABC
   int abc_index = 1;
 

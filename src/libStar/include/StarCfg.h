@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <tuple>
 
 #include "FrontEnd.h"
@@ -127,6 +128,13 @@ class StarCfg : public FrontEndCfg {
   void fromFileJson(json &j) override;
 
   size_t numABCs() { return m_ABCchips.size(); }
+
+  /// Iterate over ABCs, avoiding chipIndex
+  void eachAbc(std::function<void (AbcCfg&)> f) {
+    for(auto &abc: m_ABCchips) {
+      f(abc);
+    }
+  }
 
   int hccChannelForABCchipID(unsigned int chipID);
 
