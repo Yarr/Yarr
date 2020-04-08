@@ -3,6 +3,8 @@
 #include "AllChips.h"
 #include "StarChips.h"
 
+#include "logging.h"
+
 #include "../EmptyHw.h"
 
 /**
@@ -135,6 +137,7 @@ TEST_CASE("StarBasicConfig", "[star][chips]") {
 
   REQUIRE (tx.buffers.size() > 0);
 
+  // NB need to use one that's already registered
   auto l = spdlog::get("StarChips");
 
   size_t buf_count = tx.buffers.size() - 1;

@@ -17,14 +17,7 @@ class RxCore;
 #include "StarCmd.h"
 #include "StarCfg.h"
 
-#include "logging.h"
-
 class StarChips : public StarCfg, public StarCmd, public FrontEnd {
-static logging::LoggerStore tmplogger() {
-  static logging::LoggerStore instance = logging::make_log("StarChipsTemp");
-  return instance;
-}
-
  public:
   StarChips();
   StarChips(HwController *arg_core);
@@ -69,25 +62,13 @@ static logging::LoggerStore tmplogger() {
   bool writeRegisters();
   void readRegisters();
 
-  void writeHCCRegister(int addr) {
-    uint32_t value = m_hcc.getRegisterValue(HCCStarRegister::_from_integral(addr));
-    tmplogger()->debug("Doing HCC write register with value 0x{:08x} from registerMap[addr={}]", value, addr);
-    sendCmd(write_hcc_register(addr, value, getHCCchipID()));
-  }
+  void writeHCCRegister(int addr);
 
-  void writeABCRegister(int addr, int32_t chipIndex) {
-    uint32_t value = abcFromIndex(chipIndex).getRegisterValue(ABCStarRegister::_from_integral(addr));
-    tmplogger()->debug("Doing ABC {} writeRegister {} with value 0x{:08x}", chipIndex, addr, value);
-    sendCmd(write_abc_register(addr, value, getHCCchipID(), getABCchipID(chipIndex)));
-  }
+  void writeABCRegister(int addr, int32_t chipIndex);
 
+  void readHCCRegister(int addr);
 
-  void readHCCRegister(int addr){
-    sendCmd(read_hcc_register(addr, getHCCchipID()));
-  }
-  void readABCRegister(int addr, int32_t chipID = 0){
-    sendCmd(read_abc_register(addr, getHCCchipID(), chipID));
-  }
+  void readABCRegister(int addr, int32_t chipID);
 
 
   void setAndWriteHCCSubRegister(std::string subRegName, uint32_t value){

@@ -271,6 +271,25 @@ void StarChips::readRegisters(){
 
 }
 
+void StarChips::writeHCCRegister(int addr) {
+    uint32_t value = m_hcc.getRegisterValue(HCCStarRegister::_from_integral(addr));
+    logger->debug("Doing HCC write register with value 0x{:08x} from registerMap[addr={}]", value, addr);
+    sendCmd(write_hcc_register(addr, value, getHCCchipID()));
+}
+
+void StarChips::writeABCRegister(int addr, int32_t chipIndex) {
+    uint32_t value = abcFromIndex(chipIndex).getRegisterValue(ABCStarRegister::_from_integral(addr));
+    logger->debug("Doing ABC {} writeRegister {} with value 0x{:08x}", chipIndex, addr, value);
+    sendCmd(write_abc_register(addr, value, getHCCchipID(), getABCchipID(chipIndex)));
+}
+
+void StarChips::readHCCRegister(int addr) {
+    sendCmd(read_hcc_register(addr, getHCCchipID()));
+}
+
+void StarChips::readABCRegister(int addr, int32_t chipID) {
+    sendCmd(read_abc_register(addr, getHCCchipID(), chipID));
+}
 
 void StarChips::toFileJson(json &j){
     StarCfg::toFileJson(j);
