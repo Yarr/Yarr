@@ -136,6 +136,8 @@ class StarCfg : public FrontEndCfg {
     }
   }
 
+  HccCfg &hcc() { return m_hcc; }
+
   int hccChannelForABCchipID(unsigned int chipID);
 
  protected:

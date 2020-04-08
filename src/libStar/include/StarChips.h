@@ -75,10 +75,13 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
 
   void setAndWriteHCCSubRegister(std::string subRegName, uint32_t value){
     m_hcc.setSubRegisterValue(subRegName, value);
-    sendCmd( write_hcc_register(getSubRegisterParentAddr(0, subRegName), getSubRegisterParentValue(0, subRegName), getHCCchipID()) );
+    sendCmd( write_hcc_register(hcc().getSubRegisterParentAddr(subRegName),
+                                hcc().getSubRegisterParentValue(subRegName),
+                                getHCCchipID()) );
   }
   void readHCCSubRegister(std::string subRegName){
-    sendCmd(read_hcc_register(getSubRegisterParentAddr(0, subRegName), getHCCchipID()));
+    sendCmd(read_hcc_register(hcc().getSubRegisterParentAddr(subRegName),
+                              getHCCchipID()));
   }
 
  public:
