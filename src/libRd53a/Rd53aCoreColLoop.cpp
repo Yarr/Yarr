@@ -66,7 +66,8 @@ void Rd53aCoreColLoop::execPart1() {
         }
         // Enable next columns
         if (i%m_impl->nSteps == m_impl->m_cur) {
-            logger->debug("Enabling QC -> {}", dc);
+            logger->info("Enabling QC -> {}", dc);
+            logger->info("--------------------", dc);
             dynamic_cast<Rd53a*>(g_fe)->enableCalCol(dc);
             dynamic_cast<Rd53a*>(g_fe)->enableCalCol(dc+1);
             dynamic_cast<Rd53a*>(g_fe)->enableCalCol(dc+2);
