@@ -113,8 +113,61 @@ int StarCfg::getTrimDAC(unsigned col, unsigned row) const {
 
 void StarCfg::toFileJson(json &j) {
     logger->debug("Send StarCfg to json");
+
+    j["name"] = name;
+
+    j["HCC"]["ID"] = getHCCchipID();
+
+    for (int iABC = 0; iABC < numABCs(); iABC++) {
+        j["ABCs"]["IDs"][iABC] = abcFromIndex(iABC+1).getABCchipID();
+    }
 }
 
 void StarCfg::fromFileJson(json &j) {
     logger->debug("Read StarCfg from json");
+
+    if (!j["name"].empty()) {
+        name = j["name"];
+    }
+
+    if (j.find("HCC") == j.end()) {
+        logger->error("No HCC config found in the config file!");
+        throw std::runtime_error("Missing HCC in config file");
+    }
+
+    auto &hcc = j["HCC"];
+
+    if (!hcc["ID"].empty()) {
+        setHCCChipId(hcc["ID"]);
+    } else {
+        logger->error("No HCC ID found in the config file!");
+        throw std::runtime_error("Missing ID in config file");
+    }
+
+    // Clear list in case loading twice
+    clearABCchipIDs();
+
+    if (j["ABCs"].empty()) {
+        logger->error("No ABC config found in the config file!");
+        throw std::runtime_error("Missing ABC config in config file");
+    }
+
+    auto &abcs = j["ABCs"];
+
+    // Load the IDs
+    if (!abcs["IDs"].empty()) {
+        auto &ids = abcs["IDs"];
+
+        for (int iABC = 0; iABC < ids.size(); iABC++) {
+            addABCchipID(ids[iABC]);
+        }
+    }
+
+    // Initialize register maps now nABCs is known
+    initRegisterMaps();
+
+    if( numABCs() == 0 ){
+        logger->warn("No ABC chipIDs were found in json file, continuing with HCC only");
+        return; //No ABCs to load
+    }
 }
