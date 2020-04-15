@@ -6,6 +6,8 @@
 
 #include "StarCfg.h"
 
+#include <iomanip>
+
 #include "logging.h"
 
 namespace {
@@ -104,6 +106,21 @@ void StarCfg::toFileJson(json &j) {
 
     j["HCC"]["ID"] = getHCCchipID();
 
+    auto &hccRegs = HccStarRegInfo::instance()->hccregisterMap;
+
+    for(auto &reg: hccRegs) {
+        auto &info = reg.second;
+        int addr = info->addr();
+        // Standard rw registers start from 32
+        // Don't write status registers
+        if(addr >= 32) {
+          uint32_t val = getHCCRegister(addr);
+          std::stringstream ss;
+          ss << std::hex << std::setw(8) << std::setfill('0') << val;
+          j["HCC"]["regs"][addr-32] = ss.str();
+        }
+    }
+
     for (int iABC = 0; iABC < numABCs(); iABC++) {
         j["ABCs"]["IDs"][iABC] = abcFromIndex(iABC+1).getABCchipID();
     }
@@ -131,6 +148,44 @@ void StarCfg::fromFileJson(json &j) {
     }
 
     m_hcc.setDefaults();
+
+    if (!hcc["regs"].empty()) {
+        auto &regs = hcc["regs"];
+
+        // Iterate over list of hex strings
+        for (size_t reg_i = 0; reg_i<regs.size(); reg_i++) {
+            logger->trace("Read HCC config array at {}", reg_i);
+
+            unsigned regIndex = 32 + reg_i;
+
+            uint32_t regValue;
+
+            if(regs[reg_i].is_string()) {
+              // Interpret as hex string
+              std::string regHex = regs[reg_i];
+              regValue = std::stol(regHex, nullptr, 16);
+            } else {
+              // Interpret directly as integer (decimal in json)
+              regValue = regs[reg_i];
+            }
+
+            logger->trace("Read HCC value {}", regValue);
+
+            auto &hccRegs = HccStarRegInfo::instance()->hccregisterMap;
+
+            if (hccRegs.find(regIndex) != hccRegs.end() ) {
+                // Set the value in the internal subregister mapping
+                auto addr = HCCStarRegister::_from_integral(hccRegs[regIndex]->addr());
+                logger->trace("Set HCC value {} {}", addr, regValue);
+                m_hcc.setRegisterValue(addr, regValue);
+                auto value = m_hcc.getRegisterValue(addr);
+                logger->trace("From JSON: Set HCC {} reg {} to {:08x}",
+                              getHCCchipID(), regIndex, regValue);
+            } else {
+                logger->warn("Reg {} in JSON file does not exist as an HCC register.  It will be ignored!", regIndex);
+            }
+        }
+    }
 
     // Clear list in case loading twice
     clearABCchipIDs();

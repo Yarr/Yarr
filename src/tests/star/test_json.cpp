@@ -127,3 +127,37 @@ TEST_CASE("StarJsonMinimalABC", "[star][json]") {
 
   bounce_check(output);
 }
+
+// Configure some HCC registers
+TEST_CASE("StarJsonHccRegs", "[star][json]") {
+  json cfg;
+
+  cfg["name"] = "testname";
+  cfg["HCC"]["ID"] = 12;
+  cfg["HCC"]["regs"][0] = 0x12345678;
+
+  // debugging
+  // cfg.dump(4);
+
+  // No ABC
+
+  auto fe = StdDict::getFrontEnd("Star");
+  auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
+  REQUIRE(fecfg);
+  fecfg->fromFileJson(cfg);
+
+  json output;
+  fecfg->toFileJson(output);
+
+  // debugging
+  // output.dump(4);
+
+  // REQUIRE(fecfg->numABCs() == 0);
+
+  REQUIRE(output["name"] == cfg["name"]);
+
+  REQUIRE(output["HCC"]["ID"] == cfg["HCC"]["ID"]);
+  REQUIRE(output["HCC"]["regs"][0] == "12345678");
+
+  bounce_check(output);
+}
