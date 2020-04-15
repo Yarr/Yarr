@@ -78,7 +78,6 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path
         m_starCfg->addABCchipID(id_abc);
     }
     */
-    m_starCfg->initRegisterMaps();
 
     hpr_clkcnt = HPRPERIOD/2; // 20000 BCs or 500 us
     hpr_sent.resize(m_starCfg->numABCs() + 1); // 1 HCCStar + nABCs ABCStar chips

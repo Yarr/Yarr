@@ -33,8 +33,6 @@ StarChips::StarChips()
 	//Create dummy configuration as placeholder for globalFe in preScan routines
 	setHCCChipId(0xf);
 	addABCchipID(0xf);
-	this->initRegisterMaps(); //Initialize default register maps for 1 dummy ABC
-
 }
 
 StarChips::StarChips(HwController *arg_core)

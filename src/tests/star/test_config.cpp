@@ -9,13 +9,6 @@ TEST_CASE("StarCfg", "[star][config]") {
   const int abc_id = 14;
   test_config.addABCchipID(abc_id);
 
-  // This sets up initial values
-  test_config.initRegisterMaps();
-
-  // Check calling twice doesn't cause problems
-  test_config.initRegisterMaps();
-
-
   //  REQUIRE (test_config.numABCs() == 1);
   REQUIRE (test_config.getHCCchipID() == 4);
 
@@ -63,8 +56,6 @@ TEST_CASE("StarCfgTrims", "[star][config]") {
   test_config.setHCCChipId(2);
   const int abc_id = 3;
   test_config.addABCchipID(abc_id);
-
-  test_config.initRegisterMaps();
 
   // Default to 15 on all strips
   // Two rows of 128 strips (odd and even)

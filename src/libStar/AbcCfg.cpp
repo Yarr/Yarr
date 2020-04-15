@@ -122,6 +122,8 @@ AbcStarRegInfo::AbcStarRegInfo() {
 AbcCfg::AbcCfg()
   : m_info(AbcStarRegInfo::instance())
 {
+    setupMaps();
+    setDefaults();
 }
 
 AbcCfg::AbcCfg(AbcCfg &&other)
@@ -130,6 +132,7 @@ AbcCfg::AbcCfg(AbcCfg &&other)
 {
     // pointers will be into old vector!
     if(m_registerMap.empty()) {
+        setupMaps();
         return;
     }
     Register *old_base = &m_registerSet[0];
@@ -143,11 +146,11 @@ AbcCfg::AbcCfg(AbcCfg &&other)
                   (void*)old_base, (void*)new_base);
 }
 
-void AbcCfg::configure_ABC_Registers() {
-    int n_ABC_registers = 180;
+void AbcCfg::setupMaps() {
+    auto len = ABCStarRegister::_size();
     // In case it's not already empty
     m_registerSet.clear();
-    m_registerSet.reserve( n_ABC_registers );
+    m_registerSet.reserve( len );
 
     /// TODO Still not sure if this is a good implementation; to-be-optimized.
 
@@ -161,6 +164,12 @@ void AbcCfg::configure_ABC_Registers() {
         m_registerMap[addr]=&m_registerSet.at(lastReg); //Save it's position in memory to the registerMap
     }
 
+    if(m_registerSet.size() != len) {
+      logger->info("Mismatch between size {} and values {}", len, m_registerSet.size());
+    }
+}
+
+void AbcCfg::setDefaults() {
     //// Initialize 32-bit register with default values
     ////#special reg
     m_registerMap[ABCStarRegister::SCReg]->setValue(0x00000000);

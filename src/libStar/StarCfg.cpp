@@ -26,20 +26,6 @@ double StarCfg::toCharge(double vcal) {
 
 double StarCfg::toCharge(double vcal, bool sCap, bool lCap) { return toCharge(vcal); }
 
-void StarCfg::initRegisterMaps() {
-  auto abc_count = m_ABCchips.size();
-
-  //Make all registers and subregisters for the HCC
-  m_hcc.configure_HCC_Registers();
-
-  //Now make registers for each ABC
-  logger->debug("Now have m_nABC as {}", abc_count);
-  for( int iABC = 0; iABC < abc_count; ++iABC){ //Start at 1 b/c zero is HCC!
-    //Make all registers and subregisters for the HCC
-    abcFromIndex(iABC+1).configure_ABC_Registers();
-  }
-}
-
 int StarCfg::hccChannelForABCchipID(unsigned int chipID) {
   auto itr = std::find_if(m_ABCchips.begin(), m_ABCchips.end(),
                         [this, chipID](auto &it) { return it.getABCchipID() == chipID; });
@@ -144,6 +130,8 @@ void StarCfg::fromFileJson(json &j) {
         throw std::runtime_error("Missing ID in config file");
     }
 
+    m_hcc.setDefaults();
+
     // Clear list in case loading twice
     clearABCchipIDs();
 
@@ -164,11 +152,16 @@ void StarCfg::fromFileJson(json &j) {
         }
     }
 
-    // Initialize register maps now nABCs is known
-    initRegisterMaps();
+    auto abc_count = numABCs();
 
-    if( numABCs() == 0 ){
+    if( abc_count == 0 ){
         logger->warn("No ABC chipIDs were found in json file, continuing with HCC only");
         return; //No ABCs to load
+    }
+
+    // Initialize register maps for consistency
+    for( int iABC = 0; iABC < abc_count; ++iABC) {
+        // Make all registers and subregisters for the ABC
+        abcFromIndex(iABC+1).setDefaults();
     }
 }

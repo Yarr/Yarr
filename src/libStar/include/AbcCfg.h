@@ -104,7 +104,7 @@ class AbcCfg {
         // Implemented to move the pointers!
         AbcCfg(AbcCfg &&other);
 
-        void configure_ABC_Registers();
+        void setDefaults();
 
         unsigned int getABCchipID() const { return m_abcID;}
         void setABCChipId(unsigned abcID){
@@ -153,6 +153,8 @@ class AbcCfg {
         Register &getRegister(ABCStarRegister addr) {
             return *m_registerMap.at((unsigned int)addr);
         }
+
+        void setupMaps();
 };
 
 #endif
