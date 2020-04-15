@@ -68,7 +68,34 @@ TEST_CASE("StarJsonDefault", "[star][json]") {
   bounce_check(output);
 }
 
+// Minimal configuration (no ABCs)
 TEST_CASE("StarJsonMinimal", "[star][json]") {
+  json cfg;
+
+  cfg["name"] = "testname";
+  cfg["HCC"]["ID"] = 12;
+
+  auto fe = StdDict::getFrontEnd("Star");
+  auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
+  REQUIRE(fecfg);
+  fecfg->fromFileJson(cfg);
+
+  json output;
+  fecfg->toFileJson(output);
+
+  REQUIRE(output["name"] == cfg["name"]);
+
+  REQUIRE(output["HCC"]["ID"] == cfg["HCC"]["ID"]);
+
+  // debugging
+  // output.dump(4);
+
+  // Should be the same if read and write again
+  bounce_check(output);
+}
+
+// Minimal configuration (with some ABCs)
+TEST_CASE("StarJsonMinimalABC", "[star][json]") {
   json cfg;
 
   cfg["name"] = "testname";

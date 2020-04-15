@@ -147,9 +147,10 @@ void StarCfg::fromFileJson(json &j) {
     // Clear list in case loading twice
     clearABCchipIDs();
 
-    if (j["ABCs"].empty()) {
-        logger->error("No ABC config found in the config file!");
-        throw std::runtime_error("Missing ABC config in config file");
+    // Using find to avoid changing input
+    if (j.find("ABCs") == j.end()) {
+        logger->warn("No ABC chips found in the config file!");
+        return;
     }
 
     auto &abcs = j["ABCs"];
