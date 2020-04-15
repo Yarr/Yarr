@@ -298,12 +298,3 @@ void StarChips::readHCCRegister(int addr) {
 void StarChips::readABCRegister(int addr, int32_t chipID) {
     sendCmd(read_abc_register(addr, getHCCchipID(), chipID));
 }
-
-void StarChips::toFileJson(json &j){
-    StarCfg::toFileJson(j);
-}
-
-void StarChips::fromFileJson(json &j){
-    StarCfg::fromFileJson(j);
-}
-
