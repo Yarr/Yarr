@@ -159,12 +159,23 @@ void StarCfg::toFileJson(json &j) {
             j["ABCs"]["regs"][iABC][regKey] = ss.str();
         }
 
+        std::array<uint8_t, 256> trims;
+        bool sameTrims = true;
         for(int m=0; m<256; m++) {
+            trims[m] = abc.getTrimDACRaw(m);
+            if(m!=0 && (trims[m] != trims[m-1])) sameTrims = false;
             if(!abc.isMasked(m)) {
                 continue;
             }
 
             j["ABCs"]["masked"][iABC].push_back(m);
+        }
+        if(sameTrims) {
+            j["ABCs"]["trims"][iABC] = trims[0];
+        } else {
+            for(int m=0; m<256; m++) {
+                j["ABCs"]["trims"][iABC][m] = trims[m];
+            }
         }
     }
 }
@@ -366,6 +377,34 @@ void StarCfg::fromFileJson(json &j) {
             for(int strip: maskedStrips) {
                 auto &abc = abcFromIndex(iABC+1);
                 abc.setMask(strip, true);
+            }
+        }
+    }
+
+    if(abcs.find("trims") != abcs.end()) {
+        auto &trimArray = abcs["trims"];
+
+        if(trimArray.size() != numABCs()) {
+            logger->error("ABCs/trims array size does not match number of ABCs");
+            return;
+        }
+
+        // Each chip has either single integer (all the same), or array of value per strip
+        for (int iABC = 0; iABC < numABCs(); iABC++) {
+            auto &abc = abcFromIndex(iABC+1);
+
+            auto &chipValue = trimArray[iABC];
+            if(chipValue.is_number()) {
+                int trim = chipValue;
+                for(int m=0; m<256; m++) {
+                    abc.setTrimDACRaw(m, trim);
+                }
+            } else {
+                // Not the same
+                for(int m=0; m<256; m++) {
+                  int trim = chipValue[m];
+                    abc.setTrimDACRaw(m, trim);
+                }
             }
         }
     }

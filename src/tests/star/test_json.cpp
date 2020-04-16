@@ -272,3 +272,39 @@ TEST_CASE("StarJsonAbcSubRegs", "[star][json]") {
 
   bounce_check(output);
 }
+
+// Configure ABC trim registers
+TEST_CASE("StarJsonAbcTrim", "[star][json]") {
+  json cfg;
+
+  cfg["name"] = "testname";
+
+  cfg["HCC"]["ID"] = 12;
+
+  cfg["ABCs"]["IDs"][0] = 4;
+  cfg["ABCs"]["IDs"][1] = 6;
+
+  cfg["ABCs"]["trims"][0] = 13;
+  for(int i=0; i<256; i++) {
+    cfg["ABCs"]["trims"][1][i] = (i*13)%32;
+  }
+
+  // cfg.dump(4);
+
+  auto fe = StdDict::getFrontEnd("Star");
+  auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
+  REQUIRE(fecfg);
+  fecfg->fromFileJson(cfg);
+
+  json output;
+  fecfg->toFileJson(output);
+
+  // debugging
+  // output.dump(4);
+
+  REQUIRE(output["name"] == cfg["name"]);
+
+  REQUIRE(output["ABCs"]["trims"] == cfg["ABCs"]["trims"]);
+
+  bounce_check(output);
+}
