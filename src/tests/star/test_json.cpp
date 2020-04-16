@@ -161,3 +161,40 @@ TEST_CASE("StarJsonHccRegs", "[star][json]") {
 
   bounce_check(output);
 }
+
+// Configure some ABC registers
+TEST_CASE("StarJsonAbcRegs", "[star][json]") {
+  json cfg;
+
+  cfg["name"] = "testname";
+
+  cfg["HCC"]["ID"] = 12;
+
+  cfg["ABCs"]["IDs"][0] = 4;
+  cfg["ABCs"]["IDs"][1] = 6;
+
+  cfg["ABCs"]["regs"][0]["ADCS1"] = 0x02040810;
+  cfg["ABCs"]["regs"][1]["CREG0"] = "0ff00100";
+
+  auto fe = StdDict::getFrontEnd("Star");
+  auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
+  REQUIRE(fecfg);
+  fecfg->fromFileJson(cfg);
+
+  json output;
+  fecfg->toFileJson(output);
+
+  // debugging
+  //  output.dump(4);
+
+  REQUIRE(output["name"] == cfg["name"]);
+
+  // Output is simply all registers in hex
+  std::string outVal = output["ABCs"]["regs"][0]["ADCS1"];
+  REQUIRE(outVal == "02040810");
+
+  outVal = output["ABCs"]["regs"][1]["CREG0"];
+  REQUIRE(outVal == "0ff00100");
+
+  bounce_check(output);
+}

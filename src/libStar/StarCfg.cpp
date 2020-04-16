@@ -121,11 +121,58 @@ void StarCfg::toFileJson(json &j) {
         }
     }
 
+    auto &abcRegs = AbcStarRegInfo::instance()->abcregisterMap;
+
     for (int iABC = 0; iABC < numABCs(); iABC++) {
-        j["ABCs"]["IDs"][iABC] = abcFromIndex(iABC+1).getABCchipID();
+        auto &abc = abcFromIndex(iABC+1);
+        j["ABCs"]["IDs"][iABC] = abc.getABCchipID();
+
+        for(auto &reg_i: abcRegs) {
+            auto &info = reg_i.second;
+            int addr = info->addr();
+
+            // Skip non-writeable, trim and mask registers
+            if(addr==ABCStarRegister::SCReg) {
+                continue;
+            }
+            if(addr>=ABCStarRegister::MaskInput(0) && addr<=ABCStarRegister::MaskInput(7)) {
+                continue;
+            }
+            if(addr>=ABCStarRegister::CalREG0 && addr<=ABCStarRegister::CalREG7) {
+                continue;
+            }
+            if(addr>=ABCStarRegister::STAT0 && addr<=ABCStarRegister::HPR) {
+                continue;
+            }
+            if(addr>=ABCStarRegister::TrimLo(0) && addr<=ABCStarRegister::TrimHi(7)) {
+                continue;
+            }
+            if(addr>=ABCStarRegister::HitCountREG0) {
+                continue;
+            }
+
+            auto reg = ABCStarRegister::_from_integral(addr);
+            uint32_t val = abc.getRegisterValue(reg);
+            std::stringstream ss;
+            ss << std::hex << std::setw(8) << std::setfill('0') << val;
+            std::string regKey = reg._to_string();
+            j["ABCs"]["regs"][iABC][regKey] = ss.str();
+        }
     }
 }
 
+// No hex in json, so interpret a string
+uint32_t valFromJson(const json &jValue) {
+    if(jValue.is_string()) {
+        // Interpret as hex string
+        std::string regHex = jValue;
+        return std::stol(regHex, nullptr, 16);
+    } else {
+        // Interpret directly as integer (decimal in json)
+        return jValue;
+    }
+}
+ 
 void StarCfg::fromFileJson(json &j) {
     logger->debug("Read StarCfg from json");
 
@@ -218,5 +265,43 @@ void StarCfg::fromFileJson(json &j) {
     for( int iABC = 0; iABC < abc_count; ++iABC) {
         // Make all registers and subregisters for the ABC
         abcFromIndex(iABC+1).setDefaults();
+    }
+
+    // First, read register settings
+    if(abcs.find("regs") != abcs.end()) {
+        auto &regArray = abcs["regs"];
+
+        if(regArray.size() != numABCs()) {
+            logger->error("ABCs/regs array size does not match number of ABCs");
+            return;
+        }
+
+        for (int iABC = 0; iABC < numABCs(); iABC++) {
+            auto &chipRegs = regArray[iABC];
+
+            if(chipRegs.is_null()) continue;
+
+            if(!chipRegs.is_object()) {
+                logger->error("ABCs/regs array item not null or an object");
+                return;
+            }
+
+            auto &abc = abcFromIndex(iABC+1);
+
+            auto b = chipRegs.begin();
+            auto e = chipRegs.end();
+            for(auto i = b; i != e; i++) {
+                std::string regName = i.key();
+                uint32_t regValue = valFromJson(i.value());
+
+                try {
+                    auto addr = ABCStarRegister::_from_string(regName.c_str());
+                    abc.setRegisterValue(addr, regValue);
+                    logger->trace("For ABC index {}, reg {} has been set to {:08x}", iABC, regName, regValue);
+                } catch(std::runtime_error &e) {
+                  logger->warn("Reg {} in JSON file does not exist as an ABC register.  It will be ignored!", regName);
+                }
+            }
+        } // Loop over ABCs
     }
 }
