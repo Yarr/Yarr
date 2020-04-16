@@ -32,12 +32,12 @@ const std::vector<abcsubregdef> s_abcsubregdefs = {
   {ABCStarSubRegister::ADC_BIAS			,4	,0	,4}	,
   {ABCStarSubRegister::ADC_CH			,4	,4	,4}	,
   {ABCStarSubRegister::ADC_ENABLE		,4	,8	,1}	,
-  {ABCStarSubRegister::D_S			,6	,0	,1}	,
+  {ABCStarSubRegister::D_S			,6	,0	,15}	,
   {ABCStarSubRegister::D_LOW			,6	,15	,1}	,
   {ABCStarSubRegister::D_EN_CTRL		,6	,16	,1}	,
-  {ABCStarSubRegister::BTMUX			,7	,0	,1}	,
+  {ABCStarSubRegister::BTMUX			,7	,0	,14}	,
   {ABCStarSubRegister::BTMUXD			,7	,14	,1}	,
-  {ABCStarSubRegister::A_S			,7	,15	,1}	,
+  {ABCStarSubRegister::A_S			,7	,15	,15}	,
   {ABCStarSubRegister::A_EN_CTRL		,7	,31	,1}	,
   {ABCStarSubRegister::TEST_PULSE_ENABLE	,32	,4	,1}	,
   {ABCStarSubRegister::ENCOUNT			,32	,5	,1}	,
@@ -72,8 +72,8 @@ const std::vector<abcsubregdef> s_abcsubregdefs = {
   {ABCStarSubRegister::EN_LCB_DECODE_ERR	,36	,11	,1}	,
   {ABCStarSubRegister::EN_LCB_ERRCNT_OVFL	,36	,12	,1}	,
   {ABCStarSubRegister::EN_LCB_SCMD_ERR		,36	,13	,1}	,
-  {ABCStarSubRegister::DOFUSE			,37	,0	,2}	,
-  {ABCStarSubRegister::LCB_ERRCOUNT_THR	        ,38	,0	,1}
+  // {ABCStarSubRegister::DOFUSE			,37	,0	,24}	,
+  {ABCStarSubRegister::LCB_ERRCOUNT_THR	        ,38	,0	,16}
 };
 
 AbcStarRegInfo::AbcStarRegInfo() {
