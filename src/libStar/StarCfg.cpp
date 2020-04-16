@@ -313,6 +313,44 @@ void StarCfg::fromFileJson(json &j) {
         } // Loop over ABCs
     }
 
+    // Possible override by setting sub registers
+    if(abcs.find("subregs") != abcs.end()) {
+        auto &subregArray = abcs["subregs"];
+
+        if(subregArray.size() != numABCs()) {
+            logger->error("ABCs/subregs array size does not match number of ABCs");
+            return;
+        }
+
+        auto abcSubRegs = AbcStarRegInfo::instance()->abcSubRegisterMap_all;
+
+        for (int iABC = 0; iABC < numABCs(); iABC++) {
+            auto &chipSubRegs = subregArray[iABC];
+
+            if(chipSubRegs.is_null()) continue;
+
+            if(!chipSubRegs.is_object()) {
+                logger->error("ABCs/subregs array item not null or an object");
+                return;
+            }
+
+            auto &abc = abcFromIndex(iABC+1);
+
+            auto b = chipSubRegs.begin();
+            auto e = chipSubRegs.end();
+            for(auto i = b; i != e; i++) {
+                std::string subRegName = i.key();
+                int subRegValue = i.value();
+
+                auto regPre = abc.getSubRegisterParentValue(subRegName);
+                abc.setSubRegisterValue(subRegName, subRegValue);
+                auto retrieved = abc.getSubRegisterValue(subRegName);
+                auto regPost = abc.getSubRegisterParentValue(subRegName);
+                logger->trace("Load from JSON: For ABC index {}, {} has been set to {} (check {}) {:08x} -> {:08x}", iABC, subRegName, subRegValue, retrieved, regPre, regPost);
+            }
+        } // Loop over ABCs
+    }
+
     if(abcs.find("masked") != abcs.end()) {
         auto &maskArray = abcs["masked"];
 

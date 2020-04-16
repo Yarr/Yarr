@@ -237,3 +237,38 @@ TEST_CASE("StarJsonAbcMasks", "[star][json]") {
 
   bounce_check(output);
 }
+
+// Configure some ABC registers using subregs
+TEST_CASE("StarJsonAbcSubRegs", "[star][json]") {
+  json cfg;
+
+  cfg["name"] = "testname";
+
+  cfg["HCC"]["ID"] = 12;
+
+  cfg["ABCs"]["IDs"][0] = 4;
+  cfg["ABCs"]["IDs"][1] = 6;
+
+  cfg["ABCs"]["subregs"][0]["LCB_ERRCOUNT_THR"] = 123;
+  cfg["ABCs"]["subregs"][1] = nullptr;
+
+  auto fe = StdDict::getFrontEnd("Star");
+  auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
+  REQUIRE(fecfg);
+  fecfg->fromFileJson(cfg);
+
+  json output;
+  fecfg->toFileJson(output);
+
+  // debugging
+  // output.dump(4);
+
+  REQUIRE(output["name"] == cfg["name"]);
+
+  // Output is simply all registers in hex
+  std::string outVal = output["ABCs"]["regs"][0]["CREG6"];
+  uint32_t regValue = std::stol(outVal, nullptr, 16);
+  REQUIRE((regValue & 0xffff) == 123);
+
+  bounce_check(output);
+}
