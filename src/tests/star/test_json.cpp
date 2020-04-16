@@ -198,3 +198,42 @@ TEST_CASE("StarJsonAbcRegs", "[star][json]") {
 
   bounce_check(output);
 }
+
+// Configure ABC mask registers
+TEST_CASE("StarJsonAbcMasks", "[star][json]") {
+  json cfg;
+
+  cfg["name"] = "testname";
+
+  cfg["HCC"]["ID"] = 12;
+
+  cfg["ABCs"]["IDs"][0] = 4;
+  cfg["ABCs"]["IDs"][1] = 6;
+
+  cfg["ABCs"]["masked"][0].push_back(0);
+  cfg["ABCs"]["masked"][0].push_back(127);
+  cfg["ABCs"]["masked"][0].push_back(128);
+  cfg["ABCs"]["masked"][0].push_back(255);
+  cfg["ABCs"]["masked"][1].push_back(0);
+  cfg["ABCs"]["masked"][1].push_back(1);
+  cfg["ABCs"]["masked"][1].push_back(2);
+  cfg["ABCs"]["masked"][1].push_back(3);
+  cfg["ABCs"]["masked"][1].push_back(4);
+
+  auto fe = StdDict::getFrontEnd("Star");
+  auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
+  REQUIRE(fecfg);
+  fecfg->fromFileJson(cfg);
+
+  json output;
+  fecfg->toFileJson(output);
+
+  // debugging
+  // output.dump(4);
+
+  REQUIRE(output["name"] == cfg["name"]);
+
+  REQUIRE(output["ABCs"]["masked"] == cfg["ABCs"]["masked"]);
+
+  bounce_check(output);
+}

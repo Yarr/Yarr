@@ -144,6 +144,30 @@ class AbcCfg {
         /// Get trim DAC for particular channel (as calculated by StarCfg)
         int getTrimDACRaw(unsigned channel) const;
 
+        /// Is channel masked
+        bool isMasked(unsigned channel) const {
+            uint8_t maskIndex = ((channel & 0x7f) << 1) | ((channel & 0x80) >> 7);
+            int maskReg = ABCStarRegister::MaskInput((maskIndex>>5) & 0x7);
+            uint32_t maskValue = getRegister(maskReg).getValue();
+            return maskValue & (1 << (maskIndex&0x1f));
+        }
+
+        /// Set mask for strip
+        void setMask(unsigned channel, bool mask) {
+            uint8_t maskIndex = ((channel & 0x7f) << 1) | ((channel & 0x80) >> 7);
+            int maskReg = ABCStarRegister::MaskInput((maskIndex>>5) & 0x7);
+            auto &reg = getRegister(maskReg);
+            uint32_t maskValue = reg.getValue();
+            uint32_t maskPattern =  1 << (maskIndex&0x1f);
+
+            if(mask) {
+              maskValue |= maskPattern; 
+            } else {
+              maskValue &= ~maskPattern; 
+            }
+            reg.setValue(maskValue);
+        }
+
     private:
         SubRegister getSubRegister(ABCStarSubRegister r) {
             auto info = m_info->abcSubRegisterMap_all[r];

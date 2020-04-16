@@ -158,6 +158,14 @@ void StarCfg::toFileJson(json &j) {
             std::string regKey = reg._to_string();
             j["ABCs"]["regs"][iABC][regKey] = ss.str();
         }
+
+        for(int m=0; m<256; m++) {
+            if(!abc.isMasked(m)) {
+                continue;
+            }
+
+            j["ABCs"]["masked"][iABC].push_back(m);
+        }
     }
 }
 
@@ -303,5 +311,24 @@ void StarCfg::fromFileJson(json &j) {
                 }
             }
         } // Loop over ABCs
+    }
+
+    if(abcs.find("masked") != abcs.end()) {
+        auto &maskArray = abcs["masked"];
+
+        if(maskArray.size() != numABCs()) {
+            logger->error("ABCs/masked array size does not match number of ABCs");
+            return;
+        }
+
+        // Each chip has a list of strips
+        for (int iABC = 0; iABC < numABCs(); iABC++) {
+            auto &maskedStrips = maskArray[iABC];
+
+            for(int strip: maskedStrips) {
+                auto &abc = abcFromIndex(iABC+1);
+                abc.setMask(strip, true);
+            }
+        }
     }
 }
