@@ -122,6 +122,14 @@ TEST_CASE("StarJsonMinimalABC", "[star][json]") {
     REQUIRE(output["ABCs"]["IDs"][i] == cfg["ABCs"]["IDs"][i]);
   }
 
+  // Check all registers are the same for each ABC
+  auto common_present = output["ABCs"].find("common") != output["ABCs"].end();
+  REQUIRE(common_present);
+  REQUIRE(output["ABCs"]["common"].size() > 5);
+  // No exceptions
+  auto regs_not_present = output["ABCs"].find("regs") == output["ABCs"].end();
+  REQUIRE(regs_not_present);
+
   // debugging
   // output.dump(4);
 

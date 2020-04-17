@@ -125,6 +125,10 @@ void StarCfg::toFileJson(json &j) {
 
     auto &abcRegs = AbcStarRegInfo::instance()->abcregisterMap;
 
+    std::map<std::string, std::string> common;
+    // Store until we know which are not common
+    std::vector<std::map<std::string, std::string>> regs(numABCs());
+
     for (int iABC = 0; iABC < numABCs(); iABC++) {
         auto &abc = abcFromIndex(iABC+1);
         j["ABCs"]["IDs"][iABC] = abc.getABCchipID();
@@ -158,7 +162,18 @@ void StarCfg::toFileJson(json &j) {
             std::stringstream ss;
             ss << std::hex << std::setw(8) << std::setfill('0') << val;
             std::string regKey = reg._to_string();
-            j["ABCs"]["regs"][iABC][regKey] = ss.str();
+            std::string regValue = ss.str();
+            regs[iABC][regKey] = regValue;
+
+            if(iABC == 0) {
+                common[regKey] = regValue;
+            } else {
+                auto i = common.find(regKey);
+                if(i != common.end() && i->second != regValue) {
+                    // Not the same as others
+                    common.erase(i);
+                }
+            }
         }
 
         std::array<uint8_t, 256> trims;
@@ -179,6 +194,18 @@ void StarCfg::toFileJson(json &j) {
                 j["ABCs"]["trims"][iABC][m] = trims[m];
             }
         }
+    }
+
+    for(size_t a=0; a<regs.size(); a++) {
+        for(auto r: regs[a]) {
+            if(common.find(r.first) != common.end()) {
+                continue;
+            }
+            j["ABCs"]["regs"][a][r.first] = r.second;
+        }
+    }
+    for(auto m: common) {
+        j["ABCs"]["common"][m.first] = m.second;
     }
 }
 
