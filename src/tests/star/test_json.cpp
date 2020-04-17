@@ -134,7 +134,7 @@ TEST_CASE("StarJsonHccRegs", "[star][json]") {
 
   cfg["name"] = "testname";
   cfg["HCC"]["ID"] = 12;
-  cfg["HCC"]["regs"][0] = 0x12345678;
+  cfg["HCC"]["regs"]["Delay1"] = 0x12345678;
 
   // debugging
   // cfg.dump(4);
@@ -157,7 +157,7 @@ TEST_CASE("StarJsonHccRegs", "[star][json]") {
   REQUIRE(output["name"] == cfg["name"]);
 
   REQUIRE(output["HCC"]["ID"] == cfg["HCC"]["ID"]);
-  REQUIRE(output["HCC"]["regs"][0] == "12345678");
+  REQUIRE(output["HCC"]["regs"]["Delay1"] == "12345678");
 
   bounce_check(output);
 }

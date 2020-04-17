@@ -114,10 +114,12 @@ void StarCfg::toFileJson(json &j) {
         // Standard rw registers start from 32
         // Don't write status registers
         if(addr >= 32) {
+          auto reg = HCCStarRegister::_from_integral(addr);
+          std::string regKey = reg._to_string();
           uint32_t val = getHCCRegister(addr);
           std::stringstream ss;
           ss << std::hex << std::setw(8) << std::setfill('0') << val;
-          j["HCC"]["regs"][addr-32] = ss.str();
+          j["HCC"]["regs"][regKey] = ss.str();
         }
     }
 
@@ -218,30 +220,31 @@ void StarCfg::fromFileJson(json &j) {
     if (!hcc["regs"].empty()) {
         auto &regs = hcc["regs"];
 
-        // Iterate over list of hex strings
-        for (size_t reg_i = 0; reg_i<regs.size(); reg_i++) {
-            auto &jregValue = regs[reg_i];
+        if(!regs.is_object()) {
+          logger->error("HCC/regs is not an object!");
+          throw std::runtime_error("HCC/regs should be an object");
+        }
 
-            logger->trace("Read HCC config array at {}", reg_i);
-
-            unsigned regIndex = 32 + reg_i;
+        // Iterate over object reg name: (hex strings|integer)
+        auto b = regs.begin();
+        auto e = regs.end();
+        for (auto i=b; i!=e; i++) {
+            std::string regName = i.key();
+            auto &jregValue = i.value();
 
             uint32_t regValue = valFromJson(jregValue);
 
             logger->trace("Read HCC value {}", regValue);
 
-            auto &hccRegs = HccStarRegInfo::instance()->hccregisterMap;
-
-            if (hccRegs.find(regIndex) != hccRegs.end() ) {
-                // Set the value in the internal subregister mapping
-                auto addr = HCCStarRegister::_from_integral(hccRegs[regIndex]->addr());
+            try {
+                auto addr = HCCStarRegister::_from_string(regName.c_str());
                 logger->trace("Set HCC value {} {}", addr, regValue);
                 m_hcc.setRegisterValue(addr, regValue);
                 auto value = m_hcc.getRegisterValue(addr);
                 logger->trace("From JSON: Set HCC {} reg {} to {:08x}",
-                              getHCCchipID(), regIndex, regValue);
-            } else {
-                logger->warn("Reg {} in JSON file does not exist as an HCC register.  It will be ignored!", regIndex);
+                              getHCCchipID(), regName, regValue);
+            } catch(std::runtime_error &e) {
+                logger->warn("Reg {} in JSON file does not exist as an HCC register.  It will be ignored!", regName);
             }
         }
     }
