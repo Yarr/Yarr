@@ -193,7 +193,7 @@ TEST_CASE("StarJsonAbcRegs", "[star][json]") {
   fecfg->toFileJson(output);
 
   // debugging
-  //  output.dump(4);
+  // output.dump(4);
 
   REQUIRE(output["name"] == cfg["name"]);
 
@@ -313,6 +313,50 @@ TEST_CASE("StarJsonAbcTrim", "[star][json]") {
   REQUIRE(output["name"] == cfg["name"]);
 
   REQUIRE(output["ABCs"]["trims"] == cfg["ABCs"]["trims"]);
+
+  bounce_check(output);
+}
+
+// Configure ABC trim registers
+TEST_CASE("StarJsonAbcCommon", "[star][json]") {
+  json cfg;
+
+  cfg["name"] = "testname";
+
+  cfg["HCC"]["ID"] = 12;
+
+  cfg["ABCs"]["IDs"][0] = 4;
+  cfg["ABCs"]["IDs"][1] = 6;
+  cfg["ABCs"]["IDs"][2] = 8;
+
+  cfg["ABCs"]["common"]["ADCS2"] = 0x12345678;
+  cfg["ABCs"]["regs"][1]["ADCS2"] = 0x87654321;
+  cfg["ABCs"]["regs"][2] = nullptr;
+
+  // cfg.dump(4);
+
+  auto fe = StdDict::getFrontEnd("Star");
+  auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
+  REQUIRE(fecfg);
+  fecfg->fromFileJson(cfg);
+
+  json output;
+  fecfg->toFileJson(output);
+
+  // debugging
+  //  output.dump(4);
+
+  REQUIRE(output["name"] == cfg["name"]);
+
+  auto check = [&](int i, std::string val) {
+    std::string out_val = output["ABCs"]["regs"][i]["ADCS2"];
+    CAPTURE(i, val);
+    REQUIRE(out_val == val);
+  };
+
+  check(0, "12345678");
+  check(1, "87654321");
+  check(2, "12345678");
 
   bounce_check(output);
 }

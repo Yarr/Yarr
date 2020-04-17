@@ -309,6 +309,34 @@ void StarCfg::fromFileJson(json &j) {
         abcFromIndex(iABC+1).setDefaults();
     }
 
+    // First, commont register settings
+    if(abcs.find("common") != abcs.end()) {
+        auto &commonRegs = abcs["common"];
+
+        if(!commonRegs.is_object()) {
+            logger->error("common reg item not an object");
+            return;
+        }
+
+        auto b = commonRegs.begin();
+        auto e = commonRegs.end();
+        for(auto i = b; i != e; i++) {
+            std::string regName = i.key();
+            uint32_t regValue = valFromJson(i.value());
+
+            try {
+                auto addr = ABCStarRegister::_from_string(regName.c_str());
+                for (int iABC = 0; iABC < numABCs(); iABC++) {
+                    auto &abc = abcFromIndex(iABC+1);
+                    abc.setRegisterValue(addr, regValue);
+                }
+                logger->trace("All ABCs reg {} has been set to {:08x}", regName, regValue);
+            } catch(std::runtime_error &e) {
+                logger->warn("Reg {} in JSON file does not exist as an ABC register.  It will be ignored!", regName);
+            }
+        }
+    }
+
     // First, read register settings
     if(abcs.find("regs") != abcs.end()) {
         auto &regArray = abcs["regs"];
