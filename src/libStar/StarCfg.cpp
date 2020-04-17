@@ -220,20 +220,13 @@ void StarCfg::fromFileJson(json &j) {
 
         // Iterate over list of hex strings
         for (size_t reg_i = 0; reg_i<regs.size(); reg_i++) {
+            auto &jregValue = regs[reg_i];
+
             logger->trace("Read HCC config array at {}", reg_i);
 
             unsigned regIndex = 32 + reg_i;
 
-            uint32_t regValue;
-
-            if(regs[reg_i].is_string()) {
-              // Interpret as hex string
-              std::string regHex = regs[reg_i];
-              regValue = std::stol(regHex, nullptr, 16);
-            } else {
-              // Interpret directly as integer (decimal in json)
-              regValue = regs[reg_i];
-            }
+            uint32_t regValue = valFromJson(jregValue);
 
             logger->trace("Read HCC value {}", regValue);
 
