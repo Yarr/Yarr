@@ -214,7 +214,27 @@ uint32_t valFromJson(const json &jValue) {
     if(jValue.is_string()) {
         // Interpret as hex string
         std::string regHex = jValue;
-        return std::stol(regHex, nullptr, 16);
+        std::size_t pos;
+        try {
+          uint32_t ret = std::stoul(regHex, &pos, 16);
+          if(pos != regHex.size()) {
+            logger->warn("Failed to read hex string {} (reached pos {})", regHex, pos);
+            std::string msg = "Failed to read hex string (";
+            msg += regHex + ")";
+            throw std::runtime_error(msg);
+          }
+          return ret;
+        } catch(std::invalid_argument &e) {
+            logger->warn("Failed to parse hex string {}", regHex);
+            std::string msg = "Failed to parse hex string (";
+            msg += regHex + ")";
+            throw std::runtime_error(msg);
+        } catch(std::out_of_range &e) {
+            logger->warn("Failed to read hex string {} (too big)", regHex);
+            std::string msg = "Failed to read big hex string (";
+            msg += regHex + ")";
+            throw std::runtime_error(msg);
+        }
     } else {
         // Interpret directly as integer (decimal in json)
         return jValue;
@@ -402,7 +422,7 @@ void StarCfg::fromFileJson(json &j) {
             auto e = chipSubRegs.end();
             for(auto i = b; i != e; i++) {
                 std::string subRegName = i.key();
-                int subRegValue = i.value();
+                uint32_t subRegValue = valFromJson(i.value());
 
                 auto regPre = abc.getSubRegisterParentValue(subRegName);
                 abc.setSubRegisterValue(subRegName, subRegValue);

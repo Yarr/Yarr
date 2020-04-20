@@ -67,6 +67,9 @@ class SubRegister {
         // Write value to field and config
         void updateValue(const uint32_t cfgBits) {
             unsigned maskBits = (1<<m_info->m_width)-1;
+            if(cfgBits & ~maskBits) {
+                throw std::runtime_error("Attempt to write invalid bits in sub register");
+            }
             *m_parentReg=(*m_parentReg&(~(maskBits<<m_info->m_bOffset))) |
               ((cfgBits&maskBits)<<m_info->m_bOffset);
         }
