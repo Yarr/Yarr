@@ -1,14 +1,13 @@
 {
   "scan": {
-    "analysis": {
-      "0": {
+    "analysis": [
+      {
         "algorithm": "OccupancyAnalysis",
         "config": {
           "createMask": true
         }
-      },
-      "n_count": 1
-    },
+      }
+    ],
     "histogrammer": [
         {
             "algorithm": "OccupancyMap",
@@ -19,7 +18,7 @@
             "config": {}
         },
         {
-            "algorithm": "HitPerEvent",
+            "algorithm": "HitsPerEvent",
             "config": {}
         }
     ],
@@ -39,10 +38,6 @@
     ],
     "name": "StarDigitalScan",
     "prescan": {
-        "DigHitIn_Sel": 1,
-        "Trig_Count": 10,
-        "Trig_Lat": 220,
-        "Vthin_Coarse": 200
     }
   }
 }

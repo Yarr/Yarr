@@ -9,6 +9,12 @@
 #include "AllChips.h"
 #include "Fei4.h"
 
+#include "logging.h"
+
+namespace {
+    auto flog = logging::make_log("Fei4");
+}
+
 bool fei4_registered =
 StdDict::registerFrontEnd("FEI4B",
         []() { return std::unique_ptr<FrontEnd>(new Fei4());});
@@ -238,6 +244,6 @@ void Fei4::wrGR16(unsigned int mOffset, unsigned int bOffset, unsigned int mask,
 }
 
 void Fei4::writeNamedRegister(std::string name, uint16_t reg_value) {
-    std::cout << __PRETTY_FUNCTION__ << " : " << name << " -> " << reg_value << std::endl;
+    flog->info("Writing named register: {} -> {}", name, reg_value);
     writeRegister(regMap[name], reg_value);
 }

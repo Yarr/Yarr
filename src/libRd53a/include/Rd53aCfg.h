@@ -46,12 +46,9 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
          */
         void toFileJson(json&);
         void fromFileJson(json&);
-        void toFileBinary(std::string) {};
-        void fromFileBinary(std::string) {};
-        void toFileBinary() {};
-        void fromFileBinary() {};
-	float ADCtoV (uint16_t ADC);
-	float VtoTemp (float V, uint16_t Sensor, bool isRadSensor);
+        float ADCtoV (uint16_t ADC);
+        float VtoTemp (float V, uint16_t Sensor, bool isRadSensor);
+        
         /**
          * set the chip ID
          */

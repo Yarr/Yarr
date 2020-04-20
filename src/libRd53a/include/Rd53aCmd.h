@@ -61,8 +61,6 @@ class Rd53aCmd {
         }
 
         TxCore *core;
-    private:
-        bool verbose;
 };
 
 #endif

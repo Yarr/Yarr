@@ -25,7 +25,6 @@ class Fei4Selftrigger : public ScanBase {
     private:
         double triggerFrequency;
         unsigned triggerTime; 
-        bool verbose;
 };
 
 #endif

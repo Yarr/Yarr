@@ -65,7 +65,7 @@ public:
 public:
   NetioHandler(std::string contextStr="posix", std::string felixHost="localhost",
                uint16_t felixTXPort=12340, uint16_t felixRXPort=12345,
-               size_t queueSize=10000000, bool verbose=false);
+               size_t queueSize=10000000);
   //MW: FIX CLANG COMPILATION
   ~NetioHandler();
 
@@ -116,9 +116,6 @@ private:
   size_t m_sensitivity;
   size_t m_delay;
   size_t m_queueSize;
-
-  // Verbosity
-  bool m_verbose;
 
   // Queues and the stability check threads
   std::map<uint64_t, SharedQueue> m_pcqs; // Queues for elink RX.

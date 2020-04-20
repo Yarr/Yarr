@@ -39,6 +39,7 @@ class StarCmd {
   std::array<LCB::Frame, 9> read_abc_register(int address, int hccID = 0xf, int abcID = 0xf) {
     return command_sequence(hccID, abcID, address, true, 0, false);
   }
+  
 };
 
 #endif

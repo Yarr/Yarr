@@ -74,7 +74,7 @@
     "name": "TotScan",
     "prescan": {
         "Trig_Count": 12,
-        "Trig_Lat": 246,
+        "Trig_Lat": 205,
         "CalPulseWidth": 20
     }
   }

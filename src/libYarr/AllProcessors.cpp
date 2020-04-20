@@ -1,7 +1,11 @@
 #include "AllProcessors.h"
 #include "ClassRegistry.h"
 
-#include <iostream>
+#include "logging.h"
+
+namespace {
+    auto aplog = logging::make_log("ProcRegistry");
+}
 
 typedef ClassRegistry<DataProcessor> OurRegistry;
 
@@ -20,7 +24,7 @@ namespace StdDict {
     std::unique_ptr<DataProcessor> getDataProcessor(std::string name) {
         auto result = registry().makeClass(name);
         if(result == nullptr) {
-            std::cout << "No DataProcessor matching '" << name << "' found\n";
+            SPDLOG_LOGGER_ERROR(aplog, "No DataProcessor matching '{}' found!", name);
         }
         return result;
     }

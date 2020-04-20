@@ -34,7 +34,6 @@ Fei4GlobalPreampTune::Fei4GlobalPreampTune(Bookkeeper *b) : ScanBase(b) {
     useLcap = true;
 
     target = g_bk->getTargetCharge();
-    verbose = false;
 }
 
 // Initialize Loops
@@ -43,11 +42,9 @@ void Fei4GlobalPreampTune::init() {
     std::shared_ptr<Fei4GlobalFeedback> fbLoop(new Fei4GlobalFeedback(&Fei4::PrmpVbpf));
     fbLoop->setStep(64);
     fbLoop->setMax(128);
-    fbLoop->setVerbose(true);
 
     // Loop 1: Mask Staging
     std::shared_ptr<Fei4MaskLoop> maskStaging(new Fei4MaskLoop);
-    maskStaging->setVerbose(verbose);
     maskStaging->setMaskStage(mask);
     maskStaging->setScap(useScap);
     maskStaging->setLcap(useLcap);
@@ -55,20 +52,17 @@ void Fei4GlobalPreampTune::init() {
     
     // Loop 2: Double Columns
     std::shared_ptr<Fei4DcLoop> dcLoop(new Fei4DcLoop);
-    dcLoop->setVerbose(verbose);
     dcLoop->setMode(dcMode);
     //dcLoop->setStep(2);
 
     // Loop 3: Trigger
     std::shared_ptr<Fei4TriggerLoop> triggerLoop(new Fei4TriggerLoop);
-    triggerLoop->setVerbose(verbose);
     triggerLoop->setTrigCnt(numOfTriggers);
     triggerLoop->setTrigFreq(triggerFrequency);
     triggerLoop->setTrigDelay(triggerDelay);
 
     // Loop 4: Data gatherer
     std::shared_ptr<StdDataLoop> dataLoop(new StdDataLoop);
-    dataLoop->setVerbose(verbose);
     dataLoop->connect(g_data);
 
     this->addLoop(fbLoop);

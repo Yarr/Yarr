@@ -8,7 +8,11 @@
 
 #include "Bookkeeper.h"
 
-#include <iostream>
+#include "logging.h"
+
+namespace {
+    auto blog = logging::make_log("Bookkeeper");
+}
 
 Bookkeeper::Bookkeeper(TxCore *arg_tx, RxCore *arg_rx) {
     tx = arg_tx;
@@ -31,7 +35,7 @@ Bookkeeper::~Bookkeeper() {
 // RxChannel is unique ident
 void Bookkeeper::addFe(FrontEnd *fe, unsigned txChannel, unsigned rxChannel) {
     if(isChannelUsed(rxChannel)) {
-        std::cerr << __PRETTY_FUNCTION__ << " -> Error rx channel already in use, not adding FE" << std::endl;
+        SPDLOG_LOGGER_ERROR(blog, "Rx channel already in use, not adding FE");
     } else {
         feList.push_back(fe);
         FrontEndCfg *cfg = dynamic_cast<FrontEndCfg*>(feList.back());
@@ -42,9 +46,10 @@ void Bookkeeper::addFe(FrontEnd *fe, unsigned txChannel, unsigned rxChannel) {
         feList.back()->clipData = &eventMap[rxChannel];
         feList.back()->clipHisto = &histoMap[rxChannel];
         feList.back()->clipResult = &resultMap[rxChannel];
-        mutexMap[rxChannel];
     }
-    std::cout << __PRETTY_FUNCTION__ << " -> Added FE: Tx(" << txChannel << "), Rx(" << rxChannel << ")" << std::endl;
+
+    // Using macro includes file/line info
+    SPDLOG_LOGGER_INFO(blog, "Added FE: Tx({}), Rx({})", txChannel, rxChannel);
 }
 
 void Bookkeeper::addFe(FrontEnd *fe, unsigned channel) {
@@ -54,7 +59,7 @@ void Bookkeeper::addFe(FrontEnd *fe, unsigned channel) {
 // RxChannel is unique ident
 void Bookkeeper::delFe(unsigned rxChannel) {
     if (!isChannelUsed(rxChannel)) {
-        std::cerr << __PRETTY_FUNCTION__ << " -> Error rx channel not in use, can not delete FE" << std::endl;
+        SPDLOG_LOGGER_ERROR(blog, "Rx channel not in use, can not delete FE!");
     } else {
         for(unsigned int k=0; k<feList.size(); k++) {
             if(dynamic_cast<FrontEndCfg*>(feList[k])->getChannel() == rxChannel) {
@@ -62,10 +67,8 @@ void Bookkeeper::delFe(unsigned rxChannel) {
                 feList.erase(feList.begin() + k);
             }
         }
-        mutexMap.erase(rxChannel);
         histoMap.erase(rxChannel);
         resultMap.erase(rxChannel);
-        mutexMap.erase(rxChannel);
     }
 }
 

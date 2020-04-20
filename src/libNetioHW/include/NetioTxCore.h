@@ -62,7 +62,6 @@ private:
   std::string m_feType; // flag used to keep rd53a and strips specific stuff seperate
 
   enum TRIG_CONF_VALUE m_trigCfg;            //! trigger config
-  bool m_verbose;                            //! verbose mode
   bool m_trigEnabled;                        //! trigger is enabled
   uint32_t m_trigMode;                       //! trigger mode
   uint32_t m_trigCnt;                        //! number of triggers
