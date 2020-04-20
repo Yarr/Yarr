@@ -540,7 +540,6 @@ void StarEmu::resetABCRegisters()
         m_starCfg->setABCRegister(ABCStarRegister::CREG2, 0x00000190, abc);
         m_starCfg->setABCRegister(ABCStarRegister::CREG3, 0x00000000, abc);
         m_starCfg->setABCRegister(ABCStarRegister::CREG4, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::CREG5, 0x00000000, abc);
         m_starCfg->setABCRegister(ABCStarRegister::CREG6, 0x0000ffff, abc);
 
         m_starCfg->setABCRegister(ABCStarRegister::STAT0, 0x00000000, abc);

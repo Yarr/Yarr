@@ -159,8 +159,13 @@ void AbcCfg::setDefaults() {
         getRegister(iReg).setValue(0x00000000);
 
     ////#Congfiguration regs
-    for (unsigned int iReg=ABCStarRegister::CREG0; iReg<=ABCStarRegister::CREG6; iReg++)
+    for (unsigned int iReg=ABCStarRegister::CREG0; iReg<=ABCStarRegister::CREG6; iReg++) {
+        if(iReg == ABCStarRegister::CREG0 + 5) {
+            // Skip CREG5 as it's fuse register
+            continue;
+        }
         getRegister(iReg).setValue(0x00000000);
+    }
 
     ////# Input (Mask) regs
     for (unsigned int iReg=ABCStarRegister::MaskInput0; iReg<=ABCStarRegister::MaskInput7; iReg++)
