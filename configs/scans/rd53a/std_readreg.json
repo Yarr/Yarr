@@ -1,73 +1,27 @@
 {
-  "scan": {
-    "analysis": {
-      "0": {
-        "algorithm": "OccupancyAnalysis",
-        "config": {
-          "createMask": true
-        }
-      },
-      "1": {
-        "algorithm": "L1Analysis"
-      },
-      "n_count": 2
-    },
-    "histogrammer": {
-      "0": {
-        "algorithm": "OccupancyMap",
-        "config": {}
-      },
-      "1": {
-        "algorithm": "TotMap",
-        "config": {}
-      },
-      "2": {
-        "algorithm": "Tot2Map",
-        "config": {}
-      },
-      "3": {
-        "algorithm": "L1Dist",
-        "config": {}
-      },
-      "4": {
-        "algorithm": "HitsPerEvent",
-        "config": {}
-      },
-      "n_count": 5
-    },
-    "loops": [
-      {
-        "config": {
-          "max": 64,
-          "min": 0,
-          "step": 1
+    "scan": {
+        "analysis": {
+            "n_count": 0
         },
-        "loopAction": "Rd53aMaskLoop"
-      },
-      {
-        "config": {
-	    "VoltMux": [1,2,3,4,5,6,7,8,9,10],
-	    "CurMux": [],
-	    "Registers": ["All"],
-	    "EnblRingOsc": 255,
-	    "RstRingOsc": 1,
-	    "RingOscDur": 9
+        "histogrammer": {
+            "n_count": 0
+        },
+        "loops": [
+        {
+            "config": {
+                "VoltMux": [1,2,3,4,5,6,7,8,9,10],
+                "CurMux": [],
+                "Registers": ["All"],
+                "EnblRingOsc": 255,
+                "RstRingOsc": 1,
+                "RingOscDur": 9
 
+            },
+            "loopAction": "Rd53aReadRegLoop"
         },
-        "loopAction": "Rd53aReadRegLoop"
-      },
       {
         "config": {
-          "max": 50,
-          "min": 0,
-          "step": 1,
-          "nSteps": 5
-        },
-        "loopAction": "Rd53aCoreColLoop"
-      },
-      {
-        "config": {
-          "count": 100,
+          "count": 1,
           "delay": 48,
           "extTrigger": false,
           "frequency": 30000,
@@ -76,18 +30,18 @@
         },
         "loopAction": "Rd53aTriggerLoop"
       },
-      {
-        "loopAction": "StdDataLoop"
-      }
-    ],
-    "name": "AnalogScan",
-    "prescan": {
-        "InjEnDig": 0,
-        "LatencyConfig": 48,
-        "GlobalPulseRt": 16384,
-        "InjVcalDiff": 0,
-        "InjVcalHigh": 3000,
-        "InjVcalMed": 1000
+        {
+            "loopAction": "StdDataLoop"
+        }
+        ],
+        "name": "AnalogScan",
+        "prescan": {
+            "InjEnDig": 0,
+            "LatencyConfig": 48,
+            "GlobalPulseRt": 16384,
+            "InjVcalDiff": 0,
+            "InjVcalHigh": 3000,
+            "InjVcalMed": 1000
+        }
     }
-  }
 }
