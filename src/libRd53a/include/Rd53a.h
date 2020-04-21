@@ -54,9 +54,7 @@ public:
 
         void writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value);
         void readRegister(Rd53aReg Rd53aGlobalCfg::*ref);
-	void confADC(uint16_t MONUX, bool doCur);
-	void RunRingOsc(uint16_t Durration);
-	void writeNamedRegister(std::string name, uint16_t value) override;
+        void writeNamedRegister(std::string name, uint16_t value) override;
         
         void setInjCharge(double charge, bool sCap=true, bool lCap=true) override {
             this->writeRegister((Rd53aReg Rd53aGlobalCfg::*)&Rd53aGlobalCfg::InjVcalDiff, this->toVcal(charge));
@@ -64,6 +62,9 @@ public:
         
         void enableCalCol(unsigned col);
         void disableCalCol(unsigned col);
+        
+        void confADC(uint16_t MONUX, bool doCur);
+        void runRingOsc(uint16_t Durration);
 
     protected:
     private:

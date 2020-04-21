@@ -78,52 +78,6 @@ void Rd53a::readRegister(Rd53aReg Rd53aGlobalCfg::*ref) {
   rdRegister(m_chipId, (this->*ref).addr());
 }
 
-
-
-
-//This only works for voltage MUX values. 
-void Rd53a::confADC(uint16_t MONMUX,bool doCur=false) {
-
-  uint16_t OriginalGlobalRT = this->GlobalPulseRt.read();
-
-  if(doCur)
-    this->writeRegister(&Rd53a::MonitorImonMux,  MONMUX); //Select what to monitor
-  else
-    this->writeRegister(&Rd53a::MonitorVmonMux,  MONMUX); //Select what to monitor    
-
-
-  this->writeRegister(&Rd53a::MonitorEnable, 1); //Enabling monitoring 
-
-  this->writeRegister(&Rd53a::GlobalPulseRt ,64); //ResetADC
-  this->idle();
-  this->globalPulse(m_chipId, 4);  
-  std::this_thread::sleep_for(std::chrono::microseconds(100)); 
-
-  this->writeRegister(&Rd53a::GlobalPulseRt ,4096); //Trigger ADC Conversion
-  this->idle();
-  this->globalPulse(m_chipId, 4);  
-
-  std::this_thread::sleep_for(std::chrono::microseconds(1000)); //This is neccessary to clean. This might be controller dependent.  
-
-  this->writeRegister(&Rd53a::GlobalPulseRt ,OriginalGlobalRT); //Trigger ADC Conversion
-}
-
-
-void Rd53a::RunRingOsc(uint16_t Durration) {
-  uint16_t OriginalGlobalRT = this->GlobalPulseRt.read();
-
-  this->writeRegister(&Rd53a::GlobalPulseRt ,0x2000); //Ring Osc Enable Rout
-  this->idle();
-  this->globalPulse(m_chipId, Durration);  
-
-  std::this_thread::sleep_for(std::chrono::microseconds(1000)); //This is neccessary to clean. This might be controller dependent.  
-
-  this->writeRegister(&Rd53a::GlobalPulseRt ,OriginalGlobalRT); //Trigger ADC Conversion
-
-
-
-}
-
 void Rd53a::configure() {
     this->configureInit();
     // Turn off clock to matrix
@@ -344,5 +298,41 @@ std::pair<uint32_t, uint32_t> decodeSingleRegRead(uint32_t higher, uint32_t lowe
     return std::make_pair(999, 666);
 }
 
+void Rd53a::confADC(uint16_t MONMUX,bool doCur=false) {
+    //This only works for voltage MUX values. 
+    uint16_t OriginalGlobalRT = this->GlobalPulseRt.read();
 
+    if(doCur) {
+        this->writeRegister(&Rd53a::MonitorImonMux,  MONMUX); //Select what to monitor
+    } else {
+        this->writeRegister(&Rd53a::MonitorVmonMux,  MONMUX); //Select what to monitor    
+    }
+
+    this->writeRegister(&Rd53a::MonitorEnable, 1); //Enabling monitoring 
+
+    this->writeRegister(&Rd53a::GlobalPulseRt ,64); //ResetADC
+    this->idle();
+    this->globalPulse(m_chipId, 4);  
+    std::this_thread::sleep_for(std::chrono::microseconds(100)); 
+
+    this->writeRegister(&Rd53a::GlobalPulseRt ,4096); //Trigger ADC Conversion
+    this->idle();
+    this->globalPulse(m_chipId, 4);  
+
+    std::this_thread::sleep_for(std::chrono::microseconds(1000)); //This is neccessary to clean. This might be controller dependent.  
+
+    this->writeRegister(&Rd53a::GlobalPulseRt ,OriginalGlobalRT); //Trigger ADC Conversion
+}
+
+void Rd53a::runRingOsc(uint16_t Durration) {
+    uint16_t OriginalGlobalRT = this->GlobalPulseRt.read();
+
+    this->writeRegister(&Rd53a::GlobalPulseRt ,0x2000); //Ring Osc Enable Rout
+    this->idle();
+    this->globalPulse(m_chipId, Durration);  
+
+    std::this_thread::sleep_for(std::chrono::microseconds(1000)); //This is neccessary to clean. This might be controller dependent.  
+
+    this->writeRegister(&Rd53a::GlobalPulseRt ,OriginalGlobalRT); //Trigger ADC Conversion
+}
 

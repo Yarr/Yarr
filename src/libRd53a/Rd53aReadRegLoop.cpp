@@ -133,32 +133,34 @@ void Rd53aReadRegLoop::init() {
 }
 
 void Rd53aReadRegLoop::execPart1() {
-    dynamic_cast<HwController*>(g_rx)->setupMode(); //This is need to make sure the global rests doesn't refresh the ADCRegister
+    dynamic_cast<HwController*>(g_rx)->setupMode(); //This is need to make sure the global pulse doesn't refresh the ADCRegister
 
     //Currently for RD53A, each board needs to be configured alone due to a bug with the read out of the rd53a. This can be changed in rd53b. 
     for (auto *fe : keeper->feList) {
         if(fe->getActive()) {
+            std::string feName = dynamic_cast<FrontEndCfg*>(fe)->getName();
+            int feChannel = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
+            Rd53a *feRd53a = dynamic_cast<Rd53a*>(fe);
 
-            logger->info("Measuring for FE: {}", dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+            logger->info("Measuring for FE: {}", feChannel);
 
             ///--------------------------------///
             //Reading Standard Registers
             for (auto Reg : m_STDReg) {
                 if (keeper->globalFe<Rd53a>()->regMap.find(Reg) != keeper->globalFe<Rd53a>()->regMap.end()) {
-                    uint16_t RegisterVal =  (dynamic_cast<Rd53a*>(fe)->*(dynamic_cast<Rd53a*>(fe)->regMap[Reg])).ApplyMask( ReadRegister( keeper->globalFe<Rd53a>()->regMap[Reg] , dynamic_cast<Rd53a*>(fe)) );
-                    logger->info("REG: {}, Value: {}", Reg, RegisterVal);
+                    uint16_t RegisterVal =  (feRd53a->*(feRd53a->regMap[Reg])).ApplyMask( ReadRegister( keeper->globalFe<Rd53a>()->regMap[Reg] , feRd53a));
+                    logger->info("[{}][{}] REG: {}, Value: {}", feChannel, feName, Reg, RegisterVal);
 
-                    uint16_t StoredVal = (dynamic_cast<Rd53a*>(fe)->*(dynamic_cast<Rd53a*>(fe)->regMap[Reg])).read()  ;
+                    uint16_t StoredVal = (feRd53a->*(feRd53a->regMap[Reg])).read();
 
-                    // if ( StoredVal!=RegisterVal  ){
-                    //   std::cout<<"Warning!!! For Reg: "<<Reg<<", the stored register value ("<<StoredVal<<") doesn't match the one on the chip ("<<RegisterVal<<")."<<std::endl;
-                    // }
-
-
+                    if ( StoredVal!=RegisterVal) {
+                       logger->warn("[{}][{}] For Reg: {}, the stored register value ({}) doesn't match the one on the chip ({}).", feChannel, feName, Reg, StoredVal, RegisterVal);
+                    }
+                    
                     //Compare the Register with the stored value, it's a safety mechanism. 
                 }
                 else
-                    logger->warn("Warning!!! Requested Register {} not found, please check your runcard", Reg);
+                    logger->warn("[{}][{}] Requested Register {} not found, please check your runcard", feChannel, feName, Reg);
 
             }
 
@@ -166,12 +168,12 @@ void Rd53aReadRegLoop::execPart1() {
             //Reading Voltage  ADC 
             for( auto Reg : m_VoltMux) {
                 uint16_t ADCVal = ReadADC(Reg, false, dynamic_cast<Rd53a*>(fe));
-                logger->info("MON MUX_V: {}, Value: {} => {} V", Reg, ADCVal,dynamic_cast<Rd53a*>(fe)->ADCtoV(ADCVal));
+                logger->info("[{}][{}] MON MUX_V: {}, Value: {} => {} V", feChannel, feName, Reg, ADCVal,dynamic_cast<Rd53a*>(fe)->ADCtoV(ADCVal));
             }
 
             ///--------------------------------///
             //Reading Temp or Rad sensors from the ADC
-            for( auto Reg : m_TempMux){
+            for( auto Reg : m_TempMux) {
                 std::pair<uint16_t, uint16_t> TempVal = ReadTemp(Reg, dynamic_cast<Rd53a*>(fe));
 
                 uint16_t Sensor=0;
@@ -218,56 +220,53 @@ void Rd53aReadRegLoop::execPart1() {
                 float Volt1 = dynamic_cast<Rd53a*>(fe)->ADCtoV(TempVal.first);
                 float Volt2 = dynamic_cast<Rd53a*>(fe)->ADCtoV(TempVal.second);
 
-                logger->info("MON MUX_V: {} Bias 0 {} V Bias 1 {} V, Temperature {} C", Reg, TempVal.first, Volt1, TempVal.second, Volt2, Volt2-Volt1, (dynamic_cast<Rd53a*>(fe)->VtoTemp(Volt2-Volt1, Sensor, isRadSensor)));      
+                logger->info("[{}][{}] MON MUX_V: {} Bias 0 {} V Bias 1 {} V, Temperature {} C", feChannel, feName, Reg, TempVal.first, Volt1, TempVal.second, Volt2, Volt2-Volt1, (feRd53a->VtoTemp(Volt2-Volt1, Sensor, isRadSensor)));      
             
             }
             //Reading Current ADC
             for( auto Reg : m_CurMux)	{
                 uint16_t ADCVal = ReadADC(Reg, true, dynamic_cast<Rd53a*>(fe));
-                logger->info("MON MUX_C: {} Value: {}", Reg, ADCVal);
+                logger->info("[{}][{}] MON MUX_C: {} Value: {}", feChannel, feName, Reg, ADCVal);
             }
-        }
-    }
 
-    ///--------------------------------///
-    ///Running the Ring Oscillators ////
-    uint16_t RingValues[8][2]; 
-    //Reset Ring Osicilator 
-    for(uint16_t tmpCount = 0; m_RstRingOsc && tmpCount<8; tmpCount++) {
-        if ( ((m_EnblRingOsc >> tmpCount) % 2) == 1) {    
-            keeper->globalFe<Rd53a>()->writeRegister(OscRegisters[tmpCount],0);
-        }
-    }
+            ///--------------------------------///
+            ///Running the Ring Oscillators ////
+            uint16_t RingValues[8][2];
 
-    logger->info("Starting Ring Osc");
+            //Reset Ring Osicilator (if enabled)
+            for(uint16_t tmpCount = 0; m_RstRingOsc && tmpCount<8; tmpCount++) {
+                if ((m_EnblRingOsc >> tmpCount) % 0x1) {    
+                    keeper->globalFe<Rd53a>()->writeRegister(OscRegisters[tmpCount],0);
+                }
+            }
 
-    for (auto *fe : keeper->feList) {
-        if(fe->getActive()) {
+            logger->info("Starting Ring Osc");
+            
+            // Read start value
             for(uint16_t tmpCount = 0; tmpCount<8 ; tmpCount++) { 
-                if ( ((m_EnblRingOsc >> tmpCount) % 2) == 1) {
+                if ((m_EnblRingOsc >> tmpCount) & 0x1) {
                     RingValues[tmpCount][0]=ReadRegister(OscRegisters[tmpCount],dynamic_cast<Rd53a*>(fe)) & 0xFFF;
                     //std::cout<<"RigBuffer "<<tmpCount<<" For FE "<<dynamic_cast<FrontEndCfg*>(fe)->getTxChannel()<<" At Start: "<<RingValues[tmpCount][0]<<std::endl;
                 } 
             }
-        }
-    }
-    
-    keeper->globalFe<Rd53a>()->RunRingOsc(m_RingOscDur);
 
-    for (auto *fe : keeper->feList) {
-        if(fe->getActive()) {
+            // Run oscillators for some time
+            keeper->globalFe<Rd53a>()->runRingOsc(m_RingOscDur);
+
+            // Read value after running them
             for(uint16_t tmpCount = 0; tmpCount<8; tmpCount++) {    
-                if ( ((m_EnblRingOsc >> tmpCount) % 2) == 1) {
+                if ((m_EnblRingOsc >> tmpCount) & 0x1) {
                     RingValues[tmpCount][1]=ReadRegister(OscRegisters[tmpCount],dynamic_cast<Rd53a*>(fe)) & 0xFFF ;
                     //std::cout<<"RigBuffer For FE: "<<dynamic_cast<FrontEndCfg*>(fe)->getTxChannel()<<" At End: "<<RingValues[tmpCount][1]<<std::endl;
                 } 
             }
-        }
-    }
-    for(uint16_t tmpCount = 0; tmpCount<8; tmpCount++) {    
-        if ( ((m_EnblRingOsc >> tmpCount) % 2) == 1) {
-            logger->info("Ring Buffer: {} Values: {} - {} = {}", tmpCount,RingValues[tmpCount][1], RingValues[tmpCount][0], RingValues[tmpCount][1]-RingValues[tmpCount][0]);  
-            logger->info("Frequency: {}/2^{} = {} -> {} MHz", float(RingValues[tmpCount][1]-RingValues[tmpCount][0]), m_RingOscDur, float(RingValues[tmpCount][1]-RingValues[tmpCount][0])/ (1<<m_RingOscDur), float(RingValues[tmpCount][1]-RingValues[tmpCount][0])/ (1<<m_RingOscDur) /6.5e-3);
+            
+            for(uint16_t tmpCount = 0; tmpCount<8; tmpCount++) {    
+                if ((m_EnblRingOsc >> tmpCount) & 0x1) {
+                    logger->info("[{}][{}] Ring Buffer: {} Values: {} - {} = {}", feChannel, feName, tmpCount,RingValues[tmpCount][1], RingValues[tmpCount][0], RingValues[tmpCount][1]-RingValues[tmpCount][0]);  
+                    logger->info("[{}][{}] Frequency: {}/2^{} = {} -> {} MHz", feChannel, feName, float(RingValues[tmpCount][1]-RingValues[tmpCount][0]), m_RingOscDur, float(RingValues[tmpCount][1]-RingValues[tmpCount][0])/ (1<<m_RingOscDur), float(RingValues[tmpCount][1]-RingValues[tmpCount][0])/ (1<<m_RingOscDur) /6.5e-3);
+                }
+            }
         }
     }
     dynamic_cast<HwController*>(g_rx)->runMode(); //This is needed to revert back the setupMode
