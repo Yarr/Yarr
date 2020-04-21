@@ -1,11 +1,15 @@
 #include "catch.hpp"
 
+// Only one test needs std::filesystem
+#if defined(__clang__) || __GNUC__ > 7
 #include <filesystem>
+
+namespace fs = std::filesystem;
+
+#endif
 
 #include "AllChips.h"
 #include "ScanHelper.h"
-
-namespace fs = std::filesystem;
 
 void bounce_check(json &j) {
   auto fe = StdDict::getFrontEnd("Star");
@@ -29,6 +33,9 @@ void bounce_check(json &j) {
 
   REQUIRE(jj.str() == outj.str());
 }
+
+// Need std::filesystem
+#if defined(__clang__) || __GNUC__ > 7
 
 // Check that the default configuration is loadable
 TEST_CASE("StarJsonDefault", "[star][json]") {
@@ -67,6 +74,8 @@ TEST_CASE("StarJsonDefault", "[star][json]") {
   // Should be the same if read and write again
   bounce_check(output);
 }
+
+#endif
 
 // Minimal configuration (no ABCs)
 TEST_CASE("StarJsonMinimal", "[star][json]") {
