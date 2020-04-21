@@ -217,7 +217,7 @@ void Rd53aReadRegLoop::execPart1() {
                 float Volt1 = dynamic_cast<Rd53a*>(fe)->ADCtoV(TempVal.first);
                 float Volt2 = dynamic_cast<Rd53a*>(fe)->ADCtoV(TempVal.second);
 
-                logger->info("[{}][{}] MON MUX_V: {} Bias 0 {} V Bias 1 {} V, Temperature {} C", feChannel, feName, Reg, TempVal.first, Volt1, TempVal.second, Volt2, Volt2-Volt1, (feRd53a->VtoTemp(Volt2-Volt1, Sensor, isRadSensor)));      
+                logger->info("[{}][{}] MON MUX_V: {} Bias 0 {} -> {} V Bias 1 {} -> {} V, Temperature {} -> {} C", feChannel, feName, Reg, TempVal.first, Volt1, TempVal.second, Volt2, Volt2-Volt1, (feRd53a->VtoTemp(Volt2-Volt1, Sensor, isRadSensor)));      
             }
 
             // Reading Current ADC
@@ -339,6 +339,10 @@ void Rd53aReadRegLoop::loadConfig(json &config) {
             if (Reg=="All"){
                 m_STDReg.clear();
                 m_STDReg.push_back(Reg);
+                break;
+            }
+            if (Reg=="Null") {
+                m_STDReg.clear();
                 break;
             }
         }

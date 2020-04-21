@@ -303,6 +303,7 @@ void Rd53a::confADC(uint16_t MONMUX,bool doCur=false) {
     uint16_t OriginalGlobalRT = this->GlobalPulseRt.read();
 
     if(doCur) {
+        this->writeRegister(&Rd53a::MonitorVmonMux,  11); //Forward via VMUX    
         this->writeRegister(&Rd53a::MonitorImonMux,  MONMUX); //Select what to monitor
     } else {
         this->writeRegister(&Rd53a::MonitorVmonMux,  MONMUX); //Select what to monitor    
