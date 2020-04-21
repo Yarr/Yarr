@@ -124,8 +124,29 @@ AbcCfg::AbcCfg()
 {
 }
 
+AbcCfg::AbcCfg(AbcCfg &&other)
+  : m_abcID(other.m_abcID),
+    m_info(other.m_info)
+{
+    // pointers will be into old vector!
+    if(m_registerMap.empty()) {
+        return;
+    }
+    Register *old_base = &m_registerSet[0];
+    m_registerSet = std::move(other.m_registerSet);
+    Register *new_base = &m_registerSet[0];
+    m_registerMap = std::move(other.m_registerMap);
+    for(auto &iter: m_registerMap) {
+        iter.second += new_base-old_base;
+    }
+    logger->trace("AbcCfg::mover called change base from {} to {}",
+                  (void*)old_base, (void*)new_base);
+}
+
 void AbcCfg::configure_ABC_Registers() {
     int n_ABC_registers = 180;
+    // In case it's not already empty
+    m_registerSet.clear();
     m_registerSet.reserve( n_ABC_registers );
 
     /// TODO Still not sure if this is a good implementation; to-be-optimized.

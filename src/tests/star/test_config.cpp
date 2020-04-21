@@ -12,9 +12,12 @@ TEST_CASE("StarCfg", "[star][config]") {
   // This sets up initial values
   test_config.initRegisterMaps();
 
+  // Check calling twice doesn't cause problems
+  test_config.initRegisterMaps();
+
+
   //  REQUIRE (test_config.numABCs() == 1);
   REQUIRE (test_config.getHCCchipID() == 4);
-  REQUIRE (test_config.getABCchipID(1) == abc_id);
 
   REQUIRE (test_config.getHCCRegister(HCCStarRegister::Delay1) == 0);
   REQUIRE (test_config.getHCCRegister(HCCStarRegister::PLL1) == 0xff3b05);
@@ -26,14 +29,33 @@ TEST_CASE("StarCfg", "[star][config]") {
   test_config.setABCRegister(ABCStarRegister::CREG0, 0x87654321, abc_id);
   REQUIRE (test_config.getABCRegister(ABCStarRegister::CREG0, abc_id) == 0x87654321);
 
-  REQUIRE (test_config.getSubRegisterParentAddr(1, "TESTPATT1") == ABCStarRegister::CREG0);
+  test_config.eachAbc([&](AbcCfg &abc) {
+      REQUIRE (abc.getABCchipID() == abc_id);
 
-  test_config.setSubRegisterValue(1, "TESTPATT1", 0x5);
-  test_config.setSubRegisterValue(1, "TESTPATT2", 0xa);
-  REQUIRE (test_config.getSubRegisterValue(1, "TESTPATT1") == 0x5);
+      REQUIRE (abc.getSubRegisterParentAddr("TESTPATT1") == ABCStarRegister::CREG0);
+
+      abc.setSubRegisterValue("TESTPATT1", 0x5);
+      abc.setSubRegisterValue("TESTPATT2", 0xa);
+      REQUIRE (abc.getSubRegisterValue("TESTPATT1") == 0x5);
+
+      // Use abc_id here for some reason
+      REQUIRE (test_config.getABCRegister(ABCStarRegister::CREG0, abc_id) == 0x8a554321);
+      REQUIRE (abc.getSubRegisterParentValue("TESTPATT1") == 0x8a554321);
+    });
+
+  // Internal index for referring to the ABC
+  int abc_index = 1;
+
+  REQUIRE (test_config.getABCchipID(abc_index) == abc_id);
+
+  REQUIRE (test_config.getSubRegisterParentAddr(abc_index, "TESTPATT1") == ABCStarRegister::CREG0);
+
+  test_config.setSubRegisterValue(abc_index, "TESTPATT1", 0x5);
+  test_config.setSubRegisterValue(abc_index, "TESTPATT2", 0xa);
+  REQUIRE (test_config.getSubRegisterValue(abc_index, "TESTPATT1") == 0x5);
 
   REQUIRE (test_config.getABCRegister(ABCStarRegister::CREG0, abc_id) == 0x8a554321);
-  REQUIRE (test_config.getSubRegisterParentValue(1, "TESTPATT1") == 0x8a554321);
+  REQUIRE (test_config.getSubRegisterParentValue(abc_index, "TESTPATT1") == 0x8a554321);
 }
 
 TEST_CASE("StarCfgTrims", "[star][config]") {

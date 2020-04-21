@@ -98,6 +98,11 @@ class AbcCfg {
 
     public:
         AbcCfg();
+        AbcCfg(const AbcCfg &) = delete;
+        AbcCfg &operator =(const AbcCfg &) = delete;
+        AbcCfg &operator =(AbcCfg &&) = delete;
+        // Implemented to move the pointers!
+        AbcCfg(AbcCfg &&other);
 
         void configure_ABC_Registers();
 

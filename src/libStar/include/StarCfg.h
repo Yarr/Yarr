@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <tuple>
 
 #include "FrontEnd.h"
@@ -48,7 +49,7 @@ class StarCfg : public FrontEndCfg {
   //Initialized the registers of the HCC and ABC.  Do afer JSON file is loaded.
   void initRegisterMaps();
 
-  const unsigned int getHCCchipID(){ return m_hcc.getHCCchipID(); }
+  unsigned int getHCCchipID(){ return m_hcc.getHCCchipID(); }
   void setHCCChipId(unsigned hccID){ m_hcc.setHCCChipId(hccID); }
 
   const unsigned int getABCchipID(unsigned int chipIndex) { return abcFromIndex(chipIndex).getABCchipID(); }
@@ -81,7 +82,6 @@ class StarCfg : public FrontEndCfg {
     }
     return 0;
   }
-
 
   int getSubRegisterParentAddr(int chipIndex, std::string subRegName) {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
@@ -129,15 +129,24 @@ class StarCfg : public FrontEndCfg {
 
   size_t numABCs() { return m_ABCchips.size(); }
 
+  /// Iterate over ABCs, avoiding chipIndex
+  void eachAbc(std::function<void (AbcCfg&)> f) {
+    for(auto &abc: m_ABCchips) {
+      f(abc);
+    }
+  }
+
+  HccCfg &hcc() { return m_hcc; }
+
   int hccChannelForABCchipID(unsigned int chipID);
 
  protected:
   AbcCfg &abcFromChipID(unsigned int chipID) {
     return *std::find_if(m_ABCchips.begin(), m_ABCchips.end(),
-                        [this, chipID](auto it) { return it.getABCchipID() == chipID; });
+                        [this, chipID](auto &it) { return it.getABCchipID() == chipID; });
   }
 
- private:
+  uint32_t m_sn=0;//serial number set by eFuse bits
 
   HccCfg m_hcc;
 
