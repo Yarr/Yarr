@@ -64,7 +64,7 @@ public:
         void disableCalCol(unsigned col);
         
         void confADC(uint16_t MONUX, bool doCur);
-        void runRingOsc(uint16_t Durration);
+        void runRingOsc(uint16_t duration);
 
     protected:
     private:

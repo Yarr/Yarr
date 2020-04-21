@@ -13,7 +13,7 @@
                 "CurMux": [],
                 "Registers": ["All"],
                 "EnblRingOsc": 255,
-                "RstRingOsc": 1,
+                "RingOscRep": 10,
                 "RingOscDur": 9
 
             },
