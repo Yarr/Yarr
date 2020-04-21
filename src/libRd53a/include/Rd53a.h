@@ -22,6 +22,8 @@
 #include "Rd53aCfg.h"
 #include "Rd53aCmd.h"
 
+std::pair<uint32_t, uint32_t> decodeSingleRegRead(uint32_t higher, uint32_t lower);
+
 class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
     public:
         Rd53a();
@@ -57,10 +59,13 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
         
         void enableCalCol(unsigned col);
         void disableCalCol(unsigned col);
+        
+        void confADC(uint16_t MONUX, bool doCur);
+        void runRingOsc(uint16_t duration);
 
     protected:
     private:
-        std::pair<uint32_t, uint32_t> decodeSingleRegRead(uint32_t higher, uint32_t lower);
+
 };
 
 #endif

@@ -123,7 +123,7 @@ void Rd53aMaskLoop::execPart1() {
         //Loop over all pixels - n_Col=400, n_Row=192 - from Rd53aPixelCfg.h
         for(unsigned col=0; col<Rd53a::n_Col; col++) {
             for(unsigned row=0; row<Rd53a::n_Row; row++) {
-                if (ApplyMask(col,row)){
+                if (applyMask(col,row)){
                     if (m_maskType == StandardMask){	       
                         //------------------------------------------------------------------------
                         //standard map, inj and read out the same pixel
@@ -166,7 +166,7 @@ void Rd53aMaskLoop::execPart1() {
                             modPixels.push_back(std::make_pair(n.first, n.second));
                         }
                     }
-                }//end ApplyMask
+                }//end applyMask
                 else {
                     if (m_maskType == StandardMask){	       
                         //---------------------------------------------------------------------------------
@@ -204,7 +204,7 @@ void Rd53aMaskLoop::execPart2() {
             std::vector<std::pair<unsigned, unsigned>> modPixels;
             for(unsigned col=0; col<Rd53a::n_Col; col++) {
                 for(unsigned row=0; row<Rd53a::n_Row; row++) {
-                    if (ApplyMask(col,row)){
+                    if (applyMask(col,row)){
                         std::vector<std::pair<int, int>> neighbours;		 
                         //switch off central pixel
                         dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 0);		
@@ -320,11 +320,11 @@ bool Rd53aMaskLoop::getNeighboursMap(int col, int row,int sensorType, int maskSi
 }
 
 //Return true if the pixel should be considered for this scan step, or false if it should be ignored
-bool Rd53aMaskLoop::ApplyMask(int col, int row){
+bool Rd53aMaskLoop::applyMask(int col, int row){
 
 
     //Do not run over edges pixels, if not explicity requested
-    if (IgnorePixel(col, row)) return false;
+    if (ignorePixel(col, row)) return false;
 
     unsigned core_row = row/8;
     unsigned serial = (core_row*64)+((col+(core_row%8))%8)*8+row%8;
@@ -337,7 +337,7 @@ bool Rd53aMaskLoop::ApplyMask(int col, int row){
 }
 
 
-bool Rd53aMaskLoop::IgnorePixel(int col, int row){
+bool Rd53aMaskLoop::ignorePixel(int col, int row){
 
     //if checking bump bonding connections for rectangular sensors, only use (0,0) pixel
     if ( m_includedPixels == only00CornerForBumpBonding){
