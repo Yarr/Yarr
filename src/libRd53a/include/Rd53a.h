@@ -25,10 +25,7 @@
 std::pair<uint32_t, uint32_t> decodeSingleRegRead(uint32_t higher, uint32_t lower);
 
 class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
-  
-
-
-public:
+    public:
         Rd53a();
         Rd53a(HwController *arg_core);
         Rd53a(HwController *arg_core, unsigned arg_channel);
