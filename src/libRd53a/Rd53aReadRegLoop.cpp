@@ -147,7 +147,7 @@ void Rd53aReadRegLoop::execPart1() {
             // Reading Standard Registers
             for (auto Reg : m_STDReg) {
                 if (keeper->globalFe<Rd53a>()->regMap.find(Reg) != keeper->globalFe<Rd53a>()->regMap.end()) {
-                    uint16_t RegisterVal =  (feRd53a->*(feRd53a->regMap[Reg])).ApplyMask( ReadRegister( keeper->globalFe<Rd53a>()->regMap[Reg] , feRd53a));
+                    uint16_t RegisterVal =  (feRd53a->*(feRd53a->regMap[Reg])).applyMask( ReadRegister( keeper->globalFe<Rd53a>()->regMap[Reg] , feRd53a));
                     logger->info("[{}][{}] REG: {}, Value: {}", feChannel, feName, Reg, RegisterVal);
 
                     uint16_t StoredVal = (feRd53a->*(feRd53a->regMap[Reg])).read();
