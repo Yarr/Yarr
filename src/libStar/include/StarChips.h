@@ -39,16 +39,6 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
     //! brief configure the chip (virtual)
     void configure() override final;
 
-    //! toFileJson
-    //! brief write configuration to json (virtual)
-    //! param reference to json
-    void toFileJson(json&) override;
-
-    //! fromFileJson
-    //! brief read configuration from json (virtual)
-    //! param reference to json
-    void fromFileJson(json&) override;
-
   void setHccId(unsigned);//Set the HCC ID to the argument, uses the chip serial number set by eFuse
 
   void makeGlobal() override final {

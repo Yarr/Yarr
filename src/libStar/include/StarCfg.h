@@ -45,10 +45,6 @@ class StarCfg : public FrontEndCfg {
     setABCRegister(ABCStarRegister(ABCStarRegs::_from_integral(addr)), val, chipID);
   }
 
-
-  //Initialized the registers of the HCC and ABC.  Do afer JSON file is loaded.
-  void initRegisterMaps();
-
   unsigned int getHCCchipID(){ return m_hcc.getHCCchipID(); }
   void setHCCChipId(unsigned hccID){ m_hcc.setHCCChipId(hccID); }
 

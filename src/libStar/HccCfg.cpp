@@ -1,5 +1,11 @@
 #include "HccCfg.h"
 
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("StarCfgHCC");
+}
+
 std::shared_ptr<HccStarRegInfo> HccStarRegInfo::m_instance;
 
 typedef std::tuple<HCCStarSubRegister, unsigned int, unsigned int, unsigned int> hccsubregdef;
@@ -116,13 +122,15 @@ HccStarRegInfo::HccStarRegInfo() {
 HccCfg::HccCfg()
   : m_info(HccStarRegInfo::instance())
 {
+  setupMaps();
+  setDefaults();
 }
 
-void HccCfg::configure_HCC_Registers() {
-  int n_HCC_registers = 50;
+void HccCfg::setupMaps() {
+  auto len = HCCStarRegister::_size();
   // In case it's not already empty
   m_registerSet.clear();
-  m_registerSet.reserve( n_HCC_registers );
+  m_registerSet.reserve( len );
 
   //all HCC Register addresses we will create
   for (HCCStarRegister reg : HCCStarRegister::_values()) {
@@ -134,6 +142,12 @@ void HccCfg::configure_HCC_Registers() {
     m_registerMap[addr]=&m_registerSet.at(lastReg); //Save it's position in memory to the registerMap
   }
 
+  if(m_registerSet.size() != len) {
+    logger->info("Mismatch between size {} and values {}", len, m_registerSet.size());
+  }
+}
+
+void HccCfg::setDefaults() {
   ////  Register* this_Reg = registerMap[0][addr];
   m_registerMap[HCCStarRegister::Pulse]->setValue(0x00000000);
   m_registerMap[HCCStarRegister::Delay1]->setValue(0x00000000);

@@ -33,8 +33,6 @@ StarChips::StarChips()
 	//Create dummy configuration as placeholder for globalFe in preScan routines
 	setHCCChipId(0xf);
 	addABCchipID(0xf);
-	this->initRegisterMaps(); //Initialize default register maps for 1 dummy ABC
-
 }
 
 StarChips::StarChips(HwController *arg_core)
@@ -298,12 +296,3 @@ void StarChips::readHCCRegister(int addr) {
 void StarChips::readABCRegister(int addr, int32_t chipID) {
     sendCmd(read_abc_register(addr, getHCCchipID(), chipID));
 }
-
-void StarChips::toFileJson(json &j){
-    StarCfg::toFileJson(j);
-}
-
-void StarChips::fromFileJson(json &j){
-    StarCfg::fromFileJson(j);
-}
-

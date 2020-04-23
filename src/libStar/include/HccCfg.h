@@ -78,7 +78,7 @@ class HccCfg {
         // Default doesn't work as won't change pointers!
         HccCfg(HccCfg &&other) = delete;
 
-        void configure_HCC_Registers();
+        void setDefaults();
 
         const unsigned int getHCCchipID(){return m_hccID;}
         void setHCCChipId(unsigned hccID){
@@ -122,6 +122,8 @@ class HccCfg {
         Register &getRegister(HCCStarRegister addr) {
             return *m_registerMap.at((unsigned int)addr);
         }
+
+        void setupMaps();
 };
 
 
