@@ -113,12 +113,14 @@ class AbcCfg {
 
         void setSubRegisterValue(std::string subRegName, uint32_t value) {
             auto info = m_info->abcSubRegisterMap_all[ABCStarSubRegister::_from_string(subRegName.c_str())];
-            m_registerMap.at(info->m_regAddress)->getSubRegister(info).updateValue(value);
+            auto &reg = getRegister(info->m_regAddress);
+            reg.getSubRegister(info).updateValue(value);
         }
 
         uint32_t getSubRegisterValue(std::string subRegName) {
             auto info = m_info->abcSubRegisterMap_all[ABCStarSubRegister::_from_string(subRegName.c_str())];
-            return m_registerMap.at(info->m_regAddress)->getSubRegister(info).getValue();
+            auto &reg = getRegister(info->m_regAddress);
+            return reg.getSubRegister(info).getValue();
         }
 
         int getSubRegisterParentAddr(std::string subRegName) const {
@@ -127,7 +129,7 @@ class AbcCfg {
 
         uint32_t getSubRegisterParentValue(std::string subRegName) const {
             auto info = m_info->abcSubRegisterMap_all[ABCStarSubRegister::_from_string(subRegName.c_str())];
-            return m_registerMap.at(info->m_regAddress)->getValue();
+            return getRegister(info->m_regAddress).getValue();
         }
 
         uint32_t getRegisterValue(ABCStarRegister addr) const;
@@ -141,9 +143,14 @@ class AbcCfg {
         int getTrimDACRaw(unsigned channel) const;
 
     private:
-        SubRegister getSubRegister(ABCStarSubRegister r) const {
+        SubRegister getSubRegister(ABCStarSubRegister r) {
             auto info = m_info->abcSubRegisterMap_all[r];
-            return m_registerMap.at(info->m_regAddress)->getSubRegister(info);
+            return getRegister(info->m_regAddress).getSubRegister(info);
+        }
+
+        ConstSubRegister getSubRegister(ABCStarSubRegister r) const {
+            auto info = m_info->abcSubRegisterMap_all[r];
+            return getRegister(info->m_regAddress).getSubRegister(info);
         }
 
         const Register &getRegister(ABCStarRegister addr) const {
