@@ -88,8 +88,8 @@ class AbcStarRegInfo {
 class AbcCfg {
         unsigned m_abcID;
 
-        //This is a map from address to register (pointers into register set)
-        std::map<unsigned, Register*> m_registerMap;
+        //This is a map from address to register index (into register set)
+        std::map<unsigned, unsigned> m_registerMap;
 
         // Store of registers in arbitrary order
         std::vector< Register > m_registerSet;
@@ -101,8 +101,8 @@ class AbcCfg {
         AbcCfg(const AbcCfg &) = delete;
         AbcCfg &operator =(const AbcCfg &) = delete;
         AbcCfg &operator =(AbcCfg &&) = delete;
-        // Implemented to move the pointers!
-        AbcCfg(AbcCfg &&other);
+        // Default move works (no pointers)
+        AbcCfg(AbcCfg &&other) = default;
 
         void setDefaults();
 
@@ -147,11 +147,23 @@ class AbcCfg {
         }
 
         const Register &getRegister(ABCStarRegister addr) const {
-            return *m_registerMap.at((unsigned int)addr);
+            auto index = m_registerMap.at((unsigned int)addr);
+            return m_registerSet[index];
         }
 
         Register &getRegister(ABCStarRegister addr) {
-            return *m_registerMap.at((unsigned int)addr);
+            auto index = m_registerMap.at((unsigned int)addr);
+            return m_registerSet[index];
+        }
+
+        const Register &getRegister(unsigned int addr) const {
+            auto index = m_registerMap.at(addr);
+            return m_registerSet[index];
+        }
+
+        Register &getRegister(unsigned int addr) {
+            auto index = m_registerMap.at(addr);
+            return m_registerSet[index];
         }
 
         void setupMaps();
