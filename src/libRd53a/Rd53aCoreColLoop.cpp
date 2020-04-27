@@ -10,6 +10,12 @@
 #include "FrontEnd.h"
 #include "Rd53a.h"
 
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("Rd53aCoreColLoop");
+}
+
 class Rd53aCoreColLoop::Impl {
     public:
     unsigned m_cur;
@@ -27,48 +33,48 @@ Rd53aCoreColLoop::Rd53aCoreColLoop() : LoopActionBase(), m_impl( new Rd53aCoreCo
     m_impl->m_cur = 0;
     loopType = typeid(this);
     m_done = false;
-    verbose = false;
 }
 
 void Rd53aCoreColLoop::init() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(logger, "");
     m_done = false;
     m_impl->m_cur = 0;
     // Disable all to begin with
     g_tx->setCmdEnable(keeper->getTxMask());
+    auto rd53a = dynamic_cast<Rd53a*>(g_fe);
     // Loop over cores, i.e. activate in pairs of 4 DC
     for (unsigned dc=0; dc<Rd53a::n_DC; dc+=4) {
-        dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc);
-        dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc+1);
-        dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc+2);
-        dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc+3);
+        rd53a->disableCalCol(dc);
+        rd53a->disableCalCol(dc+1);
+        rd53a->disableCalCol(dc+2);
+        rd53a->disableCalCol(dc+3);
     }
     while(!g_tx->isCmdEmpty()) {}
 }
 
 void Rd53aCoreColLoop::execPart1() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(logger, "{}", m_impl->m_cur);
     
     g_tx->setCmdEnable(keeper->getTxMask());
+
+    auto rd53a = dynamic_cast<Rd53a*>(g_fe);
+
     // Loop over cores, i.e. activate in pairs of 4 DC
     for (unsigned dc=(m_impl->minCore*4), i=0; dc<(m_impl->maxCore*4); dc+=4, i++) {
         // Disable previous columns
         if (m_impl->m_cur>0 && ((i%m_impl->nSteps) == (m_impl->m_cur-step))) {
-            dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc);
-            dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc+1);
-            dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc+2);
-            dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc+3);
+            rd53a->disableCalCol(dc);
+            rd53a->disableCalCol(dc+1);
+            rd53a->disableCalCol(dc+2);
+            rd53a->disableCalCol(dc+3);
         }
         // Enable next columns
         if (i%m_impl->nSteps == m_impl->m_cur) {
-            if (verbose)
-                std::cout << __PRETTY_FUNCTION__ << " : Enabling QC -> " << dc << std::endl;
-            dynamic_cast<Rd53a*>(g_fe)->enableCalCol(dc);
-            dynamic_cast<Rd53a*>(g_fe)->enableCalCol(dc+1);
-            dynamic_cast<Rd53a*>(g_fe)->enableCalCol(dc+2);
-            dynamic_cast<Rd53a*>(g_fe)->enableCalCol(dc+3);
+            logger->debug("Enabling QC -> {}", dc);
+            rd53a->enableCalCol(dc);
+            rd53a->enableCalCol(dc+1);
+            rd53a->enableCalCol(dc+2);
+            rd53a->enableCalCol(dc+3);
         }
     //Add fine delay
         while(!g_tx->isCmdEmpty()) {}
@@ -77,9 +83,9 @@ void Rd53aCoreColLoop::execPart1() {
     // TODO this needs to be changed to be per FE
     if ( m_delayArray.size() > 0 ) {
         if ( m_delayArray.size() == (m_impl->maxCore-m_impl->minCore) ) 
-            dynamic_cast<Rd53a*>(g_fe)->writeRegister(&Rd53a::InjDelay,m_delayArray[m_impl->m_cur]);
+            rd53a->writeRegister(&Rd53a::InjDelay,m_delayArray[m_impl->m_cur]);
         else 
-            dynamic_cast<Rd53a*>(g_fe)->writeRegister(&Rd53a::InjDelay,m_delayArray[0]);
+            rd53a->writeRegister(&Rd53a::InjDelay,m_delayArray[0]);
     }
     while(!g_tx->isCmdEmpty()) {}
     
@@ -88,8 +94,7 @@ void Rd53aCoreColLoop::execPart1() {
 }
 
 void Rd53aCoreColLoop::execPart2() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(logger, "");
     m_impl->m_cur += step;
     if (!(m_impl->m_cur < m_impl->nSteps)) m_done = true;
     // Nothing else to do here?
@@ -97,8 +102,7 @@ void Rd53aCoreColLoop::execPart2() {
 }
 
 void Rd53aCoreColLoop::end() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(logger, "");
     
     // TODO should restore original config here
     /*
@@ -139,11 +143,11 @@ void Rd53aCoreColLoop::loadConfig(json &j) {
         m_delayArray.clear();
         for(auto i: j["delayArray"])
             m_delayArray.push_back(i);
-        std::cout << "Number of injection delay array elements is " << m_delayArray.size() << std::endl;
+        logger->debug("Number of injection delay array elements is {}", m_delayArray.size());
     }
     // Fine delay scan check
     if (m_impl->nSteps != (m_impl->maxCore-m_impl->minCore) )
-	std::cout << "The number of steps " << m_impl->nSteps << " is diffenrent from " << m_impl->maxCore-m_impl->minCore << std::endl;
+	    logger->warn("The number of steps {} is different from {}", m_impl->nSteps, m_impl->maxCore-m_impl->minCore);
     else if ( m_delayArray.size() != m_impl->nSteps )
-	std::cout << "Fine delay array size is not matching the number of injected columns, only the first fine delay number will be used!!! " << std::endl;
+	    logger->warn("Fine delay array size is not matching the number of injected columns, only the first fine delay number will be used!!!");
 }

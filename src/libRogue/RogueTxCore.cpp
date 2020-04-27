@@ -1,5 +1,5 @@
 #include <RogueTxCore.h>
-RogueTxCore::RogueTxCore():m_com(0) {
+RogueTxCore::RogueTxCore():m_com(0), m_txChannel(0) {
     m_trigCnt = 0;
     m_com=RogueCom::getInstance();
 }
@@ -9,7 +9,8 @@ RogueTxCore::~RogueTxCore() {
 }
 
 void RogueTxCore::writeFifo(uint32_t value) {
-  m_com->write32(value);
+	m_com->setTxChannel(m_txChannel);
+	m_com->write32(value);
 }
 
 void RogueTxCore::setTrigCnt(uint32_t count) {
@@ -50,6 +51,7 @@ void  RogueTxCore::setTrigWordLength(uint32_t length) {
 
 #define SW_TRIGGER
 void RogueTxCore::doTriggerCnt() {
+	m_com->setTxChannel(m_txChannel);
 
   if(!m_com->getFirmwareTrigger()) {
     for(unsigned i=0;i<m_trigCnt;i++) {

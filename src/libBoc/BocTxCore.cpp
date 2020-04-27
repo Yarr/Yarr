@@ -50,6 +50,19 @@ uint32_t BocTxCore::getCmdEnable()
 	return m_enableMask;
 }
 
+void BocTxCore::disableCmd() {
+	m_enableMask = 0x0;
+    // update BOC configuration
+	m_com->writeSingle(BMFN_OFFSET + BMF_TXBROADCAST0, (m_enableMask >>  0) & 0xFF);
+	m_com->writeSingle(BMFN_OFFSET + BMF_TXBROADCAST1, (m_enableMask >>  8) & 0xFF);
+	m_com->writeSingle(BMFS_OFFSET + BMF_TXBROADCAST0, (m_enableMask >> 16) & 0xFF);
+	m_com->writeSingle(BMFS_OFFSET + BMF_TXBROADCAST1, (m_enableMask >> 24) & 0xFF);
+
+	// make sure the configuration is matching
+	m_com->writeSingle(BMFN_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_CTRL, 0x41);
+	m_com->writeSingle(BMFS_OFFSET + BMF_TX_OFFSET + 32 * 16 + BMF_TX_CTRL, 0x41);
+}
+
 //void BocTxCore::maskCmdEnable(uint32_t value, uint32_t mask)
 //{
 //    uint32_t tmp = getCmdEnable();

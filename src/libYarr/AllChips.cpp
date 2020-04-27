@@ -1,7 +1,11 @@
 #include "AllChips.h"
 #include "ClassRegistry.h"
 
-#include <iostream>
+#include "logging.h"
+
+namespace {
+    auto aclog = logging::make_log("ChipRegistry");
+}
 
 typedef ClassRegistry<FrontEnd> OurRegistry;
 
@@ -20,7 +24,7 @@ namespace StdDict {
     std::unique_ptr<FrontEnd> getFrontEnd(std::string name) {
         auto result = registry().makeClass(name);
         if(result == nullptr) {
-            std::cout << "No FrontEnd matching '" << name << "' found\n";
+            SPDLOG_LOGGER_ERROR(aclog, "No FrontEnd matching '{}' found!");
         }
         return result;
     }

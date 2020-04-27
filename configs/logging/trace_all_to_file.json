@@ -1,0 +1,15 @@
+{
+    "pattern": "[%n] %! %@ %v",
+    "level": "error",
+    "sinks": [
+        {"name": "file", "level": "info", "file_name": "trace_log.out",
+         "pattern": "[%T:%e]%^[%=8l][%=15n]:%$ %v"}
+    ],
+    "log_config": [
+        {"name": "all",
+         "remark": "Sets default to sink for all loggers"},
+        {"name": "all", "sink": "file",
+         "remark": "Use file sink for all loggers"}
+    ],
+    "report_loggers": true
+}

@@ -35,7 +35,6 @@ class Fei4GlobalPreampTune : public ScanBase {
         bool useLcap;
 
         double target;
-        bool verbose;
 };
 
 #endif

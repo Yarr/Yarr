@@ -9,6 +9,12 @@
 
 #include "Rd53aPixelFeedback.h"
 
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("Rd53aPixelFeedback");
+}
+
 Rd53aPixelFeedback::Rd53aPixelFeedback() {
     min = -15;
     max = 15;
@@ -16,7 +22,6 @@ Rd53aPixelFeedback::Rd53aPixelFeedback() {
     m_cur = 0;
     loopType = typeid(this);
     m_done = false;
-    verbose = false;
     tuneLin = true;
     tuneDiff = true;
     m_resetTdac = true;
@@ -46,22 +51,22 @@ void Rd53aPixelFeedback::loadConfig(json &j) {
         m_steps.clear();
         for(auto i: j["steps"])
             m_steps.push_back(i);
-        std::cout << "Got " << m_steps.size() << " steps!!" << std::endl;
+        logger->debug("Got {} steps!", m_steps.size());
     }
 }
 
 void Rd53aPixelFeedback::feedback(unsigned channel, Histo2d *h) {
     // TODO Check on NULL pointer
     if (h->size() != Rd53a::n_Row*Rd53a::n_Col) {
-        std::cout << __PRETTY_FUNCTION__ 
-            << " --> ERROR : Wrong type of feedback histogram on channel " << channel << std::endl;
+        logger->error("Wrong type of feedback histogram on channel {}", channel);
         doneMap[channel] = true;
     } else {
+        auto rd53a = dynamic_cast<Rd53a*>(keeper->getFe(channel));
         m_fb[channel] = h;
         for (unsigned row=1; row<=Rd53a::n_Row; row++) {
             for (unsigned col=1; col<=Rd53a::n_Col; col++) {
                 int sign = m_fb[channel]->getBin(m_fb[channel]->binNum(col, row));
-                int v = dynamic_cast<Rd53a*>(keeper->getFe(channel))->getTDAC(col-1, row-1);
+                int v = rd53a->getTDAC(col-1, row-1);
                 if (128<col && col<=264 && tuneLin) {
                     v = v + ((m_steps[m_cur])*sign);
                     if (v<min) v = min;
@@ -71,11 +76,11 @@ void Rd53aPixelFeedback::feedback(unsigned channel, Histo2d *h) {
                     if (v<min) v = min;
                     if (v>max) v = max;
                 }
-                dynamic_cast<Rd53a*>(keeper->getFe(channel))->setTDAC(col-1, row-1, v);
+                rd53a->setTDAC(col-1, row-1, v);
             }
         }
     }
-    keeper->mutexMap[channel].unlock();
+    m_fbMutex[channel].unlock();
 }
 
 void Rd53aPixelFeedback::writePixelCfg(Rd53a *fe) {
@@ -86,8 +91,7 @@ void Rd53aPixelFeedback::writePixelCfg(Rd53a *fe) {
 }
 
 void Rd53aPixelFeedback::init() {
-    if (1)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(logger, "");
     m_done = false;
     m_cur = 0;
     // Init maps
@@ -95,6 +99,7 @@ void Rd53aPixelFeedback::init() {
         for (auto *fe : keeper->feList) {
             if (fe->getActive()) {
                 unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
+                auto rd53a = dynamic_cast<Rd53a*>(keeper->getFe(ch));
                 m_fb[ch] = NULL;
                 int linCnt = 0;
                 int diffCnt = 0;
@@ -102,10 +107,10 @@ void Rd53aPixelFeedback::init() {
                     for (unsigned row=1; row<=Rd53a::n_Row; row++) {
                         //Initial TDAC in mid of the range
                         if (128<col && col<=264 && tuneLin) {
-                            dynamic_cast<Rd53a*>(keeper->getFe(ch))->setTDAC(col-1, row-1, 8);
+                            rd53a->setTDAC(col-1, row-1, 8);
                             linCnt++;
                         } else if (264<col && tuneDiff) {
-                            dynamic_cast<Rd53a*>(keeper->getFe(ch))->setTDAC(col-1, row-1, 0);
+                            rd53a->setTDAC(col-1, row-1, 0);
                             diffCnt++;
                         }
                     }
@@ -120,11 +125,11 @@ void Rd53aPixelFeedback::execPart1() {
     // Lock all mutexes
     for (auto fe : keeper->feList) {
         if (fe->getActive()) {
-            keeper->mutexMap[dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()].try_lock();
+            m_fbMutex[dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()].try_lock();
             this->writePixelCfg(dynamic_cast<Rd53a*>(fe));
         }
     }
-    std::cout << " -> Feedback step " << m_cur << " with size " << m_steps[m_cur] << std::endl;
+    logger->info(" -> Feedback step #{} of {} with size {}", m_cur+1, m_steps.size(), m_steps[m_cur]);
 }
 
 void Rd53aPixelFeedback::execPart2() {
@@ -132,7 +137,7 @@ void Rd53aPixelFeedback::execPart2() {
     for (auto fe: keeper->feList) {
         if (fe->getActive()) {
             unsigned rx = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-            keeper->mutexMap[rx].lock();
+            m_fbMutex[rx].lock();
         }
     }
     m_cur++;

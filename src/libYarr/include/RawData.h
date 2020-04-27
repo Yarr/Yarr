@@ -21,12 +21,11 @@ class RawData {
         uint32_t adr;
         uint32_t *buf;
         unsigned words;
-        LoopStatus stat;
 };
 
 class RawDataContainer {
     public:
-        RawDataContainer(){}
+        RawDataContainer(LoopStatus &&s) : stat(s) {}
         ~RawDataContainer() {
             for(unsigned int i=0; i<adr.size(); i++)
                 delete[] buf[i];

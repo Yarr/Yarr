@@ -37,6 +37,7 @@ class Rd53aPixelFeedback : public LoopActionBase, public PixelFeedbackBase {
         std::vector<unsigned> m_steps;
 
         std::map<unsigned, Histo2d*> m_fb;
+        std::map<unsigned, std::mutex> m_fbMutex;
 
         void addFeedback(unsigned ch);
         void writePixelCfg(Rd53a *fe);

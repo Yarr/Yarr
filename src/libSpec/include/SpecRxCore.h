@@ -20,6 +20,7 @@
 
 #define RX_ENABLE 0x0
 #define RX_STATUS 0x1
+#define RX_POLARITY 0x2
 
 #define RX_START_ADDR 0x0
 #define RX_DATA_COUNT 0x1
@@ -35,6 +36,7 @@ class SpecRxCore : virtual public RxCore, virtual public SpecCom{
 
         void setRxEnable(uint32_t val);
         void setRxEnable(std::vector<uint32_t> channels);
+        void disableRx();
         void maskRxEnable(uint32_t val, uint32_t mask);
 
         RawData* readData();
@@ -43,10 +45,11 @@ class SpecRxCore : virtual public RxCore, virtual public SpecCom{
         uint32_t getDataRate();
         uint32_t getCurCount();
         bool isBridgeEmpty();
+        
+        void setRxPolarity(uint32_t val);
+        uint32_t getRxPolarity();
 
     private:
-        bool verbose;
-
         uint32_t getStartAddr();
         uint32_t getDataCount();
 };

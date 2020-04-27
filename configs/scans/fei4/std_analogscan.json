@@ -56,9 +56,9 @@
       {
         "config": {
           "count": 100,
-          "delay": 30,
+          "delay": 50,
           "extTrigger": false,
-          "frequency": 1000,
+          "frequency": 10000,
           "noInject": false,
           "time": 0
         },
@@ -70,10 +70,10 @@
     ],
     "name": "AnalogScan",
     "prescan": {
-        "DigHitIn_Sel": 1,
-        "Trig_Count": 10,
-        "Trig_Lat": 220,
-        "Vthin_Coarse": 200
+        "Trig_Count": 15,
+        "Trig_Lat": 205,
+        "CalPulseWidth": 20,
+        "PlsrDAC": 1000
     }
   }
 }

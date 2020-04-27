@@ -8,24 +8,26 @@
 
 #include "SpecTxCore.h"
 
+#include "logging.h"
+
+namespace {
+    auto stxlog = logging::make_log("SpecTx");
+}
+
 SpecTxCore::SpecTxCore() {
-    verbose = false;
     enMask = 0x0;
     m_clk_period = 6.25e-9; // 160MHz base for RD53A
     //m_clk_period = 25.0e-9; // 40MHz base for FE-I4
 }
 
 void SpecTxCore::writeFifo(uint32_t value) {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ 
-            << " : Writing 0x" << std::hex << value << std::dec << std::endl;
+    SPDLOG_LOGGER_TRACE(stxlog, "Value {0:x}", value);
     SpecCom::writeSingle(TX_ADDR | TX_FIFO, value);
 }
 
 void SpecTxCore::setCmdEnable(uint32_t value) {
     uint32_t mask = (1 << value);
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << mask << std::dec << std::endl;
+    SPDLOG_LOGGER_TRACE(stxlog, "Value {0:x}", value);
     SpecCom::writeSingle(TX_ADDR | TX_ENABLE, mask);
     enMask = mask;
 }
@@ -33,13 +35,16 @@ void SpecTxCore::setCmdEnable(uint32_t value) {
 void SpecTxCore::setCmdEnable(std::vector<uint32_t> channels) {
     uint32_t mask = 0;
     for (uint32_t channel : channels) {
-        mask += (1 << channel);
+        mask |= (1 << channel);
     }
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << mask << std::dec << std::endl;
-
+    SPDLOG_LOGGER_TRACE(stxlog, "Value {0:x}", mask);
     SpecCom::writeSingle(TX_ADDR | TX_ENABLE, mask);
     enMask = mask;
+}
+
+void SpecTxCore::disableCmd() {
+    SPDLOG_LOGGER_TRACE(stxlog, "");
+    SpecCom::writeSingle(TX_ADDR | TX_ENABLE, 0x0);
 }
 
 uint32_t SpecTxCore::getCmdEnable() {
@@ -50,14 +55,12 @@ void SpecTxCore::maskCmdEnable(uint32_t value, uint32_t mask) {
     uint32_t tmp = SpecCom::readSingle(TX_ADDR | TX_ENABLE);
     tmp &= ~mask;
     value |= tmp;
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << value << std::dec << std::endl;
+    SPDLOG_LOGGER_TRACE(stxlog, "Value {0:x}", value);
     SpecCom::writeSingle(TX_ADDR | TX_ENABLE, value);
 }
 
 void SpecTxCore::setTrigEnable(uint32_t value) {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << value << std::dec << std::endl;
+    SPDLOG_LOGGER_TRACE(stxlog, "Value {0:x}", value);
     SpecCom::writeSingle(TX_ADDR | TRIG_EN, value);
 }
 
@@ -69,51 +72,41 @@ void SpecTxCore::maskTrigEnable(uint32_t value, uint32_t mask) {
     uint32_t tmp = SpecCom::readSingle(TX_ADDR | TX_ENABLE);
     tmp &= ~mask;
     value |= tmp;
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << value << std::dec << std::endl;
+    SPDLOG_LOGGER_TRACE(stxlog, "Value {0:x}", value);
     SpecCom::writeSingle(TX_ADDR | TRIG_EN, value);
 }
 
 void SpecTxCore::setTrigConfig(enum TRIG_CONF_VALUE cfg) {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Config 0x" << std::hex << cfg << std::dec << std::endl;
+    SPDLOG_LOGGER_TRACE(stxlog, "Config {0:x}", cfg);
     SpecCom::writeSingle(TX_ADDR | TRIG_CONF, (uint32_t) cfg);
 }
 
 void SpecTxCore::setTrigFreq(double freq) {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Frequency " << freq/1.0e3 << " kHz" <<std::endl;
+    SPDLOG_LOGGER_TRACE(stxlog, "Frequency {}", freq/1.0e3);
     uint32_t tmp = 1.0/((double)m_clk_period * freq);
     SpecCom::writeSingle(TX_ADDR | TRIG_FREQ, tmp);
 }
 
 void SpecTxCore::setTrigCnt(uint32_t count) {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Count " << count << std::endl;
+    SPDLOG_LOGGER_TRACE(stxlog, "Count {}", count);
     SpecCom::writeSingle(TX_ADDR | TRIG_COUNT, count);
 }
 
   
 void SpecTxCore::setTrigTime(double time) {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Time " << time << " s, period " << m_clk_period <<std::endl;
+    SPDLOG_LOGGER_TRACE(stxlog, "Time {}", time);
     uint64_t tmp = (1.0/(double)m_clk_period)*time;
     SpecCom::writeBlock(TX_ADDR | TRIG_TIME, (uint32_t*)&tmp, 2);
 }
 
 void SpecTxCore::setTrigWordLength(uint32_t length) {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Length " << length << " bit" <<std::endl;
+    SPDLOG_LOGGER_TRACE(stxlog, "Length {}", length);
     SpecCom::writeSingle(TX_ADDR | TRIG_WORD_LENGTH, length);
 }
 
 void SpecTxCore::setTrigWord(uint32_t *word, uint32_t length) {
-    if (verbose) {
-        std::cout << __PRETTY_FUNCTION__ << " : " << std::hex << std::endl;
-        for (unsigned i=0; i<length; i++) {
-            std::cout << "     [" << i << "] = 0x " << word[i] <<std::endl;
-        }
-        std::cout << std::dec;
+    for (unsigned i=0; i<length; i++) {
+        SPDLOG_LOGGER_TRACE(stxlog, "[{}] = {0:x}", i, word[i]);
     }
 
     for (unsigned i=0; i<length; i++) {
@@ -123,8 +116,7 @@ void SpecTxCore::setTrigWord(uint32_t *word, uint32_t length) {
 }
 
 void SpecTxCore::toggleTrigAbort() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Toggling Trigger abort!" << std::endl;
+    SPDLOG_LOGGER_DEBUG(stxlog, "Toggling trigger abort!");
     SpecCom::writeSingle(TX_ADDR | TRIG_ABORT, 0x1);
 }
 
@@ -141,3 +133,10 @@ uint32_t SpecTxCore::getTrigInCount() {
     return (SpecCom::readSingle(TX_ADDR | TRIG_IN_CNT));
 }
 
+void SpecTxCore::setTxPolarity(uint32_t value) {
+    SpecCom::writeSingle(TX_ADDR | TX_POLARITY, value);
+}
+
+uint32_t SpecTxCore::getTxPolarity() {
+    return SpecCom::readSingle(TX_ADDR | TX_POLARITY);
+}

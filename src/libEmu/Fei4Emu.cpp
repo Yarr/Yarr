@@ -8,7 +8,15 @@
 #include "Fei4Emu.h"
 #include <algorithm>
 
+#include "logging.h"
+
+//#include "storage.hpp"
+
 using namespace Gauss;
+
+namespace {
+    auto flog = logging::make_log("emu_fei4");
+}
 
 Fei4Emu::Fei4Emu(std::string output_model_cfg, std::string input_model_cfg,
                  EmuCom * rx, EmuCom * tx) {
@@ -63,7 +71,7 @@ void Fei4Emu::initializePixelModelsFromFile(std::string json_file_path) {
 }
 
 void Fei4Emu::executeLoop() {
-    std::cout << "Starting emulator loop" << std::endl;
+    flog->info("Starting emulator loop");
     while (run)
     {
         uint32_t command;

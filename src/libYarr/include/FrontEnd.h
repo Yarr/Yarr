@@ -72,10 +72,7 @@ class FrontEndCfg {
         virtual double toCharge(double, bool, bool)=0;
         virtual void toFileJson(json&)=0;
         virtual void fromFileJson(json&)=0;
-        virtual void toFileBinary(std::string)=0;
-        virtual void fromFileBinary(std::string)=0;
-        virtual void toFileBinary()=0;
-        virtual void fromFileBinary()=0;
+
 		
         unsigned getChannel() {return rxChannel;}
 		unsigned getTxChannel() {return txChannel;}

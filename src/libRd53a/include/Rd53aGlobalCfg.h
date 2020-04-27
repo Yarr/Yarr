@@ -14,8 +14,6 @@
 #include <map>
 #include <cmath>
 
-
-
 #include "storage.hpp"
 
 class Rd53aReg {
@@ -40,6 +38,11 @@ class Rd53aReg {
         virtual uint16_t read() const {
             unsigned mask = (1<<m_bits)-1;
             return ((*m_cfg >> m_bOffset) & mask);
+        }
+
+        uint16_t applyMask(uint16_t value) {
+            unsigned mask = (1<<m_bits)-1;
+            return ((value >> m_bOffset) & mask);
         }
 
         unsigned addr() const{
@@ -110,7 +113,7 @@ class Rd53aGlobalCfg {
     public:
         static constexpr unsigned numRegs = 138;
         std::array<uint16_t, numRegs> m_cfg;
-        
+
         Rd53aGlobalCfg();
         ~Rd53aGlobalCfg();
         void init();
@@ -140,17 +143,17 @@ class Rd53aGlobalCfg {
             }
         }
 
-    std::string regName(const unsigned addr) const {
-        std::string name = "null_register";
+        std::string regName(const unsigned addr) const {
+            std::string name = "null_register";
 
-        for( auto& pair : regMap ) {
-            if( addr == (this->*pair.second).addr() ) {
-                name = pair.first;
-                break;
+            for( auto& pair : regMap ) {
+                if( addr == (this->*pair.second).addr() ) {
+                    name = pair.first;
+                    break;
+                }
             }
+            return name;
         }
-        return name;
-    }
 
     protected:
         void toFileJson(json &j);

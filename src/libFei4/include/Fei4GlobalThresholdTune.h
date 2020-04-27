@@ -30,7 +30,6 @@ class Fei4GlobalThresholdTune : public ScanBase {
         bool useLcap;
 
         double target;
-        bool verbose;
 };
 
 #endif

@@ -6,8 +6,13 @@
 
 #include "StarChips.h"
 
-#include <bitset>
 #include <chrono>
+
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("StarChips");
+}
 
 #include "AllChips.h"
 
@@ -16,73 +21,278 @@ StdDict::registerFrontEnd
   ("Star", []() { return std::unique_ptr<FrontEnd>(new StarChips); });
 
 StarChips::StarChips()
-  : StarCmd(), FrontEnd()
+: StarCmd(), FrontEnd()
 {
-    txChannel = 99;
-    rxChannel = 99;
-    active = false;
-    geo.nRow = 0;
-    geo.nCol = 0;
+	txChannel = 99;
+	rxChannel = 99;
+	active = false;
+	geo.nRow = 2;
+	geo.nCol = 128;
+
+
+	//Create dummy configuration as placeholder for globalFe in preScan routines
+	setHCCChipId(0xf);
+	addABCchipID(0xf);
 }
 
 StarChips::StarChips(HwController *arg_core)
-  : StarCmd(), FrontEnd()
+: StarCmd(), FrontEnd()
 {
-    m_txcore  = arg_core;
-    m_rxcore = arg_core;
-    txChannel = 99;
-    rxChannel = 99;
-    active = true;
-    geo.nRow = 0;
-    geo.nCol = 0;
+	m_txcore  = arg_core;
+	m_rxcore = arg_core;
+	txChannel = 99;
+	rxChannel = 99;
+	active = true;
+	geo.nRow = 2;
+	geo.nCol = 128;
+
 }
 
 StarChips::StarChips(HwController *arg_core, unsigned arg_channel)
-  : StarCmd(), FrontEnd()
+: StarCmd(), FrontEnd()
 {
-    m_txcore  = arg_core;
-    m_rxcore = arg_core;
-    txChannel = arg_channel;
-    rxChannel = arg_channel;
+	m_txcore  = arg_core;
+	m_rxcore = arg_core;
+	txChannel = arg_channel;
+	rxChannel = arg_channel;
 
-    active = true;
-    geo.nRow = 0;
-    geo.nCol = 0;
+	active = true;
+	geo.nRow = 2;
+	geo.nCol = 128;
 }
 
 StarChips::StarChips(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel)
-  : StarCmd(), FrontEnd()
+: StarCmd(), FrontEnd()
 {
-    m_txcore  = arg_core;
-    m_rxcore = arg_core;
-    txChannel = arg_txChannel;
-    rxChannel = arg_rxChannel;
+	m_txcore  = arg_core;
+	m_rxcore = arg_core;
+	txChannel = arg_txChannel;
+	rxChannel = arg_rxChannel;
 
-    active = true;
-    geo.nRow = 0;
-    geo.nCol = 0;
+	active = true;
+	geo.nRow = 2;
+	geo.nCol = 128;
 }
 
 void StarChips::init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
-    m_txcore  = arg_core;
-    m_rxcore = arg_core;
-    txChannel = arg_txChannel;
-    rxChannel = arg_rxChannel;
-    active = true;
+	m_txcore  = arg_core;
+	m_rxcore = arg_core;
+	txChannel = arg_txChannel;
+	rxChannel = arg_rxChannel;
+	active = true;
+
+	active = true;
+	geo.nRow = 2;
+	geo.nCol = 128;
+}
+
+
+void StarChips::setHccId(unsigned hccID) {
+  //First step will consist in setting the HCC ID (serial number might be different depending on fuse !)
+  //Load the eFuse serial number (and stop HPR)
+  sendCmd(write_hcc_register(16, 0x5, 0xf));
+  //Let's reset the HCC ID with a broadcast write of the HCCID+SN on reg 17
+  uint32_t newReg17val = (hccID<<28) | m_sn;
+  sendCmd(write_hcc_register(17, newReg17val, 0xf));
+  logger->info("Set HCC ID to {} (sent on reg17 0x{:08x})", hccID, newReg17val);
+}
+
+
+
+void StarChips::reset(){
+	logger->info("Global reseting all HCC and ABC on the same LCB control segment");
+
+	uint8_t delay = 0; //2 bits BC delay
+
+	//sendCmd(LCB::fast_command(LCB::LOGIC_RESET, delay) );
+	logger->debug("Sending fast command #{} ABC_REG_RESET", LCB::ABC_REG_RESET);
+	sendCmd(LCB::fast_command(LCB::ABC_REG_RESET, delay) );
+
+	logger->debug("Sending fast command #{} ABC_SLOW_COMMAND_RESET", LCB::ABC_SLOW_COMMAND_RESET);
+	sendCmd(LCB::fast_command(LCB::ABC_SLOW_COMMAND_RESET, delay) );
+
+	logger->debug("Sending fast command #{} ABC_SEU_RESET", LCB::ABC_SEU_RESET);
+	sendCmd(LCB::fast_command(LCB::ABC_SEU_RESET, delay) );
+
+	logger->debug("Sending fast command #{} ABC_HIT_COUNT_RESET", LCB::ABC_HIT_COUNT_RESET);
+	sendCmd(LCB::fast_command(LCB::ABC_HIT_COUNT_RESET, delay) );
+
+	logger->debug("Sending fast command #{} ABC_HIT_COUNT_START", LCB::ABC_HIT_COUNT_START);
+	sendCmd(LCB::fast_command(LCB::ABC_HIT_COUNT_START, delay) );
+
+	logger->debug("Sending fast command #{} HCC_START_PRLP", LCB::HCC_START_PRLP);
+	sendCmd(LCB::fast_command(LCB::HCC_START_PRLP, delay) );
+
+	logger->debug("Sending lonely_BCR");
+	sendCmd(LCB::lonely_bcr());
 }
 
 void StarChips::configure() {
+
+	//Set the HCC ID
+        if (m_sn) this->setHccId(getHCCchipID());
+
+	logger->debug("Sending fast command #{} HCC_REG_RESET", LCB::HCC_REG_RESET);
+	this->sendCmd(LCB::fast_command(LCB::HCC_REG_RESET, 0) );
+
+	logger->info("Sending registers configuration...");
+
+	this->writeRegisters();
+
 }
 
-void StarChips::writeNamedRegister(std::string n, uint16_t val) {
-  // look up in register map.
+void StarChips::sendCmd(uint16_t cmd){
+	//	std::cout << std::hex <<cmd << std::dec<< "_"<<std::endl;
+
+	m_txcore->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
+	m_txcore->writeFifo((cmd << 16) + LCB::IDLE);
+	m_txcore->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
+	m_txcore->releaseFifo();
+
 }
 
-void StarChips::toFileJson(json &j){
-    HccStarCfg::toFileJson(j);
+void StarChips::sendCmd(std::array<uint16_t, 9> cmd){
+	//    std::cout << __PRETTY_FUNCTION__ << "  txChannel: " << getTxChannel() << " cmd:  " <<  cmd << std::endl;
+	//	for( auto a : cmd ) {
+	//		std::cout << std::hex <<a << std::dec<< "_";
+	//	}
+	//	std::cout <<  std::endl;
+
+	//	std::cout << std::hex <<((cmd[0] << 16) + cmd[1])<< std::dec<< "_";
+	//	std::cout << std::hex <<((cmd[2] << 16) + cmd[3]) << std::dec<< "_";
+	//	std::cout << std::hex <<((cmd[4] << 16) + cmd[5])<< std::dec<< "_";
+	//	std::cout << std::hex <<((cmd[6] << 16) + cmd[7])<< std::dec<< "_";
+	//	std::cout << std::hex <<((cmd[8] << 16) + 0)<< std::dec<< "_";
+	//	std::cout <<  std::endl;
+	m_txcore->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
+	m_txcore->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
+	m_txcore->writeFifo((cmd[0] << 16) + cmd[1]);
+	m_txcore->writeFifo((cmd[2] << 16) + cmd[3]);
+	m_txcore->writeFifo((cmd[4] << 16) + cmd[5]);
+	m_txcore->writeFifo((cmd[6] << 16) + cmd[7]);
+	m_txcore->writeFifo((cmd[8] << 16) + LCB::IDLE);
+	m_txcore->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
+	m_txcore->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
+	m_txcore->releaseFifo();
+
 }
 
-void StarChips::fromFileJson(json &j){
-    HccStarCfg::fromFileJson(j);
+
+bool StarChips::writeRegisters(){
+	//Write all register to their setting, both for HCC & all ABCs
+        auto num_abc = numABCs();
+	logger->info("Write registers for HCC + {} * ABCs", num_abc);
+
+        // First write HCC
+        int hccId = getHCCchipID();
+
+        const auto &hcc_regs = HccStarRegInfo::instance()->hccregisterMap;
+	logger->info("Starting on chip {} with {} registers", hccId, hcc_regs.size());
+
+        for(auto &map_iter: hcc_regs) {
+              auto addr = map_iter.first;
+              logger->trace("Writing HCC Register {} for chipID {}", addr, hccId);
+              writeHCCRegister(addr);
+        }
+
+        // Send resets to ABC now HCC is configured
+        this->reset();
+
+        // Then each ABC
+        const auto &abc_regs = AbcStarRegInfo::instance()->abcregisterMap;
+	eachAbc([&](auto &abc) {
+                int this_chipID = abc.getABCchipID();
+
+                logger->info("Starting on chip {} with {} registers", this_chipID, abc_regs.size());
+		for(auto &map_iter: abc_regs) {
+                        auto addr = map_iter.first;
+                        logger->debug("Writing Register {} for chipID {}", addr, this_chipID);
+
+                        writeABCRegister(addr, abc);
+		}
+		logger->info("Done with {}", this_chipID);
+          });
+
+	return true;
 }
 
+//Will write value for setting name for the HCC if name starts with "HCC_" otherwise will write the setting for all ABCs if name starts with "ABCs_"
+void StarChips::writeNamedRegister(std::string name, uint16_t reg_value) {
+  std::string strPrefix = name.substr (0,4);
+  //if we deal with a setting for the HCC, look up in register map.
+  if (strPrefix=="HCC_") {
+    auto subRegName = name.substr(4);
+    if(!HCCStarSubRegister::_is_valid(subRegName.c_str())) {
+      logger->error(" --> Error: Could not find HCC sub-register \"{}\"", subRegName);
+    } else {
+      setAndWriteHCCSubRegister(subRegName, reg_value);
+    }
+  } else  if (strPrefix=="ABCs") {
+    auto subRegName = name.substr(5); // Including _
+    if(!ABCStarSubRegister::_is_valid(subRegName.c_str())) {
+      logger->error(" --> Error: Could not find ABC sub-register \"{}\"", subRegName);
+    } else {
+      logger->trace("Writing {} on setting '{}' for all ABCStar chips.", reg_value, name);
+      eachAbc([&](auto &cfg) {
+          setAndWriteABCSubRegister(subRegName, cfg, reg_value);
+        });
+    }
+  }
+}
+
+
+void StarChips::readRegisters(){
+
+	//Read all known registers, both for HCC & all ABCs
+        logger->debug("Looping over all chips in readRegisters, where m_nABC is {}", numABCs());
+
+        auto &hcc_regs = HccStarRegInfo::instance()->hccregisterMap;
+
+        for(auto &map_iter: hcc_regs) {
+                auto addr = map_iter.first;
+                // Skip HCCCommand reg
+                if(addr == 16) continue;
+                int this_chipID = getHCCchipID();
+                logger->debug("Calling readRegister for HCC {} register {}", this_chipID, addr);
+                readHCCRegister(addr);
+        }
+
+        auto &abc_regs = AbcStarRegInfo::instance()->abcregisterMap;
+
+        eachAbc([&](const auto &abc) {
+                int this_chipID = abc.getABCchipID();
+                for(auto &map_iter: abc_regs) {
+                        auto addr = map_iter.first;
+
+                        logger->debug("Hcc id: {}", getHCCchipID());
+                        logger->debug("Calling readRegister for chipID {} register {}", this_chipID, addr);
+
+                        readABCRegister(addr, this_chipID);
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                        logger->debug("Not calling read()");
+                        //                      read(map_iter->first, rxcore);
+                }//for each register address
+          }); //for each chipID
+
+}
+
+void StarChips::writeHCCRegister(int addr) {
+    uint32_t value = m_hcc.getRegisterValue(HCCStarRegister::_from_integral(addr));
+    logger->debug("Doing HCC write register with value 0x{:08x} from registerMap[addr={}]", value, addr);
+    sendCmd(write_hcc_register(addr, value, getHCCchipID()));
+}
+
+void StarChips::writeABCRegister(int addr, AbcCfg &cfg) {
+    uint32_t value = cfg.getRegisterValue(ABCStarRegister::_from_integral(addr));
+    auto id = cfg.getABCchipID();
+    logger->debug("Doing ABC ID {} writeRegister {} with value 0x{:08x}", id, addr, value);
+    sendCmd(write_abc_register(addr, value, getHCCchipID(), id));
+}
+
+void StarChips::readHCCRegister(int addr) {
+    sendCmd(read_hcc_register(addr, getHCCchipID()));
+}
+
+void StarChips::readABCRegister(int addr, int32_t chipID) {
+    sendCmd(read_abc_register(addr, getHCCchipID(), chipID));
+}

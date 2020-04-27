@@ -82,7 +82,7 @@ public:
     void outputLoop();
 
     /** When set (by EmuController) shutdown executeLoop (i.e. the thread) */
-    volatile bool run;
+    std::atomic<bool> run;
     
 private:
 
@@ -317,11 +317,6 @@ private:
     uint32_t l1id;
     uint32_t bcid;
 
-
-    /** log level control */
-    bool verbose  { false };
-
-    
     /** container for async processing */
     std::unique_ptr<ThreadPool>     m_pool;
     std::unique_ptr<ThreadPool>     m_pool2;
