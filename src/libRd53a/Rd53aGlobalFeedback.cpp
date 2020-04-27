@@ -237,7 +237,7 @@ void Rd53aGlobalFeedback::execPart2() {
         if (fe->getActive()) {
             unsigned rx = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
             m_fbMutex[rx].lock();
-            logger->info(" --> Received Feedback on Channel {} with value:", rx, m_values[rx]);
+            logger->info(" --> Received Feedback on Channel {} with value: {}", rx, m_values[rx]);
         }
     }
     m_cur++;
