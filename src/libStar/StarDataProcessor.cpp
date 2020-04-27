@@ -78,8 +78,7 @@ void StarDataProcessor::process_core() {
         // Create Output Container
         std::map<unsigned, std::unique_ptr<Fei4Data>> curOut;
         for (unsigned i=0; i<activeChannels.size(); i++) {
-            curOut[activeChannels[i]].reset(new Fei4Data());
-            curOut[activeChannels[i]]->lStat = curInV->stat;
+            curOut[activeChannels[i]].reset(new Fei4Data(curInV->stat));
         }
 
         unsigned size = curInV->size();
@@ -109,7 +108,9 @@ void process_data(RawData &curIn,
     }
     packet.add_word(0x1DC); //add EOP, only to make decoder happy
 
-    packet.parse();
+    if(packet.parse()) {
+      logger->error("Star packet parsing failed, continuing with the extracted data\n");
+    }
     
     logger->debug("Process data");
     if(logger->should_log(spdlog::level::trace)) {

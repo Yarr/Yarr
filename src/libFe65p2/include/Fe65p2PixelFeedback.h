@@ -18,6 +18,7 @@ class Fe65p2PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
         void feedback(unsigned channel, Histo2d *h);
     private:
         std::map<unsigned, Histo2d*> fbHistoMap;
+        std::map<unsigned, std::mutex> fbMutexMap;
         unsigned step, oldStep;
         unsigned cur;
 

@@ -1,0 +1,47 @@
+{
+    "scan": {
+        "analysis": {
+            "n_count": 0
+        },
+        "histogrammer": {
+            "n_count": 0
+        },
+        "loops": [
+        {
+            "config": {
+                "VoltMux": [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32],
+                "CurMux": [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],
+                "Registers": ["All"],
+                "EnblRingOsc": 255,
+                "RingOscRep": 10,
+                "RingOscDur": 9
+
+            },
+            "loopAction": "Rd53aReadRegLoop"
+        },
+      {
+        "config": {
+          "count": 1,
+          "delay": 48,
+          "extTrigger": false,
+          "frequency": 30000,
+          "noInject": false,
+          "time": 0
+        },
+        "loopAction": "Rd53aTriggerLoop"
+      },
+        {
+            "loopAction": "StdDataLoop"
+        }
+        ],
+        "name": "AnalogScan",
+        "prescan": {
+            "InjEnDig": 0,
+            "LatencyConfig": 48,
+            "GlobalPulseRt": 16384,
+            "InjVcalDiff": 0,
+            "InjVcalHigh": 3000,
+            "InjVcalMed": 1000
+        }
+    }
+}

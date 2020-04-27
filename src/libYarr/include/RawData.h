@@ -25,7 +25,7 @@ class RawData {
 
 class RawDataContainer {
     public:
-        RawDataContainer(){}
+        RawDataContainer(LoopStatus &&s) : stat(s) {}
         ~RawDataContainer() {
             for(unsigned int i=0; i<adr.size(); i++)
                 delete[] buf[i];

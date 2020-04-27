@@ -3,15 +3,20 @@
         "type": "spec",
         "cfg" : {
             "specNum" : 0,
-            "spiConfig" : 524288,
+            "spiConfig" : 541200,
             "trigConfig" : {
                 "mask" : 15,
                 "mode" : 0,
                 "config" : 65534,
                 "edge" : 0,
                 "delay" : [0, 0, 0, 0],
-                "deadtime" : 300
-            }
+                "deadtime" : 1200
+            },
+            "autoZero" : {
+                "word" : 0,
+                "interval" : 500
+            },
+            "cmdPeriod" : 6.25e-9
         }
     }
 }

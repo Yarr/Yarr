@@ -298,7 +298,7 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir) {
     m_stage_list.clear();
     m_env_list.clear();
     m_comp_list.clear();
-    m_conn_json;
+    // m_conn_json
     counter = 0;
 }
 

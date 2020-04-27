@@ -61,4 +61,3 @@ void EmuController<Rd53a, Rd53aEmu>::loadConfig(json &j) {
   emu.reset(new Rd53aEmu( rx_com.get(), tx_com.get(), emuCfgFile ));
   emuThreads.push_back(std::thread(&Rd53aEmu::executeLoop, emu.get()));
 }
-

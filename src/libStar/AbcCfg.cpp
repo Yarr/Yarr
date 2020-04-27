@@ -32,12 +32,12 @@ const std::vector<abcsubregdef> s_abcsubregdefs = {
   {ABCStarSubRegister::ADC_BIAS			,4	,0	,4}	,
   {ABCStarSubRegister::ADC_CH			,4	,4	,4}	,
   {ABCStarSubRegister::ADC_ENABLE		,4	,8	,1}	,
-  {ABCStarSubRegister::D_S			,6	,0	,1}	,
+  {ABCStarSubRegister::D_S			,6	,0	,15}	,
   {ABCStarSubRegister::D_LOW			,6	,15	,1}	,
   {ABCStarSubRegister::D_EN_CTRL		,6	,16	,1}	,
-  {ABCStarSubRegister::BTMUX			,7	,0	,1}	,
+  {ABCStarSubRegister::BTMUX			,7	,0	,14}	,
   {ABCStarSubRegister::BTMUXD			,7	,14	,1}	,
-  {ABCStarSubRegister::A_S			,7	,15	,1}	,
+  {ABCStarSubRegister::A_S			,7	,15	,15}	,
   {ABCStarSubRegister::A_EN_CTRL		,7	,31	,1}	,
   {ABCStarSubRegister::TEST_PULSE_ENABLE	,32	,4	,1}	,
   {ABCStarSubRegister::ENCOUNT			,32	,5	,1}	,
@@ -72,8 +72,8 @@ const std::vector<abcsubregdef> s_abcsubregdefs = {
   {ABCStarSubRegister::EN_LCB_DECODE_ERR	,36	,11	,1}	,
   {ABCStarSubRegister::EN_LCB_ERRCNT_OVFL	,36	,12	,1}	,
   {ABCStarSubRegister::EN_LCB_SCMD_ERR		,36	,13	,1}	,
-  {ABCStarSubRegister::DOFUSE			,37	,0	,2}	,
-  {ABCStarSubRegister::LCB_ERRCOUNT_THR	        ,38	,0	,1}
+  // {ABCStarSubRegister::DOFUSE			,37	,0	,24}	,
+  {ABCStarSubRegister::LCB_ERRCOUNT_THR	        ,38	,0	,16}
 };
 
 AbcStarRegInfo::AbcStarRegInfo() {
@@ -122,11 +122,15 @@ AbcStarRegInfo::AbcStarRegInfo() {
 AbcCfg::AbcCfg()
   : m_info(AbcStarRegInfo::instance())
 {
+    setupMaps();
+    setDefaults();
 }
 
-void AbcCfg::configure_ABC_Registers() {
-    int n_ABC_registers = 128;
-    m_registerSet.reserve( n_ABC_registers );
+void AbcCfg::setupMaps() {
+    auto len = ABCStarRegister::_size();
+    // In case it's not already empty
+    m_registerSet.clear();
+    m_registerSet.reserve( len );
 
     /// TODO Still not sure if this is a good implementation; to-be-optimized.
 
@@ -137,39 +141,50 @@ void AbcCfg::configure_ABC_Registers() {
         Register tmp_Reg(m_info->abcregisterMap[addr], 0);
         m_registerSet.push_back( std::move(tmp_Reg) ); //Save it to the list
         int lastReg = m_registerSet.size()-1;
-        m_registerMap[addr]=&m_registerSet.at(lastReg); //Save it's position in memory to the registerMap
+        m_registerMap[addr] = lastReg; //Save it's position in memory to the registerMap
     }
 
+    if(m_registerSet.size() != len) {
+      logger->info("Mismatch between size {} and values {}", len, m_registerSet.size());
+    }
+}
+
+void AbcCfg::setDefaults() {
     //// Initialize 32-bit register with default values
     ////#special reg
-    m_registerMap[ABCStarRegister::SCReg]->setValue(0x00000004);
+    getRegister(ABCStarRegister::SCReg).setValue(0x00000000);
 
     ////#Analog and DCS regs
     for (unsigned int iReg=ABCStarRegister::ADCS1; iReg<=ABCStarRegister::ADCS7; iReg++)
-        m_registerMap[iReg]->setValue(0x00000000);
+        getRegister(iReg).setValue(0x00000000);
 
     ////#Congfiguration regs
-    for (unsigned int iReg=ABCStarRegister::CREG0; iReg<=ABCStarRegister::CREG6; iReg++)
-        m_registerMap[iReg]->setValue(0x00000000);
+    for (unsigned int iReg=ABCStarRegister::CREG0; iReg<=ABCStarRegister::CREG6; iReg++) {
+        if(iReg == ABCStarRegister::CREG0 + 5) {
+            // Skip CREG5 as it's fuse register
+            continue;
+        }
+        getRegister(iReg).setValue(0x00000000);
+    }
 
     ////# Input (Mask) regs
     for (unsigned int iReg=ABCStarRegister::MaskInput0; iReg<=ABCStarRegister::MaskInput7; iReg++)
-        m_registerMap[iReg]->setValue(0x00000000);
+        getRegister(iReg).setValue(0x00000000);
 
     ////# Calibration Enable regs
     for (unsigned int iReg=ABCStarRegister::CalREG0; iReg<=ABCStarRegister::CalREG7; iReg++)
-        m_registerMap[iReg]->setValue(0xFFFFFFFF);
+        getRegister(iReg).setValue(0xFFFFFFFF);
 
     ////# 256 TrimDac regs 4-bit lsb
     int channel=0;
     for(int i=ABCStarRegister::TrimDAC0; i<=ABCStarRegister::TrimDAC31;i++){
-        m_registerMap[i]->setValue(0xFFFFFFFF);
+        getRegister(i).setValue(0xFFFFFFFF);
     }
 
     ////# 256 TrimDac regs 1-bit msb
     channel = 0;
     for(int i=ABCStarRegister::TrimDAC32; i<=ABCStarRegister::TrimDAC39;i++){
-        m_registerMap[i]->setValue(0x00000000);
+        getRegister(i).setValue(0x00000000);
     }
 }
 
@@ -178,7 +193,7 @@ void AbcCfg::setTrimDACRaw(unsigned channel, int value) {
 
     if (m_info->trimDAC_4LSB_RegisterMap_all.find(channel) != m_info->trimDAC_4LSB_RegisterMap_all.end()) {
         auto info = m_info->trimDAC_4LSB_RegisterMap_all[channel];
-        m_registerMap[info->m_regAddress]->getSubRegister(info).updateValue(value&0xf);
+        getRegister(info->m_regAddress).getSubRegister(info).updateValue(value&0xf);
     } else {
         logger->error("Could not find sub register for 4LSB for channel {} for chip[ID {}]",
                       channel, getABCchipID());
@@ -187,7 +202,7 @@ void AbcCfg::setTrimDACRaw(unsigned channel, int value) {
     if (m_info->trimDAC_1MSB_RegisterMap_all.find(channel) != m_info->trimDAC_1MSB_RegisterMap_all.end()) {
         //		std::cout << " value: " << value << "  " << ((value>>4)&0x1) << std::endl;
         auto info = m_info->trimDAC_1MSB_RegisterMap_all[channel];
-        m_registerMap[info->m_regAddress]->getSubRegister(info).updateValue((value>>4)&0x1);
+        getRegister(info->m_regAddress).getSubRegister(info).updateValue((value>>4)&0x1);
     } else {
         logger->error("Could not find sub register for 1MSB for channel {} for chip[ID {}]", channel, getABCchipID());
   }
@@ -212,8 +227,8 @@ int AbcCfg::getTrimDACRaw(unsigned channel) const {
 
     auto info1 = m_info->trimDAC_1MSB_RegisterMap_all[channel];
 
-    unsigned trimDAC_4LSB = m_registerMap.at(info4->m_regAddress)->getSubRegister(info4).getValue();
-    unsigned trimDAC_1MSB = m_registerMap.at(info1->m_regAddress)->getSubRegister(info1).getValue();
+    unsigned trimDAC_4LSB = getRegister(info4->m_regAddress).getSubRegister(info4).getValue();
+    unsigned trimDAC_1MSB = getRegister(info1->m_regAddress).getSubRegister(info1).getValue();
 
     if(trimDAC_4LSB > 15 )
       logger->error(" Sub register value for 4LSB channel {} for chip[ID {}] is larger than 15 with value {}",

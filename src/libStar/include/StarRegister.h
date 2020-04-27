@@ -26,7 +26,29 @@ struct SubRegisterInfo {
         std::string m_subRegName;
 };
 
-class SubRegister{
+/// A sub register of register, const implies the value can't be changed
+class ConstSubRegister {
+    public:
+        ConstSubRegister(const uint32_t *reg, std::shared_ptr<SubRegisterInfo> info)
+          : m_info(info), m_parentReg(reg) {}
+
+        // Get value of field
+        unsigned getValue() const {
+            unsigned maskBits = (1<<m_info->m_width)-1;
+            unsigned tmp = ((*m_parentReg&(maskBits<<m_info->m_bOffset))>>m_info->m_bOffset);
+
+            return tmp;
+        }
+
+        uint32_t getParentRegValue() const{ return *m_parentReg; }
+
+   private:
+        std::shared_ptr<SubRegisterInfo> m_info;
+        const uint32_t *m_parentReg;
+};
+
+/// A sub register of register, this one can update the value
+class SubRegister {
     public:
         SubRegister(uint32_t *reg, std::shared_ptr<SubRegisterInfo> info)
           : m_info(info),
@@ -35,7 +57,7 @@ class SubRegister{
         }
 
         // Get value of field
-        const unsigned getValue() {
+        unsigned getValue() const {
             unsigned maskBits = (1<<m_info->m_width)-1;
             unsigned tmp = ((*m_parentReg&(maskBits<<m_info->m_bOffset))>>m_info->m_bOffset);
 
@@ -45,6 +67,9 @@ class SubRegister{
         // Write value to field and config
         void updateValue(const uint32_t cfgBits) {
             unsigned maskBits = (1<<m_info->m_width)-1;
+            if(cfgBits & ~maskBits) {
+                throw std::runtime_error("Attempt to write invalid bits in sub register");
+            }
             *m_parentReg=(*m_parentReg&(~(maskBits<<m_info->m_bOffset))) |
               ((cfgBits&maskBits)<<m_info->m_bOffset);
         }
@@ -98,6 +123,10 @@ class Register {
         const unsigned getMySubRegisterValue(std::string subRegName){
             auto &info = m_info->subRegisterMap[subRegName];
             return SubRegister(&m_regValue, info).getValue();
+        }
+
+        ConstSubRegister getSubRegister(std::shared_ptr<SubRegisterInfo> info) const {
+            return ConstSubRegister(&m_regValue, info);
         }
 
         SubRegister getSubRegister(std::shared_ptr<SubRegisterInfo> info) {

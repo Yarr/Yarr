@@ -8,15 +8,16 @@
 
 #include "ResultBase.h"
 
-ResultBase::ResultBase(std::string arg_name, LoopStatus &stat) {
+ResultBase::ResultBase(std::string arg_name, LoopStatus &stat)
+  : lStat(stat) {
     name = arg_name;
     xAxisTitle = "x";
     yAxisTitle = "y";
     zAxisTitle = "z";
-    lStat = stat;
 }
 
-ResultBase::ResultBase(std::string arg_name) {
+ResultBase::ResultBase(std::string arg_name)
+  : lStat(LoopStatus::empty()) {
     name = arg_name;
     xAxisTitle = "x";
     yAxisTitle = "y";
