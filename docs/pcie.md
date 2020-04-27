@@ -38,7 +38,7 @@ $ <text>
 $ ./flash.sh
 ```
 
-For further information check the [FW Guide](fw-guide.md)
+For further information check the [FW Guide](fw_guide.md)
 
 Once you have flashed the firmware reboot your PC.
 
