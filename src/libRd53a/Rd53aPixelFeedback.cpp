@@ -129,7 +129,7 @@ void Rd53aPixelFeedback::execPart1() {
             this->writePixelCfg(dynamic_cast<Rd53a*>(fe));
         }
     }
-    logger->info(" -> Feedback step {} of {}", m_cur, m_steps[m_cur]);
+    logger->info(" -> Feedback step #{} of {} with size {}", m_cur+1, m_steps.size(), m_steps[m_cur]);
 }
 
 void Rd53aPixelFeedback::execPart2() {
