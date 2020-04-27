@@ -86,16 +86,18 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
 
             // Loop over active FEs
             for(unsigned int k=0; k<keeper->feList.size(); k++) {
-                if(keeper->feList[k]->getActive()) {
-                    unsigned ch = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
+                auto fe = keeper->feList[k];
+                if(fe->getActive()) {
+                    unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
                     
                     // Init Maps
                     fbHistoMap[ch] = NULL;
                     
                     // Initilize Pixel regs with default config
+                    auto fei4 = dynamic_cast<Fei4*>(keeper->feList[k]);
                     for (unsigned col=1; col<81; col++) {
                         for (unsigned row=1; row<337; row++) {
-                            this->setPixel(dynamic_cast<Fei4*>(keeper->feList[k]), col, row, min);
+                            this->setPixel(fei4, col, row, min);
                         }
                     }
                 }
@@ -111,11 +113,12 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
             g_stat->set(this, cur);
          
             for(unsigned int k=0; k<keeper->feList.size(); k++) {
-                if(keeper->feList[k]->getActive()) {
+                auto fe = keeper->feList[k];
+                if(fe->getActive()) {
                     // Need to lock mutex on first itereation
-                    fbMutexMap[dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel()].try_lock();
+                    fbMutexMap[dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()].try_lock();
                     // Write config
-                    this->writePixelCfg(dynamic_cast<Fei4*>(keeper->feList[k]));
+                    this->writePixelCfg(dynamic_cast<Fei4*>(fe));
                 }
             }
         }
@@ -123,8 +126,9 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
         void execPart2() {
             unsigned ch;
             for(unsigned int k=0; k<keeper->feList.size(); k++) {
-                if(keeper->feList[k]->getActive()) {
-                    ch = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
+                auto fe = keeper->feList[k];
+                if(fe->getActive()) {
+                    ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
                     // Wait for Mutex to be unlocked by feedback
                     fbMutexMap[ch].lock();
                     this->addFeedback(ch);
@@ -142,8 +146,9 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
 
         bool allDone() {
             for(unsigned int k=0; k<keeper->feList.size(); k++) {
-                if(keeper->feList[k]->getActive()) {
-                    unsigned ch = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
+                auto fe = keeper->feList[k];
+                if(fe->getActive()) {
+                    unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
                     if (!doneMap[ch])
                         return false;
                 }
@@ -176,15 +181,17 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
         }
 
         void addFeedback(unsigned ch) {
-            if (fbHistoMap[ch] != NULL) {
+            auto histo = fbHistoMap[ch];
+            if (histo != NULL) {
+                auto fe = dynamic_cast<Fei4*>(keeper->getFe(ch));
                 for (unsigned row=1; row<337; row++) {
                     for (unsigned col=1; col<81; col++) {
-                        int sign = fbHistoMap[ch]->getBin(fbHistoMap[ch]->binNum(col, row));
-                        int v = getPixel(dynamic_cast<Fei4*>(keeper->getFe(ch)),col, row);
+                        int sign = histo->getBin(histo->binNum(col, row));
+                        int v = getPixel(fe,col, row);
                         v = v + (step)*sign;
                         if (v < 0) v = 0;
                         if (v > max) v = max;
-                        this->setPixel(dynamic_cast<Fei4*>(keeper->getFe(ch)),col, row, v);
+                        this->setPixel(fe, col, row, v);
                     }
                 }
                 delete fbHistoMap[ch];

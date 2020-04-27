@@ -41,9 +41,10 @@ void Fe65p2PixelFeedback::setPixel(unsigned channel, unsigned col, unsigned row,
        dsign = 1;
        tdac = 15-val;
    }
-   
-   dynamic_cast<Fe65p2*>(keeper->feList[channel])->setSign(col, row, dsign);
-   dynamic_cast<Fe65p2*>(keeper->feList[channel])->setTDAC(col, row, tdac);
+
+   auto fe65p2 = dynamic_cast<Fe65p2*>(keeper->feList[channel]);
+   fe65p2->setSign(col, row, dsign);
+   fe65p2->setTDAC(col, row, tdac);
    keeper->globalFe<Fe65p2>()->setSign(col, row, dsign);
    keeper->globalFe<Fe65p2>()->setTDAC(col, row, tdac);
 }

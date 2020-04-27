@@ -61,11 +61,12 @@ void Rd53aPixelFeedback::feedback(unsigned channel, Histo2d *h) {
         logger->error("Wrong type of feedback histogram on channel {}", channel);
         doneMap[channel] = true;
     } else {
+        auto rd53a = dynamic_cast<Rd53a*>(keeper->getFe(channel));
         m_fb[channel] = h;
         for (unsigned row=1; row<=Rd53a::n_Row; row++) {
             for (unsigned col=1; col<=Rd53a::n_Col; col++) {
                 int sign = m_fb[channel]->getBin(m_fb[channel]->binNum(col, row));
-                int v = dynamic_cast<Rd53a*>(keeper->getFe(channel))->getTDAC(col-1, row-1);
+                int v = rd53a->getTDAC(col-1, row-1);
                 if (128<col && col<=264 && tuneLin) {
                     v = v + ((m_steps[m_cur])*sign);
                     if (v<min) v = min;
@@ -75,7 +76,7 @@ void Rd53aPixelFeedback::feedback(unsigned channel, Histo2d *h) {
                     if (v<min) v = min;
                     if (v>max) v = max;
                 }
-                dynamic_cast<Rd53a*>(keeper->getFe(channel))->setTDAC(col-1, row-1, v);
+                rd53a->setTDAC(col-1, row-1, v);
             }
         }
     }
@@ -98,6 +99,7 @@ void Rd53aPixelFeedback::init() {
         for (auto *fe : keeper->feList) {
             if (fe->getActive()) {
                 unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
+                auto rd53a = dynamic_cast<Rd53a*>(keeper->getFe(ch));
                 m_fb[ch] = NULL;
                 int linCnt = 0;
                 int diffCnt = 0;
@@ -105,10 +107,10 @@ void Rd53aPixelFeedback::init() {
                     for (unsigned row=1; row<=Rd53a::n_Row; row++) {
                         //Initial TDAC in mid of the range
                         if (128<col && col<=264 && tuneLin) {
-                            dynamic_cast<Rd53a*>(keeper->getFe(ch))->setTDAC(col-1, row-1, 8);
+                            rd53a->setTDAC(col-1, row-1, 8);
                             linCnt++;
                         } else if (264<col && tuneDiff) {
-                            dynamic_cast<Rd53a*>(keeper->getFe(ch))->setTDAC(col-1, row-1, 0);
+                            rd53a->setTDAC(col-1, row-1, 0);
                             diffCnt++;
                         }
                     }

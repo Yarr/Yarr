@@ -137,8 +137,13 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
         }
         for(unsigned int k=0; k<keeper->feList.size(); k++) {
             if(keeper->feList[k]->getActive()) {
-                g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getTxChannel());
-                dynamic_cast<Fei4*>(keeper->feList[k])->writeRegister(parPtr, chanInfo[dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel()].values);
+                auto fe = dynamic_cast<Fei4*>(keeper->feList[k]);
+                auto fe_cfg = dynamic_cast<FrontEndCfg*>(fe);
+                auto tx_channel = fe_cfg->getTxChannel();
+                auto rx_channel = fe_cfg->getRxChannel();
+                
+                g_tx->setCmdEnable(tx_channel);
+                fe->writeRegister(parPtr, chanInfo[fe_cfg->getRxChannel()].values);
                 while(!g_tx->isCmdEmpty());
             }
         }

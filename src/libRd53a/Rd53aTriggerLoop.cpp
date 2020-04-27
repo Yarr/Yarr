@@ -125,11 +125,12 @@ void Rd53aTriggerLoop::init() {
 void Rd53aTriggerLoop::execPart1() {
     SPDLOG_LOGGER_TRACE(logger, "");
     g_tx->setCmdEnable(keeper->getTxMask());
-    dynamic_cast<Rd53a*>(g_fe)->ecr();
-    dynamic_cast<Rd53a*>(g_fe)->idle();
-    dynamic_cast<Rd53a*>(g_fe)->idle();
-    dynamic_cast<Rd53a*>(g_fe)->idle();
-    dynamic_cast<Rd53a*>(g_fe)->idle();
+    auto rd53a = dynamic_cast<Rd53a*>(g_fe);
+    rd53a->ecr();
+    rd53a->idle();
+    rd53a->idle();
+    rd53a->idle();
+    rd53a->idle();
     std::this_thread::sleep_for(std::chrono::microseconds(200));
     g_rx->flushBuffer();
     while(!g_tx->isCmdEmpty());

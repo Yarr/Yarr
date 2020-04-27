@@ -167,13 +167,13 @@ unsigned newRunCounter() {
                     // Save path to config
                     std::size_t botDirPos = chipConfigPath.find_last_of("/");
                     feCfgMap[bookie.getLastFe()] = chipConfigPath;
-                    dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->setConfigFile(chipConfigPath.substr(botDirPos, chipConfigPath.length()));
+                    feCfg->setConfigFile(chipConfigPath.substr(botDirPos, chipConfigPath.length()));
 
                     // Create backup of current config
                     // TODO fix folder
-                    std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->getConfigFile() + ".before");
+                    std::ofstream backupCfgFile(outputDir + feCfg->getConfigFile() + ".before");
                     json backupCfg;
-                    dynamic_cast<FrontEndCfg*>(bookie.getLastFe())->toFileJson(backupCfg);
+                    feCfg->toFileJson(backupCfg);
                     backupCfgFile << std::setw(4) << backupCfg;
                     backupCfgFile.close();
                 }

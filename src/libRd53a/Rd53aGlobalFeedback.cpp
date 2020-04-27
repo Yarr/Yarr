@@ -128,10 +128,11 @@ bool Rd53aGlobalFeedback::allDone() {
 void Rd53aGlobalFeedback::writePar() {
     for (auto *fe : keeper->feList) {
         if(fe->getActive()) {
+            auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
             // Enable single channel
-            g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+            g_tx->setCmdEnable(feCfg->getTxChannel());
             // Write parameter
-            dynamic_cast<Rd53a*>(fe)->writeRegister(parPtr, m_values[dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()]);
+            dynamic_cast<Rd53a*>(fe)->writeRegister(parPtr, m_values[feCfg->getRxChannel()]);
             while(!g_tx->isCmdEmpty()){}
         }
     }

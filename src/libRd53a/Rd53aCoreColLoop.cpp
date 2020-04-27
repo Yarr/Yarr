@@ -41,12 +41,13 @@ void Rd53aCoreColLoop::init() {
     m_impl->m_cur = 0;
     // Disable all to begin with
     g_tx->setCmdEnable(keeper->getTxMask());
+    auto rd53a = dynamic_cast<Rd53a*>(g_fe);
     // Loop over cores, i.e. activate in pairs of 4 DC
     for (unsigned dc=0; dc<Rd53a::n_DC; dc+=4) {
-        dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc);
-        dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc+1);
-        dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc+2);
-        dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc+3);
+        rd53a->disableCalCol(dc);
+        rd53a->disableCalCol(dc+1);
+        rd53a->disableCalCol(dc+2);
+        rd53a->disableCalCol(dc+3);
     }
     while(!g_tx->isCmdEmpty()) {}
 }
@@ -55,22 +56,25 @@ void Rd53aCoreColLoop::execPart1() {
     SPDLOG_LOGGER_TRACE(logger, "{}", m_impl->m_cur);
     
     g_tx->setCmdEnable(keeper->getTxMask());
+
+    auto rd53a = dynamic_cast<Rd53a*>(g_fe);
+
     // Loop over cores, i.e. activate in pairs of 4 DC
     for (unsigned dc=(m_impl->minCore*4), i=0; dc<(m_impl->maxCore*4); dc+=4, i++) {
         // Disable previous columns
         if (m_impl->m_cur>0 && ((i%m_impl->nSteps) == (m_impl->m_cur-step))) {
-            dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc);
-            dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc+1);
-            dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc+2);
-            dynamic_cast<Rd53a*>(g_fe)->disableCalCol(dc+3);
+            rd53a->disableCalCol(dc);
+            rd53a->disableCalCol(dc+1);
+            rd53a->disableCalCol(dc+2);
+            rd53a->disableCalCol(dc+3);
         }
         // Enable next columns
         if (i%m_impl->nSteps == m_impl->m_cur) {
             logger->debug("Enabling QC -> {}", dc);
-            dynamic_cast<Rd53a*>(g_fe)->enableCalCol(dc);
-            dynamic_cast<Rd53a*>(g_fe)->enableCalCol(dc+1);
-            dynamic_cast<Rd53a*>(g_fe)->enableCalCol(dc+2);
-            dynamic_cast<Rd53a*>(g_fe)->enableCalCol(dc+3);
+            rd53a->enableCalCol(dc);
+            rd53a->enableCalCol(dc+1);
+            rd53a->enableCalCol(dc+2);
+            rd53a->enableCalCol(dc+3);
         }
     //Add fine delay
         while(!g_tx->isCmdEmpty()) {}
@@ -79,9 +83,9 @@ void Rd53aCoreColLoop::execPart1() {
     // TODO this needs to be changed to be per FE
     if ( m_delayArray.size() > 0 ) {
         if ( m_delayArray.size() == (m_impl->maxCore-m_impl->minCore) ) 
-            dynamic_cast<Rd53a*>(g_fe)->writeRegister(&Rd53a::InjDelay,m_delayArray[m_impl->m_cur]);
+            rd53a->writeRegister(&Rd53a::InjDelay,m_delayArray[m_impl->m_cur]);
         else 
-            dynamic_cast<Rd53a*>(g_fe)->writeRegister(&Rd53a::InjDelay,m_delayArray[0]);
+            rd53a->writeRegister(&Rd53a::InjDelay,m_delayArray[0]);
     }
     while(!g_tx->isCmdEmpty()) {}
     
