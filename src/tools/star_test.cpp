@@ -35,8 +35,11 @@ int main(int argc, char *argv[]) {
     HwController &spec = *hwCtrl;
     spec.toggleTrigAbort();
     spec.setTrigEnable(0);
-    
-    if(controllerType == "spec") {
+
+    // In fact, mostly needed only for a specific test version of Spec FW
+    bool do_spec_specific = controllerType == "spec";
+
+    if(do_spec_specific) {
       //Send IO config to active FMC
       SpecController &s = *dynamic_cast<SpecController*>(&*hwCtrl);
       s.writeSingle(0x6<<14 | 0x0, 0x9ce730);
@@ -72,38 +75,108 @@ int main(int argc, char *argv[]) {
     spec.writeFifo((part2[6] << 16) + part2[7]);
     spec.writeFifo((part2[8] << 16) + LCB::IDLE);
     spec.writeFifo((LCB::IDLE << 16) + LCB::IDLE);
+
+    // Test emulator
+    if (controllerType == "emu_Star") {
+      // Send fast commands:
+      spec.writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::ABC_HIT_COUNT_RESET, 0));
+      spec.writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::ABC_HIT_COUNT_START, 0));
+      spec.writeFifo((LCB::IDLE << 16) + LCB::IDLE);
+
+      // Write to ABCStar register CREG0 to enable hit counters
+      std::array<LCB::Frame, 9> writeABCCmd = star.write_abc_register(32, 0x00000020); 
+      spec.writeFifo((writeABCCmd[0] << 16) + writeABCCmd[1]);
+      spec.writeFifo((writeABCCmd[2] << 16) + writeABCCmd[3]);
+      spec.writeFifo((writeABCCmd[4] << 16) + writeABCCmd[5]);
+      spec.writeFifo((writeABCCmd[6] << 16) + writeABCCmd[7]);
+      spec.writeFifo((writeABCCmd[8] << 16) + LCB::IDLE);
+
+      // send an L0A
+      spec.writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(10, 0, false));
+
+      // read an HCCStar register
+      //
+      std::array<LCB::Frame, 9> readHCCCmd = star.read_hcc_register(44);
+      spec.writeFifo((readHCCCmd[0] << 16) + readHCCCmd[1]);
+      spec.writeFifo((readHCCCmd[2] << 16) + readHCCCmd[8]);
+
+      // read another HCCStar register
+      std::array<LCB::Frame, 9> readHCCCmd2 = star.read_hcc_register(17);
+      spec.writeFifo((readHCCCmd2[0] << 16) + readHCCCmd2[1]);
+      // the read command is interupted by an L0A
+      spec.writeFifo((LCB::l0a_mask(1, 0, false) << 16) + readHCCCmd2[2]);
+      spec.writeFifo((readHCCCmd2[8] << 16) + LCB::IDLE);
+
+      // read an ABCStar register with broadcast addresses
+      // HitCountReg60: hit counts for front-end channel 243, 242, 241, and 240
+      std::array<LCB::Frame, 9> readABCCmd = star.read_abc_register(172);
+      spec.writeFifo((readABCCmd[0] << 16) + readABCCmd[1]);
+      //////
+      // readABCCmd[3:7] not really needed
+      // read_abc_register() returns a command sequence of 9 frames instead of 4 for a read sequence
+      // They are ignored in the emulator
+      spec.writeFifo((readABCCmd[2] << 16) + readABCCmd[3]);
+      spec.writeFifo((readABCCmd[4] << 16) + readABCCmd[5]);
+      spec.writeFifo((readABCCmd[6] << 16) + readABCCmd[7]);
+      //////
+      spec.writeFifo((readABCCmd[8] << 16) + LCB::IDLE);
+    }
+
     spec.releaseFifo();
 
-    spec.setRxEnable(0x40); // Input from Channel 6 on Spec board
-
-    RawData *data = spec.readData();
-
-    for(int i=0; i<1000; i++) {
-      if(data != nullptr) break;
-
-      data = spec.readData();
+    if(do_spec_specific) {
+      spec.setRxEnable(0x40); // Input from Channel 6 on Spec board
     }
 
-    if(data == nullptr) {
+    std::unique_ptr<RawData> data(spec.readData());
+
+    bool nodata = true;
+
+    while (true) {
+
+      while (data) {
+        nodata = false;
+
+        std::cout << data->adr << " " << data->buf << " " << data->words << "\n";
+
+        for (unsigned j=0; j<data->words;j++) {
+          auto word = data->buf[j];
+
+          if(do_spec_specific) {
+            if((j%2) && (word == 0xd3400000)) continue;
+            if(!(j%2) && ((word&0xff) == 0xff)) continue;
+
+            if((word&0xff) == 0x5f) continue;
+
+            if(word == 0x1a0d) continue; // Idle on chan 6
+            if(word == 0x19f2) continue; // Idle on chan 6
+
+            word &= 0xffffc3ff; // Strip of channel number
+          }
+
+          std::cout << "[" << j << "] = 0x" << std::hex << word << std::dec << " " << std::bitset<32>(word) << std::endl;
+        }
+
+        data.reset(spec.readData());
+      }
+
+      // wait a while if no data
+      for(int i=0; i<1000; i++) {
+        if(data) break;
+
+        static const auto SLEEP_TIME = std::chrono::milliseconds(1);
+
+        std::this_thread::sleep_for( SLEEP_TIME );
+
+        data.reset(spec.readData());
+      }
+
+      if (data == nullptr) break;
+    }
+
+    if(nodata) {
       std::cout << "No data\n";
       return 1;
-    }
-
-    std::cout << data->adr << " " << data->buf << " " << data->words << "\n";
-
-    for (unsigned j=0; j<data->words;j++) {
-      auto word = data->buf[j];
-      if((j%2) && (word == 0xd3400000)) continue;
-      if(!(j%2) && ((word&0xff) == 0xff)) continue;
-
-      if((word&0xff) == 0x5f) continue;
-
-      if(word == 0x1a0d) continue; // Idle on chan 6
-      if(word == 0x19f2) continue; // Idle on chan 6
-
-      word &= 0xffffc3ff; // Strip of channel number
-
-      std::cout << "[" << j << "] = 0x" << std::hex << word << std::dec << " " << std::bitset<32>(word) << std::endl;
     }
 
     spec.setRxEnable(0x0);

@@ -53,7 +53,7 @@ void StdDataLoop::execPart2() {
 
     std::vector<RawData*> tmp_storage;
     RawData *newData = NULL;
-    std::unique_ptr<RawDataContainer> rdc(new RawDataContainer());
+    std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(g_stat->record()));
     while (done == 0) {
         //rate = g_rx->getDataRate();
         //curCnt = g_rx->getCurCount();
@@ -81,7 +81,6 @@ void StdDataLoop::execPart2() {
     } while (newData != NULL || g_rx->getCurCount() != 0);
     delete newData;
     
-    rdc->stat = *g_stat;
     storage->pushData(std::move(rdc));
         
     SPDLOG_LOGGER_DEBUG(sdllog, "--> Received {} words in {} iterations!", count ,iterations);

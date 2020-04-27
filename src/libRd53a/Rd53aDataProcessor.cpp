@@ -90,8 +90,7 @@ void Rd53aDataProcessor::process_core() {
         std::map<unsigned, std::unique_ptr<Fei4Data>> curOut;
         std::map<unsigned, int> events;
         for (unsigned i=0; i<activeChannels.size(); i++) {
-            curOut[activeChannels[i]].reset(new Fei4Data());
-            curOut[activeChannels[i]]->lStat = curInV->stat;
+            curOut[activeChannels[i]].reset(new Fei4Data(curInV->stat));
             events[activeChannels[i]] = 0;
         }
 
@@ -134,7 +133,7 @@ void Rd53aDataProcessor::process_core() {
                             // Check if there is already an event
                             if (events[channel] == 0) {
                                 logger->debug("[{}] No header in data fragment!", channel);
-                                curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
+                                curOut[channel]->newEvent(666, l1id[channel], bcid[channel]);
                                 events[channel]++;
                             }
                             // TODO Make decision on pixel address start 0,0 or 1,1

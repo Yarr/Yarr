@@ -42,7 +42,7 @@ class Histo1d : public HistogramBase {
         void plot(std::string filename, std::string dir = "");
 
     private:
-        std::vector<double>data;
+        std::vector<double> data;
         double underflow;
         double overflow;
 

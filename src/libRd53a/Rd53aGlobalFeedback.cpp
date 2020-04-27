@@ -88,7 +88,7 @@ void Rd53aGlobalFeedback::feedback(unsigned channel, double sign, bool last) {
         m_doneMap[channel] = true;
     }
     // Unlock the mutex to let the scan proceed
-    keeper->mutexMap[channel].unlock();
+    m_fbMutex[channel].unlock();
 }
 
 void Rd53aGlobalFeedback::feedbackBinary(unsigned channel, double sign, bool last) {
@@ -104,14 +104,14 @@ void Rd53aGlobalFeedback::feedbackBinary(unsigned channel, double sign, bool las
     }
 
     // Unlock the mutex to let the scan proceed
-    keeper->mutexMap[channel].unlock();
+    m_fbMutex[channel].unlock();
 
 }
 
 void Rd53aGlobalFeedback::feedbackStep(unsigned channel, double sign, bool last) {
     m_values[channel] = m_values[channel] + sign;
     m_doneMap[channel] |= last;
-    keeper->mutexMap[channel].unlock();
+    m_fbMutex[channel].unlock();
 }
 
 
@@ -226,7 +226,7 @@ void Rd53aGlobalFeedback::execPart1() {
     // Lock all mutexes
     for (auto fe : keeper->feList) {
         if (fe->getActive()) {
-            keeper->mutexMap[dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()].try_lock();
+            m_fbMutex[dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()].try_lock();
         }
     }
 }
@@ -236,7 +236,7 @@ void Rd53aGlobalFeedback::execPart2() {
     for (auto fe: keeper->feList) {
         if (fe->getActive()) {
             unsigned rx = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-            keeper->mutexMap[rx].lock();
+            m_fbMutex[rx].lock();
             logger->info(" --> Received Feedback on Channel {} with value:", rx, m_values[rx]);
         }
     }

@@ -27,7 +27,7 @@ class LoopActionBase {
         LoopActionBase();
         virtual ~LoopActionBase() {}
 
-        void setup(LoopStatus *stat, Bookkeeper *k);
+        void setup(LoopStatusMaster *stat, Bookkeeper *k);
         void setNext(shared_ptr<LoopActionBase>& ptr);
         void execute();
 
@@ -60,7 +60,7 @@ class LoopActionBase {
 
         double progress;
 
-        LoopStatus *g_stat;
+        LoopStatusMaster *g_stat;
         FrontEnd *g_fe;
         TxCore *g_tx;
         RxCore *g_rx;

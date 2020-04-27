@@ -43,13 +43,16 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
 
   std::sort(expected.begin(), expected.end());
 
-  size_t len = sizeof(packet_bytes)/sizeof(uint32_t);
+  size_t len_bytes = sizeof(packet_bytes);
+  size_t len = (len_bytes+3)/sizeof(uint32_t);
 
   uint32_t *buffer = new uint32_t[len];
-  std::copy((uint32_t*)packet_bytes, ((uint32_t*)packet_bytes)+len, buffer);
+  buffer[len-1] = 0;
+  // Could copy uint32, but then the extra bytes are undefined 
+  std::copy(packet_bytes, packet_bytes+len_bytes, (uint8_t*)buffer);
 
   RawData *rd = new RawData(chan, buffer, len);
-  std::unique_ptr<RawDataContainer> rdc(new RawDataContainer);
+  std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(LoopStatus::empty()));
   rdc->add(rd);
   rd_cp.pushData(std::move(rdc));
 

@@ -66,7 +66,9 @@ int main(int argc, char* argv[]) {
     occupancy.setZaxisTitle("Hits");
 
     // Only valid tag to l1id association
-    const std::array<unsigned, 16> l1ToTag = {{0,0,1,1,1,1,2,2,2,2,3,3,3,3,0,0}};
+    //const std::array<unsigned, 16> l1ToTag = {{0,0,1,1,1,1,2,2,2,2,3,3,3,3,0,0}};
+    const std::array<unsigned, 32> l1ToTag = {{0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,
+                                               4,4,5,5,5,5,6,6,6,6,7,7,7,7,0,0}};
 
     // Loop over input files
     int skipped = 0;
@@ -91,17 +93,22 @@ int main(int argc, char* argv[]) {
 
         Fei4Event *multiEvent = NULL;
         std::list<Fei4Event*> eventList;
+        int error = 0;
 
         while (file) {
             int now = file.tellg();
-            std::cout << "\r Loaded " << (double)now/(double)size*100 << "%                       " << std::flush;
+            //std::cout << "\r Loaded " << (double)now/(double)size*100 << "%                       " << std::flush;
 
             Fei4Event *event = new Fei4Event();
             event->fromFileBinary(file);
+            
+            // Print event
+            std::cout << "L1 count: " << l1_count << " at event " << count << " L1ID(" << event->l1id <<") BCID(" << event->bcid << ") TAG(" << event->tag << ") HITS(" << event->nHits << ")" << std::endl;
 
             // Skip if not valid event
-            if (l1ToTag[event->l1id%16] != event->tag) {
+            if (l1ToTag[event->l1id] != event->tag) {
                 skipped++;
+                std::cout << " Skipped " << std::endl;
                 continue;
             }
 
@@ -116,16 +123,25 @@ int main(int argc, char* argv[]) {
                 // Add to muti-event container
                 multiEvent->addEvent(*event);
             }
+            
+            if (l1_count - event->l1id != 0) {
+                error++;
+                std::cout << " L1ID off " << std::endl;
+            }
+
+            if (event->bcid - old_bcid != 1 && l1_count != 0) {
+                error++;
+                std::cout << " BCID off " << std::endl;
+            }
+            old_bcid = event->bcid; 
 
             // Valid event
             l1_count++;
-            // First event should have l1id 0/16
-            if (l1_count == 1 && event->l1id%16 != 0) {
+            // First event should have l1id 0
+            if (l1_count == 1 && event->l1id != 0) {
                 std::cout << "... wierd first event does not have the right l1id" << std::endl;
+                //exit(-1);
             }
-
-            // Print event
-            //std::cout << "L1 count: " << l1_count << " at event " << count << " L1ID(" << event->l1id <<") BCID(" << event->bcid << ") TAG(" << event->tag << ") HITS(" << event->nHits << ")" << std::endl;
 
             
             for (auto hit : event->hits) {
@@ -136,14 +152,16 @@ int main(int argc, char* argv[]) {
             
             
             // Start new multi-event container after 16 events
-            if (l1_count == 16) {
+            //if (l1_count == 32) {
+            if (event->l1id == 31) {
                 eventList.push_back(multiEvent);
                 multiEvent = NULL;
                 l1_count = 0;
                 trigger++;
+                std::cout << " #### Event " << trigger << " #### " << std::endl;
             }
         }
-
+        std::cout << " Number of errors: " << error << std::endl;
         std::cout << std::endl << "Fully loaded events ... analysing" << std::endl;
 
         // Loop over event List

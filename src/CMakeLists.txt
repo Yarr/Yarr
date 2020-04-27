@@ -10,6 +10,8 @@ add_compile_options(-Wfatal-errors)
 add_compile_options(-Wno-deprecated)
 add_compile_options(-std=c++17)
 
+link_libraries(-lstdc++fs)
+
 # Add -fPIC for (e.g. linking to shared libraries)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -73,6 +75,16 @@ add_dependencies(Yarr variant)
 YARR_ADD_TBB()
 add_dependencies(Yarr tbb_2019)
 
+# Plotting Tools
+find_package(ROOT COMPONENTS Hist Graf)
+if (${ROOT_FOUND})
+    YARR_ADD_PLOTTING()
+    add_dependencies(Yarr plotting_tools)
+    INSTALL(DIRECTORY ${CMAKE_BINARY_DIR}/src/external/src/plotting_tools/bin DESTINATION ${TARGET_INSTALL_AREA} FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ WORLD_EXECUTE WORLD_READ GROUP_EXECUTE GROUP_READ)
+else (${ROOT_FOUND})
+    MESSAGE(STATUS "Could not locate ROOT. Will not compile plotting tools!")
+endif (${ROOT_FOUND})
+
 if ("Rogue" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   YARR_ADD_ROGUE()
   add_dependencies(Yarr tbb_2019 rogue)
@@ -114,7 +126,7 @@ endforeach()
 # Mainly this is about making sure the auto-registration works.
 #if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 if(APPLE)
-  set(YARR_LINK_LIB_COMMAND 
+  set(YARR_LINK_LIB_COMMAND
       -Wl,-all_load Yarr -Wl, ${YARR_LIB_DEPS} pthread)
 else()
   # Whole-archive means not to drop symbols from Yarr.
@@ -147,5 +159,5 @@ add_executable(test_main ${test_src} tests/main.cpp)
 target_link_libraries(test_main ${YARR_LINK_LIB_COMMAND})
 add_dependencies(test_main Yarr)
 
-# Add custom target so we can run "make test"
-add_custom_target(test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/test_main)
+# This uses features of CTest, so requires enable_testing somewhere
+add_test(catch2_tests ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/test_main)

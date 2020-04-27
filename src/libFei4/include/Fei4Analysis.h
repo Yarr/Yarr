@@ -34,52 +34,6 @@
 #include "AllStdActions.h"
 #include "AnalysisAlgorithm.h"
 
-class Fei4Analysis : public DataProcessor {
-    public:
-        Fei4Analysis();
-        Fei4Analysis(Bookkeeper *b, unsigned ch);
-        ~Fei4Analysis();
-        
-        void connect(ScanBase *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output) {
-            scan = arg_s;
-            input = arg_input;
-            output = arg_output;
-        }
-        
-        void init();
-        void run();
-	void loadConfig(json &j);
-        void join();
-        void process();
-        void process_core();
-        void end();
-
-        void addAlgorithm(std::unique_ptr<AnalysisAlgorithm> a);
-        void addAlgorithm(std::unique_ptr<AnalysisAlgorithm> a, unsigned ch);
-
-        void setMapSize(unsigned col, unsigned row) {
-            for (unsigned i=0; i<algorithms.size(); i++) {
-                algorithms[i]->setMapSize(col, row);
-            }
-        }
-
-        void setMasking(bool val) {
-            for (unsigned i=0; i<algorithms.size(); i++) {
-                algorithms[i]->setMasking(val);
-            }
-        }
-
-    private:
-        Bookkeeper *bookie;
-        unsigned channel;
-        ClipBoard<HistogramBase> *input;
-        ClipBoard<HistogramBase> *output;
-        ScanBase *scan;
-        std::unique_ptr<std::thread> thread_ptr;
-        
-        std::vector<std::unique_ptr<AnalysisAlgorithm>> algorithms;
-};
-
 class OccupancyAnalysis : public AnalysisAlgorithm {
     public:
         OccupancyAnalysis() : AnalysisAlgorithm() {};

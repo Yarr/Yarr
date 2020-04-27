@@ -1,7 +1,10 @@
 #ifndef YARR_ANALYSIS_ALGORITHM_H
 #define YARR_ANALYSIS_ALGORITHM_H
 
+#include <thread>
+
 #include "Bookkeeper.h"
+#include "DataProcessor.h"
 #include "HistogramBase.h"
 #include "ScanBase.h"
 
@@ -46,6 +49,54 @@ class AnalysisAlgorithm {
         ClipBoard<HistogramBase> *output;
         bool make_mask;
         unsigned nCol, nRow;
+};
+
+/**
+ * Receive a sequence of histograms and process them using AnalysisAlgorithms.
+ */
+class AnalysisProcessor : public DataProcessor {
+    public:
+        AnalysisProcessor();
+        AnalysisProcessor(Bookkeeper *b, unsigned ch);
+        ~AnalysisProcessor();
+
+        void connect(ScanBase *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output) {
+            scan = arg_s;
+            input = arg_input;
+            output = arg_output;
+        }
+
+        void init();
+        void run();
+	void loadConfig(json &j);
+        void join();
+        void process();
+        void process_core();
+        void end();
+
+        void addAlgorithm(std::unique_ptr<AnalysisAlgorithm> a);
+
+        void setMapSize(unsigned col, unsigned row) {
+            for (unsigned i=0; i<algorithms.size(); i++) {
+                algorithms[i]->setMapSize(col, row);
+            }
+        }
+
+        void setMasking(bool val) {
+            for (unsigned i=0; i<algorithms.size(); i++) {
+                algorithms[i]->setMasking(val);
+            }
+        }
+
+    private:
+        Bookkeeper *bookie;
+        unsigned channel;
+        ClipBoard<HistogramBase> *input;
+        ClipBoard<HistogramBase> *output;
+        ScanBase *scan;
+        std::unique_ptr<std::thread> thread_ptr;
+        
+        std::vector<std::unique_ptr<AnalysisAlgorithm>> algorithms;
 };
 
 #endif

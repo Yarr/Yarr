@@ -6,7 +6,7 @@
 #ifndef BETTER_ENUMS_ENUM_H
 #define BETTER_ENUMS_ENUM_H
 
-
+#define BETTER_ENUMS_MACRO_FILE <enum_macros.h>
 
 #include <cstddef>
 #include <cstring>

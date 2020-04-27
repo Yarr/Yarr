@@ -10,14 +10,16 @@
 
 //Different HCC registers that can be used
 BETTER_ENUM(HCCStarRegister, int,
-            Pulse=16, Delay1=32, Delay2=33, Delay3=34,
+            SEU1=0, SEU2=1, SEU3=2, FrameRaw=3, LCBerr=4, ADCStatus=5, Status=6,
+            HPR=15, Pulse=16, Addressing=17,
+            Delay1=32, Delay2=33, Delay3=34,
             PLL1=35, PLL2=36, PLL3=37, DRV1=38, DRV2=39,
             ICenable=40, OPmode=41, OPmodeC=42, Cfg1=43, Cfg2=44,
             ExtRst=45, ExtRstC=46, ErrCfg=47, ADCcfg=48)
 //Different HCC subregisters that can be used for configuration, scans, etc.
 ////NOTE: If the name is changed here, make sure the corresponding subregister name is also changed in the config json file.
 BETTER_ENUM(HCCStarSubRegister, int,
-            STOPHPR=1,
+            STOPHPR=1, TESTHPR,
             CFD_BC_FINEDELAY, CFD_BC_COARSEDELAY, CFD_PRLP_FINEDELAY, CFD_PRLP_COARSEDELAY, HFD_LCBA_FINEDELAY, FD_RCLK_FINEDELAY, LCBA_DELAY160,
             FD_DATAIN0_FINEDELAY, FD_DATAIN1_FINEDELAY, FD_DATAIN2_FINEDELAY, FD_DATAIN3_FINEDELAY, FD_DATAIN4_FINEDELAY, FD_DATAIN5_FINEDELAY, FD_DATAIN6_FINEDELAY, FD_DATAIN7_FINEDELAY,
             FD_DATAIN8_FINEDELAY, FD_DATAIN9_FINEDELAY, FD_DATAIN10_FINEDELAY,
@@ -70,7 +72,13 @@ class HccCfg {
     public:
         HccCfg();
 
-        void configure_HCC_Registers();
+        HccCfg(const HccCfg &) = delete;
+        HccCfg &operator =(const HccCfg &) = delete;
+        HccCfg &operator =(HccCfg &&) = delete;
+        // Default doesn't work as won't change pointers!
+        HccCfg(HccCfg &&other) = delete;
+
+        void setDefaults();
 
         const unsigned int getHCCchipID(){return m_hccID;}
         void setHCCChipId(unsigned hccID){
@@ -114,6 +122,8 @@ class HccCfg {
         Register &getRegister(HCCStarRegister addr) {
             return *m_registerMap.at((unsigned int)addr);
         }
+
+        void setupMaps();
 };
 
 
