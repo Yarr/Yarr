@@ -29,7 +29,7 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
     };
 
     // Step down feedback algorithm
-    void feedback(unsigned channel, double sign, bool last = false) {
+    void feedback(unsigned channel, double sign, bool last = false) override {
         ChannelInfo &chan = chanInfo[channel];
         // Calculate new step and val
         if (sign != chan.oldSign) {
@@ -53,7 +53,7 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
     }
 
     // Binary search feedback algorithm
-    void feedbackBinary(unsigned channel, double sign, bool last = false) {
+    void feedbackBinary(unsigned channel, double sign, bool last = false) override {
         ChannelInfo &chan = chanInfo[channel];
         // Calculate new step and value
         int val = (chan.values+(chan.localStep*sign));
@@ -66,11 +66,11 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
             doneMap[channel] = true;
         }
     }
-    void writeConfig(json &config);
-    void loadConfig(json &config);
+    void writeConfig(json &config) override;
+    void loadConfig(json &config) override;
     private:
     std::string parName = "";
-    void init() {
+    void init() override {
         m_done = false;
         cur = 0;
         // Init all maps:
@@ -87,7 +87,7 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
         this->writePar();
     }
 
-    void end() {
+    void end() override {
         for(unsigned int k=0; k<keeper->feList.size(); k++) {
             if(keeper->feList[k]->getActive()) {	
                 unsigned ch = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
@@ -96,12 +96,12 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
         }
     }
 
-    void execPart1() {
+    void execPart1() override {
         g_stat->set(this, cur);
         m_done = allDone();
     }
 
-    void execPart2() {
+    void execPart2() override {
         // Wait for mutexes to be unlocked by feedback
         for(unsigned int k=0; k<keeper->feList.size(); k++) {
             if(keeper->feList[k]->getActive()) {

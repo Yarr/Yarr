@@ -16,8 +16,8 @@ class Fe65p2GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceive
     public:
         Fe65p2GlobalFeedback(Fe65p2GlobalReg Fe65p2GlobalCfg::*reg);
         
-        void feedbackBinary(unsigned channel, double sign, bool last = false);
-        void feedback(unsigned channel, double sign, bool last = false);
+        void feedbackBinary(unsigned channel, double sign, bool last = false) override;
+        void feedback(unsigned channel, double sign, bool last = false) override;
         
     private:
         Fe65p2GlobalReg Fe65p2GlobalCfg::*m_reg;
@@ -27,10 +27,10 @@ class Fe65p2GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceive
 		std::map<unsigned, double> oldSign;
         unsigned cur;
         
-        void init();
-        void end();
-        void execPart1();
-        void execPart2();
+        void init() override;
+        void end() override;
+        void execPart1() override;
+        void execPart2() override;
 };
 
 #endif
