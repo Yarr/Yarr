@@ -55,17 +55,16 @@ void Rd53aPixelFeedback::loadConfig(json &j) {
     }
 }
 
-void Rd53aPixelFeedback::feedback(unsigned channel, Histo2d *h) {
+void Rd53aPixelFeedback::feedback(unsigned channel, std::unique_ptr<Histo2d> h) {
     // TODO Check on NULL pointer
     if (h->size() != Rd53a::n_Row*Rd53a::n_Col) {
         logger->error("Wrong type of feedback histogram on channel {}", channel);
         doneMap[channel] = true;
     } else {
         auto rd53a = dynamic_cast<Rd53a*>(keeper->getFe(channel));
-        m_fb[channel] = h;
         for (unsigned row=1; row<=Rd53a::n_Row; row++) {
             for (unsigned col=1; col<=Rd53a::n_Col; col++) {
-                int sign = m_fb[channel]->getBin(m_fb[channel]->binNum(col, row));
+                int sign = h->getBin(h->binNum(col, row));
                 int v = rd53a->getTDAC(col-1, row-1);
                 if (128<col && col<=264 && tuneLin) {
                     v = v + ((m_steps[m_cur])*sign);
@@ -79,8 +78,8 @@ void Rd53aPixelFeedback::feedback(unsigned channel, Histo2d *h) {
                 rd53a->setTDAC(col-1, row-1, v);
             }
         }
+        m_fb[channel] = std::move(h);
     }
-    m_fbMutex[channel].unlock();
 }
 
 void Rd53aPixelFeedback::writePixelCfg(Rd53a *fe) {

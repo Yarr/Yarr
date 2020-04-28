@@ -24,13 +24,13 @@ class Rd53aGlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver
         Rd53aGlobalFeedback();
         Rd53aGlobalFeedback(Rd53aReg Rd53aGlobalCfg::*ref);
 
-        void writeConfig(json &j);
-        void loadConfig(json &j);
+        void writeConfig(json &j) override;
+        void loadConfig(json &j) override;
 
         // TODO should probably register a single function
-        void feedback(unsigned channel, double sign, bool last = false);
-        void feedbackBinary(unsigned channel, double sign, bool last = false);
-        void feedbackStep(unsigned channel, double sign, bool last = false);
+        void feedback(unsigned channel, double sign, bool last = false) override;
+        void feedbackBinary(unsigned channel, double sign, bool last = false) override;
+        void feedbackStep(unsigned channel, double sign, bool last = false) override;
 
     protected:
     private:
@@ -38,7 +38,6 @@ class Rd53aGlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver
         std::string parName;
         int m_cur;
 
-        std::map<unsigned, std::mutex> m_fbMutex;
         std::map<unsigned, unsigned> m_values;
         std::map<unsigned, unsigned> m_localStep;
         std::map<unsigned, int> m_oldSign;
@@ -48,10 +47,10 @@ class Rd53aGlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver
         void writePar();
         bool allDone();
         
-        void init();
-        void end();
-        void execPart1();
-        void execPart2();
+        void init() override;
+        void end() override;
+        void execPart1() override;
+        void execPart2() override;
 };
 
 
