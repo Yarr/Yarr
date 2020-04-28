@@ -175,7 +175,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
         }
 
         void addFeedback(unsigned ch) {
-            auto histo = fbHistoMap[ch];
+            auto &histo = fbHistoMap[ch];
             if (histo != nullptr) {
                 auto fe = dynamic_cast<Fei4*>(keeper->getFe(ch));
                 for (unsigned row=1; row<337; row++) {
