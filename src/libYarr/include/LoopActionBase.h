@@ -22,9 +22,13 @@
 
 using std::shared_ptr;
 
+enum LoopStyle {
+    LOOP_STYLE_END
+};
+
 class LoopActionBase {
     public:
-        LoopActionBase();
+        explicit LoopActionBase(LoopStyle s);
         virtual ~LoopActionBase() {}
 
         void setup(LoopStatusMaster *stat, Bookkeeper *k);
@@ -67,7 +71,9 @@ class LoopActionBase {
 		Bookkeeper *keeper;
 		std::map<unsigned, bool> doneMap;
 
+        LoopStyle m_style;
         std::type_index loopType;
+
     private:
         void execStep();
         void run();

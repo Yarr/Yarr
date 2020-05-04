@@ -12,7 +12,9 @@ namespace {
     auto llog = logging::make_log("LoopActionBase");
 }
 
-LoopActionBase::LoopActionBase() : loopType(typeid(void)){
+LoopActionBase::LoopActionBase(LoopStyle l)
+  : m_style(l), loopType(typeid(void))
+{
     g_fe = NULL;
     g_tx = NULL;
     g_rx = NULL;
