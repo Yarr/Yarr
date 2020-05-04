@@ -5,6 +5,7 @@ if [ ! `echo ${0} | grep bash` ]; then
     exit
 fi
 
+
 read -sp "Input mongodb account's username: " pass1
 echo ""
 read -sp "Input mongodb account's password: " pass2
