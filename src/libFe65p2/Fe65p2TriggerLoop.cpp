@@ -5,7 +5,7 @@
 
 #include "Fe65p2TriggerLoop.h"
 
-Fe65p2TriggerLoop::Fe65p2TriggerLoop() : LoopActionBase() {
+Fe65p2TriggerLoop::Fe65p2TriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
     setTrigCnt(50); // Maximum numberof triggers to send
     m_trigDelay = 33; // Delay between injection and trigger
     m_trigFreq = 1e3; // 1kHz
