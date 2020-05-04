@@ -5,7 +5,7 @@
 
 #include "Fe65p2GlobalFeedback.h"
 
-Fe65p2GlobalFeedback::Fe65p2GlobalFeedback(Fe65p2GlobalReg Fe65p2GlobalCfg::*reg) {
+Fe65p2GlobalFeedback::Fe65p2GlobalFeedback(Fe65p2GlobalReg Fe65p2GlobalCfg::*reg) : LoopActionBase(LOOP_STYLE_GLOBAL_FEEDBACK) {
     m_reg = reg;
     loopType = typeid(this);
     cur = 0;    

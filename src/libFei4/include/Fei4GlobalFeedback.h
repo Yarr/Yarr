@@ -21,11 +21,11 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
     }
 
     public:
-    Fei4GlobalFeedback() {
+    Fei4GlobalFeedback() : LoopActionBase(LOOP_STYLE_GLOBAL_FEEDBACK) {
         loopType = typeid(this);
     };
 
-    Fei4GlobalFeedback(Fei4Register Fei4GlobalCfg::*ref) :parPtr(ref) { 
+    Fei4GlobalFeedback(Fei4Register Fei4GlobalCfg::*ref) : LoopActionBase(LOOP_STYLE_GLOBAL_FEEDBACK), parPtr(ref) {
         loopType = typeid(this);
     };
 

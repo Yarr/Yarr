@@ -5,7 +5,7 @@
 
 #include "Fe65p2PixelFeedback.h"
 
-Fe65p2PixelFeedback::Fe65p2PixelFeedback() {
+Fe65p2PixelFeedback::Fe65p2PixelFeedback() : LoopActionBase(LOOP_STYLE_PIXEL_FEEDBACK) {
     step = 8;
     min = 16;
     max = 31;
