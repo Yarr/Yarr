@@ -23,6 +23,12 @@
 using std::shared_ptr;
 
 enum LoopStyle {
+    LOOP_STYLE_DATA,
+    LOOP_STYLE_TRIGGER,
+    LOOP_STYLE_MASK,
+    LOOP_STYLE_PARAMETER,
+    LOOP_STYLE_PIXEL_FEEDBACK,
+    LOOP_STYLE_GLOBAL_FEEDBACK,
     LOOP_STYLE_END
 };
 
@@ -37,6 +43,30 @@ class LoopActionBase {
 
         std::type_index type() {
             return loopType;
+        }
+
+        bool isParameterLoop() {
+            return m_style == LOOP_STYLE_PARAMETER;
+        }
+
+        bool isMaskLoop() {
+            return m_style == LOOP_STYLE_MASK;
+        }
+
+        bool isDataLoop() {
+            return m_style == LOOP_STYLE_DATA;
+        }
+
+        bool isTriggerLoop() {
+            return m_style == LOOP_STYLE_TRIGGER;
+        }
+
+        bool isPixelFeedbackLoop() {
+            return m_style == LOOP_STYLE_PIXEL_FEEDBACK;
+        }
+
+        bool isGlobalFeedbackLoop() {
+            return m_style == LOOP_STYLE_GLOBAL_FEEDBACK;
         }
 
         unsigned getMin();
