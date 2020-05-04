@@ -25,7 +25,9 @@ class Rd53aCoreColLoop::Impl {
 };
 
 
-Rd53aCoreColLoop::Rd53aCoreColLoop() : LoopActionBase(), m_impl( new Rd53aCoreColLoop::Impl() ) {
+Rd53aCoreColLoop::Rd53aCoreColLoop()
+  : LoopActionBase(LOOP_STYLE_MASK), m_impl( new Rd53aCoreColLoop::Impl() )
+{
     min = 0;
     max = 50;
     m_impl->nSteps = 25;
