@@ -15,7 +15,7 @@ namespace {
 }
 
 Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
-    m_trigCnt = 50;
+    setTrigCnt(50);
     m_trigDelay = 48;
     m_trigFreq = 1e3;
     m_trigTime = 10;
@@ -103,7 +103,7 @@ void Rd53aTriggerLoop::init() {
         this->setEdgeMode(m_edgeDuration);
     if (m_extTrig) {
         g_tx->setTrigConfig(EXT_TRIGGER);
-    } else if (m_trigCnt > 0) {
+    } else if (getTrigCnt() > 0) {
         g_tx->setTrigConfig(INT_COUNT);
     } else {
         g_tx->setTrigConfig(INT_TIME);
@@ -112,7 +112,7 @@ void Rd53aTriggerLoop::init() {
         setNoInject();
     }
     g_tx->setTrigFreq(m_trigFreq);
-    g_tx->setTrigCnt(m_trigCnt);
+    g_tx->setTrigCnt(getTrigCnt());
     g_tx->setTrigWord(&m_trigWord[0], 32);
     g_tx->setTrigWordLength(m_trigWordLength);
     g_tx->setTrigTime(m_trigTime);
@@ -155,7 +155,7 @@ void Rd53aTriggerLoop::end() {
 }
 
 void Rd53aTriggerLoop::writeConfig(json &config) {
-    config["count"] = m_trigCnt;
+    config["count"] = getTrigCnt();
     config["frequency"] = m_trigFreq;
     config["time"] = m_trigTime;
     config["delay"] = m_trigDelay;
@@ -167,7 +167,7 @@ void Rd53aTriggerLoop::writeConfig(json &config) {
 
 void Rd53aTriggerLoop::loadConfig(json &config) {
     if (!config["count"].empty())
-        m_trigCnt = config["count"];
+        setTrigCnt(getTrigCnt());
     if (!config["frequency"].empty())
         m_trigFreq = config["frequency"];
     if (!config["time"].empty())

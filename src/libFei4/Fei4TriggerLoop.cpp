@@ -13,7 +13,7 @@ namespace {
 }
 
 Fei4TriggerLoop::Fei4TriggerLoop() : LoopActionBase() {
-    m_trigCnt = 50; // Maximum numberof triggers to send
+    setTrigCnt(50); // Maximum numberof triggers to send
     m_trigDelay = 33; // Delay between injection and trigger
     m_trigFreq = 1e3; // 1kHz
     m_trigTime = 10; // 10s
@@ -36,13 +36,13 @@ void Fei4TriggerLoop::init() {
     m_done = false;
     // Setup Trigger
     this->setTrigDelay(m_trigDelay);
-    if (m_trigCnt > 0) {
+    if (getTrigCnt() > 0) {
         g_tx->setTrigConfig(INT_COUNT);
     } else {
         g_tx->setTrigConfig(INT_TIME);
     }
     g_tx->setTrigFreq(m_trigFreq);
-    g_tx->setTrigCnt(m_trigCnt);
+    g_tx->setTrigCnt(getTrigCnt());
     g_tx->setTrigWordLength(m_trigWordLength);
     g_tx->setTrigWord(m_trigWord, m_trigWordLength);
     g_tx->setTrigTime(m_trigTime);
@@ -84,14 +84,6 @@ void Fei4TriggerLoop::execPart2() {
     // Disable Trigger
     g_tx->setTrigEnable(0x0);
     m_done = true;
-}
-
-void Fei4TriggerLoop::setTrigCnt(unsigned int cnt) {
-    m_trigCnt = cnt;
-}
-
-unsigned int Fei4TriggerLoop::getTrigCnt() {
-    return m_trigCnt;
 }
 
 void Fei4TriggerLoop::setTrigDelay(unsigned int delay) {
@@ -156,7 +148,7 @@ bool Fei4TriggerLoop::getIsInner() {
 */
 
 void Fei4TriggerLoop::writeConfig(json &config) {
-    config["count"] = m_trigCnt;
+    config["count"] = getTrigCnt();
     config["frequency"] = (float) m_trigFreq; //variant fix
     config["time"] = m_trigTime;
     config["delay"] = m_trigDelay;
@@ -166,7 +158,7 @@ void Fei4TriggerLoop::writeConfig(json &config) {
 
 void Fei4TriggerLoop::loadConfig(json &config) {
     if (!config["count"].empty())
-      m_trigCnt = config["count"];
+      setTrigCnt(config["count"]);
     if (!config["frequency"].empty())
       m_trigFreq = config["frequency"];
     if (!config["time"].empty())
