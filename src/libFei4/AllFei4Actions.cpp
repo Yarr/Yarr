@@ -25,3 +25,14 @@ namespace AllFei4ActionsRegistry {
                        []() { return std::unique_ptr<LoopActionBase>(new Fei4PixelFeedback); });
 
 }
+
+// These classes have logger registration in header files, here we instantiate
+// them so the loggers are registered at static init (ie before they're likely
+// to need to be configured)
+void logger_static_init_fei4() {
+  (void)Fei4PixelFeedback::logger();
+  (void)Fei4GlobalFeedback::logger();
+  (void)Fei4ParameterLoop::logger();
+}
+
+bool fei4_header_loggers_registered = [](){ logger_static_init_fei4(); return true; }();

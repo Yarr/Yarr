@@ -90,7 +90,7 @@ class Fei4Emu {
         std::string m_output_model_cfg;
 
         /// Shut down executeLoop when set
-        volatile bool run;
+        std::atomic<bool> run;
 };
 
 #endif //__FEI4_EMU_H__

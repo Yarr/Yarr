@@ -27,7 +27,7 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
          * Obtain the corresponding charge [e] from the input VCal
          */
         double toCharge(double vcal);
-    
+	
         /**
          * Obtain the corresponding charge [e] from the input VCal, small&large capacitances(?)
          * Not fully implmented yet.
@@ -38,6 +38,7 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
          * Obtain the corresponding VCal from the input charge [e]
          */
         unsigned toVcal(double charge);
+        
         /**
          * Format converters
          * These can be possibly templated:
@@ -45,11 +46,10 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
          */
         void toFileJson(json&);
         void fromFileJson(json&);
-        void toFileBinary(std::string) {};
-        void fromFileBinary(std::string) {};
-        void toFileBinary() {};
-        void fromFileBinary() {};
-
+        
+        float ADCtoV (uint16_t ADC);
+        float VtoTemp (float V, uint16_t Sensor, bool isRadSensor);
+        
         /**
          * set the chip ID
          */
@@ -59,8 +59,11 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
         unsigned m_chipId;
 
     private:
-         float m_injCap; //fF
+        float m_injCap; //fF
         std::array<float, 4> m_vcalPar; //mV, [0] + [1]*x + [2]*x^2 + [3]*x^3
+        std::array<float, 2> m_ADCcalPar; //mV, [0] + [1]*x
+        std::array< std::array<float, 2>, 4 > m_TempSenPar;
+        std::array< std::array<float, 2>, 4 > m_RadSenPar;
 };
 
 #endif

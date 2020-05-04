@@ -51,10 +51,6 @@ class Fe65p2Cfg : public FrontEndCfg, public Fe65p2GlobalCfg, public Fe65p2Pixel
         
         void toFileJson(json &j);
         void fromFileJson(json &j);
-        void toFileBinary(std::string) {};
-        void fromFileBinary(std::string) {};
-        void toFileBinary() {};
-        void fromFileBinary() {};
 
     protected:
         std::string name;

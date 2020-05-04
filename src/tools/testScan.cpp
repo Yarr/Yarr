@@ -87,7 +87,7 @@ int main(int argc, char** argv){
   
   //readout the data
     cout << "Read-out" << endl;
-	RawDataContainer datav;
+    RawDataContainer datav(LoopStatus::empty());
 	time_t endtime;
     time_t curtime = time(NULL);
     endtime = curtime + 1;

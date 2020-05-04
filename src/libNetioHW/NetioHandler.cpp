@@ -2,6 +2,13 @@
 #include <memory>
 
 #include "NetioFei4Records.h"
+
+#include "logging.h"
+
+namespace {
+  auto nlog = logging::make_log("Netio::Handler");
+}
+
 // used for flush buffer
 bool doFlushBuffer = false;
 
@@ -9,11 +16,11 @@ bool doFlushBuffer = false;
 // TODO default constructor?
 NetioHandler::NetioHandler(std::string contextStr, std::string felixHost,
                uint16_t felixTXPort, uint16_t felixRXPort,
-               size_t queueSize, bool verbose) :
+               size_t queueSize) :
     m_felixHost(felixHost), m_felixTXPort(felixTXPort), m_felixRXPort(felixRXPort),
-    m_queueSize(queueSize), m_verbose(verbose)
+    m_queueSize(queueSize)
 {
-  if (m_verbose) { std::cout << "### NetioHandler::NetioHandler() -> Setting up context. \n"; }
+  nlog->debug("### NetioHandler::NetioHandler() -> Setting up context");
   m_activeChannels=0;
   m_context = new netio::context(contextStr);
   m_netio_bg_thread = std::thread( [&](){m_context->event_loop()->run_forever();} );
@@ -21,33 +28,33 @@ NetioHandler::NetioHandler(std::string contextStr, std::string felixHost,
 }
 
 NetioHandler::~NetioHandler() {
-  if (m_verbose) { std::cout << "### NetioHandler::~NetioHandler()\n"; }
-  if (m_verbose) { std::cout << "###  Stopping communication with FELIX:\n"
-                             << "###   -> Closing send sockets...\n"; }
+  nlog->debug("### NetioHandler::~NetioHandler()");
+  nlog->debug("###  Stopping communication with FELIX:");
+  nlog->debug("###   -> Closing send sockets...");
+
   for (auto socketIt : m_send_sockets ) {
     if (socketIt.second->is_open()) socketIt.second->disconnect();
   }
-  if (m_verbose) { std::cout << "###   -> Clearing send and sub sockets...\n"; }
+  nlog->debug("###   -> Clearing send and sub sockets...");
   m_send_sockets.clear();
   m_sub_sockets.clear();
-  if (m_verbose) { std::cout << "###   -> Stopping event loop...\n"; }
+  nlog->debug("###   -> Stopping event loop...");
   m_context->event_loop()->stop();
-  if (m_verbose) { std::cout << "###   -> Background thread joining...\n"; }
+  nlog->debug("###   -> Background thread joining...");
   m_netio_bg_thread.join();
-  if (m_verbose) { std::cout << "###  Cleaning up buffers and utilities:\n"
-                             << "###   -> Clearing monitors...\n"; }
+  nlog->debug("###  Cleaning up buffers and utilities:");
+  nlog->debug("###   -> Clearing monitors...");
   m_monitors.clear();
 
-  if (m_verbose) { std::cout << "###  Summary of NETIO Message errors (netio msg too small):\n";
-    for(auto it = m_msgErrors.cbegin(); it != m_msgErrors.cend(); ++it)
-    {
-      std::cout << it->first << " CHN:" << it->first << " SUM:" << it->second << "\n";
-    }
+  nlog->debug("###  Summary of NETIO Message errors (netio msg too small):");
+  for(auto it = m_msgErrors.cbegin(); it != m_msgErrors.cend(); ++it) {
+    nlog->debug(" CHN:{} SUM:{}",
+                it->first, it->second);
   }
 
-  if (m_verbose) { std::cout << "###   -> Clearing queues...\n"; }
+  nlog->debug("###   -> Clearing queues...");
   m_pcqs.clear();
-  if (m_verbose) { std::cout << "### NetioHandler::~NetioHandler() -> Clean shutdown. \n"; }
+  nlog->debug("### NetioHandler::~NetioHandler() -> Clean shutdown.");
 }
 
 void NetioHandler::monitorSetup(size_t sensitivity, size_t delay, size_t numOf){
@@ -67,10 +74,10 @@ void NetioHandler::monitorSetup(size_t sensitivity, size_t delay, size_t numOf){
 void NetioHandler::configureMonitors(size_t sensitivity, size_t delay) {
   m_sensitivity=sensitivity;
   m_delay=delay;
-  if (m_verbose) {
-    std::cout << "### NetioHandler::configureMonitors(sensitivity=" << sensitivity << ", delay=" << delay <<")\n"
-              << "###   -> Making monitor mapping for active channels: " << m_activeChannels << "\n";
-  }
+  nlog->debug("### NetioHandler::configureMonitors(sensitivity={}, delay={})",
+              sensitivity, delay);
+  nlog->debug("###   -> Making monitor mapping for active channels: {}",
+              m_activeChannels);
   switch(m_monitor_mode)
   {
     case single:
@@ -231,8 +238,7 @@ void NetioHandler::addChannel(uint64_t chn){
     std::cerr << "### NetioHandler::addChannel(" << chn << ") -> ERROR. Failed to activate channel.\n";
     return;
   }
-  if (m_verbose) { std::cout << "### NetioHandler::addChannel(" << chn
-                             << ") -> Success. Queue and socket-pair created, subscribed. \n"; }
+  nlog->debug("### NetioHandler::addChannel({}) -> Success. Queue and socket-pair created, subscribed.", chn);
   m_activeChannels++;
 
   //std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -242,12 +248,11 @@ void NetioHandler::addChannel(uint64_t chn){
 
 //---------------------------------------------------------------------------
 void NetioHandler::delChannel(uint64_t chn){
-    if (m_verbose) { std::cout << "### NetioHandler::delChannel(" << chn << ")" << std::endl; }
+  nlog->debug("### NetioHandler::delChannel({})", chn);
   std::vector<uint64_t>::iterator it;
   it=std::find (m_channels.begin(),m_channels.end(),chn);
   if(it!=m_channels.end()){
-    if (m_verbose) { std::cout << "### NetioHandler::delChannel(" << chn << ")"
-                               << " -> unsubscribe" << std::endl; }
+    nlog->debug("### NetioHandler::delChannel({}) -> unsubscribe", chn);
     m_channels.erase(it);
     //SHIT: please do not unsubscribe: because felixcore/netio doesn't like it
     //m_sub_sockets[chn]->unsubscribe(chn, netio::endpoint(m_felixHost, m_felixRXPort));

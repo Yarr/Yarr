@@ -8,11 +8,11 @@
 
 ## Documentation
 
-For details please refer to the documentation covering installation and usage, which can be found here http://yarr.rtfd.org 
+For details please refer to the documentation covering installation and usage, which can be found here http://cern.ch/yarr
 
 This README only includes quick install guide.
 
-(If you are working with the devel branch refer to http://yarr.readthedocs.org/en/devel/ )
+(If you are working with the devel branch refer to http://cern.ch/yarr/devel/ )
 
 ## Mailing list
 
@@ -42,7 +42,7 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
     - ``$ cd Yarr``
     - ``$ mkdir build``
     - ``$ cd build``
-    - ``$ source /opt/rh/devtoolset-7/enable``
+    - ``$ source scl_source enable devtoolset-7``
     - ``$ cmake3 ..``
     - ``$ make install -j4``
     - ``$ cd ..``
@@ -55,9 +55,9 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
     - For all controllers: 
         - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=all ..``
     - For NetIO:
-        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;NetioHW``
+        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;NetioHW"``
     - For Rogue:
-        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;Rogue``
+        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;Rogue"``
 
 ### RCE Guide
 - for ARM target cross compilers are provided by the RCE_SDK
@@ -73,3 +73,13 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
         - ``$ cmake3 .. -DYARR_CONTROLLERS_TO_BUILD=all -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm32 # ARM32/Centos7 on RCE ``
         - ``$ cmake3 .. -DYARR_CONTROLLERS_TO_BUILD=all -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-arm64 # ARM64/Centos7 on zcu102 ``
     - ``$ make -j8 install ``
+
+### Running tests
+
+While developing, it might be useful to run some unit tests. These are run
+by default in the CI on gitlab, but can also be run locally:
+
+- cd build
+- make test
+
+This runs the test_main binary, which gathers the tests found in src/tests.

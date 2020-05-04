@@ -4,7 +4,7 @@
 #include <iostream>
 #include <list>
 
-void Fei4Event::toFileBinary(std::fstream &handle) {
+void Fei4Event::toFileBinary(std::fstream &handle) const {
     handle.write((char*)&tag, sizeof(uint32_t));
     handle.write((char*)&l1id, sizeof(uint16_t));
     handle.write((char*)&bcid, sizeof(uint16_t));

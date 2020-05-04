@@ -171,20 +171,6 @@ void Fei4GlobalCfg::toFilePlain(std::string filename) {
 
 }
 
-void Fei4GlobalCfg::toFileXml(tinyxml2::XMLDocument *doc, tinyxml2::XMLElement *node) {
-    tinyxml2::XMLElement *gcfg = doc->NewElement("GlobalConfig");
-    
-    tinyxml2::XMLElement *reg = NULL;
-    typedef std::map<std::string, Fei4Register Fei4GlobalCfg::*>::iterator it_type;
-    for(it_type iterator = regMap.begin(); iterator != regMap.end(); iterator++) {
-        reg = doc->NewElement(iterator->first.c_str());
-        reg->SetAttribute("value", (this->*iterator->second).value());
-        reg->SetAttribute("type", "dec");
-        gcfg->LinkEndChild(reg);
-    }
-
-    node->LinkEndChild(gcfg);
-}
 
 void Fei4GlobalCfg::toFileJson(json &j) {
     typedef std::map<std::string, Fei4Register Fei4GlobalCfg::*>::iterator it_type;

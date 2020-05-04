@@ -29,39 +29,32 @@ Fei4ThresholdScan::Fei4ThresholdScan(Bookkeeper *b) : ScanBase(b) {
     minVcal = 10;
     maxVcal = 100;
     stepVcal = 1;
-
-    verbose = false;
 }
 
 // Initialize Loops
 void Fei4ThresholdScan::init() {
     // Loop 1: Mask Staging
     std::shared_ptr<Fei4MaskLoop> maskStaging(new Fei4MaskLoop);
-    maskStaging->setVerbose(verbose);
     maskStaging->setMaskStage(mask);
     maskStaging->setScap(true);
     maskStaging->setLcap(true);
     
     // Loop 2: Double Columns
     std::shared_ptr<Fei4DcLoop> dcLoop(new Fei4DcLoop);
-    dcLoop->setVerbose(verbose);
     dcLoop->setMode(dcMode);
 
     // Loop 1: Parameter Loop
     std::shared_ptr<Fei4ParameterLoop> parLoop(new Fei4ParameterLoop(&Fei4::PlsrDAC));
     parLoop->setRange(minVcal, maxVcal, stepVcal);
-    parLoop->setVerbose(false);
 
     // Loop 3: Trigger
     std::shared_ptr<Fei4TriggerLoop> triggerLoop(new Fei4TriggerLoop);
-    triggerLoop->setVerbose(verbose);
     triggerLoop->setTrigCnt(numOfTriggers);
     triggerLoop->setTrigFreq(triggerFrequency);
     triggerLoop->setTrigDelay(triggerDelay);
 
     // Loop 4: Data gatherer
     std::shared_ptr<StdDataLoop> dataLoop(new StdDataLoop);
-    dataLoop->setVerbose(verbose);
     dataLoop->connect(g_data);
 
     this->addLoop(maskStaging);

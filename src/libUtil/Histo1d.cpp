@@ -11,6 +11,15 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
+#include <iomanip>
+
+#include "storage.hpp"
+
+#include "logging.h"
+
+namespace {
+    auto hlog = logging::make_log("Histo1d");
+}
 
 Histo1d::Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh, std::type_index t) : HistogramBase(arg_name, t) {
     bins = arg_bins;
@@ -140,56 +149,94 @@ void Histo1d::add(const Histo1d &h) {
 }
 
 
-void Histo1d::toFile(std::string prefix, std::string dir, bool header) {
-    std::string filename = dir + prefix + "_" + HistogramBase::name + ".dat";
+void Histo1d::toFile(std::string prefix, std::string dir, bool jsonType) {
+    std::string filename = dir + prefix + "_" + HistogramBase::name;
+    if (jsonType) {
+        filename += ".json";
+    } else {
+        filename += ".dat";
+    }
     std::fstream file(filename, std::fstream::out | std::fstream::trunc);
-    // Header
-    if (header) {
-        file << "Histo1d " << std::endl;
-        file << name << std::endl;
-        file << xAxisTitle << std::endl;
-        file << yAxisTitle << std::endl;
-        file << zAxisTitle << std::endl;
-        file << bins << " " << xlow << " " << xhigh << std::endl;
-        file << underflow << " " << overflow << std::endl;
+    json j;
+    // jsonType
+    if (jsonType) {
+        j["Type"] = "Histo1d";
+        j["Name"] = name;
+        
+        j["x"]["AxisTitle"] = xAxisTitle;
+        j["x"]["Bins"] = bins;
+        j["x"]["Low"] = xlow;
+        j["x"]["High"] = xhigh;
+        
+        j["y"]["AxisTitle"] = yAxisTitle;
+        
+        j["z"]["AxisTitle"] = zAxisTitle;
+        
+        j["Underflow"] = underflow;
+        j["Overflow"] = overflow;
+
+        for (unsigned int i=0; i<bins; i++) 
+            j["Data"][i] = data[i];
+
+        file << std::setw(4) << j;
+    } else {
+        //  Only Data
+        for (unsigned int i=0; i<bins; i++) {
+            file << data[i] << " ";
+        }
+        file << std::endl;
     }
-    // Data
-    for (unsigned int i=0; i<bins; i++) {
-        file << data[i] << " ";
-    }
-    file << std::endl;
     file.close();
 }
 
 bool Histo1d::fromFile(std::string filename) {
-    std::fstream file(filename, std::fstream::in);
-    // Check for header
-    std::string line;
-    std::getline(file, line);
-    if (line.find("Histo1d") == std::string::npos) {
-        std::cerr << "ERROR: Tried loading 1d Histogram from file " << filename << ", but file has non or incorrect header" << std::endl;
-        file.close();
+    std::ifstream file(filename, std::fstream::in);
+    json j;
+    try {
+        if (!file) {
+            throw std::runtime_error("could not open file");
+        }
+        try {
+            j = json::parse(file);
+        } catch (json::parse_error &e) {
+            throw std::runtime_error(e.what());
+        }
+    } catch (std::runtime_error &e) {
+        hlog->error("Error opening histogram: {}", e.what());
+        return false;
+    }
+    // Check for type
+    if (j["Type"].empty()) {
+        hlog->error("Tried loading 1d Histogram from file {}, but file has no header: {}", filename);
         return false;
     } else {
-        file >> name;
-        file >> xAxisTitle;
-        file >> yAxisTitle;
-        file >> zAxisTitle;
-        file >> bins >> xlow >> xhigh;
-        file >> underflow >> overflow;
-    }
-    // Data
+        if (j["Type"] == "Histo1d") {
+            hlog->error("Tried loading 1d Histogram from file {}, but file has incorrect header: {}", filename, std::string(j["Type"]));
+            return false;
+        }
 
-    data = std::vector<double>(bins);
-    for (unsigned int i=0; i<bins; i++) {
-        file >> data[i];
+        name = j["Name"];
+        xAxisTitle = j["x"]["AxisTitle"];
+        yAxisTitle = j["y"]["AxisTitle"];
+        zAxisTitle = j["z"]["AxisTitle"];
+
+        bins = j["x"]["Bins"];
+        xlow = j["x"]["Low"];
+        xhigh = j["x"]["High"];
+
+        underflow = j["underflow"];
+        overflow = j["overflow"];
+
+        data.resize(bins);
+        for (unsigned i=0; i<bins; i++)
+            data[i] = j["data"][i];
     }
     file.close();
     return true;
 }
 
 void Histo1d::plot(std::string prefix, std::string dir) {
-    std::cout << "Plotting: " << HistogramBase::name << std::endl;
+    hlog->info("Plotting: {}", HistogramBase::name);
     // Put raw histo data in tmp file
     std::string tmp_name = std::string(getenv("USER")) + "/tmp_yarr_histo1d_" + prefix;
     this->toFile(tmp_name, "/tmp/", false);

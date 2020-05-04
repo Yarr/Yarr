@@ -105,7 +105,7 @@ class Fei4Event {
 
         void doClustering();
 
-        void toFileBinary(std::fstream &handle);
+        void toFileBinary(std::fstream &handle) const;
         void fromFileBinary(std::fstream &handle);
 
         uint16_t l1id;
@@ -120,7 +120,8 @@ class Fei4Event {
 class Fei4Data : public EventDataBase {
     public:
         static const unsigned numServiceRecords = 32;
-        Fei4Data() {
+        Fei4Data() : lStat(LoopStatus::empty()) {}
+        Fei4Data(LoopStatus &l) : lStat(l) {
             //curEvent = NULL;
             for(unsigned i=0; i<numServiceRecords; i++)
                 serviceRecords.push_back(0);

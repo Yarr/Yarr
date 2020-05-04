@@ -20,6 +20,12 @@
 #include <GennumRegMap.h>
 #include <BitOps.h>
 
+#include "logging.h"
+
+namespace {
+    auto slog = logging::make_log("SpecCom");
+}
+
 
 SpecCom::SpecCom() {
     is_initialized = false;
@@ -33,8 +39,8 @@ SpecCom::SpecCom(unsigned int id) {
         this->init();
         this->configure();
     } catch (Exception &e) {
-        std::cerr << __PRETTY_FUNCTION__ << " -> " << e.toString() << std::endl;
-        std::cerr << __PRETTY_FUNCTION__ <<  " -> Fatal Error! Aborting!"  << std::endl;
+        slog->critical("Error during initilisation:  {}", e.toString());
+        slog->critical("Fatal Error! Aborting!");
         exit(-1);
     }
     is_initialized = true;
@@ -67,13 +73,13 @@ void SpecCom::init(unsigned int id) {
             this->init();
             this->configure();
         } catch (Exception &e) {
-            std::cerr << __PRETTY_FUNCTION__ << " -> " << e.toString() << std::endl;
-            std::cerr << __PRETTY_FUNCTION__ <<  " -> Fatal Error! Aborting!"  << std::endl;
+            slog->critical("Error during initilisation:  {}", e.toString());
+            slog->critical("Fatal Error! Aborting!");
             exit(-1);
         }
         is_initialized = true;
     } else {
-        std::cerr << __PRETTY_FUNCTION__ << " -> " << "Device is already initialzed!" << std::endl;
+        slog->warn("SPEC is already initialzed!");
     }
 }
 
@@ -115,8 +121,7 @@ int SpecCom::writeDma(uint32_t off, uint32_t *data, size_t words) {
         this->startDma();
 
         if (spec->waitForInterrupt(0) < 1) {
-            std::cerr << __PRETTY_FUNCTION__ << " -> " 
-            << "Interrupt timeout, aborting transfer!" << std::endl;
+            slog->error("Interrupt timeout during DMA, aborting transfer!");
             this->abortDma();
         }
 
@@ -130,8 +135,7 @@ int SpecCom::writeDma(uint32_t off, uint32_t *data, size_t words) {
         delete um;
         return 0;
     } else {
-        std::cerr << __PRETTY_FUNCTION__ << " -> " 
-            << "DMA Transfer aborted (Status = 0x" << std::hex << status << std::dec << ")" << std::endl;
+        slog->error("DMA Transfer aborted (Status = 0x{:x})", status);
         return 1;
     }
 }
@@ -148,8 +152,7 @@ int SpecCom::readDma(uint32_t off, uint32_t *data, size_t words) {
         this->startDma();
 
         if (spec->waitForInterrupt(0) < 1) {
-            std::cerr << __PRETTY_FUNCTION__ << " -> " 
-            << "Interrupt timeout, aborting transfer!" << std::endl;
+            slog->error("Interrupt timeout during DMA, aborting transfer!");
             this->abortDma();
         }
         
@@ -164,67 +167,78 @@ int SpecCom::readDma(uint32_t off, uint32_t *data, size_t words) {
         delete um;
         status = this->getDmaStatus(); 
         if (status == DMAABORTED || status == DMAERROR) {
-            std::cerr << __PRETTY_FUNCTION__ << " -> " 
-                << "DMA Transfer failed! (Status = 0x" << std::hex << status << std::dec << ")" << std::endl;
+            slog->error("DMA Transfer aborted (Status = 0x{:x})", status);
             return 1;
         } else {
             return 0;
         }
     } else {
-        std::cerr << __PRETTY_FUNCTION__ << " -> " 
-            << "DMA Transfer aborted! (Status = 0x" << std::hex << status << std::dec << ")" << std::endl;
+        slog->error("DMA Transfer aborted (Status = 0x{:x})", status);
         return 1;
     }
 }
 
 void SpecCom::init() {
-    std::cout << __PRETTY_FUNCTION__ << " -> Opening SPEC with id #" << specId << std::endl;
+    slog->info("Opening SPEC with id #{}", specId);
     // Init SPEC
     try {
         spec = new SpecDevice(specId);
     } catch (Exception &e) {
-        std::cerr << __PRETTY_FUNCTION__ << " -> " << e.toString() << std::endl;
+        slog->error("Error while opening SPEC{}", e.toString());
         throw Exception(Exception::INIT_FAILED);
         return;
     }
     // Open SPEC
     spec->open();
-    std::cout << __PRETTY_FUNCTION__ << " -> Mapping BARs" << std::endl;
+    slog->info("Mapping BARs ...");
     // Map BARs
     try {
         bar0 = spec->mapBAR(0);
-        std::cout << __PRETTY_FUNCTION__ << " -> Mapped BAR0 at 0x" << std::hex << bar0 
-            << " with size 0x" << spec->getBARsize(0) << std::dec << std::endl;
+        slog->info("... Mapped BAR0 at 0x{:x} with size {}", uint64_t(bar0), spec->getBARsize(0));
     } catch (Exception &e) {
-        std::cerr << __PRETTY_FUNCTION__ << " -> " << e.toString() << std::endl;
+        slog->error("Error while mapping BAR: {}", e.toString());
         throw Exception(Exception::INIT_FAILED);
         return;
     }
     try {
         bar4 = spec->mapBAR(4);
-        std::cout << __PRETTY_FUNCTION__ << " -> Mapped BAR4 at 0x" << std::hex << bar4 
-            << " with size 0x" << spec->getBARsize(4) << std::dec << std::endl;
+        slog->info("... Mapped BAR4 at 0x{:x} with size {}", uint64_t(bar4), spec->getBARsize(4));
     } catch (Exception &e) {
         // TODO check if it's the right firmware
-        std::cerr << __PRETTY_FUNCTION__ << " -> BAR4 not map, ignore in case of Kintex7 board (" << e.what() << ")" << std::endl;
+        slog->warn("... BAR4 not mapped ({})", e.what());
         bar4 = NULL;
     }
-    std::cout << __PRETTY_FUNCTION__ << " -> Flushing buffers ..." << std::endl;
+
+    // Print FW info
+    uint32_t fw_vers = readSingle(0x7<<14 | 0x6);
+    uint32_t fw_ident = readSingle(0x7<<14 | 0x7);
+    if (fw_ident == 0xFFFFFFFF || fw_vers == 0xFFFFFFFF) {
+        slog->error("Could not read FW version or identifier!");
+    } else {
+        slog->info("~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+        slog->info("Firmware Version: 0x{:x}", fw_vers);
+        slog->info("Firmware Identifier: 0x{:x}", fw_ident);
+        slog->info("FPGA card: {}", specIdentHw[(fw_ident>>24)&0xFF]);
+        slog->info("FE Chip Type: {}", specIdentChip[(fw_ident>>16)&0xFF]);
+        slog->info("FMC Card Type: {}", specIdentFmc[(fw_ident>>8)&0xFF]);
+        slog->info("RX Speed: {}", specIdentSpeed[(fw_ident>>4)&0xF]);
+        slog->info("Channel Configuration: {}", specIdentChCfg[(fw_ident)&0xF]);
+        slog->info("~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    } 
+    // TODO decode firmware identifier
+
+    slog->info("Flushing buffers ...");
     this->flushDma();
-    std::cout << __PRETTY_FUNCTION__ << " -> Init success!" << std::endl;
+    slog->info("Init success!");
     return;
 }
 
 void SpecCom::configure() {
     if (bar4 != NULL) {
-#ifdef DEBUG
-        std::cout << __PRETTY_FUNCTION__ << " -> Configuring GN412X" << std::endl;
-#endif
+        slog->debug("Configuring GN412X");
         // Activate MSI if necessary
         if (read32(bar4, GNPPCI_MSI_CONTROL/4) != 0x00A55805) {
-#ifdef DEBUG
-            std::cout << __PRETTY_FUNCTION__ << " -> MSI needs to be configured!" << std::endl;
-#endif
+            slog->debug(" -> MSI needs to be configured!");
             this->write32(bar4,GNPPCI_MSI_CONTROL/4, 0x00A55805);
         }
         
@@ -401,9 +415,7 @@ uint32_t SpecCom::getDmaStatus() {
 }
 
 int SpecCom::progFpga(const void *data, size_t size) {
-#ifdef DEBUG
-    std::cout << __PRETTY_FUNCTION__ << " -> Setting up programming of FPGA" <<std::endl;
-#endif
+    slog->debug("Setting up programming of FPGA");
     int size32 = (size + 3) >> 2;
     const uint32_t *data32 = (uint32_t*)data;
 
@@ -421,7 +433,7 @@ int SpecCom::progFpga(const void *data, size_t size) {
     this->write32(bar4, FCL_CTRL/4, 0x40);
     // Check reset is high
     if (0x40 != this->read32(bar4, FCL_CTRL/4)) {
-        std::cerr << __PRETTY_FUNCTION__ << " -> Error setting FCL_CTRL ... aborting!" << std::endl;
+        slog->critical("Error setting FCL_CTRL ... aborting!");
         return -1;
     }
 
@@ -463,9 +475,7 @@ int SpecCom::progFpga(const void *data, size_t size) {
     ctrl |= 0x1;
     this->write32(bar4, FCL_CTRL/4, ctrl);
 
-#ifdef DEBUG
-    std::cout << __PRETTY_FUNCTION__ << " -> Starting programming!" <<std::endl;
-#endif
+    slog->debug("Starting programming ...");
     // Write a bit of data to FCL_FIFO
     int done = 0;
     int wrote = 0;
@@ -477,7 +487,7 @@ int SpecCom::progFpga(const void *data, size_t size) {
 		if ( (i & 8) && wrote) {
 		    done = 1;
 		} else if ( (i & 0x4) && !done) {
-            std::cerr << __PRETTY_FUNCTION__<< " -> Error while programming after " << wrote << " words ... aborting!" << std::endl;
+            slog->critical("Error while programming after {} words ... aborting!", wrote);
             return -1;
 		}
 
@@ -493,9 +503,7 @@ int SpecCom::progFpga(const void *data, size_t size) {
 	}
     // FCL_CTRL -> 0x186 (last data written)
     this->write32(bar4, FCL_CTRL/4, 0x186);
-#ifdef DEBUG
-    std::cout << __PRETTY_FUNCTION__ << " -> Programming done!!" <<std::endl;
-#endif
+    slog->debug("Programming done!!");
     
     //Wait a bit for the FPGA to boot up
     sleep(1);
@@ -506,16 +514,16 @@ int SpecCom::progFpga(const void *data, size_t size) {
     (void) status;
 
     if (irq & 0x4)
-        std::cerr << __PRETTY_FUNCTION__<< " -> FCL IRQ indicates an error, read: 0x" << std::hex << irq << std::dec << std::endl;
+        slog->error("FCL IRQ indicates an error, read: 0x{:x}", irq);
 
-#ifdef DEBUG
-    std::cout << __PRETTY_FUNCTION__ << " -> FCL IRQ: 0x" << std::hex << irq << std::dec << std::endl;
+    slog->debug(" -> FCL IRQ: 0x{:x}", irq);
     if (irq & 0x8)
-        std::cout << __PRETTY_FUNCTION__ << " -> FCL IRQ indicates CONFIG_DONE" <<std::endl;
-    std::cout << __PRETTY_FUNCTION__ << " -> FCL Status: 0x" << std::hex << status << std::dec << std::endl;
+        slog->debug(" -> FCL IRQ indicates CONFIG_DONE");
+
+    slog->debug(" -> FCL Status: 0x{:x}", status);
+
     if (status & 0x8)
-        std::cout << __PRETTY_FUNCTION__ << " -> FCL STATUS indicates SPRI_DONE" <<std::endl;
-#endif
+        slog->info(" -> FCL STATUS indicates SPRI_DONE (programming succesful)!");
 
     return wrote*4;
 }
@@ -857,6 +865,8 @@ void SpecCom::flushDma() {
     volatile uint32_t dma_count = 1;
     unsigned cnt = 0;
     unsigned timeout = 10000000;
+    if (bar4)
+        timeout = 100;
     do {
         dma_addr = readSingle((0x3<<14) | 0x0);
         dma_count = readSingle((0x3<<14) | 0x1);
@@ -865,8 +875,9 @@ void SpecCom::flushDma() {
         (void) dma_count;
     } while (dma_count > 0 && cnt < timeout);
     if (cnt == timeout) {
-        std::cerr << __PRETTY_FUNCTION__ << " -> Timed out while flushing buffers, might read rubbish!" << std::endl;
-        exit(-1);
+        slog->critical("Timed out while flushing buffers, something is wrong ... aborting!");
+        if (!bar4)
+            exit(-1);
     }
 }
 

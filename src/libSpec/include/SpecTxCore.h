@@ -36,6 +36,7 @@
 #define TX_AZ_INTERVAL 0xE
 #define TRIG_ABORT 0xF
 #define TRIG_IN_CNT 0xF
+#define TX_POLARITY 0x10
 
 #define TX_CLK_PERIOD 25e-9
 
@@ -54,8 +55,6 @@
 class SpecTxCore : virtual public TxCore, virtual public SpecCom{
     public:
         SpecTxCore();
-
-        void setVerbose(bool v=true);
 
         void writeFifo(uint32_t value);
         void releaseFifo() {};
@@ -116,11 +115,13 @@ class SpecTxCore : virtual public TxCore, virtual public SpecCom{
         void resetTriggerLogic() {
             SpecCom::writeSingle(TRIG_LOGIC_ADR | 0xFF, 0x1);
         }
+
+        void setTxPolarity(uint32_t value);
+        uint32_t getTxPolarity();
     protected:
         double m_clk_period;
 
     private:
-        bool verbose;
         //uint32_t enMask;
 };
 

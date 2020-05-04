@@ -1,32 +1,34 @@
 #include "SpecRxCore.h"
 #include <cstring>
 
+#include "logging.h"
+
+namespace {
+    auto srxlog = logging::make_log("SpecRx");
+}
+
 SpecRxCore::SpecRxCore() {
-    verbose = false;
 }
 
 void SpecRxCore::setRxEnable(uint32_t value) {
     uint32_t mask = (1 << value);
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << mask << std::dec << std::endl;
+    SPDLOG_LOGGER_TRACE(srxlog, "Value {0:x}", mask);
     SpecCom::writeSingle(RX_ADDR | RX_ENABLE, mask);
 }
 
 void SpecRxCore::setRxEnable(std::vector<uint32_t> channels) {
     uint32_t mask = 0;
     for (uint32_t channel : channels) {
-        mask += (1 << channel);
+        mask |= (1 << channel);
 
     }
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << mask << std::dec << std::endl;
+    SPDLOG_LOGGER_TRACE(srxlog, "Value {0:x}", mask);
     SpecCom::writeSingle(RX_ADDR | RX_ENABLE, mask);
 
 }
 
 void SpecRxCore::disableRx() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(srxlog, "");
     SpecCom::writeSingle(RX_ADDR | RX_ENABLE, 0x0);
 }
 
@@ -35,8 +37,7 @@ void SpecRxCore::maskRxEnable(uint32_t value, uint32_t mask) {
     uint32_t tmp = SpecCom::readSingle(RX_ADDR | RX_ENABLE);
     tmp &= ~mask;
     value |= tmp;
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << value << std::dec << std::endl;
+    SPDLOG_LOGGER_TRACE(srxlog, "Value {0:x}", value);
     SpecCom::writeSingle(RX_ADDR | RX_ENABLE, value);
 }
 
@@ -48,15 +49,13 @@ RawData* SpecRxCore::readData() {
         real_dma_count = dma_count;
         if (dma_count%32 != 0)
             dma_count += 32-(dma_count%32);
-        if (verbose)
-            std::cout << __PRETTY_FUNCTION__ << " : Addr 0x" << std::hex <<
-                dma_addr << " ,Count " << std::dec << dma_count << std::endl;
+
+        SPDLOG_LOGGER_DEBUG(srxlog, "Read data to Addr 0x{:x}, Count {}", dma_addr, dma_count);
         uint32_t *buf = new uint32_t[dma_count];
         std::memset(buf, 0x0, sizeof(uint32_t)*dma_count);
         if (SpecCom::readDma(dma_addr, buf, dma_count)) {
-            std::cout << __PRETTY_FUNCTION__ << std::hex << "0x" << dma_addr << " 0x" << dma_count << std::dec << std::endl;
+            SPDLOG_LOGGER_CRITICAL(srxlog, "Critical error while readin data ... aborting!!");
             exit(1);
-            return NULL;
         }
         return new RawData(dma_addr, buf, real_dma_count);
     } else {
@@ -65,8 +64,7 @@ RawData* SpecRxCore::readData() {
 }
 
 void SpecRxCore::flushBuffer() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(srxlog, "");
     SpecCom::flushDma();
 }
 
@@ -88,4 +86,12 @@ bool SpecRxCore::isBridgeEmpty() {
 
 uint32_t SpecRxCore::getCurCount() {
     return SpecCom::readSingle(RX_BRIDGE | RX_CUR_COUNT);
+}
+
+void SpecRxCore::setRxPolarity(uint32_t value) {
+    SpecCom::writeSingle(RX_ADDR | RX_POLARITY, value);
+}
+
+uint32_t SpecRxCore::getRxPolarity() {
+    return SpecCom::readSingle(RX_ADDR | RX_POLARITY);
 }

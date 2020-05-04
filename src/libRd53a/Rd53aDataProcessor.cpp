@@ -9,12 +9,16 @@
 #include "Rd53aDataProcessor.h"
 #include "AllProcessors.h"
 
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("Rd53aDataProcessor");
+}
+
 bool rd53a_proc_registered =
     StdDict::registerDataProcessor("RD53A", []() { return std::unique_ptr<DataProcessor>(new Rd53aDataProcessor());});
 
-
 Rd53aDataProcessor::Rd53aDataProcessor()  {
-    verbose = true;
     m_input = NULL;
     m_numThreads = std::thread::hardware_concurrency();
 }
@@ -24,8 +28,7 @@ Rd53aDataProcessor::~Rd53aDataProcessor() {
 }
 
 void Rd53aDataProcessor::init() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(logger, "");
 
     for (auto &it : *m_outMap) {
         activeChannels.push_back(it.first);
@@ -33,12 +36,12 @@ void Rd53aDataProcessor::init() {
 }
 
 void Rd53aDataProcessor::run() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    SPDLOG_LOGGER_TRACE(logger, "");
+
     unsigned int numThreads = m_numThreads;
     for (unsigned i=0; i<numThreads; i++) {
         thread_ptrs.emplace_back(new std::thread(&Rd53aDataProcessor::process, this));
-        std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
+        logger->info("  -> Processor thread #{} started!", i);
     }
 }
 
@@ -87,8 +90,7 @@ void Rd53aDataProcessor::process_core() {
         std::map<unsigned, std::unique_ptr<Fei4Data>> curOut;
         std::map<unsigned, int> events;
         for (unsigned i=0; i<activeChannels.size(); i++) {
-            curOut[activeChannels[i]].reset(new Fei4Data());
-            curOut[activeChannels[i]]->lStat = curInV->stat;
+            curOut[activeChannels[i]].reset(new Fei4Data(curInV->stat));
             events[activeChannels[i]] = 0;
         }
 
@@ -104,7 +106,7 @@ void Rd53aDataProcessor::process_core() {
                 uint32_t data = curIn.buf[i];
 
                 unsigned channel = activeChannels[(i/2)%activeChannels.size()];
-                //std::cout << "[" << i << "]\t\t[" << channel << "] = 0x" << std::hex << data << std::dec << std::endl;
+                logger->debug("[{}]\t\t[{}] = 0x{:x}", i, channel, data);
                 if (__builtin_expect(((data & 0xFFFF0000) != 0xFFFF0000 ), 1)) {
                     if ((data >> 25) & 0x1) { // is header
                         l1id[channel] = 0x1F & (data >> 20);
@@ -113,8 +115,7 @@ void Rd53aDataProcessor::process_core() {
                         // Create new event
                         curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
                         events[channel]++;
-                        //std::cout << "[Header] : L1ID(" << l1id[channel] 
-                        //    << ") TAG(" << tag[channel] << ") BCID(" << bcid[channel] << ")" << std::endl;
+                        //logger->debug("[Header] : L1ID({}) TAG({}) BCID({})", l1id[channel], tag[channel], bcid[channel]);
                     } else { // is hit data
                         unsigned core_col = 0x3F & (data >> 26);
                         unsigned core_row = 0x3F & (data >> 20);
@@ -126,15 +127,13 @@ void Rd53aDataProcessor::process_core() {
 
                         unsigned pix_col = core_col*8+((region&0x1)*4);
                         unsigned pix_row = core_row*8+(0x7&(region>>1));
-                        //std::cout << "[Data] : COL(" << core_col << ") ROW(" << core_row  << ") Region(" << region
-                        //    << ") TOT(" << tot3 << "," << tot2 << "," << tot1 << "," << tot0 
-                        //    << ") RAW(0x" << std::hex << data << std::dec << ")" << std::endl;
+                        //logger->debug("[Data] : COL({}) ROW({}) Region({}) TOT({},{},{},{}) RAW(0x{:x})", core_col, core_row, region, tot3, tot2, tot1, tot0, data);
 
                         if (__builtin_expect((pix_col < Rd53a::n_Col && pix_row < Rd53a::n_Row), 1)) {
                             // Check if there is already an event
                             if (events[channel] == 0) {
-                                //std::cout << "# WARNING # " << channel << " no header in data fragment!" << std::endl;
-                                curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
+                                logger->debug("[{}] No header in data fragment!", channel);
+                                curOut[channel]->newEvent(666, l1id[channel], bcid[channel]);
                                 events[channel]++;
                             }
                             // TODO Make decision on pixel address start 0,0 or 1,1
@@ -157,7 +156,7 @@ void Rd53aDataProcessor::process_core() {
                                 hits[channel]++;
                             }
                         } else {
-                            std::cout << dataCnt << " [" << channel << "] Received data not valid: [" << i << "," << curIn.words << "] = 0x" << std::hex << data << " " << std::dec << std::endl;
+                            logger->error("[{}] Received data not valid: 0x{:x}", channel, curIn.words);
                         }
 
                     }
