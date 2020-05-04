@@ -9,6 +9,11 @@
 #include "Fei4Analysis.h"
 
 #include "AllAnalyses.h"
+#include "Bookkeeper.h"
+#include "Fei4Histogrammer.h"
+#include "Fei4MaskLoop.h"
+#include "StdTriggerAction.h"
+#include "lmcurve.h"
 
 #include "logging.h"
 
