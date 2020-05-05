@@ -20,8 +20,8 @@
 
 class GraphErrors : public HistogramBase {
     public:
-        GraphErrors(std::string arg_name, int arg_n, const double *arg_x, const double *arg_y, const double *arg_x_err, const double *arg_y_err, std::type_index t);
-        GraphErrors(std::string arg_name, int arg_n, const double *arg_x, const double *arg_y, const double *arg_x_err, const double *arg_y_err, std::type_index t, LoopStatus &stat);
+        GraphErrors(std::string arg_name, int arg_n, const double *arg_x, const double *arg_y, const double *arg_x_err, const double *arg_y_err);
+        GraphErrors(std::string arg_name, int arg_n, const double *arg_x, const double *arg_y, const double *arg_x_err, const double *arg_y_err, LoopStatus &stat);
         ~GraphErrors();
         
         unsigned size() const;

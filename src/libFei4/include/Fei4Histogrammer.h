@@ -50,7 +50,7 @@ class OccupancyMap : public HistogramAlgorithm {
         }
         
         void create(LoopStatus &stat) override {
-            h = new Histo2d("OccupancyMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this), stat);
+            h = new Histo2d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, stat);
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
             h->setZaxisTitle("Hits");
@@ -74,7 +74,7 @@ class TotMap : public HistogramAlgorithm {
         }
 
         void create(LoopStatus &stat) override {
-            h = new Histo2d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this), stat);
+            h = new Histo2d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, stat);
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
             h->setZaxisTitle("Total ToT");
@@ -96,7 +96,7 @@ class Tot2Map : public HistogramAlgorithm {
         }
 
         void create(LoopStatus &stat) override {
-            h = new Histo2d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this), stat);
+            h = new Histo2d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, stat);
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
             h->setZaxisTitle("Total ToT2");
@@ -118,7 +118,7 @@ class TotDist : public HistogramAlgorithm {
         }
 
         void create(LoopStatus &stat) override {
-            h = new Histo1d(outputName(), 16, 0.5, 16.5, typeid(this), stat);
+            h = new Histo1d(outputName(), 16, 0.5, 16.5, stat);
             h->setXaxisTitle("ToT [bc]");
             h->setYaxisTitle("# of Hits");
             r.reset(h);
@@ -141,7 +141,7 @@ class Tot3d : public HistogramAlgorithm {
         }
 
         void create(LoopStatus &stat) override {
-            h = new Histo3d("Tot3d", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, 16, 0.5, 16.5, typeid(this), stat);
+            h = new Histo3d("Tot3d", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, 16, 0.5, 16.5, stat);
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
             h->setZaxisTitle("ToT");
@@ -165,7 +165,7 @@ class L1Dist : public HistogramAlgorithm {
         }
 
         void create(LoopStatus &stat) override {
-            h = new Histo1d(outputName(), 16, -0.5, 15.5, typeid(this), stat);
+            h = new Histo1d(outputName(), 16, -0.5, 15.5, stat);
             h->setXaxisTitle("L1A");
             h->setYaxisTitle("Hits");
             r.reset(h);
@@ -194,7 +194,7 @@ class L13d : public HistogramAlgorithm {
         }
 
         void create(LoopStatus &stat) override {
-            h = new Histo3d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, 16, -0.5, 15.5, typeid(this), stat);
+            h = new Histo3d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, 16, -0.5, 15.5, stat);
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
             h->setZaxisTitle("L1A");
@@ -224,7 +224,7 @@ class HitsPerEvent : public HistogramAlgorithm {
         }
 
         void create(LoopStatus &stat) override {
-            h = new Histo1d(outputName(), 16, -0.5, 15.5, typeid(this), stat);
+            h = new Histo1d(outputName(), 16, -0.5, 15.5, stat);
             h->setXaxisTitle("Number of Hits");
             h->setYaxisTitle("Events");
             r.reset(h);

@@ -8,22 +8,20 @@
 
 #include "HistogramBase.h"
 
-HistogramBase::HistogramBase(std::string arg_name, std::type_index t, LoopStatus &stat)
-  : type(typeid(void)), lStat(stat) {
+HistogramBase::HistogramBase(std::string arg_name, LoopStatus &stat)
+  : lStat(stat) {
     name = arg_name;
     xAxisTitle = "x";
     yAxisTitle = "y";
     zAxisTitle = "z";
-    type = t;
 }
 
-HistogramBase::HistogramBase(std::string arg_name, std::type_index t)
-  : type(typeid(void)), lStat(LoopStatus::empty()) {
+HistogramBase::HistogramBase(std::string arg_name)
+  : lStat(LoopStatus::empty()) {
     name = arg_name;
     xAxisTitle = "x";
     yAxisTitle = "y";
     zAxisTitle = "z";
-    type = t;
 }
 
 HistogramBase::~HistogramBase() {

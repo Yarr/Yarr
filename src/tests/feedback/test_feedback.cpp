@@ -209,7 +209,7 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
                         stat.get(0), stat.get(1), stat.get(2));
 
           // As there's no inner loop, send feedback as soon as data arrives
-          auto h = new Histo2d("Test", 80, 0, 20, 336, 0, 20, typeid(void*));
+          auto h = new Histo2d("Test", 80, 0, 20, 336, 0, 20);
           fb->feedback(0, h);
           feedback_count ++;
 
