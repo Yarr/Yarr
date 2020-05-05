@@ -95,7 +95,7 @@ void OccupancyAnalysis::init(ScanBase *s) {
 
 void OccupancyAnalysis::processHistogram(HistogramBase *h) {
     // Check if right Histogram
-    if (h->getType() != typeid(OccupancyMap*))
+    if (h->getName() != OccupancyMap::outputName())
         return;
 
     // Select correct output container
@@ -282,13 +282,13 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
     }
 
     // Gather Histogram
-    if (h->getType() == typeid(OccupancyMap*)) {
+    if (h->getName() == OccupancyMap::outputName()) {
         occMaps[ident]->add(*(Histo2d*)h);
         occInnerCnt[ident]++;
-    } else if (h->getType() == typeid(TotMap*)) {
+    } else if (h->getName() == TotMap::outputName()) {
         totMaps[ident]->add(*(Histo2d*)h);
         totInnerCnt[ident]++;
-    } else if (h->getType() == typeid(Tot2Map*)) {
+    } else if (h->getName() == Tot2Map::outputName()) {
         tot2Maps[ident]->add(*(Histo2d*)h);
         tot2InnerCnt[ident]++;
     } else {
@@ -512,7 +512,7 @@ double scurveFct(double x, const double *par) {
 void ScurveFitter::processHistogram(HistogramBase *h) {
     cnt++;
     // Check if right Histogram
-    if (h->getType() != typeid(OccupancyMap*))
+    if (h->getName() != OccupancyMap::outputName())
         return;
 
     Histo2d *hh = (Histo2d*) h;
@@ -845,7 +845,7 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
 
 void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
     // Check if right Histogram
-    if (h->getType() != typeid(OccupancyMap*))
+    if (h->getName() != OccupancyMap::outputName())
         return;
 
     // Select correct output container
@@ -974,7 +974,7 @@ void OccPixelThresholdTune::init(ScanBase *s) {
 
 void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
     // Check if right Histogram
-    if (h->getType() != typeid(OccupancyMap*))
+    if (h->getName() != OccupancyMap::outputName())
         return;
 
     // Select correct output container
@@ -1100,7 +1100,7 @@ void L1Analysis::processHistogram(HistogramBase *h) {
     }
 
     // Add up Histograms
-    if (h->getType() == typeid(L1Dist*)) {
+    if (h->getName() == L1Dist::outputName()) {
         l1Histos[ident]->add(*(Histo1d*)h);
         innerCnt[ident]++;
     } else {
@@ -1157,7 +1157,7 @@ void TotDistPlotter::init(ScanBase *s) {
 
 void TotDistPlotter::processHistogram(HistogramBase *h) {
     // Check if right Histogram
-    if (h->getType() != typeid(TotDist*))
+    if (h->getName() != TotDist::outputName())
         return;
 
     // Select correct output container
@@ -1201,9 +1201,9 @@ void NoiseAnalysis::init(ScanBase *s) {
 }
 
 void NoiseAnalysis::processHistogram(HistogramBase *h) {
-    if (h->getType() == typeid(OccupancyMap*)) {
+    if (h->getName() == OccupancyMap::outputName()) {
         occ->add(*(Histo2d*)h);
-    } else if (h->getType() == typeid(HitsPerEvent*)) {
+    } else if (h->getName() == HitsPerEvent::outputName()) {
         n_trigger += ((Histo1d*)h)->getEntries();       
     }
 }
@@ -1292,7 +1292,7 @@ void NoiseTuning::init(ScanBase *s) {
 }
 
 void NoiseTuning::processHistogram(HistogramBase *h) {
-    if (!(h->getType() == typeid(OccupancyMap*)))
+    if (!(h->getName() == OccupancyMap::outputName()))
         return;
 
     // Select correct output container
@@ -1416,7 +1416,7 @@ void DelayAnalysis::init(ScanBase *s) {
 
 void DelayAnalysis::processHistogram(HistogramBase *h) {
     // Check if right Histogram
-    if (h->getType() != typeid(L13d*))
+    if (h->getName() != L13d::outputName())
         return;
 
 
