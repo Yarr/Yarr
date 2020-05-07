@@ -14,8 +14,7 @@
 #include "logging.h"
 
 namespace {
-  auto logger = logging::make_log("Rd53a");
-
+    auto logger = logging::make_log("Rd53a");
 }
 
 bool rd53a_registred =
@@ -24,7 +23,7 @@ bool rd53a_registred =
 Rd53a::Rd53a() : FrontEnd(), Rd53aCfg(), Rd53aCmd() {
     txChannel = 99;
     rxChannel = 99;
-	active = true;
+    active = true;
     geo.nRow = 192;
     geo.nCol = 400;
 }
@@ -33,7 +32,7 @@ Rd53a::Rd53a(HwController *core) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
     m_rxcore = core;
     txChannel = 99;
     rxChannel = 99;
-	active = true;
+    active = true;
     geo.nRow = 192;
     geo.nCol = 400;
     core->setClkPeriod(6.25e-9);
@@ -41,9 +40,9 @@ Rd53a::Rd53a(HwController *core) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
 
 Rd53a::Rd53a(HwController *core, unsigned arg_channel) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
     m_rxcore = core;
-	txChannel = arg_channel;
-	rxChannel = arg_channel;
-	active = true;
+    txChannel = arg_channel;
+    rxChannel = arg_channel;
+    active = true;
     geo.nRow = 192;
     geo.nCol = 400;
     core->setClkPeriod(6.25e-9);
@@ -51,9 +50,9 @@ Rd53a::Rd53a(HwController *core, unsigned arg_channel) : FrontEnd(), Rd53aCfg(),
 
 Rd53a::Rd53a(HwController *core, unsigned arg_txChannel, unsigned arg_rxChannel) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
     m_rxcore = core;
-	txChannel = arg_txChannel;
-	rxChannel = arg_rxChannel;
-	active = true;
+    txChannel = arg_txChannel;
+    rxChannel = arg_rxChannel;
+    active = true;
     geo.nRow = 192;
     geo.nCol = 400;
     core->setClkPeriod(6.25e-9);
@@ -70,12 +69,12 @@ void Rd53a::init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rx
 }
 
 void Rd53a::writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value) {
-        (this->*ref).write(value);
-        wrRegister(m_chipId, (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
+    (this->*ref).write(value);
+    wrRegister(m_chipId, (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
 }
 
 void Rd53a::readRegister(Rd53aReg Rd53aGlobalCfg::*ref) {
-  rdRegister(m_chipId, (this->*ref).addr());
+    rdRegister(m_chipId, (this->*ref).addr());
 }
 
 void Rd53a::configure() {
@@ -259,7 +258,7 @@ int Rd53a::checkCom() {
     uint32_t regValue = m_cfg[regAddr];
     rdRegister(m_chipId, regAddr);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    
+
     // TODO not happy about this, rx knowledge should not be here
     RawData *data = m_rxcore->readData();
 
@@ -270,7 +269,7 @@ int Rd53a::checkCom() {
         }
         std::pair<uint32_t, uint32_t> answer = decodeSingleRegRead(data->buf[0], data->buf[1]);
         logger->debug("Addr ({}) Value({})", answer.first, answer.second);
-        
+
         if (answer.first != regAddr || answer.second != regValue) {
             logger->error("Received data was not as expected:");
             logger->error("    Received Addr: {} (expected {})", answer.first, regAddr);

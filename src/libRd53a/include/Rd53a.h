@@ -1,7 +1,5 @@
 #ifndef RD53A_H
 #define RD53A_H
-
-
 // #################################
 // # Author: Timon Heim
 // # Email: timon.heim at cern.ch
