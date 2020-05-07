@@ -348,12 +348,13 @@ def main():
             sys.exit(1)
         # make directory
         dir_path = args.directory
+        logger.info('Retrieve/Create data files in {}'.format(dir_path))
         if dir_path=='localdb':
             logger.error('Not set directory name to "localdb"')
             sys.exit()
         if os.path.isdir(dir_path):
             logger.warning('Already exist directory: {}.'.format(dir_path))
-            answer = input('\nDelete it? [y/n]\n> ')
+            answer = input('\nOverride it? [y/n] (Exit without doing anything if "n")\n> ')
             print('')
             if answer.lower()=='y':
                 shutil.rmtree(dir_path)
