@@ -31,7 +31,7 @@ class RxCore {
         virtual uint32_t getCurCount() {return 0;};
         virtual bool isBridgeEmpty() = 0;
 
-        std::chrono::microseconds getWaitTime() {
+        virtual std::chrono::microseconds getWaitTime() {
             return m_waitTime;
         }
 

@@ -35,7 +35,14 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq53 {
         uint32_t getDataRate();
         bool isBridgeEmpty();  
         
+        std::chrono::microseconds getWaitTime() {
+            return m_waitTime;
+        }
+
         void printBufferStatus();
+    
+    protected:
+        std::chrono::microseconds m_waitTime; 
 
     private:
         bool verbose;

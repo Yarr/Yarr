@@ -69,7 +69,6 @@ void StdDataLoop::execPart2() {
         //delete newData;
     }
     // Gather rest of data after timeout (defined by controller)
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     std::this_thread::sleep_for(g_rx->getWaitTime());
     do {
         //curCnt = g_rx->getCurCount();

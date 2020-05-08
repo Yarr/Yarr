@@ -31,10 +31,17 @@ class BdaqController : public HwController, public BdaqTxCore, public BdaqRxCore
             c.i2cAddr  = 0x1000;
             c.cmdAddr  = 0x9000;
             c.gpioAddr = 0x2100;
+            waitTime = std::chrono::microseconds(10*1000); //converting from ms to us, integer only.
             initialize(c);
             
-        }        
+        }
+
+        void runMode() override final {
+            BdaqRxCore::m_waitTime = waitTime;
+        }
+
     private:
+        std::chrono::microseconds waitTime;
 };
 
 #endif

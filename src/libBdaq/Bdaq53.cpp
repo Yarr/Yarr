@@ -23,7 +23,7 @@ void Bdaq53::initialize(bdaqConfig c) {
 	cmd.checkVersion();
 	cmd.init();
 	tcp.connect(c.ipAddr, c.tcpPort);	
-	dv = getDaqVersion(); //getDaqVersion must be called after auroraRx.setBase()
+	dv = getDaqVersion(); // getDaqVersion must be called after auroraRx.setBase()
 	if (VERSION != dv.fwVersion) {
 		std::string error = "Firmware version " + dv.fwVersion + 
 		" is different than software version " + VERSION + "! Please update.";

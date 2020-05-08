@@ -186,7 +186,7 @@ void Rd53aMaskLoop::execPart1() {
         // TODO make configrue for subset
         // TODO set cmeEnable correctly
         dynamic_cast<Rd53a*>(fe)->configurePixels(modPixels);
-        std::cout << "modPixels.size(): " << modPixels.size() << std::endl;
+        //std::cout << "modPixels.size(): " << modPixels.size() << std::endl;
         while(!g_tx->isCmdEmpty()) {}
     }
     // Reset CMD mask

@@ -39,7 +39,8 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
     loopType = typeid(this);
 }
 
-#define DCOUNT (dcount < 2)
+//#define DCOUNT (dcount < 2)
+#define DCOUNT (0)
 
 void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
     m_trigWord.fill(0x69696969);
@@ -152,7 +153,7 @@ void Rd53aTriggerLoop::execPart1() {
     dynamic_cast<Rd53a*>(g_fe)->idle();
     // AZ level for sync FE, m_chipId is not available here. 
     // "Start monitoring" is also set in GlobalPulseRt, might be a problem?
-    dynamic_cast<Rd53a*>(g_fe)->globalPulse(8/*m_chipId*/, 9); 
+    //dynamic_cast<Rd53a*>(g_fe)->globalPulse(8/*m_chipId*/, 9); 
     std::this_thread::sleep_for(std::chrono::microseconds(200));
     g_rx->flushBuffer();
     while(!g_tx->isCmdEmpty());
