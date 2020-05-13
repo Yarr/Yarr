@@ -253,10 +253,176 @@ class Rd53bGlobalCfg {
         //68
         Rd53bReg DataMergeInPol;
         Rd53bReg EnChipId;
-        Rd53bReg DataMergeEnClk;
+        Rd53bReg DataMergeSelClk;
+        Rd53bReg DataMergeEnClkGate;
         Rd53bReg DataMergeEn;
         Rd53bReg DataMergeEnBond;
-
+        //69
+        Rd53bReg DataMergeInMux3;
+        Rd53bReg DataMergeInMux2;
+        Rd53bReg DataMergeInMux1;
+        Rd53bReg DataMergeInMux0;
+        Rd53bReg DataMergeOutMux3;
+        Rd53bReg DataMergeOutMux2;
+        Rd53bReg DataMergeOutMux1;
+        Rd53bReg DataMergeOutMux0;
+        //70-73
+        Rd53bReg EnCoreColCal3;
+        Rd53bReg EnCoreColCal2;
+        Rd53bReg EnCoreColCal1;
+        Rd53bReg EnCoreColCal0;
+        //74
+        Rd53bReg DataEnBcid;
+        Rd53bReg DataEnL1id;
+        Rd53bReg DataEnEos;
+        Rd53bReg NumOfEventsInStream;
+        //75
+        Rd53bReg DataEnBinaryRo;
+        Rd53bReg DataEnRaw;
+        Rd53bReg DataEnHitRemoval;
+        Rd53bReg DataMaxHits;
+        Rd53bReg DataEnIsoHitRemoval;
+        Rd53bReg DataMaxTot;
+        //76
+        Rd53bReg EvenMask;
+        //77
+        Rd53bReg OddMask;
+        //78
+        Rd53bReg EfuseConfig;
+        //79
+        Rd53bReg EfuseWriteData1;
+        //80
+        Rd53bReg EfuseWriteData0;
+        //81
+        Rd53bReg AuroraEnPrbs;
+        Rd53bReg AuroraActiveLanes;
+        Rd53bReg AuroraCCWait;
+        Rd53bReg AuroraCCSend;
+        //82
+        Rd53bReg AuroraCBWait1;
+        //83
+        Rd53bReg AuroraCBWait0;
+        Rd53bReg AuroraCBSend;
+        //84
+        Rd53bReg AuroraInitWait;
+        //85
+        Rd53bReg GpValReg;
+        Rd53bReg GpCmosEn;
+        Rd53bReg GpLvdsEn;
+        Rd53bReg GpLvdsBias;
+        //86
+        Rd53bReg GpCmosRoute;
+        //87
+        Rd53bReg GpLvdsPad3;
+        Rd53bReg GpLvdsPad2;
+        //88
+        Rd53bReg GpLvdsPad1;
+        Rd53bReg GpLvdsPad0;
+        //89
+        Rd53bReg CdrCp;
+        //90
+        Rd53bReg CdrCpFd;
+        //91
+        Rd53bReg CdrCpBuff;
+        //92
+        Rd53bReg CdrVco;
+        //93
+        Rd53bReg CdrVcoBuff;
+        //94
+        Rd53bReg SerSelOut3;
+        Rd53bReg SerSelOut2;
+        Rd53bReg SerSelOut1;
+        Rd53bReg SerSelOut0;
+        //95
+        Rd53bReg SerInvTap;
+        Rd53bReg SerEnTap;
+        Rd53bReg SerEnLane;
+        //96
+        Rd53bReg CmlBias2;
+        //97
+        Rd53bReg CmlBias1;
+        //98
+        Rd53bReg CmlBias0;
+        //99
+        Rd53bReg MonitorEnable;
+        Rd53bReg MonitorI;
+        Rd53bReg MonitorV;
+        //100
+        Rd53bReg ErrWngMask;
+        //101
+        Rd53bReg MonSensSldoDigEn;
+        Rd53bReg MonSensSldoDigDem;
+        Rd53bReg MonSensSldoDigSelBias;
+        Rd53bReg MonSensSldoAnaEn;
+        Rd53bReg MonSensSldoAnaDem;
+        Rd53bReg MonSensSldoAnaSelBias;
+        //102
+        Rd53bReg MonSensAcbEn;
+        Rd53bReg MonSensAcbDem;
+        Rd53bReg MonSensAcbSelBias;
+        //103
+        Rd53bReg VrefRsensBot;
+        Rd53bReg VrefRsensTop;
+        Rd53bReg VrefIn;
+        Rd53bReg MonAdcTrim;
+        //104
+        Rd53bReg NtcDac;
+        //105-108
+        Rd53bReg HitOrMask3;
+        Rd53bReg HitOrMask2;
+        Rd53bReg HitOrMask1;
+        Rd53bReg HitOrMask0;
+        //109-116
+        Rd53bReg AutoRead0;
+        Rd53bReg AutoRead1;
+        Rd53bReg AutoRead2;
+        Rd53bReg AutoRead3;
+        Rd53bReg AutoRead4;
+        Rd53bReg AutoRead5;
+        Rd53bReg AutoRead6;
+        Rd53bReg AutoRead7;
+        //117
+        Rd53bReg RingOscBClear;
+        Rd53bReg RingOscBEnBl;
+        Rd53bReg RingOscBEnCapA;
+        Rd53bReg RingOscBEnFf;
+        Rd53bReg RingOscBEnLvt;
+        Rd53bReg RingOscAClear;
+        Rd53bReg RingOscAEn;
+        //118
+        Rd53bReg RingOscARoute;
+        Rd53bReg RingOscBRoute;
+        //119-120
+        Rd53bReg RingOscAOut;
+        Rd53bReg RingOscBOut;
+        //121-123 RO
+        Rd53bReg BcidCnt;
+        Rd53bReg TrigCnt;
+        Rd53bReg ReadTrigCnt;
+        //124-128
+        Rd53bReg LockLossCnt;
+        Rd53bReg BitFLipWngCnt;
+        Rd53bReg BitFLipErrCnt;
+        Rd53bReg CmdErrCnt;
+        Rd53bReg RdWrFifoErrCnt;
+        //129
+        Rd53bReg AiRegionRow;
+        //130-133
+        Rd53bReg HitOrCnt3;
+        Rd53bReg HitOrCnt2;
+        Rd53bReg HitOrCnt1;
+        Rd53bReg HitOrCnt0;
+        //134
+        Rd53bReg SkippedTrigCnt;
+        //135-136
+        Rd53bReg EfuseReadData0;
+        Rd53bReg EfuseReadData1;
+        //137
+        Rd53bReg MonitoringDataAdc;
+        //138-201
+        //SEU_notmr - not implemented, do not need to store
+        //202-255
+        //SEU - not implemented, do not need to store
 };
 
 
