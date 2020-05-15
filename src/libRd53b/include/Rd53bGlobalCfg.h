@@ -78,11 +78,13 @@ class Rd53bGlobalCfg {
     protected:
         static constexpr unsigned numRegs = 138;
         std::array<uint16_t, numRegs> m_cfg;
+        std::map<std::string, Rd53bReg Rd53bGlobalCfg::*> regMap;
 
         void toJson(json &j);
         void fromJson(json &j);
     private:
     public:
+
         //0
         Rd53bReg PixPortal;
         //1
@@ -201,7 +203,7 @@ class Rd53bGlobalCfg {
         Rd53bReg SelfTrigDigThrEn;
         Rd53bReg SelfTrigDigThr;
         //49
-        Rd53bReg SelTrigDelay;
+        Rd53bReg SelfTrigDelay;
         Rd53bReg SelfTrigMulti;
         //50
         Rd53bReg SelfTrigPattern;
@@ -405,8 +407,8 @@ class Rd53bGlobalCfg {
         Rd53bReg ReadTrigCnt;
         //124-128
         Rd53bReg LockLossCnt;
-        Rd53bReg BitFLipWngCnt;
-        Rd53bReg BitFLipErrCnt;
+        Rd53bReg BitFlipWngCnt;
+        Rd53bReg BitFlipErrCnt;
         Rd53bReg CmdErrCnt;
         Rd53bReg RdWrFifoErrCnt;
         //129
