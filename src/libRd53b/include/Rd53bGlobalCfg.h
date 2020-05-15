@@ -90,7 +90,9 @@ class Rd53bGlobalCfg {
         //2
         Rd53bReg PixRegionRow;
         //3
-        Rd53bReg PixMode;
+        Rd53bReg PixBroadcast;
+        Rd53bReg PixConfWrConfig;
+        Rd53bReg PixAutoRow;
         //4
         Rd53bReg PixDefaultConfig;
         //5
@@ -192,7 +194,7 @@ class Rd53bGlobalCfg {
 
         // Digital functions
         //47
-        Rd53bReg TrigMode;
+        Rd53bReg TwoLevelTrig;
         Rd53bReg Latency;
         //48
         Rd53bReg SelfTrigEn;
@@ -204,7 +206,7 @@ class Rd53bGlobalCfg {
         //50
         Rd53bReg SelfTrigPattern;
         //51
-        Rd53bReg ColReadDelay;
+        Rd53bReg DataReadDelay;
         Rd53bReg ReadTrigLatency;
         //52
         Rd53bReg TruncTimeoutConf;
@@ -308,6 +310,7 @@ class Rd53bGlobalCfg {
         //85
         Rd53bReg GpValReg;
         Rd53bReg GpCmosEn;
+        Rd53bReg GpCmosDs;
         Rd53bReg GpLvdsEn;
         Rd53bReg GpLvdsBias;
         //86
@@ -384,6 +387,7 @@ class Rd53bGlobalCfg {
         //117
         Rd53bReg RingOscBClear;
         Rd53bReg RingOscBEnBl;
+        Rd53bReg RingOscBEnBr;
         Rd53bReg RingOscBEnCapA;
         Rd53bReg RingOscBEnFf;
         Rd53bReg RingOscBEnLvt;

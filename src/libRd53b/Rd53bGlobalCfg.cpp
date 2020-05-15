@@ -32,339 +32,343 @@ void Rd53bGlobalCfg::init() {
     //0
     PixPortal.init          (  0, &m_cfg[  0], 0, 16, 0);
     //1
-    PixRegionCol.init       (  1, &m_cfg[  0], 0, 16, 0);
+    PixRegionCol.init       (  1, &m_cfg[  1], 0, 16, 0);
     //2
-    PixRegionRow.init       (  2, &m_cfg[  0], 0, 16, 0);
+    PixRegionRow.init       (  2, &m_cfg[  2], 0, 16, 0);
     //3
-    PixMode.init            (  3, &m_cfg[  0], 0, 16, 0);
+    PixBroadcast.init       (  3, &m_cfg[  3], 0, 1, 0);
+    PixConfWrConfig.init    (  3, &m_cfg[  3], 1, 1, 1);
+    PixAutoRow.init         (  3, &m_cfg[  3], 2, 1, 0);
     //4
-    PixDefaultConfig.init   (  4, &m_cfg[  0], 0, 16, 0);
+    PixDefaultConfig.init   (  4, &m_cfg[  4], 0, 16, 0x9CE2);
     //5
-    PixDefaultConfigB.init  (  5, &m_cfg[  0], 0, 16, 0);
+    PixDefaultConfigB.init  (  5, &m_cfg[  5], 0, 16, 0x631D);
     //6
-    GcrDefaultConfig.init   (  6, &m_cfg[  0], 0, 16, 0);
+    GcrDefaultConfig.init   (  6, &m_cfg[  6], 0, 16, 0xAC75);
     //7
-    GcrDefaultConfigB.init  (  7, &m_cfg[  0], 0, 16, 0);
+    GcrDefaultConfigB.init  (  7, &m_cfg[  7], 0, 16, 0x538A);
 
     // Diff AFE
     //8
-    DiffPreampL.init        (  8, &m_cfg[  0], 0, 16, 0);
+    DiffPreampL.init        (  8, &m_cfg[  8], 0, 16, 50);
     //9
-    DiffPreampR.init        (  9, &m_cfg[  0], 0, 16, 0);
+    DiffPreampR.init        (  9, &m_cfg[  9], 0, 16, 50);
     //10
-    DiffPreampTL.init       ( 10, &m_cfg[  0], 0, 16, 0);
+    DiffPreampTL.init       ( 10, &m_cfg[ 10], 0, 16, 50);
     //11
-    DiffPreampTR.init       ( 11, &m_cfg[  0], 0, 16, 0);
+    DiffPreampTR.init       ( 11, &m_cfg[ 11], 0, 16, 50);
     //12
-    DiffPreampT.init        ( 12, &m_cfg[  0], 0, 16, 0);
+    DiffPreampT.init        ( 12, &m_cfg[ 12], 0, 16, 50);
     //13
-    DiffPreampM.init        ( 13, &m_cfg[  0], 0, 16, 0);
+    DiffPreampM.init        ( 13, &m_cfg[ 13], 0, 16, 50);
     //14
-    DiffPreComp.init        ( 14, &m_cfg[  0], 0, 16, 0);
+    DiffPreComp.init        ( 14, &m_cfg[ 14], 0, 16, 50);
     //15
-    DiffComp.init           ( 15, &m_cfg[  0], 0, 16, 0);
+    DiffComp.init           ( 15, &m_cfg[ 15], 0, 16, 50);
     //16
-    DiffVff.init            ( 16, &m_cfg[  0], 0, 16, 0);
+    DiffVff.init            ( 16, &m_cfg[ 16], 0, 16, 100);
     //17
-    DiffTh1L.init           ( 17, &m_cfg[  0], 0, 16, 0);
+    DiffTh1L.init           ( 17, &m_cfg[ 17], 0, 16, 100);
     //18
-    DiffTh1R.init           ( 18, &m_cfg[  0], 0, 16, 0);
+    DiffTh1R.init           ( 18, &m_cfg[ 18], 0, 16, 100);
     //19
-    DiffTh1M.init           ( 19, &m_cfg[  0], 0, 16, 0);
+    DiffTh1M.init           ( 19, &m_cfg[ 19], 0, 16, 100);
     //20
-    DiffTh2.init            ( 20, &m_cfg[  0], 0, 16, 0);
+    DiffTh2.init            ( 20, &m_cfg[ 20], 0, 16, 0);
     //21
-    DiffLcc.init            ( 21, &m_cfg[  0], 0, 16, 0);
+    DiffLcc.init            ( 21, &m_cfg[ 21], 0, 16, 100);
     //37
-    DiffLccEn.init          ( 37, &m_cfg[  0], 0, 16, 0);
-    DiffFbCapEn.init        ( 37, &m_cfg[  0], 0, 16, 0);
+    DiffLccEn.init          ( 37, &m_cfg[ 37], 0, 16, 0);
+    DiffFbCapEn.init        ( 37, &m_cfg[ 37], 0, 16, 0);
 
     // Lin AFE
     //22
-    LinPreampL.init         ( 22, &m_cfg[  0], 0, 16, 0);
+    LinPreampL.init         ( 22, &m_cfg[ 22], 0, 16, 300);
     //23
-    LinPreampR.init         ( 23, &m_cfg[  0], 0, 16, 0);
+    LinPreampR.init         ( 23, &m_cfg[ 23], 0, 16, 300);
     //24
-    LinPreampTL.init        ( 24, &m_cfg[  0], 0, 16, 0);
+    LinPreampTL.init        ( 24, &m_cfg[ 24], 0, 16, 300);
     //25
-    LinPreampTR.init        ( 25, &m_cfg[  0], 0, 16, 0);
+    LinPreampTR.init        ( 25, &m_cfg[ 25], 0, 16, 300);
     //26
-    LinPreampT.init         ( 26, &m_cfg[  0], 0, 16, 0);
+    LinPreampT.init         ( 26, &m_cfg[ 26], 0, 16, 300);
     //27
-    LinPreampM.init         ( 27, &m_cfg[  0], 0, 16, 0);
+    LinPreampM.init         ( 27, &m_cfg[ 27], 0, 16, 300);
     //28
-    LinFc.init              ( 28, &m_cfg[  0], 0, 16, 0);
+    LinFc.init              ( 28, &m_cfg[ 28], 0, 16, 20);
     //29
-    LinKrumCurr.init        ( 29, &m_cfg[  0], 0, 16, 0);
+    LinKrumCurr.init        ( 29, &m_cfg[ 29], 0, 16, 50);
     //30
-    LinRefKrum.init         ( 30, &m_cfg[  0], 0, 16, 0);
+    LinRefKrum.init         ( 30, &m_cfg[ 30], 0, 16, 300);
     //31
-    LinComp.init            ( 31, &m_cfg[  0], 0, 16, 0);
+    LinComp.init            ( 31, &m_cfg[ 31], 0, 16, 110);
     //32
-    LinCompTa.init          ( 32, &m_cfg[  0], 0, 16, 0);
+    LinCompTa.init          ( 32, &m_cfg[ 32], 0, 16, 110);
     //33
-    LinGdacL.init           ( 33, &m_cfg[  0], 0, 16, 0);
+    LinGdacL.init           ( 33, &m_cfg[ 33], 0, 16, 408);
     //34
-    LinGdacR.init           ( 34, &m_cfg[  0], 0, 16, 0);
+    LinGdacR.init           ( 34, &m_cfg[ 34], 0, 16, 408);
     //35
-    LinGdacM.init           ( 35, &m_cfg[  0], 0, 16, 0);
+    LinGdacM.init           ( 35, &m_cfg[ 35], 0, 16, 408);
     //36
-    LinLdac.init            ( 36, &m_cfg[  0], 0, 16, 0);
+    LinLdac.init            ( 36, &m_cfg[ 36], 0, 16, 100);
 
     // Power
     //38
-    SldoEnUndershuntA.init  ( 38, &m_cfg[  0], 0, 16, 0);
-    SldoEnUndershuntB.init  ( 28, &m_cfg[  0], 0, 16, 0);
-    SldoTrimA.init          ( 38, &m_cfg[  0], 0, 16, 0);
-    SldoTrimB.init          ( 38, &m_cfg[  0], 0, 16, 0);
+    SldoEnUndershuntA.init  ( 38, &m_cfg[ 38], 0,  1, 0);
+    SldoEnUndershuntB.init  ( 38, &m_cfg[ 38], 1,  1, 0);
+    SldoTrimA.init          ( 38, &m_cfg[ 38], 2,  4, 8);
+    SldoTrimB.init          ( 38, &m_cfg[ 38], 6,  4, 8);
 
     // Pixel Matrix
     //39
-    EnCoreCol3.init         ( 39, &m_cfg[  0], 0, 16, 0);
+    EnCoreCol3.init         ( 39, &m_cfg[ 39], 0,  6, 63);
     //40
-    EnCoreCol2.init         ( 40, &m_cfg[  0], 0, 16, 0);
+    EnCoreCol2.init         ( 40, &m_cfg[ 40], 0, 16, 65535);
     //41
-    EnCoreCol1.init         ( 41, &m_cfg[  0], 0, 16, 0);
+    EnCoreCol1.init         ( 41, &m_cfg[ 41], 0, 16, 65535);
     //42
-    EnCoreCol0.init         ( 42, &m_cfg[  0], 0, 16, 0);
+    EnCoreCol0.init         ( 42, &m_cfg[ 42], 0, 16, 65535);
     //43
-    RstCoreCol3.init        ( 43, &m_cfg[  0], 0, 16, 0);
+    RstCoreCol3.init        ( 43, &m_cfg[ 43], 0,  6, 0);
     //44
-    RstCoreCol2.init        ( 44, &m_cfg[  0], 0, 16, 0);
+    RstCoreCol2.init        ( 44, &m_cfg[ 44], 0, 16, 0);
     //45
-    RstCoreCol1.init        ( 45, &m_cfg[  0], 0, 16, 0);
+    RstCoreCol1.init        ( 45, &m_cfg[ 45], 0, 16, 0);
     //46
-    RstCoreCol0.init        ( 46, &m_cfg[  0], 0, 16, 0);
+    RstCoreCol0.init        ( 46, &m_cfg[ 46], 0, 16, 0);
 
     // Digital functions
     //47
-    TrigMode.init           ( 47, &m_cfg[  0], 0, 16, 0);
-    Latency.init            ( 47, &m_cfg[  0], 0, 16, 0);
+    TwoLevelTrig.init       ( 47, &m_cfg[ 47], 0,  1, 0);
+    Latency.init            ( 47, &m_cfg[ 47], 1,  9, 500);
     //48
-    SelfTrigEn.init         ( 48, &m_cfg[  0], 0, 16, 0);
-    SelfTrigDigThrEn.init   ( 48, &m_cfg[  0], 0, 16, 0);
-    SelfTrigDigThr.init     ( 48, &m_cfg[  0], 0, 16, 0);
+    SelfTrigEn.init         ( 48, &m_cfg[ 48], 0,  1, 0);
+    SelfTrigDigThrEn.init   ( 48, &m_cfg[ 48], 1,  1, 0);
+    SelfTrigDigThr.init     ( 48, &m_cfg[ 48], 2,  4, 1);
     //49
-    SelTrigDelay.init       ( 49, &m_cfg[  0], 0, 16, 0);
-    SelfTrigMulti.init      ( 49, &m_cfg[  0], 0, 16, 0);
+    SelTrigDelay.init       ( 49, &m_cfg[ 49], 0, 10, 512);
+    SelfTrigMulti.init      ( 49, &m_cfg[ 49], 10, 5, 4);
     //50
-    SelfTrigPattern.init    ( 50, &m_cfg[  0], 0, 16, 0);
+    SelfTrigPattern.init    ( 50, &m_cfg[ 50], 0, 16, 65534);
     //51
-    ColReadDelay.init       ( 51, &m_cfg[  0], 0, 16, 0);
-    ReadTrigLatency.init    ( 51, &m_cfg[  0], 0, 16, 0);
+    DataReadDelay.init       ( 51, &m_cfg[ 51], 0,  2, 0);
+    ReadTrigLatency.init    ( 51, &m_cfg[ 51], 2, 12, 1000);
     //52
-    TruncTimeoutConf.init   ( 52, &m_cfg[  0], 0, 16, 0);
+    TruncTimeoutConf.init   ( 52, &m_cfg[ 52], 0, 12, 0);
     //53
-    InjDigEn.init           ( 53, &m_cfg[  0], 0, 16, 0);
-    InjAnaMode.init         ( 53, &m_cfg[  0], 0, 16, 0);
-    InjFineDelay.init       ( 53, &m_cfg[  0], 0, 16, 0);
+    InjDigEn.init           ( 53, &m_cfg[ 53], 0,  1, 0);
+    InjAnaMode.init         ( 53, &m_cfg[ 53], 1,  1, 0);
+    InjFineDelay.init       ( 53, &m_cfg[ 53], 2,  6, 0);
     //54
-    FineDelayClk.init       ( 54, &m_cfg[  0], 0, 16, 0);
-    FineDelayData.init      ( 54, &m_cfg[  0], 0, 16, 0);
+    FineDelayClk.init       ( 54, &m_cfg[ 54], 0,  6, 0);
+    FineDelayData.init      ( 54, &m_cfg[ 54], 6,  6, 0);
     //55
-    InjVcalHigh.init        ( 55, &m_cfg[  0], 0, 16, 0);
+    InjVcalHigh.init        ( 55, &m_cfg[ 55], 0, 12, 500);
     //56
-    InjVcalMed.init         ( 56, &m_cfg[  0], 0, 16, 0);
+    InjVcalMed.init         ( 56, &m_cfg[ 56], 0, 12, 300);
     //57
-    CapMeasEnPar.init       ( 57, &m_cfg[  0], 0, 16, 0);
-    CapMeasEn.init          ( 57, &m_cfg[  0], 0, 16, 0);
-    InjVcalRange.init       ( 57, &m_cfg[  0], 0, 16, 0);
+    CapMeasEnPar.init       ( 57, &m_cfg[ 57], 0,  1, 0);
+    CapMeasEn.init          ( 57, &m_cfg[ 57], 1,  1, 0);
+    InjVcalRange.init       ( 57, &m_cfg[ 57], 2,  1, 0);
     //58
-    CdrOverwriteLimit.init  ( 58, &m_cfg[  0], 0, 16, 0);
-    CdrPhaseDetSel.init     ( 58, &m_cfg[  0], 0, 16, 0);
-    CdrClkSel.init          ( 58, &m_cfg[  0], 0, 16, 0);
+    CdrOverwriteLimit.init  ( 58, &m_cfg[ 58], 0,  1, 0);
+    CdrPhaseDetSel.init     ( 58, &m_cfg[ 58], 1,  1, 0);
+    CdrClkSel.init          ( 58, &m_cfg[ 58], 2,  3, 0);
     //59
-    ChSyncLockThr.init      ( 59, &m_cfg[  0], 0, 16, 0);
+    ChSyncLockThr.init      ( 59, &m_cfg[ 59], 0,  5, 16);
     //60
-    GlobalPulseConf.init    ( 60, &m_cfg[  0], 0, 16, 0);
+    GlobalPulseConf.init    ( 60, &m_cfg[ 60], 0, 16, 0);
     //61
-    GlobalPulseWidth.init   ( 61, &m_cfg[  0], 0, 16, 0);
+    GlobalPulseWidth.init   ( 61, &m_cfg[ 61], 0,  8, 0);
     //62
-    ServiceBlockEn.init     ( 62, &m_cfg[  0], 0, 16, 0);
-    ServiceBlockPeriod.init ( 62, &m_cfg[  0], 0, 16, 0);
+    ServiceBlockEn.init     ( 62, &m_cfg[ 62], 0,  1, 0);
+    ServiceBlockPeriod.init ( 62, &m_cfg[ 62], 1,  8, 50);
     //63
-    TotEnPtot.init          ( 63, &m_cfg[  0], 0, 16, 0);
-    TotEnPtoa.init          ( 63, &m_cfg[  0], 0, 16, 0);
-    TotEn80.init            ( 63, &m_cfg[  0], 0, 16, 0);
-    TotEn6b4b.init          ( 63, &m_cfg[  0], 0, 16, 0);
-    TotPtotLatency.init     ( 63, &m_cfg[  0], 0, 16, 0);
+    TotEnPtot.init          ( 63, &m_cfg[ 63], 0,  1, 0);
+    TotEnPtoa.init          ( 63, &m_cfg[ 63], 1,  1, 0);
+    TotEn80.init            ( 63, &m_cfg[ 63], 2,  1, 0);
+    TotEn6b4b.init          ( 63, &m_cfg[ 63], 3,  1, 0);
+    TotPtotLatency.init     ( 63, &m_cfg[ 63], 4,  9, 500);
     //64
-    PtotCoreColEn3.init     ( 64, &m_cfg[  0], 0, 16, 0);
+    PtotCoreColEn3.init     ( 64, &m_cfg[ 64], 0,  6, 0);
     //65
-    PtotCoreColEn2.init     ( 65, &m_cfg[  0], 0, 16, 0);
+    PtotCoreColEn2.init     ( 65, &m_cfg[ 65], 0, 16, 0);
     //66
-    PtotCoreColEn1.init     ( 66, &m_cfg[  0], 0, 16, 0);
+    PtotCoreColEn1.init     ( 66, &m_cfg[ 66], 0, 16, 0);
     //67
-    PtotCoreColEn0.init     ( 67, &m_cfg[  0], 0, 16, 0);
+    PtotCoreColEn0.init     ( 67, &m_cfg[ 67], 0, 16, 0);
     //68
-    DataMergeInPol.init     ( 68, &m_cfg[  0], 0, 16, 0);
-    EnChipId.init           ( 68, &m_cfg[  0], 0, 16, 0);
-    DataMergeSelClk.init    ( 68, &m_cfg[  0], 0, 16, 0);
-    DataMergeEnClkGate.init ( 68, &m_cfg[  0], 0, 16, 0);
-    DataMergeEn.init        ( 68, &m_cfg[  0], 0, 16, 0);
-    DataMergeEnBond.init    ( 68, &m_cfg[  0], 0, 16, 0);
+    DataMergeInPol.init     ( 68, &m_cfg[ 68], 0,  4, 0);
+    EnChipId.init           ( 68, &m_cfg[ 68], 4,  1, 0);
+    DataMergeSelClk.init    ( 68, &m_cfg[ 68], 5,  1, 1);
+    DataMergeEnClkGate.init ( 68, &m_cfg[ 68], 6,  1, 0);
+    DataMergeEn.init        ( 68, &m_cfg[ 68], 7,  4, 0);
+    DataMergeEnBond.init    ( 68, &m_cfg[ 68], 11,  1, 0);
     //69
-    DataMergeInMux3.init    ( 69, &m_cfg[  0], 0, 16, 0);
-    DataMergeInMux2.init    ( 69, &m_cfg[  0], 0, 16, 0);
-    DataMergeInMux1.init    ( 69, &m_cfg[  0], 0, 16, 0);
-    DataMergeInMux0.init    ( 69, &m_cfg[  0], 0, 16, 0);
-    DataMergeOutMux3.init   ( 69, &m_cfg[  0], 0, 16, 0);
-    DataMergeOutMux2.init   ( 69, &m_cfg[  0], 0, 16, 0);
-    DataMergeOutMux1.init   ( 69, &m_cfg[  0], 0, 16, 0);
-    DataMergeOutMux0.init   ( 69, &m_cfg[  0], 0, 16, 0);
+    DataMergeInMux3.init    ( 69, &m_cfg[ 69], 0,  2, 3);
+    DataMergeInMux2.init    ( 69, &m_cfg[ 69], 0,  2, 2);
+    DataMergeInMux1.init    ( 69, &m_cfg[ 69], 0,  2, 1);
+    DataMergeInMux0.init    ( 69, &m_cfg[ 69], 0,  2, 0);
+    DataMergeOutMux3.init   ( 69, &m_cfg[ 69], 0,  2, 3);
+    DataMergeOutMux2.init   ( 69, &m_cfg[ 69], 0,  2, 2);
+    DataMergeOutMux1.init   ( 69, &m_cfg[ 69], 0,  2, 1);
+    DataMergeOutMux0.init   ( 69, &m_cfg[ 69], 0,  2, 0);
     //70-73
-    EnCoreColCal3.init      ( 70, &m_cfg[  0], 0, 16, 0);
-    EnCoreColCal2.init      ( 71, &m_cfg[  0], 0, 16, 0);
-    EnCoreColCal1.init      ( 72, &m_cfg[  0], 0, 16, 0);
-    EnCoreColCal0.init      ( 73, &m_cfg[  0], 0, 16, 0);
+    EnCoreColCal3.init      ( 70, &m_cfg[ 70], 0,  6, 0);
+    EnCoreColCal2.init      ( 71, &m_cfg[ 71], 0, 16, 0);
+    EnCoreColCal1.init      ( 72, &m_cfg[ 72], 0, 16, 0);
+    EnCoreColCal0.init      ( 73, &m_cfg[ 73], 0, 16, 0);
     //74
-    DataEnBcid.init         ( 74, &m_cfg[  0], 0, 16, 0);
-    DataEnL1id.init         ( 74, &m_cfg[  0], 0, 16, 0);
-    DataEnEos.init          ( 74, &m_cfg[  0], 0, 16, 0);
-    NumOfEventsInStream.init( 74, &m_cfg[  0], 0, 16, 0);
+    DataEnBcid.init         ( 74, &m_cfg[ 74], 0,  1, 0);
+    DataEnL1id.init         ( 74, &m_cfg[ 74], 0,  1, 0);
+    DataEnEos.init          ( 74, &m_cfg[ 74], 0,  1, 1);
+    NumOfEventsInStream.init( 74, &m_cfg[ 74], 0,  8, 16);
     //75
-    DataEnBinaryRo.init     ( 75, &m_cfg[  0], 0, 16, 0);
-    DataEnRaw.init          ( 75, &m_cfg[  0], 0, 16, 0);
-    DataEnHitRemoval.init   ( 75, &m_cfg[  0], 0, 16, 0);
-    DataMaxHits.init        ( 75, &m_cfg[  0], 0, 16, 0);
-    DataEnIsoHitRemoval.init(  0, &m_cfg[  0], 0, 16, 0);
-    DataMaxTot.init         ( 75, &m_cfg[  0], 0, 16, 0);
+    DataEnBinaryRo.init     ( 75, &m_cfg[ 75], 0,  1, 0);
+    DataEnRaw.init          ( 75, &m_cfg[ 75], 1,  1, 0);
+    DataEnHitRemoval.init   ( 75, &m_cfg[ 75], 2,  1, 0);
+    DataMaxHits.init        ( 75, &m_cfg[ 75], 3,  4, 0);
+    DataEnIsoHitRemoval.init( 75, &m_cfg[ 75], 7,  1, 0);
+    DataMaxTot.init         ( 75, &m_cfg[ 75], 8,  3, 0);
     //76
-    EvenMask.init           ( 76, &m_cfg[  0], 0, 16, 0);
+    EvenMask.init           ( 76, &m_cfg[ 76], 0, 16, 0);
     //77
-    OddMask.init            ( 77, &m_cfg[  0], 0, 16, 0);
+    OddMask.init            ( 77, &m_cfg[ 77], 0, 16, 0);
     //78
-    EfuseConfig.init        ( 78, &m_cfg[  0], 0, 16, 0);
+    EfuseConfig.init        ( 78, &m_cfg[ 78], 0, 16, 0);
     //79
-    EfuseWriteData1.init    ( 79, &m_cfg[  0], 0, 16, 0);
+    EfuseWriteData1.init    ( 79, &m_cfg[ 79], 0, 16, 0);
     //80
-    EfuseWriteData0.init    ( 80, &m_cfg[  0], 0, 16, 0);
+    EfuseWriteData0.init    ( 80, &m_cfg[ 80], 0, 16, 0);
     //81
-    AuroraEnPrbs.init       ( 81, &m_cfg[  0], 0, 16, 0);
-    AuroraActiveLanes.init  ( 81, &m_cfg[  0], 0, 16, 0);
-    AuroraCCWait.init       ( 81, &m_cfg[  0], 0, 16, 0);
-    AuroraCCSend.init       ( 81, &m_cfg[  0], 0, 16, 0);
+    AuroraEnPrbs.init       ( 81, &m_cfg[ 81], 0,  1, 0);
+    AuroraActiveLanes.init  ( 81, &m_cfg[ 81], 1,  4, 0xF);
+    AuroraCCWait.init       ( 81, &m_cfg[ 81], 5,  6, 25);
+    AuroraCCSend.init       ( 81, &m_cfg[ 81], 11,  2, 3);
     //82
-    AuroraCBWait1.init      ( 82, &m_cfg[  0], 0, 16, 0);
+    AuroraCBWait1.init      ( 82, &m_cfg[ 82], 0,  8, 255);
     //83
-    AuroraCBWait0.init      ( 83, &m_cfg[  0], 0, 16, 0);
-    AuroraCBSend.init       ( 83, &m_cfg[  0], 0, 16, 0);
+    AuroraCBWait0.init      ( 83, &m_cfg[ 83], 0, 12, 4095);
+    AuroraCBSend.init       ( 83, &m_cfg[ 83], 12,  4, 0);
     //84
-    AuroraInitWait.init     ( 84, &m_cfg[  0], 0, 16, 0);
+    AuroraInitWait.init     ( 84, &m_cfg[ 84], 0, 11, 32);
     //85
-    GpValReg.init           ( 85, &m_cfg[  0], 0, 16, 0);
-    GpCmosEn.init           ( 85, &m_cfg[  0], 0, 16, 0);
-    GpLvdsEn.init           ( 85, &m_cfg[  0], 0, 16, 0);
-    GpLvdsBias.init         ( 85, &m_cfg[  0], 0, 16, 0);
+    GpValReg.init           ( 85, &m_cfg[ 85], 0,  4, 5);
+    GpCmosEn.init           ( 85, &m_cfg[ 85], 4,  1, 1);
+    GpCmosDs.init           ( 85, &m_cfg[ 85], 5,  1, 0);
+    GpLvdsEn.init           ( 85, &m_cfg[ 85], 6,  4, 0xF);
+    GpLvdsBias.init         ( 85, &m_cfg[ 85], 10,  3, 7);
     //86
-    GpCmosRoute.init        ( 86, &m_cfg[  0], 0, 16, 0);
+    GpCmosRoute.init        ( 86, &m_cfg[ 86], 0,  6, 34);
     //87
-    GpLvdsPad3.init         ( 87, &m_cfg[  0], 0, 16, 0);
-    GpLvdsPad2.init         ( 87, &m_cfg[  0], 0, 16, 0);
+    GpLvdsPad3.init         ( 87, &m_cfg[ 87], 0,  6, 35);
+    GpLvdsPad2.init         ( 87, &m_cfg[ 87], 6,  6, 33);
     //88
-    GpLvdsPad1.init         (  88, &m_cfg[  0], 0, 16, 0);
-    GpLvdsPad0.init         (  88, &m_cfg[  0], 0, 16, 0);
+    GpLvdsPad1.init         ( 88, &m_cfg[ 88], 0,  6, 1);
+    GpLvdsPad0.init         ( 88, &m_cfg[ 88], 6,  6, 0);
     //89
-    CdrCp.init              ( 89, &m_cfg[  0], 0, 16, 0);
+    CdrCp.init              ( 89, &m_cfg[ 89], 0, 10, 40);
     //90
-    CdrCpFd.init            ( 90, &m_cfg[  0], 0, 16, 0);
+    CdrCpFd.init            ( 90, &m_cfg[ 90], 0, 10, 400);
     //91
-    CdrCpBuff.init          ( 91, &m_cfg[  0], 0, 16, 0);
+    CdrCpBuff.init          ( 91, &m_cfg[ 91], 0, 10, 200);
     //92
-    CdrVco.init             ( 92, &m_cfg[  0], 0, 16, 0);
+    CdrVco.init             ( 92, &m_cfg[ 92], 0, 10, 1023);
     //93
-    CdrVcoBuff.init         ( 93, &m_cfg[  0], 0, 16, 0);
+    CdrVcoBuff.init         ( 93, &m_cfg[ 93], 0, 10, 500);
     //94
-    SerSelOut3.init         ( 94, &m_cfg[  0], 0, 16, 0);
-    SerSelOut2.init         ( 94, &m_cfg[  0], 0, 16, 0);
-    SerSelOut1.init         ( 94, &m_cfg[  0], 0, 16, 0);
-    SerSelOut0.init         ( 94, &m_cfg[  0], 0, 16, 0);
+    SerSelOut3.init         ( 94, &m_cfg[ 94], 0,  2, 1);
+    SerSelOut2.init         ( 94, &m_cfg[ 94], 2,  2, 1);
+    SerSelOut1.init         ( 94, &m_cfg[ 94], 4,  2, 1);
+    SerSelOut0.init         ( 94, &m_cfg[ 94], 6,  2, 1);
     //95
-    SerInvTap.init          ( 95, &m_cfg[  0], 0, 16, 0);
-    SerEnTap.init           ( 95, &m_cfg[  0], 0, 16, 0);
-    SerEnLane.init          ( 95, &m_cfg[  0], 0, 16, 0);
+    SerInvTap.init          ( 95, &m_cfg[ 95], 0,  2, 0);
+    SerEnTap.init           ( 95, &m_cfg[ 95], 2,  2, 0);
+    SerEnLane.init          ( 95, &m_cfg[ 95], 4,  4, 1);
     //96
-    CmlBias2.init           ( 96, &m_cfg[  0], 0, 16, 0);
+    CmlBias2.init           ( 96, &m_cfg[ 96], 0, 10, 0);
     //97
-    CmlBias1.init           ( 97, &m_cfg[  0], 0, 16, 0);
+    CmlBias1.init           ( 97, &m_cfg[ 97], 0, 10, 0);
     //98
-    CmlBias0.init           ( 98, &m_cfg[  0], 0, 16, 0);
+    CmlBias0.init           ( 98, &m_cfg[ 98], 0, 10, 500);
     //99
-    MonitorEnable.init      ( 99, &m_cfg[  0], 0, 16, 0);
-    MonitorI.init           ( 99, &m_cfg[  0], 0, 16, 0);
-    MonitorV.init           ( 99, &m_cfg[  0], 0, 16, 0);
+    MonitorEnable.init      ( 99, &m_cfg[ 99], 0,  1, 0);
+    MonitorI.init           ( 99, &m_cfg[ 99], 1,  6, 63);
+    MonitorV.init           ( 99, &m_cfg[ 99], 7,  6, 63);
     //100
-    ErrWngMask.init         (100, &m_cfg[  0], 0, 16, 0);
+    ErrWngMask.init         (100, &m_cfg[100], 0,  8, 0);
     //101
-    MonSensSldoDigEn.init   (101, &m_cfg[  0], 0, 16, 0);
-    MonSensSldoDigDem.init  (101, &m_cfg[  0], 0, 16, 0);
-    MonSensSldoDigSelBias.init(101, &m_cfg[  0], 0, 16, 0);
-    MonSensSldoAnaEn.init   (101, &m_cfg[  0], 0, 16, 0);
-    MonSensSldoAnaDem.init  (101, &m_cfg[  0], 0, 16, 0);
-    MonSensSldoAnaSelBias.init(101, &m_cfg[  0], 0, 16, 0);
+    MonSensSldoDigEn.init   (101, &m_cfg[101], 0,  1, 0);
+    MonSensSldoDigDem.init  (101, &m_cfg[101], 1,  4, 0);
+    MonSensSldoDigSelBias.init(101, &m_cfg[101], 5,  1, 0);
+    MonSensSldoAnaEn.init   (101, &m_cfg[101], 6,  1, 0);
+    MonSensSldoAnaDem.init  (101, &m_cfg[101], 7,  4, 0);
+    MonSensSldoAnaSelBias.init(101, &m_cfg[101], 11,  1, 0);
     //102
-    MonSensAcbEn.init       (102, &m_cfg[  0], 0, 16, 0);
-    MonSensAcbDem.init      (102, &m_cfg[  0], 0, 16, 0);
-    MonSensAcbSelBias.init  (102, &m_cfg[  0], 0, 16, 0);
+    MonSensAcbEn.init       (102, &m_cfg[102], 0,  1, 0);
+    MonSensAcbDem.init      (102, &m_cfg[102], 0,  4, 0);
+    MonSensAcbSelBias.init  (102, &m_cfg[102], 0,  1, 0);
     //103
-    VrefRsensBot.init       (103, &m_cfg[  0], 0, 16, 0);
-    VrefRsensTop.init       (103, &m_cfg[  0], 0, 16, 0);
-    VrefIn.init             (103, &m_cfg[  0], 0, 16, 0);
-    MonAdcTrim.init         (103, &m_cfg[  0], 0, 16, 0);
+    VrefRsensBot.init       (103, &m_cfg[103], 0,  1, 0);
+    VrefRsensTop.init       (103, &m_cfg[103], 0,  1, 0);
+    VrefIn.init             (103, &m_cfg[103], 0,  1, 1);
+    MonAdcTrim.init         (103, &m_cfg[103], 0,  6, 0);
 
     //104
-    NtcDac.init             (104, &m_cfg[  0], 0, 16, 0);
+    NtcDac.init             (104, &m_cfg[104], 0, 10, 100);
     //105-108
-    HitOrMask3.init         (105, &m_cfg[  0], 0, 16, 0);
-    HitOrMask2.init         (106, &m_cfg[  0], 0, 16, 0);
-    HitOrMask1.init         (107, &m_cfg[  0], 0, 16, 0);
-    HitOrMask0.init         (108, &m_cfg[  0], 0, 16, 0);
+    HitOrMask3.init         (105, &m_cfg[105], 0,  6, 0);
+    HitOrMask2.init         (106, &m_cfg[105], 0, 16, 0);
+    HitOrMask1.init         (107, &m_cfg[105], 0, 16, 0);
+    HitOrMask0.init         (108, &m_cfg[105], 0, 16, 0);
     //109-116
-    AutoRead0.init          (109, &m_cfg[  0], 0, 16, 0);
-    AutoRead1.init          (110, &m_cfg[  0], 0, 16, 0);
-    AutoRead2.init          (111, &m_cfg[  0], 0, 16, 0);
-    AutoRead3.init          (112, &m_cfg[  0], 0, 16, 0);
-    AutoRead4.init          (113, &m_cfg[  0], 0, 16, 0);
-    AutoRead5.init          (114, &m_cfg[  0], 0, 16, 0);
-    AutoRead6.init          (115, &m_cfg[  0], 0, 16, 0);
-    AutoRead7.init          (116, &m_cfg[  0], 0, 16, 0);
+    AutoRead0.init          (109, &m_cfg[109], 0,  9, 137);
+    AutoRead1.init          (110, &m_cfg[110], 0,  9, 133);
+    AutoRead2.init          (111, &m_cfg[111], 0,  9, 121);
+    AutoRead3.init          (112, &m_cfg[112], 0,  9, 122);
+    AutoRead4.init          (113, &m_cfg[113], 0,  9, 124);
+    AutoRead5.init          (114, &m_cfg[114], 0,  9, 127);
+    AutoRead6.init          (115, &m_cfg[115], 0,  9, 126);
+    AutoRead7.init          (116, &m_cfg[116], 0,  9, 125);
     //117
-    RingOscBClear.init      (117, &m_cfg[  0], 0, 16, 0);
-    RingOscBEnBl.init       (117, &m_cfg[  0], 0, 16, 0);
-    RingOscBEnCapA.init     (117, &m_cfg[  0], 0, 16, 0);
-    RingOscBEnFf.init       (117, &m_cfg[  0], 0, 16, 0);
-    RingOscBEnLvt.init      (117, &m_cfg[  0], 0, 16, 0);
-    RingOscAClear.init      (117, &m_cfg[  0], 0, 16, 0);
-    RingOscAEn.init         (117, &m_cfg[  0], 0, 16, 0);
+    RingOscBClear.init      (117, &m_cfg[117], 0,  1, 0);
+    RingOscBEnBl.init       (117, &m_cfg[117], 1,  1, 0);
+    RingOscBEnBr.init       (117, &m_cfg[117], 2,  1, 0);
+    RingOscBEnCapA.init     (117, &m_cfg[117], 3,  1, 0);
+    RingOscBEnFf.init       (117, &m_cfg[117], 4,  1, 0);
+    RingOscBEnLvt.init      (117, &m_cfg[117], 5,  1, 0);
+    RingOscAClear.init      (117, &m_cfg[117], 6,  1, 0);
+    RingOscAEn.init         (117, &m_cfg[117], 14,  8, 0);
     //118
-    RingOscARoute.init      (118, &m_cfg[  0], 0, 16, 0);
-    RingOscBRoute.init      (118, &m_cfg[  0], 0, 16, 0);
+    RingOscARoute.init      (118, &m_cfg[118], 0,  3, 0);
+    RingOscBRoute.init      (118, &m_cfg[118], 3,  6, 0);
     //119-120
-    RingOscAOut.init        (119, &m_cfg[  0], 0, 16, 0);
-    RingOscBOut.init        (120, &m_cfg[  0], 0, 16, 0);
+    RingOscAOut.init        (119, &m_cfg[119], 0, 16, 0);
+    RingOscBOut.init        (120, &m_cfg[120], 0, 16, 0);
     //121-123 RO
-    BcidCnt.init            (121, &m_cfg[  0], 0, 16, 0);
-    TrigCnt.init            (122, &m_cfg[  0], 0, 16, 0);
-    ReadTrigCnt.init        (123, &m_cfg[  0], 0, 16, 0);
+    BcidCnt.init            (121, &m_cfg[121], 0, 16, 0);
+    TrigCnt.init            (122, &m_cfg[122], 0, 16, 0);
+    ReadTrigCnt.init        (123, &m_cfg[123], 0, 16, 0);
     //124-128
-    LockLossCnt.init        (124, &m_cfg[  0], 0, 16, 0);
-    BitFLipWngCnt.init      (125, &m_cfg[  0], 0, 16, 0);
-    BitFLipErrCnt.init      (126, &m_cfg[  0], 0, 16, 0);
-    CmdErrCnt.init          (127, &m_cfg[  0], 0, 16, 0);
-    RdWrFifoErrCnt.init     (128, &m_cfg[  0], 0, 16, 0);
+    LockLossCnt.init        (124, &m_cfg[124], 0, 16, 0);
+    BitFLipWngCnt.init      (125, &m_cfg[125], 0, 16, 0);
+    BitFLipErrCnt.init      (126, &m_cfg[126], 0, 16, 0);
+    CmdErrCnt.init          (127, &m_cfg[127], 0, 16, 0);
+    RdWrFifoErrCnt.init     (128, &m_cfg[128], 0, 16, 0);
     //129
-    AiRegionRow.init        (129, &m_cfg[  0], 0, 16, 0);
+    AiRegionRow.init        (129, &m_cfg[129], 0,  9, 0);
     //130-133
-    HitOrCnt3.init          (130, &m_cfg[  0], 0, 16, 0);
-    HitOrCnt2.init          (131, &m_cfg[  0], 0, 16, 0);
-    HitOrCnt1.init          (132, &m_cfg[  0], 0, 16, 0);
-    HitOrCnt0.init          (133, &m_cfg[  0], 0, 16, 0);
+    HitOrCnt3.init          (130, &m_cfg[130], 0, 16, 0);
+    HitOrCnt2.init          (131, &m_cfg[131], 0, 16, 0);
+    HitOrCnt1.init          (132, &m_cfg[132], 0, 16, 0);
+    HitOrCnt0.init          (133, &m_cfg[133], 0, 16, 0);
     //134
-    SkippedTrigCnt.init     (134, &m_cfg[  0], 0, 16, 0);
+    SkippedTrigCnt.init     (134, &m_cfg[134], 0, 16, 0);
     //135-136
-    EfuseReadData0.init     (135, &m_cfg[  0], 0, 16, 0);
-    EfuseReadData1.init     (136, &m_cfg[  0], 0, 16, 0);
+    EfuseReadData0.init     (135, &m_cfg[135], 0, 16, 0);
+    EfuseReadData1.init     (136, &m_cfg[136], 0, 16, 0);
     //137
-    MonitoringDataAdc.init  (137, &m_cfg[  0], 0, 16, 0);
+    MonitoringDataAdc.init  (137, &m_cfg[137], 0, 12, 0);
 
 }
