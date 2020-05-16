@@ -46,6 +46,18 @@ class Rd53aPixelCfg {
         void toFileJson(json &j);
         void fromFileJson(json &j);
 
+        struct pixelFields {
+            unsigned en : 1;
+            unsigned injen : 1;
+            unsigned hitbus : 1;
+            unsigned tdac : 4;
+            unsigned sign : 1;
+        };
+
+        union pixelBits {
+            Rd53aPixelCfg::pixelFields s;
+            uint8_t u8;
+        };
 };
 
 #endif
