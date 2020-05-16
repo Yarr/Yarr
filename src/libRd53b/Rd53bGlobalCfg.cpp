@@ -23,6 +23,31 @@ Rd53bGlobalCfg::~Rd53bGlobalCfg() {
 
 }
 
+uint16_t Rd53bGlobalCfg::getValue(Rd53bReg Rd53bGlobalCfg::*ref) {
+    return (this->*ref).read();
+}
+
+uint16_t Rd53bGlobalCfg::getValue(std::string name) {
+    if (regMap.find(name) != regMap.end()) {
+        return (this->*regMap[name]).read();
+    } else {
+        logger->error("Register \"{}\" not found, could not read!", name);
+    }
+    return 0;
+}
+
+void Rd53bGlobalCfg::setValue(Rd53bReg Rd53bGlobalCfg::*ref, uint16_t val) {
+    (this->*ref).write(val);
+}
+
+void Rd53bGlobalCfg::setValue(std::string name, uint16_t val) {
+    if (regMap.find(name) != regMap.end()) {
+        (this->*regMap[name]).write(val);
+    } else {
+        logger->error("Register \"{}\" not found, could not write!", name);
+    }
+}
+
 void Rd53bGlobalCfg::init() {
     // Reset array
     for (unsigned i=0; i<numRegs; i++) {
@@ -371,4 +396,20 @@ void Rd53bGlobalCfg::init() {
     //137
     MonitoringDataAdc.init  (137, &m_cfg[137], 0, 12, 0); regMap["MonitoringDataAdc"] = &Rd53bGlobalCfg::MonitoringDataAdc;
 
+}
+
+void Rd53bGlobalCfg::toJson(json &j) {
+    for(auto it : regMap) {
+        j["RD53B"]["GlobalConfig"][it.first] = (this->*it.second).read();
+    }    
+}
+
+void Rd53bGlobalCfg::fromJson(json &j) {
+    for (auto it : regMap) {
+        if (!j["RD53B"]["GlobalConfig"][it.first].empty()) {
+            (this->*it.second).write(j["RD53B"]["GlobalConfig"][it.first]);
+        } else {
+            logger->error("Could not find register \"{}\" using default!", it.first);
+        }
+    }
 }
