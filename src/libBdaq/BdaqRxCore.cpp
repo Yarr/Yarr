@@ -279,10 +279,10 @@ void BdaqRxCore::encodeToYarr(BdaqRxCore::regDataT in, uint32_t* out,
 // TDC Data Decoding ===========================================================
 
 bool BdaqRxCore::checkTDC(const uint32_t& word) {
-    if ((word & TDC_HEADER_MASK == TDC_ID_0) || 
-        (word & TDC_HEADER_MASK == TDC_ID_1) ||
-        (word & TDC_HEADER_MASK == TDC_ID_2) ||
-        (word & TDC_HEADER_MASK == TDC_ID_3)) return true;
+    if (((word & TDC_HEADER_MASK) == TDC_ID_0) || 
+        ((word & TDC_HEADER_MASK) == TDC_ID_1) ||
+        ((word & TDC_HEADER_MASK) == TDC_ID_2) ||
+        ((word & TDC_HEADER_MASK) == TDC_ID_3)) return true;
     else
         return false;
 }
