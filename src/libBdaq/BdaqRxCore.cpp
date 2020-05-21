@@ -273,7 +273,7 @@ void BdaqRxCore::encodeToYarr(BdaqRxCore::regDataT in, uint32_t* out,
                                 unsigned int index) {
     out[index  ] = 0x55000000;
     out[index+1] = (in.Address & 0x3FF) << 16 | 
-                    in.Data    & 0xFFFF;                               
+                   (in.Data    & 0xFFFF);                               
 }
 
 // TDC Data Decoding ===========================================================
