@@ -107,12 +107,7 @@ void Rd53aMaskLoop::init() {
             }
         }
         // TODO make configrue for subset
-<<<<<<< HEAD
-        dynamic_cast<Rd53a*>(fe)->configurePixels();
-        //dynamic_cast<Rd53a*>(fe)->writeRegister(&Rd53a::GlobalPulseRt, 0x4000); // Enabling Route: Acquire Zero level for sync FE -- Doesn't seem necessary, already done in Rd53a::configureInit().
-=======
         rd53a->configurePixels();
->>>>>>> devel
         while(!g_tx->isCmdEmpty()) {}
     }
     // Reset CMD mask
