@@ -1,0 +1,64 @@
+{
+    "name": "Barrel Hybrid Example",
+    "HCC": {
+        "ID": 0,
+
+        "regs": {
+            "Delay1": "02400000",
+            "Delay2": "44444444",
+            "Delay3": "00000444",
+            "PLL1": "00ff3b05",
+
+            "PLL2": "00000000",
+            "PLL3": "00000004",
+            "DRV1": "0fffffff",
+            "DRV2": "00000014",
+
+            "ICenable": "000003ff",
+            "OPmode": "00020001",
+            "OPmodeC": "00020001",
+            "Cfg1": "00000000",
+
+            "Cfg2": "0000018e",
+            "ExtRst": "00710003",
+            "ExtRstC": "00710003",
+            "ErrCfg": "00000000",
+            "ADCcfg": "00406600"
+        }
+    },
+    "ABCs": {
+        "IDs": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+
+        "common": {
+            "ADCS1": "000d0f0d",
+            "ADCS3": "100f100d",
+            "ADCS4": "00000d02",
+            "ADCS5": "0000000c",
+            "ADCS6": "0002000c",
+            "ADCS7": "80070000",
+            "CREG0": "00000700",
+            "CREG1": "00000004",
+            "CREG2": "41800003",
+            "CREG3": "00042000",
+            "CREG4": "00000000",
+            "CREG6": "00000086"
+        },
+
+        "comment": "These are the sub-regs that are most likely to need tweaking",
+        "subregs": [{"STR_DEL": 12, "BTRANGE": 1, "BVT": 24, "D_S": "01ff", "A_S": "01ff"},
+                    {"STR_DEL": 13, "BTRANGE": 2, "BVT": 24, "D_S": "01ff", "A_S": "01ff"},
+                    {"STR_DEL": 14, "BTRANGE": 3, "BVT": 25, "D_S": "01ff", "A_S": "01ff"},
+                    {"STR_DEL": 21, "BTRANGE": 1, "BVT": 26, "D_S": "01ff", "A_S": "01ff"},
+                    {"STR_DEL": 20, "BTRANGE": 2, "BVT": 27, "D_S": "01ff", "A_S": "01ff"},
+                    {"STR_DEL": 22, "BTRANGE": 3, "BVT": 28, "D_S": "01ff", "A_S": "01ff"},
+                    {"STR_DEL": 23, "BTRANGE": 1, "BVT": 29, "D_S": "01ff", "A_S": "01ff"},
+                    {"STR_DEL": 20, "BTRANGE": 2, "BVT": 20, "D_S": "01ff", "A_S": "01ff"},
+                    {"STR_DEL": 22, "BTRANGE": 3, "BVT": 21, "D_S": "01ff", "A_S": "01ff"},
+                    {"STR_DEL": 21, "BTRANGE": 0, "BVT": 22, "D_S": "01ff", "A_S": "01ff"}],
+
+        "masks": [null, null, null, null, null, null, null, null, null, null],
+        "trim": [16, 16, 16, 16, 16, 16, 16, 16, 16, 16],
+
+        "comment": "Useful to end with a comment"
+    }
+}

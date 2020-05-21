@@ -46,7 +46,6 @@ void Bookkeeper::addFe(FrontEnd *fe, unsigned txChannel, unsigned rxChannel) {
         feList.back()->clipData = &eventMap[rxChannel];
         feList.back()->clipHisto = &histoMap[rxChannel];
         feList.back()->clipResult = &resultMap[rxChannel];
-        mutexMap[rxChannel];
     }
 
     // Using macro includes file/line info
@@ -68,10 +67,8 @@ void Bookkeeper::delFe(unsigned rxChannel) {
                 feList.erase(feList.begin() + k);
             }
         }
-        mutexMap.erase(rxChannel);
         histoMap.erase(rxChannel);
         resultMap.erase(rxChannel);
-        mutexMap.erase(rxChannel);
     }
 }
 

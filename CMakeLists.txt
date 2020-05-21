@@ -37,5 +37,8 @@ add_compile_options(-std=c++17)
 
 include(cmake/CMakeLists.txt.external)
 
+# This needs to be in the top-level Lists file
+enable_testing()
+
 add_subdirectory(src)
 

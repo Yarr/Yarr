@@ -96,18 +96,23 @@ void Rd53aMaskLoop::init() {
     m_done = false;
     m_cur = min;
     for(FrontEnd *fe : keeper->feList) {
+        auto rd53a = dynamic_cast<Rd53a*>(fe);
         // Make copy of pixRegs
-        m_pixRegs[fe] = dynamic_cast<Rd53a*>(fe)->pixRegs;
+        m_pixRegs[fe] = rd53a->pixRegs;
         g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         for(unsigned col=0; col<Rd53a::n_Col; col++) {
             for(unsigned row=0; row<Rd53a::n_Row; row++) {
-                dynamic_cast<Rd53a*>(fe)->setEn(col, row, 0);
-                dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 0);
+                rd53a->setEn(col, row, 0);
+                rd53a->setInjEn(col, row, 0);
             }
         }
         // TODO make configrue for subset
+<<<<<<< HEAD
         dynamic_cast<Rd53a*>(fe)->configurePixels();
         //dynamic_cast<Rd53a*>(fe)->writeRegister(&Rd53a::GlobalPulseRt, 0x4000); // Enabling Route: Acquire Zero level for sync FE -- Doesn't seem necessary, already done in Rd53a::configureInit().
+=======
+        rd53a->configurePixels();
+>>>>>>> devel
         while(!g_tx->isCmdEmpty()) {}
     }
     // Reset CMD mask
@@ -121,16 +126,19 @@ void Rd53aMaskLoop::execPart1() {
     for(FrontEnd *fe : keeper->feList) {
         g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         std::vector<std::pair<unsigned, unsigned>> modPixels;
+
+        auto rd53a = dynamic_cast<Rd53a*>(fe);
+
         //Loop over all pixels - n_Col=400, n_Row=192 - from Rd53aPixelCfg.h
         for(unsigned col=0; col<Rd53a::n_Col; col++) {
             for(unsigned row=0; row<Rd53a::n_Row; row++) {
-                if (ApplyMask(col,row)){
+                if (applyMask(col,row)){
                     if (m_maskType == StandardMask){	       
                         //------------------------------------------------------------------------
                         //standard map, inj and read out the same pixel
                         //------------------------------------------------------------------------
-                        dynamic_cast<Rd53a*>(fe)->setEn(col, row, 1);
-                        dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 1);
+                        rd53a->setEn(col, row, 1);
+                        rd53a->setInjEn(col, row, 1);
                         modPixels.push_back(std::make_pair(col, row));
                     } 		
                     if (m_maskType == CrossTalkMask  ){	      
@@ -140,13 +148,13 @@ void Rd53aMaskLoop::execPart1() {
                         std::vector<std::pair<int, int>> neighbours;		 
                         getNeighboursMap(col,row,m_sensorType, m_maskSize, neighbours);
                         //Read-only central pixel
-                        dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 0);		
-                        dynamic_cast<Rd53a*>(fe)->setEn(col, row, 1);
+                        rd53a->setInjEn(col, row, 0);		
+                        rd53a->setEn(col, row, 1);
                         modPixels.push_back(std::make_pair(col, row));
                         //Inject only neighbours
                         for (auto n: neighbours){ 
-                            dynamic_cast<Rd53a*>(fe)->setInjEn(n.first, n.second,1);
-                            dynamic_cast<Rd53a*>(fe)->setEn(n.first, n.second, 0);
+                            rd53a->setInjEn(n.first, n.second,1);
+                            rd53a->setEn(n.first, n.second, 0);
                             modPixels.push_back(std::make_pair(n.first, n.second));
                         }
                     }
@@ -157,25 +165,25 @@ void Rd53aMaskLoop::execPart1() {
                         std::vector<std::pair<int, int>> neighbours;		 
                         getNeighboursMap(col,row, m_sensorType,m_maskSize,neighbours);
                         //Read-only central pixel
-                        dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 1);		
-                        dynamic_cast<Rd53a*>(fe)->setEn(col, row, 0);
+                        rd53a->setInjEn(col, row, 1);		
+                        rd53a->setEn(col, row, 0);
                         modPixels.push_back(std::make_pair(col, row));
                         //Inject only neighbours
                         for (auto n: neighbours){ 		  	       
-                            dynamic_cast<Rd53a*>(fe)->setInjEn(n.first, n.second, 0);
-                            dynamic_cast<Rd53a*>(fe)->setEn(n.first, n.second, 1);
+                            rd53a->setInjEn(n.first, n.second, 0);
+                            rd53a->setEn(n.first, n.second, 1);
                             modPixels.push_back(std::make_pair(n.first, n.second));
                         }
                     }
-                }//end ApplyMask
+                }//end applyMask
                 else {
                     if (m_maskType == StandardMask){	       
                         //---------------------------------------------------------------------------------
                         // clean pixels for standardmask
                         //--------------------------------------------------------------------------------- 		  
-                        if (dynamic_cast<Rd53a*>(fe)->getInjEn(col, row) == 1) {
-                            dynamic_cast<Rd53a*>(fe)->setEn(col, row, 0);
-                            dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 0);
+                        if (rd53a->getInjEn(col, row) == 1) {
+                            rd53a->setEn(col, row, 0);
+                            rd53a->setInjEn(col, row, 0);
                             modPixels.push_back(std::make_pair(col, row));
                         }		
                     }
@@ -185,8 +193,7 @@ void Rd53aMaskLoop::execPart1() {
 
         // TODO make configrue for subset
         // TODO set cmeEnable correctly
-        dynamic_cast<Rd53a*>(fe)->configurePixels(modPixels);
-        //std::cout << "modPixels.size(): " << modPixels.size() << std::endl;
+        rd53a->configurePixels(modPixels);
         while(!g_tx->isCmdEmpty()) {}
     }
     // Reset CMD mask
@@ -203,26 +210,28 @@ void Rd53aMaskLoop::execPart2() {
     if (m_maskType == CrossTalkMask or m_maskType == CrossTalkMaskv2 ){
         for(FrontEnd *fe : keeper->feList) {
             g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+
+            auto rd53a = dynamic_cast<Rd53a*>(fe);
             std::vector<std::pair<unsigned, unsigned>> modPixels;
             for(unsigned col=0; col<Rd53a::n_Col; col++) {
                 for(unsigned row=0; row<Rd53a::n_Row; row++) {
-                    if (ApplyMask(col,row)){
+                    if (applyMask(col,row)){
                         std::vector<std::pair<int, int>> neighbours;		 
                         //switch off central pixel
-                        dynamic_cast<Rd53a*>(fe)->setInjEn(col, row, 0);		
-                        dynamic_cast<Rd53a*>(fe)->setEn(col, row, 0);
+                        rd53a->setInjEn(col, row, 0);		
+                        rd53a->setEn(col, row, 0);
                         modPixels.push_back(std::make_pair(col, row));
                         //switch off neighbours
                         getNeighboursMap(col,row, m_sensorType,m_maskSize, neighbours);
                         for (auto n: neighbours){ 		  	       
-                            dynamic_cast<Rd53a*>(fe)->setInjEn(n.first, n.second, 0);
-                            dynamic_cast<Rd53a*>(fe)->setEn(n.first, n.second, 0);
+                            rd53a->setInjEn(n.first, n.second, 0);
+                            rd53a->setEn(n.first, n.second, 0);
                             modPixels.push_back(std::make_pair(n.first, n.second));
                         }
                     }
                 }
             }	
-            dynamic_cast<Rd53a*>(fe)->configurePixels(modPixels);
+            rd53a->configurePixels(modPixels);
             while(!g_tx->isCmdEmpty()) {}	
         }
     }
@@ -322,11 +331,11 @@ bool Rd53aMaskLoop::getNeighboursMap(int col, int row,int sensorType, int maskSi
 }
 
 //Return true if the pixel should be considered for this scan step, or false if it should be ignored
-bool Rd53aMaskLoop::ApplyMask(int col, int row){
+bool Rd53aMaskLoop::applyMask(int col, int row){
 
 
     //Do not run over edges pixels, if not explicity requested
-    if (IgnorePixel(col, row)) return false;
+    if (ignorePixel(col, row)) return false;
 
     unsigned core_row = row/8;
     unsigned serial = (core_row*64)+((col+(core_row%8))%8)*8+row%8;
@@ -339,7 +348,7 @@ bool Rd53aMaskLoop::ApplyMask(int col, int row){
 }
 
 
-bool Rd53aMaskLoop::IgnorePixel(int col, int row){
+bool Rd53aMaskLoop::ignorePixel(int col, int row){
 
     //if checking bump bonding connections for rectangular sensors, only use (0,0) pixel
     if ( m_includedPixels == only00CornerForBumpBonding){

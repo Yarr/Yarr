@@ -146,14 +146,12 @@ void Rd53aTriggerLoop::execPart1() {
     std::cout << "------------------------------------" << std::endl;*/
     SPDLOG_LOGGER_TRACE(logger, "");
     g_tx->setCmdEnable(keeper->getTxMask());
-    dynamic_cast<Rd53a*>(g_fe)->ecr();
-    dynamic_cast<Rd53a*>(g_fe)->idle();
-    dynamic_cast<Rd53a*>(g_fe)->idle();
-    dynamic_cast<Rd53a*>(g_fe)->idle();
-    dynamic_cast<Rd53a*>(g_fe)->idle();
-    // AZ level for sync FE, m_chipId is not available here. 
-    // "Start monitoring" is also set in GlobalPulseRt, might be a problem?
-    //dynamic_cast<Rd53a*>(g_fe)->globalPulse(8/*m_chipId*/, 9); 
+    auto rd53a = dynamic_cast<Rd53a*>(g_fe);
+    rd53a->ecr();
+    rd53a->idle();
+    rd53a->idle();
+    rd53a->idle();
+    rd53a->idle();
     std::this_thread::sleep_for(std::chrono::microseconds(200));
     g_rx->flushBuffer();
     while(!g_tx->isCmdEmpty());

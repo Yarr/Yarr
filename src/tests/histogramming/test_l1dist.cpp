@@ -1,13 +1,14 @@
 #include "catch.hpp"
 
-#include "Fei4Histogrammer.h"
+#include "Fei4EventData.h"
 #include "AllHistogrammers.h"
+#include "Histo1d.h"
 
 // Strictly, it's in libFei4, but not specifically
 TEST_CASE("HistogramL1Dist", "[Histogrammer][Fei4][notFei4][L1Dist]") {
     // This is for one FE
-    std::unique_ptr<DataProcessor> histo(new Fei4Histogrammer);
-    auto& histogrammer = static_cast<Fei4Histogrammer&>(*histo);
+    std::unique_ptr<DataProcessor> histo(new HistogrammerProcessor);
+    auto& histogrammer = static_cast<HistogrammerProcessor&>(*histo);
 
     ClipBoard<EventDataBase> input;
     ClipBoard<HistogramBase> output;

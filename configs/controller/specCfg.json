@@ -4,6 +4,8 @@
         "cfg" : {
             "specNum" : 0,
             "spiConfig" : 541200,
+            "rxPolarity" : 0,
+            "txPolarity" : 0,
             "autoZero" : {
                 "word" : 1549575846,
                 "interval" : 500

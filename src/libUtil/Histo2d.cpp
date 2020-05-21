@@ -11,6 +11,9 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <iomanip>
+
+#include "storage.hpp"
 
 #include "logging.h"
 
@@ -221,54 +224,102 @@ int Histo2d::binNum(double x, double y) {
 }
 
 
-void Histo2d::toFile(std::string prefix, std::string dir, bool header) {
-    std::string filename = dir + prefix + "_" + name + ".dat";
-    std::fstream file(filename, std::fstream::out | std::fstream::trunc);
-    // Header
-    if (header) {
-        file << "Histo2d " <<  std::endl;
-        file << name << std::endl;
-        file << xAxisTitle << std::endl;
-        file << yAxisTitle << std::endl; 
-        file << zAxisTitle << std::endl;
-        file << xbins << " " << xlow << " " << xhigh << std::endl;
-        file << ybins << " " << ylow << " " << yhigh << std::endl;
-        file << underflow << " " << overflow << std::endl;
+void Histo2d::toFile(std::string prefix, std::string dir, bool jsonType) {
+    std::string filename = dir + prefix + "_" + HistogramBase::name;
+    json j;
+
+    if (jsonType) {
+        filename += ".json";
+    } else {
+        filename += ".dat";
     }
-    // Data
-    for (unsigned int i=0; i<ybins; i++) {
-        for (unsigned int j=0; j<xbins; j++) {
-            file << data[i+(j*ybins)] << " ";
+    std::fstream file(filename, std::fstream::out | std::fstream::trunc);
+    // jsonType
+    if (jsonType) {
+        j["Type"] = "Histo2d";
+        j["Name"] = name;
+        
+        j["x"]["AxisTitle"] = xAxisTitle;
+        j["x"]["Bins"] = xbins;
+        j["x"]["Low"] = xlow;
+        j["x"]["High"] = xhigh;
+        
+        j["y"]["AxisTitle"] = yAxisTitle;
+        j["y"]["Bins"] = ybins;
+        j["y"]["Low"] = ylow;
+        j["y"]["High"] = yhigh;
+        
+        j["z"]["AxisTitle"] = zAxisTitle;
+        
+        j["Underflow"] = underflow;
+        j["Overflow"] = overflow;
+        
+        for (unsigned int y=0; y<ybins; y++) {
+            for (unsigned int x=0; x<xbins; x++) {
+                j["Data"][x][y] = data[y+(x*ybins)] ;
+            }
         }
-        file << std::endl;
+        
+        file << std::setw(4) << j;
+    } else {
+        // Raw Data
+        for (unsigned int i=0; i<ybins; i++) {
+            for (unsigned int j=0; j<xbins; j++) {
+                file << data[i+(j*ybins)] << " ";
+            }
+            file << std::endl;
+        }
     }
     file.close();
 }
 
 bool Histo2d::fromFile(std::string filename) {
-    std::fstream file(filename, std::fstream::in);
-    // Check for header
-    std::string line;
-    std::getline(file, line);
-    if (line.find("Histo2d") == std::string::npos) {
-        std::cerr << "ERROR: Tried loading 2d Histogram from file " << filename << ", but file has non or incorrect header" << std::endl;
-        file.close();
+    std::ifstream file(filename, std::fstream::in);
+    json j;
+    try {
+        if (!file) {
+            throw std::runtime_error("could not open file");
+        }
+        try {
+            j = json::parse(file);
+        } catch (json::parse_error &e) {
+            throw std::runtime_error(e.what());
+        }
+    } catch (std::runtime_error &e) {
+        std::cerr << "#ERROR# opening histogram: " << e.what() << std::endl;
+        return false;
+    }
+    // Check for type
+    if (j["Type"].empty()) {
+        std::cerr << "#ERROR# this does not seem to be a histogram file, could not parse." << std::endl;
         return false;
     } else {
-        file >> name;
-        file >> xAxisTitle;
-        file >> yAxisTitle;
-        file >> zAxisTitle;
-        file >> xbins >> xlow >> xhigh;
-        file >> ybins >> ylow >> yhigh;
-        file >> underflow >> overflow;
-    }
-    // Data
+        if (j["Type"] == "Histo2d") {
+            std::cerr << "#ERROR# File contains the wrong type: " << j["Type"] <<  std::endl;
+            return false;
+        }
 
-    data = std::vector<double>(xbins*ybins);
-    for (unsigned int i=0; i<ybins; i++) {
-        for (unsigned int j=0; j<xbins; j++) {
-            file >> data[i+(j*ybins)];
+        name = j["Name"];
+        xAxisTitle = j["x"]["AxisTitle"];
+        yAxisTitle = j["y"]["AxisTitle"];
+        zAxisTitle = j["z"]["AxisTitle"];
+
+        xbins = j["x"]["Bins"];
+        xlow = j["x"]["Low"];
+        xhigh = j["x"]["High"];
+
+        ybins = j["y"]["Bins"];
+        xlow = j["y"]["Low"];
+        xhigh = j["y"]["High"];
+        
+        underflow = j["underflow"];
+        overflow = j["overflow"];
+
+        data = std::vector<double>(xbins*ybins);
+        for (unsigned int x=0; x<ybins; x++) {
+            for (unsigned int y=0; y<xbins; y++) {
+                data[x+(y*ybins)] = j["Data"][x][y];
+            }
         }
     }
     file.close();

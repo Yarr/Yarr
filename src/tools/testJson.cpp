@@ -10,6 +10,8 @@
 #include "Bookkeeper.h"
 #include "ScanFactory.h"
 
+#include "storage.hpp"
+
 // By default, don't talk to controllers
 bool config_controllers = false;
 bool verbose = false;
@@ -272,7 +274,7 @@ int main(int argc, char *argv[]) {
     }
     jsonConfig = json::parse(ifs);
     ifs.close();
-  } catch (json::parse_error &e) {
+  } catch (std::runtime_error &e) {
     std::cerr << "Failed to parse file as json: " << e.what() << '\n';
     // file_name
     return 1;

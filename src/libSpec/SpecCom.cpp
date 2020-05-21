@@ -208,6 +208,25 @@ void SpecCom::init() {
         slog->warn("... BAR4 not mapped ({})", e.what());
         bar4 = NULL;
     }
+
+    // Print FW info
+    uint32_t fw_vers = readSingle(0x7<<14 | 0x6);
+    uint32_t fw_ident = readSingle(0x7<<14 | 0x7);
+    if (fw_ident == 0xFFFFFFFF || fw_vers == 0xFFFFFFFF) {
+        slog->error("Could not read FW version or identifier!");
+    } else {
+        slog->info("~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+        slog->info("Firmware Version: 0x{:x}", fw_vers);
+        slog->info("Firmware Identifier: 0x{:x}", fw_ident);
+        slog->info("FPGA card: {}", specIdentHw[(fw_ident>>24)&0xFF]);
+        slog->info("FE Chip Type: {}", specIdentChip[(fw_ident>>16)&0xFF]);
+        slog->info("FMC Card Type: {}", specIdentFmc[(fw_ident>>8)&0xFF]);
+        slog->info("RX Speed: {}", specIdentSpeed[(fw_ident>>4)&0xF]);
+        slog->info("Channel Configuration: {}", specIdentChCfg[(fw_ident)&0xF]);
+        slog->info("~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    } 
+    // TODO decode firmware identifier
+
     slog->info("Flushing buffers ...");
     this->flushDma();
     slog->info("Init success!");

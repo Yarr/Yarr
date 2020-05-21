@@ -27,7 +27,7 @@ void Fe65p2PixelFeedback::feedback(unsigned channel, Histo2d *h) {
         fbHistoMap[channel] = h;
     }
 
-    keeper->mutexMap[channel].unlock();
+    fbMutexMap[channel].unlock();
 }
 
 void Fe65p2PixelFeedback::setPixel(unsigned channel, unsigned col, unsigned row, unsigned val) {
@@ -41,9 +41,10 @@ void Fe65p2PixelFeedback::setPixel(unsigned channel, unsigned col, unsigned row,
        dsign = 1;
        tdac = 15-val;
    }
-   
-   dynamic_cast<Fe65p2*>(keeper->feList[channel])->setSign(col, row, dsign);
-   dynamic_cast<Fe65p2*>(keeper->feList[channel])->setTDAC(col, row, tdac);
+
+   auto fe65p2 = dynamic_cast<Fe65p2*>(keeper->feList[channel]);
+   fe65p2->setSign(col, row, dsign);
+   fe65p2->setTDAC(col, row, tdac);
    keeper->globalFe<Fe65p2>()->setSign(col, row, dsign);
    keeper->globalFe<Fe65p2>()->setTDAC(col, row, tdac);
 }
@@ -116,13 +117,13 @@ void Fe65p2PixelFeedback::end() {
 void Fe65p2PixelFeedback::execPart1() {
     g_stat->set(this, cur);
     unsigned ch = 0; // hardcoded TODO
-    keeper->mutexMap[ch].try_lock();
+    fbMutexMap[ch].try_lock();
     this->writePixelCfg(ch);
 }
 
 void Fe65p2PixelFeedback::execPart2() {
     unsigned ch = 0;
-    keeper->mutexMap[ch].lock();
+    fbMutexMap[ch].lock();
     this->addFeedback(ch);
 
     // Execute last step twice to get full range
