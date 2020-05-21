@@ -89,15 +89,6 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq53 {
                             unsigned int index);
 
         bool checkTDC(const uint32_t& word);
-
-        void printStats();
-
-        //debug
-        unsigned long totalWords = 0;
-        unsigned long userkWords = 0;
-        unsigned long dataWords = 0;
-        unsigned long headerWords = 0;
-        unsigned long hitWords = 0;
 };
 
 #endif

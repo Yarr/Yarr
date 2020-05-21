@@ -3,11 +3,6 @@
 
 #include <iostream>
 #include <vector>
-//#include <stdint.h>
-//#include <thread>
-//#include <mutex>
-//#include <chrono>
-
 #include "TxCore.h"
 #include "Bdaq53.h"
 
@@ -45,9 +40,6 @@ class BdaqTxCore : virtual public TxCore, virtual public Bdaq53 {
         void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) {}
         void resetTriggerLogic() {}
         uint32_t getTrigInCount() {}
-
-        void setManualDigitalTrig();
-
     protected:
 
     private:
@@ -57,8 +49,6 @@ class BdaqTxCore : virtual public TxCore, virtual public Bdaq53 {
         std::vector<uint8_t> cmdData;
         std::vector<uint8_t> trgData; //Let's keep things separated for now.
         void sendCommand();
-
-        bool once = true;
 };
 
 #endif

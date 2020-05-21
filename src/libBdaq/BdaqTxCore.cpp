@@ -1,4 +1,3 @@
-//#define FIX_TRIGGER 
 #define FIX_POST_DELAY
 
 #include "BdaqTxCore.h"
@@ -19,12 +18,6 @@ void BdaqTxCore::writeFifo(uint32_t value) {
     cmdData.push_back(value >> 16 & 0xFF);
     cmdData.push_back(value >>  8 & 0xFF);
     cmdData.push_back(value       & 0xFF);
-
-    //Inserting a SYNC frame every 32 frames
-    /*if (cmdData.size() % 32 == 0) {
-        cmdData.push_back(0x81);
-        cmdData.push_back(0x7E);
-    }*/
 
     // Checking for cmd_rd53 buffer (FPGA) overflow.
     // Should never happen if isCmdEmpty() is correctly called.
@@ -96,74 +89,6 @@ bool BdaqTxCore::isCmdEmpty() {
 // Command Repeater Stuff
 //==============================================================================
 
-void BdaqTxCore::setManualDigitalTrig() {
-
-    std::vector<uint8_t> test;
-    
-    //  
-    for (uint i=0; i<10; ++i) {
-        test.push_back(0x69);
-        test.push_back(0x69);
-    }
-    // cal (chip_id: 0)
-    test.push_back(0x63);
-    test.push_back(0x63);
-    test.push_back(0xa9);
-    test.push_back(0x71);
-    test.push_back(0xa6);
-    test.push_back(0x6a);
-    //
-    // 
-    // Trigger Delay: should range from 117 to 124
-    // BDAQ setting: 121
-    // BDAQ LatencyConfig: 500
-    // 121*4 = 484
-    // 
-    // ITkSw setting: 14 (14*4 = 56)
-    // ITkSw LatencyConfig: 58
-    //
-    for (uint i=0; i<124; ++i) { 
-        test.push_back(0x69);
-        test.push_back(0x69);
-    }
-    // trigger -- Something here that BDAQ does NOT like.
-    // Replace with BDAQ trigger and it should work
-    /*test.push_back(0x56);
-    test.push_back(0x6a);
-    test.push_back(0x56);
-    test.push_back(0x6c);
-    test.push_back(0x56);
-    test.push_back(0x71);
-    test.push_back(0x56);
-    test.push_back(0x72);*/
-    // BDAQ Trigger
-    for (uint i=0; i<8; ++i) {
-        test.push_back(0x56);
-        test.push_back(0x6a);
-    }
-    // noop
-    for (uint i=0; i<7; ++i) { 
-        test.push_back(0x69);
-        test.push_back(0x69);
-    }
-    // Cal Arm
-    test.push_back(0x63);
-    test.push_back(0x63);
-    test.push_back(0xa9);
-    test.push_back(0x6a);
-    test.push_back(0x6a);
-    test.push_back(0x6a);
-    // Post delay
-    // BDAQ setting: 800
-    // Reducing to 100 yielded a flawless digital scan.
-    for (uint i=0; i<100; ++i) {
-        test.push_back(0x69);
-        test.push_back(0x69);
-    }
-
-    trgData = test;    
-}
-
 void BdaqTxCore::setTrigWord(uint32_t *word, uint32_t length) {
     if (verbose) {
         std::cout << __PRETTY_FUNCTION__ << " : " << std::endl;
@@ -177,52 +102,12 @@ void BdaqTxCore::setTrigWord(uint32_t *word, uint32_t length) {
         trgData.push_back(word[length-i-1]       & 0xFF);
     }
     
-    //-------------------------------------------------------------------------
-    // "Adapting" YARR commands
-    //-------------------------------------------------------------------------
-
-    #ifdef FIX_TRIGGER
-    // For a standard digital scan, trigger command begins at index=96
-    const uint triggerIndex = 96;
-
-    // Erasing original trigger command
-    trgData.erase(trgData.begin()+triggerIndex, trgData.begin()+triggerIndex+8);
-
-    // Inserting BDAQ trigger command
-    std::vector<uint8_t> fixTrigger;
-    for (uint i=0; i<8; ++i) {
-        fixTrigger.push_back(0x56);
-        fixTrigger.push_back(0x6a);
-    }
-    trgData.insert(trgData.begin()+triggerIndex, fixTrigger.begin(), fixTrigger.end());
-    #endif 
-
+    // POST Delay
     #ifdef FIX_POST_DELAY
-    // Although there are already 2 NoOp commands in the end of the 
-    // command buffer (for a standard digital scan with trigDelay=56),
-    // BDAQ needs more "post delay". Likely to avoid overrunning the
-    // readout FIFO. Original value in BDAQ code is 800. I could go
-    // down to 200 for faster scans. It might not work if the TCP 
-    // connection is somehow slower. Also, there is still no dedicated
-    // thread for the readout. It might help getting things faster.
     const uint fixPostDelaySize = 400;
-
     std::vector<uint8_t> fixPostDelay(fixPostDelaySize*2, 0x69); 
     trgData.insert(trgData.end(), fixPostDelay.begin(), fixPostDelay.end());
     #endif 
-
-    //setManualDigitalTrig(); // Replace generated commands with manual commands
-
-    if (once && verbose) {
-        once = false;
-        uint index = 0;
-        std::cout << __PRETTY_FUNCTION__ << " : " << std::endl;
-        for (const auto& t : trgData) {
-            std::cout << "[" << index << "]: 0x" << std::hex << +t << std::dec << std::endl; 
-            ++index;
-        }
-        std::cin.get();
-    }
 }
 
 void BdaqTxCore::setTrigCnt(uint32_t count) {
@@ -240,7 +125,6 @@ void BdaqTxCore::setTrigEnable(uint32_t value) {
     
     if (value == 0x0) return;
 
-    //std::cout << "trgData.size() = " << trgData.size() << std::endl;
     cmd.setData(trgData);
     cmd.setSize(trgData.size()); 
     cmd.setRepetitions(trgRepetitions);
@@ -291,6 +175,5 @@ bool BdaqTxCore::isTrigDone() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     
-    //std::this_thread::sleep_for(std::chrono::milliseconds(200));
     return cmd.isDone();
 }

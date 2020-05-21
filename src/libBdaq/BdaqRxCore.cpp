@@ -59,62 +59,10 @@ void BdaqRxCore::checkRxSync() {
 	}
 }
 
-void printWords(std::vector<uint32_t>& buf, std::string id="", std::size_t max=30) {
-    std::size_t wCount = buf.size();
-    std::cout << "---> " << id << " Data Stream: " << std::endl;
-    std::cout << "size: " << wCount << std::endl;
-    uint col = 0;
-    std::size_t count = (wCount > max ? max : wCount);
-    for (std::size_t i=0; i<count; ++i) {
-        std::cout << std::hex << "0x" << buf[i] << ", ";
-        ++col;
-        if (col == 10) {
-            col = 0;
-            std::cout << std::endl;
-        }
-    }
-    std::cout << std::dec << std::endl;    
-}
-
-void printWords(uint32_t* buf, std::size_t wCount, std::string id="", std::size_t max=30) {
-    std::cout << "---> " << id << " Data Stream: " << std::endl;
-    std::cout << "size: " << wCount << std::endl;
-    uint col = 0;
-    std::size_t count = (wCount > max ? max : wCount);
-    for (std::size_t i=0; i<count; ++i) {
-        std::cout << std::hex << "0x" << buf[i] << ", ";
-        ++col;
-        if (col == 10) {
-            col = 0;
-            std::cout << std::endl;
-        }
-    }
-    std::cout << std::dec << std::endl;    
-}
-
-void BdaqRxCore::printStats() {
-    std::cout << "totalWords  : " << totalWords  << std::endl 
-              << "userkWords  : " << userkWords  << std::endl
-              << "dataWords   : " << dataWords   
-                << " ===> headerWords: " << headerWords 
-                << ", hitWords: " << hitWords << std::endl;
-}
-
-void BdaqRxCore::printBufferStatus() {
-    std::cout << "---------------------------------------------" << std::endl;
-    std::cout << "TCP buffer in bytes: " << fifo.getTcpSize() << std::endl;
-    std::cout << "TCP Available words: " << fifo.getAvailableWords() << std::endl;
-    std::cout << "---------------------------------------------" << std::endl;
-}
-
 RawData* BdaqRxCore::readData() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;
     std::size_t wCount = fifo.getAvailableWords();
-    /*if (wCount % 2) {
-        std::cout << "wCount: " << wCount << std::endl;
-        std::cin.get();
-    }*/
     // We can only decode pair of words
     //wCount = wCount - (wCount % 2); 
     std::vector<uint32_t> inBuf;
@@ -122,7 +70,6 @@ RawData* BdaqRxCore::readData() {
 
     if (wCount > 0) {
         std::size_t inSize = wCount;
-        //printWords(inBuf, "inBuf", 60);
         // outBuf size is always < wCount. 
         uint32_t* outBuf = new uint32_t[wCount]; 
         // now wCount has the number of decoded (thus, usable) words
@@ -133,8 +80,6 @@ RawData* BdaqRxCore::readData() {
                 std::cout << "inSize: " << inSize << ", outSize: " << outSize << std::endl;
                 std::cin.get();
             }
-            //printWords(outBuf, wCount, "outBuf");
-            //printStats();
             return new RawData(0x0, outBuf, wCount);
         } 
         return NULL;
@@ -145,9 +90,7 @@ RawData* BdaqRxCore::readData() {
 void BdaqRxCore::flushBuffer() {
     if (verbose)
         std::cout << __PRETTY_FUNCTION__ << std::endl;   
-    //readout.reset();
     auroraRx.resetLogic();
-    //std::this_thread::sleep_for(std::chrono::milliseconds(200));
     fifo.flushBuffer();
 }
 
@@ -173,8 +116,6 @@ bool BdaqRxCore::isBridgeEmpty() {
 // readout blocks. The same applies to Pixel Data words. This behavior
 // is due to the arbiter (selecting either USERK or Pixel Data) inside
 // the BDAQ RX core (rx_aurora).
-//
-// Thought of using setupMode()...
 
 unsigned int BdaqRxCore::decode(std::vector<uint32_t>& in, uint32_t* out) {
     
@@ -182,7 +123,6 @@ unsigned int BdaqRxCore::decode(std::vector<uint32_t>& in, uint32_t* out) {
     
 
     for (const auto& word : in) {
-        ++totalWords; // Counting 32-bit BDAQ Readout words
 
         if (word & TRIGGER_ID) {
             throw std::runtime_error("TLU data is not yet supported.");
@@ -191,7 +131,6 @@ unsigned int BdaqRxCore::decode(std::vector<uint32_t>& in, uint32_t* out) {
             throw std::runtime_error("TDC data is not yet supported.");
         } 
         if (word & USERK_FRAME_ID) {
-            ++userkWords; // Counting 32-bit BDAQ readout words which are USERK
             index = decodeUserk(word, out, index);
             continue;
         } 
@@ -206,18 +145,15 @@ unsigned int BdaqRxCore::decode(std::vector<uint32_t>& in, uint32_t* out) {
             isHighWord = false; // Next low word
             continue;
         } else {
-            ++dataWords; //Counting 32-bit RD53A Data words
             dataWord = (dataWord << 16) | (word & 0xFFFF);
             isHighWord = true; // Next is high word
         }
 
         if (isEventHeader) {
-            ++headerWords; // Counting 32-bit RD53A Event Headers
             isEventHeader = false;
             out[index] = dataWord;
             ++index;
         } else {
-            ++hitWords; // Counting 32-bit RD53A Hit Data
             out[index] = dataWord;
             ++index;
         }
