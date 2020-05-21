@@ -39,7 +39,7 @@ class BdaqTxCore : virtual public TxCore, virtual public Bdaq53 {
         void setTriggerLogicMask(uint32_t mask) {}
         void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) {}
         void resetTriggerLogic() {}
-        uint32_t getTrigInCount() {}
+        uint32_t getTrigInCount() { return 0; }
     protected:
 
     private:
