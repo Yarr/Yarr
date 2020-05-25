@@ -6,7 +6,7 @@
 // # Email: timon.heim at cern.ch
 // # Project: Yarr
 // # Description: Analysis Base class
-// # Comment: 
+// # Comment:
 // ################################
 
 #include <iostream>
@@ -95,12 +95,13 @@ class ScurveFitter : public AnalysisAlgorithm {
         unsigned n_count;
         unsigned injections;
         unsigned cnt;
+        bool isDoubleInject;
 	    unsigned n_failedfit;
-        
+
         std::vector<double> x;
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
-     
+
         std::map<unsigned, std::unique_ptr<Histo1d>> histos;
         std::map<unsigned, std::unique_ptr<Histo2d>> sCurve;
         std::map<unsigned, std::unique_ptr<Histo2d>> thrMap;
@@ -110,8 +111,8 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::map<unsigned, std::unique_ptr<Histo1d>> chiDist;
         std::map<unsigned, std::unique_ptr<Histo1d>> timeDist;
 
-        std::map<unsigned, std::unique_ptr<Histo2d>> chi2Map;   
-        std::map<unsigned, std::unique_ptr<Histo2d>> statusMap; 
+        std::map<unsigned, std::unique_ptr<Histo2d>> chi2Map;
+        std::map<unsigned, std::unique_ptr<Histo2d>> statusMap;
         std::map<unsigned, std::unique_ptr<Histo1d>> statusDist;
 
         std::unique_ptr<PixelFeedbackSender> fb;
@@ -119,7 +120,7 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::map<unsigned, std::unique_ptr<Histo2d>> deltaThr;
         unsigned prevOuter;
         double thrTarget;
-        
+
         std::map<unsigned, unsigned> innerCnt;
         std::map<unsigned, unsigned> medCnt;
         std::map<unsigned, unsigned> vcalCnt;

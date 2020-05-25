@@ -3,7 +3,7 @@
 // # Email: timon.heim at cern.ch
 // # Project: Yarr
 // # Description: Analysis Base class
-// # Comment: 
+// # Comment:
 // ################################
 
 #include "Fei4Analysis.h"
@@ -81,6 +81,10 @@ void OccupancyAnalysis::init(ScanBase *s) {
             } else {
                 injections = trigLoop->getTrigCnt();
             }
+        }
+        if (l->type() == typeid(Rd53a2TriggerLoop*)) {
+           Rd53a2TriggerLoop *trigLoop = (Rd53a2TriggerLoop*) l.get();
+           injections = trigLoop->getTrigCnt()*2;
         }
     }
 }
@@ -320,7 +324,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
                 if (occMaps[ident]->getBin(i) == injections) {
                     mean += meanTotMap->getBin(i);
                     entries++;
-                } 
+                }
             }
             if (entries > 0) {
                 mean = mean/entries;
@@ -415,6 +419,11 @@ void ScurveFitter::init(ScanBase *s) {
             } else {
                 injections = trigLoop->getTrigCnt();
             }
+        }
+        if (l->type() == typeid(Rd53a2TriggerLoop*)) {
+            Rd53a2TriggerLoop *trigLoop = (Rd53a2TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt()*2;
+            isDoubleInject = true;
         }
 
         // check injection capacitor for FEI-4
@@ -551,7 +560,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         hh2->setXaxisTitle("Column");
                         hh2->setYaxisTitle("Row");
                         hh2->setZaxisTitle("Chi2");
-                        chi2Map[outerIdent].reset(hh2);     
+                        chi2Map[outerIdent].reset(hh2);
 
                         hh2 = new Histo2d("StatusMap-"+std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
                         hh2->setXaxisTitle("Column");
@@ -572,7 +581,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
                     double chi2= status.fnorm/(double)status.nfev;
 
-                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0 
+                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0
                             && chi2 < 2.5 && chi2 > 1e-6) {
                         FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
                         thrMap[outerIdent]->setBin(bin, feCfg->toCharge(par[0], useScap, useLcap));
@@ -611,7 +620,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
             hh2->setZaxisTitle("TDAC change");
             step[outerIdent] = std::move(hh2);
         }
-        
+
         if (deltaThr[outerIdent] == nullptr) {
             Histo2d *hh2 = new Histo2d("DeltaThreshold-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
             hh2->setXaxisTitle("Column");
@@ -645,7 +654,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                             step[outerIdent]->setBin(bin, step[prevOuter]->getBin(bin)*-1);
                         }
                     }
-                } 
+                }
                 deltaThr[outerIdent]->setBin(bin, thrTarget - thrMap[outerIdent]->getBin(bin));
             }
         }
@@ -712,6 +721,19 @@ void ScurveFitter::end() {
                     sigDist[i]->fill(sigMap[i]->getBin(bin));
             }
 
+            //Double injection plot
+            if(isDoubleInject){
+                for(uint n=0; n<sCurve.size(); n++){
+                    if(sCurve[n]->getName() == "sCurve"){
+                    int k = sCurve[n]->binNum(sCurve[n]->getXlow(),injections/2);
+                    int ybins = sCurve[n]->getYbins();
+                    for(uint i=0; i<sCurve[n]->getXbins(); i++){
+                        sCurve[n]->setBin(k + ybins*i,0);
+                        }
+                    }
+                }
+            }
+
             // Before moving data to clipboard
             alog->info("\033[1;33m[{}][{}] Threshold Mean = {} +- {}\033[0m", channel, i, thrMap[i]->getMean(), thrMap[i]->getStdDev());
             alog->info("\033[1;33m[{}][{}] Noise Mean = {} +- {}\033[0m", channel, i, sigMap[i]->getMean(), sigMap[i]->getStdDev());
@@ -756,6 +778,10 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
             } else {
                 injections = trigLoop->getTrigCnt();
             }
+        }
+        if (l->type() == typeid(Rd53a2TriggerLoop*)) {
+                   Rd53a2TriggerLoop *trigLoop = (Rd53a2TriggerLoop*) l.get();
+                   injections = trigLoop->getTrigCnt()*2;
         }
 
         if (l->isGlobalFeedbackLoop()) {
@@ -964,6 +990,10 @@ void L1Analysis::init(ScanBase *s) {
                 injections = trigLoop->getTrigCnt();
             }
         }
+        if (l->type() == typeid(Rd53a2TriggerLoop*)) {
+            Rd53a2TriggerLoop *trigLoop = (Rd53a2TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt()*2;
+        }
     }
 }
 
@@ -1106,7 +1136,7 @@ void NoiseAnalysis::end() {
     noiseOcc->add(&*occ);
     noiseOcc->scale(1.0/(double)n_trigger);
     alog->info("[{}] Received {} total trigger!", channel, n_trigger);
-    double noiseThr = 1e-6; 
+    double noiseThr = 1e-6;
     for (unsigned i=0; i<noiseOcc->size(); i++) {
         if (noiseOcc->getBin(i) > noiseThr) {
             mask->setBin(i, 0);

@@ -87,7 +87,7 @@ class LoopActionBase {
 
         virtual void loadConfig(json &config) {}
         virtual void writeConfig(json &config) {}
-		
+
     protected:
         virtual void init() {}
         virtual void end() {}
@@ -100,6 +100,12 @@ class LoopActionBase {
         int min;
         int max;
         unsigned step;
+
+        //minMultiple, maxMultiple, and stepMultiple used by Rd53aTriggerLoop, which can take multiple parameter values for concurrent stepping.
+        //These vectors contain any additional parameters to step. The first parameter in the list is put in min, max, and step (above).
+        std::vector<int> minMultiple;
+        std::vector<int> maxMultiple;
+        std::vector<int> stepMultiple;
 
         double progress;
 
