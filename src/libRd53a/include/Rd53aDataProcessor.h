@@ -47,23 +47,7 @@ class Rd53aDataProcessor : public DataProcessor {
         std::map<unsigned, int> hits;
 
         void process_core();
-        
-        unsigned long dataWords = 0;
-        unsigned long headerWords = 0;
-        unsigned long hitWords = 0;
-        unsigned long invalidWords = 0; //invalid Hit words
-        unsigned long ffffWords = 0;
-        unsigned long noWayWords = 0;
-
-        unsigned long dataTotal = 0;
-        unsigned long headerTotal = 0;
-        unsigned long hitTotal = 0;
-        unsigned long invalidTotal = 0; //invalid Hit words
-        unsigned long ffffTotal = 0;
-        unsigned long noWayTotal = 0;
-
-        void printLocalStats();
-        void printGlobalStats();    
+    
 };
 
 #endif

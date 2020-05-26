@@ -69,32 +69,6 @@ void Rd53aDataProcessor::process() {
     process_core();
 }
 
-void Rd53aDataProcessor::printLocalStats() {
-    std::cout << "---------------------------------------------" << std::endl;
-    std::cout << "= Local Statistics = "                         << std::endl;
-    std::cout << "---------------------------------------------" << std::endl;
-    std::cout << "data   : " << dataWords 
-                    << " ===> header: " << headerWords
-                    << ", hit: " << hitWords << std::endl
-              << "invalid: " << invalidWords << std::endl
-              << "ffff   : " << ffffWords << std::endl
-              << "noWay  : " << noWayWords << std::endl;
-    std::cout << "---------------------------------------------" << std::endl;
-}
-
-void Rd53aDataProcessor::printGlobalStats() {
-    std::cout << "---------------------------------------------" << std::endl;
-    std::cout << "= Global Statistics = "                        << std::endl;
-    std::cout << "---------------------------------------------" << std::endl;
-    std::cout << "data   : " << dataTotal 
-                    << " ===> header: " << headerTotal
-                    << ", hit: " << hitTotal << std::endl
-              << "invalid: " << invalidTotal << std::endl
-              << "ffff   : " << ffffTotal << std::endl
-              << "noWay  : " << noWayTotal << std::endl;
-    std::cout << "---------------------------------------------" << std::endl;
-}
-
 void Rd53aDataProcessor::process_core() {
     // TODO put data from channels back into input, so other processors can use it
     for (auto &i : activeChannels) {
@@ -121,16 +95,11 @@ void Rd53aDataProcessor::process_core() {
         }
 
         unsigned size = curInV->size();
-        /*std::cout << "---------------------------------------------" << std::endl;
-        std::cout << "curInV->size(): " << size << std::endl;
-        std::cout << "---------------------------------------------" << std::endl;*/
         for(unsigned c=0; c<size; c++) {
             RawData curIn(curInV->adr[c], curInV->buf[c], curInV->words[c]);
-            //std::cout << "===> curInV: " << c << std::endl;
             // Process
             unsigned words = curIn.words;
             dataCnt += words;
-            dataWords = headerWords = hitWords = invalidWords = ffffWords = noWayWords = 0; //local counters
             for (unsigned i=0; i<words; i++) {
                 // Decode content
                 // TODO this needs review, can't deal with user-k data
@@ -139,9 +108,7 @@ void Rd53aDataProcessor::process_core() {
                 unsigned channel = activeChannels[(i/2)%activeChannels.size()];
                 logger->debug("[{}]\t\t[{}] = 0x{:x}", i, channel, data);
                 if (__builtin_expect(((data & 0xFFFF0000) != 0xFFFF0000 ), 1)) {
-                    ++dataWords;
                     if ((data >> 25) & 0x1) { // is header
-                        ++headerWords;
                         l1id[channel] = 0x1F & (data >> 20);
                         tag[channel] = 0x1F & (data >> 15);
                         bcid[channel] = 0x7FFF & data;
@@ -163,7 +130,6 @@ void Rd53aDataProcessor::process_core() {
                         //logger->debug("[Data] : COL({}) ROW({}) Region({}) TOT({},{},{},{}) RAW(0x{:x})", core_col, core_row, region, tot3, tot2, tot1, tot0, data);
 
                         if (__builtin_expect((pix_col < Rd53a::n_Col && pix_row < Rd53a::n_Row), 1)) {
-                            ++hitWords;
                             // Check if there is already an event
                             if (events[channel] == 0) {
                                 logger->debug("[{}] No header in data fragment!", channel);
@@ -190,26 +156,12 @@ void Rd53aDataProcessor::process_core() {
                                 hits[channel]++;
                             }
                         } else {
-                            ++invalidWords;
                             logger->error("[{}] Received data not valid: 0x{:x}", channel, curIn.words);
                         }
 
                     }
-                } else if ((data & 0xFFFF0000) == 0xFFFF0000) {
-                    ++ffffWords;
-                } else {
-                    ++noWayWords;
                 }
             }            
-            //printLocalStats();
-            
-            // For each member in CurInV
-            dataTotal    += dataWords;
-            headerTotal  += headerWords;
-            hitTotal     += hitWords;
-            invalidTotal += invalidWords;
-            ffffTotal    += ffffWords;
-            noWayTotal   += noWayWords;
         }
 
         // Push data out
