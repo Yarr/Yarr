@@ -6,7 +6,7 @@
 // # Email: timon.heim at cern.ch
 // # Project: Yarr
 // # Description: Analysis Base class
-// # Comment:
+// # Comment: 
 // ################################
 
 #include <iostream>
@@ -34,14 +34,12 @@ class OccupancyAnalysis : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end() {}
-	void loadConfig(json &config);
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
-	bool createMask;
         unsigned n_count;
         unsigned injections;
-        std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
+        std::map<unsigned, Histo2d*> occMaps;
         std::map<unsigned, unsigned> innerCnt;
 };
 
@@ -52,18 +50,17 @@ class TotAnalysis : public AnalysisAlgorithm {
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
-        void end();
-	void loadConfig(json &config){}
+        void end() {}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         unsigned n_count;
         double injections;
-        std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
+        std::map<unsigned, Histo2d*> occMaps;
         std::map<unsigned, unsigned> occInnerCnt;
-        std::map<unsigned, std::unique_ptr<Histo2d>> totMaps;
+        std::map<unsigned, Histo2d*> totMaps;
         std::map<unsigned, unsigned> totInnerCnt;
-        std::map<unsigned, std::unique_ptr<Histo2d>> tot2Maps;
+        std::map<unsigned, Histo2d*> tot2Maps;
         std::map<unsigned, unsigned> tot2InnerCnt;
         std::unique_ptr<GlobalFeedbackSender> globalFb;
         std::unique_ptr<PixelFeedbackSender> pixelFb;
@@ -85,7 +82,7 @@ class ScurveFitter : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-	void loadConfig(json &config){}
+
     private:
         unsigned vcalLoop;
         unsigned vcalMin;
@@ -96,8 +93,6 @@ class ScurveFitter : public AnalysisAlgorithm {
         unsigned injections;
         unsigned cnt;
         bool isDoubleInject;
-	    unsigned n_failedfit;
-
         std::vector<double> x;
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -122,10 +117,8 @@ class ScurveFitter : public AnalysisAlgorithm {
         double thrTarget;
 
         std::map<unsigned, unsigned> innerCnt;
-        std::map<unsigned, unsigned> medCnt;
-        std::map<unsigned, unsigned> vcalCnt;
-        bool useScap;
-        bool useLcap;
+	bool useScap;
+	bool useLcap;
 };
 
 class OccGlobalThresholdTune : public AnalysisAlgorithm {
@@ -136,13 +129,13 @@ class OccGlobalThresholdTune : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end() {};
-	void loadConfig(json &config){}
+
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         unsigned n_count;
-        std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
-        std::map<unsigned, std::unique_ptr<Histo1d>> occDists;
+        std::map<unsigned, Histo2d*> occMaps;
+        std::map<unsigned, Histo1d*> occDists;
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;
         std::unique_ptr<GlobalFeedbackSender> fb;
@@ -158,15 +151,14 @@ class GlobalPreampTune : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end() {};
-	void loadConfig(json &config){}
 
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         unsigned n_count;
-        std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
-        std::map<unsigned, std::unique_ptr<Histo2d>> totMaps;
-        std::map<unsigned, std::unique_ptr<Histo1d>> occDists;
+        std::map<unsigned, Histo2d*> occMaps;
+        std::map<unsigned, Histo2d*> totMaps;
+        std::map<unsigned, Histo1d*> occDists;
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;
         std::unique_ptr<GlobalFeedbackSender> fb;
@@ -181,13 +173,12 @@ class OccPixelThresholdTune : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end() {};
-	void loadConfig(json &config){}
 
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         unsigned n_count;
-        std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
+        std::map<unsigned, Histo2d*> occMaps;
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;
         std::unique_ptr<PixelFeedbackSender> fb;
@@ -201,16 +192,14 @@ class L1Analysis : public AnalysisAlgorithm {
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
-        void end();
-	void loadConfig(json &config){}
+        void end() {}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         unsigned n_count;
         unsigned injections;
-        std::map<unsigned, std::unique_ptr<Histo1d>> l1Histos;
+        std::map<unsigned, Histo1d*> l1Histos;
         std::map<unsigned, unsigned> innerCnt;
-
 };
 
 class TotDistPlotter : public AnalysisAlgorithm {
@@ -221,13 +210,12 @@ class TotDistPlotter : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end() {}
-	void loadConfig(json &config){}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         unsigned n_count;
         unsigned injections;
-        std::map<unsigned, std::unique_ptr<Histo1d>> tot;
+        std::map<unsigned, Histo1d*> tot;
         std::map<unsigned, unsigned> innerCnt;
 };
 
@@ -239,11 +227,9 @@ class NoiseAnalysis : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-	void loadConfig(json &config);
     private:
         unsigned n_trigger;
-        std::unique_ptr<Histo2d> occ;
-    bool createMask;
+        Histo2d* occ;        
 };
 
 class NoiseTuning : public AnalysisAlgorithm {
@@ -254,43 +240,14 @@ class NoiseTuning : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-	void loadConfig(json &config){}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         unsigned n_count;
-        std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
+        std::map<unsigned, Histo2d*> occMaps;
         std::map<unsigned, unsigned> innerCnt;
         std::unique_ptr<GlobalFeedbackSender> globalFb;
         std::unique_ptr<PixelFeedbackSender> pixelFb;
 };
 
-class DelayAnalysis : public AnalysisAlgorithm {
-    public:
-        DelayAnalysis() : AnalysisAlgorithm() {};
-        ~DelayAnalysis() {};
-
-        void init(ScanBase *s);
-        void processHistogram(HistogramBase *h);
-        void end();
-	void loadConfig(json &config){}
-
-    private:
-        std::vector<unsigned> loops;
-        std::vector<unsigned> loopMax;
-        unsigned n_count;
-        std::map<unsigned, std::unique_ptr<Histo3d>> occMaps;
-        std::map<unsigned, std::unique_ptr<Histo1d>> histos;
-        std::map<unsigned, unsigned> innerCnt;
-        unsigned injections;
-
-        std::unique_ptr<Histo2d> delayMap;
-        std::unique_ptr<Histo2d> rmsMap;
-
-        unsigned delayLoop;
-        unsigned delayMin;
-        unsigned delayMax;
-        unsigned delayStep;
-        unsigned count;
-};
 #endif
