@@ -43,7 +43,6 @@ class BdaqTxCore : virtual public TxCore, virtual public Bdaq53 {
     protected:
 
     private:
-        bool verbose;
         uint16_t trgRepetitions = 0;
         uint32_t trgEnable = 0;
         std::vector<uint8_t> cmdData;

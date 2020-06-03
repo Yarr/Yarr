@@ -4,6 +4,11 @@
 #include <chrono>
 
 #include "Bdaq53.h"
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("Bdaq53");
+}
 
 Bdaq53::Bdaq53() : 
 	auroraRx(rbcp), 
@@ -28,19 +33,22 @@ void Bdaq53::initialize(bdaqConfig c) {
 	if (VERSION != dv.fwVersion) {
 		std::string error = "Firmware version " + dv.fwVersion + 
 		" is different than software version " + VERSION + "! Please update.";
-		throw std::runtime_error(error);
+		logger->critical(error);
+		exit(-1);
 	}
 	if (dv.boardVersion != "BDAQ53")
 	{
 		std::string error = "Only BDAQ53 board is supported in \"bdaq\" "
 			"controller mode.";
-		throw std::runtime_error(error);
+		logger->critical(error);
+		exit(-1);
 	}
-	std::cout << "\033[1;32mFound board " + dv.boardVersion + " with " + 
+	logger->info("\033[1;32mFound board " + dv.boardVersion + " with " + 
 		dv.connectorVersion + " running firmware version " + 
-		dv.fwVersion + "\033[0m" << std::endl;
-	std::cout << "Found " << dv.rxChannels << " Aurora receiver channel(s) with " <<
-		dv.rxLanes << " lane(s)" << std::endl;
+		dv.fwVersion + "\033[0m");
+	logger->info("Found " + std::to_string(dv.rxChannels) +
+		" Aurora receiver channel(s) with " + std::to_string(dv.rxLanes) +
+		" lane(s)");
 	//Check if Si570 is configured. If not, configure it.
  	if (auroraRx.getSi570IsConfigured() == false) {
 		cmd.setOutputEn(false);
@@ -51,7 +59,7 @@ void Bdaq53::initialize(bdaqConfig c) {
 		cmd.setOutputEn(true);
 		auroraRx.setSi570IsConfigured(true);
 	} else
-		std::cout << "Si570 oscillator is already configured" << std::endl;
+		logger->info("Si570 oscillator is already configured");
 	//Reset cmd encoder
 	cmd.reset(); 
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -83,24 +91,26 @@ daqVersion Bdaq53::getDaqVersion() {
 }
 
 bool Bdaq53::waitForPllLock(uint timeout) {
-	std::cout << "Waiting for PLL lock..." << std::endl;
+	logger->info("Waiting for PLL lock...");
 	uint times = 0;
 	while (times < timeout && auroraRx.getPllLocked() == false)
 		++times;
 	if (auroraRx.getPllLocked()) {
-		std::cout << "PLL locked!" << std::endl;
+		logger->info("PLL locked!");
 		return true;
 	}
-	else 
-		throw std::runtime_error("Timeout while waiting for PLL to lock.");
+	else {
+		logger->critical("Timeout while waiting for PLL to lock");
+		exit(-1);
+	}
 }
 
 void Bdaq53::setupAurora() {
 	if (boardOptionsMap[dv.boardOptions] == "640Mbps") {
-		std::cout << "Aurora receiver running at 640 Mb/s" << std::endl;
+		logger->info("Aurora receiver running at 640 Mb/s");
 		cmd.setBypassMode(false);
 	} else {
-		std::cout << "Aurora receiver running at 1.28 Gb/s" << std::endl;
+		logger->info("Aurora receiver running at 1.28 Gb/s");
 		cmd.setBypassMode(false);
 	}
 }

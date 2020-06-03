@@ -1,6 +1,11 @@
 #include <thread>
 
 #include "BdaqRxCore.h"
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("BdaqRxCore");
+}
 
 //BDAQ word identifiers
 #define USERK_FRAME_ID  0x01000000
@@ -13,7 +18,6 @@
 #define TDC_HEADER_MASK 0xF0000000
 
 BdaqRxCore::BdaqRxCore() {
-    verbose = false;
     userkCounter = 0;
     
     isEventHeader = false;
@@ -31,19 +35,22 @@ void BdaqRxCore::runMode() {
 }
 
 void BdaqRxCore::setRxEnable(uint32_t val) {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << val << std::dec << std::endl;
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << val << std::dec;
+    logger->debug(d.str());
 }
 
 void BdaqRxCore::setRxEnable(std::vector<uint32_t>) {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__;
+    logger->debug(d.str());
 }
 
 void BdaqRxCore::maskRxEnable(uint32_t val, uint32_t mask) {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << val 
-        << ", Mask 0x" << mask << std::dec << std::endl;    
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << val 
+      << ", Mask 0x" << mask << std::dec;
+    logger->debug(d.str());
 }
 
 void BdaqRxCore::checkRxSync() {
@@ -53,20 +60,20 @@ void BdaqRxCore::checkRxSync() {
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 	if (auroraRx.getRxReady()) {
-		std::cout << "-> Aurora link is synchronized!" << std::endl;
+		logger->info("Aurora link is synchronized!");
 	}
 	else {
         cmd.reset();
-		throw std::runtime_error("Aurora link DID NOT synchronize!");
+		logger->critical("Aurora link DID NOT synchronize");
+        exit(-1);
 	}
 }
 
 RawData* BdaqRxCore::readData() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
-    std::size_t wCount = fifo.getAvailableWords();
-    // We can only decode pair of words
-    //wCount = wCount - (wCount % 2); 
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__;
+    logger->debug(d.str());
+    std::size_t wCount = fifo.getAvailableWords(); 
     std::vector<uint32_t> inBuf;
     fifo.readData(inBuf, wCount);
 
@@ -78,10 +85,6 @@ RawData* BdaqRxCore::readData() {
         wCount = decode(inBuf, outBuf);
         if (wCount > 0) {
             std::size_t outSize = wCount;
-            if (outSize > inSize/2+1) {
-                std::cout << "inSize: " << inSize << ", outSize: " << outSize << std::endl;
-                std::cin.get();
-            }
             return new RawData(0x0, outBuf, wCount);
         } 
         return NULL;
@@ -90,21 +93,24 @@ RawData* BdaqRxCore::readData() {
 }
 
 void BdaqRxCore::flushBuffer() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;   
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__;
+    logger->debug(d.str());
     auroraRx.resetLogic();
     fifo.flushBuffer();
 }
 
 uint32_t BdaqRxCore::getDataRate() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__ << std::endl;
+    logger->debug(d.str());
     return 0;
 }
 
 bool BdaqRxCore::isBridgeEmpty() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__ << std::endl;
+    logger->debug(d.str());
     return true;
 }
 
@@ -123,14 +129,15 @@ unsigned int BdaqRxCore::decode(std::vector<uint32_t>& in, uint32_t* out) {
     
     unsigned int index = 0;
     
-
     for (const auto& word : in) {
 
         if (word & TRIGGER_ID) {
-            throw std::runtime_error("TLU data is not yet supported.");
+            logger->critical("TLU data is not yet supported.");
+            exit(-1);
         } 
         if (checkTDC(word)) {
-            throw std::runtime_error("TDC data is not yet supported.");
+            logger->critical("TDC data is not yet supported.");
+            exit(-1);
         } 
         if (word & USERK_FRAME_ID) {
             index = decodeUserk(word, out, index);
@@ -177,8 +184,10 @@ unsigned int BdaqRxCore::decodeUserk(const uint32_t& word, uint32_t* out,
         // regData might contain data from either 1 or 2 registers.
         // The code below will insert this data into the output stream
         // using one of the YARR expected formats.                                        
-        if (regData.size() == 0) 
-            throw std::runtime_error("regData.size() = 0.");
+        if (regData.size() == 0) {
+            logger->critical("regData.size() = 0");
+            exit(-1);
+        } 
         for (const auto& reg : regData) {
             encodeToYarr(reg, out, index); //inserts 2 words in the out stream.
             index+=2;
@@ -257,16 +266,6 @@ std::vector<BdaqRxCore::regDataT> BdaqRxCore::getRegData(BdaqRxCore::userkDataT 
         o.Data = in.Data0;
         regData.push_back(o);
     }
-
-    if (verbose) {
-        std::cout << __PRETTY_FUNCTION__ << ": " << std::endl;
-        for (const auto& p : regData) {
-            std::cout << "[("
-                << +p.Address << ", "
-                << +p.Data << ")]" << std::endl;
-        }
-    }
-
     return regData;
 }
 

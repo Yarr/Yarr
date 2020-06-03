@@ -3,11 +3,17 @@
 
 #include "BdaqRegister.h"
 #include "BdaqRBCP.h"
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("BdaqRegister");
+}
 
 template<typename T>
 uint64_t BdaqRegister<T>::readRegister(const Register &reg) const {
 	if(!(reg.type & Register::READ)) {
-		throw std::runtime_error("Read access to write-only register");
+		logger->critical("Read access to write-only register");
+		exit(-1);
 	}
 
 	int size = reg.size / 8;
@@ -31,44 +37,30 @@ uint64_t BdaqRegister<T>::readRegister(const Register &reg) const {
 template<typename T>
 void BdaqRegister<T>::writeRegister(const Register &reg, uint64_t val) {
 	if(!(reg.type & Register::WRITE)) {
-		throw std::runtime_error("Write access to read-only register");
+		logger->critical("Write access to read-only register");
+		exit(-1);
 	}
-
 	val = selectBits(val, 0, reg.size);
 	uint64_t value = val;
-
 	int size = reg.size / 8;
 	if(reg.size % 8) {
 		size++;
-		/*std::cout << "####################################################################################################" << std::endl;
-		std::cout << "===> reg.size: " << reg.size
-				  << ", base: " << std::hex << "0x" << base  
-				  << ", reg.addr: " << "0x" << reg.addr 
-				  << std::dec << std::endl;
-		std::cout << "####################################################################################################" << std::endl;*/
-		//std::cin.get();
-
  		std::vector<uint8_t> data; 
 		intf.read(base + reg.addr, data, size);
-
 		int i = 0;
 		value = 0;
 		for(auto j : data) {
 			value |= j << (i * 8);
 			i++;
 		}
-
 		value = clearBits(value, reg.offset, reg.size);
 		value |= val << reg.offset;
 	}
-
 	std::vector<uint8_t> data;
-
 	for(int i = 0; i < size; i++) {
 		data.push_back(value & 0xFF);
 		value >>= 8;
 	}
-
 	intf.write(base + reg.addr, data);
 }
 
@@ -79,7 +71,8 @@ void BdaqRegister<T>::checkVersion(unsigned int v, std::string id) {
 		std::string error = id + " version mismatch! Expected \"" + 
 		std::to_string(v) + "\" and read \"" + std::to_string(mVersion) + 
 		"\" from the hardware module.";
-		throw std::runtime_error(error);
+		logger->critical(error);
+		exit(-1);
 	}
 }
 

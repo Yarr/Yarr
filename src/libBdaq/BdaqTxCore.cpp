@@ -1,17 +1,22 @@
 #define FIX_POST_DELAY
 
 #include "BdaqTxCore.h"
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("BdaqTxCore");
+}
 
 BdaqTxCore::BdaqTxCore() {
-    verbose = false;
 }
 
 BdaqTxCore::~BdaqTxCore() {
 }
 
 void BdaqTxCore::writeFifo(uint32_t value) {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Writing 0x" << std::hex << value << std::dec << std::endl;
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__ << " : Writing 0x" << std::hex << value << std::dec;
+    logger->debug(d.str());
 
     //Filling the Command Data Vector
     cmdData.push_back(value >> 24 & 0xFF);
@@ -27,8 +32,8 @@ void BdaqTxCore::writeFifo(uint32_t value) {
     if (cmdData.size() > 4080) {
         std::stringstream error; 
         error << __PRETTY_FUNCTION__ << ": cmd_rd53 buffer > 4080 bytes!"; 
-        std::string errorStr(error.str());
-        throw std::runtime_error(errorStr);
+        logger->critical(error.str());
+        exit(-1);
     }
 }
 
@@ -44,15 +49,15 @@ void BdaqTxCore::sendCommand() {
 
 void BdaqTxCore::setCmdEnable(uint32_t value) {
     uint32_t mask = (1 << value);
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << mask << std::dec << std::endl;
-    
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << mask << std::dec;
+    logger->debug(d.str());
+
     if (mask == 0x01) {
         cmd.setOutputEn(true); 
     } else {
         cmd.setOutputEn(false);
     }
-
     enMask = mask;
 }
 
@@ -61,8 +66,9 @@ void BdaqTxCore::setCmdEnable(std::vector<uint32_t> channels) {
     for (uint32_t channel : channels) {
         mask += (1 << channel);
     }
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << mask << std::dec << std::endl;
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << mask << std::dec;
+    logger->debug(d.str());
     
     if (mask == 0x01) {
         cmd.setOutputEn(true); 
@@ -73,15 +79,16 @@ void BdaqTxCore::setCmdEnable(std::vector<uint32_t> channels) {
 }
 
 uint32_t BdaqTxCore::getCmdEnable() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__;
+    logger->debug(d.str());
     return 0;
 }
 
 bool BdaqTxCore::isCmdEmpty() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
-
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__;
+    logger->debug(d.str());
     sendCommand();
     return true;
 }
@@ -91,9 +98,9 @@ bool BdaqTxCore::isCmdEmpty() {
 //==============================================================================
 
 void BdaqTxCore::setTrigWord(uint32_t *word, uint32_t length) {
-    if (verbose) {
-        std::cout << __PRETTY_FUNCTION__ << " : " << std::endl;
-    }
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__;
+    logger->debug(d.str());
 
     // Converting YARR format to BDAQ format
     for (uint i=0; i<length; ++i) {
@@ -112,15 +119,17 @@ void BdaqTxCore::setTrigWord(uint32_t *word, uint32_t length) {
 }
 
 void BdaqTxCore::setTrigCnt(uint32_t count) {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Count " << count << std::endl;
-    
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__ << " : Count " << count;
+    logger->debug(d.str());
+
     trgRepetitions = count;
 }
 
 void BdaqTxCore::setTrigEnable(uint32_t value) {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << value << std::dec << std::endl;
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << value << std::dec;
+    logger->debug(d.str());
 
     trgEnable = value; //Emulating SPEC register
     
@@ -134,47 +143,56 @@ void BdaqTxCore::setTrigEnable(uint32_t value) {
 }
 
 uint32_t BdaqTxCore::getTrigEnable() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__;
+    logger->debug(d.str());
+
     return trgEnable; //Emulating SPEC register
 }
 
 void BdaqTxCore::maskTrigEnable(uint32_t value, uint32_t mask) {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << value << std::dec << std::endl;
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << value << std::dec;
+    logger->debug(d.str());
 }
 
 void BdaqTxCore::setTrigConfig(enum TRIG_CONF_VALUE cfg) {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Config 0x" << std::hex << cfg << std::dec << std::endl;
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__ << " : Config 0x" << std::hex << cfg << std::dec;
+    logger->debug(d.str());
 }
 
 void BdaqTxCore::setTrigFreq(double freq) {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Frequency " << freq/1.0e3 << " kHz" <<std::endl;
-    //uint32_t tmp = 1.0/((double)m_clk_period * freq);
-    
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__ << " : Frequency " << freq/1.0e3 << " kHz" <<std::endl;
+    logger->debug(d.str());
+
+    //uint32_t tmp = 1.0/((double)m_clk_period * freq);  
     // Change the number of generated NOOP frames to emulate Frequency setting?
 }
   
 void BdaqTxCore::setTrigTime(double time) {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Time " << time << " s, period " << m_clk_period <<std::endl;
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__ << " : Time " << time << " s, period " << m_clk_period <<std::endl;
+    logger->debug(d.str());
 }
 
 void BdaqTxCore::toggleTrigAbort() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Toggling Trigger abort!" << std::endl;
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__ << " : Toggling Trigger abort!";
+    logger->debug(d.str());
 }
 
 void BdaqTxCore::setTrigWordLength(uint32_t length) {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << " : Length " << length << " bit" <<std::endl;
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__ << " : Length " << length << "-bit";
+    logger->debug(d.str());
 }
 
 bool BdaqTxCore::isTrigDone() {
-    if (verbose)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
-    
+    std::stringstream d; 
+    d << __PRETTY_FUNCTION__;
+    logger->debug(d.str());
+
     return cmd.isDone();
 }

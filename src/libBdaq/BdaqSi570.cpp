@@ -1,4 +1,9 @@
 #include "BdaqSi570.h"
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("BdaqSi570");
+}
 
 void BdaqSi570::init(int8_t _slaveAddr, double freq) {
 	slaveAddr = _slaveAddr;
@@ -21,13 +26,15 @@ void BdaqSi570::frequencyChange(double freq) {
 	freqRegs fr = readRegister();
 	double fXtal = (f0 * fr.HS_DIV * fr.N1) / (fr.RFREQ / std::pow(2, 28));
 	double newFdco = freq * fr.HS_DIV * fr.N1;
-	if (newFdco < 4850.0 || newFdco > 5670.0) //DCO freq. must be within 4.85 to 5.67 GHz.
-		throw std::runtime_error("Si570 DCO frequency is out of the operating range.");
+	if (newFdco < 4850.0 || newFdco > 5670.0) { //DCO freq. must be within 4.85 to 5.67 GHz.
+		logger->critical("Si570 DCO frequency is out of the operating range");
+		exit(-1);
+	}
 	double new_RFREQ_freq = newFdco / fXtal;
 	uint64_t new_RFREQ = new_RFREQ_freq * std::pow(2, 28);
 	fr.RFREQ = new_RFREQ;
 	modifyRegister(fr);
-	std::cout << "Changed Si570 frequency to " << newFdco / (fr.HS_DIV * fr.N1) << " MHz" << std::endl;
+	logger->info("Changed Si570 frequency to " + std::to_string(newFdco / (fr.HS_DIV * fr.N1)) + " MHz");
 }
 
 void BdaqSi570::modifyRegister(freqRegs fr) {

@@ -12,6 +12,11 @@
 #include <iostream>
 #include <iomanip>
 #include <thread>
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("BdaqRBCP");
+}
 
 // RBCP constants
 #define RBCP_VER         0xFF
@@ -166,10 +171,11 @@ void BdaqRBCP::rbcpErrorHandler(std::string id, uint16_t addr, int code) {
     std::string a(stream.str());
     switch(code){
         case ACK_SUCCESS     : return; break;
-        case NO_ACK          : throw std::runtime_error("BdaqRBCP::" + id + ": NO_ACK at address: " + a + ". Is Ethernet really up?"); break;
-        case ACK_SHORT       : throw std::runtime_error("BdaqRBCP::" + id + ": ACK_SHORT at address: " + a + "."); break;
-        case ACK_ID_MISMATCH : throw std::runtime_error("BdaqRBCP::" + id + ": ACK_ID_MISMATCH at address: " + a + "."); break;
-        case 0 ... 255       : throw std::runtime_error("BdaqRBCP::" + id + ": ACK_BUS_ERROR at address: " + a + ". Number of sucessfully executed bytes: " + std::to_string(code) + "."); break;
-        default              : throw std::runtime_error("BdaqRBCP::" + id + ": ACK_UNKNOWN_ERROR at address: " + a + "."); break;
+        case NO_ACK          : logger->critical("BdaqRBCP::" + id + ": NO_ACK at address: " + a + ". Is Ethernet really up?"); break;
+        case ACK_SHORT       : logger->critical("BdaqRBCP::" + id + ": ACK_SHORT at address: " + a + "."); break;
+        case ACK_ID_MISMATCH : logger->critical("BdaqRBCP::" + id + ": ACK_ID_MISMATCH at address: " + a + "."); break;
+        case 0 ... 255       : logger->critical("BdaqRBCP::" + id + ": ACK_BUS_ERROR at address: " + a + ". Number of sucessfully executed bytes: " + std::to_string(code) + "."); break;
+        default              : logger->critical("BdaqRBCP::" + id + ": ACK_UNKNOWN_ERROR at address: " + a + "."); break;
     }
+    exit(-1);
 }

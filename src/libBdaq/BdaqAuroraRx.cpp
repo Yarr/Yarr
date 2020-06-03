@@ -1,4 +1,9 @@
 #include "BdaqAuroraRx.h"
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("BdaqAuroraRx");
+}
 
 void BdaqAuroraRx::checkVersion () {
 	BdaqRegister::checkVersion(requireVersion, "auroraRx");
@@ -42,10 +47,10 @@ uint8_t BdaqAuroraRx::getLostCount() {
 void BdaqAuroraRx::setMgtRef(std::string value) {
 	//Controls the clock multiplexer chip, which is used for providing the Aurora reference clock
 	if (value == "int") {
-		std::cout << "MGT: Switching to on-board (Si570) oscillator\n";
+		logger->info("MGT: Switching to on-board (Si570) oscillator");
 		(*this)["MGT_REF_SEL"] = 1;
 	} else if (value == "ext") {
-		std::cout << "MGT: Switching to external (SMA) clock source.\n";
+		logger->info("MGT: Switching to external (SMA) clock source");
 		(*this)["MGT_REF_SEL"] = 0;
 	}
 }
@@ -75,8 +80,10 @@ void BdaqAuroraRx::setUserKfilterMask (uint8_t mask, uint8_t value) {
 		(*this)["USER_K_FILTER_MASK_2"] = value;
 	else if (mask == 3)
 		(*this)["USER_K_FILTER_MASK_3"] = value;
-	else
-		throw std::runtime_error("USER_K_FILTER_MASK: Parameters: mask_number[1, 2, 3], value[byte].\n");
+	else {
+		logger->critical("USER_K_FILTER_MASK: Parameters: mask_number[1, 2, 3], value[byte]");
+		exit(-1);
+	}
 }
 
 /*uint8_t BdaqAuroraRx::getUserKfilterMask() {
@@ -116,7 +123,8 @@ void BdaqAuroraRx::setGtxTxMode(std::string value) {
 		(*this)["GTX_TX_MODE"] = 1;
 		//Debug: "GTX TX MODE: 640 mHz clock"
 	} else {
-		throw std::runtime_error("GTX TX MODE: parameter out of range");
+		logger->critical("GTX TX MODE: parameter out of range");
+		exit(-1);
 	}
 }
 

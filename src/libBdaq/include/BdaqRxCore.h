@@ -45,7 +45,6 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq53 {
         std::chrono::microseconds m_waitTime; 
 
     private:
-        bool verbose;
         bool mSetupMode;        
         
         unsigned int userkCounter; 

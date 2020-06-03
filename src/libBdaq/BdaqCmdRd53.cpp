@@ -1,4 +1,10 @@
 #include "BdaqCmdRd53.h"
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("BdaqCmdRd53");
+}
+
 
 void BdaqCmdRd53::checkVersion () {
 	BdaqRegister::checkVersion(requireVersion, "auroraRx");
@@ -96,7 +102,8 @@ void BdaqCmdRd53::setData (std::vector<uint8_t>& data, uint8_t addr) {
 		std::string error = "BdaqCmdRd53::setData(): Size of data (" + 
 		std::to_string(data.size()) + " bytes) is bigger than memory (" + 
 		std::to_string(memSize) + " bytes).";
-		throw std::runtime_error(error);
+		logger->critical(error);
+		exit(-1);
 	}
 	intf.write(base + memOffset + addr, data);
 }
@@ -106,7 +113,8 @@ void BdaqCmdRd53::getData(std::vector<uint8_t>& data, uint8_t size, uint8_t addr
 		std::string error = "Bdaq_i2c::getData(): Size of data (" + 
 		std::to_string(data.size()) + " bytes) is bigger than memory (" + 
 		std::to_string(memSize) + " bytes).";
-		throw std::runtime_error(error);
+		logger->critical(error);
+		exit(-1);
 	}
 	if (size == 0)
 		intf.read(base + memOffset + addr, data, memSize);

@@ -1,4 +1,9 @@
 #include "Bdaq_i2c.h"
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("Bdaq_i2c");
+}
 
 void Bdaq_i2c::checkVersion() {
 	BdaqRegister::checkVersion(requireVersion, "i2c");
@@ -41,27 +46,31 @@ bool Bdaq_i2c::isDone() {
 }
 
 bool Bdaq_i2c::isReady() {
-	if ((*this)["NO_ACK"])
-		throw std::runtime_error("i2c: Transfer not acknowledged.");
+	if ((*this)["NO_ACK"]) {
+		logger->critical("isReady(): Transfer not acknowledged");
+		exit(-1);
+	}
 	return (*this)["READY"];
 }
 
 void Bdaq_i2c::setData(std::vector<uint8_t>& data, uint8_t addr) {
 	if (memSize < data.size()) {
-		std::string error = "Bdaq_i2c::setData(): Size of data (" + 
+		std::string error = "setData(): Size of data (" + 
 		std::to_string(data.size()) + " bytes) is bigger than memory (" + 
 		std::to_string(memSize) + " bytes).";
-		throw std::runtime_error(error);
+		logger->critical(error);
+		exit(-1);
 	}
 	intf.write(base + memOffset + addr, data);
 }
 
 void Bdaq_i2c::getData(std::vector<uint8_t>& data, uint8_t size, uint8_t addr) {
 	if (memSize < size) {
-		std::string error = "Bdaq_i2c::getData(): Size of data (" + 
+		std::string error = "getData(): Size of data (" + 
 		std::to_string(data.size()) + " bytes) is bigger than memory (" + 
 		std::to_string(memSize) + " bytes).";
-		throw std::runtime_error(error);
+		logger->critical(error);
+		exit(-1);
 	}
 	if (size == 0)
 		intf.read(base + memOffset + addr, data, memSize);
