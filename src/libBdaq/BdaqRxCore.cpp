@@ -1,3 +1,5 @@
+#include <thread>
+
 #include "BdaqRxCore.h"
 
 //BDAQ word identifiers

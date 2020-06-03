@@ -11,7 +11,6 @@
 #include "BdaqCmdRd53.h"
 #include "BdaqTCP.h"
 #include "BdaqSiTcpFifo.h"
-#include "BdaqFifoReadout.h"
 #include "BdaqGPIO.h"
 
 struct bdaqConfig {
@@ -45,7 +44,6 @@ class Bdaq53 {
         BdaqCmdRd53 cmd;
         BdaqTCP tcp;
         BdaqSiTcpFifo fifo;
-        BdaqFifoReadout readout;
         BdaqGPIO dpControl;
         
         std::map<int, std::string> hwMap = {

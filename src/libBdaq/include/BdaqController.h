@@ -14,7 +14,6 @@
 #include "BdaqTxCore.h"
 #include "BdaqRxCore.h"
 
-
 #include "storage.hpp"
 
 class BdaqController : public HwController, public BdaqTxCore, public BdaqRxCore {

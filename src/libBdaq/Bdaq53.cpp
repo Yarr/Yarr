@@ -1,5 +1,7 @@
 #include <iostream>
 #include <vector>
+#include <thread>
+#include <chrono>
 
 #include "Bdaq53.h"
 
@@ -9,7 +11,6 @@ Bdaq53::Bdaq53() :
 	si570(i2c),
 	cmd(rbcp),
 	fifo(tcp),
-	readout(fifo),
 	dpControl(rbcp) {}
 
 void Bdaq53::initialize(bdaqConfig c) {
