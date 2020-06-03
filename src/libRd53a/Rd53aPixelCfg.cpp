@@ -72,8 +72,6 @@ void Rd53aPixelCfg::setTDAC(unsigned col, unsigned row, int v) {
     mask.u8 = 0x0;
     mask.s.tdac = 0xF;
     mask.s.sign = 0x1;
-    tmp.s.tdac = 0x0; // TODO this needs reinterpretation depending on col
-    tmp.s.sign = 0x0;
     if (col < 264 && v >= 0) { // Lin FE
         tmp.s.tdac = v;
         tmp.s.sign = 0x1;

@@ -9,13 +9,17 @@
 // # Date: May 2020
 // ################################
 
+#include <array>
+#include <bitset>
+
 #include "storage.hpp"
 
 class Rd53bPixelCfg {
     public:
         Rd53bPixelCfg();
         //~Rd53bPixelCfg();
-        
+ 
+        void setReg(unsigned col, unsigned row, unsigned en, unsigned injen, unsigned hitbus, int tdac);
         void setEn(unsigned col, unsigned row, unsigned v);
         void setHitbus(unsigned col, unsigned row, unsigned v);
         void setInjEn(unsigned col, unsigned row, unsigned v);
@@ -30,14 +34,6 @@ class Rd53bPixelCfg {
         static constexpr unsigned n_Col = 400;
         static constexpr unsigned n_Row = 384;
     
-    protected:
-        std::array<std::array<uint16_t, n_Row>, n_DC> pixRegs;
-
-        void toJson(json &j);
-        void fromJson(json &j);
-    
-    private:
-
         struct pixelFields {
             unsigned en : 1;
             unsigned injen : 1;
@@ -50,6 +46,16 @@ class Rd53bPixelCfg {
             Rd53bPixelCfg::pixelFields s;
             uint8_t u8;
         };
+    
+    protected:
+        std::array<std::array<uint16_t, n_Row>, n_DC> pixRegs;
+
+        void toJson(json &j);
+        void fromJson(json &j);
+    
+    private:
+        inline uint16_t setBit(uint16_t in, uint8_t bit, uint8_t val);
+
 };
 
 #endif
