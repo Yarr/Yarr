@@ -73,7 +73,7 @@ add_library(Yarr STATIC ${LibSrcFiles})
 YARR_ADD_VARIANT()
 add_dependencies(Yarr variant)
 YARR_ADD_TBB()
-add_dependencies(Yarr tbb_2019)
+add_dependencies(Yarr tbb_2020)
 
 # Plotting Tools
 find_package(ROOT COMPONENTS Hist Graf)
@@ -87,8 +87,8 @@ endif (${ROOT_FOUND})
 
 if ("Rogue" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   YARR_ADD_ROGUE()
-  add_dependencies(Yarr tbb_2019 rogue)
-  set(YARR_EXEC_DEPS ${YARR_EXEC_DEPS} rogue tbb_2019)
+  add_dependencies(Yarr tbb_2020 rogue)
+  set(YARR_EXEC_DEPS ${YARR_EXEC_DEPS} rogue tbb_2020)
   set(YARR_LIB_DEPS ${YARR_LIB_DEPS} rogue-core)
   set(TBB_DEPS tbb)
 endif()
@@ -98,7 +98,7 @@ if ("NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   YARR_ADD_FELIX()
   add_dependencies(Yarr felixbase4 netio4)
 
-  set(YARR_EXEC_DEPS ${YARR_EXEC_DEPS} tbb_2019 felixbase4 netio4)
+  set(YARR_EXEC_DEPS ${YARR_EXEC_DEPS} tbb_2020 felixbase4 netio4)
   set(YARR_LIB_DEPS ${YARR_LIB_DEPS} netio)
   set(TBB_DEPS tbb)
 
