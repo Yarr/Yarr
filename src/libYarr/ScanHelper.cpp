@@ -26,43 +26,43 @@ namespace {
 
 namespace ScanHelper {
 
-unsigned newRunCounter() {
-    unsigned runCounter = 0;
+    unsigned newRunCounter() {
+        unsigned runCounter = 0;
 
-    std::string home;
-    if(getenv("HOME")) {
-      home = getenv("HOME");
-    } else {
-      shlog->error("HOME not set, using local directory for configuration");
-      home = ".";
+        std::string home;
+        if(getenv("HOME")) {
+            home = getenv("HOME");
+        } else {
+            shlog->error("HOME not set, using local directory for configuration");
+            home = ".";
+        }
+        std::string config_dir = home + "/.yarr";
+
+        // Load run counter
+        std::string mkdir_command = "mkdir -p " + config_dir;
+        if (system(mkdir_command.c_str()) < 0) {
+            shlog->error("Failed to create dir for run counter: ~/.yarr!");
+        }
+
+        std::string run_counter_file_name = config_dir + "/runCounter";
+        std::fstream iF(run_counter_file_name.c_str(), std::ios::in);
+        if (iF) {
+            iF >> runCounter;
+            runCounter += 1;
+        } else {
+            runCounter = 1;
+        }
+        iF.close();
+
+        std::fstream oF((home + "/.yarr/runCounter").c_str(), std::ios::out);
+        if(!oF) {
+            shlog->error("Could not increment run counter in file");
+        }
+        oF << runCounter << std::endl;
+        oF.close();
+
+        return runCounter;
     }
-    std::string config_dir = home + "/.yarr";
-
-    // Load run counter
-    std::string mkdir_command = "mkdir -p " + config_dir;
-    if (system(mkdir_command.c_str()) < 0) {
-        shlog->error("Failed to create dir for run counter: ~/.yarr!");
-    }
-
-    std::string run_counter_file_name = config_dir + "/runCounter";
-    std::fstream iF(run_counter_file_name.c_str(), std::ios::in);
-    if (iF) {
-        iF >> runCounter;
-        runCounter += 1;
-    } else {
-        runCounter = 1;
-    }
-    iF.close();
-
-    std::fstream oF((home + "/.yarr/runCounter").c_str(), std::ios::out);
-    if(!oF) {
-        shlog->error("Could not increment run counter in file");
-    }
-    oF << runCounter << std::endl;
-    oF.close();
-
-    return runCounter;
-}
 
     // Open file and parse into json object
     json openJsonFile(std::string filepath) {
@@ -182,118 +182,118 @@ unsigned newRunCounter() {
         return chipType;        
     }
 
-void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& histogrammers, const std::string& scanType, std::vector<FrontEnd*>& feList, ScanBase* s, std::string outputDir) {
-    bhlog->info("Loading histogrammer ...");
-    json scanCfg;
-    try {
-        scanCfg = ScanHelper::openJsonFile(scanType);
-    } catch (std::runtime_error &e) {
-        bhlog->error("Opening scan config: {}", e.what());
-        throw("buildHistogrammer failure");
-    }
-    json histoCfg = scanCfg["scan"]["histogrammer"];
-    json anaCfg = scanCfg["scan"]["analysis"];
-
-    for (FrontEnd *fe : feList ) {
-        if (fe->isActive()) {
-            // TODO this loads only FE-i4 specific stuff, bad
-            // Load histogrammer
-            histogrammers[fe].reset( new HistogrammerProcessor );
-            auto& histogrammer = static_cast<HistogrammerProcessor&>( *(histogrammers[fe]) );
-
-            histogrammer.connect(fe->clipData, fe->clipHisto);
-
-            auto add_histo = [&](std::string algo_name) {
-                auto histo = StdDict::getHistogrammer(algo_name);
-                if(histo) {
-                    bhlog->debug("  ... adding {}", algo_name);
-                    histogrammer.addHistogrammer(std::move(histo));
-                } else if (algo_name == "DataArchiver") {
-                    histo.reset(new DataArchiver((outputDir + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_data.raw")));
-                    histogrammer.addHistogrammer(std::move(histo));
-                    bhlog->debug("  ... adding {}", algo_name);
-                } else {
-                    bhlog->error("Error, Histogrammer \"{} unknown, skipping!", algo_name);
-                }
-            };
-
-            try {
-                int nHistos = histoCfg["n_count"];
-
-                for (int j=0; j<nHistos; j++) {
-                    std::string algo_name = histoCfg[std::to_string(j)]["algorithm"];
-                    add_histo(algo_name);
-                }
-            } catch(/* json::type_error &te*/ ... ) { //FIXME
-                int nHistos = histoCfg.size();
-                for (int j=0; j<nHistos; j++) {
-                    std::string algo_name = histoCfg[j]["algorithm"];
-                    add_histo(algo_name);
-                }
-            }
-            histogrammer.setMapSize(fe->geo.nCol, fe->geo.nRow);
-        }
-    }
-    bhlog->info("... done!");
-}
-
-void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, int mask_opt) {
-    if (scanType.find("json") != std::string::npos) {
-        balog->info("Loading analyses ...");
+    void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& histogrammers, const std::string& scanType, std::vector<FrontEnd*>& feList, ScanBase* s, std::string outputDir) {
+        bhlog->info("Loading histogrammer ...");
         json scanCfg;
         try {
             scanCfg = ScanHelper::openJsonFile(scanType);
         } catch (std::runtime_error &e) {
-            balog->error("Opening scan config: {}", e.what());
-            throw("buildAnalyses failure");
+            bhlog->error("Opening scan config: {}", e.what());
+            throw("buildHistogrammer failure");
         }
         json histoCfg = scanCfg["scan"]["histogrammer"];
         json anaCfg = scanCfg["scan"]["analysis"];
 
-        for (FrontEnd *fe : bookie.feList ) {
+        for (FrontEnd *fe : feList ) {
             if (fe->isActive()) {
                 // TODO this loads only FE-i4 specific stuff, bad
-                // TODO hardcoded
-                analyses[fe].reset( new AnalysisProcessor(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) );
-                auto& ana = static_cast<AnalysisProcessor&>( *(analyses[fe]) );
-                ana.connect(s, fe->clipHisto, fe->clipResult);
+                // Load histogrammer
+                histogrammers[fe].reset( new HistogrammerProcessor );
+                auto& histogrammer = static_cast<HistogrammerProcessor&>( *(histogrammers[fe]) );
 
-                auto add_analysis = [&](std::string algo_name) {
-                    auto analysis = StdDict::getAnalysis(algo_name);
-                    if(analysis) {
-                        balog->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(std::move(analysis));
+                histogrammer.connect(fe->clipData, fe->clipHisto);
+
+                auto add_histo = [&](std::string algo_name) {
+                    auto histo = StdDict::getHistogrammer(algo_name);
+                    if(histo) {
+                        bhlog->debug("  ... adding {}", algo_name);
+                        histogrammer.addHistogrammer(std::move(histo));
+                    } else if (algo_name == "DataArchiver") {
+                        histo.reset(new DataArchiver((outputDir + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_data.raw")));
+                        histogrammer.addHistogrammer(std::move(histo));
+                        bhlog->debug("  ... adding {}", algo_name);
                     } else {
-                        balog->error("Error, Analysis Algorithm \"{} unknown, skipping!", algo_name);
+                        bhlog->error("Error, Histogrammer \"{} unknown, skipping!", algo_name);
                     }
                 };
 
                 try {
-                  int nAnas = anaCfg["n_count"];
-                  balog->debug("Found {} Analysis!", nAnas);
-                  for (int j=0; j<nAnas; j++) {
-                    std::string algo_name = anaCfg[std::to_string(j)]["algorithm"];
-                    add_analysis(algo_name);
-                  }
-                  ana.loadConfig(anaCfg);
-                } catch(/* json::type_error &te */ ...) { //FIXME
-                  int nAnas = anaCfg.size();
-                  balog->debug("Found {} Analysis!", nAnas);
-                  for (int j=0; j<nAnas; j++) {
-                    std::string algo_name = anaCfg[j]["algorithm"];
-                    add_analysis(algo_name);
-                  }
-                }
+                    int nHistos = histoCfg["n_count"];
 
-                // Disable masking of pixels
-                if(mask_opt == 0) {
-                    balog->info("Disabling masking for this scan!");
-                    ana.setMasking(false);
+                    for (int j=0; j<nHistos; j++) {
+                        std::string algo_name = histoCfg[std::to_string(j)]["algorithm"];
+                        add_histo(algo_name);
+                    }
+                } catch(/* json::type_error &te*/ ... ) { //FIXME
+                    int nHistos = histoCfg.size();
+                    for (int j=0; j<nHistos; j++) {
+                        std::string algo_name = histoCfg[j]["algorithm"];
+                        add_histo(algo_name);
+                    }
                 }
-                ana.setMapSize(fe->geo.nCol, fe->geo.nRow);
+                histogrammer.setMapSize(fe->geo.nCol, fe->geo.nRow);
+            }
+        }
+        bhlog->info("... done!");
+    }
+
+    void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, int mask_opt) {
+        if (scanType.find("json") != std::string::npos) {
+            balog->info("Loading analyses ...");
+            json scanCfg;
+            try {
+                scanCfg = ScanHelper::openJsonFile(scanType);
+            } catch (std::runtime_error &e) {
+                balog->error("Opening scan config: {}", e.what());
+                throw("buildAnalyses failure");
+            }
+            json histoCfg = scanCfg["scan"]["histogrammer"];
+            json anaCfg = scanCfg["scan"]["analysis"];
+
+            for (FrontEnd *fe : bookie.feList ) {
+                if (fe->isActive()) {
+                    // TODO this loads only FE-i4 specific stuff, bad
+                    // TODO hardcoded
+                    analyses[fe].reset( new AnalysisProcessor(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) );
+                    auto& ana = static_cast<AnalysisProcessor&>( *(analyses[fe]) );
+                    ana.connect(s, fe->clipHisto, fe->clipResult);
+
+                    auto add_analysis = [&](std::string algo_name) {
+                        auto analysis = StdDict::getAnalysis(algo_name);
+                        if(analysis) {
+                            balog->debug("  ... adding {}", algo_name);
+                            ana.addAlgorithm(std::move(analysis));
+                        } else {
+                            balog->error("Error, Analysis Algorithm \"{} unknown, skipping!", algo_name);
+                        }
+                    };
+
+                    try {
+                        int nAnas = anaCfg["n_count"];
+                        balog->debug("Found {} Analysis!", nAnas);
+                        for (int j=0; j<nAnas; j++) {
+                            std::string algo_name = anaCfg[std::to_string(j)]["algorithm"];
+                            add_analysis(algo_name);
+                        }
+                        ana.loadConfig(anaCfg);
+                    } catch(/* json::type_error &te */ ...) { //FIXME
+                        int nAnas = anaCfg.size();
+                        balog->debug("Found {} Analysis!", nAnas);
+                        for (int j=0; j<nAnas; j++) {
+                            std::string algo_name = anaCfg[j]["algorithm"];
+                            add_analysis(algo_name);
+                        }
+                    }
+
+                    // Disable masking of pixels
+                    if(mask_opt == 0) {
+                        balog->info("Disabling masking for this scan!");
+                        ana.setMasking(false);
+                    }
+                    ana.setMapSize(fe->geo.nCol, fe->geo.nRow);
+                }
             }
         }
     }
-}
 
 } // Close namespace}
