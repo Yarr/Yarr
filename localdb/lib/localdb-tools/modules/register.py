@@ -230,7 +230,7 @@ def __test_run(i_json, i_stage, i_tr_oid):
     doc_value.update({
         'testType' : i_json.get('testType', '...'),
         'runNumber': i_json.get('runNumber', -1),
-        'stage'    : i_stage.lower().replace(' ','_'),
+        'stage'    : i_stage.replace(' ','_'),
         'chipType' : __global.chip_type,
         'address'  : __global.site_oid,
         'user_id'  : __global.user_oid,
