@@ -376,6 +376,7 @@ def main():
                     f.write(data['data'])
 
 
+        logger.warning('\033[31mPlease check "db-data/connectivity" and confirm the testing stage.\033[0m')
         logger.info('-----------------------')
         logger.debug('=======================')
         sys.exit(0)
