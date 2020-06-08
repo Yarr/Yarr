@@ -72,7 +72,7 @@ void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
     m_trigWord[2] = 0x69696363; // Header
     m_trigWord[1] = Rd53aCmd::genCal(8, 1, 0, 0, 0, 0); // Arm inject
     // Pulse
-    //m_trigWord[0] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(m_pulseDuration<<1)); // global pulse for sync FE
+    m_trigWord[0] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(m_pulseDuration<<1)); // global pulse for sync FE
     
     logger->debug("Trigger buffer set to:");
     for (unsigned i=0; i<m_trigWordLength; i++) {
@@ -125,12 +125,14 @@ void Rd53aTriggerLoop::init() {
 void Rd53aTriggerLoop::execPart1() {
     SPDLOG_LOGGER_TRACE(logger, "");
     g_tx->setCmdEnable(keeper->getTxMask());
-    auto rd53a = dynamic_cast<Rd53a*>(g_fe);
-    rd53a->ecr();
-    rd53a->idle();
-    rd53a->idle();
-    rd53a->idle();
-    rd53a->idle();
+    dynamic_cast<Rd53a*>(g_fe)->ecr();
+    dynamic_cast<Rd53a*>(g_fe)->idle();
+    dynamic_cast<Rd53a*>(g_fe)->idle();
+    dynamic_cast<Rd53a*>(g_fe)->idle();
+    dynamic_cast<Rd53a*>(g_fe)->idle();
+    // AZ level for sync FE, m_chipId is not available here. 
+    // "Start monitoring" is also set in GlobalPulseRt, might be a problem?
+    dynamic_cast<Rd53a*>(g_fe)->globalPulse(8/*m_chipId*/, m_pulseDuration); 
     std::this_thread::sleep_for(std::chrono::microseconds(200));
     g_rx->flushBuffer();
     while(!g_tx->isCmdEmpty());
