@@ -45,6 +45,7 @@ class BdaqTxCore : virtual public TxCore, virtual public Bdaq53 {
     private:
         uint16_t trgRepetitions = 0;
         uint32_t trgEnable = 0;
+        uint     noopNumber = 0;
         std::vector<uint8_t> cmdData;
         std::vector<uint8_t> trgData; //Let's keep things separated for now.
         void sendCommand();

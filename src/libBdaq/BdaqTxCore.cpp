@@ -1,5 +1,3 @@
-#define FIX_POST_DELAY
-
 #include "BdaqTxCore.h"
 #include "logging.h"
 
@@ -111,11 +109,8 @@ void BdaqTxCore::setTrigWord(uint32_t *word, uint32_t length) {
     }
     
     // POST Delay
-    #ifdef FIX_POST_DELAY
-    const uint fixPostDelaySize = 400;
-    std::vector<uint8_t> fixPostDelay(fixPostDelaySize*2, 0x69); 
+    std::vector<uint8_t> fixPostDelay(noopNumber*2, 0x69); 
     trgData.insert(trgData.end(), fixPostDelay.begin(), fixPostDelay.end());
-    #endif 
 }
 
 void BdaqTxCore::setTrigCnt(uint32_t count) {
@@ -167,8 +162,14 @@ void BdaqTxCore::setTrigFreq(double freq) {
     d << __PRETTY_FUNCTION__ << " : Frequency " << freq/1.0e3 << " kHz" <<std::endl;
     logger->debug(d.str());
 
-    //uint32_t tmp = 1.0/((double)m_clk_period * freq);  
-    // Change the number of generated NOOP frames to emulate Frequency setting?
+    // One RD53A command (16-bit) spans 4 BCs = 100 ns.
+    // The idea is converting the period into NOOP commands (taking 100 ns each)
+    // for the POST DELAY in the command buffer (trigger buffer).
+    // There might be a slight offset to the achieved period due to the other 
+    // commands in the command buffer.
+    
+    noopNumber = (1.0f/freq)/100e-9;
+    logger->info("Trigger Frequency: {}, NOOP Number: {}", freq, noopNumber);
 }
   
 void BdaqTxCore::setTrigTime(double time) {
