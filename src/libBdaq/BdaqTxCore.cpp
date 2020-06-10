@@ -92,14 +92,14 @@ bool BdaqTxCore::isCmdEmpty() {
 }
 
 //==============================================================================
-// Command Repeater Stuff
+// Command Repeater (Trigger) Stuff
 //==============================================================================
 
 void BdaqTxCore::setTrigWord(uint32_t *word, uint32_t length) {
     std::stringstream d; 
     d << __PRETTY_FUNCTION__;
     logger->debug(d.str());
-
+    
     // Converting YARR format to BDAQ format
     for (uint i=0; i<length; ++i) {
         trgData.push_back(word[length-i-1] >> 24 & 0xFF);
@@ -107,10 +107,6 @@ void BdaqTxCore::setTrigWord(uint32_t *word, uint32_t length) {
         trgData.push_back(word[length-i-1] >>  8 & 0xFF);
         trgData.push_back(word[length-i-1]       & 0xFF);
     }
-    
-    // POST Delay
-    std::vector<uint8_t> fixPostDelay(noopNumber*2, 0x69); 
-    trgData.insert(trgData.end(), fixPostDelay.begin(), fixPostDelay.end());
 }
 
 void BdaqTxCore::setTrigCnt(uint32_t count) {
@@ -118,31 +114,45 @@ void BdaqTxCore::setTrigCnt(uint32_t count) {
     d << __PRETTY_FUNCTION__ << " : Count " << count;
     logger->debug(d.str());
 
-    trgRepetitions = count;
+    hardwareTriggerCount = (uint16_t) count;
+    logger->info("Trigger Count: {}", count);
 }
 
 void BdaqTxCore::setTrigEnable(uint32_t value) {
     std::stringstream d; 
     d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << value << std::dec;
     logger->debug(d.str());
-
-    trgEnable = value; //Emulating SPEC register
-    
-    if (value == 0x0) return;
-
-    cmd.setData(trgData);
-    cmd.setSize(trgData.size()); 
-    cmd.setRepetitions(trgRepetitions);
-    cmd.start();
-    trgData.clear();
+    // Emulating SPEC register
+    trgEnable = value; 
+    // Timed Trigger (software implemented, for noise scans for example)
+    if (timedTrigger) {
+        if (value == 0x0) {
+            timedTriggerThread.join();
+            return;
+        } else {
+            timedTriggerAbort = false;
+            timedTriggerSet();
+            timedTriggerThread = std::thread(&BdaqTxCore::timedTriggerRun, this);
+            return;
+        }
+    // Hardware Trigger Mode
+    } else {
+        if (value == 0x0) {
+            return;
+        } else {
+            hardwareTriggerSet();
+            hardwareTriggerRun();
+        }
+    }
+    logger->info("Trigger Enable: {}", value);
 }
 
 uint32_t BdaqTxCore::getTrigEnable() {
     std::stringstream d; 
     d << __PRETTY_FUNCTION__;
     logger->debug(d.str());
-
-    return trgEnable; //Emulating SPEC register
+    // Emulating SPEC register
+    return trgEnable; 
 }
 
 void BdaqTxCore::maskTrigEnable(uint32_t value, uint32_t mask) {
@@ -165,23 +175,37 @@ void BdaqTxCore::setTrigFreq(double freq) {
     // One RD53A command (16-bit) spans 4 BCs = 100 ns.
     // The idea is converting the period into NOOP commands (taking 100 ns each)
     // for the POST DELAY in the command buffer (trigger buffer).
-    // There might be a slight offset to the achieved period due to the other 
+    // There might be a slight offset to the real period due to the other 
     // commands in the command buffer.
-    
-    noopNumber = (1.0f/freq)/100e-9;
-    logger->info("Trigger Frequency: {}, NOOP Number: {}", freq, noopNumber);
+    hardwareTriggerNoop = (1.0f/freq)/100e-9; // Only for hardware trigger mode.
+    // For Timed trigger
+    timedTriggerFreq = freq;
+    logger->info("Trigger Frequency: {}, NOOP Number: {}", freq, hardwareTriggerNoop);
 }
   
 void BdaqTxCore::setTrigTime(double time) {
     std::stringstream d; 
     d << __PRETTY_FUNCTION__ << " : Time " << time << " s, period " << m_clk_period <<std::endl;
     logger->debug(d.str());
+    
+    // Hardware Trigger
+    if (time == 0) {
+        timedTrigger = false; // No timed trigger, enables Hardware trigger
+    }
+    // Timed trigger mode (with time > 0)   
+    else {
+        timedTrigger = true;
+        timedTriggerTime = time;
+    }
+    logger->info("Trigger Time: {}", time);
 }
 
 void BdaqTxCore::toggleTrigAbort() {
     std::stringstream d; 
     d << __PRETTY_FUNCTION__ << " : Toggling Trigger abort!";
     logger->debug(d.str());
+    // Stop timed trigger loop
+    timedTriggerAbort = true;
 }
 
 void BdaqTxCore::setTrigWordLength(uint32_t length) {
@@ -194,6 +218,61 @@ bool BdaqTxCore::isTrigDone() {
     std::stringstream d; 
     d << __PRETTY_FUNCTION__;
     logger->debug(d.str());
+    // Timed Trigger
+    if (timedTrigger) {
+        return timedTriggerDone;
+    // Normal Trigger
+    } else {
+        return cmd.isDone();
+    }
+}
 
-    return cmd.isDone();
+//------------------------------------------------------------------------------
+// Hardware Trigger
+//------------------------------------------------------------------------------
+
+void BdaqTxCore::hardwareTriggerSet() {
+    // POST Delay
+    std::vector<uint8_t> fixPostDelay(hardwareTriggerNoop*2, 0x69); 
+    trgData.insert(trgData.end(), fixPostDelay.begin(), fixPostDelay.end());
+    // Setting hardware registers/buffers
+    cmd.setData(trgData);
+    cmd.setSize(trgData.size()); 
+    cmd.setRepetitions(hardwareTriggerCount);
+    logger->info("Hardware Trigger Size (in bytes): {}", trgData.size());
+    trgData.clear();
+}
+
+void BdaqTxCore::hardwareTriggerRun() {
+    cmd.start(); 
+}
+
+//------------------------------------------------------------------------------
+// Timed Trigger (software) Emulation 
+//------------------------------------------------------------------------------
+
+void BdaqTxCore::timedTriggerSet() {
+    // Setting hardware registers/buffers
+    cmd.setData(trgData);
+    cmd.setSize(trgData.size()); 
+    cmd.setRepetitions(1);
+    logger->info("Timed Trigger Size (in bytes): {}", trgData.size());
+    trgData.clear();
+}
+
+void BdaqTxCore::timedTriggerRun() {
+    timedTriggerDone = false;
+    auto start = std::chrono::system_clock::now();
+    auto cur = std::chrono::system_clock::now();
+    while (std::chrono::duration_cast<std::chrono::seconds>(cur - start).count() < timedTriggerTime) {
+        cmd.start();
+        // Frequency is implemented by software: 
+        std::this_thread::sleep_for(std::chrono::microseconds((int)(1000/timedTriggerFreq))); 
+        // Wait for trigger completion (which is likely shorter than the period 
+        // above). Here for peace of mind.
+        while(!cmd.isDone()); //wait for completion 
+        cur = std::chrono::system_clock::now();
+        if (timedTriggerAbort) break;
+    }
+    timedTriggerDone = true;
 }

@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <thread>
 #include "TxCore.h"
 #include "Bdaq53.h"
 
@@ -43,12 +44,30 @@ class BdaqTxCore : virtual public TxCore, virtual public Bdaq53 {
     protected:
 
     private:
-        uint16_t trgRepetitions = 0;
-        uint32_t trgEnable = 0;
-        uint     noopNumber = 0;
+        // Registers Configuration
         std::vector<uint8_t> cmdData;
-        std::vector<uint8_t> trgData; //Let's keep things separated for now.
         void sendCommand();
+
+        // Common Command Repeater (Trigger)
+        uint32_t trgEnable = 0; // Emulating SPEC register.
+        std::vector<uint8_t> trgData;
+        
+        // Hardware Command Repeater (Trigger)
+        uint16_t hardwareTriggerCount = 0;
+        uint hardwareTriggerNoop = 0;
+        void hardwareTriggerSet();
+        void hardwareTriggerRun();
+
+        // Emulated Timed Trigger 
+        bool timedTrigger = false;
+        bool timedTriggerAbort = false;
+        bool timedTriggerDone = false;
+        double timedTriggerFreq = 0;
+        double timedTriggerTime = 0;
+        std::thread timedTriggerThread;
+        void timedTriggerSet();
+        void timedTriggerRun();
+
 };
 
 #endif

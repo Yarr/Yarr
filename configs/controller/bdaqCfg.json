@@ -5,7 +5,7 @@
             "ipAddr"     : "192.168.10.12",
             "udpPort"    : 4660,
             "tcpPort"    : 24,
-            "rxWaitTime" : 10,
+            "rxWaitTime" : 15,
             "rxAddr"     : "0x6000",
             "i2cAddr"    : "0x1000",
             "cmdAddr"    : "0x9000",
