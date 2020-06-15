@@ -23,13 +23,13 @@ Rd53bGlobalCfg::~Rd53bGlobalCfg() {
 
 }
 
-uint16_t Rd53bGlobalCfg::getValue(Rd53bReg Rd53bGlobalCfg::*ref) {
+uint16_t Rd53bGlobalCfg::getValue(Rd53bReg Rd53bGlobalCfg::*ref) const {
     return (this->*ref).read();
 }
 
-uint16_t Rd53bGlobalCfg::getValue(std::string name) {
+uint16_t Rd53bGlobalCfg::getValue(std::string name) const {
     if (regMap.find(name) != regMap.end()) {
-        return (this->*regMap[name]).read();
+        return (this->*regMap.at(name)).read();
     } else {
         logger->error("Register \"{}\" not found, could not read!", name);
     }
@@ -46,6 +46,14 @@ void Rd53bGlobalCfg::setValue(std::string name, uint16_t val) {
     } else {
         logger->error("Register \"{}\" not found, could not write!", name);
     }
+}
+
+uint16_t& Rd53bGlobalCfg::operator[](unsigned index) {
+    if (index >= numRegs) {
+        logger->critical("Trying to access config out of range!");
+        exit(0);
+    }
+    return m_cfg[index];
 }
 
 void Rd53bGlobalCfg::init() {

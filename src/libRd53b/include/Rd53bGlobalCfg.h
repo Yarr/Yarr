@@ -70,10 +70,12 @@ class Rd53bGlobalCfg {
 
         void init();
 
-        uint16_t getValue(Rd53bReg Rd53bGlobalCfg::*ref);
-        uint16_t getValue(std::string name);
+        uint16_t getValue(Rd53bReg Rd53bGlobalCfg::*ref) const;
+        uint16_t getValue(std::string name) const;
         void setValue(Rd53bReg Rd53bGlobalCfg::*ref, uint16_t val);
         void setValue(std::string name, uint16_t val);
+
+        uint16_t& operator[](unsigned index);
 
     protected:
         static constexpr unsigned numRegs = 138;
