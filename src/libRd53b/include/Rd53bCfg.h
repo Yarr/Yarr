@@ -13,7 +13,10 @@
 #include "Constants.h"
 #include "Units.h"
 
-class Rd53bCfg : public FrontEndCfg {
+#include "Rd53bGlobalCfg.h"
+#include "Rd53bPixelCfg.h"
+
+class Rd53bCfg : public FrontEndCfg, public Rd53bGlobalCfg, public Rd53bPixelCfg {
     public:
         Rd53bCfg();
 
