@@ -1501,6 +1501,6 @@ void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
     logger->debug("HPR packet transmission period is set to {} BC", hprperiod);
   }
 
-  emu.reset(new StarEmu( rx, tx_com.get(), emuCfgFile, hprperiod ));
-  emuThreads.push_back(std::thread(&StarEmu::executeLoop, emu.get()));
+  emus.emplace_back(new StarEmu( rx, tx_com.get(), emuCfgFile, hprperiod));
+  emuThreads.push_back(std::thread(&StarEmu::executeLoop, emus.back().get()));
 }
