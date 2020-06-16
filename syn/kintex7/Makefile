@@ -31,8 +31,8 @@ clean:
 
 deploy:
 	ssh lxplus.cern.ch "mkdir -p ~/www/yarr/firmware/$(GIT_VERS) &&\
-		rm -f ~/www/yarr/firmware/latest &&\
-		ln -s ~/www/yarr/firmware/$(GIT_VERS) /afs/cern.ch/user/t/theim/www/yarr/firmware/latest"
+		rm -f ~/eos/www/yarr/firmware/latest &&\
+		ln -s ~/eos/www/yarr/firmware/$(GIT_VERS) ~/eos/www/yarr/firmware/latest"
 	rsync -av --include '*/' --include '*_*_*.bit' --exclude '*' --prune-empty-dirs ./ lxplus.cern.ch:~/www/yarr/firmware/$(GIT_VERS)
 
 .PHONY: all clean hdl vers $(SUBDIRS)
