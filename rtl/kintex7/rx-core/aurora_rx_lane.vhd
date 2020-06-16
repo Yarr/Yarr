@@ -137,8 +137,10 @@ architecture behavioral of aurora_rx_lane is
     signal datain_p : std_logic;
     signal datain_n : std_logic;
     signal serdes_data2 : std_logic_vector(1 downto 0);
+    signal serdes_data2_s : std_logic_vector(1 downto 0);
     signal serdes_data2_d : std_logic_vector(1 downto 0);
     signal serdes_data2_valid : std_logic_vector(1 downto 0);
+    signal serdes_data2_valid_s : std_logic_vector(1 downto 0);
     signal serdes_data2_sel : std_logic;
     signal serdes_lock : std_logic;
 
@@ -307,10 +309,15 @@ begin
             reset => rst,
             din => datain_p,
             slip => '0',
-            data_value => serdes_data2,
-            data_valid => serdes_data2_valid,
+            data_value => serdes_data2_s,
+            data_valid => serdes_data2_valid_s,
             data_lock => serdes_lock
         );
+        
+        pol_loop: for I in 0 to 1 generate
+            serdes_data2(I) <= serdes_data2_s(I) xor rx_polarity_i;
+        end generate pol_loop;
+        serdes_data2_valid <= serdes_data2_valid_s;
 
         serdes_2to32_proc : process(clk_rx_i, rst_n_i)
         begin
