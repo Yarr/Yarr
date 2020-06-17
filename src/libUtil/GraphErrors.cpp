@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <cstring>
 
-GraphErrors::GraphErrors(std::string arg_name, int arg_n, const double *arg_x, const double *arg_y, const double *arg_x_err, const double *arg_y_err, std::type_index t) : HistogramBase(arg_name, t) {
+GraphErrors::GraphErrors(std::string arg_name, int arg_n, const double *arg_x, const double *arg_y, const double *arg_x_err, const double *arg_y_err) : HistogramBase(arg_name) {
     data_n = arg_n;
     data_x = new double[data_n];
     data_y = new double[data_n];
@@ -33,7 +33,7 @@ GraphErrors::GraphErrors(std::string arg_name, int arg_n, const double *arg_x, c
     is_xmax_limit = false;
 }
 
-GraphErrors::GraphErrors(std::string arg_name, int arg_n, const double *arg_x, const double *arg_y, const double *arg_x_err, const double *arg_y_err, std::type_index t, LoopStatus &stat) : HistogramBase(arg_name, t, stat) {
+GraphErrors::GraphErrors(std::string arg_name, int arg_n, const double *arg_x, const double *arg_y, const double *arg_x_err, const double *arg_y_err, LoopStatus &stat) : HistogramBase(arg_name, stat) {
     data_n = arg_n;
     data_x = new double[data_n];
     data_y = new double[data_n];
