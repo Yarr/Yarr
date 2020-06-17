@@ -18,9 +18,9 @@ int main(int argc, char *argv[]) {
     json cfg;
     cfg=json::parse(cfgfile);
     
-    Histo1d h1("TDacDistLin", 16, -0.5, 15.5, typeid(void));
-    Histo1d h2("TDacDistDiff", 31, -15.5, 15.5, typeid(void));
-    Histo2d h3("TDacMap", 400, 0.5, 400.5, 192, 0.5, 192.5, typeid(void));
+    Histo1d h1("TDacDistLin", 16, -0.5, 15.5);
+    Histo1d h2("TDacDistDiff", 31, -15.5, 15.5);
+    Histo2d h3("TDacMap", 400, 0.5, 400.5, 192, 0.5, 192.5);
     for (unsigned col = 128; col<400; col++) {
         for (unsigned row = 0; row<192; row++) {
             int tdac = cfg["RD53A"]["PixelConfig"][col]["TDAC"][row];

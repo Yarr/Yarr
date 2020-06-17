@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 #include <iomanip>
-#include <cctype> 
+#include <cctype>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -28,11 +28,11 @@ class DBHandler {
         DBHandler();
         ~DBHandler();
 
-        /*** 
+        /***
         Initialize for Local Database
         * i_db_cfg_path: path to database config
           - hostIp: ip address of Local DB server
-          - port: opened port number of Local DB server 
+          - port: opened port number of Local DB server
           - dbName: database name of Local DB (default: localdb)
         ***/
         void initialize(std::string /*i_db_cfg_path*/,
@@ -62,8 +62,12 @@ class DBHandler {
         ***/
         json setUser(std::string /*i_user_path*/);
         json setSite(std::string /*i_site_path*/);
-        void setConnCfg(std::vector<std::string> /*i_conn_paths*/); 
+        void setConnCfg(std::vector<std::string> /*i_conn_paths*/);
         void setDCSCfg(std::string /*i_dcs_path*/,
+                       std::string /*i_scanlog_path*/,
+                       std::string /*i_user_path*/,
+                       std::string /*i_site_path*/);
+        void setIVCfg( std::string /*i_iv_path*/,
                        std::string /*i_scanlog_path*/,
                        std::string /*i_user_path*/,
                        std::string /*i_site_path*/);
@@ -121,17 +125,17 @@ class DBHandler {
                        std::string /*i_value*/,
                        std::string /*i_list_path*/,
                        std::string /*i_file_path*/);
-        json checkDBCfg(std::string /*i_db_path*/); 
-        void checkConnCfg(std::string /*i_conn_path*/); 
+        json checkDBCfg(std::string /*i_db_path*/);
+        void checkConnCfg(std::string /*i_conn_path*/);
         json checkUserCfg(std::string /*i_user_path*/);
         json checkSiteCfg(std::string /*i_site_path*/);
         void checkDCSCfg(std::string /*i_dcs_path*/,
                          std::string /*i_num*/,
-                         json /*i_json*/); 
+                         json /*i_json*/);
         std::string checkDCSLog(std::string /*i_log_path*/,
                                 std::string /*i_dcs_path*/,
                                 std::string /*i_key*/,
-                                int /*i_num*/); 
+                                int /*i_num*/);
 
         /// check json
         json toJson(std::string /*i_file_path*/,
@@ -139,13 +143,13 @@ class DBHandler {
         void writeJson(std::string /*i_key*/,
                        std::string /*i_value*/,
                        std::string /*i_file_path*/,
-                       json /*i_json*/); 
+                       json /*i_json*/);
 
         /// split function
-        std::vector<std::string> split(std::string /*str*/, 
+        std::vector<std::string> split(std::string /*str*/,
                                        char /*del*/);
         void mkdir(std::string /*i_dir_path*/);
-      
+
     private:
         std::string m_db_cfg_path;
         std::string m_chip_type;

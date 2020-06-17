@@ -14,8 +14,9 @@
 
 Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
         unsigned arg_ybins, double arg_ylow, double arg_yhigh, 
-        unsigned arg_zbins, double arg_zlow, double arg_zhigh, 
-        std::type_index t) : HistogramBase(arg_name, t) {
+        unsigned arg_zbins, double arg_zlow, double arg_zhigh)
+  : HistogramBase(arg_name)
+{
     xbins = arg_xbins;
     xlow = arg_xlow;
     xhigh = arg_xhigh;
@@ -44,7 +45,9 @@ Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
 Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
         unsigned arg_ybins, double arg_ylow, double arg_yhigh, 
         unsigned arg_zbins, double arg_zlow, double arg_zhigh, 
-        std::type_index t, LoopStatus &stat) : HistogramBase(arg_name, t, stat) {
+        LoopStatus &stat)
+  : HistogramBase(arg_name, stat)
+{
     xbins = arg_xbins;
     xlow = arg_xlow;
     xhigh = arg_xhigh;
@@ -68,7 +71,7 @@ Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     entries = 0;
 }
 
-Histo3d::Histo3d(Histo3d *h) : HistogramBase(h->getName(), h->getType()) {
+Histo3d::Histo3d(Histo3d *h) : HistogramBase(h->getName()) {
     xbins = h->getXbins();
     xlow = h->getXlow();
     xhigh = h->getXhigh();

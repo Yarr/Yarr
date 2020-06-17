@@ -18,49 +18,49 @@ int main(int argc, char* argv[]) {
 
     // Define histograms
 
-    Histo1d hitsPerEvent("hitsPerEvent", 31, -0.5, 30.5, typeid(void));
+    Histo1d hitsPerEvent("hitsPerEvent", 31, -0.5, 30.5);
     hitsPerEvent.setXaxisTitle("# of Hits");
     hitsPerEvent.setYaxisTitle("# of Events");
 
-    Histo1d hitsPerCluster("hitsPerCluster", 31, -0.5, 30.5, typeid(void));
+    Histo1d hitsPerCluster("hitsPerCluster", 31, -0.5, 30.5);
     hitsPerCluster.setXaxisTitle("# of Hits");
     hitsPerCluster.setYaxisTitle("# of Events");
 
     Histo2d *eventScreen = NULL;
 
-    Histo1d clusterColLength("clusterColLength", 31, -0.5, 30.5, typeid(void));
+    Histo1d clusterColLength("clusterColLength", 31, -0.5, 30.5);
     clusterColLength.setXaxisTitle("Cluster Column Length");
     clusterColLength.setYaxisTitle("# of Clusters");
 
-    Histo1d clusterRowWidth("clusterRowWidth", 31, -0.5, 30.5, typeid(void));
+    Histo1d clusterRowWidth("clusterRowWidth", 31, -0.5, 30.5);
     clusterRowWidth.setXaxisTitle("Cluster Row Width");
     clusterRowWidth.setYaxisTitle("# of Clusters");
 
-    Histo2d clusterWidthLengthCorr("clusterWidthLengthCorr", 11, -0.5, 10.5, 11, -0.5, 10.5, typeid(void));
+    Histo2d clusterWidthLengthCorr("clusterWidthLengthCorr", 11, -0.5, 10.5, 11, -0.5, 10.5);
     clusterWidthLengthCorr.setXaxisTitle("Cluster Col Length");
     clusterWidthLengthCorr.setYaxisTitle("Cluster Row Width");
 
-    Histo1d clustersPerEvent("clustersPerEvent", 11, -0.5, 10.5, typeid(void));
+    Histo1d clustersPerEvent("clustersPerEvent", 11, -0.5, 10.5);
     clustersPerEvent.setXaxisTitle("# of Clusters");
     clustersPerEvent.setYaxisTitle("# of Events");
 
-    Histo1d hitsPerTrigger("clustersPerEvent", 11, -0.5, 10.5, typeid(void));
+    Histo1d hitsPerTrigger("clustersPerEvent", 11, -0.5, 10.5);
     hitsPerTrigger.setXaxisTitle("# of Clusters");
     hitsPerTrigger.setYaxisTitle("# of Events");
 
-    Histo1d bcid("bcid", 32768, -0.5, 32767.5, typeid(void));
+    Histo1d bcid("bcid", 32768, -0.5, 32767.5);
     bcid.setXaxisTitle("BCID");
     bcid.setYaxisTitle("Number of Trigger");
 
-    Histo1d bcidDiff("bcidDiff", 32768, -0.5, 32767.5, typeid(void));
+    Histo1d bcidDiff("bcidDiff", 32768, -0.5, 32767.5);
     bcidDiff.setXaxisTitle("Delta BCID");
     bcidDiff.setYaxisTitle("Number of Trigger");
 
-    Histo1d l1id("l1id", 32, -0.5, 31.5, typeid(void));
+    Histo1d l1id("l1id", 32, -0.5, 31.5);
     l1id.setXaxisTitle("L1Id");
     l1id.setYaxisTitle("Number of Trigger");
 
-    Histo2d occupancy("occupancy", 400, 0.5, 400.5, 192, 0.5, 192.5, typeid(void));
+    Histo2d occupancy("occupancy", 400, 0.5, 400.5, 192, 0.5, 192.5);
     occupancy.setXaxisTitle("Column");
     occupancy.setYaxisTitle("Row");
     occupancy.setZaxisTitle("Hits");
@@ -206,7 +206,7 @@ int main(int argc, char* argv[]) {
             }
             if (event->clusters.size() > 0 && plotIt < 100) {
                 if (eventScreen == NULL) {
-                    eventScreen = new Histo2d((std::to_string(nonZero_cnt) + "-eventScreen"), 400, 0.5, 400.5, 192, 0.5, 192.5, typeid(void));
+                    eventScreen = new Histo2d((std::to_string(nonZero_cnt) + "-eventScreen"), 400, 0.5, 400.5, 192, 0.5, 192.5);
                     eventScreen->setXaxisTitle("Column");
                     eventScreen->setYaxisTitle("Row");
                     eventScreen->setZaxisTitle("ToT");
@@ -222,7 +222,7 @@ int main(int argc, char* argv[]) {
                 if (plotIt%10 == 9) {
                     eventScreen->plot(std::to_string(plotIt), "offline/");
                     delete eventScreen;
-                    eventScreen = new Histo2d((std::to_string(nonZero_cnt) + "-eventScreen"), 400, 0.5, 400.5, 192, 0.5, 192.5, typeid(void));
+                    eventScreen = new Histo2d((std::to_string(nonZero_cnt) + "-eventScreen"), 400, 0.5, 400.5, 192, 0.5, 192.5);
                     eventScreen->setXaxisTitle("Column");
                     eventScreen->setYaxisTitle("Row");
                     eventScreen->setZaxisTitle("ToT");
