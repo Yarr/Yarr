@@ -175,11 +175,10 @@ void BdaqTxCore::setTrigFreq(double freq) {
     // One RD53A command (16-bit) spans 4 BCs = 100 ns.
     // The idea is converting the period into NOOP commands (taking 100 ns each)
     // for the POST DELAY in the command buffer (trigger buffer).
-    // There might be a slight offset to the real period due to the other 
-    // commands in the command buffer.
     hardwareTriggerNoop = (1.0f/freq)/100e-9; // Only for hardware trigger mode.
     // For Timed trigger
     timedTriggerFreq = freq;
+    // Debug
     logger->info("Trigger Frequency: {}, NOOP Number: {}", freq, hardwareTriggerNoop);
 }
   
@@ -232,7 +231,11 @@ bool BdaqTxCore::isTrigDone() {
 //------------------------------------------------------------------------------
 
 void BdaqTxCore::hardwareTriggerSet() {
-    // POST Delay
+    // Subtracing the number of "other commands" from the number of NOOPs
+    // to get the right trigger frequency. The "other commands" size is
+    // (trgData.size() / 2): each command takes 16 bits.
+    hardwareTriggerNoop = hardwareTriggerNoop - (trgData.size() / 2);
+    // POST Delay: Trigger Frequency
     std::vector<uint8_t> fixPostDelay(hardwareTriggerNoop*2, 0x69); 
     trgData.insert(trgData.end(), fixPostDelay.begin(), fixPostDelay.end());
     // Setting hardware registers/buffers
