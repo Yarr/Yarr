@@ -41,6 +41,11 @@ class BdaqController : public HwController, public BdaqTxCore, public BdaqRxCore
                 rxWaitTime = std::chrono::microseconds(uint(j["rxWaitTime"])*1000);
             else
                 rxWaitTime = std::chrono::microseconds(10*1000); // converting from ms to us.            
+            // Software AZ for Sycnhronous FE
+            if (!j["softwareAZ"].empty())
+                softwareAZ = j["softwareAZ"];
+            else
+                softwareAZ = true;
             // RX Module Address
             if (!j["rxAddr"].empty())
                 c.rxAddr = std::stoi(j["rxAddr"], nullptr, 16);
@@ -64,6 +69,10 @@ class BdaqController : public HwController, public BdaqTxCore, public BdaqRxCore
             // Initialize controller with the above configuration
             initialize(c);
         }
+        
+        void setupMode() override final {
+            BdaqTxCore::m_softwareAZ = softwareAZ;
+        }
 
         void runMode() override final {
             BdaqRxCore::m_waitTime = rxWaitTime;
@@ -71,6 +80,7 @@ class BdaqController : public HwController, public BdaqTxCore, public BdaqRxCore
 
     private:
         std::chrono::microseconds rxWaitTime;
+        bool softwareAZ;
 };
 
 #endif

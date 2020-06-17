@@ -35,6 +35,7 @@ class BdaqTxCore : virtual public TxCore, virtual public Bdaq53 {
         void setTrigWordLength(uint32_t length); // From Msb
         void setTrigWord(uint32_t *word, uint32_t length); // 4 words, start at Msb
         void toggleTrigAbort();
+        bool getSoftwareAZ() { return m_softwareAZ; }
 
         // Trigger interface (This is the TLU stuff)
         void setTriggerLogicMask(uint32_t mask) {}
@@ -42,6 +43,7 @@ class BdaqTxCore : virtual public TxCore, virtual public Bdaq53 {
         void resetTriggerLogic() {}
         uint32_t getTrigInCount() { return 0; }
     protected:
+        bool m_softwareAZ;
 
     private:
         // Registers Configuration
