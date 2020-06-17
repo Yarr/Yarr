@@ -30,9 +30,9 @@ clean:
 	for d in $(SUBDIRS); do make -C $$d/xpressk7_325 clean; done
 
 deploy:
-	ssh lxplus.cern.ch "mkdir -p ~/www/yarr/firmware/$(GIT_VERS) &&\
+	ssh lxplus.cern.ch "mkdir -p ~/eos/www/yarr/firmware/$(GIT_VERS) &&\
 		rm -f ~/eos/www/yarr/firmware/latest &&\
 		ln -s ~/eos/www/yarr/firmware/$(GIT_VERS) ~/eos/www/yarr/firmware/latest"
-	rsync -av --include '*/' --include '*_*_*.bit' --exclude '*' --prune-empty-dirs ./ lxplus.cern.ch:~/www/yarr/firmware/$(GIT_VERS)
+	rsync -av --include '*/' --include '*_*_*.bit' --exclude '*' --prune-empty-dirs ./ lxplus.cern.ch:~/eos/www/yarr/firmware/$(GIT_VERS)
 
 .PHONY: all clean hdl vers $(SUBDIRS)
