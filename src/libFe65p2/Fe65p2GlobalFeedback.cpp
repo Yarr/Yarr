@@ -24,9 +24,6 @@ void Fe65p2GlobalFeedback::feedbackBinary(unsigned channel, double sign, bool la
     if (localStep[channel] == 1) {
         doneMap[channel] = true;
     }
-
-    // Unlock the mutex to let the scan proceed
-    fbMutex[channel].unlock();
 }
 
 void Fe65p2GlobalFeedback::feedback(unsigned channel, double sign, bool last) {
@@ -48,11 +45,6 @@ void Fe65p2GlobalFeedback::feedback(unsigned channel, double sign, bool last) {
 
     //if (val < 120 && localStep[channel] > 4)
     //    localStep[channel] = 4;
-
-    // Unlock the mutex to let the scan proceed
-    std::cout << "unlock" << std::endl;
-    fbMutex[channel].unlock();
-
 }
 
 void Fe65p2GlobalFeedback::init() {
@@ -77,14 +69,14 @@ void Fe65p2GlobalFeedback::end() {
 void Fe65p2GlobalFeedback::execPart1() {
     g_stat->set(this, cur);
     unsigned ch = 0;
-    fbMutex[ch].try_lock();
     m_done = doneMap[ch];
-    
 }
 
 void Fe65p2GlobalFeedback::execPart2() {
     unsigned ch = 0; // TODO hardcoded on ch0
-    fbMutex[ch].lock();
+
+    waitForFeedback(ch);
+
     std::cout << "---> Received Feedback for Fe " << ch << " with value " << values[ch] << std::endl;
     
     dynamic_cast<Fe65p2*>(keeper->feList[ch])->setValue(m_reg, (uint16_t) values[ch]);

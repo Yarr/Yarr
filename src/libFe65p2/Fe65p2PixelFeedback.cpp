@@ -16,7 +16,7 @@ Fe65p2PixelFeedback::Fe65p2PixelFeedback() : LoopActionBase(LOOP_STYLE_PIXEL_FEE
     loopType = typeid(this);
 }
 
-void Fe65p2PixelFeedback::feedback(unsigned channel, Histo2d *h) {
+void Fe65p2PixelFeedback::feedback(unsigned channel, std::unique_ptr<Histo2d> h) {
     std::cout << "--> Received feedback on channel: " << channel << std::endl;
     // TODO Check on NULL pointer
     if (h->size() != 4096) {
@@ -24,10 +24,8 @@ void Fe65p2PixelFeedback::feedback(unsigned channel, Histo2d *h) {
             << " --> ERROR : Wrong type of feedback histogram on channel " << channel << std::endl;
         doneMap[channel] = true;
     } else {
-        fbHistoMap[channel] = h;
+        fbHistoMap[channel] = std::move(h);
     }
-
-    fbMutexMap[channel].unlock();
 }
 
 void Fe65p2PixelFeedback::setPixel(unsigned channel, unsigned col, unsigned row, unsigned val) {
@@ -91,8 +89,7 @@ void Fe65p2PixelFeedback::addFeedback(unsigned ch) {
             }
             //std::cout << std::endl;
         }
-        delete fbHistoMap[ch];
-        fbHistoMap[ch] = NULL;
+        fbHistoMap[ch].reset();
     }
 }
 
@@ -101,7 +98,7 @@ void Fe65p2PixelFeedback::init() {
     cur = 0;
 
     unsigned ch = 0; // hardcoded TODO
-    fbHistoMap[ch] = NULL;
+    fbHistoMap[ch].reset();
     for (unsigned col = 1; col<65; col++) {
         for (unsigned row = 1; row<65; row++) {
             this->setPixel(ch, col, row, min);
@@ -117,13 +114,15 @@ void Fe65p2PixelFeedback::end() {
 void Fe65p2PixelFeedback::execPart1() {
     g_stat->set(this, cur);
     unsigned ch = 0; // hardcoded TODO
-    fbMutexMap[ch].try_lock();
+
     this->writePixelCfg(ch);
 }
 
 void Fe65p2PixelFeedback::execPart2() {
     unsigned ch = 0;
-    fbMutexMap[ch].lock();
+
+    waitForFeedback(ch);
+
     this->addFeedback(ch);
 
     // Execute last step twice to get full range

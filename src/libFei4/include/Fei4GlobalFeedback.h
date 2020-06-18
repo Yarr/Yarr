@@ -7,14 +7,13 @@
 #define FEI4GLOBALFEEDBACK_H
 
 #include <queue>
-#include <mutex>
 #include "Fei4.h"
 #include "LoopActionBase.h"
 #include "FeedbackBase.h"
 
 #include "logging.h"
 
-class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
+class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver {
     static logging::Logger &logger() {
         static logging::LoggerStore instance = logging::make_log("Fei4GlobalFeedback");
         return *instance;
@@ -30,7 +29,7 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
     };
 
     // Step down feedback algorithm
-    void feedback(unsigned channel, double sign, bool last = false) {
+    void feedback(unsigned channel, double sign, bool last = false) override {
         ChannelInfo &chan = chanInfo[channel];
         // Calculate new step and val
         if (sign != chan.oldSign) {
@@ -51,12 +50,10 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
         if (val < 50) {
             doneMap[channel] = true;
         }
-        // Unlock the mutex to let the scan proceed
-        chan.fbMutex.unlock();
     }
 
     // Binary search feedback algorithm
-    void feedbackBinary(unsigned channel, double sign, bool last = false) {
+    void feedbackBinary(unsigned channel, double sign, bool last = false) override {
         ChannelInfo &chan = chanInfo[channel];
         // Calculate new step and value
         int val = (chan.values+(chan.localStep*sign));
@@ -68,15 +65,12 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
         if (chan.localStep == 1) {
             doneMap[channel] = true;
         }
-
-        // Unlock the mutex to let the scan proceed
-        chan.fbMutex.unlock();
     }
-    void writeConfig(json &config);
-    void loadConfig(json &config);
+    void writeConfig(json &config) override;
+    void loadConfig(json &config) override;
     private:
     std::string parName = "";
-    void init() {
+    void init() override {
         m_done = false;
         cur = 0;
         // Init all maps:
@@ -93,7 +87,7 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
         this->writePar();
     }
 
-    void end() {
+    void end() override {
         for(unsigned int k=0; k<keeper->feList.size(); k++) {
             if(keeper->feList[k]->getActive()) {	
                 unsigned ch = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
@@ -102,26 +96,18 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
         }
     }
 
-    void execPart1() {
+    void execPart1() override {
         g_stat->set(this, cur);
-        // Lock all mutexes if open
-        for(unsigned int k=0; k<keeper->feList.size(); k++) {
-            if(keeper->feList[k]->getActive()) {
-                unsigned ch = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
-                ChannelInfo &info = chanInfo[ch];
-                info.fbMutex.try_lock();
-            }
-        }
         m_done = allDone();
     }
 
-    void execPart2() {
+    void execPart2() override {
         // Wait for mutexes to be unlocked by feedback
         for(unsigned int k=0; k<keeper->feList.size(); k++) {
             if(keeper->feList[k]->getActive()) {
                 unsigned ch = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
-                ChannelInfo &info = chanInfo[ch];
-                info.fbMutex.lock();
+                waitForFeedback(ch);
+
                 logger().info(" --> Received Feedback on Channel {} with value: {}",
                         dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel(),
                         chanInfo[dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel()].values);
@@ -166,7 +152,6 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
     protected:
 
     struct ChannelInfo {
-      std::mutex fbMutex;
       unsigned values;
       unsigned localStep;
       unsigned oldSign;

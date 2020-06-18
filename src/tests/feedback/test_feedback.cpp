@@ -25,7 +25,7 @@ public:
 TEST_CASE("FeedbackTestEmpty", "[Feedback]") {
     MyHardware empty;
     Bookkeeper bookie(&empty, &empty);
-    ScanFactory scan(&bookie);
+    ScanFactory scan(&bookie, nullptr);
 
     auto g_fe = StdDict::getFrontEnd("FEI4B");
     g_fe->makeGlobal();
@@ -51,12 +51,16 @@ TEST_CASE("FeedbackTestEmpty", "[Feedback]") {
 TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
     MyHardware empty;
     Bookkeeper bookie(&empty, &empty);
-    ScanFactory scan(&bookie);
+    FeedbackClipboardMap fb;
+    ScanFactory scan(&bookie, &fb);
 
     auto fe = StdDict::getFrontEnd("FEI4B").release();
     fe->setActive(true);
+
+    unsigned rx_channel = 0;
+
     fe->init(&empty, 0, 0);
-    bookie.addFe(fe, 0, 0);
+    bookie.addFe(fe, 0, rx_channel);
 
     auto g_fe = StdDict::getFrontEnd("FEI4B");
     g_fe->makeGlobal();
@@ -74,18 +78,7 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
 
     scan.init();
 
-    GlobalFeedbackBase *fb = nullptr;
-
-    for (unsigned n=0; n<scan.size(); n++) {
-        std::shared_ptr<LoopActionBase> l = scan.getLoop(n);
-
-        auto maybe = dynamic_cast<GlobalFeedbackBase *>(l.get());
-        if(maybe != nullptr) {
-          fb = maybe;
-        }
-    }
-
-    REQUIRE (fb != nullptr);
+    GlobalFeedbackSender send(&fb[rx_channel]);
 
     uint32_t feedback_count = 0;
 
@@ -113,7 +106,7 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
                         stat.get(0), stat.get(1), stat.get(2));
 
           // As there's no inner loop, send feedback as soon as data arrives
-          fb->feedbackBinary(0, 1, true);
+          send.feedbackBinary(rx_channel, 1, true);
           feedback_count ++;
 
           logger->debug("Sent feedback at iteration {}", loop_count);
@@ -146,12 +139,15 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
 TEST_CASE("FeedbackTestPixel", "[Feedback]") {
     MyHardware empty;
     Bookkeeper bookie(&empty, &empty);
-    ScanFactory scan(&bookie);
+    FeedbackClipboardMap fb;
+    ScanFactory scan(&bookie, &fb);
+
+    unsigned rx_channel = 0;
 
     auto fe = StdDict::getFrontEnd("FEI4B").release();
     fe->setActive(true);
     fe->init(&empty, 0, 0);
-    bookie.addFe(fe, 0, 0);
+    bookie.addFe(fe, 0, rx_channel);
 
     auto g_fe = StdDict::getFrontEnd("FEI4B");
     g_fe->makeGlobal();
@@ -170,18 +166,7 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
 
     scan.init();
 
-    PixelFeedbackBase *fb = nullptr;
-
-    for (unsigned n=0; n<scan.size(); n++) {
-        std::shared_ptr<LoopActionBase> l = scan.getLoop(n);
-
-        auto maybe = dynamic_cast<PixelFeedbackBase *>(l.get());
-        if(maybe != nullptr) {
-          fb = maybe;
-        }
-    }
-
-    REQUIRE (fb != nullptr);
+    PixelFeedbackSender send(&fb[rx_channel]);
 
     uint32_t feedback_count = 0;
 
@@ -209,8 +194,8 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
                         stat.get(0), stat.get(1), stat.get(2));
 
           // As there's no inner loop, send feedback as soon as data arrives
-          auto h = new Histo2d("Test", 80, 0, 20, 336, 0, 20);
-          fb->feedback(0, h);
+          auto h = std::make_unique<Histo2d>("Test", 80, 0, 20, 336, 0, 20);
+          send.feedback(rx_channel, std::move(h));
           feedback_count ++;
 
           logger->debug("Sent feedback at iteration {}", loop_count);
