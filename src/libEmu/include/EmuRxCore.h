@@ -18,50 +18,87 @@
 template<class FE>
 class EmuRxCore : virtual public RxCore {
     public:
-        EmuRxCore(EmuCom *com);
-        EmuRxCore() {m_com = NULL;}
+        EmuRxCore() {}
         ~EmuRxCore();
         
-        void setCom(EmuCom *com) {m_com = com;}
-        EmuCom* getCom() {return m_com;}
+        void setCom(uint32_t chn, EmuCom *com);
+        EmuCom* getCom(uint32_t chn);
 
+    // TODO
         void setRxEnable(uint32_t val) {}
         void setRxEnable(std::vector<uint32_t> channels) {}
         void maskRxEnable(uint32_t val, uint32_t mask) {}
         void disableRx() {}
 
         RawData* readData();
+        RawData* readData(uint32_t chn);
         
         uint32_t getDataRate() {return 0;}
-        uint32_t getCurCount() {return m_com->getCurSize();}
-        bool isBridgeEmpty() {return m_com->isEmpty();}
+
+        uint32_t getCurCount(uint32_t chn) {return m_coms[chn]->getCurSize();}
+        uint32_t getCurCount() {
+            uint32_t cnt = 0;
+            for (auto& com : m_coms) {
+                if (m_channels[com.first]) cnt += com.second->getCurSize();
+            }
+            return cnt;
+        }
+
+        bool isBridgeEmpty() {
+            for (auto& com : m_coms) {
+                if (m_channels[com.first])
+                    if (not com.second->isEmpty()) return false;
+            }
+            return true;
+        }
 
     private:
-        EmuCom *m_com;
+        std::map<uint32_t, EmuCom*> m_coms;
+        std::map<uint32_t, bool> m_channels;
 };
-
-template<class FE>
-EmuRxCore<FE>::EmuRxCore(EmuCom *com) {
-    m_com = com;
-}
 
 template<class FE>
 EmuRxCore<FE>::~EmuRxCore() {}
 
 template<class FE>
-RawData* EmuRxCore<FE>::readData() {
+void EmuRxCore<FE>::setCom(uint32_t chn, EmuCom *com) {
+    m_coms[chn] = com;
+    m_channels[chn] = true;
+}
+
+template<class FE>
+EmuCom* EmuRxCore<FE>::getCom(uint32_t chn) {
+    if (m_coms.find(chn) != m_coms.end()) {
+        return m_coms[chn];
+    } else {
+        return nullptr;
+    }
+}
+
+template<class FE>
+RawData* EmuRxCore<FE>::readData(uint32_t chn) {
     //std::this_thread::sleep_for(std::chrono::microseconds(1));
-    uint32_t words = this->getCurCount()/sizeof(uint32_t);
+    uint32_t words = this->getCurCount(chn)/sizeof(uint32_t);
     if (words > 0) {
         uint32_t *buf = new uint32_t[words];
         //for(unsigned i=0; i<words; i++)
         //    buf[i] = m_com->read32();
-        if (m_com->readBlock32(buf, words)) {
-            return new RawData(0x0, buf, words);
+        if (m_coms[chn]->readBlock32(buf, words)) {
+            return new RawData(chn, buf, words);
         } else {
             delete[] buf;
         }
     }
     return NULL;
+}
+
+template<class FE>
+RawData* EmuRxCore<FE>::readData() {
+    for (auto& com : m_coms) {
+        if (not m_channels[com.first]) continue;
+        if (com.second->isEmpty()) continue;
+        return EmuRxCore<FE>::readData(com.first);
+    }
+    return nullptr;
 }
 #endif

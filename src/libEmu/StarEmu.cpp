@@ -1426,25 +1426,42 @@ void StarEmu::executeLoop() {
 
 template<>
 class EmuRxCore<StarChips> : virtual public RxCore {
-        ClipBoard<RawData> m_queue;
-        uint32_t m_channel = 0;
+        std::map<uint32_t, std::unique_ptr<ClipBoard<RawData>> > m_queues;
+        std::map<uint32_t, bool> m_channels;
     public:
         EmuRxCore();
         ~EmuRxCore();
         
-        void setCom(EmuCom *com) {} // Used by EmuController.h
-        ClipBoard<RawData> &getCom() {return m_queue;}
+        void setCom(uint32_t chn, std::unique_ptr<ClipBoard<RawData>> queue);
+        ClipBoard<RawData>* getCom(uint32_t chn) {return m_queues[chn].get();}
 
-        void setRxEnable(uint32_t val) override { m_channel = val; }
-        void setRxEnable(std::vector<uint32_t> channels) override { if (not channels.empty()) m_channel = channels[0];}
+    // TODO
+        void setRxEnable(uint32_t val) override {}
+        void setRxEnable(std::vector<uint32_t> channels) override {}
         void maskRxEnable(uint32_t val, uint32_t mask) override {}
         void disableRx() override {}
 
         RawData* readData() override;
+        RawData* readData(uint32_t chn);
         
         uint32_t getDataRate() override {return 0;}
-        uint32_t getCurCount() override {return m_queue.empty()?0:1;}
-        bool isBridgeEmpty() override {return m_queue.empty();}
+        uint32_t getCurCount(uint32_t chn) {return m_queues[chn]->empty()?0:1;}
+        uint32_t getCurCount() override {
+            uint32_t cnt = 0;
+            for (auto& q : m_queues) {
+                if (m_channels[q.first])
+                    cnt += EmuRxCore<StarChips>::getCurCount(q.first);
+            }
+            return cnt;
+        }
+
+        bool isBridgeEmpty() override {
+            for (auto& q : m_queues) {
+                if (m_channels[q.first])
+                    if (not q.second->empty()) return false;
+            }
+            return true;
+        }
 };
 
 
@@ -1452,27 +1469,36 @@ class EmuRxCore<StarChips> : virtual public RxCore {
 
 template<class FE, class ChipEmu>
 std::unique_ptr<HwController> makeEmu() {
-  // This is just to match EmuController API, not used
-  std::unique_ptr<RingBuffer> rx;
-  std::unique_ptr<RingBuffer> tx(new RingBuffer(128));
-
-  std::unique_ptr<HwController> ctrl(new EmuController<FE, ChipEmu>(std::move(rx), std::move(tx)));
-
-  return ctrl;
+    auto ctrl = std::make_unique< EmuController<FE, ChipEmu> >();
+    return ctrl;
 }
 
 EmuRxCore<StarChips>::EmuRxCore() {}
 EmuRxCore<StarChips>::~EmuRxCore() {}
 
-RawData* EmuRxCore<StarChips>::readData() {
-    // //std::this_thread::sleep_for(std::chrono::microseconds(1));
-    if(m_queue.empty()) return nullptr;
+void EmuRxCore<StarChips>::setCom(uint32_t chn, std::unique_ptr<ClipBoard<RawData>> queue) {
+    m_queues[chn] = std::move(queue);
+    m_channels[chn] = true;
+}
 
-    std::unique_ptr<RawData> rd = m_queue.popData();
+RawData* EmuRxCore<StarChips>::readData(uint32_t chn) {
+    // //std::this_thread::sleep_for(std::chrono::microseconds(1));
+    if(m_queues[chn]->empty()) return nullptr;
+
+    std::unique_ptr<RawData> rd = m_queues[chn]->popData();
     // set rx channel number
-    rd->adr = m_channel;
+    rd->adr = chn;
 
     return rd.release();
+}
+
+RawData* EmuRxCore<StarChips>::readData() {
+    for (auto& q : m_queues) {
+        if (not m_channels[q.first]) continue;
+        if (q.second->empty()) continue;
+        return EmuRxCore<StarChips>::readData(q.first);
+    }
+    return nullptr;
 }
 
 bool emu_registered_Emu =
@@ -1481,15 +1507,14 @@ bool emu_registered_Emu =
 
 template<>
 void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
-  auto tx = EmuTxCore<StarChips>::getCom();
-  auto &rx = EmuRxCore<StarChips>::getCom();
 
   //TODO make nice
   logger->info("-> Starting Emulator");
+
+  // Default config
   std::string emuCfgFile;
   if (!j["feCfg"].empty()) {
     emuCfgFile = j["feCfg"];
-    logger->info("Using config: {}", emuCfgFile);
   }
 
   // HPR packet:
@@ -1498,9 +1523,50 @@ void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
   unsigned hprperiod = 40000;
   if (!j["hprPeriod"].empty()) {
     hprperiod = j["hprPeriod"];
-    logger->debug("HPR packet transmission period is set to {} BC", hprperiod);
   }
 
-  emus.emplace_back(new StarEmu( rx, tx_com.get(), emuCfgFile, hprperiod));
-  emuThreads.push_back(std::thread(&StarEmu::executeLoop, emus.back().get()));
+  if (j["chipEmu"].empty()) {
+    logger->info("chipEmu list is not found. One emulated FE instance will be generated.");
+    j["chipEmu"] = json::array();
+    j["chipEmu"][0] = {{"tx", 0}, {"rx", 0}};
+  }
+
+  for (unsigned i=0; i<j["chipEmu"].size(); i++) {
+
+    uint32_t chn_tx = 0, chn_rx = 0;
+    if (not j["chipEmu"][i]["tx"].empty()) {
+      chn_tx = j["chipEmu"][i]["tx"];
+    }
+    if (not j["chipEmu"][i]["rx"].empty()) {
+      chn_rx = j["chipEmu"][i]["rx"];
+    }
+
+    // Tx
+    tx_coms.emplace_back(new RingBuffer(128));
+    EmuTxCore<StarChips>::setCom(chn_tx, tx_coms.back().get());
+    auto tx = EmuTxCore<StarChips>::getCom(chn_tx);
+    // Rx
+    EmuRxCore<StarChips>:: setCom(chn_rx, std::make_unique<ClipBoard<RawData>>());
+    auto rx = EmuRxCore<StarChips>::getCom(chn_rx);
+
+    // use FE sepcific config if available otherwise use the global config
+    std::string emuCfgFile_i;
+    if (!j["chipEmu"][i]["feCfg"].empty()) {
+      emuCfgFile_i = j["chipEmu"][i]["feCfg"];
+    } else {
+      emuCfgFile_i = emuCfgFile;
+    }
+    logger->info("Using config: {} for FE {}", emuCfgFile_i, i);
+
+    unsigned hprperiod_i;
+    if (!j["chipEmu"][i]["hprPeriod"].empty()) {
+      hprperiod_i = j["chipEmu"][i]["hprPeriod"];
+    } else {
+      hprperiod_i = hprperiod;
+    }
+    logger->debug("HPR packet transmission period is set to {} BC for FE {}", hprperiod_i, i);
+
+    emus.emplace_back(new StarEmu( *rx, tx, emuCfgFile_i, hprperiod_i));
+    emuThreads.push_back(std::thread(&StarEmu::executeLoop, emus.back().get()));
+  }
 }

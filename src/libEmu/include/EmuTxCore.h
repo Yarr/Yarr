@@ -14,6 +14,7 @@
 #include <iostream>
 #include <thread>
 #include <mutex>
+#include <map>
 
 #include "TxCore.h"
 #include "EmuCom.h"
@@ -21,16 +22,17 @@
 template<class FE>
 class EmuTxCore : virtual public TxCore {
     public:
-        EmuTxCore(EmuCom *com);
         EmuTxCore();
         ~EmuTxCore();
 
-        void setCom(EmuCom *com) {m_com = com;}
-        EmuCom* getCom() {return m_com;}
+        void setCom(uint32_t chn, EmuCom *com);
+        EmuCom* getCom(uint32_t chn);
 
         void writeFifo(uint32_t value);
+        void writeFifo(uint32_t chn, uint32_t value);
         void releaseFifo() {this->writeFifo(0x0);} // Add some padding
-        
+
+        // TODO
         void setCmdEnable(uint32_t value) {}
         void setCmdEnable(std::vector<uint32_t> channels) {}
         void disableCmd() {}
@@ -38,7 +40,7 @@ class EmuTxCore : virtual public TxCore {
         void maskCmdEnable(uint32_t value, uint32_t mask) {}
 
         void setTrigEnable(uint32_t value);
-        uint32_t getTrigEnable() {return triggerProc.joinable() || !m_com->isEmpty();}
+        uint32_t getTrigEnable() {return triggerProc.joinable() || !EmuTxCore<FE>::isCmdEmpty();}
         void maskTrigEnable(uint32_t value, uint32_t mask) {}
 
         void setTrigConfig(enum TRIG_CONF_VALUE cfg) {}
@@ -52,11 +54,15 @@ class EmuTxCore : virtual public TxCore {
         void toggleTrigAbort() {}
 
         bool isCmdEmpty() {
-            bool rtn = m_com->isEmpty();
-            return rtn;
+            for (auto& com : m_coms) {
+                if (m_channels[com.first])
+                    if (not com.second->isEmpty()) return false;
+            }
+            return true;
         }
+
         bool isTrigDone() {
-            bool rtn = !trigProcRunning && m_com->isEmpty();
+            bool rtn = !trigProcRunning && EmuTxCore<FE>::isCmdEmpty();
             return rtn;
         }
 
@@ -67,7 +73,8 @@ class EmuTxCore : virtual public TxCore {
         void resetTriggerLogic() {}
 
     private:
-        EmuCom *m_com;
+        std::map<uint32_t, EmuCom*> m_coms;
+        std::map<uint32_t, bool> m_channels;
 
         unsigned m_trigCnt;
         std::mutex accMutex;
@@ -79,15 +86,7 @@ class EmuTxCore : virtual public TxCore {
 };
 
 template<class FE>
-EmuTxCore<FE>::EmuTxCore(EmuCom *com) {
-    m_com = com;
-    m_trigCnt = 0;
-    trigProcRunning = false;
-}
-
-template<class FE>
 EmuTxCore<FE>::EmuTxCore() {
-    m_com = NULL;
     m_trigCnt = 0;
     trigProcRunning = false;
 }
@@ -96,9 +95,32 @@ template<class FE>
 EmuTxCore<FE>::~EmuTxCore() {}
 
 template<class FE>
+void EmuTxCore<FE>::setCom(uint32_t chn, EmuCom *com) {
+    m_coms[chn] = com;
+    m_channels[chn] = true;
+}
+
+template<class FE>
+EmuCom* EmuTxCore<FE>::getCom(uint32_t chn) {
+    if (m_coms.find(chn) != m_coms.end()) {
+        return m_coms[chn];
+    } else {
+        return nullptr;
+    }
+}
+
+template<class FE>
 void EmuTxCore<FE>::writeFifo(uint32_t value) {
-    // TODO need to check channel
-    m_com->write32(value);
+    for (auto& chn_en : m_channels) {
+        if (chn_en.second) {
+            EmuTxCore<FE>::writeFifo(chn_en.first, value);
+        }
+    }
+}
+
+template<class FE>
+void EmuTxCore<FE>::writeFifo(uint32_t chn, uint32_t value) {
+    if (m_channels[chn]) m_coms[chn]->write32(value);
 }
 
 template<class FE>
