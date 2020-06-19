@@ -245,8 +245,16 @@ def __pull(dir_path, args):
             'dbVersion': db_version
         }
         entries = localdb.componentTestRun.find(query)
+        QC_status_doc = localdb.QC.module.status.find_one({"component_name":i_chip})
+        if QC_status_doc == None:
+            c_stage = this_tr.get('stage', '...')
+        else:
+            c_stage = QC_status_doc["currentStage"]
+
+
+        logger.warning('Current stage is \033[1m' + c_stage + '\033[0m\n')
         conn_json = {
-            'stage'   : this_tr.get('stage', '...'),
+            'stage'   : c_stage,
             'chipType': chip_type,
             'chips'   : []
         }
@@ -340,9 +348,17 @@ def __pull(dir_path, args):
             sys.exit(1)
         if this_cmp: this_chip = this_cmp
         else:        this_chip = this_ch
+
         ### connectivity
+        QC_status_doc = localdb.QC.module.status.find_one({"component_name":i_chip})
+        if QC_status_doc == None:
+            c_stage = "Testing"
+        else:
+            c_stage = QC_status_doc["currentStage"]
+
+        logger.warning('Current stage is \033[1m' + c_stage + '\033[0m\n')
         conn_json = {
-            'stage': 'Testing',
+            'stage': c_stage,
             'chips': []
         }
         module = False

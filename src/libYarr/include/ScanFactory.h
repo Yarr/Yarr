@@ -11,12 +11,12 @@
 
 #include "ScanBase.h"
 
-
+#include "FeedbackBase.h"
 #include "storage.hpp"
 #include <functional>
 class ScanFactory : public ScanBase {
     public:
-        ScanFactory(Bookkeeper *k);
+        ScanFactory(Bookkeeper *k, FeedbackClipboardMap *fb);
 
         void loadConfig(json &scanCfg);
 
@@ -25,6 +25,8 @@ class ScanFactory : public ScanBase {
         void postScan();
     private:
         json m_config;
+        // Keep around until configuration
+        FeedbackClipboardMap *feedback;
 };
 
 namespace StdDict {

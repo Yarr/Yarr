@@ -13,6 +13,7 @@
 
 #include "Bookkeeper.h"
 #include "DataProcessor.h"
+#include "FeedbackBase.h"
 #include "FrontEnd.h"
 #include "HwController.h"
 
@@ -32,7 +33,7 @@ namespace ScanHelper {
 // TODO would prefer not to need bookie --> deep dependency!
 // TODO Do not want to use the raw pointer ScanBase*
         void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses,
-                            const std::string& scanType, Bookkeeper& bookie, ScanBase* s, int mask_opt);
+                            const std::string& scanType, Bookkeeper& bookie, ScanBase* s, FeedbackClipboardMap *fbMap, int mask_opt);
 }
 
 #endif

@@ -20,12 +20,11 @@ class Histo3d : public HistogramBase {
     public:
         Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
                 unsigned arg_ybins, double arg_ylow, double arg_yhigh, 
-                unsigned arg_zbins, double arg_zlow, double arg_zhigh, 
-                std::type_index t);
+                unsigned arg_zbins, double arg_zlow, double arg_zhigh);
         Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
                 unsigned arg_ybins, double arg_ylow, double arg_yhigh, 
                 unsigned arg_zbins, double arg_zlow, double arg_zhigh, 
-                std::type_index t, LoopStatus &stat);
+                LoopStatus &stat);
         Histo3d(Histo3d *h);
         ~Histo3d();
         

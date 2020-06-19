@@ -9,8 +9,8 @@ int main(int argc, char*argv[]) {
 		std::cout << "Usage: " << argv[0] << " <filename>" << std::endl;
 		return -1;
 	}
-	Histo1d h1("Temp1", 1, 0.0, 1.0, typeid(void));
-	Histo2d h2("Temp2", 1, 0.0, 1.0, 1, 0.0, 1.0, typeid(void));
+	Histo1d h1("Temp1", 1, 0.0, 1.0);
+	Histo2d h2("Temp2", 1, 0.0, 1.0, 1, 0.0, 1.0);
 
 	if(h1.fromFile(std::string(argv[1]))){
 		h1.plot("replot", "./");

@@ -22,7 +22,7 @@ namespace {
 }
 
 Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
-        unsigned arg_ybins, double arg_ylow, double arg_yhigh, std::type_index t) : HistogramBase(arg_name, t) {
+        unsigned arg_ybins, double arg_ylow, double arg_yhigh) : HistogramBase(arg_name) {
     xbins = arg_xbins;
     xlow = arg_xlow;
     xhigh = arg_xhigh;
@@ -44,7 +44,7 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
 }
 
 Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
-        unsigned arg_ybins, double arg_ylow, double arg_yhigh, std::type_index t, LoopStatus &stat) : HistogramBase(arg_name, t, stat) {
+        unsigned arg_ybins, double arg_ylow, double arg_yhigh, LoopStatus &stat) : HistogramBase(arg_name, stat) {
     xbins = arg_xbins;
     xlow = arg_xlow;
     xhigh = arg_xhigh;
@@ -64,7 +64,7 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     entries = 0;
 }
 
-Histo2d::Histo2d(Histo2d *h) : HistogramBase(h->getName(), h->getType()) {
+Histo2d::Histo2d(Histo2d *h) : HistogramBase(h->getName()) {
     xbins = h->getXbins();
     xlow = h->getXlow();
     xhigh = h->getXhigh();
