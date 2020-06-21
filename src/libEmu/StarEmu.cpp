@@ -1371,11 +1371,10 @@ class EmuRxCore<StarChips> : virtual public RxCore {
         void setCom(uint32_t chn, std::unique_ptr<ClipBoard<RawData>> queue);
         ClipBoard<RawData>* getCom(uint32_t chn) {return m_queues[chn].get();}
 
-    // TODO
-        void setRxEnable(uint32_t val) override {}
-        void setRxEnable(std::vector<uint32_t> channels) override {}
+        void setRxEnable(uint32_t channel) override;
+        void setRxEnable(std::vector<uint32_t> channels) override;
         void maskRxEnable(uint32_t val, uint32_t mask) override {}
-        void disableRx() override {}
+        void disableRx() override;
 
         RawData* readData() override;
         RawData* readData(uint32_t chn);
@@ -1435,6 +1434,25 @@ RawData* EmuRxCore<StarChips>::readData() {
         return EmuRxCore<StarChips>::readData(q.first);
     }
     return nullptr;
+}
+
+void EmuRxCore<StarChips>::setRxEnable(uint32_t channel) {
+    if (m_queues.find(channel) != m_queues.end())
+        m_channels[channel] = true;
+    //else
+        //logger->warn("Channel {}");
+}
+
+void EmuRxCore<StarChips>::setRxEnable(std::vector<uint32_t> channels) {
+    for (auto channel : channels) {
+        this->setRxEnable(channel);
+    }
+}
+
+void EmuRxCore<StarChips>::disableRx() {
+    for (auto& q : m_queues) {
+        m_channels[q.first] = false;
+    }
 }
 
 bool emu_registered_Emu =

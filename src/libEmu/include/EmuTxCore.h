@@ -28,32 +28,31 @@ class EmuTxCore : virtual public TxCore {
         void setCom(uint32_t chn, EmuCom *com);
         EmuCom* getCom(uint32_t chn);
 
-        void writeFifo(uint32_t value);
+        void writeFifo(uint32_t value) override;
         void writeFifo(uint32_t chn, uint32_t value);
-        void releaseFifo() {this->writeFifo(0x0);} // Add some padding
+        void releaseFifo() override {this->writeFifo(0x0);} // Add some padding
 
-        // TODO
-        void setCmdEnable(uint32_t value) {}
-        void setCmdEnable(std::vector<uint32_t> channels) {}
-        void disableCmd() {}
-        uint32_t getCmdEnable() {return 0x0;}
+        void setCmdEnable(uint32_t channel) override;
+        void setCmdEnable(std::vector<uint32_t> channels) override;
+        void disableCmd() override;
+        uint32_t getCmdEnable() override {return 0x0;}
         void maskCmdEnable(uint32_t value, uint32_t mask) {}
 
-        void setTrigEnable(uint32_t value);
-        uint32_t getTrigEnable() {return triggerProc.joinable() || !EmuTxCore<FE>::isCmdEmpty();}
-        void maskTrigEnable(uint32_t value, uint32_t mask) {}
+        void setTrigEnable(uint32_t value) override;
+        uint32_t getTrigEnable() override {return triggerProc.joinable() || !this->isCmdEmpty();}
+        void maskTrigEnable(uint32_t value, uint32_t mask) override {}
 
-        void setTrigConfig(enum TRIG_CONF_VALUE cfg) {}
-        void setTrigFreq(double freq) {}
-        void setTrigCnt(uint32_t count);
-        void setTrigTime(double time) {}
+        void setTrigConfig(enum TRIG_CONF_VALUE cfg) override {}
+        void setTrigFreq(double freq) override {}
+        void setTrigCnt(uint32_t count) override;
+        void setTrigTime(double time) override {}
         
-        void setTrigWordLength(uint32_t length) { trigLength = length; }
-        void setTrigWord(uint32_t *word, uint32_t length) { trigWord = word; trigLength = length; }
+        void setTrigWordLength(uint32_t length) override { trigLength = length; }
+        void setTrigWord(uint32_t *word, uint32_t length) override { trigWord = word; trigLength = length; }
 
-        void toggleTrigAbort() {}
+        void toggleTrigAbort() override {}
 
-        bool isCmdEmpty() {
+        bool isCmdEmpty() override {
             for (auto& com : m_coms) {
                 if (m_channels[com.first])
                     if (not com.second->isEmpty()) return false;
@@ -61,16 +60,16 @@ class EmuTxCore : virtual public TxCore {
             return true;
         }
 
-        bool isTrigDone() {
-            bool rtn = !trigProcRunning && EmuTxCore<FE>::isCmdEmpty();
+        bool isTrigDone() override {
+            bool rtn = !trigProcRunning && this->isCmdEmpty();
             return rtn;
         }
 
-        uint32_t getTrigInCount() {return 0x0;}
+        uint32_t getTrigInCount() override {return 0x0;}
         
-        void setTriggerLogicMask(uint32_t mask) {}
-        void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) {}
-        void resetTriggerLogic() {}
+        void setTriggerLogicMask(uint32_t mask) override {}
+        void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) override {}
+        void resetTriggerLogic() override {}
 
     private:
         std::map<uint32_t, EmuCom*> m_coms;
@@ -113,7 +112,7 @@ template<class FE>
 void EmuTxCore<FE>::writeFifo(uint32_t value) {
     for (auto& chn_en : m_channels) {
         if (chn_en.second) {
-            EmuTxCore<FE>::writeFifo(chn_en.first, value);
+            this->writeFifo(chn_en.first, value);
         }
     }
 }
@@ -136,6 +135,29 @@ void EmuTxCore<FE>::setTrigEnable(uint32_t value) {
     } else {
         trigProcRunning = true;
         triggerProc = std::thread(&EmuTxCore::doTrigger, this);
+    }
+}
+
+template<class FE>
+void EmuTxCore<FE>::setCmdEnable(uint32_t channel) {
+    // check if the channel exists
+    if (m_coms.find(channel) != m_coms.end())
+        m_channels[channel] = true;
+    //else
+        //logger->warn("Channel {} has not been configured!", channel);
+}
+
+template<class FE>
+void EmuTxCore<FE>::setCmdEnable(std::vector<uint32_t> channels) {
+    for (auto channel : channels) {
+        this->setCmdEnable(channel);
+    }
+}
+
+template<class FE>
+void EmuTxCore<FE>::disableCmd() {
+    for (auto& com : m_coms) {
+        m_channels[com.first] = false;
     }
 }
 

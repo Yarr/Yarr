@@ -24,19 +24,18 @@ class EmuRxCore : virtual public RxCore {
         void setCom(uint32_t chn, EmuCom *com);
         EmuCom* getCom(uint32_t chn);
 
-    // TODO
-        void setRxEnable(uint32_t val) {}
-        void setRxEnable(std::vector<uint32_t> channels) {}
+        void setRxEnable(uint32_t channel) override;
+        void setRxEnable(std::vector<uint32_t> channels) override;
         void maskRxEnable(uint32_t val, uint32_t mask) {}
-        void disableRx() {}
+        void disableRx() override;
 
-        RawData* readData();
+        RawData* readData() override;
         RawData* readData(uint32_t chn);
         
-        uint32_t getDataRate() {return 0;}
+        uint32_t getDataRate() override {return 0;}
 
         uint32_t getCurCount(uint32_t chn) {return m_coms[chn]->getCurSize();}
-        uint32_t getCurCount() {
+        uint32_t getCurCount() override {
             uint32_t cnt = 0;
             for (auto& com : m_coms) {
                 if (m_channels[com.first]) cnt += com.second->getCurSize();
@@ -44,7 +43,7 @@ class EmuRxCore : virtual public RxCore {
             return cnt;
         }
 
-        bool isBridgeEmpty() {
+        bool isBridgeEmpty() override {
             for (auto& com : m_coms) {
                 if (m_channels[com.first])
                     if (not com.second->isEmpty()) return false;
@@ -97,8 +96,31 @@ RawData* EmuRxCore<FE>::readData() {
     for (auto& com : m_coms) {
         if (not m_channels[com.first]) continue;
         if (com.second->isEmpty()) continue;
-        return EmuRxCore<FE>::readData(com.first);
+        return this->readData(com.first);
     }
     return nullptr;
+}
+
+template<class FE>
+void EmuRxCore<FE>::setRxEnable(uint32_t channel) {
+    // check if the channel exists
+    if (m_coms.find(channel) != m_coms.end())
+        m_channels[channel] = true;
+    //else
+        //logger->warn("Channel {} has not been configured!", channel);
+}
+
+template<class FE>
+void EmuRxCore<FE>::setRxEnable(std::vector<uint32_t> channels) {
+    for (auto channel : channels) {
+        this->setRxEnable(channel);
+    }
+}
+
+template<class FE>
+void EmuRxCore<FE>::disableRx() {
+    for (auto& com : m_coms) {
+        m_channels[com.first] = false;
+    }
 }
 #endif
