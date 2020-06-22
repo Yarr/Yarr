@@ -134,22 +134,15 @@ void Rd53aParameterLoop::loadConfig(json &j) {
     }
     if (!j_a["min"].empty()){
         min = j_a["min"];
-        std::cout << j_a.size() << std::endl;
-
     }
     if (!j_a["max"].empty()){
         max = j_a["max"];
-        std::cout << j_a.size() << std::endl;
-
     }
     if (!j_a["step"].empty()){
         step = j_a["step"];
-        std::cout << j_a.size() << std::endl;
-
     }
     if (!j_a["parameter"].empty()) {
         parName = j_a["parameter"];
-        std::cout << j_a.size() << std::endl;
     }
 
 

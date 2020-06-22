@@ -55,14 +55,14 @@ void Rd53a2TriggerLoop::singleCmdInject(){
     m_edgeDuration = int(m_doubleDelay*4); //cal_edge duration (160MHz) is 4 times doubledelay (40MHz)
     if(m_noInject2){
         m_trigWord[of-1] = Rd53aCmd::genCal(8, 0, 9-CMDDEL, 1, 0, 1); // Inject cmd
-        flexibleTrigger(of, 8+std::round(float(m_edgeDuration)/4), m_Ntrig2, 0); //Trigger on injection #2
+        flexibleTrigger(1 + of, 8+std::round(float(m_edgeDuration)/4), m_Ntrig2, 0); //Trigger on injection #2
 
     }else{
         m_trigWord[of-1] = Rd53aCmd::genCal(8, 1, 9-CMDDEL, m_edgeDuration, 1, 4*(9-CMDDEL)+1); // Inject cmd
-        flexibleTrigger(of, 8+std::round(float(m_edgeDuration)/4), m_Ntrig2, m_trigDelay2); //Trigger on injection #2
+        flexibleTrigger(1 + of, 8+std::round(float(m_edgeDuration)/4), m_Ntrig2, m_trigDelay2); //Trigger on injection #2
 
     }
-    flexibleTrigger(of, 8, m_Ntrig1, m_trigDelay); //Trigger on injection #1
+    flexibleTrigger(1 + of, 8, m_Ntrig1, m_trigDelay); //Trigger on injection #1
 }
 
 
