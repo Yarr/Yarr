@@ -126,11 +126,11 @@ void Rd53aParameterLoop::loadConfig(json &j) {
     if ( j.find("1") == j.end() ) {
         j_a = j;
         multipleParams = false;
-        std::cout << "Processing single-parameter ParameterLoop." << std::endl;
+        //std::cout << "Processing single-parameter ParameterLoop." << std::endl;
     } else {
         j_a = j["1"];
         multipleParams = true;
-        std::cout << "Processing multi-parameter ParameterLoop." << std::endl;
+        //std::cout << "Processing multi-parameter ParameterLoop." << std::endl;
     }
     if (!j_a["min"].empty()){
         min = j_a["min"];

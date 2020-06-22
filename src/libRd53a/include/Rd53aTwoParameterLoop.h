@@ -32,8 +32,10 @@ class Rd53aParameterLoop : public LoopActionBase {
                 bool multipleParams = false;
                 signed add = 0;
                 bool logDiff = false;
-                int m_curToLog = 0;
-
+                int m_curToLog = 0;                    
+                std::vector<int> minMultiple; // Multiple vectors can take multiple parameter values for concurrent stepping.
+                std::vector<int> maxMultiple; // 
+                std::vector<int> stepMultiple;            
                 void init();
                 void end();
                 void execPart1();
