@@ -87,7 +87,7 @@ class LoopActionBase {
 
         virtual void loadConfig(json &config) {}
         virtual void writeConfig(json &config) {}
-                
+		
     protected:
         virtual void init() {}
         virtual void end() {}
@@ -100,7 +100,6 @@ class LoopActionBase {
         int min;
         int max;
         unsigned step;
-
 
         double progress;
 
