@@ -5,6 +5,8 @@
 #include "StarChipPacket.h"
 #include "AllHwControllers.h"
 
+#include <stdio.h>
+
 void sendCommand(TxCore &hw, std::array<uint16_t, 9> &cmd) {
   hw.writeFifo((LCB::IDLE << 16) + LCB::IDLE);
   hw.writeFifo((cmd[0] << 16) + cmd[1]);
@@ -18,7 +20,7 @@ template<typename PacketT>
 void compareOutputs(RawData* data, const PacketT& expected_packet);
 
 template<typename PacketT>
-void checkData(HwController*, std::deque<PacketT>&, const PacketT&);
+void checkData(HwController*, std::deque<PacketT>&, const PacketT *const mask_pattern = nullptr);
 
 // Test by parsing bytes and comparing string
 TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
@@ -28,9 +30,6 @@ TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
 
   json cfg;
   emu->loadConfig(cfg);
-
-  emu->setCmdEnable(0xFFFF);
-  emu->setRxEnable(0x0);
 
   StarCmd star;
 
@@ -67,9 +66,7 @@ TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
   while(!emu->isCmdEmpty())
     ;
 
-  checkData(emu.get(), expected, std::string(""));
-
-  emu->setRxEnable(0x0);
+  checkData(emu.get(), expected);
 }
 
 TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
@@ -79,9 +76,6 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
 
   json cfg;
   emu->loadConfig(cfg);
-
-  emu->setCmdEnable(0xFFFF);
-  emu->setRxEnable(0x0);
 
   StarCmd star;
 
@@ -148,7 +142,12 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
   }
 
   SECTION("Read ABCStar interposed") {
-    // Read an ABCStar register
+    // Write an ABCStar register first
+    // (So its value is known here and does not depend on the default/reset)
+    // Set register 34 (CREG2) to 0x00000190
+    std::array<LCB::Frame, 9> writeABCCmd_reg = star.write_abc_register(34, 0x00000190);
+    sendCommand(*emu, writeABCCmd_reg);
+    // Read this register
     std::array<LCB::Frame, 9> readABCCmd =  star.read_abc_register(34); // 0x22
     emu->writeFifo((readABCCmd[0] << 16) + readABCCmd[1]);
     // The read command is interupted by an L0A
@@ -248,13 +247,11 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
   while(!emu->isCmdEmpty())
     ;
 
-  checkData(emu.get(), expected, mask_pattern);
-
-  emu->setRxEnable(0x0);
+  checkData(emu.get(), expected, &mask_pattern);
 }
 
 TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
-  std::shared_ptr<HwController> emu =  StdDict::getHwController("emu_Star");
+  std::shared_ptr<HwController> emu = StdDict::getHwController("emu_Star");
 
   REQUIRE (emu);
 
@@ -265,7 +262,6 @@ TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
   StarCmd star;
 
   typedef std::vector<uint8_t> PacketCompare;
-  const PacketCompare mask_pattern = {0xff, 0xde, 0xad, 0xbe, 0xef, 0x00};
 
   std::deque<PacketCompare> expected;
 
@@ -353,11 +349,219 @@ TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
 
   while(!emu->isCmdEmpty());
 
-  checkData(emu.get(), expected, mask_pattern);
+  checkData(emu.get(), expected);
+}
+
+// Multiple star chips
+TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
+  std::shared_ptr<HwController> emu = StdDict::getHwController("emu_Star");
+
+  REQUIRE (emu);
+
+  //////////////////////////
+  // Create a chip configuration
+  json tmpChipCfg;
+  tmpChipCfg["chips"] = json::array();
+
+  // Three channels/HCCStar chips
+  // Each HCCStar is configured to have one ABCStar if no other config provided
+  unsigned nchannels = 3;
+  std::string tmpFileName("test_multichannel_star_setup.json");
+  for (unsigned i=0; i<nchannels; i++) {
+    tmpChipCfg["chips"][i] = {{"tx", 2*i}, {"rx", 2*i+1}};
+  }
+  std::ofstream tmpCfgFile(tmpFileName);
+  tmpCfgFile << std::setw(4) << tmpChipCfg;
+  tmpCfgFile.close();
+
+  //////////////////////////
+  // Emulator configuration
+  json cfg;
+  cfg["chipCfg"] = tmpFileName;
+
+  emu->loadConfig(cfg);
+
+  remove(tmpFileName.c_str());
+
+  StarCmd star;
+
+  typedef std::pair<uint32_t, std::vector<uint8_t>> PacketCompare;
+
+  std::deque<PacketCompare> expected;
+
+  //////////////////////////
+  // Initialization
+  // First turn off both HCC and ABC HPRs i.e. MaskHPR=1, StopHPR=1
+  // Commands are broacasted to all HCCStar and ABCStar chips
+  auto writeHCCCmd_MaskHPR = star.write_hcc_register(43, 0x00000100);
+  sendCommand(*emu, writeHCCCmd_MaskHPR);
+  auto writeHCCCmd_StopHPR = star.write_hcc_register(16, 0x00000001);
+  sendCommand(*emu, writeHCCCmd_StopHPR);
+  auto writeABCCmd_MaskHPR = star.write_abc_register(32, 0x00000040);
+  sendCommand(*emu, writeABCCmd_MaskHPR);
+  auto writeABCCmd_StopHPR = star.write_abc_register(0, 0x00000004);
+  sendCommand(*emu, writeABCCmd_StopHPR);
+
+  // Expected to receive one initial HPR packet from HCCStar and one from ABCStar
+  for (unsigned i=0; i<nchannels; i++) {
+    uint32_t chn_rx = 2*i+1;
+    // HCC HPR with Idle frame
+    expected.push_back({chn_rx, {0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0}});
+    // ABC HPR with Idle frame
+    expected.push_back({chn_rx, {0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00}});
+  }
+
+  emu->releaseFifo();
+  while(!emu->isCmdEmpty());
+  checkData(emu.get(), expected);
+
+  //////////////////////////
+  // Start tests
+
+  SECTION("Register read from all channels") {
+    // Read HCCStar registers ADCcfg
+    auto readHCCCmd_ADCcfg = star.read_hcc_register(48);
+    // Broadcast command
+    sendCommand(*emu, readHCCCmd_ADCcfg);
+
+    // Expect to read back the default value 0x00406600 from all HCCStars
+    for (unsigned i=0; i<nchannels; i++) {
+      uint32_t chn_rx = 2*i+1;
+      expected.push_back({chn_rx, {0x83, 0x00, 0x04, 0x06, 0x60, 0x00}});
+    }
+
+    emu->releaseFifo();
+    while(!emu->isCmdEmpty());
+    checkData(emu.get(), expected);
+  }
+
+  SECTION("Rx channel control") {
+    // Write all MaskInput7 of ABCStar chips
+    auto writeABCCmd_mask7 = star.write_abc_register(23, 0xdeadbeef);
+    sendCommand(*emu, writeABCCmd_mask7);
+
+    // Write all MaskInput6 of ABCStar chips
+    auto writeABCCmd_mask6 = star.write_abc_register(22, 0xcafebabe);
+    sendCommand(*emu, writeABCCmd_mask6);
+
+    // Disable all rx channels except for rx channel 3
+    emu->disableRx();
+    emu->setRxEnable(3);
+
+    // Send a broadcast register read command to read MaskInput7
+    auto readABCCmd_mask7 = star.read_abc_register(23);
+    sendCommand(*emu, readABCCmd_mask7);
+
+    // Expect to receive data only from rx channel 3
+    expected.push_back({3, {0x40, 0x17, 0x0d, 0xea, 0xdb, 0xee, 0xff, 0x00, 0x00}});
+
+    emu->releaseFifo();
+    while(!emu->isCmdEmpty());
+    checkData(emu.get(), expected);
+
+    // Now disable all rx channels except for rx channel 1
+    emu->disableRx();
+    emu->setRxEnable(1);
+
+    // Send a broadcast register read command to read MaskInput6
+    auto readABCCmd_mask6 = star.read_abc_register(22);
+    sendCommand(*emu, readABCCmd_mask6);
+
+    // Should receive data only from rx channel 1.
+    // Two data packets are expected:
+    // One is from the previous MaskInput7 read command: the register read packet was pushed to the rx buffer but had not been read out since the rx channel was disabled.
+    expected.push_back({1, {0x40, 0x17, 0x0d, 0xea, 0xdb, 0xee, 0xff, 0x00, 0x00}});
+    // The second packet is from the MaskInput6 read command.
+    expected.push_back({1, {0x40, 0x16, 0x0c, 0xaf, 0xeb, 0xab, 0xef, 0x00, 0x00}});
+
+    emu->releaseFifo();
+    while(!emu->isCmdEmpty());
+    checkData(emu.get(), expected);
+  }
+
+  SECTION("Tx command control") {
+    // Enable tx channel 2, disable all others
+    emu->disableCmd();
+    emu->setCmdEnable(2);
+
+    // Broadcast a register write command to change the value of MaskInput0
+    auto writeABCCmd_mask0 = star.write_abc_register(16, 0xdecafbad);
+    sendCommand(*emu, writeABCCmd_mask0);
+
+    // Read all MaskInput0 registers
+    // Enable all tx channels first
+    for (unsigned i=0; i<nchannels; i++) {
+      unsigned chn_tx = 2*i;
+      emu->setCmdEnable(chn_tx);
+    }
+    auto readABCCmd_mask0 = star.read_abc_register(16); // broadcast reg read
+    sendCommand(*emu, readABCCmd_mask0);
+
+    // Only the ABCStar on tx channel 2 is expected to have its value updated
+    // Others should still have the default value 0x0
+    for (unsigned i=0; i<nchannels; i++) {
+      unsigned chn_tx = 2*i;
+      unsigned chn_rx = 2*i+1;
+      if (chn_tx == 2)
+        expected.push_back({chn_rx, {0x40, 0x10, 0x0d, 0xec, 0xaf, 0xba, 0xdf, 0x00, 0x00}});
+      else
+        expected.push_back({chn_rx, {0x40, 0x10, 0x00, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x00}});
+    }
+
+    emu->releaseFifo();
+    while(!emu->isCmdEmpty());
+    checkData(emu.get(), expected);
+  }
+
+  SECTION("Tx trigger control") {
+    // Switch to the static test mode (TM = 1)
+    auto writeABCCmd_TM = star.write_abc_register(32, 0x00010040);
+    sendCommand(*emu, writeABCCmd_TM);
+
+    // Write 0xfffe0000 to MaskInput3 so we will have a non-empty cluster
+    auto writeABCCmd_mask3 = star.write_abc_register(19, 0xfffe0000);
+    sendCommand(*emu, writeABCCmd_mask3);
+
+    // Prepare trigger
+    // Trigger counts
+    emu->setTrigCnt(2);
+    // Trigger words
+    std::array<uint32_t, 3> trigWord;
+    trigWord[0] = (LCB::IDLE << 16) + LCB::IDLE;
+    trigWord[1] = (LCB::IDLE << 16) + LCB::IDLE;
+    trigWord[2] = (LCB::l0a_mask(1, 4, false) << 16) | LCB::IDLE;
+    emu->setTrigWord(&trigWord[0], 3);
+
+    // Disable trigger commands in all channels except for tx channel 2 and 4
+    emu->disableCmd();
+    emu->setCmdEnable(2);
+    emu->setCmdEnable(4);
+
+    while(!emu->isCmdEmpty());
+
+    // Start trigger
+    emu->setTrigEnable(1);
+
+    // Cluster bytes from MaskInput3 value 0xfffe0000:
+    // {0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee}
+    // L0tag from the trigger words: l0tag = 4 (input tag) + 3 (BC offset)
+    // Expect two physics packets from rx channel 3 (corresponding to tx 2)
+    expected.push_back({3, {0x20,0x76, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b0110
+    expected.push_back({3, {0x20,0x77, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b0111
+    // And two packets from rx channel 5 (corresponding to tx 4)
+    expected.push_back({5, {0x20,0x76, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b0110
+    expected.push_back({5, {0x20,0x77, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b0111
+
+    // Join trigger process when it is done
+    while(!emu->isTrigDone());
+    emu->setTrigEnable(0);
+
+    checkData(emu.get(), expected);
+  }
 }
 
 template<typename PacketT>
-void checkData(HwController* emu, std::deque<PacketT>& expected, const PacketT& mask_pattern)
+void checkData(HwController* emu, std::deque<PacketT>& expected, const PacketT *const mask_pattern)
 {
   std::unique_ptr<RawData> data(emu->readData());
 
@@ -375,14 +579,19 @@ void checkData(HwController* emu, std::deque<PacketT>& expected, const PacketT& 
       CAPTURE (data->words);
 
       // Do comparison
-      if (expected_packet != mask_pattern)
+      if (not mask_pattern) {
         compareOutputs(data.get(), expected_packet);
+      } else if (expected_packet != (*mask_pattern)) {
+        compareOutputs(data.get(), expected_packet);
+      }
 
       delete [] data->buf;
     }
 
     data.reset(emu->readData());
   }
+
+  CHECK(expected.empty());
 }
 
 template<>
@@ -426,4 +635,19 @@ void compareOutputs<std::vector<uint8_t>>(RawData* data, const std::vector<uint8
       }
     } // i
   } // w
+}
+
+template<>
+void compareOutputs<std::pair<uint32_t, std::vector<uint8_t>>>(RawData* data, const std::pair<uint32_t, std::vector<uint8_t>>& expected)
+{
+  // Compare channel numbers
+  uint32_t rx_exp = expected.first;
+  CAPTURE (rx_exp);
+  uint32_t rx_data = data->adr;
+  CAPTURE (rx_data);
+
+  CHECK (rx_exp == rx_data);
+
+  // Compare the actual data
+  compareOutputs<std::vector<uint8_t>>(data, expected.second);
 }

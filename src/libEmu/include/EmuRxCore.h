@@ -26,7 +26,7 @@ class EmuRxCore : virtual public RxCore {
 
         void setRxEnable(uint32_t channel) override;
         void setRxEnable(std::vector<uint32_t> channels) override;
-        void maskRxEnable(uint32_t val, uint32_t mask) {}
+        void maskRxEnable(uint32_t val, uint32_t mask) override {}
         void disableRx() override;
 
         RawData* readData() override;
