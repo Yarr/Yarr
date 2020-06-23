@@ -5,8 +5,6 @@
 #include "StarChipPacket.h"
 #include "AllHwControllers.h"
 
-#include <stdio.h>
-
 void sendCommand(TxCore &hw, std::array<uint16_t, 9> &cmd) {
   hw.writeFifo((LCB::IDLE << 16) + LCB::IDLE);
   hw.writeFifo((cmd[0] << 16) + cmd[1]);
