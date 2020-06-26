@@ -47,7 +47,6 @@ void Fe65p2DataProcessor::join() {
 
 void Fe65p2DataProcessor::process() {
   while(true) {
-    std::unique_lock<std::mutex> lk(mtx);
     input->waitNotEmptyOrDone();
     
     process_core();
