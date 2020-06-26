@@ -82,6 +82,15 @@ Additional changes for the quad module's chip configurations:
 - `OutputActiveLanes`: 7 instead of 15 because only 3 data lanes are connected, not 4
 - `CmlEn`: 7 instead of 15
 
+## Readout Speed
+
+The readout speed that the chip is confgured to has to match the readout speed of the firmware (which is fixed). In order to chanege the readout frequency of the chip one has to change the ``CdrSelSerClk`` register. These settings correspond to the different readout frequencies (the value is the divider from 1.28Gbps):
+
+- ``0`` : 1280Mbps
+- ``1`` : 640Mbps
+- ``2`` : 320Mbps
+- ``3`` : 160Mbps
+
 # Scan Console for RD53A
 
 The general structure of the Scan Console commands is:
