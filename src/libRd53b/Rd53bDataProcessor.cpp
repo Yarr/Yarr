@@ -75,7 +75,6 @@ void Rd53bDataProcessor::process()
 {
 	while (true)
 	{
-		std::unique_lock<std::mutex> lk(mtx);
 		m_input->waitNotEmptyOrDone();
 
 		process_core();
