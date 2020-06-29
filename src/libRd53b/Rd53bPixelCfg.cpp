@@ -31,6 +31,10 @@ uint16_t Rd53bPixelCfg::setBit(uint16_t in, uint8_t bit, uint8_t val) {
     return (in & ~(1U << bit)) | (val << bit);
 }
 
+uint16_t Rd53bPixelCfg::getBit(uint16_t in, uint8_t bit) {
+    return (in >> bit) & 0x1;
+}
+
 void Rd53bPixelCfg::setEn(unsigned col, unsigned row, unsigned v) {
     pixRegs[col/2][row] = setBit(pixRegs[col/2][row], (col&0x1)*8 + 0, v);
 }
@@ -44,7 +48,28 @@ void Rd53bPixelCfg::setHitbus(unsigned col, unsigned row, unsigned v) {
 }
 
 void Rd53bPixelCfg::setTDAC(unsigned col, unsigned row, int v) {
+    Rd53bPixelCfg::pixelBits reg;
+    reg.u8 = (pixRegs[col/2][row] >> ((col&0x1)*8)) & 0xFF;
+    reg.s.tdac = abs(v);
+    reg.s.sign = (v < 0) ? 0x1 : 0x0;
+    // Clear old regs and set new ones
+    pixRegs[col/2][row] = (pixRegs[col/2][row] & ~(0xFF << ((col&0x1)*8))) | (reg.u8 << ((col&0x1)*8));
+}   
 
+unsigned Rd53bPixelCfg::getEn(unsigned col, unsigned row) {
+   return getBit(pixRegs[col/2][row], (col&0x1)*8 + 0);
 }
 
+unsigned Rd53bPixelCfg::getHitbus(unsigned col, unsigned row) {
+   return getBit(pixRegs[col/2][row], (col&0x1)*8 + 1);
+}
 
+unsigned Rd53bPixelCfg::getInjEn(unsigned col, unsigned row) {
+   return getBit(pixRegs[col/2][row], (col&0x1)*8 + 2);
+}
+
+int Rd53bPixelCfg::getTDAC(unsigned col, unsigned row) {
+    Rd53bPixelCfg::pixelBits reg;
+    reg.u8 = (pixRegs[col/2][row] >> ((col&0x1)*8)) & 0xFF;
+    return (reg.s.tdac*(-1*reg.s.sign));
+}

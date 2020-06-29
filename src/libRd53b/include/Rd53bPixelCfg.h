@@ -55,6 +55,7 @@ class Rd53bPixelCfg {
     
     private:
         inline uint16_t setBit(uint16_t in, uint8_t bit, uint8_t val);
+        inline uint16_t getBit(uint16_t in, uint8_t bit);
 
 };
 
