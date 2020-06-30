@@ -55,14 +55,14 @@ void Rd53a2TriggerLoop::singleCmdInject(){
     m_edgeDuration = int(m_doubleDelay*4); //cal_edge duration (160MHz) is 4 times doubledelay (40MHz)
     if(m_noInject2){
         m_trigWord[of-1] = Rd53aCmd::genCal(8, 0, 9-CMDDEL, 1, 0, 1); // Inject cmd
-        flexibleTrigger(1 + of, 8+std::round(float(m_edgeDuration)/4), m_Ntrig2, 0); //Trigger on injection #2
+        flexibleTrigger(of, 8+std::round(float(m_edgeDuration)/4), m_Ntrig2, 0); //Trigger on injection #2
 
     }else{
         m_trigWord[of-1] = Rd53aCmd::genCal(8, 1, 9-CMDDEL, m_edgeDuration, 1, 4*(9-CMDDEL)+1); // Inject cmd
-        flexibleTrigger(1 + of, 8+std::round(float(m_edgeDuration)/4), m_Ntrig2, m_trigDelay2); //Trigger on injection #2
+        flexibleTrigger(of, 8+std::round(float(m_edgeDuration)/4), m_Ntrig2, m_trigDelay2); //Trigger on injection #2
 
     }
-    flexibleTrigger(1 + of, 8, m_Ntrig1, m_trigDelay); //Trigger on injection #1
+    flexibleTrigger(of, 8, m_Ntrig1, m_trigDelay); //Trigger on injection #1
 }
 
 
@@ -71,11 +71,11 @@ void Rd53a2TriggerLoop::doubleCmdInject(){
     //**Second calibration command population**
     uint8_t of = (m_trigDelay2 + m_Ntrig2)/8;
     if(m_noInject2){
-        flexibleTrigger(3 + of, 0, m_Ntrig2, 0);
+        flexibleTrigger(2.5 + of, 0, m_Ntrig2, 0);
     }else{
         m_trigWord[3 + of] = 0x69696363; //Second calibration command header
         m_trigWord[2 + of] = Rd53aCmd::genCal(8, 1, 0, 0, 1, 0);
-        flexibleTrigger(4 + of, 0, m_Ntrig2, m_trigDelay2); //Trigger on injection #2
+        flexibleTrigger(3.5 + of, 0, m_Ntrig2, m_trigDelay2); //Trigger on injection #2
     }
 
 
@@ -87,7 +87,7 @@ void Rd53a2TriggerLoop::doubleCmdInject(){
       SPDLOG_LOGGER_ERROR(logger, "DoubleDelay is too large (Burst buffer words: "+std::to_string(of + 1 + m_synPulse)+").");
     }
 
-    flexibleTrigger(of + 1, m_edgeDelay + CMDDEL-1, m_Ntrig1, m_trigDelay); //Flexible trigger for first injection of double injection scheme
+    flexibleTrigger(0.5 + of, m_edgeDelay + CMDDEL-1, m_Ntrig1, m_trigDelay); //Flexible trigger for first injection of double injection scheme
     m_trigWord[of] = 0x69696363; //First calibration command header //PRINTED OUT ()COMES FIRST
     if(m_noInject2){
         m_trigWord[of-1] = Rd53aCmd::genCal(8, 0, m_edgeDelay, 1, 1, m_auxDelay); // first calibration command

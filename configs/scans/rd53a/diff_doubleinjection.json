@@ -43,40 +43,44 @@
       },
       {
         "config": {
-          "max": 200,
-          "min": 0,
-          "step": 5,
-          "parameter":"InjVcalDiff"
+          "1": {
+            "max": 500,
+            "min": 250,
+            "step": 5,
+            "parameter": "InjVcalHigh"
+          },
+          "2": {
+            "max": 300,
+            "min": 50,
+            "step": 5,
+            "parameter": "InjVcalMed"
+          },
+          "log": "InjVcalMed"
         },
-        "loopAction": "Rd53aParameterLoop"
+        "loopAction": "Rd53aTwoParameterLoop"
       },
       {
         "config": {
-          "max": 33,
-          "min": 16,
+          "max": 50,
+          "min": 33,
           "step": 1,
-          "nSteps": 2,
-	  "delayArray": [0]
+          "nSteps": 2
         },
         "loopAction": "Rd53aCoreColLoop"
       },
       {
         "config": {
-          "count": 50,
-          "delay": 48,
+          "count": 100,
+          "delay": 20,
           "extTrigger": false,
-          "frequency": 30000,
+          "frequency": 2000,
           "noInject": false,
-<<<<<<< HEAD:configs/scans/rd53a/lin_thresholdscan.json
-          "time": 0
-=======
           "time": 0,
           "doubleDelay": 120,
           "Ntrig": 8,
           "Ntrig2": 8
->>>>>>> Added scan config for diff FE and adjusted trigger timing to match both Front Ends:configs/scans/rd53a/lin_doubleinjection.json
         },
-        "loopAction": "Rd53aTriggerLoop"
+        "loopAction": "Rd53a2TriggerLoop"
       },
       {
         "loopAction": "StdDataLoop"
@@ -84,23 +88,16 @@
     ],
     "name": "ThresholdScan",
     "prescan": {
-        "InjEnDig": 0,
-<<<<<<< HEAD:configs/scans/rd53a/lin_thresholdscan.json
-        "LatencyConfig": 48,
-        "GlobalPulseRt": 0,
-        "InjVcalMed": 1000,
-        "InjVcalHigh": 1000,
-=======
-        "LatencyConfig": 20,
-        "GlobalPulseRt": 16384,
-        "InjVcalMed": 50,
-        "InjVcalHigh": 250,
->>>>>>> Added scan config for diff FE and adjusted trigger timing to match both Front Ends:configs/scans/rd53a/lin_doubleinjection.json
-        "DiffVth1": 500,
-        "SyncVth": 500,
-        "EnCoreColDiff1": 0,
-        "EnCoreColDiff2": 0,
-        "EnCoreColSync":0
+      "InjEnDig": 0,
+      "LatencyConfig": 20,
+      "GlobalPulseRt": 0,
+      "InjVcalMed": 50,
+      "InjVcalHigh": 300,
+      "SyncVth": 500,
+      "LinVth": 500,
+      "EnCoreColLin1": 0,
+      "EnCoreColLin2": 0,
+      "EnCoreColSync": 0
     }
   }
 }
