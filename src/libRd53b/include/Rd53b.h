@@ -13,9 +13,10 @@
 #include "TxCore.h"
 #include "RxCore.h"
 
+#include "Rd53bCmd.h"
 #include "Rd53bCfg.h"
 
-class Rd53b : public FrontEnd, public Rd53bCfg{
+class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
     public:
         Rd53b();
         Rd53b(HwController *arg_core);
@@ -32,7 +33,9 @@ class Rd53b : public FrontEnd, public Rd53bCfg{
 
         void maskPixel(unsigned col, unsigned row) override {}
 
-        void writeNamedRegister(std::string name, uint16_t value) override {}
+        void writeRegister(Rd53bReg Rd53bGlobalCfg::*ref, uint16_t value);
+        void readRegister(Rd53bReg Rd53bGlobalCfg::*ref);
+        void writeNamedRegister(std::string name, uint16_t value) override;
 
         void setInjCharge(double charge, bool sCap=true, bool lCap=true) override {}
     protected:

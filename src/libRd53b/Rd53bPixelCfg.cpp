@@ -73,3 +73,27 @@ int Rd53bPixelCfg::getTDAC(unsigned col, unsigned row) {
     reg.u8 = (pixRegs[col/2][row] >> ((col&0x1)*8)) & 0xFF;
     return (reg.s.tdac*(-1*reg.s.sign));
 }
+
+void Rd53bPixelCfg::toJson(json &j) {
+    for (unsigned col=0; col<n_Col; col++) {
+        for (unsigned row=0; row<n_Row; row++) {
+            j["RD53B"]["PixelConfig"][col]["Col"] = col;
+            j["RD53B"]["PixelConfig"][col]["Enable"][row] = this->getEn(col, row);
+            j["RD53B"]["PixelConfig"][col]["Hitbus"][row] = this->getHitbus(col, row);
+            j["RD53B"]["PixelConfig"][col]["InjEn"][row] = this->getInjEn(col, row);
+            j["RD53B"]["PixelConfig"][col]["TDAC"][row] = this->getTDAC(col, row);
+        }
+    }
+}
+
+// TODO add failsaife
+void Rd53bPixelCfg::fromJson(json &j) {
+    for (unsigned col=0; col<n_Col; col++) {
+        for (unsigned row=0; row<n_Row; row++) {
+            this->setEn(col, row, j["RD53B"]["PixelConfig"][col]["Enable"][row]);
+            this->setHitbus(col, row, j["RD53B"]["PixelConfig"][col]["Hitbus"][row]);
+            this->setInjEn(col, row, j["RD53B"]["PixelConfig"][col]["InjEn"][row]);
+            this->setTDAC(col, row, j["RD53B"]["PixelConfig"][col]["TDAC"][row]);
+        }
+    }
+}

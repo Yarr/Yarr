@@ -39,10 +39,24 @@ void Rd53bCfg::toFileJson(json &j) {
     j["RD53B"]["Parameter"]["InjCap"] = m_injCap;
     for(unsigned  i=0;i<m_vcalPar.size();i++)  
         j["RD53B"]["Parameter"]["VcalPar"][i]= m_vcalPar[i];
+
+    Rd53bGlobalCfg::toJson(j);
+    Rd53bPixelCfg::toJson(j);
 }
 
 void Rd53bCfg::fromFileJson(json &j) {
+    if (!j["RD53B"]["Parameter"]["Name"].empty())
+        name = j["RD53B"]["Parameter"]["Name"];
+    if (!j["RD53B"]["Parameter"]["ChipId"].empty())
+        m_chipId = j["RD53B"]["Parameter"]["ChipId"];
+    if (!j["RD53B"]["Parameter"]["InjCap"].empty())
+        m_injCap = j["RD53B"]["Parameter"]["InjCap"];
+    if (!j["RD53B"]["Parameter"]["VcalPar"].empty())
+        for(unsigned  i=0;i<m_vcalPar.size();i++)
+            m_vcalPar[i] = j["RD53B"]["Parameter"]["VcalPar"][i];
 
+    Rd53bGlobalCfg::fromJson(j);
+    Rd53bPixelCfg::fromJson(j);
 }
 
 void Rd53bCfg::setChipId(unsigned id) {

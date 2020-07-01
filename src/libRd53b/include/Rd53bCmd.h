@@ -80,8 +80,9 @@ class Rd53bCmd {
         void setCore(TxCore *arg_core) {
             core = arg_core;
         }
-    private:
+        
         TxCore *core;
+    private:
 };
 
 #endif

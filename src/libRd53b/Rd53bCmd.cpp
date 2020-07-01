@@ -112,4 +112,3 @@ void Rd53bCmd::sendRdReg(uint8_t chipId, uint16_t address) {
     core->writeFifo((rdReg[1] << 16) | rdReg[0]);
     core->releaseFifo();
 }
-
