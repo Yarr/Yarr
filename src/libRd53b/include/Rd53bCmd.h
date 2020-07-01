@@ -58,19 +58,16 @@ class Rd53bCmd {
         static std::array<uint16_t, 1> genSync();
         static std::array<uint16_t, 1> genTrigger(uint8_t bc, uint8_t tag);
         static std::array<uint16_t, 2> genReadTrigger(uint8_t chipId, uint8_t etag);
-        static std::array<uint16_t, 1> genClear();
-        static std::array<uint16_t, 2> genGlobalPulse(uint8_t chipId);
+        static std::array<uint16_t, 1> genClear(uint8_t chipId);
+        static std::array<uint16_t, 1> genGlobalPulse(uint8_t chipId);
         static std::array<uint16_t, 3> genCal(uint8_t chipId, uint8_t mode, uint8_t edgeDelay, uint8_t edgeDuration, uint8_t auxPar, uint8_t auxDelay);
         static std::array<uint16_t, 4> genWrReg(uint8_t chipId, uint16_t address, uint16_t data);
         static std::array<uint16_t, 2> genRdReg(uint8_t chipId, uint16_t address);
 
-        // Broadcasts
         void sendPllLock();
         void sendSync();
-        void sendClear();
-        
-        // Specific Commands    
         void sendReadTrigger(uint8_t chipId, uint8_t etag);
+        void sendClear(uint8_t chipId);
         void sendGlobalPulse(uint8_t chipId);
         void sendWrReg(uint8_t chipId, uint16_t address, uint16_t data);
         void sendRdReg(uint8_t chipId, uint16_t address);
