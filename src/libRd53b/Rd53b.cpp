@@ -53,11 +53,23 @@ void Rd53b::init(HwController *core, unsigned arg_txChannel, unsigned arg_rxChan
     //m_rxcore = arg_core;
     txChannel = arg_txChannel;
     rxChannel = arg_rxChannel;
-    geo.nRow = 192;
+    geo.nRow = 384;
     geo.nCol = 400;
     core->setClkPeriod(6.25e-9);
 }
 
 void Rd53b::configure() {
+
+}
+
+void Rd53b::configureInit() {
+
+}
+
+void Rd53b::configureGlobal() {
+
+}
+
+void Rd53b::configurePixels() {
 
 }

@@ -26,6 +26,9 @@ class Rd53b : public FrontEnd, public Rd53bCfg{
         void makeGlobal() override {m_chipId = 8;}
 
         void configure() override;
+        void configureInit();
+        void configureGlobal();
+        void configurePixels();
 
         void maskPixel(unsigned col, unsigned row) override {}
 
