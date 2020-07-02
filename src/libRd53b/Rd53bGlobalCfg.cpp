@@ -16,7 +16,7 @@ namespace {
 }
 
 Rd53bGlobalCfg::Rd53bGlobalCfg() {
-
+    this->init();
 }
 
 Rd53bGlobalCfg::~Rd53bGlobalCfg() {
@@ -408,6 +408,7 @@ void Rd53bGlobalCfg::init() {
 
 void Rd53bGlobalCfg::toJson(json &j) {
     for(auto it : regMap) {
+        logger->debug("Writing reg: {}", it.first);
         j["RD53B"]["GlobalConfig"][it.first] = (this->*it.second).read();
     }    
 }
