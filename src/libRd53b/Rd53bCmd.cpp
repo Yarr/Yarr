@@ -99,7 +99,7 @@ void Rd53bCmd::sendGlobalPulse(uint8_t chipId) {
 }
 
 void Rd53bCmd::sendWrReg(uint8_t chipId, uint16_t address, uint16_t data) {
-    SPDLOG_LOGGER_TRACE(logger, "Sending WrReg(id({}),addr({}),data(0x{0:x}))", chipId, address, data);
+    SPDLOG_LOGGER_TRACE(logger, "Sending WrReg(id({}),addr({}),data({}))", chipId, address, data);
     std::array<uint16_t, 4> wrReg = Rd53bCmd::genWrReg(chipId, address, data);
     core->writeFifo((wrReg[3] << 16) | wrReg[2]);
     core->writeFifo((wrReg[1] << 16) | wrReg[0]);

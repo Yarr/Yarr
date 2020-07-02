@@ -66,17 +66,25 @@ void Rd53b::configureInit() {
     logger->debug("Initiliasing chip ...");
     
     // TODO this should only be done once per TX!
-    // Send low number of transitions for at least 2us to put chip in reset state 
+    // Send low number of transitions for at least 10us to put chip in reset state 
     logger->debug(" ... asserting CMD reset via low activity");
-    for (unsigned int i=0; i<30; i++) {
+    for (unsigned int i=0; i<100; i++) {
         core->writeFifo(0xFFFFFFFF);
         core->writeFifo(0x00000000);
     }
     core->releaseFifo();
     while(!core->isCmdEmpty());
-    // Wait for at least 0.5us before chip is release from reset
+    // Wait for at least 1000us before chip is release from reset
     logger->debug(" ... waiting for CMD reset to be released");
-    std::this_thread::sleep_for(std::chrono::microseconds(500));
+    std::this_thread::sleep_for(std::chrono::microseconds(2000));
+
+    // Sync CMD decoder
+    logger->debug(" ... send syncs");
+    for(unsigned int i=0; i<32; i++)
+        core->writeFifo(0xAAAA817E);
+    core->releaseFifo();
+    while(!core->isCmdEmpty());
+
 
     // Send a clear cmd
     logger->debug(" ... sending clear command");

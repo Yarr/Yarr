@@ -33,7 +33,7 @@ int main (int argc, char *argv[]) {
     json j; // empty
     j["pattern"] = defaultLogPattern;
     j["log_config"][0]["name"] = "all";
-    j["log_config"][0]["level"] = "info";
+    j["log_config"][0]["level"] = "trace";
     logging::setupLoggers(j);
  
     logger->info("\033[1;31m###################\033[0m");
@@ -119,8 +119,12 @@ int main (int argc, char *argv[]) {
         newCfgFile.close();
     }
  
-    logger->info("Configure chip ...");
+    logger->info("Enable Tx");
+    hwCtrl->setCmdEnable(0);
 
+    logger->info("Configure chip ...");
+    rd53b.configureInit();
+    rd53b.configureGlobal();
     logger->info("... done! bye!");
     return 0;
 }
