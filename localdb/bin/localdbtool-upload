@@ -8,18 +8,18 @@
 
 ### Common
 import os, sys, time, argparse, yaml
+import coloredlogs
 from getpass          import getpass
 from pymongo          import MongoClient, errors, DESCENDING
 from bson.objectid    import ObjectId
 from datetime         import datetime
 
 ### log
-from logging import getLogger, StreamHandler, DEBUG, Formatter, FileHandler, getLoggerClass, INFO
-logger = getLogger('Log')
-logger.setLevel(INFO)
-#logger.setLevel(DEBUG) # remove comment out for debug mode
-
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../lib/localdb-tools/modules'))
+import db_logging
+import logging
+logger = logging.getLogger('Log')
+
 import register
 
 ### global variables
@@ -827,8 +827,26 @@ def __check_component(i_type):
             logger.info('The number of chips: {}'.format(len(chips)))
             logger.info('Done.')
 
+#####################
+# error exit function
+def __error_exit(command):
+    if command=='init':
+        pass
+    elif command=='comp':
+        logger.error('Usage: localdbtool-upload comp <path/to/component/file>')
+    elif command=='scan':
+        logger.error('Usage: localdbtool-upload scan <path/to/result/dir>')
+    elif command=='dcs':
+        logger.error('Usage: localdbtool-upload dcs <path/to/result/dir>')
+    elif command=='iv':
+        logger.error('Usage: localdbtool-upload iv <path/to/result/dir>')
+    elif command=='check':
+        logger.error('Usage: localdbtool-upload check comp')
+        logger.error('       localdbtool-upload check chip')
+    logger.info('-----------------------')
+    sys.exit(1)
+
 def main():
-    logger.debug('=======================')
     logger.debug('Main Function.')
     global option
     global logfile
@@ -838,27 +856,19 @@ def main():
     nargs = len(args.command)-1
 
     if command[0]=='test':
-        logger.debug('=======================')
+        logger.debug('test')
         sys.exit(0)
 
     ### logging
     if args.log==True:
-        formatter = Formatter('%(asctime)s - %(levelname)s: %(message)s')
         day = datetime.today().day
         logfile = '{0}/.yarr/localdb/log/{1}.log'.format(home, day)
         for i in range(3):
             past_logfile = '{0}/.yarr/localdb/log/{1}.log'.format(home, day+i+1)
             if os.path.isfile(past_logfile): os.remove(past_logfile)
-        handler = FileHandler(filename=logfile)
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-        logger.debug('Set log file: {}'.format(logfile))
+        db_logging.setLogFile(logfile)
     else:
-        formatter = Formatter('#DB %(levelname)s# %(message)s')
-        handler = StreamHandler()
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-        logger.debug('Not set log file')
+        db_logging.setLog()
 
     logger.info('-----------------------')
 
@@ -868,64 +878,39 @@ def main():
             db_cfg = register.toJson(args.database)
         else:
             db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
-        if not __init(db_cfg)==True:
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
+        if not __init(db_cfg)==True: __error_exit(command[0])
     elif command[0]=='comp':
         logger.info('Function: Register Component')
         option = 'comp'
-        if nargs == 0:
-            logger.error('Usage: localdbtool-upload comp <path/to/component/file>')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
+        if nargs == 0: __error_exit(command[0])
         __upload_comp(command[1])
     elif command[0]=='scan':
         logger.info('Function: Upload Scan Data')
         option = 'scan'
         register.__global.option = 'scan'
-        if nargs == 0:
-            logger.error('Usage: localdbtool-upload scan <path/to/result/dir>')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
+        if nargs == 0: __error_exit(command[0])
         __set_cache(command[1])
     elif command[0]=='dcs':
         logger.info('Function: Upload DCS Data')
         option = 'dcs'
         register.__global.option = 'dcs'
-        if nargs == 0:
-            logger.error('Usage: localdbtool-upload dcs <path/to/result/dir>')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
+        if nargs == 0: __error_exit(command[0])
         __set_cache(command[1])
     elif command[0]=='iv':
         logger.info('Function: Upload IV Data')
         option = 'iv'
         register.__global.option = 'iv'
-        if nargs == 0:
-            logger.error('Usage: localdbtool-upload iv <path/to/result/dir>')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
+        if nargs == 0: __error_exit(command[0])
         __set_cache(command[1])
     elif command[0]=='cache':
         logger.info('Function: Upload From Cache')
         __upload_from_cache()
     elif command[0]=='check':
         logger.info('Function: Check Component Data')
-        if nargs == 0:
-            logger.error('Usage: localdbtool-upload check comp')
-            logger.error('       localdbtool-upload check chip')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
+        if nargs == 0: __error_exit(command[0])
         __check_component(command[1])
 
     logger.info('-----------------------')
-    logger.debug('=======================')
     sys.exit(0)
 
 if __name__ == '__main__': main()

@@ -7,27 +7,41 @@
 // ################################
 
 #include "DBHandler.h"
+#define DBDEBUG 0
+
 #include <functional>
+
+#include "logging.h"
+namespace {
+    auto dlog = logging::make_log("Local DB");
+}
+
 DBHandler::DBHandler():
 m_db_cfg_path(""), m_output_dir(""), m_command(""),
 m_stage_list(), m_env_list(), m_comp_list(),
-m_db_version(1.0), DB_DEBUG(false), m_verify(true), m_conn_json(), counter(0)
+m_db_version(1.0), m_verify(true), m_conn_json(), counter(0)
 {
-    if (DB_DEBUG) std::cout << "DBHandler: DBHandler" << std::endl;
+#if DBDEBUG
+    std::cout << "DBHandler: DBHandler" << std::endl;
+#endif
 
     // make temporary directory for output log file: /tmp/localdb/timestamp_error.log
     this->mkdir("/tmp/localdb");
 }
 
 DBHandler::~DBHandler() {
-    if (DB_DEBUG) std::cout << "DBHandler: Exit DBHandler" << std::endl;
+#if DBDEBUG
+    std::cout << "DBHandler: Exit DBHandler" << std::endl;
+#endif
 }
 
 //*****************************************************************************************************
 // Public functions
 //
 void DBHandler::initialize(std::string i_db_cfg_path, std::string i_command, std::string i_option) {
-    if (DB_DEBUG) std::cout << "DBHandler: Initializing." << std::endl;
+#if DBDEBUG
+    std::cout << "DBHandler: Initializing." << std::endl;
+#endif
 
     std::ifstream db_cfg_ifs(i_db_cfg_path);
     if (!db_cfg_ifs.is_open()) {
@@ -61,14 +75,16 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_command, std
 }
 
 void DBHandler::alert(std::string i_function, std::string i_message, std::string i_type) {
-    if (DB_DEBUG) std::cout << "DBHandler: Alert '" << i_type << "'" << std::endl;
+#if DBDEBUG
+    std::cout << "DBHandler: Alert '" << i_type << "'" << std::endl;
+#endif
 
     std::string alert_message;
     if (i_type=="error") alert_message = "#DB ERROR#";
     else if (i_type=="warning") alert_message = "#DB WARNING#";
     else if (i_type=="status") alert_message = "#DB STATUS#";
 
-    std::cerr << alert_message << " " << i_message << std::endl;
+    dlog->error("{} {}", alert_message, i_message);
     std::time_t now = std::time(NULL);
     struct tm *lt = std::localtime(&now);
     char tmp[20];
@@ -88,7 +104,9 @@ void DBHandler::alert(std::string i_function, std::string i_message, std::string
 }
 
 json DBHandler::setUser(std::string i_user_path) {
-    if (DB_DEBUG) std::cout << "DBHandler: Set user: " << i_user_path << std::endl;
+#if DBDEBUG
+    std::cout << "DBHandler: Set user: " << i_user_path << std::endl;
+#endif
     std::ifstream user_ifs(i_user_path);
     if (!user_ifs.is_open()) {
         std::string message = "Not found user config file: "+i_user_path+"\n\tSet it by 'YARR/localdb/setup_db.sh'";
@@ -101,7 +119,7 @@ json DBHandler::setUser(std::string i_user_path) {
     if (getenv("HOSTNAME")) {
         hostname = getenv("HOSTNAME");
     } else {
-        std::cout << "HOSTNAME environmental variable not found. (Proceeding with 'default_host')" << std::endl;
+        dlog->warn("HOSTNAME environmental variable not found. (Proceeding with 'default_host')");
     }
     user_json["HOSTNAME"] = hostname;
 
@@ -109,7 +127,9 @@ json DBHandler::setUser(std::string i_user_path) {
 }
 
 json DBHandler::setSite(std::string i_site_path) {
-    if (DB_DEBUG) std::cout << "DBHandler: Set site: " << i_site_path << std::endl;
+#if DBDEBUG
+    std::cout << "DBHandler: Set site: " << i_site_path << std::endl;
+#endif
     std::ifstream site_ifs(i_site_path);
     if (!site_ifs.is_open()) {
         std::string message = "Not found site config file: "+i_site_path+"\n\tSet it by 'YARR/localdb/setup_db.sh'";
@@ -121,7 +141,7 @@ json DBHandler::setSite(std::string i_site_path) {
     if (getenv("HOSTNAME")) {
         hostname = getenv("HOSTNAME");
     } else {
-        std::cout << "HOSTNAME environmental variable not found. (Proceeding with 'default_host')" << std::endl;
+        dlog->warn("HOSTNAME environmental variable not found. (Proceeding with 'default_host')");
     }
     site_json["HOSTNAME"] = hostname;
 
@@ -129,16 +149,22 @@ json DBHandler::setSite(std::string i_site_path) {
 }
 
 void DBHandler::setConnCfg(std::vector<std::string> i_conn_paths) {
-    if (DB_DEBUG) std::cout << "DBHandler: Set connectivity config" << std::endl;
+#if DBDEBUG
+    std::cout << "DBHandler: Set connectivity config" << std::endl;
+#endif
 
     for (auto conn_path : i_conn_paths) {
-        if (DB_DEBUG) std::cout << "\tDBHandler: setting connectivity config file: " << conn_path << std::endl;
+#if DBDEBUG
+        std::cout << "\tDBHandler: setting connectivity config file: " << conn_path << std::endl;
+#endif
         this->checkConnCfg(conn_path);
     }
 }
 
 void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, std::string i_user_path, std::string i_site_path) {
-    if (DB_DEBUG) std::cout << "DBHandler: Set DCS config: " << i_dcs_path << std::endl;
+#if DBDEBUG
+    std::cout << "DBHandler: Set DCS config: " << i_dcs_path << std::endl;
+#endif
 
     json log_json = this->toJson(i_scanlog_path);
     json user_json = this->setUser(i_user_path);
@@ -236,7 +262,9 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, st
 }
 
 void DBHandler::setIVCfg(std::string i_iv_path, std::string i_scanlog_path, std::string i_user_path, std::string i_site_path) {
-    if (DB_DEBUG) std::cout << "DBHandler: Set IV config: " << i_iv_path << std::endl;
+#if DBDEBUG
+    std::cout << "DBHandler: Set IV config: " << i_iv_path << std::endl;
+#endif
 
     json log_json = this->toJson(i_scanlog_path);
     json user_json = this->setUser(i_user_path);
@@ -336,7 +364,9 @@ void DBHandler::setIVCfg(std::string i_iv_path, std::string i_scanlog_path, std:
 
 
 void DBHandler::cleanUp(std::string i_option, std::string i_dir) {
-    if (DB_DEBUG) std::cout << "DBHandler: Clean Up." << std::endl;
+#if DBDEBUG
+    std::cout << "DBHandler: Clean Up." << std::endl;
+#endif
 
     char path[1000];
     std::string current_dir = getcwd(path, sizeof(path));
@@ -380,9 +410,9 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir) {
 
     std::string cmd = m_command+" test 2> /dev/null";
     if (system(cmd.c_str())!=0) {
-        std::cerr << "#DB ERROR# Cannot upload result data into Local DB" << std::endl;
-        std::cerr << "           Not found Local DB command: 'localdbtool-upload'" << std::endl;
-        std::cerr << "           Try 'YARR/localdb/setup_db.sh' to set Local DB command and 'localdbtool-upload cache' to upload data." << std::endl;
+        dlog->error("Cannot upload result data into Local DB");
+        dlog->error("Not found Local DB command: 'localdbtool-upload'");
+        dlog->error("Try 'YARR/localdb/setup_db.sh' to set Local DB command and 'localdbtool-upload cache' to upload data.");
     } else {
         cmd = m_command+" init --database "+m_db_cfg_path;
         if (system(cmd.c_str())==0) {
@@ -390,9 +420,9 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir) {
             else if (i_option=="dcs") cmd = m_command+" dcs "+result_dir+" --log &";
             else if (i_option=="iv") cmd = m_command+" iv "+result_dir+" --log &";
             system(cmd.c_str());
-            std::cout << "#DB INFO# Uploading in the back ground. (log: ~/.yarr/localdb/log/)" << std::endl;
+            dlog->info("Uploading in the back ground. (log: ~/.yarr/localdb/log/)");
         } else {
-            std::cerr << "           Try 'localdbtool-upload cache' to upload data in the good connection to Local DB Server." << std::endl;
+            dlog->error("Try 'localdbtool-upload cache' to upload data in the good connection to Local DB Server.");
         }
     }
 
@@ -406,12 +436,14 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir) {
 }
 
 int DBHandler::setComponent(std::string i_conn_path, std::string i_user_cfg_path, std::string i_site_cfg_path) {
-    if (DB_DEBUG) std::cout << "DBHandler: Register Component Data." << std::endl;
+#if DBDEBUG
+    std::cout << "DBHandler: Register Component Data." << std::endl;
+#endif
 
     std::string cmd = m_command+" test 2> /dev/null";
     if (system(cmd.c_str())!=0) {
-        std::cerr << "#ERROR# Not found Local DB command: 'localdbtool-upload'" << std::endl;
-        std::cerr << "        Set Local DB function by YARR/localdb/setup_db.sh'" << std::endl;
+        dlog->error("Not found Local DB command: 'localdbtool-upload'");
+        dlog->error("Set Local DB function by YARR/localdb/setup_db.sh'");
         return 1;
     }
     if (i_user_cfg_path!="") i_user_cfg_path=" --user "+i_user_cfg_path;
@@ -424,12 +456,14 @@ int DBHandler::setComponent(std::string i_conn_path, std::string i_user_cfg_path
 }
 
 int DBHandler::setCache(std::string i_user_cfg_path, std::string i_site_cfg_path) {
-    if (DB_DEBUG) std::cout << "DBHandler: Upload Cache Data." << std::endl;
+#if DBDEBUG
+    std::cout << "DBHandler: Upload Cache Data." << std::endl;
+#endif
 
     std::string cmd = m_command+" test 2> /dev/null";
     if (system(cmd.c_str())!=0) {
-        std::cerr << "#ERROR# Not found Local DB command: 'localdbtool-upload'" << std::endl;
-        std::cerr << "        Set Local DB function by YARR/localdb/setup_db.sh'" << std::endl;
+        dlog->error("Not found Local DB command: 'localdbtool-upload'");
+        dlog->error("Set Local DB function by YARR/localdb/setup_db.sh'");
         return 1;
     }
     if (i_user_cfg_path!="") i_user_cfg_path=" --user "+i_user_cfg_path;
@@ -440,7 +474,9 @@ int DBHandler::setCache(std::string i_user_cfg_path, std::string i_site_cfg_path
 }
 
 int DBHandler::checkConnection() {
-    if (DB_DEBUG) std::cout << "DBHandler: Check the connection to Local DB." << std::endl;
+#if DBDEBUG
+    std::cout << "DBHandler: Check the connection to Local DB." << std::endl;
+#endif
 
     std::string cmd = m_command+" init";
 
@@ -448,12 +484,14 @@ int DBHandler::checkConnection() {
 }
 
 int DBHandler::checkModule() {
-    if (DB_DEBUG) std::cout << "DBHandler: Check Module List from Local DB." << std::endl;
+#if DBDEBUG
+    std::cout << "DBHandler: Check Module List from Local DB." << std::endl;
+#endif
 
     std::string cmd = m_command+" test 2> /dev/null";
     if (system(cmd.c_str())!=0) {
-        std::cerr << "#ERROR# Not found Local DB command: 'localdbtool-upload'" << std::endl;
-        std::cerr << "        Set Local DB function by YARR/localdb/setup_db.sh'" << std::endl;
+        dlog->error("Not found Local DB command: 'localdbtool-upload'");
+        dlog->error("Set Local DB function by YARR/localdb/setup_db.sh'");
         return 1;
     }
     cmd = m_command+" check comp --database "+m_db_cfg_path;
@@ -465,7 +503,9 @@ int DBHandler::checkModule() {
 // Protected fuctions
 //
 void DBHandler::writeJson(std::string i_key, std::string i_value, std::string i_file_path, json i_json) {
-    if (DB_DEBUG) std::cout << "\tDBHandler: Cache log file: " << i_file_path << std::endl;
+#if DBDEBUG
+    std::cout << "\tDBHandler: Cache log file: " << i_file_path << std::endl;
+#endif
 
     i_json[i_key] = i_value;
     std::ofstream log_file(i_file_path);
@@ -478,7 +518,9 @@ void DBHandler::writeJson(std::string i_key, std::string i_value, std::string i_
 /////////////////
 // Check Function
 void DBHandler::checkFile(std::string i_file_path, std::string i_description) {
-    if (DB_DEBUG) std::cout << "\t\tDBHandler: Check file: " << i_file_path << std::endl;
+#if DBDEBUG
+    std::cout << "\t\tDBHandler: Check file: " << i_file_path << std::endl;
+#endif
     std::ifstream file_ifs(i_file_path);
     if (!file_ifs.is_open()) {
         std::string message = "Not found the file.\n\tfile: " + i_file_path;
@@ -491,7 +533,9 @@ void DBHandler::checkFile(std::string i_file_path, std::string i_description) {
 }
 
 void DBHandler::checkEmpty(bool i_empty, std::string i_key, std::string i_file_path, std::string i_description) {
-    if (DB_DEBUG) std::cout << "\t\tDBHandler: Check empty: " << i_key << " in " << i_file_path << std::endl;
+#if DBDEBUG
+    std::cout << "\t\tDBHandler: Check empty: " << i_key << " in " << i_file_path << std::endl;
+#endif
     if (i_empty) {
         std::string message = "Found an empty field in json file.\n\tfile: " + i_file_path + "    key: " + i_key;
         if (i_description!="") message += "    description: " + i_description;
@@ -502,7 +546,9 @@ void DBHandler::checkEmpty(bool i_empty, std::string i_key, std::string i_file_p
 }
 
 void DBHandler::checkNumber(bool i_number, std::string i_key, std::string i_file_path) {
-    if (DB_DEBUG) std::cout << "\t\tDBHandler: Check number: " << i_key << " in " << i_file_path << std::endl;
+#if DBDEBUG
+    std::cout << "\t\tDBHandler: Check number: " << i_key << " in " << i_file_path << std::endl;
+#endif
     if (!i_number) {
         std::string message = "This field value must be the number.\n\tfile: " + i_file_path + "    key: '" + i_key + "'";
         std::string function = __PRETTY_FUNCTION__;
@@ -512,7 +558,9 @@ void DBHandler::checkNumber(bool i_number, std::string i_key, std::string i_file
 }
 
 void DBHandler::checkList(std::vector<std::string> i_list, std::string i_value, std::string i_list_path, std::string i_file_path) {
-    if (DB_DEBUG) std::cout << "\t\tDBHandler: Check list: " << i_value << " in " << i_file_path << std::endl;
+#if DBDEBUG
+    std::cout << "\t\tDBHandler: Check list: " << i_value << " in " << i_file_path << std::endl;
+#endif
     if (std::find(i_list.begin(), i_list.end(), i_value)==i_list.end()) {
         std::string message = "Not registered '" + i_value + "' in " + i_list_path + "\n\tCheck the file: " + i_file_path + "\n\tList : ";
         for (unsigned i=0;i<i_list.size();i++) message += i_list[i] + " ";
@@ -523,7 +571,9 @@ void DBHandler::checkList(std::vector<std::string> i_list, std::string i_value, 
 }
 
 json DBHandler::checkDBCfg(std::string i_db_path) {
-    if (DB_DEBUG) std::cout << "\t\tDBHandler: Check database config: " << i_db_path << std::endl;
+#if DBDEBUG
+    std::cout << "\t\tDBHandler: Check database config: " << i_db_path << std::endl;
+#endif
 
     json db_json = toJson(i_db_path);
     this->checkEmpty(db_json["hostIp"].empty(), "hostIp", i_db_path);
@@ -534,7 +584,9 @@ json DBHandler::checkDBCfg(std::string i_db_path) {
 }
 
 void DBHandler::checkConnCfg(std::string i_conn_path) {
-    if (DB_DEBUG) std::cout << "\t\tDBHandler: Check connectivity config: " << i_conn_path << std::endl;
+#if DBDEBUG
+    std::cout << "\t\tDBHandler: Check connectivity config: " << i_conn_path << std::endl;
+#endif
 
     if (!m_verify) return;
 
@@ -554,7 +606,7 @@ void DBHandler::checkConnCfg(std::string i_conn_path) {
         if (getenv("HOSTNAME")) {
             hostname = getenv("HOSTNAME");
         } else {
-            std::cout << "HOSTNAME environmental variable not found. (Proceeding with 'default_host')" << std::endl;
+            dlog->warn("HOSTNAME environmental variable not found. (Proceeding with 'default_host')");
         }
         std::string mo_serial_number = conn_json["module"]["serialNumber"];
         std::string mod_list_path = home+"/.yarr/localdb/"+hostname+"_modules.csv";
@@ -614,7 +666,9 @@ void DBHandler::checkConnCfg(std::string i_conn_path) {
 }
 
 void DBHandler::checkDCSCfg(std::string i_dcs_path, std::string i_num, json i_json) {
-    if (DB_DEBUG) std::cout << "\t\tDBHandler: Check DCS config: " << i_dcs_path << std::endl;
+#if DBDEBUG
+    std::cout << "\t\tDBHandler: Check DCS config: " << i_dcs_path << std::endl;
+#endif
 
     this->checkEmpty(i_json["key"].empty(), "environments."+i_num+".key", i_dcs_path, "Set the environmental key from the key list.");
     std::string j_key = i_json["key"];
@@ -629,7 +683,9 @@ void DBHandler::checkDCSCfg(std::string i_dcs_path, std::string i_num, json i_js
 }
 
 std::string DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_path, std::string i_key, int i_num) {
-    if (DB_DEBUG) std::cout << "\t\tDBHandler: Check DCS log file: " << i_log_path << std::endl;
+#if DBDEBUG
+    std::cout << "\t\tDBHandler: Check DCS log file: " << i_log_path << std::endl;
+#endif
 
     this->checkFile(i_log_path, "Check environmental data file of key '"+i_key+"' in file "+i_dcs_path+".");
     std::ifstream log_ifs(i_log_path);
@@ -719,7 +775,9 @@ std::string DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_pat
 }
 
 json DBHandler::checkUserCfg(std::string i_user_path) {
-    if (DB_DEBUG) std::cout << "\t\tDBHandler: Check user config file: " << i_user_path << std::endl;
+#if DBDEBUG
+    std::cout << "\t\tDBHandler: Check user config file: " << i_user_path << std::endl;
+#endif
 
     json user_json = this->toJson(i_user_path);
 
@@ -731,7 +789,9 @@ json DBHandler::checkUserCfg(std::string i_user_path) {
 }
 
 json DBHandler::checkSiteCfg(std::string i_site_path) {
-    if (DB_DEBUG) std::cout << "\t\tDBHandler: Check site config file: " << i_site_path << std::endl;
+#if DBDEBUG
+    std::cout << "\t\tDBHandler: Check site config file: " << i_site_path << std::endl;
+#endif
 
     json site_json = this->toJson(i_site_path);
 
@@ -745,7 +805,9 @@ json DBHandler::checkSiteCfg(std::string i_site_path) {
 //////////
 // Others
 json DBHandler::toJson(std::string i_file_path, std::string i_file_type) {
-    if (DB_DEBUG) std::cout << "\t\tDBHandler: Convert to json code from: " << i_file_path << std::endl;
+#if DBDEBUG
+    std::cout << "\t\tDBHandler: Convert to json code from: " << i_file_path << std::endl;
+#endif
 
     json file_json;
 

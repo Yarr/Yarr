@@ -33,8 +33,8 @@
         "vddd_current",
         "vdda_voltage",
         "vdda_current",
-	"vddcom_voltage",
-	"vddcom_current",
+        "vddcom_voltage",
+        "vddcom_current",
         "hv_voltage",
         "hv_current",
         "temperature"

@@ -14,15 +14,10 @@ from pymongo    import MongoClient, errors
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../lib/localdb-tools/modules'))
 
 ### log
-from logging import getLogger, StreamHandler, DEBUG, Formatter, FileHandler, getLoggerClass, INFO
-logger = getLogger('Log')
-logger.setLevel(INFO)
-#logger.setLevel(DEBUG) # remove comment out for debug mode
-formatter = Formatter('#DB %(levelname)s# %(message)s')
-handler = StreamHandler()
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-logger.debug('Not set log file')
+import db_logging
+import logging
+logger = logging.getLogger('Log')
+db_logging.setLog()
 
 home = os.environ['HOME']
 if not "HOSTNAME" in os.environ:

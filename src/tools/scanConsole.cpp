@@ -80,7 +80,7 @@ static std::string defaultDbDirPath() {
   }
   return home+"/.yarr/localdb";
 }
- 
+
 static std::string defaultDbCfgPath() {
   return defaultDbDirPath()+"/"+getHostname()+"_database.json";
 }
@@ -115,10 +115,10 @@ int main(int argc, char *argv[]) {
     bool dbUse = false;
     std::string dbCfgPath = defaultDbCfgPath();
     std::string dbSiteCfgPath = defaultDbSiteCfgPath();
-    std::string dbUserCfgPath = defaultDbDirPath();
+    std::string dbUserCfgPath = defaultDbUserCfgPath();
 
     std::string logCfgPath = "";
-    
+
     int nThreads = 4;
     int c;
     while ((c = getopt(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:l:")) != -1) {
@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
                 return -1;
         }
     }
-    
+
     spdlog::info("Configuring logger ...");
     if(!logCfgPath.empty()) {
         auto j = ScanHelper::openJsonFile(logCfgPath);
@@ -422,7 +422,7 @@ int main(int argc, char *argv[]) {
     std::chrono::steady_clock::time_point cfg_end = std::chrono::steady_clock::now();
     logger->info("All FEs configured in {} ms!",
                  std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count());
-    
+
     // Wait for rx to sync with FE stream
     // TODO Check RX sync
     hwCtrl->checkRxSync(); // As it is implemented in BDAQ, I added it here. Should be harmless to other HWs.
@@ -506,7 +506,7 @@ int main(int argc, char *argv[]) {
 
           histogrammers[fe]->init();
           histogrammers[fe]->run();
-          
+
           logger->info(" .. started threads of Fe {}", dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
         }
     }
@@ -540,7 +540,7 @@ int main(int argc, char *argv[]) {
     proc->join();
     std::chrono::steady_clock::time_point processor_done = std::chrono::steady_clock::now();
     logger->info("Processor done, waiting for histogrammer ...");
-    
+
     for (unsigned i=0; i<bookie.feList.size(); i++) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
@@ -552,9 +552,9 @@ int main(int argc, char *argv[]) {
     for( auto& histogrammer : histogrammers ) {
       histogrammer.second->join();
     }
-    
+
     logger->info("Processor done, waiting for analysis ...");
-    
+
     for (unsigned i=0; i<bookie.feList.size(); i++) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {

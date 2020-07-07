@@ -164,7 +164,6 @@ class DBHandler {
         std::vector<std::string> m_histo_names;
 
         double m_db_version;
-        bool DB_DEBUG;
         bool m_verify;
 
         json m_conn_json;
