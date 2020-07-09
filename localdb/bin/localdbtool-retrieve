@@ -19,30 +19,20 @@ import logging
 logger = logging.getLogger('Log')
 db_logging.setLog()
 
+### functions
+import common
+from localdb import *
+
 home = os.environ['HOME']
 if not "HOSTNAME" in os.environ:
     hostname = "default_host"
 else:
     hostname = os.environ["HOSTNAME"]
 
+global localdb
 global my_user
 global my_pwd
 global authentication
-
-def readConfig(conf_path):
-    f = open(conf_path, 'r')
-    conf = yaml.load(f, Loader=yaml.SafeLoader)
-    return conf
-
-def readKey(i_path):
-    file_text = open(i_path, 'r')
-    file_keys = file_text.read().split()
-    keys = {
-        'username': file_keys[0],
-        'password': file_keys[1]
-    }
-    file_text.close()
-    return keys
 
 def getArgs():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
@@ -65,7 +55,7 @@ def getArgs():
     args = parser.parse_args()
 
     if args.config is not None:
-        conf = readConfig(args.config)    # Read from config file
+        conf = common.readConfig(args.config)    # Read from config file
         if 'user'      in conf and not args.user:      args.user = conf['user']
         if 'site'      in conf and not args.site:      args.site = conf['site']
         if 'chip'      in conf and not args.chip:      args.chip = conf['chip']
@@ -73,27 +63,17 @@ def getArgs():
 
     return args
 
-########################################################
-# File to Json
-# If file path is not provided /or/ file dose not exist,
-# return {}
-# If file exist, return {json}
-# But if file cannot be paresed, alert(error)
-def toJson(i_file_path):
-    logger.debug('\t\t\tConvert to json code from: {}'.format(i_file_path))
-
-    file_json = {}
-    if i_file_path:
-        if os.path.isfile(i_file_path):
-            try:
-                with open(i_file_path, 'r') as f: file_json = json.load(f)
-            except ValueError as e:
-                message = []
-                message.append('Could not parse {}'.format(i_file_path))
-                message.append('\twhat(): {}',format(e))
-                alert(message)
-
-    return file_json
+################
+# read JSON file
+def readJson(i_path):
+    logger.debug('Read json file and convert it to dict: {}'.format(i_path))
+    try:
+        return common.readJson(i_path)
+    except Exception as e:
+        messages = str(e).split('\n')
+        for message in messages:
+            logger.error(message)
+        __error_exit()
 
 ##########################
 ### Display log on console
@@ -122,124 +102,63 @@ def __init():
     logger.debug('Initialize.')
 
     args = getArgs()
+    global localdb
 
-    if db_cfg=={}:
-        logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
-        logger.error('Set it by YARR/localdb/setup_db.sh')
-        logger.info('-----------------------')
-        logger.debug('=======================')
-        sys.exit(1)
+    db = LocalDb()
+    try:
+        service = db.setCfg(db_cfg)
+    except DBCfgError:
+        __error_exit('database')
 
-    service = db_cfg.get('service', 'mongodb')
-    if service=='viewer':
-        url = 'http://{0}:{1}/localdb/'.format(db_cfg.get('hostIp','127.0.0.1'), db_cfg.get('hostPort',5000))
-        connection = __network_viewer(url)
-    else:
-        url = 'mongodb://{0}:{1}'.format(db_cfg.get('hostIp','127.0.0.1'), db_cfg.get('hostPort',27017))
-        ### check tls/ssl
-        db_tls = db_cfg.get('tls', {}).get('enabled',False)
-        db_ssl = db_cfg.get('ssl', {}).get('enabled',False)
-        if db_tls:
-            db_certfile = db_cfg.get('tls', {}).get('CertificateKeyFile',None)
-            db_ca_certs = db_cfg.get('tls', {}).get('CAFile',None)
-        elif db_ssl:
-            db_certfile = db_cfg.get('ssl', {}).get('PEMKeyFile',None)
-            db_ca_certs = db_cfg.get('ssl', {}).get('CAFile',None)
-        if db_tls or db_ssl:
-            url+='/?ssl=true&ssl_ca_certs={0}&ssl_certfile={1}&ssl_match_hostname=false'.format(db_ca_certs,db_certfile)
-            ### authenticate mechanism
-            if db_cfg.get('auth',None)=='x509':
-                url+='&authMechanism=MONGODB-X509'
-        connection = __network_db(url, db_cfg.get('dbName', 'localdb'))
+    if args.username: db.setUsername(args.username)
+    if args.password: db.setPassword(args.password)
+
+    try:
+        url = db.checkConnection()
+        connection = True
+    except:
+        connection = False
+
     response = {
-        'service': service,
+        'service'   : service,
         'connection': connection,
-        'url':url
+        'url'       : url
     }
+
+    localdb = db.getLocalDb()
 
     return response
 
-def __network_db(url, db_name):
-    logger.info('[Connection Test] DB Server: {0}/{1}'.format(url, db_name))
+#####################
+# error exit function
+def __error_exit(command=''):
+    if   command=='init':
+        logger.error('Usage: localdbtool-retrieve init [--database <dbCfg>]')
+    elif command=='log':
+            logger.error('Usage: localdbtool-retrieve log [--database <dbCfg>] [--user <user_name>] [--site <site_name>] [--chip <chip_name>]')
+    elif command=='pull':
+        logger.error('Usage: localdbtool-retrieve pull --chip <chip_name> [--directory <dir>] [--database <dbCfg>]')
+        logger.error('   or: localdbtool-retrieve pull --test <test_ID> [--directory <dir>] [--database <dbCfg>]')
+    elif command=='directory':
+        logger.error('Not set directory name to "localdb"')
+    elif command=='list':
+        logger.error('Usage: localdbtool-retrieve list')
+        logger.error('   or: localdbtool-retrieve list component')
+        logger.error('   or: localdbtool-retrieve list user')
+        logger.error('   or: localdbtool-retrieve list site')
+    elif command=='database' or command=='site' or command=='user':
+        logger.error('There is no default {0} config in {1}/.yarr/localdb'.format(command, home))
+        logger.error('Set it by YARR/localdb/setup_db.sh')
+    elif command=='connection':
+        logger.error('Could not access Local DB, retry again in the good connection to Local DB Server')
 
-    global authentication
-    authentication = False
-    username = None
-    password = None
-    max_server_delay = 1
-    client = MongoClient(url, serverSelectionTimeoutMS=max_server_delay)
-    localdb = client[db_name]
-    try:
-        localdb.list_collection_names()
-        logger.info('---> Connection is GOOD.')
-        return True
-    except errors.ServerSelectionTimeoutError as err:
-        logger.error('---> Connection is BAD.')
-        logger.error('     {}'.format(err))
-        logger.error('     Access https://localdb-docs.readthedocs.io/en/master/faq/ to check more detail')
-        return False
-    except errors.OperationFailure as err:
-        ### Need user authentication
-        if db_cfg.get('KeyFile',None):
-            if not db_cfg['KeyFile'] == 'null':
-                keys = readKey(db_cfg['KeyFile'])
-                username = keys['username']
-                password = keys['password']
-        if args.username:
-            username = args.username
-        elif db_cfg.get('username',None):
-            username = db_cfg['username']
-        elif os.environ.get('username',None):
-            username = os.environ['username']
-        else:
-            username = ""
-        if args.password:
-            password = args.password
-        elif db_cfg.get('password',None):
-            password = db_cfg['password']
-        elif os.environ.get('password',None):
-            password = os.environ['password']
-        else:
-            password = ""
-
-        global my_user
-        global my_pwd
-        my_user = username
-        my_pwd = password
-        try:
-            localdb.authenticate(my_user, my_pwd)
-            logger.info('---> Connection is GOOD.')
-            os.environ['username'] = my_user
-            os.environ['password'] = my_pwd
-            authentication = True
-            return True
-        except errors.OperationFailure as err:
-            logger.error('This scan did not store in LocalDB because of the authentication. Please login by "source localdb/login_mongodb.sh"')
-            return False
-        except:
-            logger.error('This scan did not store in LocalDB because of the authentication. Please login by "source localdb/login_mongodb.sh"')
-            return False
-
-def __network_viewer(url):
-    logger.info('[Connection Test] Viewer: {}'.format(url))
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            logger.info('---> Connection is GOOD.')
-            return True
-        else:
-            logger.warning('---> Connection is BAD.')
-            logger.warning('     Something wrong in the page.')
-            return False
-    except Exception as err:
-        logger.warning('---> Connection is BAD.')
-        logger.warning('     {}'.format(err))
-        return False
+    logger.info('-----------------------')
+    sys.exit(1)
 
 def main():
-    logger.debug('=======================')
     logger.debug('Main Function.')
 
+    global localdb
     global lines
     global size
     lines = 0
@@ -251,27 +170,21 @@ def main():
     nargs = len(args.command)-1
 
     if command[0]=='test':
-        logger.debug('=======================')
         sys.exit(0)
 
     logger.info('-----------------------')
 
     global db_cfg
     if args.database:
-        db_cfg = toJson(args.database)
+        db_cfg = readJson(args.database)
     else:
-        db_cfg = toJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
+        db_cfg = readJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
 
     if command[0]=='init':
-        if not nargs==0:
-            logger.error('Usage: localdbtool-retrieve init [--database <dbCfg>]')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
+        if not nargs==0: __error_exit(command[0])
         logger.info('Function: Initialize')
         __init()
         logger.info('-----------------------')
-        logger.debug('=======================')
         sys.exit(0)
 
     response = __init()
@@ -281,25 +194,16 @@ def main():
             function.url = response['url']
         else:
             import direct as function
-            max_server_delay = 1
-            url = response['url']
-            localdb = MongoClient(url, serverSelectionTimeoutMS=max_server_delay)[db_cfg.get('dbName', 'localdb')]
-            if authentication:
-                localdb.authenticate(my_user, my_pwd)
+            #max_server_delay = 1
+            #url = response['url']
+            #localdb = MongoClient(url, serverSelectionTimeoutMS=max_server_delay)[db_cfg.get('dbName', 'localdb')]
+            #if authentication:
+            #    localdb.authenticate(my_user, my_pwd)
             function.__set_localdb(localdb)
-    else:
-        logger.error('Could not access Local DB')
-        logger.error('Try later or by another remote')
-        logger.info('-----------------------')
-        logger.debug('=======================')
-        sys.exit(1)
+    else: __error_exit('connection')
 
     if command[0]=='log':
-        if not nargs==0:
-            logger.error('Usage: localdbtool-retrieve log [--database <dbCfg>] [--user <user_name>] [--site <site_name>] [--chip <chip_name>]')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
+        if not nargs==0: __error_exit(command[0])
         r_json = function.__log(args)
         for test_data in r_json['log']:
             printLog('\033[1;33mtest data ID: {0} \033[0m'.format(test_data['runId']))
@@ -320,33 +224,13 @@ def main():
                         printLog('   {0} ({1})'.format(', '.join(test_data['environment'][chip]), chip))
             printLog('')
         logger.info('-----------------------')
-        logger.debug('=======================')
         sys.exit(0)
     if command[0]=='pull':
-        if args.chip and args.test:
-            logger.error('Usage: localdbtool-retrieve pull --chip <chip_name> [--directory <dir>] [--database <dbCfg>]')
-            logger.error('   or: localdbtool-retrieve pull --test <test_ID> [--directory <dir>] [--database <dbCfg>]')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
-        if args.user or args.site:
-            logger.error('Usage: localdbtool-retrieve pull --chip <chip_name> [--directory <dir>] [--database <dbCfg>]')
-            logger.error('   or: localdbtool-retrieve pull --test <test_ID> [--directory <dir>] [--database <dbCfg>]')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
-        if not nargs==0:
-            logger.error('Usage: localdbtool-retrieve pull --chip <chip_name> [--directory <dir>] [--database <dbCfg>]')
-            logger.error('   or: localdbtool-retrieve pull --test <test_ID> [--directory <dir>] [--database <dbCfg>]')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
+        if (args.chip and args.test) or not nargs==0: __error_exit(command[0])
         # make directory
         dir_path = args.directory
         logger.info('Retrieve/Create data files in {}'.format(dir_path))
-        if dir_path=='localdb':
-            logger.error('Not set directory name to "localdb"')
-            sys.exit()
+        if dir_path=='localdb': __error_exit('directory')
         if os.path.isdir(dir_path):
             logger.warning('Already exist directory: {}.'.format(dir_path))
             answer = input('\nOverride it? [y/n] (Exit without doing anything if "n")\n> ')
@@ -373,21 +257,13 @@ def main():
 
         logger.warning('\033[31mPlease check "db-data/connectivity" and confirm the testing stage.\033[0m')
         logger.info('-----------------------')
-        logger.debug('=======================')
         sys.exit(0)
     if command[0]=='list':
         if nargs==0:
             opt = 'component'
         elif nargs==1 and (command[1]=='component' or command[1]=='user' or command[1]=='site'):
             opt = command[1]
-        else:
-            logger.error('Usage: localdbtool-retrieve list')
-            logger.error('   or: localdbtool-retrieve list component')
-            logger.error('   or: localdbtool-retrieve list user')
-            logger.error('   or: localdbtool-retrieve list site')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
+        else: __error_exit(command[0])
         if opt=='component':
             r_json = function.__list_component()
             printLog('')
@@ -429,7 +305,6 @@ def main():
             printLog('')
 
         logger.info('-----------------------')
-        logger.debug('=======================')
         sys.exit(0)
 
 if __name__ == '__main__': main()

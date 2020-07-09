@@ -121,7 +121,6 @@ def alert(i_messages, i_type='error'):
                     if not line or not line=='': f.write('{}\n'.format(line))
 
         logger.info('-----------------------')
-        logger.debug('=======================')
         sys.exit(1)
 
 ########################################################
@@ -1256,7 +1255,7 @@ def __set_test_run_finish(i_scanlog_json, i_conn_jsons):
             updateSys(tr_oid, 'testRun')
 
         __global.tr_oids.append(tr_oid)
-        
+
 
     return
 

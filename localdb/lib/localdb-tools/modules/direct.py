@@ -502,22 +502,23 @@ def __list_component():
         if not this['user_id']==-1:
             query = { '_id': ObjectId(this['user_id']) }
             this_user = localdb.user.find_one( query )
+            user = this_user.get('userName', 'NULL')
         else:
-            this_user['userName'] = 'NULL'
+            user = 'NULL'
         query = { '_id': ObjectId(this['address']) }
         this_site = localdb.institution.find_one( query )
         docs = {
-            'oid' : oid,
-            'name': this['name'],
-            'type': this['componentType'],
-            'asic': this['chipType'],
+            'oid'  : oid,
+            'name' : this['name'],
+            'type' : this['componentType'],
+            'asic' : this['chipType'],
             'chips': [],
-            'user': this_user['userName'],
-            'site': this_site['institution']
+            'user' : user,
+            'site' : this_site.get('institution','NULL')
         }
         query = {
-            'parent'    : oid,
-            'dbVersion' : db_version
+            'parent'   : oid,
+            'dbVersion': db_version
         }
         entries = localdb.childParentRelation.find(query)
         for entry in entries:
@@ -537,18 +538,19 @@ def __list_component():
         if not this['user_id']==-1:
             query = { '_id': ObjectId(this['user_id']) }
             this_user = localdb.user.find_one( query )
+            user = this_user.get('userName','NULL')
         else:
-            this_user['userName'] = 'NULL'
+            user = 'NULL'
         query = { '_id': ObjectId(this['address']) }
         this_site = localdb.institution.find_one( query )
         docs_list['child'].update({
             oid: {
-                'name': this['name'],
-                'type': this['componentType'],
-                'asic': this['chipType'],
+                'name'  : this['name'],
+                'type'  : this['componentType'],
+                'asic'  : this['chipType'],
                 'chipId': this['chipId'],
-                'user': this_user['userName'],
-                'site': this_site['institution']
+                'user'  : user,
+                'site'  : this_site.get('institution','NULL')
             }
         })
     docs_list['parent'] = sorted(docs_list['parent'], key=lambda x:(x['type']))

@@ -8,7 +8,6 @@
 
 ### Common
 import os, sys, time, argparse, yaml
-import coloredlogs
 from getpass          import getpass
 from pymongo          import MongoClient, errors, DESCENDING
 from bson.objectid    import ObjectId
@@ -20,6 +19,7 @@ import db_logging
 import logging
 logger = logging.getLogger('Log')
 
+from localdb import *
 import register
 
 ### global variables
@@ -32,29 +32,12 @@ global localdb
 global option
 global logfile
 
+### functions
+import common
+
 #######################
 ### local functions ###
 #######################
-
-##################################
-# convert yaml config file to dict
-def readConfig(conf_path):
-    logger.debug('Read Config File.')
-    conf = {}
-    if os.path.isfile(conf_path):
-        f = open(conf_path, 'r')
-        conf = yaml.load(f, Loader=yaml.SafeLoader)
-    return conf
-
-def readKey(i_path):
-    file_text = open(i_path, 'r')
-    file_keys = file_text.read().split()
-    keys = {
-        'username': file_keys[0],
-        'password': file_keys[1]
-    }
-    file_text.close()
-    return keys
 
 ###############
 # get arguments
@@ -63,26 +46,43 @@ def getArgs():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument(
         "command",
-        help="option*\tfuntion\ninit\tFunction initialization & Connection check\ncomp\tComponent registration\nscan\tScan data upload\ndcs\tDCS data upload\ncache\tCache data upload\ncheck\tRegistered component check\ntest\tTesting command",
+        help="option*\tfuntion\n" +
+             "init\tFunction initialization & Connection check\n" +
+             "comp\tComponent registration\n" +
+             "scan\tScan data upload\n" +
+             "dcs\tDCS data upload\n" +
+             "cache\tCache data upload\n" +
+             "check\tRegistered component check\n" +
+             "test\tTesting command",
         type=str,
         nargs='+'
     )
-    parser.add_argument('--config', help='Set User Config Path of Local DB Server.', type=str)
-    parser.add_argument('--username', help='Set the User Name of Local DB Server.', type=str)
-    parser.add_argument('--password', help='Set the Password of Local DB Server.', type=str)
-    parser.add_argument('--database', help='Set Database Config Path', type=str)
-    parser.add_argument('--user', help='Set User Config Path', type=str)
-    parser.add_argument('--site', help='Set Site Config Path', type=str)
-    parser.add_argument('--log', help='Set Log Mode', action='store_true')
-    #parser.add_argument('--force', help='Set Log Mode', action='store_true')
+    parser.add_argument('--config',   help='Set User Config Path of Local DB Server.', type=str)
+    parser.add_argument('--username', help='Set the User Name of Local DB Server.',    type=str)
+    parser.add_argument('--password', help='Set the Password of Local DB Server.',     type=str)
+    parser.add_argument('--database', help='Set Database Config Path',                 type=str)
+    parser.add_argument('--user',     help='Set User Config Path',                     type=str)
+    parser.add_argument('--site',     help='Set Site Config Path',                     type=str)
+    parser.add_argument('--log',      help='Set Log Mode',                             action='store_true')
+    #parser.add_argument('--force',   help='Set Log Mode',                             action='store_true')
     args = parser.parse_args()
 
     if args.config:
-        conf = readConfig(args.config)
+        conf = common.readConfig(args.config)
         if 'username' in conf and not args.username: args.username = conf['username']
         if 'password' in conf and not args.password: args.password = conf['password']
 
     return args
+
+################
+# read JSON file
+def readJson(i_path):
+    logger.debug('Read json file and convert it to dict: {}'.format(i_path))
+    try:
+        return common.readJson(i_path)
+    except Exception as e:
+        messages = str(e).split('\n')
+        register.alert(messages)
 
 #######################################################################
 # get test run data from test run data id or connectivity and timestamp
@@ -174,80 +174,21 @@ def __init(db_cfg):
     args = getArgs()
     global localdb
 
-    if db_cfg=={}:
-        logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
-        logger.error('Set it by YARR/localdb/setup_db.sh')
-        logger.info('-----------------------')
-        logger.debug('=======================')
-        sys.exit(1)
-
-    url = 'mongodb://{0}:{1}'.format(db_cfg['hostIp'], db_cfg['hostPort'])
-    logger.info('[Connection Test] DB Server: {0}/{1}'.format(url, db_cfg.get('dbName', 'localdb')))
-
-    ##################
-    # Connection check
-    max_server_delay = 1
-    username = None
-    password = None
-    authSource = db_cfg.get('dbName', 'localdb')
-    ### check tls/ssl
-    db_tls = db_cfg.get('tls', {}).get('enabled',False)
-    db_ssl = db_cfg.get('ssl', {}).get('enabled',False)
-    if db_tls:
-        db_certfile = db_cfg.get('tls', {}).get('CertificateKeyFile',None)
-        db_ca_certs = db_cfg.get('tls', {}).get('CAFile',None)
-    elif db_ssl:
-        db_certfile = db_cfg.get('ssl', {}).get('PEMKeyFile',None)
-        db_ca_certs = db_cfg.get('ssl', {}).get('CAFile',None)
-    if db_tls or db_ssl:
-        url+='/?ssl=true&ssl_ca_certs={0}&ssl_certfile={1}&ssl_match_hostname=false'.format(db_ca_certs,db_certfile)
-        ### authenticate mechanism
-        if db_cfg.get('auth',None)=='x509':
-            url+='&authMechanism=MONGODB-X509'
-    client = MongoClient(
-        url,
-        serverSelectionTimeoutMS=max_server_delay
-    )
-    localdb = client[db_cfg.get('dbName', 'localdb')]
+    db = LocalDb()
     try:
-        localdb['fs.files'].create_index([('hash', DESCENDING), ('_id', DESCENDING)])
-        localdb['component'].create_index([('serialNumber', DESCENDING)])
-        localdb['testRun'].create_index([('startTime', DESCENDING), ('user_id', DESCENDING), ('address', DESCENDING)])
-        localdb['componentTestRun'].create_index([('name', DESCENDING), ('testRun', DESCENDING)])
-    except errors.ServerSelectionTimeoutError as err:
-        ### Connection failed
-        logger.error('---> Connection is BAD.')
-        logger.error('     {}'.format(err))
-        logger.error('     Access https://localdb-docs.readthedocs.io/en/master/faq/ to check more detail')
-        return False
-    except errors.OperationFailure as err:
-        ### Need user authentication
-        if db_cfg.get('KeyFile',None):
-            if not db_cfg['KeyFile'] == 'null':
-                keys = readKey(db_cfg['KeyFile'])
-                username = keys['username']
-                password = keys['password']
-        if args.username:
-            username = args.username
-        elif db_cfg.get('username',None):
-            username = db_cfg['username']
-        elif os.environ.get('username',None):
-            username = os.environ['username']
-        if args.password:
-            password = args.password
-        elif db_cfg.get('password',None):
-            password = db_cfg['password']
-        elif os.environ.get('password',None):
-            password = os.environ['password']
-        if username and password:
-            try:
-                localdb.authenticate(username, password)
-            except errors.OperationFailure as err:
-                logger.error('Authentication failed.')
-                return False
-        else:
-            logger.error('This scan did not store in LocalDB because of the authentication. Please login by "source localdb/login_mongodb.sh"')
-            return False
+        db.setCfg(db_cfg)
+    except DBCfgError:
+        __error_exit('database')
+
+    if args.username: db.setUsername(args.username)
+    if args.password: db.setPassword(args.password)
+
+    try:
+        db.checkConnection()
+    except:
+        return False #TODO
+
+    localdb = db.getLocalDb()
 
     localdb['fs.files'].create_index([('hash', DESCENDING), ('_id', DESCENDING)])
     localdb['component'].create_index([('serialNumber', DESCENDING)])
@@ -284,7 +225,7 @@ def __set_cache(cache_dir):
         scanlog_path = '{}/dbIVLog.json'.format(cache_dir)
     else:
         return
-    scanlog_json = register.toJson(scanlog_path)
+    scanlog_json = readJson(scanlog_path)
 
     #####################
     # Set database config
@@ -294,17 +235,13 @@ def __set_cache(cache_dir):
     #   3. default (~/.yarr/localdb/${HOSTNAME}_database.json
     db_cfg = None
     if args.database:
-        db_cfg = register.toJson(args.database)
+        db_cfg = readJson(args.database)
     elif 'dbCfg' in scanlog_json:
         db_cfg = scanlog_json['dbCfg']
     if not db_cfg:
-        db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
+        db_cfg = readJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
         if db_cfg=={}:
-            logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
-            logger.error('Set it by YARR/localdb/setup_db.sh')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
+            __error_exit('database')
 
     #####################
     # Write Scan/DCS data
@@ -317,7 +254,7 @@ def __set_cache(cache_dir):
         if option=='iv':
             result=__write_dcs(cache_dir, scanlog_json)
     else:
-        logger.error('Cannot upload data {}, retry again in the good connection to Local DB Server'.format(cache_dir))
+        logger.error('Could not access Local DB, retry again in the good connection to Local DB Server')
         result = True
 
     #########
@@ -361,15 +298,11 @@ def __write_scan(cache_dir, scanlog_json):
     # If the site information has already registered, this step will be skipped.
     site_json = scanlog_json.get('siteCfg',{})
     if args.site:
-        site_json.update(register.toJson(args.site))
+        site_json.update(readJson(args.site))
     if site_json=={}:
-        site_json = register.toJson('{0}/.yarr/localdb/{1}_site.json'.format(home, hostname))
+        site_json = readJson('{0}/.yarr/localdb/{1}_site.json'.format(home, hostname))
         if site_json=={}:
-            logger.error('There is no default site config in {}/.yarr/localdb'.format(home))
-            logger.error('Set it by YARR/localdb/setup_db.sh')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
+            __error_exit('site')
     site_oid = register.__set_site(site_json)
 
     ######
@@ -379,15 +312,11 @@ def __write_scan(cache_dir, scanlog_json):
     # If the user information has already registered, this step will be skipped.
     user_json = scanlog_json.get('userCfg',{})
     if args.user:
-        user_json.update(register.toJson(args.user))
+        user_json.update(readJson(args.user))
     if user_json=={}:
-        user_json = register.toJson('{0}/.yarr/localdb/user.json'.format(home))
+        user_json = readJson('{0}/.yarr/localdb/user.json'.format(home))
         if user_json=={}:
-            logger.error('There is no default user config in {}/.yarr/localdb'.format(home))
-            logger.error('Set it by YARR/localdb/setup_db.sh')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
+            __error_exit('user')
     user_oid = register.__set_user(user_json)
 
     #############
@@ -437,7 +366,7 @@ def __write_scan(cache_dir, scanlog_json):
             cfg_json = scanlog_json[key]
             register.__set_config(cfg_json, key, key, 'testRun', {}, conn_json)
         scan_cfg_path = '{0}/{1}.json'.format(cache_dir, test_type)
-        cfg_json = register.toJson(scan_cfg_path)
+        cfg_json = readJson(scan_cfg_path)
         register.__set_config(cfg_json, test_type, 'scanCfg', 'testRun', {}, conn_json)
 
         for chip_json in conn_json['chips']:
@@ -448,7 +377,7 @@ def __write_scan(cache_dir, scanlog_json):
             for file_name in os.listdir(cache_dir):
                 ### config for componentTestRun
                 if chip_cfg_name in file_name:
-                    cfg_json = register.toJson('{0}/{1}'.format(cache_dir, file_name))
+                    cfg_json = readJson('{0}/{1}'.format(cache_dir, file_name))
                     title = '{}Cfg'.format(file_name.split(chip_cfg_name)[1][1:])
                     register.__set_config(cfg_json, filename, title, 'componentTestRun', chip_json, conn_json)
                     continue
@@ -498,15 +427,11 @@ def __write_dcs(cache_dir, dcslog_json):
     # If the site information has already registered, this step will be skipped.
     site_json = dcslog_json.get('siteCfg',{})
     if args.site:
-        site_json.update(register.toJson(args.site))
+        site_json.update(readJson(args.site))
     if site_json=={}:
-        site_json = register.toJson('{0}/.yarr/localdb/{1}_site.json'.format(home, hostname))
+        site_json = readJson('{0}/.yarr/localdb/{1}_site.json'.format(home, hostname))
         if site_json=={}:
-            logger.error('There is no default site config in {}/.yarr/localdb'.format(home))
-            logger.error('Set it by YARR/localdb/setup_db.sh')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
+            __error_exit('site')
     site_oid = register.__set_site(site_json)
 
     ######
@@ -516,15 +441,11 @@ def __write_dcs(cache_dir, dcslog_json):
     # If the user information has already registered, this step will be skipped.
     user_json = dcslog_json.get('userCfg',{})
     if args.user:
-        user_json.update(register.toJson(args.user))
+        user_json.update(readJson(args.user))
     if user_json=={}:
-        user_json = register.toJson('{0}/.yarr/localdb/user.json'.format(home))
+        user_json = readJson('{0}/.yarr/localdb/user.json'.format(home))
         if user_json=={}:
-            logger.error('There is no default user config in {}/.yarr/localdb'.format(home))
-            logger.error('Set it by YARR/localdb/setup_db.sh')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
+            __error_exit('user')
     user_oid = register.__set_user(user_json)
 
     conn_json = register.__set_conn_cfg(dcslog_json.get('connectivity',{}), cache_dir)
@@ -637,40 +558,29 @@ def __upload_comp(comp_path):
     #   1. argument
     #   2. default (~/.yarr/localdb/${HOSTNAME}_database.json
     if args.database:
-        db_cfg = register.toJson(args.database)
+        db_cfg = readJson(args.database)
     else:
-        db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
+        db_cfg = readJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
         if db_cfg=={}:
-            logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
-            logger.error('Set it by YARR/localdb/setup_db.sh')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
+            __error_exit('database')
 
     ############
     # Initialize
     # If the connection is bad,
     # exit the function
     if not __init(db_cfg)==True:
-        logger.error('Could not upload data {}, retry again in the good connection to Local DB Server'.format(comp_path))
-        logger.info('-----------------------')
-        logger.debug('=======================')
-        sys.exit(1)
+        __error_exit('connection')
 
     ######
     # site
     # If site config file is speficied, register site information from the config file.
     # If not, register site information by extracting mac address and hostname of the machine.
     # If the site information has already registered, this step will be skipped.
-    site_json = register.toJson(args.site)
+    site_json = readJson(args.site)
     if site_json=={}:
-        site_json = register.toJson('{0}/.yarr/localdb/{1}_site.json'.format(home, hostname))
+        site_json = readJson('{0}/.yarr/localdb/{1}_site.json'.format(home, hostname))
         if site_json=={}:
-            logger.error('There is no default site config in {}/.yarr/localdb'.format(home))
-            logger.error('Set it by YARR/localdb/setup_db.sh')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
+            __error_exit('site')
     site_oid = register.__set_site(site_json)
     register.__check_site_data(site_oid)
 
@@ -679,15 +589,11 @@ def __upload_comp(comp_path):
     # If user config file is specified, register user information from the user file.
     # If not, register user information by extracting user name and hostname of the machine.
     # If the user information has already registered, this step will be skipped.
-    user_json = register.toJson(args.user)
+    user_json = readJson(args.user)
     if user_json=={}:
-        user_json = register.toJson('{0}/.yarr/localdb/user.json'.format(home))
+        user_json = readJson('{0}/.yarr/localdb/user.json'.format(home))
         if user_json=={}:
-            logger.error('There is no default user config in {}/.yarr/localdb'.format(home))
-            logger.error('Set it by YARR/localdb/setup_db.sh')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
+            __error_exit('user')
     user_oid = register.__set_user(user_json)
     register.__check_user_data(user_oid)
 
@@ -699,7 +605,6 @@ def __upload_comp(comp_path):
     print('')
     if answer.lower()!='y':
         logger.info('-----------------------')
-        logger.debug('=======================')
         sys.exit(0)
     ####################################
     # Check the status of the components
@@ -723,21 +628,14 @@ def __check_component(i_type):
     args = getArgs()
 
     if args.database:
-        db_cfg = register.toJson(args.database)
+        db_cfg = readJson(args.database)
     else:
-        db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
+        db_cfg = readJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
         if db_cfg=={}:
-            logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
-            logger.error('Set it by YARR/localdb/setup_db.sh')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
+            __error_exit('database')
 
     if not __init(db_cfg)==True:
-        logger.error('Could not check component data, retry again in the good connection to Local DB Server')
-        logger.info('-----------------------')
-        logger.debug('=======================')
-        sys.exit(1)
+        __error_exit('connection')
 
     ### fetch
     if i_type=='comp':
@@ -827,10 +725,11 @@ def __check_component(i_type):
             logger.info('The number of chips: {}'.format(len(chips)))
             logger.info('Done.')
 
-#####################
-# error exit function
-def __error_exit(command):
-    if command=='init':
+###########################
+# function to exit by error
+def __error_exit(command=''):
+    #f_name = sys._getframe().f_back.f_code.co_name
+    if   command=='init':
         pass
     elif command=='comp':
         logger.error('Usage: localdbtool-upload comp <path/to/component/file>')
@@ -843,9 +742,29 @@ def __error_exit(command):
     elif command=='check':
         logger.error('Usage: localdbtool-upload check comp')
         logger.error('       localdbtool-upload check chip')
+    elif command=='database' or command=='site' or command=='user':
+        logger.error('There is no {0} config in {1}/.yarr/localdb'.format(command, home))
+        logger.error('Set it by YARR/localdb/setup_db.sh')
+    elif command=='connection':
+        logger.error('Could not access Local DB, retry again in the good connection to Local DB Server')
     logger.info('-----------------------')
     sys.exit(1)
 
+########################
+# function to set logger
+def __set_log(log=False):
+    if log==True:
+        day = datetime.today().day
+        logfile = '{0}/.yarr/localdb/log/{1}.log'.format(home, day)
+        for i in range(3):
+            past_logfile = '{0}/.yarr/localdb/log/{1}.log'.format(home, day+i+1)
+            if os.path.isfile(past_logfile): os.remove(past_logfile)
+        db_logging.setLogFile(logfile)
+    else:
+        db_logging.setLog()
+
+###############
+# main function
 def main():
     logger.debug('Main Function.')
     global option
@@ -859,55 +778,46 @@ def main():
         logger.debug('test')
         sys.exit(0)
 
-    ### logging
-    if args.log==True:
-        day = datetime.today().day
-        logfile = '{0}/.yarr/localdb/log/{1}.log'.format(home, day)
-        for i in range(3):
-            past_logfile = '{0}/.yarr/localdb/log/{1}.log'.format(home, day+i+1)
-            if os.path.isfile(past_logfile): os.remove(past_logfile)
-        db_logging.setLogFile(logfile)
-    else:
-        db_logging.setLog()
+    __set_log(args.log) ### logging
 
     logger.info('-----------------------')
 
     if command[0]=='init':
         logger.info('Function: Initialize')
         if args.database:
-            db_cfg = register.toJson(args.database)
+            db_cfg = readJson(args.database)
         else:
-            db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
-        if not __init(db_cfg)==True: __error_exit(command[0])
+            db_cfg = readJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
+        __init(db_cfg)
     elif command[0]=='comp':
         logger.info('Function: Register Component')
         option = 'comp'
-        if nargs == 0: __error_exit(command[0])
+        if nargs==0: __error_exit(command[0])
         __upload_comp(command[1])
     elif command[0]=='scan':
         logger.info('Function: Upload Scan Data')
         option = 'scan'
         register.__global.option = 'scan'
-        if nargs == 0: __error_exit(command[0])
+        if nargs==0: __error_exit(command[0])
         __set_cache(command[1])
     elif command[0]=='dcs':
         logger.info('Function: Upload DCS Data')
         option = 'dcs'
         register.__global.option = 'dcs'
-        if nargs == 0: __error_exit(command[0])
+        if nargs==0: __error_exit(command[0])
         __set_cache(command[1])
     elif command[0]=='iv':
         logger.info('Function: Upload IV Data')
         option = 'iv'
         register.__global.option = 'iv'
-        if nargs == 0: __error_exit(command[0])
+        if nargs==0: __error_exit(command[0])
         __set_cache(command[1])
     elif command[0]=='cache':
         logger.info('Function: Upload From Cache')
         __upload_from_cache()
     elif command[0]=='check':
         logger.info('Function: Check Component Data')
-        if nargs == 0: __error_exit(command[0])
+        if nargs==0: __error_exit(command[0])
         __check_component(command[1])
 
     logger.info('-----------------------')
