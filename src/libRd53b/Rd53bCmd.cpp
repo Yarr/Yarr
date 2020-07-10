@@ -63,7 +63,7 @@ std::array<uint16_t, 4> Rd53bCmd::genWrReg(uint8_t chipId, uint16_t address, uin
 }
 
 std::array<uint16_t, 2> Rd53bCmd::genRdReg(uint8_t chipId, uint16_t address) {
-    return {static_cast<uint16_t>(0x6600 | enc5to8[chipId&0x1F]),
+    return {static_cast<uint16_t>(0x6500 | enc5to8[chipId&0x1F]),
         static_cast<uint16_t>((enc5to8[(address&0x1E0)>>5]<<8) | enc5to8[address&0x1F])};
 }
 
@@ -82,7 +82,7 @@ void Rd53bCmd::sendSync() {
 void Rd53bCmd::sendReadTrigger(uint8_t chipId, uint8_t etag) {
     SPDLOG_LOGGER_TRACE(logger, "Sending ReadTrigger(id({}), etag({}))", chipId, etag);
     std::array<uint16_t, 2> readTrig = Rd53bCmd::genReadTrigger(chipId, etag);
-    core->writeFifo((readTrig[1] << 16) | readTrig[0]);
+    core->writeFifo((readTrig[0] << 16) | readTrig[1]);
     core->releaseFifo();
 }
 
@@ -99,16 +99,16 @@ void Rd53bCmd::sendGlobalPulse(uint8_t chipId) {
 }
 
 void Rd53bCmd::sendWrReg(uint8_t chipId, uint16_t address, uint16_t data) {
-    SPDLOG_LOGGER_TRACE(logger, "Sending WrReg(id({}),addr({}),data({}))", chipId, address, data);
+    logger->debug("Sending WrReg(id({}),addr({}),data({}))", chipId, address, data);
     std::array<uint16_t, 4> wrReg = Rd53bCmd::genWrReg(chipId, address, data);
-    core->writeFifo((wrReg[3] << 16) | wrReg[2]);
-    core->writeFifo((wrReg[1] << 16) | wrReg[0]);
+    core->writeFifo((wrReg[0] << 16) | wrReg[1]);
+    core->writeFifo((wrReg[2] << 16) | wrReg[3]);
     core->releaseFifo();
 }
 
 void Rd53bCmd::sendRdReg(uint8_t chipId, uint16_t address) {
-    SPDLOG_LOGGER_TRACE(logger, "Sending WrReg(id({}),addr({}))", chipId, address);
+    logger->debug("Sending RdReg(id({}),addr({}))", chipId, address);
     std::array<uint16_t, 2> rdReg = Rd53bCmd::genRdReg(chipId, address);
-    core->writeFifo((rdReg[1] << 16) | rdReg[0]);
+    core->writeFifo((rdReg[0] << 16) | rdReg[1]);
     core->releaseFifo();
 }

@@ -69,9 +69,9 @@ void Rd53bGlobalCfg::init() {
     //2
     PixRegionRow.init       (  2, &m_cfg[  2], 0, 16, 0); regMap["PixRegionRow"] = &Rd53bGlobalCfg::PixRegionRow;
     //3
-    PixBroadcast.init       (  3, &m_cfg[  3], 0, 1, 0); regMap["PixBroadcast"] = &Rd53bGlobalCfg::PixBroadcast;
+    PixBroadcast.init       (  3, &m_cfg[  3], 2, 1, 0); regMap["PixBroadcast"] = &Rd53bGlobalCfg::PixBroadcast;
     PixConfWrConfig.init    (  3, &m_cfg[  3], 1, 1, 1); regMap["PixConfWrConfig"] = &Rd53bGlobalCfg::PixConfWrConfig;
-    PixAutoRow.init         (  3, &m_cfg[  3], 2, 1, 0); regMap["PixAutoRow"] = &Rd53bGlobalCfg::PixAutoRow;
+    PixAutoRow.init         (  3, &m_cfg[  3], 0, 1, 0); regMap["PixAutoRow"] = &Rd53bGlobalCfg::PixAutoRow;
     //4
     PixDefaultConfig.init   (  4, &m_cfg[  4], 0, 16, 0x9CE2); regMap["PixDefaultConfig"] = &Rd53bGlobalCfg::PixDefaultConfig;
     //5
@@ -111,8 +111,8 @@ void Rd53bGlobalCfg::init() {
     //21
     DiffLcc.init            ( 21, &m_cfg[ 21], 0, 10, 100); regMap["DiffLcc"] = &Rd53bGlobalCfg::DiffLcc;
     //37
-    DiffLccEn.init          ( 37, &m_cfg[ 37], 0,  1, 0); regMap["DiffLccEn"] = &Rd53bGlobalCfg::DiffLccEn;
-    DiffFbCapEn.init        ( 37, &m_cfg[ 37], 1,  1, 0); regMap["DiffFbCapEn"] = &Rd53bGlobalCfg::DiffFbCapEn;
+    DiffLccEn.init          ( 37, &m_cfg[ 37], 1,  1, 0); regMap["DiffLccEn"] = &Rd53bGlobalCfg::DiffLccEn;
+    DiffFbCapEn.init        ( 37, &m_cfg[ 37], 0,  1, 0); regMap["DiffFbCapEn"] = &Rd53bGlobalCfg::DiffFbCapEn;
 
     // Lin AFE
     //22
@@ -148,10 +148,10 @@ void Rd53bGlobalCfg::init() {
 
     // Power
     //38
-    SldoEnUndershuntA.init  ( 38, &m_cfg[ 38], 0,  1, 0); regMap["SldoEnUndershuntA"] = &Rd53bGlobalCfg::SldoEnUndershuntA;
-    SldoEnUndershuntB.init  ( 38, &m_cfg[ 38], 1,  1, 0); regMap["SldoEnUndershuntB"] = &Rd53bGlobalCfg::SldoEnUndershuntB;
-    SldoTrimA.init          ( 38, &m_cfg[ 38], 2,  4, 8); regMap["SldoTrimA"] = &Rd53bGlobalCfg::SldoTrimA;
-    SldoTrimB.init          ( 38, &m_cfg[ 38], 6,  4, 8); regMap["SldoTrimB"] = &Rd53bGlobalCfg::SldoTrimB;
+    SldoEnUndershuntA.init  ( 38, &m_cfg[ 38], 6,  1, 0); regMap["SldoEnUndershuntA"] = &Rd53bGlobalCfg::SldoEnUndershuntA;
+    SldoEnUndershuntB.init  ( 38, &m_cfg[ 38], 5,  1, 0); regMap["SldoEnUndershuntB"] = &Rd53bGlobalCfg::SldoEnUndershuntB;
+    SldoTrimA.init          ( 38, &m_cfg[ 38], 4,  4, 8); regMap["SldoTrimA"] = &Rd53bGlobalCfg::SldoTrimA;
+    SldoTrimB.init          ( 38, &m_cfg[ 38], 0,  4, 8); regMap["SldoTrimB"] = &Rd53bGlobalCfg::SldoTrimB;
 
     // Pixel Matrix
     //39
@@ -173,41 +173,41 @@ void Rd53bGlobalCfg::init() {
 
     // Digital functions
     //47
-    TwoLevelTrig.init       ( 47, &m_cfg[ 47], 0,  1, 0); regMap["TwoLevelTrig"] = &Rd53bGlobalCfg::TwoLevelTrig;
-    Latency.init            ( 47, &m_cfg[ 47], 1,  9, 500); regMap["Latency"] = &Rd53bGlobalCfg::Latency;
+    TwoLevelTrig.init       ( 47, &m_cfg[ 47], 9,  1, 0); regMap["TwoLevelTrig"] = &Rd53bGlobalCfg::TwoLevelTrig;
+    Latency.init            ( 47, &m_cfg[ 47], 0,  9, 500); regMap["Latency"] = &Rd53bGlobalCfg::Latency;
     //48
-    SelfTrigEn.init         ( 48, &m_cfg[ 48], 0,  1, 0); regMap["SelfTrigEn"] = &Rd53bGlobalCfg::SelfTrigEn;
-    SelfTrigDigThrEn.init   ( 48, &m_cfg[ 48], 1,  1, 0); regMap["SelfTrigDigThrEn"] = &Rd53bGlobalCfg::SelfTrigDigThrEn;
-    SelfTrigDigThr.init     ( 48, &m_cfg[ 48], 2,  4, 1); regMap["SelfTrigDigThr"] = &Rd53bGlobalCfg::SelfTrigDigThr;
+    SelfTrigEn.init         ( 48, &m_cfg[ 48], 5,  1, 0); regMap["SelfTrigEn"] = &Rd53bGlobalCfg::SelfTrigEn;
+    SelfTrigDigThrEn.init   ( 48, &m_cfg[ 48], 4,  1, 0); regMap["SelfTrigDigThrEn"] = &Rd53bGlobalCfg::SelfTrigDigThrEn;
+    SelfTrigDigThr.init     ( 48, &m_cfg[ 48], 0,  4, 1); regMap["SelfTrigDigThr"] = &Rd53bGlobalCfg::SelfTrigDigThr;
     //49
-    SelfTrigDelay.init       ( 49, &m_cfg[ 49], 0, 10, 512); regMap["SelfTrigDelay"] = &Rd53bGlobalCfg::SelfTrigDelay;
-    SelfTrigMulti.init      ( 49, &m_cfg[ 49], 10, 5, 4); regMap["SelfTrigMulti"] = &Rd53bGlobalCfg::SelfTrigMulti;
+    SelfTrigDelay.init      ( 49, &m_cfg[ 49], 5, 10, 512); regMap["SelfTrigDelay"] = &Rd53bGlobalCfg::SelfTrigDelay;
+    SelfTrigMulti.init      ( 49, &m_cfg[ 49], 0, 5, 4); regMap["SelfTrigMulti"] = &Rd53bGlobalCfg::SelfTrigMulti;
     //50
     SelfTrigPattern.init    ( 50, &m_cfg[ 50], 0, 16, 65534); regMap["SelfTrigPattern"] = &Rd53bGlobalCfg::SelfTrigPattern;
     //51
-    DataReadDelay.init       ( 51, &m_cfg[ 51], 0,  2, 0); regMap["DataReadDelay"] = &Rd53bGlobalCfg::DataReadDelay;
-    ReadTrigLatency.init    ( 51, &m_cfg[ 51], 2, 12, 1000); regMap["ReadTrigLatency"] = &Rd53bGlobalCfg::ReadTrigLatency;
+    DataReadDelay.init      ( 51, &m_cfg[ 51], 12,  2, 0); regMap["DataReadDelay"] = &Rd53bGlobalCfg::DataReadDelay;
+    ReadTrigLatency.init    ( 51, &m_cfg[ 51], 0, 12, 1000); regMap["ReadTrigLatency"] = &Rd53bGlobalCfg::ReadTrigLatency;
     //52
     TruncTimeoutConf.init   ( 52, &m_cfg[ 52], 0, 12, 0); regMap["TruncTimeoutConf"] = &Rd53bGlobalCfg::TruncTimeoutConf;
     //53
-    InjDigEn.init           ( 53, &m_cfg[ 53], 0,  1, 0); regMap["InjDigEn"] = &Rd53bGlobalCfg::InjDigEn;
-    InjAnaMode.init         ( 53, &m_cfg[ 53], 1,  1, 0); regMap["InjAnaMode"] = &Rd53bGlobalCfg::InjAnaMode;
-    InjFineDelay.init       ( 53, &m_cfg[ 53], 2,  6, 0); regMap["InjFineDelay"] = &Rd53bGlobalCfg::InjFineDelay;
+    InjDigEn.init           ( 53, &m_cfg[ 53], 7,  1, 0); regMap["InjDigEn"] = &Rd53bGlobalCfg::InjDigEn;
+    InjAnaMode.init         ( 53, &m_cfg[ 53], 6,  1, 0); regMap["InjAnaMode"] = &Rd53bGlobalCfg::InjAnaMode;
+    InjFineDelay.init       ( 53, &m_cfg[ 53], 0,  6, 0); regMap["InjFineDelay"] = &Rd53bGlobalCfg::InjFineDelay;
     //54
-    FineDelayClk.init       ( 54, &m_cfg[ 54], 0,  6, 0); regMap["FineDelayClk"] = &Rd53bGlobalCfg::FineDelayClk;
-    FineDelayData.init      ( 54, &m_cfg[ 54], 6,  6, 0); regMap["FineDelayData"] = &Rd53bGlobalCfg::FineDelayData;
+    FineDelayClk.init       ( 54, &m_cfg[ 54], 6,  6, 0); regMap["FineDelayClk"] = &Rd53bGlobalCfg::FineDelayClk;
+    FineDelayData.init      ( 54, &m_cfg[ 54], 0,  6, 0); regMap["FineDelayData"] = &Rd53bGlobalCfg::FineDelayData;
     //55
     InjVcalHigh.init        ( 55, &m_cfg[ 55], 0, 12, 500); regMap["InjVcalHigh"] = &Rd53bGlobalCfg::InjVcalHigh;
     //56
     InjVcalMed.init         ( 56, &m_cfg[ 56], 0, 12, 300); regMap["InjVcalMed"] = &Rd53bGlobalCfg::InjVcalMed;
     //57
-    CapMeasEnPar.init       ( 57, &m_cfg[ 57], 0,  1, 0); regMap["CapMeasEnPar"] = &Rd53bGlobalCfg::CapMeasEnPar;
+    CapMeasEnPar.init       ( 57, &m_cfg[ 57], 2,  1, 0); regMap["CapMeasEnPar"] = &Rd53bGlobalCfg::CapMeasEnPar;
     CapMeasEn.init          ( 57, &m_cfg[ 57], 1,  1, 0); regMap["CapMeasEn"] = &Rd53bGlobalCfg::CapMeasEn;
-    InjVcalRange.init       ( 57, &m_cfg[ 57], 2,  1, 0); regMap["InjVcalRange"] = &Rd53bGlobalCfg::InjVcalRange;
+    InjVcalRange.init       ( 57, &m_cfg[ 57], 0,  1, 0); regMap["InjVcalRange"] = &Rd53bGlobalCfg::InjVcalRange;
     //58
-    CdrOverwriteLimit.init  ( 58, &m_cfg[ 58], 0,  1, 0); regMap["CdrOverwriteLimit"] = &Rd53bGlobalCfg::CdrOverwriteLimit;
-    CdrPhaseDetSel.init     ( 58, &m_cfg[ 58], 1,  1, 0); regMap["CdrPhaseDetSel"] = &Rd53bGlobalCfg::CdrPhaseDetSel;
-    CdrClkSel.init          ( 58, &m_cfg[ 58], 2,  3, 0); regMap["CdrClkSel"] = &Rd53bGlobalCfg::CdrClkSel;
+    CdrOverwriteLimit.init  ( 58, &m_cfg[ 58], 4,  1, 0); regMap["CdrOverwriteLimit"] = &Rd53bGlobalCfg::CdrOverwriteLimit;
+    CdrPhaseDetSel.init     ( 58, &m_cfg[ 58], 3,  1, 0); regMap["CdrPhaseDetSel"] = &Rd53bGlobalCfg::CdrPhaseDetSel;
+    CdrClkSel.init          ( 58, &m_cfg[ 58], 0,  3, 0); regMap["CdrClkSel"] = &Rd53bGlobalCfg::CdrClkSel;
     //59
     ChSyncLockThr.init      ( 59, &m_cfg[ 59], 0,  5, 16); regMap["ChSyncLockThr"] = &Rd53bGlobalCfg::ChSyncLockThr;
     //60
@@ -215,14 +215,14 @@ void Rd53bGlobalCfg::init() {
     //61
     GlobalPulseWidth.init   ( 61, &m_cfg[ 61], 0,  8, 0); regMap["GlobalPulseWidth"] = &Rd53bGlobalCfg::GlobalPulseWidth;
     //62
-    ServiceBlockEn.init     ( 62, &m_cfg[ 62], 0,  1, 0); regMap["ServiceBlockEn"] = &Rd53bGlobalCfg::ServiceBlockEn;
-    ServiceBlockPeriod.init ( 62, &m_cfg[ 62], 1,  8, 50); regMap["ServiceBlockPeriod"] = &Rd53bGlobalCfg::ServiceBlockPeriod;
+    ServiceBlockEn.init     ( 62, &m_cfg[ 62], 8,  1, 1); regMap["ServiceBlockEn"] = &Rd53bGlobalCfg::ServiceBlockEn;
+    ServiceBlockPeriod.init ( 62, &m_cfg[ 62], 0,  8, 50); regMap["ServiceBlockPeriod"] = &Rd53bGlobalCfg::ServiceBlockPeriod;
     //63
-    TotEnPtot.init          ( 63, &m_cfg[ 63], 0,  1, 0); regMap["TotEnPtot"] = &Rd53bGlobalCfg::TotEnPtot;
-    TotEnPtoa.init          ( 63, &m_cfg[ 63], 1,  1, 0); regMap["TotEnPtoa"] = &Rd53bGlobalCfg::TotEnPtoa;
-    TotEn80.init            ( 63, &m_cfg[ 63], 2,  1, 0); regMap["TotEn80"] = &Rd53bGlobalCfg::TotEn80;
-    TotEn6b4b.init          ( 63, &m_cfg[ 63], 3,  1, 0); regMap["TotEn6b4b"] = &Rd53bGlobalCfg::TotEn6b4b;
-    TotPtotLatency.init     ( 63, &m_cfg[ 63], 4,  9, 500); regMap["TotPtotLatency"] = &Rd53bGlobalCfg::TotPtotLatency;
+    TotEnPtot.init          ( 63, &m_cfg[ 63], 12,  1, 0); regMap["TotEnPtot"] = &Rd53bGlobalCfg::TotEnPtot;
+    TotEnPtoa.init          ( 63, &m_cfg[ 63], 11,  1, 0); regMap["TotEnPtoa"] = &Rd53bGlobalCfg::TotEnPtoa;
+    TotEn80.init            ( 63, &m_cfg[ 63], 10,  1, 0); regMap["TotEn80"] = &Rd53bGlobalCfg::TotEn80;
+    TotEn6b4b.init          ( 63, &m_cfg[ 63], 9,  1, 0); regMap["TotEn6b4b"] = &Rd53bGlobalCfg::TotEn6b4b;
+    TotPtotLatency.init     ( 63, &m_cfg[ 63], 0,  9, 500); regMap["TotPtotLatency"] = &Rd53bGlobalCfg::TotPtotLatency;
     //64
     PtotCoreColEn3.init     ( 64, &m_cfg[ 64], 0,  6, 0); regMap["PtotCoreColEn3"] = &Rd53bGlobalCfg::PtotCoreColEn3;
     //65
@@ -232,20 +232,20 @@ void Rd53bGlobalCfg::init() {
     //67
     PtotCoreColEn0.init     ( 67, &m_cfg[ 67], 0, 16, 0); regMap["PtotCoreColEn0"] = &Rd53bGlobalCfg::PtotCoreColEn0;
     //68
-    DataMergeInPol.init     ( 68, &m_cfg[ 68], 0,  4, 0); regMap["DataMergeInPol"] = &Rd53bGlobalCfg::DataMergeInPol;
-    EnChipId.init           ( 68, &m_cfg[ 68], 4,  1, 0); regMap["EnChipId"] = &Rd53bGlobalCfg::EnChipId;
-    DataMergeSelClk.init    ( 68, &m_cfg[ 68], 5,  1, 1); regMap["DataMergeSelClk"] = &Rd53bGlobalCfg::DataMergeSelClk;
-    DataMergeEnClkGate.init ( 68, &m_cfg[ 68], 6,  1, 0); regMap["DataMergeEnClkGate"] = &Rd53bGlobalCfg::DataMergeEnClkGate;
-    DataMergeEn.init        ( 68, &m_cfg[ 68], 7,  4, 0); regMap["DataMergeEn"] = &Rd53bGlobalCfg::DataMergeEn;
-    DataMergeEnBond.init    ( 68, &m_cfg[ 68], 11,  1, 0); regMap["DataMergeEnBond"] = &Rd53bGlobalCfg::DataMergeEnBond;
+    DataMergeInPol.init     ( 68, &m_cfg[ 68], 8,  4, 0); regMap["DataMergeInPol"] = &Rd53bGlobalCfg::DataMergeInPol;
+    EnChipId.init           ( 68, &m_cfg[ 68], 7,  1, 0); regMap["EnChipId"] = &Rd53bGlobalCfg::EnChipId;
+    DataMergeSelClk.init    ( 68, &m_cfg[ 68], 6,  1, 1); regMap["DataMergeSelClk"] = &Rd53bGlobalCfg::DataMergeSelClk;
+    DataMergeEnClkGate.init ( 68, &m_cfg[ 68], 5,  1, 0); regMap["DataMergeEnClkGate"] = &Rd53bGlobalCfg::DataMergeEnClkGate;
+    DataMergeEn.init        ( 68, &m_cfg[ 68], 1,  4, 0); regMap["DataMergeEn"] = &Rd53bGlobalCfg::DataMergeEn;
+    DataMergeEnBond.init    ( 68, &m_cfg[ 68], 0,  1, 0); regMap["DataMergeEnBond"] = &Rd53bGlobalCfg::DataMergeEnBond;
     //69
-    DataMergeInMux3.init    ( 69, &m_cfg[ 69], 0,  2, 3); regMap["DataMergeInMux3"] = &Rd53bGlobalCfg::DataMergeInMux3;
-    DataMergeInMux2.init    ( 69, &m_cfg[ 69], 0,  2, 2); regMap["DataMergeInMux2"] = &Rd53bGlobalCfg::DataMergeInMux2;
-    DataMergeInMux1.init    ( 69, &m_cfg[ 69], 0,  2, 1); regMap["DataMergeInMux1"] = &Rd53bGlobalCfg::DataMergeInMux1;
-    DataMergeInMux0.init    ( 69, &m_cfg[ 69], 0,  2, 0); regMap["DataMergeInMux0"] = &Rd53bGlobalCfg::DataMergeInMux0;
-    DataMergeOutMux3.init   ( 69, &m_cfg[ 69], 0,  2, 3); regMap["DataMergeOutMux3"] = &Rd53bGlobalCfg::DataMergeOutMux3;
-    DataMergeOutMux2.init   ( 69, &m_cfg[ 69], 0,  2, 2); regMap["DataMergeOutMux2"] = &Rd53bGlobalCfg::DataMergeOutMux2;
-    DataMergeOutMux1.init   ( 69, &m_cfg[ 69], 0,  2, 1); regMap["DataMergeOutMux1"] = &Rd53bGlobalCfg::DataMergeOutMux1;
+    DataMergeInMux3.init    ( 69, &m_cfg[ 69], 14,  2, 3); regMap["DataMergeInMux3"] = &Rd53bGlobalCfg::DataMergeInMux3;
+    DataMergeInMux2.init    ( 69, &m_cfg[ 69], 12,  2, 2); regMap["DataMergeInMux2"] = &Rd53bGlobalCfg::DataMergeInMux2;
+    DataMergeInMux1.init    ( 69, &m_cfg[ 69], 10,  2, 1); regMap["DataMergeInMux1"] = &Rd53bGlobalCfg::DataMergeInMux1;
+    DataMergeInMux0.init    ( 69, &m_cfg[ 69], 8,  2, 0); regMap["DataMergeInMux0"] = &Rd53bGlobalCfg::DataMergeInMux0;
+    DataMergeOutMux3.init   ( 69, &m_cfg[ 69], 6,  2, 3); regMap["DataMergeOutMux3"] = &Rd53bGlobalCfg::DataMergeOutMux3;
+    DataMergeOutMux2.init   ( 69, &m_cfg[ 69], 4,  2, 2); regMap["DataMergeOutMux2"] = &Rd53bGlobalCfg::DataMergeOutMux2;
+    DataMergeOutMux1.init   ( 69, &m_cfg[ 69], 2,  2, 1); regMap["DataMergeOutMux1"] = &Rd53bGlobalCfg::DataMergeOutMux1;
     DataMergeOutMux0.init   ( 69, &m_cfg[ 69], 0,  2, 0); regMap["DataMergeOutMux0"] = &Rd53bGlobalCfg::DataMergeOutMux0;
     //70-73
     EnCoreColCal3.init      ( 70, &m_cfg[ 70], 0,  6, 0); regMap["EnCoreColCal3"] = &Rd53bGlobalCfg::EnCoreColCal3;
@@ -253,17 +253,17 @@ void Rd53bGlobalCfg::init() {
     EnCoreColCal1.init      ( 72, &m_cfg[ 72], 0, 16, 0); regMap["EnCoreColCal1"] = &Rd53bGlobalCfg::EnCoreColCal1;
     EnCoreColCal0.init      ( 73, &m_cfg[ 73], 0, 16, 0); regMap["EnCoreColCal0"] = &Rd53bGlobalCfg::EnCoreColCal0;
     //74
-    DataEnBcid.init         ( 74, &m_cfg[ 74], 0,  1, 0); regMap["DataEnBcid"] = &Rd53bGlobalCfg::DataEnBcid;
-    DataEnL1id.init         ( 74, &m_cfg[ 74], 0,  1, 0); regMap["DataEnL1id"] = &Rd53bGlobalCfg::DataEnL1id;
-    DataEnEos.init          ( 74, &m_cfg[ 74], 0,  1, 1); regMap["DataEnEos"] = &Rd53bGlobalCfg::DataEnEos;
+    DataEnBcid.init         ( 74, &m_cfg[ 74], 10,  1, 0); regMap["DataEnBcid"] = &Rd53bGlobalCfg::DataEnBcid;
+    DataEnL1id.init         ( 74, &m_cfg[ 74], 9,  1, 0); regMap["DataEnL1id"] = &Rd53bGlobalCfg::DataEnL1id;
+    DataEnEos.init          ( 74, &m_cfg[ 74], 8,  1, 1); regMap["DataEnEos"] = &Rd53bGlobalCfg::DataEnEos;
     NumOfEventsInStream.init( 74, &m_cfg[ 74], 0,  8, 16); regMap["NumOfEventsInStream"] = &Rd53bGlobalCfg::NumOfEventsInStream;
     //75
-    DataEnBinaryRo.init     ( 75, &m_cfg[ 75], 0,  1, 0); regMap["DataEnBinaryRo"] = &Rd53bGlobalCfg::DataEnBinaryRo;
-    DataEnRaw.init          ( 75, &m_cfg[ 75], 1,  1, 0); regMap["DataEnRaw"] = &Rd53bGlobalCfg::DataEnRaw;
-    DataEnHitRemoval.init   ( 75, &m_cfg[ 75], 2,  1, 0); regMap["DataEnHitRemoval"] = &Rd53bGlobalCfg::DataEnHitRemoval;
-    DataMaxHits.init        ( 75, &m_cfg[ 75], 3,  4, 0); regMap["DataMaxHits"] = &Rd53bGlobalCfg::DataMaxHits;
-    DataEnIsoHitRemoval.init( 75, &m_cfg[ 75], 7,  1, 0); regMap["DataEnIsoHitRemoval"] = &Rd53bGlobalCfg::DataEnIsoHitRemoval;
-    DataMaxTot.init         ( 75, &m_cfg[ 75], 8,  3, 0); regMap["DataMaxTot"] = &Rd53bGlobalCfg::DataMaxTot;
+    DataEnBinaryRo.init     ( 75, &m_cfg[ 75], 10,  1, 0); regMap["DataEnBinaryRo"] = &Rd53bGlobalCfg::DataEnBinaryRo;
+    DataEnRaw.init          ( 75, &m_cfg[ 75], 9,  1, 0); regMap["DataEnRaw"] = &Rd53bGlobalCfg::DataEnRaw;
+    DataEnHitRemoval.init   ( 75, &m_cfg[ 75], 8,  1, 0); regMap["DataEnHitRemoval"] = &Rd53bGlobalCfg::DataEnHitRemoval;
+    DataMaxHits.init        ( 75, &m_cfg[ 75], 4,  4, 0); regMap["DataMaxHits"] = &Rd53bGlobalCfg::DataMaxHits;
+    DataEnIsoHitRemoval.init( 75, &m_cfg[ 75], 3,  1, 0); regMap["DataEnIsoHitRemoval"] = &Rd53bGlobalCfg::DataEnIsoHitRemoval;
+    DataMaxTot.init         ( 75, &m_cfg[ 75], 0,  3, 0); regMap["DataMaxTot"] = &Rd53bGlobalCfg::DataMaxTot;
     //76
     EvenMask.init           ( 76, &m_cfg[ 76], 0, 16, 0); regMap["EvenMask"] = &Rd53bGlobalCfg::EvenMask;
     //77
@@ -275,31 +275,31 @@ void Rd53bGlobalCfg::init() {
     //80
     EfuseWriteData0.init    ( 80, &m_cfg[ 80], 0, 16, 0); regMap["EfuseWriteData0"] = &Rd53bGlobalCfg::EfuseWriteData0;
     //81
-    AuroraEnPrbs.init       ( 81, &m_cfg[ 81], 0,  1, 0); regMap["AuroraEnPrbs"] = &Rd53bGlobalCfg::AuroraEnPrbs;
-    AuroraActiveLanes.init  ( 81, &m_cfg[ 81], 1,  4, 0xF); regMap["AuroraActiveLanes"] = &Rd53bGlobalCfg::AuroraActiveLanes;
-    AuroraCCWait.init       ( 81, &m_cfg[ 81], 5,  6, 25); regMap["AuroraCCWait"] = &Rd53bGlobalCfg::AuroraCCWait;
-    AuroraCCSend.init       ( 81, &m_cfg[ 81], 11,  2, 3); regMap["AuroraCCSend"] = &Rd53bGlobalCfg::AuroraCCSend;
+    AuroraEnPrbs.init       ( 81, &m_cfg[ 81], 12,  1, 0); regMap["AuroraEnPrbs"] = &Rd53bGlobalCfg::AuroraEnPrbs;
+    AuroraActiveLanes.init  ( 81, &m_cfg[ 81], 8,  4, 0xF); regMap["AuroraActiveLanes"] = &Rd53bGlobalCfg::AuroraActiveLanes;
+    AuroraCCWait.init       ( 81, &m_cfg[ 81], 2,  6, 25); regMap["AuroraCCWait"] = &Rd53bGlobalCfg::AuroraCCWait;
+    AuroraCCSend.init       ( 81, &m_cfg[ 81], 0,  2, 3); regMap["AuroraCCSend"] = &Rd53bGlobalCfg::AuroraCCSend;
     //82
     AuroraCBWait1.init      ( 82, &m_cfg[ 82], 0,  8, 255); regMap["AuroraCBWait1"] = &Rd53bGlobalCfg::AuroraCBWait1;
     //83
-    AuroraCBWait0.init      ( 83, &m_cfg[ 83], 0, 12, 4095); regMap["AuroraCBWait0"] = &Rd53bGlobalCfg::AuroraCBWait0;
-    AuroraCBSend.init       ( 83, &m_cfg[ 83], 12,  4, 0); regMap["AuroraCBSend"] = &Rd53bGlobalCfg::AuroraCBSend;
+    AuroraCBWait0.init      ( 83, &m_cfg[ 83], 4, 12, 4095); regMap["AuroraCBWait0"] = &Rd53bGlobalCfg::AuroraCBWait0;
+    AuroraCBSend.init       ( 83, &m_cfg[ 83], 0,  4, 0); regMap["AuroraCBSend"] = &Rd53bGlobalCfg::AuroraCBSend;
     //84
     AuroraInitWait.init     ( 84, &m_cfg[ 84], 0, 11, 32); regMap["AuroraInitWait"] = &Rd53bGlobalCfg::AuroraInitWait;
     //85
-    GpValReg.init           ( 85, &m_cfg[ 85], 0,  4, 5); regMap["GpValReg"] = &Rd53bGlobalCfg::GpValReg;
-    GpCmosEn.init           ( 85, &m_cfg[ 85], 4,  1, 1); regMap["GpCmosEn"] = &Rd53bGlobalCfg::GpCmosEn;
-    GpCmosDs.init           ( 85, &m_cfg[ 85], 5,  1, 0); regMap["GpCmosDs"] = &Rd53bGlobalCfg::GpCmosDs;
-    GpLvdsEn.init           ( 85, &m_cfg[ 85], 6,  4, 0xF); regMap["GpLvdsEn"] = &Rd53bGlobalCfg::GpLvdsEn;
-    GpLvdsBias.init         ( 85, &m_cfg[ 85], 10,  3, 7); regMap["GpLvdsBias"] = &Rd53bGlobalCfg::GpLvdsBias;
+    GpValReg.init           ( 85, &m_cfg[ 85], 9,  4, 5); regMap["GpValReg"] = &Rd53bGlobalCfg::GpValReg;
+    GpCmosEn.init           ( 85, &m_cfg[ 85], 8,  1, 1); regMap["GpCmosEn"] = &Rd53bGlobalCfg::GpCmosEn;
+    GpCmosDs.init           ( 85, &m_cfg[ 85], 7,  1, 0); regMap["GpCmosDs"] = &Rd53bGlobalCfg::GpCmosDs;
+    GpLvdsEn.init           ( 85, &m_cfg[ 85], 3,  4, 0xF); regMap["GpLvdsEn"] = &Rd53bGlobalCfg::GpLvdsEn;
+    GpLvdsBias.init         ( 85, &m_cfg[ 85], 0,  3, 7); regMap["GpLvdsBias"] = &Rd53bGlobalCfg::GpLvdsBias;
     //86
     GpCmosRoute.init        ( 86, &m_cfg[ 86], 0,  6, 34); regMap["GpCmosRoute"] = &Rd53bGlobalCfg::GpCmosRoute;
     //87
-    GpLvdsPad3.init         ( 87, &m_cfg[ 87], 0,  6, 35); regMap["GpLvdsPad3"] = &Rd53bGlobalCfg::GpLvdsPad3;
-    GpLvdsPad2.init         ( 87, &m_cfg[ 87], 6,  6, 33); regMap["GpLvdsPad2"] = &Rd53bGlobalCfg::GpLvdsPad2;
+    GpLvdsPad3.init         ( 87, &m_cfg[ 87], 6,  6, 35); regMap["GpLvdsPad3"] = &Rd53bGlobalCfg::GpLvdsPad3;
+    GpLvdsPad2.init         ( 87, &m_cfg[ 87], 0,  6, 33); regMap["GpLvdsPad2"] = &Rd53bGlobalCfg::GpLvdsPad2;
     //88
-    GpLvdsPad1.init         ( 88, &m_cfg[ 88], 0,  6, 1); regMap["GpLvdsPad1"] = &Rd53bGlobalCfg::GpLvdsPad1;
-    GpLvdsPad0.init         ( 88, &m_cfg[ 88], 6,  6, 0); regMap["GpLvdsPad0"] = &Rd53bGlobalCfg::GpLvdsPad0;
+    GpLvdsPad1.init         ( 88, &m_cfg[ 88], 6,  6, 1); regMap["GpLvdsPad1"] = &Rd53bGlobalCfg::GpLvdsPad1;
+    GpLvdsPad0.init         ( 88, &m_cfg[ 88], 0,  6, 0); regMap["GpLvdsPad0"] = &Rd53bGlobalCfg::GpLvdsPad0;
     //89
     CdrCp.init              ( 89, &m_cfg[ 89], 0, 10, 40); regMap["CdrCp"] = &Rd53bGlobalCfg::CdrCp;
     //90
@@ -311,14 +311,14 @@ void Rd53bGlobalCfg::init() {
     //93
     CdrVcoBuff.init         ( 93, &m_cfg[ 93], 0, 10, 500); regMap["CdrVcoBuff"] = &Rd53bGlobalCfg::CdrVcoBuff;
     //94
-    SerSelOut3.init         ( 94, &m_cfg[ 94], 0,  2, 1); regMap["SerSelOut3"] = &Rd53bGlobalCfg::SerSelOut3;
-    SerSelOut2.init         ( 94, &m_cfg[ 94], 2,  2, 1); regMap["SerSelOut2"] = &Rd53bGlobalCfg::SerSelOut2;
-    SerSelOut1.init         ( 94, &m_cfg[ 94], 4,  2, 1); regMap["SerSelOut1"] = &Rd53bGlobalCfg::SerSelOut1;
-    SerSelOut0.init         ( 94, &m_cfg[ 94], 6,  2, 1); regMap["SerSelOut0"] = &Rd53bGlobalCfg::SerSelOut0;
+    SerSelOut3.init         ( 94, &m_cfg[ 94], 6,  2, 1); regMap["SerSelOut3"] = &Rd53bGlobalCfg::SerSelOut3;
+    SerSelOut2.init         ( 94, &m_cfg[ 94], 4,  2, 1); regMap["SerSelOut2"] = &Rd53bGlobalCfg::SerSelOut2;
+    SerSelOut1.init         ( 94, &m_cfg[ 94], 2,  2, 1); regMap["SerSelOut1"] = &Rd53bGlobalCfg::SerSelOut1;
+    SerSelOut0.init         ( 94, &m_cfg[ 94], 0,  2, 1); regMap["SerSelOut0"] = &Rd53bGlobalCfg::SerSelOut0;
     //95
-    SerInvTap.init          ( 95, &m_cfg[ 95], 0,  2, 0); regMap["SerInvTap"] = &Rd53bGlobalCfg::SerInvTap;
-    SerEnTap.init           ( 95, &m_cfg[ 95], 2,  2, 0); regMap["SerEnTap"] = &Rd53bGlobalCfg::SerEnTap;
-    SerEnLane.init          ( 95, &m_cfg[ 95], 4,  4, 1); regMap["SerEnLane"] = &Rd53bGlobalCfg::SerEnLane;
+    SerInvTap.init          ( 95, &m_cfg[ 95], 6,  2, 0); regMap["SerInvTap"] = &Rd53bGlobalCfg::SerInvTap;
+    SerEnTap.init           ( 95, &m_cfg[ 95], 4,  2, 0); regMap["SerEnTap"] = &Rd53bGlobalCfg::SerEnTap;
+    SerEnLane.init          ( 95, &m_cfg[ 95], 0,  4, 0xF); regMap["SerEnLane"] = &Rd53bGlobalCfg::SerEnLane;
     //96
     CmlBias2.init           ( 96, &m_cfg[ 96], 0, 10, 0); regMap["CmlBias2"] = &Rd53bGlobalCfg::CmlBias2;
     //97
@@ -326,26 +326,26 @@ void Rd53bGlobalCfg::init() {
     //98
     CmlBias0.init           ( 98, &m_cfg[ 98], 0, 10, 500); regMap["CmlBias0"] = &Rd53bGlobalCfg::CmlBias0;
     //99
-    MonitorEnable.init      ( 99, &m_cfg[ 99], 0,  1, 0); regMap["MonitorEnable"] = &Rd53bGlobalCfg::MonitorEnable;
-    MonitorI.init           ( 99, &m_cfg[ 99], 1,  6, 63); regMap["MonitorI"] = &Rd53bGlobalCfg::MonitorI;
-    MonitorV.init           ( 99, &m_cfg[ 99], 7,  6, 63); regMap["MonitorV"] = &Rd53bGlobalCfg::MonitorV;
+    MonitorEnable.init      ( 99, &m_cfg[ 99], 12,  1, 0); regMap["MonitorEnable"] = &Rd53bGlobalCfg::MonitorEnable;
+    MonitorI.init           ( 99, &m_cfg[ 99], 6,  6, 63); regMap["MonitorI"] = &Rd53bGlobalCfg::MonitorI;
+    MonitorV.init           ( 99, &m_cfg[ 99], 0,  6, 63); regMap["MonitorV"] = &Rd53bGlobalCfg::MonitorV;
     //100
     ErrWngMask.init         (100, &m_cfg[100], 0,  8, 0); regMap["ErrWngMask"] = &Rd53bGlobalCfg::ErrWngMask;
     //101
-    MonSensSldoDigEn.init   (101, &m_cfg[101], 0,  1, 0); regMap["MonSensSldoDigEn"] = &Rd53bGlobalCfg::MonSensSldoDigEn;
-    MonSensSldoDigDem.init  (101, &m_cfg[101], 1,  4, 0); regMap["MonSensSldoDigDem"] = &Rd53bGlobalCfg::MonSensSldoDigDem;
-    MonSensSldoDigSelBias.init(101, &m_cfg[101], 5,  1, 0); regMap["MonSensSldoDigSelBias"] = &Rd53bGlobalCfg::MonSensSldoDigSelBias;
-    MonSensSldoAnaEn.init   (101, &m_cfg[101], 6,  1, 0); regMap["MonSensSldoAnaEn"] = &Rd53bGlobalCfg::MonSensSldoAnaEn;
-    MonSensSldoAnaDem.init  (101, &m_cfg[101], 7,  4, 0); regMap["MonSensSldoAnaDem"] = &Rd53bGlobalCfg::MonSensSldoAnaDem;
-    MonSensSldoAnaSelBias.init(101, &m_cfg[101], 11,  1, 0); regMap["MonSensSldoAnaSelBias"] = &Rd53bGlobalCfg::MonSensSldoAnaSelBias;
+    MonSensSldoDigEn.init   (101, &m_cfg[101], 11,  1, 0); regMap["MonSensSldoDigEn"] = &Rd53bGlobalCfg::MonSensSldoDigEn;
+    MonSensSldoDigDem.init  (101, &m_cfg[101], 7,  4, 0); regMap["MonSensSldoDigDem"] = &Rd53bGlobalCfg::MonSensSldoDigDem;
+    MonSensSldoDigSelBias.init(101, &m_cfg[101], 6,  1, 0); regMap["MonSensSldoDigSelBias"] = &Rd53bGlobalCfg::MonSensSldoDigSelBias;
+    MonSensSldoAnaEn.init   (101, &m_cfg[101], 5,  1, 0); regMap["MonSensSldoAnaEn"] = &Rd53bGlobalCfg::MonSensSldoAnaEn;
+    MonSensSldoAnaDem.init  (101, &m_cfg[101], 1,  4, 0); regMap["MonSensSldoAnaDem"] = &Rd53bGlobalCfg::MonSensSldoAnaDem;
+    MonSensSldoAnaSelBias.init(101, &m_cfg[101], 0,  1, 0); regMap["MonSensSldoAnaSelBias"] = &Rd53bGlobalCfg::MonSensSldoAnaSelBias;
     //102
-    MonSensAcbEn.init       (102, &m_cfg[102], 0,  1, 0); regMap["MonSensAcbEn"] = &Rd53bGlobalCfg::MonSensAcbEn;
-    MonSensAcbDem.init      (102, &m_cfg[102], 0,  4, 0); regMap["MonSensAcbDem"] = &Rd53bGlobalCfg::MonSensAcbDem;
+    MonSensAcbEn.init       (102, &m_cfg[102], 5,  1, 0); regMap["MonSensAcbEn"] = &Rd53bGlobalCfg::MonSensAcbEn;
+    MonSensAcbDem.init      (102, &m_cfg[102], 1,  4, 0); regMap["MonSensAcbDem"] = &Rd53bGlobalCfg::MonSensAcbDem;
     MonSensAcbSelBias.init  (102, &m_cfg[102], 0,  1, 0); regMap["MonSensAcbSelBias"] = &Rd53bGlobalCfg::MonSensAcbSelBias;
     //103
-    VrefRsensBot.init       (103, &m_cfg[103], 0,  1, 0); regMap["VrefRsensBot"] = &Rd53bGlobalCfg::VrefRsensBot;
-    VrefRsensTop.init       (103, &m_cfg[103], 0,  1, 0); regMap["VrefRsensTop"] = &Rd53bGlobalCfg::VrefRsensTop;
-    VrefIn.init             (103, &m_cfg[103], 0,  1, 1); regMap["VrefIn"] = &Rd53bGlobalCfg::VrefIn;
+    VrefRsensBot.init       (103, &m_cfg[103], 8,  1, 0); regMap["VrefRsensBot"] = &Rd53bGlobalCfg::VrefRsensBot;
+    VrefRsensTop.init       (103, &m_cfg[103], 7,  1, 0); regMap["VrefRsensTop"] = &Rd53bGlobalCfg::VrefRsensTop;
+    VrefIn.init             (103, &m_cfg[103], 6,  1, 1); regMap["VrefIn"] = &Rd53bGlobalCfg::VrefIn;
     MonAdcTrim.init         (103, &m_cfg[103], 0,  6, 0); regMap["MonAdcTrim"] = &Rd53bGlobalCfg::MonAdcTrim;
 
     //104
@@ -365,17 +365,17 @@ void Rd53bGlobalCfg::init() {
     AutoRead6.init          (115, &m_cfg[115], 0,  9, 126); regMap["AutoRead6"] = &Rd53bGlobalCfg::AutoRead6;
     AutoRead7.init          (116, &m_cfg[116], 0,  9, 125); regMap["AutoRead7"] = &Rd53bGlobalCfg::AutoRead7;
     //117
-    RingOscBClear.init      (117, &m_cfg[117], 0,  1, 0); regMap["RingOscBClear"] = &Rd53bGlobalCfg::RingOscBClear;
-    RingOscBEnBl.init       (117, &m_cfg[117], 1,  1, 0); regMap["RingOscBEnBl"] = &Rd53bGlobalCfg::RingOscBEnBl;
-    RingOscBEnBr.init       (117, &m_cfg[117], 2,  1, 0); regMap["RingOscBEnBr"] = &Rd53bGlobalCfg::RingOscBEnBr;
-    RingOscBEnCapA.init     (117, &m_cfg[117], 3,  1, 0); regMap["RingOscBEnCapA"] = &Rd53bGlobalCfg::RingOscBEnCapA;
-    RingOscBEnFf.init       (117, &m_cfg[117], 4,  1, 0); regMap["RingOscBEnFf"] = &Rd53bGlobalCfg::RingOscBEnFf;
-    RingOscBEnLvt.init      (117, &m_cfg[117], 5,  1, 0); regMap["RingOscBEnLvt"] = &Rd53bGlobalCfg::RingOscBEnLvt;
-    RingOscAClear.init      (117, &m_cfg[117], 6,  1, 0); regMap["RingOscAClear"] = &Rd53bGlobalCfg::RingOscAClear;
-    RingOscAEn.init         (117, &m_cfg[117], 14,  8, 0); regMap["RingOscAEn"] = &Rd53bGlobalCfg::RingOscAEn;
+    RingOscBClear.init      (117, &m_cfg[117], 14,  1, 0); regMap["RingOscBClear"] = &Rd53bGlobalCfg::RingOscBClear;
+    RingOscBEnBl.init       (117, &m_cfg[117], 13,  1, 0); regMap["RingOscBEnBl"] = &Rd53bGlobalCfg::RingOscBEnBl;
+    RingOscBEnBr.init       (117, &m_cfg[117], 12,  1, 0); regMap["RingOscBEnBr"] = &Rd53bGlobalCfg::RingOscBEnBr;
+    RingOscBEnCapA.init     (117, &m_cfg[117], 11,  1, 0); regMap["RingOscBEnCapA"] = &Rd53bGlobalCfg::RingOscBEnCapA;
+    RingOscBEnFf.init       (117, &m_cfg[117], 10,  1, 0); regMap["RingOscBEnFf"] = &Rd53bGlobalCfg::RingOscBEnFf;
+    RingOscBEnLvt.init      (117, &m_cfg[117], 9,  1, 0); regMap["RingOscBEnLvt"] = &Rd53bGlobalCfg::RingOscBEnLvt;
+    RingOscAClear.init      (117, &m_cfg[117], 8,  1, 0); regMap["RingOscAClear"] = &Rd53bGlobalCfg::RingOscAClear;
+    RingOscAEn.init         (117, &m_cfg[117], 0,  8, 0); regMap["RingOscAEn"] = &Rd53bGlobalCfg::RingOscAEn;
     //118
-    RingOscARoute.init      (118, &m_cfg[118], 0,  3, 0); regMap["RingOscARoute"] = &Rd53bGlobalCfg::RingOscARoute;
-    RingOscBRoute.init      (118, &m_cfg[118], 3,  6, 0); regMap["RingOscBRoute"] = &Rd53bGlobalCfg::RingOscBRoute;
+    RingOscARoute.init      (118, &m_cfg[118], 6,  3, 0); regMap["RingOscARoute"] = &Rd53bGlobalCfg::RingOscARoute;
+    RingOscBRoute.init      (118, &m_cfg[118], 0,  6, 0); regMap["RingOscBRoute"] = &Rd53bGlobalCfg::RingOscBRoute;
     //119-120
     RingOscAOut.init        (119, &m_cfg[119], 0, 16, 0); regMap["RingOscAOut"] = &Rd53bGlobalCfg::RingOscAOut;
     RingOscBOut.init        (120, &m_cfg[120], 0, 16, 0); regMap["RingOscBOut"] = &Rd53bGlobalCfg::RingOscBOut;

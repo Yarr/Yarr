@@ -26,6 +26,20 @@ void printHelp() {
     std::cout << "-c <string> : path to config" << std::endl;
 }
 
+namespace rd53bTest {
+    std::pair<uint32_t, uint32_t> decodeSingleRegRead(uint32_t higher, uint32_t lower) {
+        if ((higher & 0x55000000) == 0x55000000) {
+            return std::make_pair((lower>>16)&0x3FF, lower&0xFFFF);
+        } else if ((higher & 0x99000000) == 0x99000000) {
+            return std::make_pair((higher>>10)&0x3FF, ((lower>>26)&0x3F)+((higher&0x3FF)<<6));
+        } else {
+            logger->error("Could not decode reg read!");
+            return std::make_pair(999, 666);
+        }
+        return std::make_pair(999, 666);
+    }
+}
+
 int main (int argc, char *argv[]) {
     // Setup logger with some defaults
     std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
@@ -84,8 +98,9 @@ int main (int argc, char *argv[]) {
         return -1;
     }
     
-    hwCtrl->setupMode();
+    hwCtrl->runMode();
     hwCtrl->setTrigEnable(0);
+    hwCtrl->disableRx();
 
     Bookkeeper bookie(&*hwCtrl, &*hwCtrl);
     
@@ -125,6 +140,30 @@ int main (int argc, char *argv[]) {
     logger->info("Configure chip ...");
     rd53b.configureInit();
     rd53b.configureGlobal();
+    //rd53b.configurePixels();
+
+    logger->info("... done!");
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    hwCtrl->setRxEnable(0);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    logger->info("Sending read register");
+    rd53b.readRegister(&Rd53b::PixAutoRow);
+    hwCtrl->writeFifo(0x33a6);
+    while(!hwCtrl->isCmdEmpty());
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    logger->info("Reading data");
+    RawData *data = hwCtrl->readData();
+    if  (data) {
+        logger->info("read {} words", data->words);
+        std::pair<uint32_t, uint32_t> answer = rd53bTest::decodeSingleRegRead(data->buf[0], data->buf[1]);
+        logger->info("Answer: {} {}", answer.first, answer.second);
+        for (unsigned j=0; j<data->words; j++)
+            logger->info("[{}] = 0x{:x}", j, data->buf[j]);
+    }
+
     logger->info("... done! bye!");
+    hwCtrl->disableRx();
     return 0;
 }

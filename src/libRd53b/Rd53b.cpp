@@ -67,21 +67,28 @@ void Rd53b::configureInit() {
     
     // TODO this should only be done once per TX!
     // Send low number of transitions for at least 10us to put chip in reset state 
+    
     logger->debug(" ... asserting CMD reset via low activity");
-    for (unsigned int i=0; i<100; i++) {
+    for (unsigned int i=0; i<400; i++) {
+        // Pattern corresponds to approx. 0.83MHz
         core->writeFifo(0xFFFFFFFF);
+        core->writeFifo(0xFFFFFFFF);
+        core->writeFifo(0xFFFFFFFF);
+        core->writeFifo(0x00000000);
+        core->writeFifo(0x00000000);
         core->writeFifo(0x00000000);
     }
     core->releaseFifo();
     while(!core->isCmdEmpty());
+    
     // Wait for at least 1000us before chip is release from reset
     logger->debug(" ... waiting for CMD reset to be released");
     std::this_thread::sleep_for(std::chrono::microseconds(2000));
 
     // Sync CMD decoder
     logger->debug(" ... send syncs");
-    for(unsigned int i=0; i<32; i++)
-        core->writeFifo(0xAAAA817E);
+    for(unsigned int i=0; i<128; i++)
+        core->writeFifo(0x817E817E);
     core->releaseFifo();
     while(!core->isCmdEmpty());
 
@@ -91,6 +98,7 @@ void Rd53b::configureInit() {
     this->sendClear(m_chipId);
     while(!core->isCmdEmpty());
 
+    
     // Enable register writing to do more resetting
     logger->debug(" ... set global register in writeable mode");
     this->writeRegister(&Rd53b::GcrDefaultConfig, 0xAC75);
@@ -107,6 +115,22 @@ void Rd53b::configureInit() {
     std::this_thread::sleep_for(std::chrono::microseconds(500));
     // Reset register
     this->writeRegister(&Rd53b::GlobalPulseConf, 0);
+
+    // Reset Core
+    logger->debug("Reset Cores!");
+    for (unsigned i=0; i<16; i++) {
+        this->writeRegister(&Rd53b::RstCoreCol0, 1<<i);
+        this->writeRegister(&Rd53b::RstCoreCol1, 1<<i);
+        this->writeRegister(&Rd53b::RstCoreCol2, 1<<i);
+        this->writeRegister(&Rd53b::RstCoreCol3, 1<<i);
+        while(!core->isCmdEmpty()){;}
+    }
+    logger->debug("Chip initialisation done!");
+    this->writeRegister(&Rd53b::RstCoreCol0, 0);
+    this->writeRegister(&Rd53b::RstCoreCol1, 0);
+    this->writeRegister(&Rd53b::RstCoreCol2, 0);
+    this->writeRegister(&Rd53b::RstCoreCol3, 0);
+    while(!core->isCmdEmpty()){;}
 
     logger->debug("Chip initialisation done!");
 }
@@ -138,8 +162,8 @@ void Rd53b::configurePixels() {
 }
 
 void Rd53b::writeRegister(Rd53bReg Rd53bGlobalCfg::*ref, uint16_t value) {
-    logger->debug("Writing register #{} with 0x{0:x}", (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
     (this->*ref).write(value);
+    logger->debug("Writing register #{} with {}", (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
     this->sendWrReg(m_chipId, (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
 }
 
