@@ -13,6 +13,12 @@
 #include <netdb.h>
 #include <unistd.h>
 
+#include "logging.h"
+
+namespace {
+auto logger = logging::make_log("ItsdaqFW::UDP");
+}
+
 /*
  * This can be used either for local communicataion using hsioPipe, 
  * or for some recent firmware versions.
@@ -39,15 +45,14 @@ void UdpSocket::setup(uint32_t remote, int srcPort, int dstPort)
   sourcePort = srcPort;
   destinationPort = dstPort;
 
-  std::cout << "Creating UDP socket to " << remote << " ports: " << srcPort << " to " << dstPort << std::endl;
+  logger->debug("Creating UDP socket to IP {:08x} ports: {} to {}", remote, srcPort, dstPort);
 
   // Look up destination address
   uint32_t addr_ip4 = remote; // lookup(remote_name);
 
-  std::cout << " IP address: " << ((addr_ip4>>0)&0xff) << "."
-                               << ((addr_ip4>>8)&0xff) << "."
-                               << ((addr_ip4>>16)&0xff) << "."
-                               << ((addr_ip4>>24)&0xff) << "\n";
+  logger->debug("IP address: {}.{}.{}.{}",
+                (addr_ip4>>0)&0xff, (addr_ip4>>8)&0xff,
+                (addr_ip4>>16)&0xff, (addr_ip4>>24)&0xff);
 
   // Don't send packets on general network
   bool ip_address_ok = false;
@@ -55,8 +60,8 @@ void UdpSocket::setup(uint32_t remote, int srcPort, int dstPort)
   else if(((addr_ip4 & 0xff) == 192) && (((addr_ip4>>8) & 0xff) == 168)) ip_address_ok = true;
 
   if(!ip_address_ok) {
-    std::cout << "*** Validation failed, address outside 192.168.*.* and 127.0.0.1 not allowed\n";
-    std::cout << "***   Using 127.0.0.1!\n";
+    logger->warn("*** Validation failed, address outside 192.168.*.* and 127.0.0.1 not allowed");
+    logger->info( "***   Using 127.0.0.1!");
     addr_ip4 = 0x0100007f;
   }
 
@@ -75,7 +80,7 @@ void UdpSocket::setup(uint32_t remote, int srcPort, int dstPort)
     throw std::runtime_error("Failed to open udp socket");
   }
 
-  std::cout << "Have udp socket handle: " << sock_fd << std::endl;
+  logger->trace("Have UDP socket handle: {}", sock_fd);
 
   // Bind says which port to receive on
   struct sockaddr_in sin;
@@ -99,7 +104,7 @@ void UdpSocket::setup(uint32_t remote, int srcPort, int dstPort)
     perror("Failed to set SO_REUSEADDR");
   }
 
-  std::cout << "Have bound socket handle: " << sock_fd << std::endl;
+  logger->trace("Bound socket handle: {}", sock_fd);
 }
 
 void UdpSocket::send(const char *packet_start, const char *packet_end)
@@ -129,6 +134,8 @@ void UdpSocket::send(const char *packet_start, const char *packet_end)
 
 bool UdpSocket::receive(std::array<char, 1500> &buffer, size_t &output_bytes, int timeout)
 {
+  logger->trace("UdpSocket::receive");
+
   // Currently ignore timeout parameter (could use select, or fcntl? to set read timeout)
   int timeoutCounter = 0;
 
@@ -182,6 +189,8 @@ bool UdpSocket::receive(std::array<char, 1500> &buffer, size_t &output_bytes, in
 
   // std::copy(buffer, buffer + result, &packet[0]);
   output_bytes = result;
+
+  logger->trace("Received {} bytes from UDP", result);
 
   return true;
 }

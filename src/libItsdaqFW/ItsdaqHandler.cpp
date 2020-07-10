@@ -9,6 +9,11 @@
 #include "Checksum.h"
 #include "UdpSocket.h"
 #include "Utils.h"
+#include "logging.h"
+
+namespace {
+auto logger = logging::make_log("ItsdaqFW::Handler");
+}
 
 /// Private implementation (keep details out of header file)
 class ItsdaqPrivate {
@@ -91,7 +96,7 @@ void ItsdaqPrivate::ReceiverMain() {
         continue;
       }
 
-      std::cout << "Received opcode " << Utils::hexify(opcode) << "\n";
+      logger->debug("Received opcode {:x}", opcode);
 
       for(size_t b_o = 0; b_o < output_bytes/2; b_o ++ ) {
         buf16[b_o] = htons(buf16[b_o]);
@@ -108,5 +113,6 @@ void ItsdaqPrivate::ReceiverMain() {
     }
   }
 
-  std::cout << "End ReceiverMain after receiving " << packet_count << " packets\n";
+  logger->debug("End ReceiverMain after receiving {} packets with {} bytes",
+                packet_count, bytes_count);
 }

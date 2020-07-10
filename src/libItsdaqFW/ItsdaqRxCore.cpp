@@ -2,9 +2,15 @@
 
 #include <iomanip>
 
+#include "logging.h"
+
 const size_t max_stream = 256;
 
 std::chrono::steady_clock::time_point bridge_watcher;
+
+namespace {
+auto logger = logging::make_log("ItsdaqFW::RxCore");
+}
 
 ItsdaqRxCore::ItsdaqRxCore(ItsdaqHandler&h)
   : m_h(h)
@@ -20,7 +26,7 @@ void ItsdaqRxCore::init() {
 
 void ItsdaqRxCore::setRxEnable(uint32_t stream) {
   // Set stream mask (fixed params, capture?)
-  std::cout << "Set Rx enable only stream " << stream << '\n';
+  logger->debug("Set Rx enable only stream {}", stream);
 
   disableRx();
 
@@ -51,7 +57,7 @@ void ItsdaqRxCore::disableRx() {
 }
 
 void ItsdaqRxCore::setRxEnable(std::vector<uint32_t> channels) {
-  std::cout << "Skip setRxEnable list of " << channels.size() << " streams\n";
+  logger->debug("Skip setRxEnable list of {} streams", channels.size());
 
   // First disable all
   disableRx();
@@ -64,11 +70,11 @@ void ItsdaqRxCore::setRxEnable(std::vector<uint32_t> channels) {
 }
 
 void ItsdaqRxCore::maskRxEnable(uint32_t val, uint32_t mask) {
-  std::cout << "Skip maskRxEnable " << val << ' ' << mask << '\n';
+  logger->debug("Skip maskRxEnable {} {}", val, mask);
 }
 
 void ItsdaqRxCore::flushBuffer(){
-  std::cout << "Skip flushBuffer\n";
+  logger->debug("Skip flushBuffer");
 }
 
 RawData* ItsdaqRxCore::readData(){

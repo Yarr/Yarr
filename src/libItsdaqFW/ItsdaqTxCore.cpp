@@ -7,6 +7,12 @@
 
 #include "ItsdaqHandler.h"
 
+#include "logging.h"
+
+namespace {
+auto logger = logging::make_log("ItsdaqFW::TxCore");
+}
+
 enum class OPCODE : uint16_t {
   RAWSEQ = 0x0078,
 };
@@ -61,7 +67,7 @@ uint32_t ItsdaqTxCore::getCmdEnable() {
 
 void ItsdaqTxCore::writeFifo(uint32_t bit_data) {
   // Two bits in each sequence word
-  std::cout << std::hex << bit_data << '\n';
+  logger->debug("WriteFifo: {:08x}", bit_data);
 
   // Just output idle
   const uint32_t L1R3 = 0x78557855;
@@ -237,5 +243,5 @@ void ItsdaqTxCore::toFileJson(json &j)  {
 }
 
 void ItsdaqTxCore::fromFileJson(json &j){
-  std::cout << "ItsdaqTxCore: No config for now\n";
+  logger->debug("ItsdaqTxCore: No config load");
 }
