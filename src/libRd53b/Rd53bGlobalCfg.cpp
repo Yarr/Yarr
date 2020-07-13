@@ -83,23 +83,23 @@ void Rd53bGlobalCfg::init() {
 
     // Diff AFE
     //8
-    DiffPreampL.init        (  8, &m_cfg[  8], 0, 10, 50); regMap["DiffPreampL"] = &Rd53bGlobalCfg::DiffPreampL;
+    DiffPreampL.init        (  8, &m_cfg[  8], 0, 10, 800); regMap["DiffPreampL"] = &Rd53bGlobalCfg::DiffPreampL;
     //9
-    DiffPreampR.init        (  9, &m_cfg[  9], 0, 10, 50); regMap["DiffPreampR"] = &Rd53bGlobalCfg::DiffPreampR;
+    DiffPreampR.init        (  9, &m_cfg[  9], 0, 10, 800); regMap["DiffPreampR"] = &Rd53bGlobalCfg::DiffPreampR;
     //10
-    DiffPreampTL.init       ( 10, &m_cfg[ 10], 0, 10, 50); regMap["DiffPreampTL"] = &Rd53bGlobalCfg::DiffPreampTL;
+    DiffPreampTL.init       ( 10, &m_cfg[ 10], 0, 10, 800); regMap["DiffPreampTL"] = &Rd53bGlobalCfg::DiffPreampTL;
     //11
-    DiffPreampTR.init       ( 11, &m_cfg[ 11], 0, 10, 50); regMap["DiffPreampTR"] = &Rd53bGlobalCfg::DiffPreampTR;
+    DiffPreampTR.init       ( 11, &m_cfg[ 11], 0, 10, 800); regMap["DiffPreampTR"] = &Rd53bGlobalCfg::DiffPreampTR;
     //12
-    DiffPreampT.init        ( 12, &m_cfg[ 12], 0, 10, 50); regMap["DiffPreampT"] = &Rd53bGlobalCfg::DiffPreampT;
+    DiffPreampT.init        ( 12, &m_cfg[ 12], 0, 10, 800); regMap["DiffPreampT"] = &Rd53bGlobalCfg::DiffPreampT;
     //13
-    DiffPreampM.init        ( 13, &m_cfg[ 13], 0, 10, 50); regMap["DiffPreampM"] = &Rd53bGlobalCfg::DiffPreampM;
+    DiffPreampM.init        ( 13, &m_cfg[ 13], 0, 10, 800); regMap["DiffPreampM"] = &Rd53bGlobalCfg::DiffPreampM;
     //14
-    DiffPreComp.init        ( 14, &m_cfg[ 14], 0, 10, 50); regMap["DiffPreComp"] = &Rd53bGlobalCfg::DiffPreComp;
+    DiffPreComp.init        ( 14, &m_cfg[ 14], 0, 10, 500); regMap["DiffPreComp"] = &Rd53bGlobalCfg::DiffPreComp;
     //15
-    DiffComp.init           ( 15, &m_cfg[ 15], 0, 10, 50); regMap["DiffComp"] = &Rd53bGlobalCfg::DiffComp;
+    DiffComp.init           ( 15, &m_cfg[ 15], 0, 10, 500); regMap["DiffComp"] = &Rd53bGlobalCfg::DiffComp;
     //16
-    DiffVff.init            ( 16, &m_cfg[ 16], 0, 10, 100); regMap["DiffVff"] = &Rd53bGlobalCfg::DiffVff;
+    DiffVff.init            ( 16, &m_cfg[ 16], 0, 10, 160); regMap["DiffVff"] = &Rd53bGlobalCfg::DiffVff;
     //17
     DiffTh1L.init           ( 17, &m_cfg[ 17], 0, 10, 100); regMap["DiffTh1L"] = &Rd53bGlobalCfg::DiffTh1L;
     //18
@@ -149,9 +149,9 @@ void Rd53bGlobalCfg::init() {
     // Power
     //38
     SldoEnUndershuntA.init  ( 38, &m_cfg[ 38], 6,  1, 0); regMap["SldoEnUndershuntA"] = &Rd53bGlobalCfg::SldoEnUndershuntA;
-    SldoEnUndershuntB.init  ( 38, &m_cfg[ 38], 5,  1, 0); regMap["SldoEnUndershuntB"] = &Rd53bGlobalCfg::SldoEnUndershuntB;
+    SldoEnUndershuntD.init  ( 38, &m_cfg[ 38], 5,  1, 0); regMap["SldoEnUndershuntD"] = &Rd53bGlobalCfg::SldoEnUndershuntD;
     SldoTrimA.init          ( 38, &m_cfg[ 38], 4,  4, 8); regMap["SldoTrimA"] = &Rd53bGlobalCfg::SldoTrimA;
-    SldoTrimB.init          ( 38, &m_cfg[ 38], 0,  4, 8); regMap["SldoTrimB"] = &Rd53bGlobalCfg::SldoTrimB;
+    SldoTrimD.init          ( 38, &m_cfg[ 38], 0,  4, 8); regMap["SldoTrimD"] = &Rd53bGlobalCfg::SldoTrimD;
 
     // Pixel Matrix
     //39
@@ -276,7 +276,7 @@ void Rd53bGlobalCfg::init() {
     EfuseWriteData0.init    ( 80, &m_cfg[ 80], 0, 16, 0); regMap["EfuseWriteData0"] = &Rd53bGlobalCfg::EfuseWriteData0;
     //81
     AuroraEnPrbs.init       ( 81, &m_cfg[ 81], 12,  1, 0); regMap["AuroraEnPrbs"] = &Rd53bGlobalCfg::AuroraEnPrbs;
-    AuroraActiveLanes.init  ( 81, &m_cfg[ 81], 8,  4, 0xF); regMap["AuroraActiveLanes"] = &Rd53bGlobalCfg::AuroraActiveLanes;
+    AuroraActiveLanes.init  ( 81, &m_cfg[ 81], 8,  4, 1); regMap["AuroraActiveLanes"] = &Rd53bGlobalCfg::AuroraActiveLanes;
     AuroraCCWait.init       ( 81, &m_cfg[ 81], 2,  6, 25); regMap["AuroraCCWait"] = &Rd53bGlobalCfg::AuroraCCWait;
     AuroraCCSend.init       ( 81, &m_cfg[ 81], 0,  2, 3); regMap["AuroraCCSend"] = &Rd53bGlobalCfg::AuroraCCSend;
     //82
@@ -293,7 +293,7 @@ void Rd53bGlobalCfg::init() {
     GpLvdsEn.init           ( 85, &m_cfg[ 85], 3,  4, 0xF); regMap["GpLvdsEn"] = &Rd53bGlobalCfg::GpLvdsEn;
     GpLvdsBias.init         ( 85, &m_cfg[ 85], 0,  3, 7); regMap["GpLvdsBias"] = &Rd53bGlobalCfg::GpLvdsBias;
     //86
-    GpCmosRoute.init        ( 86, &m_cfg[ 86], 0,  6, 34); regMap["GpCmosRoute"] = &Rd53bGlobalCfg::GpCmosRoute;
+    GpCmosRoute.init        ( 86, &m_cfg[ 86], 0,  7, 34); regMap["GpCmosRoute"] = &Rd53bGlobalCfg::GpCmosRoute;
     //87
     GpLvdsPad3.init         ( 87, &m_cfg[ 87], 6,  6, 35); regMap["GpLvdsPad3"] = &Rd53bGlobalCfg::GpLvdsPad3;
     GpLvdsPad2.init         ( 87, &m_cfg[ 87], 0,  6, 33); regMap["GpLvdsPad2"] = &Rd53bGlobalCfg::GpLvdsPad2;
@@ -318,7 +318,7 @@ void Rd53bGlobalCfg::init() {
     //95
     SerInvTap.init          ( 95, &m_cfg[ 95], 6,  2, 0); regMap["SerInvTap"] = &Rd53bGlobalCfg::SerInvTap;
     SerEnTap.init           ( 95, &m_cfg[ 95], 4,  2, 0); regMap["SerEnTap"] = &Rd53bGlobalCfg::SerEnTap;
-    SerEnLane.init          ( 95, &m_cfg[ 95], 0,  4, 0xF); regMap["SerEnLane"] = &Rd53bGlobalCfg::SerEnLane;
+    SerEnLane.init          ( 95, &m_cfg[ 95], 0,  4, 1); regMap["SerEnLane"] = &Rd53bGlobalCfg::SerEnLane;
     //96
     CmlBias2.init           ( 96, &m_cfg[ 96], 0, 10, 0); regMap["CmlBias2"] = &Rd53bGlobalCfg::CmlBias2;
     //97

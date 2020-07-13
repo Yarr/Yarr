@@ -59,7 +59,7 @@ std::array<uint16_t, 4> Rd53bCmd::genWrReg(uint8_t chipId, uint16_t address, uin
     return {static_cast<uint16_t>(0x6600 | enc5to8[chipId&0x1F]),
         static_cast<uint16_t>((enc5to8[(address&0x1E0)>>5]<<8) | enc5to8[address&0x1F]),
         static_cast<uint16_t>((enc5to8[(data&0xF800)>>11]<<8) | enc5to8[(data&0x7C0)>>6]),
-        static_cast<uint16_t>((enc5to8[(data&0x1E)>>1]<<8) | enc5to8[(data&0x1)<<4])};
+        static_cast<uint16_t>((enc5to8[(data&0x3E)>>1]<<8) | enc5to8[(data&0x1)<<4])};
 }
 
 std::array<uint16_t, 2> Rd53bCmd::genRdReg(uint8_t chipId, uint16_t address) {
@@ -101,14 +101,14 @@ void Rd53bCmd::sendGlobalPulse(uint8_t chipId) {
 void Rd53bCmd::sendWrReg(uint8_t chipId, uint16_t address, uint16_t data) {
     logger->debug("Sending WrReg(id({}),addr({}),data({}))", chipId, address, data);
     std::array<uint16_t, 4> wrReg = Rd53bCmd::genWrReg(chipId, address, data);
-    core->writeFifo((wrReg[0] << 16) | wrReg[1]);
-    core->writeFifo((wrReg[2] << 16) | wrReg[3]);
+    core->writeFifo(((uint32_t)wrReg[0] << 16) | wrReg[1]);
+    core->writeFifo(((uint32_t)wrReg[2] << 16) | wrReg[3]);
     core->releaseFifo();
 }
 
 void Rd53bCmd::sendRdReg(uint8_t chipId, uint16_t address) {
     logger->debug("Sending RdReg(id({}),addr({}))", chipId, address);
     std::array<uint16_t, 2> rdReg = Rd53bCmd::genRdReg(chipId, address);
-    core->writeFifo((rdReg[0] << 16) | rdReg[1]);
+    core->writeFifo(((uint32_t)rdReg[0] << 16) | rdReg[1]);
     core->releaseFifo();
 }

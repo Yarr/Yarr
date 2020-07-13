@@ -47,9 +47,9 @@ class Rd53bPixelCfg {
             uint8_t u8;
         };
     
-    protected:
         std::array<std::array<uint16_t, n_Row>, n_DC> pixRegs;
 
+    protected:
         void toJson(json &j);
         void fromJson(json &j);
     

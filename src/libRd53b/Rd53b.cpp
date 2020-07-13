@@ -123,6 +123,7 @@ void Rd53b::configureInit() {
         this->writeRegister(&Rd53b::RstCoreCol1, 1<<i);
         this->writeRegister(&Rd53b::RstCoreCol2, 1<<i);
         this->writeRegister(&Rd53b::RstCoreCol3, 1<<i);
+        this->sendClear(m_chipId);
         while(!core->isCmdEmpty()){;}
     }
     logger->debug("Chip initialisation done!");
@@ -159,6 +160,27 @@ void Rd53b::configurePixels() {
         }
         while(!core->isCmdEmpty()){;}
     }
+}
+
+void Rd53b::configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels) {
+    logger->debug("Configuring some pixel registers ...");
+    // Writing two columns and six rows at the same time
+    unsigned old_dc = 99999;
+    unsigned write_counter = 0;
+    for (auto &pixel: pixels) {
+        if (old_dc != pixel.first/2) {
+            this->writeRegister(&Rd53b::PixRegionCol, pixel.first/2);
+            old_dc = pixel.first/2;
+        }
+        this->writeRegister(&Rd53b::PixRegionRow, pixel.second); 
+        this->writeRegister(&Rd53b::PixPortal, pixRegs[pixel.first/2][pixel.second]);
+        write_counter++;
+        if (write_counter > 50) {
+            while(!core->isCmdEmpty()){;}
+            write_counter = 0;
+        }
+    }
+    while(!core->isCmdEmpty()){;}
 }
 
 void Rd53b::writeRegister(Rd53bReg Rd53bGlobalCfg::*ref, uint16_t value) {

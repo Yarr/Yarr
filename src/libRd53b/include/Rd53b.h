@@ -30,6 +30,7 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         void configureInit();
         void configureGlobal();
         void configurePixels();
+        void configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels);
 
         void maskPixel(unsigned col, unsigned row) override {}
 

@@ -174,9 +174,9 @@ class Rd53bGlobalCfg {
         // Power
         //38
         Rd53bReg SldoEnUndershuntA;
-        Rd53bReg SldoEnUndershuntB;
+        Rd53bReg SldoEnUndershuntD;
         Rd53bReg SldoTrimA;
-        Rd53bReg SldoTrimB;
+        Rd53bReg SldoTrimD;
 
         // Pixel Matrix
         //39

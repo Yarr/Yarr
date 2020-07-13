@@ -140,7 +140,13 @@ int main (int argc, char *argv[]) {
     logger->info("Configure chip ...");
     rd53b.configureInit();
     rd53b.configureGlobal();
-    //rd53b.configurePixels();
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    rd53b.setReg(0, 0, 1, 1, 1, 0); // Enable first pixel
+    rd53b.setReg(0, 1, 1, 1, 1, 0); // Enable first pixel
+    rd53b.setReg(0, 30, 1, 1, 1, 0); // Enable first pixel
+    rd53b.configurePixels();
+    while(!hwCtrl->isCmdEmpty());
 
     logger->info("... done!");
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -148,8 +154,21 @@ int main (int argc, char *argv[]) {
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     logger->info("Sending read register");
+    rd53b.readRegister(&Rd53b::InjVcalHigh);
+    std::array<uint16_t, 3> cal = rd53b.genCal(15, 1, 0, 30, 0, 0);
+    
+    hwCtrl->writeFifo(cal[0] << 16 | cal[1]);
+    hwCtrl->writeFifo(cal[2] << 16 | 0xAAAA); // 4bc
+    hwCtrl->writeFifo(0xAAAAAAAA);// 8bc
+    hwCtrl->writeFifo(0xAAAAAAAA);// 8bc
+    hwCtrl->writeFifo(0x566a566c);
+    hwCtrl->writeFifo(0x56715672);
+    hwCtrl->writeFifo(0x568b568d);
+    
+    while(!hwCtrl->isCmdEmpty());
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    //hwCtrl->writeFifo(0x56a65671);
     rd53b.readRegister(&Rd53b::PixAutoRow);
-    hwCtrl->writeFifo(0x33a6);
     while(!hwCtrl->isCmdEmpty());
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
@@ -161,6 +180,27 @@ int main (int argc, char *argv[]) {
         logger->info("Answer: {} {}", answer.first, answer.second);
         for (unsigned j=0; j<data->words; j++)
             logger->info("[{}] = 0x{:x}", j, data->buf[j]);
+        delete data;
+    }
+    logger->info("Reading data");
+    data = hwCtrl->readData();
+    if  (data) {
+        logger->info("read {} words", data->words);
+        std::pair<uint32_t, uint32_t> answer = rd53bTest::decodeSingleRegRead(data->buf[0], data->buf[1]);
+        logger->info("Answer: {} {}", answer.first, answer.second);
+        for (unsigned j=0; j<data->words; j++)
+            logger->info("[{}] = 0x{:x}", j, data->buf[j]);
+        delete data;
+    }
+    logger->info("Reading data");
+    data = hwCtrl->readData();
+    if  (data) {
+        logger->info("read {} words", data->words);
+        std::pair<uint32_t, uint32_t> answer = rd53bTest::decodeSingleRegRead(data->buf[0], data->buf[1]);
+        logger->info("Answer: {} {}", answer.first, answer.second);
+        for (unsigned j=0; j<data->words; j++)
+            logger->info("[{}] = 0x{:x}", j, data->buf[j]);
+        delete data;
     }
 
     logger->info("... done! bye!");

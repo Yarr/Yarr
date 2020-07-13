@@ -11,7 +11,7 @@
 Rd53bPixelCfg::Rd53bPixelCfg() {
     for (unsigned dc=0; dc<n_DC; dc++) {
         for (unsigned row=0; row<n_Row; row++) {
-            pixRegs[dc][row] = 0x55; //En=1,Inj=0,HitOr=1,TDAC=0
+            pixRegs[dc][row] = 0x00; //En=1,Inj=0,HitOr=1,TDAC=0
         }
     }
 }
