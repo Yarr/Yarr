@@ -335,7 +335,7 @@ int main(int argc, char *argv[]) {
     // Add to scan log
     scanLog["ctrlCfg"] = ctrlCfg;
 
-    hwCtrl->setupMode();
+    hwCtrl->runMode();
 
     // Disable trigger in-case
     hwCtrl->setTrigEnable(0);
