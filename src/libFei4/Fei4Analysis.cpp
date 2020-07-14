@@ -64,6 +64,9 @@ void OccupancyAnalysis::init(ScanBase *s) {
                     l->type() != typeid(Rd53aMaskLoop*) &&
                     l->type() != typeid(Rd53aTriggerLoop*) &&
                     l->type() != typeid(Rd53aCoreColLoop*) &&
+                    l->type() != typeid(Rd53bMaskLoop*) &&
+                    l->type() != typeid(Rd53bTriggerLoop*) &&
+                    l->type() != typeid(Rd53bCoreColLoop*) &&
                     l->type() != typeid(Fe65p2MaskLoop*) &&
                     l->type() != typeid(Fe65p2TriggerLoop*) &&
                     l->type() != typeid(Fe65p2QcLoop*) &&
@@ -88,6 +91,10 @@ void OccupancyAnalysis::init(ScanBase *s) {
         }
         if (l->type() == typeid(Rd53aTriggerLoop*)) {
             Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
+        if (l->type() == typeid(Rd53bTriggerLoop*)) {
+            Rd53bTriggerLoop *trigLoop = (Rd53bTriggerLoop*) l.get();
             injections = trigLoop->getTrigCnt();
         }
     }
@@ -201,6 +208,11 @@ void TotAnalysis::init(ScanBase *s) {
 
         if (l->type() == typeid(Rd53aTriggerLoop*)) {
             Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
+        
+        if (l->type() == typeid(Rd53bTriggerLoop*)) {
+            Rd53bTriggerLoop *trigLoop = (Rd53bTriggerLoop*) l.get();
             injections = trigLoop->getTrigCnt();
         }
 
