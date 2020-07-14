@@ -145,7 +145,7 @@ int main (int argc, char *argv[]) {
     rd53b.setReg(0, 0, 1, 1, 1, 0); // Enable first pixel
     rd53b.setReg(0, 1, 1, 1, 1, 0); // Enable first pixel
     rd53b.setReg(0, 30, 1, 1, 1, 0); // Enable first pixel
-    rd53b.configurePixels();
+    //rd53b.configurePixels();
     while(!hwCtrl->isCmdEmpty());
 
     logger->info("... done!");

@@ -195,6 +195,7 @@ void Rd53bDataProcessor::process_core()
 			++_blockIdx; // Increase block index
 			_bitIdx = 9; // Reset bit index = NS + tag
 			curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
+            logger->info("New Stream, New Event: {} ", tag[channel]);
 			events[channel]++;
 
 			while (_blockIdx <= blocks)
@@ -213,6 +214,7 @@ void Rd53bDataProcessor::process_core()
 					++_blockIdx; // Increase block index
 					_bitIdx = 9; // Reset bit index = NS + tag
 					curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
+                    logger->info("Same Stream, New Event: {} ", tag[channel]);
 					events[channel]++;
 					continue;
 				}
@@ -221,6 +223,7 @@ void Rd53bDataProcessor::process_core()
 					tag[channel] = (ccol << 5) | retrieve(5);
 					// There is no L1ID and BCID in RD53B data stream. Has to come from somewhere else
 					curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
+                    logger->info("Same Stream, New Event: {} ", tag[channel]);
 					events[channel]++;
 					continue;
 				}
@@ -271,12 +274,13 @@ void Rd53bDataProcessor::process_core()
 						// For now fill in events without checking whether the addresses are valid
 						if (events[channel] == 0)
 						{
-							logger->debug("[{}] No header in data fragment!", channel);
+							logger->info("[{}] No header in data fragment!", channel);
 							curOut[channel]->newEvent(666, l1id[channel], bcid[channel]);
 							events[channel]++;
 						}
 
 						curOut[channel]->curEvent->addHit(pix_row, pix_col, pix_tot);
+                        logger->info("Hit: row({}) col({}) tot({}) ", pix_row, pix_col, pix_tot);
 						hits[channel]++;
 					}
 				} while (!(islast_isneighbor_qrow & 0x200));

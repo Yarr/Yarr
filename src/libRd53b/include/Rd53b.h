@@ -24,7 +24,7 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         Rd53b(HwController *arg_core, unsigned arg_txchannel, unsigned arg_rxchannel);
         
         void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override;
-        void makeGlobal() override {m_chipId = 8;}
+        void makeGlobal() override {m_chipId = 16;}
 
         void configure() override;
         void configureInit();

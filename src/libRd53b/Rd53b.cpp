@@ -59,7 +59,9 @@ void Rd53b::init(HwController *core, unsigned arg_txChannel, unsigned arg_rxChan
 }
 
 void Rd53b::configure() {
-
+    this->configureInit();
+    this->configureGlobal();
+    this->configurePixels();
 }
 
 void Rd53b::configureInit() {
@@ -83,7 +85,7 @@ void Rd53b::configureInit() {
     
     // Wait for at least 1000us before chip is release from reset
     logger->debug(" ... waiting for CMD reset to be released");
-    std::this_thread::sleep_for(std::chrono::microseconds(2000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
     // Sync CMD decoder
     logger->debug(" ... send syncs");
@@ -92,13 +94,6 @@ void Rd53b::configureInit() {
     core->releaseFifo();
     while(!core->isCmdEmpty());
 
-
-    // Send a clear cmd
-    logger->debug(" ... sending clear command");
-    this->sendClear(m_chipId);
-    while(!core->isCmdEmpty());
-
-    
     // Enable register writing to do more resetting
     logger->debug(" ... set global register in writeable mode");
     this->writeRegister(&Rd53b::GcrDefaultConfig, 0xAC75);
@@ -116,6 +111,7 @@ void Rd53b::configureInit() {
     // Reset register
     this->writeRegister(&Rd53b::GlobalPulseConf, 0);
 
+    /*
     // Reset Core
     logger->debug("Reset Cores!");
     for (unsigned i=0; i<16; i++) {
@@ -125,6 +121,7 @@ void Rd53b::configureInit() {
         this->writeRegister(&Rd53b::RstCoreCol3, 1<<i);
         this->sendClear(m_chipId);
         while(!core->isCmdEmpty()){;}
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
     logger->debug("Chip initialisation done!");
     this->writeRegister(&Rd53b::RstCoreCol0, 0);
@@ -132,6 +129,14 @@ void Rd53b::configureInit() {
     this->writeRegister(&Rd53b::RstCoreCol2, 0);
     this->writeRegister(&Rd53b::RstCoreCol3, 0);
     while(!core->isCmdEmpty()){;}
+    std::this_thread::sleep_for(std::chrono::microseconds(100));
+    */
+
+    // Send a clear cmd
+    logger->debug(" ... sending clear command");
+    this->sendClear(m_chipId);
+    while(!core->isCmdEmpty());
+    std::this_thread::sleep_for(std::chrono::microseconds(100));
 
     logger->debug("Chip initialisation done!");
 }

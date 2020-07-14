@@ -60,11 +60,11 @@ unsigned Rd53bPixelCfg::getEn(unsigned col, unsigned row) {
    return getBit(pixRegs[col/2][row], (col&0x1)*8 + 0);
 }
 
-unsigned Rd53bPixelCfg::getHitbus(unsigned col, unsigned row) {
+unsigned Rd53bPixelCfg::getInjEn(unsigned col, unsigned row) {
    return getBit(pixRegs[col/2][row], (col&0x1)*8 + 1);
 }
 
-unsigned Rd53bPixelCfg::getInjEn(unsigned col, unsigned row) {
+unsigned Rd53bPixelCfg::getHitbus(unsigned col, unsigned row) {
    return getBit(pixRegs[col/2][row], (col&0x1)*8 + 2);
 }
 

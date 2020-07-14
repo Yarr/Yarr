@@ -57,18 +57,20 @@ void Rd53bMaskLoop::execPart1() {
         
         for(unsigned col=0; col<Rd53b::n_Col; col++) {
             for(unsigned row=0; row<Rd53b::n_Row; row++) {
-                // Enable pixels of current mask stage
-                if (applyMask(col,row)){
-                    rd53b->setEn(col, row, 1); // TODO Make configurable
-                    rd53b->setInjEn(col, row, 1);
-                    modPixels.push_back(std::make_pair(col, row));
-                }
                 // Disable pixels of last mask stage
                 if (rd53b->getInjEn(col, row) == 1) {
+                    logger->debug("Disabling {};{}", col, row);
                     rd53b->setEn(col, row, 0); // TODO make configurable
                     rd53b->setInjEn(col, row, 0);
                     modPixels.push_back(std::make_pair(col, row));
                 }		
+                // Enable pixels of current mask stage
+                if (applyMask(col,row)){
+                    logger->debug("Enabling {};{}", col, row);
+                    rd53b->setEn(col, row, 1); // TODO Make configurable
+                    rd53b->setInjEn(col, row, 1);
+                    modPixels.push_back(std::make_pair(col, row));
+                }
             }
         }
         
