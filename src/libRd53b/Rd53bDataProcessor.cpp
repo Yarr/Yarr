@@ -34,6 +34,8 @@ Rd53bDataProcessor::Rd53bDataProcessor()
 	_blockIdx = 0; // Index of block, starting from 0
 	_bitIdx = 0;   // Index of bit within block, starting from 0
 	_data = nullptr;
+
+	_isCompressedHitmap = false;
 }
 
 Rd53bDataProcessor::~Rd53bDataProcessor()
@@ -243,9 +245,11 @@ void Rd53bDataProcessor::process_core()
 						qrow = islast_isneighbor_qrow & 0xFF;
 					}
 
+					uint16_t hitmap = retrieve(16);
+					if(_isCompressedHitmap){
 					// First read 16-bit, then see whether it is enough
-					const uint16_t hitmap_raw = retrieve(16);
-					uint16_t hitmap = (_LUT_BinaryTreeHitMap[hitmap_raw] & 0xFFFF);
+					const uint16_t hitmap_raw = hitmap;
+					hitmap = (_LUT_BinaryTreeHitMap[hitmap_raw] & 0xFFFF);
 					const uint8_t hitmap_rollBack = ((_LUT_BinaryTreeHitMap[hitmap_raw] & 0xFF000000) >> 24);
 
 					/* If the hit map is not fully covered yet */
@@ -263,7 +267,7 @@ void Rd53bDataProcessor::process_core()
 					{
 						rollBack((_LUT_BinaryTreeHitMap[hitmap_raw] & 0xFF0000) >> 16);
 					}
-
+					}
 					uint64_t ToT = retrieve(_LUT_PlainHMap_To_ColRow_ArrSize[hitmap] << 2);
 					for (unsigned ihit = 0; ihit < _LUT_PlainHMap_To_ColRow_ArrSize[hitmap]; ++ihit)
 					{

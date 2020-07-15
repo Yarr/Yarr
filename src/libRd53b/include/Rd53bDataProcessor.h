@@ -37,7 +37,7 @@ public:
 	unsigned _blockIdx;	   // Index of the data block
 	unsigned _bitIdx;	   // Index of the first bit in datablock which is not processed yet. It starts from 0. The first half thus ends at 31, and the 2nd starts at 32
 	std::unique_ptr<RawData> _curIn;
-
+        void setCompressedHitmap(bool flag){_isCompressedHitmap = flag;}
 private:
 	std::vector<std::unique_ptr<std::thread>> thread_ptrs;
 	ClipBoard<RawDataContainer> *m_input;
@@ -50,6 +50,7 @@ private:
 	std::map<unsigned, unsigned> wordCount;
 	std::map<unsigned, int> hits;
 
+        bool _isCompressedHitmap; // Flag for toggle hitmap type, true for compressed, false for raw
 	// Inline functions frequently used
 	inline uint64_t retrieve(const unsigned length, const bool checkEOS = false);	// Retrieve bit string with length
 	inline void rollBack(const unsigned length);									// Roll back bit index
