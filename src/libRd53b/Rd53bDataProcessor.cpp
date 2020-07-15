@@ -35,7 +35,7 @@ Rd53bDataProcessor::Rd53bDataProcessor()
 	_bitIdx = 0;   // Index of bit within block, starting from 0
 	_data = nullptr;
 
-	_isCompressedHitmap = false;
+	_isCompressedHitmap = true; // True by default
 }
 
 Rd53bDataProcessor::~Rd53bDataProcessor()
