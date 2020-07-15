@@ -128,7 +128,7 @@ void startNewStream(Rd53bDataProcessor *p, Rd53bDecodeHelper *h, unsigned &nEven
 
 	h->block((uint64_t(p->_data[0]) << 32) | p->_data[1]);
 	h->fill(std::bitset<1>(p->_data[0] >> 31).to_string(), "", "NS", true);
-	h->fill(std::bitset<8>(tag).to_string(), "", "Tag");
+	h->fill(std::bitset<8>(tag).to_string(), std::to_string(tag), "Tag");
 	nEvents++;
 }
 
