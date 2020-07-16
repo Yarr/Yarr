@@ -18,7 +18,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(YARR_FRONT_ENDS_TO_BUILD "Fei4;Rd53a;Star;Fe65p2"
     CACHE STRING "Semicolon-separated list of front-ends to build, or \"all\".")
 
-set(YARR_CONTROLLERS_TO_BUILD "Spec;Emu;Bdaq"
+set(YARR_CONTROLLERS_TO_BUILD "Spec;Emu"
     CACHE STRING "Semicolon-separated list of controllers to build, or \"all\".")
 
 # Default to allowing debug macros (spdlog default is info)
