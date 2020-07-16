@@ -35,7 +35,7 @@ struct daqVersion {
 
 class Bdaq53 {
 	public:
-        const std::string VERSION = "0.11"; // Must match FW version.
+        const std::string VERSION = "0.15"; // Must match FW version.
 
         BdaqRBCP rbcp;
         Bdaq_i2c i2c;
