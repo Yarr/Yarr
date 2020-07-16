@@ -15,7 +15,7 @@ namespace {
   auto logger = logging::make_log("Rd53aPixelFeedback");
 }
 
-Rd53aPixelFeedback::Rd53aPixelFeedback() {
+Rd53aPixelFeedback::Rd53aPixelFeedback() : LoopActionBase(LOOP_STYLE_PIXEL_FEEDBACK) {
     min = -15;
     max = 15;
     step = 1;
