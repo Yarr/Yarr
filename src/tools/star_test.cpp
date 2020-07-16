@@ -6,51 +6,7 @@
 #include "StarChips.h"
 #include "LCBUtils.h"
 
-int main(int argc, char *argv[]) {
-    std::string controller;
-    std::string controllerType;
-
-    if (argc > 1)
-      controller = argv[1];
-
-    std::unique_ptr<HwController> hwCtrl = nullptr;
-    if(controller.empty()) {
-	controllerType = "spec";
-        hwCtrl = StdDict::getHwController(controllerType);
-        // hwCtrl->init(0);
-    } else {
-        json ctrlCfg;
-        std::ifstream controllerFile(controller);
-        try {
-            ctrlCfg = json::parse(controllerFile);
-        } catch (json::parse_error &e) {
-            std::cerr << "#ERROR# Could not parse config: " << e.what() << std::endl;
-            return 1;
-        }
-	controllerType = ctrlCfg["ctrlCfg"]["type"];
-        hwCtrl = StdDict::getHwController(controllerType);
-        hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
-    }
-
-    HwController &spec = *hwCtrl;
-    spec.toggleTrigAbort();
-    spec.setTrigEnable(0);
-
-    // In fact, mostly needed only for a specific test version of Spec FW
-    bool do_spec_specific = controllerType == "spec";
-
-    if(do_spec_specific) {
-      //Send IO config to active FMC
-      SpecController &s = *dynamic_cast<SpecController*>(&*hwCtrl);
-      s.writeSingle(0x6<<14 | 0x0, 0x9ce730);
-      s.writeSingle(0x6<<14 | 0x1, 0xF);
-    }
-    spec.setCmdEnable(0xFFFF); // LCB Port D
-    // First disable all input
-    spec.disableRx();
-
-    StarChips star(&spec);
-
+void sendCommands(StarChips &star, HwController &spec, std::string controllerType) {
     uint32_t regNum = 41;
     // Default (power-on) value
     uint32_t regVal = 0x00020001;
@@ -124,6 +80,54 @@ int main(int argc, char *argv[]) {
     }
 
     spec.releaseFifo();
+}
+
+int main(int argc, char *argv[]) {
+    std::string controller;
+    std::string controllerType;
+
+    if (argc > 1)
+      controller = argv[1];
+
+    std::unique_ptr<HwController> hwCtrl = nullptr;
+    if(controller.empty()) {
+	controllerType = "spec";
+        hwCtrl = StdDict::getHwController(controllerType);
+        // hwCtrl->init(0);
+    } else {
+        json ctrlCfg;
+        std::ifstream controllerFile(controller);
+        try {
+            ctrlCfg = json::parse(controllerFile);
+        } catch (json::parse_error &e) {
+            std::cerr << "#ERROR# Could not parse config: " << e.what() << std::endl;
+            return 1;
+        }
+	controllerType = ctrlCfg["ctrlCfg"]["type"];
+        hwCtrl = StdDict::getHwController(controllerType);
+        hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
+    }
+
+    HwController &spec = *hwCtrl;
+    spec.toggleTrigAbort();
+    spec.setTrigEnable(0);
+
+    // In fact, mostly needed only for a specific test version of Spec FW
+    bool do_spec_specific = controllerType == "spec";
+
+    if(do_spec_specific) {
+      //Send IO config to active FMC
+      SpecController &s = *dynamic_cast<SpecController*>(&*hwCtrl);
+      s.writeSingle(0x6<<14 | 0x0, 0x9ce730);
+      s.writeSingle(0x6<<14 | 0x1, 0xF);
+    }
+    spec.setCmdEnable(0xFFFF); // LCB Port D
+    // First disable all input
+    spec.disableRx();
+
+    StarChips star(&spec);
+
+    sendCommands(star, spec, controllerType);
 
     if(do_spec_specific) {
       spec.setRxEnable(0x40); // Input from Channel 6 on Spec board
