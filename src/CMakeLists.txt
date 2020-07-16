@@ -106,6 +106,10 @@ if ("NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/netio4)
 endif()
 
+if ("Bdaq" IN_LIST YARR_CONTROLLERS_TO_BUILD )
+  set(YARR_LIB_DEPS ${YARR_LIB_DEPS} boost_system)
+endif()
+
 #add executables
 file(GLOB tools
      CONFIGURE_DEPENDS
@@ -127,12 +131,12 @@ endforeach()
 #if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 if(APPLE)
   set(YARR_LINK_LIB_COMMAND 
-      -Wl,-all_load Yarr -Wl, ${YARR_LIB_DEPS} pthread boost_system)
+      -Wl,-all_load Yarr -Wl, ${YARR_LIB_DEPS} pthread)
 else()
   # Whole-archive means not to drop symbols from Yarr.
   # We're not sure why tbb needs same treatment...
   set(YARR_LINK_LIB_COMMAND
-      -Wl,--whole-archive Yarr ${TBB_DEPS} -Wl,--no-whole-archive ${YARR_LIB_DEPS} ${TBB_DEPS} pthread rt boost_system)
+      -Wl,--whole-archive Yarr ${TBB_DEPS} -Wl,--no-whole-archive ${YARR_LIB_DEPS} ${TBB_DEPS} pthread rt)
 endif()
 # (Not sure why rt is not linked by default here)
 
