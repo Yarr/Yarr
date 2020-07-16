@@ -30,6 +30,13 @@ void ItsdaqRxCore::init() {
   const uint16_t SEND_TO_ME = 0x00f2;
   std::array<uint16_t, 2> noContents{0, 0};
   m_h.SendOpcode(SEND_TO_ME, noContents.data(), 2);
+
+  const uint16_t READ_REG_BLOCK = 0x0015;
+  logger->trace("Read reg block");
+  m_h.SendOpcode(READ_REG_BLOCK, noContents.data(), 0);
+  const uint16_t READ_STATUS_BLOCK = 0x0019;
+  logger->trace("Read status block");
+  m_h.SendOpcode(READ_STATUS_BLOCK, noContents.data(), 0);
 }
 
 void ItsdaqRxCore::setRxEnable(uint32_t stream) {
