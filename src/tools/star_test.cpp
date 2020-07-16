@@ -158,7 +158,12 @@ int main(int argc, char *argv[]) {
       spec.setRxEnable(0x40); // Input from Channel 6 on Spec board
     }
 
+    std::unique_ptr<uint32_t[]> tidy_up;
     std::unique_ptr<RawData> data(spec.readData());
+    if(data) {
+      std::cout << "Use data: " << (void*)data->buf << " (init)\n";
+      tidy_up.reset(data->buf);
+    }
 
     bool nodata = true;
 
@@ -170,6 +175,10 @@ int main(int argc, char *argv[]) {
         reportData(*data, controllerType);
 
         data.reset(spec.readData());
+        if(data) {
+          std::cout << "Use data: " << (void*)data->buf << " (main)\n";
+          tidy_up.reset(data->buf);
+        }
       }
 
       // wait a while if no data
@@ -181,6 +190,10 @@ int main(int argc, char *argv[]) {
         std::this_thread::sleep_for( SLEEP_TIME );
 
         data.reset(spec.readData());
+        if(data) {
+          std::cout << "Use data: " << (void*)data->buf << " (while)\n";
+          tidy_up.reset(data->buf);
+        }
       }
 
       if (data == nullptr) break;
