@@ -30,8 +30,8 @@ public:
     };
     
     /** These are ring buffers are owned by EmuController */
-    StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path,
-            unsigned);
+    StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string& json_emu_file_path,
+            std::string& json_chip_file_path, unsigned);
     ~StarEmu();
 
     // the main loop which recieves commands from yarr
@@ -81,7 +81,6 @@ private:
     void resetABCRegisters();
     void resetABCSEU();
     void resetABCHitCounts();
-    void resetABCTrimDAC();
     void resetSlowCommand();
     void resetHCCRegisters();
     void resetHCCSEU();
