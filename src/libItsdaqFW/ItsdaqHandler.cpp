@@ -92,11 +92,17 @@ ItsdaqPrivate::~ItsdaqPrivate() {
 
   logger->debug("Flush receiver queue...");
   // Delete anything not read
+  int count = 0;
   while(!rawData.empty()) {
     auto data = rawData.popData();
+    count ++;
     delete [] data->buf;
   }
-  logger->debug(" ...done");
+  if(count) {
+    logger->debug(" ...done ({} stray data blocks)", count);
+  } else {
+    logger->debug(" ...done");
+  }
 }
 
 void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
