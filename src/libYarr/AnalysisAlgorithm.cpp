@@ -52,7 +52,6 @@ void AnalysisProcessor::join() {
 void AnalysisProcessor::process() {
     while( true ) {
 
-        std::unique_lock<std::mutex> lk(mtx);
         input->waitNotEmptyOrDone();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(200));

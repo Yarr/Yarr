@@ -53,7 +53,6 @@ void Rd53aDataProcessor::join() {
 
 void Rd53aDataProcessor::process() {
     while(true) {
-        std::unique_lock<std::mutex> lk(mtx);
         m_input->waitNotEmptyOrDone();
 
         process_core();
