@@ -22,6 +22,7 @@ class RxCore {
         virtual void setRxEnable(std::vector<uint32_t>) = 0;
         virtual void maskRxEnable(uint32_t val, uint32_t mask) = 0;
         virtual void disableRx() = 0;
+        virtual void checkRxSync() {}
 
         virtual RawData* readData() = 0;
         virtual void flushBuffer() {}
@@ -30,10 +31,10 @@ class RxCore {
         virtual uint32_t getCurCount() {return 0;};
         virtual bool isBridgeEmpty() = 0;
 
-        std::chrono::microseconds getWaitTime() {
+        virtual std::chrono::microseconds getWaitTime() {
             return m_waitTime;
         }
-
+        
     protected:
         RxCore();
         ~RxCore();

@@ -425,6 +425,7 @@ int main(int argc, char *argv[]) {
     
     // Wait for rx to sync with FE stream
     // TODO Check RX sync
+    hwCtrl->checkRxSync(); // As it is implemented in BDAQ, I added it here. Should be harmless to other HWs.
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
     hwCtrl->flushBuffer();
     for ( FrontEnd* fe : bookie.feList ) {

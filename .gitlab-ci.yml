@@ -3,6 +3,7 @@ image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_build
 job_build_and_test:
     stage: build
     script:
+      - yum -y install boost-devel
       - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
       - cd build
@@ -32,6 +33,7 @@ job_build_all:
           - bin
           - build
     script:
+      - yum -y install boost-devel
       - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
       - cd build
@@ -42,6 +44,7 @@ job_build_all:
 job_build_clang:
     stage: build
     script:
+      - yum -y install boost-devel
       - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - source scl_source enable llvm-toolset-6.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir -p build
