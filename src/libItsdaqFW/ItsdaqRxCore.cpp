@@ -23,11 +23,20 @@ ItsdaqRxCore::~ItsdaqRxCore(){
 void ItsdaqRxCore::init() {
   bridge_watcher = std::chrono::steady_clock::now();
 
+  // Shutdown stream output if not done by previous run
+  disableRx();
+
   // Make TS pass more quickly to encourage packets to appear
   std::array<uint16_t, 2> wrReg{32, 0xc};
+  logger->trace("Setting short FW packet timeout");
+  m_h.SendOpcode(0x10, wrReg.data(), 2);
+
+  wrReg = {11, 13};
+  logger->trace("Set up ophase");
   m_h.SendOpcode(0x10, wrReg.data(), 2);
 
   const uint16_t SEND_TO_ME = 0x00f2;
+  logger->trace("Send data on this socket");
   std::array<uint16_t, 2> noContents{0, 0};
   m_h.SendOpcode(SEND_TO_ME, noContents.data(), 2);
 
