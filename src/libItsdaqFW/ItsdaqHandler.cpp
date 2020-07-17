@@ -271,6 +271,11 @@ void ItsdaqPrivate::ReceiverMain() {
         continue;
       }
 
+      if((opcode & 0xf000) != 0xd000) {
+        logger->info("Ignore unknown opcode {:x}", opcode);
+        continue;
+      }
+
       // Don't pass CRC word
       QueueData(buf16 + offset, (output_bytes/2) - (offset+1));
 
