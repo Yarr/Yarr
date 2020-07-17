@@ -7,6 +7,7 @@
 #include "LCBUtils.h"
 #include "LoggingConfig.h"
 #include "ScanHelper.h"
+#include "StarChipPacket.h"
 #include "logging.h"
 
 void sendCommands(StarChips &star, HwController &spec, std::string controllerType) {
@@ -107,6 +108,25 @@ void reportData(RawData &data, std::string controllerType) {
     }
 
     std::cout << "[" << j << "] = 0x" << std::hex << word << std::dec << " " << std::bitset<32>(word) << std::endl;
+  }
+
+  StarChipPacket packet;
+  packet.add_word(0x13C); //add SOP
+  for(unsigned iw=0; iw<data.words; iw++) {
+    for(int i=0; i<4;i++){
+      packet.add_word((data.buf[iw]>>i*8)&0xFF);
+    }
+  }
+  packet.add_word(0x1DC); //add EOP
+  if(packet.parse()) {
+    std::cout << "Parse error\n";
+  } else {
+    auto packetType = packet.getType();
+    if(packetType == TYP_LP || packetType == TYP_PR) {
+      packet.print_clusters(std::cout);
+    } else if(packetType == TYP_ABC_RR || packetType == TYP_HCC_RR || packetType == TYP_ABC_HPR || packetType == TYP_HCC_HPR) {
+      packet.print_more(std::cout);
+    }
   }
 }
 
