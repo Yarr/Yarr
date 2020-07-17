@@ -3,7 +3,9 @@
 
 #include "TxCore.h"
 
+#include <atomic>
 #include <cstdint>
+#include <thread>
 #include <vector>
 
 #include "storage.hpp"
@@ -46,9 +48,20 @@ class ItsdaqTxCore : virtual public TxCore {
   void toFileJson(json& j);
 
 private:
+  // Run n triggers in the background
+  void doTriggerCnt();
+
+  // Run triggers for some time
+  void doTriggerTime();
+
+  // Send triggerFifo
+  void trigger();
+
+  std::thread m_trigProc;                    //! trigger processor
+
   enum TRIG_CONF_VALUE m_trigCfg;            //! trigger config
 
-  bool m_trigEnabled;                        //! trigger is enabled */
+  std::atomic<bool> m_trigEnabled;           //! trigger is enabled */
   uint32_t m_trigMode;                       //! trigger mode
   uint32_t m_trigCnt;                        //! number of triggers
   uint32_t m_trigTime;                       //! trigger time

@@ -20,25 +20,14 @@ enum class OPCODE : uint16_t {
 ItsdaqTxCore::ItsdaqTxCore(ItsdaqHandler &h)
   : m_h(h)
 {
-#if 0
-  //m_enableMask = 0;
+  m_trigWordLength = 0;
   m_trigEnabled = false;
-  m_trigWordLength = 4;
   m_trigCnt = 0;
   m_trigFreq = 1;
-
-  m_verbose = false;
-  m_debug = false;
-#endif
 }
 
 ItsdaqTxCore::~ItsdaqTxCore(){
-#if 0
   if(m_trigProc.joinable()) m_trigProc.join();
-  if(m_socket->is_open()) m_socket->disconnect();
-  delete m_socket;
-  delete m_context;
-#endif
 }
 
 // Activate single channel
@@ -95,10 +84,9 @@ void ItsdaqTxCore::releaseFifo(){
   m_buffer.clear();
 }
 
-#if 0
 void ItsdaqTxCore::trigger(){
+  logger->info("Send trigger pattern not implemented yet");
 }
-#endif
 
 bool ItsdaqTxCore::isCmdEmpty() {
   return m_buffer.empty();
@@ -106,27 +94,27 @@ bool ItsdaqTxCore::isCmdEmpty() {
 
 void ItsdaqTxCore::setTrigEnable(uint32_t value){
   if(value == 0) {
-    // if(m_trigProc.joinable()) m_trigProc.join();
+    if(m_trigProc.joinable()) 
+      m_trigProc.join();
     m_trigEnabled = false;
   } else {
     m_trigEnabled = true;
-  //   switch (m_trigCfg) {
-  //   case INT_TIME:
-  //   case EXT_TRIGGER:
-  //     m_trigProc = std::thread(&ItsdaqTxCore::doTriggerTime, this);
-  //     break;
-  //   case INT_COUNT:
-  //     m_trigProc = std::thread(&ItsdaqTxCore::doTriggerCnt, this);
-  //     break;
-  //   default:
-  //     // Should not occur, else stuck
-  //     break;
-  //   }
+    switch (m_trigCfg) {
+    case INT_TIME:
+    case EXT_TRIGGER:
+      logger->debug("Starting trigger by time");
+      m_trigProc = std::thread(&ItsdaqTxCore::doTriggerTime, this);
+      break;
+    case INT_COUNT:
+      logger->debug("Starting trigger by count");
+      m_trigProc = std::thread(&ItsdaqTxCore::doTriggerCnt, this);
+      break;
+    default:
+      // Should not occur, else stuck
+      break;
+    }
   }
-
-  //  m_trigEnabled = true;
 }
-// #endif
 
 uint32_t ItsdaqTxCore::getTrigEnable(){
   return m_trigEnabled;
@@ -187,30 +175,20 @@ uint32_t ItsdaqTxCore::getTrigInCount(){
   return 0;
 }
 
-#if 0
 void ItsdaqTxCore::doTriggerCnt() {
-  prepareTrigger();
-
   uint32_t trigs=0;
   for(uint32_t i=0; i<m_trigCnt; i++) {
     if(m_trigEnabled==false) break;
     trigs++;
+    logger->trace("Send trigger count {}", trigs);
     trigger();
     std::this_thread::sleep_for(std::chrono::microseconds((int)(1e6/m_trigFreq))); // Frequency in Hz
   }
   m_trigEnabled = false;
-  if(m_verbose) cout << "finished trigger count" << endl;
-  if(m_debug){
-    cout << endl
-         << "============> Finish trigger with n counts: " << trigs << endl
-         << endl;
-  }
+  logger->debug("Finished trigger count {}", trigs);
 }
 
 void ItsdaqTxCore::doTriggerTime() {
-  //PrepareTrigger
-  prepareTrigger();
-
   std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
   std::chrono::steady_clock::time_point cur = start;
   uint32_t trigs=0;
@@ -222,22 +200,8 @@ void ItsdaqTxCore::doTriggerTime() {
     cur = std::chrono::steady_clock::now();
   }
   m_trigEnabled = false;
-  if(m_verbose) cout << "finished trigger time" << endl;
-  if(m_debug){
-    cout << endl
-         << "============> Finish trigger with n counts: " << trigs << endl
-         << endl;
-  }
+  logger->debug("Finished trigger counts {}", trigs);
 }
-
-void ItsdaqTxCore::printFifo(uint32_t elink){
-  cout << "FIFO[" << elink << "][" << m_fifo[elink].size()-1 << "]: " << hex;
-  for(uint32_t i=1; i<m_fifo[elink].size(); i++){
-    std::cout << setfill('0') << setw(2) << (m_fifo[elink][i]&0xFF);
-  }
-  std:cout << dec << endl;
-}
-#endif
 
 void ItsdaqTxCore::toFileJson(json &j)  {
 }
