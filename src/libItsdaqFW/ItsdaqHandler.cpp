@@ -153,13 +153,48 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
     size_t len64 = i-startOffset;
     size_t len32 = len64 * 2;
     uint32_t *buf = new uint32_t[len32];
+    buf[0] = 0;
+    size_t buf_off = 0;
     for(int o=0; o<len64; o++) {
       auto word = get64(o+startOffset);
-      buf[o*2] = (word >> 32) & 0xffffffff;
-      buf[o*2+1] = word & 0xffffffff;
+      // 0-6 bits indicate cntrl (3c, dc, 0 are SOP, EOP, IDLE)
+      uint8_t map = word >> 56;
+      // logger->trace("QueueData {}: {:016x} {:07b}", o, word, map);
+      for(int m=6; m>=0; m--) {
+        uint8_t byte = word >> (m*8);
+        if(map & (1<<m)) {
+          // Control byte
+          if(byte == 0xdc) {
+            size_t n_words = (buf_off+3)/4;
+            rawData.pushData(std::make_unique<RawData>(stream,
+                                                       buf, n_words));
+            logger->trace("QueueData: {} words (to {}) {}", n_words, i,
+                          (void*)buf);
+            buf_off = 0;
+            buf = new uint32_t[len32];
+            buf[0] = 0;
+          } else if(!((byte == 0x3c) || (byte == 0xdc) || (byte == 0))) {
+            logger->warn("QueueData {}.{}: Bad control {:02x}",
+                         o, m, byte);
+          }
+        } else {
+          buf[buf_off/4] |= byte << ((buf_off%4) * 8);
+          // logger->trace("QueueData {}.{}: {} {:08x}", o, m,
+          //               buf_off, buf[buf_off/4]);
+          buf_off ++;
+          if((buf_off%4) == 0) {
+            buf[buf_off/4] = 0;
+          }
+        }
+      }
     }
-    rawData.pushData(std::make_unique<RawData>(stream, buf, len32));
-    logger->debug("QueueData: {} words ({} to {})", len64, startOffset, i);
+    if(buf_off > 0) {
+      size_t n_words = (buf_off+3)/4;
+      rawData.pushData(std::make_unique<RawData>(stream, buf, n_words));
+      logger->warn("QueueData: Extra (no EOP) {} words ({} from {} to {})", n_words, buf_off, startOffset, i);
+    } else {
+      delete [] buf;
+    }
 
     startOffset = i;
   }
