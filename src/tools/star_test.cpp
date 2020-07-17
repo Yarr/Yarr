@@ -5,6 +5,9 @@
 #include "AllHwControllers.h"
 #include "StarChips.h"
 #include "LCBUtils.h"
+#include "LoggingConfig.h"
+#include "ScanHelper.h"
+#include "logging.h"
 
 void sendCommands(StarChips &star, HwController &spec, std::string controllerType) {
     uint32_t regNum = 41;
@@ -110,6 +113,11 @@ void reportData(RawData &data, std::string controllerType) {
 int main(int argc, char *argv[]) {
     std::string controller;
     std::string controllerType;
+
+    {
+      auto j = ScanHelper::openJsonFile("configs/logging/trace_all.json");
+      logging::setupLoggers(j);
+    }
 
     if (argc > 1)
       controller = argv[1];
