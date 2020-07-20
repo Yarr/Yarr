@@ -111,26 +111,30 @@ void Rd53b::configureInit() {
     // Reset register
     this->writeRegister(&Rd53b::GlobalPulseConf, 0);
 
-    /*
+    
     // Reset Core
+    
     logger->debug("Reset Cores!");
     for (unsigned i=0; i<16; i++) {
         this->writeRegister(&Rd53b::RstCoreCol0, 1<<i);
         this->writeRegister(&Rd53b::RstCoreCol1, 1<<i);
         this->writeRegister(&Rd53b::RstCoreCol2, 1<<i);
         this->writeRegister(&Rd53b::RstCoreCol3, 1<<i);
+        while(!core->isCmdEmpty()){;}
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
         this->sendClear(m_chipId);
         while(!core->isCmdEmpty()){;}
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
     logger->debug("Chip initialisation done!");
+    
     this->writeRegister(&Rd53b::RstCoreCol0, 0);
     this->writeRegister(&Rd53b::RstCoreCol1, 0);
     this->writeRegister(&Rd53b::RstCoreCol2, 0);
     this->writeRegister(&Rd53b::RstCoreCol3, 0);
     while(!core->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::microseconds(100));
-    */
+    
 
     // Send a clear cmd
     logger->debug(" ... sending clear command");
@@ -155,13 +159,15 @@ void Rd53b::configurePixels() {
     logger->debug("Configure all pixel registers ...");
     // Setup pixel programming
     this->writeRegister(&Rd53b::PixAutoRow, 1);
-
+    this->writeRegister(&Rd53b::PixBroadcast, 0);
     // Writing two columns and six rows at the same time
     for (unsigned dc=0; dc<n_DC; dc++) {
         this->writeRegister(&Rd53b::PixRegionCol, dc);
-        this->writeRegister(&Rd53b::PixRegionRow, 0); 
-        for (unsigned row=0; row<n_Row; row+=1) {
+        this->writeRegister(&Rd53b::PixRegionRow, 0);
+        for (unsigned row=0; row<n_Row; row++) {
             this->writeRegister(&Rd53b::PixPortal, pixRegs[dc][row]);
+            if (row%32==0)
+                while(!core->isCmdEmpty()){;}
         }
         while(!core->isCmdEmpty()){;}
     }
@@ -172,15 +178,17 @@ void Rd53b::configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels) 
     // Writing two columns and six rows at the same time
     unsigned old_dc = 99999;
     unsigned write_counter = 0;
+    this->writeRegister(&Rd53b::PixAutoRow, 0);
+    this->writeRegister(&Rd53b::PixBroadcast, 0);
     for (auto &pixel: pixels) {
         if (old_dc != pixel.first/2) {
-            this->writeRegister(&Rd53b::PixRegionCol, pixel.first/2);
+            this->writeRegister(&Rd53b::PixRegionCol, pixel.first>>1);
             old_dc = pixel.first/2;
         }
         this->writeRegister(&Rd53b::PixRegionRow, pixel.second); 
-        this->writeRegister(&Rd53b::PixPortal, pixRegs[pixel.first/2][pixel.second]);
+        this->writeRegister(&Rd53b::PixPortal, pixRegs[pixel.first>>1][pixel.second]);
         write_counter++;
-        if (write_counter > 50) {
+        if (write_counter >= 20) {
             while(!core->isCmdEmpty()){;}
             write_counter = 0;
         }
