@@ -35,7 +35,7 @@ Rd53bDataProcessor::Rd53bDataProcessor()
 	_bitIdx = 0;   // Index of bit within block, starting from 0
 	_data = nullptr;
 
-	_isCompressedHitmap = false; // True by default
+	_isCompressedHitmap = true; // True by default
 }
 
 Rd53bDataProcessor::~Rd53bDataProcessor()
@@ -273,8 +273,9 @@ void Rd53bDataProcessor::process_core()
 					{
 						const uint8_t pix_tot = (ToT >> (ihit << 2)) & 0xF;
                         //logger->info("Hit: ccol({}) qrow({})) ", ccol, qrow);
-						const uint16_t pix_col = ((ccol - 1) * 8) + (_LUT_PlainHMap_To_ColRow[hitmap][ihit] >> 4);
-						const uint16_t pix_row = ((qrow) * 2) + (_LUT_PlainHMap_To_ColRow[hitmap][ihit] & 0xF);
+                        // First pixel is 1,1, last pixel is 400,384
+						const uint16_t pix_col = ((ccol - 1) * 8) + (_LUT_PlainHMap_To_ColRow[hitmap][ihit] >> 4) + 1;
+						const uint16_t pix_row = ((qrow) * 2) + (_LUT_PlainHMap_To_ColRow[hitmap][ihit] & 0xF) + 1;
 
 						// For now fill in events without checking whether the addresses are valid
 						if (events[channel] == 0)
