@@ -153,7 +153,7 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
     startOffset ++;
     size_t len64 = i-startOffset;
     size_t len32 = len64 * 2;
-    uint32_t *buf = new uint32_t[len32];
+    std::unique_ptr<uint32_t[]> buf(new uint32_t[len32]);
     buf[0] = 0;
     size_t buf_off = 0;
     for(int o=0; o<len64; o++) {
@@ -168,11 +168,11 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
           if(byte == 0xdc) {
             size_t n_words = (buf_off+3)/4;
             rawData.pushData(std::make_unique<RawData>(stream,
-                                                       buf, n_words));
+                                                       buf.release(), n_words));
             logger->trace("QueueData: {} words (to {}) {}", n_words, i,
-                          (void*)buf);
+                          (void*)(buf.get()));
             buf_off = 0;
-            buf = new uint32_t[len32];
+            buf.reset(new uint32_t[len32]);
             buf[0] = 0;
           } else if(!((byte == 0x3c) || (byte == 0xdc) || (byte == 0))) {
             logger->warn("QueueData {}.{}: Bad control {:02x}",
@@ -191,10 +191,8 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
     }
     if(buf_off > 0) {
       size_t n_words = (buf_off+3)/4;
-      rawData.pushData(std::make_unique<RawData>(stream, buf, n_words));
-      logger->warn("QueueData: Extra (no EOP) {} words ({} from {} to {})", n_words, buf_off, startOffset, i);
-    } else {
-      delete [] buf;
+      logger->warn("QueueData: Extra (no EOP) {} words ({} from {} to {}) (ptr {})", n_words, buf_off, startOffset, i, (void*)(buf.get()));
+      rawData.pushData(std::make_unique<RawData>(stream, buf.release(), n_words));
     }
 
     startOffset = i;
