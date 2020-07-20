@@ -8,9 +8,9 @@
         }
       },
       "1": {
-        "algorithm": "L1Analysis"
+        "algorithm": "TagAnalysis"
       },
-      "n_count": 1
+      "n_count": 2
     },
     "histogrammer": {
       "0": {
@@ -26,7 +26,7 @@
         "config": {}
       },
       "3": {
-        "algorithm": "L1Dist",
+        "algorithm": "TagDist",
         "config": {}
       },
       "4": {
@@ -37,7 +37,7 @@
         "algorithm": "DataArchiver",
         "config": {}
       },
-      "n_count": 5
+      "n_count": 4
     },
     "loops": [
       {
