@@ -75,7 +75,7 @@ void Rd53bTriggerLoop::setTrigDelay(uint32_t delay) {
 
 void Rd53bTriggerLoop::setEdgeMode(uint32_t duration) {
     // Assumes CAL command to be in index 31/30
-    std::array<uint16_t, 3> calWords = Rd53b::genCal(16, 1, 0, 40, 0, 0);
+    std::array<uint16_t, 3> calWords = Rd53b::genCal(16, 1, 0, 20, 0, 0);
     m_trigWord[31] = 0xAAAA0000 | calWords[0];
     m_trigWord[30] = ((uint32_t)calWords[1]<<16) | calWords[2];
 }
@@ -121,10 +121,11 @@ void Rd53bTriggerLoop::execPart1() {
     g_tx->setCmdEnable(keeper->getTxMask());
     auto rd53b = dynamic_cast<Rd53b*>(g_fe);
     //rd53b->sendClear(16);
-    //while(!g_tx->isCmdEmpty());
+    while(!g_tx->isCmdEmpty());
     //std::this_thread::sleep_for(std::chrono::microseconds(200));
     g_rx->flushBuffer();
     std::this_thread::sleep_for(std::chrono::microseconds(10));
+    //std::this_thread::sleep_for(std::chrono::milliseconds(10));
     g_tx->setTrigEnable(0x1);
 
 }
