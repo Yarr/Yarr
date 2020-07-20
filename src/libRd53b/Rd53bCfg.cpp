@@ -11,7 +11,7 @@
 #include <cmath>
 
 Rd53bCfg::Rd53bCfg() :
-    m_chipId(0),
+    m_chipId(15),
     m_vcalPar({{-1.0, 0.215}})
 {}
 
