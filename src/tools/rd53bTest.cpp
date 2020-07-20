@@ -47,7 +47,7 @@ int main (int argc, char *argv[]) {
     json j; // empty
     j["pattern"] = defaultLogPattern;
     j["log_config"][0]["name"] = "all";
-    j["log_config"][0]["level"] = "trace";
+    j["log_config"][0]["level"] = "info";
     logging::setupLoggers(j);
  
     logger->info("\033[1;31m###################\033[0m");
@@ -145,7 +145,7 @@ int main (int argc, char *argv[]) {
     rd53b.setReg(0, 0, 1, 1, 1, 0); // Enable first pixel
     rd53b.setReg(0, 1, 1, 1, 1, 0); // Enable first pixel
     rd53b.setReg(0, 30, 1, 1, 1, 0); // Enable first pixel
-    //rd53b.configurePixels();
+    rd53b.configurePixels();
     while(!hwCtrl->isCmdEmpty());
 
     logger->info("... done!");
