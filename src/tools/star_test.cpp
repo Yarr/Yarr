@@ -107,7 +107,7 @@ void reportData(RawData &data, std::string controllerType) {
       word &= 0xffffc3ff; // Strip of channel number
     }
 
-    std::cout << "[" << j << "] = 0x" << std::hex << word << std::dec << " " << std::bitset<32>(word) << std::endl;
+    std::cout << "[" << j << "] = " << std::setfill('0') << std::hex << std::setw(8) << word << std::dec << " " << std::bitset<32>(word) << std::endl;
   }
 
   StarChipPacket packet;
