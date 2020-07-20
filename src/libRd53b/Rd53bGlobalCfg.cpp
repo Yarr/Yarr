@@ -70,7 +70,7 @@ void Rd53bGlobalCfg::init() {
     PixRegionRow.init       (  2, &m_cfg[  2], 0, 16, 0); regMap["PixRegionRow"] = &Rd53bGlobalCfg::PixRegionRow;
     //3
     PixBroadcast.init       (  3, &m_cfg[  3], 2, 1, 0); regMap["PixBroadcast"] = &Rd53bGlobalCfg::PixBroadcast;
-    PixConfWrConfig.init    (  3, &m_cfg[  3], 1, 1, 1); regMap["PixConfWrConfig"] = &Rd53bGlobalCfg::PixConfWrConfig;
+    PixConfMode.init        (  3, &m_cfg[  3], 1, 1, 1); regMap["PixConfMode"] = &Rd53bGlobalCfg::PixConfMode;
     PixAutoRow.init         (  3, &m_cfg[  3], 0, 1, 0); regMap["PixAutoRow"] = &Rd53bGlobalCfg::PixAutoRow;
     //4
     PixDefaultConfig.init   (  4, &m_cfg[  4], 0, 16, 0x9CE2); regMap["PixDefaultConfig"] = &Rd53bGlobalCfg::PixDefaultConfig;
@@ -356,7 +356,7 @@ void Rd53bGlobalCfg::init() {
     HitOrMask1.init         (107, &m_cfg[105], 0, 16, 0); regMap["HitOrMask1"] = &Rd53bGlobalCfg::HitOrMask1;
     HitOrMask0.init         (108, &m_cfg[105], 0, 16, 0); regMap["HitOrMask0"] = &Rd53bGlobalCfg::HitOrMask0;
     //109-116
-    AutoRead0.init          (109, &m_cfg[109], 0,  9, 137); regMap["AuroRead0"] = &Rd53bGlobalCfg::AutoRead0;
+    AutoRead0.init          (109, &m_cfg[109], 0,  9, 137); regMap["AutoRead0"] = &Rd53bGlobalCfg::AutoRead0;
     AutoRead1.init          (110, &m_cfg[110], 0,  9, 133); regMap["AutoRead1"] = &Rd53bGlobalCfg::AutoRead1;
     AutoRead2.init          (111, &m_cfg[111], 0,  9, 121); regMap["AutoRead2"] = &Rd53bGlobalCfg::AutoRead2;
     AutoRead3.init          (112, &m_cfg[112], 0,  9, 122); regMap["AutoRead3"] = &Rd53bGlobalCfg::AutoRead3;

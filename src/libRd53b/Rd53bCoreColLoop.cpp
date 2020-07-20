@@ -41,9 +41,10 @@ void Rd53bCoreColLoop::execPart1() {
     
     //Disable everything
     m_coreCols = {0x0, 0x0, 0x0, 0x0};
+    const uint32_t one = 0x1;
     for (unsigned i=m_minCore; i<m_maxCore; i+=step) {
         if (i%m_nSteps == m_cur) {
-            m_coreCols[i/16] |= 1 << i%16;
+            m_coreCols[i/16] |= one << i%16;
         }
     }
     logger->debug("Core Col stage #{} (0x{O:x}, 0x{O:x}, 0x{O:x}, 0x{O:x})", m_cur, m_coreCols[0], m_coreCols[1], m_coreCols[2], m_coreCols[3]);

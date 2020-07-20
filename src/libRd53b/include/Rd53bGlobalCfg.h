@@ -95,7 +95,7 @@ class Rd53bGlobalCfg {
         Rd53bReg PixRegionRow;
         //3
         Rd53bReg PixBroadcast;
-        Rd53bReg PixConfWrConfig;
+        Rd53bReg PixConfMode;
         Rd53bReg PixAutoRow;
         //4
         Rd53bReg PixDefaultConfig;

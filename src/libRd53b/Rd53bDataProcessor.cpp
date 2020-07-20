@@ -35,7 +35,7 @@ Rd53bDataProcessor::Rd53bDataProcessor()
 	_bitIdx = 0;   // Index of bit within block, starting from 0
 	_data = nullptr;
 
-	_isCompressedHitmap = true; // True by default
+	_isCompressedHitmap = false; // True by default
 }
 
 Rd53bDataProcessor::~Rd53bDataProcessor()
@@ -197,7 +197,7 @@ void Rd53bDataProcessor::process_core()
 			++_blockIdx; // Increase block index
 			_bitIdx = 9; // Reset bit index = NS + tag
 			curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
-            logger->info("New Stream, New Event: {} ", tag[channel]);
+            //logger->info("New Stream, New Event: {} ", tag[channel]);
 			events[channel]++;
 
 			while (_blockIdx <= blocks)
@@ -216,7 +216,7 @@ void Rd53bDataProcessor::process_core()
 					++_blockIdx; // Increase block index
 					_bitIdx = 9; // Reset bit index = NS + tag
 					curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
-                    logger->info("Same Stream, New Event: {} ", tag[channel]);
+                    //logger->info("Same Stream, New Event: {} ", tag[channel]);
 					events[channel]++;
 					continue;
 				}
@@ -225,7 +225,7 @@ void Rd53bDataProcessor::process_core()
 					tag[channel] = (ccol << 5) | retrieve(5);
 					// There is no L1ID and BCID in RD53B data stream. Has to come from somewhere else
 					curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
-                    logger->info("Same Stream, New Event: {} ", tag[channel]);
+                    //logger->info("Same Stream, New Event: {} ", tag[channel]);
 					events[channel]++;
 					continue;
 				}
@@ -272,23 +272,25 @@ void Rd53bDataProcessor::process_core()
 					for (unsigned ihit = 0; ihit < _LUT_PlainHMap_To_ColRow_ArrSize[hitmap]; ++ihit)
 					{
 						const uint8_t pix_tot = (ToT >> (ihit << 2)) & 0xF;
-						const uint16_t pix_col = (ccol - 1) * 8 + (_LUT_PlainHMap_To_ColRow[hitmap][ihit] >> 4);
-						const uint16_t pix_row = (qrow) * 2 + (_LUT_PlainHMap_To_ColRow[hitmap][ihit] & 0xF);
+                        //logger->info("Hit: ccol({}) qrow({})) ", ccol, qrow);
+						const uint16_t pix_col = ((ccol - 1) * 8) + (_LUT_PlainHMap_To_ColRow[hitmap][ihit] >> 4);
+						const uint16_t pix_row = ((qrow) * 2) + (_LUT_PlainHMap_To_ColRow[hitmap][ihit] & 0xF);
 
 						// For now fill in events without checking whether the addresses are valid
 						if (events[channel] == 0)
 						{
-							logger->info("[{}] No header in data fragment!", channel);
+							//logger->info("[{}] No header in data fragment!", channel);
 							curOut[channel]->newEvent(666, l1id[channel], bcid[channel]);
 							events[channel]++;
 						}
 
 						curOut[channel]->curEvent->addHit(pix_row, pix_col, pix_tot);
-                        logger->info("Hit: row({}) col({}) tot({}) ", pix_row, pix_col, pix_tot);
+                        //logger->info("Hit: row({}) col({}) tot({}) ", pix_row, pix_col, pix_tot);
 						hits[channel]++;
 					}
 				} while (!(islast_isneighbor_qrow & 0x200));
 			}
+            logger->info("total number of hits: {}", hits[channel]);
 		}
 		// Push data out
 		for (unsigned i = 0; i < activeChannels.size(); i++)
