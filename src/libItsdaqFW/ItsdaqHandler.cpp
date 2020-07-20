@@ -126,7 +126,8 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
   uint64_t first = get64(0);
   uint16_t stream = ntohs(start[0]);
 
-  logger->debug("First word: {:x}", first);
+  // logger->debug("First word: {:x} (after header {:x} {:x} {:x})",
+  //               first, start[0], start[1], start[2]);
 
   // Three word header and two word trailer
   size_t wordCount = (len - (3+2)) / 4;
