@@ -180,11 +180,11 @@ int main(int argc, char *argv[]) {
 
     StarChips star(&spec);
 
-    sendCommands(star, spec, controllerType);
-
     if(do_spec_specific) {
       spec.setRxEnable(0x40); // Input from Channel 6 on Spec board
     }
+
+    sendCommands(star, spec, controllerType);
 
     std::unique_ptr<uint32_t[]> tidy_up;
     std::unique_ptr<RawData> data(spec.readData());
