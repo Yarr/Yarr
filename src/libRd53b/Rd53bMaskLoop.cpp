@@ -14,7 +14,7 @@ namespace {
   auto logger = logging::make_log("Rd53bMaskLoop");
 }
 
-Rd53bMaskLoop::Rd53bMaskLoop() : LoopActionBase() {
+Rd53bMaskLoop::Rd53bMaskLoop() : LoopActionBase(LOOP_STYLE_MASK) {
     min = 0;
     max = 64;
     step = 1;

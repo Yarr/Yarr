@@ -54,7 +54,6 @@ void StarDataProcessor::join() {
 
 void StarDataProcessor::process() {
     while(true) {
-        std::unique_lock<std::mutex> lk(mtx);
         input->waitNotEmptyOrDone();
 
         process_core();

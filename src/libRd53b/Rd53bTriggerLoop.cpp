@@ -14,7 +14,7 @@ namespace {
     auto logger = logging::make_log("Rd53bTriggerLoop");
 }
 
-Rd53bTriggerLoop::Rd53bTriggerLoop() : LoopActionBase() {
+Rd53bTriggerLoop::Rd53bTriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
     m_trigCnt = 50;
     m_trigDelay = 48;
     m_trigFreq = 1e3;

@@ -14,7 +14,7 @@ namespace {
     auto spllog = logging::make_log("StdParameterLoop");
 }
 
-StdParameterLoop::StdParameterLoop() {
+StdParameterLoop::StdParameterLoop() : LoopActionBase(LOOP_STYLE_PARAMETER) {
     loopType = typeid(this);
     min = 0;
     max = 100;

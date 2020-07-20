@@ -153,6 +153,30 @@ class Tot3d : public HistogramAlgorithm {
         Histo3d *h;
 };
 
+class TagDist : public HistogramAlgorithm {
+    public:
+        TagDist() : HistogramAlgorithm() {
+            h = nullptr;
+            r = nullptr;
+        }
+
+        ~TagDist() {
+        }
+
+        void create(LoopStatus &stat) override {
+            h = new Histo1d(outputName(), 257, -0.5, 256.5, stat);
+            h->setXaxisTitle("Tag");
+            h->setYaxisTitle("Hits");
+            r.reset(h);
+        }
+
+        void processEvent(Fei4Data *data) override;
+
+        static std::string outputName() { return "TagDist"; }
+    private:
+        Histo1d *h;
+};
+
 class L1Dist : public HistogramAlgorithm {
     public:
         L1Dist() : HistogramAlgorithm() {

@@ -5,7 +5,7 @@
 
 #include "Fe65p2ParameterLoop.h"
 
-Fe65p2ParameterLoop::Fe65p2ParameterLoop(Fe65p2GlobalReg Fe65p2GlobalCfg::*reg) {
+Fe65p2ParameterLoop::Fe65p2ParameterLoop(Fe65p2GlobalReg Fe65p2GlobalCfg::*reg) : LoopActionBase(LOOP_STYLE_PARAMETER) {
     m_reg = reg;
     cur = 0;
     loopType = typeid(this);

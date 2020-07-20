@@ -15,7 +15,7 @@ namespace {
     auto logger = logging::make_log("Rd53bCoreColLoop");
 }
 
-Rd53bCoreColLoop::Rd53bCoreColLoop() {
+Rd53bCoreColLoop::Rd53bCoreColLoop() : LoopActionBase(LOOP_STYLE_MASK){
     m_cur = 0;
     m_nSteps = 25;
     min = 0;

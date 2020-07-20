@@ -47,6 +47,10 @@ namespace {
     bool l1dist_registered =
       StdDict::registerHistogrammer("L1Dist",
                                 []() { return std::unique_ptr<HistogramAlgorithm>(new L1Dist());});
+    
+    bool tagdist_registered =
+      StdDict::registerHistogrammer("TagDist",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new TagDist());});
 
     bool l13d_registered =
       StdDict::registerHistogrammer("L13d",
@@ -117,6 +121,13 @@ void Tot3d::processEvent(Fei4Data *data) {
                     h->fill(curHit.col, curHit.row, curHit.tot);
             }
         }
+    }
+}
+
+void TagDist::processEvent(Fei4Data *data) {
+    // Event Loop
+    for (const Fei4Event &curEvent: data->events) {
+        h->fill(curEvent.tag, curEvent.nHits);
     }
 }
 

@@ -14,7 +14,7 @@ namespace {
     auto logger = logging::make_log("Rd53aReadRegLoop");
 }
 
-Rd53aReadRegLoop::Rd53aReadRegLoop() {
+Rd53aReadRegLoop::Rd53aReadRegLoop() : LoopActionBase(LOOP_STYLE_NOP) {
     loopType = typeid(this);
     m_EnblRingOsc=0;
     m_RingOscDur=0;

@@ -12,7 +12,7 @@ namespace {
     auto logger = logging::make_log("StarTriggerLoop");
 }
 
-StarTriggerLoop::StarTriggerLoop() : LoopActionBase() {
+StarTriggerLoop::StarTriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
 
 	m_trigCnt = 50; // Maximum number of triggers to send
 	m_trigDelay = 45; // L0_delay 34

@@ -29,7 +29,7 @@ set(YARR_ALL_FRONT_ENDS
     Fe65p2 Fei4 Rd53a Rd53b Star)
 
 set(YARR_ALL_CONTROLLERS
-    Spec Emu Rce Boc KU040 Rogue NetioHW)
+    Spec Emu Rce Boc KU040 Rogue NetioHW Bdaq)
 
 if( YARR_FRONT_ENDS_TO_BUILD STREQUAL "all" )
   set( YARR_FRONT_ENDS_TO_BUILD ${YARR_ALL_FRONT_ENDS} )
@@ -106,6 +106,10 @@ if ("NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/netio4)
 endif()
 
+if ("Bdaq" IN_LIST YARR_CONTROLLERS_TO_BUILD )
+  set(YARR_LIB_DEPS ${YARR_LIB_DEPS} boost_system)
+endif()
+
 #add executables
 file(GLOB tools
      CONFIGURE_DEPENDS
@@ -126,7 +130,7 @@ endforeach()
 # Mainly this is about making sure the auto-registration works.
 #if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 if(APPLE)
-  set(YARR_LINK_LIB_COMMAND
+  set(YARR_LINK_LIB_COMMAND 
       -Wl,-all_load Yarr -Wl, ${YARR_LIB_DEPS} pthread)
 else()
   # Whole-archive means not to drop symbols from Yarr.

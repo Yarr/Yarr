@@ -10,6 +10,7 @@
 #include "EmuRxCore.h"
 #include "LCBUtils.h"
 #include "RingBuffer.h"
+#include "ScanHelper.h"
 
 #include "logging.h"
 
@@ -37,52 +38,64 @@ std::ostream &operator <<(std::ostream &os, print_hex_type<T> v) {
 auto logger = logging::make_log("StarEmu");
 }
 
-StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path,
-    unsigned hpr_period)
+//StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path,
+    //unsigned hpr_period)
+StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx,
+                 std::string& json_emu_file_path,
+                 std::string& json_chip_file_path,
+                 unsigned hpr_period)
     : m_txRingBuffer ( tx )
     , m_rxQueue ( rx )
     , m_bccnt( 0 )
+    , m_ignoreCmd( true )
+    , m_isForABC( false )
+    , m_startHitCount( false )
+    , m_bc_sel( 0 )
     , m_starCfg( new StarCfg )
     , HPRPERIOD( hpr_period )
 {
     run = true;
 
-    if (!json_file_path.empty()) {
-      std::ifstream file(json_file_path);
-      json j = json::parse(file);
-      file.close();
-
-      // Initialize FE strip array from config json
-      for (size_t istrip = 0; istrip < 256; ++istrip) {
-          m_stripArray[istrip].setValue(j["vthreshold_mean"][istrip],
-                                        j["vthreshold_sigma"][istrip],
-                                        j["noise_occupancy_mean"][istrip],
-                                        j["noise_occupancy_sigma"][istrip]);
-      }
+    // Emulator analog FE configurations
+    if (not json_emu_file_path.empty()) {
+       json jEmu;
+        try {
+            jEmu = ScanHelper::openJsonFile(json_emu_file_path);
+        } catch (std::runtime_error &e) {
+            logger->error("Error opening emulator config: {}", e.what());
+            throw(std::runtime_error("StarEmu::StarEmu failure"));
+        }
+        // Initialize FE strip array from config json
+        for (size_t istrip = 0; istrip < 256; ++istrip) {
+            m_stripArray[istrip].setValue(jEmu["vthreshold_mean"][istrip],
+                                          jEmu["vthreshold_sigma"][istrip],
+                                          jEmu["noise_occupancy_mean"][istrip],
+                                          jEmu["noise_occupancy_sigma"][istrip]);
+        }
     }
 
-    m_ignoreCmd = true;
-    m_isForABC = false;
-
-    m_startHitCount = false;
-    m_bc_sel = 0;
-    
-    // HCCStar and ABCStar configurations
-    // TODO: should get these from chip config json file
-    // m_starCfg->fromFileJson(j_starCfg);
-    // for now
-    m_starCfg->setHCCChipId(15);
-    m_starCfg->addABCchipID(15);
-    /*
-    for (size_t id_abc = 1; id_abc < 9; id_abc++) {
-        m_starCfg->addABCchipID(id_abc);
+    // HCCStar and ABCStar chip configurations
+    if (not json_chip_file_path.empty()) {
+        json jChips;
+        try {
+            jChips = ScanHelper::openJsonFile(json_chip_file_path);
+        } catch (std::runtime_error &e) {
+            logger->error("Error opening chip config: {}", e.what());
+            throw(std::runtime_error("StarEmu::StarEmu"));
+        }
+        m_starCfg->fromFileJson(jChips);
+    } else {
+        // No chip configuration provided. Default: one HCCStar + one ABCStar
+        m_starCfg->setHCCChipId(15);
+        m_starCfg->addABCchipID(15);
     }
-    */
 
+    // HPR
     hpr_clkcnt = HPRPERIOD/2; // 20000 BCs or 500 us
     hpr_sent.resize(m_starCfg->numABCs() + 1); // 1 HCCStar + nABCs ABCStar chips
     std::fill(hpr_sent.begin(), hpr_sent.end(), false);
 
+    // Data container
     m_l0buffers_lite.clear();
     m_l0buffers_lite.resize(m_starCfg->numABCs());
 
@@ -496,105 +509,43 @@ void StarEmu::logicReset()
     m_bccnt = 0;
     hpr_clkcnt = HPRPERIOD/2;
     std::fill(hpr_sent.begin(), hpr_sent.end(), false);
-    m_starCfg->setSubRegisterValue(0, "TESTHPR", 0);
-    m_starCfg->setSubRegisterValue(0, "STOPHPR", 0);
-    m_starCfg->setSubRegisterValue(0, "MASKHPR", 0);
     
-    for (unsigned ichip = 1; ichip <= m_starCfg->numABCs(); ++ichip) {
-        clearFEData(ichip);
+    (m_starCfg->hcc()).setSubRegisterValue("TESTHPR", 0);
+    (m_starCfg->hcc()).setSubRegisterValue("STOPHPR", 0);
+    (m_starCfg->hcc()).setSubRegisterValue("MASKHPR", 0);
 
-        m_starCfg->setSubRegisterValue(ichip, "TESTHPR", 0);
-        m_starCfg->setSubRegisterValue(ichip, "STOPHPR", 0);
-        m_starCfg->setSubRegisterValue(ichip, "MASKHPR", 0);
-    }
+    m_starCfg->eachAbc([&](auto &abc) {
+            abc.setSubRegisterValue("TESTHPR", 0);
+            abc.setSubRegisterValue("STOPHPR", 0);
+            abc.setSubRegisterValue("MASKHPR", 0);
+        });
+
+    for (unsigned ichip = 1; ichip <= m_starCfg->numABCs(); ++ichip)
+        clearFEData(ichip);
 }
 
 /////////////////////////////////////////////
-// Move the reset functions below to StarCfg?
 void StarEmu::resetABCRegisters()
 {
-    for (unsigned ichip = 1; ichip <= m_starCfg->numABCs(); ++ichip) {
-        unsigned abc = m_starCfg->getABCchipID(ichip);
-        // cf. ABCStar specs v7.8 section 9.14
-        m_starCfg->setABCRegister(ABCStarRegister::SCReg, 0x00000000, abc);
-
-        m_starCfg->setABCRegister(ABCStarRegister::ADCS1, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::ADCS2, 0x000000ff, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::ADCS3, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::ADCS4, 0x0000010c, abc);
-        //m_starCfg->setABCRegister(ABCStarRegister::ADCS5, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::ADCS6, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::ADCS7, 0x00000000, abc);
-
-        m_starCfg->setABCRegister(ABCStarRegister::MaskInput0, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::MaskInput1, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::MaskInput2, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::MaskInput3, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::MaskInput4, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::MaskInput5, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::MaskInput6, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::MaskInput7, 0x00000000, abc);
-
-        m_starCfg->setABCRegister(ABCStarRegister::CREG0, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::CREG1, 0x00000004, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::CREG2, 0x00000190, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::CREG3, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::CREG4, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::CREG6, 0x0000ffff, abc);
-
-        m_starCfg->setABCRegister(ABCStarRegister::STAT0, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::STAT1, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::STAT2, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::STAT3, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::STAT4, 0x00000000, abc);
-
-        //m_starCfg->setABCRegister(ABCStarRegister::HPR, 0x00000000, abc);
-
-        m_starCfg->setABCRegister(ABCStarRegister::CalREG0, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::CalREG1, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::CalREG2, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::CalREG3, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::CalREG4, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::CalREG5, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::CalREG6, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::CalREG7, 0x00000000, abc);
-    }
-
-    resetABCTrimDAC();
+    m_starCfg->eachAbc([&](auto &abc){abc.setDefaults();});
     resetABCHitCounts();
 }
 
 void StarEmu::resetABCSEU()
 {
-    for (unsigned ichip = 1; ichip <= m_starCfg->numABCs(); ++ichip) {
-        unsigned abc = m_starCfg->getABCchipID(ichip);
-        m_starCfg->setABCRegister(ABCStarRegister::STAT0, 0x00000000, abc);
-        m_starCfg->setABCRegister(ABCStarRegister::STAT1, 0x00000000, abc);
-    }
+    m_starCfg->eachAbc([&](auto &abc) {
+            abc.setRegisterValue(ABCStarRegister::STAT0, 0x00000000);
+            abc.setRegisterValue(ABCStarRegister::STAT1, 0x00000000);
+        });
 }
 
 void StarEmu::resetABCHitCounts()
 {
-    for (unsigned ichip = 1; ichip <= m_starCfg->numABCs(); ++ichip) {
-        unsigned abc = m_starCfg->getABCchipID(ichip);
-        // 64 HitCount registers per ABCStar
-        for (size_t j = 0; j < 64; j++) {
-            unsigned addr = (+ABCStarRegister::HitCountREG0)._to_integral() + j;
-            m_starCfg->setABCRegister(addr, 0x00000000, abc);
-        }
-    }
-}
-
-void StarEmu::resetABCTrimDAC()
-{
-    for (unsigned ichip = 1; ichip <= m_starCfg->numABCs(); ++ichip) {
-        unsigned abc = m_starCfg->getABCchipID(ichip);
-        // 40 TrimDAC registers per ABCStar
-        for (size_t j = 0; j < 40; j++) {
-            unsigned addr = (+ABCStarRegister::TrimDAC0)._to_integral() + j;
-            m_starCfg->setABCRegister(addr, 0x00000000, abc);
-        }
-    }
+    m_starCfg->eachAbc([&](auto &abc) {
+            for (unsigned int iReg=ABCStarRegister::HitCountREG0; iReg<=ABCStarRegister::HitCountREG63; iReg++) {
+                abc.setRegisterValue(ABCStarRegister::_from_integral(iReg), 0x00000000);
+            }
+        });
 }
 
 void StarEmu::resetSlowCommand()
@@ -609,22 +560,7 @@ void StarEmu::resetSlowCommand()
 
 void StarEmu::resetHCCRegisters()
 {
-    // cf. HCCStar specs v1.0e section 9.15.1
-    m_starCfg->setHCCRegister(HCCStarRegister::Pulse,     0x00000000);
-    m_starCfg->setHCCRegister(HCCStarRegister::Delay1,    0x00000000);
-    m_starCfg->setHCCRegister(HCCStarRegister::Delay2,    0x00000000);
-    m_starCfg->setHCCRegister(HCCStarRegister::Delay3,    0x00000000);
-    m_starCfg->setHCCRegister(HCCStarRegister::DRV1,      0x00000000);
-    m_starCfg->setHCCRegister(HCCStarRegister::DRV2,      0x00000014);
-    m_starCfg->setHCCRegister(HCCStarRegister::ICenable,  0x00000000);
-    m_starCfg->setHCCRegister(HCCStarRegister::OPmode,    0x00020001);
-    m_starCfg->setHCCRegister(HCCStarRegister::OPmodeC,   0x00020001);
-    m_starCfg->setHCCRegister(HCCStarRegister::Cfg1,      0x00000000);
-    m_starCfg->setHCCRegister(HCCStarRegister::Cfg2,      0x0000018e);
-    m_starCfg->setHCCRegister(HCCStarRegister::ExtRst,    0x00000000);
-    m_starCfg->setHCCRegister(HCCStarRegister::ExtRstC,   0x00000000);
-    m_starCfg->setHCCRegister(HCCStarRegister::ErrCfg,    0x00000000);
-    m_starCfg->setHCCRegister(HCCStarRegister::ADCcfg,    0x00406600);
+    (m_starCfg->hcc()).setDefaults();
 }
 
 void StarEmu::resetHCCSEU()
@@ -1426,25 +1362,41 @@ void StarEmu::executeLoop() {
 
 template<>
 class EmuRxCore<StarChips> : virtual public RxCore {
-        ClipBoard<RawData> m_queue;
-        uint32_t m_channel = 0;
+        std::map<uint32_t, std::unique_ptr<ClipBoard<RawData>> > m_queues;
+        std::map<uint32_t, bool> m_channels;
     public:
         EmuRxCore();
         ~EmuRxCore();
         
-        void setCom(EmuCom *com) {} // Used by EmuController.h
-        ClipBoard<RawData> &getCom() {return m_queue;}
+        void setCom(uint32_t chn, std::unique_ptr<ClipBoard<RawData>> queue);
+        ClipBoard<RawData>* getCom(uint32_t chn) {return m_queues[chn].get();}
 
-        void setRxEnable(uint32_t val) override { m_channel = val; }
-        void setRxEnable(std::vector<uint32_t> channels) override { if (not channels.empty()) m_channel = channels[0];}
+        void setRxEnable(uint32_t channel) override;
+        void setRxEnable(std::vector<uint32_t> channels) override;
         void maskRxEnable(uint32_t val, uint32_t mask) override {}
-        void disableRx() override {}
+        void disableRx() override;
 
         RawData* readData() override;
+        RawData* readData(uint32_t chn);
         
         uint32_t getDataRate() override {return 0;}
-        uint32_t getCurCount() override {return m_queue.empty()?0:1;}
-        bool isBridgeEmpty() override {return m_queue.empty();}
+        uint32_t getCurCount(uint32_t chn) {return m_queues[chn]->empty()?0:1;}
+        uint32_t getCurCount() override {
+            uint32_t cnt = 0;
+            for (auto& q : m_queues) {
+                if (m_channels[q.first])
+                    cnt += EmuRxCore<StarChips>::getCurCount(q.first);
+            }
+            return cnt;
+        }
+
+        bool isBridgeEmpty() override {
+            for (auto& q : m_queues) {
+                if (m_channels[q.first])
+                    if (not q.second->empty()) return false;
+            }
+            return true;
+        }
 };
 
 
@@ -1452,27 +1404,55 @@ class EmuRxCore<StarChips> : virtual public RxCore {
 
 template<class FE, class ChipEmu>
 std::unique_ptr<HwController> makeEmu() {
-  // This is just to match EmuController API, not used
-  std::unique_ptr<RingBuffer> rx;
-  std::unique_ptr<RingBuffer> tx(new RingBuffer(128));
-
-  std::unique_ptr<HwController> ctrl(new EmuController<FE, ChipEmu>(std::move(rx), std::move(tx)));
-
-  return ctrl;
+    auto ctrl = std::make_unique< EmuController<FE, ChipEmu> >();
+    return ctrl;
 }
 
 EmuRxCore<StarChips>::EmuRxCore() {}
 EmuRxCore<StarChips>::~EmuRxCore() {}
 
-RawData* EmuRxCore<StarChips>::readData() {
-    // //std::this_thread::sleep_for(std::chrono::microseconds(1));
-    if(m_queue.empty()) return nullptr;
+void EmuRxCore<StarChips>::setCom(uint32_t chn, std::unique_ptr<ClipBoard<RawData>> queue) {
+    m_queues[chn] = std::move(queue);
+    m_channels[chn] = true;
+}
 
-    std::unique_ptr<RawData> rd = m_queue.popData();
+RawData* EmuRxCore<StarChips>::readData(uint32_t chn) {
+    // //std::this_thread::sleep_for(std::chrono::microseconds(1));
+    if(m_queues[chn]->empty()) return nullptr;
+
+    std::unique_ptr<RawData> rd = m_queues[chn]->popData();
     // set rx channel number
-    rd->adr = m_channel;
+    rd->adr = chn;
 
     return rd.release();
+}
+
+RawData* EmuRxCore<StarChips>::readData() {
+    for (auto& q : m_queues) {
+        if (not m_channels[q.first]) continue;
+        if (q.second->empty()) continue;
+        return EmuRxCore<StarChips>::readData(q.first);
+    }
+    return nullptr;
+}
+
+void EmuRxCore<StarChips>::setRxEnable(uint32_t channel) {
+    if (m_queues.find(channel) != m_queues.end())
+        m_channels[channel] = true;
+    //else
+        //logger->warn("Channel {}");
+}
+
+void EmuRxCore<StarChips>::setRxEnable(std::vector<uint32_t> channels) {
+    for (auto channel : channels) {
+        this->setRxEnable(channel);
+    }
+}
+
+void EmuRxCore<StarChips>::disableRx() {
+    for (auto& q : m_queues) {
+        m_channels[q.first] = false;
+    }
 }
 
 bool emu_registered_Emu =
@@ -1481,8 +1461,6 @@ bool emu_registered_Emu =
 
 template<>
 void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
-  auto tx = EmuTxCore<StarChips>::getCom();
-  auto &rx = EmuRxCore<StarChips>::getCom();
 
   //TODO make nice
   logger->info("-> Starting Emulator");
@@ -1501,6 +1479,38 @@ void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
     logger->debug("HPR packet transmission period is set to {} BC", hprperiod);
   }
 
-  emu.reset(new StarEmu( rx, tx_com.get(), emuCfgFile, hprperiod ));
-  emuThreads.push_back(std::thread(&StarEmu::executeLoop, emu.get()));
+  json chipCfg;
+  if (!j["chipCfg"].empty()) {
+    try {
+      chipCfg = ScanHelper::openJsonFile(j["chipCfg"]);
+    } catch (std::runtime_error &e) {
+      logger->error("Error opening chip config: {}", e.what());
+      throw(std::runtime_error("EmuController::loadConfig failure"));
+    }
+    logger->info("Using chip config: {}", std::string(j["chipCfg"]));
+  } else {
+    logger->info("Chip configuration is not provided. One emulated HCCStar and ABCStar chip will be generated.");
+    chipCfg["chips"] = json::array();
+    chipCfg["chips"][0] = {{"tx", 0}, {"rx", 1}};
+  }
+
+  for (unsigned i=0; i<chipCfg["chips"].size(); i++) {
+    uint32_t chn_tx = chipCfg["chips"][i]["tx"];
+    uint32_t chn_rx = chipCfg["chips"][i]["rx"];
+
+    // Tx
+    tx_coms.emplace_back(new RingBuffer(128));
+    EmuTxCore<StarChips>::setCom(chn_tx, tx_coms.back().get());
+    auto tx = EmuTxCore<StarChips>::getCom(chn_tx);
+    // Rx
+    EmuRxCore<StarChips>:: setCom(chn_rx, std::make_unique<ClipBoard<RawData>>());
+    auto rx = EmuRxCore<StarChips>::getCom(chn_rx);
+
+    std::string regCfgFile;
+    if (not chipCfg["chips"][i]["config"].empty())
+      regCfgFile = chipCfg["chips"][i]["config"];
+
+    emus.emplace_back(new StarEmu( *rx, tx, emuCfgFile, regCfgFile, hprperiod));
+    emuThreads.push_back(std::thread(&StarEmu::executeLoop, emus.back().get()));
+  }
 }

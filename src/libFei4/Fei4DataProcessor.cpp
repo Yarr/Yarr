@@ -53,7 +53,6 @@ void Fei4DataProcessor::join() {
 
 void Fei4DataProcessor::process() {
     while(true) {
-        std::unique_lock<std::mutex> lk(mtx);
         input->waitNotEmptyOrDone();
 
         process_core();
