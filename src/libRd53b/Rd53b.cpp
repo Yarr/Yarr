@@ -211,6 +211,9 @@ void Rd53b::writeNamedRegister(std::string name, uint16_t value) {
     if(regMap.find(name) != regMap.end()) {
         logger->info("Write named register {} -> 0x{0:x}", name, value);
         this->writeRegister(regMap[name], value);
+    } else if(virtRegMap.find(name) != virtRegMap.end()) {
+        logger->info("Write named virtual register {} -> 0x{0:x}", name, value);
+        this->writeRegister(virtRegMap[name], value);
     } else {
         logger->error("Trying to write named register, register not found: {}", name);
     }

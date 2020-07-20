@@ -291,7 +291,7 @@ void Rd53bDataProcessor::process_core()
 					}
 				} while (!(islast_isneighbor_qrow & 0x200));
 			}
-            logger->info("total number of hits: {}", hits[channel]);
+            //logger->info("total number of hits: {}", hits[channel]);
 		}
 		// Push data out
 		for (unsigned i = 0; i < activeChannels.size(); i++)

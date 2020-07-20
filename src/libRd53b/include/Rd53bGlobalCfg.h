@@ -12,6 +12,7 @@
 
 #include <map>
 #include <string>
+#include <cmath>
 
 #include "storage.hpp"
 
@@ -63,6 +64,54 @@ class Rd53bReg {
     private:
 };
 
+class Rd53bDiffReg : public Rd53bReg {
+    public:
+        void init(Rd53bReg *arg_lowRef, Rd53bReg *arg_highRef, bool changeHigh) {
+            lowRef = arg_lowRef;
+            highRef = arg_highRef;
+            m_cfg = NULL; // Not needed
+            m_bOffset = 0; // Not needed
+            m_bits = 0; // Not needed
+            m_changeHigh = changeHigh;
+            if (m_changeHigh) {
+                m_addr = highRef->addr(); // Write register asks for the address, only want to modify highRef
+            } else {
+                m_addr = lowRef->addr();
+            }
+
+        }
+
+        void write(const uint16_t value) override {
+            uint16_t highValue = highRef->read();
+            uint16_t lowValue = lowRef->read();
+            //std::cout << __PRETTY_FUNCTION__ << " : " << value << " " << highValue << " " << lowValue <<  std::endl;
+            if (m_changeHigh) {
+                if (lowValue + value < pow(2, highRef->bits())) {
+                    highRef->write(value + lowValue);
+                } else {
+                    std::cerr << "#ERROR# Could not write value to Rd53aDiffReg! Out of range!" << std::endl;
+                }
+            } else {
+                if (highValue - value >= 0) {
+                    lowRef->write(highValue - value);
+                } else {
+                    std::cerr << "#ERROR# Could not write value to Rd53aDiffReg! Out of range!" << std::endl;
+                }
+            }
+
+        }
+
+        uint16_t read() const override {
+            uint16_t lowValue = lowRef->read();
+            uint16_t highValue = highRef->read();
+            return highValue - lowValue;
+        }
+    private:
+        Rd53bReg *lowRef;
+        Rd53bReg *highRef;
+        bool m_changeHigh;
+};
+
 class Rd53bGlobalCfg {
     public:
         Rd53bGlobalCfg();
@@ -81,6 +130,7 @@ class Rd53bGlobalCfg {
         static constexpr unsigned numRegs = 138;
         std::array<uint16_t, numRegs> m_cfg;
         std::map<std::string, Rd53bReg Rd53bGlobalCfg::*> regMap;
+        std::map<std::string, Rd53bReg Rd53bGlobalCfg::*> virtRegMap;
 
         void toJson(json &j);
         void fromJson(json &j);
@@ -431,6 +481,9 @@ class Rd53bGlobalCfg {
         //SEU_notmr - not implemented, do not need to store
         //202-255
         //SEU - not implemented, do not need to store
+        
+        // Special regs
+        Rd53bDiffReg InjVcalDiff;
 };
 
 

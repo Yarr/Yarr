@@ -30,6 +30,8 @@ uint16_t Rd53bGlobalCfg::getValue(Rd53bReg Rd53bGlobalCfg::*ref) const {
 uint16_t Rd53bGlobalCfg::getValue(std::string name) const {
     if (regMap.find(name) != regMap.end()) {
         return (this->*regMap.at(name)).read();
+    } else if (virtRegMap.find(name) != virtRegMap.end()) {
+        return (this->*virtRegMap.at(name)).read();
     } else {
         logger->error("Register \"{}\" not found, could not read!", name);
     }
@@ -43,6 +45,8 @@ void Rd53bGlobalCfg::setValue(Rd53bReg Rd53bGlobalCfg::*ref, uint16_t val) {
 void Rd53bGlobalCfg::setValue(std::string name, uint16_t val) {
     if (regMap.find(name) != regMap.end()) {
         (this->*regMap[name]).write(val);
+    } else if (virtRegMap.find(name) != virtRegMap.end()) {
+        (this->*virtRegMap[name]).write(val);
     } else {
         logger->error("Register \"{}\" not found, could not write!", name);
     }
@@ -404,6 +408,8 @@ void Rd53bGlobalCfg::init() {
     //137
     MonitoringDataAdc.init  (137, &m_cfg[137], 0, 12, 0); regMap["MonitoringDataAdc"] = &Rd53bGlobalCfg::MonitoringDataAdc;
 
+    // Special virtual registers
+    InjVcalDiff.init(&InjVcalMed, &InjVcalHigh, true); virtRegMap["InjVcalDiff"] = (Rd53bReg Rd53bGlobalCfg::*)&Rd53bGlobalCfg::InjVcalDiff;
 }
 
 void Rd53bGlobalCfg::toJson(json &j) {
