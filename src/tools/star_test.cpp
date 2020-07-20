@@ -10,6 +10,8 @@
 #include "StarChipPacket.h"
 #include "logging.h"
 
+static void printHelp();
+
 void sendCommands(StarChips &star, HwController &spec, std::string controllerType) {
     uint32_t regNum = 41;
     // Default (power-on) value
@@ -135,30 +137,62 @@ int main(int argc, char *argv[]) {
     std::string controllerType;
 
     {
-      auto j = ScanHelper::openJsonFile("configs/logging/trace_all.json");
+      json j; // Start empty
+      std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
+      j["pattern"] = defaultLogPattern;
+      j["log_config"][0]["name"] = "all";
+      j["log_config"][0]["level"] = "info";
       logging::setupLoggers(j);
     }
 
-    if (argc > 1)
-      controller = argv[1];
+    // Original Spec version
+    int rxChannel = 6;
+    int c;
+    while ((c = getopt(argc, argv, "hl:r:")) != -1) {
+      switch(c) {
+      case 'h':
+        printHelp();
+        return 0;
+      case 'l':
+        try {
+          std::string logPath = std::string(optarg);
+          auto j = ScanHelper::openJsonFile(logPath);
+          logging::setupLoggers(j);
+        } catch (std::runtime_error &e) {
+          spdlog::error("Opening logger config: {}", e.what());
+          return 1;
+        }
+        break;
+      case 'r':
+        rxChannel = atoi(optarg);
+        break;
+      default:
+        spdlog::critical("Error while parsing command line parameters!");
+        return -1;
+      }
+    }
 
+    if (optind != argc) {
+      // First positional parameter (optind is first not parsed by getopt)
+      controller = argv[optind];
+    }
+    std::cout << std::endl;
     std::unique_ptr<HwController> hwCtrl = nullptr;
     if(controller.empty()) {
 	controllerType = "spec";
         hwCtrl = StdDict::getHwController(controllerType);
         // hwCtrl->init(0);
     } else {
-        json ctrlCfg;
-        std::ifstream controllerFile(controller);
-        try {
-            ctrlCfg = json::parse(controllerFile);
-        } catch (json::parse_error &e) {
-            std::cerr << "#ERROR# Could not parse config: " << e.what() << std::endl;
-            return 1;
-        }
-	controllerType = ctrlCfg["ctrlCfg"]["type"];
+      try {
+        std::cout << " Using controller from " << controller << "\n";
+        json ctrlCfg = ScanHelper::openJsonFile(controller);
+        controllerType = ctrlCfg["ctrlCfg"]["type"];
         hwCtrl = StdDict::getHwController(controllerType);
         hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
+      } catch (std::runtime_error &e) {
+        spdlog::error("Opening controller config: {}", e.what());
+        return 1;
+      }
     }
 
     HwController &spec = *hwCtrl;
@@ -180,9 +214,7 @@ int main(int argc, char *argv[]) {
 
     StarChips star(&spec);
 
-    if(do_spec_specific) {
-      spec.setRxEnable(0x40); // Input from Channel 6 on Spec board
-    }
+    spec.setRxEnable(rxChannel);
 
     sendCommands(star, spec, controllerType);
 
@@ -240,4 +272,12 @@ int main(int argc, char *argv[]) {
     }
 
     return 0;
+}
+
+void printHelp() {
+  std::cout << "Usage: [OPTIONS] ... [HW_CONFIG]\n";
+  std::cout << "   Run Star FE tests with HardwareController configuration from HW_CONFIG\n";
+  std::cout << " -h: Show this help.\n";
+  std::cout << " -r <channel> : Rx channel to enable.\n";
+  std::cout << " -l <log_config> : Configure loggers.\n";
 }
