@@ -128,10 +128,10 @@ void Rd53b::configureInit() {
     }
     logger->debug("Chip initialisation done!");
     
-    this->writeRegister(&Rd53b::RstCoreCol0, 0);
-    this->writeRegister(&Rd53b::RstCoreCol1, 0);
-    this->writeRegister(&Rd53b::RstCoreCol2, 0);
-    this->writeRegister(&Rd53b::RstCoreCol3, 0);
+    this->writeRegister(&Rd53b::RstCoreCol0, 0xFFFF);
+    this->writeRegister(&Rd53b::RstCoreCol1, 0xFFFF);
+    this->writeRegister(&Rd53b::RstCoreCol2, 0xFFFF);
+    this->writeRegister(&Rd53b::RstCoreCol3, 0x3F);
     while(!core->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::microseconds(100));
     
