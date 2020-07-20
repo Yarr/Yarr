@@ -194,6 +194,7 @@ int main(int argc, char *argv[]) {
     }
 
     bool nodata = true;
+    auto start_reading = std::chrono::steady_clock::now();
 
     while (true) {
 
@@ -207,6 +208,10 @@ int main(int argc, char *argv[]) {
           std::cout << "Use data: " << (void*)data->buf << " (main)\n";
           tidy_up.reset(data->buf);
         }
+
+        auto run_time = std::chrono::steady_clock::now() - start_reading;
+        if(run_time > std::chrono::seconds(2))
+          break;
       }
 
       // wait a while if no data
