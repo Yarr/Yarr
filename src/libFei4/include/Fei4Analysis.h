@@ -219,6 +219,25 @@ class L1Analysis : public AnalysisAlgorithm {
 
 };
 
+class TagAnalysis : public AnalysisAlgorithm {
+    public:
+        TagAnalysis() : AnalysisAlgorithm() {};
+        ~TagAnalysis() {};
+
+        void init(ScanBase *s);
+        void processHistogram(HistogramBase *h);
+        void end();
+	    void loadConfig(json &config){}
+    private:
+        std::vector<unsigned> loops;
+        std::vector<unsigned> loopMax;
+        unsigned n_count;
+        unsigned injections;
+        std::map<unsigned, std::unique_ptr<Histo1d>> tagHistos;
+        std::map<unsigned, unsigned> innerCnt;
+
+};
+
 class TotDistPlotter : public AnalysisAlgorithm {
     public:
         TotDistPlotter() : AnalysisAlgorithm() {};

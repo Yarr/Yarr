@@ -29,6 +29,10 @@ namespace {
     bool l1_registered =
       StdDict::registerAnalysis("L1Analysis",
                                 []() { return std::unique_ptr<AnalysisAlgorithm>(new L1Analysis());});
+    
+    bool tag_registered =
+      StdDict::registerAnalysis("TagAnalysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new TagAnalysis());});
 
     bool tot_registered =
       StdDict::registerAnalysis("TotAnalysis",
@@ -1009,6 +1013,64 @@ void L1Analysis::processHistogram(HistogramBase *h) {
 }
 
 void L1Analysis::end() {
+}
+
+void TagAnalysis::init(ScanBase *s) {
+    n_count = 1;
+    injections = 0;
+    for (unsigned n=0; n<s->size(); n++) {
+        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
+            loops.push_back(n);
+            loopMax.push_back((unsigned)l->getMax());
+        } else {
+            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            if (cnt == 0)
+                cnt = 1;
+            n_count = n_count*cnt;
+        }
+
+    }
+}
+
+void TagAnalysis::processHistogram(HistogramBase *h) {
+    // Select correct output container
+    unsigned ident = 0;
+    unsigned offset = 0;
+
+    // Determine identifier
+    std::string name = "TagDist";
+    for (unsigned n=0; n<loops.size(); n++) {
+        ident += h->getStat().get(loops[n])+offset;
+        offset += loopMax[n];
+        name += "-" + std::to_string(h->getStat().get(loops[n]));
+    }
+
+    // Check if Histogram exists
+    if (tagHistos[ident] == NULL) {
+        Histo1d *hh = new Histo1d(name, 257, -0.5, 256.5);
+        hh->setXaxisTitle("Tag");
+        hh->setYaxisTitle("Hits");
+        tagHistos[ident].reset(hh);
+        innerCnt[ident] = 0;
+    }
+
+    // Add up Histograms
+    if (h->getName() == TagDist::outputName()) {
+        tagHistos[ident]->add(*(Histo1d*)h);
+        innerCnt[ident]++;
+    } else {
+        return;
+    }
+
+    // Got all data, finish up Analysis
+    if (innerCnt[ident] == n_count) {
+        output->pushData(std::move(tagHistos[ident]));
+        innerCnt[ident] = 0;
+    }
+}
+
+void TagAnalysis::end() {
 }
 
 void TotDistPlotter::init(ScanBase *s) {
