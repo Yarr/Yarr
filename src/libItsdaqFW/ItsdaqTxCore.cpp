@@ -32,22 +32,17 @@ ItsdaqTxCore::~ItsdaqTxCore(){
 
 // Activate single channel
 void ItsdaqTxCore::setCmdEnable(uint32_t elink) {
-    // this->disableAllChannels();
-    // this->enableChannel(elink);
-    // //m_elinks[elink]=true;
+  // FW Default is all enabled, leave this for now
+  logger->trace("setCmdEnable: Multiple tx not yet implemented");
 }
 
 void ItsdaqTxCore::disableCmd() {
-    // this->disableAllChannels();
+  logger->trace("disableCmd: Multiple tx not yet implemented");
 }
 
 // Broadcast to multiple channels
 void ItsdaqTxCore::setCmdEnable(std::vector<uint32_t> channels) {
-    // this->disableAllChannels();
-    // for (uint32_t channel : channels) {
-    //     this->enableChannel(channel);
-    // }
-    // return;
+  logger->trace("setCmdEnable: Multiple tx not yet implemented");
 }
 
 uint32_t ItsdaqTxCore::getCmdEnable() {
