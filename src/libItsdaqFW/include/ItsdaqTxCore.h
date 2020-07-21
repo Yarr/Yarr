@@ -57,6 +57,12 @@ private:
   // Send triggerFifo
   void trigger();
 
+  // Extend buffer with appropriate bits for sending sequence of LCB/L1R3
+  void buildSequenceWord(std::vector<uint16_t> &buffer,
+                         uint32_t LCB, uint32_t L1R3);
+
+  void buildTriggerSequence();
+
   std::thread m_trigProc;                    //! trigger processor
 
   enum TRIG_CONF_VALUE m_trigCfg;            //! trigger config
@@ -71,6 +77,7 @@ private:
   std::vector<uint32_t> m_trigWords;         //! the trigger words
 
   std::vector<uint16_t> m_buffer;
+  std::vector<uint16_t> m_trigBuffer;
 
   ItsdaqHandler &m_h;
 };

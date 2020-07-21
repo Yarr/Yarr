@@ -31,10 +31,6 @@ class UdpSocket {
 
   bool receive(std::array<char, MAX_PACKET_SIZE> &packet, size_t &output_length, int timeout);
 
-  /* bool canReceive(); */
-
-  /* void printStatus(std::ostream &os); */
-
   void interrupt() { shutting_down = true; }
 };
 

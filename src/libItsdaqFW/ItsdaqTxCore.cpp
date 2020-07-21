@@ -54,19 +54,14 @@ uint32_t ItsdaqTxCore::getCmdEnable() {
   return 0;
 }
 
-void ItsdaqTxCore::writeFifo(uint32_t bit_data) {
-  // Two bits in each sequence word
-  logger->debug("WriteFifo: {:08x}", bit_data);
-
-  // Just output idle
-  const uint32_t L1R3 = 0x78557855;
-
+void ItsdaqTxCore::buildSequenceWord(std::vector<uint16_t> &buffer,
+                                     uint32_t LCB, uint32_t L1R3) {
   for(int b=0; b<16; b++) {
     unsigned int bit = 30-(b*2);
     uint16_t seq_word = 0;
-    if(bit_data & (1<<(bit+1)))
+    if(LCB & (1<<(bit+1)))
       seq_word |= 2;
-    if(bit_data & (1<<(bit+0)))
+    if(LCB & (1<<(bit+0)))
       seq_word |= 1;
 
     if(L1R3 & (1<<(bit+1)))
@@ -74,8 +69,16 @@ void ItsdaqTxCore::writeFifo(uint32_t bit_data) {
     if(L1R3 & (1<<(bit+0)))
       seq_word |= 4;
 
-    m_buffer.push_back(seq_word);
+    buffer.push_back(seq_word);
   }
+}
+
+void ItsdaqTxCore::writeFifo(uint32_t bit_data) {
+  // Two bits in each sequence word
+  logger->debug("WriteFifo: {:08x}", bit_data);
+
+  // Just output idle
+  buildSequenceWord(m_buffer, bit_data, 0x78557855);
 }
 
 void ItsdaqTxCore::releaseFifo(){
@@ -85,7 +88,10 @@ void ItsdaqTxCore::releaseFifo(){
 }
 
 void ItsdaqTxCore::trigger(){
-  logger->info("Send trigger pattern not implemented yet");
+  logger->trace("Send trigger pattern");
+
+  m_h.SendOpcode((uint16_t)OPCODE::RAWSEQ,
+                 (uint16_t*)&m_trigBuffer[0], (uint16_t)m_trigBuffer.size());
 }
 
 bool ItsdaqTxCore::isCmdEmpty() {
@@ -150,13 +156,27 @@ void ItsdaqTxCore::setTrigTime(double time){
   m_trigTime = time;
 }
 
+void ItsdaqTxCore::buildTriggerSequence() {
+  size_t trigLen = m_trigWordLength;
+  auto words32 = std::min(trigLen, m_trigWords.size());
+
+  m_trigBuffer.clear();
+  for(int i=0; i<words32; i++) {
+    buildSequenceWord(m_trigBuffer, m_trigWords[i], 0x78557855);
+  }
+}
+
 void ItsdaqTxCore::setTrigWordLength(uint32_t length){
   m_trigWordLength=length;
+
+  buildTriggerSequence();
 }
 
 void ItsdaqTxCore::setTrigWord(uint32_t *word, uint32_t size){
   m_trigWords.clear();
   for(uint32_t i=0;i<size;i++){m_trigWords.push_back(word[i]);}
+
+  buildTriggerSequence();
 }
 
 void ItsdaqTxCore::setTriggerLogicMask(uint32_t mask){

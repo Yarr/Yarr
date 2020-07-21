@@ -1,17 +1,11 @@
 #include "UdpSocket.h"
 
-#include <array>
-#include <cstdlib>
-#include <cstring>
 #include <iostream>
 
-#include <errno.h>
-#include <stdio.h>
-
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <unistd.h>
+#include "sys/types.h"
+#include "sys/socket.h"
+#include "netdb.h"
+#include "unistd.h"
 
 #include "logging.h"
 
@@ -20,9 +14,6 @@ auto logger = logging::make_log("ItsdaqFW::UDP");
 }
 
 /*
- * This can be used either for local communicataion using hsioPipe, 
- * or for some recent firmware versions.
- *
  * Example network setup on Linux (lost on reboot, for testing):
  *
  *  ifconfig eth1 192.168.222.100 netmask 255.255.255.0
@@ -48,7 +39,7 @@ void UdpSocket::setup(uint32_t remote, int srcPort, int dstPort)
   logger->debug("Creating UDP socket to IP {:08x} ports: {} to {}", remote, srcPort, dstPort);
 
   // Look up destination address
-  uint32_t addr_ip4 = remote; // lookup(remote_name);
+  uint32_t addr_ip4 = remote;
 
   logger->debug("IP address: {}.{}.{}.{}",
                 (addr_ip4>>0)&0xff, (addr_ip4>>8)&0xff,
