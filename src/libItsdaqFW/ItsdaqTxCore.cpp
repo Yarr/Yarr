@@ -136,7 +136,9 @@ void ItsdaqTxCore::toggleTrigAbort(){
 }
 
 bool ItsdaqTxCore::isTrigDone(){
-  if (!m_trigEnabled && isCmdEmpty()){ return true; }
+  if (!m_trigEnabled) {
+    return true;
+  }
   return false;
 }
 
