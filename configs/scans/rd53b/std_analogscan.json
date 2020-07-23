@@ -10,7 +10,10 @@
       "1": {
         "algorithm": "TagAnalysis"
       },
-      "n_count": 2
+      "2": {
+        "algorithm": "TotAnalysis"
+      },
+      "n_count": 3
     },
     "histogrammer": {
       "0": {
@@ -62,7 +65,7 @@
           "count": 10,
           "delay": 56,
           "extTrigger": false,
-          "frequency": 5000,
+          "frequency": 500,
           "noInject": false,
           "time": 0,
           "edgeMode": false
@@ -75,9 +78,11 @@
     ],
     "name": "DigitalScan",
     "prescan": {
-        "InjVcalDiff": 400,
+        "InjVcalMed": 100,
+        "InjVcalHigh": 1600,
+        "InjVcalRange": 0,
         "InjDigEn": 0,
-        "Latency": 58
+        "Latency": 56
     }
   }
 }
