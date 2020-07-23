@@ -10,4 +10,6 @@ namespace AllRd53bActionsRegistry {
             []() { return std::unique_ptr<LoopActionBase>(new Rd53bMaskLoop);});
     bool corecol_loop_registered = registerLoopAction("Rd53bCoreColLoop",
             []() { return std::unique_ptr<LoopActionBase>(new Rd53bCoreColLoop);});
+    bool par_loop_registered = registerLoopAction("Rd53bParameterLoop",
+            []() { return std::unique_ptr<LoopActionBase>(new Rd53bParameterLoop);});
 }
