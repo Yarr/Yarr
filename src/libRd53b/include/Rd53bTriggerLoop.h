@@ -10,15 +10,14 @@
 // ################################
 
 #include "LoopActionBase.h"
+#include "StdTriggerAction.h"
 #include "Rd53b.h"
 #include "Rd53bCmd.h"
 
-class Rd53bTriggerLoop : public LoopActionBase {
+class Rd53bTriggerLoop : public LoopActionBase, public StdTriggerAction {
     public:
         Rd53bTriggerLoop();
         
-        uint32_t getTrigCnt() {return m_trigCnt;}
-        void setTrigCnt(uint32_t cnt) {m_trigCnt = cnt;}
         void setTrigTime(double time) {m_trigTime = time;}
         void setTrigFreq(double freq) {m_trigFreq = freq;}
         void setTrigDelay(uint32_t delay);
@@ -29,7 +28,6 @@ class Rd53bTriggerLoop : public LoopActionBase {
         void loadConfig(json &config);
 
     private:
-        uint32_t m_trigCnt;
         uint32_t m_trigDelay;
         float m_trigTime;
         float m_trigFreq;

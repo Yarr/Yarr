@@ -12,7 +12,8 @@
 
 Rd53bCfg::Rd53bCfg() :
     m_chipId(15),
-    m_vcalPar({{-1.0, 0.215}})
+    m_vcalPar({{-1.0, 0.215}}),
+    m_injCap(8.2)
 {}
 
 double Rd53bCfg::toCharge(double vcal) {

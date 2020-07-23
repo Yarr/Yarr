@@ -201,9 +201,9 @@ void Rd53bGlobalCfg::init() {
     FineDelayClk.init       ( 54, &m_cfg[ 54], 6,  6, 0); regMap["FineDelayClk"] = &Rd53bGlobalCfg::FineDelayClk;
     FineDelayData.init      ( 54, &m_cfg[ 54], 0,  6, 0); regMap["FineDelayData"] = &Rd53bGlobalCfg::FineDelayData;
     //55
-    InjVcalHigh.init        ( 55, &m_cfg[ 55], 0, 12, 500); regMap["InjVcalHigh"] = &Rd53bGlobalCfg::InjVcalHigh;
+    InjVcalHigh.init        ( 55, &m_cfg[ 55], 0, 12, 200); regMap["InjVcalHigh"] = &Rd53bGlobalCfg::InjVcalHigh;
     //56
-    InjVcalMed.init         ( 56, &m_cfg[ 56], 0, 12, 300); regMap["InjVcalMed"] = &Rd53bGlobalCfg::InjVcalMed;
+    InjVcalMed.init         ( 56, &m_cfg[ 56], 0, 12, 200); regMap["InjVcalMed"] = &Rd53bGlobalCfg::InjVcalMed;
     //57
     CapMeasEnPar.init       ( 57, &m_cfg[ 57], 2,  1, 0); regMap["CapMeasEnPar"] = &Rd53bGlobalCfg::CapMeasEnPar;
     CapMeasEn.init          ( 57, &m_cfg[ 57], 1,  1, 0); regMap["CapMeasEn"] = &Rd53bGlobalCfg::CapMeasEn;

@@ -37,6 +37,7 @@
 // For masking
 #include "Fei4.h"
 #include "Rd53a.h"
+#include "Rd53b.h"
 
 #include "ScanBase.h"
 #include "ScanFactory.h"
@@ -392,6 +393,15 @@ int main(int argc, char *argv[]) {
                     for (unsigned row = 0; row < rd53a->n_Row; row ++) {
                         rd53a->setEn(col, row, 1);
                         rd53a->setHitbus(col, row, 1);
+                    }
+                }
+            } else if (chipType == "RD53B") {
+                auto rd53b = dynamic_cast<Rd53b*>(fe);
+                logger->info("Resetting enable/hitbus pixel mask to all enabled!");
+                for (unsigned int col = 0; col < rd53b->n_Col; col++) {
+                    for (unsigned row = 0; row < rd53b->n_Row; row ++) {
+                        rd53b->setEn(col, row, 1);
+                        rd53b->setHitbus(col, row, 1);
                     }
                 }
             }

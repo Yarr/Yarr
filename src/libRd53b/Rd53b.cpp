@@ -89,7 +89,7 @@ void Rd53b::configureInit() {
 
     // Sync CMD decoder
     logger->debug(" ... send syncs");
-    for(unsigned int i=0; i<128; i++)
+    for(unsigned int i=0; i<32; i++)
         core->writeFifo(0x817E817E);
     core->releaseFifo();
     while(!core->isCmdEmpty());
@@ -107,7 +107,7 @@ void Rd53b::configureInit() {
     while(!core->isCmdEmpty());
     this->sendGlobalPulse(m_chipId);
     while(!core->isCmdEmpty());
-    std::this_thread::sleep_for(std::chrono::microseconds(500));
+    std::this_thread::sleep_for(std::chrono::microseconds(100));
     // Reset register
     this->writeRegister(&Rd53b::GlobalPulseConf, 0);
 
@@ -198,23 +198,34 @@ void Rd53b::configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels) 
 
 void Rd53b::writeRegister(Rd53bReg Rd53bGlobalCfg::*ref, uint16_t value) {
     (this->*ref).write(value);
-    logger->debug("Writing register #{} with {}", (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
+    logger->debug("Writing register {} with {}", (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
     this->sendWrReg(m_chipId, (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
 }
 
 void Rd53b::readRegister(Rd53bReg Rd53bGlobalCfg::*ref) {
-    logger->debug("Reading register #{}", (this->*ref).addr());
+    logger->debug("Reading register {}", (this->*ref).addr());
     this->sendRdReg(m_chipId, (this->*ref).addr());
 }
 
 void Rd53b::writeNamedRegister(std::string name, uint16_t value) {
     if(regMap.find(name) != regMap.end()) {
-        logger->info("Write named register {} -> 0x{0:x}", name, value);
+        logger->info("Write named register {} -> {}", name, value);
         this->writeRegister(regMap[name], value);
     } else if(virtRegMap.find(name) != virtRegMap.end()) {
-        logger->info("Write named virtual register {} -> 0x{0:x}", name, value);
+        logger->info("Write named virtual register {} -> {}", name, value);
         this->writeRegister(virtRegMap[name], value);
     } else {
         logger->error("Trying to write named register, register not found: {}", name);
     }
+}
+
+Rd53bReg Rd53bGlobalCfg::*  Rd53b::getNamedRegister(std::string name) {
+    if(regMap.find(name) != regMap.end()) {
+        return regMap[name];
+    } else if(virtRegMap.find(name) != virtRegMap.end()) {
+        return virtRegMap[name];
+    } else {
+        logger->error("Trying to get named register, register not found: {}", name);
+    }
+    return NULL;
 }

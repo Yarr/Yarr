@@ -84,7 +84,6 @@ class Rd53bDiffReg : public Rd53bReg {
         void write(const uint16_t value) override {
             uint16_t highValue = highRef->read();
             uint16_t lowValue = lowRef->read();
-            //std::cout << __PRETTY_FUNCTION__ << " : " << value << " " << highValue << " " << lowValue <<  std::endl;
             if (m_changeHigh) {
                 if (lowValue + value < pow(2, highRef->bits())) {
                     highRef->write(value + lowValue);
@@ -98,6 +97,9 @@ class Rd53bDiffReg : public Rd53bReg {
                     std::cerr << "#ERROR# Could not write value to Rd53aDiffReg! Out of range!" << std::endl;
                 }
             }
+            highValue = highRef->read();
+            lowValue = lowRef->read();
+            std::cout << __PRETTY_FUNCTION__ << " : " << value << " " << highValue << " " << lowValue <<  std::endl;
 
         }
 
@@ -126,11 +128,12 @@ class Rd53bGlobalCfg {
 
         uint16_t& operator[](unsigned index);
 
+        // TODO this not be public
+        std::map<std::string, Rd53bReg Rd53bGlobalCfg::*> regMap;
+        std::map<std::string, Rd53bReg Rd53bGlobalCfg::*> virtRegMap;
     protected:
         static constexpr unsigned numRegs = 138;
         std::array<uint16_t, numRegs> m_cfg;
-        std::map<std::string, Rd53bReg Rd53bGlobalCfg::*> regMap;
-        std::map<std::string, Rd53bReg Rd53bGlobalCfg::*> virtRegMap;
 
         void toJson(json &j);
         void fromJson(json &j);

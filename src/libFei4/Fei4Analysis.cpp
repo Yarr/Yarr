@@ -132,16 +132,18 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
         mask->setYaxisTitle("Rows");
         mask->setZaxisTitle("Enable");
 
-
+        unsigned failed_cnt = 0;
         for (unsigned i=0; i<occMaps[ident]->size(); i++) {
             if (occMaps[ident]->getBin(i) == injections) {
                 mask->setBin(i, 1);
             } else {
+                failed_cnt++;
                 if (make_mask&&createMask) {
                     bookie->getFe(channel)->maskPixel((i/nRow), (i%nRow));
                 }
             }
         }
+        alog->info("Total number of failing pixels: {}", failed_cnt);
         output->pushData(std::move(mask)); // TODO push this mask to the specific configuration
         output->pushData(std::move(occMaps[ident]));
 
@@ -594,7 +596,8 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
                     } else {
                         n_failedfit++;
-                           alog->debug("Failed fit Col({}) Row({}) Threshold({}) Chi2({}) Status({}) Entries({}) Mean({})", col, row, thrMap[outerIdent]->getBin(bin), chi2, status.outcome, histos[ident]->getEntries(), histos[ident]->getMean());
+                        alog->info("Failed fit Col({}) Row({}) Threshold({}) Chi2({}) Status({}) Entries({}) Mean({})", col, row, thrMap[outerIdent]->getBin(bin), chi2, status.outcome, histos[ident]->getEntries(), histos[ident]->getMean());
+                        output->pushData(std::move(histos[ident]));
                     }
                     if (row == nRow/2 && col%10 == 0) {
                         output->pushData(std::move(histos[ident]));
@@ -1090,7 +1093,7 @@ void TotDistPlotter::init(ScanBase *s) {
         if (l->isTriggerLoop()) {
             auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
             if(trigLoop == nullptr) {
-                alog->error("L1Analysis: loop declared as trigger does not have a count");
+                alog->error("TotDistPlotter: loop declared as trigger does not have a count");
             } else {
                 injections = trigLoop->getTrigCnt();
             }
