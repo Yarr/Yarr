@@ -6,11 +6,13 @@
 # Project: Local Database for YARR
 #################################
 
+import os
 from copy import copy
 from logging import getLogger, getLoggerClass, Formatter, FileHandler, StreamHandler, addLevelName, DEBUG, INFO, WARNING, ERROR, CRITICAL
 import coloredlogs
 
 _level = INFO
+#_level = DEBUG
 logger = getLogger("Log")
 logger.setLevel(_level)
 
@@ -59,15 +61,17 @@ def setLog(level=_level):
     formatter = ColoredFormatter("[%(asctime)s:%(msecs)-3d]%(levelname)s %(message)s")
     console.setFormatter(formatter)
     logger.addHandler(console)
+
     logger.setLevel(level)
-    logger.debug('Not set log file')
+    logger.debug('Set log')
 
 def setLogFile(filename, level=_level):
+    dir_path = os.path.dirname(os.path.abspath(filename))
+    os.makedirs(dir_path, exist_ok=True)
     handler = FileHandler(filename)
     handler.setLevel(level)
-    formatter = LogFileFormatter("[%(asctime)s:%(msecs)-3d]%(levelname)s %(message)s")
+    formatter = ColoredFormatter("[%(asctime)s:%(msecs)-3d]%(levelname)s %(message)s")
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     logger.setLevel(level)
     logger.debug('Set log file: {}'.format(filename))
-

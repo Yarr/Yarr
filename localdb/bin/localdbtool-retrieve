@@ -29,7 +29,6 @@ if not "HOSTNAME" in os.environ:
 else:
     hostname = os.environ["HOSTNAME"]
 
-global localdb
 global my_user
 global my_pwd
 global authentication
@@ -55,7 +54,7 @@ def getArgs():
     args = parser.parse_args()
 
     if args.config is not None:
-        conf = common.readConfig(args.config)    # Read from config file
+        conf = common.readCfg(args.config)    # Read from config file
         if 'user'      in conf and not args.user:      args.user = conf['user']
         if 'site'      in conf and not args.site:      args.site = conf['site']
         if 'chip'      in conf and not args.chip:      args.chip = conf['chip']
@@ -102,7 +101,6 @@ def __init():
     logger.debug('Initialize.')
 
     args = getArgs()
-    global localdb
 
     db = LocalDb()
     try:
@@ -113,6 +111,7 @@ def __init():
     if args.username: db.setUsername(args.username)
     if args.password: db.setPassword(args.password)
 
+    url = None
     try:
         url = db.checkConnection()
         connection = True
@@ -122,10 +121,9 @@ def __init():
     response = {
         'service'   : service,
         'connection': connection,
-        'url'       : url
+        'url'       : url,
+        'db'        : db
     }
-
-    localdb = db.getLocalDb()
 
     return response
 
@@ -158,7 +156,6 @@ def __error_exit(command=''):
 def main():
     logger.debug('Main Function.')
 
-    global localdb
     global lines
     global size
     lines = 0
@@ -194,11 +191,8 @@ def main():
             function.url = response['url']
         else:
             import direct as function
-            #max_server_delay = 1
-            #url = response['url']
-            #localdb = MongoClient(url, serverSelectionTimeoutMS=max_server_delay)[db_cfg.get('dbName', 'localdb')]
-            #if authentication:
-            #    localdb.authenticate(my_user, my_pwd)
+            db = response['db']
+            localdb = db.getLocalDb()
             function.__set_localdb(localdb)
     else: __error_exit('connection')
 
@@ -255,7 +249,7 @@ def main():
                     f.write(data['data'])
 
 
-        logger.warning('\033[31mPlease check "db-data/connectivity" and confirm the testing stage.\033[0m')
+        logger.warning('\033[31mPlease confirm "db-data/connectivity" before running scanConsole.\033[0m')
         logger.info('-----------------------')
         sys.exit(0)
     if command[0]=='list':
@@ -273,19 +267,21 @@ def main():
                 printLog('Chip Type : {0}'.format(docs['asic']))
                 printLog('Chips({0})  :'.format(len(docs['chips'])))
                 for oid in docs['chips']:
-                    chip_docs = r_json['child'][oid]
-                    printLog('\033[1;33m    {0}: {1} \033[0m'.format(chip_docs['type'], chip_docs['name']))
-                    printLog('    User  : {0} at {1}'.format(chip_docs['user'], chip_docs['site']))
-                    printLog('    ChipId: {0}'.format(chip_docs['chipId']))
-                    del r_json['child'][oid]
+                    if oid in r_json['child']:
+                        chip_docs = r_json['child'][oid]
+                        printLog('\033[1;33m    {0}: {1} \033[0m'.format(chip_docs['type'], chip_docs['name']))
+                        printLog('    User  : {0} at {1}'.format(chip_docs['user'], chip_docs['site']))
+                        printLog('    ChipId: {0}'.format(chip_docs['chipId']))
+                        del r_json['child'][oid]
                 printLog('')
             for oid in r_json['child']:
-                docs = r_json['child'][oid]
-                printLog('\033[1;33m{0}: {1} \033[0m'.format(docs['type'], docs['name']))
-                printLog('User      : {0} at {1}'.format(docs['user'], docs['site']))
-                printLog('Chip Type : {0}'.format(docs['asic']))
-                printLog('ChipId    : {0}'.format(docs['chipId']))
-                printLog('')
+                if oid in r_json['child']:
+                    docs = r_json['child'][oid]
+                    printLog('\033[1;33m{0}: {1} \033[0m'.format(docs['type'], docs['name']))
+                    printLog('User      : {0} at {1}'.format(docs['user'], docs['site']))
+                    printLog('Chip Type : {0}'.format(docs['asic']))
+                    printLog('ChipId    : {0}'.format(docs['chipId']))
+                    printLog('')
 
         elif opt=='user':
             r_json = function.__list_user()

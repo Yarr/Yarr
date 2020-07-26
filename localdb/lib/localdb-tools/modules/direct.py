@@ -245,16 +245,10 @@ def __pull(dir_path, args):
             'dbVersion': db_version
         }
         entries = localdb.componentTestRun.find(query)
-        QC_status_doc = localdb.QC.module.status.find_one({"component_name":i_chip})
-        if QC_status_doc == None:
-            c_stage = this_tr.get('stage', '...')
-        else:
-            c_stage = QC_status_doc["currentStage"]
 
-
-        logger.warning('Current stage is \033[1m' + c_stage + '\033[0m\n')
+        stage = this_tr.get('stage', '...')
         conn_json = {
-            'stage'   : c_stage,
+            'stage'   : stage,
             'chipType': chip_type,
             'chips'   : []
         }
@@ -269,6 +263,13 @@ def __pull(dir_path, args):
                         'componentType': this_cmp['componentType']
                     }
                 })
+                query = { 'component': str(this_cmp['_id']) }
+                this_QC = localdb.QC.module.status.find_one(query)
+                if this_QC:
+                    stage = this_QC['currentStage']
+                    if not conn_json['stage']==stage:
+                        logger.warning('Current stage is \033[1m' + stage + '\033[0m\n')
+                        conn_json.update({ 'stage': stage })
                 continue
             chip_conn = {}
             for key in this_ctr:
@@ -327,7 +328,8 @@ def __pull(dir_path, args):
                 'Date'      : setTime(this_tr['startTime']),
                 'Chips'     : ', '.join(chips),
                 'Run Number': this_tr['runNumber'],
-                'Test Type' : this_tr['testType']
+                'Test Type' : this_tr['testType'],
+                'Stage'     : stage
             },
             'data': data_entries
         }
@@ -350,15 +352,8 @@ def __pull(dir_path, args):
         else:        this_chip = this_ch
 
         ### connectivity
-        QC_status_doc = localdb.QC.module.status.find_one({"component_name":i_chip})
-        if QC_status_doc == None:
-            c_stage = "Testing"
-        else:
-            c_stage = QC_status_doc["currentStage"]
-
-        logger.warning('Current stage is \033[1m' + c_stage + '\033[0m\n')
         conn_json = {
-            'stage': c_stage,
+            'stage': 'Testing',
             'chips': []
         }
         module = False
@@ -377,6 +372,11 @@ def __pull(dir_path, args):
                     'componentType': this_chip['componentType']
                 }
             })
+            query = { 'component': str(this_chip['_id']) }
+            this_QC = localdb.QC.module.status.find_one(query)
+            if this_QC:
+                stage = this_QC['currentStage']
+                conn_json.update({ 'stage': stage })
             for entry in entries:
                 children.append(entry['child'])
             module = True
@@ -404,6 +404,7 @@ def __pull(dir_path, args):
             data_entries.append( docs )
 
             conn_json['chips'].append({
+                'name': this['name'],
                 'config': '{0}/{1}.json'.format(dir_path, this['name']),
                 'tx'    : i,
                 'rx'    : i
@@ -425,6 +426,7 @@ def __pull(dir_path, args):
                 'Parent'   : '\033[1;31m{0} ({1})\033[0m'.format(this_chip['serialNumber'], this_chip['componentType']) if module else None,
                 'Chip Type': chip_type,
                 'Chips'    : ', '.join(chips),
+                'Stage'    : stage,
             },
             'data': data_entries
         }

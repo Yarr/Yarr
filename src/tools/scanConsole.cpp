@@ -116,12 +116,14 @@ int main(int argc, char *argv[]) {
     std::string dbCfgPath = defaultDbCfgPath();
     std::string dbSiteCfgPath = defaultDbSiteCfgPath();
     std::string dbUserCfgPath = defaultDbUserCfgPath();
+    bool isQC = false;
+    bool setInteractive = false;
 
     std::string logCfgPath = "";
 
     int nThreads = 4;
     int c;
-    while ((c = getopt(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:l:")) != -1) {
+    while ((c = getopt(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:l:QI")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
@@ -191,6 +193,12 @@ int main(int argc, char *argv[]) {
                 break;
             case 'u': // Database config file
                 dbUserCfgPath = std::string(optarg);
+                break;
+            case 'Q':
+                isQC = true;
+                break;
+            case 'I':
+                setInteractive = true;
                 break;
             case '?':
                 if(optopt == 's' || optopt == 'n'){
@@ -297,26 +305,6 @@ int main(int argc, char *argv[]) {
     scanLog["targetTot"] = target_tot;
     scanLog["testType"] = strippedScan;
 
-    // Initial setting local DBHandler
-    DBHandler *database = new DBHandler();
-    if (dbUse) {
-        logger->info("\033[1;31m################\033[0m");
-        logger->info("\033[1;31m# Set Database #\033[0m");
-        logger->info("\033[1;31m################\033[0m");
-        logger->info("-> Setting user's information");
-
-        database->initialize(dbCfgPath, argv[0]);
-
-        json dbCfg = ScanHelper::openJsonFile(dbCfgPath);
-        scanLog["dbCfg"] = dbCfg;
-
-        // set/check user config if specified
-        json userCfg = database->setUser(dbUserCfgPath);
-        scanLog["userCfg"] = userCfg;
-        // set/check site config if specified
-        json siteCfg = database->setSite(dbSiteCfgPath);
-        scanLog["siteCfg"] = siteCfg;
-    }
     logger->info("\033[1;31m#################\033[0m");
     logger->info("\033[1;31m# Init Hardware #\033[0m");
     logger->info("\033[1;31m#################\033[0m");
@@ -368,11 +356,23 @@ int main(int argc, char *argv[]) {
         scanLog["connectivity"].push_back(config);
     }
 
+    // Initial setting local DBHandler
+    DBHandler *database = new DBHandler();
     if (dbUse) {
-        logger->info("Setting Connectivity Configs");
-        // set/check connectivity config files
-        database->setConnCfg(cConfigPaths);
+        logger->info("\033[1;31m################\033[0m");
+        logger->info("\033[1;31m# Set Database #\033[0m");
+        logger->info("\033[1;31m################\033[0m");
+        database->initialize(dbCfgPath, argv[0], "scan", isQC, setInteractive);
+        if (database->checkConfigs(dbUserCfgPath, dbSiteCfgPath, cConfigPaths)==1)
+            return -1;
+        json dbCfg = ScanHelper::openJsonFile(dbCfgPath);
+        scanLog["dbCfg"] = dbCfg;
+        json userCfg = ScanHelper::openJsonFile(dbUserCfgPath);
+        scanLog["userCfg"] = userCfg;
+        json siteCfg = ScanHelper::openJsonFile(dbSiteCfgPath);
+        scanLog["siteCfg"] = siteCfg;
     }
+
 
     // Reset masks
     if (mask_opt == 1) {
@@ -693,6 +693,8 @@ void printHelp() {
     std::cout << " -i <site.json> : Provide site configuration. (Default " << dbSiteCfgPath << ")" << std::endl;
     std::cout << " -u <user.json> : Provide user configuration. (Default " << dbUserCfgPath << ")" << std::endl;
     std::cout << " -l <log_cfg.json> : Provide logger configuration." << std::endl;
+    std::cout << " -Q: Set QC scan mode." << std::endl;
+    std::cout << " -I: Set interactive mode." << std::endl;
 }
 
 void listChips() {

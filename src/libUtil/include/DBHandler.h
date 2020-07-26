@@ -37,7 +37,9 @@ class DBHandler {
         ***/
         void initialize(std::string /*i_db_cfg_path*/,
                         std::string /*i_command*/,
-                        std::string i_option="scan");
+                        std::string i_option="scan",
+                        bool isQC=false,
+                        bool i_interactive=false);
 
         /***
         Alert and write message in error log file
@@ -60,9 +62,6 @@ class DBHandler {
         - Config: requires config file and information to set config data
         - Attachment: requires dat file and information to set dat data
         ***/
-        json setUser(std::string /*i_user_path*/);
-        json setSite(std::string /*i_site_path*/);
-        void setConnCfg(std::vector<std::string> /*i_conn_paths*/);
         void setDCSCfg(std::string /*i_dcs_path*/,
                        std::string /*i_scanlog_path*/,
                        std::string /*i_user_path*/,
@@ -75,7 +74,8 @@ class DBHandler {
         Clean up veriables after scanConsole
         ***/
         void cleanUp(std::string /*i_option*/,
-                     std::string /*i_dir*/);
+                     std::string /*i_dir*/,
+                     bool        i_back=true);
 
         /***
         Upload unuploaded test cache data into Local DB
@@ -98,12 +98,14 @@ class DBHandler {
         /***
         Check registered modules in Local DB and create module list in ~/.yarr/localdb/${HOSTNAME}_modules.csv
         ***/
-        int checkModule();
+        int checkConfigs(std::string /*i_user_cfg_path*/,
+                         std::string /*i_site_cfg_path*/,
+                         std::vector<std::string> /*i_conn_cfg_paths*/);
 
-	/***
-	retrieve DCS data from InfluxDB
-	***/
-	void init_influx(std::string /*i_command*/);
+        /***
+        retrieve DCS data from InfluxDB
+        ***/
+        void init_influx(std::string /*i_command*/);
         int retrieveFromInflux(std::string, /*influx_conn_path*/
                                std::string, /*chipname*/
                                std::string  /*i_scanlog_path*/);
@@ -126,9 +128,6 @@ class DBHandler {
                        std::string /*i_list_path*/,
                        std::string /*i_file_path*/);
         json checkDBCfg(std::string /*i_db_path*/);
-        void checkConnCfg(std::string /*i_conn_path*/);
-        json checkUserCfg(std::string /*i_user_path*/);
-        json checkSiteCfg(std::string /*i_site_path*/);
         void checkDCSCfg(std::string /*i_dcs_path*/,
                          std::string /*i_num*/,
                          json /*i_json*/);
@@ -155,7 +154,7 @@ class DBHandler {
         std::string m_chip_type;
         std::string m_output_dir;
         std::string m_command;
-	std::string influx_command;
+        std::string influx_command;
 
         std::vector<std::string> m_stage_list;
         std::vector<std::string> m_env_list;
@@ -164,7 +163,8 @@ class DBHandler {
         std::vector<std::string> m_histo_names;
 
         double m_db_version;
-        bool m_verify;
+        bool m_qc;
+        bool m_interactive;
 
         json m_conn_json;
         int counter;
