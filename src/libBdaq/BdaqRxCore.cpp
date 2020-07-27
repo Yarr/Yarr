@@ -184,10 +184,6 @@ unsigned int BdaqRxCore::decodeUserk(const uint32_t& word, uint32_t* out,
         // regData might contain data from either 1 or 2 registers.
         // The code below will insert this data into the output stream
         // using one of the YARR expected formats.                                        
-        if (regData.size() == 0) {
-            logger->critical("regData.size() = 0");
-            exit(-1);
-        } 
         for (const auto& reg : regData) {
             encodeToYarr(reg, out, index); //inserts 2 words in the out stream.
             index+=2;
