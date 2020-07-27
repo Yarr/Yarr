@@ -260,8 +260,13 @@ void StarEmu::DecodeLCB(LCB::Frame frame) {
         }
     } // if (not (iskcode0 or iskcode1) )
 
-    // Increment BC counter
-    m_bccnt += 4;
+    if (m_resetbc) {
+        m_bccnt = 0;
+        m_resetbc = false;
+    } else {
+        // Increment BC counter
+        m_bccnt += 4;
+    }
 }
 
 //
@@ -487,7 +492,6 @@ void StarEmu::doFastCommand(uint8_t data6) {
 
 void StarEmu::logicReset()
 {
-    m_bccnt = 0;
     hpr_clkcnt = HPRPERIOD/2;
     std::fill(hpr_sent.begin(), hpr_sent.end(), false);
     
@@ -730,7 +734,7 @@ void StarEmu::doL0A(uint16_t data12) {
         } // if L0A
     } // 4 BCs
 
-    if (bcr) m_bccnt = 0;
+    if (bcr) m_resetbc = true;
 }
 
 unsigned int StarEmu::countTriggers(LCB::Frame frame) {

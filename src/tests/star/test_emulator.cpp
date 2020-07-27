@@ -45,7 +45,7 @@ TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
     emu->writeFifo((readHCCCmd2[8] << 16) + LCB::IDLE);
 
     // Response from L0?
-    expected.push_back("Packet type TYP_LP, BCID 0 (0), L0ID 3, nClusters 0\n");
+    expected.push_back("Packet type TYP_LP, BCID 7 (1), L0ID 3, nClusters 0\n");
     // NB this is incorrect?
     expected.push_back("Packet type TYP_HCC_RR, ABC 0, Address 11, Value 00000000\n");
   }
@@ -116,6 +116,9 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
   // (By default the emulator has only one hard-coded ABC with ID = 15 for now)
   expected.push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
 
+  // Reset BC counters
+  emu->writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(0, 0, true));
+
   //////////////////////////
   // Start tests
   //////////////////////////
@@ -152,8 +155,11 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     emu->writeFifo((LCB::l0a_mask(1, 0, false) << 16) + readABCCmd[2]);
     emu->writeFifo((readABCCmd[8] << 16) + LCB::IDLE);
 
-    // Response from L0A: empty cluster; l0tag = 0 + 3; bcid = 0b0000
-    expected.push_back({0x20, 0x30, 0x03, 0xfe, 0x6f, 0xed});
+    // Response from L0A: empty cluster; l0tag = 0 + 3;
+    // At the time of the L0A frame, bc count = 56; L0 latency is set to 400
+    // => 8-bit BCID = (512 + 56-1 - 400) & 0xff = 0xa7
+    // 4-bit BCID in the packet: 0b1111
+    expected.push_back({0x20, 0x3f, 0x03, 0xfe, 0x6f, 0xed});
     // ABCStar register 34 (CREG2): 0x00000190
     expected.push_back({0x40, 0x22, 0x00, 0x00, 0x00, 0x19, 0x0f, 0x00, 0x00});
   }
@@ -172,8 +178,10 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     // Send an L0A
     emu->writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(1, 4, false));
 
-    // l0tag = 4 + 3; bcid = 0b0111;
-    expected.push_back({0x20, 0x77, 0x05, 0xc7, 0x01, 0xcf, 0x05, 0xe7, 0x01, 0xee, 0x07, 0xc7, 0x03, 0xcf, 0x07, 0xe7, 0x03, 0xee, 0x6f, 0xed});
+    // l0tag = 4 + 3
+    // bc count at L0A frame = 148; trigger command on 148-1; latency = 0
+    // => 8-bit BCID = 0x93; 4-bit BCID in the packet = 0b0110
+    expected.push_back({0x20, 0x76, 0x05, 0xc7, 0x01, 0xcf, 0x05, 0xe7, 0x01, 0xee, 0x07, 0xc7, 0x03, 0xcf, 0x07, 0xe7, 0x03, 0xee, 0x6f, 0xed});
   }
 
   SECTION("Hit Counters") {
@@ -236,8 +244,10 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     emu->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
     emu->writeFifo((LCB::fast_command(LCB::ABC_DIGITAL_PULSE, 0) << 16) + LCB::l0a_mask(1, 20, false));
 
-    // Physics packet: l0tag = 20 + 3; bcid = 0b1000
-    expected.push_back({0x21, 0x78, 0x00, 0x00, 0x6f, 0xed});
+    // Physics packet: l0tag = 20 + 3
+    // bc count = 156 when L0A command received; trigger on 156-1; latency = 3
+    // 8-bit BCID = 152 (0x98) => 4-bit BCID in the packet = 0b0001
+    expected.push_back({0x21, 0x71, 0x00, 0x00, 0x6f, 0xed});
   }
 
   emu->releaseFifo();
@@ -512,6 +522,9 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
   }
 
   SECTION("Tx trigger control") {
+    // Reset BC counters
+    emu->writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(0, 0, true));
+
     // Switch to the static test mode (TM = 1)
     auto writeABCCmd_TM = star.write_abc_register(32, 0x00010040);
     sendCommand(*emu, writeABCCmd_TM);
@@ -544,11 +557,11 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
     // {0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee}
     // L0tag from the trigger words: l0tag = 4 (input tag) + 3 (BC offset)
     // Expect two physics packets from rx channel 3 (corresponding to tx 2)
-    expected.push_back({3, {0x20,0x76, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b0110
-    expected.push_back({3, {0x20,0x77, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b0111
+    expected.push_back({3, {0x20,0x7e, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b1110
+    expected.push_back({3, {0x20,0x7e, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b1110
     // And two packets from rx channel 5 (corresponding to tx 4)
-    expected.push_back({5, {0x20,0x76, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b0110
-    expected.push_back({5, {0x20,0x77, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b0111
+    expected.push_back({5, {0x20,0x7e, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b1110
+    expected.push_back({5, {0x20,0x7e, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b1110
 
     // Join trigger process when it is done
     while(!emu->isTrigDone());

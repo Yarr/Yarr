@@ -153,6 +153,7 @@ private:
 
     // BC counter
     uint16_t m_bccnt;
+    bool m_resetbc;
 
     // Count hits
     bool m_startHitCount;
