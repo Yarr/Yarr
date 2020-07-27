@@ -44,10 +44,8 @@ private:
 
     // FE data format
     static constexpr unsigned NStrips = 256;
-    static constexpr unsigned NBitsBC = 8;
+    using StripData = std::bitset<NStrips>;
 
-    using StripData = std::bitset<NStrips+NBitsBC>;
-    
     /////////////////////////////////////////////
     /// Send response packet (excluding SOP/EOP)
     template<typename T> void sendPacket(T &iterable) {
@@ -96,22 +94,24 @@ private:
     /// Trigger and front end
     void doL0A(uint16_t);
     unsigned int countTriggers(LCB::Frame);
-    void countHits(unsigned iABC, uint8_t cmdBC);
-    unsigned getL0BufferAddr(unsigned iABC, uint8_t cmdBC);
-    uint8_t getEventBCID(uint8_t cmdBC);
-    
-    void addClusters(std::vector<std::vector<uint16_t>>&, unsigned, uint8_t);
     uint16_t clusterFinder_sub(uint64_t&, uint64_t&, bool);
     std::vector<uint16_t> clusterFinder(const StripData&,
                                         const uint8_t maxCluster=63);
-    void generateFEData_StaticTest(unsigned ichip);
-    void generateFEData_TestPulse(unsigned ichip, uint8_t BC);
-    void generateFEData_CaliPulse(unsigned ichip, uint8_t BC);
-    void applyMasks(unsigned ichip);
-    StripData getMasks(unsigned ichip);
-    StripData getCalEnables(unsigned ichip);
-    void clearFEData(unsigned ichip);
-    void prepareFEData(unsigned ichip);
+    void ackPulseCmd(int pulseType, uint8_t cmdBC);
+    unsigned getL0BufferAddr(unsigned latency, uint8_t cmdBC);
+    void clearFEData();
+
+    // per ABC
+    void countHits(AbcCfg& abc, const StripData& hits);
+    std::vector<uint16_t> getClusters(const AbcCfg&, const StripData&);
+
+    std::pair<uint8_t,StripData> getFEData(const AbcCfg& abc, uint8_t cmdBC);
+    std::pair<uint8_t,StripData> generateFEData_StaticTest(const AbcCfg&, unsigned);
+    std::pair<uint8_t,StripData> generateFEData_TestPulse(const AbcCfg&, unsigned);
+    std::pair<uint8_t,StripData> generateFEData_CaliPulse(const AbcCfg&, unsigned);
+
+    StripData getMasks(const AbcCfg& abc);
+    StripData getCalEnables(const AbcCfg& abc);
 
     /// Utilities
     bool getParity_8bits(uint8_t);
@@ -135,10 +135,24 @@ private:
     // front-end data container
     // For nABCs and *Four* bunch crossings
     // m_l0buffer_lite[iABC][iBC] = 8-bit BC + 256-bit strip hits
-    std::vector< std::array<StripData, 4> > m_l0buffers_lite;
+    //std::vector< std::array<StripData, 4> > m_l0buffers_lite;
+
+    // Front-end data pipeline
+    // Simplified L0 buffer
+    // Instead of storing the hit data, it only takes note when a calibration or test pulse command is received.
+    // The actual 256b strip data is generated when a trigger is received.
+    // Since pulse commands are broadcasted to all chips, there is no need to have separate L0 pipelines for different ABCStar chips
+    // 512 deep and each entry is 8b BCID + 2 bits indicating a cal or test pulse
+    // 0b01: calibration pulse; 0b10: digital test pulse
+    static constexpr unsigned L0BufDepth = 512;
+    static constexpr unsigned L0BufWidth = 10;
+    std::array<std::bitset<L0BufWidth>, L0BufDepth> m_l0buffer_lite;
+
+    // number of untriggered data in the pipeline
+    unsigned int m_ndata_l0buf;
 
     // BC counter
-    uint8_t m_bccnt;
+    uint16_t m_bccnt;
 
     // Count hits
     bool m_startHitCount;
