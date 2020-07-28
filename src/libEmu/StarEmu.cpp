@@ -1010,7 +1010,7 @@ std::pair<uint8_t, StarEmu::StripData> StarEmu::generateFEData_CaliPulse(const A
 
     // apply masks
     auto masks = getMasks(abc);
-    hits &= masks;
+    hits &= masks.flip();
 
     return std::make_pair(bcid, hits);
 }
