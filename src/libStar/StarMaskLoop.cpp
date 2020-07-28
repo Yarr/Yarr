@@ -11,7 +11,7 @@ namespace {
     auto logger = logging::make_log("StarMaskLoop");
 }
 
-StarMaskLoop::StarMaskLoop() : LoopActionBase() {
+StarMaskLoop::StarMaskLoop() : LoopActionBase(LOOP_STYLE_MASK) {
     min = 0;
     max = 16;
     step = 1;
