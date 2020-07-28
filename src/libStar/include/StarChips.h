@@ -42,7 +42,7 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
   void setHccId(unsigned);//Set the HCC ID to the argument, uses the chip serial number set by eFuse
 
   void makeGlobal() override final {
-      setHccId(15);
+      StarCfg::setHCCChipId(15);
   }
 
   void reset();
