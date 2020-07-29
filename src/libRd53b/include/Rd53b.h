@@ -32,14 +32,19 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         void configurePixels();
         void configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels);
 
-        void maskPixel(unsigned col, unsigned row) override {}
+        void maskPixel(unsigned col, unsigned row) override {
+            this->setEn(col, row, 0);
+            this->setHitbus(col, row, 0);
+        }
 
         void writeRegister(Rd53bReg Rd53bGlobalCfg::*ref, uint16_t value);
         void readRegister(Rd53bReg Rd53bGlobalCfg::*ref);
         void writeNamedRegister(std::string name, uint16_t value) override;
         Rd53bReg Rd53bGlobalCfg::* getNamedRegister(std::string name);
 
-        void setInjCharge(double charge, bool sCap=true, bool lCap=true) override {}
+        void setInjCharge(double charge, bool sCap=true, bool lCap=true) override {
+            this->writeRegister((Rd53bReg Rd53bGlobalCfg::*)&Rd53bGlobalCfg::InjVcalDiff, this->toVcal(charge));
+        }
     protected:
     private:
 };

@@ -114,6 +114,7 @@ void Rd53b::configureInit() {
     
     // Reset Core
     
+    /*
     logger->debug("Reset Cores!");
     for (unsigned i=0; i<16; i++) {
         this->writeRegister(&Rd53b::RstCoreCol0, 1<<i);
@@ -127,7 +128,8 @@ void Rd53b::configureInit() {
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
     logger->debug("Chip initialisation done!");
-    
+    */
+
     this->writeRegister(&Rd53b::RstCoreCol0, 0xFFFF);
     this->writeRegister(&Rd53b::RstCoreCol1, 0xFFFF);
     this->writeRegister(&Rd53b::RstCoreCol2, 0xFFFF);
