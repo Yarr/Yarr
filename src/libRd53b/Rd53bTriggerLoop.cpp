@@ -75,7 +75,7 @@ void Rd53bTriggerLoop::setTrigDelay(uint32_t delay) {
 
 void Rd53bTriggerLoop::setEdgeMode(uint32_t duration) {
     // Assumes CAL command to be in index 31/30
-    std::array<uint16_t, 3> calWords = Rd53b::genCal(16, 1, 0, 20, 0, 0);
+    std::array<uint16_t, 3> calWords = Rd53b::genCal(16, 1, 0, m_edgeDuration, 0, 0);
     m_trigWord[31] = 0xAAAA0000 | calWords[0];
     m_trigWord[30] = ((uint32_t)calWords[1]<<16) | calWords[2];
 }
@@ -152,6 +152,8 @@ void Rd53bTriggerLoop::writeConfig(json &config) {
     config["noInject"] = m_noInject;
     config["extTrig"] = m_extTrig;
     config["trigMultiplier"] = m_trigMultiplier;
+    config["edgeMode"] = m_edgeMode;
+    config["edgeDuration"] = m_edgeDuration;
 }
 
 void Rd53bTriggerLoop::loadConfig(json &config) {
@@ -167,6 +169,8 @@ void Rd53bTriggerLoop::loadConfig(json &config) {
         m_noInject = config["noInject"];
     if (!config["edgeMode"].empty())
         m_edgeMode = config["edgeMode"];
+    if (!config["edgeDuration"].empty())
+        m_edgeDuration = config["edgeDuration"];
     if (!config["extTrig"].empty())
         m_extTrig = config["extTrig"];
     if (!config["trigMultiplier"].empty())
