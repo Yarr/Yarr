@@ -138,7 +138,7 @@ void Rd53bGlobalCfg::init() {
     //30
     LinRefKrum.init         ( 30, &m_cfg[ 30], 0, 10, 300); regMap["LinRefKrum"] = &Rd53bGlobalCfg::LinRefKrum;
     //31
-    LinComp.init            ( 31, &m_cfg[ 31], 0, 10, 110); regMap["Comp"] = &Rd53bGlobalCfg::LinComp;
+    LinComp.init            ( 31, &m_cfg[ 31], 0, 10, 110); regMap["LinComp"] = &Rd53bGlobalCfg::LinComp;
     //32
     LinCompTa.init          ( 32, &m_cfg[ 32], 0, 10, 110); regMap["LinCompTa"] = &Rd53bGlobalCfg::LinCompTa;
     //33
@@ -356,9 +356,9 @@ void Rd53bGlobalCfg::init() {
     NtcDac.init             (104, &m_cfg[104], 0, 10, 100); regMap["NtcDac"] = &Rd53bGlobalCfg::NtcDac;
     //105-108
     HitOrMask3.init         (105, &m_cfg[105], 0,  6, 0); regMap["HitOrMask3"] = &Rd53bGlobalCfg::HitOrMask3;
-    HitOrMask2.init         (106, &m_cfg[105], 0, 16, 0); regMap["HitOrMask2"] = &Rd53bGlobalCfg::HitOrMask2;
-    HitOrMask1.init         (107, &m_cfg[105], 0, 16, 0); regMap["HitOrMask1"] = &Rd53bGlobalCfg::HitOrMask1;
-    HitOrMask0.init         (108, &m_cfg[105], 0, 16, 0); regMap["HitOrMask0"] = &Rd53bGlobalCfg::HitOrMask0;
+    HitOrMask2.init         (106, &m_cfg[106], 0, 16, 0); regMap["HitOrMask2"] = &Rd53bGlobalCfg::HitOrMask2;
+    HitOrMask1.init         (107, &m_cfg[107], 0, 16, 0); regMap["HitOrMask1"] = &Rd53bGlobalCfg::HitOrMask1;
+    HitOrMask0.init         (108, &m_cfg[108], 0, 16, 0); regMap["HitOrMask0"] = &Rd53bGlobalCfg::HitOrMask0;
     //109-116
     AutoRead0.init          (109, &m_cfg[109], 0,  9, 137); regMap["AutoRead0"] = &Rd53bGlobalCfg::AutoRead0;
     AutoRead1.init          (110, &m_cfg[110], 0,  9, 133); regMap["AutoRead1"] = &Rd53bGlobalCfg::AutoRead1;
