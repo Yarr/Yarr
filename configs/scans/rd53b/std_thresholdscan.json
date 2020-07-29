@@ -39,27 +39,27 @@
     "loops": [
       {
         "config": {
-          "max": 800,
+          "max": 64,
           "min": 0,
-          "step": 20,
+          "step": 4
+        },
+        "loopAction": "Rd53bMaskLoop"
+      },
+      {
+        "config": {
+          "max": 600,
+          "min": 0,
+          "step": 10,
           "parameter":"InjVcalDiff"
         },
         "loopAction": "Rd53bParameterLoop"
       },
       {
         "config": {
-          "max": 64,
-          "min": 0,
-          "step": 16
-        },
-        "loopAction": "Rd53bMaskLoop"
-      },
-      {
-        "config": {
-          "max": 8,
+          "max": 1,
           "min": 0,
           "step": 1,
-          "nSteps": 8
+          "nSteps": 1
         },
         "loopAction": "Rd53bCoreColLoop"
       },
@@ -68,7 +68,7 @@
           "count": 50,
           "delay": 56,
           "extTrigger": false,
-          "frequency": 10000,
+          "frequency": 5000,
           "noInject": false,
           "time": 0,
           "edgeMode": false
@@ -82,7 +82,7 @@
     "name": "DigitalScan",
     "prescan": {
         "InjDigEn": 0,
-        "InjVcalMed": 200,
+        "InjVcalMed": 500,
         "VcalRange": 1,
         "Latency": 56
     }

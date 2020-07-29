@@ -62,13 +62,14 @@
       },
       {
         "config": {
-          "count": 10,
+          "count": 50,
           "delay": 56,
           "extTrigger": false,
           "frequency": 10000,
           "noInject": false,
           "time": 0,
-          "edgeMode": true
+          "edgeMode": true,
+          "edgeDuration": 20
         },
         "loopAction": "Rd53bTriggerLoop"
       },
@@ -79,7 +80,7 @@
     "name": "DigitalScan",
     "prescan": {
         "InjDigEn": 1,
-        "Latency": 58
+        "Latency": 60
     }
   }
 }
