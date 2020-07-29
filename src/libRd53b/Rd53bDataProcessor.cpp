@@ -36,6 +36,7 @@ Rd53bDataProcessor::Rd53bDataProcessor()
 	_data = nullptr;
 
 	_isCompressedHitmap = true; // True by default
+	_dropToT = false; /* False by default */
 }
 
 Rd53bDataProcessor::~Rd53bDataProcessor()
@@ -268,7 +269,8 @@ void Rd53bDataProcessor::process_core()
 						rollBack((_LUT_BinaryTreeHitMap[hitmap_raw] & 0xFF0000) >> 16);
 					}
 					}
-					uint64_t ToT = retrieve(_LUT_PlainHMap_To_ColRow_ArrSize[hitmap] << 2);
+					/* If drop ToT, the ToT value saved in the output event will be 0 */
+					uint64_t ToT = _dropToT ? 0 : retrieve(_LUT_PlainHMap_To_ColRow_ArrSize[hitmap] << 2);
 					for (unsigned ihit = 0; ihit < _LUT_PlainHMap_To_ColRow_ArrSize[hitmap]; ++ihit)
 					{
 						const uint8_t pix_tot = (ToT >> (ihit << 2)) & 0xF;
