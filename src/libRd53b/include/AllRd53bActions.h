@@ -2,3 +2,4 @@
 #include "Rd53bMaskLoop.h"
 #include "Rd53bCoreColLoop.h"
 #include "Rd53bParameterLoop.h"
+#include "Rd53bPixelFeedback.h"
