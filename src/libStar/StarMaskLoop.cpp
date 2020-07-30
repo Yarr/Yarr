@@ -115,8 +115,6 @@ void StarMaskLoop::applyMask(StarChips* fe, const uint32_t masks[8], const uint3
       logger->debug("{}", oss.str());
     } // End debug
 
-  auto num_abc = fe->numABCs();
-
   auto writeReg = [&](auto words) {
     g_tx->writeFifo((words[0] << 16) + words[1]);
     g_tx->writeFifo((words[2] << 16) + words[3]);
@@ -128,22 +126,25 @@ void StarMaskLoop::applyMask(StarChips* fe, const uint32_t masks[8], const uint3
     g_tx->releaseFifo();
   };
 
-  for( int iChip = 1; iChip < num_abc+1; ++iChip){ //exclude iChip=0 which is the Hcc
-    //Looping over MaskInput registers
-    int index=0;
-    for (int j=ABCStarRegister::MaskInput(0); j<=ABCStarRegister::MaskInput(7); j++){
-      logger->trace("write mask: {} {} 0x{:08x}", iChip, index, masks[index]);
-      writeReg(fe->write_abc_register(j, ~masks[index], 0xf));  // strip 0's mask starts from reg 16,
-      index++;
-    }
-    //Looping over CAL ENABLE registers
-    index=0;
-    for (int j=ABCStarRegister::CalREG0; j<=ABCStarRegister::CalREG7; j++){
-      logger->trace("write cal: {} {} 0x{:08x}", iChip, j, enables[index]);
-      writeReg(fe->write_abc_register(j, enables[index], 0xf));  // strip 0's mask starts from reg 104,.
-      index++;
-    }
-  }//end of loop over ABCs
+  // NB currently using broadcast writes.
+  // I the future this could be expanded to allow an overriding
+  // mask for each front-end, but that requires a more complex
+  // configuration architecture.
+
+  //Looping over MaskInput registers
+  for (int j=ABCStarRegister::MaskInput(0), index = 0;
+       j<=ABCStarRegister::MaskInput(7);
+       j++, index++) {
+    logger->trace("write mask: {} 0x{:08x}", index, masks[index]);
+    writeReg(fe->write_abc_register(j, ~masks[index], 0xf));
+  }
+  //Looping over CAL ENABLE registers
+  for (int j=ABCStarRegister::CalReg(0), index = 0;
+       j<=ABCStarRegister::CalReg(7);
+       j++, index++) {
+    logger->trace("write cal: {} 0x{:08x}", j, enables[index]);
+    writeReg(fe->write_abc_register(j, enables[index], 0xf));
+  }
 }
 
 void StarMaskLoop::applyEncodedMask(StarChips* fe, unsigned int curStep) {

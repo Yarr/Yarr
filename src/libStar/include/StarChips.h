@@ -86,8 +86,6 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
     readABCSubRegister(subRegName, abcFromChipID(chipID));
   }
 
-  using StarCfg::numABCs;
-
  private:
   void setAndWriteABCSubRegister(std::string subRegName, AbcCfg &cfg, uint32_t value) {
     cfg.setSubRegisterValue(subRegName, value);
