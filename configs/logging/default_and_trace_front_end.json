@@ -1,0 +1,11 @@
+{
+    "pattern": "[%T:%e]%^[%=8l][%=15n]:%$ %v",
+    "log_config": [
+        {"name": "all", "level": "info"},
+        {"name": "Fei4", "level": "trace"},
+        {"name": "Fei4Cmd", "level": "trace"},
+        {"name": "Rd53a", "level": "trace"},
+        {"name": "Rd53aCmd", "level": "trace"},
+        {"name": "StarChips", "level": "trace"}
+    ]
+}
