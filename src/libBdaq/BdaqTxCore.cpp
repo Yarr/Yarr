@@ -115,7 +115,7 @@ void BdaqTxCore::setTrigCnt(uint32_t count) {
     logger->debug(d.str());
 
     hardwareTriggerCount = (uint16_t) count;
-    logger->info("Trigger Count: {}", count);
+    logger->debug("Trigger Count: {}", count);
 }
 
 void BdaqTxCore::setTrigEnable(uint32_t value) {
@@ -144,7 +144,7 @@ void BdaqTxCore::setTrigEnable(uint32_t value) {
             hardwareTriggerRun();
         }
     }
-    logger->info("Trigger Enable: {}", value);
+    logger->debug("Trigger Enable: {}", value);
 }
 
 uint32_t BdaqTxCore::getTrigEnable() {
@@ -179,7 +179,7 @@ void BdaqTxCore::setTrigFreq(double freq) {
     // For Timed trigger
     timedTriggerFreq = freq;
     // Debug
-    logger->info("Trigger Frequency: {}, NOOP Number: {}", freq, hardwareTriggerNoop);
+    logger->debug("Trigger Frequency: {}, NOOP Number: {}", freq, hardwareTriggerNoop);
 }
   
 void BdaqTxCore::setTrigTime(double time) {
@@ -196,7 +196,7 @@ void BdaqTxCore::setTrigTime(double time) {
         timedTrigger = true;
         timedTriggerTime = time;
     }
-    logger->info("Trigger Time: {}", time);
+    logger->debug("Trigger Time: {}", time);
 }
 
 void BdaqTxCore::toggleTrigAbort() {
@@ -242,7 +242,7 @@ void BdaqTxCore::hardwareTriggerSet() {
     cmd.setData(trgData);
     cmd.setSize(trgData.size()); 
     cmd.setRepetitions(hardwareTriggerCount);
-    logger->info("Hardware Trigger Size (in bytes): {}", trgData.size());
+    logger->debug("Hardware Trigger Size (in bytes): {}", trgData.size());
     trgData.clear();
 }
 
@@ -259,7 +259,7 @@ void BdaqTxCore::timedTriggerSet() {
     cmd.setData(trgData);
     cmd.setSize(trgData.size()); 
     cmd.setRepetitions(1);
-    logger->info("Timed Trigger Size (in bytes): {}", trgData.size());
+    logger->debug("Timed Trigger Size (in bytes): {}", trgData.size());
     trgData.clear();
 }
 
