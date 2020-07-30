@@ -182,9 +182,12 @@ def main():
     if command[0]=='init':
         if not nargs==0: __error_exit(command[0])
         logger.info('Function: Initialize')
-        __init()
+        response = __init()
         logger.info('-----------------------')
-        sys.exit(0)
+        if response['connection']:
+            sys.exit(0)
+        else:
+            sys.exit(1)
 
     response = __init()
     if response['connection']:

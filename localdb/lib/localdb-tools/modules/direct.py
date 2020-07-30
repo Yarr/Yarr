@@ -461,6 +461,7 @@ def __pull(dir_path, args):
             i_json['chips'] = [{ 'name': 'JohnDoe' }]
         for i, chip_json in enumerate(i_json.get('chips',[])):
             cfg_json = toJson(cfg_path)
+            print(chip_json)
             chip_json['name'] = chip_json.get('name', 'JohnDoe_{}'.format(i))
             chip_json['chipId'] = chip_json.get('chipId', i)
             if chip_type=='FEI4B':
@@ -477,8 +478,8 @@ def __pull(dir_path, args):
             conn_json['chips'].append({
                 'name': chip_json['name'],
                 'config': '{0}/{1}.json'.format(dir_path, chip_json['name']),
-                'tx'    : i,
-                'rx'    : i
+                'tx'    : chip_json.get('tx',i),
+                'rx'    : chip_json.get('rx',i)
             })
             chips.append(chip_json['name'])
 
