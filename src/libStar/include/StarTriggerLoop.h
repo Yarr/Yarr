@@ -10,14 +10,12 @@
 // ################################
 
 #include "LoopActionBase.h"
+#include "StdTriggerAction.h"
 #include "StarChips.h"
 
-class StarTriggerLoop: public LoopActionBase {
+class StarTriggerLoop: public LoopActionBase, public StdTriggerAction {
     public:
         StarTriggerLoop();
-        
-        void setTrigCnt(uint32_t cnt) {m_trigCnt = cnt;}
-        uint32_t getTrigCnt(){return m_trigCnt;};
 
         void setTrigDelay(uint32_t delay) {m_trigDelay = delay;}
         uint32_t getTrigDelay() {return m_trigDelay;}
@@ -35,7 +33,6 @@ class StarTriggerLoop: public LoopActionBase {
         void loadConfig(json &config);
 
     private:
-        uint32_t m_trigCnt;
         uint32_t m_trigDelay;
         double m_trigFreq;
         double m_trigTime;
