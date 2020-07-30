@@ -34,44 +34,44 @@ int main(int argc, char *argv[]){
     std::string cfg_path      = dbDirPath+"/"+hostname+"_database.json";
     std::string user_cfg_path = "";
     std::string site_cfg_path = "";
-    std::string registerType = "";
+    std::string commandType = "";
 
     std::string commandLine= argv[0];
 
     // Init parameters
     std::string scan_path = "";
     std::string dcs_path = "";
-    std::string iv_path = "";
     std::string conn_path = "";
     std::string scanlog_path = "";
-
-    //for influxDB
-    std::string influx_conn_path="";
-    std::string influx_chip_name="";
+    std::string comp_name = "";
+    std::string dir_path = "";
 
     int c;
-    while ((c = getopt(argc, argv, "hIRCS:E:c:s:i:d:u:F:n:")) != -1 ){
+    while ((c = getopt(argc, argv, "hIRCS:E:Dc:s:i:p:d:u:F:n:")) != -1 ){
         switch (c) {
             case 'h':
                 printHelp();
                 return 0;
                 break;
             case 'I':
-                registerType = "Initialize";
+                commandType = "Initialize";
                 break;
             case 'R':
-                registerType = "Cache";
+                commandType = "Cache";
                 break;
             case 'S':
-                registerType = "Scan";
+                commandType = "Scan";
                 scan_path = std::string(optarg);
                 break;
             case 'C':
-                registerType = "Component";
+                commandType = "Component";
                 break;
             case 'E':
-                registerType = "Environment";
+                commandType = "Environment";
                 dcs_path = std::string(optarg);
+                break;
+            case 'D':
+                commandType = "Config";
                 break;
             case 'c':
                 conn_path = std::string(optarg);
@@ -82,6 +82,9 @@ int main(int argc, char *argv[]){
             case 'i':
                 site_cfg_path = std::string(optarg);
                 break;
+            case 'p':
+                dir_path = std::string(optarg);
+                break;
             case 'd':
                 cfg_path = std::string(optarg);
                 break;
@@ -89,11 +92,11 @@ int main(int argc, char *argv[]){
                 user_cfg_path = std::string(optarg);
                 break;
             case 'F' :
-                registerType= "Influxdb";
-                influx_conn_path= std::string(optarg);
+                commandType= "Influxdb";
+                conn_path= std::string(optarg);
   	            break;
             case 'n' :
-                influx_chip_name= std::string(optarg);
+                comp_name= std::string(optarg);
                 break;
             case '?':
                 if(optopt=='E'||optopt=='S'||optopt=='F'){
@@ -110,10 +113,10 @@ int main(int argc, char *argv[]){
         }
     }
 
-    if (registerType == "") printHelp();
+    if (commandType == "") printHelp();
 
     // Initialize
-    if (registerType == "Initialize") {
+    if (commandType == "Initialize") {
         DBHandler *database = new DBHandler();
         database->initialize(cfg_path, commandLine);
         int status = database->checkConnection();
@@ -122,7 +125,7 @@ int main(int argc, char *argv[]){
     }
 
     // register cache
-    if (registerType == "Cache") {
+    if (commandType == "Cache") {
         DBHandler *database = new DBHandler();
         database->initialize(cfg_path, commandLine);
         int status = database->setCache(user_cfg_path, site_cfg_path);
@@ -131,7 +134,7 @@ int main(int argc, char *argv[]){
     }
 
     // register scan
-    if (registerType == "Scan") {
+    if (commandType == "Scan") {
         DBHandler *database = new DBHandler();
         database->initialize(cfg_path, commandLine);
         database->cleanUp("scan", scan_path);
@@ -140,7 +143,7 @@ int main(int argc, char *argv[]){
     }
 
     // register component
-    if (registerType=="Component") {//TODO
+    if (commandType=="Component") {//TODO
         if (conn_path == "") {
             std::cerr << "#DB ERROR# No component connecivity config file path given, please specify file path under -c option!" << std::endl;
             return 1;
@@ -153,7 +156,7 @@ int main(int argc, char *argv[]){
     }
 
     // cache DCS
-    if (registerType == "Environment") {
+    if (commandType == "Environment") {
         DBHandler *database = new DBHandler();
         if (scanlog_path == "") {
             std::cerr << "#DB ERROR# No scan log file path given, please specify file path under -s option!" << std::endl;
@@ -170,12 +173,21 @@ int main(int argc, char *argv[]){
         return 0;
     }
 
-    if (registerType == "Influxdb") {
+    // Retrieve/Create config files
+    if (commandType == "Config") {
+        std::cout << "DBHandler: Retrieve Config Files" << std::endl;
+        DBHandler *database = new DBHandler();
+        database->initialize(cfg_path, commandLine, "retrieve");
+        int status = database->retrieveComponentData(comp_name, conn_path, dir_path);
+        return status;
+    }
+
+    if (commandType == "Influxdb") {
         if (scanlog_path == "") {
             std::cerr << "#DB ERROR# No scan log file path given, please specify file path under -s option!" << std::endl;
             return 1;
         }
-        if (influx_chip_name == "") {
+        if (comp_name == "") {
             std::cerr << "#DB ERROR# No chip name given, please specify chipname under -n option!" << std::endl;
             return 1;
         }
@@ -183,7 +195,7 @@ int main(int argc, char *argv[]){
         DBHandler *database = new DBHandler();
         database->initialize(cfg_path, commandLine, "register");
         database->init_influx(commandLine);
-        success=database->retrieveFromInflux(influx_conn_path,influx_chip_name,scanlog_path);
+        success=database->retrieveFromInflux(conn_path,comp_name,scanlog_path);
         if(success==0){
             size_t last_slash=scanlog_path.find_last_of('/');
             std::string scandir="";
@@ -224,6 +236,10 @@ void printHelp() {
     std::cout << " -R: Upload data into Local DB from cache." << std::endl;
     std::cout << " -C: Upload component data into Local DB." << std::endl;
     std::cout << "     -c <component.json> : Provide component connectivity configuration." << std::endl;
+    std::cout << " -D: Download/Create config files." << std::endl;
+    std::cout << "     -n <component name> : Provide component name." << std::endl;
+    std::cout << "     -p <conn dir> : Provide directory path to put config files." << std::endl;
+    std::cout << "     -c <component.json> : Provide connectivity configuration to create chip config files." << std::endl;
     std::cout << " " << std::endl;
     std::cout << " -d <database.json> : Provide database configuration. (Default " << dbDirPath << "/" << hostname << "_database.json)" << std::endl;
     std::cout << " -i <site.json> : Provide site configuration." << std::endl;

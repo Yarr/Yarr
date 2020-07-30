@@ -50,6 +50,8 @@ def getArgs():
     parser.add_argument('--chip', help='Set the name of the chip.', type=str)
     parser.add_argument('--test', help='Set data ID of the test.', type=str)
     parser.add_argument('--directory', help='Provide directory name.', type=str, default='./db-data')
+    parser.add_argument('--config_only', help='Set mode to pull config files only.', action='store_true')
+    parser.add_argument('--create_config', help='Set path to connectivity config to create chip config files.', type=str)
 
     args = parser.parse_args()
 
@@ -249,7 +251,7 @@ def main():
                     f.write(data['data'])
 
 
-        logger.warning('\033[31mPlease confirm "db-data/connectivity" before running scanConsole.\033[0m')
+        logger.warning('\033[31mPlease confirm "{}/connectivity" before running scanConsole.\033[0m'.format(args.directory))
         logger.info('-----------------------')
         sys.exit(0)
     if command[0]=='list':

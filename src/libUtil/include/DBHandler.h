@@ -66,10 +66,6 @@ class DBHandler {
                        std::string /*i_scanlog_path*/,
                        std::string /*i_user_path*/,
                        std::string /*i_site_path*/);
-        void setIVCfg( std::string /*i_iv_path*/,
-                       std::string /*i_scanlog_path*/,
-                       std::string /*i_user_path*/,
-                       std::string /*i_site_path*/);
         /***
         Clean up veriables after scanConsole
         ***/
@@ -109,6 +105,12 @@ class DBHandler {
         int retrieveFromInflux(std::string, /*influx_conn_path*/
                                std::string, /*chipname*/
                                std::string  /*i_scanlog_path*/);
+        /***
+        retrieve connectivity and chip configs
+        ***/
+        int retrieveComponentData(std::string i_comp_name="",
+                                  std::string i_path="",
+                                  std::string i_dir="");
         void cleanDataDir();
 
 
@@ -153,8 +155,9 @@ class DBHandler {
         std::string m_db_cfg_path;
         std::string m_chip_type;
         std::string m_output_dir;
-        std::string m_command;
-        std::string influx_command;
+        std::string m_upload_command;
+        std::string m_retrieve_command;
+        std::string m_influx_command;
 
         std::vector<std::string> m_stage_list;
         std::vector<std::string> m_env_list;

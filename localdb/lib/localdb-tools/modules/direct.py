@@ -26,6 +26,11 @@ logger = getLogger("Log").getChild("sub")
 global localdb
 # version of Local DB
 db_version = 1.01
+# path
+yarr_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+
+class MissingData(Exception):
+    pass
 
 #########################################################
 ### Set localdb setting from localdb/bin/localdb-retrieve
@@ -110,7 +115,7 @@ def __log(args):
         for this_chip in chip_entries:
             chip_query.append({ 'chip': str(this_chip['_id']) })
         if chip_query==[]:
-            logger.error('Not found chip data: {}'.format(chip_name))
+            logger.error('Not found chip data in Local DB: {}'.format(chip_name))
             sys.exit(1)
         else:
             run_query.update({ '$or': chip_query })
@@ -129,7 +134,7 @@ def __log(args):
         }
         entries = localdb.user.find(query)
         if entries.count()==0:
-            logger.error('Not found user data: {}'.format(arg_vars['user']))
+            logger.error('Not found user data in Local DB: {}'.format(arg_vars['user']))
             sys.exit()
         user_oids = []
         for entry in entries:
@@ -142,7 +147,7 @@ def __log(args):
         }
         entries = localdb.institution.find( query )
         if entries.count()==0:
-            logger.error('Not found site data: {}'.format(arg_vars['site']))
+            logger.error('Not found site data in Local DB: {}'.format(arg_vars['site']))
             sys.exit()
         site_oids = []
         for entry in entries:
@@ -346,17 +351,21 @@ def __pull(dir_path, args):
         this_cmp = localdb.component.find_one(query)
         this_ch  = localdb.chip.find_one(query)
         if not this_cmp and not this_ch:
-            logger.error('Not found chip data: {}'.format(i_chip))
+            logger.error('Not found component data in Local DB: {}'.format(i_chip))
             sys.exit(1)
-        if this_cmp: this_chip = this_cmp
-        else:        this_chip = this_ch
+        elif this_cmp:
+            this_chip = this_cmp
+        else:
+            this_chip = this_ch
 
         ### connectivity
+        stage = 'Testing'
         conn_json = {
-            'stage': 'Testing',
+            'stage': stage,
             'chips': []
         }
         module = False
+        chips = []
         children = []
         query = {
             'parent'   : str(this_chip['_id']),
@@ -380,15 +389,13 @@ def __pull(dir_path, args):
             for entry in entries:
                 children.append(entry['child'])
             module = True
-
-        chips = []
         for i, chip in enumerate(children):
             query = { '_id': ObjectId(chip) }
             this = localdb.component.find_one(query)
             if not this: continue
 
             chip_type = this.get('chipType', 'NULL') if this.get('chipType', 'NULL')!='FE-I4B' else 'FEI4B'
-            cfg_path = 'configs/defaults/default_{}.json'.format(chip_type.lower())
+            cfg_path = '{0}/configs/defaults/default_{1}.json'.format(yarr_path, chip_type.lower())
             if not os.path.isfile(cfg_path):
                 logger.error('Not found default chip config: {}'.format(cfg_path))
                 sys.exit(1)
@@ -415,6 +422,7 @@ def __pull(dir_path, args):
                 chips.append('\033[1;31m{}\033[0m'.format(this['name']))
             else:
                 chips.append(this['name'])
+
         docs = getData('json', dir_path, 'connectivity.json', conn_json, True)
         data_entries.append( docs )
 
@@ -426,7 +434,65 @@ def __pull(dir_path, args):
                 'Parent'   : '\033[1;31m{0} ({1})\033[0m'.format(this_chip['serialNumber'], this_chip['componentType']) if module else None,
                 'Chip Type': chip_type,
                 'Chips'    : ', '.join(chips),
-                'Stage'    : stage,
+                'Stage'    : stage
+            },
+            'data': data_entries
+        }
+        return console_data
+
+    def __pull_configs(i_json):
+        data_entries = []
+        ### connectivity
+        stage = i_json.get('stage', 'Testing')
+        conn_json = {
+            'stage': stage,
+            'chips': []
+        }
+        chips = []
+        conn_json['stage'] = stage
+        chip_type = i_json.get('chhipType', 'FEI4B')
+        conn_json.update({ 'chipType': chip_type })
+        cfg_path = '{0}/configs/defaults/default_{1}.json'.format(yarr_path, chip_type.lower())
+        if not os.path.isfile(cfg_path):
+            logger.error('Not found default chip config: {}'.format(cfg_path))
+            logger.error('Maybe chip type "{}" is wrong.'.format(chip_type))
+            sys.exit(1)
+        if i_json.get('chips',[])==[]:
+            i_json['chips'] = [{ 'name': 'JohnDoe' }]
+        for i, chip_json in enumerate(i_json.get('chips',[])):
+            cfg_json = toJson(cfg_path)
+            chip_json['name'] = chip_json.get('name', 'JohnDoe_{}'.format(i))
+            chip_json['chipId'] = chip_json.get('chipId', i)
+            if chip_type=='FEI4B':
+                cfg_json['FE-I4B']['name']                = chip_json['name']
+                cfg_json['FE-I4B']['Parameter']['chipId'] = chip_json['chipId']
+            else:
+                cfg_json[chip_type]['Parameter']['Name']   = chip_json['name']
+
+                cfg_json[chip_type]['Parameter']['ChipId'] = chip_json['chipId']
+            ### chip config
+            docs = getData('json', dir_path, '{}.json'.format(chip_json['name']), cfg_json, True)
+            data_entries.append( docs )
+
+            conn_json['chips'].append({
+                'name': chip_json['name'],
+                'config': '{0}/{1}.json'.format(dir_path, chip_json['name']),
+                'tx'    : i,
+                'rx'    : i
+            })
+            chips.append(chip_json['name'])
+
+        docs = getData('json', dir_path, 'connectivity.json', conn_json, True)
+        data_entries.append( docs )
+
+        ### output texts
+        console_data = {
+            '_id' : 'None',
+            'col' : 'component',
+            'log' : {
+                'Chip Type': chip_type,
+                'Chips'    : ', '.join(chips),
+                'Stage'    : stage
             },
             'data': data_entries
         }
@@ -440,21 +506,24 @@ def __pull(dir_path, args):
     if arg_vars.get('test',None):
         tr_oid = arg_vars['test']
     elif arg_vars.get('chip',None):
-        query = {
-            'name'     : arg_vars['chip'],
-            'dbVersion': db_version
-        }
-        entries = localdb.componentTestRun.find(query)
-        if not entries.count()==0:
+        if not args.config_only:
             query = {
-                '$or'      : [],
+                'name'     : arg_vars['chip'],
                 'dbVersion': db_version
             }
-            for entry in entries:
-                query['$or'].append({ '_id': ObjectId(entry['testRun']) })
-            entry = localdb.testRun.find(query).sort([('startTime', DESCENDING)]).limit(1)
-            if not entry.count()==0:
-                tr_oid = str(entry[0]['_id'])
+            entries = localdb.componentTestRun.find(query)
+            if not entries.count()==0:
+                query = {
+                    '$or'      : [],
+                    'dbVersion': db_version
+                }
+                for entry in entries:
+                    query['$or'].append({ '_id': ObjectId(entry['testRun']) })
+                entry = localdb.testRun.find(query).sort([('startTime', DESCENDING)]).limit(1)
+                if not entry.count()==0:
+                    tr_oid = str(entry[0]['_id'])
+    elif arg_vars.get('create_config', None):
+        pass
     else:
         query = { 'dbVersion': db_version }
         entry = localdb.testRun.find(query).sort([('startTime', DESCENDING)]).limit(1)
@@ -469,19 +538,21 @@ def __pull(dir_path, args):
         entries = localdb.componentTestRun.find(query)
         if entries.count()==0:
             if arg_vars.get('chip',None):
-                logger.warning('Not found test data ID: {}'.format(tr_oid))
                 console_data = __pull_component(arg_vars['chip'])
             else:
-                logger.error('Not found test data ID: {}'.format(tr_oid))
+                logger.error('Not found test data ID in Local DB: {}'.format(tr_oid))
                 sys.exit(1)
         else:
             console_data = __pull_test_run(tr_oid, arg_vars.get('chip', None))
 
     elif arg_vars.get('chip',None):
-        logger.warning('Not found test data of the component: {}'.format(arg_vars['chip']))
         console_data = __pull_component(arg_vars['chip'])
+    elif arg_vars.get('create_config', None):
+        conn_path = os.path.realpath(os.path.abspath(arg_vars['create_config']))
+        conn_json = toJson(conn_path)
+        console_data = __pull_configs(conn_json)
     else:
-        logger.error('Not found test data')
+        logger.error('Not found any test data in Local DB')
         sys.exit(1)
 
     return console_data
