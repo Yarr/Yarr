@@ -1375,6 +1375,8 @@ class EmuRxCore<StarChips> : virtual public RxCore {
         void setRxEnable(std::vector<uint32_t> channels) override;
         void maskRxEnable(uint32_t val, uint32_t mask) override {}
         void disableRx() override;
+        void enableRx();
+        std::vector<uint32_t> listRx();
 
         RawData* readData() override;
         RawData* readData(uint32_t chn);
@@ -1439,8 +1441,12 @@ RawData* EmuRxCore<StarChips>::readData() {
 void EmuRxCore<StarChips>::setRxEnable(uint32_t channel) {
     if (m_queues.find(channel) != m_queues.end())
         m_channels[channel] = true;
-    //else
-        //logger->warn("Channel {}");
+    else {
+        logger->critical("Channel {} has not been configured!", channel);
+        logger->warn("Available rx channels:");
+        for (auto& q: m_queues)
+            logger->warn("    {}", q.first);
+    }
 }
 
 void EmuRxCore<StarChips>::setRxEnable(std::vector<uint32_t> channels) {
@@ -1449,10 +1455,25 @@ void EmuRxCore<StarChips>::setRxEnable(std::vector<uint32_t> channels) {
     }
 }
 
+void EmuRxCore<StarChips>::enableRx() {
+    for (auto& q: m_queues) {
+        m_channels[q.first] = true;
+    }
+}
+
 void EmuRxCore<StarChips>::disableRx() {
     for (auto& q : m_queues) {
         m_channels[q.first] = false;
     }
+}
+
+std::vector<uint32_t> EmuRxCore<StarChips>::listRx() {
+    std::vector<uint32_t> rxChannels;
+    rxChannels.reserve(m_queues.size());
+    for (auto& q: m_queues) {
+        rxChannels.push_back(q.first);
+    }
+    return rxChannels;
 }
 
 bool emu_registered_Emu =
