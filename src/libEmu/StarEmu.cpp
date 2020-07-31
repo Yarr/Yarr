@@ -47,6 +47,7 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx,
     : m_txRingBuffer ( tx )
     , m_rxQueue ( rx )
     , m_bccnt( 0 )
+    , m_resetbc( false )
     , m_ignoreCmd( true )
     , m_isForABC( false )
     , m_startHitCount( false )
