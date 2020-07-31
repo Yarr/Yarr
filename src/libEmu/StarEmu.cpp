@@ -704,19 +704,27 @@ void StarEmu::doL0A(uint16_t data12) {
 
     logger->debug("Receive an L0A command: BCR = {}, L0A mask = {:b}, L0A tag = 0x{:x}", bcr, l0a_mask, l0a_tag);
 
+    bool trig_mode = m_starCfg->getSubRegisterValue(0, "TRIGMODE"); // TRIGMODEC?
+    logger->debug("Trigger mode is {}", trig_mode ? "single-level" : "multi-level");
+
     // An LCB frame covers 4 BCs
     for (unsigned ibc = 0; ibc < 4; ++ibc) {
-        // check if thereis an L0A
+        // check if there is an L0A
         // msb of the L0A mask corresponds to the earliest BC
-        if ( (l0a_mask >> (3-ibc)) & 1 ) {
+        if (not ((l0a_mask >> (3-ibc)) & 1) ) continue;
+
+        if (trig_mode) { // single-level trigger
             // clusters
             std::vector<std::vector<uint16_t>> clusters;
             uint8_t bcid;
 
             // for each ABC
             m_starCfg->eachAbc([this, ibc, &bcid, &clusters](auto& abc) {
+                // L0 address
+                auto l0addr = this->getL0BufferAddr(abc, ibc);
+
                 StripData hits;
-                std::tie(bcid, hits) = this->getFEData(abc, ibc);
+                std::tie(bcid, hits) = this->getFEData(abc, l0addr);
 
                 // count hits
                 this->countHits(abc, hits);
@@ -727,11 +735,30 @@ void StarEmu::doL0A(uint16_t data12) {
             });
 
             // build and send data packet
-            PacketTypes ptype = PacketTypes::LP; // for now
-            std::vector<uint8_t> packet =
-                buildPhysicsPacket(clusters, ptype, l0a_tag+ibc, bcid);
+            PacketTypes ptype = PacketTypes::LP;
+            std::vector<uint8_t> packet = buildPhysicsPacket(clusters, ptype, l0a_tag+ibc, bcid);
             sendPacket(packet);
-        } // if L0A
+
+        } else { // multi-level trigger
+            // for each ABC
+            m_starCfg->eachAbc([this, ibc, l0a_tag](auto& abc) {
+                // L0 address
+                auto l0addr = this->getL0BufferAddr(abc, ibc);
+
+                // fill m_evtbuffers_lite
+                int abcId = abc.getABCchipID();
+                if (m_evtbuffers_lite.find(abcId) == m_evtbuffers_lite.end())
+                    m_evtbuffers_lite[abcId] = std::array<EvtBufData, EvtBufDepth>();
+
+                // event buffer address
+                uint8_t evaddr = (l0a_tag+ibc)%EvtBufDepth;
+                // 8-bit BCID@L0A
+                auto bcidl0 = EvtBufData( (m_bccnt+ibc) & 0xff );
+                m_evtbuffers_lite[abcId][evaddr] = EvtBufData(l0addr)<<8 | bcidl0;
+
+                // count hits?
+            });
+        }
     } // 4 BCs
 
     if (bcr) m_resetbc = true;
@@ -805,11 +832,11 @@ void StarEmu::countHits(AbcCfg& abc, const StripData& hits)
 void StarEmu::ackPulseCmd(int pulseType, uint8_t cmdBC)
 {
     // 8-bit BCID
-    auto bcid = std::bitset<L0BufWidth>( (m_bccnt + cmdBC)%256 );
+    auto bcid = L0BufData( (m_bccnt + cmdBC)%256 );
     // L0 buffer address
     uint16_t addr = (m_bccnt + cmdBC) % L0BufDepth;
 
-    m_l0buffer_lite[addr] = std::bitset<L0BufWidth>(pulseType)<<8 | bcid;
+    m_l0buffer_lite[addr] = L0BufData(pulseType)<<8 | bcid;
     m_ndata_l0buf += 1;
 }
 
@@ -817,6 +844,10 @@ void StarEmu::clearFEData()
 {
     for (int i=0; i<L0BufDepth; i++)
         m_l0buffer_lite[i].reset();
+
+    for (auto& evtbuffer : m_evtbuffers_lite) {
+        evtbuffer.second.fill(EvtBufData(0));
+    }
 }
 
 StarEmu::StripData StarEmu::getMasks(const AbcCfg& abc)
@@ -1085,13 +1116,20 @@ StarEmu::StripData StarEmu::getCalEnables(const AbcCfg& abc)
     return enables;
 }
 
-std::pair<uint8_t, StarEmu::StripData> StarEmu::getFEData(const AbcCfg& abc, uint8_t cmdBC)
+unsigned StarEmu::getL0BufferAddr(const AbcCfg& abc, uint8_t cmdBC)
 {
     // L0A latency from ABCStar register CREG2
     // 9 bits
     unsigned l0_latency = abc.getSubRegisterValue("LATENCY");
-    auto l0addr = getL0BufferAddr(l0_latency, cmdBC);
 
+    // cmdBC = 0, 1, 2, or 3 from trigger command
+    // address of m_l0buffer_lite that associates to cmdBC
+    // L0BufDepth in the bracket ensures the sum is positive
+    return (L0BufDepth + m_bccnt - 4 + cmdBC - l0_latency) % L0BufDepth;
+}
+
+std::pair<uint8_t, StarEmu::StripData> StarEmu::getFEData(const AbcCfg& abc, unsigned l0addr)
+{
     // Mode of operation
     uint8_t TM = abc.getSubRegisterValue("TM");
     if (TM == 0) { // Normal data taking
@@ -1205,12 +1243,74 @@ inline void StarEmu::setBit_128b(uint8_t bit_addr, bool value,
     }
 }
 
-unsigned StarEmu::getL0BufferAddr(unsigned latency, uint8_t cmdBC)
-{
-    // cmdBC = 0, 1, 2, or 3 from trigger command
-    // address of m_l0buffer_lite that associates to cmdBC
-    // L0BufDepth in the bracket ensures the sum is positive
-    return (L0BufDepth + m_bccnt - 4 + cmdBC - latency) % L0BufDepth;
+//
+// Decode R3L1
+//
+void StarEmu::decodeR3L1(uint16_t frame) {
+    SPDLOG_LOGGER_TRACE(logger, "Raw LCB frame = 0x{:x} BC = {}", frame, m_bccnt);
+
+    if (frame == LCB::IDLE) { // Idle
+        SPDLOG_LOGGER_TRACE(logger, "Receive an IDLE");
+        // do nothing
+    } else {
+        // {code0, code1}
+        uint8_t code0 = (frame >> 8) & 0xff;
+        uint8_t code1 = frame & 0xff;
+        // decode the 16-bit frame to 12-bit data
+        uint16_t data12 = (SixEight::decode(code0) << 6) | SixEight::decode(code1);
+        // top 5 bits: mask/marker
+        uint8_t mask = (data12 >> 7) & 0x1f;
+        // bottom 7 bits: l0tag
+        uint8_t l0tag = data12 & 0x7f;
+
+        if (mask) { // an R3 frame
+            // module number
+            unsigned module = (m_starCfg->getHCCchipID())/2;
+            // TODO: double check this
+            if ( module>=1 and module <=5 and ((mask>>(module-1))&1) )
+                doPRLP(l0tag, true);
+        } else { // an L1 frame
+            doPRLP(l0tag, false);
+        }
+    }
+}
+
+void StarEmu::doPRLP(uint8_t l0tag, bool isPR) {
+    bool trig_mode = m_starCfg->getSubRegisterValue(0, "TRIGMODE"); // TRIGMODEC?
+    if (trig_mode) { // single-level
+        logger->critical("doPRLP is called while the trigger mode is single level");
+        return;
+    }
+
+     // clusters
+    std::vector<std::vector<uint16_t>> clusters;
+    uint8_t bcid;
+
+    // for each ABC
+    m_starCfg->eachAbc([this, l0tag, &bcid, &clusters](auto& abc) {
+        int abcId = abc.getABCchipID();
+        if (m_evtbuffers_lite.find(abcId) == m_evtbuffers_lite.end()) {
+            logger->critical("No event buffer instantiated for chip ID {}", abcId);
+        }
+
+        // access event buffer via l0tag
+        auto evtdata = m_evtbuffers_lite[abcId][l0tag];
+        // bottom 8 bits are BCID@L0A
+        uint8_t bcl0 = evtdata.to_ulong() & 0xff;
+        // top 9 bits are L0 buffer address
+        uint16_t l0addr = (evtdata>>8).to_ulong();
+
+        // get FE hits and form clusters
+        StripData hits;
+        std::tie(bcid, hits) = this->getFEData(abc, l0addr);
+        auto abc_clusters = this->getClusters(abc, hits);
+        clusters.push_back(abc_clusters);
+    });
+
+    // build and send data packet
+    PacketTypes ptype = isPR ? PacketTypes::PR : PacketTypes::LP;
+    std::vector<uint8_t> packet = buildPhysicsPacket(clusters, ptype, l0tag, bcid);
+    sendPacket(packet);
 }
 
 void StarEmu::executeLoop() {

@@ -66,6 +66,9 @@ private:
     /// Decode LCB command
     void DecodeLCB(LCB::Frame);
 
+    /// Decode R3L1 command
+    void decodeR3L1(uint16_t);
+
     /// Register R/W commands
     void doRegReadWrite(LCB::Frame);
     void execute_command_sequence();
@@ -98,14 +101,16 @@ private:
     std::vector<uint16_t> clusterFinder(const StripData&,
                                         const uint8_t maxCluster=63);
     void ackPulseCmd(int pulseType, uint8_t cmdBC);
-    unsigned getL0BufferAddr(unsigned latency, uint8_t cmdBC);
     void clearFEData();
+
+    void doPRLP(uint8_t l0tag, bool isPR);
 
     // per ABC
     void countHits(AbcCfg& abc, const StripData& hits);
     std::vector<uint16_t> getClusters(const AbcCfg&, const StripData&);
+    unsigned getL0BufferAddr(const AbcCfg& abc, uint8_t cmdBC);
 
-    std::pair<uint8_t,StripData> getFEData(const AbcCfg& abc, uint8_t cmdBC);
+    std::pair<uint8_t,StripData> getFEData(const AbcCfg& abc, unsigned l0addr);
     std::pair<uint8_t,StripData> generateFEData_StaticTest(const AbcCfg&, unsigned);
     std::pair<uint8_t,StripData> generateFEData_TestPulse(const AbcCfg&, unsigned);
     std::pair<uint8_t,StripData> generateFEData_CaliPulse(const AbcCfg&, unsigned);
@@ -146,10 +151,21 @@ private:
     // 0b01: calibration pulse; 0b10: digital test pulse
     static constexpr unsigned L0BufDepth = 512;
     static constexpr unsigned L0BufWidth = 10;
-    std::array<std::bitset<L0BufWidth>, L0BufDepth> m_l0buffer_lite;
+    using L0BufData = std::bitset<L0BufWidth>;
+    std::array<L0BufData, L0BufDepth> m_l0buffer_lite;
 
     // number of untriggered data in the pipeline
     unsigned int m_ndata_l0buf;
+
+    // Event buffer
+    // 128 deep; L0tag is used as the address
+    // Each entry: 9-bit L0buffer address + 8-bit BCID@L0A
+    static constexpr unsigned EvtBufDepth = 128;
+    static constexpr unsigned EvtBufWidth = 17;
+    using EvtBufData = std::bitset<EvtBufWidth>;
+    // key: ABC chip ID; value: event buffer
+    std::map<int, std::array<EvtBufData, EvtBufDepth>> m_evtbuffers_lite;
+    // (Should ABCs never have different L0 latency settings, one array instead of a map of arrays would suffice.)
 
     // BC counter
     uint16_t m_bccnt;
