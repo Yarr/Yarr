@@ -8,7 +8,7 @@
 #include "Bdaq_i2c.h"
 #include "BdaqSi570.h"
 #include "BdaqAuroraRx.h"
-#include "BdaqCmdRd53.h"
+#include "BdaqDriver.h"
 #include "BdaqTCP.h"
 #include "BdaqSiTcpFifo.h"
 #include "BdaqGPIO.h"
@@ -40,7 +40,7 @@ class Bdaq53 {
         Bdaq_i2c i2c;
         BdaqSi570 si570;
         BdaqAuroraRx auroraRx;
-        BdaqCmdRd53 cmd;
+        BdaqDriver cmd;
         BdaqTCP tcp;
         BdaqSiTcpFifo fifo;
         BdaqGPIO dpControl;
