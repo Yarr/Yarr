@@ -73,9 +73,9 @@ void BdaqAuroraRx::setUserKfilterMask (uint8_t mask, uint8_t value) {
 
 void BdaqAuroraRx::setUserkFilterMode(userkFilterMode mode) {
 	switch(mode) {
-		case block : (*this)["USER_K_FILTER_MODE"] = 1; break;
-		case filter: (*this)["USER_K_FILTER_MODE"] = 2; break;
-		case pass  : (*this)["USER_K_FILTER_MODE"] = 3; break;
+		case block : (*this)["USER_K_FILTER_MODE"] = 0; break;
+		case filter: (*this)["USER_K_FILTER_MODE"] = 1; break;
+		case pass  : (*this)["USER_K_FILTER_MODE"] = 2; break;
 		default:
 			logger->critical("USERK_K filter mode: {} not allowed. Parameters: 'block', 'filter', 'pass'");
 	}
