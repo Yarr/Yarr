@@ -24,22 +24,22 @@ StarMaskLoop::StarMaskLoop() : LoopActionBase(LOOP_STYLE_MASK) {
 
 
 void StarMaskLoop::initMasks() {
-  int pos=0;
-  while (pos<256) {
-    for (unsigned int i=0; i<m_nMaskedStripsPerGroup; i++) m_maskedChannelsRing.fill(0x1, 1);
-    pos += m_nMaskedStripsPerGroup;
-    if (pos<256){
-      for (unsigned int i=0; i<(max-m_nMaskedStripsPerGroup); i++) m_maskedChannelsRing.fill(0x0, 1);
-      pos += max-m_nMaskedStripsPerGroup;
+  m_maskedChannelsRing.reset();
+
+  while (!m_maskedChannelsRing.full()) {
+    for (unsigned int i=0; i<m_nMaskedStripsPerGroup; i++) m_maskedChannelsRing.fill(true);
+    if (!m_maskedChannelsRing.full()) {
+      for (unsigned int i=0; i<(max-m_nMaskedStripsPerGroup); i++) m_maskedChannelsRing.fill(false);
     }
   }
-  for (pos=0; pos<m_EnabledMaskedShift; pos++) m_enabledChannelsRing.fill(0x0,1);
-  while (pos<256) {
-    for (unsigned int i=0; i<m_nEnabledStripsPerGroup; i++) m_enabledChannelsRing.fill(0x1, 1);
-    pos += m_nEnabledStripsPerGroup;
-    if (pos<256) {
-      for (unsigned int i=0; i<(max-m_nEnabledStripsPerGroup); i++) m_enabledChannelsRing.fill(0x0, 1);
-      pos += max-m_nEnabledStripsPerGroup;
+
+  m_enabledChannelsRing.reset();
+
+  for (unsigned int pos=0; pos<m_EnabledMaskedShift; pos++) m_enabledChannelsRing.fill(false);
+  while (!m_enabledChannelsRing.full()) {
+    for (unsigned int i=0; i<m_nEnabledStripsPerGroup; i++) m_enabledChannelsRing.fill(true);
+    if (!m_enabledChannelsRing.full()) {
+      for (unsigned int i=0; i<(max-m_nEnabledStripsPerGroup); i++) m_enabledChannelsRing.fill(false);
     }
   }
 

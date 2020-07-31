@@ -12,6 +12,7 @@ Two modes are available:
 */
 
 #include <iostream>
+#include <bitset>
 
 #include "StarChips.h"
 #include "LoopActionBase.h"
@@ -24,18 +25,22 @@ typedef std::array<uint32_t, 8> MaskType;
 //- or as in "CAL ENABLE" registers is like 1st row 1st col, 1st row 2nd col, 2nd row 1st col, 2nd row 2nd col,...
 class ChannelRing {
  public:
-  ChannelRing() {}
+  ChannelRing() : pos(0), bits(0) {}
   ~ChannelRing() {}
-  uint16_t pos=0;
+
+  void reset() {
+    pos = 0; bits = 0;
+  }
 
   /// Fill in hit data order
-  void fill(uint32_t newBits, short size) {
-    for (int i=size-1; i>=0; i--) {
-      bits[pos] = (newBits >> i) & 0x1;
-      pos++;
-    }
+  void fill(bool newBit) {
+    if(full()) return;
+    bits[pos++] = newBit;
   }
-  void printRing() const { std::cout << "Ring content: "; for (unsigned int i=0;i<256; i++) std::cout << bits[i]; std::cout << "." << std::endl;}
+
+  bool full() const { return pos >= 256; }
+
+  void printRing() const { std::cout << "Ring content: " << bits << ".\n";}
 
   /// Extract register settings for the mask register
   MaskType readMask(int offset) const {
@@ -71,7 +76,8 @@ class ChannelRing {
   }
 
  private:
-  bool bits[512]={0};
+  uint16_t pos;
+  std::bitset<256> bits;
 };
 
 
