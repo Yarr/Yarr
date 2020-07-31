@@ -30,8 +30,9 @@ public:
     };
     
     /** These are ring buffers are owned by EmuController */
-    StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string& json_emu_file_path,
-            std::string& json_chip_file_path, unsigned);
+    StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, EmuCom * tx2,
+            std::string& json_emu_file_path, std::string& json_chip_file_path,
+            unsigned);
     ~StarEmu();
 
     // the main loop which recieves commands from yarr
@@ -64,7 +65,7 @@ private:
     std::vector<uint8_t> buildHCCRegisterPacket(PacketTypes, uint8_t, unsigned);
 
     /// Decode LCB command
-    void DecodeLCB(LCB::Frame);
+    void decodeLCB(LCB::Frame);
 
     /// Decode R3L1 command
     void decodeR3L1(uint16_t);
@@ -124,7 +125,8 @@ private:
     void setBit_128b(uint8_t, bool, uint64_t&, uint64_t&);
     
     ////////////////////////////////////////
-    EmuCom * m_txRingBuffer;
+    EmuCom * m_txRingBuffer;  // for LCB
+    EmuCom * m_txRingBuffer2; // for R3L1
     ClipBoard<RawData> &m_rxQueue;
     
     ////////////////////////////////////////

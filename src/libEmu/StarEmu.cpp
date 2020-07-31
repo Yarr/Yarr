@@ -40,11 +40,12 @@ auto logger = logging::make_log("StarEmu");
 
 //StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path,
     //unsigned hpr_period)
-StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx,
+StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, EmuCom * tx2,
                  std::string& json_emu_file_path,
                  std::string& json_chip_file_path,
                  unsigned hpr_period)
     : m_txRingBuffer ( tx )
+    , m_txRingBuffer2 ( tx2 )
     , m_rxQueue ( rx )
     , m_bccnt( 0 )
     , m_resetbc( false )
@@ -216,7 +217,7 @@ std::vector<uint8_t> StarEmu::buildHCCRegisterPacket(PacketTypes typ, uint8_t re
 //
 // Decode LCB
 //
-void StarEmu::DecodeLCB(LCB::Frame frame) {
+void StarEmu::decodeLCB(LCB::Frame frame) {
 
     SPDLOG_LOGGER_TRACE(logger, "Raw LCB frame = 0x{:x} BC = {}", frame, m_bccnt);
 
@@ -1320,69 +1321,40 @@ void StarEmu::executeLoop() {
     static const auto SLEEP_TIME = std::chrono::milliseconds(1);
 
     while (run) {
-        if ( m_txRingBuffer->isEmpty()) {
-            std::this_thread::sleep_for( SLEEP_TIME );
-            continue;
+        if (m_txRingBuffer2) {
+            // two tx channels
+            // wait until neither of them are empty
+            if (m_txRingBuffer->isEmpty() or m_txRingBuffer2->isEmpty()) {
+                std::this_thread::sleep_for( SLEEP_TIME );
+                continue;
+            }
+        } else {
+            // only one tx
+            if ( m_txRingBuffer->isEmpty()) {
+                std::this_thread::sleep_for( SLEEP_TIME );
+                continue;
+            }
         }
 
         logger->debug("{}: -----------------------------------------------------------", __PRETTY_FUNCTION__);
 
-        uint32_t d = m_txRingBuffer->read32();
-
-        
-        uint16_t d0 = (d >> 16) & 0xffff;
-        uint16_t d1 = (d >> 0) & 0xffff;
-
-        DecodeLCB(d0);
-        DecodeLCB(d1);
-
-        /*
-        int trig_count = 0;
-        trig_count += countTriggers(d0);
-        trig_count += countTriggers(d1);
-
-        // This is an LP packet
-        alignas(32) uint8_t fixed_packet[] =
-            {0x20, 0x06,
-             // Channel 0...
-             0x07, 0x8f, 0x03, 0x8f, 0x07, 0xaf, 0x03, 0xaf,
-             // Channel 1...
-             0x0f, 0x8f, 0x0b, 0x8f, 0x0f, 0xaf, 0x0b, 0xaf,
-             // Channel 2
-             0x17, 0x8f, 0x13, 0x8f, 0x17, 0xaf, 0x13, 0xaf,
-             0x17, 0xcf, 0x13, 0xcf, 0x17, 0xee, 0x13, 0xee,
-             // Channel 0 continued
-             0x07, 0xcf, 0x03, 0xcf, 0x07, 0xee, 0x03, 0xee,
-             // Channel 1 continued
-             0x0f, 0xcf, 0x0b, 0xcf, 0x0f, 0xee, 0x0b, 0xee,
-             // Channel 3
-             0x1f, 0x8f, 0x1b, 0x8f, 0x1f, 0xaf, 0x1b, 0xaf,
-             0x1f, 0xcf, 0x1b, 0xcf, 0x1f, 0xee, 0x1b, 0xee,
-             // Channel 4
-             0x27, 0x8f, 0x23, 0x8f, 0x27, 0xaf, 0x23, 0xaf,
-             0x27, 0xcf, 0x23, 0xcf, 0x27, 0xee, 0x23, 0xee,
-             // Channel 5
-             0x2f, 0x8f, 0x2b, 0x8f, 0x2f, 0xaf, 0x2b, 0xaf,
-             0x2f, 0xcf, 0x2b, 0xcf, 0x2f, 0xee, 0x2b, 0xee,
-             // Channel 6
-             0x37, 0x8f, 0x33, 0x8f, 0x37, 0xaf, 0x33, 0xaf,
-             0x37, 0xcf, 0x33, 0xcf, 0x37, 0xee, 0x33, 0xee,
-             // Channel 7
-             0x3f, 0x8f, 0x3b, 0x8f, 0x3f, 0xaf, 0x3b, 0xaf,
-             0x3f, 0xcf, 0x3b, 0xcf, 0x3f, 0xee, 0x3b, 0xee,
-             // Channel 8
-             0x47, 0x8f, 0x43, 0x8f, 0x47, 0xaf, 0x43, 0xaf,
-             0x47, 0xcf, 0x43, 0xcf, 0x47, 0xee, 0x43, 0xee,
-             // Channel 9
-             0x4f, 0x8f, 0x4b, 0x8f, 0x4f, 0xaf, 0x4b, 0xaf,
-             0x4f, 0xcf, 0x4b, 0xcf, 0x4f, 0xee, 0x4b, 0xee,
-             0x6f, 0xed};
-
-        for(int i=0; i<trig_count; i++) {
-            sendPacket(fixed_packet);
+        // get data
+        uint16_t d0_r3l1, d1_r3l1;
+        if (m_txRingBuffer2) {
+            uint32_t d_r3l1 = m_txRingBuffer2->read32();
+            d0_r3l1 = (d_r3l1 >> 16) & 0xffff;
+            d1_r3l1 = (d_r3l1 >> 0) & 0xffff;
         }
-        */
 
+        uint32_t d_lcb = m_txRingBuffer->read32();
+        uint16_t d0_lcb = (d_lcb >> 16) & 0xffff;
+        uint16_t d1_lcb = (d_lcb >> 0) & 0xffff;
+
+        if (m_txRingBuffer2) decodeR3L1(d0_r3l1);
+        decodeLCB(d0_lcb);
+
+        if (m_txRingBuffer2) decodeR3L1(d1_r3l1);
+        decodeLCB(d1_lcb);
     }
 }
 
@@ -1530,6 +1502,16 @@ void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
     tx_coms.emplace_back(new RingBuffer(128));
     EmuTxCore<StarChips>::setCom(chn_tx, tx_coms.back().get());
     auto tx = EmuTxCore<StarChips>::getCom(chn_tx);
+
+    // 2nd Tx for R3L1 in case of multi-level trigger mode
+    EmuCom* tx2 = nullptr;
+    if (not chipCfg["chips"][i]["tx2"].empty()) {
+        uint32_t chn_tx2 = chipCfg["chips"][i]["tx2"];
+        tx_coms.emplace_back(new RingBuffer(128));
+        EmuTxCore<StarChips>::setCom(chn_tx2, tx_coms.back().get());
+        tx2 = EmuTxCore<StarChips>::getCom(chn_tx2);
+    }
+
     // Rx
     EmuRxCore<StarChips>:: setCom(chn_rx, std::make_unique<ClipBoard<RawData>>());
     auto rx = EmuRxCore<StarChips>::getCom(chn_rx);
@@ -1538,7 +1520,7 @@ void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
     if (not chipCfg["chips"][i]["config"].empty())
       regCfgFile = chipCfg["chips"][i]["config"];
 
-    emus.emplace_back(new StarEmu( *rx, tx, emuCfgFile, regCfgFile, hprperiod));
+    emus.emplace_back(new StarEmu( *rx, tx, tx2, emuCfgFile, regCfgFile, hprperiod));
     emuThreads.push_back(std::thread(&StarEmu::executeLoop, emus.back().get()));
   }
 }
