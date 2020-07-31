@@ -46,9 +46,8 @@ void Bdaq53::initialize(bdaqConfig c) {
 	logger->info("\033[1;32mFound board " + dv.boardVersion + " with " + 
 		dv.connectorVersion + " running firmware version " + 
 		dv.fwVersion + "\033[0m");
-	logger->info("Found " + std::to_string(dv.rxChannels) +
-		" Aurora receiver channel(s) with " + std::to_string(dv.rxLanes) +
-		" lane(s)");
+	logger->info("Board has " + std::to_string(dv.numRxChannels) + 
+		" Aurora receiver channel(s)");
 	//Check if Si570 is configured. If not, configure it.
  	if (auroraRx.getSi570IsConfigured() == false) {
 		cmd.setOutputEn(false);
@@ -76,17 +75,16 @@ daqVersion Bdaq53::getDaqVersion() {
 	dv.fwVersion = std::to_string(buf.at(1)) + "." + std::to_string(buf.at(0));
 	//Board version
 	rbcp.read(0x2, buf, 2);
-	dv.boardVersion = hwMap[buf.at(0) + (buf.at(1) << 8)];
+	dv.boardVersion = hwMap[buf.at(0)];
+	//Number of RX channels
+	rbcp.read(0x3, buf, 1);
+	dv.numRxChannels = buf.at(0);
 	//Board options
 	rbcp.read(0x4, buf, 1);
 	dv.boardOptions = buf.at(0);
 	//Connector Version
 	rbcp.read(0x5, buf, 2);
-	dv.connectorVersion = hwConMap[buf.at(0) + (buf.at(1) << 8)];
-	//RX lanes and RX channels
-	rxConfig rxc = auroraRx.getRxConfig();
-	dv.rxLanes = rxc.rxLanes;
-	dv.rxChannels = rxc.rxChannels;
+	dv.connectorVersion = hwConMap[buf.at(0)];
 	return dv;
 }
 

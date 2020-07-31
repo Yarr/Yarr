@@ -27,15 +27,14 @@ struct bdaqConfig {
 struct daqVersion {
     std::string fwVersion;
     std::string boardVersion;
+    int         numRxChannels;
     int         boardOptions;
     std::string connectorVersion;
-    int         rxLanes;
-    int         rxChannels; 
 };
 
 class Bdaq53 {
 	public:
-        const std::string VERSION = "0.15"; // Must match FW version.
+        const std::string VERSION = "1.2"; // Must match FW version.
 
         BdaqRBCP rbcp;
         Bdaq_i2c i2c;

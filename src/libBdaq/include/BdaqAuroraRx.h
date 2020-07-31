@@ -15,7 +15,7 @@ struct rxConfig {
 
 class BdaqAuroraRx : public BdaqRegister<BdaqRBCP> {
 	public:
-		const uint requireVersion = 3;
+		const uint requireVersion = 4;
 
 		BdaqAuroraRx(BdaqRBCP& _rbcp) : BdaqRegister(_rbcp) {
 			registers = {
