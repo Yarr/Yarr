@@ -62,10 +62,8 @@ void StarMaskLoop::init() {
 	if (!m_nEnabledStripsPerGroup)
 	  applyEncodedMask(static_cast<StarChips*>(fe), m_cur);
 	else {
-	  m_maskedChannelsRing.pos=m_cur;
-	  m_enabledChannelsRing.pos=m_cur;
-	  auto masks = m_maskedChannelsRing.readMask();
-	  auto enables = m_enabledChannelsRing.readCalEnable();
+	  auto masks = m_maskedChannelsRing.readMask(m_cur);
+	  auto enables = m_enabledChannelsRing.readCalEnable(m_cur);
 	  applyMask(static_cast<StarChips*>(fe), masks, enables);
 	}
     }
@@ -180,10 +178,8 @@ void StarMaskLoop::execPart2() {
 	if (!m_nEnabledStripsPerGroup)
 	  applyEncodedMask(static_cast<StarChips*>(fe), m_cur);
 	else {
-	  m_maskedChannelsRing.pos=m_cur;
-	  m_enabledChannelsRing.pos=m_cur;
-	  auto masks = m_maskedChannelsRing.readMask();
-	  auto enables = m_enabledChannelsRing.readCalEnable();
+	  auto masks = m_maskedChannelsRing.readMask(m_cur);
+	  auto enables = m_enabledChannelsRing.readCalEnable(m_cur);
 	  applyMask(static_cast<StarChips*>(fe), masks, enables);
 	}
       }

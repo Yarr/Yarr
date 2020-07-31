@@ -38,16 +38,16 @@ class ChannelRing {
   void printRing() const { std::cout << "Ring content: "; for (unsigned int i=0;i<256; i++) std::cout << bits[i]; std::cout << "." << std::endl;}
 
   /// Extract register settings for the mask register
-  MaskType readMask() const {
+  MaskType readMask(int offset) const {
     MaskType masks;
     masks.fill(0);
 
     for (unsigned int curpos=0; curpos<256; curpos=curpos+4) { //Loop over the "blocks" of mask bits (1st row Xth col, 1st row X+1th col, 2nd row Xth col, 2nd row X+1th col)
       unsigned int posBlock = curpos%32;
-      masks[curpos/32] |= bits[(pos+curpos/2)%256]      << posBlock;
-      masks[curpos/32] |= bits[(pos+curpos/2+128)%256]  << (posBlock+1);
-      masks[curpos/32] |= bits[(pos+curpos/2+1)%256]    << (posBlock+2);
-      masks[curpos/32] |= bits[(pos+curpos/2+128+1)%256]<< (posBlock+3);
+      masks[curpos/32] |= bits[(offset+curpos/2)%256]      << posBlock;
+      masks[curpos/32] |= bits[(offset+curpos/2+128)%256]  << (posBlock+1);
+      masks[curpos/32] |= bits[(offset+curpos/2+1)%256]    << (posBlock+2);
+      masks[curpos/32] |= bits[(offset+curpos/2+128+1)%256]<< (posBlock+3);
     }
     for(int m_i=0; m_i<8; m_i++) {
       auto &m = masks[m_i];
@@ -56,16 +56,16 @@ class ChannelRing {
     return masks;
   }
   /// Extract register settings for the calmask register
-  MaskType readCalEnable() const {
+  MaskType readCalEnable(int offset) const {
     MaskType masks;
     masks.fill(0);
 
     for (unsigned int curpos=0; curpos<256; curpos=curpos+4) { //Loop over the "blocks" of mask bits (1st row Xth col, 1st row X+1th col, 2nd row Xth col, 2nd row X+1th col)
       unsigned int posBlock = curpos%32;
-      masks[curpos/32] |= bits[(pos+curpos/2)%256]      << posBlock;
-      masks[curpos/32] |= bits[(pos+curpos/2+1)%256]    << (posBlock+1);
-      masks[curpos/32] |= bits[(pos+curpos/2+128)%256]  << (posBlock+2);
-      masks[curpos/32] |= bits[(pos+curpos/2+128+1)%256]<< (posBlock+3);
+      masks[curpos/32] |= bits[(offset+curpos/2)%256]      << posBlock;
+      masks[curpos/32] |= bits[(offset+curpos/2+1)%256]    << (posBlock+1);
+      masks[curpos/32] |= bits[(offset+curpos/2+128)%256]  << (posBlock+2);
+      masks[curpos/32] |= bits[(offset+curpos/2+128+1)%256]<< (posBlock+3);
     }
     return masks;
   }
