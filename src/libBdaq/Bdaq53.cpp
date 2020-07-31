@@ -3,6 +3,8 @@
 #include <thread>
 #include <chrono>
 
+#include <math.h>
+
 #include "Bdaq53.h"
 #include "logging.h"
 
@@ -16,7 +18,7 @@ Bdaq53::Bdaq53() :
 	si570(i2c),
 	cmd(rbcp),
 	fifo(tcp),
-	dpControl(rbcp) {}
+	bdaqControl(rbcp) {}
 
 void Bdaq53::initialize(bdaqConfig c) {
 	rbcp.connect(c.ipAddr, c.udpPort);
@@ -28,7 +30,12 @@ void Bdaq53::initialize(bdaqConfig c) {
 	cmd.setBase(c.cmdAddr);
 	cmd.checkVersion();
 	cmd.init();
-	tcp.connect(c.ipAddr, c.tcpPort);	
+	tcp.connect(c.ipAddr, c.tcpPort);
+
+	bdaqControl.setBase(c.controlAddr);
+	bdaqControl.init(24, uint(pow(2.0, 24.0) - 1));
+	bdaqControl.setData(0);
+
 	dv = getDaqVersion(); // getDaqVersion must be called after auroraRx.setBase()
 	if (VERSION != dv.fwVersion) {
 		std::string error = "Firmware version " + dv.fwVersion + 
@@ -89,6 +96,9 @@ daqVersion Bdaq53::getDaqVersion() {
 	dv.connectorVersion = hwConMap[buf.at(0)];
 	return dv;
 }
+
+/*void Bdaq53::setSi570IsConfigured() {
+}*/
 
 bool Bdaq53::waitForPllLock(uint timeout) {
 	logger->info("Waiting for PLL lock...");

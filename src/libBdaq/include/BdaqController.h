@@ -63,9 +63,9 @@ class BdaqController : public HwController, public BdaqTxCore, public BdaqRxCore
                 c.cmdAddr = 0x9000;
             // GPIO Module Address
             if (!j["gpioAddr"].empty())
-                c.gpioAddr = std::stoi(j["gpioAddr"], nullptr, 16);
+                c.controlAddr = std::stoi(j["controlAddr"], nullptr, 16);
             else
-                c.gpioAddr = 0x2100;
+                c.controlAddr = 0x2100;
             // Initialize controller with the above configuration
             initialize(c);
         }

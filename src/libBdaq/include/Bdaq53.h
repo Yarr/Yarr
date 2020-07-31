@@ -19,7 +19,7 @@ struct bdaqConfig {
     uint        tcpPort;
     uint        fifoAddr;
     uint        i2cAddr;
-    uint        gpioAddr;
+    uint        controlAddr;
     uint        rxAddr;
     uint        cmdAddr;
 };
@@ -43,7 +43,7 @@ class Bdaq53 {
         BdaqDriver cmd;
         BdaqTCP tcp;
         BdaqSiTcpFifo fifo;
-        BdaqGPIO dpControl;
+        BdaqGPIO bdaqControl;
         
         std::map<int, std::string> hwMap = {
             {0, "SIMULATION"},
