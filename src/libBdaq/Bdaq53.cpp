@@ -60,7 +60,9 @@ void Bdaq53::initialize(bdaqConfig c) {
 	} else
 		logger->info("Si570 oscillator is already configured");
 	//Reset cmd encoder
-	cmd.reset(); 
+	cmd.reset();
+	//Setting BdaqDriver to RD53A
+	setChipTypeRD53A(); // Gotta move it to YARR code
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	//Configure the Aurora link
 	waitForPllLock();
@@ -111,4 +113,20 @@ void Bdaq53::setupAurora() {
 		logger->info("Aurora receiver running at 1.28 Gb/s");
 		cmd.setBypassMode(false);
 	}
+}
+
+void Bdaq53::setChipTypeRD53A() {
+	cmd.setChipType(0);
+}
+
+void Bdaq53::setChipTypeITkPixV1() {
+	cmd.setChipType(1);
+}
+
+void Bdaq53::enableAutoSync() {
+	cmd.setAutoSync(true);
+}
+
+void Bdaq53::disableAutoSync() {
+	cmd.setAutoSync(false);
 }

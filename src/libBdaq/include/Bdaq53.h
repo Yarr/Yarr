@@ -72,6 +72,10 @@ class Bdaq53 {
 		daqVersion getDaqVersion();
         bool waitForPllLock(uint timeout=1000);
         void setupAurora();
+        void setChipTypeRD53A();
+        void setChipTypeITkPixV1();
+        void enableAutoSync();
+        void disableAutoSync();
                 
 	private:
         daqVersion dv;

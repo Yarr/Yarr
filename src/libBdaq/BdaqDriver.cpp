@@ -72,13 +72,13 @@ void BdaqDriver::setOutputEn(bool value) {
 }
 
 void BdaqDriver::setBypassMode(bool value) {
-	//CDS bypass mode (KC705+FMC_LPC). Enables output drivers and sends cmd and serializer clock to the chip.
+	//CDR bypass mode (KC705+FMC_LPC). Enables output drivers and sends cmd and serializer clock to the chip.
 	//Probably not useful for YARR-BDAQ integration, since the idea is to support the BDAQ hardware onlye (no KC705).
 	(*this)["BYPASS_MODE"] = value;
 }
 
 bool BdaqDriver::getBypassMode() {
-	//CDS bypass mode (KC705+FMC_LPC). Enables output drivers and sends cmd and serializer clock to the chip.
+	//CDR bypass mode (KC705+FMC_LPC). Enables output drivers and sends cmd and serializer clock to the chip.
 	//Probably not useful for YARR-BDAQ integration, since the idea is to support the BDAQ hardware onlye (no KC705).
 	return (*this)["BYPASS_MODE"];
 }
@@ -106,6 +106,7 @@ uint16_t BdaqDriver::getAzVetoCycles() {
 }
 
 void BdaqDriver::setChipType(uint8_t value) {
+	//Defines chip type for DAQ 0 = RD53A, 1 = ITKPixV1
 	(*this)["CHIP_TYPE"] = value;
 }
 
