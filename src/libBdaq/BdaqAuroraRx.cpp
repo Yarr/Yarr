@@ -44,25 +44,6 @@ uint8_t BdaqAuroraRx::getLostCount() {
 	return (*this)["LOST_COUNT"];
 }
 
-void BdaqAuroraRx::setMgtRef(std::string value) {
-	//Controls the clock multiplexer chip, which is used for providing the Aurora reference clock
-	if (value == "int") {
-		logger->info("MGT: Switching to on-board (Si570) oscillator");
-		(*this)["MGT_REF_SEL"] = 1;
-	} else if (value == "ext") {
-		logger->info("MGT: Switching to external (SMA) clock source");
-		(*this)["MGT_REF_SEL"] = 0;
-	}
-}
-
-std::string BdaqAuroraRx::getMgtRef() {
-	bool value = (*this)["MGT_REF_SEL"];
-	if (value == false)
-		return "EXT (SMA)";
-	else
-		return "INT (Si570)";
-}
-
 int8_t BdaqAuroraRx::getSoftErrorCounter () {
 	//Aurora soft errors
 	return (*this)["SOFT_ERROR_COUNTER"];
@@ -90,25 +71,22 @@ void BdaqAuroraRx::setUserKfilterMask (uint8_t mask, uint8_t value) {
 	return (*this)["USER_K_FILTER_MASK"];
 }*/
 
-void BdaqAuroraRx::setUserKfilterEn(bool value) {
-	(*this)["USER_K_FILTER_EN"] = value;
+void BdaqAuroraRx::setUserkFilterMode(userkFilterMode mode) {
+	switch(mode) {
+		case block : (*this)["USER_K_FILTER_MODE"] = 1; break;
+		case filter: (*this)["USER_K_FILTER_MODE"] = 2; break;
+		case pass  : (*this)["USER_K_FILTER_MODE"] = 3; break;
+		default:
+			logger->critical("USERK_K filter mode: {} not allowed. Parameters: 'block', 'filter', 'pass'");
+	}
 }
 
-bool BdaqAuroraRx::getUserKfilterEn() {
-	return (*this)["USER_K_FILTER_EN"];
+uint8_t BdaqAuroraRx::getUserkFilterMode() {
+	return (*this)["USER_K_FILTER_MODE"];
 }
 
 uint32_t BdaqAuroraRx::getFrameCount() {
 	return (*this)["FRAME_COUNTER"];
-}
-
-void BdaqAuroraRx::setSi570IsConfigured(bool value) {
-	//Emulates a "is_configured" register for the Si570 reference clock chip
-	(*this)["SI570_IS_CONFIGURED"] = value;
-}
-
-bool BdaqAuroraRx::getSi570IsConfigured() {
-	return (*this)["SI570_IS_CONFIGURED"];
 }
 
 void BdaqAuroraRx::setGtxTxMode(std::string value) {
@@ -128,9 +106,6 @@ void BdaqAuroraRx::setGtxTxMode(std::string value) {
 	}
 }
 
-rxConfig BdaqAuroraRx::getRxConfig() {
-	rxConfig rxc;
-	rxc.rxLanes    = (*this)["RX_LANES"];
-	rxc.rxChannels = (*this)["RX_CHANNELS"];
-	return rxc;
+uint BdaqAuroraRx::getRxConfig() {
+	return (*this)["RX_LANES"];
 }

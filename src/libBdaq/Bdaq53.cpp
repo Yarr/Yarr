@@ -49,16 +49,16 @@ void Bdaq53::initialize(bdaqConfig c) {
 	logger->info("Board has " + std::to_string(dv.numRxChannels) + 
 		" Aurora receiver channel(s)");
 	//Check if Si570 is configured. If not, configure it.
- 	if (auroraRx.getSi570IsConfigured() == false) {
+ 	//if (auroraRx.getSi570IsConfigured() == false) {
 		cmd.setOutputEn(false);
 		auroraRx.reset();
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		si570.init(0xBA, 160.0); //0xBA is the Si570 i2c slave address, 160 MHz.
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		cmd.setOutputEn(true);
-		auroraRx.setSi570IsConfigured(true);
-	} else
-		logger->info("Si570 oscillator is already configured");
+		//auroraRx.setSi570IsConfigured(true);
+	/*} else
+		logger->info("Si570 oscillator is already configured");*/
 	//Reset cmd encoder
 	cmd.reset();
 	//Setting BdaqDriver to RD53A
