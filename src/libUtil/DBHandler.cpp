@@ -17,12 +17,11 @@ namespace {
 DBHandler::DBHandler():
 m_db_cfg_path(""), m_output_dir(""), m_upload_command(""),
 m_env_list(),
-m_db_version(1.0), m_qc(false), m_conn_json(), counter(0)
+m_db_version(1.0), m_qc(false), m_interactive(false)
 {
 #if DBDEBUG
     std::cout << "DBHandler: DBHandler" << std::endl;
 #endif
-    // make temporary directory for output log file: /tmp/localdb/timestamp_error.log
     this->mkdir("/tmp/localdb");
 }
 
@@ -35,46 +34,37 @@ DBHandler::~DBHandler() {
 //*****************************************************************************************************
 // Public functions
 //
-void DBHandler::initialize(std::string i_db_cfg_path, std::string i_command, std::string i_option, bool isQC, bool i_interactive) {
+void DBHandler::initialize(std::string i_db_cfg_path, std::string i_command, bool isQC, bool i_interactive) {
 #if DBDEBUG
     std::cout << "DBHandler: Initializing." << std::endl;
 #endif
-
-    std::ifstream db_cfg_ifs(i_db_cfg_path);
-    if (!db_cfg_ifs.is_open()) {
-        std::string message = "Not found Local DB config file: "+i_db_cfg_path+"\n\tSet it by 'YARR/localdb/setup_db.sh'";
-        std::string function = __PRETTY_FUNCTION__;
-        this->alert(function, message);
+    /// DB config
+    if (i_db_cfg_path!="") {
+        std::ifstream db_cfg_ifs(i_db_cfg_path);
+        if (!db_cfg_ifs.is_open()) {
+            std::string message = "Not found Local DB config file: "+i_db_cfg_path+"\n\tSet it by 'YARR/localdb/setup_db.sh'";
+            std::string function = __PRETTY_FUNCTION__;
+            this->alert(function, message);
+        }
+        m_db_cfg_path = i_db_cfg_path;
+        json db_json = checkDBCfg(m_db_cfg_path);
+        if (db_json["QC"].is_bool()||isQC) m_qc = true;
+        m_interactive = i_interactive;
+        if (m_env_list.size()==0) {
+            for(auto s_tmp: db_json["environment"]) m_env_list.push_back(s_tmp); //TODO
+        }
     }
 
-    m_db_cfg_path = i_db_cfg_path;
-
-    json db_json = checkDBCfg(m_db_cfg_path);
-    if (db_json["QC"].is_bool()||isQC) m_qc = true;
-    m_interactive = i_interactive;
-
+    /// db command
     std::string cmd;
-    m_upload_command = "localdbtool-upload";
-    cmd = m_upload_command+" test 2> /dev/null";
-    if (system(cmd.c_str())!=0) {
-        std::size_t pathPos;
-        if ( i_command.find('/')!=std::string::npos) pathPos = i_command.find_last_of('/');
-        else pathPos = i_command.size();
-        m_upload_command = i_command.substr(0, pathPos) + "/../localdb/bin/localdbtool-upload";
-    }
+    std::size_t pathPos;
+    if ( i_command.find('/')!=std::string::npos) pathPos = i_command.find_last_of('/');
+    else pathPos = i_command.size();
+    std::string yarr_bin_path=i_command.substr(0,pathPos);
+    m_upload_command   = yarr_bin_path + "/../localdb/bin/localdbtool-upload";
+    m_retrieve_command = yarr_bin_path + "/../localdb/bin/localdbtool-retrieve";
+    m_influx_command   = yarr_bin_path + "/../localdb/bin/influxdbtool-retrieve";
 
-    m_retrieve_command = "localdbtool-retrieve";
-    cmd = m_retrieve_command+" test 2> /dev/null";
-    if (system(cmd.c_str())!=0) {
-        std::size_t pathPos;
-        if ( i_command.find('/')!=std::string::npos) pathPos = i_command.find_last_of('/');
-        else pathPos = i_command.size();
-        m_retrieve_command = i_command.substr(0, pathPos) + "/../localdb/bin/localdbtool-retrieve";
-    }
-
-    if (m_env_list.size()==0) {
-        for(auto s_tmp: db_json["environment"]) m_env_list.push_back(s_tmp); //TODO
-    }
 }
 
 void DBHandler::alert(std::string i_function, std::string i_message, std::string i_type) {
@@ -94,20 +84,6 @@ void DBHandler::alert(std::string i_function, std::string i_message, std::string
     while (std::getline(ss, message, '\n')) {
         dlog->error(message);
     }
-    std::time_t now = std::time(NULL);
-    struct tm *lt = std::localtime(&now);
-    char tmp[20];
-    strftime(tmp, 20, "%Y%m%d", lt);
-    std::string timestamp=tmp;
-    std::string log_path = "/tmp/localdb/"+timestamp+"_error.log";
-    std::ofstream file_ofs(log_path, std::ios::app);
-    strftime(tmp, 20, "%F_%H:%M:%S", lt);
-    timestamp=tmp;
-    file_ofs << timestamp << std::endl;
-    file_ofs << alert_message << " " << i_function << std::endl;
-    file_ofs << "Message: " << i_message << std::endl;
-    file_ofs << "--------------------" << std::endl;
-
     if (i_type=="error") std::abort();
 
     return;
@@ -117,6 +93,7 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, st
 #if DBDEBUG
     std::cout << "DBHandler: Set DCS config: " << i_dcs_path << std::endl;
 #endif
+//TODO replace upload command
 
     json log_json = this->toJson(i_scanlog_path);
     json user_json = this->toJson(i_user_path);
@@ -127,31 +104,9 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, st
         if (log_json["siteCfg"].empty()) log_json["siteCfg"] = site_json;
     }
     char path[1000];
-    std::string current_dir = getcwd(path, sizeof(path));
-    std::size_t prefixPos = i_scanlog_path.find_first_of('/');
-    std::string log_path;
-    if (prefixPos!=0) {
-        if (i_scanlog_path.substr(0,1)=="~") {
-            std::string home = getenv("HOME");
-            log_path = home+i_scanlog_path.substr(1);
-        } else if (i_scanlog_path.substr(0,1)==".") {
-            log_path = current_dir+i_scanlog_path.substr(1);
-        } else {
-            log_path = current_dir+"/"+i_scanlog_path;
-        }
-    } else {
-        log_path = i_scanlog_path;
-    }
+    std::string log_path = this->getAbsPath(i_scanlog_path);
     std::size_t pathPos = log_path.find_last_of('/');
     log_path = log_path.substr(0, pathPos);
-    char buf[4096];
-    if (realpath(log_path.c_str(), buf)!=NULL) {
-        log_path = buf;
-    } else {
-        std::string message = "No such directory : " + log_path;
-        std::string function = __PRETTY_FUNCTION__;
-        this->alert(function, message);
-    }
     // confirmation
     std::string scanlog_path = log_path + "/scanLog.json";
     this->checkFile(scanlog_path, "Failed to get real path to "+i_scanlog_path);
@@ -216,33 +171,18 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir, bool i_back) {
 #if DBDEBUG
     std::cout << "DBHandler: Clean Up." << std::endl;
 #endif
-
     char path[1000];
-    std::string current_dir = getcwd(path, sizeof(path));
-    std::size_t prefixPos = i_dir.find_first_of('/');
     std::string result_dir;
     if (i_dir=="") {
         result_dir = m_output_dir;
-    } else if (prefixPos!=0) {
-        if (i_dir.substr(0,1)=="~") {
-            std::string home = getenv("HOME");
-            result_dir = home+i_dir.substr(1);
-        } else if (i_dir.substr(0,1)==".") {
-            result_dir = current_dir + i_dir.substr(1);
-        } else {
-            result_dir = current_dir + "/" + i_dir;
-        }
     } else {
-        result_dir = i_dir;
+        result_dir = this->getAbsPath(i_dir);
     }
-
     if (result_dir=="") {
         std::string message = "Not provided output directory.";
         std::string function = __PRETTY_FUNCTION__;
         this->alert(function, message);
     }
-    if (result_dir.back() != '/')
-        result_dir += "/";
 
     std::string home = getenv("HOME");
     std::string log_path;
@@ -260,64 +200,55 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir, bool i_back) {
     db_file << result_dir << std::endl;
     db_file.close();
 
-    std::string cmd = m_upload_command+" test 2> /dev/null";
-    if (system(cmd.c_str())!=0) {
+    if (this->checkCommand("upload")!=0) {
         dlog->error("Could not upload result data into Local DB");
-        dlog->error("Not found Local DB command: 'localdbtool-upload'");
-        dlog->error("Try 'YARR/localdb/setup_db.sh' to set Local DB command and 'localdbtool-upload cache' to upload data.");
     } else {
-        cmd = m_upload_command+" init --database "+m_db_cfg_path;
-        if (system(cmd.c_str())==0) {
-            if (i_option=="scan") cmd = m_upload_command+" scan "+result_dir+" --log &";
-            else if (i_option=="dcs") cmd = m_upload_command+" dcs "+result_dir+" --log &";
-            system(cmd.c_str());
+        std::string cmd = m_upload_command + " " + i_option + " " + result_dir;;
+        if (i_back) {
             dlog->info("Uploading in the back ground. (log: ~/.yarr/localdb/log/)");
-        } else {
-            dlog->error("Try 'localdbtool-upload cache' to upload data in the good connection to Local DB Server.");
+            cmd = cmd + " --log &";
+        }
+        if (system(cmd.c_str())!=0) {
+            dlog->error("Unknown error");
         }
     }
 
     // initialize
     m_db_cfg_path = "";
     m_env_list.clear();
-    // m_conn_json
-    counter = 0;
 }
 
 int DBHandler::setComponent(std::string i_conn_path, std::string i_user_cfg_path, std::string i_site_cfg_path) {
 #if DBDEBUG
     std::cout << "DBHandler: Register Component Data." << std::endl;
 #endif
-
-    std::string cmd = m_upload_command+" test 2> /dev/null";
-    if (system(cmd.c_str())!=0) {
-        dlog->error("Not found Local DB command: 'localdbtool-upload'");
-        dlog->error("Set Local DB function by YARR/localdb/setup_db.sh'");
+    if (this->checkCommand("upload")!=0) {
         return 1;
     }
-    if (i_user_cfg_path!="") i_user_cfg_path=" --user "+i_user_cfg_path;
-    if (i_site_cfg_path!="") i_site_cfg_path=" --site "+i_site_cfg_path;
-    cmd = m_upload_command+" comp "+i_conn_path+" --database "+m_db_cfg_path+i_user_cfg_path+i_site_cfg_path;
-    system(cmd.c_str());
-    return 0;
+    std::string cmd = m_upload_command + " comp " + i_conn_path;
+    if (m_db_cfg_path!="")   cmd = cmd + " --database " + m_db_cfg_path;
+    if (i_user_cfg_path!="") cmd = cmd + " --user " + i_user_cfg_path;
+    if (i_site_cfg_path!="") cmd = cmd + " --site " + i_site_cfg_path;
+    if(system(cmd.c_str())==0){
+        return 0;
+    } else {
+        return 1;
+    }
 }
 
 int DBHandler::setCache(std::string i_user_cfg_path, std::string i_site_cfg_path) {
 #if DBDEBUG
     std::cout << "DBHandler: Upload Cache Data." << std::endl;
 #endif
-
-    std::string cmd = m_upload_command+" test 2> /dev/null";
-    if (system(cmd.c_str())!=0) {
-        dlog->error("Not found Local DB command: 'localdbtool-upload'");
-        dlog->error("Set Local DB function by YARR/localdb/setup_db.sh'");
+    if (this->checkCommand("upload")!=0) {
         return 1;
     }
-    if (i_user_cfg_path!="") i_user_cfg_path=" --user "+i_user_cfg_path;
-    if (i_site_cfg_path!="") i_site_cfg_path=" --site "+i_site_cfg_path;
-    cmd = m_upload_command+" --database "+m_db_cfg_path+i_user_cfg_path+i_site_cfg_path;
-    if (m_qc) cmd = cmd + " --QC";
-    if (m_interactive) cmd = cmd + " --interactive";
+    std::string cmd = m_upload_command;
+    if (m_db_cfg_path!="")   cmd = cmd + " --database " + m_db_cfg_path;
+    if (i_user_cfg_path!="") cmd = cmd + " --user " + i_user_cfg_path;
+    if (i_site_cfg_path!="") cmd = cmd + " --site " + i_site_cfg_path;
+    if (m_qc)                cmd = cmd + " --QC";
+    if (m_interactive)       cmd = cmd + " --interactive";
     // scan
     system((cmd+" cache scan").c_str());
     // dcs dcs
@@ -325,13 +256,22 @@ int DBHandler::setCache(std::string i_user_cfg_path, std::string i_site_cfg_path
     return 0;
 }
 
-int DBHandler::checkConnection() {
+int DBHandler::checkConnection(std::string i_opt) {
 #if DBDEBUG
     std::cout << "DBHandler: Check the connection to Local DB." << std::endl;
 #endif
-
-    std::string cmd = m_upload_command+" init";
-
+    std::string cmd;
+    if (i_opt=="upload") {
+        cmd = m_upload_command;
+    } else if (i_opt=="retrieve") {
+        cmd = m_retrieve_command;
+    } else if (i_opt=="influx") {
+        cmd = m_influx_command;
+    }
+    cmd = cmd + " init";
+    if (m_db_cfg_path!="") {
+        cmd = cmd + " --database " + m_db_cfg_path;
+    }
     return system(cmd.c_str());
 }
 
@@ -339,14 +279,12 @@ int DBHandler::checkConfigs(std::string i_user_cfg_path, std::string i_site_cfg_
 #if DBDEBUG
     std::cout << "DBHandler: Check config files for Local DB." << std::endl;
 #endif
-    std::string cmd = m_upload_command+" test 2> /dev/null";
-    if (system(cmd.c_str())!=0) {
-        dlog->error("Not found Local DB command: 'localdbtool-upload'");
-        dlog->error("Set Local DB function by YARR/localdb/setup_db.sh'");
+    if (this->checkCommand()!=0) {
         return 1;
     }
     for(std::string const& tmp : i_conn_cfg_paths){
-        cmd = m_upload_command+" check --user "+i_user_cfg_path+" --site "+i_site_cfg_path+" --conn "+tmp+" --database "+m_db_cfg_path;
+        std::string cmd = m_upload_command + " check --user " + i_user_cfg_path + " --site " + i_site_cfg_path + " --conn " + tmp;
+        if (m_db_cfg_path!="") cmd = cmd + " --database "+m_db_cfg_path;
         if (m_qc) cmd = cmd + " --QC";
         if (m_interactive) cmd = cmd + " --interactive";
         int result = system(cmd.c_str());
@@ -438,12 +376,10 @@ json DBHandler::checkDBCfg(std::string i_db_path) {
 #if DBDEBUG
     std::cout << "\t\tDBHandler: Check database config: " << i_db_path << std::endl;
 #endif
-
     json db_json = toJson(i_db_path);
-    this->checkEmpty(db_json["hostIp"].empty(), "hostIp", i_db_path);
+    this->checkEmpty(db_json["hostIp"].empty(),   "hostIp",   i_db_path);
     this->checkEmpty(db_json["hostPort"].empty(), "hostPort", i_db_path);
-    this->checkEmpty(db_json["dbName"].empty(), "dbName", i_db_path);
-
+    this->checkEmpty(db_json["dbName"].empty(),   "dbName",   i_db_path);
     return db_json;
 }
 
@@ -451,7 +387,6 @@ void DBHandler::checkDCSCfg(std::string i_dcs_path, std::string i_num, json i_js
 #if DBDEBUG
     std::cout << "\t\tDBHandler: Check DCS config: " << i_dcs_path << std::endl;
 #endif
-
     this->checkEmpty(i_json["key"].empty(), "environments."+i_num+".key", i_dcs_path, "Set the environmental key from the key list.");
     std::string j_key = i_json["key"];
     this->checkList(m_env_list, j_key, m_db_cfg_path, i_dcs_path);
@@ -468,7 +403,7 @@ std::string DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_pat
 #if DBDEBUG
     std::cout << "\t\tDBHandler: Check DCS log file: " << i_log_path << std::endl;
 #endif
-
+// TODO
     this->checkFile(i_log_path, "Check environmental data file of key '"+i_key+"' in file "+i_dcs_path+".");
     std::ifstream log_ifs(i_log_path);
     std::size_t suffix = i_log_path.find_last_of('.');
@@ -556,42 +491,85 @@ std::string DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_pat
     return extension;
 }
 
+int DBHandler::checkCommand(std::string i_opt) {
+#if DEBUG
+    std::cout << "\t\tDBHandler: Check Comand: " << i_opt << std::endl;
+#endif
+    std::string cmd;
+    std::string tool;
+    if (i_opt=="upload") {
+        cmd = m_upload_command;
+        tool = "localdbtool-upload";
+    } else if (i_opt=="retrieve") {
+        cmd = m_retrieve_command;
+        tool = "localdbtool-retrieve";
+    } else if (i_opt=="influx") {
+        cmd = m_influx_command;
+        tool = "influxdbtool-retrieve";
+    }
+    cmd = cmd + " test 2> /dev/null";
+    if (system(cmd.c_str())!=0) {
+        dlog->error("Not found Local DB command: '{}'",tool);
+        dlog->error("Set Local DB function by:");
+        dlog->error("    YARR/localdb/setup_db.sh");
+        return 1;
+    }
+    return 0;
+}
+
+std::string DBHandler::getAbsPath(std::string i_path) {
+#ifdef DEBUG
+    std::cout << "\t\tDBHandler: Get Absolute Path: " << i_path << std::endl;
+#endif
+    char path[1000];
+    std::string current_dir = getcwd(path, sizeof(path));
+    std::size_t prefixPos = i_path.find_first_of('/');
+    std::string o_path;
+    if (prefixPos!=0) {
+        if (i_path.substr(0,1)=="~") {
+            std::string home = getenv("HOME");
+            o_path = home+i_path.substr(1);
+        } else if (i_path.substr(0,1)==".") {
+            o_path = current_dir+i_path.substr(1);
+        } else {
+            o_path = current_dir+"/"+i_path;
+        }
+    } else {
+        o_path = i_path;
+    }
+    char buf[4096];
+    if (realpath(o_path.c_str(), buf)!=NULL) {
+        o_path = buf;
+    } else {
+        std::string message = "No such directory or file: " + i_path;
+        std::string function = __PRETTY_FUNCTION__;
+        this->alert(function, message);
+    }
+#ifdef DEBUG
+    std::cout << "\t\t           -> : " << o_path << std::endl;
+#endif
+    return o_path;
+}
+
 //////////
 // Others
-json DBHandler::toJson(std::string i_file_path, std::string i_file_type) {
+json DBHandler::toJson(std::string i_file_path) {
 #if DBDEBUG
     std::cout << "\t\tDBHandler: Convert to json code from: " << i_file_path << std::endl;
 #endif
-
     json file_json;
-
     std::ifstream file_ifs(i_file_path);
-
     std::size_t pathPos = i_file_path.find_last_of('.');
     if (pathPos==std::string::npos||i_file_path.substr(pathPos+1)!="json") {
         return file_json;
     }
-
     if (file_ifs) {
-        if (i_file_type=="json") {
-            try {
-                file_json = json::parse(file_ifs);
-            } catch (json::parse_error &e) {
-                std::string message = "Could not parse " + i_file_path + "\n\twhat(): " + e.what();
-                std::string function = __PRETTY_FUNCTION__;
-                this->alert(function, message);
-            }
-        } else if (i_file_type=="bson") {
-            std::uint8_t tmp;
-            std::vector<std::uint8_t> v_bson;
-            while (file_ifs.read(reinterpret_cast<char*>(std::addressof(tmp)), sizeof(std::uint8_t))) v_bson.push_back(tmp);
-            try {
-	      //file_json = json::from_bson(v_bson); //FIXME
-            } catch (json::parse_error &e) {
-                std::string message = "Could not parse " + i_file_path + "\n\twhat(): " + e.what();
-                std::string function = __PRETTY_FUNCTION__;
-                this->alert(function, message);
-            }
+        try {
+            file_json = json::parse(file_ifs);
+        } catch (json::parse_error &e) {
+            std::string message = "Could not parse " + i_file_path + "\n\twhat(): " + e.what();
+            std::string function = __PRETTY_FUNCTION__;
+            this->alert(function, message);
         }
     }
     return file_json;
@@ -600,22 +578,16 @@ json DBHandler::toJson(std::string i_file_path, std::string i_file_type) {
 std::vector<std::string> DBHandler::split(std::string str, char del) {
     std::size_t first = 0;
     std::size_t last = str.find_first_of(del);
-
     std::vector<std::string> result;
-
     while (first < str.size()) {
         std::string subStr(str, first, last - first);
-
         result.push_back(subStr);
-
         first = last + 1;
         last = str.find_first_of(del, first);
-
         if (last == std::string::npos) {
             last = str.size();
         }
     }
-
     return result;
 }
 
@@ -628,84 +600,39 @@ void DBHandler::mkdir(std::string i_dir_path) {
     }
 }
 
-// function to retreive DCS data from InfluxDB
-void DBHandler::init_influx(std::string i_command){
-  std::size_t pathPos;
-  if ( i_command.find('/')!=std::string::npos) pathPos = i_command.find_last_of('/');
-  else pathPos = i_command.size();
-  std::string yarr_bin_path=i_command.substr(0,pathPos);
+int DBHandler::retrieveFromInflux(std::string i_influx_conn_path, std::string chip_name, std::string i_scanlog_path){
+    std::string log_path = this->getAbsPath(i_scanlog_path);
+    std::string conn_path = this->getAbsPath(i_influx_conn_path);
 
-  m_influx_command = "influxdbtool-retrieve";
-  std::string cmd = m_influx_command+" --test --chip gaya --dcs_config gaya 2> /dev/null";
-  if (system(cmd.c_str())!=0) {
-    m_influx_command = yarr_bin_path + "/../localdb/bin/influxdbtool-retrieve";
-  }
-}
-int DBHandler::retrieveFromInflux(std::string influx_conn_path, std::string chip_name, std::string i_scanlog_path){
-  char path[1000];
-  std::string current_dir = getcwd(path, sizeof(path));
-  std::size_t prefixPos = i_scanlog_path.find_first_of('/');
-  std::string log_path;
-  std::string cmd="";
-  if (prefixPos!=0) {
-    if (i_scanlog_path.substr(0,1)=="~") {
-      std::string home = getenv("HOME");
-      log_path = home+i_scanlog_path.substr(1);
-    } else if (i_scanlog_path.substr(0,1)==".") {
-      log_path = current_dir+"/"+i_scanlog_path;
-    } else {
-      log_path = current_dir+"/"+i_scanlog_path;
+    json log_json = this->toJson(log_path);
+    if (log_json["id"].empty()) {
+        this->checkEmpty(log_json["startTime"].empty()&&log_json["timestamp"].empty(), "startTime||timestamp", log_path);
     }
-  } else {
-    log_path = i_scanlog_path;
-  }
-  prefixPos = influx_conn_path.find_first_of('/');
-  if (prefixPos!=0) {
-    if (influx_conn_path.substr(0,1)=="~") {
-      std::string home = getenv("HOME");
-      influx_conn_path = home+influx_conn_path.substr(1);
-    } else if (i_scanlog_path.substr(0,1)==".") {
-      influx_conn_path = current_dir+"/"+influx_conn_path;
+    if (this->checkCommand("influx")!=0) {
+        dlog->error("Could not retrieve DCS data from Local DB");
     } else {
-      influx_conn_path = current_dir+"/"+influx_conn_path;
+        std::string cmd = m_influx_command + " retrieve --chip " + chip_name +" -s "+log_path+" --dcs_config "+conn_path;
+        if(system(cmd.c_str())==0){
+            return 0;
+        } else {
+            return 1;
+        }
     }
-  } else {
-    log_path = i_scanlog_path;
-  }
-
-  json log_json = this->toJson(log_path);
-  if (log_json["id"].empty()) {
-    this->checkEmpty(log_json["startTime"].empty()&&log_json["timestamp"].empty(), "startTime||timestamp", log_path);
-  }
-  cmd = m_influx_command + " retrieve --chip " + chip_name +" -s "+log_path+" --dcs_config "+influx_conn_path;
-  if(system(cmd.c_str())==0){
-    return 0;
-  }
-  else return 1;
 }
 
 int DBHandler::retrieveComponentData(std::string i_comp_name, std::string i_path, std::string i_dir) {
 #if DBDEBUG
     std::cout << "DBHandler: Retrieve Config Files from Local DB." << std::endl;
 #endif
-    std::string cmd = m_retrieve_command+" test 2> /dev/null";
-    if (system(cmd.c_str())!=0) {
-        dlog->error("Could not retrieve data from Local DB");
-        dlog->error("Not found Local DB command: 'localdbtool-retrieve'");
-        dlog->error("Try 'YARR/localdb/setup_db.sh' to set Local DB command.");
+    if (this->checkCommand("retrieve")!=0) {
+        dlog->error("Could not retrieve component data from Local DB");
         return 1;
     } else {
-        cmd = m_retrieve_command+" init --database "+m_db_cfg_path;
-        if (system(cmd.c_str())==0) {
-            cmd = m_retrieve_command+" pull --config_only";
-            if (i_comp_name!="") cmd = cmd + " --chip "+i_comp_name;
-            if (i_dir!="") cmd = cmd + " --directory " + i_dir;
-            if (i_path!="") cmd = cmd + " --create_config " + i_path;
-            if (system(cmd.c_str())!=0) return 1;
-        } else {
-            dlog->critical("not confirmed exception"); //TODO
-            return 1;
-        }
+        std::string cmd = m_retrieve_command+" pull --config_only";
+        if (i_comp_name!="") cmd = cmd + " --chip "+i_comp_name;
+        if (i_dir!="") cmd = cmd + " --directory " + i_dir;
+        if (i_path!="") cmd = cmd + " --create_config " + i_path;
+        if (system(cmd.c_str())!=0) return 1;
     }
     return 0;
 }

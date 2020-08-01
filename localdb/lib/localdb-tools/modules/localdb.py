@@ -169,7 +169,8 @@ class LocalDb(object):
                 raise DBConnectionError
             elif err=='auth':
                 self.logger.error('---> ' + f'{message}')
-                self.logger.error('     Please login Local DB with correct username and password by "source localdb/login_mongodb.sh"')
+                self.logger.error('     Please login Local DB with correct username and password by')
+                self.logger.error('        $ source localdb/login_mongodb.sh')
                 raise DBAuthenticationFailure
         elif self.service=='viewer':
             if err=='code':

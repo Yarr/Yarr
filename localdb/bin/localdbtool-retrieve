@@ -199,6 +199,8 @@ def main():
             db = response['db']
             localdb = db.getLocalDb()
             function.__set_localdb(localdb)
+    elif args.create_config:
+        import direct as function
     else: __error_exit('connection')
 
     if command[0]=='log':
@@ -237,7 +239,7 @@ def main():
             if answer.lower()=='y':
                 shutil.rmtree(dir_path)
             else:
-                sys.exit()
+                sys.exit(1)
         os.makedirs(dir_path)
         console_data = function.__pull(dir_path, args)
         logger.info('\033[1;33m{0} data ID: {1} \033[0m'.format(console_data['col'], console_data['_id']))

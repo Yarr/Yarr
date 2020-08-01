@@ -13,18 +13,25 @@ current_DIR=os.getcwd()
 this_DIR=current_DIR+'/'+os.path.dirname(__file__)
 output_DIR=''
 
+### log
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../lib/localdb-tools/modules'))
+import db_logging
+import logging
+logger = logging.getLogger('Log')
+db_logging.setLog()
+
 remote_host='127.0.0.1'
 remote_port=8086
 dbname='dcsDB'
 
 class dcsDataClient:
-    def __init__(self):        
+    def __init__(self):
         self.client=InfluxDBClient(host=remote_host,
                                    port=remote_port,
                                    database=dbname)
         database_list=self.client.get_list_database()
         self.runStart=0
-        self.runEnd=1566546707353068032 
+        self.runEnd=1566546707353068032
         if not {'name' : dbname} in database_list :
             self.db_exist=False
         else :
@@ -53,14 +60,15 @@ def getArgs():
     parser.add_argument('-s','--scan', help='provided scanLog file of target Scan')
     parser.add_argument('--port', help='provided port Number (default:'+str(remote_port)+')')
     parser.add_argument('--host', help='provided host (default:'+remote_host+')')
-    parser.add_argument('--database', help='provided database name (default:'+dbname+')')
+    parser.add_argument('--dbname', help='provided database name (default:'+dbname+')')
+    parser.add_argument('--database', help='provided database config')
     parser.add_argument('--output', help='provided output directory name (default:same directory of scanLog.json)')
 
     args=parser.parse_args()
     return args
 
 def error_message(key_type,name ):
-    print('{} : {} is not Found!'.format(key_type, name))
+    logger.error('{} : {} is not Found!'.format(key_type, name))
 
 def getData(client, dcs_config_fname):
     output_jsonName='{}/dcsDataInfo.json'.format(output_DIR)
@@ -68,8 +76,8 @@ def getData(client, dcs_config_fname):
         dcs_config=json.load(dcs_config_f)
 
     if dcs_config.get('environments') is None :
-        print('dcs Configuration file : {}'.format(dcs_config))
-        print('ERROR!')
+        logger.error('dcs Configuration file : {}'.format(dcs_config))
+        logger.error('ERROR!')
         return 1
     dcsInfo={}
     dcsInfo['environments']=[]
@@ -101,12 +109,12 @@ def getData(client, dcs_config_fname):
                     setting_text+=str(dcs.get('setting'))+' '
                     description=dcs.get('description')
                     dcsInfo['environments']=appendDcsInfo(dcsInfo['environments'],description,key,num,datFileName)
-            
+
                 dat_f.write(key_text+'\n')
                 dat_f.write(num_text+'\n')
                 #dat_f.write(mode_text+'\n')
                 #dat_f.write(setting_text+'\n')
-        
+
                 for data in data_list[measurement] :
                     time=data.get('time')
                     unixtime=datetime.datetime.strptime(time[0:19], '%Y-%m-%dT%H:%M:%S').replace(tzinfo=pytz.utc).timestamp()
@@ -148,7 +156,6 @@ def calculate_runTime(scanLog):
     start_timestamp=start_timestamp-pd.offsets.Milli(offset_time)
     end_timestamp=end_timestamp+pd.offsets.Milli(offset_time)
 
-
     return start_timestamp.value, end_timestamp.value
 
 def appendDcsInfo(dcsInfoList,description,key,num,path):
@@ -159,7 +166,7 @@ def appendDcsInfo(dcsInfoList,description,key,num,path):
     singleInfo['path']=path
     singleInfo['chip']=chip
     singleInfo['status']='enabled'
-    
+
     dcsInfoList.append(singleInfo)
     return dcsInfoList
 
@@ -171,16 +178,23 @@ def removeDatFile(dcsInfo_path):
             if os.path.exists(path):
                 os.remove(path)
     os.remove(dcsInfo_path)
-    
+
 def main():
     args=getArgs()
     command=args.command
 
     if command == 'test':
         sys.exit(0)
+    elif command == 'init':
+        try:
+            client=dcsDataClient()
+        except Exception as e:
+            logger.error('---> Bad connection to Influx DB.')
+            logger.error('     ' + f'{e}')
+            sys.exit(1)
     elif command == 'remove':
         if args.scan is None :
-            print('scanlog file is required! Please specify scan log file path under --scan or -s')
+            logger.error('scanlog file is required! Please specify scan log file path under --scan or -s')
             sys.exit(1)
         scanlog_path=args.scan
         scan_dir=os.path.dirname(scanlog_path)
@@ -189,17 +203,17 @@ def main():
             removeDatFile(dcsDataInfo_path)
         else :
             error_massage('target directory',scan_dir)
-        
+
     elif command == 'retrieve':
         global chip
         global output_DIR
-        
+
         # required variable check
         if args.chip is None :
-            print('chipname is required! Please specify chipname under --chip or -c')
+            logger.error('chipname is required! Please specify chipname under --chip or -c')
             sys.exit(1)
         if args.dcs_config is None :
-            print('dcs configuration file is required! Please specify dcs configuration file path under --dcs_config or -d')
+            logger.error('dcs configuration file is required! Please specify dcs configuration file path under --dcs_config or -d')
             sys.exit(1)
 
         chip=args.chip
@@ -211,9 +225,9 @@ def main():
         if not args.host is None:
             global remote_host
             remote_host=args.host
-        if not args.database is None:
+        if not args.dbname is None:
             global dbname
-            dbname=args.database
+            dbname=args.dbname
         if not args.output is None:
             if os.path.exists(args.output) :
                 output_DIR=args.output
@@ -235,7 +249,6 @@ def main():
         else :
             error_message('database',dbname)
             sys.exit(1)
-    
-       
+
 if __name__=='__main__' :
     main()

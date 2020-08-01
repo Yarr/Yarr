@@ -362,7 +362,7 @@ int main(int argc, char *argv[]) {
         logger->info("\033[1;31m################\033[0m");
         logger->info("\033[1;31m# Set Database #\033[0m");
         logger->info("\033[1;31m################\033[0m");
-        database->initialize(dbCfgPath, argv[0], "scan", isQC, setInteractive);
+        database->initialize(dbCfgPath, argv[0], isQC, setInteractive);
         if (database->checkConfigs(dbUserCfgPath, dbSiteCfgPath, cConfigPaths)==1)
             return -1;
         json dbCfg = ScanHelper::openJsonFile(dbCfgPath);
@@ -663,7 +663,7 @@ int main(int argc, char *argv[]) {
 
     // Register test info into database
     if (dbUse) {
-        database->cleanUp("scan", outputDir);
+        database->cleanUp("scan", outputDir, true);
     }
     delete database;
 

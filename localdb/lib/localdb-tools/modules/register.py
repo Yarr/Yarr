@@ -605,7 +605,6 @@ class ScanData(RegisterData):
             self.logger.info('~~~     "stage": "\033[1;33m{}\033[0m"'.format(conn['stage']))
             self.logger.info('~~~ }')
 
-
     def __check_conn(self):
         """
         This function checks connectivity data

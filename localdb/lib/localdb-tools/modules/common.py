@@ -96,6 +96,7 @@ def readDbCfg(arg, log={}):
         logger.error('\033[5mNot found database config.\033[0m')
         logger.error('Specify the correct path or create the default config by YARR/localdb/setup_db.sh')
         raise ConfigError
+    logger.info('-> Setting database config: {}'.format(path))
     return cfg
 
 def readUserCfg(arg, log={}):

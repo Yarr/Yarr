@@ -499,6 +499,8 @@ def listCache(self, i_dir, i_opt, i_remove=False):
                         self.logger.info('Succeeded uploading {0} data from {1}'.format(i_opt, i_dir))
                         cache_list.remove(i_dir)
         with open(path, 'w') as f:
+            if not cache_list==[]:
+                self.logger.warning('{0} data that has not been uploaded is listed in {1}'.format(i_opt.capitalize(), path))
             for line in cache_list:
                 if not line or not line=='': f.write('{}\n'.format(line))
 
@@ -646,14 +648,13 @@ def main():
         __upload_from_cache(command[1])
 
     elif option=='check': #TODO
-        logger.info('Function: Check registered component data')
+        logger.info('Function: Check config files')
         scan = ScanData()
         try:
             scan.checkConfigFormat()
             scan.checkDb()
             scan.verifyData()
         except DBConnectionError:
-            logger.error('Data upload can be done when the connection to DB is good')
             logger.info('------------------------------')
             sys.exit(2)
         except InteractiveExit:

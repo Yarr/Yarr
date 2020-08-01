@@ -37,7 +37,6 @@ class DBHandler {
         ***/
         void initialize(std::string /*i_db_cfg_path*/,
                         std::string /*i_command*/,
-                        std::string i_option="scan",
                         bool isQC=false,
                         bool i_interactive=false);
 
@@ -89,7 +88,7 @@ class DBHandler {
         /***
         Check the connection to Local DB
         ***/
-        int checkConnection();
+        int checkConnection(std::string i_opt="upload");
 
         /***
         Check registered modules in Local DB and create module list in ~/.yarr/localdb/${HOSTNAME}_modules.csv
@@ -101,7 +100,6 @@ class DBHandler {
         /***
         retrieve DCS data from InfluxDB
         ***/
-        void init_influx(std::string /*i_command*/);
         int retrieveFromInflux(std::string, /*influx_conn_path*/
                                std::string, /*chipname*/
                                std::string  /*i_scanlog_path*/);
@@ -137,10 +135,11 @@ class DBHandler {
                                 std::string /*i_dcs_path*/,
                                 std::string /*i_key*/,
                                 int /*i_num*/);
+        int checkCommand(std::string i_opt="upload");
+        std::string getAbsPath(std::string /*i_path*/);
 
         /// check json
-        json toJson(std::string /*i_file_path*/,
-                    std::string i_file_type="json");
+        json toJson(std::string /*i_file_path*/);
         void writeJson(std::string /*i_key*/,
                        std::string /*i_value*/,
                        std::string /*i_file_path*/,
@@ -168,9 +167,6 @@ class DBHandler {
         double m_db_version;
         bool m_qc;
         bool m_interactive;
-
-        json m_conn_json;
-        int counter;
 };
 
 #endif

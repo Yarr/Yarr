@@ -49,12 +49,13 @@ def setTime(date):
 ##################################
 ### Get data document from data_id
 def getData(i_type, i_dir, i_filename, i_data, i_bool=False):
-    fs = gridfs.GridFS(localdb)
     if i_bool:
         data = i_data
     elif i_type=='json':
+        fs = gridfs.GridFS(localdb)
         data = json.loads(fs.get(ObjectId(i_data)).read().decode('ascii'))
     else:
+        fs = gridfs.GridFS(localdb)
         data = fs.get(ObjectId(i_data)).read().decode('ascii')
     docs = {
         'type': i_type,
@@ -402,10 +403,10 @@ def __pull(dir_path, args):
             cfg_json = toJson(cfg_path)
             if chip_type=='FEI4B':
                 cfg_json['FE-I4B']['name']                = this['name']
-                cfg_json['FE-I4B']['Parameter']['chipId'] = this.get('chipId', 0)
+                cfg_json['FE-I4B']['Parameter']['chipId'] = this.get('chipId', i)
             else:
                 cfg_json[chip_type]['Parameter']['Name']   = this['name']
-                cfg_json[chip_type]['Parameter']['ChipId'] = this.get('chipId', 0)
+                cfg_json[chip_type]['Parameter']['ChipId'] = this.get('chipId', i)
             ### chip config
             docs = getData('json', dir_path, '{}.json'.format(this['name']), cfg_json, True)
             data_entries.append( docs )
@@ -413,6 +414,7 @@ def __pull(dir_path, args):
             conn_json['chips'].append({
                 'name': this['name'],
                 'config': '{0}/{1}.json'.format(dir_path, this['name']),
+                'chipId': this.get('chipId',i),
                 'tx'    : i,
                 'rx'    : i
             })
@@ -450,7 +452,7 @@ def __pull(dir_path, args):
         }
         chips = []
         conn_json['stage'] = stage
-        chip_type = i_json.get('chhipType', 'FEI4B')
+        chip_type = i_json.get('chipType', 'FEI4B')
         conn_json.update({ 'chipType': chip_type })
         cfg_path = '{0}/configs/defaults/default_{1}.json'.format(yarr_path, chip_type.lower())
         if not os.path.isfile(cfg_path):
@@ -461,7 +463,6 @@ def __pull(dir_path, args):
             i_json['chips'] = [{ 'name': 'JohnDoe' }]
         for i, chip_json in enumerate(i_json.get('chips',[])):
             cfg_json = toJson(cfg_path)
-            print(chip_json)
             chip_json['name'] = chip_json.get('name', 'JohnDoe_{}'.format(i))
             chip_json['chipId'] = chip_json.get('chipId', i)
             if chip_type=='FEI4B':
@@ -478,6 +479,7 @@ def __pull(dir_path, args):
             conn_json['chips'].append({
                 'name': chip_json['name'],
                 'config': '{0}/{1}.json'.format(dir_path, chip_json['name']),
+                'chipId': chip_json['chipId'],
                 'tx'    : chip_json.get('tx',i),
                 'rx'    : chip_json.get('rx',i)
             })
