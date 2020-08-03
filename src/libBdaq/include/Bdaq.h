@@ -32,7 +32,7 @@ struct daqVersion {
     std::string connectorVersion;
 };
 
-class Bdaq53 {
+class Bdaq {
 	public:
         const std::string VERSION = "1.2"; // Must match FW version.
 
@@ -65,8 +65,8 @@ class Bdaq53 {
             {0x01, "640Mbps"}
         };
         
-        Bdaq53();
-		~Bdaq53() {}
+        Bdaq();
+		~Bdaq() {}
         
         void initialize(bdaqConfig c);
 		daqVersion getDaqVersion();

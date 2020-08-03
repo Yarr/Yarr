@@ -30,14 +30,14 @@ void BdaqRxCore::setupMode() {
     mSetupMode = true;
     logger->debug("Setup Mode");
     // Enable register data monitoring
-    Bdaq53::setMonitorFilter(BdaqAuroraRx::filter);
+    Bdaq::setMonitorFilter(BdaqAuroraRx::filter);
 }
 
 void BdaqRxCore::runMode() {
     mSetupMode = false;
     logger->debug("Run Mode");
     // Disable register data monitoring
-    Bdaq53::setMonitorFilter(BdaqAuroraRx::block);
+    Bdaq::setMonitorFilter(BdaqAuroraRx::block);
 }
 
 void BdaqRxCore::setRxEnable(uint32_t val) {

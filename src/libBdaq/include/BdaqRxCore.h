@@ -12,10 +12,10 @@
 #include <iostream>
 
 #include "RxCore.h"
-#include "Bdaq53.h"
+#include "Bdaq.h"
 #include "RawData.h"
 
-class BdaqRxCore : virtual public RxCore, virtual public Bdaq53 {
+class BdaqRxCore : virtual public RxCore, virtual public Bdaq {
     public:
         BdaqRxCore();
 

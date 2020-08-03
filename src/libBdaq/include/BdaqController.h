@@ -10,7 +10,7 @@
 // ################################
 
 #include "HwController.h"
-#include "Bdaq53.h"
+#include "Bdaq.h"
 #include "BdaqTxCore.h"
 #include "BdaqRxCore.h"
 

@@ -5,14 +5,14 @@
 
 #include <math.h>
 
-#include "Bdaq53.h"
+#include "Bdaq.h"
 #include "logging.h"
 
 namespace {
-  auto logger = logging::make_log("Bdaq53");
+  auto logger = logging::make_log("Bdaq");
 }
 
-Bdaq53::Bdaq53() : 
+Bdaq::Bdaq() : 
 	auroraRx(rbcp), 
 	i2c(rbcp),
 	si570(i2c),
@@ -20,7 +20,7 @@ Bdaq53::Bdaq53() :
 	fifo(tcp),
 	bdaqControl(rbcp) {}
 
-void Bdaq53::initialize(bdaqConfig c) {
+void Bdaq::initialize(bdaqConfig c) {
 	// Initialize Remote Bus Control Protocol (RBCP)
 	rbcp.connect(c.ipAddr, c.udpPort);
 	
@@ -82,7 +82,7 @@ void Bdaq53::initialize(bdaqConfig c) {
 	setupAurora();
 }
 
-daqVersion Bdaq53::getDaqVersion() {
+daqVersion Bdaq::getDaqVersion() {
 	std::vector<uint8_t> buf(2);
 	daqVersion dv;
 	//Firmware version
@@ -103,10 +103,10 @@ daqVersion Bdaq53::getDaqVersion() {
 	return dv;
 }
 
-/*void Bdaq53::setSi570IsConfigured() {
+/*void Bdaq::setSi570IsConfigured() {
 }*/
 
-bool Bdaq53::waitForPllLock(uint timeout) {
+bool Bdaq::waitForPllLock(uint timeout) {
 	logger->info("Waiting for PLL lock...");
 	uint times = 0;
 	while (times < timeout && auroraRx.getPllLocked() == false)
@@ -121,7 +121,7 @@ bool Bdaq53::waitForPllLock(uint timeout) {
 	}
 }
 
-void Bdaq53::setupAurora() {
+void Bdaq::setupAurora() {
 	if (boardOptionsMap[dv.boardOptions] == "640Mbps") {
 		logger->info("Aurora receiver running at 640 Mb/s");
 		cmd.setBypassMode(false);
@@ -131,23 +131,23 @@ void Bdaq53::setupAurora() {
 	}
 }
 
-void Bdaq53::setChipTypeRD53A() {
+void Bdaq::setChipTypeRD53A() {
 	cmd.setChipType(0);
 }
 
-void Bdaq53::setChipTypeITkPixV1() {
+void Bdaq::setChipTypeITkPixV1() {
 	cmd.setChipType(1);
 }
 
-void Bdaq53::enableAutoSync() {
+void Bdaq::enableAutoSync() {
 	cmd.setAutoSync(true);
 }
 
-void Bdaq53::disableAutoSync() {
+void Bdaq::disableAutoSync() {
 	cmd.setAutoSync(false);
 }
 
-void Bdaq53::setMonitorFilter(BdaqAuroraRx::userkFilterMode mode) {
+void Bdaq::setMonitorFilter(BdaqAuroraRx::userkFilterMode mode) {
 	auroraRx.setUserKfilterMask(1, 0x00); // Only allow register data frames
 	auroraRx.setUserKfilterMask(2, 0x01); // Only allow register data frames
 	auroraRx.setUserKfilterMask(3, 0x02); // Only allow register data frames
