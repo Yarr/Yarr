@@ -217,13 +217,20 @@ begin
 --    );
 
     -- XAPP1017 style SERDES with auto-phase detection up to 1.6Gbps
-    xapp1017_serdes: if c_RX_SPEED = "0640" generate
+    xapp1017_serdes_1280: if c_RX_SPEED = "1280" generate
         
         c_SLIP_SERDES_MAX <= to_unsigned(8, 8);
-        c_SERDES8_CYCLE <= to_unsigned(1, 4);
+        c_SERDES8_CYCLE <= to_unsigned(0, 4);
     
         serdes_idelay_rdy <= rst_n_i;
-        serdes_cmp: serdes_1_to_468_idelay_ddr port map (
+        serdes_cmp: serdes_1_to_468_idelay_ddr generic map (
+            S => 8,
+            D => 1,
+            CLKIN_PERIOD => 1.5625,
+            REF_FREQ => 310.0,
+            HIGH_PERFORMANCE_MODE => "TRUE",
+            DATA_FORMAT => "PER_CLOCK")
+        port map (
             datain_p(0) => rx_data_i_p,
             datain_n(0) => rx_data_i_n,
             enable_phase_detector => '1',
@@ -244,7 +251,7 @@ begin
             rx_data(5) => serdes_data8(2),
             rx_data(6) => serdes_data8(1),
             rx_data(7) => serdes_data8(0),
-            bit_rate_value => x"0625", -- TODO make generic
+            bit_rate_value => x"1280", -- TODO make generic
             dcd_correct => '0',
             bit_time_value => bit_time_value,
             debug => open,
@@ -283,7 +290,82 @@ begin
                 end if;
             end if;
         end process serdes_8to32_proc;
-    end generate xapp1017_serdes;
+    end generate xapp1017_serdes_1280;
+
+    xapp1017_serdes_640: if c_RX_SPEED = "0640" generate
+        
+        c_SLIP_SERDES_MAX <= to_unsigned(8, 8);
+        c_SERDES8_CYCLE <= to_unsigned(1, 4);
+    
+        serdes_idelay_rdy <= rst_n_i;
+        serdes_cmp: serdes_1_to_468_idelay_ddr generic map (
+            S => 8,
+            D => 1,
+            CLKIN_PERIOD => 3.125,
+            REF_FREQ => 310.0,
+            HIGH_PERFORMANCE_MODE => "TRUE",
+            DATA_FORMAT => "PER_CLOCK")
+        port map (
+            datain_p(0) => rx_data_i_p,
+            datain_n(0) => rx_data_i_n,
+            enable_phase_detector => '1',
+            enable_monitor => '1',
+            reset => rst,
+            --bitslip => '0',
+            bitslip => serdes_slip,
+            idelay_rdy => serdes_idelay_rdy,
+            rxclk => clk_serdes_i,
+            system_clk => clk_rx_i,
+            rx_lckd => serdes_lock,
+            --rx_data => serdes_data8,
+            rx_data(0) => serdes_data8(7),
+            rx_data(1) => serdes_data8(6),
+            rx_data(2) => serdes_data8(5),
+            rx_data(3) => serdes_data8(4),
+            rx_data(4) => serdes_data8(3),
+            rx_data(5) => serdes_data8(2),
+            rx_data(6) => serdes_data8(1),
+            rx_data(7) => serdes_data8(0),
+            bit_rate_value => x"0640", -- TODO make generic
+            dcd_correct => '0',
+            bit_time_value => bit_time_value,
+            debug => open,
+            eye_info => eye_info,
+            m_delay_1hot => m_delay_1hot,
+            clock_sweep => open
+        );
+
+        pol_loop: for I in 0 to 7 generate
+            serdes_data8_s(I) <= serdes_data8(I) xor rx_polarity_i;
+        end generate pol_loop;
+
+        serdes_8to32_proc : process(clk_rx_i, rst_n_i)
+        begin
+            if (rst_n_i = '0') then
+                serdes_data32 <= (others => '0');
+                serdes_data32_shift <= (others => '0');
+                serdes_data32_valid <= '0';
+                serdes_cnt <= (others => '0');
+                serdes8_cnt <= (others => '0');
+                serdes_data8_d <= (others => '0');
+            elsif rising_edge(clk_rx_i) then
+                serdes8_cnt <= serdes8_cnt + 1;
+                serdes_data32_valid <= '0';
+                if (serdes8_cnt = c_SERDES8_CYCLE) then
+                    serdes_cnt <= serdes_cnt + 1;
+                    --serdes_data8_d <= serdes_data8_s;
+                    serdes_data32_shift(31 downto 8) <= serdes_data32_shift(23 downto 0);
+                    serdes_data32_shift(7 downto 0) <= serdes_data8_s;
+                    if (serdes_cnt = to_unsigned(3, 6)) then
+                        serdes_data32 <= serdes_data32_shift(31 downto 0);
+                        serdes_data32_valid <= '1';
+                        serdes_cnt <= (others => '0');
+                    end if;
+                    serdes8_cnt <= (others => '0');
+                end if;
+            end if;
+        end process serdes_8to32_proc;
+    end generate xapp1017_serdes_640;
 
     -- Quad-Oversampling style SERDES with auto-phase detection up to 160Mpbs
     custom_serdes: if c_RX_SPEED = "0160" generate
