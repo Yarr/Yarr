@@ -8,10 +8,10 @@ vers:
 	./make_version.sh
 
 $(SUBDIRS): vers 
-	-@echo "Building $@/tef1001_R1" && cd $@/tef1001_R1 && $(MAKE) 1> buildlog.txt
-	-@echo "Building $@/tef1001_R2" && cd $@/tef1001_R2 && $(MAKE) 1> buildlog.txt
-	-@echo "Building $@/xpressk7_160" && cd $@/xpressk7_160 && $(MAKE) 1> buildlog.txt
-	-@echo "Building $@/xpressk7_325" && cd $@/xpressk7_325 && $(MAKE) 1> buildlog.txt
+	-@echo "Building $@/tef1001_R1" && cd $@/tef1001_R1 && $(MAKE) 2>&1 /dev/null
+	-@echo "Building $@/tef1001_R2" && cd $@/tef1001_R2 && $(MAKE) 2>&1 /dev/null
+	-@echo "Building $@/xpressk7_160" && cd $@/xpressk7_160 && $(MAKE) 2>&1 /dev/null
+	-@echo "Building $@/xpressk7_325" && cd $@/xpressk7_325 && $(MAKE) 2>&1 /dev/null
 	-@echo "Finished $@/tef1001_R1 ... moving bit file" && cp $@/tef1001_R1/yarr.runs/impl_1/top_level.bit $@/$@_tef1001_R1.bit
 	-@echo "Finished $@/tef1001_R2 ... moving bit file" && cp $@/tef1001_R2/yarr.runs/impl_1/top_level.bit $@/$@_tef1001_R2.bit
 	-@echo "Finished $@/xpressk7_160 ... moving bit file" && cp $@/xpressk7_160/yarr.runs/impl_1/top_level.bit $@/$@_xpressk7_160.bit
