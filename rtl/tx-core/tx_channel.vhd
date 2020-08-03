@@ -33,9 +33,16 @@ entity tx_channel is
 		loop_word_i     : in std_logic_vector(1023 downto 0); -- (WB clk domain)
 		loop_word_bytes_i : in std_logic_vector(7 downto 0); -- (WB clk domain)
             
-        -- Auto-zero
-        az_word_i       : in std_logic_vector(31 downto 0);
-        az_interval_i   : in std_logic_vector(15 downto 0);
+        -- Pulse
+        pulse_word_i       : in std_logic_vector(31 downto 0);
+        pulse_interval_i   : in std_logic_vector(15 downto 0);
+		
+        -- Sync
+        sync_word_i       : in std_logic_vector(31 downto 0);
+        sync_interval_i   : in std_logic_vector(7 downto 0);
+		
+        -- Idle
+        idle_word_i       : in std_logic_vector(31 downto 0);
 		
 		-- Status
 		tx_underrun_o	: out std_logic;
@@ -61,8 +68,8 @@ architecture rtl of tx_channel is
         idle_i      : in std_logic_vector(31 downto 0);
         sync_i      : in std_logic_vector(31 downto 0);
         sync_interval_i : in std_logic_vector(7 downto 0);
-        az_i      : in std_logic_vector(31 downto 0);
-        az_interval_i : in std_logic_vector(15 downto 0);
+        pulse_i      : in std_logic_vector(31 downto 0);
+        pulse_interval_i : in std_logic_vector(15 downto 0);
         data_valid_i : in std_logic;
         -- Output
         data_o      : out std_logic;
@@ -105,8 +112,11 @@ architecture rtl of tx_channel is
 	signal loop_word_s : std_logic_vector(1023 downto 0);
     signal loop_word_bytes_s : std_logic_vector(7 downto 0);
 	
-    signal az_word_s : std_logic_vector(31 downto 0);
-    signal az_interval_s : std_logic_vector(15 downto 0);
+    signal pulse_word_s : std_logic_vector(31 downto 0);
+    signal pulse_interval_s : std_logic_vector(15 downto 0);
+    signal sync_word_s : std_logic_vector(31 downto 0);
+    signal sync_interval_s : std_logic_vector(7 downto 0);
+    signal idle_word_s : std_logic_vector(31 downto 0);
 begin
 
 	-- Write to FiFo
@@ -128,8 +138,11 @@ begin
 	       loop_mode_s <= '0';
            loop_word_s <= (others => '0');
            loop_word_bytes_s <= (others => '0');
-           az_word_s <= c_TX_AZ_WORD;
-           az_interval_s <= std_logic_vector(c_TX_AZ_INTERVAL);
+           pulse_word_s <= c_TX_AZ_WORD;
+           pulse_interval_s <= std_logic_vector(c_TX_AZ_INTERVAL);
+           sync_word_s <= c_TX_SYNC_WORD;
+           sync_interval_s <= std_logic_vector(c_TX_SYNC_INTERVAL);
+           idle_word_s <= c_TX_IDLE_WORD;
 	   elsif rising_edge(tx_clk_i) then
 	       loop_empty <= '1';
 	       loop_mode_s <= loop_mode_i;
@@ -147,8 +160,11 @@ begin
 	               loop_empty <= '0';
 	           end if;
 	       end if;
-           az_word_s <= az_word_i;
-           az_interval_s <= az_interval_i;
+           pulse_word_s <= pulse_word_i;
+           pulse_interval_s <= pulse_interval_i;
+           sync_word_s <= sync_word_i;
+           sync_interval_s <= sync_interval_i;
+           idle_word_s <= idle_word_i;
 	   end if;
 	end process loop_proc;
 	
@@ -194,11 +210,11 @@ begin
 		rst_n_i => rst_n_i,
 		enable_i => tx_enable_i,
 		data_i => sport_data,
-		idle_i => c_TX_IDLE_WORD,
-		sync_i => c_TX_SYNC_WORD,
-		sync_interval_i => std_logic_vector(c_TX_SYNC_INTERVAL),
-		az_i => az_word_s,
-		az_interval_i => az_interval_s,
+		idle_i => idle_word_s,
+		sync_i => sync_word_s,
+		sync_interval_i => sync_interval_s,
+		pulse_i => pulse_word_s,
+		pulse_interval_i => pulse_interval_s,
 		data_valid_i => sport_data_valid,
 		data_o => tx_data_o,
 		data_read_o => sport_data_read

@@ -6,25 +6,26 @@
 -- # Outputs are synchronous to clk_i
 -- ####################################
 -- # Adress Map:
--- # Adr[8:4]: channel number 0 to 31
--- # Adr[3:0]:
--- #   0x0 - FiFo (WO) (Write to enabled channels)
--- #   0x1 - CMD Enable (RW)
--- #   0x2 - CMD Empty (RO)
--- #   0x3 - Trigger Enable (RW)
--- #   0x4 - Trigger Done (RO)
--- #   0x5 - Trigger Conf (RW) : 
+-- # Adr[4:0]:
+-- #   0x00 - FiFo (WO) (Write to enabled channels)
+-- #   0x01 - CMD Enable (RW)
+-- #   0x02 - CMD Empty (RO)
+-- #   0x03 - Trigger Enable (RW)
+-- #   0x04 - Trigger Done (RO)
+-- #   0x05 - Trigger Conf (RW) : 
 -- #          0 = External
 -- #          1 = Internal Time
 -- #          2 = Internal Count
--- #   0x6 - Trigger Frequency (RW)
--- #   0x7 - Trigger Time_L (RW)
--- #   0x8 - Trigger Time_H (RW)
--- #   0x9 - Trigger Count (RW)
--- #   0xA - Trigger Word Length (RW)
--- #   0xB - Trigger Word [31:0] (RW)
--- #   0xC - Trigger Pointer (RW)
--- #   0xF - Toggle trigger abort
+-- #   0x06 - Trigger Frequency (RW)
+-- #   0x07 - Trigger Time_L (RW)
+-- #   0x08 - Trigger Time_H (RW)
+-- #   0x09 - Trigger Count (RW)
+-- #   0x0A - Trigger Word Length (RW)
+-- #   0x0B - Trigger Word [31:0] (RW)
+-- #   0x0C - Trigger Pointer (RW)
+-- #   0x0F - Toggle trigger abort
+-- #   0x10 - TX polarity (RW)
+-- #   0x11 - 
 
 library IEEE;
 use ieee.std_logic_1164.all;
@@ -84,9 +85,16 @@ architecture behavioral of wb_tx_core is
             loop_word_i     : in std_logic_vector(1023 downto 0);
             loop_word_bytes_i : in std_logic_vector(7 downto 0);
 
-            -- Auto-zero
-            az_word_i       : in std_logic_vector(31 downto 0);
-            az_interval_i   : in std_logic_vector(15 downto 0);
+            -- Pulse
+            pulse_word_i       : in std_logic_vector(31 downto 0);
+            pulse_interval_i   : in std_logic_vector(15 downto 0);
+            
+            -- Sync
+            sync_word_i       : in std_logic_vector(31 downto 0);
+            sync_interval_i   : in std_logic_vector(7 downto 0);
+            
+            -- Idle
+            idle_word_i       : in std_logic_vector(31 downto 0);
 			
 			-- Status
 			tx_underrun_o	: out std_logic;
@@ -164,6 +172,8 @@ architecture behavioral of wb_tx_core is
     signal per_second_cnt : unsigned(31 downto 0);
     constant ticks_per_second : integer := 160000000; -- 160 MHz clock rate TODO make it set via board_pkg
     
+    type word_array is array (g_NUM_TX-1 downto 0) of std_logic_vector(31 downto 0);
+
 	signal trig_abort : std_logic;
 	
 	signal wb_wr_en	: std_logic_vector(31 downto 0) := (others => '0');
@@ -171,9 +181,16 @@ architecture behavioral of wb_tx_core is
 	
 	signal channel : integer range 0 to 31;
 
-    signal az_word : std_logic_vector(31 downto 0);
-    signal az_interval : std_logic_vector(15 downto 0);
+    signal pulse_word : std_logic_vector(31 downto 0);
+    signal pulse_interval : std_logic_vector(15 downto 0);
+    signal pulse_words : word_array;
 
+    signal sync_word : std_logic_vector(31 downto 0);
+    signal sync_interval : std_logic_vector(7 downto 0);
+    signal sync_words : word_array;
+
+    signal idle_word : std_logic_vector(31 downto 0);
+    signal idle_words : word_array;
 begin
 
 	channel <= TO_INTEGER(unsigned(wb_adr_i(8 downto 4)));
@@ -200,8 +217,11 @@ begin
             trig_word_pointer <= (others => '0');
             trig_abort <= '0';
             trig_in_freq_d <= (others => '0');
-            az_word <= c_TX_AZ_WORD;
-            az_interval <= std_logic_vector(c_TX_AZ_INTERVAL);
+            pulse_word <= c_TX_AZ_WORD;
+            pulse_interval <= std_logic_vector(c_TX_AZ_INTERVAL);
+            sync_word <= c_TX_SYNC_WORD;
+            sync_interval <= std_logic_vector(c_TX_SYNC_INTERVAL);
+            idle_word <= c_TX_IDLE_WORD;
 		elsif rising_edge(wb_clk_i) then
 			wb_wr_en <= (others => '0');
 			wb_ack_o <= '0';
@@ -247,17 +267,26 @@ begin
 						when x"0C" => -- Set trigger word pointer
 							trig_word_pointer <= unsigned(wb_dat_i(4 downto 0));
 							wb_ack_o <= '1';
-						when x"0D" => -- Set trigger word pointer
-							az_word <= wb_dat_i(31 downto 0);
+						when x"0D" => -- Pulse word
+							pulse_word <= wb_dat_i(31 downto 0);
 							wb_ack_o <= '1';
-						when x"0E" => -- Set trigger word pointer
-							az_interval <= wb_dat_i(15 downto 0);
+						when x"0E" => -- Pulse word interval
+							pulse_interval <= wb_dat_i(15 downto 0);
 							wb_ack_o <= '1';
 						when x"0F" => -- Toggle trigger abort
 							trig_abort <= wb_dat_i(0);
 							wb_ack_o <= '1';
 						when x"10" => -- TX polarity
 							tx_polarity <= wb_dat_i((g_NUM_TX-1) downto 0);
+							wb_ack_o <= '1';
+						when x"11" => -- Pulse word
+							sync_word <= wb_dat_i(31 downto 0);
+							wb_ack_o <= '1';
+						when x"12" => -- Pulse word interval
+							sync_interval <= wb_dat_i(7 downto 0);
+							wb_ack_o <= '1';
+						when x"13" => -- Pulse word
+						    idle_word <= wb_dat_i(31 downto 0);
 							wb_ack_o <= '1';
 						when others =>
 							wb_ack_o <= '1';
@@ -305,11 +334,11 @@ begin
 							wb_dat_o(4 downto 0) <= std_logic_vector(trig_word_pointer);
 							wb_ack_o <= '1';
 						when x"0D" => -- autozero word
-							wb_dat_o(31 downto 0) <= az_word;
+							wb_dat_o(31 downto 0) <= pulse_word;
 							wb_ack_o <= '1';
 						when x"0E" => -- autozero interval
                             wb_dat_o <= (others => '0');
-							wb_dat_o(15 downto 0) <= az_interval;
+							wb_dat_o(15 downto 0) <= pulse_interval;
 							wb_ack_o <= '1';
 						when x"0F" => -- Trigger in frequency
 							wb_dat_o <= trig_in_freq_d;
@@ -317,6 +346,16 @@ begin
 						when x"10" => -- TX polarity
 							wb_dat_o <= (others => '0');
 							wb_dat_o((g_NUM_TX-1) downto 0) <= tx_polarity;
+							wb_ack_o <= '1';
+						when x"11" => -- sync word
+							wb_dat_o(31 downto 0) <= sync_word;
+							wb_ack_o <= '1';
+						when x"12" => -- sync interval
+                            wb_dat_o <= (others => '0');
+							wb_dat_o(7 downto 0) <= sync_interval;
+							wb_ack_o <= '1';
+						when x"13" => -- idle word
+							wb_dat_o(31 downto 0) <= idle_word;
 							wb_ack_o <= '1';
 						when others =>
 							wb_dat_o <= x"DEADBEEF";
@@ -345,9 +384,14 @@ begin
 			loop_mode_i => trig_en,
 			loop_word_i => trig_word_t(I),
 			loop_word_bytes_i => trig_word_length(7 downto 0),
-            -- Autozeroing
-            az_word_i => az_word,
-            az_interval_i => az_interval,
+            -- Pulse
+            pulse_word_i => pulse_words(I),
+            pulse_interval_i => pulse_interval,
+            -- Sync word
+            sync_word_i => sync_words(I),
+            sync_interval_i => sync_interval,
+            -- Idle word
+            idle_word_i => idle_words(I),
 			-- Status
 			tx_underrun_o => tx_underrun(I),
 			tx_overrun_o => tx_overrun(I),
@@ -361,6 +405,10 @@ begin
 				tx_data_o(I) <= '0';
                 trig_word_t(I) <= (others => '0');
                 tx_polarity_t(I) <= '0';
+
+                pulse_words(I) <= c_TX_AZ_WORD;
+                sync_words(I) <= c_TX_SYNC_WORD;
+                idle_words(I) <= c_TX_IDLE_WORD;
 			elsif rising_edge(tx_clk_i) then
 				--if (tx_enable(I) = '1' and trig_en = '1') then
 				--	tx_data_o(I) <= tx_data_trig;
@@ -368,6 +416,10 @@ begin
                     trig_word_t(I) <= trig_word;
 					tx_data_o(I) <= tx_data_cmd(I) xor tx_polarity_t(I);
                     tx_polarity_t(I) <= tx_polarity(I);
+
+                    sync_words(I) <= sync_word;
+                    pulse_words(I) <= pulse_word;
+                    idle_words(I) <= idle_word;
 				--end if;
 			end if;
 		end process;

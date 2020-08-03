@@ -27,8 +27,8 @@ entity serial_port is
         idle_i      : in std_logic_vector(g_PORT_WIDTH-1 downto 0);
         sync_i      : in std_logic_vector(g_PORT_WIDTH-1 downto 0);
         sync_interval_i : in std_logic_vector(7 downto 0);
-        az_i      : in std_logic_vector(g_PORT_WIDTH-1 downto 0);
-        az_interval_i : in std_logic_vector(15 downto 0);
+        pulse_i      : in std_logic_vector(g_PORT_WIDTH-1 downto 0);
+        pulse_interval_i : in std_logic_vector(15 downto 0);
         
         data_valid_i : in std_logic;
         -- Output
@@ -53,7 +53,7 @@ architecture behavioral of serial_port is
     signal bit_count : unsigned(log2_ceil(g_PORT_WIDTH) downto 0);
     signal sreg      : std_logic_vector(g_PORT_WIDTH-1 downto 0);
     signal sync_cnt : unsigned(7 downto 0);
-    signal az_cnt : unsigned(15 downto 0);
+    signal pulse_cnt : unsigned(15 downto 0);
     signal bx_tick : std_logic;
 begin
 
@@ -65,7 +65,7 @@ begin
 			bit_count <= (others => '0');
 			data_read_o <= '0';
 			sync_cnt <= (others => '0');
-			az_cnt <= (others => '0');
+			pulse_cnt <= (others => '0');
             data_o <= '0';
 		elsif rising_edge(clk_i) then
             -- Output register
@@ -80,23 +80,23 @@ begin
                 data_read_o <= '1';
                 bit_count <= (others => '0');
                 sync_cnt <= sync_cnt + 1;
-                az_cnt <= az_cnt + 1;
-            elsif (bit_count = g_PORT_WIDTH-1 and az_cnt >= unsigned(az_interval_i) and (az_i /= c_ZEROS) and (enable_i = '1')) then --
-                sreg <= az_i;
+                pulse_cnt <= pulse_cnt + 1;
+            elsif (bit_count = g_PORT_WIDTH-1 and pulse_cnt >= unsigned(pulse_interval_i) and (pulse_i /= c_ZEROS) and (enable_i = '1')) then --
+                sreg <= pulse_i;
                 bit_count <= (others => '0');
                 sync_cnt <= sync_cnt + 1;				        
-                az_cnt <= (others => '0');
+                pulse_cnt <= (others => '0');
             elsif (bit_count = g_PORT_WIDTH-1 and sync_cnt >= unsigned(sync_interval_i) and (sync_i /= c_ZEROS)) then
                 sreg <= sync_i;
                 bit_count <= (others => '0');
                 sync_cnt <= (others => '0');
-                az_cnt <= az_cnt + 1;
+                pulse_cnt <= pulse_cnt + 1;
             --elsif (bit_count = g_PORT_WIDTH-1 and data_valid_i = '0') then
             elsif (bit_count = g_PORT_WIDTH-1) then
                 sreg <= idle_i;
                 bit_count <= (others => '0');
                 sync_cnt <= sync_cnt + 1;
-                az_cnt <= az_cnt + 1;
+                pulse_cnt <= pulse_cnt + 1;
             else
                 sreg <= sreg(g_PORT_WIDTH-2 downto 0) & '0';
                 data_read_o <= '0';
