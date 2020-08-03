@@ -49,13 +49,16 @@ void BdaqTxCore::setCmdEnable(uint32_t value) {
     uint32_t mask = (1 << value);
     std::stringstream d; 
     d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << mask << std::dec;
-    logger->debug(d.str());
+    //logger->info(d.str());
 
-    if (mask == 0x01) {
+    /*if (mask == 0x01) {
         cmd.setOutputEn(true); 
     } else {
         cmd.setOutputEn(false);
-    }
+    }*/
+    
+    cmd.setOutputEn(true);
+
     enMask = mask;
 }
 
@@ -66,13 +69,16 @@ void BdaqTxCore::setCmdEnable(std::vector<uint32_t> channels) {
     }
     std::stringstream d; 
     d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << mask << std::dec;
-    logger->debug(d.str());
+    //logger->info(d.str());
     
-    if (mask == 0x01) {
+    /*if (mask == 0x01) {
         cmd.setOutputEn(true); 
     } else {
         cmd.setOutputEn(false);
-    }
+    }*/
+
+    cmd.setOutputEn(true);
+
     enMask = mask;
 }
 
