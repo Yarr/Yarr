@@ -21,22 +21,11 @@ Bdaq53::Bdaq53() :
 	bdaqControl(rbcp) {}
 
 void Bdaq53::initialize(bdaqConfig c) {
+	// Initialize Remote Bus Control Protocol (RBCP)
 	rbcp.connect(c.ipAddr, c.udpPort);
-	auroraRx.setBase(c.rxAddr);
-	auroraRx.checkVersion();
-	i2c.setBase(c.i2cAddr);
-	i2c.checkVersion();
-	i2c.init();
-	cmd.setBase(c.cmdAddr);
-	cmd.checkVersion();
-	cmd.init();
-	tcp.connect(c.ipAddr, c.tcpPort);
-
-	bdaqControl.setBase(c.controlAddr);
-	bdaqControl.init(24, uint(pow(2.0, 24.0) - 1));
-	bdaqControl.setData(0);
-
-	dv = getDaqVersion(); // getDaqVersion must be called after auroraRx.setBase()
+	
+	// Get DAQ (board) version
+ 	dv = getDaqVersion();
 	if (VERSION != dv.fwVersion) {
 		std::string error = "Firmware version " + dv.fwVersion + 
 		" is different than software version " + VERSION + "! Please update.";
@@ -55,18 +44,35 @@ void Bdaq53::initialize(bdaqConfig c) {
 		dv.fwVersion + "\033[0m");
 	logger->info("Board has " + std::to_string(dv.numRxChannels) + 
 		" Aurora receiver channel(s)");
+	
+	// Initialize FPGA modules/drivers
+	auroraRx.setBase(c.rxAddr);
+	auroraRx.checkVersion();
+	i2c.setBase(c.i2cAddr);
+	i2c.checkVersion();
+	i2c.init();
+	cmd.setBase(c.cmdAddr);
+	cmd.checkVersion();
+	cmd.init();
+	tcp.connect(c.ipAddr, c.tcpPort);
+
+	// BDAQ Control Register: Work in progress
+	bdaqControl.setBase(c.controlAddr);
+	bdaqControl.init(24, uint(pow(2.0, 24.0) - 1));
+	bdaqControl.setData(0);
+
 	//Check if Si570 is configured. If not, configure it.
- 	//if (auroraRx.getSi570IsConfigured() == false) {
+ 	//if (auroraRx.getSi570IsConfigured() == false) { // Commented due to BDAQ CONTROL WIP
 		cmd.setOutputEn(false);
 		auroraRx.reset();
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		si570.init(0xBA, 160.0); //0xBA is the Si570 i2c slave address, 160 MHz.
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		cmd.setOutputEn(true);
-		//auroraRx.setSi570IsConfigured(true);
-	/*} else
+	/*} else  // Commented due to BDAQ CONTROL WIP
 		logger->info("Si570 oscillator is already configured");*/
-	//Reset cmd encoder
+
+	//Reset BdaqDriver (command TX)
 	cmd.reset();
 	//Setting BdaqDriver to RD53A
 	setChipTypeRD53A(); // Gotta move it to YARR code
