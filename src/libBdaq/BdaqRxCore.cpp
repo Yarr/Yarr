@@ -28,10 +28,16 @@ BdaqRxCore::BdaqRxCore() {
 
 void BdaqRxCore::setupMode() {
     mSetupMode = true;
+    logger->info("Setup Mode!");
+    // Enable register data monitoring
+    Bdaq53::setMonitorFilter(BdaqAuroraRx::filter);
 }
 
 void BdaqRxCore::runMode() {
     mSetupMode = false;
+    logger->info("Run Mode!");
+    // Disable register data monitoring
+    Bdaq53::setMonitorFilter(BdaqAuroraRx::block);
 }
 
 void BdaqRxCore::setRxEnable(uint32_t val) {
@@ -76,6 +82,8 @@ RawData* BdaqRxCore::readData() {
     std::size_t wCount = fifo.getAvailableWords(); 
     std::vector<uint32_t> inBuf;
     fifo.readData(inBuf, wCount);
+    
+    logger->info("readData = {}", wCount);
 
     if (wCount > 0) {
         std::size_t inSize = wCount;
@@ -175,6 +183,9 @@ unsigned int BdaqRxCore::decode(std::vector<uint32_t>& in, uint32_t* out) {
 
 unsigned int BdaqRxCore::decodeUserk(const uint32_t& word, uint32_t* out, 
                                         unsigned int index) {
+
+    logger->info("USERK word {} = {}", userkCounter, word);
+
     buildUserkFrame(word, userkCounter);
     // 4 USERK readout words are necessary to build an USERK frame.
     if (userkCounter == 3) {
@@ -217,6 +228,9 @@ void BdaqRxCore::buildUserkFrame(const uint32_t& word, unsigned int id) {
 BdaqRxCore::userkDataT BdaqRxCore::interpretUserkFrame() {
     uint64_t userkBlock, Data0, Data1;
     userkDataT u;
+
+    logger->info("userkWordA = {}", userkWordA);
+    logger->info("userkWordB = {}", userkWordB);
 
     userkWordA = (userkWordB & 0x3) << 32 | userkWordA;
     userkBlock = userkWordB >> 2;

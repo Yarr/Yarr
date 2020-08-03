@@ -76,6 +76,7 @@ class Bdaq53 {
         void setChipTypeITkPixV1();
         void enableAutoSync();
         void disableAutoSync();
+        void setMonitorFilter(BdaqAuroraRx::userkFilterMode mode);
                 
 	private:
         daqVersion dv;

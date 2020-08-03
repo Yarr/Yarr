@@ -140,3 +140,10 @@ void Bdaq53::enableAutoSync() {
 void Bdaq53::disableAutoSync() {
 	cmd.setAutoSync(false);
 }
+
+void Bdaq53::setMonitorFilter(BdaqAuroraRx::userkFilterMode mode) {
+	auroraRx.setUserKfilterMask(1, 0x00); // Only allow register data frames
+	auroraRx.setUserKfilterMask(2, 0x01); // Only allow register data frames
+	auroraRx.setUserKfilterMask(3, 0x02); // Only allow register data frames
+	auroraRx.setUserkFilterMode(mode);
+}
