@@ -564,6 +564,10 @@ begin
     wb_clk_s <= clk_160_s;
     
     -- Select RX serdes CLK
+    serdes_clk_1280_gen: if c_RX_SPEED = "1280" generate
+        rx_serdes_clk <= clk_640_s;
+    end generate;
+    
     serdes_clk_640_gen: if c_RX_SPEED = "0640" generate
         rx_serdes_clk <= clk_320_s;
     end generate;
