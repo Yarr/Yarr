@@ -28,14 +28,14 @@ BdaqRxCore::BdaqRxCore() {
 
 void BdaqRxCore::setupMode() {
     mSetupMode = true;
-    logger->info("Setup Mode!");
+    logger->debug("Setup Mode");
     // Enable register data monitoring
     Bdaq53::setMonitorFilter(BdaqAuroraRx::filter);
 }
 
 void BdaqRxCore::runMode() {
     mSetupMode = false;
-    logger->info("Run Mode!");
+    logger->debug("Run Mode");
     // Disable register data monitoring
     Bdaq53::setMonitorFilter(BdaqAuroraRx::block);
 }
@@ -81,10 +81,7 @@ RawData* BdaqRxCore::readData() {
     logger->debug(d.str());
     std::size_t wCount = fifo.getAvailableWords(); 
     std::vector<uint32_t> inBuf;
-    fifo.readData(inBuf, wCount);
-    
-    logger->info("readData = {}", wCount);
-
+    fifo.readData(inBuf, wCount);    
     if (wCount > 0) {
         std::size_t inSize = wCount;
         // outBuf size is always < wCount. 
@@ -182,10 +179,8 @@ unsigned int BdaqRxCore::decode(std::vector<uint32_t>& in, uint32_t* out) {
 // USERK Decoding ==============================================================
 
 unsigned int BdaqRxCore::decodeUserk(const uint32_t& word, uint32_t* out, 
-                                        unsigned int index) {
-
-    logger->info("USERK word {} = {}", userkCounter, word);
-
+                                        unsigned int index) {                                            
+    logger->debug("USERK word {} = {}", userkCounter, word);
     buildUserkFrame(word, userkCounter);
     // 4 USERK readout words are necessary to build an USERK frame.
     if (userkCounter == 3) {
@@ -229,8 +224,8 @@ BdaqRxCore::userkDataT BdaqRxCore::interpretUserkFrame() {
     uint64_t userkBlock, Data0, Data1;
     userkDataT u;
 
-    logger->info("userkWordA = {}", userkWordA);
-    logger->info("userkWordB = {}", userkWordB);
+    logger->debug("userkWordA = {}", userkWordA);
+    logger->debug("userkWordB = {}", userkWordB);
 
     userkWordA = (userkWordB & 0x3) << 32 | userkWordA;
     userkBlock = userkWordB >> 2;
@@ -254,6 +249,8 @@ BdaqRxCore::userkDataT BdaqRxCore::interpretUserkFrame() {
 std::vector<BdaqRxCore::regDataT> BdaqRxCore::getRegData(BdaqRxCore::userkDataT in) {
     BdaqRxCore::regDataT o;
     std::vector<BdaqRxCore::regDataT> regData;
+
+    logger->info("AuroraKWord = {}", in.AuroraKWord);
 
     // There is data in both Data0 and Data1 (data from 2 different registers?)
     if (in.AuroraKWord == 0) {

@@ -439,7 +439,6 @@ int main(int argc, char *argv[]) {
             return -1;
         }
         logger->info("... success!");
-        exit(1);
     }
 
     // Enable all active channels
