@@ -18,10 +18,10 @@
 
 class Histo2d : public HistogramBase {
     public:
-        Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
+        Histo2d(const std::string &arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh,
                 unsigned arg_ybins, double arg_ylow, double arg_yhigh);
-        Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
-                unsigned arg_ybins, double arg_ylow, double arg_yhigh, LoopStatus &stat);
+        Histo2d(const std::string &arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh,
+                unsigned arg_ybins, double arg_ylow, double arg_yhigh, const LoopStatus &stat);
         Histo2d(Histo2d *h);
         ~Histo2d();
         
@@ -59,11 +59,16 @@ class Histo2d : public HistogramBase {
         double getNumOfEntries() {return entries;}
 
         
-        void toFile(std::string filename, std::string dir = "", bool header=true);
-        bool fromFile(std::string filename);
-        void plot(std::string filename, std::string dir = "");
+        void toFile(const std::string &filename, const std::string &dir = "", bool header= true) const;
+        bool fromFile(const std::string &filename);
+        void plot(const std::string &filename, const std::string &dir = "") const;
 
-    private:
+    void toStream(std::ostream &out) const override;
+
+    void toJson(json &j) const override;
+
+
+private:
         std::vector<double> data;
         std::vector<bool> isFilled;
 

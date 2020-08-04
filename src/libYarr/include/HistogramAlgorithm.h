@@ -23,7 +23,7 @@ class HistogramAlgorithm {
         }
         virtual ~HistogramAlgorithm() {}
 
-        virtual void create(LoopStatus &stat) {}
+        virtual void create(const LoopStatus &stat) {}
         
         std::unique_ptr<HistogramBase> getHisto() {
             return std::move(r);
