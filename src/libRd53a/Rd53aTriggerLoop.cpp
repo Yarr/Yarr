@@ -167,7 +167,7 @@ void Rd53aTriggerLoop::writeConfig(json &config) {
 
 void Rd53aTriggerLoop::loadConfig(json &config) {
     if (!config["count"].empty())
-        setTrigCnt(getTrigCnt());
+        setTrigCnt(config["count"]);
     if (!config["frequency"].empty())
         m_trigFreq = config["frequency"];
     if (!config["time"].empty())
