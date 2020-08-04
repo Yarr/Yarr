@@ -21,7 +21,6 @@
 #include "Histo1d.h"
 #include "Histo2d.h"
 #include "Histo3d.h"
-#include "GraphErrors.h"
 
 #include "FeedbackBase.h"
 

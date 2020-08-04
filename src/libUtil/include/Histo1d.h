@@ -17,8 +17,8 @@
 
 class Histo1d : public HistogramBase {
     public:
-        Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh);
-        Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh, LoopStatus &stat);
+        Histo1d(const std::string &arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh);
+        Histo1d(const std::string &arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh, const LoopStatus &stat);
         ~Histo1d();
         
         unsigned size() const;
@@ -37,11 +37,15 @@ class Histo1d : public HistogramBase {
         double getUnderflow() const {return underflow;};
         double getOverflow() const {return overflow;};
         
-        void toFile(std::string filename, std::string dir = "", bool header=true);
-        bool fromFile(std::string filename);
-        void plot(std::string filename, std::string dir = "");
+        void toFile(const std::string &filename, const std::string &dir = "", bool header= true) const;
+        bool fromFile(const std::string &filename);
+        void plot(const std::string &filename, const std::string &dir = "") const ;
 
-    private:
+    void toStream(std::ostream &out) const override;
+
+    void toJson(json &j) const override;
+
+private:
         std::vector<double> data;
         double underflow;
         double overflow;
