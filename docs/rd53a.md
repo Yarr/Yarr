@@ -82,6 +82,15 @@ Additional changes for the quad module's chip configurations:
 - `OutputActiveLanes`: 7 instead of 15 because only 3 data lanes are connected, not 4
 - `CmlEn`: 7 instead of 15
 
+## Readout Speed
+
+The readout speed that the chip is confgured to has to match the readout speed of the firmware (which is fixed). In order to chanege the readout frequency of the chip one has to change the ``CdrSelSerClk`` register. These settings correspond to the different readout frequencies (the value is the divider from 1.28Gbps):
+
+- ``0`` : 1280Mbps
+- ``1`` : 640Mbps
+- ``2`` : 320Mbps
+- ``3`` : 160Mbps
+
 # Scan Console for RD53A
 
 The general structure of the Scan Console commands is:
@@ -355,29 +364,28 @@ The trigger loop in this scan does not sent an ECR signal during the scan. The s
 
 ### Hit-Or ("self-trigger")
 
-For the "self-triggering" source scan using Hit-Or as a trigger, a second DP-miniDP cable is needed to connect to the second DP port in the SCC and port B on the Ohio card. The multi-chip firmware cannot be used.
-Instead of the `specCfg.json` `specCfgExtTrigger.json` is to be used. The Hit-Or lines have to be enabled in the chip config:
+For the "self-triggering" source scan using Hit-Or as a trigger, a second DP-miniDP cable is needed to connect to the second DP port in the SCC and port B on the Ohio card, which should have the [modifications](ohio-rd53a-multi-module-adapter) on port B. The corresponding firmware has to be used and can be obtained from firmware [v0.9.2](https://github.com/Yarr/Yarr-fw/tree/v0.9.2) as the bit files which do not end with ``_4chip.bit``. For the controller configuration, instead of the `specCfg.json` `specCfgExtTrigger.json` is to be used. The Hit-Or lines have to be enabled in the chip config:
 ```
-"HitOr0MaskDiff0": 65536,
+"HitOr0MaskDiff0": 65535,
 "HitOr0MaskDiff1": 1,
-"HitOr0MaskLin0": 65536,
+"HitOr0MaskLin0": 65535,
 "HitOr0MaskLin1": 1,
-"HitOr0MaskSync": 65536,
-"HitOr1MaskDiff0": 65536,
+"HitOr0MaskSync": 65535,
+"HitOr1MaskDiff0": 65535,
 "HitOr1MaskDiff1": 1,
-"HitOr1MaskLin0": 65536,
+"HitOr1MaskLin0": 65535,
 "HitOr1MaskLin1": 1,
-"HitOr1MaskSync": 65536,
-"HitOr2MaskDiff0": 65536,
+"HitOr1MaskSync": 65535,
+"HitOr2MaskDiff0": 65535,
 "HitOr2MaskDiff1": 1,
-"HitOr2MaskLin0": 65536,
+"HitOr2MaskLin0": 65535,
 "HitOr2MaskLin1": 1,
-"HitOr2MaskSync": 65536,
-"HitOr3MaskDiff0": 65536,
+"HitOr2MaskSync": 65535,
+"HitOr3MaskDiff0": 65535,
 "HitOr3MaskDiff1": 1,
-"HitOr3MaskLin0": 65536,
+"HitOr3MaskLin0": 65535,
 "HitOr3MaskLin1": 1,
-"HitOr3MaskSync": 65536,
+"HitOr3MaskSync": 65535,
 ```
 
 ### External trigger

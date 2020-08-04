@@ -64,14 +64,16 @@ Used for FE-I4 readout.
 ### FE Chip Type
 
 Supported chips are:
-* FE-I4
-* FE65-P2
-* RD53A/B
-* ABC/HCCStar
+
+- FE-I4
+- FE65-P2
+- RD53A/B
+- ABC/HCCStar
 
 ### RX Speed
 
 Not all speeds might be supported for all chips this is somewhat chip dependent:
+
 - FE-I4: 160Mbps
 - FE65-P2: 160Mbps
 - RD53A/B: 160Mbps/640Mbps
@@ -80,6 +82,7 @@ Not all speeds might be supported for all chips this is somewhat chip dependent:
 ### Channel Configuration
 
 Not all configuration are available for all chip types:
+
 - FE-I4: tbd
 - FE65-P2: 1x1
 - RD53A/B: 4x4, 16x1
