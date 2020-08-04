@@ -32,11 +32,14 @@
 #define TRIG_WORD_LENGTH 0xA
 #define TRIG_WORD 0xB
 #define TRIG_WORD_POINTER 0xC
-#define TX_AZ_WORD 0xD
-#define TX_AZ_INTERVAL 0xE
+#define TX_PULSE_WORD 0xD
+#define TX_PULSE_INTERVAL 0xE
 #define TRIG_ABORT 0xF
 #define TRIG_IN_CNT 0xF
 #define TX_POLARITY 0x10
+#define TX_SYNC_WORD 0x11
+#define TX_SYNC_INTERVAL 0x12
+#define TX_IDLE_WORD 0x13
 
 #define TX_CLK_PERIOD 25e-9
 
@@ -104,14 +107,26 @@ class SpecTxCore : virtual public TxCore, virtual public SpecCom{
             SpecCom::writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_DEADTIME, deadtime);
         }
 
-        void setAzWord(uint32_t word) {
-            SpecCom::writeSingle(TX_ADDR | TX_AZ_WORD, word);
+        void setPulseWord(uint32_t word) {
+            SpecCom::writeSingle(TX_ADDR | TX_PULSE_WORD, word);
         }
 
-        void setAzInterval(uint32_t interval) {
-            SpecCom::writeSingle(TX_ADDR | TX_AZ_INTERVAL, interval & 0xFFFF);
+        void setPulseInterval(uint32_t interval) {
+            SpecCom::writeSingle(TX_ADDR | TX_PULSE_INTERVAL, interval & 0xFFFF);
         }
 
+        void setSyncWord(uint32_t word) {
+            SpecCom::writeSingle(TX_ADDR | TX_SYNC_WORD, word);
+        }
+
+        void setSyncInterval(uint32_t interval) {
+            SpecCom::writeSingle(TX_ADDR | TX_SYNC_INTERVAL, interval & 0xFF);
+        }
+        
+        void setIdleWord(uint32_t word) {
+            SpecCom::writeSingle(TX_ADDR | TX_IDLE_WORD, word);
+        }
+        
         void resetTriggerLogic() {
             SpecCom::writeSingle(TRIG_LOGIC_ADR | 0xFF, 0x1);
         }
