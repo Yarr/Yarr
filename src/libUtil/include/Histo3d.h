@@ -66,9 +66,9 @@ class Histo3d : public HistogramBase {
         double getNumOfEntries() {return entries;}
 
         
-        void toFile(const std::string &filename, const std::string &dir = "", bool header= true) const;
+        void toFile(const std::string &filename, const std::string &dir = "", bool header= true) const override;
         bool fromFile(const std::string &filename);
-        void plot(const std::string &filename, const std::string &dir = "") const;
+        void plot(const std::string &filename, const std::string &dir = "") const override;
 
     void toStream(std::ostream &out) const override;
 

@@ -344,6 +344,6 @@ void Histo3d::plot(const std::string &prefix, const std::string &dir) const {
     FILE *gnu = popen(cmd.c_str(), "w");
     std::stringstream ss;
     toStream(ss);
-    fprintf(gnu,ss.str().c_str());
+    fprintf(gnu,"%s",ss.str().c_str());
     pclose(gnu);
 }
