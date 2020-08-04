@@ -263,10 +263,9 @@ void Histo1d::plot(const std::string &prefix, const std::string &dir) const {
     input+="plot \\'-\\' matrix u ((($1)*("+std::to_string(binWidth);
     input+="))+"+std::to_string(xlow)+"+(" + std::to_string(binWidth)+"/2)):3 with boxes'";
     std::string cmd="gnuplot  -e "+input+" > "+output+"\n";
-//    fprintf(gnu, "plot \"%s\" matrix u ((($1)*(%f))+%f+(%f/2)):3 with boxes\n", ("/tmp/" + tmp_name + "_" + name + ".dat").c_str(), binWidth, xlow, binWidth);
     FILE *gnu = popen(cmd.c_str(), "w");
     std::stringstream ss;
     toStream(ss);
-    fprintf(gnu,ss.str().c_str());
+    fprintf(gnu,"%s",ss.str().c_str());
     pclose(gnu);
 }
