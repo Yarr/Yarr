@@ -44,6 +44,8 @@ void Rd53bTriggerLoop::setTrigDelay(uint32_t delay) {
     m_trigWord[31] = 0xAAAA0000 | calWords[0];
     m_trigWord[30] = ((uint32_t)calWords[1]<<16) | calWords[2];
     
+	/* Special case: if trigger multiplier = 0, no trigger should be sent in command line */
+	if(m_trigMultiplier != 0){
     uint64_t trigStream = 0;
 
     // Generate stream of ones for each trigger
@@ -61,7 +63,7 @@ void Rd53bTriggerLoop::setTrigDelay(uint32_t delay) {
             logger->error("Delay is either too small or too large!");
         }
     }
-
+	}
     // Rearm
     std::array<uint16_t, 3> armWords = Rd53b::genCal(16, 1, 0, 0, 0, 0);
     m_trigWord[1] = 0xAAAA0000 | armWords[0];

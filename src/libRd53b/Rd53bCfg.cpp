@@ -63,3 +63,7 @@ void Rd53bCfg::fromFileJson(json &j) {
 void Rd53bCfg::setChipId(unsigned id) {
     m_chipId = id;
 }
+
+unsigned Rd53bCfg::getChipId() {
+    return m_chipId;
+}

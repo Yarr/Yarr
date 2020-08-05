@@ -47,7 +47,7 @@ void Rd53bCoreColLoop::execPart1() {
             m_coreCols[i/16] |= one << i%16;
         }
     }
-    logger->debug("Core Col stage #{} (0x{O:x}, 0x{O:x}, 0x{O:x}, 0x{O:x})", m_cur, m_coreCols[0], m_coreCols[1], m_coreCols[2], m_coreCols[3]);
+    logger->debug("Core Col stage #{0} (0x{1:x}, 0x{2:x}, 0x{3:x}, 0x{4:x})", m_cur, m_coreCols[0], m_coreCols[1], m_coreCols[2], m_coreCols[3]);
     this->setCores();
     g_stat->set(this, m_cur);
 }
