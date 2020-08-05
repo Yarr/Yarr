@@ -61,6 +61,10 @@ void Rd53aCfg::setChipId(unsigned id) {
     m_chipId = id;
 }
 
+unsigned Rd53aCfg::getChipId() {
+    return m_chipId;
+}
+
 void Rd53aCfg::toFileJson(json &j) {
     j["RD53A"]["Parameter"]["Name"] = name;
     j["RD53A"]["Parameter"]["ChipId"] = m_chipId;
