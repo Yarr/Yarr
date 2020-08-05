@@ -28,6 +28,7 @@ class Rd53bCfg : public FrontEndCfg, public Rd53bGlobalCfg, public Rd53bPixelCfg
         void fromFileJson(json &cfg);
 
         void setChipId(unsigned id);
+        unsigned getChipId();
  
     protected:
         unsigned m_chipId;
