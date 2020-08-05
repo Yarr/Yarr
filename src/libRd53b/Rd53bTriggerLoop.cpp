@@ -44,26 +44,35 @@ void Rd53bTriggerLoop::setTrigDelay(uint32_t delay) {
     m_trigWord[31] = 0xAAAA0000 | calWords[0];
     m_trigWord[30] = ((uint32_t)calWords[1]<<16) | calWords[2];
     
-	/* Special case: if trigger multiplier = 0, no trigger should be sent in command line */
-	if(m_trigMultiplier != 0){
-    uint64_t trigStream = 0;
+    std::array<uint16_t, 4> wrReg = Rd53bCmd::genWrReg(16, 53, 0x80);
+    m_trigWord[29] = (((uint32_t)wrReg[0] << 16) | wrReg[1]);
+    m_trigWord[28] = (((uint32_t)wrReg[2] << 16) | wrReg[3]);
+    
+	// Special case: if trigger multiplier = 0, no trigger should be sent in command line
+    if(m_trigMultiplier != 0){
+        uint64_t trigStream = 0;
 
-    // Generate stream of ones for each trigger
-    uint64_t one = 1;
-    for (unsigned i=0; i<m_trigMultiplier; i++)
-        trigStream |= (one << i);
-    trigStream = trigStream << delay%8;
+        // Generate stream of ones for each trigger
+        uint64_t one = 1;
+        for (unsigned i=0; i<m_trigMultiplier; i++)
+            trigStream |= (one << i);
+        trigStream = trigStream << delay%8;
 
-    for (unsigned i=0; i<(m_trigMultiplier/8)+1; i++) {
-        if (((30-(delay/8)-i) > 2) && delay > 30) {
-            uint32_t bc1 = (trigStream >> (2*i*4)) & 0xF;
-            uint32_t bc2 = (trigStream >> ((2*i*4)+4)) & 0xF;
-            m_trigWord[30-(delay/8)-i] = ((uint32_t)Rd53b::genTrigger(bc1, 2*i)[0] << 16) |  Rd53b::genTrigger(bc2, (2*i)+1)[0];
-        } else {
-            logger->error("Delay is either too small or too large!");
+        for (unsigned i=0; i<(m_trigMultiplier/8)+1; i++) {
+            if (((30-(delay/8)-i) > 2) && delay > 30) {
+                uint32_t bc1 = (trigStream >> (2*i*4)) & 0xF;
+                uint32_t bc2 = (trigStream >> ((2*i*4)+4)) & 0xF;
+                m_trigWord[30-(delay/8)-i] = ((uint32_t)Rd53b::genTrigger(bc1, 2*i)[0] << 16) |  Rd53b::genTrigger(bc2, (2*i)+1)[0];
+            } else {
+                logger->error("Delay is either too small or too large!");
+            }
         }
     }
-	}
+
+    std::array<uint16_t, 4> wrReg2 = Rd53bCmd::genWrReg(16, 53, 0x0);
+    m_trigWord[3] = (((uint32_t)wrReg2[0] << 16) | wrReg2[1]);
+    m_trigWord[2] = (((uint32_t)wrReg2[2] << 16) | wrReg2[3]);
+    
     // Rearm
     std::array<uint16_t, 3> armWords = Rd53b::genCal(16, 1, 0, 0, 0, 0);
     m_trigWord[1] = 0xAAAA0000 | armWords[0];
@@ -77,7 +86,7 @@ void Rd53bTriggerLoop::setTrigDelay(uint32_t delay) {
 
 void Rd53bTriggerLoop::setEdgeMode(uint32_t duration) {
     // Assumes CAL command to be in index 31/30
-    std::array<uint16_t, 3> calWords = Rd53b::genCal(16, 1, 0, m_edgeDuration, 0, 0);
+    std::array<uint16_t, 3> calWords = Rd53b::genCal(16, 1, 32, duration, 0, 0);
     m_trigWord[31] = 0xAAAA0000 | calWords[0];
     m_trigWord[30] = ((uint32_t)calWords[1]<<16) | calWords[2];
 }
@@ -138,6 +147,29 @@ void Rd53bTriggerLoop::execPart2() {
     while(!g_tx->isTrigDone());
     // Disable Trigger
     g_tx->setTrigEnable(0x0);
+    
+   
+    Rd53b *rd53b = dynamic_cast<Rd53b*>(g_fe);
+    uint16_t latency = rd53b->Latency.read();
+    rd53b->writeRegister(&Rd53b::Latency, 500);
+    while(!g_tx->isCmdEmpty()){;}
+    
+    // Reset ToT memories
+    this->setEdgeMode(2);
+    g_tx->setTrigFreq(800000);
+    g_tx->setTrigCnt(1000);
+    g_tx->setTrigWord(&m_trigWord[0], 32);
+    g_tx->setTrigWordLength(2);
+    g_tx->setTrigConfig(INT_COUNT);
+ 
+    g_tx->setTrigEnable(0x1);
+    std::this_thread::sleep_for(std::chrono::microseconds(1));
+    while(!g_tx->isTrigDone());
+    g_tx->setTrigEnable(0x0);
+    
+    rd53b->writeRegister(&Rd53b::Latency, latency);
+    while(!g_tx->isCmdEmpty()){;}
+    
     m_done = true;
 }
 

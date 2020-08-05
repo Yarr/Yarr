@@ -163,7 +163,7 @@ class TagDist : public HistogramAlgorithm {
         ~TagDist() {
         }
 
-        void create(LoopStatus &stat) override {
+        void create(const LoopStatus &stat) override {
             h = new Histo1d(outputName(), 257, -0.5, 256.5, stat);
             h->setXaxisTitle("Tag");
             h->setYaxisTitle("Hits");
