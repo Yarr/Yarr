@@ -45,7 +45,8 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq {
         std::chrono::microseconds m_waitTime; 
 
     private:
-        bool mSetupMode;        
+        bool mSetupMode;
+        BdaqAuroraRx* auroraRx;     
         
         unsigned int userkCounter; 
         uint64_t userkWordA, userkWordB;

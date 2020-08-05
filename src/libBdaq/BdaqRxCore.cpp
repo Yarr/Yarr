@@ -40,16 +40,32 @@ void BdaqRxCore::runMode() {
     Bdaq::setMonitorFilter(BdaqAuroraRx::block);
 }
 
+// val: 0, 1, 2, 3
 void BdaqRxCore::setRxEnable(uint32_t val) {
     std::stringstream d; 
     d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << val << std::dec;
     logger->debug(d.str());
+    switch (val) {
+        //Mapping rx[0, 1, 2, 3] to BDAQ rx[0, 4, 5, 6]
+        case 0x0: auroraRx = &(rx.at(0)); break; 
+        case 0x1: auroraRx = &(rx.at(4)); break;
+        case 0x2: auroraRx = &(rx.at(5)); break;
+        case 0x3: auroraRx = &(rx.at(6)); break;
+        default: auroraRx = NULL;
+    }
 }
 
-void BdaqRxCore::setRxEnable(std::vector<uint32_t>) {
+void BdaqRxCore::setRxEnable(std::vector<uint32_t> channels) {
+    uint32_t mask = 0;
+    for (uint32_t channel : channels) {
+        mask |= (1 << channel);
+    }
     std::stringstream d; 
-    d << __PRETTY_FUNCTION__;
-    logger->debug(d.str());
+    d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << mask << std::dec;
+    logger->info(d.str());
+    std::cin.get();
+
+    auroraRx = &(rx.at(0));
 }
 
 void BdaqRxCore::maskRxEnable(uint32_t val, uint32_t mask) {
@@ -60,12 +76,13 @@ void BdaqRxCore::maskRxEnable(uint32_t val, uint32_t mask) {
 }
 
 void BdaqRxCore::checkRxSync() {
+    //return;
 	uint time = 0;
-	while (time < 1000 && auroraRx.getRxReady() == false) {
+	while (time < 1000 && auroraRx->getRxReady() == false) {
 		++time;
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
-	if (auroraRx.getRxReady()) {
+	if (auroraRx->getRxReady()) {
 		logger->info("Aurora link is synchronized!");
 	}
 	else {
@@ -101,7 +118,7 @@ void BdaqRxCore::flushBuffer() {
     std::stringstream d; 
     d << __PRETTY_FUNCTION__;
     logger->debug(d.str());
-    auroraRx.resetLogic();
+    auroraRx->resetLogic();
     fifo.flushBuffer();
 }
 

@@ -39,7 +39,7 @@ class Bdaq {
         BdaqRBCP rbcp;
         Bdaq_i2c i2c;
         BdaqSi570 si570;
-        BdaqAuroraRx auroraRx;
+        std::vector<BdaqAuroraRx> rx;
         BdaqDriver cmd;
         BdaqTCP tcp;
         BdaqSiTcpFifo fifo;

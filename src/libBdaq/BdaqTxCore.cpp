@@ -37,6 +37,12 @@ void BdaqTxCore::writeFifo(uint32_t value) {
 
 void BdaqTxCore::sendCommand() {
     if (cmdData.size() == 0) return;  
+    /*uint fillTotal = (4080 - cmdData.size()) / 2;  
+    for (uint i=0;i<fillTotal;++i) {
+        cmdData.push_back(0x81);
+        cmdData.push_back(0x7E);
+    }*/
+    //logger->info("Command Size = {}", cmdData.size());
     cmd.setData(cmdData);
     cmd.setSize(cmdData.size());
     cmd.setRepetitions(1);
@@ -45,18 +51,14 @@ void BdaqTxCore::sendCommand() {
     cmdData.clear();
 }
 
+// value: 1, 2, 4, 8
 void BdaqTxCore::setCmdEnable(uint32_t value) {
     uint32_t mask = (1 << value);
     std::stringstream d; 
     d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << mask << std::dec;
-    //logger->info(d.str());
-
-    /*if (mask == 0x01) {
-        cmd.setOutputEn(true); 
-    } else {
-        cmd.setOutputEn(false);
-    }*/
+    logger->debug(d.str());
     
+    // There is one Command Encoder connected to all DP
     cmd.setOutputEn(true);
 
     enMask = mask;
@@ -69,14 +71,9 @@ void BdaqTxCore::setCmdEnable(std::vector<uint32_t> channels) {
     }
     std::stringstream d; 
     d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << mask << std::dec;
-    //logger->info(d.str());
-    
-    /*if (mask == 0x01) {
-        cmd.setOutputEn(true); 
-    } else {
-        cmd.setOutputEn(false);
-    }*/
+    logger->debug(d.str());
 
+    // There is one Command Encoder connected to all DP    
     cmd.setOutputEn(true);
 
     enMask = mask;

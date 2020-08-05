@@ -13,7 +13,6 @@ namespace {
 }
 
 Bdaq::Bdaq() : 
-	auroraRx(rbcp), 
 	i2c(rbcp),
 	si570(i2c),
 	cmd(rbcp),
@@ -45,9 +44,14 @@ void Bdaq::initialize(bdaqConfig c) {
 	logger->info("Board has " + std::to_string(dv.numRxChannels) + 
 		" Aurora receiver channel(s)");
 	
-	// Initialize FPGA modules/drivers
-	auroraRx.setBase(c.rxAddr);
-	auroraRx.checkVersion();
+	// Initialize FPGA modules/drivers	
+	rx.reserve(7);
+	for (uint i=0;i<7;++i) {
+		rx.emplace_back(BdaqAuroraRx(rbcp));
+		rx.at(i).setBase(c.rxAddr+0x100*i);
+		rx.at(i).checkVersion();
+	}
+
 	i2c.setBase(c.i2cAddr);
 	i2c.checkVersion();
 	i2c.init();
@@ -64,7 +68,7 @@ void Bdaq::initialize(bdaqConfig c) {
 	//Check if Si570 is configured. If not, configure it.
  	//if (auroraRx.getSi570IsConfigured() == false) { // Commented due to BDAQ CONTROL WIP
 		cmd.setOutputEn(false);
-		auroraRx.reset();
+		for (uint i=0;i<7;++i) rx.at(i).reset();
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		si570.init(0xBA, 160.0); //0xBA is the Si570 i2c slave address, 160 MHz.
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -109,9 +113,15 @@ daqVersion Bdaq::getDaqVersion() {
 bool Bdaq::waitForPllLock(uint timeout) {
 	logger->info("Waiting for PLL lock...");
 	uint times = 0;
-	while (times < timeout && auroraRx.getPllLocked() == false)
+	bool locked = false;
+	while (times < timeout && locked == false) {
+		locked = rx.at(0).getPllLocked() && rx.at(1).getPllLocked() && 
+		         rx.at(2).getPllLocked() && rx.at(3).getPllLocked() && 
+				 rx.at(4).getPllLocked() && rx.at(5).getPllLocked() && 
+				 rx.at(6).getPllLocked();
 		++times;
-	if (auroraRx.getPllLocked()) {
+	}
+	if (locked) {
 		logger->info("PLL locked!");
 		return true;
 	}
@@ -148,8 +158,10 @@ void Bdaq::disableAutoSync() {
 }
 
 void Bdaq::setMonitorFilter(BdaqAuroraRx::userkFilterMode mode) {
-	auroraRx.setUserKfilterMask(1, 0x00); // Only allow register data frames
-	auroraRx.setUserKfilterMask(2, 0x01); // Only allow register data frames
-	auroraRx.setUserKfilterMask(3, 0x02); // Only allow register data frames
-	auroraRx.setUserkFilterMode(mode);
+	for (uint i=0;i<7;++i) {
+		rx.at(i).setUserKfilterMask(1, 0x00); // Only allow register data frames
+		rx.at(i).setUserKfilterMask(2, 0x01); // Only allow register data frames
+		rx.at(i).setUserKfilterMask(3, 0x02); // Only allow register data frames
+		rx.at(i).setUserkFilterMode(mode);
+	}	
 }

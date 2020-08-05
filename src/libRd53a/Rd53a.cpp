@@ -79,6 +79,7 @@ void Rd53a::readRegister(Rd53aReg Rd53aGlobalCfg::*ref) {
 }
 
 void Rd53a::configure() {
+    logger->info("Chip ID = {}", m_chipId);
     this->configureInit();
     // Turn off clock to matrix
     uint16_t tmp_enCoreColSync = EnCoreColSync.read();

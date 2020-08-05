@@ -424,15 +424,17 @@ int main(int argc, char *argv[]) {
     
     // Wait for rx to sync with FE stream
     // TODO Check RX sync
-    hwCtrl->checkRxSync(); // As it is implemented in BDAQ, I added it here. Should be harmless to other HWs.
+    //hwCtrl->checkRxSync(); // As it is implemented in BDAQ, I added it here. Should be harmless to other HWs.
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
-    hwCtrl->flushBuffer();
+    //hwCtrl->flushBuffer();
     for ( FrontEnd* fe : bookie.feList ) {
         auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
         logger->info("Checking com {}", feCfg->getName());
         // Select correct channel
         hwCtrl->setCmdEnable(feCfg->getTxChannel());
         hwCtrl->setRxEnable(feCfg->getRxChannel());
+        hwCtrl->checkRxSync(); // Should be done per fe (Aurora link) and after setRxEnable().
+        hwCtrl->flushBuffer(); // Might be able to remove from here, if I get rid of auroraRx.resetLogic() in BdaqRxCore.
         // Configure
         if (fe->checkCom() != 1) {
             logger->critical("Can't establish communication, aborting!");
