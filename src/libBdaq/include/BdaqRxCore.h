@@ -44,10 +44,13 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq {
     protected:
         std::chrono::microseconds m_waitTime; 
 
-    private:
+    private:        
         bool mSetupMode;
         BdaqAuroraRx* auroraRx;     
         
+        std::vector<uint> activeChannels; 
+        std::vector<std::vector<uint32_t>> sBuffer;
+
         unsigned int userkCounter; 
         uint64_t userkWordA, userkWordB;
 
@@ -73,7 +76,15 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq {
         bool isEventHeader;
         bool isHighWord;
         uint32_t dataWord;
+
+        uint counter1 = 0;
+        uint counter2 = 0;
+        uint counter3 = 0;
+        void displaySort();
         
+        void initSortBuffer();
+        std::size_t sortChannels(std::vector<uint32_t>& in, std::vector<uint32_t>& out);
+
         unsigned int decode(std::vector<uint32_t>& in, uint32_t* out);
         
         unsigned int decodeUserk(const uint32_t& word, uint32_t* out, 

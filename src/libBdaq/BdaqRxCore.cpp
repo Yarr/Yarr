@@ -47,24 +47,40 @@ void BdaqRxCore::setRxEnable(uint32_t val) {
     logger->debug(d.str());
     switch (val) {
         //Mapping rx[0, 1, 2, 3] to BDAQ rx[0, 4, 5, 6]
-        case 0x0: auroraRx = &(rx.at(0)); break; 
-        case 0x1: auroraRx = &(rx.at(4)); break;
-        case 0x2: auroraRx = &(rx.at(5)); break;
-        case 0x3: auroraRx = &(rx.at(6)); break;
+        case 0: auroraRx = &(rx.at(0)); break; 
+        case 1: auroraRx = &(rx.at(4)); break;
+        case 2: auroraRx = &(rx.at(5)); break;
+        case 3: auroraRx = &(rx.at(6)); break;
         default: auroraRx = NULL;
+    }
+
+    activeChannels.clear();
+    switch (val) {
+        //Mapping rx[0, 1, 2, 3] to BDAQ rx[0, 4, 5, 6]
+        case 0: activeChannels.push_back(0); break; 
+        case 1: activeChannels.push_back(4); break;
+        case 2: activeChannels.push_back(5); break;
+        case 3: activeChannels.push_back(6); break;
     }
 }
 
 void BdaqRxCore::setRxEnable(std::vector<uint32_t> channels) {
-    uint32_t mask = 0;
+    //uint32_t mask = 0;
+    activeChannels.clear();
     for (uint32_t channel : channels) {
-        mask |= (1 << channel);
+        //mask |= (1 << channel);
+        logger->info("setRxEnable(): channels = {}", channel);
+        switch (channel) {
+            //Mapping rx[0, 1, 2, 3] to BDAQ rx[0, 4, 5, 6]
+            case 0: activeChannels.push_back(0); break; 
+            case 1: activeChannels.push_back(4); break;
+            case 2: activeChannels.push_back(5); break;
+            case 3: activeChannels.push_back(6); break;
+        }
     }
-    std::stringstream d; 
-    d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << mask << std::dec;
-    logger->info(d.str());
+    //logger->info("setRxEnable(): Mask = 0x{:X}", mask);
     std::cin.get();
-
+    
     auroraRx = &(rx.at(0));
 }
 
@@ -98,9 +114,11 @@ RawData* BdaqRxCore::readData() {
     logger->debug(d.str());
     std::size_t wCount = fifo.getAvailableWords(); 
     std::vector<uint32_t> inBuf;
+    std::vector<uint32_t> midBuf;
     fifo.readData(inBuf, wCount);    
     if (wCount > 0) {
-        std::size_t inSize = wCount;
+        /*wCount = */sortChannels(inBuf, midBuf);
+        displaySort();
         // outBuf size is always < wCount. 
         uint32_t* outBuf = new uint32_t[wCount]; 
         // now wCount has the number of decoded (thus, usable) words
@@ -147,6 +165,59 @@ bool BdaqRxCore::isBridgeEmpty() {
 // is due to the arbiter (selecting either USERK or Pixel Data) inside
 // the BDAQ RX core (rx_aurora).
 
+#define __MAX__ 100
+void BdaqRxCore::displaySort() {
+    uint nChannel = 0;
+    for (uint c : activeChannels) {
+        if (counter1 >= __MAX__ && c == 0) continue;
+        if (counter2 >= __MAX__ && c == 4) continue;
+        logger->info("Displaying sort for Aurora ID = {}", c);
+        for (const auto& word : sBuffer.at(nChannel)) {
+            if (counter1 >= __MAX__ && c == 0) continue;
+            if (counter2 >= __MAX__ && c == 4) continue;
+            if (c == 0) ++counter1;
+            if (c == 4) ++counter2;
+            logger->info("Aurora ID = {}, word = 0x{:X}", (word >> 20) & 0xF, word);                
+        }
+        ++nChannel;
+    }
+}
+
+void BdaqRxCore::initSortBuffer() {
+    sBuffer.clear();
+    for (uint c : activeChannels) {
+        sBuffer.push_back(std::vector<uint32_t>(0));
+    }
+}
+
+std::size_t BdaqRxCore::sortChannels(std::vector<uint32_t>& in, std::vector<uint32_t>& out) {
+    std::size_t size = 0;
+    // Sorting
+    initSortBuffer();
+    for (const auto& word : in) {
+        uint nChannel = 0;
+        for (uint c : activeChannels) {
+            // Testing Aurora RX Identifier 
+            if (((word >> 20) & 0xF) == c) {
+                sBuffer.at(nChannel).push_back(word);
+                ++size;
+            }
+            ++nChannel;
+        }
+    }
+    logger->info("RX 0 size = {}", sBuffer.at(0).size());
+    if (activeChannels.size() > 1) logger->info("RX 4 size = {}", sBuffer.at(1).size());
+    logger->info("size = {}", size);
+    if (activeChannels.size() > 1) logger->info("sum = {}", sBuffer.at(0).size()+sBuffer.at(1).size());
+    // Building continuous stream
+    for (std::size_t i;i<size;++i) {
+        // 4 words of each channel, sequentially
+        uint nChannel = (i/4)%activeChannels.size();
+        out.push_back(sBuffer.at(nChannel).front());
+    }
+    return size;
+}
+
 unsigned int BdaqRxCore::decode(std::vector<uint32_t>& in, uint32_t* out) {
     
     unsigned int index = 0;
@@ -165,7 +236,6 @@ unsigned int BdaqRxCore::decode(std::vector<uint32_t>& in, uint32_t* out) {
             index = decodeUserk(word, out, index);
             continue;
         } 
-
         if (word & HEADER_ID) {
             isEventHeader = true;
             isHighWord = true;
