@@ -117,12 +117,12 @@ RawData* BdaqRxCore::readData() {
     std::vector<uint32_t> midBuf;
     fifo.readData(inBuf, wCount);    
     if (wCount > 0) {
-        /*wCount = */sortChannels(inBuf, midBuf);
-        displaySort();
+        wCount = sortChannels(inBuf, midBuf);
+        //displaySort();
         // outBuf size is always < wCount. 
         uint32_t* outBuf = new uint32_t[wCount]; 
         // now wCount has the number of decoded (thus, usable) words
-        wCount = decode(inBuf, outBuf);
+        wCount = decode(midBuf, outBuf);
         if (wCount > 0) {
             std::size_t outSize = wCount;
             return new RawData(0x0, outBuf, wCount);
@@ -186,7 +186,7 @@ void BdaqRxCore::displaySort() {
 void BdaqRxCore::initSortBuffer() {
     sBuffer.clear();
     for (uint c : activeChannels) {
-        sBuffer.push_back(std::vector<uint32_t>(0));
+        sBuffer.push_back(std::deque<uint32_t>(0));
     }
 }
 
@@ -213,7 +213,10 @@ std::size_t BdaqRxCore::sortChannels(std::vector<uint32_t>& in, std::vector<uint
     for (std::size_t i;i<size;++i) {
         // 4 words of each channel, sequentially
         uint nChannel = (i/4)%activeChannels.size();
-        out.push_back(sBuffer.at(nChannel).front());
+        if (sBuffer.at(nChannel).size() == 0) continue;
+        out.push_back(sBuffer.at(nChannel).at(0));
+        sBuffer.at(nChannel).pop_front();
+        //logger->info("Pushing back = 0x{:X}", sBuffer.at(nChannel).front());
     }
     return size;
 }

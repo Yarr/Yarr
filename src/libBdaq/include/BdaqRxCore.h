@@ -10,6 +10,8 @@
 // ################################
 
 #include <iostream>
+#include <vector>
+#include <deque>
 
 #include "RxCore.h"
 #include "Bdaq.h"
@@ -49,7 +51,7 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq {
         BdaqAuroraRx* auroraRx;     
         
         std::vector<uint> activeChannels; 
-        std::vector<std::vector<uint32_t>> sBuffer;
+        std::vector<std::deque<uint32_t>> sBuffer;
 
         unsigned int userkCounter; 
         uint64_t userkWordA, userkWordB;
