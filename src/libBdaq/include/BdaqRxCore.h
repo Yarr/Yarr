@@ -48,7 +48,6 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq {
 
     private:        
         bool mSetupMode;
-        BdaqAuroraRx* auroraRx;     
         
         std::vector<uint> activeChannels; 
         std::vector<std::deque<uint32_t>> sBuffer;

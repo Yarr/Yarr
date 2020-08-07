@@ -45,15 +45,6 @@ void BdaqRxCore::setRxEnable(uint32_t val) {
     std::stringstream d; 
     d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << val << std::dec;
     logger->debug(d.str());
-    switch (val) {
-        //Mapping rx[0, 1, 2, 3] to BDAQ rx[0, 4, 5, 6]
-        case 0: auroraRx = &(rx.at(0)); break; 
-        case 1: auroraRx = &(rx.at(4)); break;
-        case 2: auroraRx = &(rx.at(5)); break;
-        case 3: auroraRx = &(rx.at(6)); break;
-        default: auroraRx = NULL;
-    }
-
     activeChannels.clear();
     switch (val) {
         //Mapping rx[0, 1, 2, 3] to BDAQ rx[0, 4, 5, 6]
@@ -65,10 +56,8 @@ void BdaqRxCore::setRxEnable(uint32_t val) {
 }
 
 void BdaqRxCore::setRxEnable(std::vector<uint32_t> channels) {
-    //uint32_t mask = 0;
     activeChannels.clear();
     for (uint32_t channel : channels) {
-        //mask |= (1 << channel);
         logger->info("setRxEnable(): channels = {}", channel);
         switch (channel) {
             //Mapping rx[0, 1, 2, 3] to BDAQ rx[0, 4, 5, 6]
@@ -78,10 +67,7 @@ void BdaqRxCore::setRxEnable(std::vector<uint32_t> channels) {
             case 3: activeChannels.push_back(6); break;
         }
     }
-    //logger->info("setRxEnable(): Mask = 0x{:X}", mask);
     std::cin.get();
-    
-    auroraRx = &(rx.at(0));
 }
 
 void BdaqRxCore::maskRxEnable(uint32_t val, uint32_t mask) {
@@ -94,11 +80,18 @@ void BdaqRxCore::maskRxEnable(uint32_t val, uint32_t mask) {
 void BdaqRxCore::checkRxSync() {
     //return;
 	uint time = 0;
-	while (time < 1000 && auroraRx->getRxReady() == false) {
+    bool rxReady = true;
+    for (uint c : activeChannels) {
+        rxReady &= rx.at(c).getRxReady();
+    }
+	while (time < 1000 && rxReady == false) {
 		++time;
+        for (uint c : activeChannels) {
+            rxReady &= rx.at(c).getRxReady();
+        }
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
-	if (auroraRx->getRxReady()) {
+	if (rxReady) {
 		logger->info("Aurora link is synchronized!");
 	}
 	else {
@@ -136,7 +129,7 @@ void BdaqRxCore::flushBuffer() {
     std::stringstream d; 
     d << __PRETTY_FUNCTION__;
     logger->debug(d.str());
-    auroraRx->resetLogic();
+    //auroraRx->resetLogic();
     fifo.flushBuffer();
 }
 
@@ -205,10 +198,17 @@ std::size_t BdaqRxCore::sortChannels(std::vector<uint32_t>& in, std::vector<uint
             ++nChannel;
         }
     }
-    logger->info("RX 0 size = {}", sBuffer.at(0).size());
-    if (activeChannels.size() > 1) logger->info("RX 4 size = {}", sBuffer.at(1).size());
-    logger->info("size = {}", size);
-    if (activeChannels.size() > 1) logger->info("sum = {}", sBuffer.at(0).size()+sBuffer.at(1).size());
+    uint nChannel = 0;
+    std::size_t acc = 0;
+    for (uint c : activeChannels) {
+        if (sBuffer.at(nChannel).size() == 0) {
+            logger->info("RX {} size = {}", c, sBuffer.at(nChannel).size());
+        }
+        acc += sBuffer.at(nChannel).size();
+        ++nChannel;
+    }
+    //logger->info("size = {}", size);
+    //logger->info("sum = {}", acc);
     // Building continuous stream
     for (std::size_t i;i<size;++i) {
         // 4 words of each channel, sequentially
