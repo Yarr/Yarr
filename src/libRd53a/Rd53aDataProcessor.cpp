@@ -164,7 +164,7 @@ void Rd53aDataProcessor::process_core() {
                                 hits[channel]++;
                             }
                         } else {
-                            logger->error("[{}] Received data not valid: 0x{:x}", channel, curIn.words);
+                            //logger->error("[{}] Received data not valid: 0x{:x}", channel, curIn.words);
                         }
 
                     }

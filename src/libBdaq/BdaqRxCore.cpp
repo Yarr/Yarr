@@ -42,9 +42,7 @@ void BdaqRxCore::runMode() {
 
 // val: 0, 1, 2, 3
 void BdaqRxCore::setRxEnable(uint32_t val) {
-    std::stringstream d; 
-    d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << val << std::dec;
-    logger->debug(d.str());
+    logger->info("setRxEnable(): value = {}", val);
     activeChannels.clear();
     switch (val) {
         //Mapping rx[0, 1, 2, 3] to BDAQ rx[0, 4, 5, 6]
@@ -78,7 +76,6 @@ void BdaqRxCore::maskRxEnable(uint32_t val, uint32_t mask) {
 }
 
 void BdaqRxCore::checkRxSync() {
-    //return;
 	uint time = 0;
     bool rxReady = true;
     for (uint c : activeChannels) {
@@ -102,23 +99,16 @@ void BdaqRxCore::checkRxSync() {
 }
 
 RawData* BdaqRxCore::readData() {
-    std::stringstream d; 
-    d << __PRETTY_FUNCTION__;
-    logger->debug(d.str());
-    std::size_t wCount = fifo.getAvailableWords(); 
-    std::vector<uint32_t> inBuf;
-    std::vector<uint32_t> midBuf;
-    fifo.readData(inBuf, wCount);    
-    if (wCount > 0) {
-        wCount = sortChannels(inBuf, midBuf);
-        //displaySort();
-        // outBuf size is always < wCount. 
-        uint32_t* outBuf = new uint32_t[wCount]; 
-        // now wCount has the number of decoded (thus, usable) words
-        wCount = decode(midBuf, outBuf);
-        if (wCount > 0) {
-            std::size_t outSize = wCount;
-            return new RawData(0x0, outBuf, wCount);
+    uint size = readEqualized();
+    if (size > 0) {
+        std::vector<uint32_t> streamBuf;
+        buildStream(streamBuf, size);
+        // outBuf size is always < sortedSize. 
+        uint32_t* outBuf = new uint32_t[size]; 
+        size = decode(streamBuf, outBuf);
+        // now, size has the number of decoded (thus, usable) words
+        if (size > 0) {
+            return new RawData(0x0, outBuf, size);
         } 
         return NULL;
     }
@@ -158,22 +148,31 @@ bool BdaqRxCore::isBridgeEmpty() {
 // is due to the arbiter (selecting either USERK or Pixel Data) inside
 // the BDAQ RX core (rx_aurora).
 
-#define __MAX__ 100
-void BdaqRxCore::displaySort() {
-    uint nChannel = 0;
-    for (uint c : activeChannels) {
-        if (counter1 >= __MAX__ && c == 0) continue;
-        if (counter2 >= __MAX__ && c == 4) continue;
-        logger->info("Displaying sort for Aurora ID = {}", c);
-        for (const auto& word : sBuffer.at(nChannel)) {
-            if (counter1 >= __MAX__ && c == 0) continue;
-            if (counter2 >= __MAX__ && c == 4) continue;
-            if (c == 0) ++counter1;
-            if (c == 4) ++counter2;
-            logger->info("Aurora ID = {}, word = 0x{:X}", (word >> 20) & 0xF, word);                
-        }
-        ++nChannel;
+uint BdaqRxCore::readEqualized() {
+    uint trial = 0;
+    bool equalSize = false;
+    std::vector<uint32_t> inBuf;
+    uint sorted = 0;
+
+    uint available = fifo.getAvailableWords(); 
+    if (available == 0) return 0;
+    
+    initSortBuffer();
+
+    while (trial < 1000 && equalSize == false) {
+        /*logger->info("--------------------------------------------");
+        logger->info("trial = {}, available = {}", trial, available);*/
+        ++trial;
+        inBuf.clear();
+        fifo.readData(inBuf, available);    
+        sorted = sortChannels(inBuf);
+        equalSize = testEqualSize();
+        /*logger->info("sorted = {}, equalSize = {}", sorted, equalSize);
+        logger->info("--------------------------------------------");*/
+        // Wait?
+        available = fifo.getAvailableWords(); 
     }
+    return sorted;
 }
 
 void BdaqRxCore::initSortBuffer() {
@@ -183,10 +182,10 @@ void BdaqRxCore::initSortBuffer() {
     }
 }
 
-std::size_t BdaqRxCore::sortChannels(std::vector<uint32_t>& in, std::vector<uint32_t>& out) {
-    std::size_t size = 0;
+uint BdaqRxCore::sortChannels(std::vector<uint32_t>& in) {
+    uint size = 0;
     // Sorting
-    initSortBuffer();
+    //initSortBuffer();
     for (const auto& word : in) {
         uint nChannel = 0;
         for (uint c : activeChannels) {
@@ -198,28 +197,41 @@ std::size_t BdaqRxCore::sortChannels(std::vector<uint32_t>& in, std::vector<uint
             ++nChannel;
         }
     }
-    uint nChannel = 0;
-    std::size_t acc = 0;
-    for (uint c : activeChannels) {
-        if (sBuffer.at(nChannel).size() == 0) {
-            logger->info("RX {} size = {}", c, sBuffer.at(nChannel).size());
-        }
-        acc += sBuffer.at(nChannel).size();
-        ++nChannel;
+    return size; // Total size.
+}
+
+bool BdaqRxCore::testEqualSize() {
+    // Test if channels have the same size
+    switch (activeChannels.size()) {
+        case 0: return false; break; // No channels, no size.
+        case 1: return true; break;
+        case 2: 
+            return sBuffer.at(0).size() == sBuffer.at(1).size();
+        break;
+        case 3: 
+            return (sBuffer.at(0).size() == sBuffer.at(1).size()) &&
+                   (sBuffer.at(1).size() == sBuffer.at(2).size());
+        break;
+        case 4: 
+            return (sBuffer.at(0).size() == sBuffer.at(1).size()) &&
+                   (sBuffer.at(1).size() == sBuffer.at(2).size()) &&
+                   (sBuffer.at(2).size() == sBuffer.at(3).size());
+        break;
+        default: return false;
     }
-    //logger->info("size = {}", size);
-    //logger->info("sum = {}", acc);
+}
+
+void BdaqRxCore::buildStream(std::vector<uint32_t>& out, uint size) {
     // Building continuous stream
-    for (std::size_t i;i<size;++i) {
+    for (uint i=0;i<size;++i) {
         // 4 words of each channel, sequentially
         uint nChannel = (i/4)%activeChannels.size();
-        if (sBuffer.at(nChannel).size() == 0) continue;
+        if (sBuffer.at(nChannel).size() == 0) continue; // Might delete when get equal sizes OR MIGHT INSERT SOMETHING THAT IS IGNORED BY YARR DATA PROCESSOR.
         out.push_back(sBuffer.at(nChannel).at(0));
         sBuffer.at(nChannel).pop_front();
-        //logger->info("Pushing back = 0x{:X}", sBuffer.at(nChannel).front());
     }
-    return size;
 }
+
 
 unsigned int BdaqRxCore::decode(std::vector<uint32_t>& in, uint32_t* out) {
     

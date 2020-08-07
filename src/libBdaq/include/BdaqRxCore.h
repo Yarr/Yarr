@@ -83,8 +83,11 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq {
         uint counter3 = 0;
         void displaySort();
         
+        uint readEqualized();
         void initSortBuffer();
-        std::size_t sortChannels(std::vector<uint32_t>& in, std::vector<uint32_t>& out);
+        uint sortChannels(std::vector<uint32_t>& in);
+        bool testEqualSize();
+        void buildStream(std::vector<uint32_t>& out, uint size);
 
         unsigned int decode(std::vector<uint32_t>& in, uint32_t* out);
         
