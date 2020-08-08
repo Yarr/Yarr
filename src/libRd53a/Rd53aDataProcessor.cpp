@@ -107,14 +107,6 @@ void Rd53aDataProcessor::process_core() {
                 uint32_t data = curIn.buf[i];
 
                 unsigned channel = activeChannels[(i/2)%activeChannels.size()];
-                if (counter < 30) {
-                    ++counter;
-                    logger->info("activeChannels.size() = {}", activeChannels.size());
-                    logger->info("words = {}", words);
-                    logger->info("Channel = {}", channel);
-                    logger->info("Channel Index = {}", (i/2)%activeChannels.size());
-                    logger->info("[{}]\t\t[{}] = 0x{:x}", i, channel, data);
-                }
                 if (__builtin_expect(((data & 0xFFFF0000) != 0xFFFF0000 ), 1)) {
                     if ((data >> 25) & 0x1) { // is header
                         l1id[channel] = 0x1F & (data >> 20);
@@ -164,7 +156,7 @@ void Rd53aDataProcessor::process_core() {
                                 hits[channel]++;
                             }
                         } else {
-                            //logger->error("[{}] Received data not valid: 0x{:x}", channel, curIn.words);
+                            logger->error("[{}] Received data not valid: 0x{:x}", channel, curIn.words);
                         }
 
                     }

@@ -438,7 +438,7 @@ int main(int argc, char *argv[]) {
         // Configure
         if (fe->checkCom() != 1) {
             logger->critical("Can't establish communication, aborting!");
-            return -1;
+            //return -1;
         }
         logger->info("... success!");
     }
@@ -571,6 +571,8 @@ int main(int argc, char *argv[]) {
 
     hwCtrl->disableCmd();
     hwCtrl->disableRx();
+
+    hwCtrl->printSortStatus();
 
     logger->info("\033[1;31m##########\033[0m");
     logger->info("\033[1;31m# Timing #\033[0m");

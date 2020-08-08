@@ -19,10 +19,6 @@ namespace {
 
 BdaqRxCore::BdaqRxCore() {
     userkCounter = 0;
-    
-    isEventHeader = false;
-    isHighWord = true;
-
     mSetupMode = true;
 }
 
@@ -42,7 +38,7 @@ void BdaqRxCore::runMode() {
 
 // val: 0, 1, 2, 3
 void BdaqRxCore::setRxEnable(uint32_t val) {
-    logger->info("setRxEnable(): value = {}", val);
+    logger->debug("setRxEnable(): value = {}", val);
     activeChannels.clear();
     switch (val) {
         //Mapping rx[0, 1, 2, 3] to BDAQ rx[0, 4, 5, 6]
@@ -51,12 +47,13 @@ void BdaqRxCore::setRxEnable(uint32_t val) {
         case 2: activeChannels.push_back(5); break;
         case 3: activeChannels.push_back(6); break;
     }
+    initSortBuffer();
 }
 
 void BdaqRxCore::setRxEnable(std::vector<uint32_t> channels) {
     activeChannels.clear();
     for (uint32_t channel : channels) {
-        logger->info("setRxEnable(): channels = {}", channel);
+        logger->debug("setRxEnable(): channels = {}", channel);
         switch (channel) {
             //Mapping rx[0, 1, 2, 3] to BDAQ rx[0, 4, 5, 6]
             case 0: activeChannels.push_back(0); break; 
@@ -65,6 +62,7 @@ void BdaqRxCore::setRxEnable(std::vector<uint32_t> channels) {
             case 3: activeChannels.push_back(6); break;
         }
     }
+    initSortBuffer();
     std::cin.get();
 }
 
@@ -99,14 +97,13 @@ void BdaqRxCore::checkRxSync() {
 }
 
 RawData* BdaqRxCore::readData() {
-    uint size = readEqualized();
+    uint size = fifo.getAvailableWords();
     if (size > 0) {
-        std::vector<uint32_t> streamBuf;
-        buildStream(streamBuf, size);
-        // outBuf size is always < sortedSize. 
-        uint32_t* outBuf = new uint32_t[size]; 
-        size = decode(streamBuf, outBuf);
-        // now, size has the number of decoded (thus, usable) words
+        std::vector<uint32_t> inBuf;
+        fifo.readData(inBuf, size);
+        size = sortChannels(inBuf);
+        uint32_t* outBuf = new uint32_t[size];
+        buildStream(outBuf, size);
         if (size > 0) {
             return new RawData(0x0, outBuf, size);
         } 
@@ -141,40 +138,6 @@ bool BdaqRxCore::isBridgeEmpty() {
 // BDAQ Decoding
 // =============================================================================
 
-// Readout stream processing is "global", assuming that USERK words
-// (encapsulating service frames: register or monitoring) might arrive
-// separetely (with other word types in between) or in separated 
-// readout blocks. The same applies to Pixel Data words. This behavior
-// is due to the arbiter (selecting either USERK or Pixel Data) inside
-// the BDAQ RX core (rx_aurora).
-
-uint BdaqRxCore::readEqualized() {
-    uint trial = 0;
-    bool equalSize = false;
-    std::vector<uint32_t> inBuf;
-    uint sorted = 0;
-
-    uint available = fifo.getAvailableWords(); 
-    if (available == 0) return 0;
-    
-    initSortBuffer();
-
-    while (trial < 1000 && equalSize == false) {
-        /*logger->info("--------------------------------------------");
-        logger->info("trial = {}, available = {}", trial, available);*/
-        ++trial;
-        inBuf.clear();
-        fifo.readData(inBuf, available);    
-        sorted = sortChannels(inBuf);
-        equalSize = testEqualSize();
-        /*logger->info("sorted = {}, equalSize = {}", sorted, equalSize);
-        logger->info("--------------------------------------------");*/
-        // Wait?
-        available = fifo.getAvailableWords(); 
-    }
-    return sorted;
-}
-
 void BdaqRxCore::initSortBuffer() {
     sBuffer.clear();
     for (uint c : activeChannels) {
@@ -182,64 +145,35 @@ void BdaqRxCore::initSortBuffer() {
     }
 }
 
-uint BdaqRxCore::sortChannels(std::vector<uint32_t>& in) {
-    uint size = 0;
-    // Sorting
-    //initSortBuffer();
-    for (const auto& word : in) {
-        uint nChannel = 0;
-        for (uint c : activeChannels) {
-            // Testing Aurora RX Identifier 
-            if (((word >> 20) & 0xF) == c) {
-                sBuffer.at(nChannel).push_back(word);
-                ++size;
-            }
-            ++nChannel;
+void BdaqRxCore::buildStream(uint32_t* out, uint size) {
+    // Building continuous stream
+    for (uint i=0;i<size;i++) {
+        // n words of each channel, sequentially
+        uint nChannel = (i/2)%activeChannels.size();
+        if (sBuffer.at(nChannel).size() < 2) {
+            out[i] = 0xFFFF0000;
+        } else {
+            uint32_t hi = sBuffer.at(nChannel).at(0) & 0xFFFF;
+            uint32_t lo = sBuffer.at(nChannel).at(1) & 0xFFFF;
+            out[i] = (hi << 16) | lo;
+            sBuffer.at(nChannel).pop_front();
+            sBuffer.at(nChannel).pop_front();
         }
     }
-    return size; // Total size.
 }
 
-bool BdaqRxCore::testEqualSize() {
-    // Test if channels have the same size
-    switch (activeChannels.size()) {
-        case 0: return false; break; // No channels, no size.
-        case 1: return true; break;
-        case 2: 
-            return sBuffer.at(0).size() == sBuffer.at(1).size();
-        break;
-        case 3: 
-            return (sBuffer.at(0).size() == sBuffer.at(1).size()) &&
-                   (sBuffer.at(1).size() == sBuffer.at(2).size());
-        break;
-        case 4: 
-            return (sBuffer.at(0).size() == sBuffer.at(1).size()) &&
-                   (sBuffer.at(1).size() == sBuffer.at(2).size()) &&
-                   (sBuffer.at(2).size() == sBuffer.at(3).size());
-        break;
-        default: return false;
+void BdaqRxCore::printSortStatus() {
+    uint nChannel = 0;
+    for (const auto& c : activeChannels) {    
+        logger->info("RX ID = {}, Buffer Index = {}, Size = {}", c, nChannel, sBuffer.at(nChannel).size());
+        ++nChannel;
     }
 }
 
-void BdaqRxCore::buildStream(std::vector<uint32_t>& out, uint size) {
-    // Building continuous stream
-    for (uint i=0;i<size;++i) {
-        // 4 words of each channel, sequentially
-        uint nChannel = (i/4)%activeChannels.size();
-        if (sBuffer.at(nChannel).size() == 0) continue; // Might delete when get equal sizes OR MIGHT INSERT SOMETHING THAT IS IGNORED BY YARR DATA PROCESSOR.
-        out.push_back(sBuffer.at(nChannel).at(0));
-        sBuffer.at(nChannel).pop_front();
-    }
-}
-
-
-unsigned int BdaqRxCore::decode(std::vector<uint32_t>& in, uint32_t* out) {
-    
-    unsigned int index = 0;
-    
+uint BdaqRxCore::sortChannels(std::vector<uint32_t>& in) {
+    // Sorting
     for (const auto& word : in) {
-
-        if (word & TRIGGER_ID) {
+        if (word & TRIGGER_ID) { // CHECK THIS
             logger->critical("TLU data is not yet supported.");
             exit(-1);
         } 
@@ -248,34 +182,26 @@ unsigned int BdaqRxCore::decode(std::vector<uint32_t>& in, uint32_t* out) {
             exit(-1);
         } 
         if (word & USERK_FRAME_ID) {
-            index = decodeUserk(word, out, index);
+            //index = decodeUserk(word, out, index);
             continue;
         } 
-        if (word & HEADER_ID) {
-            isEventHeader = true;
-            isHighWord = true;
+        uint nChannel = 0;
+        for (const auto& c : activeChannels) {
+            // Testing Aurora RX Identifier 
+            if (((word >> 20) & 0xF) == c) {
+                sBuffer.at(nChannel).push_back(word);
+            }
+            ++nChannel;
         }
-
-        if (isHighWord) {
-            dataWord = word & 0xFFFF;
-            isHighWord = false; // Next low word
-            continue;
-        } else {
-            dataWord = (dataWord << 16) | (word & 0xFFFF);
-            isHighWord = true; // Next is high word
-        }
-
-        if (isEventHeader) {
-            isEventHeader = false;
-            out[index] = dataWord;
-            ++index;
-        } else {
-            out[index] = dataWord;
-            ++index;
-        }
-
     }
-    return index;
+    // Calculating Total Size
+    uint acc = 0;
+    uint nChannel = 0;
+    for (const auto& c : activeChannels) {
+        acc += sBuffer.at(nChannel).size();
+        ++nChannel;
+    }
+    return acc; // Total size.
 }
 
 // USERK Decoding ==============================================================

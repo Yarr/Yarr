@@ -35,8 +35,6 @@ class Rd53aDataProcessor : public DataProcessor {
         void process() override final;
 
     private:
-        uint counter = 37;
-
         std::vector<std::unique_ptr<std::thread>> thread_ptrs;
         ClipBoard<RawDataContainer> *m_input;
         std::map<unsigned, ClipBoard<EventDataBase>> *m_outMap;

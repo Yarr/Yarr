@@ -41,7 +41,7 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq {
             return m_waitTime;
         }
 
-        void printBufferStatus();
+        void printSortStatus();
     
     protected:
         std::chrono::microseconds m_waitTime; 
@@ -72,24 +72,10 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq {
             uint16_t Address;
             uint16_t Data;
         };
-
-        
-        bool isEventHeader;
-        bool isHighWord;
-        uint32_t dataWord;
-
-        uint counter1 = 0;
-        uint counter2 = 0;
-        uint counter3 = 0;
-        void displaySort();
-        
-        uint readEqualized();
+               
         void initSortBuffer();
         uint sortChannels(std::vector<uint32_t>& in);
-        bool testEqualSize();
-        void buildStream(std::vector<uint32_t>& out, uint size);
-
-        unsigned int decode(std::vector<uint32_t>& in, uint32_t* out);
+        void buildStream(uint32_t* out, uint size);
         
         unsigned int decodeUserk(const uint32_t& word, uint32_t* out, 
                                     unsigned int index);
