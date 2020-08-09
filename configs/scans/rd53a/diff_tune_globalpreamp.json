@@ -69,7 +69,7 @@
           "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 30000,
+          "frequency": 15000,
           "noInject": false,
           "time": 0
         },

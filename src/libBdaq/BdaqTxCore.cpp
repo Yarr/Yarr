@@ -267,13 +267,15 @@ void BdaqTxCore::timedTriggerSet() {
 }
 
 void BdaqTxCore::timedTriggerRun() {
+    logger->debug("Timed Trigger Frequency (Hz) = {}", timedTriggerFreq);
+    logger->debug("Timed Trigger Period (us) = {}", (int)(1E6/timedTriggerFreq));
     timedTriggerDone = false;
     auto start = std::chrono::system_clock::now();
     auto cur = std::chrono::system_clock::now();
     while (std::chrono::duration_cast<std::chrono::seconds>(cur - start).count() < timedTriggerTime) {
         cmd.start();
         // Frequency is implemented by software: 
-        std::this_thread::sleep_for(std::chrono::microseconds((int)(1000/timedTriggerFreq))); 
+        std::this_thread::sleep_for(std::chrono::microseconds((int)(1E6/timedTriggerFreq))); 
         // Wait for trigger completion (which is likely shorter than the period 
         // above). Here for peace of mind.
         while(!cmd.isDone()); //wait for completion 

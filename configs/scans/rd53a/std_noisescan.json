@@ -38,9 +38,9 @@
           "count": 0,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 5000,
+          "frequency": 1000,
           "noInject": true,
-          "time": 300
+          "time": 60
         },
         "loopAction": "Rd53aTriggerLoop"
       },
