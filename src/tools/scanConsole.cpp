@@ -436,10 +436,10 @@ int main(int argc, char *argv[]) {
         hwCtrl->checkRxSync(); // Should be done per fe (Aurora link) and after setRxEnable().
         hwCtrl->flushBuffer(); // Might be able to remove from here, if I get rid of auroraRx.resetLogic() in BdaqRxCore.
         // Configure
-        if (fe->checkCom() != 1) {
+        /*if (fe->checkCom() != 1) {
             logger->critical("Can't establish communication, aborting!");
-            //return -1;
-        }
+            return -1;
+        }*/
         logger->info("... success!");
     }
 

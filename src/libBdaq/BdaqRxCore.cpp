@@ -63,7 +63,6 @@ void BdaqRxCore::setRxEnable(std::vector<uint32_t> channels) {
         }
     }
     initSortBuffer();
-    std::cin.get();
 }
 
 void BdaqRxCore::maskRxEnable(uint32_t val, uint32_t mask) {
