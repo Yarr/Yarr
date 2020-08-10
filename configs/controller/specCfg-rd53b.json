@@ -4,7 +4,7 @@
         "cfg" : {
             "specNum" : 0,
             "spiConfig" : 541200,
-            "rxPolarity" : 0,
+            "rxPolarity" : 15,
             "txPolarity" : 0,
             "pulse" : {
                 "word" : 0,
