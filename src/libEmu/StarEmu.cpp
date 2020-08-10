@@ -218,11 +218,17 @@ std::vector<uint8_t> StarEmu::buildHCCRegisterPacket(PacketTypes typ, uint8_t re
 // Decode LCB
 //
 void StarEmu::decodeLCB(LCB::Frame frame) {
-
-    SPDLOG_LOGGER_TRACE(logger, "Raw LCB frame = 0x{:x} BC = {}", frame, m_bccnt);
-
     // HPR
     doHPR(frame);
+
+    // check if it is a valid frame
+    if (LCB::is_valid(frame)) {
+        SPDLOG_LOGGER_TRACE(logger, "Raw LCB frame = 0x{:x} BC = {}", frame, m_bccnt);
+    } else {
+        logger->debug("Invalid LCB frame received: 0x{:x} @ BC = {}", frame, m_bccnt);
+        logger->debug("Skip decoding");
+        return;
+    }
 
     // {code0, code1}
     uint8_t code0 = (frame >> 8) & 0xff;
@@ -1258,6 +1264,14 @@ void StarEmu::decodeR3L1(uint16_t frame) {
         // {code0, code1}
         uint8_t code0 = (frame >> 8) & 0xff;
         uint8_t code1 = frame & 0xff;
+
+        // check if they are valid 8b code before decoding
+        if ( not (SixEight::is_valid(code0) and SixEight::is_valid(code1)) ) {
+            logger->debug("Invalid 8-bit code received: code0 = 0x{:x}, code1 = 0x{:x}", code0, code1);
+            logger->debug("Skip decoding");
+            return;
+        }
+
         // decode the 16-bit frame to 12-bit data
         uint16_t data12 = (SixEight::decode(code0) << 6) | SixEight::decode(code1);
         // top 5 bits: mask/marker
