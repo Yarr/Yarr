@@ -44,9 +44,9 @@ void Rd53bTriggerLoop::setTrigDelay(uint32_t delay) {
     m_trigWord[31] = 0xAAAA0000 | calWords[0];
     m_trigWord[30] = ((uint32_t)calWords[1]<<16) | calWords[2];
     
-    std::array<uint16_t, 4> wrReg = Rd53bCmd::genWrReg(16, 53, 0x80);
-    m_trigWord[29] = (((uint32_t)wrReg[0] << 16) | wrReg[1]);
-    m_trigWord[28] = (((uint32_t)wrReg[2] << 16) | wrReg[3]);
+    //std::array<uint16_t, 4> wrReg = Rd53bCmd::genWrReg(16, 53, 0x80);
+    //m_trigWord[29] = (((uint32_t)wrReg[0] << 16) | wrReg[1]);
+    //m_trigWord[28] = (((uint32_t)wrReg[2] << 16) | wrReg[3]);
     
 	// Special case: if trigger multiplier = 0, no trigger should be sent in command line
     if(m_trigMultiplier != 0){
@@ -69,9 +69,9 @@ void Rd53bTriggerLoop::setTrigDelay(uint32_t delay) {
         }
     }
 
-    std::array<uint16_t, 4> wrReg2 = Rd53bCmd::genWrReg(16, 53, 0x0);
-    m_trigWord[3] = (((uint32_t)wrReg2[0] << 16) | wrReg2[1]);
-    m_trigWord[2] = (((uint32_t)wrReg2[2] << 16) | wrReg2[3]);
+    //std::array<uint16_t, 4> wrReg2 = Rd53bCmd::genWrReg(16, 53, 0x0);
+    //m_trigWord[3] = (((uint32_t)wrReg2[0] << 16) | wrReg2[1]);
+    //m_trigWord[2] = (((uint32_t)wrReg2[2] << 16) | wrReg2[3]);
     
     // Rearm
     std::array<uint16_t, 3> armWords = Rd53b::genCal(16, 1, 0, 0, 0, 0);
@@ -86,7 +86,7 @@ void Rd53bTriggerLoop::setTrigDelay(uint32_t delay) {
 
 void Rd53bTriggerLoop::setEdgeMode(uint32_t duration) {
     // Assumes CAL command to be in index 31/30
-    std::array<uint16_t, 3> calWords = Rd53b::genCal(16, 1, 32, duration, 0, 0);
+    std::array<uint16_t, 3> calWords = Rd53b::genCal(16, 1, 0, duration, 0, 0);
     m_trigWord[31] = 0xAAAA0000 | calWords[0];
     m_trigWord[30] = ((uint32_t)calWords[1]<<16) | calWords[2];
 }
