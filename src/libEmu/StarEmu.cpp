@@ -356,10 +356,21 @@ void StarEmu::writeRegister(const uint32_t data, const uint8_t address,
             address == HCCStarRegister::LCBerr or
             address == HCCStarRegister::ADCStatus or
             address == HCCStarRegister::Status or
-            address == HCCStarRegister::HPR or
-            address == HCCStarRegister::Addressing) {
+            address == HCCStarRegister::HPR) {
             logger->warn("A register write command is received for a read-only ABCStar register 0x{:x}. Skip writing.", address);
             return;
+        } else if (address == HCCStarRegister::Addressing) {
+            // special case for dynamic addressing
+            // only the top 4 bits are read-write bits and are used as HCC ID
+            uint32_t hccid_cur = m_starCfg->getHCCRegister(HCCStarRegister::Addressing);
+            if ((data & 0xfff) == (hccid_cur & 0xfff)) {
+                // update the top 4 bits and the HCC ID only if the bottom 24
+                // bits from the write command match the bottom 24 bits of the
+                // Addressing register
+                uint32_t hccid_new = (data & 0xf000) | (hccid_cur & 0x0fff);
+                m_starCfg->setHCCRegister(address, hccid_new);
+                m_starCfg->setHCCChipId(data>>24);
+            }
         } else {
             m_starCfg->setHCCRegister(address, data);
         }
