@@ -334,10 +334,35 @@ void StarEmu::writeRegister(const uint32_t data, const uint8_t address,
                             bool isABC, const unsigned ABCID)
 {
     if (isABC) {
-        m_starCfg->setABCRegister(address, data, ABCID);
+        // skip writing if the register is read only
+        if (address == ABCStarRegister::STAT0 or
+            address == ABCStarRegister::STAT1 or
+            address == ABCStarRegister::STAT2 or
+            address == ABCStarRegister::STAT3 or
+            address == ABCStarRegister::STAT4 or
+            address == ABCStarRegister::HPR) {
+            logger->warn("A register write command is received for a read-only HCCStar register 0x{:x}. Skip writing.", address);
+            return;
+        } else {
+            m_starCfg->setABCRegister(address, data, ABCID);
+        }
     }
     else {
-        m_starCfg->setHCCRegister(address, data);
+        // skip writing if the register is read only
+        if (address == HCCStarRegister::SEU1 or
+            address == HCCStarRegister::SEU2 or
+            address == HCCStarRegister::SEU3 or
+            address == HCCStarRegister::FrameRaw or
+            address == HCCStarRegister::LCBerr or
+            address == HCCStarRegister::ADCStatus or
+            address == HCCStarRegister::Status or
+            address == HCCStarRegister::HPR or
+            address == HCCStarRegister::Addressing) {
+            logger->warn("A register write command is received for a read-only ABCStar register 0x{:x}. Skip writing.", address);
+            return;
+        } else {
+            m_starCfg->setHCCRegister(address, data);
+        }
     }
 }
 
