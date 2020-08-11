@@ -4,6 +4,9 @@
 #include "StarCmd.h"
 #include "StarChipPacket.h"
 #include "AllHwControllers.h"
+#include "StarChips.h"
+#include "EmuController.h"
+#include "StarEmu.h"
 
 void sendCommand(TxCore &hw, std::array<uint16_t, 9> &cmd) {
   hw.writeFifo((LCB::IDLE << 16) + LCB::IDLE);
@@ -12,6 +15,15 @@ void sendCommand(TxCore &hw, std::array<uint16_t, 9> &cmd) {
   hw.writeFifo((cmd[4] << 16) + cmd[5]);
   hw.writeFifo((cmd[6] << 16) + cmd[7]);
   hw.writeFifo((cmd[8] << 16) + LCB::IDLE);
+}
+
+void sendCommand(EmuTxCore<StarChips> &hw, uint32_t channel, std::array<uint16_t, 9> &cmd) {
+  hw.writeFifo(channel, (LCB::IDLE << 16) + LCB::IDLE);
+  hw.writeFifo(channel, (cmd[0] << 16) + cmd[1]);
+  hw.writeFifo(channel, (cmd[2] << 16) + cmd[3]);
+  hw.writeFifo(channel, (cmd[4] << 16) + cmd[5]);
+  hw.writeFifo(channel, (cmd[6] << 16) + cmd[7]);
+  hw.writeFifo(channel, (cmd[8] << 16) + LCB::IDLE);
 }
 
 template<typename PacketT>
@@ -569,6 +581,156 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
 
     checkData(emu.get(), expected);
   }
+}
+
+// Multi-level trigger mode
+TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
+  std::shared_ptr<HwController> emu = StdDict::getHwController("emu_Star");
+  // Downcast to EmuController in order to write to a specific channel using writeFifo(uint32_t chn, uint32_t value)
+  auto staremu = std::dynamic_pointer_cast<EmuController<StarChips,StarEmu>>(emu);
+
+  REQUIRE (staremu);
+
+  // Create a chip configuration
+  json tmpChipCfg;
+  tmpChipCfg["chips"] = json::array();
+  // One chip (1 HCCStar + 1 ABCStar) with two tx channels and one rx channel
+  // tx uses channel #0; tx2 uses channel #2
+  tmpChipCfg["chips"][0] = {{"tx", 0}, {"tx2", 2}, {"rx", 1}};
+
+  // Save the chip config file to disk
+  std::string tmpFileName("test_staremu_r3l1.json");
+  std::ofstream tmpCfgFile(tmpFileName);
+  tmpCfgFile << std::setw(4) << tmpChipCfg;
+  tmpCfgFile.close();
+
+  // Load emulator configuration
+  json cfg;
+  cfg["chipCfg"] = tmpFileName;
+
+  staremu->loadConfig(cfg);
+
+  remove(tmpFileName.c_str());
+
+  StarCmd star;
+
+  typedef std::vector<uint8_t> PacketCompare;
+  std::deque<PacketCompare> expected;
+
+  //////////////////////////
+  // Initialize the emulator
+  // Turn off HPRs: MaskHPR=1, StopHPR=1
+  // LCB command sent via tx channel 0
+  // Send IDLE packets of equal length via tx2 channel 2 to ensure the channels are in sync
+  std::array<uint16_t, 9> IdleCmd;
+  for (size_t i=0; i<9; i++) {
+    IdleCmd[i] =  LCB::IDLE;
+  }
+
+  // tx (channel 0)
+  auto writeHCCCmd_MaskHPR = star.write_hcc_register(43, 0x00000100);
+  sendCommand(*staremu, 0, writeHCCCmd_MaskHPR);
+  // tx2 (channel 2)
+  sendCommand(*staremu, 2, IdleCmd);
+
+  // tx (channel 0)
+  auto writeHCCCmd_StopHPR = star.write_hcc_register(16, 0x00000001);
+  sendCommand(*staremu, 0, writeHCCCmd_StopHPR);
+  // tx2 (channel 2)
+  sendCommand(*staremu, 2, IdleCmd);
+
+  // tx (channel 0)
+  auto writeABCCmd_MaskHPR = star.write_abc_register(32, 0x00000040);
+  sendCommand(*staremu, 0, writeABCCmd_MaskHPR);
+  // tx2 (channel 2)
+  sendCommand(*staremu, 2, IdleCmd);
+
+  // tx (channel 0)
+  auto writeABCCmd_StopHPR = star.write_abc_register(0, 0x00000004);
+  sendCommand(*staremu, 0, writeABCCmd_StopHPR);
+  // tx2 (channel 2)
+  sendCommand(*staremu, 2, IdleCmd);
+
+  // Expect to receive initial HPR packets
+  // HCC HPR with Idle frame
+  expected.push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
+  // ABC HPR with Idle frame
+  expected.push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+
+  // Switch to multi-level trigger mode
+  // Register 41 OPmode bit 0
+  auto writeHCCCmd_trigmode = star.write_hcc_register(41, 0x00020000);
+  sendCommand(*staremu, 0, writeHCCCmd_trigmode);
+  sendCommand(*staremu, 2, IdleCmd);
+  // Register 42 OPmodeC as well?
+  //auto writeHCCCmd_trigmodec = star.write_hcc_register(42, 0x00020000);
+  //sendCommand(*staremu, 0, writeHCCCmd_trigmodec);
+  //sendCommand(*staremu, 2, IdleCmd);
+
+  //////////////////////////
+  // Start test
+  // Switch to test pulse mode: TM = 2, TestPulseEnable = 1
+  auto writeABCCmd_tm = star.write_abc_register(32, 0x00020050);
+  sendCommand(*staremu, 0, writeABCCmd_tm);
+  sendCommand(*staremu, 2, IdleCmd);
+
+  // Set MaskInput0 register to 0x00000001 so there would be a non-empty cluster
+  auto writeABCCmd_mask = star.write_abc_register(16, 0x00000001);
+  sendCommand(*staremu, 0, writeABCCmd_mask);
+  sendCommand(*staremu, 2, IdleCmd);
+
+  // Set L0 latency to e.g. 5
+  auto writeABCCmd_lat = star.write_abc_register(34, 0x00000005);
+  sendCommand(*staremu, 0, writeABCCmd_lat);
+  sendCommand(*staremu, 2, IdleCmd);
+
+  // Set the the HCC ID to e.g. 10 so it would respond to an R3 command
+  // (default serial number from HCC register 17 is 0 in the emulator)
+  uint8_t hccID = 10; // module #5
+  auto writeHCCCmd_id = star.write_hcc_register(17, hccID<<24);
+  sendCommand(*staremu, 0, writeHCCCmd_id);
+  sendCommand(*staremu, 2, IdleCmd);
+
+  // Reset BC counters
+  staremu->writeFifo(0, (LCB::IDLE << 16) + LCB::l0a_mask(0, 0, true));
+  staremu->writeFifo(2, (LCB::IDLE << 16) + LCB::IDLE);
+
+  // Send two digital pulse commands
+  staremu->writeFifo(0, (LCB::fast_command(LCB::ABC_DIGITAL_PULSE, 3) << 16) + LCB::fast_command(LCB::ABC_DIGITAL_PULSE, 3));
+  staremu->writeFifo(2, (LCB::IDLE << 16) + LCB::IDLE);
+
+  // Send an L0A command with L0tag = 42 that triggers on the first pulse
+  unsigned tag1 = 42;
+  staremu->writeFifo(0, (LCB::IDLE << 16) + LCB::l0a_mask(8, tag1, false));
+  staremu->writeFifo(2, (LCB::IDLE << 16) + LCB::IDLE);
+
+  // Send a second L0A command with L0tag = 66 that triggers on the second pulse
+  unsigned tag2 = 66;
+  staremu->writeFifo(0, (LCB::l0a_mask(8, tag2, false) << 16) + LCB::IDLE);
+  // At the same time, send an R3 to read the first pulse with l0tag 42
+  unsigned modulemask = 1<<4;
+  // encode into 16b frame
+  uint16_t r3frame1 = LCB::raw_bits( (modulemask<<7) + tag1 );
+  staremu->writeFifo(2, (r3frame1 << 16) + LCB::IDLE);
+
+  // Expect a PR packet: tag = 42 (0x2a); 4-bit BCID = 0b0110
+  expected.push_back({0x12, 0xa6, 0x00, 0x00, 0x6f, 0xed});
+
+  // Send another R3 frame to read the second event with tag 66
+  // Followed by an L1 command that read the previous event
+  staremu->writeFifo(0, (LCB::IDLE << 16) + LCB::IDLE);
+  uint16_t r3frame2 = LCB::raw_bits( (modulemask<<7) + tag2 );
+  uint16_t l1frame = LCB::raw_bits( tag1 );
+  staremu->writeFifo(2, (r3frame2 << 16) + l1frame);
+
+  // Expected a PR packet: tag = 66 (0x42), 4-bit BCID = 0b1111
+  expected.push_back({0x14, 0x2f, 0x00, 0x00, 0x6f, 0xed});
+  // And an LP packet with tag = 42 (0x2a), 4-bit BCID = 0b0110
+  expected.push_back({0x22, 0xa6, 0x00, 0x00, 0x6f, 0xed});
+
+  staremu->releaseFifo();
+  while(!staremu->isCmdEmpty());
+  checkData(staremu.get(), expected);
 }
 
 template<typename PacketT>
