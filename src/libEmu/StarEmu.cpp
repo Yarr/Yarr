@@ -1018,7 +1018,7 @@ std::pair<uint8_t, StarEmu::StripData> StarEmu::generateFEData_TestPulse(const A
                 // otherwise use testpatt2 bit
                 hits = ~masks & patt1_ibit | masks & patt2_ibit;
 
-                bcid += ibit; assert(bcid == l0addr&0xff);
+                bcid += ibit;// assert(bcid == (l0addr&0xff));
                 break;
             } // end of if there is a test pulse
         } // end of ibit loop
@@ -1027,7 +1027,7 @@ std::pair<uint8_t, StarEmu::StripData> StarEmu::generateFEData_TestPulse(const A
         auto pulse = m_l0buffer_lite[l0addr];
         uint8_t pulsetype = (pulse.to_ulong()>>8) & 3;
         if (pulsetype == 2) {
-            bcid = pulse.to_ulong() & 0xff; assert(bcid == l0addr&0xff);
+            bcid = pulse.to_ulong() & 0xff;// assert(bcid == (l0addr&0xff));
             hits = masks;
         }
     }
@@ -1053,7 +1053,7 @@ std::pair<uint8_t, StarEmu::StripData> StarEmu::generateFEData_CaliPulse(const A
     uint16_t BCAL;
     if (pulsetype == 1 and CalPulseEnable) {
         BCAL = abc.getSubRegisterValue("BCAL");
-        assert(bcid == l0addr&0xff);
+        //assert(bcid == (l0addr&0xff));
     } else { // No calibration pulse. Hits could still be recorded due to noise.
         BCAL = 0;
         // assign BCID
