@@ -28,6 +28,8 @@ class EmuRxCore : virtual public RxCore {
         void setRxEnable(std::vector<uint32_t> channels) override;
         void maskRxEnable(uint32_t val, uint32_t mask) override {}
         void disableRx() override;
+        void enableRx();
+        std::vector<uint32_t> listRx();
 
         RawData* readData() override;
         RawData* readData(uint32_t chn);
@@ -118,9 +120,26 @@ void EmuRxCore<FE>::setRxEnable(std::vector<uint32_t> channels) {
 }
 
 template<class FE>
+void EmuRxCore<FE>::enableRx() {
+    for (auto& com : m_coms) {
+        m_channels[com.first] = true;
+    }
+}
+
+template<class FE>
 void EmuRxCore<FE>::disableRx() {
     for (auto& com : m_coms) {
         m_channels[com.first] = false;
     }
+}
+
+template<class FE>
+std::vector<uint32_t> EmuRxCore<FE>::listRx() {
+    std::vector<uint32_t> rxChannels;
+    rxChannels.reserve(m_coms.size());
+    for (auto& com: m_coms) {
+        rxChannels.push_back(com.first);
+    }
+    return rxChannels;
 }
 #endif
