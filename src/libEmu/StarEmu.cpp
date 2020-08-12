@@ -41,8 +41,8 @@ auto logger = logging::make_log("StarEmu");
 //StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, std::string json_file_path,
     //unsigned hpr_period)
 StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, EmuCom * tx2,
-                 std::string& json_emu_file_path,
-                 std::string& json_chip_file_path,
+                 const std::string& json_emu_file_path,
+                 const std::vector<std::string>& json_chip_file_path,
                  unsigned hpr_period)
     : m_txRingBuffer ( tx )
     , m_txRingBuffer2 ( tx2 )
@@ -77,10 +77,10 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, EmuCom * tx2,
     }
 
     // HCCStar and ABCStar chip configurations
-    if (not json_chip_file_path.empty()) {
+    if (not json_chip_file_path[0].empty()) {
         json jChips;
         try {
-            jChips = ScanHelper::openJsonFile(json_chip_file_path);
+            jChips = ScanHelper::openJsonFile(json_chip_file_path[0]);
         } catch (std::runtime_error &e) {
             logger->error("Error opening chip config: {}", e.what());
             throw(std::runtime_error("StarEmu::StarEmu"));
@@ -1419,7 +1419,7 @@ class EmuRxCore<StarChips> : virtual public RxCore {
         ~EmuRxCore();
         
         void setCom(uint32_t chn, std::unique_ptr<ClipBoard<RawData>> queue);
-        ClipBoard<RawData>* getCom(uint32_t chn) {return m_queues[chn].get();}
+        ClipBoard<RawData>* getCom(uint32_t chn);
 
         void setRxEnable(uint32_t channel) override;
         void setRxEnable(std::vector<uint32_t> channels) override;
@@ -1466,6 +1466,14 @@ EmuRxCore<StarChips>::~EmuRxCore() {}
 void EmuRxCore<StarChips>::setCom(uint32_t chn, std::unique_ptr<ClipBoard<RawData>> queue) {
     m_queues[chn] = std::move(queue);
     m_channels[chn] = true;
+}
+
+ClipBoard<RawData>* EmuRxCore<StarChips>::getCom(uint32_t chn) {
+    if (m_queues.find(chn) != m_queues.end()) {
+        return m_queues[chn].get();
+    } else {
+        return nullptr;
+    }
 }
 
 RawData* EmuRxCore<StarChips>::readData(uint32_t chn) {
@@ -1565,33 +1573,68 @@ void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
     chipCfg["chips"][0] = {{"tx", 0}, {"rx", 1}};
   }
 
+  // Loop over all FEs to group the register config files of the same channel
+  // A map storing register config file paths
+  // Key: a tuple of channel ID (tx_channel, rx_channel, tx2_channel)
+  // Value: a vector of register config file paths for FEs
+  std::map<std::tuple<int, int, int>, std::vector<std::string>> regConfigs;
+
+  // The assumption here is if two FEs have the same tx they must have the same
+  // rx, and vice versa. (So they can be handled in the same StarEmu instance.)
   for (unsigned i=0; i<chipCfg["chips"].size(); i++) {
-    uint32_t chn_tx = chipCfg["chips"][i]["tx"];
-    uint32_t chn_rx = chipCfg["chips"][i]["rx"];
-
     // Tx
-    tx_coms.emplace_back(new RingBuffer(128));
-    EmuTxCore<StarChips>::setCom(chn_tx, tx_coms.back().get());
-    auto tx = EmuTxCore<StarChips>::getCom(chn_tx);
-
-    // 2nd Tx for R3L1 in case of multi-level trigger mode
-    EmuCom* tx2 = nullptr;
-    if (not chipCfg["chips"][i]["tx2"].empty()) {
-        uint32_t chn_tx2 = chipCfg["chips"][i]["tx2"];
-        tx_coms.emplace_back(new RingBuffer(128));
-        EmuTxCore<StarChips>::setCom(chn_tx2, tx_coms.back().get());
-        tx2 = EmuTxCore<StarChips>::getCom(chn_tx2);
-    }
-
+    int chn_tx = chipCfg["chips"][i]["tx"];
     // Rx
-    EmuRxCore<StarChips>:: setCom(chn_rx, std::make_unique<ClipBoard<RawData>>());
-    auto rx = EmuRxCore<StarChips>::getCom(chn_rx);
+    int chn_rx = chipCfg["chips"][i]["rx"];
+    // 2nd Tx for R3L1 in case of multi-level trigger mode
+    int chn_tx2 = -1;
+    if  (not chipCfg["chips"][i]["tx2"].empty())
+      chn_tx2 = chipCfg["chips"][i]["tx2"];
 
     std::string regCfgFile;
     if (not chipCfg["chips"][i]["config"].empty())
       regCfgFile = chipCfg["chips"][i]["config"];
 
-    emus.emplace_back(new StarEmu( *rx, tx, tx2, emuCfgFile, regCfgFile, hprperiod));
+    auto tx = EmuTxCore<StarChips>::getCom(chn_tx);
+    auto rx = EmuTxCore<StarChips>::getCom(chn_rx);
+    if ( tx and rx ) {
+      // This channel has already been set up
+      // Only need to add register config file path to the corresponding list
+      regConfigs[std::make_tuple(chn_tx, chn_rx, chn_tx2)].push_back(regCfgFile);
+    } else if ( not (tx or rx) ) {
+      // create a new channel
+      tx_coms.emplace_back(new RingBuffer(128));
+      tx = tx_coms.back().get();
+      EmuTxCore<StarChips>::setCom(chn_tx, tx);
+
+      EmuRxCore<StarChips>::setCom(chn_rx, std::make_unique<ClipBoard<RawData>>());
+      rx = EmuTxCore<StarChips>::getCom(chn_rx);
+
+      if (chn_tx2 >= 0) {
+        assert(not EmuTxCore<StarChips>::getCom(chn_tx2));
+        tx_coms.emplace_back(new RingBuffer(128));
+        EmuTxCore<StarChips>::setCom(chn_tx2, tx_coms.back().get());
+      }
+
+      regConfigs[std::make_tuple(chn_tx, chn_rx, chn_tx2)] = {regCfgFile};
+    } else {
+      // something is wrong with the chip configuration
+      logger->error("Either Tx channel {} or Rx channel {} has been set up more than once. ");
+      throw std::runtime_error("Fail to load emulator configuration due to inconsistent channel assignment");
+    }
+  }
+
+  // Configure and start emulators
+  for (const auto& chn : regConfigs) {
+    int chn_tx, chn_rx, chn_tx2;
+    std::tie(chn_tx, chn_rx, chn_tx2) = chn.first;
+    auto tx = EmuTxCore<StarChips>::getCom(chn_tx);
+    auto rx = EmuRxCore<StarChips>::getCom(chn_rx);
+
+    EmuCom* tx2 = nullptr;
+    if (chn_tx2 >= 0) tx2 = EmuTxCore<StarChips>::getCom(chn_tx2);
+
+    emus.emplace_back(new StarEmu(*rx, tx, tx2, emuCfgFile, chn.second, hprperiod));
     emuThreads.push_back(std::thread(&StarEmu::executeLoop, emus.back().get()));
   }
 }

@@ -31,7 +31,8 @@ public:
     
     /** These are ring buffers are owned by EmuController */
     StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, EmuCom * tx2,
-            std::string& json_emu_file_path, std::string& json_chip_file_path,
+            const std::string& json_emu_file_path,
+            const std::vector<std::string>& json_chip_file_path,
             unsigned);
     ~StarEmu();
 
