@@ -1,35 +1,18 @@
 #ifndef __STAR_EMU_H__
 #define __STAR_EMU_H__
 
-#include "StarChips.h"
-#include "StarCfg.h"
-#include "StripModel.h"
+#include "StarChipsetEmu.h"
 
 #include <atomic>
-#include <memory>
-#include <queue>
-
-#include <cstdint>
-#include <iterator>
-#include <algorithm>
-#include <bitset>
 
 class EmuCom;
 
-class StarCfg;
-
 /**
- * Emulation of data returned by HCCStar.
+ * Emulation of data returned by HCCStars in one channel
  */
 class StarEmu {
 public:
 
-    enum class PacketTypes {
-        PR = 1, LP = 2, ABCRegRd = 4, ABCPacketTransRegRd = 7, HCCRegRd = 8,
-        ABCFullTransRegRd = 11, ABCHPR = 13, HCCHPR = 14
-    };
-    
-    /** These are ring buffers are owned by EmuController */
     StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, EmuCom * tx2,
             const std::string& json_emu_file_path,
             const std::vector<std::string>& json_chip_file_path,
@@ -44,153 +27,54 @@ public:
     
 private:
 
-    // FE data format
-    static constexpr unsigned NStrips = 256;
-    using StripData = std::bitset<NStrips>;
-
-    /////////////////////////////////////////////
-    /// Send response packet (excluding SOP/EOP)
-    template<typename T> void sendPacket(T &iterable) {
-        sendPacket(&(*std::begin(iterable)), &(*std::end(iterable)));
-    }
-
-    /// Send response packet (excluding SOP/EOP)
-    void sendPacket(uint8_t *byte_s, uint8_t *byte_e);
-
-    /// Build data packet
-    std::vector<uint8_t> buildPhysicsPacket(
-        const std::vector<std::vector<uint16_t>>&, PacketTypes, uint8_t, uint8_t,
-        uint16_t endOfPacket=0x6fed);
-    std::vector<uint8_t> buildABCRegisterPacket(PacketTypes, uint8_t, uint8_t,
-                                               unsigned, uint16_t);
-    std::vector<uint8_t> buildHCCRegisterPacket(PacketTypes, uint8_t, unsigned);
-
     /// Decode LCB command
     void decodeLCB(LCB::Frame);
 
     /// Decode R3L1 command
     void decodeR3L1(uint16_t);
 
-    /// Register R/W commands
-    void doRegReadWrite(LCB::Frame);
-    void execute_command_sequence();
-    void writeRegister(const uint32_t, const uint8_t, bool isABC=false,
-                       const unsigned ABCID=0);
-    void readRegister(const uint8_t, bool isABC=false, const unsigned ABCID=0);
+    ///
+    void doL0A(bool bcr, uint8_t l0a_mask, uint8_t l0a_tag) {
+        for (auto& emu : chipEmus) emu->doL0A(bcr, l0a_mask, l0a_tag);
+    }
 
-    /// Fast commands
-    void doFastCommand(uint8_t);
-    void logicReset();
-    void resetABCRegisters();
-    void resetABCSEU();
-    void resetABCHitCounts();
-    void resetSlowCommand();
-    void resetHCCRegisters();
-    void resetHCCSEU();
-    void resetHCCPLL();
+    void doRegReadWrite(LCB::Frame frame) {
+        for (auto& emu : chipEmus) emu->doRegReadWrite(frame);
+    }
 
-    /// HPR
-    void setHCCStarHPR(LCB::Frame);
-    void setABCStarHPR(LCB::Frame, int);
-    void doHPR_HCC(LCB::Frame);
-    void doHPR_ABC(LCB::Frame, unsigned);
-    void doHPR(LCB::Frame);
+    void doFastCommand(uint8_t data6b) {
+        for (auto& emu : chipEmus) emu->doFastCommand(data6b);
+    }
 
-    /// Trigger and front end
-    void doL0A(uint16_t);
-    unsigned int countTriggers(LCB::Frame);
-    uint16_t clusterFinder_sub(uint64_t&, uint64_t&, bool);
-    std::vector<uint16_t> clusterFinder(const StripData&,
-                                        const uint8_t maxCluster=63);
-    void ackPulseCmd(int pulseType, uint8_t cmdBC);
-    void clearFEData();
+    void doHPR(LCB::Frame frame) {
+        for (auto& emu : chipEmus) emu->doHPR(frame);
+    }
 
-    void doPRLP(uint8_t l0tag, bool isPR);
-
-    // per ABC
-    void countHits(AbcCfg& abc, const StripData& hits);
-    std::vector<uint16_t> getClusters(const AbcCfg&, const StripData&);
-    unsigned getL0BufferAddr(const AbcCfg& abc, uint8_t cmdBC);
-
-    std::pair<uint8_t,StripData> getFEData(const AbcCfg& abc, unsigned l0addr);
-    std::pair<uint8_t,StripData> generateFEData_StaticTest(const AbcCfg&, unsigned);
-    std::pair<uint8_t,StripData> generateFEData_TestPulse(const AbcCfg&, unsigned);
-    std::pair<uint8_t,StripData> generateFEData_CaliPulse(const AbcCfg&, unsigned);
-
-    StripData getMasks(const AbcCfg& abc);
-    StripData getCalEnables(const AbcCfg& abc);
-
-    /// Utilities
-    bool getParity_8bits(uint8_t);
-    bool getBit_128b(uint8_t, uint64_t, uint64_t);
-    void setBit_128b(uint8_t, bool, uint64_t&, uint64_t&);
-    
-    ////////////////////////////////////////
-    EmuCom * m_txRingBuffer;  // for LCB
-    EmuCom * m_txRingBuffer2; // for R3L1
-    ClipBoard<RawData> &m_rxQueue;
-    
-    ////////////////////////////////////////
-    // Internal states
-    
-    // For register command sequence
-    bool m_ignoreCmd;
-    bool m_isForABC;
-    
-    // buffer for register read/write command sequence
-    std::queue<uint8_t> m_reg_cmd_buffer;
-    
-    // front-end data container
-    // For nABCs and *Four* bunch crossings
-    // m_l0buffer_lite[iABC][iBC] = 8-bit BC + 256-bit strip hits
-    //std::vector< std::array<StripData, 4> > m_l0buffers_lite;
-
-    // Front-end data pipeline
-    // Simplified L0 buffer
-    // Instead of storing the hit data, it only takes note when a calibration or test pulse command is received.
-    // The actual 256b strip data is generated when a trigger is received.
-    // Since pulse commands are broadcasted to all chips, there is no need to have separate L0 pipelines for different ABCStar chips
-    // 512 deep and each entry is 8b BCID + 2 bits indicating a cal or test pulse
-    // 0b01: calibration pulse; 0b10: digital test pulse
-    static constexpr unsigned L0BufDepth = 512;
-    static constexpr unsigned L0BufWidth = 10;
-    using L0BufData = std::bitset<L0BufWidth>;
-    std::array<L0BufData, L0BufDepth> m_l0buffer_lite;
-
-    // number of untriggered data in the pipeline
-    unsigned int m_ndata_l0buf;
-
-    // Event buffer
-    // 128 deep; L0tag is used as the address
-    // Each entry: 9-bit L0buffer address + 8-bit BCID@L0A
-    static constexpr unsigned EvtBufDepth = 128;
-    static constexpr unsigned EvtBufWidth = 17;
-    using EvtBufData = std::bitset<EvtBufWidth>;
-    // key: ABC chip ID; value: event buffer
-    std::map<int, std::array<EvtBufData, EvtBufDepth>> m_evtbuffers_lite;
-    // (Should ABCs never have different L0 latency settings, one array instead of a map of arrays would suffice.)
+    void doPRLP(uint8_t mask, uint8_t l0tag) {
+        for (auto& emu : chipEmus) emu->doPRLP(mask, l0tag);
+    }
 
     // BC counter
     uint16_t m_bccnt;
     bool m_resetbc;
+    void updateBC() {
+        if (m_resetbc) {
+            m_bccnt = 0;
+            m_resetbc = false;
+        } else {
+            // Increment BC counter
+            m_bccnt += 4;
+        }
 
-    // Count hits
-    bool m_startHitCount;
-    uint8_t m_bc_sel;
-
-    // Clock counter for HPR packets
-    unsigned hpr_clkcnt; // unit: BC (25 ns)
-    // Flag indicating if at least one HPR packet has been sent
-    std::vector<bool> hpr_sent;
-    const unsigned HPRPERIOD; // HPR packet period
-    
-    ////////////////////////////////////////
-    // HCCStar and ABCStar configurations
-    std::unique_ptr<StarCfg> m_starCfg;
+        for (auto& emu : chipEmus) emu->setBC(m_bccnt);
+    }
 
     ////////////////////////////////////////
-    // Analog FE
-    std::array<StripModel, NStrips> m_stripArray;
+    /** These are ring buffers owned by EmuController */
+    EmuCom * m_txRingBuffer;  // for LCB
+    EmuCom * m_txRingBuffer2; // for R3L1
+
+    std::vector< std::unique_ptr<StarChipsetEmu> > chipEmus;
 };
 
 #endif //__STAR_EMU_H__

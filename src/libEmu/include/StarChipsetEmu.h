@@ -22,11 +22,18 @@ public:
     ABCFullTransRegRd = 11, ABCHPR = 13, HCCHPR = 14
   };
 
-  StarChipsetEmu(ClipBoard<RawData>* rx,
-                 const std::string& json_emu_file_path,
-                 const std::string& json_chip_file_path,
-                 unsigned hpr_period);
+  StarChipsetEmu(ClipBoard<RawData>* rx, const std::string& json_emu_file_path,
+                 std::unique_ptr<StarCfg> regCfg,  unsigned hpr_period);
   ~StarChipsetEmu();
+
+  void doL0A(bool, uint8_t, uint8_t);
+  void doPRLP(uint8_t mask, uint8_t l0tag);
+  void doFastCommand(uint8_t);
+  void doRegReadWrite(LCB::Frame);
+  void doHPR(LCB::Frame);
+
+  uint16_t getBC() {return m_bccnt;}
+  void setBC(uint16_t bc) {m_bccnt = bc;}
 
 private:
 
@@ -52,14 +59,12 @@ private:
   std::vector<uint8_t> buildHCCRegisterPacket(PacketTypes, uint8_t, unsigned);
 
   /// Register R/W commands
-  void doRegReadWrite(LCB::Frame);
   void execute_command_sequence();
   void writeRegister(const uint32_t, const uint8_t, bool isABC=false,
                      const unsigned ABCID=0);
   void readRegister(const uint8_t, bool isABC=false, const unsigned ABCID=0);
 
   /// Fast commands
-  void doFastCommand(uint8_t);
   void logicReset();
   void resetABCRegisters();
   void resetABCSEU();
@@ -74,10 +79,8 @@ private:
   void setABCStarHPR(LCB::Frame, int);
   void doHPR_HCC(LCB::Frame);
   void doHPR_ABC(LCB::Frame, unsigned);
-  void doHPR(LCB::Frame);
 
   /// Trigger and front end
-  void doL0A(uint16_t);
   unsigned int countTriggers(LCB::Frame);
   uint16_t clusterFinder_sub(uint64_t&, uint64_t&, bool);
   std::vector<uint16_t> clusterFinder(const StripData&,
@@ -85,18 +88,16 @@ private:
   void ackPulseCmd(int pulseType, uint8_t cmdBC);
   void clearFEData();
 
-  void doPRLP(uint8_t l0tag, bool isPR);
-
   /// per ABC
   void countHits(AbcCfg& abc, const StripData& hits);
   std::vector<uint16_t> getClusters(const AbcCfg&, const StripData&);
   unsigned getL0BufferAddr(const AbcCfg& abc, uint8_t cmdBC);
-  
+
   std::pair<uint8_t,StripData> getFEData(const AbcCfg& abc, unsigned l0addr);
   std::pair<uint8_t,StripData> generateFEData_StaticTest(const AbcCfg&, unsigned);
   std::pair<uint8_t,StripData> generateFEData_TestPulse(const AbcCfg&, unsigned);
   std::pair<uint8_t,StripData> generateFEData_CaliPulse(const AbcCfg&, unsigned);
-  
+
   StripData getMasks(const AbcCfg& abc);
   StripData getCalEnables(const AbcCfg& abc);
 
@@ -145,7 +146,6 @@ private:
 
   // BC counter
   uint16_t m_bccnt;
-  bool m_resetbc;
 
   // Count hits
   bool m_startHitCount;

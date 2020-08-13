@@ -31,15 +31,15 @@ auto logger = logging::make_log("StarChipsetEmu");
 
 StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
                                const std::string& json_emu_file_path,
-                               const std::string& json_chip_file_path,
+                               std::unique_ptr<StarCfg> regCfg,
                                unsigned hpr_period)
   : m_rxbuffer ( rx )
   , m_bccnt ( 0 )
-  , m_resetbc ( false )
   , m_ignoreCmd ( true )
   , m_isForABC ( false )
   , m_startHitCount ( false )
   , m_bc_sel ( 0 )
+  , m_starCfg (std::move(regCfg))
   , HPRPERIOD( hpr_period )
 {
   // Emulator analog FE configurations
@@ -50,7 +50,7 @@ StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
     } catch (std::runtime_error &e) {
       logger->error("Error opening emulator config: {}", e.what());
       throw(std::runtime_error("StarChipsetEmu::StarChipsetEmu failure"));
-        }
+    }
     // Initialize FE strip array from config json
     for (size_t istrip = 0; istrip < 256; ++istrip) {
       m_stripArray[istrip].setValue(jEmu["vthreshold_mean"][istrip],
@@ -58,22 +58,6 @@ StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
                                     jEmu["noise_occupancy_mean"][istrip],
                                     jEmu["noise_occupancy_sigma"][istrip]);
     }
-  }
-
-  // HCCStar and ABCStar chip configurations
-  if (not json_chip_file_path.empty()) {
-    json jChips;
-    try {
-      jChips = ScanHelper::openJsonFile(json_chip_file_path);
-    } catch (std::runtime_error &e) {
-      logger->error("Error opening chip config: {}", e.what());
-      throw(std::runtime_error("StarChipsetEmu::StarChipsetEmu"));
-    }
-    m_starCfg->fromFileJson(jChips);
-  } else {
-    // No chip configuration provided. Default: one HCCStar + one ABCStar
-    m_starCfg->setHCCChipId(15);
-    m_starCfg->addABCchipID(15);
   }
 
   // HPR
@@ -638,11 +622,7 @@ void StarChipsetEmu::setABCStarHPR(LCB::Frame frame, int abcID) {
 //
 // Trigger and front-end data
 //
-void StarChipsetEmu::doL0A(uint16_t data12) {
-  bool bcr = (data12 >> 11) & 1;  // BC reset
-  uint8_t l0a_mask = (data12 >> 7) & 0xf; // 4-bit L0A mask
-  uint8_t l0a_tag = data12 & 0x7f; // 7-bit L0A tag
-
+void StarChipsetEmu::doL0A(bool bcr, uint8_t l0a_mask, uint8_t l0a_tag) {
   logger->debug("Receive an L0A command: BCR = {}, L0A mask = {:b}, L0A tag = 0x{:x}", bcr, l0a_mask, l0a_tag);
 
   bool trig_mode = m_starCfg->getSubRegisterValue(0, "TRIGMODE"); // TRIGMODEC?
@@ -702,14 +682,27 @@ void StarChipsetEmu::doL0A(uint16_t data12) {
     }
   } // 4 BCs
 
-  if (bcr) m_resetbc = true;
+  //if (bcr) m_resetbc = true;
 }
 
-void StarChipsetEmu::doPRLP(uint8_t l0tag, bool isPR) {
+void StarChipsetEmu::doPRLP(uint8_t mask, uint8_t l0tag) {
   bool trig_mode = m_starCfg->getSubRegisterValue(0, "TRIGMODE"); // TRIGMODEC?
   if (trig_mode) { // single-level
     logger->critical("doPRLP is called while the trigger mode is single level");
     return;
+  }
+
+  bool isPR;
+  if (mask) { // a R3 command
+    isPR = true;
+    // module number
+    unsigned module = (m_starCfg->getHCCchipID())/2;
+    if ( not (module>=1 and module <=5 and ((mask>>(module-1))&1)) ) {
+      logger->debug("Skip R3 command with mask {:b} for HCCStar {}", mask, m_starCfg->getHCCchipID());
+      return;
+    }
+  } else { // an L1 command
+    isPR = false;
   }
 
   // clusters
