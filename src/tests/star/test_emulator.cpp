@@ -372,7 +372,146 @@ TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
   checkData(emu.get(), expected);
 }
 
-// Multiple star chips
+// Multiple star chips in one channel
+TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
+  std::shared_ptr<HwController> emu = StdDict::getHwController("emu_Star");
+
+  REQUIRE (emu);
+
+  //////////////////////////
+  // Set up configurations
+  // Three HCCStars with ID 3, 4, 5
+  // HCC 3 has two ABCs with ID 1 and 2
+  json tmpRegCfg1;
+  tmpRegCfg1["HCC"] = {{"ID", 3}};
+  tmpRegCfg1["ABCs"] = {{"IDs", {1, 2}}};
+  std::ofstream tmpRegFile1("test_star_1.json");
+  tmpRegFile1 << std::setw(4) << tmpRegCfg1;
+  tmpRegFile1.close();
+
+  // HCC 4 has one ABC with ID 7
+  json tmpRegCfg2;
+  tmpRegCfg2["HCC"] = {{"ID", 4}};
+  tmpRegCfg2["ABCs"] = {{"IDs", {7}}};
+  std::ofstream tmpRegFile2("test_star_2.json");
+  tmpRegFile2 << std::setw(4) << tmpRegCfg2;
+  tmpRegFile2.close();
+
+  // HCC 5 has three ABCs with ID 2, 4, 7
+  json tmpRegCfg3;
+  tmpRegCfg3["HCC"] = {{"ID", 5}};
+  tmpRegCfg3["ABCs"] = {{"IDs", {2 ,4, 7}}};
+  std::ofstream tmpRegFile3("test_star_3.json");
+  tmpRegFile3 << std::setw(4) << tmpRegCfg3;
+  tmpRegFile3.close();
+
+  json tmpChipCfg;
+  tmpChipCfg["chips"] = json::array();
+  // One channel that contains three HCCStars
+  // Use tx channel 33 and rx channel 44
+  tmpChipCfg["chips"][0] = {{"tx",33}, {"rx",44}, {"config","test_star_1.json"}};
+  tmpChipCfg["chips"][1] = {{"tx",33}, {"rx",44}, {"config","test_star_2.json"}};
+  tmpChipCfg["chips"][2] = {{"tx",33}, {"rx",44}, {"config","test_star_3.json"}};
+  std::string tmpChipFname("test_multichip_star_setup.json");
+  std::ofstream tmpChipFile(tmpChipFname);
+  tmpChipFile << std::setw(4) << tmpChipCfg;
+  tmpChipFile.close();
+
+  // EmuController config
+  json cfg;
+  cfg["chipCfg"] = tmpChipFname;
+  emu->loadConfig(cfg);
+
+  // Clean up
+  remove(tmpChipFname.c_str());
+  remove("test_star_1.json");
+  remove("test_star_2.json");
+  remove("test_star_3.json");
+
+  StarCmd star;
+
+  typedef std::vector<uint8_t> PacketCompare;
+  std::deque<PacketCompare> expected;
+
+  SECTION("HCCStar Write and Read") {
+    // Broadcast write command to set register 47 (ErrCfg) to 0xabcdabcd
+    auto writeHCCCmd_reg47 = star.write_hcc_register(47, 0xabcdabcd);
+    sendCommand(*emu, writeHCCCmd_reg47);
+
+    // Read only the HCC with ID = 3
+    auto readHCCCmd_3_reg47 = star.read_hcc_register(47, 3);
+    sendCommand(*emu, readHCCCmd_3_reg47);
+    expected.push_back({0x82, 0xfa, 0xbc, 0xda, 0xbc, 0xd0});
+
+    // Write 0xdeadbeef to register 47 of the HCC with ID = 4
+    auto writeHCCCmd_4_reg47 = star.write_hcc_register(47, 0xdeadbeef, 4);
+    sendCommand(*emu, writeHCCCmd_4_reg47);
+
+    // Write 0xcafebabe to register 47 of the HCC with ID = 5
+    auto writeHCCCmd_5_reg47 = star.write_hcc_register(47, 0xcafebabe, 5);
+    sendCommand(*emu, writeHCCCmd_5_reg47);
+
+    // Broadcast read command to read register 47 of all HCCs
+    auto readHCCCmd_47 = star.read_hcc_register(47);
+    sendCommand(*emu, readHCCCmd_47);
+
+    // HCC 3: register 47 is still 0xabcdabcd
+    expected.push_back({0x82, 0xfa, 0xbc, 0xda, 0xbc, 0xd0});
+    // HCC 4: register 47 should be 0xdeadbeef
+    expected.push_back({0x82, 0xfd, 0xea, 0xdb, 0xee, 0xf0});
+    // HCC 5: register 47 should be 0xcafebabe
+    expected.push_back({0x82, 0xfc, 0xaf, 0xeb, 0xab, 0xe0});
+  }
+
+  SECTION("ABCStar Write and Read") {
+    // Broadcast write 0xff7ff7ff to all MaskInput7 (addr=0x17) register
+    auto writeABCCmd_mask7 = star.write_abc_register(0x17, 0xff7ff7ff, 0xf, 0xf);
+    sendCommand(*emu, writeABCCmd_mask7);
+
+    // Read MaskInput7 of all ABCs on HCC 3
+    auto readABCCmd_hcc3 = star.read_abc_register(23, 3, 0xf);
+    sendCommand(*emu, readABCCmd_hcc3);
+    // Expect two ABC RR packets from ABC 1 and 2
+    expected.push_back({0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf1, 0x00, 0x00});
+    expected.push_back({0x41, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00});
+
+    // Write 0xdeadbeef to MaskInput7 of ABC 7 on HCC 4
+    auto writeABCCmd_4_7 = star.write_abc_register(0x17, 0xdeadbeef, 4, 7);
+    sendCommand(*emu, writeABCCmd_4_7);
+
+    // Write 0xaa0451aa to MaskInput7 of ABC 4 on HCC 5
+    auto writeABCCmd_5_4 = star.write_abc_register(0x17, 0xaa0451aa, 5, 4);
+    sendCommand(*emu, writeABCCmd_5_4);
+
+    // Read MaskInput 7 of ABC 7 on HCC 5
+    auto readABCCmd_5_7 = star.read_abc_register(0x17, 5, 7);
+    sendCommand(*emu, readABCCmd_5_7);
+
+    expected.push_back({0x42, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf7, 0x00, 0x00});
+
+    // Broadcast read of MaskInput 7 of all ABCs
+    auto readABCCmd_mask7 = star.read_abc_register(0x17, 0xf, 0xf);
+    sendCommand(*emu, readABCCmd_mask7);
+
+    // Two ABC RR packets from ABC 1 and 2 on HCC 3
+    expected.push_back({0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf1, 0x00, 0x00});
+    expected.push_back({0x41, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00});
+
+    // One ABC RR packet from ABC 7 on HCC 4
+    expected.push_back({0x40, 0x17, 0x0d, 0xea, 0xdb, 0xee, 0xf7, 0x00, 0x00});
+
+    // Three ABC RR packet from ABC 2, 4, 7 on HCC 5
+    expected.push_back({0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00});
+    expected.push_back({0x41, 0x17, 0x0a, 0xa0, 0x45, 0x1a, 0xa4, 0x00, 0x00});
+    expected.push_back({0x42, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf7, 0x00, 0x00});
+  }
+
+  emu->releaseFifo();
+  while(!emu->isCmdEmpty());
+  checkData(emu.get(), expected);
+}
+
+// Multiple channels
 TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
   std::shared_ptr<HwController> emu = StdDict::getHwController("emu_Star");
 
@@ -383,7 +522,7 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
   json tmpChipCfg;
   tmpChipCfg["chips"] = json::array();
 
-  // Three channels/HCCStar chips
+  // Three channels, each channel contains one HCCStar chip
   // Each HCCStar is configured to have one ABCStar if no other config provided
   unsigned nchannels = 3;
   std::string tmpFileName("test_multichannel_star_setup.json");
