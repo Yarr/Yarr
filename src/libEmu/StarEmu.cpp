@@ -391,7 +391,7 @@ void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
       regCfgFile = chipCfg["chips"][i]["config"];
 
     auto tx = EmuTxCore<StarChips>::getCom(chn_tx);
-    auto rx = EmuTxCore<StarChips>::getCom(chn_rx);
+    auto rx = EmuRxCore<StarChips>::getCom(chn_rx);
     if ( tx and rx ) {
       // This channel has already been set up
       // Only need to add register config file path to the corresponding list
@@ -403,7 +403,7 @@ void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
       EmuTxCore<StarChips>::setCom(chn_tx, tx);
 
       EmuRxCore<StarChips>::setCom(chn_rx, std::make_unique<ClipBoard<RawData>>());
-      rx = EmuTxCore<StarChips>::getCom(chn_rx);
+      rx = EmuRxCore<StarChips>::getCom(chn_rx);
 
       if (chn_tx2 >= 0) {
         assert(not EmuTxCore<StarChips>::getCom(chn_tx2));
