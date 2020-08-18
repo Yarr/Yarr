@@ -602,7 +602,7 @@ class ScanData(RegisterData):
                 self.logger.info('~~~         "componentType": "\033[1;33m{}\033[0m",'.format(chip['componentType']))
                 self.logger.info('~~~         "chipId": "\033[1;33m{}\033[0m",'.format(chip['chipId']))
             self.logger.info('~~~     }],')
-            self.logger.info('~~~     "stage": "\033[1;33m{}\033[0m"'.format(conn['stage']))
+            self.logger.info('~~~     "stage": "\033[1;33m{}\033[0m"'.format(conn.get('stage','...')))
             self.logger.info('~~~ }')
 
     def __check_conn(self):
