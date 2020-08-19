@@ -282,7 +282,7 @@ void Rd53bDataProcessor::process_core()
 						// For now fill in events without checking whether the addresses are valid
 						if (events[channel] == 0)
 						{
-							//logger->info("[{}] No header in data fragment!", channel);
+							logger->warn("[{}] No header in data fragment!", channel);
 							curOut[channel]->newEvent(666, l1id[channel], bcid[channel]);
 							events[channel]++;
 						}
