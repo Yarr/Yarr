@@ -25,6 +25,7 @@ Rd53bTriggerLoop::Rd53bTriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
     m_noInject = false;
     m_extTrig = false;
     m_trigMultiplier = 16;
+    m_zeroTot = true;
 
     m_edgeMode = false;
     m_edgeDuration = 40;
@@ -44,7 +45,7 @@ void Rd53bTriggerLoop::setTrigDelay(uint32_t delay) {
     m_trigWord[31] = 0xAAAA0000 | calWords[0];
     m_trigWord[30] = ((uint32_t)calWords[1]<<16) | calWords[2];
     
-    //std::array<uint16_t, 4> wrReg = Rd53bCmd::genWrReg(16, 53, 0x80);
+    //std::array<uint16_t, 4> wrReg = Rd53bCmd::genWrReg(16, 53, 0x0);
     //m_trigWord[29] = (((uint32_t)wrReg[0] << 16) | wrReg[1]);
     //m_trigWord[28] = (((uint32_t)wrReg[2] << 16) | wrReg[3]);
     
@@ -69,7 +70,7 @@ void Rd53bTriggerLoop::setTrigDelay(uint32_t delay) {
         }
     }
 
-    //std::array<uint16_t, 4> wrReg2 = Rd53bCmd::genWrReg(16, 53, 0x0);
+    //std::array<uint16_t, 4> wrReg2 = Rd53bCmd::genWrReg(16, 53, 0x80);
     //m_trigWord[3] = (((uint32_t)wrReg2[0] << 16) | wrReg2[1]);
     //m_trigWord[2] = (((uint32_t)wrReg2[2] << 16) | wrReg2[3]);
     
@@ -89,6 +90,8 @@ void Rd53bTriggerLoop::setEdgeMode(uint32_t duration) {
     std::array<uint16_t, 3> calWords = Rd53b::genCal(16, 1, 0, duration, 0, 0);
     m_trigWord[31] = 0xAAAA0000 | calWords[0];
     m_trigWord[30] = ((uint32_t)calWords[1]<<16) | calWords[2];
+    m_trigWord[1] = 0xAAAAAAAA;
+    m_trigWord[0] = 0xAAAAAAAA;
 }
 
 void Rd53bTriggerLoop::setNoInject() {
@@ -148,27 +151,28 @@ void Rd53bTriggerLoop::execPart2() {
     // Disable Trigger
     g_tx->setTrigEnable(0x0);
     
-   
-    Rd53b *rd53b = dynamic_cast<Rd53b*>(g_fe);
-    uint16_t latency = rd53b->Latency.read();
-    rd53b->writeRegister(&Rd53b::Latency, 500);
-    while(!g_tx->isCmdEmpty()){;}
-    
-    // Reset ToT memories
-    this->setEdgeMode(2);
-    g_tx->setTrigFreq(800000);
-    g_tx->setTrigCnt(1000);
-    g_tx->setTrigWord(&m_trigWord[0], 32);
-    g_tx->setTrigWordLength(2);
-    g_tx->setTrigConfig(INT_COUNT);
- 
-    g_tx->setTrigEnable(0x1);
-    std::this_thread::sleep_for(std::chrono::microseconds(1));
-    while(!g_tx->isTrigDone());
-    g_tx->setTrigEnable(0x0);
-    
-    rd53b->writeRegister(&Rd53b::Latency, latency);
-    while(!g_tx->isCmdEmpty()){;}
+    if (m_zeroTot) {
+        // Reset ToT memories
+        Rd53b *rd53b = dynamic_cast<Rd53b*>(g_fe);
+        uint16_t latency = rd53b->Latency.read();
+        rd53b->writeRegister(&Rd53b::Latency, 500);
+        while(!g_tx->isCmdEmpty()){;}
+
+        this->setEdgeMode(2);
+        g_tx->setTrigFreq(800000);
+        g_tx->setTrigCnt(100);
+        g_tx->setTrigWord(&m_trigWord[0], 32);
+        g_tx->setTrigWordLength(32);
+        g_tx->setTrigConfig(INT_COUNT);
+
+        g_tx->setTrigEnable(0x1);
+        std::this_thread::sleep_for(std::chrono::microseconds(10));
+        while(!g_tx->isTrigDone());
+        g_tx->setTrigEnable(0x0);
+
+        rd53b->writeRegister(&Rd53b::Latency, latency);
+        while(!g_tx->isCmdEmpty()){;}
+    }
     
     m_done = true;
 }
@@ -188,6 +192,7 @@ void Rd53bTriggerLoop::writeConfig(json &config) {
     config["trigMultiplier"] = m_trigMultiplier;
     config["edgeMode"] = m_edgeMode;
     config["edgeDuration"] = m_edgeDuration;
+    config["zeroTot"] = m_zeroTot;
 }
 
 void Rd53bTriggerLoop::loadConfig(json &config) {
@@ -209,5 +214,7 @@ void Rd53bTriggerLoop::loadConfig(json &config) {
         m_extTrig = config["extTrig"];
     if (!config["trigMultiplier"].empty())
         m_trigMultiplier = config["trigMultiplier"];
+    if (!config["zeroTot"].empty())
+        m_zeroTot = config["zeroTot"];
     this->setTrigDelay(m_trigDelay);
 }
