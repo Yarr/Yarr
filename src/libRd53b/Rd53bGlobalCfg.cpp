@@ -219,7 +219,7 @@ void Rd53bGlobalCfg::init() {
     //61
     GlobalPulseWidth.init   ( 61, &m_cfg[ 61], 0,  8, 0); regMap["GlobalPulseWidth"] = &Rd53bGlobalCfg::GlobalPulseWidth;
     //62
-    ServiceBlockEn.init     ( 62, &m_cfg[ 62], 8,  1, 1); regMap["ServiceBlockEn"] = &Rd53bGlobalCfg::ServiceBlockEn;
+    ServiceBlockEn.init     ( 62, &m_cfg[ 62], 8,  1, 0); regMap["ServiceBlockEn"] = &Rd53bGlobalCfg::ServiceBlockEn;
     ServiceBlockPeriod.init ( 62, &m_cfg[ 62], 0,  8, 50); regMap["ServiceBlockPeriod"] = &Rd53bGlobalCfg::ServiceBlockPeriod;
     //63
     TotEnPtot.init          ( 63, &m_cfg[ 63], 12,  1, 0); regMap["TotEnPtot"] = &Rd53bGlobalCfg::TotEnPtot;
