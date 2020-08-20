@@ -211,9 +211,9 @@ void Rd53bGlobalCfg::init() {
     //58
     CdrOverwriteLimit.init  ( 58, &m_cfg[ 58], 4,  1, 0); regMap["CdrOverwriteLimit"] = &Rd53bGlobalCfg::CdrOverwriteLimit;
     CdrPhaseDetSel.init     ( 58, &m_cfg[ 58], 3,  1, 0); regMap["CdrPhaseDetSel"] = &Rd53bGlobalCfg::CdrPhaseDetSel;
-    CdrClkSel.init          ( 58, &m_cfg[ 58], 0,  3, 3); regMap["CdrClkSel"] = &Rd53bGlobalCfg::CdrClkSel;
+    CdrClkSel.init          ( 58, &m_cfg[ 58], 0,  3, 1); regMap["CdrClkSel"] = &Rd53bGlobalCfg::CdrClkSel;
     //59
-    ChSyncLockThr.init      ( 59, &m_cfg[ 59], 0,  5, 16); regMap["ChSyncLockThr"] = &Rd53bGlobalCfg::ChSyncLockThr;
+    ChSyncLockThr.init      ( 59, &m_cfg[ 59], 0,  5, 31); regMap["ChSyncLockThr"] = &Rd53bGlobalCfg::ChSyncLockThr;
     //60
     GlobalPulseConf.init    ( 60, &m_cfg[ 60], 0, 16, 0); regMap["GlobalPulseConf"] = &Rd53bGlobalCfg::GlobalPulseConf;
     //61
@@ -260,7 +260,7 @@ void Rd53bGlobalCfg::init() {
     DataEnBcid.init         ( 74, &m_cfg[ 74], 10,  1, 0); regMap["DataEnBcid"] = &Rd53bGlobalCfg::DataEnBcid;
     DataEnL1id.init         ( 74, &m_cfg[ 74], 9,  1, 0); regMap["DataEnL1id"] = &Rd53bGlobalCfg::DataEnL1id;
     DataEnEos.init          ( 74, &m_cfg[ 74], 8,  1, 1); regMap["DataEnEos"] = &Rd53bGlobalCfg::DataEnEos;
-    NumOfEventsInStream.init( 74, &m_cfg[ 74], 0,  8, 16); regMap["NumOfEventsInStream"] = &Rd53bGlobalCfg::NumOfEventsInStream;
+    NumOfEventsInStream.init( 74, &m_cfg[ 74], 0,  8, 1); regMap["NumOfEventsInStream"] = &Rd53bGlobalCfg::NumOfEventsInStream;
     //75
     DataEnBinaryRo.init     ( 75, &m_cfg[ 75], 10,  1, 0); regMap["DataEnBinaryRo"] = &Rd53bGlobalCfg::DataEnBinaryRo;
     DataEnRaw.init          ( 75, &m_cfg[ 75], 9,  1, 0); regMap["DataEnRaw"] = &Rd53bGlobalCfg::DataEnRaw;
