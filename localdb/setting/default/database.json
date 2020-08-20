@@ -15,19 +15,6 @@
     "auth": "default",
     "KeyFile": "null",
     "verify": false,
-    "stage": [
-        "Bare Module",
-        "Wire Bonded",
-        "Potted",
-        "Final Electrical",
-        "Complete",
-        "Loaded",
-        "Parylene",
-        "Initial Electrical",
-        "Thermal Cycling",
-        "Flex + Bare Module Attachment",
-        "Testing"
-    ],
     "environment": [
         "vddd_voltage",
         "vddd_current",
@@ -38,13 +25,5 @@
         "hv_voltage",
         "hv_current",
         "temperature"
-    ],
-    "component": [
-        "Front-end Chip",
-        "Front-end Chips Wafer",
-        "Hybrid",
-        "Module",
-        "Sensor Tile",
-        "Sensor Wafer"
     ]
 }

@@ -90,7 +90,6 @@ def getArgs():
     parser.add_argument('--log',        help='Set Log Mode',                             action='store_true')
     parser.add_argument('--interactive',help='Set Interactive Mode',                     action='store_true')
     parser.add_argument('--QC',         help='Set QC Mode',                              action='store_true')
-    #parser.add_argument('--force',     help='Set Log Mode',                             action='store_true')
     args = parser.parse_args()
 
     if args.config:
@@ -100,39 +99,46 @@ def getArgs():
 
     return args
 
-def getTestRunData(self, i_type, i_tr_oid, i_conn_json=None, i_timestamp=None):
+def checkUploadData(self):
     """
-    This function check if test data registered by searching with data id or connectivity and timestamp
+    This function check if data registered by searching with data id
     """
-    self.logger.debug('Get TestRun Data.')
+    self.logger.debug('Check if TestRun Data registered.')
     tr_oids = []
-    try:
-        self.checkDb()
-        status = self._check_test_run(i_tr_oid, i_conn_json, i_timestamp)
-        for i, tr_oid in enumerate(status['_id']):
-            if status['passed'][i]: tr_oids.append(tr_oid)
-        if i_type=='dcs':
-            dcs_tr_oids = []
-            for tr_oid in tr_oids:
-                query = {
-                    '_id'      : ObjectId(tr_oid),
-                    'dbVersion': self.db_version
-                }
-                this_run = self.localdb.testRun.find_one(query)
-                if not this_run.get('environment',False)==False:
-                    dcs_tr_oids.append(tr_oid)
-            tr_oids = dcs_tr_oids
-    except DBConnectionError:
-        pass
+    for tr_oid in self.tr_oids:
+        try:
+            self.checkDb()
+            status = self._check_test_run(tr_oid)
+            for i, oid in enumerate(status['_id']):
+                if status['passed'][i]: tr_oids.append(oid)
+        except DBConnectionError:
+            pass
     return tr_oids
 
-common.addInstanceMethod(RegisterData, getTestRunData)
+common.addInstanceMethod(ScanData, checkUploadData)
+
+def checkUploadData(self):
+    """
+    This function check if data registered by searching with data id
+    """
+    self.logger.debug('Check if DCS data registered.')
+    ctr_oids = []
+    for entry in self.ctr_oids:
+        try:
+            self.checkDb()
+            oid = self._check_dcs(entry['ctr_oid'], entry['key'], entry['num'], entry['description'])
+            ctr_oids.append(oid)
+        except DBConnectionError:
+            pass
+    return ctr_oids
+
+common.addInstanceMethod(DcsData, checkUploadData)
 
 ######################
 ### main functions ###
 ######################
 
-def checkDb(self, i_log={}):
+def checkDb(self, i_log={}, i_path=''):
     """
     This function check connection to Local DB
     """
@@ -146,7 +152,7 @@ def checkDb(self, i_log={}):
             raise DBConnectionError
     else:
         db = LocalDb()
-        db_cfg = common.readDbCfg(args.database, i_log.get('dbCfg', {}))
+        db_cfg = common.readDbCfg(args, i_log.get('dbCfg', {}), i_path)
         db.setCfg(db_cfg)
 
         if args.username: db.setUsername(args.username)
@@ -160,7 +166,7 @@ def checkDb(self, i_log={}):
 
 common.addInstanceMethod(RegisterData, checkDb)
 
-def checkConfigFormat(self, i_dir='', i_log={}):
+def checkConfigFormat(self, i_dir='', i_log={}, i_path=''):
     """
     This function checks config files
     """
@@ -168,11 +174,11 @@ def checkConfigFormat(self, i_dir='', i_log={}):
     args = getArgs()
 
     # user
-    user_json = common.readUserCfg(args.user, i_log.get('userCfg',{}))
+    user_json = common.readUserCfg(args, i_log.get('userCfg',{}), i_path)
     self.setUser(user_json)
 
     # site
-    site_json = common.readSiteCfg(args.site, i_log.get('siteCfg',{}))
+    site_json = common.readSiteCfg(args, i_log.get('siteCfg',{}), i_path)
     self.setSite(site_json)
 
     # connectivity
@@ -193,11 +199,10 @@ def verifyData(self, i_log={}):
     args = getArgs()
 
     QC = args.QC if args.QC else i_log.get('dbCfg',{}).get('QC',False)
-    #if QC:
     self.verifyCfg(QC)
     if not args.log and args.interactive:
         self.logger.warning('-> Confirmation')
-        self.logger.warning('Is this ok to upload QC data into Local DB?')
+        self.logger.warning('Is this ok to upload data into Local DB?')
         self.logger.warning('\033[5m(Please answer Y/y to continue or N/n to eixt.)\033[0m')
         while True:
             answer = input('[y/n]: ')
@@ -207,6 +212,66 @@ def verifyData(self, i_log={}):
                 raise InteractiveExit
 
 common.addInstanceMethod(ScanData, verifyData)
+
+def verifyData(self, i_log={}):
+    """
+    This function verifies config files for DCS uploading
+    """
+    self.logger.debug('Verify config files for DCS uploading')
+    args = getArgs()
+    self.environments = []
+
+    self.logger.info('Loading DCS information ...')
+    self.verifyCfg(i_log)
+    registered_keys=[]
+    ctr_oids = []
+    for env_json in i_log['environments']:
+        env_json = self.verifyDcsData(env_json)
+        if not env_json['registered_oids']==[]:
+            if not args.log and args.interactive:
+                self.confirmDcsData(env_json)
+                self.logger.warning('DCS data with the key "{}" is already registered in Local DB.'.format(env_json['key']))
+                self.logger.warning('Do you continue to upload this data into Local DB? [y/n]')
+                self.logger.warning('\033[5m(Please answer Y/y to append new data or N/n to skip this registration.)\033[0m')
+                while True:
+                    answer = input('[y/n]: ')
+                    if answer.lower()=='y':
+                        env_json['ctr_oids'] = env_json['ctr_oids'] + env_json['registered_oids']
+                        env_json['chips'] = env_json['chips'] + env_json['registered_chips']
+                        env_json['registered_chips'] = []
+                        env_json['registered_oids'] = []
+                        break
+                    elif answer.lower()=='n':
+                        registered_keys.append(env_json['key'])
+                        break
+            else:
+                registered_keys.append('"{}"'.format(env_json['key']))
+        if not env_json['ctr_oids']==[] or not env_json['registered_oids']==[]:
+            self.environments.append(env_json)
+            if not env_json['ctr_oids']==[]:
+                ctr_oids = ctr_oids + env_json['ctr_oids']
+    self.tr_oids = []
+    if not ctr_oids==[]:
+        for env_json in self.environments:
+            self.confirmDcsData(env_json)
+    if not registered_keys==[]:
+        self.logger.warning('DCS data with the key {} is already registered in Local DB, so skip.'.format(', '.join(registered_keys)))
+    if ctr_oids==[]:
+        self.logger.error('No DCS data needed to be uploaded.')
+        raise DataError
+    else:
+        if not args.log and args.interactive:
+            self.logger.warning('-> Confirmation')
+            self.logger.warning('Is this ok to upload DCS data into Local DB?')
+            self.logger.warning('\033[5m(Please answer Y/y to continue or N/n to eixt.)\033[0m')
+            while True:
+                answer = input('[y/n]: ')
+                if answer.lower()=='y':
+                    break
+                elif answer.lower()=='n':
+                    raise InteractiveExit
+
+common.addInstanceMethod(DcsData, verifyData)
 
 def setCache(self, i_dir, i_opt):
     """
@@ -256,18 +321,17 @@ def writeScan(self, i_dir):
     args = getArgs()
 
     # scanLog.json
-    log_path = '{}/scanLog.json'.format(i_dir)
-    log_json = common.readJson(log_path)
+    log_path = 'scanLog.json'
+    log_json = common.readJson('{0}/{1}'.format(i_dir, log_path))
     if log_json=={}:
         self.logger.error('No scanLog.json in {}'.format(log_path))
         self.logger.error('Specify the correct path to result directory')
         raise DataError
     log_json['QC'] = args.QC
-    common.writeJson(log_json, log_path)
 
     # DB Connection
-    self.checkConfigFormat(i_dir, log_json)
-    self.checkDb(log_json)
+    self.checkConfigFormat(i_dir, log_json, log_path)
+    self.checkDb(log_json, log_path)
 
     # Validation for QC
     self.verifyData(log_json)
@@ -352,8 +416,8 @@ def writeDcs(self, i_dir):
     args = getArgs()
 
     # dcsLog.json
-    log_path = '{}/dbDcsLog.json'.format(i_dir)
-    log_json = common.readJson(log_path)
+    log_path = 'dbDcsLog.json'.format(i_dir)
+    log_json = common.readJson('{0}/{1}'.format(i_dir, log_path))
     if log_json=={}:
         self.logger.error('No dbDcsLog.json in {}'.format(log_path))
         self.logger.error('Specify the correct path to result directory')
@@ -371,39 +435,14 @@ def writeDcs(self, i_dir):
         timestamp = time.mktime(time.strptime(log_json['timestamp'], '%Y-%m-%d_%H:%M:%S'))
     else:
         timestamp = -1
+    log_json['timestamp'] = timestamp
 
-    self.checkConfigFormat(i_dir, log_json)
-    self.checkDb(log_json)
-    #self.verifyDcsData() #TODO
+    self.checkConfigFormat(i_dir, log_json, log_path)
+    self.checkDb(log_json, log_path)
 
-    ## start
-    self.setConfig()
-    tr_oids = self.getTestRunData('scan', log_json.get('id',''), {}, timestamp)
-    if tr_oids==[]:
-        self.logger.error('Not found relational test run data in DB')
-        raise RegisterError
-    dcs_tr_oids = []
-    for tr_oid in tr_oids:
-        if not self.getTestRunData('dcs', tr_oid)==[]:
-            self.logger.warning('Already registered dcs data to this test data in DB')
-            if not args.log and args.interactive:
-                self.logger.warning('Do you continue to upload data into Local DB?')
-                while True:
-                    answer = input('[y/n]: ')
-                    if answer.lower()=='y':
-                        dcs_tr_oids.append(tr_oid)
-                        break
-                    elif answer.lower()=='n':
-                        self.tr_oids.append(tr_oid)
-            else:
-                self.tr_oids.append(tr_oid)
-        else:
-            dcs_tr_oids.append(tr_oid)
-    if dcs_tr_oids==[]:
-        raise DataError
-    tr_oids = dcs_tr_oids
-    for tr_oid in tr_oids:
-        self.setDcs(tr_oid, log_json['environments'])
+    self.logger.info('-> Setting DCS config: {}'.format(log_path))
+    self.verifyData(log_json)
+    self.setDcs()
 
     return True
 
@@ -428,10 +467,8 @@ def __upload_from_cache(i_opt):
     for cache_dir in cache_list:
         if cache_dir=='': continue
         logger.info('------------------------------')
-        scan = ScanData()
-        dcs = DcsData()
-        if i_opt=='scan': data = scan
-        elif i_opt=='dcs': data = dcs
+        if i_opt=='scan': data = ScanData()
+        elif i_opt=='dcs': data = DcsData()
         data.setCache(cache_dir, i_opt)
         logger.info('------------------------------')
     cache_list = []
@@ -458,7 +495,8 @@ def uploadComp(self, i_path):
     self.checkDb()
     self.checkConnCfg(i_path)
 
-    self.logger.warning('Do you continue to upload data into Local DB? [y/n]\n')
+    self.logger.warning('Do you continue to upload data into Local DB? [y/n]')
+    self.logger.warning('\033[5m(Please answer Y/y to continue or N/n to eixt.)\033[0m')
     while True:
         answer = input('[y/n]: ')
         if answer.lower()=='y':
@@ -493,11 +531,10 @@ def listCache(self, i_dir, i_opt, i_remove=False):
         if i_remove:
             if i_dir in cache_list: cache_list.remove(i_dir)
         else:
-            for tr_oid in self.tr_oids:
-                if not self.getTestRunData(i_opt, tr_oid)==[]:
-                    if i_dir in cache_list:
-                        self.logger.info('Succeeded uploading {0} data from {1}'.format(i_opt, i_dir))
-                        cache_list.remove(i_dir)
+            if not self.checkUploadData()==[]:
+                self.logger.info('Succeeded uploading {0} data from {1}'.format(i_opt, i_dir))
+                if i_dir in cache_list:
+                    cache_list.remove(i_dir)
         with open(path, 'w') as f:
             if not cache_list==[]:
                 self.logger.warning('{0} data that has not been uploaded is listed in {1}'.format(i_opt.capitalize(), path))

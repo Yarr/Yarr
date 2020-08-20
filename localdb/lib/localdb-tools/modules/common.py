@@ -71,46 +71,50 @@ def readJson(i_path):
             raise JsonParsingError
     return j
 
-def readDbCfg(arg, log={}):
+def readDbCfg(args, log={}, path=''):
     """
     This function reads database config from
     1. argument: --database
     2. path written in scanLog.json: for upload tool
     3. default: $HOME/.yarr/localdb/$HOSTNAME_database.json
-    Return empty if no db config
+    raise ConfigError if no db config
     """
     cfg = {}
-    path = ''
-    if arg:
-        path = os.path.realpath(os.path.abspath(arg))
+    num = 0
+    if args.database:
+        path = os.path.realpath(os.path.abspath(args.database))
         cfg = readJson(path)
+        num = 1
     elif not log=={}:
-        path = 'scanLog.json'
         cfg = log
+        num = 2
     else:
         path = '{0}/.yarr/localdb/{1}_database.json'.format(home, hostname)
         cfg = readJson(path)
         path = path + ' (default)'
-    logger.info('-> Setting DB config: {}'.format(path))
+        num = 3
+    logger.info('-> Setting database config: {}'.format(path))
     if cfg=={}:
         logger.error('\033[5mNot found database config.\033[0m')
-        logger.error('Specify the correct path or create the default config by YARR/localdb/setup_db.sh')
+        if num==1 or num==2:
+            logger.error('Specify the correct path to database config file under --database option.')
+        else:
+            logger.error('Create the default config by')
+            logger.error('   $ ./localdb/setup_db.sh')
         raise ConfigError
-    logger.info('-> Setting database config: {}'.format(path))
     return cfg
 
-def readUserCfg(arg, log={}):
+def readUserCfg(args, log={}, path=''):
     """
     This function reads user config from
     1. argument: --user
     2. path written in scanLog.json: for upload tool
     3. default: $HOME/.yarr/localdb/user.json
-    Return empty if no db config
+    Return empty if no config
     """
     cfg = log
-    path = 'scanLog.json'
-    if arg:
-        path = os.path.realpath(os.path.abspath(arg))
+    if args.user:
+        path = os.path.realpath(os.path.abspath(args.user))
         cfg.update(readJson(path))
     if cfg=={}:
         path = '{0}/.yarr/localdb/user.json'.format(home)
@@ -118,18 +122,17 @@ def readUserCfg(arg, log={}):
     logger.info('-> Setting user config: {}'.format(path))
     return cfg
 
-def readSiteCfg(arg, log={}):
+def readSiteCfg(args, log={}, path=''):
     """
     This function reads site config from
     1. argument: --site
     2. path written in scanLog.json: for upload tool
     3. default: $HOME/.yarr/localdb/$HOSTNAME_site.json
-    Return empty if no db config
+    Return empty if no config
     """
     cfg = log
-    path = 'scanLog.json'
-    if arg:
-        path = os.path.realpath(os.path.abspath(arg))
+    if args.site:
+        path = os.path.realpath(os.path.abspath(args.site))
         cfg.update(readJson(path))
     if cfg=={}:
         path = '{0}/.yarr/localdb/{1}_site.json'.format(home, hostname)

@@ -39,16 +39,17 @@ int main(int argc, char *argv[]){
     std::string comp_name = "";
     std::string dir_path = "";
 
-    bool isQC = false;
+    bool setQCMode = false;
+    bool setInteractiveMode = false;
 
     int c;
-    while ((c = getopt(argc, argv, "hIRCS:E:DQc:s:i:p:d:u:F:n:")) != -1 ){
+    while ((c = getopt(argc, argv, "hNRCS:E:DQIc:s:i:p:d:u:F:n:")) != -1 ){
         switch (c) {
             case 'h':
                 printHelp();
                 return 0;
                 break;
-            case 'I':
+            case 'N':
                 commandType = "Initialize";
                 break;
             case 'R':
@@ -69,7 +70,10 @@ int main(int argc, char *argv[]){
                 commandType = "Config";
                 break;
             case 'Q':
-                isQC = true;
+                setQCMode = true;
+                break;
+            case 'I':
+                setInteractiveMode = true;
                 break;
             case 'c':
                 conn_path = std::string(optarg);
@@ -136,7 +140,7 @@ int main(int argc, char *argv[]){
     if (commandType == "Cache") {
         logger->info("DBHandler: Register Data from Cache");
         DBHandler *database = new DBHandler();
-        database->initialize(cfg_path, commandLine, isQC, true);
+        database->initialize(cfg_path, commandLine, setQCMode, true);
         int status = database->setCache(user_cfg_path, site_cfg_path);
         delete database;
         return status;
@@ -146,7 +150,7 @@ int main(int argc, char *argv[]){
     if (commandType == "Scan") {
         logger->info("DBHandler: Register Scan Data");
         DBHandler *database = new DBHandler();
-        database->initialize(cfg_path, commandLine, isQC, true);
+        database->initialize(cfg_path, commandLine, setQCMode, setInteractiveMode);
         database->cleanUp("scan", scan_path, false);
         delete database;
         return 0;
@@ -161,9 +165,18 @@ int main(int argc, char *argv[]){
             return 1;
         }
         DBHandler *database = new DBHandler();
-        database->initialize(cfg_path, commandLine);
+        database->initialize(cfg_path, commandLine, setQCMode, setInteractiveMode);
         int status = database->setComponent(conn_path, user_cfg_path, site_cfg_path);
         delete database;
+        return status;
+    }
+
+    // Retrieve/Create config files
+    if (commandType == "Config") {
+        logger->info("DBHandler: Retrieve Config Files");
+        DBHandler *database = new DBHandler();
+        database->initialize(cfg_path, commandLine);
+        int status = database->retrieveComponentData(comp_name, conn_path, dir_path);
         return status;
     }
 
@@ -176,21 +189,12 @@ int main(int argc, char *argv[]){
             logger->error("Please specify file path under -s option!");
             return 1;
         }
-        database->initialize(cfg_path, commandLine, isQC);
+        database->initialize(cfg_path, commandLine, setQCMode, setInteractiveMode);
         database->setDCSCfg(dcs_path, scanlog_path, user_cfg_path, site_cfg_path);
         database->cleanUp("dcs", "", false);
 
         delete database;
         return 0;
-    }
-
-    // Retrieve/Create config files
-    if (commandType == "Config") {
-        logger->info("DBHandler: Retrieve Config Files");
-        DBHandler *database = new DBHandler();
-        database->initialize(cfg_path, commandLine);
-        int status = database->retrieveComponentData(comp_name, conn_path, dir_path);
-        return status;
     }
 
     if (commandType == "Influxdb") {
@@ -205,7 +209,7 @@ int main(int argc, char *argv[]){
         }
         int success=0;
         DBHandler *database = new DBHandler();
-        database->initialize(cfg_path, commandLine);
+        database->initialize(cfg_path, commandLine, setQCMode, setInteractiveMode);
         success=database->retrieveFromInflux(conn_path,comp_name,scanlog_path);
         if(success==0){
             size_t last_slash=scanlog_path.find_last_of('/');
@@ -215,8 +219,7 @@ int main(int argc, char *argv[]){
                 //std::string dcs_path=scandir+"/dcsDataInfo.json";
                 std::string dcs_path="/tmp/dcsDataInfo.json";
 
-                std::cout << "DBHandler: Register Environment:" << std::endl;
-                std::cout << "\tenvironmental config file : " << dcs_path << std::endl;
+                logger->info("DBHandler: Register Environment Data");
 
                 database->setDCSCfg(dcs_path, scanlog_path, user_cfg_path, site_cfg_path);
                 database->cleanUp("dcs", "", false);
@@ -232,7 +235,7 @@ int main(int argc, char *argv[]){
 void printHelp() {
     std::cout << "Help:" << std::endl;
     std::cout << " -h: Shows this." << std::endl;
-    std::cout << " -I: Check the connection to Local DB." << std::endl;
+    std::cout << " -N: Check the connection to Local DB." << std::endl;
     std::cout << " -S <scan result>: Provide scan result directory to upload scan data into Local DB." << std::endl;
     std::cout << " -E <dcs.json> : Provide DCS configuration to upload DCS data into Local DB." << std::endl;
     std::cout << "     -s <scanLog.json> : Provide scan log file." << std::endl;
@@ -243,6 +246,9 @@ void printHelp() {
     std::cout << "     -n <component name> : Provide component name." << std::endl;
     std::cout << "     -p <conn dir> : Provide directory path to put config files." << std::endl;
     std::cout << "     -c <component.json> : Provide connectivity configuration to create chip config files." << std::endl;
+    std::cout << " " << std::endl;
+    std::cout << " -Q: Set QC scan mode." << std::endl;
+    std::cout << " -I: Set interactive mode." << std::endl;
     std::cout << " " << std::endl;
     std::cout << " -d <database.json> : Provide database configuration." << std::endl;
     std::cout << " -i <site.json> : Provide site configuration." << std::endl;

@@ -32,6 +32,9 @@ class RegisterError(Exception):
 class ValidationError(Exception):
     pass
 
+class DcsDataError(Exception):
+    pass
+
 class RegisterData():
     def __init__(self):
         self.logger = getLogger('Log').getChild('Register')
@@ -172,20 +175,38 @@ class RegisterData():
         self.logger.debug('\tCheck Empty:')
         self.logger.debug('\t- key: {}'.format(i_key))
         self.logger.debug('\t- file: {}'.format(i_filename))
-        if not i_key in i_json:
-            self.logger.error('Found an empty field in json file.')
+        if type(i_key)==type([]):
+            if set(i_key)&set(i_json)==set({}):
+                self.logger.error('Found an empty field in json file.')
+                self.logger.error('\tfile: {0}  key: {1}'.format(i_filename, ' or '.join(map(str, A))))
+                raise RegisterError
+        else:
+            if not i_key in i_json:
+                self.logger.error('Found an empty field in json file.')
+                self.logger.error('\tfile: {0}  key: {1}'.format(i_filename, i_key))
+                raise RegisterError
+        return
+
+    def _check_number(self, i_json, i_key, i_filename):
+        self.logger.debug('\tCheck Number:')
+        self.logger.debug('\t- key: {}'.format(i_key))
+        self.logger.debug('\t- file: {}'.format(i_filename))
+        try:
+            float(i_json.get(i_key, ''))
+        except ValueError:
+            self.logger.error('This field must be the number.')
             self.logger.error('\tfile: {0}  key: {1}'.format(i_filename, i_key))
             raise RegisterError
         return
 
-    def _check_user(self):
+    def _check_user(self, i_register=True):
         """
         This function checks user data
         If there is a matching data, return oid
         If there is not a matching data, register user_json and return oid
         """
         self.logger.debug('\tCheck User')
-        oid = None
+        oid = 'null'
         query = {
             'userName'   : os.environ['USER'],
             'institution': hostname,
@@ -200,17 +221,17 @@ class RegisterData():
         self.user_json = query
         this_user = self.localdb.user.find_one(query)
         if this_user: oid = str(this_user['_id'])
-        else: oid = self._register_user()
+        elif i_register: oid = self.__register_user()
         return oid
 
-    def _check_site(self):
+    def _check_site(self, i_register=True):
         """
         This function checks site data
         If there is a matching data, return oid
         If there is not a matching data, register site_json and return oid
         """
         self.logger.debug('\tCheck Site')
-        oid = None
+        oid = 'null'
         query = {
             'address'    : ':'.join(['{:02x}'.format((uuid.getnode() >> ele) & 0xff)for ele in range(0,8*6,8)][::-1]),
             'HOSTNAME'   : hostname,
@@ -222,7 +243,7 @@ class RegisterData():
         self.site_json = query
         this_site = self.localdb.institution.find_one(query)
         if this_site: oid = str(this_site['_id'])
-        else: oid = self._register_site()
+        elif i_register: oid = self.__register_site()
         return oid
 
     def _check_component(self, i_json, i_qc=False):
@@ -265,7 +286,28 @@ class RegisterData():
             if this_cpr: oid = str(this_cpr['_id'])
         return oid
 
-    def _check_test_run(self, i_tr_oid='', i_conn=None, i_timestamp=None):
+    def _check_chip(self, i_json, i_register=True):
+        """
+        This function checks chip data
+        If there is a matching data, return oid
+        If there is not a matching data, register chip data and return oid
+        If chip is disabled, return '...'
+        """
+        self.logger.debug('\tCheck Chip data:')
+        oid = '...'
+        if not i_json.get('enable', 1)==0:
+            query = {
+                'name'     : i_json['name'],
+                'chipId'   : i_json['chipId'],
+                'chipType' : self.chip_type,
+                'dbVersion': self.db_version
+            }
+            this_chip = self.localdb.chip.find_one(query)
+            if this_chip: oid = str(this_chip['_id'])
+            elif i_register: oid = self.__register_chip(i_json)
+        return oid
+
+    def _check_test_run(self, i_tr_oid='', i_conn={}, i_timestamp=None):
         """
         This function checks test run data
         """
@@ -312,7 +354,7 @@ class RegisterData():
 
         return status
 
-    def __check_list(self, i_value, i_name):
+    def _check_list(self, i_value, i_name):
         """
         This function checks if the value is listed
         """
@@ -320,11 +362,11 @@ class RegisterData():
         self.logger.debug('\t- value: {}'.format(i_value))
         self.logger.debug('\t- list: {}'.format(i_name))
         if not i_value.lower().replace(' ','_') in self.db_list[i_name]:
-            self.logger.error('Not registered {0} in the {1} list in database config file.'.format(i_value, i_name))
+            self.logger.error('Not found {0} in the {1} list in database config file.'.format(i_value, i_name))
             raise RegisterError
         return
 
-    def _register_user(self):
+    def __register_user(self):
         """
         This function registeres user data
         All the information in self.user_json is registered
@@ -341,7 +383,7 @@ class RegisterData():
         self.logger.debug('\t\tdoc   : {}'.format(oid))
         return oid
 
-    def _register_site(self):
+    def __register_site(self):
         """
         All the information in self.site_json is registered.
         """
@@ -356,6 +398,23 @@ class RegisterData():
         self.logger.debug('\t\tdoc   : {}'.format(oid))
         return oid
 
+    def __register_chip(self, i_json):
+        """
+        chip data written in i_json is registered.
+        """
+        self.logger.debug('\t\tRegister Chip')
+        doc = {
+            'sys'          : {},
+            'name'         : i_json.get('name','...'),
+            'chipId'       : i_json.get('chipId',0),
+            'chipType'     : self.chip_type,
+            'componentType': 'front-end_chip',
+            'dbVersion'    : self.db_version
+        }
+        oid = str(self.localdb.chip.insert_one(doc).inserted_id)
+        self._update_sys(oid, 'chip')
+        self.logger.debug('\t\tdoc   : {}'.format(oid))
+        return oid
 
 class ScanData(RegisterData):
     def __init__(self):
@@ -632,7 +691,7 @@ class ScanData(RegisterData):
                     chip_json['cpr'] = cpr_oid
                 if not chip_json.get('cpr'):
                     conn['module'] = {}
-                chip_oid = self.__check_chip(chip_json)
+                chip_oid = self._check_chip(chip_json)
                 chip_json['chip'] = chip_oid
                 if 'serialNumber'  in chip_json: del chip_json['serialNumber']
                 if 'componentType' in chip_json: del chip_json['componentType']
@@ -640,27 +699,6 @@ class ScanData(RegisterData):
                 if 'cpr'           in chip_json: del chip_json['cpr']
                 conn['chips'].append(chip_json)
             self.conns.append(conn)
-
-    def __check_chip(self, i_json):
-        """
-        This function checks chip data
-        If there is a matching data, return oid
-        If there is not a matching data, register chip data and return oid
-        If chip is disabled, return '...'
-        """
-        self.logger.debug('\tCheck Chip data:')
-        oid = '...'
-        if not i_json.get('enable', 1)==0:
-            query = {
-                'name'     : i_json['name'],
-                'chipId'   : i_json['chipId'],
-                'chipType' : self.chip_type,
-                'dbVersion': self.db_version
-            }
-            this_chip = self.localdb.chip.find_one(query)
-            if this_chip: oid = str(this_chip['_id'])
-            else: oid = self.__register_chip(i_json)
-        return oid
 
     def __check_stage(self, i_mo_oid):
         """
@@ -741,24 +779,6 @@ class ScanData(RegisterData):
         this_file = self.localdb.fs.files.find_one( query, { '_id': 1 } )
         if this_file:
             oid = str(this_file['_id'])
-        return oid
-
-    def __register_chip(self, i_json):
-        """
-        chip data written in i_json is registered.
-        """
-        self.logger.debug('\t\tRegister Chip')
-        doc = {
-            'sys'          : {},
-            'name'         : i_json.get('name','...'),
-            'chipId'       : i_json.get('chipId',0),
-            'chipType'     : self.chip_type,
-            'componentType': 'front-end_chip',
-            'dbVersion'    : self.db_version
-        }
-        oid = str(self.localdb.chip.insert_one(doc).inserted_id)
-        self._update_sys(oid, 'chip')
-        self.logger.debug('\t\tdoc   : {}'.format(oid))
         return oid
 
     def __register_test_run(self, i_json, i_stage, i_tr_oid):
@@ -888,43 +908,116 @@ class ScanData(RegisterData):
 class DcsData(RegisterData):
     def __init__(self):
         super().__init__()
+        self.ctr_oids = []
 
-    def setConfig(self):
-        self.logger.debug('Set Configs')
-        # user
-        self.user_oid = self._check_user()
+    def verifyCfg(self, i_log):
+        self.__verify_dcs_log_format(i_log)
+        self.__verify_test_data(i_log)
 
-        # site
-        self.site_oid = self._check_site()
-
-        # connectivity
-        self.__check_conn()
-
-    def setDcs(self, i_tr_oid, i_env_json):
-        self.logger.debug('\t\tRegister Environment')
-        doc = {
-            '_id'      : ObjectId(i_tr_oid),
-            'dbVersion': self.db_version
-        }
-        this_run = self.localdb.testRun.find_one(doc)
-        starttime  = this_run['startTime'].timestamp()
-        finishtime = this_run['finishTime'].timestamp()
-        for env_j in i_env_json:
+    def __verify_dcs_log_format(self, i_log):
+        """
+        This function verifies DCS log file
+        If the format is unreadable, raise RegisterError
+        """
+        self.logger.debug('\tVerify DCS Log')
+        for i, env_j in enumerate(i_log['environments']):
+            filename = 'environments.{} in DCS log file'.format(i)
+            self._check_empty(env_j, 'status', filename)
             if env_j['status']!='enabled': continue
-            env_key = env_j['key'].lower().replace(' ','_')
-            query = {
-                'testRun'   : i_tr_oid,
-                'dbVersion' : self.db_version
-            }
-            if env_j.get('chip', None):
-                query.update({ 'name': env_j['chip'] })
-            ctr_entries = self.localdb.componentTestRun.find(query)
-            for this_ctr in ctr_entries:
-                ctr_oid = self.__check_dcs(str(this_ctr['_id']), env_key, env_j['num'], env_j['description'])
-                if ctr_oid: self.__register_dcs(i_tr_oid, ctr_oid, env_key, env_j)
-        self.tr_oids.append(i_tr_oid)
+            self._check_empty(env_j, 'key', filename)
+            self._check_list(env_j['key'], 'environment')
+            self._check_empty(env_j, 'description', filename)
+            self._check_empty(env_j, 'num', filename)
+            self._check_number(env_j, 'num', filename)
+            self._check_empty(env_j, ['path','value'], filename)
+            if 'path' in env_j:
+                try:
+                    self.__read_dcs_data(env_j['path'], env_j['key'], env_j['num'])
+                except:
+                    raise RegisterError
+                if 'margin' in env_j:
+                    self._check_number(env_j, 'margin', filename)
 
-        return
+    def __verify_test_data(self, i_log):
+        """
+        This function verifies scan data
+        If the data is not registered, raise ValidationError
+        """
+        self.user_oid = self._check_user(False)
+        self.site_oid = self._check_site(False)
+        self.__check_conn()
+        tr_oids = []
+        if self.conns==[]: self.conns=[{}]
+        for conn in self.conns:
+            status = self._check_test_run(i_log.get('id',''), conn, i_log['timestamp'])
+            for i, tr_oid in enumerate(status['_id']):
+                if status['passed'][i]: tr_oids.append(tr_oid)
+        if tr_oids==[]:
+            self.logger.error('Not found relational test run data in DB')
+            raise ValidationError
+        self.dcs_tr_oids = tr_oids
+
+    def verifyDcsData(self, i_env):
+        """
+        This function verifies DCS data associated to scan data
+        If the data is already registered, return warning
+        """
+        ctr_oids = []
+        registered_oids = []
+        chips = []
+        registered_chips = []
+        if i_env['status']=='enabled':
+            env_key = i_env['key'].lower().replace(' ','_')
+            for tr_oid in self.dcs_tr_oids:
+                query = {
+                    'testRun'  : tr_oid,
+                    'dbVersion': self.db_version
+                }
+                if i_env.get('chip', None): query.update({ 'name': i_env['chip'] })
+                ctr_entries = self.localdb.componentTestRun.find(query)
+                for this_ctr in ctr_entries:
+                    ctr_oid = self._check_dcs(str(this_ctr['_id']), env_key, i_env['num'], i_env['description'])
+                    if ctr_oid:
+                        registered_oids.append(str(this_ctr['_id']))
+                        registered_chips.append('"\033[1;33m{}\033[0m"'.format(this_ctr['name']))
+                    else:
+                        ctr_oids.append(str(this_ctr['_id']))
+                        chips.append('\033[1;33m"{}"\033[0m'.format(this_ctr['name']))
+        i_env.update({ 'registered_oids': registered_oids, 'ctr_oids': ctr_oids, 'chips': chips, 'registered_chips': registered_chips })
+        return i_env
+
+    def confirmDcsData(self, i_env):
+        """
+        This function display DCS configuration
+        """
+        self.logger.info('~~~ {')
+        self.logger.info('~~~     "key": "\033[1;33m{}\033[0m",'.format(i_env['key']))
+        self.logger.info('~~~     "description": "\033[1;33m{}\033[0m",'.format(i_env['description']))
+        self.logger.info('~~~     "num": "\033[1;33m{}\033[0m",'.format(i_env['num']))
+        if 'path' in i_env:
+            self.logger.info('~~~     "path": "\033[1;33m{}\033[0m",'.format(i_env['path']))
+            if 'margin' in i_env: self.logger.info('~~~     "margin": "\033[1;33m{}\033[0m",'.format(i_env['margin']))
+        elif 'value' in i_env: self.logger.info('~~~     "value": "\033[1;33m{}\033[0m",'.format(i_env['value']))
+        if not i_env.get('chips',[])==[]: self.logger.info('~~~     "chips": {}'.format(', '.join(i_env['chips'])))
+        if not i_env.get('registered_chips',[])==[]: self.logger.info('~~~     "\033[1;31mchips with registered DCS data\033[0m": {}'.format(', '.join(i_env['registered_chips'])))
+        self.logger.info('~~~ }')
+
+    def setDcs(self):
+        self.logger.debug('\t\tSet DCS')
+        environments = self.environments
+        for env_j in environments:
+            env_key = env_j['key'].lower().replace(' ','_')
+            ctr_oids = env_j.get('registered_oids',[])
+            for ctr_oid in ctr_oids:
+                self.ctr_oids.append({ 'ctr_oid': ctr_oid, 'key': env_key, 'num': env_j['num'], 'description': env_j['description'] })
+            ctr_oids = env_j.get('ctr_oids',[])
+            if 'ctr_oids' in env_j:         del env_j['ctr_oids']
+            if 'registered_oids' in env_j:  del env_j['registered_oids']
+            if 'chips' in env_j:            del env_j['chips']
+            if 'registered_chips' in env_j: del env_j['registered_chips']
+            for ctr_oid in ctr_oids:
+                self.__register_dcs(ctr_oid, env_key, env_j)
+                self.ctr_oids.append({ 'ctr_oid': ctr_oid, 'key': env_key, 'num': env_j['num'], 'description': env_j['description'] })
 
     def __check_conn(self):
         """
@@ -938,14 +1031,14 @@ class DcsData(RegisterData):
             chips_json = conn['chips']
             conn['chips'] = []
             for i, chip_json in enumerate(chips_json):
-                chip_oid = self.__check_chip(chip_json)
+                chip_oid = self._check_chip(chip_json, False)
                 chip_json['chip'] = chip_oid
                 conn['chips'].append(chip_json)
             self.conns.append(conn)
 
-    def __check_dcs(self, i_ctr_oid, i_key, i_num, i_description):
+    def _check_dcs(self, i_ctr_oid, i_key, i_num, i_description):
         self.logger.debug('\tCheck DCS')
-        ctr_oid = i_ctr_oid
+        ctr_oid = None
         query = {
             '_id'      : ObjectId(i_ctr_oid),
             'dbVersion': self.db_version
@@ -959,98 +1052,135 @@ class DcsData(RegisterData):
             this_dcs = self.localdb.environment.find_one(query)
             for this_data in this_dcs.get(i_key,[]):
                 if str(this_data['num'])==str(i_num) and this_data['description']==i_description:
-                    ctr_oid = None
+                    ctr_oid = i_ctr_oid
                     break
         return ctr_oid
 
-    def __register_dcs(self, i_tr_oid, i_ctr_oid, i_env_key, i_env_j):
+    def __register_dcs(self, i_ctr_oid, i_env_key, i_env_j):
         self.logger.debug('\t\tRegister DCS')
-        array = []
-        if i_env_j['path']!='null':
-            extension = i_env_j['path'].split('.')[len(i_env_j['path'].split('.'))-1]
-            if extension=='dat':
-                separator = ' '
-            elif extenstion=='csv':
-                separator = ','
-            else:
-                self.logger.warning('This file ({}) format is not supported by Local DB, set to "dat" or "csv"'.format(i_env_j['path']))
-                return
-            env_file = open(i_env_j['path'],'r')
-            # key and num
-            env_key_line = env_file.readline().splitlines()[0]
-            env_num_line = env_file.readline().splitlines()[0]
-            key = -1
-            for j, tmp_key in enumerate(env_key_line.split(separator)):
-                tmp_key = tmp_key.lower().replace(' ','_')
-                tmp_num = env_num_line.split(separator)[j]
-                if str(i_env_key)==str(tmp_key) and str(i_env_j['num'])==str(tmp_num):
-                    key = j
-                    break
-            if key==-1:
-                self.logger.warning('Not found DCS data {{ key: {0}, num: {1} }} in data file: {2}'.format(i_env_key, i_env_j['num'], i_env_j['path']))
-                return
-            # value
-            env_line = env_file.readline()
-
-            while env_line:
-                if len(env_line.split(separator)) < key: break
-                date = int(env_line.split(separator)[1])
-                value = env_line.split(separator)[key]
-                if not value=='null':
-                    try:
-                        value = float(value)
-                    except:
-                        self.logger.error('Invalid value : {0} in data file: {1}'.format(value, i_env_j['path']))
-                        raise RegisterError
-                    if 'margin' in i_env_j:
-                        if starttime-date<i_env_j['margin'] and finishtime-date>i_env_j['margin']:
-                            array.append({
-                                'date': datetime.utcfromtimestamp(date),
-                                'value': value
-                            })
-                    else:
-                        array.append({
-                            'date': datetime.utcfromtimestamp(date),
-                            'value': value
-                        })
-                env_line = env_file.readline()
-        else:
-            array.append({
-                'date': this_run['startTime'],
-                'value': i_env_j['value']
-            })
         query = {
             '_id'       : ObjectId(i_ctr_oid),
             'dbVersion' : self.db_version
         }
         this_ctr = self.localdb.componentTestRun.find_one(query)
+        tr_oid = this_ctr['testRun']
+        query = {
+            '_id'       : ObjectId(tr_oid),
+            'dbVersion' : self.db_version
+        }
+        this_tr = self.localdb.testRun.find_one(query)
+        array = []
+        if i_env_j.get('path','null')!='null':
+            starttime  = None
+            finishtime = None
+            if 'margin' in i_env_j:
+                starttime  = this_tr['startTime'].timestamp()  - i_env_j['margin']
+                finishtime = this_tr['finishTime'].timestamp() + i_env_j['margin']
+            try:
+                array = self.__read_dcs_data(i_env_j['path'], i_env_key, i_env_j['num'], starttime, finishtime)
+            except DcsDataError:
+                return
+        else:
+            array.append({
+                'date' : this_tr['startTime'],
+                'value': i_env_j['value']
+            })
+        i_env_j.update({ 'data': array })
         if this_ctr.get('environment', '...')=='...':
             doc_value = {
-                'sys': {},
-                i_env_key: [ i_env_j ],
+                'sys'      : {},
+                i_env_key  : [ i_env_j ],
                 'dbVersion': self.db_version
             }
-            doc_value[i_env_key][0].update({ 'data': array })
             oid = str(self.localdb.environment.insert_one(doc_value).inserted_id)
             self._add_value(i_ctr_oid, 'componentTestRun', 'environment', oid)
             self._update_sys(i_ctr_oid, 'componentTestRun');
         else:
             oid = this_ctr['environment']
-            doc_value = {
-                '$push': {
-                    i_env_key: i_env_j
-                }
-            }
-            doc_value['$push'][i_env_key].update({ 'data': array })
+            doc_value = { '$push': { i_env_key: i_env_j } }
             query = { '_id': ObjectId(oid) }
             self.localdb.environment.update_one( query, doc_value )
 
         self._update_sys(oid, 'environment');
-        self._add_value(i_tr_oid, 'testRun', 'environment', True)
-        self._update_sys(i_tr_oid, 'testRun')
+        self._add_value(tr_oid, 'testRun', 'environment', True)
+        self._update_sys(tr_oid, 'testRun')
+        self.tr_oids.append(tr_oid)
 
-        self.logger.debug('\t\tctr doc : {}'.format(i_ctr_oid))
-        self.logger.debug('\t\tdcs data: {}'.format(oid))
+    def __read_dcs_data(self, i_path, i_key, i_num, i_start=None, i_finish=None):
+        self.logger.debug('\t\tRead DCS data')
+        env_key = i_key.lower().replace(' ','_')
+        extension = i_path.split('.')[len(i_path.split('.'))-1]
+        if extension=='dat':
+            separator = ' '
+        elif extension=='csv':
+            separator = ','
+        else:
+            self.logger.error('No supported DCS data.')
+            self.logger.error('\tfile: {0}  extension: {1}'.format(i_path, extension))
+            self.logger.error('\tSet to "dat" or "csv".')
+            raise DcsDataError
+        if os.path.isfile(i_path):
+            data = open(i_path, 'r')
+        else:
+            self.logger.error('Not found DCS data file.')
+            self.logger.error('\tfile: {0}'.format(i_path))
+            raise DcsDataError
+        # key and num
+        key_lines = data.readline().splitlines()
+        if key_lines==[]:
+            self.logger.error('Not found DCS keys in the 1st line.')
+            self.logger.error('\tfile: {0}'.format(i_path))
+            raise DcsDataError
+        num_lines = data.readline().splitlines()
+        if num_lines==[]:
+            self.logger.error('Not found DCS nums in the 2nd line.')
+            self.logger.error('\tfile: {0}'.format(i_path))
+            raise DcsDataError
+        key = -1
+        for j, tmp_key in enumerate(key_lines[0].split(separator)):
+            tmp_key = tmp_key.lower().replace(' ','_')
+            tmp_num = num_lines[0].split(separator)[j]
+            if str(env_key)==str(tmp_key) and str(i_num)==str(tmp_num):
+                key = j
+                break
+        if key==-1:
+            self.logger.error('Not found specified DCS data.')
+            self.logger.error('\tfile: {0}  key: {1}  num: {2}'.format(i_path, env_key, i_num))
+            raise DcsDataError
+        # value
+        env_lines = data.readline().splitlines()
+        if env_lines==[]:
+            self.logger.error('Not found DCS values from the 3rd line.')
+            self.logger.error('\tfile: {0}'.format(i_path))
+            raise DcsDataError
+        l = 3
+        array = []
+        while env_lines:
+            if len(env_lines[0].split(separator)) < key: break
+            try:
+                date = int(env_lines[0].split(separator)[1])
+            except:
+                self.logger.error('Invalid value: Unixtime must be "int"')
+                self.logger.error('\tfile: {0}  line: {1}  text: {2}'.format(i_path, l, date))
+                raise DcsDataError
+            value = env_lines[0].split(separator)[key]
+            if not value=='null':
+                try:
+                    value = float(value)
+                except:
+                    self.logger.error('Invalid value: DCS data must be "float" or "null"')
+                    self.logger.error('\tfile: {0}  line: {1}  text: {2}'.format(i_path, l, value))
+                    raise DcsDataError
+                if i_start and date<i_start: pass
+                elif i_finish and data>i_finish: pass
+                else:
+                    array.append({
+                        'date' : datetime.utcfromtimestamp(date),
+                        'value': value
+                    })
+            env_lines = data.readline()
+            l = l+1
+        return array
 
 class CompData(RegisterData):
     def __init__(self):

@@ -68,7 +68,7 @@ def getArgs():
     return args
 
 def error_message(key_type,name ):
-    logger.error('{} : {} is not Found!'.format(key_type, name))
+    logger.error('{} : {} is not found!'.format(key_type, name))
 
 def getData(client, dcs_config_fname):
     output_jsonName='{}/dcsDataInfo.json'.format(output_DIR)

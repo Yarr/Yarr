@@ -16,7 +16,6 @@ namespace {
 
 DBHandler::DBHandler():
 m_db_cfg_path(""), m_output_dir(""), m_upload_command(""),
-m_env_list(),
 m_db_version(1.0), m_qc(false), m_interactive(false)
 {
 #if DBDEBUG
@@ -48,12 +47,9 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_command, boo
         }
         m_db_cfg_path = i_db_cfg_path;
         json db_json = checkDBCfg(m_db_cfg_path);
-        if (db_json["QC"].is_bool()||isQC) m_qc = true;
-        m_interactive = i_interactive;
-        if (m_env_list.size()==0) {
-            for(auto s_tmp: db_json["environment"]) m_env_list.push_back(s_tmp); //TODO
-        }
     }
+    m_qc = isQC;
+    m_interactive = i_interactive;
 
     /// db command
     std::string cmd;
@@ -71,13 +67,6 @@ void DBHandler::alert(std::string i_function, std::string i_message, std::string
 #if DBDEBUG
     std::cout << "DBHandler: Alert '" << i_type << "'" << std::endl;
 #endif
-
-    std::string alert_message;
-    if (i_type=="error") alert_message = "#DB ERROR#";
-    else if (i_type=="warning") alert_message = "#DB WARNING#";
-    else if (i_type=="status") alert_message = "#DB STATUS#";
-
-
     std::string message;
     std::vector<std::string> messages;
     std::stringstream ss{i_message};
@@ -93,16 +82,6 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, st
 #if DBDEBUG
     std::cout << "DBHandler: Set DCS config: " << i_dcs_path << std::endl;
 #endif
-//TODO replace upload command
-
-    json log_json = this->toJson(i_scanlog_path);
-    json user_json = this->toJson(i_user_path);
-    json site_json = this->toJson(i_site_path);
-    if (log_json["id"].empty()) {
-        this->checkEmpty(log_json["startTime"].empty()&&log_json["timestamp"].empty(), "startTime||timestamp", i_scanlog_path);
-        if (log_json["userCfg"].empty()) log_json["userCfg"] = user_json;
-        if (log_json["siteCfg"].empty()) log_json["siteCfg"] = site_json;
-    }
     char path[1000];
     std::string log_path = this->getAbsPath(i_scanlog_path);
     std::size_t pathPos = log_path.find_last_of('/');
@@ -111,38 +90,50 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, st
     std::string scanlog_path = log_path + "/scanLog.json";
     this->checkFile(scanlog_path, "Failed to get real path to "+i_scanlog_path);
     m_output_dir = log_path;
-    log_path = log_path+"/dbDcsLog.json";
 
+    json log_json  = this->toJson(scanlog_path);
+    json user_json = this->toJson(i_user_path);
+    json site_json = this->toJson(i_site_path);
+    json db_json   = this->toJson(m_db_cfg_path);
+
+    if (log_json["id"].empty()) {
+        this->checkEmpty(log_json["startTime"].empty()&&log_json["timestamp"].empty(), "startTime||timestamp", i_scanlog_path);
+        if (log_json["userCfg"].empty()) log_json["userCfg"] = user_json;
+        if (log_json["siteCfg"].empty()) log_json["siteCfg"] = site_json;
+        if (log_json["dbCfg"].empty())   log_json["dbCfg"]   = db_json;
+    }
+
+    std::string dcs_log_path = log_path+"/dbDcsLog.json";
     json dcs_log_json;
 
-    int timestamp_int = -1;
-    std::string timestamp_str = "";
     if (!log_json["id"].empty())        dcs_log_json["id"]        = std::string(log_json["id"]);
     if (!log_json["startTime"].empty()) dcs_log_json["startTime"] = (int)log_json["startTime"];
     if (!log_json["timestamp"].empty()) dcs_log_json["timestamp"] = std::string(log_json["timestamp"]);
     if (!log_json["userCfg"].empty())   dcs_log_json["userCfg"]   = log_json["userCfg"];
     if (!log_json["siteCfg"].empty())   dcs_log_json["siteCfg"]   = log_json["siteCfg"];
+    if (!log_json["dbCfg"].empty())     dcs_log_json["dbCfg"]     = log_json["dbCfg"];
 
     json dcs_json = this->toJson(i_dcs_path);
-    if (dcs_json["environments"].empty()) return;
+    if (dcs_json["environments"].empty()) {
+        dlog->error("No \"environments\" data in "+i_dcs_path);
+        std::abort();
+    }
     json env_json = dcs_json["environments"];
-
     for (int i=0; i<(int)env_json.size(); i++) {
         std::string num_str = std::to_string(i);
         this->checkEmpty(env_json[i]["status"].empty(), "environments."+num_str+".status", i_dcs_path, "Set enabled/disabled to register.");
         if (std::string(env_json[i]["status"])!="enabled") continue;
-
         this->checkDCSCfg(i_dcs_path, num_str, env_json[i]);
         if (!env_json[i]["path"].empty()) {
-            int j_num = env_json[i]["num"];
-            std::string env_log_path = "";
-            std::string j_key = env_json[i]["key"];
-            env_log_path = env_json[i]["path"];
-            std::string extension = this->checkDCSLog(env_log_path, i_dcs_path, j_key, j_num);
+            int j_num          = env_json[i]["num"];
+            std::string j_path = env_json[i]["path"];
+            std::string j_key  = env_json[i]["key"];
             std::string chip_name = "";
             if (!env_json[i]["chip"].empty()) chip_name = std::string(env_json[i]["chip"])+"_";
+            std::size_t suffix = j_path.find_last_of('.');
+            std::string extension = j_path.substr(suffix+1);
             std::string file_path = m_output_dir+"/"+chip_name+j_key+"_"+std::to_string(j_num)+"."+extension;
-            std::string cmd = "cp "+env_log_path+" "+file_path;
+            std::string cmd = "cp "+j_path+" "+file_path;
             env_json[i]["path"] = file_path;
             if (system(cmd.c_str()) < 0) {
                 std::string message = "Could not copy the DCS data log file.";
@@ -153,21 +144,16 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, st
             this->checkNumber(env_json[i]["value"].is_number(), "environments."+num_str+".value", i_dcs_path);
         }
     }
-
     dcs_log_json["environments"] = env_json;
 
-    json db_json = toJson(m_db_cfg_path);
-
-    dcs_log_json["dbCfg"] = db_json;
-
-    std::ofstream log_file(log_path);
+    std::ofstream log_file(dcs_log_path);
     log_file << std::setw(4) << dcs_log_json;
     log_file.close();
 
     return;
 }
 
-void DBHandler::cleanUp(std::string i_option, std::string i_dir, bool i_back) {
+void DBHandler::cleanUp(std::string i_option, std::string i_dir, bool i_back, bool i_interactive) {
 #if DBDEBUG
     std::cout << "DBHandler: Clean Up." << std::endl;
 #endif
@@ -204,6 +190,9 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir, bool i_back) {
         dlog->error("Could not upload result data into Local DB");
     } else {
         std::string cmd = m_upload_command + " " + i_option + " " + result_dir;;
+        if (m_db_cfg_path!="")            cmd = cmd + " --database " + m_db_cfg_path;
+        if (m_qc)                         cmd = cmd + " --QC";
+        if (m_interactive&&i_interactive) cmd = cmd + " --interactive";
         if (i_back) {
             dlog->info("Uploading in the back ground. (log: ~/.yarr/localdb/log/)");
             cmd = cmd + " --log &";
@@ -212,10 +201,8 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir, bool i_back) {
             dlog->error("Unknown error");
         }
     }
-
     // initialize
     m_db_cfg_path = "";
-    m_env_list.clear();
 }
 
 int DBHandler::setComponent(std::string i_conn_path, std::string i_user_cfg_path, std::string i_site_cfg_path) {
@@ -289,10 +276,8 @@ int DBHandler::checkConfigs(std::string i_user_cfg_path, std::string i_site_cfg_
         if (m_interactive) cmd = cmd + " --interactive";
         int result = system(cmd.c_str());
         if (m_qc&&result==256) {
-            dlog->critical("Invalid configs for uploading QC scan data.");
             return 1;
         } else if (result==256) {
-            dlog->critical("Invalid configs for uploading data.");
             return 1;
         } else if (result==2560) {
             return 1;
@@ -388,14 +373,11 @@ void DBHandler::checkDCSCfg(std::string i_dcs_path, std::string i_num, json i_js
     std::cout << "\t\tDBHandler: Check DCS config: " << i_dcs_path << std::endl;
 #endif
     this->checkEmpty(i_json["key"].empty(), "environments."+i_num+".key", i_dcs_path, "Set the environmental key from the key list.");
-    std::string j_key = i_json["key"];
-    this->checkList(m_env_list, j_key, m_db_cfg_path, i_dcs_path);
     this->checkEmpty(i_json["path"].empty()&&i_json["value"].empty(), "environments."+i_num+".path/value", i_dcs_path);
     this->checkEmpty(i_json["description"].empty(), "environments."+i_num+".description", i_dcs_path);
     this->checkEmpty(i_json["num"].empty(), "environments."+i_num+".num", i_dcs_path);
     this->checkNumber(i_json["num"].is_number(), "environments."+i_num+".num", i_dcs_path);
     if (!i_json["margin"].empty()) this->checkNumber(i_json["margin"].is_number(), "environments."+i_num+".margin", i_dcs_path);
-
     return;
 }
 
@@ -638,7 +620,7 @@ int DBHandler::retrieveComponentData(std::string i_comp_name, std::string i_path
 }
 
 void DBHandler::cleanDataDir(){
-  std::string cmd="";
-  cmd = m_influx_command + " remove -s /tmp/";
-  system(cmd.c_str());
+    std::string cmd="";
+    cmd = m_influx_command + " remove -s /tmp/";
+    system(cmd.c_str());
 }

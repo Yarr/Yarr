@@ -114,6 +114,7 @@ class LocalDb(object):
         except errors.ServerSelectionTimeoutError as err:
             self.__connection_failed('to', err)
         except errors.OperationFailure as err:
+            self.logger.info('Local DB is locked.')
             ### Need user authentication
             if self.username:
                 username = self.username
@@ -132,7 +133,7 @@ class LocalDb(object):
             if username and password:
                 try:
                     localdb.authenticate(username, password)
-                    self.__connection_succeeded()
+                    self.__connection_succeeded('Authentication success.')
                 except errors.OperationFailure as err:
                     self.__connection_failed('auth', err)
             else:
@@ -158,8 +159,8 @@ class LocalDb(object):
             self.__connection_failed('', err)
         return True
 
-    def __connection_succeeded(self):
-        self.logger.info('---> Good connection!')
+    def __connection_succeeded(self, message='Good connection!'):
+        self.logger.info('---> {}'.format(message))
 
     def __connection_failed(self, err='to', message=''):
         if self.service=='mongodb':

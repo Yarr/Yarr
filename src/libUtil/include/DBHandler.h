@@ -70,7 +70,9 @@ class DBHandler {
         ***/
         void cleanUp(std::string /*i_option*/,
                      std::string /*i_dir*/,
-                     bool        i_back=true);
+                     //bool        i_back=true);
+                     bool        i_back=false,
+                     bool        i_interactive=true);
 
         /***
         Upload unuploaded test cache data into Local DB
@@ -100,9 +102,9 @@ class DBHandler {
         /***
         retrieve DCS data from InfluxDB
         ***/
-        int retrieveFromInflux(std::string, /*influx_conn_path*/
-                               std::string, /*chipname*/
-                               std::string  /*i_scanlog_path*/);
+        int retrieveFromInflux(std::string /*influx_conn_path*/,
+                               std::string /*chipname*/,
+                               std::string /*i_scanlog_path*/);
         /***
         retrieve connectivity and chip configs
         ***/
@@ -157,10 +159,6 @@ class DBHandler {
         std::string m_upload_command;
         std::string m_retrieve_command;
         std::string m_influx_command;
-
-        std::vector<std::string> m_stage_list;
-        std::vector<std::string> m_env_list;
-        std::vector<std::string> m_comp_list;
 
         std::vector<std::string> m_histo_names;
 

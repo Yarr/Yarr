@@ -116,8 +116,8 @@ int main(int argc, char *argv[]) {
     std::string dbCfgPath = defaultDbCfgPath();
     std::string dbSiteCfgPath = defaultDbSiteCfgPath();
     std::string dbUserCfgPath = defaultDbUserCfgPath();
-    bool isQC = false;
-    bool setInteractive = false;
+    bool setQCMode = false;
+    bool setInteractiveMode = false;
 
     std::string logCfgPath = "";
 
@@ -195,10 +195,10 @@ int main(int argc, char *argv[]) {
                 dbUserCfgPath = std::string(optarg);
                 break;
             case 'Q':
-                isQC = true;
+                setQCMode = true;
                 break;
             case 'I':
-                setInteractive = true;
+                setInteractiveMode = true;
                 break;
             case '?':
                 if(optopt == 's' || optopt == 'n'){
@@ -362,7 +362,7 @@ int main(int argc, char *argv[]) {
         logger->info("\033[1;31m################\033[0m");
         logger->info("\033[1;31m# Set Database #\033[0m");
         logger->info("\033[1;31m################\033[0m");
-        database->initialize(dbCfgPath, argv[0], isQC, setInteractive);
+        database->initialize(dbCfgPath, argv[0], setQCMode, setInteractiveMode);
         if (database->checkConfigs(dbUserCfgPath, dbSiteCfgPath, cConfigPaths)==1)
             return -1;
         json dbCfg = ScanHelper::openJsonFile(dbCfgPath);
@@ -663,7 +663,7 @@ int main(int argc, char *argv[]) {
 
     // Register test info into database
     if (dbUse) {
-        database->cleanUp("scan", outputDir, true);
+        database->cleanUp("scan", outputDir, false, false);
     }
     delete database;
 
