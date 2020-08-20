@@ -56,7 +56,7 @@
           "max": 50,
           "min": 0,
           "step": 1,
-          "nSteps": 50
+          "nSteps": 10
         },
         "loopAction": "Rd53bCoreColLoop"
       },
@@ -69,7 +69,7 @@
           "noInject": false,
           "time": 0,
           "edgeMode": true,
-          "edgeDuration": 20
+          "edgeDuration": 35
         },
         "loopAction": "Rd53bTriggerLoop"
       },
