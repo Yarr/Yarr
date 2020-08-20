@@ -242,26 +242,31 @@ int main (int argc, char *argv[]) {
     
     for (unsigned cal=0; cal<bins; cal++) {
         rd53b.writeRegister(&Rd53b::InjVcalHigh, 2000+(cal*scaler));
+        rd53b.readRegister(&Rd53b::InjVcalHigh);
         while(!hwCtrl->isCmdEmpty());
-        rd53b.sendClear(15);
-        while(!hwCtrl->isCmdEmpty());
+        //rd53b.sendClear(15);
+        //while(!hwCtrl->isCmdEmpty());
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         unsigned counter = 0;
             
-        hwCtrl->setTrigEnable(0x1);
+        //hwCtrl->setTrigEnable(0x1);
 
-        while(!hwCtrl->isTrigDone());
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        hwCtrl->setTrigEnable(0x0);
+        //while(!hwCtrl->isTrigDone());
+        //std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        //hwCtrl->setTrigEnable(0x0);
         
         //logger->info("Reading data");
         RawData *data = hwCtrl->readData();
         while (data) {
             if  (data) {
-                //logger->info("Read {} words", data->words);
-                //std::pair<uint32_t, uint32_t> answer = rd53bTest::decodeSingleRegRead(data->buf[0], data->buf[1]);
-                //logger->info("Answer: {} {}", answer.first, answer.second);
-                for (unsigned j=0; j<data->words; j+=2) {
+                logger->info("Read {} words", data->words);
+                std::pair<uint32_t, uint32_t> answer = rd53bTest::decodeSingleRegRead(data->buf[0], data->buf[1]);
+                logger->info("Answer: {} {}", answer.first, answer.second);
+                if (data->words>2) {
+                    answer = rd53bTest::decodeSingleRegRead(data->buf[1], data->buf[2]);
+                    logger->info("Answer: {} {}", answer.first, answer.second);
+                }
+                /*for (unsigned j=0; j<data->words; j+=2) {
                     unsigned tag = (data->buf[j] & 0x7F800000) >> 23;
                     unsigned ccol = (data->buf[j] & 0x007E0000) >> 17;
                     if (ccol > 0) {
@@ -271,7 +276,7 @@ int main (int argc, char *argv[]) {
                     }
                     logger->info("[{}] = 0x{:x} = Tag({}) CCOL({})", j, data->buf[j], tag, ccol);
                     logger->info("[{}] = 0x{:x} ", j+1, data->buf[j+1]);
-                }
+                }*/
                 delete data;
             }
             data = hwCtrl->readData();
