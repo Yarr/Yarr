@@ -14,6 +14,7 @@ The currently supported readout chips are:
 * FE-I4B
 * FE65-P2
 * RD53A
+* RD53B (ITkPixV1)
 * ABC/HCC STAR
 
 There is very preliminary support for Star chips (strips).
@@ -34,6 +35,7 @@ Support for YARR can be found in the [YARR Matter Most channel.](https://matterm
     * [FE-I4](fei4.md)
     * [FE65-P2](fe65p2.md)
     * [RD53A](rd53a.md)
+    * [RD53B](rd53b.md)
     * [Star Strips](star.md)
 * [Troubleshooting](troubleshooting.md)
 
