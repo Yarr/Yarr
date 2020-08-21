@@ -59,7 +59,7 @@ int main (int argc, char *argv[]) {
     logger->info("Parsing command line parameters ...");
     int c;
     std::string cfgFilePath = "configs/JohnDoe.json";
-    std::string ctrlFilePath = "controller/specCfg.json";
+    std::string ctrlFilePath = "configs/controller/specCfg.json";
     while ((c = getopt(argc, argv, "hc:r:")) != -1) {
         int count = 0;
         switch (c) {
