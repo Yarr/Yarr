@@ -58,7 +58,7 @@ The readout speed that the chip is confgured to has to match the readout speed o
 
 The general structure of the scanConsole command is:
 ```bash
-bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/<type of scan>.json -p
+bin/scanConsole -r configs/controller/specCfg-rd53b.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/<type of scan>.json -p
 ```
 
 which specifies the controller (`-r`), the chip list and chip type (`-c`), and the scan (`-s`). The option `-p` selects plotting so plots are produced after the scans.
