@@ -1,4 +1,6 @@
 #include "catch.hpp"
+#include <deque>
+#include <fstream>
 
 #include "LCBUtils.h"
 #include "StarCmd.h"
