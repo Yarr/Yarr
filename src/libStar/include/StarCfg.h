@@ -11,6 +11,7 @@
 #include <cmath>
 #include <functional>
 #include <tuple>
+#include <iostream>
 
 #include "FrontEnd.h"
 
