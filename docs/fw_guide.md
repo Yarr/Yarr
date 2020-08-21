@@ -5,11 +5,11 @@
 In order to flash the firmware, download the following script: [flash.sh](http://yarr.web.cern.ch/yarr/firmware/flash.sh)
 
 ```bash
-wget http://yarr.web.cern.ch/yarr/firmware/flash.sh
+wget --backups=1 http://yarr.web.cern.ch/yarr/firmware/flash.sh
 ```
 
 The script can be used in two ways:
-q
+
 1. Run it by itself (without an argument) and it will ask some questions about what kind of configuration you desire. It will then download the latest firmware and proceed to flash the firmware to the FPGA and PROM.
 2. Run it with an already downloaded bit-file as an argument and it will proceed to flash this firmware to the FPGA card. It will still ask what FPGA card you have as this specifies how to flash the firmware exactly.
 
