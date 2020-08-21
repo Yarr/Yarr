@@ -97,6 +97,11 @@ void Rd53bCoreColLoop::setCores() {
     rd53b->writeRegister(&Rd53b::EnCoreColCal1, m_coreCols[1]);
     rd53b->writeRegister(&Rd53b::EnCoreColCal2, m_coreCols[2]);
     rd53b->writeRegister(&Rd53b::EnCoreColCal3, m_coreCols[3]);
+	// Remove hitOR mask
+    rd53b->writeRegister(&Rd53b::HitOrMask0, ~m_coreCols[0]);
+    rd53b->writeRegister(&Rd53b::HitOrMask1, ~m_coreCols[1]);
+    rd53b->writeRegister(&Rd53b::HitOrMask2, ~m_coreCols[2]);
+    rd53b->writeRegister(&Rd53b::HitOrMask3, ~m_coreCols[3]);	
     while(!g_tx->isCmdEmpty()) {}
 }
 
