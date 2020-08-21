@@ -11,6 +11,7 @@
 #include <iostream>
 #include <cmath>
 #include <fstream>
+#include <sstream>
 #include "logging.h"
 
 namespace {
