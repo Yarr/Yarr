@@ -148,7 +148,7 @@ def __error_exit(command=''):
         logger.error('   or: localdbtool-retrieve list site')
     elif command=='database' or command=='site' or command=='user':
         logger.error('There is no default {0} config in {1}/.yarr/localdb'.format(command, home))
-        logger.error('Set it by YARR/localdb/setup_db.sh')
+        logger.error('Set it by path/to/YARR/localdb/setup_db.sh')
     elif command=='connection':
         logger.error('Could not access Local DB, retry again in the good connection to Local DB Server')
 

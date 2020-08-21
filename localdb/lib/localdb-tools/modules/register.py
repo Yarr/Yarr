@@ -551,7 +551,7 @@ class ScanData(RegisterData):
                 self.logger.error('Not username of viewer user account provided.')
                 self.logger.error('Please login Local DB with username and password')
                 self.logger.error('and create user config file by:')
-                self.logger.error('   $ source localdb/login_mongodb.sh -Q')
+                self.logger.error('   $ source path/to/YARR/localdb/login_mongodb.sh -Q')
                 raise ValidationError
         self.logger.info('~~~ {')
         if i_qc:

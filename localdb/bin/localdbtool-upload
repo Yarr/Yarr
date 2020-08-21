@@ -203,7 +203,7 @@ def verifyData(self, i_log={}):
     if not args.log and args.interactive:
         self.logger.warning('-> Confirmation')
         self.logger.warning('Is this ok to upload data into Local DB?')
-        self.logger.warning('\033[5m(Please answer Y/y to continue or N/n to eixt.)\033[0m')
+        self.logger.warning('\033[5m(Please answer Y/y to continue or N/n to exit.)\033[0m')
         while True:
             answer = input('[y/n]: ')
             if answer.lower()=='y':
@@ -263,7 +263,7 @@ def verifyData(self, i_log={}):
         if not args.log and args.interactive:
             self.logger.warning('-> Confirmation')
             self.logger.warning('Is this ok to upload DCS data into Local DB?')
-            self.logger.warning('\033[5m(Please answer Y/y to continue or N/n to eixt.)\033[0m')
+            self.logger.warning('\033[5m(Please answer Y/y to continue or N/n to exit.)\033[0m')
             while True:
                 answer = input('[y/n]: ')
                 if answer.lower()=='y':
@@ -496,7 +496,7 @@ def uploadComp(self, i_path):
     self.checkConnCfg(i_path)
 
     self.logger.warning('Do you continue to upload data into Local DB? [y/n]')
-    self.logger.warning('\033[5m(Please answer Y/y to continue or N/n to eixt.)\033[0m')
+    self.logger.warning('\033[5m(Please answer Y/y to continue or N/n to exit.)\033[0m')
     while True:
         answer = input('[y/n]: ')
         if answer.lower()=='y':
@@ -561,8 +561,8 @@ def __check_command():
     command = args.command
     nargs = len(args.command)-1
     if command==[]:
-        logger.error('Usage: localdbtool-upload [command] <--option>')
-        logger.error('These are common upload commands used in variaous situations:')
+        logger.error('Usage: localdbtool-upload <command> [--option]')
+        logger.error('These are common upload commands used in various situations:')
         logger.error('')
         logger.error('\tinit\t\tInitialize upload function and check connection to Local DB')
         logger.error('\tcomp\t<file>\tRegister component data from specified connectivity file')

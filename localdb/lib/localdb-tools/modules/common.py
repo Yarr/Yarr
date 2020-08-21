@@ -100,7 +100,7 @@ def readDbCfg(args, log={}, path=''):
             logger.error('Specify the correct path to database config file under --database option.')
         else:
             logger.error('Create the default config by')
-            logger.error('   $ ./localdb/setup_db.sh')
+            logger.error('   $ path/to/YARR/localdb/setup_db.sh')
         raise ConfigError
     return cfg
 
