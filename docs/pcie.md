@@ -33,12 +33,12 @@ source /opt/Xilinx/Vivado_Lab/2016.4/settings64.sh
 In order to flash the firmware, download the following script: [flash.sh](http://yarr.web.cern.ch/yarr/firmware/flash.sh)
 
 ```bash
-$ wget http://yarr.web.cern.ch/yarr/firmware/flash.sh
+$ wget --backup=1 http://yarr.web.cern.ch/yarr/firmware/flash.sh
 $ <text>
 $ ./flash.sh
 ```
 
-For further information check the [FW Guide](fw_guide.md)
+Please check the [FW Guide](fw_guide.md) for more information for your specific card!
 
 Once you have flashed the firmware reboot your PC.
 
