@@ -545,7 +545,7 @@ class ScanData(RegisterData):
                     self.user_json['viewerUser'] = this_user['username']
                 else:
                     self.logger.error('Not found user data {} registered in Local DB.'.format(query))
-                    self.logger.error('Please contact Local DB administrator to create your account.')
+                    self.logger.error('Please contact Local DB administrator to create your account on Local DB Viewer.')
                     raise ValidationError
             else:
                 self.logger.error('Not username of viewer user account provided.')

@@ -584,40 +584,40 @@ def __check_command():
         if nargs==0:
             logger.error('Usage: localdbtool-upload comp <path/to/component/file>')
             logger.error('')
-            logger.error('Option \'comp\' requires a parameter')
+            logger.error('Option \'comp\' requires a parameter.')
             raise CommandError
         if args.log:
             logger.error('Usage: localdbtool-upload comp <path/to/component/file>')
             logger.error('')
-            logger.error('Option \'comp\' does not accept --log.')
+            logger.error('Option \'comp\' does not support an option "--log".')
             raise CommandError
     elif command[0]=='scan':
         if nargs==0:
             logger.error('Usage: localdbtool-upload scan <path/to/result/dir>')
             logger.error('')
-            logger.error('Option \'scan\' requires a parameter')
+            logger.error('Option \'scan\' requires a parameter.')
             raise CommandError
     elif command[0]=='dcs':
         if nargs==0:
             logger.error('Usage: localdbtool-upload dcs <path/to/result/dir>')
             logger.error('')
-            logger.error('Option \'dcs\' requires a parameter')
+            logger.error('Option \'dcs\' requires a parameter.')
             raise CommandError
     elif command[0]=='cache':
         if nargs==0:
             logger.error('Usage: localdbtool-upload cache scan')
             logger.error('   or: localdbtool-upload cache dcs')
             logger.error('')
-            logger.error('Option \'cache\' requires a parameter "scan" or "dcs"')
+            logger.error('Option \'cache\' requires a parameter "scan" or "dcs".')
             raise CommandError
     elif command[0]=='check':
         if args.log:
             logger.error('Usage: localdbtool-upload check')
             logger.error('')
-            logger.error('Option \'check\' does not accept --log.')
+            logger.error('Option \'check\' does not support an option "--log".')
             raise CommandError
     else:
-        logger.error('\'{}\' is not upload command. See \'localdbtool-upload --help\' to check available commands and options'.format(command[0]))
+        logger.error('\'{}\' is not upload command. See \'localdbtool-upload --help\' to check available commands and options.'.format(command[0]))
         raise CommandError
 
 def main():
@@ -631,8 +631,8 @@ def main():
     try:
         __check_command()
     except CommandError:
+        logger.error('')
         logger.error('Command Exception: Aborting...')
-        logger.info('------------------------------')
         sys.exit(1)
 
     option = command[0]

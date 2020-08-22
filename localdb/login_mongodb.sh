@@ -42,6 +42,7 @@ fi
 
 qc=false
 dbcfg=${HOME}/.yarr/localdb/${HOSTNAME}_database.json
+OPTIND=1
 while getopts hd:Q OPT
 do
     case ${OPT} in
@@ -87,17 +88,13 @@ with open(path, 'w') as f:
 EOF
 
 if "${qc}"; then
-${shell_dir}/bin/localdbtool-upload check --QC
+${shell_dir}/bin/localdbtool-retrieve user --user ${usercfg} --site ${sitecfg} --QC
 else
-${shell_dir}/bin/localdbtool-upload check
+${shell_dir}/bin/localdbtool-retrieve user --user ${usercfg} --site ${sitecfg}
 fi
 if [ $? -ne 0 ]; then
     echo ""
     printf '\033[31m%s\033[m\n' "[LDB] Login failed."
-    printf '\033[31m%s\033[m\n' "[LDB] Please make sure config files and connection to Local DB and try again."
-    printf '\033[31m%s\033[m\n' "        database config : ${dbcfg}"
-    printf '\033[31m%s\033[m\n' "        user config     : ${usercfg}"
-    printf '\033[31m%s\033[m\n' "        site config     : ${sitecfg}"
     unsetvariables
     unset username
     unset password

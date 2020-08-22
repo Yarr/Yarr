@@ -140,5 +140,33 @@ def readSiteCfg(args, log={}, path=''):
     logger.info('-> Setting site config: {}'.format(path))
     return cfg
 
+def writeUserCfg(doc={}, path=''):
+    """
+    This function writes user config file
+    """
+    if path=='': path = '{0}/.yarr/localdb/user.json'.format(home)
+    if not doc=={}:
+        writeJson(doc, path)
+    doc = readJson(path)
+    logger.info('-> Set user config: {}'.format(path))
+    logger.info('~~~ {')
+    for key in doc:
+        logger.info('~~~   "{0}": "{1}"'.format(key, doc[key]))
+    logger.info('~~~ }')
+
+def writeSiteCfg(doc={}, path=''):
+    """
+    This function writes site config file
+    """
+    if path=='': path = '{0}/.yarr/localdb/{1}_site.json'.format(home, hostname)
+    if not doc=={}:
+        writeJson(doc, path)
+    doc = readJson(path)
+    logger.info('-> Set site config: {}'.format(path))
+    logger.info('~~~ {')
+    for key in doc:
+        logger.info('~~~   "{0}": "{1}"'.format(key, doc[key]))
+    logger.info('~~~ }')
+
 def addInstanceMethod(Class, method):
     setattr(Class, method.__name__, method)

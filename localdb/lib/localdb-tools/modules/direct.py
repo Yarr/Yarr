@@ -24,6 +24,7 @@ import pytz
 from logging import getLogger
 logger = getLogger("Log").getChild("sub")
 global localdb
+global toolsdb
 # version of Local DB
 db_version = 1.01
 # path
@@ -37,6 +38,10 @@ class MissingData(Exception):
 def __set_localdb(i_localdb):
     global localdb
     localdb = i_localdb
+
+def __set_toolsdb(i_toolsdb):
+    global toolsdb
+    toolsdb = i_toolsdb
 
 ###########################
 ### Set timestamp to string
@@ -661,3 +666,37 @@ def __list_site():
     docs_list = list(set(docs_list))
 
     return docs_list
+
+#########################
+### Pull viewer user data
+def __pull_user(i_json):
+    docs = {}
+    query = {}
+    if not i_json.get('userName','')=='': query.update({ 'name'    : i_json['userName'] })
+    if not i_json.get('viewerUser','')=='': query.update({ 'username': i_json['viewerUser'] })
+    if not query=={}:
+        this_user = toolsdb.viewer.user.find_one(query)
+        if this_user:
+            docs.update({
+                'userName'   : this_user['name'],
+                'institution': this_user['institution'],
+                'description': 'viewer',
+                'viewerUser' : this_user['username']
+            })
+    return docs
+
+##################
+### Pull site data
+def __pull_site(i_json):
+    docs = {}
+    query = {}
+    if not i_json.get('institution','')=='': query.update({ 'institution': i_json['institution'] })
+    if not i_json.get('code','')=='': query.update({ 'code': i_json['code'] })
+    if not query=={}:
+        this_site = localdb.pd.institution.find_one(query)
+        if this_site:
+            docs.update({
+                'institution': this_site['institution'],
+                'code'       : this_site['code']
+            })
+    return docs

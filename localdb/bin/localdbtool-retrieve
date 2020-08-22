@@ -17,7 +17,6 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../lib/
 import db_logging
 import logging
 logger = logging.getLogger('Log')
-db_logging.setLog()
 
 ### functions
 import common
@@ -33,13 +32,21 @@ global my_user
 global my_pwd
 global authentication
 
+class CommandError(Exception):
+    pass
+
 def getArgs():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument(
-        "command",
-        help="option*\tfuntion\ninit\tFunction initialization & Connection check\nlog\tDisplay data log\npull\tData retrieve\nlist\tDisplay data list\ntest\tTesting command",
+        'command',
+        help="option*\tfuntion\n" +
+             "init\tFunction initialization & Connection check\n" +
+             "log\tDisplay data log\n" +
+             "pull\tData retrieve\n" +
+             "list\tDisplay data list\n" +
+             "user\tGet user&site data\n",
         type=str,
-        nargs='+'
+        nargs='*'
     )
     parser.add_argument('--config', help='Set User Config Path of Local DB Server.', type=str)
     parser.add_argument('--username', help='Set the User Name of Local DB Server.', type=str)
@@ -52,6 +59,7 @@ def getArgs():
     parser.add_argument('--directory', help='Provide directory name.', type=str, default='./db-data')
     parser.add_argument('--config_only', help='Set mode to pull config files only.', action='store_true')
     parser.add_argument('--create_config', help='Set path to connectivity config to create chip config files.', type=str)
+    parser.add_argument('--QC', help='Set QC Mode', action='store_true')
 
     args = parser.parse_args()
 
@@ -131,21 +139,72 @@ def __init():
 
 #####################
 # error exit function
-def __error_exit(command=''):
-    if   command=='init':
-        logger.error('Usage: localdbtool-retrieve init [--database <dbCfg>]')
-    elif command=='log':
+def __check_command():
+    """
+    This function checks command notation
+    If there is any mistake, this function outputs error message and raises CommandError
+    """
+    args = getArgs()
+    command = args.command
+    nargs = len(args.command)-1
+    if command==[]:
+        logger.error('Usage: localdbtool-retrieve <command> [--option]')
+        logger.error('These are common retrieve commands used in various situations:')
+        logger.error('')
+        logger.error('\tinit\t\tInitialize retrieve function and check connection to Local DB')
+        logger.error('\tlog\t\tDisplay test data log in Local DB')
+        logger.error('\tpull\t\tRetrieve data from Local DB')
+        logger.error('\tlist\t\tDisplay component/user/site data list')
+        logger.error('\tuser\t\tRetrieve user&site data from Local DB')
+        logger.error('')
+        logger.error('See \'localdbtool-retrieve --help\' to check available options')
+        logger.error('')
+        logger.error('The following argument is required: command')
+        raise CommandError
+    elif command[0]=='test':
+        pass
+    elif command[0]=='init':
+        if not nargs==0:
+            logger.error('Usage: localdbtool-retrieve init [--database <dbCfg>]')
+            logger.error('')
+            logger.error('Option \'init\' requires no parameters.')
+            raise CommandError
+    elif command[0]=='log':
+        if not nargs==0:
             logger.error('Usage: localdbtool-retrieve log [--database <dbCfg>] [--user <user_name>] [--site <site_name>] [--chip <chip_name>]')
-    elif command=='pull':
-        logger.error('Usage: localdbtool-retrieve pull --chip <chip_name> [--directory <dir>] [--database <dbCfg>]')
-        logger.error('   or: localdbtool-retrieve pull --test <test_ID> [--directory <dir>] [--database <dbCfg>]')
-    elif command=='directory':
+            logger.error('')
+            logger.error('Option \'log\' requires no parameters.')
+            raise CommandError
+    elif command[0]=='pull':
+        if (args.chip and args.test) or not nargs==0:
+            logger.error('Usage: localdbtool-retrieve pull [--directory <dir>] [--database <dbCfg>]')
+            logger.error('   or: localdbtool-retrieve pull --chip <chip_name> [--directory <dir>] [--database <dbCfg>]')
+            logger.error('   or: localdbtool-retrieve pull --test <test_ID> [--directory <dir>] [--database <dbCfg>]')
+            logger.error('')
+            logger.error('Option \'pull\' supports an option "--chip" or "--test".')
+            raise CommandError
+    elif command[0]=='list':
+        if not nargs==0 and not (nargs==1 and (command[1]=='component' or command[1]=='user' or command[1]=='site')):
+            logger.error('Usage: localdbtool-retrieve list')
+            logger.error('   or: localdbtool-retrieve list component')
+            logger.error('   or: localdbtool-retrieve list user')
+            logger.error('   or: localdbtool-retrieve list site')
+            logger.error('')
+            logger.error('Option \'list\' supports a parameter "component", "user", or "site".')
+            raise CommandError
+    elif command[0]=='user':
+        if not nargs==0:
+            logger.error('Usage: localdbtool-retrieve user [--database <dbCfg>] [--user <userCfg>] [--site <siteCfg>]')
+            logger.error('')
+            logger.error('Option \'user\' requires no parameters.')
+            raise CommandError
+    else:
+        logger.error('\'{}\' is not retrieve command. See \'localdbtool-retrieve --help\' to check available commands and options.'.format(command[0]))
+        raise CommandError
+
+def __error_exit(command=''):
+    if  command=='directory':
         logger.error('Not set directory name to "localdb"')
-    elif command=='list':
-        logger.error('Usage: localdbtool-retrieve list')
-        logger.error('   or: localdbtool-retrieve list component')
-        logger.error('   or: localdbtool-retrieve list user')
-        logger.error('   or: localdbtool-retrieve list site')
     elif command=='database' or command=='site' or command=='user':
         logger.error('There is no default {0} config in {1}/.yarr/localdb'.format(command, home))
         logger.error('Set it by path/to/YARR/localdb/setup_db.sh')
@@ -168,8 +227,17 @@ def main():
     command = args.command
     nargs = len(args.command)-1
 
+    try:
+        __check_command()
+    except CommandError:
+        logger.error('')
+        logger.error('Command Exception: Aborting...')
+        sys.exit(1)
+
     if command[0]=='test':
         sys.exit(0)
+
+    db_logging.setLog()
 
     logger.info('-----------------------')
 
@@ -180,7 +248,6 @@ def main():
         db_cfg = readJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
 
     if command[0]=='init':
-        if not nargs==0: __error_exit(command[0])
         logger.info('Function: Initialize')
         response = __init()
         logger.info('-----------------------')
@@ -198,13 +265,14 @@ def main():
             import direct as function
             db = response['db']
             localdb = db.getLocalDb()
+            toolsdb = db.getLocalDbTools()
             function.__set_localdb(localdb)
+            function.__set_toolsdb(toolsdb)
     elif args.create_config:
         import direct as function
     else: __error_exit('connection')
 
     if command[0]=='log':
-        if not nargs==0: __error_exit(command[0])
         r_json = function.__log(args)
         for test_data in r_json['log']:
             printLog('\033[1;33mtest data ID: {0} \033[0m'.format(test_data['runId']))
@@ -218,7 +286,6 @@ def main():
             else:
                 printLog('DCS Data  :')
                 for chip in test_data.get('environment',{}):
-##
                     if args.chip==chip:
                         printLog('   \033[1;31m{0} ({1})\033[0m'.format(', '.join(test_data['environment'][chip]), chip))
                     else:
@@ -227,7 +294,6 @@ def main():
         logger.info('-----------------------')
         sys.exit(0)
     if command[0]=='pull':
-        if (args.chip and args.test) or not nargs==0: __error_exit(command[0])
         # make directory
         dir_path = args.directory
         logger.info('Retrieve/Create data files in {}'.format(dir_path))
@@ -264,7 +330,6 @@ def main():
             opt = 'component'
         elif nargs==1 and (command[1]=='component' or command[1]=='user' or command[1]=='site'):
             opt = command[1]
-        else: __error_exit(command[0])
         if opt=='component':
             r_json = function.__list_component()
             printLog('')
@@ -307,6 +372,38 @@ def main():
                 printLog('- {0}'.format(site))
             printLog('')
 
+        logger.info('-----------------------')
+        sys.exit(0)
+
+    if command[0]=='user':
+        # user
+        user_path = ''
+        if args.user: user_path = args.user
+        else: user_path = '{0}/.yarr/localdb/user.json'.format(home)
+        user_json = readJson(user_path)
+        r_json = function.__pull_user(user_json)
+        if r_json=={} and args.QC:
+            logger.error('Not found QC user data registered in Local DB.')
+            logger.error('Please set your Local DB Viewer account correctly in')
+            logger.error('{{ "viewerUser": "xxx" }} in {}'.format(user_path))
+            logger.error('If you do not have such an account, please contact Local DB administrator in your institute.')
+            sys.exit(1)
+        common.writeUserCfg(r_json, user_path)
+
+        # site
+        site_path = ''
+        if args.site: site_path = args.site
+        else: site_path = '{0}/.yarr/localdb/{1}_site.json'.format(home, hostname)
+        site_json = common.readJson(site_path)
+        r_json = function.__pull_site(site_json)
+        if r_json=={} and args.QC:
+            r_json = function.__pull_site(user_json)
+        if r_json=={} and args.QC:
+            logger.error('Not found QC site data registered in Local DB.')
+            logger.error('Please set your institution correctly in ')
+            logger.error('{{ "code": "xxx" }} or {{ "institution": "xxx" }} in {}'.format(site_path))
+            sys.exit(1)
+        common.writeSiteCfg(r_json, site_path)
         logger.info('-----------------------')
         sys.exit(0)
 
