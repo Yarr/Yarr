@@ -106,11 +106,11 @@ class DBHandler {
                                std::string /*chipname*/,
                                std::string /*i_scanlog_path*/);
         /***
-        retrieve connectivity and chip configs
+        retrieve data
         ***/
-        int retrieveComponentData(std::string i_comp_name="",
-                                  std::string i_path="",
-                                  std::string i_dir="");
+        int retrieveData(std::string i_comp_name="",
+                         std::string i_path="",
+                         std::string i_dir="");
         void cleanDataDir();
 
 

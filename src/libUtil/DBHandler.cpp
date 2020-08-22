@@ -602,15 +602,16 @@ int DBHandler::retrieveFromInflux(std::string i_influx_conn_path, std::string ch
     }
 }
 
-int DBHandler::retrieveComponentData(std::string i_comp_name, std::string i_path, std::string i_dir) {
+int DBHandler::retrieveData(std::string i_comp_name, std::string i_path, std::string i_dir) {
 #if DBDEBUG
-    std::cout << "DBHandler: Retrieve Config Files from Local DB." << std::endl;
+    std::cout << "DBHandler: Retrieve Data from Local DB." << std::endl;
 #endif
     if (this->checkCommand("retrieve")!=0) {
-        dlog->error("Could not retrieve component data from Local DB");
+        dlog->error("Could not retrieve data from Local DB");
         return 1;
     } else {
-        std::string cmd = m_retrieve_command+" pull --config_only";
+        std::string cmd = m_retrieve_command+" pull";
+        //if (i_config) cmd = cmd + " --config_only";//TODO
         if (i_comp_name!="") cmd = cmd + " --chip "+i_comp_name;
         if (i_dir!="") cmd = cmd + " --directory " + i_dir;
         if (i_path!="") cmd = cmd + " --create_config " + i_path;

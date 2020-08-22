@@ -440,7 +440,7 @@ def writeDcs(self, i_dir):
     self.checkConfigFormat(i_dir, log_json, log_path)
     self.checkDb(log_json, log_path)
 
-    self.logger.info('-> Setting DCS config: {}'.format(log_path))
+    self.logger.info('-> Setting DCS Log {}'.format(log_path))
     self.verifyData(log_json)
     self.setDcs()
 

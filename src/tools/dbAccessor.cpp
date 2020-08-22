@@ -175,8 +175,9 @@ int main(int argc, char *argv[]){
     // Retrieve/Create config files
     if (commandType == "Config") {
         logger->info("DBHandler: Retrieve Config Files");
+        if (comp_name
         database->initialize(db_cfg_path, commandLine, setQCMode, setInteractiveMode);
-        status = database->retrieveComponentData(comp_name, conn_cfg_path, output_dir_path);
+        status = database->retrieveData(comp_name, conn_cfg_path, output_dir_path);
     }
 
     // cache DCS
@@ -234,14 +235,14 @@ void printHelp() {
     std::cout << std::endl;
     std::cout << "    -h                     Shows this." << std::endl;
     std::cout << "    -N                     Check the connection to Local DB." << std::endl;
-    std::cout << "    -S <result dir>        Upload scan data from the specified result directory into Local DB." << std::endl;
+    std::cout << "    -S <result dir>        Upload scan data from the specified scan result directory into Local DB." << std::endl;
     std::cout << "    -E <dcs.json>          Upload DCS data according to the specified DCS config file into Local DB." << std::endl;
-    std::cout << "       -s <scanLog.json>   Provide path to scan log file of result data to link the DCS data." << std::endl;
+    std::cout << "       -s <scanLog.json>   Provide path to log file of scan result data to link the DCS data." << std::endl;
     std::cout << "    -F <influx.json>       Retrieve DCS data from influxDB and Upload the data according to the specified influxDB config file into Local DB." << std::endl;
     std::cout << "       -n <chip name>      Provide chip name to link the DCS data." << std::endl;
-    std::cout << "       -s <scanLog.json>   Provide path to scan log file of result data to link the DCS data." << std::endl;
+    std::cout << "       -s <scanLog.json>   Provide path to log file of scan result data to link the DCS data." << std::endl;
     std::cout << "    -R                     Upload scan/DCS data recorded in the cache ($HOME/.yarr/localdb/run.dat or dcs.dat) into Local DB." << std::endl;
-    std::cout << "    -D                     Retrieve/Create config files from Local DB. (Default. most recently saved data)" << std::endl;
+    std::cout << "    -D                     Retrieve/Create data from Local DB. (Default. most recently saved data)" << std::endl;
     std::cout << "       [-n <cmp name>]     Provide component (chip/module) name." << std::endl;
     std::cout << "       [-p <output dir>]   Provide path to directory to put config files. (Default. ./db-data)" << std::endl;
     std::cout << "       [-c <cmp.json>]     Provide path to component connectivity config file to create chip config files." << std::endl;
