@@ -294,7 +294,7 @@ For the defaul settings and a fully depleated sensor, the OccupancyMap.png plot 
 
 To identify the threhsold at which cross-talk appear, run the following command:
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_crosstalk_scan.json  -p
+bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_crosstalkscan.json  -p
 ```
 
 Config parameters:
@@ -325,7 +325,7 @@ Example of the s-curve, threshold distribution, threshold map and noise distribu
 
 To run do
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_crosstalk_scan_checkBumpBonding.json  -p
+bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_crosstalkscan_checkBumpBonding.json  -p
 ```
 There are 2 ways to bump bond 25x100 sensor pixels onto the 50x50 chip pixels. This scan shows crosstalk for sensor type 1 and no crosstalk for sensor type 0 (50x50) or 2 (25x100 but different bump bonding scheme than type 1) as can be distinguished below:
 
