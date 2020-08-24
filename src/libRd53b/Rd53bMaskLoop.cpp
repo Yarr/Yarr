@@ -14,6 +14,8 @@ namespace {
   auto logger = logging::make_log("Rd53bMaskLoop");
 }
 
+enum MaskType {StandardMask = 0, CrossTalkMask = 1, CrossTalkMaskv2 = 2, PToTMask = 3};
+
 Rd53bMaskLoop::Rd53bMaskLoop() : LoopActionBase(LOOP_STYLE_MASK) {
     min = 0;
     max = 64;
@@ -21,6 +23,7 @@ Rd53bMaskLoop::Rd53bMaskLoop() : LoopActionBase(LOOP_STYLE_MASK) {
     m_cur = 0;
     loopType = typeid(this);
     m_done = false;
+    m_maskType = StandardMask;
 }
 
 void Rd53bMaskLoop::init() {
@@ -106,7 +109,7 @@ void Rd53bMaskLoop::end() {
 bool Rd53bMaskLoop::applyMask(unsigned col, unsigned row) {
     // This is the mask pattern
     unsigned core_row = row/8;
-    unsigned serial = (core_row*64)+((col+(core_row%8))%8)*8+row%8;
+    unsigned serial = (m_maskType == PToTMask) ? (row * 2 + (col % 8)/4) : (core_row*64)+((col+(core_row%8))%8)*8+row%8;
     //unsigned serial = (col%8*Rd53b::n_Row)+row;
     if ((serial%max) == m_cur){
         return true;
@@ -118,6 +121,7 @@ void Rd53bMaskLoop::writeConfig(json &j) {
     j["min"] = min;
     j["max"] = max;
     j["step"] = step;
+    j["maskType"] = m_maskType;
 }
 
 void Rd53bMaskLoop::loadConfig(json &j) {
@@ -127,4 +131,6 @@ void Rd53bMaskLoop::loadConfig(json &j) {
         max = j["max"];
     if (!j["step"].empty())
         step = j["step"];
+    if (!j["maskType"].empty())
+        m_maskType = j["maskType"];
 }
