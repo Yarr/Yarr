@@ -83,7 +83,7 @@ void Rd53bMaskLoop::execPart1() {
             }
         }
         
-        rd53b->configurePixels();
+        rd53b->configurePixels(modPixels);
         while(!g_tx->isCmdEmpty()) {}
     }
     
