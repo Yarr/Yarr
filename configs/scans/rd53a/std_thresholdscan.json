@@ -4,13 +4,13 @@
       "0": {
         "algorithm": "ScurveFitter"
       },
-     "1": {
+    "1": {
         "algorithm": "OccupancyAnalysis",
         "config": {
           "createMask": false
         }
       },
-      "n_count": 2
+      "n_count": 1
     },
     "histogrammer": {
       "0": {
