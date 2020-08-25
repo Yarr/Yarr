@@ -48,8 +48,7 @@
           "max": 768,
           "min": 0,
           "step": 1,
-          "maskType": 3,
-          "nSteps": 768
+          "maskType": 3
         },
         "loopAction": "Rd53bMaskLoop"
       },

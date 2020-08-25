@@ -28,7 +28,6 @@ class Rd53bMaskLoop: public LoopActionBase {
         unsigned m_cur;
         std::map<FrontEnd*, std::array<std::array<uint16_t, Rd53b::n_Row>, Rd53b::n_DC> > m_pixRegs;
         int m_maskType;
-        unsigned m_nSteps;
         
         void init();
         void end();
