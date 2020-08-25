@@ -86,7 +86,7 @@
         "Latency": 60,
         "TotEnPtot": 1,
         "TotEnPtoa": 1,
-        "TotPtotLatency": 3
+        "TotPtotLatency": 0
     }
   }
 }
