@@ -33,7 +33,7 @@ source /opt/Xilinx/Vivado_Lab/2016.4/settings64.sh
 In order to flash the firmware, download the following script: [flash.sh](http://yarr.web.cern.ch/yarr/firmware/flash.sh)
 
 ```bash
-$ wget --backup=1 http://yarr.web.cern.ch/yarr/firmware/flash.sh
+$ wget --backups=1 http://yarr.web.cern.ch/yarr/firmware/flash.sh
 $ <text>
 $ ./flash.sh
 ```

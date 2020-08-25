@@ -33,6 +33,15 @@ $ sudo modprobe -v specDriver
 insmod /lib/modules/3.10.0-229.14.1.el7.x86_64/extra/specDriver.ko
 ```
 
+If you encounter something like
+```
+make -C /lib/modules/3.10.0-1127.18.2.el7.x86_64/build M=/home/$USER/Yarr/src/kernel modules
+make[1]: *** /lib/modules/3.10.0-1127.18.2.el7.x86_64/build: No such file or directory.  Stop.
+make: *** [Makefile:10: default] Error 2
+```
+then the ``kernel-devel`` package is missing. Install with ``yum install kernel-devel-$(uname -r)``.
+
+
 In case you run into a problem during ``modprobe`` which looks like this: ``modprobe: ERROR: could not insert 'specDriver': Required key not available``. Do the following:
 ```bash
 $ sudo yum install mokutil
