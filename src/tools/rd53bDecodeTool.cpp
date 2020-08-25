@@ -392,19 +392,17 @@ int main(int argc, char **argv)
                     // uint16_t PToT[3] = {0, 0, 0}, PToA[2] = {0, 0};
                     uint8_t hitsub = (hitmap >> (ibus << 2)) & 0xF;
                     if (hitsub) {
-                        uint16_t ptot_ptoa_buf = 0;
-                        uint8_t fourbit = 0;
+                        uint16_t ptot_ptoa_buf = 0xFFFF;
                         for(int iread = 0; iread < 4; iread++){
                             if ((hitsub >> iread) & 0x1){
-                                fourbit = retrieve(p, h, 4);
+                                uint8_t fourbit = retrieve(p, h, 4);
+                                ptot_ptoa_buf &= ~((~fourbit & 0xF) << (iread << 2));
                                 h->fill(std::bitset<4>(fourbit).to_string(), "", "");
                             }
-                            else{
-                                fourbit = 0xF; // Suppressed
+                            else
                                 h->fill("(1111)", "", "");
-                            }
-                            ptot_ptoa_buf |= (fourbit << (iread << 2));
                         }
+                        std::cout << std::bitset<16>(ptot_ptoa_buf) << std::endl;
                         uint16_t PToT = ptot_ptoa_buf & 0x7FF;
                         uint8_t PToA = ptot_ptoa_buf >> 11;
                         h->fill("", std::to_string(PToT), "PToT" + std::to_string(ibus));

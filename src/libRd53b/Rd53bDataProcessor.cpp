@@ -287,14 +287,12 @@ void Rd53bDataProcessor::process_core()
                             uint8_t hitsub = (hitmap >> (ibus << 2)) & 0xF;
                             if (hitsub)
                             {
-                                uint16_t ptot_ptoa_buf = 0;
+                                uint16_t ptot_ptoa_buf = 0xFFFF;
                                 // PToT first 8 bits
                                 for (unsigned iread = 0; iread < 4; iread++)
                                 {
                                     if ((hitsub >> iread) & 0x1)
-                                        ptot_ptoa_buf |= (retrieve(4) << (iread << 2));
-                                    else
-                                        ptot_ptoa_buf |= (0xF << (iread << 2)); // Suppressed
+                                        ptot_ptoa_buf &= ~((~retrieve(4) & 0xF) << (iread << 2));
                                 }
 
                                 uint16_t PToT = ptot_ptoa_buf & 0x7FF;
