@@ -3,6 +3,8 @@
 
 #include <bitset>
 #include <getopt.h>
+#include <sstream>
+#include <fstream>
 
 static constexpr uint8_t _LUT_BinaryTreeMaskSize[3] = {4, 2, 1};
 static constexpr uint8_t _LUT_BinaryTreeMask[3][8] = {
