@@ -107,8 +107,7 @@ void Rd53bCoreColLoop::setCores() {
     rd53b->writeRegister(&Rd53b::HitOrMask2, ~m_coreCols[2]);
     rd53b->writeRegister(&Rd53b::HitOrMask3, ~m_coreCols[3]);	
     // Turn on PToT if needed
-    if (m_usePToT)
-    {
+    if (m_usePToT) {
         rd53b->writeRegister(&Rd53b::PtotCoreColEn0, m_coreCols[0]);
         rd53b->writeRegister(&Rd53b::PtotCoreColEn1, m_coreCols[1]);
         rd53b->writeRegister(&Rd53b::PtotCoreColEn2, m_coreCols[2]);
