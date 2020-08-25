@@ -39,7 +39,8 @@ public:
 	std::unique_ptr<RawData> _curIn;
         void setCompressedHitmap(bool flag){_isCompressedHitmap = flag;}
 	void setDropToT(bool flag){_dropToT = flag;}
-	
+	void setUsePToT(bool flag){_usePToT = flag;}
+
 private:
 	std::vector<std::unique_ptr<std::thread>> thread_ptrs;
 	ClipBoard<RawDataContainer> *m_input;
@@ -54,6 +55,8 @@ private:
 
         bool _isCompressedHitmap; // Flag for toggle hitmap type, true for compressed, false for raw
 	bool _dropToT;
+	bool _usePToT;
+
 	// Inline functions frequently used
 	inline uint64_t retrieve(const unsigned length, const bool checkEOS = false);	// Retrieve bit string with length
 	inline void rollBack(const unsigned length);									// Roll back bit index

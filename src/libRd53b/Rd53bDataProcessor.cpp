@@ -18,6 +18,12 @@ using namespace RD53BDecoding;
 #define likely(x) __builtin_expect((x), 1)
 #define unlikely(x) __builtin_expect((x), 0)
 
+const uint8_t PToT_maskStaging[4][4] = {
+    {0, 1, 2, 3},
+    {4, 5, 6, 7},
+    {2, 3, 0, 1},
+    {6, 7, 4, 5}};
+
 namespace
 {
     auto logger = logging::make_log("Rd53bDataProcessor");
@@ -37,6 +43,7 @@ Rd53bDataProcessor::Rd53bDataProcessor()
 
     _isCompressedHitmap = true; // True by default
     _dropToT = false;           /* False by default */
+    _usePToT = false; // For now hard-coded
 }
 
 Rd53bDataProcessor::~Rd53bDataProcessor()
@@ -270,31 +277,90 @@ void Rd53bDataProcessor::process_core()
                             rollBack((_LUT_BinaryTreeHitMap[hitmap_raw] & 0xFF0000) >> 16);
                         }
                     }
-                    /* If drop ToT, the ToT value saved in the output event will be 0 */
-                    uint64_t ToT = _dropToT ? 0 : retrieve(_LUT_PlainHMap_To_ColRow_ArrSize[hitmap] << 2);
-                    if (_LUT_PlainHMap_To_ColRow_ArrSize[hitmap] == 0)
-                    {
-                        logger->warn("Received fragment with no ToT! ({} , {})", ccol, qrow);
-                    }
-                    for (unsigned ihit = 0; ihit < _LUT_PlainHMap_To_ColRow_ArrSize[hitmap]; ++ihit)
-                    {
-                        const uint8_t pix_tot = (ToT >> (ihit << 2)) & 0xF;
-                        //logger->info("Hit: ccol({}) qrow({})) ", ccol, qrow);
-                        // First pixel is 1,1, last pixel is 400,384
-                        const uint16_t pix_col = ((ccol - 1) * 8) + (_LUT_PlainHMap_To_ColRow[hitmap][ihit] >> 4) + 1;
-                        const uint16_t pix_row = ((qrow)*2) + (_LUT_PlainHMap_To_ColRow[hitmap][ihit] & 0xF) + 1;
 
-                        // For now fill in events without checking whether the addresses are valid
-                        if (events[channel] == 0)
+                    // Check whether it is precision ToT data
+                    if (qrow >= 196)
+                    {
+                        // logger->info("Hit: ccol({}) qrow({}) hitmap (0x{:x})) ", ccol, qrow, hitmap);
+                        for (unsigned ibus = 0; ibus < 4; ibus++)
                         {
-                            logger->warn("[{}] No header in data fragment!", channel);
-                            curOut[channel]->newEvent(666, l1id[channel], bcid[channel]);
-                            events[channel]++;
-                        }
+                            uint8_t hitsub = (hitmap >> (ibus << 2)) & 0xF;
+                            if (hitsub)
+                            {
+                                uint16_t PToT = 0;
+                                // PToT first 8 bits
+                                for (unsigned iread = 0; iread < 2; iread++)
+                                {
+                                    if ((hitsub >> iread) & 0x1)
+                                        PToT += (retrieve(4) << (iread << 2));
+                                    else
+                                        PToT += (0xF << (iread << 2)); // Suppressed
+                                }
 
-                        curOut[channel]->curEvent->addHit(pix_row, pix_col, pix_tot);
-                        //logger->info("Hit: row({}) col({}) tot({}) ", pix_row, pix_col, pix_tot);
-                        hits[channel]++;
+                                // PToT last 3 bits
+                                // These are the most significant bits of the PToT. It is very unlikely that 111 (00000000) = 1792 will show up, therefore we will not consider the suppression of 1111 here.
+                                // Neglect the MSB, which is buggy
+                                PToT += ((retrieve(3) & 0x3) << 8);
+
+                                // PToA
+                                uint8_t PToA = retrieve(1);
+
+                                if ((hitsub >> 3) & 0x1)
+                                    PToA += (retrieve(4) << 1);
+                                else
+                                    PToA += (0xF << 1); // Suppressed
+
+                                if (_usePToT)
+                                {
+                                    if (events[channel] == 0)
+                                    {
+                                        logger->warn("[{}] No header in data fragment!", channel);
+                                        curOut[channel]->newEvent(666, l1id[channel], bcid[channel]);
+                                        events[channel]++;
+                                    }
+
+                                    // Reverse enginner the pixel address
+                                    // MUST PUT THE MASK STAGING LOOP AT THE BEGINNING
+                                    const unsigned step = curOut[channel]->lStat.get(0);
+                                    const uint16_t pix_col = (ccol - 1) * 8 + PToT_maskStaging[step % 4][ibus] + 1;
+                                    const uint16_t pix_row = step / 2 + 1;
+                                    // logger->info("Hit: row({}) col({}) tot({}) ", pix_row, pix_col, PToT);
+                                    // curOut[channel]->curEvent->addHit(pix_row, pix_col, (PToT >> 4) - 1);
+                                    curOut[channel]->curEvent->addHit(pix_row, pix_col, PToT);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        /* If drop ToT, the ToT value saved in the output event will be 0 */
+                        uint64_t ToT = _dropToT ? 0 : retrieve(_LUT_PlainHMap_To_ColRow_ArrSize[hitmap] << 2);
+                        if (!_usePToT)
+                        {
+                            if (_LUT_PlainHMap_To_ColRow_ArrSize[hitmap] == 0)
+                            {
+                                logger->warn("Received fragment with no ToT! ({} , {})", ccol, qrow);
+                            }
+                            for (unsigned ihit = 0; ihit < _LUT_PlainHMap_To_ColRow_ArrSize[hitmap]; ++ihit)
+                            {
+                                const uint8_t pix_tot = (ToT >> (ihit << 2)) & 0xF;
+                                // First pixel is 1,1, last pixel is 400,384
+                                const uint16_t pix_col = ((ccol - 1) * 8) + (_LUT_PlainHMap_To_ColRow[hitmap][ihit] >> 4) + 1;
+                                const uint16_t pix_row = ((qrow)*2) + (_LUT_PlainHMap_To_ColRow[hitmap][ihit] & 0xF) + 1;
+
+                                // For now fill in events without checking whether the addresses are valid
+                                if (events[channel] == 0)
+                                {
+                                    logger->warn("[{}] No header in data fragment!", channel);
+                                    curOut[channel]->newEvent(666, l1id[channel], bcid[channel]);
+                                    events[channel]++;
+                                }
+
+                                curOut[channel]->curEvent->addHit(pix_row, pix_col, pix_tot);
+                                //logger->info("Hit: row({}) col({}) tot({}) ", pix_row, pix_col, pix_tot);
+                                hits[channel]++;
+                            }
+                        }
                     }
                 } while (!(islast_isneighbor_qrow & 0x200));
             }
