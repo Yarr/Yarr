@@ -48,8 +48,8 @@
           "max": 768,
           "min": 0,
           "step": 1,
-		  "maskType": 3,
-		  "nSteps": 768
+          "maskType": 3,
+          "nSteps": 768
         },
         "loopAction": "Rd53bMaskLoop"
       },
@@ -59,7 +59,7 @@
           "min": 0,
           "step": 1,
           "nSteps": 10,
-		  "usePToT": true
+          "usePToT": true
         },
         "loopAction": "Rd53bCoreColLoop"
       },
@@ -86,9 +86,9 @@
         "InjVcalRange": 1,
         "InjDigEn": 0,
         "Latency": 45,
-		"TotEnPtot": 1,
-		"TotEnPtoa": 1,
-		"TotPtotLatency": 10
+        "TotEnPtot": 1,
+        "TotEnPtoa": 1,
+        "TotPtotLatency": 10
     }
   }
 }
