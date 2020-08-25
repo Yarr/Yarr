@@ -6,9 +6,9 @@
       },
       "1": {
         "algorithm": "OccupancyAnalysis",
-		"config": {
-		"createMask": false
-		}
+        "config": {
+          "createMask": false
+        }
       },
       "2": {
         "algorithm": "L1Analysis"
