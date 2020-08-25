@@ -69,7 +69,7 @@
           "noInject": false,
           "time": 0,
           "edgeMode": true,
-          "edgeDuration": 35
+          "edgeDuration": 20
         },
         "loopAction": "Rd53bTriggerLoop"
       },
