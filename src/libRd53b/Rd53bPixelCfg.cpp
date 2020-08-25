@@ -71,7 +71,7 @@ unsigned Rd53bPixelCfg::getHitbus(unsigned col, unsigned row) {
 int Rd53bPixelCfg::getTDAC(unsigned col, unsigned row) {
     Rd53bPixelCfg::pixelBits reg;
     reg.u8 = (pixRegs[col/2][row] >> ((col&0x1)*8)) & 0xFF;
-    return (reg.s.tdac*(-1*reg.s.sign));
+    return (reg.s.tdac * (reg.s.sign == 0 ? +1 : -1));
 }
 
 void Rd53bPixelCfg::toJson(json &j) {

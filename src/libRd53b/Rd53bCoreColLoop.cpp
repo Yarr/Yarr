@@ -26,6 +26,7 @@ Rd53bCoreColLoop::Rd53bCoreColLoop() : LoopActionBase(LOOP_STYLE_MASK){
     m_coreCols = {0x0, 0x0, 0x0, 0x0};
     loopType = typeid(this);
     m_done = false;
+    m_usePToT = false;
 }
 
 void Rd53bCoreColLoop::init() {
@@ -67,6 +68,7 @@ void Rd53bCoreColLoop::writeConfig(json &j) {
     j["max"] = m_maxCore;
     j["step"] = step;
     j["nSteps"] = m_nSteps;
+    j["usePToT"] = m_usePToT;
 }
 
 void Rd53bCoreColLoop::loadConfig(json &j) {
@@ -78,6 +80,8 @@ void Rd53bCoreColLoop::loadConfig(json &j) {
         step = j["step"];
     if (!j["nSteps"].empty())
         m_nSteps = j["nSteps"];
+    if (!j["usePToT"].empty())
+        m_usePToT = j["usePToT"];		
     min = 0;
     max = m_nSteps;
     if (m_nSteps > (m_maxCore-m_minCore) )
@@ -102,6 +106,14 @@ void Rd53bCoreColLoop::setCores() {
     rd53b->writeRegister(&Rd53b::HitOrMask1, ~m_coreCols[1]);
     rd53b->writeRegister(&Rd53b::HitOrMask2, ~m_coreCols[2]);
     rd53b->writeRegister(&Rd53b::HitOrMask3, ~m_coreCols[3]);	
+    // Turn on PToT if needed
+    if (m_usePToT)
+    {
+        rd53b->writeRegister(&Rd53b::PtotCoreColEn0, m_coreCols[0]);
+        rd53b->writeRegister(&Rd53b::PtotCoreColEn1, m_coreCols[1]);
+        rd53b->writeRegister(&Rd53b::PtotCoreColEn2, m_coreCols[2]);
+        rd53b->writeRegister(&Rd53b::PtotCoreColEn3, m_coreCols[3]);
+    }
     while(!g_tx->isCmdEmpty()) {}
 }
 
