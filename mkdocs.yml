@@ -9,6 +9,7 @@ pages:
     - FE-I4: fei4.md
     - FE65-P2: fe65p2.md
     - RD53A: rd53a.md
+    - RD53B: rd53b.md
     - Star: star.md
     - Local DB: localdb.md
     - Plotting Tools: plotting.md
