@@ -386,11 +386,52 @@ int main(int argc, char **argv)
 				h->fill(std::bitset<16>(hitmap).to_string(), "", "Hit map");
 			}
 
-			nHits += RD53BDecoding::_LUT_PlainHMap_To_ColRow_ArrSize[hitmap];
-			for (int ihit = 0; ihit < RD53BDecoding::_LUT_PlainHMap_To_ColRow_ArrSize[hitmap]; ++ihit)
-			{
-				uint8_t pix_tot = retrieve(p, h, 4);
-				h->fill(std::bitset<4>(pix_tot).to_string(), std::to_string(pix_tot), "ToT" + std::to_string(ihit));
+			// Precision ToT data
+			if (qrow == 196) {
+				for (int ibus = 0; ibus < 4; ibus++) {
+					uint16_t PToT[3] = {0, 0, 0}, PToA[2] = {0, 0};
+					uint8_t hitsub = (hitmap >> (ibus << 2)) & 0xF;
+					if (hitsub) {
+						// PToT
+						for(int iread = 0; iread < 2; iread++){
+							if ((hitsub >> iread) & 0x1){
+								PToT[iread] = retrieve(p, h, 4);
+								h->fill(std::bitset<4>(PToT[iread]).to_string(), std::to_string(PToT[iread] << (iread << 2)), "");
+							}
+							else{
+								PToT[iread] = 0xF; // Suppressed
+								h->fill("(1111)", std::to_string(PToT[iread] << (iread << 2)), "");
+							}
+						}
+						// These are the highest bits of the PToT. It is very unlikely that 111 (00000000) = 1792 will show up, therefore we will not consider the suppression of 1111 here.
+						// Neglect the MSB, which is buggy
+						PToT[2] = retrieve(p, h, 3) & 0x3;
+						
+						h->fill(std::bitset<3>(PToT[2]).to_string(), std::to_string(PToT[2] << 8), "");
+
+						h->fill("", std::to_string((PToT[2] << 8) + (PToT[1] << 4) + PToT[0]), "PToT" + std::to_string(ibus));
+						// PToA
+						PToA[0] = retrieve(p, h, 1);
+						h->fill(std::bitset<1>(PToA[0]).to_string(), std::to_string(PToA[0]), "");
+						if ((hitsub >> 3) & 0x1){
+							PToA[1] = retrieve(p, h, 4);
+							h->fill(std::bitset<4>(PToA[1]).to_string(), std::to_string(PToA[1] << 1), "");
+						}
+						else{
+							PToA[1] = 0xF; // Suppressed
+							h->fill("(1111)", std::to_string(PToA[1] << 1), "");
+						}
+						h->fill("", std::to_string((PToA[1] << 1) + PToA[0]), "PToA" + std::to_string(ibus));
+					}
+				}
+			}
+			else{
+				nHits += RD53BDecoding::_LUT_PlainHMap_To_ColRow_ArrSize[hitmap];
+				for (int ihit = 0; ihit < RD53BDecoding::_LUT_PlainHMap_To_ColRow_ArrSize[hitmap]; ++ihit)
+				{
+					uint8_t pix_tot = retrieve(p, h, 4);
+					h->fill(std::bitset<4>(pix_tot).to_string(), std::to_string(pix_tot), "ToT" + std::to_string(ihit));
+				}
 			}
 		} while (!islast);
 	}
