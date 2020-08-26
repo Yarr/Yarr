@@ -287,28 +287,16 @@ void Rd53bDataProcessor::process_core()
                             uint8_t hitsub = (hitmap >> (ibus << 2)) & 0xF;
                             if (hitsub)
                             {
-                                uint16_t PToT = 0;
+                                uint16_t ptot_ptoa_buf = 0xFFFF;
                                 // PToT first 8 bits
-                                for (unsigned iread = 0; iread < 2; iread++)
+                                for (unsigned iread = 0; iread < 4; iread++)
                                 {
                                     if ((hitsub >> iread) & 0x1)
-                                        PToT += (retrieve(4) << (iread << 2));
-                                    else
-                                        PToT += (0xF << (iread << 2)); // Suppressed
+                                        ptot_ptoa_buf &= ~((~retrieve(4) & 0xF) << (iread << 2));
                                 }
 
-                                // PToT last 3 bits
-                                // These are the most significant bits of the PToT. It is very unlikely that 111 (00000000) = 1792 will show up, therefore we will not consider the suppression of 1111 here.
-                                // Neglect the MSB, which is buggy
-                                PToT += ((retrieve(3) & 0x3) << 8);
-
-                                // PToA
-                                uint8_t PToA = retrieve(1);
-
-                                if ((hitsub >> 3) & 0x1)
-                                    PToA += (retrieve(4) << 1);
-                                else
-                                    PToA += (0xF << 1); // Suppressed
+                                uint16_t PToT = ptot_ptoa_buf & 0x7FF;
+                                uint8_t PToA = ptot_ptoa_buf >> 11;
 
                                 if (_usePToT)
                                 {
