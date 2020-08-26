@@ -402,7 +402,7 @@ int main(int argc, char **argv)
                             else
                                 h->fill("(1111)", "", "");
                         }
-                        std::cout << std::bitset<16>(ptot_ptoa_buf) << std::endl;
+
                         uint16_t PToT = ptot_ptoa_buf & 0x7FF;
                         uint8_t PToA = ptot_ptoa_buf >> 11;
                         h->fill("", std::to_string(PToT), "PToT" + std::to_string(ibus));
