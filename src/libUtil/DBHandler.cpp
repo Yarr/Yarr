@@ -52,6 +52,7 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_command, boo
     m_retrieve_command = yarr_bin_path + "/../localdb/bin/localdbtool-retrieve";
     m_influx_command   = yarr_bin_path + "/../localdb/bin/influxdbtool-retrieve";
 
+    return;
 }
 
 void DBHandler::alert(std::string i_function, std::string i_message, std::string i_type) {
@@ -194,6 +195,8 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir, bool i_back, bo
     }
     // initialize
     m_db_cfg_path = "";
+
+    return;
 }
 
 int DBHandler::setComponent(std::string i_conn_path, std::string i_user_cfg_path, std::string i_site_cfg_path) {
@@ -212,6 +215,7 @@ int DBHandler::setComponent(std::string i_conn_path, std::string i_user_cfg_path
     } else {
         return 1;
     }
+    return 0;
 }
 
 int DBHandler::setCache(std::string i_user_cfg_path, std::string i_site_cfg_path) {
@@ -568,9 +572,10 @@ void DBHandler::mkdir(std::string i_dir_path) {
         std::string function = __PRETTY_FUNCTION__;
         this->alert(function, message); return;
     }
+    return;
 }
 
-int DBHandler::retrieveFromInflux(std::string i_influx_conn_path, std::string chip_name, std::string i_scanlog_path){
+int DBHandler::retrieveFromInflux(std::string i_influx_conn_path, std::string chip_name, std::string i_scanlog_path) {
     std::string log_path = this->getAbsPath(i_scanlog_path);
     std::string conn_path = this->getAbsPath(i_influx_conn_path);
 
@@ -580,6 +585,7 @@ int DBHandler::retrieveFromInflux(std::string i_influx_conn_path, std::string ch
     }
     if (this->checkCommand("influx")!=0) {
         dlog->error("Could not retrieve DCS data from Local DB");
+        return 1;
     } else {
         std::string cmd = m_influx_command + " retrieve --chip " + chip_name +" -s "+log_path+" --dcs_config "+conn_path;
         if(system(cmd.c_str())==0){
@@ -588,6 +594,7 @@ int DBHandler::retrieveFromInflux(std::string i_influx_conn_path, std::string ch
             return 1;
         }
     }
+    return 0;
 }
 
 int DBHandler::retrieveData(std::string i_comp_name, std::string i_path, std::string i_dir) {
@@ -612,4 +619,5 @@ void DBHandler::cleanDataDir(){
     std::string cmd="";
     cmd = m_influx_command + " remove -s /tmp/";
     system(cmd.c_str());
+    return;
 }
