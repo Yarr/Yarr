@@ -80,16 +80,16 @@ def getArgs():
         type=str,
         nargs='*'
     )
-    parser.add_argument('--config',     help='Set User Config Path of Local DB Server.', type=str)
-    parser.add_argument('--username',   help='Set the User Name of Local DB Server.',    type=str)
-    parser.add_argument('--password',   help='Set the Password of Local DB Server.',     type=str)
-    parser.add_argument('--database',   help='Set Database Config Path',                 type=str)
-    parser.add_argument('--user',       help='Set User Config Path',                     type=str)
-    parser.add_argument('--site',       help='Set Site Config Path',                     type=str)
-    parser.add_argument('--conn',       help='Set Connectivity Config Path',             type=str)
-    parser.add_argument('--log',        help='Set Log Mode',                             action='store_true')
-    parser.add_argument('--interactive',help='Set Interactive Mode',                     action='store_true')
-    parser.add_argument('--QC',         help='Set QC Mode',                              action='store_true')
+    parser.add_argument('--config',         help='Set User Config Path of Local DB Server.', type=str)
+    parser.add_argument('--username',       help='Set the User Name of Local DB Server.',    type=str)
+    parser.add_argument('--password',       help='Set the Password of Local DB Server.',     type=str)
+    parser.add_argument('--database', '-d', help='Set Database Config Path',                 type=str)
+    parser.add_argument('--user', '-u',     help='Set User Config Path',                     type=str)
+    parser.add_argument('--site', '-i',     help='Set Site Config Path',                     type=str)
+    parser.add_argument('--conn',           help='Set Connectivity Config Path',             type=str)
+    parser.add_argument('--log',            help='Set Log Mode',                             action='store_true')
+    parser.add_argument('--interactive',    help='Set Interactive Mode',                     action='store_true')
+    parser.add_argument('--QC',             help='Set QC Mode',                              action='store_true')
     args = parser.parse_args()
 
     if args.config:

@@ -38,16 +38,7 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_command, boo
     std::cout << "DBHandler: Initializing." << std::endl;
 #endif
     /// DB config
-    if (i_db_cfg_path!="") {
-        std::ifstream db_cfg_ifs(i_db_cfg_path);
-        if (!db_cfg_ifs.is_open()) {
-            std::string message = "Not found Local DB config file: "+i_db_cfg_path+"\n\tSet it by 'YARR/localdb/setup_db.sh'";
-            std::string function = __PRETTY_FUNCTION__;
-            this->alert(function, message);
-        }
-        m_db_cfg_path = i_db_cfg_path;
-        json db_json = checkDBCfg(m_db_cfg_path);
-    }
+    m_db_cfg_path = i_db_cfg_path;
     m_qc = isQC;
     m_interactive = i_interactive;
 
@@ -362,9 +353,6 @@ json DBHandler::checkDBCfg(std::string i_db_path) {
     std::cout << "\t\tDBHandler: Check database config: " << i_db_path << std::endl;
 #endif
     json db_json = toJson(i_db_path);
-    this->checkEmpty(db_json["hostIp"].empty(),   "hostIp",   i_db_path);
-    this->checkEmpty(db_json["hostPort"].empty(), "hostPort", i_db_path);
-    this->checkEmpty(db_json["dbName"].empty(),   "dbName",   i_db_path);
     return db_json;
 }
 

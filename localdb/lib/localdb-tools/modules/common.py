@@ -97,7 +97,7 @@ def readDbCfg(args, log={}, path=''):
     if cfg=={}:
         logger.error('\033[5mNot found database config.\033[0m')
         if num==1 or num==2:
-            logger.error('Specify the correct path to database config file under --database option.')
+            logger.error('Specify the correct path to database config file under -d option.')
         else:
             logger.error('Create the default config by')
             logger.error('   $ path/to/YARR/localdb/setup_db.sh')

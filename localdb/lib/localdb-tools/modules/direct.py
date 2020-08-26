@@ -480,14 +480,11 @@ def __pull(dir_path, args):
             ### chip config
             docs = getData('json', dir_path, '{}.json'.format(chip_json['name']), cfg_json, True)
             data_entries.append( docs )
+            chip_json['config'] = '{0}/{1}.json'.format(dir_path, chip_json['name'])
+            chip_json['tx'] = chip_json.get('tx',i)
+            chip_json['rx'] = chip_json.get('rx',i)
 
-            conn_json['chips'].append({
-                'name': chip_json['name'],
-                'config': '{0}/{1}.json'.format(dir_path, chip_json['name']),
-                'chipId': chip_json['chipId'],
-                'tx'    : chip_json.get('tx',i),
-                'rx'    : chip_json.get('rx',i)
-            })
+            conn_json['chips'].append(chip_json)
             chips.append(chip_json['name'])
 
         docs = getData('json', dir_path, 'connectivity.json', conn_json, True)

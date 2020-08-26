@@ -13,8 +13,7 @@
         "CAFile": "null"
     },
     "auth": "default",
-    "KeyFile": "null",
-    "verify": false,
+    "QC": false,
     "environment": [
         "vddd_voltage",
         "vddd_current",
