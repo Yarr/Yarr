@@ -43,7 +43,6 @@ Rd53bDataProcessor::Rd53bDataProcessor()
 
     _isCompressedHitmap = true; // True by default
     _dropToT = false;           /* False by default */
-    _usePToT = false; // For now hard-coded
 }
 
 Rd53bDataProcessor::~Rd53bDataProcessor()
@@ -298,45 +297,6 @@ void Rd53bDataProcessor::process_core()
                                 uint16_t PToT = ptot_ptoa_buf & 0x7FF;
                                 uint8_t PToA = ptot_ptoa_buf >> 11;
 
-                                if (_usePToT)
-                                {
-                                    if (events[channel] == 0)
-                                    {
-                                        logger->warn("[{}] No header in data fragment!", channel);
-                                        curOut[channel]->newEvent(666, l1id[channel], bcid[channel]);
-                                        events[channel]++;
-                                    }
-
-                                    // Reverse enginner the pixel address
-                                    // MUST PUT THE MASK STAGING LOOP AT THE BEGINNING
-                                    const unsigned step = curOut[channel]->lStat.get(0);
-                                    const uint16_t pix_col = (ccol - 1) * 8 + PToT_maskStaging[step % 4][ibus] + 1;
-                                    const uint16_t pix_row = step / 2 + 1;
-                                    // logger->info("Hit: row({}) col({}) tot({}) ", pix_row, pix_col, PToT);
-                                    // curOut[channel]->curEvent->addHit(pix_row, pix_col, (PToT >> 4) - 1);
-                                    curOut[channel]->curEvent->addHit(pix_row, pix_col, PToT);
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        /* If drop ToT, the ToT value saved in the output event will be 0 */
-                        uint64_t ToT = _dropToT ? 0 : retrieve(_LUT_PlainHMap_To_ColRow_ArrSize[hitmap] << 2);
-                        if (!_usePToT)
-                        {
-                            if (_LUT_PlainHMap_To_ColRow_ArrSize[hitmap] == 0)
-                            {
-                                logger->warn("Received fragment with no ToT! ({} , {})", ccol, qrow);
-                            }
-                            for (unsigned ihit = 0; ihit < _LUT_PlainHMap_To_ColRow_ArrSize[hitmap]; ++ihit)
-                            {
-                                const uint8_t pix_tot = (ToT >> (ihit << 2)) & 0xF;
-                                // First pixel is 1,1, last pixel is 400,384
-                                const uint16_t pix_col = ((ccol - 1) * 8) + (_LUT_PlainHMap_To_ColRow[hitmap][ihit] >> 4) + 1;
-                                const uint16_t pix_row = ((qrow)*2) + (_LUT_PlainHMap_To_ColRow[hitmap][ihit] & 0xF) + 1;
-
-                                // For now fill in events without checking whether the addresses are valid
                                 if (events[channel] == 0)
                                 {
                                     logger->warn("[{}] No header in data fragment!", channel);
@@ -344,10 +304,43 @@ void Rd53bDataProcessor::process_core()
                                     events[channel]++;
                                 }
 
-                                curOut[channel]->curEvent->addHit(pix_row, pix_col, pix_tot);
-                                //logger->info("Hit: row({}) col({}) tot({}) ", pix_row, pix_col, pix_tot);
-                                hits[channel]++;
+                                // Reverse enginner the pixel address
+                                // MUST PUT THE MASK STAGING LOOP AT THE BEGINNING
+                                const unsigned step = curOut[channel]->lStat.get(0);
+                                const uint16_t pix_col = (ccol - 1) * 8 + PToT_maskStaging[step % 4][ibus] + 1;
+                                const uint16_t pix_row = step / 2 + 1;
+                                // logger->info("Hit: row({}) col({}) tot({}) ", pix_row, pix_col, PToT);
+                                // curOut[channel]->curEvent->addHit(pix_row, pix_col, (PToT >> 4) - 1);
+                                curOut[channel]->curEvent->addHit(pix_row, pix_col, PToT);
                             }
+                        }
+                    }
+                    else
+                    {
+                        /* If drop ToT, the ToT value saved in the output event will be 0 */
+                        uint64_t ToT = _dropToT ? 0 : retrieve(_LUT_PlainHMap_To_ColRow_ArrSize[hitmap] << 2);
+                        if (_LUT_PlainHMap_To_ColRow_ArrSize[hitmap] == 0)
+                        {
+                            logger->warn("Received fragment with no ToT! ({} , {})", ccol, qrow);
+                        }
+                        for (unsigned ihit = 0; ihit < _LUT_PlainHMap_To_ColRow_ArrSize[hitmap]; ++ihit)
+                        {
+                            const uint8_t pix_tot = (ToT >> (ihit << 2)) & 0xF;
+                            // First pixel is 1,1, last pixel is 400,384
+                            const uint16_t pix_col = ((ccol - 1) * 8) + (_LUT_PlainHMap_To_ColRow[hitmap][ihit] >> 4) + 1;
+                            const uint16_t pix_row = ((qrow)*2) + (_LUT_PlainHMap_To_ColRow[hitmap][ihit] & 0xF) + 1;
+
+                            // For now fill in events without checking whether the addresses are valid
+                            if (events[channel] == 0)
+                            {
+                                logger->warn("[{}] No header in data fragment!", channel);
+                                curOut[channel]->newEvent(666, l1id[channel], bcid[channel]);
+                                events[channel]++;
+                            }
+
+                            curOut[channel]->curEvent->addHit(pix_row, pix_col, pix_tot);
+                            //logger->info("Hit: row({}) col({}) tot({}) ", pix_row, pix_col, pix_tot);
+                            hits[channel]++;
                         }
                     }
                 } while (!(islast_isneighbor_qrow & 0x200));
