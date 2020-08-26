@@ -278,7 +278,7 @@ def main():
             printLog('\033[1;33mtest data ID: {0} \033[0m'.format(test_data['runId']))
             printLog('User      : {0} at {1}'.format(test_data['user'], test_data['site']))
             printLog('Date      : {0}'.format(test_data['datetime']))
-            printLog('Chip      : {0}'.format(', '.join(test_data['chips'])))
+            printLog('Component : {0}'.format(', '.join(test_data['chips'])))
             printLog('Run Number: {0}'.format(test_data['runNumber']))
             printLog('Test Type : {0}'.format(test_data['testType']))
             if test_data.get('environment',{})=={}:

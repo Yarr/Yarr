@@ -48,6 +48,8 @@ int main(int argc, char *argv[]){
     std::string conn_cfg_path = "";
     std::string scan_log_path = "";
     std::string comp_name = "";
+    std::string user_name = "";
+    std::string site_name = "";
     std::string output_dir_path = "";
 
     bool setQCMode = false;
@@ -55,7 +57,7 @@ int main(int argc, char *argv[]){
 
     int c;
     opterr = 0;
-    while ((c = getopt(argc, argv, "hNRCS:E:F:DQIc:s:i:p:d:u:n:")) != -1 ){
+    while ((c = getopt(argc, argv, "hNS:E:F:RDCLQIc:s:i:p:d:u:n:")) != -1 ){
         switch (c) {
             case 'h':
                 printHelp();
@@ -64,27 +66,30 @@ int main(int argc, char *argv[]){
             case 'N': // command
                 if (commandType=="") commandType = "Initialize";
                 break;
-            case 'R': // command
-                if (commandType=="") commandType = "Cache";
-                break;
             case 'S': // command
                 if (commandType=="") commandType = "Scan";
                 scan_dir_path = std::string(optarg);
-                break;
-            case 'C': // command
-                if (commandType=="") commandType = "Component";
                 break;
             case 'E': // command
                 if (commandType=="") commandType = "Environment";
                 dcs_cfg_path = std::string(optarg);
                 break;
-            case 'D': // command
-                if (commandType=="") commandType = "Config";
-                break;
             case 'F' : // command
                 if (commandType=="") commandType= "Influxdb";
                 influx_cfg_path= std::string(optarg);
   	            break;
+            case 'R': // command
+                if (commandType=="") commandType = "Cache";
+                break;
+            case 'D': // command
+                if (commandType=="") commandType = "Config";
+                break;
+            case 'C': // command
+                if (commandType=="") commandType = "Component";
+                break;
+            case 'L': // command
+                if (commandType=="") commandType = "Log";
+                break;
             case 'Q': // option
                 setQCMode = true;
                 break;
@@ -99,6 +104,7 @@ int main(int argc, char *argv[]){
                 break;
             case 'i': // option
                 site_cfg_path = std::string(optarg);
+                site_name = std::string(optarg);
                 break;
             case 'p': // option
                 output_dir_path = std::string(optarg);
@@ -108,6 +114,7 @@ int main(int argc, char *argv[]){
                 break;
             case 'u': // option
                 user_cfg_path = std::string(optarg);
+                user_name = std::string(optarg);
                 break;
             case 'n' : // option
                 comp_name= std::string(optarg);
@@ -225,6 +232,13 @@ int main(int argc, char *argv[]){
         }
         status = 0;
     }
+
+    if (commandType == "Log") {
+        logger->info("DBHandler: Retrieve Test Log");
+        database->initialize(db_cfg_path, commandLine, setQCMode, setInteractiveMode);
+        status = database->checkLog(user_name, site_name, comp_name);
+    }
+
     return status;
 }
 
@@ -247,6 +261,10 @@ void printHelp() {
     std::cout << "       [-c <cmp.json>]     Provide path to component connectivity config file to create chip config files." << std::endl;
     std::cout << "    -C                     Upload non-QC component data into Local DB." << std::endl;
     std::cout << "       -c <cmp.json>       Provide path to component connectivity config file to upload." << std::endl;
+    std::cout << "    -L                     Display log of test data in Local DB." << std::endl;
+    std::cout << "       [-u <user name>]    Provide user name to query." << std::endl;
+    std::cout << "       [-i <site name>]    Provide site name to query." << std::endl;
+    std::cout << "       [-n <cmp name>]     Provide component (chip/module) name to query." << std::endl;
     std::cout << std::endl;
     std::cout << "optional arguments:" << std::endl;
     std::cout << "    -Q                     Set QC mode (add a step to check if the data to upload is suitable for QC)." << std::endl;

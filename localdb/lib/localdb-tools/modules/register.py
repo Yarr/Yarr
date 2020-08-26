@@ -1152,7 +1152,9 @@ class DcsData(RegisterData):
                 break
         if key==-1:
             self.logger.error('Not found specified DCS data.')
-            self.logger.error('\tfile: {0}  key: {1}  num: {2}'.format(i_path, env_key, i_num))
+            self.logger.error('\tfile: {0}'.format(i_path))
+            self.logger.error('\tkey: {0}  num: {1}'.format(env_key, i_num))
+            self.logger.error('Please check the key and num given in the DCS config file are set in the DCS data file.')
             raise DcsDataError
         # value
         env_lines = data.readline().splitlines()

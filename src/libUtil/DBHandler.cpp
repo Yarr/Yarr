@@ -253,6 +253,23 @@ int DBHandler::checkConnection(std::string i_opt) {
     return system(cmd.c_str());
 }
 
+int DBHandler::checkLog(std::string i_user, std::string i_site, std::string i_chip) {
+#if DBDEBUG
+    std::cout << "DBHandler: Check the log in Local DB." << std::endl;
+#endif
+    std::string cmd = m_retrieve_command + " log";
+    if (i_user!="") {
+        cmd = cmd + " --user " + i_user;
+    }
+    if (i_site!="") {
+        cmd = cmd + " --site " + i_site;
+    }
+    if (i_chip!="") {
+        cmd = cmd + " --chip " + i_chip;
+    }
+    return system(cmd.c_str());
+}
+
 int DBHandler::checkConfigs(std::string i_user_cfg_path, std::string i_site_cfg_path, std::vector<std::string> i_conn_cfg_paths) {
 #if DBDEBUG
     std::cout << "DBHandler: Check config files for Local DB." << std::endl;

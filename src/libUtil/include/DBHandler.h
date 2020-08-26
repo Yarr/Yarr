@@ -91,6 +91,13 @@ class DBHandler {
         int checkConnection(std::string i_opt="upload");
 
         /***
+        Check the test log in Local DB
+        ***/
+        int checkLog(std::string i_user="",
+                     std::string i_site="",
+                     std::string i_chip="");
+
+        /***
         Check registered modules in Local DB and create module list in ~/.yarr/localdb/${HOSTNAME}_modules.csv
         ***/
         int checkConfigs(std::string /*i_user_cfg_path*/,
