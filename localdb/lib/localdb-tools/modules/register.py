@@ -614,7 +614,9 @@ class ScanData(RegisterData):
                     raise ValidationError
                 mo_oid = self._check_component(conn['module'], True)
                 if mo_oid=='...':
-                    self.logger.error('Not found data {{ "serialNumber": "{0}", "componentType": "{1}" }} registered in Local DB.'.format(conn['module']['serialNumber'], conn['module']['componentType']))
+                    self.logger.error('Not found component data {{ "serialNumber": "{0}", "componentType": "{1}" }} registered in Local DB.'.format(conn['module']['serialNumber'], conn['module']['componentType']))
+                    self.logger.error('Please set the serial number of the QC parent component correctly in ')
+                    self.logger.error('{{ "module": {{ "serialNumber": "xxx" }} }} in connectivity file.')
                     raise ValidationError
                 conn['module']['component'] = mo_oid
                 # chips
@@ -629,12 +631,15 @@ class ScanData(RegisterData):
                     chip_json['name'] = chip_json['serialNumber']
                     ch_oid = self._check_component(chip_json, True)
                     if ch_oid=='...':
-                        self.logger.error('Not found data {{ "serialNumber": "{0}", "componentType": "{1}" }} registered in Local DB.'.format(chip_json['serialNumber'], chip_json['componentType']))
+                        self.logger.error('Not found component data {{ "serialNumber": "{0}", "componentType": "{1}" }} registered in Local DB.'.format(chip_json['serialNumber'], chip_json['componentType']))
+                        self.logger.error('Please set the serial number of the QC child component correctly in ')
+                        self.logger.error('{{ "serialNumber": "xxx" }} in connectivity file.')
                         raise ValidationError
                     chip_json['component'] = ch_oid
                     cpr_oid = self._check_child_parent_relation(mo_oid, ch_oid)
                     if not cpr_oid:
                         self.logger.error('Not found chipParentRelation data {{ "module": "{0}", "chip": "{1}" }} registered in Local DB.'.format(conn['module']['serialNumber'], chip_json['serialNumber']))
+                        self.logger.error('Please check the parent and children are set in the correct relationship.')
                         raise ValidationError
                     chip_json['cpr'] = cpr_oid
                     conn['chips'].append(chip_json)
@@ -954,6 +959,8 @@ class DcsData(RegisterData):
                 if status['passed'][i]: tr_oids.append(tr_oid)
         if tr_oids==[]:
             self.logger.error('Not found relational test run data in DB')
+            self.logger.error('The scan data may not have been uploaded.')
+            self.logger.error('Please make sure it is uploaded and try to upload DCS data again.')
             raise ValidationError
         self.dcs_tr_oids = tr_oids
 

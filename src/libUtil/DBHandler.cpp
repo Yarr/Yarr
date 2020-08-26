@@ -70,7 +70,7 @@ void DBHandler::alert(std::string i_function, std::string i_message, std::string
     return;
 }
 
-void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, std::string i_user_path, std::string i_site_path) {
+void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path) {
 #if DBDEBUG
     std::cout << "DBHandler: Set DCS config: " << i_dcs_path << std::endl;
 #endif
@@ -84,14 +84,10 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path, st
     m_output_dir = log_path;
 
     json log_json  = this->toJson(scanlog_path);
-    json user_json = this->toJson(i_user_path);
-    json site_json = this->toJson(i_site_path);
     json db_json   = this->toJson(m_db_cfg_path);
 
     if (log_json["id"].empty()) {
         this->checkEmpty(log_json["startTime"].empty()&&log_json["timestamp"].empty(), "startTime||timestamp", i_scanlog_path);
-        if (log_json["userCfg"].empty()) log_json["userCfg"] = user_json;
-        if (log_json["siteCfg"].empty()) log_json["siteCfg"] = site_json;
         if (log_json["dbCfg"].empty())   log_json["dbCfg"]   = db_json;
     }
 

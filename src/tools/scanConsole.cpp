@@ -373,7 +373,6 @@ int main(int argc, char *argv[]) {
         scanLog["siteCfg"] = siteCfg;
     }
 
-
     // Reset masks
     if (mask_opt == 1) {
         for (FrontEnd* fe : bookie.feList) {

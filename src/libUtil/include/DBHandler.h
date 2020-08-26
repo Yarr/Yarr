@@ -62,9 +62,7 @@ class DBHandler {
         - Attachment: requires dat file and information to set dat data
         ***/
         void setDCSCfg(std::string /*i_dcs_path*/,
-                       std::string /*i_scanlog_path*/,
-                       std::string /*i_user_path*/,
-                       std::string /*i_site_path*/);
+                       std::string /*i_scanlog_path*/);
         /***
         Clean up veriables after scanConsole
         ***/

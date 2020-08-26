@@ -324,7 +324,7 @@ def writeScan(self, i_dir):
     log_path = 'scanLog.json'
     log_json = common.readJson('{0}/{1}'.format(i_dir, log_path))
     if log_json=={}:
-        self.logger.error('No scanLog.json in {}'.format(log_path))
+        self.logger.error('Not found {0} in {1}'.format(log_path, i_dir))
         self.logger.error('Specify the correct path to result directory')
         raise DataError
     log_json['QC'] = args.QC
@@ -419,7 +419,7 @@ def writeDcs(self, i_dir):
     log_path = 'dbDcsLog.json'.format(i_dir)
     log_json = common.readJson('{0}/{1}'.format(i_dir, log_path))
     if log_json=={}:
-        self.logger.error('No dbDcsLog.json in {}'.format(log_path))
+        self.logger.error('Not found {0} in {1}'.format(log_path, i_dir))
         self.logger.error('Specify the correct path to result directory')
         raise DataError
 

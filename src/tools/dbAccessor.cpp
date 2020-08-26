@@ -188,7 +188,7 @@ int main(int argc, char *argv[]){
             return 1;
         }
         database->initialize(db_cfg_path, commandLine, setQCMode, setInteractiveMode);
-        database->setDCSCfg(dcs_cfg_path, scan_log_path, user_cfg_path, site_cfg_path);
+        database->setDCSCfg(dcs_cfg_path, scan_log_path);
         database->cleanUp("dcs", "", false, setInteractiveMode);
         status = 0;
     }
@@ -218,7 +218,7 @@ int main(int argc, char *argv[]){
 
                 logger->info("DBHandler: Register Environment Data");
 
-                database->setDCSCfg(dcs_cfg_path, scan_log_path, user_cfg_path, site_cfg_path);
+                database->setDCSCfg(dcs_cfg_path, scan_log_path);
                 database->cleanUp("dcs", "", false, setInteractiveMode);
                 database->cleanDataDir();
             }
