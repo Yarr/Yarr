@@ -134,9 +134,10 @@ void Rd53bTriggerLoop::execPart1() {
     SPDLOG_LOGGER_TRACE(logger, "");
     g_tx->setCmdEnable(keeper->getTxMask());
     auto rd53b = dynamic_cast<Rd53b*>(g_fe);
-    //rd53b->sendClear(16);
+    rd53b->sendClear(16);
     while(!g_tx->isCmdEmpty());
-    //std::this_thread::sleep_for(std::chrono::microseconds(200));
+    std::this_thread::sleep_for(std::chrono::microseconds(200));
+    //std::this_thread::sleep_for(std::chrono::microseconds(10));
     g_rx->flushBuffer();
     std::this_thread::sleep_for(std::chrono::microseconds(10));
     //std::this_thread::sleep_for(std::chrono::milliseconds(10));

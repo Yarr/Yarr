@@ -43,7 +43,7 @@ void Rd53bCoreColLoop::execPart1() {
     //Disable everything
     m_coreCols = {0x0, 0x0, 0x0, 0x0};
     const uint32_t one = 0x1;
-    for (unsigned i=m_minCore; i<m_maxCore; i+=step) {
+    for (unsigned i=m_minCore; i<m_maxCore; i++) {
         if (i%m_nSteps == m_cur) {
             m_coreCols[i/16] |= one << i%16;
         }
@@ -96,16 +96,25 @@ void Rd53bCoreColLoop::setCores() {
     rd53b->writeRegister(&Rd53b::EnCoreCol1, m_coreCols[1]);
     rd53b->writeRegister(&Rd53b::EnCoreCol2, m_coreCols[2]);
     rd53b->writeRegister(&Rd53b::EnCoreCol3, m_coreCols[3]);
+    while(!g_tx->isCmdEmpty()) {}
+    // Set correct reset path
+    rd53b->writeRegister(&Rd53b::RstCoreCol0, m_coreCols[0]);
+    rd53b->writeRegister(&Rd53b::RstCoreCol1, m_coreCols[1]);
+    rd53b->writeRegister(&Rd53b::RstCoreCol2, m_coreCols[2]);
+    rd53b->writeRegister(&Rd53b::RstCoreCol3, m_coreCols[3]);
+    //while(!g_tx->isCmdEmpty()) {}
     // Enable injection to core
     rd53b->writeRegister(&Rd53b::EnCoreColCal0, m_coreCols[0]);
     rd53b->writeRegister(&Rd53b::EnCoreColCal1, m_coreCols[1]);
     rd53b->writeRegister(&Rd53b::EnCoreColCal2, m_coreCols[2]);
     rd53b->writeRegister(&Rd53b::EnCoreColCal3, m_coreCols[3]);
-	// Remove hitOR mask
+    while(!g_tx->isCmdEmpty()) {}
+	// Enable hitORs
     rd53b->writeRegister(&Rd53b::HitOrMask0, ~m_coreCols[0]);
     rd53b->writeRegister(&Rd53b::HitOrMask1, ~m_coreCols[1]);
     rd53b->writeRegister(&Rd53b::HitOrMask2, ~m_coreCols[2]);
     rd53b->writeRegister(&Rd53b::HitOrMask3, ~m_coreCols[3]);	
+    while(!g_tx->isCmdEmpty()) {}
     // Turn on PToT if needed
     if (m_usePToT) {
         rd53b->writeRegister(&Rd53b::PtotCoreColEn0, m_coreCols[0]);

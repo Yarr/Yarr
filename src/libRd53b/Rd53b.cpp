@@ -113,14 +113,16 @@ void Rd53b::configureInit() {
 
     
     // Reset Core
-    
-    /*
     logger->debug("Reset Cores!");
     for (unsigned i=0; i<16; i++) {
         this->writeRegister(&Rd53b::RstCoreCol0, 1<<i);
         this->writeRegister(&Rd53b::RstCoreCol1, 1<<i);
         this->writeRegister(&Rd53b::RstCoreCol2, 1<<i);
         this->writeRegister(&Rd53b::RstCoreCol3, 1<<i);
+        this->writeRegister(&Rd53b::EnCoreCol0, 1<<i);
+        this->writeRegister(&Rd53b::EnCoreCol1, 1<<i);
+        this->writeRegister(&Rd53b::EnCoreCol2, 1<<i);
+        this->writeRegister(&Rd53b::EnCoreCol3, 1<<i);
         while(!core->isCmdEmpty()){;}
         std::this_thread::sleep_for(std::chrono::microseconds(100));
         this->sendClear(m_chipId);
@@ -128,14 +130,17 @@ void Rd53b::configureInit() {
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
     logger->debug("Chip initialisation done!");
-    */
+    
 
     this->writeRegister(&Rd53b::RstCoreCol0, 0xFFFF);
     this->writeRegister(&Rd53b::RstCoreCol1, 0xFFFF);
     this->writeRegister(&Rd53b::RstCoreCol2, 0xFFFF);
     this->writeRegister(&Rd53b::RstCoreCol3, 0x3F);
+    this->writeRegister(&Rd53b::EnCoreCol0, 0xFFFF);
+    this->writeRegister(&Rd53b::EnCoreCol1, 0xFFFF);
+    this->writeRegister(&Rd53b::EnCoreCol2, 0xFFFF);
+    this->writeRegister(&Rd53b::EnCoreCol3, 0x3F);
     while(!core->isCmdEmpty()){;}
-    std::this_thread::sleep_for(std::chrono::microseconds(100));
     
 
     // Send a clear cmd
