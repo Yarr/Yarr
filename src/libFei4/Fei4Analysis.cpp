@@ -599,7 +599,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         alog->info("Failed fit Col({}) Row({}) Threshold({}) Chi2({}) Status({}) Entries({}) Mean({})", col, row, thrMap[outerIdent]->getBin(bin), chi2, status.outcome, histos[ident]->getEntries(), histos[ident]->getMean());
                         output->pushData(std::move(histos[ident]));
                     }
-                    if (row == nRow/2 && col%10 == 0) {
+                    if (row == nRow/10 && col%40 == 0) {
                         output->pushData(std::move(histos[ident]));
                     }
                     histos[ident].reset(nullptr);
