@@ -40,7 +40,7 @@
         "algorithm": "DataArchiver",
         "config": {}
       },
-      "n_count": 6
+      "n_count": 5
     },
     "loops": [
       {
@@ -57,7 +57,7 @@
           "max": 50,
           "min": 0,
           "step": 1,
-          "nSteps": 10,
+          "nSteps": 2,
           "usePToT": true
         },
         "loopAction": "Rd53bCoreColLoop"
@@ -67,7 +67,7 @@
           "count": 50,
           "delay": 56,
           "extTrigger": false,
-          "frequency": 10000,
+          "frequency": 5000,
           "noInject": false,
           "time": 0,
           "edgeMode": true,

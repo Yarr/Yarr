@@ -83,7 +83,7 @@
     "prescan": {
         "InjDigEn": 0,
         "InjVcalMed": 500,
-        "VcalRange": 1,
+        "InjVcalRange": 1,
         "Latency": 56
     }
   }

@@ -2,18 +2,12 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "OccupancyAnalysis",
-        "config": {
-          "createMask": true
-        }
+        "algorithm": "ScurveFitter"
       },
-      "1": {
-        "algorithm": "TagAnalysis"
+     "1": {
+        "algorithm": "OccupancyAnalysis"
       },
-      "2": {
-        "algorithm": "TotAnalysis"
-      },
-      "n_count": 3
+      "n_count": 1
     },
     "histogrammer": {
       "0": {
@@ -45,18 +39,29 @@
     "loops": [
       {
         "config": {
-          "max": 64,
+          "max": 768,
           "min": 0,
-          "step": 1
+          "step": 16,
+          "maskType": 3
         },
         "loopAction": "Rd53bMaskLoop"
+      },
+      {
+        "config": {
+          "max": 400,
+          "min": 0,
+          "step": 10,
+          "parameter":"InjVcalDiff"
+        },
+        "loopAction": "Rd53bParameterLoop"
       },
       {
         "config": {
           "max": 50,
           "min": 0,
           "step": 1,
-          "nSteps": 2
+          "nSteps": 2,
+          "usePToT": true
         },
         "loopAction": "Rd53bCoreColLoop"
       },
@@ -68,8 +73,7 @@
           "frequency": 5000,
           "noInject": false,
           "time": 0,
-          "edgeMode": true,
-          "edgeDuration": 20
+          "edgeMode": false
         },
         "loopAction": "Rd53bTriggerLoop"
       },
@@ -79,10 +83,13 @@
     ],
     "name": "DigitalScan",
     "prescan": {
-        "InjVcalMed": 100,
-        "InjVcalHigh": 2000,
-        "InjDigEn": 1,
-        "Latency": 60
+        "InjDigEn": 0,
+        "InjVcalMed": 500,
+        "InjVcalRange": 1,
+        "Latency": 60,
+        "TotEnPtot": 1,
+        "TotEnPtoa": 1,
+        "TotPtotLatency": 2
     }
   }
 }
