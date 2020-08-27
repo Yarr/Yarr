@@ -35,11 +35,7 @@ import db_logging
 import logging
 global logfile
 logger = logging.getLogger('Log')
-day = datetime.today().day
-logfile = '{0}/.yarr/localdb/log/{1}.log'.format(home, day)
-for i in range(3):
-    past_logfile = '{0}/.yarr/localdb/log/{1}.log'.format(home, day+i+1)
-    if os.path.isfile(past_logfile): os.remove(past_logfile)
+logfile = '' # default. written in HOME/.yarr/localdb/log/log (Old logs are saved as log-old up to log-old-9)
 
 ##############
 # Exceptions #

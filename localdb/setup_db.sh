@@ -174,8 +174,7 @@ fi
 ### Set editor command ###
 ##########################
 
-#if [ -z "${EDITOR}" ]; then
-echo -e "[LDB] Set editor command ..."
+echo -e "[LDB] Set editor command ... (e.g. nano, vim, emacs)"
 unset answer
 read -p "[LDB] > " answer
 while [ -z "${answer}" ];
@@ -183,7 +182,6 @@ do
     read -p "[LDB] > " answer
 done
 EDITOR=${answer}
-#fi
 echo -e "[LDB]"
 
 #############################

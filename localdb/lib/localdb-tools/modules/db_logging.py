@@ -10,6 +10,7 @@ import os
 from copy import copy
 from logging import getLogger, getLoggerClass, Formatter, FileHandler, StreamHandler, addLevelName, DEBUG, INFO, WARNING, ERROR, CRITICAL
 import coloredlogs
+from datetime import datetime
 
 _level = INFO
 #_level = DEBUG
@@ -65,7 +66,18 @@ def setLog(level=_level):
     logger.setLevel(level)
     logger.debug('Set log')
 
-def setLogFile(filename, level=_level):
+def setLogFile(filename='', level=_level):
+    if filename=='':
+        home = os.environ['HOME']
+        dirname = '{0}/.yarr/localdb/log/'.format(home)
+        if os.path.isfile('{}/log'.format(dirname)):
+            size = os.path.getsize('{}/log'.format(dirname))
+            if size/1000. > 500: # greather than 500KB
+                os.rename('{0}/log', '{1}/log-old-0'.format(dirname, dirname))
+                if os.path.isfile('{0}/log-old-{1}'.format(dirname, 9)): os.remove('{0}/log-old-{1}'.format(dirname, 9))
+                for i in reversed(range(10)):
+                    if os.path.isfile('{0}/log-old-{1}'.format(dirname, i)): os.rename('{0}/log-old-{1}', '{2}/log-old-{3}'.format(dirname, i, dirname, i+1))
+        filename = '{}/log'.format(dirname)
     dir_path = os.path.dirname(os.path.abspath(filename))
     os.makedirs(dir_path, exist_ok=True)
     handler = FileHandler(filename)
