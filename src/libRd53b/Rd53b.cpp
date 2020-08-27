@@ -142,12 +142,11 @@ void Rd53b::configureInit() {
     this->writeRegister(&Rd53b::EnCoreCol3, 0x3F);
     while(!core->isCmdEmpty()){;}
     
-
     // Send a clear cmd
     logger->debug(" ... sending clear command");
     this->sendClear(m_chipId);
     while(!core->isCmdEmpty());
-    std::this_thread::sleep_for(std::chrono::microseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     logger->debug("Chip initialisation done!");
 }
@@ -156,7 +155,13 @@ void Rd53b::configureGlobal() {
     logger->debug("Configuring all registers ...");
     for (unsigned addr=0; addr<numRegs; addr++) {
         this->sendWrReg(m_chipId, addr, m_cfg[addr]);
-        if (addr % 20 == 0) // Wait every 20 regs to not overflow a buffer
+        
+        // Special handling of preamp register
+        if (addr == 13)
+            while(!core->isCmdEmpty()){;}
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
+
+        if (addr % 18 == 0) // Wait every 20 regs to not overflow a buffer
             while(!core->isCmdEmpty()){;}
     }
     while(!core->isCmdEmpty());
