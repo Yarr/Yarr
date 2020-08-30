@@ -366,6 +366,7 @@ def __pull(dir_path, args):
 
         ### connectivity
         stage = 'Testing'
+        chip_type = 'NULL'
         conn_json = {
             'stage': stage,
             'chips': []
@@ -398,7 +399,9 @@ def __pull(dir_path, args):
         for i, chip in enumerate(children):
             query = { '_id': ObjectId(chip) }
             this = localdb.component.find_one(query)
-            if not this: continue
+            if not this:
+                this = localdb.chip.find_one(query)
+                if not this: continue
 
             chip_type = this.get('chipType', 'NULL') if this.get('chipType', 'NULL')!='FE-I4B' else 'FEI4B'
             cfg_path = '{0}/configs/defaults/default_{1}.json'.format(yarr_path, chip_type.lower())
