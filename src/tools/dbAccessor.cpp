@@ -175,6 +175,16 @@ int main(int argc, char *argv[]){
             logger->error("Please specify file path under -c option!");
             return 1;
         }
+        if (user_cfg_path == "") {
+            logger->error("No user config file path given.");
+            logger->error("Please specify file path under -u option!");
+            return 1;
+        }
+        if (site_cfg_path == "") {
+            logger->error("No site config file path given.");
+            logger->error("Please specify file path under -i option!");
+            return 1;
+        }
         database->initialize(db_cfg_path, commandLine, setQCMode, setInteractiveMode);
         status = database->setComponent(conn_cfg_path, user_cfg_path, site_cfg_path);
     }
@@ -255,12 +265,16 @@ void printHelp() {
     std::cout << "       -n <component name> Provide component name to link the DCS data." << std::endl;
     std::cout << "       -s <scanLog.json>   Provide path to log file of scan result data to link the DCS data." << std::endl;
     std::cout << "    -R                     Upload scan/DCS data recorded in the cache ($HOME/.yarr/localdb/run.dat or dcs.dat) into Local DB." << std::endl;
+    std::cout << "       [-u <user.json>]    Provide path to user config file." << std::endl;
+    std::cout << "       [-i <site.json>]    Provide path to site config file." << std::endl;
     std::cout << "    -D                     Retrieve data from Local DB. (Default. most recently saved data)" << std::endl;
     std::cout << "       [-n <cmp name>]     Provide component (chip/module) name." << std::endl;
     std::cout << "       [-p <output dir>]   Provide path to directory to put config files. (Default. ./db-data)" << std::endl;
     std::cout << "       [-c <cmp.json>]     Provide path to component connectivity config file to create chip config files." << std::endl;
     std::cout << "    -C                     Upload non-QC component data into Local DB." << std::endl;
     std::cout << "       -c <cmp.json>       Provide path to component connectivity config file to upload." << std::endl;
+    std::cout << "       -u <user.json>      Provide path to user config file." << std::endl;
+    std::cout << "       -i <site.json>      Provide path to site config file." << std::endl;
     std::cout << "    -L                     Display log of test data in Local DB." << std::endl;
     std::cout << "       [-u <user name>]    Provide user name to query." << std::endl;
     std::cout << "       [-i <site name>]    Provide site name to query." << std::endl;
@@ -270,7 +284,5 @@ void printHelp() {
     std::cout << "    -Q                     Set QC mode (add a step to check if the data to upload is suitable for QC)." << std::endl;
     std::cout << "    -I                     Set interactive mode (add a step to ask the user to check the data to upload interactively)." << std::endl;
     std::cout << "    -d <database.json>     Provide path to database config file." << std::endl;
-    std::cout << "    -u <user.json>         Provide path to user config file." << std::endl;
-    std::cout << "    -i <site.json>         Provide path to site config file." << std::endl;
     std::cout << std::endl;
 }

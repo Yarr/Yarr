@@ -366,6 +366,74 @@ class RegisterData():
             raise RegisterError
         return
 
+    def _verify_user(self, i_qc=False):
+        """
+        This function verifies user data
+        If there is not a matching data, raise ValidationError
+        """
+        self.logger.debug('\tVerify User')
+        self.logger.info('Loading user information ...')
+        if i_qc:
+            if 'viewerUser' in self.user_json:
+                query = { 'username': self.user_json['viewerUser'] }
+                this_user = self.toolsdb.viewer.user.find_one(query)
+                if this_user:
+                    self.user_json['userName'] = this_user['name']
+                    self.user_json['institution'] = this_user['institution']
+                    self.user_json['description'] = 'viewer'
+                    self.user_json['viewerUser'] = this_user['username']
+                else:
+                    self.logger.error('Not found user data {} registered in Local DB.'.format(query))
+                    self.logger.error('Please contact Local DB administrator to create your account on Local DB Viewer.')
+                    raise ValidationError
+            else:
+                self.logger.error('Not username of viewer user account provided.')
+                self.logger.error('Please login Local DB with username and password')
+                self.logger.error('and create user config file by:')
+                self.logger.error('   $ source path/to/YARR/localdb/login_mongodb.sh -Q')
+                raise ValidationError
+        self.logger.info('~~~ {')
+        if i_qc:
+            self.logger.info('~~~     "viewerUser": "\033[1;33m{}\033[0m",'.format(self.user_json['viewerUser']))
+        self.logger.info('~~~     "name": "\033[1;33m{}\033[0m",'.format(self.user_json['userName']))
+        self.logger.info('~~~     "institution": "\033[1;33m{}\033[0m"'.format(self.user_json['institution']))
+        self.logger.info('~~~ }')
+
+    def _verify_site(self, i_qc=False):
+        """
+        This function verifies site data
+        If there is not a matching data, raise ValidationError
+        """
+        self.logger.debug('\tVerify Site')
+        self.logger.info('Loading site information ...')
+        if i_qc:
+            if 'institution' in self.site_json or 'code' in self.site_json:
+                query = {}
+                if 'code' in self.site_json:
+                    query = { 'code': self.site_json['code'] }
+                else:
+                    query = { 'institution': self.site_json['institution'] }
+                this_site = self.localdb.pd.institution.find_one(query)
+                if this_site:
+                    self.site_json['code'] = this_site['code']
+                    self.site_json['institution'] = this_site['institution']
+                    self.site_json['pdInstitution'] = str(this_site['_id'])
+                else:
+                    self.logger.error('Not found site data {} registered in Local DB.'.format(query))
+                    self.logger.error('Please set your institution correctly in ')
+                    self.logger.error('{{ "code": "xxx" }} or {{ "institution": "xxx" }} in {0}/.yarr/localdb/{1}_site.json'.format(home, hostname))
+                    raise ValidationError
+            else:
+                self.logger.error('Not institution code provided.')
+                self.logger.error('Please set your institution correctory in ')
+                self.logger.error('{{ "code": "xxx" }} or {{ "institution": "xxx" }} in {0}/.yarr/localdb/{1}_site.json'.format(home, hostname))
+                raise ValidationError
+        self.logger.info('~~~ {')
+        if i_qc:
+            self.logger.info('~~~     "code": "\033[1;33m{}\033[0m",'.format(self.site_json['code']))
+        self.logger.info('~~~     "institution": "\033[1;33m{}\033[0m"'.format(self.site_json['institution']))
+        self.logger.info('~~~ }')
+
     def __register_user(self):
         """
         This function registeres user data
@@ -524,78 +592,10 @@ class ScanData(RegisterData):
     def verifyCfg(self, i_qc):
         self._verify_user(i_qc)
         self._verify_site(i_qc)
-        self._verify_conn_cfg(i_qc)
+        self.__verify_conn_cfg(i_qc)
         self.qcTest=i_qc
 
-    def _verify_user(self, i_qc):
-        """
-        This function verifies user data
-        If there is not a matching data, raise ValidationError
-        """
-        self.logger.debug('\tVerify User')
-        self.logger.info('Loading user information ...')
-        if i_qc:
-            if 'viewerUser' in self.user_json:
-                query = { 'username': self.user_json['viewerUser'] }
-                this_user = self.toolsdb.viewer.user.find_one(query)
-                if this_user:
-                    self.user_json['userName'] = this_user['name']
-                    self.user_json['institution'] = this_user['institution']
-                    self.user_json['description'] = 'viewer'
-                    self.user_json['viewerUser'] = this_user['username']
-                else:
-                    self.logger.error('Not found user data {} registered in Local DB.'.format(query))
-                    self.logger.error('Please contact Local DB administrator to create your account on Local DB Viewer.')
-                    raise ValidationError
-            else:
-                self.logger.error('Not username of viewer user account provided.')
-                self.logger.error('Please login Local DB with username and password')
-                self.logger.error('and create user config file by:')
-                self.logger.error('   $ source path/to/YARR/localdb/login_mongodb.sh -Q')
-                raise ValidationError
-        self.logger.info('~~~ {')
-        if i_qc:
-            self.logger.info('~~~     "viewerUser": "\033[1;33m{}\033[0m",'.format(self.user_json['viewerUser']))
-        self.logger.info('~~~     "name": "\033[1;33m{}\033[0m",'.format(self.user_json['userName']))
-        self.logger.info('~~~     "institution": "\033[1;33m{}\033[0m"'.format(self.user_json['institution']))
-        self.logger.info('~~~ }')
-
-    def _verify_site(self, i_qc):
-        """
-        This function verifies site data
-        If there is not a matching data, raise ValidationError
-        """
-        self.logger.debug('\tVerify Site')
-        self.logger.info('Loading site information ...')
-        if i_qc:
-            if 'institution' in self.site_json or 'code' in self.site_json:
-                query = {}
-                if 'code' in self.site_json:
-                    query = { 'code': self.site_json['code'] }
-                else:
-                    query = { 'institution': self.site_json['institution'] }
-                this_site = self.localdb.pd.institution.find_one(query)
-                if this_site:
-                    self.site_json['code'] = this_site['code']
-                    self.site_json['institution'] = this_site['institution']
-                    self.site_json['pdInstitution'] = str(this_site['_id'])
-                else:
-                    self.logger.error('Not found site data {} registered in Local DB.'.format(query))
-                    self.logger.error('Please set your institution correctly in ')
-                    self.logger.error('{{ "code": "xxx" }} or {{ "institution": "xxx" }} in {0}/.yarr/localdb/{1}_site.json'.format(home, hostname))
-                    raise ValidationError
-            else:
-                self.logger.error('Not institution code provided.')
-                self.logger.error('Please set your institution correctory in ')
-                self.logger.error('{{ "code": "xxx" }} or {{ "institution": "xxx" }} in {0}/.yarr/localdb/{1}_site.json'.format(home, hostname))
-                raise ValidationError
-        self.logger.info('~~~ {')
-        if i_qc:
-            self.logger.info('~~~     "code": "\033[1;33m{}\033[0m",'.format(self.site_json['code']))
-        self.logger.info('~~~     "institution": "\033[1;33m{}\033[0m"'.format(self.site_json['institution']))
-        self.logger.info('~~~ }')
-
-    def _verify_conn_cfg(self, i_qc):
+    def __verify_conn_cfg(self, i_qc):
         """
         This function verifies component data
         If there is not a matching data, raise ValidationError
@@ -1194,6 +1194,10 @@ class DcsData(RegisterData):
 class CompData(RegisterData):
     def __init__(self):
         super().__init__()
+
+    def verifyCfg(self):
+        self._verify_user()
+        self._verify_site()
 
     def checkConnCfg(self, i_path):
         """

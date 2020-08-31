@@ -489,6 +489,7 @@ def uploadComp(self, i_path):
     # DB Connection
     self.checkConfigFormat()
     self.checkDb()
+    self.verifyCfg()
     self.checkConnCfg(i_path)
 
     self.logger.warning('Do you continue to upload data into Local DB? [y/n]')
