@@ -41,14 +41,14 @@
         "config": {
           "max": 768,
           "min": 0,
-          "step": 16,
+          "step": 1,
           "maskType": 3
         },
         "loopAction": "Rd53bMaskLoop"
       },
       {
         "config": {
-          "max": 400,
+          "max": 300,
           "min": 0,
           "step": 10,
           "parameter":"InjVcalDiff"
@@ -70,7 +70,7 @@
           "count": 50,
           "delay": 56,
           "extTrigger": false,
-          "frequency": 5000,
+          "frequency": 8000,
           "noInject": false,
           "time": 0,
           "edgeMode": false
