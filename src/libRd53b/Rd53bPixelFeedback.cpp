@@ -58,7 +58,7 @@ void Rd53bPixelFeedback::feedback(unsigned channel, std::unique_ptr<Histo2d> h) 
                 int sign = h->getBin(h->binNum(col, row));
                 int v = rd53b->getTDAC(col-1, row-1);
                 
-                v = v + (m_steps[m_cur]*sign*-1);
+                v = v + ((int)m_steps[m_cur]*sign*-1);
                 if (v<min) v = min;
                 if (v>max) v = max;
                 
