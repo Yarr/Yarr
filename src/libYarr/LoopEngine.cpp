@@ -26,7 +26,7 @@ void LoopEngine::init() {
     
     unsigned i = 0;
     while(m_list.end() != it) {
-        stat.addLoop(i, (*it).get());
+        stat.addLoop(i, (*it).get(), (*it).get()->getStyle());
         i++;
         (*it)->setup(&stat, g_bk);
         ++it;
