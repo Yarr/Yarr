@@ -127,7 +127,7 @@ class RegisterData():
                     chip_json['chipId'] = chip_cfg_json[self.chip_type]['Parameter']['ChipId']
                 else: # TODO
                     chip_json['name'] = 'UnnamedChip_{}'.format(i)
-                    chip_json['chipId'] = 0
+                    chip_json['chipId'] = -1
             chip_json['serialNumber'] = chip_json['name']
             chip_json['componentType'] = chip_json.get('componentType', 'front-end_chip')
             chip_json['geomId'] = chip_json.get('geomId', i)
@@ -261,10 +261,17 @@ class RegisterData():
                 'chipType'     : self.chip_type,
                 'dbVersion'    : self.db_version
             }
-            if i_qc: query.update({ 'proDB': True })
+            if i_qc:
+                #query.update({ 'chipId': i_json.get('chipId',-1) })  # TODO to enable
+                query.update({ 'proDB': True })
             this_cmp = self.localdb.component.find_one(query)
             if this_cmp:
                 oid = str(this_cmp['_id'])
+                if not i_json.get('chipId',-1)==this_cmp.get('chipId',-1):
+                    self.logger.warning('\033[1;31mMismatched chipId:\033[0m')
+                    self.logger.warning('\033[1;31m    Serial Number    : {}\033[0m'.format(this_cmp['serialNumber']))
+                    self.logger.warning('\033[1;31m    Provided chipId  : {}\033[0m'.format(i_json.get('chipId',-1)))
+                    self.logger.warning('\033[1;31m    Registered chipId: {}\033[0m'.format(this_cmp.get('chipId',-1)))
         return oid
 
     def _check_child_parent_relation(self, i_mo_oid, i_ch_oid):

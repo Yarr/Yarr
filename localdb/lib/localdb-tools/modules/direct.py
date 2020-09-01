@@ -396,33 +396,21 @@ def __pull(dir_path, args):
             for entry in entries:
                 children.append(entry['child'])
             module = True
+        configs = []
         for i, chip in enumerate(children):
             query = { '_id': ObjectId(chip) }
             this = localdb.component.find_one(query)
             if not this:
                 this = localdb.chip.find_one(query)
                 if not this: continue
-
             chip_type = this.get('chipType', 'NULL') if this.get('chipType', 'NULL')!='FE-I4B' else 'FEI4B'
-            cfg_path = '{0}/configs/defaults/default_{1}.json'.format(yarr_path, chip_type.lower())
-            if not os.path.isfile(cfg_path):
-                logger.error('Not found default chip config: {}'.format(cfg_path))
-                sys.exit(1)
-            cfg_json = toJson(cfg_path)
-            if chip_type=='FEI4B':
-                cfg_json['FE-I4B']['name']                = this['name']
-                cfg_json['FE-I4B']['Parameter']['chipId'] = this.get('chipId', i)
-            else:
-                cfg_json[chip_type]['Parameter']['Name']   = this['name']
-                cfg_json[chip_type]['Parameter']['ChipId'] = this.get('chipId', i)
-            ### chip config
-            docs = getData('json', dir_path, '{}.json'.format(this['name']), cfg_json, True)
-            data_entries.append( docs )
-
+            config = '{0}/{1}.json'.format(dir_path, this['name'])
+            chip_id = this.get('chipId',-1)
+            configs.append({ 'chipType': chip_type, 'name': this['name'], 'config': config }),
             conn_json['chips'].append({
                 'name': this['name'],
-                'config': '{0}/{1}.json'.format(dir_path, this['name']),
-                'chipId': this.get('chipId',i),
+                'config': config,
+                'chipId': chip_id,
                 'tx'    : i,
                 'rx'    : i
             })
@@ -446,7 +434,8 @@ def __pull(dir_path, args):
                 'Chips'    : ', '.join(chips),
                 'Stage'    : stage
             },
-            'data': data_entries
+            'data': data_entries,
+            'configs': configs
         }
         return console_data
 

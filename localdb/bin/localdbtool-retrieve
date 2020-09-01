@@ -320,9 +320,11 @@ def main():
             else:
                 with open(data['path'], 'w') as f:
                     f.write(data['data'])
-
-
-        logger.warning('\033[31mPlease confirm "{}/connectivity" before running scanConsole.\033[0m'.format(args.directory))
+        logger.warning('\033[31mPlease confirm if there is no mistake in "{}/connectivity" before running scanConsole.\033[0m'.format(args.directory))
+        if console_data.get('configs',[]):
+            logger.warning('\033[31mAnd create chip config files by:\033[0m'.format(args.directory))
+        for chip_config in console_data.get('configs',[]):
+            logger.warning('\033[31m    ./bin/createConfig -t {0} -n {1} -o {2}\033[0m'.format(chip_config['chipType'], chip_config['name'], chip_config['config']))
         logger.info('-----------------------')
         sys.exit(0)
     if command[0]=='list':
