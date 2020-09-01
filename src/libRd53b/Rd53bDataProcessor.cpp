@@ -305,8 +305,15 @@ void Rd53bDataProcessor::process_core()
                                 }
 
                                 // Reverse enginner the pixel address
-                                // MUST PUT THE MASK STAGING LOOP AT THE BEGINNING
-                                const unsigned step = curOut[channel]->lStat.get(0);
+                                // TODO Should do this only once
+                                unsigned maskLoopIndex = 0;
+                                for (unsigned loop=0; loop<curOut[channel]->lStat.size(); loop++) {
+                                    if (curOut[channel]->lStat.getStyle(loop) == LOOP_STYLE_MASK) {
+                                        maskLoopIndex = loop;
+                                        break;
+                                    }
+                                }
+                                const unsigned step = curOut[channel]->lStat.get(maskLoopIndex);
                                 const uint16_t pix_col = (ccol - 1) * 8 + PToT_maskStaging[step % 4][ibus] + 1;
                                 const uint16_t pix_row = step / 2 + 1;
                                 // logger->info("Hit: row({}) col({}) tot({}) ", pix_row, pix_col, PToT);
