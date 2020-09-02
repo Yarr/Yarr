@@ -494,9 +494,9 @@ int DBHandler::checkCommand(std::string i_opt) {
         cmd = m_influx_command;
         tool = "influxdbtool-retrieve";
     }
-    cmd = cmd + " test 2> /dev/null";
+    cmd = cmd + " test 1> /dev/null";
     if (system(cmd.c_str())!=0) {
-        dlog->error("Not found Local DB command: '{}'",tool);
+        dlog->error("Local DB command: '{}' exited with errors", tool);
         dlog->error("Set Local DB function by:");
         dlog->error("    YARR/localdb/setup_db.sh");
         return 1;

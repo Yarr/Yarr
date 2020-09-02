@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from influxdb import InfluxDBClient
+from influxdb import InfluxDBClient, exceptions
 import sys, os
 import datetime
 import time as time_module
@@ -20,16 +20,35 @@ import logging
 logger = logging.getLogger('Log')
 db_logging.setLog()
 
-remote_host='127.0.0.1'
-remote_port=8086
-dbname='dcsDB'
+# Loading basic influxDB config
+with open(current_DIR + "/localdb/configs/influxdb_connectivity.json") as f:
+    influxdbConfig = json.load(f)
+
+remote_host = influxdbConfig["influxdb"]["host"]
+remote_port = influxdbConfig["influxdb"]["port"]
+dbname = influxdbConfig["influxdb"]["database"]
+username = influxdbConfig["influxdb"]["username"]
+password = influxdbConfig["influxdb"]["username"]
 
 class dcsDataClient:
     def __init__(self):
+
+
         self.client=InfluxDBClient(host=remote_host,
                                    port=remote_port,
-                                   database=dbname)
-        database_list=self.client.get_list_database()
+                                   database=dbname,
+                                   username=username,
+                                   password=password)
+        try:                    
+            database_list=self.client.get_list_database()
+        except exceptions.InfluxDBClientError as e:
+            logger.error('Received error from InfluxDB: {}'.format(e))
+            logger.error('If using authentication, input username and password in ')
+            logger.error('{}/localdb/configs/influxdb_connectivity.json'.format(current_DIR))
+
+            sys.exit(1)
+
+
         self.runStart=0
         self.runEnd=1566546707353068032
         if not {'name' : dbname} in database_list :
@@ -45,6 +64,7 @@ class dcsDataClient:
     def getEvent(self,measName):
         if self.db_exist :
             if {'name':measName} in self.meas_list :
+                print('SELECT * FROM \"{0}\" WHERE time >= {1} AND time <= {2}'.format(measName,self.runStart,self.runEnd))
                 return self.client.query('SELECT * FROM \"{0}\" WHERE time >= {1} AND time <= {2}'.format(measName,self.runStart,self.runEnd))
             else :
                 #error_massage('measurement',measName)
@@ -135,14 +155,13 @@ def getScanLog(scanLog_file):
     return scanLog
 
 def calculate_runTime(scanLog):
+
+    # Reading from Yarr's cfg the timestamp corresponding to the beggining of the analysis
     start_time_str=scanLog['timestamp']
     start_time=datetime.datetime.strptime(start_time_str,'%Y-%m-%d_%H:%M:%S').replace(tzinfo=dateutil.tz.tzlocal())
-    #start_UTC=start_time.astimezone(pytz.timezone('utc'))
-    #    print(start_time)
-    #print(start_UTC)
-    #start_timestamp=pd.to_datetime(str(start_UTC)) #UTC time in InfluxDB
     start_timestamp=pd.to_datetime(str(start_time)) #local time in InfluxDB
 
+    # Calculate the timestamp corresponding to the end of the analysis
     stopwatch=scanLog['stopwatch']
     analysis=stopwatch['analysis']
     config=stopwatch['config']
@@ -151,12 +170,17 @@ def calculate_runTime(scanLog):
     total_ms=analysis+config+processing+scan
     end_timestamp=start_timestamp+pd.offsets.Milli(total_ms)
 
-    #offset
+    # Add an extra offset to make sure we catch the whole scan
     offset_time=15000 #ms
     start_timestamp=start_timestamp-pd.offsets.Milli(offset_time)
     end_timestamp=end_timestamp+pd.offsets.Milli(offset_time)
 
-    return start_timestamp.value, end_timestamp.value
+    # Although start_timestamp and end_timestamp have ms precission, the values
+    # of both are completed with 0s until ns (6 extra 0s). We have to remove 3
+    # to have the value in us (so InfluxDB does not complain), although the
+    # actual precission is ms)
+
+    return int(start_timestamp.value/1000), int(end_timestamp.value/1000)
 
 def appendDcsInfo(dcsInfoList,description,key,num,path):
     singleInfo={}
