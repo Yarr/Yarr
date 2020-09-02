@@ -272,6 +272,8 @@ class RegisterData():
                     self.logger.warning('\033[1;31m    Serial Number    : {}\033[0m'.format(this_cmp['serialNumber']))
                     self.logger.warning('\033[1;31m    Provided chipId  : {}\033[0m'.format(i_json.get('chipId',-1)))
                     self.logger.warning('\033[1;31m    Registered chipId: {}\033[0m'.format(this_cmp.get('chipId',-1)))
+                    self.logger.warning('\033[1;31mIgnores the registered chipId and proceeds to upload data according to the provided serial number and chipId\033[0m')
+                    self.logger.warning('\033[1;31mCheck the registered information and correct the registered/provided chipId to prevent this warning message')
         return oid
 
     def _check_child_parent_relation(self, i_mo_oid, i_ch_oid):
