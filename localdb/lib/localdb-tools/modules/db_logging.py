@@ -72,12 +72,11 @@ def setLogFile(filename='', level=_level):
         dirname = '{0}/.yarr/localdb/log/'.format(home)
         if os.path.isfile('{}/log'.format(dirname)):
             size = os.path.getsize('{}/log'.format(dirname))
-            #if size/1000. > 500: # greather than 500KB
-            if size/1000. > 10: # greather than 500KB
+            if size/1000. > 1000: # greather than 1MB
                 os.rename('{}/log'.format(dirname), '{}/log-old-0'.format(dirname))
-                if os.path.isfile('{0}/log-old-{1}'.format(dirname, 9)): os.remove('{0}/log-old-{1}'.format(dirname, 9))
                 for i in reversed(range(10)):
                     if os.path.isfile('{0}/log-old-{1}'.format(dirname, i)): os.rename('{0}/log-old-{1}'.format(dirname, i), '{0}/log-old-{1}'.format(dirname, i+1))
+                if os.path.isfile('{0}/log-old-{1}'.format(dirname, 10)): os.remove('{0}/log-old-{1}'.format(dirname, 10))
         filename = '{}/log'.format(dirname)
     dir_path = os.path.dirname(os.path.abspath(filename))
     os.makedirs(dir_path, exist_ok=True)
