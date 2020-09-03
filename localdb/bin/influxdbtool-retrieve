@@ -28,7 +28,7 @@ remote_host = influxdbConfig["influxdb"]["host"]
 remote_port = influxdbConfig["influxdb"]["port"]
 dbname = influxdbConfig["influxdb"]["database"]
 username = influxdbConfig["influxdb"]["username"]
-password = influxdbConfig["influxdb"]["username"]
+password = influxdbConfig["influxdb"]["password"]
 
 class dcsDataClient:
     def __init__(self):
