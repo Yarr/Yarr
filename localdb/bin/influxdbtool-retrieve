@@ -64,7 +64,6 @@ class dcsDataClient:
     def getEvent(self,measName):
         if self.db_exist :
             if {'name':measName} in self.meas_list :
-                print('SELECT * FROM \"{0}\" WHERE time >= {1} AND time <= {2}'.format(measName,self.runStart,self.runEnd))
                 return self.client.query('SELECT * FROM \"{0}\" WHERE time >= {1} AND time <= {2}'.format(measName,self.runStart,self.runEnd))
             else :
                 #error_massage('measurement',measName)
