@@ -50,10 +50,10 @@ Rd53a2TriggerLoop::Rd53a2TriggerLoop() : LoopActionBase() {
 
 void Rd53a2TriggerLoop::singleCmdInject(){
     //Performs double injection with a single inject command. Works up to doubleDelay = 15.75 bunch crossings.
-    // The floor (m_doubleDelay) is used to make sure the signal injections happens in the correct phase relative to the clock edge 
-    uint8_t of = 3+(std::max(float(m_trigDelay+16-CMDDEL + m_Ntrig1), floor (m_doubleDelay) + m_trigDelay2+16-CMDDEL + m_Ntrig2)-1)/8; //Calculate trigWord offset, i.e. at which index the header cmd is to be inserted.
+    //The user have to type in half number values for the double delay values (fix is to floor m_doubleDelay)
+    uint8_t of = 3+(std::max(float(m_trigDelay+16-CMDDEL + m_Ntrig1), m_doubleDelay + m_trigDelay2+16-CMDDEL + m_Ntrig2)-1)/8; //Calculate trigWord offset, i.e. at which index the header cmd is to be inserted.
     m_trigWord[of] = 0x69696363; //Populate header
-    m_edgeDuration = int((floor (m_doubleDelay) + 0.5)*4); //cal_edge duration (160MHz) is 4 times doubledelay (40MHz)
+    m_edgeDuration = int(m_doubleDelay*4); //cal_edge duration (160MHz) is 4 times doubledelay (40MHz)
     if(m_noInject2){
         m_trigWord[of-1] = Rd53aCmd::genCal(8, 0, 9-CMDDEL, 1, 0, 1); // Inject cmd
         flexibleTrigger(of, 8+std::round(float(m_edgeDuration)/4), m_Ntrig2, 0); //Trigger on injection #2
