@@ -1247,7 +1247,7 @@ class CompData(RegisterData):
                 raise RegisterError
             chips.append(chip_conn)
         conn['chips'] = chips
-        conn['module']['children'] = len(chips)
+        if 'module' in conn: conn['module']['children'] = len(chips)
 
         self.logger.info('Component Data:')
         self.logger.info('    Chip Type: \033[1;33m{}\033[0m'.format(conn['chipType']))
@@ -1293,14 +1293,6 @@ class CompData(RegisterData):
                 self.__register_child_parent_relation(mo_oid, ch_oid, chip_id, -1, cpr_oid)
 
         self.logger.info('Succeeded uploading component data')
-        self.logger.info('')
-        self.logger.info('You can retrieve config files from Local DB by')
-        if 'module' in conn:
-            self.logger.info('    localdbtool-retrieve pull --chip {}'.format(conn['module']['serialNumber']))
-        else:
-            for chip_conn in conn['chips']:
-                self.logger.info('    localdbtool-retrieve pull --chip {}'.format(chip_conn['serialNumber']))
-
         return True
 
     def __check_component(self, i_json):

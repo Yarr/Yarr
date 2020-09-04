@@ -370,8 +370,12 @@ def main():
         elif opt=='site':
             r_json = function.__list_site()
             printLog('')
-            for site in r_json['site']:
-                printLog('- {0}'.format(site))
+            printLog('ITk PD Institution List:')
+            for site in r_json['itkpd']:
+                printLog('- \033[1;33m{0}\033[0m \033[1;32m(Code: {1})\033[0m'.format(site['institution'], site['code']))
+            printLog('Local DB Institution List:')
+            for site in r_json['localdb']:
+                printLog('- \033[1;33m{0}\033[0m \033[1;32m(Code: {1})\033[0m'.format(site['institution'], site['code']))
             printLog('')
 
         logger.info('-----------------------')
