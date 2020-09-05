@@ -7,9 +7,11 @@
 #################################
 
 # Common
-import os, sys, requests, json, argparse, yaml, shutil
+import os, sys, requests, json, argparse, yaml, shutil, io
 from getpass    import getpass
 from pymongo    import MongoClient, errors
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../lib/localdb-tools/modules'))
 
