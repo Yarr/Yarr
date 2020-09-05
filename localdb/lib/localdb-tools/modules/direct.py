@@ -632,7 +632,7 @@ def __list_user():
     entries = localdb.user.find({ 'dbVersion' : db_version })
     users = []
     for entry in entries:
-        users.append(entry['userName'])
+        users.append(str(entry['userName']))
     for user in users:
         query = {
             'userName'  : user,
@@ -641,7 +641,7 @@ def __list_user():
         entries = localdb.user.find(query)
         docs = []
         for entry in entries:
-            docs.append(entry['institution'])
+            docs.append(str(entry['institution']))
         docs = list(set(docs))
         docs_list.update({ user: docs })
 
@@ -652,14 +652,14 @@ def __list_site():
     entries = localdb.institution.find({ 'dbVersion' : db_version })
     for entry in entries:
         docs_list['localdb'].append({
-            'institution': entry.get('institution', 'null'),
-            'code'       : entry.get('code', 'null')
+            'institution': str(entry.get('institution', 'null')),
+            'code'       : str(entry.get('code', 'null'))
         })
     entries = localdb.pd.institution.find({ 'dbVersion' : db_version })
     for entry in entries:
         docs_list['itkpd'].append({
-            'institution': entry.get('institution', 'null'),
-            'code'       : entry.get('code', 'null')
+            'institution': str(entry.get('institution', 'null')),
+            'code'       : str(entry.get('code', 'null'))
         })
     docs_list['localdb'] = sorted(docs_list['localdb'], key=lambda x: (x['institution']))
     docs_list['itkpd'] = sorted(docs_list['itkpd'], key=lambda x: (x['institution']))
