@@ -182,8 +182,7 @@ Similarly, to use the example controller config with `bin/scanConsole`,
 the connectivity config specified by `-c` needs to be compatible with the channels
 in the controller config. For example:
 ```bash
-$ bin/scanConsole -r configs/controller/emuCfg_star.json -c
-config/connectivity/example_star_setup.json -s <scan config>
+$ bin/scanConsole -r configs/controller/emuCfg_star.json -c config/connectivity/example_star_setup.json -s <scan config>
 ```
 
 The tx and rx channels for the Star emulator are configured via the
@@ -230,21 +229,28 @@ For example:
             ...
         },
         {
-            "tx" : 3,
-            "rx" : 4,
+            "tx" : 1,
+            "rx" : 2,
             ...
         },
         {
             "tx" : 1,
-            "rx" : 2,
+            "rx" : 3,
+            ...
+        },
+        {
+            "tx" : 4,
+            "rx" : 5,
             ...
         }
     ]
 }
 ```
-In the above example, three HCCStars are configured: the first and third
-ones share tx channel 1 and rx channel 2, the second one uses tx channel
-3 and rx channel 4.
+In the above example, four HCCStars are configured.
+The first three HCCStars share the same tx channel 1. The first and
+second HCCStars also share the same rx channel 2, while the third one
+uses a separate rx channel 3. The fourth HCCStar uses a different tx
+channel 4 and a different rx channel 5.
 
 #### Configuration for the multi-level trigger mode
 To run the Star emulator in the multi-level trigger mode, a second tx
