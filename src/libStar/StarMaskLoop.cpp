@@ -41,6 +41,12 @@ void StarMaskLoop::initMasks() {
       pos += max-m_nEnabledStripsPerGroup;
     }
   }
+
+  SPDLOG_LOGGER_DEBUG(logger, "ChannelRings:");
+  if (logger->should_log(spdlog::level::debug)) {
+    m_enabledChannelsRing.printRing();
+    m_maskedChannelsRing.printRing();
+  }
 }
 
 void StarMaskLoop::init() {
