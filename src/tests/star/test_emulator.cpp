@@ -407,11 +407,14 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
 
   json tmpChipCfg;
   tmpChipCfg["chips"] = json::array();
-  // One channel that contains three HCCStars
-  // Use tx channel 33 and rx channel 44
-  tmpChipCfg["chips"][0] = {{"tx",33}, {"rx",44}, {"config","test_star_1.json"}};
-  tmpChipCfg["chips"][1] = {{"tx",33}, {"rx",44}, {"config","test_star_2.json"}};
-  tmpChipCfg["chips"][2] = {{"tx",33}, {"rx",44}, {"config","test_star_3.json"}};
+  // Three front ends share the same tx channel 33
+  // The first two FEs share the same rx channel 44
+  int rx_fe1 = 44, rx_fe2 = 44;
+  // The third one uses a separate rx channel 55
+  int rx_fe3 = 55;
+  tmpChipCfg["chips"][0] = {{"tx",33}, {"rx",rx_fe1}, {"config","test_star_1.json"}};
+  tmpChipCfg["chips"][1] = {{"tx",33}, {"rx",rx_fe2}, {"config","test_star_2.json"}};
+  tmpChipCfg["chips"][2] = {{"tx",33}, {"rx",rx_fe3}, {"config","test_star_3.json"}};
   std::string tmpChipFname("test_multichip_star_setup.json");
   std::ofstream tmpChipFile(tmpChipFname);
   tmpChipFile << std::setw(4) << tmpChipCfg;
@@ -430,7 +433,7 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
 
   StarCmd star;
 
-  typedef std::vector<uint8_t> PacketCompare;
+  typedef std::pair<uint32_t, std::vector<uint8_t>> PacketCompare;
   std::deque<PacketCompare> expected;
 
   SECTION("HCCStar Write and Read") {
@@ -441,7 +444,7 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
     // Read only the HCC with ID = 3
     auto readHCCCmd_3_reg47 = star.read_hcc_register(47, 3);
     sendCommand(*emu, readHCCCmd_3_reg47);
-    expected.push_back({0x82, 0xfa, 0xbc, 0xda, 0xbc, 0xd0});
+    expected.push_back({rx_fe1, {0x82, 0xfa, 0xbc, 0xda, 0xbc, 0xd0}});
 
     // Write 0xdeadbeef to register 47 of the HCC with ID = 4
     auto writeHCCCmd_4_reg47 = star.write_hcc_register(47, 0xdeadbeef, 4);
@@ -456,11 +459,11 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
     sendCommand(*emu, readHCCCmd_47);
 
     // HCC 3: register 47 is still 0xabcdabcd
-    expected.push_back({0x82, 0xfa, 0xbc, 0xda, 0xbc, 0xd0});
+    expected.push_back({rx_fe1, {0x82, 0xfa, 0xbc, 0xda, 0xbc, 0xd0}});
     // HCC 4: register 47 should be 0xdeadbeef
-    expected.push_back({0x82, 0xfd, 0xea, 0xdb, 0xee, 0xf0});
+    expected.push_back({rx_fe2, {0x82, 0xfd, 0xea, 0xdb, 0xee, 0xf0}});
     // HCC 5: register 47 should be 0xcafebabe
-    expected.push_back({0x82, 0xfc, 0xaf, 0xeb, 0xab, 0xe0});
+    expected.push_back({rx_fe3, {0x82, 0xfc, 0xaf, 0xeb, 0xab, 0xe0}});
   }
 
   SECTION("ABCStar Write and Read") {
@@ -472,8 +475,12 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
     auto readABCCmd_hcc3 = star.read_abc_register(23, 3, 0xf);
     sendCommand(*emu, readABCCmd_hcc3);
     // Expect two ABC RR packets from ABC 1 and 2
-    expected.push_back({0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf1, 0x00, 0x00});
-    expected.push_back({0x41, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00});
+    expected.push_back({rx_fe1, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf1, 0x00, 0x00}});
+    expected.push_back({rx_fe1, {0x41, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
+
+    emu->releaseFifo();
+    while(!emu->isCmdEmpty());
+    checkData(emu.get(), expected);
 
     // Write 0xdeadbeef to MaskInput7 of ABC 7 on HCC 4
     auto writeABCCmd_4_7 = star.write_abc_register(0x17, 0xdeadbeef, 4, 7);
@@ -487,23 +494,27 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
     auto readABCCmd_5_7 = star.read_abc_register(0x17, 5, 7);
     sendCommand(*emu, readABCCmd_5_7);
 
-    expected.push_back({0x42, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf7, 0x00, 0x00});
+    expected.push_back({rx_fe3, {0x42, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf7, 0x00, 0x00}});
+
+    emu->releaseFifo();
+    while(!emu->isCmdEmpty());
+    checkData(emu.get(), expected);
 
     // Broadcast read of MaskInput 7 of all ABCs
     auto readABCCmd_mask7 = star.read_abc_register(0x17, 0xf, 0xf);
     sendCommand(*emu, readABCCmd_mask7);
 
     // Two ABC RR packets from ABC 1 and 2 on HCC 3
-    expected.push_back({0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf1, 0x00, 0x00});
-    expected.push_back({0x41, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00});
+    expected.push_back({rx_fe1, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf1, 0x00, 0x00}});
+    expected.push_back({rx_fe1, {0x41, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
 
     // One ABC RR packet from ABC 7 on HCC 4
-    expected.push_back({0x40, 0x17, 0x0d, 0xea, 0xdb, 0xee, 0xf7, 0x00, 0x00});
+    expected.push_back({rx_fe2, {0x40, 0x17, 0x0d, 0xea, 0xdb, 0xee, 0xf7, 0x00, 0x00}});
 
     // Three ABC RR packet from ABC 2, 4, 7 on HCC 5
-    expected.push_back({0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00});
-    expected.push_back({0x41, 0x17, 0x0a, 0xa0, 0x45, 0x1a, 0xa4, 0x00, 0x00});
-    expected.push_back({0x42, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf7, 0x00, 0x00});
+    expected.push_back({rx_fe3, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
+    expected.push_back({rx_fe3, {0x41, 0x17, 0x0a, 0xa0, 0x45, 0x1a, 0xa4, 0x00, 0x00}});
+    expected.push_back({rx_fe3, {0x42, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf7, 0x00, 0x00}});
   }
 
   emu->releaseFifo();
