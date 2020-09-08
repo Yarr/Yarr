@@ -5,6 +5,7 @@
 #include "LCBUtils.h"
 #include "StarCfg.h"
 #include "Utils.h"
+#include "StarMaskLoop.h"
 #include "StarMask_CalEn.h"
 
 #include "logging.h"
@@ -309,4 +310,30 @@ TEST_CASE("StarMaskLoopCheckFixed", "[star][mask_loop]") {
     REQUIRE (ring.readMask(127-i) == star_masks[i]);
     REQUIRE (ring.readCalEnable(127-i) == star_calEn[i]);
   }
+}
+
+TEST_CASE("StarMaskLoopRing", "[star][mask_loop]") {
+  ChannelRing ring;
+  for(int i=0; i<128; i++) {
+    ring.fill(false);
+    ring.fill(true);
+  }
+
+  REQUIRE ( ring.readMask(0) == MaskType{0x33333333, 0x33333333, 0x33333333, 0x33333333, 0x33333333, 0x33333333, 0x33333333, 0x33333333} );
+  REQUIRE ( ring.readMask(1) == MaskType{0xcccccccc, 0xcccccccc, 0xcccccccc, 0xcccccccc, 0xcccccccc, 0xcccccccc, 0xcccccccc, 0xcccccccc} );
+
+  REQUIRE ( ring.readCalEnable(0) == MaskType{0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa} );
+  REQUIRE ( ring.readCalEnable(1) == MaskType{0x55555555, 0x55555555, 0x55555555, 0x55555555, 0x55555555, 0x55555555, 0x55555555, 0x55555555} );
+  REQUIRE ( ring.readCalEnable(2) == MaskType{0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa} );
+  REQUIRE ( ring.readCalEnable(4) == MaskType{0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa} );
+
+  // Mostly checking which end we fill from
+  ChannelRing ring_one;
+  ring_one.fill(true);
+  for(int i=0; i<256; i++) {
+    ring.fill(false);
+  }
+
+  REQUIRE ( ring_one.readMask(0) == MaskType{0xfffffffe, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff} );
+  REQUIRE ( ring_one.readCalEnable(0) == MaskType{1, 0, 0, 0, 0, 0, 0, 0} );
 }
