@@ -19,7 +19,7 @@ namespace {
 auto logger = logging::make_log("StarEmu");
 }
 
-StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, EmuCom * tx2,
+StarEmu::StarEmu(std::vector<ClipBoard<RawData>*> &rx, EmuCom * tx, EmuCom * tx2,
                  const std::string& json_emu_file_path,
                  const std::vector<std::string>& json_chip_file_paths,
                  unsigned hpr_period)
@@ -31,6 +31,7 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, EmuCom * tx2,
     run = true;
 
     // HCCStar and ABCStar chip configurations
+    assert(rx.size()==json_chip_file_paths.size());
     for (unsigned i=0; i<json_chip_file_paths.size(); i++) {
         // Set up the chip configuration and load it to the emulator
         const std::string& regCfgFile = json_chip_file_paths[i];
@@ -51,17 +52,7 @@ StarEmu::StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, EmuCom * tx2,
             regCfg->addABCchipID(15);
         }
 
-        chipEmus.emplace_back( new StarChipsetEmu(&rx, json_emu_file_path, std::move(regCfg), hpr_period) );
-    }
-
-    // In case json_chip_file_paths is an empty vector
-    if (chipEmus.empty()) {
-        logger->warn("Try to start emulators without any front end specified");
-        logger->warn("Will assume one HCCStar and one ABCStar");
-        auto regCfg = std::make_unique<StarCfg>();
-        regCfg->setHCCChipId(15);
-        regCfg->addABCchipID(15);
-        chipEmus.emplace_back( new StarChipsetEmu(&rx, json_emu_file_path, std::move(regCfg), hpr_period) );
+        chipEmus.emplace_back( new StarChipsetEmu(rx[i], json_emu_file_path, std::move(regCfg), hpr_period) );
     }
 }
 
@@ -368,68 +359,82 @@ void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
     chipCfg["chips"][0] = {{"tx", 0}, {"rx", 1}};
   }
 
-  // Loop over all FEs to group the register config files of the same channel
-  // A map storing register config file paths
-  // Key: a tuple of channel ID (tx_channel, rx_channel, tx2_channel)
-  // Value: a vector of register config file paths for FEs
-  std::map<std::tuple<int, int, int>, std::vector<std::string>> regConfigs;
+  // HCCStars with the same tx channel are grouped together
+  // Store their rx channels and register config files in two maps
+  // Key: pair of tx channel numbers (tx, tx2)
+  // Value of the first map: a vector of register config file path
+  // Value of the second map: a vector of pointers to rx buffers
+  std::map<std::pair<int, int>, std::vector<std::string>> cfgMap;
+  std::map<std::pair<int, int>, std::vector<ClipBoard<RawData>*>> rxMap;
 
-  // The assumption here is if two FEs have the same tx they must have the same
-  // rx, and vice versa. (So they can be handled in the same StarEmu instance.)
+  // StarChipsetEmu instances with the same tx channel are handled in the same StarEmu instance. Their second tx channel, if configured, must be the same as well.
+  // The rx channels can be different.
   for (unsigned i=0; i<chipCfg["chips"].size(); i++) {
     // Tx
     int chn_tx = chipCfg["chips"][i]["tx"];
-    // Rx
-    int chn_rx = chipCfg["chips"][i]["rx"];
     // 2nd Tx for R3L1 in case of multi-level trigger mode
     int chn_tx2 = -1;
     if  (not chipCfg["chips"][i]["tx2"].empty())
       chn_tx2 = chipCfg["chips"][i]["tx2"];
 
+    // Rx
+    int chn_rx = chipCfg["chips"][i]["rx"];
+    // Set up rx link if not already done so
+    if (not EmuRxCore<StarChips>::getCom(chn_rx)) {
+      EmuRxCore<StarChips>::setCom(chn_rx, std::make_unique<ClipBoard<RawData>>());
+    }
+
     std::string regCfgFile;
     if (not chipCfg["chips"][i]["config"].empty())
       regCfgFile = chipCfg["chips"][i]["config"];
 
-    auto tx = EmuTxCore<StarChips>::getCom(chn_tx);
-    auto rx = EmuRxCore<StarChips>::getCom(chn_rx);
-    if ( tx and rx ) {
-      // This channel has already been set up
-      // Only need to add register config file path to the corresponding list
-      regConfigs[std::make_tuple(chn_tx, chn_rx, chn_tx2)].push_back(regCfgFile);
-    } else if ( not (tx or rx) ) {
-      // create a new channel
+    auto txlabel = std::make_pair(chn_tx, chn_tx2);
+    if (rxMap.find(txlabel) != rxMap.end()) {
+      // This tx channel has already been set up
+      // Update the existing channel setup
+      cfgMap[txlabel].push_back(regCfgFile);
+      rxMap[txlabel].push_back(EmuRxCore<StarChips>::getCom(chn_rx));
+    } else {
+      // Create a new tx channel (for a new StarEmu instance)
+      //assert(not EmuTxCore<StarChips>::getCom(chn_tx));
+      if (EmuTxCore<StarChips>::getCom(chn_tx)) {
+        logger->error("Tx channel {} has already been set up!", chn_tx);
+        throw std::runtime_error("Fail to load emulator configuration");
+      }
       tx_coms.emplace_back(new RingBuffer(128));
-      tx = tx_coms.back().get();
-      EmuTxCore<StarChips>::setCom(chn_tx, tx);
+      EmuTxCore<StarChips>::setCom(chn_tx, tx_coms.back().get());
 
-      EmuRxCore<StarChips>::setCom(chn_rx, std::make_unique<ClipBoard<RawData>>());
-      rx = EmuRxCore<StarChips>::getCom(chn_rx);
-
+      // TX2 if required
       if (chn_tx2 >= 0) {
-        assert(not EmuTxCore<StarChips>::getCom(chn_tx2));
+        //assert(not EmuTxCore<StarChips>::getCom(chn_tx2));
+        if (EmuTxCore<StarChips>::getCom(chn_tx2)) {
+          logger->error("Tx channel {} has already been set up!", chn_tx2);
+          throw std::runtime_error("Fail to load emulator configuration");
+        }
         tx_coms.emplace_back(new RingBuffer(128));
         EmuTxCore<StarChips>::setCom(chn_tx2, tx_coms.back().get());
       }
 
-      regConfigs[std::make_tuple(chn_tx, chn_rx, chn_tx2)] = {regCfgFile};
-    } else {
-      // something is wrong with the chip configuration
-      logger->error("Either Tx channel {} or Rx channel {} has been set up more than once. ");
-      throw std::runtime_error("Fail to load emulator configuration due to inconsistent channel assignment");
+      cfgMap[txlabel] = {regCfgFile};
+      rxMap[txlabel] = {EmuRxCore<StarChips>::getCom(chn_rx)};
     }
-  }
+
+  } // end of chipCfg["chips"] loop
 
   // Configure and start emulators
-  for (const auto& chn : regConfigs) {
-    int chn_tx, chn_rx, chn_tx2;
-    std::tie(chn_tx, chn_rx, chn_tx2) = chn.first;
+  //assert(rxMap.size()==cfgMap.size());
+  for (const auto& chn : cfgMap) {
+    int chn_tx, chn_tx2;
+    std::tie(chn_tx, chn_tx2) = chn.first;
+
     auto tx = EmuTxCore<StarChips>::getCom(chn_tx);
-    auto rx = EmuRxCore<StarChips>::getCom(chn_rx);
 
     EmuCom* tx2 = nullptr;
     if (chn_tx2 >= 0) tx2 = EmuTxCore<StarChips>::getCom(chn_tx2);
 
-    emus.emplace_back(new StarEmu(*rx, tx, tx2, emuCfgFile, chn.second, hprperiod));
+    std::vector<ClipBoard<RawData>*>& rx = rxMap[chn.first];
+
+    emus.emplace_back(new StarEmu(rx, tx, tx2, emuCfgFile, chn.second, hprperiod));
     emuThreads.push_back(std::thread(&StarEmu::executeLoop, emus.back().get()));
   }
 }

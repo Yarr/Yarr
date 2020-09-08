@@ -13,7 +13,7 @@ class EmuCom;
 class StarEmu {
 public:
 
-    StarEmu(ClipBoard<RawData> &rx, EmuCom * tx, EmuCom * tx2,
+    StarEmu(std::vector<ClipBoard<RawData>*> &rx, EmuCom * tx, EmuCom * tx2,
             const std::string& json_emu_file_path,
             const std::vector<std::string>& json_chip_file_path,
             unsigned);
