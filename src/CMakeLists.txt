@@ -10,6 +10,10 @@ add_compile_options(-Wfatal-errors)
 add_compile_options(-Wno-deprecated)
 add_compile_options(-std=c++17)
 
+if ( USE_JSON )
+    add_definitions( -DUSE_JSON )
+endif()
+
 link_libraries(-lstdc++fs)
 
 # Add -fPIC for (e.g. linking to shared libraries)
