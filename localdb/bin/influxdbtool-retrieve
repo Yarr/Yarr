@@ -20,19 +20,15 @@ import logging
 logger = logging.getLogger('Log')
 db_logging.setLog()
 
-# Loading basic influxDB config
-with open(current_DIR + "/localdb/configs/influxdb_connectivity.json") as f:
-    influxdbConfig = json.load(f)
 
-remote_host = influxdbConfig["influxdb"]["host"]
-remote_port = influxdbConfig["influxdb"]["port"]
-dbname = influxdbConfig["influxdb"]["database"]
-username = influxdbConfig["influxdb"]["username"]
-password = influxdbConfig["influxdb"]["password"]
+remote_host = ""
+remote_port = ""
+dbname = ""
+username = ""
+password = ""
 
 class dcsDataClient:
     def __init__(self):
-
 
         self.client=InfluxDBClient(host=remote_host,
                                    port=remote_port,
@@ -42,12 +38,11 @@ class dcsDataClient:
         try:                    
             database_list=self.client.get_list_database()
         except exceptions.InfluxDBClientError as e:
-            logger.error('Received error from InfluxDB: {}'.format(e))
-            logger.error('If using authentication, input username and password in ')
-            logger.error('{}/localdb/configs/influxdb_connectivity.json'.format(current_DIR))
+            logger.error("Received error from InfluxDB: {}".format(e))
+            logger.error("If using authentication, input username and password in ")
+            logger.error("Please specify the db connectivity parameters (\"username\", \"password\", \"database\", \"host\", \"port\") in the .\"connectivity\" section of file passed with --dcs_config or -d (-F from dbAccessor)")
 
             sys.exit(1)
-
 
         self.runStart=0
         self.runEnd=1566546707353068032
@@ -70,6 +65,7 @@ class dcsDataClient:
                 return None
         else :
             return None
+
 def getArgs():
     parser=argparse.ArgumentParser(description='data downloader from InfluxDB')
 
@@ -88,6 +84,19 @@ def getArgs():
 
 def error_message(key_type,name ):
     logger.error('{} : {} is not found!'.format(key_type, name))
+    
+def loadDBConnectivity(dcs_config_fname):
+
+    global remote_host, remote_port, dbname, username, password
+
+    with open(dcs_config_fname,'r') as dcs_config_f :
+        dcs_config=json.load(dcs_config_f)
+
+    remote_host = dcs_config["connectivity"]["host"]
+    remote_port = dcs_config["connectivity"]["port"]
+    dbname = dcs_config["connectivity"]["database"]
+    username = dcs_config["connectivity"]["username"]
+    password = dcs_config["connectivity"]["password"]
 
 def getData(client, dcs_config_fname):
     output_jsonName='{}/dcsDataInfo.json'.format(output_DIR)
@@ -98,6 +107,7 @@ def getData(client, dcs_config_fname):
         logger.error('dcs Configuration file : {}'.format(dcs_config))
         logger.error('ERROR!')
         return 1
+
     dcsInfo={}
     dcsInfo['environments']=[]
     for dcsList in dcs_config['environments']:
@@ -204,12 +214,15 @@ def removeDatFile(dcsInfo_path):
 
 def main():
     args=getArgs()
-    command=args.command
 
+    command             = args.command
+    dcs_config_fname    = args.dcs_config
+    
     if command == 'test':
         sys.exit(0)
     elif command == 'init':
         try:
+            loadDBConnectivity(dcs_config_fname)
             client=dcsDataClient()
         except Exception as e:
             logger.error('---> Bad connection to Influx DB.')
@@ -238,7 +251,9 @@ def main():
         if args.dcs_config is None :
             logger.error('dcs configuration file is required! Please specify dcs configuration file path under --dcs_config or -d')
             sys.exit(1)
-
+        
+        loadDBConnectivity(dcs_config_fname)
+        
         chip=args.chip
         if not args.scan is None:
             scanlog_path=args.scan
@@ -261,7 +276,7 @@ def main():
             #output_DIR=os.path.dirname(scanlog_path)
             output_DIR='/tmp/'
 
-        dcs_config_fname=args.dcs_config
+        
         start_runTime, end_runTime=calculate_runTime(getScanLog(scanlog_path))
 
         client=dcsDataClient()
