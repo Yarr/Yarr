@@ -1,8 +1,7 @@
 { 
-    "influxdb":
+    "connectivity":
     {
         "username": "",
-        "password": "",
         "database": "dcsDB",
         "host": "127.0.0.1",
         "port": 8086

@@ -30,17 +30,48 @@ password = ""
 class dcsDataClient:
     def __init__(self):
 
+        global password
+
+        # TODO: Substitute "INFLUXDBPWD" for a hidden unknown string read from somewhere?
+
+        if "INFLUXDBPWD" in  os.environ:
+            # Don't ask the user twice (if the pwd was already entered in a previous stage)
+            password = str(os.environ['INFLUXDBPWD'])
+
+        try:    
+            # Try to connect without authentication
+            self.client=InfluxDBClient(host=remote_host,
+                                       port=remote_port,
+                                       database=dbname,
+                                       username=username,
+                                       password=password)
+
+            database_list=self.client.get_list_database()
+
+        except exceptions.InfluxDBClientError as e:
+
+            # If auth is enabled, ask the user for his/her password
+            if "authorization failed" in str(e):
+                logger.warning('Input the password for user \"{}\" in InfluxDB. If you don\'t want to input the password in the future until you close your current bash session (e.g. you are running a bash script that calls this many times), use \"export INFLUXDBPWD=yourPassword\'.'.format(username))
+                password = input("pwd: ")
+
+        # And connect again.
         self.client=InfluxDBClient(host=remote_host,
                                    port=remote_port,
                                    database=dbname,
                                    username=username,
                                    password=password)
-        try:                    
+
+        try:
+            # It should be working now if the user entered the right pwd
             database_list=self.client.get_list_database()
+
         except exceptions.InfluxDBClientError as e:
+
+            # If not, let the user know what's happening and exit.
             logger.error("Received error from InfluxDB: {}".format(e))
-            logger.error("If using authentication, input username and password in ")
-            logger.error("Please specify the db connectivity parameters (\"username\", \"password\", \"database\", \"host\", \"port\") in the .\"connectivity\" section of file passed with --dcs_config or -d (-F from dbAccessor)")
+            logger.error("Please specify the db connectivity parameters (\"username\", \"database\", \"host\", \"port\") in the .\"connectivity\" section of the file passed with --dcs_config or -d (-F if calling from dbAccessor)")
+            logger.error("See an example in {}/localdb/configs/influxdb_connectivity.json".format(current_DIR))
 
             sys.exit(1)
 
@@ -96,7 +127,6 @@ def loadDBConnectivity(dcs_config_fname):
     remote_port = dcs_config["connectivity"]["port"]
     dbname = dcs_config["connectivity"]["database"]
     username = dcs_config["connectivity"]["username"]
-    password = dcs_config["connectivity"]["password"]
 
 def getData(client, dcs_config_fname):
     output_jsonName='{}/dcsDataInfo.json'.format(output_DIR)
