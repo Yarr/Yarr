@@ -2,7 +2,7 @@
     "connectivity":
     {
         "username": "",
-        "database": "dcsDB",
+        "database": "dbName",
         "host": "127.0.0.1",
         "port": 8086
     },
