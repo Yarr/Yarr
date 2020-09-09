@@ -11,7 +11,8 @@
         "algorithm": "TagAnalysis"
       },
       "2": {
-        "algorithm": "TotAnalysis"
+        "algorithm": "TotAnalysis",
+        "config": {}
       },
       "n_count": 3
     },
