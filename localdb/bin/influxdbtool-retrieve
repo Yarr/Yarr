@@ -32,8 +32,6 @@ class dcsDataClient:
 
         global password
 
-        # TODO: Substitute "INFLUXDBPWD" for a hidden unknown string read from somewhere?
-
         if "INFLUXDBPWD" in  os.environ:
             # Don't ask the user twice (if the pwd was already entered in a previous stage)
             password = str(os.environ['INFLUXDBPWD'])
