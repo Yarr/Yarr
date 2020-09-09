@@ -60,6 +60,7 @@ class TotAnalysis : public AnalysisAlgorithm {
         void processHistogram(HistogramBase *h);
         void end();
         void loadConfig(json &config){}
+
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -81,6 +82,12 @@ class TotAnalysis : public AnalysisAlgorithm {
         unsigned vcalStep;
         unsigned vcalBins;
         std::unique_ptr<Histo2d> chargeVsTotMap;
+
+        // histogram configuration
+        bool m_ptotEnabled;
+        unsigned n_bins_tot = 16;
+        float tot_bins_xlo = 0;
+        float tot_bins_xhi = 16;
 };
 
 class ScurveFitter : public AnalysisAlgorithm {

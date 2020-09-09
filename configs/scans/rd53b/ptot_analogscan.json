@@ -11,7 +11,11 @@
         "algorithm": "TagAnalysis"
       },
       "2": {
-        "algorithm": "TotAnalysis"
+        "algorithm": "TotAnalysis",
+        "config": {
+            "n_bins_tot": 2048,
+            "tot_bins": [0,400]
+        }
       },
       "n_count": 3
     },
