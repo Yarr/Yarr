@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-from influxdb import InfluxDBClient
+from influxdb import InfluxDBClient, exceptions
+from getpass import getpass
 import sys, os
 import datetime
 import time as time_module
@@ -20,16 +21,67 @@ import logging
 logger = logging.getLogger('Log')
 db_logging.setLog()
 
-remote_host='127.0.0.1'
-remote_port=8086
-dbname='dcsDB'
+
+remote_host = "127.0.0.1"
+remote_port = "8086"
+dbname = ""
+username = ""
+password = ""
 
 class dcsDataClient:
     def __init__(self):
+
+        global password
+
+        if "INFLUXDBPWD" in  os.environ:
+            # Don't ask the user twice (if the pwd was already entered in a previous stage)
+            password = str(os.environ['INFLUXDBPWD'])
+
+        try:    
+            # Try to connect without authentication
+            self.client=InfluxDBClient(host=remote_host,
+                                       port=remote_port,
+                                       database=dbname,
+                                       username=username,
+                                       password=password)
+
+            database_list=self.client.get_list_database()
+
+        except exceptions.InfluxDBClientError as e:
+
+            # If auth is enabled, ask the user for his/her password
+            if "authorization failed" in str(e):
+                logger.warning('Input the password for user \"{}\" in InfluxDB. If you don\'t want to input the password in the future until you close your current bash session (e.g. you are running a script that calls this many times), use \"export INFLUXDBPWD=yourPassword\'.'.format(username))
+                try:
+                    password = getpass()
+                except:
+                    print()
+                    sys.exit(1)
+
+        # And connect again.
         self.client=InfluxDBClient(host=remote_host,
                                    port=remote_port,
-                                   database=dbname)
-        database_list=self.client.get_list_database()
+                                   database=dbname,
+                                   username=username,
+                                   password=password)
+
+        try:
+            # It should be working now if the user entered the right pwd
+            database_list=self.client.get_list_database()
+
+        except exceptions.InfluxDBClientError as e:
+
+            # If not, let the user know what's happening and exit.
+            logger.error("Received error from InfluxDB: {}".format(e))
+            logger.warn("Please specify the db connectivity parameters "
+                    "\"database\", and optionally also \"username\", " 
+                    "\"host\" and \"port\" in the .\"influxdb_cfg\" section in" 
+                    "the file passed with --dcs_config or -d (-F if calling from dbAccessor)")
+
+            logger.warn("See an example in {}/localdb/configs/influxdb_connectivity.json".format(current_DIR))
+
+            sys.exit(1)
+
         self.runStart=0
         self.runEnd=1566546707353068032
         if not {'name' : dbname} in database_list :
@@ -51,6 +103,7 @@ class dcsDataClient:
                 return None
         else :
             return None
+
 def getArgs():
     parser=argparse.ArgumentParser(description='data downloader from InfluxDB')
 
@@ -69,6 +122,33 @@ def getArgs():
 
 def error_message(key_type,name ):
     logger.error('{} : {} is not found!'.format(key_type, name))
+    
+def loadDBConnectivity(dcs_config_fname):
+
+    global remote_host, remote_port, dbname, username
+
+    with open(dcs_config_fname,'r') as dcs_config_f :
+        dcs_config=json.load(dcs_config_f)
+
+
+    if not "influxdb_cfg" in dcs_config:
+        logger.error('No "influxdb_cfg" key found in the influxDB connectivity file: {}'.format(dcs_config_fname))
+        sys.exit(1)
+    
+    if not "database" in dcs_config["influxdb_cfg"]:
+        logger.error("Please specify the db connectivity parameters "
+                    "\"database\", and optionally also \"username\", " 
+                    "\"host\" and \"port\" in the .\"influxdb_cfg\" section in \"{}\"".format(dcs_config_fname))
+        sys.exit(1)
+
+    if "host" in dcs_config["influxdb_cfg"]:
+        remote_host = dcs_config["influxdb_cfg"]["host"]
+    if "port" in dcs_config["influxdb_cfg"]:
+        remote_port = dcs_config["influxdb_cfg"]["port"]
+    if "username" in dcs_config["influxdb_cfg"]:
+        username = dcs_config["influxdb_cfg"]["username"]
+
+    dbname = dcs_config["influxdb_cfg"]["database"]
 
 def getData(client, dcs_config_fname):
     output_jsonName='{}/dcsDataInfo.json'.format(output_DIR)
@@ -79,6 +159,7 @@ def getData(client, dcs_config_fname):
         logger.error('dcs Configuration file : {}'.format(dcs_config))
         logger.error('ERROR!')
         return 1
+
     dcsInfo={}
     dcsInfo['environments']=[]
     for dcsList in dcs_config['environments']:
@@ -135,14 +216,13 @@ def getScanLog(scanLog_file):
     return scanLog
 
 def calculate_runTime(scanLog):
+
+    # Reading from Yarr's cfg the timestamp corresponding to the beggining of the analysis
     start_time_str=scanLog['timestamp']
     start_time=datetime.datetime.strptime(start_time_str,'%Y-%m-%d_%H:%M:%S').replace(tzinfo=dateutil.tz.tzlocal())
-    #start_UTC=start_time.astimezone(pytz.timezone('utc'))
-    #    print(start_time)
-    #print(start_UTC)
-    #start_timestamp=pd.to_datetime(str(start_UTC)) #UTC time in InfluxDB
     start_timestamp=pd.to_datetime(str(start_time)) #local time in InfluxDB
 
+    # Calculate the timestamp corresponding to the end of the analysis
     stopwatch=scanLog['stopwatch']
     analysis=stopwatch['analysis']
     config=stopwatch['config']
@@ -151,12 +231,17 @@ def calculate_runTime(scanLog):
     total_ms=analysis+config+processing+scan
     end_timestamp=start_timestamp+pd.offsets.Milli(total_ms)
 
-    #offset
+    # Add an extra offset to make sure we catch the whole scan
     offset_time=15000 #ms
     start_timestamp=start_timestamp-pd.offsets.Milli(offset_time)
     end_timestamp=end_timestamp+pd.offsets.Milli(offset_time)
 
-    return start_timestamp.value, end_timestamp.value
+    # Although start_timestamp and end_timestamp have ms precission, the values
+    # of both are completed with 0s until ns (6 extra 0s). We have to remove 3
+    # to have the value in us (so InfluxDB does not complain), although the
+    # actual precission is ms)
+
+    return int(start_timestamp.value/1000), int(end_timestamp.value/1000)
 
 def appendDcsInfo(dcsInfoList,description,key,num,path):
     singleInfo={}
@@ -181,12 +266,18 @@ def removeDatFile(dcsInfo_path):
 
 def main():
     args=getArgs()
-    command=args.command
 
+    command             = args.command
+    dcs_config_fname    = args.dcs_config
+    
     if command == 'test':
         sys.exit(0)
     elif command == 'init':
+        if args.dcs_config is None :
+            logger.error('dcs configuration file is required! Please specify dcs configuration file path under --dcs_config or -d')
+            sys.exit(1)
         try:
+            loadDBConnectivity(dcs_config_fname)
             client=dcsDataClient()
         except Exception as e:
             logger.error('---> Bad connection to Influx DB.')
@@ -215,7 +306,9 @@ def main():
         if args.dcs_config is None :
             logger.error('dcs configuration file is required! Please specify dcs configuration file path under --dcs_config or -d')
             sys.exit(1)
-
+        
+        loadDBConnectivity(dcs_config_fname)
+        
         chip=args.chip
         if not args.scan is None:
             scanlog_path=args.scan
@@ -238,7 +331,7 @@ def main():
             #output_DIR=os.path.dirname(scanlog_path)
             output_DIR='/tmp/'
 
-        dcs_config_fname=args.dcs_config
+        
         start_runTime, end_runTime=calculate_runTime(getScanLog(scanlog_path))
 
         client=dcsDataClient()

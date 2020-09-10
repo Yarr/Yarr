@@ -494,9 +494,9 @@ int DBHandler::checkCommand(std::string i_opt) {
         cmd = m_influx_command;
         tool = "influxdbtool-retrieve";
     }
-    cmd = cmd + " test 2> /dev/null";
+    cmd = cmd + " test 1> /dev/null";
     if (system(cmd.c_str())!=0) {
-        dlog->error("Not found Local DB command: '{}'",tool);
+        dlog->error("Local DB command: '{}' wasn't found or exited with errors", tool);
         dlog->error("Set Local DB function by:");
         dlog->error("    YARR/localdb/setup_db.sh");
         return 1;
@@ -597,7 +597,7 @@ int DBHandler::retrieveFromInflux(std::string i_influx_conn_path, std::string ch
         this->checkEmpty(log_json["startTime"].empty()&&log_json["timestamp"].empty(), "startTime||timestamp", log_path);
     }
     if (this->checkCommand("influx")!=0) {
-        dlog->error("Could not retrieve DCS data from Local DB");
+        dlog->error("Could not retrieve DCS data from Influx DB");
         return 1;
     } else {
         std::string cmd = m_influx_command + " retrieve --chip " + chip_name +" -s "+log_path+" --dcs_config "+conn_path;
