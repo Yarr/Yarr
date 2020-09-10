@@ -250,7 +250,7 @@ void Histo1d::plot(const std::string &prefix, const std::string &dir) const {
         output += "_" + std::to_string(lStat.get(i));
     output += ".png";
     std::string input;
-    input+="$'set terminal postscript enhanced color \"Helvetica\" 18 eps;";
+    input+="$'set terminal png size 1280, 1024;";
     input+="unset key;";
     input+="set xlabel \""  +HistogramBase::xAxisTitle+"\";";
     input+="set ylabel \""  +HistogramBase::yAxisTitle+"\";";
