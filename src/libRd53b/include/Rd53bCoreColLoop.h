@@ -18,9 +18,6 @@ class Rd53bCoreColLoop : public LoopActionBase {
         void writeConfig(json &j);
         void loadConfig(json &j);
 
-        // whether or not the PToT is enabled for all core columns
-        bool usePToT() { return m_usePToT; }
-
     private:
         unsigned m_cur;
         unsigned m_nSteps;
