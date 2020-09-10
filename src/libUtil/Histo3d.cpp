@@ -3,7 +3,7 @@
 // # Email: timon.heim at cern.ch
 // # Project: Yarr
 // # Description: 2D Histogram
-// # Comment:
+// # Comment: 
 // ################################
 
 #include "Histo3d.h"
@@ -26,17 +26,17 @@ Histo3d::Histo3d(const std::string &arg_name, unsigned arg_xbins, double arg_xlo
     xlow = arg_xlow;
     xhigh = arg_xhigh;
     xbinWidth = (xhigh - xlow)/xbins;
-
+    
     ybins = arg_ybins;
     ylow = arg_ylow;
     yhigh = arg_yhigh;
     ybinWidth = (yhigh - ylow)/ybins;
-
+    
     zbins = arg_zbins;
     zlow = arg_zlow;
     zhigh = arg_zhigh;
     zbinWidth = (zhigh - zlow)/zbins;
-
+ 
     min = 0;
     max = 0;
     underflow = 0;
@@ -47,9 +47,9 @@ Histo3d::Histo3d(const std::string &arg_name, unsigned arg_xbins, double arg_xlo
 
 }
 
-Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh,
-        unsigned arg_ybins, double arg_ylow, double arg_yhigh,
-        unsigned arg_zbins, double arg_zlow, double arg_zhigh,
+Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
+        unsigned arg_ybins, double arg_ylow, double arg_yhigh, 
+        unsigned arg_zbins, double arg_zlow, double arg_zhigh, 
         const LoopStatus &stat)
   : HistogramBase(arg_name, stat)
 {
@@ -57,7 +57,7 @@ Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     xlow = arg_xlow;
     xhigh = arg_xhigh;
     xbinWidth = (xhigh - xlow)/xbins;
-
+    
     ybins = arg_ybins;
     ylow = arg_ylow;
     yhigh = arg_yhigh;
@@ -67,7 +67,7 @@ Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     zlow = arg_zlow;
     zhigh = arg_zhigh;
     zbinWidth = (zhigh - zlow)/zbins;
-
+ 
     min = 0;
     max = 0;
     underflow = 0;
@@ -87,12 +87,12 @@ Histo3d::Histo3d(Histo3d *h) : HistogramBase(h->getName()) {
     yhigh = h->getYhigh();
     ybinWidth = h->getYbinWidth();
 
-
+    
     zbins = h->getZbins();
     zlow = h->getZbins();
     zhigh = h->getZbins();
     zbinWidth = h->getZbins();
-
+ 
     min = h->getMin();
     max = h->getMax();
     underflow = h->getUnderflow();
@@ -260,7 +260,7 @@ void Histo3d::toFile(const std::string &prefix, const std::string &dir, bool hea
         file << "Histo3d " <<  std::endl;
         file << name << std::endl;
         file << xAxisTitle << std::endl;
-        file << yAxisTitle << std::endl;
+        file << yAxisTitle << std::endl; 
         file << zAxisTitle << std::endl;
         file << xbins << " " << xlow << " " << xhigh << std::endl;
         file << ybins << " " << ylow << " " << yhigh << std::endl;
