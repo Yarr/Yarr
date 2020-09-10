@@ -174,6 +174,16 @@ void TotAnalysis::loadConfig(json &j) {
     if (!j["tot_unit"].empty()) {
         tot_unit = static_cast<std::string>(j["tot_unit"]);
     }
+
+    // check for valid ToT sigma histogram bin configuration
+    if (!j["tot_sigma_bins"].empty()) {
+        auto j_bins = j["tot_sigma_bins"];
+        if(!j_bins["n_bins"].empty() && !j_bins["x_lo"].empty() && !j_bins["x_hi"].empty()) {
+            tot_sigma_bins_n = static_cast<unsigned>(j_bins["n_bins"]);
+            tot_sigma_bins_x_lo = static_cast<float>(j_bins["x_lo"]);
+            tot_sigma_bins_x_hi = static_cast<float>(j_bins["x_hi"]);
+        } // has all required bin specification
+    }
 }
 
 void TotAnalysis::init(ScanBase *s) {
@@ -317,7 +327,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         std::unique_ptr<Histo1d> meanTotDist(new Histo1d("MeanTotDist-"+std::to_string(ident), tot_bins_n, tot_bins_x_lo + 0.5, tot_bins_x_hi + 0.5));
         meanTotDist->setXaxisTitle("Mean ToT ["+tot_unit+"]");
         meanTotDist->setYaxisTitle("Number of Pixels");
-        std::unique_ptr<Histo1d> sigmaTotDist(new Histo1d("SigmaTotDist-"+std::to_string(ident), 101, -0.05, 1.05));
+        std::unique_ptr<Histo1d> sigmaTotDist(new Histo1d("SigmaTotDist-"+std::to_string(ident), tot_sigma_bins_n, tot_sigma_bins_x_lo, tot_sigma_bins_x_hi));
         sigmaTotDist->setXaxisTitle("Sigma ToT ["+tot_unit+"]");
         sigmaTotDist->setYaxisTitle("Number of Pixels");
         std::unique_ptr<Histo1d> tempMeanTotDist(new Histo1d("MeanTotDistFine-"+std::to_string(ident), tot_bins_n*10, tot_bins_x_lo + 0.05, tot_bins_x_hi + 0.05));

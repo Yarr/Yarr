@@ -13,8 +13,17 @@
       "2": {
         "algorithm": "TotAnalysis",
         "config": {
-            "n_bins_tot": 2048,
-            "tot_bins": [0,400]
+            "tot_bins": {
+                "n_bins": 2048,
+                "x_lo": 0,
+                "x_hi": 400
+            },
+            "tot_sigma_bins": {
+                "n_bins": 11,
+                "x_lo": -0.5,
+                "x_hi": 10.5
+            },
+            "tot_unit": "1.5625 ns"
         }
       },
       "n_count": 3
