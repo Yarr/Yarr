@@ -92,6 +92,7 @@ deploy_master:
     only:
         - master
     variables:
+        "CI_PROJECT_PATH" : "YARR/YARR"
         "EOS_PATH" : "/eos/user/t/theim/www/yarr"
         "CI_OUTPUT_DIR" : "site/"
     image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
@@ -104,6 +105,7 @@ deploy_devel:
     only:
         - devel
     variables:
+        "CI_PROJECT_PATH" : "YARR/YARR"
         "EOS_PATH" : "/eos/user/t/theim/www/yarr/devel"
         "CI_OUTPUT_DIR" : "site/"
     image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
