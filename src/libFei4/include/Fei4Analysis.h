@@ -83,11 +83,16 @@ class TotAnalysis : public AnalysisAlgorithm {
         unsigned vcalBins;
         std::unique_ptr<Histo2d> chargeVsTotMap;
 
-        // histogram configuration
+        // histogram configuration for ToT distributions
         unsigned tot_bins_n = 16;
         float tot_bins_x_lo = 0;
         float tot_bins_x_hi = 16;
         std::string tot_unit = "BC";
+
+        // histogram configuration for ToT sigma distributions
+        unsigned tot_sigma_bins_n = 101;
+        float tot_sigma_bins_x_lo = -0.05;
+        float tot_sigma_bins_x_hi = 1.05;
 };
 
 class ScurveFitter : public AnalysisAlgorithm {
