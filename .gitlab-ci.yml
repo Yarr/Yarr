@@ -90,9 +90,8 @@ deploy_master:
     stage: deploy
     dependencies: ["build_docs"]
     only:
-        - master
+        - master@YARR/YARR
     variables:
-        "CI_PROJECT_PATH" : "YARR/YARR"
         "EOS_PATH" : "/eos/user/t/theim/www/yarr"
         "CI_OUTPUT_DIR" : "site/"
     image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
@@ -103,9 +102,8 @@ deploy_devel:
     stage: deploy
     dependencies: ["build_docs"]
     only:
-        - devel
+        - devel@YARR/YARR
     variables:
-        "CI_PROJECT_PATH" : "YARR/YARR"
         "EOS_PATH" : "/eos/user/t/theim/www/yarr/devel"
         "CI_OUTPUT_DIR" : "site/"
     image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
