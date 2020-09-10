@@ -160,17 +160,20 @@ void OccupancyAnalysis::loadConfig(json &j){
 
 void TotAnalysis::loadConfig(json &j) {
 
-    // number of bins for (P)ToT
-    if (!j["n_bins_tot"].empty()) {
-        n_bins_tot = j["n_bins_tot"];
-    }
-
-    // x-range on (P)ToT axes
+    // check for valid ToT histogram bin configuration
     if (!j["tot_bins"].empty()) {
-        tot_bins_xlo = j["tot_bins"][0];
-        tot_bins_xhi = j["tot_bins"][1];
+        auto j_bins = j["tot_bins"];
+        if(!j_bins["n_bins"].empty() && !j_bins["x_lo"].empty() && !j_bins["x_hi"].empty()) {
+            tot_bins_n = static_cast<unsigned>(j_bins["n_bins"]);
+            tot_bins_x_lo = static_cast<float>(j_bins["x_lo"]);
+            tot_bins_x_hi = static_cast<float>(j_bins["x_hi"]);
+        } // has all required bin specifications
     }
 
+    // ToT unit
+    if (!j["tot_unit"].empty()) {
+        tot_unit = static_cast<std::string>(j["tot_unit"]);
+    }
 }
 
 void TotAnalysis::init(ScanBase *s) {
@@ -181,9 +184,6 @@ void TotAnalysis::init(ScanBase *s) {
     pixelFb = NULL;
     globalFb = NULL;
     hasVcalLoop = false;
-
-    // histogram configuration
-    m_ptotEnabled = false;
 
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
@@ -196,17 +196,6 @@ void TotAnalysis::init(ScanBase *s) {
                 cnt = 1;
             n_count = n_count*cnt;
         }
-
-        // check if core columns have PToT enabled so that we can adjust
-        // the analysis
-        if(l->isMaskLoop())
-        {
-            auto coreColLoop = std::dynamic_pointer_cast<Rd53bCoreColLoop>(l);
-            if(coreColLoop != nullptr && (m_ptotEnabled = coreColLoop->usePToT()))
-            {
-                alog->info("TotAnalysis: PToT is enabled");
-            } // coreColLoop
-        } // isMaskLoop
 
         if (l->isTriggerLoop()) {
             auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
@@ -246,8 +235,8 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
     unsigned offset = 0;
     // Determine identifier
     std::string name = "OccMap";
-    std::string name2 = m_ptotEnabled ? "PTotMap" : "TotMap";
-    std::string name3 = m_ptotEnabled ? "PTot2Map" : "Tot2Map";
+    std::string name2 = "TotMap";
+    std::string name3 = "Tot2Map";
     for (unsigned n=0; n<loops.size(); n++) {
         ident += h->getStat().get(loops[n])+offset;
         offset += loopMax[n];
@@ -267,13 +256,13 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         hh = new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
-        hh->setZaxisTitle( m_ptotEnabled ? "{/Symbol S}(PToT)" : "{/Symbol S}(ToT)");
+        hh->setZaxisTitle("{/Symbol S}(ToT)");
         totMaps[ident].reset(hh);
         totInnerCnt[ident] = 0;
         hh = new Histo2d(name3, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
-        hh->setZaxisTitle( m_ptotEnabled ? "{/Symbol S}(PToT^2)" : "{/Symbol S}(ToT^2)");
+        hh->setZaxisTitle("{/Symbol S}(ToT^2)");
         tot2Maps[ident].reset(hh);
         tot2InnerCnt[ident] = 0;
     }
@@ -284,9 +273,9 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         double chargeMax = feCfg->toCharge(vcalMax, useScap, useLcap);
         double chargeStep = feCfg->toCharge(vcalStep, useScap, useLcap);
 
-        Histo2d *hh = new Histo2d(m_ptotEnabled ? "ChargeVsPTotMap" : "ChargeVsTotMap", vcalBins+1, chargeMin-chargeStep/2, chargeMax+chargeStep/2, n_bins_tot * 10, tot_bins_xlo + 0.5, tot_bins_xhi + 0.5);
+        Histo2d *hh = new Histo2d("ChargeVsTotMap", vcalBins+1, chargeMin-chargeStep/2, chargeMax+chargeStep/2, tot_bins_n * 10, tot_bins_x_lo + 0.5, tot_bins_x_hi + 0.5);
         hh->setXaxisTitle("Injected Charge [e]");
-        hh->setYaxisTitle(m_ptotEnabled ? "PToT" : "ToT");
+        hh->setYaxisTitle("ToT");
         hh->setZaxisTitle("Pixels");
         chargeVsTotMap.reset(hh);
     }
@@ -309,29 +298,29 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
     if (occInnerCnt[ident] == n_count &&
             totInnerCnt[ident] == n_count &&
             tot2InnerCnt[ident] == n_count) {
-        std::unique_ptr<Histo2d> meanTotMap(new Histo2d((m_ptotEnabled ? "MeanPTotMap-" : "MeanTotMap-")+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
+        std::unique_ptr<Histo2d> meanTotMap(new Histo2d("MeanTotMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
         meanTotMap->setXaxisTitle("Column");
         meanTotMap->setYaxisTitle("Row");
-        meanTotMap->setZaxisTitle(m_ptotEnabled ? "Mean PToT [1.5625ns]" : "Mean ToT [bc]");
-        std::unique_ptr<Histo2d> sumTotMap(new Histo2d((m_ptotEnabled ? "SumPTotMap-" : "SumTotMap-")+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
+        meanTotMap->setZaxisTitle("Mean ToT ["+tot_unit+"]");
+        std::unique_ptr<Histo2d> sumTotMap(new Histo2d("SumTotMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
         sumTotMap->setXaxisTitle("Column");
         sumTotMap->setYaxisTitle("Row");
-        sumTotMap->setZaxisTitle(m_ptotEnabled ? "Mean PToT [1.5625ns]" : "Mean ToT [bc]");
-        std::unique_ptr<Histo2d> sumTot2Map(new Histo2d((m_ptotEnabled ? "MeanPTot2Map-" : "MeanTot2Map-")+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
+        sumTotMap->setZaxisTitle("Mean ToT ["+tot_unit+"]");
+        std::unique_ptr<Histo2d> sumTot2Map(new Histo2d("MeanTot2Map-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
         sumTot2Map->setXaxisTitle("Column");
         sumTot2Map->setYaxisTitle("Row");
-        sumTot2Map->setZaxisTitle(m_ptotEnabled ? "Mean PToT^2 [1.5625ns^2]" : "Mean ToT^2 [bc^2]");
-        std::unique_ptr<Histo2d> sigmaTotMap(new Histo2d((m_ptotEnabled ? "SigmaPTotMap-" : "SigmaTotMap-")+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
+        sumTot2Map->setZaxisTitle("Mean ToT^2 ["+tot_unit+"^2]");
+        std::unique_ptr<Histo2d> sigmaTotMap(new Histo2d("SigmaTotMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
         sigmaTotMap->setXaxisTitle("Column");
         sigmaTotMap->setYaxisTitle("Row");
-        sigmaTotMap->setZaxisTitle(m_ptotEnabled ?  "Sigma PToT [1.5625ns]" : "Sigma ToT [bc]");
-        std::unique_ptr<Histo1d> meanTotDist(new Histo1d((m_ptotEnabled ? "MeanPTotDist-" : "MeanTotDist-")+std::to_string(ident), n_bins_tot, tot_bins_xlo + 0.5, tot_bins_xhi + 0.5));
-        meanTotDist->setXaxisTitle(m_ptotEnabled ? "Mean PToT [1.5625ns]" : "Mean ToT [bc]");
+        sigmaTotMap->setZaxisTitle("Sigma ToT ["+tot_unit+"]");
+        std::unique_ptr<Histo1d> meanTotDist(new Histo1d("MeanTotDist-"+std::to_string(ident), tot_bins_n, tot_bins_x_lo + 0.5, tot_bins_x_hi + 0.5));
+        meanTotDist->setXaxisTitle("Mean ToT ["+tot_unit+"]");
         meanTotDist->setYaxisTitle("Number of Pixels");
-        std::unique_ptr<Histo1d> sigmaTotDist(new Histo1d((m_ptotEnabled ? "SigmaPTotDist-" : "SigmaTotDist-")+std::to_string(ident), (m_ptotEnabled ? 451 : 101), -0.05, (m_ptotEnabled ? 45.05 : 1.05)));
-        sigmaTotDist->setXaxisTitle(m_ptotEnabled ? "Sigma PToT [1.5625ns]" : "Sigma ToT [bc]");
+        std::unique_ptr<Histo1d> sigmaTotDist(new Histo1d("SigmaTotDist-"+std::to_string(ident), 101, -0.05, 1.05));
+        sigmaTotDist->setXaxisTitle("Sigma ToT ["+tot_unit+"]");
         sigmaTotDist->setYaxisTitle("Number of Pixels");
-        std::unique_ptr<Histo1d> tempMeanTotDist(new Histo1d((m_ptotEnabled ? "MeanPTotDistFine-" : "MeanTotDistFine-")+std::to_string(ident), n_bins_tot*10, tot_bins_xlo + 0.05, tot_bins_xhi + 0.05));
+        std::unique_ptr<Histo1d> tempMeanTotDist(new Histo1d("MeanTotDistFine-"+std::to_string(ident), tot_bins_n*10, tot_bins_x_lo + 0.05, tot_bins_x_hi + 0.05));
 
         meanTotMap->add(*totMaps[ident]);
         meanTotMap->divide(*occMaps[ident]);
@@ -352,7 +341,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
                 chargeVsTotMap->fill(currentCharge, (i+1)*0.1, tempMeanTotDist->getBin(i));
             }
         }
-        alog->info("\033[1;33m[{}] [{}] {} Mean = {} +- {}\033[0m", channel, ident, (m_ptotEnabled ? "PToT" : "ToT"),  meanTotDist->getMean(), meanTotDist->getStdDev());
+        alog->info("\033[1;33m[{}] [{}] ToT Mean = {} +- {}\033[0m", channel, ident,  meanTotDist->getMean(), meanTotDist->getStdDev());
 
         if (globalFb != NULL) {
             double mean = 0;
