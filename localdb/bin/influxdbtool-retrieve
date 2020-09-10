@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from influxdb import InfluxDBClient, exceptions
+from getpass import getpass
 import sys, os
 import datetime
 import time as time_module
@@ -21,8 +22,8 @@ logger = logging.getLogger('Log')
 db_logging.setLog()
 
 
-remote_host = ""
-remote_port = ""
+remote_host = "127.0.0.1"
+remote_port = "8086"
 dbname = ""
 username = ""
 password = ""
@@ -50,8 +51,12 @@ class dcsDataClient:
 
             # If auth is enabled, ask the user for his/her password
             if "authorization failed" in str(e):
-                logger.warning('Input the password for user \"{}\" in InfluxDB. If you don\'t want to input the password in the future until you close your current bash session (e.g. you are running a bash script that calls this many times), use \"export INFLUXDBPWD=yourPassword\'.'.format(username))
-                password = input("pwd: ")
+                logger.warning('Input the password for user \"{}\" in InfluxDB. If you don\'t want to input the password in the future until you close your current bash session (e.g. you are running a script that calls this many times), use \"export INFLUXDBPWD=yourPassword\'.'.format(username))
+                try:
+                    password = getpass()
+                except:
+                    print()
+                    sys.exit(1)
 
         # And connect again.
         self.client=InfluxDBClient(host=remote_host,
@@ -68,8 +73,12 @@ class dcsDataClient:
 
             # If not, let the user know what's happening and exit.
             logger.error("Received error from InfluxDB: {}".format(e))
-            logger.error("Please specify the db connectivity parameters (\"username\", \"database\", \"host\", \"port\") in the .\"connectivity\" section of the file passed with --dcs_config or -d (-F if calling from dbAccessor)")
-            logger.error("See an example in {}/localdb/configs/influxdb_connectivity.json".format(current_DIR))
+            logger.warn("Please specify the db connectivity parameters "
+                    "\"username\" and \"database\", and optionally also " 
+                    "\"host\" and \"port\" in the .\"influxdb_cfg\" section of " 
+                    "the file passed with --dcs_config or -d (-F if calling from dbAccessor)")
+
+            logger.warn("See an example in {}/localdb/configs/influxdb_connectivity.json".format(current_DIR))
 
             sys.exit(1)
 
@@ -116,15 +125,29 @@ def error_message(key_type,name ):
     
 def loadDBConnectivity(dcs_config_fname):
 
-    global remote_host, remote_port, dbname, username, password
+    global remote_host, remote_port, dbname, username
 
     with open(dcs_config_fname,'r') as dcs_config_f :
         dcs_config=json.load(dcs_config_f)
 
-    remote_host = dcs_config["connectivity"]["host"]
-    remote_port = dcs_config["connectivity"]["port"]
-    dbname = dcs_config["connectivity"]["database"]
-    username = dcs_config["connectivity"]["username"]
+
+    if not "influxdb_cfg" in dcs_config:
+        logger.error('No "influxdb_cfg" key found in the influxDB connectivity file: {}'.format(dcs_config_fname))
+        sys.exit(1)
+    
+    if not all(val in dcs_config["influxdb_cfg"] for val in ["database", "username"]):
+        logger.error("Please specify the db connectivity parameters "
+                    "\"username\" and \"database\", and optionally also " 
+                    "\"host\" and \"port\" in the .\"influxdb_cfg\" section in \"{}\"".format(dcs_config_fname))
+        sys.exit(1)
+
+    if "host" in dcs_config["influxdb_cfg"]:
+        remote_host = dcs_config["influxdb_cfg"]["host"]
+    if "port" in dcs_config["influxdb_cfg"]:
+        remote_port = dcs_config["influxdb_cfg"]["port"]
+
+    dbname = dcs_config["influxdb_cfg"]["database"]
+    username = dcs_config["influxdb_cfg"]["username"]
 
 def getData(client, dcs_config_fname):
     output_jsonName='{}/dcsDataInfo.json'.format(output_DIR)
@@ -249,6 +272,9 @@ def main():
     if command == 'test':
         sys.exit(0)
     elif command == 'init':
+        if args.dcs_config is None :
+            logger.error('dcs configuration file is required! Please specify dcs configuration file path under --dcs_config or -d')
+            sys.exit(1)
         try:
             loadDBConnectivity(dcs_config_fname)
             client=dcsDataClient()
