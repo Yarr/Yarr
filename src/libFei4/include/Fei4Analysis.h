@@ -84,10 +84,10 @@ class TotAnalysis : public AnalysisAlgorithm {
         std::unique_ptr<Histo2d> chargeVsTotMap;
 
         // histogram configuration
-        bool m_ptotEnabled;
-        unsigned n_bins_tot = 16;
-        float tot_bins_xlo = 0;
-        float tot_bins_xhi = 16;
+        unsigned tot_bins_n = 16;
+        float tot_bins_x_lo = 0;
+        float tot_bins_x_hi = 16;
+        std::string tot_unit = "BC";
 };
 
 class ScurveFitter : public AnalysisAlgorithm {

@@ -7,7 +7,20 @@
      "1": {
         "algorithm": "OccupancyAnalysis"
       },
-      "n_count": 1
+     "2": {
+        "algorithm": "TotAnalysis",
+        "config": {
+            "tot_bins": {
+                "n_bins": 2048,
+                "x_lo" : 0,
+                "x_hi" : 400
+            },
+            "tot_unit" {
+                "1.5625 ns"
+            }
+        }
+      },
+      "n_count": 3
     },
     "histogrammer": {
       "0": {
@@ -48,9 +61,9 @@
       },
       {
         "config": {
-          "max": 300,
-          "min": 0,
-          "step": 10,
+          "max": 1500,
+          "min": 300,
+          "step": 100,
           "parameter":"InjVcalDiff"
         },
         "loopAction": "Rd53bParameterLoop"
