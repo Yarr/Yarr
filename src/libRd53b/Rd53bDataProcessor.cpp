@@ -119,8 +119,8 @@ uint64_t Rd53bDataProcessor::retrieve(const unsigned length, const bool checkEOS
     }
     else
     {
-        if (checkEOS && (_data[2] >> 31))
-        { // Check end of stream
+        // Check end of stream
+        if (checkEOS && (((_blockIdx << 1) < _curIn->words && (_data[2] >> 31)) || ((_blockIdx << 1) >= _curIn->words))){
             return 0;
         }
 
