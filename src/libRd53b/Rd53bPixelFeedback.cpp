@@ -21,14 +21,16 @@ Rd53bPixelFeedback::Rd53bPixelFeedback() : LoopActionBase(LOOP_STYLE_PIXEL_FEEDB
     m_cur = 0;
     loopType = typeid(this);
     m_done = false;
-    m_resetTdac = true;
+    m_rstPixelReg = true;
+    m_pixelReg = 0;
 }
 
 void Rd53bPixelFeedback::writeConfig(json &j) {
     j["min"] = min;
     j["max"] = max;
     j["steps"] = m_steps;
-    j["resetTdac"] = m_resetTdac;
+    j["pixelReg"] = m_pixelReg;
+    j["rstPixelReg"] = m_rstPixelReg;
 }
 
 void Rd53bPixelFeedback::loadConfig(json &j) {
@@ -36,8 +38,10 @@ void Rd53bPixelFeedback::loadConfig(json &j) {
         min = j["min"];
     if (!j["max"].empty())
         max = j["max"];
-    if (!j["resetTdac"].empty())
-        m_resetTdac = j["resetTdac"];
+    if (!j["pixelReg"].empty()) 
+        m_pixelReg = j["pixelReg"];
+    if (!j["rstPixelReg"].empty())
+        m_rstPixelReg = j["rstPixelReg"];
     if (!j["steps"].empty()) {
         m_steps.clear();
         for(auto i: j["steps"])
@@ -81,7 +85,7 @@ void Rd53bPixelFeedback::init() {
     m_done = false;
     m_cur = 0;
     // Init maps
-    if (m_resetTdac) {
+    if (m_rstPixelReg) {
         for (auto *fe : keeper->feList) {
             if (fe->getActive()) {
                 unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
@@ -90,7 +94,7 @@ void Rd53bPixelFeedback::init() {
                 for (unsigned col=1; col<=Rd53b::n_Col; col++) {
                     for (unsigned row=1; row<=Rd53b::n_Row; row++) {
                         //Initial TDAC in mid of the range
-                        rd53b->setTDAC(col-1, row-1, 0);
+                        rd53b->setTDAC(col-1, row-1, m_pixelReg);
                     }
                 }
             }

@@ -2,10 +2,7 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "ScurveFitter"
-      },
-     "1": {
-        "algorithm": "OccupancyAnalysis"
+        "algorithm": "OccGlobalThresholdTune"
       },
       "n_count": 1
     },
@@ -30,30 +27,27 @@
         "algorithm": "HitsPerEvent",
         "config": {}
       },
-      "5": {
-        "algorithm": "DataArchiver",
-        "config": {}
-      },
-      "n_count": 4
+      "n_count": 5
     },
     "loops": [
+      { "config": {
+          "max": 350,
+          "min": 0,
+          "step": 16,
+          "parameter": "DiffTh1M",
+          "rstPixelReg": false
+
+        },
+        "loopAction": "Rd53bGlobalFeedback"
+      },
       {
         "config": {
           "max": 768,
           "min": 0,
-          "step": 1,
+          "step": 4,
           "maskType": 3
         },
         "loopAction": "Rd53bMaskLoop"
-      },
-      {
-        "config": {
-          "max": 200,
-          "min": 0,
-          "step": 5,
-          "parameter":"InjVcalDiff"
-        },
-        "loopAction": "Rd53bParameterLoop"
       },
       {
         "config": {
@@ -70,7 +64,7 @@
           "count": 50,
           "delay": 56,
           "extTrigger": false,
-          "frequency": 8000,
+          "frequency": 5000,
           "noInject": false,
           "time": 0,
           "edgeMode": false
@@ -81,15 +75,14 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "DigitalScan",
+    "name": "PtotTuneGlobalThreshold",
     "prescan": {
-        "InjDigEn": 0,
-        "InjVcalMed": 500,
         "InjVcalRange": 1,
+        "InjDigEn": 0,
         "Latency": 60,
         "TotEnPtot": 1,
         "TotEnPtoa": 1,
-        "TotPtotLatency": 2
+        "TotPtotLatency": 0
     }
   }
 }

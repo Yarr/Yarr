@@ -42,9 +42,8 @@
             "config": {
                 "max": 15,
                 "min": -15,
-                "steps": [8,4,2,1,1,1,1],
-                "pixelReg": 0,
-                "rstPixelReg": true
+                "steps": [1,1,1,1,1,1],
+                "rstPixelReg": false
             },
             "loopAction": "Rd53bPixelFeedback"
         },

@@ -24,7 +24,8 @@ class Rd53bPixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
     protected:
     private:
         unsigned m_cur;
-        bool m_resetTdac;
+        bool m_rstPixelReg;
+        int m_pixelReg;
         std::vector<unsigned> m_steps;
 
         std::map<unsigned, std::unique_ptr<Histo2d>> m_fb;
