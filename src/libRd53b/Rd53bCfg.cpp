@@ -12,14 +12,15 @@
 
 Rd53bCfg::Rd53bCfg() :
     m_chipId(15),
-    m_vcalPar({{-1.0, 0.215}}),
-    m_injCap(8.2)
+    m_vcalPar({{0.46, 0.2007}}),
+    m_injCap(7.5)
 {}
 
 double Rd53bCfg::toCharge(double vcal) {
     // Q = C*V
     // Linear is good enough
-    double V = (m_vcalPar[0]*Unit::Milli + m_vcalPar[1]*vcal*Unit::Milli)/Physics::ElectronCharge;
+    //double V = (m_vcalPar[0]*Unit::Milli + m_vcalPar[1]*vcal*Unit::Milli)/Physics::ElectronCharge;
+    double V = (m_vcalPar[1]*vcal*Unit::Milli)/Physics::ElectronCharge; // Note no offset applied
     return V*m_injCap*Unit::Femto;
 }
 
