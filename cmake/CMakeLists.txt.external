@@ -60,7 +60,7 @@ function(YARR_ADD_NETIO)
         PATCH_COMMAND cp ${PROJECT_SOURCE_DIR}/cmake/CMakeLists.txt.netio ${CMAKE_CURRENT_BINARY_DIR}/external/src/netio4/CMakeLists.txt
         INSTALL_COMMAND ""
         PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
-        CMAKE_ARGS "${TOOLCHAIN}"
+        CMAKE_ARGS "${TOOLCHAIN}" -DCMAKE_CXX_FLAGS=-fPIC
         DEPENDS tbb_2020
         )
 

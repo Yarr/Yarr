@@ -255,7 +255,7 @@ void NetioHandler::delChannel(uint64_t chn){
     nlog->debug("### NetioHandler::delChannel({}) -> unsubscribe", chn);
     m_channels.erase(it);
     //SHIT: please do not unsubscribe: because felixcore/netio doesn't like it
-    //m_sub_sockets[chn]->unsubscribe(chn, netio::endpoint(m_felixHost, m_felixRXPort));
+    m_sub_sockets[chn]->unsubscribe(chn, netio::endpoint(m_felixHost, m_felixRXPort));
     delete m_send_sockets[chn];
     delete m_sub_sockets[chn];
     m_send_sockets.erase(chn);
