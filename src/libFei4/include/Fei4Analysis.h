@@ -40,11 +40,11 @@ class OccupancyAnalysis : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end() {}
-	void loadConfig(json &config);
+        void loadConfig(json &config);
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
-	bool createMask;
+        bool createMask;
         unsigned n_count;
         unsigned injections;
         std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
@@ -59,7 +59,7 @@ class TotAnalysis : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-	void loadConfig(json &config){}
+        void loadConfig(json &config){}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -91,7 +91,7 @@ class ScurveFitter : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-	void loadConfig(json &config){}
+        void loadConfig(json &config){}
     private:
         unsigned vcalLoop;
         unsigned vcalMin;
@@ -101,12 +101,12 @@ class ScurveFitter : public AnalysisAlgorithm {
         unsigned n_count;
         unsigned injections;
         unsigned cnt;
-	    unsigned n_failedfit;
-        
+        unsigned n_failedfit;
+
         std::vector<double> x;
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
-     
+
         std::map<unsigned, std::unique_ptr<Histo1d>> histos;
         std::map<unsigned, std::unique_ptr<Histo2d>> sCurve;
         std::map<unsigned, std::unique_ptr<Histo2d>> thrMap;
@@ -125,7 +125,7 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::map<unsigned, std::unique_ptr<Histo2d>> deltaThr;
         unsigned prevOuter;
         double thrTarget;
-        
+
         std::map<unsigned, unsigned> innerCnt;
         std::map<unsigned, unsigned> medCnt;
         std::map<unsigned, unsigned> vcalCnt;
@@ -141,7 +141,7 @@ class OccGlobalThresholdTune : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end() {};
-	void loadConfig(json &config){}
+        void loadConfig(json &config){}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -163,7 +163,7 @@ class GlobalPreampTune : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end() {};
-	void loadConfig(json &config){}
+        void loadConfig(json &config){}
 
     private:
         std::vector<unsigned> loops;
@@ -180,18 +180,23 @@ class GlobalPreampTune : public AnalysisAlgorithm {
 
 class OccPixelThresholdTune : public AnalysisAlgorithm {
     public:
-        OccPixelThresholdTune() : AnalysisAlgorithm()  {};
+        OccPixelThresholdTune() : AnalysisAlgorithm()  {
+            m_occLowCut = 0.3;
+            m_occHighCut = 0.7;
+        };
         ~OccPixelThresholdTune() {};
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end() {};
-	void loadConfig(json &config){}
+        void loadConfig(json &config);
 
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         unsigned n_count;
+        float m_occLowCut;
+        float m_occHighCut;
         std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;
@@ -207,7 +212,7 @@ class L1Analysis : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-	void loadConfig(json &config){}
+        void loadConfig(json &config){}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -226,7 +231,7 @@ class TagAnalysis : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-	    void loadConfig(json &config){}
+        void loadConfig(json &config){}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -245,7 +250,7 @@ class TotDistPlotter : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end() {}
-	void loadConfig(json &config){}
+        void loadConfig(json &config){}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -263,11 +268,11 @@ class NoiseAnalysis : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-	void loadConfig(json &config);
+        void loadConfig(json &config);
     private:
         unsigned n_trigger;
         std::unique_ptr<Histo2d> occ;
-    bool createMask;
+        bool createMask;
 };
 
 class NoiseTuning : public AnalysisAlgorithm {
@@ -278,7 +283,7 @@ class NoiseTuning : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-	void loadConfig(json &config){}
+        void loadConfig(json &config){}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -297,7 +302,7 @@ class DelayAnalysis : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-	void loadConfig(json &config){}
+        void loadConfig(json &config){}
 
     private:
         std::vector<unsigned> loops;

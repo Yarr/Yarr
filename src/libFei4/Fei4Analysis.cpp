@@ -597,10 +597,11 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     } else {
                         n_failedfit++;
                         alog->debug("Failed fit Col({}) Row({}) Threshold({}) Chi2({}) Status({}) Entries({}) Mean({})", col, row, thrMap[outerIdent]->getBin(bin), chi2, status.outcome, histos[ident]->getEntries(), histos[ident]->getMean());
-                        //output->pushData(std::move(histos[ident]));
+                        if (row < 50 && col < 20)
+                        output->pushData(std::move(histos[ident]));
                     }
                     if (row == nRow%50 && col%50 == 0) {
-                        output->pushData(std::move(histos[ident]));
+                        //output->pushData(std::move(histos[ident]));
                     }
                     histos[ident].reset(nullptr);
                 }
@@ -854,6 +855,13 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
 
 }
 
+void OccPixelThresholdTune::loadConfig(json &j){
+    if (!j["occLowCut"].empty())
+        m_occLowCut=j["occLowCut"];
+    if (!j["occHighCut"].empty())
+        m_occHighCut=j["occHighCut"];
+}
+
 void OccPixelThresholdTune::init(ScanBase *s) {
     n_count = 1;
     for (unsigned n=0; n<s->size(); n++) {
@@ -884,7 +892,6 @@ void OccPixelThresholdTune::init(ScanBase *s) {
             }
         }
     }
-
 }
 
 void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
@@ -926,11 +933,12 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
         std::unique_ptr<Histo1d> occDist(new Histo1d(name2, injections-1, 0.5, injections-0.5));
         occDist->setXaxisTitle("Occupancy");
         occDist->setYaxisTitle("Number of Pixels");
+         
         for (unsigned i=0; i<fbHisto->size(); i++) {
             double occ = occMaps[ident]->getBin(i);
-            if ((occ/(double)injections) > 0.7) {
+            if ((occ/(double)injections) > m_occHighCut) {
                 fbHisto->setBin(i, -1);
-            } else if ((occ/(double)injections) < 0.3) {
+            } else if ((occ/(double)injections) < m_occLowCut) {
                 fbHisto->setBin(i, +1);
             } else {
                 fbHisto->setBin(i, 0);
@@ -938,6 +946,7 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
             mean += occMaps[ident]->getBin(i);
             occDist->fill(occMaps[ident]->getBin(i));
         }
+        
         alog->info("[{}] Mean Occupancy = {}", channel, mean/(nCol*nRow*(double)injections));
         alog->info("[{}] RMS = {}", channel, occDist->getStdDev());
 
