@@ -59,7 +59,7 @@ class TotAnalysis : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-        void loadConfig(json &config){}
+        void loadConfig(json &config);
 
     private:
         std::vector<unsigned> loops;
