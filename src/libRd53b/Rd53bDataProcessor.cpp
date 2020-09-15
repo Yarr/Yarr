@@ -350,7 +350,7 @@ void Rd53bDataProcessor::process_core()
                             hits[channel]++;
                         }
                     }
-                } while (!(islast_isneighbor_qrow & 0x200));
+                } while (!(islast_isneighbor_qrow & 0x200) && (_blockIdx <= blocks));
             }
             //logger->info("total number of hits: {}", hits[channel]);
         }
