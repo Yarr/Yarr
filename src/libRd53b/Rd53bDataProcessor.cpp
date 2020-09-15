@@ -104,6 +104,10 @@ uint64_t Rd53bDataProcessor::retrieve(const unsigned length, const bool checkEOS
 {
     if (unlikely(length == 0))
         return 0;
+    // Should never happen: should be enough protection when going through the data stream
+    if (unlikely((_blockIdx >> 1) > _curIn->words))
+        logger->error("Data error: end of current packet reached while still reading stream!");
+
     if (checkEOS && (_data[0] >> 31) && _bitIdx == 1)
     {                // Corner case where end of event mark (0000000) is suppressed and there is no orphan bits
         _blockIdx--; // Roll back block index by 1. A new stream will start in the next loop iteration
