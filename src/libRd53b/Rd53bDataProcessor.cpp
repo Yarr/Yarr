@@ -128,13 +128,18 @@ uint64_t Rd53bDataProcessor::retrieve(const unsigned length, const bool checkEOS
             return 0;
         }
 
-        /* If we fill in two extra dummy words = 0 at the end of the packet as protection for overflow */
-        /* The following line can be removed */
-        if (unlikely((_blockIdx >> 1) >= _curIn->words))
-            return (((_bitIdx < HALFBLOCKSIZE) ? (((_data[0] & (0xFFFFFFFFUL >> _bitIdx)) << HALFBLOCKSIZE) | _data[1]) : (_data[1] & (0xFFFFFFFFUL >> (_bitIdx - HALFBLOCKSIZE)))) << (length + _bitIdx - BLOCKSIZE));
+        variable = (((_bitIdx < HALFBLOCKSIZE) ? (((_data[0] & (0xFFFFFFFFUL >> _bitIdx)) << HALFBLOCKSIZE) | _data[1]) : (_data[1] & (0xFFFFFFFFUL >> (_bitIdx - HALFBLOCKSIZE)))) << (length + _bitIdx - BLOCKSIZE));
 
-        variable = (((_bitIdx < HALFBLOCKSIZE) ? (((_data[0] & (0xFFFFFFFFUL >> _bitIdx)) << HALFBLOCKSIZE) | _data[1]) : (_data[1] & (0xFFFFFFFFUL >> (_bitIdx - HALFBLOCKSIZE)))) << (length + _bitIdx - BLOCKSIZE)) |
-                   (((_bitIdx + length) < (HALFBLOCKSIZE + BLOCKSIZE)) ? ((_data[2] & 0x7FFFFFFFUL) >> (0x5F & ~(_bitIdx + length))) : (((_data[2] & 0x7FFFFFFFUL) << (_bitIdx + length - 0x5F)) | (_data[3] >> (0x7F & ~(length + _bitIdx)))));
+        if (unlikely((_blockIdx >> 1) >= _curIn->words))
+        {
+            // Corner case that we are literally reading the stream until the last bit
+            // if (_bitIdx + length == BLOCKSIZE)
+                return variable;
+            // Otherwise there is an error...
+            // logger->error("Data error: end of current packet reached while still reading stream!");
+        }
+
+        variable |= (((_bitIdx + length) < (HALFBLOCKSIZE + BLOCKSIZE)) ? ((_data[2] & 0x7FFFFFFFUL) >> (95 - (_bitIdx + length))) : (((_data[2] & 0x7FFFFFFFUL) << (_bitIdx + length - 95)) | (_data[3] >> (127 - (length + _bitIdx)))));
 
         ++_blockIdx; // Increase block index
         _data = &_data[2];
