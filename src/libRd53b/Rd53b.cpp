@@ -210,8 +210,6 @@ void Rd53b::configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels) 
 
 void Rd53b::writeRegister(Rd53bReg Rd53bGlobalCfg::*ref, uint16_t value) {
     (this->*ref).write(value);
-    if ((this->*ref).addr() == 19) 
-        logger->info("Writing register {} with {}", (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
     this->sendWrReg(m_chipId, (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
 }
 
