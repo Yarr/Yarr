@@ -13,7 +13,6 @@
 #include <map>
 #include <string>
 #include <cmath>
-#include <iostream>
 
 #include "storage.hpp"
 
@@ -100,7 +99,6 @@ class Rd53bDiffReg : public Rd53bReg {
             }
             highValue = highRef->read();
             lowValue = lowRef->read();
-            std::cout << __PRETTY_FUNCTION__ << " : " << value << " " << highValue << " " << lowValue <<  std::endl;
 
         }
 
