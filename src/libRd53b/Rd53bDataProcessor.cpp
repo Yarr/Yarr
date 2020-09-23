@@ -104,6 +104,10 @@ uint64_t Rd53bDataProcessor::retrieve(const unsigned length, const bool checkEOS
 {
     if (unlikely(length == 0))
         return 0;
+    // Should never happen: should be enough protection when going through the data stream
+    if (unlikely((_blockIdx >> 1) > _curIn->words))
+        logger->error("Data error: end of current packet reached while still reading stream!");
+
     if (checkEOS && (_data[0] >> 31) && _bitIdx == 1)
     {                // Corner case where end of event mark (0000000) is suppressed and there is no orphan bits
         _blockIdx--; // Roll back block index by 1. A new stream will start in the next loop iteration
@@ -119,18 +123,23 @@ uint64_t Rd53bDataProcessor::retrieve(const unsigned length, const bool checkEOS
     }
     else
     {
-        if (checkEOS && (_data[2] >> 31))
-        { // Check end of stream
+        // Check end of stream
+        if (checkEOS && (((_blockIdx << 1) < _curIn->words && (_data[2] >> 31)) || ((_blockIdx << 1) >= _curIn->words))){
             return 0;
         }
 
-        /* If we fill in two extra dummy words = 0 at the end of the packet as protection for overflow */
-        /* The following line can be removed */
-        if (unlikely((_blockIdx >> 1) >= _curIn->words))
-            return (((_bitIdx < HALFBLOCKSIZE) ? (((_data[0] & (0xFFFFFFFFUL >> _bitIdx)) << HALFBLOCKSIZE) | _data[1]) : (_data[1] & (0xFFFFFFFFUL >> (_bitIdx - HALFBLOCKSIZE)))) << (length + _bitIdx - BLOCKSIZE));
+        variable = (((_bitIdx < HALFBLOCKSIZE) ? (((_data[0] & (0xFFFFFFFFUL >> _bitIdx)) << HALFBLOCKSIZE) | _data[1]) : (_data[1] & (0xFFFFFFFFUL >> (_bitIdx - HALFBLOCKSIZE)))) << (length + _bitIdx - BLOCKSIZE));
 
-        variable = (((_bitIdx < HALFBLOCKSIZE) ? (((_data[0] & (0xFFFFFFFFUL >> _bitIdx)) << HALFBLOCKSIZE) | _data[1]) : (_data[1] & (0xFFFFFFFFUL >> (_bitIdx - HALFBLOCKSIZE)))) << (length + _bitIdx - BLOCKSIZE)) |
-                   (((_bitIdx + length) < (HALFBLOCKSIZE + BLOCKSIZE)) ? ((_data[2] & 0x7FFFFFFFUL) >> (0x5F & ~(_bitIdx + length))) : (((_data[2] & 0x7FFFFFFFUL) << (_bitIdx + length - 0x5F)) | (_data[3] >> (0x7F & ~(length + _bitIdx)))));
+        if (unlikely((_blockIdx >> 1) >= _curIn->words))
+        {
+            // Corner case that we are literally reading the stream until the last bit
+            // if (_bitIdx + length == BLOCKSIZE)
+                return variable;
+            // Otherwise there is an error...
+            // logger->error("Data error: end of current packet reached while still reading stream!");
+        }
+
+        variable |= (((_bitIdx + length) < (HALFBLOCKSIZE + BLOCKSIZE)) ? ((_data[2] & 0x7FFFFFFFUL) >> (95 - (_bitIdx + length))) : (((_data[2] & 0x7FFFFFFFUL) << (_bitIdx + length - 95)) | (_data[3] >> (127 - (length + _bitIdx)))));
 
         ++_blockIdx; // Increase block index
         _data = &_data[2];
@@ -350,7 +359,7 @@ void Rd53bDataProcessor::process_core()
                             hits[channel]++;
                         }
                     }
-                } while (!(islast_isneighbor_qrow & 0x200));
+                } while (!(islast_isneighbor_qrow & 0x200) && (_blockIdx <= blocks));
             }
             //logger->info("total number of hits: {}", hits[channel]);
         }
