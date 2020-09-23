@@ -129,9 +129,8 @@ void Rd53b::configureInit() {
         while(!core->isCmdEmpty()){;}
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
-    logger->debug("Chip initialisation done!");
     
-
+    // Enable all for now, will be overwritten by global config
     this->writeRegister(&Rd53b::RstCoreCol0, 0xFFFF);
     this->writeRegister(&Rd53b::RstCoreCol1, 0xFFFF);
     this->writeRegister(&Rd53b::RstCoreCol2, 0xFFFF);
@@ -157,11 +156,11 @@ void Rd53b::configureGlobal() {
         this->sendWrReg(m_chipId, addr, m_cfg[addr]);
         
         // Special handling of preamp register
-        if (addr == 13)
+        if (addr == 13) // specifically wait after setting preamp bias
             while(!core->isCmdEmpty()){;}
             std::this_thread::sleep_for(std::chrono::microseconds(100));
 
-        if (addr % 18 == 0) // Wait every 20 regs to not overflow a buffer
+        if (addr % 20 == 0) // Wait every 20 regs to not overflow a buffer
             while(!core->isCmdEmpty()){;}
     }
     while(!core->isCmdEmpty());
@@ -210,8 +209,7 @@ void Rd53b::configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels) 
 
 void Rd53b::writeRegister(Rd53bReg Rd53bGlobalCfg::*ref, uint16_t value) {
     (this->*ref).write(value);
-    if ((this->*ref).addr() == 19) 
-        logger->info("Writing register {} with {}", (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
+    logger->debug("Writing register {} with {}", (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
     this->sendWrReg(m_chipId, (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
 }
 
