@@ -99,19 +99,19 @@ void Rd53bGlobalCfg::init() {
     //13
     DiffPreampM.init        ( 13, &m_cfg[ 13], 0, 10, 800); regMap["DiffPreampM"] = &Rd53bGlobalCfg::DiffPreampM;
     //14
-    DiffPreComp.init        ( 14, &m_cfg[ 14], 0, 10, 500); regMap["DiffPreComp"] = &Rd53bGlobalCfg::DiffPreComp;
+    DiffPreComp.init        ( 14, &m_cfg[ 14], 0, 10, 350); regMap["DiffPreComp"] = &Rd53bGlobalCfg::DiffPreComp;
     //15
     DiffComp.init           ( 15, &m_cfg[ 15], 0, 10, 500); regMap["DiffComp"] = &Rd53bGlobalCfg::DiffComp;
     //16
     DiffVff.init            ( 16, &m_cfg[ 16], 0, 10, 160); regMap["DiffVff"] = &Rd53bGlobalCfg::DiffVff;
     //17
-    DiffTh1L.init           ( 17, &m_cfg[ 17], 0, 10, 100); regMap["DiffTh1L"] = &Rd53bGlobalCfg::DiffTh1L;
+    DiffTh1L.init           ( 17, &m_cfg[ 17], 0, 10, 200); regMap["DiffTh1L"] = &Rd53bGlobalCfg::DiffTh1L;
     //18
-    DiffTh1R.init           ( 18, &m_cfg[ 18], 0, 10, 100); regMap["DiffTh1R"] = &Rd53bGlobalCfg::DiffTh1R;
+    DiffTh1R.init           ( 18, &m_cfg[ 18], 0, 10, 200); regMap["DiffTh1R"] = &Rd53bGlobalCfg::DiffTh1R;
     //19
-    DiffTh1M.init           ( 19, &m_cfg[ 19], 0, 10, 100); regMap["DiffTh1M"] = &Rd53bGlobalCfg::DiffTh1M;
+    DiffTh1M.init           ( 19, &m_cfg[ 19], 0, 10, 200); regMap["DiffTh1M"] = &Rd53bGlobalCfg::DiffTh1M;
     //20
-    DiffTh2.init            ( 20, &m_cfg[ 20], 0, 10, 0); regMap["DiffTh2"] = &Rd53bGlobalCfg::DiffTh2;
+    DiffTh2.init            ( 20, &m_cfg[ 20], 0, 10, 50); regMap["DiffTh2"] = &Rd53bGlobalCfg::DiffTh2;
     //21
     DiffLcc.init            ( 21, &m_cfg[ 21], 0, 10, 100); regMap["DiffLcc"] = &Rd53bGlobalCfg::DiffLcc;
     //37
@@ -207,7 +207,7 @@ void Rd53bGlobalCfg::init() {
     //57
     CapMeasEnPar.init       ( 57, &m_cfg[ 57], 2,  1, 0); regMap["CapMeasEnPar"] = &Rd53bGlobalCfg::CapMeasEnPar;
     CapMeasEn.init          ( 57, &m_cfg[ 57], 1,  1, 0); regMap["CapMeasEn"] = &Rd53bGlobalCfg::CapMeasEn;
-    InjVcalRange.init       ( 57, &m_cfg[ 57], 0,  1, 0); regMap["InjVcalRange"] = &Rd53bGlobalCfg::InjVcalRange;
+    InjVcalRange.init       ( 57, &m_cfg[ 57], 0,  1, 1); regMap["InjVcalRange"] = &Rd53bGlobalCfg::InjVcalRange;
     //58
     CdrOverwriteLimit.init  ( 58, &m_cfg[ 58], 4,  1, 0); regMap["CdrOverwriteLimit"] = &Rd53bGlobalCfg::CdrOverwriteLimit;
     CdrPhaseDetSel.init     ( 58, &m_cfg[ 58], 3,  1, 0); regMap["CdrPhaseDetSel"] = &Rd53bGlobalCfg::CdrPhaseDetSel;
