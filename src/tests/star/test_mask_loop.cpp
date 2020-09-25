@@ -119,7 +119,11 @@ std::unique_ptr<MyTxCore> runWithConfig(json &j) {
 
   action->loadConfig(j);
 
-  REQUIRE(action->isMaskLoop());
+  if(!j["parameter"].empty() && j["parameter"]) {
+    REQUIRE(action->isParameterLoop());
+  } else {
+    REQUIRE(action->isMaskLoop());
+  }
 
   LoopStatusMaster ls;
 
@@ -262,6 +266,15 @@ TEST_CASE("StarMaskLoop", "[star][mask_loop]") {
     j["max"] = 32;
     j["min"] = 0;
     j["step"] = 1;
+  }
+  SECTION ("ScanParameter") {
+    j["nMaskedStripsPerGroup"] = 1;
+    j["nEnabledStripsPerGroup"] = 1;
+    j["EnabledMaskedShift"] = 0;
+    j["max"] = 32;
+    j["min"] = 0;
+    j["step"] = 1;
+    j["parameter"] = 1;
   }
   SECTION ("AnalogueScan_NoCal") {
     // Don't change calibration mask register

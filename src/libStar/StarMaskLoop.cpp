@@ -211,6 +211,10 @@ void StarMaskLoop::loadConfig(json &config) {
     m_nEnabledStripsPerGroup = config["nEnabledStripsPerGroup"];
     m_EnabledMaskedShift = config["EnabledMaskedShift"];
 
+    if((!config["parameter"].empty()) && config["parameter"]) {
+      m_style = LOOP_STYLE_PARAMETER;
+    }
+
     if(!config["maskOnly"].empty()) {
       m_onlyMask = config["maskOnly"];
     }
