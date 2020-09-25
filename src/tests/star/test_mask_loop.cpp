@@ -103,31 +103,21 @@ public:
   void runMode() override {}
 };
 
-TEST_CASE("StarMaskLoop", "[star][mask_loop]") {
+std::unique_ptr<MyTxCore> runWithConfig(json &j) {
   std::shared_ptr<LoopActionBase> action = StdDict::getLoopAction("StarMaskLoop");
 
   REQUIRE (action);
 
-  json j;
-
-  // SECTION means re-run this test with various options
-  SECTION ("AnalogueScan") {
-    j["nMaskedStripsPerGroup"] = 1;
-    j["nEnabledStripsPerGroup"] = 1;
-    j["EnabledMaskedShift"] = 0;
-    j["max"] = 8;
-    j["min"] = 0;
-    j["step"] = 1;
-  }
-
   action->loadConfig(j);
+
+  REQUIRE(action->isMaskLoop());
 
   LoopStatusMaster ls;
 
-  MyHwController hw;
-  Bookkeeper bk(&hw, &hw);
+  std::unique_ptr<MyHwController> hw(new MyHwController);
+  Bookkeeper bk(&*hw, &*hw);
 
-  MyTxCore &tx = hw;
+  MyTxCore &tx = *hw;
 
   auto fe = StdDict::getFrontEnd("Star").release();
   {
@@ -137,7 +127,7 @@ TEST_CASE("StarMaskLoop", "[star][mask_loop]") {
   }
 
   fe->setActive(true);
-  fe->init(&hw, 0, 0);
+  fe->init(&*hw, 0, 0);
   bk.addFe(fe, 0, 0);
 
   // Normally registered by LoopEngine
@@ -147,6 +137,10 @@ TEST_CASE("StarMaskLoop", "[star][mask_loop]") {
   action->setup(&ls, &bk);
   action->execute();
 
+  return std::move(hw);
+}
+
+void checkMaskRegisters(MyTxCore &tx, json &j, uint32_t full_mask) {
   REQUIRE (tx.buffers.size() > 0);
   // releaseFifo above creates new object
   REQUIRE (tx.buffers.back().empty());
@@ -215,6 +209,28 @@ TEST_CASE("StarMaskLoop", "[star][mask_loop]") {
 
   for(int i=0; i<8; i++) {
     CAPTURE(i);
-    REQUIRE ( mask[i] == 0xffffffff );
+    REQUIRE ( mask[i] == full_mask );
   }
+}
+
+TEST_CASE("StarMaskLoop", "[star][mask_loop]") {
+  // What a full mask register contains (for checking)
+  uint32_t full_mask = 0xffffffff;
+
+  json j;
+
+  // SECTION means re-run this test with various options
+  SECTION ("AnalogueScan") {
+    j["nMaskedStripsPerGroup"] = 1;
+    j["nEnabledStripsPerGroup"] = 1;
+    j["EnabledMaskedShift"] = 0;
+    j["max"] = 8;
+    j["min"] = 0;
+    j["step"] = 1;
+  }
+
+  std::unique_ptr<MyTxCore> tx_ptr(std::move(runWithConfig(j)));
+  auto tx = *tx_ptr;
+
+  checkMaskRegisters(tx, j, full_mask);
 }
