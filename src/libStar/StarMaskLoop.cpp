@@ -142,7 +142,7 @@ void StarMaskLoop::applyMask(StarChips* fe, const uint32_t masks[8], const uint3
        j<=ABCStarRegister::MaskInput(7);
        j++, index++) {
     logger->trace("write mask: {} 0x{:08x}", index, masks[index]);
-    writeReg(fe->write_abc_register(j, ~masks[index], 0xf));
+    writeReg(fe->write_abc_register(j, masks[index], 0xf));
   }
   //Looping over CAL ENABLE registers
   for (int j=ABCStarRegister::CalReg(0), index = 0;

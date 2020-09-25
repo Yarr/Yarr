@@ -169,10 +169,10 @@ void checkMaskRegisters(MyTxCore &tx, json &j, uint32_t full_mask) {
   }
 #endif
 
-  REQUIRE (buf_count == 128);
-
   int max = j["max"];
   int step = j["step"];
+
+  REQUIRE (buf_count == (max * 16));
 
   CAPTURE (max, step);
 
@@ -220,7 +220,20 @@ TEST_CASE("StarMaskLoop", "[star][mask_loop]") {
   json j;
 
   // SECTION means re-run this test with various options
+  SECTION ("DefaultScan") {
+    // Default is 0 to 127, with one channel in each bank
+    j["nEnabledStripsPerGroup"] = 0;
+
+    // Shouldn't be needed (ignored)
+    j["nMaskedStripsPerGroup"] = 1;
+    j["EnabledMaskedShift"] = 0;
+
+    j["max"] = 128;
+    j["min"] = 0;
+    j["step"] = 1;
+  }
   SECTION ("AnalogueScan") {
+    // This enables one in 8 channels
     j["nMaskedStripsPerGroup"] = 1;
     j["nEnabledStripsPerGroup"] = 1;
     j["EnabledMaskedShift"] = 0;

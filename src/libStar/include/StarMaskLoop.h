@@ -45,6 +45,10 @@ class ChannelRing {
       masks[curpos/32] |= bits[(pos+curpos/2+1)%256]    << (posBlock+2);
       masks[curpos/32] |= bits[(pos+curpos/2+128+1)%256]<< (posBlock+3);
     }
+    for(int m_i=0; m_i<8; m_i++) {
+      auto &m = masks[m_i];
+      m = ~m;
+    }
     return masks;
   }
   const uint32_t * readCalEnable() {
