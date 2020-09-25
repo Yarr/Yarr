@@ -222,4 +222,9 @@ void StarMaskLoop::loadConfig(json &config) {
     logger->debug("Loaded StarMaskLoop configuration with nMaskedStripsPerGroup={}, nEnabledStripsPerGroup={}, shifted by  strips, min={}, max={}, step={}",
                   m_nMaskedStripsPerGroup, m_nEnabledStripsPerGroup,
                   m_EnabledMaskedShift, min, max, step);
+
+    if(256 % max) {
+      // Problem is that a loop will enable a channel more than once
+      logger->warn("Group of {} channels not supported (remainder from 256 is non-zero)", max);
+    }
 }
