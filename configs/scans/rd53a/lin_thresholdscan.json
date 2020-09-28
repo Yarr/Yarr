@@ -67,14 +67,7 @@
           "extTrigger": false,
           "frequency": 30000,
           "noInject": false,
-<<<<<<< HEAD:configs/scans/rd53a/lin_thresholdscan.json
           "time": 0
-=======
-          "time": 0,
-          "doubleDelay": 120,
-          "Ntrig": 8,
-          "Ntrig2": 8
->>>>>>> Added scan config for diff FE and adjusted trigger timing to match both Front Ends:configs/scans/rd53a/lin_doubleinjection.json
         },
         "loopAction": "Rd53aTriggerLoop"
       },
@@ -85,17 +78,10 @@
     "name": "ThresholdScan",
     "prescan": {
         "InjEnDig": 0,
-<<<<<<< HEAD:configs/scans/rd53a/lin_thresholdscan.json
         "LatencyConfig": 48,
         "GlobalPulseRt": 0,
         "InjVcalMed": 1000,
         "InjVcalHigh": 1000,
-=======
-        "LatencyConfig": 20,
-        "GlobalPulseRt": 16384,
-        "InjVcalMed": 50,
-        "InjVcalHigh": 250,
->>>>>>> Added scan config for diff FE and adjusted trigger timing to match both Front Ends:configs/scans/rd53a/lin_doubleinjection.json
         "DiffVth1": 500,
         "SyncVth": 500,
         "EnCoreColDiff1": 0,

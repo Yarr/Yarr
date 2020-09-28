@@ -76,7 +76,7 @@
           "frequency": 2000,
           "noInject": false,
           "time": 0,
-          "doubleDelay": 120,
+          "doubleDelay": 120.5,
           "Ntrig": 8,
           "Ntrig2": 8
         },
@@ -89,7 +89,7 @@
     "name": "ThresholdScan",
     "prescan": {
       "InjEnDig": 0,
-      "LatencyConfig": 20,
+      "LatencyConfig": 22,
       "GlobalPulseRt": 0,
       "InjVcalMed": 50,
       "InjVcalHigh": 300,
