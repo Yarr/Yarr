@@ -108,6 +108,7 @@ int main(int argc, char *argv[]) {
     std::string outputDir = "./data/";
     std::string ctrlCfgPath = "";
     bool doPlots = false;
+    bool doJsonOnly = false;
     int target_charge = -1;
     int target_tot = -1;
     int mask_opt = -1;
@@ -121,7 +122,7 @@ int main(int argc, char *argv[]) {
     
     int nThreads = 4;
     int c;
-    while ((c = getopt(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:l:")) != -1) {
+    while ((c = getopt(argc, argv, "hn:ks:n:m:g:r:c:t:pjo:Wd:u:i:l:")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
@@ -153,6 +154,9 @@ int main(int argc, char *argv[]) {
                 break;
             case 'p':
                 doPlots = true;
+                break;
+            case 'j':
+                doJsonOnly = true;
                 break;
             case 'o':
                 outputDir = std::string(optarg);
@@ -250,6 +254,7 @@ int main(int argc, char *argv[]) {
     logger->info("Target ToT: {}", target_tot);
     logger->info("Target Charge: {}", target_charge);
     logger->info("Output Plots: {}", doPlots);
+    logger->info("JSON only Plots: {}", doJsonOnly);
     logger->info("Output Directory: {}", outputDir);
 
     // Create folder
@@ -648,14 +653,16 @@ int main(int argc, char *argv[]) {
                 } else {
                     while(!output.empty()) {
                         std::unique_ptr<HistogramBase> histo = output.popData();
-                        histo->plot(name, outputDirTmp);
+                        if(!doJsonOnly) {
+                            histo->plot(name, outputDirTmp);
+                        }
                         histo->toFile(name, outputDir);
                     }
                 }
             }
         }
     }
-    std::string lsCmd = "ls -1 " + dataDir + "last_scan/*.p*";
+    std::string lsCmd = "ls -1 " + dataDir + "last_scan/";
     logger->info("Finishing run: {}", runCounter);
     if(doPlots && (system(lsCmd.c_str()) < 0)) {
         logger->info("Find plots in: {}last_scan", dataDir);
@@ -685,6 +692,7 @@ void printHelp() {
     std::cout << " -r <ctrl.json> Provide controller configuration." << std::endl;
     std::cout << " -t <target_charge> [<tot_target>] : Set target values for threshold/charge (and tot)." << std::endl;
     std::cout << " -p: Enable plotting of results." << std::endl;
+    std::cout << " -j: Output only JSON-formatted plots (not *.png format)" << std::endl;
     std::cout << " -o <dir> : Output directory. (Default ./data/)" << std::endl;
     std::cout << " -m <int> : 0 = pixel masking disabled, 1 = start with fresh pixel mask, default = pixel masking enabled" << std::endl;
     std::cout << " -k: Report known items (Scans, Hardware etc.)\n";
