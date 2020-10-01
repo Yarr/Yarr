@@ -45,7 +45,9 @@ void StarMaskLoop::initMasks() {
 
   SPDLOG_LOGGER_DEBUG(logger, "ChannelRings:");
   if (logger->should_log(spdlog::level::debug)) {
-    m_enabledChannelsRing.printRing();
+    if(!m_onlyMask) {
+      m_enabledChannelsRing.printRing();
+    }
     m_maskedChannelsRing.printRing();
   }
 }
@@ -106,17 +108,20 @@ void StarMaskLoop::applyMask(StarChips* fe, MaskType masks, MaskType enables) {
       oss << "2nd row: " << row2.c_str() << "\n";
       oss << "1sr row: " << row1.c_str() << "\n";
 
-      oss << "Enable channels:\n";
-      printMask(enables, oss);
-      row1=""; row2="";
-      for (unsigned int ireg=0; ireg<8; ireg++)
-        for (unsigned int i=0;i<32;i++)
-          if ((i%4)<2)
-            row1 += (((enables[ireg]>>i) & 0x1) ? "1" : "0");
-          else
-            row2 += (((enables[ireg]>>i) & 0x1) ? "1" : "0");
-      oss << "2nd row: " << row2.c_str() << "\n";
-      oss << "1sr row: " << row1.c_str() << "\n";
+      if(!m_onlyMask) {
+        oss << "Enable channels:\n";
+        printMask(enables, oss);
+        row1=""; row2="";
+        for (unsigned int ireg=0; ireg<8; ireg++)
+          for (unsigned int i=0;i<32;i++)
+            if ((i%4)<2)
+              row1 += (((enables[ireg]>>i) & 0x1) ? "1" : "0");
+            else
+              row2 += (((enables[ireg]>>i) & 0x1) ? "1" : "0");
+        oss << "2nd row: " << row2.c_str() << "\n";
+        oss << "1sr row: " << row1.c_str() << "\n";
+      }
+
       logger->debug("{}", oss.str());
     } // End debug
 
