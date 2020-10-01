@@ -43,10 +43,10 @@ class FrontEndCluster {
             int min = 99999;
             int max = -1;
             for (unsigned ii = 0; ii < hits.size(); ii++) {
-                if ((int)hits.at(ii)->col > max)
-                    max = hits.at(ii)->col;
-                if ((int)hits.at(ii)->col < min)
-                    min = hits.at(ii)->col;
+                if ((int)hits[ii]->col > max)
+                    max = hits[ii]->col;
+                if ((int)hits[ii]->col < min)
+                    min = hits[ii]->col;
             } // ii
             return (max-min+1);
         }
@@ -55,10 +55,10 @@ class FrontEndCluster {
             int min = 99999;
             int max = -1;
             for (unsigned ii = 0; ii < hits.size(); ii++) {
-                if ((int)hits.at(ii)->row > max)
-                    max = hits.at(ii)->row;
-                if ((int)hits.at(ii)->row < min)
-                    min = hits.at(ii)->row;
+                if ((int)hits[ii]->row > max)
+                    max = hits[ii]->row;
+                if ((int)hits[ii]->row < min)
+                    min = hits[ii]->row;
             } // ii
             return (max-min+1);
         }

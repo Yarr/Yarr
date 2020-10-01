@@ -49,7 +49,7 @@ void FrontEndEvent::doClustering() {
     while (!unclustered.empty()) {
         // Loop over hits in cluster, increases as we go
         for (unsigned ii=0; ii < clusters.back().nHits; ii++) {
-            auto tHit = *clusters.back().hits.at(ii);
+            auto tHit = *clusters.back().hits[ii];
             // Loop over unclustered hits
             for (auto jj = unclustered.begin() ; jj != unclustered.end(); ++jj) {
                 if ((abs((int)(tHit.col) - (int)(*jj)->col) <= (1+gap))
