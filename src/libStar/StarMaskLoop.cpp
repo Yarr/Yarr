@@ -15,6 +15,9 @@ StarMaskLoop::StarMaskLoop() : LoopActionBase(LOOP_STYLE_MASK) {
     max = 16;
     step = 1;
     m_cur = 0;
+
+    m_doNmask = false;
+
     m_nMaskedStripsPerGroup=0;
     m_nEnabledStripsPerGroup=0;
     m_EnabledMaskedShift=0;
@@ -52,20 +55,55 @@ void StarMaskLoop::initMasks() {
   }
 }
 
+void StarMaskLoop::setupNmask(unsigned int count) {
+  m_maskedChannelsRing.reset();
+  m_enabledChannelsRing.reset();
+
+  // Mask reads out as 1 if false is inserted...
+  for(unsigned int pos=0; pos<count; pos++) {
+    m_maskedChannelsRing.fill(true);
+    m_enabledChannelsRing.fill(true);
+  }
+
+  for(unsigned int pos=count; pos<256; pos++) {
+    m_maskedChannelsRing.fill(false);
+    m_enabledChannelsRing.fill(false);
+  }
+  assert(m_maskedChannelsRing.full());
+  assert(m_enabledChannelsRing.full());
+
+  SPDLOG_LOGGER_DEBUG(logger, "ChannelRings:");
+  if (logger->should_log(spdlog::level::debug)) {
+    if(!m_onlyMask) {
+      m_enabledChannelsRing.printRing();
+    }
+    m_maskedChannelsRing.printRing();
+  }
+}
+
 void StarMaskLoop::init() {
     SPDLOG_LOGGER_DEBUG(logger, "Init");
 
     m_done = false;
     m_cur = min;
-    if (m_nEnabledStripsPerGroup) initMasks();
-    
+    if (m_doNmask) {
+      setupNmask(0);
+    } else if (m_nEnabledStripsPerGroup) {
+      initMasks();
+    }
+
+    int offset = m_cur;
+    if (m_doNmask) {
+      offset = 0;
+    }
+
     for ( FrontEnd* fe : keeper->feList ) {
     	if (!fe->isActive()) {continue;}
-	if (!m_nEnabledStripsPerGroup)
-	  applyEncodedMask(static_cast<StarChips*>(fe), m_cur);
+	if (!m_doNmask && !m_nEnabledStripsPerGroup)
+	  applyEncodedMask(static_cast<StarChips*>(fe), offset);
 	else {
-	  auto masks = m_maskedChannelsRing.readMask(m_cur);
-	  auto enables = m_enabledChannelsRing.readCalEnable(m_cur);
+	  auto masks = m_maskedChannelsRing.readMask(offset);
+	  auto enables = m_enabledChannelsRing.readCalEnable(offset);
 	  applyMask(static_cast<StarChips*>(fe), masks, enables);
 	}
     }
@@ -176,15 +214,21 @@ void StarMaskLoop::execPart2() {
         logger->warn("No ABCs defined to write masks to!\n");
       }
 
+      int offset = m_cur;
+      if(m_doNmask) {
+        setupNmask(m_cur);
+        offset = 0;
+      }
+
       // FIXME: Global writes used, but loop over FE to be sure of tx mask
       for ( FrontEnd* fe : keeper->feList ) {
 	if (!fe->isActive()) {continue;}
 	
-	if (!m_nEnabledStripsPerGroup)
-	  applyEncodedMask(static_cast<StarChips*>(fe), m_cur);
+	if (!m_doNmask && !m_nEnabledStripsPerGroup)
+	  applyEncodedMask(static_cast<StarChips*>(fe), offset);
 	else {
-	  auto masks = m_maskedChannelsRing.readMask(m_cur);
-	  auto enables = m_enabledChannelsRing.readCalEnable(m_cur);
+	  auto masks = m_maskedChannelsRing.readMask(offset);
+	  auto enables = m_enabledChannelsRing.readCalEnable(offset);
 	  applyMask(static_cast<StarChips*>(fe), masks, enables);
 	}
       }
@@ -206,6 +250,7 @@ void StarMaskLoop::writeConfig(json &config) {
     config["EnabledMaskedShift"] = m_EnabledMaskedShift;
 
     config["maskOnly"] = m_onlyMask;
+    config["doNmask"] = m_doNmask;
 }
 
 void StarMaskLoop::loadConfig(json &config) {
@@ -222,6 +267,10 @@ void StarMaskLoop::loadConfig(json &config) {
 
     if(!config["maskOnly"].empty()) {
       m_onlyMask = config["maskOnly"];
+    }
+
+    if(!config["doNmask"].empty()) {
+      m_doNmask = config["doNmask"];
     }
 
     logger->debug("Loaded StarMaskLoop configuration with nMaskedStripsPerGroup={}, nEnabledStripsPerGroup={}, shifted by  strips, min={}, max={}, step={}",

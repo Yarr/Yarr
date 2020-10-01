@@ -305,6 +305,116 @@ TEST_CASE("StarMaskLoop", "[star][mask_loop]") {
   checkMaskRegisters(tx, j, full_mask);
 }
 
+TEST_CASE("StarMaskLoopNmask", "[star][mask_loop]") {
+  json j;
+
+  // SECTION means re-run this test with various options
+  SECTION ("NmaskScan") {
+    j["doNmask"] = true;
+    j["maskOnly"] = true;
+
+    // Shouldn't be needed (ignored)
+    j["nEnabledStripsPerGroup"] = 0;
+    j["nMaskedStripsPerGroup"] = 0;
+    j["EnabledMaskedShift"] = 0;
+
+    j["max"] = 128;
+    j["min"] = 0;
+    j["step"] = 1;
+  }
+
+  std::unique_ptr<MyTxCore> tx_ptr(std::move(runWithConfig(j)));
+  auto tx = *tx_ptr;
+
+  REQUIRE (tx.buffers.size() > 0);
+  // releaseFifo above creates new object
+  REQUIRE (tx.buffers.back().empty());
+
+  size_t buf_count = tx.buffers.size() - 1;
+  CAPTURE (buf_count);
+
+  int max = j["max"];
+  int step = j["step"];
+
+  bool mask_only = j["maskOnly"].empty()
+    ?false
+    :(bool)j["maskOnly"];
+
+  // 2 sets (cal and mask) of 8 registers
+  unsigned regs_per_loop = mask_only ? 8 : 16;
+
+  CAPTURE (mask_only, max, step, regs_per_loop);
+
+  int expected_loops = max;
+  expected_loops /= step;
+
+  int loops = buf_count / regs_per_loop;
+
+  REQUIRE (loops == expected_loops);
+
+  std::array<uint32_t, 8> mask{0};
+
+  for(int i=0; i<buf_count; i++) {
+    uint8_t reg;
+    uint32_t value;
+    tx.getRegValueForBuffer(i, reg, value);
+
+    CAPTURE(i, reg, value);
+
+    if(reg > 0x18) {
+      REQUIRE (!mask_only);
+      REQUIRE ( ((reg >= 0x68) && (reg < 0x70)) );
+    } else {
+      REQUIRE ( ((reg >= 0x10) && (reg < 0x18)) );
+
+      // std::cout << "Mask: " << (reg-0x10) << " " << std::bitset<32>(value) << "\n";
+
+      auto &test_mask = mask[reg-0x10];
+      CAPTURE(test_mask, mask, ~value);
+      CAPTURE((~value) & test_mask);
+
+      // Not enabling anything already enabled
+      REQUIRE (((~value) & test_mask) == 0);
+      test_mask = value;
+    }
+
+    if(((i+1)%regs_per_loop) == 0) {
+      int iter = i/regs_per_loop;
+      CAPTURE(i, iter);
+
+      std::array<uint32_t, 8> exp_mask;
+      exp_mask.fill(0xffffffff);
+      if(iter == 0) {
+        REQUIRE ( mask == exp_mask);
+      } else if(iter == 4) {
+        exp_mask[0] = 0xffffffaa;
+        REQUIRE ( mask == exp_mask);
+      } else if(iter == 16) {
+        exp_mask[0] = 0xaaaaaaaa;
+        REQUIRE ( mask == exp_mask);
+      } else if(iter == 64) {
+        exp_mask[0] = 0xaaaaaaaa;
+        exp_mask[1] = 0xaaaaaaaa;
+        exp_mask[2] = 0xaaaaaaaa;
+        exp_mask[3] = 0xaaaaaaaa;
+        REQUIRE ( mask == exp_mask);
+      } else if(iter == 120) {
+        exp_mask[0] = 0xaaaaaaaa;
+        exp_mask[1] = 0xaaaaaaaa;
+        exp_mask[2] = 0xaaaaaaaa;
+        exp_mask[3] = 0xaaaaaaaa;
+        exp_mask[4] = 0xaaaaaaaa;
+        exp_mask[5] = 0xaaaaaaaa;
+        exp_mask[6] = 0xaaaaaaaa;
+        exp_mask[7] = 0xffffaaaa;
+        REQUIRE ( mask == exp_mask);
+      }
+
+      mask = std::array<uint32_t, 8>{};
+    }
+  }
+}
+
 TEST_CASE("StarMaskLoopCheckFixed", "[star][mask_loop]") {
   // Compare star_masks and star_calEn with output of ChannelRing
   // NB this basically means that could be removed

@@ -102,7 +102,11 @@ class StarMaskLoop : public LoopActionBase {
   // ie. don't send calibration masks
   bool m_onlyMask;
 
+  bool m_doNmask;
+
   ChannelRing m_maskedChannelsRing, m_enabledChannelsRing;
+
+  void setupNmask(unsigned int count);
   
   void init() override;
   void end() override;
