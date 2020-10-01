@@ -86,8 +86,8 @@ class StarMaskLoop : public LoopActionBase {
  public:
   StarMaskLoop();
 
-  void writeConfig(json &config);
-  void loadConfig(json &config);
+  void writeConfig(json &config) override;
+  void loadConfig(json &config) override;
 
  protected:
   void applyMask(StarChips* fe, MaskType masks, MaskType enables);
