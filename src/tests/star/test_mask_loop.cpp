@@ -10,6 +10,9 @@
 
 #include "../EmptyHw.h"
 
+// Keep in a namespace to avoid collisions (eg test_trigger_loop)
+namespace MaskTesting {
+
 /**
    Override TxCore to record what is written to FIFO.
  */
@@ -102,6 +105,10 @@ public:
   void setupMode() override {}
   void runMode() override {}
 };
+
+} // End namespace MaskTesting
+
+using namespace MaskTesting;
 
 std::unique_ptr<MyTxCore> runWithConfig(json &j) {
   std::shared_ptr<LoopActionBase> action = StdDict::getLoopAction("StarMaskLoop");
