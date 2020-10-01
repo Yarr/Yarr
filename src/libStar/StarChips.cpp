@@ -139,6 +139,8 @@ void StarChips::configure() {
 
 	this->writeRegisters();
 
+	// Make histo size match number of configured ABCs
+	geo.nCol = 128 * numABCs();
 }
 
 void StarChips::sendCmd(uint16_t cmd){
