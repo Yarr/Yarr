@@ -119,13 +119,8 @@ class FrontEndData : public EventDataBase {
     public:
 
         FrontEndData() : lStat(LoopStatus::empty()) {}
-        FrontEndData(LoopStatus& l) : lStat(l) {
-            for(unsigned ii = 0; ii < numServiceRecords; ii++) {
-                serviceRecords.push_back(0);
-            } // ii
-        };
+        FrontEndData(LoopStatus& l) : lStat(l) {}
         ~FrontEndData() {};
-        static const unsigned numServiceRecords = 32;
 
         void delLastEvent() {
             events.pop_back();
