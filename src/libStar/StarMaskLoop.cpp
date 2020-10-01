@@ -87,25 +87,9 @@ void StarMaskLoop::init() {
     m_done = false;
     m_cur = min;
     if (m_doNmask) {
-      setupNmask(0);
+      // setupNmask called later
     } else if (m_nEnabledStripsPerGroup) {
       initMasks();
-    }
-
-    int offset = m_cur;
-    if (m_doNmask) {
-      offset = 0;
-    }
-
-    for ( FrontEnd* fe : keeper->feList ) {
-    	if (!fe->isActive()) {continue;}
-	if (!m_doNmask && !m_nEnabledStripsPerGroup)
-	  applyEncodedMask(static_cast<StarChips*>(fe), offset);
-	else {
-	  auto masks = m_maskedChannelsRing.readMask(offset);
-	  auto enables = m_enabledChannelsRing.readCalEnable(offset);
-	  applyMask(static_cast<StarChips*>(fe), masks, enables);
-	}
     }
 
     while(g_tx->isCmdEmpty() == 0);
@@ -120,6 +104,33 @@ void StarMaskLoop::execPart1() {
   SPDLOG_LOGGER_DEBUG(logger, "-> Mask stage {}", m_cur);
 
   g_stat->set(this, m_cur);
+
+  int offset = m_cur;
+  if (m_doNmask) {
+    setupNmask(m_cur);
+    offset = 0;
+  }
+
+  // FIXME: Global writes used, but loop over FE to be sure of tx mask
+  if(keeper->feList.empty()) {
+    logger->warn("No ABCs defined to write masks to!\n");
+  }
+
+  for ( FrontEnd* fe : keeper->feList ) {
+    if (!fe->isActive()) {continue;}
+    if (!m_doNmask && !m_nEnabledStripsPerGroup)
+      applyEncodedMask(static_cast<StarChips*>(fe), offset);
+    else {
+      auto masks = m_maskedChannelsRing.readMask(offset);
+      auto enables = m_enabledChannelsRing.readCalEnable(offset);
+      applyMask(static_cast<StarChips*>(fe), masks, enables);
+    }
+  }
+
+  while(g_tx->isCmdEmpty() == 0) {
+    // This might no longer be useful
+    logger->trace("Waiting for cmd to empty");
+  }
 }
 
 void StarMaskLoop::printMask(MaskType chans, std::ostream &os) const {
@@ -205,38 +216,8 @@ void StarMaskLoop::applyEncodedMask(StarChips* fe, unsigned int curStep) {
 void StarMaskLoop::execPart2() {
     SPDLOG_LOGGER_DEBUG(logger, " End {} -> {}", m_cur, m_cur + step);
     m_cur += step;
-    if (!((int)m_cur < max))
+    if (!((int)m_cur < max)) {
       m_done = true;
-    else {
-      // Shift Enable mask by step size
-
-      if(keeper->feList.empty()) {
-        logger->warn("No ABCs defined to write masks to!\n");
-      }
-
-      int offset = m_cur;
-      if(m_doNmask) {
-        setupNmask(m_cur);
-        offset = 0;
-      }
-
-      // FIXME: Global writes used, but loop over FE to be sure of tx mask
-      for ( FrontEnd* fe : keeper->feList ) {
-	if (!fe->isActive()) {continue;}
-	
-	if (!m_doNmask && !m_nEnabledStripsPerGroup)
-	  applyEncodedMask(static_cast<StarChips*>(fe), offset);
-	else {
-	  auto masks = m_maskedChannelsRing.readMask(offset);
-	  auto enables = m_enabledChannelsRing.readCalEnable(offset);
-	  applyMask(static_cast<StarChips*>(fe), masks, enables);
-	}
-      }
-
-      while(g_tx->isCmdEmpty() == 0) {
-        // This might no longer be useful
-        logger->trace("Waiting for cmd to empty");
-      }
     }
 }
 
