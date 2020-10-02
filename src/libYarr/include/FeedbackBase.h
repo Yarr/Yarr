@@ -44,6 +44,7 @@ typedef std::map<unsigned, FeedbackClipboard> FeedbackClipboardMap;
 
 class GlobalFeedbackBase {
     public:
+        virtual ~GlobalFeedbackBase() {}
         virtual void feedback(unsigned channel, double sign, bool last) = 0;
         virtual void feedbackBinary(unsigned channel, double sign, bool last) = 0; // TODO Algorithm should be selected in scan
         virtual void feedbackStep(unsigned channel, double sign, bool last) {}
@@ -77,6 +78,7 @@ class GlobalFeedbackSender : public GlobalFeedbackBase {
 
 class PixelFeedbackBase {
     public:
+        virtual ~PixelFeedbackBase() {}
         virtual void feedback(unsigned channel, std::unique_ptr<Histo2d> h) {};
         virtual void feedbackStep(unsigned channel, std::unique_ptr<Histo2d> h) {};
 };
