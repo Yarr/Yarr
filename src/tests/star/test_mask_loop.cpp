@@ -154,7 +154,8 @@ std::unique_ptr<MyTxCore> runWithConfig(json &j) {
 }
 
 void checkMaskRegisters(MyTxCore &tx, json &j,
-                        uint32_t full_mask, MaskType first_mask) {
+                        uint32_t full_mask,
+                        MaskType first_mask, MaskType second_mask) {
   REQUIRE (tx.buffers.size() > 0);
   // releaseFifo above creates new object
   REQUIRE (tx.buffers.back().empty());
@@ -227,6 +228,15 @@ void checkMaskRegisters(MyTxCore &tx, json &j,
 
     if(i == regs_per_loop - 1) {
       REQUIRE ( mask == first_mask);
+    } else if((i-regs_per_loop) == regs_per_loop - 1) {
+      CAPTURE (mask);
+      for(int m=0; m<8; m++) {
+        CAPTURE (m);
+        CAPTURE (mask[m], first_mask[m]);
+        auto only_second = (mask[m]&~first_mask[m]);
+        CAPTURE (only_second);
+        REQUIRE (only_second == second_mask[m]);
+      }
     }
   }
 
@@ -241,6 +251,7 @@ TEST_CASE("StarMaskLoop", "[star][mask_loop]") {
   uint32_t full_mask = 0xffffffff;
 
   MaskType first_mask;
+  MaskType second_mask;
 
   json j;
 
@@ -258,6 +269,7 @@ TEST_CASE("StarMaskLoop", "[star][mask_loop]") {
     j["step"] = 1;
 
     first_mask = {3, 0, 0, 0, 0, 0, 0, 0};
+    second_mask = {0xc, 0, 0, 0, 0, 0, 0, 0};
   }
   SECTION ("AnalogueScan") {
     // This enables one in 8 channels
@@ -270,6 +282,8 @@ TEST_CASE("StarMaskLoop", "[star][mask_loop]") {
 
     first_mask = {0x00030003, 0x00030003, 0x00030003, 0x00030003,
                   0x00030003, 0x00030003, 0x00030003, 0x00030003};
+    second_mask = {0x000c000c, 0x000c000c, 0x000c000c, 0x000c000c,
+                   0x000c000c, 0x000c000c, 0x000c000c, 0x000c000c};
   }
   SECTION ("AnalogueScan_32") {
     j["nMaskedStripsPerGroup"] = 1;
@@ -280,6 +294,7 @@ TEST_CASE("StarMaskLoop", "[star][mask_loop]") {
     j["step"] = 1;
 
     first_mask = {3, 0, 3, 0, 3, 0, 3, 0};
+    second_mask = {0xc, 0, 0xc, 0, 0xc, 0, 0xc, 0};
   }
   SECTION ("ScanParameter") {
     j["nMaskedStripsPerGroup"] = 1;
@@ -290,6 +305,7 @@ TEST_CASE("StarMaskLoop", "[star][mask_loop]") {
     j["step"] = 1;
     j["parameter"] = 1;
     first_mask = {3, 0, 3, 0, 3, 0, 3, 0};
+    second_mask = {0xc, 0, 0xc, 0, 0xc, 0, 0xc, 0};
   }
   SECTION ("AnalogueScan_NoCal") {
     // Don't change calibration mask register
@@ -302,6 +318,8 @@ TEST_CASE("StarMaskLoop", "[star][mask_loop]") {
     j["maskOnly"] = true;
     first_mask = {0x00030003, 0x00030003, 0x00030003, 0x00030003,
                   0x00030003, 0x00030003, 0x00030003, 0x00030003};
+    second_mask = {0x000c000c, 0x000c000c, 0x000c000c, 0x000c000c,
+                   0x000c000c, 0x000c000c, 0x000c000c, 0x000c000c};
   }
   SECTION ("AnalogueScan_32_step2") {
     // Mask one in 32, but step by 2 each iteration, misses half the channels
@@ -315,12 +333,13 @@ TEST_CASE("StarMaskLoop", "[star][mask_loop]") {
     // Step of 2
     full_mask = 0x33333333;
     first_mask = {3, 0, 3, 0, 3, 0, 3, 0};
+    second_mask = {0x30, 0, 0x30, 0, 0x30, 0, 0x30, 0};
   }
 
   std::unique_ptr<MyTxCore> tx_ptr(std::move(runWithConfig(j)));
   auto tx = *tx_ptr;
 
-  checkMaskRegisters(tx, j, full_mask, first_mask);
+  checkMaskRegisters(tx, j, full_mask, first_mask, second_mask);
 }
 
 TEST_CASE("StarMaskLoopNmask", "[star][mask_loop]") {

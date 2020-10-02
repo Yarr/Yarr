@@ -109,6 +109,8 @@ void StarMaskLoop::execPart1() {
   if (m_doNmask) {
     setupNmask(m_cur);
     offset = 0;
+  } else if (m_nEnabledStripsPerGroup) {
+    offset = (256-m_cur)%256;
   }
 
   // FIXME: Global writes used, but loop over FE to be sure of tx mask
