@@ -6,7 +6,6 @@
 #include "StarCfg.h"
 #include "Utils.h"
 #include "StarMaskLoop.h"
-#include "StarMask_CalEn.h"
 
 #include "logging.h"
 
@@ -449,26 +448,6 @@ TEST_CASE("StarMaskLoopNmask", "[star][mask_loop]") {
 
       mask = std::array<uint32_t, 8>{};
     }
-  }
-}
-
-TEST_CASE("StarMaskLoopCheckFixed", "[star][mask_loop]") {
-  // Compare star_masks and star_calEn with output of ChannelRing
-  // NB this basically means that could be removed
-  // (with an added option for direction)
-
-  ChannelRing ring;
-  for(int a=0; a<2; a++) {
-    for(int i=0; i<127; i++) {
-      ring.fill(false);
-    }
-    ring.fill(true);
-  }
-
-  for(int i=0; i<128; i++) {
-    CAPTURE (i);
-    REQUIRE (ring.readMask(127-i) == star_masks[i]);
-    REQUIRE (ring.readCalEnable(127-i) == star_calEn[i]);
   }
 }
 

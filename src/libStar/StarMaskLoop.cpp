@@ -2,8 +2,6 @@
 
 #include <iomanip>
 
-#include "StarMask_CalEn.h"
-
 #include "logging.h"
 
 namespace {
@@ -109,7 +107,7 @@ void StarMaskLoop::execPart1() {
   if (m_doNmask) {
     setupNmask(m_cur);
     offset = 0;
-  } else if (m_nEnabledStripsPerGroup) {
+  } else {
     offset = (256-m_cur)%256;
   }
 
@@ -120,13 +118,10 @@ void StarMaskLoop::execPart1() {
 
   for ( FrontEnd* fe : keeper->feList ) {
     if (!fe->isActive()) {continue;}
-    if (!m_doNmask && !m_nEnabledStripsPerGroup)
-      applyEncodedMask(static_cast<StarChips*>(fe), offset);
-    else {
-      auto masks = m_maskedChannelsRing.readMask(offset);
-      auto enables = m_enabledChannelsRing.readCalEnable(offset);
-      applyMask(static_cast<StarChips*>(fe), masks, enables);
-    }
+
+    auto masks = m_maskedChannelsRing.readMask(offset);
+    auto enables = m_enabledChannelsRing.readCalEnable(offset);
+    applyMask(static_cast<StarChips*>(fe), masks, enables);
   }
 
   while(g_tx->isCmdEmpty() == 0) {
@@ -211,10 +206,6 @@ void StarMaskLoop::applyMask(StarChips* fe, MaskType masks, MaskType enables) {
   }
 }
 
-void StarMaskLoop::applyEncodedMask(StarChips* fe, unsigned int curStep) {
-  applyMask(fe, star_masks[curStep], star_calEn[curStep]);
-}
-
 void StarMaskLoop::execPart2() {
     SPDLOG_LOGGER_DEBUG(logger, " End {} -> {}", m_cur, m_cur + step);
     m_cur += step;
@@ -243,6 +234,14 @@ void StarMaskLoop::loadConfig(json &config) {
     m_nMaskedStripsPerGroup = config["nMaskedStripsPerGroup"];
     m_nEnabledStripsPerGroup = config["nEnabledStripsPerGroup"];
     m_EnabledMaskedShift = config["EnabledMaskedShift"];
+
+    if(m_nEnabledStripsPerGroup == 0) {
+      // Default version (how it was before ChannelRing introduced)
+      // Assume range is 0-127, then 1 puts one hit in each block
+      m_nMaskedStripsPerGroup = 1;
+      m_nEnabledStripsPerGroup = 1;
+      m_EnabledMaskedShift = 0;
+    }
 
     if((!config["parameter"].empty()) && config["parameter"]) {
       m_style = LOOP_STYLE_PARAMETER;
