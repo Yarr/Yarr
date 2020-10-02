@@ -647,7 +647,7 @@ int main(int argc, char *argv[]) {
                     while(!output.empty()) {
                         auto histo = output.popData();
                         // only create the image files if asked to
-                        if(doPlots || dbUse) {
+                        if(doPlots) {
                             histo->plot(name, outputDir);
                         }
                         // always dump the data
