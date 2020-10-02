@@ -193,7 +193,7 @@ void Rd53aGlobalCfg::init() {
     CdrPdDel.init(64, &m_cfg[64], 7, 4, 8); regMap["CdrPdDel"] = &Rd53aGlobalCfg::CdrPdDel;
     CdrEnGck.init(64, &m_cfg[64], 6, 1, 0); regMap["CdrEnGck"] = &Rd53aGlobalCfg::CdrEnGck;
     CdrVcoGain.init(64, &m_cfg[64], 3, 3, 3); regMap["CdrVcoGain"] = &Rd53aGlobalCfg::CdrVcoGain;
-    CdrSelSerClk.init(64, &m_cfg[64], 0, 3, 3); regMap["CdrSelSerClk"] = &Rd53aGlobalCfg::CdrSelSerClk;
+    CdrSelSerClk.init(64, &m_cfg[64], 0, 3, 1); regMap["CdrSelSerClk"] = &Rd53aGlobalCfg::CdrSelSerClk;
     //65
     VcoBuffBias.init(65, &m_cfg[65], 0, 10, 400); regMap["VcoBuffBias"] = &Rd53aGlobalCfg::VcoBuffBias;
     //66
