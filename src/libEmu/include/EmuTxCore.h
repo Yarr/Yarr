@@ -35,6 +35,8 @@ class EmuTxCore : virtual public TxCore {
         void setCmdEnable(uint32_t channel) override;
         void setCmdEnable(std::vector<uint32_t> channels) override;
         void disableCmd() override;
+        void enableCmd();
+        std::vector<uint32_t> listTx();
         uint32_t getCmdEnable() override {return 0x0;}
         void maskCmdEnable(uint32_t value, uint32_t mask) {}
 
@@ -155,10 +157,27 @@ void EmuTxCore<FE>::setCmdEnable(std::vector<uint32_t> channels) {
 }
 
 template<class FE>
+void EmuTxCore<FE>::enableCmd() {
+    for (auto& com : m_coms) {
+        m_channels[com.first] = true;
+    }
+}
+
+template<class FE>
 void EmuTxCore<FE>::disableCmd() {
     for (auto& com : m_coms) {
         m_channels[com.first] = false;
     }
+}
+
+template<class FE>
+std::vector<uint32_t> EmuTxCore<FE>::listTx() {
+    std::vector<uint32_t> txChannels;
+    txChannels.reserve(m_coms.size());
+    for (auto& com : m_coms) {
+        txChannels.push_back(com.first);
+    }
+    return txChannels;
 }
 
 #endif
