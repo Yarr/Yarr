@@ -7,410 +7,350 @@
 #################################
 
 ### Common
-import os, sys, time, argparse, yaml
+import os, sys, time, argparse, yaml, json
 from getpass          import getpass
 from pymongo          import MongoClient, errors, DESCENDING
 from bson.objectid    import ObjectId
 from datetime         import datetime
 
-### log
-from logging import getLogger, StreamHandler, DEBUG, Formatter, FileHandler, getLoggerClass, INFO
-logger = getLogger('Log')
-logger.setLevel(INFO)
-#logger.setLevel(DEBUG) # remove comment out for debug mode
-
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../lib/localdb-tools/modules'))
+from localdb import *
 import register
+from register import RegisterData, ScanData, DcsData, CompData
 
 ### global variables
 home = os.environ['HOME']
-if not "HOSTNAME" in os.environ:
-    hostname = "default_host"
+if not 'HOSTNAME' in os.environ:
+    hostname = 'default_host'
 else:
-    hostname = os.environ["HOSTNAME"]
+    hostname = os.environ['HOSTNAME']
 global localdb
-global option
+
+### functions
+import common
+from common import JsonParsingError
+
+### log
+import db_logging
+import logging
 global logfile
+logger = logging.getLogger('Log')
+logfile = '' # default. written in HOME/.yarr/localdb/log/log (Old logs are saved as log-old up to log-old-9)
+
+##############
+# Exceptions #
+##############
+
+class CommandError(Exception):
+    pass
+
+class DataError(ValueError):
+    pass
+
+class ValidationError(Exception):
+    pass
+
+class RegisterError(Exception):
+    pass
+
+class InteractiveExit(Exception):
+    pass
 
 #######################
 ### local functions ###
 #######################
 
-##################################
-# convert yaml config file to dict
-def readConfig(conf_path):
-    logger.debug('Read Config File.')
-    conf = {}
-    if os.path.isfile(conf_path):
-        f = open(conf_path, 'r')
-        conf = yaml.load(f, Loader=yaml.SafeLoader)
-    return conf
-
-def readKey(i_path):
-    file_text = open(i_path, 'r')
-    file_keys = file_text.read().split()
-    keys = {
-        'username': file_keys[0],
-        'password': file_keys[1]
-    }
-    file_text.close()
-    return keys
-
-###############
-# get arguments
 def getArgs():
     logger.debug('Get Arguments.')
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument(
-        "command",
-        help="option*\tfuntion\ninit\tFunction initialization & Connection check\ncomp\tComponent registration\nscan\tScan data upload\ndcs\tDCS data upload\ncache\tCache data upload\ncheck\tRegistered component check\ntest\tTesting command",
+        'command',
+        help='option*\t\tfuntion\n' +
+             'init\t\tInitialize upload function and check connection to Local DB\n'+
+             'comp\t<file>\tRegister component data from specified connectivity file\n'+
+             'scan\t<dir>\tUpload scan data from specified directory\n'+
+             'dcs\t<dir>\tUpload DCS data from specified directory\n'+
+             'cache\t\tUpload cache data\n'+
+             'check\tcomp\tCheck registered component data\n'+
+             '     \tchip\tCheck registered chip data',
         type=str,
-        nargs='+'
+        nargs='*'
     )
-    parser.add_argument('--config', help='Set User Config Path of Local DB Server.', type=str)
-    parser.add_argument('--username', help='Set the User Name of Local DB Server.', type=str)
-    parser.add_argument('--password', help='Set the Password of Local DB Server.', type=str)
-    parser.add_argument('--database', help='Set Database Config Path', type=str)
-    parser.add_argument('--user', help='Set User Config Path', type=str)
-    parser.add_argument('--site', help='Set Site Config Path', type=str)
-    parser.add_argument('--log', help='Set Log Mode', action='store_true')
-    #parser.add_argument('--force', help='Set Log Mode', action='store_true')
+    parser.add_argument('--config',         help='Set User Config Path of Local DB Server.', type=str)
+    parser.add_argument('--username',       help='Set the User Name of Local DB Server.',    type=str)
+    parser.add_argument('--password',       help='Set the Password of Local DB Server.',     type=str)
+    parser.add_argument('--database', '-d', help='Set Database Config Path',                 type=str)
+    parser.add_argument('--user', '-u',     help='Set User Config Path',                     type=str)
+    parser.add_argument('--site', '-i',     help='Set Site Config Path',                     type=str)
+    parser.add_argument('--conn',           help='Set Connectivity Config Path',             type=str)
+    parser.add_argument('--log',            help='Set Log Mode',                             action='store_true')
+    parser.add_argument('--interactive',    help='Set Interactive Mode',                     action='store_true')
+    parser.add_argument('--QC',             help='Set QC Mode',                              action='store_true')
     args = parser.parse_args()
 
     if args.config:
-        conf = readConfig(args.config)
+        conf = common.readCfg(args.config)
         if 'username' in conf and not args.username: args.username = conf['username']
         if 'password' in conf and not args.password: args.password = conf['password']
 
     return args
 
-#######################################################################
-# get test run data from test run data id or connectivity and timestamp
-# * get unique test data which has { '_id': ObjectId(i_tr_oid) }
-# * get some test data which has { 'startTime': i_timestamp }
-#   (option) limit test data by adding info { 'user_id': i_user_oid }
-#   (option) limit test data by adding info { 'address': i_site_oid }
-#   limit test data associated with component in connectivity
-def getTestRunData(i_type, i_tr_oid, i_conn_json=None, i_timestamp=None, i_site_oid=None, i_user_oid=None):
-    logger.debug('Get TestRun Data.')
-
+def checkUploadData(self):
+    """
+    This function check if data registered by searching with data id
+    """
+    self.logger.debug('Check if TestRun Data registered.')
     tr_oids = []
-
-    if i_tr_oid=='':
-        if not i_timestamp:
-            return tr_oids
-        doc_value = {
-            'startTime' : datetime.utcfromtimestamp(i_timestamp),
-            'dbVersion' : register.__global.db_version
-        }
-        if i_site_oid: doc_value.update({ 'address': i_site_oid })
-        if i_user_oid: doc_value.update({ 'user_id': i_user_oid })
-        run_entries = localdb.testRun.find(doc_value).sort([('$natural', -1)])
-        if not i_conn_json=={}:
-            for run_entry in run_entries:
-                chip_names = []
-                for chip_json in i_conn_json['chips']:
-                    if chip_json.get('enable', 1)==0: continue
-                    chip_names.append({ 'name': chip_json['name'] })
-                query = {
-                    'dbVersion' : register.__global.db_version,
-                    'testRun'   : str(run_entry['_id']),
-                    '$or'       : chip_names
-                }
-                ctr_entries = localdb.componentTestRun.find(query)
-                if not ctr_entries.count()==0:
-                    tr_oids.append(str(run_entry['_id']))
-                    break
-        else:
-            for run_entry in run_entries:
-                tr_oids.append(str(run_entry['_id']))
-    else:
-        doc_value = {
-            '_id'       : ObjectId(i_tr_oid),
-            'dbVersion' : register.__global.db_version
-        }
-        this_run = localdb.testRun.find_one(doc_value)
-        if this_run:
-            tr_oids.append(str(this_run['_id']))
-
-    if i_type=='dcs':
-        dcs_tr_oids = []
-        for tr_oid in tr_oids:
-            query = {
-                '_id'       : ObjectId(tr_oid),
-                'dbVersion' : register.__global.db_version
-            }
-            this_run = localdb.testRun.find_one(query)
-            if not this_run.get('environment',False)==False:
-                dcs_tr_oids.append(tr_oid)
-        tr_oids = dcs_tr_oids
-
-    if i_type=='iv':
-        dcs_tr_oids = []
-        for tr_oid in tr_oids:
-            query = {
-                '_id'       : ObjectId(tr_oid),
-                'dbVersion' : register.__global.db_version,
-            }
-            localdb.testRun.update_one(query, { '$set': {'ivTest' : True}})
-            this_run = localdb.testRun.find_one(query)
-            if not this_run.get('environment',False)==False:
-                dcs_tr_oids.append(tr_oid)
-        tr_oids = dcs_tr_oids
-
-
+    for tr_oid in self.tr_oids:
+        try:
+            self.checkDb()
+            status = self._check_test_run(tr_oid)
+            for i, oid in enumerate(status['_id']):
+                if status['passed'][i]: tr_oids.append(oid)
+        except DBConnectionError:
+            pass
     return tr_oids
+
+common.addInstanceMethod(ScanData, checkUploadData)
+
+def checkUploadData(self):
+    """
+    This function check if data registered by searching with data id
+    """
+    self.logger.debug('Check if DCS data registered.')
+    ctr_oids = []
+    for entry in self.ctr_oids:
+        try:
+            self.checkDb()
+            oid = self._check_dcs(entry['ctr_oid'], entry['key'], entry['num'], entry['description'])
+            ctr_oids.append(oid)
+        except DBConnectionError:
+            pass
+    return ctr_oids
+
+common.addInstanceMethod(DcsData, checkUploadData)
 
 ######################
 ### main functions ###
 ######################
 
-############
-# Initialize
-# Check the connection to Local DB
-def __init(db_cfg):
-    logger.debug('Initialize.')
-
+def checkDb(self, i_log={}, i_path=''):
+    """
+    This function check connection to Local DB
+    """
+    self.logger.debug('Initialize.')
     args = getArgs()
-    global localdb
 
-    if db_cfg=={}:
-        logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
-        logger.error('Set it by YARR/localdb/setup_db.sh')
-        logger.info('-----------------------')
-        logger.debug('=======================')
-        sys.exit(1)
+    if self.dbstatus:
+        try:
+            self.localdb.list_collection_names()
+        except:
+            raise DBConnectionError
+    else:
+        db = LocalDb()
+        db_cfg = common.readDbCfg(args, i_log.get('dbCfg', {}), i_path)
+        db.setCfg(db_cfg)
 
-    url = 'mongodb://{0}:{1}'.format(db_cfg['hostIp'], db_cfg['hostPort'])
-    logger.info('[Connection Test] DB Server: {0}/{1}'.format(url, db_cfg.get('dbName', 'localdb')))
+        if args.username: db.setUsername(args.username)
+        if args.password: db.setPassword(args.password)
 
-    ##################
-    # Connection check
-    max_server_delay = 1
-    username = None
-    password = None
-    authSource = db_cfg.get('dbName', 'localdb')
-    ### check tls/ssl
-    db_tls = db_cfg.get('tls', {}).get('enabled',False)
-    db_ssl = db_cfg.get('ssl', {}).get('enabled',False)
-    if db_tls:
-        db_certfile = db_cfg.get('tls', {}).get('CertificateKeyFile',None)
-        db_ca_certs = db_cfg.get('tls', {}).get('CAFile',None)
-    elif db_ssl:
-        db_certfile = db_cfg.get('ssl', {}).get('PEMKeyFile',None)
-        db_ca_certs = db_cfg.get('ssl', {}).get('CAFile',None)
-    if db_tls or db_ssl:
-        url+='/?ssl=true&ssl_ca_certs={0}&ssl_certfile={1}&ssl_match_hostname=false'.format(db_ca_certs,db_certfile)
-        ### authenticate mechanism
-        if db_cfg.get('auth',None)=='x509':
-            url+='&authMechanism=MONGODB-X509'
-    client = MongoClient(
-        url,
-        serverSelectionTimeoutMS=max_server_delay
-    )
-    localdb = client[db_cfg.get('dbName', 'localdb')]
-    try:
-        localdb['fs.files'].create_index([('hash', DESCENDING), ('_id', DESCENDING)])
-        localdb['component'].create_index([('serialNumber', DESCENDING)])
-        localdb['testRun'].create_index([('startTime', DESCENDING), ('user_id', DESCENDING), ('address', DESCENDING)])
-        localdb['componentTestRun'].create_index([('name', DESCENDING), ('testRun', DESCENDING)])
-    except errors.ServerSelectionTimeoutError as err:
-        ### Connection failed
-        logger.error('---> Connection is BAD.')
-        logger.error('     {}'.format(err))
-        logger.error('     Access https://localdb-docs.readthedocs.io/en/master/faq/ to check more detail')
-        return False
-    except errors.OperationFailure as err:
-        ### Need user authentication
-        if db_cfg.get('KeyFile',None):
-            if not db_cfg['KeyFile'] == 'null':
-                keys = readKey(db_cfg['KeyFile'])
-                username = keys['username']
-                password = keys['password']
-        if args.username:
-            username = args.username
-        elif db_cfg.get('username',None):
-            username = db_cfg['username']
-        elif os.environ.get('username',None):
-            username = os.environ['username']
-        if args.password:
-            password = args.password
-        elif db_cfg.get('password',None):
-            password = db_cfg['password']
-        elif os.environ.get('password',None):
-            password = os.environ['password']
-        if username and password:
-            try:
-                localdb.authenticate(username, password)
-            except errors.OperationFailure as err:
-                logger.error('Authentication failed.')
-                return False
-        else:
-            logger.error('This scan did not store in LocalDB because of the authentication. Please login by "source localdb/login_mongodb.sh"')
-            return False
+        db.checkConnection()
 
-    localdb['fs.files'].create_index([('hash', DESCENDING), ('_id', DESCENDING)])
-    localdb['component'].create_index([('serialNumber', DESCENDING)])
-    localdb['testRun'].create_index([('startTime', DESCENDING), ('user_id', DESCENDING), ('address', DESCENDING)])
-    localdb['componentTestRun'].create_index([('name', DESCENDING), ('testRun', DESCENDING)])
+        localdb = db.getLocalDb()
+        toolsdb = db.getLocalDbTools()
+        self.setDb(db_cfg, localdb, toolsdb)
 
-    register.__set_localdb(localdb)
-    register.__set_list(db_cfg.get('stage',[]), 'stage')
-    register.__set_list(db_cfg.get('environment',[]), 'environment')
-    register.__set_list(db_cfg.get('component',[]), 'component')
-    #register.__global.force = args.force
+common.addInstanceMethod(RegisterData, checkDb)
 
-    logger.info('---> Connection is GOOD.')
+def checkConfigFormat(self, i_dir='', i_log={}, i_path=''):
+    """
+    This function checks config files
+    """
+    self.logger.debug('Check config files before scan')
+    args = getArgs()
 
-    return True
+    # user
+    user_json = common.readUserCfg(args, i_log.get('userCfg',{}), i_path)
+    self.setUser(user_json)
 
-#####################
-# Set cache directory
-# - Scan Upload: path/to/cache/scanLog.json
-# - DCS Upload: path/to/cache/dbDcsLog.json
-def __set_cache(cache_dir):
-    logger.debug('Write cache data: {}.'.format(cache_dir))
+    # site
+    site_json = common.readSiteCfg(args, i_log.get('siteCfg',{}), i_path)
+    self.setSite(site_json)
 
+    # connectivity
+    conn_jsons = common.readJson(args.conn) if args.conn else i_log.get('connectivity',{})
+    if not type(conn_jsons)==type([]):
+        self.setConnCfg(conn_jsons, i_dir)
+    else:
+        for conn in conn_jsons:
+            self.setConnCfg(conn, i_dir)
+
+common.addInstanceMethod(RegisterData, checkConfigFormat)
+
+def verifyData(self, i_log={}):
+    """
+    This function verifies config files for QC
+    """
+    self.logger.debug('Verify config files for QC')
+    args = getArgs()
+
+    QC = args.QC if args.QC else i_log.get('dbCfg',{}).get('QC',False)
+    self.verifyCfg(QC)
+    if not args.log and args.interactive:
+        self.logger.warning('-> Confirmation')
+        self.logger.warning('Is this ok to upload data into Local DB?')
+        self.logger.warning('\033[5m(Please answer Y/y to continue or N/n to exit.)\033[0m')
+        while True:
+            answer = input('[y/n]: ')
+            if answer.lower()=='y':
+                break
+            elif answer.lower()=='n':
+                raise InteractiveExit
+
+common.addInstanceMethod(ScanData, verifyData)
+
+def verifyData(self, i_log={}):
+    """
+    This function verifies config files for DCS uploading
+    """
+    self.logger.debug('Verify config files for DCS uploading')
+    args = getArgs()
+    self.environments = []
+
+    self.logger.info('Loading DCS information ...')
+    self.verifyCfg(i_log)
+    registered_keys=[]
+    ctr_oids = []
+    for env_json in i_log['environments']:
+        env_json = self.verifyDcsData(env_json)
+        if not env_json['registered_oids']==[]:
+            if not args.log and args.interactive:
+                self.confirmDcsData(env_json)
+                self.logger.warning('DCS data with the key "{}" is already registered in Local DB.'.format(env_json['key']))
+                self.logger.warning('Do you continue to upload this data into Local DB? [y/n]')
+                self.logger.warning('\033[5m(Please answer Y/y to append new data or N/n to skip this registration.)\033[0m')
+                while True:
+                    answer = input('[y/n]: ')
+                    if answer.lower()=='y':
+                        env_json['ctr_oids'] = env_json['ctr_oids'] + env_json['registered_oids']
+                        env_json['chips'] = env_json['chips'] + env_json['registered_chips']
+                        env_json['registered_chips'] = []
+                        env_json['registered_oids'] = []
+                        break
+                    elif answer.lower()=='n':
+                        registered_keys.append(env_json['key'])
+                        break
+            else:
+                registered_keys.append('"{}"'.format(env_json['key']))
+        if not env_json['ctr_oids']==[] or not env_json['registered_oids']==[]:
+            self.environments.append(env_json)
+            if not env_json['ctr_oids']==[]:
+                ctr_oids = ctr_oids + env_json['ctr_oids']
+    self.tr_oids = []
+    if not ctr_oids==[]:
+        for env_json in self.environments:
+            self.confirmDcsData(env_json)
+    if not registered_keys==[]:
+        self.logger.warning('DCS data with the key {} is already registered in Local DB, so skip.'.format(', '.join(registered_keys)))
+    if ctr_oids==[]:
+        self.logger.error('No DCS data needed to be uploaded.')
+        raise DataError
+    else:
+        if not args.log and args.interactive:
+            self.logger.warning('-> Confirmation')
+            self.logger.warning('Is this ok to upload DCS data into Local DB?')
+            self.logger.warning('\033[5m(Please answer Y/y to continue or N/n to exit.)\033[0m')
+            while True:
+                answer = input('[y/n]: ')
+                if answer.lower()=='y':
+                    break
+                elif answer.lower()=='n':
+                    raise InteractiveExit
+
+common.addInstanceMethod(DcsData, verifyData)
+
+def setCache(self, i_dir, i_opt):
+    """
+    This function sets chache directory where the log file is placed
+    a. scan upload: path/to/cache/scanLog.json
+    b. DCS upload: path/to/cache/dbDcsLog.json
+    """
+    i_dir = os.path.realpath(os.path.abspath(i_dir))
+    self.logger.debug('Write cache data: {}.'.format(i_dir))
     args = getArgs()
 
     ##################################
     # Set cache directory and log file
-    register.__global.dir_path = cache_dir
-    if option=='scan':
-        scanlog_path = '{}/scanLog.json'.format(cache_dir)
-    elif option=='dcs':
-        scanlog_path = '{}/dbDcsLog.json'.format(cache_dir)
-    elif option=='iv':
-        scanlog_path = '{}/dbIVLog.json'.format(cache_dir)
-    else:
-        return
-    scanlog_json = register.toJson(scanlog_path)
+    #register.__global.dir_path = i_dir
+    remove = False
+    try:
+        if i_opt=='scan':
+            self.writeScan(i_dir)
+        elif i_opt=='dcs':
+            self.writeDcs(i_dir)
+        else:
+            return
+    except DataError:
+        remove = True
+    except:
+        if not args.log and args.interactive:
+            self.logger.warning('Do you want to keep this data in the cache list and retry the upload later?')
+            while True:
+                answer = input('[y/n]: ')
+                if answer.lower()=='y':
+                    remove = False
+                    break
+                elif answer.lower()=='n':
+                    remove = True
+                    break
+    self.listCache(i_dir, i_opt, remove)
 
-    #####################
-    # Set database config
-    # - priority
-    #   1. argument
-    #   2. database config in scanLog.json
-    #   3. default (~/.yarr/localdb/${HOSTNAME}_database.json
-    db_cfg = None
-    if args.database:
-        db_cfg = register.toJson(args.database)
-    elif 'dbCfg' in scanlog_json:
-        db_cfg = scanlog_json['dbCfg']
-    if not db_cfg:
-        db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
-        if db_cfg=={}:
-            logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
-            logger.error('Set it by YARR/localdb/setup_db.sh')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
+common.addInstanceMethod(RegisterData, setCache)
 
-    #####################
-    # Write Scan/DCS data
-    result = False
-    if __init(db_cfg)==True:
-        if option=='scan':
-            result=__write_scan(cache_dir, scanlog_json)
-        if option=='dcs':
-            result=__write_dcs(cache_dir, scanlog_json)
-        if option=='iv':
-            result=__write_dcs(cache_dir, scanlog_json)
-    else:
-        logger.error('Cannot upload data {}, retry again in the good connection to Local DB Server'.format(cache_dir))
-        result = True
-
-    #########
-    # CleanUp
-    __clean(cache_dir, result)
-
-##################
-# Scan Data Upload
-# Upload scan data from result data files following scanLog.json
-def __write_scan(cache_dir, scanlog_json):
-    logger.debug('Write cache scan data: {}.'.format(cache_dir))
-    logger.info('Cache Directory: {}'.format(cache_dir))
+def writeScan(self, i_dir):
+    """
+    This function uploads scan data from result data files following scanLog.json
+    """
+    self.logger.debug('Write cache scan data: {}.'.format(i_dir))
+    self.logger.info('Cache Directory: {}'.format(i_dir))
 
     args = getArgs()
 
-    if scanlog_json=={}:
-        logger.warning('No Scan Data')
-        return False
+    # scanLog.json
+    log_path = 'scanLog.json'
+    log_json = common.readJson('{0}/{1}'.format(i_dir, log_path))
+    if log_json=={}:
+        self.logger.error('Not found {0} in {1}'.format(log_path, i_dir))
+        self.logger.error('Specify the correct path to result directory')
+        raise DataError
+    log_json['QC'] = args.QC
 
-    ###########
-    # timestamp
-    # If 'start/finishTime' is written in scanLog.json, extract 'start/finishTime' from scanLog.json.
-    # If not, extract 'timestamp' and convert it to 'start/finishTime'.
-    if 'startTime' in scanlog_json:
-        start_timestamp = scanlog_json['startTime']
-    elif 'timestamp' in scanlog_json:
-        start_timestamp = time.mktime(time.strptime(scanlog_json['timestamp'], '%Y-%m-%d_%H:%M:%S'))
+    # DB Connection
+    self.checkConfigFormat(i_dir, log_json, log_path)
+    self.checkDb(log_json, log_path)
+
+    # Validation for QC
+    self.verifyData(log_json)
+
+    # scanLog.json
+    if 'startTime' in log_json:
+        start_timestamp = log_json['startTime']
+    elif 'timestamp' in log_json:
+        start_timestamp = time.mktime(time.strptime(log_json['timestamp'], '%Y-%m-%d_%H:%M:%S'))
     else:
         start_timestamp = datetime.now().timestamp()
-    if 'finishTime' in scanlog_json:
-        finish_timestamp = scanlog_json['finishTime']
+    if 'finishTime' in log_json:
+        finish_timestamp = log_json['finishTime']
     else:
         finish_timestamp = start_timestamp
-    scanlog_json['startTime']  = start_timestamp
-    scanlog_json['finishTime'] = finish_timestamp
+    log_json['startTime']  = start_timestamp
+    log_json['finishTime'] = finish_timestamp
 
-    ######
-    # site
-    # If site config file is speficied, register site information from the config file.
-    # If not, register site information by extracting mac address and hostname of the machine.
-    # If the site information has already registered, this step will be skipped.
-    site_json = scanlog_json.get('siteCfg',{})
-    if args.site:
-        site_json.update(register.toJson(args.site))
-    if site_json=={}:
-        site_json = register.toJson('{0}/.yarr/localdb/{1}_site.json'.format(home, hostname))
-        if site_json=={}:
-            logger.error('There is no default site config in {}/.yarr/localdb'.format(home))
-            logger.error('Set it by YARR/localdb/setup_db.sh')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
-    site_oid = register.__set_site(site_json)
-
-    ######
-    # user
-    # If user config file is specified, register user information from the user file.
-    # If not, register user information by extracting user name and hostname of the machine.
-    # If the user information has already registered, this step will be skipped.
-    user_json = scanlog_json.get('userCfg',{})
-    if args.user:
-        user_json.update(register.toJson(args.user))
-    if user_json=={}:
-        user_json = register.toJson('{0}/.yarr/localdb/user.json'.format(home))
-        if user_json=={}:
-            logger.error('There is no default user config in {}/.yarr/localdb'.format(home))
-            logger.error('Set it by YARR/localdb/setup_db.sh')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
-    user_oid = register.__set_user(user_json)
-
-    #############
-    # connctivity
-    # Check chip status ('enable':True/False) and upload for disabled chip will be skipped.
-    # If the test data associated with the component has already registered, the test data upload will be skipped.
-    conn_jsons = []
-    if not type(scanlog_json['connectivity'])==type([]):
-        conn_json = register.__set_conn_cfg(scanlog_json['connectivity'], cache_dir)
-        conn_jsons.append(conn_json)
-    else:
-        for connectivity in scanlog_json['connectivity']:
-            conn_json = register.__set_conn_cfg(connectivity, cache_dir)
-            conn_jsons.append(conn_json)
-
-    ##########
     # testType
-    # If 'testType' is written in scanLog.json, extract 'testType' from scanLog.json.
-    # If not, extract '-s <scanCfg.json' from command line and convert it to 'testType'.
-    if 'testType' in scanlog_json:
-        test_type = scanlog_json['testType']
-    elif 'exec' in scanlog_json:
-        command = scanlog_json['exec']
+    if 'testType' in log_json:
+        test_type = log_json['testType']
+    elif 'exec' in log_json:
+        command = log_json['exec']
         for i, com in enumerate(command.split(' ')):
             if com=='-s':
                 scan_command = command.split(' ')[i+1]
@@ -418,514 +358,349 @@ def __write_scan(cache_dir, scanlog_json):
         test_type = scan_command.split('/')[-1].split('.')[0]
     else:
         test_type = 'unknown_type'
-    scanlog_json['testType'] = test_type
+    log_json['testType'] = test_type
 
-    ########################
     # test data upload
-    # Almost all information of scanLog.json will be stored as test data with keeping the format.
-    # (Config data and timestamps are stored in the specific format.)
+    """
+    Almost all information of scanLog.json will be stored as test data with keeping the format.
+    (Config data and timestamps are stored in the specific format.)
+    """
+    ## start
+    conn_jsons = self.setTestRun(log_json)
 
-    ### start
-    conn_jsons = register.__set_test_run_start(scanlog_json, conn_jsons)
-
-    ### config and attachment
+    ## config and attachment
     for conn_json in conn_jsons:
         ### config for testRun
-        for key in scanlog_json:
-            if not 'Cfg' in key:
-                continue
-            cfg_json = scanlog_json[key]
-            register.__set_config(cfg_json, key, key, 'testRun', {}, conn_json)
-        scan_cfg_path = '{0}/{1}.json'.format(cache_dir, test_type)
-        cfg_json = register.toJson(scan_cfg_path)
-        register.__set_config(cfg_json, test_type, 'scanCfg', 'testRun', {}, conn_json)
-
+        for key in log_json:
+            if not 'Cfg' in key: continue
+            cfg_json = log_json[key]
+            self.setConfig(cfg_json, key, key, 'testRun', {}, conn_json)
+        scan_cfg_path = '{0}/{1}.json'.format(i_dir, test_type)
+        cfg_json = common.readJson(scan_cfg_path)
+        self.setConfig(cfg_json, test_type, 'scanCfg', 'testRun', {}, conn_json)
         for chip_json in conn_json['chips']:
             chip_name = chip_json['name']
             filename = 'chipCfg'
             chip_cfg_name = chip_json['config'].split('/')[len(chip_json['config'].split('/'))-1]
-
-            for file_name in os.listdir(cache_dir):
+            for file_name in os.listdir(i_dir):
                 ### config for componentTestRun
                 if chip_cfg_name in file_name:
-                    cfg_json = register.toJson('{0}/{1}'.format(cache_dir, file_name))
+                    cfg_json = common.readJson('{0}/{1}'.format(i_dir, file_name))
                     title = '{}Cfg'.format(file_name.split(chip_cfg_name)[1][1:])
-                    register.__set_config(cfg_json, filename, title, 'componentTestRun', chip_json, conn_json)
+                    self.setConfig(cfg_json, filename, title, 'componentTestRun', chip_json, conn_json)
                     continue
                 ### attachment for componentTestRun
-                if chip_name in file_name:
-                    file_path = '{0}/{1}'.format(cache_dir, file_name)
+                if '{}_'.format(chip_name) in file_name:
+                    file_path = '{0}/{1}'.format(i_dir, file_name)
                     histoname = file_name.split('{}_'.format(chip_name))[1].split('.')[0]
-                    register.__set_attachment(file_path, histoname, chip_json, conn_json)
+                    self.setAttachment(file_path, histoname, chip_json, conn_json)
                     continue
-    ### finish
-    register.__set_test_run_finish(scanlog_json, conn_jsons)
+    ## finish
+    tr_oids = self.completeTestRun(log_json, conn_jsons)
 
     return True
 
-##################
-# DCS Data Upload
-# Upload DCS data from result data files following dbDcsLog.json
-def __write_dcs(cache_dir, dcslog_json):
-    logger.debug('Write cache DCS data: {}.'.format(cache_dir))
-    logger.info('Cache Directory: {}'.format(cache_dir))
+common.addInstanceMethod(ScanData, writeScan)
+
+def writeDcs(self, i_dir):
+    """
+    This function uploads DCS data from result data files following dbDcsLog.json
+    """
+    self.logger.debug('Write cache DCS data: {}.'.format(i_dir))
+    self.logger.info('Cache Directory: {}'.format(i_dir))
 
     args = getArgs()
 
-    if dcslog_json=={}:
-        logger.warning('No DCS Data')
-        return False
+    # dcsLog.json
+    log_path = 'dbDcsLog.json'.format(i_dir)
+    log_json = common.readJson('{0}/{1}'.format(i_dir, log_path))
+    if log_json=={}:
+        self.logger.error('Not found {0} in {1}'.format(log_path, i_dir))
+        self.logger.error('Specify the correct path to result directory')
+        raise DataError
 
-    if not 'environments' in dcslog_json:
-        logger.warning('No DCS data in the log file: {}/dbDcsLog.json'.format(cache_dir))
-        return False
+    # environments
+    if not 'environments' in log_json:
+        self.logger.error('No "environments" data in {}'.format(log_path))
+        raise DataError
 
-    ###########
     # timestamp
-    # If 'start/finishTime' is written in scanLog.json, extract 'start/finishTime' from scanLog.json.
-    # If not, extract 'timestamp' and convert it to 'start/finishTime'.
-    if 'startTime' in dcslog_json:
-        timestamp = dcslog_json['startTime']
-    elif 'timestamp' in dcslog_json:
-        timestamp = time.mktime(time.strptime(dcslog_json['timestamp'], '%Y-%m-%d_%H:%M:%S'))
+    if 'startTime' in log_json:
+        timestamp = log_json['startTime']
+    elif 'timestamp' in log_json:
+        timestamp = time.mktime(time.strptime(log_json['timestamp'], '%Y-%m-%d_%H:%M:%S'))
     else:
         timestamp = -1
+    log_json['timestamp'] = timestamp
 
-    ######
-    # site
-    # If site config file is speficied, register site information from the config file.
-    # If not, register site information by extracting mac address and hostname of the machine.
-    # If the site information has already registered, this step will be skipped.
-    site_json = dcslog_json.get('siteCfg',{})
-    if args.site:
-        site_json.update(register.toJson(args.site))
-    if site_json=={}:
-        site_json = register.toJson('{0}/.yarr/localdb/{1}_site.json'.format(home, hostname))
-        if site_json=={}:
-            logger.error('There is no default site config in {}/.yarr/localdb'.format(home))
-            logger.error('Set it by YARR/localdb/setup_db.sh')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
-    site_oid = register.__set_site(site_json)
+    self.checkConfigFormat(i_dir, log_json, log_path)
+    self.checkDb(log_json, log_path)
 
-    ######
-    # user
-    # If user config file is specified, register user information from the user file.
-    # If not, register user information by extracting user name and hostname of the machine.
-    # If the user information has already registered, this step will be skipped.
-    user_json = dcslog_json.get('userCfg',{})
-    if args.user:
-        user_json.update(register.toJson(args.user))
-    if user_json=={}:
-        user_json = register.toJson('{0}/.yarr/localdb/user.json'.format(home))
-        if user_json=={}:
-            logger.error('There is no default user config in {}/.yarr/localdb'.format(home))
-            logger.error('Set it by YARR/localdb/setup_db.sh')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
-    user_oid = register.__set_user(user_json)
-
-    conn_json = register.__set_conn_cfg(dcslog_json.get('connectivity',{}), cache_dir)
-    tr_oids = getTestRunData('scan', dcslog_json.get('id',''), conn_json, timestamp, site_oid, user_oid)
-    if tr_oids==[]:
-        logger.warning('Not found relational test run data in DB')
-        return True
-
-    for tr_oid in tr_oids:
-        dcs_tr_oids = []
-        if not getTestRunData('dcs', tr_oid)==[]:
-            logger.warning('Already registered dcs data to this test data in DB')
-            if not args.log:
-                print('')
-                answer = input('Do you continue to upload data into Local DB? [y/n]\n')
-                print('')
-                if answer.lower()!='y':
-                    return False
-                else:
-                    dcs_tr_oids.append(tr_oid)
-        else:
-            dcs_tr_oids.append(tr_oid)
-
-    tr_oids = dcs_tr_oids
-    for tr_oid in tr_oids:
-        register.__set_dcs(tr_oid, dcslog_json['environments'])
-        register.__global.tr_oids.append(tr_oid)
+    self.logger.info('-> Setting DCS Log {}'.format(log_path))
+    self.verifyData(log_json)
+    self.setDcs()
 
     return True
 
-def __clean(cache_dir, result):
-    logger.debug('Clean Up: {}.'.format(option))
+common.addInstanceMethod(DcsData, writeDcs)
 
-    ############
-    # cache list
-    # scan upload -> cache file : ~/.yarr/localdb/run.dat
-    # dcs upload  -> cache file : ~/.yarr/localdb/dcs.dat
-    if option=='scan':
-        cache_path = '{}/.yarr/localdb/run.dat'.format(home)
-    elif option=='dcs':
-        cache_path = '{}/.yarr/localdb/dcs.dat'.format(home)
-    elif option=='iv':
-        cache_path = '{}/.yarr/localdb/iv.dat'.format(home)
-    else: return
-
-    if os.path.isfile(cache_path):
-        with open(cache_path,'r') as f:
-            cache_list = f.read().splitlines()
-    else:
-        cache_list = []
-    cache_list.append(cache_dir)
-    cache_list = list(set(cache_list))
-
-    if not result==True:
-    ### Unuploadable test data outputs 'result:False', then remove directory path from cache list.
-        if cache_dir in cache_list: cache_list.remove(cache_dir)
-    else:
-        if option=='scan' or option=='dcs' or option=='iv':
-            for tr_oid in register.__global.tr_oids:
-                if not getTestRunData(option, tr_oid)==[]:
-                    logger.info('Success')
-                    if cache_dir in cache_list: cache_list.remove(cache_dir)
-                else:
-                    logger.error('Something wrong')
-
-    ##################
-    # Write Cache File
-    with open(cache_path,'w') as f:
-        for line in cache_list:
-            if not line or not line=='': f.write('{}\n'.format(line))
-
-    #register.__global.clean()
-    register.clean()
-
-###################
-# Cache Data Upload
-# Upload Scan/DCS data from cache file run.dat/dcs.dat
-def __upload_from_cache():
+def __upload_from_cache(i_opt):
+    """
+    This function uploads scan/DCS data from cache directories written in HOME/.yarr/localdb/run.dat or HOME/.yarr/localdb/dcs.dat
+    """
     logger.debug('Upload From Cache List.')
-    global option
+    file_paths = {
+        'scan': '{}/.yarr/localdb/run.dat'.format(home),
+        'dcs' : '{}/.yarr/localdb/dcs.dat'.format(home)
+    }
+    file_path = file_paths[i_opt]
+    logger.info('Upload {0} cache data from {1}'.format(i_opt, file_path))
+    cache_list = []
+    if os.path.isfile(file_path):
+        with open(file_path,'r') as f:
+            cache_list = f.read().splitlines()
+    cache_list = list(set(cache_list))
+    for cache_dir in cache_list:
+        if cache_dir=='': continue
+        logger.info('------------------------------')
+        if i_opt=='scan': data = ScanData()
+        elif i_opt=='dcs': data = DcsData()
+        data.setCache(cache_dir, i_opt)
+        logger.info('------------------------------')
+    cache_list = []
+    if os.path.isfile(file_path):
+        with open(file_path,'r') as f:
+            cache_list = f.read().splitlines()
+    if not len(cache_list)==0:
+        logger.warning('{} cache data could not be uploade for some reason.'.format(len(cache_list)))
+        logger.warning('\tCache list: {}'.format(file_path))
+        logger.warning('\tLog file  : {}'.format(logfile))
+        logger.warning('Please check error messages in log file and retry the upload,')
+        logger.warning('    or delete the data not to upload from the cache list.')
 
-    #################
-    # Scan Cache List
-    file_paths = {'scan': '{}/.yarr/localdb/run.dat'.format(home), 'dcs': '{}/.yarr/localdb/dcs.dat'.format(home), 'iv': '{}/.yarr/localdb/iv.dat'.format(home)}
+def uploadComp(self, i_path):
+    """
+    This function registeres component data following connectivity file
+    """
+    self.logger.debug('Register Component Data.')
+    self.logger.info('Component Config File: {}'.format(i_path))
+    args = getArgs()
 
-    for opt in file_paths:
-        option = opt
-        file_path = file_paths[opt]
+    # DB Connection
+    self.checkConfigFormat()
+    self.checkDb()
+    self.verifyCfg()
+    self.checkConnCfg(i_path)
+
+    self.logger.warning('Do you continue to upload data into Local DB? [y/n]')
+    self.logger.warning('\033[5m(Please answer Y/y to continue or N/n to exit.)\033[0m')
+    while True:
+        answer = input('[y/n]: ')
+        if answer.lower()=='y':
+            break
+        elif answer.lower()=='n':
+            raise InteractiveExit
+    self.setComponent()
+
+common.addInstanceMethod(CompData, uploadComp)
+
+def listCache(self, i_dir, i_opt, i_remove=False):
+    """
+    This function adjusts the cache list written in HOME/.yarr/localdb/run.dat or dcs.dat
+    """
+    self.logger.debug('listCache')
+    file_paths = {
+        'scan': '{}/.yarr/localdb/run.dat'.format(home),
+        'dcs' : '{}/.yarr/localdb/dcs.dat'.format(home)
+    }
+    path = file_paths.get(i_opt,'')
+    if not path=='':
+        if os.path.isfile(path):
+            with open(path, 'r') as f:
+                cache_dirs = f.read().splitlines()
+        else:
+            cache_dirs = []
         cache_list = []
-        if os.path.isfile(file_path.format(home)):
-            with open(file_path.format(home),'r') as f:
-                cache_list = f.read().splitlines()
-
+        for cache_dir in cache_dirs:
+            cache_dir = os.path.realpath(os.path.abspath(cache_dir))
+            cache_list.append(cache_dir)
         cache_list = list(set(cache_list))
-        for cache_dir in cache_list:
-            if cache_dir=='': continue
-            __set_cache(cache_dir)
+        if i_remove:
+            if i_dir in cache_list: cache_list.remove(i_dir)
+        else:
+            if not self.checkUploadData()==[]:
+                self.logger.info('Succeeded uploading {0} data from {1}'.format(i_opt, i_dir))
+                if i_dir in cache_list:
+                    cache_list.remove(i_dir)
+        with open(path, 'w') as f:
+            if not cache_list==[]:
+                self.logger.warning('{0} data that has not been uploaded is listed in {1}'.format(i_opt.capitalize(), path))
+            for line in cache_list:
+                if not line or not line=='': f.write('{}\n'.format(line))
 
-################################
-# Register Component (temporary)
-# TODO Prepare the function to retrieve component data from proDB
-def __upload_comp(comp_path):
-    logger.debug('Register Component Data.')
+common.addInstanceMethod(RegisterData, listCache)
 
+def __set_log(log=False):
+    """
+    This function sets log configuration
+    """
+    db_logging.setLogFile(logfile)
+    if not log==True:
+        db_logging.setLog()
+    logger.info('------------------------------')
+
+def __check_command():
+    """
+    This function checks command notation
+    If there is any mistake, this function outputs error message and raises CommandError
+    """
     args = getArgs()
-
-    #####################
-    # Set database config
-    # - priority
-    #   1. argument
-    #   2. default (~/.yarr/localdb/${HOSTNAME}_database.json
-    if args.database:
-        db_cfg = register.toJson(args.database)
+    command = args.command
+    nargs = len(args.command)-1
+    if command==[]:
+        logger.error('Usage: localdbtool-upload <command> [--option]')
+        logger.error('These are common upload commands used in various situations:')
+        logger.error('')
+        logger.error('\tinit\t\tInitialize upload function and check connection to Local DB')
+        logger.error('\tcomp\t<file>\tRegister component data from specified connectivity file')
+        logger.error('\tscan\t<dir>\tUpload scan data from specified directory')
+        logger.error('\tdcs\t<dir>\tUpload DCS data from specified directory')
+        logger.error('\tcache\t\tUpload cache data')
+        logger.error('\tcheck\tcomp\tCheck registered component data')
+        logger.error('\t     \tchip\tCheck registered chip data')
+        logger.error('')
+        logger.error('See \'localdbtool-upload --help\' to check available options')
+        logger.error('')
+        logger.error('The following argument is required: command')
+        raise CommandError
+    elif command[0]=='test':
+        pass
+    elif command[0]=='init':
+        pass
+    elif command[0]=='comp':
+        if nargs==0:
+            logger.error('Usage: localdbtool-upload comp <path/to/component/file>')
+            logger.error('')
+            logger.error('Option \'comp\' requires a parameter.')
+            raise CommandError
+        if args.log:
+            logger.error('Usage: localdbtool-upload comp <path/to/component/file>')
+            logger.error('')
+            logger.error('Option \'comp\' does not support an option "--log".')
+            raise CommandError
+    elif command[0]=='scan':
+        if nargs==0:
+            logger.error('Usage: localdbtool-upload scan <path/to/result/dir>')
+            logger.error('')
+            logger.error('Option \'scan\' requires a parameter.')
+            raise CommandError
+    elif command[0]=='dcs':
+        if nargs==0:
+            logger.error('Usage: localdbtool-upload dcs <path/to/result/dir>')
+            logger.error('')
+            logger.error('Option \'dcs\' requires a parameter.')
+            raise CommandError
+    elif command[0]=='cache':
+        if nargs==0:
+            logger.error('Usage: localdbtool-upload cache scan')
+            logger.error('   or: localdbtool-upload cache dcs')
+            logger.error('')
+            logger.error('Option \'cache\' requires a parameter "scan" or "dcs".')
+            raise CommandError
+    elif command[0]=='check':
+        if args.log:
+            logger.error('Usage: localdbtool-upload check')
+            logger.error('')
+            logger.error('Option \'check\' does not support an option "--log".')
+            raise CommandError
     else:
-        db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
-        if db_cfg=={}:
-            logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
-            logger.error('Set it by YARR/localdb/setup_db.sh')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
-
-    ############
-    # Initialize
-    # If the connection is bad,
-    # exit the function
-    if not __init(db_cfg)==True:
-        logger.error('Could not upload data {}, retry again in the good connection to Local DB Server'.format(comp_path))
-        logger.info('-----------------------')
-        logger.debug('=======================')
-        sys.exit(1)
-
-    ######
-    # site
-    # If site config file is speficied, register site information from the config file.
-    # If not, register site information by extracting mac address and hostname of the machine.
-    # If the site information has already registered, this step will be skipped.
-    site_json = register.toJson(args.site)
-    if site_json=={}:
-        site_json = register.toJson('{0}/.yarr/localdb/{1}_site.json'.format(home, hostname))
-        if site_json=={}:
-            logger.error('There is no default site config in {}/.yarr/localdb'.format(home))
-            logger.error('Set it by YARR/localdb/setup_db.sh')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
-    site_oid = register.__set_site(site_json)
-    register.__check_site_data(site_oid)
-
-    ######
-    # user
-    # If user config file is specified, register user information from the user file.
-    # If not, register user information by extracting user name and hostname of the machine.
-    # If the user information has already registered, this step will be skipped.
-    user_json = register.toJson(args.user)
-    if user_json=={}:
-        user_json = register.toJson('{0}/.yarr/localdb/user.json'.format(home))
-        if user_json=={}:
-            logger.error('There is no default user config in {}/.yarr/localdb'.format(home))
-            logger.error('Set it by YARR/localdb/setup_db.sh')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
-    user_oid = register.__set_user(user_json)
-    register.__check_user_data(user_oid)
-
-    ######################
-    # Check component file
-    register.__check_conn_cfg(comp_path)
-    print('')
-    answer = input('Do you continue to upload data into Local DB? [y/n]\n')
-    print('')
-    if answer.lower()!='y':
-        logger.info('-----------------------')
-        logger.debug('=======================')
-        sys.exit(0)
-    ####################################
-    # Check the status of the components
-    # If the component has already registered,
-    # return False.
-    # If not, the components are registered and return True when completed.
-    status = register.__conn_cfg(comp_path)
-    if status==True:
-        logger.info('Completed the upload successfuly.')
-        logger.info('')
-        logger.info('You can retrieve config files from Local DB by ')
-        logger.info('       localdbtool-retrieve pull --chip <SERIAL NUMBER>')
-    else:
-        logger.info('Already registered.')
-
-########################################
-# Check Component registered in Local DB
-def __check_component(i_type):
-    logger.debug('Check Component Data.')
-
-    args = getArgs()
-
-    if args.database:
-        db_cfg = register.toJson(args.database)
-    else:
-        db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
-        if db_cfg=={}:
-            logger.error('There is no default database config in {}/.yarr/localdb'.format(home))
-            logger.error('Set it by YARR/localdb/setup_db.sh')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
-
-    if not __init(db_cfg)==True:
-        logger.error('Could not check component data, retry again in the good connection to Local DB Server')
-        logger.info('-----------------------')
-        logger.debug('=======================')
-        sys.exit(1)
-
-    ### fetch
-    if i_type=='comp':
-        file_path = home+'/.yarr/localdb/'+hostname+'_modules.csv'
-        file_open = open(file_path, 'w')
-        query = { 'dbVersion': register.__global.db_version }
-        component_entries = localdb.component.find(query)
-        modules = []
-        for component in component_entries:
-            module = {}
-            module['serialNumber'] = component['serialNumber']
-            module['componentType'] = component['componentType']
-            module['chipType'] = component['chipType']
-            file_open.write('{},'.format(component['serialNumber']))
-            query = {
-                'dbVersion' : register.__global.db_version,
-                'parent'    : str(component['_id'])
-            }
-            child_entries = localdb.childParentRelation.find(query)
-            module['chips'] = []
-            for child in child_entries:
-                query = {
-                    '_id'       : ObjectId(child['child']),
-                    'dbVersion' : register.__global.db_version
-                }
-                this_chip = localdb.component.find_one(query)
-                chip = {}
-                chip['serialNumber'] = this_chip['serialNumber']
-                chip['componentType'] = this_chip['componentType']
-                chip['chipId'] = this_chip['chipId']
-                file_open.write('{},'.format(this_chip['serialNumber']))
-                module['chips'].append(chip)
-            modules.append(module)
-            file_open.write('\n')
-        file_open.close()
-
-        if not args.log:
-            logger.info('Download Component Data of Local DB locally ({})...'.format(file_path))
-            logger.info('**************************************')
-            for j, module in enumerate(modules):
-                logger.info('Component ({})'.format(j+1))
-                logger.info('    Chip Type: {}'.format(module['chipType']))
-                logger.info('    Parent:')
-                logger.info('        serial number: {}'.format(module['serialNumber']))
-                logger.info('        component type: {}'.format(module['componentType']))
-                logger.info('        children: {}'.format(len(module['chips'])))
-                for i, chip in enumerate(module['chips']):
-                    logger.info('    Child ({}):'.format(i+1))
-                    logger.info('        serial number: {}'.format(chip['serialNumber']))
-                    logger.info('        component type: {}'.format(chip['componentType']))
-                    logger.info('        chip ID: {}'.format(chip['chipId']))
-                logger.info('**************************************')
-            logger.info('The number of components: {}'.format(len(modules)))
-            logger.info('Done.')
-    elif i_type=='chip':
-        query = { 'dbVersion': register.__global.db_version }
-        component_entries = localdb.chip.find(query)
-        chips = []
-        for component in component_entries:
-            chip = {}
-            chip['name'] = component['name']
-            chip['chipType'] = component['chipType']
-            chip['chipId'] = component['chipId']
-            chip['component'] = '...'
-            chip['proDB'] = False
-            query = {
-                'serialNumber': chip['name'],
-                'dbVersion'   : register.__global.db_version
-            }
-            this_cmp = localdb.component.find_one(query)
-            if this_cmp:
-                chip['component'] = str(this_cmp['_id'])
-                chip['proDB'] = this_cmp['proDB']
-            chips.append(chip)
-
-        if not args.log:
-            logger.info('Download Chip Data of Local DB locally...')
-            logger.info('**************************************')
-            for j, chip in enumerate(chips):
-                logger.info('Chip ({})'.format(j+1))
-                logger.info('    Chip Type: {}'.format(chip['chipType']))
-                logger.info('        Name: {}'.format(chip['name']))
-                logger.info('        chip ID: {}'.format(chip['chipId']))
-                logger.info('        component ID: {}'.format(chip['component']))
-                logger.info('        productionDB: {}'.format(chip['proDB']))
-                logger.info('**************************************')
-            logger.info('The number of chips: {}'.format(len(chips)))
-            logger.info('Done.')
+        logger.error('\'{}\' is not upload command. See \'localdbtool-upload --help\' to check available commands and options.'.format(command[0]))
+        raise CommandError
 
 def main():
-    logger.debug('=======================')
     logger.debug('Main Function.')
-    global option
     global logfile
 
     args = getArgs()
     command = args.command
     nargs = len(args.command)-1
 
-    if command[0]=='test':
-        logger.debug('=======================')
+    try:
+        __check_command()
+    except CommandError:
+        logger.error('')
+        logger.error('Command Exception: Aborting...')
+        sys.exit(1)
+
+    option = command[0]
+
+    if option=='test':
         sys.exit(0)
 
-    ### logging
-    if args.log==True:
-        formatter = Formatter('%(asctime)s - %(levelname)s: %(message)s')
-        day = datetime.today().day
-        logfile = '{0}/.yarr/localdb/log/{1}.log'.format(home, day)
-        for i in range(3):
-            past_logfile = '{0}/.yarr/localdb/log/{1}.log'.format(home, day+i+1)
-            if os.path.isfile(past_logfile): os.remove(past_logfile)
-        handler = FileHandler(filename=logfile)
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-        logger.debug('Set log file: {}'.format(logfile))
-    else:
-        formatter = Formatter('#DB %(levelname)s# %(message)s')
-        handler = StreamHandler()
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-        logger.debug('Not set log file')
+    __set_log(args.log) ### logging
 
-    logger.info('-----------------------')
+    #try:
+    if option=='init':
+        logger.info('Function: Initialize upload function and check connection to Local DB')
+        scan = ScanData()
+        try:
+            scan.checkDb()
+        except:
+            logger.info('------------------------------')
+            sys.exit(1)
 
-    if command[0]=='init':
-        logger.info('Function: Initialize')
-        if args.database:
-            db_cfg = register.toJson(args.database)
-        else:
-            db_cfg = register.toJson('{0}/.yarr/localdb/{1}_database.json'.format(home, hostname))
-        if not __init(db_cfg)==True:
-            logger.info('-----------------------')
-            logger.debug('=======================')
+    elif option=='comp':
+        logger.info('Function: Register component data from specified connectivity file')
+        data = CompData()
+        try:
+            data.uploadComp(command[1])
+        except DBConnectionError:
+            logger.error('Data upload can be done when the connection to DB is good')
+            logger.info('------------------------------')
+            sys.exit(2)
+        except InteractiveExit:
+            logger.info('Exiting...')
+            logger.info('------------------------------')
+            sys.exit(10)
+        except:
+            logger.error('Invalid configs for uploading data, aborting...')
+            logger.info('------------------------------')
             sys.exit(1)
-    elif command[0]=='comp':
-        logger.info('Function: Register Component')
-        option = 'comp'
-        if nargs == 0:
-            logger.error('Usage: localdbtool-upload comp <path/to/component/file>')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
-        __upload_comp(command[1])
-    elif command[0]=='scan':
-        logger.info('Function: Upload Scan Data')
-        option = 'scan'
-        register.__global.option = 'scan'
-        if nargs == 0:
-            logger.error('Usage: localdbtool-upload scan <path/to/result/dir>')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
-        __set_cache(command[1])
-    elif command[0]=='dcs':
-        logger.info('Function: Upload DCS Data')
-        option = 'dcs'
-        register.__global.option = 'dcs'
-        if nargs == 0:
-            logger.error('Usage: localdbtool-upload dcs <path/to/result/dir>')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
-        __set_cache(command[1])
-    elif command[0]=='iv':
-        logger.info('Function: Upload IV Data')
-        option = 'iv'
-        register.__global.option = 'iv'
-        if nargs == 0:
-            logger.error('Usage: localdbtool-upload iv <path/to/result/dir>')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
-        __set_cache(command[1])
-    elif command[0]=='cache':
-        logger.info('Function: Upload From Cache')
-        __upload_from_cache()
-    elif command[0]=='check':
-        logger.info('Function: Check Component Data')
-        if nargs == 0:
-            logger.error('Usage: localdbtool-upload check comp')
-            logger.error('       localdbtool-upload check chip')
-            logger.info('-----------------------')
-            logger.debug('=======================')
-            sys.exit(1)
-        __check_component(command[1])
 
-    logger.info('-----------------------')
-    logger.debug('=======================')
+    elif option=='scan': # verify
+        logger.info('Function: Upload scan data from specified directory')
+        scan = ScanData()
+        scan.setCache(command[1], option)
+
+    elif option=='dcs': # verify
+        logger.info('Function: Upload DCS data from specified directory')
+        dcs  = DcsData()
+        dcs.setCache(command[1], option)
+
+    elif option=='cache': #verify
+        logger.info('Function: Upload cache data')
+        __upload_from_cache(command[1])
+
+    elif option=='check': #TODO
+        logger.info('Function: Check config files')
+        scan = ScanData()
+        try:
+            scan.checkConfigFormat()
+            scan.checkDb()
+            scan.verifyData()
+        except DBConnectionError:
+            logger.info('------------------------------')
+            sys.exit(2)
+        except InteractiveExit:
+            logger.info('Exiting...')
+            logger.info('------------------------------')
+            sys.exit(10)
+        except:
+            logger.error('Invalid configs for uploading data, aborting...')
+            logger.info('------------------------------')
+            sys.exit(1)
+
+    logger.info('------------------------------')
     sys.exit(0)
 
 if __name__ == '__main__': main()
