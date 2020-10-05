@@ -1,5 +1,5 @@
-#ifndef RD53APARAMETERLOOP_H
-#define RD53APARAMETERLOOP_H
+#ifndef RD53ATWOPARAMETERLOOP_H
+#define RD53ATWOPARAMETERLOOP_H
 // #################################
 // # Author: Timon Heim
 // # Email: timon.heim at cern.ch
@@ -13,10 +13,10 @@
 #include "LoopActionBase.h"
 #include "Rd53a.h"
 
-class Rd53aParameterLoop : public LoopActionBase {
+class Rd53aTwoParameterLoop : public LoopActionBase {
     public:
-        Rd53aParameterLoop();
-        Rd53aParameterLoop(Rd53aReg Rd53aGlobalCfg::*ref);
+        Rd53aTwoParameterLoop();
+        Rd53aTwoParameterLoop(Rd53aReg Rd53aGlobalCfg::*ref);
 
         void writeConfig(json &j);
         void loadConfig(json &j);

@@ -1,8 +1,8 @@
 // #################################
-// # Author: Timon Heim
-// # Email: timon.heim at cern.ch
+// # Author: Timon Heim, magne.eik.laurizen at cern.ch and Simon Huiberts
+// # Email: timon.heim at cern.ch, magne.eik.laurizen at cern.ch and simon.kristian.huiberts at cern.ch
 // # Project: Yarr
-// # Description: Parameter Loop for RD53A
+// # Description: Two Parameter Loop for RD53A
 // # Date: 03/2018
 // ################################
 
@@ -13,10 +13,10 @@
 #include <cstddef>
 
 namespace {
-  auto logger = logging::make_log("Rd53aParameterLoop");
+  auto logger = logging::make_log("Rd53aTwoParameterLoop");
 }
 
-Rd53aParameterLoop::Rd53aParameterLoop() {
+Rd53aTwoParameterLoop::Rd53aTwoParameterLoop() : LoopActionBase(LOOP_STYLE_PARAMETER) {
     loopType = typeid(this);
     min = 0;
     max = 100;
@@ -24,7 +24,7 @@ Rd53aParameterLoop::Rd53aParameterLoop() {
 
 }
 
-Rd53aParameterLoop::Rd53aParameterLoop(Rd53aReg Rd53aGlobalCfg::*ref): parPtr(ref) {
+Rd53aTwoParameterLoop::Rd53aTwoParameterLoop(Rd53aReg Rd53aGlobalCfg::*ref): LoopActionBase(LOOP_STYLE_PARAMETER), parPtr(ref) {
     loopType = typeid(this);
     min = 0;
     max = 100;
@@ -33,7 +33,7 @@ Rd53aParameterLoop::Rd53aParameterLoop(Rd53aReg Rd53aGlobalCfg::*ref): parPtr(re
 
 }
 
-void Rd53aParameterLoop::init() {
+void Rd53aTwoParameterLoop::init() {
     SPDLOG_LOGGER_TRACE(logger, "");
     m_done = false;
 
@@ -52,7 +52,7 @@ void Rd53aParameterLoop::init() {
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
-void Rd53aParameterLoop::execPart1() {
+void Rd53aTwoParameterLoop::execPart1() {
   for(std::vector<int>::size_type i = 0; i != m_cur.size(); i++){
          std::string p;
          if(!multipleParams){p = parName;}
@@ -67,7 +67,7 @@ void Rd53aParameterLoop::execPart1() {
 
 
 
-void Rd53aParameterLoop::execPart2() {
+void Rd53aTwoParameterLoop::execPart2() {
   for(std::vector<int>::size_type i = 0; i != m_cur.size(); i++){
       if(!multipleParams){
           m_cur[i] += step;
@@ -82,7 +82,7 @@ void Rd53aParameterLoop::execPart2() {
   }
 }
 
-void Rd53aParameterLoop::end() {
+void Rd53aTwoParameterLoop::end() {
     // Reset to min
     for(std::vector<int>::size_type i = 0; i != m_cur.size(); i++){
          if(!multipleParams){
@@ -97,13 +97,13 @@ void Rd53aParameterLoop::end() {
 
 }
 
-void Rd53aParameterLoop::writePar(Rd53aReg Rd53aGlobalCfg::*p, uint32_t m) {
+void Rd53aTwoParameterLoop::writePar(Rd53aReg Rd53aGlobalCfg::*p, uint32_t m) {
     keeper->globalFe<Rd53a>()->writeRegister(p, m);
     while(!g_tx->isCmdEmpty());
     //std::this_thread::sleep_for(std::chrono::milliseconds(20));
 }
 
-void Rd53aParameterLoop::writeConfig(json &j) {
+void Rd53aTwoParameterLoop::writeConfig(json &j) {
     if(multipleParams){
       j["min"] = minMultiple[m_curToLog];
       j["max"] = maxMultiple[m_curToLog];
@@ -117,7 +117,7 @@ void Rd53aParameterLoop::writeConfig(json &j) {
     }
 }
 
-void Rd53aParameterLoop::loadConfig(json &j) {
+void Rd53aTwoParameterLoop::loadConfig(json &j) {
     //Figure out if j contains dicts named 1, 2, 3, etc. each containing a min, max, step, and parname.
     //If an element named "1" is found, we assume multiple parameters to step has been given.
     //If not element named "1" is found, we assume only one parameter is to be stepped.

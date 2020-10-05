@@ -18,8 +18,8 @@ namespace {
   auto logger = logging::make_log("Rd53a2TriggerLoop");
 }
 
-Rd53a2TriggerLoop::Rd53a2TriggerLoop() : LoopActionBase() {
-    m_trigCnt = 50;
+Rd53a2TriggerLoop::Rd53a2TriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
+    setTrigCnt(50);
     m_trigDelay = 48;
     m_trigDelay2 = m_trigDelay;
     m_trigFreq = 1e3;
@@ -198,7 +198,7 @@ void Rd53a2TriggerLoop::init(){
     }
     if (m_extTrig) {
       g_tx->setTrigConfig(EXT_TRIGGER);
-    } else if (m_trigCnt > 0) {
+    } else if (getTrigCnt() > 0) {
       g_tx->setTrigConfig(INT_COUNT);
     } else {
       g_tx->setTrigConfig(INT_TIME);
@@ -208,7 +208,7 @@ void Rd53a2TriggerLoop::init(){
     }
 
     g_tx->setTrigFreq(m_trigFreq);
-    g_tx->setTrigCnt(m_trigCnt);
+    g_tx->setTrigCnt(getTrigCnt());
     g_tx->setTrigWord(&m_trigWord[0], m_trigWordLength);
     g_tx->setTrigWordLength(m_trigWordLength);
     g_tx->setTrigTime(m_trigTime);
@@ -249,7 +249,7 @@ void Rd53a2TriggerLoop::end() {
 }
 
 void Rd53a2TriggerLoop::writeConfig(json &config) {
-    config["count"] = m_trigCnt;
+    config["count"] = getTrigCnt();
     config["frequency"] = m_trigFreq;
     config["time"] = m_trigTime;
     config["delay"] = m_trigDelay;
@@ -263,7 +263,7 @@ void Rd53a2TriggerLoop::writeConfig(json &config) {
 
 void Rd53a2TriggerLoop::loadConfig(json &config) {
     if (!config["count"].empty())
-        m_trigCnt = config["count"];
+        setTrigCnt(config["count"]);
     if (!config["frequency"].empty())
         m_trigFreq = config["frequency"];
     if (!config["time"].empty())

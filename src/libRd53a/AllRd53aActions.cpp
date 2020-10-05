@@ -14,6 +14,8 @@ namespace AllRd53aActionsRegistry {
             []() { return std::unique_ptr<LoopActionBase>(new Rd53aCoreColLoop);});
     bool parameter_loop_registered = registerLoopAction("Rd53aParameterLoop",
             []() { return std::unique_ptr<LoopActionBase>(new Rd53aParameterLoop);});
+    bool two_parameter_loop_registered = registerLoopAction("Rd53aTwoParameterLoop",
+            []() { return std::unique_ptr<LoopActionBase>(new Rd53aTwoParameterLoop);});
     bool globalfb_loop_registered = registerLoopAction("Rd53aGlobalFeedback",
             []() { return std::unique_ptr<LoopActionBase>(new Rd53aGlobalFeedback);});
     bool pixelfb_loop_registered = registerLoopAction("Rd53aPixelFeedback",

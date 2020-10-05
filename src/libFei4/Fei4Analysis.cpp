@@ -82,6 +82,10 @@ void OccupancyAnalysis::init(ScanBase *s) {
                 injections = trigLoop->getTrigCnt();
             }
         }
+        if (l->type() == typeid(Rd53a2TriggerLoop*)) {
+            Rd53a2TriggerLoop *trigLoop = (Rd53a2TriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt()*2;
+        }
     }
 }
 
@@ -175,6 +179,10 @@ void TotAnalysis::init(ScanBase *s) {
             } else {
                 injections = trigLoop->getTrigCnt();
             }
+        }
+        if (l->type() == typeid(Rd53a2TriggerLoop*)) {
+          Rd53a2TriggerLoop *trigLoop = (Rd53a2TriggerLoop*) l.get();
+          injections = trigLoop->getTrigCnt()*2;
         }
 
         if (l->isGlobalFeedbackLoop()) {
@@ -416,6 +424,10 @@ void ScurveFitter::init(ScanBase *s) {
                 injections = trigLoop->getTrigCnt();
             }
         }
+        if (l->type() == typeid(Rd53a2TriggerLoop*)) {
+          Rd53a2TriggerLoop *trigLoop = (Rd53a2TriggerLoop*) l.get();
+          injections = trigLoop->getTrigCnt()*2;
+        }
 
         // check injection capacitor for FEI-4
         if(l->type() == typeid(Fei4MaskLoop*)) {
@@ -446,9 +458,10 @@ void ScurveFitter::init(ScanBase *s) {
 // par[0] = Mean
 // par[1] = Sigma
 // par[2] = Normlization
+// par[3] = Constant
 #define SQRT2 1.414213562
 double scurveFct(double x, const double *par) {
-    return 0.5*( 2-erfc( (x-par[0])/(par[1]*SQRT2) ) )*par[2];
+    return par[3] + 0.5*( 2-erfc( (x-par[0])/(par[1]*SQRT2) ) )*par[2];
 }
 
 void ScurveFitter::processHistogram(HistogramBase *h) {
@@ -520,7 +533,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     control = lm_control_float;
                     //control.verbosity = 3;
                     control.verbosity = 0;
-                    const unsigned n_par = 3;
+                    const unsigned n_par = 4;
                     //double par[n_par] = {((vcalMax-vcalMin)/2.0)+vcalMin,  5 , (double) injections};
                     double par[n_par] = {((vcalMax-vcalMin)/2.0)+vcalMin,  0.05*(((vcalMax-vcalMin)/2.0)+vcalMin)  , (double) injections};
                     std::chrono::high_resolution_clock::time_point start;
@@ -757,6 +770,10 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
                 injections = trigLoop->getTrigCnt();
             }
         }
+        if (l->type() == typeid(Rd53a2TriggerLoop*)) {
+          Rd53a2TriggerLoop *trigLoop = (Rd53a2TriggerLoop*) l.get();
+          injections = trigLoop->getTrigCnt()*2;
+        }
 
         if (l->isGlobalFeedbackLoop()) {
             fb.reset(new GlobalFeedbackSender(feedback));
@@ -865,6 +882,10 @@ void OccPixelThresholdTune::init(ScanBase *s) {
                 injections = trigLoop->getTrigCnt();
             }
         }
+        if (l->type() == typeid(Rd53a2TriggerLoop*)) {
+          Rd53a2TriggerLoop *trigLoop = (Rd53a2TriggerLoop*) l.get();
+          injections = trigLoop->getTrigCnt()*2;
+        }
 
         if (l->isPixelFeedbackLoop()) {
             fb.reset(new PixelFeedbackSender(feedback));
@@ -963,6 +984,10 @@ void L1Analysis::init(ScanBase *s) {
             } else {
                 injections = trigLoop->getTrigCnt();
             }
+        }
+        if (l->type() == typeid(Rd53a2TriggerLoop*)) {
+          Rd53a2TriggerLoop *trigLoop = (Rd53a2TriggerLoop*) l.get();
+          injections = trigLoop->getTrigCnt()*2;
         }
     }
 }
