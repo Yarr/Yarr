@@ -14,6 +14,7 @@
 #include "Fei4MaskLoop.h"
 #include "StdTriggerAction.h"
 #include "lmcurve.h"
+#include "AllRd53aActions.h"
 
 #include "logging.h"
 
