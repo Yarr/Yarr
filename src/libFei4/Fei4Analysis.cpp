@@ -14,7 +14,6 @@
 #include "Fei4MaskLoop.h"
 #include "StdTriggerAction.h"
 #include "lmcurve.h"
-#include "AllRd53aActions.h"
 
 #include "logging.h"
 
@@ -82,10 +81,6 @@ void OccupancyAnalysis::init(ScanBase *s) {
             } else {
                 injections = trigLoop->getTrigCnt();
             }
-        }
-        if (l->type() == typeid(Rd53a2TriggerLoop*)) {
-            Rd53a2TriggerLoop *trigLoop = (Rd53a2TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt()*2;
         }
     }
 }
@@ -180,10 +175,6 @@ void TotAnalysis::init(ScanBase *s) {
             } else {
                 injections = trigLoop->getTrigCnt();
             }
-        }
-        if (l->type() == typeid(Rd53a2TriggerLoop*)) {
-          Rd53a2TriggerLoop *trigLoop = (Rd53a2TriggerLoop*) l.get();
-          injections = trigLoop->getTrigCnt()*2;
         }
 
         if (l->isGlobalFeedbackLoop()) {
@@ -425,10 +416,6 @@ void ScurveFitter::init(ScanBase *s) {
                 injections = trigLoop->getTrigCnt();
             }
         }
-        if (l->type() == typeid(Rd53a2TriggerLoop*)) {
-          Rd53a2TriggerLoop *trigLoop = (Rd53a2TriggerLoop*) l.get();
-          injections = trigLoop->getTrigCnt()*2;
-        }
 
         // check injection capacitor for FEI-4
         if(l->type() == typeid(Fei4MaskLoop*)) {
@@ -459,7 +446,6 @@ void ScurveFitter::init(ScanBase *s) {
 // par[0] = Mean
 // par[1] = Sigma
 // par[2] = Normlization
-// par[3] = Constant
 #define SQRT2 1.414213562
 double scurveFct(double x, const double *par) {
     return par[3] + 0.5*( 2-erfc( (x-par[0])/(par[1]*SQRT2) ) )*par[2];
@@ -771,10 +757,6 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
                 injections = trigLoop->getTrigCnt();
             }
         }
-        if (l->type() == typeid(Rd53a2TriggerLoop*)) {
-          Rd53a2TriggerLoop *trigLoop = (Rd53a2TriggerLoop*) l.get();
-          injections = trigLoop->getTrigCnt()*2;
-        }
 
         if (l->isGlobalFeedbackLoop()) {
             fb.reset(new GlobalFeedbackSender(feedback));
@@ -883,10 +865,6 @@ void OccPixelThresholdTune::init(ScanBase *s) {
                 injections = trigLoop->getTrigCnt();
             }
         }
-        if (l->type() == typeid(Rd53a2TriggerLoop*)) {
-          Rd53a2TriggerLoop *trigLoop = (Rd53a2TriggerLoop*) l.get();
-          injections = trigLoop->getTrigCnt()*2;
-        }
 
         if (l->isPixelFeedbackLoop()) {
             fb.reset(new PixelFeedbackSender(feedback));
@@ -985,10 +963,6 @@ void L1Analysis::init(ScanBase *s) {
             } else {
                 injections = trigLoop->getTrigCnt();
             }
-        }
-        if (l->type() == typeid(Rd53a2TriggerLoop*)) {
-          Rd53a2TriggerLoop *trigLoop = (Rd53a2TriggerLoop*) l.get();
-          injections = trigLoop->getTrigCnt()*2;
         }
     }
 }
