@@ -277,7 +277,7 @@ int main(int argc, char* argv[])
     histos.getHisto2D("occupancy")->setZaxisTitle("Hits");
 
     // Only valid tag to l1id association
-    const std::array<unsigned, 16> l1ToTag = {{0,0,1,1,1,1,2,2,2,2,3,3,3,3,0,0}};
+    //const std::array<unsigned, 16> l1ToTag = {{0,0,1,1,1,1,2,2,2,2,3,3,3,3,0,0}};
     //    const std::array<unsigned, 32> l1ToTag = {{0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,
     //                                               4,4,5,5,5,5,6,6,6,6,7,7,7,7,0,0}};
 
@@ -315,7 +315,7 @@ int main(int argc, char* argv[])
 
             iterCounter ++;
             if (iterCounter % 400000 == 0){
-                std::cout << "\r Loading event " << trigger << "                    " << std::flush;
+                std::cout << "\r Loaded events: " << trigger << "                    " << std::flush;
             }
 
             event = std::make_shared<Fei4Event>();
