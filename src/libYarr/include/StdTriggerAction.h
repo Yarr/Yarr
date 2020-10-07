@@ -11,7 +11,7 @@ class StdTriggerAction {
         virtual uint32_t getTrigCnt() { return m_trigCnt; }
         void setTrigCnt(uint32_t cnt) { m_trigCnt = cnt; }
         
-        virtual ~StdTriggerAction();
+        virtual ~StdTriggerAction() {};
     protected:
         uint32_t m_trigCnt;
 };
