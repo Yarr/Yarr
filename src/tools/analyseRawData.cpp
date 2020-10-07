@@ -32,10 +32,11 @@ class HistoContainer
             {
                 std::string name = histos1d[i].getName();
                 if ( name == arg_name){
-                    //std::cout << name << std::endl;
                     return &histos1d[i];
                 }
             }
+            std::cout << "Couldn't find histogram " << arg_name << std::endl;
+            return nullptr;
         }
 
         
@@ -50,7 +51,8 @@ class HistoContainer
                     return &histos2d[i];
                 }
             }
-            std::cout << "Couldn't find " << arg_name << std::endl;
+            std::cout << "Couldn't find histogram " << arg_name << std::endl;
+            return nullptr;
         }
 };
 
