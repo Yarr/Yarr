@@ -12,7 +12,7 @@ class StdTriggerAction {
         void setTrigCnt(uint32_t cnt) { m_trigCnt = cnt; }
         
         virtual ~StdTriggerAction();
-    private:
+    protected:
         uint32_t m_trigCnt;
 };
 
