@@ -314,12 +314,15 @@ void Rd53bDataProcessor::process_core()
                                 }
 
                                 // Reverse enginner the pixel address
-                                // TODO Should do this only once
-                                unsigned maskLoopIndex = 0;
-                                for (unsigned loop=0; loop<curOut[channel]->lStat.size(); loop++) {
-                                    if (curOut[channel]->lStat.getStyle(loop) == LOOP_STYLE_MASK) {
-                                        maskLoopIndex = loop;
-                                        break;
+                                static unsigned maskLoopIndex = 0;
+                                static bool check_loop_index = true;
+                                if(check_loop_index) {
+                                    for (unsigned loop=0; loop<curOut[channel]->lStat.size(); loop++) {
+                                        if (curOut[channel]->lStat.getStyle(loop) == LOOP_STYLE_MASK) {
+                                            maskLoopIndex = loop;
+                                            check_loop_index = false;
+                                            break;
+                                        }
                                     }
                                 }
                                 const unsigned step = curOut[channel]->lStat.get(maskLoopIndex);
