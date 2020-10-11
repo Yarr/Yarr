@@ -7,7 +7,6 @@
 #include "Histo1d.h"
 #include "Histo2d.h"
 
-
 class HistoContainer
 {
     public:
@@ -39,7 +38,6 @@ class HistoContainer
             return nullptr;
         }
 
-        
         Histo2d * getHisto2D(const std::string &arg_name)
         {
             int len = histos2d.size();
@@ -70,7 +68,7 @@ void processMultiEvent(std::list<std::shared_ptr<Fei4Event>> eventList, HistoCon
 
     std::cout << std::endl;
 
-    // Get the histos now so accessing them is easier inside the loop
+    // Get the histos now so accessing them is faster inside the loop
     Histo1d *bcidDiff = histos.getHisto1D("bcidDiff");
     Histo1d *clustersPerEvent = histos.getHisto1D("clustersPerEvent");
     Histo1d *hitsPerEvent = histos.getHisto1D("hitsPerEvent");
@@ -96,12 +94,11 @@ void processMultiEvent(std::list<std::shared_ptr<Fei4Event>> eventList, HistoCon
     // Loop over event List
     for (std::shared_ptr<Fei4Event> event: eventList) {
 
-        iterCounter ++;
-
         // print progress every 1000 iterations
         if (iterCounter % 1000 == 0){
-            std::cout << "\r Filling histograms... " << (float)iterCounter/len * 100 << " %                    " << std::flush;
+            std::cout << "\r Filling histograms with loaded events... " << ((float)iterCounter + 1)/len * 100 << " %                    " << std::flush;
         }
+        iterCounter ++;
 
         if(event != 0){
             hitsPerEvent->fill(event->nHits);
@@ -148,12 +145,10 @@ void processMultiEvent(std::list<std::shared_ptr<Fei4Event>> eventList, HistoCon
                 eventScreen->setYaxisTitle("Row");
                 eventScreen->setZaxisTitle("ToT");
             }
-            int cluster_cnt = 1;
             for (auto cluster: event->clusters) {
                 for (auto hit : cluster.hits) {
                     eventScreen->fill(hit->col, hit->row, hit->tot);
                 }
-                cluster_cnt++;
             }
             if (plotIt%10 == 9) {
                 eventScreen->plot(std::to_string(plotIt), varContainer->outputDir);
@@ -170,15 +165,19 @@ void processMultiEvent(std::list<std::shared_ptr<Fei4Event>> eventList, HistoCon
     std::cout << std::endl;
 }
 
-
 void usage(char* argv[])
 {
-    std::cout << "Usage: " << argv[0] << "[options] inputFile1 inputFile2 ..." << std::endl;
+    std::cout << "Usage: " << argv[0] << " [options] inputFile1 inputFile2 ..." << std::endl;
     std::cout << "    List of options:" << std::endl;
-    std::cout << "        -o outputDir (default: ./offline)" << std::endl;
+    std::cout << "        -o outpu_dir (default: ./offline)" << std::endl;
     exit(1);
 }
 
+bool fileExists(const std::string& filename)
+{
+    std::ifstream ifile(filename);
+    return ifile.good();
+}
 
 int main(int argc, char* argv[]) 
 {
@@ -207,21 +206,24 @@ int main(int argc, char* argv[])
     }
 
     std::string mkdirCmd = "mkdir -p " + varContainer.outputDir;
-    if (varContainer.outputDir == "offline" && system(mkdirCmd.c_str()) < 0) {
-        std::cout << "#ERROR# Failed to create offline directory, not able to save plots!" << std::endl;
-    }
-    else if (varContainer.outputDir != "offline" && system(mkdirCmd.c_str()) < 0){
+    if (system(mkdirCmd.c_str()) < 0){
         std::cout << "#ERROR# Failed to create " << varContainer.outputDir << " directory, not able to save plots!" << std::endl;
     }
 
-    std::string command;
+    std::string inputFile;
     std::vector<std::string> inputFiles;
     if (optind < argc)
     {
         while (optind < argc)
         {
-            command = argv[optind++];
-            inputFiles.push_back(command);
+            inputFile = argv[optind++];
+
+            if (! fileExists(inputFile)){
+                std::cout << "#ERROR# Input file \"" << inputFile << "\" does not exist or cannot be opened" << std::endl;
+                return -1;
+            }
+
+            inputFiles.push_back(inputFile);
         }
     }
 
@@ -283,10 +285,10 @@ int main(int argc, char* argv[])
     //    const std::array<unsigned, 32> l1ToTag = {{0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,
     //                                               4,4,5,5,5,5,6,6,6,6,7,7,7,7,0,0}};
 
-
     // Loop over input files
     int skipped = 0;
     for (int i=0; i<inputFiles.size(); i++) {
+
         std::cout << "Opening file: " << inputFiles[i] << std::endl;
         std::fstream file(inputFiles[i], std::fstream::in | std::fstream::binary);
 
@@ -313,10 +315,8 @@ int main(int argc, char* argv[])
 
         while (file) {
 
-            int now = file.tellg();
-
             iterCounter ++;
-            if (iterCounter % 400000 == 0){
+            if (iterCounter % 100000 == 0){
                 std::cout << "\r Loaded events: " << trigger << "                    " << std::flush;
             }
 
@@ -403,16 +403,16 @@ int main(int argc, char* argv[])
                 eventList.clear();
             }
         }
-
-        std::cout << " Number of errors: " << error << std::endl;
-
-        std::cout << std::endl;
         file.close();
+        std::cout << std::endl;
+
+        std::cout << "Number of errors: " << error << std::endl;\
         std::cout << "Max BCID: " << varContainer.max_bcid << std::endl;
         std::cout << "Numer of trigger: " << trigger << std::endl;
         std::cout << "Number of truncated events: " << n_truncated << std::endl;
     }
     
+    // Save occupancy data
     histos.getHisto2D("occupancy")->toFile(varContainer.outputDir + "offline_");
 
     int sum = 0;
