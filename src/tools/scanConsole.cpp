@@ -635,26 +635,28 @@ int main(int argc, char *argv[]) {
             backupCfgFile.close();
 
             // Plot
-            if (doPlots||dbUse) {
-                logger->info("-> Plotting histograms of FE {}", feCfg->getRxChannel());
-                std::string outputDirTmp = outputDir;
-
-                auto &output = *fe->clipResult;
+            // store output results (if any)
+            if(analyses.size()) {
+                logger->info("-> Storing output results of FE {}", feCfg->getRxChannel());
+                auto& output = *fe->clipResult;
                 std::string name = feCfg->getName();
-
                 if (output.empty()) {
                     logger->warn("There were no results for chip {}, this usually means that the chip did not send any data at all.", name);
                 } else {
                     while(!output.empty()) {
-                        std::unique_ptr<HistogramBase> histo = output.popData();
-                        histo->plot(name, outputDirTmp);
+                        auto histo = output.popData();
+                        // only create the image files if asked to
+                        if(doPlots) {
+                            histo->plot(name, outputDir);
+                        }
+                        // always dump the data
                         histo->toFile(name, outputDir);
-                    }
+                    } // while
                 }
             }
-        }
-    }
-    std::string lsCmd = "ls -1 " + dataDir + "last_scan/*.p*";
+        } // fe active
+    } // i
+    std::string lsCmd = "ls -1 " + dataDir + "last_scan/";
     logger->info("Finishing run: {}", runCounter);
     if(doPlots && (system(lsCmd.c_str()) < 0)) {
         logger->info("Find plots in: {}last_scan", dataDir);
