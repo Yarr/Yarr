@@ -96,7 +96,7 @@ void processMultiEvent(std::list<std::shared_ptr<Fei4Event>> eventList, HistoCon
 
         // print progress every 1000 iterations
         if (iterCounter % 1000 == 0){
-            std::cout << "\r Filling histograms with loaded events... " << ((float)iterCounter + 1)/len * 100 << " %                    " << std::flush;
+            std::cout << "\r Filling histograms with loaded events... " << (float)iterCounter/len * 100 << " %                    " << std::flush;
         }
         iterCounter ++;
 
@@ -301,9 +301,12 @@ int main(int argc, char* argv[])
         std::list<std::shared_ptr<Fei4Event>> eventList;
         int error = 0;
 
+        // Input data will be loaded and analyzed in packages to prevent memory
+        // overflows
+        long int triggersPerPackage = 1e7;
+        
         long int iterCounter = 0;
         int packageCounter = 1;
-        long int eventsPerckage = 1e7;
         std::shared_ptr<Fei4Event> event(nullptr);
         int trigger = 0;
         int old_offset = 0;
@@ -395,7 +398,7 @@ int main(int argc, char* argv[])
             // Once eventList is filled to some extent, use it to fill the
             // histos, empty it afterwards and repeat the process. This prevents
             // memory problems when the input file is too big.
-            if (trigger > eventsPerckage*packageCounter)
+            if (trigger > triggersPerPackage*packageCounter)
             {
                 iterCounter = 0;
                 packageCounter ++;
