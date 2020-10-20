@@ -16,7 +16,7 @@
 
 #include "DataProcessor.h"
 #include "ClipBoard.h"
-#include "Fei4EventData.h"
+#include "EventData.h"
 #include "HistogramAlgorithm.h"
 #include "HistogramBase.h"
 #include "Histo1d.h"
@@ -35,7 +35,7 @@ class DataArchiver : public HistogramAlgorithm {
         }
 
         void create(const LoopStatus &stat) override {}
-        void processEvent(Fei4Data *data) override;
+        void processEvent(FrontEndData *data) override;
     private:
         std::fstream fileHandle;
 };
@@ -57,7 +57,7 @@ class OccupancyMap : public HistogramAlgorithm {
             r.reset(h);
         }
         
-        void processEvent(Fei4Data *data) override;
+        void processEvent(FrontEndData *data) override;
 
         static const std::string outputName()  { return "OccupancyMap"; }
     private:
@@ -81,7 +81,7 @@ class TotMap : public HistogramAlgorithm {
             r.reset(h);
         }
 
-        void processEvent(Fei4Data *data) override;
+        void processEvent(FrontEndData *data) override;
 
         static std::string outputName() { return "TotMap"; }
     private:
@@ -103,7 +103,7 @@ class Tot2Map : public HistogramAlgorithm {
             r.reset(h);
         }
 
-        void processEvent(Fei4Data *data) override;
+        void processEvent(FrontEndData *data) override;
 
         static std::string outputName() { return "Tot2Map"; }
     private:
@@ -124,7 +124,7 @@ class TotDist : public HistogramAlgorithm {
             r.reset(h);
         }
 
-        void processEvent(Fei4Data *data) override;
+        void processEvent(FrontEndData *data) override;
 
         static std::string outputName() { return "TotDist"; }
     private:
@@ -148,7 +148,7 @@ class Tot3d : public HistogramAlgorithm {
             r.reset(h);
         }
 
-        void processEvent(Fei4Data *data) override;
+        void processEvent(FrontEndData *data) override;
     private:
         Histo3d *h;
 };
@@ -173,7 +173,7 @@ class L1Dist : public HistogramAlgorithm {
             bcid_offset = 0;
         }
 
-        void processEvent(Fei4Data *data) override;
+        void processEvent(FrontEndData *data) override;
 
         static std::string outputName() { return "L1Dist"; }
     private:
@@ -203,7 +203,7 @@ class L13d : public HistogramAlgorithm {
             bcid_offset = 0;
         }
 
-        void processEvent(Fei4Data *data) override;
+        void processEvent(FrontEndData *data) override;
 
         static std::string outputName() { return "L13d"; }
     private:
@@ -230,7 +230,7 @@ class HitsPerEvent : public HistogramAlgorithm {
             r.reset(h);
         }
 
-        void processEvent(Fei4Data *data) override;
+        void processEvent(FrontEndData *data) override;
 
         static std::string outputName() { return "HitDist"; }
     private:

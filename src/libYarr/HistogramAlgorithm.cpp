@@ -8,7 +8,7 @@
 
 #include "HistogramAlgorithm.h"
 
-#include "Fei4EventData.h"
+#include "EventData.h"
 
 #include "logging.h"
 
@@ -59,7 +59,7 @@ void HistogrammerProcessor::process() {
 void HistogrammerProcessor::process_core() {
     while (!input->empty()) {
         auto d = input->popData();
-        Fei4Data *data = dynamic_cast<Fei4Data*>(d.get());
+        FrontEndData *data = dynamic_cast<FrontEndData*>(d.get());
         if (data == nullptr)
             continue;
         for (unsigned i=0; i<algorithms.size(); i++) {

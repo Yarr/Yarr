@@ -1,5 +1,6 @@
 #include "catch.hpp"
 #include <deque>
+#include <memory>
 #include <fstream>
 
 #include "LCBUtils.h"

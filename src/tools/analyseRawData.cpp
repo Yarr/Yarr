@@ -1,8 +1,9 @@
 #include <iostream>
 #include <fstream>
 #include <array>
+#include <list>
 
-#include "Fei4EventData.h"
+#include "EventData.h"
 #include "Histo1d.h"
 #include "Histo2d.h"
 
@@ -91,15 +92,15 @@ int main(int argc, char* argv[]) {
 
         int l1_count = 0;
 
-        Fei4Event *multiEvent = NULL;
-        std::list<Fei4Event*> eventList;
+        FrontEndEvent *multiEvent = NULL;
+        std::list<FrontEndEvent*> eventList;
         int error = 0;
 
         while (file) {
             int now = file.tellg();
             //std::cout << "\r Loaded " << (double)now/(double)size*100 << "%                       " << std::flush;
 
-            Fei4Event *event = new Fei4Event();
+            FrontEndEvent *event = new FrontEndEvent();
             event->fromFileBinary(file);
             
             // Print event

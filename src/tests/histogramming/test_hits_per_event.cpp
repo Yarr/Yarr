@@ -1,7 +1,7 @@
 #include "catch.hpp"
 
 #include "AllHistogrammers.h"
-#include "Fei4EventData.h"
+#include "EventData.h"
 #include "Histo1d.h"
 
 // Strictly, it's in libFei4, but not specifically
@@ -22,7 +22,7 @@ TEST_CASE("HistogramHitsPerEvent", "[Histogrammer][Fei4][notFei4][HitsPerEvent]"
     histogrammer.run();
 
     {
-        auto data = std::make_unique<Fei4Data>();
+        auto data = std::make_unique<FrontEndData>();
         data->newEvent(1, 2, 3);
         data->curEvent->addHit(1, 2, 3);
         input.pushData(std::move(data));

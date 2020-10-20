@@ -13,7 +13,6 @@
 #include "TxCore.h"
 #include "Fe65p2Cfg.h"
 #include "Fe65p2Cmd.h"
-#include "Fei4EventData.h"
 #include "ClipBoard.h"
 #include "HistogramBase.h"
 
