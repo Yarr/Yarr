@@ -4,7 +4,7 @@
 
 #include "AllProcessors.h"
 
-#include "Fei4EventData.h"
+#include "EventData.h"
 
 #include "rd53b_test_stream.h"
 #include "rd53b_test_truth.h"
@@ -45,7 +45,7 @@ TEST_CASE("Rd53bDataProcessor", "[rd53b][data_processor]") {
   REQUIRE (!em_cp[chan].empty());
 
   auto data = em_cp[chan].popData();
-  Fei4Data &rawData = *(Fei4Data*)data.get();
+  FrontEndData &rawData = *(FrontEndData*)data.get();
 
   REQUIRE (rawData.events.size() == truth_nEvents);
 
