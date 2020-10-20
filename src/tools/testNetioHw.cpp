@@ -87,6 +87,10 @@ int main(int argc, char** argv){
   j["NetIO"]["host"] = chost;
   j["NetIO"]["txport"] = cptx;
   j["NetIO"]["rxport"] = cprx;
+  j["NetIO"]["manchester"] = false;
+  j["NetIO"]["flip"]       = true;
+  j["NetIO"]["extern"]     = false;
+  j["NetIO"]["fetype"]     = "strip";
 
   cout << "Create NetIO with options\n";
   cout << j << endl;

@@ -119,7 +119,7 @@ class AbcCfg {
             reg.getSubRegister(info).updateValue(value);
         }
 
-        uint32_t getSubRegisterValue(std::string subRegName) {
+        uint32_t getSubRegisterValue(std::string subRegName) const {
             auto info = m_info->abcSubRegisterMap_all[ABCStarSubRegister::_from_string(subRegName.c_str())];
             auto &reg = getRegister(info->m_regAddress);
             return reg.getSubRegister(info).getValue();

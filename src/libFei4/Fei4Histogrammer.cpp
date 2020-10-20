@@ -61,18 +61,18 @@ namespace {
                                 []() { return std::unique_ptr<HistogramAlgorithm>(new HitsPerEvent());});
 }
 
-void DataArchiver::processEvent(Fei4Data *data) {
-    for (const Fei4Event &curEvent: data->events) {
+void DataArchiver::processEvent(FrontEndData *data) {
+    for (const FrontEndEvent &curEvent: data->events) {
         // Save Event to File
         curEvent.toFileBinary(fileHandle);
     }
 }
 
 
-void OccupancyMap::processEvent(Fei4Data *data) {
-    for (const Fei4Event &curEvent: data->events) {
+void OccupancyMap::processEvent(FrontEndData *data) {
+    for (const FrontEndEvent &curEvent: data->events) {
         if (curEvent.nHits > 0) {
-            for (const Fei4Hit &curHit: curEvent.hits) {
+            for (const FrontEndHit &curHit: curEvent.hits) {
                 if(curHit.tot > 0)
                     h->fill(curHit.col, curHit.row);
             }
@@ -80,10 +80,10 @@ void OccupancyMap::processEvent(Fei4Data *data) {
     }
 }
 
-void TotMap::processEvent(Fei4Data *data) {
-    for (const Fei4Event &curEvent: data->events) {
+void TotMap::processEvent(FrontEndData *data) {
+    for (const FrontEndEvent &curEvent: data->events) {
         if (curEvent.nHits > 0) {
-            for (const Fei4Hit &curHit: curEvent.hits) {   
+            for (const FrontEndHit &curHit: curEvent.hits) {   
                 if(curHit.tot > 0)
                     h->fill(curHit.col, curHit.row, curHit.tot);
             }
@@ -91,10 +91,10 @@ void TotMap::processEvent(Fei4Data *data) {
     }
 }
 
-void Tot2Map::processEvent(Fei4Data *data) {
-    for (const Fei4Event &curEvent: data->events) {
+void Tot2Map::processEvent(FrontEndData *data) {
+    for (const FrontEndEvent &curEvent: data->events) {
         if (curEvent.nHits > 0) {
-            for (const Fei4Hit &curHit: curEvent.hits) {   
+            for (const FrontEndHit &curHit: curEvent.hits) {   
                 if(curHit.tot > 0)
                     h->fill(curHit.col, curHit.row, curHit.tot*curHit.tot);
             }
@@ -102,10 +102,10 @@ void Tot2Map::processEvent(Fei4Data *data) {
     }
 }
 
-void TotDist::processEvent(Fei4Data *data) {
-    for (const Fei4Event &curEvent: data->events) {
+void TotDist::processEvent(FrontEndData *data) {
+    for (const FrontEndEvent &curEvent: data->events) {
         if (curEvent.nHits > 0) {
-            for (const Fei4Hit &curHit: curEvent.hits) {   
+            for (const FrontEndHit &curHit: curEvent.hits) {   
                 if(curHit.tot > 0)
                     h->fill(curHit.tot);
             }
@@ -113,10 +113,10 @@ void TotDist::processEvent(Fei4Data *data) {
     }
 }
 
-void Tot3d::processEvent(Fei4Data *data) {
-    for (const Fei4Event &curEvent: data->events) {
+void Tot3d::processEvent(FrontEndData *data) {
+    for (const FrontEndEvent &curEvent: data->events) {
         if (curEvent.nHits > 0) {
-            for (const Fei4Hit &curHit: curEvent.hits) {   
+            for (const FrontEndHit &curHit: curEvent.hits) {   
                 if(curHit.tot > 0)
                     h->fill(curHit.col, curHit.row, curHit.tot);
             }
@@ -124,16 +124,16 @@ void Tot3d::processEvent(Fei4Data *data) {
     }
 }
 
-void TagDist::processEvent(Fei4Data *data) {
+void TagDist::processEvent(FrontEndData *data) {
     // Event Loop
-    for (const Fei4Event &curEvent: data->events) {
+    for (const FrontEndEvent &curEvent: data->events) {
         h->fill(curEvent.tag, curEvent.nHits);
     }
 }
 
-void L1Dist::processEvent(Fei4Data *data) {
+void L1Dist::processEvent(FrontEndData *data) {
     // Event Loop
-    for (const Fei4Event &curEvent: data->events) {
+    for (const FrontEndEvent &curEvent: data->events) {
         if(curEvent.l1id != l1id) {
             l1id = curEvent.l1id;
             if (curEvent.bcid - bcid_offset > 16) {
@@ -157,8 +157,8 @@ void L1Dist::processEvent(Fei4Data *data) {
     }
 }
 
-void L13d::processEvent(Fei4Data *data) {
-    for (const Fei4Event &curEvent: data->events) {
+void L13d::processEvent(FrontEndData *data) {
+    for (const FrontEndEvent &curEvent: data->events) {
         
         /*if(curEvent.l1id != l1id) {
             l1id = curEvent.l1id;
@@ -176,7 +176,7 @@ void L13d::processEvent(Fei4Data *data) {
         */
         
         if (curEvent.nHits > 0) {
-            for (const Fei4Hit &curHit: curEvent.hits) {   
+            for (const FrontEndHit &curHit: curEvent.hits) {   
                 if(curHit.tot > 0)
                     h->fill(curHit.col, curHit.row, curEvent.l1id%16);
             }
@@ -184,9 +184,9 @@ void L13d::processEvent(Fei4Data *data) {
     }
 }
 
-void HitsPerEvent::processEvent(Fei4Data *data) {
+void HitsPerEvent::processEvent(FrontEndData *data) {
     // Event Loop
-    for (const Fei4Event &curEvent: data->events) {
+    for (const FrontEndEvent &curEvent: data->events) {
         h->fill(curEvent.nHits);
     }
 }

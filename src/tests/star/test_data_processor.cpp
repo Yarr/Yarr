@@ -4,7 +4,8 @@
 
 #include "AllProcessors.h"
 
-#include "Fei4EventData.h"
+#include "EventData.h"
+#include <memory>
 
 TEST_CASE("StarDataProcessor", "[star][data_processor]") {
   std::shared_ptr<DataProcessor> proc = StdDict::getDataProcessor("Star");
@@ -65,7 +66,7 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
   REQUIRE (!em_cp[chan].empty());
 
   auto data = em_cp[chan].popData();
-  Fei4Data &rawData = *(Fei4Data*)data.get();
+  FrontEndData &rawData = *(FrontEndData*)data.get();
 
   REQUIRE (rawData.events.size() == 1);
 

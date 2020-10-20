@@ -5,7 +5,10 @@
                 "algorithm": "ScurveFitter"
             },
             "1": {
-                "algorithm": "OccupancyAnalysis"
+                "algorithm": "OccupancyAnalysis",
+                "config": {
+                    "createMask": false
+                }
             },
             "n_count": 1
         },
@@ -67,7 +70,7 @@
                 "min": 33,
                 "step": 1,
                 "nSteps": 17,
-		"delayArray": [0]
+        "delayArray": [0]
             },
             "loopAction": "Rd53aCoreColLoop"
         },

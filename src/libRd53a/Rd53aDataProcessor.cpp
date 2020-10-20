@@ -8,6 +8,7 @@
 
 #include "Rd53aDataProcessor.h"
 #include "AllProcessors.h"
+#include "EventData.h"
 
 #include "logging.h"
 
@@ -86,10 +87,10 @@ void Rd53aDataProcessor::process_core() {
             continue;
 
         // Create Output Container
-        std::map<unsigned, std::unique_ptr<Fei4Data>> curOut;
+        std::map<unsigned, std::unique_ptr<FrontEndData>> curOut;
         std::map<unsigned, int> events;
         for (unsigned i=0; i<activeChannels.size(); i++) {
-            curOut[activeChannels[i]].reset(new Fei4Data(curInV->stat));
+            curOut[activeChannels[i]].reset(new FrontEndData(curInV->stat));
             events[activeChannels[i]] = 0;
         }
 

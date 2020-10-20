@@ -33,7 +33,7 @@ Revision 1 specifics:
 Revision 2 specifics:
 
 * Can be powered via PCIe Molex or directly from PCIe.
-* DIP switches should be set to ``0,0,1,0`` (where the bits are ordered like this ``4,3,2,1``, same setting as in the picture) 
+* DIP switches should be set to ``0,1,0,0`` (where the bits are ordered like this ``4,3,2,1``, same setting as in the picture) which is ``VCC_IO`` of 1.8V
 
 #### PLDA XpressK7
 

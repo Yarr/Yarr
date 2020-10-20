@@ -166,21 +166,15 @@ fi
 ######################
 
 if ! export -p | grep HOSTNAME > /dev/null 2>&1; then
-    echo -e "[LDB] HOSTNAME environmental variable not found then exit."
-    echo -e "[LDB] Re-try this script after setting it by:"
-    echo -e "[LDB]     \$ export HOSTNAME='xxx' "
-    echo -e "[LDB] "
-    echo -e "[LDB] Exit ..."
-    echo -e "[LDB]"
-    exit 0
+    echo -e "[LDB] HOSTNAME environmental variable not found ... using default: default_host"
+    export HOSTNAME="default_host"
 fi
 
 ##########################
 ### Set editor command ###
 ##########################
 
-#if [ -z "${EDITOR}" ]; then
-echo -e "[LDB] Set editor command ..."
+echo -e "[LDB] Set editor command ... (e.g. nano, vim, emacs)"
 unset answer
 read -p "[LDB] > " answer
 while [ -z "${answer}" ];
@@ -188,7 +182,6 @@ do
     read -p "[LDB] > " answer
 done
 EDITOR=${answer}
-#fi
 echo -e "[LDB]"
 
 #############################
@@ -513,16 +506,8 @@ echo -e "[LDB] Done."
 echo -e "[LDB]"
 
 # finish
-echo -e "[LDB] -------------"
-echo -e "[LDB] --  Usage  --"
-echo -e "[LDB] -------------"
 echo -e "[LDB] To upoad the test data into Local DB after scanConsole:"
 echo -e "[LDB]   \$ ./bin/scanConsole -c <conn> -r <ctr> -s <scan> -W"
-echo -e "[LDB] To upload every cache data:"
-echo -e "[LDB]   \$ ${shell_dir}/bin/localdbtool-upload cache"
-echo -e "[LDB] To display the test data log from Local DB:"
-echo -e "[LDB]   \$ ${shell_dir}/bin/localdbtool-retrieve log"
-echo -e "[LDB] To retrieve the latest data files from Local DB:"
-echo -e "[LDB]   \$ ${shell_dir}/bin/localdbtool-retrieve pull"
 echo -e "[LDB] More detail:"
-echo -e "[LDB]   Access 'https://localdb-docs.readthedocs.io/en/master/'"
+echo -e "[LDB]   Access 'https://localdb-docs.readthedocs.io/en/master/' (master branch)"
+echo -e "[LDB]   Access 'https://localdb-docs.readthedocs.io/en/devel/'  (devel branch)"
