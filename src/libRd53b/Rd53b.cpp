@@ -29,7 +29,7 @@ Rd53b::Rd53b() : FrontEnd(), Rd53bCfg(), Rd53bCmd(){
 }
 
 Rd53b::Rd53b(HwController *core) : FrontEnd(), Rd53bCfg(), Rd53bCmd(core) {
-    //m_rxcore = core;
+    m_rxcore = core;
     txChannel = 99;
     rxChannel = 99;
     active = true;
@@ -39,7 +39,7 @@ Rd53b::Rd53b(HwController *core) : FrontEnd(), Rd53bCfg(), Rd53bCmd(core) {
 }
 
 Rd53b::Rd53b(HwController *core, unsigned arg_channel) : FrontEnd(), Rd53bCfg(), Rd53bCmd(core){
-    //m_rxcore = core;
+    m_rxcore = core;
     txChannel = arg_channel;
     rxChannel = arg_channel;
     active = true;
@@ -50,7 +50,7 @@ Rd53b::Rd53b(HwController *core, unsigned arg_channel) : FrontEnd(), Rd53bCfg(),
 
 void Rd53b::init(HwController *core, unsigned arg_txChannel, unsigned arg_rxChannel) {
     this->setCore(core);
-    //m_rxcore = arg_core;
+    m_rxcore = core;
     txChannel = arg_txChannel;
     rxChannel = arg_rxChannel;
     geo.nRow = 384;
@@ -239,4 +239,59 @@ Rd53bReg Rd53bGlobalCfg::*  Rd53b::getNamedRegister(std::string name) {
         logger->error("Trying to get named register, register not found: {}", name);
     }
     return NULL;
+}
+
+int Rd53b::checkCom() {
+    if (this->ServiceBlockEn.read() == 0) {
+        logger->error("Register messages not enabled, can't check communication ... proceeding blind! (Set \"ServiceBlockEn\" to 1 in the chip config)");
+        return 1;
+    }
+
+    
+    logger->debug("Checking communication for {} by reading a register ...", this->name);
+    uint32_t regAddr = 21;
+    uint32_t regValue = m_cfg[regAddr];
+    this->sendRdReg(m_chipId, regAddr);
+    while(!core->isCmdEmpty()){;} // Required by the rdRegister() above 
+                                  // (when relying on isCmdEmpty() to actually send commands).
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    // TODO not happy about this, rx knowledge should not be here
+    RawData *data = m_rxcore->readData();
+
+    if (data != NULL) {
+        std::cout << "Size: " << data->words << std::endl;
+
+        if (!(data->words == 2 || data->words == 4 || data->words == 8 || data->words == 12 || data->words == 6)) {
+            logger->error("Received wrong number of words ({}) for {}", data->words, this->name);
+            return 0;
+        }
+        std::pair<uint32_t, uint32_t> answer = decodeSingleRegRead(data->buf[0], data->buf[1]);
+        logger->debug("Addr ({}) Value({})", answer.first, answer.second);
+
+        if (answer.first != regAddr || answer.second != regValue) {
+            logger->error("Received data was not as expected:");
+            logger->error("    Received Addr: {} (expected {})", answer.first, regAddr);
+            logger->error("    Received Value: {} (expected {})", answer.second, regValue);
+            return 0;
+        }
+
+        logger->debug("... success");
+        return 1;
+    } else {
+        logger->error("Did not receive any data for {}", this->name);
+        return 0;
+    }
+}
+
+std::pair<uint32_t, uint32_t> Rd53b::decodeSingleRegRead(uint32_t higher, uint32_t lower) {
+    if ((higher & 0x55000000) == 0x55000000) {
+        return std::make_pair((lower>>16)&0x3FF, lower&0xFFFF);
+    } else if ((higher & 0x99000000) == 0x99000000) {
+        return std::make_pair((higher>>10)&0x3FF, ((lower>>26)&0x3F)+((higher&0x3FF)<<6));
+    } else {
+        logger->error("Could not decode reg read!");
+        return std::make_pair(999, 666);
+    }
+    return std::make_pair(999, 666);
 }

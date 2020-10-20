@@ -31,6 +31,8 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         void configureGlobal();
         void configurePixels();
         void configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels);
+        
+        int checkCom() override;
 
         void maskPixel(unsigned col, unsigned row) override {
             this->setEn(col, row, 0);
@@ -45,6 +47,8 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         void setInjCharge(double charge, bool sCap=true, bool lCap=true) override {
             this->writeRegister((Rd53bReg Rd53bGlobalCfg::*)&Rd53bGlobalCfg::InjVcalDiff, this->toVcal(charge));
         }
+        
+        static std::pair<uint32_t, uint32_t> decodeSingleRegRead(uint32_t higher, uint32_t lower);
     protected:
     private:
 };
