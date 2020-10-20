@@ -5,7 +5,7 @@
 // # Author: Timon Heim
 // # Email: timon.heim at cern.ch
 // # Project: Yarr
-// # Description: Histograms Fei4 data
+// # Description: Histograms FrontEnd data
 // # Comment: 
 // ################################
 
@@ -170,7 +170,7 @@ class TagDist : public HistogramAlgorithm {
             r.reset(h);
         }
 
-        void processEvent(Fei4Data *data) override;
+        void processEvent(FrontEndData *data) override;
 
         static std::string outputName() { return "TagDist"; }
     private:

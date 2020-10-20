@@ -9,7 +9,7 @@
 #include "DataProcessor.h"
 #include "ClipBoard.h"
 #include "RawData.h"
-#include "Fei4EventData.h"
+#include "EventData.h"
 #include "Rd53b.h"
 
 #define BINARYTREE_DEPTH 4
