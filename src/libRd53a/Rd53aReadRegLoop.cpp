@@ -46,7 +46,7 @@ uint16_t Rd53aReadRegLoop::ReadRegister(Rd53aReg Rd53aGlobalCfg::*ref,  Rd53a *t
     for(unsigned c=0; c<size/2; c++)
     {
         if (c*2+1<size) {
-            std::pair<uint32_t, uint32_t> readReg = decodeSingleRegRead(data->buf[c*2],data->buf[c*2+1]);	    
+            std::pair<uint32_t, uint32_t> readReg = Rd53a::decodeSingleRegRead(data->buf[c*2],data->buf[c*2+1]);	    
             if ( readReg.first==(tmpFE->*ref).addr()) {
                 delete data;
                 return readReg.second;

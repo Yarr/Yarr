@@ -291,7 +291,7 @@ int Rd53a::checkCom() {
     }
 }
 
-std::pair<uint32_t, uint32_t> decodeSingleRegRead(uint32_t higher, uint32_t lower) {
+std::pair<uint32_t, uint32_t> Rd53a::decodeSingleRegRead(uint32_t higher, uint32_t lower) {
     if ((higher & 0x55000000) == 0x55000000) {
         return std::make_pair((lower>>16)&0x3FF, lower&0xFFFF);
     } else if ((higher & 0x99000000) == 0x99000000) {
