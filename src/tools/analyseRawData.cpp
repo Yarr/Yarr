@@ -138,10 +138,12 @@ int main(int argc, char* argv[])
         std::cout << "Opening file: " << inputFiles[i] << std::endl;
         std::fstream file(inputFiles[i], std::fstream::in | std::fstream::binary);
 
-        file.seekg(0, std::ios_base::end);
-        int size = file.tellg();
-        file.seekg(0, std::ios_base::beg);
-        std::cout << "Size of " << inputFiles[i] << " is: " << size/1024.0/1024.0 << " MB" << std::endl;        
+        // seekg doesn't give the right value for files over 2 GB
+
+        //file.seekg(0, std::ios_base::end);
+        //int size = file.tellg();
+        //file.seekg(0, std::ios_base::beg);
+        //std::cout << "Size of " << inputFiles[i] << " is: " << size/1024.0/1024.0 << " MB" << std::endl;        
 
         std::shared_ptr<Fei4Event> multiEvent(nullptr);
         std::shared_ptr<Fei4Event> event(nullptr);
@@ -171,7 +173,6 @@ int main(int argc, char* argv[])
             int mod_l1id = (event->l1id-l1_offset+32)%32;
             if (event->tag==666) {
                 skipped++;
-                continue;
                 if (l1_count != 16 && l1_count != 0){
                   if(event->l1id != 666 and event->l1id != 31){
                     l1_offset = event->l1id+1;
@@ -181,6 +182,7 @@ int main(int argc, char* argv[])
                   }
                   l1_count = 0;
                 }
+                continue;
             }
 
             if(l1_offset - old_offset != 0){
@@ -207,7 +209,6 @@ int main(int argc, char* argv[])
             if (event->bcid - old_bcid != 1 && not (l1_count == 0 or l1_count == 16)) {
                 error++;
             }
-            old_bcid = event->bcid; 
 
             // Valid event
             l1_count++;
@@ -296,7 +297,7 @@ int main(int argc, char* argv[])
                 l1_count = 0;
             }
         }
-        std::cout << "\rLoaded events: " << trigger << "                    " << std::flush;
+        std::cout << "\rLoaded triggers: " << trigger << "                    " << std::flush;
 
 
         file.close();
@@ -305,7 +306,7 @@ int main(int argc, char* argv[])
         std::cout << "Number of errors: " << error << std::endl;\
         std::cout << "Number of first events without the right l1id: " << weird << std::endl;\
         std::cout << "Max BCID: " << max_bcid << std::endl;
-        std::cout << "Numer of trigger: " << trigger << std::endl;
+        std::cout << "Number of trigger: " << trigger << std::endl;
         std::cout << "Number of truncated events: " << n_truncated << std::endl;
     }
     
@@ -321,10 +322,12 @@ int main(int argc, char* argv[])
     std::cout << "Occupancy mean = " << mean << std::endl;
     if (mean < 3.0) 
         mean = 3;
+    int noisy = 0;
     for (unsigned i=0; i<400*192; i++) {
         if (occupancy.getBin(i) > (mean*5)) {
-            std::cout << "Flagged bin " << i << " noisy " << occupancy.getBin(i) << std::endl;
+            //std::cout << "Flagged bin " << i << " noisy " << occupancy.getBin(i) << std::endl;
             occupancy.setBin(i, 0);
+            noisy ++;
         }
     }
 
@@ -346,6 +349,7 @@ int main(int argc, char* argv[])
     std::cout << "Number of clusters: " << clustersPerEvent.getEntries() << std::endl;
     std::cout << "Number of events: " << hitsPerEvent.getEntries() << std::endl;
     std::cout << "Number of skipped events: " << skipped << std::endl;
+    std::cout << "Number Bins flagged noisy (occupancy map): " << noisy << std::endl;
 
     return 0;
 }
