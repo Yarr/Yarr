@@ -85,7 +85,7 @@ void TotMap::processEvent(FrontEndData *data) {
         if (curEvent.nHits > 0) {
             for (const FrontEndHit &curHit: curEvent.hits) {   
                 if(curHit.tot > 0)
-                    h->fill(curHit.col, curHit.row, curHit.ptot & 0x7ff);
+                    h->fill(curHit.col, curHit.row, curHit.tot & 0x7ff);
             }
         }
     }
@@ -96,7 +96,7 @@ void Tot2Map::processEvent(FrontEndData *data) {
         if (curEvent.nHits > 0) {
             for (const FrontEndHit &curHit: curEvent.hits) {   
                 if(curHit.tot > 0)
-                    h->fill(curHit.col, curHit.row, (curHit.ptot & 0x7ff) * (curHit.ptot & 0x7ff));
+                    h->fill(curHit.col, curHit.row, (curHit.tot & 0x7ff) * (curHit.tot & 0x7ff));
             }
         }
     }
@@ -107,7 +107,7 @@ void TotDist::processEvent(FrontEndData *data) {
         if (curEvent.nHits > 0) {
             for (const FrontEndHit &curHit: curEvent.hits) {   
                 if(curHit.tot > 0)
-                    h->fill(curHit.ptot & 0x7ff);
+                    h->fill(curHit.tot & 0x7ff);
             }
         }
     }

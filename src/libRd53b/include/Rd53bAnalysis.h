@@ -57,15 +57,15 @@ class FrontEndScopeAnalysis : public AnalysisAlgorithm {
         bool m_exclude_LRCols = true;
 };
 
-class PrecisionTimingAnalysis : public AnalysisAlgorithm {
+class ToaAnalysis : public AnalysisAlgorithm {
 
     public :
-        PrecisionTimingAnalysis() : AnalysisAlgorithm() {};
-        ~PrecisionTimingAnalysis() {};
+        ToaAnalysis() : AnalysisAlgorithm() {};
+        ~ToaAnalysis() {};
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase* h);
-        void end() {}
+        void end();
         void loadConfig(json& config);
 
     private :
@@ -78,23 +78,35 @@ class PrecisionTimingAnalysis : public AnalysisAlgorithm {
         std::map<unsigned, std::unique_ptr<Histo2d>> h_occMaps;
         std::map<unsigned, unsigned> occ_count;
 
-        std::map<unsigned, std::unique_ptr<Histo1d>> h_ptotDists;
-        std::map<unsigned, unsigned> ptot_dist_count;
-
-        std::map<unsigned, std::unique_ptr<Histo1d>> h_ptoaDists;
-        std::map<unsigned, unsigned> ptoa_dist_count;
-
-        std::map<unsigned, std::unique_ptr<Histo2d>> h_ptotMaps;
-        std::map<unsigned, unsigned> ptot_count;
-
-        std::map<unsigned, std::unique_ptr<Histo2d>> h_ptot2Maps;
-        std::map<unsigned, unsigned> ptot2_count;
-
         std::map<unsigned, std::unique_ptr<Histo2d>> h_ptoaMaps;
         std::map<unsigned, unsigned> ptoa_count;
 
         std::map<unsigned, std::unique_ptr<Histo2d>> h_ptoa2Maps;
         std::map<unsigned, unsigned> ptoa2_count;
+
+        std::map<unsigned, std::unique_ptr<Histo1d>> h_ptoaDists;
+        std::map<unsigned, unsigned> ptoa_dist_count;
+
+        // histogram configuration for ToA distributions
+        unsigned toa_bins_n = 33;
+        float toa_bins_x_lo = -0.5;
+        float toa_bins_x_hi = 32.5;
+
+        // histogram configuration for ToA sigma distributions
+        unsigned toa_sigma_bins_n = 101;
+        float toa_sigma_bins_x_lo = -0.05;
+        float toa_sigma_bins_x_hi = 5.05;
+
+        std::string toa_unit = "1.5625 ns";
+
+        // has ∆Vcal loop (for ToA vs charge)
+        bool m_hasVcalLoop = false;
+        unsigned m_vcalMax;
+        unsigned m_vcalMin;
+        unsigned m_vcalStep;
+        unsigned m_vcalNBins;
+        std::unique_ptr<Histo2d> h_chargeVsToaMap;
+
 
 };
 

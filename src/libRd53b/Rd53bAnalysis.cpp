@@ -20,9 +20,9 @@ namespace {
         StdDict::registerAnalysis("FrontEndScopeAnalysis",
                                 []() { return std::unique_ptr<AnalysisAlgorithm>(new FrontEndScopeAnalysis());} );
 
-    bool pt_analysis_registered = 
-        StdDict::registerAnalysis("PrecisionTimingAnalysis",
-                                []() { return std::unique_ptr<AnalysisAlgorithm>(new PrecisionTimingAnalysis());} );
+    bool toa_analysis_registered = 
+        StdDict::registerAnalysis("ToaAnalysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new ToaAnalysis());} );
 }
 
 
@@ -287,11 +287,36 @@ void FrontEndScopeAnalysis::end() {
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-void PrecisionTimingAnalysis::loadConfig(json &j) {
+void ToaAnalysis::loadConfig(json &j) {
+
+    // check for valid ToA histogram bin configuration
+    if (!j["toa_bins"].empty()) {
+        auto j_bins = j["toa_bins"];
+        if (!j_bins["n_bins"].empty() && !j_bins["x_lo"].empty() && !j_bins["x_hi"].empty()) {
+            toa_bins_n = static_cast<unsigned>(j_bins["n_bins"]);
+            toa_bins_x_lo = static_cast<float>(j_bins["x_lo"]);
+            toa_bins_x_hi = static_cast<float>(j_bins["x_hi"]);
+        }
+    }
+
+    // ToA unit
+    if (!j["toa_unit"].empty()) {
+        toa_unit = static_cast<std::string>(j["toa_unit"]);
+    }
+
+    // check for valid ToA sigma histogram bin configuration
+    if (!j["toa_sigma_bins"].empty()) {
+        auto j_bins = j["toa_sigma_bins"];
+        if (!j_bins["n_bins"].empty() && !j_bins["x_lo"].empty() && !j_bins["x_hi"].empty()) {
+            toa_sigma_bins_n = static_cast<unsigned>(j_bins["n_bins"]);
+            toa_sigma_bins_x_lo = static_cast<float>(j_bins["x_lo"]);
+            toa_sigma_bins_x_hi = static_cast<float>(j_bins["x_hi"]);
+        }
+    }
 
 }
 
-void PrecisionTimingAnalysis::init(ScanBase *s) {
+void ToaAnalysis::init(ScanBase *s) {
 
     m_n_count = 1;
     m_injections = 0;
@@ -309,24 +334,33 @@ void PrecisionTimingAnalysis::init(ScanBase *s) {
         if (loop->isTriggerLoop()) {
             auto trigger_loop = std::dynamic_pointer_cast<StdTriggerAction>(loop);
             if(trigger_loop == nullptr) {
-                logger->error("PrecisionTimingAnalysis: loop declared as trigger does not have a count");
+                logger->error("ToaAnalysis: loop declared as trigger does not have a count");
             } else {
                 m_injections = trigger_loop->getTrigCnt();
+            }
+        }
+
+        if (loop->isParameterLoop()) {
+            if(m_hasVcalLoop) {
+                logger->warn("ToaAnalysis: multiple ParameterLoops encountered -- will not create ToA vs. Charge map!");
+                m_hasVcalLoop = false;
+            } else {
+                m_hasVcalLoop = true;
+                m_vcalMax = loop->getMax();
+                m_vcalMin = loop->getMin();
+                m_vcalStep = loop->getStep();
+                m_vcalNBins = (m_vcalMax - m_vcalMin) / m_vcalStep;
             }
         }
     }
 }
 
-void PrecisionTimingAnalysis::processHistogram(HistogramBase *h) {
+void ToaAnalysis::processHistogram(HistogramBase *h) {
     // Check if right Histogram
     bool is_occ = (h->getName() == OccupancyMap::outputName());
-    bool is_ptotDist = (h->getName() == PToTDist::outputName());
-    bool is_ptoaDist = (h->getName() == PToADist::outputName());
-    bool is_ptotMap = (h->getName() == TotMap::outputName());
     bool is_ptoaMap = (h->getName() == ToaMap::outputName());
-    bool is_ptot2 = (h->getName() == Tot2Map::outputName());
     bool is_ptoa2 = (h->getName() == Toa2Map::outputName());
-    bool is_relevant = is_ptotDist || is_ptoaDist || is_ptotMap || is_ptoaMap || is_occ || is_ptot2 || is_ptoa2;
+    bool is_relevant = is_ptoaMap || is_occ || is_ptoa2;
     if(!is_relevant) return;
 
     // Select correct output container
@@ -335,21 +369,13 @@ void PrecisionTimingAnalysis::processHistogram(HistogramBase *h) {
 
     // Determine identifier
     std::string occ_name = "OccMap";
-    std::string ptotMap_name = "PTotMap";
-    std::string ptoaMap_name = "PToAMap";
-    std::string ptot2Map_name = "PTot2Map";
-    std::string ptoa2Map_name = "PToA2Map";
-    std::string ptotDist_name = "PToTDist";
-    std::string ptoaDist_name = "PToADist";
+    std::string ptoaMap_name = "ToAMap";
+    std::string ptoa2Map_name = "ToA2Map";
     for (unsigned n=0; n<m_loops.size(); n++) {
         ident += h->getStat().get(m_loops[n])+offset;
         offset += m_loopMax[n];
         std::string stat = std::to_string(h->getStat().get(m_loops[n]));
-        ptotDist_name += "-" + stat; 
-        ptoaDist_name += "-" + stat; 
-        ptotMap_name += "-" + stat; 
         ptoaMap_name += "-" + stat; 
-        ptot2Map_name += "-" + stat; 
         ptoa2Map_name += "-" + stat; 
         occ_name += "-" + stat;
     }
@@ -367,16 +393,6 @@ void PrecisionTimingAnalysis::processHistogram(HistogramBase *h) {
         occ_count[ident] = 0;
     }
 
-    // PToT map
-    if(h_ptotMaps[ident] == NULL) {
-        Histo2d* hh = new Histo2d(ptotMap_name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
-        hh->setXaxisTitle("Column");
-        hh->setYaxisTitle("Row");
-        hh->setZaxisTitle("Hits");
-        h_ptotMaps[ident].reset(hh);
-        ptot_count[ident] = 0;
-    }
-
     // PToA map
     if(h_ptoaMaps[ident] == NULL) {
         Histo2d* hh = new Histo2d(ptoaMap_name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
@@ -385,16 +401,6 @@ void PrecisionTimingAnalysis::processHistogram(HistogramBase *h) {
         hh->setZaxisTitle("Hits");
         h_ptoaMaps[ident].reset(hh);
         ptoa_count[ident] = 0;
-    }
-
-    // PToT2 map
-    if(h_ptot2Maps[ident] == NULL) {
-        Histo2d* hh = new Histo2d(ptot2Map_name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
-        hh->setXaxisTitle("Column");
-        hh->setYaxisTitle("Row");
-        hh->setZaxisTitle("Hits");
-        h_ptot2Maps[ident].reset(hh);
-        ptot2_count[ident] = 0;
     }
 
     // PToA2 map
@@ -407,22 +413,18 @@ void PrecisionTimingAnalysis::processHistogram(HistogramBase *h) {
         ptoa2_count[ident] = 0;
     }
 
-    // 1D PToT distributions
-    if(h_ptotDists[ident] == NULL) {
-        Histo1d* hh = new Histo1d(ptotDist_name, 2049, -0.5, 2048.5);
-        hh->setXaxisTitle("PToT [1.5625 ns]");
-        hh->setYaxisTitle("Number of Pixels");
-        h_ptotDists[ident].reset(hh);
-        ptot_dist_count[ident] = 0;
-    }
+    // ToA vs charge
+    if(m_hasVcalLoop && h_chargeVsToaMap == NULL) {
+        auto cfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
+        double chargeMin = cfg->toCharge(m_vcalMin);
+        double chargeMax = cfg->toCharge(m_vcalMax);
+        double chargeStep = cfg->toCharge(m_vcalStep);
 
-    // 1D PToA distributions
-    if(h_ptoaDists[ident] == NULL) {
-        Histo1d* hh = new Histo1d(ptoaDist_name, 501, -0.5, 500.5);
-        hh->setXaxisTitle("PToA [1.5625 ns]");
-        hh->setYaxisTitle("Number of Pixels");
-        h_ptoaDists[ident].reset(hh);
-        ptoa_dist_count[ident] = 0;
+        Histo2d* hh = new Histo2d("ChargeVsToaMap", m_vcalNBins+1, chargeMin - chargeStep/2, chargeMax + chargeStep/2, toa_bins_n, toa_bins_x_lo + 0.5, toa_bins_x_hi + 0.5);
+        hh->setXaxisTitle("Injected Charge [e]");
+        hh->setYaxisTitle("ToA [" + toa_unit + "]");
+        hh->setZaxisTitle("Pixels");
+        h_chargeVsToaMap.reset(hh);
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -435,90 +437,19 @@ void PrecisionTimingAnalysis::processHistogram(HistogramBase *h) {
     if(is_occ) {
         h_occMaps[ident]->add(*(Histo2d*)h);
         occ_count[ident]++;
-    } else if (is_ptotMap) {
-        h_ptotMaps[ident]->add(*(Histo2d*)h);
-        ptot_count[ident]++;
     } else if (is_ptoaMap) {
         h_ptoaMaps[ident]->add(*(Histo2d*)h);
         ptoa_count[ident]++;
-    } else if (is_ptot2) {
-        h_ptot2Maps[ident]->add(*(Histo2d*)h);
-        ptot2_count[ident]++;
     } else if (is_ptoa2) {
         h_ptoa2Maps[ident]->add(*(Histo2d*)h);
         ptoa2_count[ident]++;
-    } else if (is_ptotDist) {
-        h_ptotDists[ident]->add(*(Histo1d*)h);
-        ptot_dist_count[ident]++;
-    } else if (is_ptoaDist) {
-        h_ptoaDists[ident]->add(*(Histo1d*)h);
-        ptoa_dist_count[ident]++;
     } else { return; };
 
     bool got_all_data = (occ_count[ident] == m_n_count &&
-                            ptot_count[ident] == m_n_count &&
                             ptoa_count[ident] == m_n_count &&
-                            ptot2_count[ident] == m_n_count &&
-                            ptoa2_count[ident] == m_n_count &&
-                            ptot_dist_count[ident] == m_n_count &&
-                            ptoa_dist_count[ident] == m_n_count);
+                            ptoa2_count[ident] == m_n_count);
 
     if(got_all_data) {
-
-        ///////////////////////////////////////////////
-        //
-        // PToT Map stuff
-        //
-        ///////////////////////////////////////////////
-
-        // mean PToT MAP
-        std::unique_ptr<Histo2d> meanPToTMap(new Histo2d("MeanPToTMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
-        meanPToTMap->setXaxisTitle("Column");
-        meanPToTMap->setYaxisTitle("Row");
-        meanPToTMap->setZaxisTitle("Mean PToT [1.5625 ns]");
-
-        // sum PToT MAP
-        std::unique_ptr<Histo2d> sumPToTMap(new Histo2d("SumPToTMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
-        sumPToTMap->setXaxisTitle("Column");
-        sumPToTMap->setYaxisTitle("Row");
-        sumPToTMap->setZaxisTitle("Sum PToT [1.5625 ns]");
-
-        // sum PToT^2 MAP
-        std::unique_ptr<Histo2d> sumPToT2Map(new Histo2d("SumPToT2Map-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
-        sumPToT2Map->setXaxisTitle("Column");
-        sumPToT2Map->setYaxisTitle("Row");
-        sumPToT2Map->setZaxisTitle("Sum PToT^2 [1.5625 ns]^2");
-
-        // sigma PToT MAP
-        std::unique_ptr<Histo2d> sigmaPToTMap(new Histo2d("sigmaPToTMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
-        sigmaPToTMap->setXaxisTitle("Column");
-        sigmaPToTMap->setYaxisTitle("Row");
-        sigmaPToTMap->setZaxisTitle("Per-pixel sigma PToT [1.5625 ns]");
-
-        // mean PToT DIST
-        std::unique_ptr<Histo1d> meanPToTDist(new Histo1d("MeanPToTDist-"+std::to_string(ident), 2048, 0.5, 2048.5));
-        meanPToTDist->setXaxisTitle("Mean PToT [1.5625 ns]");
-        meanPToTDist->setYaxisTitle("Number of Pixels");
-
-        // sigma PToT DIST
-        std::unique_ptr<Histo1d> sigmaPToTDist(new Histo1d("SigmaPToTDist-"+std::to_string(ident), 20, 0, 20));
-        sigmaPToTDist->setXaxisTitle("Per-pixel sigma PToT [1.5625 ns]");
-        sigmaPToTDist->setYaxisTitle("Number of Pixels");
-
-        // fill
-        meanPToTMap->add(*h_ptotMaps[ident]);
-        meanPToTMap->divide(*h_occMaps[ident]);
-        sumPToTMap->add(*h_ptotMaps[ident]);
-        sumPToT2Map->add(*h_ptot2Maps[ident]);
-        for(unsigned ii = 0; ii < meanPToTMap->size(); ii++) {
-            double sumOfPToT_squared = sumPToTMap->getBin(ii)*sumPToTMap->getBin(ii);
-            double sigma = sqrt(fabs((sumPToT2Map->getBin(ii) - (sumOfPToT_squared/m_injections))/(m_injections-1)));
-            sigmaPToTMap->setBin(ii, sigma);
-            meanPToTDist->fill(meanPToTMap->getBin(ii));
-            sigmaPToTDist->fill(sigma);
-        } // ii
-
-        logger->info("\033[1;33m[{}]  [{}] PToT Mean = {} +- {}\033[0m", channel, ident, meanPToTDist->getMean(), meanPToTDist->getStdDev());
 
         ///////////////////////////////////////////////
         //
@@ -527,38 +458,41 @@ void PrecisionTimingAnalysis::processHistogram(HistogramBase *h) {
         ///////////////////////////////////////////////
 
         // mean PToA MAP
-        std::unique_ptr<Histo2d> meanPToAMap(new Histo2d("MeanPToAMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
+        std::unique_ptr<Histo2d> meanPToAMap(new Histo2d("MeanToAMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
         meanPToAMap->setXaxisTitle("Column");
         meanPToAMap->setYaxisTitle("Row");
-        meanPToAMap->setZaxisTitle("Mean PToA [1.5625 ns]");
+        meanPToAMap->setZaxisTitle("Mean ToA [1.5625 ns]");
 
         // sum PToA MAP
-        std::unique_ptr<Histo2d> sumPToAMap(new Histo2d("SumPToAMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
+        std::unique_ptr<Histo2d> sumPToAMap(new Histo2d("SumToAMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
         sumPToAMap->setXaxisTitle("Column");
         sumPToAMap->setYaxisTitle("Row");
-        sumPToAMap->setZaxisTitle("Sum PToA [1.5625 ns]");
+        sumPToAMap->setZaxisTitle("Sum ToA [1.5625 ns]");
 
         // sum PToA^2 MAP
-        std::unique_ptr<Histo2d> sumPToA2Map(new Histo2d("SumPToA2Map-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
+        std::unique_ptr<Histo2d> sumPToA2Map(new Histo2d("SumToA2Map-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
         sumPToA2Map->setXaxisTitle("Column");
         sumPToA2Map->setYaxisTitle("Row");
-        sumPToA2Map->setZaxisTitle("Sum PToA^2 [1.5625 ns]^2");
+        sumPToA2Map->setZaxisTitle("Sum ToA^2 [1.5625 ns]^2");
 
         // sigma PToA MAP
-        std::unique_ptr<Histo2d> sigmaPToAMap(new Histo2d("sigmaPToAMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
+        std::unique_ptr<Histo2d> sigmaPToAMap(new Histo2d("sigmaToAMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
         sigmaPToAMap->setXaxisTitle("Column");
         sigmaPToAMap->setYaxisTitle("Row");
-        sigmaPToAMap->setZaxisTitle("Per-pixel sigma PToA [1.5625 ns]");
+        sigmaPToAMap->setZaxisTitle("Per-pixel sigma ToA [1.5625 ns]");
 
         // mean PToA DIST
-        std::unique_ptr<Histo1d> meanPToADist(new Histo1d("MeanPToADist-"+std::to_string(ident), 200, 0, 400));
-        meanPToADist->setXaxisTitle("Mean PToA [1.5625 ns]");
+        std::unique_ptr<Histo1d> meanPToADist(new Histo1d("MeanToADist-"+std::to_string(ident), toa_bins_n, toa_bins_x_lo + 0.5, toa_bins_x_hi));
+        meanPToADist->setXaxisTitle("Mean ToA [1.5625 ns]");
         meanPToADist->setYaxisTitle("Number of Pixels");
 
         // sigma PToA DIST
-        std::unique_ptr<Histo1d> sigmaPToADist(new Histo1d("SigmaPToADist-"+std::to_string(ident), 20, 0, 20));
-        sigmaPToADist->setXaxisTitle("Per-pixel sigma PToA [1.5625 ns]");
+        std::unique_ptr<Histo1d> sigmaPToADist(new Histo1d("SigmaToADist-"+std::to_string(ident), 20, 0, 20));
+        sigmaPToADist->setXaxisTitle("Per-pixel sigma ToA [1.5625 ns]");
         sigmaPToADist->setYaxisTitle("Number of Pixels");
+
+        // Finely binned PToA DIST
+        std::unique_ptr<Histo1d> fineMeanPToADist(new Histo1d("MeanToADistFine-"+std::to_string(ident), toa_bins_n, toa_bins_x_lo + 0.5, toa_bins_x_hi + 0.5));
 
         // fill
         meanPToAMap->add(*h_ptoaMaps[ident]);
@@ -566,19 +500,29 @@ void PrecisionTimingAnalysis::processHistogram(HistogramBase *h) {
         sumPToAMap->add(*h_ptoaMaps[ident]);
         sumPToA2Map->add(*h_ptoa2Maps[ident]);
         for(unsigned ii = 0; ii < meanPToAMap->size(); ii++) {
+
+            if(!(h_occMaps[ident]->getBin(ii) > 0)) continue; // only consider filled bins
+
             double sumOfPToA_squared = sumPToAMap->getBin(ii)*sumPToAMap->getBin(ii);
             double sigma = sqrt(fabs((sumPToA2Map->getBin(ii) - (sumOfPToA_squared/m_injections))/(m_injections-1)));
             sigmaPToAMap->setBin(ii, sigma);
             meanPToADist->fill(meanPToAMap->getBin(ii));
             sigmaPToADist->fill(sigma);
+            fineMeanPToADist->fill(meanPToAMap->getBin(ii));
         } // ii
 
-        logger->info("\033[1;33m[{}]  [{}] PToA Mean = {} +- {}\033[0m", channel, ident, meanPToADist->getMean(), meanPToADist->getStdDev());
+        logger->info("\033[1;33mChannel:{} ScanID:{} ToA Mean = {} +- {}\033[0m", channel, ident, meanPToADist->getMean(), meanPToADist->getStdDev());
 
-        output->pushData(std::move(meanPToTMap));
-        output->pushData(std::move(meanPToTDist));
-        output->pushData(std::move(sigmaPToTMap));
-        output->pushData(std::move(sigmaPToTDist));
+        // ToA vs charge
+        if (m_hasVcalLoop) {
+            auto cfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
+            double chargeAtCurrentStep = cfg->toCharge(ident);
+            double bin_width = ((toa_bins_x_hi+0.5) - (toa_bins_x_lo+0.5)) / (toa_bins_n);
+            for (unsigned ii = 0; ii < fineMeanPToADist->size(); ii++) {
+                double toa_val = (ii+1) * bin_width + (toa_bins_x_lo+0.5);
+                h_chargeVsToaMap->fill(chargeAtCurrentStep, toa_val, fineMeanPToADist->getBin(ii));
+            } // ii
+        } // hasVcalLoop
 
         output->pushData(std::move(meanPToAMap));
         output->pushData(std::move(meanPToADist));
@@ -586,13 +530,14 @@ void PrecisionTimingAnalysis::processHistogram(HistogramBase *h) {
         output->pushData(std::move(sigmaPToADist));
 
         occ_count[ident] = 0;
-        ptot_count[ident] = 0;
         ptoa_count[ident] = 0;
-        ptot2_count[ident] = 0;
         ptoa2_count[ident] = 0;
-        ptot_dist_count[ident] = 0;
-        ptoa_dist_count[ident] = 0;
 
     } // got_all_data
+}
 
+void ToaAnalysis::end() {
+    if (m_hasVcalLoop && h_chargeVsToaMap != NULL) {
+        output->pushData(std::move(h_chargeVsToaMap));
+    }
 }
