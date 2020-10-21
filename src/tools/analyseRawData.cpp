@@ -159,7 +159,8 @@ int main(int argc, char* argv[])
         int error       = 0;
         int nonZero_cnt = 0;
         int plotIt      = 0;
-        int old_bcid    = 0;
+        int old_bcid2   = 0;
+        int old_bcid1   = 0;
         int weird       = 0;
 
         while (file) {
@@ -173,15 +174,15 @@ int main(int argc, char* argv[])
             int mod_l1id = (event->l1id-l1_offset+32)%32;
             if (event->tag==666) {
                 skipped++;
-                if (l1_count != 16 && l1_count != 0){
-                  if(event->l1id != 666 and event->l1id != 31){
-                    l1_offset = event->l1id+1;
-                  }
-                  if(event->bcid == 666){
-                    l1_offset = old_l1id+1;
-                  }
-                  l1_count = 0;
-                }
+                //if (l1_count != 16 && l1_count != 0){
+                //  if(event->l1id != 666 and event->l1id != 31){
+                //    l1_offset = event->l1id+1;
+                //  }
+                //  if(event->bcid == 666){
+                //    l1_offset = old_l1id+1;
+                //  }
+                //  l1_count = 0;
+                //}
                 continue;
             }
 
@@ -206,9 +207,10 @@ int main(int argc, char* argv[])
                 error++;
             }
 
-            if (event->bcid - old_bcid != 1 && not (l1_count == 0 or l1_count == 16)) {
+            if (event->bcid - old_bcid1 != 1 && not (l1_count == 0 or l1_count == 16)) {
                 error++;
             }
+            old_bcid1 = event->bcid; 
 
             // Valid event
             l1_count++;
@@ -244,12 +246,12 @@ int main(int argc, char* argv[])
 
                 bcid.fill(multiEvent->bcid, multiEvent->nHits);
 
-                if ((int)multiEvent->bcid - old_bcid < 0 && ((int)multiEvent->bcid-old_bcid+32768) > 16) {// wrap around, just reset
-                    bcidDiff.fill((int)multiEvent->bcid-old_bcid+32768);
-                    old_bcid = multiEvent->bcid;
-                } else if ((int)multiEvent->bcid - old_bcid > 16) { 
-                    bcidDiff.fill((int)multiEvent->bcid-old_bcid);
-                    old_bcid = multiEvent->bcid;
+                if ((int)multiEvent->bcid - old_bcid2 < 0 && ((int)multiEvent->bcid-old_bcid2+32768) > 16) {// wrap around, just reset
+                    bcidDiff.fill((int)multiEvent->bcid-old_bcid2+32768);
+                    old_bcid2 = multiEvent->bcid;
+                } else if ((int)multiEvent->bcid - old_bcid2 > 16) { 
+                    bcidDiff.fill((int)multiEvent->bcid-old_bcid2);
+                    old_bcid2 = multiEvent->bcid;
                 }
 
                 if (multiEvent->nHits > 0) {
