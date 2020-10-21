@@ -7,30 +7,9 @@
         }
       },
      "1": {
-        "algorithm": "PrecisionTimingAnalysis",
-        "config":{
-        }
-     },
-     "2": {
         "algorithm": "OccupancyAnalysis",
         "config": {
             "createMask": false
-        }
-      },
-     "3": {
-        "algorithm": "TotAnalysis",
-        "config": {
-            "tot_bins": {
-                "n_bins": 2048,
-                "x_lo" : 0,
-                "x_hi" : 400
-            },
-            "tot_sigma_bins": {
-                "n_bins": 11,
-                "x_lo": -0.5,
-                "x_hi": 10.5
-            },
-            "tot_unit": "1.5625 ns"
         }
       },
       "n_count": 1
@@ -49,26 +28,6 @@
         "config": {}
       },
       "3": {
-        "algorithm": "Tot2Map",
-        "config": {}
-      },
-      "4": {
-        "algorithm": "Toa2Map",
-        "config": {}
-      },
-      "5": {
-        "algorithm": "PToTDist",
-        "config": {}
-      },
-      "6": {
-        "algorithm": "PToADist",
-        "config": {}
-      },
-      "7": {
-        "algorithm": "TagDist",
-        "config": {}
-      },
-      "8": {
         "algorithm": "DataArchiver",
         "config": {}
       },
