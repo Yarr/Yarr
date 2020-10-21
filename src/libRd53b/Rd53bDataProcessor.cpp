@@ -359,7 +359,7 @@ void Rd53bDataProcessor::process_core()
                                 events[channel]++;
                             }
 
-                            curOut[channel]->curEvent->addHit({pix_row, pix_col, pix_tot});
+                            curOut[channel]->curEvent->addHit({pix_col,pix_row,pix_tot});
                             //logger->info("Hit: row({}) col({}) tot({}) ", pix_row, pix_col, pix_tot);
                             hits[channel]++;
                         }

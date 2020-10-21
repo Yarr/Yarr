@@ -8,7 +8,9 @@
         }
       },
       "1": {
-        "algorithm": "TagAnalysis"
+        "algorithm": "PrecisionTimingAnalysis",
+        "config": {
+        }
       },
       "2": {
         "algorithm": "TotAnalysis",
@@ -26,7 +28,10 @@
             "tot_unit": "1.5625 ns"
         }
       },
-      "n_count": 3
+      "3": {
+        "algorithm": "TagAnalysis"
+      },
+      "n_count": 2
     },
     "histogrammer": {
       "0": {
@@ -42,18 +47,34 @@
         "config": {}
       },
       "3": {
-        "algorithm": "TagDist",
+        "algorithm": "ToaMap",
         "config": {}
       },
       "4": {
-        "algorithm": "HitsPerEvent",
+        "algorithm": "Toa2Map",
         "config": {}
       },
       "5": {
+        "algorithm": "PToTDist",
+        "config": {}
+      },
+      "6": {
+        "algorithm": "PToADist",
+        "config": {}
+      },
+      "7": {
+        "algorithm": "TagDist",
+        "config": {}
+      },
+      "8": {
+        "algorithm": "HitsPerEvent",
+        "config": {}
+      },
+      "9": {
         "algorithm": "DataArchiver",
         "config": {}
       },	  
-      "n_count": 5
+      "n_count": 7
     },
     "loops": [
       {
@@ -93,14 +114,14 @@
     ],
     "name": "AnalogScan_PToT",
     "prescan": {
-        "InjVcalMed": 100,
+        "InjVcalMed": 200,
         "InjVcalHigh": 2000,
         "InjVcalRange": 1,
         "InjDigEn": 0,
         "Latency": 60,
         "TotEnPtot": 1,
         "TotEnPtoa": 1,
-        "TotPtotLatency": 0
+        "TotPtotLatency": 2
     }
   }
 }

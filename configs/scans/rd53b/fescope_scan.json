@@ -7,16 +7,16 @@
         }
       },
      "1": {
+        "algorithm": "PrecisionTimingAnalysis",
+        "config":{
+        }
+     },
+     "2": {
         "algorithm": "OccupancyAnalysis",
         "config": {
             "createMask": false
         }
       },
-     "2": {
-        "algorithm": "PrecisionTimingAnalysis",
-        "config":{
-        }
-     },
      "3": {
         "algorithm": "TotAnalysis",
         "config": {
@@ -33,7 +33,7 @@
             "tot_unit": "1.5625 ns"
         }
       },
-      "n_count": 2
+      "n_count": 1
     },
     "histogrammer": {
       "0": {
