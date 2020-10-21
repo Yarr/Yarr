@@ -1,6 +1,6 @@
 #include "catch.hpp"
 
-#include "Fei4EventData.h"
+#include "EventData.h"
 #include "AllHistogrammers.h"
 #include "Histo1d.h"
 
@@ -22,7 +22,7 @@ TEST_CASE("HistogramL1Dist", "[Histogrammer][Fei4][notFei4][L1Dist]") {
     histogrammer.run();
 
     {
-        auto data = std::make_unique<Fei4Data>();
+        auto data = std::make_unique<FrontEndData>();
         data->newEvent(1, 2, 3);
         data->curEvent->addHit(1, 2, 3);
         input.pushData(std::move(data));

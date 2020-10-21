@@ -9,7 +9,7 @@
 #include "LoopStatus.h"
 
 // Could be EventDataBase?
-class Fei4Data;
+class FrontEndData;
 
 /**
  * Process a stream of events and produce a histogram.
@@ -29,7 +29,7 @@ class HistogramAlgorithm {
             return std::move(r);
         }
         
-        virtual void processEvent(Fei4Data *data) {}
+        virtual void processEvent(FrontEndData *data) {}
         void setMapSize(unsigned col, unsigned row) {
             nCol = col;
             nRow = row;

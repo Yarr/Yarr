@@ -8,8 +8,7 @@
 
 #include "StarChipPacket.h"
 
-// Used to transfer data to histogrammers
-#include "Fei4EventData.h"
+#include "EventData.h"
 
 #include "logging.h"
 
@@ -18,7 +17,7 @@ namespace {
 }
 
 void process_data(RawData &curIn,
-                  Fei4Data &curOut);
+                  FrontEndData &curOut);
 
 bool star_proc_registered =
   StdDict::registerDataProcessor("Star", []() { return std::unique_ptr<DataProcessor>(new StarDataProcessor());});
@@ -75,9 +74,9 @@ void StarDataProcessor::process_core() {
             continue;
 
         // Create Output Container
-        std::map<unsigned, std::unique_ptr<Fei4Data>> curOut;
+        std::map<unsigned, std::unique_ptr<FrontEndData>> curOut;
         for (unsigned i=0; i<activeChannels.size(); i++) {
-            curOut[activeChannels[i]].reset(new Fei4Data(curInV->stat));
+            curOut[activeChannels[i]].reset(new FrontEndData(curInV->stat));
         }
 
         unsigned size = curInV->size();
@@ -96,7 +95,7 @@ void StarDataProcessor::process_core() {
 }
 
 void process_data(RawData &curIn,
-                  Fei4Data &curOut) {
+                  FrontEndData &curOut) {
     StarChipPacket packet;
 
     packet.add_word(0x13C); //add SOP, only to make decoder happy

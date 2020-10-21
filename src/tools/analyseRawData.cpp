@@ -3,7 +3,7 @@
 #include <array>
 #include <memory>
 
-#include "Fei4EventData.h"
+#include "EventData.h"
 #include "Histo1d.h"
 #include "Histo2d.h"
 
@@ -145,8 +145,8 @@ int main(int argc, char* argv[])
         //file.seekg(0, std::ios_base::beg);
         //std::cout << "Size of " << inputFiles[i] << " is: " << size/1024.0/1024.0 << " MB" << std::endl;        
 
-        std::shared_ptr<Fei4Event> multiEvent(nullptr);
-        std::shared_ptr<Fei4Event> event(nullptr);
+        std::shared_ptr<FrontEndEvent> multiEvent(nullptr);
+        std::shared_ptr<FrontEndEvent> event(nullptr);
 
         long int iterCounter = 0;
         int trigger     = 0;
@@ -166,7 +166,7 @@ int main(int argc, char* argv[])
 
             iterCounter ++;
 
-            event = std::make_shared<Fei4Event>();
+            event = std::make_shared<FrontEndEvent>();
             event->fromFileBinary(file);
             
             // Skip if not valid event
