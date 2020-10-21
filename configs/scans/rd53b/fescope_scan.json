@@ -78,7 +78,7 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "DigitalScan",
+    "name": "FrontEndScope",
     "prescan": {
         "InjDigEn": 0,
         "InjVcalRange": 1,
