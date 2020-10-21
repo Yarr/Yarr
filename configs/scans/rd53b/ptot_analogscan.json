@@ -8,11 +8,6 @@
         }
       },
       "1": {
-        "algorithm": "PrecisionTimingAnalysis",
-        "config": {
-        }
-      },
-      "2": {
         "algorithm": "TotAnalysis",
         "config": {
             "tot_bins": {
@@ -28,7 +23,7 @@
             "tot_unit": "1.5625 ns"
         }
       },
-      "3": {
+      "2": {
         "algorithm": "TagAnalysis"
       },
       "n_count": 2
