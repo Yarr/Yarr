@@ -1173,6 +1173,7 @@ class DcsData(RegisterData):
             raise DcsDataError
         l = 3
         array = []
+
         while env_lines:
             if len(env_lines[0].split(separator)) < key: break
             try:
@@ -1196,7 +1197,7 @@ class DcsData(RegisterData):
                         'date' : datetime.utcfromtimestamp(date),
                         'value': value
                     })
-            env_lines = data.readline()
+            env_lines = data.readline().splitlines()
             l = l+1
         return array
 
