@@ -47,7 +47,7 @@ void Toa2Map::processEvent(FrontEndData* data) {
         if (curEvent.nHits > 0) {
             for(const FrontEndHit& curHit: curEvent.hits) {
                 if(curHit.ptot > 0) {
-                    //double val = curHit.ptoa;// + curEvent.tag * 16;
+                    //double val = curHit.ptoa;
                     double val = static_cast<double>(curHit.ptoa + (curEvent.tag * 16));
                     h->fill(curHit.col, curHit.row, val*val);
                 }

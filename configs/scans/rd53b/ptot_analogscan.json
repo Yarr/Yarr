@@ -24,9 +24,22 @@
         }
       },
       "2": {
-        "algorithm": "TagAnalysis"
-      },
-      "n_count": 2
+        "algorithm": "ToaAnalysis",
+        "config": {
+            "toa_bins": {
+                "n_bins": 400,
+                "x_lo": 0,
+                "x_hi" : 400
+            },
+            "toa_sigma_bins": {
+                "n_bins": 11,
+                "x_lo": -0.5,   
+                "x_hi": 10.5
+            },
+            "toa_unit": "1.5625 ns"
+        }
+    },
+      "n_count": 3
     },
     "histogrammer": {
       "0": {

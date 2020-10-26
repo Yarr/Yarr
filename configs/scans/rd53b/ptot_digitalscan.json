@@ -4,28 +4,41 @@
       "0": {
         "algorithm": "OccupancyAnalysis",
         "config": {
-          "createMask": true
+          "createMask": false
         }
       },
       "1": {
-        "algorithm": "TagAnalysis"
-      },
-      "2": {
         "algorithm": "TotAnalysis",
         "config": {
             "tot_bins": {
                 "n_bins": 2048,
                 "x_lo": 0,
-                "x_hi": 400
+                "x_hi" : 400
             },
             "tot_sigma_bins": {
                 "n_bins": 11,
-                "x_lo": -0.5,
+                "x_lo": -0.5,   
                 "x_hi": 10.5
             },
             "tot_unit": "1.5625 ns"
         }
       },
+      "2": {
+        "algorithm": "ToaAnalysis",
+        "config": {
+            "toa_bins": {
+                "n_bins": 400,
+                "x_lo": 0,
+                "x_hi" : 400
+            },
+            "toa_sigma_bins": {
+                "n_bins": 11,
+                "x_lo": -0.5,   
+                "x_hi": 10.5
+            },
+            "toa_unit": "1.5625 ns"
+        }
+    },
       "n_count": 3
     },
     "histogrammer": {
@@ -84,7 +97,7 @@
           "noInject": false,
           "time": 0,
           "edgeMode": true,
-          "edgeDuration": 35
+          "edgeDuration": 20
         },
         "loopAction": "Rd53bTriggerLoop"
       },
@@ -92,13 +105,16 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "DigitalScan_PToT",
+    "name": "DigitalScanPToT",
     "prescan": {
+        "InjVcalRange": 1,
+        "DiffTh1M": 600,
+        "DiffTh2": 0,
         "InjDigEn": 1,
         "Latency": 60,
         "TotEnPtot": 1,
         "TotEnPtoa": 1,
-        "TotPtotLatency": 0
+        "TotPtotLatency": 2
     }
   }
 }
