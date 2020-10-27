@@ -187,14 +187,14 @@ def getData(client, dcs_config_fname):
                     key_text+=str(key)+' '
                     num_text+=str(num)+' '
                     mode_text+='null '
-                    setting_text+=str(dcs.get('setting'))+' '
+                    setting_text+=str(dcs.get('setting',0))+' '
                     description=dcs.get('description')
-                    dcsInfo['environments']=appendDcsInfo(dcsInfo['environments'],description,key,num,datFileName)
+                    dcsInfo['environments']=appendDcsInfo(dcsInfo['environments'],description,key,num,dcs.get("setting",0),datFileName)
 
                 dat_f.write(key_text+'\n')
                 dat_f.write(num_text+'\n')
                 #dat_f.write(mode_text+'\n')
-                #dat_f.write(setting_text+'\n')
+                dat_f.write(setting_text+'\n')
 
                 for data in data_list[measurement] :
                     time=data.get('time')
@@ -244,11 +244,12 @@ def calculate_runTime(scanLog):
     #return int(start_timestamp.value/1000), int(end_timestamp.value/1000)
     return int(start_timestamp.value), int(end_timestamp.value)
 
-def appendDcsInfo(dcsInfoList,description,key,num,path):
+def appendDcsInfo(dcsInfoList,description,key,num,setting,path):
     singleInfo={}
     singleInfo['description']=description
     singleInfo['key']=key
     singleInfo['num']=num
+    singleInfo['setting']=setting
     singleInfo['path']=path
     singleInfo['chip']=chip
     singleInfo['status']='enabled'
