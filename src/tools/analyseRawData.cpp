@@ -1,24 +1,82 @@
 #include <iostream>
 #include <fstream>
 #include <array>
-#include <list>
+#include <memory>
 
 #include "EventData.h"
 #include "Histo1d.h"
 #include "Histo2d.h"
 
-int main(int argc, char* argv[]) {
+
+
+
+void usage(char* argv[])
+{
+    std::cout << "Usage: " << argv[0] << " [options] inputFile1 inputFile2 ..." << std::endl;
+    std::cout << "    List of options:" << std::endl;
+    std::cout << "        -o outpu_dir (default: ./offline)" << std::endl;
+    exit(1);
+}
+
+bool fileExists(const std::string& filename)
+{
+    std::ifstream ifile(filename);
+    return ifile.good();
+}
+
+int main(int argc, char* argv[]) 
+{
     if (argc < 2) {
-        std::cout << "#ERROR# Provide input file(s)!" << std::endl;
+        usage(argv);
         return -1;
     }
 
-    if (system("mkdir -p offline") < 0) {
-        std::cout << "#ERROR# Failed to create offline directory, not able to save plots!" << std::endl;
+    std::string outputDir = "";
+
+    // Parse CL
+    int c;
+    while ((c = getopt (argc, argv, "o:")) != -1)
+    {
+        switch (c)
+        {
+        case 'o':
+            outputDir = std::string(optarg) + std::string("/");
+            break;
+        }
     }
 
-    // Define histograms
+    if (outputDir == "") {
+        outputDir = "offline/";
+    }
 
+    std::string mkdirCmd = "mkdir -p " + outputDir;
+    if (system(mkdirCmd.c_str()) < 0){
+        std::cout << "#ERROR# Failed to create " << outputDir << " directory, not able to save plots!" << std::endl;
+    }
+
+    std::string inputFile;
+    std::vector<std::string> inputFiles;
+    if (optind < argc)
+    {
+        while (optind < argc)
+        {
+            inputFile = argv[optind++];
+
+            if (! fileExists(inputFile)){
+                std::cout << "#ERROR# Input file \"" << inputFile << "\" does not exist or cannot be opened" << std::endl;
+                return -1;
+            }
+
+            inputFiles.push_back(inputFile);
+        }
+    }
+
+    if (inputFiles.size() == 0)
+    {
+        usage(argv);
+    }
+
+    // Create histos
     Histo1d hitsPerEvent("hitsPerEvent", 31, -0.5, 30.5);
     hitsPerEvent.setXaxisTitle("# of Hits");
     hitsPerEvent.setYaxisTitle("# of Events");
@@ -26,8 +84,6 @@ int main(int argc, char* argv[]) {
     Histo1d hitsPerCluster("hitsPerCluster", 31, -0.5, 30.5);
     hitsPerCluster.setXaxisTitle("# of Hits");
     hitsPerCluster.setYaxisTitle("# of Events");
-
-    Histo2d *eventScreen = NULL;
 
     Histo1d clusterColLength("clusterColLength", 31, -0.5, 30.5);
     clusterColLength.setXaxisTitle("Cluster Column Length");
@@ -37,6 +93,8 @@ int main(int argc, char* argv[]) {
     clusterRowWidth.setXaxisTitle("Cluster Row Width");
     clusterRowWidth.setYaxisTitle("# of Clusters");
 
+    Histo2d *eventScreen = NULL;
+
     Histo2d clusterWidthLengthCorr("clusterWidthLengthCorr", 11, -0.5, 10.5, 11, -0.5, 10.5);
     clusterWidthLengthCorr.setXaxisTitle("Cluster Col Length");
     clusterWidthLengthCorr.setYaxisTitle("Cluster Row Width");
@@ -45,7 +103,7 @@ int main(int argc, char* argv[]) {
     clustersPerEvent.setXaxisTitle("# of Clusters");
     clustersPerEvent.setYaxisTitle("# of Events");
 
-    Histo1d hitsPerTrigger("clustersPerEvent", 11, -0.5, 10.5);
+    Histo1d hitsPerTrigger("hitsPerTrigger", 11, -0.5, 10.5);
     hitsPerTrigger.setXaxisTitle("# of Clusters");
     hitsPerTrigger.setYaxisTitle("# of Events");
 
@@ -66,177 +124,197 @@ int main(int argc, char* argv[]) {
     occupancy.setYaxisTitle("Row");
     occupancy.setZaxisTitle("Hits");
 
+
     // Only valid tag to l1id association
     //const std::array<unsigned, 16> l1ToTag = {{0,0,1,1,1,1,2,2,2,2,3,3,3,3,0,0}};
-    const std::array<unsigned, 32> l1ToTag = {{0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,
-                                               4,4,5,5,5,5,6,6,6,6,7,7,7,7,0,0}};
+    //    const std::array<unsigned, 32> l1ToTag = {{0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,
+    //                                               4,4,5,5,5,5,6,6,6,6,7,7,7,7,0,0}};
+
 
     // Loop over input files
     int skipped = 0;
-    for (int i=1; i<argc; i++) {
-        std::cout << "Opening file: " << argv[i] << std::endl;
-        std::fstream file(argv[i], std::fstream::in | std::fstream::binary);
+    for (int i=0; i<inputFiles.size(); i++) {
 
-        file.seekg(0, std::ios_base::end);
-        int size = file.tellg();
-        file.seekg(0, std::ios_base::beg);
-        std::cout << "Size of " << argv[i] << " is: " << size/1024.0/1024.0 << " MB" << std::endl;        
+        std::cout << "Opening file: " << inputFiles[i] << std::endl;
+        std::fstream file(inputFiles[i], std::fstream::in | std::fstream::binary);
 
-        int count = 0;
+        // seekg doesn't give the right value for files over 2 GB
+
+        //file.seekg(0, std::ios_base::end);
+        //int size = file.tellg();
+        //file.seekg(0, std::ios_base::beg);
+        //std::cout << "Size of " << inputFiles[i] << " is: " << size/1024.0/1024.0 << " MB" << std::endl;        
+
+        std::shared_ptr<FrontEndEvent> multiEvent(nullptr);
+        std::shared_ptr<FrontEndEvent> event(nullptr);
+
+        long int iterCounter = 0;
+        int trigger     = 0;
+        int old_offset  = 0;
+        int n_truncated = 0;
+        int l1_offset   = 0;
+        int l1_count    = 0;
+        int old_l1id    = 0;
+        int max_bcid    = 0;
+        int error       = 0;
         int nonZero_cnt = 0;
-        int plotIt = 0;
-        int old_bcid = 0;
-        int other_old_bcid = 0;
-        int max_bcid = 0;
-        int trigger = 0;
-
-        int l1_count = 0;
-
-        FrontEndEvent *multiEvent = NULL;
-        std::list<FrontEndEvent*> eventList;
-        int error = 0;
+        int plotIt      = 0;
+        int old_bcid2   = 0;
+        int old_bcid1   = 0;
+        int weird       = 0;
 
         while (file) {
-            int now = file.tellg();
-            //std::cout << "\r Loaded " << (double)now/(double)size*100 << "%                       " << std::flush;
 
-            FrontEndEvent *event = new FrontEndEvent();
+            iterCounter ++;
+
+            event = std::make_shared<FrontEndEvent>();
             event->fromFileBinary(file);
             
-            // Print event
-            std::cout << "L1 count: " << l1_count << " at event " << count << " L1ID(" << event->l1id <<") BCID(" << event->bcid << ") TAG(" << event->tag << ") HITS(" << event->nHits << ")" << std::endl;
-
             // Skip if not valid event
-            if (l1ToTag[event->l1id] != event->tag) {
+            int mod_l1id = (event->l1id-l1_offset+32)%32;
+            if (event->tag==666) {
                 skipped++;
-                std::cout << " Skipped " << std::endl;
+                //if (l1_count != 16 && l1_count != 0){
+                //  if(event->l1id != 666 and event->l1id != 31){
+                //    l1_offset = event->l1id+1;
+                //  }
+                //  if(event->bcid == 666){
+                //    l1_offset = old_l1id+1;
+                //  }
+                //  l1_count = 0;
+                //}
                 continue;
             }
 
-            // Skip if EOF
-            if (!file) {
-                break;
+            if(l1_offset - old_offset != 0){
+              n_truncated++;
+            }
+
+            old_offset = l1_offset;
+            old_l1id = event->l1id;
+
+            if (mod_l1id == 0 or mod_l1id == 16) {
+              trigger++;
             }
 
             if (multiEvent == NULL) {
                 multiEvent = event;
             } else {
-                // Add to muti-event container
                 multiEvent->addEvent(*event);
             }
             
-            if (l1_count - event->l1id != 0) {
+            if (l1_count - mod_l1id != 0) {
                 error++;
-                std::cout << " L1ID off " << std::endl;
             }
 
-            if (event->bcid - old_bcid != 1 && l1_count != 0) {
+            if (event->bcid - old_bcid1 != 1 && not (l1_count == 0 or l1_count == 16)) {
                 error++;
-                std::cout << " BCID off " << std::endl;
             }
-            old_bcid = event->bcid; 
+            old_bcid1 = event->bcid; 
 
             // Valid event
             l1_count++;
             // First event should have l1id 0
-            if (l1_count == 1 && event->l1id != 0) {
-                std::cout << "... wierd first event does not have the right l1id" << std::endl;
+            if (l1_count == 1 && mod_l1id != 0) {
+                weird++;
                 //exit(-1);
             }
 
-            
             for (auto hit : event->hits) {
-                l1id.fill(event->l1id);
+                l1id.fill(mod_l1id);
                 (void) hit;
-                //std::cout << "      Col(" << hit.col << ") Row(" << hit.row << ") ToT(" << hit.tot << ")" << std::endl;
             }
             
-            
-            // Start new multi-event container after 16 events
-            //if (l1_count == 32) {
-            if (event->l1id == 31) {
-                eventList.push_back(multiEvent);
+            if (iterCounter % 200000 == 0){
+                std::cout << "\r Loaded events: " << trigger << "                    " << std::flush;
+            }
+
+            // Fill histos and start new multi-event container after 16 events
+            if (mod_l1id == 31 || !file) {
+
+                if(multiEvent != 0){
+                    hitsPerEvent.fill(multiEvent->nHits);
+                }else{
+                    multiEvent = NULL;
+                    l1_count = 0;
+                    continue;
+                }
+
+                if (max_bcid < multiEvent->bcid){
+                    max_bcid = multiEvent->bcid;
+                }
+
+                bcid.fill(multiEvent->bcid, multiEvent->nHits);
+
+                if ((int)multiEvent->bcid - old_bcid2 < 0 && ((int)multiEvent->bcid-old_bcid2+32768) > 16) {// wrap around, just reset
+                    bcidDiff.fill((int)multiEvent->bcid-old_bcid2+32768);
+                    old_bcid2 = multiEvent->bcid;
+                } else if ((int)multiEvent->bcid - old_bcid2 > 16) { 
+                    bcidDiff.fill((int)multiEvent->bcid-old_bcid2);
+                    old_bcid2 = multiEvent->bcid;
+                }
+
+                if (multiEvent->nHits > 0) {
+                    multiEvent->doClustering();
+                    clustersPerEvent.fill(multiEvent->clusters.size());
+                    nonZero_cnt++;
+                    for (auto hit : multiEvent->hits) {
+                        occupancy.fill(hit.col, hit.row);
+                    }
+                }
+
+                for (auto cluster : multiEvent->clusters) {
+                    hitsPerCluster.fill(cluster.nHits);
+                    if (cluster.nHits > 1) {
+                        clusterColLength.fill(cluster.getColLength());
+                        clusterRowWidth.fill(cluster.getRowWidth());
+                        clusterWidthLengthCorr.fill(cluster.getColLength(), cluster.getRowWidth());
+                    }
+                }
+
+                if (multiEvent->clusters.size() > 0 && plotIt < 100) {
+                    if (eventScreen == NULL) {
+                        eventScreen = new Histo2d((std::to_string(nonZero_cnt) + "-eventScreen"), 400, 0.5, 400.5, 192, 0.5, 192.5);
+                        eventScreen->setXaxisTitle("Column");
+                        eventScreen->setYaxisTitle("Row");
+                        eventScreen->setZaxisTitle("ToT");
+                    }
+                    for (auto cluster: multiEvent->clusters) {
+                        for (auto hit : cluster.hits) {
+                            eventScreen->fill(hit->col, hit->row, hit->tot);
+                        }
+                    }
+                    if (plotIt%10 == 9) {
+                        eventScreen->plot(std::to_string(plotIt), outputDir);
+                        delete eventScreen;
+                        eventScreen = new Histo2d((std::to_string(nonZero_cnt) + "-eventScreen"), 400, 0.5, 400.5, 192, 0.5, 192.5);
+                        eventScreen->setXaxisTitle("Column");
+                        eventScreen->setYaxisTitle("Row");
+                        eventScreen->setZaxisTitle("ToT");
+                    }
+                    plotIt++;
+                }
+
                 multiEvent = NULL;
                 l1_count = 0;
-                trigger++;
-                std::cout << " #### Event " << trigger << " #### " << std::endl;
             }
         }
-        std::cout << " Number of errors: " << error << std::endl;
-        std::cout << std::endl << "Fully loaded events ... analysing" << std::endl;
-
-        // Loop over event List
-        for (auto event: eventList) {
-            hitsPerEvent.fill(event->nHits);
+        std::cout << "\rLoaded triggers: " << trigger << "                    " << std::flush;
 
 
-            if (max_bcid < event->bcid)
-                max_bcid = event->bcid;
-
-            if (count==0)
-                other_old_bcid = event->bcid;
-            (void)other_old_bcid;
-
-            bcid.fill(event->bcid, event->nHits);
-
-            if ((int)event->bcid - old_bcid < 0 && ((int)event->bcid-old_bcid+32768) > 16) {// wrap around, just reset
-                bcidDiff.fill((int)event->bcid-old_bcid+32768);
-                old_bcid = event->bcid;
-            } else if ((int)event->bcid - old_bcid > 16) { 
-                bcidDiff.fill((int)event->bcid-old_bcid);
-                old_bcid = event->bcid;
-            }
-
-            if (event->nHits > 0) {
-                event->doClustering();
-                clustersPerEvent.fill(event->clusters.size());
-                nonZero_cnt++;
-                for (auto hit : event->hits) {
-                    occupancy.fill(hit.col, hit.row);
-                }
-            }
-
-            for (auto cluster : event->clusters) {
-                hitsPerCluster.fill(cluster.nHits);
-                if (cluster.nHits > 1) {
-                    clusterColLength.fill(cluster.getColLength());
-                    clusterRowWidth.fill(cluster.getRowWidth());
-                    clusterWidthLengthCorr.fill(cluster.getColLength(), cluster.getRowWidth());
-                }
-
-            }
-            if (event->clusters.size() > 0 && plotIt < 100) {
-                if (eventScreen == NULL) {
-                    eventScreen = new Histo2d((std::to_string(nonZero_cnt) + "-eventScreen"), 400, 0.5, 400.5, 192, 0.5, 192.5);
-                    eventScreen->setXaxisTitle("Column");
-                    eventScreen->setYaxisTitle("Row");
-                    eventScreen->setZaxisTitle("ToT");
-                }
-                int cluster_cnt = 1;
-                for (auto cluster: event->clusters) {
-                    for (auto hit : cluster.hits) {
-                        //std::cout << hit->col << " " << hit->row << std::endl;
-                        eventScreen->fill(hit->col, hit->row, hit->tot);
-                    }
-                    cluster_cnt++;
-                }
-                if (plotIt%10 == 9) {
-                    eventScreen->plot(std::to_string(plotIt), "offline/");
-                    delete eventScreen;
-                    eventScreen = new Histo2d((std::to_string(nonZero_cnt) + "-eventScreen"), 400, 0.5, 400.5, 192, 0.5, 192.5);
-                    eventScreen->setXaxisTitle("Column");
-                    eventScreen->setYaxisTitle("Row");
-                    eventScreen->setZaxisTitle("ToT");
-                }
-                plotIt++;
-            }
-            count ++;
-        }
-        std::cout << std::endl;
         file.close();
+        std::cout << std::endl;
+
+        std::cout << "Number of errors: " << error << std::endl;\
+        std::cout << "Number of first events without the right l1id: " << weird << std::endl;\
         std::cout << "Max BCID: " << max_bcid << std::endl;
-        std::cout << "Numer of trigger: " << trigger << std::endl;
+        std::cout << "Number of trigger: " << trigger << std::endl;
+        std::cout << "Number of truncated events: " << n_truncated << std::endl;
     }
+    
+
+    // Save occupancy data
+    occupancy.toFile(outputDir + "offline");
 
     int sum = 0;
     for (unsigned i=0; i<400*192; i++) {
@@ -246,25 +324,25 @@ int main(int argc, char* argv[]) {
     std::cout << "Occupancy mean = " << mean << std::endl;
     if (mean < 3.0) 
         mean = 3;
+    int noisy = 0;
     for (unsigned i=0; i<400*192; i++) {
         if (occupancy.getBin(i) > (mean*5)) {
-            std::cout << "Flagged bin " << i << " nosiy " << occupancy.getBin(i) << std::endl;
+            //std::cout << "Flagged bin " << i << " noisy " << occupancy.getBin(i) << std::endl;
             occupancy.setBin(i, 0);
+            noisy ++;
         }
     }
 
-
-
-    bcid.plot("offline", "offline/");
-    l1id.plot("offline", "offline/");
-    bcidDiff.plot("offline", "offline/");
-    hitsPerEvent.plot("offline", "offline/");
-    hitsPerCluster.plot("offline", "offline/");
-    clusterColLength.plot("offline", "offline/");
-    clusterRowWidth.plot("offline", "offline/");
-    clusterWidthLengthCorr.plot("offline", "offline/");
-    clustersPerEvent.plot("offline", "offline/");
-    occupancy.plot("offline", "offline/");
+    bcid.plot("offline", outputDir);
+    l1id.plot("offline", outputDir);
+    bcidDiff.plot("offline", outputDir);
+    hitsPerEvent.plot("offline", outputDir);
+    hitsPerCluster.plot("offline", outputDir);
+    clusterColLength.plot("offline", outputDir);
+    clusterRowWidth.plot("offline", outputDir);
+    clusterWidthLengthCorr.plot("offline", outputDir);
+    clustersPerEvent.plot("offline", outputDir);
+    occupancy.plot("offline", outputDir);
 
     std::cout << "Cluster Column Length mean: " << clusterColLength.getMean() << " +- " << clusterColLength.getStdDev() << std::endl;
     std::cout << "Cluster Row Width mean:     " << clusterRowWidth.getMean() << " +- " << clusterRowWidth.getStdDev() << std::endl;
@@ -273,6 +351,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Number of clusters: " << clustersPerEvent.getEntries() << std::endl;
     std::cout << "Number of events: " << hitsPerEvent.getEntries() << std::endl;
     std::cout << "Number of skipped events: " << skipped << std::endl;
+    std::cout << "Number Bins flagged noisy (occupancy map): " << noisy << std::endl;
 
     return 0;
 }
