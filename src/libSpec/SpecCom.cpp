@@ -218,11 +218,11 @@ void SpecCom::init() {
         slog->info("~~~~~~~~~~~~~~~~~~~~~~~~~~~");
         slog->info("Firmware Version: 0x{:x}", fw_vers);
         slog->info("Firmware Identifier: 0x{:x}", fw_ident);
-        slog->info("FPGA card: {}", specIdentHw[(fw_ident>>24)&0xFF]);
-        slog->info("FE Chip Type: {}", specIdentChip[(fw_ident>>16)&0xFF]);
-        slog->info("FMC Card Type: {}", specIdentFmc[(fw_ident>>8)&0xFF]);
-        slog->info("RX Speed: {}", specIdentSpeed[(fw_ident>>4)&0xF]);
-        slog->info("Channel Configuration: {}", specIdentChCfg[(fw_ident)&0xF]);
+        slog->info("FPGA card: {}", getSpecIdentHw(fw_ident));
+        slog->info("FE Chip Type: {}", getSpecIdentChip(fw_ident));
+        slog->info("FMC Card Type: {}", getSpecIdentFmc(fw_ident));
+        slog->info("RX Speed: {}", getSpecIdentSpeed(fw_ident));
+        slog->info("Channel Configuration: {}", getSpecIdentChCfg(fw_ident));
         slog->info("~~~~~~~~~~~~~~~~~~~~~~~~~~~");
     } 
     // TODO decode firmware identifier
@@ -881,3 +881,28 @@ void SpecCom::flushDma() {
     }
 }
 
+std::string SpecCom::getSpecIdentHw(uint32_t fw_ident) {
+  unsigned index = (fw_ident>>24)&0xFF;
+  if (array_length(specIdentHw)<=index) index = 0;
+  return specIdentHw[index];
+}
+std::string SpecCom::getSpecIdentChip(uint32_t fw_ident) {
+  unsigned index = (fw_ident>>16)&0xFF;
+  if (array_length(specIdentChip)<=index) index = 0;
+  return specIdentChip[index];
+}
+std::string SpecCom::getSpecIdentFmc(uint32_t fw_ident) {
+  unsigned index = (fw_ident>>8)&0xFF;
+  if (array_length(specIdentFmc)<=index) index = 0;
+  return specIdentFmc[index];
+}
+std::string SpecCom::getSpecIdentSpeed(uint32_t fw_ident) {
+  unsigned index = (fw_ident>>4)&0xF;
+  if (array_length(specIdentSpeed)<=index) index = 0;
+  return specIdentSpeed[index];
+}
+std::string SpecCom::getSpecIdentChCfg(uint32_t fw_ident) {
+  unsigned index = (fw_ident)&0xF;
+  if (array_length(specIdentChCfg)<=index) index = 0;
+  return specIdentChCfg[index];
+}
