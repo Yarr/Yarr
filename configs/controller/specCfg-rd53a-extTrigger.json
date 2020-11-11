@@ -1,0 +1,31 @@
+{
+    "ctrlCfg" : {
+        "type": "spec",
+        "cfg" : {
+            "specNum" : 0,
+            "spiConfig" : 541200,
+            "rxPolarity" : 0,
+            "txPolarity" : 0,
+            "trigConfig" : {
+                "mask" : 15,
+                "mode" : 0,
+                "config" : 65534,
+                "edge" : 0,
+                "delay" : [0, 0, 0, 0],
+                "deadtime" : 1200
+            },
+            "pulse" : {
+                "word" : 0,
+                "interval" : 500
+            },
+            "sync" : {
+                "word" : 2172545385,
+                "interval" : 32
+            },
+            "idle" : {
+                "word" : 1768515945
+            },
+            "cmdPeriod" : 6.25e-9
+        }
+    }
+}
