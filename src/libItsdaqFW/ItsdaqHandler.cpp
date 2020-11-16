@@ -225,7 +225,8 @@ void ItsdaqPrivate::ReceiverMain() {
 
       uint16_t opcode = htons(buf16[4]);
 
-      if((opcode == 0x50) || (opcode == 0x10) || (opcode == 0x78)) {
+      if((opcode == 0x50) || (opcode == 0x10) || (opcode == 0x78)
+         || (opcode == 0xf2)) {
         // Ignore acks
         logger->debug("Ignore ack {:x}", opcode);
         continue;
