@@ -34,8 +34,8 @@ insmod /lib/modules/3.10.0-229.14.1.el7.x86_64/extra/specDriver.ko
 ```
 
 If you encounter something like
-```
-make -C /lib/modules/3.10.0-1127.18.2.el7.x86_64/build M=/home/$USER/Yarr/src/kernel modules
+```bash
+$ make -C /lib/modules/3.10.0-1127.18.2.el7.x86_64/build M=/home/$USER/Yarr/src/kernel modules
 make[1]: *** /lib/modules/3.10.0-1127.18.2.el7.x86_64/build: No such file or directory.  Stop.
 make: *** [Makefile:10: default] Error 2
 ```
