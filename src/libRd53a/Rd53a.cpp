@@ -113,9 +113,9 @@ void Rd53a::configureInit() {
     while(!core->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     //Sync frames required by BDAQ
-    /*for (int i=0;i<32;++i)
+    for (int i=0;i<32;++i)
         this->sync();
-    while(!core->isCmdEmpty()){;}*/
+    while(!core->isCmdEmpty()){;}
     this->writeRegister(&Rd53a::GlobalPulseRt, 0x4100); //activate monitor and prime sync FE AZ
     while(!core->isCmdEmpty()){;}
     this->globalPulse(m_chipId, 8);
