@@ -54,13 +54,53 @@ The readout speed that the chip is confgured to has to match the readout speed o
 - ``2`` : 320Mbps
 - ``3`` : 160Mbps
 
+Recommended is 640Mbps.
+
+## Number Data Lanes
+
+At the current point in time it is necessary to only one lane (default). This can be chosen via the ``AuroraActiveLanes`` register where each bit represents one lane.
+
 # Scan Console for RD53B
 
 The general structure of the scanConsole command is:
 ```bash
-bin/scanConsole -r configs/controller/specCfg-rd53b.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/<type of scan>.json -p
+bin/scanConsole -r configs/controller/specCfg-rd53b.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/<type of scan>.json -p -n 1
 ```
 
 which specifies the controller (`-r`), the chip list and chip type (`-c`), and the scan (`-s`). The option `-p` selects plotting so plots are produced after the scans.
 If you run a scan for the first time, it will create a default configuration for the chip along with running the scan.
+
+Note currently the decoder needs to be limited to one thread ``-n 1``.
+
+# Start-up
+
+## ITkPixV1
+
+ITkPixV1 contains a bug which leads to large current on the digital rail caused by wrongly designed ToT latch. It is not desireable to leave the chip in this high current state for too long without at least passive cooling of some sort. The current can be reduced either by running a ``std_digitalscan`` or the ``clear_tot_mem`` routine (``clear_tot_mem`` might need to be run two times``). Once the current has been reduced it should stay in this mode until fully power cycled.
+
+### Current
+
+Expected current draw at start-up:
+
+- Digital: typical 1.5A, up to 2.5A
+- Analog: 80-100mA
+
+After ``std_digitalscan``:
+
+- Digital: around 600mA
+- Analog: around 750mA (depending on config)
+
+## ITkPixV1.1
+
+### Current
+
+# Tuning Routine
+
+We recommend the following tuning routine:
+
+1. Tune global threshold to 1500e (Note: edge columns need to be adjusted by hand)
+2. Tune pixel threshold to 1500e
+3. Retune (not changing TDACs) global threshold to 1000e
+4. Retune pixel threshold to 1000e
+
 

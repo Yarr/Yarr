@@ -463,7 +463,7 @@ int main(int argc, char *argv[]) {
         logger->info("Enabling Rx channel {}", channel);
     }
 
-    hwCtrl->runMode();
+    //hwCtrl->runMode();
 
     logger->info("\033[1;31m##############\033[0m");
     logger->info("\033[1;31m# Setup Scan #\033[0m");

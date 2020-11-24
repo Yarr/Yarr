@@ -22,6 +22,8 @@ class Rd53aReg {
             m_addr = 999;
         }
 
+        virtual ~Rd53aReg() {}
+
         void init(unsigned addr, uint16_t *cfg, const unsigned bOffset, const unsigned bits, const uint16_t value) {
             m_addr = addr;
             m_cfg = cfg;

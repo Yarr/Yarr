@@ -125,6 +125,7 @@ void Rd53aTriggerLoop::init() {
 void Rd53aTriggerLoop::execPart1() {
     SPDLOG_LOGGER_TRACE(logger, "");
     g_tx->setCmdEnable(keeper->getTxMask());
+    dynamic_cast<HwController*>(g_tx)->runMode();
     auto rd53a = dynamic_cast<Rd53a*>(g_fe);
     rd53a->ecr();
     rd53a->idle();
@@ -145,6 +146,7 @@ void Rd53aTriggerLoop::execPart2() {
     while(!g_tx->isTrigDone());
     // Disable Trigger
     g_tx->setTrigEnable(0x0);
+    dynamic_cast<HwController*>(g_tx)->setupMode();
     m_done = true;
     progress = 1;
 }

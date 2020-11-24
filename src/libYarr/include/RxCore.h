@@ -37,7 +37,7 @@ class RxCore {
         
     protected:
         RxCore();
-        ~RxCore();
+        virtual ~RxCore();
 
         std::chrono::microseconds m_waitTime; 
 };

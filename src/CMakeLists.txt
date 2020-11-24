@@ -8,6 +8,7 @@ else()
 endif()
 add_compile_options(-Wfatal-errors)
 add_compile_options(-Wno-deprecated)
+add_compile_options(-Wnon-virtual-dtor)
 add_compile_options(-std=c++17)
 
 if ( USE_JSON )

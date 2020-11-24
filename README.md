@@ -1,7 +1,3 @@
-![docs](http://readthedocs.org/projects/yarr/badge/?version=latest)
-
-![https://gitlab.cern.ch/YARR/YARR/pipelines](https://gitlab.cern.ch/YARR/YARR/badges/master/pipeline.svg)
-
 ![logo](docs/images/logo_blue_inv.png)
 
 # YARR: Yet Another Rapid Readout
@@ -24,7 +20,7 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
 
 ### Software:
 
-- CentOS 7
+- CentOS 7 or 8
 - cmake 3.6
 - GCC version 7 or higher
     - for example from devtoolset-7, instruction can be found here https://www.softwarecollections.org/en/scls/rhscl/devtoolset-7
