@@ -134,6 +134,7 @@ void Rd53bTriggerLoop::execPart1() {
     SPDLOG_LOGGER_TRACE(logger, "");
     g_tx->setCmdEnable(keeper->getTxMask());
     auto rd53b = dynamic_cast<Rd53b*>(g_fe);
+    dynamic_cast<HwController*>(g_tx)->runMode();
     rd53b->sendClear(16);
     while(!g_tx->isCmdEmpty());
     std::this_thread::sleep_for(std::chrono::microseconds(200));
@@ -151,6 +152,7 @@ void Rd53bTriggerLoop::execPart2() {
     while(!g_tx->isTrigDone());
     // Disable Trigger
     g_tx->setTrigEnable(0x0);
+    dynamic_cast<HwController*>(g_tx)->setupMode();
     
     if (m_zeroTot) {
         // Reset ToT memories
