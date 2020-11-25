@@ -403,8 +403,8 @@ void Rd53bGlobalCfg::init() {
     //134
     SkippedTrigCnt.init     (134, &m_cfg[134], 0, 16, 0); regMap["SkippedTrigCnt"] = &Rd53bGlobalCfg::SkippedTrigCnt;
     //135-136
-    EfuseReadData0.init     (135, &m_cfg[135], 0, 16, 0); regMap["EfuseReadData0"] = &Rd53bGlobalCfg::EfuseReadData0;
-    EfuseReadData1.init     (136, &m_cfg[136], 0, 16, 0); regMap["EfuseReadData1"] = &Rd53bGlobalCfg::EfuseReadData1;
+    EfuseReadData1.init     (135, &m_cfg[135], 0, 16, 0); regMap["EfuseReadData1"] = &Rd53bGlobalCfg::EfuseReadData1;
+    EfuseReadData0.init     (136, &m_cfg[136], 0, 16, 0); regMap["EfuseReadData0"] = &Rd53bGlobalCfg::EfuseReadData0;
     //137
     MonitoringDataAdc.init  (137, &m_cfg[137], 0, 12, 0); regMap["MonitoringDataAdc"] = &Rd53bGlobalCfg::MonitoringDataAdc;
 
