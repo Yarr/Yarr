@@ -7,7 +7,6 @@
 #define FEI4PIXELFEEDBACK_H
 
 #include <queue>
-#include <mutex>
 #include "LoopActionBase.h"
 #include "Histo2d.h"
 #include "ClipBoard.h"
@@ -18,17 +17,17 @@ enum FeedbackType {
     FDAC_FB// 0 - 15
 };
 
-class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
+class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
     static logging::Logger &logger() {
         static logging::LoggerStore instance = logging::make_log("Fei4PixelFeedback");
         return *instance;
     }
 
     public:
-        Fei4PixelFeedback() : LoopActionBase(){
+        Fei4PixelFeedback() : LoopActionBase(LOOP_STYLE_PIXEL_FEEDBACK) {
             loopType = typeid(this);
         }
-        Fei4PixelFeedback(enum FeedbackType type) : LoopActionBase(){
+        Fei4PixelFeedback(enum FeedbackType type) : LoopActionBase(LOOP_STYLE_PIXEL_FEEDBACK) {
             fbType = type;
             switch (fbType) {
                 case (TDAC_FB):
@@ -45,24 +44,22 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
             loopType = typeid(this);
         }
 
-        void feedback(unsigned channel, Histo2d *h) {
+        void feedback(unsigned channel, std::unique_ptr<Histo2d> h) override {
             // TODO Check on NULL pointer
             if (h->size() != 26880) {
                 logger().error("Wrong type of feedback histogram on channel {}", channel);
                 doneMap[channel] = true;
             } else {
-                fbHistoMap[channel] = h;
+                fbHistoMap[channel] = std::move(h);
             }
-
-            fbMutexMap[channel].unlock();
         }
-        void writeConfig(json &config){
+        void writeConfig(json &config) override {
 	    config["min"]=min;
 	    config["max"]=max;
             config["step"]=step;
             config["parameter"] = parName;
         }
-        void loadConfig(json &config){
+        void loadConfig(json &config) override {
 	    if (!config["min"].empty())
 	      min = config["min"];
 	    if (!config["max"].empty())
@@ -80,7 +77,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
         }
     private:
 	std::string parName="";
-        void init() {
+        void init() override {
             m_done = false;
             cur = 0;
 
@@ -91,7 +88,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
                     unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
                     
                     // Init Maps
-                    fbHistoMap[ch] = NULL;
+                    fbHistoMap[ch].reset();
                     
                     // Initilize Pixel regs with default config
                     auto fei4 = dynamic_cast<Fei4*>(keeper->feList[k]);
@@ -106,31 +103,28 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
 
         }
 
-        void end() {
+        void end() override {
         }
 
-        void execPart1() {
+        void execPart1() override {
             g_stat->set(this, cur);
          
             for(unsigned int k=0; k<keeper->feList.size(); k++) {
                 auto fe = keeper->feList[k];
                 if(fe->getActive()) {
-                    // Need to lock mutex on first itereation
-                    fbMutexMap[dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()].try_lock();
                     // Write config
                     this->writePixelCfg(dynamic_cast<Fei4*>(fe));
                 }
             }
         }
 
-        void execPart2() {
-            unsigned ch;
+        void execPart2() override {
             for(unsigned int k=0; k<keeper->feList.size(); k++) {
                 auto fe = keeper->feList[k];
                 if(fe->getActive()) {
-                    ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-                    // Wait for Mutex to be unlocked by feedback
-                    fbMutexMap[ch].lock();
+                    unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
+                    waitForFeedback(ch);
+
                     this->addFeedback(ch);
                 }
             }
@@ -181,8 +175,8 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
         }
 
         void addFeedback(unsigned ch) {
-            auto histo = fbHistoMap[ch];
-            if (histo != NULL) {
+            auto &histo = fbHistoMap[ch];
+            if (histo != nullptr) {
                 auto fe = dynamic_cast<Fei4*>(keeper->getFe(ch));
                 for (unsigned row=1; row<337; row++) {
                     for (unsigned col=1; col<81; col++) {
@@ -194,7 +188,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
                         this->setPixel(fe, col, row, v);
                     }
                 }
-                delete fbHistoMap[ch];
+                fbHistoMap[ch].reset();
             }
         }
 
@@ -220,8 +214,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
         }
 
         enum FeedbackType fbType;
-        std::map<unsigned, Histo2d*> fbHistoMap;
-        std::map<unsigned, std::mutex> fbMutexMap;
+        std::map<unsigned, std::unique_ptr<Histo2d>> fbHistoMap;
         unsigned step, oldStep;
         unsigned cur;
 

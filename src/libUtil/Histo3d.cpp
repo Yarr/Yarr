@@ -11,11 +11,17 @@
 #include <iostream>
 #include <cmath>
 #include <fstream>
+#include <sstream>
+#include "logging.h"
 
-Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
-        unsigned arg_ybins, double arg_ylow, double arg_yhigh, 
-        unsigned arg_zbins, double arg_zlow, double arg_zhigh, 
-        std::type_index t) : HistogramBase(arg_name, t) {
+namespace {
+    auto hlog = logging::make_log("Histo3d");
+}
+Histo3d::Histo3d(const std::string &arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh,
+                 unsigned arg_ybins, double arg_ylow, double arg_yhigh,
+                 unsigned arg_zbins, double arg_zlow, double arg_zhigh)
+  : HistogramBase(arg_name)
+{
     xbins = arg_xbins;
     xlow = arg_xlow;
     xhigh = arg_xhigh;
@@ -44,7 +50,9 @@ Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
 Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
         unsigned arg_ybins, double arg_ylow, double arg_yhigh, 
         unsigned arg_zbins, double arg_zlow, double arg_zhigh, 
-        std::type_index t, LoopStatus &stat) : HistogramBase(arg_name, t, stat) {
+        const LoopStatus &stat)
+  : HistogramBase(arg_name, stat)
+{
     xbins = arg_xbins;
     xlow = arg_xlow;
     xhigh = arg_xhigh;
@@ -68,7 +76,7 @@ Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     entries = 0;
 }
 
-Histo3d::Histo3d(Histo3d *h) : HistogramBase(h->getName(), h->getType()) {
+Histo3d::Histo3d(Histo3d *h) : HistogramBase(h->getName()) {
     xbins = h->getXbins();
     xlow = h->getXlow();
     xhigh = h->getXhigh();
@@ -197,7 +205,7 @@ double Histo3d::getStdDev() {
     double entries = 0;
     for (unsigned int i=0; i<(xbins*ybins*zbins); i++) {
         if (isFilled[i]) {
-             mu += pow(data[i]-mean, 2);
+             mu += (data[i]-mean)*(data[i]-mean);
              entries++;
         }
     }
@@ -236,8 +244,15 @@ int Histo3d::binNum(double x, double y, double z) {
     }
 }
 
+void Histo3d::toStream(std::ostream &out) const{
 
-void Histo3d::toFile(std::string prefix, std::string dir, bool header) {
+}
+
+void Histo3d::toJson(json &j) const {
+
+}
+
+void Histo3d::toFile(const std::string &prefix, const std::string &dir, bool header) const {
     std::string filename = dir + prefix + "_" + name + ".dat";
     std::fstream file(filename, std::fstream::out | std::fstream::trunc);
     // Header
@@ -264,7 +279,7 @@ void Histo3d::toFile(std::string prefix, std::string dir, bool header) {
     file.close();
 }
 
-bool Histo3d::fromFile(std::string filename) {
+bool Histo3d::fromFile(const std::string &filename) {
     std::fstream file(filename, std::fstream::in);
     // Check for header
     std::string line;
@@ -297,34 +312,39 @@ bool Histo3d::fromFile(std::string filename) {
     return true;
 }
 
-void Histo3d::plot(std::string prefix, std::string dir) {
+void Histo3d::plot(const std::string &prefix, const std::string &dir) const {
+    hlog->info("Plotting {}", HistogramBase::name);
     // Put raw histo data in tmp file
     std::string tmp_name = std::string(getenv("USER")) + "/tmp_yarr_histo2d_" + prefix;
-    this->toFile(tmp_name, "/tmp/", false);
-    //std::string cmd = "gnuplot | epstopdf -f > " + dir + prefix + "_" + HistogramBase::name;
-    std::string cmd = "gnuplot > " + dir + prefix + "_" + HistogramBase::name;
+    std::string output = dir + prefix + "_" + HistogramBase::name;
     for (unsigned i=0; i<lStat.size(); i++)
-        cmd += "_" + std::to_string(lStat.get(i));
-    //cmd += ".pdf";
-    cmd += ".png";
+        output += "_" + std::to_string(lStat.get(i));
+    output += ".png";
 
     // Open gnuplot as file and pipe commands
+
+    std::string input;
+
+    input+="$'set terminal png size 1280, 1024;";
+    input+="set palette negative defined ( 0 \\'#D53E4F\\', 1 \\'#F46D43\\', 2 \\'#FDAE61\\', 3 \\'#FEE08B\\', 4 \\'#E6F598\\', 5 \\'#ABDDA4\\', 6 \\'#66C2A5\\', 7 \\'#3288BD\\');";
+    input+="unset key;";
+    input+="set title \""  +HistogramBase::name+"\";";
+    input+="set xlabel \""  +HistogramBase::xAxisTitle+"\";";
+    input+="set ylabel \""  +HistogramBase::yAxisTitle+"\";";
+    input+="set cblabel \""  +HistogramBase::zAxisTitle+"\";";
+    input+="set xrange["+ std::to_string(xlow)+ ":"+std::to_string(xhigh)+ "];";
+    input+="set yrange["+ std::to_string(ylow)+ ":"+std::to_string(yhigh)+ "];";
+    input+="plot \\'-\\' matrix u (($1)*(("+std::to_string(xhigh);
+    input+="-"+std::to_string(xlow)+")/";
+    input+=std::to_string(xbins)+".0)+"+std::to_string(xlow +(xhigh-xlow)/(xbins*2.0));
+    input+= "):(($2)*(("+std::to_string(yhigh);
+    input+="-"+std::to_string(ylow)+")/";
+    input+=std::to_string(ybins)+".0)+"+std::to_string(ylow +(yhigh-ylow)/(ybins*2.0));
+    input+="):3 with image'";
+    std::string cmd="gnuplot  -e "+input+" > "+output+"\n";
     FILE *gnu = popen(cmd.c_str(), "w");
-    
-    //fprintf(gnu, "set terminal postscript enhanced color \"Helvetica\" 18 eps\n");
-    fprintf(gnu, "set terminal png size 1280, 1024\n");
-    fprintf(gnu, "set palette negative defined ( 0 '#D53E4F', 1 '#F46D43', 2 '#FDAE61', 3 '#FEE08B', 4 '#E6F598', 5 '#ABDDA4', 6 '#66C2A5', 7 '#3288BD')\n");
-    //fprintf(gnu, "set pm3d map\n");
-    fprintf(gnu, "unset key\n");
-    fprintf(gnu, "set title \"%s\"\n" , HistogramBase::name.c_str());
-    fprintf(gnu, "set xlabel \"%s\"\n" , HistogramBase::xAxisTitle.c_str());
-    fprintf(gnu, "set ylabel \"%s\"\n" , HistogramBase::yAxisTitle.c_str());
-    fprintf(gnu, "set cblabel \"%s\"\n" , HistogramBase::zAxisTitle.c_str());
-    fprintf(gnu, "set xrange[%f:%f]\n", xlow, xhigh);
-    fprintf(gnu, "set yrange[%f:%f]\n", ylow, yhigh);
-    //fprintf(gnu, "set cbrange[0:120]\n");
-    //fprintf(gnu, "splot \"/tmp/tmp_%s.dat\" matrix u (($1)*((%f-%f)/%d)):(($2)*((%f-%f)/%d)):3\n", HistogramBase::name.c_str(), xhigh, xlow, xbins, yhigh, ylow, ybins);
-    fprintf(gnu, "plot \"%s\" matrix u (($1)*((%f-%f)/%d.0)+%f):(($2)*((%f-%f)/%d.0)+%f):3 with image\n", ("/tmp/" + tmp_name + "_" + name + ".dat").c_str(), xhigh, xlow, xbins, xlow +(xhigh-xlow)/(xbins*2.0), yhigh, ylow, ybins, ylow+(yhigh-ylow)/(ybins*2.0));
-   // fprintf(gnu, "plot \"%s\" matrix u (($1)):(($2)):3 with image\n", ("/tmp/" + tmp_name + "_" + name + ".dat").c_str());
+    std::stringstream ss;
+    toStream(ss);
+    fprintf(gnu,"%s",ss.str().c_str());
     pclose(gnu);
 }

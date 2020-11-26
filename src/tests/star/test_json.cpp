@@ -1,4 +1,5 @@
 #include "catch.hpp"
+#include <sstream>
 
 // Only one test needs std::filesystem
 #if defined(__clang__) || __GNUC__ > 7

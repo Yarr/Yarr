@@ -10,34 +10,33 @@
 // ################################
 
 #include <string>
-#include <typeinfo>
-#include <typeindex>
 
 #include "LoopStatus.h"
+#include "storage.hpp"
 
 class HistogramBase {
     public:
-        HistogramBase(std::string arg_name, std::type_index t);
-        HistogramBase(std::string arg_name, std::type_index t, LoopStatus &stat);
+        HistogramBase(const std::string &arg_name);
+        HistogramBase(const std::string &arg_name, const LoopStatus &stat);
         virtual ~HistogramBase();
 
-        std::string getName();
+        const std::string & getName() const;
 
-        LoopStatus getStat() {return lStat;}
-
-        virtual void toFile(std::string basename, std::string dir = "", bool header=true) {}
-        virtual void plot(std::string basename, std::string dir = "") {}
+        const LoopStatus & getStat() const {return lStat;}
+        virtual void toStream(std::ostream &out) const=0;
+        virtual void toJson(json &j) const=0;
+        virtual void toFile(const std::string &basename, const std::string &dir = "", bool header= true) const=0;
+        virtual void plot(const std::string &basename, const std::string &dir = "") const=0;
         
         void setAxisTitle(std::string x, std::string y="y", std::string z="z");
         void setXaxisTitle(std::string);
         void setYaxisTitle(std::string);
         void setZaxisTitle(std::string);
 
-        std::string getXaxisTitle();
-        std::string getYaxisTitle();
-        std::string getZaxisTitle();
+        const std::string & getXaxisTitle() const;
+        const std::string & getYaxisTitle() const;
+        const std::string & getZaxisTitle() const;
 
-        std::type_index getType() {return type;}
     protected:
         std::string name;
         std::string xAxisTitle;
@@ -45,7 +44,5 @@ class HistogramBase {
         std::string zAxisTitle;
             
         LoopStatus lStat;
-    private:
-        std::type_index type;
 };
 #endif

@@ -24,7 +24,7 @@ job_build_and_test:
       - if [ "$NUM100" != "26880" ]; then exit 2; fi
       - bin/scanConsole -k
       - bin/test_main
-      - bin/star_test configs/controller/emuCfg_star.json
+      - bin/star_test -r 0 configs/controller/emuCfg_star.json
 
 job_build_all:
     stage: build
@@ -90,7 +90,7 @@ deploy_master:
     stage: deploy
     dependencies: ["build_docs"]
     only:
-        - master
+        - master@YARR/YARR
     variables:
         "EOS_PATH" : "/eos/user/t/theim/www/yarr"
         "CI_OUTPUT_DIR" : "site/"
@@ -102,7 +102,7 @@ deploy_devel:
     stage: deploy
     dependencies: ["build_docs"]
     only:
-        - devel
+        - devel@YARR/YARR
     variables:
         "EOS_PATH" : "/eos/user/t/theim/www/yarr/devel"
         "CI_OUTPUT_DIR" : "site/"

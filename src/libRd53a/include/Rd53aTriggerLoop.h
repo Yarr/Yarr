@@ -13,15 +13,14 @@
 #include <chrono>
 #include <thread>
 #include "LoopActionBase.h"
+#include "StdTriggerAction.h"
 #include "Rd53a.h"
 #include "Rd53aCmd.h"
 
-class Rd53aTriggerLoop: public LoopActionBase {
+class Rd53aTriggerLoop: public LoopActionBase, public StdTriggerAction {
     public:
         Rd53aTriggerLoop();
  
-        uint32_t getTrigCnt() {return m_trigCnt;}
-        void setTrigCnt(uint32_t cnt) {m_trigCnt = cnt;}
         void setTrigTime(double time) {m_trigTime = time;}
         void setTrigFreq(double freq) {m_trigFreq = freq;}
         void setTrigDelay(uint32_t delay);
@@ -32,7 +31,6 @@ class Rd53aTriggerLoop: public LoopActionBase {
         void loadConfig(json &config);
 
     private:
-        uint32_t m_trigCnt;
         uint32_t m_trigDelay;
         float m_trigTime;
         float m_trigFreq;

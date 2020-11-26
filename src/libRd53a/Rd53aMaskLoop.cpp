@@ -40,7 +40,7 @@ enum IncludedPixels {includeEdges=0 ,removeEdgesFullSensor=1, removeEdgesSynFE=2
 enum SensorType { SquareSensor=0, RecSensorUpDown=1, RecSensorDownUp=2 };
 
 
-Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase() {
+Rd53aMaskLoop::Rd53aMaskLoop() : LoopActionBase(LOOP_STYLE_MASK) {
     min = 0;
     max = 32;
     step = 1;

@@ -60,7 +60,7 @@ All subsequent scans assume single chip operation; however, when testing triplet
 
 Here are some things to be mindful of as you are planning on running with multiple RD53a:
 
-- multiple PCIexpress cards: each PCIexpress card has its own `specNum`; therefore, the user needs to creat one specCfg.json per PCIExpress card.
+- multiple PCIexpress cards: each PCIexpress card has its own `specNum`; therefore, the user needs to creat one specCfg-rd53a.json per PCIExpress card.
 - setting up the configuration for whether each RD53a receives its own command or will share a command line. Both of these instances are described in [ScanConsole](scanconsole).
 - setting up the correct chipId for each RD53a in a triplet or a quad. After running a scan or just running scanConsole without running a scan, a configuration for each chip will be created. The `ChipId` for each FE will be set to 0 (default). You must change this value to match the wire-bonded value in each configuration. 
 
@@ -82,19 +82,28 @@ Additional changes for the quad module's chip configurations:
 - `OutputActiveLanes`: 7 instead of 15 because only 3 data lanes are connected, not 4
 - `CmlEn`: 7 instead of 15
 
+## Readout Speed
+
+The readout speed that the chip is confgured to has to match the readout speed of the firmware (which is fixed). In order to chanege the readout frequency of the chip one has to change the ``CdrSelSerClk`` register. These settings correspond to the different readout frequencies (the value is the divider from 1.28Gbps):
+
+- ``0`` : 1280Mbps
+- ``1`` : 640Mbps
+- ``2`` : 320Mbps
+- ``3`` : 160Mbps
+
 # Scan Console for RD53A
 
 The general structure of the Scan Console commands is:
 
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/<type of scan>.json -p
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/<type of scan>.json -p
 ```
 which specifies the controller (`-r`), the chip list and chip type (`-c`), and the scan (`-s`). The option `-p` selects plotting so plots are produced after the scans.
 If you run a scan for the first time, it will create a default configuration for the chip along with running the scan.
 
 To create the default chip configuration without running a scan:
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json
 ```
 
 More general information about how to use the scanConsole, can be found on the main page: [ScanConsole](scanconsole). This page details each of the configuration settings. 
@@ -158,7 +167,7 @@ Some general tips when operating RD53A with YARR:
 
 To run a digital scan for RD53A with the default configuration execute the following command:
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json -p
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json -p
 ```
 An example of occupancy map after a successful digital scan is given below.
 ![Occupancy map digital scan](images/JohnDoe_DigitalScan_OccupancyMap.png)
@@ -167,7 +176,7 @@ An example of occupancy map after a successful digital scan is given below.
 
 To run a analog scan for RD53A with the default configuration execute the following command:
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_analogscan.json -p
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_analogscan.json -p
 ```
 An example of the occupancy map after a successful analog scan is given below.
 ![Occupancy map analog scan](images/JohnDoe_AnalogScan_OccupancyMap.png)
@@ -175,7 +184,7 @@ An example of the occupancy map after a successful analog scan is given below.
 ### Analog scan for only one analog FrontEnd
 
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/diff_analogscan.json -p
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/diff_analogscan.json -p
 ```
 ![Occupancy map analog scan for DIFF FE](images/JohnDoe_AnalogScanDiff_OccupancyMap.png)
 - There are similar scan configs for the linear and sync FE
@@ -184,7 +193,7 @@ bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/examp
 
 To run a threshold scan for RD53A with the default configuration execute the following command:
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_thresholdscan.json -p
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_thresholdscan.json -p
 ```
 
 Config parameters for ``InjVcalDiff``:  
@@ -218,7 +227,7 @@ Below is an example of tuning the global threshold of the linear FE to 2500e. Th
 In a similar manner the differential and synchronous global threshold DAC can be tuned.
 
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/lin_tune_globalthreshold.json -t 2500 -p
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/lin_tune_globalthreshold.json -t 2500 -p
 ```
 | ![Occupancy distribution](images/JohnDoe_OccupancyDist-0-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-1-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-3-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-4-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-5-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-6-LinTuning.png) |
 |:---:|:---:|:---:|:---:|:---:|:---:|
@@ -227,7 +236,7 @@ bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/examp
 Then, the pixel tuning can be performed. See below an example of tuning the differential pixel TDACs to 2500e. The initial bathtub of the global threshold tune appear again, but with each step the values should converge more and more towards the center. In a similar manner the pixel TDACs of the linear FE can be tuned.
 
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/diff_tune_pixelthreshold.json -t 2500 -p
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/diff_tune_pixelthreshold.json -t 2500 -p
 ```
 | ![Occupancy distribution](images/JohnDoe_OccupancyDist-0.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-1.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-2.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-3.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-4.png) |
 |:---:|:---:|:---:|:---:|:---:|
@@ -248,7 +257,7 @@ Once the full tuning routine (as outlined in the beginning of this page) has bee
 ## Time over Threshold Scan
 Before performing the time over threshold scan, one should first tune each FE.
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/diff_tune_globalpreamp.json -t 10000 8 -p
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/diff_tune_globalpreamp.json -t 10000 8 -p
 ```
 
 This command has the same format as all other scans, except for the `-t 10000 8`, which sets the target charge to `10000` and the TOT to `8`.
@@ -256,7 +265,7 @@ This command has the same format as all other scans, except for the `-t 10000 8`
 Similarly, the totscan also requires the user to specify the target charge, in this case `10000`.
 
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_totscan.json -p -t 10000
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_totscan.json -p -t 10000
 ```
 
 The ToT mean value will be given in the output of the code, for example:
@@ -277,7 +286,7 @@ The cross-talk is evaluated injecting in the neighboring pixels and checking the
 
 To check if there is cross-talk for your chip+sensor, use the following command:
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_crosstalk.json  -p
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_crosstalk.json  -p
 ```
 For the defaul settings and a fully depleated sensor, the OccupancyMap.png plot should show hits in half of the pixels.
 
@@ -285,7 +294,7 @@ For the defaul settings and a fully depleated sensor, the OccupancyMap.png plot 
 
 To identify the threhsold at which cross-talk appear, run the following command:
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_crosstalk_scan.json  -p
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_crosstalkscan.json  -p
 ```
 
 Config parameters:
@@ -316,7 +325,7 @@ Example of the s-curve, threshold distribution, threshold map and noise distribu
 
 To run do
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_crosstalk_scan_checkBumpBonding.json  -p
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_crosstalkscan_checkBumpBonding.json  -p
 ```
 There are 2 ways to bump bond 25x100 sensor pixels onto the 50x50 chip pixels. This scan shows crosstalk for sensor type 1 and no crosstalk for sensor type 0 (50x50) or 2 (25x100 but different bump bonding scheme than type 1) as can be distinguished below:
 
@@ -329,7 +338,7 @@ There are 2 ways to bump bond 25x100 sensor pixels onto the 50x50 chip pixels. T
 Uses crosstalk scan to identify pixels without any crosstalk - which are likely be due to disconnected bumps. Based on analog scan with crosstalk mask. This scan uses the same config parameters as the crosstalk scan.
 Run the following command:
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_discbumpscan.json  -p
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_discbumpscan.json  -p
 ```
 
 ![disconnected bumps scan](images/JohnDoe_OccupancyMap_DiscBump.png)
@@ -355,29 +364,28 @@ The trigger loop in this scan does not sent an ECR signal during the scan. The s
 
 ### Hit-Or ("self-trigger")
 
-For the "self-triggering" source scan using Hit-Or as a trigger, a second DP-miniDP cable is needed to connect to the second DP port in the SCC and port B on the Ohio card. The multi-chip firmware cannot be used.
-Instead of the `specCfg.json` `specCfgExtTrigger.json` is to be used. The Hit-Or lines have to be enabled in the chip config:
+For the "self-triggering" source scan using Hit-Or as a trigger, a second DP-miniDP cable is needed to connect to the second DP port in the SCC and port B on the Ohio card, which should have the [modifications](ohio-rd53a-multi-module-adapter) on port B. The corresponding firmware has to be used and can be obtained from firmware [v0.9.2](https://github.com/Yarr/Yarr-fw/tree/v0.9.2) as the bit files which do not end with ``_4chip.bit``. For the controller configuration, instead of the `specCfg-rd53a.json` `specCfgExtTrigger.json` is to be used. The Hit-Or lines have to be enabled in the chip config:
 ```
-"HitOr0MaskDiff0": 65536,
+"HitOr0MaskDiff0": 65535,
 "HitOr0MaskDiff1": 1,
-"HitOr0MaskLin0": 65536,
+"HitOr0MaskLin0": 65535,
 "HitOr0MaskLin1": 1,
-"HitOr0MaskSync": 65536,
-"HitOr1MaskDiff0": 65536,
+"HitOr0MaskSync": 65535,
+"HitOr1MaskDiff0": 65535,
 "HitOr1MaskDiff1": 1,
-"HitOr1MaskLin0": 65536,
+"HitOr1MaskLin0": 65535,
 "HitOr1MaskLin1": 1,
-"HitOr1MaskSync": 65536,
-"HitOr2MaskDiff0": 65536,
+"HitOr1MaskSync": 65535,
+"HitOr2MaskDiff0": 65535,
 "HitOr2MaskDiff1": 1,
-"HitOr2MaskLin0": 65536,
+"HitOr2MaskLin0": 65535,
 "HitOr2MaskLin1": 1,
-"HitOr2MaskSync": 65536,
-"HitOr3MaskDiff0": 65536,
+"HitOr2MaskSync": 65535,
+"HitOr3MaskDiff0": 65535,
 "HitOr3MaskDiff1": 1,
-"HitOr3MaskLin0": 65536,
+"HitOr3MaskLin0": 65535,
 "HitOr3MaskLin1": 1,
-"HitOr3MaskSync": 65536,
+"HitOr3MaskSync": 65535,
 ```
 
 ### External trigger

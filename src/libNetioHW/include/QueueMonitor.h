@@ -34,18 +34,18 @@ public:
     m_worker_thread(), m_monitorID(monitorID), m_queueIDs(queueIDs),
     m_pcqs(pcqs), m_sensitivity(sensitivity), m_delay(delay)
   {
-    std::cout << "### QueueMonitor::QueueMonitor() ID: " << m_monitorID << "\n"
+    std::cerr << "### QueueMonitor::QueueMonitor() ID: " << m_monitorID << "\n"
               << "     -> sensitivity: " << m_sensitivity << " matches"<< "\n"
               << "     -> delay: " << m_delay << " [us]"<< "\n"
               << "     -> queue(s) to monitor: [ ";
     for (auto i : m_queueIDs){
-      std::cout << i << " ";
+      std::cerr << i << " ";
     }
-    std::cout << "]"<< std::endl;
+    std::cerr << "]"<< std::endl;
   }
 
   ~QueueMonitor() {
-    std::cout << "### QueueMonitor::~QueueMonitor() -> Joining "
+    std::cerr << "### QueueMonitor::~QueueMonitor() -> Joining "
               << whatAmI << "[" << m_monitorID << "] thread...\n";
     m_stop_thread = true;
     if (m_worker_thread.joinable())
@@ -65,7 +65,7 @@ public:
   // Actually start the thread. Notice Move semantics of thread!
   void startMonitor() {
     whatAmI = "monitor";
-    std::cout << "### QueueMonitor::startMonitor() -> Thread moved and starts as a " << whatAmI << " ...\n";
+    std::cerr << "### QueueMonitor::startMonitor() -> Thread moved and starts as a " << whatAmI << " ...\n";
     m_worker_thread = std::thread(&QueueMonitor::MonitorQueues, this);
   }
 

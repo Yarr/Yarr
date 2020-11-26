@@ -139,6 +139,8 @@ void StarChips::configure() {
 
 	this->writeRegisters();
 
+	// Make histo size match number of configured ABCs
+	geo.nCol = 128 * numABCs();
 }
 
 void StarChips::sendCmd(uint16_t cmd){
@@ -187,7 +189,7 @@ bool StarChips::writeRegisters(){
         int hccId = getHCCchipID();
 
         const auto &hcc_regs = HccStarRegInfo::instance()->hccregisterMap;
-	logger->info("Starting on chip {} with {} registers", hccId, hcc_regs.size());
+	logger->info("Starting on HCC {} with {} registers", hccId, hcc_regs.size());
 
         for(auto &map_iter: hcc_regs) {
               auto addr = map_iter.first;
@@ -203,14 +205,14 @@ bool StarChips::writeRegisters(){
 	eachAbc([&](auto &abc) {
                 int this_chipID = abc.getABCchipID();
 
-                logger->info("Starting on chip {} with {} registers", this_chipID, abc_regs.size());
+                logger->info("Starting on ABC {} with {} registers", this_chipID, abc_regs.size());
 		for(auto &map_iter: abc_regs) {
                         auto addr = map_iter.first;
                         logger->debug("Writing Register {} for chipID {}", addr, this_chipID);
 
                         writeABCRegister(addr, abc);
 		}
-		logger->info("Done with {}", this_chipID);
+		logger->info("Done with ABC {}", this_chipID);
           });
 
 	return true;

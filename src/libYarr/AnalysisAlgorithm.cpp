@@ -27,7 +27,7 @@ AnalysisProcessor::~AnalysisProcessor() {
 
 void AnalysisProcessor::init() {
     for (unsigned i=0; i<algorithms.size(); i++) {
-        algorithms[i]->connect(output);
+        algorithms[i]->connect(output, feedback);
         algorithms[i]->init(scan);
     }
 }
@@ -52,7 +52,6 @@ void AnalysisProcessor::join() {
 void AnalysisProcessor::process() {
     while( true ) {
 
-        std::unique_lock<std::mutex> lk(mtx);
         input->waitNotEmptyOrDone();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(200));

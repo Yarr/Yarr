@@ -17,21 +17,13 @@
 #include <chrono>
 
 #include "ScanBase.h"
-#include "ClipBoard.h"
-#include "DataProcessor.h"
 #include "HistogramBase.h"
+#include "Histo1d.h"
 #include "Histo2d.h"
-#include "GraphErrors.h"
-#include "Fei4Histogrammer.h"
-#include "lmcurve.h"
+#include "Histo3d.h"
 
-#include "Bookkeeper.h"
 #include "FeedbackBase.h"
 
-#include "AllFei4Actions.h"
-#include "AllFe65p2Actions.h"
-#include "AllRd53aActions.h"
-#include "AllStdActions.h"
 #include "AnalysisAlgorithm.h"
 
 class OccupancyAnalysis : public AnalysisAlgorithm {
@@ -73,8 +65,8 @@ class TotAnalysis : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> totInnerCnt;
         std::map<unsigned, std::unique_ptr<Histo2d>> tot2Maps;
         std::map<unsigned, unsigned> tot2InnerCnt;
-        GlobalFeedbackBase *globalFb;
-        PixelFeedbackBase *pixelFb;
+        std::unique_ptr<GlobalFeedbackSender> globalFb;
+        std::unique_ptr<PixelFeedbackSender> pixelFb;
         bool useScap;
         bool useLcap;
         bool hasVcalLoop;
@@ -122,7 +114,7 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::map<unsigned, std::unique_ptr<Histo2d>> statusMap; 
         std::map<unsigned, std::unique_ptr<Histo1d>> statusDist;
 
-        PixelFeedbackBase *fb;
+        std::unique_ptr<PixelFeedbackSender> fb;
         std::map<unsigned, std::unique_ptr<Histo2d>> step;
         std::map<unsigned, std::unique_ptr<Histo2d>> deltaThr;
         unsigned prevOuter;
@@ -152,7 +144,7 @@ class OccGlobalThresholdTune : public AnalysisAlgorithm {
         std::map<unsigned, std::unique_ptr<Histo1d>> occDists;
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;
-        GlobalFeedbackBase *fb;
+        std::unique_ptr<GlobalFeedbackSender> fb;
         LoopActionBase *lb;
 
 };
@@ -176,7 +168,7 @@ class GlobalPreampTune : public AnalysisAlgorithm {
         std::map<unsigned, std::unique_ptr<Histo1d>> occDists;
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;
-        GlobalFeedbackBase *fb;
+        std::unique_ptr<GlobalFeedbackSender> fb;
 
 };
 
@@ -197,7 +189,7 @@ class OccPixelThresholdTune : public AnalysisAlgorithm {
         std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;
-        PixelFeedbackBase *fb;
+        std::unique_ptr<PixelFeedbackSender> fb;
 
 };
 
@@ -268,8 +260,8 @@ class NoiseTuning : public AnalysisAlgorithm {
         unsigned n_count;
         std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
         std::map<unsigned, unsigned> innerCnt;
-        GlobalFeedbackBase *globalFb;
-        PixelFeedbackBase *pixelFb;
+        std::unique_ptr<GlobalFeedbackSender> globalFb;
+        std::unique_ptr<PixelFeedbackSender> pixelFb;
 };
 
 class DelayAnalysis : public AnalysisAlgorithm {

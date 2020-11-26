@@ -1,4 +1,5 @@
 #include "catch.hpp"
+#include <memory>
 
 #include "AllStdActions.h"
 #include "LCBUtils.h"

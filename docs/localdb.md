@@ -9,8 +9,6 @@ Please look at [Local DB Docs](https://localdb-docs.readthedocs.io/en/master/) t
 
 ```bash
 $ cd YARR
-$ git checkout devel
-$ mkdir build && cd build
 $ cmake3 ../
 $ make -j4
 $ make install
@@ -39,26 +37,29 @@ $ ./localdb/setup_db.sh
 ### 3. Confirmation
 
 ```bash
-$./localdb/bin/localdbtool-upload init
-#DB INFO# -----------------------
-#DB INFO# Function: Initialize
-#DB INFO# [Connection Test] DB Server: mongodb://127.0.0.1:27017/localdb
-#DB INFO# ---> Connection is GOOD.
-#DB INFO# -----------------------
-$
-$./localdb/bin/localdbtool-retrieve init
-#DB INFO# -----------------------
-#DB INFO# Function: Initialize
-#DB INFO# [Connection Test] DB Server: mongodb://127.0.0.1:27017/localdb
-#DB INFO# ---> Connection is GOOD.
-#DB INFO# -----------------------
-$
-$./bin/dbAccessor -I
-#DB INFO# -----------------------
-#DB INFO# Function: Initialize
-#DB INFO# Local DB Server: mongodb://127.0.0.1:27017/localdb
-#DB INFO# ---> connection is good.
-#DB INFO# -----------------------
+$ ./localdb//bin/localdbtool-upload init
+[  info  ][   Local DB    ]: ------------------------------
+[  info  ][   Local DB    ]: Function: Initialize upload function and check connection to Local DB
+[  info  ][   Local DB    ]: -> Setting database config: /root/.yarr/localdb/guest0_database.json (default)
+[  info  ][   Local DB    ]: Checking connection to DB Server: mongodb://127.0.0.1:27000/localdb ...
+[  info  ][   Local DB    ]: ---> Good connection!
+[  info  ][   Local DB    ]: ------------------------------
+
+$ ./localdb//bin/localdbtool-retrieve init
+[  info  ][   Local DB    ]: -----------------------
+[  info  ][   Local DB    ]: Function: Initialize
+[  info  ][   Local DB    ]: Checking connection to DB Server: mongodb://127.0.0.1:27000/localdb ...
+[  info  ][   Local DB    ]: ---> Good connection!
+[  info  ][   Local DB    ]: -----------------------
+
+$ ./bin/dbAccessor -N
+[  info  ][  dbAccessor   ]: DBHandler: Check DB Connection
+[  info  ][   Local DB    ]: ------------------------------
+[  info  ][   Local DB    ]: Function: Initialize upload function and check connection to Local DB
+[  info  ][   Local DB    ]: -> Setting database config: /root/.yarr/localdb/guest0_database.json (default)
+[  info  ][   Local DB    ]: Checking connection to DB Server: mongodb://127.0.0.1:27000/localdb ...
+[  info  ][   Local DB    ]: ---> Good connection!
+[  info  ][   Local DB    ]: ------------------------------
 ```
 
 ## Quick Tutorial
@@ -66,93 +67,95 @@ $./bin/dbAccessor -I
 ### Upload
 
 You can scan and upload the test data into Local DB by `scanConsole -W`. <br>
-First please confirm if the default config files are prepared, the commands are enabled, and the connection is established using `setup_db.sh`, <br>
+First please confirm if the default config files are prepared, the commands are enabled, and the connection is established using `setup_db.sh` following [this step](#2-setup-localdb-command),
 and `scanConsole` use `${HOME}/.yarr/localdb/${HOSTNAME}_database.json`, `${HOME}/.yarr/localdb/user.json`, and `${HOME}/.yarr/localdb/${HOSTNAME}_site.json` as default config files.
 
 ```bash
-$ ./localdb/setup_db.sh
-<some texts>
-[LDB] Checking the connection...
-#DB INFO# -----------------------
-#DB INFO# Function: Initialize
-#DB INFO# [Connection Test] DB Server: mongodb://127.0.0.1:27017/localdb
-#DB INFO# ---> Connection is GOOD.
-#DB INFO# -----------------------
-<some texts>
-$
 $ ./bin/scanConsole \
 -r configs/controller/emuCfg.json \
 -c configs/connectivity/example_fei4b_setup.json \
 -s configs/scans/fei4/std_digitalscan.json \
 -W
 <lots of text>
-#DB INFO# -----------------------
-#DB INFO# Function: Initialize
-#DB INFO# Local DB Server: mongodb://127.0.0.1:27017
-#DB INFO# ---> connection is good.
-#DB INFO# -----------------------
-#DB INFO# Uploading in the back ground. (log: ~/.yarr/localdb/log/)
+[  info  ][   Local DB    ]: Succeeded uploading scan data from /home/YARR/data/006237_std_digitalscan
+[  info  ][   Local DB    ]: ------------------------------
 ```
-> [More detail about Upload Tool](https://localdb-docs.readthedocs.io/en/master/upload/)
 
-You can check if the upload is success in log file `${HOME}/.yarr/localdb/log/${day}.log`:
-
-```log
-2019-08-01 10:55:46,821 - INFO: -----------------------
-2019-08-01 10:55:46,821 - INFO: Function: Upload Scan Data
-2019-08-01 10:55:46,823 - INFO: Local DB Server: mongodb://127.0.0.1:27017
-2019-08-01 10:55:46,826 - INFO: ---> connection is good.
-2019-08-01 10:55:46,826 - INFO: Cache Directory: /home/akubata/work/YARR/data/000186_std_digitalscan/
-2019-08-01 10:55:47,058 - INFO: Success
-2019-08-01 10:55:47,060 - INFO: -----------------------
-```
+You can check the log related to Local DB in log file `${HOME}/.yarr/localdb/log/log`:
 
 ### Retrieve
 
-You can check the uploaded test data log by `localdbtool-retrieve log`:
+You can check the uploaded test data log by `dbAccessor -L`:
 
 ```bash
-$ ./localdb/bin/localdbtool-retrieve log
-#DB INFO# -----------------------
-#DB INFO# [Connection Test] DB Server: mongodb://127.0.0.1:27017
-#DB INFO#    The connection is GOOD.
-test data ID: 5d8da5eda45ae057dbd1fbd6
-User      : user at site
-Date      : 2019/09/27 15:02:17
-Chip      : JohnDoe_0
-Run Number: 5635
+$ ./bin/dbAccessor -L
+[  info  ][  dbAccessor   ]: DBHandler: Retrieve Test Log
+[  info  ][   Local DB    ]: -----------------------
+[  info  ][   Local DB    ]: Checking connection to DB Server: mongodb://127.0.0.1:27017/localdb ...
+[  info  ][   Local DB    ]: ---> Good connection!
+[  info  ][   Local DB    ]: -----------------------
+test data ID: 5f4bb2f2a77dc1518b904e5d
+User      : test_user at cern
+Date      : 2020/08/30 23:08:27
+Component : JohnDoe_0, DisabledChip_1
+Run Number: 6236
+Test Type : std_digitalscan
+DCS Data  : NULL
+
+test data ID: 5f4baef2daeb8bb44c258bb4
+User      : test_user at cern
+Date      : 2020/08/30 22:51:22
+Component : JohnDoe_0, DisabledChip_1
+Run Number: 6235
+Test Type : std_digitalscan
+DCS Data  : NULL
+
+test data ID: 5f4baea6e0d2327bd8899c17
+User      : test_user at cern
+Date      : 2020/08/30 22:50:07
+Component : JohnDoe_0, DisabledChip_1
+Run Number: 6234
 Test Type : std_digitalscan
 DCS Data  : NULL
 # Ctrl+C can terminate the output test log
 ```
-> [More detail about Retrieve Tool](https://localdb-docs.readthedocs.io/en/master/retrieve/)
 
-You can retrieve the uploaded data into the local directory by `localdbtool-retrieve pull`:
+You can retrieve the uploaded data into the local directory by `dbAccessor.`:
 
 ```bash
-$ ./localdb/bin/localdbtool-retrieve pull
-#DB INFO# -----------------------
-#DB INFO# [Connection Test] DB Server: mongodb://127.0.0.1:27017
-#DB INFO#    The connection is GOOD.
-#DB INFO# test data ID: 5d8da5eda45ae057dbd1fbd6
-#DB INFO# - User      : user at site
-#DB INFO# - Date      : 2019/09/27 15:02:17
-#DB INFO# - Chips     : JohnDoe_0
-#DB INFO# - Run Number: 5635
-#DB INFO# - Test Type : std_digitalscan
-#DB INFO# Retrieve ... ./db-data/ctrlCfg.json
-#DB INFO# Retrieve ... ./db-data/dbCfg.json
-#DB INFO# Retrieve ... ./db-data/siteCfg.json
-#DB INFO# Retrieve ... ./db-data/userCfg.json
-#DB INFO# Retrieve ... ./db-data/std_digitalscan.json
-#DB INFO# Retrieve ... ./db-data/scanLog.json
-#DB INFO# Retrieve ... ./db-data/JohnDoe_0_EnMask.dat
-#DB INFO# Retrieve ... ./db-data/JohnDoe_0_OccupancyMap.dat
-#DB INFO# Retrieve ... ./db-data/JohnDoe_0_beforeCfg.json
-#DB INFO# Retrieve ... ./db-data/fei4b_test.json
-#DB INFO# Retrieve ... ./db-data/JohnDoe_0_afterCfg.json
-#DB INFO# Retrieve ... ./db-data/connectivity.json
-#DB INFO# -----------------------
+$ ./bin/dbAccessor -D
+[  info  ][  dbAccessor   ]: DBHandler: Retrieve Config Files
+[  info  ][   Local DB    ]: -----------------------
+[  info  ][   Local DB    ]: Checking connection to DB Server: mongodb://127.0.0.1:27017/localdb ...
+[  info  ][   Local DB    ]: ---> Good connection!
+[  info  ][   Local DB    ]: Retrieve/Create data files in ./db-data
+[warning ][   Local DB    ]: Already exist directory: ./db-data.
+
+Override it? [y/n] (Exit without doing anything if "n")
+> y
+
+[  info  ][   Local DB    ]: testRun data ID: 5f4bb2f2a77dc1518b904e5d
+[  info  ][   Local DB    ]: - User      : test_user at cern
+[  info  ][   Local DB    ]: - Date      : 2020/08/30 23:08:27
+[  info  ][   Local DB    ]: - Chips     : JohnDoe_0, DisabledChip_1
+[  info  ][   Local DB    ]: - Run Number: 6236
+[  info  ][   Local DB    ]: - Test Type : std_digitalscan
+[  info  ][   Local DB    ]: - Stage     : ...
+[  info  ][   Local DB    ]: Retrieve ... ./db-data/ctrlCfg.json
+[  info  ][   Local DB    ]: Retrieve ... ./db-data/dbCfg.json
+[  info  ][   Local DB    ]: Retrieve ... ./db-data/siteCfg.json
+[  info  ][   Local DB    ]: Retrieve ... ./db-data/userCfg.json
+[  info  ][   Local DB    ]: Retrieve ... ./db-data/std_digitalscan.json
+[  info  ][   Local DB    ]: Retrieve ... ./db-data/JohnDoe_0_EnMask.json
+[  info  ][   Local DB    ]: Retrieve ... ./db-data/JohnDoe_0_OccupancyMap.json
+[  info  ][   Local DB    ]: Retrieve ... ./db-data/JohnDoe_0_L1Dist.json
+[  info  ][   Local DB    ]: Retrieve ... ./db-data/rd53a_test.json
+[  info  ][   Local DB    ]: Retrieve ... ./db-data/rd53a_test.json.before
+[  info  ][   Local DB    ]: Retrieve ... ./db-data/rd53a_test.json.after
+[  info  ][   Local DB    ]: Retrieve ... ./db-data/connectivity.json
+[  info  ][   Local DB    ]: Retrieve ... ./db-data/scanLog.json
+[warning ][   Local DB    ]: Please confirm "./db-data/connectivity" before running scanConsole.
+[  info  ][   Local DB    ]: -----------------------
 ```
 
 * List of restored data (default dir: `YARR/db_data`)
@@ -172,32 +175,93 @@ You can register the component data and upload test data associated with the reg
 First please prepare connectivity file following [this sample format](https://localdb-docs.readthedocs.io/en/master/config/) and register by `dbAccessor -C -c <component connectivity file> -u <user config file> -i <site config file>`:<br>
 
 ```bash
-$ cd YARR
 $ ./bin/dbAccessor -C -c component.json -u user.json -i site.json
-<some texts>
-Do you continue to upload data into Local DB? [y/n]
-y
-
-#DB INFO# Completed the upload successfuly.
-#DB INFO# -----------------------
+[  info  ][  dbAccessor   ]: DBHandler: Register Component Data
+[  info  ][   Local DB    ]: ------------------------------
+[  info  ][   Local DB    ]: Function: Register component data from specified connectivity file
+[  info  ][   Local DB    ]: Component Config File: component.json
+[  info  ][   Local DB    ]: -> Setting user config: user.json
+[  info  ][   Local DB    ]: -> Setting site config: site.json
+[  info  ][   Local DB    ]: -> Setting database config: database.json (default)
+[  info  ][   Local DB    ]: Checking connection to DB Server: mongodb://127.0.0.1:27017/localdb ...
+[  info  ][   Local DB    ]: ---> Good connection!
+[  info  ][   Local DB    ]: Loading user information ...
+[  info  ][   Local DB    ]: ~~~ {
+[  info  ][   Local DB    ]: ~~~     "name": "Test User",
+[  info  ][   Local DB    ]: ~~~     "institution": "CERN"
+[  info  ][   Local DB    ]: ~~~ }
+[  info  ][   Local DB    ]: Loading site information ...
+[  info  ][   Local DB    ]: ~~~ {
+[  info  ][   Local DB    ]: ~~~     "institution": "CERN"
+[  info  ][   Local DB    ]: ~~~ }
+[  info  ][   Local DB    ]: Component Data:
+[  info  ][   Local DB    ]:     Chip Type: RD53A
+[  info  ][   Local DB    ]:     Module:
+[  info  ][   Local DB    ]:         serial number: RD53A-001
+[  info  ][   Local DB    ]:         component type: Module
+[  info  ][   Local DB    ]:         # of chips: 1
+[  info  ][   Local DB    ]:     Chip (1):
+[  info  ][   Local DB    ]:         serial number: RD53A-001_chip1
+[  info  ][   Local DB    ]:         component type: Front-end Chip
+[  info  ][   Local DB    ]:         chip ID: 0
+[warning ][   Local DB    ]: It will be override with the provided infomation if data already exists in Local DB.
+[warning ][   Local DB    ]: Do you continue to upload data into Local DB? [y/n]
+[warning ][   Local DB    ]: (Please answer Y/y to continue or N/n to exit.)
+[y/n]: y
+[  info  ][   Local DB    ]: Succeeded uploading component data
+[  info  ][   Local DB    ]:
+[  info  ][   Local DB    ]: You can retrieve config files from Local DB by
+[  info  ][   Local DB    ]:     localdbtool-retrieve pull --chip RD53A-001
+[  info  ][   Local DB    ]: ------------------------------
 ```
-> [More detail about Upload Tool](https://localdb-docs.readthedocs.io/en/master/upload/)
 
-After registration, you can retrieve/generate the connectivity config file and the chip config files by `localdb-retrieve pull --chip <SERIAL NUMBER>`.<br>
+After registration, you can retrieve/generate the connectivity config file and the chip config files by `localdb-retrieve pull --chip <SERIAL NUMBER>`:
 
 ```bash
-$ ./localdb/bin/localdb-retrieve pull --chip <SERIAL NUMBER>
-#DB INFO# -----------------------
-#DB INFO# [Connection Test] DB Server: mongodb://127.0.0.1:27017/localdb
-#DB INFO# ---> Connection is GOOD.
-#DB WARNING# Not found test data of the component: <SERIAL NUMBER>
-#DB INFO# component data ID: 5dce77c414dc504d3ad53e80
-#DB INFO# - Name: <SERIAL NUMBER>  Type: RD53A
-#DB INFO# Retrieve ... ./db-data/<SERIAL NUMBER>.json
-#DB INFO# Retrieve ... ./db-data/connectivity.json
-#DB INFO# -----------------------
+$ ./localdb/bin/localdbtool-retrieve pull --chip RD53A-001
+[  info  ][   Local DB    ]: -----------------------
+[  info  ][   Local DB    ]: Checking connection to DB Server: mongodb://127.0.0.1:27017/localdb ...
+[  info  ][   Local DB    ]: ---> Good connection!
+[  info  ][   Local DB    ]: Retrieve/Create data files in ./db-data
+[warning ][   Local DB    ]: Already exist directory: ./db-data.
+
+Override it? [y/n] (Exit without doing anything if "n")
+> y
+
+[  info  ][   Local DB    ]: component data ID: 5f4c8ba810d11528f565e182
+[  info  ][   Local DB    ]: - Parent    : RD53A-001 (module)
+[  info  ][   Local DB    ]: - Chip Type : RD53A
+[  info  ][   Local DB    ]: - Chips     : RD53A-001_chip1
+[  info  ][   Local DB    ]: - Stage     : Testing
+[  info  ][   Local DB    ]: Retrieve ... ./db-data/RD53A-001_chip1.json
+[  info  ][   Local DB    ]: Retrieve ... ./db-data/connectivity.json
+[warning ][   Local DB    ]: Please confirm "./db-data/connectivity" before running scanConsole.
+[  info  ][   Local DB    ]: -----------------------
 ```
-> [More detail about Retrieve Tool](https://localdb-docs.readthedocs.io/en/master/retrieve/)
+
+or `dbAccessor -D -n <SERIALNUMBER>`:
+
+```bash
+./bin/dbAccessor -D -n RD53A-001_chip1
+[  info  ][  dbAccessor   ]: DBHandler: Retrieve Config Files
+[  info  ][   Local DB    ]: -----------------------
+[  info  ][   Local DB    ]: Checking connection to DB Server: mongodb://127.0.0.1:27017/localdb ...
+[  info  ][   Local DB    ]: ---> Good connection!
+[  info  ][   Local DB    ]: Retrieve/Create data files in ./db-data
+[warning ][   Local DB    ]: Already exist directory: ./db-data.
+
+Override it? [y/n] (Exit without doing anything if "n")
+> y
+
+[  info  ][   Local DB    ]: component data ID: 5f4c8ba810d11528f565e183
+[  info  ][   Local DB    ]: - Chip Type : RD53A
+[  info  ][   Local DB    ]: - Chips     : RD53A-001_chip1
+[  info  ][   Local DB    ]: - Stage     : Testing
+[  info  ][   Local DB    ]: Retrieve ... ./db-data/RD53A-001_chip1.json
+[  info  ][   Local DB    ]: Retrieve ... ./db-data/connectivity.json
+[warning ][   Local DB    ]: Please confirm "./db-data/connectivity" before running scanConsole.
+[  info  ][   Local DB    ]: -----------------------
+```
 
 And you can upload test data associated with component data using these config files by `scanConsole`.
 
@@ -210,14 +274,9 @@ $ ./bin/scanConsole \
 -u user.json \
 -i site.json
 <lots of text>
-#DB INFO# -----------------------
-#DB INFO# Function: Initialize
-#DB INFO# Local DB Server: mongodb://127.0.0.1:27017
-#DB INFO# ---> connection is good.
-#DB INFO# -----------------------
-#DB INFO# Uploading in the back ground. (log: ~/.yarr/localdb/log/)
+[  info  ][   Local DB    ]: Succeeded uploading scan data from /home/YARR/data/006237_std_digitalscan
+[  info  ][   Local DB    ]: ------------------------------
 ```
-> [More detail about Upload Tool](https://localdb-docs.readthedocs.io/en/master/upload/)
 
 ### Local DB Tools
 
@@ -243,7 +302,6 @@ $ ./app.py --config conf.yml
 # ---> Access 'http://127.0.0.1:5000/localdb/' or
 #      'http://IPaddress/localdb/' on browser to check data in Local DB
 ```
-> [More detail about Viewer Application](https://localdb-docs.readthedocs.io/en/master/viewer/)
 
 #### Synchronization Tool
 
@@ -255,7 +313,6 @@ $ ./setup_sync_tool.sh
 # 2. Run Tool
 $ ./bin/localdbtool-sync.py --sync-opt <option> --config my_configure.yml
 ```
-> [More detail about Synchronization Tool](https://localdb-docs.readthedocs.io/en/master/sync/)
 
 #### Archive Tool
 
@@ -267,4 +324,3 @@ $ ./setup_archive_tool.sh
 # 2. Run Tool
 $ ./bin/localdbtool-archive.sh --config my_archive_configure.yml
 ```
-> [More detail about Archive Tools](https://localdb-docs.readthedocs.io/en/master/archive/)

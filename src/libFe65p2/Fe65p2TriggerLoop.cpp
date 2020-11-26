@@ -5,8 +5,8 @@
 
 #include "Fe65p2TriggerLoop.h"
 
-Fe65p2TriggerLoop::Fe65p2TriggerLoop() : LoopActionBase() {
-    m_trigCnt = 50; // Maximum numberof triggers to send
+Fe65p2TriggerLoop::Fe65p2TriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
+    setTrigCnt(50); // Maximum numberof triggers to send
     m_trigDelay = 33; // Delay between injection and trigger
     m_trigFreq = 1e3; // 1kHz
     m_trigTime = 10; // 10s
@@ -28,7 +28,7 @@ void Fe65p2TriggerLoop::init() {
     m_done = false;
     g_tx->setTrigConfig(m_trigMode);
     g_tx->setTrigFreq(m_trigFreq);
-    g_tx->setTrigCnt(m_trigCnt);
+    g_tx->setTrigCnt(getTrigCnt());
     g_tx->setTrigWordLength(m_trigWordLength);
     g_tx->setTrigWord(m_trigWord, m_trigWordLength);
     g_tx->setTrigTime(m_trigTime);
@@ -54,16 +54,12 @@ void Fe65p2TriggerLoop::execPart2() {
 }
 
 void Fe65p2TriggerLoop::setTrigCnt(unsigned int cnt) {
-    m_trigCnt = cnt;
-    if (m_trigCnt > 0) {
+    StdTriggerAction::setTrigCnt(cnt);
+    if (cnt > 0) {
         m_trigMode = INT_COUNT;
     } else {
         m_trigMode = INT_TIME;
     }
-}
-
-unsigned int Fe65p2TriggerLoop::getTrigCnt() {
-    return m_trigCnt;
 }
 
 void Fe65p2TriggerLoop::setTrigFreq(double freq) {

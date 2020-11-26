@@ -8,14 +8,16 @@
 
 #include "LoopActionBase.h"
 #include "TxCore.h"
+#include "StdTriggerAction.h"
 #include "Fe65p2.h"
 
-class Fe65p2TriggerLoop : public LoopActionBase {
+class Fe65p2TriggerLoop : public LoopActionBase, public StdTriggerAction {
     public:
         Fe65p2TriggerLoop();
-        
-        void setTrigCnt(unsigned int cnt);
-        unsigned getTrigCnt();
+
+        // Overrides StdTriggerAction, but not virtual
+        void setTrigCnt(uint32_t cnt);
+
         void setTrigFreq(double freq);
         double getTrigFreq();
         void setTrigTime(double time);
@@ -25,7 +27,6 @@ class Fe65p2TriggerLoop : public LoopActionBase {
         void setExtTrigger();
 
     private:
-        unsigned m_trigCnt;
         unsigned m_trigDelay;
         double m_trigFreq;
         double m_trigTime;

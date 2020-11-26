@@ -16,7 +16,7 @@ namespace {
     auto sdllog = logging::make_log("StdDataLoop");
 }
 
-StdDataLoop::StdDataLoop() : LoopActionBase() {
+StdDataLoop::StdDataLoop() : LoopActionBase(LOOP_STYLE_DATA) {
     storage = NULL;
     loopType = typeid(this);
     min = 0;

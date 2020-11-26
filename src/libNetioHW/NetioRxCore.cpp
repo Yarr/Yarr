@@ -43,7 +43,7 @@ NetioRxCore::~NetioRxCore(){
   m_cont=false;
   map<uint64_t,bool>::iterator it;
   for(it=m_elinks.begin();it!=m_elinks.end();it++){
-    cout << "Unsubscribe elink: 0x" << hex << it->first << dec << endl;
+    nlog->debug("Unsubscribe elink: {:x}", it->first);
     m_nioh.delChannel(it->first);
     //FIXME: //m_socket->unsubscribe(it->first, endpoint(m_felixhost,m_felixport));
     //m_sockets[it->first]->unsubscribe(it->first, endpoint(m_felixhost,m_felixport));

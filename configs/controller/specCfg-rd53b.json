@@ -6,9 +6,16 @@
             "spiConfig" : 541200,
             "rxPolarity" : 0,
             "txPolarity" : 0,
-            "autoZero" : {
-                "word" : 1549575846,
+            "pulse" : {
+                "word" : 0,
                 "interval" : 500
+            },
+            "sync" : {
+                "word" : 2172551550,
+                "interval" : 16
+            },
+            "idle" : {
+                "word" : 2863311530
             },
             "cmdPeriod" : 6.25e-9
         }

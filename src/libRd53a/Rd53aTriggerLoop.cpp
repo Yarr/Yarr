@@ -14,8 +14,8 @@ namespace {
   auto logger = logging::make_log("Rd53aTriggerLoop");
 }
 
-Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase() {
-    m_trigCnt = 50;
+Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
+    setTrigCnt(50);
     m_trigDelay = 48;
     m_trigFreq = 1e3;
     m_trigTime = 10;
@@ -104,7 +104,7 @@ void Rd53aTriggerLoop::init() {
         this->setEdgeMode(m_edgeDuration);
     if (m_extTrig) {
         g_tx->setTrigConfig(EXT_TRIGGER);
-    } else if (m_trigCnt > 0) {
+    } else if (getTrigCnt() > 0) {
         g_tx->setTrigConfig(INT_COUNT);
     } else {
         g_tx->setTrigConfig(INT_TIME);
@@ -113,7 +113,7 @@ void Rd53aTriggerLoop::init() {
         setNoInject();
     }
     g_tx->setTrigFreq(m_trigFreq);
-    g_tx->setTrigCnt(m_trigCnt);
+    g_tx->setTrigCnt(getTrigCnt());
     g_tx->setTrigWord(&m_trigWord[0], 32);
     g_tx->setTrigWordLength(m_trigWordLength);
     g_tx->setTrigTime(m_trigTime);
@@ -126,6 +126,7 @@ void Rd53aTriggerLoop::init() {
 void Rd53aTriggerLoop::execPart1() {
     SPDLOG_LOGGER_TRACE(logger, "");
     g_tx->setCmdEnable(keeper->getTxMask());
+    dynamic_cast<HwController*>(g_tx)->runMode();
     auto rd53a = dynamic_cast<Rd53a*>(g_fe);
     rd53a->ecr();
     rd53a->idle();
@@ -151,6 +152,7 @@ void Rd53aTriggerLoop::execPart2() {
     while(!g_tx->isTrigDone());
     // Disable Trigger
     g_tx->setTrigEnable(0x0);
+    dynamic_cast<HwController*>(g_tx)->setupMode();
     m_done = true;
     progress = 1;
 }
@@ -161,7 +163,7 @@ void Rd53aTriggerLoop::end() {
 }
 
 void Rd53aTriggerLoop::writeConfig(json &config) {
-    config["count"] = m_trigCnt;
+    config["count"] = getTrigCnt();
     config["frequency"] = m_trigFreq;
     config["time"] = m_trigTime;
     config["delay"] = m_trigDelay;
@@ -173,7 +175,7 @@ void Rd53aTriggerLoop::writeConfig(json &config) {
 
 void Rd53aTriggerLoop::loadConfig(json &config) {
     if (!config["count"].empty())
-        m_trigCnt = config["count"];
+        setTrigCnt(config["count"]);
     if (!config["frequency"].empty())
         m_trigFreq = config["frequency"];
     if (!config["time"].empty())

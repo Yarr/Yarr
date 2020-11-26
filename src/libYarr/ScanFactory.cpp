@@ -20,13 +20,20 @@ namespace {
     auto sflog = logging::make_log("ScanFactory");
 }
 
-ScanFactory::ScanFactory(Bookkeeper *k) : ScanBase(k) {
+ScanFactory::ScanFactory(Bookkeeper *k, FeedbackClipboardMap *fb)
+  : ScanBase(k), feedback(fb) {
 }
 
 void ScanFactory::init() {
-    // TODO I don't like this, we assume the innermost loops get the data
-    dynamic_cast<StdDataAction*>((this->getLoop(this->size()-1)).get())->connect(g_data);    
-    
+    for(size_t il=0; il<size(); il++) {
+        auto loop = getLoop(il);
+        if(!loop->isDataLoop()) {
+            continue;
+        }
+
+        std::dynamic_pointer_cast<StdDataAction>(loop)->connect(g_data);
+    }
+
     engine.init();
 }
 
@@ -90,6 +97,13 @@ void ScanFactory::loadConfig(json &scanCfg) {
         if (!scanCfg["scan"]["loops"][i]["config"].empty()) {
             sflog->info("   Loading loop config ... ");
             action->loadConfig(scanCfg["scan"]["loops"][i]["config"]);
+        }
+
+        if(auto *fbGlobal = dynamic_cast<GlobalFeedbackReceiver*>(&*action)) {
+            fbGlobal->connectClipboard(feedback);
+        }
+        if(auto *fbPixel = dynamic_cast<PixelFeedbackReceiver*>(&*action)) {
+            fbPixel->connectClipboard(feedback);
         }
         this->addLoop(action);
 

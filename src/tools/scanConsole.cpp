@@ -32,6 +32,7 @@
 #include "AllStdActions.h"
 
 #include "Bookkeeper.h"
+#include "FeedbackBase.h"
 
 // For masking
 #include "Fei4.h"
@@ -57,7 +58,7 @@ void printHelp();
 void listScans();
 void listKnown();
 
-std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie );
+std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie, FeedbackClipboardMap *fbData);
 
 static std::string getHostname() {
   std::string hostname = "default_host";
@@ -79,7 +80,7 @@ static std::string defaultDbDirPath() {
   }
   return home+"/.yarr/localdb";
 }
- 
+
 static std::string defaultDbCfgPath() {
   return defaultDbDirPath()+"/"+getHostname()+"_database.json";
 }
@@ -114,13 +115,15 @@ int main(int argc, char *argv[]) {
     bool dbUse = false;
     std::string dbCfgPath = defaultDbCfgPath();
     std::string dbSiteCfgPath = defaultDbSiteCfgPath();
-    std::string dbUserCfgPath = defaultDbDirPath();
+    std::string dbUserCfgPath = defaultDbUserCfgPath();
+    bool setQCMode = false;
+    bool setInteractiveMode = false;
 
     std::string logCfgPath = "";
-    
+
     int nThreads = 4;
     int c;
-    while ((c = getopt(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:l:")) != -1) {
+    while ((c = getopt(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:l:QI")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
@@ -191,6 +194,12 @@ int main(int argc, char *argv[]) {
             case 'u': // Database config file
                 dbUserCfgPath = std::string(optarg);
                 break;
+            case 'Q':
+                setQCMode = true;
+                break;
+            case 'I':
+                setInteractiveMode = true;
+                break;
             case '?':
                 if(optopt == 's' || optopt == 'n'){
                     spdlog::error("Option {} requires a parameter! (Proceeding with default)", (char)optopt);
@@ -206,7 +215,7 @@ int main(int argc, char *argv[]) {
                 return -1;
         }
     }
-    
+
     spdlog::info("Configuring logger ...");
     if(!logCfgPath.empty()) {
         auto j = ScanHelper::openJsonFile(logCfgPath);
@@ -296,26 +305,6 @@ int main(int argc, char *argv[]) {
     scanLog["targetTot"] = target_tot;
     scanLog["testType"] = strippedScan;
 
-    // Initial setting local DBHandler
-    DBHandler *database = new DBHandler();
-    if (dbUse) {
-        logger->info("\033[1;31m################\033[0m");
-        logger->info("\033[1;31m# Set Database #\033[0m");
-        logger->info("\033[1;31m################\033[0m");
-        logger->info("-> Setting user's information");
-
-        database->initialize(dbCfgPath, argv[0]);
-
-        json dbCfg = ScanHelper::openJsonFile(dbCfgPath);
-        scanLog["dbCfg"] = dbCfg;
-
-        // set/check user config if specified
-        json userCfg = database->setUser(dbUserCfgPath);
-        scanLog["userCfg"] = userCfg;
-        // set/check site config if specified
-        json siteCfg = database->setSite(dbSiteCfgPath);
-        scanLog["siteCfg"] = siteCfg;
-    }
     logger->info("\033[1;31m#################\033[0m");
     logger->info("\033[1;31m# Init Hardware #\033[0m");
     logger->info("\033[1;31m#################\033[0m");
@@ -367,10 +356,21 @@ int main(int argc, char *argv[]) {
         scanLog["connectivity"].push_back(config);
     }
 
+    // Initial setting local DBHandler
+    DBHandler *database = new DBHandler();
     if (dbUse) {
-        logger->info("Setting Connectivity Configs");
-        // set/check connectivity config files
-        database->setConnCfg(cConfigPaths);
+        logger->info("\033[1;31m################\033[0m");
+        logger->info("\033[1;31m# Set Database #\033[0m");
+        logger->info("\033[1;31m################\033[0m");
+        database->initialize(dbCfgPath, argv[0], setQCMode, setInteractiveMode);
+        if (database->checkConfigs(dbUserCfgPath, dbSiteCfgPath, cConfigPaths)==1)
+            return -1;
+        json dbCfg = ScanHelper::openJsonFile(dbCfgPath);
+        scanLog["dbCfg"] = dbCfg;
+        json userCfg = ScanHelper::openJsonFile(dbUserCfgPath);
+        scanLog["userCfg"] = userCfg;
+        json siteCfg = ScanHelper::openJsonFile(dbSiteCfgPath);
+        scanLog["siteCfg"] = siteCfg;
     }
 
     // Reset masks
@@ -421,7 +421,7 @@ int main(int argc, char *argv[]) {
     std::chrono::steady_clock::time_point cfg_end = std::chrono::steady_clock::now();
     logger->info("All FEs configured in {} ms!",
                  std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count());
-    
+
     // Wait for rx to sync with FE stream
     // TODO Check RX sync
     //hwCtrl->checkRxSync(); // As it is implemented in BDAQ, I added it here. Should be harmless to other HWs.
@@ -455,7 +455,7 @@ int main(int argc, char *argv[]) {
         logger->info("Enabling Rx channel {}", channel);
     }
 
-    hwCtrl->runMode();
+    //hwCtrl->runMode();
 
     logger->info("\033[1;31m##############\033[0m");
     logger->info("\033[1;31m# Setup Scan #\033[0m");
@@ -473,10 +473,13 @@ int main(int argc, char *argv[]) {
         cfgFile.close();
     }
 
+    // For sending feedback data
+    FeedbackClipboardMap fbData;
+
     // TODO Make this nice
     std::unique_ptr<ScanBase> s;
     try {
-        s = buildScan(scanType, bookie );
+        s = buildScan(scanType, bookie, &fbData);
     } catch (const char *msg) {
         logger->warn("No scan to run, exiting with msg: {}", msg);
         return 0;
@@ -488,7 +491,8 @@ int main(int argc, char *argv[]) {
 
     // TODO not to use the raw pointer!
     ScanHelper::buildHistogrammers( histogrammers, scanType, bookie.feList, s.get(), outputDir);
-    ScanHelper::buildAnalyses( analyses, scanType, bookie, s.get(), mask_opt);
+    ScanHelper::buildAnalyses( analyses, scanType, bookie, s.get(),
+                               &fbData, mask_opt);
 
     logger->info("Running pre scan!");
     s->init();
@@ -503,7 +507,7 @@ int main(int argc, char *argv[]) {
 
           histogrammers[fe]->init();
           histogrammers[fe]->run();
-          
+
           logger->info(" .. started threads of Fe {}", dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
         }
     }
@@ -537,7 +541,7 @@ int main(int argc, char *argv[]) {
     proc->join();
     std::chrono::steady_clock::time_point processor_done = std::chrono::steady_clock::now();
     logger->info("Processor done, waiting for histogrammer ...");
-    
+
     for (unsigned i=0; i<bookie.feList.size(); i++) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
@@ -549,9 +553,9 @@ int main(int argc, char *argv[]) {
     for( auto& histogrammer : histogrammers ) {
       histogrammer.second->join();
     }
-    
+
     logger->info("Processor done, waiting for analysis ...");
-    
+
     for (unsigned i=0; i<bookie.feList.size(); i++) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
@@ -635,26 +639,28 @@ int main(int argc, char *argv[]) {
             backupCfgFile.close();
 
             // Plot
-            if (doPlots||dbUse) {
-                logger->info("-> Plotting histograms of FE {}", feCfg->getRxChannel());
-                std::string outputDirTmp = outputDir;
-
-                auto &output = *fe->clipResult;
+            // store output results (if any)
+            if(analyses.size()) {
+                logger->info("-> Storing output results of FE {}", feCfg->getRxChannel());
+                auto& output = *fe->clipResult;
                 std::string name = feCfg->getName();
-
                 if (output.empty()) {
                     logger->warn("There were no results for chip {}, this usually means that the chip did not send any data at all.", name);
                 } else {
                     while(!output.empty()) {
-                        std::unique_ptr<HistogramBase> histo = output.popData();
-                        histo->plot(name, outputDirTmp);
+                        auto histo = output.popData();
+                        // only create the image files if asked to
+                        if(doPlots) {
+                            histo->plot(name, outputDir);
+                        }
+                        // always dump the data
                         histo->toFile(name, outputDir);
-                    }
+                    } // while
                 }
             }
-        }
-    }
-    std::string lsCmd = "ls -1 " + dataDir + "last_scan/*.p*";
+        } // fe active
+    } // i
+    std::string lsCmd = "ls -1 " + dataDir + "last_scan/";
     logger->info("Finishing run: {}", runCounter);
     if(doPlots && (system(lsCmd.c_str()) < 0)) {
         logger->info("Find plots in: {}last_scan", dataDir);
@@ -662,7 +668,7 @@ int main(int argc, char *argv[]) {
 
     // Register test info into database
     if (dbUse) {
-        database->cleanUp("scan", outputDir);
+        database->cleanUp("scan", outputDir, false, false);
     }
     delete database;
 
@@ -692,6 +698,8 @@ void printHelp() {
     std::cout << " -i <site.json> : Provide site configuration. (Default " << dbSiteCfgPath << ")" << std::endl;
     std::cout << " -u <user.json> : Provide user configuration. (Default " << dbUserCfgPath << ")" << std::endl;
     std::cout << " -l <log_cfg.json> : Provide logger configuration." << std::endl;
+    std::cout << " -Q: Set QC scan mode." << std::endl;
+    std::cout << " -I: Set interactive mode." << std::endl;
 }
 
 void listChips() {
@@ -744,10 +752,10 @@ void listKnown() {
     logging::listLoggers();
 }
 
-std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie ) {
+std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie,  FeedbackClipboardMap *fbData) {
 
     logger->info("Found Scan config, constructing scan ...");
-    std::unique_ptr<ScanFactory> s ( new ScanFactory(&bookie) );
+    std::unique_ptr<ScanFactory> s ( new ScanFactory(&bookie, fbData) );
     json scanCfg;
     try {
         scanCfg = ScanHelper::openJsonFile(scanType);

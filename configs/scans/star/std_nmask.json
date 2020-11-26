@@ -1,0 +1,53 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "OccupancyAnalysis",
+        "config": {}
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "n_count": 1
+    },
+    "loops": [       
+      {
+        "config": {
+          "nMaskedStripsPerGroup": 1,
+          "nEnabledStripsPerGroup": 1,
+	  "EnabledMaskedShift":1,
+          "doNmask": true,
+          "mask_only": true,
+          "parameter": true,
+          "min": 0,
+          "max": 257,
+          "step": 1
+        },
+        "loopAction": "StarMaskLoop"
+      },
+
+      {
+        "config": {
+          "trig_count": 2,
+          "trig_frequency": 100,
+          "trig_time": 0,
+          "l0_latency": 5,
+          "noInject": true       
+        },
+        "loopAction": "StarTriggerLoop"
+      },
+      {
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "MaskTestScan",
+    "prescan": {
+	"ABCs_PR_ENABLE": 1,
+	"ABCs_TM": 1
+    }
+  }
+}

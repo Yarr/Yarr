@@ -18,14 +18,13 @@
 
 class Histo3d : public HistogramBase {
     public:
+        Histo3d(const std::string &arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh,
+                unsigned arg_ybins, double arg_ylow, double arg_yhigh,
+                unsigned arg_zbins, double arg_zlow, double arg_zhigh);
         Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
                 unsigned arg_ybins, double arg_ylow, double arg_yhigh, 
                 unsigned arg_zbins, double arg_zlow, double arg_zhigh, 
-                std::type_index t);
-        Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
-                unsigned arg_ybins, double arg_ylow, double arg_yhigh, 
-                unsigned arg_zbins, double arg_zlow, double arg_zhigh, 
-                std::type_index t, LoopStatus &stat);
+                const LoopStatus &stat);
         Histo3d(Histo3d *h);
         ~Histo3d();
         
@@ -67,11 +66,15 @@ class Histo3d : public HistogramBase {
         double getNumOfEntries() {return entries;}
 
         
-        void toFile(std::string filename, std::string dir = "", bool header=true);
-        bool fromFile(std::string filename);
-        void plot(std::string filename, std::string dir = "");
+        void toFile(const std::string &filename, const std::string &dir = "", bool header= true) const override;
+        bool fromFile(const std::string &filename);
+        void plot(const std::string &filename, const std::string &dir = "") const override;
 
-    private:
+    void toStream(std::ostream &out) const override;
+
+    void toJson(json &j) const override;
+
+private:
         std::vector<uint16_t > data;
 
         double underflow;

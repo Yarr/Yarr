@@ -18,7 +18,7 @@ namespace {
     auto sdglog = logging::make_log("StdDataGatherer");
 }
 
-StdDataGatherer::StdDataGatherer() : LoopActionBase() {
+StdDataGatherer::StdDataGatherer() : LoopActionBase(LOOP_STYLE_DATA) {
     storage = NULL;
     loopType = typeid(this);
     min = 0;

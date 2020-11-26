@@ -18,14 +18,14 @@ class Fei4ParameterLoop : public LoopActionBase{
         }
 
     public:
-        Fei4ParameterLoop() {
+        Fei4ParameterLoop() : LoopActionBase(LOOP_STYLE_PARAMETER) {
 	  min=0;
 	  max=100;
 	  step=1;
             loopType = typeid(this);
         }
 
-        Fei4ParameterLoop(Fei4Register Fei4GlobalCfg::*ref) : parPtr(ref){ 
+        Fei4ParameterLoop(Fei4Register Fei4GlobalCfg::*ref) : LoopActionBase(LOOP_STYLE_PARAMETER), parPtr(ref) {
 	  min=0;
 	  max=100;
 	  step=1;

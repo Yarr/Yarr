@@ -107,11 +107,12 @@ void SpecDevice::open()
 		
 	handle = ret;
 
-    //if (fcntl(handle, F_GETLK, &filelock))
-    //throw Exception( Exception::LOCK_FAILED );
-    //filelock.l_type = F_RDLCK | F_WRLCK;
-    //if (fcntl(handle, F_SETLK, &filelock))
-	//	throw Exception( Exception::LOCK_FAILED );
+    filelock = {F_WRLCK | F_RDLCK, SEEK_SET,   0,      0,     0 };
+    if (fcntl(handle, F_GETLK, &filelock))
+        throw Exception( Exception::LOCK_FAILED );
+    filelock.l_type = F_RDLCK | F_WRLCK;
+    if (fcntl(handle, F_SETLK, &filelock))
+		throw Exception( Exception::LOCK_FAILED );
 
 }
 
