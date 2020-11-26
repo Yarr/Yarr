@@ -433,7 +433,8 @@ int main(int argc, char *argv[]) {
         hwCtrl->setRxEnable(feCfg->getRxChannel());
         hwCtrl->checkRxSync(); // Should be done per fe (Aurora link) and after setRxEnable().
         // Configure
-        /*if (fe->checkCom() != 1) {
+        // USERK decoding in TEMPORARILY disabled in BdaqRxCore. Not supposed to be merged.
+        /*if (fe->checkCom() != 1) { 
             logger->critical("Can't establish communication, aborting!");
             return -1;
         }*/
