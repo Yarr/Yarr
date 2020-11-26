@@ -20,19 +20,24 @@ class ItsdaqPrivate {
 public:
   ItsdaqPrivate(uint32_t remote_IP,
                 uint16_t srcPort, uint16_t dstPort)
-    : sock(remote_IP, srcPort, dstPort)
+    : sock(remote_IP, srcPort, dstPort),
+      running(true)
   {
+    receiver = std::thread( [&] () { ReceiverMain(); });
   }
 
   ~ItsdaqPrivate();
 
   UdpSocket sock;
+
+  std::unique_ptr<RawData> GetData();
+
+private:
   std::thread receiver;
   std::atomic<bool> running;
 
   ClipBoard<RawData> rawData;
 
-  std::unique_ptr<RawData> GetData();
   void QueueData(uint16_t *start, size_t len);
   void ReceiverMain();
 };
@@ -41,8 +46,6 @@ ItsdaqHandler::ItsdaqHandler(uint32_t remote_IP,
                              uint16_t srcPort, uint16_t dstPort) :
   priv(new ItsdaqPrivate(remote_IP, srcPort, dstPort))
 {
-  running = true;
-  priv->receiver = std::thread( [&] () { priv->ReceiverMain(); });
 }
 
 ItsdaqHandler::~ItsdaqHandler() {
