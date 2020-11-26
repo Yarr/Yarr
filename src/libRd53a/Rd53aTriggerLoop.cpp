@@ -135,7 +135,6 @@ void Rd53aTriggerLoop::execPart1() {
     rd53a->idle();
     // AZ level for sync FE 
     if (g_tx->getSoftwareAZ()) {
-        // m_chipId is not available here, using "8" (broadcast) instead 
         rd53a->globalPulse(8, m_pulseDuration);
     }
     std::this_thread::sleep_for(std::chrono::microseconds(200));
@@ -192,6 +191,7 @@ void Rd53aTriggerLoop::loadConfig(json &config) {
         m_trigMultiplier = config["trigMultiplier"];
     if (!config["sendEcr"].empty())
         m_sendEcr = config["sendEcr"];
-    //this->setTrigDelay(m_trigDelay); // Removing it from here makes "g_tx" reachable inside setTrigDelay() and
-                                       // it doesn't seem necessary here, because it's called in Rd53aTriggerLoop::init()
+    //this->setTrigDelay(m_trigDelay); // Removing it from here makes "g_tx" reachable inside setTrigDelay().
+                                       // Otherwise, "g_tx" is accessed before being created: crash
+                                       // Also, it doesn't seem necessary here, because it's called in Rd53aTriggerLoop::init()
 }
