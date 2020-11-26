@@ -79,7 +79,7 @@ void Bdaq::initialize(bdaqConfig c) {
 	//Reset BdaqDriver (command TX)
 	cmd.reset();
 	//Setting BdaqDriver to RD53A
-	setChipTypeRD53A(); // Gotta move it to YARR code
+	setChipTypeRD53A(); // Move it to "main" code, when "rd53b_devel" is merged
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	//Configure the Aurora link
 	waitForPllLock();
