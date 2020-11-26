@@ -33,6 +33,9 @@
         "loopAction": "StdParameterLoop"
       },
       {
+        "loopAction": "StarTriggerLoop"
+      },
+      {
         "loopAction": "StdDataLoop"
       }
     ],

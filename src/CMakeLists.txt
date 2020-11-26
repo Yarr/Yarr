@@ -34,7 +34,7 @@ set(YARR_ALL_FRONT_ENDS
     Fe65p2 Fei4 Rd53a Star)
 
 set(YARR_ALL_CONTROLLERS
-    Spec Emu Rce Boc KU040 Rogue NetioHW Bdaq)
+    Spec Emu Rce Boc KU040 Rogue NetioHW Bdaq Itsdaq)
 
 if( YARR_FRONT_ENDS_TO_BUILD STREQUAL "all" )
   set( YARR_FRONT_ENDS_TO_BUILD ${YARR_ALL_FRONT_ENDS} )
