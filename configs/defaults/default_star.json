@@ -1,5 +1,5 @@
 {
-    "name": "Barrel Hybrid Example",
+    "name": "Barrel_Hybrid_Example",
     "HCC": {
         "ID": 0,
 
@@ -39,7 +39,7 @@
             "CREG0": "00000700",
             "CREG1": "00000004",
             "CREG2": "41800003",
-            "CREG3": "00042000",
+            "CREG3": "00002000",
             "CREG4": "00000000",
             "CREG6": "00000086"
         },

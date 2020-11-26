@@ -5,7 +5,10 @@
               "algorithm": "TotAnalysis"
 	  },
 	  "1": {
-              "algorithm": "OccupancyAnalysis"
+              "algorithm": "OccupancyAnalysis",
+			  "config": {
+			  "createMask": false
+        }
 	  },
 	  "2": {
               "algorithm": "TotAnalysis"	    

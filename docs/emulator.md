@@ -132,3 +132,144 @@ The pixel ToT as function of extra charge above threshold is studied in the foll
 
 # RD53B emulator
 Does not exist yet.
+
+# Star emulator
+The Star emulator emulates HCCStar and ABCStar front-end ASICs for
+Strips.
+More information about the Star emulator can be found in:
+https://cernbox.cern.ch/index.php/s/shnadHRkX8g4ASY.
+
+## Usage
+To use the Star emulator, set `"type"` in the controller config to
+`"emu_Star"`, and run `bin/scanConsole` or
+`bin/star_test` using this controller config.
+
+An example of the Star emulator controller config is provided in "configs/controller/emuCfg_star.json":
+```json
+{
+    "ctrlCfg" : {
+        "type" : "emu_Star",
+        "cfg" : {
+            "hprPeriod" : 40000,
+            "feCfg" : "configs/emulator/emu_fe0_star.json",
+            "chipCfg" : "config/connectivity/example_star_setup.json"
+        }
+    }
+}
+```
+The "cfg" field of the Star emulator config takes three paramters:
+
+- `"hprPeriod"` : HPR packet transmission period in the unit of number
+of bunch crossings. (Default: 40000)
+- `"feCfg"` : Path to the configuration file for the analog front-end model used in the
+  emulator. It sets the parameters for modeling the front-end
+  threshold and noise level. A dummy example is provided in
+  "configs/emulator/emu_fe0_star.json"
+- `"chipCfg"` : Path to the configuration file for chip setup. This
+  config file is expected to follow the same format and syntax as the
+  connectivity config file described in the
+  [ScanConsole](scanconsole.md) documentation.
+
+Note that the above example configures the Star emulator to use
+channel 0 for tx and channel 0 for rx.
+In order to get non-empty output when running `bin/star_test`, the rx
+channel 0 needs to be enabled via the argument `-r` (by default, rx
+channel 6 is enabled):
+```bash
+$ bin/star_test -r 0 configs/controller/emuCfg_star.json
+```
+Similarly, to use the example controller config with `bin/scanConsole`,
+the connectivity config specified by `-c` needs to be compatible with the channels
+in the controller config. For example:
+```bash
+$ bin/scanConsole -r configs/controller/emuCfg_star.json -c config/connectivity/example_star_setup.json -s <scan config>
+```
+
+The tx and rx channels for the Star emulator are configured via the
+field `"chipCfg"` of the controller config. See more details below.
+
+### Emulated Chip Configuration
+The chip config file specified by the `"chipCfg"` field in the
+controller config contains the chip type (in case of the Star emulator,
+this should always be `"Star"`) and a list of chips with their
+register configuration, tx and rx channels, etc.
+Below is an example of the Star chip config ("config/connectivity/example_star_setup.json"):
+```json
+{
+    "chipType" : "Star",
+    "chips" : [
+        {
+            "config" : "configs/defaults/default_star.json",
+            "tx" :  0,
+            "rx" : 0,
+            "enable" : 1,
+            "locked" : 1
+        }
+    ]
+}
+```
+In this example, there is one HCCStar chip. It uses tx channel 0
+for commands and rx channel 0 for packet transmission.
+Register contents of the HCCStar, as well as the ABCStar chips that connect
+to it, are configured based on "configs/defaults/default_star.json" as
+specified in the filed `"config"`.
+
+#### Configuration for multiple HCCStars
+To set up multiple HCCStar chips running in same or different
+communication channels, simply add more entries in the `"chips"` array
+and specify their tx and rx channels.
+For example:
+```json
+{
+    "chipType" : "Star",
+    "chips" : [
+        {
+            "tx" : 1,
+            "rx" : 2,
+            ...
+        },
+        {
+            "tx" : 1,
+            "rx" : 2,
+            ...
+        },
+        {
+            "tx" : 1,
+            "rx" : 3,
+            ...
+        },
+        {
+            "tx" : 4,
+            "rx" : 5,
+            ...
+        }
+    ]
+}
+```
+In the above example, four HCCStars are configured.
+The first three HCCStars share the same tx channel 1. The first and
+second HCCStars also share the same rx channel 2, while the third one
+uses a separate rx channel 3. The fourth HCCStar uses a different tx
+channel 4 and a different rx channel 5.
+
+#### Configuration for the multi-level trigger mode
+To run the Star emulator in the multi-level trigger mode, a second tx
+channel per FE needs to be set up for R3L1 commands.
+This can be achieved by adding a `"tx2"` for each `"tx"` in the
+chip configuration.
+For example:
+```json
+{
+    "chipType" : "Star",
+    "chips" : [
+        {
+            "tx" : 0,
+            "tx2" : 1,
+            "rx" : 2,
+            ...
+        }
+    ]
+}
+```
+In the above case, the tx channel 0 is used for LCB, and the tx
+channel 1 is used for R3L1 commands.

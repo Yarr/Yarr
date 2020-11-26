@@ -112,6 +112,10 @@ void Rd53a::configureInit() {
     this->globalPulse(m_chipId, 8);
     while(!core->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    //Sync frames required by BDAQ
+    for (int i=0;i<32;++i)
+        this->sync();
+    while(!core->isCmdEmpty()){;}
     this->writeRegister(&Rd53a::GlobalPulseRt, 0x4100); //activate monitor and prime sync FE AZ
     while(!core->isCmdEmpty()){;}
     this->globalPulse(m_chipId, 8);
@@ -258,6 +262,8 @@ int Rd53a::checkCom() {
     uint32_t regAddr = 21;
     uint32_t regValue = m_cfg[regAddr];
     rdRegister(m_chipId, regAddr);
+    while(!core->isCmdEmpty()){;} // Required by the rdRegister() above 
+                                  // (when relying on isCmdEmpty() to actually send commands).
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     
     // TODO not happy about this, rx knowledge should not be here

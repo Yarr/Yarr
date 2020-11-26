@@ -2,3 +2,8 @@
 *#
 *.swp
 *.swo
+
+bin/
+build/
+data/
+offline/

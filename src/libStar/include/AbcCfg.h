@@ -49,6 +49,7 @@ class ABCStarRegister : public ABCStarRegs {
     ABCStarRegister(const ABCStarRegs & other) : ABCStarRegs::ABCStarRegs(other) {}
     ABCStarRegister(const ABCStarRegs::_enumerated & other) : ABCStarRegs::ABCStarRegs(other) {}
     static  ABCStarRegister MaskInput(int i) { return ABCStarRegs::_from_integral((int)(ABCStarRegs::MaskInput0) + i);}
+    static  ABCStarRegister CalReg(int i) { return ABCStarRegs::_from_integral((int)(ABCStarRegs::CalREG0) + i);}
     /// 32 registers containing lo 4 bits of trim
     static  ABCStarRegister TrimLo(int i) { return ABCStarRegs::_from_integral((int)(ABCStarRegs::TrimDAC0) + i);}
     /// 8 registers containing hi 1 bits of trim
@@ -119,7 +120,7 @@ class AbcCfg {
             reg.getSubRegister(info).updateValue(value);
         }
 
-        uint32_t getSubRegisterValue(std::string subRegName) {
+        uint32_t getSubRegisterValue(std::string subRegName) const {
             auto info = m_info->abcSubRegisterMap_all[ABCStarSubRegister::_from_string(subRegName.c_str())];
             auto &reg = getRegister(info->m_regAddress);
             return reg.getSubRegister(info).getValue();

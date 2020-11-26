@@ -82,7 +82,7 @@ void NetioHandler::configureMonitors(size_t sensitivity, size_t delay) {
   {
     case single:
       {
-        std::cout << "###  -> 1 Monitor per single elink mode.\n";
+        nlog->debug("###  -> 1 Monitor per single elink mode.");
         for (uint32_t i=0; i<m_activeChannels; ++i) {
           m_monitor_config_dynamic.insert( std::pair<uint32_t, std::vector<uint64_t>>(i, {m_channels[i]}) );
           m_monitors.emplace_back( QueueMonitor(i, std::ref(m_monitor_config_dynamic[i]), m_pcqs, m_sensitivity, m_delay) );
@@ -92,7 +92,7 @@ void NetioHandler::configureMonitors(size_t sensitivity, size_t delay) {
     case dual:
       {
         //if (m_activeChannels/2 != 0) { std::cout << "### ERROR -> Active channels number are not the "}
-        std::cout << "###  -> 1 Monitor per 2 elink mode.\n";
+        nlog->debug("###  -> 1 Monitor per 2 elink mode.");
         for (uint32_t i=0; i<m_activeChannels; i=i+2) {
           m_monitor_config_dynamic.insert( std::pair<uint32_t, std::vector<uint64_t>>(i/2, {m_channels[i], m_channels[i+1]}) );
           m_monitors.emplace_back( QueueMonitor(i/2, std::ref(m_monitor_config_dynamic[i/2]), m_pcqs, m_sensitivity, m_delay) );
@@ -102,7 +102,7 @@ void NetioHandler::configureMonitors(size_t sensitivity, size_t delay) {
     case quad:
       {
         //if (m_activeChannels/2 != 0) { std::cout << "### ERROR -> Active channels number are not the "}
-        std::cout << "###  -> 1 Monitor per 4 elink mode.\n";
+        nlog->debug("###  -> 1 Monitor per 4 elink mode.");
         for (uint32_t i=0; i<m_activeChannels; i=i+4) {
           m_monitor_config_dynamic.insert( std::pair<uint32_t, std::vector<uint64_t>>(i/4, {m_channels[i], m_channels[i+1], m_channels[i+2], m_channels[i+3]}) );
           m_monitors.emplace_back( QueueMonitor(i/4, std::ref(m_monitor_config_dynamic[i/4]), m_pcqs, m_sensitivity, m_delay) );
@@ -119,7 +119,7 @@ void NetioHandler::startChecking(){
 }
 
 void NetioHandler::stopChecking(){
-  std::cout << "### NetioHandler -> DON'T CALL stopChecking() for monitors!\n";
+  nlog->warn("### NetioHandler -> DON'T CALL stopChecking() for monitors!");
 }
 
 bool NetioHandler::isStable(size_t monitorID) {
@@ -159,7 +159,7 @@ int NetioHandler::getDataCount() {
 void NetioHandler::addChannel(uint64_t chn){
 
   m_channels.push_back(chn);
-  std::cout << "### NetioHandler -> Adding channel: " << chn << '\n';
+  nlog->info("### NetioHandler -> Adding channel: {}");
   m_pcqs[chn] = std::make_shared<FollyQueue>(m_queueSize);
 
   m_msgErrors[chn] = 0;
@@ -200,7 +200,7 @@ void NetioHandler::addChannel(uint64_t chn){
 
 	  
 	  if((offset+4*numWords) != msg_size && m_feType == "rd53a") // this is rd53a specific; there may need to be a similar thing for strips
-		std::cout<<"\nWARNING: the message size is not compatible with RD53A data format.\n";
+		nlog->warn("WARNING: the message size is not compatible with RD53A data format.");
 
 	  if(numWords==0)
 		return;
@@ -209,7 +209,7 @@ void NetioHandler::addChannel(uint64_t chn){
 	  memcpy(buffer, (uint32_t *)&data[offset], numWords*4);
 
 	  //Sasha: print out the data
-	  printf("msg size: %d \n", numWords);
+	  nlog->debug("msg size: {}", numWords);
           //for(uint32_t i=0; i<numRd53AWords; i++ ) { //&&  i < 13; ++i) {
 	  //      printf("event number: %i ", event_number);
           //	printf("%08x ", buffer[i]); 
@@ -224,7 +224,7 @@ void NetioHandler::addChannel(uint64_t chn){
 
           ++handlerDataCount;
         } else  { 
-        	std::cerr << "WARNING: NetIO message is shorter than "<<my_headersize<<" bytes. It is  " << data.size() << " bytes."<< std::endl;
+        	nlog->warn("WARNING: NetIO message is shorter than {} bytes. It is {} bytes.", my_headersize, data.size());
           	//m_msgErrors[cid]++;
 		return;
         }
@@ -235,7 +235,7 @@ void NetioHandler::addChannel(uint64_t chn){
     m_sub_sockets[chn]->subscribe(chn, netio::endpoint(m_felixHost, m_felixRXPort));
     //std::cout << "Should be subscribed to " << m_felixHost << ":" << m_felixRXPort << std::endl;
   } catch(...) {
-    std::cerr << "### NetioHandler::addChannel(" << chn << ") -> ERROR. Failed to activate channel.\n";
+    nlog->error("### NetioHandler::addChannel({}) -> ERROR. Failed to activate channel.", chn);
     return;
   }
   nlog->debug("### NetioHandler::addChannel({}) -> Success. Queue and socket-pair created, subscribed.", chn);
@@ -255,7 +255,7 @@ void NetioHandler::delChannel(uint64_t chn){
     nlog->debug("### NetioHandler::delChannel({}) -> unsubscribe", chn);
     m_channels.erase(it);
     //SHIT: please do not unsubscribe: because felixcore/netio doesn't like it
-    //m_sub_sockets[chn]->unsubscribe(chn, netio::endpoint(m_felixHost, m_felixRXPort));
+    m_sub_sockets[chn]->unsubscribe(chn, netio::endpoint(m_felixHost, m_felixRXPort));
     delete m_send_sockets[chn];
     delete m_sub_sockets[chn];
     m_send_sockets.erase(chn);

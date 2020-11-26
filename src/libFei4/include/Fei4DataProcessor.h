@@ -17,7 +17,6 @@
 #include "DataProcessor.h"
 #include "ClipBoard.h"
 #include "RawData.h"
-#include "Fei4EventData.h"
 
 class Fei4DataProcessor : public DataProcessor {
     public:

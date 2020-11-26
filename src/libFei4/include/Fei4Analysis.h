@@ -17,21 +17,13 @@
 #include <chrono>
 
 #include "ScanBase.h"
-#include "ClipBoard.h"
-#include "DataProcessor.h"
 #include "HistogramBase.h"
+#include "Histo1d.h"
 #include "Histo2d.h"
-#include "GraphErrors.h"
-#include "Fei4Histogrammer.h"
-#include "lmcurve.h"
+#include "Histo3d.h"
 
-#include "Bookkeeper.h"
 #include "FeedbackBase.h"
 
-#include "AllFei4Actions.h"
-#include "AllFe65p2Actions.h"
-#include "AllRd53aActions.h"
-#include "AllStdActions.h"
 #include "AnalysisAlgorithm.h"
 
 class OccupancyAnalysis : public AnalysisAlgorithm {

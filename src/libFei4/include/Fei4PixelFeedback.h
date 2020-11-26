@@ -24,10 +24,10 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
     }
 
     public:
-        Fei4PixelFeedback() : LoopActionBase(){
+        Fei4PixelFeedback() : LoopActionBase(LOOP_STYLE_PIXEL_FEEDBACK) {
             loopType = typeid(this);
         }
-        Fei4PixelFeedback(enum FeedbackType type) : LoopActionBase(){
+        Fei4PixelFeedback(enum FeedbackType type) : LoopActionBase(LOOP_STYLE_PIXEL_FEEDBACK) {
             fbType = type;
             switch (fbType) {
                 case (TDAC_FB):

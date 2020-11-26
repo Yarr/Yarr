@@ -16,7 +16,7 @@
 
 #include "DataProcessor.h"
 #include "ClipBoard.h"
-#include "Fei4EventData.h"
+#include "EventData.h"
 #include "HistogramAlgorithm.h"
 #include "HistogramBase.h"
 #include "Histo1d.h"
@@ -34,8 +34,8 @@ class DataArchiver : public HistogramAlgorithm {
             fileHandle.close();
         }
 
-        void create(LoopStatus &stat) override {}
-        void processEvent(Fei4Data *data) override;
+        void create(const LoopStatus &stat) override {}
+        void processEvent(FrontEndData *data) override;
     private:
         std::fstream fileHandle;
 };
@@ -49,7 +49,7 @@ class OccupancyMap : public HistogramAlgorithm {
         ~OccupancyMap() {
         }
         
-        void create(LoopStatus &stat) override {
+        void create(const LoopStatus &stat) override {
             h = new Histo2d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, stat);
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
@@ -57,9 +57,9 @@ class OccupancyMap : public HistogramAlgorithm {
             r.reset(h);
         }
         
-        void processEvent(Fei4Data *data) override;
+        void processEvent(FrontEndData *data) override;
 
-        static std::string outputName() { return "OccupancyMap"; }
+        static const std::string outputName()  { return "OccupancyMap"; }
     private:
         Histo2d *h;
 };
@@ -73,7 +73,7 @@ class TotMap : public HistogramAlgorithm {
         ~TotMap() {
         }
 
-        void create(LoopStatus &stat) override {
+        void create(const LoopStatus &stat) override {
             h = new Histo2d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, stat);
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
@@ -81,7 +81,7 @@ class TotMap : public HistogramAlgorithm {
             r.reset(h);
         }
 
-        void processEvent(Fei4Data *data) override;
+        void processEvent(FrontEndData *data) override;
 
         static std::string outputName() { return "TotMap"; }
     private:
@@ -95,7 +95,7 @@ class Tot2Map : public HistogramAlgorithm {
         ~Tot2Map() {
         }
 
-        void create(LoopStatus &stat) override {
+        void create(const LoopStatus &stat) override {
             h = new Histo2d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, stat);
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
@@ -103,7 +103,7 @@ class Tot2Map : public HistogramAlgorithm {
             r.reset(h);
         }
 
-        void processEvent(Fei4Data *data) override;
+        void processEvent(FrontEndData *data) override;
 
         static std::string outputName() { return "Tot2Map"; }
     private:
@@ -117,14 +117,14 @@ class TotDist : public HistogramAlgorithm {
         ~TotDist() {
         }
 
-        void create(LoopStatus &stat) override {
+        void create(const LoopStatus &stat) override {
             h = new Histo1d(outputName(), 16, 0.5, 16.5, stat);
             h->setXaxisTitle("ToT [bc]");
             h->setYaxisTitle("# of Hits");
             r.reset(h);
         }
 
-        void processEvent(Fei4Data *data) override;
+        void processEvent(FrontEndData *data) override;
 
         static std::string outputName() { return "TotDist"; }
     private:
@@ -140,7 +140,7 @@ class Tot3d : public HistogramAlgorithm {
         ~Tot3d() {
         }
 
-        void create(LoopStatus &stat) override {
+        void create(const LoopStatus &stat) override {
             h = new Histo3d("Tot3d", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, 16, 0.5, 16.5, stat);
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
@@ -148,7 +148,7 @@ class Tot3d : public HistogramAlgorithm {
             r.reset(h);
         }
 
-        void processEvent(Fei4Data *data) override;
+        void processEvent(FrontEndData *data) override;
     private:
         Histo3d *h;
 };
@@ -164,7 +164,7 @@ class L1Dist : public HistogramAlgorithm {
         ~L1Dist() {
         }
 
-        void create(LoopStatus &stat) override {
+        void create(const LoopStatus &stat) override {
             h = new Histo1d(outputName(), 16, -0.5, 15.5, stat);
             h->setXaxisTitle("L1A");
             h->setYaxisTitle("Hits");
@@ -173,7 +173,7 @@ class L1Dist : public HistogramAlgorithm {
             bcid_offset = 0;
         }
 
-        void processEvent(Fei4Data *data) override;
+        void processEvent(FrontEndData *data) override;
 
         static std::string outputName() { return "L1Dist"; }
     private:
@@ -193,7 +193,7 @@ class L13d : public HistogramAlgorithm {
         ~L13d() {
         }
 
-        void create(LoopStatus &stat) override {
+        void create(const LoopStatus &stat) override {
             h = new Histo3d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, 16, -0.5, 15.5, stat);
             h->setXaxisTitle("Column");
             h->setYaxisTitle("Row");
@@ -203,7 +203,7 @@ class L13d : public HistogramAlgorithm {
             bcid_offset = 0;
         }
 
-        void processEvent(Fei4Data *data) override;
+        void processEvent(FrontEndData *data) override;
 
         static std::string outputName() { return "L13d"; }
     private:
@@ -223,14 +223,14 @@ class HitsPerEvent : public HistogramAlgorithm {
         ~HitsPerEvent() {
         }
 
-        void create(LoopStatus &stat) override {
+        void create(const LoopStatus &stat) override {
             h = new Histo1d(outputName(), 16, -0.5, 15.5, stat);
             h->setXaxisTitle("Number of Hits");
             h->setYaxisTitle("Events");
             r.reset(h);
         }
 
-        void processEvent(Fei4Data *data) override;
+        void processEvent(FrontEndData *data) override;
 
         static std::string outputName() { return "HitDist"; }
     private:

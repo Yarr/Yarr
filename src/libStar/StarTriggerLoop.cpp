@@ -12,9 +12,9 @@ namespace {
     auto logger = logging::make_log("StarTriggerLoop");
 }
 
-StarTriggerLoop::StarTriggerLoop() : LoopActionBase() {
+StarTriggerLoop::StarTriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
 
-	m_trigCnt = 50; // Maximum number of triggers to send
+	setTrigCnt(50); // Maximum number of triggers to send
 	m_trigDelay = 45; // L0_delay 34
 	m_trigFreq = 1e3; // 1kHz
 	m_trigTime = 10; // 10s
@@ -31,7 +31,7 @@ void StarTriggerLoop::init() {
 	// Setup Trigger
 	this->setTrigWord();
 
-	if (m_trigCnt > 0) {
+	if (getTrigCnt() > 0) {
 		g_tx->setTrigConfig(INT_COUNT); //use internal charge injection
 	} else {
 		g_tx->setTrigConfig(INT_TIME);  //external trigger
@@ -41,7 +41,7 @@ void StarTriggerLoop::init() {
 	}
 
 	g_tx->setTrigFreq(m_trigFreq);
-	g_tx->setTrigCnt(m_trigCnt);
+	g_tx->setTrigCnt(getTrigCnt());
     g_tx->setTrigWord(&m_trigWord[0], m_trigWordLength);
     g_tx->setTrigWordLength(m_trigWordLength);
 	g_tx->setTrigTime(m_trigTime);
@@ -126,7 +126,7 @@ void StarTriggerLoop::setNoInject() {
 
 
 void StarTriggerLoop::writeConfig(json &config) {
-	config["trig_count"] = m_trigCnt;
+	config["trig_count"] = getTrigCnt();
 	config["trig_frequency"] = m_trigFreq;
 	config["trig_time"] = m_trigTime;
 	config["l0_latency"] = m_trigDelay;
@@ -136,7 +136,7 @@ void StarTriggerLoop::writeConfig(json &config) {
 void StarTriggerLoop::loadConfig(json &config) {
 
 	if (!config["trig_count"].empty())
-		m_trigCnt = config["trig_count"];
+		setTrigCnt(config["trig_count"]);
 
 	if (!config["trig_frequency"].empty())
 		m_trigFreq = config["trig_frequency"];
@@ -151,7 +151,7 @@ void StarTriggerLoop::loadConfig(json &config) {
 		m_noInject = config["noInject"];
 
 	logger->info("Configured trigger loop: trig_count: {} trig_frequency: {} l0_delay: {}",
-                      m_trigCnt, m_trigFreq, m_trigDelay);
+                      getTrigCnt(), m_trigFreq, m_trigDelay);
 }
 
 

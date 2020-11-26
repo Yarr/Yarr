@@ -5,7 +5,7 @@
 
 #include "Fe65p2QcLoop.h"
 
-Fe65p2QcLoop::Fe65p2QcLoop() {
+Fe65p2QcLoop::Fe65p2QcLoop() : LoopActionBase(LOOP_STYLE_MASK) {
     m_mask = 0x0101;
     min = 0;
     max = 8;

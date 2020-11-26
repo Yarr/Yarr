@@ -9,6 +9,11 @@
 #include "Fei4Analysis.h"
 
 #include "AllAnalyses.h"
+#include "Bookkeeper.h"
+#include "Fei4Histogrammer.h"
+#include "Fei4MaskLoop.h"
+#include "StdTriggerAction.h"
+#include "lmcurve.h"
 
 #include "logging.h"
 
@@ -60,16 +65,7 @@ void OccupancyAnalysis::init(ScanBase *s) {
     injections = 0;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ((l->type() != typeid(Fei4TriggerLoop*) &&
-                    l->type() != typeid(Rd53aMaskLoop*) &&
-                    l->type() != typeid(Rd53aTriggerLoop*) &&
-                    l->type() != typeid(Rd53aCoreColLoop*) &&
-                    l->type() != typeid(Fe65p2MaskLoop*) &&
-                    l->type() != typeid(Fe65p2TriggerLoop*) &&
-                    l->type() != typeid(Fe65p2QcLoop*) &&
-                    l->type() != typeid(Fei4MaskLoop*) &&
-                    l->type() != typeid(StdDataLoop*) &&
-                    l->type() != typeid(Fei4DcLoop*))) {
+        if (!(l->isMaskLoop() || l->isTriggerLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -78,17 +74,13 @@ void OccupancyAnalysis::init(ScanBase *s) {
                 cnt = 1;
             n_count = n_count*cnt;
         }
-        if (l->type() == typeid(Fei4TriggerLoop*)) {
-            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
-            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-        if (l->type() == typeid(Rd53aTriggerLoop*)) {
-            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
+        if (l->isTriggerLoop()) {
+            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            if(trigLoop == nullptr) {
+                alog->error("OccupancyAnalysis: loop declared as trigger loop, does not have a trigger count");
+            } else {
+                injections = trigLoop->getTrigCnt();
+            }
         }
     }
 }
@@ -157,10 +149,6 @@ void OccupancyAnalysis::loadConfig(json &j){
 }
 
 void TotAnalysis::init(ScanBase *s) {
-    std::shared_ptr<LoopActionBase> tmpVcalLoop(new Fei4ParameterLoop(&Fei4::PlsrDAC));
-    std::shared_ptr<LoopActionBase> tmpVcalLoop2(new Fe65p2ParameterLoop(&Fe65p2::PlsrDac));
-    std::shared_ptr<LoopActionBase> tmpVcalLoop3(new Rd53aParameterLoop());
-
     useScap = true;
     useLcap = true;
     n_count = 1;
@@ -170,16 +158,7 @@ void TotAnalysis::init(ScanBase *s) {
     hasVcalLoop = false;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ((l->type() != typeid(Fei4TriggerLoop*) &&
-                    l->type() != typeid(Rd53aMaskLoop*) &&
-                    l->type() != typeid(Rd53aTriggerLoop*) &&
-                    l->type() != typeid(Rd53aCoreColLoop*) &&
-                    l->type() != typeid(Fe65p2MaskLoop*) &&
-                    l->type() != typeid(Fe65p2TriggerLoop*) &&
-                    l->type() != typeid(Fe65p2QcLoop*) &&
-                    l->type() != typeid(Fei4MaskLoop*) &&
-                    l->type() != typeid(StdDataLoop*) &&
-                    l->type() != typeid(Fei4DcLoop*))) {
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -189,42 +168,28 @@ void TotAnalysis::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
 
-        if (l->type() == typeid(Fei4TriggerLoop*)) {
-            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
+        if (l->isTriggerLoop()) {
+            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            if(trigLoop == nullptr) {
+                alog->error("TotAnalysis: loop declared as trigger loop, does not have a trigger count");
+            } else {
+                injections = trigLoop->getTrigCnt();
+            }
         }
 
-        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
-            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-
-        if (l->type() == typeid(Rd53aTriggerLoop*)) {
-            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-
-        std::shared_ptr<LoopActionBase> tmpPrmpFb(new Fei4GlobalFeedback(&Fei4::PrmpVbpf));
-        if (l->type() == tmpPrmpFb->type()) {
-            alog->debug("Found global feedback loop (Fei4)");
+        if (l->isGlobalFeedbackLoop()) {
+            alog->debug("Found global feedback loop");
             globalFb.reset(new GlobalFeedbackSender(feedback));
-            alog->debug("Connect feedback (Fei4)");
+            alog->debug("Connect global feedback");
         }
 
-        if (l->type() == typeid(Rd53aGlobalFeedback*)) {
-            alog->debug("Found global feedback loop (Rd53a)");
-            globalFb.reset(new GlobalFeedbackSender(feedback));
-        }
-
-        if (l->type() == typeid(Fei4PixelFeedback*)) {
-            alog->debug("Found pixel feedback loop (Fei4)");
+        if (l->isPixelFeedbackLoop()) {
+            alog->debug("Found pixel feedback loop");
             pixelFb.reset(new PixelFeedbackSender(feedback));
         }
 
         // Vcal Loop
-        if (l->type() == tmpVcalLoop->type() ||
-                l->type() == tmpVcalLoop2->type() ||
-                l->type() == tmpVcalLoop3->type()) {
+        if (l->isParameterLoop()) {
             vcalMax = l->getMax();
             vcalMin = l->getMin();
             vcalStep = l->getStep();
@@ -413,9 +378,6 @@ void TotAnalysis::end() {
 }
 
 void ScurveFitter::init(ScanBase *s) {
-    std::shared_ptr<LoopActionBase> tmpVcalLoop(new Fei4ParameterLoop(&Fei4::PlsrDAC));
-    std::shared_ptr<LoopActionBase> tmpVcalLoop2(new Fe65p2ParameterLoop(&Fe65p2::PlsrDac));
-    std::shared_ptr<LoopActionBase> tmpVcalLoop3(new Rd53aParameterLoop());
     fb = NULL;
     scan = s;
     n_count = 1;
@@ -425,26 +387,12 @@ void ScurveFitter::init(ScanBase *s) {
     useLcap = true;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if (l->type() != typeid(Fei4TriggerLoop*) &&
-                l->type() != typeid(Rd53aMaskLoop*) &&
-                l->type() != typeid(Rd53aTriggerLoop*) &&
-                l->type() != typeid(Rd53aCoreColLoop*) &&
-                l->type() != typeid(Fe65p2TriggerLoop*) &&
-                l->type() != typeid(Fei4MaskLoop*) &&
-                l->type() != typeid(Fe65p2MaskLoop*) &&
-                l->type() != typeid(StdDataLoop*) &&
-                l->type() != typeid(Fei4DcLoop*) &&
-                l->type() != typeid(Fe65p2QcLoop*) &&
-                l->type() != tmpVcalLoop3->type() &&
-                l->type() != tmpVcalLoop2->type() &&
-                l->type() != tmpVcalLoop->type()) {
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || l->isParameterLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
             unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
-            if (l->type() == tmpVcalLoop3->type() ||
-                l->type() == tmpVcalLoop2->type() ||
-                l->type() == tmpVcalLoop->type()) {
+            if (l->isParameterLoop()) {
                 cnt++; // Parameter loop interval is inclusive
             }
             if (cnt == 0)
@@ -452,9 +400,7 @@ void ScurveFitter::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
         // Vcal Loop
-        if (l->type() == tmpVcalLoop->type() ||
-                l->type() == tmpVcalLoop2->type() ||
-                l->type() == tmpVcalLoop3->type()) {
+        if (l->isParameterLoop()) {
             vcalLoop = n;
             vcalMax = l->getMax();
             vcalMin = l->getMin();
@@ -462,17 +408,13 @@ void ScurveFitter::init(ScanBase *s) {
             vcalBins = (vcalMax-vcalMin)/vcalStep;
         }
 
-        if (l->type() == typeid(Fei4TriggerLoop*)) {
-            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
-            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-        if (l->type() == typeid(Rd53aTriggerLoop*)) {
-            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
+        if (l->isTriggerLoop()) {
+            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            if(trigLoop == nullptr) {
+                alog->error("ScurveFitter: loop declared as trigger loop, does not have a trigger count");
+            } else {
+                injections = trigLoop->getTrigCnt();
+            }
         }
 
         // check injection capacitor for FEI-4
@@ -481,18 +423,14 @@ void ScurveFitter::init(ScanBase *s) {
             useScap = msk->getScap();
             useLcap = msk->getLcap();
         }
-        
-        // Find potential pixel feedback
-        if (l->type() == typeid(Fei4PixelFeedback*)) {
-            fb.reset(new PixelFeedbackSender(feedback));
-        }
-        if (l->type() == typeid(Fe65p2PixelFeedback*)) {
-            fb.reset(new PixelFeedbackSender(feedback));
-        }
-        if (l->type() == typeid(Rd53aPixelFeedback*)) {
-            fb.reset(new PixelFeedbackSender(feedback));
-        }
 
+        // find potential pixel feedback
+        if (l->isPixelFeedbackLoop()) {
+            fb.reset(new PixelFeedbackSender(feedback));
+            if(fb == nullptr) {
+                alog->error("ScurveFitter: loop declared as pixel feedback, does not implement feedback");
+            }
+        }
     }
 
     for (unsigned i=vcalMin; i<=vcalMax; i+=vcalStep) {
@@ -713,8 +651,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
         }
         prevOuter = outerIdent;
         alog->info("[{}] --> Sending feedback #{}", this->channel, outerIdent);
-        fb->feedback(this->channel, std::move(step[outerIdent]));
-        step[outerIdent].reset();
+        fb->feedback(this->channel, std::move(std::make_unique<Histo2d>(*(step[outerIdent].get()))));
     }
 }
 
@@ -798,22 +735,10 @@ void ScurveFitter::end() {
 }
 
 void OccGlobalThresholdTune::init(ScanBase *s) {
-    std::shared_ptr<LoopActionBase> tmpVthinFb(new Fei4GlobalFeedback(&Fei4::Vthin_Fine));
-    std::shared_ptr<LoopActionBase> tmpVthinFb2(new Fe65p2GlobalFeedback(&Fe65p2::Vthin1Dac));
-    std::shared_ptr<LoopActionBase> tmpVthinFb3(new Rd53aGlobalFeedback());
     n_count = 1;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ((l->type() != typeid(Fei4TriggerLoop*) &&
-                    l->type() != typeid(Rd53aMaskLoop*) &&
-                    l->type() != typeid(Rd53aTriggerLoop*) &&
-                    l->type() != typeid(Rd53aCoreColLoop*) &&
-                    l->type() != typeid(Fe65p2TriggerLoop*) &&
-                    l->type() != typeid(Fei4MaskLoop*) &&
-                    l->type() != typeid(Fe65p2MaskLoop*) &&
-                    l->type() != typeid(StdDataLoop*) &&
-                    l->type() != typeid(Fe65p2QcLoop*) &&
-                    l->type() != typeid(Fei4DcLoop*))) {
+        if (!(l->isDataLoop() || l->isTriggerLoop() || l->isMaskLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -823,24 +748,16 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
 
-        if (l->type() == typeid(Fei4TriggerLoop*)) {
-            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
+        if (l->isTriggerLoop()) {
+            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            if(trigLoop == nullptr) {
+                alog->error("OccGlobalThresholdTune: loop declared as trigger does not have a count");
+            } else {
+                injections = trigLoop->getTrigCnt();
+            }
         }
 
-        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
-            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-
-        if (l->type() == typeid(Rd53aTriggerLoop*)) {
-            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-
-        if (l->type() == tmpVthinFb->type() 
-                || l->type() == tmpVthinFb2->type()
-                || l->type() == tmpVthinFb3->type()) {
+        if (l->isGlobalFeedbackLoop()) {
             fb.reset(new GlobalFeedbackSender(feedback));
             lb = (LoopActionBase*) l.get(); 
         }
@@ -929,16 +846,7 @@ void OccPixelThresholdTune::init(ScanBase *s) {
     n_count = 1;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ((l->type() != typeid(Fei4TriggerLoop*) &&
-                    l->type() != typeid(Rd53aMaskLoop*) &&
-                    l->type() != typeid(Rd53aTriggerLoop*) &&
-                    l->type() != typeid(Rd53aCoreColLoop*) &&
-                    l->type() != typeid(Fe65p2TriggerLoop*) &&
-                    l->type() != typeid(Fei4MaskLoop*) &&
-                    l->type() != typeid(Fe65p2MaskLoop*) &&
-                    l->type() != typeid(StdDataLoop*) &&
-                    l->type() != typeid(Fe65p2QcLoop*) &&
-                    l->type() != typeid(Fei4DcLoop*))) {
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -948,29 +856,20 @@ void OccPixelThresholdTune::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
 
-        if (l->type() == typeid(Fei4TriggerLoop*)) {
-            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
+        if (l->isTriggerLoop()) {
+            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            if(trigLoop == nullptr) {
+                alog->error("OccPixelThresholdTune: loop declared as trigger does not have a count");
+            } else {
+                injections = trigLoop->getTrigCnt();
+            }
         }
 
-        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
-            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-
-        if (l->type() == typeid(Rd53aTriggerLoop*)) {
-            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-
-        if (l->type() == typeid(Fei4PixelFeedback*)) {
+        if (l->isPixelFeedbackLoop()) {
             fb.reset(new PixelFeedbackSender(feedback));
-        }
-        if (l->type() == typeid(Fe65p2PixelFeedback*)) {
-            fb.reset(new PixelFeedbackSender(feedback));
-        }
-        if (l->type() == typeid(Rd53aPixelFeedback*)) {
-            fb.reset(new PixelFeedbackSender(feedback));
+            if(fb == nullptr) {
+                alog->error("OccPixelThresholdTune: loop declared as pixel feedback does not implement feedback");
+            }
         }
     }
 
@@ -1046,16 +945,7 @@ void L1Analysis::init(ScanBase *s) {
     injections = 0;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ((l->type() != typeid(Fei4TriggerLoop*) &&
-                    l->type() != typeid(Rd53aMaskLoop*) &&
-                    l->type() != typeid(Rd53aTriggerLoop*) &&
-                    l->type() != typeid(Rd53aCoreColLoop*) &&
-                    l->type() != typeid(Fei4MaskLoop*) &&
-                    l->type() != typeid(StdDataLoop*) &&
-                    l->type() != typeid(Fei4DcLoop*)) &&
-                l->type() != typeid(Fe65p2MaskLoop*) &&
-                l->type() != typeid(Fe65p2QcLoop*) &&
-                l->type() != typeid(Fe65p2TriggerLoop*)) {
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -1064,19 +954,14 @@ void L1Analysis::init(ScanBase *s) {
                 cnt = 1;
             n_count = n_count*cnt;
         }
-        if (l->type() == typeid(Fei4TriggerLoop*)) {
-            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
 
-        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
-            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-
-        if (l->type() == typeid(Rd53aTriggerLoop*)) {
-            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
+        if (l->isTriggerLoop()) {
+            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            if(trigLoop == nullptr) {
+                alog->error("L1Analysis: loop declared as trigger does not have a count");
+            } else {
+                injections = trigLoop->getTrigCnt();
+            }
         }
     }
 }
@@ -1124,22 +1009,9 @@ void L1Analysis::end() {
 void TotDistPlotter::init(ScanBase *s) {
     n_count = 1;
     injections = 0;
-    std::shared_ptr<LoopActionBase> tmpVcalLoop(new Fei4ParameterLoop(&Fei4::PlsrDAC));
-    std::shared_ptr<LoopActionBase> tmpVcalLoop2(new Fe65p2ParameterLoop(&Fe65p2::PlsrDac));
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ((l->type() != typeid(Fei4TriggerLoop*) &&
-                    l->type() != typeid(Rd53aMaskLoop*) &&
-                    l->type() != typeid(Rd53aTriggerLoop*) &&
-                    l->type() != typeid(Rd53aCoreColLoop*) &&
-                    l->type() != typeid(Fei4MaskLoop*) &&
-                    l->type() != typeid(StdDataLoop*) &&
-                    l->type() != typeid(Fei4DcLoop*)) &&
-                l->type() != typeid(Fe65p2MaskLoop*) &&
-                l->type() != typeid(Fe65p2QcLoop*) &&
-                l->type() != typeid(Fe65p2TriggerLoop*) &&
-                l->type() != tmpVcalLoop->type() &&
-                l->type() != tmpVcalLoop2->type()) {
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || l->isParameterLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -1148,13 +1020,13 @@ void TotDistPlotter::init(ScanBase *s) {
                 cnt = 1;
             n_count = n_count*cnt;
         }
-        if (l->type() == typeid(Fei4TriggerLoop*)) {
-            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
-            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
+        if (l->isTriggerLoop()) {
+            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            if(trigLoop == nullptr) {
+                alog->error("L1Analysis: loop declared as trigger does not have a count");
+            } else {
+                injections = trigLoop->getTrigCnt();
+            }
         }
     }
 }
@@ -1256,17 +1128,7 @@ void NoiseTuning::init(ScanBase *s) {
     globalFb = NULL;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ((l->type() != typeid(Fei4TriggerLoop*) &&
-                    l->type() != typeid(Rd53aMaskLoop*) &&
-                    l->type() != typeid(Rd53aTriggerLoop*) &&
-                    l->type() != typeid(Rd53aCoreColLoop*) &&
-                    l->type() != typeid(Fei4MaskLoop*) &&
-                    l->type() != typeid(StdDataLoop*) &&
-                    l->type() != typeid(Fei4DcLoop*)) &&
-                l->type() != typeid(Fe65p2MaskLoop*) &&
-                l->type() != typeid(Fe65p2QcLoop*) &&
-                l->type() != typeid(Fe65p2TriggerLoop*) &&
-                l->type() != typeid(StdRepeater*)) {
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -1276,20 +1138,11 @@ void NoiseTuning::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
 
-        std::shared_ptr<LoopActionBase> tmpPrmpFb(new Fei4GlobalFeedback(&Fei4::PrmpVbpf));
-        if (l->type() == tmpPrmpFb->type()) {
+        if (l->isGlobalFeedbackLoop()) {
             globalFb.reset(new GlobalFeedbackSender(feedback));
         }
 
-        if (l->type() == typeid(Rd53aGlobalFeedback*)) {
-            globalFb.reset(new GlobalFeedbackSender(feedback));
-        }
-
-        if (l->type() == typeid(Fei4PixelFeedback*)) {
-            pixelFb.reset(new PixelFeedbackSender(feedback));
-        }
-
-        if (l->type() == typeid(Rd53aPixelFeedback*)) {
+        if (l->isPixelFeedbackLoop()) {
             pixelFb.reset(new PixelFeedbackSender(feedback));
         }
     }
@@ -1368,23 +1221,12 @@ void NoiseTuning::end() {
 }
 
 void DelayAnalysis::init(ScanBase *s) {
-    std::shared_ptr<LoopActionBase> tmpVcalLoop(new Rd53aParameterLoop());
     scan = s;
     n_count = nCol*nRow;
     injections = 50;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if (l->type() != typeid(Fei4TriggerLoop*) &&
-                l->type() != typeid(Rd53aMaskLoop*) &&
-                l->type() != typeid(Rd53aTriggerLoop*) &&
-                l->type() != typeid(Rd53aCoreColLoop*) &&
-                l->type() != typeid(Fe65p2TriggerLoop*) &&
-                l->type() != typeid(Fei4MaskLoop*) &&
-                l->type() != typeid(Fe65p2MaskLoop*) &&
-                l->type() != typeid(StdDataLoop*) &&
-                l->type() != typeid(Fei4DcLoop*) &&
-                l->type() != typeid(Fe65p2QcLoop*) &&
-                l->type() != tmpVcalLoop->type()) {
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || l->isParameterLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -1395,24 +1237,20 @@ void DelayAnalysis::init(ScanBase *s) {
         }
 
         // Vcal Loop
-        if (l->type() == tmpVcalLoop->type() ) {
+        if (l->isParameterLoop()) {
             delayLoop = n;
             delayMax = l->getMax();
             delayMin = l->getMin();
             delayStep = l->getStep();
         }
 
-        if (l->type() == typeid(Fei4TriggerLoop*)) {
-            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
-            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-        if (l->type() == typeid(Rd53aTriggerLoop*)) {
-            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
+        if (l->isTriggerLoop()) {
+            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            if(trigLoop == nullptr) {
+                alog->error("DelayAnalysis: loop declared as trigger does not have a count");
+            } else {
+                injections = trigLoop->getTrigCnt();
+            }
         }
     }
     count = 0;

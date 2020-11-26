@@ -1,9 +1,15 @@
 #include "catch.hpp"
+#include <deque>
+#include <memory>
+#include <fstream>
 
 #include "LCBUtils.h"
 #include "StarCmd.h"
 #include "StarChipPacket.h"
 #include "AllHwControllers.h"
+#include "StarChips.h"
+#include "EmuController.h"
+#include "StarEmu.h"
 
 void sendCommand(TxCore &hw, std::array<uint16_t, 9> &cmd) {
   hw.writeFifo((LCB::IDLE << 16) + LCB::IDLE);
@@ -14,11 +20,20 @@ void sendCommand(TxCore &hw, std::array<uint16_t, 9> &cmd) {
   hw.writeFifo((cmd[8] << 16) + LCB::IDLE);
 }
 
+void sendCommand(EmuTxCore<StarChips> &hw, uint32_t channel, std::array<uint16_t, 9> &cmd) {
+  hw.writeFifo(channel, (LCB::IDLE << 16) + LCB::IDLE);
+  hw.writeFifo(channel, (cmd[0] << 16) + cmd[1]);
+  hw.writeFifo(channel, (cmd[2] << 16) + cmd[3]);
+  hw.writeFifo(channel, (cmd[4] << 16) + cmd[5]);
+  hw.writeFifo(channel, (cmd[6] << 16) + cmd[7]);
+  hw.writeFifo(channel, (cmd[8] << 16) + LCB::IDLE);
+}
+
 template<typename PacketT>
 void compareOutputs(RawData* data, const PacketT& expected_packet);
 
 template<typename PacketT>
-void checkData(HwController*, std::deque<PacketT>&, const PacketT&);
+void checkData(HwController*, std::deque<PacketT>&, const PacketT *const mask_pattern = nullptr);
 
 // Test by parsing bytes and comparing string
 TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
@@ -28,9 +43,6 @@ TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
 
   json cfg;
   emu->loadConfig(cfg);
-
-  emu->setCmdEnable(0xFFFF);
-  emu->setRxEnable(0x0);
 
   StarCmd star;
 
@@ -48,7 +60,7 @@ TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
     emu->writeFifo((readHCCCmd2[8] << 16) + LCB::IDLE);
 
     // Response from L0?
-    expected.push_back("Packet type TYP_LP, BCID 0 (0), L0ID 3, nClusters 0\n");
+    expected.push_back("Packet type TYP_LP, BCID 7 (1), L0ID 3, nClusters 0\n");
     // NB this is incorrect?
     expected.push_back("Packet type TYP_HCC_RR, ABC 0, Address 11, Value 00000000\n");
   }
@@ -67,9 +79,7 @@ TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
   while(!emu->isCmdEmpty())
     ;
 
-  checkData(emu.get(), expected, std::string(""));
-
-  emu->setRxEnable(0x0);
+  checkData(emu.get(), expected);
 }
 
 TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
@@ -79,9 +89,6 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
 
   json cfg;
   emu->loadConfig(cfg);
-
-  emu->setCmdEnable(0xFFFF);
-  emu->setRxEnable(0x0);
 
   StarCmd star;
 
@@ -124,6 +131,9 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
   // (By default the emulator has only one hard-coded ABC with ID = 15 for now)
   expected.push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
 
+  // Reset BC counters
+  emu->writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(0, 0, true));
+
   //////////////////////////
   // Start tests
   //////////////////////////
@@ -148,15 +158,23 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
   }
 
   SECTION("Read ABCStar interposed") {
-    // Read an ABCStar register
+    // Write an ABCStar register first
+    // (So its value is known here and does not depend on the default/reset)
+    // Set register 34 (CREG2) to 0x00000190
+    std::array<LCB::Frame, 9> writeABCCmd_reg = star.write_abc_register(34, 0x00000190);
+    sendCommand(*emu, writeABCCmd_reg);
+    // Read this register
     std::array<LCB::Frame, 9> readABCCmd =  star.read_abc_register(34); // 0x22
     emu->writeFifo((readABCCmd[0] << 16) + readABCCmd[1]);
     // The read command is interupted by an L0A
     emu->writeFifo((LCB::l0a_mask(1, 0, false) << 16) + readABCCmd[2]);
     emu->writeFifo((readABCCmd[8] << 16) + LCB::IDLE);
 
-    // Response from L0A: empty cluster; l0tag = 0 + 3; bcid = 0b0000
-    expected.push_back({0x20, 0x30, 0x03, 0xfe, 0x6f, 0xed});
+    // Response from L0A: empty cluster; l0tag = 0 + 3;
+    // At the time of the L0A frame, bc count = 56; L0 latency is set to 400
+    // => 8-bit BCID = (512 + 56-1 - 400) & 0xff = 0xa7
+    // 4-bit BCID in the packet: 0b1111
+    expected.push_back({0x20, 0x3f, 0x03, 0xfe, 0x6f, 0xed});
     // ABCStar register 34 (CREG2): 0x00000190
     expected.push_back({0x40, 0x22, 0x00, 0x00, 0x00, 0x19, 0x0f, 0x00, 0x00});
   }
@@ -175,8 +193,10 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     // Send an L0A
     emu->writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(1, 4, false));
 
-    // l0tag = 4 + 3; bcid = 0b0111;
-    expected.push_back({0x20, 0x77, 0x05, 0xc7, 0x01, 0xcf, 0x05, 0xe7, 0x01, 0xee, 0x07, 0xc7, 0x03, 0xcf, 0x07, 0xe7, 0x03, 0xee, 0x6f, 0xed});
+    // l0tag = 4 + 3
+    // bc count at L0A frame = 148; trigger command on 148-1; latency = 0
+    // => 8-bit BCID = 0x93; 4-bit BCID in the packet = 0b0110
+    expected.push_back({0x20, 0x76, 0x05, 0xc7, 0x01, 0xcf, 0x05, 0xe7, 0x01, 0xee, 0x07, 0xc7, 0x03, 0xcf, 0x07, 0xe7, 0x03, 0xee, 0x6f, 0xed});
   }
 
   SECTION("Hit Counters") {
@@ -239,8 +259,10 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     emu->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
     emu->writeFifo((LCB::fast_command(LCB::ABC_DIGITAL_PULSE, 0) << 16) + LCB::l0a_mask(1, 20, false));
 
-    // Physics packet: l0tag = 20 + 3; bcid = 0b1000
-    expected.push_back({0x21, 0x78, 0x00, 0x00, 0x6f, 0xed});
+    // Physics packet: l0tag = 20 + 3
+    // bc count = 156 when L0A command received; trigger on 156-1; latency = 3
+    // 8-bit BCID = 152 (0x98) => 4-bit BCID in the packet = 0b0001
+    expected.push_back({0x21, 0x71, 0x00, 0x00, 0x6f, 0xed});
   }
 
   emu->releaseFifo();
@@ -248,13 +270,11 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
   while(!emu->isCmdEmpty())
     ;
 
-  checkData(emu.get(), expected, mask_pattern);
-
-  emu->setRxEnable(0x0);
+  checkData(emu.get(), expected, &mask_pattern);
 }
 
 TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
-  std::shared_ptr<HwController> emu =  StdDict::getHwController("emu_Star");
+  std::shared_ptr<HwController> emu = StdDict::getHwController("emu_Star");
 
   REQUIRE (emu);
 
@@ -265,7 +285,6 @@ TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
   StarCmd star;
 
   typedef std::vector<uint8_t> PacketCompare;
-  const PacketCompare mask_pattern = {0xff, 0xde, 0xad, 0xbe, 0xef, 0x00};
 
   std::deque<PacketCompare> expected;
 
@@ -353,11 +372,522 @@ TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
 
   while(!emu->isCmdEmpty());
 
-  checkData(emu.get(), expected, mask_pattern);
+  checkData(emu.get(), expected);
+}
+
+// Multiple star chips in one channel
+TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
+  std::shared_ptr<HwController> emu = StdDict::getHwController("emu_Star");
+
+  REQUIRE (emu);
+
+  //////////////////////////
+  // Set up configurations
+  // Three HCCStars with ID 3, 4, 5
+  // HCC 3 has two ABCs with ID 1 and 2
+  json tmpRegCfg1;
+  tmpRegCfg1["HCC"] = {{"ID", 3}};
+  tmpRegCfg1["ABCs"] = {{"IDs", {1, 2}}};
+  std::ofstream tmpRegFile1("test_star_1.json");
+  tmpRegFile1 << std::setw(4) << tmpRegCfg1;
+  tmpRegFile1.close();
+
+  // HCC 4 has one ABC with ID 7
+  json tmpRegCfg2;
+  tmpRegCfg2["HCC"] = {{"ID", 4}};
+  tmpRegCfg2["ABCs"] = {{"IDs", {7}}};
+  std::ofstream tmpRegFile2("test_star_2.json");
+  tmpRegFile2 << std::setw(4) << tmpRegCfg2;
+  tmpRegFile2.close();
+
+  // HCC 5 has three ABCs with ID 2, 4, 7
+  json tmpRegCfg3;
+  tmpRegCfg3["HCC"] = {{"ID", 5}};
+  tmpRegCfg3["ABCs"] = {{"IDs", {2 ,4, 7}}};
+  std::ofstream tmpRegFile3("test_star_3.json");
+  tmpRegFile3 << std::setw(4) << tmpRegCfg3;
+  tmpRegFile3.close();
+
+  json tmpChipCfg;
+  tmpChipCfg["chips"] = json::array();
+  // Three front ends share the same tx channel 33
+  // The first two FEs share the same rx channel 44
+  int rx_fe1 = 44, rx_fe2 = 44;
+  // The third one uses a separate rx channel 55
+  int rx_fe3 = 55;
+  tmpChipCfg["chips"][0] = {{"tx",33}, {"rx",rx_fe1}, {"config","test_star_1.json"}};
+  tmpChipCfg["chips"][1] = {{"tx",33}, {"rx",rx_fe2}, {"config","test_star_2.json"}};
+  tmpChipCfg["chips"][2] = {{"tx",33}, {"rx",rx_fe3}, {"config","test_star_3.json"}};
+  std::string tmpChipFname("test_multichip_star_setup.json");
+  std::ofstream tmpChipFile(tmpChipFname);
+  tmpChipFile << std::setw(4) << tmpChipCfg;
+  tmpChipFile.close();
+
+  // EmuController config
+  json cfg;
+  cfg["chipCfg"] = tmpChipFname;
+  emu->loadConfig(cfg);
+
+  // Clean up
+  remove(tmpChipFname.c_str());
+  remove("test_star_1.json");
+  remove("test_star_2.json");
+  remove("test_star_3.json");
+
+  StarCmd star;
+
+  typedef std::pair<uint32_t, std::vector<uint8_t>> PacketCompare;
+  std::deque<PacketCompare> expected;
+
+  SECTION("HCCStar Write and Read") {
+    // Broadcast write command to set register 47 (ErrCfg) to 0xabcdabcd
+    auto writeHCCCmd_reg47 = star.write_hcc_register(47, 0xabcdabcd);
+    sendCommand(*emu, writeHCCCmd_reg47);
+
+    // Read only the HCC with ID = 3
+    auto readHCCCmd_3_reg47 = star.read_hcc_register(47, 3);
+    sendCommand(*emu, readHCCCmd_3_reg47);
+    expected.push_back({rx_fe1, {0x82, 0xfa, 0xbc, 0xda, 0xbc, 0xd0}});
+
+    // Write 0xdeadbeef to register 47 of the HCC with ID = 4
+    auto writeHCCCmd_4_reg47 = star.write_hcc_register(47, 0xdeadbeef, 4);
+    sendCommand(*emu, writeHCCCmd_4_reg47);
+
+    // Write 0xcafebabe to register 47 of the HCC with ID = 5
+    auto writeHCCCmd_5_reg47 = star.write_hcc_register(47, 0xcafebabe, 5);
+    sendCommand(*emu, writeHCCCmd_5_reg47);
+
+    // Broadcast read command to read register 47 of all HCCs
+    auto readHCCCmd_47 = star.read_hcc_register(47);
+    sendCommand(*emu, readHCCCmd_47);
+
+    // HCC 3: register 47 is still 0xabcdabcd
+    expected.push_back({rx_fe1, {0x82, 0xfa, 0xbc, 0xda, 0xbc, 0xd0}});
+    // HCC 4: register 47 should be 0xdeadbeef
+    expected.push_back({rx_fe2, {0x82, 0xfd, 0xea, 0xdb, 0xee, 0xf0}});
+    // HCC 5: register 47 should be 0xcafebabe
+    expected.push_back({rx_fe3, {0x82, 0xfc, 0xaf, 0xeb, 0xab, 0xe0}});
+  }
+
+  SECTION("ABCStar Write and Read") {
+    // Broadcast write 0xff7ff7ff to all MaskInput7 (addr=0x17) register
+    auto writeABCCmd_mask7 = star.write_abc_register(0x17, 0xff7ff7ff, 0xf, 0xf);
+    sendCommand(*emu, writeABCCmd_mask7);
+
+    // Read MaskInput7 of all ABCs on HCC 3
+    auto readABCCmd_hcc3 = star.read_abc_register(23, 3, 0xf);
+    sendCommand(*emu, readABCCmd_hcc3);
+    // Expect two ABC RR packets from ABC 1 and 2
+    expected.push_back({rx_fe1, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf1, 0x00, 0x00}});
+    expected.push_back({rx_fe1, {0x41, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
+
+    emu->releaseFifo();
+    while(!emu->isCmdEmpty());
+    checkData(emu.get(), expected);
+
+    // Write 0xdeadbeef to MaskInput7 of ABC 7 on HCC 4
+    auto writeABCCmd_4_7 = star.write_abc_register(0x17, 0xdeadbeef, 4, 7);
+    sendCommand(*emu, writeABCCmd_4_7);
+
+    // Write 0xaa0451aa to MaskInput7 of ABC 4 on HCC 5
+    auto writeABCCmd_5_4 = star.write_abc_register(0x17, 0xaa0451aa, 5, 4);
+    sendCommand(*emu, writeABCCmd_5_4);
+
+    // Read MaskInput 7 of ABC 7 on HCC 5
+    auto readABCCmd_5_7 = star.read_abc_register(0x17, 5, 7);
+    sendCommand(*emu, readABCCmd_5_7);
+
+    expected.push_back({rx_fe3, {0x42, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf7, 0x00, 0x00}});
+
+    emu->releaseFifo();
+    while(!emu->isCmdEmpty());
+    checkData(emu.get(), expected);
+
+    // Broadcast read of MaskInput 7 of all ABCs
+    auto readABCCmd_mask7 = star.read_abc_register(0x17, 0xf, 0xf);
+    sendCommand(*emu, readABCCmd_mask7);
+
+    // Two ABC RR packets from ABC 1 and 2 on HCC 3
+    expected.push_back({rx_fe1, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf1, 0x00, 0x00}});
+    expected.push_back({rx_fe1, {0x41, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
+
+    // One ABC RR packet from ABC 7 on HCC 4
+    expected.push_back({rx_fe2, {0x40, 0x17, 0x0d, 0xea, 0xdb, 0xee, 0xf7, 0x00, 0x00}});
+
+    // Three ABC RR packet from ABC 2, 4, 7 on HCC 5
+    expected.push_back({rx_fe3, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
+    expected.push_back({rx_fe3, {0x41, 0x17, 0x0a, 0xa0, 0x45, 0x1a, 0xa4, 0x00, 0x00}});
+    expected.push_back({rx_fe3, {0x42, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf7, 0x00, 0x00}});
+  }
+
+  emu->releaseFifo();
+  while(!emu->isCmdEmpty());
+  checkData(emu.get(), expected);
+}
+
+// Multiple channels
+TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
+  std::shared_ptr<HwController> emu = StdDict::getHwController("emu_Star");
+
+  REQUIRE (emu);
+
+  //////////////////////////
+  // Create a chip configuration
+  json tmpChipCfg;
+  tmpChipCfg["chips"] = json::array();
+
+  // Three channels, each channel contains one HCCStar chip
+  // Each HCCStar is configured to have one ABCStar if no other config provided
+  unsigned nchannels = 3;
+  std::string tmpFileName("test_multichannel_star_setup.json");
+  for (unsigned i=0; i<nchannels; i++) {
+    tmpChipCfg["chips"][i] = {{"tx", 2*i}, {"rx", 2*i+1}};
+  }
+  std::ofstream tmpCfgFile(tmpFileName);
+  tmpCfgFile << std::setw(4) << tmpChipCfg;
+  tmpCfgFile.close();
+
+  //////////////////////////
+  // Emulator configuration
+  json cfg;
+  cfg["chipCfg"] = tmpFileName;
+
+  emu->loadConfig(cfg);
+
+  remove(tmpFileName.c_str());
+
+  StarCmd star;
+
+  typedef std::pair<uint32_t, std::vector<uint8_t>> PacketCompare;
+
+  std::deque<PacketCompare> expected;
+
+  //////////////////////////
+  // Initialization
+  // First turn off both HCC and ABC HPRs i.e. MaskHPR=1, StopHPR=1
+  // Commands are broacasted to all HCCStar and ABCStar chips
+  auto writeHCCCmd_MaskHPR = star.write_hcc_register(43, 0x00000100);
+  sendCommand(*emu, writeHCCCmd_MaskHPR);
+  auto writeHCCCmd_StopHPR = star.write_hcc_register(16, 0x00000001);
+  sendCommand(*emu, writeHCCCmd_StopHPR);
+  auto writeABCCmd_MaskHPR = star.write_abc_register(32, 0x00000040);
+  sendCommand(*emu, writeABCCmd_MaskHPR);
+  auto writeABCCmd_StopHPR = star.write_abc_register(0, 0x00000004);
+  sendCommand(*emu, writeABCCmd_StopHPR);
+
+  // Expected to receive one initial HPR packet from HCCStar and one from ABCStar
+  for (unsigned i=0; i<nchannels; i++) {
+    uint32_t chn_rx = 2*i+1;
+    // HCC HPR with Idle frame
+    expected.push_back({chn_rx, {0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0}});
+    // ABC HPR with Idle frame
+    expected.push_back({chn_rx, {0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00}});
+  }
+
+  emu->releaseFifo();
+  while(!emu->isCmdEmpty());
+  checkData(emu.get(), expected);
+
+  //////////////////////////
+  // Start tests
+
+  SECTION("Register read from all channels") {
+    // Read HCCStar registers ADCcfg
+    auto readHCCCmd_ADCcfg = star.read_hcc_register(48);
+    // Broadcast command
+    sendCommand(*emu, readHCCCmd_ADCcfg);
+
+    // Expect to read back the default value 0x00406600 from all HCCStars
+    for (unsigned i=0; i<nchannels; i++) {
+      uint32_t chn_rx = 2*i+1;
+      expected.push_back({chn_rx, {0x83, 0x00, 0x04, 0x06, 0x60, 0x00}});
+    }
+
+    emu->releaseFifo();
+    while(!emu->isCmdEmpty());
+    checkData(emu.get(), expected);
+  }
+
+  SECTION("Rx channel control") {
+    // Write all MaskInput7 of ABCStar chips
+    auto writeABCCmd_mask7 = star.write_abc_register(23, 0xdeadbeef);
+    sendCommand(*emu, writeABCCmd_mask7);
+
+    // Write all MaskInput6 of ABCStar chips
+    auto writeABCCmd_mask6 = star.write_abc_register(22, 0xcafebabe);
+    sendCommand(*emu, writeABCCmd_mask6);
+
+    // Disable all rx channels except for rx channel 3
+    emu->disableRx();
+    emu->setRxEnable(3);
+
+    // Send a broadcast register read command to read MaskInput7
+    auto readABCCmd_mask7 = star.read_abc_register(23);
+    sendCommand(*emu, readABCCmd_mask7);
+
+    // Expect to receive data only from rx channel 3
+    expected.push_back({3, {0x40, 0x17, 0x0d, 0xea, 0xdb, 0xee, 0xff, 0x00, 0x00}});
+
+    emu->releaseFifo();
+    while(!emu->isCmdEmpty());
+    checkData(emu.get(), expected);
+
+    // Now disable all rx channels except for rx channel 1
+    emu->disableRx();
+    emu->setRxEnable(1);
+
+    // Send a broadcast register read command to read MaskInput6
+    auto readABCCmd_mask6 = star.read_abc_register(22);
+    sendCommand(*emu, readABCCmd_mask6);
+
+    // Should receive data only from rx channel 1.
+    // Two data packets are expected:
+    // One is from the previous MaskInput7 read command: the register read packet was pushed to the rx buffer but had not been read out since the rx channel was disabled.
+    expected.push_back({1, {0x40, 0x17, 0x0d, 0xea, 0xdb, 0xee, 0xff, 0x00, 0x00}});
+    // The second packet is from the MaskInput6 read command.
+    expected.push_back({1, {0x40, 0x16, 0x0c, 0xaf, 0xeb, 0xab, 0xef, 0x00, 0x00}});
+
+    emu->releaseFifo();
+    while(!emu->isCmdEmpty());
+    checkData(emu.get(), expected);
+  }
+
+  SECTION("Tx command control") {
+    // Enable tx channel 2, disable all others
+    emu->disableCmd();
+    emu->setCmdEnable(2);
+
+    // Broadcast a register write command to change the value of MaskInput0
+    auto writeABCCmd_mask0 = star.write_abc_register(16, 0xdecafbad);
+    sendCommand(*emu, writeABCCmd_mask0);
+
+    // Read all MaskInput0 registers
+    // Enable all tx channels first
+    for (unsigned i=0; i<nchannels; i++) {
+      unsigned chn_tx = 2*i;
+      emu->setCmdEnable(chn_tx);
+    }
+    auto readABCCmd_mask0 = star.read_abc_register(16); // broadcast reg read
+    sendCommand(*emu, readABCCmd_mask0);
+
+    // Only the ABCStar on tx channel 2 is expected to have its value updated
+    // Others should still have the default value 0x0
+    for (unsigned i=0; i<nchannels; i++) {
+      unsigned chn_tx = 2*i;
+      unsigned chn_rx = 2*i+1;
+      if (chn_tx == 2)
+        expected.push_back({chn_rx, {0x40, 0x10, 0x0d, 0xec, 0xaf, 0xba, 0xdf, 0x00, 0x00}});
+      else
+        expected.push_back({chn_rx, {0x40, 0x10, 0x00, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x00}});
+    }
+
+    emu->releaseFifo();
+    while(!emu->isCmdEmpty());
+    checkData(emu.get(), expected);
+  }
+
+  SECTION("Tx trigger control") {
+    // Reset BC counters
+    emu->writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(0, 0, true));
+
+    // Switch to the static test mode (TM = 1)
+    auto writeABCCmd_TM = star.write_abc_register(32, 0x00010040);
+    sendCommand(*emu, writeABCCmd_TM);
+
+    // Write 0xfffe0000 to MaskInput3 so we will have a non-empty cluster
+    auto writeABCCmd_mask3 = star.write_abc_register(19, 0xfffe0000);
+    sendCommand(*emu, writeABCCmd_mask3);
+
+    // Prepare trigger
+    // Trigger counts
+    emu->setTrigCnt(2);
+    // Trigger words
+    std::array<uint32_t, 3> trigWord;
+    trigWord[0] = (LCB::IDLE << 16) + LCB::IDLE;
+    trigWord[1] = (LCB::IDLE << 16) + LCB::IDLE;
+    trigWord[2] = (LCB::l0a_mask(1, 4, false) << 16) | LCB::IDLE;
+    emu->setTrigWord(&trigWord[0], 3);
+
+    // Disable trigger commands in all channels except for tx channel 2 and 4
+    emu->disableCmd();
+    emu->setCmdEnable(2);
+    emu->setCmdEnable(4);
+
+    while(!emu->isCmdEmpty());
+
+    // Start trigger
+    emu->setTrigEnable(1);
+
+    // Cluster bytes from MaskInput3 value 0xfffe0000:
+    // {0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee}
+    // L0tag from the trigger words: l0tag = 4 (input tag) + 3 (BC offset)
+    // Expect two physics packets from rx channel 3 (corresponding to tx 2)
+    expected.push_back({3, {0x20,0x7e, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b1110
+    expected.push_back({3, {0x20,0x7e, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b1110
+    // And two packets from rx channel 5 (corresponding to tx 4)
+    expected.push_back({5, {0x20,0x7e, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b1110
+    expected.push_back({5, {0x20,0x7e, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b1110
+
+    // Join trigger process when it is done
+    while(!emu->isTrigDone());
+    emu->setTrigEnable(0);
+
+    checkData(emu.get(), expected);
+  }
+}
+
+// Multi-level trigger mode
+TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
+  std::shared_ptr<HwController> emu = StdDict::getHwController("emu_Star");
+  // Downcast to EmuController in order to write to a specific channel using writeFifo(uint32_t chn, uint32_t value)
+  auto staremu = std::dynamic_pointer_cast<EmuController<StarChips,StarEmu>>(emu);
+
+  REQUIRE (staremu);
+
+  // Create a chip configuration
+  json tmpChipCfg;
+  tmpChipCfg["chips"] = json::array();
+  // One chip (1 HCCStar + 1 ABCStar) with two tx channels and one rx channel
+  // tx uses channel #0; tx2 uses channel #2
+  tmpChipCfg["chips"][0] = {{"tx", 0}, {"tx2", 2}, {"rx", 1}};
+
+  // Save the chip config file to disk
+  std::string tmpFileName("test_staremu_r3l1.json");
+  std::ofstream tmpCfgFile(tmpFileName);
+  tmpCfgFile << std::setw(4) << tmpChipCfg;
+  tmpCfgFile.close();
+
+  // Load emulator configuration
+  json cfg;
+  cfg["chipCfg"] = tmpFileName;
+
+  staremu->loadConfig(cfg);
+
+  remove(tmpFileName.c_str());
+
+  StarCmd star;
+
+  typedef std::vector<uint8_t> PacketCompare;
+  std::deque<PacketCompare> expected;
+
+  //////////////////////////
+  // Initialize the emulator
+  // Turn off HPRs: MaskHPR=1, StopHPR=1
+  // LCB command sent via tx channel 0
+  // Send IDLE packets of equal length via tx2 channel 2 to ensure the channels are in sync
+  std::array<uint16_t, 9> IdleCmd;
+  for (size_t i=0; i<9; i++) {
+    IdleCmd[i] =  LCB::IDLE;
+  }
+
+  // tx (channel 0)
+  auto writeHCCCmd_MaskHPR = star.write_hcc_register(43, 0x00000100);
+  sendCommand(*staremu, 0, writeHCCCmd_MaskHPR);
+  // tx2 (channel 2)
+  sendCommand(*staremu, 2, IdleCmd);
+
+  // tx (channel 0)
+  auto writeHCCCmd_StopHPR = star.write_hcc_register(16, 0x00000001);
+  sendCommand(*staremu, 0, writeHCCCmd_StopHPR);
+  // tx2 (channel 2)
+  sendCommand(*staremu, 2, IdleCmd);
+
+  // tx (channel 0)
+  auto writeABCCmd_MaskHPR = star.write_abc_register(32, 0x00000040);
+  sendCommand(*staremu, 0, writeABCCmd_MaskHPR);
+  // tx2 (channel 2)
+  sendCommand(*staremu, 2, IdleCmd);
+
+  // tx (channel 0)
+  auto writeABCCmd_StopHPR = star.write_abc_register(0, 0x00000004);
+  sendCommand(*staremu, 0, writeABCCmd_StopHPR);
+  // tx2 (channel 2)
+  sendCommand(*staremu, 2, IdleCmd);
+
+  // Expect to receive initial HPR packets
+  // HCC HPR with Idle frame
+  expected.push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
+  // ABC HPR with Idle frame
+  expected.push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+
+  // Switch to multi-level trigger mode
+  // Register 41 OPmode bit 0
+  auto writeHCCCmd_trigmode = star.write_hcc_register(41, 0x00020000);
+  sendCommand(*staremu, 0, writeHCCCmd_trigmode);
+  sendCommand(*staremu, 2, IdleCmd);
+  // Register 42 OPmodeC as well?
+  //auto writeHCCCmd_trigmodec = star.write_hcc_register(42, 0x00020000);
+  //sendCommand(*staremu, 0, writeHCCCmd_trigmodec);
+  //sendCommand(*staremu, 2, IdleCmd);
+
+  //////////////////////////
+  // Start test
+  // Switch to test pulse mode: TM = 2, TestPulseEnable = 1
+  auto writeABCCmd_tm = star.write_abc_register(32, 0x00020050);
+  sendCommand(*staremu, 0, writeABCCmd_tm);
+  sendCommand(*staremu, 2, IdleCmd);
+
+  // Set MaskInput0 register to 0x00000001 so there would be a non-empty cluster
+  auto writeABCCmd_mask = star.write_abc_register(16, 0x00000001);
+  sendCommand(*staremu, 0, writeABCCmd_mask);
+  sendCommand(*staremu, 2, IdleCmd);
+
+  // Set L0 latency to e.g. 5
+  auto writeABCCmd_lat = star.write_abc_register(34, 0x00000005);
+  sendCommand(*staremu, 0, writeABCCmd_lat);
+  sendCommand(*staremu, 2, IdleCmd);
+
+  // Set the the HCC ID to e.g. 10 so it would respond to an R3 command
+  // (default serial number from HCC register 17 is 0 in the emulator)
+  uint8_t hccID = 10; // module #5
+  auto writeHCCCmd_id = star.write_hcc_register(17, hccID<<24);
+  sendCommand(*staremu, 0, writeHCCCmd_id);
+  sendCommand(*staremu, 2, IdleCmd);
+
+  // Reset BC counters
+  staremu->writeFifo(0, (LCB::IDLE << 16) + LCB::l0a_mask(0, 0, true));
+  staremu->writeFifo(2, (LCB::IDLE << 16) + LCB::IDLE);
+
+  // Send two digital pulse commands
+  staremu->writeFifo(0, (LCB::fast_command(LCB::ABC_DIGITAL_PULSE, 3) << 16) + LCB::fast_command(LCB::ABC_DIGITAL_PULSE, 3));
+  staremu->writeFifo(2, (LCB::IDLE << 16) + LCB::IDLE);
+
+  // Send an L0A command with L0tag = 42 that triggers on the first pulse
+  unsigned tag1 = 42;
+  staremu->writeFifo(0, (LCB::IDLE << 16) + LCB::l0a_mask(8, tag1, false));
+  staremu->writeFifo(2, (LCB::IDLE << 16) + LCB::IDLE);
+
+  // Send a second L0A command with L0tag = 66 that triggers on the second pulse
+  unsigned tag2 = 66;
+  staremu->writeFifo(0, (LCB::l0a_mask(8, tag2, false) << 16) + LCB::IDLE);
+  // At the same time, send an R3 to read the first pulse with l0tag 42
+  unsigned modulemask = 1<<4;
+  // encode into 16b frame
+  uint16_t r3frame1 = LCB::raw_bits( (modulemask<<7) + tag1 );
+  staremu->writeFifo(2, (r3frame1 << 16) + LCB::IDLE);
+
+  // Expect a PR packet: tag = 42 (0x2a); 4-bit BCID = 0b0110
+  expected.push_back({0x12, 0xa6, 0x00, 0x00, 0x6f, 0xed});
+
+  // Send another R3 frame to read the second event with tag 66
+  // Followed by an L1 command that read the previous event
+  staremu->writeFifo(0, (LCB::IDLE << 16) + LCB::IDLE);
+  uint16_t r3frame2 = LCB::raw_bits( (modulemask<<7) + tag2 );
+  uint16_t l1frame = LCB::raw_bits( tag1 );
+  staremu->writeFifo(2, (r3frame2 << 16) + l1frame);
+
+  // Expected a PR packet: tag = 66 (0x42), 4-bit BCID = 0b1111
+  expected.push_back({0x14, 0x2f, 0x00, 0x00, 0x6f, 0xed});
+  // And an LP packet with tag = 42 (0x2a), 4-bit BCID = 0b0110
+  expected.push_back({0x22, 0xa6, 0x00, 0x00, 0x6f, 0xed});
+
+  staremu->releaseFifo();
+  while(!staremu->isCmdEmpty());
+  checkData(staremu.get(), expected);
 }
 
 template<typename PacketT>
-void checkData(HwController* emu, std::deque<PacketT>& expected, const PacketT& mask_pattern)
+void checkData(HwController* emu, std::deque<PacketT>& expected, const PacketT *const mask_pattern)
 {
   std::unique_ptr<RawData> data(emu->readData());
 
@@ -375,14 +905,19 @@ void checkData(HwController* emu, std::deque<PacketT>& expected, const PacketT& 
       CAPTURE (data->words);
 
       // Do comparison
-      if (expected_packet != mask_pattern)
+      if (not mask_pattern) {
         compareOutputs(data.get(), expected_packet);
+      } else if (expected_packet != (*mask_pattern)) {
+        compareOutputs(data.get(), expected_packet);
+      }
 
       delete [] data->buf;
     }
 
     data.reset(emu->readData());
   }
+
+  CHECK(expected.empty());
 }
 
 template<>
@@ -426,4 +961,19 @@ void compareOutputs<std::vector<uint8_t>>(RawData* data, const std::vector<uint8
       }
     } // i
   } // w
+}
+
+template<>
+void compareOutputs<std::pair<uint32_t, std::vector<uint8_t>>>(RawData* data, const std::pair<uint32_t, std::vector<uint8_t>>& expected)
+{
+  // Compare channel numbers
+  uint32_t rx_exp = expected.first;
+  CAPTURE (rx_exp);
+  uint32_t rx_data = data->adr;
+  CAPTURE (rx_data);
+
+  CHECK (rx_exp == rx_data);
+
+  // Compare the actual data
+  compareOutputs<std::vector<uint8_t>>(data, expected.second);
 }

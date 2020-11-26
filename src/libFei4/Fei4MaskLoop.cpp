@@ -11,7 +11,7 @@ namespace {
     auto flog = logging::make_log("Fei4MaskLoop");
 }
 
-Fei4MaskLoop::Fei4MaskLoop() : LoopActionBase() {
+Fei4MaskLoop::Fei4MaskLoop() : LoopActionBase(LOOP_STYLE_MASK) {
     m_mask = MASK_16;
     min = 0;
     max = 16;

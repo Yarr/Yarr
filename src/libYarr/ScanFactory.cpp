@@ -25,9 +25,15 @@ ScanFactory::ScanFactory(Bookkeeper *k, FeedbackClipboardMap *fb)
 }
 
 void ScanFactory::init() {
-    // TODO I don't like this, we assume the innermost loops get the data
-    dynamic_cast<StdDataAction*>((this->getLoop(this->size()-1)).get())->connect(g_data);    
-    
+    for(size_t il=0; il<size(); il++) {
+        auto loop = getLoop(il);
+        if(!loop->isDataLoop()) {
+            continue;
+        }
+
+        std::dynamic_pointer_cast<StdDataAction>(loop)->connect(g_data);
+    }
+
     engine.init();
 }
 

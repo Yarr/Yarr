@@ -5,7 +5,10 @@
                 "algorithm": "ScurveFitter"
             }, 
             "1": {
-                "algorithm": "OccupancyAnalysis"
+                "algorithm": "OccupancyAnalysis",
+				"config": {
+				  "createMask": false
+				}
             }, 
             "n_count": 2
         }, 

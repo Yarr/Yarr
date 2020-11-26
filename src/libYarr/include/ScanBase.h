@@ -38,7 +38,6 @@ class ScanBase {
 
         std::shared_ptr<LoopActionBase> getLoop(unsigned n);
         std::shared_ptr<LoopActionBase> operator[](unsigned n);
-        std::shared_ptr<LoopActionBase> operator[](std::type_index t);
         unsigned size();
         
         virtual void loadConfig(json &cfg) {}
@@ -53,7 +52,6 @@ class ScanBase {
 
     private:
         std::vector<std::shared_ptr<LoopActionBase> > loops;
-        std::map<std::type_index, std::shared_ptr<LoopActionBase> > loopMap;
 };
 
 #endif
