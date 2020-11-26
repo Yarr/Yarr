@@ -10,12 +10,14 @@
 // ################################
 
 #include <iostream>
+#include <vector>
+#include <deque>
 
 #include "RxCore.h"
-#include "Bdaq53.h"
+#include "Bdaq.h"
 #include "RawData.h"
 
-class BdaqRxCore : virtual public RxCore, virtual public Bdaq53 {
+class BdaqRxCore : virtual public RxCore, virtual public Bdaq {
     public:
         BdaqRxCore();
 
@@ -39,14 +41,17 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq53 {
             return m_waitTime;
         }
 
-        void printBufferStatus();
+        void printSortStatus();
     
     protected:
         std::chrono::microseconds m_waitTime; 
 
-    private:
-        bool mSetupMode;        
+    private:        
+        bool mSetupMode;
         
+        std::vector<uint> activeChannels; 
+        std::vector<std::deque<uint32_t>> sBuffer;
+
         unsigned int userkCounter; 
         uint64_t userkWordA, userkWordB;
 
@@ -67,13 +72,10 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq53 {
             uint16_t Address;
             uint16_t Data;
         };
-
-        
-        bool isEventHeader;
-        bool isHighWord;
-        uint32_t dataWord;
-        
-        unsigned int decode(std::vector<uint32_t>& in, uint32_t* out);
+               
+        void initSortBuffer();
+        uint sortChannels(std::vector<uint32_t>& in);
+        void buildStream(uint32_t* out, uint size);
         
         unsigned int decodeUserk(const uint32_t& word, uint32_t* out, 
                                     unsigned int index);

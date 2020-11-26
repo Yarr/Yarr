@@ -19,31 +19,50 @@ namespace {
 
 BdaqRxCore::BdaqRxCore() {
     userkCounter = 0;
-    
-    isEventHeader = false;
-    isHighWord = true;
-
     mSetupMode = true;
 }
 
 void BdaqRxCore::setupMode() {
     mSetupMode = true;
+    logger->debug("Setup Mode");
+    // Enable register data monitoring
+    Bdaq::setMonitorFilter(BdaqAuroraRx::filter);
 }
 
 void BdaqRxCore::runMode() {
     mSetupMode = false;
+    logger->debug("Run Mode");
+    // Disable register data monitoring
+    Bdaq::setMonitorFilter(BdaqAuroraRx::block);
 }
 
+// val: 0, 1, 2, 3
 void BdaqRxCore::setRxEnable(uint32_t val) {
-    std::stringstream d; 
-    d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << val << std::dec;
-    logger->debug(d.str());
+    logger->debug("setRxEnable(): value = {}", val);
+    activeChannels.clear();
+    switch (val) {
+        //Mapping rx[0, 1, 2, 3] to BDAQ rx[0, 4, 5, 6]
+        case 0: activeChannels.push_back(0); break; 
+        case 1: activeChannels.push_back(4); break;
+        case 2: activeChannels.push_back(5); break;
+        case 3: activeChannels.push_back(6); break;
+    }
+    initSortBuffer();
 }
 
-void BdaqRxCore::setRxEnable(std::vector<uint32_t>) {
-    std::stringstream d; 
-    d << __PRETTY_FUNCTION__;
-    logger->debug(d.str());
+void BdaqRxCore::setRxEnable(std::vector<uint32_t> channels) {
+    activeChannels.clear();
+    for (uint32_t channel : channels) {
+        logger->debug("setRxEnable(): channels = {}", channel);
+        switch (channel) {
+            //Mapping rx[0, 1, 2, 3] to BDAQ rx[0, 4, 5, 6]
+            case 0: activeChannels.push_back(0); break; 
+            case 1: activeChannels.push_back(4); break;
+            case 2: activeChannels.push_back(5); break;
+            case 3: activeChannels.push_back(6); break;
+        }
+    }
+    initSortBuffer();
 }
 
 void BdaqRxCore::maskRxEnable(uint32_t val, uint32_t mask) {
@@ -55,11 +74,18 @@ void BdaqRxCore::maskRxEnable(uint32_t val, uint32_t mask) {
 
 void BdaqRxCore::checkRxSync() {
 	uint time = 0;
-	while (time < 1000 && auroraRx.getRxReady() == false) {
+    bool rxReady = true;
+    for (uint c : activeChannels) {
+        rxReady &= rx.at(c).getRxReady();
+    }
+	while (time < 1000 && rxReady == false) {
 		++time;
+        for (uint c : activeChannels) {
+            rxReady &= rx.at(c).getRxReady();
+        }
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
-	if (auroraRx.getRxReady()) {
+	if (rxReady) {
 		logger->info("Aurora link is synchronized!");
 	}
 	else {
@@ -70,22 +96,15 @@ void BdaqRxCore::checkRxSync() {
 }
 
 RawData* BdaqRxCore::readData() {
-    std::stringstream d; 
-    d << __PRETTY_FUNCTION__;
-    logger->debug(d.str());
-    std::size_t wCount = fifo.getAvailableWords(); 
-    std::vector<uint32_t> inBuf;
-    fifo.readData(inBuf, wCount);
-
-    if (wCount > 0) {
-        std::size_t inSize = wCount;
-        // outBuf size is always < wCount. 
-        uint32_t* outBuf = new uint32_t[wCount]; 
-        // now wCount has the number of decoded (thus, usable) words
-        wCount = decode(inBuf, outBuf);
-        if (wCount > 0) {
-            std::size_t outSize = wCount;
-            return new RawData(0x0, outBuf, wCount);
+    uint size = fifo.getAvailableWords();
+    if (size > 0) {
+        std::vector<uint32_t> inBuf;
+        fifo.readData(inBuf, size);
+        size = sortChannels(inBuf);
+        uint32_t* outBuf = new uint32_t[size];
+        buildStream(outBuf, size);
+        if (size > 0) {
+            return new RawData(0x0, outBuf, size);
         } 
         return NULL;
     }
@@ -96,7 +115,7 @@ void BdaqRxCore::flushBuffer() {
     std::stringstream d; 
     d << __PRETTY_FUNCTION__;
     logger->debug(d.str());
-    auroraRx.resetLogic();
+    //auroraRx->resetLogic();
     fifo.flushBuffer();
 }
 
@@ -118,20 +137,42 @@ bool BdaqRxCore::isBridgeEmpty() {
 // BDAQ Decoding
 // =============================================================================
 
-// Readout stream processing is "global", assuming that USERK words
-// (encapsulating service frames: register or monitoring) might arrive
-// separetely (with other word types in between) or in separated 
-// readout blocks. The same applies to Pixel Data words. This behavior
-// is due to the arbiter (selecting either USERK or Pixel Data) inside
-// the BDAQ RX core (rx_aurora).
+void BdaqRxCore::initSortBuffer() {
+    sBuffer.clear();
+    for (uint c : activeChannels) {
+        sBuffer.push_back(std::deque<uint32_t>(0));
+    }
+}
 
-unsigned int BdaqRxCore::decode(std::vector<uint32_t>& in, uint32_t* out) {
-    
-    unsigned int index = 0;
-    
+void BdaqRxCore::buildStream(uint32_t* out, uint size) {
+    // Building continuous stream
+    for (uint i=0;i<size;i++) {
+        // n words of each channel, sequentially
+        uint nChannel = (i/2)%activeChannels.size();
+        if (sBuffer.at(nChannel).size() < 2) {
+            out[i] = 0xFFFF0000;
+        } else {
+            uint32_t hi = sBuffer.at(nChannel).at(0) & 0xFFFF;
+            uint32_t lo = sBuffer.at(nChannel).at(1) & 0xFFFF;
+            out[i] = (hi << 16) | lo;
+            sBuffer.at(nChannel).pop_front();
+            sBuffer.at(nChannel).pop_front();
+        }
+    }
+}
+
+void BdaqRxCore::printSortStatus() {
+    uint nChannel = 0;
+    for (const auto& c : activeChannels) {    
+        logger->info("RX ID = {}, Buffer Index = {}, Size = {}", c, nChannel, sBuffer.at(nChannel).size());
+        ++nChannel;
+    }
+}
+
+uint BdaqRxCore::sortChannels(std::vector<uint32_t>& in) {
+    // Sorting
     for (const auto& word : in) {
-
-        if (word & TRIGGER_ID) {
+        if (word & TRIGGER_ID) { // CHECK THIS
             logger->critical("TLU data is not yet supported.");
             exit(-1);
         } 
@@ -140,41 +181,33 @@ unsigned int BdaqRxCore::decode(std::vector<uint32_t>& in, uint32_t* out) {
             exit(-1);
         } 
         if (word & USERK_FRAME_ID) {
-            index = decodeUserk(word, out, index);
+            //index = decodeUserk(word, out, index);
             continue;
         } 
-
-        if (word & HEADER_ID) {
-            isEventHeader = true;
-            isHighWord = true;
+        uint nChannel = 0;
+        for (const auto& c : activeChannels) {
+            // Testing Aurora RX Identifier 
+            if (((word >> 20) & 0xF) == c) {
+                sBuffer.at(nChannel).push_back(word);
+            }
+            ++nChannel;
         }
-
-        if (isHighWord) {
-            dataWord = word & 0xFFFF;
-            isHighWord = false; // Next low word
-            continue;
-        } else {
-            dataWord = (dataWord << 16) | (word & 0xFFFF);
-            isHighWord = true; // Next is high word
-        }
-
-        if (isEventHeader) {
-            isEventHeader = false;
-            out[index] = dataWord;
-            ++index;
-        } else {
-            out[index] = dataWord;
-            ++index;
-        }
-
     }
-    return index;
+    // Calculating Total Size
+    uint acc = 0;
+    uint nChannel = 0;
+    for (const auto& c : activeChannels) {
+        acc += sBuffer.at(nChannel).size();
+        ++nChannel;
+    }
+    return acc; // Total size.
 }
 
 // USERK Decoding ==============================================================
 
 unsigned int BdaqRxCore::decodeUserk(const uint32_t& word, uint32_t* out, 
-                                        unsigned int index) {
+                                        unsigned int index) {                                            
+    logger->debug("USERK word {} = {}", userkCounter, word);
     buildUserkFrame(word, userkCounter);
     // 4 USERK readout words are necessary to build an USERK frame.
     if (userkCounter == 3) {
@@ -218,6 +251,9 @@ BdaqRxCore::userkDataT BdaqRxCore::interpretUserkFrame() {
     uint64_t userkBlock, Data0, Data1;
     userkDataT u;
 
+    logger->debug("userkWordA = {}", userkWordA);
+    logger->debug("userkWordB = {}", userkWordB);
+
     userkWordA = (userkWordB & 0x3) << 32 | userkWordA;
     userkBlock = userkWordB >> 2;
     Data1 = userkBlock & 0x7FFFFFF;
@@ -240,6 +276,8 @@ BdaqRxCore::userkDataT BdaqRxCore::interpretUserkFrame() {
 std::vector<BdaqRxCore::regDataT> BdaqRxCore::getRegData(BdaqRxCore::userkDataT in) {
     BdaqRxCore::regDataT o;
     std::vector<BdaqRxCore::regDataT> regData;
+
+    logger->info("AuroraKWord = {}", in.AuroraKWord);
 
     // There is data in both Data0 and Data1 (data from 2 different registers?)
     if (in.AuroraKWord == 0) {

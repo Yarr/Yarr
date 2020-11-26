@@ -5,9 +5,9 @@
 #include <vector>
 #include <thread>
 #include "TxCore.h"
-#include "Bdaq53.h"
+#include "Bdaq.h"
 
-class BdaqTxCore : virtual public TxCore, virtual public Bdaq53 {
+class BdaqTxCore : virtual public TxCore, virtual public Bdaq {
     public:
         BdaqTxCore();
         ~BdaqTxCore();

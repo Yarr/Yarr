@@ -37,6 +37,12 @@ void BdaqTxCore::writeFifo(uint32_t value) {
 
 void BdaqTxCore::sendCommand() {
     if (cmdData.size() == 0) return;  
+    /*uint fillTotal = (4080 - cmdData.size()) / 2;  
+    for (uint i=0;i<fillTotal;++i) {
+        cmdData.push_back(0x81);
+        cmdData.push_back(0x7E);
+    }*/
+    //logger->info("Command Size = {}", cmdData.size());
     cmd.setData(cmdData);
     cmd.setSize(cmdData.size());
     cmd.setRepetitions(1);
@@ -45,17 +51,16 @@ void BdaqTxCore::sendCommand() {
     cmdData.clear();
 }
 
+// value: 1, 2, 4, 8
 void BdaqTxCore::setCmdEnable(uint32_t value) {
     uint32_t mask = (1 << value);
     std::stringstream d; 
     d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << mask << std::dec;
     logger->debug(d.str());
+    
+    // There is one Command Encoder connected to all DP
+    cmd.setOutputEn(true);
 
-    if (mask == 0x01) {
-        cmd.setOutputEn(true); 
-    } else {
-        cmd.setOutputEn(false);
-    }
     enMask = mask;
 }
 
@@ -67,12 +72,10 @@ void BdaqTxCore::setCmdEnable(std::vector<uint32_t> channels) {
     std::stringstream d; 
     d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << mask << std::dec;
     logger->debug(d.str());
-    
-    if (mask == 0x01) {
-        cmd.setOutputEn(true); 
-    } else {
-        cmd.setOutputEn(false);
-    }
+
+    // There is one Command Encoder connected to all DP    
+    cmd.setOutputEn(true);
+
     enMask = mask;
 }
 
@@ -264,13 +267,15 @@ void BdaqTxCore::timedTriggerSet() {
 }
 
 void BdaqTxCore::timedTriggerRun() {
+    logger->debug("Timed Trigger Frequency (Hz) = {}", timedTriggerFreq);
+    logger->debug("Timed Trigger Period (us) = {}", (int)(1E6/timedTriggerFreq));
     timedTriggerDone = false;
     auto start = std::chrono::system_clock::now();
     auto cur = std::chrono::system_clock::now();
     while (std::chrono::duration_cast<std::chrono::seconds>(cur - start).count() < timedTriggerTime) {
         cmd.start();
         // Frequency is implemented by software: 
-        std::this_thread::sleep_for(std::chrono::microseconds((int)(1000/timedTriggerFreq))); 
+        std::this_thread::sleep_for(std::chrono::microseconds((int)(1E6/timedTriggerFreq))); 
         // Wait for trigger completion (which is likely shorter than the period 
         // above). Here for peace of mind.
         while(!cmd.isDone()); //wait for completion 
