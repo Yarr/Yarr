@@ -41,6 +41,7 @@ ItsdaqHandler::ItsdaqHandler(uint32_t remote_IP,
                              uint16_t srcPort, uint16_t dstPort) :
   priv(new ItsdaqPrivate(remote_IP, srcPort, dstPort))
 {
+  running = true;
   priv->receiver = std::thread( [&] () { priv->ReceiverMain(); });
 }
 
