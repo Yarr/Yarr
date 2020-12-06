@@ -10,7 +10,12 @@ If you encounter errors concerning permissions, e.g.
 # open_hw_target
 ERROR: [Labtoolstcl 44-469] There is no current hw_target.
 ```
-you might have to add a ``udev`` rule. Run ``lsusb`` and identify your JTAG cable, e.g. ``Bus 001 Device 007: ID 0403:6014``.
+try installing cable drivers:
+```cd /opt/Xilinx/Vivado/2020.1/data/xicom/cable_drivers/lin64/install_script/install_drivers/
+sudo ./install_drivers
+```
+
+Alternatively you might have to add a ``udev`` rule. Run ``lsusb`` and identify your JTAG cable, e.g. ``Bus 001 Device 007: ID 0403:6014``.
 Open ``/etc/udev/rules.d/99-usb.rules`` and add the line
 ```
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6014", MODE:="0666"
@@ -22,12 +27,10 @@ sudo udevadm control --reload-rules && sudo udevadm trigger
 
 ### Centos 8
 
-- Kernel driver does not load on start up: in ``/etc/modules-load.d/`` add a line to a config file e.g. ``modules.conf`` with ``specDriver``
+#### Kernel driver does not load on start up
+In ``/etc/modules-load.d/`` add a line to a config file (or create one if none existing) e.g. ``modules.conf`` with ``specDriver``
 
-
-#### Xilinx related
-
-##### Installing Vivado
+#### Installing Vivado
 ```
 No protocol specified
 No protocol specified
@@ -49,12 +52,13 @@ java.lang.NoClassDefFoundError: Could not initialize class java.awt.GraphicsEnvi
 
 Execute ``xhost +``.
 
-##### librdi_commontasks.so, libtinfo.so.5
+#### Couldn't load "librdi_commontasks.so": libtinfo.so.5
+
 ```
 application-specific initialization failed: couldn't load file "librdi_commontasks.so": libtinfo.so.5: cannot open shared object file: No such file or directory
 ```
 
-Make a symblink ``ln -s libtinfo.so.6 libtinfo.so.5`` in ``/usr/lib64``
+In ``/usr/lib64`` make a symblink ``sudo ln -s libtinfo.so.6 libtinfo.so.5``.
 
 
 ## PCIe Card Troubleshooting
