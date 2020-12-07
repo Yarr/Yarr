@@ -23,6 +23,8 @@ StdDict::registerFrontEnd
 StarChips::StarChips()
 : StarCmd(), FrontEnd()
 {
+	m_txcore  = nullptr;
+
 	txChannel = 99;
 	rxChannel = 99;
 	active = false;
@@ -75,6 +77,7 @@ StarChips::StarChips(HwController *arg_core, unsigned arg_txChannel, unsigned ar
 }
 
 void StarChips::init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
+	logger->debug("Running init {} {} {}", (void*)arg_core, arg_txChannel, arg_rxChannel);
 	m_txcore  = arg_core;
 	m_rxcore = arg_core;
 	txChannel = arg_txChannel;
@@ -90,6 +93,11 @@ void StarChips::init(HwController *arg_core, unsigned arg_txChannel, unsigned ar
 void StarChips::setHccId(unsigned hccID) {
   //First step will consist in setting the HCC ID (serial number might be different depending on fuse !)
   //Load the eFuse serial number (and stop HPR)
+  if(!m_txcore) {
+    logger->warn("Set HCC ID (to {}) called before init", hccID);
+    return;
+  }
+
   sendCmd(write_hcc_register(16, 0x5, 0xf));
   //Let's reset the HCC ID with a broadcast write of the HCCID+SN on reg 17
   uint32_t newReg17val = (hccID<<28) | m_sn;
@@ -139,6 +147,8 @@ void StarChips::configure() {
 
 	this->writeRegisters();
 
+	// Make histo size match number of configured ABCs
+	geo.nCol = 128 * numABCs();
 }
 
 void StarChips::sendCmd(uint16_t cmd){
@@ -187,7 +197,7 @@ bool StarChips::writeRegisters(){
         int hccId = getHCCchipID();
 
         const auto &hcc_regs = HccStarRegInfo::instance()->hccregisterMap;
-	logger->info("Starting on chip {} with {} registers", hccId, hcc_regs.size());
+	logger->info("Starting on HCC {} with {} registers", hccId, hcc_regs.size());
 
         for(auto &map_iter: hcc_regs) {
               auto addr = map_iter.first;
@@ -203,14 +213,14 @@ bool StarChips::writeRegisters(){
 	eachAbc([&](auto &abc) {
                 int this_chipID = abc.getABCchipID();
 
-                logger->info("Starting on chip {} with {} registers", this_chipID, abc_regs.size());
+                logger->info("Starting on ABC {} with {} registers", this_chipID, abc_regs.size());
 		for(auto &map_iter: abc_regs) {
                         auto addr = map_iter.first;
                         logger->debug("Writing Register {} for chipID {}", addr, this_chipID);
 
                         writeABCRegister(addr, abc);
 		}
-		logger->info("Done with {}", this_chipID);
+		logger->info("Done with ABC {}", this_chipID);
           });
 
 	return true;

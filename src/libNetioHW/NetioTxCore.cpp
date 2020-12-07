@@ -48,9 +48,9 @@ void NetioTxCore::connect(){
   if(!m_socket->is_open()){
     try{
       m_socket->connect(netio::endpoint(m_felixhost,m_felixport));
-      cout << "Connected to " << m_felixhost << ":" << m_felixport << endl;
+      nlog->info("Connected to {}:{}", m_felixhost, m_felixport);
     }catch(...){
-      cout << "Cannot connect to " << m_felixhost << ":" << m_felixport << endl;
+      nlog->info("Cannot connect to {}:{}", m_felixhost, m_felixport);
     }
   }
 }
@@ -433,9 +433,9 @@ void NetioTxCore::fromFileJson(json &j){
    m_extend     = (j["NetIO"]["extend"]?4:1);
    m_feType     = j["NetIO"]["fetype"];
 
-   cout << "NetioTxCore: " << endl
-        << " manchester=" << m_manchester << endl
-        << " flip=" << m_flip << endl
-        << " extend=" << m_extend << endl
-        << " feType=" << m_feType << endl;
+   nlog->info("NetioTxCore:");
+   nlog->info(" manchester={}", m_manchester);
+   nlog->info(" flip={}", m_flip);
+   nlog->info(" extend={}", m_extend);
+   nlog->info(" feType={}", m_feType);
 }
