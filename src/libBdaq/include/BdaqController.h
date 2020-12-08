@@ -41,6 +41,11 @@ class BdaqController : public HwController, public BdaqTxCore, public BdaqRxCore
                 rxWaitTime = std::chrono::microseconds(uint(j["rxWaitTime"])*1000);
             else
                 rxWaitTime = std::chrono::microseconds(10*1000); // converting from ms to us.            
+            // Configure Si570 oscillator (MGT reference clock)
+            if (!j["configSi570"].empty())
+                c.configSi570 = j["configSi570"];
+            else
+                c.configSi570 = true;
             // Software AZ for Sycnhronous FE
             if (!j["softwareAZ"].empty())
                 softwareAZ = j["softwareAZ"];

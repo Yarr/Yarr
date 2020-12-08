@@ -17,6 +17,7 @@ struct bdaqConfig {
     std::string ipAddr;
     uint        udpPort;
     uint        tcpPort;
+    bool        configSi570;
     uint        fifoAddr;
     uint        i2cAddr;
     uint        controlAddr;

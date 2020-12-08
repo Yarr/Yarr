@@ -67,12 +67,16 @@ void Bdaq::initialize(bdaqConfig c) {
 
 	//Check if Si570 is configured. If not, configure it.
  	//if (auroraRx.getSi570IsConfigured() == false) { // Commented due to BDAQ CONTROL WIP
+	if (c.configSi570) {
 		cmd.setOutputEn(false);
 		for (uint i=0;i<7;++i) rx.at(i).reset();
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		si570.init(0xBA, 160.0); //0xBA is the Si570 i2c slave address, 160 MHz.
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		cmd.setOutputEn(true);
+	} else {
+		logger->info("Si570 (MGT ref. clock) configuration is disabled");
+	}
 	/*} else  // Commented due to BDAQ CONTROL WIP
 		logger->info("Si570 oscillator is already configured");*/
 
