@@ -36,17 +36,11 @@ void BdaqRxCore::runMode() {
     Bdaq::setMonitorFilter(BdaqAuroraRx::block);
 }
 
-// val: 0, 1, 2, 3
+// val: whatever is passed in "rx"
 void BdaqRxCore::setRxEnable(uint32_t val) {
     logger->debug("setRxEnable(): value = {}", val);
     activeChannels.clear();
-    switch (val) {
-        //Mapping rx[0, 1, 2, 3] to BDAQ rx[0, 4, 5, 6]
-        case 0: activeChannels.push_back(0); break; 
-        case 1: activeChannels.push_back(4); break;
-        case 2: activeChannels.push_back(5); break;
-        case 3: activeChannels.push_back(6); break;
-    }
+    activeChannels.push_back(val);
     initSortBuffer();
 }
 
@@ -54,13 +48,7 @@ void BdaqRxCore::setRxEnable(std::vector<uint32_t> channels) {
     activeChannels.clear();
     for (uint32_t channel : channels) {
         logger->debug("setRxEnable(): channels = {}", channel);
-        switch (channel) {
-            //Mapping rx[0, 1, 2, 3] to BDAQ rx[0, 4, 5, 6]
-            case 0: activeChannels.push_back(0); break; 
-            case 1: activeChannels.push_back(4); break;
-            case 2: activeChannels.push_back(5); break;
-            case 3: activeChannels.push_back(6); break;
-        }
+        activeChannels.push_back(channel);
     }
     initSortBuffer();
 }
