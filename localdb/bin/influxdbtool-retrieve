@@ -37,7 +37,7 @@ class dcsDataClient:
             # Don't ask the user twice (if the pwd was already entered in a previous stage)
             password = str(os.environ['INFLUXDBPWD'])
 
-        try:    
+        try:
             # Try to connect without authentication
             self.client=InfluxDBClient(host=remote_host,
                                        port=remote_port,
@@ -74,8 +74,8 @@ class dcsDataClient:
             # If not, let the user know what's happening and exit.
             logger.error("Received error from InfluxDB: {}".format(e))
             logger.warn("Please specify the db connectivity parameters "
-                    "\"database\", and optionally also \"username\", " 
-                    "\"host\" and \"port\" in the .\"influxdb_cfg\" section in" 
+                    "\"database\", and optionally also \"username\", "
+                    "\"host\" and \"port\" in the .\"influxdb_cfg\" section in"
                     "the file passed with --dcs_config or -d (-F if calling from dbAccessor)")
 
             logger.warn("See an example in {}/localdb/configs/influxdb_connectivity.json".format(current_DIR))
@@ -122,7 +122,7 @@ def getArgs():
 
 def error_message(key_type,name ):
     logger.error('{} : {} is not found!'.format(key_type, name))
-    
+
 def loadDBConnectivity(dcs_config_fname):
 
     global remote_host, remote_port, dbname, username
@@ -134,10 +134,10 @@ def loadDBConnectivity(dcs_config_fname):
     if not "influxdb_cfg" in dcs_config:
         logger.error('No "influxdb_cfg" key found in the influxDB connectivity file: {}'.format(dcs_config_fname))
         sys.exit(1)
-    
+
     if not "database" in dcs_config["influxdb_cfg"]:
         logger.error("Please specify the db connectivity parameters "
-                    "\"database\", and optionally also \"username\", " 
+                    "\"database\", and optionally also \"username\", "
                     "\"host\" and \"port\" in the .\"influxdb_cfg\" section in \"{}\"".format(dcs_config_fname))
         sys.exit(1)
 
@@ -187,14 +187,14 @@ def getData(client, dcs_config_fname):
                     key_text+=str(key)+' '
                     num_text+=str(num)+' '
                     mode_text+='null '
-                    setting_text+=str(dcs.get('setting'))+' '
+                    setting_text+=str(dcs.get('setting',0))+' '
                     description=dcs.get('description')
-                    dcsInfo['environments']=appendDcsInfo(dcsInfo['environments'],description,key,num,datFileName)
+                    dcsInfo['environments']=appendDcsInfo(dcsInfo['environments'],description,key,num,dcs.get("setting",0),datFileName)
 
                 dat_f.write(key_text+'\n')
                 dat_f.write(num_text+'\n')
                 #dat_f.write(mode_text+'\n')
-                #dat_f.write(setting_text+'\n')
+                dat_f.write(setting_text+'\n')
 
                 for data in data_list[measurement] :
                     time=data.get('time')
@@ -241,13 +241,15 @@ def calculate_runTime(scanLog):
     # to have the value in us (so InfluxDB does not complain), although the
     # actual precission is ms)
 
-    return int(start_timestamp.value/1000), int(end_timestamp.value/1000)
+    #return int(start_timestamp.value/1000), int(end_timestamp.value/1000)
+    return int(start_timestamp.value), int(end_timestamp.value)
 
-def appendDcsInfo(dcsInfoList,description,key,num,path):
+def appendDcsInfo(dcsInfoList,description,key,num,setting,path):
     singleInfo={}
     singleInfo['description']=description
     singleInfo['key']=key
     singleInfo['num']=num
+    singleInfo['setting']=setting
     singleInfo['path']=path
     singleInfo['chip']=chip
     singleInfo['status']='enabled'
@@ -269,7 +271,7 @@ def main():
 
     command             = args.command
     dcs_config_fname    = args.dcs_config
-    
+
     if command == 'test':
         sys.exit(0)
     elif command == 'init':
@@ -306,9 +308,9 @@ def main():
         if args.dcs_config is None :
             logger.error('dcs configuration file is required! Please specify dcs configuration file path under --dcs_config or -d')
             sys.exit(1)
-        
+
         loadDBConnectivity(dcs_config_fname)
-        
+
         chip=args.chip
         if not args.scan is None:
             scanlog_path=args.scan
@@ -331,7 +333,7 @@ def main():
             #output_DIR=os.path.dirname(scanlog_path)
             output_DIR='/tmp/'
 
-        
+
         start_runTime, end_runTime=calculate_runTime(getScanLog(scanlog_path))
 
         client=dcsDataClient()
