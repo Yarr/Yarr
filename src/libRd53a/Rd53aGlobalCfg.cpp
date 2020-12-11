@@ -58,7 +58,7 @@ void Rd53aGlobalCfg::init() {
     //11
     SyncVbl.init(11, &m_cfg[11], 0, 10, 400); regMap["SyncVbl"] = &Rd53aGlobalCfg::SyncVbl;
     //12
-    SyncVth.init(12, &m_cfg[12], 0, 10, 170); regMap["SyncVth"] = &Rd53aGlobalCfg::SyncVth;
+    SyncVth.init(12, &m_cfg[12], 0, 10, 160); regMap["SyncVth"] = &Rd53aGlobalCfg::SyncVth;
     //13
     SyncVrefKrum.init(13, &m_cfg[13], 0, 10, 450); regMap["SyncVrefKrum"] = &Rd53aGlobalCfg::SyncVrefKrum;
     //30
@@ -95,7 +95,7 @@ void Rd53aGlobalCfg::init() {
     //25
     DiffVff.init(25, &m_cfg[25], 0, 10, 50); regMap["DiffVff"] = &Rd53aGlobalCfg::DiffVff;
     //26
-    DiffVth1.init(26, &m_cfg[26], 0, 10, 250); regMap["DiffVth1"] = &Rd53aGlobalCfg::DiffVth1;
+    DiffVth1.init(26, &m_cfg[26], 0, 10, 280); regMap["DiffVth1"] = &Rd53aGlobalCfg::DiffVth1;
     //27
     DiffVth2.init(27, &m_cfg[27], 0, 10, 50); regMap["DiffVth2"] = &Rd53aGlobalCfg::DiffVth2;
     //28
