@@ -11,7 +11,7 @@ for instance [NetIO](netio.md).
 
 ## Software installation
 
-### Dependencies
+### Dependencies for Centos 7
 
 - Make sure you have GCC version 7.0 or higher installed:
 ```bash
@@ -40,6 +40,13 @@ $ echo "source /opt/rh/devtoolset-7/enable" >> ~/.bash_profile
 - If not installed before, you need some standard packages:
 ```bash
 $ sudo yum install gnuplot texlive-epstopdf cmake3 zeromq zeromq-devel 
+```
+
+### Dependencies for Centos 8
+
+- If not installed before, you need some standard packages:
+```bash
+$ sudo yum install gnuplot texlive-epstopdf cmake3 elfutils-libelf-devel
 ```
 
 ### Initialise repository
