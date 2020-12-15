@@ -4,6 +4,7 @@
 #include <bitset>
 
 #include "Rd53bDataProcessor.h"
+#include "EventData.h"
 #include "AllProcessors.h"
 
 #include "logging.h"
@@ -304,7 +305,7 @@ void Rd53bDataProcessor::process_core()
                                 }
 
                                 uint16_t PToT = ptot_ptoa_buf & 0x7FF;
-                                uint8_t PToA = ptot_ptoa_buf >> 11;
+                                uint16_t PToA = ptot_ptoa_buf >> 11;
 
                                 if (events[channel] == 0)
                                 {
@@ -330,7 +331,8 @@ void Rd53bDataProcessor::process_core()
                                 const uint16_t pix_row = step / 2 + 1;
                                 // logger->info("Hit: row({}) col({}) tot({}) ", pix_row, pix_col, PToT);
                                 // curOut[channel]->curEvent->addHit(pix_row, pix_col, (PToT >> 4) - 1);
-                                curOut[channel]->curEvent->addHit(pix_row, pix_col, PToT);
+
+                                curOut[channel]->curEvent->addHit({pix_col, pix_row, static_cast<uint16_t>(PToT | (PToA << 11))});
                             }
                         }
                     }
@@ -357,7 +359,7 @@ void Rd53bDataProcessor::process_core()
                                 events[channel]++;
                             }
 
-                            curOut[channel]->curEvent->addHit(pix_row, pix_col, pix_tot);
+                            curOut[channel]->curEvent->addHit({pix_col,pix_row,pix_tot});
                             //logger->info("Hit: row({}) col({}) tot({}) ", pix_row, pix_col, pix_tot);
                             hits[channel]++;
                         }
