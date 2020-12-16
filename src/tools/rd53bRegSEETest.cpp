@@ -151,11 +151,12 @@ uint16_t decodeGlob(RawData *data)
     return 0;
 }
 
-void saveCfgFile(Rd53b rd53b, std::string cfgFilePath)
+void saveCfgFile(Rd53b rd53b, std::string cfgFilePath, json globSEU)
 {
     std::ofstream newCfgFile(cfgFilePath.c_str());
     json cfg;
     rd53b.toFileJson(cfg);
+    cfg["GlobalSEU"] = globSEU;
     newCfgFile << std::setw(4) << cfg;
     newCfgFile.close();
     logger->info("Output file {} saved.", cfgFilePath.c_str());
@@ -182,7 +183,7 @@ int main(int argc, char *argv[])
     std::string ctrlFilePath = "configs/controller/specCfg-rd53b.json";
     bool randomize = false, initialize = false;
     int seed = 0;
-    std::string outputDirName = "RD53B_SEE";
+    std::string outputPrefix = "RD53B_SEE";
     const unsigned nRead = 2; /* Read back two times */
     const unsigned counter_max = Rd53b::n_Row*2;
 
@@ -204,7 +205,7 @@ int main(int argc, char *argv[])
             seed = std::atoi(optarg);
             break;
         case 'o':
-            outputDirName = std::string(optarg);
+            outputPrefix = std::string(optarg);
             break;
         case 'i':
             initialize = std::atoi(optarg);
@@ -272,10 +273,17 @@ int main(int argc, char *argv[])
     {
         logger->warn("Config file not found, using default!");
         // Write default to file
-        saveCfgFile(rd53b, cfgFilePath);
+        std::ofstream newCfgFile(cfgFilePath.c_str());
+        json cfg;
+        rd53b.toFileJson(cfg);
+        newCfgFile << std::setw(4) << cfg;
+        newCfgFile.close();
     }
     /* Creating output directory */
-    system((std::string("mkdir -vp ") + outputDirName).c_str());
+    if (outputPrefix.find('/') != std::string::npos){
+        std::string outputDirName = outputPrefix.substr(0, outputPrefix.find_last_of('/'));
+        system((std::string("mkdir -vp ") + outputDirName).c_str());
+    }
 
     hwCtrl->setCmdEnable(0);
     while (!hwCtrl->isCmdEmpty())
@@ -311,8 +319,6 @@ int main(int argc, char *argv[])
                     rd53b.setTDAC(col, row, tdac(generator));
                 }
             }
-            /* Save the config file */
-            saveCfgFile(rd53b, (outputDirName + "/rd53b_test.json.rdm"));
 
             /* Randomize global registers for SEU: 138--255, each 16 bits */
             /* These registers are not implemented, so need to save them in a separate file */
@@ -327,9 +333,8 @@ int main(int argc, char *argv[])
                     ;
             }
 
-            std::ofstream fout(outputDirName + "/glob_seu.json.rdm");
-            fout << std::setw(4) << j_glob_seu;
-            fout.close();
+            /* Save the config file */
+            saveCfgFile(rd53b, outputPrefix + "_rndm" + std::to_string(seed) + ".json", j_glob_seu);
         }
         rd53b.configurePixels();
         while (!hwCtrl->isCmdEmpty())
@@ -350,7 +355,7 @@ int main(int argc, char *argv[])
 
         for (unsigned dc = 0; dc < Rd53b::n_DC; dc++)
         {
-            logger->info("DC {}", dc);
+            // logger->info("DC {}", dc);
             for (unsigned row = 0; row < Rd53b::n_Row; row++)
             {
                 // logger->info("Row {}", row);
@@ -411,9 +416,6 @@ int main(int argc, char *argv[])
             } while (data != NULL);
         }
 
-        /* Use config file to record readback values. In the end will analyze the config files for SEE effects */
-        saveCfgFile(rd53b_readback[idx], outputDirName + "/rd53b_test.json.rb" + std::to_string(idx));
-
         json j_glob_seu; // empty
         for (uint16_t address = 138; address < 256; address++)
         {
@@ -435,9 +437,8 @@ int main(int argc, char *argv[])
             } while (data != NULL);
         }
 
-        std::ofstream fout(outputDirName + "/glob_seu.json.rb" + std::to_string(idx));
-        fout << std::setw(4) << j_glob_seu;
-        fout.close();
+        /* Use config file to record readback values. In the end will analyze the config files for SEE effects */
+        saveCfgFile(rd53b_readback[idx], outputPrefix + "_rb" + std::to_string(idx)+".json", j_glob_seu);
     }
 
     /* Put pixel readout registers to unphysical values */
