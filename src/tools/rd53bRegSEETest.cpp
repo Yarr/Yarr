@@ -117,7 +117,7 @@ void decodePix(std::vector<RawData> dataList, Rd53b &rd53b, std::vector<std::pai
         if (i + 2 >= result.size())
         {
             logger->warn("Incomplete data for pixel register reading. Will skip the last unreadable block");
-            continue;
+            break;
         }
         uint16_t dc = result[i + 1];
         uint16_t row = result[i + 2];
@@ -130,8 +130,20 @@ void decodePix(std::vector<RawData> dataList, Rd53b &rd53b, std::vector<std::pai
         }
         else
         {
-            logger->warn("Pixel address dc {}, row {} does not match any address of pixels processed. Skipping...", dc, row);
-            *badpix << dc << " " << row << std::endl;
+            logger->warn("Pixel address dc {}, row {} does not match any address of pixels processed.", dc, row);
+            // *badpix << dc << " " << row << std::endl;
+            /* What usually happens is the pix portal is read into dc or row. This can be checked by asking whether the number is out of range */
+            if (dc >= Rd53b::n_DC){
+                logger->warn("DC number is invalid. Increase index by 1: {}", i);
+                i = i + 1;
+            }
+            else if (row >= Rd53b::n_Row){
+                logger->warn("Row number is invalid. Increase index by 2: {}", i);
+                i = i + 2; 
+            }
+            else{
+                i = i + 3;
+            }
             continue;
         }
         // std::cout << val1 << " " << val2 << std::endl;
@@ -143,6 +155,8 @@ void decodePix(std::vector<RawData> dataList, Rd53b &rd53b, std::vector<std::pai
         pix2.u8 = (val >> 8) & 0xFF;
         rd53b.setReg(dc * 2, row, pix1.s.en, pix1.s.injen, pix1.s.hitbus, pix1.s.tdac * (pix1.s.sign == 0 ? +1 : -1));
         rd53b.setReg(dc * 2 + 1, row, pix2.s.en, pix2.s.injen, pix2.s.hitbus, pix2.s.tdac * (pix2.s.sign == 0 ? +1 : -1));
+
+        i += 3;
     }
 }
 
@@ -155,10 +169,13 @@ uint16_t decodeGlob(std::vector<RawData> dataList, int address)
         std::vector<uint16_t> tmp = readData(&data);
         result.insert(result.end(), tmp.begin(), tmp.end());
     }
-    if (result.size() > 1)
+    if (result.size() > 1){
         logger->warn("There are more than one set of readback for a single global register! Will use the first value");
+        *badglob << address << " " << result.size() << std::endl;
+    }
     else if (result.size() == 0)
     {
+        *badglob << address << " " << result.size() << std::endl;
         logger->warn("There are no data readback! Will use value 0");
         return 0;
     }
@@ -299,9 +316,6 @@ int main(int argc, char *argv[])
         std::string outputDirName = outputPrefix.substr(0, outputPrefix.find_last_of('/'));
         system((std::string("mkdir -vp ") + outputDirName).c_str());
     }
-    /* Start files documenting bad pixels and raw data */
-    badpix = new std::ofstream(outputPrefix + "_badpix.txt");
-    rawdata = new std::ofstream(outputPrefix + "_rawdata.txt", std::ofstream::binary);
 
     hwCtrl->setCmdEnable(0);
     while (!hwCtrl->isCmdEmpty())
