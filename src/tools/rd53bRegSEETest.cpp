@@ -19,8 +19,9 @@
 
 auto logger = logging::make_log("rd53bRegSEETest");
 
-std::ofstream *badpix = NULL;
-std::ofstream *rawdata = NULL;
+std::unique_ptr<std::ofstream> badpix;
+std::unique_ptr<std::ofstream> badglob;
+std::unique_ptr<std::ofstream> rawdata;
 
 std::vector<RawData> processDataPackets(HwController *hwCtrl)
 {
@@ -111,7 +112,7 @@ void decodePix(std::vector<RawData> dataList, Rd53b &rd53b, std::vector<std::pai
         result.insert(result.end(), tmp.begin(), tmp.end());
     }
 
-    for (unsigned i = 0; i < result.size(); i += 3)
+    for (unsigned i = 0; i < result.size();)
     {
         if (i + 2 >= result.size())
         {
@@ -146,7 +147,7 @@ void decodePix(std::vector<RawData> dataList, Rd53b &rd53b, std::vector<std::pai
 }
 
 /* Decode global registers, one-by-one */
-uint16_t decodeGlob(std::vector<RawData> dataList)
+uint16_t decodeGlob(std::vector<RawData> dataList, int address)
 {
     std::vector<uint16_t> result;
     for (auto data : dataList)
@@ -350,12 +351,12 @@ int main(int argc, char *argv[])
             /* Randomize global registers for SEU: 138--255, each 16 bits */
             /* These registers are not implemented, so need to save them in a separate file */
             json j_glob_seu; // empty
-            for (uint16_t address = 138; address < 256; address++)
+            for (uint16_t addr = 138; addr < 256; addr++)
             {
-                std::string regName = address < 202 ? ("SEU" + std::to_string(address - 138) + "_notmr") : ("SEU" + std::to_string(address - 202));
+                std::string regName = addr < 202 ? ("SEU" + std::to_string(addr - 138) + "_notmr") : ("SEU" + std::to_string(addr - 202));
                 std::uniform_int_distribution<> regVal(0, 0xFFFF);
                 j_glob_seu[regName] = regVal(generator);
-                rd53b.sendWrReg(rd53b.getChipId(), address, j_glob_seu[regName]);
+                rd53b.sendWrReg(rd53b.getChipId(), addr, j_glob_seu[regName]);
                 while (!hwCtrl->isCmdEmpty())
                     ;
             }
@@ -376,6 +377,10 @@ int main(int argc, char *argv[])
 
     for (unsigned idx = 0; idx < nRead; idx++)
     {
+        /* Start files documenting bad pixels and raw data */
+        rawdata.reset(new std::ofstream(outputPrefix + "_rawdata"+std::to_string(idx)+".txt", std::ofstream::binary));
+        badpix.reset(new std::ofstream(outputPrefix + "_badpix"+std::to_string(idx)+".txt"));
+        badglob.reset(new std::ofstream(outputPrefix + "_badglob"+std::to_string(idx)+".txt"));
         /* Read back pixel registers */
         unsigned counter = 0;
         std::vector<std::pair<uint16_t, uint16_t>> address;
@@ -426,22 +431,25 @@ int main(int argc, char *argv[])
             while (!hwCtrl->isCmdEmpty())
                 ;
             std::vector<RawData> dataList = processDataPackets(hwCtrl.get());
-            rd53b_readback[idx][addr] = decodeGlob(dataList);
+            rd53b_readback[idx][addr] = decodeGlob(dataList, addr);
         }
 
         json j_glob_seu; // empty
-        for (uint16_t address = 138; address < 256; address++)
+        for (uint16_t addr = 138; addr < 256; addr++)
         {
-            std::string regName = address < 202 ? ("SEU" + std::to_string(address - 138) + "_notmr") : ("SEU" + std::to_string(address - 202));
-            rd53b.sendRdReg(rd53b.getChipId(), address);
+            std::string regName = addr < 202 ? ("SEU" + std::to_string(addr - 138) + "_notmr") : ("SEU" + std::to_string(addr - 202));
+            rd53b.sendRdReg(rd53b.getChipId(), addr);
             while (!hwCtrl->isCmdEmpty())
                 ;
             std::vector<RawData> dataList = processDataPackets(hwCtrl.get());
-            j_glob_seu[regName] = decodeGlob(dataList);
+            j_glob_seu[regName] = decodeGlob(dataList, addr);
         }
 
         /* Use config file to record readback values. In the end will analyze the config files for SEE effects */
         saveCfgFile(rd53b_readback[idx], outputPrefix + "_rb" + std::to_string(idx) + ".json", j_glob_seu);
+        badpix->close();
+        badglob->close();
+        rawdata->close();
     }
 
     /* Put pixel readout registers to largest unphysical values */
