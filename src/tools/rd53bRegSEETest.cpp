@@ -300,7 +300,17 @@ int main(int argc, char *argv[])
         rd53b.configureInit();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        while (!hwCtrl->isCmdEmpty());
+
         rd53b.configureGlobal();
+        /* Put global threshold to high value to avoid large current */
+        rd53b.writeRegister(&Rd53b::DiffTh1L, 400);
+        rd53b.writeRegister(&Rd53b::DiffTh1R, 400);
+        rd53b.writeRegister(&Rd53b::DiffTh1M, 400);
+        rd53b.writeRegister(&Rd53b::DiffVff, 200);
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        while (!hwCtrl->isCmdEmpty());
 
         if (randomize)
         {
@@ -385,7 +395,7 @@ int main(int argc, char *argv[])
                     counter = 0;
                     if (!address.empty())
                     {
-                        logger->info("Address array not empty");
+                        logger->warn("Address array not empty");
                         while (!address.empty())
                         {
                             logger->info("{} {}", address.front().first, address.front().second);
@@ -441,9 +451,12 @@ int main(int argc, char *argv[])
         saveCfgFile(rd53b_readback[idx], outputPrefix + "_rb" + std::to_string(idx)+".json", j_glob_seu);
     }
 
-    /* Put pixel readout registers to unphysical values */
-    rd53b.writeRegister(&Rd53b::PixRegionCol, Rd53b::n_DC);
-    rd53b.writeRegister(&Rd53b::PixRegionRow, Rd53b::n_Row);
+    /* Put pixel readout registers to largest unphysical values */
+    rd53b.writeRegister(&Rd53b::PixPortal, 0xffff); /* 16 bit */
+    rd53b.writeRegister(&Rd53b::PixRegionCol, 0xffff); /* 16 bit */
+    rd53b.writeRegister(&Rd53b::PixRegionRow, 0xffff); /* 16 bit */
+    rd53b.writeRegister(&Rd53b::PixAutoRow, 0x0); /* 1 bit */
+    rd53b.writeRegister(&Rd53b::AiRegionRow, 0x1ff); /* 9 bit */
     while (!hwCtrl->isCmdEmpty())
         ;
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
