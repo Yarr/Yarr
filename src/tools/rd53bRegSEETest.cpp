@@ -19,10 +19,31 @@
 
 auto logger = logging::make_log("rd53bRegSEETest");
 
-/* Decode pixel registers */
-void decodePix(RawData *data, Rd53b &rd53b, std::queue<std::pair<unsigned, unsigned> > &address)
+std::ofstream *badpix = NULL;
+std::ofstream *rawdata = NULL;
+
+std::vector<RawData> processDataPackets(HwController *hwCtrl)
 {
-    // std::cout << dc << " " << row << std::endl;
+    std::vector<RawData> dataList;
+    RawData *data = NULL;
+    do
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        if (data != NULL)
+            delete data;
+        data = hwCtrl->readData();
+        if (data != NULL)
+        {
+            dataList.push_back(*data);
+        }
+    } while (data != NULL);
+
+    return dataList;
+}
+
+std::vector<uint16_t> readData(RawData *data)
+{
+    std::vector<uint16_t> result;
     int frameNum = 0;
     unsigned zz = 0;
     unsigned stat = 0;
@@ -37,7 +58,7 @@ void decodePix(RawData *data, Rd53b &rd53b, std::queue<std::pair<unsigned, unsig
     {
         if (data->buf[i] != 0xFFFFFFFF)
         {
-            // std::cout << "[RawBuf]" << std::bitset<32>(data->buf[i]) << std::endl;
+            *rawdata << data->buf[i] << std::endl;
             if (frameNum % 2 == 0)
             {
                 zz = 0;
@@ -53,13 +74,12 @@ void decodePix(RawData *data, Rd53b &rd53b, std::queue<std::pair<unsigned, unsig
 
                 if (!(zz == 0x55 || zz == 0x99))
                 {
-                    std::cout << "wrong Aurora code" << std::endl;
-                    std::cout << "[zz]" << std::hex << zz << std::dec << std::endl;
-                    return;
+                    logger->warn("wrong Aurora code: [zz] = 0x{:x}. Skip current frame", zz);
+                    i++;
+                    frameNum += 2;
+                    continue;
                 }
 
-                // stat = 0xF & (data->buf[i] >> 20);
-                // addr1 = 0x3FF & (data->buf[i] >> 10);
                 val1_1 = (0x3FF & (data->buf[i] >> 0)) << 6;
             }
             else
@@ -68,87 +88,80 @@ void decodePix(RawData *data, Rd53b &rd53b, std::queue<std::pair<unsigned, unsig
                 val1_2 = 0x3F & (data->buf[i] >> 26);
                 val1 = val1_1 + val1_2;
 
-                // addr2 = 0x3FF & (data->buf[i] >> 16);
                 val2 = 0xFFFF & (data->buf[i] >> 0);
 
                 const uint16_t val = (zz == 0x99) ? val1 : val2;
-                Rd53bPixelCfg::pixelBits pix1, pix2;
-                pix1.u8 = (val & 0xFF);
-                pix2.u8 = (val >> 8) & 0xFF;
-
-                unsigned dc = address.front().first, row = address.front().second;
-                address.pop();
-                // std::cout << val1 << " " << val2 << std::endl;
-                // std::cout << dc << " " << row << " " << pix1.s.en << " " << pix1.s.hitbus << " " << pix1.s.injen << " " << pix1.s.tdac * (pix1.s.sign == 0 ? +1 : -1) << std::endl;
-                // std::cout << dc << " " << row << " " << pix2.s.en << " " << pix2.s.hitbus << " " << pix2.s.injen << " " << pix2.s.tdac * (pix2.s.sign == 0 ? +1 : -1) << std::endl;
-                // getchar();
-                rd53b.setReg(dc * 2, row, pix1.s.en, pix1.s.injen, pix1.s.hitbus, pix1.s.tdac * (pix1.s.sign == 0 ? +1 : -1));
-                rd53b.setReg(dc * 2 + 1, row, pix2.s.en, pix2.s.injen, pix2.s.hitbus, pix2.s.tdac * (pix2.s.sign == 0 ? +1 : -1));
+                result.push_back(val);
             }
         }
         frameNum++;
+    }
+    // logger->info("There are {} frames read in total", frameNum);
+
+    return result;
+}
+
+/* Decode pixel registers */
+void decodePix(std::vector<RawData> dataList, Rd53b &rd53b, std::vector<std::pair<uint16_t, uint16_t>> &address)
+{
+    std::vector<uint16_t> result;
+    for (auto data : dataList)
+    {
+        std::vector<uint16_t> tmp = readData(&data);
+        result.insert(result.end(), tmp.begin(), tmp.end());
+    }
+
+    for (unsigned i = 0; i < result.size(); i += 3)
+    {
+        if (i + 2 >= result.size())
+        {
+            logger->warn("Incomplete data for pixel register reading. Will skip the last unreadable block");
+            continue;
+        }
+        uint16_t dc = result[i + 1];
+        uint16_t row = result[i + 2];
+        uint16_t val = result[i];
+
+        auto it = std::find(address.begin(), address.end(), std::make_pair(dc, row));
+        if (it != address.end())
+        {
+            address.erase(it);
+        }
+        else
+        {
+            logger->warn("Pixel address dc {}, row {} does not match any address of pixels processed. Skipping...", dc, row);
+            *badpix << dc << " " << row << std::endl;
+            continue;
+        }
+        // std::cout << val1 << " " << val2 << std::endl;
+        // std::cout << dc << " " << row << " " << pix1.s.en << " " << pix1.s.hitbus << " " << pix1.s.injen << " " << pix1.s.tdac * (pix1.s.sign == 0 ? +1 : -1) << std::endl;
+        // std::cout << dc << " " << row << " " << pix2.s.en << " " << pix2.s.hitbus << " " << pix2.s.injen << " " << pix2.s.tdac * (pix2.s.sign == 0 ? +1 : -1) << std::endl;
+        // getchar();
+        Rd53bPixelCfg::pixelBits pix1, pix2;
+        pix1.u8 = (val & 0xFF);
+        pix2.u8 = (val >> 8) & 0xFF;
+        rd53b.setReg(dc * 2, row, pix1.s.en, pix1.s.injen, pix1.s.hitbus, pix1.s.tdac * (pix1.s.sign == 0 ? +1 : -1));
+        rd53b.setReg(dc * 2 + 1, row, pix2.s.en, pix2.s.injen, pix2.s.hitbus, pix2.s.tdac * (pix2.s.sign == 0 ? +1 : -1));
     }
 }
 
 /* Decode global registers, one-by-one */
-uint16_t decodeGlob(RawData *data)
+uint16_t decodeGlob(std::vector<RawData> dataList)
 {
-    // std::cout << dc << " " << row << std::endl;
-    int frameNum = 0;
-    unsigned zz = 0;
-    unsigned stat = 0;
-    unsigned addr1 = 0;
-    unsigned val1 = 0;
-    unsigned val1_1 = 0;
-    unsigned val1_2 = 0;
-    unsigned addr2 = 0;
-    unsigned val2 = 0;
-
-    for (unsigned i = 0; i < data->words; i++)
+    std::vector<uint16_t> result;
+    for (auto data : dataList)
     {
-        if (data->buf[i] != 0xFFFFFFFF)
-        {
-            // std::cout << "[RawBuf]" << std::bitset<32>(data->buf[i]) << std::endl;
-            if (frameNum % 2 == 0)
-            {
-                zz = 0;
-                stat = 0;
-                addr1 = 0;
-                val1 = 0;
-                val1_1 = 0;
-                val1_2 = 0;
-                addr2 = 0;
-                val2 = 0;
-
-                zz = 0xFF & (data->buf[i] >> 24);
-
-                if (!(zz == 0x55 || zz == 0x99))
-                {
-                    std::cout << "wrong Aurora code" << std::endl;
-                    std::cout << "[zz]" << std::hex << zz << std::dec << std::endl;
-                    return 0;
-                }
-
-                // stat = 0xF & (data->buf[i] >> 20);
-                // addr1 = 0x3FF & (data->buf[i] >> 10);
-                val1_1 = (0x3FF & (data->buf[i] >> 0)) << 6;
-            }
-            else
-            {
-
-                val1_2 = 0x3F & (data->buf[i] >> 26);
-                val1 = val1_1 + val1_2;
-
-                // addr2 = 0x3FF & (data->buf[i] >> 16);
-                val2 = 0xFFFF & (data->buf[i] >> 0);
-
-                const uint16_t val = (zz == 0x99) ? val1 : val2;
-                return val;
-            }
-        }
-        frameNum++;
+        std::vector<uint16_t> tmp = readData(&data);
+        result.insert(result.end(), tmp.begin(), tmp.end());
     }
-    return 0;
+    if (result.size() > 1)
+        logger->warn("There are more than one set of readback for a single global register! Will use the first value");
+    else if (result.size() == 0)
+    {
+        logger->warn("There are no data readback! Will use value 0");
+        return 0;
+    }
+    return result[0];
 }
 
 void saveCfgFile(Rd53b rd53b, std::string cfgFilePath, json globSEU)
@@ -185,7 +198,7 @@ int main(int argc, char *argv[])
     int seed = 0;
     std::string outputPrefix = "RD53B_SEE";
     const unsigned nRead = 2; /* Read back two times */
-    const unsigned counter_max = Rd53b::n_Row*2;
+    const unsigned counter_max = Rd53b::n_Row;
 
     while ((c = getopt(argc, argv, "c:r:m:s:o:i:")) != -1)
     {
@@ -209,7 +222,7 @@ int main(int argc, char *argv[])
             break;
         case 'i':
             initialize = std::atoi(optarg);
-            break;            
+            break;
         default:
             spdlog::critical("No command line parameters given!");
             return -1;
@@ -280,10 +293,14 @@ int main(int argc, char *argv[])
         newCfgFile.close();
     }
     /* Creating output directory */
-    if (outputPrefix.find('/') != std::string::npos){
+    if (outputPrefix.find('/') != std::string::npos)
+    {
         std::string outputDirName = outputPrefix.substr(0, outputPrefix.find_last_of('/'));
         system((std::string("mkdir -vp ") + outputDirName).c_str());
     }
+    /* Start files documenting bad pixels and raw data */
+    badpix = new std::ofstream(outputPrefix + "_badpix.txt");
+    rawdata = new std::ofstream(outputPrefix + "_rawdata.txt", std::ofstream::binary);
 
     hwCtrl->setCmdEnable(0);
     while (!hwCtrl->isCmdEmpty())
@@ -361,7 +378,7 @@ int main(int argc, char *argv[])
     {
         /* Read back pixel registers */
         unsigned counter = 0;
-        std::queue<std::pair<unsigned, unsigned> > address;
+        std::vector<std::pair<uint16_t, uint16_t>> address;
 
         for (unsigned dc = 0; dc < Rd53b::n_DC; dc++)
         {
@@ -370,38 +387,34 @@ int main(int argc, char *argv[])
             {
                 // logger->info("Row {}", row);
                 rd53b.writeRegister(&Rd53b::PixRegionCol, dc);
-                rd53b.writeRegister(&Rd53b::PixRegionRow, row);	
+                rd53b.writeRegister(&Rd53b::PixRegionRow, row);
                 rd53b.readRegister(&Rd53b::PixPortal);
                 while (!hwCtrl->isCmdEmpty())
                     ;
+                rd53b.readRegister(&Rd53b::PixRegionCol);
+                while (!hwCtrl->isCmdEmpty())
+                    ;
+                rd53b.readRegister(&Rd53b::PixRegionRow);
+                while (!hwCtrl->isCmdEmpty())
+                    ;
 
-                address.push(std::make_pair(dc, row));
+                address.push_back(std::make_pair(dc, row));
                 counter++;
                 if (counter >= counter_max)
                 {
-                    RawData *data = NULL;
-                    do
-                    {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-                        if (data != NULL)
-                            delete data;
-                        data = hwCtrl->readData();
-                        if (data != NULL)
-                        {
-                            decodePix(data, rd53b_readback[idx], address);
-                        }
-                    } while (data != NULL);
+                    std::vector<RawData> dataList = processDataPackets(hwCtrl.get());
 
-                    counter = 0;
+                    decodePix(dataList, rd53b_readback[idx], address);
                     if (!address.empty())
                     {
-                        logger->warn("Address array not empty");
-                        while (!address.empty())
+                        logger->warn("Not all pixels are processed!");
+                        for (auto item : address)
                         {
-                            logger->info("{} {}", address.front().first, address.front().second);
-                            address.pop();
+                            *badpix << item.first << " " << item.second << std::endl;
                         }
+                        address.clear();
                     }
+                    counter = 0;
                 }
             }
         }
@@ -412,18 +425,8 @@ int main(int argc, char *argv[])
             rd53b.sendRdReg(rd53b.getChipId(), addr);
             while (!hwCtrl->isCmdEmpty())
                 ;
-            RawData *data = NULL;
-            do
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(1));
-                if (data != NULL)
-                    delete data;
-                data = hwCtrl->readData();
-                if (data != NULL)
-                {
-                    rd53b_readback[idx][addr] = decodeGlob(data);
-                }
-            } while (data != NULL);
+            std::vector<RawData> dataList = processDataPackets(hwCtrl.get());
+            rd53b_readback[idx][addr] = decodeGlob(dataList);
         }
 
         json j_glob_seu; // empty
@@ -433,22 +436,12 @@ int main(int argc, char *argv[])
             rd53b.sendRdReg(rd53b.getChipId(), address);
             while (!hwCtrl->isCmdEmpty())
                 ;
-            RawData *data = NULL;
-            do
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(1));
-                if (data != NULL)
-                    delete data;
-                data = hwCtrl->readData();
-                if (data != NULL)
-                {
-                    j_glob_seu[regName] = decodeGlob(data);
-                }
-            } while (data != NULL);
+            std::vector<RawData> dataList = processDataPackets(hwCtrl.get());
+            j_glob_seu[regName] = decodeGlob(dataList);
         }
 
         /* Use config file to record readback values. In the end will analyze the config files for SEE effects */
-        saveCfgFile(rd53b_readback[idx], outputPrefix + "_rb" + std::to_string(idx)+".json", j_glob_seu);
+        saveCfgFile(rd53b_readback[idx], outputPrefix + "_rb" + std::to_string(idx) + ".json", j_glob_seu);
     }
 
     /* Put pixel readout registers to largest unphysical values */
@@ -462,5 +455,7 @@ int main(int argc, char *argv[])
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     hwCtrl->disableRx();
+    badpix->close();
+    rawdata->close();
     return 0;
 }

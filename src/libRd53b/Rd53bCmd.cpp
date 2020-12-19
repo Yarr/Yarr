@@ -33,7 +33,7 @@ std::array<uint16_t, 1> Rd53bCmd::genSync() {
 }
 
 std::array<uint16_t, 1> Rd53bCmd::genTrigger(uint8_t bc, uint8_t tag) {
-    return {static_cast<uint16_t>((encTrigger[bc]<<8) | encTag[tag])};
+    return {static_cast<uint16_t>((encTrigger[bc]<<8) | (bc > 0 ? encTag[tag] : 0xAA))};
 }
 
 std::array<uint16_t, 2> Rd53bCmd::genReadTrigger(uint8_t chipId, uint8_t  etag) {
