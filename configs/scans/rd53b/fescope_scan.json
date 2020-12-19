@@ -2,44 +2,17 @@
   "scan": {
     "analysis": {
       "0": {
+        "algorithm": "FrontEndScopeAnalysis",
+        "config": {
+        }
+      },
+     "1": {
         "algorithm": "OccupancyAnalysis",
         "config": {
-          "createMask": false
+            "createMask": false
         }
       },
-      "1": {
-        "algorithm": "TotAnalysis",
-        "config": {
-            "tot_bins": {
-                "n_bins": 2048,
-                "x_lo": 0,
-                "x_hi" : 400
-            },
-            "tot_sigma_bins": {
-                "n_bins": 11,
-                "x_lo": -0.5,   
-                "x_hi": 10.5
-            },
-            "tot_unit": "1.5625 ns"
-        }
-      },
-      "2": {
-        "algorithm": "ToaAnalysis",
-        "config": {
-            "toa_bins": {
-                "n_bins": 400,
-                "x_lo": 0,
-                "x_hi" : 400
-            },
-            "toa_sigma_bins": {
-                "n_bins": 11,
-                "x_lo": -0.5,   
-                "x_hi": 10.5
-            },
-            "toa_unit": "1.5625 ns"
-        }
-    },
-      "n_count": 3
+      "n_count": 1
     },
     "histogrammer": {
       "0": {
@@ -51,22 +24,14 @@
         "config": {}
       },
       "2": {
-        "algorithm": "Tot2Map",
+        "algorithm": "ToaMap",
         "config": {}
       },
       "3": {
-        "algorithm": "TagDist",
-        "config": {}
-      },
-      "4": {
-        "algorithm": "HitsPerEvent",
-        "config": {}
-      },
-      "5": {
         "algorithm": "DataArchiver",
         "config": {}
       },
-      "n_count": 5
+      "n_count": 3
     },
     "loops": [
       {
@@ -77,6 +42,15 @@
           "maskType": 3
         },
         "loopAction": "Rd53bMaskLoop"
+      },
+      {
+        "config": {
+          "max": 600,
+          "min": 0,
+          "step": 10,
+          "parameter":"DiffTh1M"
+        },
+        "loopAction": "Rd53bParameterLoop"
       },
       {
         "config": {
@@ -93,11 +67,10 @@
           "count": 50,
           "delay": 56,
           "extTrigger": false,
-          "frequency": 5000,
+          "frequency": 8000,
           "noInject": false,
           "time": 0,
-          "edgeMode": true,
-          "edgeDuration": 20
+          "edgeMode": false
         },
         "loopAction": "Rd53bTriggerLoop"
       },
@@ -105,12 +78,13 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "DigitalScanPToT",
+    "name": "FrontEndScope",
     "prescan": {
+        "InjDigEn": 0,
         "InjVcalRange": 1,
-        "DiffTh1M": 600,
+        "InjVcalMed":200,
+        "InjVcalHigh": 600,
         "DiffTh2": 0,
-        "InjDigEn": 1,
         "Latency": 60,
         "TotEnPtot": 1,
         "TotEnPtoa": 1,

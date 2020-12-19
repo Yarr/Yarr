@@ -351,7 +351,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
                 chargeVsTotMap->fill(currentCharge, (i+1)*0.1, tempMeanTotDist->getBin(i));
             }
         }
-        alog->info("\033[1;33m[{}] [{}] ToT Mean = {} +- {}\033[0m", channel, ident,  meanTotDist->getMean(), meanTotDist->getStdDev());
+        alog->info("\033[1;33mChannel:{} ScanID:{} ToT Mean = {} +- {}\033[0m", channel, ident,  meanTotDist->getMean(), meanTotDist->getStdDev());
 
         if (globalFb != NULL) {
             double mean = 0;
