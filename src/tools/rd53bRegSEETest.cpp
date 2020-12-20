@@ -25,6 +25,7 @@ std::unique_ptr<std::ofstream> rawdata;
 
 std::vector<RawData> processDataPackets(HwController *hwCtrl)
 {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     std::vector<RawData> dataList;
     RawData *data = NULL;
     do
@@ -213,12 +214,12 @@ int main(int argc, char *argv[])
     std::string cfgFilePath = "configs/rd53b_test.json";
     std::string ctrlFilePath = "configs/controller/specCfg-rd53b.json";
     bool randomize = false, initialize = false;
-    int seed = 0;
+    int seed = 0, waitTime = 300;
     std::string outputPrefix = "RD53B_SEE";
     const unsigned nRead = 2; /* Read back two times */
     const unsigned counter_max = Rd53b::n_Row;
 
-    while ((c = getopt(argc, argv, "c:r:m:s:o:i:")) != -1)
+    while ((c = getopt(argc, argv, "c:r:m:s:o:i:w:")) != -1)
     {
         int count = 0;
         switch (c)
@@ -241,6 +242,9 @@ int main(int argc, char *argv[])
         case 'i':
             initialize = std::atoi(optarg);
             break;
+        case 'w':
+            waitTime = std::atoi(optarg);
+            break;            
         default:
             spdlog::critical("No command line parameters given!");
             return -1;
@@ -322,11 +326,6 @@ int main(int argc, char *argv[])
         ;
     std::this_thread::sleep_for(std::chrono::microseconds(10));
 
-    hwCtrl->setRxEnable(0);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    while (!hwCtrl->isCmdEmpty())
-        ;
-
     if (initialize)
     {
         rd53b.configureInit();
@@ -383,89 +382,102 @@ int main(int argc, char *argv[])
             ;
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
-
+    
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    hwCtrl->setRxEnable(0);
+    while (!hwCtrl->isCmdEmpty())
+        ;
     hwCtrl->flushBuffer();
 
     /* Read back pixel registers */
-    Rd53b rd53b_readback[nRead];
-
-    for (unsigned idx = 0; idx < nRead; idx++)
+    Rd53b rd53b_readback[2][nRead];
+    std::chrono::time_point<std::chrono::steady_clock> start, end;
+    for (unsigned stage = 0; stage < 2; stage++)
     {
-        /* Start files documenting bad pixels and raw data */
-        rawdata.reset(new std::ofstream(outputPrefix + "_rawdata"+std::to_string(idx)+".txt", std::ofstream::binary));
-        badpix.reset(new std::ofstream(outputPrefix + "_badpix"+std::to_string(idx)+".txt"));
-        badglob.reset(new std::ofstream(outputPrefix + "_badglob"+std::to_string(idx)+".txt"));
-        /* Read back pixel registers */
-        unsigned counter = 0;
-        std::vector<std::pair<uint16_t, uint16_t>> address;
-
-        for (unsigned dc = 0; dc < Rd53b::n_DC; dc++)
+        std::string outputPrefix_stage = outputPrefix + (stage == 0 ? "_input" : "_readback");
+        for (unsigned idx = 0; idx < nRead; idx++)
         {
-            // logger->info("DC {}", dc);
-            for (unsigned row = 0; row < Rd53b::n_Row; row++)
+            /* Start files documenting bad pixels and raw data */
+            rawdata.reset(new std::ofstream(outputPrefix_stage + "_rawdata" + std::to_string(idx) + ".txt", std::ofstream::binary));
+            badpix.reset(new std::ofstream(outputPrefix_stage + "_badpix" + std::to_string(idx) + ".txt"));
+            badglob.reset(new std::ofstream(outputPrefix_stage + "_badglob" + std::to_string(idx) + ".txt"));
+            /* Read back pixel registers */
+            unsigned counter = 0;
+            std::vector<std::pair<uint16_t, uint16_t>> address;
+
+            for (unsigned dc = 0; dc < Rd53b::n_DC; dc++)
             {
-                // logger->info("Row {}", row);
-                rd53b.writeRegister(&Rd53b::PixRegionCol, dc);
-                rd53b.writeRegister(&Rd53b::PixRegionRow, row);
-                rd53b.readRegister(&Rd53b::PixPortal);
-                while (!hwCtrl->isCmdEmpty())
-                    ;
-                rd53b.readRegister(&Rd53b::PixRegionCol);
-                while (!hwCtrl->isCmdEmpty())
-                    ;
-                rd53b.readRegister(&Rd53b::PixRegionRow);
-                while (!hwCtrl->isCmdEmpty())
-                    ;
-
-                address.push_back(std::make_pair(dc, row));
-                counter++;
-                if (counter >= counter_max)
+                // logger->info("DC {}", dc);
+                for (unsigned row = 0; row < Rd53b::n_Row; row++)
                 {
-                    std::vector<RawData> dataList = processDataPackets(hwCtrl.get());
+                    // logger->info("Row {}", row);
+                    rd53b.writeRegister(&Rd53b::PixRegionCol, dc);
+                    rd53b.writeRegister(&Rd53b::PixRegionRow, row);
+                    rd53b.readRegister(&Rd53b::PixPortal);
+                    while (!hwCtrl->isCmdEmpty())
+                        ;
+                    rd53b.readRegister(&Rd53b::PixRegionCol);
+                    while (!hwCtrl->isCmdEmpty())
+                        ;
+                    rd53b.readRegister(&Rd53b::PixRegionRow);
+                    while (!hwCtrl->isCmdEmpty())
+                        ;
 
-                    decodePix(dataList, rd53b_readback[idx], address);
-                    if (!address.empty())
+                    address.push_back(std::make_pair(dc, row));
+                    counter++;
+                    if (counter >= counter_max)
                     {
-                        logger->warn("Not all pixels are processed!");
-                        for (auto item : address)
+                        std::vector<RawData> dataList = processDataPackets(hwCtrl.get());
+
+                        decodePix(dataList, rd53b_readback[stage][idx], address);
+                        if (!address.empty())
                         {
-                            *badpix << item.first << " " << item.second << std::endl;
+                            logger->warn("Not all pixels are processed!");
+                            for (auto item : address)
+                            {
+                                *badpix << item.first << " " << item.second << std::endl;
+                            }
+                            address.clear();
                         }
-                        address.clear();
+                        counter = 0;
                     }
-                    counter = 0;
                 }
             }
-        }
 
-        /* Read back global registers, starting from normal ones */
-        for (unsigned addr = 0; addr < 138; addr++)
-        {
-            rd53b.sendRdReg(rd53b.getChipId(), addr);
-            while (!hwCtrl->isCmdEmpty())
-                ;
-            std::vector<RawData> dataList = processDataPackets(hwCtrl.get());
-            rd53b_readback[idx][addr] = decodeGlob(dataList, addr);
-        }
+            /* Read back global registers, starting from normal ones */
+            for (unsigned addr = 0; addr < 138; addr++)
+            {
+                rd53b.sendRdReg(rd53b.getChipId(), addr);
+                while (!hwCtrl->isCmdEmpty())
+                    ;
+                std::vector<RawData> dataList = processDataPackets(hwCtrl.get());
+                rd53b_readback[stage][idx][addr] = decodeGlob(dataList, addr);
+            }
 
-        json j_glob_seu; // empty
-        for (uint16_t addr = 138; addr < 256; addr++)
-        {
-            std::string regName = addr < 202 ? ("SEU" + std::to_string(addr - 138) + "_notmr") : ("SEU" + std::to_string(addr - 202));
-            rd53b.sendRdReg(rd53b.getChipId(), addr);
-            while (!hwCtrl->isCmdEmpty())
-                ;
-            std::vector<RawData> dataList = processDataPackets(hwCtrl.get());
-            j_glob_seu[regName] = decodeGlob(dataList, addr);
-        }
+            json j_glob_seu; // empty
+            for (uint16_t addr = 138; addr < 256; addr++)
+            {
+                std::string regName = addr < 202 ? ("SEU" + std::to_string(addr - 138) + "_notmr") : ("SEU" + std::to_string(addr - 202));
+                rd53b.sendRdReg(rd53b.getChipId(), addr);
+                while (!hwCtrl->isCmdEmpty())
+                    ;
+                std::vector<RawData> dataList = processDataPackets(hwCtrl.get());
+                j_glob_seu[regName] = decodeGlob(dataList, addr);
+            }
 
-        /* Use config file to record readback values. In the end will analyze the config files for SEE effects */
-        saveCfgFile(rd53b_readback[idx], outputPrefix + "_rb" + std::to_string(idx) + ".json", j_glob_seu);
-        badpix->close();
-        badglob->close();
-        rawdata->close();
+            /* Use config file to record readback values. In the end will analyze the config files for SEE effects */
+            if (stage == 0 && idx == 0)
+                start = std::chrono::steady_clock::now();
+            else if (stage == 1 && idx == nRead - 1)
+                end = std::chrono::steady_clock::now();
+            saveCfgFile(rd53b_readback[stage][idx], outputPrefix_stage + "_rb" + std::to_string(idx) + ".json", j_glob_seu);
+            badpix->close();
+            badglob->close();
+            rawdata->close();
+        }
+        if (stage == 0)
+            std::this_thread::sleep_for(std::chrono::seconds(waitTime));
     }
-
     /* Put pixel readout registers to largest unphysical values */
     rd53b.writeRegister(&Rd53b::PixPortal, 0xffff); /* 16 bit */
     rd53b.writeRegister(&Rd53b::PixRegionCol, 0xffff); /* 16 bit */
@@ -476,8 +488,11 @@ int main(int argc, char *argv[])
         ;
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
+    std::ofstream ftime(outputPrefix + "_time.txt");
+    std::chrono::duration<double> diff = end - start;
+    ftime << diff.count() << std::endl;
+    ftime.close();
+
     hwCtrl->disableRx();
-    badpix->close();
-    rawdata->close();
     return 0;
 }
