@@ -269,7 +269,12 @@ int main (int argc, char *argv[]) {
     readRegCmdErr = rd53bTest::singleRegRead(hwCtrl.get());
     logger->info("CmdErrCnt: {}", readRegCmdErr.second);
     
-    std::string cmd2 = "echo \"success\ttrigCmdErr\n" + std::to_string(ok) +"\t" + std::to_string(readRegCmdErr.second) + "\" | python3 ~/moneater/moneater.py --host 127.0.0.1 --port 8086 --user strips --password physics --database betsee --table rd53b_trig_test eaters.tabeater.TabEater";
+    rd53b.readRegister(&Rd53b::SkippedTrigCnt);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    std::pair<uint32_t, uint32_t> skipTrig = rd53bTest::singleRegRead(hwCtrl.get());
+    logger->info("SkippedTriggerCnt: {}", skipTrig.second);
+    
+    std::string cmd2 = "echo \"success\ttrigCmdErr\tskippedTrigCnt\n" + std::to_string(ok) +"\t" + std::to_string(readRegCmdErr.second) + "\t" + std::to_string(skipTrig.second) + "\" | python3 ~/moneater/moneater.py --host 127.0.0.1 --port 8086 --user strips --password physics --database betsee --table rd53b_trig_test eaters.tabeater.TabEater";
     
     FILE *gnu2 = popen(cmd2.c_str(), "w");
     pclose(gnu2);
