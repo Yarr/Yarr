@@ -7,6 +7,7 @@
 // ############################
 
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <fstream>
 #include <iomanip>
@@ -55,11 +56,19 @@ int main (int argc, char *argv[]) {
     logger->info("\033[1;31m###################\033[0m");
     logger->info("Do not use unless you know what you are doing!");
     logger->info("Do not ask questions related to this tool, as you should know what you are doing!");
+    
+    std::time_t now = std::time(NULL);
+    struct tm *lt = std::localtime(&now);
+    char c_timestamp[20];
+    strftime(c_timestamp, 20, "%F_%H:%M:%S", lt);
+    logger->info("Timestamp: {}", c_timestamp);
+    std::string timestamp = c_timestamp;
 
     logger->info("Parsing command line parameters ...");
     int c;
     std::string cfgFilePath = "configs/JohnDoe.json";
     std::string ctrlFilePath = "configs/controller/specCfg.json";
+    std::string outputFolder = ".";
     while ((c = getopt(argc, argv, "hc:r:")) != -1) {
         int count = 0;
         switch (c) {
@@ -72,6 +81,9 @@ int main (int argc, char *argv[]) {
                 break;
             case 'c':
                 cfgFilePath = std::string(optarg);
+                break;
+            case 'o':
+                outputFolder = std::string(optarg);
                 break;
             default:
                 spdlog::critical("No command line parameters given!");
@@ -145,6 +157,9 @@ int main (int argc, char *argv[]) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     hwCtrl->setRxEnable(0);
 
+    logger->info("Binary file: {}", (outputFolder + "/" + timestamp + "_readback.bin"));
+    std::ofstream binOut((outputFolder + "/" + timestamp + "_readback.bin"), std::ios::binary);
+    
     unsigned ok = 0;
     unsigned total = 2000;
 
@@ -168,6 +183,7 @@ int main (int argc, char *argv[]) {
             if (data->words>2) {
                 answer2 = Rd53b::decodeSingleRegRead(data->buf[2], data->buf[3]);
             }
+            binOut.write((char*) data->buf, data->words*4);
             delete data;
         }
 
@@ -178,9 +194,15 @@ int main (int argc, char *argv[]) {
         }
 
     }
+
+    std::string cmd = "echo \"sucess\n" + std::to_string(ok) + "\" | python3 ~/moneater/moneater.py --host 127.0.0.1 --port 8086 --user strips --password physics --database betsee --table rd53b_counter_regs eaters.tabeater.TabEater";
+    
+    FILE *gnu = popen(cmd.c_str(), "w");
+    pclose(gnu);
     
     logger->info("{} out of {} ok", ok, total);
     logger->info("... done! bye!");
     hwCtrl->disableRx();
+    binOut.close();
     return 0;
 }
