@@ -253,11 +253,11 @@ int main (int argc, char *argv[]) {
 
         RawData *data = hwCtrl->readData();
         if  (data) {
-            logger->info("Received {} words", data->words);
+            logger->debug("Received {} words", data->words);
             for (unsigned i=0; i<data->words;i+=2) {
-                logger->info("[{}] = {:x} {:x}", i, data->buf[i], data->buf[i+1]);
+                logger->debug("[{}] = {:x} {:x}", i, data->buf[i], data->buf[i+1]);
                 uint32_t tag = (data->buf[i] & 0x7F800000) >> 23;
-                logger->info("Tag: {} should be {}", tag, (((2*n%50)*4)+i/2));
+                logger->debug("Tag: {} should be {}", tag, (((2*n%50)*4)+i/2));
                 if (tag == (((2*n%50)*4)+i/2)) {
                     ok++;
                 }
