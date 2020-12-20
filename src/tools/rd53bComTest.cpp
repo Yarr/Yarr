@@ -69,7 +69,7 @@ int main (int argc, char *argv[]) {
     std::string cfgFilePath = "configs/JohnDoe.json";
     std::string ctrlFilePath = "configs/controller/specCfg.json";
     std::string outputFolder = ".";
-    while ((c = getopt(argc, argv, "hc:r:")) != -1) {
+    while ((c = getopt(argc, argv, "hc:r:o:")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
@@ -195,7 +195,7 @@ int main (int argc, char *argv[]) {
 
     }
 
-    std::string cmd = "echo \"sucess\n" + std::to_string(ok) + "\" | python3 ~/moneater/moneater.py --host 127.0.0.1 --port 8086 --user strips --password physics --database betsee --table rd53b_counter_regs eaters.tabeater.TabEater";
+    std::string cmd = "echo \"success\n" + std::to_string(ok) + "\" | python3 ~/moneater/moneater.py --host 127.0.0.1 --port 8086 --user strips --password physics --database betsee --table rd53b_com_test eaters.tabeater.TabEater";
     
     FILE *gnu = popen(cmd.c_str(), "w");
     pclose(gnu);
