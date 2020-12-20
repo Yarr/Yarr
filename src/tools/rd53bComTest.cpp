@@ -164,6 +164,14 @@ int main (int argc, char *argv[]) {
     logger->info("Configure chip ...");
     rd53b.configureInit();
     rd53b.configureGlobal();
+    rd53b.configurePixels();
+
+
+    rd53b.writeRegister(&Rd53b::DiffTh1L, 500);
+    rd53b.writeRegister(&Rd53b::DiffTh1R, 500);
+    rd53b.writeRegister(&Rd53b::DiffTh1M, 500);
+    rd53b.writeRegister(&Rd53b::DiffVff, 200);
+
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     hwCtrl->setRxEnable(0);
@@ -233,7 +241,7 @@ int main (int argc, char *argv[]) {
     
     ok = 0;
     uint32_t words_received;
-    total = 2000;
+    total = 500;
 
     logger->info("Trigger test");
     for (unsigned n = 0; n<total; n++) {
@@ -241,15 +249,15 @@ int main (int argc, char *argv[]) {
         // Send trigger
         hwCtrl->writeFifo(((uint32_t)Rd53b::genTrigger(0xF, (2*n)%50)[0] << 16) |  Rd53b::genTrigger(0xF, ((2*n)%50)+1)[0]);
         while(!hwCtrl->isCmdEmpty());
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
         RawData *data = hwCtrl->readData();
         if  (data) {
-            logger->debug("Received {} words", data->words);
+            logger->info("Received {} words", data->words);
             for (unsigned i=0; i<data->words;i+=2) {
-                logger->debug("[{}] = {:x} {:x}", i, data->buf[i], data->buf[i+1]);
+                logger->info("[{}] = {:x} {:x}", i, data->buf[i], data->buf[i+1]);
                 uint32_t tag = (data->buf[i] & 0x7F800000) >> 23;
-                logger->debug("Tag: {} should be {}", tag, (((2*n%50)*4)+i/2));
+                logger->info("Tag: {} should be {}", tag, (((2*n%50)*4)+i/2));
                 if (tag == (((2*n%50)*4)+i/2)) {
                     ok++;
                 }
