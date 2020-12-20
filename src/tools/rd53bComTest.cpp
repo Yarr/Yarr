@@ -39,6 +39,17 @@ namespace rd53bTest {
         }
         return std::make_pair(999, 666);
     }
+
+    std::pair<uint32_t, uint32_t> singleRegRead(HwController *hwCtrl) {
+        RawData *data = hwCtrl->readData();
+        std::pair<uint32_t, uint32_t> answer(999, 666);
+        int timeout = 0;
+        if  (data) {
+            answer = Rd53b::decodeSingleRegRead(data->buf[0], data->buf[1]);
+            delete data;
+        }
+        return answer;
+    }
 }
 
 int main (int argc, char *argv[]) {
@@ -160,6 +171,11 @@ int main (int argc, char *argv[]) {
     logger->info("Binary file: {}", (outputFolder + "/" + timestamp + "_readback.bin"));
     std::ofstream binOut((outputFolder + "/" + timestamp + "_readback.bin"), std::ios::binary);
     
+    // Read counter
+    rd53b.readRegister(&Rd53b::CmdErrCnt);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    logger->info("CmdErrCnt: {}", rd53bTest::singleRegRead(hwCtrl.get()).second);
+
     unsigned ok = 0;
     unsigned total = 2000;
 
@@ -194,15 +210,73 @@ int main (int argc, char *argv[]) {
         }
 
     }
+    
+    // Read counter
+    rd53b.readRegister(&Rd53b::CmdErrCnt);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    std::pair<uint32_t, uint32_t> readRegCmdErr = rd53bTest::singleRegRead(hwCtrl.get());
+    logger->info("CmdErrCnt: {}", readRegCmdErr.second);
+    
+    rd53b.readRegister(&Rd53b::CmdErrCnt);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    logger->info("CmdErrCnt: {} Reset ?", rd53bTest::singleRegRead(hwCtrl.get()).second);
 
-    std::string cmd = "echo \"success\n" + std::to_string(ok) + "\" | python3 ~/moneater/moneater.py --host 127.0.0.1 --port 8086 --user strips --password physics --database betsee --table rd53b_com_test eaters.tabeater.TabEater";
+    std::string cmd = "echo \"success\treadRegCmdErr\n" + std::to_string(ok) +"\t" + std::to_string(readRegCmdErr.second) + "\" | python3 ~/moneater/moneater.py --host 127.0.0.1 --port 8086 --user strips --password physics --database betsee --table rd53b_com_test eaters.tabeater.TabEater";
     
     FILE *gnu = popen(cmd.c_str(), "w");
     pclose(gnu);
-    
+
     logger->info("{} out of {} ok", ok, total);
+    
+    logger->info("Binary file: {}", (outputFolder + "/" + timestamp + "_trigger.bin"));
+    std::ofstream trigOut((outputFolder + "/" + timestamp + "_trigger.bin"), std::ios::binary);
+    
+    ok = 0;
+    uint32_t words_received;
+    total = 2000;
+
+    logger->info("Trigger test");
+    for (unsigned n = 0; n<total; n++) {
+        if (n%100==0) logger->info("Cycle {}/{}", n, total);
+        // Send trigger
+        hwCtrl->writeFifo(((uint32_t)Rd53b::genTrigger(0xF, (2*n)%50)[0] << 16) |  Rd53b::genTrigger(0xF, ((2*n)%50)+1)[0]);
+        while(!hwCtrl->isCmdEmpty());
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        RawData *data = hwCtrl->readData();
+        if  (data) {
+            logger->debug("Received {} words", data->words);
+            for (unsigned i=0; i<data->words;i+=2) {
+                logger->debug("[{}] = {:x} {:x}", i, data->buf[i], data->buf[i+1]);
+                uint32_t tag = (data->buf[i] & 0x7F800000) >> 23;
+                logger->debug("Tag: {} should be {}", tag, (((2*n%50)*4)+i/2));
+                if (tag == (((2*n%50)*4)+i/2)) {
+                    ok++;
+                }
+                words_received+=data->words;
+            }
+            trigOut.write((char*) data->buf, data->words*4);
+            delete data;
+        }
+
+    }
+    
+    logger->info("{} out of {} ok", ok, total*8);
+    logger->info("Received {} words", words_received);
+    
+    rd53b.readRegister(&Rd53b::CmdErrCnt);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    readRegCmdErr = rd53bTest::singleRegRead(hwCtrl.get());
+    logger->info("CmdErrCnt: {}", readRegCmdErr.second);
+    
+    std::string cmd2 = "echo \"success\ttrigCmdErr\n" + std::to_string(ok) +"\t" + std::to_string(readRegCmdErr.second) + "\" | python3 ~/moneater/moneater.py --host 127.0.0.1 --port 8086 --user strips --password physics --database betsee --table rd53b_trig_test eaters.tabeater.TabEater";
+    
+    FILE *gnu2 = popen(cmd2.c_str(), "w");
+    pclose(gnu2);
+    
     logger->info("... done! bye!");
     hwCtrl->disableRx();
     binOut.close();
+    trigOut.close();
     return 0;
 }
