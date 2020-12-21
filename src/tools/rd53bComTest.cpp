@@ -180,6 +180,8 @@ int main (int argc, char *argv[]) {
     std::ofstream binOut((outputFolder + "/" + timestamp + "_readback.bin"), std::ios::binary);
     
     // Read counter
+    rd53b.writeRegister(&Rd53b::CmdErrCnt, 0);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     rd53b.readRegister(&Rd53b::CmdErrCnt);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     logger->info("CmdErrCnt: {}", rd53bTest::singleRegRead(hwCtrl.get()).second);
@@ -219,15 +221,26 @@ int main (int argc, char *argv[]) {
 
     }
     
+    hwCtrl->flushBuffer();
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    
     // Read counter
     rd53b.readRegister(&Rd53b::CmdErrCnt);
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     std::pair<uint32_t, uint32_t> readRegCmdErr = rd53bTest::singleRegRead(hwCtrl.get());
     logger->info("CmdErrCnt: {}", readRegCmdErr.second);
     
+    rd53b.writeRegister(&Rd53b::CmdErrCnt, 0);
+    rd53b.writeRegister(&Rd53b::SkippedTrigCnt, 0);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    
     rd53b.readRegister(&Rd53b::CmdErrCnt);
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     logger->info("CmdErrCnt: {} Reset ?", rd53bTest::singleRegRead(hwCtrl.get()).second);
+    
+    rd53b.readRegister(&Rd53b::SkippedTrigCnt);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    logger->info("SkippedTrigCnt: {} = 0 ?", rd53bTest::singleRegRead(hwCtrl.get()).second);
 
     std::string cmd = "echo \"success\treadRegCmdErr\n" + std::to_string(ok) +"\t" + std::to_string(readRegCmdErr.second) + "\" | python3 ~/moneater/moneater.py --host 127.0.0.1 --port 8086 --user strips --password physics --database betsee --table rd53b_com_test eaters.tabeater.TabEater";
     
@@ -238,6 +251,12 @@ int main (int argc, char *argv[]) {
     
     logger->info("Binary file: {}", (outputFolder + "/" + timestamp + "_trigger.bin"));
     std::ofstream trigOut((outputFolder + "/" + timestamp + "_trigger.bin"), std::ios::binary);
+    
+    rd53b.sendClear(16);
+    while(!hwCtrl->isCmdEmpty());
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    hwCtrl->flushBuffer();
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     
     ok = 0;
     uint32_t words_received;
@@ -271,6 +290,8 @@ int main (int argc, char *argv[]) {
     
     logger->info("{} out of {} ok", ok, total*8);
     logger->info("Received {} words", words_received);
+    
+    hwCtrl->flushBuffer();
     
     rd53b.readRegister(&Rd53b::CmdErrCnt);
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
