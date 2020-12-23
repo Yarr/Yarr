@@ -203,15 +203,21 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
 
             auto add_histo = [&](std::string algo_name) {
                 auto histo = StdDict::getHistogrammer(algo_name);
+                if(algo_name == "DataArchiver") {
+                    auto archiver = dynamic_cast<DataArchiver*>(histo.get());
+                    std::string output_filename = (outputDir + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_data.raw");
+                    bool status = archiver->open(output_filename);
+                    if(!status) {
+                        bhlog->error("Unable to open DataArchiver output file \"{}\"", output_filename);
+                        throw std::runtime_error("Can't open requested output data file \"" + output_filename + "\"");
+                    } 
+                    histo.reset(archiver);
+                }
                 if(histo) {
-                    bhlog->debug("  ... adding {}", algo_name);
+                    bhlog->debug(" ... adding {}", algo_name);
                     histogrammer.addHistogrammer(std::move(histo));
-                } else if (algo_name == "DataArchiver") {
-                    histo.reset(new DataArchiver((outputDir + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_data.raw")));
-                    histogrammer.addHistogrammer(std::move(histo));
-                    bhlog->debug("  ... adding {}", algo_name);
                 } else {
-                    bhlog->error("Error, Histogrammer \"{} unknown, skipping!", algo_name);
+                    bhlog->error("Error, Histogrammer \"{}\" unknown, skipping!", algo_name);
                 }
             };
 

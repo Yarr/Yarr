@@ -18,18 +18,17 @@ class Histo3d;
 class LoopStatus;
 
 class DataArchiver : public HistogramAlgorithm {
-    public:
-        DataArchiver(std::string filename) : HistogramAlgorithm() {
-            r = NULL;
-            fileHandle.open(filename.c_str(), std::fstream::out | std::fstream::binary | std::fstream::trunc);
+    public :
+        DataArchiver() : HistogramAlgorithm() {
+            r = nullptr;
         }
-        ~DataArchiver() {
-            fileHandle.close();
-        }
+        ~DataArchiver() { if(fileHandle.is_open()) fileHandle.close(); }
 
+        bool open(std::string filename);
         void create(const LoopStatus &stat) override {}
         void processEvent(FrontEndData *data) override;
-    private:
+
+    private :
         std::fstream fileHandle;
 };
 

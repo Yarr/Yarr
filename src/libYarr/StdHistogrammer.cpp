@@ -19,10 +19,9 @@ namespace {
 }
 
 namespace {
-    // Needs filename from somewhere...
-    // bool da_registered =
-    //   StdDict::registerHistogrammer("DataArchiver",
-    //                             []() { return std::unique_ptr<HistogramAlgorithm>(new DataArchiver());});
+    bool da_registered =
+      StdDict::registerHistogrammer("DataArchiver",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new DataArchiver());});
 
     bool om_registered =
       StdDict::registerHistogrammer("OccupancyMap",
@@ -61,10 +60,16 @@ namespace {
                                 []() { return std::unique_ptr<HistogramAlgorithm>(new HitsPerEvent());});
 }
 
+bool DataArchiver::open(std::string filename) {
+    fileHandle.open(filename.c_str(), std::fstream::out | std::fstream::binary | std::fstream::trunc);
+    return fileHandle.good();
+}
+
 void DataArchiver::processEvent(FrontEndData *data) {
-    for (const FrontEndEvent &curEvent: data->events) {
-        // Save Event to File
-        curEvent.toFileBinary(fileHandle);
+    if(fileHandle.is_open()) {
+        for (const FrontEndEvent &curEvent: data->events) {
+            curEvent.toFileBinary(fileHandle);
+        }
     }
 }
 
