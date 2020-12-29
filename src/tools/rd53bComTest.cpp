@@ -242,10 +242,13 @@ int main (int argc, char *argv[]) {
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     logger->info("SkippedTrigCnt: {} = 0 ?", rd53bTest::singleRegRead(hwCtrl.get()).second);
 
-    std::string cmd = "echo \"success\treadRegCmdErr\n" + std::to_string(ok) +"\t" + std::to_string(readRegCmdErr.second) + "\" | python3 ~/moneater/moneater.py --host 127.0.0.1 --port 8086 --user strips --password physics --database betsee --table rd53b_com_test eaters.tabeater.TabEater";
+#ifdef MONEATER
+    std::string cmd = "echo \"success\treadRegCmdErr\n" + std::to_string(ok) +"\t" + std::to_string(readRegCmdErr.second) + "\" | python3 ~/moneater/moneater.py --host 127.0.0.1 --port 8086 --user <user> --password <password> --database betsee --table rd53b_com_test eaters.tabeater.TabEater";
     
     FILE *gnu = popen(cmd.c_str(), "w");
     pclose(gnu);
+
+#endif
 
     logger->info("{} out of {} ok", ok, total);
     
@@ -302,12 +305,14 @@ int main (int argc, char *argv[]) {
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     std::pair<uint32_t, uint32_t> skipTrig = rd53bTest::singleRegRead(hwCtrl.get());
     logger->info("SkippedTriggerCnt: {}", skipTrig.second);
-    
-    std::string cmd2 = "echo \"success\ttrigCmdErr\tskippedTrigCnt\n" + std::to_string(ok) +"\t" + std::to_string(readRegCmdErr.second) + "\t" + std::to_string(skipTrig.second) + "\" | python3 ~/moneater/moneater.py --host 127.0.0.1 --port 8086 --user strips --password physics --database betsee --table rd53b_trig_test eaters.tabeater.TabEater";
+
+#ifdef MONEATER
+    std::string cmd2 = "echo \"success\ttrigCmdErr\tskippedTrigCnt\n" + std::to_string(ok) +"\t" + std::to_string(readRegCmdErr.second) + "\t" + std::to_string(skipTrig.second) + "\" | python3 ~/moneater/moneater.py --host 127.0.0.1 --port 8086 --user <user> --password <password> --database betsee --table rd53b_trig_test eaters.tabeater.TabEater";
     
     FILE *gnu2 = popen(cmd2.c_str(), "w");
     pclose(gnu2);
-    
+#endif
+
     logger->info("... done! bye!");
     hwCtrl->disableRx();
     binOut.close();
