@@ -204,6 +204,10 @@ int main(int argc, char *argv[]){
             logger->error("Please specify file path under -s option!");
             return 1;
         }
+        else if (scan_log_path.substr(scan_log_path.find_last_of(".") + 1) != "json"){
+            logger->error("Please specify the path to scanLog.json (including the file name) under -s theoption");
+            return 1;
+        }
         database->initialize(db_cfg_path, commandLine, setQCMode, setInteractiveMode);
         database->setDCSCfg(dcs_cfg_path, scan_log_path);
         database->cleanUp("dcs", "", false, setInteractiveMode);
@@ -215,6 +219,10 @@ int main(int argc, char *argv[]){
         if (scan_log_path == "") {
             logger->error("No scan log file path given.");
             logger->error("Please specify file path under -s option!");
+            return 1;
+        }
+        else if (scan_log_path.substr(scan_log_path.find_last_of(".") + 1) != "json"){
+            logger->error("Please specify the path to scanLog.json (including the file name) under -s theoption");
             return 1;
         }
         if (comp_name == "") {
