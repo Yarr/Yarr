@@ -322,6 +322,7 @@ int main(int argc, char *argv[]) {
     }
     // Add to scan log
     scanLog["ctrlCfg"] = ctrlCfg;
+    scanLog["ctrlStatus"] = hwCtrl->getStatus();
 
     hwCtrl->setupMode();
 
