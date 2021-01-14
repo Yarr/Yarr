@@ -228,7 +228,8 @@ void Rd53bDataProcessor::process_core()
                     if (unlikely(_blockIdx >= blocks))
                         break; // End of data processing
                     _data = &_curIn->buf[2 * _blockIdx];
-
+                    if (!(_data[0] >> 31 & 0x1))
+                        logger->error("Expect new stream while NS = 0");
                     tag[channel] = (_data[0] >> 23) & 0xFF;
                     ++_blockIdx; // Increase block index
                     _bitIdx = 9; // Reset bit index = NS + tag
